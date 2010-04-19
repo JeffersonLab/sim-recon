@@ -32,6 +32,22 @@ extern string OUTPUT_FILENAME;
 
 
 //------------------------------------------------------------------
+// MyProcessor
+//------------------------------------------------------------------
+MyProcessor::MyProcessor()
+{
+	ROOTfile = NULL;
+}
+
+//------------------------------------------------------------------
+// ~MyProcessor
+//------------------------------------------------------------------
+MyProcessor::~MyProcessor()
+{
+
+}
+
+//------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
 jerror_t MyProcessor::init(void)
@@ -39,11 +55,6 @@ jerror_t MyProcessor::init(void)
 	// open ROOT file
 	ROOTfile = new TFile(OUTPUT_FILENAME.c_str(),"RECREATE","Produced by hd_root");
 	cout<<"Opened ROOT file \""<<OUTPUT_FILENAME<<"\" ..."<<endl;
-
-	// Create tree
-
-	//ROOTtree = new TTree("ROOTtree","HDGeant Hits Tree");
-	//cout<<"Created Root Tree ..."<<endl;
 
 	return NOERROR;
 }

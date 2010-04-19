@@ -19,6 +19,9 @@ extern bool ACTIVATE_ALL;
 class MyProcessor:public JEventProcessor
 {
 	public:
+		MyProcessor();
+		~MyProcessor();
+	
 		jerror_t init(void);				///< Called once at program start.
 		jerror_t brun(JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);						///< Called every event.
@@ -32,5 +35,4 @@ class MyProcessor:public JEventProcessor
 		vector<factory_info_t> fac_info;
 
 		TFile *ROOTfile;
-		TTree *ROOTtree;
 };
