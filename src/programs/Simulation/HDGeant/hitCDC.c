@@ -60,20 +60,17 @@ void hitCentralDC (float xin[4], float xout[4],
    xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
    xlocal[2] = (xinlocal[2] + xoutlocal[2])/2;
 
+	/* For particles that range out inside the active volume, the
+	 * "out" time seems to be set to something enormously high.
+	 * This screws up the hit. Check for this case here by looking
+	 * at xout[3] and making sure it is less than 1 second. If it's
+	 * not, then just use xin[3] for "t".
+	*/
+	if(xout[3] > 1.0) t = xin[3] * 1e9;
+
    drin = sqrt(xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1]);
    drout = sqrt(xoutlocal[0]*xoutlocal[0] + xoutlocal[1]*xoutlocal[1]);
-	
-	/* Project the input position/momentum to the DOCA point. 4/27/2009  DL
-	 *
-	 * Commented out 6/24/2009 DL
-	 */
-	/*
-	GetDOCA(ipart, xin, pin, doca);
-   xlocal[0] = doca[0];
-   xlocal[1] = doca[1];
-   xlocal[2] = doca[2];
-	*/
-	
+		
 	/* This will get called when the particle actually passes through
 	 * the wire volume itself. For these cases, we should set the 
 	 * location of the hit to be the point on the wire itself. Do
