@@ -28,21 +28,6 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 														, int max_swim_steps
 														, double step_size)
 {
-	// It turns out that the greatest bottleneck in speed here comes from
-	// allocating/deallocating the large block of memory required to hold
-	// all of the trajectory info. The preferred way of calling this is 
-	// with a pointer allocated once at program startup. This code block
-	// though allows it to be allocated here if necessary.
-	if(!swim_steps){
-		own_swim_steps = true;
-		this->max_swim_steps = 10000;
-		this->swim_steps = new swim_step_t[this->max_swim_steps];
-	}else{
-		own_swim_steps = false;
-		this->max_swim_steps = max_swim_steps;
-		this->swim_steps = swim_steps;
-	}
-
 	// Copy some values into data members
 	this->q = q;
 	this->step_size = step_size;
@@ -59,10 +44,27 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	BOUNDARY_STEP_FRACTION = 0.80;
 	MIN_STEP_SIZE = 0.05;	// cm
 	MAX_STEP_SIZE = 3.0;		// cm
+	int MAX_SWIM_STEPS = 10000;
 	
 	gPARMS->SetDefaultParameter("TRK:BOUNDARY_STEP_FRACTION" , BOUNDARY_STEP_FRACTION, "Fraction of estimated distance to boundary to use as step size");
 	gPARMS->SetDefaultParameter("TRK:MIN_STEP_SIZE" , MIN_STEP_SIZE, "Minimum step size in cm to take when swimming a track with adaptive step sizes");
 	gPARMS->SetDefaultParameter("TRK:MAX_STEP_SIZE" , MAX_STEP_SIZE, "Maximum step size in cm to take when swimming a track with adaptive step sizes");
+	gPARMS->SetDefaultParameter("TRK:MAX_SWIM_STEPS" , MAX_SWIM_STEPS, "Number of swim steps for DReferenceTrajectory to allocate memory for (when not using external buffer)");
+
+	// It turns out that the greatest bottleneck in speed here comes from
+	// allocating/deallocating the large block of memory required to hold
+	// all of the trajectory info. The preferred way of calling this is 
+	// with a pointer allocated once at program startup. This code block
+	// though allows it to be allocated here if necessary.
+	if(!swim_steps){
+		own_swim_steps = true;
+		this->max_swim_steps = MAX_SWIM_STEPS;
+		this->swim_steps = new swim_step_t[this->max_swim_steps];
+	}else{
+		own_swim_steps = false;
+		this->max_swim_steps = max_swim_steps;
+		this->swim_steps = swim_steps;
+	}
 }
 
 //---------------------------------
