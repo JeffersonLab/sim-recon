@@ -1510,8 +1510,6 @@ double DReferenceTrajectory::dPdx(double ptot, double KrhoZ_overA,
 	
 	if(ploss_direction==kBackward)dP_dx = -dP_dx;
 
-dP_dx*=2.0;
-
 	return dP_dx;
 }
 
