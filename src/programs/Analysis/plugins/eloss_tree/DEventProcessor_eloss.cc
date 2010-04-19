@@ -105,16 +105,15 @@ jerror_t DEventProcessor_eloss::evnt(JEventLoop *loop, int eventnumber)
 		geant_event.x = traj->x;
 		geant_event.y = traj->y;
 		geant_event.z = traj->z;
-		geant_event.P = traj->px*traj->px + traj->py*traj->py + traj->pz*traj->pz;
+		geant_event.P = sqrt(traj->px*traj->px + traj->py*traj->py + traj->pz*traj->pz);
 		float E = traj->E;
 		float dE = traj->dE;
-		float P = dana_event.P;
+		float P = geant_event.P;
 		float m = sqrt(E*E - P*P);
 		float P1 = sqrt((E-dE)*(E-dE) - m*m);
 		geant_event.dP = P-P1;
 		geant_event.mech = traj->mech;
 		geant->Fill();
-		
 	}
 
 	return NOERROR;
