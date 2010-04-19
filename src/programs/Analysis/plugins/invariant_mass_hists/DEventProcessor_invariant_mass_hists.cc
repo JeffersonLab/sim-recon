@@ -19,7 +19,7 @@ using namespace jana;
 
 #include <TRACKING/DMCThrown.h>
 #include <PID/DKinematicData.h>
-#include <PID/DParticle.h>
+#include <PID/DChargedTrack.h>
 #include <PID/DPhoton.h>
 #include <PID/DBeamPhoton.h>
 
@@ -88,11 +88,11 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 	// Get reconstructed objects
 	vector<const DBeamPhoton*> beam_photons;
 	vector<const DPhoton*> photons;
-	vector<const DParticle*> particles;
+	vector<const DChargedTrack*> chargedtracks;
 
 	loop->Get(beam_photons);	// from truth info
 	loop->Get(photons);			// all reconstructed photons (BCAL and FCAL)
-	loop->Get(particles);		// all reconstructed charged (CDC and FDC)
+	loop->Get(chargedtracks);		// all reconstructed charged (CDC and FDC)
 
 	// Target is proton at rest in lab frame
 	TLorentzVector target(0.0, 0.0, 0.0, 0.93827);
@@ -108,33 +108,28 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 
 	// Loop over charged particles turning them into TLorentzVector objects
 	// and sorting them into various containers declared just above.
-	for(unsigned int j=0; j<particles.size(); j++){
-		const DParticle *part = particles[j];
+	for(unsigned int j=0; j<chargedtracks.size(); j++){
+		if(chargedtracks[j]->hypotheses.size()<1)continue;
+		const DTrackTimeBased *trk = chargedtracks[j]->hypotheses[0];
 
-		// If this came from the HDParSim factory it will have a DMCThrown object
-		// associated with it that we can use to get the particle type since
-		// we currently don't have that info in reconstruction. If it is not there,
-		// then assume it's a pion.
-		int type = part->charge()<0.0 ? 9:8; // initialize to pi-(=9) or pi+(=8)
-
-		
-		//printf("mass %f\n",part->mass());
-		if (part->mass()>0.5) type=14;
-
-		// Here we try and get the "truth" object DMCThrown. The access mechanism
-		// forces us to get it as a list, but there should be at most 1.
-		vector<const DMCThrown*> throwns;
-		part->Get(throwns);
-		// if DMCThrown was found, overwrite pion with actual particle type
-		//if(throwns.size()>0)type = throwns[0]->type;			
+		// Use particle mass to decide the type
+		int type = 0;
+		if(fabs(trk->mass()-0.13957)<0.01){
+			type = trk->charge()<0.0 ? 9:8; // initialize to pi-(=9) or pi+(=8)
+		}else if(fabs(trk->mass()-0.93827)<0.01 && trk->charge()==1.0){
+			type=14;
+		}
 
 		// Add TLorentzVector to appropriate container based on charged particle type
 		switch(type){
-			case 8:	rec_piplus.push_back(MakeTLorentz(part, 0.13957));		break;
-			case 9:	rec_piminus.push_back(MakeTLorentz(part, 0.13957));	break;
-			case 14:	rec_protons.push_back(MakeTLorentz(part, 0.93827));	break;
+			case 8:	rec_piplus.push_back(MakeTLorentz(trk, 0.13957));		break;
+			case 9:	rec_piminus.push_back(MakeTLorentz(trk, 0.13957));	break;
+			case 14:	rec_protons.push_back(MakeTLorentz(trk, 0.93827));	break;
+			default:
+				cout<<"Unknown particle mass: "<<trk->mass()<<" for charge "<<trk->charge()<<endl;
+				break;
 		}
-	} // particles
+	} // chargedtracks
 
 	// Some generators don't supply information on the beam photon. If there
 	// are no DBeamPhoton objects, then create a 9GeV one here
