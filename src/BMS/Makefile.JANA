@@ -6,4 +6,9 @@ ifdef XERCESCROOT
 	include $(HALLD_HOME)/src/BMS/Makefile.XERCES
 endif
 
+ifdef EVIOROOT
+	include $(HALLD_HOME)/src/BMS/Makefile.EVIO
+endif
+
+
 ADDITIONAL_MODULES += JANA
