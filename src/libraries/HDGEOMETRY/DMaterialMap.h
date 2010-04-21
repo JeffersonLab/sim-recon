@@ -28,7 +28,7 @@ class DMaterialMap{
 				double rhoZ_overA_logI;	// density*Z/A * log(mean excitation energy)
 		};
 		
-		const MaterialNode* FindNode(DVector3 &pos) const;
+		inline const MaterialNode* FindNode(DVector3 &pos) const;
 		jerror_t FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const;
 		jerror_t FindMatALT1(DVector3 &pos,double &KrhoZ_overA,
 				 double &rhoZ_overA, double &logI, 
@@ -68,5 +68,24 @@ class DMaterialMap{
 
 		JCalibration *jcalib;
 };
+
+//-----------------
+// FindNode
+//-----------------
+inline const DMaterialMap::MaterialNode* DMaterialMap::FindNode(DVector3 &pos) const
+{
+	// For now, this just finds the bin in the material map the given position is in
+	// (i.e. no interpolation )
+	double pos_x = pos.X();
+	double pos_y = pos.Y();
+	double r = sqrt(pos_x*pos_x + pos_y*pos_y);
+	double z = pos.Z();
+	int ir = (int)floor((r-rmin)/dr);
+	int iz = (int)floor((z-zmin)/dz);
+	if(ir<0 || ir>=Nr || iz<0 || iz>=Nz)return NULL;
+	
+	return &nodes[ir][iz];
+}
+
 
 #endif // _DMaterialMap_

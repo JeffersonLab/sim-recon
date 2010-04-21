@@ -23,6 +23,7 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumbe
 {
 	this->jgeom = jgeom;
 	this->dapp = dapp;
+	this->bfield = dapp->GetBfield();
 
 	JCalibration *jcalib = dapp->GetJCalibration(runnumber);
 	if(!jcalib){
@@ -81,7 +82,7 @@ DGeometry::~DGeometry()
 //---------------------------------
 DMagneticFieldMap* DGeometry::GetBfield(void) const
 {
-	return dapp->GetBfield();
+	return bfield;
 }
 
 //---------------------------------
@@ -156,7 +157,7 @@ jerror_t DGeometry::FindMatALT1(DVector3 &pos, DVector3 &mom,double &KrhoZ_overA
 			if(s_to_boundary==NULL)return NOERROR;	// User doesn't want distance to boundary
 			*s_to_boundary = 1.0E6;
 			for(unsigned int j=0; j<=i; j++){
-				double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom, GetBfield());
+				double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom, bfield);
 				if(s<*s_to_boundary)*s_to_boundary = s;
 			}
 			return NOERROR;
@@ -189,7 +190,7 @@ jerror_t DGeometry::FindMatKalman(DVector3 &pos, DVector3 &mom,double &Z,
       // there is no need to check them.
       *s_to_boundary = 1.0E6;
       for(unsigned int j=0; j<=i; j++){
-	double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom, GetBfield());
+	double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom, bfield);
 	if(s<*s_to_boundary)*s_to_boundary = s;
       }
       return NOERROR;

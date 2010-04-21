@@ -112,7 +112,7 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	}
 }
 
-
+#if 0
 //-----------------
 // FindNode
 //-----------------
@@ -120,7 +120,9 @@ const DMaterialMap::MaterialNode* DMaterialMap::FindNode(DVector3 &pos) const
 {
 	// For now, this just finds the bin in the material map the given position is in
 	// (i.e. no interpolation )
-	double r = pos.Perp();
+	double pos_x = pos.X();
+	double pos_y = pos.Y();
+	double r = sqrt(pos_x*pos_x + pos_y*pos_y);
 	double z = pos.Z();
 	int ir = (int)floor((r-rmin)/dr);
 	int iz = (int)floor((z-zmin)/dz);
@@ -128,6 +130,7 @@ const DMaterialMap::MaterialNode* DMaterialMap::FindNode(DVector3 &pos) const
 	
 	return &nodes[ir][iz];
 }
+#endif
 
 //-----------------
 // FindMat
@@ -203,7 +206,9 @@ jerror_t DMaterialMap::FindMatKalman(DVector3 &pos,double &Z,
 //-----------------
 bool DMaterialMap::IsInMap(const DVector3 &pos) const
 {
-	double r = pos.Perp();
+	double pos_x = pos.X();
+	double pos_y = pos.Y();
+	double r = sqrt(pos_x*pos_x + pos_y*pos_y);
 	double z = pos.Z();
 	return (r>=rmin) && (r<=rmax) && (z>=zmin) && (z<=zmax);
 }
@@ -236,15 +241,21 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	double s_to_boundary = 1.0E6;
 	if(!ENABLE_BOUNDARY_CHECK)return s_to_boundary; // low-level, catch-all opportunity to NOT do this.
 	
-	double r = pos.Perp();
+	double pos_x = pos.X();
+	double pos_y = pos.Y();
+
+	double mom_x = mom.X();
+	double mom_y = mom.Y();
+	
+	double r = sqrt(pos_x*pos_x + pos_y*pos_y);
 	double z = pos.Z();
-	double pr = mom.Perp();
+	double pr = sqrt(mom_x*mom_x + mom_y*mom_y);
 	double pz = mom.Z();
 	// The value of pr is positive definite, but should be signed since the 
 	// momentum could be pointing back towards the beamline. To determine
 	// the sign, take the dot product of the mopmentum with the position
 	// in the x-y plane.
-	if((pos.X()*mom.X() + pos.Y()*mom.Y()) < 0.0) pr = -pr;
+	if((pos_x*mom_x + pos_y*mom_y) < 0.0) pr = -pr;
 	
 	// Unit vector pointing in momentum direction in r-z space
 	double mod = sqrt(pr*pr + pz*pz);
