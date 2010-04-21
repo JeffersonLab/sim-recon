@@ -21,6 +21,8 @@ class DReferenceTrajectory;
 class DTrackCandidate:public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DTrackCandidate);
+		
+		DTrackCandidate():chisq(0),Ndof(0){}
 
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
