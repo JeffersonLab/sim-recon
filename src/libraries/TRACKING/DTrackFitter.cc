@@ -166,9 +166,12 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 	// Correct for energy loss in target etc. based on particle mass in starting_params
 	DVector3 pos, mom; // (holds parameters at vertex after correction)
 	if(fit_type==kWireBased){
-	  CorrectForELoss(starting_params, rt, pos, mom, mass);
-	}else
-	{
+		jerror_t err = CorrectForELoss(starting_params, rt, pos, mom, mass);
+		if(err != NOERROR){
+			pos = starting_params.position();
+			mom = starting_params.momentum();
+		}
+	}else{
 	  pos = starting_params.position();
 	  mom = starting_params.momentum();
 	}
