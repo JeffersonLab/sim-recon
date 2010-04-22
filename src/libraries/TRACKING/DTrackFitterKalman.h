@@ -107,9 +107,6 @@ class DTrackFitterKalman: public DTrackFitter{
 
     len = 0.0;
     ftime=0.0;
-    path_length = 0.0;
-    track_dedx=0.0;
-    num_dedx=0;
     x_=y_=tx_=ty_=q_over_p_ = 0.0;
     z_=phi_=tanl_=q_over_pt_ = 0.0;
     chisq_ = 0.0;
@@ -153,7 +150,6 @@ class DTrackFitterKalman: public DTrackFitter{
   double GetCharge(void){return q_over_pt_>0?1.:-1.;};
   double GetChiSq(void){return chisq_;}
   unsigned int GetNDF(void){return ndf;};
-  double GetActivePathLength(void){ return path_length;}
   double GetdEdx(double q_over_p,double K_rho_Z_over_A,double rho_Z_over_A,
 		 double rho_Z_over_A_LnI); 
   double GetEnergyVariance(double ds,double beta2,double K_rho_Z_over_A);
@@ -268,12 +264,6 @@ class DTrackFitterKalman: public DTrackFitter{
   double Bx,By,Bz;
   double dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
   bool get_field;
-
-  // For dEdx measurements
-  double track_dedx;
-  int num_dedx;
-  double path_length;  // path length in active volume
-  double p_meas;  // Average measured momentum in active region
 
   // endplate dimensions and location
   double endplate_z, endplate_dz, endplate_rmin, endplate_rmax;

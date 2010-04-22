@@ -121,10 +121,6 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
   // Number degrees of freedom
   ndf=0;
 
-  // Energy loss
-  track_dedx=0.;
-  num_dedx=0;
-
   // Step sizes
   mStepSizeS=mStepSizeZ=0.3;
   
@@ -229,14 +225,10 @@ void DTrackFitterKalman::ResetKalman(void)
 	 
 	 len = 0.0;
 	 ftime=0.0;
-	 path_length = 0.0;
 	 x_=y_=tx_=ty_=q_over_p_ = 0.0;
 	 z_=phi_=tanl_=q_over_pt_ = 0.0;
 	 chisq_ = 0.0;
 	 ndf = 0;
-	 track_dedx=0.;
-	 num_dedx=0;
-	 p_meas=0.;
 	 //MASS=0.13957;
 	 //mass2=MASS*MASS;
 	 Bx=By=0.;
@@ -429,33 +421,33 @@ jerror_t DTrackFitterKalman::CalcDeriv(double z,double dz,const DMatrix &S,
   if (fabs(ty)>TAN_MAX) ty=TAN_MAX*(ty>0?1.:-1.);
   
   // useful combinations of terms
-  double qpfactor=qBr2p*q_over_p;
+  double kq_over_p=qBr2p*q_over_p;
   double tx2=tx*tx;
   double ty2=ty*ty;
   double txty=tx*ty;
-  double factor=sqrt(1.+tx2+ty2);
+  double dsdz=sqrt(1.+tx2+ty2);
   double dtx_Bfac=ty*Bz+txty*Bx-(1.+tx2)*By;
   double dty_Bfac=Bx*(1.+ty2)-txty*By-tx*Bz;
-  double qpfactor2=qpfactor*factor;
-  double qpfactor_ds=0.5*dz*qpfactor2;
+  double kq_over_p_dsdz=kq_over_p*dsdz;
+  double kq_over_p_ds=0.5*dz*kq_over_p_dsdz;
 
   // Derivative of S with respect to z
   D(state_x,0)=tx;
   D(state_y,0)=ty;
 
   if (fit_type==kTimeBased){
-    D(state_x,0)+=qpfactor_ds*dtx_Bfac;
-    D(state_y,0)+=qpfactor_ds*dty_Bfac;
+    D(state_x,0)+=kq_over_p_ds*dtx_Bfac;
+    D(state_y,0)+=kq_over_p_ds*dty_Bfac;
   }
 
-  D(state_tx,0)=qpfactor2*dtx_Bfac;
-  D(state_ty,0)=qpfactor2*dty_Bfac;
+  D(state_tx,0)=kq_over_p_dsdz*dtx_Bfac;
+  D(state_ty,0)=kq_over_p_dsdz*dty_Bfac;
 
   D(state_q_over_p,0)=0.;
   if (fabs(dEdx)>0. && fabs(q_over_p)<Q_OVER_P_MAX){
     double q_over_p_sq=q_over_p*q_over_p;
     double E=sqrt(1./q_over_p_sq+mass2); 
-    D(state_q_over_p,0)=-q_over_p_sq*q_over_p*E*dEdx*factor;
+    D(state_q_over_p,0)=-q_over_p_sq*q_over_p*E*dEdx*dsdz;
   }
   return NOERROR;
 }
@@ -483,16 +475,18 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double z,double dz,
   if (fabs(tx)>TAN_MAX) tx=TAN_MAX*(tx>0?1.:-1.); 
   if (fabs(ty)>TAN_MAX) ty=TAN_MAX*(ty>0?1.:-1.);
   // useful combinations of terms
-  double qpfactor=qBr2p*q_over_p;
+  double kq_over_p=qBr2p*q_over_p;
   double tx2=tx*tx;
   double ty2=ty*ty;
   double txty=tx*ty;
   double one_plus_tx2=1.+tx2;
   double one_plus_ty2=1.+ty2;
-  double factor=sqrt(1.+tx2+ty2);
-  double factor_sq=factor*factor;
-  double qpfactor2=qpfactor*factor;
-  double qpfactor_ds=0.5*dz*qpfactor2;
+  double dsdz=sqrt(1.+tx2+ty2);
+  double kdsdz=qBr2p*dsdz;
+  double kq_over_p_over_dsdz=kq_over_p/dsdz;
+  double one_over_dsdz_sq=1./(dsdz*dsdz);
+  double kq_over_p_dsdz=kq_over_p*dsdz;
+  double kq_over_p_ds=0.5*dz*kq_over_p_dsdz;
   double dtx_Bdep=ty*Bz+txty*Bx-one_plus_tx2*By;
   double dty_Bdep=Bx*one_plus_ty2-txty*By-tx*Bz;
   double Bxty=Bx*ty;
@@ -505,47 +499,49 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double z,double dz,
   D(state_x,0)=tx;
   D(state_y,0)=ty;
   if (fit_type==kTimeBased){
-    D(state_x,0)+=qpfactor_ds*dtx_Bdep;
-    D(state_y,0)+=qpfactor_ds*dty_Bdep;
+    D(state_x,0)+=kq_over_p_ds*dtx_Bdep;
+    D(state_y,0)+=kq_over_p_ds*dty_Bdep;
   }
-  D(state_tx,0)=qpfactor2*dtx_Bdep;
-  D(state_ty,0)=qpfactor2*dty_Bdep;
+  D(state_tx,0)=kq_over_p_dsdz*dtx_Bdep;
+  D(state_ty,0)=kq_over_p_dsdz*dty_Bdep;
 
   // Jacobian
   J(state_x,state_tx)=J(state_y,state_ty)=1.;
-  J(state_tx,state_q_over_p)=qBr2p*factor*dtx_Bdep;
-  J(state_ty,state_q_over_p)=qBr2p*factor*dty_Bdep;
-  J(state_tx,state_tx)=qpfactor*(Bxty*(1.+2.*tx2+ty2)
-				       -Bytx*(3.+3.*tx2+2.*ty2)
-				       +Bztxty)/factor;
-  J(state_tx,state_x)=qpfactor2*(ty*dBzdx+txty*dBxdx
-					     -one_plus_tx2*dBydx);
-  J(state_ty,state_ty)=qpfactor*(Bxty*(3.+2.*tx2+3.*ty2)
-				       -Bytx*one_plus_tx2+2.*ty2
-				       -Bztxty)/factor;
-  J(state_ty,state_y)= qpfactor2*(one_plus_ty2*dBxdy
-					      -txty*dBydy-tx*dBzdy);
-  J(state_tx,state_ty)=qpfactor*((Bxtx+Bz)*(one_plus_tx2+2.*ty2)
-				       -Byty*one_plus_tx2)/factor;
-  J(state_tx,state_y)= qpfactor2*(tx*dBzdy+txty*dBxdy
-					      -one_plus_tx2*dBydy);
-  J(state_ty,state_tx)=-qpfactor*((Byty+Bz)*(1.+2.*tx2+ty2)
-					-Bxtx*one_plus_ty2)/factor;
-  J(state_ty,state_x)=qpfactor2*(one_plus_ty2*dBxdx-txty*dBydx
-					     -tx*dBzdx);
-  J(state_q_over_p,state_tx)=D(state_q_over_p,0)*tx/factor_sq;
-  J(state_q_over_p,state_ty)=D(state_q_over_p,0)*ty/factor_sq;
-
+  J(state_tx,state_q_over_p)=kdsdz*dtx_Bdep;
+  J(state_ty,state_q_over_p)=kdsdz*dty_Bdep;
+  J(state_tx,state_tx)=kq_over_p_over_dsdz*(Bxty*(1.+2.*tx2+ty2)
+					    -Bytx*(3.+3.*tx2+2.*ty2)
+					    +Bztxty);
+  J(state_tx,state_x)=kq_over_p_dsdz*(ty*dBzdx+txty*dBxdx
+				      -one_plus_tx2*dBydx);
+  J(state_ty,state_ty)=kq_over_p_over_dsdz*(Bxty*(3.+2.*tx2+3.*ty2)
+					    -Bytx*one_plus_tx2+2.*ty2
+					    -Bztxty);
+  J(state_ty,state_y)= kq_over_p_dsdz*(one_plus_ty2*dBxdy
+				       -txty*dBydy-tx*dBzdy);
+  J(state_tx,state_ty)=kq_over_p_over_dsdz
+    *((Bxtx+Bz)*(one_plus_tx2+2.*ty2)-Byty*one_plus_tx2);
+  J(state_tx,state_y)= kq_over_p_dsdz*(tx*dBzdy+txty*dBxdy
+				       -one_plus_tx2*dBydy);
+  J(state_ty,state_tx)=-kq_over_p_over_dsdz*((Byty+Bz)*(1.+2.*tx2+ty2)
+					     -Bxtx*one_plus_ty2);
+  J(state_ty,state_x)=kq_over_p_dsdz*(one_plus_ty2*dBxdx-txty*dBydx
+				      -tx*dBzdx);
+  J(state_q_over_p,state_tx)=D(state_q_over_p,0)*tx*one_over_dsdz_sq;
+  J(state_q_over_p,state_ty)=D(state_q_over_p,0)*ty*one_over_dsdz_sq;
+  
   // Second order
   if (fit_type==kTimeBased){
     double dz_over_2=0.5*dz;
-    J(state_x,state_tx)+=qpfactor_ds*(dtx_Bdep*tx/factor_sq+Bxty-2.*Bytx);
-    J(state_x,state_ty)=qpfactor_ds*(dtx_Bdep*ty/factor_sq+Bz+Bxtx);
+    J(state_x,state_tx)+=kq_over_p_ds*(dtx_Bdep*tx*one_over_dsdz_sq+Bxty
+				       -2.*Bytx);
+    J(state_x,state_ty)=kq_over_p_ds*(dtx_Bdep*ty*one_over_dsdz_sq+Bz+Bxtx);
     J(state_x,state_q_over_p)=J(state_tx,state_q_over_p)*dz_over_2;
     J(state_x,state_x)=J(state_tx,state_x)*dz_over_2;
     J(state_x,state_y)=J(state_tx,state_y)*dz_over_2;
-    J(state_y,state_tx)=qpfactor_ds*(dty_Bdep*tx/factor_sq-Byty-Bz);
-    J(state_y,state_ty)+=qpfactor_ds*(dty_Bdep*ty/factor_sq+2.*Bxty-Bytx);
+    J(state_y,state_tx)=kq_over_p_ds*(dty_Bdep*tx*one_over_dsdz_sq-Byty-Bz);
+    J(state_y,state_ty)+=kq_over_p_ds*(dty_Bdep*ty*one_over_dsdz_sq
+				       +2.*Bxty-Bytx);
     J(state_y,state_q_over_p)=J(state_ty,state_q_over_p)*dz_over_2;
     J(state_y,state_x)=J(state_ty,state_x)*dz_over_2;
     J(state_y,state_y)=J(state_ty,state_y)*dz_over_2;
@@ -556,8 +552,8 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double z,double dz,
   if (fabs(dEdx)>0.){
     double p2=1./q_over_p/q_over_p;
     double E=sqrt(p2+mass2); 
-    D(state_q_over_p,0)=-q_over_p/p2*E*dEdx*factor;
-    J(state_q_over_p,state_q_over_p)=-dEdx*factor/E*(2.+3.*mass2/p2);
+    D(state_q_over_p,0)=-q_over_p/p2*E*dEdx*dsdz;
+    J(state_q_over_p,state_q_over_p)=-dEdx*dsdz/E*(2.+3.*mass2/p2);
   }
    
     
@@ -1370,22 +1366,23 @@ jerror_t DTrackFitterKalman::CalcDeriv(double ds,const DVector3 &pos,
     pt=PT_MIN;
     q_over_pt=(1./PT_MIN)*(q_over_pt>0?1.:-1.);
   }
-  double qpfactor=qBr2p*q_over_pt;
+  double kq_over_pt=qBr2p*q_over_pt;
 
   // Derivative of S with respect to s
   double By_cosphi_minus_Bx_sinphi=By*cosphi-Bx*sinphi;
   D1(state_q_over_pt,0)
-    =qpfactor*q_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
+    =kq_over_pt*q_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
+  double one_over_cosl=1./cosl;
   if (fabs(dEdx)>0){    
-    double p=pt/cosl;
+    double p=pt*one_over_cosl;
     double p_sq=p*p;
     double E=sqrt(p_sq+mass2);
     if (1./p<Q_OVER_P_MAX)
       D1(state_q_over_pt,0)+=-q_over_pt*E/p_sq*dEdx;
   }
   D1(state_phi,0)
-    =qpfactor*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
-  D1(state_tanl,0)=qpfactor*By_cosphi_minus_Bx_sinphi/cosl;
+    =kq_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
+  D1(state_tanl,0)=kq_over_pt*By_cosphi_minus_Bx_sinphi*one_over_cosl;
   D1(state_z,0)=sinl;
 
   // New direction
@@ -1393,7 +1390,7 @@ jerror_t DTrackFitterKalman::CalcDeriv(double ds,const DVector3 &pos,
 
   // Second order correction
   if (fit_type==kTimeBased){
-    double factor=qpfactor*ds/2.*cosl;
+    double factor=0.5*kq_over_pt*ds*cosl;
     D1(state_z,0)+=factor*cosl*By_cosphi_minus_Bx_sinphi;
     dpos(2)=D1(state_z,0);
     dpos(0)+=factor*(Bz*cosl*sinphi-By*sinl);
@@ -1421,6 +1418,9 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,
   double lambda=atan(tanl);
   double sinl=sin(lambda);
   double cosl=cos(lambda);
+  double cosl2=cosl*cosl;
+  double cosl3=cosl*cosl2;
+  double one_over_cosl=1./cosl;
   // Other parameters
   double q_over_pt=S(state_q_over_pt,0);
   double pt=fabs(1./q_over_pt);
@@ -1431,7 +1431,7 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,
     pt=PT_MIN;
     q_over_pt=q/PT_MIN;
   }
-  double qpfactor=qBr2p*q_over_pt;
+  double kq_over_pt=qBr2p*q_over_pt;
 
   // B-field and gradient at (x,y,z)
   bfield->GetFieldAndGradient(pos.x(),pos.y(),pos.z(),Bx,By,Bz,
@@ -1441,9 +1441,9 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,
   // Derivative of S with respect to s
   double By_cosphi_minus_Bx_sinphi=By*cosphi-Bx*sinphi;
   double By_sinphi_plus_Bx_cosphi=By*sinphi+Bx*cosphi;
-  D1(state_q_over_pt,0)=qpfactor*q_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
-  D1(state_phi,0)=qpfactor*(By_sinphi_plus_Bx_cosphi*sinl-Bz*cosl);
-  D1(state_tanl,0)=qpfactor*By_cosphi_minus_Bx_sinphi/cosl;
+  D1(state_q_over_pt,0)=kq_over_pt*q_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
+  D1(state_phi,0)=kq_over_pt*(By_sinphi_plus_Bx_cosphi*sinl-Bz*cosl);
+  D1(state_tanl,0)=kq_over_pt*By_cosphi_minus_Bx_sinphi*one_over_cosl;
   D1(state_z,0)=sinl;
 
   // New direction
@@ -1451,7 +1451,7 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,
 
   // Second order correction
   if (fit_type==kTimeBased){
-    double factor=qpfactor*ds/2.*cosl;
+    double factor=0.5*kq_over_pt*ds*cosl;
     D1(state_z,0)+=factor*cosl*By_cosphi_minus_Bx_sinphi;
     dpos(2)=D1(state_z,0);
     dpos(0)+=factor*(Bz*cosl*sinphi-By*sinl);
@@ -1459,43 +1459,42 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,
   }
 
   // Jacobian matrix elements
-  J1(state_phi,state_phi)=qpfactor*sinl*By_cosphi_minus_Bx_sinphi;
+  J1(state_phi,state_phi)=kq_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
   J1(state_phi,state_q_over_pt)
     =qBr2p*(By_sinphi_plus_Bx_cosphi*sinl-Bz*cosl);
-  J1(state_phi,state_tanl)=qpfactor*(By_sinphi_plus_Bx_cosphi*cosl
-				     +Bz*sinl)/(1.+tanl*tanl);
+  J1(state_phi,state_tanl)=kq_over_pt*(By_sinphi_plus_Bx_cosphi*cosl
+				       +Bz*sinl)*cosl2;
   J1(state_phi,state_z)
-    =qpfactor*(dBxdz*cosphi*sinl+dBydz*sinphi*sinl-dBzdz*cosl);
+    =kq_over_pt*(dBxdz*cosphi*sinl+dBydz*sinphi*sinl-dBzdz*cosl);
 
-  J1(state_tanl,state_phi)=-qpfactor*By_sinphi_plus_Bx_cosphi/cosl;
-  J1(state_tanl,state_q_over_pt)=qBr2p*By_cosphi_minus_Bx_sinphi/cosl;
-  J1(state_tanl,state_tanl)=qpfactor*sinl*By_cosphi_minus_Bx_sinphi;
-  J1(state_tanl,state_z)=qpfactor*(dBydz*cosphi-dBxdz*sinphi)/cosl;  
+  J1(state_tanl,state_phi)=-kq_over_pt*By_sinphi_plus_Bx_cosphi*one_over_cosl;
+  J1(state_tanl,state_q_over_pt)=qBr2p*By_cosphi_minus_Bx_sinphi*one_over_cosl;
+  J1(state_tanl,state_tanl)=kq_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
+  J1(state_tanl,state_z)=kq_over_pt*(dBydz*cosphi-dBxdz*sinphi)*one_over_cosl;  
   J1(state_q_over_pt,state_phi)
-    =-qpfactor*q_over_pt*sinl*By_sinphi_plus_Bx_cosphi;  
+    =-kq_over_pt*q_over_pt*sinl*By_sinphi_plus_Bx_cosphi;  
   J1(state_q_over_pt,state_q_over_pt)
-    =2.*qpfactor*sinl*By_cosphi_minus_Bx_sinphi;
+    =2.*kq_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
   J1(state_q_over_pt,state_tanl)
-    =qpfactor*q_over_pt*cosl*cosl*cosl*By_cosphi_minus_Bx_sinphi;
+    =kq_over_pt*q_over_pt*cosl3*By_cosphi_minus_Bx_sinphi;
   if (fabs(dEdx)>0){  
-    double p=pt/cosl;
+    double p=pt*one_over_cosl;
     double p_sq=p*p;
     double m2_over_p2=mass2/p_sq;
     double E=sqrt(p_sq+mass2);
 
     D1(state_q_over_pt,0)+=-q_over_pt*E/p_sq*dEdx;
     J1(state_q_over_pt,state_q_over_pt)+=-dEdx*(2.+3.*m2_over_p2)/E;
-    J1(state_q_over_pt,state_tanl)+=q*dEdx*sinl*(1.+2.*m2_over_p2)/p/E;
+    J1(state_q_over_pt,state_tanl)+=q*dEdx*sinl*(1.+2.*m2_over_p2)/(p*E);
   }
   J1(state_q_over_pt,state_z)
-    =qpfactor*q_over_pt*sinl*(dBydz*cosphi-dBxdz*sinphi);
+    =kq_over_pt*q_over_pt*sinl*(dBydz*cosphi-dBxdz*sinphi);
 
   // Second order
   if (fit_type==kTimeBased){
-    double factor=qpfactor*ds/2.*cosl;
-    double one_plus_tanl2=1.+tanl*tanl;
-    J1(state_z,state_tanl)=cosl/one_plus_tanl2;
-    J1(state_z,state_tanl)+=-2.*factor*sinl*By_cosphi_minus_Bx_sinphi/one_plus_tanl2;
+    double factor=0.5*kq_over_pt*ds*cosl;
+    J1(state_z,state_tanl)=cosl3;
+    J1(state_z,state_tanl)+=-2.*factor*sinl*By_cosphi_minus_Bx_sinphi*cosl2;
     J1(state_z,state_phi)=-factor*cosl*By_sinphi_plus_Bx_cosphi;
     J1(state_z,state_q_over_pt)=factor*cosl*By_cosphi_minus_Bx_sinphi/q_over_pt;
   }
