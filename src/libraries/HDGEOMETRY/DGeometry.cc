@@ -12,6 +12,7 @@ using namespace std;
 #include <JANA/JGeometryXML.h>
 #include "FDC/DFDCWire.h"
 #include "FDC/DFDCGeometry.h"
+#include <ansi_escape.h>
 
 using namespace std;
 
@@ -61,11 +62,18 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumbe
 	}
 
 	// Actually read in the maps
-	//cout<<" Reading:"<<endl;
+	unsigned int Npoints_total=0;
+	cout<<endl; // make empty line so material map can overwrite it below
 	for(unsigned int i=0; i<material_namepaths.size(); i++){
-		//cout<<"      "<<material_namepaths[i]<<" ..."<<endl;
-		materialmaps.push_back(new DMaterialMap(material_namepaths[i], jcalib));
+		// DMaterialMap constructor prints line so we conserve real
+		// estate by having each recycle the line
+		cout<<ansi_up(1)<<string(85, ' ')<<"\r";
+		DMaterialMap *mat = new DMaterialMap(material_namepaths[i], jcalib);
+		materialmaps.push_back(mat);
+		Npoints_total += (unsigned int)(mat->GetNr()*mat->GetNz());
 	}
+	cout<<ansi_up(1)<<string(85, ' ')<<"\r";
+	cout<<"Read in "<<materialmaps.size()<<" material maps containing "<<Npoints_total<<" grid points total"<<endl;
 }
 
 //---------------------------------
