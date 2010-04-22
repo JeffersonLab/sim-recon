@@ -476,7 +476,7 @@ void MyProcessor::FillGraphics(void)
 			TEllipse *e = new TEllipse(photon->getPositionCal().X(), photon->getPositionCal().Y(), dist2, dist2);
 			e->SetLineColor(kOrange);
 			e->SetFillStyle(0);
-			e->SetLineWidth(2.0);
+			e->SetLineWidth(2);
 			graphics_xyB.push_back(e);
 		}
 		graphics.push_back(gset);
@@ -507,7 +507,7 @@ void MyProcessor::FillGraphics(void)
 			TEllipse *e = new TEllipse(photon->getPositionCal().X(), photon->getPositionCal().Y(), dist2, dist2);
 			e->SetLineColor(gset.color);
 			e->SetFillStyle(0);
-			e->SetLineWidth(1.0);
+			e->SetLineWidth(1);
 			TMarker *m = new TMarker(photon->getPositionCal().X(), photon->getPositionCal().Y(), gset.marker_style);
 			m->SetMarkerColor(gset.color);
 			m->SetMarkerSize(1.75);
@@ -547,7 +547,7 @@ void MyProcessor::FillGraphics(void)
 			TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
 			e->SetLineColor(kSpring);
 			e->SetFillStyle(0);
-			e->SetLineWidth(4.0);
+			e->SetLineWidth(4);
 			graphics_xyB.push_back(e);
 		}
 		graphics.push_back(gset);
@@ -584,7 +584,7 @@ void MyProcessor::FillGraphics(void)
 			TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
 			e->SetLineColor(thrown->charge()>0.0 ? kBlue:kRed);
 			e->SetFillStyle(0);
-			e->SetLineWidth(4.0);
+			e->SetLineWidth(4);
 			graphics_xyB.push_back(e);
 		}
 	}
@@ -623,7 +623,7 @@ void MyProcessor::FillGraphics(void)
 			TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
 			e->SetLineColor(track->charge()>0.0 ? kBlue:kRed);
 			e->SetFillStyle(0);
-			e->SetLineWidth(4.0);
+			e->SetLineWidth(4);
 			graphics_xyB.push_back(e);
 		}
 	}
@@ -640,8 +640,8 @@ void MyProcessor::FillGraphics(void)
 		DGraphicSet gset(colors[Ntraj%Ncolors], kLine, 3.0);
 		//gset.marker_style = 7;
 		TVector3 last_point;
-		int last_track;
-		int last_part;
+		int last_track=-1;
+		int last_part=-1;
 		for(unsigned int i=0; i<mctrajectorypoints.size(); i++){
 			const DMCTrajectoryPoint *pt = mctrajectorypoints[i];
 			

@@ -54,17 +54,11 @@ hdv_endviewBframe::hdv_endviewBframe(hdv_mainframe *hdvmf, const TGWindow *p, UI
 
 	// The main GUI window is divided into three sections, top, middle, and bottom.
 	// Create those frames here.
-	TGLayoutHints *hints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX|kLHintsExpandY, 5,5,5,5);
 	TGLayoutHints *lhints = new TGLayoutHints(kLHintsNormal, 2,2,2,2);
-	TGLayoutHints *rhints = new TGLayoutHints(kLHintsCenterY|kLHintsRight, 2,2,2,2);
 	TGLayoutHints *chints = new TGLayoutHints(kLHintsCenterY|kLHintsCenterX, 2,2,2,2);
-	TGLayoutHints *bhints = new TGLayoutHints(kLHintsBottom|kLHintsCenterX, 2,2,2,2);
 	TGLayoutHints *xhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX, 2,2,2,2);
 	TGLayoutHints *yhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandY|kLHintsCenterY, 2,2,2,2);
-	TGLayoutHints *dhints = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0,0,0,0);
-	TGLayoutHints *ehints = new TGLayoutHints(kLHintsNormal, 2,2,0,0);
 	TGLayoutHints *thints = new TGLayoutHints(kLHintsTop|kLHintsCenterX|kLHintsExpandX, 2,2,0,0);
-	TGLayoutHints *lxhints = new TGLayoutHints(kLHintsLeft|kLHintsExpandX, 2,2,0,0);
 	TGHorizontalFrame *topframe = new TGHorizontalFrame(this, w, h);
 	TGHorizontalFrame *botframe = new TGHorizontalFrame(this, w, h);
 	AddFrame(topframe, lhints);
