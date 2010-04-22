@@ -1029,6 +1029,7 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	vector<bool> good_all;
 	for(unsigned int i=0; i<size_good; i++){
 		bool isgood = true;
+		isgood &= good_initial[i];
 		isgood &= good_px[i];
 		isgood &= good_py[i];
 		isgood &= good_pz[i];
