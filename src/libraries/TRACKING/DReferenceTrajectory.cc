@@ -40,6 +40,11 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->ploss_direction = kForward;
 	this->check_material_boundaries = true;
 	
+	this->last_phi = 0.0;
+	this->last_swim_step = NULL;
+	this->last_dist_along_wire = 0.0;
+	this->last_dz_dphi = 0.0;
+	
 	// Initialize some values from configuration parameters
 	BOUNDARY_STEP_FRACTION = 0.80;
 	MIN_STEP_SIZE = 0.05;	// cm
