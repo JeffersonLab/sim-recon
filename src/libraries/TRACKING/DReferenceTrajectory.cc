@@ -1383,12 +1383,16 @@ void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const
 	if(last_swim_step==NULL){
 		if(Nswim_steps>0){
 			last_swim_step = &swim_steps[0];
+			last_phi = 0.0;
 		}else{
 			pos.SetXYZ(0,0,0);
 			mom.SetXYZ(0,0,0);
 			return;
 		}
 	}
+
+	// If last_phi is not finite, set it to 0 as a last resort
+	if(!finite(last_phi))last_phi = 0.0;
 	
 	const DVector3 &xdir = last_swim_step->sdir;
 	const DVector3 &ydir = last_swim_step->tdir;
