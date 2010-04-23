@@ -15,6 +15,7 @@ using namespace std;
 #include "DMagneticFieldStepper.h"
 #include "HDGEOMETRY/DRootGeom.h"
 #define ONE_THIRD 0.33333333333333333
+#define TWO_THIRD 0.66666666666666667
 #define EPS 1e-8
 
 struct StepStruct {DReferenceTrajectory::swim_step_t steps[256];};
@@ -536,9 +537,11 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 		double A = -Ro*nx/2.0;
 		double B = Ro*ny + dz_dphi*nz;
 		double C = norm.Dot(step->origin-origin);
+		double sqroot=sqrt(B*B-4.0*A*C);
+		double twoA=2.0*A;
 
-		double phi_1 = (-B + sqrt(B*B - 4.0*A*C))/(2.0*A);
-		double phi_2 = (-B - sqrt(B*B - 4.0*A*C))/(2.0*A);
+		double phi_1 = (-B + sqroot)/(twoA);
+		double phi_2 = (-B - sqroot)/(twoA);
 		
 		double phi = fabs(phi_1)<fabs(phi_2) ? phi_1:phi_2;
 		if(!finite(phi_1))phi = phi_2;
@@ -778,18 +781,24 @@ if(Nswim_steps<1)_DBG__;
 	double delta_z = step->mom.Dot(step->udir);
 	double delta_phi = step->mom.Dot(step->tdir)/Ro;
 	double dz_dphi = delta_z/delta_phi;
-
-	double alpha = x0*Ro + Ro2 + pow(dz_dphi,2.0);
-	double beta = -2.0*y0*Ro - 2.0*z0*dz_dphi;
-	double b = (2.0*alpha/Ro2)/3.0;
-	double c = (beta/Ro2)/2.0;
-	double d = sqrt(pow(b,3.0) + pow(c,2.0));
+	
+	//  double alpha = x0*Ro + Ro2 + pow(dz_dphi,2.0);
+	double alpha=x0*Ro + Ro2 +dz_dphi*dz_dphi;
+	//  double beta = -2.0*y0*Ro - 2.0*z0*dz_dphi;
+	double beta = -2.0*(y0*Ro + z0*dz_dphi);
+	//  double b = (2.0*alpha/Ro2)/3.0;
+	double b= TWO_THIRD*alpha/Ro2;
+	//  double c = (beta/Ro2)/2.0;
+	double c = 0.5*(beta/Ro2);
+	//  double d = sqrt(pow(b,3.0) + pow(c,2.0));
+	double d=sqrt(b*b*b+c*c);
 	double q = pow(d-c, ONE_THIRD);
 	double p = pow(d+c, ONE_THIRD);
 	double phi = q - p;
 	double phi2=phi*phi;
 
-	double dist2 = Ro2/4.0*phi2*phi2 + alpha*phi2 + beta*phi + x0*x0 + y0*y0 + z0*z0;
+	//  double dist2 = Ro2/4.0*phi2*phi2 + alpha*phi2 + beta*phi + x0*x0 + y0*y0 + z0*z0;
+	double dist2 = 0.25*Ro2*phi2*phi2 + alpha*phi2 + beta*phi + x0*x0 + y0*y0 + z0*z0;
 
 	return sqrt(dist2);
 }
@@ -1063,12 +1072,19 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	double delta_z = step->mom.Dot(step->udir);
 	double delta_phi = step->mom.Dot(step->tdir)/Ro;
 	double dz_dphi = delta_z/delta_phi;
+	double dz_dphi2=dz_dphi*dz_dphi;
+	double Ro_dz_dphi=Ro*dz_dphi;
 
-	double Q = pow(A*Ro/2.0, 2.0) + pow(E*Ro/2.0, 2.0);
-	double R = -(2.0*A*B*Ro2 + 2.0*A*C*Ro*dz_dphi + 2.0*E*F*Ro2 + 2.0*E*G*Ro*dz_dphi)/2.0;
-	double S = pow(B*Ro, 2.0) + pow(C*dz_dphi,2.0) + 2.0*B*C*Ro*dz_dphi - 2.0*A*D*Ro/2.0
-					+ pow(F*Ro, 2.0) + pow(G*dz_dphi,2.0) + 2.0*F*G*Ro*dz_dphi - 2.0*E*H*Ro/2.0;
-	double T = 2.0*B*D*Ro + 2.0*C*D*dz_dphi + 2.0*F*H*Ro + 2.0*G*H*dz_dphi;
+	//	double Q = pow(A*Ro/2.0, 2.0) + pow(E*Ro/2.0, 2.0);
+	double Q=0.25*Ro2*(A*A+E*E);
+	//	double R = -(2.0*A*B*Ro2 + 2.0*A*C*Ro_dz_dphi + 2.0*E*F*Ro2 + 2.0*E*G*Ro_dz_dphi)/2.0;
+	double R = -((A*B+E*F)*Ro2 + (A*C+E*G)*Ro_dz_dphi);
+	//	double S = pow(B*Ro, 2.0) + pow(C*dz_dphi,2.0) + 2.0*B*C*Ro_dz_dphi - 2.0*A*D*Ro/2.0
+	//+ pow(F*Ro, 2.0) + pow(G*dz_dphi,2.0) + 2.0*F*G*Ro_dz_dphi - 2.0*E*H*Ro/2.0;
+	double S= (B*B+F*F)*Ro2+(C*C+G*G)*dz_dphi2+2.0*(B*C+F*G)*Ro_dz_dphi
+	  -(A*D+E*H)*Ro;
+	//	double T = 2.0*B*D*Ro + 2.0*C*D*dz_dphi + 2.0*F*H*Ro + 2.0*G*H*dz_dphi;	
+	double T = 2.0*((B*D+F*H)*Ro + (C*D+G*H)*dz_dphi);
 	double U = D*D + H*H;
 	
 	// Aaarghh! my fingers hurt just from typing all of that!
@@ -1124,20 +1140,31 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	// back to solving the quadratic equation for phi.
 	double phi =0.0;
 	if(fabs(Q)>1.0E-6){
+	  /*
 		double fourQ = 4.0*Q;
 		double a2 = 3.0*R/fourQ;
 		double a1 = 2.0*S/fourQ;
 		double a0 =     T/fourQ;
-
+	  */
+	  double one_over_fourQ=0.25/Q;
+	  double a2=3.0*R*one_over_fourQ;
+	  double a1=2.0*S*one_over_fourQ;
+	  double a0=T*one_over_fourQ;
+	  double a2sq=a2*a2;
+	  /*
 		double b = a1/3.0 - a2*a2/9.0;
 		double c = a0/2.0 - a1*a2/6.0 + a2*a2*a2/27.0;
-
-		double d = sqrt(pow(b, 3.0) + pow(c, 2.0)); // occasionally, this is zero. See below
+	  */
+	  double b=ONE_THIRD*(a1-ONE_THIRD*a2sq);
+	  double c=0.5*(a0-ONE_THIRD*a1*a2)+a2*a2sq/27.0;
+		//double d = sqrt(pow(b, 3.0) + pow(c, 2.0)); // occasionally, this is zero. See below
+		double d=sqrt(b*b*b+c*c);
 		double q = pow(d - c, ONE_THIRD);
 		double p = pow(d + c, ONE_THIRD);
 
 		double w0 = q - p;
-		phi = w0 - a2/3.0;
+		//phi = w0 - a2/3.0;
+		phi = w0 - ONE_THIRD*a2;
 	}
 	
 	if(fabs(Q)<=1.0E-6 || !finite(phi)){
@@ -1195,7 +1222,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	// calculate h (the vector defined way up above) and dot it into the
 	// wire's u-direction to get the position of the DOCA point along the
 	// wire.
-	double x = -Ro*phi*phi/2.0;
+	double x = -0.5*Ro*phi*phi;
 	double y = Ro*phi;
 	double z = dz_dphi*phi;
 	DVector3 h = pos_diff + x*xdir + y*ydir + z*zdir;
@@ -1204,11 +1231,13 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 		// Looks like our DOCA point is past the end of the wire.
 		// Find phi corresponding to the end of the wire.
 		double L_over_2 = u>0.0 ? wire->L/2.0:-wire->L/2.0;
-		double a = -Ro*udir.Dot(xdir)/2.0;
+		double a = -0.5*Ro*udir.Dot(xdir);
 		double b = Ro*udir.Dot(ydir) + dz_dphi*udir.Dot(zdir);
 		double c = udir.Dot(pos_diff) - L_over_2;
-		double phi1 = (-b + sqrt(b*b - 4.0*a*c))/(2.0*a); 
-		double phi2 = (-b - sqrt(b*b - 4.0*a*c))/(2.0*a);
+		double twoa=2.0*a;
+		double sqroot=sqrt(b*b-4.0*a*c);
+		double phi1 = (-b + sqroot)/(twoa); 
+		double phi2 = (-b - sqroot)/(twoa);
 		phi = fabs(phi1)<fabs(phi2) ? phi1:phi2;
 		u=L_over_2;
 	}
