@@ -78,6 +78,13 @@
         </fcalBlock>
         <fcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
       </forwardEMcal>
+      <ComptonEMcal minOccurs="0">
+        <ccalBlock column="int" maxOccurs="unbounded" minOccurs="0" row="int">
+          <ccalHit E="float" maxOccurs="unbounded" t="float"/>
+          <ccalTruthHit E="float" maxOccurs="unbounded" t="float"/>
+        </ccalBlock>
+        <ccalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+      </ComptonEMcal>
       <upstreamEMveto minOccurs="0">
         <upvPaddle layer="int" maxOccurs="unbounded" minOccurs="0" row="int">
           <upvLeftHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
