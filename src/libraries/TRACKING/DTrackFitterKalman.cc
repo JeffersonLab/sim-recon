@@ -45,11 +45,11 @@
 #define CHISQ_DIFF_CUT 20.
 #define MAX_DEDX 40.
 #define MIN_ITER 3
-#define MIN_CDC_ITER 6
+#define MIN_CDC_ITER 3
 
 #define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.00005 // 50 keV
-#define DE_PER_STEP_TIME_BASED 0.00005 // 50 keV
+#define DE_PER_STEP_WIRE_BASED 0.0001 // 100 keV
+#define DE_PER_STEP_TIME_BASED 0.0001 // 100 keV
 
 #define MIN_STEP_SIZE 0.1
 
@@ -235,11 +235,11 @@ void DTrackFitterKalman::ResetKalman(void)
 	 Bz=-2.;
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
-	 mStepSizeS=0.5;
-	 mStepSizeZ=0.5;
+	 mStepSizeS=0.6;
+	 mStepSizeZ=0.6;
 	 if (fit_type==kWireBased){
-	   mStepSizeS=1.0;
-	   mStepSizeZ=1.0;
+	   mStepSizeS=0.6;
+	   mStepSizeZ=0.6;
 	 }
 }
 
@@ -1776,12 +1776,13 @@ double DTrackFitterKalman::GetdEdx(double q_over_p,double K_rho_Z_over_A,
   double p=fabs(1./q_over_p);
   double betagamma=p/MASS;
   double betagamma2=betagamma*betagamma;
-  double beta2=1./(1.+1./betagamma2);
+  double gamma2=1.+betagamma2;
+  double beta2=betagamma2/gamma2;
   if (beta2<EPS) beta2=EPS;
 
   double two_Me_betagamma_sq=2.*ELECTRON_MASS*betagamma2;
   double Tmax
-    =two_Me_betagamma_sq/(1.+2.*sqrt(1.+betagamma2)*m_ratio+m_ratio_sq);
+    =two_Me_betagamma_sq/(1.+2.*sqrt(gamma2)*m_ratio+m_ratio_sq);
 
   // density effect
   double delta=CalcDensityEffect(betagamma,rho_Z_over_A,LnI);
@@ -3891,9 +3892,9 @@ jerror_t DTrackFitterKalman::ExtrapolateToVertex(DMatrix &S,DMatrix &C){
     // Adjust the step size
     double sign=(dz>0)?1.:-1.;
     if (fabs(dEdx)>EPS){
-      double dEperStep=DE_PER_STEP_TIME_BASED;
-      if (fit_type==kWireBased) dEperStep=DE_PER_STEP_WIRE_BASED;
-      dz=sign*dEperStep/fabs(dEdx)
+      dz=sign
+	*(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+	/fabs(dEdx)
 	/sqrt(1.+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
     }
     if(fabs(dz)>mStepSizeZ) dz=sign*mStepSizeZ;
@@ -3997,9 +3998,9 @@ jerror_t DTrackFitterKalman::ExtrapolateToVertex(DVector3 &pos,
       // Adjust the step size
       double sign=(ds>0)?1.:-1.;
       if (fabs(dedx)>EPS){
-	double dEperStep=DE_PER_STEP_TIME_BASED;
-	if (fit_type==kWireBased) dEperStep=DE_PER_STEP_WIRE_BASED;
-	ds=sign*dEperStep/fabs(dedx);
+	ds=sign
+	  *(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+	  /fabs(dedx);
       }
       if(fabs(ds)>mStepSizeS) ds=sign*mStepSizeS;
       if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
