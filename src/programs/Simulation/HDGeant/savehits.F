@@ -236,6 +236,18 @@
      >          IPART)
           ISTORY = 2  ! this particle has entered the FCal (inherited trait)
         endif
+      elseif (cnames(NLEVEL).eq.'LTBL') then		! Compton calorimeter
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
+          dEsum = 1e-2   ! 10 MeV in the calorimeter block
+        endif
+#endif
+        if ((dEsum.ne.0).or.(ISTORY.ne.2)) then
+          call hitComptonEMcal
+     +                       (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
+          ISTORY = 2  ! this particle has entered the CCal (inherited trait)
+        endif
       elseif ((cnames(NLEVEL).eq.'UPVP').or.		! UPV channel
      +        (cnames(NLEVEL).eq.'UPVC')) then
 #ifdef MAKE_HITS_WHEN_ILOSS_0

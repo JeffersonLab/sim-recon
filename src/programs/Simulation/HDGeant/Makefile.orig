@@ -94,7 +94,7 @@ AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
        $(HDDS_HOME)/obj/$(BMS_OSNAME)/hddsGeant3.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
-       hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
+       hitFCal.o hitCCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
        calibDB.o hitTag.o storeTrajectory.o hitGCal.o
 
 GXFIXED = gxcs.o gxphys.o

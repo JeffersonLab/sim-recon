@@ -104,6 +104,9 @@ int loadOutput ()
    if ((hitView->forwardEMcal = pickForwardEMcal()) != HDDM_NULL) {
       ++packages_hit;
    }
+   if ((hitView->ComptonEMcal = pickComptonEMcal()) != HDDM_NULL) {
+      ++packages_hit;
+   }
 #ifdef TESTING_CAL_CONTAINMENT
    if ((hitView->gapEMcal = pickGapEMcal()) != HDDM_NULL) {
       ++packages_hit;
