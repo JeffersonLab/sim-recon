@@ -48,6 +48,15 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    transformCoord(x,"global",xlocal,"BCAL");
    transformCoord(xHat,"local",xbcal,"BCAL");
 
+	/* Under certain conditions the time in xout[3] will
+	   be invalid (unusually large). Check for this and
+		use only the in time in these cases
+	*/
+	if(xout[3] > 1.0){
+		 t = xin[3] * 1e9;
+		printf("xout[3]=%g\n", xout[3]);
+	}
+
    /* post the hit to the truth tree */
 
    if ((history == 0) && (pin[3] > THRESH_MEV/1e3)) {
