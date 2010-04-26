@@ -5,6 +5,7 @@ s_BarrelEMcal_t* pickBarrelEMcal (void);
 s_Cerenkov_t*	pickCerenkov (void);
 s_ForwardTOF_t* pickForwardTOF (void);
 s_ForwardEMcal_t* pickForwardEMcal (void);
+s_ComptonEMcal_t* pickComptonEMcal (void);
 s_UpstreamEMveto_t* pickUpstreamEMveto (void);
 s_Tagger_t* pickTagger (void);
 s_McTrajectory_t* pickMCTrajectory (void);
