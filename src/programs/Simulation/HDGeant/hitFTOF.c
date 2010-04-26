@@ -157,8 +157,8 @@ void hitForwardTOF (float xin[4], float xout[4],
   // in other words now store the simulated detector response
   if (dEsum > 0) {
     int nhit;
-    s_FtofNorthTruthHits_t* northHits;
-    s_FtofSouthTruthHits_t* southHits;
+    s_FtofNorthHits_t* northHits;
+    s_FtofSouthHits_t* southHits;
     // getrow and getcolumn are both coded in
     // src/programs/Simulation/HDGeant/hddsGeant3.F
     // see above for function getplane()
@@ -211,12 +211,12 @@ void hitForwardTOF (float xin[4], float xout[4],
       // is one of the short once with only one PMT.
 
       //      if (column == 0 || column == 1) {
-      counters->in[0].ftofNorthTruthHits = northHits = make_s_FtofNorthTruthHits(MAX_HITS);
-		counters->in[0].ftofNorthHits = HDDM_NULL;
+      counters->in[0].ftofNorthHits = northHits
+	= make_s_FtofNorthHits(MAX_HITS);
       //}
       //      if (column == 0 || column == 2) {
-      counters->in[0].ftofSouthTruthHits = southHits = make_s_FtofSouthTruthHits(MAX_HITS);
-		counters->in[0].ftofSouthHits = HDDM_NULL;
+      counters->in[0].ftofSouthHits = southHits
+	= make_s_FtofSouthHits(MAX_HITS);
       //}
       tof->ftofCounters = counters;
       counterCount++;
@@ -225,8 +225,8 @@ void hitForwardTOF (float xin[4], float xout[4],
       // this paddle is already registered (was hit before)
       // get the hit list back
       s_ForwardTOF_t* tof = *twig;
-      northHits = tof->ftofCounters->in[0].ftofNorthTruthHits;
-      southHits = tof->ftofCounters->in[0].ftofSouthTruthHits;
+      northHits = tof->ftofCounters->in[0].ftofNorthHits;
+      southHits = tof->ftofCounters->in[0].ftofSouthHits;
     }
     
     if (northHits != HDDM_NULL) {
@@ -367,8 +367,8 @@ s_ForwardTOF_t* pickForwardTOF ()
     int point;
     
     for (counter=0; counter < counters->mult; ++counter) {
-      s_FtofNorthTruthHits_t* northHits = counters->in[counter].ftofNorthTruthHits;
-      s_FtofSouthTruthHits_t* southHits = counters->in[counter].ftofSouthTruthHits;
+      s_FtofNorthHits_t* northHits = counters->in[counter].ftofNorthHits;
+      s_FtofSouthHits_t* southHits = counters->in[counter].ftofSouthHits;
       
       /* compress out the hits below threshold */
       // cut off parameter is THRESH_MEV
@@ -391,7 +391,7 @@ s_ForwardTOF_t* pickForwardTOF ()
       if (iok) {
 	northHits->mult = iok;
       } else if (northHits != HDDM_NULL){ // no hits left over for this PMT	    
-	counters->in[counter].ftofNorthTruthHits = HDDM_NULL;
+	counters->in[counter].ftofNorthHits = HDDM_NULL;
 	FREE(northHits);
       }
       
@@ -411,7 +411,7 @@ s_ForwardTOF_t* pickForwardTOF ()
 	southHits->mult = iok;
       }
       else if (southHits != HDDM_NULL) {
-	counters->in[counter].ftofSouthTruthHits = HDDM_NULL;
+	counters->in[counter].ftofSouthHits = HDDM_NULL;
 	FREE(southHits);
       }
       if (mok){ // total number of time independent FTOF hits in this counter
