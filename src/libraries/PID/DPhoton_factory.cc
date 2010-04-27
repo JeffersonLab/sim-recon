@@ -59,22 +59,18 @@ jerror_t DPhoton_factory::brun(JEventLoop *loop, int runnumber)
 	// Get calibration constants
 	map<string, double> photon_track_matching;
 	loop->GetCalib("PID/photon_track_matching", photon_track_matching);
-	DELTA_PHI_BCAL = photon_track_matching["DELTA_PHI_BCAL"];
-	  DELTA_Z_BCAL = photon_track_matching["DELTA_Z_BCAL"];
-	 MEAN_PHI_BCAL = photon_track_matching["MEAN_PHI_BCAL"];
-	   MEAN_Z_BCAL = photon_track_matching["MEAN_Z_BCAL"];
 	  DELTA_R_FCAL = photon_track_matching["DELTA_R_FCAL"];
 	   MEAN_R_FCAL = photon_track_matching["MEAN_R_FCAL"];
+	  DELTA_R_BCAL = photon_track_matching["DELTA_R_BCAL"];
+	   MEAN_R_BCAL = photon_track_matching["MEAN_R_BCAL"];
 
 	// Optionally notify user of values
 	if(debug_level>0){
 		cout<<"PID: Photon/Charged track matching parameters"<<endl;
-		cout<<"   DELTA_PHI_BCAL = "<<photon_track_matching["DELTA_PHI_BCAL"]<<endl;
-		cout<<"     DELTA_Z_BCAL = "<<photon_track_matching["DELTA_Z_BCAL"]<<endl;
-		cout<<"    MEAN_PHI_BCAL = "<<photon_track_matching["MEAN_PHI_BCAL"]<<endl;
-		cout<<"      MEAN_Z_BCAL = "<<photon_track_matching["MEAN_Z_BCAL"]<<endl;
 		cout<<"     DELTA_R_FCAL = "<<photon_track_matching["DELTA_R_FCAL"]<<endl;
 		cout<<"      MEAN_R_FCAL = "<<photon_track_matching["MEAN_R_FCAL"]<<endl;
+		cout<<"     DELTA_R_BCAL = "<<photon_track_matching["DELTA_R_BCAL"]<<endl;
+		cout<<"      MEAN_R_BCAL = "<<photon_track_matching["MEAN_R_BCAL"]<<endl;
 		cout<<endl;
 		cout<<"FCAL front face is at z="<<fcal_origin.Z()<<endl;
 	}
@@ -103,27 +99,26 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	// Get charged tracks
 	vector<const DTrackTimeBased*> tracks;
 	eventLoop->Get(tracks);
-	
+
+#if 0	
 	// Project charged tracks to FCAL and BCAL if needed
 	vector<DVector3> track_projection_fcal;
 	vector<DVector3> track_projection_bcal;
 	if(fcalPhotons.size()!=0)ProjectToFCAL(tracks, track_projection_fcal);
 	if(bcalPhotons.size()!=0)ProjectToBCAL(tracks, track_projection_bcal);
+#endif
 
 	// Loop over reconstructed FCAL photons
 	for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
 		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], (JObject::oid_t)i);
+		DVector3 photon_pos = photon->getPositionCal();
 
 		// Loop over charged tracks to see if this matches any
-		DVector3 pos_phot = photon->getPositionCal();
-		for(unsigned int j=0; j<track_projection_fcal.size(); j++){
-			DVector3 &pos_trk = track_projection_fcal[j];
-			
-			// Set reconstructed photon z-position to same as track projection
-			// to make sure distance is in plane of FCAL face
-			pos_phot.SetZ(pos_trk.Z());
-			double delta_r = (pos_phot-pos_trk).Mag();
-			if(fabs(delta_r - MEAN_R_FCAL) < DELTA_R_FCAL){
+		for(unsigned int j=0; j<tracks.size(); j++){
+			const DReferenceTrajectory *rt = tracks[j]->rt;
+			double dist = rt->DistToRT(photon_pos);
+
+			if(fabs(dist - MEAN_R_FCAL) < DELTA_R_FCAL){
 				photon->setTag( DPhoton::kCharge);
 				break;
 			}
@@ -136,18 +131,16 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	// Loop over reconstructed BCAL photons
 	for ( unsigned int i=0; i < bcalPhotons.size(); i++ ) {
 		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i], (JObject::oid_t)i);
+		DVector3 photon_pos = photon->getPositionCal();
 
 		// Loop over charged tracks to see if this matches any
-		DVector3 pos_phot = photon->getPositionCal();
-		for(unsigned int j=0; j<track_projection_bcal.size(); j++){
-			DVector3 &pos_trk = track_projection_bcal[j];
-			double delta_phi = pos_trk.DeltaPhi(pos_phot);
-			if(fabs(delta_phi - MEAN_PHI_BCAL) < DELTA_PHI_BCAL){
-				double delta_z = pos_trk.Z() - pos_phot.Z();
-				if(fabs(delta_z - MEAN_Z_BCAL) < DELTA_Z_BCAL){
-					photon->setTag( DPhoton::kCharge);
-					break;
-				}
+		for(unsigned int j=0; j<tracks.size(); j++){
+			const DReferenceTrajectory *rt = tracks[j]->rt;
+			double dist = rt->DistToRT(photon_pos);
+
+			if(fabs(dist - MEAN_R_BCAL) < DELTA_R_BCAL){
+				photon->setTag( DPhoton::kCharge);
+				break;
 			}
 		}
 
@@ -266,6 +259,7 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
         return photon;
 }
 
+#if 0
 //--------------------------
 // ProjectToFCAL
 //--------------------------
@@ -303,5 +297,5 @@ void DPhoton_factory::ProjectToBCAL(vector<const DTrackTimeBased*> &tracks, vect
 		}
 	}
 }
-
+#endif
 

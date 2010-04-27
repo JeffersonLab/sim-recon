@@ -36,12 +36,10 @@ class DPhoton_factory:public JFactory<DPhoton>{
 		double PHOTON_VERTEX_Z;
 
 		// Calibration Constants
-		double DELTA_PHI_BCAL;
-		double DELTA_Z_BCAL;
-		double MEAN_PHI_BCAL;
-		double MEAN_Z_BCAL;
 		double DELTA_R_FCAL;
 		double MEAN_R_FCAL;
+		double DELTA_R_BCAL;
+		double MEAN_R_BCAL;
 		
 		// Geometry info
 		double FCAL_Z;	// z-position of front face of FCAL in lab coordinates (cm)
