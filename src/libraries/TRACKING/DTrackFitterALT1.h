@@ -147,6 +147,7 @@ class DTrackFitterALT1:public DTrackFitter{
 		TH1F *fdc_single_hit_prob, *fdc_double_hit_prob;
 		TH1F *cdc_can_resi, *fdc_can_resi, *fdc_can_resi_cath;
 		TH2F *chisq_vs_p_vs_theta;
+		TH1F *lambda;
 };
 
 #endif // _DTrackFitterALT1_

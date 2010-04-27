@@ -174,6 +174,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 		fdc_can_resi = (TH1F*)gROOT->FindObject("fdc_can_resi");
 		fdc_can_resi_cath = (TH1F*)gROOT->FindObject("fdc_can_resi_cath");
 		chisq_vs_p_vs_theta = (TH2F*)gROOT->FindObject("chisq_vs_p_vs_theta");
+		lambda = (TH1F*)gROOT->FindObject("lambda");
 
 		if(!cdcdoca_vs_dist)cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA vs. DIST",300, 0.0, 1.2, 300, 0.0, 1.2);
 		if(!cdcdoca_vs_dist_vs_ring)cdcdoca_vs_dist_vs_ring = new TH3F("cdcdoca_vs_dist_vs_ring","DOCA vs. DIST vs. ring",300, 0.0, 1.2, 300, 0.0, 1.2,23,0.5,23.5);
@@ -203,7 +204,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 		if(!cdc_can_resi)cdc_can_resi = new TH1F("cdc_can_resi","Residual of CDC hits with candidate tracks", 200, -1.0, 1.0);
 		if(!fdc_can_resi)fdc_can_resi = new TH1F("fdc_can_resi","Residual of FDC hits with candidate tracks", 200, -1.0, 1.0);
 		if(!fdc_can_resi_cath)fdc_can_resi_cath = new TH1F("fdc_can_resi_cath","Residual of FDC cathode hits with candidate tracks", 200, -1.0, 1.0);
-		//if(!chisq_vs_p_vs_theta)chisq_vs_p_vs_theta = new TH2F("chisq_vs_p_vs_theta","#chi^{2}/dof map", 100, 0.9, 1.1, 100, 0.9, 1.1);
+		if(!lambda)lambda = new TH1F("lambda","Scaling factor #lambda for Newton-Raphson calculated step", 2048, -2.0, 2.0);
 
 		dapp->Unlock();
 	}
@@ -1174,7 +1175,7 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	double min_lambda = 0.0;
 	double lambda = -1.0;
 	int Ntrys = 0;
-	int max_trys = 8;
+	int max_trys = 6;
 	DMatrix new_state(5,1);
 	for(; Ntrys<max_trys; Ntrys++){
 
@@ -1192,7 +1193,9 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 		// If we're at a lower chi-sq then we're done
 		if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq_per_dof="<<initial_chisq_per_dof<<"  new chisq_per_dof="<<chisq_per_dof<<" nhits="<<resiv.GetNrows()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
 		if(chisq_per_dof-initial_chisq_per_dof < 0.1 && chisq_per_dof<2.0)break;
-		
+
+		if(chisq_per_dof<initial_chisq_per_dof)break;
+
 		// Chi-sq was increased, try a smaller step on the next iteration
 		lambda/=2.0;
 	}
@@ -1201,8 +1204,8 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	// in the wrong direction(??) Try looking in the opposite direction.
 	//if(Ntrys>=max_trys && (min_chisq_per_dof>=initial_chisq_per_dof || min_chisq_per_dof>1.0)){
 	if(Ntrys>=max_trys){
-		lambda = 1.0;
-		for(; Ntrys<2*max_trys; Ntrys++){
+		lambda = 1.0/4.0;
+		for(int j=0; j<3; j++, Ntrys++){
 
 			// Scale the delta by lambda to take a partial step (except the 1st iteration where lambda is 1)
 			for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*lambda;
@@ -1218,6 +1221,8 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 			// If we're at a lower chi-sq then we're done
 			if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq_per_dof="<<initial_chisq_per_dof<<"  new chisq_per_dof="<<chisq_per_dof<<" nhits="<<resiv.GetNrows()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
 			if(chisq_per_dof-initial_chisq_per_dof < 0.1 && chisq_per_dof<2.0)break;
+
+			if(chisq_per_dof<initial_chisq_per_dof)break;
 			
 			// Chi-sq was increased, try a smaller step on the next iteration
 			lambda/=2.0;
@@ -1235,6 +1240,7 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	
 	// Re-create new_state using min_lambda
 	for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*min_lambda;
+	if(DEBUG_HISTS)this->lambda->Fill(min_lambda);
 
 	// Re-swim reference trajectory using these parameters and re-calc chisq.
 	// Note that here we have the chisq and Ndof members set.
