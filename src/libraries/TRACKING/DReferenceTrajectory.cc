@@ -180,7 +180,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	/// This will use the charge and step size (if given) passed to
 	/// the constructor when the object was created. It will also
 	/// (re)use the sim_step buffer, replacing it's contents.
-	
+
 	// If the charged passed to us is greater that 10, it means use the charge
 	// already stored in the class. Otherwise, use what was passed to us.
 	if(fabs(q)>10)
@@ -705,8 +705,13 @@ if(Nswim_steps<1)_DBG__;
 		}
 	}
 	if(step==NULL){
-		_DBG_<<"\"hit\" passed to DistToRT(DVector3) out of range!"<<endl;
-		hit.Print();
+		// It seems to occasionally occur that we have 1 swim step
+		// and it's values are invalid. Supress warning messages
+		// for these as they are "known" (even if not fully understood!)
+		if(Nswim_steps>1){
+			_DBG_<<"\"hit\" passed to DistToRT(DVector3) out of range!"<<endl;
+			_DBG_<<"hit x,y,z = "<<hit.x()<<", "<<hit.y()<<", "<<hit.z()<<"  Nswim_steps="<<Nswim_steps<<"  min_delta2="<<min_delta2<<endl;
+		}
 		return 1.0E6;
 	}
 	
