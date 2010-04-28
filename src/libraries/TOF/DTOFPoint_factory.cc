@@ -44,7 +44,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
       -LONGBARLENGTH/2./VELOCITY;
     double dy=uhits[i]->bar>20?BARWIDTH:-BARWIDTH;
     double uy=BARWIDTH*(uhits[i]->bar-20.5)+dy;
-    double x_cut=BARWIDTH/2.;
+    double x_cut=BARWIDTH*0.55; // changed to "*0.55" from "/2." 4/28/2010  DL
     double t_cut=1.;
     
     // Handle the single-ended bars
@@ -84,7 +84,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 	-LONGBARLENGTH/2./VELOCITY;
       double dx=vhits[j]->bar>20?BARWIDTH:-BARWIDTH;
       double vx=BARWIDTH*(vhits[j]->bar-20.5)+dx;
-      double y_cut=BARWIDTH/2.;
+      double y_cut=BARWIDTH*0.55; // changed to "*0.55" from "/2." 4/28/2010  DL
 
       // Handle the single-ended bars
       if (vhits[j]->bar>40){
