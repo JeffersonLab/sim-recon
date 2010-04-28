@@ -35,6 +35,7 @@ class DTOFHit:public JObject{
 			AddString(items, "t_north", "%1.3f", t_north);
 			AddString(items, "E_north", "%1.3f", E_north);
 			AddString(items, "t_south", "%1.3f", t_south);
+			AddString(items, "E_south", "%1.3f", E_south);
 			AddString(items, "meantime", "%1.3f", meantime);
 			AddString(items, "timediff", "%1.3f", timediff);
 			AddString(items, "pos", "%1.3f", pos);
