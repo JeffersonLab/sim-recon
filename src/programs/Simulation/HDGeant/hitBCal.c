@@ -54,7 +54,6 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 	*/
 	if(xout[3] > 1.0){
 		 t = xin[3] * 1e9;
-		printf("xout[3]=%g\n", xout[3]);
 	}
 
    /* post the hit to the truth tree */
