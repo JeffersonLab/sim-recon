@@ -7,7 +7,7 @@
 
 #include <math.h>
 #include <DVector3.h>
-#include <TLorentzVector.h>
+#include <DLorentzVector.h>
 using namespace std;
 
 #include "DFCALPhoton_factory.h"
