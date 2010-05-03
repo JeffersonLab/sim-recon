@@ -74,8 +74,8 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                 DTwoGammaFit* fit2g = new DTwoGammaFit( nPairs );
 
 // set two gamma kinematics
-                TLorentzVector P4U = photons[i]->lorentzMomentum() + photons[j]->lorentzMomentum(); 
-                TLorentzVector P4 = kinout[0].lorentzMomentum() + kinout[1].lorentzMomentum(); 
+                DLorentzVector P4U = photons[i]->lorentzMomentum() + photons[j]->lorentzMomentum(); 
+                DLorentzVector P4 = kinout[0].lorentzMomentum() + kinout[1].lorentzMomentum(); 
 		DVector3 vertex = 0.5*(photons[i]->position() + photons[j]->position());
 
                 fit2g->setUMass( P4U.M() );

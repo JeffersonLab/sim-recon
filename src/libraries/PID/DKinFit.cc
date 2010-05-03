@@ -1421,7 +1421,7 @@ void DKinFit::_SetMissingParticleErrors(const TMatrixD &__missingCov, const TMat
   /// Calculate the missing particle errors from the last fit
 
   double p = sqrt(__x(0,0)*__x(0,0) + __x(1,0)*__x(1,0) + __x(2,0)*__x(2,0));
-  TLorentzVector p4(__x(0,0),__x(1,0),__x(2,0),sqrt(p*p + pow(_missingMass,2)));
+  DLorentzVector p4(__x(0,0),__x(1,0),__x(2,0),sqrt(p*p + pow(_missingMass,2)));
 
   // kinematic quantities in tracking coordinates
   //double phi = PhiTrack(p4);

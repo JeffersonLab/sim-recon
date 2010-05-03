@@ -12,9 +12,9 @@
 // ROOT Headers:
 #include "TMatrixD.h"
 #include "TMath.h"
-#include "TLorentzVector.h"
-#include "TVector3.h"
 // Local Headers
+#include "DLorentzVector.h"
+#include "DVector3.h"
 #include "DKinematicData.h"
 
 using namespace std;

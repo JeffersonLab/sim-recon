@@ -5,7 +5,7 @@
 // Last modified: Blake Leverington Mon Nov 23
 
 #include <math.h>
-#include <TLorentzVector.h>
+#include <DLorentzVector.h>
 
 #include "DPhoton.h"
 #include "DPhoton_factory.h"
