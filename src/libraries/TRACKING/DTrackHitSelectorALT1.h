@@ -7,7 +7,7 @@
 
 #ifndef _DTrackHitSelectorALT1_
 #define _DTrackHitSelectorALT1_
-
+#include <TMath.h>
 #include <JANA/jerror.h>
 
 #include <TRACKING/DTrackHitSelector.h>
