@@ -173,7 +173,7 @@ void DKinFit::Fit()
   //double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
   //double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
   //double dumt, dumx, dumy, dumz;
-  TVector3 p3_miss;
+  DVector3 p3_miss;
   // The following were changed to vectors to avoid compiler warnings on SunOS 11/12/2007 D.L.
   vector<double> pxMeas(_extraC), pyMeas(_extraC), pzMeas(_extraC), EMeas(_extraC);
   vector<double> pxTot(_extraC), pyTot(_extraC), pzTot(_extraC), ETot(_extraC), massTot(_extraC);
@@ -917,7 +917,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   //double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
   //double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
   //double dumt, dumx, dumy, dumz;
-  TVector3 p3_miss;
+  DVector3 p3_miss;
 
   for(int i=0;i<numParts;i++)
   {
