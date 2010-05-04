@@ -235,14 +235,14 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
       //  Thus, the s direction is just given by (W - (u.W/u.z)z)
       //
       
-      //w->sdir=w->origin-TVector3(0,0,w->origin.Z());
+      //w->sdir=w->origin-DVector3(0,0,w->origin.Z());
       w->sdir = w->origin - DVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
       w->sdir.SetMag(1.0);
       
       w->tdir = w->udir.Cross(w->sdir);
       w->tdir.SetMag(1.0); // This isn't really needed
       
-      w->stereo = w->udir.Angle(TVector3(0,0,1));
+      w->stereo = w->udir.Angle(DVector3(0,0,1));
       //if(rotX>0.0)w->stereo = -w->stereo;
       w->L = L/cos(w->stereo);
 
