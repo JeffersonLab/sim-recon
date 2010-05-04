@@ -10,7 +10,7 @@
 
 #include <math.h>
 #include <DVector3.h>
-#include <TLorentzVector.h>
+#include <DLorentzVector.h>
 #include "DFCALCluster.h"
 using namespace std;
 
@@ -31,7 +31,7 @@ class DFCALPhoton:public JObject{
 			double getEnergy() const;  
 			double getTime() const;  
 			DVector3 getMom3() const; 
-			TLorentzVector getMom4() const;
+			DLorentzVector getMom4() const;
 
 		// set photon energy and position 
 			void setPosition( const DVector3 aPosition );  
@@ -62,7 +62,7 @@ class DFCALPhoton:public JObject{
 			DVector3 fPosition;  // Photon position in the FCAL
                         DVector3 fPositionError;  // Errors in X and Y are estimated from
 			DVector3 fMom3;  // Photon 3-momentum
-			TLorentzVector fMom4;  // Photon 4-momentum
+			DLorentzVector fMom4;  // Photon 4-momentum
 };
 
 
@@ -92,7 +92,7 @@ inline double DFCALPhoton::getTime() const
 }
 
 
-inline TLorentzVector DFCALPhoton::getMom4() const
+inline DLorentzVector DFCALPhoton::getMom4() const
 {
       return fMom4;
 }
