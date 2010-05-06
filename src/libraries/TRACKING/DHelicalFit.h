@@ -67,6 +67,7 @@ using namespace std;
 
 #include <DMatrix.h>
 #include <DVector3.h>
+#include "FDC/DFDCPseudo.h"
 
 #include "JANA/jerror.h"
 
@@ -96,6 +97,7 @@ class DHelicalFit{
   jerror_t AddHitXYZ(float x, float y, float z);
   jerror_t AddHitXYZ(float x,float y, float z,float covx,float covy, 
 		     float covxy);
+  jerror_t AddHit(const DFDCPseudo *fdchit);
   jerror_t PruneHit(int idx);
   jerror_t Clear(void);
   jerror_t FitCircle(void);
@@ -128,9 +130,7 @@ class DHelicalFit{
   // for Riemann plane
   void GetPlaneParameters(double &c,DVector3 &n){
     c=c_origin;
-    n(0)=N[0];
-    n(1)=N[1];
-    n(2)=N[2];
+    n.SetXYZ(N[0],N[1],N[2]);
   };
 
   enum ChiSqSourceType_t{

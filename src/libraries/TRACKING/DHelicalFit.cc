@@ -117,6 +117,24 @@ DHelicalFit::~DHelicalFit()
 {
 	Clear();
 }
+//-----------------
+// AddHit --  add an FDC hit to the list
+//-----------------
+jerror_t DHelicalFit::AddHit(const DFDCPseudo *fdchit){
+  DHFHit_t *hit = new DHFHit_t;
+  hit->x = fdchit->x;
+  hit->y = fdchit->y;
+  hit->z = fdchit->wire->origin.z();
+  hit->covx=fdchit->covxx;
+  hit->covy=fdchit->covyy;
+  hit->covxy=fdchit->covxy;
+  hit->chisq = 0.0;
+  hits.push_back(hit);
+  
+  return NOERROR;
+
+}
+
 
 //-----------------
 // AddHit
@@ -365,9 +383,7 @@ jerror_t DHelicalFit::FitCircleRiemann(float BeamRMS)
         if(phi>=2.0*M_PI)phi-=2.0*M_PI;
 	
 	// Normal vector for plane intersecting Riemann surface 
-	normal(0)=N[0];
-	normal(1)=N[1];
-	normal(2)=N[2];
+	normal.SetXYZ(N[0],N[1],N[2]);
 
 	return NOERROR;
 }
