@@ -48,9 +48,7 @@ class DRiemannFit{
   double GetCharge();
   void GetPlaneParameters(double &c,DVector3 &n){
     c=dist_to_origin;
-    n(0)=N[0];
-    n(1)=N[1];
-    n(2)=N[2];
+    n.SetXYZ(N[0],N[1],N[2]);
   };
   jerror_t DoFit(double rc);
 
