@@ -36,8 +36,10 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 
 		jerror_t GetPositionAndMomentum(DFDCSegment *segment,
 						DVector3 &pos, DVector3 &mom);
+		jerror_t GetPositionAndMomentum(const double Bz_avg,
+						DVector3 &pos,DVector3 &mom);
 		
-                DFDCSegment *GetTrackMatch(double q,double z,
+                DFDCSegment *GetTrackMatch(double z,
                                            DFDCSegment *segment,
                                            vector<DFDCSegment*>package,
                                            unsigned int &match_id);
@@ -45,6 +47,8 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 	TH2F *match_dist_fdc;
 	vector<double>z_wires;
 
+	// Fit parameters
+	double xc,yc,rc,z_vertex,q,phi0,tanl;
 };
 
 #endif // _DTrackCandidate_factory_FDCCathodes_
