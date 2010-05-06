@@ -106,6 +106,40 @@ void DMagneticFieldMapSpoiled::GetField(double x, double y, double z, double &Bx
 
 }
 
+
+//---------------------------------
+// get z-component of magnetic field
+//---------------------------------
+double DMagneticFieldMapSpoiled::GetBz(double x, double y, double z) const
+{
+	if(!initialized){
+		DMagneticFieldMapSpoiled *mythis = const_cast<DMagneticFieldMapSpoiled*>(this);
+		mythis->Init();
+	}
+	if(!initialized)return 0.;
+	double Bx,By,Bz;
+	bfield->GetField(x, y, z, Bx, By, Bz);
+	
+	DVector3 B(Bx, By, Bz);
+	double r = sqrt(x*x + y*y);
+	double phi = atan2(y,x);
+	if(phi<0.0)phi+=2.0*M_PI;
+	
+	// Apply phi dependance
+	double fac = phi_amp*sin(phi_omega*phi) + 1.0;
+	
+	// Apply r dependance
+	fac *= r_amp*sin(r_omega*r) + 1.0;
+	
+	// Apply z dependance
+	fac *= z_amp*sin(z_omega*z) + 1.0;
+	
+	B *= fac;
+	return B.Z();
+
+}
+
+
 //---------------------------------
 // GetFieldGradient
 //---------------------------------

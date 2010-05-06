@@ -17,6 +17,7 @@ class DMagneticFieldMap{
 		virtual ~DMagneticFieldMap(){}
 		
 		virtual void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const = 0;
+		virtual double GetBz(double x, double y, double z) const=0;
 
 		virtual void GetFieldGradient(double x, double y, double z,
                                       double &dBxdx, double &dBxdy,

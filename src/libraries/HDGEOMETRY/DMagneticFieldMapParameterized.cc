@@ -215,6 +215,23 @@ void DMagneticFieldMapParameterized::GetField(double x, double y, double z, doub
 		By = Br*y/r;
 	}
 }
+//---------------------------------
+// Get the z-component of the magnetic field
+//---------------------------------
+double DMagneticFieldMapParameterized::GetBz(double x, double y, double z)const
+{
+
+  double r = sqrt(x*x + y*y);
+  
+  // Find Bz Dsection object for this z value
+  for(unsigned int i=0; i<sections_Bz.size(); i++){
+    if(sections_Bz[i].IsInRange(z)){
+      return (sections_Bz[i].Eval(r,z));
+    }
+  }
+  return 0.;
+}
+
 
 //---------------------------------
 // Eval

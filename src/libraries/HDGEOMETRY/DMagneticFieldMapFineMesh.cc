@@ -660,6 +660,42 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 }
 
 
+// Get the z-component of the magnetic field
+double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
+  // radial position 
+  double r = sqrt(x*x + y*y);
+
+  // If the point (x,y,z) is outside the fine-mesh grid, interpolate 
+  // on the coarse grid
+  if (z<zminFine || z>zmaxFine || r>rmaxFine){
+    // Get closest indices for this point
+    int index_x = (int)floor((r-xmin)/dx + 0.5);
+    //if(index_x<0 || index_x>=Nx)return 0.;
+    if (index_x>=Nx) return 0.;
+    else if (index_x<0) index_x=0;
+    int index_z = (int)floor((z-zmin)/dz + 0.5);	
+    if(index_z<0 || index_z>=Nz)return 0.;
+    
+    int index_y = 0;
+    
+    const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
+    
+    // Fractional distance between map points.
+    double ur = (r - B->x)/dx;
+    double uz = (z - B->z)/dz;
+	  
+    // Use gradient to project grid point to requested position
+    return (B->Bz + B->dBzdx*ur + B->dBzdz*uz);
+  }
+ 
+  // otherwise do a simple lookup in the fine-mesh table
+  unsigned int indr=(unsigned int)floor((r-rminFine)/drFine);
+  unsigned int indz=(unsigned int)floor((z-zminFine)/dzFine);
+  
+  return mBfine[indr][indz].Bz;
+}
+
+
 // Read a fine-mesh B-field map from an evio file
 void DMagneticFieldMapFineMesh::GetFineMeshMap(void){ 
 #ifdef USE_EVIO

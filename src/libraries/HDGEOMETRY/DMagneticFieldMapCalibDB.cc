@@ -599,3 +599,26 @@ void DMagneticFieldMapCalibDB::GetField(double x, double y, double z, double &Bx
 }
 
 
+// Get the z-component of the magnetic field
+double DMagneticFieldMapCalibDB::GetBz(double x, double y, double z) const{
+  // radial position 
+  double r = sqrt(x*x + y*y);
+
+  // Get closest indices for this point
+  int index_x = (int)floor((r-xmin)/dx + 0.5);
+  if (index_x>=Nx) return 0.;
+  else if (index_x<0) index_x=0;
+  int index_z = (int)floor((z-zmin)/dz + 0.5);	
+  if(index_z<0 || index_z>=Nz)return 0.;
+  
+  int index_y = 0;
+  
+  const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
+  
+  // Fractional distance between map points.
+  double ur = (r - B->x)/dx;
+  double uz = (z - B->z)/dz;
+  
+  // Use gradient to project grid point to requested position
+  return (B->Bz + B->dBzdx*ur + B->dBzdz*uz);
+}

@@ -30,6 +30,7 @@ class DMagneticFieldMapConst:public DMagneticFieldMap{
 		int GetValues(string namepath, int runnumber=1, string context="");
 		
 		void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const;
+		double GetBz(double x,double y, double z) const {return Bz;};
 		
 		void GetFieldGradient(double x, double y, double z,
 				      double &dBxdx, double &dBxdy,
