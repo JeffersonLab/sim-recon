@@ -101,6 +101,14 @@
         <mcTrajectoryPoint E="float" dE="float" maxOccurs="unbounded" mech="int" minOccurs="0" part="int" primary_track="int" px="float" py="float" pz="float" radlen="float" step="float" t="float" track="int" x="float" y="float" z="float"/>
       </mcTrajectory>
     </hitView>
+	 
+	 <reconView minOccurs="0" version="1.0">
+		<tracktimebased maxOccurs="unbounded" minOccurs="0" FOM="float" candidateid="int" oid="int">
+			<momentum E="float" px="float" py="float" pz="float"/>
+			<properties charge="int" mass="float"/>
+			<origin t="float" vx="float" vy="float" vz="float"/>
+		</tracktimebased>
+	 </reconView>
   </physicsEvent>
 
 </HDDM>
