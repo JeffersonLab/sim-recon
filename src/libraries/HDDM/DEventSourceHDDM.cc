@@ -17,11 +17,11 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
 
-#include "TVector2.h"
-#include "DEventSourceHDDM.h"
-#include "FDC/DFDCGeometry.h"
-#include "FCAL/DFCALGeometry.h"
-#include "FCAL/DFCALHit.h"
+#include <TVector2.h>
+#include <DEventSourceHDDM.h>
+#include <FDC/DFDCGeometry.h>
+#include <FCAL/DFCALGeometry.h>
+#include <FCAL/DFCALHit.h>
 
 //------------------------------------------------------------------
 // Binary predicate used to sort hits
@@ -49,6 +49,8 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name):JEventSource(source_
 	
 	if(fin)source_is_open = 1;
 	flush_on_free = true;
+	
+	pthread_mutex_init(&rt_mutex, NULL);
 }
 
 //----------------
@@ -99,7 +101,7 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
 	event.SetEventNumber(event_number);
 	event.SetRunNumber(run_number);
 	event.SetRef(hddm_s);
-
+	
 	return NOERROR;
 }
 
@@ -110,6 +112,16 @@ void DEventSourceHDDM::FreeEvent(JEvent &event)
 {
 	s_HDDM_t *my_hddm_s = (s_HDDM_t*)event.GetRef();
 	if(flush_on_free && my_hddm_s!=NULL)flush_s_HDDM(my_hddm_s, 0);
+
+	// Check for DReferenceTrajectory objects we need to delete
+	pthread_mutex_lock(&rt_mutex);
+	map<s_HDDM_t*, vector<DReferenceTrajectory*> >::iterator iter = rt_pool.find(my_hddm_s);
+	if(iter != rt_pool.end()){
+		vector<DReferenceTrajectory*> &rts = iter->second;
+		for(unsigned int i=0; i<rts.size(); i++)delete rts[i];
+		rt_pool.erase(iter);
+	}
+	pthread_mutex_unlock(&rt_mutex);
 }
 
 //----------------
@@ -132,7 +144,17 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	// The ref field of the JEvent is just the s_HDDM_t pointer.
 	s_HDDM_t *my_hddm_s = (s_HDDM_t*)event.GetRef();
 	if(!my_hddm_s)throw RESOURCE_UNAVAILABLE;
-	
+
+	// Get pointer to the B-field object and Geometry object
+	JEventLoop *loop = event.GetJEventLoop();
+	if(loop){
+		DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+		if(dapp){
+			bfield = dapp->GetBfield();
+			geom = dapp->GetDGeometry(event.GetRunNumber());
+		}
+	}
+
 	// Get name of data class we're trying to extract
 	string dataClassName = factory->GetDataClassName();
 	
@@ -177,6 +199,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 
 	if(dataClassName =="DSCTruthHit" && tag=="")
 	  return Extract_DSCTruthHit(my_hddm_s, dynamic_cast<JFactory<DSCTruthHit>*>(factory));
+
+	if(dataClassName =="DTrackTimeBased" && tag=="")
+	  return Extract_DTrackTimeBased(my_hddm_s, dynamic_cast<JFactory<DTrackTimeBased>*>(factory));
 
 	return OBJECT_NOT_AVAILABLE;
 }
@@ -1214,3 +1239,94 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit( s_HDDM_t *hddm_s,  JFactory<DSCT
 
   return NOERROR;
 }
+
+//------------------
+// Extract_DTrackTimeBased
+//------------------
+jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory)
+{
+	// Note: Since this is a reconstructed factory, we want to generally return OBJECT_NOT_AVAILABLE
+	// rather than NOERROR. The reason being that the caller interprets "NOERROR" to mean "yes I
+	// usually can provide objects of that type, but this event has none." This will cause it to
+	// skip any attempt at reconstruction. On the other hand, a value of "OBJECT_NOT_AVAILABLE" tells
+	// it "I cannot provide those type of objects for this event.
+
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+  vector<DTrackTimeBased*> data;
+  vector<DReferenceTrajectory*> rts;
+  
+  // Loop over physics events.
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return OBJECT_NOT_AVAILABLE;
+  
+	bool event_had_tracktimebaseds = false;
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_ReconView_t *recon = PE->in[i].reconView;
+		if (recon == HDDM_NULL || recon->tracktimebaseds == HDDM_NULL)continue;
+		event_had_tracktimebaseds = true;
+		
+		// Loop over timebased tracks
+		for(unsigned int i=0; i< recon->tracktimebaseds->mult; i++){
+			s_Tracktimebased_t *tbt = &(recon->tracktimebaseds->in[i]);
+			
+			DVector3 mom(tbt->momentum->px, tbt->momentum->py, tbt->momentum->pz);
+			DVector3 pos(tbt->origin->vx, tbt->origin->vy, tbt->origin->vz);
+			
+			DTrackTimeBased *track = new DTrackTimeBased();
+
+			track->setMomentum(mom);
+			track->setPosition(pos);
+			track->setCharge(tbt->properties->charge);
+			track->setMass(tbt->properties->mass);
+			track->chisq = tbt->chisq;
+			track->Ndof = tbt->Ndof;
+			track->FOM = tbt->FOM;
+			track->candidateid = tbt->candidateid;
+			track->id = tbt->id;
+			
+			// We need to create a pool of DReferenceTrajectory objects that we can assign 
+			// to the track as is done in DTrackTimeBased_factory.cc. For now though, we
+			// skip that in order to focus on getting the rest of this working.
+			DReferenceTrajectory *rt = new DReferenceTrajectory(bfield);
+			if(rt){
+				rt->SetMass(track->mass());
+				rt->SetDGeometry(geom);
+				rt->Swim(pos, mom, track->charge());
+			}
+			track->rt = rt;
+
+			data.push_back(track);
+			rts.push_back(rt);
+		}
+	}
+
+	// Copy into factory
+	if(event_had_tracktimebaseds){
+		factory->CopyTo(data);
+		
+		// Add DReferenceTrajectory objects to rt_pool so they can be deleted later.
+		// The rt_pool maintains lists indexed by the hddm_s pointer since multiple
+		// threads may be calling us. Note that we first look to see if a list already
+		// exists for this event and append to it if it does. This is so we can the
+		// same list for all objects that use DReferenceTrajectories.
+		pthread_mutex_lock(&rt_mutex);
+		map<s_HDDM_t*, vector<DReferenceTrajectory*> >::iterator iter = rt_pool.find(hddm_s);
+		if(iter != rt_pool.end()){
+			vector<DReferenceTrajectory*> &my_rts = iter->second;
+			my_rts.insert(my_rts.end(), rts.begin(), rts.end());
+		}else{
+			rt_pool[hddm_s] = rts;
+		}
+		pthread_mutex_unlock(&rt_mutex);
+
+		// If the event had a s_Tracktimebased_t pointer, then report back that
+		// we read them in from the file. Otherwise, report OBJECT_NOT_AVAILABLE
+		return NOERROR;
+	}
+
+	// If we get to here then there was not even a placeholder in the HDDM file.
+	// Return OBJECT_NOT_AVAILABLE to indicate reconstruction should be tried.
+	return OBJECT_NOT_AVAILABLE;
+}
+

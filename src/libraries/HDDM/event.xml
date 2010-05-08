@@ -103,7 +103,7 @@
     </hitView>
 	 
 	 <reconView minOccurs="0" version="1.0">
-		<tracktimebased maxOccurs="unbounded" minOccurs="0" FOM="float" candidateid="int" oid="int">
+		<tracktimebased maxOccurs="unbounded" minOccurs="0" FOM="float" Ndof="int" chisq="float" candidateid="int" trackid="int" id="int">
 			<momentum E="float" px="float" py="float" pz="float"/>
 			<properties charge="int" mass="float"/>
 			<origin t="float" vx="float" vy="float" vz="float"/>

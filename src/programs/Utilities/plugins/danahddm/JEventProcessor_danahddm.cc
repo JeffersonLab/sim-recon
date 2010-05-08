@@ -213,7 +213,10 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView
 		
 		tbt_hddm->FOM = tbt_dana->FOM;
 		tbt_hddm->candidateid = tbt_dana->candidateid;
-		tbt_hddm->oid = tbt_dana->id;
+		tbt_hddm->trackid = tbt_dana->trackid;
+		tbt_hddm->id = tbt_dana->id;
+		tbt_hddm->chisq = tbt_dana->chisq;
+		tbt_hddm->Ndof = tbt_dana->Ndof;
 
 		tbt_hddm->momentum = make_s_Momentum();
 		tbt_hddm->properties = make_s_Properties();
@@ -231,7 +234,7 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView
 		tbt_hddm->origin->vx = pos.x();
 		tbt_hddm->origin->vy = pos.y();
 		tbt_hddm->origin->vz = pos.z();
-		
+
 	}
 }
 

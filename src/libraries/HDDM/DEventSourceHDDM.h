@@ -31,6 +31,8 @@ using namespace std;
 #include "START_COUNTER/DSCTruthHit.h"
 #include "START_COUNTER/DSCHit.h"
 #include <PID/DBeamPhoton.h>
+#include <TRACKING/DTrackTimeBased.h>
+
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -66,11 +68,19 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDDMTOFHit>* factory);
 		jerror_t Extract_DSCHit(s_HDDM_t *hddm_s,  JFactory<DSCHit> *factory);
 		jerror_t Extract_DSCTruthHit(s_HDDM_t *hddm_s,  JFactory<DSCTruthHit> *factory);
+
+		jerror_t Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory);
+
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;
 		bool flush_on_free;
+		const DMagneticFieldMap *bfield;
+		const DGeometry *geom;
 		
 	private:
+	
+		pthread_mutex_t rt_mutex;
+		map<s_HDDM_t*, vector<DReferenceTrajectory*> > rt_pool;
 
 };
 
