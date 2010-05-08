@@ -688,7 +688,7 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 //---------------------------------
 // DistToRT
 //---------------------------------
-double DReferenceTrajectory::DistToRT(DVector3 hit) const
+double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 {
 if(Nswim_steps<1)_DBG__;
 	// First, find closest step to point
@@ -804,6 +804,14 @@ if(Nswim_steps<1)_DBG__;
 
 	//  double dist2 = Ro2/4.0*phi2*phi2 + alpha*phi2 + beta*phi + x0*x0 + y0*y0 + z0*z0;
 	double dist2 = 0.25*Ro2*phi2*phi2 + alpha*phi2 + beta*phi + x0*x0 + y0*y0 + z0*z0;
+	
+	// Calculate distance along track ("s")
+	if(s!=NULL){
+		double dz = dz_dphi*phi;
+		double Rodphi = Ro*phi;
+		double ds = sqrt(dz*dz + Rodphi*Rodphi);
+		*s = step->s + (phi>0.0 ? ds:-ds);
+	}
 
 	return sqrt(dist2);
 }

@@ -11,9 +11,9 @@
 #include <set>
 using namespace std;
 
-#define BCAL_SIGMA 0.5
-#define BCAL_COEFF 0.07
-#define TOF_SIGMA 0.05
+#define TOF_SIGMA 0.080   // TOF resolution in ns
+
+#include <TROOT.h>
 
 #include "DTrackTimeBased_factory.h"
 #include <TRACKING/DTrackWireBased.h>
@@ -46,10 +46,12 @@ jerror_t DTrackTimeBased_factory::init(void)
 {
 	fitter = NULL;
 
+	DEBUG_HISTS = false;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
 	MOMENTUM_CUT_FOR_PROTON_ID=2.0;
 
+	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_DEDX",MOMENTUM_CUT_FOR_DEDX);	
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_PROTON_ID",MOMENTUM_CUT_FOR_PROTON_ID);
@@ -82,6 +84,29 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		_DBG_<<"Unable to get a DTrackFitter object! NO Charged track fitting will be done!"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
+	
+	if(DEBUG_HISTS){
+		dapp->Lock();
+		
+		// Histograms may already exist. (Another thread may have created them)
+		// Try and get pointers to the existing ones.
+		fom_tdiff_bcal = (TH1F*)gROOT->FindObject("fom_tdiff_bcal");
+		fom_tdiff_tof = (TH1F*)gROOT->FindObject("fom_tdiff_tof");
+		fom_chi2_trk = (TH1F*)gROOT->FindObject("fom_chi2_trk");
+		fom_chi2_dedx = (TH1F*)gROOT->FindObject("fom_chi2_dedx");
+		fom_chi2_tof = (TH1F*)gROOT->FindObject("fom_chi2_tof");
+		fom_chi2_bcal = (TH1F*)gROOT->FindObject("fom_chi2_bcal");
+
+		if(!fom_tdiff_bcal)fom_tdiff_bcal = new TH1F("fom_tdiff_bcal","PID FOM: BCAL time difference", 2000, -10.0, 10.0);
+		if(!fom_tdiff_tof)fom_tdiff_tof = new TH1F("fom_tdiff_tof","PID FOM: TOF time difference", 2000, -10.0, 10.0);
+		if(!fom_chi2_trk)fom_chi2_trk = new TH1F("fom_chi2_trk","PID FOM: #chi^{2}/Ndf from tracking", 1000, 0.0, 100.0);
+		if(!fom_chi2_dedx)fom_chi2_dedx = new TH1F("fom_chi2_dedx","PID FOM: #chi^{2}/Ndf from dE/dx", 1000, 0.0, 100.0);
+		if(!fom_chi2_tof)fom_chi2_tof = new TH1F("fom_chi2_tof","PID FOM: #chi^{2}/Ndf from TOF", 1000, 0.0, 100.0);
+		if(!fom_chi2_bcal)fom_chi2_bcal = new TH1F("fom_chi2_bcal","PID FOM: #chi^{2}/Ndf from BCAL", 1000, 0.0, 100.0);
+
+		dapp->Unlock();
+	}
+
 
 	return NOERROR;
 }
@@ -237,8 +262,9 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   */
 
   // First ingredient is chi2 from the fit
-  double chi2_sum=dtrack->chisq;
+  double trk_chi2=dtrack->chisq;
   unsigned int ndof=dtrack->Ndof;
+  double chi2_sum = trk_chi2;
 
   // Next compute dEdx in the chambers for this track
   double mean_path_length=0.,p_avg=0.;
@@ -252,11 +278,13 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   double dEdx=0.,dEdx_diff=0.;
   double N=0.;
   double mass=dtrack->rt->GetMass();
-  for (unsigned int i=0;i<0.5*dEdx_list.size();i++){
+  for (unsigned int i=0;i<dEdx_list.size();i++){
     double p=dEdx_list[i].p;
     double dx=dEdx_list[i].dx;
     double dE=dEdx_list[i].dE;						
     double my_dedx=dE/dx;
+	 if(my_dedx > 0.0020)break; // cut off end of tail of distribution
+
     // Get the expected (most probable) dE/dx for a particle with this mass
     // and momentum for this hit
     double dEdx_mp=fitter->GetdEdx(p,mass,dx);
@@ -293,11 +321,23 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
     ndof++;
   }
   
+  if(DEBUG_HISTS){
+	fom_chi2_trk->Fill(trk_chi2);
+	fom_chi2_dedx->Fill(dedx_chi2);
+	fom_chi2_tof->Fill(tof_chi2);
+	fom_chi2_bcal->Fill(bcal_chi2);
+  }
+
+//_DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<trk_chi2<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<endl;
+
   // Return a combined FOM that includes the tracking chi2 information, the 
   // dEdx result and the tof result where available.
   return TMath::Prob(chi2_sum,ndof);
 }
 
+//------------------
+// MatchToTOF
+//------------------
 // Loop over TOF points, looking for minimum distance of closest approach
 // of track to a point in the TOF and using this to check for a match. 
 // If a match is found, return the probability that the mass hypothesis is 
@@ -349,6 +389,8 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
     double t_var=TOF_SIGMA*TOF_SIGMA;
 
     t_diff=mEndTime-mFlightTime;
+	 
+	 if(DEBUG_HISTS)fom_tdiff_tof->Fill(t_diff);
 
     // chi2
     return t_diff*t_diff/t_var;
@@ -358,6 +400,9 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
 }
 
 
+//------------------
+// MatchToBCAL
+//------------------
 // Loop over bcal clusters, looking for minimum distance of closest approach
 // of track to a cluster and using this to check for a match.  Return the 
 // probability that the particle is has the hypothesized mass if there is a 
@@ -366,6 +411,10 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
 					vector<const DBCALShower*>bcal_clusters){ 
 
   if (bcal_clusters.size()==0) return -1.;
+
+  double p=track->momentum().Mag();
+  double mass=track->mass();  
+  double beta_hyp=1./sqrt(1.+mass*mass/p/p);
 
   //Loop over bcal clusters
   double dmin=10000.;
@@ -381,13 +430,15 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
     // and the bcal cluster position, looking for the minimum
     double my_s=0.;
     double tflight=0.;
-    if (track->rt->GetIntersectionWithRadius(bcal_pos.Perp(),proj_pos,&my_s,
-					     &tflight)
-	!=NOERROR) continue;
-    double d=(bcal_pos-proj_pos).Mag();
+    //if (track->rt->GetIntersectionWithRadius(bcal_pos.Perp(),proj_pos,&my_s, &tflight) !=NOERROR) continue;
+    //double d=(bcal_pos-proj_pos).Mag();
+    double d = track->rt->DistToRT(bcal_pos, &my_s);
+    proj_pos = track->rt->GetLastDOCAPoint();
+
     if (d<dmin){
       dmin=d;
       mPathLength=my_s;
+		tflight = my_s/(beta_hyp*2.998E10)*1.0E9; // multiply beta by c and convert value to ns
       mFlightTime=tflight;
       bcal_match_id=k; 
       dz=proj_pos.z()-bcal_pos.z();
@@ -396,9 +447,9 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
   }
   
   // Check for a match 
-  double p=track->momentum().Mag();
   dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
   double phi_sigma=0.025+5.8e-4/p/p/p;
+
   if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
     // Add the time and path length to the outer detector to the track object
     track->setT1(bcal_clusters[bcal_match_id]->t, 0., SYS_BCAL);
@@ -409,18 +460,17 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
     
     // Calculate beta and use it to guess PID
     mEndTime=bcal_clusters[bcal_match_id]->t;
-    double mass=track->mass();  
-    double beta_hyp=1./sqrt(1.+mass*mass/p/p);
     double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
     double E=bcal_clusters[bcal_match_id]->E; // This E is not fully corrected! (See DBCALPhoton_factory.cc)
     double t_sigma=0.12154/sqrt(E)+0.17037*E-0.10843;
     if (mass>0.9) t_sigma=0.1473/sqrt(E)+0.3431*E-0.1872;
 
-    t_sigma=0.00255*pow(p,-2.52)+0.022;
+    //t_sigma=0.00255*pow(p,-2.52)+0.022;
+    t_sigma=0.00255*pow(p,-2.52)+0.220;
     double t_var=t_sigma*t_sigma;
 
     t_diff=mEndTime-mFlightTime;
-
+	 if(DEBUG_HISTS)fom_tdiff_bcal->Fill(t_diff);
 
     // chi2
     //return beta_diff*beta_diff/sigma_beta/sigma_beta;
@@ -455,6 +505,7 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 		for(unsigned int j=i+1; j<_data.size(); j++){
 			DTrackTimeBased *dtrack2 = _data[j];
 			if (dtrack2->candidateid==cand1) continue;
+			if (dtrack2->mass() != dtrack1->mass())continue;
 
 			vector<const DCDCTrackHit*> cdchits2;
 			vector<const DFDCPseudo*> fdchits2;
@@ -481,7 +532,7 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 		}
 	}
 	
-	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<indexes_to_delete.size()<<" wire-based clones"<<endl;
+	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<indexes_to_delete.size()<<" time-based clones"<<endl;
 
 	// Return now if we're keeping everyone
 	if(indexes_to_delete.size()==0)return;
@@ -494,80 +545,9 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 			new_data.push_back(_data[i]);
 		}else{
 			delete _data[i];
-			if(DEBUG_LEVEL>1)_DBG_<<"Deleting clone wire-based track "<<i<<endl;
+			if(DEBUG_LEVEL>1)_DBG_<<"Deleting clone time-based track "<<i<<endl;
 		}
 	}	
 	_data = new_data;
 }
-
-
-
-
-
-//------------------
-// GetRangeOutFOM - this routine is not currently being used...
-//------------------
-double DTrackTimeBased_factory::GetRangeOutFOM(DTrackTimeBased *dtrack)
-{
-	/// Calculate a figure of merit for the track ranging out within the
-	/// detector. If the particle does range out (lose all of its energy)
-	/// then the value returned would be essentially zero. If it does not,
-	/// then the value will be greater than zero.
-	///
-	/// The FOM is ratio of the total pathlength of the track to the 
-	/// pathlength to the outermost wire associated with the track.
-	/// Therefore, FOM=1 corresponds to a track that goes just
-	/// as far after it hit the last wire as before, before finally
-	/// hitting the BCAL, FCAL, etc...
-
-	// We want the pathlength to the last wire that is on this track
-	// (as determined by the DParticleHitSelector??? class). Since the
-	// tracks can curl back in toward the beamline, we have to check every
-	// wire to see what the pathlength to it is
-	
-	// Need the reference trajectory to find pathlengths
-	DReferenceTrajectory *rt = const_cast<DReferenceTrajectory*>(dtrack->rt);
-	
-	// Look first at FDC hits
-	vector<const DFDCPseudo*> fdchits;
-	dtrack->Get(fdchits);
-	const DCoordinateSystem *outermost_wire = NULL;
-	double s_to_outermost_wire=-1.0;
-	for(unsigned int i=0; i<fdchits.size(); i++){
-		DReferenceTrajectory::swim_step_t *step = rt->FindClosestSwimStep(fdchits[i]->wire);
-		if(step->s > s_to_outermost_wire){
-			s_to_outermost_wire = step->s;
-			outermost_wire = fdchits[i]->wire;
-		}
-	}
-	
-	// Check CDC if no FDC wire was found
-	if(!outermost_wire){
-		vector<const DCDCTrackHit*> cdchits;
-		dtrack->Get(cdchits);
-
-		for(unsigned int i=0; i<cdchits.size(); i++){
-			DReferenceTrajectory::swim_step_t *step = rt->FindClosestSwimStep(cdchits[i]->wire);
-			if(step->s > s_to_outermost_wire){
-				s_to_outermost_wire = step->s;
-				outermost_wire = cdchits[i]->wire;
-			}
-		}
-	}
-	
-	// Make sure *a* wire was found. (This is just a dummy check)
-	if(!outermost_wire){
-		_DBG_<<"ERROR: No outermost wire found for track!"<<endl;
-		return 0.0;
-	}
-	
-	// Get total pathlength from last swim step
-	double total_s = dtrack->rt->swim_steps[dtrack->rt->Nswim_steps-1].s;
-	
-	// Calculate figure of merit
-	double fom = (total_s - s_to_outermost_wire)/s_to_outermost_wire;
-
-	return fom;
-}
-
 

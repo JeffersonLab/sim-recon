@@ -67,7 +67,7 @@ class DReferenceTrajectory{
 		static const char* static_className(void){return "DReferenceTrajectory";}
 		
 		double DistToRT(double x, double y, double z) const {return DistToRT(DVector3(x,y,z));}
-		double DistToRT(DVector3 hit) const;
+		double DistToRT(DVector3 hit, double *s=NULL) const;
 		double DistToRT(const DCoordinateSystem *wire, double *s=NULL) const;
 		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL) const;
 		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL) const;

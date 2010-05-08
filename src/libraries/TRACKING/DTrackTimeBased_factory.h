@@ -8,6 +8,8 @@
 #ifndef _DTrackTimeBased_factory_
 #define _DTrackTimeBased_factory_
 
+#include <TH2.h>
+
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackFitter.h>
 #include <BCAL/DBCALShower.h>
@@ -34,12 +36,20 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
   jerror_t fini(void);						///< Called after last event of last event source has been processed.
   
+  bool DEBUG_HISTS;
   int DEBUG_LEVEL;
   double MOMENTUM_CUT_FOR_DEDX;
   double MOMENTUM_CUT_FOR_PROTON_ID;
   DTrackFitter *fitter;
   vector<DReferenceTrajectory*> rtv;
  
+	// Optional debugging histograms
+	TH1F *fom_tdiff_bcal;
+	TH1F *fom_tdiff_tof;
+	TH1F *fom_chi2_trk;
+	TH1F *fom_chi2_dedx;
+	TH1F *fom_chi2_tof;
+	TH1F *fom_chi2_bcal;
   
   void FilterDuplicates(void);  
   double GetFOM(DTrackTimeBased *dtrack,
@@ -50,8 +60,6 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 		    vector<const DTOFPoint*>tof_points);
   double MatchToBCAL(DTrackTimeBased *track,
 		     vector<const DBCALShower*>bcal_clusters);
-  // The following routine is not currently used
-  double GetRangeOutFOM(DTrackTimeBased *dtrack);
 
   // Geometry
   const DGeometry *geom;

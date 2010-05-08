@@ -254,6 +254,7 @@ void DTrackWireBased_factory::FilterDuplicates(void)
 		for(unsigned int j=i+1; j<_data.size(); j++){
 			DTrackWireBased *dtrack2 = _data[j];
 			if (dtrack2->candidateid==cand1) continue;
+			if (dtrack2->mass() != dtrack1->mass())continue;
 
 			vector<const DCDCTrackHit*> cdchits2;
 			vector<const DFDCPseudo*> fdchits2;
