@@ -80,7 +80,8 @@ class DEventSourceHDDM:public JEventSource
 	private:
 	
 		pthread_mutex_t rt_mutex;
-		map<s_HDDM_t*, vector<DReferenceTrajectory*> > rt_pool;
+		map<s_HDDM_t*, vector<DReferenceTrajectory*> > rt_by_event;
+		list<DReferenceTrajectory*> rt_pool;
 
 };
 
