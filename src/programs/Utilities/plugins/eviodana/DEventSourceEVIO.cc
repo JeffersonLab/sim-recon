@@ -203,14 +203,12 @@ jerror_t DEventSourceEVIO::Extract_DTrackTimeBased(evioDOMTree *evt,  JFactory<D
 			// is expensive to allocate these things so we recycle as much as possible.
 			list<DReferenceTrajectory*> my_rts;
 			pthread_mutex_lock(&rt_mutex);
-			for(unsigned int i=0; i<v_objId.size(); i++){
-				while(my_rts.size() < v_objId.size()){
-					if(rt_pool.size()>0){
-						my_rts.push_back(rt_pool.back());
-						rt_pool.pop_back();
-					}else{
-						my_rts.push_back(new DReferenceTrajectory(bfield));
-					}
+			while(my_rts.size() < v_objId.size()){
+				if(rt_pool.size()>0){
+					my_rts.push_back(rt_pool.back());
+					rt_pool.pop_back();
+				}else{
+					my_rts.push_back(new DReferenceTrajectory(bfield));
 				}
 			}
 			pthread_mutex_unlock(&rt_mutex);
@@ -233,9 +231,7 @@ jerror_t DEventSourceEVIO::Extract_DTrackTimeBased(evioDOMTree *evt,  JFactory<D
 				track->FOM = v_FOM[i];
 				track->id = v_objId[i];
 				
-				// We need to create a pool of DReferenceTrajectory objects that we can assign 
-				// to the track as is done in DTrackTimeBased_factory.cc. For now though, we
-				// skip that in order to focus on getting the rest of this working.
+				// Use DReferenceTrajectory objects (either recycled or new)
 				DReferenceTrajectory *rt = my_rts.back();
 				my_rts.pop_back();
 				if(rt){
