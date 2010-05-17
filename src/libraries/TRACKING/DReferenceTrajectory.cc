@@ -172,6 +172,18 @@ DReferenceTrajectory::~DReferenceTrajectory()
 }
 
 //---------------------------------
+// CopyWithShift
+//---------------------------------
+void DReferenceTrajectory::CopyWithShift(const DReferenceTrajectory *rt, DVector3 shift)
+{
+	// First, do a straight copy
+	*this = *rt;
+	
+	// Second, shift all positions
+	for(int i=0; i<Nswim_steps; i++)swim_steps[i].origin += shift;
+}
+
+//---------------------------------
 // Swim
 //---------------------------------
 void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, double smax, const DCoordinateSystem *wire)
