@@ -118,8 +118,12 @@ void DMagneticFieldStepper::CalcDirs(double *Bvals)
 		return;
 	}
 
+  double momMag = mom.Mag();
+  double BMagXmomMag = B.Mag() * momMag;
+  
 	// cross product of p and B (natural x-direction)
 	xdir = mom.Cross(B);
+  sin_theta = xdir.Mag() / ( BMagXmomMag );
 	if(xdir.Mag2()<1.0E-6)xdir = mom.Orthogonal();
 	if(xdir.Mag2()!=0.0)xdir.SetMag(1.0);
 	
@@ -131,13 +135,15 @@ void DMagneticFieldStepper::CalcDirs(double *Bvals)
 	zdir = B;
 	if(zdir.Mag2()!=0.0)zdir.SetMag(1.0);
 
+  
 	// cosine of angle between p and B
-	double theta = B.Angle(mom);
-	cos_theta = cos(theta);
-	sin_theta = sin(theta);
+  //	double theta = B.Angle(mom);
+	//cos_theta = cos(theta);
+  cos_theta = B.Dot( mom ) / ( BMagXmomMag );
+  //	sin_theta = sin(theta);
 
 	// Calculate Rp and Ro for this momentum and position
-	Rp = mom.Mag()/(q*sqrt(B2)*qBr2p); // qBr2p converts to GeV/c/cm so Rp will be in cm
+	Rp = momMag /(q*sqrt(B2)*qBr2p); // qBr2p converts to GeV/c/cm so Rp will be in cm
 	Ro = Rp*sin_theta;
 }
 
@@ -546,4 +552,3 @@ bool DMagneticFieldStepper::DistToRadius(DVector3 &pos, double R)
 
 	return false;
 }
-
