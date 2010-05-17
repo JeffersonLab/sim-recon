@@ -343,36 +343,28 @@ double DMaterialMap::DistanceToBox(DVector2 pos, DVector2 dir, double xmin, doub
 	double dist_x2 = (xmax-pos.X())/dir.X();
 	double dist_y1 = (ymin-pos.Y())/dir.Y();
 	double dist_y2 = (ymax-pos.Y())/dir.Y();
-	
+
 	// Make list of all positive, finite distances that are
 	// on border of box.
-	vector<double> dists;
+	double shortestDist = 1.0E6;
 	if(finite(dist_x1) && dist_x1>=0.0){
 		double y = (pos + dist_x1*dir).Y();
-		if(y>=ymin && y<=ymax)dists.push_back(dist_x1);
+		if(y>=ymin && y<=ymax && dist_x1 < shortestDist ) shortestDist = dist_x1;
 	}
 	if(finite(dist_x2) && dist_x2>=0.0){
 		double y = (pos + dist_x2*dir).Y();
-		if(y>=ymin && y<=ymax)dists.push_back(dist_x2);
+		if(y>=ymin && y<=ymax && dist_x2 < shortestDist ) shortestDist = dist_x2;
 	}
 	if(finite(dist_y1) && dist_y1>=0.0){
 		double x = (pos + dist_y1*dir).X();
-		if(x>=xmin && x<=xmax)dists.push_back(dist_y1);
+		if(x>=xmin && x<=xmax && dist_y1 < shortestDist ) shortestDist = dist_y1;
 	}
 	if(finite(dist_y2) && dist_y2>=0.0){
 		double x = (pos + dist_y2*dir).X();
-		if(x>=xmin && x<=xmax)dists.push_back(dist_y2);
+		if(x>=xmin && x<=xmax && dist_y2 < shortestDist ) shortestDist = dist_y2;
 	}
-	
-	// If there are no entries in the dists vector then we must not have
-	// hit the box at all. Return a large number.
-	if(dists.size()<1)return 1.0E6;
-	
-	// Sort list of distances from smallest to biggest
-	sort(dists.begin(), dists.end());
-	
+  	
 	// Return shortest distance
-	return dists[0];
+	return shortestDist;
 }
-
 
