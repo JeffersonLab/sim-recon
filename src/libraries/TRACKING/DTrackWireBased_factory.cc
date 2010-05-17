@@ -118,10 +118,16 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   // Get candidates and hits
   vector<const DTrackCandidate*> candidates;
   loop->Get(candidates);
-  
+
+  // Count the number of tracks we'll be fitting
+  unsigned int Ntracks_to_fit = 0;
+  for(unsigned int i=0; i<candidates.size(); i++){
+    Ntracks_to_fit += candidates[i]->charge()<0.0 ? mass_hypotheses_negative.size():mass_hypotheses_positive.size();
+  }
+
   // Deallocate some reference trajectories occasionally
-  unsigned int rts_to_keep = 5;
-  if(candidates.size()>rts_to_keep)rts_to_keep=candidates.size();
+  unsigned int rts_to_keep = 10;
+  if(Ntracks_to_fit>rts_to_keep)rts_to_keep=Ntracks_to_fit;
   for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
   if(rts_to_keep<rtv.size())rtv.resize(rts_to_keep);
   
