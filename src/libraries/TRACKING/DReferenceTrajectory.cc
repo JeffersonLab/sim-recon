@@ -853,20 +853,46 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	double min_delta2 = 1.0E6;
 	double L_over_2 = wire->L/2.0; // half-length of wire in cm
 	int istep=-1;
-	for(int i=0; i<Nswim_steps; i++, swim_step++){
+
+	double dx, dy, dz;
+  
+  // w is a vector to the origin of the wire
+  // u is a unit vector along the wire
+  
+  double wx, wy, wz;
+  double ux, uy, uz;
+  
+  wx = wire->origin.X();
+  wy = wire->origin.Y();
+  wz = wire->origin.Z();
+  
+  ux = wire->udir.X();
+  uy = wire->udir.Y();
+  uz = wire->udir.Z();
+  
+  for(int i=0; i<Nswim_steps; i++, swim_step++){
 		// Find the point's position along the wire. If the point
 		// is past the end of the wire, calculate the distance
 		// from the end of the wire.
-		DVector3 pos_diff = swim_step->origin - wire->origin;
-		double u = wire->udir.Dot(pos_diff);
+    //		DVector3 pos_diff = swim_step->origin - wire->origin;
+
+    dx = swim_step->origin.X() - wx;
+    dy = swim_step->origin.Y() - wy;
+    dz = swim_step->origin.Z() - wz;
+		
+    //    double u = wire->udir.Dot(pos_diff);
+    double u = ux * dx + uy * dy + uz * dz;
 
 		// Find distance perpendicular to wire
-		double delta2 = pos_diff.Mag2() - u*u;
+    //		double delta2 = pos_diff.Mag2() - u*u;
+    double delta2 = dx*dx + dy*dy + dz*dz - u*u;
 
 		// If point is past end of wire, calculate distance
 		// from wire's end by adding on distance along wire direction.
-		if(fabs(u)>L_over_2){
-			delta2 += pow(fabs(u)-L_over_2, 2.0);
+		if( fabs(u)>L_over_2){
+      //			delta2 += pow(fabs(u)-L_over_2, 2.0);
+      
+      delta2 += ( ( fabs(u)-L_over_2 ) * ( fabs(u)-L_over_2 ) );
 		}
 
 		if(delta2 < min_delta2){
@@ -1575,7 +1601,6 @@ double DReferenceTrajectory::dPdx(double ptot, double KrhoZ_overA,
 
 	return dP_dx;
 }
-
 
 
 
