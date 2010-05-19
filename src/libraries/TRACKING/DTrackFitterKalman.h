@@ -279,6 +279,7 @@ class DTrackFitterKalman: public DTrackFitter{
 	
   bool do_multiple_scattering;
   bool do_energy_loss;
+  bool passed_endplate;
   int pass;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
