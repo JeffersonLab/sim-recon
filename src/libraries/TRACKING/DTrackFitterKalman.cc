@@ -44,7 +44,7 @@
 
 #define CHISQ_DIFF_CUT 20.
 #define MAX_DEDX 40.
-#define MIN_ITER 3
+#define MIN_ITER 5
 #define MIN_CDC_ITER 3
 
 #define MOLIERE_FRACTION 0.99
@@ -235,11 +235,11 @@ void DTrackFitterKalman::ResetKalman(void)
 	 Bz=-2.;
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
-	 mStepSizeS=0.6;
-	 mStepSizeZ=0.6;
+	 mStepSizeS=0.5;
+	 mStepSizeZ=0.5;
 	 if (fit_type==kWireBased){
-	   mStepSizeS=0.6;
-	   mStepSizeZ=0.6;
+	   mStepSizeS=1.0;
+	   mStepSizeZ=1.0;
 	 }
 }
 
@@ -345,18 +345,17 @@ jerror_t DTrackFitterKalman::SetSeed(double q,DVector3 pos, DVector3 mom){
   }
 
   // Forward parameterization 
-  x_=pos(0);
-  y_=pos(1);
-  z_=pos(2);
-  tx_= mom(0)/mom(2);
-  ty_= mom(1)/mom(2);
+  x_=pos.x();
+  y_=pos.y();
+  z_=pos.z();
+  tx_= mom.x()/mom.z();
+  ty_= mom.y()/mom.z();
   q_over_p_=q/mom.Mag();
   
   // Central parameterization
-  double pt=mom.Perp();
   phi_=mom.Phi();
   tanl_=tan(M_PI/2.-mom.Theta());
-  q_over_pt_=q/pt;
+  q_over_pt_=q/mom.Perp();
   
   return NOERROR;
 }
@@ -380,8 +379,8 @@ jerror_t DTrackFitterKalman::AddFDCHit(const DFDCPseudo *fdchit){
   hit->uwire=fdchit->w;
   hit->vstrip=fdchit->s;
   hit->z=fdchit->wire->origin.z();
-  hit->cosa=fdchit->wire->udir(1);
-  hit->sina=fdchit->wire->udir(0);
+  hit->cosa=fdchit->wire->udir.y();
+  hit->sina=fdchit->wire->udir.x();
   hit->nr=0.;
   hit->nz=0.;
   hit->covu=hit->covv=0.0004;
@@ -1392,9 +1391,10 @@ jerror_t DTrackFitterKalman::CalcDeriv(double ds,const DVector3 &pos,
   if (fit_type==kTimeBased){
     double factor=0.5*kq_over_pt*ds*cosl;
     D1(state_z,0)+=factor*cosl*By_cosphi_minus_Bx_sinphi;
-    dpos(2)=D1(state_z,0);
-    dpos(0)+=factor*(Bz*cosl*sinphi-By*sinl);
-    dpos(1)+=factor*(Bx*sinl-Bz*cosl*cosphi);
+    dpos.SetZ(D1(state_z,0));
+    dpos.SetX(dpos.x()+factor*(Bz*cosl*sinphi-By*sinl));
+    dpos.SetY(dpos.y()+factor*(Bx*sinl-Bz*cosl*cosphi));
+
   }
   return NOERROR;
 }
@@ -1453,9 +1453,10 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,
   if (fit_type==kTimeBased){
     double factor=0.5*kq_over_pt*ds*cosl;
     D1(state_z,0)+=factor*cosl*By_cosphi_minus_Bx_sinphi;
-    dpos(2)=D1(state_z,0);
-    dpos(0)+=factor*(Bz*cosl*sinphi-By*sinl);
-    dpos(1)+=factor*(Bx*sinl-Bz*cosl*cosphi);
+    dpos.SetZ(D1(state_z,0));
+    dpos.SetX(dpos.x()+factor*(Bz*cosl*sinphi-By*sinl));
+    dpos.SetY(dpos.y()+factor*(Bx*sinl-Bz*cosl*cosphi));
+
   }
 
   // Jacobian matrix elements
@@ -1521,9 +1522,7 @@ jerror_t DTrackFitterKalman::ConvertStateVector(double z,double wire_x,
   Sc(state_z,0)=z;
 
   // D is a signed quantity
-  //double Bx,By,Bz;
-  bfield->GetField(x,y,z, Bx, By, Bz);    
-  double rc=1./Sc(state_q_over_pt,0)/qBr2p/fabs(Bz);
+  double rc=1./fabs(Sc(state_q_over_pt,0)*qBr2p*bfield->GetBz(x,y,z));
   double xc=x+rc*sin(Sc(state_phi,0));
   double yc=y+rc*cos(Sc(state_phi,0));
   double r=sqrt(xc*xc+yc*yc);
@@ -1566,7 +1565,7 @@ jerror_t DTrackFitterKalman::FixedStep(DVector3 &pos,double ds,DMatrix &S,
   DMatrix S1(5,1);
   DVector3 dpos1,dpos2,dpos3,dpos4;
   double ds_2=ds/2.;
-  
+
   // Magnetic field
   bfield->GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
   Bz_=fabs(Bz);
@@ -2909,9 +2908,9 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
   double ds2=0.;
 
   // beginning position
-  pos(0)=central_traj[0].pos.x()-Sc(state_D,0)*sin(Sc(state_phi,0));
-  pos(1)=central_traj[0].pos.y()+Sc(state_D,0)*cos(Sc(state_phi,0));
-  pos(2)=Sc(state_z,0);
+  pos.SetXYZ(central_traj[0].pos.x()-Sc(state_D,0)*sin(Sc(state_phi,0)),
+	     central_traj[0].pos.y()+Sc(state_D,0)*cos(Sc(state_phi,0)),
+	     Sc(state_z,0));
 
   // Wire origin and direction
   unsigned int cdc_index=my_cdchits.size()-1;
@@ -2967,9 +2966,9 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
     */
 
     // update position based on new doca to reference trajectory
-    pos(0)=central_traj[k].pos.x()-Sc(state_D,0)*sin(Sc(state_phi,0));
-    pos(1)=central_traj[k].pos.y()+Sc(state_D,0)*cos(Sc(state_phi,0));
-    pos(2)=Sc(state_z,0);
+    pos.SetXYZ(central_traj[k].pos.x()-Sc(state_D,0)*sin(Sc(state_phi,0)),
+	       central_traj[k].pos.y()+Sc(state_D,0)*cos(Sc(state_phi,0)),
+	       Sc(state_z,0));
 
     // Save the current state of the reference trajectory
     S0_=S0;
@@ -3001,11 +3000,7 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
 	double qpt=1./Sc(state_q_over_pt,0);
 	double sinphi=sin(Sc(state_phi,0));
 	double cosphi=cos(Sc(state_phi,0));
-	//double Bx=0.,By=0.,Bz=-2.;
-	//bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
-	bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
-	double Bz_=fabs(Bz);
-	double qrc_old=qpt/qBr2p/Bz_;
+	double qrc_old=qpt/fabs(qBr2p*bfield->GetBz(pos.x(),pos.y(),pos.z()));
 	double qrc_plus_D=D+qrc_old;
 	double lambda=atan(Sc(state_tanl,0));
 	double cosl=cos(lambda); 
@@ -3236,10 +3231,10 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
 	
 	// update position on current trajectory based on corrected doca to 
 	// reference trajectory
-	pos=central_traj[k].pos;
-	pos(0)+=-Sc(state_D,0)*sin(Sc(state_phi,0));
-	pos(1)+= Sc(state_D,0)*cos(Sc(state_phi,0));
-	pos(2)=Sc(state_z,0); 
+	pos.SetXYZ(central_traj[k].pos.x()-Sc(state_D,0)*sin(Sc(state_phi,0)),
+		   central_traj[k].pos.y()+Sc(state_D,0)*cos(Sc(state_phi,0)),
+		   Sc(state_z,0)); 
+
       }
       else {
 	if (cdc_index>0) cdc_index--;
@@ -3616,7 +3611,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	      +(y-wirepos.y())*(y-wirepos.y()));
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca /* || z>endplate_z */)&& more_measurements){
+    if ((doca>old_doca)&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Mark previous point on ref trajectory with a hit id for the straw
 	forward_traj_cdc[k-1].h_id=cdc_index+1;
@@ -3626,9 +3621,6 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 			    forward_traj_cdc[k].K_rho_Z_over_A,
 			    forward_traj_cdc[k].rho_Z_over_A,
 			    forward_traj_cdc[k].LnI);
-	//double Bx=0.,By=0.,Bz=-2.;
-	//bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
-	bfield->GetField(S(state_x,0),S(state_y,0),z,Bx, By, Bz);
 	double tx=S(state_tx,0);
 	double ty=S(state_ty,0);	
 	double tanl=1./sqrt(tx*tx+ty*ty);
@@ -3657,7 +3649,9 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	}
 	//printf("step1 %f step 2 %f \n",step1,step2);
 	double two_step=step1+step2;
-	if (fabs(qBr2p*S(state_q_over_p,0)*Bz*two_step/sinl)<0.01 
+	if (fabs(qBr2p*S(state_q_over_p,0)
+		 *bfield->GetBz(S(state_x,0),S(state_y,0),z)
+		 *two_step/sinl)<0.01 
 	    && denom>EPS){
 	  double dzw=(z-z0w)/uz;
 	  dz=-((S(state_x,0)-origin.x()-ux*dzw)*my_ux
