@@ -150,3 +150,5 @@ ifneq ($(strip $(DEPS)),)
 -include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
 endif
 
+CXXFLAGS += -DUSE_SIMD -msse2 -mfpmath=sse
+
