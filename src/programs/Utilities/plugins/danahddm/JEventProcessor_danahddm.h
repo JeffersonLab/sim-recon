@@ -39,7 +39,7 @@ class JEventProcessor_danahddm : public JEventProcessor {
 		s_iostream_t *file;
 		unsigned long Nevents_written;
 
-		void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView_t *recon);
+		void Add_DTrackTimeBased(JEventLoop *loop, s_ReconView_t *recon);
 };
 
 
