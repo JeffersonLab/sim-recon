@@ -1,12 +1,11 @@
 class DMatrix5x5{
  public:
   DMatrix5x5(){
-    for (unsigned int i=0;i<6;i++){
+    for (unsigned int i=0;i<5;i++){
       for (unsigned int j=0;j<3;j++){
 	mA[i].v[j]=_mm_setzero_pd();
       }
     }
-    mA[5].d[5]=1.;  // Needed for matrix inversion
   }
   DMatrix5x5(__m128d m11,__m128d m12,__m128d m13,__m128d m14,__m128d m15,
 	     __m128d m21,__m128d m22,__m128d m23,__m128d m24,__m128d m25,
@@ -27,19 +26,13 @@ class DMatrix5x5{
     mA[2].v[2]=m33;
     mA[3].v[2]=m34;  
     mA[4].v[2]=m35;
-    // pad the matrix to 6x6 (needed for matrix inversion)
-    for (unsigned int i=0;i<2;i++){
-      mA[5].v[i]=_mm_setzero_pd();
-    }
-    mA[0].d[5]=mA[1].d[5]=mA[2].d[5]=mA[3].d[5]=mA[4].d[5]=0.;
-    mA[5].v[2]=_mm_setr_pd(0.,1.);
   }
   // Constructor using block matrices from matrix inversion 
-  DMatrix5x5(const DMatrix2x2 &A,const DMatrix2x4 &B,
-	     const DMatrix4x2 &C,const DMatrix4x4 &D){
+  DMatrix5x5(const DMatrix2x2 &A,const DMatrix2x3 &B,
+	     const DMatrix3x2 &C,const DMatrix3x3 &D){
     mA[0].v[0]=A.GetV(0);
     mA[1].v[0]=A.GetV(1);
-    for (unsigned int i=0;i<4;i++){
+    for (unsigned int i=0;i<3;i++){
       mA[2+i].v[0]=B.GetV(i);
       for (unsigned int j=0;j<2;j++){
 	mA[2+i].v[j+1]=D.GetV(j,i);
@@ -94,7 +87,7 @@ class DMatrix5x5{
 		      ADD(1,3),ADD(1,4),ADD(2,0),ADD(2,1),ADD(2,2),ADD(2,3),ADD(2,4));
   }
   DMatrix5x5 &operator+=(const DMatrix5x5 &m2){
-    for (unsigned int i=0;i<6;i++){
+    for (unsigned int i=0;i<5;i++){
       for (unsigned int j=0;j<3;j++){
 	mA[i].v[j]=ADD(j,i);
       }
@@ -285,25 +278,23 @@ class DMatrix5x5{
   // Matrix inversion by blocks   
   DMatrix5x5 Invert(){
     DMatrix2x2 A(GetV(0,0),GetV(0,1));
-    DMatrix4x2 C(GetV(1,0),GetV(1,1),GetV(2,0),GetV(2,1));
-    DMatrix4x2 CAinv=C*A.Invert();
-    DMatrix4x4 D(GetV(1,2),GetV(1,3),GetV(1,4),GetV(1,5),
-		 GetV(2,2),GetV(2,3),GetV(2,4),GetV(2,5));
-    DMatrix2x4 B(GetV(0,2),GetV(0,3),GetV(0,4),GetV(0,5));
-    DMatrix2x4 BDinv=B*D.Invert();
+    DMatrix3x2 C(GetV(1,0),GetV(1,1),GetV(2,0),GetV(2,1));
+    DMatrix3x2 CAinv=C*A.Invert();
+    DMatrix3x3 D(GetV(1,2),GetV(1,3),GetV(1,4),GetV(2,2),GetV(2,3),GetV(2,4));
+    DMatrix2x3 B(GetV(0,2),GetV(0,3),GetV(0,4));
+    DMatrix2x3 BDinv=B*D.Invert();
     DMatrix2x2 AA=(A-BDinv*C).Invert();
-    DMatrix4x4 DD=(D-CAinv*B).Invert();
+    DMatrix3x3 DD=(D-CAinv*B).Invert();
     return DMatrix5x5(AA,-AA*BDinv,-DD*CAinv,DD);
   }
 
   // Zero out the matrix
   DMatrix5x5 Zero(){
-    for (unsigned int i=0;i<6;i++){
+    for (unsigned int i=0;i<5;i++){
       for (unsigned int j=0;j<3;j++){
 	mA[i].v[j]=_mm_setzero_pd();
       }
     }
-    mA[5].d[5]=1.;  // Needed for matrix inversion
     return *this;
   }
 
@@ -313,9 +304,9 @@ class DMatrix5x5{
     cout << "     |      0    |      1    |      2    |      3    |      4    |" <<endl;
     cout << "----------------------------------------------------------------------" <<endl;
     
-    for (unsigned int i=0;i<6;i++){
+    for (unsigned int i=0;i<5;i++){
       cout <<"   "<< i << " |";
-      for (unsigned int j=0;j<6;j++){
+      for (unsigned int j=0;j<5;j++){
 	cout << setw(11)<<setprecision(4)<<mA[j].d[i] <<" "; 
       } 
       cout << endl;
@@ -327,7 +318,7 @@ class DMatrix5x5{
     __m128d v[3];
       double d[6];
   };
-  union dvec mA[6];
+  union dvec mA[5];
     
 };
   
