@@ -9,9 +9,47 @@ using namespace std;
 
 #include "DMatrix2x1.h"
 #include "DMatrix2x2.h"
+#include "DMatrix3x2.h"
+#include "DMatrix3x3.h"
+#include "DMatrix2x3.h"
 #include "DMatrix4x2.h"
 #include "DMatrix4x4.h"
 #include "DMatrix2x4.h"
+
+// Matrix multiplication:  (3x2) x (2x3)
+inline DMatrix3x3 operator*(const DMatrix3x2 &m1,
+			    const DMatrix2x3 &m2){
+  __m128d a11=_mm_set1_pd(m2(0,0));
+  __m128d a12=_mm_set1_pd(m2(0,1)); 
+  __m128d a13=_mm_set1_pd(m2(0,2));
+  __m128d a21=_mm_set1_pd(m2(1,0));
+  __m128d a22=_mm_set1_pd(m2(1,1)); 
+  __m128d a23=_mm_set1_pd(m2(1,2));
+  return DMatrix3x3(_mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a11),
+			       _mm_mul_pd(m1.GetV(0,1),a21)),
+		    _mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a12),
+			       _mm_mul_pd(m1.GetV(0,1),a22)),
+		    _mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a13),
+			       _mm_mul_pd(m1.GetV(0,1),a23)),
+		    _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a11),
+			       _mm_mul_pd(m1.GetV(1,1),a21)),
+		    _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a12),
+			       _mm_mul_pd(m1.GetV(1,1),a22)),
+		    _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a13),
+			       _mm_mul_pd(m1.GetV(1,1),a23)));
+}
+
+// Matrix multiplication:  (2x2) x (2x3)
+inline DMatrix2x3 operator*(const DMatrix2x2 &m1,const DMatrix2x3 &m2){
+  return DMatrix2x3(_mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,0))),
+			       _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,0)))),
+		    _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,1))),
+			       _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,1)))),
+		    _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,2))),
+			       _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,2)))));
+}
+
+
 
 // Matrix multiplication:  (4x2) x (2x4)
 inline DMatrix4x4 operator*(const DMatrix4x2 &m1,
