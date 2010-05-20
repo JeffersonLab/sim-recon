@@ -1,7 +1,7 @@
 class DMatrix4x2{
   public:
   DMatrix4x2(){
-    for (unsigned int j=0;j<3;j++){
+    for (unsigned int j=0;j<2;j++){
       mA[0].v[j]=_mm_setzero_pd();
       mA[1].v[j]=_mm_setzero_pd();
     }
