@@ -1,4 +1,15 @@
-all: hddm_s.h hddm_s.c
+WHICH_HDDM-C = $(shell which hddm-c)
+
+all: env_check library
+
+env_check:
+ifeq ($(strip $(WHICH_HDDM-C)),)
+	@echo error: hddm-c not in path ; exit 1
+else
+	@echo hddm-c found in path: $(WHICH_HDDM-C)
+endif
+
+library: hddm_s.h hddm_s.c
 	make -f Makefile.static
 #	make -C shlib
 
@@ -17,4 +28,4 @@ pristine:
 	make -f Makefile.static pristine
 
 hddm_s.h hddm_s.c: event.xml
-	$(HALLD_HOME)/bin/$(BMS_OSNAME)/hddm-c $<
+	hddm-c $<
