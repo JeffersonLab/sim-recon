@@ -25,7 +25,7 @@
 #define NUM_ITER 10
 #define Z_MIN 15.
 #define Z_MAX 175.
-#define R_MAX 60.0
+#define R_MAX 65.0
 #ifndef SPEED_OF_LIGHT
 #define SPEED_OF_LIGHT 29.98
 #endif
@@ -51,7 +51,7 @@
 
 #define MOLIERE_FRACTION 0.99
 #define DE_PER_STEP_WIRE_BASED 0.0001 // 100 keV
-#define DE_PER_STEP_TIME_BASED 0.0001 // 100 keV
+#define DE_PER_STEP_TIME_BASED 0.0001 
 
 #define MIN_STEP_SIZE 0.1
 
@@ -240,8 +240,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 mStepSizeS=0.5;
 	 mStepSizeZ=0.5;
 	 if (fit_type==kWireBased){
-	   mStepSizeS=1.0;
-	   mStepSizeZ=1.0;
+	   mStepSizeS=0.5;
+	   mStepSizeZ=0.5;
 	 }
 }
 
@@ -696,13 +696,19 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
       /fabs(dEdx)
       /sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
   }
-  if (fabs(dBzdz)>EPS){
-    double my_step_size_B=0.001*fabs(Bz/dBzdz);
-    if (my_step_size_B<step) step=my_step_size_B;
-  }
+  //if (fabs(dBzdz)>EPS){
+  //  double my_step_size_B=0.001*fabs(Bz/dBzdz);
+  //  if (my_step_size_B<step) step=my_step_size_B;
+  // }
   if(step>mStepSizeZ) step=mStepSizeZ;
   if(step<MIN_STEP_SIZE)step=MIN_STEP_SIZE;
   double newz=z+step; // new z position  
+
+  if (newz>endplate_z){
+    step=endplate_z-z;
+    newz=endplate_z;
+  }
+
 
   // Step through field
   double ds=Step(z,newz,dEdx,S); 
@@ -819,10 +825,10 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	  (fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
 	  /fabs(dedx);
       }
-      if (fabs(dBzdz)>EPS){	
-	double my_step_size_B=0.001*fabs(Bz/dBzdz/sin(atan(Sc(state_tanl))));
-	if (my_step_size_B<step_size) step_size=my_step_size_B;
-      }
+      //if (fabs(dBzdz)>EPS){	
+      //double my_step_size_B=0.001*fabs(Bz/dBzdz/sin(atan(Sc(state_tanl))));
+      //if (my_step_size_B<step_size) step_size=my_step_size_B;
+      //}
       if(step_size>mStepSizeS) step_size=mStepSizeS;
       if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
 
@@ -906,10 +912,10 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	  (fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
 	  /fabs(dedx);
     }  
-    if (fabs(dBzdz)>EPS){	
-      double my_step_size_B=0.001*fabs(Bz/dBzdz/sin(atan(Sc(state_tanl))));
-      if (my_step_size_B<step_size) step_size=my_step_size_B;
-    }    
+    //if (fabs(dBzdz)>EPS){	
+    //double my_step_size_B=0.001*fabs(Bz/dBzdz/sin(atan(Sc(state_tanl))));
+    //if (my_step_size_B<step_size) step_size=my_step_size_B;
+    //}    
     if(step_size>mStepSizeS) step_size=mStepSizeS;
     if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
 
@@ -1056,10 +1062,10 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
       /fabs(dEdx)
       /sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
   }
-  if (fabs(dBzdz)>EPS){
-    double my_step_size_B=0.001*fabs(Bz/dBzdz);
-    if (my_step_size_B<step) step=my_step_size_B;
-  }
+  //if (fabs(dBzdz)>EPS){
+  //  double my_step_size_B=0.001*fabs(Bz/dBzdz);
+  //  if (my_step_size_B<step) step=my_step_size_B;
+  //}
   if(step>mStepSizeZ) step=mStepSizeZ;
   if(step<MIN_STEP_SIZE)step=MIN_STEP_SIZE;
   double newz=z+step; // new z position  
@@ -1900,8 +1906,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Initial guess for forward representation covariance matrix
     C0(state_x,state_x)=1.;
     C0(state_y,state_y)=1.;
-    C0(state_tx,state_tx)=0.010*0.010;
-    C0(state_ty,state_ty)=0.010*0.010;
+    C0(state_tx,state_tx)=0.0001;
+    C0(state_ty,state_ty)=0.0001;
     C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
 
     DMatrix5x1 Slast(S);
@@ -1911,7 +1917,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:5);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:1);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
 
@@ -1982,10 +1988,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       }
 
       //printf("iter2: %d chi2 %f %f\n",iter2,chisq_forward,chisq_iter);
-      
+      /*
       // Abort loop if the chisq is increasing
       if (fit_type==kWireBased && chisq_forward-chisq_iter>0.)
 	break;
+      */
 
       if (fit_type==kTimeBased){
 	//if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
@@ -2100,8 +2107,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Initial guess for forward representation covariance matrix
     C0(state_x,state_x)=1;
     C0(state_y,state_y)=1;
-    C0(state_tx,state_tx)=0.010*0.010;
-    C0(state_ty,state_ty)=0.010*0.010;
+    C0(state_tx,state_tx)=0.0001;
+    C0(state_ty,state_ty)=0.0001;
     C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
     
     DMatrix5x1 Slast(S);
@@ -2111,7 +2118,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:5);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:1);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
       
@@ -2167,9 +2174,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       //printf("iter2: %d factor %f chi2 %f %f\n",iter2,anneal_factor,chisq_forward,chisq_iter);
       
       // Abort loop if the chisq is increasing 
+      /*
       if (fit_type==kWireBased && chisq_forward-chisq_iter>0.)
 	break;
-      
+      */
       if (fit_type==kTimeBased){
 	//if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>MIN_CDC_ITER && 
@@ -2263,8 +2271,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     //C0(state_z,state_z)=1.;
     C0(state_z,state_z)=2.0;
-    C0(state_q_over_pt,state_q_over_pt)=0.20*0.20*q_over_pt_*q_over_pt_;
-    C0(state_phi,state_phi)=0.01*0.01;
+    C0(state_q_over_pt,state_q_over_pt)=0.04*q_over_pt_*q_over_pt_;
+    C0(state_phi,state_phi)=0.0001;
     C0(state_D,state_D)=1.0;
     double dlambda=0.05;
     //dlambda=0.1;
@@ -2281,7 +2289,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // iteration 
     double anneal_factor=1.;
     double chisq_iter=chisq;
-    for (int iter2=0;iter2<(fit_type==kTimeBased?20:5);iter2++){  
+    for (int iter2=0;iter2<(fit_type==kTimeBased?20:1);iter2++){  
       // Break out of loop if p is too small
       double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
       if (fabs(q_over_p)>Q_OVER_P_MAX) break;
@@ -2359,9 +2367,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       }
           
       // Abort loop if the chisq is increasing
+      /*
       if (fit_type==kWireBased && chisq-chisq_iter>0.)
 	break;
-
+      */
       if (!isfinite(chisq_central)) break;
       
       if (fit_type==kTimeBased){
