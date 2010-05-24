@@ -13,6 +13,10 @@
 #include <DVector3.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 
+#ifndef qBr2p
+#define qBr2p 0.003  // conversion factor for converting q*B*r to GeV/c
+#endif // qBr2p
+
 class DTrajectory{
 	public:
 		DTrajectory(const DMagneticFieldMap *bfield);
@@ -47,8 +51,8 @@ class DTrajectory{
 		
 		typedef double ThreeVector[3]; // this is needed to allow one to pass by reference
 
-		void CalcDirs(ThreeVector &pos, ThreeVector &p, RTdirs &dirs);
-		void CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p=NULL);
+		inline void CalcDirs(ThreeVector &pos, ThreeVector &p, RTdirs &dirs);
+		inline void CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p=NULL);
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0);
 		bool AdjustForMaterial(swim_step_t *swim_step);
 		
@@ -76,6 +80,8 @@ class DTrajectory{
 	private:
 
 };
+
+
 
 #endif // _DTrajectory_
 

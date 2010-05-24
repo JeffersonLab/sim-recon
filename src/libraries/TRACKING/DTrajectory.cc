@@ -11,8 +11,6 @@ using namespace std;
 
 #include "DTrajectory.h"
 
-#define qBr2p 0.003  // conversion factor for converting q*B*r to GeV/c
-
 //---------------------------------
 // DTrajectory    (Constructor)
 //---------------------------------
@@ -22,7 +20,7 @@ DTrajectory::DTrajectory(const DMagneticFieldMap *bfield)
 	Max_swim_steps = 10000;
 	swim_steps = new swim_step_t[Max_swim_steps];
 	own_swim_steps = true;
-	step_size = 3.0; // step size of zero means use adaptive step sizes
+	step_size = 2.0; // step size of zero means use adaptive step sizes
 	
 	ZMIN = -17.0;
 	ZMAX = 650.0;
@@ -54,7 +52,7 @@ void DTrajectory::CalcDirs(ThreeVector &pos, ThreeVector &p, RTdirs &dirs)
 	//
 	// Note that this is used by the Swim method which may pass
 	// in a position not corresponding to the actual momentum.
-_DBG__;
+
 	// Convenence references (these should cost nothing at run time)
 	double &x = pos[0];
 	double &y = pos[1];
@@ -74,6 +72,8 @@ _DBG__;
 	
 	// Get B-field at x
 	bfield->GetField(x, y, z, Bx, By, Bz);
+	//Bx = By = 0.0;
+	//Bz = -2.0;
 	
 	// xdir = p cross B
 	xdir_x = py*Bz - pz*Bx;
@@ -167,8 +167,10 @@ void DTrajectory::CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p
 
 	// Calculate step components perpendicular to B-field
 	double delta_phi = h*sin_theta/Ro; // delta_phi is angle step makes in plane perpendicular to B
-	double cos_delta_phi = cos(delta_phi);
-	double sin_delta_phi = sin(delta_phi);
+	//double cos_delta_phi = cos(delta_phi);
+	//double sin_delta_phi = sin(delta_phi);
+	double cos_delta_phi = 1.0 - (delta_phi*delta_phi/2.0);
+	double sin_delta_phi = delta_phi;
 	double delta_x = Ro*(1.0-cos_delta_phi);
 	double delta_y = Ro*sin_delta_phi;
 	
@@ -234,6 +236,15 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 	swim_step->itheta02s2 = 0.0;
 	
 	bool DO_MATERIAL_LOSS = (mass!=0.0);
+
+	double h = step_size;
+	double h_2 = h/2.0;
+
+	RTdirs dirs0, dirs1, dirs2, dirs3;
+	
+	double x0[3], x1[3], x2[3], x3[3];
+	double k1[3], k2[3], k3[3], k4[3], k1_2[3], k2_2[3];
+	double p1[3], p2[3], p3[3], p4[3];
 	
 	for(Nswim_steps=0; Nswim_steps<(Max_swim_steps-1); Nswim_steps++){
 	
@@ -264,18 +275,10 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		//
 		// p = p1/6 + p2/3 + p3/3 + p4/6
 		//
-		
-		double h = step_size;
-		double h_2 = h/2.0;
-
-		RTdirs dirs0, dirs1, dirs2, dirs3;
-		
-		double x0[3], x1[3], x2[3], x3[3];
-		double k1[3], k2[3], k3[3], k4[3], k1_2[3], k2_2[3];
-		double p1[3], p2[3], p3[3], p4[3];
 
 		double p0[3] = {px, py, pz};
 
+#if 0
 		// k1
 		x0[0]=x;  x0[1]=y;  x0[2]=z;
 		CalcDirs(x0, p0, dirs0);
@@ -297,10 +300,26 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		x3[0]=x+k3[0];  x3[1]=y+k3[1];  x3[2]=z+k3[2];
 		CalcDirs(x3, p0, dirs3);
 		CalcPosMom(h, dirs3, k4, p4);
-		
+#endif
+
+		// k1
+		x0[0]=x;  x0[1]=y;  x0[2]=z;
+		CalcDirs(x0, p0, dirs0);
+		//CalcDirs(x0, p0, dirs0);
+
+		// k2
+		CalcPosMom(h_2, dirs0, k1_2);
+		//CalcPosMom(h_2, dirs0, k1_2);
+		x1[0]=x+k1_2[0];  x1[1]=y+k1_2[1];  x1[2]=z+k1_2[2];
+		CalcDirs(x1, p0, dirs1);
+		//CalcDirs(x1, p0, dirs1);
+		CalcPosMom(h, dirs1, k2, p2);
+		//CalcPosMom(h, dirs1, k2, p2);
+
 		// Go to next swim step
 		swim_step++;
 
+#if 0
 		// new_pos = pos + k1/6 + k2/3 + k3/3 + k4/6
 		swim_step->x = x + (k1[0]+k4[0])/6.0 + (k2[0]+k3[0])/3.0;
 		swim_step->y = y + (k1[1]+k4[1])/6.0 + (k2[1]+k3[1])/3.0;
@@ -310,12 +329,24 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		swim_step->px = (p1[0]+p4[0])/6.0 + (p2[0]+p3[0])/3.0;
 		swim_step->py = (p1[1]+p4[1])/6.0 + (p2[1]+p3[1])/3.0;
 		swim_step->pz = (p1[2]+p4[2])/6.0 + (p2[2]+p3[2])/3.0;
+#endif
+		// new_pos = pos + k2
+		swim_step->x = x + k2[0];
+		swim_step->y = y + k2[1];
+		swim_step->z = z + k2[2];
+
+		// new_mom = p2
+		swim_step->px = p2[0];
+		swim_step->py = p2[1];
+		swim_step->pz = p2[2];
+
 		
 		// distance along trajectory
 		swim_step->s = s+h;
 		
 		// Optionally account for material
 		if(DO_MATERIAL_LOSS){
+			_DBG__;
 			bool particle_stopped = AdjustForMaterial(swim_step);
 			if(particle_stopped) break;
 		}else{
