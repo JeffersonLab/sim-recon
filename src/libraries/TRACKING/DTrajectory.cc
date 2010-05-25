@@ -20,7 +20,7 @@ DTrajectory::DTrajectory(const DMagneticFieldMap *bfield)
 	Max_swim_steps = 10000;
 	swim_steps = new swim_step_t[Max_swim_steps];
 	own_swim_steps = true;
-	step_size = 2.0; // step size of zero means use adaptive step sizes
+	step_size = 3.0; // step size of zero means use adaptive step sizes
 	
 	ZMIN = -17.0;
 	ZMAX = 650.0;
@@ -69,6 +69,7 @@ void DTrajectory::CalcDirs(ThreeVector &pos, ThreeVector &p, RTdirs &dirs)
 	double &Ro = dirs.Ro;
 	double &sin_theta = dirs.sin_theta;
 	double &cos_theta = dirs.cos_theta;
+	bool   &straight_track = dirs.straight_track;
 	
 	// Get B-field at x
 	bfield->GetField(x, y, z, Bx, By, Bz);
@@ -76,7 +77,7 @@ void DTrajectory::CalcDirs(ThreeVector &pos, ThreeVector &p, RTdirs &dirs)
 	//Bz = -2.0;
 	
 	// xdir = p cross B
-	xdir_x = py*Bz - pz*Bx;
+	xdir_x = py*Bz - pz*By;
 	xdir_y = pz*Bx - px*Bz;
 	xdir_z = px*By - py*Bx;
 	
@@ -86,42 +87,34 @@ void DTrajectory::CalcDirs(ThreeVector &pos, ThreeVector &p, RTdirs &dirs)
 	zdir_z = Bz;
 	
 	// ydir = zdir cross xdir
-	ydir_x = zdir_y*ydir_z - zdir_z*ydir_y;
-	ydir_y = zdir_z*ydir_x - zdir_x*ydir_z;
-	ydir_z = zdir_x*ydir_y - zdir_y*ydir_x;
+	ydir_x = zdir_y*xdir_z - zdir_z*xdir_y;
+	ydir_y = zdir_z*xdir_x - zdir_x*xdir_z;
+	ydir_z = zdir_x*xdir_y - zdir_y*xdir_x;
 	
 	// Normalize all direction vectors. If any one of them has
-	// a magnitude of zero or is not finite then default to lab
-	// coordinate system. This may look ugly but it was written
-	// to be optimized for speed.
-	bool use_lab = false;
-	double xmag, ymag, zmag;
-	xmag = sqrt(xdir_x*xdir_x + xdir_y*xdir_y + xdir_z*xdir_z);
-	use_lab |= (!finite(xmag) || xmag==0.0);
-	if(!use_lab){
-		ymag = sqrt(ydir_x*ydir_x + ydir_y*ydir_y + ydir_z*ydir_z);
-		use_lab |= (!finite(ymag) || ymag==0.0);
-		if(!use_lab){
-			zmag = sqrt(zdir_x*zdir_x + zdir_y*zdir_y + zdir_z*zdir_z);
-			use_lab |= (!finite(zmag) || zmag==0.0);
-		}
-	}
-	if(use_lab){
-		xdir_x=1.0;  xdir_y=0.0;  xdir_z=0.0;
-		ydir_x=0.0;  ydir_y=1.0;  ydir_z=0.0;
-		zdir_x=0.0;  zdir_y=0.0;  zdir_z=1.0;
+	// a magnitude of zero or is not finite then set the 
+	// "straight_track" flag and return immediately
+	double xmag = sqrt(xdir_x*xdir_x + xdir_y*xdir_y + xdir_z*xdir_z);
+	if(!finite(xmag) || xmag==0.0){straight_track=true; return;}
+	
+	double ymag = sqrt(ydir_x*ydir_x + ydir_y*ydir_y + ydir_z*ydir_z);
+	if(!finite(ymag) || ymag==0.0){straight_track=true; return;}
+	
+	double zmag = sqrt(zdir_x*zdir_x + zdir_y*zdir_y + zdir_z*zdir_z);
+	if(!finite(zmag) || zmag==0.0){straight_track=true; return;}
+	
+	// It looks like we're not a straight track
+	straight_track = false;
+
+	// Apply normalization to direction vectors
+	xdir_x/=xmag;  xdir_y/=xmag;  xdir_z/=xmag;
+	ydir_x/=ymag;  ydir_y/=ymag;  ydir_z/=ymag;
+	zdir_x/=zmag;  zdir_y/=zmag;  zdir_z/=zmag;
 		
-		Ro = 1.0E20; // Effectively default to a straight line
-	}else{
-		xdir_x/=xmag;  xdir_y/=xmag;  xdir_z/=xmag;
-		ydir_x/=ymag;  ydir_y/=ymag;  ydir_z/=ymag;
-		zdir_x/=zmag;  zdir_y/=zmag;  zdir_z/=zmag;
-		
-		// Calculate Ro
-		double &p_cross_B_mag=xmag; // p cross B already calculated above
-		double B2 = Bx*Bx + By*By + Bz*Bz;
-		Ro = p_cross_B_mag/B2/qBr2p;
-	}
+	// Calculate Ro
+	double &p_cross_B_mag=xmag; // p cross B already calculated above
+	double B2 = Bx*Bx + By*By + Bz*Bz;
+	Ro = p_cross_B_mag/B2/qBr2p;
 	
 	// The values sin_theta and cos_theta represent the angle the 
 	// momentum makes with the B-field. These are used to calculate
@@ -161,6 +154,24 @@ void DTrajectory::CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p
 	double &Ro = dirs.Ro;
 	double &sin_theta = dirs.sin_theta;
 	double &cos_theta = dirs.cos_theta;
+	bool   &straight_track = dirs.straight_track;
+
+	// First check if we're a straight track or not
+	if(straight_track){
+		double &dx = dirs.p[0];
+		double &dy = dirs.p[1];
+		double &dz = dirs.p[2];
+		double f = h/sqrt(dx*dx + dy*dy + dz*dz);
+		x = f*dx;
+		y = f*dy;
+		z = f*dz;
+		if(p){
+			p[0] = dirs.p[0];
+			p[1] = dirs.p[1];
+			p[2] = dirs.p[2];
+		}
+		return;
+	}
 
 	// Calculate step component parallel to B-field
 	double delta_z = h*cos_theta;
@@ -179,6 +190,7 @@ void DTrajectory::CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p
 	y = delta_x*xdir_y + delta_y*ydir_y + delta_z*zdir_y;
 	z = delta_x*xdir_z + delta_y*ydir_z + delta_z*zdir_z;
 
+//_DBG_<<"Ro="<<Ro<<" delta_phi="<<delta_phi<<" h="<<h<<endl;
 //_DBG_<<"delta_x="<<delta_x<<" delta_y="<<delta_y<<" delta_z="<<delta_z<<" delta_phi="<<delta_phi<<" h="<<h<<endl;
 
 	// If a non-NULL argument is passed in for "p" then the caller wants us also
@@ -205,8 +217,8 @@ void DTrajectory::CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p
 	
 	// Rotate in X/Y plane of RT coordinate system
 	double  px_rt_rotated =  px_rt*cos_delta_phi + py_rt*sin_delta_phi;
-	double  py_rt_rotated = -py_rt*sin_delta_phi + py_rt*cos_delta_phi;
-	double &pz_rt_rotated = pz_rt;
+	double  py_rt_rotated = -px_rt*sin_delta_phi + py_rt*cos_delta_phi;
+	double &pz_rt_rotated =  pz_rt;
 
 	// Convert back to lab coordinates
 	p[0] = px_rt_rotated*xdir_x + py_rt_rotated*ydir_x + pz_rt_rotated*zdir_x;
@@ -246,7 +258,7 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 	double k1[3], k2[3], k3[3], k4[3], k1_2[3], k2_2[3];
 	double p1[3], p2[3], p3[3], p4[3];
 	
-	for(Nswim_steps=0; Nswim_steps<(Max_swim_steps-1); Nswim_steps++){
+	for(Nswim_steps=1; Nswim_steps<(Max_swim_steps-1); Nswim_steps++){
 	
 		// Setup references to make code more readable.
 		// Note that these all point to the values at the start of the step
@@ -300,21 +312,18 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		x3[0]=x+k3[0];  x3[1]=y+k3[1];  x3[2]=z+k3[2];
 		CalcDirs(x3, p0, dirs3);
 		CalcPosMom(h, dirs3, k4, p4);
-#endif
+#else
 
 		// k1
 		x0[0]=x;  x0[1]=y;  x0[2]=z;
 		CalcDirs(x0, p0, dirs0);
-		//CalcDirs(x0, p0, dirs0);
 
 		// k2
 		CalcPosMom(h_2, dirs0, k1_2);
-		//CalcPosMom(h_2, dirs0, k1_2);
 		x1[0]=x+k1_2[0];  x1[1]=y+k1_2[1];  x1[2]=z+k1_2[2];
 		CalcDirs(x1, p0, dirs1);
-		//CalcDirs(x1, p0, dirs1);
 		CalcPosMom(h, dirs1, k2, p2);
-		//CalcPosMom(h, dirs1, k2, p2);
+#endif
 
 		// Go to next swim step
 		swim_step++;
@@ -329,7 +338,7 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		swim_step->px = (p1[0]+p4[0])/6.0 + (p2[0]+p3[0])/3.0;
 		swim_step->py = (p1[1]+p4[1])/6.0 + (p2[1]+p3[1])/3.0;
 		swim_step->pz = (p1[2]+p4[2])/6.0 + (p2[2]+p3[2])/3.0;
-#endif
+#else
 		// new_pos = pos + k2
 		swim_step->x = x + k2[0];
 		swim_step->y = y + k2[1];
@@ -339,6 +348,7 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		swim_step->px = p2[0];
 		swim_step->py = p2[1];
 		swim_step->pz = p2[2];
+#endif
 
 		
 		// distance along trajectory
@@ -369,10 +379,13 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		double R2 = swim_step->x*swim_step->x + swim_step->y*swim_step->y;
 		if(R2 >= R2MAX)break;  // r-boundary
 
-
-//_DBG_<<"x,y,z="<<swim_step->x<<", "<<swim_step->y<<", "<<swim_step->z<<endl;
 	}
 	
+	// If we broke out of loop, then increment Nswim_steps
+	if(Nswim_steps<Max_swim_steps)Nswim_steps++;
+	
+//_DBG_<<"x,y,z="<<swim_step->x<<", "<<swim_step->y<<", "<<swim_step->z<<endl;
+
 	if(Nswim_steps >= (Max_swim_steps-1)){
 		_DBG_<<"Maximum number of steps ("<<Max_swim_steps<<") reached. Swimming truncated."<<endl;
 	}

@@ -31,6 +31,7 @@ class DTrajectory{
 			double Ro;
 			double sin_theta;
 			double cos_theta;
+			bool straight_track; // true if track is straight due to B=0 or q=0
 		}RTdirs;
 
 		typedef struct {
