@@ -27,6 +27,28 @@ class DMatrix5x5{
     mA[3].v[2]=m34;  
     mA[4].v[2]=m35;
   }
+  // Constructor for a symmetric matrix
+  DMatrix5x5(__m128d m11,__m128d m12,__m128d m13,__m128d m14,__m128d m15,
+	     __m128d m23,__m128d m24,__m128d m25,__m128d m35
+	     ){
+    mA[0].v[0]=m11;
+    mA[1].v[0]=m12;  
+    mA[2].v[0]=m13;
+    mA[3].v[0]=m14;  
+    mA[4].v[0]=m15;
+    mA[0].v[1]=_mm_setr_pd(mA[2].d[0],mA[3].d[0]);
+    mA[1].v[1]=_mm_setr_pd(mA[2].d[1],mA[3].d[1]);  
+    mA[2].v[1]=m23;
+    mA[3].v[1]=m24;  
+    mA[4].v[1]=m25;
+    mA[0].v[2]=_mm_setr_pd(mA[4].d[0],0.);
+    mA[1].v[2]=_mm_setr_pd(mA[4].d[1],0.);
+    mA[2].v[2]=_mm_setr_pd(mA[4].d[2],0.);
+    mA[3].v[2]=_mm_setr_pd(mA[4].d[3],0.);
+    mA[4].v[2]=m35;
+  }
+
+
   // Constructor using block matrices from matrix inversion 
   DMatrix5x5(const DMatrix2x2 &A,const DMatrix2x3 &B,
 	     const DMatrix3x2 &C,const DMatrix3x3 &D){
@@ -94,7 +116,11 @@ class DMatrix5x5{
     }
     return *this;
   }
-
+  // Method for adding symmetric matrices
+  DMatrix5x5 AddSym(const DMatrix5x5 &m2) const{
+    return DMatrix5x5(ADD(0,0),ADD(0,1),ADD(0,2),ADD(0,3),ADD(0,4),ADD(1,2),
+		      ADD(1,3),ADD(1,4),ADD(2,4));
+  }
 
   // Matrix subtraction
   DMatrix5x5 operator-(const DMatrix5x5 &m2) const{
@@ -103,7 +129,11 @@ class DMatrix5x5{
     return DMatrix5x5(SUB(0,0),SUB(0,1),SUB(0,2),SUB(0,3),SUB(0,4),SUB(1,0),SUB(1,1),SUB(1,2),
 		      SUB(1,3),SUB(1,4),SUB(2,0),SUB(2,1),SUB(2,2),SUB(2,3),SUB(2,4));
   }
-
+  // method for subtracting a symmetric matrix from another symmetric matrix
+  DMatrix5x5 SubSym(const DMatrix5x5 &m2) const{
+    return DMatrix5x5(SUB(0,0),SUB(0,1),SUB(0,2),SUB(0,3),SUB(0,4),SUB(1,2),
+		      SUB(1,3),SUB(1,4),SUB(2,4));
+  }
 
   // Matrix multiplication:  (5x5) x (5x1)
   DMatrix5x1 operator*(const DMatrix5x1 &m2){
@@ -287,6 +317,20 @@ class DMatrix5x5{
     DMatrix3x3 DD=(D-CAinv*B).Invert();
     return DMatrix5x5(AA,-AA*BDinv,-DD*CAinv,DD);
   }
+  // Matrix inversion by blocks for a symmetric matrix
+  DMatrix5x5 InvertSym(){
+    DMatrix2x2 A(GetV(0,0),GetV(0,1));
+    DMatrix3x2 C(GetV(1,0),GetV(1,1),GetV(2,0),GetV(2,1));
+    DMatrix3x2 CAinv=C*A.Invert();
+    DMatrix3x3 D(GetV(1,2),GetV(1,3),GetV(1,4),GetV(2,2),GetV(2,3),GetV(2,4));
+    DMatrix2x3 B(GetV(0,2),GetV(0,3),GetV(0,4));
+    DMatrix2x3 BDinv=B*D.InvertSym();
+    DMatrix2x2 AA=(A-BDinv*C).Invert();
+    DMatrix3x3 DD=(D-CAinv*B).InvertSym();
+    return DMatrix5x5(AA,-AA*BDinv,-DD*CAinv,DD);
+  }
+
+
 
   // Zero out the matrix
   DMatrix5x5 Zero(){

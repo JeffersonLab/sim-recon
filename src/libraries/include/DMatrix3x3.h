@@ -98,6 +98,26 @@ class DMatrix3x3{
 		      _mm_mul_pd(one_over_detA,_mm_setr_pd(b33,0.)));
 				
   }
+  // Matrix inversion for a symmetric matrix
+  DMatrix3x3 InvertSym(){
+    double b11=mA[1].d[1]*mA[2].d[2]-mA[1].d[2]*mA[2].d[1];
+    double b21=mA[2].d[1]*mA[0].d[2]-mA[0].d[1]*mA[2].d[2];
+    double b22=mA[0].d[0]*mA[2].d[2]-mA[0].d[2]*mA[2].d[0];
+    double b31=mA[0].d[1]*mA[1].d[2]-mA[1].d[1]*mA[0].d[2];
+    double b32=mA[1].d[0]*mA[0].d[2]-mA[0].d[0]*mA[1].d[2];
+    double b33=mA[0].d[0]*mA[1].d[1]-mA[0].d[1]*mA[1].d[0];
+    __m128d one_over_detA=_mm_set1_pd(1./(mA[0].d[0]*b11+mA[1].d[0]*b21+mA[2].d[0]*b31));
+    return DMatrix3x3(_mm_mul_pd(one_over_detA,_mm_setr_pd(b11,b21)),
+		      _mm_mul_pd(one_over_detA,_mm_setr_pd(b21,b22)),
+		      _mm_mul_pd(one_over_detA,_mm_setr_pd(b31,b32)),
+		      _mm_mul_pd(one_over_detA,_mm_setr_pd(b31,0.)),
+		      _mm_mul_pd(one_over_detA,_mm_setr_pd(b32,0.)),
+		      _mm_mul_pd(one_over_detA,_mm_setr_pd(b33,0.)));
+				
+  }
+
+
+
 
   void Print(){
     cout << "DMatrix3x3:" <<endl;
