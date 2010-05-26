@@ -107,7 +107,7 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 		node.RadLen = a[5];
 		node.rhoZ_overA = a[6];
 		node.rhoZ_overA_logI = a[7];
-		node.LogI=node.rhoZ_overA_logI/node.rhoZ_overA;
+		node.LogI=node.rhoZ_overA_logI/(node.rhoZ_overA==0.0 ? 1.0:node.rhoZ_overA);
 		node.KrhoZ_overA=0.1535e-3*node.rhoZ_overA;
 	}
 }
