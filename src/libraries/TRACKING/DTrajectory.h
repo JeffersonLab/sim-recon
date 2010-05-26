@@ -12,6 +12,7 @@
 
 #include <DVector3.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
+#include <HDGEOMETRY/DGeometry.h>
 
 #ifndef qBr2p
 #define qBr2p 0.003  // conversion factor for converting q*B*r to GeV/c
@@ -19,7 +20,7 @@
 
 class DTrajectory{
 	public:
-		DTrajectory(const DMagneticFieldMap *bfield);
+		DTrajectory(const DMagneticFieldMap *bfield, const DGeometry *geom=NULL);
 		virtual ~DTrajectory();
 
 		typedef struct {
@@ -37,9 +38,6 @@ class DTrajectory{
 		typedef struct {
 			double x,y,z;
 			double px,py,pz;
-			//double P;
-			//double Bx, By, Bz;
-			//double Ro;
 			double s; // distance along RT
 			double t; // flight time
 			double dP; // momentum loss between previous step and this one
@@ -76,7 +74,10 @@ class DTrajectory{
 		double RMAX;
 		double R2MAX;
 		
+		bool check_material_boundaries;
+		
 		const DMagneticFieldMap *bfield;
+		const DGeometry *geom;
 
 	private:
 

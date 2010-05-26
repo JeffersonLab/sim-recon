@@ -14,7 +14,7 @@ using namespace std;
 //---------------------------------
 // DTrajectory    (Constructor)
 //---------------------------------
-DTrajectory::DTrajectory(const DMagneticFieldMap *bfield)
+DTrajectory::DTrajectory(const DMagneticFieldMap *bfield, const DGeometry *geom)
 {
 	Nswim_steps = 0;
 	Max_swim_steps = 10000;
@@ -26,9 +26,12 @@ DTrajectory::DTrajectory(const DMagneticFieldMap *bfield)
 	ZMAX = 650.0;
 	RMAX = 88.0;
 	R2MAX = RMAX*RMAX;
-	mass = 0.0;
+	mass = 0.1396;
+	
+	check_material_boundaries = true;
 	
 	this->bfield = bfield;
+	this->geom = geom;
 }
 
 //---------------------------------
@@ -247,7 +250,7 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 	swim_step->itheta02s = 0.0;
 	swim_step->itheta02s2 = 0.0;
 	
-	bool DO_MATERIAL_LOSS = (mass!=0.0);
+	bool DO_MATERIAL_LOSS = (mass!=0.0) && (geom!=NULL);
 
 	double h = step_size;
 	double h_2 = h/2.0;
@@ -356,7 +359,6 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		
 		// Optionally account for material
 		if(DO_MATERIAL_LOSS){
-			_DBG__;
 			bool particle_stopped = AdjustForMaterial(swim_step);
 			if(particle_stopped) break;
 		}else{
@@ -396,6 +398,11 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 //---------------------------------
 bool DTrajectory::AdjustForMaterial(swim_step_t *swim_step)
 {
+	/// Adjust the swim step based on the material traversed between the previous
+	/// step and this one.
+	/// The return value is a boolen that will be true if the particle lost all of its
+	/// energy and therefore stopped. A boolean false is returned otherwise.
+
 	swim_step_t *prev_swim_step = swim_step;
 	prev_swim_step--; // potentially unsafe, but speedy
 	
@@ -406,7 +413,18 @@ bool DTrajectory::AdjustForMaterial(swim_step_t *swim_step)
 	double ds = swim_step->s - prev_swim_step->s;
 
 	// Get Material properties for begining of step
-	double radlen = 2.0E-5; // replace with call/calculation
+	double KrhoZ_overA, LogI, rhoZ_overA, X0, s_to_boundary;
+	int err;
+	DVector3 pos(swim_step->x, swim_step->y, swim_step->z);
+	DVector3 mom(swim_step->px, swim_step->py, swim_step->pz);
+	if(check_material_boundaries){
+		err = geom->FindMatALT1(pos, mom, KrhoZ_overA, rhoZ_overA,LogI, X0, &s_to_boundary);
+	}else{
+		err = geom->FindMatALT1(pos, mom, KrhoZ_overA, rhoZ_overA,LogI, X0);
+	}
+	double delta_s = swim_step->s - prev_swim_step->s;
+	double radlen = delta_s/X0;
+	//double radlen = 2.0E-5; // replace with call/calculation
 
 	// Calculate momentum loss
 	double dPdx = 0.0; // replace with call/calculation
