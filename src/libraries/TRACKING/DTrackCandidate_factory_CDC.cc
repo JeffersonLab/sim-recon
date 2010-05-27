@@ -1085,14 +1085,17 @@ void DTrackCandidate_factory_CDC::FindThetaZStraightTrack(DCDCSeed &seed)
 		DCDCTrkHit *trkhit = &seed.stereo_hits[i];
 		if(!trkhit->flags&VALID_STEREO)continue;
 		
-		double R = sqrt(pow(trkhit->x_stereo,2.0) + pow(trkhit->y_stereo,2.0));
+		//double R = sqrt(pow(trkhit->x_stereo,2.0) + pow(trkhit->y_stereo,2.0));
+		double R=sqrt(trkhit->x_stereo*trkhit->x_stereo
+			      +trkhit->y_stereo*trkhit->y_stereo);
 		r.push_back(R);
 		z.push_back(trkhit->z_stereo);
 	}
 
 	for(unsigned int i=0; i<seed.fdchits.size(); i++){
 		const DFDCPseudo *fdchit = seed.fdchits[i];
-		double R = sqrt(pow((double)fdchit->x,2.0) + pow((double)fdchit->y,2.0));
+		//double R = sqrt(pow((double)fdchit->x,2.0) + pow((double)fdchit->y,2.0));
+		double R=sqrt(fdchit->x*fdchit->x+fdchit->y*fdchit->y);
 		r.push_back(R);
 		z.push_back(fdchit->wire->origin.Z());
 	}
@@ -1115,9 +1118,16 @@ void DTrackCandidate_factory_CDC::FindThetaZStraightTrack(DCDCSeed &seed)
 	double Szr=0.0, Szz=0.0, Srr=0.0;;
 	for(unsigned int i=0; i<r.size(); i++){
 		if(DEBUG_LEVEL>4)_DBG_<<"r="<<r[i]<<"\t z="<<z[i]<<"  Szz_i="<<pow((z[i] - Zavg), 2.0)<<" Srr_i="<<pow((r[i] - Ravg),2.0)<<endl;
+		double dz=z[i] - Zavg;
+		double dr=r[i] - Ravg;
+		/*
 		Szr += (z[i] - Zavg)*(r[i] - Ravg);
-		Szz += pow((z[i] - Zavg), 2.0);
-		Srr += pow((r[i] - Ravg), 2.0);
+		Szz += pow((z[i] - Zavg), 2);
+		Srr += pow((r[i] - Ravg), 2);
+		*/
+		Szr += dz*dr;
+		Szz += dz*dz;
+		Srr += dr*dr;
 	}
 
 	if(Szz>Srr){
@@ -1465,17 +1475,14 @@ double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
 
 	double Bz_sum=0.0;
 	for(unsigned int i=0; i<stereo_hits.size(); i++){
-		DCDCTrkHit *hit = &stereo_hits[i];
-		double Bx, By, Bz;
-		bfield->GetField(hit->x_stereo, hit->y_stereo, hit->z_stereo, Bx, By, Bz);
-		Bz_sum += Bz;
+	  DCDCTrkHit *hit = &stereo_hits[i];
+	  Bz_sum += bfield->GetBz(hit->x_stereo,hit->y_stereo,
+				  hit->z_stereo);
 	}
 	// If there are no stereo hits, fall back on available FDC hits
 	for (unsigned int i=0; i<fdchits.size();i++){
 	  const DFDCPseudo *hit= fdchits[i];
-	  double Bx, By, Bz;
-	  bfield->GetField(hit->x, hit->y, hit->wire->origin(2), Bx, By, Bz);
-	  Bz_sum += Bz;	  
+	  Bz_sum += bfield->GetBz(hit->x, hit->y, hit->wire->origin.z());
 	}
 	
 	return Bz_sum/(double)(stereo_hits.size()+fdchits.size());
@@ -1503,29 +1510,30 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
     DVector3 intersection;
     DVector3 N=seed.fit.normal;
-    double c0=seed.fit.c_origin;
-    double A=c0+R2*N(2);
-    double B=N(0)*N(0)+N(1)*N(1);
+    //double c0=seed.fit.c_origin;
+    double A=seed.fit.c_origin+R2*N.Z();
+    double B=N.Perp();
     double C=B*R2-A*A;
     
     if (C>=0) {
-      double x1=(-N(0)*A+N(1)*sqrt(C))/B;
-      double y1=(-N(1)*A-N(0)*sqrt(C))/B;   
-      double x2=(-N(0)*A-N(1)*sqrt(C))/B;
-      double y2=(-N(1)*A+N(0)*sqrt(C))/B;
+      double sqrtC=sqrt(C);
+      double x1=(-N.X()*A+N.Y()*sqrtC)/B;
+      double y1=(-N.Y()*A-N.X()*sqrtC)/B;   
+      double x2=(-N.X()*A-N.Y()*sqrtC)/B;
+      double y2=(-N.Y()*A+N.X()*sqrtC)/B;
       
       if (fabs(trkhit->y_stereo-y1)<fabs(trkhit->y_stereo-y2)){
-	intersection(0)=x1;
-	intersection(1)=y1;
+	intersection.SetX(x1);
+	intersection.SetY(y1);
       }
       else{
-	intersection(0)=x2;
-	intersection(1)=y2;
-		    }
-      intersection(2)=trkhit->z_stereo;
+	intersection.SetX(x2);
+	intersection.SetY(y2);
+      }
+      intersection.SetZ(trkhit->z_stereo);
       
       intersections.push_back(intersection);
-		if(DEBUG_LEVEL>5)_DBG_<<"Adding CDC hit "<<m<<" z="<<intersection(2)<<endl;      
+		if(DEBUG_LEVEL>5)_DBG_<<"Adding CDC hit "<<m<<" z="<<intersection.z()<<endl;      
       
     }
 
@@ -1538,29 +1546,30 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
     DVector3 intersection;
     DVector3 N=seed.fit.normal;
-    double c0=seed.fit.c_origin;
-    double A=c0+R2*N(2);
-    double B=N(0)*N(0)+N(1)*N(1);
+    //double c0=seed.fit.c_origin;
+    double A=seed.fit.c_origin+R2*N.Z();
+    double B=N.Perp();
     double C=B*R2-A*A;
     
     if (C>=0) {
-      double x1=(-N(0)*A+N(1)*sqrt(C))/B;
-      double y1=(-N(1)*A-N(0)*sqrt(C))/B;   
-      double x2=(-N(0)*A-N(1)*sqrt(C))/B;
-      double y2=(-N(1)*A+N(0)*sqrt(C))/B;
+      double sqrtC=sqrt(C);
+      double x1=(-N.X()*A+N.Y()*sqrtC)/B;
+      double y1=(-N.Y()*A-N.X()*sqrtC)/B;   
+      double x2=(-N.X()*A-N.Y()*sqrtC)/B;
+      double y2=(-N.Y()*A+N.X()*sqrtC)/B;
       
       if (fabs(trkhit->y-y1)<fabs(trkhit->y-y2)){
-	intersection(0)=x1;
-	intersection(1)=y1;
+	intersection.SetX(x1);
+	intersection.SetY(y1);
       }
       else{
-	intersection(0)=x2;
-	intersection(1)=y2;
-		    }
-      intersection(2)=trkhit->wire->origin.Z();
+	intersection.SetX(x2);
+	intersection.SetY(y2);
+      }
+      intersection.SetZ(trkhit->wire->origin.Z());
       
       intersections.push_back(intersection);
-		if(DEBUG_LEVEL>5)_DBG_<<"Adding FDC hit "<<m<<" z="<<intersection(2)<<endl;      
+		if(DEBUG_LEVEL>5)_DBG_<<"Adding FDC hit "<<m<<" z="<<intersection.z()<<endl;      
     }
 
   }
@@ -1592,9 +1601,9 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     for (unsigned int m=0;m<intersections.size();m++){
       sumv+=1./var_z[m];
       sumx+=arclengths[m]/var_z[m];
-      sumy+=intersections[m](2)/var_z[m];
+      sumy+=intersections[m].z()/var_z[m];
       sumxx+=arclengths[m]*arclengths[m]/var_z[m];
-      sumxy+=arclengths[m]*intersections[m](2)/var_z[m];
+      sumxy+=arclengths[m]*intersections[m].z()/var_z[m];
     }
     double Delta=sumv*sumxx-sumx*sumx;
     if (Delta==0.) return VALUE_OUT_OF_RANGE;
@@ -1604,7 +1613,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
   }
   else{
     z0=Z_TARGET;
-    tanl=(intersections[1](2)-z0)/arclengths[1];
+    tanl=(intersections[1].z()-z0)/arclengths[1];
   }
   
   if (z0>TARGET_Z_MAX || z0<TARGET_Z_MIN){
