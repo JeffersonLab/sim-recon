@@ -221,14 +221,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<segment->hits.size();n++){
 	    const DFDCPseudo *hit=segment->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));
+	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
 	  }
 	}
 	if (match2){
 	  for (unsigned int n=0;n<match2->hits.size();n++){
 	    const DFDCPseudo *hit=match2->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));	    
+	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
 	  }
 	  num_hits+=match2->hits.size();
 	}
@@ -236,7 +236,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<match3->hits.size();n++){
 	    const DFDCPseudo *hit=match3->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));
+	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
 	  }
 	  num_hits+=match3->hits.size();
 	}
@@ -244,7 +244,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<match4->hits.size();n++){
 	    const DFDCPseudo *hit=match4->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));
+	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
 	  }
 	  num_hits+=match4->hits.size();
 	}
@@ -288,7 +288,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    for (unsigned int n=0;n<match2->hits.size();n++){
 	      const DFDCPseudo *hit=match2->hits[n];
 	      fit.AddHit(hit);
-	      Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));
+	      Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
 	    }
 	    num_hits+=match2->hits.size();
 	    
@@ -337,7 +337,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    for (unsigned int n=0;n<match3->hits.size();n++){
 	      const DFDCPseudo *hit=match3->hits[n];
 	      fit.AddHit(hit);
-	      Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));
+	      Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
 	    }
 	    num_hits+=match3->hits.size();
 	    
@@ -504,14 +504,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<segment->hits.size();n++){
 	    const DFDCPseudo *hit=segment->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));
+	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
 	  }
 	}
 	if (match3){
 	  for (unsigned int n=0;n<match3->hits.size();n++){
 	    const DFDCPseudo *hit=match3->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));	    
+	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
 	  }
 	  num_hits+=match3->hits.size();
 	}
@@ -574,7 +574,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	      for (unsigned int n=0;n<match1->hits.size();n++){
 		const DFDCPseudo *hit=match1->hits[n];
 		fit.AddHit(hit);
-		Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));
+		Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
 	      }
 	      num_hits+=match1->hits.size();
 
@@ -603,7 +603,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       else{
 	for (unsigned int n=0;n<segment->hits.size();n++){
 	  Bz_avg-=bfield->GetBz(segment->hits[n]->x,segment->hits[n]->y,
-				segment->hits[n]->wire->origin(2));
+				segment->hits[n]->wire->origin.z());
 	}
       }
 
@@ -685,7 +685,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<mysegments[m]->hits.size();n++){
 	    DFDCPseudo *hit=mysegments[m]->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));	    
+	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
 	  }
 	  num_hits+=mysegments[m]->hits.size();
 	}
@@ -723,7 +723,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<match2->hits.size();n++){
 	    const DFDCPseudo *hit=match2->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin(2));	    
+	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
 	  }
 	  num_hits+=match2->hits.size();
 
@@ -762,7 +762,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       else{
 	for (unsigned int n=0;n<segment->hits.size();n++){
 	  Bz_avg-=bfield->GetBz(segment->hits[n]->x,segment->hits[n]->y,
-				segment->hits[n]->wire->origin(2));
+				segment->hits[n]->wire->origin.z());
 	}
       }
 	
@@ -813,7 +813,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     // Compute average magnitic field for the segment
     for (unsigned int m=0;m<segment->hits.size();m++){
       Bz_avg-=bfield->GetBz(segment->hits[m]->x,segment->hits[m]->y,
-			    segment->hits[m]->wire->origin(2));
+			    segment->hits[m]->wire->origin.z());
     }
     Bz_avg/=double(segment->hits.size());
   
@@ -849,7 +849,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     // Compute average magnitic field for the segment
     for (unsigned int m=0;m<segment->hits.size();m++){
       Bz_avg-=bfield->GetBz(segment->hits[m]->x,segment->hits[m]->y,
-			    segment->hits[m]->wire->origin(2));
+			    segment->hits[m]->wire->origin.z());
     }
     Bz_avg/=double(segment->hits.size());
 
@@ -898,7 +898,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
  
       double x2=segment2->hits[segment2->hits.size()-1]->x;
       double y2=segment2->hits[segment2->hits.size()-1]->y;
-      diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
+      diff=sqrt((pos.x()-x2)*(pos.x()-x2)+(pos.y()-y2)*(pos.y()-y2));
       if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	diff_min=diff;
 	match=segment2;
@@ -915,11 +915,11 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
       DFDCSegment *segment2=package[i];
       if (GetPositionAndMomentum(segment2,pos,mom)==NOERROR){
         mom=-1.0*mom;
-        origin.SetZ(segment->hits[0]->wire->origin(2));
+        origin.SetZ(segment->hits[0]->wire->origin.z());
         if (stepper.SwimToPlane(pos,mom,origin,norm,NULL)==false){
           double x2=segment->hits[0]->x;
           double y2=segment->hits[0]->y;
-          diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
+          diff=sqrt((pos.x()-x2)*(pos.x()-x2)+(pos.y()-y2)*(pos.y()-y2));
           if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	    diff_min=diff;
 	    match=segment2;
@@ -948,7 +948,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
  
       double x2=segment2->hits[segment2->hits.size()-1]->x;
       double y2=segment2->hits[segment2->hits.size()-1]->y;
-      diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
+      diff=sqrt((pos.x()-x2)*(pos.x()-x2)+(pos.y()-y2)*(pos.y()-y2));
       if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	diff_min=diff;
 	match=segment2;
@@ -971,11 +971,11 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
       
       if (GetPositionAndMomentum(segment2,pos,mom)==NOERROR){
         mom=-1.0*mom;
-        origin.SetZ(segment->hits[0]->wire->origin(2));
+        origin.SetZ(segment->hits[0]->wire->origin.z());
         if (stepper.SwimToPlane(pos,mom,origin,norm,NULL)==false){
           double x2=segment->hits[0]->x;
           double y2=segment->hits[0]->y;
-          diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
+          diff=sqrt((pos.x()-x2)*(pos.x()-x2)+(pos.y()-y2)*(pos.y()-y2));
           if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	    diff_min=diff;
 	    match=segment2;
@@ -1004,7 +1004,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   // Position of track segment at last hit plane of package
   double x=segment->xc+segment->rc*cos(segment->Phi1);
   double y=segment->yc+segment->rc*sin(segment->Phi1);
-  double z=segment->hits[0]->wire->origin(2);
+  double z=segment->hits[0]->wire->origin.z();
   pos.SetXYZ(x,y,z);
 
   // Make sure that the position makes sense!
