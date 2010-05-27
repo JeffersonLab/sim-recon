@@ -46,7 +46,7 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   // Get the position of the exit of the CDC endplate from DGeometry
   double endplate_z,endplate_dz,endplate_rmin;
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
-  cdc_endplate(2)=endplate_z;
+  cdc_endplate.SetZ(endplate_z);
 
   if(DEBUG_HISTS){
     dapp->Lock();
@@ -217,7 +217,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double covxy=segments[k]->hits[n]->covxy;
 	      double x=segments[k]->hits[n]->x;
 	      double y=segments[k]->hits[n]->y;
-	      double z=segments[k]->hits[n]->wire->origin(2);
+	      double z=segments[k]->hits[n]->wire->origin.z();
 	      
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
 	      bfield->GetField(x,y,z,Bx,By,Bz);
@@ -353,7 +353,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double covxy=segments[k]->hits[n]->covxy;
 	      double x=segments[k]->hits[n]->x;
 	      double y=segments[k]->hits[n]->y;
-	      double z=segments[k]->hits[n]->wire->origin(2);
+	      double z=segments[k]->hits[n]->wire->origin.z();
 	      
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
 	      bfield->GetField(x,y,z,Bx,By,Bz);
@@ -483,7 +483,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double covxy=segments[m]->hits[n]->covxy;
 	      double x=segments[m]->hits[n]->x;
 	      double y=segments[m]->hits[n]->y;
-	      double z=segments[m]->hits[n]->wire->origin(2);
+	      double z=segments[m]->hits[n]->wire->origin.z();
 	      
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
 	      bfield->GetField(x,y,z,Bx,By,Bz);
@@ -601,7 +601,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		double covxy=segments[m]->hits[n]->covxy;
 		double x=segments[m]->hits[n]->x;
 		double y=segments[m]->hits[n]->y;
-		double z=segments[m]->hits[n]->wire->origin(2);
+		double z=segments[m]->hits[n]->wire->origin.z();
 		
 		fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
 		bfield->GetField(x,y,z,Bx,By,Bz);
@@ -702,7 +702,7 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(
   // Position of track segment at last hit plane of package
   double x=segment->xc+segment->rc*cos(segment->Phi1);
   double y=segment->yc+segment->rc*sin(segment->Phi1);
-  double z=segment->hits[0]->wire->origin(2);
+  double z=segment->hits[0]->wire->origin.z();
 
   // Track parameters
   double kappa=segment->S(0,0);
