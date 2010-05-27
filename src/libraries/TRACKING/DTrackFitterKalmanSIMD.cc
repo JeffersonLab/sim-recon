@@ -186,32 +186,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
     for (unsigned int i=0;i<my_fdchits.size();i++){
       delete my_fdchits[i];
     }
+    
     if (fit_type==kWireBased){
-      for (unsigned int i=0;i<forward_traj.size();i++){
-	delete forward_traj[i].Q;
-	delete forward_traj[i].S;
-	delete forward_traj[i].J;	
-	delete forward_traj[i].JT;
-	delete forward_traj[i].Ckk;
-	delete forward_traj[i].Skk;
-      } 
-      for (unsigned int i=0;i<forward_traj_cdc.size();i++){
-	delete forward_traj_cdc[i].Q;
-	delete forward_traj_cdc[i].S;
-	delete forward_traj_cdc[i].J;
-	delete forward_traj_cdc[i].JT;
-	delete forward_traj_cdc[i].Ckk;
-	delete forward_traj_cdc[i].Skk;
-      }
-
-      for (unsigned int i=0;i<central_traj.size();i++){
-	delete central_traj[i].Q;
-	delete central_traj[i].S;
-	delete central_traj[i].J;
-	delete central_traj[i].JT;  
-	delete central_traj[i].Ckk;
-	delete central_traj[i].Skk;
-      }
       central_traj.clear();
       forward_traj.clear();
       forward_traj_cdc.clear();
@@ -585,14 +561,6 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
   if (i<(int)forward_traj_cdc.size()){
     forward_traj_cdc_length=forward_traj_cdc.size();
     for (int j=0;j<forward_traj_cdc_length-i;j++){
-      delete forward_traj_cdc[j].Q;
-      delete forward_traj_cdc[j].S;
-      delete forward_traj_cdc[j].J;
-      delete forward_traj_cdc[j].JT;
-      delete forward_traj_cdc[j].Ckk;
-      delete forward_traj_cdc[j].Skk;
-    }
-    for (int j=0;j<forward_traj_cdc_length-i;j++){
       forward_traj_cdc.pop_front();
     }
   }
@@ -604,7 +572,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
     {
       cout << "--- Forward cdc trajectory ---" <<endl;
     for (unsigned int m=0;m<forward_traj_cdc.size();m++){
-      DMatrix5x1 S=*(forward_traj_cdc[m].S);
+      //      DMatrix5x1 S=*(forward_traj_cdc[m].S); 
+      DMatrix5x1 S=(forward_traj_cdc[m].S);
       double tx=S(state_tx),ty=S(state_ty);
       double phi=atan2(ty,tx);
       double cosphi=cos(phi);
@@ -629,8 +598,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
   }
    
    // Current state vector
-   S=*(forward_traj_cdc[0].S);
-   
+  S=forward_traj_cdc[0].S;
+
    // position at the end of the swim
    z_=forward_traj_cdc[0].pos.Z();
    x_=forward_traj_cdc[0].pos.X();
@@ -644,7 +613,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
 jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 						 double &z,double &r,
 						 DMatrix5x1 &S){
-  DMatrix5x5 J,Q,JT;    
+  DMatrix5x5 J,Q;
   DKalmanSIMDState_t temp;
   int my_i=0;
   temp.h_id=0;
@@ -695,12 +664,10 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     forward_traj_cdc[my_i].rho_Z_over_A=temp.rho_Z_over_A;
     forward_traj_cdc[my_i].K_rho_Z_over_A=temp.K_rho_Z_over_A;
     forward_traj_cdc[my_i].LnI=temp.LnI;
-    for (unsigned int j=0;j<5;j++){
-      forward_traj_cdc[my_i].S->operator()(j)=S(j);
-    }
+    forward_traj_cdc[my_i].S=S;
   } 
   else{
-    temp.S= new DMatrix5x1(S);
+    temp.S=S;
   }
    
   // Determine the step size based on energy loss 
@@ -743,24 +710,19 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 	  
   // Compute the Jacobian matrix and its transpose
   StepJacobian(newz,z,S,dEdx,J);
-  JT=J.Transpose();
   
   // update the trajectory
   if (index<=length){
-    for (unsigned int j=0;j<5;j++){
-      for (unsigned int k=0;k<5;k++){
-	forward_traj_cdc[my_i].Q->operator()(j,k)=Q(j,k);
-	forward_traj_cdc[my_i].J->operator()(j,k)=J(j,k);
-	forward_traj_cdc[my_i].JT->operator()(j,k)=JT(j,k);
-      }
-    }
+    forward_traj_cdc[my_i].Q=Q;
+    forward_traj_cdc[my_i].J=J;
+    forward_traj_cdc[my_i].JT=J.Transpose();
   }
   else{	
-    temp.Q= new DMatrix5x5(Q);
-    temp.J= new DMatrix5x5(J);
-    temp.JT=new DMatrix5x5(JT);
-    temp.Ckk= new DMatrix5x5();
-    temp.Skk= new DMatrix5x1();
+    temp.Q=Q;
+    temp.J=J;
+    temp.JT=J.Transpose();
+    temp.Ckk=DMatrix5x5();
+    temp.Skk=DMatrix5x1();
     forward_traj_cdc.push_front(temp);    
   }
 
@@ -780,7 +742,6 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 						       DMatrix5x1 &Sc){
   DKalmanSIMDState_t temp;
   DMatrix5x5 J;  // State vector Jacobian matrix 
-  DMatrix5x5 JT; // ... and its transpose
   DMatrix5x5 Q;  // Process noise covariance matrix
 
   // Magnetic field at beginning of trajectory
@@ -811,11 +772,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       central_traj[m].t=t;
       central_traj[m].pos=pos;
       central_traj[m].h_id=0;
-      central_traj[m].S->operator()(state_q_over_pt)=Sc(state_q_over_pt);
-      central_traj[m].S->operator()(state_phi)=Sc(state_phi);
-      central_traj[m].S->operator()(state_tanl)=Sc(state_tanl);
-      central_traj[m].S->operator()(state_z)=Sc(state_z);
-      central_traj[m].S->operator()(state_D)=0.;
+      central_traj[m].S=Sc;
+      central_traj[m].S(state_D)=0.;  // make sure D=0.
 
       // update path length and flight time
       len+=step_size;
@@ -885,18 +843,11 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 
       // Compute the Jacobian matrix for back-tracking towards target
       StepJacobian(pos,origin,dir,-step_size,Sc,dedx,J);
-      // ... and its transpose 
-      JT=J.Transpose();
     
       // Fill the deque with the Jacobian and Process Noise matrices
-      for (unsigned int k=0;k<5;k++){
-	for (unsigned int j=0;j<5;j++){
-	  central_traj[m].J->operator()(k,j)=J(k,j);
-	  central_traj[m].Q->operator()(k,j)=Q(k,j);	
-	  central_traj[m].JT->operator()(k,j)=JT(k,j);	  
-	}
-      }
-   
+      central_traj[m].J=J;
+      central_traj[m].Q=Q;
+      central_traj[m].JT=J.Transpose();
     }
   }
 
@@ -942,7 +893,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
     dedx=GetdEdx(q_over_p,temp.K_rho_Z_over_A,temp.rho_Z_over_A,temp.LnI);
  
     // New state vector
-    temp.S= new DMatrix5x1(Sc);	
+    temp.S=Sc;
     
     // Adjust the step size
     if (fabs(dedx)>EPS){
@@ -979,18 +930,16 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 
     // Compute the Jacobian matrix and its transpose
     StepJacobian(pos,origin,dir,-step_size,Sc,dedx,J);
-    JT=J.Transpose();
 
     // update the radius relative to the beam line
     r=pos.Perp();
     
     // Update the trajectory info
-    temp.Q= new DMatrix5x5(Q);
-    temp.J= new DMatrix5x5(J);
-    temp.JT= new DMatrix5x5(JT);
-    temp.Ckk= new DMatrix5x5();
-    temp.Skk= new DMatrix5x1();
-    
+    temp.Q=Q;
+    temp.J=J;
+    temp.JT=J.Transpose();
+    temp.Ckk=DMatrix5x5();
+    temp.Skk=DMatrix5x1();
     central_traj.push_front(temp);    
   }
 
@@ -998,14 +947,6 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
   // trajectory deque, remove the extra elements and shrink the deque
   if (i<(int)central_traj.size()){
     int central_traj_length=central_traj.size();
-    for (int j=0;j<central_traj_length-i;j++){
-      delete central_traj[j].Q;
-      delete central_traj[j].S;
-      delete central_traj[j].J;
-      delete central_traj[j].JT;
-      delete central_traj[j].Ckk;
-      delete central_traj[j].Skk;
-    }
     for (int j=0;j<central_traj_length-i;j++){
       central_traj.pop_front();
     }
@@ -1017,7 +958,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
   if (DEBUG_LEVEL>1)
     {
     for (unsigned int m=0;m<central_traj.size();m++){
-      DMatrix5x1 S=*(central_traj[m].S);
+      DMatrix5x1 S=central_traj[m].S;
       double cosphi=cos(S(state_phi));
       double sinphi=sin(S(state_phi));
       double pt=fabs(1./S(state_q_over_pt));
@@ -1039,7 +980,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
   }
  
   // State at end of swim
-  Sc=*(central_traj[0].S);
+  Sc=central_traj[0].S;
 
   // Position at the end of the swim
   x_=pos.x();
@@ -1100,12 +1041,10 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     forward_traj[my_i].rho_Z_over_A=temp.rho_Z_over_A;
     forward_traj[my_i].K_rho_Z_over_A=temp.K_rho_Z_over_A;
     forward_traj[my_i].LnI=temp.LnI;
-    for (unsigned int j=0;j<5;j++){
-      forward_traj[my_i].S->operator()(j)=S(j);
-    }
+    forward_traj[my_i].S=S;
   } 
   else{
-    temp.S=new DMatrix5x1(S);
+    temp.S=S;
   }
  
   // Determine the step size based on energy loss 
@@ -1155,24 +1094,19 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
 			            
   // Compute the Jacobian matrix and its transpose
   StepJacobian(newz,z,S,dEdx,J);
-  JT=J.Transpose();
       
   // update the trajectory data
   if (i<=length){
-    for (unsigned int j=0;j<5;j++){
-      for (unsigned int k=0;k<5;k++){
-	forward_traj[my_i].Q->operator()(j,k)=Q(j,k);
-	forward_traj[my_i].J->operator()(j,k)=J(j,k);
-	forward_traj[my_i].JT->operator()(j,k)=JT(j,k);
-      }
-    }
+    forward_traj[my_i].Q=Q;
+    forward_traj[my_i].J=J;
+    forward_traj[my_i].JT=J.Transpose();
   }
   else{
-    temp.Q=new DMatrix5x5(Q);
-    temp.J=new DMatrix5x5(J);
-    temp.JT=new DMatrix5x5(JT);
-    temp.Ckk= new DMatrix5x5();
-    temp.Skk= new DMatrix5x1();
+    temp.Q=Q;
+    temp.J=J;
+    temp.JT=J.Transpose();
+    temp.Ckk=DMatrix5x5();
+    temp.Skk=DMatrix5x1();
     forward_traj.push_front(temp);
   }
  
@@ -1221,14 +1155,6 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
   if (i<(int)forward_traj.size()){
     int mylen=forward_traj.size();
     for (int j=0;j<mylen-i;j++){
-      delete forward_traj[j].Q;
-      delete forward_traj[j].S;
-      delete forward_traj[j].J;
-      delete forward_traj[j].JT;
-      delete forward_traj[j].Ckk;
-      delete forward_traj[j].Skk;
-    }
-    for (int j=0;j<mylen-i;j++){
       forward_traj.pop_front();
     }
   }
@@ -1254,7 +1180,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
     {
     cout << "--- Forward fdc trajectory ---" <<endl;
     for (unsigned int m=0;m<forward_traj.size();m++){
-      DMatrix5x1 S=*(forward_traj[m].S);
+      DMatrix5x1 S=(forward_traj[m].S);
       double tx=S(state_tx),ty=S(state_ty);
       double phi=atan2(ty,tx);
       double cosphi=cos(phi);
@@ -1378,6 +1304,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
     q_over_pt=(1./PT_MIN)*(q_over_pt>0?1.:-1.);
   }
   double kq_over_pt=qBr2p*q_over_pt;
+  double factor=0.5*kq_over_pt*ds*cosl;
 
   // Derivative of S with respect to s
   double By_cosphi_minus_Bx_sinphi=By*cosphi-Bx*sinphi;
@@ -1393,14 +1320,17 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
   }
   D1(state_phi)
     =kq_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
-  D1(state_tanl)=kq_over_pt*By_cosphi_minus_Bx_sinphi*one_over_cosl;
-  D1(state_z)=sinl;
+  D1(state_tanl)=kq_over_pt*By_cosphi_minus_Bx_sinphi*one_over_cosl;  
+  D1(state_z)=sinl+factor*cosl*By_cosphi_minus_Bx_sinphi;
 
   // New direction
-  dpos.SetXYZ(cosl*cosphi,cosl*sinphi,sinl);
+  dpos.SetXYZ(cosl*cosphi+factor*(Bz*cosl*sinphi-By*sinl),
+	      cosl*sinphi+factor*(Bx*sinl-Bz*cosl*cosphi),
+	      D1(state_z));
 
   // Second order correction
   // if (fit_type==kTimeBased)
+  /*
   {
     double factor=0.5*kq_over_pt*ds*cosl;
     D1(state_z)+=factor*cosl*By_cosphi_minus_Bx_sinphi;
@@ -1409,6 +1339,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
     dpos.SetY(dpos.y()+factor*(Bx*sinl-Bz*cosl*cosphi));
 
   }
+  */
   return NOERROR;
 }
 
@@ -1446,6 +1377,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double ds,
     q_over_pt=q/PT_MIN;
   }
   double kq_over_pt=qBr2p*q_over_pt;
+  double factor=0.5*kq_over_pt*ds*cosl;
 
   // B-field and gradient at (x,y,z)
   bfield->GetFieldAndGradient(pos.x(),pos.y(),pos.z(),Bx,By,Bz,
@@ -1458,13 +1390,16 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double ds,
   D1(state_q_over_pt)=kq_over_pt*q_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
   D1(state_phi)=kq_over_pt*(By_sinphi_plus_Bx_cosphi*sinl-Bz*cosl);
   D1(state_tanl)=kq_over_pt*By_cosphi_minus_Bx_sinphi*one_over_cosl;
-  D1(state_z)=sinl;
+  D1(state_z)=sinl+factor*cosl*By_cosphi_minus_Bx_sinphi;
 
   // New direction
-  dpos.SetXYZ(cosl*cosphi,cosl*sinphi,sinl);
+  dpos.SetXYZ(cosl*cosphi+factor*(Bz*cosl*sinphi-By*sinl),
+	      cosl*sinphi+factor*(Bx*sinl-Bz*cosl*cosphi),
+	      D1(state_z));
 
   // Second order correction
   //if (fit_type==kTimeBased)
+  /*
   {
     double factor=0.5*kq_over_pt*ds*cosl;
     D1(state_z)+=factor*cosl*By_cosphi_minus_Bx_sinphi;
@@ -1473,6 +1408,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double ds,
     dpos.SetY(dpos.y()+factor*(Bx*sinl-Bz*cosl*cosphi));
 
   }
+  */
 
   // Jacobian matrix elements
   J1(state_phi,state_phi)=kq_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
@@ -1509,7 +1445,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double ds,
   // Second order
   //if (fit_type==kTimeBased)
   {
-    double factor=0.5*kq_over_pt*ds*cosl;
+    //double factor=0.5*kq_over_pt*ds*cosl;
     J1(state_z,state_tanl)=cosl3;
     J1(state_z,state_tanl)+=-2.*factor*sinl*By_cosphi_minus_Bx_sinphi*cosl2;
     J1(state_z,state_phi)=-factor*cosl*By_sinphi_plus_Bx_cosphi;
@@ -1536,7 +1472,6 @@ jerror_t DTrackFitterKalmanSIMD::ConvertStateVector(double z,double wire_x,
   Sc(state_phi)=atan2(ty,tx);
   Sc(state_tanl)=tanl;
   Sc(state_D)=sqrt((x-wire_x)*(x-wire_x)+(y-wire_y)*(y-wire_y));
-  //Sc(state_D)=sqrt(x*x+y*y);
   Sc(state_z)=z;
 
   // D is a signed quantity
@@ -1559,8 +1494,6 @@ jerror_t DTrackFitterKalmanSIMD::ConvertStateVector(double z,double wire_x,
   J(state_phi,state_ty)=tx/tsquare;
   J(state_D,state_x)=(x-wire_x)/Sc(state_D);
   J(state_D,state_y)=(y-wire_y)/Sc(state_D);
-  //J(state_D,state_x)=x/Sc(state_D);
-  //J(state_D,state_y)=y/Sc(state_D);
 
   Cc=J*C*J.Transpose();
 
@@ -1834,26 +1767,23 @@ inline double DTrackFitterKalmanSIMD::GetEnergyVariance(double ds,
 // information from all the steps and outputs the state vector at the
 // outermost step.
 jerror_t DTrackFitterKalmanSIMD::SmoothForward(DMatrix5x1 &Ss){  
-  DMatrix5x1 S,S1;
-  DMatrix5x5 C,C1,Cs;
+  DMatrix5x1 S; 
+  DMatrix5x5 C,Cs;
   DMatrix5x5 JT,A;
   
   unsigned int max=forward_traj.size()-1;
-  S=(*forward_traj[max].Skk);
-  C=(*forward_traj[max].Ckk);
-  JT=(*forward_traj[max].JT);
+  S=(forward_traj[max].Skk);
+  C=(forward_traj[max].Ckk);
+  JT=(forward_traj[max].JT);
   Ss=S;
 
   for (unsigned int m=max-1;m>0;m--){
-    S1=(*forward_traj[m].Skk);
-    C1=(*forward_traj[m].Ckk);
+    A=forward_traj[m].Ckk*JT*C.InvertSym();
+    Ss=forward_traj[m].Skk+A*(Ss-S);
 
-    A=C1*JT*C.InvertSym();
-    Ss=S1+A*(Ss-S);
-
-    S=S1;
-    C=C1;
-    JT=(*forward_traj[m].JT);
+    S=forward_traj[m].Skk;
+    C=forward_traj[m].Ckk;
+    JT=forward_traj[m].JT;
   }
 
   return NOERROR;
@@ -1864,25 +1794,22 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(DMatrix5x1 &Ss){
 // information from all the steps and outputs the state vector at the
 // outermost step.
 jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss){  
-  DMatrix5x1 S,S1;
-  DMatrix5x5 C,C1,Cs;
+  DMatrix5x1 S;
+  DMatrix5x5 C,Cs;
   DMatrix5x5 JT,A;
   
   unsigned int max=central_traj.size()-1;
-  S=(*central_traj[max].Skk);
-  C=(*central_traj[max].Ckk);
-  JT=(*central_traj[max].JT);
+  S=(central_traj[max].Skk);
+  C=(central_traj[max].Ckk);
+  JT=(central_traj[max].JT);
   Ss=S;
   for (unsigned int m=max-1;m>0;m--){
-    S1=(*central_traj[m].Skk);
-    C1=(*central_traj[m].Ckk);
+    A=central_traj[m].Ckk*JT*C.InvertSym();
+    Ss=central_traj[m].Skk+A*(Ss-S);
 
-    A=C1*JT*C.InvertSym();
-    Ss=S1+A*(Ss-S);
-
-    S=S1;
-    C=C1;
-    JT=(*central_traj[m].JT);
+    S=central_traj[m].Skk;
+    C=central_traj[m].Ckk;
+    JT=(central_traj[m].JT);
   }
 
   return NOERROR;
@@ -1894,25 +1821,22 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss){
 // information from all the steps and outputs the state vector at the
 // outermost step.
 jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(DMatrix5x1 &Ss){  
-  DMatrix5x1 S,S1;
-  DMatrix5x5 C,C1,Cs;
+  DMatrix5x1 S;
+  DMatrix5x5 C,Cs;
   DMatrix5x5 JT,A;
   
   unsigned int max=forward_traj_cdc.size()-1;
-  S=(*forward_traj_cdc[max].Skk);
-  C=(*forward_traj_cdc[max].Ckk);
-  JT=(*forward_traj_cdc[max].JT);
+  S=(forward_traj_cdc[max].Skk);
+  C=(forward_traj_cdc[max].Ckk);
+  JT=(forward_traj_cdc[max].JT);
   Ss=S;
   for (unsigned int m=max-1;m>0;m--){
-    S1=(*forward_traj_cdc[m].Skk);
-    C1=(*forward_traj_cdc[m].Ckk);
+    A=forward_traj_cdc[m].Ckk*JT*C.InvertSym();
+    Ss=forward_traj_cdc[m].Skk+A*(Ss-S);
 
-    A=C1*JT*C.InvertSym();
-    Ss=S1+A*(Ss-S);
-
-    S=S1;
-    C=C1;
-    JT=(*forward_traj_cdc[m].JT);
+    S=forward_traj_cdc[m].Skk;
+    C=forward_traj_cdc[m].Ckk;
+    JT=forward_traj_cdc[m].JT;
   }
 
   return NOERROR;
@@ -2767,12 +2691,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   DVector3 wirepos=origin+((pos.z()-z0w)/uz)*dir;
 
   // Save the starting values for C and S in the deque
-  for (unsigned int n=0;n<5;n++){
-    central_traj[0].Skk->operator()(n)=Sc(n);
-    for (unsigned int m=0;m<5;m++){
-      central_traj[0].Ckk->operator()(n,m)=Cc(n,m);
-    }
-  }
+  central_traj[0].Skk=Sc;
+  central_traj[0].Ckk=Cc;
 
   // doca variables
   double doca,old_doca=(pos-wirepos).Mag();
@@ -2784,15 +2704,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   bool more_measurements=true;
 
   // Initialize S0_ and perform the loop over the trajectory
-  S0_=(*central_traj[0].S);
+  S0_=central_traj[0].S;
 
   for (unsigned int k=1;k<central_traj.size();k++){
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
-    S0=(*central_traj[k].S);
-    J=(*central_traj[k].J);
-    JT=(*central_traj[k].JT);
-    Q=(*central_traj[k].Q);
+    S0=central_traj[k].S;
+    J=central_traj[k].J;
+    JT=central_traj[k].JT;
+    Q=central_traj[k].Q;
 
     // State S is perturbation about a seed S0
     //dS=Sc-S0_;
@@ -2802,15 +2722,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     Sc=S0+J*(Sc-S0_);  
     // Cc=J*(Cc*JT)+Q;   
     Cc=Q.AddSym(J*Cc*JT);
-
-    /*
-    // Copy covariance to the trajectory vector
-    for (unsigned int i=0;i<5;i++){
-      for (unsigned int j=0;j<5;j++){
-	central_traj[k].C->operator()(i,j)=Cc(i,j);
-      }
-    }
-    */
+    //Sc=central_traj[k].S+central_traj[k].J*(Sc-S0_);
+    //Cc=central_traj[k].Q.AddSym(central_traj[k].J*Cc*central_traj[k].JT);
 
     // update position based on new doca to reference trajectory
     pos.SetXYZ(central_traj[k].pos.x()-Sc(state_D)*sin(Sc(state_phi)),
@@ -3085,12 +2998,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     old_doca=doca;
 
     // Save the current state and covariance matrix in the deque
-    for (unsigned int n=0;n<5;n++){
-      central_traj[k].Skk->operator()(n)=Sc(n);
-      for (unsigned int m=0;m<5;m++){
-	central_traj[k].Ckk->operator()(n,m)=Cc(n,m);
-      }
-    }
+    central_traj[k].Skk=Sc;
+    central_traj[k].Ckk=Cc;
   } 
 
   // If chisq is still zero after the fit, something went wrong...
@@ -3139,24 +3048,20 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   DMatrix2x2 InvV; // Inverse of error matrix
 
   // Save the starting values for C and S in the deque
-  for (unsigned int n=0;n<5;n++){
-    forward_traj[0].Skk->operator()(n)=S(n);
-    for (unsigned int m=0;m<5;m++){
-      forward_traj[0].Ckk->operator()(n,m)=C(n,m);
-    }
-  }
+  forward_traj[0].Skk=S;
+  forward_traj[0].Ckk=C;
 
   // Initialize chi squared
   chisq=0;
 
-  S0_=(*forward_traj[0].S);
+  S0_=(forward_traj[0].S);
   for (unsigned int k=1;k<forward_traj.size();k++){
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
-    S0=(*forward_traj[k].S);
-    J=(*forward_traj[k].J);
-    J_T=(*forward_traj[k].JT);
-    Q=(*forward_traj[k].Q);
+    S0=(forward_traj[k].S);
+    J=(forward_traj[k].J);
+    J_T=(forward_traj[k].JT);
+    Q=(forward_traj[k].Q);
 
     // State S is perturbation about a seed S0
     //dS=S-S0_;
@@ -3192,8 +3097,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
       // The next measurement 
       M.Set(0.,v);
-      //M(0)=0.;
-      // M(1)=v;
 
       if (fit_type==kTimeBased){
 	// Compute drift distance
@@ -3218,8 +3121,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	// Measurement vector with drift distance and Lorentz-corrected 
 	// position along the wire
 	M.Set(drift,v+dv);
-	//M(0)=drift;
-	//M(1)=v+dv;
 
 	// Variance due to Lorentz correction
 	double x2=x*x;
@@ -3283,12 +3184,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
     }
 
     // Save the current state and covariance matrix in the deque
-    for (unsigned int n=0;n<5;n++){
-      forward_traj[k].Skk->operator()(n)=S(n);
-      for (unsigned int m=0;m<5;m++){
-	forward_traj[k].Ckk->operator()(n,m)=C(n,m);
-      }
-    }
+    forward_traj[k].Skk=S;
+    forward_traj[k].Ckk=C;
 
   }
   
@@ -3321,12 +3218,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   double InvV;  // inverse of variance
   
   // Save the starting values for C and S in the deque
-  for (unsigned int n=0;n<5;n++){
-    forward_traj_cdc[0].Skk->operator()(n)=S(n);
-    for (unsigned int m=0;m<5;m++){
-      forward_traj_cdc[0].Ckk->operator()(n,m)=C(n,m);
-    }
-  }
+  forward_traj_cdc[0].Skk=S;
+  forward_traj_cdc[0].Ckk=C;
 
   // position variables
   double x=S(state_x);
@@ -3347,16 +3240,16 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 			    +(y-wirepos.y())*(y-wirepos.y()));
   
   // loop over entries in the trajectory
-  S0_=(*forward_traj_cdc[0].S);
+  S0_=(forward_traj_cdc[0].S);
   for (unsigned int k=1;k<forward_traj_cdc.size()-1;k++){
     z=forward_traj_cdc[k].pos.z();
 
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
-    S0=(*forward_traj_cdc[k].S);
-    J=(*forward_traj_cdc[k].J);
-    J_T=(*forward_traj_cdc[k].JT);
-    Q=(*forward_traj_cdc[k].Q);
+    S0=(forward_traj_cdc[k].S);
+    J=(forward_traj_cdc[k].J);
+    J_T=(forward_traj_cdc[k].JT);
+    Q=(forward_traj_cdc[k].Q);
 
     // State S is perturbation about a seed S0
     //dS=S-S0_;
@@ -3594,12 +3487,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
     old_doca=doca;
  
     // Save the current state and covariance matrix in the deque
-    for (unsigned int n=0;n<5;n++){
-      forward_traj_cdc[k].Skk->operator()(n)=S(n);
-      for (unsigned int m=0;m<5;m++){
-	forward_traj_cdc[k].Ckk->operator()(n,m)=C(n,m);
-      }
-    }
+    forward_traj_cdc[k].Skk=S;
+    forward_traj_cdc[k].Ckk=C;
 
   }
 
@@ -3657,18 +3546,18 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     
     // Adjust the step size
     double sign=(dz>0)?1.:-1.;
+    double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
     if (fabs(dEdx)>EPS){
       dz=sign
 	*(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
-	/fabs(dEdx)
-	/sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+	/fabs(dEdx)/ds_dz;
     }
     if(fabs(dz)>mStepSizeZ) dz=sign*mStepSizeZ;
     if(fabs(dz)<MIN_STEP_SIZE)dz=sign*MIN_STEP_SIZE;
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    ds=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty))*dz;
+    ds=ds_dz*dz;
     GetProcessNoise(ds,Z,rho_Z_over_A,S,Q);
    
     newz=z+dz;

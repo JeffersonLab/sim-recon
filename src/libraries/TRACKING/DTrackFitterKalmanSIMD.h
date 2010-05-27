@@ -41,8 +41,8 @@ typedef struct{
 typedef struct{
   unsigned int h_id;
   DVector3 pos;
-  DMatrix5x1 *S,*Skk;
-  DMatrix5x5 *J,*JT,*Q,*Ckk;
+  DMatrix5x1 S,Skk;
+  DMatrix5x5 J,JT,Q,Ckk;
   double s,t;
   double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
 }DKalmanSIMDState_t;
@@ -70,31 +70,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     for (unsigned int i=0;i<my_fdchits.size();i++){
       delete my_fdchits[i];
     }
-    for (unsigned int i=0;i<forward_traj.size();i++){
-      delete forward_traj[i].Q;
-      delete forward_traj[i].S;
-      delete forward_traj[i].J; 
-      delete forward_traj[i].JT;
-      delete forward_traj[i].Ckk;
-      delete forward_traj[i].Skk;
-    } 
-    for (unsigned int i=0;i<forward_traj_cdc.size();i++){
-      delete forward_traj_cdc[i].Q;
-      delete forward_traj_cdc[i].S;
-      delete forward_traj_cdc[i].J; 
-      delete forward_traj_cdc[i].JT;
-      delete forward_traj_cdc[i].Ckk; 
-      delete forward_traj_cdc[i].Skk;
-    }
-    for (unsigned int i=0;i<central_traj.size();i++){
-      delete central_traj[i].Q;
-      delete central_traj[i].S;
-      delete central_traj[i].J;
-      delete central_traj[i].JT;
-      delete central_traj[i].Ckk;
-      delete central_traj[i].Skk;
-    }
-  
     my_fdchits.clear();
     my_cdchits.clear();
     central_traj.clear();
