@@ -1,6 +1,7 @@
 
 
 #include <iostream>
+#include <set>
 using namespace std;
 
 #include <DANA/DApplication.h>
@@ -33,6 +34,8 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	this->jcalib = jcalib;
 	if(!jcalib)return;
 	
+	string blank(' ',80);
+	cout<<blank<<"\r"; cout.flush(); // clear line
 	cout<<"Reading "<<namepath<<" ... "; cout.flush();
 	vector< vector<float> > Mmap;
 	jcalib->Get(namepath, Mmap);
@@ -110,27 +113,93 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 		node.LogI=node.rhoZ_overA_logI/(node.rhoZ_overA==0.0 ? 1.0:node.rhoZ_overA);
 		node.KrhoZ_overA=0.1535e-3*node.rhoZ_overA;
 	}
+	
+	// Now find the r and z boundaries that will be used during swimming
+	FindBoundaries();
 }
 
-#if 0
 //-----------------
-// FindNode
+// FindBoundaries
 //-----------------
-const DMaterialMap::MaterialNode* DMaterialMap::FindNode(DVector3 &pos) const
+void DMaterialMap::FindBoundaries(void)
 {
-	// For now, this just finds the bin in the material map the given position is in
-	// (i.e. no interpolation )
-	double pos_x = pos.X();
-	double pos_y = pos.Y();
-	double r = sqrt(pos_x*pos_x + pos_y*pos_y);
-	double z = pos.Z();
-	int ir = (int)floor((r-rmin)/dr);
-	int iz = (int)floor((z-zmin)/dz);
-	if(ir<0 || ir>=Nr || iz<0 || iz>=Nz)return NULL;
+	/// Look for boundaries where the material density changes
+	/// and record them for faster checking during swimming
 	
-	return &nodes[ir][iz];
+	// Boundaries are recorded for r(or z) bins for which ANY adjacent
+	// z(or r) bin shows a factor of 2 or more change in the 
+	// radiation length of the material.
+	//
+	// This is done by making 2 passes over every bin in the map
+	// (one for the r boundaries and one for the z) and recording
+	// the index of the bin for which an increase was detected.
+	// Doing it this way will detect a boundary multiple times
+	// (one for each bin in the direction the boundary runs).
+	// Thus, we use a set container to record the boundaries
+	// temporarily since writing the same value to it multiple
+	// times won't result in multiple entries.
+	//
+	// A final pass at the end records the r (or z) boundary values
+	// for the border between the bins in the vectors containers
+	// that are actually used by the EstimatedDistanceToBoundary
+	// method below.
+	
+	// Loop over r bins
+	set<int> iz_boundaries;
+	for(int ir=0; ir<Nr; ir++){
+		
+		// initialize boundary
+		double RadLen1 = nodes[ir][0].RadLen;
+		
+		// Loop over z bins
+		for(int iz=1; iz<Nz; iz++){
+			double RadLen2 = nodes[ir][iz].RadLen;
+			if(RadLen1<0.5*RadLen2 || RadLen2<0.5*RadLen1){
+				iz_boundaries.insert(iz);
+			}
+		}
+	}
+
+	// Loop over z bins
+	set<int> ir_boundaries;
+	for(int iz=0; iz<Nz; iz++){
+		
+		// initialize boundary
+		double RadLen1 = nodes[0][iz].RadLen;
+		
+		// Loop over r bins
+		for(int ir=1; ir<Nr; ir++){
+			double RadLen2 = nodes[ir][iz].RadLen;
+			if(RadLen1<0.5*RadLen2 || RadLen2<0.5*RadLen1){
+				ir_boundaries.insert(ir);
+			}
+		}
+	}
+
+	// Fill r_boundaries and z_boundaries with actual values of
+	// borders between the bins
+	for(set<int>::iterator iter=iz_boundaries.begin(); iter!=iz_boundaries.end(); iter++){
+		int iz = *iter;
+		z_boundaries.push_back(zmin+dz*(double)iz);
+	}
+	for(set<int>::iterator iter=ir_boundaries.begin(); iter!=ir_boundaries.end(); iter++){
+		int ir = *iter;
+		r_boundaries.push_back(rmin+dr*(double)ir);
+	}
+
+
+	// If the number of boundaries in either direction is more
+	// than half the number of bins then flag this material
+	// as having an irregular density profile.
+	irregular_density_profile = false;
+	irregular_density_profile |= (int)r_boundaries.size() > (Nr/2);
+	irregular_density_profile |= (int)z_boundaries.size() > (Nz/2);
+	if(irregular_density_profile){
+		r_boundaries.clear();
+		z_boundaries.clear();
+	}
+_DBG_<<"R boundaries:"<<r_boundaries.size()<<" Z boundaries:"<<z_boundaries.size()<<" irregular:"<<irregular_density_profile<<endl<<endl;
 }
-#endif
 
 //-----------------
 // FindMat
@@ -216,7 +285,7 @@ bool DMaterialMap::IsInMap(const DVector3 &pos) const
 //-----------------
 // EstimatedDistanceToBoundary
 //-----------------
-double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVector3 &mom, const DMagneticFieldMap *bfield)
+double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVector3 &mom)
 {
 	/// Give a very rough estimate of the distance a track at this position/momentum
 	/// will travel before seeing either a significant change in the raditation
@@ -241,47 +310,108 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	double s_to_boundary = 1.0E6;
 	if(!ENABLE_BOUNDARY_CHECK)return s_to_boundary; // low-level, catch-all opportunity to NOT do this.
 	
+	// This gets called often enough it is worth trying to bail as quickly
+	// as possible. We check if the point is outside the boundary and headed
+	// away from the map first.
+	double z = pos.Z();
+	double pz = mom.Z();
+	if(pz>0.0)
+		if(z>zmax)return s_to_boundary;
+	else
+		if(z<zmin)return s_to_boundary;
+
 	double pos_x = pos.X();
 	double pos_y = pos.Y();
-
 	double mom_x = mom.X();
 	double mom_y = mom.Y();
-	
+	double x_dot_p = pos_x*mom_x + pos_y*mom_y;
 	double r = sqrt(pos_x*pos_x + pos_y*pos_y);
-	double z = pos.Z();
-	double pr = sqrt(mom_x*mom_x + mom_y*mom_y);
-	double pz = mom.Z();
-	// The value of pr is positive definite, but should be signed since the 
-	// momentum could be pointing back towards the beamline. To determine
-	// the sign, take the dot product of the mopmentum with the position
-	// in the x-y plane.
-	if((pos_x*mom_x + pos_y*mom_y) < 0.0) pr = -pr;
+	if(x_dot_p>0.0)
+		if(r>rmax)return s_to_boundary;
+	else
+		if(r<rmin)return s_to_boundary;
+	
+
+	double pr = sqrt(mom_x*mom_x + mom_y*mom_y) * (x_dot_p>0 ? +1.0:-1.0); // sign of pr depends on x_dot_p
 	
 	// Unit vector pointing in momentum direction in r-z space
 	double mod = sqrt(pr*pr + pz*pz);
 	if(mod<1.0E-6)return s_to_boundary; // for when momentum is purely in phi direction
-	DVector2 p_hat(pr/mod, pz/mod);
+	double p_hatR = pr/mod;
+	double p_hatZ = pz/mod;
+	DVector2 p_hat(p_hatR, p_hatZ);
 
 	// Get shortest distance to boundary of entire map
-	s_to_boundary = DistanceToBox(DVector2(r, z), p_hat, rmin, rmax, zmin, zmax);
+	s_to_boundary = DistanceToBox(r, z, p_hatR, p_hatZ, rmin, rmax, zmin, zmax);
 
 	// If point is outside of map, then return now. s_to_boundary has valid answer
-	if(!IsInMap(pos))return s_to_boundary;
+	if(r<=rmin || r>=rmax || z<=zmin || z>=zmax)return s_to_boundary;
+	
+	// At this point we know that the point is inside of this map. We need to
+	// search for boundaries within this map to find the closest one to the
+	// track. If the map is marked as "irregular" then we do a bin by bin 
+	// search for changes in density. Otherwise, we loop over the boundary
+	// map already generated during construction.
+	if(irregular_density_profile){
+		return EstimatedDistanceToBoundarySearch(r, z, p_hatR, p_hatZ, s_to_boundary);
+	}
+
+	
+	// Loop over boundaries stored in z_boundaries
+	for(unsigned int i=0; i<z_boundaries.size(); i++){
+		double dist = (z_boundaries[i]-z)/p_hatZ;
+		if(!finite(dist))continue;
+		if(dist<0.0)continue; // boundary is behind us
+		if(dist>s_to_boundary)continue; // boundary intersection is already further than closest boundary
+		
+		// Now we must calculate whether this intersection point is
+		// still inside the map.
+		double my_r = r + dist*p_hatR;
+		if(my_r>=rmin && my_r<=rmax)s_to_boundary = dist;
+	}
+	
+	// Loop over boundaries stored in r_boundaries
+	for(unsigned int i=0; i<r_boundaries.size(); i++){
+		double dist = (r_boundaries[i]-r)/p_hatR;
+		if(!finite(dist))continue;
+		if(dist<0.0)continue; // boundary is behind us
+		if(dist>s_to_boundary)continue; // boundary intersection is already further than closest boundary
+		
+		// Now we must calculate whether this intersection point is
+		// still inside the map.
+		double my_z = z + dist*p_hatZ;
+		if(my_z>=zmin && my_z<=zmax)s_to_boundary = dist;
+	}
+
+	return s_to_boundary;
+}
+
+//-----------------
+// EstimatedDistanceToBoundarySearch
+//-----------------
+double DMaterialMap::EstimatedDistanceToBoundarySearch(double r, double z, double p_hatR, double p_hatZ, double &s_to_boundary)
+{
+	/// Estimate the distance to the nearest boundary (marked by a
+	/// a change in radiation length by a factor of 2 or more) by
+	/// doing an exhaustive bin-by-bin search in the direction of
+	/// the momentum vector in r-z space. This should only get called
+	/// for maps with an irregular density profile (i.e. one whose
+	/// boundaries do not appear to be in pure r or pure z directions.
 
 	// If we got this far then the point is inside of this map. We need to check
 	// if there is a jump in the radiation length of a cell that is in the path
 	// of the trajectory so we can return that. Otherwise, we'll return the distance
-	// to the edge of the map.
+	// passed in via s_to_boundary.
 
 	// We want to form a vector pointing in the direction of momentum in r,z space
 	// but with a magnitude such that we are taking a step across a single grid
 	// point in either r or z, whichever is smallest.
-	double scale_r=fabs(dr/p_hat.X());
-	double scale_z=fabs(dz/p_hat.Y());
+	double scale_r=fabs(dr/p_hatR);
+	double scale_z=fabs(dz/p_hatZ);
 	double scale=1000.0;
 	if(finite(scale_r) && scale_r<scale)scale = scale_r;
 	if(finite(scale_z) && scale_z<scale)scale = scale_z;
-	DVector2 delta_rz = p_hat*scale;
+	DVector2 delta_rz(scale*p_hatR, scale*p_hatZ);
 
 	// Find radiation length of our starting cell
 	int ir_start = (int)floor((r-rmin)/dr);
@@ -313,7 +443,9 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 			double rmax_cell = rmin_cell + dr;
 			double zmin_cell = (double)last_iz*dz + zmin;
 			double zmax_cell = zmin_cell + dz;
-			double s_to_cell = DistanceToBox(last_rzpos, p_hat, rmin_cell, rmax_cell, zmin_cell, zmax_cell);
+			double last_rzposX = last_rzpos.X();
+			double last_rzposY = last_rzpos.Y();
+			double s_to_cell = DistanceToBox(last_rzposX, last_rzposY, p_hatR, p_hatZ, rmin_cell, rmax_cell, zmin_cell, zmax_cell);
 			if(s_to_cell==1.0E6)s_to_cell = 0.0;
 			double my_s_to_boundary = (last_rzpos-rzpos_start).Mod() + s_to_cell;
 			if(my_s_to_boundary < s_to_boundary)s_to_boundary = my_s_to_boundary;
@@ -333,35 +465,39 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 //-----------------
 // DistanceToBox
 //-----------------
-double DMaterialMap::DistanceToBox(DVector2 pos, DVector2 dir, double xmin, double xmax, double ymin, double ymax)
+double DMaterialMap::DistanceToBox(double &posx, double &posy, double &xdir, double &ydir, double xmin, double xmax, double ymin, double ymax)
 {
 	/// Given a point in 2-D space, a direction, and the limits of a box, find the
 	/// closest distance to box edge in the given direction.
 	
 	// Calculate intersection distances to all 4 boundaries of map
-	double dist_x1 = (xmin-pos.X())/dir.X();
-	double dist_x2 = (xmax-pos.X())/dir.X();
-	double dist_y1 = (ymin-pos.Y())/dir.Y();
-	double dist_y2 = (ymax-pos.Y())/dir.Y();
+	double dist_x1 = (xmin-posx)/xdir;
+	double dist_x2 = (xmax-posx)/xdir;
+	double dist_y1 = (ymin-posy)/ydir;
+	double dist_y2 = (ymax-posy)/ydir;
 
 	// Make list of all positive, finite distances that are
 	// on border of box.
 	double shortestDist = 1.0E6;
-	if(finite(dist_x1) && dist_x1>=0.0){
-		double y = (pos + dist_x1*dir).Y();
-		if(y>=ymin && y<=ymax && dist_x1 < shortestDist ) shortestDist = dist_x1;
+	if(finite(dist_x1) && dist_x1>=0.0 && dist_x1 < shortestDist){
+		//double y = (pos + dist_x1*dir).Y();
+		double y = posy + dist_x1*ydir;
+		if(y>=ymin && y<=ymax) shortestDist = dist_x1;
 	}
-	if(finite(dist_x2) && dist_x2>=0.0){
-		double y = (pos + dist_x2*dir).Y();
-		if(y>=ymin && y<=ymax && dist_x2 < shortestDist ) shortestDist = dist_x2;
+	if(finite(dist_x2) && dist_x2>=0.0 && dist_x2 < shortestDist){
+		//double y = (pos + dist_x2*dir).Y();
+		double y = posy + dist_x2*ydir;
+		if(y>=ymin && y<=ymax) shortestDist = dist_x2;
 	}
-	if(finite(dist_y1) && dist_y1>=0.0){
-		double x = (pos + dist_y1*dir).X();
-		if(x>=xmin && x<=xmax && dist_y1 < shortestDist ) shortestDist = dist_y1;
+	if(finite(dist_y1) && dist_y1>=0.0 && dist_y1 < shortestDist){
+		//double x = (pos + dist_y1*dir).X();
+		double x = posx + dist_y1*xdir;
+		if(x>=xmin && x<=xmax) shortestDist = dist_y1;
 	}
-	if(finite(dist_y2) && dist_y2>=0.0){
-		double x = (pos + dist_y2*dir).X();
-		if(x>=xmin && x<=xmax && dist_y2 < shortestDist ) shortestDist = dist_y2;
+	if(finite(dist_y2) && dist_y2>=0.0 && dist_y2 < shortestDist){
+		//double x = (pos + dist_y2*dir).X();
+		double x = posx + dist_y2*xdir;
+		if(x>=xmin && x<=xmax) shortestDist = dist_y2;
 	}
   	
 	// Return shortest distance

@@ -29,6 +29,7 @@ class DMaterialMap{
 		};
 		
 		inline const MaterialNode* FindNode(DVector3 &pos) const;
+		
 		jerror_t FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const;
 		jerror_t FindMatALT1(DVector3 &pos,double &KrhoZ_overA,
 				 double &rhoZ_overA, double &logI, 
@@ -38,8 +39,9 @@ class DMaterialMap{
 				       double &K_rho_Z_over_A,
 				       double &rho_Z_over_A,double &LogI) const;
 		bool IsInMap(const DVector3 &pos) const;
-		double EstimatedDistanceToBoundary(const DVector3 &pos, const DVector3 &mom, const DMagneticFieldMap *bfield);
-		double DistanceToBox(DVector2 pos, DVector2 dir, double xmin, double xmax, double ymin, double ymax);
+		double EstimatedDistanceToBoundary(const DVector3 &pos, const DVector3 &mom);
+		double EstimatedDistanceToBoundarySearch(double r, double z, double p_hatR, double p_hatZ, double &s_to_boundary);
+		double DistanceToBox(double &x, double &y, double &xdir, double &ydir, double xmin, double xmax, double ymin, double ymax);
 
 		string GetNamepath(void) const {return namepath;}
 		double GetRmin(void) const {return rmin;}
@@ -54,6 +56,8 @@ class DMaterialMap{
 	private:
 		DMaterialMap(); // Forbid default constructor
 
+		void FindBoundaries(void);
+
 		string namepath;
 		vector<vector<MaterialNode> > nodes; // nodes[ir][iz]
 		int Nr, Nz;		// Number of nodes in R and Z
@@ -65,6 +69,10 @@ class DMaterialMap{
 		
 		int MAX_BOUNDARY_SEARCH_STEPS;
 		bool ENABLE_BOUNDARY_CHECK;
+		
+		bool irregular_density_profile; // Set to true if significant density changes do not follow r or z lines
+		vector<double> r_boundaries;
+		vector<double> z_boundaries;
 
 		JCalibration *jcalib;
 };
