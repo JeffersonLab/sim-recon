@@ -92,6 +92,7 @@ class DReferenceTrajectory{
 		void SetDGeometry(const DGeometry *geom){this->geom = geom;}
 		const DRootGeom* GetDRootGeom(void) const {return RootGeom;}
 		const DGeometry* GetDGeometry(void) const {return geom;}
+		const DMagneticFieldMap* GetBfield(void) const {return bfield;}
 		double GetMass(void) const {return mass;}
 		double GetStepSize(void) const {return step_size;}
 		void SetMass(double mass){this->mass = mass;}
