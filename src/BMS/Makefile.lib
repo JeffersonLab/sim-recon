@@ -59,7 +59,6 @@ $(DEP_DIR)/%.d : %.cpp
 	$(DCXX) -MM -MT "$(LIBNAME)($(basename $(notdir $@)).o)" $(CXXFLAGS) $< > $@
 $(DEP_DIR)/%.d : %.cc
 	mkdir -p $(DEP_DIR)
-	echo basename = $(basename $(notdir $@))
 	$(DCXX) -MM -MT "$(LIBNAME)($(basename $(notdir $@)).o)" $(CXXFLAGS) $< > $@
 $(DEP_DIR)/%.d : %.cxx
 	mkdir -p $(DEP_DIR)
