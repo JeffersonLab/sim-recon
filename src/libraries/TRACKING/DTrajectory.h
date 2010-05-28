@@ -38,6 +38,7 @@ class DTrajectory{
 		typedef struct {
 			double x,y,z;
 			double px,py,pz;
+			double P;
 			double s; // distance along RT
 			double t; // flight time
 			double dP; // momentum loss between previous step and this one
@@ -53,11 +54,10 @@ class DTrajectory{
 		inline void CalcDirs(ThreeVector &pos, ThreeVector &p, RTdirs &dirs);
 		inline void CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p=NULL);
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0);
-		bool AdjustForMaterial(swim_step_t *swim_step);
+		//bool AdjustForMaterial(swim_step_t *swim_step, double &h);
+		int GetMaterialInfo(double P, DVector3 &pos, DVector3 &mom, double &dP_dx, double &X0, double &s_to_boundary);
+		//double dPdx(double ptot, double KrhoZ_overA, double rhoZ_overA,double LogI) const;
 		
-		double GetStepSize(void){return step_size;}
-		void SetStepSize(double step_size){this->step_size=step_size;}
-
 		unsigned int Nswim_steps;
 		swim_step_t *swim_steps;
 	
@@ -65,7 +65,6 @@ class DTrajectory{
 	
 		bool own_swim_steps;
 		unsigned int Max_swim_steps;
-		double step_size;
 		
 		double mass;
 		
@@ -73,6 +72,9 @@ class DTrajectory{
 		double ZMAX;
 		double RMAX;
 		double R2MAX;
+		double BOUNDARY_STEP_FRACTION;
+		double MIN_STEP_SIZE;
+		double MAX_STEP_SIZE;
 		
 		bool check_material_boundaries;
 		

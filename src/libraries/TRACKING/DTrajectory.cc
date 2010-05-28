@@ -20,13 +20,18 @@ DTrajectory::DTrajectory(const DMagneticFieldMap *bfield, const DGeometry *geom)
 	Max_swim_steps = 10000;
 	swim_steps = new swim_step_t[Max_swim_steps];
 	own_swim_steps = true;
-	step_size = 3.0; // step size of zero means use adaptive step sizes
 	
+	// Initialize some values from configuration parameters
 	ZMIN = -17.0;
 	ZMAX = 650.0;
 	RMAX = 88.0;
-	R2MAX = RMAX*RMAX;
 	mass = 0.1396;
+	BOUNDARY_STEP_FRACTION = 0.80;
+	MIN_STEP_SIZE = 0.05;	// cm
+	MAX_STEP_SIZE = 3.0;		// cm
+	
+	
+	R2MAX = RMAX*RMAX;
 	
 	check_material_boundaries = true;
 	
@@ -193,9 +198,6 @@ void DTrajectory::CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p
 	y = delta_x*xdir_y + delta_y*ydir_y + delta_z*zdir_y;
 	z = delta_x*xdir_z + delta_y*ydir_z + delta_z*zdir_z;
 
-//_DBG_<<"Ro="<<Ro<<" delta_phi="<<delta_phi<<" h="<<h<<endl;
-//_DBG_<<"delta_x="<<delta_x<<" delta_y="<<delta_y<<" delta_z="<<delta_z<<" delta_phi="<<delta_phi<<" h="<<h<<endl;
-
 	// If a non-NULL argument is passed in for "p" then the caller wants us also
 	// to calculate the updated momentum at the end of the step. If they pass
 	// NULL (default if argument is omitted), then they aren't interested in that
@@ -243,6 +245,7 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 	swim_step->px = mom.x();
 	swim_step->py = mom.y();
 	swim_step->pz = mom.z();
+	swim_step->P = mom.Mag();
 	swim_step->s = 0.0;
 	swim_step->t = 0.0;
 	swim_step->dP = 0.0;
@@ -252,9 +255,6 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 	
 	bool DO_MATERIAL_LOSS = (mass!=0.0) && (geom!=NULL);
 
-	double h = step_size;
-	double h_2 = h/2.0;
-
 	RTdirs dirs0, dirs1, dirs2, dirs3;
 	
 	double x0[3], x1[3], x2[3], x3[3];
@@ -263,17 +263,99 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 	
 	for(Nswim_steps=1; Nswim_steps<(Max_swim_steps-1); Nswim_steps++){
 	
-		// Setup references to make code more readable.
-		// Note that these all point to the values at the start of the step
-		double &x = swim_step->x;
-		double &y = swim_step->y;
-		double &z = swim_step->z;
+		// Setup references to point to begining of step
+		// (and to make code more readable.)
+		double &x  = swim_step->x;
+		double &y  = swim_step->y;
+		double &z  = swim_step->z;
 		double &px = swim_step->px;
 		double &py = swim_step->py;
 		double &pz = swim_step->pz;
-		double &s = swim_step->s;
+		double &s  = swim_step->s;
+		
+		double p0[3] = {px, py, pz}; // momentum vector at start of step
+		
+		// Increment to the end step. Note that the references
+		// defined above will still point to the start step.
+		swim_step_t *start_step=swim_step;
+		swim_step++;
+		swim_step_t *end_step = swim_step;
 
-		// Do 4th order Runge-Kutta
+		// Initialize step size to maximum so it can be overwritten based
+		// on material losses below
+		double h = MAX_STEP_SIZE;
+
+		// The total momentum of the particle is kept in local variable "P"
+		// We set it here to the value at the beginning of the step. If
+		// material losses are being included below, they will decrease it
+		// by half of the momentum loss of the step so that the step is
+		// actually calculated using the median momentum of the particle
+		// over the step. Values used for calculating the MULS errors will
+		// also use the median momentum for the step.
+		double P = start_step->P;
+
+		// Get the dPdx and radiation length of the material at the 
+		// beginning of the step (if we are including material losses
+		// in the swimming.)
+		double momentum_scale_factor = 1.0;
+		if(DO_MATERIAL_LOSS){
+			double dP_dx, X0, s_to_boundary=MAX_STEP_SIZE;
+			DVector3 pos(x, y, z);
+			DVector3 mom(px, py, pz);
+			bool particle_stopped = GetMaterialInfo(P, pos, mom, dP_dx, X0, s_to_boundary);
+			if(particle_stopped) break;
+			
+			// Calculate step size based on 100keV/c momentum loss
+			double step_size_ploss = 0.0001/dP_dx;
+			
+			// Keep the minimum step size
+			if(s_to_boundary   < h) h =s_to_boundary;
+			if(step_size_ploss < h) h =step_size_ploss;
+			if( h < MIN_STEP_SIZE ) h = MIN_STEP_SIZE;
+			
+			// Use step size to calculate momentum loss and radiation lengths
+			double &dP = end_step->dP;
+			dP = dP_dx*h;
+			double radlen = h/X0;
+			
+			// Adjust momentum vector to have a magnitude equal to the median
+			// magnitude over the step
+			momentum_scale_factor = (start_step->P - dP/2.0)/start_step->P;
+			P *= momentum_scale_factor;
+			p0[0] *= momentum_scale_factor;
+			p0[1] *= momentum_scale_factor;
+			p0[2] *= momentum_scale_factor;
+			
+			// Update counters used to keep track of material for calculating MULS errors
+			if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
+				// n.b. we use P for previous step when should be that same as for the
+				// current one before we adjusted it above.
+				double beta=1./sqrt(1.+mass*mass/P/P);
+				double theta0 = 0.0136/(P*beta)*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
+				double theta02 = theta0*theta0;
+				double s = start_step->s + h;
+				end_step->itheta02 = start_step->itheta02 + theta02;
+				end_step->itheta02s = start_step->itheta02s + s*theta02;
+				end_step->itheta02s2 = start_step->itheta02s2 + s*s*theta02;
+			}
+		}else{
+			// Set these values to reasonable defaults when not
+			// adjusting for material. It's possible we could skip
+			// this since these values should only be looked at
+			// when material adjustments are in effect. That will
+			// be left as a later optimization though.
+			end_step->t = 0.0;
+			end_step->dP = 0.0;
+			end_step->itheta02 = 0.0;
+			end_step->itheta02s = 0.0;
+			end_step->itheta02s2 = 0.0;
+		}
+		
+		double h_2 = h/2.0;
+
+		// Do either 2nd or 4th order Runge-Kutta
+		//
+		// For 4th order Runge-Kutta:
 		//
 		// Each of the following is a vector representing the full step in position.
 		// k1 = projection of full step using Bfield at starting position
@@ -291,9 +373,34 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		// p = p1/6 + p2/3 + p3/3 + p4/6
 		//
 
-		double p0[3] = {px, py, pz};
 
-#if 0
+#if 1	// 1=midpoint method  0= 4th order Runge-Kutta
+
+		// Midpoint (2nd order Runge-Kutta)
+
+		// k1
+		x0[0]=x;  x0[1]=y;  x0[2]=z;
+		CalcDirs(x0, p0, dirs0);
+
+		// k2
+		CalcPosMom(h_2, dirs0, k1_2);
+		x1[0]=x+k1_2[0];  x1[1]=y+k1_2[1];  x1[2]=z+k1_2[2];
+		CalcDirs(x1, p0, dirs1);
+		CalcPosMom(h, dirs1, k2, p2);
+
+		// new_pos = pos + k2
+		end_step->x = x + k2[0];
+		end_step->y = y + k2[1];
+		end_step->z = z + k2[2];
+
+		// new_mom = p2
+		end_step->px = p2[0];
+		end_step->py = p2[1];
+		end_step->pz = p2[2];
+
+#else
+		// 4th order Runge-Kutta
+
 		// k1
 		x0[0]=x;  x0[1]=y;  x0[2]=z;
 		CalcDirs(x0, p0, dirs0);
@@ -315,143 +422,150 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 		x3[0]=x+k3[0];  x3[1]=y+k3[1];  x3[2]=z+k3[2];
 		CalcDirs(x3, p0, dirs3);
 		CalcPosMom(h, dirs3, k4, p4);
-#else
 
-		// k1
-		x0[0]=x;  x0[1]=y;  x0[2]=z;
-		CalcDirs(x0, p0, dirs0);
-
-		// k2
-		CalcPosMom(h_2, dirs0, k1_2);
-		x1[0]=x+k1_2[0];  x1[1]=y+k1_2[1];  x1[2]=z+k1_2[2];
-		CalcDirs(x1, p0, dirs1);
-		CalcPosMom(h, dirs1, k2, p2);
-#endif
-
-		// Go to next swim step
-		swim_step++;
-
-#if 0
 		// new_pos = pos + k1/6 + k2/3 + k3/3 + k4/6
-		swim_step->x = x + (k1[0]+k4[0])/6.0 + (k2[0]+k3[0])/3.0;
-		swim_step->y = y + (k1[1]+k4[1])/6.0 + (k2[1]+k3[1])/3.0;
-		swim_step->z = z + (k1[2]+k4[2])/6.0 + (k2[2]+k3[2])/3.0;
+		end_step->x = x + (k1[0]+k4[0])/6.0 + (k2[0]+k3[0])/3.0;
+		end_step->y = y + (k1[1]+k4[1])/6.0 + (k2[1]+k3[1])/3.0;
+		end_step->z = z + (k1[2]+k4[2])/6.0 + (k2[2]+k3[2])/3.0;
 
 		// new_mom = p1/6 + p2/3 + p3/3 + p4/6
-		swim_step->px = (p1[0]+p4[0])/6.0 + (p2[0]+p3[0])/3.0;
-		swim_step->py = (p1[1]+p4[1])/6.0 + (p2[1]+p3[1])/3.0;
-		swim_step->pz = (p1[2]+p4[2])/6.0 + (p2[2]+p3[2])/3.0;
-#else
-		// new_pos = pos + k2
-		swim_step->x = x + k2[0];
-		swim_step->y = y + k2[1];
-		swim_step->z = z + k2[2];
-
-		// new_mom = p2
-		swim_step->px = p2[0];
-		swim_step->py = p2[1];
-		swim_step->pz = p2[2];
+		end_step->px = (p1[0]+p4[0])/6.0 + (p2[0]+p3[0])/3.0;
+		end_step->py = (p1[1]+p4[1])/6.0 + (p2[1]+p3[1])/3.0;
+		end_step->pz = (p1[2]+p4[2])/6.0 + (p2[2]+p3[2])/3.0;
 #endif
 
 		
-		// distance along trajectory
-		swim_step->s = s+h;
+		// Update distance along trajectory
+		end_step->s = start_step->s + h;
 		
-		// Optionally account for material
-		if(DO_MATERIAL_LOSS){
-			bool particle_stopped = AdjustForMaterial(swim_step);
-			if(particle_stopped) break;
-		}else{
-			// Set these values to reasonable defaults when not
-			// adjusting for material. It's possible we could skip
-			// this since these values should only be looked at
-			// when material adjustments are in effect. That will
-			// be left as a later optimization though.
-			swim_step->t = 0.0;
-			swim_step->dP = 0.0;
-			swim_step->itheta02 = 0.0;
-			swim_step->itheta02s = 0.0;
-			swim_step->itheta02s2 = 0.0;
-		}
-		
+		// If including material losses, adjust momemtum
+		end_step->px *= momentum_scale_factor;
+		end_step->py *= momentum_scale_factor;
+		end_step->pz *= momentum_scale_factor;
+		end_step->P = P*momentum_scale_factor;
+
 		// Check if we have hit a boundary such that we should stop swimming
-		if(swim_step->s >= smax)break; // max trajectory length
-		if(swim_step->z <= ZMIN)break; // upstream z-boundary
-		if(swim_step->z >= ZMAX)break; // downstream z-boundary
-		double R2 = swim_step->x*swim_step->x + swim_step->y*swim_step->y;
+		if(end_step->s >= smax)break; // max trajectory length
+		if(end_step->z <= ZMIN)break; // upstream z-boundary
+		if(end_step->z >= ZMAX)break; // downstream z-boundary
+		double R2 = end_step->x*end_step->x + end_step->y*end_step->y;
 		if(R2 >= R2MAX)break;  // r-boundary
 
 	}
-	
+
 	// If we broke out of loop, then increment Nswim_steps
 	if(Nswim_steps<Max_swim_steps)Nswim_steps++;
 	
-//_DBG_<<"x,y,z="<<swim_step->x<<", "<<swim_step->y<<", "<<swim_step->z<<endl;
-
-	if(Nswim_steps >= (Max_swim_steps-1)){
+	if(Nswim_steps > Max_swim_steps){
 		_DBG_<<"Maximum number of steps ("<<Max_swim_steps<<") reached. Swimming truncated."<<endl;
 	}
 }
 
 //---------------------------------
-// AdjustForMaterial
+// GetMaterialInfo
 //---------------------------------
-bool DTrajectory::AdjustForMaterial(swim_step_t *swim_step)
+int DTrajectory::GetMaterialInfo(double P, DVector3 &pos, DVector3 &mom, double &dP_dx, double &X0, double &s_to_boundary)
 {
-	/// Adjust the swim step based on the material traversed between the previous
-	/// step and this one.
-	/// The return value is a boolen that will be true if the particle lost all of its
-	/// energy and therefore stopped. A boolean false is returned otherwise.
+	/// Determine the material properties for the given position and momentum
+	/// and use them to calculate the rate of momemtum loss per cm, radiation
+	/// length of material, and estimated distance to material boundary.
+	///
+	/// It may seem redundant to pass in both the magnitude of the momentum 
+	/// as well as the momentum vector. Do this is just an optimization that
+	/// saves a semi-expensive calculation of the magnitude here.
+	///
+	/// Momentum loss per cm of the material is returned in GeV/c per cm
+	/// This follows the July 2008 PDG section 27.2 ppg 268-270.
+	///
+	/// Return value is value returned by call to DGeometry::FindMatALT1
 
-	swim_step_t *prev_swim_step = swim_step;
-	prev_swim_step--; // potentially unsafe, but speedy
-	
-	// Total momentum at begining of step
-	double P = sqrt(swim_step->px*swim_step->px + swim_step->py*swim_step->py + swim_step->pz*swim_step->pz);
-	
-	// Step size to integrate over
-	double ds = swim_step->s - prev_swim_step->s;
 
 	// Get Material properties for begining of step
-	double KrhoZ_overA, LogI, rhoZ_overA, X0, s_to_boundary;
+	double KrhoZ_overA, LogI, rhoZ_overA;
 	int err;
-	DVector3 pos(swim_step->x, swim_step->y, swim_step->z);
-	DVector3 mom(swim_step->px, swim_step->py, swim_step->pz);
 	if(check_material_boundaries){
 		err = geom->FindMatALT1(pos, mom, KrhoZ_overA, rhoZ_overA,LogI, X0, &s_to_boundary);
 	}else{
 		err = geom->FindMatALT1(pos, mom, KrhoZ_overA, rhoZ_overA,LogI, X0);
 	}
-	double delta_s = swim_step->s - prev_swim_step->s;
-	double radlen = delta_s/X0;
-	//double radlen = 2.0E-5; // replace with call/calculation
 
-	// Calculate momentum loss
-	double dPdx = 0.0; // replace with call/calculation
-	swim_step->dP = dPdx*ds;
-	if(swim_step->dP >= P)swim_step->dP = P; // don't allow negative momentum
+	// Calculate rate of momentum loss
 
-	// Apply momentum loss for the step
-	double momentum_scale_factor = (P-swim_step->dP)/P;
-	swim_step->px *= momentum_scale_factor;
-	swim_step->py *= momentum_scale_factor;
-	swim_step->pz *= momentum_scale_factor;
-
-	// Update counters used to keep track of material for calculating MULS errors
-	if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
-		
-		// n.b. we use P for previous step when should be that same as for the
-		// current one before we adjusted it above.
-		double beta=1./sqrt(1.+mass*mass/P/P);
-		double theta0 = 0.0136/(P*beta)*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
-		double theta02 = theta0*theta0;
-		double &s = swim_step->s;
-		swim_step->itheta02 = prev_swim_step->itheta02 + theta02;
-		swim_step->itheta02s = prev_swim_step->itheta02s + s*theta02;
-		swim_step->itheta02s2 = prev_swim_step->itheta02s2 + s*s*theta02;
+	// Since we are dividing by mass below we should verify that mass is not zero
+	if(mass==0.0){
+		_DBG_<<"DTrajectory::GetMaterialInfo called for mass=0.0 particle!"<<endl;
+		dP_dx = 0.0;
+		return 0.0; // no ionization losses for neutrals
 	}
 	
-	// return true if particle stopped
-	return (swim_step->dP >= P);
+	double gammabeta = P/mass;
+	double gammabeta2=gammabeta*gammabeta;
+	double gamma = sqrt(gammabeta2+1);
+	double beta = gammabeta/gamma;
+	double beta2=beta*beta;
+	double me = 0.511E-3;
+	double m_ratio=me/mass;
+	double two_me_gammabeta2=2.*me*gammabeta2;
+
+	double Tmax = two_me_gammabeta2/(1.0+2.0*gamma*m_ratio+m_ratio*m_ratio);
+
+	// Density effect
+	double delta=0.;	
+	double X=log10(gammabeta);
+	double X_0,X_1;
+	double Cbar=2.*(LogI-log(28.816e-9*sqrt(rhoZ_overA)))+1.;
+	if (rhoZ_overA>0.01){ // not a gas
+	  if (LogI<-1.6118){ // I<100
+	    if (Cbar<=3.681) X_0=0.2;
+	    else X_0=0.326*Cbar-1.;
+	    X_1=2.;
+	  }
+	  else{
+	    if (Cbar<=5.215) X_0=0.2;
+	    else X_0=0.326*Cbar-1.5;
+	    X_1=3.;
+	  }
+	}
+	else { // gases
+	  X_1=4.;
+	  if (Cbar<=9.5) X_0=1.6;
+	  else if (Cbar>9.5 && Cbar<=10.) X_0=1.7;
+	  else if (Cbar>10 && Cbar<=10.5) X_0=1.8;    
+	  else if (Cbar>10.5 && Cbar<=11.) X_0=1.9;
+	  else if (Cbar>11.0 && Cbar<=12.25) X_0=2.;
+	  else if (Cbar>12.25 && Cbar<=13.804){
+	    X_0=2.;
+	    X_1=5.;
+	  }
+	  else {
+	    X_0=0.326*Cbar-2.5;
+	    X_1=5.;
+	  } 
+	}
+	if (X>=X_0 && X<X_1)
+	  delta=4.606*X-Cbar+(Cbar-4.606*X_0)*pow((X_1-X)/(X_1-X_0),3.);
+	else if (X>=X_1)
+	  delta= 4.606*X-Cbar;  	
+
+	double dEdx = KrhoZ_overA/beta2*(log(two_me_gammabeta2*Tmax) 
+					 -2.*LogI - 2.0*beta2 -delta);
+
+	dP_dx = dEdx/beta;
+
+	// Empirical correction for really low momentum particles. We
+	// hardcode the ugly numbers just to save CPU cycles. The
+	// more readable formulas are:
+	//
+	//  g = 0.350/sqrt(-log(0.06)) = 0.31663529 = 1/3.15820764
+	//
+	//  dP_dx *= 1.0 + exp(-pow(ptot/g,2.0))
+	//
+	// Note that for a momentum of greater than 450MeV/c this correction
+	// is less than 1 percent so we apply that threshold here
+	if(P<0.450){
+		double a = P/0.31663529;
+		dP_dx *= 1.0 + exp(-a*a);
+	}
+	return err;
 }
 
