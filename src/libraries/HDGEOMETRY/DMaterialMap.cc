@@ -198,7 +198,6 @@ void DMaterialMap::FindBoundaries(void)
 		r_boundaries.clear();
 		z_boundaries.clear();
 	}
-_DBG_<<"R boundaries:"<<r_boundaries.size()<<" Z boundaries:"<<z_boundaries.size()<<" irregular:"<<irregular_density_profile<<endl<<endl;
 }
 
 //-----------------
