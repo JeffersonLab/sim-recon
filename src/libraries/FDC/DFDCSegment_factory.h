@@ -88,12 +88,11 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		double xavg[3],var_avg;
 		
 		// Track parameters
-		double tanl,z0,zvertex,D,kappa,phi0;
+		double tanl,z0,zvertex,D,phi0;
 		double var_tanl,Phi1;
 		double charge;
 		unsigned int ref_plane;
 	
-		vector<fdc_track_t>fdc_track;
 		double chisq;
 
                 const DMagneticFieldMap *bfield;

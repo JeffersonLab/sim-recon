@@ -44,7 +44,7 @@ DFDCSegment_factory::DFDCSegment_factory() {
 /// default destructor -- closes log file
 ///
 DFDCSegment_factory::~DFDCSegment_factory() {
-        delete _log;
+        delete _log;	
 }
 ///
 /// DFDCSegment_factory::brun():
@@ -68,25 +68,17 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 
   vector<const DFDCPseudo*>pseudopoints;
   eventLoop->Get(pseudopoints);  
-  
-  // Copy into local vector
-  vector<DFDCPseudo*>points;
-  for (vector<const DFDCPseudo*>::iterator i=pseudopoints.begin();
-       i!=pseudopoints.end();i++){
-    DFDCPseudo *temp=new DFDCPseudo();
-    *temp=*(*i);
-    temp->ds=0.;  //initialize correction along wire
-    temp->dw=0.;  // initialize correction transverse to wire
-    points.push_back(temp);
-  }
-  
+ 
   // Skip segment finding if there aren't enough points to form a sensible 
   // segment 
   if (pseudopoints.size()>=3){
     // Group pseudopoints by package
     vector<DFDCPseudo*>package[4];
-    for (vector<DFDCPseudo*>::iterator i=points.begin();i!=points.end();i++){
-      package[((*i)->wire->layer-1)/6].push_back(*i);
+    //for (vector<DFDCPseudo*>::iterator i=points.begin();i!=points.end();i++){
+    for (vector<const DFDCPseudo*>::const_iterator i=pseudopoints.begin();
+	 i!=pseudopoints.end();i++){
+      // cast away the constness so that we can use the status word later
+      package[((*i)->wire->layer-1)/6].push_back(const_cast<DFDCPseudo *>(*i));
     }
     
     // Find the segments in each package
@@ -115,9 +107,10 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
     double x_int0,temp,y_int0;
     double denom= N[0]*N[0]+N[1]*N[1];
     double numer=dist_to_origin+r2*N[2];
+    double ratio=numer/denom;
    
-    x_int0=-N[0]*numer/denom;
-    y_int0=-N[1]*numer/denom;
+    x_int0=-N[0]*ratio;
+    y_int0=-N[1]*ratio;
     temp=denom*r2-numer*numer;
     if (temp<0){    
       bad[m]=1;
@@ -128,24 +121,24 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
     temp=sqrt(temp)/denom;
     
     // Choose sign of square root based on proximity to actual measurements
-    double diffx1=x_int0+N[1]*temp;
-    double diffy1=y_int0-N[0]*temp;
-    double diffx2=x_int0-N[1]*temp;
-    double diffy2=y_int0+N[0]*temp;
-    if (m<n-1){
-      diffx1-=points[m]->x;
-      diffx2-=points[m]->x;
-      diffy1-=points[m]->y;
-      diffy2-=points[m]->y;		       
-    }
+    double deltax=N[1]*temp;
+    double deltay=-N[0]*temp;
+    double x1=x_int0+deltax;
+    double y1=y_int0+deltay;
+    double x2=x_int0-deltax;
+    double y2=y_int0-deltay;
+    double diffx1=x1-points[m]->x;
+    double diffx2=x2-points[m]->x;
+    double diffy1=y1-points[m]->y;
+    double diffy2=y2-points[m]->y;		       
     
     if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
-      XYZ(m,0)=x_int0-N[1]*temp;
-      XYZ(m,1)=y_int0+N[0]*temp;
+      XYZ(m,0)=x2;
+      XYZ(m,1)=y2;
     }
     else{
-      XYZ(m,0)=x_int0+N[1]*temp;
-      XYZ(m,1)=y_int0-N[0]*temp;
+      XYZ(m,0)=x1;
+      XYZ(m,1)=y1;
     }
   }
   // Fake target point
@@ -165,7 +158,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
   // Linear regression to find z0, tanl   
   double sumv=0.,sumx=0.;
   double sumy=0.,sumxx=0.,sumxy=0.;
-  double sperp=0.,sperp_old=0.,chord,ratio,Delta;
+  double sperp=0.,sperp_old=0.,ratio,Delta;
   double z=0,zlast=0;
   //for (unsigned int k=start;k<n-1;k++){
   for (unsigned int k=start;k<n;k++){
@@ -174,8 +167,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
     if (!bad[k]){
       double diffx=XYZ(k,0)-XYZ(start,0);
       double diffy=XYZ(k,1)-XYZ(start,1);
-      chord=sqrt(diffx*diffx+diffy*diffy);
-      ratio=chord/2./rc; 
+      ratio=sqrt(diffx*diffx+diffy*diffy)/(2.*rc); 
       // Make sure the argument for the arcsin does not go out of range...
       if (ratio>1.) 
 	sperp=2.*rc*(M_PI/2.);
@@ -183,11 +175,12 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
 	sperp=2.*rc*asin(ratio);
       z=XYZ(k,2);
       // Assume errors in s dominated by errors in R 
-      sumv+=1./CR(k,k);
-      sumy+=sperp/CR(k,k);
-      sumx+=XYZ(k,2)/CR(k,k);
-      sumxx+=XYZ(k,2)*XYZ(k,2)/CR(k,k);
-      sumxy+=sperp*XYZ(k,2)/CR(k,k);
+      double inv_var=1./CR(k,k);
+      sumv+=inv_var;
+      sumy+=sperp*inv_var;
+      sumx+=XYZ(k,2)*inv_var;
+      sumxx+=XYZ(k,2)*XYZ(k,2)*inv_var;
+      sumxy+=sperp*XYZ(k,2)*inv_var;
     }
   }
   Delta=sumv*sumxx-sumx*sumx;
@@ -236,8 +229,6 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     double cosp=cos(Phi1+sperp/rc);
     XYZ(k,0)=xc+rc*cosp;
     XYZ(k,1)=yc+rc*sinp;
-    if (k<n-1) // Exclude target point...
-      fdc_track[k].s=(XYZ(k,2)-zvertex)/sin(atan(tanl)); // path length 
  
     // Error analysis.  We ignore errors in N because there doesn't seem to 
     // be any obvious established way to estimate errors in eigenvalues for 
@@ -509,17 +500,10 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   unsigned int num_points=points.size()+1;
   DMatrix CRPhi(num_points,num_points); 
  
-  // Clear supplemental track info vector
-  fdc_track.clear();
-  fdc_track_t temp;
-  temp.hit_id=0;
-  temp.dx=temp.dy=temp.s=temp.chi2=0.;
-  fdc_track.assign(num_points-1,temp);
-   
   // Fill initial matrices for R and RPhi measurements
   XYZ(num_points-1,2)=Z_TARGET;
   for (unsigned int m=0;m<points.size();m++){
-    XYZ(m,2)=points[m]->wire->origin(2);
+    XYZ(m,2)=points[m]->wire->origin.z();
 
     Phi=atan2(points[m]->y,points[m]->x);
     CRPhi(m,m)
@@ -585,18 +569,11 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   // Store residuals and path length for each measurement
   chisq=0.;
   for (unsigned int m=0;m<points.size();m++){
-    fdc_track[m].hit_id=m;
-    double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl; 
-    double sinp=sin(Phi1+sperp/rc);
-    double cosp=cos(Phi1+sperp/rc);
-    XYZ(m,0)=xc+rc*cosp;
-    XYZ(m,1)=yc+rc*sinp;
-    fdc_track[m].dx=XYZ(m,0)-points[m]->x; // residuals
-    fdc_track[m].dy=XYZ(m,1)-points[m]->y;
-    fdc_track[m].s=(XYZ(m,2)-zvertex)/sin(atan(tanl)); // path length 
-    fdc_track[m].chi2=(fdc_track[m].dx*fdc_track[m].dx
-                       +fdc_track[m].dy*fdc_track[m].dy)/CR(m,m);
-    chisq+=fdc_track[m].chi2;
+    double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl;
+    double phi_s=Phi1+sperp/rc;
+    double dx=xc+rc*cos(phi_s)-points[m]->x; // residuals
+    double dy=yc+rc*sin(phi_s)-points[m]->y;
+    chisq+=(dx*dx+dy*dy)/CR(m,m);
   }
   return NOERROR;
 }
@@ -609,14 +586,14 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
 jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
    // Put indices for the first point in each plane before the most downstream
   // plane in the vector x_list.
-  double old_z=points[0]->wire->origin(2);
+  double old_z=points[0]->wire->origin.z();
   vector<unsigned int>x_list;
   x_list.push_back(0);
   for (unsigned int i=0;i<points.size();i++){
-    if (points[i]->wire->origin(2)!=old_z){
+    if (points[i]->wire->origin.z()!=old_z){
       x_list.push_back(i);
     }
-    old_z=points[i]->wire->origin(2);
+    old_z=points[i]->wire->origin.z();
   }
   x_list.push_back(points.size()); 
 
@@ -638,7 +615,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	chisq=1.e8;
 
 	// Clear track parameters
-	kappa=tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
+	tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
 	charge=1.;
 	
 	// Point in the current plane in the package 
@@ -686,7 +663,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	    delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
 	    if (delta<ADJACENT_MATCH_RADIUS && 
 		abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
-		&& neighbors[j]->wire->origin(2)==points[k]->wire->origin(2)){
+		&& neighbors[j]->wire->origin.z()==points[k]->wire->origin.z()){
 	      points[k]->status|=USED_IN_SEGMENT;
 	      neighbors.push_back(points[k]);
 	      do_sort=true;
@@ -710,9 +687,6 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
 		
 	if (error==NOERROR){  
-	  // guess for curvature
-	  kappa=charge/2./rc;  
-	  
 	  // Estimate for azimuthal angle
 	  phi0=atan2(-xc,yc); 
 	  if (charge<0) phi0+=M_PI;
@@ -722,22 +696,15 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	  
 	  // Creat a new segment
 	  DFDCSegment *segment = new DFDCSegment;	
-	  DMatrix Seed(5,1);
-	  DMatrix Cov(5,5);	  
+
 	  // Initialize seed track parameters
-	  Seed(0,0)=kappa;    // Curvature 
-	  Seed(1,0)=phi0;      // Phi
-	  Seed(2,0)=D;       // D=distance of closest approach to origin   
-	  Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
-	  Seed(4,0)=zvertex;       // z-position at closest approach to origin
-	  for (unsigned int i=0;i<5;i++) Cov(i,i)=1.;
-	  
-	  segment->S.ResizeTo(Seed);
-	  segment->S=Seed;
-	  segment->cov.ResizeTo(Cov);
-	  segment->cov=Cov;
+	  segment->q=charge; //charge 
+	  segment->phi0=phi0;      // Phi
+	  segment->D=D;       // D=distance of closest approach to origin   
+	  segment->tanl=tanl;     // tan(lambda), lambda=dip angle
+	  segment->z_vertex=zvertex;// z-position at closest approach to origin
+
 	  segment->hits=neighbors;
-	  segment->track=fdc_track;
 	  segment->xc=xc;
 	  segment->yc=yc;
 	  segment->rc=rc;
@@ -758,24 +725,10 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
   return NOERROR;
 }
 
-// Track position using Riemann Helical fit parameters
-jerror_t DFDCSegment_factory::GetHelicalTrackPosition(double z,
-                                            const DFDCSegment *segment,
-                                                      double &xpos,
-                                                      double &ypos){
-  double charge=segment->S(0,0)/fabs(segment->S(0,0));
-  double sperp=charge*(z-segment->hits[0]->wire->origin(2))/segment->S(3,0);
- 
-  xpos=segment->xc+segment->rc*cos(segment->Phi1+sperp/segment->rc);
-  ypos=segment->yc+segment->rc*sin(segment->Phi1+sperp/segment->rc);
- 
-  return NOERROR;
-}
-
 // Linear regression to find charge
 double DFDCSegment_factory::GetCharge(unsigned int n,DMatrix XYZ, DMatrix CR, 
 				      DMatrix CRPhi){
-  double var=0.; 
+  double inv_var=0.; 
   double sumv=0.;
   double sumy=0.;
   double sumx=0.;
@@ -791,12 +744,13 @@ double DFDCSegment_factory::GetCharge(unsigned int n,DMatrix XYZ, DMatrix CR,
       else phi_z+=2.*M_PI;
     }
     r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
-    var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
-    sumv+=1./var;
-    sumy+=phi_z/var;
-    sumx+=tempz/var;
-    sumxx+=tempz*tempz/var;
-    sumxy+=phi_z*tempz/var;
+    //var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
+    inv_var=r2/(CRPhi(k,k)+phi_z*phi_z*CR(k,k));
+    sumv+=inv_var;
+    sumy+=phi_z*inv_var;
+    sumx+=tempz*inv_var;
+    sumxx+=tempz*tempz*inv_var;
+    sumxy+=phi_z*tempz*inv_var;
     phi_old=phi_z;
   }
   Delta=sumv*sumxx-sumx*sumx;
@@ -872,7 +826,7 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     double sinangle=point->wire->udir(0);
     x=XYZ(m,0);
     y=XYZ(m,1);
-    z=point->wire->origin(2);
+    z=point->wire->origin.z();
     double delta_x=0,delta_y=0;   
     // Variances based on expected resolution
     double sigx2=FDC_X_RESOLUTION*FDC_X_RESOLUTION;

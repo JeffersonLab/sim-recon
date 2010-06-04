@@ -38,8 +38,6 @@ class DFDCSegment : public JObject {
 		///
 		DFDCSegment(){}
 
-	        DMatrix S;   // state vector
-		DMatrix cov; // ... and its covariance matrix
 		double chisq;
 
 		// circle parameters
@@ -47,12 +45,18 @@ class DFDCSegment : public JObject {
 		// azimuthal angle of the intersection of the helical path to 
 		// the most downstream plane in a given package containing a
 		// hit
-		double Phi1;		                
+		double Phi1;		               
+		// "vertex" z position and the phi angle there
+		double z_vertex,phi0;
+		// tangent of the dip angle
+		double tanl;
+		// charge (+/-1)
+		double q;
+		// Distance of closest approach to the beam line
+		double D;
 
 		// List of pseudopoints belonging to this track segment
 		vector<DFDCPseudo *>hits;	
-		// Supplementary track info
-		vector<fdc_track_t>track;
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "xc", "%3.2f", xc);
