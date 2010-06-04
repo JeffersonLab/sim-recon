@@ -705,10 +705,10 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(
   double z=segment->hits[0]->wire->origin.z();
 
   // Track parameters
-  double kappa=segment->S(0,0);
-  double phi0=segment->S(1,0);
-  double tanl=segment->S(3,0);
-  double z0=segment->S(4,0);
+  double kappa=segment->q/(2.*segment->rc);
+  double phi0=segment->phi0;
+  double tanl=segment->tanl;
+  double z0=segment->z_vertex;
 
   // Useful intermediate variables
   double cosp=cos(phi0);
