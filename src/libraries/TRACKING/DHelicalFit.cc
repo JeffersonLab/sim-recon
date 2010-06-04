@@ -512,14 +512,27 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   for (int i=0;i<3;i++){
     N[i]/=sqrt(sum);
   }
- 
+  /*
+  DVector3 testn(1.,(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
+		 /(A(0,1)*A(2,1)-(A(1,1)-lambda_min)*A(0,2)),
+		 (A(2,0)*(A(1,1)-lambda_min)-A(1,0)*A(2,1))
+		 /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min)));
+  testn.SetMag(1.0);
+  testn.Print();
+  printf("N %f %f %f\n",N[0],N[1],N[2]);
+  */
+
   // Distance to origin
   c_origin=-(N[0]*Xavg(0,0)+N[1]*Xavg(0,1)+N[2]*Xavg(0,2));
 
   // Center and radius of the circle
-  x0=-N[0]/2./N[2];
-  y0=-N[1]/2./N[2];
-  r0=sqrt(1.-N[2]*N[2]-4.*c_origin*N[2])/2./fabs(N[2]);
+  double one_over_2Nz=1./(2.*N[2]);
+  //x0=-N[0]/2./N[2];
+  //y0=-N[1]/2./N[2];
+  //r0=sqrt(1.-N[2]*N[2]-4.*c_origin*N[2])/2./fabs(N[2]);
+  x0=-N[0]*one_over_2Nz;
+  y0=-N[1]*one_over_2Nz;
+  r0=sqrt(1.-N[2]*N[2]-4.*c_origin*N[2])*fabs(one_over_2Nz);
  
   // Phi value at "vertex"
   phi=atan2(-x0,y0);  
@@ -769,8 +782,9 @@ jerror_t DHelicalFit::FitLineRiemann(){
       //      bad[m]=1;
     }
     else{
-      x_int0=-N[0]*numer/denom;
-      y_int0=-N[1]*numer/denom;
+      double ratio=numer/denom;
+      x_int0=-N[0]*ratio;
+      y_int0=-N[1]*ratio;
       temp=denom*r2-numer*numer;
       if (temp<0){  // Skip point if the intersection gives nonsense
 	bad[m]=1;
@@ -783,17 +797,23 @@ jerror_t DHelicalFit::FitLineRiemann(){
       temp=sqrt(temp)/denom;
       
       // Choose sign of square root based on proximity to actual measurements
-      double diffx1=x_int0+N[1]*temp-hits[m]->x;
-      double diffy1=y_int0-N[0]*temp-hits[m]->y;
-      double diffx2=x_int0-N[1]*temp-hits[m]->x;
-      double diffy2=y_int0+N[0]*temp-hits[m]->y;
+      double deltax=N[1]*temp;
+      double deltay=-N[0]*temp;
+      double x1=x_int0+deltax;
+      double y1=y_int0+deltay;
+      double x2=x_int0-deltax;
+      double y2=y_int0-deltay;
+      double diffx1=x1-hits[m]->x;
+      double diffy1=y1-hits[m]->y;
+      double diffx2=x2-hits[m]->x;
+      double diffy2=y2-hits[m]->y;
       if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
-	temphit->x=x_int0-N[1]*temp;
-	temphit->y=y_int0+N[0]*temp;
+	temphit->x=x2;
+	temphit->y=y2;
       }
       else{
-	temphit->x=x_int0+N[1]*temp;
-	temphit->y=y_int0-N[0]*temp;
+	temphit->x=x1;
+	temphit->y=y1;
       }
     }
     projections.push_back(temphit);
@@ -812,7 +832,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
   // Linear regression to find z0, tanl   
   unsigned int n=projections.size();
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
-  double sperp=0.,sperp_old=0., chord=0,ratio=0, Delta;
+  double sperp=0.,sperp_old=0., ratio=0, Delta;
   double z_last=0.,z=0.;
   for (unsigned int k=start;k<n;k++){
     if (!bad[k]){
@@ -821,8 +841,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
 
       double diffx=projections[k]->x-projections[start]->x;
       double diffy=projections[k]->y-projections[start]->y;   
-      chord=sqrt(diffx*diffx+diffy*diffy);
-      ratio=chord/2./r0; 
+      ratio=sqrt(diffx*diffx+diffy*diffy)/(2.*r0); 
       // Make sure the argument for the arcsin does not go out of range...
       if (ratio>1.) 
 	sperp=2.*r0*(M_PI/2.);
@@ -834,11 +853,12 @@ jerror_t DHelicalFit::FitLineRiemann(){
       z=projections[k]->z;
 
       // Assume errors in s dominated by errors in R 
-      sumv+=1./CR(k,k);
-      sumy+=sperp/CR(k,k);
-      sumx+=projections[k]->z/CR(k,k);
-      sumxx+=projections[k]->z*projections[k]->z/CR(k,k);
-      sumxy+=sperp*projections[k]->z/CR(k,k);
+      double weight=1./CR(k,k);
+      sumv+=weight;
+      sumy+=sperp*weight;
+      sumx+=projections[k]->z*weight;
+      sumxx+=projections[k]->z*projections[k]->z*weight;
+      sumxy+=sperp*projections[k]->z*weight;
     }
   }
   Delta=sumv*sumxx-sumx*sumx;
