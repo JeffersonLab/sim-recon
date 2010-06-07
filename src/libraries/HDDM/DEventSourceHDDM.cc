@@ -17,7 +17,7 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
 
-#include <TVector2.h>
+#include <DVector2.h>
 #include <DEventSourceHDDM.h>
 #include <FDC/DFDCGeometry.h>
 #include <FCAL/DFCALGeometry.h>
@@ -924,7 +924,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(s_HDDM_t *hddm_s,  JFactory<DFCALHit
 			 
 			 // Get position of blocks on front face. (This should really come from
 			 // hdgeant directly so the poisitions can be shifted in mcsmear.)
-			 TVector2 pos = fcalGeom.positionOnFace(block->row, block->column);
+			 DVector2 pos = fcalGeom.positionOnFace(block->row, block->column);
 			 
 			 // Real hits
 			 if(tag==""){
