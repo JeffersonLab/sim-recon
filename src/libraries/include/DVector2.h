@@ -85,13 +85,22 @@ class DVector2{
   double Phi() const {return atan2(Y(),X());}
 
   // Angular difference between two vectors
-  double DeltaPhi(const DVector2 &v1) const {
+  double DeltaPhi(const DVector2 &v1) const { 
+    double twopi=2.*M_PI;
     double dphi=Phi()-v1.Phi();
-    while (dphi>=M_PI) dphi-=2.*M_PI;
-    while (dphi<-M_PI) dphi+=2.*M_PI;
+    while (dphi>=M_PI) dphi-=twopi;
+    while (dphi<-M_PI) dphi+=twopi;
     return dphi;
   }
-
+  
+  // return phi angle between 0 and 2pi
+  double Phi_0_2pi(double angle){
+    double twopi=2.*M_PI;
+    while (angle>=twopi) angle-=twopi;
+    while (angle<0) angle+=twopi;
+    return angle;
+  }
+  
 
   void Print(){
     cout << "DVector2 (x,y)=("<<X()<<","<<Y()<<") (rho,phi)=("<< Mod()
