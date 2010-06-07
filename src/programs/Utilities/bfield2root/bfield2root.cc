@@ -76,7 +76,14 @@ int main(int narg, char *argv[])
 				double y = r*sin(phi);
 				
 				double Bx, By, Bz;
-				bfield->GetField(x, y, z-Z0, Bx, By, Bz);
+				double dBxdx, dBxdy, dBxdz;
+				double dBydx, dBydy, dBydz;
+				double dBzdx, dBzdy, dBzdz;
+
+				bfield->GetFieldAndGradient(x, y, z-Z0, Bx, By, Bz, 
+					dBxdx, dBxdy, dBxdz,
+					dBydx, dBydy, dBydz,
+					dBzdx, dBzdy, dBzdz);
 				
 				TVector3 B(Bx, By, Bz);
 				double Br = B.Dot(TVector3(x, y, 0.0))/sqrt(x*x + y*y);
@@ -104,17 +111,63 @@ int main(int narg, char *argv[])
 	Bz_vs_r_vs_z->SetYTitle("r (cm)");
 	Bz_vs_r_vs_z->SetStats(0);
 	TH2D *Btot_vs_r_vs_z = (TH2D*)Bz_vs_r_vs_z->Clone("Btot_vs_r_vs_z");
+	TH2D *dBtot_vs_r_vs_z = (TH2D*)Bz_vs_r_vs_z->Clone("dBtot_vs_r_vs_z");
 	for(int ibin=1; ibin<=Bz_vs_r_vs_z->GetNbinsX(); ibin++){
 		double z = Bz_vs_r_vs_z->GetXaxis()->GetBinCenter(ibin);
 		for(int jbin=1; jbin<=Bz_vs_r_vs_z->GetNbinsY(); jbin++){
 			double r = Bz_vs_r_vs_z->GetYaxis()->GetBinCenter(jbin);
 			
 			double Bx, By, Bz;
-			bfield->GetField(r, 0.0, z-Z0, Bx, By, Bz);
+			double dBxdx, dBxdy, dBxdz;
+			double dBydx, dBydy, dBydz;
+			double dBzdx, dBzdy, dBzdz;
+
+			bfield->GetFieldAndGradient(r, 0.0, z-Z0, Bx, By, Bz, 
+				dBxdx, dBxdy, dBxdz,
+				dBydx, dBydy, dBydz,
+				dBzdx, dBzdy, dBzdz);
 			double Btot = sqrt(Bx*Bx + By*By + Bz*Bz);
+			
+			// Gradient of magnitude
+			TVector3 gradient(dBxdx*Bx/Btot + dBydx*By/Btot + dBzdx*Bz/Btot,
+			                  dBxdy*Bx/Btot + dBydy*By/Btot + dBzdy*Bz/Btot,
+					          dBxdz*Bx/Btot + dBydz*By/Btot + dBzdz*Bz/Btot);
+			double dBtot = gradient.Mag();
 			
 			Bz_vs_r_vs_z->SetBinContent(ibin, jbin, Bz);
 			Btot_vs_r_vs_z->SetBinContent(ibin, jbin, Btot);
+			dBtot_vs_r_vs_z->SetBinContent(ibin, jbin, dBtot);
+		}
+	}
+
+	// Zoom in to TOF
+	TH2D *Btot_vs_r_vs_z_tof = new TH2D("Btot_vs_r_vs_z_tof", "", 61, 590.0, 650.0, 200, 76.0, 151.0);
+	Btot_vs_r_vs_z_tof->SetXTitle("z (cm)");
+	Btot_vs_r_vs_z_tof->SetYTitle("r (cm)");
+	Btot_vs_r_vs_z_tof->SetStats(0);
+	for(int ibin=1; ibin<=Btot_vs_r_vs_z_tof->GetNbinsX(); ibin++){
+		double z = Btot_vs_r_vs_z_tof->GetXaxis()->GetBinCenter(ibin);
+		for(int jbin=1; jbin<=Btot_vs_r_vs_z_tof->GetNbinsY(); jbin++){
+			double r = Btot_vs_r_vs_z_tof->GetYaxis()->GetBinCenter(jbin);
+			
+			double Bx, By, Bz;
+			double dBxdx, dBxdy, dBxdz;
+			double dBydx, dBydy, dBydz;
+			double dBzdx, dBzdy, dBzdz;
+
+			bfield->GetFieldAndGradient(r, 0.0, z-Z0, Bx, By, Bz, 
+				dBxdx, dBxdy, dBxdz,
+				dBydx, dBydy, dBydz,
+				dBzdx, dBzdy, dBzdz);
+			double Btot = sqrt(Bx*Bx + By*By + Bz*Bz);
+			
+			// Gradient of magnitude
+			TVector3 gradient(dBxdx*Bx/Btot + dBydx*By/Btot + dBzdx*Bz/Btot,
+			                  dBxdy*Bx/Btot + dBydy*By/Btot + dBzdy*Bz/Btot,
+					          dBxdz*Bx/Btot + dBydz*By/Btot + dBzdz*Bz/Btot);
+			double dBtot = gradient.Mag();
+			
+			Btot_vs_r_vs_z_tof->SetBinContent(ibin, jbin, Btot);
 		}
 	}
 
