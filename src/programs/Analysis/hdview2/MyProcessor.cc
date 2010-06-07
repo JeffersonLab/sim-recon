@@ -47,6 +47,7 @@ using namespace std;
 #include "PID/DPhoton.h"
 #include "PID/DTwoGammaFit.h"
 #include "BCAL/DHDDMBCALHit.h"
+#include "DVector2.h"
 
 extern hdv_mainframe *hdvmf;
 
@@ -257,8 +258,12 @@ void MyProcessor::FillGraphics(void)
 			
 			int color = (cdctrackhits[i]->tdrift>-20 && cdctrackhits[i]->tdrift<400) ? kCyan:kYellow;
 			DGraphicSet gset(color, kLine, 1.0);
-			gset.points.push_back(wire->origin-(wire->L/2.0)*wire->udir);
-			gset.points.push_back(wire->origin+(wire->L/2.0)*wire->udir);
+			DVector3 dpoint=wire->origin-(wire->L/2.0)*wire->udir;
+			TVector3 tpoint(dpoint.X(),dpoint.Y(),dpoint.Z());
+			gset.points.push_back(tpoint);
+			dpoint=wire->origin+(wire->L/2.0)*wire->udir;
+			tpoint.SetXYZ(dpoint.X(),dpoint.Y(),dpoint.Z());
+			gset.points.push_back(tpoint);
 			graphics.push_back(gset);
 			
 			// Rings for drift times.
@@ -298,8 +303,12 @@ void MyProcessor::FillGraphics(void)
 			// Wire
 			int color = (fdchit->t>-50 && fdchit->t<400) ? kCyan:kYellow;
 			DGraphicSet gset(color, kLine, 1.0);
-			gset.points.push_back(wire->origin-(wire->L/2.0)*wire->udir);
-			gset.points.push_back(wire->origin+(wire->L/2.0)*wire->udir);
+			DVector3 dpoint=wire->origin-(wire->L/2.0)*wire->udir;
+			TVector3 tpoint(dpoint.X(),dpoint.Y(),dpoint.Z());
+			gset.points.push_back(tpoint);
+			dpoint=wire->origin+(wire->L/2.0)*wire->udir;
+			tpoint.SetXYZ(dpoint.X(),dpoint.Y(),dpoint.Z());
+			gset.points.push_back(tpoint);
 			graphics.push_back(gset);
 		}		
 	}
@@ -311,7 +320,9 @@ void MyProcessor::FillGraphics(void)
 		DGraphicSet gsetp(46, kMarker, 0.5);
 		
 		for(unsigned int i=0; i<fdcints.size(); i++){
-			gsetp.points.push_back(fdcints[i]->pos);
+		  TVector3 tpos(fdcints[i]->pos.X(),fdcints[i]->pos.Y(),
+				fdcints[i]->pos.Z());
+		  gsetp.points.push_back(tpos);
 		}
 		graphics.push_back(gsetp);
 	}
@@ -436,7 +447,7 @@ void MyProcessor::FillGraphics(void)
 			for(unsigned int i=0; i<mcfcalhits.size(); i++){
 				const DFCALHit *hit = mcfcalhits[i];
 
-				TVector2 pos_face = fgeom->positionOnFace(hit->row, hit->column);
+				DVector2 pos_face = fgeom->positionOnFace(hit->row, hit->column);
 				TVector3 pos(pos_face.X(), pos_face.Y(), FCAL_Zmin);
 				gset.points.push_back(pos);
 			}
@@ -496,7 +507,10 @@ void MyProcessor::FillGraphics(void)
 			// Draw on all frames except FCAL frame
 			DGraphicSet gset(kRed, kMarker, 1.25);
 			gset.marker_style = is_bcal ? 22:3;
-			gset.points.push_back(photon->getPositionCal());
+			TVector3 tpos(photon->getPositionCal().X(),
+				      photon->getPositionCal().Y(),
+				      photon->getPositionCal().Z());
+			gset.points.push_back(tpos);
 			graphics.push_back(gset);
 			
 			// For BCAL hits, don't draw them on FCAL pane
@@ -537,8 +551,8 @@ void MyProcessor::FillGraphics(void)
 			if(who!=DPhoton::kFcal && who!=DPhoton::kBcal)continue;
 			if(who==DPhoton::kFcal && !hdvmf->GetCheckButton("thrown_photons_fcal"))continue;
 			if(who==DPhoton::kBcal && !hdvmf->GetCheckButton("thrown_photons_bcal"))continue;
-						
-			gset.points.push_back(pos);
+			TVector3 tpos(pos.X(),pos.Y(),pos.Z());
+			gset.points.push_back(tpos);
 			
 			// Only draw on FCAL pane if photon hits FCAL
 			if(who==DPhoton::kBcal)continue;
@@ -576,7 +590,8 @@ void MyProcessor::FillGraphics(void)
 			if(who==DPhoton::kBcal && !hdvmf->GetCheckButton("thrown_charged_bcal"))continue;
 			
 			DGraphicSet gset(thrown->charge()>0.0 ? kBlue:kRed, kMarker, 1.25);
-			gset.points.push_back(pos);
+			TVector3 tpos(pos.X(),pos.Y(),pos.Z());
+			gset.points.push_back(tpos);
 			graphics.push_back(gset);
 			
 			//double dist2 = 6.0 + 2.0*thrown->momentum().Mag();
@@ -613,7 +628,8 @@ void MyProcessor::FillGraphics(void)
 			if(who==DPhoton::kBcal && !hdvmf->GetCheckButton("recon_charged_bcal"))continue;
 			
 			DGraphicSet gset(track->charge()>0.0 ? kBlue:kRed, kMarker, 1.25);
-			gset.points.push_back(pos);
+			TVector3 tpos(pos.X(),pos.Y(),pos.Z());
+			gset.points.push_back(tpos);
 			graphics.push_back(gset);
 			
 			if(who==DPhoton::kBcal)continue; // Don't draw tracks hitting BCAL on FCAL pane
@@ -938,7 +954,8 @@ void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, dou
 	DGraphicSet gset(color, kLine, size);
 	DReferenceTrajectory::swim_step_t *step = rt.swim_steps;
 	for(int i=0; i<rt.Nswim_steps; i++, step++){
-		gset.points.push_back(step->origin);
+	  TVector3 tpoint(step->origin.X(),step->origin.Y(),step->origin.Z());
+		gset.points.push_back(tpoint);
 	}
 	
 	// Push the graphics set onto the stack
