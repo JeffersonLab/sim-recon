@@ -10,7 +10,7 @@
 using namespace std;
 
 #include "DFCALGeometry.h"
-#include "TVector2.h"
+#include "DVector2.h"
 
 //---------------------------------
 // DFCALGeometry    (Constructor)
@@ -28,7 +28,7 @@ m_numActiveBlocks( 0 )
 			
 			// transform to beam axis
 			m_positionOnFace[row][col] = 
-			   TVector2(  ( col - kMidBlock ) * blockSize(),
+			   DVector2(  ( col - kMidBlock ) * blockSize(),
 					     ( row - kMidBlock ) * blockSize() );
 			
 			double thisRadius = m_positionOnFace[row][col].Mod();
@@ -85,7 +85,7 @@ DFCALGeometry::column( float x ) const
 	return static_cast<int>( x / blockSize() + kMidBlock );
 }
 
-TVector2
+DVector2
 DFCALGeometry::positionOnFace( int row, int column ) const
 { 
 	assert(    row >= 0 &&    row < kBlocksTall );
@@ -94,7 +94,7 @@ DFCALGeometry::positionOnFace( int row, int column ) const
 	return m_positionOnFace[row][column]; 
 }
 
-TVector2
+DVector2
 DFCALGeometry::positionOnFace( int channel ) const
 {
 	assert( channel >= 0 && channel < m_numActiveBlocks );

@@ -12,26 +12,8 @@
 #include <JANA/JObject.h>
 using namespace jana;
 
-#include "TVector2.h"
+#include "DVector2.h"
 #include "units.h"
-
-/*
-class Vector2 {
-	
-public:
-	
-	Vector2() : m_x( 0 ), m_y( 0 ) {}
-	Vector2( double x, double y ) : m_x( x ), m_y( y ) {}
-	
-	double Mod( void ) const { return sqrt( m_x * m_x +
-											m_y * m_y ); }
-	
-private:
-	
-	double m_x;
-	double m_y;
-};
-*/
 
 class DFCALGeometry : public JObject {
 
@@ -66,8 +48,8 @@ public:
 	int  numActiveBlocks() const { return m_numActiveBlocks; }
 
 	
-	TVector2 positionOnFace( int row, int column ) const;
-	TVector2 positionOnFace( int channel ) const;
+	DVector2 positionOnFace( int row, int column ) const;
+	DVector2 positionOnFace( int channel ) const;
 	
 	int channel( int row, int column ) const;
 
@@ -88,7 +70,7 @@ public:
 private:
 
 	bool   m_activeBlock[kBlocksTall][kBlocksWide];
-	TVector2 m_positionOnFace[kBlocksTall][kBlocksWide];
+	DVector2 m_positionOnFace[kBlocksTall][kBlocksWide];
 
 	int    m_channelNumber[kBlocksTall][kBlocksWide];
 	int    m_row[kMaxChannels];
