@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <set>
+#include <TMath.h>
 using namespace std;
 
 #define TOF_SIGMA 0.080   // TOF resolution in ns
@@ -274,16 +275,18 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   fitter->GetdEdx(dtrack->rt,dEdx_list);
  
   // Truncated mean:  loop over a subset of this list, throwing away a
-  // number of the highest dE/dx values.
+  // number of the highest dE/dx values.  Since the list is sorted according 
+  // to dEdx values, with smaller values being earlier in the list, we need 
+  // only loop over a fraction of the total number of hits.
   double dEdx=0.,dEdx_diff=0.;
   double N=0.;
   double mass=dtrack->rt->GetMass();
-  for (unsigned int i=0;i<dEdx_list.size();i++){
+  for (unsigned int i=0;i<dEdx_list.size()/2;i++){
     double p=dEdx_list[i].p;
     double dx=dEdx_list[i].dx;
     double dE=dEdx_list[i].dE;						
     double my_dedx=dE/dx;
-	 if(my_dedx > 0.0020)break; // cut off end of tail of distribution
+    //	 if(my_dedx > 0.0020)break; // cut off end of tail of distribution
 
     // Get the expected (most probable) dE/dx for a particle with this mass
     // and momentum for this hit
