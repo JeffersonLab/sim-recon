@@ -680,7 +680,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	DHelicalFit fit;
 	for (unsigned int m=0;m<mysegments.size();m++){
 	  for (unsigned int n=0;n<mysegments[m]->hits.size();n++){
-	    DFDCPseudo *hit=mysegments[m]->hits[n];
+	    const DFDCPseudo *hit=mysegments[m]->hits[n];
 	    fit.AddHit(hit);
 	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
 	  }
