@@ -1,6 +1,6 @@
 // residFDCAnode: class to calculate drift distance, distance of closest
 // approach, point of closest approach, residual and error on residual
-// for the CDC for a given set of track parameters
+// for the FDC anode wires for a given set of track parameters
 
 #include "residFDCAnode.h"
 
@@ -40,7 +40,14 @@ void residFDCAnode::calcResids(){
       residThis = innerResidFrac*(distThis - docaThis)/errorFDCA;
     }
     posWireThis = line.poca(pocaThis);
-    if (debug_level > 2) cout << "residFDCAnode: j = " << j << " dist = " << distThis << " doca = " << docaThis << " poca xyzt = " << pocaThis.getX() << ' ' << pocaThis.getY() << ' ' << pocaThis.getZ() << ' ' << pocaThis.getT()/c << " resid = " << residThis << endl;
+    if (debug_level > 2) cout << "residFDCAnode: j = " << j
+			      << " dist = " << distThis
+			      << " doca = " << docaThis
+			      << " poca xyzt = " << pocaThis.getX()
+			      << ' ' << pocaThis.getY()
+			      << ' ' << pocaThis.getZ()
+			      << ' ' << pocaThis.getT()/c
+			      << " resid = " << residThis << endl;
     errorThis = errorFDCA;
     doca.push_back(docaThis);
     dist.push_back(distThis);
