@@ -19,12 +19,6 @@
 using namespace std;
 
 typedef struct{
-  double x,y,z;
-  double covx,covxy,covy;
-  double dE;
-}DKalmanSIMDHit_t;
-
-typedef struct{
   int status;
   double residual;
   const DCDCTrackHit *hit;
@@ -33,8 +27,7 @@ typedef struct{
 typedef struct{
   double t,cosa,sina;
   double uwire,vstrip,z;
-  double covu,covv;
-  double xres,yres,dE;
+  double xres,yres;
   double nr,nz;
 }DKalmanSIMDFDCHit_t;
 
@@ -259,6 +252,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
+  TH2F *Hsteptype;
 };
 
 
