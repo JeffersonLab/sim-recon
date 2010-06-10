@@ -231,7 +231,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		swim_step->Ro = stepper.GetRo();
 		swim_step->s = s;
 		swim_step->t = t;
-		
+	
 		//magnitude of momentum and beta
 		double p=swim_step->mom.Mag();
 		double beta=1./sqrt(1.+mass*mass/p/p);
@@ -459,10 +459,12 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	if (step && step->origin.Z()>600.
 	    ){
 	  double p=step->mom.Mag();
-	  double ds=(origin.z()-step->origin.z())*p/step->mom.z();
-	  pos(2)=origin.z();
-	  pos(0)=step->origin.x()+ds*step->mom.x()/p;
-	  pos(1)=step->origin.y()+ds*step->mom.y()/p;
+	  //double ds=(origin.z()-step->origin.z())*p/step->mom.z();
+	  double dz_over_pz=(origin.z()-step->origin.z())/step->mom.z();
+	  double ds=p*dz_over_pz;
+	  pos.SetXYZ(step->origin.x()+dz_over_pz*step->mom.x(),
+		     step->origin.y()+dz_over_pz*step->mom.y(),
+		     origin.z());
 	  dir=step->mom;
 	  dir.SetMag(1.0);
 	  if (s){
@@ -470,9 +472,8 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	  } 
 	  // flight time
 	  if (t){
-	    double p=step->mom.Mag();
-	    double beta=1./sqrt(1.+mass*mass/p/p);
-	    *t = step->t+ds/beta/SPEED_OF_LIGHT;
+	    double one_over_beta=sqrt(1.+mass*mass/(p*p));
+	    *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 	  }
 	  
 	  return;
