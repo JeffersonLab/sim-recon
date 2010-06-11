@@ -402,9 +402,9 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   DMatrix A(3,3);
   double B0,B1,B2,Q,Q1,R,sum,diff;
   double theta,lambda_min=0.;
-  // Column and row vectors of ones
-  DMatrix Ones(hits.size(),1),OnesT(1,hits.size());
-  DMatrix W_sum(1,1);
+  // vector of ones
+  DMatrix OnesT(1,hits.size());
+  double W_sum=0.;
   DMatrix W(hits.size(),hits.size());
 
   // Make sure hit list is ordered in z
@@ -416,10 +416,14 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
     CovRPhi_ = new DMatrix(hits.size(),hits.size());
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
+      double cosPhi=cos(Phi);
+      double sinPhi=sin(Phi);
+      double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
+      double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
       CovRPhi_->operator()(i,i)
-      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
-      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
-      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
+	=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covx
+	+Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hits[i]->covy
+	+2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covxy;
     }
   }
   for (unsigned int i=0;i<hits.size();i++)
@@ -439,20 +443,14 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
     X(i,0)=hits[i]->x;
     X(i,1)=hits[i]->y;
     X(i,2)=hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y;
-    Ones(i,0)=OnesT(0,i)=1.;
+    OnesT(0,i)=1.;
+    W(i,i)=1./CRPhi(i,i);
+    W_sum+=W(i,i);
   }
+  Xavg=(1./W_sum)*(OnesT*(W*X));
 
-  // Check that CRPhi is invertible 
-  TDecompLU lu(CRPhi);
-  if (lu.Decompose()==false){
-    return UNRECOVERABLE_ERROR; // error placeholder
-  }
-  W=DMatrix(DMatrix::kInverted,CRPhi);
-  W_sum=OnesT*(W*Ones);
-  Xavg=(1./W_sum(0,0))*(OnesT*(W*X));
-  
   A=DMatrix(DMatrix::kTransposed,X)*(W*X)
-    -W_sum(0,0)*(DMatrix(DMatrix::kTransposed,Xavg)*Xavg);
+    -W_sum*(DMatrix(DMatrix::kTransposed,Xavg)*Xavg);
   if(!A.IsValid())return UNRECOVERABLE_ERROR;
 
   // The characteristic equation is 
@@ -512,15 +510,6 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   for (int i=0;i<3;i++){
     N[i]/=sqrt(sum);
   }
-  /*
-  DVector3 testn(1.,(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
-		 /(A(0,1)*A(2,1)-(A(1,1)-lambda_min)*A(0,2)),
-		 (A(2,0)*(A(1,1)-lambda_min)-A(1,0)*A(2,1))
-		 /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min)));
-  testn.SetMag(1.0);
-  testn.Print();
-  printf("N %f %f %f\n",N[0],N[1],N[2]);
-  */
 
   // Distance to origin
   c_origin=-(N[0]*Xavg(0,0)+N[1]*Xavg(0,1)+N[2]*Xavg(0,2));
@@ -581,19 +570,25 @@ jerror_t DHelicalFit::FitCircleRiemannCorrected(float rc){
     CovRPhi_ = new DMatrix(hits.size(),hits.size());
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
+      double cosPhi=cos(Phi);
+      double sinPhi=sin(Phi);
+      double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
+      double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
       CovRPhi_->operator()(i,i)
-      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
-      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
-      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
+	=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covx
+	+Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hits[i]->covy
+	+2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covxy;
     }
   }
   if (CovR_==NULL){
     CovR_= new DMatrix(hits.size(),hits.size());
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
-      CovR_->operator()(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
-	+sin(Phi)*sin(Phi)*hits[m]->covy
-	+2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+      double cosPhi=cos(Phi);
+      double sinPhi=sin(Phi);
+      CovR_->operator()(m,m)=cosPhi*cosPhi*hits[m]->covx
+	+sinPhi*sinPhi*hits[m]->covy
+	+2.*sinPhi*cosPhi*hits[m]->covxy;
     } 
   }
   for (unsigned int i=0;i<hits.size();i++){
@@ -629,7 +624,7 @@ jerror_t DHelicalFit::GetChargeRiemann(float rc_input){
   DMatrix S(hits.size(),hits.size());
   for (unsigned int i=0;i<hits.size();i++){
     double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
-    double stemp=rtemp/4./rc_input;
+    double stemp=rtemp/(4.*rc_input);
     double ctemp=1.-stemp*stemp;
     if (ctemp>0){
       S(i,i)=stemp;
@@ -646,19 +641,25 @@ jerror_t DHelicalFit::GetChargeRiemann(float rc_input){
     CovRPhi_ = new DMatrix(hits.size(),hits.size());
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
+      double cosPhi=cos(Phi);
+      double sinPhi=sin(Phi);
+      double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
+      double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
       CovRPhi_->operator()(i,i)
-      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
-      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
-      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
+	=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covx
+	+Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hits[i]->covy
+	+2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covxy;
     }
   }
   if (CovR_==NULL){
     CovR_= new DMatrix(hits.size(),hits.size());
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
-      CovR_->operator()(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
-	+sin(Phi)*sin(Phi)*hits[m]->covy
-	+2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+      double cosPhi=cos(Phi);
+      double sinPhi=sin(Phi);
+      CovR_->operator()(m,m)=cosPhi*cosPhi*hits[m]->covx
+	+sinPhi*sinPhi*hits[m]->covy
+	+2.*sinPhi*cosPhi*hits[m]->covxy;
     } 
   }
   for (unsigned int i=0;i<hits.size();i++){
@@ -688,19 +689,25 @@ jerror_t DHelicalFit::GetChargeRiemann(){
     CovRPhi_ = new DMatrix(hits.size(),hits.size());
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
+      double cosPhi=cos(Phi);
+      double sinPhi=sin(Phi);
+      double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
+      double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
       CovRPhi_->operator()(i,i)
-	=(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
-      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
-      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
+	=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covx
+	+Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hits[i]->covy
+      +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covxy;
     }
   }
   if (CovR_==NULL){
     CovR_= new DMatrix(hits.size(),hits.size());
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
-      CovR_->operator()(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
-	+sin(Phi)*sin(Phi)*hits[m]->covy
-	+2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+      double cosPhi=cos(Phi);
+      double sinPhi=sin(Phi);
+      CovR_->operator()(m,m)=cosPhi*cosPhi*hits[m]->covx
+	+sinPhi*sinPhi*hits[m]->covy
+	+2.*sinPhi*cosPhi*hits[m]->covxy;
     } 
   }
   for (unsigned int i=0;i<hits.size();i++){
@@ -753,9 +760,11 @@ jerror_t DHelicalFit::FitLineRiemann(){
     CovR_= new DMatrix(hits.size(),hits.size());
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
-      CovR_->operator()(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
-      +sin(Phi)*sin(Phi)*hits[m]->covy
-      +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+      double cosPhi=cos(Phi);
+      double sinPhi=sin(Phi);
+      CovR_->operator()(m,m)=cosPhi*cosPhi*hits[m]->covx
+      +sinPhi*sinPhi*hits[m]->covy
+      +2.*sinPhi*cosPhi*hits[m]->covxy;
     } 
   }
   for (unsigned int i=0;i<hits.size();i++)
@@ -834,31 +843,36 @@ jerror_t DHelicalFit::FitLineRiemann(){
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,sperp_old=0., ratio=0, Delta;
   double z_last=0.,z=0.;
+  double oldx=projections[start]->x;
+  double oldy=projections[start]->y;
   for (unsigned int k=start;k<n;k++){
     if (!bad[k]){
       sperp_old=sperp;
       z_last=z;
 
-      double diffx=projections[k]->x-projections[start]->x;
-      double diffy=projections[k]->y-projections[start]->y;   
+      double diffx=projections[k]->x-oldx;
+      double diffy=projections[k]->y-oldy;   
       ratio=sqrt(diffx*diffx+diffy*diffy)/(2.*r0); 
       // Make sure the argument for the arcsin does not go out of range...
-      if (ratio>1.) 
-	sperp=2.*r0*(M_PI/2.);
-      else
-	sperp=2.*r0*asin(ratio);
+      sperp=sperp_old+(ratio>1? 2.*r0*(M_PI/2.) : 2.*r0*asin(ratio));
+      /*
       if (sperp-sperp_old<0.){
 	if (k==n-1) sperp=2.*r0*M_PI-sperp;
       }
+      */
       z=projections[k]->z;
 
       // Assume errors in s dominated by errors in R 
       double weight=1./CR(k,k);
       sumv+=weight;
       sumy+=sperp*weight;
-      sumx+=projections[k]->z*weight;
-      sumxx+=projections[k]->z*projections[k]->z*weight;
-      sumxy+=sperp*projections[k]->z*weight;
+      sumx+=z*weight;
+      sumxx+=z*z*weight;
+      sumxy+=sperp*z*weight;
+
+      // Store the current x and y projection values
+      oldx=projections[k]->x;
+      oldy=projections[k]->y;
     }
   }
   Delta=sumv*sumxx-sumx*sumx;
