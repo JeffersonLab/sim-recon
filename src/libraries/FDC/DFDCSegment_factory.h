@@ -46,18 +46,18 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		///
 		~DFDCSegment_factory();	
 
-		jerror_t FindSegments(vector<DFDCPseudo*>points);
+		jerror_t FindSegments(vector<const DFDCPseudo*>points);
 //		jerror_t CorrectPoints(vector<DFDCPseudo*>point, DMatrix XYZ);
 		jerror_t GetHelicalTrackPosition(double z,
 						 const DFDCSegment *segment,
 						 double &xpos,
 						 double &ypos);
-		jerror_t RiemannHelicalFit(vector<DFDCPseudo*>points,
+		jerror_t RiemannHelicalFit(vector<const DFDCPseudo*>points,
 					   DMatrix &CR,
 					   DMatrix &XYZ);
-	        jerror_t RiemannCircleFit(vector<DFDCPseudo*>points,
+	        jerror_t RiemannCircleFit(vector<const DFDCPseudo*>points,
 			DMatrix CRPhi);
-		jerror_t RiemannLineFit(vector<DFDCPseudo *>points,
+		jerror_t RiemannLineFit(vector<const DFDCPseudo *>points,
 					DMatrix CR,DMatrix &XYZ);
 	        jerror_t UpdatePositionsAndCovariance(unsigned int n,
 						      double r1sq,
@@ -99,6 +99,9 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		const DLorentzDeflections *lorentz_def;
 //		double ref_time;
 //		bool use_tof,use_sc;
+
+		//vector of flags indicating whether or not a hit has been used
+		vector<bool>used;
 
 		int myeventno;
 };

@@ -73,12 +73,10 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   // segment 
   if (pseudopoints.size()>=3){
     // Group pseudopoints by package
-    vector<DFDCPseudo*>package[4];
-    //for (vector<DFDCPseudo*>::iterator i=points.begin();i!=points.end();i++){
+    vector<const DFDCPseudo*>package[4];
     for (vector<const DFDCPseudo*>::const_iterator i=pseudopoints.begin();
 	 i!=pseudopoints.end();i++){
-      // cast away the constness so that we can use the status word later
-      package[((*i)->wire->layer-1)/6].push_back(const_cast<DFDCPseudo *>(*i));
+      package[((*i)->wire->layer-1)/6].push_back(*i);
     }
     
     // Find the segments in each package
@@ -97,7 +95,7 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 // the dip angle and the z position of the closest approach to the beam line.
 // Also returns predicted positions along the helical path.
 //
-jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
+jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
 					     DMatrix CR,DMatrix &XYZ){
   unsigned int n=points.size()+1;
   vector<int>bad(n);  // Keep track of "bad" intersection points
@@ -160,19 +158,18 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
   double sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,sperp_old=0.,ratio,Delta;
   double z=0,zlast=0;
+  double oldx=XYZ(start,0);
+  double oldy=XYZ(start,1);
   //for (unsigned int k=start;k<n-1;k++){
   for (unsigned int k=start;k<n;k++){
     zlast=z;
     sperp_old=sperp;
     if (!bad[k]){
-      double diffx=XYZ(k,0)-XYZ(start,0);
-      double diffy=XYZ(k,1)-XYZ(start,1);
+      double diffx=XYZ(k,0)-oldx;
+      double diffy=XYZ(k,1)-oldy;
       ratio=sqrt(diffx*diffx+diffy*diffy)/(2.*rc); 
       // Make sure the argument for the arcsin does not go out of range...
-      if (ratio>1.) 
-	sperp=2.*rc*(M_PI/2.);
-      else
-	sperp=2.*rc*asin(ratio);
+      sperp=sperp_old+(ratio>1?2.*rc*(M_PI/2.):2.*rc*asin(ratio));
       z=XYZ(k,2);
       // Assume errors in s dominated by errors in R 
       double inv_var=1./CR(k,k);
@@ -181,6 +178,10 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
       sumx+=XYZ(k,2)*inv_var;
       sumxx+=XYZ(k,2)*XYZ(k,2)*inv_var;
       sumxy+=sperp*XYZ(k,2)*inv_var;
+
+      // Save the current x and y coordinates
+      oldx=XYZ(k,0);
+      oldy=XYZ(k,1);
     }
   }
   Delta=sumv*sumxx-sumx*sumx;
@@ -272,8 +273,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     CR(k,k)=dR_dx1*dR_dx1*var_x1+dR_dy1*dR_dy1*var_y1
       +dR_dtanl*dR_dtanl*var_tanl;
     
-    double rtemp=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1)); 
-    double stemp=rtemp/4./rc;
+    double stemp=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1))/(4.*rc);
     double ctemp=1.-stemp*stemp;
     if (ctemp>0){
       S(k,k)=stemp;
@@ -285,44 +285,6 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     }
   }
   
-#if 0  // Disable for now...
-   // Correct the covariance matrices for contributions due to multiple
-  // scattering
-  DMatrix CRPhi_ms(n,n);
-  DMatrix CR_ms(n,n);
-  double lambda=atan(tanl);
-  double cosl=cos(lambda);
-  double sinl=sin(lambda);
-  if (cosl<EPS) cosl=EPS;
-  if (sinl<EPS) sinl=EPS;
-  // We loop over all the points except the point at the target, which is left
-  // out because the path length is too long to use the linear approximation
-  // we are using to estimate the contributions due to multiple scattering.
-  for (unsigned int m=0;m<n-1;m++){
-    double Rm=sqrt(XYZ(m,0)*XYZ(m,0)+XYZ(m,1)*XYZ(m,1));
-    double zm=XYZ(m,2);
-    for (unsigned int k=m;k<n-1;k++){
-      double Rk=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1));
-      double zk=XYZ(k,2);
-      unsigned int imin=(k+1>m+1)?k+1:m+1;
-      for (unsigned int i=imin;i<n-1;i++){
-        double sigma2_ms=GetProcessNoise(i,XYZ);
-	if (isnan(sigma2_ms)){
-	  sigma2_ms=0.;
-	}
-        double Ri=sqrt(XYZ(i,0)*XYZ(i,0)+XYZ(i,1)*XYZ(i,1));
-        double zi=XYZ(i,2);
-        CRPhi_ms(m,k)+=sigma2_ms*(Rk-Ri)*(Rm-Ri)/cosl/cosl;
-        CR_ms(m,k)+=sigma2_ms*(zk-zi)*(zm-zi)/sinl/sinl/sinl/sinl;
-      }
-      CRPhi_ms(k,m)=CRPhi_ms(m,k);
-      CR_ms(k,m)=CR_ms(m,k);
-    }
-  }
-  CRPhi+=CRPhi_ms;
-  CR+=CR_ms;
- #endif
-
   // Correction for non-normal incidence of track on FDC 
   CRPhi=C*CRPhi*C+S*CR*S;
  
@@ -371,7 +333,7 @@ double DFDCSegment_factory::GetProcessNoise(unsigned int i,DMatrix XYZ){
 // task of fitting points in (x,y) to a circle is transormed to the taks of
 // fitting planes in (x,y, w=x^2+y^2) space
 //
-jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
+jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
 					       DMatrix CRPhi){
   unsigned int n=points.size()+1;
   DMatrix X(n,3);
@@ -379,9 +341,9 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
   DMatrix A(3,3);
   double B0,B1,B2,Q,Q1,R,sum,diff;
   double theta,lambda_min;
-  // Column and row vectors of ones
-  DMatrix Ones(n,1),OnesT(1,n);
-  DMatrix W_sum(1,1);
+  // vector of ones
+  DMatrix OnesT(1,n);
+  double W_sum=0.;
   DMatrix W(n,n);
 
   // The goal is to find the eigenvector corresponding to the smallest 
@@ -392,33 +354,28 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
   // and W is the weight matrix, assumed for now to be diagonal.
   // In the absence of multiple scattering, W_sum is the sum of all the 
   // diagonal elements in W.
-
+  // At this stage we ignore the multiple scattering.
   for (unsigned int i=0;i<n-1;i++){
     X(i,0)=points[i]->x;
     X(i,1)=points[i]->y;
     X(i,2)=X(i,0)*X(i,0)+X(i,1)*X(i,1);
-    Ones(i,0)=OnesT(0,i)=1.;
+    OnesT(0,i)=1.;
+    W(i,i)=1./CRPhi(i,i);
+    W_sum+=W(i,i);
   }
-  Ones(n-1,0)=OnesT(0,n-1)=1.;
-
-  // Check that CRPhi is invertible 
-  TDecompLU lu(CRPhi);
-  if (lu.Decompose()==false){
-    *_log << "RiemannCircleFit: Singular matrix,  event "<< myeventno << endMsg;
-    
-    return UNRECOVERABLE_ERROR; // error placeholder
-  }
-  W=DMatrix(DMatrix::kInverted,CRPhi);
-  W_sum=OnesT*(W*Ones);
-  Xavg=(1./W_sum(0,0))*(OnesT*(W*X));
+  unsigned int last_index=n-1;
+  OnesT(0,last_index)=1.;
+  W(last_index,last_index)=1./CRPhi(last_index,last_index);
+  W_sum+=W(last_index,last_index);
+  var_avg=1./W_sum;
+  Xavg=var_avg*(OnesT*(W*X));
   // Store in private array for use in other routines
   xavg[0]=Xavg(0,0);
   xavg[1]=Xavg(0,1);
   xavg[2]=Xavg(0,2);
-  var_avg=1./W_sum(0,0);
   
   A=DMatrix(DMatrix::kTransposed,X)*(W*X)
-    -W_sum(0,0)*(DMatrix(DMatrix::kTransposed,Xavg)*Xavg);
+    -W_sum*(DMatrix(DMatrix::kTransposed,Xavg)*Xavg);
   if(!A.IsValid())return UNRECOVERABLE_ERROR;
 
   // The characteristic equation is 
@@ -494,7 +451,7 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
 // to a circular paraboloid surface combined with a linear fit of the arc 
 // length versus z. Uses RiemannCircleFit and RiemannLineFit.
 //
-jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
+jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
 						DMatrix &CR,DMatrix &XYZ){
   double Phi;
   unsigned int num_points=points.size()+1;
@@ -506,14 +463,18 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
     XYZ(m,2)=points[m]->wire->origin.z();
 
     Phi=atan2(points[m]->y,points[m]->x);
+    double cosPhi=cos(Phi);
+    double sinPhi=sin(Phi);
+    double Phi_cosPhi=Phi*cosPhi;
+    double Phi_sinPhi=Phi*sinPhi;
     CRPhi(m,m)
-      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*points[m]->covxx
-      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*points[m]->covyy
-      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*points[m]->covxy;
+      =(Phi_cosPhi-sinPhi)*(Phi_cosPhi-sinPhi)*points[m]->covxx
+      +(Phi_sinPhi+cosPhi)*(Phi_sinPhi+cosPhi)*points[m]->covyy
+      +2.*(Phi_sinPhi+cosPhi)*(Phi_cosPhi-sinPhi)*points[m]->covxy;
 
-    CR(m,m)=cos(Phi)*cos(Phi)*points[m]->covxx
-      +sin(Phi)*sin(Phi)*points[m]->covyy
-      +2.*sin(Phi)*cos(Phi)*points[m]->covxy;
+    CR(m,m)=cosPhi*cosPhi*points[m]->covxx
+      +sinPhi*sinPhi*points[m]->covyy
+      +2.*sinPhi*cosPhi*points[m]->covxy;
   }
   CR(points.size(),points.size())=BEAM_VARIANCE;
   CRPhi(points.size(),points.size())=BEAM_VARIANCE;
@@ -583,13 +544,17 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
 //  Associate nearest neighbors within a package with track segment candidates.
 // Provide guess for (seed) track parameters
 //
-jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
-   // Put indices for the first point in each plane before the most downstream
+jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
+  // Clear all the "used" flags;
+  used.clear();
+
+  // Put indices for the first point in each plane before the most downstream
   // plane in the vector x_list.
   double old_z=points[0]->wire->origin.z();
   vector<unsigned int>x_list;
   x_list.push_back(0);
   for (unsigned int i=0;i<points.size();i++){
+    used.push_back(false);
     if (points[i]->wire->origin.z()!=old_z){
       x_list.push_back(i);
     }
@@ -600,18 +565,18 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
   unsigned int start=0;
   // loop over the start indices, starting with the first plane
   while (start<x_list.size()-1){
-    int used=0;
+    int num_used=0;
     // For each iteration, count how many hits we have used already in segments
     for (unsigned int i=0;i<points.size();i++){
-      if (points[i]->status&USED_IN_SEGMENT) used++;
+      if(used[i]==true) num_used++;
     }
     // Break out of loop if we don't have enough hits left to fit a circle
-    if (points.size()-used<3) break;
+    if (points.size()-num_used<3) break;
 
     // Now loop over the list of track segment start points
     for (unsigned int i=x_list[start];i<x_list[start+1];i++){
-      if ((points[i]->status&USED_IN_SEGMENT)==0){ 
-	points[i]->status|=USED_IN_SEGMENT;   
+      if (used[i]==false){
+	used[i]=true;
 	chisq=1.e8;
 
 	// Clear track parameters
@@ -623,7 +588,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	double y=points[i]->y; 
 	
 	// Create list of nearest neighbors
-	vector<DFDCPseudo*>neighbors;
+	vector<const DFDCPseudo*>neighbors;
 	neighbors.push_back(points[i]);
 	unsigned int match=0;
 	double delta,delta_min=1000.,xtemp,ytemp;
@@ -639,10 +604,12 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	      match=m;
 	    }
 	  }	
-	  if (match!=0 && (points[match]->status&USED_IN_SEGMENT)==0 ){
+	  if (match!=0 
+	      && used[match]==false
+	      ){
 	    x=points[match]->x;
 	    y=points[match]->y;
-	    points[match]->status|=USED_IN_SEGMENT;
+	    used[match]=true;
 	    neighbors.push_back(points[match]);	  
 	  }
 	}
@@ -664,7 +631,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	    if (delta<ADJACENT_MATCH_RADIUS && 
 		abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
 		&& neighbors[j]->wire->origin.z()==points[k]->wire->origin.z()){
-	      points[k]->status|=USED_IN_SEGMENT;
+	      used[k]=true;
 	      neighbors.push_back(points[k]);
 	      do_sort=true;
 	    }      
@@ -717,7 +684,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     }
     // Look for a new plane to start looking for a segment
     while (start<x_list.size()-1){
-      if ((points[x_list[start]]->status&USED_IN_SEGMENT)==0) break;
+      if (used[x_list[start]]==false) break;
       start++;
     }
   } //while loop over x_list planes

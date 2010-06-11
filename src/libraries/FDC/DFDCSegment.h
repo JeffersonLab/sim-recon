@@ -56,7 +56,7 @@ class DFDCSegment : public JObject {
 		double D;
 
 		// List of pseudopoints belonging to this track segment
-		vector<DFDCPseudo *>hits;	
+		vector<const DFDCPseudo *>hits;	
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "xc", "%3.2f", xc);
