@@ -40,15 +40,6 @@ typedef struct{
   double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
 }DKalmanSIMDState_t;
 
-typedef struct{
-  DVector3 pos;
-  double q_over_pt,phi,tanl,D,z;
-}DKalmanSIMDCentral_t;
-
-typedef struct{
-  double dE,ds;
-}DKalmanSIMD_dedx_t;
-
 class DTrackFitterKalmanSIMD: public DTrackFitter{
  public:
 //  enum tracking_level{
