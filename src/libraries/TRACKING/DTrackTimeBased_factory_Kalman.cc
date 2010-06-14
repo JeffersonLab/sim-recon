@@ -13,6 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <set>
+#include <TMath.h>
 using namespace std;
 
 
@@ -50,8 +51,8 @@ jerror_t DTrackTimeBased_factory_Kalman::init(void)
 	fitter = NULL;
 
 	DEBUG_LEVEL = 0;
-	//DEBUG_HISTS=true;
-	DEBUG_HISTS=false;
+	DEBUG_HISTS=true;
+	//DEBUG_HISTS=false;
 	MOMENTUM_CUT_FOR_DEDX=0.5;
 	MOMENTUM_CUT_FOR_PROTON_ID=2.0;
 
@@ -119,6 +120,14 @@ jerror_t DTrackTimeBased_factory_Kalman::brun(jana::JEventLoop *loop, int runnum
       HBCALdTime->SetYTitle("#Delta t [ns]");
       HBCALdTime->SetXTitle("p [GeV/c]");
     }  
+    HBCALdTime_vs_beta=(TH2F*)gROOT->FindObject("HBCALdTime_vs_beta");
+    if (!HBCALdTime_vs_beta){
+      HBCALdTime_vs_beta=new TH2F("HBCALdTime_vs_beta",
+			  "t-t_hyp vs #beta for BCAL",
+			  100,0,1,4000,-15.,15.);
+      HBCALdTime_vs_beta->SetYTitle("#Delta t [ns]");
+      HBCALdTime_vs_beta->SetXTitle("#beta");
+    }  
     HBCALPull=(TH2F*)gROOT->FindObject("HBCALPull");
     if (!HBCALPull){
       HBCALPull=new TH2F("HBCALPull",
@@ -151,6 +160,14 @@ jerror_t DTrackTimeBased_factory_Kalman::brun(jana::JEventLoop *loop, int runnum
       HTOFdTime->SetYTitle("#Delta t [ns]");
       HTOFdTime->SetXTitle("p [GeV/c]");
     }
+    HTOFdTime_vs_beta=(TH2F*)gROOT->FindObject("HTOFdTime_vs_beta");
+    if (!HTOFdTime_vs_beta){
+      HTOFdTime_vs_beta=new TH2F("HTOFdTime_vs_beta",
+			  "t-t_hyp vs #beta for TOF",
+			  100,0,1,4000,-15.,15.);
+      HTOFdTime_vs_beta->SetYTitle("#Delta t [ns]");
+      HTOFdTime_vs_beta->SetXTitle("#beta");
+    }  
     HTOFPull=(TH2F*)gROOT->FindObject("HTOFPull");
     if (!HTOFPull){
       HTOFPull=new TH2F("HTOFPull",
@@ -162,15 +179,23 @@ jerror_t DTrackTimeBased_factory_Kalman::brun(jana::JEventLoop *loop, int runnum
     HdEdxDiff=(TH2F*)gROOT->FindObject("HdEdxDiff");
     if (!HdEdxDiff){
       HdEdxDiff=new TH2F("HdEdxDiff",
-			  "dE/dx-dE/dx_hyp vs p for TOF",
+			  "dE/dx-dE/dx_hyp vs p",
 			  100,0,7,600,-0.03,0.03);
-      HdEdxDiff->SetYTitle("#Delta(dE/dx) [keV/cm]");
+      HdEdxDiff->SetYTitle("#Delta(dE/dx) [MeV/cm]");
       HdEdxDiff->SetXTitle("p [GeV/c]");
+    } 
+    HdEdxDiff_vs_beta=(TH2F*)gROOT->FindObject("HdEdxDiff_vs_beta");
+    if (!HdEdxDiff_vs_beta){
+      HdEdxDiff_vs_beta=new TH2F("HdEdxDiff_vs_beta",
+			  "dE/dx-dE/dx_hyp vs #beta",
+			  100,0,1,600,-0.03,0.03);
+      HdEdxDiff_vs_beta->SetYTitle("#Delta(dE/dx) [MeV/cm]");
+      HdEdxDiff_vs_beta->SetXTitle("#beta");
     }
     HdEdxPull=(TH2F*)gROOT->FindObject("HdEdxPull");
     if (!HdEdxPull){
       HdEdxPull=new TH2F("HdEdxPull",
-			  "(dE/dx-dE/dx_hyp)/#sigma(dE/dx) vs p for TOF",
+			  "(dE/dx-dE/dx_hyp)/#sigma(dE/dx) vs p",
 			  100,0,7,100,-5.,5.);
       HdEdxPull->SetYTitle("pull(dE/dx)");
       HdEdxPull->SetXTitle("p [GeV/c]");
@@ -370,12 +395,20 @@ double DTrackTimeBased_factory_Kalman::GetFOM(DTrackTimeBased *dtrack,
   dEdx_diff/=N;
   mean_path_length/=N;
   p_avg/=N;
-
-  double dEdx_sigma=fitter->GetdEdxSigma(N,p_avg,mass,mean_path_length);
   
+  // double dEdx_sigma=fitter->GetdEdxSigma(N,p_avg,mass,mean_path_length);
+  double dEdx_sigma=0.;
+  double beta_hyp=p_avg/sqrt(p_avg*p_avg+mass*mass);
+
+  dEdx_sigma=1.921e-5*pow(beta_hyp,-4.305)+9.315e-5*pow(beta_hyp,-1.306);
+
+
   if (DEBUG_HISTS){
-    HdEdxDiff->Fill(p_avg,dEdx_diff);
-    HdEdxPull->Fill(p_avg,dEdx_diff/dEdx_sigma);
+    if (TMath::Prob(dtrack->chisq,dtrack->Ndof)>0.01){
+      HdEdxDiff->Fill(p_avg,dEdx_diff); 
+      HdEdxDiff_vs_beta->Fill(beta_hyp,dEdx_diff);
+      HdEdxPull->Fill(p_avg,dEdx_diff/dEdx_sigma);
+    }
   }
     
   // Chi2 for dedx measurement
@@ -539,21 +572,25 @@ double DTrackTimeBased_factory_Kalman::MatchToTOF(DTrackTimeBased *track,
     double mass=track->mass();  
     double beta_hyp=1./sqrt(1.+mass*mass/p/p);
     double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
-    double t_var=TOF_SIGMA*TOF_SIGMA;
+    double tof_sigma=0.0893*pow(p,-0.4109);
+      //    double t_var=TOF_SIGMA*TOF_SIGMA;
+
+
 
     t_diff=mEndTime-mFlightTime;
 
     DVector3 mypos=tof_points[tof_match_id]->pos;
-    mypos[2]=618.0;
+    mypos.SetZ(618.0);
     fitter->GetdEdx(p,mass,2.5,mypos);
 
     if (DEBUG_HISTS){
       HTOFdTime->Fill(p,t_diff);
-      HTOFPull->Fill(p,t_diff/sqrt(t_var));
+      HTOFdTime_vs_beta->Fill(beta_hyp,t_diff);
+      HTOFPull->Fill(p,t_diff/tof_sigma);
     }
 
     // chi2
-    return t_diff*t_diff/t_var;
+    return t_diff*t_diff/tof_sigma/tof_sigma;
   }
     
   return -1.;
@@ -615,10 +652,9 @@ double DTrackTimeBased_factory_Kalman::MatchToBCAL(DTrackTimeBased *track,
     double beta_hyp=1./sqrt(1.+mass*mass/p/p);
     double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
     double E=bcal_clusters[bcal_match_id]->E;
-    double t_sigma=0.12154/sqrt(E)+0.17037*E-0.10843;
-    if (mass>0.9) t_sigma=0.1473/sqrt(E)+0.3431*E-0.1872;
+    double t_sigma=0.;
 
-    t_sigma=0.00255*pow(p,-2.52)+0.022;
+    t_sigma=2.026e-3*pow(beta_hyp,-6.86)+0.239*beta_hyp;
     double t_var=t_sigma*t_sigma;
 
 
@@ -626,6 +662,7 @@ double DTrackTimeBased_factory_Kalman::MatchToBCAL(DTrackTimeBased *track,
 
     if (DEBUG_HISTS){
       HBCALdTime->Fill(p,t_diff);
+      HBCALdTime_vs_beta->Fill(beta_hyp,t_diff);
       HBCALPull->Fill(p,t_diff/t_sigma);
       HBCALdTime_vs_E->Fill(E,t_diff);
       HBCALdTime_vs_E_scaled->Fill(E,t_diff/t_sigma);
