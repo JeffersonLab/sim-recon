@@ -3367,7 +3367,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	    =forward_traj_cdc[k].pos.z()-forward_traj_cdc[k-1].pos.z();
 	    dz=BrentsAlgorithm(z,step_size,dedx,origin,dir,S);
 	  */
-	  dz=BrentsAlgorithm(z,0.5*two_step,dedx,origin,dir,S);
+	  dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
 	}
 	double newz=z+dz;
 	// Check for exiting the straw

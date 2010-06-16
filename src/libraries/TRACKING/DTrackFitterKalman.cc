@@ -307,6 +307,7 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   }
 
   fit_params.setTrackingErrorMatrix(errMatrix);
+  
   this->chisq = GetChiSq();
   this->Ndof = GetNDF();
   fit_status = kFitSuccess;
@@ -3668,7 +3669,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	    =forward_traj_cdc[k].pos.z()-forward_traj_cdc[k-1].pos.z();
 	    dz=BrentsAlgorithm(z,step_size,dedx,origin,dir,S);
 	  */
-	  dz=BrentsAlgorithm(z,0.5*two_step,dedx,origin,dir,S);
+	  dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
 	}
 	double newz=z+dz;
 	// Check for exiting the straw
