@@ -71,8 +71,8 @@ class DTrackTimeBased_factory_Kalman:public jana::JFactory<DTrackTimeBased>{
 
   // Debug histograms
   TH2F *HBCALdTime_vs_E,*HBCALdTime_vs_E_scaled,*HBCALdTime,*HBCALPull;
-  TH2F *HTOFdTime,*HTOFPull;
-  TH2F *HdEdxDiff,*HdEdxPull;
+  TH2F *HTOFdTime,*HTOFPull,*HTOFdTime_vs_beta,*HBCALdTime_vs_beta;
+  TH2F *HdEdxDiff,*HdEdxPull,*HdEdxDiff_vs_beta;
 };
 
 #endif // _DTrackTimeBased_factory_Kalman_
