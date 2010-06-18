@@ -130,8 +130,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   MASS=0.13957; //charged pion
   mass2=MASS*MASS;
 
-  DEBUG_HISTS=true;
-  // DEBUG_HISTS=false;
+  //DEBUG_HISTS=true;
+  DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
   //DEBUG_LEVEL=2;
 
