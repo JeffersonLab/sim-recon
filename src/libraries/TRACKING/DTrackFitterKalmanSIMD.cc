@@ -46,12 +46,12 @@
 
 #define CHISQ_DIFF_CUT 20.
 #define MAX_DEDX 40.
-#define MIN_ITER 5
-#define MIN_CDC_ITER 3
+#define MIN_ITER 0
+#define MIN_CDC_ITER 0
 
 #define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.00002 // 20 keV
-#define DE_PER_STEP_TIME_BASED 0.00002
+#define DE_PER_STEP_WIRE_BASED 0.000100 // 100 keV
+#define DE_PER_STEP_TIME_BASED 0.000025
 #define BFIELD_FRAC 0.01
 #define MIN_STEP_SIZE 0.05
 
@@ -221,8 +221,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 Bz=-2.;
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
-	 mStepSizeS=0.5;
-	 mStepSizeZ=0.5;
+	 mStepSizeS=1.5;
+	 mStepSizeZ=1.5;
 
 }
 
@@ -1943,7 +1943,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:1);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
 
@@ -2020,7 +2020,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	break;
       */
 
-      if (fit_type==kTimeBased){
+      //if (fit_type==kTimeBased)
+	{
 	//if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>MIN_ITER && 
 	  (fabs(chisq_forward-chisq_iter)<0.1 
@@ -2144,7 +2145,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:1);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
       
@@ -2204,7 +2205,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       if (fit_type==kWireBased && chisq_forward-chisq_iter>0.)
 	break;
       */
-      if (fit_type==kTimeBased){
+      //if (fit_type==kTimeBased)
+	{
 	//if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>MIN_CDC_ITER && 
 	  (fabs(chisq_forward-chisq_iter)<0.1 
@@ -2316,7 +2318,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // iteration 
     double anneal_factor=1.;
     double chisq_iter=chisq;
-    for (int iter2=0;iter2<(fit_type==kTimeBased?20:1);iter2++){  
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){  
       // Break out of loop if p is too small
       double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
       if (fabs(q_over_p)>Q_OVER_P_MAX) break;
@@ -2400,7 +2402,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       */
       if (!isfinite(chisq_central)) break;
       
-      if (fit_type==kTimeBased){
+      //if (fit_type==kTimeBased)
+	{
 	//if (chisq-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>MIN_CDC_ITER && 
 	  (fabs(chisq-chisq_iter)<0.1 
@@ -2823,7 +2826,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	}
 	//printf("step1 %f step 2 %f \n",step1,step2);
 	double two_step=step1+step2;
-	if (two_step*cosl/fabs(qrc_old)<0.01 && denom>EPS){
+	if (two_step*cosl/fabs(qrc_old)<0.1 && denom>EPS){
 	  double dzw=(pos.z()-z0w)/uz;
 	  ds2=((pos.x()-origin.x()-ux*dzw)*my_ux
 	       +(pos.y()-origin.y()-uy*dzw)*my_uy)/denom;
@@ -3310,7 +3313,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	      +(y-wirepos.y())*(y-wirepos.y()));
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca)&& more_measurements){
+    if ((doca>old_doca || z>endplate_z)&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Mark previous point on ref trajectory with a hit id for the straw
 	forward_traj_cdc[k-1].h_id=cdc_index+1;
@@ -3350,7 +3353,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	double two_step=step1+step2;
 	if (fabs(qBr2p*S(state_q_over_p)
 		 *bfield->GetBz(S(state_x),S(state_y),z)
-		 *two_step/sinl)<0.01 
+		 *two_step/sinl)<0.1 
 	    && denom>EPS){
 	  double dzw=(z-z0w)/uz;
 	  dz=-((S(state_x)-origin.x()-ux*dzw)*my_ux
