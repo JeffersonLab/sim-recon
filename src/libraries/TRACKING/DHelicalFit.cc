@@ -6,6 +6,7 @@
 #include <algorithm>
 using namespace std;
 
+#include "DANA/DApplication.h"
 #include <TDecompLU.h>
 #include <math.h>
 
@@ -14,6 +15,8 @@ using namespace std;
 #define Z_VERTEX 65.0
 #define Z_MIN 45.0
 #define Z_MAX 85.0
+#define ONE_THIRD  0.33333333333333333
+#define SQRT3      1.73205080756887719
 
 // The following is for sorting hits by z
 class DHFHitLessThanZ{
@@ -37,16 +40,16 @@ bool RiemannFit_hit_cmp(DHFHit_t *a,DHFHit_t *b){
 //-----------------
 DHelicalFit::DHelicalFit(void)
 {
-	x0 = y0 = r0 = 0;
-	chisq = 0;
-	chisq_source = NOFIT;
-	bfield = NULL;
-	
-	// For Riemann Fit
-	CovR_=NULL;
-	CovRPhi_=NULL;
-	c_origin=0.;
-	normal.SetXYZ(0.,0.,0.);
+  x0 = y0 = r0 = 0;
+  chisq = 0;
+  chisq_source = NOFIT;
+  bfield = NULL;
+  
+  // For Riemann Fit
+  CovR_=NULL;
+  CovRPhi_=NULL;
+  c_origin=0.;
+  normal.SetXYZ(0.,0.,0.);
 }
 
 //-----------------
@@ -210,11 +213,6 @@ jerror_t DHelicalFit::Clear(void)
   for(unsigned int i=0; i<hits.size(); i++)delete hits[i];
   hits.clear();
  
-  // Remove projections 
-  for (unsigned int i=0;i<projections.size();i++)
-    delete projections[i];
-  projections.clear();
-
   return NOERROR;
 }
 
@@ -372,7 +370,7 @@ jerror_t DHelicalFit::FitCircleRiemann(float BeamRMS)
 	// for this track. Otherwise, assume -2T.
 	// Also assume a singly charged track (i.e. q=+/-1)
 	// The sign of the charge will be determined below.
-	Bz_avg=-2.0; 
+	Bz_avg=-2.0;
 	q = +1.0;
 	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c
 	if(p_trans<0.0){
@@ -400,8 +398,6 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   DMatrix X(hits.size(),3);
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
-  double B0,B1,B2,Q,Q1,R,sum,diff;
-  double theta,lambda_min=0.;
   // vector of ones
   DMatrix OnesT(1,hits.size());
   double W_sum=0.;
@@ -456,10 +452,10 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   // The characteristic equation is 
   //   lambda^3+B2*lambda^2+lambda*B1+B0=0 
   //
-  B2=-(A(0,0)+A(1,1)+A(2,2));
-  B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)+A(1,1)*A(2,2)
-    -A(2,1)*A(1,2);
-  B0=-A.Determinant();
+  double B2=-(A(0,0)+A(1,1)+A(2,2));
+  double B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)
+    +A(1,1)*A(2,2)-A(2,1)*A(1,2);
+  double B0=-A.Determinant();
   if(B0==0 || !finite(B0))return UNRECOVERABLE_ERROR;
 
   // The roots of the cubic equation are given by 
@@ -476,9 +472,9 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   // We divide Q and R by a safety factor to prevent multiplying together 
   // enormous numbers that cause unreliable results.
 
-  Q=(3.*B1-B2*B2)/9.e4; 
-  R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
-  Q1=Q*Q*Q+R*R;
+  double Q=(3.*B1-B2*B2)/9.e4; 
+  double R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
+  double Q1=Q*Q*Q+R*R;
   if (Q1<0) Q1=sqrt(-Q1);
   else{
     return VALUE_OUT_OF_RANGE;
@@ -489,11 +485,11 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   //                  = r^(p/q)*(cos(p*theta/q)+i sin(p*theta/q))
   //
   double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
-  theta=atan2(Q1,R)/3.;
-  sum=2.*temp*cos(theta);
-  diff=-2.*temp*sin(theta);
+  double theta1=ONE_THIRD*atan2(Q1,R);
+  double sum_over_2=temp*cos(theta1);
+  double diff_over_2=-temp*sin(theta1);
   // Third root
-  lambda_min=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
+  double lambda_min=-ONE_THIRD*B2-sum_over_2+SQRT3*diff_over_2;
  
   // Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
   N[0]=1.;
@@ -503,12 +499,9 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
     /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min));
   
   // Normalize: n1^2+n2^2+n3^2=1
-  sum=0.;
+  double denom=sqrt(N[0]*N[0]+N[1]*N[1]+N[2]*N[2]);
   for (int i=0;i<3;i++){
-    sum+=N[i]*N[i];
-  }
-  for (int i=0;i<3;i++){
-    N[i]/=sqrt(sum);
+    N[i]/=denom;
   }
 
   // Distance to origin
@@ -772,35 +765,27 @@ jerror_t DHelicalFit::FitLineRiemann(){
       CR(i,j)=CovR_->operator()(i, j);
  
   // Fill vector of intersection points 
-  double x_int0,temp,y_int0;
   double denom= N[0]*N[0]+N[1]*N[1];
-  double numer;
   vector<int>bad(hits.size());
   int numbad=0;
-  // Clear old projection vector
-  projections.clear();
+  // projection vector
+  vector<DVector2>projections;
   for (unsigned int m=0;m<hits.size();m++){
     double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
-    numer=c_origin+r2*N[2];
-    DHFHit_t *temphit = new DHFHit_t;
-    temphit->z=hits[m]->z;
+    double numer=c_origin+r2*N[2];
 
     if (r2==0){
-      temphit->x=0.;
-      temphit->y=0.;
-      //      bad[m]=1;
+      projections.push_back(DVector2(0.,0.));
     }
     else{
       double ratio=numer/denom;
-      x_int0=-N[0]*ratio;
-      y_int0=-N[1]*ratio;
-      temp=denom*r2-numer*numer;
+      double x_int0=-N[0]*ratio;
+      double y_int0=-N[1]*ratio;
+      double temp=denom*r2-numer*numer;
       if (temp<0){  // Skip point if the intersection gives nonsense
 	bad[m]=1;
 	numbad++;
-	temphit->x=x_int0;
-	temphit->y=y_int0;
-	projections.push_back(temphit);
+	projections.push_back(DVector2(x_int0,y_int0));
 	continue;
       }
       temp=sqrt(temp)/denom;
@@ -817,15 +802,17 @@ jerror_t DHelicalFit::FitLineRiemann(){
       double diffx2=x2-hits[m]->x;
       double diffy2=y2-hits[m]->y;
       if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
-	temphit->x=x2;
-	temphit->y=y2;
+	//temphit->x=x2;
+	//temphit->y=y2;
+	projections.push_back(DVector2(x2,y2));
       }
       else{
-	temphit->x=x1;
-	temphit->y=y1;
+	//temphit->x=x1;
+	//temphit->y=y1;
+	projections.push_back(DVector2(x1,y1));
       }
     }
-    projections.push_back(temphit);
+    //projections.push_back(temphit);
   }  
   
   // All arc lengths are measured relative to some reference plane with a hit.
@@ -843,24 +830,15 @@ jerror_t DHelicalFit::FitLineRiemann(){
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,sperp_old=0., ratio=0, Delta;
   double z_last=0.,z=0.;
-  double oldx=projections[start]->x;
-  double oldy=projections[start]->y;
+  DVector2 old_proj=projections[start];
   for (unsigned int k=start;k<n;k++){
     if (!bad[k]){
       sperp_old=sperp;
       z_last=z;
-
-      double diffx=projections[k]->x-oldx;
-      double diffy=projections[k]->y-oldy;   
-      ratio=sqrt(diffx*diffx+diffy*diffy)/(2.*r0); 
+      ratio=(projections[k]-old_proj).Mod()/(2.*r0);
       // Make sure the argument for the arcsin does not go out of range...
       sperp=sperp_old+(ratio>1? 2.*r0*(M_PI/2.) : 2.*r0*asin(ratio));
-      /*
-      if (sperp-sperp_old<0.){
-	if (k==n-1) sperp=2.*r0*M_PI-sperp;
-      }
-      */
-      z=projections[k]->z;
+      z=hits[k]->z;
 
       // Assume errors in s dominated by errors in R 
       double weight=1./CR(k,k);
@@ -871,8 +849,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
       sumxy+=sperp*z*weight;
 
       // Store the current x and y projection values
-      oldx=projections[k]->x;
-      oldy=projections[k]->y;
+      old_proj=projections[k];
     }
   }
   Delta=sumv*sumxx-sumx*sumx;

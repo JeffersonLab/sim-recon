@@ -67,6 +67,7 @@ using namespace std;
 
 #include <DMatrix.h>
 #include <DVector3.h>
+#include <DVector2.h>
 #include "FDC/DFDCPseudo.h"
 
 #include "JANA/jerror.h"
@@ -167,10 +168,6 @@ class DHelicalFit{
   // Riemann circle fit parameters
   double N[3]; 
   double xavg[3],var_avg;
-
-  // projections
-  vector<DHFHit_t*>projections;
-
 };
 
 
