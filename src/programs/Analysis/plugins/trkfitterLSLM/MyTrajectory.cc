@@ -40,13 +40,15 @@ void MyTrajectory::swim(HepVector startingPoint, double theta,
 {
   checkClear();
   double stepLength = 1.0;
+  double t0 = 0.0;
   HepLorentzVector step;
   step.setX(stepLength*sin(theta)*cos(phi));
   step.setY(stepLength*sin(theta)*sin(phi));
   step.setZ(stepLength*cos(theta));
+  step.setT(stepLength);
   HepLorentzVector* thisVector;
   thisVector = new HepLorentzVector(startingPoint(1), startingPoint(2),
-				    startingPoint(3));
+				    startingPoint(3), t0);
   traj.push_back(thisVector);
   HepLorentzVector lastVector(*thisVector);
   for (int i = 0; i < 600; i++) {
