@@ -315,7 +315,10 @@ void DKinematicData::setTrackingErrorMatrix(const DMatrixDSym& aMatrix){
   const int kMatrixSize = 5;
   assert( kMatrixSize == aMatrix.GetNrows() );
 
-  m_TrackingErrorMatrix = new DMatrixDSym(aMatrix);
+  if (&aMatrix!= null5x5Matrix()){
+    clearTrackingErrorMatrix();
+    m_TrackingErrorMatrix = new DMatrixDSym(aMatrix);
+  }
 }
 
 
