@@ -437,7 +437,7 @@ double DMaterialMap::EstimatedDistanceToBoundarySearch(double r, double z, doubl
 
 		// Check radiation length against start point's
 		double RadLen = nodes[ir][iz].RadLen;
-		if(RadLen <= 0.5*RadLen_start){
+		if(RadLen < 0.5*RadLen_start){
 			double rmin_cell = (double)last_ir*dr + rmin;
 			double rmax_cell = rmin_cell + dr;
 			double zmin_cell = (double)last_iz*dz + zmin;
