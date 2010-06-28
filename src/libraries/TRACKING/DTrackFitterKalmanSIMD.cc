@@ -23,9 +23,10 @@
 #define MAX_ITER 25
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
-#define Z_MIN 15.
+#define Z_MIN 0.
 #define Z_MAX 175.
 #define R_MAX 65.0
+#define R_MAX_FORWARD 88.0
 #ifndef SPEED_OF_LIGHT
 #define SPEED_OF_LIGHT 29.98
 #endif
@@ -195,7 +196,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
       delete my_fdchits[i];
     }
     
-    if (fit_type==kWireBased){
+    //if (fit_type==kWireBased)
+      {
       central_traj.clear();
       forward_traj.clear();
       forward_traj_cdc.clear();
@@ -221,8 +223,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 Bz=-2.;
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
-	 mStepSizeS=1.5;
-	 mStepSizeZ=1.5;
+	 mStepSizeS=1.0;
+	 mStepSizeZ=1.0;
 
 }
 
@@ -551,13 +553,15 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
   int i=0,forward_traj_cdc_length=forward_traj_cdc.size();
   double z=z_;
   double r=0.;
-    
+  double rmax=R_MAX;
+  if (my_fdchits.size()>0) rmax=R_MAX_FORWARD;
+  
   // Magnetic field at beginning of trajectory
   bfield->GetField(x_,y_,z_,Bx,By,Bz);
 
   // Continue adding to the trajectory until we have reached the endplate
   // or the maximum radius
-  while(z<endplate_z && r<R_MAX){
+  while(z<endplate_z && r<rmax){
     if (PropagateForwardCDC(forward_traj_cdc_length,i,z,r,S)
 	!=NOERROR) return UNRECOVERABLE_ERROR;   
   }
@@ -639,7 +643,9 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   //if (r<r_outer_hit)
   {
     // get material properties from the Root Geometry
-    if (fit_type==kTimeBased){
+    if (fit_type==kTimeBased)
+    //if (true)
+      {
       DVector3 mom(S(state_tx),S(state_ty),1.);
       if(geom->FindMatKalman(temp.pos,mom,temp.Z,temp.K_rho_Z_over_A,
 			     temp.rho_Z_over_A,temp.LnI,&s_to_boundary)!=NOERROR){
@@ -795,7 +801,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       //      t+=step_size*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
       // get material properties from the Root Geometry
-      if (fit_type==kTimeBased){
+      if (fit_type==kTimeBased)
+      //if (true)
+	{
         DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
 	if(geom->FindMatKalman(pos,mom,central_traj[m].Z,
 			       central_traj[m].K_rho_Z_over_A,
@@ -841,7 +849,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       // Propagate the state through the field
       FixedStep(pos,step_size,Sc,dedx);
       // Break out of the loop if we would swim out of the fiducial volume
-      if (pos.Perp()>R_MAX || pos.z()<cdc_origin[2] || pos.z()>endplate_z)
+      if (pos.Perp()>R_MAX || pos.z()<Z_MIN || pos.z()>endplate_z)
 	break;
   
       // update flight time
@@ -874,7 +882,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 
   // Swim out
   double r=pos.Perp();
-  while(r<R_MAX && pos.z()<endplate_z && pos.z()>cdc_origin[2] && len<MAX_PATH_LENGTH){
+  while(r<R_MAX && pos.z()<endplate_z && pos.z()>Z_MIN && len<MAX_PATH_LENGTH){
     i++;
 
     // Reset D to zero
@@ -896,7 +904,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
     //t+=step_size*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
     // get material properties from the Root Geometry
-    if (fit_type==kTimeBased){
+    if (fit_type==kTimeBased)
+    //if (true)
+      {
       DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
       if(geom->FindMatKalman(pos,mom,temp.Z,temp.K_rho_Z_over_A,
 			     temp.rho_Z_over_A,temp.LnI,&s_to_boundary)
@@ -1039,7 +1049,9 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.Z=temp.LnI=0.; //initialize
   
   // get material properties from the Root Geometry
-  if (fit_type==kTimeBased){
+  if (fit_type==kTimeBased)
+  //if (true)
+    {
     DVector3 mom(S(state_tx),S(state_ty),1.);
     if (geom->FindMatKalman(temp.pos,mom,temp.Z,temp.K_rho_Z_over_A,
   			    temp.rho_Z_over_A,temp.LnI,&s_to_boundary)
@@ -2098,7 +2110,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
 
   // Deal with CDC-only tracks with theta<50 degrees using forward parameters
-  if (my_cdchits.size()>0 && tanl_>0.84){
+  if (my_cdchits.size()>0 && tanl_>0.58){
     // Order the CDC hits by ring number
     sort(my_cdchits.begin(),my_cdchits.end(),DKalmanSIMDCDCHit_cmp);
 
@@ -2767,6 +2779,13 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     pos.SetXYZ(central_traj[k].pos.x()-Sc(state_D)*sin(Sc(state_phi)),
 	       central_traj[k].pos.y()+Sc(state_D)*cos(Sc(state_phi)),
 	       Sc(state_z));
+    // Bail if the position is grossly outside of the tracking volume
+    if (pos.Perp()>R_MAX || Sc(state_z)<Z_MIN || Sc(state_z)>Z_MAX){
+      if (DEBUG_LEVEL>2){
+	_DBG_<< "Went outside of tracking volume at z="<<Sc(state_z)<<endl;
+      }
+      return VALUE_OUT_OF_RANGE;
+    }
 
     // Save the current state of the reference trajectory
     S0_=S0;
@@ -2922,7 +2941,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	// Difference and variance
 	double var=V,var_pred=0.;
 	if (prediction>0.){
-	  var_pred=H*Cc*H_T;
+	  var_pred=H*(Cc*H_T);
 	  var+=var_pred;
 	}
 	double dm=measurement-prediction;
@@ -2961,7 +2980,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	
 	// Update state vector covariance matrix
 	//Cc=Cc-(K*(H*Cc));  
-	Cc=Cc.SubSym(K*H*Cc);
+	Cc=Cc.SubSym(K*(H*Cc));
 	
 	// calculate the residual
 	dm*=1.-H*K;
@@ -3106,6 +3125,16 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
     // Update the actual state vector and covariance matrix
     S=S0+J*(S-S0_);
+
+    // Bail if the position is grossly outside of the tracking volume
+    if (sqrt(S(state_x)*S(state_x)+S(state_y)*S(state_y))>R_MAX_FORWARD){
+      if (DEBUG_LEVEL>2)
+      {
+	_DBG_<< "Went outside of tracking volume at z="<<forward_traj[k].pos.z()<<endl;
+      }
+      return VALUE_OUT_OF_RANGE;
+    }
+
     //C=J*(C*J_T)+Q;   
     C=Q.AddSym(J*C*J_T);
 
@@ -3192,7 +3221,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       H(0,state_tx)=H_T(state_tx,0)=-cosa*factor;
 
       // Compute Kalman gain matrix
-      K=C*H_T*(V+H*C*H_T).Invert();
+      K=C*H_T*(V+H*(C*H_T)).Invert();
 
       // Update the state vector 
       Mdiff.Set(M(0)-du*cos(alpha),M(1)-(y*cosa+x*sina));
@@ -3205,7 +3234,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
       // Update state vector covariance matrix
       //C=C-K*(H*C);    
-      C=C.SubSym(K*H*C);
+      C=C.SubSym(K*(H*C));
 
       // Filtered residual and covariance of filtered residual
       R=Mdiff-H*K*Mdiff;   
@@ -3254,7 +3283,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   DMatrix5x1 S0,S0_; //State vector
   DMatrix5x1 dS;  // perturbation in state vector
   double InvV;  // inverse of variance
-  
+  double rmax=R_MAX;
+  if (my_fdchits.size()>0) rmax=R_MAX_FORWARD;
+ 
   // Save the starting values for C and S in the deque
   forward_traj_cdc[0].Skk=S;
   forward_traj_cdc[0].Ckk=C;
@@ -3297,6 +3328,17 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
     */
     // Update the actual state vector and covariance matrix
     S=S0+J*(S-S0_);
+
+      // Bail if the position is grossly outside of the tracking volume
+    if (sqrt(S(state_x)*S(state_x)+S(state_y)*S(state_y))>rmax){
+      if (DEBUG_LEVEL>2)
+	{
+	_DBG_<< "Went outside of tracking volume at z="<<z<<endl;
+      }
+      return VALUE_OUT_OF_RANGE;
+    }
+
+
     //C=J*(C*J_T)+Q;   
     C=Q.AddSym(J*C*J_T);
 
@@ -3423,7 +3465,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	// variance including prediction
 	double var=V,var_pred=0.;
 	if (d>0.){
-	  var_pred=H*C*H_T;
+	  var_pred=H*(C*H_T);
 	  var+=var_pred;
 	}
 	if (var<0.){
@@ -3461,7 +3503,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	
 	// Update state vector covariance matrix
 	//C=C-K*(H*C);    
-	C=C.SubSym(K*H*C);
+	C=C.SubSym(K*(H*C));
 	
 	// doca after correction
 	//dy=S(state_y,0)-yw;
@@ -3474,7 +3516,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	my_cdchits[cdc_index]->residual=res;
 
 	// Update chi2 for this segment
-	double err2 = V-H*C*H_T;
+	double err2 = V-H*(C*H_T);
 	chisq+=anneal*res*res/err2;
 	
 	pulls.push_back(pull_t(res, sqrt(fabs(err2/anneal))));
