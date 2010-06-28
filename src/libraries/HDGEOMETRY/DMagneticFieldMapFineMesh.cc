@@ -421,9 +421,9 @@ void DMagneticFieldMapFineMesh::InterpolateField(double r,double z,double &Br,
   temp[15]=B10->dBxdxdz;
     
   for (i=0;i<16;i++){
-    double tmp2=0.0;
+    double tmp2=0.0; 
     for (k=0;k<16;k++) tmp2+=wt[i][k]*temp[k];
-      cl[i]=tmp2;
+    cl[i]=tmp2;
   }
   for (i=0;i<4;i++)
     for (j=0;j<4;j++) coeff[i][j]=cl[m++];
@@ -432,8 +432,9 @@ void DMagneticFieldMapFineMesh::InterpolateField(double r,double z,double &Br,
   double u=(r - B00->x)/dx;
   Br=dBrdr=dBrdz=0.;
   for (i=3;i>=0;i--){
-    Br=t*Br+((coeff[i][3]*u+coeff[i][2])*u+coeff[i][1])*u+coeff[i][0];
-    dBrdr=t*dBrdr+(3.*coeff[i][3]*u+2.*coeff[i][2])*u+coeff[i][1];
+    double c3u=coeff[i][3]*u;
+    Br=t*Br+((c3u+coeff[i][2])*u+coeff[i][1])*u+coeff[i][0];
+    dBrdr=t*dBrdr+(3.*c3u+2.*coeff[i][2])*u+coeff[i][1];
     dBrdz=u*dBrdz+(3.*coeff[3][i]*t+2.*coeff[2][i])*t+coeff[1][i];
   }
   dBrdr/=dx;
@@ -471,8 +472,9 @@ void DMagneticFieldMapFineMesh::InterpolateField(double r,double z,double &Br,
   
   Bz=dBzdr=dBzdz=0.;
   for (i=3;i>=0;i--){
-    Bz=t*Bz+((coeff[i][3]*u+coeff[i][2])*u+coeff[i][1])*u+coeff[i][0];
-    dBzdr=t*dBzdr+(3.*coeff[i][3]*u+2.*coeff[i][2])*u+coeff[i][1];
+    double c3u=coeff[i][3]*u;
+    Bz=t*Bz+((c3u+coeff[i][2])*u+coeff[i][1])*u+coeff[i][0];
+    dBzdr=t*dBzdr+(3.*c3u+2.*coeff[i][2])*u+coeff[i][1];
     dBzdz=u*dBzdz+(3.*coeff[3][i]*t+2.*coeff[2][i])*t+coeff[1][i];
     }
   dBzdr/=dx;
@@ -723,7 +725,7 @@ void DMagneticFieldMapFineMesh::GetFineMeshMap(void){
 
 void DMagneticFieldMapFineMesh::GenerateFineMesh(void){
   rminFine=0.;
-  rmaxFine=65.;
+  rmaxFine=88.5;
   drFine=0.1;
   zminFine=0.;
   zmaxFine=600.;

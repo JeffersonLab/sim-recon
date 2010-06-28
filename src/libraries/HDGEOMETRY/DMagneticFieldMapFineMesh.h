@@ -76,9 +76,9 @@ class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
   double dx, dy,dz;
   
   vector<vector<DBfieldCylindrical_t> >mBfine;
-  float zminFine,rminFine,zmaxFine,rmaxFine,drFine,dzFine;
-  unsigned int NrFine,NzFine;
-  
+  double zminFine,rminFine,zmaxFine,rmaxFine,drFine,dzFine;
+  unsigned int NrFine,NzFine;  
+ 
  private:
   void InterpolateField(double r,double z,double &Br,double &Bz,double &dBrdr,
 			double &dBrdz,double &dBzdr,double &dBzdz) const;
