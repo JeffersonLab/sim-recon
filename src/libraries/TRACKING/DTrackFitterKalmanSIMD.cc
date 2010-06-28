@@ -51,7 +51,7 @@
 #define MIN_CDC_ITER 0
 
 #define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.000100 // 100 keV
+#define DE_PER_STEP_WIRE_BASED 0.000050 // 50 keV
 #define DE_PER_STEP_TIME_BASED 0.000025
 #define BFIELD_FRAC 0.01
 #define MIN_STEP_SIZE 0.05
@@ -826,6 +826,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 		   central_traj[m].rho_Z_over_A,central_traj[m].LnI);
     
       // Adjust the step size
+      step_size=mStepSizeS;
       if (fabs(dedx)>EPS){
 	step_size=
 	  (fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
@@ -927,6 +928,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
     temp.S=Sc;
     
     // Adjust the step size
+    step_size=mStepSizeS;
     if (fabs(dedx)>EPS){
       step_size=
 	  (fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
@@ -1088,6 +1090,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   }
  
   // Determine the step size based on energy loss 
+  step=mStepSizeZ;
   if (fabs(dEdx)>EPS){
     step=(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
       /fabs(dEdx)*dz_ds;
@@ -2909,7 +2912,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	// Measurement
 
 	double measurement=0.;
-	if (fit_type==kTimeBased){	
+	if (fit_type==kTimeBased)
+	  {	
 	  measurement=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
 				       -central_traj[k].t);
 
@@ -3165,7 +3169,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       // The next measurement 
       M.Set(0.,v);
 
-      if (fit_type==kTimeBased){
+      if (fit_type==kTimeBased)
+	{
 	// Compute drift distance
 	double tflight=forward_traj[k].t;
 	double drift=DRIFT_SPEED*(my_fdchits[id]->t-tflight);  
@@ -3451,7 +3456,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	// The next measurement
 	double dm=0.;
 	double V=0.2133; //1.6*1.6/12.;
-	if (fit_type==kTimeBased){
+	if (fit_type==kTimeBased)
+	  {
 	  dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
 			      -forward_traj_cdc[k].t);
 	  /*
