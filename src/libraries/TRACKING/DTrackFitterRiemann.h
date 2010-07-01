@@ -15,7 +15,7 @@ using namespace std;
 typedef struct{
   DVector2 XY; 
   double covx,covy,covxy;  ///< error info for x and y coordinates
-  double z;
+  double z,covz;
   const DFDCPseudo *fdc;
   const DCDCTrackHit *cdc;
 }DRiemannHit_t;
@@ -66,6 +66,7 @@ class DTrackFitterRiemann:public DTrackFitter{
   // Covariance matrices
   DMatrix CR;
   DMatrix CRPhi;
+  DMatrix Cz;
 
   // Vector of projections
   vector<DVector2>projections;
