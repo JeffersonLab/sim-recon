@@ -41,7 +41,8 @@ class DTrackFitterRiemann:public DTrackFitter{
   jerror_t ComputeCR();
   jerror_t GetAxialPosition(double &sperp,const DVector2 &XYold,
 			    DRiemannHit_t *hit);
-  jerror_t GetStereoPosition(DVector3 &pos);
+  jerror_t GetStereoPosition(double &sperp,DVector2 &XYold,
+			     DRiemannHit_t *hit);
   jerror_t GetFDCPosition(DRiemannHit_t *hit);
   jerror_t FitCircle();
   jerror_t FitLine();

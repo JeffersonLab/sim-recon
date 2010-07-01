@@ -37,9 +37,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 
   // Clear the hits
   for (unsigned int i=0;i<my_line_hits.size();i++){
-    if (my_line_hits[i]->cdc!=NULL){
-      delete my_line_hits[i];
-    }
+    delete my_line_hits[i];
   }
   my_line_hits.clear(); 
   for (unsigned int i=0;i<my_circle_hits.size();i++){
@@ -71,7 +69,6 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
     B+=bfield->GetBz(hit->XY.X(),hit->XY.Y(),hit->z);
     
     my_circle_hits.push_back(hit);
-    my_line_hits.push_back(hit);
   }
   // Deal with cdc axial hits
   DVector2 XY(xc+rc*cos(phi1),yc+rc*sin(phi1)); // Starting radial coords.
@@ -105,6 +102,59 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
     ComputeCRPhi();    
     FitCircle();
 
+    /*
+    DRiemannHit_t *hit= new DRiemannHit_t;
+    hit->fdc=NULL;
+    hit->cdc=NULL;
+    hit->XY.Set(0.,0.);
+    hit->covxy=0.;
+    hit->covx=hit->covy=1.;
+    hit->z=Z_VERTEX;
+    my_line_hits.push_back(hit);
+    */
+
+    // Deal with cdc stereo hits
+    XY.Set(xc+rc*cos(phi1),yc+rc*sin(phi1)); // Starting radial coords.
+    double sperp=0.; // perpendicular arc length
+    for (unsigned int i=0;i<cdchits.size();i++){
+      // Stereo wires
+      if (fabs(cdchits[i]->wire->stereo)>EPS){ 
+	DRiemannHit_t *hit= new DRiemannHit_t;
+	// Pointers to fdc/cdc hit objects
+	hit->fdc=NULL;
+	hit->cdc=cdchits[i];
+	
+	GetStereoPosition(sperp,XY,hit);
+	//XY=hit->XY;
+	
+	my_line_hits.push_back(hit);
+      }
+    }
+    // Add the fdc hits to the my_line_hits vector
+    for (unsigned int i=0;i<fdchits.size();i++){
+      DRiemannHit_t *hit= new DRiemannHit_t;
+      // Pointers to fdc/cdc hit objects
+      hit->fdc=fdchits[i];
+      hit->cdc=NULL;
+      
+      GetFDCPosition(hit);
+      
+      // Measurement covariance
+      double cosa=hit->fdc->wire->udir.y();
+      double sina=hit->fdc->wire->udir.x();
+      double cosa2=cosa*cosa;
+      double sina2=sina*sina;
+      double sigx2=0.02*0.02;
+      double sigy2=0.02*0.02;
+      hit->covx=sigx2*cosa2+sigy2*sina2;
+      hit->covy=sigx2*sina2+sigy2*cosa2;
+      hit->covxy=(sigy2-sigx2)*sina*cosa;
+      hit->z=hit->fdc->wire->origin.z();
+ 
+      my_line_hits.push_back(hit);
+     }
+
+
     if (my_line_hits.size()>0){
       ComputeCR();
       FitLine();
@@ -113,7 +163,8 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
     // reset sperp to zero
     sperp=0.; 
     // New starting radial coordinates
-    DVector2 XY(xc+rc*cos(phi1),yc+rc*sin(phi1));
+    phi1=phi0; // temp
+    XY.Set(xc+rc*cos(phi1),yc+rc*sin(phi1));
 
     for (unsigned int i=0;i<my_circle_hits.size();i++){
       DRiemannHit_t *hit=my_circle_hits[i];
@@ -127,13 +178,15 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 	hit->z=z_vertex+q*rc*tanl*(atan2(XY.Y()-yc,XY.X()-xc)-phi1);
       }
     }
+    /*
     ComputeCRPhi();    
     FitCircle();
-
+    
     if (my_line_hits.size()>0.){
       ComputeCR();
       FitLine();
     }
+    */
     
     if (q<0) phi0+=M_PI;
     if(phi0<0)phi0+=2.0*M_PI;
@@ -224,50 +277,65 @@ jerror_t DTrackFitterRiemann::GetAxialPosition(double &sperp,
 
   return NOERROR;
 }
-/*
-    }
-    else{
-      double ux=cdchit->wire->udir.x()/cdchit->wire->udir.z();
-      double uy=cdchit->wire->udir.y()/cdchit->wire->udir.z();
-      double denom=ux*ux+uy*uy;
-      
-      z=cdchit->wire->origin.z();
-      z+=((xc-xwire0)*ux+(yc-ywire0)*uy)/denom;
-      z-=sqrt(denom*rc*rc-(uy*(xwire0-xc)-ux*(ywire0-yc))*(uy*(xwire0-xc)-ux*(ywire0-yc)))/denom;
-      
-      //z=z_old+1.;
-      double my_phi=phi1+(z-z_vertex)/(q*tanl*rc);
-      double xp=xc+rc*cos(my_phi);
-      double yp=yc+rc*sin(my_phi);
-      double zwire=cdchit->wire->origin.z();
-      double xwire=xwire0+ux*(z-zwire);
-      double ywire=ywire0+uy*(z-zwire);
-      x=xwire;
-      y=ywire;
-      printf("rc %f %f\n",rc,sqrt((xwire-xc)*(xwire-xc)+(ywire-yc)*(ywire-yc)));
-      printf("xwire %f ywire %f sin %f\n",xwire,ywire,sin(cdchit->wire->stereo));
-      printf("Stereo x %f y %f z %f d %f\n",x,y,z,sqrt((xp-xwire)*(xp-xwire)
-						       +(yp-ywire)*(yp-ywire)));
 
-    }
-    z_old=z;
-    x_old=x;
-    y_old=y;
 
-    if (cdchit->wire->stereo==0)
-      {
-      DRiemannHit_t *hit= new DRiemannHit_t;
-      hit->pos.SetXYZ(x,y,z);
-      hit->covx=hit->covy=0.02;//1.6*1.6/12;
-      hit->covxy=0.;
-      hits.push_back(hit);
-      }
-      B+=bfield->GetBz(x,y,z);
-      nB+=1.0;
-  }
+jerror_t DTrackFitterRiemann::GetStereoPosition(double &sperp,
+						DVector2 &XYold,
+						DRiemannHit_t *hit){
+  double uz=hit->cdc->wire->udir.z();
+  double ux=hit->cdc->wire->udir.x()/uz;
+  double uy=hit->cdc->wire->udir.y()/uz;
+  double denom=ux*ux+uy*uy;
+  
+  // wire origin
+  double xwire0=hit->cdc->wire->origin.x();
+  double ywire0=hit->cdc->wire->origin.y();
+  double zwire0=hit->cdc->wire->origin.z();
+
+  DVector2 XY(hit->cdc->wire->origin.x(),hit->cdc->wire->origin.y());
+  DVector2 dXY(XY.X()-xc,XY.Y()-yc);
+  double drw=dXY.Mod();
+  DVector2 dir=(1./drw)*dXY;
+  
+  double sign=(drw<rc)?1.:-1.;
+  sperp+=2.*rc*asin((XY-XYold).Mod()/(2.*rc));
+  double tflight=sperp*fabs(tanl)*sqrt(1.+mass2/(p*p))/29.98;
+  double d_drift=sign*0.0055*(hit->cdc->tdrift-tflight)
+    *cos(hit->cdc->wire->stereo);
+  xwire0+=d_drift*dir.X();
+  ywire0+=d_drift*dir.Y();
+
+
+  hit->z=zwire0+((xc-xwire0)*ux+(yc-ywire0)*uy)/denom;
+  double rootz=sqrt(denom*rc*rc-(uy*(xwire0-xc)-ux*(ywire0-yc))*(uy*(xwire0-xc)-ux*(ywire0-yc)))/denom;
+  double z1=hit->z+rootz;
+  double z2=hit->z-rootz;
+  if (fabs(z2-Z_VERTEX)>fabs(z1-Z_VERTEX)) hit->z=z1;
+  else hit->z=z2;
+      
+  //z=z_old+1.;
+  //double my_phi=phi1+(hit->z-z_vertex)/(q*tanl*rc);
+  //double xp=xc+rc*cos(my_phi);
+  //double yp=yc+rc*sin(my_phi);
+  double dzwire=hit->z-zwire0;
+  hit->XY.Set(xwire0+ux*dzwire,ywire0+uy*dzwire);
+  /*
+  printf("stereo %f r0 %f\n",hit->cdc->wire->stereo,hit->cdc->wire->origin.Perp());
+  printf("xp %f x %f yp %f y %f z %f\n",xp,hit->XY.X(),yp,hit->XY.Y(),
+	 hit->z);
+  printf("r1 %f\n",hit->XY.Mod());
+  */
+
+  // Crude approximation for covariance matrix ignoring error in dir
+  hit->covx=0.015*0.015*dir.X()*dir.X();
+  hit->covy=0.015*0.015*dir.Y()*dir.Y();
+  hit->covxy=0.;
+
+  XYold=XY;
+
+  return NOERROR;
 }
 
-*/
 
 jerror_t DTrackFitterRiemann::GetFDCPosition(DRiemannHit_t *hit){          
   // Position on the helical trajectory 
@@ -404,8 +472,8 @@ jerror_t DTrackFitterRiemann::ComputeCR(){
     double Phi=my_line_hits[i]->XY.Phi();
     double cosPhi=cos(Phi);
     double sinPhi=sin(Phi);
-    CR(i,i)=cosPhi*cosPhi*my_circle_hits[i]->covx+sinPhi*sinPhi*my_circle_hits[i]->covy
-      +2.*sinPhi*cosPhi*my_circle_hits[i]->covxy;
+    CR(i,i)=cosPhi*cosPhi*my_line_hits[i]->covx+sinPhi*sinPhi*my_line_hits[i]->covy
+      +2.*sinPhi*cosPhi*my_line_hits[i]->covxy;
   }
   //  printf("Errors\n");
   //CR.Print();
@@ -607,12 +675,18 @@ jerror_t DTrackFitterRiemann::FitLine(){
   int numbad=0;
   // Clear old projection vector
   projections.clear();
+  // vector of arc lengths
+  vector<double>s;
+  DVector2 XYold;
+  double my_s=0.;
+  double chord_ratio=0.;
   for (unsigned int m=0;m<my_line_hits.size();m++){
     double r2=my_line_hits[m]->XY.Mod2();
     numer=c_origin+r2*N.z();
 
     if (r2==0){
       projections.push_back(DVector2(0.,0.));
+      s.push_back(0.);
     }
     else{
       double ratio=numer/denom;
@@ -624,6 +698,10 @@ jerror_t DTrackFitterRiemann::FitLine(){
 	bad[m]=1;
 	numbad++;
 	projections.push_back(DVector2(x_int0,y_int0));
+	chord_ratio=(projections[projections.size()-1]-XYold).Mod()/(2.*rc);
+	my_s=my_s+(chord_ratio>1.?2.*rc*M_PI_2:2.*rc*asin(chord_ratio));
+	s.push_back(my_s);
+
 	continue;
       }
       temp=sqrt(temp)/denom;
@@ -639,6 +717,11 @@ jerror_t DTrackFitterRiemann::FitLine(){
       else{
 	projections.push_back(XY1);
       }
+      chord_ratio=(projections[projections.size()-1]-XYold).Mod()/(2.*rc);
+      my_s=my_s+(chord_ratio>1.?2.*rc*M_PI_2:2.*rc*asin(chord_ratio));
+      s.push_back(my_s);
+
+      XYold=projections[projections.size()-1];     
     }
   }  
   
@@ -655,34 +738,47 @@ jerror_t DTrackFitterRiemann::FitLine(){
   // Linear regression to find z0, tanl   
   unsigned int n=projections.size();
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
-  double sperp=0.,sperp_old=0., ratio=0, Delta;
-  double z_last=0.,z=0.;
+  double Delta;
+  double z=0.;
   DVector2 old_projection=projections[start];
-  for (unsigned int k=start;k<n;k++){
-    if (!bad[k]){
-      sperp_old=sperp;
-      z_last=z;
-
-      DVector2 diff=projections[k]-old_projection;
-      old_projection=projections[k];
-      ratio=diff.Mod()/(2.*rc); 
-      sperp=sperp_old+(ratio>1.?2.*rc*M_PI_2:2.*rc*asin(ratio));
-      z=my_line_hits[k]->z;
-
-      // Assume errors in s dominated by errors in R 
-      double weight=1./CR(k,k);
-      sumv+=weight;
-      sumy+=sperp*weight;
-      sumx+=z*weight;
-      sumxx+=z*z*weight;
-      sumxy+=sperp*z*weight;
+  if (fdchits.size()==0){
+    for (unsigned int k=start;k<n;k++){
+      if (!bad[k]){
+	z=my_line_hits[k]->z;
+	double weight=0.01;
+	sumv+=weight;
+	sumy+=z*weight;
+	sumx+=s[k]*weight;
+	sumxx+=s[k]*s[k]*weight;
+	sumxy+=s[k]*z*weight;
+      }
     }
+    Delta=-(sumv*sumxx-sumx*sumx);
+    // Track parameters tan(lambda) and z-vertex
+    theta=atan(-Delta/(sumv*sumxy-sumy*sumx));
+    tanl=tan(M_PI_2-theta);
+    z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
   }
-  Delta=-(sumv*sumxx-sumx*sumx);
-  // Track parameters tan(lambda) and z-vertex
-  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
+  else{
+    for (unsigned int k=start;k<n;k++){
+      if (!bad[k]){
+	z=my_line_hits[k]->z;
 
+	// Assume errors in s dominated by errors in R 
+	double weight=1./CR(k,k);
+	sumv+=weight;
+	sumy+=s[k]*weight;
+	sumx+=z*weight;
+	sumxx+=z*z*weight;
+	sumxy+=s[k]*z*weight;
+      }
+    }
+    Delta=-(sumv*sumxx-sumx*sumx);
+    // Track parameters tan(lambda) and z-vertex
+    tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+    z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
+  }
+  
   /*
   // Use the last z and s values to estimate the vertex position if the first
   // method gave a result beyond the extent of the target
