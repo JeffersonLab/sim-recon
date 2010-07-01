@@ -140,8 +140,25 @@ int main(int narg, char *argv[])
 		}
 	}
 
+	TH2D *cos_theta_vs_r_vs_z = new TH2D("cos_theta_vs_r_vs_z", "", 651, -25, 625.0, 400, 0.0, 200.0);
+	cos_theta_vs_r_vs_z->SetXTitle("z (cm)");
+	cos_theta_vs_r_vs_z->SetYTitle("r (cm)");
+	cos_theta_vs_r_vs_z->SetStats(0);
+	for(int ibin=1; ibin<=cos_theta_vs_r_vs_z->GetNbinsX(); ibin++){
+		double z = cos_theta_vs_r_vs_z->GetXaxis()->GetBinCenter(ibin);
+		for(int jbin=1; jbin<=cos_theta_vs_r_vs_z->GetNbinsY(); jbin++){
+			double r = cos_theta_vs_r_vs_z->GetYaxis()->GetBinCenter(jbin);
+			
+			double Bx, By, Bz;
+			bfield->GetField(r, 0.0, z-Z0, Bx, By, Bz);
+			double Btot = sqrt(Bx*Bx + By*By + Bz*Bz);
+			
+			cos_theta_vs_r_vs_z->SetBinContent(ibin, jbin, Bz/Btot);
+		}
+	}
+
 	// Zoom in to TOF
-	TH2D *Btot_vs_r_vs_z_tof = new TH2D("Btot_vs_r_vs_z_tof", "", 61, 590.0, 650.0, 200, 76.0, 151.0);
+	TH2D *Btot_vs_r_vs_z_tof = new TH2D("Btot_vs_r_vs_z_tof", "", 61, 590.0, 650.0, 200, 76.0, 180.0);
 	Btot_vs_r_vs_z_tof->SetXTitle("z (cm)");
 	Btot_vs_r_vs_z_tof->SetYTitle("r (cm)");
 	Btot_vs_r_vs_z_tof->SetStats(0);
@@ -160,12 +177,6 @@ int main(int narg, char *argv[])
 				dBydx, dBydy, dBydz,
 				dBzdx, dBzdy, dBzdz);
 			double Btot = sqrt(Bx*Bx + By*By + Bz*Bz);
-			
-			// Gradient of magnitude
-			TVector3 gradient(dBxdx*Bx/Btot + dBydx*By/Btot + dBzdx*Bz/Btot,
-			                  dBxdy*Bx/Btot + dBydy*By/Btot + dBzdy*Bz/Btot,
-					          dBxdz*Bx/Btot + dBydz*By/Btot + dBzdz*Bz/Btot);
-			double dBtot = gradient.Mag();
 			
 			Btot_vs_r_vs_z_tof->SetBinContent(ibin, jbin, Btot);
 		}
