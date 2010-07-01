@@ -130,6 +130,12 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 	my_line_hits.push_back(hit);
       }
     }
+    // Covariance matrix for z;
+    Cz.ResizeTo(my_line_hits.size(),my_line_hits.size());
+    for (unsigned int i=0;i<my_line_hits.size();i++){
+      Cz(i,i)=my_line_hits[i]->covz;
+    }
+
     // Add the fdc hits to the my_line_hits vector
     for (unsigned int i=0;i<fdchits.size();i++){
       DRiemannHit_t *hit= new DRiemannHit_t;
@@ -291,47 +297,42 @@ jerror_t DTrackFitterRiemann::GetStereoPosition(double &sperp,
   double xwire0=hit->cdc->wire->origin.x();
   double ywire0=hit->cdc->wire->origin.y();
   double zwire0=hit->cdc->wire->origin.z();
-
-  DVector2 XY(hit->cdc->wire->origin.x(),hit->cdc->wire->origin.y());
-  DVector2 dXY(XY.X()-xc,XY.Y()-yc);
-  double drw=dXY.Mod();
-  DVector2 dir=(1./drw)*dXY;
-  
-  double sign=(drw<rc)?1.:-1.;
-  sperp+=2.*rc*asin((XY-XYold).Mod()/(2.*rc));
-  double tflight=sperp*fabs(tanl)*sqrt(1.+mass2/(p*p))/29.98;
-  double d_drift=sign*0.0055*(hit->cdc->tdrift-tflight)
-    *cos(hit->cdc->wire->stereo);
-  xwire0+=d_drift*dir.X();
-  ywire0+=d_drift*dir.Y();
-
-
   hit->z=zwire0+((xc-xwire0)*ux+(yc-ywire0)*uy)/denom;
-  double rootz=sqrt(denom*rc*rc-(uy*(xwire0-xc)-ux*(ywire0-yc))*(uy*(xwire0-xc)-ux*(ywire0-yc)))/denom;
-  double z1=hit->z+rootz;
-  double z2=hit->z-rootz;
-  if (fabs(z2-Z_VERTEX)>fabs(z1-Z_VERTEX)) hit->z=z1;
-  else hit->z=z2;
-      
-  //z=z_old+1.;
-  //double my_phi=phi1+(hit->z-z_vertex)/(q*tanl*rc);
-  //double xp=xc+rc*cos(my_phi);
-  //double yp=yc+rc*sin(my_phi);
+  double rootz2=denom*rc*rc-(uy*(xwire0-xc)-ux*(ywire0-yc))
+    *(uy*(xwire0-xc)-ux*(ywire0-yc));  
+  double dx0dz=ux/denom;
+  double dy0dz=uy/denom;
+  if (rootz2>0.){
+    double rootz=sqrt(rootz2);
+    double z1=hit->z+rootz/denom;
+    double z2=hit->z-rootz/denom;
+
+    if (fabs(z2-Z_VERTEX)>fabs(z1-Z_VERTEX)){
+      hit->z=z1;
+      dx0dz+=((uy*(xwire0-xc)-ux*(ywire0-yc))*uy/rootz)/denom;
+      dy0dz-=((uy*(xwire0-xc)-ux*(ywire0-yc))*ux/rootz)/denom;
+    }
+    else{
+      hit->z=z2; 
+      dx0dz-=((uy*(xwire0-xc)-ux*(ywire0-yc))*uy/rootz)/denom; 
+      dy0dz+=((uy*(xwire0-xc)-ux*(ywire0-yc))*ux/rootz)/denom;
+    }
+  }
+  if (hit->z>167.3) hit->z=167.3;
+  if (hit->z<17.0) hit->z=17.0;
   double dzwire=hit->z-zwire0;
   hit->XY.Set(xwire0+ux*dzwire,ywire0+uy*dzwire);
-  /*
-  printf("stereo %f r0 %f\n",hit->cdc->wire->stereo,hit->cdc->wire->origin.Perp());
-  printf("xp %f x %f yp %f y %f z %f\n",xp,hit->XY.X(),yp,hit->XY.Y(),
-	 hit->z);
-  printf("r1 %f\n",hit->XY.Mod());
-  */
 
+  DVector2 dXY(hit->XY.X()-xc,hit->XY.Y()-yc);
+  double drw=dXY.Mod();
+  DVector2 dir=(1./drw)*dXY;
   // Crude approximation for covariance matrix ignoring error in dir
-  hit->covx=0.015*0.015*dir.X()*dir.X();
-  hit->covy=0.015*0.015*dir.Y()*dir.Y();
+  hit->covx=0.2133*dir.X()*dir.X();
+  hit->covy=0.2133*dir.Y()*dir.Y();
   hit->covxy=0.;
+  hit->covz=dx0dz*dx0dz*hit->covx+dy0dz*dy0dz*hit->covy;
 
-  XYold=XY;
+  XYold=hit->XY;
 
   return NOERROR;
 }
@@ -745,7 +746,7 @@ jerror_t DTrackFitterRiemann::FitLine(){
     for (unsigned int k=start;k<n;k++){
       if (!bad[k]){
 	z=my_line_hits[k]->z;
-	double weight=0.01;
+	double weight=1./Cz(k,k);
 	sumv+=weight;
 	sumy+=z*weight;
 	sumx+=s[k]*weight;
