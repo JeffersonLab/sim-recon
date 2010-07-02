@@ -100,7 +100,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
     // Using the new combined list of hits, compute the covariance matrix 
     // for RPhi associated with these hits
     ComputeCRPhi();    
-    FitCircle();
+    if (FitCircle()!=NOERROR) return kFitFailed;
 
     /*
     DRiemannHit_t *hit= new DRiemannHit_t;
@@ -271,7 +271,8 @@ jerror_t DTrackFitterRiemann::GetAxialPosition(double &sperp,
   DVector2 dir=(1./drw)*dXY;
 
   double sign=(drw<rc)?1.:-1.;
-  sperp+=2.*rc*asin((XY-XYold).Mod()/(2.*rc));
+  double ratio=(XY-XYold).Mod()/(2.*rc);
+  sperp+=2.*rc*((ratio>1.)?M_PI_2:asin(ratio));
   double tflight=sperp*fabs(tanl)*sqrt(1.+mass2/(p*p))/29.98;
   double tdrift=hit->cdc->tdrift-tflight;
   hit->XY=XY+sign*0.0055*tdrift*dir;
@@ -375,7 +376,7 @@ jerror_t DTrackFitterRiemann::GetFDCPosition(DRiemannHit_t *hit){
 jerror_t DTrackFitterRiemann::ComputeCRPhi(){
   // Size the matrices according to the number of hits
   unsigned int nhits=my_circle_hits.size();
-  DMatrix my_CR(nhits,nhits);
+  DMatrix my_CR(nhits,nhits);// Needed for correction for non-normal incidence
   CRPhi.ResizeTo(nhits,nhits);
 
   // Zero the CRPhi matrix out before filling them with new data
@@ -394,47 +395,35 @@ jerror_t DTrackFitterRiemann::ComputeCRPhi(){
     my_CR(i,i)=cosPhi*cosPhi*my_circle_hits[i]->covx+sinPhi*sinPhi*my_circle_hits[i]->covy
       +2.*sinPhi*cosPhi*my_circle_hits[i]->covxy;
   }
-  //  printf("Errors\n");
-  //CR.Print();
+  //printf("Errors\n");
+  //my_CR.Print();
   //CRPhi.Print();
-
 
    // Correct the covariance matrices for contributions due to multiple
   // scattering
   DMatrix CRPhi_ms(nhits,nhits);
-  DMatrix CR_ms(nhits,nhits);
   double lambda=atan(tanl);
   double cosl=cos(lambda);
-  double sinl=sin(lambda);
   if (cosl<EPS) cosl=EPS;
-  if (sinl<EPS) sinl=EPS;
+  double cosl2=cosl*cosl;
   for (unsigned int m=0;m<nhits;m++){
     double Rm=my_circle_hits[m]->XY.Mod();
-    double zm=my_circle_hits[m]->z;
     for (unsigned int k=m;k<nhits;k++){
       double Rk=my_circle_hits[k]->XY.Mod();
-      double zk=my_circle_hits[k]->z;
-      unsigned int imin=(k+1>m+1)?k+1:m+1;
-      for (unsigned int i=imin;i<nhits;i++){
-        double sigma2_ms=GetProcessNoise(my_circle_hits[i]->XY,zk);
+      unsigned int imax=(k>m)?m:k;
+      for (unsigned int i=0;i<imax;i++){ 
+	double zi=my_circle_hits[i]->z;
+        double sigma2_ms=GetProcessNoise(my_circle_hits[i]->XY,zi);
 	if (isnan(sigma2_ms)){
 	  sigma2_ms=0.;
 	}
         double Ri=my_circle_hits[i]->XY.Mod();
-        double zi=my_circle_hits[i]->z;
-        CRPhi_ms(m,k)+=sigma2_ms*(Rk-Ri)*(Rm-Ri)/(cosl*cosl);
-        CR_ms(m,k)+=sigma2_ms*(zk-zi)*(zm-zi)/(sinl*sinl*sinl*sinl);
+        CRPhi_ms(m,k)+=sigma2_ms*(Rk-Ri)*(Rm-Ri)/cosl2;
       }
       CRPhi_ms(k,m)=CRPhi_ms(m,k);
-      CR_ms(k,m)=CR_ms(m,k);
     }
   }
   CRPhi+=CRPhi_ms;
-  my_CR+=CR_ms;
-  /*
-  CR.Print();
-  CRPhi.Print();
-  */
 
   // Correction for non-normal incidence of track at the intersection R=R_i
   // The correction is 
@@ -480,26 +469,25 @@ jerror_t DTrackFitterRiemann::ComputeCR(){
   //CR.Print();
   //CRPhi.Print();
 
-   // Correct the covariance matrices for contributions due to multiple
+  // Correct the covariance matrix for contributions due to multiple
   // scattering
   DMatrix CR_ms(nhits,nhits);
   double lambda=atan(tanl);
-  double cosl=cos(lambda);
   double sinl=sin(lambda);
-  if (cosl<EPS) cosl=EPS;
   if (sinl<EPS) sinl=EPS;
+  double sinl4=sinl*sinl*sinl*sinl;
   for (unsigned int m=0;m<nhits;m++){
     double zm=my_line_hits[m]->z;
     for (unsigned int k=m;k<nhits;k++){
       double zk=my_line_hits[k]->z;
-      unsigned int imin=(k+1>m+1)?k+1:m+1;
-      for (unsigned int i=imin;i<nhits;i++){
-        double sigma2_ms=GetProcessNoise(my_line_hits[i]->XY,zk);
+      unsigned int imax=(k>m)?m:k;
+      for (unsigned int i=0;i<imax;i++){
+	double zi=my_line_hits[i]->z;
+        double sigma2_ms=GetProcessNoise(my_line_hits[i]->XY,zi);
 	if (isnan(sigma2_ms)){
 	  sigma2_ms=0.;
-	}
-        double zi=my_line_hits[i]->z;
-        CR_ms(m,k)+=sigma2_ms*(zk-zi)*(zm-zi)/(sinl*sinl*sinl*sinl);
+	}      
+        CR_ms(m,k)+=sigma2_ms*(zk-zi)*(zm-zi)/sinl4;
       }
       CR_ms(k,m)=CR_ms(m,k);
     }
@@ -550,7 +538,7 @@ jerror_t DTrackFitterRiemann::FitCircle(){
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
   double B0,B1,B2,Q,Q1,R,sum,diff;
-  double theta,lambda_min=0.;
+  double angle,lambda_min=0.;
   // Column and row vectors of ones
   DMatrix Ones(nhits,1),OnesT(1,nhits);
   DMatrix W_sum(1,1);
@@ -583,7 +571,9 @@ jerror_t DTrackFitterRiemann::FitCircle(){
   
   A=DMatrix(DMatrix::kTransposed,X)*(W*X)
     -W_sum(0,0)*(DMatrix(DMatrix::kTransposed,Xavg)*Xavg);
-  if(!A.IsValid())return UNRECOVERABLE_ERROR;
+  if(!A.IsValid()){
+    return UNRECOVERABLE_ERROR;
+  }
 
   // The characteristic equation is 
   //   lambda^3+B2*lambda^2+lambda*B1+B0=0 
@@ -592,7 +582,9 @@ jerror_t DTrackFitterRiemann::FitCircle(){
   B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)+A(1,1)*A(2,2)
     -A(2,1)*A(1,2);
   B0=-A.Determinant();
-  if(B0==0 || !finite(B0))return UNRECOVERABLE_ERROR;
+  if(B0==0 || !finite(B0)){
+    return UNRECOVERABLE_ERROR;
+  }
 
   // The roots of the cubic equation are given by 
   //        lambda1= -B2/3 + S+T
@@ -611,21 +603,25 @@ jerror_t DTrackFitterRiemann::FitCircle(){
   Q=(3.*B1-B2*B2)/9.e4; 
   R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
   Q1=Q*Q*Q+R*R;
-  if (Q1<0) Q1=sqrt(-Q1);
-  else{
-    return VALUE_OUT_OF_RANGE;
+  if (Q1<EPS){
+    if (fabs(Q1)<EPS) Q1=0.;
+    else Q1=sqrt(-Q1);
+    // DeMoivre's theorem for fractional powers of complex numbers:  
+    //      (r*(cos(angle)+i sin(angle)))^(p/q)
+    //                  = r^(p/q)*(cos(p*angle/q)+i sin(p*angle/q))
+    //
+    double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
+    angle=atan2(Q1,R)/3.;
+    sum=2.*temp*cos(angle);
+    diff=-2.*temp*sin(angle);
+    // Third root
+    lambda_min=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
   }
-
-  // DeMoivre's theorem for fractional powers of complex numbers:  
-  //      (r*(cos(theta)+i sin(theta)))^(p/q)
-  //                  = r^(p/q)*(cos(p*theta/q)+i sin(p*theta/q))
-  //
-  double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
-  theta=atan2(Q1,R)/3.;
-  sum=2.*temp*cos(theta);
-  diff=-2.*temp*sin(theta);
-  // Third root
-  lambda_min=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
+  else{
+    Q1=sqrt(Q1);
+    // first root
+    lambda_min=-B2/3+pow(R+Q1,ONE_THIRD)+pow(R-Q1,ONE_THIRD);
+  }
 
   // Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
   N.SetXYZ(1.,
@@ -743,6 +739,29 @@ jerror_t DTrackFitterRiemann::FitLine(){
   double z=0.;
   DVector2 old_projection=projections[start];
   if (fdchits.size()==0){
+    // Correct the Cz covariance matrix for contributions due to multiple
+    // scattering
+    DMatrix Cz_ms(n,n);
+    double lambda=atan(tanl);
+    double cosl=cos(lambda);
+    if (cosl<EPS) cosl=EPS;
+    double cosl4=cosl*cosl*cosl*cosl;
+    for (unsigned int m=0;m<n;m++){
+      for (unsigned int k=m;k<n;k++){
+	unsigned int imax=(k>m)?m:k;
+	for (unsigned int i=0;i<imax;i++){
+	  double zi=my_line_hits[k]->z;
+	  double sigma2_ms=GetProcessNoise(my_line_hits[i]->XY,zi);
+	  if (isnan(sigma2_ms)){
+	    sigma2_ms=0.;
+	  }
+	  Cz_ms(m,k)+=sigma2_ms*(s[k]-s[i])*(s[m]-s[i])/cosl4;
+	}
+	Cz_ms(k,m)=Cz_ms(m,k);
+      }
+    }
+    Cz+=Cz_ms;
+
     for (unsigned int k=start;k<n;k++){
       if (!bad[k]){
 	z=my_line_hits[k]->z;
