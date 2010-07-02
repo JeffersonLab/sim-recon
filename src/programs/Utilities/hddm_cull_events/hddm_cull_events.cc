@@ -75,7 +75,10 @@ int main(int narg,char* argv[])
 			if(hddm_s->physicsEvents!=HDDM_NULL){
 				for(unsigned int i=0; i<hddm_s->physicsEvents->mult; i++){
 					int eventNo = hddm_s->physicsEvents->in[i].eventNo;
-					if((unsigned int)eventNo == SPECIFIC_EVENT_TO_KEEP)write_this_event = true;
+					if((unsigned int)eventNo == SPECIFIC_EVENT_TO_KEEP){
+						write_this_event = true;
+						QUIT = true;
+					}
 				}
 			}
 			
