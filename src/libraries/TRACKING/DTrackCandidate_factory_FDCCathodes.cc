@@ -826,11 +826,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     _data.push_back(track); 
   }
 
-
   // Finally, output stray segments in package 1
   for (unsigned int k=0;k<pack1_left_over.size();k++){
     DFDCSegment *segment=pack1_left_over[k];
-    
+  
     DVector3 pos,mom;
     tanl=segment->tanl;
     phi0=segment->phi0;
@@ -840,7 +839,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     rc=segment->rc;
     // Sign of the charge
     q=segment->q;
-       
+   
     double Bz_avg=0.;
     // Compute average magnitic field for the segment
     for (unsigned int m=0;m<segment->hits.size();m++){
@@ -933,10 +932,14 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
   // too large.  Try matching again with an adjusted tanl.
   if (match==NULL){
     diff_min=1000.;
-    tanl=segment->tanl;
-    double sperp=(z-segment->z_vertex)/tanl;
-    segment->tanl=tanl*sperp/(sperp+2.*segment->rc*M_PI);
-    if (GetPositionAndMomentum(segment,pos,mom)!=NOERROR) return NULL;
+    double my_tanl=segment->tanl;
+    double sperp=(z-segment->z_vertex)/my_tanl;
+    segment->tanl=my_tanl*sperp/(sperp+2.*segment->rc*M_PI);
+    if (GetPositionAndMomentum(segment,pos,mom)!=NOERROR){
+      // Restore old value
+      segment->tanl=my_tanl;
+      return NULL;
+    }
     if (z<pos.z()) mom=-1.0*mom;
     
     for (unsigned int j=0;j<package.size();j++){
@@ -952,7 +955,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
       }
     }
     // Restore old value
-    segment->tanl=tanl;
+    segment->tanl=my_tanl;
   }
 
   // If matching in the forward direction did not work, try swimming and
@@ -961,10 +964,10 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
     diff_min=1000.;
     for (unsigned int i=0;i<package.size();i++){
       DFDCSegment *segment2=package[i];
-      tanl=segment2->tanl;
-      double sperp=(z-segment2->z_vertex)/tanl;
-      segment2->tanl=tanl*sperp/(sperp+2.*segment2->rc*M_PI);
-      
+      double my_tanl=segment2->tanl;
+      double sperp=(z-segment2->z_vertex)/my_tanl;
+      segment2->tanl=my_tanl*sperp/(sperp+2.*segment2->rc*M_PI);
+   
       if (GetPositionAndMomentum(segment2,pos,mom)==NOERROR){
         mom=-1.0*mom;
         origin.SetZ(segment->hits[0]->wire->origin.z());
@@ -980,10 +983,9 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
         }	
       } 
       // Restore old value
-      segment2->tanl=tanl;
+      segment2->tanl=my_tanl;
     }
   }
-
 
   if(DEBUG_HISTS){
     match_dist_fdc->Fill(mom.Mag(),diff_min);
@@ -1008,14 +1010,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
 
   // Track parameters
   double kappa=segment->q/(2.*segment->rc);
-  phi0=segment->phi0;
-  tanl=segment->tanl;
+  double my_phi0=segment->phi0;
+  double my_tanl=segment->tanl;
   double z0=segment->z_vertex;
 
   // Useful intermediate variables
-  double cosp=cos(phi0);
-  double sinp=sin(phi0);
-  double twoks=2.*kappa*(z-z0)/tanl;
+  double cosp=cos(my_phi0);
+  double sinp=sin(my_phi0);
+  double twoks=2.*kappa*(z-z0)/my_tanl;
   double sin2ks=sin(twoks);
   double cos2ks=cos(twoks); 
 
@@ -1025,7 +1027,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   // Momentum
   double pt=0.003*Bz*segment->rc;
   mom.SetXYZ(pt*(cosp*cos2ks-sinp*sin2ks),pt*(sinp*cos2ks+cosp*sin2ks),
-	     pt*tanl);
+	     pt*my_tanl);
 
   return NOERROR;
 }
