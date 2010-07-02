@@ -23,6 +23,7 @@ int QUIT = 0;
 unsigned int EVENTS_TO_SKIP = 0;
 unsigned int EVENTS_TO_KEEP = 1;
 unsigned int SPECIFIC_EVENT_TO_KEEP = 0;
+unsigned int SPECIFIC_OFFSET_TO_KEEP = 0;
 
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
@@ -67,8 +68,22 @@ int main(int narg,char* argv[])
 			if(!hddm_s)break;
 			NEvents_read++;
 			
+			bool write_this_event = false;
+			
+			// Loop over physics events within this event and see if one
+			// has the run number of interest
+			if(hddm_s->physicsEvents!=HDDM_NULL){
+				for(unsigned int i=0; i<hddm_s->physicsEvents->mult; i++){
+					int eventNo = hddm_s->physicsEvents->in[i].eventNo;
+					if((unsigned int)eventNo == SPECIFIC_EVENT_TO_KEEP)write_this_event = true;
+				}
+			}
+			
+			// Check if we're in the range of offsets to write out
+			if(NEvents_read>EVENTS_TO_SKIP)write_this_event = true;
+			
 			// Write this output event to file and free its memory
-			if(NEvents_read>EVENTS_TO_SKIP){
+			if(write_this_event){
 				flush_s_HDDM(hddm_s, fout);
 				NEvents++;
 			}else{
@@ -117,7 +132,8 @@ void ParseCommandLineArguments(int narg, char* argv[])
 				case 'o': OUTFILENAME=&ptr[2];						break;
 				case 's': EVENTS_TO_SKIP=atoi(&ptr[2]);			break;
 				case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]);			break;
-				case 'e': SPECIFIC_EVENT_TO_KEEP=atoi(&ptr[2]);	break;
+				case 'e': SPECIFIC_OFFSET_TO_KEEP=atoi(&ptr[2]);	break;
+				case 'E': SPECIFIC_EVENT_TO_KEEP=atoi(&ptr[2]);	break;
 			}
 		}else{
 			INFILENAMES.push_back(argv[i]);
@@ -129,17 +145,22 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		Usage();
 	}
 	
+	if(SPECIFIC_OFFSET_TO_KEEP>0){
+		EVENTS_TO_KEEP=1;
+		EVENTS_TO_SKIP=SPECIFIC_OFFSET_TO_KEEP-1;
+	}
+
 	if(SPECIFIC_EVENT_TO_KEEP>0){
 		EVENTS_TO_KEEP=1;
-		EVENTS_TO_SKIP=SPECIFIC_EVENT_TO_KEEP-1;
+		EVENTS_TO_SKIP=1000000000; // Large number of events to read it while looking for the specified event
 	}
 	
 	if(OUTFILENAME==NULL){
-		if(SPECIFIC_EVENT_TO_KEEP>0){
+		if(SPECIFIC_OFFSET_TO_KEEP>0){
 			OUTFILENAME = new char[256];
-			sprintf(OUTFILENAME,"evt%d.hddm", SPECIFIC_EVENT_TO_KEEP);
+			sprintf(OUTFILENAME,"evt%d.hddm", SPECIFIC_OFFSET_TO_KEEP);
 		}else{
-			OUTFILENAME = "culled.hddm";
+			OUTFILENAME = (char*)"culled.hddm";
 		}
 	}
 }
@@ -157,7 +178,8 @@ void Usage(void)
 	cout<<"    -oOutputfile     Set output filename (def. culled.hddm)"<<endl;
 	cout<<"    -sNeventsToSkip  Set number of events to skip (def. 0)"<<endl;
 	cout<<"    -kNeventsToKeep  Set number of events to keep (def. 1)"<<endl;
-	cout<<"    -eSingleEvent    Keep only the single, specified event"<<endl;
+	cout<<"    -eSingleEvent    Keep only the single, specified event (file pos.)"<<endl;
+	cout<<"    -ESingleEvent    Keep only the single, specified event (event number)"<<endl;
 	cout<<endl;
 	cout<<" This will copy a continguous set of events from the combined event streams"<<endl;
 	cout<<" into a seperate output file. The primary use for this would be to copy"<<endl;
@@ -167,6 +189,9 @@ void Usage(void)
 	cout<<" (the NNN-th event) and written to a file with the name evtNNN.hddm."<<endl;
 	cout<<" Note that the event is counted from the begining of the file, starting"<<endl;
 	cout<<" with \"1\". This does NOT look at the event number stored in the event itself."<<endl;
+	cout<<" "<<endl;
+	cout<<" If the -ENNN option is used then only a single event is extracted"<<endl;
+	cout<<" (the specified event number) and written to a file with the name evtNNN.hddm."<<endl;
 	cout<<" "<<endl;
 	cout<<endl;
 
