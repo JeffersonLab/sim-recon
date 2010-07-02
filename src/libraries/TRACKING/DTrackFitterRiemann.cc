@@ -45,6 +45,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
   }
   my_circle_hits.clear();
 
+  // Initialize B-field value
   B=0.;
   for (unsigned int i=0;i<fdchits.size();i++){
     DRiemannHit_t *hit= new DRiemannHit_t;
@@ -91,8 +92,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
       B+=bfield->GetBz(hit->XY.X(),hit->XY.Y(),hit->z);      
     }
   }
-  // Average B-field
-  B/=my_circle_hits.size();
+  unsigned int num_B_hits=my_circle_hits.size();
 
   if (my_circle_hits.size()>0){
     sort(my_circle_hits.begin(),my_circle_hits.end(),DRiemannHit_cmp);
@@ -114,7 +114,8 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
     */
 
     // Deal with cdc stereo hits
-    XY.Set(xc+rc*cos(phi1),yc+rc*sin(phi1)); // Starting radial coords.
+    // .. First compute starting radial coords
+    XY.Set(xc+q*rc*sin(phi0),yc-q*rc*cos(phi0));
     double sperp=0.; // perpendicular arc length
     for (unsigned int i=0;i<cdchits.size();i++){
       // Stereo wires
@@ -126,8 +127,11 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 	
 	GetStereoPosition(sperp,XY,hit);
 	//XY=hit->XY;
-	
+	//B+=bfield->GetBz(hit->XY.X(),hit->XY.Y(),hit->z);      
+	//num_B_hits++;
+
 	my_line_hits.push_back(hit);
+
       }
     }
     // Covariance matrix for z;
@@ -168,10 +172,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 
     // reset sperp to zero
     sperp=0.; 
-    // New starting radial coordinates
-    phi1=phi0; // temp
-    XY.Set(xc+rc*cos(phi1),yc+rc*sin(phi1));
-
+    // Get FDC and CDC axial positions with refined circle and line parameters
     for (unsigned int i=0;i<my_circle_hits.size();i++){
       DRiemannHit_t *hit=my_circle_hits[i];
       if (hit->fdc!=NULL){
@@ -183,8 +184,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 	// Guess z-position from result of candidate fit
 	hit->z=z_vertex+q*rc*tanl*(atan2(XY.Y()-yc,XY.X()-xc)-phi1);
       }
-    }
-    /*
+    }   
     ComputeCRPhi();    
     FitCircle();
     
@@ -192,14 +192,13 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
       ComputeCR();
       FitLine();
     }
-    */
-    
-    if (q<0) phi0+=M_PI;
-    if(phi0<0)phi0+=2.0*M_PI;
-    if(phi0>=2.0*M_PI)phi0-=2.0*M_PI;
+     
+    // Average B-field 
+    B/=num_B_hits;
     
     double pt=0.003*fabs(B)*rc;
-    fit_params.setPosition(DVector3(xc+rc*cos(phi1),yc+rc*sin(phi1),z_vertex));
+    fit_params.setPosition(DVector3(xc+q*rc*sin(phi0),yc-q*rc*cos(phi0),
+				    z_vertex));
     fit_params.setMomentum(DVector3(pt*cos(phi0),pt*sin(phi0),pt*tanl));
     fit_params.setCharge(q);
  
@@ -644,7 +643,10 @@ jerror_t DTrackFitterRiemann::FitCircle(){
  
   // Phi value at "vertex"
   phi0=atan2(-xc,yc);  
-
+  if (q<0) phi0+=M_PI;
+  if(phi0<0)phi0+=2.0*M_PI;
+  if(phi0>=2.0*M_PI)phi0-=2.0*M_PI;
+  
   // Calculate the chisq
   //ChisqCircle();
   //chisq_source = CIRCLE;
@@ -773,9 +775,9 @@ jerror_t DTrackFitterRiemann::FitLine(){
 	sumxy+=s[k]*z*weight;
       }
     }
-    Delta=-(sumv*sumxx-sumx*sumx);
+    Delta=(sumv*sumxx-sumx*sumx);
     // Track parameters tan(lambda) and z-vertex
-    theta=atan(-Delta/(sumv*sumxy-sumy*sumx));
+    theta=atan(Delta/(sumv*sumxy-sumy*sumx));
     tanl=tan(M_PI_2-theta);
     z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
   }
@@ -796,7 +798,8 @@ jerror_t DTrackFitterRiemann::FitLine(){
     Delta=-(sumv*sumxx-sumx*sumx);
     // Track parameters tan(lambda) and z-vertex
     tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-    z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
+    //z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
+    z_vertex=z-s[n-1]*tanl;
   }
   
   /*
