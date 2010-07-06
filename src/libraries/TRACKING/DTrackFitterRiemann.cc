@@ -166,6 +166,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 
 
     if (my_line_hits.size()>0){
+      if (ComputeIntersections()!=NOERROR) return kFitFailed;
       ComputeCR();
       FitLine();
     }
@@ -186,9 +187,44 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
       }
     }   
     ComputeCRPhi();    
-    FitCircle();
+    if (FitCircle()!=NOERROR) return kFitFailed;
     
     if (my_line_hits.size()>0.){
+      if (ComputeIntersections()!=NOERROR) return kFitFailed;
+      double cosl=cos(atan(tanl));
+      for (unsigned int i=0;i<my_line_hits.size();i++){
+	DRiemannHit_t *hit=my_line_hits[i];
+	// Use the results of the previous line fit to predict the z-value 
+	// for a certain arc length value s and use this to determine the 
+	// direction of the correction to the wire position for the drift
+	// time.
+	if (hit->cdc!=NULL){
+	  double kappa=q/2./rc;
+	  double twoks=2.*kappa*s[i];
+	  double sin2ks=sin(twoks);
+	  double cos2ks=cos(twoks);
+	  double cosphi=cos(phi0);
+	  double sinphi=sin(phi0);
+	  double one_minus_cos2ks=1.-cos2ks;
+	  double one_over_2k=1./(2.*kappa);
+	  DVector2 XYp(+(cosphi*sin2ks-sinphi*one_minus_cos2ks)*one_over_2k,
+		       +(sinphi*sin2ks+cosphi*one_minus_cos2ks)*one_over_2k);
+
+	  DVector2 dXY(XYp.X()-xc,XYp.Y()-yc);
+	  double drw=dXY.Mod();
+	  DVector2 dir=(1./drw)*dXY;
+	  double tdrift=hit->cdc->tdrift-s[i]*sqrt(1.+mass2/(p*p))
+	    /(cosl*29.98);
+	  // prediction for z
+	  double zpred=z_vertex+s[i]*tanl;
+	  DVector2 dXYtest=0.0055*tdrift*dir;
+	  // Two LR solutions 
+	  double zplus=GetStereoZ(dXYtest.X(),dXYtest.Y(),hit);
+	  double zminus=GetStereoZ(-dXYtest.X(),-dXYtest.Y(),hit);
+	  if (fabs(zplus-zpred)<fabs(zminus-zpred)) hit->z=zplus;
+	  else hit->z=zminus;
+	}
+      }
       ComputeCR();
       FitLine();
     }
@@ -201,6 +237,7 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 				    z_vertex));
     fit_params.setMomentum(DVector3(pt*cos(phi0),pt*sin(phi0),pt*tanl));
     fit_params.setCharge(q);
+    this->chisq=ChiSq();
  
     return kFitSuccess;
   }
@@ -212,8 +249,47 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 //-----------------
 double DTrackFitterRiemann::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr, int *dof_ptr, vector<pull_t> *pulls_ptr)
 {
-
   return 0.;
+}
+
+double DTrackFitterRiemann::ChiSq(){
+  double chi2=0;
+  double kappa=q/2./rc;
+  double cosphi=cos(phi0);
+  double sinphi=sin(phi0);
+  this->Ndof=my_circle_hits.size()-5;
+  for (unsigned int i=0;i<my_circle_hits.size();i++){
+    double twoks=2.*kappa*(my_circle_hits[i]->z-z_vertex)/tanl;
+    double sin2ks=sin(twoks);
+    double cos2ks=cos(twoks);  
+    double one_minus_cos2ks=1.-cos2ks;
+    double one_over_2k=1./(2.*kappa);
+    DVector2 XYp(+(cosphi*sin2ks-sinphi*one_minus_cos2ks)*one_over_2k,
+		 +(sinphi*sin2ks+cosphi*one_minus_cos2ks)*one_over_2k);
+    double Phi=my_circle_hits[i]->XY.Phi();
+    double cosPhi=cos(Phi);
+    double sinPhi=sin(Phi);
+    chi2+=(my_circle_hits[i]->XY-XYp).Mod2()
+      /(cosPhi*cosPhi*my_circle_hits[i]->covx
+	+sinPhi*sinPhi*my_circle_hits[i]->covy
+	+2.*sinPhi*cosPhi*my_circle_hits[i]->covxy);
+  }
+  for (unsigned int i=0;i<my_line_hits.size();i++){
+    if (my_line_hits[i]->cdc!=NULL){
+      this->Ndof++;
+      double twoks=2.*kappa*(my_line_hits[i]->z-z_vertex)/tanl;
+      double sin2ks=sin(twoks);
+      double cos2ks=cos(twoks);  
+      double one_minus_cos2ks=1.-cos2ks;
+      double one_over_2k=1./(2.*kappa);
+      DVector2 XYp(+(cosphi*sin2ks-sinphi*one_minus_cos2ks)*one_over_2k,
+		   +(sinphi*sin2ks+cosphi*one_minus_cos2ks)*one_over_2k);
+      chi2+=(my_line_hits[i]->XY-XYp).Mod2()/CR(i,i);
+    }
+  }
+
+
+  return chi2;
 }
 
 
@@ -271,8 +347,9 @@ jerror_t DTrackFitterRiemann::GetAxialPosition(double &sperp,
 
   double sign=(drw<rc)?1.:-1.;
   double ratio=(XY-XYold).Mod()/(2.*rc);
+  double cosl=cos(atan(tanl));
   sperp+=2.*rc*((ratio>1.)?M_PI_2:asin(ratio));
-  double tflight=sperp*fabs(tanl)*sqrt(1.+mass2/(p*p))/29.98;
+  double tflight=sperp*sqrt(1.+mass2/(p*p))/(cosl*29.98);
   double tdrift=hit->cdc->tdrift-tflight;
   hit->XY=XY+sign*0.0055*tdrift*dir;
 
@@ -283,6 +360,41 @@ jerror_t DTrackFitterRiemann::GetAxialPosition(double &sperp,
 
   return NOERROR;
 }
+
+double DTrackFitterRiemann::GetStereoZ(double dx,double dy,
+				       DRiemannHit_t *hit){
+  double uz=hit->cdc->wire->udir.z();
+  double ux=hit->cdc->wire->udir.x()/uz;
+  double uy=hit->cdc->wire->udir.y()/uz;
+  double denom=ux*ux+uy*uy;
+  double my_z=0.;
+  
+  // wire origin
+  double xwire0=hit->cdc->wire->origin.x()+dx;
+  double ywire0=hit->cdc->wire->origin.y()+dy;
+  double zwire0=hit->cdc->wire->origin.z();
+  my_z=zwire0+((xc-xwire0)*ux+(yc-ywire0)*uy)/denom;
+  double rootz2=denom*rc*rc-(uy*(xwire0-xc)-ux*(ywire0-yc))
+    *(uy*(xwire0-xc)-ux*(ywire0-yc));  
+  if (rootz2>0.){
+    double rootz=sqrt(rootz2);
+    double z1=my_z+rootz/denom;
+    double z2=my_z-rootz/denom;
+
+    if (fabs(z2-Z_VERTEX)>fabs(z1-Z_VERTEX)){
+      my_z=z1;
+    }
+    else{
+      my_z=z2; 
+    }
+  }
+  if (my_z>167.3) my_z=167.3;
+  if (my_z<17.0) my_z=17.0;
+  
+  return my_z;
+}
+
+
 
 
 jerror_t DTrackFitterRiemann::GetStereoPosition(double &sperp,
@@ -654,34 +766,24 @@ jerror_t DTrackFitterRiemann::FitCircle(){
   return NOERROR;
 }
 
-
-
-
-//-----------------
-// FitLine
-//-----------------
-jerror_t DTrackFitterRiemann::FitLine(){
-/// Riemann Line fit: linear regression of s on z to determine the tangent of 
-/// the dip angle and the z position of the closest approach to the beam line.
-/// Computes intersection points along the helical path.
-///
- 
-  // Fill vector of intersection points 
+// Compute the intersections of the fitted circle with the measurements 
+// through the paraboloid transform, such that the problem becomes the 
+// calculation of the intersection of two planes -- i.e., a straight line.
+// Store the cumulative arc length from measurement to measurement.
+jerror_t DTrackFitterRiemann::ComputeIntersections(){
   double x_int0,temp,y_int0;
   double denom=N.Perp();
-  double numer;
-  vector<int>bad(my_line_hits.size());
   int numbad=0;
   // Clear old projection vector
   projections.clear();
-  // vector of arc lengths
-  vector<double>s;
+  // Clear arc lengths
+  s.clear();
   DVector2 XYold;
   double my_s=0.;
   double chord_ratio=0.;
   for (unsigned int m=0;m<my_line_hits.size();m++){
     double r2=my_line_hits[m]->XY.Mod2();
-    numer=c_origin+r2*N.z();
+    double numer=c_origin+r2*N.z();
 
     if (r2==0){
       projections.push_back(DVector2(0.,0.));
@@ -693,14 +795,17 @@ jerror_t DTrackFitterRiemann::FitLine(){
       y_int0=-N.y()*ratio;
 
       temp=denom*r2-numer*numer;
-      if (temp<0){  // Skip point if the intersection gives nonsense
-	bad[m]=1;
+      // Since we will be taking a square root next, check for positive value
+      if (temp<0){  
 	numbad++;
 	projections.push_back(DVector2(x_int0,y_int0));
 	chord_ratio=(projections[projections.size()-1]-XYold).Mod()/(2.*rc);
 	my_s=my_s+(chord_ratio>1.?2.*rc*M_PI_2:2.*rc*asin(chord_ratio));
 	s.push_back(my_s);
-
+	//	printf("bad hit? x0 %f y0 %f temp %f\n",x_int0,y_int0,temp);
+	if (numbad>1){ //Allow for one bad hit? 
+	  //return VALUE_OUT_OF_RANGE;
+	}
 	continue;
       }
       temp=sqrt(temp)/denom;
@@ -723,23 +828,25 @@ jerror_t DTrackFitterRiemann::FitLine(){
       XYold=projections[projections.size()-1];     
     }
   }  
-  
-  // All arc lengths are measured relative to some reference plane with a hit.
-  // Don't use a "bad" hit for the reference...
-  unsigned int start=0;
-  for (unsigned int i=0;i<bad.size();i++){
-    if (!bad[i]){
-      start=i;
-      break;
-    }
-  }
 
-  // Linear regression to find z0, tanl   
-  unsigned int n=projections.size();
+
+  return NOERROR;
+}
+
+
+
+
+//-----------------
+// FitLine
+//-----------------
+jerror_t DTrackFitterRiemann::FitLine(){
+/// Riemann Line fit: linear regression of s on z to determine the tangent of 
+/// the dip angle and the z position of the closest approach to the beam line.
+   unsigned int n=projections.size();
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
   double Delta;
   double z=0.;
-  DVector2 old_projection=projections[start];
+  DVector2 old_projection=projections[0];
   if (fdchits.size()==0){
     // Correct the Cz covariance matrix for contributions due to multiple
     // scattering
@@ -764,16 +871,14 @@ jerror_t DTrackFitterRiemann::FitLine(){
     }
     Cz+=Cz_ms;
 
-    for (unsigned int k=start;k<n;k++){
-      if (!bad[k]){
-	z=my_line_hits[k]->z;
-	double weight=1./Cz(k,k);
-	sumv+=weight;
-	sumy+=z*weight;
-	sumx+=s[k]*weight;
-	sumxx+=s[k]*s[k]*weight;
-	sumxy+=s[k]*z*weight;
-      }
+    for (unsigned int k=0;k<n;k++){
+      z=my_line_hits[k]->z;
+      double weight=1./Cz(k,k);
+      sumv+=weight;
+      sumy+=z*weight;
+      sumx+=s[k]*weight;
+      sumxx+=s[k]*s[k]*weight;
+      sumxy+=s[k]*z*weight;
     }
     Delta=(sumv*sumxx-sumx*sumx);
     // Track parameters tan(lambda) and z-vertex
@@ -782,18 +887,16 @@ jerror_t DTrackFitterRiemann::FitLine(){
     z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
   }
   else{
-    for (unsigned int k=start;k<n;k++){
-      if (!bad[k]){
-	z=my_line_hits[k]->z;
-
-	// Assume errors in s dominated by errors in R 
-	double weight=1./CR(k,k);
-	sumv+=weight;
-	sumy+=s[k]*weight;
-	sumx+=z*weight;
-	sumxx+=z*z*weight;
-	sumxy+=s[k]*z*weight;
-      }
+    for (unsigned int k=0;k<n;k++){
+      z=my_line_hits[k]->z;
+      
+      // Assume errors in s dominated by errors in R 
+      double weight=1./CR(k,k);
+      sumv+=weight;
+      sumy+=s[k]*weight;
+      sumx+=z*weight;
+      sumxx+=z*z*weight;
+      sumxy+=s[k]*z*weight;
     }
     Delta=-(sumv*sumxx-sumx*sumx);
     // Track parameters tan(lambda) and z-vertex

@@ -43,11 +43,14 @@ class DTrackFitterRiemann:public DTrackFitter{
 			    DRiemannHit_t *hit);
   jerror_t GetStereoPosition(double &sperp,DVector2 &XYold,
 			     DRiemannHit_t *hit);
+  double GetStereoZ(double dx,double dy,DRiemannHit_t *hit);
   jerror_t GetFDCPosition(DRiemannHit_t *hit);
   jerror_t FitCircle();
   jerror_t FitLine();
   jerror_t GetCharge();
-  
+  jerror_t ComputeIntersections();
+  double ChiSq();
+
  private:
   // list of hits on track
   vector<DRiemannHit_t *>my_circle_hits;
@@ -68,8 +71,9 @@ class DTrackFitterRiemann:public DTrackFitter{
   DMatrix CRPhi;
   DMatrix Cz;
 
-  // Vector of projections
+  // Vectors of projections and arc lengths
   vector<DVector2>projections;
+  vector<double>s;
 
   // Normal vector to plane intersecting Riemann surface
   DVector3 N;
