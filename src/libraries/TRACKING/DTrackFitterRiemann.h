@@ -45,6 +45,7 @@ class DTrackFitterRiemann:public DTrackFitter{
 			     DRiemannHit_t *hit);
   double GetStereoZ(double dx,double dy,DRiemannHit_t *hit);
   jerror_t GetFDCPosition(DRiemannHit_t *hit);
+  DVector2 GetHelicalPosition(double sperp);
   jerror_t FitCircle();
   jerror_t FitLine();
   jerror_t GetCharge();
@@ -60,8 +61,8 @@ class DTrackFitterRiemann:public DTrackFitter{
   double mass2;
 
   // Tracking parameters
-  double phi0,phi1,z_vertex,tanl,q,rc,xc,yc;
-  double p,theta;
+  double phi0,phi1,z_vertex,tanl,q,rc,xc,yc,D;
+  double p,theta,one_over_v;
 
   // Magnetic field
   double B;
