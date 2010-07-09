@@ -39,6 +39,7 @@ class DTrackFitterRiemann:public DTrackFitter{
   double GetProcessNoise(const DVector2 &XY,const double z);
   jerror_t ComputeCRPhi();
   jerror_t ComputeCR();
+  jerror_t ComputeCz();
   jerror_t GetAxialPosition(double &sperp,const DVector2 &XYold,
 			    DRiemannHit_t *hit);
   jerror_t GetStereoPosition(double &sperp,DVector2 &XYold,
