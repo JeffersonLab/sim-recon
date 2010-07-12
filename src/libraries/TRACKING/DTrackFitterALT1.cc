@@ -508,13 +508,13 @@ double DTrackFitterALT1::ChiSq(vector<resiInfo> &residuals, double *chisq_ptr, i
 			for(unsigned int i=0; i<residuals.size(); i++){
 				const swim_step_t *stepA = residuals[i].step;
 				if(!stepA)continue;
-				resiInfo &riA = residuals[i];
+				// resiInfo &riA = residuals[i]; // see 2010/07/12 note below
 				
 				// Loop over all residuals
 				for(unsigned int j=i; j<residuals.size(); j++){
 					const swim_step_t *stepB = residuals[j].step;
 					if(!stepB)continue;
-					resiInfo &riB = residuals[j];
+					// resiInfo &riB = residuals[j]; // see 2010/07/12 note below
 					
 					// Correlations are very hard to get correct given the left-right
 					// ambiguity which determines the sign of the correlation. 
@@ -548,16 +548,27 @@ double DTrackFitterALT1::ChiSq(vector<resiInfo> &residuals, double *chisq_ptr, i
 					// For wires that are orhogonal (like a CDC is to an FDC wire), the
 					// the procedure is not so clear.
 					
-					// Find LR of this hit.
-					// Vector pointing from origin of wire to step position crossed into
-					// wire direction gives a vector that will either be pointing
-					// generally in the direction of the momentum or opposite to it.
-					// Take dot product of above described vectors  for each hit 
-					// use it to determine L or R.
-					DVector3 crossA = (stepA->origin - riA.hit->wire->origin).Cross(riA.hit->wire->udir);
-					DVector3 crossB = (stepB->origin - riB.hit->wire->origin).Cross(riB.hit->wire->udir);
-					double sides_angle = crossA.Angle(crossB)*57.3;
-					double sign = fabs(sides_angle) < 90.0 ? +1.0:-1.0;
+					// Note: 2010/07/12 DL
+					// The following code is unneeded since we are not implementing off
+					// diagonal elements of the covariance matrix. It was noted by Simon,
+					// however, that the value of "sign" was sometimes being calculated
+					// as negative, even for on diagonal elements leading to overall
+					// worse resolutions. Upon re-reading the comment below, I'm so sure
+					// I believe the method to be correct anyway. Hence, I'm commenting
+					// it and the corresponding code out, but leaving it here in case this 
+					// issue gets revisited in the future.
+					//
+					// // Find LR of this hit.
+					// // Vector pointing from origin of wire to step position crossed into
+					// // wire direction gives a vector that will either be pointing
+					// // generally in the direction of the momentum or opposite to it.
+					// // Take dot product of above described vectors  for each hit 
+					// // use it to determine L or R.
+					// DVector3 crossA = (stepA->origin - riA.hit->wire->origin).Cross(riA.hit->wire->udir);
+					// DVector3 crossB = (stepB->origin - riB.hit->wire->origin).Cross(riB.hit->wire->udir);
+					// double sides_angle = crossA.Angle(crossB)*57.3;
+					// double sign = fabs(sides_angle) < 90.0 ? +1.0:-1.0;
+					double sign = +1.0;
 					
 					cov_muls[i][j] = cov_muls[j][i] = sign*sigmaAB;
 				}
