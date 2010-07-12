@@ -47,7 +47,7 @@ class DHDDMTOFHit:public JObject{
 			AddString(items, "py", "%12.4e", py);
 			AddString(items, "pz", "%12.4e", pz);
 			AddString(items, "E", "%12.4e", E);
-			AddString(items, "ptype", "%12.4e", ptype);
+			AddString(items, "ptype", "%d", ptype);
 		}
 };
 
