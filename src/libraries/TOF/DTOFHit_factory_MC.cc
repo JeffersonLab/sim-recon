@@ -25,6 +25,11 @@ jerror_t DTOFHit_factory_MC::evnt(JEventLoop *eventLoop, int eventnumber)
     const DTOFMCResponse *mcresponse = mcresponses[i];
     DTOFHit *hit = new DTOFHit;
 
+    // keep basic information
+    hit->id          = mcresponse->id;
+    hit->orientation = mcresponse->orientation;
+    hit->bar         = mcresponse->bar;
+    
     // calculate meantime and time difference of MC data
     if (mcresponse->TDC_north>0 && mcresponse->TDC_south>0){
       hit->id          = mcresponse->id;
@@ -71,9 +76,6 @@ jerror_t DTOFHit_factory_MC::evnt(JEventLoop *eventLoop, int eventnumber)
       float en =  float(mcresponse->ADC_north);
       float es =  float(mcresponse->ADC_south);
 
-      hit->id          = mcresponse->id;
-      hit->orientation = mcresponse->orientation;
-      hit->bar         = mcresponse->bar;
       hit->t_north = tn;
       hit->E_north = en;
       hit->t_south = ts;
