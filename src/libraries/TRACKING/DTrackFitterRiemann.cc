@@ -19,11 +19,6 @@
 #define Z_VERTEX 65.0
 #define Z_MAX 80.0
 
-bool DRiemannHit_cmp(DRiemannHit_t *a,DRiemannHit_t *b){
-  //return (a->z>b->z);
-  return(a->z<b->z);
-}
-
 DTrackFitterRiemann::DTrackFitterRiemann(JEventLoop *loop):DTrackFitter(loop){
 
 }
@@ -73,6 +68,24 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
   }
   */
 
+  // Deal with cdc axial hits
+  DVector2 XY(-D*sin(phi0),D*cos(phi0)); // Starting radial coords.
+  double sperp=0.; // perpendicular arc length
+  for (unsigned int i=0;i<cdchits.size();i++){
+    // Axial wires
+    if (fabs(cdchits[i]->wire->stereo)<EPS){ 
+      DRiemannHit_t *hit= new DRiemannHit_t;
+      // Pointers to fdc/cdc hit objects
+      hit->fdc=NULL;
+      hit->cdc=cdchits[i];
+
+      GetAxialPosition(sperp,XY,hit);
+      XY=hit->XY;
+
+      my_circle_hits.push_back(hit);
+    }
+  }
+
   // Add the FDC hits to the circle hit list
   for (unsigned int i=0;i<fdchits.size();i++){
     DRiemannHit_t *hit= new DRiemannHit_t;
@@ -96,29 +109,11 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
     
     my_circle_hits.push_back(hit);
   }
-  // Deal with cdc axial hits
-  DVector2 XY(-D*sin(phi0),D*cos(phi0)); // Starting radial coords.
-  double sperp=0.; // perpendicular arc length
-  for (unsigned int i=0;i<cdchits.size();i++){
-    // Axial wires
-    if (fabs(cdchits[i]->wire->stereo)<EPS){ 
-      DRiemannHit_t *hit= new DRiemannHit_t;
-      // Pointers to fdc/cdc hit objects
-      hit->fdc=NULL;
-      hit->cdc=cdchits[i];
-
-      GetAxialPosition(sperp,XY,hit);
-      XY=hit->XY;
-
-      my_circle_hits.push_back(hit);
-    }
-  }
 
   // Check that we have enough hits on the circle to proceed
   if (my_circle_hits.size()<3) return kFitFailed;
 
-  // Otherwise proceed with the fit
-  sort(my_circle_hits.begin(),my_circle_hits.end(),DRiemannHit_cmp);
+  // Otherwise proceed with the fit...
     
   // Using the new combined list of hits, compute the covariance matrix 
   // for RPhi associated with these hits
@@ -285,15 +280,40 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 //-----------------
 double DTrackFitterRiemann::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr, int *dof_ptr, vector<pull_t> *pulls_ptr)
 {
-  return 0.;
+  double chisq = ChiSq();
+  unsigned int ndf = this->Ndof;
+  
+  if(chisq_ptr)*chisq_ptr = chisq;
+  if(dof_ptr)*dof_ptr = int(ndf);
+  //if(pulls_ptr)*pulls_ptr = pulls;
+  
+  printf("reduced chi2 %f\n",chisq/double(ndf));
+  return chisq/double(ndf);
+
+
 }
 
+// Compute the chi2 for the fit using both the line and circle hits
 double DTrackFitterRiemann::ChiSq(){
   double chi2=0;
   this->Ndof=my_circle_hits.size()-5;
+  double sperp=0.;
+  double x0=-D*sin(phi0);
+  double y0=D*cos(phi0);
+  DVector2 XYold(x0,y0);
+  // First take care of the FDC hits and the cdc axial wires
   for (unsigned int i=0;i<my_circle_hits.size();i++){
-    double sperp=(my_circle_hits[i]->z-z_vertex)/tanl;
+    if (my_circle_hits[i]->fdc!=NULL){
+      sperp=(my_circle_hits[i]->z-z_vertex)/tanl;
+    }
+    else{
+      double ratio=(my_circle_hits[i]->XY-XYold).Mod()/(2.*rc);
+      sperp+=2.*rc*((ratio>1.)?M_PI_2:asin(ratio));
+      XYold=my_circle_hits[i]->XY;
+    }
+    // Position on the fitted helix
     DVector2 XYp=GetHelicalPosition(sperp);
+
     double Phi=my_circle_hits[i]->XY.Phi();
     double cosPhi=cos(Phi);
     double sinPhi=sin(Phi);
@@ -302,11 +322,21 @@ double DTrackFitterRiemann::ChiSq(){
 	+sinPhi*sinPhi*my_circle_hits[i]->covy
 	+2.*sinPhi*cosPhi*my_circle_hits[i]->covxy);
   }
+
+  // Next take care of the cdc stereo wires
+  XYold.Set(x0,y0);
+  sperp=0.;
   for (unsigned int i=0;i<my_line_hits.size();i++){
     if (my_line_hits[i]->cdc!=NULL){
       this->Ndof++;
-      double sperp=(my_line_hits[i]->z-z_vertex)/tanl;
+      //double sperp=(my_line_hits[i]->z-z_vertex)/tanl;
+      double ratio=(my_line_hits[i]->XY-XYold).Mod()/(2.*rc);
+      sperp+=2.*rc*((ratio>1.)?M_PI_2:asin(ratio));
+      XYold=my_line_hits[i]->XY;
+
+      // Position on the fitted helix
       DVector2 XYp=GetHelicalPosition(sperp);  
+   
       double Phi=my_line_hits[i]->XY.Phi();
       double cosPhi=cos(Phi);
       double sinPhi=sin(Phi);
@@ -316,7 +346,6 @@ double DTrackFitterRiemann::ChiSq(){
 	  +2.*sinPhi*cosPhi*my_line_hits[i]->covxy);
     }
   }
-
 
   return chi2;
 }
@@ -496,6 +525,7 @@ jerror_t DTrackFitterRiemann::GetStereoPosition(double &sperp,
   return NOERROR;
 }
 
+// Compute the position on the helical trajectory for a given arc length
 DVector2 DTrackFitterRiemann::GetHelicalPosition(double sperp){
     double twokappa=q/rc;
     double twoks=twokappa*sperp;
