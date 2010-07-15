@@ -1,0 +1,20 @@
+
+# For gcc 4.1.2 on 32-bit Linux systems we have seen problems
+# with using sse2 causing seg. faults. The same code and compiler
+# version for 64-bit machines seems to run fine. We also have
+# not observed the problems with 32-bit OS X machines. Therefore,
+# we check and enable sse2 only if it is NOT for 32-bit Linux. 
+
+DISABLE_SIMD=no
+ifeq ($(OS), Linux)
+  ifeq ($(ARCH), i686)
+    DISABLE_SIMD=yes
+  endif
+endif
+
+ifeq ($(DISABLE_SIMD), no)
+  SIMD_CXXFLAGS = -DUSE_SIMD -msse2 -mfpmath=sse
+
+  CFLAGS += $(SIMD_CFLAGS)
+  CXXFLAGS += $(SIMD_CFLAGS)
+endif

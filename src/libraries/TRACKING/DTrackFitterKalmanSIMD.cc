@@ -2,6 +2,9 @@
 // DTrackFitterKalmanSIMD.cc
 //************************************************************************
 
+#if USE_SIMD
+
+
 #include "DTrackFitterKalmanSIMD.h"
 #include "CDC/DCDCTrackHit.h"
 #include "HDGEOMETRY/DLorentzDeflections.h"
@@ -3794,3 +3797,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   
   return NOERROR;
 }
+
+
+#endif  // USE_SIMD
+
