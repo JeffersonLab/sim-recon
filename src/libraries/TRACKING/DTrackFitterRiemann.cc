@@ -179,7 +179,8 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
   // Do the line fit
   FitLine();
   
-  if (cdchits.size()>0){
+  //if (cdchits.size()>0)
+    {
     // Compute the magnitude of the momentum at this stage of the fit:
     p=0.003*fabs(B)*rc/cos(atan(tanl));
     one_over_v=sqrt(1.+mass2/(p*p))/29.98;
@@ -987,10 +988,24 @@ jerror_t DTrackFitterRiemann::FitLine(){
     theta=M_PI_2-atan(tanl);
     z_vertex=(sumxx*sumy-sumx*sumxy)/Delta; 
 
+    // Try to constrain the particle to come from somewhere near the center 
+    // of the target if the initial fit result goes out of range in z
+    if (z_vertex<Z_MIN || z_vertex>Z_MAX){
+      double weight=1000.;
+      sumv+=weight;
+      sumy+=Z_VERTEX*weight;
+      Delta= sumv*sumxx-sumx*sumx;
+      tanl=(sumv*sumxy-sumx*sumy)/Delta;
+      theta=M_PI_2-atan(tanl);
+      z_vertex=(sumxx*sumy-sumx*sumxy)/Delta; 
+      
+    }
+    /*
     if (z_vertex<Z_MIN || z_vertex>Z_MAX){
       double z1=z-s[n-1]*tanl;
       if (fabs(z1-Z_VERTEX)<fabs(z_vertex-Z_VERTEX)) z_vertex=z1;
     }
+    */
   }
   else{
     B=0;
@@ -1017,6 +1032,21 @@ jerror_t DTrackFitterRiemann::FitLine(){
 
     z_vertex=-(sumxx*sumy-sumx*sumxy)/Delta1;
 
+    // Try to constrain the particle to come from somewhere near the center 
+    // of the target if the initial fit result goes out of range in z
+    if (z_vertex<Z_MIN || z_vertex>Z_MAX){
+      double weight=1000;
+      sumv+=weight;
+      sumx+=Z_VERTEX*weight;
+      sumxx+=Z_VERTEX*Z_VERTEX*weight;
+      Delta= sumv*sumxx-sumx*sumx;
+      Delta1=sumv*sumxy-sumy*sumx;
+      // Track parameters tan(lambda) and z-vertex
+      tanl=Delta/Delta1;
+      theta=M_PI_2-atan(tanl);
+      z_vertex=-(sumxx*sumy-sumx*sumxy)/Delta1;
+    }
+    
     //z_vertex=z-s[n-1]*tanl;    
     
   }
