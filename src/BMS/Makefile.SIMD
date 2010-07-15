@@ -6,14 +6,14 @@
 # we check and enable sse2 only if it is NOT for 32-bit Linux. 
 
 DISABLE_SIMD=no
-ifeq ($(OS), Linux)
-  ifeq ($(ARCH), i686)
+ifeq ($(OS),Linux)
+  ifeq ($(ARCH),i686)
     DISABLE_SIMD=yes
   endif
 endif
 
-ifeq ($(DISABLE_SIMD), no)
-  SIMD_CXXFLAGS = -DUSE_SIMD -msse2 -mfpmath=sse
+ifeq ($(DISABLE_SIMD),no)
+  SIMD_CFLAGS = -DUSE_SIMD -msse2 -mfpmath=sse
 
   CFLAGS += $(SIMD_CFLAGS)
   CXXFLAGS += $(SIMD_CFLAGS)

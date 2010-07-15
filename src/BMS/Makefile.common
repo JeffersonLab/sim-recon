@@ -150,4 +150,4 @@ ifneq ($(strip $(DEPS)),)
 -include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
 endif
 
-
+include $(HALLD_HOME)/src/BMS/Makefile.SIMD
