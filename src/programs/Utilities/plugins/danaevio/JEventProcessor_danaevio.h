@@ -35,8 +35,8 @@ class JEventProcessor_danaevio : public JEventProcessor {
 
 
  private:
+  jerror_t brun(JEventLoop *eventLoop, int runnumber);
   jerror_t evnt(JEventLoop *eventLoop, int eventnumber);
-  jerror_t fini();
   
   evioFileChannel *chan;
   

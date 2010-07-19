@@ -8,6 +8,14 @@
   <xmldumpDictEntry name="DanaEvent"                             tag="10000"     num="0"/>
 
 
+<!-- name/tag to tag/num lookup table -->
+  <xmldumpDictEntry name="NameTag_lookup_table"                  tag="1"         num="0"/>
+  <xmldumpDictEntry name="NameTag"                               tag="1"         num="1"/>
+  <xmldumpDictEntry name="tag"                                   tag="1"         num="2"/>
+  <xmldumpDictEntry name="num"                                   tag="1"         num="3"/>
+
+
+
 <!-- Global Object Id data -->
   <xmldumpDictEntry name="objIdBank"                             tag="10001"     num="0"/>
   <xmldumpDictEntry name="objIdBank.id"                          tag="10001"     num="1"/>

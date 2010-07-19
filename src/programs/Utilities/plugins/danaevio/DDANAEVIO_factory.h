@@ -23,44 +23,6 @@ using namespace jana;
 #include <DDANAEVIODOMTree.h>
 
 
-// list of factory tags for dana objects that to be added to tree by default
-// use -PEVIO:DANAEVIO to override
-// *** NOTE:  if you add to this list be sure to modify decode_object_parameters() appropriately ***
-static set<string> emptySet;
-static string untagged[] = {string("")};
-static set<string> untaggedSet(untagged,untagged+1);
-static pair< string, set<string> > danaObs[] =  {
-  pair< string, set<string> > ("dmctrackhit",          emptySet),
-  pair< string, set<string> > ("dbeamphoton",          untaggedSet),
-  pair< string, set<string> > ("dmcthrown",            untaggedSet),
-  pair< string, set<string> > ("dfcaltruthshower",     untaggedSet),
-  pair< string, set<string> > ("dbcaltruthshower",     untaggedSet),
-  pair< string, set<string> > ("dtoftruth",            untaggedSet),
-  pair< string, set<string> > ("dsctruthhit",          untaggedSet),
-  pair< string, set<string> > ("dmctrajectorypoint",   emptySet),
-  pair< string, set<string> > ("dcdchit",              untaggedSet),
-  pair< string, set<string> > ("dfdchit",              untaggedSet),
-  pair< string, set<string> > ("dfcalhit",             untaggedSet),
-  pair< string, set<string> > ("dhddmbcalhit",         untaggedSet),
-  pair< string, set<string> > ("dhddmtofhit",          untaggedSet),
-  pair< string, set<string> > ("dschit",               untaggedSet),
-  pair< string, set<string> > ("dtrackwirebased",      emptySet),
-  pair< string, set<string> > ("dtracktimebased",      emptySet),
-  pair< string, set<string> > ("dchargedtrack",        emptySet),
-  pair< string, set<string> > ("dphoton",              emptySet),
-  pair< string, set<string> > ("dcdctrackhit",         emptySet),
-  pair< string, set<string> > ("dfdcpseudo",           emptySet),
-};
-
-
-// global map of which factory/tags to convert
-static map<string, set<string> > evioMap(danaObs,danaObs+sizeof(danaObs)/sizeof(danaObs[0]));
-
-
-// holds tag/num pairs for all DANA objects
-static map< string, pair<int,int> > tagMap;
-
-
 
 //------------------------------------------------------------------------------------
 
@@ -70,13 +32,19 @@ class DDANAEVIO_factory : public JFactory<DDANAEVIODOMTree> {
  public:
   DDANAEVIO_factory();
   ~DDANAEVIO_factory() {};
-  
-  
+
+  static map< string, pair<uint16_t,uint8_t> > *getTagMapPointer();
+
+
  private:
   jerror_t evnt(JEventLoop *eventLoop, int eventnumber);
   void decode_DANAEVIO_parameter(void);
   void get_tagNum_dictionary(void);
   static void startElement(void *userData, const char *xmlname, const char **atts);
+
+  template<typename T> evioDOMNodeP createLeafNode(string nameId);
+  evioDOMNodeP createContainerNode(string nameId);
+
 
 
   void addObjIdBank(evioDOMTree &tree);
@@ -107,19 +75,6 @@ class DDANAEVIO_factory : public JFactory<DDANAEVIODOMTree> {
   map<int,string> objIdMap;
 
 
-
-  // templated methods must be in header file
-  template<typename T> evioDOMNodeP createLeafNode(string nameId) {
-    pair<int,int> p = tagMap[nameId];;
-    return(evioDOMNode::createEvioDOMNode<T>(p.first,p.second));
-  }
-
-  // might as well put this here...
-  evioDOMNodeP createContainerNode(string nameId) {
-    pair<int,int> p = tagMap[nameId];;
-    return(evioDOMNode::createEvioDOMNode(p.first,p.second));
-  }
-  
 };
 
 #endif // _DDANAEVIO_factory_

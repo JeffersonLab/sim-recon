@@ -28,8 +28,8 @@ extern "C" {
     // default for writing out evio DOM tree is true, inhibit with "-PEVIO:WRITEOUT=0"
     bool evioWriteOut = true;
     gPARMS->SetDefaultParameter("EVIO:WRITEOUT",evioWriteOut);
-    //    if(evioWriteOut)app->AddProcessor(new JEventProcessor_danaevio(),true);  ??? need new DANA release ???
-    if(evioWriteOut)app->AddProcessor(new JEventProcessor_danaevio());
+    if(evioWriteOut)app->AddProcessor(new JEventProcessor_danaevio(),true);
+    //    if(evioWriteOut)app->AddProcessor(new JEventProcessor_danaevio());
   }
 } // "extern C"
 
