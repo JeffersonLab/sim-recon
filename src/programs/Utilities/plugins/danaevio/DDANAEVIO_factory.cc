@@ -191,7 +191,10 @@ void DDANAEVIO_factory::decode_DANAEVIO_parameter(void) {
       std::transform(params[i].begin(), params[i].end(), params[i].begin(), (int(*)(int)) tolower);
       bool plus=(params[i][0]=='+');
       bool minus=(params[i][0]=='-');
-      string value=params[i].substr((plus||minus)?1:0);
+
+      string value   =   params[i].substr((plus||minus)?1:0);
+      string valueCS = paramsCS[i].substr((plus||minus)?1:0);
+
 
       if(value=="all") {
         for(iter=evioMap.begin(); iter!=evioMap.end(); iter++) if(!minus) iter->second.insert(""); else iter->second.erase("");
