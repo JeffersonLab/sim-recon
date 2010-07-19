@@ -62,7 +62,7 @@ class DTrackFitterRiemann:public DTrackFitter{
   double mass2;
 
   // Tracking parameters
-  double phi0,phi1,z_vertex,tanl,q,rc,xc,yc,D;
+  double phi0,z_vertex,tanl,q,rc,xc,yc,D;
   double p,theta,one_over_v;
 
   // Magnetic field
