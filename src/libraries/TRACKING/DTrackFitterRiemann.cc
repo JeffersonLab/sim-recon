@@ -46,28 +46,6 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
   projections.clear();
   s.clear();
 
-  /*
-  if (cdchits.size()==0){
-    vector<const DSCHit*> schits;
-    loop->Get(schits);
-
-    if (schits.size()>0){ 
-      DRiemannHit_t *hit=new DRiemannHit_t;
-      hit->fdc=NULL;
-      hit->cdc=NULL;
-      double sc_phi=(4.5+9.*(schits[0]->sector-1))*M_PI/180.;
-      double sc_r=5.;
-      hit->XY.Set(sc_r*cos(sc_phi),sc_r*sin(sc_phi));
-      hit->z=100.;
-     
-      hit->covx=hit->covy=0.1;
-      hit->covxy=0.;
-      my_circle_hits.push_back(hit);
-    }
-   
-  }
-  */
-
   // Deal with cdc axial hits
   DVector2 XY(-D*sin(phi0),D*cos(phi0)); // Starting radial coords.
   double sperp=0.; // perpendicular arc length
@@ -178,9 +156,11 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 
   // Do the line fit
   FitLine();
-  
-  //if (cdchits.size()>0)
-    {
+ 
+  if (cdchits.size()>0){
+    // Get the field value
+    B=bfield->GetBz(-D*sin(phi0),D*cos(phi0),z_vertex);
+    
     // Compute the magnitude of the momentum at this stage of the fit:
     p=0.003*fabs(B)*rc/cos(atan(tanl));
     one_over_v=sqrt(1.+mass2/(p*p))/29.98;
@@ -266,10 +246,26 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
     // Do the line fit
     FitLine();
   }
+
+  double sinphi=sin(phi0);
+  double cosphi=cos(phi0);
+  double x0=-D*sinphi;
+  double y0=D*cosphi;
+  if (fit_type==kWireBased){
+    B=bfield->GetBz(x0,y0,z_vertex);
+  }
+  else{
+    B=0;
+    for (unsigned int i=0;i<my_line_hits.size();i++){
+      const DRiemannHit_t *hit=my_line_hits[i];
+      B+=bfield->GetBz(hit->XY.X(),hit->XY.Y(),hit->z);
+    }
+    B/=my_line_hits.size();
+  }
   
   double pt=0.003*fabs(B)*rc;
-  fit_params.setPosition(DVector3(-D*sin(phi0),D*cos(phi0),z_vertex));
-  fit_params.setMomentum(DVector3(pt*cos(phi0),pt*sin(phi0),pt*tanl));
+  fit_params.setPosition(DVector3(x0,y0,z_vertex));
+  fit_params.setMomentum(DVector3(pt*cosphi,pt*sinphi,pt*tanl));
   fit_params.setCharge(q);
   this->chisq=ChiSq();
   
@@ -385,16 +381,26 @@ jerror_t DTrackFitterRiemann::SetSeed(double my_q,const DVector3 &pos,
   z_vertex=pos.z();
 
   // Circle parameters
-  B=fabs(bfield->GetBz(pos.x(),pos.y(),pos.z()));
-  rc=p*sin(theta)/(0.003*B);
+  B=bfield->GetBz(pos.x(),pos.y(),pos.z());
+  if (fit_type==kTimeBased){
+    if (fdchits.size()>0){
+      for (unsigned int i=0;i<fdchits.size();i++){
+	const DFDCPseudo *hit=fdchits[i];
+	double u=hit->w;
+	double v=hit->s; 
+	double cosa=hit->wire->udir.y();
+	double sina=hit->wire->udir.x();
+	B+=bfield->GetBz(u*cosa+v*sina,-u*sina+v*cosa,hit->wire->origin.z());
+      }
+      B/=fdchits.size()+1;
+    }
+  }
+
+  rc=p*sin(theta)/fabs(0.003*B);
   xc=pos.x()-q*rc*sin(phi0);
   yc=pos.y()+q*rc*cos(phi0);
   // Signed distance to origin
   D=-pos.x()/sin(phi0);
-
-  // Phi angle with respect to the center of the circle at the origin of 
-  // the track
-  phi1=atan2(pos.y()-yc,pos.x()-xc);
 
   return NOERROR;
 }
@@ -963,9 +969,9 @@ jerror_t DTrackFitterRiemann::FitLine(){
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
   double Delta;
   double z=0.;
+
   DVector2 old_projection=projections[0];
   if (fdchits.size()==0){
-    B=0;
     for (unsigned int k=0;k<n;k++){
       z=my_line_hits[k]->z;
 
@@ -975,10 +981,7 @@ jerror_t DTrackFitterRiemann::FitLine(){
       sumx+=s[k]*weight;
       sumxx+=s[k]*s[k]*weight;
       sumxy+=s[k]*z*weight;
-     
-      B+=bfield->GetBz(my_line_hits[k]->XY.X(),my_line_hits[k]->XY.Y(),z);
     }
-    B/=n;
 
     Delta=(sumv*sumxx-sumx*sumx);
     // Track parameters tan(lambda) and z-vertex
@@ -997,18 +1000,10 @@ jerror_t DTrackFitterRiemann::FitLine(){
       Delta= sumv*sumxx-sumx*sumx;
       tanl=(sumv*sumxy-sumx*sumy)/Delta;
       theta=M_PI_2-atan(tanl);
-      z_vertex=(sumxx*sumy-sumx*sumxy)/Delta; 
-      
+      z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;  
     }
-    /*
-    if (z_vertex<Z_MIN || z_vertex>Z_MAX){
-      double z1=z-s[n-1]*tanl;
-      if (fabs(z1-Z_VERTEX)<fabs(z_vertex-Z_VERTEX)) z_vertex=z1;
-    }
-    */
   }
-  else{
-    B=0;
+  else{ // Got FDC hits
     for (unsigned int k=0;k<n;k++){
       z=my_line_hits[k]->z;
 
@@ -1019,10 +1014,7 @@ jerror_t DTrackFitterRiemann::FitLine(){
       sumx+=z*weight;
       sumxx+=z*z*weight;
       sumxy+=s[k]*z*weight;
-
-      B+=bfield->GetBz(my_line_hits[k]->XY.X(),my_line_hits[k]->XY.Y(),z);
     }
-    B/=n;
 
     Delta= sumv*sumxx-sumx*sumx;
     double Delta1=sumv*sumxy-sumy*sumx;
@@ -1035,7 +1027,7 @@ jerror_t DTrackFitterRiemann::FitLine(){
     // Try to constrain the particle to come from somewhere near the center 
     // of the target if the initial fit result goes out of range in z
     if (z_vertex<Z_MIN || z_vertex>Z_MAX){
-      double weight=1000;
+      double weight=1000.;
       sumv+=weight;
       sumx+=Z_VERTEX*weight;
       sumxx+=Z_VERTEX*Z_VERTEX*weight;
@@ -1048,7 +1040,6 @@ jerror_t DTrackFitterRiemann::FitLine(){
     }
     
     //z_vertex=z-s[n-1]*tanl;    
-    
   }
 
   return NOERROR;
