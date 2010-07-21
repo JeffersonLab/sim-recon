@@ -19,6 +19,29 @@
 #define Z_VERTEX 65.0
 #define Z_MAX 80.0
 
+// Variance for position along wire using PHENIX angle dependence, transverse
+// diffusion, and an intrinsic resolution of 127 microns.
+#define DIFFUSION_COEFF     1.1e-6 // cm^2/s --> 200 microns at 1 cm
+#define DRIFT_SPEED           .0055
+#define FDC_CATHODE_VARIANCE 0.02*0.02
+inline double fdc_y_variance(double my_tanl,double x){
+  double diffusion=2.*DIFFUSION_COEFF*fabs(x)/DRIFT_SPEED;
+  //return FDC_CATHODE_VARIANCE;
+  return diffusion+FDC_CATHODE_VARIANCE+0.0064/my_tanl/my_tanl;
+}
+// Smearing function from Yves
+inline double cdc_variance(double x){  
+  // return CDC_VARIANCE;
+
+  x*=10.; // mm
+  if (x>7.895) x=7.895; // straw radius in mm
+  else if (x<0) x=0.;
+  double sigma_d 
+    =(108.55 + 7.62391*x + 556.176*exp(-(1.12566)*pow(x,1.29645)))*1e-4;
+
+  return sigma_d*sigma_d;
+}
+
 DTrackFitterRiemann::DTrackFitterRiemann(JEventLoop *loop):DTrackFitter(loop){
 
 }
@@ -73,17 +96,6 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 
     hit->z=hit->fdc->wire->origin.z();
     GetFDCPosition(hit);
-
-    // Measurement covariance
-    double cosa=hit->fdc->wire->udir.y();
-    double sina=hit->fdc->wire->udir.x();
-    double cosa2=cosa*cosa;
-    double sina2=sina*sina;
-    double sigx2=0.015*0.015;
-    double sigy2=0.02*0.02;
-    hit->covx=sigx2*cosa2+sigy2*sina2;
-    hit->covy=sigx2*sina2+sigy2*cosa2;
-    hit->covxy=(sigy2-sigx2)*sina*cosa;
     
     my_circle_hits.push_back(hit);
   }
@@ -199,10 +211,10 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 	DVector2 dXY(XYp.X()-xc,XYp.Y()-yc);
 	double drw=dXY.Mod();
 	DVector2 dir=(1./drw)*dXY;
-	double tdrift=hit->cdc->tdrift-s[i]*one_over_v/cosl;
+	double d_drift=0.0055*(hit->cdc->tdrift-s[i]*one_over_v/cosl);
 	// prediction for z
 	double zpred=z_vertex+s[i]*tanl;
-	DVector2 dXYtest=0.0055*tdrift*dir;
+	DVector2 dXYtest=d_drift*dir;
 	// Two LR solutions 
 	double zplus=GetStereoZ(dXYtest.X(),dXYtest.Y(),hit);
 	double zminus=GetStereoZ(-dXYtest.X(),-dXYtest.Y(),hit);
@@ -223,9 +235,10 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 	  else hit->z=zminus;
 	}   
 	// Crude approximation for covariances
-	hit->covx=0.015*0.015*dir.X()*dir.X();
-	hit->covy=0.015*0.015*dir.Y()*dir.Y();
-	hit->covz*=(0.0015*0.0015)/0.2133;
+	double var=cdc_variance(d_drift);
+	hit->covx=var*dir.X()*dir.X();
+	hit->covy=var*dir.Y()*dir.Y();
+	hit->covz*=var/0.2133;
       }
       else{
 	GetFDCPosition(hit);
@@ -419,12 +432,13 @@ jerror_t DTrackFitterRiemann::GetAxialPosition(double &sperp,
   double cosl=cos(atan(tanl));
   sperp+=2.*rc*((ratio>1.)?M_PI_2:asin(ratio));
   double tflight=sperp*one_over_v/cosl;
-  double tdrift=hit->cdc->tdrift-tflight;
-  hit->XY=XY+sign*0.0055*tdrift*dir;
+  double d_drift=0.0055*(hit->cdc->tdrift-tflight);
+  hit->XY=XY+sign*d_drift*dir;
 
   // Crude approximation for covariance matrix ignoring error in dir
-  hit->covx=0.015*0.015*dir.X()*dir.X();
-  hit->covy=0.015*0.015*dir.Y()*dir.Y();
+  double var=cdc_variance(d_drift);
+  hit->covx=var*dir.X()*dir.X();
+  hit->covy=var*dir.Y()*dir.Y();
   hit->covxy=0.;
 
   // Guess z-position from result of candidate fit
@@ -577,6 +591,16 @@ jerror_t DTrackFitterRiemann::GetFDCPosition(DRiemannHit_t *hit){
   double u=hit->fdc->w+delta_x;
   double v=hit->fdc->s-delta_y;
   hit->XY.Set(u*cosa+v*sina,-u*sina+v*cosa);
+
+  // Measurement covariance
+  double cosa2=cosa*cosa;
+  double sina2=sina*sina;
+  double sigx2=0.015*0.015;
+  double sigy2=fdc_y_variance(tanl,delta_x);
+  hit->covx=sigx2*cosa2+sigy2*sina2;
+  hit->covy=sigx2*sina2+sigy2*cosa2;
+  hit->covxy=(sigy2-sigx2)*sina*cosa;
+
 
   return NOERROR;
 }
