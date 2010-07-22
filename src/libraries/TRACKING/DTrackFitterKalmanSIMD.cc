@@ -94,7 +94,7 @@ inline double fdc_y_variance(double alpha,double x){
 
 // Smearing function from Yves
 inline double cdc_variance(double x){  
-  return CDC_VARIANCE;
+  //return CDC_VARIANCE;
 
   x*=10.; // mm
   if (x>7.895) x=7.895; // straw radius in mm
@@ -2528,7 +2528,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
   double u=0.;
 
   // initialization
-  double fw=(pos-wirepos).Mag();
+  double fw=(pos-wirepos).Perp();
   double fv=fw,fx=fw;
 
   // main loop
@@ -2587,7 +2587,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
     u_old=u;
     
     wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
-    double fu=(pos-wirepos).Mag();
+    double fu=(pos-wirepos).Perp();
 
     //printf("Brent: z %f d %f\n",pos.z(),fu);
     
@@ -2641,7 +2641,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
   DVector3 pos(S0(state_x),S0(state_y),z+x);
 
   // initialization
-  double fw=(pos-wirepos).Mag();
+  double fw=(pos-wirepos).Perp();
   double fv=fw;
   double fx=fw;
 
@@ -2687,7 +2687,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
     
     wirepos=origin+((z+u-origin.z())/dir.z())*dir;
     pos.SetXYZ(S0(state_x),S0(state_y),z+u);
-    double fu=(pos-wirepos).Mag();
+    double fu=(pos-wirepos).Perp();
 
     if (fu<=fx){
       if (u>=x) a=x; else b=x;
@@ -2724,7 +2724,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   DMatrix5x1 K;  // KalmanSIMD gain matrix
   double V=1.6*1.6/12.;  // Measurement variance
   double InvV; // inverse of variance
-  DMatrix5x1 dS;  // perturbation in state vector
+  //DMatrix5x1 dS;  // perturbation in state vector
   DMatrix5x1 S0,S0_; // state vector
 
   // Initialize the chi2 for this part of the track
@@ -2751,7 +2751,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   central_traj[0].Ckk=Cc;
 
   // doca variables
-  double doca,old_doca=(pos-wirepos).Mag();
+  double doca,old_doca=(pos-wirepos).Perp();
 
   // energy loss
   double dedx=0.;
@@ -2800,7 +2800,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     wirepos=origin+((pos.z()-z0w)/uz)*dir;
 
     // new doca
-    doca=(pos-wirepos).Mag();
+    doca=(pos-wirepos).Perp();
 
     // Check if the doca is no longer decreasing
     if ((doca>old_doca && pos.z()>=cdc_origin[2])
@@ -3056,7 +3056,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
       
       //s+=ds2;
       // new doca
-      doca=(pos-wirepos).Mag();
+      doca=(pos-wirepos).Perp();
     }
 
     old_doca=doca;
@@ -3108,7 +3108,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   DMatrix2x1 R;  // Filtered residual
   DMatrix2x2 RC;  // Covariance of filtered residual
   DMatrix5x1 S0,S0_; //State vector
-  DMatrix5x1 dS;  // perturbation in state vector
+  //DMatrix5x1 dS;  // perturbation in state vector
   DMatrix2x2 InvV; // Inverse of error matrix
 
   // Save the starting values for C and S in the deque
@@ -3289,7 +3289,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x1 K;  // KalmanSIMD gain matrix
   DMatrix5x1 S0,S0_; //State vector
-  DMatrix5x1 dS;  // perturbation in state vector
+  //DMatrix5x1 dS;  // perturbation in state vector
   double InvV;  // inverse of variance
   double rmax=R_MAX;
   if (my_fdchits.size()>0) rmax=R_MAX_FORWARD;
@@ -3298,9 +3298,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   forward_traj_cdc[0].Skk=S;
   forward_traj_cdc[0].Ckk=C;
 
-  // position variables
-  double x=S(state_x);
-  double y=S(state_y);
+  // z-position
   double z=forward_traj_cdc[0].pos.z();
 
   // wire information  
@@ -3313,8 +3311,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   bool more_measurements=true;
 
   // doca variables
-  double doca=0.,old_doca=sqrt((x-wirepos.x())*(x-wirepos.x())
-			    +(y-wirepos.y())*(y-wirepos.y()));
+  double dx=S(state_x)-wirepos.x();
+  double dy=S(state_y)-wirepos.y();
+  double doca=0.,old_doca=sqrt(dx*dx+dy*dy);
   
   // loop over entries in the trajectory
   S0_=(forward_traj_cdc[0].S);
@@ -3357,10 +3356,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
     wirepos=origin+((z-z0w)/uz)*dir;
 
     // new doca
-    x=S(state_x);
-    y=S(state_y);
-    doca=sqrt((x-wirepos.x())*(x-wirepos.x())
-	      +(y-wirepos.y())*(y-wirepos.y()));
+    dx=S(state_x)-wirepos.x();
+    dy=S(state_y)-wirepos.y();
+    doca=sqrt(dx*dx+dy*dy);
 
     // Check if the doca is no longer decreasing
     if ((doca>old_doca || z>endplate_z)&& more_measurements){
@@ -3444,8 +3442,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	double yw=wirepos.y();
 	
 	// predicted doca taking into account the orientation of the wire
-	double dy=S(state_y)-yw;
-	double dx=S(state_x)-xw;      
+	dy=S(state_y)-yw;
+	dx=S(state_x)-xw;      
 	double d=sqrt(dx*dx*one_minus_ux2+dy*dy*one_minus_uy2-2.*dx*dy*uxuy);
 	
 	// Track projection
@@ -3568,10 +3566,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
       wirepos=origin+((z-z0w)/uz)*dir;
       
       // new doca
-      x=S(state_x);
-      y=S(state_y);
-      doca=sqrt((x-wirepos.x())*(x-wirepos.x())
-		+(y-wirepos.y())*(y-wirepos.y()));
+      dx=S(state_x)-wirepos.x();
+      dy=S(state_y)-wirepos.y();
+      doca=sqrt(dx*dx+dy*dy);
     }
     old_doca=doca;
  
