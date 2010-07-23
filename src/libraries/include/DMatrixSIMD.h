@@ -3,6 +3,9 @@
 
 #include <math.h>
 #include <emmintrin.h> // Header file for SSE2 SIMD instructions
+#ifdef USE_SSE3
+#include <pmmintrin.h> // Header file for SSE3 SIMD instructions
+#endif
 #include <iostream>
 #include <iomanip>
 using namespace std;

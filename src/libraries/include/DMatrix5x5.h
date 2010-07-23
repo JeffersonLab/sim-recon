@@ -208,6 +208,61 @@ class DMatrix5x5{
 							     _mm_mul_pd(GetV(2,4),m52))))));
   }
 
+#ifdef USE_SSE3
+  // Matrix multiplication. Requires the SSE3 instruction HADD (horizontal add)
+  DMatrix5x5 operator*(const DMatrix5x5 &m2){
+    __m128d A11A12=_mm_setr_pd(mA[0].d[0],mA[1].d[0]);
+    __m128d A13A14=_mm_setr_pd(mA[2].d[0],mA[3].d[0]);
+    __m128d A21A22=_mm_setr_pd(mA[0].d[1],mA[1].d[1]);
+    __m128d A23A24=_mm_setr_pd(mA[2].d[1],mA[3].d[1]);
+    __m128d A31A32=_mm_setr_pd(mA[0].d[2],mA[1].d[2]);
+    __m128d A33A34=_mm_setr_pd(mA[2].d[2],mA[3].d[2]);
+    __m128d A41A42=_mm_setr_pd(mA[0].d[3],mA[1].d[3]);
+    __m128d A43A44=_mm_setr_pd(mA[2].d[3],mA[3].d[3]);
+
+   return
+     DMatrix5x5(_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A11A12,m2.GetV(0,0)),_mm_mul_pd(A21A22,m2.GetV(0,0))),
+				      _mm_hadd_pd(_mm_mul_pd(A13A14,m2.GetV(1,0)),_mm_mul_pd(A23A24,m2.GetV(1,0)))),
+			   _mm_mul_pd(mA[4].v[0],_mm_set1_pd(m2(4,0)))),
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A11A12,m2.GetV(0,1)),_mm_mul_pd(A21A22,m2.GetV(0,1))),
+				      _mm_hadd_pd(_mm_mul_pd(A13A14,m2.GetV(1,1)),_mm_mul_pd(A23A24,m2.GetV(1,1)))),
+			   _mm_mul_pd(mA[4].v[0],_mm_set1_pd(m2(4,1)))),
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A11A12,m2.GetV(0,2)),_mm_mul_pd(A21A22,m2.GetV(0,2))),
+				      _mm_hadd_pd(_mm_mul_pd(A13A14,m2.GetV(1,2)),_mm_mul_pd(A23A24,m2.GetV(1,2)))),
+			   _mm_mul_pd(mA[4].v[0],_mm_set1_pd(m2(4,2)))),
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A11A12,m2.GetV(0,3)),_mm_mul_pd(A21A22,m2.GetV(0,3))),
+				      _mm_hadd_pd(_mm_mul_pd(A13A14,m2.GetV(1,3)),_mm_mul_pd(A23A24,m2.GetV(1,3)))),
+			   _mm_mul_pd(mA[4].v[0],_mm_set1_pd(m2(4,3)))),
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A11A12,m2.GetV(0,4)),_mm_mul_pd(A21A22,m2.GetV(0,4))),
+				      _mm_hadd_pd(_mm_mul_pd(A13A14,m2.GetV(1,4)),_mm_mul_pd(A23A24,m2.GetV(1,4)))),
+			   _mm_mul_pd(mA[4].v[0],_mm_set1_pd(m2(4,4)))),
+		
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A31A32,m2.GetV(0,0)),_mm_mul_pd(A41A42,m2.GetV(0,0))),
+				      _mm_hadd_pd(_mm_mul_pd(A33A34,m2.GetV(1,0)),_mm_mul_pd(A43A44,m2.GetV(1,0)))),
+			   _mm_mul_pd(mA[4].v[1],_mm_set1_pd(m2(4,0)))),
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A31A32,m2.GetV(0,1)),_mm_mul_pd(A41A42,m2.GetV(0,1))),
+				      _mm_hadd_pd(_mm_mul_pd(A33A34,m2.GetV(1,1)),_mm_mul_pd(A43A44,m2.GetV(1,1)))),
+			   _mm_mul_pd(mA[4].v[1],_mm_set1_pd(m2(4,1)))),	
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A31A32,m2.GetV(0,2)),_mm_mul_pd(A41A42,m2.GetV(0,2))),
+				      _mm_hadd_pd(_mm_mul_pd(A33A34,m2.GetV(1,2)),_mm_mul_pd(A43A44,m2.GetV(1,2)))),
+			   _mm_mul_pd(mA[4].v[1],_mm_set1_pd(m2(4,2)))),
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A31A32,m2.GetV(0,3)),_mm_mul_pd(A41A42,m2.GetV(0,3))),
+				      _mm_hadd_pd(_mm_mul_pd(A33A34,m2.GetV(1,3)),_mm_mul_pd(A43A44,m2.GetV(1,3)))),
+			   _mm_mul_pd(mA[4].v[1],_mm_set1_pd(m2(4,3)))),	
+		_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A31A32,m2.GetV(0,4)),_mm_mul_pd(A41A42,m2.GetV(0,4))),
+				      _mm_hadd_pd(_mm_mul_pd(A33A34,m2.GetV(1,4)),_mm_mul_pd(A43A44,m2.GetV(1,4)))),
+			   _mm_mul_pd(mA[4].v[1],_mm_set1_pd(m2(4,4)))),	
+		
+		_mm_set_sd(mA[0].d[4]*m2(0,0)+mA[1].d[4]*m2(1,0)+mA[2].d[4]*m2(2,0)+mA[3].d[4]*m2(3,0)+mA[4].d[4]*m2(4,0)),
+		_mm_set_sd(mA[0].d[4]*m2(0,1)+mA[1].d[4]*m2(1,1)+mA[2].d[4]*m2(2,1)+mA[3].d[4]*m2(3,1)+mA[4].d[4]*m2(4,1)),
+		_mm_set_sd(mA[0].d[4]*m2(0,2)+mA[1].d[4]*m2(1,2)+mA[2].d[4]*m2(2,2)+mA[3].d[4]*m2(3,2)+mA[4].d[4]*m2(4,2)),
+		_mm_set_sd(mA[0].d[4]*m2(0,3)+mA[1].d[4]*m2(1,3)+mA[2].d[4]*m2(2,3)+mA[3].d[4]*m2(3,3)+mA[4].d[4]*m2(4,3)),
+		_mm_set_sd(mA[0].d[4]*m2(0,4)+mA[1].d[4]*m2(1,4)+mA[2].d[4]*m2(2,4)+mA[3].d[4]*m2(3,4)+mA[4].d[4]*m2(4,4))
+		);
+ }
+
+
+#else 
   // Matrix multiplication: (5x5) x (5x5)
   DMatrix5x5 operator*(const DMatrix5x5 &m2){
     __m128d temp[5][5];
@@ -295,6 +350,8 @@ class DMatrix5x5{
 						       _mm_add_pd(MUL(2,3,4),
 								  MUL(2,4,4))))));    
   }
+#endif
+
 
   // Find the transpose of this matrix
   DMatrix5x5 Transpose(){
