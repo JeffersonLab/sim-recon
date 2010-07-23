@@ -15,6 +15,13 @@ endif
 ifeq ($(DISABLE_SIMD),no)
   SIMD_CFLAGS = -DUSE_SIMD -msse2 -mfpmath=sse
 
+  DISABLE_SSE3=no
+# here one would put some check for the availability of sse3, but I don't know
+# what check that would be...
+  ifeq ($(DISABLE_SSE3),no)
+  	SIMD_CFLAGS += -DUSE_SSE3 -msse3
+  endif
+ 
   CFLAGS += $(SIMD_CFLAGS)
   CXXFLAGS += $(SIMD_CFLAGS)
 endif
