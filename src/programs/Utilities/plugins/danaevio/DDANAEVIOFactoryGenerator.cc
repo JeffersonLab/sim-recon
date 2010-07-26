@@ -25,7 +25,7 @@ extern "C" {
     app->AddFactoryGenerator(new DDANAEVIOFactoryGenerator());
 
 
-    // default for writing out evio DOM tree is true, inhibit with "-PEVIO:WRITEOUT=0"
+    // default for writing out evio DOM tree is true
     bool evioWriteOut = true;
     gPARMS->SetDefaultParameter("EVIO:WRITEOUT",evioWriteOut);
     if(evioWriteOut)app->AddProcessor(new JEventProcessor_danaevio(),true);

@@ -26,7 +26,7 @@
 //
 //
 //
-//  Elliott Wolin, 31-Mar-2010
+//  Elliott Wolin, 19-Jul-2010
 //
 //
 //
@@ -116,6 +116,23 @@ static pair< string, set<string> > danaObs[] =  {
   pair< string, set<string> > ("dphoton",              emptySet),
   pair< string, set<string> > ("dcdctrackhit",         emptySet),
   pair< string, set<string> > ("dfdcpseudo",           emptySet),
+
+  pair< string, set<string> > ("dvertex",              emptySet),
+  pair< string, set<string> > ("dtrackcandidate",      emptySet),
+  pair< string, set<string> > ("dbcalphoton",          emptySet),
+  pair< string, set<string> > ("dfcalphoton",          emptySet),
+  pair< string, set<string> > ("dchargedtruthmatch",   emptySet),
+  pair< string, set<string> > ("dtofhit",              emptySet),
+  pair< string, set<string> > ("dtofpoint",            emptySet),
+  pair< string, set<string> > ("dtofmcresponse",       emptySet),
+  pair< string, set<string> > ("dbcalhit",             emptySet),
+  pair< string, set<string> > ("dbcalmcresponse",      emptySet),
+  pair< string, set<string> > ("dbcalshower",          emptySet),
+  pair< string, set<string> > ("dfcalcluster",         emptySet),
+  pair< string, set<string> > ("dfdccathodecluster",   emptySet),
+  pair< string, set<string> > ("dfdcsegment",          emptySet),
+  pair< string, set<string> > ("dtwogammafit",         emptySet),
+  pair< string, set<string> > ("dparticle",            emptySet),
 };
 
 
@@ -398,29 +415,48 @@ jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, int eventnumber) {
 
 
   // add selected DANA banks to event tree
-  if(evioMap["dmctrackhit"        ].size()>0)  addDMCTrackHit(        eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dbeamphoton"        ].size()>0)  addDBeamPhoton(        eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dmcthrown"          ].size()>0)  addDMCThrown(          eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dfcaltruthshower"   ].size()>0)  addDFCALTruthShower(   eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dbcaltruthshower"   ].size()>0)  addDBCALTruthShower(   eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dtoftruth"          ].size()>0)  addDTOFTruth(          eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dsctruthhit"        ].size()>0)  addDSCTruthHit(        eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dmctrajectorypoint" ].size()>0)  addDMCTrajectoryPoint( eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dmctrackhit"        ].size()>0)  addDMCTrackHit(          eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dbeamphoton"        ].size()>0)  addDBeamPhoton(          eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dmcthrown"          ].size()>0)  addDMCThrown(            eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dfcaltruthshower"   ].size()>0)  addDFCALTruthShower(     eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dbcaltruthshower"   ].size()>0)  addDBCALTruthShower(     eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dtoftruth"          ].size()>0)  addDTOFTruth(            eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dsctruthhit"        ].size()>0)  addDSCTruthHit(          eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dmctrajectorypoint" ].size()>0)  addDMCTrajectoryPoint(   eventLoop, myDDANAEVIODOMTree->tree);
   
-  if(evioMap["dcdchit"            ].size()>0)  addDCDCHit(            eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dfdchit"            ].size()>0)  addDFDCHit(            eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dfcalhit"           ].size()>0)  addDFCALHit(           eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dhddmbcalhit"       ].size()>0)  addDHDDMBCALHit(       eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dhddmtofhit"        ].size()>0)  addDHDDMTOFHit(        eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dschit"             ].size()>0)  addDSCHit(             eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dcdchit"            ].size()>0)  addDCDCHit(              eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dfdchit"            ].size()>0)  addDFDCHit(              eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dfcalhit"           ].size()>0)  addDFCALHit(             eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dhddmbcalhit"       ].size()>0)  addDHDDMBCALHit(         eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dhddmtofhit"        ].size()>0)  addDHDDMTOFHit(          eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dschit"             ].size()>0)  addDSCHit(               eventLoop, myDDANAEVIODOMTree->tree);
   
-  if(evioMap["dcdctrackhit"       ].size()>0)  addDCDCTrackHit(       eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dfdcpseudo"         ].size()>0)  addDFDCPseudo(         eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dtrackwirebased"    ].size()>0)  addDTrackWireBased(    eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dtracktimebased"    ].size()>0)  addDTrackTimeBased(    eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dchargedtrack"      ].size()>0)  addDChargedTrack(      eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dphoton"            ].size()>0)  addDPhoton(            eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dcdctrackhit"       ].size()>0)  addDCDCTrackHit(         eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dfdcpseudo"         ].size()>0)  addDFDCPseudo(           eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dtrackwirebased"    ].size()>0)  addDTrackWireBased(      eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dtracktimebased"    ].size()>0)  addDTrackTimeBased(      eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dchargedtrack"      ].size()>0)  addDChargedTrack(        eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dphoton"            ].size()>0)  addDPhoton(              eventLoop, myDDANAEVIODOMTree->tree);
   
+
+  // new banks ???
+//   if(evioMap["dvertex"            ].size()>0)  addDVertex(              eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dtrackcandidate"    ].size()>0)  addDTrackCandidate(      eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dbcalphoton"        ].size()>0)  addDBCALPhoton(          eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dfcalphoton"        ].size()>0)  addDFCALPhoton(          eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dchargedtruthmatch" ].size()>0)  addDChargedTruthMatch(   eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dtofhit"            ].size()>0)  addDTOFHit(              eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dtofpoint"          ].size()>0)  addDTOFPoint(            eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dtofmcresponse"     ].size()>0)  addDTOFMCResponse(       eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dbcalhit"           ].size()>0)  addDBCALHit(             eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dbcalmcresponse"    ].size()>0)  addDBCALMCResponse(      eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dbcalshower"        ].size()>0)  addDBCALShower(          eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dfcalcluster"       ].size()>0)  addDFCALCluster(         eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dfdccathodecluster" ].size()>0)  addDFDCCathodeCluster(   eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dfdcsegment"        ].size()>0)  addDFDCSegment(          eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dtwogammafit"       ].size()>0)  addDTwoGammaFit(         eventLoop, myDDANAEVIODOMTree->tree); 
+//   if(evioMap["dparticle"          ].size()>0)  addDParticle(            eventLoop, myDDANAEVIODOMTree->tree); 
+
 
   // add global object id bank
   addObjIdBank(myDDANAEVIODOMTree->tree);
@@ -2016,4 +2052,70 @@ void DDANAEVIO_factory::addDFDCPseudo(JEventLoop *eventLoop, evioDOMTree &tree) 
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+
+// void DDANAEVIO_factory::addDbankName (JEventLoop *eventLoop, evioDOMTree &tree) {
+
+//   string objName    = "fred";
+//   string objNameLC;
+//   std::transform(objName.begin(), objName.end(), objNameLC.begin(), (int(*)(int)) tolower);
+
+
+//   // create main bank and add to event tree
+//   evioDOMNodeP mainBank = createContainerNode(objName);
+//   tree << mainBank;
+
+
+//   // create data banks and add to bank
+//   evioDOMNodeP objIdBank   = createLeafNode<uint64_t>  (objName+".objId");
+//   evioDOMNodeP var1Bank    = createLeafNode<uint64_t>  (objName+".var1");
+//   *mainBank << objIdBank << var1Bank;
+
+
+//   // create associated object bank and add to main bank
+//   evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+//   *mainBank << assocBank;
+
+
+//   // loop over each requested factory, indexed by object name in lower case
+//   int assocCount = 0;
+//   set<string>::iterator iter;
+//   for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+//     // is there any data
+//     vector<const DBankName*> dataObjects;
+//     eventLoop->Get(dataObjects,(*iter).c_str()); 
+//     if(dataObjects.size()<=0)continue;
+
+
+//     // add track data to banks
+//     for(unsigned int i=0; i<dataObjects.size(); i++) {
+//       *objIdBank   << dataObjects[i]->id;
+//       *var1Bank    << dataObjects[i]->var1;
+      
+//       objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+
+
+//       // get associated object id bank and add to associated object bank
+//       evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+//       *assocBank << assocObjs;
+      
+//       // get id's, add to id bank and to global object id map
+//       vector<const JObject*> objs;
+//       bankNames[i]->GetT(objs); 
+//       for(unsigned int j=0; j<objs.size(); j++) {
+//         assocCount++;
+//         *assocObjs << objs[j]->id;
+//         objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+//       }
+//     }
+//   }
+//   if(assocCount==0)assocBank->cutAndDelete();
+
+// }
+
+
+//------------------------------------------------------------------------------
+
 

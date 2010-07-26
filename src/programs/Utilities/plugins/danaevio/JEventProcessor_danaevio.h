@@ -9,6 +9,16 @@
 #define _JEventProcessor_danaevio_
 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
+
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JFactory.h>
@@ -37,8 +47,6 @@ class JEventProcessor_danaevio : public JEventProcessor {
  private:
   jerror_t brun(JEventLoop *eventLoop, int runnumber);
   jerror_t evnt(JEventLoop *eventLoop, int eventnumber);
-  
-  evioFileChannel *chan;
   
 
 //----------------------------------------------------------------------------
