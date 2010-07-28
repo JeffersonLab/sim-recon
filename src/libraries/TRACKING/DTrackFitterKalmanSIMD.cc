@@ -564,7 +564,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
 
   // Continue adding to the trajectory until we have reached the endplate
   // or the maximum radius
-  while(z<endplate_z && r<rmax){
+  while(z<endplate_z && r<rmax && fabs(S(state_q_over_p))<Q_OVER_P_MAX){
     if (PropagateForwardCDC(forward_traj_cdc_length,i,z,r,S)
 	!=NOERROR) return UNRECOVERABLE_ERROR;   
   }
@@ -853,7 +853,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       // Propagate the state through the field
       FixedStep(pos,step_size,Sc,dedx);
       // Break out of the loop if we would swim out of the fiducial volume
-      if (pos.Perp()>R_MAX || pos.z()<Z_MIN || pos.z()>endplate_z)
+      if (pos.Perp()>R_MAX || pos.z()<Z_MIN || pos.z()>endplate_z
+	  || fabs(1./Sc(state_q_over_pt))<PT_MIN)
 	break;
   
       // update flight time
@@ -886,7 +887,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 
   // Swim out
   double r=pos.Perp();
-  while(r<R_MAX && pos.z()<endplate_z && pos.z()>Z_MIN && len<MAX_PATH_LENGTH){
+  while(r<R_MAX && pos.z()<endplate_z && pos.z()>Z_MIN && len<MAX_PATH_LENGTH
+	&&  fabs(1./Sc(state_q_over_pt))>PT_MIN){
     i++;
 
     // Reset D to zero
@@ -1891,7 +1893,6 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(DMatrix5x1 &Ss){
     C=forward_traj_cdc[m].Ckk;
     JT=forward_traj_cdc[m].JT;
   }
-
   return NOERROR;
 }
 
@@ -3317,7 +3318,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   
   // loop over entries in the trajectory
   S0_=(forward_traj_cdc[0].S);
-  for (unsigned int k=1;k<forward_traj_cdc.size()-1;k++){
+  for (unsigned int k=1;k<forward_traj_cdc.size()/*-1*/;k++){
     z=forward_traj_cdc[k].pos.z();
 
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
