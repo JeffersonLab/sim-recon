@@ -169,13 +169,15 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
   // Do the line fit
   FitLine();
  
-  if (cdchits.size()>0){
+  if (cdchits.size()>0)
+    {
     // Get the field value
     B=bfield->GetBz(-D*sin(phi0),D*cos(phi0),z_vertex);
     
     // Compute the magnitude of the momentum at this stage of the fit:
-    p=0.003*fabs(B)*rc/cos(atan(tanl));
-    one_over_v=sqrt(1.+mass2/(p*p))/29.98;
+    double cosl=cos(atan(tanl));
+    p=0.003*fabs(B)*rc/cosl;
+    one_over_vcosl=sqrt(1.+mass2/(p*p))/(29.98*cosl);
     
     // reset sperp to zero
     sperp=0.; 
@@ -198,8 +200,6 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
     
     // Recompute the intersections with the circle and redo the line fit, 
     // this time with drift time information for the stereo wires
-    double cosl=cos(atan(tanl));
-    //double s_old=0;
     for (unsigned int i=0;i<nhits;i++){
       DRiemannHit_t *hit=my_line_hits[i];
       // Use the results of the previous line fit to predict the z-value 
@@ -211,7 +211,9 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 	DVector2 dXY(XYp.X()-xc,XYp.Y()-yc);
 	double drw=dXY.Mod();
 	DVector2 dir=(1./drw)*dXY;
-	double d_drift=0.0055*(hit->cdc->tdrift-s[i]*one_over_v/cosl);
+	double d_drift=0.0055*(hit->cdc->tdrift-s[i]*one_over_vcosl)
+	  *cos(hit->cdc->wire->stereo);
+
 	// prediction for z
 	double zpred=z_vertex+s[i]*tanl;
 	DVector2 dXYtest=d_drift*dir;
@@ -220,19 +222,31 @@ DTrackFitter::fit_status_t DTrackFitterRiemann::FitTrack(void)
 	double zminus=GetStereoZ(-dXYtest.X(),-dXYtest.Y(),hit);
 	if (zpred>=167.3){
 	  zpred=167.3;
-	  if (zminus<zpred) hit->z=zminus;
-	  else if (zplus<zpred) hit->z=zplus;
+	  if (zminus<zpred){
+	    hit->z=zminus;
+	  }
+	  else if (zplus<zpred){
+	    hit->z=zplus;
+	  }
 	  else hit->z=zpred;
 	}
 	else if (zpred<=17.){
 	  zpred=17.0;
-	  if (zminus>zpred) hit->z=zminus;
-	  else if (zplus>zpred) hit->z=zplus;
+	  if (zminus>zpred){
+	    hit->z=zminus;
+	  }
+	  else if (zplus>zpred){
+	    hit->z=zplus;
+	  }
 	  else hit->z=zpred;
 	}
 	else{
-	  if (fabs(zplus-zpred)<fabs(zminus-zpred)) hit->z=zplus;
-	  else hit->z=zminus;
+	  if (fabs(zplus-zpred)<fabs(zminus-zpred)){
+	    hit->z=zplus;
+	  }
+	  else{
+	    hit->z=zminus;
+	  }
 	}   
 	// Crude approximation for covariances
 	double var=cdc_variance(d_drift);
@@ -376,8 +390,7 @@ jerror_t DTrackFitterRiemann::SetSeed(double my_q,const DVector3 &pos,
   if (p>8.){
     p=8.;
   }
-  one_over_v=sqrt(1.+mass2/(p*p))/29.98;
-
+  
   // Charge
   q=my_q;
   
@@ -386,7 +399,9 @@ jerror_t DTrackFitterRiemann::SetSeed(double my_q,const DVector3 &pos,
   //tanl=tan(lambda); 
   theta=mom.Theta();
   tanl=tan(M_PI_2-theta);
- 
+
+  one_over_vcosl=sqrt(1.+mass2/(p*p))/(29.98*sin(theta));
+  
   // Phi angle
   phi0=mom.Phi();
 
@@ -429,9 +444,8 @@ jerror_t DTrackFitterRiemann::GetAxialPosition(double &sperp,
 
   double sign=(drw<rc)?1.:-1.;
   double ratio=(XY-XYold).Mod()/(2.*rc);
-  double cosl=cos(atan(tanl));
   sperp+=2.*rc*((ratio>1.)?M_PI_2:asin(ratio));
-  double tflight=sperp*one_over_v/cosl;
+  double tflight=sperp*one_over_vcosl;
   double d_drift=0.0055*(hit->cdc->tdrift-tflight);
   hit->XY=XY+sign*d_drift*dir;
 
@@ -440,19 +454,7 @@ jerror_t DTrackFitterRiemann::GetAxialPosition(double &sperp,
   hit->covx=var*dir.X()*dir.X();
   hit->covy=var*dir.Y()*dir.Y();
   hit->covxy=0.;
-
-  // Guess z-position from result of candidate fit
-  hit->z=z_vertex+tanl*sperp;
-  if (hit->z>167.3){
-    hit->z=167.3;
-    sperp=(hit->z-z_vertex)/tanl;
-    hit->XY=XY+sign*0.0055*(hit->cdc->tdrift-sperp*one_over_v/cosl)*dir;
-  }
-  else if (hit->z<17.0){
-    hit->z=17.0;
-    sperp=(hit->z-z_vertex)/tanl;
-    hit->XY=XY+sign*0.0055*(hit->cdc->tdrift-sperp*one_over_v/cosl)*dir;  
-  }
+  
   return NOERROR;
 }
 
@@ -464,19 +466,19 @@ double DTrackFitterRiemann::GetStereoZ(double dx,double dy,
   double ux=hit->cdc->wire->udir.x()/uz;
   double uy=hit->cdc->wire->udir.y()/uz;
   double denom=ux*ux+uy*uy;
-  double my_z=0.;
   
   // wire origin
-  double xwire0=hit->cdc->wire->origin.x()+dx;
-  double ywire0=hit->cdc->wire->origin.y()+dy;
+  double dxwire0=xc-(hit->cdc->wire->origin.x()+dx);
+  double dywire0=yc-(hit->cdc->wire->origin.y()+dy);
   double zwire0=hit->cdc->wire->origin.z();
-  my_z=zwire0+((xc-xwire0)*ux+(yc-ywire0)*uy)/denom;
-  double rootz2=denom*rc*rc-(uy*(xwire0-xc)-ux*(ywire0-yc))
-    *(uy*(xwire0-xc)-ux*(ywire0-yc));  
+  // Compute the z position
+  double my_z=zwire0+(dxwire0*ux+dywire0*uy)/denom;
+  double temp=uy*dxwire0-ux*dywire0;
+  double rootz2=denom*rc*rc-temp*temp;  
   if (rootz2>0.){
-    double rootz=sqrt(rootz2);
-    double z1=my_z+rootz/denom;
-    double z2=my_z-rootz/denom;
+    double rootz=sqrt(rootz2)/denom;
+    double z1=my_z+rootz;
+    double z2=my_z-rootz;
 
     if (fabs(z2-Z_VERTEX)>fabs(z1-Z_VERTEX)){
       my_z=z1;
@@ -485,8 +487,8 @@ double DTrackFitterRiemann::GetStereoZ(double dx,double dy,
       my_z=z2; 
     }
   }
-  if (my_z>167.3) my_z=167.3;
-  if (my_z<17.0) my_z=17.0;
+  //if (my_z>167.3) my_z=167.3;
+  //if (my_z<17.0) my_z=17.0;
   
   return my_z;
 }
@@ -502,35 +504,41 @@ jerror_t DTrackFitterRiemann::GetStereoPosition(double &sperp,
   double denom=ux*ux+uy*uy;
   
   // wire origin
-  double xwire0=hit->cdc->wire->origin.x();
-  double ywire0=hit->cdc->wire->origin.y();
+  double dxwire0=xc-hit->cdc->wire->origin.x();
+  double dywire0=yc-hit->cdc->wire->origin.y();
   double zwire0=hit->cdc->wire->origin.z();
-  hit->z=zwire0+((xc-xwire0)*ux+(yc-ywire0)*uy)/denom;
-  double rootz2=denom*rc*rc-(uy*(xwire0-xc)-ux*(ywire0-yc))
-    *(uy*(xwire0-xc)-ux*(ywire0-yc));  
+  hit->z=zwire0+(dxwire0*ux+dywire0*uy)/denom;
+  double temp=uy*dxwire0-ux*dywire0;
+  double rootz2=denom*rc*rc-temp*temp;  
   double dx0dz=ux/denom;
   double dy0dz=uy/denom;
   if (rootz2>0.){
-    double rootz=sqrt(rootz2);
-    double z1=hit->z+rootz/denom;
-    double z2=hit->z-rootz/denom;
+    double rootz=sqrt(rootz2)/denom;
+    double z1=hit->z+rootz;
+    double z2=hit->z-rootz;
 
+    double temp1=temp/(rootz*denom*denom);
     if (fabs(z2-Z_VERTEX)>fabs(z1-Z_VERTEX)){
       hit->z=z1;
-      dx0dz+=((uy*(xwire0-xc)-ux*(ywire0-yc))*uy/rootz)/denom;
-      dy0dz-=((uy*(xwire0-xc)-ux*(ywire0-yc))*ux/rootz)/denom;
+      //dx0dz+=((uy*(xwire0-xc)-ux*(ywire0-yc))*uy/rootz)/denom;
+      //dy0dz-=((uy*(xwire0-xc)-ux*(ywire0-yc))*ux/rootz)/denom;
+      dx0dz+=temp1*uy;
+      dy0dz-=temp1*ux;
     }
     else{
       hit->z=z2; 
-      dx0dz-=((uy*(xwire0-xc)-ux*(ywire0-yc))*uy/rootz)/denom; 
-      dy0dz+=((uy*(xwire0-xc)-ux*(ywire0-yc))*ux/rootz)/denom;
+      //dx0dz-=((uy*(xwire0-xc)-ux*(ywire0-yc))*uy/rootz)/denom; 
+      //dy0dz+=((uy*(xwire0-xc)-ux*(ywire0-yc))*ux/rootz)/denom;
+      dx0dz-=temp1*uy;
+      dy0dz+=temp1*ux;
     }
   }
   // Deal with endplates
   if (hit->z>167.3) hit->z=167.3;
   if (hit->z<17.0) hit->z=17.0;
   double dzwire=hit->z-zwire0;
-  hit->XY.Set(xwire0+ux*dzwire,ywire0+uy*dzwire);
+  hit->XY.Set(hit->cdc->wire->origin.x()+ux*dzwire,
+	      hit->cdc->wire->origin.y()+uy*dzwire);
 
   DVector2 dXY(hit->XY.X()-xc,hit->XY.Y()-yc);
   double drw=dXY.Mod();
@@ -583,7 +591,7 @@ jerror_t DTrackFitterRiemann::GetFDCPosition(DRiemannHit_t *hit){
   
   // Correct the drift time for the flight path and convert to distance 
   // units
-  double delta_x=sign*(hit->fdc->time-sperp*one_over_v/sin(theta))*55E-4;
+  double delta_x=sign*(hit->fdc->time-sperp*one_over_vcosl)*55E-4;
     
   // Next find correction to y from table of deflections
   double delta_y=lorentz_def->GetLorentzCorrection(XYp.X(),XYp.Y(),hit->z,theta,delta_x);
@@ -595,7 +603,7 @@ jerror_t DTrackFitterRiemann::GetFDCPosition(DRiemannHit_t *hit){
   // Measurement covariance
   double cosa2=cosa*cosa;
   double sina2=sina*sina;
-  double sigx2=0.015*0.015;
+  double sigx2=0.0004;
   double sigy2=fdc_y_variance(tanl,delta_x);
   hit->covx=sigx2*cosa2+sigy2*sina2;
   hit->covy=sigx2*sina2+sigy2*cosa2;
