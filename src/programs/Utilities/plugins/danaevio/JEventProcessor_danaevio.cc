@@ -1,5 +1,4 @@
 // still to do:
-//   try socket a few times
 //   die more gracefully if socket connection fails
 //   option to continue if socket connection fails
 
@@ -21,6 +20,8 @@
 //    EVIO:HOST         specify host for socket communications, default is "localhost"
 //    EVIO:PORT         specify port for socket communications, default is 3309 (0xCED)
 //    EVIO:BUFSIZE      serialized event internal buffer size, default 200000 words
+//    EVIO:SOCKETTRY    number of times to try connecting to the socket
+//    EVIO:SOCKETWAIT   number of seconds between tries
 //
 //
 //  dana_evio_dict.xml is corresponding evio2xml dictionary
@@ -54,6 +55,8 @@ static FILE* evioFILE            = NULL;
 static int evioSocket            = 0;  
 static uint32_t socketHeader[3]  = {0xCEBAF,1,0};
 static uint32_t *socketBuffer;
+static int evioSocketTry         = 6;
+static int evioSocketWait        = 5;
 
 
 // internal evio buffer size, use EVIO:BUFSIZE command-line parameter to override
@@ -85,9 +88,11 @@ JEventProcessor_danaevio::JEventProcessor_danaevio() {
   jout << endl << "  EVIO output file name is " << evioFileName << endl << endl;
 
 
-  // check for EVIO:HOST and EVIO:PORT for TCP communications
+  // check for socket parameters
   gPARMS->SetDefaultParameter("EVIO:HOST",evioHost);
   gPARMS->SetDefaultParameter("EVIO:PORT",evioPort);
+  gPARMS->SetDefaultParameter("EVIO:SOCKETTRY",evioSocketTry);
+  gPARMS->SetDefaultParameter("EVIO:SOCKETWAIT",evioSocketWait);
 
 
   // check for EVIO:BUFSIZE internal buffer size parameter
@@ -96,6 +101,8 @@ JEventProcessor_danaevio::JEventProcessor_danaevio() {
   if(evioFileName=="socket") {
     jout << endl << "  EVIO TCP socket host is " << evioHost<< endl << endl;
     jout << endl << "  EVIO TCP socket port is " << evioPort<< endl << endl;
+    jout << endl << "  EVIO TCP socket try is  " << evioSocketTry << endl << endl;
+    jout << endl << "  EVIO TCP socket wait is " << evioSocketWait << endl << endl;
   }
   
   
@@ -358,13 +365,27 @@ FILE *initSocket(const char *ipAddress, int port, int *sock) {
   servAddr.sin_port = htons(port); // Server port
 
 
-  // Establish the connection to the server
-  if (connect(*sock, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
-    jerr << endl;
-    jerr << " ?initSocket...connect() failed";
-    jerr << endl;
-    return NULL;
+  // try a number of times to establish the connection to the server
+  int i=0;
+  while (true) {
+    i++;
+    if(connect(*sock, (struct sockaddr *) &servAddr, sizeof(servAddr))>=0) {
+      jout << "initSocket...connection successful on attempt " << i << endl;
+      break;
+      
+    } else if (i<evioSocketTry) {
+      jerr << "   ...initSocket connection attempt " << i << " failed, trying again..." << endl;
+      sleep(evioSocketWait);
+      continue;
+      
+    } else {
+      jerr << endl;
+      jerr << " ?initSocket...connect() failed after " << evioSocketTry << " attempts" << endl;
+      jerr << endl;
+      return NULL;
+    }
   }
+
 
   //wrap the socket in an output stream
   return fdopen(*sock, "w");
