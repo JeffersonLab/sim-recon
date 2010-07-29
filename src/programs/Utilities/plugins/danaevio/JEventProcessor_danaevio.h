@@ -19,6 +19,7 @@
 #include <netdb.h>
 
 
+#include <JANA/JApplication.h>
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JFactory.h>

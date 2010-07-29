@@ -1,11 +1,3 @@
-// still to do:
-//   die more gracefully if socket connection fails
-//   option to continue if socket connection fails
-
-
-
-
-
 // JEventProcessor_danaevio.cc
 //
 //
@@ -49,6 +41,7 @@ static evioFileChannel *chan;
 
 
 // evio TCP host and port for socket-based output
+static bool evioIOAbort          = false;        // true if unrecoverable IO error
 static string evioHost           = "localhost";
 static int evioPort              = 0xCED;        // 3309
 static FILE* evioFILE            = NULL;
@@ -69,6 +62,10 @@ static pthread_mutex_t evioMutex = PTHREAD_MUTEX_INITIALIZER;
 
 // from Dave Heddle
 static FILE *initSocket(const char *ipAddress, int port, int *sock);
+
+
+// from JApplication
+extern jana::JApplication *japp;
 
 
 
@@ -117,8 +114,13 @@ JEventProcessor_danaevio::JEventProcessor_danaevio() {
     } catch (evioException e) {
       jerr << endl << "  ?evioException in JEventProcessor_danaevio" << endl << endl 
            << e.toString() << endl;
+      japp->Quit();
+      evioIOAbort=true;
+
     } catch (...) {
       jerr << endl << "  ?unknown exception in JEventProcessor_danaevio, unable to open output file" << endl << endl;
+      japp->Quit();
+      evioIOAbort=true;
     }
 
 
@@ -131,14 +133,14 @@ JEventProcessor_danaevio::JEventProcessor_danaevio() {
     // open socket
     evioFILE = initSocket(evioHost.c_str(),evioPort,&evioSocket);
     if(evioFILE==NULL) {
-      jerr << endl;
-      jerr << " ?JEventProcessor_danaevio...unable to open socket" << endl;
-      jerr << endl;
-      
+      jerr << endl << " ?JEventProcessor_danaevio...unable to open socket" << endl << endl;
+      japp->Quit();
+      evioIOAbort=true;
+      return;
     }
   }
 
-}  
+}
 
 
 //----------------------------------------------------------------------------
@@ -146,12 +148,16 @@ JEventProcessor_danaevio::JEventProcessor_danaevio() {
 
 JEventProcessor_danaevio::~JEventProcessor_danaevio() {
     
+  if(evioIOAbort)return;
+
+
   // close file or socket
   if(evioFileName!="socket") {
 
     // file I/O
     try {
       chan->close();
+      delete(chan);
       
     } catch (evioException e) {
       jerr << endl << "  ?evioException in ~JEventProcessor_danaevio" << endl << endl 
@@ -159,19 +165,17 @@ JEventProcessor_danaevio::~JEventProcessor_danaevio() {
     } catch (...) {
       jerr << endl << "  ?unknown exception in ~JEventProcessor_danaevio, unable to close output file" << endl << endl;
     }
-    
-    delete(chan);
 
   } else {
-
+    
     // TCP socket I/O
     if(evioFILE!=NULL) {
       fflush(evioFILE);
       fclose(evioFILE);
       delete(socketBuffer);
     }
-
   }
+
 }
 
 
@@ -184,8 +188,13 @@ jerror_t JEventProcessor_danaevio::brun(JEventLoop *eventLoop, int runnumber) {
   unsigned int n;
 
 
+  // has file or socket open failed?
+  if(evioIOAbort)return(UNRECOVERABLE_ERROR);
+
+
   // get write lock
   pthread_mutex_lock(&evioMutex);
+
   
   // create dictionary banks from DDANAEVIO factory tagMap<string, pair<uint16_t,uint8_t> >
   //  and write out as first event in file
@@ -248,6 +257,10 @@ jerror_t JEventProcessor_danaevio::brun(JEventLoop *eventLoop, int runnumber) {
 jerror_t JEventProcessor_danaevio::evnt(JEventLoop *eventLoop, int eventnumber) {
     
   unsigned int n;
+
+
+  // has file or socket open failed?
+  if(evioIOAbort)return(UNRECOVERABLE_ERROR);
 
 
   // get evio trees
