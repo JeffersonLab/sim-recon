@@ -1,0 +1,687 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-07-28
+   Date: July 29, 2010
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 6580 of trunk/sim-recon
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+  HDDS 1.0
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.0
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.24
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.0
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r6382 | davidl | 2010-05-17 08:33:22 -0400 (Mon, 17 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Optimization from Matt S. to help speed up tracking.
+------------------------------------------------------------------------
+r6390 | marki | 2010-05-19 15:37:38 -0400 (Wed, 19 May 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/Makefile
+
+Search HALLD_MY for include files as well.
+
+------------------------------------------------------------------------
+r6391 | staylor | 2010-05-19 18:07:40 -0400 (Wed, 19 May 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/include/DMatrix1x5.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix2x1.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix2x2.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix2x4.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix2x5.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix4x2.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix4x4.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix5x1.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix5x2.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+   A /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Matrix classes to replace use of generic TMatrixD classes in the Kalman filter.  Code uses SIMD instructions.
+------------------------------------------------------------------------
+r6392 | staylor | 2010-05-19 18:18:23 -0400 (Wed, 19 May 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD.h
+
+New version of the Kalman filter that takes advantage of the new SIMDized matrix classes.
+------------------------------------------------------------------------
+r6393 | staylor | 2010-05-19 18:19:04 -0400 (Wed, 19 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+
+Add the KalmanSIMD factory.
+------------------------------------------------------------------------
+r6394 | staylor | 2010-05-19 18:20:09 -0400 (Wed, 19 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Version consistent with new SIMDized Kalman fitter, but with TMatrixD
+------------------------------------------------------------------------
+r6395 | staylor | 2010-05-19 18:20:32 -0400 (Wed, 19 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Version consistent with new SIMDized Kalman fitter, but with TMatrixD
+------------------------------------------------------------------------
+r6396 | staylor | 2010-05-19 18:24:53 -0400 (Wed, 19 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.common
+
+Add sse flags for SIMD instructions to CXXFLAGS.
+------------------------------------------------------------------------
+r6402 | davidl | 2010-05-20 10:45:06 -0400 (Thu, 20 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danahddm/JEventProcessor_danahddm.h
+
+Removed class scope resolution (JEventProcessor_danahddm::) from in front of declaration of Add_DTrackTimeBased in class itself. This causes problems on some compilers. Thanks to Jake Bennett for identifying this one.
+------------------------------------------------------------------------
+r6404 | staylor | 2010-05-20 18:57:45 -0400 (Thu, 20 May 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/include/DMatrix2x3.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix3x2.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix3x3.h
+
+More matrix classes:  3x2, 3x3, 2x3
+------------------------------------------------------------------------
+r6405 | staylor | 2010-05-20 18:58:44 -0400 (Thu, 20 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Add #includes for 2x3, 3x3, and 3x2 matrices
+------------------------------------------------------------------------
+r6406 | staylor | 2010-05-20 18:59:14 -0400 (Thu, 20 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x2.h
+
+Fix indexing error
+------------------------------------------------------------------------
+r6407 | staylor | 2010-05-20 19:08:03 -0400 (Thu, 20 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Use new 2x3,3x3, and 3x2 matrix classes in the matrix inversion code.  No longer need to pad 5x5 matrices with an extra column.
+------------------------------------------------------------------------
+r6409 | staylor | 2010-05-21 15:22:37 -0400 (Fri, 21 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+(1) Raise maximum radius from 60 cm to 65 cm.  (2) Run filter only once for wire-based pass. (3) Comment out code that adjusts step size according to the field gradient.
+------------------------------------------------------------------------
+r6410 | marki | 2010-05-21 15:34:04 -0400 (Fri, 21 May 2010) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/Makefile
+
+Use the path to locate hddm-c.
+
+Included a check that hddm-c is actually in the path. Will exit with
+an error if hddm-c is not found.
+
+
+------------------------------------------------------------------------
+r6411 | davidl | 2010-05-22 23:01:23 -0400 (Sat, 22 May 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.cc
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.h
+
+Start of a new swimmer. Currently runs slower than DReferenceTrajectory used by ALT1.
+------------------------------------------------------------------------
+r6412 | davidl | 2010-05-24 09:53:44 -0400 (Mon, 24 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.h
+
+Switch to mid-point method.
+------------------------------------------------------------------------
+r6413 | davidl | 2010-05-25 09:41:52 -0400 (Tue, 25 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.h
+
+Continued development on DTrajectory
+------------------------------------------------------------------------
+r6414 | davidl | 2010-05-26 07:54:26 -0400 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.h
+
+Started adding material to DTrajectory. Not complete yet.
+------------------------------------------------------------------------
+r6415 | staylor | 2010-05-26 07:56:37 -0400 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix3x3.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Added routines to take advantage of symmetric matrices.
+------------------------------------------------------------------------
+r6416 | staylor | 2010-05-26 08:00:14 -0400 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Use new DMatrix methods for symmetric matrices. Tweak some parameters.
+------------------------------------------------------------------------
+r6417 | davidl | 2010-05-26 13:27:47 -0400 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.cc
+
+Check that rhoZ_overA is not zero before dividing by it when calculating LogI
+------------------------------------------------------------------------
+r6422 | staylor | 2010-05-27 17:53:05 -0400 (Thu, 27 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Store the J,S,JT, etc. matrices in the DKalmanSIMDState_t structure directly instead of using pointers to these matrices.  This avoids calling new so many times.  This appears to speed up the code by a measurable amount.
+------------------------------------------------------------------------
+r6423 | staylor | 2010-05-27 17:59:06 -0400 (Thu, 27 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Use faster access methods for getting (and setting) DVector3 componenents.  Try to minimize repeated operations, such as taking the sqrt of the same number multiple times in the ThetaZ regression code.  Use the GetBz method to get the z-component of the magnetic field.
+------------------------------------------------------------------------
+r6424 | staylor | 2010-05-27 18:02:25 -0400 (Thu, 27 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Use the x(),etc  and SetX(),etc DVector3 routines insted of accessing by index.
+------------------------------------------------------------------------
+r6425 | staylor | 2010-05-27 18:04:11 -0400 (Thu, 27 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Use the x(),etc DVector3 routines insted of accessing by index.
+------------------------------------------------------------------------
+r6426 | marki | 2010-05-28 08:50:30 -0400 (Fri, 28 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.lib
+
+remove debugging output
+------------------------------------------------------------------------
+r6427 | davidl | 2010-05-28 11:08:41 -0400 (Fri, 28 May 2010) | 11 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.h
+
+Optimized material lookup a bit.
+- Record boundaries in r and z where material density changes
+  during DMaterialMap construction so that only the boundaries
+  need to be searched for most volumes.
+- Do quicker check on whether particle is outside of map
+  and trajectory pointing away so further calculation is
+  not needed.
+
+Also, the unused DMagneticFieldMap pointer was removed from the
+argument list for calling FindMat.
+
+------------------------------------------------------------------------
+r6428 | davidl | 2010-05-28 11:09:33 -0400 (Fri, 28 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+
+Add GetBfield method to DReferenceTrajectory
+------------------------------------------------------------------------
+r6429 | davidl | 2010-05-28 11:10:32 -0400 (Fri, 28 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.h
+
+Reconfigured how material is used in DTrajectory to try and optimize speed.
+------------------------------------------------------------------------
+r6430 | davidl | 2010-05-28 22:46:58 -0400 (Fri, 28 May 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.cc
+
+Remove debug message accidentally left in for earlier commit.
+------------------------------------------------------------------------
+r6434 | staylor | 2010-06-04 17:28:07 -0400 (Fri, 04 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.h
+
+Removed memory leak -- was creating copies of pseudopoints by calling new and filling a new vector of points, but failed to put in the corresponding deletes.  Removed unused supplemental vector fdc_track.  Removed unused output covariance matrix.  Replaced the state vector S (previously in Matrix form) with member data with more meaningful names for the state vector parameters.
+------------------------------------------------------------------------
+r6435 | staylor | 2010-06-04 17:29:18 -0400 (Fri, 04 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Make candidate factories consistent with revised version of DFDCSegment_factory
+------------------------------------------------------------------------
+r6436 | staylor | 2010-06-04 17:34:41 -0400 (Fri, 04 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+
+Minor changes to get rid of some repeated operations
+------------------------------------------------------------------------
+r6437 | staylor | 2010-06-07 12:45:00 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DVector3.h
+
+SIMDized version of DVector3.h.  Falls back on the original typedef to TVector3 if the USE_SIMD flag is not defined.
+------------------------------------------------------------------------
+r6438 | staylor | 2010-06-07 12:51:01 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DLorentzVector.h
+
+Implementation of the subset of methods in TLorentzVector actually used by our code so that we have code that is consistent with the SIMDized DVector3.
+------------------------------------------------------------------------
+r6439 | davidl | 2010-06-07 13:09:42 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/bfield2root/bfield2root.cc
+
+Added a few histograms to bfield2root utility.
+------------------------------------------------------------------------
+r6440 | staylor | 2010-06-07 17:06:50 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DVector2.h
+
+SIMDized version of DVector2.h.  If the USE_SIMD flag is not defined, the code falls back to typedefing DVector2.h to TVector2.h
+------------------------------------------------------------------------
+r6441 | staylor | 2010-06-07 18:18:53 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALGeometry.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALGeometry.h
+
+Replace TVector2 with DVector2
+------------------------------------------------------------------------
+r6442 | staylor | 2010-06-07 18:19:22 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+
+Replace TVector2 with DVector2
+------------------------------------------------------------------------
+r6443 | staylor | 2010-06-07 18:26:23 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DVector2.h
+
+Add Phi_0_2pi method, needed by hdview2
+------------------------------------------------------------------------
+r6444 | staylor | 2010-06-07 18:27:48 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+Explicitly add #include for TMath.h
+------------------------------------------------------------------------
+r6445 | staylor | 2010-06-07 18:29:54 -0400 (Mon, 07 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+
+Switch from TVector2 to DVector2.  In some places I also had to change the code to copy from DVector3 objects to TVector3 objects.
+------------------------------------------------------------------------
+r6446 | staylor | 2010-06-08 10:03:51 -0400 (Tue, 08 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Explicitly add #include<TMath.h>.  Comment out the mydedx>0.002 tail cutoff condition, because this causes nans for low momentum protons because no hits survive this cut...  Instead use the fact the hits are ordered according to dEdx and so we can perform a truncated mean by keeping some fraction of the low dEdx values in the calculation.  Currently this fraction is set to 50%.
+------------------------------------------------------------------------
+r6456 | marki | 2010-06-08 15:35:41 -0400 (Tue, 08 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trkfitterLSLM/residFDCAnode.cc
+
+cosmetics
+------------------------------------------------------------------------
+r6458 | staylor | 2010-06-08 18:16:48 -0400 (Tue, 08 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Add const keyword to line 683
+------------------------------------------------------------------------
+r6459 | staylor | 2010-06-09 08:17:24 -0400 (Wed, 09 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Remove unused structure.  Add diagnostic histogram for studying step size from dBz/dz.
+------------------------------------------------------------------------
+r6464 | staylor | 2010-06-09 15:32:19 -0400 (Wed, 09 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.cc
+
+Switch to SetXYZ method for setting components of 3-vectors
+------------------------------------------------------------------------
+r6465 | staylor | 2010-06-10 07:47:04 -0400 (Thu, 10 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Use the SetXYZ method to set the components of the pos vector.
+------------------------------------------------------------------------
+r6469 | staylor | 2010-06-11 10:09:55 -0400 (Fri, 11 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+
+Modified code to take advantage of the fact that the covariance matrices are diagonal (no multiple-scattering is taken into account at this stage).  Precompute some quantities to avoid too many duplicate calculations.  Changed how the arc lengths are computed in the line fit to accumulaterelatively small arc lengths from point to point, as opposed to computing all arc lengths relative to some start position.
+------------------------------------------------------------------------
+r6470 | staylor | 2010-06-11 10:14:22 -0400 (Fri, 11 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.h
+
+Create a new vector to keep account of which hits have already been used in a track segment.  This lets me get rid of the const_cast when filling the package vector.  Modified code to take advantage of the fact that the covariance matrices are diagonal (no multiple-scattering is taken into account at this stage).  Precompute some quantities to avoid too many duplicate calculations.  Changed how the arc lengths are computed in the line fit to accumulaterelatively small arc lengths from point to point, as opposed to computing all arc lengths relative to some start position.
+------------------------------------------------------------------------
+r6471 | staylor | 2010-06-11 10:22:37 -0400 (Fri, 11 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Remove unused structures
+------------------------------------------------------------------------
+r6474 | staylor | 2010-06-14 08:18:57 -0400 (Mon, 14 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.cc
+
+Add some debug histograms.
+------------------------------------------------------------------------
+r6479 | staylor | 2010-06-16 19:22:10 -0400 (Wed, 16 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Fix sign error in call to BrentsAlgorithm.  This is only relevant for low momentum tracks.
+------------------------------------------------------------------------
+r6480 | staylor | 2010-06-17 07:47:17 -0400 (Thu, 17 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.h
+
+Debug histograms.
+------------------------------------------------------------------------
+r6483 | staylor | 2010-06-18 12:39:16 -0400 (Fri, 18 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Increase the maximum number of iterations at the wire-based stage to 10 in the main kalman loop.  Increase the cut on the arc length for a step relative to the curvature from 0.01 to 0.1 (this dictates whether or not Brent's algorithm is called when finding the doca for central tracks.) Increase maximum step size to 1.5 cm.
+------------------------------------------------------------------------
+r6484 | staylor | 2010-06-18 12:40:42 -0400 (Fri, 18 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.h
+
+Change the projections vector to a vector of DVector2 objects.
+------------------------------------------------------------------------
+r6485 | staylor | 2010-06-18 12:43:50 -0400 (Fri, 18 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Turn off debug hists by default.
+------------------------------------------------------------------------
+r6493 | staylor | 2010-06-22 09:15:25 -0400 (Tue, 22 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DKinematicData.cc
+
+Plug a memory leak by clearing the tracking error matrix before calling new.
+------------------------------------------------------------------------
+r6494 | marki | 2010-06-22 14:28:38 -0400 (Tue, 22 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectory.cc
+
+Add time to straight line trajectory
+------------------------------------------------------------------------
+r6499 | staylor | 2010-06-28 08:10:55 -0400 (Mon, 28 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Allow reference trajectories to enter the BCAL for forward-going tracks with hits in the CDC. Change the order of some matrix operations to increase the overall speed of these operations.
+------------------------------------------------------------------------
+r6500 | staylor | 2010-06-28 08:15:06 -0400 (Mon, 28 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
+
+Expand radial extent of the fine mesh map to the outer edge of the BCAL.  Changed interpolation code to remove one duplicate calculation.  Made the maximum r and z doubles.
+------------------------------------------------------------------------
+r6501 | staylor | 2010-06-28 18:49:46 -0400 (Mon, 28 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.cc
+
+In the EstimatedDistanceToBoundarySearch method, changed the radlen condition from <= to < so that the radlen=0 (vacuum) case is handled in a way that does not lead to multiple very small distances-to-boundary values.
+------------------------------------------------------------------------
+r6502 | staylor | 2010-06-28 18:51:55 -0400 (Mon, 28 Jun 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+For the CDC ref trajectory, reset the step size to the maximum before computing the step size from dEdx, etc.
+------------------------------------------------------------------------
+r6503 | staylor | 2010-06-30 14:26:52 -0400 (Wed, 30 Jun 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.h
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory_Riemann.h
+
+Beginnings of a time-based Riemann fitter.
+------------------------------------------------------------------------
+r6504 | staylor | 2010-07-01 09:59:15 -0400 (Thu, 01 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.h
+
+Some progress toward getting the line fit working with stereo wires.
+------------------------------------------------------------------------
+r6505 | staylor | 2010-07-01 15:31:38 -0400 (Thu, 01 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Line fit now working for stereo wires, but without using time information.
+------------------------------------------------------------------------
+r6506 | staylor | 2010-07-01 15:32:14 -0400 (Thu, 01 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.h
+
+Add covariance matrix for z.
+------------------------------------------------------------------------
+r6507 | davidl | 2010-07-01 16:47:48 -0400 (Thu, 01 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/bfield2root/bfield2root.cc
+
+Add a few more histograms to bfield2root utility that are used to generate/test specifications.
+------------------------------------------------------------------------
+r6508 | staylor | 2010-07-02 09:07:14 -0400 (Fri, 02 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Work on covariance matrices.
+------------------------------------------------------------------------
+r6509 | staylor | 2010-07-02 11:38:22 -0400 (Fri, 02 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Fix z-vertex calculation and other progress...
+------------------------------------------------------------------------
+r6512 | davidl | 2010-07-02 14:24:53 -0400 (Fri, 02 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/hddm_cull_events.cc
+
+Add -ENNN option to specify an event by the event number contained within event (as opposed to -eNNN which just uses offset in file.)
+------------------------------------------------------------------------
+r6513 | davidl | 2010-07-02 14:34:01 -0400 (Fri, 02 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/hddm_cull_events.cc
+
+Fixed bug that when -E is used, events continued to be read in even after the event of interest was found.
+------------------------------------------------------------------------
+r6514 | staylor | 2010-07-02 17:26:23 -0400 (Fri, 02 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Fix subtle bug that on very rare occasions corrupts tan(lambda).
+------------------------------------------------------------------------
+r6517 | staylor | 2010-07-06 15:23:01 -0400 (Tue, 06 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.h
+
+Use drift time information from stereo wires in the line fit.
+------------------------------------------------------------------------
+r6518 | staylor | 2010-07-08 08:50:58 -0400 (Thu, 08 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.h
+
+More progress...
+------------------------------------------------------------------------
+r6523 | staylor | 2010-07-09 16:45:22 -0400 (Fri, 09 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.h
+
+Add routine to compute covariance matrix for z.  Changed code to try to improve line fit.
+------------------------------------------------------------------------
+r6524 | davidl | 2010-07-12 08:25:05 -0400 (Mon, 12 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterALT1.cc
+
+Fixed problem with occasionally negative on-diagonal covariance matrix values in ALT1 fitter noticed by Simon a while back.
+------------------------------------------------------------------------
+r6525 | zihlmann | 2010-07-12 15:11:49 -0400 (Mon, 12 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DHDDMTOFHit.h
+
+ptype is integer not float
+
+------------------------------------------------------------------------
+r6527 | zihlmann | 2010-07-13 08:35:01 -0400 (Tue, 13 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory_MC.cc
+
+keeping track of bar and plane number was done at the wrong place.
+
+------------------------------------------------------------------------
+r6537 | staylor | 2010-07-14 14:36:41 -0400 (Wed, 14 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Improvements to the line fit.  Also if there are no cdc hits, only do circle and line fits once.
+------------------------------------------------------------------------
+r6538 | staylor | 2010-07-14 19:33:19 -0400 (Wed, 14 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Improved chi2 calculation.
+------------------------------------------------------------------------
+r6540 | davidl | 2010-07-15 10:09:58 -0400 (Thu, 15 Jul 2010) | 5 lines
+Changed paths:
+   A /trunk/sim-recon/src/BMS/Makefile.SIMD
+   M /trunk/sim-recon/src/BMS/Makefile.common
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+   M /trunk/sim-recon/src/libraries/include/DLorentzVector.h
+
+Disable KalmanSIMD and SIMD in DLorentzVector when compiling on 32-bit
+Linux systems. This was causing crashes with gcc 4.1.2 on RHEL5 and Fedora 8.
+It does not seems to cause problems with the same compiler version on
+64-bit Linux or gcc 4.0.1 on OS X 10.5 (32-bit).
+
+------------------------------------------------------------------------
+r6541 | davidl | 2010-07-15 10:16:04 -0400 (Thu, 15 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+
+Include Makefile.SIMD auotmatically when including Makefile.DANA.
+------------------------------------------------------------------------
+r6542 | davidl | 2010-07-15 10:27:48 -0400 (Thu, 15 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+   M /trunk/sim-recon/src/BMS/Makefile.SIMD
+   M /trunk/sim-recon/src/BMS/Makefile.common
+
+Yet another try at fixing the SIMD conditional enabling.
+------------------------------------------------------------------------
+r6543 | staylor | 2010-07-15 15:03:20 -0400 (Thu, 15 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Apply fuzzy target constraint for those tracks that appear to point to a vertex outside the target when only the fdc and cdc hits are used.
+------------------------------------------------------------------------
+r6551 | wolin | 2010-07-19 09:53:21 -0400 (Mon, 19 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIOFactoryGenerator.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Now outputs factory name tags, case sensitivity for factory tags, other minor mods
+------------------------------------------------------------------------
+r6552 | wolin | 2010-07-19 09:55:47 -0400 (Mon, 19 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+
+Typo
+------------------------------------------------------------------------
+r6553 | staylor | 2010-07-19 11:05:11 -0400 (Mon, 19 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Changed how B is estimated. Seems to improve efficiency in forward direction.
+------------------------------------------------------------------------
+r6554 | staylor | 2010-07-19 11:09:49 -0400 (Mon, 19 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.h
+
+Remove unused variable
+------------------------------------------------------------------------
+r6558 | staylor | 2010-07-21 09:02:03 -0400 (Wed, 21 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Make variances for CDC and FDC more consistent with smearing in HDGeant/mcsmear.
+------------------------------------------------------------------------
+r6564 | staylor | 2010-07-22 17:39:48 -0400 (Thu, 22 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Enabled non-constant variance for cdc hits. Implemented some other minor changes (for example, use Perp() instead of Mag() to compute the doca because the z-difference is trivially zero in the instances where Mag was used...).
+------------------------------------------------------------------------
+r6568 | staylor | 2010-07-23 17:03:02 -0400 (Fri, 23 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Added alternate method for multiplication of two 5x5 matrices using sse3 instructions.
+------------------------------------------------------------------------
+r6569 | staylor | 2010-07-23 17:04:02 -0400 (Fri, 23 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.SIMD
+
+Added flag for use of sse3 instructions.
+------------------------------------------------------------------------
+r6573 | wolin | 2010-07-26 15:35:02 -0400 (Mon, 26 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIOFactoryGenerator.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.h
+
+Now can feed events to event display using Heddles simple socket interface
+------------------------------------------------------------------------
