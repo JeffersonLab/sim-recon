@@ -47,7 +47,26 @@ class DMatrix5x5{
     mA[3].v[2]=_mm_setr_pd(mA[4].d[3],0.);
     mA[4].v[2]=m35;
   }
-
+  // Constructor for symmetric matrix by elements
+  DMatrix5x5(double C11,double C12,double C13,double C14,double C15,double C22,double C23,double C24,double C25,
+	     double C33,double C34,double C35,double C44,double C45,double C55){
+    mA[0].v[0]=_mm_setr_pd(C11,C12);
+    mA[1].v[0]=_mm_setr_pd(C12,C22);
+    mA[2].v[0]=_mm_setr_pd(C13,C23);
+    mA[3].v[0]=_mm_setr_pd(C14,C24);
+    mA[4].v[0]=_mm_setr_pd(C15,C25);
+    mA[0].v[1]=_mm_setr_pd(C13,C14);
+    mA[1].v[1]=_mm_setr_pd(C23,C24);
+    mA[2].v[1]=_mm_setr_pd(C33,C34);
+    mA[3].v[1]=_mm_setr_pd(C34,C44);
+    mA[4].v[1]=_mm_setr_pd(C35,C45);
+    mA[0].v[2]=_mm_setr_pd(C15,0);
+    mA[1].v[2]=_mm_setr_pd(C25,0);
+    mA[2].v[2]=_mm_setr_pd(C35,0);
+    mA[3].v[2]=_mm_setr_pd(C45,0);
+    mA[4].v[2]=_mm_setr_pd(C55,0);
+    
+  }
 
   // Constructor using block matrices from matrix inversion 
   DMatrix5x5(const DMatrix2x2 &A,const DMatrix2x3 &B,
@@ -209,6 +228,156 @@ class DMatrix5x5{
   }
 
 #ifdef USE_SSE3
+  
+  // The following code performs the matrix operation ABA^T, where B is a symmetric matrix
+  DMatrix5x5 SandwichMultiply(const DMatrix5x5 &A){
+    __m128d A1112=_mm_setr_pd(A(0,0),A(0,1));
+    __m128d A1314=_mm_setr_pd(A(0,2),A(0,3));
+    __m128d A15=_mm_set1_pd(A(0,4));
+    union dvec temp;
+
+    // BA^T column 1
+    temp.v[0]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,0),A1112),
+						_mm_mul_pd(GetV(0,1),A1112)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,0),A1314),
+						_mm_mul_pd(GetV(1,1),A1314))),
+			 _mm_mul_pd(GetV(0,4),A15));
+    temp.v[1]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,2),A1112),
+						_mm_mul_pd(GetV(0,3),A1112)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,2),A1314),
+						_mm_mul_pd(GetV(1,3),A1314))),
+			 _mm_mul_pd(GetV(1,4),A15));
+    temp.v[2] =_mm_set1_pd(mA[4].d[0]*A(0,0)+mA[4].d[1]*A(0,1)+mA[4].d[2]*A(0,2)+mA[4].d[3]*A(0,3)+mA[4].d[4]*A(0,4));
+    
+    union dvec2{
+      __m128d v;
+      double d[2];
+    }temp2;
+    
+    // C=ABA^T elements C11,C12
+#define A2122 _mm_setr_pd(A(1,0),A(1,1))
+#define A2324 _mm_setr_pd(A(1,2),A(1,3))
+    temp2.v=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A1112,temp.v[0]),_mm_mul_pd(A2122,temp.v[0])),
+				  _mm_hadd_pd(_mm_mul_pd(A1314,temp.v[1]),_mm_mul_pd(A2324,temp.v[1]))),
+		       _mm_mul_pd(A.GetV(0,4),temp.v[2]));
+    double C11=temp2.d[0];
+    double C12=temp2.d[1];
+
+    // C=ABA^T elements C13,C14
+#define A3132 _mm_setr_pd(A(2,0),A(2,1))
+#define A3334 _mm_setr_pd(A(2,2),A(2,3))
+#define A4142 _mm_setr_pd(A(3,0),A(3,1))
+#define A4344 _mm_setr_pd(A(3,2),A(3,3))
+    temp2.v=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A3132,temp.v[0]),_mm_mul_pd(A4142,temp.v[0])),
+				    _mm_hadd_pd(_mm_mul_pd(A3334,temp.v[1]),_mm_mul_pd(A4344,temp.v[1]))),
+			 _mm_mul_pd(A.GetV(1,4),temp.v[2]));
+    double C13=temp2.d[0];
+    double C14=temp2.d[1];
+
+    // BA^T column 2
+#define A25 _mm_set1_pd(A(1,4))
+    temp.v[0]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,0),A2122),
+						_mm_mul_pd(GetV(0,1),A2122)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,0),A2324),
+						_mm_mul_pd(GetV(1,1),A2324))),
+			 _mm_mul_pd(GetV(0,4),A25));
+    temp.v[1]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,2),A2122),
+						_mm_mul_pd(GetV(0,3),A2122)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,2),A2324),
+						_mm_mul_pd(GetV(1,3),A2324))),
+			 _mm_mul_pd(GetV(1,4),A25));
+    temp.v[2]=_mm_set1_pd(mA[4].d[0]*A(1,0)+mA[4].d[1]*A(1,1)+mA[4].d[2]*A(1,2)+mA[4].d[3]*A(1,3)+mA[4].d[4]*A(1,4));
+    
+    // C=ABA^T elements C22,C23
+#define A2535 _mm_setr_pd(A(1,4),A(2,4))
+    temp2.v=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A2122,temp.v[0]),_mm_mul_pd(A3132,temp.v[0])),
+				    _mm_hadd_pd(_mm_mul_pd(A2324,temp.v[1]),_mm_mul_pd(A3334,temp.v[1]))),
+			 _mm_mul_pd(A2535,temp.v[2]));
+    double C22=temp2.d[0];
+    double C23=temp2.d[1];
+
+    // C=ABA^T elements C24,C25
+#define A5152 _mm_setr_pd(A(4,0),A(4,1))
+#define A5354 _mm_setr_pd(A(4,2),A(4,3)) 
+#define A4555 _mm_setr_pd(A(3,4),A(4,4))
+    temp2.v=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A4142,temp.v[0]),_mm_mul_pd(A5152,temp.v[0])),
+				    _mm_hadd_pd(_mm_mul_pd(A4344,temp.v[1]),_mm_mul_pd(A5354,temp.v[1]))),
+			 _mm_mul_pd(A4555,temp.v[2]));  
+    double C24=temp2.d[0];
+    double C25=temp2.d[1];
+
+    // BA^T column 3
+#define A35 _mm_set1_pd(A(2,4))
+    temp.v[0]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,0),A3132),
+						_mm_mul_pd(GetV(0,1),A3132)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,0),A3334),
+						_mm_mul_pd(GetV(1,1),A3334))),
+			 _mm_mul_pd(GetV(0,4),A35));
+    temp.v[1]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,2),A3132),
+						_mm_mul_pd(GetV(0,3),A3132)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,2),A3334),
+						_mm_mul_pd(GetV(1,3),A3334))),
+			 _mm_mul_pd(GetV(1,4),A35));
+    temp.v[2]=_mm_set1_pd(mA[4].d[0]*A(2,0)+mA[4].d[1]*A(2,1)+mA[4].d[2]*A(2,2)+mA[4].d[3]*A(2,3)+mA[4].d[4]*A(2,4));
+    
+
+    // C=ABA^T elements C33,C34,C35
+#define A3545 _mm_setr_pd(A(2,4),A(3,4))
+    temp2.v=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A3132,temp.v[0]),_mm_mul_pd(A4142,temp.v[0])),
+				    _mm_hadd_pd(_mm_mul_pd(A3334,temp.v[1]),_mm_mul_pd(A4344,temp.v[1]))),
+			 _mm_mul_pd(A3545,temp.v[2]));
+    double C33=temp2.d[0];
+    double C34=temp2.d[1];
+    double C35=A(4,0)*temp.d[0]+A(4,1)*temp.d[1]+A(4,2)*temp.d[2]+A(4,3)*temp.d[3]+A(4,4)*temp.d[4];
+
+// BA^T column 4
+#define A45 _mm_set1_pd(A(3,4))
+    temp.v[0]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,0),A4142),
+						_mm_mul_pd(GetV(0,1),A4142)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,0),A4344),
+						_mm_mul_pd(GetV(1,1),A4344))),
+			 _mm_mul_pd(GetV(0,4),A45));
+    temp.v[1]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,2),A4142),
+						_mm_mul_pd(GetV(0,3),A4142)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,2),A4344),
+						_mm_mul_pd(GetV(1,3),A4344))),
+			 _mm_mul_pd(GetV(1,4),A45));
+    temp.v[2]=_mm_set1_pd(mA[4].d[0]*A(3,0)+mA[4].d[1]*A(3,1)+mA[4].d[2]*A(3,2)+mA[4].d[3]*A(3,3)+mA[4].d[4]*A(3,4));
+
+    // C=ABA^T elements C44,C45
+#define A4545 _mm_setr_pd(A(3,4),A(4,4))
+    temp2.v=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A4142,temp.v[0]),_mm_mul_pd(A5152,temp.v[0])),
+				    _mm_hadd_pd(_mm_mul_pd(A4344,temp.v[1]),_mm_mul_pd(A5354,temp.v[1]))),
+			 _mm_mul_pd(A4555,temp.v[2]));
+    double C44=temp2.d[0];
+    double C45=temp2.d[1];
+ 
+       // BA^T column 5
+#define A55 _mm_set1_pd(A(4,4))
+    temp.v[0]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,0),A5152),
+						_mm_mul_pd(GetV(0,1),A5152)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,0),A5354),
+						_mm_mul_pd(GetV(1,1),A5354))),
+			 _mm_mul_pd(GetV(0,4),A55));
+    temp.v[1]=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(GetV(0,2),A5152),
+						_mm_mul_pd(GetV(0,3),A5152)),
+				    _mm_hadd_pd(_mm_mul_pd(GetV(1,2),A5354),
+						_mm_mul_pd(GetV(1,3),A5354))),
+			 _mm_mul_pd(GetV(1,4),A55));
+    temp.v[2]=_mm_set1_pd(mA[4].d[0]*A(4,0)+mA[4].d[1]*A(4,1)+mA[4].d[2]*A(4,2)+mA[4].d[3]*A(4,3)+mA[4].d[4]*A(4,4));
+
+
+  // C=ABA^T elements C15,C55
+#define A1555 _mm_setr_pd(A(0,4),A(4,4)) 
+    temp2.v=_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A1112,temp.v[0]),_mm_mul_pd(A5152,temp.v[0])),
+				    _mm_hadd_pd(_mm_mul_pd(A1314,temp.v[1]),_mm_mul_pd(A5354,temp.v[1]))),
+			 _mm_mul_pd(A1555,temp.v[2]));
+    double C15=temp2.d[0];
+    double C55=temp2.d[1];
+
+    return DMatrix5x5(C11,C12,C13,C14,C15,C22,C23,C24,C25,C33,C34,C35,C44,C45,C55);
+  }
+
   // Matrix multiplication. Requires the SSE3 instruction HADD (horizontal add)
   DMatrix5x5 operator*(const DMatrix5x5 &m2){
     __m128d A11A12=_mm_setr_pd(mA[0].d[0],mA[1].d[0]);
