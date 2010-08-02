@@ -403,4 +403,15 @@
   <danaevioDictEntry name="DTOFMCResponse.assocObjectBanks"           tag="12700"    num="254"/>
   <danaevioDictEntry name="DTOFMCResponse.assocObjects"               tag="12700"    num="255"/>
 
+  <danaevioDictEntry name="DBCALHit"                                  tag="12800"    num="0"/>
+  <danaevioDictEntry name="DBCALHit.objId"                            tag="12800"    num="1"/>
+  <danaevioDictEntry name="DBCALHit.module"                           tag="12800"    num="2"/>
+  <danaevioDictEntry name="DBCALHit.layer"                            tag="12800"    num="3"/>
+  <danaevioDictEntry name="DBCALHit.sector"                           tag="12800"    num="4"/>
+  <danaevioDictEntry name="DBCALHit.end"                              tag="12800"    num="5"/>
+  <danaevioDictEntry name="DBCALHit.E"                                tag="12800"    num="6"/>
+  <danaevioDictEntry name="DBCALHit.t"                                tag="12800"    num="7"/>
+  <danaevioDictEntry name="DBCALHit.assocObjectBanks"                 tag="12800"    num="254"/>
+  <danaevioDictEntry name="DBCALHit.assocObjects"                     tag="12800"    num="255"/>
+
 </xmlDict>
