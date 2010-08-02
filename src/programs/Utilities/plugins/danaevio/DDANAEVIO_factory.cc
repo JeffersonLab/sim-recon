@@ -61,6 +61,7 @@ using namespace jana;
 
 #include "FCAL/DFCALTruthShower.h"
 #include "FCAL/DFCALHit.h"
+#include "FCAL/DFCALPhoton.h"
 
 #include "BCAL/DBCALTruthShower.h"
 #include "BCAL/DHDDMBCALHit.h"
@@ -2194,7 +2195,7 @@ void DDANAEVIO_factory::addDTrackCandidate(JEventLoop *eventLoop, evioDOMTree &t
 }
 
 
-// //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 
 void DDANAEVIO_factory::addDBCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree) {
@@ -2274,7 +2275,87 @@ void DDANAEVIO_factory::addDBCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree)
 }
 
 
-// //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDFCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DFCALPhoton";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>  (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<float>     (objName+".x");
+  evioDOMNodeP var2Bank    = createLeafNode<float>     (objName+".y");
+  evioDOMNodeP var3Bank    = createLeafNode<float>     (objName+".z");
+  evioDOMNodeP var4Bank    = createLeafNode<float>     (objName+".px");
+  evioDOMNodeP var5Bank    = createLeafNode<float>     (objName+".py");
+  evioDOMNodeP var6Bank    = createLeafNode<float>     (objName+".pz");
+  evioDOMNodeP var7Bank    = createLeafNode<float>     (objName+".E");
+  evioDOMNodeP var8Bank    = createLeafNode<float>     (objName+".t");
+  *mainBank << objIdBank << var1Bank  << var2Bank  << var3Bank  << var4Bank  << var5Bank  
+            << var6Bank  << var7Bank  << var8Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    vector<const DFCALPhoton*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->getPosition().X();
+      *var2Bank    << dataObjects[i]->getPosition().Y();
+      *var3Bank    << dataObjects[i]->getPosition().Z();
+      *var4Bank    << dataObjects[i]->getMom3().Px();
+      *var5Bank    << dataObjects[i]->getMom3().Py();
+      *var6Bank    << dataObjects[i]->getMom3().Pz();
+      *var7Bank    << dataObjects[i]->getEnergy();
+      *var8Bank    << dataObjects[i]->getTime();
+      
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+
+
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+
+}
+
+
+//------------------------------------------------------------------------------
 
 
 // void DDANAEVIO_factory::addDbankName (JEventLoop *eventLoop, evioDOMTree &tree) {
