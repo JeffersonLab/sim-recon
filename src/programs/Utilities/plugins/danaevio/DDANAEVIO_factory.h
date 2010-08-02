@@ -69,6 +69,22 @@ class DDANAEVIO_factory : public JFactory<DDANAEVIODOMTree> {
   void addDTrackTimeBased(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDChargedTrack(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDPhoton(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDVertex(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDTrackCandidate(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDBCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDFCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDChargedTruthMatch(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDTOFHit(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDTOFPoint(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDTOFMCResponse(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDBCALHit(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDBCALMCResponse(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDBCALShower(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDFCALCluster(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDFDCCathodeCluster(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDFDCSegment(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDTwoGammaFit(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDParticle(JEventLoop *eventLoop, evioDOMTree &tree);
 
 
   // event-specific global object id map

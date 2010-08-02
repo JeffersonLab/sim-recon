@@ -57,12 +57,14 @@ using namespace jana;
 #include "TRACKING/DTrackWireBased.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
+#include "TRACKING/DTrackCandidate.h"
 
 #include "FCAL/DFCALTruthShower.h"
 #include "FCAL/DFCALHit.h"
 
 #include "BCAL/DBCALTruthShower.h"
 #include "BCAL/DHDDMBCALHit.h"
+#include "BCAL/DBCALPhoton.h"
 
 #include "TOF/DTOFTruth.h"
 #include "TOF/DHDDMTOFHit.h"
@@ -77,6 +79,8 @@ using namespace jana;
 
 #include "START_COUNTER/DSCHit.h"
 #include "START_COUNTER/DSCTruthHit.h"
+
+#include "PID/DVertex.h"
 
 #include "SplitString.h"
 
@@ -116,7 +120,6 @@ static pair< string, set<string> > danaObs[] =  {
   pair< string, set<string> > ("dphoton",              emptySet),
   pair< string, set<string> > ("dcdctrackhit",         emptySet),
   pair< string, set<string> > ("dfdcpseudo",           emptySet),
-
   pair< string, set<string> > ("dvertex",              emptySet),
   pair< string, set<string> > ("dtrackcandidate",      emptySet),
   pair< string, set<string> > ("dbcalphoton",          emptySet),
@@ -437,25 +440,22 @@ jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, int eventnumber) {
   if(evioMap["dtracktimebased"    ].size()>0)  addDTrackTimeBased(      eventLoop, myDDANAEVIODOMTree->tree);
   if(evioMap["dchargedtrack"      ].size()>0)  addDChargedTrack(        eventLoop, myDDANAEVIODOMTree->tree);
   if(evioMap["dphoton"            ].size()>0)  addDPhoton(              eventLoop, myDDANAEVIODOMTree->tree);
-  
-
-  // new banks ???
-//   if(evioMap["dvertex"            ].size()>0)  addDVertex(              eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dtrackcandidate"    ].size()>0)  addDTrackCandidate(      eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dbcalphoton"        ].size()>0)  addDBCALPhoton(          eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dfcalphoton"        ].size()>0)  addDFCALPhoton(          eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dchargedtruthmatch" ].size()>0)  addDChargedTruthMatch(   eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dtofhit"            ].size()>0)  addDTOFHit(              eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dtofpoint"          ].size()>0)  addDTOFPoint(            eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dtofmcresponse"     ].size()>0)  addDTOFMCResponse(       eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dbcalhit"           ].size()>0)  addDBCALHit(             eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dbcalmcresponse"    ].size()>0)  addDBCALMCResponse(      eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dbcalshower"        ].size()>0)  addDBCALShower(          eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dfcalcluster"       ].size()>0)  addDFCALCluster(         eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dfdccathodecluster" ].size()>0)  addDFDCCathodeCluster(   eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dfdcsegment"        ].size()>0)  addDFDCSegment(          eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dtwogammafit"       ].size()>0)  addDTwoGammaFit(         eventLoop, myDDANAEVIODOMTree->tree); 
-//   if(evioMap["dparticle"          ].size()>0)  addDParticle(            eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dvertex"            ].size()>0)  addDVertex(              eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dtrackcandidate"    ].size()>0)  addDTrackCandidate(      eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dbcalphoton"        ].size()>0)  addDBCALPhoton(          eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dfcalphoton"        ].size()>0)  addDFCALPhoton(          eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dchargedtruthmatch" ].size()>0)  addDChargedTruthMatch(   eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dtofhit"            ].size()>0)  addDTOFHit(              eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dtofpoint"          ].size()>0)  addDTOFPoint(            eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dtofmcresponse"     ].size()>0)  addDTOFMCResponse(       eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dbcalhit"           ].size()>0)  addDBCALHit(             eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dbcalmcresponse"    ].size()>0)  addDBCALMCResponse(      eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dbcalshower"        ].size()>0)  addDBCALShower(          eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dfcalcluster"       ].size()>0)  addDFCALCluster(         eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dfdccathodecluster" ].size()>0)  addDFDCCathodeCluster(   eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dfdcsegment"        ].size()>0)  addDFDCSegment(          eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dtwogammafit"       ].size()>0)  addDTwoGammaFit(         eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dparticle"          ].size()>0)  addDParticle(            eventLoop, myDDANAEVIODOMTree->tree); 
 
 
   // add global object id bank
@@ -2051,14 +2051,237 @@ void DDANAEVIO_factory::addDFDCPseudo(JEventLoop *eventLoop, evioDOMTree &tree) 
 
 
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDVertex(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DVertex";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+  
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>  (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<float>     (objName+".x");
+  evioDOMNodeP var2Bank    = createLeafNode<float>     (objName+".y");
+  evioDOMNodeP var3Bank    = createLeafNode<float>     (objName+".z");
+  evioDOMNodeP var4Bank    = createLeafNode<int>       (objName+".beamline_used");
+  evioDOMNodeP var5Bank    = createLeafNode<int>       (objName+".NTracks");
+  *mainBank << objIdBank << var1Bank << var2Bank << var3Bank << var4Bank << var5Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    vector<const DVertex*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->x.X();
+      *var2Bank    << dataObjects[i]->x.Y();
+      *var3Bank    << dataObjects[i]->x.Z();
+      *var4Bank    << dataObjects[i]->beamline_used;
+
+      vector<const DTrackTimeBased*> trks;
+      dataObjects[i]->Get(trks);
+      *var5Bank    << trks.size();
+      
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+      
+      
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+  
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDTrackCandidate(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DTrackCandidate";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>  (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<float>     (objName+".chisq");
+  evioDOMNodeP var2Bank    = createLeafNode<int>       (objName+".Ndof");
+  *mainBank << objIdBank << var1Bank << var2Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    //    vector<const DBankName*> dataObjects;
+    vector<const DTrackCandidate*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->chisq;
+      *var2Bank    << dataObjects[i]->Ndof ;
+      
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+
+
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+
+}
+
+
+// //------------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDBCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DBCALPhoton";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>  (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<float>     (objName+".x");
+  evioDOMNodeP var2Bank    = createLeafNode<float>     (objName+".y");
+  evioDOMNodeP var3Bank    = createLeafNode<float>     (objName+".z");
+  evioDOMNodeP var4Bank    = createLeafNode<float>     (objName+".px");
+  evioDOMNodeP var5Bank    = createLeafNode<float>     (objName+".py");
+  evioDOMNodeP var6Bank    = createLeafNode<float>     (objName+".pz");
+  evioDOMNodeP var7Bank    = createLeafNode<float>     (objName+".E");
+  evioDOMNodeP var8Bank    = createLeafNode<float>     (objName+".t");
+  *mainBank << objIdBank << var1Bank  << var2Bank  << var3Bank  << var4Bank  << var5Bank  
+            << var6Bank  << var7Bank  << var8Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    vector<const DBCALPhoton*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->showerPosition().X();
+      *var2Bank    << dataObjects[i]->showerPosition().Y();
+      *var3Bank    << dataObjects[i]->showerPosition().Z();
+      *var4Bank    << dataObjects[i]->lorentzMomentum().Px();
+      *var5Bank    << dataObjects[i]->lorentzMomentum().Py();
+      *var6Bank    << dataObjects[i]->lorentzMomentum().Pz();
+      *var7Bank    << dataObjects[i]->lorentzMomentum().E();
+      *var8Bank    << dataObjects[i]->showerTime();
+      
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+
+
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+
+}
+
+
+// //------------------------------------------------------------------------------
 
 
 // void DDANAEVIO_factory::addDbankName (JEventLoop *eventLoop, evioDOMTree &tree) {
 
-//   string objName    = "fred";
-//   string objNameLC;
-//   std::transform(objName.begin(), objName.end(), objNameLC.begin(), (int(*)(int)) tolower);
+//   string objName             = "fred";
+//   string objNameLC(objName);
+//   std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
 
 
 //   // create main bank and add to event tree
@@ -2103,7 +2326,7 @@ void DDANAEVIO_factory::addDFDCPseudo(JEventLoop *eventLoop, evioDOMTree &tree) 
       
 //       // get id's, add to id bank and to global object id map
 //       vector<const JObject*> objs;
-//       bankNames[i]->GetT(objs); 
+//       dataObjects[i]->GetT(objs); 
 //       for(unsigned int j=0; j<objs.size(); j++) {
 //         assocCount++;
 //         *assocObjs << objs[j]->id;
@@ -2116,6 +2339,6 @@ void DDANAEVIO_factory::addDFDCPseudo(JEventLoop *eventLoop, evioDOMTree &tree) 
 // }
 
 
-//------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------
 
 

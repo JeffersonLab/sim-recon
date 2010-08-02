@@ -306,4 +306,47 @@
   <xmldumpDictEntry name="DFDCPseudo.assocObjectBanks"           tag="12000"    num="254"/>
   <xmldumpDictEntry name="DFDCPseudo.assocObjects"               tag="12000"    num="255"/>
 
+  <xmldumpDictEntry name="DVertex"                               tag="12100"    num="0"/>
+  <xmldumpDictEntry name="DVertex.objId"                         tag="12100"    num="1"/>
+  <xmldumpDictEntry name="DVertex.x"                             tag="12100"    num="2"/>
+  <xmldumpDictEntry name="DVertex.y"                             tag="12100"    num="3"/>
+  <xmldumpDictEntry name="DVertex.z"                             tag="12100"    num="4"/>
+  <xmldumpDictEntry name="DVertex.beamline_used"                 tag="12100"    num="5"/>
+  <xmldumpDictEntry name="DVertex.NTracks"                       tag="12100"    num="6"/>
+  <xmldumpDictEntry name="DVertex.assocObjectBanks"              tag="12100"    num="254"/>
+  <xmldumpDictEntry name="DVertex.assocObjects"                  tag="12100"    num="255"/>
+
+  <xmldumpDictEntry name="DTrackCandidate"                       tag="12200"    num="0"/>
+  <xmldumpDictEntry name="DTrackCandidate.objId"                 tag="12200"    num="1"/>
+  <xmldumpDictEntry name="DTrackCandidate.chisq"                 tag="12200"    num="2"/>
+  <xmldumpDictEntry name="DTrackCandidate.Ndof"                  tag="12200"    num="3"/>
+  <xmldumpDictEntry name="DTrackCandidate.assocObjectBanks"      tag="12200"    num="254"/>
+  <xmldumpDictEntry name="DTrackCandidate.assocObjects"          tag="12200"    num="255"/>
+
+  <xmldumpDictEntry name="DBCALPhoton"                           tag="12300"    num="0"/>
+  <xmldumpDictEntry name="DBCALPhoton.objId"                     tag="12300"    num="1"/>
+  <xmldumpDictEntry name="DBCALPhoton.x"                         tag="12300"    num="2"/>
+  <xmldumpDictEntry name="DBCALPhoton.y"                         tag="12300"    num="3"/>
+  <xmldumpDictEntry name="DBCALPhoton.z"                         tag="12300"    num="4"/>
+  <xmldumpDictEntry name="DBCALPhoton.px"                        tag="12300"    num="5"/>
+  <xmldumpDictEntry name="DBCALPhoton.py"                        tag="12300"    num="6"/>
+  <xmldumpDictEntry name="DBCALPhoton.pz"                        tag="12300"    num="7"/>
+  <xmldumpDictEntry name="DBCALPhoton.E"                         tag="12300"    num="8"/>
+  <xmldumpDictEntry name="DBCALPhoton.t"                         tag="12300"    num="9"/>
+  <xmldumpDictEntry name="DBCALPhoton.assocObjectBanks"          tag="12300"    num="254"/>
+  <xmldumpDictEntry name="DBCALPhoton.assocObjects"              tag="12300"    num="255"/>
+
+  <xmldumpDictEntry name="DFCALPhoton"                           tag="12400"    num="0"/>
+  <xmldumpDictEntry name="DFCALPhoton.objId"                     tag="12400"    num="1"/>
+  <xmldumpDictEntry name="DFCALPhoton.assocObjectBanks"          tag="12400"    num="254"/>
+  <xmldumpDictEntry name="DFCALPhoton.assocObjects"              tag="12400"    num="255"/>
+
+
+<!--
+  <xmldumpDictEntry name="D"                       tag="12200"    num="0"/>
+  <xmldumpDictEntry name="D.objId"                 tag="12200"    num="1"/>
+  <xmldumpDictEntry name="D.assocObjectBanks"      tag="12200"    num="254"/>
+  <xmldumpDictEntry name="D.assocObjects"          tag="12200"    num="255"/>
+-->
+
 </xmlDict>
