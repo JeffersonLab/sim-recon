@@ -77,6 +77,7 @@ using namespace jana;
 #include "PID/DBeamPhoton.h"
 #include "PID/DPhoton.h"
 #include "PID/DChargedTrack.h"
+#include "PID/DChargedTruthMatch.h"
 
 #include "START_COUNTER/DSCHit.h"
 #include "START_COUNTER/DSCTruthHit.h"
@@ -2332,6 +2333,79 @@ void DDANAEVIO_factory::addDFCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree)
       *var6Bank    << dataObjects[i]->getMom3().Pz();
       *var7Bank    << dataObjects[i]->getEnergy();
       *var8Bank    << dataObjects[i]->getTime();
+      
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+
+
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDChargedTruthMatch(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DChargedTruthMatch";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>  (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<int>       (objName+".Nhits_thrown");
+  evioDOMNodeP var2Bank    = createLeafNode<int>       (objName+".Nhits_thrown_selector");
+  evioDOMNodeP var3Bank    = createLeafNode<int>       (objName+".Nhits_recon");
+  evioDOMNodeP var4Bank    = createLeafNode<int>       (objName+".Nhits_both");
+  evioDOMNodeP var5Bank    = createLeafNode<float>     (objName+".fom");
+  *mainBank << objIdBank << var1Bank  << var2Bank  << var3Bank  << var4Bank  << var5Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    vector<const DChargedTruthMatch*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->Nhits_thrown;
+      *var2Bank    << dataObjects[i]->Nhits_thrown_selector;
+      *var3Bank    << dataObjects[i]->Nhits_recon;
+      *var4Bank    << dataObjects[i]->Nhits_both;
+      *var5Bank    << dataObjects[i]->fom;
       
       objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
 
