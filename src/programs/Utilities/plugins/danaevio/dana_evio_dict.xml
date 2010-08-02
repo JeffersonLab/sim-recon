@@ -386,4 +386,21 @@
   <danaevioDictEntry name="DTOFPoint.assocObjectBanks"                tag="12700"    num="254"/>
   <danaevioDictEntry name="DTOFPoint.assocObjects"                    tag="12700"    num="255"/>
 
+  <danaevioDictEntry name="DTOFMCResponse"                            tag="12700"    num="0"/>
+  <danaevioDictEntry name="DTOFMCResponse.objId"                      tag="12700"    num="1"/>
+  <danaevioDictEntry name="DTOFMCResponse.orientation"                tag="12700"    num="2"/>
+  <danaevioDictEntry name="DTOFMCResponse.ptype"                      tag="12700"    num="3"/>
+  <danaevioDictEntry name="DTOFMCResponse.bar"                        tag="12700"    num="4"/>
+  <danaevioDictEntry name="DTOFMCResponse.y"                          tag="12700"    num="5"/>
+  <danaevioDictEntry name="DTOFMCResponse.t_north"                    tag="12700"    num="6"/>
+  <danaevioDictEntry name="DTOFMCResponse.E_north"                    tag="12700"    num="7"/>
+  <danaevioDictEntry name="DTOFMCResponse.t_south"                    tag="12700"    num="8"/>
+  <danaevioDictEntry name="DTOFMCResponse.E_south"                    tag="12700"    num="9"/>
+  <danaevioDictEntry name="DTOFMCResponse.ADC_north"                  tag="12700"    num="10"/>
+  <danaevioDictEntry name="DTOFMCResponse.ADC_south"                  tag="12700"    num="11"/>
+  <danaevioDictEntry name="DTOFMCResponse.TDC_north"                  tag="12700"    num="12"/>
+  <danaevioDictEntry name="DTOFMCResponse.TDC_south"                  tag="12700"    num="13"/>
+  <danaevioDictEntry name="DTOFMCResponse.assocObjectBanks"           tag="12700"    num="254"/>
+  <danaevioDictEntry name="DTOFMCResponse.assocObjects"               tag="12700"    num="255"/>
+
 </xmlDict>
