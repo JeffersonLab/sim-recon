@@ -355,8 +355,35 @@
   <danaevioDictEntry name="DChargedTruthMatch.Nhits_thrown_selector"  tag="12500"    num="3"/>
   <danaevioDictEntry name="DChargedTruthMatch.Nhits_recon"            tag="12500"    num="4"/>
   <danaevioDictEntry name="DChargedTruthMatch.Nhits_both"             tag="12500"    num="5"/>
-  <danaevioDictEntry name="DChargedTruthMatch.Nhits_fom"              tag="12500"    num="6"/>
+  <danaevioDictEntry name="DChargedTruthMatch.fom"                    tag="12500"    num="6"/>
   <danaevioDictEntry name="DChargedTruthMatch.assocObjectBanks"       tag="12500"    num="254"/>
   <danaevioDictEntry name="DChargedTruthMatch.assocObjects"           tag="12500"    num="255"/>
+
+  <danaevioDictEntry name="DTOFHit"                                   tag="12600"    num="0"/>
+  <danaevioDictEntry name="DTOFHit.objId"                             tag="12600"    num="1"/>
+  <danaevioDictEntry name="DTOFHit.orientation"                       tag="12600"    num="2"/>
+  <danaevioDictEntry name="DTOFHit.bar"                               tag="12600"    num="3"/>
+  <danaevioDictEntry name="DTOFHit.t_north"                           tag="12600"    num="4"/>
+  <danaevioDictEntry name="DTOFHit.E_north"                           tag="12600"    num="5"/>
+  <danaevioDictEntry name="DTOFHit.t_south"                           tag="12600"    num="6"/>
+  <danaevioDictEntry name="DTOFHit.E_south"                           tag="12600"    num="7"/>
+  <danaevioDictEntry name="DTOFHit.meantime"                          tag="12600"    num="8"/>
+  <danaevioDictEntry name="DTOFHit.timediff"                          tag="12600"    num="9"/>
+  <danaevioDictEntry name="DTOFHit.pos"                               tag="12600"    num="10"/>
+  <danaevioDictEntry name="DTOFHit.dpos"                              tag="12600"    num="11"/>
+  <danaevioDictEntry name="DTOFHit.dE"                                tag="12600"    num="12"/>
+  <danaevioDictEntry name="DTOFHit.assocObjectBanks"                  tag="12600"    num="254"/>
+  <danaevioDictEntry name="DTOFHit.assocObjects"                      tag="12600"    num="255"/>
+
+  <danaevioDictEntry name="DTOFPoint"                                 tag="12700"    num="0"/>
+  <danaevioDictEntry name="DTOFPoint.objId"                           tag="12700"    num="1"/>
+  <danaevioDictEntry name="DTOFPoint.x"                               tag="12700"    num="2"/>
+  <danaevioDictEntry name="DTOFPoint.y"                               tag="12700"    num="3"/>
+  <danaevioDictEntry name="DTOFPoint.z"                               tag="12700"    num="4"/>
+  <danaevioDictEntry name="DTOFPoint.t"                               tag="12700"    num="5"/>
+  <danaevioDictEntry name="DTOFPoint.dedx"                            tag="12700"    num="6"/>
+  <danaevioDictEntry name="DTOFPoint.chisq"                           tag="12700"    num="7"/>
+  <danaevioDictEntry name="DTOFPoint.assocObjectBanks"                tag="12700"    num="254"/>
+  <danaevioDictEntry name="DTOFPoint.assocObjects"                    tag="12700"    num="255"/>
 
 </xmlDict>
