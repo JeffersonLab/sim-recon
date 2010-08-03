@@ -149,7 +149,7 @@ static pair< string, set<string> > danaObs[] =  {
   pair< string, set<string> > ("dfdccathodecluster",   emptySet),
   pair< string, set<string> > ("dfdcsegment",          emptySet),
   pair< string, set<string> > ("dparticle",            emptySet),
-  pair< string, set<string> > ("dtwogammafit",         emptySet),   
+  //  pair< string, set<string> > ("dtwogammafit",         emptySet),   
 };
 
 
@@ -469,7 +469,7 @@ jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, int eventnumber) {
   if(evioMap["dfcalcluster"       ].size()>0)  addDFCALCluster(         eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dfdccathodecluster" ].size()>0)  addDFDCCathodeCluster(   eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dfdcsegment"        ].size()>0)  addDFDCSegment(          eventLoop, myDDANAEVIODOMTree->tree); 
-  if(evioMap["dtwogammafit"       ].size()>0)  addDTwoGammaFit(         eventLoop, myDDANAEVIODOMTree->tree); 
+  //  if(evioMap["dtwogammafit"       ].size()>0)  addDTwoGammaFit(         eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dparticle"          ].size()>0)  addDParticle(            eventLoop, myDDANAEVIODOMTree->tree); 
 
 
