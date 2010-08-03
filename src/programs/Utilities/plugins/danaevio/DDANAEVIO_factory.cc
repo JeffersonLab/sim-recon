@@ -81,6 +81,8 @@ using namespace jana;
 #include "CDC/DCDCHit.h"
 
 #include "FDC/DFDCHit.h"
+#include "FDC/DFDCCathodeCluster.h"
+#include "FDC/DFDCSegment.h"
 
 #include "PID/DBeamPhoton.h"
 #include "PID/DPhoton.h"
@@ -142,8 +144,8 @@ static pair< string, set<string> > danaObs[] =  {
   pair< string, set<string> > ("dbcalmcresponse",      emptySet),
   pair< string, set<string> > ("dbcalshower",          emptySet),
   pair< string, set<string> > ("dfcalcluster",         emptySet),
-
   pair< string, set<string> > ("dfdccathodecluster",   emptySet),
+
   pair< string, set<string> > ("dfdcsegment",          emptySet),
   pair< string, set<string> > ("dtwogammafit",         emptySet),
   pair< string, set<string> > ("dparticle",            emptySet),
@@ -2962,6 +2964,152 @@ void DDANAEVIO_factory::addDFCALCluster(JEventLoop *eventLoop, evioDOMTree &tree
       *var2Bank    << dataObjects[i]->getCentroid().y();
       *var3Bank    << dataObjects[i]->getEnergy();
       *var4Bank    << dataObjects[i]->getTime();
+      
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+
+
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDFDCCathodeCluster(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DFDCCathodeCluster";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>  (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<int>       (objName+".Nmembers");
+  evioDOMNodeP var2Bank    = createLeafNode<int>       (objName+".plane");
+  evioDOMNodeP var3Bank    = createLeafNode<int>       (objName+".gLayer");
+  evioDOMNodeP var4Bank    = createLeafNode<int>       (objName+".gPlane");
+  evioDOMNodeP var5Bank    = createLeafNode<float>     (objName+".q_tot");
+  *mainBank << objIdBank << var1Bank  << var2Bank  << var3Bank  << var4Bank << var5Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    vector<const DFDCCathodeCluster*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->members.size();
+      *var2Bank    << dataObjects[i]->plane;
+      *var3Bank    << dataObjects[i]->gLayer;
+      *var4Bank    << dataObjects[i]->gPlane;
+      *var5Bank    << dataObjects[i]->q_tot;
+      
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+
+
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDFDCSegment(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DFDCSegment";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>   (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<float>      (objName+".xc");
+  evioDOMNodeP var2Bank    = createLeafNode<float>      (objName+".yc");
+  evioDOMNodeP var3Bank    = createLeafNode<float>      (objName+".rc");
+  evioDOMNodeP var4Bank    = createLeafNode<float>      (objName+".Phi1");
+  evioDOMNodeP var5Bank    = createLeafNode<int>        (objName+".Nhits");
+  *mainBank << objIdBank << var1Bank  << var2Bank  << var3Bank  << var4Bank << var5Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    vector<const DFDCSegment*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->xc;
+      *var2Bank    << dataObjects[i]->yc;
+      *var3Bank    << dataObjects[i]->rc;
+      *var4Bank    << dataObjects[i]->Phi1;
+      *var5Bank    << dataObjects[i]->hits.size();
       
       objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
 

@@ -444,4 +444,24 @@
   <danaevioDictEntry name="DFCALCluster.assocObjectBanks"             tag="13200"    num="254"/>
   <danaevioDictEntry name="DFCALCluster.assocObjects"                 tag="13200"    num="255"/>
 
+  <danaevioDictEntry name="DFDCCathodeCluster"                        tag="13300"    num="0"/>
+  <danaevioDictEntry name="DFDCCathodeCluster.objId"                  tag="13300"    num="1"/>
+  <danaevioDictEntry name="DFDCCathodeCluster.Nmembers"               tag="13300"    num="2"/>
+  <danaevioDictEntry name="DFDCCathodeCluster.plane"                  tag="13300"    num="3"/>
+  <danaevioDictEntry name="DFDCCathodeCluster.gLayer"                 tag="13300"    num="4"/>
+  <danaevioDictEntry name="DFDCCathodeCluster.gPlane"                 tag="13300"    num="5"/>
+  <danaevioDictEntry name="DFDCCathodeCluster.q_tot"                  tag="13300"    num="6"/>
+  <danaevioDictEntry name="DFDCCathodeCluster.assocObjectBanks"       tag="13300"    num="254"/>
+  <danaevioDictEntry name="DFDCCathodeCluster.assocObjects"           tag="13300"    num="255"/>
+
+  <danaevioDictEntry name="DFDCSegment"                               tag="13400"    num="0"/>
+  <danaevioDictEntry name="DFDCSegment.objId"                         tag="13400"    num="1"/>
+  <danaevioDictEntry name="DFDCSegment.xc"                            tag="13400"    num="2"/>
+  <danaevioDictEntry name="DFDCSegment.yc"                            tag="13400"    num="3"/>
+  <danaevioDictEntry name="DFDCSegment.rc"                            tag="13400"    num="4"/>
+  <danaevioDictEntry name="DFDCSegment.Phi1"                          tag="13400"    num="5"/>
+  <danaevioDictEntry name="DFDCSegment.Nhits"                         tag="13400"    num="6"/>
+  <danaevioDictEntry name="DFDCSegment.assocObjectBanks"              tag="13400"    num="254"/>
+  <danaevioDictEntry name="DFDCSegment.assocObjects"                  tag="13400"    num="255"/>
+
 </xmlDict>
