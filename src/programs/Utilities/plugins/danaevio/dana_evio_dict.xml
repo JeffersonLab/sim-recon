@@ -425,4 +425,23 @@
   <danaevioDictEntry name="DBCALMCResponse.assocObjectBanks"          tag="13000"    num="254"/>
   <danaevioDictEntry name="DBCALMCResponse.assocObjects"              tag="13000"    num="255"/>
 
+  <danaevioDictEntry name="DBCALShower"                               tag="13100"    num="0"/>
+  <danaevioDictEntry name="DBCALShower.objId"                         tag="13100"    num="1"/>
+  <danaevioDictEntry name="DBCALShower.x"                             tag="13100"    num="2"/>
+  <danaevioDictEntry name="DBCALShower.y"                             tag="13100"    num="3"/>
+  <danaevioDictEntry name="DBCALShower.z"                             tag="13100"    num="4"/>
+  <danaevioDictEntry name="DBCALShower.t"                             tag="13100"    num="5"/>
+  <danaevioDictEntry name="DBCALShower.E"                             tag="13100"    num="6"/>
+  <danaevioDictEntry name="DBCALShower.assocObjectBanks"              tag="13100"    num="254"/>
+  <danaevioDictEntry name="DBCALShower.assocObjects"                  tag="13100"    num="255"/>
+
+  <danaevioDictEntry name="DFCALCluster"                              tag="13200"    num="0"/>
+  <danaevioDictEntry name="DFCALCluster.objId"                        tag="13200"    num="1"/>
+  <danaevioDictEntry name="DFCALCluster.x"                            tag="13200"    num="2"/>
+  <danaevioDictEntry name="DFCALCluster.y"                            tag="13200"    num="3"/>
+  <danaevioDictEntry name="DFCALCluster.E"                            tag="13200"    num="4"/>
+  <danaevioDictEntry name="DFCALCluster.t"                            tag="13200"    num="5"/>
+  <danaevioDictEntry name="DFCALCluster.assocObjectBanks"             tag="13200"    num="254"/>
+  <danaevioDictEntry name="DFCALCluster.assocObjects"                 tag="13200"    num="255"/>
+
 </xmlDict>
