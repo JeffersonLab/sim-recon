@@ -18,7 +18,7 @@
 %
 %%%%%%%%%%%%%%%%% Start Input Values %%%%%%%%%%%%%%%%%%%%
 % beamp.x beamp.y beamp.z beamMass  
-0 0 beamZ 0
+0 0 65.0 0
 % targetp.x targetp.y targetp.z targetMass
 0 0 0 0.938
 % t-channelSlope
@@ -31,7 +31,7 @@
 % baryon (Y) decay
  0       *      *       *       13       0       0.938     0.0   0       11  
 % meson (X) decay
- 1       2      3       *       0       2       Xmass     Xwidth    +1     00
+ 1       2      3       *       0       2       1662     0.234    +1     00
  2       4      5       1       0       2       0.770   10.0    0       00
  3       *      *       1       8      0       0.140   0      +1       11
  4       *      *       2       8       0       0.140   0       +1      11
