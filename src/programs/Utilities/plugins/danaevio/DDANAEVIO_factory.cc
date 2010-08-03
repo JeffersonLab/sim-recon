@@ -31,6 +31,7 @@
 //
 //
 // still to do:
+//    DTwoGammaFit needs toString() method
 //    optimize multi-threading
 //    add evio to external packages
 
@@ -88,6 +89,7 @@ using namespace jana;
 #include "PID/DPhoton.h"
 #include "PID/DChargedTrack.h"
 #include "PID/DChargedTruthMatch.h"
+#include "PID/DParticle.h"
 
 #include "START_COUNTER/DSCHit.h"
 #include "START_COUNTER/DSCTruthHit.h"
@@ -145,10 +147,9 @@ static pair< string, set<string> > danaObs[] =  {
   pair< string, set<string> > ("dbcalshower",          emptySet),
   pair< string, set<string> > ("dfcalcluster",         emptySet),
   pair< string, set<string> > ("dfdccathodecluster",   emptySet),
-
   pair< string, set<string> > ("dfdcsegment",          emptySet),
-  pair< string, set<string> > ("dtwogammafit",         emptySet),
   pair< string, set<string> > ("dparticle",            emptySet),
+  pair< string, set<string> > ("dtwogammafit",         emptySet),   
 };
 
 
@@ -3110,6 +3111,96 @@ void DDANAEVIO_factory::addDFDCSegment(JEventLoop *eventLoop, evioDOMTree &tree)
       *var3Bank    << dataObjects[i]->rc;
       *var4Bank    << dataObjects[i]->Phi1;
       *var5Bank    << dataObjects[i]->hits.size();
+      
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+
+
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDParticle(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DParticle";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>   (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<float>      (objName+".q");
+  evioDOMNodeP var2Bank    = createLeafNode<float>      (objName+".x");
+  evioDOMNodeP var3Bank    = createLeafNode<float>      (objName+".y");
+  evioDOMNodeP var4Bank    = createLeafNode<float>      (objName+".z");
+  evioDOMNodeP var5Bank    = createLeafNode<float>      (objName+".E");
+  evioDOMNodeP var6Bank    = createLeafNode<float>      (objName+".t");
+  evioDOMNodeP var7Bank    = createLeafNode<float>      (objName+".p");
+  evioDOMNodeP var8Bank    = createLeafNode<float>      (objName+".theta");
+  evioDOMNodeP var9Bank    = createLeafNode<float>      (objName+".phi");
+  evioDOMNodeP var10Bank   = createLeafNode<uint64_t>   (objName+".trackid");
+  evioDOMNodeP var11Bank   = createLeafNode<float>      (objName+".chisq");
+  evioDOMNodeP var12Bank   = createLeafNode<int>        (objName+".Ndof");
+
+  *mainBank << objIdBank << var1Bank  << var2Bank  << var3Bank  << var4Bank << var5Bank
+            << var6Bank  << var7Bank  << var8Bank  << var9Bank 
+            << var10Bank << var11Bank << var12Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    vector<const DParticle*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->charge();
+      *var2Bank    << dataObjects[i]->x();
+      *var3Bank    << dataObjects[i]->y();
+      *var4Bank    << dataObjects[i]->z();
+      *var5Bank    << dataObjects[i]->energy();
+      *var6Bank    << dataObjects[i]->t0();
+      *var7Bank    << dataObjects[i]->momentum().Mag();
+      *var8Bank    << dataObjects[i]->momentum().Theta()*180.0/M_PI;
+      *var9Bank    << dataObjects[i]->momentum().Phi()*180.0/M_PI;
+      *var10Bank   << dataObjects[i]->trackid;
+      *var11Bank   << dataObjects[i]->chisq;
+      *var12Bank   << dataObjects[i]->Ndof;
       
       objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
 
