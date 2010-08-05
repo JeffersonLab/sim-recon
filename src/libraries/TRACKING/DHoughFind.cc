@@ -18,6 +18,7 @@ using namespace std;
 DHoughFind::DHoughFind()
 {
 	hist = NULL;
+	max_bin_valid = false;
 }
 
 //---------------------------------
@@ -140,7 +141,6 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 	// that step here so we don't have to over and over inside the loop
 	double small_step = bin_size*1.0E-3;
 
-//_DBG_<<"points.size()="<<points.size()<<endl;
 	for(unsigned int i=0; i<points.size(); i++){
 		const DVector2 &point = points[i];
 		DVector2 g(point.Y(), -point.X()); // perp. to point
@@ -149,7 +149,6 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 		
 		// Find intersection with an edge of the histogram area that
 		// we can use as a starting point.
-//_DBG_<<"============= point "<<i<<"==============="<<endl;
 		double beta = FindBeta(xmin, ymin, xmax-xmin, ymax-ymin, pos, g);
 		pos += beta*g;
 		
@@ -160,7 +159,6 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 		// of g as needed to always step in the scan direction
 		int ix, iy; // bin indexes
 		FindIndexes(pos + small_step*g, ix, iy);
-//_DBG_<<"beta="<<beta<<" ix="<<ix<<" iy="<<iy<<endl;
 		if(ix<0 || ix>=(int)Nbinsx-1 || iy<0 || iy>=(int)Nbinsy-1){
 			g *= -1.0;
 			FindIndexes(pos + small_step*g, ix, iy);
@@ -175,7 +173,6 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 		do{
 			
 			// Find distance to boundary of next bin
-//_DBG_<<"   --- iteration "<<Niterations<<" ---"<<endl;
 			beta = FindBeta(xmin+(double)ix*bin_widthx, ymin+(double)iy*bin_widthy, bin_widthx, bin_widthy, pos, g);
 			
 			// Beta too large indicates problem
@@ -184,7 +181,6 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 			// increment histo for bin we just stepped across
 			if(ix<0 || ix>=(int)Nbinsx || iy<0 || iy>=(int)Nbinsy)break; // must have left the histo
 			int index = ix + iy*Nbinsy;
-//_DBG_<<"before: index="<<index<<" ix="<<ix<<" iy="<<iy<<endl;
 			hist[index] += fabs(beta);
 			if(hist[index]>max_bin_content){
 				max_bin_content = hist[index];
@@ -197,10 +193,95 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 			FindIndexes(pos + small_step*g, ix, iy);
 
 		}while(++Niterations<2*Nbinsx);
-//_DBG_<<"after:  ix="<<ix<<" iy="<<iy<<" Niterations="<<Niterations<<endl;
 	}
 
 	return GetMaxBinLocation();
+}
+
+//---------------------------------
+// Fill
+//---------------------------------
+void DHoughFind::Fill(double x, double sigmax, double y, double sigmay)
+{
+	/// Increment the histogram bins according to the given location
+	/// and sigmas. This will increment each bin by calculating the
+	/// product of 2 gaussians using the coordinates of the center of
+	/// the bin. Only bins within 4 sigma in each dimension are incremented.
+	///
+	/// Note that the histogram is NOT reset prior to filling. This is
+	/// to allow accumulation over multiple calls.
+	
+	int ixmin = (int)(((x-xmin) - 4.0*sigmax)/bin_widthx -0.5);
+	int ixmax = (int)(((x-xmin) + 4.0*sigmax)/bin_widthx +0.5);
+	int iymin = (int)(((y-ymin) - 4.0*sigmay)/bin_widthy -0.5);
+	int iymax = (int)(((y-ymin) + 4.0*sigmay)/bin_widthy +0.5);
+	if(ixmin<0)ixmin=0;
+	if(iymin<0)iymin=0;
+	if(ixmax>(int)Nbinsx)ixmax=Nbinsx;
+	if(iymax>(int)Nbinsy)iymax=Nbinsy;
+	
+	// Loop over bins
+	double x_bin = xmin + (0.5+(double)ixmin)*bin_widthx;
+	for(int i=ixmin; i<ixmax; i++, x_bin+=bin_widthx){
+		double y_bin = ymin + (0.5+(double)iymin)*bin_widthy;
+		for(int j=iymin; j<iymax; j++, y_bin+=bin_widthy){
+			double k_x = (x - x_bin)/sigmax;
+			double k_y = (y - y_bin)/sigmay;
+			double gauss_x = exp(k_x*k_x)/sigmax; // divide by sigma to make constant area
+			double gauss_y = exp(k_y*k_y)/sigmay; // divide by sigma to make constant area
+			
+			int index = i + j*Nbinsy;
+			hist[index] += gauss_x*gauss_y;
+		}
+	}
+}
+
+//---------------------------------
+// GetMaxBinLocation (static)
+//---------------------------------
+DVector2 DHoughFind::GetMaxBinLocation(vector<const DHoughFind*> &houghs)
+{
+	/// This routine is designed to be called statically via:
+	///
+	///     DHoughFind::GetMaxBinLocation(houghs);
+	///
+	/// It will find the location of the center of the bin with the maximum
+	/// content based on the sum of the input DHough objects. It does this
+	/// dynamically without maintaining a sum histogram.
+	///
+	/// WARNING: If you call this as a method of an existing object, (e.g.
+	/// like this myhough->GetMacBinLocation(houghs); ) the object is NOT
+	/// used unless it explicitly appears in the "houghs" list!
+	///
+	/// It is left to the caller to ensure the limits and number of bins for each
+	/// DHough object are the same.
+
+	if(houghs.size()<1)return DVector2(0.0, 0.0);
+	
+	unsigned int Nbinsx = houghs[0]->Nbinsx;
+	unsigned int Nbinsy = houghs[0]->Nbinsy;
+	
+	unsigned int imax_binx=0, imax_biny=0;
+	double max_bin_content = 0.0;
+	for(unsigned int i=0; i<Nbinsx; i++){
+		for(unsigned int j=0; j<Nbinsy; j++){
+			double tot = 0.0;
+			for(unsigned int k=0; k<houghs.size(); k++){
+				unsigned int index = i + Nbinsy*j;
+				tot += houghs[k]->hist[index];
+			}
+			if(tot>max_bin_content){
+				max_bin_content = tot;
+				imax_binx = i;
+				imax_biny = j;
+			}
+		}
+	}
+	
+	double x = houghs[0]->xmin + (0.5+(double)imax_binx)*houghs[0]->bin_widthx;
+	double y = houghs[0]->ymin + (0.5+(double)imax_biny)*houghs[0]->bin_widthy;
+	
+	return DVector2(x, y);
 }
 
 //---------------------------------
@@ -235,92 +316,6 @@ void DHoughFind::ClearPoints(void)
 {
 	points.clear();
 }
-
-#if 0
-//---------------------------------
-// FindIndexes
-//---------------------------------
-void DHoughFind::FindIndexes(const DVector2 &pos, int &ix, int &iy)
-{
-	ix = (int)floor((pos.X()-xmin)/bin_widthx);
-	iy = (int)floor((pos.Y()-ymin)/bin_widthy);
-}
-
-//---------------------------------
-// FindBeta
-//---------------------------------
-double DHoughFind::FindBeta(double xlo, double ylo, double widthx, double widthy, DVector2 &pos, DVector2 &step)
-{
-	DVector2 a0(xlo, ylo);
-	DVector2 xdir(1.0, 0.0);
-	DVector2 ydir(0.0, 1.0);
-	DVector2 stepdir = step/step.Mod();
-
-	//vector<double> beta(4);
-	double beta[4];
-	beta[0] = FindBeta(a0, xdir, pos, stepdir);
-	beta[1] = FindBeta(a0+widthx*xdir, ydir, pos, stepdir);
-	beta[2] = FindBeta(a0+widthx*xdir+widthy*ydir, -1.0*xdir, pos, stepdir);
-	beta[3] = FindBeta(a0+widthy*ydir, -1.0*ydir, pos, stepdir);
-	//beta.push_back(FindBeta(a0, xdir, pos, stepdir));
-	//beta.push_back(FindBeta(a0+widthx*xdir, ydir, pos, stepdir));
-	//beta.push_back(FindBeta(a0+widthx*xdir+widthy*ydir, -1.0*xdir, pos, stepdir));
-	//beta.push_back(FindBeta(a0+widthy*ydir, -1.0*ydir, pos, stepdir));
-
-	// Here, we want to choose the closest boundary of the bin which is not
-	// the boundary the point "pos" lies on. The values of beta give the
-	// distances to the lines which define the boundaries, but not clipped
-	// to the bin itself.
-
-	// Loop over beta values
-	DVector2 bin_center(xlo+widthx/2.0, ylo+widthy/2.0);
-	double min_dist_to_center = 1.0E6;
-	double min_beta = 1.0E6;
-	for(unsigned int i=0; i<4; i++){
-		if(fabs(beta[i])<1.0E-6*bin_size)continue; // This is most likely due to our starting pos being on a boundary already. Ignore it.
-		
-		DVector2 delta_center = pos + beta[i]*stepdir - bin_center;
-		if(delta_center.Mod() < min_dist_to_center){
-			min_dist_to_center = delta_center.Mod();
-			min_beta = beta[i];
-		}
-	}
-	
-	return min_beta;
-}
-
-//---------------------------------
-// FindBeta
-//---------------------------------
-double DHoughFind::FindBeta(const DVector2 &a, const DVector2 &b, const DVector2 &c, const DVector2 &d)
-{
-	/// Given the 2-D vectors a,b,c, and d find the scaler value "beta" such that
-	///
-	/// a + alpha*b = c + beta*d
-	///
-	/// It vectors b and d should be unit vectors.
-	/// The value of alpha is not returned, but can be calculated via:
-	///
-	/// alpha = beta*(d.b) - b.(a-c)
-	///
-	/// If the vectors b and d are parallel, then the return value will be inf
-	/// or whatever division by zero returns on the system.
-#if 0
-	double ex = a.X() - c.X();
-	double ey = a.Y() - c.Y();
-	double bx = b.X();
-	double by = b.Y();
-	double dx = d.X();
-	double dy = d.Y();
-	double b_dot_d = bx*dx + by*dy;
-	double d_dot_e = dx*ex + dy*ey;
-	double b_dot_e = bx*ex + by*ey;
-	return (d_dot_e - b_dot_d*b_dot_e)/(1.0-b_dot_d*b_dot_d);
-#endif
-
-	return (d*(a-c) - (d*b)*(b*(a-c)))/(1.0-pow(b*d, 2.0));
-}
-#endif
 
 //---------------------------------
 // PrintHist

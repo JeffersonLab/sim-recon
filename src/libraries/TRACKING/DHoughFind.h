@@ -35,21 +35,27 @@ class DHoughFind:public JObject{
 		double GetSigmaY(void);
 		DVector2 Find(void);
 		DVector2 Find(const vector<DVector2> &points);
+		
+		void Fill(double x, double sigmax, double y, double sigmay);
+		static DVector2 GetMaxBinLocation(vector<const DHoughFind*> &houghs); // does not look at "this" object!
+		
 		void AddPoint(const DVector2 &point);
 		void AddPoint(const double &x, const double &y);
 		void AddPoints(const vector<DVector2> &points);
 		unsigned int GetNPoints(void){return points.size();}
 		void ClearPoints(void);
-		void FindIndexes(const DVector2 &pos, int &ix, int &iy);
-		double FindBeta(double xlo, double ylo, double widthx, double widthy, DVector2 &pos, DVector2 &step);
-		double FindBeta(const DVector2 &a, const DVector2 &b, const DVector2 &c, const DVector2 &d);
 		void PrintHist(void);
 		
+		inline void FindIndexes(const DVector2 &pos, int &ix, int &iy);
+		inline double FindBeta(double xlo, double ylo, double widthx, double widthy, DVector2 &pos, DVector2 &step);
+		inline double FindBeta(const DVector2 &a, const DVector2 &b, const DVector2 &c, const DVector2 &d);
+
 	protected:
 		vector<DVector2> points;
 		double xmin, xmax, ymin, ymax;
 		unsigned int Nbinsx, Nbinsy;
 		double bin_widthx, bin_widthy, bin_size;
+		bool max_bin_valid;
 		unsigned int imax_binx, imax_biny;
 		double max_bin_content;
 	
