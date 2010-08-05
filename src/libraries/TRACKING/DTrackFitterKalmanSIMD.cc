@@ -2,7 +2,7 @@
 // DTrackFitterKalmanSIMD.cc
 //************************************************************************
 
-#if USE_SIMD
+#if USE_SSE3
 
 
 #include "DTrackFitterKalmanSIMD.h"
@@ -330,6 +330,9 @@ jerror_t DTrackFitterKalmanSIMD::SetSeed(double q,DVector3 pos, DVector3 mom){
   }
   if (mom.Mag()>8.){
     mom.SetMag(8.0);
+  }
+  if (mom.Mag()<0.1){
+    mom.SetMag(0.1);
   }
 
   // Forward parameterization 
@@ -2720,7 +2723,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   DMatrix1x5 H;  // Track projection matrix
   DMatrix5x1 H_T; // Transpose of track projection matrix
   DMatrix5x5 J;  // State vector Jacobian matrix
-  DMatrix5x5 JT; // transpose of this matrix
+  //DMatrix5x5 JT; // transpose of this matrix
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x1 K;  // KalmanSIMD gain matrix
   double V=1.6*1.6/12.;  // Measurement variance
@@ -2768,7 +2771,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     // from reference trajectory
     S0=central_traj[k].S;
     J=central_traj[k].J;
-    JT=central_traj[k].JT;
+    // JT=central_traj[k].JT;
     Q=central_traj[k].Q;
 
     // State S is perturbation about a seed S0
@@ -2778,7 +2781,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     // Update the actual state vector and covariance matrix
     Sc=S0+J*(Sc-S0_);  
     // Cc=J*(Cc*JT)+Q;   
-    Cc=Q.AddSym(J*Cc*JT);
+    //Cc=Q.AddSym(J*Cc*JT);
+    Cc=Q.AddSym(Cc.SandwichMultiply(J));
+
     //Sc=central_traj[k].S+central_traj[k].J*(Sc-S0_);
     //Cc=central_traj[k].Q.AddSym(central_traj[k].J*Cc*central_traj[k].JT);
 
@@ -2883,8 +2888,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  StepJacobian(pos0,origin,dir,myds,S0,dedx,J);
 	  
 	  // Update covariance matrix
-	  Cc=J*Cc*J.Transpose();
-	  
+	  // Cc=J*Cc*J.Transpose();
+	  Cc=Cc.SandwichMultiply(J);
+
 	  // Step along reference trajectory 
 	  FixedStep(pos0,myds,S0,dedx);	
 	}
@@ -3007,8 +3013,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  StepJacobian(pos0,origin,dir,-myds,S0,dedx,J);
 	  
 	  // Update covariance matrix
-	  Cc=J*Cc*J.Transpose();
-	  
+	  //Cc=J*Cc*J.Transpose();
+	  Cc=Cc.SandwichMultiply(J);
+ 
 	  // Step along reference trajectory 
 	  FixedStep(pos0,-myds,S0,dedx);	
 	  
@@ -3020,7 +3027,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  StepJacobian(pos0,origin,dir,-ds3,S0,dedx,J);
 	  
 	  // Update covariance matrix
-	  Cc=J*Cc*J.Transpose();
+	  //Cc=J*Cc*J.Transpose();
+	  Cc=Cc.SandwichMultiply(J);
 	}
 	
 	// Step to the next point on the trajectory
@@ -3102,7 +3110,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   DMatrix2x5 H;  // Track projection matrix
   DMatrix5x2 H_T; // Transpose of track projection matrix
   DMatrix5x5 J;  // State vector Jacobian matrix
-  DMatrix5x5 J_T; // transpose of this matrix
+  //DMatrix5x5 J_T; // transpose of this matrix
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x2 K;  // Kalman gain matrix
   DMatrix2x2 V(0.08333,0.,0.,0.008533);  // Measurement covariance matrix
@@ -3125,7 +3133,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
     // from reference trajectory
     S0=(forward_traj[k].S);
     J=(forward_traj[k].J);
-    J_T=(forward_traj[k].JT);
+    //J_T=(forward_traj[k].JT);
     Q=(forward_traj[k].Q);
 
     // State S is perturbation about a seed S0
@@ -3144,7 +3152,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
     }
 
     //C=J*(C*J_T)+Q;   
-    C=Q.AddSym(J*C*J_T);
+    //C=Q.AddSym(J*C*J_T);
+    C=Q.AddSym(C.SandwichMultiply(J));
 
     // Save the current state of the reference trajectory
     S0_=S0;
@@ -3286,7 +3295,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   DMatrix1x5 H;  // Track projection matrix
   DMatrix5x1 H_T; // Transpose of track projection matrix
   DMatrix5x5 J;  // State vector Jacobian matrix
-  DMatrix5x5 J_T; // transpose of this matrix
+  //DMatrix5x5 J_T; // transpose of this matrix
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x1 K;  // KalmanSIMD gain matrix
   DMatrix5x1 S0,S0_; //State vector
@@ -3325,7 +3334,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
     // from reference trajectory
     S0=(forward_traj_cdc[k].S);
     J=(forward_traj_cdc[k].J);
-    J_T=(forward_traj_cdc[k].JT);
+    //J_T=(forward_traj_cdc[k].JT);
     Q=(forward_traj_cdc[k].Q);
 
     // State S is perturbation about a seed S0
@@ -3348,7 +3357,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 
 
     //C=J*(C*J_T)+Q;   
-    C=Q.AddSym(J*C*J_T);
+    //C=Q.AddSym(J*C*J_T);
+    C=Q.AddSym(C.SandwichMultiply(J));
 
     // Save the current state of the reference trajectory
     S0_=S0;
@@ -3435,8 +3445,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 
 	// propagate error matrix to z-position of hit
 	StepJacobian(z,newz,S0,dedx,J);
-	C=J*C*J.Transpose();
-	
+	//C=J*C*J.Transpose();
+	C=C.SandwichMultiply(J);
+
 	// Wire position at current z
 	wirepos=origin+((newz-z0w)/uz)*dir;
 	double xw=wirepos.x();
@@ -3538,7 +3549,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	
 	// Step C back to the z-position on the reference trajectory
 	StepJacobian(newz,z,S0,dedx,J);
-	C=J*C*J.Transpose();
+	//C=J*C*J.Transpose();
+	C=C.SandwichMultiply(J);
 	
 	// Step S to current position on the reference trajectory
 	Step(newz,z,dedx,S);
@@ -3652,7 +3664,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     StepJacobian(z,newz,S,dEdx,J);
 
     // Propagate the covariance matrix
-    C=Q.AddSym(J*C*J.Transpose());
+    //C=Q.AddSym(J*C*J.Transpose());
+    C=Q.AddSym(C.SandwichMultiply(J));
 
     // Step through field
     ds=Step(z,newz,dEdx,S);
@@ -3675,7 +3688,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       StepJacobian(newz,newz+dz,S,dEdx,J);
       
       // Propagate the covariance matrix
-      C=J*C*J.Transpose()+(dz/(newz-z))*Q;
+      //C=J*C*J.Transpose()+(dz/(newz-z))*Q;
+      C=((dz/newz-z)*Q).AddSym(C.SandwichMultiply(J));
 
       Step(newz,newz+dz,dEdx,S);
       newz+=dz;
@@ -3758,7 +3772,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
 
       // Propagate the covariance matrix
       //Cc=Jc*Cc*Jc.Transpose()+Q;
-      Cc=Q.AddSym(Jc*Cc*Jc.Transpose());
+      //Cc=Q.AddSym(Jc*Cc*Jc.Transpose());
+      Cc=Q.AddSym(Cc.SandwichMultiply(Jc));
       
       // Propagate the state through the field
       S0=Sc;
@@ -3783,7 +3798,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
 	StepJacobian(old_pos,origin,dir,my_ds,S0,dedx,Jc);
       
 	// Propagate the covariance matrix
-	Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
+	//Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
+	Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
 
 	//printf("new %f\n",pos.Perp());
 	break;
