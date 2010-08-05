@@ -291,8 +291,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		// Adjust step size to take smaller steps in regions of high momentum loss or field gradient
 		if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
 			// Take step so as to change momentum by 100keV
-			double my_step_size=p/fabs(dP_dx)*0.01;
-			my_step_size = 0.0001/fabs(dP_dx);
+			//double my_step_size=p/fabs(dP_dx)*0.01;
+			double my_step_size = 0.0001/fabs(dP_dx);
 
 			// Now check the field gradient
 #if 0
@@ -341,7 +341,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		}
 		
 		// update flight time
-		t+=ds/beta/SPEED_OF_LIGHT;
+		t+=ds/(beta*SPEED_OF_LIGHT);
 		s += ds;
 	
 		
@@ -696,6 +696,19 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 	// new points and the ones after them by making one more pass. I'm hoping
 	// it is a realitively small correction though so we can skip it here.
 	return 0;
+}
+
+//---------------------------------
+// DistToRT
+//---------------------------------
+double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t) const{
+  double dist=DistToRT(hit,s);
+  if (s!=NULL && t!=NULL){
+    double p=last_swim_step->mom.Mag();
+    double one_over_beta=sqrt(1.+mass*mass/(p*p));
+    *t=last_swim_step->t+(*s-last_swim_step->s)*one_over_beta/SPEED_OF_LIGHT;
+  }
+  return dist;
 }
 
 //---------------------------------
