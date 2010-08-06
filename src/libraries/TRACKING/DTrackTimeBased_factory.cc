@@ -191,7 +191,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	timebased_track->candidateid=track->candidateid;
 
 	// Set the start time
-	timebased_track->setT0(mStartTime,0.,mStartDetector);
+	timebased_track->setT0(mStartTime, 2., mStartDetector);
 
 	// Add hits used as associated objects
 	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
