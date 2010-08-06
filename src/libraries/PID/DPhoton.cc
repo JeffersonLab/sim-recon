@@ -42,7 +42,13 @@ void DPhoton::setTag( PhotonTag aTag )
 
 void DPhoton::setTime( double aTime )
 {
+   // Time photon hit calorimeter
    fTime = aTime;
+   
+   // Time photon was at vertex. (n.b. this assumes fPosition
+   // and fPositionCal are valid
+   double d = (fPositionCal-position()).Mag();
+   setT0(aTime - d/29.98, 2.0, SYS_NULL); /// FIXME!!
 }
 
 // Distance to track's ReferenceTrajectory
