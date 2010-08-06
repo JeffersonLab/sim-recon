@@ -45,6 +45,8 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 				vector<TLorentzVector> piplus;
 				vector<TLorentzVector> piminus;
 				vector<TLorentzVector> protons;
+				vector<TLorentzVector> Kplus;
+				vector<TLorentzVector> Kminus;
 		};
 
 		Event *evt_recon;

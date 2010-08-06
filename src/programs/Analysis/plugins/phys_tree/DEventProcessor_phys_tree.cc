@@ -28,6 +28,7 @@ using namespace jana;
 #include <PID/DChargedTrack.h>
 #include <PID/DPhoton.h>
 #include <PID/DBeamPhoton.h>
+#include <PID/DPhysicsEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include "Particle.h"
@@ -113,11 +114,13 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DPhoton*> photons;
 	vector<const DChargedTrack*> chargedtracks;
+	vector<const DPhysicsEvent*> physicsevents;
 
 	loop->Get(beam_photons);
 	loop->Get(mcthrowns);
 	loop->Get(photons);
 	loop->Get(chargedtracks);
+	loop->Get(physicsevents);
 
 	// Make TLorentzVector for beam photon
 	TLorentzVector beam_photon = TLorentzVector(0.0, 0.0, 9.0, 9.0);
@@ -125,39 +128,60 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 		
 	// Target is proton at rest in lab frame
 	TLorentzVector target(0.0, 0.0, 0.0, 0.93827);
-
-	// Create TLorentzVectors for reconstructed photons not matched to charged particles
-	particle_set rec;
-	for(unsigned int j=0; j<photons.size(); j++){
-		if(photons[j]->getTag()!=DPhoton::kCharge) rec.photons.push_back(MakeTLorentz(photons[j], 0.0));
-	}
-
-	// Loop over charged particles turning them into TLorentzVector objects
-	// and sorting them into various containers declared just above.
-	for(unsigned int j=0; j<chargedtracks.size(); j++){
-		if(chargedtracks[j]->hypotheses.size()==0)continue;
-		const DTrackTimeBased *track = chargedtracks[j]->hypotheses[0];
-		
-		// Rely on the mass of the track to decide the type. Limit it to 
-		// pions and protons for now.
-		int type = track->charge()<0.0 ? 9:8; // initialize to pi-(=9) or pi+(=8)
-		if(fabs(track->mass() - 0.93827)<0.100)type=14;
-
-		// Add TLorentzVector to appropriate container based on charged particle type
-		switch(type){
-			case 8:	rec.piplus.push_back(MakeTLorentz(track, 0.13957));	break;
-			case 9:	rec.piminus.push_back(MakeTLorentz(track, 0.13957));	break;
-			case 14:	rec.protons.push_back(MakeTLorentz(track, 0.93827));	break;
+	
+	// Find the DPhysicsEvent with the most particles and only use that one.
+	// This is not a long term solution, but is motivated by the fact that
+	// we have only one set of DMCThrown particles and one DBeamPhoton
+	const DPhysicsEvent *physicsevent = NULL;
+	int max_parts=0;
+	for(unsigned int i=0; i<physicsevents.size(); i++){
+		const DPhysicsEvent *pe = physicsevents[i];
+		int Nparts = pe->pip.size() + pe->pim.size()
+		        + pe->photon.size() + pe->proton.size()
+		        + pe->Kp.size()     + pe->Km.size()
+		        + pe->otherp.size() + pe->otherm.size();
+		if(Nparts>max_parts || physicsevent==NULL){
+			physicsevent = pe;
+			max_parts = Nparts;
 		}
-	} // particles
+	}
+	
+	// Created TLorentzVector objects for each of the common particle types
+	particle_set rec;
+	for(unsigned int j=0; j<physicsevent->photon.size(); j++){
+		// photon
+		rec.photons.push_back(MakeTLorentz(physicsevent->photon[j], 0.0));
+	}
+	for(unsigned int j=0; j<physicsevent->pip.size(); j++){
+		// pi+
+		rec.piplus.push_back(MakeTLorentz(physicsevent->pip[j], 0.13957));
+	}
+	for(unsigned int j=0; j<physicsevent->pim.size(); j++){
+		// pi-
+		rec.piminus.push_back(MakeTLorentz(physicsevent->pim[j], 0.13957));
+	}
+	for(unsigned int j=0; j<physicsevent->proton.size(); j++){
+		// proton
+		rec.protons.push_back(MakeTLorentz(physicsevent->proton[j], 0.93827));
+	}
+	for(unsigned int j=0; j<physicsevent->Kp.size(); j++){
+		// K+
+		rec.Kplus.push_back(MakeTLorentz(physicsevent->Kp[j], 0.493677));
+	}
+	for(unsigned int j=0; j<physicsevent->Km.size(); j++){
+		// Ki+
+		rec.Kminus.push_back(MakeTLorentz(physicsevent->Km[j], 0.493677));
+	}
 
 	// Create TLorentzVectors for thrown particles
 	particle_set thr;
 	for(unsigned int k=0; k<mcthrowns.size(); k++){
 		switch(mcthrowns[k]->type){
 			case  1: thr.photons.push_back(MakeTLorentz(mcthrowns[k], 0.0));		break;
-			case  8: thr.piplus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));	break;
+			case  8: thr.piplus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));		break;
 			case  9: thr.piminus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));	break;
+			case 11: thr.Kplus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));		break;
+			case 12: thr.Kminus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));	break;
 			case 14: thr.protons.push_back(MakeTLorentz(mcthrowns[k], 0.93827));	break;
 		}
 	}
