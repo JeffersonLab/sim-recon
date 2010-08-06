@@ -15,7 +15,10 @@ using std::vector;
 #include <JANA/JObject.h>
 using namespace jana;
 
+#include <TH2.h>
+
 #include <DVector2.h>
+
 
 class DHoughFind:public JObject{
 	public:
@@ -38,6 +41,8 @@ class DHoughFind:public JObject{
 		
 		void Fill(double x, double sigmax, double y, double sigmay);
 		static DVector2 GetMaxBinLocation(vector<const DHoughFind*> &houghs); // does not look at "this" object!
+		void Add(const DHoughFind* hough);
+		
 		
 		void AddPoint(const DVector2 &point);
 		void AddPoint(const double &x, const double &y);
@@ -49,6 +54,8 @@ class DHoughFind:public JObject{
 		inline void FindIndexes(const DVector2 &pos, int &ix, int &iy);
 		inline double FindBeta(double xlo, double ylo, double widthx, double widthy, DVector2 &pos, DVector2 &step);
 		inline double FindBeta(const DVector2 &a, const DVector2 &b, const DVector2 &c, const DVector2 &d);
+
+		TH2D* MakeIntoRootHist(string hname);
 
 	protected:
 		vector<DVector2> points;

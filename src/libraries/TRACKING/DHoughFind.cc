@@ -180,7 +180,7 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 			
 			// increment histo for bin we just stepped across
 			if(ix<0 || ix>=(int)Nbinsx || iy<0 || iy>=(int)Nbinsy)break; // must have left the histo
-			int index = ix + iy*Nbinsy;
+			int index = ix + iy*Nbinsx;
 			hist[index] += fabs(beta);
 			if(hist[index]>max_bin_content){
 				max_bin_content = hist[index];
@@ -210,7 +210,7 @@ void DHoughFind::Fill(double x, double sigmax, double y, double sigmay)
 	///
 	/// Note that the histogram is NOT reset prior to filling. This is
 	/// to allow accumulation over multiple calls.
-	
+
 	int ixmin = (int)(((x-xmin) - 4.0*sigmax)/bin_widthx -0.5);
 	int ixmax = (int)(((x-xmin) + 4.0*sigmax)/bin_widthx +0.5);
 	int iymin = (int)(((y-ymin) - 4.0*sigmay)/bin_widthy -0.5);
@@ -220,17 +220,19 @@ void DHoughFind::Fill(double x, double sigmax, double y, double sigmay)
 	if(ixmax>(int)Nbinsx)ixmax=Nbinsx;
 	if(iymax>(int)Nbinsy)iymax=Nbinsy;
 	
+//_DBG_<<"x="<<x<<"( sigmax="<<sigmax<<")   y="<<y<<" (sigmay="<<sigmay<<")  ixmin="<<ixmin<<" ixmax="<<ixmax<<" iymin="<<iymin<<" iymax="<<iymax<<endl;
+
 	// Loop over bins
-	double x_bin = xmin + (0.5+(double)ixmin)*bin_widthx;
-	for(int i=ixmin; i<ixmax; i++, x_bin+=bin_widthx){
-		double y_bin = ymin + (0.5+(double)iymin)*bin_widthy;
-		for(int j=iymin; j<iymax; j++, y_bin+=bin_widthy){
+	for(int i=ixmin; i<ixmax; i++){
+		double x_bin = xmin + (0.5+(double)i)*bin_widthx;
+		for(int j=iymin; j<iymax; j++){
+			double y_bin = ymin + (0.5+(double)j)*bin_widthy;
 			double k_x = (x - x_bin)/sigmax;
 			double k_y = (y - y_bin)/sigmay;
-			double gauss_x = exp(k_x*k_x)/sigmax; // divide by sigma to make constant area
-			double gauss_y = exp(k_y*k_y)/sigmay; // divide by sigma to make constant area
+			double gauss_x = exp(-k_x*k_x)/sigmax; // divide by sigma to make constant area
+			double gauss_y = exp(-k_y*k_y)/sigmay; // divide by sigma to make constant area
 			
-			int index = i + j*Nbinsy;
+			int index = i + j*Nbinsx;
 			hist[index] += gauss_x*gauss_y;
 		}
 	}
@@ -265,9 +267,9 @@ DVector2 DHoughFind::GetMaxBinLocation(vector<const DHoughFind*> &houghs)
 	double max_bin_content = 0.0;
 	for(unsigned int i=0; i<Nbinsx; i++){
 		for(unsigned int j=0; j<Nbinsy; j++){
+			unsigned int index = i + Nbinsx*j;
 			double tot = 0.0;
 			for(unsigned int k=0; k<houghs.size(); k++){
-				unsigned int index = i + Nbinsy*j;
 				tot += houghs[k]->hist[index];
 			}
 			if(tot>max_bin_content){
@@ -282,6 +284,35 @@ DVector2 DHoughFind::GetMaxBinLocation(vector<const DHoughFind*> &houghs)
 	double y = houghs[0]->ymin + (0.5+(double)imax_biny)*houghs[0]->bin_widthy;
 	
 	return DVector2(x, y);
+}
+
+//---------------------------------
+// Add
+//---------------------------------
+void DHoughFind::Add(const DHoughFind* hough)
+{
+	bool same_configuration = true;
+	same_configuration &= hough->Nbinsx==Nbinsx;
+	same_configuration &= hough->Nbinsy==Nbinsy;
+	same_configuration &= hough->xmin==xmin;
+	same_configuration &= hough->ymin==ymin;
+	same_configuration &= hough->xmax==xmax;
+	same_configuration &= hough->ymax==ymax;
+
+	if(!same_configuration){
+		_DBG_<<"WARNING: trying to add 2 DHoughFind objects with different dimensions!"<<endl;
+		_DBG_<<"Nbinsx="<<Nbinsx<<":"<<hough->Nbinsx
+				<<" Nbinsy="<<Nbinsy<<":"<<hough->Nbinsy
+				<<" xmin="<<xmin<<":"<<hough->xmin
+				<<" ymin="<<ymin<<":"<<hough->ymin
+				<<" xmax="<<xmax<<":"<<hough->xmax
+				<<" ymax="<<ymax<<":"<<hough->ymax;
+		return;
+	}
+
+	for(unsigned int i=0; i<Nbinsx*Nbinsy; i++){
+		hist[i] += hough->hist[i];
+	}
 }
 
 //---------------------------------
@@ -344,5 +375,23 @@ void DHoughFind::PrintHist(void)
 		}
 		cout<<row<<" "<<ymin+(double)i*bin_widthy<<endl;
 	}
+}
+
+//---------------------------------
+// MakeIntoRootHist
+//---------------------------------
+TH2D* DHoughFind::MakeIntoRootHist(string hname)
+{
+	/// Make a ROOT TH2D histogram out of this contents of this DHoughFind object.
+	/// Note that it is up to the caller to delete the returned TH2D object.
+
+	TH2D *h = new TH2D(hname.c_str(),"Copied from DHoughFind object",Nbinsx, xmin, xmax, Nbinsy, ymin, ymax);
+	for(unsigned int i=0; i<Nbinsx; i++){
+		for(unsigned int j=0; j<Nbinsy; j++){
+			h->SetBinContent(i, j, hist[i+j*Nbinsx]);
+		}
+	}
+	
+	return h;
 }
 
