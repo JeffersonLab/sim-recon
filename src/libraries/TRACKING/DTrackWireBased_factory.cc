@@ -527,6 +527,9 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
 // of track to a cluster and using this to check for a match.  
 jerror_t DTrackWireBased_factory::MatchToBCAL(DTrackWireBased *track,
 					vector<const DBCALShower*>bcal_clusters){ 
+
+  if(track->rt->Nswim_steps<3)return VALUE_OUT_OF_RANGE;
+   
   //Loop over bcal clusters
   double dmin=10000.;
   unsigned int bcal_match_id=0;
