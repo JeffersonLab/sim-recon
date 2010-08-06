@@ -18,6 +18,10 @@ using namespace std;
 #include <FDC/DFDCPseudo.h>
 #include <SplitString.h>
 
+#include <TROOT.h>
+
+#define C_EFFECTIVE     15.
+
 using namespace jana;
 
 //------------------
@@ -65,6 +69,8 @@ jerror_t DTrackWireBased_factory::init(void)
 {
 	fitter = NULL;
 
+	//DEBUG_HISTS = true;	
+	DEBUG_HISTS = false;
 	DEBUG_LEVEL = 0;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",DEBUG_LEVEL);
@@ -77,6 +83,30 @@ jerror_t DTrackWireBased_factory::init(void)
 //------------------
 jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 {
+   // Get the geometry
+  DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
+  geom = dapp->GetDGeometry(runnumber);
+
+  vector<double>sc_origin;
+  geom->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z",sc_origin);
+
+  vector<double>sc_light_guide;
+  geom->Get("//tubs[@name='STLG']/@Rio_Z",sc_light_guide); 
+  sc_light_guide_length=sc_light_guide[2];
+  
+  vector<vector<double> > sc_rioz;
+  geom->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+  
+  for (unsigned int k=0;k<sc_rioz.size()-1;k++){
+    DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
+    DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,
+		 -sc_rioz[k+1][0]+sc_rioz[k][0]);
+    dir.SetMag(1.);
+    
+    sc_pos.push_back(pos);
+    sc_norm.push_back(dir);
+    
+  }
 	// Get pointer to DTrackFitter object that actually fits a track
 	vector<const DTrackFitter *> fitters;
 	loop->Get(fitters);
@@ -105,6 +135,25 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 	if(mass_hypotheses_positive.size()==0)mass_hypotheses_positive.push_back(0.0); // If empty string is specified, assume they want massless particle
 	if(mass_hypotheses_negative.size()==0)mass_hypotheses_negative.push_back(0.0); // If empty string is specified, assume they want massless particle
 
+	
+	if(DEBUG_HISTS){
+	  dapp->Lock();
+	  
+	  // Histograms may already exist. (Another thread may have created them)
+	  // Try and get pointers to the existing ones.
+	  Hsc_match= (TH1F*)gROOT->FindObject("Hsc_match");
+	  if (!Hsc_match) Hsc_match=new TH1F("Hsc_match","#delta#phi match to SC",100,-1,1.);
+	  Hstart_time= (TH2F*)gROOT->FindObject("Hstart_time");
+	  if (!Hstart_time) Hstart_time=new TH2F("Hstart_time",
+		    "vertex time source vs time",250,-10,40,4,-0.5,3.5);
+	  Htof_match= (TH1F*)gROOT->FindObject("Htof_match");
+	  if (!Htof_match) Htof_match=new TH1F("Htof_match","#deltar match to TOF",200,0,100.);
+	  Hbcal_match= (TH2F*)gROOT->FindObject("Hbcal_match");
+	  if (!Hbcal_match) Hbcal_match=new TH2F("Hbcal_match","#delta#phi vs #deltaz match to BCAL",200,-20,20.,200,-0.5,0.5);
+	  
+	  dapp->Unlock();
+	}
+
 	return NOERROR;
 }
 
@@ -119,6 +168,20 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   vector<const DTrackCandidate*> candidates;
   loop->Get(candidates);
 
+  // get start counter hits
+  vector<const DSCHit*>sc_hits;
+  eventLoop->Get(sc_hits);
+
+  // Get TOF points
+  vector<const DTOFPoint*> tof_points;
+  eventLoop->Get(tof_points);
+  
+  // Get BCAL and FCAL clusters
+  vector<const DBCALShower*>bcal_clusters;
+  eventLoop->Get(bcal_clusters);
+  //vector<const DFCALPhoton*>fcal_clusters;
+  //eventLoop->Get(fcal_clusters);
+  
   // Count the number of tracks we'll be fitting
   unsigned int Ntracks_to_fit = 0;
   for(unsigned int i=0; i<candidates.size(); i++){
@@ -194,12 +257,34 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  vector<const DFDCPseudo*> fdchits = fitter->GetFDCFitHits();
 	  sort(cdchits.begin(), cdchits.end(), CDCSortByRincreasing);
 	  sort(fdchits.begin(), fdchits.end(), FDCSortByZincreasing);
-	  for(unsigned int i=0; i<cdchits.size(); i++)track->AddAssociatedObject(cdchits[i]);
-	  for(unsigned int i=0; i<fdchits.size(); i++)track->AddAssociatedObject(fdchits[i]);
+	  for(unsigned int m=0; m<cdchits.size(); m++)track->AddAssociatedObject(cdchits[m]);
+	  for(unsigned int m=0; m<fdchits.size(); m++)track->AddAssociatedObject(fdchits[m]);
 	  
 	  // Add DTrackCandidate as associated object
 	  track->AddAssociatedObject(candidate);
-	
+
+	  // Clear the start time vector
+	  start_times.clear();
+	  start_time_source=SYS_NULL;
+       
+	  // Try to match to start counter and outer detectors 
+	  jerror_t error=NOERROR;
+	  if (tof_points.size()>0){
+	    error=MatchToTOF(track,tof_points);
+	  }  
+	  if (error!=NOERROR && bcal_clusters.size()>0){
+	    error=MatchToBCAL(track,bcal_clusters);
+	  }
+	  if (error!=NOERROR && sc_hits.size()){
+	    error=MatchToSC(track,sc_hits);
+	  }
+	  if (error!=NOERROR){
+	    //printf("No start time found!\n");
+	  }
+
+	  //printf("source %x, num %d\n",start_time_source,start_times.size());
+	  //printf("sc hits %d\n",sc_hits.size());
+
 	  _data.push_back(track);
 	  break;
 	}
@@ -306,3 +391,186 @@ void DTrackWireBased_factory::FilterDuplicates(void)
 	_data = new_data;
 }
 
+
+//------------------
+// MatchToTOF
+//------------------
+// Loop over TOF points, looking for minimum distance of closest approach
+// of track to a point in the TOF and using this to check for a match.
+// If a match is found, use this to estimate the time at the vertex. 
+jerror_t DTrackWireBased_factory::MatchToTOF(DTrackWireBased *track,
+				       vector<const DTOFPoint*>tof_points){
+  double dmin=10000.;
+  unsigned int tof_match_id=0;
+  // loop over tof points
+  double tflight=0.;
+  for (unsigned int k=0;k<tof_points.size();k++){
+    // Get the TOF cluster position and normal vector for the TOF plane
+    DVector3 tof_pos=tof_points[k]->pos;
+    DVector3 norm(0,0,1);
+    DVector3 proj_pos,dir;
+    
+    // Find the distance of closest approach between the track trajectory
+    // and the tof cluster position, looking for the minimum
+    double t=0.;
+    track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,NULL,&t);
+    double d=(tof_pos-proj_pos).Mag();
+    if (d<dmin){
+      dmin=d;
+      tflight=t;
+      tof_match_id=k;
+    }
+  }
+  if (DEBUG_HISTS){
+    Htof_match->Fill(dmin);
+  }
+  
+  // Check for a match 
+  //  double p=track->momentum().Mag();
+  //  double match_sigma=0.75+1./p/p;
+  if (dmin<4.){
+    // Add the time to the outer detector and the vertex time to the track 
+    // object
+    track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF); 
+    track->setT0(tof_points[tof_match_id]->t-tflight,0.,SYS_TOF);
+  
+    if (DEBUG_HISTS){
+      Hstart_time->Fill(tof_points[tof_match_id]->t-tflight,2);
+    }
+    // Add DTOFPoint object as associate object
+    track->AddAssociatedObject(tof_points[tof_match_id]);
+
+    return NOERROR;
+  }
+    
+  return VALUE_OUT_OF_RANGE;
+}
+
+// Match wire based track to the start counter paddles with hits.  If a match
+// is found, use the z-position of the track projection to the start counter 
+// planes to correct for the light propagation within the scintillator and 
+// estimate the "vertex" time.
+jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
+					    vector<const DSCHit*>sc_hits){
+  
+  double myz=0.,flight_time=0.;
+  double dphi_min=10000.,myphi=0.;
+  DVector3 pos,norm,proj_pos;
+  unsigned int sc_match_id=0;
+  
+  // loop over sc hits
+  for (unsigned int i=0;i<sc_hits.size();i++){
+    double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
+    double r=sc_pos[1].x();
+    pos.SetXYZ(r*cos(phi),r*sin(phi),sc_pos[1].z());
+    norm.SetXYZ(cos(phi),sin(phi),0.);
+    
+    double t=0.;
+    track->rt->GetIntersectionWithPlane(pos,norm,proj_pos,NULL,&t);
+    double proj_phi=proj_pos.Phi();
+    if (proj_phi<0) proj_phi+=2.*M_PI;
+    double dphi=phi-proj_phi;
+
+    if (dphi<dphi_min){
+      dphi_min=dphi;
+      myphi=phi;
+      myz=proj_pos.z();
+      sc_match_id=i;
+      flight_time=t;
+    }
+  }
+  if (DEBUG_HISTS){
+    Hsc_match->Fill(dphi_min);
+  }
+  if (fabs(dphi_min)<0.16){
+    double t0=sc_hits[sc_match_id]->t
+      -(-sc_pos[0].z()+sc_light_guide_length)/C_EFFECTIVE;
+    if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
+    if (myz>sc_pos[1].z()){
+      for (unsigned int i=1;i<sc_norm.size()-1;i++){
+	double xhat=sc_norm[i].x();
+	norm.SetXYZ(cos(myphi)*xhat,sin(myphi)*xhat,sc_norm[i].z());
+	double r=sc_pos[i].X();
+	pos.SetXYZ(r*cos(myphi),r*sin(myphi),sc_pos[i].z());
+	track->rt->GetIntersectionWithPlane(pos,norm,proj_pos,NULL,
+					    &flight_time);
+	if (proj_pos.z()<sc_pos[i+1].z()){
+	  break;
+	}
+      }
+      double theta=sc_norm[sc_norm.size()-1].Theta();
+
+      t0-=flight_time
+	+((proj_pos.z()-sc_pos[1].z())/cos(M_PI-theta) 
+	  +sc_pos[1].z())/C_EFFECTIVE;
+    }
+    else{
+      t0-=flight_time+myz/C_EFFECTIVE;
+    }
+    track->setT0(t0,0.,SYS_START);
+    
+    if (DEBUG_HISTS){
+      Hstart_time->Fill(t0,1);
+    }
+    return NOERROR;
+  }
+  // else printf("dphi %f\n",dphi_min);
+
+  return VALUE_OUT_OF_RANGE;
+}
+
+
+//------------------
+// MatchToBCAL
+//------------------
+// Loop over bcal clusters, looking for minimum distance of closest approach
+// of track to a cluster and using this to check for a match.  
+jerror_t DTrackWireBased_factory::MatchToBCAL(DTrackWireBased *track,
+					vector<const DBCALShower*>bcal_clusters){ 
+  //Loop over bcal clusters
+  double dmin=10000.;
+  unsigned int bcal_match_id=0;
+  double flight_time=0.;
+  double dphi=1000.,dz=1000.;
+  for (unsigned int k=0;k<bcal_clusters.size();k++){
+    // Get the BCAL cluster position and normal
+    const DBCALShower *shower = bcal_clusters[k];
+    DVector3 bcal_pos(shower->x, shower->y, shower->z); 
+    DVector3 proj_pos;
+    
+    // Find the distance of closest approach between the track trajectory
+    // and the bcal cluster position, looking for the minimum
+    double t=0.,s=0.;
+    double d = track->rt->DistToRTwithTime(bcal_pos, &s, &t);
+    proj_pos = track->rt->GetLastDOCAPoint();
+
+    if (d<dmin){
+      dmin=d;
+      flight_time=t;
+      bcal_match_id=k; 
+      dz=proj_pos.z()-bcal_pos.z();
+      dphi=proj_pos.Phi()-bcal_pos.Phi();
+    }
+  }
+  if (DEBUG_HISTS){
+    Hbcal_match->Fill(dz,dphi);
+  }
+
+  // Check for a match 
+  if (fabs(dz)<10. && fabs(dphi)<0.04){
+    // Add the time to the outer detector to the track object
+    track->setT1(bcal_clusters[bcal_match_id]->t, 0., SYS_BCAL);
+    track->setT0(bcal_clusters[bcal_match_id]->t-flight_time,0.,SYS_BCAL);
+
+    // Add DBCALShower object as associate object
+    track->AddAssociatedObject(bcal_clusters[bcal_match_id]);
+
+    if (DEBUG_HISTS){
+      Hstart_time->Fill(bcal_clusters[bcal_match_id]->t-flight_time,3);
+    }
+	
+    return NOERROR;
+  }
+
+  return VALUE_OUT_OF_RANGE;
+}
