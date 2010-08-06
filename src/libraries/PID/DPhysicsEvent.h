@@ -47,9 +47,9 @@ class DPhysicsEvent:public jana::JObject{
 		// for each particle should be kept at least.
 		void toStrings(vector<pair<string,string> > &items)const{
 			
-			AddString(items, "x", "%3.2f", vertex->x.X());
-			AddString(items, "y", "%3.2f", vertex->x.Y());
-			AddString(items, "z", "%3.2f", vertex->x.Z());
+			//AddString(items, "x", "%3.2f", vertex->x.X());
+			//AddString(items, "y", "%3.2f", vertex->x.Y());
+			//AddString(items, "z", "%3.2f", vertex->x.Z());
 			AddString(items, "Nphoton",      "%d", photon.size());
 			AddString(items, "Npi_plus",     "%d", pip.size());
 			AddString(items, "Npi_minus",    "%d", pim.size());

@@ -37,12 +37,15 @@ jerror_t DPhysicsEvent_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	// it comes across slightly busier and busier events.
 	MAX_PARTINFOS = 10;
 
-	Nbinst = 100;
+	Nbinst = 600;
 	tmin = -100.0;
 	tmax = 500.0;
 	Nbinsz = 50;
-	zmin = -0.0;
+	zmin = 0.0;
 	zmax = 100.0;
+	
+	MAKE_ROOT_HISTOS = false;
+	gPARMS->SetDefaultParameter("PHYSICS:MAKE_ROOT_HISTOS", MAKE_ROOT_HISTOS);
 
 	return NOERROR;
 }
@@ -60,15 +63,21 @@ jerror_t DPhysicsEvent_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// Get reconstructed charged particles and photons
 	vector<const DChargedTrack*> chargedtracks;
-	vector<const DPhoton*> photons;
+	vector<const DPhoton*> all_photons;
 	loop->Get(chargedtracks);
-	loop->Get(photons);
+	loop->Get(all_photons);
 
 	// Keep only most probable hypothesis for charged tracks
 	vector<const DTrackTimeBased*> tracktimebaseds;
 	for(unsigned int i=0; i<chargedtracks.size(); i++){
 		const vector<const DTrackTimeBased*> &hypotheses = chargedtracks[i]->hypotheses;
 		if(hypotheses.size()>0)tracktimebaseds.push_back(hypotheses[0]);
+	}
+
+	// Keep only photons not matched to charged tracks
+	vector<const DPhoton*> photons;
+	for(unsigned int i=0; i<all_photons.size(); i++){
+		if(all_photons[i]->getTag()!=DPhoton::kCharge)photons.push_back(all_photons[i]);
 	}
 
 	// To minimize memory usage and time in allocation, we maintain a
@@ -78,7 +87,7 @@ jerror_t DPhysicsEvent_factory::evnt(JEventLoop *loop, int eventnumber)
 	for(unsigned int i=partInfos_pool.size(); i<Nparticles_total; i++){
 		partInfo_t *pi = new partInfo_t();
 
-		pi->SetLimits(tmin, tmax, Nbinst, zmin, zmax, Nbinsz);
+		pi->SetLimits(tmin, tmax, zmin, zmax, Nbinst, Nbinsz);
 		partInfos_pool.push_back(pi);
 	}
 
@@ -131,6 +140,8 @@ jerror_t DPhysicsEvent_factory::evnt(JEventLoop *loop, int eventnumber)
 		// particle's histos together
 		DVector2 maxloc = DHoughFind::GetMaxBinLocation(unassigned);
 		
+		if(debug_level>0)_DBG_<<"Location of maximum: t="<<maxloc.X()<<"  z="<<maxloc.Y()<<endl;		
+
 		// Loop over all unassigned particles, assigning any within
 		// 3 sigma in both t and z to the new group. We loop over
 		// the parts vector just because it saves a dynamic_cast
@@ -245,15 +256,9 @@ jerror_t DPhysicsEvent_factory::evnt(JEventLoop *loop, int eventnumber)
 		_data.push_back(pe);
 	}
 	
-	// DPhysicsEvent *myDPhysicsEvent = new DPhysicsEvent;
-	// myDPhysicsEvent->x = x;
-	// myDPhysicsEvent->y = y;
-	// ...
-	// _data.push_back(myDPhysicsEvent);
-	//
-	// Note that the objects you create here will be deleted later
-	// by the system and the _data vector will be cleared automatically.
-
+	// Optionally record histo info for debugging
+	if(MAKE_ROOT_HISTOS)MakeRootHists(eventnumber, groups);
+	
 	return NOERROR;
 }
 
@@ -294,7 +299,7 @@ void DPhysicsEvent_factory::FillPartInfoChargedTrack(DPhysicsEvent_factory::part
 	pi->t = trk->t0();
 	pi->sigmat = trk->t0_err();
 	pi->z = trk->z();
-	pi->sigmaz = 0.3/sin(trk->momentum().Theta()); // in cm.  For now, use 3mm wide angle track resolution scaled by sin(theta)
+	pi->sigmaz = 0.8/sin(trk->momentum().Theta()); // in cm.  For now, use 3mm wide angle track resolution scaled by sin(theta)
 
 	pi->Fill(pi->t, pi->sigmat, pi->z, pi->sigmaz);
 }
@@ -314,4 +319,68 @@ void DPhysicsEvent_factory::FillPartInfoPhoton(DPhysicsEvent_factory::partInfo_t
 
 	pi->Fill(pi->t, pi->sigmat, pi->z, pi->sigmaz);
 }
+
+//------------------
+// MakeRootHists
+//------------------
+void DPhysicsEvent_factory::MakeRootHists(int event, vector< vector<partInfo_t *> > &groups)
+{
+	/// This is meant for debugging ONLY. It will take the DHoughFind objects
+	/// contained in the given "groups" container and convert them into
+	/// ROOT histograms. This should be utilized using something like hd_root
+	/// so that the histograms are saved to a file.
+	///
+	/// A TDirectory will be made to hold the histograms for each event.
+	/// Within that, a TDirectory will be created for each group and the
+	/// group member's histos will be created there.
+
+	// Save current directory so we can cd back to it before returing
+	TDirectory *saveDir = gDirectory;
+
+	// Create a TDirectory to hold the event
+	char dirname[256];
+	sprintf(dirname, "event%03d", event);
+	TDirectory *eventdir = saveDir->mkdir(dirname);
+
+	// Container to keep pointer to all hists so we can make sum histo later
+	vector<TH2D*> root_hists;
+
+	// Loop over groups
+	for(unsigned int i=0; i<groups.size(); i++){
+		
+		// Make a TDirectory for this group
+		sprintf(dirname, "group%02d", i);
+		TDirectory *groupdir = eventdir->mkdir(dirname);
+		groupdir->cd();
+		
+		// Loop over members of group
+		vector<partInfo_t *> &group = groups[i];
+		for(unsigned int j=0; j<group.size(); j++){
+			char hname[256];
+			sprintf(hname, "part%02d", j);
+			TH2D *h = group[j]->MakeIntoRootHist(hname);
+			h->SetDrawOption("surf4");
+			h->SetXTitle("time from L1 trigger (ns)");
+			h->SetYTitle("Z position of vertex (cm)");
+			h->SetStats(0);
+			root_hists.push_back(h);
+		}
+	}
+
+	// Create sum histo for all particles this event
+	if(root_hists.size() > 0){
+		eventdir->cd();
+		TH2D *sum = (TH2D*)root_hists[0]->Clone("sum");
+		for(unsigned int i=1; i<root_hists.size(); i++){
+			sum->Add(root_hists[i]);
+		}
+	}
+
+	// Write eventdir and its contents to the file
+	//eventdir->Write();
+
+	// cd back into TDirectory we were in upon entering this method
+	saveDir->cd();
+}
+
 

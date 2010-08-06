@@ -10,6 +10,8 @@
 
 #include <JANA/JFactory.h>
 
+#include <TDirectoryFile.h>
+
 #include <PID/DPhysicsEvent.h>
 #include <TRACKING/DHoughFind.h>
 
@@ -51,9 +53,14 @@ class DPhysicsEvent_factory:public jana::JFactory<DPhysicsEvent>{
 		double zmin;
 		double zmax;
 		
+		// Configuration parameters
+		bool MAKE_ROOT_HISTOS;
+		
 		bool AllInGroups(vector<partInfo_t*> &parts);
 		void FillPartInfoChargedTrack(partInfo_t *pi, const DTrackTimeBased *trk);
 		void FillPartInfoPhoton(partInfo_t *pi, const DPhoton *photon);
+		
+		void MakeRootHists(int event, vector< vector<partInfo_t *> > &groups);
 		
 	private:
 		jerror_t init(void);						///< Called once at program start.
