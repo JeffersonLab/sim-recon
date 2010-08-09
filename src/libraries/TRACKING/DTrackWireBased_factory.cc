@@ -92,7 +92,7 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 
   vector<double>sc_light_guide;
   geom->Get("//tubs[@name='STLG']/@Rio_Z",sc_light_guide); 
-  sc_light_guide_length=sc_light_guide[2];
+  //sc_light_guide_length=sc_light_guide[2];
   
   vector<vector<double> > sc_rioz;
   geom->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
@@ -104,9 +104,12 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
     dir.SetMag(1.);
     
     sc_pos.push_back(pos);
-    sc_norm.push_back(dir);
-    
+    sc_norm.push_back(dir);    
   }
+  sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
+  double theta=sc_norm[sc_norm.size()-1].Theta();
+  sc_angle_cor=1./cos(M_PI-theta); 
+
 	// Get pointer to DTrackFitter object that actually fits a track
 	vector<const DTrackFitter *> fitters;
 	loop->Get(fitters);
@@ -262,22 +265,20 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  
 	  // Add DTrackCandidate as associated object
 	  track->AddAssociatedObject(candidate);
-
-	  // Clear the start time vector
-	  start_times.clear();
-	  start_time_source=SYS_NULL;
        
 	  // Try to match to start counter and outer detectors 
-	  jerror_t error=NOERROR;
-	  if (tof_points.size()>0){
+	  jerror_t error=NOERROR;	 
+	  if (sc_hits.size() 
+	      && track->position().z()<sc_pos[1].z()){
+	    error=MatchToSC(track,sc_hits);
+	  }
+	  if (error!=NOERROR && tof_points.size()>0){
 	    error=MatchToTOF(track,tof_points);
 	  }  
 	  if (error!=NOERROR && bcal_clusters.size()>0){
 	    error=MatchToBCAL(track,bcal_clusters);
 	  }
-	  if (error!=NOERROR && sc_hits.size()){
-	    error=MatchToSC(track,sc_hits);
-	  }
+
 	  if (error!=NOERROR){
 	    //printf("No start time found!\n");
 	  }
@@ -452,6 +453,7 @@ jerror_t DTrackWireBased_factory::MatchToTOF(DTrackWireBased *track,
 // estimate the "vertex" time.
 jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
 					    vector<const DSCHit*>sc_hits){
+  if(track->rt->Nswim_steps<3)return VALUE_OUT_OF_RANGE;
   
   double myz=0.,flight_time=0.;
   double dphi_min=10000.,myphi=0.;
@@ -482,27 +484,41 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
   if (DEBUG_HISTS){
     Hsc_match->Fill(dphi_min);
   }
-  if (fabs(dphi_min)<0.16){
-    double t0=sc_hits[sc_match_id]->t
-      -(-sc_pos[0].z()+sc_light_guide_length)/C_EFFECTIVE;
+  if (fabs(dphi_min)<0.2){
+    double t0=sc_hits[sc_match_id]->t-sc_leg_tcor;
     if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
     if (myz>sc_pos[1].z()){
-      for (unsigned int i=1;i<sc_norm.size()-1;i++){
+      unsigned int num=sc_norm.size()-1;
+      for (unsigned int i=1;i<num;i++){
 	double xhat=sc_norm[i].x();
 	norm.SetXYZ(cos(myphi)*xhat,sin(myphi)*xhat,sc_norm[i].z());
 	double r=sc_pos[i].X();
 	pos.SetXYZ(r*cos(myphi),r*sin(myphi),sc_pos[i].z());
 	track->rt->GetIntersectionWithPlane(pos,norm,proj_pos,NULL,
 					    &flight_time);
-	if (proj_pos.z()<sc_pos[i+1].z()){
+	myz=proj_pos.z();
+	if (myz<sc_pos[i+1].z()){
 	  break;
 	}
       }
-      double theta=sc_norm[sc_norm.size()-1].Theta();
+      double sc_pos1=sc_pos[1].z();
+      if (myz<sc_pos1){
+	t0-=flight_time+sc_pos1/C_EFFECTIVE;
+      }
+      else if (myz>sc_pos[num].z()){
+	// Assume that the particle hit the most downstream z position of the
+	// start counter
+	double s=(sc_pos[num].z()-track->position().z())
+	  /track->momentum().CosTheta();
+	double mass=track->rt->GetMass();
+	double one_over_beta=sqrt(1.+mass*mass/track->momentum().Mag2());
 
-      t0-=flight_time
-	+((proj_pos.z()-sc_pos[1].z())/cos(M_PI-theta) 
-	  +sc_pos[1].z())/C_EFFECTIVE;
+	t0-=s*one_over_beta/SPEED_OF_LIGHT
+	  +((sc_pos[num].z()-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
+      }
+      else{
+	t0-=flight_time+((myz-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
+      }
     }
     else{
       t0-=flight_time+myz/C_EFFECTIVE;
