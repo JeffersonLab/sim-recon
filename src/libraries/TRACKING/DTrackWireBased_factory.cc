@@ -69,8 +69,8 @@ jerror_t DTrackWireBased_factory::init(void)
 {
 	fitter = NULL;
 
-	//DEBUG_HISTS = true;	
-	DEBUG_HISTS = false;
+	DEBUG_HISTS = true;	
+	//DEBUG_HISTS = false;
 	DEBUG_LEVEL = 0;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",DEBUG_LEVEL);
@@ -149,8 +149,8 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 	  Hstart_time= (TH2F*)gROOT->FindObject("Hstart_time");
 	  if (!Hstart_time) Hstart_time=new TH2F("Hstart_time",
 		    "vertex time source vs time",250,-10,40,4,-0.5,3.5);
-	  Htof_match= (TH1F*)gROOT->FindObject("Htof_match");
-	  if (!Htof_match) Htof_match=new TH1F("Htof_match","#deltar match to TOF",200,0,100.);
+	  Htof_match= (TH2F*)gROOT->FindObject("Htof_match");
+	  if (!Htof_match) Htof_match=new TH2F("Htof_match","#deltar match to TOF vs p",100,0.,5.,200,0,100.);
 	  Hbcal_match= (TH2F*)gROOT->FindObject("Hbcal_match");
 	  if (!Hbcal_match) Hbcal_match=new TH2F("Hbcal_match","#delta#phi vs #deltaz match to BCAL",200,-20,20.,200,-0.5,0.5);
 	  
@@ -267,21 +267,40 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  track->AddAssociatedObject(candidate);
        
 	  // Try to match to start counter and outer detectors 
-	  jerror_t error=NOERROR;	 
+	  jerror_t error=NOERROR;
+	  
 	  if (sc_hits.size() 
-	      && track->position().z()<sc_pos[1].z()){
+	      && track->position().z()<sc_pos[1].z() 
+	      && track->position().Perp()<sc_pos[1].Perp()){
 	    error=MatchToSC(track,sc_hits);
 	  }
+	   
 	  if (error!=NOERROR && tof_points.size()>0){
 	    error=MatchToTOF(track,tof_points);
 	  }  
 	  if (error!=NOERROR && bcal_clusters.size()>0){
 	    error=MatchToBCAL(track,bcal_clusters);
 	  }
-
-	  if (error!=NOERROR){
-	    //printf("No start time found!\n");
+	  
+	  if (error!=NOERROR && sc_hits.size()){
+	    double t0=0.;
+	    for (unsigned int i=0;i<sc_hits.size();i++){
+	      t0+=sc_hits[i]->t-sc_leg_tcor-sc_pos[1].z()/C_EFFECTIVE;
+	    }
+	    t0/=sc_hits.size();
+	    track->setT0(t0,0.,SYS_NULL);
+	    
+	    if (DEBUG_HISTS){
+	      Hstart_time->Fill(t0,0);
+	    }
+	    error=NOERROR;
 	  }
+	  else {
+
+	  }
+	  
+	  
+
 
 	  //printf("source %x, num %d\n",start_time_source,start_times.size());
 	  //printf("sc hits %d\n",sc_hits.size());
@@ -423,13 +442,13 @@ jerror_t DTrackWireBased_factory::MatchToTOF(DTrackWireBased *track,
     }
   }
   if (DEBUG_HISTS){
-    Htof_match->Fill(dmin);
+    Htof_match->Fill(track->momentum().Mag(),dmin);
   }
   
   // Check for a match 
   //  double p=track->momentum().Mag();
   //  double match_sigma=0.75+1./p/p;
-  if (dmin<4.){
+  if (dmin<5. && tflight>0.){
     // Add the time to the outer detector and the vertex time to the track 
     // object
     track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF); 
@@ -481,10 +500,11 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
       flight_time=t;
     }
   }
+
   if (DEBUG_HISTS){
     Hsc_match->Fill(dphi_min);
   }
-  if (fabs(dphi_min)<0.2){
+  if (fabs(dphi_min)<0.2 && flight_time>0.){
     double t0=sc_hits[sc_match_id]->t-sc_leg_tcor;
     if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
     if (myz>sc_pos[1].z()){
@@ -576,7 +596,7 @@ jerror_t DTrackWireBased_factory::MatchToBCAL(DTrackWireBased *track,
   }
 
   // Check for a match 
-  if (fabs(dz)<10. && fabs(dphi)<0.04){
+  if (fabs(dz)<10. && fabs(dphi)<0.04 && flight_time>0.){
     // Add the time to the outer detector to the track object
     track->setT1(bcal_clusters[bcal_match_id]->t, 0., SYS_BCAL);
     track->setT0(bcal_clusters[bcal_match_id]->t-flight_time,0.,SYS_BCAL);
