@@ -119,12 +119,13 @@ void DTrackFitter::AddHits(vector<const DFDCPseudo*> fdchits)
 //-------------------
 // FitTrack
 //-------------------
-DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass)
+DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0)
 {
 	input_params.setPosition(pos);
 	input_params.setMomentum(mom);
 	input_params.setCharge(q);
 	input_params.setMass(mass);
+	input_params.setT0(t0,0.,SYS_NULL);
 	
 	return FitTrack();
 }
@@ -142,7 +143,8 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting
 //-------------------
 // FindHitsAndFitTrack
 //-------------------
-DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, DReferenceTrajectory *rt, JEventLoop *loop, double mass)
+DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, DReferenceTrajectory *rt, JEventLoop *loop, double mass,
+							     double t0)
 {
 	/// Fit a DTrackCandidate using a given mass hypothesis.
 	///
@@ -224,7 +226,7 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 	fit_params.setMass(mass);
 
 	// Do the fit
-	return fit_status = FitTrack(pos, mom,q, mass);	
+	return fit_status = FitTrack(pos, mom,q, mass,t0);
 }
 
 //------------------
@@ -238,13 +240,13 @@ jerror_t DTrackFitter::CorrectForELoss(const DKinematicData &starting_params, DR
 	starting_params.Get(cdchits);
 	if(cdchits.size()>0){
 		sort(cdchits.begin(), cdchits.end(), CDCSortByRincreasing);
-		first_wire = cdchits[0]->wire;
+		first_wire = cdchits[cdchits.size()/2]->wire;
 	}else{
 		vector<const DFDCPseudo*> fdchits;
 		starting_params.Get(fdchits);
 		if(fdchits.size()!=0){
 			sort(fdchits.begin(), fdchits.end(), FDCSortByZincreasing);
-			first_wire = fdchits[0]->wire;
+			first_wire = fdchits[fdchits.size()/2]->wire;
 		}
 	}
 	if(!first_wire){
