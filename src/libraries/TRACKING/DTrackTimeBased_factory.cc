@@ -48,6 +48,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 	fitter = NULL;
 
 	DEBUG_HISTS = false;
+	DEBUG_HISTS = true;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
 	MOMENTUM_CUT_FOR_PROTON_ID=2.0;
@@ -97,6 +98,7 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		fom_chi2_dedx = (TH1F*)gROOT->FindObject("fom_chi2_dedx");
 		fom_chi2_tof = (TH1F*)gROOT->FindObject("fom_chi2_tof");
 		fom_chi2_bcal = (TH1F*)gROOT->FindObject("fom_chi2_bcal");
+		time_based_start=(TH1F*)gROOT->FindObject("time_based_start");
 
 		if(!fom_tdiff_bcal)fom_tdiff_bcal = new TH1F("fom_tdiff_bcal","PID FOM: BCAL time difference", 2000, -10.0, 10.0);
 		if(!fom_tdiff_tof)fom_tdiff_tof = new TH1F("fom_tdiff_tof","PID FOM: TOF time difference", 2000, -10.0, 10.0);
@@ -104,6 +106,8 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		if(!fom_chi2_dedx)fom_chi2_dedx = new TH1F("fom_chi2_dedx","PID FOM: #chi^{2}/Ndf from dE/dx", 1000, 0.0, 100.0);
 		if(!fom_chi2_tof)fom_chi2_tof = new TH1F("fom_chi2_tof","PID FOM: #chi^{2}/Ndf from TOF", 1000, 0.0, 100.0);
 		if(!fom_chi2_bcal)fom_chi2_bcal = new TH1F("fom_chi2_bcal","PID FOM: #chi^{2}/Ndf from BCAL", 1000, 0.0, 100.0);
+		if (!time_based_start)
+		  time_based_start=new TH1F("time_based_start","t0 for time-based tracking",100,-20.,20.);
 
 		dapp->Unlock();
 	}
@@ -134,9 +138,25 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   vector<const DFCALPhoton*>fcal_clusters;
   //eventLoop->Get(fcal_clusters);
 
-  //Temporary
+  //Find the start time
   mStartTime=0.;
   mStartDetector=SYS_NULL;
+  double num=0.;
+  for (unsigned int i=0;i<tracks.size();i++){
+    const DTrackWireBased *track = tracks[i];
+  
+    if (track->t0()>-999.){
+      mStartTime+=track->t0();
+      num+=1.;
+    }
+  }
+  if (num>0.){
+    mStartTime/=num;
+    if (DEBUG_HISTS){
+      time_based_start->Fill(mStartTime);
+    }
+  }
+  else return NOERROR;
   
   // Loop over candidates
   for(unsigned int i=0; i<tracks.size(); i++){
@@ -152,7 +172,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
     
     // Do the fit
     fitter->SetFitType(DTrackFitter::kTimeBased);
-    DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, loop, track->mass());
+    DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, loop, track->mass(),mStartTime);
 
     // Check the status value from the fit
     switch(status){
@@ -196,10 +216,10 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Add hits used as associated objects
 	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
 	const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
-	for(unsigned int i=0; i<cdchits.size(); i++)
-	  timebased_track->AddAssociatedObject(cdchits[i]);
-	for(unsigned int i=0; i<fdchits.size(); i++)
-	  timebased_track->AddAssociatedObject(fdchits[i]);
+	for(unsigned int m=0; m<cdchits.size(); m++)
+	  timebased_track->AddAssociatedObject(cdchits[m]);
+	for(unsigned int m=0; m<fdchits.size(); m++)
+	  timebased_track->AddAssociatedObject(fdchits[m]);
 	
 	// Add DTrack object as associate object
 	timebased_track->AddAssociatedObject(track);
@@ -312,8 +332,10 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   ndof++;
 
   // Next match to outer detectors
-  double tof_chi2=MatchToTOF(dtrack,tof_points);
-  double bcal_chi2=MatchToBCAL(dtrack,bcal_clusters);
+  double tof_chi2=-1.;
+  if (tof_points.size()>0) tof_chi2=MatchToTOF(dtrack,tof_points);
+  double bcal_chi2=-1.;
+  if (bcal_clusters.size()>0) bcal_chi2=MatchToBCAL(dtrack,bcal_clusters);
 
   if (tof_chi2>-1.){
     chi2_sum+=tof_chi2;
@@ -347,7 +369,7 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
 // correct based on the time-of-flight calculation.
 double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
 				       vector<const DTOFPoint*>tof_points){
-  if (tof_points.size()==0) return -1.;
+  //if (tof_points.size()==0) return -1.;
 
   double dmin=10000.;
   unsigned int tof_match_id=0;
@@ -413,7 +435,7 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
 double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
 					vector<const DBCALShower*>bcal_clusters){ 
 
-  if (bcal_clusters.size()==0) return -1.;
+  //  if (bcal_clusters.size()==0) return -1.;
 
   double p=track->momentum().Mag();
   double mass=track->mass();  

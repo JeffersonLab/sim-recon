@@ -50,6 +50,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 	TH1F *fom_chi2_dedx;
 	TH1F *fom_chi2_tof;
 	TH1F *fom_chi2_bcal;
+	TH1F *time_based_start;
   
   void FilterDuplicates(void);  
   double GetFOM(DTrackTimeBased *dtrack,
