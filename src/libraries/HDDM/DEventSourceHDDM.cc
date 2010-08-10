@@ -158,6 +158,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	// Get name of data class we're trying to extract
 	string dataClassName = factory->GetDataClassName();
 	
+	if(dataClassName =="DTagger" && tag=="")
+	  return Extract_DTagger(my_hddm_s, dynamic_cast<JFactory<DTagger>*>(factory));
+
 	if(dataClassName =="DMCTrackHit" && tag=="")
 		return Extract_DMCTrackHit(my_hddm_s, dynamic_cast<JFactory<DMCTrackHit>*>(factory));
 
@@ -770,6 +773,8 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 					newHit->layer				= fdcChamber.layer;
 					newHit->module				= fdcChamber.module;
 					newHit->element				= cathodeStrip.strip;
+					if (newHit->element>1000) newHit->element-=1000;
+
 					newHit->plane				= cathodeStrip.plane;
 					newHit->q					= stripHit.q;
 					newHit->t					= stripHit.t;
@@ -1344,3 +1349,51 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<D
 	return OBJECT_NOT_AVAILABLE;
 }
 
+
+//------------------
+// Extract_DTagger
+//------------------
+jerror_t DEventSourceHDDM::Extract_DTagger( s_HDDM_t *hddm_s,  JFactory<DTagger>* factory)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+  vector<DTagger*> data;
+  
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+  
+  for(unsigned int i=0; i<PE->mult; i++){
+    s_HitView_t *hits = PE->in[i].hitView;
+    if (hits == HDDM_NULL ||
+	hits->tagger == HDDM_NULL)continue;
+    s_MicroChannels_t *microChannels=hits->tagger->microChannels;
+    if (microChannels==HDDM_NULL) continue;
+
+    s_MicroChannel_t *microChannel=microChannels->in;
+    for (unsigned int j=0;j<microChannels->mult;j++,microChannel++){
+      s_TaggerHits_t *taggerHits=microChannel->taggerHits;
+      if (taggerHits==HDDM_NULL) continue;
+
+      s_TaggerHit_t *taggerHit=taggerHits->in;
+      for (unsigned int k=0;k<taggerHits->mult;k++,taggerHit++){
+	DTagger *tagger=new DTagger();
+
+	tagger->E=microChannel->E;
+	tagger->t=taggerHit->t;
+	tagger->row=microChannel->row;
+	tagger->column=microChannel->column;
+
+	data.push_back(tagger);
+      }
+    }
+  }
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+
+}

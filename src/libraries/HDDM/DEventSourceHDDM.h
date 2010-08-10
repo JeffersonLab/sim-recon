@@ -32,7 +32,7 @@ using namespace std;
 #include "START_COUNTER/DSCHit.h"
 #include <PID/DBeamPhoton.h>
 #include <TRACKING/DTrackTimeBased.h>
-
+#include <TAGGER/DTagger.h>
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -70,6 +70,8 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DSCTruthHit(s_HDDM_t *hddm_s,  JFactory<DSCTruthHit> *factory);
 
 		jerror_t Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory);
+
+		jerror_t Extract_DTagger( s_HDDM_t *hddm_s,  JFactory<DTagger>* factory);
 
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;
