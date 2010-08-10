@@ -79,16 +79,15 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		const DGeometry *geom;
 
 		// start counter geometry parameters
-		double sc_light_guide_length;
+		double sc_leg_tcor;
+		double sc_angle_cor;
 		vector<DVector3>sc_pos;
 		vector<DVector3>sc_norm;
 
-		// vector of start times
-		vector<double>start_times;
-		unsigned int start_time_source;
 
 		bool DEBUG_HISTS;
-		TH1F* Hsc_match,*Htof_match;
+		TH1F* Hsc_match;
+		TH2F* Htof_match;
 		TH2F *Hstart_time,*Hbcal_match;
 
 };
