@@ -145,7 +145,7 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 	  // Histograms may already exist. (Another thread may have created them)
 	  // Try and get pointers to the existing ones.
 	  Hsc_match= (TH1F*)gROOT->FindObject("Hsc_match");
-	  if (!Hsc_match) Hsc_match=new TH1F("Hsc_match","#delta#phi match to SC",100,-1,1.);
+	  if (!Hsc_match) Hsc_match=new TH1F("Hsc_match","#delta#phi match to SC",300,0.,1.);
 	  Hstart_time= (TH2F*)gROOT->FindObject("Hstart_time");
 	  if (!Hstart_time) Hstart_time=new TH2F("Hstart_time",
 		    "vertex time source vs time",250,-10,40,4,-0.5,3.5);
@@ -478,7 +478,7 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
   double dphi_min=10000.,myphi=0.;
   DVector3 pos,norm,proj_pos;
   unsigned int sc_match_id=0;
-  
+
   // loop over sc hits
   for (unsigned int i=0;i<sc_hits.size();i++){
     double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
@@ -492,8 +492,8 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
     if (proj_phi<0) proj_phi+=2.*M_PI;
     double dphi=phi-proj_phi;
 
-    if (dphi<dphi_min){
-      dphi_min=dphi;
+    if (fabs(dphi)<dphi_min){
+      dphi_min=fabs(dphi);
       myphi=phi;
       myz=proj_pos.z();
       sc_match_id=i;
@@ -504,7 +504,8 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
   if (DEBUG_HISTS){
     Hsc_match->Fill(dphi_min);
   }
-  if (fabs(dphi_min)<0.2 && flight_time>0.){
+
+  if (fabs(dphi_min)<0.235 && flight_time>0.){
     double t0=sc_hits[sc_match_id]->t-sc_leg_tcor;
     if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
     if (myz>sc_pos[1].z()){
@@ -544,7 +545,7 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
       t0-=flight_time+myz/C_EFFECTIVE;
     }
     track->setT0(t0,0.,SYS_START);
-    
+
     if (DEBUG_HISTS){
       Hstart_time->Fill(t0,1);
     }
