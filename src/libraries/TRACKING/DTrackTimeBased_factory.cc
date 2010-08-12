@@ -70,6 +70,30 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   geom = dapp->GetDGeometry(runnumber);
 
+   vector<double>sc_origin;
+  geom->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z",sc_origin);
+
+  vector<double>sc_light_guide;
+  geom->Get("//tubs[@name='STLG']/@Rio_Z",sc_light_guide); 
+  //sc_light_guide_length=sc_light_guide[2];
+  
+  vector<vector<double> > sc_rioz;
+  geom->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+  
+  for (unsigned int k=0;k<sc_rioz.size()-1;k++){
+    DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
+    DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,
+		 -sc_rioz[k+1][0]+sc_rioz[k][0]);
+    dir.SetMag(1.);
+    
+    sc_pos.push_back(pos);
+    sc_norm.push_back(dir);    
+  }
+  sc_light_guide_length_cor=sc_light_guide[2]-sc_pos[0].z();
+  double theta=sc_norm[sc_norm.size()-1].Theta();
+  sc_angle_cor=1./cos(M_PI-theta); 
+
+
 	// Get pointer to TrackFitter object that actually fits a track
 	vector<const DTrackFitter *> fitters;
 	loop->Get(fitters);
@@ -99,17 +123,29 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		fom_chi2_tof = (TH1F*)gROOT->FindObject("fom_chi2_tof");
 		fom_chi2_bcal = (TH1F*)gROOT->FindObject("fom_chi2_bcal");
 		time_based_start=(TH1F*)gROOT->FindObject("time_based_start");
+		fom_sc_match=(TH1F*)gROOT->FindObject("fom_sc_match");
+		fom_sc_delta_dedx_vs_p=(TH2F*)gROOT->FindObject("fom_sc_delta_dedx_vs_p");
+		fom_chi2_sc = (TH1F*)gROOT->FindObject("fom_chi2_sc");
 
 		if(!fom_tdiff_bcal)fom_tdiff_bcal = new TH1F("fom_tdiff_bcal","PID FOM: BCAL time difference", 2000, -10.0, 10.0);
 		if(!fom_tdiff_tof)fom_tdiff_tof = new TH1F("fom_tdiff_tof","PID FOM: TOF time difference", 2000, -10.0, 10.0);
 		if(!fom_chi2_trk)fom_chi2_trk = new TH1F("fom_chi2_trk","PID FOM: #chi^{2}/Ndf from tracking", 1000, 0.0, 100.0);
 		if(!fom_chi2_dedx)fom_chi2_dedx = new TH1F("fom_chi2_dedx","PID FOM: #chi^{2}/Ndf from dE/dx", 1000, 0.0, 100.0);
-		if(!fom_chi2_tof)fom_chi2_tof = new TH1F("fom_chi2_tof","PID FOM: #chi^{2}/Ndf from TOF", 1000, 0.0, 100.0);
+		if(!fom_chi2_tof)fom_chi2_tof = new TH1F("fom_chi2_tof","PID FOM: #chi^{2}/Ndf from TOF", 1000, 0.0, 100.0);	
+		if(!fom_chi2_sc)fom_chi2_sc = new TH1F("fom_chi2_sc","PID FOM: #chi^{2}/Ndf from SC", 1000, 0.0, 100.0);
 		if(!fom_chi2_bcal)fom_chi2_bcal = new TH1F("fom_chi2_bcal","PID FOM: #chi^{2}/Ndf from BCAL", 1000, 0.0, 100.0);
 		if (!time_based_start)
 		  time_based_start=new TH1F("time_based_start","t0 for time-based tracking",100,-20.,20.);
 
+		if (!fom_sc_match)
+		  fom_sc_match=new TH1F("fom_sc_match","#delta#phi match to SC",300,0.,1.);
+		if (!fom_sc_delta_dedx_vs_p)
+		  fom_sc_delta_dedx_vs_p=new TH2F("fom_sc_delta_dedx_vs_p",
+						  "#delta(dEdx) vs p for SC",
+						  100,0,7,100,-10,10);
+
 		dapp->Unlock();
+
 	}
 
 
@@ -137,6 +173,10 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   eventLoop->Get(bcal_clusters);
   vector<const DFCALPhoton*>fcal_clusters;
   //eventLoop->Get(fcal_clusters);
+
+  // Get SC hits
+  vector<const DSCHit*>sc_hits;
+  eventLoop->Get(sc_hits);
 
   //Find the start time
   mStartTime=0.;
@@ -227,7 +267,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Add figure-of-merit based on chi2, dEdx and matching to outer 
 	// detectors
 	timebased_track->FOM=GetFOM(timebased_track,bcal_clusters,
-				    fcal_clusters,tof_points);
+				    fcal_clusters,tof_points,sc_hits);
 
 	_data.push_back(timebased_track);
 	break;
@@ -271,7 +311,8 @@ jerror_t DTrackTimeBased_factory::fini(void)
 double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
 			      vector<const DBCALShower*>bcal_clusters,
 			      vector<const DFCALPhoton*>fcal_clusters,
-			      vector<const DTOFPoint*>tof_points)
+				       vector<const DTOFPoint*>tof_points,
+				       vector<const DSCHit*>sc_hits)
 {
 
   // For high momentum, the likelihood that the particle is a proton is small.
@@ -336,6 +377,8 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   if (tof_points.size()>0) tof_chi2=MatchToTOF(dtrack,tof_points);
   double bcal_chi2=-1.;
   if (bcal_clusters.size()>0) bcal_chi2=MatchToBCAL(dtrack,bcal_clusters);
+  double sc_chi2=-1.;
+  if (sc_hits.size()>0) sc_chi2=MatchToSC(dtrack,sc_hits);
 
   if (tof_chi2>-1.){
     chi2_sum+=tof_chi2;
@@ -346,11 +389,17 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
     ndof++;
   }
   
+  if (sc_chi2>-1.){
+    chi2_sum+=sc_chi2;
+    ndof++;
+  }
+  
   if(DEBUG_HISTS){
 	fom_chi2_trk->Fill(trk_chi2);
 	fom_chi2_dedx->Fill(dedx_chi2);
 	fom_chi2_tof->Fill(tof_chi2);
 	fom_chi2_bcal->Fill(bcal_chi2);
+	fom_chi2_sc->Fill(sc_chi2);
   }
 
 //_DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<trk_chi2<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<endl;
@@ -504,6 +553,88 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
 
   return -1.;
 }
+
+// Match wire based track to the start counter paddles with hits.  If a match
+// is found, compute the dEdx in the scintillator and return a chi2 value 
+// indicating how close the dEdx is to the expected dEdx for the particular 
+// mass hypothesis.
+double DTrackTimeBased_factory::MatchToSC(DTrackTimeBased *track,
+					  vector<const DSCHit*>sc_hits){
+  if(track->rt->Nswim_steps<3)return -1.;
+  double p=track->momentum().Mag();
+  if (p>0.8) return -1.;
+  
+  double dphi_min=10000.,myphi=0.,myz=0.;
+  DVector3 pos,norm,proj_pos,dir;
+  double ds=0.;
+  unsigned int sc_match_id=0;
+
+  // loop over sc hits
+  for (unsigned int i=0;i<sc_hits.size();i++){
+    double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
+    double r=sc_pos[1].x();
+    pos.SetXYZ(r*cos(phi),r*sin(phi),sc_pos[1].z());
+    norm.SetXYZ(cos(phi),sin(phi),0.);
+    
+    track->rt->GetIntersectionWithPlane(pos,norm,proj_pos,dir,NULL,NULL);
+    double proj_phi=proj_pos.Phi();
+    if (proj_phi<0) proj_phi+=2.*M_PI;
+    double dphi=phi-proj_phi;
+
+    if (fabs(dphi)<dphi_min){
+      dphi_min=fabs(dphi);
+      myphi=phi;
+      ds=0.3/norm.Dot(dir);
+      myz=proj_pos.z();
+      sc_match_id=i;
+    }
+  }
+
+  if (DEBUG_HISTS){
+    fom_sc_match->Fill(dphi_min);
+  }
+
+  if (fabs(dphi_min)<0.235){
+    double length=myz+sc_light_guide_length_cor;
+    double atten_length=150.;
+    if (myz>sc_pos[1].z()){
+      unsigned int num=sc_norm.size()-1;
+      for (unsigned int i=1;i<num;i++){
+	double xhat=sc_norm[i].x();
+	norm.SetXYZ(cos(myphi)*xhat,sin(myphi)*xhat,sc_norm[i].z());
+	double r=sc_pos[i].X();
+	pos.SetXYZ(r*cos(myphi),r*sin(myphi),sc_pos[i].z());
+	track->rt->GetIntersectionWithPlane(pos,norm,proj_pos,dir,NULL,NULL);
+
+	myz=proj_pos.z();
+	if (myz<sc_pos[i+1].z()){
+	  ds=0.3/norm.Dot(dir);	  
+	  length=sc_light_guide_length_cor+sc_pos[1].z()
+	    +(myz-sc_pos[1].z())*sc_angle_cor;
+	  break;
+	}
+      }
+    }
+    
+    double mass=track->mass();  
+    double dEdx=1000.*sc_hits[sc_match_id]->dE/ds*exp(length/atten_length);
+    double dEdx_pred=fitter->GetdEdx(p,mass,ds,sc_pos[1]);
+    double dEdx_var=fitter->GetdEdxVariance(p,mass,ds,sc_pos[1]);
+    double dEdx_diff=dEdx-dEdx_pred;
+
+    if (DEBUG_HISTS){
+      fom_sc_delta_dedx_vs_p->Fill(p,dEdx_diff);
+    }
+
+    return dEdx_diff*dEdx_diff/dEdx_var;
+  }
+  
+  return -1.;
+}
+
+
+
+
 
 //------------------
 // FilterDuplicates

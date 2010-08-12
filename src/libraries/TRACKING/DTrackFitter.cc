@@ -376,15 +376,20 @@ double DTrackFitter::GetdEdx(double p,double mass_hyp,double dx,
   // Electron mass 
   double Me=0.000511; //GeV
   
+   // Get material properties
+  double rho_Z_over_A=0.,rho_Z_over_A_LnI=0.,radlen=0.;
+  geom->FindMat(pos,rho_Z_over_A,rho_Z_over_A_LnI,radlen);
+
   // First (non-logarithmic) term in Bethe-Bloch formula
-  double mean_dedx=mKRhoZoverAGas/beta2;
+  double mean_dedx=0.1535*rho_Z_over_A/beta2;
 
   // density effect
-  double delta=CalcDensityEffect(betagamma,mRhoZoverAGas,mLnIGas);
+  double LnI=rho_Z_over_A_LnI/rho_Z_over_A;
+  double delta=CalcDensityEffect(betagamma,rho_Z_over_A,LnI);
   
   // Most probable energy loss from Landau theory (see Leo, pp. 51-52)
   return mean_dedx*(log(mean_dedx*dx/1000.)-log((1.-beta2)/2./Me/beta2)
-		    -2.*mLnIGas-beta2+0.198-delta);
+		    -2.*LnI-beta2+0.198-delta);
 }
 
 

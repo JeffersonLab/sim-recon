@@ -15,6 +15,7 @@
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALPhoton.h>
 #include <TOF/DTOFPoint.h>
+#include <START_COUNTER/DSCHit.h>
 
 class DTrackWireBased;
 class DTrackHitSelector;
@@ -51,22 +52,34 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 	TH1F *fom_chi2_tof;
 	TH1F *fom_chi2_bcal;
 	TH1F *time_based_start;
-  
+	TH1F *fom_sc_match;
+	TH2F *fom_sc_delta_dedx_vs_p;
+  	TH1F *fom_chi2_sc ;
   void FilterDuplicates(void);  
   double GetFOM(DTrackTimeBased *dtrack,
 		vector<const DBCALShower*>bcal_clusters,
 		vector<const DFCALPhoton*>fcal_clusters,
-		vector<const DTOFPoint*>tof_points);
+		vector<const DTOFPoint*>tof_points,
+		vector<const DSCHit*>sc_hits);
   double MatchToTOF(DTrackTimeBased *track,
 		    vector<const DTOFPoint*>tof_points);
   double MatchToBCAL(DTrackTimeBased *track,
 		     vector<const DBCALShower*>bcal_clusters);
+  double MatchToSC(DTrackTimeBased *track,vector<const DSCHit*>sc_hits);
+  
 
   // Geometry
   const DGeometry *geom;
 
   double mPathLength,mEndTime,mStartTime,mFlightTime;
   DetectorSystem_t mDetector, mStartDetector;
+  
+  // start counter geometry
+  double sc_light_guide_length_cor;
+  double sc_angle_cor;
+  vector<DVector3>sc_pos;
+  vector<DVector3>sc_norm;
+
  
 };
 
