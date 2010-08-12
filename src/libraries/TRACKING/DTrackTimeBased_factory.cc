@@ -330,10 +330,15 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
 
   // Next compute dEdx in the chambers for this track
   double mean_path_length=0.,p_avg=0.;
-  
+  double dedx_chi2=1e8;
+
   // Get the dEdx info from the CDC/FDC hits in a list
   vector<DTrackFitter::dedx_t>dEdx_list;
   fitter->GetdEdx(dtrack->rt,dEdx_list);
+
+  // if the track does not intersect with any of the hit wires, then the 
+  // parameters are clearly wrong for the set of hits!
+  if (dEdx_list.size()==0) return 0.;
  
   // Truncated mean:  loop over a subset of this list, throwing away a
   // number of the highest dE/dx values.  Since the list is sorted according 
@@ -342,7 +347,7 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   double dEdx=0.,dEdx_diff=0.;
   double N=0.;
   double mass=dtrack->rt->GetMass();
-  for (unsigned int i=0;i<dEdx_list.size()/2;i++){
+  for (unsigned int i=0;i<=dEdx_list.size()/2;i++){
     double p=dEdx_list[i].p;
     double dx=dEdx_list[i].dx;
     double dE=dEdx_list[i].dE;						
@@ -363,12 +368,12 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   dEdx_diff/=N;
   mean_path_length/=N;
   p_avg/=N;
-
-  double dEdx_sigma=fitter->GetdEdxSigma(N,p_avg,mass,mean_path_length);
-    
-  // Chi2 for dedx measurement
-  double dedx_chi2=dEdx_diff*dEdx_diff/dEdx_sigma/dEdx_sigma;
   
+  double dEdx_sigma=fitter->GetdEdxSigma(N,p_avg,mass,mean_path_length);
+  
+  // Chi2 for dedx measurement
+  dedx_chi2=dEdx_diff*dEdx_diff/dEdx_sigma/dEdx_sigma;
+    
   chi2_sum+=dedx_chi2;
   ndof++;
 
