@@ -174,15 +174,30 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	}
 
 	// Create TLorentzVectors for thrown particles
+	bool all_mesons_fiducial = true;
+	bool all_photons_fiducial = true;
+	bool all_protons_fiducial = true;
 	particle_set thr;
 	for(unsigned int k=0; k<mcthrowns.size(); k++){
 		switch(mcthrowns[k]->type){
-			case  1: thr.photons.push_back(MakeTLorentz(mcthrowns[k], 0.0));		break;
-			case  8: thr.piplus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));		break;
-			case  9: thr.piminus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));	break;
-			case 11: thr.Kplus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));		break;
-			case 12: thr.Kminus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));	break;
-			case 14: thr.protons.push_back(MakeTLorentz(mcthrowns[k], 0.93827));	break;
+			case  1: thr.photons.push_back(MakeTLorentz(mcthrowns[k], 0.0));
+			         all_photons_fiducial &= IsFiducial(mcthrowns[k]);
+				      break;
+			case  8: thr.piplus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));
+			         all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
+				      break;
+			case  9: thr.piminus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));
+			         all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
+				      break;
+			case 11: thr.Kplus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));
+			         all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
+				      break;
+			case 12: thr.Kminus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));
+			         all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
+				      break;
+			case 14: thr.protons.push_back(MakeTLorentz(mcthrowns[k], 0.93827));
+			         all_protons_fiducial &= IsFiducial(mcthrowns[k]);
+				      break;
 		}
 	}
 	
@@ -194,7 +209,12 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	evt_thrown->Clear();
 	FillEvent(evt_recon, rec, thr);
 	FillEvent(evt_thrown, thr, rec);
-	
+
+	// Copy fiducial cuts (based only on thrown values) to both trees
+	evt_recon->all_mesons_fiducial = all_mesons_fiducial;
+	evt_recon->all_photons_fiducial = all_photons_fiducial;
+	evt_recon->all_protons_fiducial = all_protons_fiducial;
+
 	// Copy event number to both trees and add this event to them
 	evt_recon->event = eventnumber;
 	evt_thrown->event = eventnumber;
@@ -302,11 +322,11 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 		prt->x.SetXYZ(0,0,65); // FIXME!!!
 	}
 	
-
 	// Calculate W of reconstructed particles
 	for(unsigned int i=0; i<photon.size(); i++)evt->W += photon[i];
 	for(unsigned int i=0; i<pip.size(); i++)evt->W += pip[i];
 	for(unsigned int i=0; i<pim.size(); i++)evt->W += pim[i];
+
 }
 
 //------------------
@@ -362,6 +382,27 @@ double DEventProcessor_phys_tree::GetFOM(const TLorentzVector &a, const TLorentz
 	double fom = curvature_fom*theta_fom;
 
 	return fom;
+}
+
+//------------------
+// IsFiducial
+//------------------
+bool DEventProcessor_phys_tree::IsFiducial(const DKinematicData *kd)
+{
+	double theta_degrees = kd->momentum().Theta()*TMath::RadToDeg();
+	double p = kd->momentum().Mag();
+	
+	if(kd->charge()==0.0){
+		// photon
+		if(theta_degrees<2.0 || theta_degrees>110.0)return false;
+		if(p<0.100)return false;
+	}else{
+		// charged particle
+		if(theta_degrees<1.0 || theta_degrees>120.0)return false;
+		if(p<0.400)return false;
+	}
+	
+	return true;
 }
 
 //------------------
