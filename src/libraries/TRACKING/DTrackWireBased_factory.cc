@@ -267,7 +267,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  track->AddAssociatedObject(candidate);
        
 	  // Try to match to start counter and outer detectors 
-	  jerror_t error=NOERROR;
+	  jerror_t error=VALUE_OUT_OF_RANGE;
 	  
 	  if (sc_hits.size() 
 	      && track->position().z()<sc_pos[1].z() 
@@ -282,22 +282,22 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	    error=MatchToBCAL(track,bcal_clusters);
 	  }
 	  
-	  if (error!=NOERROR && sc_hits.size()){
-	    double t0=0.;
-	    for (unsigned int i=0;i<sc_hits.size();i++){
-	      t0+=sc_hits[i]->t-sc_leg_tcor-sc_pos[1].z()/C_EFFECTIVE;
-	    }
-	    t0/=sc_hits.size();
-	    track->setT0(t0,0.,SYS_NULL);
-	    
-	    if (DEBUG_HISTS){
-	      Hstart_time->Fill(t0,0);
-	    }
-	    error=NOERROR;
-	  }
-	  else {
-
-	  }
+	  //  if (error!=NOERROR && sc_hits.size()){
+	  // double t0=0.;
+	  // for (unsigned int i=0;i<sc_hits.size();i++){
+	  //   t0+=sc_hits[i]->t-sc_leg_tcor-sc_pos[1].z()/C_EFFECTIVE;
+	  // }
+	  // t0/=sc_hits.size();
+	  // track->setT0(t0,0.,SYS_NULL);
+	  // 
+	  // if (DEBUG_HISTS){
+	  //   Hstart_time->Fill(t0,0);
+	  // }
+	  // error=NOERROR;
+	  //}
+	  //else {
+	  //
+	  //}
 	  
 	  
 
@@ -429,12 +429,13 @@ jerror_t DTrackWireBased_factory::MatchToTOF(DTrackWireBased *track,
     DVector3 tof_pos=tof_points[k]->pos;
     DVector3 norm(0,0,1);
     DVector3 proj_pos,dir;
-    
+
     // Find the distance of closest approach between the track trajectory
     // and the tof cluster position, looking for the minimum
     double t=0.;
     track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,NULL,&t);
     double d=(tof_pos-proj_pos).Mag();
+
     if (d<dmin){
       dmin=d;
       tflight=t;
@@ -448,7 +449,7 @@ jerror_t DTrackWireBased_factory::MatchToTOF(DTrackWireBased *track,
   // Check for a match 
   //  double p=track->momentum().Mag();
   //  double match_sigma=0.75+1./p/p;
-  if (dmin<5. && tflight>0.){
+  if (dmin<5.){
     // Add the time to the outer detector and the vertex time to the track 
     // object
     track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF); 
@@ -472,24 +473,28 @@ jerror_t DTrackWireBased_factory::MatchToTOF(DTrackWireBased *track,
 // estimate the "vertex" time.
 jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
 					    vector<const DSCHit*>sc_hits){
-  if(track->rt->Nswim_steps<3)return VALUE_OUT_OF_RANGE;
-  
+  if(track->rt->Nswim_steps<3){
+    //printf("Too few swim steps! p=%f\n",track->momentum().Mag());
+    //track->position().Print();
+    //track->momentum().Print();
+    return VALUE_OUT_OF_RANGE;
+  }
+    
   double myz=0.,flight_time=0.;
   double dphi_min=10000.,myphi=0.;
-  DVector3 pos,norm,proj_pos;
+  DVector3 proj_pos;
   unsigned int sc_match_id=0;
 
-  // loop over sc hits
+  // Find intersection with a "barrel" approximation for the start counter
+  track->rt->GetIntersectionWithRadius(sc_pos[1].x(),proj_pos,NULL,
+				       &flight_time);
+  double proj_phi=proj_pos.Phi();
+  if (proj_phi<0) proj_phi+=2.*M_PI;
+
+  // loop over sc hits, looking for the one with closest phi value to the 
+  // projected phi value
   for (unsigned int i=0;i<sc_hits.size();i++){
     double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
-    double r=sc_pos[1].x();
-    pos.SetXYZ(r*cos(phi),r*sin(phi),sc_pos[1].z());
-    norm.SetXYZ(cos(phi),sin(phi),0.);
-    
-    double t=0.;
-    track->rt->GetIntersectionWithPlane(pos,norm,proj_pos,NULL,&t);
-    double proj_phi=proj_pos.Phi();
-    if (proj_phi<0) proj_phi+=2.*M_PI;
     double dphi=phi-proj_phi;
 
     if (fabs(dphi)<dphi_min){
@@ -497,7 +502,6 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
       myphi=phi;
       myz=proj_pos.z();
       sc_match_id=i;
-      flight_time=t;
     }
   }
 
@@ -505,55 +509,51 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
     Hsc_match->Fill(dphi_min);
   }
 
-  if (fabs(dphi_min)<0.235 && flight_time>0.){
-    double t0=sc_hits[sc_match_id]->t-sc_leg_tcor;
-    if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
-    if (myz>sc_pos[1].z()){
-      unsigned int num=sc_norm.size()-1;
-      for (unsigned int i=1;i<num;i++){
-	double xhat=sc_norm[i].x();
-	norm.SetXYZ(cos(myphi)*xhat,sin(myphi)*xhat,sc_norm[i].z());
-	double r=sc_pos[i].X();
-	pos.SetXYZ(r*cos(myphi),r*sin(myphi),sc_pos[i].z());
-	track->rt->GetIntersectionWithPlane(pos,norm,proj_pos,NULL,
-					    &flight_time);
-	myz=proj_pos.z();
-	if (myz<sc_pos[i+1].z()){
-	  break;
-	}
+  // Now check to see if the intersection is in the nose region and find the
+  // start time
+  double t0=sc_hits[sc_match_id]->t-sc_leg_tcor;
+  if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
+  if (myz>sc_pos[1].z()){
+    unsigned int num=sc_norm.size()-1;
+    for (unsigned int i=1;i<num;i++){
+      double xhat=sc_norm[i].x();
+      DVector3 norm(cos(myphi)*xhat,sin(myphi)*xhat,sc_norm[i].z());
+      double r=sc_pos[i].X();
+      DVector3 pos(r*cos(myphi),r*sin(myphi),sc_pos[i].z());
+      track->rt->GetIntersectionWithPlane(pos,norm,proj_pos,NULL,&flight_time);
+      myz=proj_pos.z();
+      if (myz<sc_pos[i+1].z()){
+	break;
       }
-      double sc_pos1=sc_pos[1].z();
-      if (myz<sc_pos1){
-	t0-=flight_time+sc_pos1/C_EFFECTIVE;
-      }
-      else if (myz>sc_pos[num].z()){
-	// Assume that the particle hit the most downstream z position of the
-	// start counter
-	double s=(sc_pos[num].z()-track->position().z())
-	  /track->momentum().CosTheta();
-	double mass=track->rt->GetMass();
-	double one_over_beta=sqrt(1.+mass*mass/track->momentum().Mag2());
-
-	t0-=s*one_over_beta/SPEED_OF_LIGHT
-	  +((sc_pos[num].z()-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
-      }
-      else{
-	t0-=flight_time+((myz-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
-      }
+    }
+    double sc_pos1=sc_pos[1].z();
+    if (myz<sc_pos1){
+      t0-=flight_time+sc_pos1/C_EFFECTIVE;
+    }
+    else if (myz>sc_pos[num].z()){
+      // Assume that the particle hit the most downstream z position of the
+      // start counter
+      double s=(sc_pos[num].z()-track->position().z())
+	/track->momentum().CosTheta();
+      double mass=track->rt->GetMass();
+      double one_over_beta=sqrt(1.+mass*mass/track->momentum().Mag2());
+      
+      t0-=s*one_over_beta/SPEED_OF_LIGHT
+	+((sc_pos[num].z()-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
     }
     else{
-      t0-=flight_time+myz/C_EFFECTIVE;
+      t0-=flight_time+((myz-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
     }
-    track->setT0(t0,0.,SYS_START);
-
-    if (DEBUG_HISTS){
-      Hstart_time->Fill(t0,1);
-    }
-    return NOERROR;
   }
-  // else printf("dphi %f\n",dphi_min);
+  else{
+    t0-=flight_time+myz/C_EFFECTIVE;
+  }
+  track->setT0(t0,0.,SYS_START);
 
-  return VALUE_OUT_OF_RANGE;
+  if (DEBUG_HISTS){
+    Hstart_time->Fill(t0,1);
+  }
+  return NOERROR;
 }
 
 
@@ -564,7 +564,6 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
 // of track to a cluster and using this to check for a match.  
 jerror_t DTrackWireBased_factory::MatchToBCAL(DTrackWireBased *track,
 					vector<const DBCALShower*>bcal_clusters){ 
-
   if(track->rt->Nswim_steps<3)return VALUE_OUT_OF_RANGE;
    
   //Loop over bcal clusters
@@ -597,7 +596,7 @@ jerror_t DTrackWireBased_factory::MatchToBCAL(DTrackWireBased *track,
   }
 
   // Check for a match 
-  if (fabs(dz)<10. && fabs(dphi)<0.04 && flight_time>0.){
+  if (fabs(dz)<10. && fabs(dphi)<0.04){
     // Add the time to the outer detector to the track object
     track->setT1(bcal_clusters[bcal_match_id]->t, 0., SYS_BCAL);
     track->setT0(bcal_clusters[bcal_match_id]->t-flight_time,0.,SYS_BCAL);
