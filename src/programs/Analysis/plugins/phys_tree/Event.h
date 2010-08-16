@@ -26,15 +26,21 @@ class Event:public TObject{
 		int event;
 		UInt_t Npip;
 		UInt_t Npim;
+		UInt_t NKp;
+		UInt_t NKm;
 		UInt_t Nproton;
 		UInt_t Nphoton;
 		TClonesArray *pip;
 		TClonesArray *pim;
+		TClonesArray *Kp;
+		TClonesArray *Km;
 		TClonesArray *proton;
 		TClonesArray *photon;
 
 		TClonesArray *pip_match;		///< Closest match pi+ (truth or recon, whatever is not in pip)
-		TClonesArray *pim_match;		///< Closest match pim (truth or recon, whatever is not in pim)
+		TClonesArray *pim_match;		///< Closest match pi- (truth or recon, whatever is not in pim)
+		TClonesArray *Kp_match;			///< Closest match K+ (truth or recon, whatever is not in Kp)
+		TClonesArray *Km_match;			///< Closest match K- (truth or recon, whatever is not in Km)
 		TClonesArray *proton_match;	///< Closest match proton (truth or recon, whatever is not in proton)
 		TClonesArray *photon_match;	///< Closest match photon (truth or recon, whatever is not in photon)
 

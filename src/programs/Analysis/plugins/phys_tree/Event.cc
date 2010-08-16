@@ -17,11 +17,15 @@ Event::Event()
 {
 	pip = new TClonesArray("Particle", MAX_PART);
 	pim = new TClonesArray("Particle", MAX_PART);
+	Kp = new TClonesArray("Particle", MAX_PART);
+	Km = new TClonesArray("Particle", MAX_PART);
 	proton = new TClonesArray("Particle", MAX_PART);
 	photon = new TClonesArray("Particle", MAX_PART);
 
 	pip_match = new TClonesArray("Particle", MAX_PART);
 	pim_match = new TClonesArray("Particle", MAX_PART);
+	Kp_match = new TClonesArray("Particle", MAX_PART);
+	Km_match = new TClonesArray("Particle", MAX_PART);
 	proton_match = new TClonesArray("Particle", MAX_PART);
 	photon_match = new TClonesArray("Particle", MAX_PART);
 }
@@ -33,11 +37,15 @@ Event::~Event()
 {
 	delete pip;
 	delete pim;
+	delete Kp;
+	delete Km;
 	delete proton;
 	delete photon;
 
 	delete pip_match;
 	delete pim_match;
+	delete Kp_match;
+	delete Km_match;
 	delete proton_match;
 	delete photon_match;
 }
@@ -49,15 +57,21 @@ void Event::Clear(void)
 {
 	Npip = 0;
 	Npim = 0;
+	NKp = 0;
+	NKm = 0;
 	Nproton = 0;
 	Nphoton = 0;
-	pip->Clear();	// delete entries in TClonesArray (without freeing memory)
-	pim->Clear();	// delete entries in TClonesArray (without freeing memory)
+	pip->Clear();		// delete entries in TClonesArray (without freeing memory)
+	pim->Clear();		// delete entries in TClonesArray (without freeing memory)
+	Kp->Clear();		// delete entries in TClonesArray (without freeing memory)
+	Km->Clear();		// delete entries in TClonesArray (without freeing memory)
 	proton->Clear();	// delete entries in TClonesArray (without freeing memory)
 	photon->Clear();	// delete entries in TClonesArray (without freeing memory)
 
 	pip_match->Clear();
 	pim_match->Clear();
+	Kp_match->Clear();
+	Km_match->Clear();
 	proton_match->Clear();
 	photon_match->Clear();
 	

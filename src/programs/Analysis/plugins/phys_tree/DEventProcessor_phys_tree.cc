@@ -257,17 +257,23 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 	vector<TLorentzVector> &photon = pset.photons;
 	vector<TLorentzVector> &pip = pset.piplus;
 	vector<TLorentzVector> &pim = pset.piminus;
+	vector<TLorentzVector> &Kp = pset.Kplus;
+	vector<TLorentzVector> &Km = pset.Kminus;
 	vector<TLorentzVector> &proton = pset.protons;
 
 	vector<TLorentzVector> &photon_match = pset_match.photons;
 	vector<TLorentzVector> &pip_match = pset_match.piplus;
 	vector<TLorentzVector> &pim_match = pset_match.piminus;
+	vector<TLorentzVector> &Kp_match = pset_match.Kplus;
+	vector<TLorentzVector> &Km_match = pset_match.Kminus;
 	vector<TLorentzVector> &proton_match = pset_match.protons;
 
 	// Sort particle arrays by energy
 	sort(photon.begin(), photon.end(), CompareLorentzEnergy);
 	sort(pip.begin(), pip.end(), CompareLorentzEnergy);
 	sort(pim.begin(), pim.end(), CompareLorentzEnergy);
+	sort(Kp.begin(), Kp.end(), CompareLorentzEnergy);
+	sort(Km.begin(), Km.end(), CompareLorentzEnergy);
 	sort(proton.begin(), proton.end(), CompareLorentzEnergy);
 
 	// Add photons
@@ -309,6 +315,32 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 		prt->x.SetXYZ(0,0,65); // FIXME!!!
 	}
 
+	// Add Kplus
+	for(unsigned int i=0; i<Kp.size(); i++){
+		TClonesArray &prts_match = *(evt->Kp_match);
+		Particle *prt_match = new(prts_match[evt->NKp]) Particle();
+		prt_match->p = FindBestMatch(Kp[i], Kp_match);
+		prt_match->x.SetXYZ(0,0,65); // FIXME!!!
+
+		TClonesArray &prts = *(evt->Kp);
+		Particle *prt = new(prts[evt->NKp++]) Particle();
+		prt->p = Kp[i];
+		prt->x.SetXYZ(0,0,65); // FIXME!!!
+	}
+
+	// Add Kminus
+	for(unsigned int i=0; i<Km.size(); i++){
+		TClonesArray &prts_match = *(evt->Km_match);
+		Particle *prt_match = new(prts_match[evt->NKm]) Particle();
+		prt_match->p = FindBestMatch(Km[i], Km_match);
+		prt_match->x.SetXYZ(0,0,65); // FIXME!!!
+
+		TClonesArray &prts = *(evt->Km);
+		Particle *prt = new(prts[evt->NKm++]) Particle();
+		prt->p = Km[i];
+		prt->x.SetXYZ(0,0,65); // FIXME!!!
+	}
+
 	// Add proton
 	for(unsigned int i=0; i<proton.size(); i++){
 		TClonesArray &prts_match = *(evt->proton_match);
@@ -326,6 +358,8 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 	for(unsigned int i=0; i<photon.size(); i++)evt->W += photon[i];
 	for(unsigned int i=0; i<pip.size(); i++)evt->W += pip[i];
 	for(unsigned int i=0; i<pim.size(); i++)evt->W += pim[i];
+	for(unsigned int i=0; i<Kp.size(); i++)evt->W += Kp[i];
+	for(unsigned int i=0; i<Km.size(); i++)evt->W += Km[i];
 
 }
 
