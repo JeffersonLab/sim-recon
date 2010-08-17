@@ -78,6 +78,7 @@ class DReferenceTrajectory{
 		double Straw_dx(const DCoordinateSystem *wire, double radius);
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr=NULL) const;
 		swim_step_t* FindClosestSwimStep(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
+		swim_step_t* FindPlaneCrossing(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0, const DCoordinateSystem *wire=NULL);
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
 		void GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL,double *t=NULL) const;	

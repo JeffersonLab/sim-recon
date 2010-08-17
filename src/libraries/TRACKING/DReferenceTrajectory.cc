@@ -452,8 +452,9 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	pos.SetXYZ(0,0,0);
 	if(s)*s=0.0;
 	
-	// Find the closest swim step to the plane
-	swim_step_t *step = FindClosestSwimStep(origin,norm);
+	// Find the closest swim step to the position where the track crosses
+	// the plane
+	swim_step_t *step = FindPlaneCrossing(origin,norm);
 	// Kludge for tracking to forward detectors assuming that the planes 
 	// are perpendicular to the beam line 
 	if (step && step->origin.Z()>600.
@@ -720,15 +721,20 @@ if(Nswim_steps<1)_DBG__;
 	// First, find closest step to point
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;
-	double min_delta2 = 1.0E6;
+	//double min_delta2 = 1.0E6;
+	double old_delta2=10.e6,delta2=1.0e6;
 	for(int i=0; i<Nswim_steps; i++, swim_step++){
 
-		DVector3 pos_diff = swim_step->origin - hit;
-		double delta2 = pos_diff.Mag2();
-		if(delta2 < min_delta2){
-			min_delta2 = delta2;
-			step = swim_step;
-		}
+	  DVector3 pos_diff = swim_step->origin - hit;
+	  delta2 = pos_diff.Mag2();
+	  if (delta2>old_delta2) break;
+
+	  //if(delta2 < min_delta2){
+	  //min_delta2 = delta2;
+
+	  step = swim_step;
+	  old_delta2=delta2;
+	  //}
 	}
 	if(step==NULL){
 		// It seems to occasionally occur that we have 1 swim step
@@ -736,7 +742,7 @@ if(Nswim_steps<1)_DBG__;
 		// for these as they are "known" (even if not fully understood!)
 		if(Nswim_steps>1){
 			_DBG_<<"\"hit\" passed to DistToRT(DVector3) out of range!"<<endl;
-			_DBG_<<"hit x,y,z = "<<hit.x()<<", "<<hit.y()<<", "<<hit.z()<<"  Nswim_steps="<<Nswim_steps<<"  min_delta2="<<min_delta2<<endl;
+			_DBG_<<"hit x,y,z = "<<hit.x()<<", "<<hit.y()<<", "<<hit.z()<<"  Nswim_steps="<<Nswim_steps<<"  min_delta2="<<delta2<<endl;
 		}
 		return 1.0E6;
 	}
@@ -864,7 +870,8 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	// Loop over swim steps and find the one closest to the wire
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;
-	double min_delta2 = 1.0E6;
+	//double min_delta2 = 1.0E6;
+	double old_delta2=1.0e6;
 	double L_over_2 = wire->L/2.0; // half-length of wire in cm
 	int istep=-1;
 
@@ -905,15 +912,20 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 		// from wire's end by adding on distance along wire direction.
 		if( fabs(u)>L_over_2){
       //			delta2 += pow(fabs(u)-L_over_2, 2.0);
-      
-      delta2 += ( ( fabs(u)-L_over_2 ) * ( fabs(u)-L_over_2 ) );
+		  double u_minus_L_over_2=fabs(u)-L_over_2;
+      delta2 += ( u_minus_L_over_2*u_minus_L_over_2 );
+      // printf("step %d\n",i);
 		}
 
-		if(delta2 < min_delta2){
-			min_delta2 = delta2;
-			step = swim_step;
-			istep=i;
-		}
+		
+		if (delta2>old_delta2) break;
+		//if(delta2 < min_delta2){
+		//	min_delta2 = delta2;
+		step = swim_step;
+		istep=i;
+		//}
+		//printf("%d delta %f min %f\n",i,delta2,min_delta2);
+		old_delta2=delta2;
 	}
 
 	if(istep_ptr)*istep_ptr=istep;
@@ -942,6 +954,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;
 	double min_dist = 1.0E6;
+	double old_dist=1.0e6;
 	int istep=-1;
 
 	for(int i=0; i<Nswim_steps; i++, swim_step++){
@@ -950,13 +963,17 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 		// vector pointing from the current step to a point in the plane
 		double dist = fabs(norm.Dot(swim_step->origin-origin));
 
+		if (dist>old_dist) break;
+
 		// Check if we're the closest step
-		if(dist < min_dist){
-			min_dist = dist;
-			step = swim_step;
-			istep=i;
-		}
-		
+		//if(dist < min_dist){
+		//min_dist = dist;
+
+		step = swim_step;
+		istep=i;
+			//}
+		old_dist=dist;
+
 		// We should probably have a break condition here so we don't
 		// waste time looking all the way to the end of the track after
 		// we've passed the plane.
@@ -966,6 +983,60 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 
 	return step;	
 }
+
+
+//---------------------------------
+// FindPlaneCrossing
+//---------------------------------
+DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const DVector3 &origin, DVector3 norm, int *istep_ptr) const
+{
+  /// Find the closest swim step to the position where the track crosses
+  /// the plane specified by origin
+  /// and norm. origin should indicate any point in the plane and
+  /// norm a vector normal to the plane.
+  if(istep_ptr)*istep_ptr=-1;
+	
+	if(Nswim_steps<1){
+		_DBG_<<"No swim steps! You must \"Swim\" the track before calling FindPlaneCrossing(...)"<<endl;
+	}
+
+	// Make sure normal vector is unit lenght
+	norm.SetMag(1.0);
+
+	// Loop over swim steps and find the one closest to the plane
+	swim_step_t *swim_step = swim_steps;
+	swim_step_t *step=NULL;
+	//double min_dist = 1.0E6;
+	int istep=-1;
+	double old_dist=1.0e6;
+
+	for(int i=0; i<Nswim_steps; i++, swim_step++){
+	
+	  // Distance to plane is dot product of normal vector with any
+	  // vector pointing from the current step to a point in the plane
+	  //double dist = fabs(norm.Dot(swim_step->origin-origin));
+	  double dist = norm.Dot(swim_step->origin-origin);
+
+	  // We've crossed the plane when the sign of dist changes
+	  if (dist*old_dist<0 && i>0) {
+	    if (fabs(dist)<fabs(old_dist)){
+	      step=swim_step;
+	      istep=i;
+	    }
+	    break;
+	  }
+	  step = swim_step;
+	  istep=i;
+	  old_dist=dist;
+	}
+
+	if(istep_ptr)*istep_ptr=istep;
+
+	return step;	
+}
+
+
+
 
 //---------------------------------
 // DistToRT
