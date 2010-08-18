@@ -123,7 +123,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	 point->chisq=0.; //??
 	 if (vhits[j]->bar<41 && uhits[i]->bar<41){
-	   point->pos.SetXYZ(vy,ux,618.81);
+	   point->pos.SetXYZ(ux,vy,618.81);
 	   point->t=(utof+vtof)/2.;
 	   point->dedx=(sqrt(uhits[i]->dE_north*uhits[i]->dE_south)
 			+sqrt(vhits[j]->dE_north*vhits[j]->dE_south))/2.;

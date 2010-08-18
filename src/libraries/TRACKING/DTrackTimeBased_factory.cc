@@ -51,7 +51,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 	DEBUG_HISTS = true;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
-	MOMENTUM_CUT_FOR_PROTON_ID=2.0;
+	MOMENTUM_CUT_FOR_PROTON_ID=3.0;
 
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
@@ -135,7 +135,7 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		if(!fom_chi2_sc)fom_chi2_sc = new TH1F("fom_chi2_sc","PID FOM: #chi^{2}/Ndf from SC", 1000, 0.0, 100.0);
 		if(!fom_chi2_bcal)fom_chi2_bcal = new TH1F("fom_chi2_bcal","PID FOM: #chi^{2}/Ndf from BCAL", 1000, 0.0, 100.0);
 		if (!time_based_start)
-		  time_based_start=new TH1F("time_based_start","t0 for time-based tracking",100,-20.,20.);
+		  time_based_start=new TH1F("time_based_start","t0 for time-based tracking",200,-10.,10.);
 
 		if (!fom_sc_match)
 		  fom_sc_match=new TH1F("fom_sc_match","#delta#phi match to SC",300,0.,1.);
@@ -318,10 +318,8 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   // For high momentum, the likelihood that the particle is a proton is small.
   // For now, assign a figure-of-merit of zero for particles with the proton 
   // mass hypothesis that exceed some momentum cut.
-  /*
   if (dtrack->mass()>0.9 
       && dtrack->momentum().Mag()>MOMENTUM_CUT_FOR_PROTON_ID) return 0.;
-  */
 
   // First ingredient is chi2 from the fit
   double trk_chi2=dtrack->chisq;
@@ -407,7 +405,7 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
 	fom_chi2_sc->Fill(sc_chi2);
   }
 
-//_DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<trk_chi2<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<endl;
+  // _DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<trk_chi2<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<" sc_chi2="<<sc_chi2<<endl;
 
   // Return a combined FOM that includes the tracking chi2 information, the 
   // dEdx result and the tof result where available.
@@ -441,6 +439,9 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
     track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,&my_s,
 					&tflight);
     double d=(tof_pos-proj_pos).Mag();
+    //printf("matching %f\n",d);
+    //tof_pos.Print();
+    //proj_pos.Print();
     if (d<dmin){
       dmin=d;
       mPathLength=my_s;
@@ -450,9 +451,9 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
   }
   
   // Check for a match 
-  double p=track->momentum().Mag();
-  double match_sigma=0.75+1./p/p;
-  if (dmin<3.*match_sigma){
+  //double p=track->momentum().Mag();
+  double match_cut=3.624+0.488/track->momentum().Mag();
+  if (dmin<match_cut){
     // Add the time and path length to the outer detector to the track object
     track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF);
     track->setPathLength(mPathLength,0.);
@@ -460,15 +461,18 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
     // Add DTOFPoint object as associate object
     track->AddAssociatedObject(tof_points[tof_match_id]);
 
-    // Calculate beta and use it to guess PID
+    // Compute the chi2 for the time-of-flight
     mEndTime=tof_points[tof_match_id]->t;
-    double mass=track->mass();  
-    double beta_hyp=1./sqrt(1.+mass*mass/p/p);
-    double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
+    //double mass=track->mass();  
+    //double beta_hyp=1./sqrt(1.+mass*mass/p/p);
+    //double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
     double t_var=TOF_SIGMA*TOF_SIGMA;
 
-    t_diff=mEndTime-mFlightTime;
+    double t_diff=mEndTime-mFlightTime
+      -(track->position().z()-65.)/SPEED_OF_LIGHT;//-mStartTime;
 	 
+    //printf("mass %f tdiff %f\n",track->mass(),t_diff);
+
 	 if(DEBUG_HISTS)fom_tdiff_tof->Fill(t_diff);
 
     // chi2
@@ -492,8 +496,8 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
   //  if (bcal_clusters.size()==0) return -1.;
 
   double p=track->momentum().Mag();
-  double mass=track->mass();  
-  double beta_hyp=1./sqrt(1.+mass*mass/p/p);
+  //  double mass=track->mass();  
+  //double beta_hyp=1./sqrt(1.+mass*mass/p/p);
 
   //Loop over bcal clusters
   double dmin=10000.;
@@ -511,13 +515,12 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
     double tflight=0.;
     //if (track->rt->GetIntersectionWithRadius(bcal_pos.Perp(),proj_pos,&my_s, &tflight) !=NOERROR) continue;
     //double d=(bcal_pos-proj_pos).Mag();
-    double d = track->rt->DistToRT(bcal_pos, &my_s);
+    double d = track->rt->DistToRTwithTime(bcal_pos,&my_s,&tflight);
     proj_pos = track->rt->GetLastDOCAPoint();
 
     if (d<dmin){
       dmin=d;
       mPathLength=my_s;
-		tflight = my_s/(beta_hyp*2.998E10)*1.0E9; // multiply beta by c and convert value to ns
       mFlightTime=tflight;
       bcal_match_id=k; 
       dz=proj_pos.z()-bcal_pos.z();
@@ -537,22 +540,19 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
     // Add DBCALShower object as associate object
     track->AddAssociatedObject(bcal_clusters[bcal_match_id]);
     
-    // Calculate beta and use it to guess PID
+    // Compute the chi2 for the time of flight
     mEndTime=bcal_clusters[bcal_match_id]->t;
-    double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
-    double E=bcal_clusters[bcal_match_id]->E; // This E is not fully corrected! (See DBCALPhoton_factory.cc)
-    double t_sigma=0.12154/sqrt(E)+0.17037*E-0.10843;
-    if (mass>0.9) t_sigma=0.1473/sqrt(E)+0.3431*E-0.1872;
-
-    //t_sigma=0.00255*pow(p,-2.52)+0.022;
-    t_sigma=0.00255*pow(p,-2.52)+0.220;
+    //double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
+    //double E=bcal_clusters[bcal_match_id]->E; // This E is not fully corrected! (See DBCALPhoton_factory.cc)
+    double t_sigma=0.00255*pow(p,-2.52)+0.220;
     double t_var=t_sigma*t_sigma;
 
-    t_diff=mEndTime-mFlightTime;
-	 if(DEBUG_HISTS)fom_tdiff_bcal->Fill(t_diff);
+    double t_diff=mEndTime-mFlightTime
+      -(track->position().z()-65.)/SPEED_OF_LIGHT;//-mStartTime;
+	 
+    if(DEBUG_HISTS)fom_tdiff_bcal->Fill(t_diff);
 
     // chi2
-    //return beta_diff*beta_diff/sigma_beta/sigma_beta;
     return t_diff*t_diff/t_var;
     }
 
@@ -599,7 +599,7 @@ double DTrackTimeBased_factory::MatchToSC(DTrackTimeBased *track,
     fom_sc_match->Fill(dphi_min);
   }
 
-  if (fabs(dphi_min)<0.235){
+  if (fabs(dphi_min)<0.08){
     double length=myz+sc_light_guide_length_cor;
     double atten_length=150.;
     if (myz>sc_pos[1].z()){
@@ -636,7 +636,6 @@ double DTrackTimeBased_factory::MatchToSC(DTrackTimeBased *track,
   
   return -1.;
 }
-
 
 
 
