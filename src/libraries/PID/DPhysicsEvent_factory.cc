@@ -128,7 +128,7 @@ jerror_t DPhysicsEvent_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// Loop until all particles have been assigned to a group.
 	vector< vector<partInfo_t *> > groups;
-	do{
+	while(!AllInGroups(parts)){
 		// Make a list of all particles that have not been assigned
 		// to a group
 		vector<const DHoughFind*> unassigned;
@@ -186,6 +186,7 @@ jerror_t DPhysicsEvent_factory::evnt(JEventLoop *loop, int eventnumber)
 			
 			if(pi_with_max_t==NULL){
 				_DBG_<<"pi_with_max_t==NULL. This should never happen! Complain to davidl@jlab.org"<<endl;
+				_DBG_<<"event number: "<<eventnumber<<endl;
 				break;
 			}
 			
@@ -198,7 +199,7 @@ jerror_t DPhysicsEvent_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Add the new group to the list of groups
 		groups.push_back(new_group);
 		
-	}while(!AllInGroups(parts));
+	};
 
 	// OK, we've now grouped the particles together into groups. Create a new
 	// DPhysicsEvent for each group
