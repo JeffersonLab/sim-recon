@@ -40,6 +40,22 @@ BEAM 12. 9.
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'hdgeant.hddm'
 
+c The following are used to automatically invoke the mcsmear program
+c to do the final stage digitization of hits after the simulation
+c stage is complete. This simply invokes the mcsmear program passing
+c it any optional arguments supplied here and then optionally deletes
+c the OUTFILE specified above leaving only the smeared file. This stage
+c can be invoked by hand afterwards, but having it done automatically
+c here allows hdgeant and mcsmear to function as though it were a single
+c program. The specific keys are as follows.
+c
+c POSTSMEAR  - set this 1 to auto-invoke the mcsmear program and 0 to not
+c DELETEUNSMEARED - set this to 1 to delete the OUTFILE after running mcsmear
+c MCSMEAROPTS - String to specify additional arguments to pass to mcsmear
+POSTSMEAR 0
+DELETEUNSMEARED 0
+c MCSMEAROPTS '-t1000 -d0'
+
 c The following card enables single-track generation (for testing).
 c For a single-particle gun, set the momentum (GeV/c), direction
 c theta,phi (degrees) and vertex position (cm), and for the particle

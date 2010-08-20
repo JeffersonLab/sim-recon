@@ -146,6 +146,15 @@
       data iskip/0/
       data infile/20*0/
       data outfile/20*0/
+
+      integer postsmear
+      integer mcsmearopts(64)
+      integer deleteunsmeared
+      common /smearing/ postsmear,mcsmearopts,deleteunsmeared
+      data mcsmearopts/64*0/
+      data postsmear/0/
+      data deleteunsmeared/0/
+
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
       real beamE0, beamEpeak, beamEmin, radColDist
@@ -217,6 +226,9 @@ C..geant..
       call ffkey('infile',infile,20,'MIXED')
       call ffkey('skip',iskip,1,'INTEGER')
       call ffkey('outfile',outfile,20,'MIXED')
+      call ffkey('postsmear',postsmear,1,'INTEGER')
+      call ffkey('mcsmearopts',mcsmearopts,64,'MIXED')
+      call ffkey('deleteunsmeared',deleteunsmeared,1,'INTEGER')
       call ffkey('beam',beamE0,4,'REAL')
       call ffkey('bfieldmap', bfield_map,20,'MIXED')
       call ffkey('bfieldtype', bfield_type,20,'MIXED')
@@ -337,7 +349,9 @@ C..geant..
 *
       call HDDSgeant3
       call Goptimize
-		call initcalibdb(bfield_type, bfield_map)
+      call initcalibdb(bfield_type, bfield_map)
+      call copytocplusplus(infile,outfile,postsmear,mcsmearopts
+     +,deleteunsmeared)
 *
 *             Open the HBOOK file for output
 *
