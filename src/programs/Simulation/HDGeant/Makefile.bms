@@ -2,10 +2,14 @@
 PACKAGES := CERNLIB:JANA:ROOT
 MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad -lhitutil
 #FFLAGS = -Wno-globals
-FFLAGS += -DCERNLIB_MOTIF
 CFLAGS += -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
 ADDITIONAL_MODULES += HDDM HDGEOMETRY hddsGeant3
 LIB_DIRS += $(HDDS_HOME)/lib/$(BMS_OSNAME)
+
+# A compatible motif is not so easily available on OSX
+ifneq ($(shell uname), Darwin)
+   FFLAGS += -DCERNLIB_MOTIF
+endif
 
 # The following line was used for the fine-grained DOCA calculations
 # These were disabled 6/24/2009 
@@ -29,4 +33,5 @@ ifeq ($(BMS_OSNAME), Darwin_macosx10.6-i386-gcc4.2.1)
 endif
 
 include $(HALLD_HOME)/src/BMS/Makefile.bin
+
 
