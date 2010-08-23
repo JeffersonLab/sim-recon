@@ -484,7 +484,8 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   //      (r*(cos(theta)+i sin(theta)))^(p/q)
   //                  = r^(p/q)*(cos(p*theta/q)+i sin(p*theta/q))
   //
-  double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
+  //double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
+  double temp=100.*sqrt(cbrt(R*R+Q1*Q1));
   double theta1=ONE_THIRD*atan2(Q1,R);
   double sum_over_2=temp*cos(theta1);
   double diff_over_2=-temp*sin(theta1);
@@ -855,14 +856,17 @@ jerror_t DHelicalFit::FitLineRiemann(){
   Delta=sumv*sumxx-sumx*sumx;
   // Track parameters tan(lambda) and z-vertex
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
+  //z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
+  sperp-=sperp_old;
+  z_vertex=z_last-sperp*tanl;
 
-  // Use the last z and s values to estimate the vertex position if the first
-  // method gave a result beyond the extent of the target
-  if (z_vertex<Z_MIN || z_vertex>Z_MAX){
-    sperp-=sperp_old;
-    double myz_vertex=z_last-sperp*tanl;
-    if (fabs(myz_vertex-Z_VERTEX)<fabs(z_vertex-Z_VERTEX)) z_vertex=myz_vertex;
+  if (z_vertex<Z_MIN){
+    z_vertex=Z_MIN;
+    tanl=(z_last-Z_MIN)/sperp;
+  }
+  else if (z_vertex>Z_MAX){
+    z_vertex=Z_MAX;
+    tanl=(z_last-Z_MAX)/sperp;
   }
   theta=M_PI_2-atan(tanl);
 
