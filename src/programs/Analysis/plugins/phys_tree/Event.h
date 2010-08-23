@@ -49,6 +49,7 @@ class Event:public TObject{
 		TVector3 vertex;			// Vertex position
 		TLorentzVector W;			// Final state 4-momentum of everything *except* the proton(s)
 
+		bool all_fiducial;			// True if the following three are true
 		bool all_mesons_fiducial;	// True if all pi+ and pi- are in fiducial region
 		bool all_photons_fiducial;	// True if all photons are in fiducial region
 		bool all_protons_fiducial;	// True if all protons are in fiducial region

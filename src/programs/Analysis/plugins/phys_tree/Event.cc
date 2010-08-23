@@ -80,6 +80,7 @@ void Event::Clear(void)
 	vertex.SetXYZ(0.0, 0.0, 65.0);
 	W.SetXYZT(0.0, 0.0, 0.0, 0.0);
 
+	all_fiducial = false;
 	all_mesons_fiducial = false;
 	all_photons_fiducial = false;
 	all_protons_fiducial = false;

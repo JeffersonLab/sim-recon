@@ -211,9 +211,16 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	FillEvent(evt_thrown, thr, rec);
 
 	// Copy fiducial cuts (based only on thrown values) to both trees
+	bool all_fiducial = all_mesons_fiducial && all_photons_fiducial && all_protons_fiducial;
+	evt_recon->all_fiducial = all_fiducial;
 	evt_recon->all_mesons_fiducial = all_mesons_fiducial;
 	evt_recon->all_photons_fiducial = all_photons_fiducial;
 	evt_recon->all_protons_fiducial = all_protons_fiducial;
+
+	evt_thrown->all_fiducial = all_fiducial;
+	evt_thrown->all_mesons_fiducial = all_mesons_fiducial;
+	evt_thrown->all_photons_fiducial = all_photons_fiducial;
+	evt_thrown->all_protons_fiducial = all_protons_fiducial;
 
 	// Copy event number to both trees and add this event to them
 	evt_recon->event = eventnumber;
