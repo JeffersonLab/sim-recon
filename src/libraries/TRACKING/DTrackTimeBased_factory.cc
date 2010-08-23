@@ -21,6 +21,7 @@ using namespace std;
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DTrackFitter.h>
 #include <TRACKING/DTrackHitSelector.h>
+#include <TRACKING/DMCTrackHit.h>
 using namespace jana;
 
 // count_common_members
@@ -48,7 +49,6 @@ jerror_t DTrackTimeBased_factory::init(void)
 	fitter = NULL;
 
 	DEBUG_HISTS = false;
-	DEBUG_HISTS = true;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
 	MOMENTUM_CUT_FOR_PROTON_ID=3.0;
@@ -57,6 +57,10 @@ jerror_t DTrackTimeBased_factory::init(void)
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_DEDX",MOMENTUM_CUT_FOR_DEDX);	
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_PROTON_ID",MOMENTUM_CUT_FOR_PROTON_ID);
+	
+	// Forces correct particle id (when available)
+	PID_FORCE_TRUTH = false;
+	gPARMS->SetDefaultParameter("TRKFIT:PID_FORCE_TRUTH", PID_FORCE_TRUTH);
 
 	return NOERROR;
 }
@@ -122,6 +126,8 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		fom_chi2_dedx = (TH1F*)gROOT->FindObject("fom_chi2_dedx");
 		fom_chi2_tof = (TH1F*)gROOT->FindObject("fom_chi2_tof");
 		fom_chi2_bcal = (TH1F*)gROOT->FindObject("fom_chi2_bcal");
+		fom = (TH1F*)gROOT->FindObject("fom");
+		chi2_trk_mom = (TH2F*)gROOT->FindObject("chi2_trk_mom");
 		time_based_start=(TH1F*)gROOT->FindObject("time_based_start");
 		fom_sc_match=(TH1F*)gROOT->FindObject("fom_sc_match");
 		fom_sc_delta_dedx_vs_p=(TH2F*)gROOT->FindObject("fom_sc_delta_dedx_vs_p");
@@ -134,9 +140,10 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		if(!fom_chi2_tof)fom_chi2_tof = new TH1F("fom_chi2_tof","PID FOM: #chi^{2}/Ndf from TOF", 1000, 0.0, 100.0);	
 		if(!fom_chi2_sc)fom_chi2_sc = new TH1F("fom_chi2_sc","PID FOM: #chi^{2}/Ndf from SC", 1000, 0.0, 100.0);
 		if(!fom_chi2_bcal)fom_chi2_bcal = new TH1F("fom_chi2_bcal","PID FOM: #chi^{2}/Ndf from BCAL", 1000, 0.0, 100.0);
+		if(!fom)fom = new TH1F("fom","Combined PID FOM", 1000, 0.0, 1.0);
+		if(!chi2_trk_mom)chi2_trk_mom = new TH2F("chi2_trk_mom","Track #chi^{2}/Ndf versus Kinematic #chi^{2}/Ndf", 1000, 0.0, 100.0, 1000, 0.,100.);
 		if (!time_based_start)
 		  time_based_start=new TH1F("time_based_start","t0 for time-based tracking",200,-10.,10.);
-
 		if (!fom_sc_match)
 		  fom_sc_match=new TH1F("fom_sc_match","#delta#phi match to SC",300,0.,1.);
 		if (!fom_sc_delta_dedx_vs_p)
@@ -174,6 +181,10 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   vector<const DFCALPhoton*>fcal_clusters;
   //eventLoop->Get(fcal_clusters);
 
+  vector<const DMCThrown*> mcthrowns;
+  loop->Get(mcthrowns);
+
+  //Temporary
   // Get SC hits
   vector<const DSCHit*>sc_hits;
   eventLoop->Get(sc_hits);
@@ -256,6 +267,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Add hits used as associated objects
 	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
 	const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
+
 	for(unsigned int m=0; m<cdchits.size(); m++)
 	  timebased_track->AddAssociatedObject(cdchits[m]);
 	for(unsigned int m=0; m<fdchits.size(); m++)
@@ -263,11 +275,18 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Add DTrack object as associate object
 	timebased_track->AddAssociatedObject(track);
-
-	// Add figure-of-merit based on chi2, dEdx and matching to outer 
-	// detectors
-	timebased_track->FOM=GetFOM(timebased_track,bcal_clusters,
-				    fcal_clusters,tof_points,sc_hits);
+	//_DBG_<< "eventnumber:   " << eventnumber << endl;
+	if (PID_FORCE_TRUTH) {
+	  // Add figure-of-merit based on track chi2 if track matches MC truth info (including PID); add FOM=0 otherwise
+	  timebased_track->FOM=GetTruthMatchingFOM(i,timebased_track,mcthrowns);
+	}
+	else {
+	  // Add figure-of-merit based on chi2, dEdx and matching to outer 
+	  // detectors
+	  timebased_track->FOM=GetFOM(timebased_track,bcal_clusters,
+				      fcal_clusters,tof_points,sc_hits);
+	}
+	//_DBG_<< "FOM:   " << timebased_track->FOM << endl;
 
 	_data.push_back(timebased_track);
 	break;
@@ -398,11 +417,12 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
   }
   
   if(DEBUG_HISTS){
-	fom_chi2_trk->Fill(trk_chi2);
-	fom_chi2_dedx->Fill(dedx_chi2);
-	fom_chi2_tof->Fill(tof_chi2);
-	fom_chi2_bcal->Fill(bcal_chi2);
-	fom_chi2_sc->Fill(sc_chi2);
+    fom_chi2_trk->Fill(trk_chi2);
+    fom_chi2_dedx->Fill(dedx_chi2);
+    fom_chi2_tof->Fill(tof_chi2);
+    fom_chi2_bcal->Fill(bcal_chi2);
+    fom_chi2_sc->Fill(sc_chi2);
+    fom->Fill(TMath::Prob(chi2_sum,ndof));
   }
 
   // _DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<trk_chi2<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<" sc_chi2="<<sc_chi2<<endl;
@@ -637,9 +657,6 @@ double DTrackTimeBased_factory::MatchToSC(DTrackTimeBased *track,
   return -1.;
 }
 
-
-
-
 //------------------
 // FilterDuplicates
 //------------------
@@ -727,3 +744,121 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 	_data = new_data;
 }
 
+// Returns a FOM based on chi2 of fit if track matches MC truth hit information and thrown mass and charge; 
+// returns a FOM=0 otherwise
+double DTrackTimeBased_factory::GetTruthMatchingFOM(int trackIndex,DTrackTimeBased *track,vector<const DMCThrown*>mcthrowns)  {
+  bool match=false;
+  
+  DLorentzVector fourMom = track->lorentzMomentum(); 
+  DLorentzVector gen_fourMom[mcthrowns.size()];
+  for(unsigned int i=0; i<mcthrowns.size(); i++){
+    gen_fourMom[i] = mcthrowns[i]->lorentzMomentum();
+  }
+  
+  // Get info for thrown track
+  int MAX_TRACKS = 10;
+  int Ncdc=-1, Nfdc=-1, thrownIndex=-1;
+  GetNhits(track, Ncdc, Nfdc, thrownIndex);
+  if(thrownIndex<=0 || thrownIndex>=MAX_TRACKS) return 0.;
+
+  double delta_pt_over_pt = (fourMom.Pt()-gen_fourMom[thrownIndex-1].Pt())/gen_fourMom[thrownIndex-1].Pt();
+  double delta_theta = (fourMom.Theta()-gen_fourMom[thrownIndex-1].Theta())*1000.0; // in milliradians
+  double delta_phi = (fourMom.Phi()-gen_fourMom[thrownIndex-1].Phi())*1000.0; // in milliradians
+  double chisq = pow(delta_pt_over_pt/0.04, 2.0) + pow(delta_theta/20.0, 2.0) + pow(delta_phi/20.0, 2.0);
+  
+  if (fabs(track->mass()-mcthrowns[thrownIndex-1]->mass())<0.01 && track->charge()==mcthrowns[thrownIndex-1]->charge()) 
+    match = true;
+  
+  double trk_chi2=track->chisq;
+  unsigned int ndof=track->Ndof;
+
+  if(DEBUG_HISTS){
+    chi2_trk_mom->Fill(trk_chi2/ndof,chisq/3.);
+    fom->Fill(TMath::Prob(trk_chi2,ndof));
+  }
+
+  /*_DBG_ << "trk_chi2: " << trk_chi2 << endl;
+  _DBG_ << "ndof: " << ndof << endl;
+  _DBG_ << "throwncharge: " << mcthrowns[thrownIndex-1]->charge() << endl;
+  _DBG_ << "trackcharge: " << track->charge() << endl;
+  _DBG_ << "chargediff: " << fabs(track->charge()-mcthrowns[thrownIndex-1]->charge()) << endl;
+  _DBG_ << "thrownmass: " << mcthrowns[thrownIndex-1]->mass() << endl;
+  _DBG_ << "trackmass: " << track->mass() << endl;
+  _DBG_ << "massdiff: " << fabs(track->mass()-mcthrowns[thrownIndex-1]->mass()) << endl;
+  _DBG_ << "chisq: " << chisq << endl;
+  _DBG_ << "match?: " << match << endl;
+  _DBG_ << "Ncdc: " << Ncdc << endl;
+  _DBG_ << "Nfdc: " << Nfdc << endl;
+  _DBG_ << "thrownIndex: " << thrownIndex << "   trackIndex: " << trackIndex << endl;
+  _DBG_<< "track   " << setprecision(4) << "Px: " << fourMom.Px() << "    Py: " << fourMom.Py() << "   Pz: " << fourMom.Pz() << "   E: " << fourMom.E() << "    M: " << fourMom.M() << "   pt: " << fourMom.Pt() << "   theta: " << fourMom.Theta() << "   phi: " << fourMom.Phi() << endl; 
+  _DBG_<< "thrown  " << setprecision(4) << "Px: " << gen_fourMom[thrownIndex-1].Px() << "    Py: " << gen_fourMom[thrownIndex-1].Py() << "   Pz: " << gen_fourMom[thrownIndex-1].Pz() << "   E: " << gen_fourMom[thrownIndex-1].E() << "    M: " << gen_fourMom[thrownIndex-1].M() << "   pt: " << gen_fourMom[thrownIndex-1].Pt() << "   theta: " << gen_fourMom[thrownIndex-1].Theta() << "   phi: " << gen_fourMom[thrownIndex-1].Phi() << endl;*/
+  
+
+  return (match) ?  TMath::Prob(trk_chi2,ndof) : 0.0; 
+}
+
+//------------------
+// GetNhits
+//------------------
+void DTrackTimeBased_factory::GetNhits(const DKinematicData *kd, int &Ncdc, int &Nfdc, int &track)
+{
+	vector<const DCDCTrackHit*> cdctrackhits;
+	vector<const DFDCPseudo*> fdcpseudos;
+	
+	// The DKinematicData object should be a DTrackCandidate, DTrackWireBased, or DParticle which
+	// has associated objects for the hits
+	kd->Get(cdctrackhits);
+	kd->Get(fdcpseudos);
+
+	int MAX_TRACKS = 10;
+	// The track number is buried in the truth hit objects of type DMCTrackHit. These should be 
+	// associated objects for the individual hit objects. We need to loop through them and
+	// keep track of how many hits for each track number we find
+
+	// CDC hits
+	vector<int> cdc_track_no(MAX_TRACKS, 0);
+	for(unsigned int i=0; i<cdctrackhits.size(); i++){
+		vector<const DMCTrackHit*> mctrackhits;
+		cdctrackhits[i]->Get(mctrackhits);
+		if(mctrackhits.size()==0)continue;
+		if(!mctrackhits[0]->primary)continue;
+		int track = mctrackhits[0]->track;
+		//_DBG_ << "cdc mchitssize: " << mctrackhits.size() << endl;
+		//_DBG_ << "cdc track: " << track << endl;
+		if(track>=0 && track<MAX_TRACKS)cdc_track_no[track]++;
+		//_DBG_ << "cdc_track_no[track]: " << cdc_track_no[track] << endl;
+	}
+	// FDC hits
+	vector<int> fdc_track_no(MAX_TRACKS, 0);
+	for(unsigned int i=0; i<fdcpseudos.size(); i++){
+		vector<const DMCTrackHit*> mctrackhits;
+		fdcpseudos[i]->Get(mctrackhits);
+		if(mctrackhits.size()==0)continue;
+		if(!mctrackhits[0]->primary)continue;
+		int track = mctrackhits[0]->track;
+		//_DBG_ << "fdc mchitssize: " << mctrackhits.size() << endl;
+		//_DBG_ << "fdc track: " << track << endl;
+		if(track>=0 && track<MAX_TRACKS)fdc_track_no[track]++;
+		//_DBG_ << "fdc_track_no[track]: " << fdc_track_no[track] << endl;
+	}
+	
+	// Find track number with most wires hit
+	int track_with_max_hits = 0;
+	int tot_hits_max = cdc_track_no[0] + fdc_track_no[0];
+	for(int i=1; i<MAX_TRACKS; i++){
+		int tot_hits = cdc_track_no[i] + fdc_track_no[i];
+		if(tot_hits > tot_hits_max){
+			track_with_max_hits=i;
+			tot_hits_max = tot_hits;
+		}
+		//_DBG_ << "tot_hits_max: " << tot_hits_max << endl;
+		//_DBG_ << "track_with_max_hits: " << track_with_max_hits << endl;
+	}
+	
+	Ncdc = cdc_track_no[track_with_max_hits];
+	Nfdc = fdc_track_no[track_with_max_hits];
+	
+	// If there are no hits on this track, then we really should report
+	// a "non-track" (i.e. track=-1)
+	track = tot_hits_max>0 ? track_with_max_hits:-1;
+}
