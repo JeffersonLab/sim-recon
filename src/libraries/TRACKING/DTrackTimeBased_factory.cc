@@ -665,7 +665,13 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 		for(unsigned int j=i+1; j<_data.size(); j++){
 			DTrackTimeBased *dtrack2 = _data[j];
 			if (dtrack2->candidateid==cand1) continue;
-			if (dtrack2->mass() != dtrack1->mass())continue;
+			
+			// Particles with the same mass but from different
+			// candidates are filtered at the Wire-based level.
+			// Here, it's possible to have multiple tracks with
+			// different masses that are clones due to that.
+			// Hence, we cut different mass clones is appropriate.
+			//if (dtrack2->mass() != dtrack1->mass())continue;
 
 			vector<const DCDCTrackHit*> cdchits2;
 			vector<const DFDCPseudo*> fdchits2;
@@ -675,6 +681,12 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 			// Count number of cdc and fdc hits in common
 			unsigned int Ncdc = count_common_members(cdchits1, cdchits2);
 			unsigned int Nfdc = count_common_members(fdchits1, fdchits2);
+			
+			if(DEBUG_LEVEL>3){
+				_DBG_<<"cand1:"<<cand1<<" cand2:"<<dtrack2->candidateid<<endl;
+				_DBG_<<"   Ncdc="<<Ncdc<<" cdchits1.size()="<<cdchits1.size()<<" cdchits2.size()="<<cdchits2.size()<<endl;
+				_DBG_<<"   Nfdc="<<Nfdc<<" fdchits1.size()="<<fdchits1.size()<<" fdchits2.size()="<<fdchits2.size()<<endl;
+			}
 
 			if(Ncdc!=cdchits1.size() && Ncdc!=cdchits2.size())continue;
 			if(Nfdc!=fdchits1.size() && Nfdc!=fdchits2.size())continue;
@@ -686,8 +698,12 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 
 			if(total1<total2){
 				indexes_to_delete.insert(i);
-			}else{
+			}else if(total2<total1){
 				indexes_to_delete.insert(j);
+			}else if(dtrack1->FOM > dtrack2->FOM){
+				indexes_to_delete.insert(j);
+			}else{
+				indexes_to_delete.insert(i);
 			}
 		}
 	}
