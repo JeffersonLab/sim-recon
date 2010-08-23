@@ -22,6 +22,8 @@
 #define MAX_ITER 10
 #define TARGET_LENGTH 30.0 //cm
 #define MIN_TANL 2.0
+#define ONE_THIRD  0.33333333333333333
+#define SQRT3      1.73205080756887719
 
 // Variance for position along wire using PHENIX angle dependence, transverse
 // diffusion, and an intrinsic resolution of 127 microns.
@@ -160,6 +162,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   double z=0,zlast=0;
   double oldx=XYZ(start,0);
   double oldy=XYZ(start,1);
+  // printf("<<<<<<<<\n");
   //for (unsigned int k=start;k<n-1;k++){
   for (unsigned int k=start;k<n;k++){
     zlast=z;
@@ -178,7 +181,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
       sumx+=XYZ(k,2)*inv_var;
       sumxx+=XYZ(k,2)*XYZ(k,2)*inv_var;
       sumxy+=sperp*XYZ(k,2)*inv_var;
-
+      
       // Save the current x and y coordinates
       oldx=XYZ(k,0);
       oldy=XYZ(k,1);
@@ -191,12 +194,17 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   // Error in tanl 
   var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
   
-  if (tanl<0){ // a negative tanl makes no sense for FDC segments if we 
-    // assume that the particle came from the target
-    tanl*=-1.;
-  }
+  // Vertex position
   sperp-=sperp_old; 
-  zvertex=zlast-tanl*sperp;
+  if (tanl<0){ 
+    // a negative tanl makes no sense for FDC segments if we 
+    // assume that the particle came from the target
+    zvertex=Z_TARGET;
+    tanl=(zlast-zvertex)/sperp;
+  }
+  else{
+    zvertex=zlast-tanl*sperp;
+  }
 
   return NOERROR;
 }
@@ -339,8 +347,6 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
   DMatrix X(n,3);
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
-  double B0,B1,B2,Q,Q1,R,sum,diff;
-  double theta,lambda_min;
   // vector of ones
   DMatrix OnesT(1,n);
   double W_sum=0.;
@@ -381,10 +387,10 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
   // The characteristic equation is 
   //   lambda^3+B2*lambda^2+lambda*B1+B0=0 
   //
-  B2=-(A(0,0)+A(1,1)+A(2,2));
-  B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)+A(1,1)*A(2,2)
-    -A(2,1)*A(1,2);
-  B0=-A.Determinant();
+  double B2=-(A(0,0)+A(1,1)+A(2,2));
+  double B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)
+    +A(1,1)*A(2,2)-A(2,1)*A(1,2);
+  double B0=-A.Determinant();
   if(B0==0 || !finite(B0))return UNRECOVERABLE_ERROR;
 
   // The roots of the cubic equation are given by 
@@ -401,9 +407,9 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
   // We divide Q and R by a safety factor to prevent multiplying together 
   // enormous numbers that cause unreliable results.
 
-  Q=(3.*B1-B2*B2)/9.e4; 
-  R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
-  Q1=Q*Q*Q+R*R;
+  double Q=(3.*B1-B2*B2)/9.e4; 
+  double R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
+  double Q1=Q*Q*Q+R*R;
   if (Q1<0) Q1=sqrt(-Q1);
   else{
     return VALUE_OUT_OF_RANGE;
@@ -413,12 +419,13 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
   //      (r*(cos(theta)+i sin(theta)))^(p/q)
   //                  = r^(p/q)*(cos(p*theta/q)+i sin(p*theta/q))
   //
-  double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
-  theta=atan2(Q1,R)/3.;
-  sum=2.*temp*cos(theta);
-  diff=-2.*temp*sin(theta);
+  //double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
+  double temp=100.*sqrt(cbrt(R*R+Q1*Q1));
+  double theta1=ONE_THIRD*atan2(Q1,R);
+  double sum_over_2=temp*cos(theta1);
+  double diff_over_2=-temp*sin(theta1);
   // Third root
-  lambda_min=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
+  double lambda_min=-ONE_THIRD*B2-sum_over_2+SQRT3*diff_over_2;
 
   // Normal vector to plane
   N[0]=1.;
@@ -428,12 +435,9 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
     /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min));
   
   // Normalize: n1^2+n2^2+n3^2=1
-  sum=0.;
+  double denom=sqrt(N[0]*N[0]+N[1]*N[1]+N[2]*N[2]);
   for (int i=0;i<3;i++){
-    sum+=N[i]*N[i];
-  }
-  for (int i=0;i<3;i++){
-    N[i]/=sqrt(sum);
+    N[i]/=denom;
   }
       
   // Distance to origin

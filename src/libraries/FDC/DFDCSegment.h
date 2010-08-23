@@ -37,6 +37,17 @@ class DFDCSegment : public JObject {
 		/// Default constructor
 		///
 		DFDCSegment(){}
+		DFDCSegment(const DFDCSegment &segment){
+		  this->xc=segment.xc;
+		  this->yc=segment.yc;
+		  this->rc=segment.rc;
+		  this->tanl=segment.tanl;
+		  this->q=segment.q;
+		  this->D=segment.D;
+		  this->z_vertex=segment.z_vertex;
+		  this->phi0=segment.phi0;
+		  this->Phi1=segment.Phi1;
+		}
 
 		double chisq;
 
