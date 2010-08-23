@@ -829,8 +829,10 @@ if(Nswim_steps<1)_DBG__;
 	double c = 0.5*(beta/Ro2);
 	//  double d = sqrt(pow(b,3.0) + pow(c,2.0));
 	double d=sqrt(b*b*b+c*c);
-	double q = pow(d-c, ONE_THIRD);
-	double p = pow(d+c, ONE_THIRD);
+	//double q = pow(d-c, ONE_THIRD);
+	//double p = pow(d+c, ONE_THIRD);
+	double p=cbrt(d+c);
+	double q=cbrt(d-c);
 	double phi = q - p;
 	double phi2=phi*phi;
 
@@ -953,7 +955,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	// Loop over swim steps and find the one closest to the plane
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;
-	double min_dist = 1.0E6;
+	//double min_dist = 1.0E6;
 	double old_dist=1.0e6;
 	int istep=-1;
 
@@ -1295,8 +1297,10 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	  double c=0.5*(a0-ONE_THIRD*a1*a2)+a2*a2sq/27.0;
 		//double d = sqrt(pow(b, 3.0) + pow(c, 2.0)); // occasionally, this is zero. See below
 		double d=sqrt(b*b*b+c*c);
-		double q = pow(d - c, ONE_THIRD);
-		double p = pow(d + c, ONE_THIRD);
+		//double q = pow(d - c, ONE_THIRD);
+		//double p = pow(d + c, ONE_THIRD);
+		double q=cbrt(d-c);
+		double p=cbrt(d+c);
 
 		double w0 = q - p;
 		//phi = w0 - a2/3.0;
