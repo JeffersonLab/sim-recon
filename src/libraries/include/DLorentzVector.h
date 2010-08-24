@@ -91,6 +91,10 @@ class DLorentzVector{
 inline DLorentzVector operator+(const DLorentzVector &v1,const DLorentzVector &v2){
   return DLorentzVector(v1.Vect()+v2.Vect(),v1.E()+v2.E());
 }
+//Subtraction 
+inline DLorentzVector operator-(const DLorentzVector &v1,const DLorentzVector &v2){
+  return DLorentzVector(v1.Vect()-v2.Vect(),v1.E()-v2.E());
+}
 
 #endif // USE_SIMD
 
