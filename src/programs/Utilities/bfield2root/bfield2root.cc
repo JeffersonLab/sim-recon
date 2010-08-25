@@ -162,6 +162,8 @@ int main(int narg, char *argv[])
 	Btot_vs_r_vs_z_tof->SetXTitle("z (cm)");
 	Btot_vs_r_vs_z_tof->SetYTitle("r (cm)");
 	Btot_vs_r_vs_z_tof->SetStats(0);
+	TH2D *Bz_vs_r_vs_z_tof = (TH2D*)Btot_vs_r_vs_z_tof->Clone("Bz_vs_r_vs_z_tof");
+	TH2D *Br_vs_r_vs_z_tof = (TH2D*)Btot_vs_r_vs_z_tof->Clone("Br_vs_r_vs_z_tof");
 	for(int ibin=1; ibin<=Btot_vs_r_vs_z_tof->GetNbinsX(); ibin++){
 		double z = Btot_vs_r_vs_z_tof->GetXaxis()->GetBinCenter(ibin);
 		for(int jbin=1; jbin<=Btot_vs_r_vs_z_tof->GetNbinsY(); jbin++){
@@ -177,8 +179,11 @@ int main(int narg, char *argv[])
 				dBydx, dBydy, dBydz,
 				dBzdx, dBzdy, dBzdz);
 			double Btot = sqrt(Bx*Bx + By*By + Bz*Bz);
+			double Br = sqrt(Bx*Bx + By*By);
 			
 			Btot_vs_r_vs_z_tof->SetBinContent(ibin, jbin, Btot);
+			Bz_vs_r_vs_z_tof->SetBinContent(ibin, jbin, Bz);
+			Br_vs_r_vs_z_tof->SetBinContent(ibin, jbin, Br);
 		}
 	}
 
