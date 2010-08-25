@@ -22,7 +22,7 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_VAR 1.0 // cm^2
+#define BEAM_VAR 0.09 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
 #define Z_MAX 85.0
@@ -1009,7 +1009,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   //  if (sqrt(x*x+y*y)>FDC_OUTER_RADIUS) return VALUE_OUT_OF_RANGE;
 
   // Track parameters
-  double kappa=segment->q/(2.*segment->rc);
+  //double kappa=segment->q/(2.*segment->rc);
   double my_phi0=segment->phi0;
   double my_tanl=segment->tanl;
   double z0=segment->z_vertex;
@@ -1017,7 +1017,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   // Useful intermediate variables
   double cosp=cos(my_phi0);
   double sinp=sin(my_phi0);
-  double twoks=2.*kappa*(z-z0)/my_tanl;
+  // double twoks=2.*kappa*(z-z0)/my_tanl;
+  double twoks=segment->q*(z-z0)/(my_tanl*segment->rc);
   double sin2ks=sin(twoks);
   double cos2ks=cos(twoks); 
 
@@ -1040,26 +1041,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(const doubl
   double cosphi=cos(phi0);
   double sinphi=sin(phi0);
   double d=yc-q*rc*cosphi;
-		
+
   mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);	  
   pos.SetXYZ(-d*sinphi,d*cosphi,z_vertex);
 
-  // Fix the momentum and position if the z-position is nonsense
-  if (z_vertex<0){
-    double sperp=(Z_VERTEX-z_vertex)/tanl;
-    double kappa=q/2./rc;
-    double twoks=2.*kappa*sperp;
-    double sin2ks=sin(twoks);
-    double cos2ks=cos(twoks);
-    double one_minus_cos2ks=1.-cos2ks;
-    double one_over_2k=1./(2.*kappa);
-    pos.SetXYZ(pos.x()
-	       +(cosphi*sin2ks-sinphi*one_minus_cos2ks)*one_over_2k,
-	       pos.y()
-	       +(sinphi*sin2ks+cosphi*one_minus_cos2ks)*one_over_2k,
-	       Z_VERTEX);
-    mom.SetX(pt*(cosphi*cos2ks-sinphi*sin2ks));
-    mom.SetY(pt*(sinphi*cos2ks+cosphi*sin2ks));
-  }
   return NOERROR;
 }
