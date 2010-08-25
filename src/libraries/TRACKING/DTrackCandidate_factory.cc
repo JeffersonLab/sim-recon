@@ -170,11 +170,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	if (got_match){
 	  unsigned int cdc_index=cdc_forward_ids[jmin];
 
-	  // Remove the CDC candidate from the id list because we 
-	  // found a match
-	  cdc_forward_ids.erase(cdc_forward_ids.begin()+jmin);
-	  num_forward_cdc_cands_remaining--;
-
 	  // Mark the FDC candidate as matched
 	  forward_matches[i]=1;
 	  num_fdc_cands_remaining--;
@@ -185,7 +180,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	  // Create new track candidate object 
 	  DTrackCandidate *can = new DTrackCandidate;
-
+	  can->setCharge(srccan->charge());
+	  
 	  // Add cdc and fdc hits to the track as associated objects
 	  unsigned int num_fdc_hits=0;
 	  for (unsigned int m=0;m<segments.size();m++)
@@ -234,8 +230,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      && cdchits.size()>num_fdc_hits){
 	    can->setCharge(cdctrackcandidates[cdc_index]->charge());
 	  }
-	  else
-	    can->setCharge(srccan->charge());
 
 	  // Fit the points to a circle
 	  if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){	  
@@ -271,8 +265,13 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  }
 	  	 	  
 	  _data.push_back(can);	    
+	
+	  // Remove the CDC candidate from the id list because we 
+	  // found a match
+	  cdc_forward_ids.erase(cdc_forward_ids.begin()+jmin);
+	  num_forward_cdc_cands_remaining--;
 	}
-      } 
+      }
     }
    
     if (!got_match){
@@ -323,10 +322,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  }
 	}
 	if (num_match==num_axial && num_match>0){
-	  // Remove the CDC candidate from the list
-	  cdc_forward_ids.erase(cdc_forward_ids.begin()+j); 
-	  num_forward_cdc_cands_remaining--;
-	 
 	  // Mark the FDC candidate as matched
 	  forward_matches[i]=1;
 	  num_fdc_cands_remaining--;
@@ -371,9 +366,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      && cdchits.size()>num_fdc_hits){
 	    can->setCharge(cdctrackcandidates[cdc_index]->charge());
 	  }
-	  else
-	    can->setCharge(srccan->charge());
-
 
 	  // Fit the points to a circle
 	  if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
@@ -388,7 +380,11 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  }
 	    
 	  _data.push_back(can);
-	  
+	
+	  // Remove the CDC candidate from the list
+	  cdc_forward_ids.erase(cdc_forward_ids.begin()+j); 
+	  num_forward_cdc_cands_remaining--;
+  
 	  break;
 	}
       } // loop over forward cdc candidates
@@ -396,7 +392,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   }
 
   // If starting with the fdc candidates did not lead to a complete set of
-  // CDC-FDC matches, try looping over the remaing CDC candidates that point
+  // CDC-FDC matches, try looping over the remaining CDC candidates that point
   // toward the FDC.
   vector<int>cdc_forward_matches(cdc_forward_ids.size());
   for (unsigned int i=0;i<cdc_forward_ids.size();i++){ 
@@ -406,23 +402,23 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     // Get hits already linked to this candidate from associated objects
     vector<const DCDCTrackHit *>cdchits;
     srccan->GetT(cdchits);
-   
-    // loop over fdc candidates
+    
+      // loop over fdc candidates
     for (unsigned int k=0;k<fdctrackcandidates.size();k++){
       if (forward_matches[k]==0){
 	const DTrackCandidate *fdccan = fdctrackcandidates[k];
-
+	
 	// Get the segment data
 	vector<const DFDCSegment *>segments;
 	fdccan->GetT(segments);
-
+	
 	// Initialize the stepper 
 	DMagneticFieldStepper stepper(bfield,srccan->charge());
-
+	
 	// Momentum and position vectors for the CDC candidate
 	DVector3 mom=srccan->momentum();
 	DVector3 pos=srccan->position();
-
+	
 	// Try to match unmatched fdc candidates
 	int num_match=0;
 	int num_hits=0;
@@ -448,7 +444,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	}
 	if (double(num_match)/double(num_hits)>0.5){
 	  DTrackCandidate *can = new DTrackCandidate;
-
+	  
 	  can->setMass(srccan->mass());
 	  can->setPosition(srccan->position());
 	  can->setCharge(srccan->charge());
@@ -457,14 +453,14 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // mark the fdc track candidate as matched
 	  forward_matches[k]=1; 
 	  num_fdc_cands_remaining--;
-
+	  
 	  //Mark the cdc track candidate as matched
 	  cdc_forward_matches[i]=1;
 	  
 	  // variables for calculating average Bz
 	  double Bz_avg=0.,Bx,By,Bz;
 	  unsigned int num_hits=0;
-
+	  
 	  // Redo helical fit with all available hits
 	  DHelicalFit fit; 
 	  for (unsigned int m=0;m<cdchits.size();m++){
@@ -488,7 +484,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
 	      bfield->GetField(x,y,z,Bx,By,Bz);
 	      Bz_avg-=Bz;
-
+		
 	      can->AddAssociatedObject(segments[m]->hits[n]);
 	    }
 	    num_hits+=segments[m]->hits.size();
@@ -506,7 +502,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
 	    can->setMomentum(mom);
 	  }
-
+	  
 	  _data.push_back(can);
 	  break;
 	}
@@ -705,7 +701,7 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(
   double z=segment->hits[0]->wire->origin.z();
 
   // Track parameters
-  double kappa=segment->q/(2.*segment->rc);
+  //double kappa=segment->q/(2.*segment->rc);
   double phi0=segment->phi0;
   double tanl=segment->tanl;
   double z0=segment->z_vertex;
@@ -714,20 +710,19 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(
   double cosp=cos(phi0);
   double sinp=sin(phi0);
   double sperp=(z-z0)/tanl;
-  double sin2ks=sin(2.*kappa*sperp);
-  double cos2ks=cos(2.*kappa*sperp); 
-  kappa=fabs(kappa);  // magnitude of curvature
+  //double twoks=2.*kappa*sperp;
+  double twoks=segment->q*sperp/segment->rc;
+  double sin2ks=sin(twoks);
+  double cos2ks=cos(twoks); 
 
   // Get Bfield
-  double Bx,By,Bz,B;
-  bfield->GetField(x,y,z,Bx,By,Bz);
-  //B=sqrt(Bx*Bx+By*By+Bz*Bz);
-  B=fabs(Bz);
+  double B=fabs(bfield->GetBz(x,y,z));
 
   // Momentum
-  double px=(cosp*cos2ks-sinp*sin2ks)*0.003*B/2./kappa;
-  double py=(sinp*cos2ks+cosp*sin2ks)*0.003*B/2./kappa;
-  double pz=0.003*B*tanl/2./kappa;
+  double pt=0.003*B*segment->rc;
+  double px=pt*(cosp*cos2ks-sinp*sin2ks);
+  double py=pt*(sinp*cos2ks+cosp*sin2ks);
+  double pz=pt*tanl;
 
   pos.SetXYZ(x,y,z);
   mom.SetXYZ(px,py,pz);
