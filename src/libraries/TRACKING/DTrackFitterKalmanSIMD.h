@@ -233,6 +233,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double MASS,mass2;
   double m_ratio; // electron mass/MASS
   double m_ratio_sq; // .. and its square
+
+  // Vertex time
+  double mT0;
 	
   bool do_multiple_scattering;
   bool do_energy_loss;

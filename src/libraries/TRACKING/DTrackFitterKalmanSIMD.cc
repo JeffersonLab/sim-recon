@@ -24,6 +24,7 @@
 #define EPS2 1.e-4
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
+#define MAX_CHI2 1e8
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
 #define Z_MIN 0.
@@ -245,6 +246,9 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
   if (my_fdchits.size()+my_cdchits.size()<6) return kFitFailed;
   
+  // start time
+  mT0=input_params.t0();
+  
   // Set starting parameters
   jerror_t error = SetSeed(input_params.charge(), input_params.position(), 
 			   input_params.momentum());
@@ -256,7 +260,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   m_ratio=ELECTRON_MASS/MASS;
   m_ratio_sq=m_ratio*m_ratio;
 
-  //  printf("mass %f\n",MASS);
+  //printf("--------------mass %f\n",MASS);
 
   // Do fit 
   if (DEBUG_LEVEL>0)
@@ -1720,7 +1724,8 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,double Z,
     double alpha=7.29735e-03; // Fine structure constant
     double one_over_beta2=1.+mass2/p2;
     double chi2c=0.157*(Z+1)*rho_Z_over_A*my_ds*one_over_beta2/p2;
-    double chi2a=2.007e-5*pow(Z,TWO_THIRDS)
+    double cbrtZ=cbrt(Z);
+    double chi2a=2.007e-5*cbrtZ*cbrtZ
       *(1.+3.34*Z*Z*alpha*alpha*one_over_beta2)/p2;
     double nu=0.5*chi2c/(chi2a*(1.-F));
     double sig2_ms=2.*chi2c*1e-6/(1.+F*F)*((1.+nu)/nu*log(1.+nu)-1.);
@@ -1834,16 +1839,18 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(DMatrix5x1 &Ss){
   C=(forward_traj[max].Ckk);
   JT=(forward_traj[max].JT);
   Ss=S;
+  //Cs=C;
 
   for (unsigned int m=max-1;m>0;m--){
     A=forward_traj[m].Ckk*JT*C.InvertSym();
     Ss=forward_traj[m].Skk+A*(Ss-S);
+    //Cs=forward_traj[m].Ckk+A*(Cs-C)*A.Transpose();
 
     S=forward_traj[m].Skk;
     C=forward_traj[m].Ckk;
     JT=forward_traj[m].JT;
   }
-
+  //Cs.Print();
   return NOERROR;
 }
 
@@ -1906,8 +1913,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   
   DMatrix5x1 S,Sc;
   DMatrix5x5 C0,C,Cc;
-  double chisq=1.e16,chisq_forward=1.e16,chisq_central=1.e16;
-  chisq_=1.e16;
+  double chisq=MAX_CHI2,chisq_forward=MAX_CHI2,chisq_central=MAX_CHI2;
+  chisq_=MAX_CHI2;
   // position along track. 
   DVector3 pos(x_,y_,z_); 
 
@@ -1994,7 +2001,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       //printf("forward iteration %d cdc size %d\n",iter2,forward_traj_cdc.size());
       
       if (error==NOERROR && forward_traj.size()> 1){
-	chisq_forward=1.e16;
+	chisq_forward=MAX_CHI2;
 	for (unsigned int iter=0;iter<10;iter++) {      	  
 	  if (iter>0){
 	    // Use the smoother to find the state vector at the first (most
@@ -2014,6 +2021,13 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    error=KalmanForwardCDC(anneal_factor,S,C,chisq);
 	    if (error!=NOERROR) break;
 	  }
+	  
+	  if (chisq>=MAX_CHI2 ){
+	    if (iter2>0) break;
+	    if (DEBUG_LEVEL>0) _DBG_<< "-- forward fit failed --" <<endl;
+	    return VALUE_OUT_OF_RANGE;
+	  }
+
 
 	  //printf("iter %d chi2 %f %f\n",iter2,chisq,chisq_forward);
 	  if (!isfinite(chisq)){
@@ -2199,6 +2213,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  chisq=0.;
 	  error=KalmanForwardCDC(anneal_factor,S,C,chisq);
 	  if (error!=NOERROR) break;
+
+	  if (chisq>=MAX_CHI2 ){
+	    if (iter2>0) break;
+	    if (DEBUG_LEVEL>0) _DBG_<< "-- cdc forward fit failed --" <<endl;
+	    return VALUE_OUT_OF_RANGE;
+	  }
+
+
 	  if (chisq==0.){
 	    chisq=1.e16;
 	    break;
@@ -2365,7 +2387,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
               
       if (error==NOERROR && central_traj.size()>1){
 	// Iteration for given reference trajectory 
-	chisq=1.e16;
+	chisq=MAX_CHI2;
 	for (int iter=0;iter<20;iter++){
 	  Cc=C0;
 	  if (iter>0){
@@ -2384,7 +2406,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  if (chisq_central==0.) break;
 	  
 	  //fom=anneal_factor*chisq_central;
-	  if (chisq_central>=1e16 ){
+	  if (chisq_central>=MAX_CHI2 ){
 	    if (iter2>0) break;
 	    if (DEBUG_LEVEL>0) _DBG_<< "-- central fit failed --" <<endl;
 	    return VALUE_OUT_OF_RANGE;
@@ -2924,7 +2946,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	double measurement=0.;
 	if (fit_type==kTimeBased)
 	  {	
-	  measurement=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
+	  measurement=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
 				       -central_traj[k].t);
 
 	  // Measurement error
@@ -3186,7 +3208,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	{
 	// Compute drift distance
 	double tflight=forward_traj[k].t;
-	double drift=DRIFT_SPEED*(my_fdchits[id]->t-tflight);  
+	double drift=DRIFT_SPEED*(my_fdchits[id]->t-mT0-tflight);  
 	drift*=(du>0?1.:-1.);
 	
 	// Angles of incidence to the measurement plane
@@ -3471,7 +3493,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	double V=0.2133; //1.6*1.6/12.;
 	if (fit_type==kTimeBased)
 	  {
-	  dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
+	  dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
 			      -forward_traj_cdc[k].t);
 	  /*
 	  printf("cdc hit %d dm %f t %f %f\n",cdc_index,dm,
