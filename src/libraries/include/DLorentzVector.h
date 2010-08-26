@@ -61,12 +61,17 @@ class DLorentzVector{
   double Px() const {return mP.x();};
   double Py() const {return mP.y();};
   double Pz() const {return mP.z();}; 
+  double Pt() const {return mP.Perp();};
   double P() const {return mP.Mag();};
   double E() const {return mE;};
   double Energy() const {return mE;};
 
   // Spherical coordinates of spatial component
   double Rho() const { return mP.Mag();};
+
+  // Angles
+  double Theta() const {return mP.Theta();};
+  double Phi() const {return mP.Phi();};
 
   // Kinematical quantities 
   double Beta() const { return P()/E();};
