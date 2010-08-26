@@ -47,7 +47,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   vector<DReferenceTrajectory*> rtv;
  
   // Optional debugging histograms
-  TH1F *fom_tdiff_bcal;
+  TH2F *fom_tdiff_bcal;
   TH1F *fom_tdiff_tof;
   TH1F *fom_chi2_trk;
   TH1F *fom_chi2_dedx;
@@ -59,6 +59,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   TH1F *fom_sc_match;
   TH2F *fom_sc_delta_dedx_vs_p;
   TH1F *fom_chi2_sc ;
+  TH2F *fom_bcal_E_over_p;
 
   void FilterDuplicates(void);  
   double GetFOM(DTrackTimeBased *dtrack,
