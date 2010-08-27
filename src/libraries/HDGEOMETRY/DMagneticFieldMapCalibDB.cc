@@ -64,10 +64,10 @@ int DMagneticFieldMapCalibDB::ReadMap(string namepath, int runnumber, string con
   // we do it this way. 
   if(!jcalib)return 0;
   
-  cout<<"Reading Magnetic field map from "<<namepath<<" ..."<<endl;
+  jout<<"Reading Magnetic field map from "<<namepath<<" ..."<<endl;
   vector< vector<float> > Bmap;
   jcalib->Get(namepath, Bmap);
-  cout<<Bmap.size()<<" entries found (";
+  jout<<Bmap.size()<<" entries found (";
   
   // The map should be on a grid with equal spacing in x,y, and z.
   // Here we want to determine the number of points in each of these
@@ -107,10 +107,10 @@ int DMagneticFieldMapCalibDB::ReadMap(string namepath, int runnumber, string con
   Nx = xvals.size();
   Ny = yvals.size();
   Nz = zvals.size();
-  cout<<" Nx="<<Nx;
-  cout<<" Ny="<<Ny;
-  cout<<" Nz="<<Nz;
-  cout<<" )  at 0x"<<hex<<(unsigned long)this<<dec<<endl;
+  jout<<" Nx="<<Nx;
+  jout<<" Ny="<<Ny;
+  jout<<" Nz="<<Nz;
+  jout<<" )  at 0x"<<hex<<(unsigned long)this<<dec<<endl;
   
   // Create 3D vector so we can index the values by [x][y][z]
   vector<DBfieldPoint_t> zvec(Nz);

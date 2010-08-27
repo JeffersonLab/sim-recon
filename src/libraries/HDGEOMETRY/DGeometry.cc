@@ -49,31 +49,31 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumbe
 	
 	// Inform user what's happening
 	if(material_namepaths.size()==0){
-		cout<<"No material maps found in calibration DB!!"<<endl;
+		jerr<<"No material maps found in calibration DB!!"<<endl;
 		return;
 	}
-	cout<<"Found "<<material_namepaths.size()<<" material maps in calib. DB for run "<<runnumber<<endl;
+	jout<<"Found "<<material_namepaths.size()<<" material maps in calib. DB for run "<<runnumber<<endl;
 	
 	if(false){ // save this to work off configuration parameter
-		cout<<"Will read in the following:"<<endl;
+		jout<<"Will read in the following:"<<endl;
 		for(unsigned int i=0; i<material_namepaths.size(); i++){
-			cout<<"  "<<material_namepaths[i]<<endl;
+			jout<<"  "<<material_namepaths[i]<<endl;
 		}
 	}
 
 	// Actually read in the maps
 	unsigned int Npoints_total=0;
-	cout<<endl; // make empty line so material map can overwrite it below
+	//cout<<endl; // make empty line so material map can overwrite it below
 	for(unsigned int i=0; i<material_namepaths.size(); i++){
 		// DMaterialMap constructor prints line so we conserve real
 		// estate by having each recycle the line
-		cout<<ansi_up(1)<<string(85, ' ')<<"\r";
+		//cout<<ansi_up(1)<<string(85, ' ')<<"\r";
 		DMaterialMap *mat = new DMaterialMap(material_namepaths[i], jcalib);
 		materialmaps.push_back(mat);
 		Npoints_total += (unsigned int)(mat->GetNr()*mat->GetNz());
 	}
-	cout<<ansi_up(1)<<string(85, ' ')<<"\r";
-	cout<<"Read in "<<materialmaps.size()<<" material maps containing "<<Npoints_total<<" grid points total"<<endl;
+	//cout<<ansi_up(1)<<string(85, ' ')<<"\r";
+	jout<<"Read in "<<materialmaps.size()<<" material maps containing "<<Npoints_total<<" grid points total"<<endl;
 }
 
 //---------------------------------

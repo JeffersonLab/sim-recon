@@ -35,13 +35,13 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	if(!jcalib)return;
 	
 	string blank(' ',80);
-	cout<<blank<<"\r"; cout.flush(); // clear line
-	cout<<"Reading "<<namepath<<" ... "; cout.flush();
+	//cout<<blank<<"\r"; cout.flush(); // clear line
+	//cout<<"Reading "<<namepath<<" ... "; cout.flush();
 	vector< vector<float> > Mmap;
 	jcalib->Get(namepath, Mmap);
-	cout<<(int)Mmap.size()<<" entries (";
+	//cout<<(int)Mmap.size()<<" entries (";
 	if(Mmap.size()<1){
-		cout<<")"<<endl;
+		//cout<<")"<<endl;
 		return;
 	}
 	
@@ -75,9 +75,9 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	z0 = zmin;
 	dr = (rmax-rmin)/(double)(Nr-1);
 	dz = (zmax-zmin)/(double)(Nz-1);
-	cout<<"Nr="<<Nr;
-	cout<<" Nz="<<Nz;
-	cout<<")"<<endl;
+	//cout<<"Nr="<<Nr;
+	//cout<<" Nz="<<Nz;
+	//cout<<")"<<endl;
 	
 	// The values in the table are stored with r,z at the center of the node.
 	// This means the actual map extends half a bin further out than the current

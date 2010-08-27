@@ -51,7 +51,7 @@ m_numActiveBlocks( 0 )
 		}
 	}
 		
-	cout << "FCAL Geometry initialized with " << m_numActiveBlocks 
+	jout << "FCAL Geometry initialized with " << m_numActiveBlocks 
 		<< " active blocks." << endl;
 }
 

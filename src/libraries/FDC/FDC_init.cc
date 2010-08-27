@@ -19,7 +19,7 @@ typedef JFactory<DFDCHit> DFDCHit_factory;
 
 jerror_t FDC_init(JEventLoop *loop)
 {
-  printf("Registering FDC factories");
+	jout<<"Registering FDC factories"<<endl;
   
 	/// Create and register FDC data factories
 	loop->AddFactory(new DFDCHit_factory());
