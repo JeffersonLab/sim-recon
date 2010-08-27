@@ -17,7 +17,8 @@ class trackres:public TObject{
 	public:
 
 		int event;
-		TVector3 pthrown;
+		TVector3 recon;
+		TVector3 thrown;
 		double deltak;
 		double pt_res; // relative
 		double p_res;  // relative

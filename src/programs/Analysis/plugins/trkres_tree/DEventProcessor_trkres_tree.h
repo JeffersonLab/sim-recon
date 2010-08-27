@@ -23,7 +23,6 @@ using namespace std;
 #include <PID/DKinematicData.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DMCTrackHit.h>
-#include <TRACKING/DTrack.h>
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>

@@ -79,11 +79,22 @@ jerror_t DEventProcessor_trkres_tree::brun(JEventLoop *loop, int runnumber)
 {
 	pthread_mutex_lock(&mutex);
 	
-	bfield = dynamic_cast<DApplication*>(loop->GetJApplication())->GetBfield();
+	DApplication *dapp =  dynamic_cast<DApplication*>(loop->GetJApplication());
+	if(dapp){
+		bfield = dapp->GetBfield();
+	}else{
+		_DBG_<<"Unable to get DApplication pointer! (JApplication* = "<<loop->GetJApplication()<<")"<<endl;
+		exit(-1);
+	}
+	
+	// These are copied from DTrackFitterALT1.cc
+	SIGMA_CDC = 0.0150;
+	SIGMA_FDC_ANODE = 0.0200;
+	SIGMA_FDC_CATHODE = 0.0200;
 
-	gPARMS->GetParameter("TRKFIT:SIGMA_CDC",						SIGMA_CDC);
-	gPARMS->GetParameter("TRKFIT:SIGMA_FDC_ANODE",				SIGMA_FDC_ANODE);
-	gPARMS->GetParameter("TRKFIT:SIGMA_FDC_CATHODE",			SIGMA_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_CDC",						SIGMA_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",				SIGMA_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",			SIGMA_FDC_CATHODE);
 
 	pthread_mutex_unlock(&mutex);
 
@@ -98,16 +109,18 @@ jerror_t DEventProcessor_trkres_tree::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DMCTrajectoryPoint*> trajpoints;
 	vector<const DCDCTrackHit*> cdchits;
 	vector<const DFDCPseudo*> fdchits;
+	const DMCThrown *mcthrown;
 
 	loop->Get(trajpoints);
 	loop->Get(cdchits);
 	loop->Get(fdchits);
+	loop->GetSingle(mcthrown);
 
 	// Assume all hits belong to this one thrown track
 	// (this should only be used on data procuded with
 	// NOSECONDARIES set to 1 !!)
 	vector<meas_t> meas; // container to hold measurements
-	
+
 	// Loop over CDC hits, adding them to list
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCoordinateSystem *wire = cdchits[i]->wire;
@@ -154,12 +167,15 @@ jerror_t DEventProcessor_trkres_tree::evnt(JEventLoop *loop, int eventnumber)
 	double p  = sqrt(pow((double)meas[0].traj->pz,2.0) + pow(pt,2.0));
 	double theta = asin(pt/p);
 	if(theta<0.0)theta+=2.0*M_PI;
+	
+	DVector3 dthrown = mcthrown->momentum();
 
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
 	
 	trkres.event = eventnumber;
-	trkres.pthrown.SetXYZ(meas[0].traj->px, meas[0].traj->py, meas[0].traj->pz);
+	trkres.recon.SetXYZ(meas[0].traj->px, meas[0].traj->py, meas[0].traj->pz);
+	trkres.thrown.SetXYZ(dthrown.X(), dthrown.Y(), dthrown.Z());
 	trkres.deltak = deltak;
 	trkres.pt_res = pt_res;
 	trkres.p_res = (pt_res*pt + fabs(pt/tan(theta)*theta_res))/sin(theta)/p;
