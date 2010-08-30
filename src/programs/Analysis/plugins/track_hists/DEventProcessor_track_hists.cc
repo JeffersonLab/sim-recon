@@ -13,6 +13,7 @@ using namespace std;
 #include "DEventProcessor_track_hists.h"
 
 #include <TROOT.h>
+#include <TVector3.h>
 
 #include <JANA/JApplication.h>
 #include <JANA/JEventLoop.h>
@@ -313,16 +314,26 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	double doca_tgt = rt->DistToRT(&target);
 	DVector3 tgt_doca = rt->GetLastDOCAPoint();
 	
+	// Convert some DVector3 objects into TVector3 objects
+	DVector3 tmp = thrown->momentum();
+	TVector3 thrown_mom(tmp.X(), tmp.Y(), tmp.Z());
+	tmp = recon->momentum();
+	TVector3 recon_mom(tmp.X(), tmp.Y(), tmp.Z());
+	tmp = thrown->position();
+	TVector3 thrown_pos(tmp.X(), tmp.Y(), tmp.Z());
+	tmp = candidate->position();
+	TVector3 can_pos(tmp.X(), tmp.Y(), tmp.Z());
+	
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
 
 	// Fill in track tree
 	trk.eventnumber = eventnumber;
-	trk.pthrown = thrown->momentum();
-	trk.pfit = recon->momentum();
-	trk.z_thrown = thrown->position().Z();
+	trk.pthrown = thrown_mom;
+	trk.pfit = recon_mom;
+	trk.z_thrown = thrown_pos.Z();
 	trk.z_fit = tgt_doca.Z();
-	trk.z_can = candidate->position().Z();
+	trk.z_can = can_pos.Z();
 	trk.r_fit = doca_tgt;
 	trk.NLRcorrect = NLRcorrect_this_track;
 	trk.NLRincorrect = NLRincorrect_this_track;
@@ -353,12 +364,16 @@ void DEventProcessor_track_hists::hit_info_t::FindLR(vector<const DMCTrackHit*> 
 	/// from the same place on the wire to the truth point. If the 2 vectors are within
 	/// +/- 90 degrees, then the trajectory is said to be on the correct side of the wire.
 	
+	DVector3 pos_doca_dvec3(pos_doca.X(), pos_doca.Y(), pos_doca.Z());
+	DVector3 mom_doca_dvec3(mom_doca.X(), mom_doca.Y(), mom_doca.Z());
+	
 	double s;
 	doca = rt->DistToRT(wire, &s);
-	rt->GetLastDOCAPoint(pos_doca, mom_doca);
-	DVector3 shift = wire->udir.Cross(mom_doca);
+	rt->GetLastDOCAPoint(pos_doca_dvec3, mom_doca_dvec3);
+	DVector3 shift = wire->udir.Cross(mom_doca_dvec3);
 	u = rt->GetLastDistAlongWire();
-	pos_wire = wire->origin + u*wire->udir;
+	DVector3 pos_wire_devc3 = wire->origin + u*wire->udir;
+	pos_wire.SetXYZ(pos_wire_devc3.X(), pos_wire_devc3.Y(), pos_wire_devc3.Z());
 
 	// Estimate TOF assuming pion
 	double mass = 0.13957;
@@ -368,10 +383,10 @@ void DEventProcessor_track_hists::hit_info_t::FindLR(vector<const DMCTrackHit*> 
 	
 	// Find the Lorentz correction based on current track (if applicable)
 	if(lorentz_def){
-		DVector3 shift = wire->udir.Cross(mom_doca);
+		DVector3 shift = wire->udir.Cross(mom_doca_dvec3);
 		shift.SetMag(1.0);
-		double LRsign = shift.Dot(pos_doca-pos_wire)<0.0 ? +1.0:-1.0;
-		double alpha = mom_doca.Angle(DVector3(0,0,1));
+		double LRsign = shift.Dot(pos_doca_dvec3-pos_wire_devc3)<0.0 ? +1.0:-1.0;
+		double alpha = mom_doca.Angle(TVector3(0,0,1));
 		u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, dist);
 	}else{
 		u_lorentz = 0.0;
@@ -384,11 +399,12 @@ void DEventProcessor_track_hists::hit_info_t::FindLR(vector<const DMCTrackHit*> 
 		LRfit = 0;
 		LRis_correct = false; // can't really tell what to set this to
 	}else{
-		DVector3 pos_truth(mctrackhit->r*cos(mctrackhit->phi), mctrackhit->r*sin(mctrackhit->phi), mctrackhit->z);
-		DVector3 pos_diff_truth = pos_truth-pos_wire;
-		DVector3 pos_diff_traj  = pos_doca-pos_wire;
+		TVector3 pos_truth(mctrackhit->r*cos(mctrackhit->phi), mctrackhit->r*sin(mctrackhit->phi), mctrackhit->z);
+		TVector3 pos_diff_truth = pos_truth-pos_wire;
+		TVector3 pos_diff_traj  = pos_doca-pos_wire;
 		
-		LRfit = shift.Dot(pos_diff_traj)<0.0 ? -1:1;
+		TVector3 shift_tvec3(shift.X(), shift.Y(), shift.Z());
+		LRfit = shift_tvec3.Dot(pos_diff_traj)<0.0 ? -1:1;
 		LRis_correct = pos_diff_truth.Dot(pos_diff_traj)>0.0;
 	}
 }

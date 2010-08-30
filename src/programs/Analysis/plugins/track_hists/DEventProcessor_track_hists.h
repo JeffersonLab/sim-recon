@@ -63,9 +63,9 @@ class DEventProcessor_track_hists:public JEventProcessor{
 				double u_lorentz;
 				int LRfit;
 				bool LRis_correct;
-				DVector3 pos_doca;
-				DVector3 mom_doca;
-				DVector3 pos_wire;
+				TVector3 pos_doca;
+				TVector3 mom_doca;
+				TVector3 pos_wire;
 
 				void FindLR(vector<const DMCTrackHit*> &mctrackhits, const DLorentzDeflections *lorentz_def=NULL);
 		};
