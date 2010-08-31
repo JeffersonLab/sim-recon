@@ -19,6 +19,8 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
+#include <HDGEOMETRY/DMagneticFieldMap.h>
+
 #include "radstep.h"
 
 class DEventProcessor_radlen_hists:public JEventProcessor{
@@ -54,6 +56,7 @@ class DEventProcessor_radlen_hists:public JEventProcessor{
 		void GapIntegration(TH1F *hin, TH1F *hout);
 		
 		pthread_mutex_t mutex;
+		DMagneticFieldMap *bfield;
 };
 
 #endif // _DEventProcessor_radlen_hists_

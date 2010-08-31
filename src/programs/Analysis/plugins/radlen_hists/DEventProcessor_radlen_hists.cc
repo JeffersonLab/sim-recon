@@ -14,6 +14,10 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
+extern JApplication *japp;
+
+#include <DANA/DApplication.h>
+
 #include "DEventProcessor_radlen_hists.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "TRACKING/DMCThrown.h"
@@ -104,6 +108,8 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 	tradstep = new TTree("radstep","Radlen steps");
 	tradstep->Branch("R","radstep",&rstep_ptr);
 
+	DApplication *dapp = dynamic_cast<DApplication*>(japp);
+	bfield = dapp->GetBfield();
 
 	// Go back up to the parent directory
 	dir->cd("../");
@@ -136,7 +142,10 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 	pthread_mutex_lock(&mutex);
 	rstep.stot = 0.0;
 	rstep.ix_over_Xo = 0.0;
-	rstep.pthrown = throwns[0]->momentum();
+	rstep.iB_cross_p_dl = 0.0;
+	rstep.iB_dl = 0.0;
+	DVector3 tmp = throwns[0]->momentum();
+	rstep.pthrown.SetXYZ(tmp.X(), tmp.Y(), tmp.Z());
 	for(unsigned int i=0;i<trajpoints.size();i++){
 		const DMCTrajectoryPoint *traj = trajpoints[i];
 		
@@ -150,6 +159,14 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 		nXo_vs_z_vs_theta->Fill(traj->z, theta, dnXo);
 		nXo_vs_r->Fill(r, dnXo);
 		nXo_vs_z->Fill(traj->z, dnXo);
+		
+		double Bx, By, Bz;
+		bfield->GetField(traj->x, traj->y, traj->z, Bx, By, Bz);
+		rstep.B.SetXYZ(Bx, By, Bz);
+		TVector3 mom(traj->px, traj->py, traj->pz);
+		TVector3 B_cross_p = rstep.B.Cross(mom);
+		rstep.iB_cross_p_dl += B_cross_p.Mag() * traj->step/mom.Mag();
+		rstep.iB_dl += rstep.B.Mag()*traj->step;
 
 		rstep.pos.SetXYZ(traj->x, traj->y, traj->z);
 		rstep.s = traj->step;
