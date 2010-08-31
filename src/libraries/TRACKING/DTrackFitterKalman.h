@@ -172,6 +172,16 @@ class DTrackFitterKalman: public DTrackFitter{
     state_D,
     state_z,
   };
+  enum state_cartesian{
+    state_Px,
+    state_Py,
+    state_Pz,
+    state_E,
+    state_X,
+    state_Y,
+    state_Z,
+  };
+
   void ResetKalman(void);
   jerror_t GetProcessNoise(double ds,double Z, double rho_Z_over_A, 
 			   const DMatrix &S,DMatrix &Q);
@@ -222,6 +232,8 @@ class DTrackFitterKalman: public DTrackFitter{
   jerror_t PropagateForward(int length,int &index,double &z,double zhit,
 			    double &step,DMatrix &S,bool &done);
 
+  DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C);
+
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
   //const DLorentzDeflections *lorentz_def;// pointer to lorentz correction map
@@ -238,7 +250,7 @@ class DTrackFitterKalman: public DTrackFitter{
   // Track parameters for forward region
   double x_,y_,tx_,ty_,q_over_p_;
   // Alternate track parameters for central region
-  double z_,phi_,tanl_,q_over_pt_;
+  double z_,phi_,tanl_,q_over_pt_,D_;
   // chi2 of fit
   double chisq_;
   // number of degrees of freedom

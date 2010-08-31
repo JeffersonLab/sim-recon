@@ -14,6 +14,7 @@
 
 #include <TH2F.h>
 #include <TROOT.h>
+#include <DMatrix.h>
 
 #include <iomanip>
 #include <math.h>
@@ -28,7 +29,7 @@
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
 #define Z_MIN 0.
-#define Z_MAX 175.
+#define Z_MAX 370.
 #define R_MAX 65.0
 #define R_MAX_FORWARD 88.0
 #ifndef SPEED_OF_LIGHT
@@ -281,23 +282,25 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   // Convert error matrix from internal representation to the type expected 
   // by the DKinematicData class
   DMatrixDSym errMatrix(5);
-  if (fcov.size()==0){
-    fit_params.setForwardParmFlag(false);
+  // The error matrix for the central parameterization always gets filled
+  for (unsigned int i=0;i<5;i++){
+    for (unsigned int j=i;j<5;j++){
+      errMatrix(i,j)=cov[i][j];
+    }
+  }
+  // Compute and fill the error matrix needed for kinematic fitting
+  fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
+  // Replace the tracking error matrix with the results for the forward 
+  // paramaterization if available
+  if (fcov.size()!=0){
+    fit_params.setForwardParmFlag(true);
     for (unsigned int i=0;i<5;i++){
       for (unsigned int j=i;j<5;j++){
 	errMatrix(i,j)=cov[i][j];
       }
     }
   }
-  else{
-    fit_params.setForwardParmFlag(true);
-    for (unsigned int i=0;i<5;i++){
-      for (unsigned int j=i;j<5;j++){
-	errMatrix(i,j)=fcov[i][j];
-      }
-    }
-  }
-
+  else fit_params.setForwardParmFlag(false);
   fit_params.setTrackingErrorMatrix(errMatrix);
   this->chisq = GetChiSq();
   this->Ndof = GetNDF();
@@ -1524,38 +1527,42 @@ jerror_t DTrackFitterKalmanSIMD::ConvertStateVector(double z,double wire_x,
 						    const DMatrix5x5 &C,
 						    DMatrix5x1 &Sc, 
 						    DMatrix5x5 &Cc){
-  double x=S(state_x),y=S(state_y);
-  double tx=S(state_tx),ty=S(state_ty),q_over_p=S(state_q_over_p);
-  double tsquare=tx*tx+ty*ty;
+  //double x=S(state_x),y=S(state_y);
+  //double tx=S(state_tx),ty=S(state_ty),q_over_p=S(state_q_over_p);
+  // Copy over to the class variables
+  x_=S(state_x), y_=S(state_y);
+  tx_=S(state_tx),ty_=S(state_ty);
+  q_over_p_=S(state_q_over_p);
+  double tsquare=tx_*tx_+ty_*ty_;
   double factor=1./sqrt(1.+tsquare);
   double tanl=1./sqrt(tsquare);
   double cosl=cos(atan(tanl));
-  Sc(state_q_over_pt)=q_over_p/cosl;
-  Sc(state_phi)=atan2(ty,tx);
+  Sc(state_q_over_pt)=q_over_p_/cosl;
+  Sc(state_phi)=atan2(ty_,tx_);
   Sc(state_tanl)=tanl;
-  Sc(state_D)=sqrt((x-wire_x)*(x-wire_x)+(y-wire_y)*(y-wire_y));
+  Sc(state_D)=sqrt((x_-wire_x)*(x_-wire_x)+(y_-wire_y)*(y_-wire_y));
   Sc(state_z)=z;
 
   // D is a signed quantity
-  double rc=1./fabs(Sc(state_q_over_pt)*qBr2p*bfield->GetBz(x,y,z));
-  double xc=x+rc*sin(Sc(state_phi));
-  double yc=y+rc*cos(Sc(state_phi));
+  double rc=1./fabs(Sc(state_q_over_pt)*qBr2p*bfield->GetBz(x_,y_,z));
+  double xc=x_+rc*sin(Sc(state_phi));
+  double yc=y_+rc*cos(Sc(state_phi));
   double r=sqrt(xc*xc+yc*yc);
-  if ((q_over_p>0 && r<rc) || (q_over_p<0 && r>rc)) Sc(state_D)*=-1.;
+  if ((q_over_p_>0 && r<rc) || (q_over_p_<0 && r>rc)) Sc(state_D)*=-1.;
 
   DMatrix5x5 J;
   double tanl3=tanl*tanl*tanl;
-  J(state_tanl,state_tx)=-tx*tanl3;
-  J(state_tanl,state_ty)=-ty*tanl3;
-  J(state_z,state_x)=1./tx;
-  J(state_z,state_y)=1./ty;
+  J(state_tanl,state_tx)=-tx_*tanl3;
+  J(state_tanl,state_ty)=-ty_*tanl3;
+  J(state_z,state_x)=1./tx_;
+  J(state_z,state_y)=1./ty_;
   J(state_q_over_pt,state_q_over_p)=1./cosl;
-  J(state_q_over_pt,state_tx)=-tx*q_over_p*tanl3*factor;
-  J(state_q_over_pt,state_ty)=-ty*q_over_p*tanl3*factor;
-  J(state_phi,state_tx)=-ty/tsquare;
-  J(state_phi,state_ty)=tx/tsquare;
-  J(state_D,state_x)=(x-wire_x)/Sc(state_D);
-  J(state_D,state_y)=(y-wire_y)/Sc(state_D);
+  J(state_q_over_pt,state_tx)=-tx_*q_over_p_*tanl3*factor;
+  J(state_q_over_pt,state_ty)=-ty_*q_over_p_*tanl3*factor;
+  J(state_phi,state_tx)=-ty_/tsquare;
+  J(state_phi,state_ty)=tx_/tsquare;
+  J(state_D,state_x)=(x_-wire_x)/Sc(state_D);
+  J(state_D,state_y)=(y_-wire_y)/Sc(state_D);
 
   Cc=J*C*J.Transpose();
 
@@ -1958,11 +1965,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     S(state_ty)=ty_;
     S(state_q_over_p)=q_over_p_; 
 
+    // Initial charge
+    double q=q_over_p_>0?1.:-1.;
+
     // Initial guess for forward representation covariance matrix
     C0(state_x,state_x)=1.;
     C0(state_y,state_y)=1.;
-    C0(state_tx,state_tx)=0.0001;
-    C0(state_ty,state_ty)=0.0001;
+    C0(state_tx,state_tx)=0.001;
+    C0(state_ty,state_ty)=0.001;
     C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
 
     DMatrix5x1 Slast(S);
@@ -2015,13 +2025,33 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  error=KalmanForward(anneal_factor,S,C,chisq);
 	  if (error!=NOERROR) break;
 
+	  // Check the charge relative to the hypothesis for protons
+	  if (MASS>0.9){
+	    double my_q=S(state_q_over_p)>0?1.:-1.;
+	    if (q!=my_q){
+	      //_DBG_ << "Sign change in fit for protons" <<endl;
+	      return VALUE_OUT_OF_RANGE;
+	    }
+	  }
+
 	  // include any hits from the CDC on the trajectory
 	  if (my_cdchits.size()>0 && forward_traj_cdc.size()>0){
 	    // Proceed into CDC
 	    error=KalmanForwardCDC(anneal_factor,S,C,chisq);
 	    if (error!=NOERROR) break;
+
+	    // Check the charge relative to the hypothesis for protons
+	    if (MASS>0.9){
+	      double my_q=S(state_q_over_p)>0?1.:-1.;
+	      if (q!=my_q){
+		//_DBG_ << "Sign change in fit for protons" <<endl;
+		return VALUE_OUT_OF_RANGE;
+	      }
+	    }
 	  }
 	  
+	  
+
 	  if (chisq>=MAX_CHI2 ){
 	    if (iter2>0) break;
 	    if (DEBUG_LEVEL>0) _DBG_<< "-- forward fit failed --" <<endl;
@@ -2083,6 +2113,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     phi_=Sc(state_phi);
     q_over_pt_=Sc(state_q_over_pt);
     tanl_=Sc(state_tanl);
+    D_=Sc(state_D);
 
     if (DEBUG_LEVEL>0)
       cout
@@ -2167,16 +2198,19 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     S(state_ty)=ty_;
     S(state_q_over_p)=q_over_p_; 
 
+    // Initial charge
+    double q=q_over_p_>0?1.:-1.;
+
     // Initial guess for forward representation covariance matrix
     C0(state_x,state_x)=1;
     C0(state_y,state_y)=1;
-    C0(state_tx,state_tx)=0.0001;
-    C0(state_ty,state_ty)=0.0001;
+    C0(state_tx,state_tx)=0.001;
+    C0(state_ty,state_ty)=0.001;
     C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
     
     DMatrix5x1 Slast(S);
     DMatrix5x5 Clast(C0);
-    
+
     double chisq_iter=chisq;
     double zvertex=65.;
     double anneal_factor=1.;
@@ -2194,9 +2228,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       // Initialize path length variable and flight time
       len=0;
       ftime=0.;
-            
+   
+      // Swim to create the reference trajectory
       jerror_t error=SetCDCForwardReferenceTrajectory(S);
-      
+   
       if (error==NOERROR && forward_traj_cdc.size()> 1){
 	chisq_forward=1.e16;
 	for (unsigned int iter=0;iter<10;iter++) {      
@@ -2213,6 +2248,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  chisq=0.;
 	  error=KalmanForwardCDC(anneal_factor,S,C,chisq);
 	  if (error!=NOERROR) break;
+
+	  // Check the charge relative to the hypothesis for protons
+	  if (MASS>0.9){
+	    double my_q=S(state_q_over_p)>0?1.:-1.;
+	    if (q!=my_q){
+	      //_DBG_ << "Sign change in fit for protons" <<endl;
+	      return VALUE_OUT_OF_RANGE;
+	    }
+	  }
 
 	  if (chisq>=MAX_CHI2 ){
 	    if (iter2>0) break;
@@ -2263,6 +2307,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       S=Slast;
       zvertex=z_;
     }
+
     // Extrapolate to the point of closest approach to the beam line
     z_=zvertex;
     ExtrapolateToVertex(Slast,Clast);
@@ -2274,6 +2319,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     phi_=Sc(state_phi);
     q_over_pt_=Sc(state_q_over_pt);
     tanl_=Sc(state_tanl);
+    D_=Sc(state_D);
    
     if (DEBUG_LEVEL>0)
       cout << "----- Pass: " 
@@ -2340,13 +2386,16 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     Sc(state_tanl)=tanl_;
     Sc(state_z)=z_;  
     Sc(state_D)=0.;
+    
+    // Initial charge
+    double q=q_over_pt_>0?1.:-1.;
 
     //C0(state_z,state_z)=1.;
-    C0(state_z,state_z)=2.0;
+    C0(state_z,state_z)=1.0;
     C0(state_q_over_pt,state_q_over_pt)=0.04*q_over_pt_*q_over_pt_;
-    C0(state_phi,state_phi)=0.0001;
+    C0(state_phi,state_phi)=0.001;
     C0(state_D,state_D)=1.0;
-    double dlambda=0.05;
+    double dlambda=0.1;
     //dlambda=0.1;
     double one_plus_tanl2=1.+tanl_*tanl_;
     C0(state_tanl,state_tanl)=(one_plus_tanl2)*(one_plus_tanl2)
@@ -2404,7 +2453,16 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq_central);
 	  if (error!=NOERROR) break;
 	  if (chisq_central==0.) break;
-	  
+	  	  
+	  // Check the charge relative to the hypothesis for protons
+	  if (MASS>0.9){
+	    double my_q=Sc(state_q_over_pt)>0?1.:-1.;
+	    if (q!=my_q){
+	      //_DBG_ << "Sign change in fit for protons" <<endl;
+	      return VALUE_OUT_OF_RANGE;
+	    }
+	  }
+
 	  //fom=anneal_factor*chisq_central;
 	  if (chisq_central>=MAX_CHI2 ){
 	    if (iter2>0) break;
@@ -2473,6 +2531,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     phi_=Sclast(state_phi);
     q_over_pt_=Sclast(state_q_over_pt);
     tanl_=Sclast(state_tanl);
+    D_=Sclast(state_D);
     x_=best_pos.x();
     y_=best_pos.y();
     z_=best_pos.z();
@@ -3629,7 +3688,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 // track representation at the end.
 jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 						     DMatrix5x5 &C){
-  DMatrix5x5 J;  //.Jacobian matrix
+  DMatrix5x5 J;  // Jacobian matrix
   DMatrix5x5 Q;  // multiple scattering matrix
 
   // position variables
@@ -3641,17 +3700,23 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   double dz_old=0.;
   double dEdx=0.;
 
+  //printf("step size %f\n",mStepSizeZ);
+  //  printf("Extraplolating from %f %f %f\n",S(state_x),S(state_y),z);
+  //printf("q/p %f\n",S(state_q_over_p));
+
   // Check the direction of propagation
   DMatrix5x1 S0;
   S0=S;
   Step(z,z+dz,dEdx,S0);
   double r2=S0(state_x)*S0(state_x)+S0(state_y)*S0(state_y);
   if (r2>r2_old) dz*=-1.;
-  // printf("vertex z %f r2 %f old %f %f\n",z+dz,r2,z,r2_old);
+  //printf("vertex z %f r2 %f old %f %f\n",z+dz,r2,z,r2_old);
 
   // material properties
   double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
   DVector3 pos;  // current position along trajectory
+
+  //double min_dist=1000.;
 
   while (z>Z_MIN && sqrt(r2_old)<65. && z<Z_MAX){
     // get material properties from the Root Geometry
@@ -3675,6 +3740,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     }
     if(fabs(dz)>mStepSizeZ) dz=sign*mStepSizeZ;
     if(fabs(dz)<MIN_STEP_SIZE)dz=sign*MIN_STEP_SIZE;
+
+    //printf("z %f dz %f q/p %f\n",z,dz,S(state_q_over_p));
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
@@ -3715,6 +3782,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
       Step(newz,newz+dz,dEdx,S);
       newz+=dz;
+
       break;
     }
     r2_old=r2;
@@ -3726,6 +3794,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   y_=S(state_y);
   z_=newz;
 
+  //  printf("vertex %f %f %f\n",x_,y_,z_);
   return NOERROR;
 }
 
@@ -3823,7 +3892,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
 	//Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
 	Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
 
-	//printf("new %f\n",pos.Perp());
 	break;
       }
       r_old=r;
@@ -3833,6 +3901,49 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   
   return NOERROR;
 }
+
+// Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
+// coordinates
+DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
+  DMatrixDSym C7x7(7);
+  DMatrix J(7,5);
+  double cosl=cos(atan(tanl_));
+  double pt=1./fabs(q_over_pt_);
+  double p=pt/cosl;
+  double p_sq=p*p;
+  double E=sqrt(mass2+p_sq);
+  double E3=E*E*E;
+  double pt_sq=1./(q_over_pt_*q_over_pt_);
+  double cosphi=cos(phi_);
+  double sinphi=sin(phi_);
+  double q=(q_over_pt_>0)?1.:-1.;
+  
+  J(state_Px,state_q_over_pt)=-q*pt_sq*cosphi;
+  J(state_Px,state_phi)=-pt*sinphi;
+  
+  J(state_Py,state_q_over_pt)=-q*pt_sq*sinphi;
+  J(state_Py,state_phi)=pt*cosphi;
+  
+  J(state_Pz,state_q_over_pt)=-q*pt_sq*tanl_;
+  J(state_Pz,state_tanl)=pt;
+  
+  J(state_E,state_q_over_pt)=q*pt*p_sq/E3;
+  J(state_E,state_tanl)=pt_sq*tanl_/E3;
+
+  J(state_X,state_phi)=-D_*cosphi;
+  J(state_X,state_D)=-sinphi;
+  
+  J(state_Y,state_phi)=-D_*sinphi;
+  J(state_Y,state_D)=cosphi;
+  
+  J(state_Z,state_z)=1.;
+
+  // C'= JCJ^T
+  C7x7=C.Similarity(J);
+
+  return C7x7;
+}
+
 
 
 #endif  // USE_SIMD

@@ -289,23 +289,25 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   // Convert error matrix from internal representation to the type expected 
   // by the DKinematicData class
   DMatrixDSym errMatrix(5);
-  if (fcov.size()==0){
-    fit_params.setForwardParmFlag(false);
+  // The error matrix for the central parameterization always gets filled
+  for (unsigned int i=0;i<5;i++){
+    for (unsigned int j=i;j<5;j++){
+      errMatrix(i,j)=cov[i][j];
+    }
+  }
+  // Compute and fill the error matrix needed for kinematic fitting
+  fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
+  // Replace the tracking error matrix with the results for the forward 
+  // paramaterization if available
+  if (fcov.size()!=0){
+    fit_params.setForwardParmFlag(true);
     for (unsigned int i=0;i<5;i++){
       for (unsigned int j=i;j<5;j++){
 	errMatrix(i,j)=cov[i][j];
       }
     }
   }
-  else{
-    fit_params.setForwardParmFlag(true);
-    for (unsigned int i=0;i<5;i++){
-      for (unsigned int j=i;j<5;j++){
-	errMatrix(i,j)=fcov[i][j];
-      }
-    }
-  }
-
+  else fit_params.setForwardParmFlag(false);
   fit_params.setTrackingErrorMatrix(errMatrix);
   
   this->chisq = GetChiSq();
@@ -2111,6 +2113,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     phi_=Sc(state_phi,0);
     q_over_pt_=Sc(state_q_over_pt,0);
     tanl_=Sc(state_tanl,0);
+    D_=Sc(state_D,0);
 
     if (DEBUG_LEVEL>0)
       cout
@@ -2299,6 +2302,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     phi_=Sc(state_phi,0);
     q_over_pt_=Sc(state_q_over_pt,0);
     tanl_=Sc(state_tanl,0);
+    D_=Sc(state_D,0);
    
     if (DEBUG_LEVEL>0)
       cout << "----- Pass: " 
@@ -2423,6 +2427,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     phi_=Sc(state_phi,0);
     q_over_pt_=Sc(state_q_over_pt,0);
     tanl_=Sc(state_tanl,0);
+    D_=Sc(state_D,0);
     x_=Slast(state_x,0);
     y_=Slast(state_y,0);
     z_=zvertex;
@@ -4046,6 +4051,51 @@ jerror_t DTrackFitterKalman::ExtrapolateToVertex(DVector3 &pos,
   
   return NOERROR;
 }
+
+// Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
+// coordinates
+DMatrixDSym DTrackFitterKalman::Get7x7ErrorMatrix(DMatrixDSym C){
+  DMatrixDSym C7x7(7);
+  DMatrix J(7,5);
+  double cosl=cos(atan(tanl_));
+  double pt=1./fabs(q_over_pt_);
+  double p=pt/cosl;
+  double p_sq=p*p;
+  double E=sqrt(mass2+p_sq);
+  double E3=E*E*E;
+  double pt_sq=1./(q_over_pt_*q_over_pt_);
+  double cosphi=cos(phi_);
+  double sinphi=sin(phi_);
+  double q=(q_over_pt_>0)?1.:-1.;
+  
+  J(state_Px,state_q_over_pt)=-q*pt_sq*cosphi;
+  J(state_Px,state_phi)=-pt*sinphi;
+  
+  J(state_Py,state_q_over_pt)=-q*pt_sq*sinphi;
+  J(state_Py,state_phi)=pt*cosphi;
+  
+  J(state_Pz,state_q_over_pt)=-q*pt_sq*tanl_;
+  J(state_Pz,state_tanl)=pt;
+  
+  J(state_E,state_q_over_pt)=q*pt*p_sq/E3;
+  J(state_E,state_tanl)=pt_sq*tanl_/E3;
+
+  J(state_X,state_phi)=-D_*cosphi;
+  J(state_X,state_D)=-sinphi;
+  
+  J(state_Y,state_phi)=-D_*sinphi;
+  J(state_Y,state_D)=cosphi;
+  
+  J(state_Z,state_z)=1.;
+
+  // C'= JCJ^T
+  C7x7=C.Similarity(J);
+
+  return C7x7;
+}
+
+
+
 
 //------------These routines are no longer in use-------------------------
 /*
