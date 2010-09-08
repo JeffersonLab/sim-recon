@@ -126,16 +126,6 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   geom->Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='1']", fdc_z1);
   fdc_origin[2]+=fdc_z1[2]-1.; 
 
-  // Number degrees of freedom
-  ndf=0;
-
-  // Step sizes
-  mStepSizeS=mStepSizeZ=0.3;
-  
-  // Mass hypothesis
-  MASS=0.13957; //charged pion
-  mass2=MASS*MASS;
-
   //DEBUG_HISTS=true;
   DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
@@ -219,7 +209,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 len = 0.0;
 	 ftime=0.0;
 	 x_=y_=tx_=ty_=q_over_p_ = 0.0;
-	 z_=phi_=tanl_=q_over_pt_ = 0.0;
+	 z_=phi_=tanl_=q_over_pt_ = D_= 0.0;
 	 chisq_ = 0.0;
 	 ndf = 0;
 	 //MASS=0.13957;
@@ -410,8 +400,10 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,double dz,
   bfield->GetField(x,y,z,Bx,By,Bz);
 
   // Don't let the magnitude of the momentum drop below some cutoff
-  if (fabs(q_over_p)>Q_OVER_P_MAX) 
+  if (fabs(q_over_p)>Q_OVER_P_MAX){
     q_over_p=Q_OVER_P_MAX*(q_over_p>0?1.:-1.);
+    dEdx=0.;
+  }
   // Try to keep the direction tangents from heading towards 90 degrees
   if (fabs(tx)>TAN_MAX) tx=TAN_MAX*(tx>0?1.:-1.); 
   if (fabs(ty)>TAN_MAX) ty=TAN_MAX*(ty>0?1.:-1.);
@@ -441,7 +433,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,double dz,
   D(state_ty)=kq_over_p_dsdz*dty_Bfac;
 
   D(state_q_over_p)=0.;
-  if (fabs(dEdx)>0. && fabs(q_over_p)<Q_OVER_P_MAX){
+  if (fabs(dEdx)>EPS){
     double q_over_p_sq=q_over_p*q_over_p;
     double E=sqrt(1./q_over_p_sq+mass2); 
     D(state_q_over_p)=-q_over_p_sq*q_over_p*E*dEdx*dsdz;
@@ -466,8 +458,10 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double z,double dz,
 			      dBydz,dBzdx,dBzdy,dBzdz);
 
   // Don't let the magnitude of the momentum drop below some cutoff
-  if (fabs(q_over_p)>Q_OVER_P_MAX) 
+  if (fabs(q_over_p)>Q_OVER_P_MAX){
     q_over_p=Q_OVER_P_MAX*(q_over_p>0?1.:-1.);
+    dEdx=0.;
+  }
   // Try to keep the direction tangents from heading towards 90 degrees
   if (fabs(tx)>TAN_MAX) tx=TAN_MAX*(tx>0?1.:-1.); 
   if (fabs(ty)>TAN_MAX) ty=TAN_MAX*(ty>0?1.:-1.);
@@ -548,7 +542,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double z,double dz,
 
   D(state_q_over_p)=0.;
   J(state_q_over_p,state_q_over_p)=0.;
-  if (fabs(dEdx)>0.){
+  if (fabs(dEdx)>EPS){
     double p2=1./(q_over_p*q_over_p);
     double E=sqrt(p2+mass2); 
     D(state_q_over_p)=-q_over_p/p2*E*dEdx*dsdz;
@@ -1367,6 +1361,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
   if (pt<PT_MIN) {
     pt=PT_MIN;
     q_over_pt=(1./PT_MIN)*(q_over_pt>0?1.:-1.);
+    dEdx=0.;
   }
   double kq_over_pt=qBr2p*q_over_pt;
   double factor=0.5*kq_over_pt*ds*cosl;
@@ -1376,12 +1371,11 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
   D1(state_q_over_pt)
     =kq_over_pt*q_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
   double one_over_cosl=1./cosl;
-  if (fabs(dEdx)>0){    
+  if (fabs(dEdx)>EPS){    
     double p=pt*one_over_cosl;
     double p_sq=p*p;
     double E=sqrt(p_sq+mass2);
-    if (1./p<Q_OVER_P_MAX)
-      D1(state_q_over_pt)+=-q_over_pt*E/p_sq*dEdx;
+    D1(state_q_over_pt)+=-q_over_pt*E/p_sq*dEdx;
   }
   D1(state_phi)
     =kq_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
@@ -1440,6 +1434,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double ds,
   if (pt<PT_MIN) {
     pt=PT_MIN;
     q_over_pt=q/PT_MIN;
+    dEdx=0.;
   }
   double kq_over_pt=qBr2p*q_over_pt;
   double factor=0.5*kq_over_pt*ds*cosl;
@@ -1494,7 +1489,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double ds,
     =2.*kq_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
   J1(state_q_over_pt,state_tanl)
     =kq_over_pt*q_over_pt*cosl3*By_cosphi_minus_Bx_sinphi;
-  if (fabs(dEdx)>0){  
+  if (fabs(dEdx)>EPS){  
     double p=pt*one_over_cosl;
     double p_sq=p*p;
     double m2_over_p2=mass2/p_sq;
@@ -2099,8 +2094,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       S=Slast;
       zvertex=z_;
     }
-    
-   
 
     // Extrapolate to the point of closest approach to the beam line
     z_=zvertex;
@@ -3701,8 +3694,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   double dEdx=0.;
 
   //printf("step size %f\n",mStepSizeZ);
-  //  printf("Extraplolating from %f %f %f\n",S(state_x),S(state_y),z);
-  //printf("q/p %f\n",S(state_q_over_p));
+  //printf("Extraplolating from %f %f %f\n",S(state_x),S(state_y),z);
+  //  printf("q/p %f\n",S(state_q_over_p));
 
   // Check the direction of propagation
   DMatrix5x1 S0;
@@ -3713,40 +3706,38 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   //printf("vertex z %f r2 %f old %f %f\n",z+dz,r2,z,r2_old);
 
   // material properties
-  double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
-  DVector3 pos;  // current position along trajectory
+  //double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
+  //DVector3 pos;  // current position along trajectory
 
   //double min_dist=1000.;
 
   while (z>Z_MIN && sqrt(r2_old)<65. && z<Z_MAX){
     // get material properties from the Root Geometry
-    pos.SetXYZ(S(state_x),S(state_y),z);
-    if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
-	!=NOERROR){
-      _DBG_ << "Material error in ExtrapolateToVertex! " << endl;
-      break;
-    }
+    //pos.SetXYZ(S(state_x),S(state_y),z);
+    //if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
+    //!=NOERROR){
+    // _DBG_ << "Material error in ExtrapolateToVertex! " << endl;
+    // break;
+    //}
 
     // Get dEdx for the upcoming step
-    dEdx=GetdEdx(S(state_q_over_p),K_rho_Z_over_A,rho_Z_over_A,LnI); 
-    
-    // Adjust the step size
-    double sign=(dz>0)?1.:-1.;
-    double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
-    if (fabs(dEdx)>EPS){
-      dz=sign
-	*(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
-	/fabs(dEdx)/ds_dz;
-    }
-    if(fabs(dz)>mStepSizeZ) dz=sign*mStepSizeZ;
-    if(fabs(dz)<MIN_STEP_SIZE)dz=sign*MIN_STEP_SIZE;
+    //dEdx=GetdEdx(S(state_q_over_p),K_rho_Z_over_A,rho_Z_over_A,LnI); 
 
-    //printf("z %f dz %f q/p %f\n",z,dz,S(state_q_over_p));
+    // Adjust the step size
+    //double sign=(dz>0)?1.:-1.;
+    //double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+    //if (fabs(dEdx)>EPS){
+    //  dz=sign
+    //	*(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+    //	/fabs(dEdx)/ds_dz;
+    //}
+    //if(fabs(dz)>mStepSizeZ) dz=sign*mStepSizeZ;
+    //if(fabs(dz)<MIN_STEP_SIZE)dz=sign*MIN_STEP_SIZE;
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    ds=ds_dz*dz;
-    GetProcessNoise(ds,Z,rho_Z_over_A,S,Q);
+    //ds=ds_dz*dz;
+    //GetProcessNoise(ds,Z,rho_Z_over_A,S,Q);
    
     newz=z+dz;
     // Compute the Jacobian matrix
@@ -3754,7 +3745,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
     // Propagate the covariance matrix
     //C=Q.AddSym(J*C*J.Transpose());
-    C=Q.AddSym(C.SandwichMultiply(J));
+    //C=Q.AddSym(C.SandwichMultiply(J));
+    C=C.SandwichMultiply(J);
 
     // Step through field
     ds=Step(z,newz,dEdx,S);
@@ -3778,7 +3770,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       
       // Propagate the covariance matrix
       //C=J*C*J.Transpose()+(dz/(newz-z))*Q;
-      C=((dz/newz-z)*Q).AddSym(C.SandwichMultiply(J));
+      //C=((dz/newz-z)*Q).AddSym(C.SandwichMultiply(J));
+      C=C.SandwichMultiply(J);
 
       Step(newz,newz+dz,dEdx,S);
       newz+=dz;
@@ -3832,40 +3825,42 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     
     // Track propagation loop
     while (Sc(state_z)>Z_MIN && Sc(state_z)<Z_MAX  
-	   && r<R_MAX){   
+	   && r<R_MAX){  
+
       // get material properties from the Root Geometry
-      double rho_Z_over_A=0.,Z=0,LnI=0.,K_rho_Z_over_A=0.;
-      if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
-	  !=NOERROR){
-	_DBG_ << "Material error in ExtrapolateToVertex! " << endl;
-	break;
-      }
+      //double rho_Z_over_A=0.,Z=0,LnI=0.,K_rho_Z_over_A=0.;
+      //if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
+      //	  !=NOERROR){
+      //	_DBG_ << "Material error in ExtrapolateToVertex! " << endl;
+      //	break;
+      //}
 
       // Get dEdx for the upcoming step
-      double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
-      dedx=GetdEdx(q_over_p,K_rho_Z_over_A,rho_Z_over_A,LnI); 
+      //double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
+      //dedx=GetdEdx(q_over_p,K_rho_Z_over_A,rho_Z_over_A,LnI); 
       
       // Adjust the step size
-      double sign=(ds>0)?1.:-1.;
-      if (fabs(dedx)>EPS){
-	ds=sign
-	  *(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
-	  /fabs(dedx);
-      }
-      if(fabs(ds)>mStepSizeS) ds=sign*mStepSizeS;
-      if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
+      //double sign=(ds>0)?1.:-1.;
+      //if (fabs(dedx)>EPS){
+      //ds=sign
+      //  *(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+      //  /fabs(dedx);
+      //}
+      //if(fabs(ds)>mStepSizeS) ds=sign*mStepSizeS;
+      //if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
 
       // Compute the Jacobian matrix
       StepJacobian(pos,origin,dir,ds,Sc,dedx,Jc);
       
       // Multiple scattering
-      GetProcessNoiseCentral(ds,Z,rho_Z_over_A,Sc,Q);
+      //GetProcessNoiseCentral(ds,Z,rho_Z_over_A,Sc,Q);
 
       // Propagate the covariance matrix
       //Cc=Jc*Cc*Jc.Transpose()+Q;
       //Cc=Q.AddSym(Jc*Cc*Jc.Transpose());
-      Cc=Q.AddSym(Cc.SandwichMultiply(Jc));
-      
+      //Cc=Q.AddSym(Cc.SandwichMultiply(Jc));
+      Cc=Cc.SandwichMultiply(Jc);
+
       // Propagate the state through the field
       S0=Sc;
       DVector3 old_pos=pos;
@@ -3890,7 +3885,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
       
 	// Propagate the covariance matrix
 	//Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
-	Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
+	//Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
+	Cc=Cc.SandwichMultiply(Jc);
 
 	break;
       }
