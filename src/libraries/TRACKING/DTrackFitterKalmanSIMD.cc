@@ -239,6 +239,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   
   // start time
   mT0=input_params.t0();
+  //mT0=0.;
   
   // Set starting parameters
   jerror_t error = SetSeed(input_params.charge(), input_params.position(), 
@@ -733,6 +734,9 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   // Energy loss straggling
   double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);
   Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
+
+  if (Q(state_q_over_pt,state_q_over_pt)>1.) 
+    Q(state_q_over_pt,state_q_over_pt)=1.;
 	  
   // Compute the Jacobian matrix and its transpose
   StepJacobian(newz,z,S,dEdx,J);
@@ -877,7 +881,10 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 			     central_traj[m].K_rho_Z_over_A);	
       Q(state_q_over_pt,state_q_over_pt)
 	=varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
-	*q_over_p_sq;
+	  *q_over_p_sq;
+   
+      if (Q(state_q_over_pt,state_q_over_pt)>1.) 
+	Q(state_q_over_pt,state_q_over_pt)=1.;
 
       // Compute the Jacobian matrix for back-tracking towards target
       StepJacobian(pos,origin,dir,-step_size,Sc,dedx,J);
@@ -976,6 +983,10 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
     Q(state_q_over_pt,state_q_over_pt)
       =varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
       *q_over_p_sq;
+    
+    if (Q(state_q_over_pt,state_q_over_pt)>1.) 
+      Q(state_q_over_pt,state_q_over_pt)=1.;
+    
 
     // Compute the Jacobian matrix and its transpose
     StepJacobian(pos,origin,dir,-step_size,Sc,dedx,J);
@@ -1151,6 +1162,9 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);	
   Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
 			            
+  if (Q(state_q_over_pt,state_q_over_pt)>1.) 
+    Q(state_q_over_pt,state_q_over_pt)=1.;
+
   // Compute the Jacobian matrix and its transpose
   StepJacobian(newz,z,S,dEdx,J);
       
@@ -2811,6 +2825,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   // path length increment
   double ds2=0.;
 
+  //printf(">>>>>>>>>>>>>>>>\n");
+
   // beginning position
   pos.SetXYZ(central_traj[0].pos.x()-Sc(state_D)*sin(Sc(state_phi)),
 	     central_traj[0].pos.y()+Sc(state_D)*cos(Sc(state_phi)),
@@ -2847,6 +2863,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     J=central_traj[k].J;
     // JT=central_traj[k].JT;
     Q=central_traj[k].Q;
+
+    //Q.Print();
+    //J.Print();
 
     // State S is perturbation about a seed S0
     //dS=Sc-S0_;

@@ -67,7 +67,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     len = 0.0;
     ftime=0.0;
     x_=y_=tx_=ty_=q_over_p_ = 0.0;
-    z_=phi_=tanl_=q_over_pt_ = 0.0;
+    z_=phi_=tanl_=q_over_pt_ = D_= 0.0;
     chisq_ = 0.0;
     ndf = 0;
 
