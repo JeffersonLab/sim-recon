@@ -337,18 +337,9 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
 				       vector<const DTOFPoint*>tof_points,
 				       vector<const DSCHit*>sc_hits)
 {
-
-  // For high momentum, the likelihood that the particle is a proton is small.
-  // For now, assign a figure-of-merit of zero for particles with the proton 
-  // mass hypothesis that exceed some momentum cut.
   double mass=dtrack->rt->GetMass();
-  if (mass>0.9 
-      && dtrack->momentum().Mag()>MOMENTUM_CUT_FOR_PROTON_ID) return 0.;
-
-  // First ingredient is chi2 from the fit
-  double trk_chi2=dtrack->chisq;
-  unsigned int ndof=dtrack->Ndof;
-  double chi2_sum = trk_chi2;
+  unsigned int ndof=0;
+  double chi2_sum=0.;
 
   // Next compute dEdx in the chambers for this track
   double mean_path_length=0.,p_avg=0.;
@@ -419,9 +410,9 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
     chi2_sum+=sc_chi2;
     ndof++;
   }
-  
+
   if(DEBUG_HISTS){
-    fom_chi2_trk->Fill(trk_chi2);
+    fom_chi2_trk->Fill(dtrack->chisq);
     fom_chi2_dedx->Fill(dedx_chi2);
     fom_chi2_tof->Fill(tof_chi2);
     fom_chi2_bcal->Fill(bcal_chi2);
@@ -429,7 +420,7 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
     fom->Fill(TMath::Prob(chi2_sum,ndof));
   }
 
-  //   _DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<trk_chi2<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<" sc_chi2="<<sc_chi2<<endl;
+  //     _DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<dtrack->chisq<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<" sc_chi2="<<sc_chi2<<endl;
 
   // Return a combined FOM that includes the tracking chi2 information, the 
   // dEdx result and the tof result where available.
@@ -447,7 +438,7 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
 				       vector<const DTOFPoint*>tof_points){
   //if (tof_points.size()==0) return -1.;
 
-  double dmin=10000.;
+  double dmin=10000.,dt=1000.;
   unsigned int tof_match_id=0;
   // loop over tof points
   for (unsigned int k=0;k<tof_points.size();k++){
@@ -471,13 +462,14 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
       mPathLength=my_s;
       mFlightTime=tflight;
       tof_match_id=k;
+      dt=tof_points[tof_match_id]->t-mStartTime;
     }
   }
   
   // Check for a match 
   //double p=track->momentum().Mag();
   double match_cut=3.624+0.488/track->momentum().Mag();
-  if (dmin<match_cut){
+  if (dmin<match_cut && fabs(dt)<100.){
     // Add the time and path length to the outer detector to the track object
     track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF);
     track->setPathLength(mPathLength,0.);
@@ -495,7 +487,7 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
     double t_diff=mEndTime-mFlightTime
       -(track->position().z()-65.)/SPEED_OF_LIGHT;//-mStartTime;
 	 
-    //printf("mass %f tdiff %f\n",track->mass(),t_diff);
+    //printf("mass %f t1 %f tdiff %f\n",track->mass(),mEndTime,t_diff);
 
 	 if(DEBUG_HISTS)fom_tdiff_tof->Fill(t_diff);
 
@@ -528,7 +520,7 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
   //Loop over bcal clusters
   double dmin=10000.;
   unsigned int bcal_match_id=0;
-  double dphi=1000.,dz=1000.;
+  double dphi=1000.,dz=1000.,dt=1000.;
   for (unsigned int k=0;k<bcal_clusters.size();k++){
     // Get the BCAL cluster position and normal
 	 const DBCALShower *shower = bcal_clusters[k];
@@ -551,6 +543,7 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
       bcal_match_id=k; 
       dz=proj_pos.z()-bcal_pos.z();
       dphi=proj_pos.Phi()-bcal_pos.Phi();
+      dt=bcal_clusters[bcal_match_id]->t-mStartTime;
 
       z=bcal_pos.z();
     }
@@ -560,7 +553,7 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
   dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
   double phi_sigma=0.025+5.8e-4/p/p/p;
 
-  if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
+  if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma && fabs(dt)<20.){
     // Add the time and path length to the outer detector to the track object
     track->setT1(bcal_clusters[bcal_match_id]->t, 0., SYS_BCAL);
     track->setPathLength(mPathLength,0.);
@@ -578,7 +571,7 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
     double t_diff=mEndTime-mFlightTime
       -(track->position().z()-65.)/SPEED_OF_LIGHT;//-mStartTime;
 
-    //printf("t1 %f tflight %f\n",mEndTime,mFlightTime);
+    //printf("dz %f t1 %f tflight %f tvar %f\n",dz,mEndTime,mFlightTime,t_var);
 
     if(DEBUG_HISTS){
       fom_tdiff_bcal->Fill(p,t_diff);
@@ -600,7 +593,7 @@ double DTrackTimeBased_factory::MatchToSC(DTrackTimeBased *track,
 					  vector<const DSCHit*>sc_hits){
   if(track->rt->Nswim_steps<3)return -1.;
   double p=track->momentum().Mag();
-  if (p>1.) return -1.;
+  if (p>0.8) return -1.;
   
   double dphi_min=10000.,myphi=0.,myz=0.;
   DVector3 pos,norm,proj_pos,dir;
