@@ -107,6 +107,8 @@
 			<momentum E="float" px="float" py="float" pz="float"/>
 			<properties charge="int" mass="float"/>
 			<origin t="float" vx="float" vy="float" vz="float"/>
+			<errorMatrix Nrows="int" Ncols="int" type="string" vals="string"/>
+			<TrackingErrorMatrix Nrows="int" Ncols="int" type="string" vals="string"/>
 		</tracktimebased>
 	 </reconView>
   </physicsEvent>

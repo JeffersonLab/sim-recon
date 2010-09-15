@@ -40,6 +40,8 @@ class JEventProcessor_danahddm : public JEventProcessor {
 		unsigned long Nevents_written;
 
 		void Add_DTrackTimeBased(JEventLoop *loop, s_ReconView_t *recon);
+		
+		string DMatrixDSymToString(const DMatrixDSym &mat);
 };
 
 

@@ -203,7 +203,7 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView
 	// Allocate memory for all time based tracks
 	s_Tracktimebaseds_t *tbt = recon->tracktimebaseds = make_s_Tracktimebaseds(tracktimebaseds.size());
 	tbt->mult = 0;
-	
+
 	for(unsigned int i=0; i<tracktimebaseds.size(); i++, tbt->mult++){
 		const DTrackTimeBased *tbt_dana = tracktimebaseds[i];
 		s_Tracktimebased_t *tbt_hddm = &(tbt->in[tbt->mult]);
@@ -221,6 +221,8 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView
 		tbt_hddm->momentum = make_s_Momentum();
 		tbt_hddm->properties = make_s_Properties();
 		tbt_hddm->origin = make_s_Origin();
+		tbt_hddm->errorMatrix = make_s_ErrorMatrix();
+		tbt_hddm->TrackingErrorMatrix = make_s_TrackingErrorMatrix();
 
 		tbt_hddm->momentum->E = tbt_dana->energy();
 		tbt_hddm->momentum->px = mom.x();
@@ -234,7 +236,35 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView
 		tbt_hddm->origin->vx = pos.x();
 		tbt_hddm->origin->vy = pos.y();
 		tbt_hddm->origin->vz = pos.z();
+		
+		string vals = DMatrixDSymToString(tbt_dana->errorMatrix());
+		tbt_hddm->errorMatrix->Ncols = 7;
+		tbt_hddm->errorMatrix->Nrows = 7;
+		tbt_hddm->errorMatrix->type = strdup("DMatrixDSym"); // HDDM always frees strings automatically
+		tbt_hddm->errorMatrix->vals = strdup(vals.c_str()); // HDDM always frees strings automatically
+
+		tbt_hddm->TrackingErrorMatrix->Ncols = 5;
+		tbt_hddm->TrackingErrorMatrix->Nrows = 5;
+		tbt_hddm->TrackingErrorMatrix->type = strdup("DMatrixDSym"); // HDDM always frees strings automatically
+		tbt_hddm->TrackingErrorMatrix->vals = strdup(DMatrixDSymToString(tbt_dana->TrackingErrorMatrix()).c_str());
 
 	}
 }
 
+//-------------------------------
+// DMatrixDSymToString
+//-------------------------------
+string JEventProcessor_danahddm::DMatrixDSymToString(const DMatrixDSym &mat)
+{
+	// Convert the given symmetric matrix into a single string that
+	// can be used in an HDDM file.
+
+	stringstream ss;
+	for(int irow=0; irow<mat.GetNrows(); irow++) {
+		for(int icol=irow; icol<mat.GetNcols(); icol++) {
+			ss << mat[irow][icol] << " ";
+		}
+	}
+	
+	return ss.str();
+}
