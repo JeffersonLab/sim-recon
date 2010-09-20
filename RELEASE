@@ -1,0 +1,476 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-07-28
+   Date: July 29, 2010
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 6580 of trunk/sim-recon
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+  HDDS 1.0
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.0
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.26
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.0
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r6582 | staylor | 2010-07-28 18:39:05 -0400 (Wed, 28 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Changes to make the code work better for low momentum proton tracks.
+------------------------------------------------------------------------
+r6583 | staylor | 2010-07-28 18:44:02 -0400 (Wed, 28 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.h
+
+Some cleanup of the code and removed counter-productive treatment of hits in the cdc that are close to the endplate.
+------------------------------------------------------------------------
+r6587 | wolin | 2010-07-29 14:58:09 -0400 (Thu, 29 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+
+Tries socket a few times before giving up
+------------------------------------------------------------------------
+r6588 | wolin | 2010-07-29 15:47:30 -0400 (Thu, 29 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.h
+
+Dies more gracefully if unable to open file or socket
+------------------------------------------------------------------------
+r6595 | staylor | 2010-07-30 18:23:14 -0400 (Fri, 30 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Added routine to perform the operation ABA^T, where B is a symmetric 5x5 matrix.
+------------------------------------------------------------------------
+r6596 | wolin | 2010-08-02 09:24:43 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DBCALPhoton and updated xml dictionary
+------------------------------------------------------------------------
+r6597 | wolin | 2010-08-02 09:34:12 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+
+Added DFCALPhoton
+------------------------------------------------------------------------
+r6598 | wolin | 2010-08-02 10:00:47 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DChargedTruthMatch
+------------------------------------------------------------------------
+r6600 | wolin | 2010-08-02 13:59:53 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DTOFHit and DTOFPoint
+------------------------------------------------------------------------
+r6605 | wolin | 2010-08-02 16:58:10 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DTOFMCResponse
+------------------------------------------------------------------------
+r6606 | wolin | 2010-08-02 17:22:59 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DBCALHit
+------------------------------------------------------------------------
+r6607 | wolin | 2010-08-02 17:29:18 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DBCALMCResponse
+------------------------------------------------------------------------
+r6608 | davidl | 2010-08-02 22:09:00 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genr8/InputFiles/n_pi-pi+pi+.input
+
+replace placeholder strings with actual values so this will work 'out-of-the-box'
+------------------------------------------------------------------------
+r6609 | davidl | 2010-08-02 22:51:02 -0400 (Mon, 02 Aug 2010) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/programs/Simulation/genr8/InputFiles/n_pi-pi+pi+.input
+
+This non-functioning file is superceeded by n_3pi.input which has the same reaction.
+------------------------------------------------------------------------
+r6610 | wolin | 2010-08-03 09:30:21 -0400 (Tue, 03 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DBCALShower and DFCALCluster
+------------------------------------------------------------------------
+r6614 | wolin | 2010-08-03 13:17:13 -0400 (Tue, 03 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DFDCCathodeCluster and DFDCSegment
+------------------------------------------------------------------------
+r6615 | wolin | 2010-08-03 14:03:16 -0400 (Tue, 03 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DParticle
+------------------------------------------------------------------------
+r6616 | wolin | 2010-08-03 14:23:08 -0400 (Tue, 03 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+
+Minor, waiting for DTwoGammaFit toString() method
+------------------------------------------------------------------------
+r6618 | staylor | 2010-08-05 07:45:04 -0400 (Thu, 05 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Minor modifications to the SandwichMultiply routine
+------------------------------------------------------------------------
+r6619 | staylor | 2010-08-05 07:46:53 -0400 (Thu, 05 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Modified covariance matrix propagation to take advantage of new SandwichMultiply routine (doing JCJ^T)
+------------------------------------------------------------------------
+r6621 | davidl | 2010-08-05 10:51:50 -0400 (Thu, 05 Aug 2010) | 2 lines
+Changed paths:
+   A /trunk/sim-recon/src/libraries/PID/DPhysicsEvent.h
+   A /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.cc
+   A /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHoughFind.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHoughFind.h
+
+Start of work on DPhysicsEvent factory. This compiles, but I haven't even tried to run it yet. It will likely seg. fault you one tries getting DPhysicsEvent objects, but I wanted to make a backup before continuing.
+
+------------------------------------------------------------------------
+r6622 | staylor | 2010-08-05 13:06:52 -0400 (Thu, 05 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+
+Add variant of DistToRT that also returns the time of flight.
+------------------------------------------------------------------------
+r6623 | staylor | 2010-08-06 09:31:01 -0400 (Fri, 06 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.h
+
+Added code to compute the time at the vertex for each track using matching to (in order) the time-of-flight, the bcal, and the start counter.
+------------------------------------------------------------------------
+r6624 | davidl | 2010-08-06 10:24:37 -0400 (Fri, 06 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Set timing resolution for charged tracks at vertex to 2ns always for now.
+------------------------------------------------------------------------
+r6625 | davidl | 2010-08-06 10:29:59 -0400 (Fri, 06 Aug 2010) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHoughFind.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHoughFind.h
+
+- Fixed bugs to allow DHoughFind to be used with DPhysicsEvent
+- Fixed bug in calculating index in DHoughFind(points) from
+  original incarnation of this. Not sure if that caused problems
+  before
+- Added MakeIntoRootHist method to easily generate a ROOT
+  TH2D from a DHoughFind object for debugging
+- Added new "Add" method to add 2 DHoughFind objects together
+
+------------------------------------------------------------------------
+r6626 | davidl | 2010-08-06 10:35:09 -0400 (Fri, 06 Aug 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DPhoton.cc
+
+In seTime method of DPhoton, added code to also set the t0 and t0_err fields of the underlying DKinematicData object. The DPhoton "time" still represents when the particle hit the detector. The t0 represents the time of the photon projected back to the vertex position as determined by the PHOTON_VERTEX_X, ... configuration parameters that by default are set to be at the center of the target (0,0,65). For now, the t0_err is fixed at 2ns, though that will likely need to be changed.
+
+------------------------------------------------------------------------
+r6627 | davidl | 2010-08-06 10:37:10 -0400 (Fri, 06 Aug 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DPhysicsEvent.h
+   M /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.h
+
+First "working" iteration of DPhysicsEvent. Only tested with a few p omega events with no background, but it at least runs and looks to be grouping particles together in a not too crazy way.
+
+------------------------------------------------------------------------
+r6628 | davidl | 2010-08-06 12:40:04 -0400 (Fri, 06 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.h
+
+Convert phys_tree plugin to use DPhysicsEvent objects. Not tested yet.
+------------------------------------------------------------------------
+r6629 | davidl | 2010-08-06 13:25:31 -0400 (Fri, 06 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Bomb proofing
+------------------------------------------------------------------------
+r6631 | staylor | 2010-08-09 08:49:03 -0400 (Mon, 09 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Working to improve the start time algorithm
+------------------------------------------------------------------------
+r6632 | staylor | 2010-08-09 18:03:49 -0400 (Mon, 09 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+If matching tracks to SC, TOF, or BCAL hits does not work, average over the start counter hits with a crude correction for the propagation time in the scintillator using a fixed distance along z -- with no flight time correction right now...
+------------------------------------------------------------------------
+r6633 | staylor | 2010-08-10 10:10:00 -0400 (Tue, 10 Aug 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TAGGER/DTagger.h
+   M /trunk/sim-recon/src/libraries/TAGGER/TAGGER_init.cc
+
+Create new DTagger object for storing the tagger info from hddm.
+------------------------------------------------------------------------
+r6634 | staylor | 2010-08-10 10:11:09 -0400 (Tue, 10 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+Added routine for extracting the tagger data from the HDDM file.
+------------------------------------------------------------------------
+r6635 | staylor | 2010-08-10 10:15:10 -0400 (Tue, 10 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.h
+
+Remove some unused variables and make the root histograms consistent with the cc code.
+------------------------------------------------------------------------
+r6636 | staylor | 2010-08-10 10:17:01 -0400 (Tue, 10 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.h
+
+Add the vertex time to the arguments for FitTrack...
+------------------------------------------------------------------------
+r6637 | staylor | 2010-08-10 10:20:32 -0400 (Tue, 10 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Compute a currently crude guess for the start(vertex) time for the event using the average of the t0s from the individual tracks.  Added histogram to display the distribution of these values.
+------------------------------------------------------------------------
+r6638 | staylor | 2010-08-10 10:21:33 -0400 (Tue, 10 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+
+Add the Riemann track fitter factory.
+------------------------------------------------------------------------
+r6639 | staylor | 2010-08-10 19:35:03 -0400 (Tue, 10 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Improved matching to start counter.
+------------------------------------------------------------------------
+r6640 | staylor | 2010-08-12 09:00:34 -0400 (Thu, 12 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Added very preliminary code to use dEdx in the start counter as an ingredient in the figure-of-merit for particle id.  The lon Landau tail could limit the usefulness of this, but we'll see..
+------------------------------------------------------------------------
+r6641 | staylor | 2010-08-12 10:54:58 -0400 (Thu, 12 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Return 0 for the fom if the dEdx list does not have any entries -- this probably means that the track parameters are completely inconsistent with the list of hits that went into the fit.  This eliminates a few cases where the fom was NaN.
+------------------------------------------------------------------------
+r6643 | marki | 2010-08-12 13:03:51 -0400 (Thu, 12 Aug 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trkfitterLSLM/Makefile
+
+If GSL_INCLUDE and/or GSL_LIB are defined, form the correct
+options. Otherwise let the correspoding options remain undefined.
+
+------------------------------------------------------------------------
+r6647 | staylor | 2010-08-13 16:16:19 -0400 (Fri, 13 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Latest revision of start time algorithm.
+------------------------------------------------------------------------
+r6648 | davidl | 2010-08-13 16:27:12 -0400 (Fri, 13 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+
+Fill in fiducial status flags in phys_tree.
+------------------------------------------------------------------------
+r6649 | davidl | 2010-08-16 10:44:35 -0400 (Mon, 16 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/Event.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/Event.h
+
+Add K_ and K- to phys_tree
+------------------------------------------------------------------------
+r6650 | staylor | 2010-08-17 10:35:03 -0400 (Tue, 17 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+
+Add routine that detects when a plane has been crossed by a track.  In the already existing FindClosestSwimStep routines, break out of the loop when the doca starts increasing again.  This could have an impact on very low momentum particles that curl completely around in the cdc.
+------------------------------------------------------------------------
+r6651 | staylor | 2010-08-18 10:01:45 -0400 (Wed, 18 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Improvements to start time algorithm, including a vertex correction.
+------------------------------------------------------------------------
+r6652 | staylor | 2010-08-18 10:03:45 -0400 (Wed, 18 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Working on improvements to pid from time-of-flight, including vertex correction.
+------------------------------------------------------------------------
+r6655 | davidl | 2010-08-20 11:17:15 -0400 (Fri, 20 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+
+Do not add -DCERNLIB_MOTIF on Darwin systems when building hdgeant and friends.
+------------------------------------------------------------------------
+r6656 | davidl | 2010-08-20 11:51:33 -0400 (Fri, 20 Aug 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/control.in
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/copytocplusplus.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hdgeant.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+
+Add the ability of hdgeant to automatically run mcsmear when it is done and optionally delete the unsmeared file. The new feature is controlled by the POSTSMEAR, DELETEUNSMEARED, and MCSMEAROPTS ffread cards. Descriptions of these have been added to the example control.in file .
+
+------------------------------------------------------------------------
+r6657 | davidl | 2010-08-20 17:16:00 -0400 (Fri, 20 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.cc
+
+Fixed bug that caused warning message to print when no particles were reconstructed.
+------------------------------------------------------------------------
+r6658 | davidl | 2010-08-23 11:01:20 -0400 (Mon, 23 Aug 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Filter time-based clones from different candidates that have different masses. Use FOM to decide which to keep.
+
+------------------------------------------------------------------------
+r6659 | staylor | 2010-08-23 11:01:21 -0400 (Mon, 23 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+
+Use the cbrt routine instead of pow(x,0.333...).  Made other minor changes, mostly for speed.
+------------------------------------------------------------------------
+r6660 | staylor | 2010-08-23 13:22:01 -0400 (Mon, 23 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+
+Use sqrt and cbrt instead of pow(x,1./6.).  Tests suggest that the latter is ~50% slower than sqrt(cbrt(x)) on ifarml6. Also implemented slight change to how z-vertex is computed.
+------------------------------------------------------------------------
+r6661 | staylor | 2010-08-23 13:28:57 -0400 (Mon, 23 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Use cbrt instead of pow(x,1./3.).
+------------------------------------------------------------------------
+r6662 | davidl | 2010-08-23 13:44:59 -0400 (Mon, 23 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/Event.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/Event.h
+
+Set fiducial flags for thrown tree in phys_tree plugin. All all_fiducial flag.
+------------------------------------------------------------------------
+r6663 | nsparks | 2010-08-23 14:42:20 -0400 (Mon, 23 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Added configuration parameter PID_FORCE_TRUTH, which if set true, forces the correct particle identification if it is available.
+------------------------------------------------------------------------
+r6664 | staylor | 2010-08-24 10:58:31 -0400 (Tue, 24 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DLorentzVector.h
+
+Add subtraction operator.
+------------------------------------------------------------------------
+r6665 | staylor | 2010-08-25 14:44:20 -0400 (Wed, 25 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Move the call to the stl vector erase in one part of the code to a later part of the sequence of code.  This was to address an occasional failure mode that caused candidates to be matched incorrectly.  Clean up computation of the momentum in GetPositionAndMomentum by removing several repeated operations.
+------------------------------------------------------------------------
+r6666 | staylor | 2010-08-25 14:46:20 -0400 (Wed, 25 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Simplify calculation of momentum in the GetPositionAndMomentum routines.
+------------------------------------------------------------------------
+r6667 | staylor | 2010-08-25 14:50:11 -0400 (Wed, 25 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Explicitly include start time in calculation of drift distance.  Define MAX_CHI2, currently set to 1e8, and bail from the fitting the chi2 exceeds this value. Use cbrt instead of pow(x,1./3.).
+------------------------------------------------------------------------
+r6668 | davidl | 2010-08-25 16:13:13 -0400 (Wed, 25 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/bfield2root/bfield2root.cc
+
+Add Bz and Br component histos in TOF region.
+------------------------------------------------------------------------
+r6669 | staylor | 2010-08-26 08:10:47 -0400 (Thu, 26 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DLorentzVector.h
+
+Add Pt(),Theta(),Phi() methods.
+------------------------------------------------------------------------
+r6670 | staylor | 2010-08-26 08:14:10 -0400 (Thu, 26 Aug 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Add some diagnostic histograms.
+------------------------------------------------------------------------
