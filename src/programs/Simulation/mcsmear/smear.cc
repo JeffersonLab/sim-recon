@@ -11,12 +11,16 @@ using namespace std;
 
 #include <math.h>
 #include "HDDM/hddm_s.h"
+#include <TF1.h>
 
 float RANDOM_MAX = (float)(0x7FFFFFFF);
 #ifndef _DBG_
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
 #endif
+
+
+extern TF1 *fdc_smear_function[8];
 
 void SmearCDC(s_HDDM_t *hddm_s);
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
@@ -40,7 +44,6 @@ bool FDC_GEOMETRY_INITIALIZED = false;
 unsigned int NFDC_WIRES_PER_PLANE;
 vector<double> FDC_LAYER_Z;
 double FDC_RATE_COEFFICIENT;
-
 
 double SampleGaussian(double sigma);
 double SampleRange(double x1, double x2);
@@ -66,8 +69,13 @@ double CDC_TDRIFT_SIGMA = 150.0/55.0*1E-9;	// in seconds
 // hits in the CDC for a given event.
 double CDC_TIME_WINDOW = 1000.0E-9; // in seconds
  
-// The error on the drift time in the CDC. The drift times
-// for the actual CDC hits coming from the input file
+// If the following flag is true, then include the drift-distance
+// dependency on the error in the FDC position. Otherwise, use a
+// flat distribution given by the FDC_TDRIFT_SIGMA below.
+bool FDC_USE_PARAMETERIZED_SIGMA = true;
+
+// The error on the drift time in the FDC. The drift times
+// for the actual FDC hits coming from the input file
 // are smeared by a gaussian with this sigma.
 double FDC_TDRIFT_SIGMA = 200.0/55.0*1.0E-9;	// in seconds
 
@@ -164,7 +172,8 @@ void SmearCDC(s_HDDM_t *hddm_s)
 				double sigma_t = CDC_TDRIFT_SIGMA;
 				if(CDC_USE_PARAMETERIZED_SIGMA){
 					// Convert drift time back to drift distance assuming standard 55 um/ns
-					double drift_d = strawtruthhit->t*55.0E-3; // use mm since that's what the error function was paramaterized
+					//double drift_d = strawtruthhit->t*55.0E-3; // use mm since that's what the error function was paramaterized
+				  double drift_d=strawtruthhit->d*10.;
 					
 					// The following is from a fit to Yves' numbers circa Aug 2009. The values fit were
 					// resolution (microns) vs. drift distance (mm).
@@ -374,8 +383,45 @@ void SmearFDC(s_HDDM_t *hddm_s)
 			    s_FdcAnodeHit_t *hit=hits->in;
 			    s_FdcAnodeTruthHit_t *truthhit=truthhits->in;
 			    for (unsigned int s=0;s<hits->mult;s++, hit++, truthhit++){
-			      hit->t = truthhit->t + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;
-					hit->dE = truthhit->dE;
+			      if (FDC_USE_PARAMETERIZED_SIGMA==false){
+				hit->t = truthhit->t + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;
+			      }
+			      else{		
+				// The scale of the smearing in time depends 
+				// on the drift distance.  We use the root TF1
+				// random generator using functions representing
+				// the degree of smearing in various bins in x
+	      
+				double dx=0.;
+				if (truthhit->d<0.25){
+				  dx=fdc_smear_function[0]->GetRandom();
+				}
+				else if (truthhit->d<0.75){
+				  dx=fdc_smear_function[1]->GetRandom();
+				}
+				else if (truthhit->d<1.5){
+				  dx=fdc_smear_function[2]->GetRandom();
+				}
+				else if (truthhit->d<2.5){
+				  dx=fdc_smear_function[3]->GetRandom();
+				}
+				else if (truthhit->d<3.5){
+				  dx=fdc_smear_function[4]->GetRandom();
+				}
+				else if (truthhit->d<4.25){
+				  dx=fdc_smear_function[5]->GetRandom();
+				}
+				else if (truthhit->d<4.75){
+				dx=fdc_smear_function[6]->GetRandom();
+				}
+				else{
+				  dx=fdc_smear_function[7]->GetRandom();
+				}
+				// dx is mm so we divide by 0.055 mm/ns for the
+				// drift speed
+				hit->t=truthhit->t+dx/0.055;
+			      }
+			      hit->dE = truthhit->dE;
 			    }
 			  }
 			}
