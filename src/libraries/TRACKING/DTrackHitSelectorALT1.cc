@@ -18,6 +18,8 @@
 #define ansi_blue				ansi_escape<<"[34m"
 #endif // ansi_escape
 
+#define ONE_OVER_SQRT12  0.288675
+
 bool static DTrackHitSelector_cdchit_cmp(pair<double,const DCDCTrackHit *>a,
 				      pair<double,const DCDCTrackHit *>b){
   if (a.second->wire->ring!=b.second->wire->ring) 
@@ -70,7 +72,8 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
   /// wire-based tracks.
   
   // Calculate beta of particle.
-  double beta = 1.0/sqrt(1.0+pow(rt->GetMass(),2.0)/rt->swim_steps[0].mom.Mag2());
+  double my_mass=rt->GetMass();
+  double one_over_beta =sqrt(1.0+my_mass*my_mass/rt->swim_steps[0].mom.Mag2());
   
   // The error on the residual. This will be different based on the
   // quality of the track and whether MULS is on or not etc.
@@ -79,20 +82,22 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
   double sigma;
   switch(fit_type){
   case kTimeBased:
-    sigma = 0.8/sqrt(12.0);
+    sigma = 0.8*ONE_OVER_SQRT12;
     break;
   case kWireBased:
-    sigma = 2.0*0.8/sqrt(12.0);
+    sigma = 1.6*ONE_OVER_SQRT12;
     break;
   case kHelical:
   default:
-    sigma = 10.0*0.8/sqrt(12.0);
+    sigma = 8.0*ONE_OVER_SQRT12;
   }
   
   // Low-momentum tracks are more poorly defined than high-momentum tracks.
   // We account for that here by increasing the error as a function of momentum
   double g = 0.350/sqrt(log(2.0)); // total guess
-  sigma *= 1.0 + exp(-pow(rt->swim_steps[0].mom.Mag()/g,2.0));
+  double p_over_g=rt->swim_steps[0].mom.Mag()/g;
+  //sigma *= 1.0 + exp(-pow(rt->swim_steps[0].mom.Mag()/g,2.0));
+  sigma*=1.0+exp(-p_over_g*p_over_g);
   
   // Minimum probability of hit belonging to wire and still be accepted
   double MIN_HIT_PROB = 0.05;
@@ -112,10 +117,10 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
       // Distance using drift time
       // NOTE: Right now we assume pions for the TOF
       // and a constant drift velocity of 55um/ns
-      double tof = s/(beta*3E10*1E-9);
+      double tof = s*one_over_beta/29.98;
       dist = (hit->tdrift - tof)*55E-4;
     }else{
-      dist = 0.8/2.0; // half cell-size
+      dist = 0.4; // =0.8/2.0; half cell-size
     }
     
     // For time-based and wire-based tracks, the fit was
@@ -130,9 +135,10 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
     
     // Residual
     double resi = dist - doca;
-    double chisq = pow(resi/sigma_total, 2.0);
+    //double chisq = pow(resi/sigma_total, 2.0);
+    double chisq=resi*resi/(sigma_total*sigma_total);
     
-    // Use chi-sq probaility function with Ndof=1 to calculate probability
+    // Use chi-sq probability function with Ndof=1 to calculate probability
     double probability = TMath::Prob(chisq, 1);
     if(probability>=MIN_HIT_PROB){
       pair<double,const DCDCTrackHit*>myhit;
@@ -188,27 +194,28 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   // Calculate beta of particle assuming its a pion for now. If the
   // particles is really a proton or an electron, the residual
   // calculated below will only be off by a little.
-  double beta = 1.0/sqrt(1.0+pow(rt->GetMass(),2.0)/rt->swim_steps[0].mom.Mag2());
+  double my_mass=rt->GetMass();
+  double one_over_beta =sqrt(1.0+my_mass*my_mass/rt->swim_steps[0].mom.Mag2());
   
   // The error on the residual. This will be different based on the
   // quality of the track and whether MULS is on or not etc.
   // In principle, this could also depend on the momentum parameters
   // of the track.
-  double sigma_anode = 0.5/sqrt(12.0);
-  double sigma_cathode = 0.5/sqrt(12.0);
+  double sigma_anode = 0.5*ONE_OVER_SQRT12;
+  double sigma_cathode = 0.5*ONE_OVER_SQRT12;
   switch(fit_type){
   case kTimeBased:
-    sigma_anode = 0.5/sqrt(12.0);
-    sigma_cathode = 0.5/sqrt(12.0);
+    sigma_anode = 0.5*ONE_OVER_SQRT12;
+    sigma_cathode = 0.5*ONE_OVER_SQRT12;
     break;
   case kWireBased:
-    sigma_anode = 2.0*0.5/sqrt(12.0);
-    sigma_cathode = 2.0*0.5/sqrt(12.0);
+    sigma_anode = ONE_OVER_SQRT12;
+    sigma_cathode = ONE_OVER_SQRT12;
     break;
   case kHelical:
   default:
-    sigma_anode = 10.0*0.5/sqrt(12.0);
-    sigma_cathode = 10.0*0.5/sqrt(12.0);
+    sigma_anode = 5.0*ONE_OVER_SQRT12;
+    sigma_cathode = 5.0*ONE_OVER_SQRT12;
   }
   
   // Scale the errors up by 1/p for p<1GeV/c. This accounts for the poorer knowledge
@@ -224,8 +231,9 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   // These next 2 lines are here mainly to improve the situation for protons so
   // we take a stab at scaling up the errors by the number of pion masses since
   // this worked reasonably well for pions before.
-  sigma_anode *= rt->GetMass()/0.13957;
-  sigma_cathode *= rt->GetMass()/0.13957;
+  double mass_scale=my_mass/0.13957;
+  sigma_anode *= mass_scale;
+  sigma_cathode *= mass_scale;
   
   // Minimum probability of hit belonging to wire and still be accepted
   double MIN_HIT_PROB = 0.01;
@@ -237,7 +245,7 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
     // Find the DOCA to this wire
     double s;
     double doca = rt->DistToRT(hit->wire, &s);  
-    
+       
     // Get "measured" distance to wire. For time-based tracks
     // this is calculated from the drift time. For all other
     // tracks, this is assumed to be half a cell size
@@ -246,10 +254,10 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
       // Distance using drift time
       // NOTE: Right now we assume pions for the TOF
       // and a constant drift velocity of 55um/ns
-      double tof = s/(beta*3E10*1E-9);
+      double tof = s*one_over_beta/29.98;
       dist = (hit->time - tof)*55E-4;
     }else{
-      dist = 0.5/2.0; // half cell-size
+      dist = 0.25; //= 0.5/2.0; half cell-size
     }
     
     // Anode Residual
@@ -260,7 +268,11 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
     double resic = u - hit->s;
     
     // Probability of this hit being on the track
-    double chisq = pow(resi/sigma_anode, 2.0) + pow(resic/sigma_cathode, 2.0);
+    //double chisq = pow(resi/sigma_anode, 2.0) + pow(resic/sigma_cathode, 2.0);
+    double chisq
+      =resi*resi/(sigma_anode*sigma_anode)
+      +resic*resic/(sigma_cathode*sigma_cathode);
+      
     double probability = TMath::Prob(chisq, 2);
     if(probability>=MIN_HIT_PROB){
       pair<double,const DFDCPseudo*>myhit;
