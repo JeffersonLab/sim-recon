@@ -94,6 +94,21 @@ inline double fdc_y_variance(double alpha,double x){
   return diffusion+FDC_CATHODE_VARIANCE+0.0064*tan(alpha)*tan(alpha);
 }
 
+// Crude approximation for the variance in drift distance due to smearing
+inline double fdc_drift_variance(double x){
+  //return FDC_ANODE_VARIANCE;
+
+  double parm[6]={0.485,-0.263,-0.066,0.129,-0.047,0.005};
+  x=10.*fabs(x);
+  if (x>5) return 0.01;
+  double x2=x*x;
+  double x3=x2*x;
+  double x4=x2*x2;
+  double sigma=parm[0]+parm[1]*x+parm[2]*x2+parm[3]*x3+parm[4]*x4+parm[5]*x4*x;
+ 
+  return sigma*sigma*0.01;
+}
+
 // Smearing function from Yves
 inline double cdc_variance(double x){  
   //return CDC_VARIANCE;
@@ -126,8 +141,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   geom->Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='1']", fdc_z1);
   fdc_origin[2]+=fdc_z1[2]-1.; 
 
-  //DEBUG_HISTS=true;
-  DEBUG_HISTS=false;
+  DEBUG_HISTS=true;
+  //  DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
   //DEBUG_LEVEL=2;
 
@@ -3293,7 +3308,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	double dv=nz*drift*sinalpha*cosphi-nr*drift*cosalpha;
 	
 	// ... and its covariance matrix 
-	V(0,0)=anneal_factor*FDC_ANODE_VARIANCE;
+	//V(0,0)=anneal_factor*FDC_ANODE_VARIANCE;
+	V(0,0)=anneal_factor*fdc_drift_variance(drift);
 	V(1,1)=fdc_y_variance(alpha,drift);
 
 	// Measurement vector with drift distance and Lorentz-corrected 
