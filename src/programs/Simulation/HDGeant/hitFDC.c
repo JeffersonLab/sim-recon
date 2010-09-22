@@ -19,8 +19,10 @@
 #include <bintree.h>
 
 const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
-const float wire_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
-const float strip_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
+//const float wire_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
+//const float strip_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
+const float wire_dead_zone_radius[4]={3.0,3.0,3.0,3.9};
+const float strip_dead_zone_radius[4]={1.3,1.3,1.3,1.3};
 
 #define CATHODE_ROT_ANGLE 1.309 // 75 degrees
 
@@ -379,6 +381,7 @@ void hitForwardDC (float xin[4], float xout[4],
 	polint(&lorentz_x[imin],&ytemp[imin],4,r,&tanr,&dy);
 	polint(&lorentz_x[imin],&ytemp2[imin],4,r,&tanz,&dy);
 
+
 	// Correct avalanche position with deflection along wire	
  	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)
 	  +tanr*dist_to_wire*cos(alpha);
@@ -450,6 +453,7 @@ void hitForwardDC (float xin[4], float xout[4],
 				/* Feb. 11, 2008 D. L. */
 				if(ahits->in[nhit].t>tdrift){
 					ahits->in[nhit].t = tdrift;
+					ahits->in[nhit].d = dradius;
 					ahits->in[nhit].dE = dEsum;
 				}
 			
@@ -462,6 +466,7 @@ void hitForwardDC (float xin[4], float xout[4],
         {
           ahits->in[nhit].t = tdrift;
           ahits->in[nhit].dE = dE;
+	  ahits->in[nhit].d = dradius;
           ahits->mult++;
         }
         else
