@@ -289,6 +289,8 @@ void hitCentralDC (float xin[4], float xout[4],
 				if(hits->in[nhit].t>tdrift){
 					hits->in[nhit].t = tdrift;
 					hits->in[nhit].dE = dEsum;
+					hits->in[nhit].d = dradius;
+
 				}
 			
            /* hits->in[nhit].t =
@@ -300,6 +302,8 @@ void hitCentralDC (float xin[4], float xout[4],
          {
             hits->in[nhit].t = tdrift;
             hits->in[nhit].dE = dEsum;
+	    hits->in[nhit].d = dradius;
+
             hits->mult++;
          }
          else
