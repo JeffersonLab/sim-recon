@@ -98,15 +98,10 @@ inline double fdc_y_variance(double alpha,double x){
 inline double fdc_drift_variance(double x){
   //return FDC_ANODE_VARIANCE;
 
-  double parm[6]={0.485,-0.263,-0.066,0.129,-0.047,0.005};
-  x=10.*fabs(x);
-  if (x>5) return 0.01;
-  double x2=x*x;
-  double x3=x2*x;
-  double x4=x2*x2;
-  double sigma=parm[0]+parm[1]*x+parm[2]*x2+parm[3]*x3+parm[4]*x4+parm[5]*x4*x;
+  x=fabs(x);
+  double sigma=0.04555*exp(-5.496*x)+1.289e-6*exp(22.63*x);
  
-  return sigma*sigma*0.01;
+  return sigma*sigma;
 }
 
 // Smearing function from Yves
