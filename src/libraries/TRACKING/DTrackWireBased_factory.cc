@@ -450,8 +450,8 @@ jerror_t DTrackWireBased_factory::MatchToTOF(DTrackWireBased *track,
   //double p2=track->momentum().Mag2();
   //double match_cut=7.5+10./p2;
   if (dmin<4.+0.488/track->momentum().Mag2()){
-    double t0=tof_points[tof_match_id]->t-tflight
-      -(track->position().z()-65.)/SPEED_OF_LIGHT;
+    double t0=tof_points[tof_match_id]->t-tflight;
+
     // Add the time to the outer detector and the vertex time to the track 
     // object
     track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF); 
@@ -551,7 +551,6 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
     else{
       t0-=flight_time+myz/C_EFFECTIVE;
     }
-    t0-=(track->position().z()-65.)/SPEED_OF_LIGHT;
     track->setT0(t0,0.,SYS_START);
 
     if (DEBUG_HISTS){
@@ -604,8 +603,8 @@ jerror_t DTrackWireBased_factory::MatchToBCAL(DTrackWireBased *track,
 
   // Check for a match 
   if (fabs(dz)<10. && fabs(dphi)<0.04){
-    double t0=bcal_clusters[bcal_match_id]->t-flight_time
-      -(track->position().z()-65.)/SPEED_OF_LIGHT;
+    double t0=bcal_clusters[bcal_match_id]->t-flight_time;
+
     // Add the time to the outer detector to the track object
     track->setT1(bcal_clusters[bcal_match_id]->t, 0., SYS_BCAL);
     track->setT0(t0,0.,SYS_BCAL);

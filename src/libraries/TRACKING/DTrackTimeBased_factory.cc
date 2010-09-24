@@ -48,7 +48,8 @@ jerror_t DTrackTimeBased_factory::init(void)
 {
 	fitter = NULL;
 
-	DEBUG_HISTS = false;
+	//DEBUG_HISTS = false;
+	DEBUG_HISTS = true;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
 	MOMENTUM_CUT_FOR_PROTON_ID=3.0;
@@ -202,6 +203,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   
     if (track->t0()>-999.){
       mStartTime+=track->t0();
+      //mStartTime+=(track->position().z()-65.)/SPEED_OF_LIGHT;
       num+=1.;
     }
   }
@@ -484,8 +486,8 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
     //double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
     double t_var=TOF_SIGMA*TOF_SIGMA;
 
-    double t_diff=mEndTime-mFlightTime
-      -(track->position().z()-65.)/SPEED_OF_LIGHT;//-mStartTime;
+    double t_diff=mEndTime-mFlightTime-mStartTime;
+
 	 
     //printf("mass %f t1 %f tdiff %f\n",track->mass(),mEndTime,t_diff);
 
@@ -568,8 +570,7 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
     double t_sigma=0.00255*pow(p,-2.52)+0.220;
     double t_var=t_sigma*t_sigma;
 
-    double t_diff=mEndTime-mFlightTime
-      -(track->position().z()-65.)/SPEED_OF_LIGHT;//-mStartTime;
+    double t_diff=mEndTime-mFlightTime-mStartTime;
 
     //printf("dz %f t1 %f tflight %f tvar %f\n",dz,mEndTime,mFlightTime,t_var);
 
