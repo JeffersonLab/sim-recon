@@ -32,7 +32,7 @@ const float strip_dead_zone_radius[4]={1.3,1.3,1.3,1.3};
 //#define STRIP_DEAD_ZONE_RADIUS 5.0
 #define ACTIVE_AREA_OUTER_RADIUS 48.5
 #define ANODE_CATHODE_SPACING 0.5
-#define TWO_HIT_RESOL         250.
+#define TWO_HIT_RESOL         25.
 #define WIRES_PER_PLANE       96
 #define WIRE_SPACING          1.0
 #define U_OF_WIRE_ZERO        (-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2)
@@ -455,6 +455,8 @@ void hitForwardDC (float xin[4], float xout[4],
 					ahits->in[nhit].t = tdrift;
 					ahits->in[nhit].d = dradius;
 					ahits->in[nhit].dE = dEsum;
+					ahits->in[nhit].itrack = track;
+					ahits->in[nhit].ptype = ipart;
 				}
 			
           /*ahits->in[nhit].t = 
@@ -467,6 +469,8 @@ void hitForwardDC (float xin[4], float xout[4],
           ahits->in[nhit].t = tdrift;
           ahits->in[nhit].dE = dE;
 	  ahits->in[nhit].d = dradius;
+	  ahits->in[nhit].itrack = track;
+	  ahits->in[nhit].ptype = ipart;
           ahits->mult++;
         }
         else
@@ -593,6 +597,8 @@ void hitForwardDC (float xin[4], float xout[4],
 						if(chits->in[nhit].t>tdrift){
 							chits->in[nhit].t = tdrift;
 							chits->in[nhit].q = q;
+							chits->in[nhit].itrack = track;
+							chits->in[nhit].ptype = ipart;
 						}
                 /*chits->in[nhit].t = 
                     (chits->in[nhit].t * chits->in[nhit].q + tdrift * q)
@@ -603,6 +609,8 @@ void hitForwardDC (float xin[4], float xout[4],
               {
                 chits->in[nhit].t = tdrift;
                 chits->in[nhit].q = q;
+		chits->in[nhit].itrack = track;
+		chits->in[nhit].ptype = ipart;
                 chits->mult++;
               }
               else

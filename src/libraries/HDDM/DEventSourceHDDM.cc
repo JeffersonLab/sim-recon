@@ -677,6 +677,8 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> 
 				hit->straw = cdcstraw->straw;
 				hit->dE = strawhit->dE;
 				hit->t = strawhit->t;
+				hit->itrack = strawhit->itrack;
+				hit->ptype = strawhit->ptype;
 
 				data.push_back(hit);
 			}
@@ -751,13 +753,15 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 					newHit->layer		 		= fdcChamber.layer;
 					newHit->module		 		= fdcChamber.module;
 					newHit->element				= anodeWire.wire;
-					newHit->q					= wireHit.dE;
-					newHit->t					= wireHit.t;
+					newHit->q				= wireHit.dE;
+					newHit->t				= wireHit.t;
+					newHit->itrack                          = wireHit.itrack;
+					newHit->ptype                           = wireHit.ptype;
 					newHit->plane				= 2;
 					newHit->type				= 0;
 					newHit->gPlane				= DFDCGeometry::gPlane(newHit);
 					newHit->gLayer				= DFDCGeometry::gLayer(newHit);
-					newHit->r					= DFDCGeometry::getWireR(newHit);
+					newHit->r				= DFDCGeometry::getWireR(newHit);
 					
 					data.push_back(newHit);
 				}
@@ -776,12 +780,15 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 					if (newHit->element>1000) newHit->element-=1000;
 
 					newHit->plane				= cathodeStrip.plane;
-					newHit->q					= stripHit.q;
-					newHit->t					= stripHit.t;
+					newHit->q				= stripHit.q;
+					newHit->t				= stripHit.t;
+					newHit->itrack                          = stripHit.itrack;
+					newHit->ptype                           = stripHit.ptype;
 					newHit->type				= 1;
 					newHit->gPlane				= DFDCGeometry::gPlane(newHit);	 
 					newHit->gLayer				= DFDCGeometry::gLayer(newHit);
-					newHit->r					= DFDCGeometry::getStripR(newHit);
+					newHit->r				= DFDCGeometry::getStripR(newHit);
+
 					data.push_back(newHit);
 				}
 			}	

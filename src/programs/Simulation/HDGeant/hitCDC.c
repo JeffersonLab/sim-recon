@@ -20,7 +20,7 @@
 
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
 #define DRIFT_SPEED	.0055
-#define TWO_HIT_RESOL	250.
+#define TWO_HIT_RESOL	25.
 #define MAX_HITS 	100
 #define THRESH_KEV	1.
 #define STRAW_RADIUS 0.8
@@ -290,7 +290,8 @@ void hitCentralDC (float xin[4], float xout[4],
 					hits->in[nhit].t = tdrift;
 					hits->in[nhit].dE = dEsum;
 					hits->in[nhit].d = dradius;
-
+					hits->in[nhit].itrack = track;
+					hits->in[nhit].ptype = ipart;
 				}
 			
            /* hits->in[nhit].t =
@@ -303,7 +304,9 @@ void hitCentralDC (float xin[4], float xout[4],
             hits->in[nhit].t = tdrift;
             hits->in[nhit].dE = dEsum;
 	    hits->in[nhit].d = dradius;
-
+	    hits->in[nhit].itrack = track;
+	    hits->in[nhit].ptype = ipart;
+	    
             hits->mult++;
          }
          else

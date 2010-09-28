@@ -32,6 +32,9 @@ class DFDCHit : public JObject{
 	    						// center of chamber to wire/strip center
 	    int type;				// cathode=1, anode=0
 
+	    int itrack;                         // track number causing the hit
+	    int ptype;                          // particle type causing the hit
+
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "layer", "%d", layer);
 			AddString(items, "module", "%d", module);
@@ -43,6 +46,8 @@ class DFDCHit : public JObject{
 			AddString(items, "t", "%f", t);
 			AddString(items, "r", "%f", r);
 			AddString(items, "type", "%d", type);
+			AddString(items, "itrack", "%d", itrack);
+			AddString(items, "ptype", "%d", ptype);
 		}
 	    	
 };

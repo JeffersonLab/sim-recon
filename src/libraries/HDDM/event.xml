@@ -22,20 +22,20 @@
     <hitView minOccurs="0" version="2.0">
       <centralDC minOccurs="0">
         <cdcStraw maxOccurs="unbounded" minOccurs="0" ring="int" straw="int">
-          <cdcStrawHit dE="float" maxOccurs="unbounded" t="float"/>
-          <cdcStrawTruthHit dE="float" maxOccurs="unbounded" t="float" d="float"/>
+          <cdcStrawHit dE="float" maxOccurs="unbounded" t="float" itrack="int" ptype="int"/>
+          <cdcStrawTruthHit dE="float" maxOccurs="unbounded" t="float" d="float" itrack="int" ptype="int"/>
         </cdcStraw>
         <cdcTruthPoint dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float"/>
       </centralDC>
       <forwardDC minOccurs="0">
         <fdcChamber layer="int" maxOccurs="unbounded" module="int">
           <fdcAnodeWire maxOccurs="unbounded" minOccurs="0" wire="int">
-            <fdcAnodeHit dE="float" maxOccurs="unbounded" t="float"/>
-            <fdcAnodeTruthHit dE="float" maxOccurs="unbounded" t="float" d="float"/>
+            <fdcAnodeHit dE="float" maxOccurs="unbounded" t="float" itrack="int" ptype="int"/>
+            <fdcAnodeTruthHit dE="float" maxOccurs="unbounded" t="float" d="float" itrack="int" ptype="int"/>
           </fdcAnodeWire>
           <fdcCathodeStrip maxOccurs="unbounded" minOccurs="0" plane="int" strip="int">
-            <fdcCathodeHit maxOccurs="unbounded" q="float" t="float"/>
-            <fdcCathodeTruthHit maxOccurs="unbounded" q="float" t="float"/>
+            <fdcCathodeHit maxOccurs="unbounded" q="float" t="float" itrack="int" ptype="int"/>
+            <fdcCathodeTruthHit maxOccurs="unbounded" q="float" t="float" itrack="int" ptype="int"/>
           </fdcCathodeStrip>
           <fdcTruthPoint E="float" dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
         </fdcChamber>
