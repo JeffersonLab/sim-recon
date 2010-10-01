@@ -11,6 +11,7 @@ endif
 ifdef LOCAL_HALLD_HOME
 export HALLD_HOME := $(shell cd ../; pwd)
 export HALLD_MY := $(HALLD_HOME)
+export PATH := $(HALLD_HOME)/bin/$(BMS_OSNAME):$(PATH)
 endif
 
 ifdef HALLD_HOME
