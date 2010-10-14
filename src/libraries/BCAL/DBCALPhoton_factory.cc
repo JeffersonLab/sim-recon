@@ -15,22 +15,23 @@ using namespace std;
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALGeometry.h"
 #include <PID/DVertex.h>
-//#include <iostream>
-//using namespace std;
+
+#include "DLorentzVector.h"
 
 DBCALPhoton_factory::DBCALPhoton_factory()
 {
 
-  /*    
-    m_scaleZ_p0GE =  8.25618e-01;
-    m_scaleZ_p1GE =  9.22446e-02;
-    m_scaleZ_p2GE =  1.27379e02;
-    m_scaleZ_p3GE = -1.21171e02;
+    m_scaleZ_p0GE =  0.660299;
+    m_scaleZ_p1GE =  0.00229035;
+    m_scaleZ_p2GE =  -7.8725e-06;
+    m_scaleZ_p3GE =  8.05729e-09;
      
-    m_nonlinZ_p0GE =  5.0833e-02;
-    m_nonlinZ_p1GE = -2.66106e-02;
-    m_nonlinZ_p2GE =  5.22213e01;    
-    m_nonlinZ_p3GE =  6.88344e01;
+    m_nonlinZ_p0GE =  0.117;
+    m_nonlinZ_p1GE =  -3.79638e-04;
+    m_nonlinZ_p2GE =  3.770e-07;    
+    m_nonlinZ_p3GE =  1.9274e-10;
+
+  /*    
     
     m_linZ_p0GE = -5.26475e-03;
     m_linZ_p1GE = -2.47419e-02;
@@ -55,7 +56,7 @@ DBCALPhoton_factory::DBCALPhoton_factory()
     m_linZ_p1 = -1000.0;
     m_linZ_p2 = 482.0;
     m_linZ_p3 = 24.19;
-  */
+  
 
 
  // parameters for correcting with dark noise (different correction function)
@@ -93,6 +94,7 @@ DBCALPhoton_factory::DBCALPhoton_factory()
     m_linZ_p1 = -10.0;
     m_linZ_p2 = 456.7;
     m_linZ_p3 = 17.69;
+   */
 
 }
 
@@ -387,6 +389,7 @@ DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower, con
 	// for slices of z.  These fit parameters (scale and nonlin) are then plotted 
 	// as a function of z and fit.
     
+	/*
 	if( zEntry < 370.0 ) {
 		scale = (m_scaleZ_p0GE  + m_scaleZ_p1GE *(exp( -0.5 *(zEntry - m_scaleZ_p2GE )* (zEntry - m_scaleZ_p2GE ) / (m_scaleZ_p3GE * m_scaleZ_p3GE)   ) ) );
 		nonlin =( m_nonlinZ_p0GE  + m_nonlinZ_p1GE *(exp( -0.5 *(zEntry - m_nonlinZ_p2GE )* (zEntry - m_nonlinZ_p2GE ) / (m_nonlinZ_p3GE * m_nonlinZ_p3GE)   ) ) ) ;
@@ -403,8 +406,10 @@ DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower, con
 		lin = m_linZ_p0 + m_linZ_p1 *(exp( -0.5 *(zEntry - m_linZ_p2 )* (zEntry - m_linZ_p2 ) / (m_linZ_p3 * m_linZ_p3)   ) )  ;
 
 		//  cout << scale << ' ' << nonlin << ' ' << lin << endl;    
-	}
+	}*/
 
+	scale = m_scaleZ_p0GE + m_scaleZ_p1GE*zEntry + m_scaleZ_p2GE*(zEntry*zEntry) + m_scaleZ_p3GE*(zEntry*zEntry*zEntry);
+	nonlin = m_nonlinZ_p0GE + m_nonlinZ_p1GE*zEntry + m_nonlinZ_p2GE*(zEntry*zEntry)+ m_nonlinZ_p3GE*(zEntry*zEntry*zEntry);
 
 	// if( zEntry < m_zTarget ) zEntry = m_zTarget;
 
@@ -413,7 +418,7 @@ DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower, con
 
 		  
 	// now turn E_rec into E_gen -->> E_gen = ( E_rec / scale ) ^ ( 1 / ( 1 + nonlin ) )
-	double energy = pow( (shower->E - lin ) / scale, 1 / ( 1 + nonlin ) );
+	double energy = pow( (shower->E ) / scale, 1 / ( 1 + nonlin ) );
 
 
 	DBCALPhoton* photon = new DBCALPhoton();

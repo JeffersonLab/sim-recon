@@ -20,7 +20,7 @@ using namespace std;
 #include "TRACKING/DMCTrackHit.h"
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
-#include "BCAL/DHDDMBCALHit.h"
+#include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALTruthShower.h"
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
@@ -56,7 +56,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t GetSCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
 
 		jerror_t Extract_DBCALTruthShower(s_HDDM_t *hddm_s, JFactory<DBCALTruthShower> *factory);
-		jerror_t Extract_DHDDMBCALHit(s_HDDM_t *hddm_s, JFactory<DHDDMBCALHit> *factory);
+		jerror_t Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory);
 		jerror_t Extract_DBeamPhoton(s_HDDM_t *hddm_s, JFactory<DBeamPhoton> *factory);
 		jerror_t Extract_DMCThrown(s_HDDM_t *hddm_s, JFactory<DMCThrown> *factory);
 		jerror_t Extract_DCDCHit(s_HDDM_t *hddm_s, JFactory<DCDCHit> *factory);

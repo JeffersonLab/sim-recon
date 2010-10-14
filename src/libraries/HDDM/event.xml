@@ -48,8 +48,14 @@
       </startCntr>
       <barrelEMcal minOccurs="0">
         <bcalCell layer="int" maxOccurs="4" minOccurs="0" module="int" sector="int">
+          <bcalSiPMUpHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
+          <bcalSiPMDownHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
           <bcalHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float"/>
         </bcalCell>
+        <bcalfADCCell layer="int" maxOccurs="4" minOccurs="0" module="int" sector="int">
+          <bcalfADCUpHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
+          <bcalfADCDownHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
+        </bcalfADCCell>
         <bcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float"/>
       </barrelEMcal>
       <gapEMcal minOccurs="0">

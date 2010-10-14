@@ -28,6 +28,16 @@ double SampleGaussian(double sigma)
 }
 
 //--------------------------
+// SamplePoisson
+//--------------------------
+int SamplePoisson(float lambda)
+{
+        if(!rnd)rnd = new TRandom3;
+	
+	return rnd->Poisson(lambda);
+}
+
+//--------------------------
 // SampleRange
 //--------------------------
 double SampleRange(double x1, double x2)

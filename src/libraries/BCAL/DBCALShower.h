@@ -3,6 +3,7 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
+#include <math.h>
 using namespace jana;
 
 class DBCALShower:public JObject{
@@ -33,8 +34,11 @@ class DBCALShower:public JObject{
     float t_rms_b;
 
 	void toStrings(vector<pair<string,string> > &items)const{
+	                /*Old, easier to compare r-phi rather than x-y, for Truth Hits
 			AddString(items, "x", "%5.2f", x);
 			AddString(items, "y", "%5.2f", y);
+			*/
+	                AddString(items, "r", "%5.2f", sqrt(x*x+y*y));	      			        AddString(items, "phi", "%5.2f",atan2(y,x));
 			AddString(items, "z", "%5.2f", z);
 			AddString(items, "t", "%5.2f", t);
 			AddString(items, "E", "%5.2f", E);

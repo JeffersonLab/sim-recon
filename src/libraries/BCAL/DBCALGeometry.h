@@ -44,6 +44,20 @@ public:
     
     float ATTEN_LENGTH;   ///> attenuation length
     float C_EFFECTIVE;    ///> speed of light in fibers
+
+    //Public Data Members for smear.cc
+    static int NBcalMods() { return 48; }  
+    static int NBcalLays1() { return 2; }
+    static int NBcalLays2() { return 2; }
+    static int NBcalSecs1() { return 4; }
+    static int NBcalSecs2() { return 2; }
+    static float BcalInnerRad() { return 64.3; }
+    static float BcalMidRad() { return 76.3; }
+    static float BcalOuterRad() { return 86.17; }
+    static float BcalFiberLength() { return 390.0; }
+    static float Global_Center() { return 212; }
+    static float Atten_Length() { return 300.; }
+    static float C_Effective() { return 16.75;}
     
     static inline int module( int cellId ) { return ( cellId & MODULE_MASK ) >> MODULE_SHIFT; };
     static inline int layer( int cellId ) { return ( cellId & LAYER_MASK ) >> LAYER_SHIFT; };

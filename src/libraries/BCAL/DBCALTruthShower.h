@@ -19,12 +19,12 @@ class DBCALTruthShower:public JObject{
 		float E;
 
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "x", "%d", track);
-			AddString(items, "y", "%4.3f", phi);
-			AddString(items, "z", "%3.1f", r);
-			AddString(items, "t", "%4.1f", z);
+			AddString(items, "track", "%d", track);
+			AddString(items, "phi", "%3.1f", phi);
+			AddString(items, "r", "%4.3f", r);
+			AddString(items, "z", "%4.1f", z);
+			AddString(items, "t", "%4.3f", t);
 			AddString(items, "E", "%4.3f", E);
-			AddString(items, "E", "%4.3f", t);
 		}
 };
 

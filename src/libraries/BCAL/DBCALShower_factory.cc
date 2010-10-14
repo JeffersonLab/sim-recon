@@ -9,7 +9,7 @@
 #include <math.h>
 #include <map>
 
-#include "BCAL/DBCALMCResponse.h"
+#include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALGeometry.h"
 #include "BCAL/DBCALShower_factory.h"
 
@@ -210,7 +210,7 @@ void DBCALShower_factory::CellRecon(JEventLoop *loop)
     
     //**********************************************************************
     // The main purpose of this function is extracting information
-    // from  DBCALMCResponse class 
+    // from  DBCALHit class 
     // objects and form the array: ecel_a,tcel_a,ecel_b,tcel_b 
     // and xcel,ycel,zcel,tcel,ecel,tcell_anor,tcell_bnor;
     // Among these arrays,
@@ -219,7 +219,7 @@ void DBCALShower_factory::CellRecon(JEventLoop *loop)
     //********************************************************************** 
     
     /////////////////////////////////////////////////////////////////////
-    // Now start to take take out  DBCALMCResponse to form our private 
+    // Now start to take take out DBCALHit to form our private 
     // data member ecel_a,tcel_a,ecel_b,tcel_b
     /////////////////////////////////////////////////////////////////////
     
@@ -234,14 +234,14 @@ void DBCALShower_factory::CellRecon(JEventLoop *loop)
     
     // extract the BCAL hits
     
-    vector<const DBCALMCResponse*> hits;
+    vector<const DBCALHit*> hits;
     loop->Get(hits);
     if(hits.size() <= 0) return;
     
         
     for (unsigned int i = 0; i < hits.size(); i++) {
         
-        const  DBCALMCResponse *hit = hits[i];     
+        const  DBCALHit *hit = hits[i];     
         int module = hit->module;
         int layer = hit->layer;
         int sector = hit->sector;
