@@ -99,8 +99,16 @@ inline double fdc_drift_variance(double x){
   //return FDC_ANODE_VARIANCE;
 
   x=fabs(x);
+  // For 40/60 Ar/CO2
   double sigma=0.04555*exp(-5.496*x)+1.289e-6*exp(22.63*x);
- 
+  // For 90/10
+  
+  //if (x<0.1) x=0.1;
+  //double sigma=0.0547*exp(-16.14*x)+0.0064*exp(2.51*x);
+  //if (x>0.45) sigma=0.0547*exp(-16.14*0.45)+0.0064*exp(2.51*0.45)
+  //  +1.6*(x-0.45);
+  
+  //printf("x %f sigma %f\n",x,sigma);
   return sigma*sigma;
 }
 
@@ -139,7 +147,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   DEBUG_HISTS=true;
   //  DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
-  //DEBUG_LEVEL=2;
+  //DEBUG_LEVEL=1;
 
   if(DEBUG_HISTS){
     DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -165,14 +173,14 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
     if (!fdc_xresiduals){
       fdc_xresiduals=new TH2F("fdc_xresiduals","x residuals vs z",
-			      200,170.,370.,100,-1,1.);
+			      200,170.,370.,1000,-1,1.);
       fdc_xresiduals->SetXTitle("z (cm)");
       fdc_xresiduals->SetYTitle("#Deltax (cm)");
     }  
     fdc_yresiduals=(TH2F*)gROOT->FindObject("fdc_yresiduals");
     if (!fdc_yresiduals){
       fdc_yresiduals=new TH2F("fdc_yresiduals","y residuals vs z",
-			      200,170.,370.,100,-1,1.);
+			      200,170.,370.,1000,-1,1.);
       fdc_yresiduals->SetXTitle("z (cm)");
       fdc_yresiduals->SetYTitle("#Deltay (cm)");
     } 
@@ -291,17 +299,23 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   }
   // Compute and fill the error matrix needed for kinematic fitting
   fit_params.setErrorMatrix(Get7x7ErrorMatrix(errMatrix));
+  //(Get7x7ErrorMatrix(errMatrix)).Print();
+  
+  //printf("%d %d\n",state_x,state_y);
+
   // Replace the tracking error matrix with the results for the forward 
   // paramaterization if available
   if (fcov.size()!=0){
     fit_params.setForwardParmFlag(true);
     for (unsigned int i=0;i<5;i++){
       for (unsigned int j=i;j<5;j++){
-	errMatrix(i,j)=cov[i][j];
+	errMatrix(i,j)=fcov[i][j];
       }
     }
+    //  errMatrix.Print();
   }
-  else fit_params.setForwardParmFlag(false);
+  else
+    fit_params.setForwardParmFlag(false);
   fit_params.setTrackingErrorMatrix(errMatrix);
   this->chisq = GetChiSq();
   this->Ndof = GetNDF();
@@ -1563,11 +1577,10 @@ jerror_t DTrackFitterKalmanSIMD::ConvertStateVector(double z,double wire_x,
   Sc(state_z)=z;
 
   // D is a signed quantity
-  double rc=1./fabs(Sc(state_q_over_pt)*qBr2p*bfield->GetBz(x_,y_,z));
-  double xc=x_+rc*sin(Sc(state_phi));
-  double yc=y_+rc*cos(Sc(state_phi));
-  double r=sqrt(xc*xc+yc*yc);
-  if ((q_over_p_>0 && r<rc) || (q_over_p_<0 && r>rc)) Sc(state_D)*=-1.;
+  double cosphi=cos(Sc(state_phi));
+  double sinphi=sin(Sc(state_phi));
+  if ((x_>0 && sinphi>0) || (y_ <0 && cosphi>0) || (y_>0 && cosphi<0) 
+      || (x_<0 && sinphi<0)) Sc(state_D)*=-1.; 
 
   DMatrix5x5 J;
   double tanl3=tanl*tanl*tanl;
@@ -2157,6 +2170,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       }
       fcov.push_back(dummy);
     }
+    //Clast.Print();
 
     // total chisq and ndf
     chisq_=chisq_iter;
@@ -3281,6 +3295,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       double alpha=atan(tu);
       double cosalpha=cos(alpha);
       double sinalpha=sin(alpha);
+      // Correction for lorentz effect
+      double nz=my_fdchits[id]->nz;
+      double nr=my_fdchits[id]->nr;
+      double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
 
       // The next measurement 
       M.Set(0.,v);
@@ -3291,62 +3309,37 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	double tflight=forward_traj[k].t;
 	double drift=DRIFT_SPEED*(my_fdchits[id]->t-mT0-tflight);  
 	drift*=(du>0?1.:-1.);
-	
-	// Angles of incidence to the measurement plane
-	double phi=atan2(S(state_y),S(state_x));
-	double cosphi=cos(phi);
-	double sinphi=sin(phi);
-	
-	// Correction for lorentz effect
-	double nz=my_fdchits[id]->nz;
-	double nr=my_fdchits[id]->nr;
-	double dv=nz*drift*sinalpha*cosphi-nr*drift*cosalpha;
-	
-	// ... and its covariance matrix 
-	//V(0,0)=anneal_factor*FDC_ANODE_VARIANCE;
+	M.Set(drift,v);
+
+	// Variance in drift distance and distance along wire
 	V(0,0)=anneal_factor*fdc_drift_variance(drift);
-	V(1,1)=fdc_y_variance(alpha,drift);
-
-	// Measurement vector with drift distance and Lorentz-corrected 
-	// position along the wire
-	M.Set(drift,v+dv);
-
-	// Variance due to Lorentz correction
-	double x2=x*x;
-	double y2=y*y;
-	double var_alpha
-	  =(C(state_tx,state_tx)*cosa*cosa+C(state_ty,state_ty)*sina*sina
-	    -2.*sina*cosa*C(state_tx,state_ty))/one_plus_tu2/one_plus_tu2;
-	double var_phi=(y2*C(state_x,state_x)+x2*C(state_y,state_y)
-			-2*x*y*C(state_x,state_y))/(x2+y2)/(x2+y2);
-	
-	double drift2=drift*drift;	
-	double nz_cosa_cosphi_plus_nr_sina=nz*cosalpha*cosphi+nr*sinalpha;
-	V(1,1)+=dv*dv*V(0,0)/drift2
-	  +drift2*nz_cosa_cosphi_plus_nr_sina*nz_cosa_cosphi_plus_nr_sina
-	  *var_alpha
-	  +drift2*nz*nz*sinalpha*sinalpha*sinphi*sinphi*var_phi;
-	
-	V(1,1)*=anneal_factor;
-	
+	V(1,1)=anneal_factor*fdc_y_variance(alpha,drift);
       }
 
       // To transform from (x,y) to (u,v), need to do a rotation:
       //   u = x*cosa-y*sina
       //   v = y*cosa+x*sina
       H(0,state_x)=H_T(state_x,0)=cosa*cosalpha;
-      H(1,state_x)=H_T(state_x,1)=sina;
+      H(1,state_x)=H_T(state_x,1)
+	=sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;
       H(0,state_y)=H_T(state_y,0)=-sina*cosalpha;
-      H(1,state_y)=H_T(state_y,1)=cosa;
+      H(1,state_y)=H_T(state_y,1)
+	=cosa-sina*cosalpha*nz_sinalpha_plus_nr_cosalpha;
       double factor=du*tu/sqrt(one_plus_tu2)/one_plus_tu2;
       H(0,state_ty)=H_T(state_ty,0)=sina*factor;
       H(0,state_tx)=H_T(state_tx,0)=-cosa*factor;
+      double temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
+				     -2.*nr*cosalpha*sinalpha);
+      H(1,state_tx)=H_T(state_tx,0)=cosa*temp;
+      H(1,state_ty)=H_T(state_ty,1)=-sina*temp;
 
       // Compute Kalman gain matrix
       K=C*H_T*(V+H*(C*H_T)).Invert();
 
       // Update the state vector 
-      Mdiff.Set(M(0)-du*cos(alpha),M(1)-(y*cosa+x*sina));
+      Mdiff.Set(M(0)-du*cosalpha,
+		M(1)-(y*cosa+x*sina
+		      +du*cosalpha*nz_sinalpha_plus_nr_cosalpha));
       //S=S+K*Mdiff;
       S+=K*Mdiff;
 
