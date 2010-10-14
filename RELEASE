@@ -1,0 +1,169 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-10-11
+   Date: October 11, 2010
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 6789 of trunk/sim-recon
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+  HDDS 1.0
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.0
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.26
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.0
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r6728 | staylor | 2010-09-22 08:30:10 -0400 (Wed, 22 Sep 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+Add the drift distance to the truth hits for FDC anodes and CDC straws.
+------------------------------------------------------------------------
+r6729 | staylor | 2010-09-22 08:31:06 -0400 (Wed, 22 Sep 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+
+Add drift distance to the StrawTruthHit for use later in the smearing.
+------------------------------------------------------------------------
+r6730 | staylor | 2010-09-22 08:33:09 -0400 (Wed, 22 Sep 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+Reduce strip dead zone radius to 1.3 cm and adjust wire-dead zone to latest guess.  Add drift distance to anode Truth Hit.
+------------------------------------------------------------------------
+r6731 | staylor | 2010-09-22 08:38:11 -0400 (Wed, 22 Sep 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Added parameterization of the FDC drift distance smearing as a function of position with the cell as determined by fitting GARFIELD simulation results computed by Lubomir.  One can smear with the old constant sigma by using the -Y option.
+------------------------------------------------------------------------
+r6732 | staylor | 2010-09-22 09:53:51 -0400 (Wed, 22 Sep 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Added position-within-cell-dependent FDC anode smearing.
+------------------------------------------------------------------------
+r6733 | staylor | 2010-09-22 09:55:55 -0400 (Wed, 22 Sep 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+
+Streamline some of the calculations.
+------------------------------------------------------------------------
+r6745 | staylor | 2010-09-24 08:15:48 -0400 (Fri, 24 Sep 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Better functional form for fdc anode smearing.
+------------------------------------------------------------------------
+r6752 | staylor | 2010-09-24 18:04:28 -0400 (Fri, 24 Sep 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+More progress on PID.
+------------------------------------------------------------------------
+r6756 | zihlmann | 2010-09-28 15:31:31 -0400 (Tue, 28 Sep 2010) | 55 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit.h
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+The following changes are made to add the particle type and track number
+that caused the hit in the FDC or TDC. With this information the tracking
+algorithem can unambigously determine to wich true particle track a given hit
+belonged to for diagnostic purposes only of course. In the process I also 
+changed the two hit resolution from 250ns to 25ns which is more realistic.
+So here the damage list to the code:
+
+sim-recon/src/libraries/HDDM/event.xml
+1) add  itrack="int" ptype="int" to <cdcStrawTruthHit> and <cdcStrawHit> 
+2) add  itrack="int" ptype="int" to <fdcAnodeTruthHit> and <fdcAnodeHit>
+3) add  itrack="int" ptype="int" to <fdcCathodeTruthHit> and <fdcAnodeTruthHit> 
+
+sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+1) Extract_DCDCHit:
+   hit->itrack = strawhit->itrack;
+   hit->ptype = strawhit->ptype;
+2) Extract_DFDCHit:
+   newHit->itrack   = wireHit.itrack;
+   newHit->ptype    = wireHit.ptype;
+   newHit->itrack   = stripHit.itrack;
+   newHit->ptype    = stripHit.ptype;
+
+sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+1) add hits->in[nhit].itrack = itrack;
+   and hits->in[nhit].ptype = ipart;
+   to cdcStrawTruthHits
+2 #define TWO_HIT_RESOL         25. // was 250.
+
+sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+1) for anode hits:
+   ahits->in[nhit].itrack = itrack;
+   ahits->in[nhit].ptype = ipart;
+
+2) for cathode hits:
+   chits->in[nhit].itrack = itrack;
+   chits->in[nhit].ptype = ipart;
+
+3) #define TWO_HIT_RESOL	25. // was 250
+
+sim-recon/src/libraries/CDC/DCDCHit.h
+1) int itrack;
+   int ptype;
+2) AddString(items, "itrack", "%d", itrack);
+   AddString(items, "ptype", "%d", ptype);
+
+sim-recon/src/libraries/FDC/DFDCHit.h
+1) int itrack;  // track number causing the hit
+   int ptype;   // particle type causing the hit
+
+2) AddString(items, "itrack", "%d", itrack);
+   AddString(items, "ptype", "%d", ptype);
+
+
+
+
+------------------------------------------------------------------------
+r6767 | marki | 2010-10-01 09:08:51 -0400 (Fri, 01 Oct 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/Makefile
+
+If LOCAL_HALLD_HOME is requested, add local bin directory to front of path.
+
+------------------------------------------------------------------------
+r6791 | davidl | 2010-10-12 06:35:29 -0400 (Tue, 12 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+Make name array long enough to hold function name and terminating zero.
+------------------------------------------------------------------------
