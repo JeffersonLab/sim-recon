@@ -68,7 +68,7 @@ int main(int narg,char* argv[])
 	
 	// Smearing functions for FDC drift distance
 	for (unsigned int i=0;i<8;i++){
-	  char name[2];
+	  char name[256];
 	  sprintf(name,"f%d",i);
 	  fdc_smear_function[i]=new TF1(name,"[0]*exp(-(x-[1])*(x-[1])/[2])+[3]*exp(-(x-[4])*(x-[4])/[5])+[6]*exp(-(x-[7])*(x-[7])/[8])",-5,5);
 	  for (unsigned int j=0;j<9;j++){
