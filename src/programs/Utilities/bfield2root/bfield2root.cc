@@ -106,7 +106,7 @@ int main(int narg, char *argv[])
 	}
 	
 	// Create 2D histos in R and Z
-	TH2D *Bz_vs_r_vs_z = new TH2D("Bz_vs_r_vs_z", "", 651, -25, 625.0, 200, 0.0, 100.0);
+	TH2D *Bz_vs_r_vs_z = new TH2D("Bz_vs_r_vs_z", "", Nz, Zmin, Zmax, Nr, Rmin, Rmax);
 	Bz_vs_r_vs_z->SetXTitle("z (cm)");
 	Bz_vs_r_vs_z->SetYTitle("r (cm)");
 	Bz_vs_r_vs_z->SetStats(0);
