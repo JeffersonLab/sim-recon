@@ -1316,6 +1316,8 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
 double DTrackFitterKalmanSIMD::Step(double oldz,double newz, double dEdx,
 				    DMatrix5x1 &S){
   double delta_z=newz-oldz;
+  if (fabs(delta_z)<EPS) return 0.; // skip if the step is too small
+
   double delta_z_over_2=0.5*delta_z;
   double midz=oldz+delta_z_over_2;
   DMatrix5x1 D1,D2,D3,D4;
@@ -1352,11 +1354,15 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(double oldz,double newz,
    // Initialize the Jacobian matrix
   J.Zero();
   for (int i=0;i<5;i++) J(i,i)=1.;
+
+  // Step in z
+  double delta_z=newz-oldz;
+  if (fabs(delta_z)<EPS) return NOERROR; //skip if the step is too small 
+
   // Matrices for intermediate steps
   DMatrix5x5 J1,J2,J3,J4;  
   DMatrix5x1 D1;
   
-  double delta_z=newz-oldz;
   double delta_z_over_2=0.5*delta_z;
   double midz=oldz+delta_z_over_2;
   CalcDerivAndJacobian(oldz,delta_z,S,dEdx,J1,D1);
@@ -1738,7 +1744,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,double Z,
 						    const DMatrix5x1 &Sc,
 						    DMatrix5x5 &Q){
   Q.Zero();
-  if (Z>0.){
+  if (Z>0. && fabs(ds)>EPS){
     double tanl=Sc(state_tanl);
     double tanl2=tanl*tanl;
     double one_plus_tanl2=1.+tanl2;
@@ -1786,7 +1792,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,double Z,
 						 DMatrix5x5 &Q){
 
  Q.Zero();
- if (Z>0.){
+ if (Z>0. && fabs(ds)>EPS){
    double tx=S(state_tx),ty=S(state_ty);
    double one_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
    double my_ds=fabs(ds);
