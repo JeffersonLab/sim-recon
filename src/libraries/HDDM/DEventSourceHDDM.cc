@@ -716,6 +716,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> 
 		      hit->straw   = cdcstraw->straw;
 		      hit->dE      = strawhit->dE;
 		      hit->t       = strawhit->t;
+		      hit->d       = 0.; // initialize to zero to avoid any NaN
 		      hit->itrack  = strawhit->itrack;
 		      hit->ptype   = strawhit->ptype;
 		      
@@ -820,6 +821,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 			newHit->element				= anodeWire.wire;
 			newHit->q				= wireHit.dE;
 			newHit->t				= wireHit.t;
+ 		        newHit->d                               = 0.; // initialize to zero to avoid any NaN
 			newHit->itrack                          = wireHit.itrack;
 			newHit->ptype                           = wireHit.ptype;
 			newHit->plane				= 2;
@@ -851,6 +853,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 			newHit->plane				= cathodeStrip.plane;
 			newHit->q				= stripHit.q;
 			newHit->t				= stripHit.t;
+		        newHit->d                               = 0.; // initialize to zero to avoid any NaN
 			newHit->itrack                          = stripHit.itrack;
 			newHit->ptype                           = stripHit.ptype;
 			newHit->type				= 1;
@@ -910,6 +913,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 			newHit->plane				= cathodeStrip.plane;
 			newHit->q				= stripHit.q;
 			newHit->t				= stripHit.t;
+	   	        newHit->d                               = 0.; // initialize to zero to avoid any NaN
 			newHit->itrack                          = stripHit.itrack;
 			newHit->ptype                           = stripHit.ptype;
 			newHit->type				= 1;
