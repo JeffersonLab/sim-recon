@@ -162,43 +162,43 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	
 	if(dataClassName =="DTagger" && tag=="")
 	  return Extract_DTagger(my_hddm_s, dynamic_cast<JFactory<DTagger>*>(factory));
-
+	
 	if(dataClassName =="DMCTrackHit" && tag=="")
-		return Extract_DMCTrackHit(my_hddm_s, dynamic_cast<JFactory<DMCTrackHit>*>(factory));
-
+	  return Extract_DMCTrackHit(my_hddm_s, dynamic_cast<JFactory<DMCTrackHit>*>(factory));
+	
 	if(dataClassName =="DBeamPhoton" && tag=="")
-		return Extract_DBeamPhoton(my_hddm_s, dynamic_cast<JFactory<DBeamPhoton>*>(factory));
-
+	  return Extract_DBeamPhoton(my_hddm_s, dynamic_cast<JFactory<DBeamPhoton>*>(factory));
+	
 	if(dataClassName =="DMCThrown" && tag=="")
-		return Extract_DMCThrown(my_hddm_s, dynamic_cast<JFactory<DMCThrown>*>(factory));
-
+	  return Extract_DMCThrown(my_hddm_s, dynamic_cast<JFactory<DMCThrown>*>(factory));
+	
 	if(dataClassName == "DBCALTruthShower" && tag=="")
 	  return Extract_DBCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DBCALTruthShower>*>(factory));
-
+	
 	if(dataClassName =="DBCALHit" && tag=="")
-		return Extract_DBCALHit(my_hddm_s, dynamic_cast<JFactory<DBCALHit>*>(factory));
-
-	if(dataClassName =="DCDCHit" && tag=="")
-		return Extract_DCDCHit(my_hddm_s, dynamic_cast<JFactory<DCDCHit>*>(factory));
-
-	if(dataClassName =="DFDCHit" && tag=="")
-		return Extract_DFDCHit(my_hddm_s, dynamic_cast<JFactory<DFDCHit>*>(factory));
-
+	  return Extract_DBCALHit(my_hddm_s, dynamic_cast<JFactory<DBCALHit>*>(factory));
+	
+	if(dataClassName =="DCDCHit" && (tag=="" || tag=="TRUTH") )
+	  return Extract_DCDCHit(my_hddm_s, dynamic_cast<JFactory<DCDCHit>*>(factory) , tag );
+	
+	if(dataClassName =="DFDCHit" && (tag=="" || tag=="TRUTH") )
+	  return Extract_DFDCHit(my_hddm_s, dynamic_cast<JFactory<DFDCHit>*>(factory), tag);
+	
 	if(dataClassName == "DFCALTruthShower" && tag=="")
 	  return Extract_DFCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DFCALTruthShower>*>(factory));
-
+	
 	if(dataClassName == "DFCALHit" && (tag=="" || tag=="TRUTH"))
 	  return Extract_DFCALHit(my_hddm_s, dynamic_cast<JFactory<DFCALHit>*>(factory), event.GetJEventLoop(), tag);
-
+	
 	if(dataClassName =="DMCTrajectoryPoint" && tag=="")
-		return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
-
+	  return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
+	
 	if(dataClassName =="DTOFTruth" && tag=="")
 	  return Extract_DTOFTruth(my_hddm_s, dynamic_cast<JFactory<DTOFTruth>*>(factory));
-
+	
 	if(dataClassName =="DHDDMTOFHit" && tag=="")
 	  return Extract_DHDDMTOFHit(my_hddm_s, dynamic_cast<JFactory<DHDDMTOFHit>*>(factory));
-
+	
 	if(dataClassName =="DSCHit" && tag=="")
 	  return Extract_DSCHit(my_hddm_s, dynamic_cast<JFactory<DSCHit>*>(factory));
 
@@ -681,7 +681,7 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 //------------------
 // Extract_DCDCHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> *factory)
+jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> *factory, string tag)
 {
 	/// Copies the data from the given hddm_s structure. This is called
 	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -702,21 +702,43 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> 
 		if (hits == HDDM_NULL)continue;
 		if (hits->centralDC == HDDM_NULL)continue;
 		if (hits->centralDC->cdcStraws == HDDM_NULL)continue;
-		for(unsigned int k=0; k<hits->centralDC->cdcStraws->mult; k++){
-			s_CdcStraw_t *cdcstraw = &hits->centralDC->cdcStraws->in[k];
-			for(unsigned int j=0; j<cdcstraw->cdcStrawHits->mult; j++){
-				s_CdcStrawHit_t *strawhit = &cdcstraw->cdcStrawHits->in[j];
-				
-				DCDCHit *hit = new DCDCHit;
-				hit->ring = cdcstraw->ring;
-				hit->straw = cdcstraw->straw;
-				hit->dE = strawhit->dE;
-				hit->t = strawhit->t;
-				hit->itrack = strawhit->itrack;
-				hit->ptype = strawhit->ptype;
 
-				data.push_back(hit);
-			}
+		
+		for(unsigned int k=0; k<hits->centralDC->cdcStraws->mult; k++){
+		  s_CdcStraw_t *cdcstraw = &hits->centralDC->cdcStraws->in[k];
+
+		  if (tag=="") {
+		    for(unsigned int j=0; j<cdcstraw->cdcStrawHits->mult; j++){
+		      s_CdcStrawHit_t *strawhit = &cdcstraw->cdcStrawHits->in[j];
+		      
+		      DCDCHit *hit = new DCDCHit;
+		      hit->ring    = cdcstraw->ring;
+		      hit->straw   = cdcstraw->straw;
+		      hit->dE      = strawhit->dE;
+		      hit->t       = strawhit->t;
+		      hit->itrack  = strawhit->itrack;
+		      hit->ptype   = strawhit->ptype;
+		      
+		      data.push_back(hit);
+		    }
+		  } // end of tag==""
+
+		  if (tag=="TRUTH") {
+		    for(unsigned int j=0; j<cdcstraw->cdcStrawTruthHits->mult; j++){
+		      s_CdcStrawTruthHit_t *strawhit = &cdcstraw->cdcStrawTruthHits->in[j];
+		      
+		      DCDCHit *hit = new DCDCHit;
+		      hit->ring    = cdcstraw->ring;
+		      hit->straw   = cdcstraw->straw;
+		      hit->dE      = strawhit->dE;
+		      hit->t       = strawhit->t;
+		      hit->d       = strawhit->d;
+		      hit->itrack  = strawhit->itrack;
+		      hit->ptype   = strawhit->ptype;
+		      
+		      data.push_back(hit);
+		    }
+		  } // end of tag=="TRUTH"
 		}
 	}
 	
@@ -730,7 +752,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> 
 //------------------
 // Extract_DFDCHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> *factory)
+jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> *factory, string tag)
 {
 	/// Copies the data from the given hddm_s structure. This is called
 	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -769,70 +791,146 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 
 		// Acquire the pointer to the beginning of the FDC hit tree
 		s_FdcChambers_t* fdcChamberSet = hits->forwardDC->fdcChambers;
-
+		
 		for (unsigned int i=0; i < fdcChamberSet->mult; i++) {
-			// Each chamber in the ChamberSet has a wire set and a strip set
-			s_FdcChamber_t &fdcChamber 		= fdcChamberSet->in[i];		
-			s_FdcAnodeWires_t* wireSet 		= fdcChamber.fdcAnodeWires;
-			s_FdcCathodeStrips_t* stripSet 	= fdcChamber.fdcCathodeStrips;
-		
-			// Each set of wires has (obviously) wires inside of it, and each wire
-			// may have one or more hits on it. Make a DFDCHit object for each one
-			// of these hits.
-			for (unsigned int j=0; j < wireSet->mult; j++) {
-				s_FdcAnodeWire_t anodeWire		= wireSet->in[j];
-				s_FdcAnodeHits_t* wireHitSet	= anodeWire.fdcAnodeHits;
-				for (unsigned int k=0; k < wireHitSet->mult; k++) {
-					s_FdcAnodeHit_t wireHit		= wireHitSet->in[k];
-					DFDCHit* newHit				= new DFDCHit();
-					newHit->layer		 		= fdcChamber.layer;
-					newHit->module		 		= fdcChamber.module;
-					newHit->element				= anodeWire.wire;
-					newHit->q				= wireHit.dE;
-					newHit->t				= wireHit.t;
-					newHit->itrack                          = wireHit.itrack;
-					newHit->ptype                           = wireHit.ptype;
-					newHit->plane				= 2;
-					newHit->type				= 0;
-					newHit->gPlane				= DFDCGeometry::gPlane(newHit);
-					newHit->gLayer				= DFDCGeometry::gLayer(newHit);
-					newHit->r				= DFDCGeometry::getWireR(newHit);
-					
-					data.push_back(newHit);
-				}
-			}
-		
-			// Ditto for the cathodes.
-			for (unsigned int j=0; j < stripSet->mult; j++) {
-				s_FdcCathodeStrip_t cathodeStrip = stripSet->in[j];
-				s_FdcCathodeHits_t* stripHitSet = cathodeStrip.fdcCathodeHits;
-				for (unsigned int k=0; k < stripHitSet->mult; k++) {
-					s_FdcCathodeHit_t stripHit	= stripHitSet->in[k];
-					DFDCHit* newHit				= new DFDCHit();
-					newHit->layer				= fdcChamber.layer;
-					newHit->module				= fdcChamber.module;
-					newHit->element				= cathodeStrip.strip;
-					if (newHit->element>1000) newHit->element-=1000;
+		  // Each chamber in the ChamberSet has a wire set and a strip set
+		  s_FdcChamber_t &fdcChamber 		= fdcChamberSet->in[i];		
+		  
+		  
+		  
+		  s_FdcAnodeWires_t* wireSet 		= fdcChamber.fdcAnodeWires;
+		  s_FdcCathodeStrips_t* stripSet 	= fdcChamber.fdcCathodeStrips;
+		  
+		  // Each set of wires has (obviously) wires inside of it, and each wire
+		  // may have one or more hits on it. Make a DFDCHit object for each one
+		  // of these hits.
 
-					newHit->plane				= cathodeStrip.plane;
-					newHit->q				= stripHit.q;
-					newHit->t				= stripHit.t;
-					newHit->itrack                          = stripHit.itrack;
-					newHit->ptype                           = stripHit.ptype;
-					newHit->type				= 1;
-					newHit->gPlane				= DFDCGeometry::gPlane(newHit);	 
-					newHit->gLayer				= DFDCGeometry::gLayer(newHit);
-					newHit->r				= DFDCGeometry::getStripR(newHit);
+		  if (tag==""){
+		    for (unsigned int j=0; j < wireSet->mult; j++) {
 
-					data.push_back(newHit);
-				}
-			}	
+		      s_FdcAnodeWire_t anodeWire		= wireSet->in[j];
+		      s_FdcAnodeHits_t* wireHitSet	        = anodeWire.fdcAnodeHits;
+
+		      for (unsigned int k=0; k < wireHitSet->mult; k++) {
+
+			s_FdcAnodeHit_t wireHit		        = wireHitSet->in[k];
+			DFDCHit* newHit				= new DFDCHit();
+			newHit->layer		 		= fdcChamber.layer;
+			newHit->module		 		= fdcChamber.module;
+			newHit->element				= anodeWire.wire;
+			newHit->q				= wireHit.dE;
+			newHit->t				= wireHit.t;
+			newHit->itrack                          = wireHit.itrack;
+			newHit->ptype                           = wireHit.ptype;
+			newHit->plane				= 2;
+			newHit->type				= 0;
+			newHit->gPlane				= DFDCGeometry::gPlane(newHit);
+			newHit->gLayer				= DFDCGeometry::gLayer(newHit);
+			newHit->r				= DFDCGeometry::getWireR(newHit);
+			
+			data.push_back(newHit);
+		      }
+		    }
+		    
+		    
+		    // Ditto for the cathodes.
+		    for (unsigned int j=0; j < stripSet->mult; j++) {
+
+		      s_FdcCathodeStrip_t cathodeStrip          = stripSet->in[j];
+		      s_FdcCathodeHits_t* stripHitSet           = cathodeStrip.fdcCathodeHits;
+
+		      for (unsigned int k=0; k < stripHitSet->mult; k++) {
+
+			s_FdcCathodeHit_t stripHit	        = stripHitSet->in[k];
+			DFDCHit* newHit				= new DFDCHit();
+			newHit->layer				= fdcChamber.layer;
+			newHit->module				= fdcChamber.module;
+			newHit->element				= cathodeStrip.strip;
+			if (newHit->element>1000) newHit->element-=1000;
+			
+			newHit->plane				= cathodeStrip.plane;
+			newHit->q				= stripHit.q;
+			newHit->t				= stripHit.t;
+			newHit->itrack                          = stripHit.itrack;
+			newHit->ptype                           = stripHit.ptype;
+			newHit->type				= 1;
+			newHit->gPlane				= DFDCGeometry::gPlane(newHit);	 
+			newHit->gLayer				= DFDCGeometry::gLayer(newHit);
+			newHit->r				= DFDCGeometry::getStripR(newHit);
+			
+			data.push_back(newHit);
+		      }
+		    }
+
+		  } else if (tag=="TRUTH"){
+		    
+		    for (unsigned int j=0; j < wireSet->mult; j++) {
+
+		      s_FdcAnodeWire_t anodeWire		= wireSet->in[j];
+		      s_FdcAnodeTruthHits_t* wireHitSet	        = anodeWire.fdcAnodeTruthHits;
+
+		      for (unsigned int k=0; k < wireHitSet->mult; k++) {
+
+			s_FdcAnodeTruthHit_t wireHit		= wireHitSet->in[k];
+			DFDCHit* newHit				= new DFDCHit();
+			newHit->layer		 		= fdcChamber.layer;
+			newHit->module		 		= fdcChamber.module;
+			newHit->element				= anodeWire.wire;
+			newHit->q				= wireHit.dE;
+			newHit->t				= wireHit.t;
+			newHit->d				= wireHit.d;
+			newHit->itrack                          = wireHit.itrack;
+			newHit->ptype                           = wireHit.ptype;
+			newHit->plane				= 2;
+			newHit->type				= 0;
+			newHit->gPlane				= DFDCGeometry::gPlane(newHit);
+			newHit->gLayer				= DFDCGeometry::gLayer(newHit);
+			newHit->r				= DFDCGeometry::getWireR(newHit);
+			
+			data.push_back(newHit);
+		      }
+		    }
+		    
+		    
+		    // Ditto for the cathodes.
+		    for (unsigned int j=0; j < stripSet->mult; j++) {
+
+		      s_FdcCathodeStrip_t cathodeStrip          = stripSet->in[j];
+		      s_FdcCathodeTruthHits_t* stripHitSet      = cathodeStrip.fdcCathodeTruthHits;
+
+		      for (unsigned int k=0; k < stripHitSet->mult; k++) {
+
+			s_FdcCathodeTruthHit_t stripHit	= stripHitSet->in[k];
+			DFDCHit* newHit				= new DFDCHit();
+			newHit->layer				= fdcChamber.layer;
+			newHit->module				= fdcChamber.module;
+			newHit->element				= cathodeStrip.strip;
+			if (newHit->element>1000) newHit->element-=1000;
+			
+			newHit->plane				= cathodeStrip.plane;
+			newHit->q				= stripHit.q;
+			newHit->t				= stripHit.t;
+			newHit->itrack                          = stripHit.itrack;
+			newHit->ptype                           = stripHit.ptype;
+			newHit->type				= 1;
+			newHit->gPlane				= DFDCGeometry::gPlane(newHit);	 
+			newHit->gLayer				= DFDCGeometry::gLayer(newHit);
+			newHit->r				= DFDCGeometry::getStripR(newHit);
+			
+			data.push_back(newHit);
+		      }
+		    }
+		    
+		    
+		  }
+		  
+		  
 		}
 	}
 	
 	// Copy into factory
 	factory->CopyTo(data);
-
+	
 	return NOERROR;
 }
 
@@ -939,7 +1037,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(s_HDDM_t *hddm_s,  JFactory<DFCALHit
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
-  /// returns OBJECT_NOT_AVAILABLE immediately.
+  /// returs OBJECT_NOT_AVAILABLE immediately.
 	
   if(factory==NULL)return OBJECT_NOT_AVAILABLE;
 

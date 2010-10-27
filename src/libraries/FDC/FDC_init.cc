@@ -23,6 +23,7 @@ jerror_t FDC_init(JEventLoop *loop)
   
 	/// Create and register FDC data factories
 	loop->AddFactory(new DFDCHit_factory());
+	loop->AddFactory(new DFDCHit_factory("TRUTH"));
 	loop->AddFactory(new DFDCPseudo_factory());
 	loop->AddFactory(new DFDCCathodeCluster_factory());
 	loop->AddFactory(new DFDCSegment_factory());

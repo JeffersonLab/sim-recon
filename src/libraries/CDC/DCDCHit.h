@@ -19,14 +19,16 @@ class DCDCHit:public JObject{
 		int straw;
 		float dE;
 		float t;
+		float d;
 		int itrack;
 		int ptype;
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "ring", "%d", ring);
 			AddString(items, "straw", "%d", straw);
-			AddString(items, "dE", "%2.3f", dE);
-			AddString(items, "t", "%4.0f", t);
+			AddString(items, "dE", "%10.4e", dE);
+			AddString(items, "t", "%6.1f", t);
+			AddString(items, "d", "%10.4e", d);
 			AddString(items, "itrack", "%d", itrack);
 			AddString(items, "ptype", "%d", ptype);
 		}
