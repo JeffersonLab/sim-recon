@@ -147,7 +147,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   DEBUG_HISTS=true;
   //  DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
-  //DEBUG_LEVEL=1;
+  //  DEBUG_LEVEL=2;
 
   if(DEBUG_HISTS){
     DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -191,7 +191,14 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       thetay_vs_thetax->SetXTitle("z (cm)");
       thetay_vs_thetax->SetYTitle("#Deltay (cm)");
     }
-    
+ 
+       
+    fdc_t0=(TH2F*)gROOT->FindObject("fdc_t0");
+    if (!fdc_t0){
+      fdc_t0=new TH2F("fdc_t0","t0 estimate from tracks vs momentum",100,0,7,501,-100,100);
+    }
+
+
     dapp->Unlock();
   }
 
@@ -237,7 +244,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
 	 mStepSizeS=1.0;
-	 mStepSizeZ=2.0;
+	 mStepSizeZ=1.0;
 	 if (fit_type==kTimeBased){
 	   mStepSizeS=0.2;
 	   mStepSizeZ=1.0;
@@ -260,8 +267,10 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   if (my_fdchits.size()+my_cdchits.size()<6) return kFitFailed;
   
   // start time
-  mT0=input_params.t0();
-  //mT0=0.;
+  mT0=-999.;
+  if (fit_type==kTimeBased){
+    mT0=input_params.t0();
+  }
   
   // Set starting parameters
   jerror_t error = SetSeed(input_params.charge(), input_params.position(), 
@@ -291,6 +300,14 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   fit_params.setMomentum(mom);
   fit_params.setCharge(charge);
   fit_params.setMass(MASS);
+  if (fit_type==kWireBased){
+    mT0/=mInvVarT0;
+    mT0-=3.47; // Not sure why the offset is needed..
+    fit_params.setT0(mT0,1./sqrt(mInvVarT0),SYS_NULL); 
+    if (my_fdchits.size()>0){
+      fdc_t0->Fill(mom.Mag(),mT0);
+    }
+  }
 
   // Convert error matrix from internal representation to the type expected 
   // by the DKinematicData class
@@ -3262,6 +3279,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   // Initialize chi squared
   chisq=0;
 
+  if (fit_type==kWireBased){
+    mInvVarT0=mT0=0.;
+  }
+
   S0_=(forward_traj[0].S);
   for (unsigned int k=1;k<forward_traj.size();k++){
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
@@ -3320,6 +3341,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
       // The next measurement 
       M.Set(0.,v);
+   
+      V(1,1)=anneal_factor*fdc_y_variance(alpha,du*alpha);
 
       if (fit_type==kTimeBased)
 	{
@@ -3331,7 +3354,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
 	// Variance in drift distance and distance along wire
 	V(0,0)=anneal_factor*fdc_drift_variance(drift);
-	V(1,1)=anneal_factor*fdc_y_variance(alpha,drift);
+	//V(1,1)=anneal_factor*fdc_y_variance(alpha,drift);
       }
 
       // To transform from (x,y) to (u,v), need to do a rotation:
@@ -3345,16 +3368,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       H(0,state_ty)=H_T(state_ty,0)=sina*factor;
       H(0,state_tx)=H_T(state_tx,0)=-cosa*factor;
 
-      if (fit_type==kTimeBased){
-	H(1,state_x)=H_T(state_x,1)
-	  =sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;
-	H(1,state_y)=H_T(state_y,1)
-	  =cosa-sina*cosalpha*nz_sinalpha_plus_nr_cosalpha;
-	double temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
-				       -2.*nr*cosalpha*sinalpha);
-	H(1,state_tx)=H_T(state_tx,1)=cosa*temp;
-	H(1,state_ty)=H_T(state_ty,1)=-sina*temp;
-      }
+      // Terms that depend on the correction for the Lorentz effect
+      H(1,state_x)=H_T(state_x,1)
+	=sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;
+      H(1,state_y)=H_T(state_y,1)
+	=cosa-sina*cosalpha*nz_sinalpha_plus_nr_cosalpha;
+      double temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
+				     -2.*nr*cosalpha*sinalpha);
+      H(1,state_tx)=H_T(state_tx,1)=cosa*temp;
+      H(1,state_ty)=H_T(state_ty,1)=-sina*temp;
 
       // Compute Kalman gain matrix
       K=C*H_T*(V+H*(C*H_T)).Invert();
@@ -3368,7 +3390,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
       //.      printf("z %f Diff\n",forward_traj[k].pos.z());
       //Mdiff.Print();
-      
 
       // Update state vector covariance matrix
       //C=C-K*(H*C);    
@@ -3383,6 +3404,24 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       
       // Update chi2 for this segment
       chisq+=RC.Chi2(R);
+
+      if (fit_type==kWireBased){
+	du=S(state_x)*cosa-S(state_y)*sina-u;
+	if(fabs(du)<0.5){
+	  double tdiff=my_fdchits[id]->t-forward_traj[k].t;
+	  double d=(M(1)-S(state_y)*cosa-S(state_x)*sina)
+	    /nz_sinalpha_plus_nr_cosalpha;
+	  double t0=tdiff-fabs(d)/DRIFT_SPEED;
+	  double var_t0=V(0,0)+(V(1,1)+C(state_y,state_y)*cosa*cosa
+				 +C(state_x,state_x)*sina*sina
+				 +2.*C(state_x,state_y)*sina*cosa)
+			 /(nz_sinalpha_plus_nr_cosalpha
+			   *nz_sinalpha_plus_nr_cosalpha);
+	  mT0+=t0/var_t0;
+	  mInvVarT0+=1./var_t0;
+	}
+      }
+
 
       pulls.push_back(pull_t(R(0), sqrt(fabs(RC(0,0)/anneal_factor))));
       pulls.push_back(pull_t(R(1), sqrt(fabs(RC(1,1)/anneal_factor))));
@@ -3423,6 +3462,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   double InvV;  // inverse of variance
   double rmax=R_MAX;
   if (my_fdchits.size()>0) rmax=R_MAX_FORWARD;
+  else if (fit_type==kWireBased){
+    mInvVarT0=mT0=0.;
+  }
  
   // Save the starting values for C and S in the deque
   forward_traj_cdc[0].Skk=S;
@@ -3657,6 +3699,24 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	double err2 = V-H*(C*H_T);
 	chisq+=anneal*res*res/err2;
 	
+	if (fit_type==kWireBased){
+	  dy=S(state_y)-yw;
+	  dx=S(state_x)-xw;     
+	  d=sqrt(dx*dx+dy*dy)*cosstereo;
+	  if (d<0.8){
+	    double tdiff=my_cdchits[cdc_index]->hit->tdrift
+	      -forward_traj_cdc[k].t;
+	    double t0=tdiff-d/CDC_DRIFT_SPEED;
+	    double var=V+cosstereo*cosstereo*(dx*dx*C(state_x,state_x)
+					      +dy*dy*C(state_y,state_y)
+					      +2.*dx*dy*C(state_x,state_y))
+	      /(dx*dx+dy*dy);
+	    mT0+=t0/var;
+	    mInvVarT0+=1./var;
+	  }
+	}
+
+
 	pulls.push_back(pull_t(res, sqrt(fabs(err2/anneal))));
 
 	/*

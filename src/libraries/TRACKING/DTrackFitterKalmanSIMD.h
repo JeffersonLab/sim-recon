@@ -14,7 +14,7 @@
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 #include <TH2.h>
-
+#include <TH1.h>
 
 using namespace std;
 
@@ -249,6 +249,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // Vertex time
   double mT0;
+  // inverse of vertex time variance;
+  double mInvVarT0;
 	
   bool do_multiple_scattering;
   bool do_energy_loss;
@@ -260,6 +262,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
   TH2F *Hsteptype;
+  TH2F *fdc_t0;
 };
 
 
