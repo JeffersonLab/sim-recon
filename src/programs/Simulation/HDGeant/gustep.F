@@ -409,7 +409,10 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
       if (nosecondaries.eq.0) then
         do i=1,NGKINE
           itypa  = GKIN(5,i)
-          if (itypa.ne.4) call GSKING(i)
+          if (itypa.ne.4) then
+              iflgk(i) = 1
+             call GSKING(i)
+          endif
         enddo
       endif
 
