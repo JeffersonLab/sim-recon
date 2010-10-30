@@ -200,6 +200,10 @@
       equivalence (NAMES(1),cnames(1))
       real rnd(100)
 
+      integer*4 cint
+      character*4 cchar
+      equivalence(cint,cchar)
+
 #ifdef BACKGROUND_STUDIES
       integer type
       real xv(4),Etot
@@ -410,12 +414,22 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
         do i=1,NGKINE
           itypa  = GKIN(5,i)
           if (itypa.ne.4) then
-              iflgk(i) = 1
+
+c     make primary except if in calorimeter volume and not hadronic interaction
+             iflgk(i) = 1
+             cint = KCASE
+c             print *, cchar
+             rx = sqrt(VERT(1)**2+VERT(2)**2)
+             if ( (((rx>65.) .and.((VERT(3)>-17.) .and.
+     >            (VERT(3)<390.))).or.(VERT(3)>625.)).and.
+     >            (cchar.ne.'HADR')) then
+                iflgk(i) = 0
+             endif
              call GSKING(i)
           endif
-        enddo
+       enddo
       endif
-
+      
 * For explicit Cerenkov generation, apply an inefficiency factor
 
       if (NGPHOT.gt.100) then
