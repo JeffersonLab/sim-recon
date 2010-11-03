@@ -262,7 +262,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
   TH2F *Hsteptype;
-  TH2F *fdc_t0;
+  TH2F *fdc_t0,*fdc_t0_vs_theta;
 };
 
 

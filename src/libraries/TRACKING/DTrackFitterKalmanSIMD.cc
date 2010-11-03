@@ -197,6 +197,10 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     if (!fdc_t0){
       fdc_t0=new TH2F("fdc_t0","t0 estimate from tracks vs momentum",100,0,7,501,-100,100);
     }
+    fdc_t0_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_vs_theta");
+    if (!fdc_t0_vs_theta){
+      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",30,0,30,501,-100,100);
+    }
 
 
     dapp->Unlock();
@@ -300,13 +304,13 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   fit_params.setMomentum(mom);
   fit_params.setCharge(charge);
   fit_params.setMass(MASS);
-  if (fit_type==kWireBased){
+  if (fit_type==kWireBased&&my_fdchits.size()>0){
     mT0/=mInvVarT0;
-    mT0-=3.47; // Not sure why the offset is needed..
-    fit_params.setT0(mT0,1./sqrt(mInvVarT0),SYS_NULL); 
-    if (my_fdchits.size()>0){
-      fdc_t0->Fill(mom.Mag(),mT0);
-    }
+    //printf("t0 %f+-%f\n",mT0,1./sqrt(mInvVarT0));
+    //mT0-=3.47; // Not sure why the offset is needed..
+    fit_params.setT0(mT0,1./sqrt(mInvVarT0),SYS_NULL);
+    fdc_t0->Fill(mom.Mag(),mT0);
+    fdc_t0_vs_theta->Fill(mom.Theta()*180./M_PI,mT0);
   }
 
   // Convert error matrix from internal representation to the type expected 
@@ -3407,16 +3411,37 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
       if (fit_type==kWireBased){
 	du=S(state_x)*cosa-S(state_y)*sina-u;
-	if(fabs(du)<0.5){
+	//if(fabs(du)<0.5)
+	  {
+	  // First estimate t0 using the distance along the wire
 	  double tdiff=my_fdchits[id]->t-forward_traj[k].t;
 	  double d=(M(1)-S(state_y)*cosa-S(state_x)*sina)
 	    /nz_sinalpha_plus_nr_cosalpha;
 	  double t0=tdiff-fabs(d)/DRIFT_SPEED;
-	  double var_t0=V(0,0)+(V(1,1)+C(state_y,state_y)*cosa*cosa
-				 +C(state_x,state_x)*sina*sina
-				 +2.*C(state_x,state_y)*sina*cosa)
+	  double sina2=sina*sina;
+	  double cosa2=cosa*cosa;
+	  double twosinacosa=2.*sina*cosa;
+	  double speed2=DRIFT_SPEED*DRIFT_SPEED;
+	  alpha=atan(S(state_tx)*cosa-S(state_ty)*sina);
+	  cosalpha=cos(alpha);
+	  double var_drift=fdc_drift_variance(du*cosalpha);
+	  double var_t0=(var_drift+(V(1,1)+C(state_y,state_y)*cosa2
+				+C(state_x,state_x)*sina2
+				+C(state_x,state_y)*twosinacosa)
 			 /(nz_sinalpha_plus_nr_cosalpha
-			   *nz_sinalpha_plus_nr_cosalpha);
+			   *nz_sinalpha_plus_nr_cosalpha))/speed2;
+	  mT0+=t0/var_t0;
+	  mInvVarT0+=1./var_t0;
+
+	  // next estimate t0 from distance away from wire	
+	  double one_plus_alpha2=1.+alpha*alpha;
+	  t0=tdiff-fabs(du*cosalpha)/DRIFT_SPEED;
+	  var_t0=(var_drift+(C(state_x,state_x)*cosa2+C(state_y,state_y)*sina2
+			  -twosinacosa*C(state_x,state_y))*cosalpha*cosalpha
+		  +du*du*sinalpha*sinalpha*(cosa2*C(state_tx,state_tx)
+					    +sina2*C(state_ty,state_ty)
+				      -twosinacosa*C(state_tx,state_ty))
+		  /(one_plus_alpha2*one_plus_alpha2))/speed2;
 	  mT0+=t0/var_t0;
 	  mInvVarT0+=1./var_t0;
 	}
@@ -3699,18 +3724,22 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	double err2 = V-H*(C*H_T);
 	chisq+=anneal*res*res/err2;
 	
-	if (fit_type==kWireBased){
+	// Use the track parameters to estimate t0 for forward-going tracks
+	if (fit_type==kWireBased && my_fdchits.size()>0){
 	  dy=S(state_y)-yw;
 	  dx=S(state_x)-xw;     
 	  d=sqrt(dx*dx+dy*dy)*cosstereo;
-	  if (d<0.8){
+	  //if (d<0.8)
+	    {
 	    double tdiff=my_cdchits[cdc_index]->hit->tdrift
 	      -forward_traj_cdc[k].t;
 	    double t0=tdiff-d/CDC_DRIFT_SPEED;
-	    double var=V+cosstereo*cosstereo*(dx*dx*C(state_x,state_x)
-					      +dy*dy*C(state_y,state_y)
-					      +2.*dx*dy*C(state_x,state_y))
-	      /(dx*dx+dy*dy);
+	    double speed2=CDC_DRIFT_SPEED*CDC_DRIFT_SPEED;
+	    double var_drift=cdc_variance(d);
+	    double var=(var_drift+cosstereo*cosstereo*(dx*dx*C(state_x,state_x)
+					       +dy*dy*C(state_y,state_y)
+					       +2.*dx*dy*C(state_x,state_y))
+			/(dx*dx+dy*dy))/speed2;
 	    mT0+=t0/var;
 	    mInvVarT0+=1./var;
 	  }
@@ -3855,7 +3884,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     // Step through field
     ds=Step(z,newz,dEdx,S);
     r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-    if (r2>r2_old){  
+    if (r2>r2_old && z<endplate_z){  
       double two_step=dz+dz_old;
       double tx=S(state_tx);
       double ty=S(state_ty);
