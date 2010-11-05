@@ -9,7 +9,7 @@
 #define _DTrackFitter_factory1_
 
 #include <JANA/JFactory.h>
-#include <TRACKING/DTrackFitterALT1.h>
+#include <TRACKING/DTrackFitter.h>
 
 class DTrackFitter_factory:public jana::JFactory<DTrackFitter>{
 	public:
