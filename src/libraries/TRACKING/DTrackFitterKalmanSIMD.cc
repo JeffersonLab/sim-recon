@@ -199,9 +199,12 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     }
     fdc_t0_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_vs_theta");
     if (!fdc_t0_vs_theta){
-      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",30,0,30,501,-100,100);
+      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,501,-100,100);
     }
-
+    cdc_drift=(TH2F*)gROOT->FindObject("cdc_drift");
+    if (!cdc_drift){
+      cdc_drift=new TH2F("cdc_drift","cdc drift time measured vs recon",400,-20,180.,400,-20,180);
+    }
 
     dapp->Unlock();
   }
@@ -304,13 +307,15 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   fit_params.setMomentum(mom);
   fit_params.setCharge(charge);
   fit_params.setMass(MASS);
-  if (fit_type==kWireBased&&my_fdchits.size()>0){
-    mT0/=mInvVarT0;
-    //printf("t0 %f+-%f\n",mT0,1./sqrt(mInvVarT0));
-    //mT0-=3.47; // Not sure why the offset is needed..
-    fit_params.setT0(mT0,1./sqrt(mInvVarT0),SYS_NULL);
-    fdc_t0->Fill(mom.Mag(),mT0);
-    fdc_t0_vs_theta->Fill(mom.Theta()*180./M_PI,mT0);
+
+  // Start time (t0) estimate
+  if (fit_type==kWireBased && mInvVarT0>0.){
+    fit_params.setT0(mT0wires,1./sqrt(mInvVarT0),
+		     my_fdchits.size()>0?SYS_FDC:SYS_CDC);
+  }
+  if (fit_type==kTimeBased && mInvVarT0>0.){
+    fdc_t0->Fill(mom.Mag(),mT0wires);
+    fdc_t0_vs_theta->Fill(mom.Theta()*180./M_PI,mT0wires);
   }
 
   // Convert error matrix from internal representation to the type expected 
@@ -2119,8 +2124,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    }
 	  }
 	  
+	  // t0 estimate	  
+	  mT0wires/=mInvVarT0;
 	  
-
 	  if (chisq>=MAX_CHI2 ){
 	    if (iter2>0) break;
 	    if (DEBUG_LEVEL>0) _DBG_<< "-- forward fit failed --" <<endl;
@@ -2140,7 +2146,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    break;
 	  chisq_forward=chisq;
 	  Slast=S;
-	  Clast=C;
+	  Clast=C;	 
 	} //iteration
       }
       else{
@@ -2167,6 +2173,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       C=Clast;
       S=Slast;
       zvertex=z_;
+      
+      //mT0=mT0wires;
     }
 
     // Extrapolate to the point of closest approach to the beam line
@@ -2314,8 +2322,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  
 	  C=C0;
 	  chisq=0.;
-	  error=KalmanForwardCDC(anneal_factor,S,C,chisq);
+	  error=KalmanForwardCDC(anneal_factor,S,C,chisq);	  
 	  if (error!=NOERROR) break;
+
+	  // t0 estimate
+	  mT0wires/=mInvVarT0;
 
 	  // Check the charge relative to the hypothesis for protons
 	  if (MASS>0.9){
@@ -2374,6 +2385,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       C=Clast;
       S=Slast;
       zvertex=z_;
+
+      //mT0=mT0wires;
     }
 
     // Extrapolate to the point of closest approach to the beam line
@@ -2521,6 +2534,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq_central);
 	  if (error!=NOERROR) break;
 	  if (chisq_central==0.) break;
+
+	  // t0 estimate
+	  mT0wires/=mInvVarT0;
 	  	  
 	  // Check the charge relative to the hypothesis for protons
 	  if (MASS>0.9){
@@ -2586,6 +2602,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       Cc=Cclast;
       Sc=Sclast;
       best_pos=pos0;
+
+      //mT0=mT0wires;
     }
 
     if (chisq_iter==1.e16) {
@@ -2882,6 +2900,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   //DMatrix5x1 dS;  // perturbation in state vector
   DMatrix5x1 S0,S0_; // state vector
 
+  V=4.*0.64; // Testing ideas...
+
+  // Variables for estimating t0 from track itself
+  mT0wires=mInvVarT0=0.;
+
   // Initialize the chi2 for this part of the track
   chisq=0.;
 
@@ -2994,9 +3017,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	// wire direction variables
 	double ux=dir.x();
 	double uy=dir.y();
-	double uxuy=ux*uy;
-	double one_minus_ux2=1.-ux*ux;
-	double one_minus_uy2=1.-uy*uy;
 	// Variables relating wire direction and track direction
 	double my_ux=ux*sinl/uz-cosl*cosphi;
 	double my_uy=uy*sinl/uz-cosl*sinphi;
@@ -3090,9 +3110,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	
 	// prediction for measurement  
 	DVector3 diff=pos-wirepos;
-	DVector3 mdir=pos-wirepos-(diff.Dot(dir))*dir;
-	mdir.SetMag(1.0);
-	double prediction=diff.Dot(mdir);
+	double d=diff.Perp();
+	double cosstereo=cos(my_cdchits[cdc_index]->hit->wire->stereo);
+	double prediction=d*cosstereo;
 	
 	// Projection matrix        
 	sinphi=sin(Sc(state_phi));
@@ -3100,12 +3120,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	double dx=diff.x();
 	double dy=diff.y();
 	if (prediction>0.){
-	  H(state_D)=H_T(state_D)
-	    =(dy*(uxuy*sinphi+one_minus_uy2*cosphi)-dx*(one_minus_ux2*sinphi+uxuy*cosphi))/prediction;
+	  H(state_D)=H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo/d;
 	  H(state_phi)=H_T(state_phi)
-	    =-Sc(state_D)*(dx*(one_minus_ux2*cosphi-uxuy*sinphi)+dy*(one_minus_uy2*sinphi-uxuy*cosphi))/prediction;
-	  H(state_z)=H_T(state_z)
-	    =-uz*(dx*ux+dy*uy)/prediction;
+	    =-Sc(state_D)*cosstereo*(dx*cosphi+dy*sinphi)/d;
+	  H(state_z)=H_T(state_z)=-cosstereo*(dx*ux+dy*uy)/(uz*d);
 	}
 	
 	// Difference and variance
@@ -3161,6 +3179,37 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	var=V*(1.-H*K);
 	chisq+=dm*dm/var;      
 	
+	// Estimate for time at vertex
+	pos.SetXYZ(pos0.X()-Sc(state_D)*sin(Sc(state_phi)),
+		   pos0.Y()+Sc(state_D)*cos(Sc(state_phi)),
+		   Sc(state_z)); 
+	wirepos=origin+((pos.z()-z0w)/uz)*dir;
+	diff=pos-wirepos;
+	d=diff.Perp();
+	dx=diff.x();
+	dy=diff.y();
+	cosphi=cos(Sc(state_phi));
+	sinphi=sin(Sc(state_phi));
+	doca=d*cosstereo;
+	double tdiff=my_cdchits[cdc_index]->hit->tdrift-central_traj[k-1].t;
+	
+	double t0=tdiff-doca/CDC_DRIFT_SPEED;
+	
+	if (fit_type==kWireBased)
+	  cdc_drift->Fill(doca/CDC_DRIFT_SPEED,tdiff);
+
+	// Calculate the variance
+	double my_var=cdc_variance(doca);
+	H(state_D)=H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo/d;
+	H(state_phi)=H_T(state_phi)
+	  =-Sc(state_D)*cosstereo*(dx*cosphi+dy*sinphi)/d;
+	H(state_z)=H_T(state_z)=-cosstereo*(dx*ux+dy*uy)/(uz*d);	  
+	my_var+=H*(Cc*H_T);
+	
+	// weighted average
+	mT0wires+=t0/my_var;
+	mInvVarT0+=1./my_var;
+
 	// propagate the covariance matrix to the next point on the trajectory
 	for (int j=0;j<abs(numstep);j++){
 	  DMatrix5x1 Stemp(S0);
@@ -3201,6 +3250,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	if (cdc_index>0) cdc_index--;
 	else cdc_index=0;	
       }
+
+    
+
 
       // new wire origin and direction
       if (cdc_index>0){
@@ -3246,6 +3298,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   q_over_pt_=Sc(state_q_over_pt);
   tanl_=Sc(state_tanl);
 
+  // t0 estimate
+  //  mT0wires/=mInvVarT0;
+
   x_=pos.x();
   y_=pos.y();
   z_=Sc(state_z);
@@ -3283,9 +3338,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   // Initialize chi squared
   chisq=0;
 
-  if (fit_type==kWireBased){
-    mInvVarT0=mT0=0.;
-  }
+  // Variables for estimating t0 from tracking
+  mInvVarT0=mT0wires=0.;
 
   S0_=(forward_traj[0].S);
   for (unsigned int k=1;k<forward_traj.size();k++){
@@ -3409,42 +3463,42 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       // Update chi2 for this segment
       chisq+=RC.Chi2(R);
 
-      if (fit_type==kWireBased){
-	du=S(state_x)*cosa-S(state_y)*sina-u;
-	//if(fabs(du)<0.5)
-	  {
-	  // First estimate t0 using the distance along the wire
-	  double tdiff=my_fdchits[id]->t-forward_traj[k].t;
-	  double d=(M(1)-S(state_y)*cosa-S(state_x)*sina)
-	    /nz_sinalpha_plus_nr_cosalpha;
-	  double t0=tdiff-fabs(d)/DRIFT_SPEED;
-	  double sina2=sina*sina;
-	  double cosa2=cosa*cosa;
-	  double twosinacosa=2.*sina*cosa;
-	  double speed2=DRIFT_SPEED*DRIFT_SPEED;
-	  alpha=atan(S(state_tx)*cosa-S(state_ty)*sina);
-	  cosalpha=cos(alpha);
-	  double var_drift=fdc_drift_variance(du*cosalpha);
-	  double var_t0=(var_drift+(V(1,1)+C(state_y,state_y)*cosa2
-				+C(state_x,state_x)*sina2
-				+C(state_x,state_y)*twosinacosa)
-			 /(nz_sinalpha_plus_nr_cosalpha
-			   *nz_sinalpha_plus_nr_cosalpha))/speed2;
-	  mT0+=t0/var_t0;
-	  mInvVarT0+=1./var_t0;
-
-	  // next estimate t0 from distance away from wire	
-	  double one_plus_alpha2=1.+alpha*alpha;
-	  t0=tdiff-fabs(du*cosalpha)/DRIFT_SPEED;
-	  var_t0=(var_drift+(C(state_x,state_x)*cosa2+C(state_y,state_y)*sina2
-			  -twosinacosa*C(state_x,state_y))*cosalpha*cosalpha
-		  +du*du*sinalpha*sinalpha*(cosa2*C(state_tx,state_tx)
-					    +sina2*C(state_ty,state_ty)
-				      -twosinacosa*C(state_tx,state_ty))
-		  /(one_plus_alpha2*one_plus_alpha2))/speed2;
-	  mT0+=t0/var_t0;
-	  mInvVarT0+=1./var_t0;
-	}
+      // Estimate t0
+      du=S(state_x)*cosa-S(state_y)*sina-u;
+      //if(fabs(du)<0.5)
+      {
+	// First estimate t0 using the distance along the wire
+	double tdiff=my_fdchits[id]->t-forward_traj[k].t;
+	//double d=(M(1)-S(state_y)*cosa-S(state_x)*sina)
+	//  /nz_sinalpha_plus_nr_cosalpha;
+	//double t0=tdiff-fabs(d)/DRIFT_SPEED;
+	double sina2=sina*sina;
+	double cosa2=cosa*cosa;
+	double twosinacosa=2.*sina*cosa;
+	double speed2=DRIFT_SPEED*DRIFT_SPEED;
+	alpha=atan(S(state_tx)*cosa-S(state_ty)*sina);
+	cosalpha=cos(alpha);
+	double d=fabs(du*cosalpha);
+	double var_drift=fdc_drift_variance(d);
+	//double var_t0=(var_drift+(V(1,1)+C(state_y,state_y)*cosa2
+	//			  +C(state_x,state_x)*sina2
+	//			  +C(state_x,state_y)*twosinacosa)
+	//	       /(nz_sinalpha_plus_nr_cosalpha
+	//		 *nz_sinalpha_plus_nr_cosalpha))/speed2;
+	//mT0wires+=t0/var_t0;
+	//mInvVarT0+=1./var_t0;
+	
+	// estimate t0 from distance away from wire	
+	double one_plus_alpha2=1.+alpha*alpha;
+	double t0=tdiff-d/DRIFT_SPEED;
+	double var_t0=(var_drift+(C(state_x,state_x)*cosa2+C(state_y,state_y)*sina2
+			   -twosinacosa*C(state_x,state_y))*cosalpha*cosalpha
+		+du*du*sinalpha*sinalpha*(cosa2*C(state_tx,state_tx)
+					  +sina2*C(state_ty,state_ty)
+					  -twosinacosa*C(state_tx,state_ty))
+		/(one_plus_alpha2*one_plus_alpha2))/speed2;
+	mT0wires+=t0/var_t0;
+	mInvVarT0+=1./var_t0;
       }
 
 
@@ -3462,6 +3516,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   if (chisq<EPS) return UNRECOVERABLE_ERROR;
 
   chisq*=anneal_factor;
+
+  // t0 estimate
+  //if (my_cdchits.size()==0){
+  //  mT0wires/=mInvVarT0;
+  //}
 
   // Final position for this leg
   x_=S(state_x);
@@ -3487,8 +3546,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   double InvV;  // inverse of variance
   double rmax=R_MAX;
   if (my_fdchits.size()>0) rmax=R_MAX_FORWARD;
-  else if (fit_type==kWireBased){
-    mInvVarT0=mT0=0.;
+  else{
+    mInvVarT0=mT0wires=0.;
   }
  
   // Save the starting values for C and S in the deque
@@ -3655,9 +3714,12 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	// The next measurement
 	double dm=0.;
 	double V=0.2133; //1.6*1.6/12.;
+
+	V=4.*0.8*0.8; // Testing ideas...
+
 	if (fit_type==kTimeBased)
 	  {
-	  dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
+	    dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
 			      -forward_traj_cdc[k].t);
 	  /*
 	  printf("cdc hit %d dm %f t %f %f\n",cdc_index,dm,
@@ -3725,27 +3787,24 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	chisq+=anneal*res*res/err2;
 	
 	// Use the track parameters to estimate t0 for forward-going tracks
-	if (fit_type==kWireBased && my_fdchits.size()>0){
-	  dy=S(state_y)-yw;
-	  dx=S(state_x)-xw;     
-	  d=sqrt(dx*dx+dy*dy)*cosstereo;
-	  //if (d<0.8)
-	    {
-	    double tdiff=my_cdchits[cdc_index]->hit->tdrift
-	      -forward_traj_cdc[k].t;
-	    double t0=tdiff-d/CDC_DRIFT_SPEED;
-	    double speed2=CDC_DRIFT_SPEED*CDC_DRIFT_SPEED;
-	    double var_drift=cdc_variance(d);
-	    double var=(var_drift+cosstereo*cosstereo*(dx*dx*C(state_x,state_x)
-					       +dy*dy*C(state_y,state_y)
-					       +2.*dx*dy*C(state_x,state_y))
-			/(dx*dx+dy*dy))/speed2;
-	    mT0+=t0/var;
-	    mInvVarT0+=1./var;
-	  }
+	dy=S(state_y)-yw;
+	dx=S(state_x)-xw;     
+	d=sqrt(dx*dx+dy*dy)*cosstereo;
+	//if (d<0.8)
+	{
+	  double tdiff=my_cdchits[cdc_index]->hit->tdrift
+	    -forward_traj_cdc[k].t;
+	  double t0=tdiff-d/CDC_DRIFT_SPEED;
+	  double speed2=CDC_DRIFT_SPEED*CDC_DRIFT_SPEED;
+	  double var_drift=cdc_variance(d);
+	  double var=(var_drift+cosstereo*cosstereo*(dx*dx*C(state_x,state_x)
+						     +dy*dy*C(state_y,state_y)
+						     +2.*dx*dy*C(state_x,state_y))
+		      /(dx*dx+dy*dy))/speed2;
+	  mT0wires+=t0/var;
+	  mInvVarT0+=1./var;
 	}
-
-
+      
 	pulls.push_back(pull_t(res, sqrt(fabs(err2/anneal))));
 
 	/*
@@ -3806,6 +3865,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   
   if (DEBUG_LEVEL>0)
     cout << "Position after forward cdc filter: " << x_ << ", " << y_ << ", " << z_ <<endl;
+
+  // t0 estimate
+  //  mT0wires/=mInvVarT0;
   
   return NOERROR;
 }

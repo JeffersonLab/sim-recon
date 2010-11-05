@@ -248,7 +248,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double m_ratio_sq; // .. and its square
 
   // Vertex time
-  double mT0;
+  double mT0,mT0wires;
   // inverse of vertex time variance;
   double mInvVarT0;
 	
@@ -263,6 +263,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *thetay_vs_thetax;
   TH2F *Hsteptype;
   TH2F *fdc_t0,*fdc_t0_vs_theta;
+  TH2F *cdc_drift;
 };
 
 
