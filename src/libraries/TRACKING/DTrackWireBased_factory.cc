@@ -148,7 +148,7 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 	  if (!Hsc_match) Hsc_match=new TH1F("Hsc_match","#delta#phi match to SC",300,0.,1.);
 	  Hstart_time= (TH2F*)gROOT->FindObject("Hstart_time");
 	  if (!Hstart_time) Hstart_time=new TH2F("Hstart_time",
-		    "vertex time source vs time",300,-5,25,4,-0.5,3.5);
+		    "vertex time source vs time",300,-5,25,5,-0.5,4.5);
 	  Htof_match= (TH2F*)gROOT->FindObject("Htof_match");
 	  if (!Htof_match) Htof_match=new TH2F("Htof_match","#deltar match to TOF vs p",100,0.,5.,200,0,100.);
 	  Hbcal_match= (TH2F*)gROOT->FindObject("Hbcal_match");
@@ -299,7 +299,12 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  //
 	  //}
 	  
-	  
+	  if (DEBUG_HISTS){
+	    if (track->t0_detector()==SYS_FDC)
+	      Hstart_time->Fill(track->t0(),0); 
+	    if (track->t0_detector()==SYS_CDC)
+	      Hstart_time->Fill(track->t0(),4);
+	  }
 
 
 	  //printf("source %x, num %d\n",start_time_source,start_times.size());
