@@ -148,57 +148,58 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Created TLorentzVector objects for each of the common particle types
 	particle_set rec;
-	for(unsigned int j=0; j<physicsevent->photon.size(); j++){
+	if (physicsevent!=NULL){
+	  for(unsigned int j=0; j<physicsevent->photon.size(); j++){
 		// photon
-		rec.photons.push_back(MakeTLorentz(physicsevent->photon[j], 0.0));
+	    rec.photons.push_back(MakeTLorentz(physicsevent->photon[j], 0.0));
+	  }
+	  for(unsigned int j=0; j<physicsevent->pip.size(); j++){
+	    // pi+
+	    rec.piplus.push_back(MakeTLorentz(physicsevent->pip[j], 0.13957));
+	  }
+	  for(unsigned int j=0; j<physicsevent->pim.size(); j++){
+	    // pi-
+	    rec.piminus.push_back(MakeTLorentz(physicsevent->pim[j], 0.13957));
+	  }
+	  for(unsigned int j=0; j<physicsevent->proton.size(); j++){
+	    // proton
+	    rec.protons.push_back(MakeTLorentz(physicsevent->proton[j], 0.93827));
+	  }
+	  for(unsigned int j=0; j<physicsevent->Kp.size(); j++){
+	    // K+
+	    rec.Kplus.push_back(MakeTLorentz(physicsevent->Kp[j], 0.493677));
+	  }
+	  for(unsigned int j=0; j<physicsevent->Km.size(); j++){
+	    // Ki+
+	    rec.Kminus.push_back(MakeTLorentz(physicsevent->Km[j], 0.493677));
+	  }  
 	}
-	for(unsigned int j=0; j<physicsevent->pip.size(); j++){
-		// pi+
-		rec.piplus.push_back(MakeTLorentz(physicsevent->pip[j], 0.13957));
-	}
-	for(unsigned int j=0; j<physicsevent->pim.size(); j++){
-		// pi-
-		rec.piminus.push_back(MakeTLorentz(physicsevent->pim[j], 0.13957));
-	}
-	for(unsigned int j=0; j<physicsevent->proton.size(); j++){
-		// proton
-		rec.protons.push_back(MakeTLorentz(physicsevent->proton[j], 0.93827));
-	}
-	for(unsigned int j=0; j<physicsevent->Kp.size(); j++){
-		// K+
-		rec.Kplus.push_back(MakeTLorentz(physicsevent->Kp[j], 0.493677));
-	}
-	for(unsigned int j=0; j<physicsevent->Km.size(); j++){
-		// Ki+
-		rec.Kminus.push_back(MakeTLorentz(physicsevent->Km[j], 0.493677));
-	}
-
 	// Create TLorentzVectors for thrown particles
 	bool all_mesons_fiducial = true;
 	bool all_photons_fiducial = true;
 	bool all_protons_fiducial = true;
 	particle_set thr;
 	for(unsigned int k=0; k<mcthrowns.size(); k++){
-		switch(mcthrowns[k]->type){
-			case  1: thr.photons.push_back(MakeTLorentz(mcthrowns[k], 0.0));
-			         all_photons_fiducial &= IsFiducial(mcthrowns[k]);
-				      break;
-			case  8: thr.piplus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));
-			         all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
-				      break;
-			case  9: thr.piminus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));
-			         all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
-				      break;
-			case 11: thr.Kplus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));
-			         all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
-				      break;
-			case 12: thr.Kminus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));
-			         all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
-				      break;
-			case 14: thr.protons.push_back(MakeTLorentz(mcthrowns[k], 0.93827));
-			         all_protons_fiducial &= IsFiducial(mcthrowns[k]);
-				      break;
-		}
+	  switch(mcthrowns[k]->type){
+	  case  1: thr.photons.push_back(MakeTLorentz(mcthrowns[k], 0.0));
+	    all_photons_fiducial &= IsFiducial(mcthrowns[k]);
+	    break;
+	  case  8: thr.piplus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));
+	      all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
+	      break;
+	  case  9: thr.piminus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));
+	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
+	    break;
+	  case 11: thr.Kplus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));
+	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
+	    break;
+	  case 12: thr.Kminus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));
+	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
+	    break;
+	  case 14: thr.protons.push_back(MakeTLorentz(mcthrowns[k], 0.93827));
+	    all_protons_fiducial &= IsFiducial(mcthrowns[k]);
+	      break;
+	  }
 	}
 	
 	// Lock mutex
