@@ -249,6 +249,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // Vertex time
   double mT0,mT0wires;
+  // Variance in vertex time
+  double mVarT0;
   // inverse of vertex time variance;
   double mInvVarT0;
 	
