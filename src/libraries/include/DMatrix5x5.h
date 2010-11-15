@@ -614,7 +614,7 @@ inline DMatrix5x5 operator*(const double c,const DMatrix5x5 &M){
 
 #define SCALE(i,j) _mm_mul_pd(scale,M.GetV((i),(j)))
   return DMatrix5x5(SCALE(0,0),SCALE(0,1),SCALE(0,2),SCALE(0,3),SCALE(0,4),
-		    SCALE(1,0),SCALE(0,1),SCALE(1,2),SCALE(1,3),SCALE(1,4),
+		    SCALE(1,0),SCALE(1,1),SCALE(1,2),SCALE(1,3),SCALE(1,4),
 		    SCALE(2,0),SCALE(2,1),SCALE(2,2),SCALE(2,3),SCALE(2,4));
 
 }
