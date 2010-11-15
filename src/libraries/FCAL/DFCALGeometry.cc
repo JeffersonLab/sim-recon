@@ -50,8 +50,12 @@ m_numActiveBlocks( 0 )
 			}
 		}
 	}
-		
-	jout << "FCAL Geometry initialized with " << m_numActiveBlocks 
+
+	// In hdview2, a DFCALGeometry object is created globally (before 
+	// main() is called) so that jout is not yet defined leading to
+	// seg. faults before entering main(). Use cout here to avoid these
+	// crashes.
+	cout << "FCAL Geometry initialized with " << m_numActiveBlocks 
 		<< " active blocks." << endl;
 }
 
