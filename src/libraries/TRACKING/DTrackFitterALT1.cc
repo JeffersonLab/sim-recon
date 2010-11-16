@@ -727,7 +727,7 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 				double mass = rt->GetMass();
 				double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
 				double tof = s/beta/1.0E-9; // in ns
-				hi.dist = hit->dist*((hit->time-tof)/hit->time);
+				hi.dist = 55E-4*(hit->time-tof);
 				hi.err = SIGMA_FDC_ANODE;
 				
 				if(USE_FDC_CATHODE){
