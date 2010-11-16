@@ -54,6 +54,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   TH1F *fom_chi2_tof;
   TH1F *fom_chi2_bcal;
   TH1F *fom;
+  TH1F *hitMatchFOM;
   TH2F *chi2_trk_mom;
   TH1F *time_based_start;
   TH1F *fom_sc_match;
@@ -73,8 +74,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 		     vector<const DBCALShower*>bcal_clusters);
   double MatchToSC(DTrackTimeBased *track,vector<const DSCHit*>sc_hits);
   double GetTruthMatchingFOM(int trackIndex,DTrackTimeBased *dtrack,vector<const DMCThrown*>mcthrowns);
-  void GetNhits(const DKinematicData *kd, int &Ncdc, int &Nfdc, int &track);
-
+  void GetThrownIndex(const DKinematicData *kd, int &MAX_TRACKS, double &f, int &track);
 
   // Geometry
   const DGeometry *geom;

@@ -128,6 +128,7 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		fom_chi2_tof = (TH1F*)gROOT->FindObject("fom_chi2_tof");
 		fom_chi2_bcal = (TH1F*)gROOT->FindObject("fom_chi2_bcal");
 		fom = (TH1F*)gROOT->FindObject("fom");
+		hitMatchFOM = (TH1F*)gROOT->FindObject("hitMatchFOM");
 		chi2_trk_mom = (TH2F*)gROOT->FindObject("chi2_trk_mom");
 		time_based_start=(TH1F*)gROOT->FindObject("time_based_start");
 		fom_sc_match=(TH1F*)gROOT->FindObject("fom_sc_match");
@@ -141,7 +142,8 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		if(!fom_chi2_tof)fom_chi2_tof = new TH1F("fom_chi2_tof","PID FOM: #chi^{2}/Ndf from TOF", 1000, 0.0, 100.0);	
 		if(!fom_chi2_sc)fom_chi2_sc = new TH1F("fom_chi2_sc","PID FOM: #chi^{2}/Ndf from SC", 1000, 0.0, 100.0);
 		if(!fom_chi2_bcal)fom_chi2_bcal = new TH1F("fom_chi2_bcal","PID FOM: #chi^{2}/Ndf from BCAL", 1000, 0.0, 100.0);
-		if(!fom)fom = new TH1F("fom","Combined PID FOM", 1000, 0.0, 1.0);
+		if(!fom)fom = new TH1F("fom","Combined PID FOM", 1000, 0.0, 1.01);
+		if(!hitMatchFOM)hitMatchFOM = new TH1F("hitMatchFOM","Total Fraction of Hit Matches", 101, 0.0, 1.01);
 		if(!chi2_trk_mom)chi2_trk_mom = new TH2F("chi2_trk_mom","Track #chi^{2}/Ndf versus Kinematic #chi^{2}/Ndf", 1000, 0.0, 100.0, 1000, 0.,100.);
 		if (!time_based_start)
 		  time_based_start=new TH1F("time_based_start","t0 for time-based tracking",200,-10.,10.);
@@ -283,7 +285,9 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	timebased_track->AddAssociatedObject(track);
 	//_DBG_<< "eventnumber:   " << eventnumber << endl;
 	if (PID_FORCE_TRUTH) {
-	  // Add figure-of-merit based on track chi2 if track matches MC truth info (including PID); add FOM=0 otherwise
+	  // Add figure-of-merit based on difference between thrown and reconstructed momentum 
+	  // if more than half of the track's hits match MC truth hits and also (charge,mass)
+	  // match; add FOM=0 otherwise
 	  timebased_track->FOM=GetTruthMatchingFOM(i,timebased_track,mcthrowns);
 	}
 	else {
@@ -751,8 +755,9 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 	_data = new_data;
 }
 
-// Returns a FOM based on chi2 of fit if track matches MC truth hit information and thrown mass and charge; 
-// returns a FOM=0 otherwise
+// Returns a FOM based on difference between thrown and reconstructed momentum if track matches MC truth information, 
+// returns a FOM=0 otherwise;
+// a match requires identical masses and charges, and that more than half of the track's hits match the truth hits 
 double DTrackTimeBased_factory::GetTruthMatchingFOM(int trackIndex,DTrackTimeBased *track,vector<const DMCThrown*>mcthrowns)  {
   bool match=false;
   
@@ -763,28 +768,29 @@ double DTrackTimeBased_factory::GetTruthMatchingFOM(int trackIndex,DTrackTimeBas
   }
   
   // Get info for thrown track
-  int MAX_TRACKS = 10;
-  int Ncdc=-1, Nfdc=-1, thrownIndex=-1;
-  GetNhits(track, Ncdc, Nfdc, thrownIndex);
-  if(thrownIndex<=0 || thrownIndex>=MAX_TRACKS) return 0.;
+  int MAX_TRACKS = (int)mcthrowns.size()+1, thrownIndex=-1; double f = 0.;
+  GetThrownIndex(track,MAX_TRACKS,f,thrownIndex);
+  if(thrownIndex<=0 || thrownIndex>=MAX_TRACKS || f<=0.5) return 0.;
 
   double delta_pt_over_pt = (fourMom.Pt()-gen_fourMom[thrownIndex-1].Pt())/gen_fourMom[thrownIndex-1].Pt();
   double delta_theta = (fourMom.Theta()-gen_fourMom[thrownIndex-1].Theta())*1000.0; // in milliradians
   double delta_phi = (fourMom.Phi()-gen_fourMom[thrownIndex-1].Phi())*1000.0; // in milliradians
   double chisq = pow(delta_pt_over_pt/0.04, 2.0) + pow(delta_theta/20.0, 2.0) + pow(delta_phi/20.0, 2.0);
-  
+
   if (fabs(track->mass()-mcthrowns[thrownIndex-1]->mass())<0.01 && track->charge()==mcthrowns[thrownIndex-1]->charge()) 
     match = true;
   
   double trk_chi2=track->chisq;
   unsigned int ndof=track->Ndof;
 
-  if(DEBUG_HISTS){
-    chi2_trk_mom->Fill(trk_chi2/ndof,chisq/3.);
-    fom->Fill(TMath::Prob(trk_chi2,ndof));
+  if(DEBUG_HISTS&&match){
+    fom_chi2_trk->Fill(track->chisq);
+    chi2_trk_mom->Fill(chisq/3.,trk_chi2/ndof);
+    fom->Fill(TMath::Prob(chisq,3));
   }
 
-  /*_DBG_ << "trk_chi2: " << trk_chi2 << endl;
+  /*_DBG_ << "f: " << f << endl;
+  _DBG_ << "trk_chi2: " << trk_chi2 << endl;
   _DBG_ << "ndof: " << ndof << endl;
   _DBG_ << "throwncharge: " << mcthrowns[thrownIndex-1]->charge() << endl;
   _DBG_ << "trackcharge: " << track->charge() << endl;
@@ -794,20 +800,17 @@ double DTrackTimeBased_factory::GetTruthMatchingFOM(int trackIndex,DTrackTimeBas
   _DBG_ << "massdiff: " << fabs(track->mass()-mcthrowns[thrownIndex-1]->mass()) << endl;
   _DBG_ << "chisq: " << chisq << endl;
   _DBG_ << "match?: " << match << endl;
-  _DBG_ << "Ncdc: " << Ncdc << endl;
-  _DBG_ << "Nfdc: " << Nfdc << endl;
   _DBG_ << "thrownIndex: " << thrownIndex << "   trackIndex: " << trackIndex << endl;
   _DBG_<< "track   " << setprecision(4) << "Px: " << fourMom.Px() << "    Py: " << fourMom.Py() << "   Pz: " << fourMom.Pz() << "   E: " << fourMom.E() << "    M: " << fourMom.M() << "   pt: " << fourMom.Pt() << "   theta: " << fourMom.Theta() << "   phi: " << fourMom.Phi() << endl; 
   _DBG_<< "thrown  " << setprecision(4) << "Px: " << gen_fourMom[thrownIndex-1].Px() << "    Py: " << gen_fourMom[thrownIndex-1].Py() << "   Pz: " << gen_fourMom[thrownIndex-1].Pz() << "   E: " << gen_fourMom[thrownIndex-1].E() << "    M: " << gen_fourMom[thrownIndex-1].M() << "   pt: " << gen_fourMom[thrownIndex-1].Pt() << "   theta: " << gen_fourMom[thrownIndex-1].Theta() << "   phi: " << gen_fourMom[thrownIndex-1].Phi() << endl;*/
-  
 
-  return (match) ?  TMath::Prob(trk_chi2,ndof) : 0.0; 
+  return (match) ?  TMath::Prob(chisq,3) : 0.0; 
 }
 
 //------------------
-// GetNhits
+// GetThrownIndex
 //------------------
-void DTrackTimeBased_factory::GetNhits(const DKinematicData *kd, int &Ncdc, int &Nfdc, int &track)
+void DTrackTimeBased_factory::GetThrownIndex(const DKinematicData *kd, int &MAX_TRACKS, double &f, int &track)
 {
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCPseudo*> fdcpseudos;
@@ -817,7 +820,6 @@ void DTrackTimeBased_factory::GetNhits(const DKinematicData *kd, int &Ncdc, int 
 	kd->Get(cdctrackhits);
 	kd->Get(fdcpseudos);
 
-	int MAX_TRACKS = 10;
 	// The track number is buried in the truth hit objects of type DMCTrackHit. These should be 
 	// associated objects for the individual hit objects. We need to loop through them and
 	// keep track of how many hits for each track number we find
@@ -830,10 +832,9 @@ void DTrackTimeBased_factory::GetNhits(const DKinematicData *kd, int &Ncdc, int 
 		if(mctrackhits.size()==0)continue;
 		if(!mctrackhits[0]->primary)continue;
 		int track = mctrackhits[0]->track;
-		//_DBG_ << "cdc mchitssize: " << mctrackhits.size() << endl;
-		//_DBG_ << "cdc track: " << track << endl;
 		if(track>=0 && track<MAX_TRACKS)cdc_track_no[track]++;
-		//_DBG_ << "cdc_track_no[track]: " << cdc_track_no[track] << endl;
+		//_DBG_ << "cdc:(i,trackhitssize,mchitssize,TrackNo,NhitsforTrackNo):  " << "(" << i << "," << cdctrackhits.size() << "," << mctrackhits.size() << "," << track << "," << cdc_track_no[track] << ")" << endl;
+		//_DBG_ << "cdc:(system,ptype,r,phi,z):  " << "(" << mctrackhits[0]->system << "," << mctrackhits[0]->ptype << "," << mctrackhits[0]->r << "," << mctrackhits[0]->phi << "," << mctrackhits[0]->z << ")" << endl;
 	}
 	// FDC hits
 	vector<int> fdc_track_no(MAX_TRACKS, 0);
@@ -843,10 +844,9 @@ void DTrackTimeBased_factory::GetNhits(const DKinematicData *kd, int &Ncdc, int 
 		if(mctrackhits.size()==0)continue;
 		if(!mctrackhits[0]->primary)continue;
 		int track = mctrackhits[0]->track;
-		//_DBG_ << "fdc mchitssize: " << mctrackhits.size() << endl;
-		//_DBG_ << "fdc track: " << track << endl;
 		if(track>=0 && track<MAX_TRACKS)fdc_track_no[track]++;
-		//_DBG_ << "fdc_track_no[track]: " << fdc_track_no[track] << endl;
+		//_DBG_ << "fdc:(i,trackhitssize,mchitssize,TrackNo,NhitsforTrackNo):  " << "(" << i << "," << fdcpseudos.size() << "," << mctrackhits.size() << "," << track << "," << fdc_track_no[track] << ")" << endl;
+		//_DBG_ << "fdc:(system,ptype,r,phi,z):  " << "(" << mctrackhits[0]->system << "," << mctrackhits[0]->ptype << "," << mctrackhits[0]->r << "," << mctrackhits[0]->phi << "," << mctrackhits[0]->z << ")" << endl;
 	}
 	
 	// Find track number with most wires hit
@@ -862,10 +862,16 @@ void DTrackTimeBased_factory::GetNhits(const DKinematicData *kd, int &Ncdc, int 
 		//_DBG_ << "track_with_max_hits: " << track_with_max_hits << endl;
 	}
 	
-	Ncdc = cdc_track_no[track_with_max_hits];
-	Nfdc = fdc_track_no[track_with_max_hits];
-	
+	int Ncdc = cdc_track_no[track_with_max_hits];
+	int Nfdc = fdc_track_no[track_with_max_hits];
+
+	// total fraction of reconstructed hits that match truth hits
+	if (cdctrackhits.size()+fdcpseudos.size()) f = 1.*(Ncdc+Nfdc)/(cdctrackhits.size()+fdcpseudos.size());
+	//_DBG_ << "(Ncdc(match),Nfdc(match),Ncdc(recon),Nfdc(recon)):  " << "(" << Ncdc << "," << Nfdc << "," << cdctrackhits.size() << "," << fdcpseudos.size() << ")" << endl;
+	if(DEBUG_HISTS)hitMatchFOM->Fill(f);
+
 	// If there are no hits on this track, then we really should report
 	// a "non-track" (i.e. track=-1)
 	track = tot_hits_max>0 ? track_with_max_hits:-1;
 }
+
