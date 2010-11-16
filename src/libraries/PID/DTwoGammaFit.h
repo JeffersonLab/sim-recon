@@ -56,6 +56,15 @@ class DTwoGammaFit:public DKinematicData {
                void setChildFit(const DKinematicData& aChildFit, const int i);  
                void setChildMom(const DLorentzVector& aChildMom, const int i);  
 
+
+			void toStrings(vector<pair<string,string> > &items)const{
+				DKinematicData::toStrings(items);
+				AddString(items, "prob" , "%4.3lf", fProb);
+				AddString(items, "chisq", "%4.3lf", fChi2);
+				AddString(items, "Ndof" , "%d"   , fNdf);
+				AddString(items, "mass" , "%4.3lf", fMass);
+				AddString(items, "umass", "%4.3lf", fUMass);
+			}
 	private:
 
                JObject::oid_t fIDs[2];  
