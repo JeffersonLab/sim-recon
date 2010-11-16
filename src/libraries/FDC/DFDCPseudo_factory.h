@@ -67,6 +67,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// information. See also
 		/// DFDCPseudo_factory::makePseudo().
 		///
+		jerror_t init(void);
 		jerror_t evnt(JEventLoop *eventLoop, int eventNo);
 		jerror_t brun(JEventLoop *loop, int runnumber);
 
@@ -106,6 +107,8 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		std::vector<centroid_t>upeaks;
 		std::vector<centroid_t>vpeaks;
 		vector<vector<DFDCWire*> >fdcwires;
+
+		double ROUT_FIDUCIAL;
 
 		JStreamLog* _log;
 };

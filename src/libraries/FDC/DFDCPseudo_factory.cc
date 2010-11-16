@@ -23,6 +23,7 @@
 #define ALPHA 1e-4 // rate parameter for Newton step backtracking algorithm
 #define CHARGE_TO_ENERGY 5.9e-9 //place holder 
 
+
 ///
 /// DFDCAnode_gLayer_cmp(): 
 /// non-member function passed to std::sort() to sort DFDCHit pointers 
@@ -48,6 +49,19 @@ DFDCPseudo_factory::DFDCPseudo_factory() {
 DFDCPseudo_factory::~DFDCPseudo_factory() {
 	delete _log;
 }
+
+//------------------
+// init
+//------------------
+jerror_t DFDCPseudo_factory::init(void)
+{
+  ROUT_FIDUCIAL=48.;
+  gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL);
+  _DBG_ << "Using FDC fiducial radius r=" << ROUT_FIDUCIAL << " cm" <<endl;
+
+  return NOERROR;
+}
+
 
 //------------------
 // brun
@@ -337,23 +351,27 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    float trms = sqrt((dt1*dt1 + dt2*dt2 + dt3*dt3)/3.0);
 	    if(trms>20.0)continue;	
 	    
+	   
 	    float x_from_wire=DFDCGeometry::getWireR(*xIt);
-	    if (fabs(x_from_wire-x_from_strips)<WIRE_SPACING/2.){
+	    // Test radial value for checking whether or not the hit is within
+	    // the fiducial region of the detector
+	    float rtest=sqrt(x_from_wire*x_from_wire
+			     +y_from_strips*y_from_strips);
+	    double delta_x=x_from_wire-x_from_strips;
+	    if (fabs(delta_x)<WIRE_SPACING/2. && rtest<ROUT_FIDUCIAL){
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
 	      float xres=WIRE_SPACING/2./sqrt(12.);
-	      float yres=fabs(x_from_wire-x_from_strips);
 	      float cosangle,sinangle;	   
 	      
-	      yres=x_from_wire-x_from_strips;
-	      
 	      DFDCPseudo* newPseu = new DFDCPseudo;
+	      newPseu->u = upeaks[i].pos;
+	      newPseu->v = vpeaks[j].pos;
 	      newPseu->w      = x_from_wire;
 	      newPseu->dw     = xres;
 	      newPseu->s      = y_from_strips;
-	      newPseu->ds     = yres;
+	      newPseu->ds     = delta_x;
 	      newPseu->wire   = fdcwires[layer-1][(*xIt)->element-1];
 	      newPseu->time   = (*xIt)->t;
-	      newPseu->dist   = newPseu->time*DRIFT_SPEED;
 	      newPseu->status = status;
 
 	      newPseu->AddAssociatedObject(v[vpeaks[j].cluster]);
@@ -383,7 +401,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
 
 			// Try matching truth hit with this "real" hit.
-			const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, newPseu->dist, mctrackhits);
+			const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, DRIFT_SPEED*newPseu->time, mctrackhits);
 			if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
 
 	      _data.push_back(newPseu);

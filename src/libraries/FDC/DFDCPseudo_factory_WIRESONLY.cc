@@ -50,7 +50,6 @@ void DFDCPseudo_factory_WIRESONLY::MakePseudo(const DFDCHit *hit, const DFDCWire
 	pseudo->ds = 1.0/sqrt(12.0); // cm
 	pseudo->wire = wire;
 	pseudo->time = hit->t;
-	pseudo->dist = pseudo->time*55.0E-4; // cm
 	pseudo->status = 1;  // 1 external hit used to find intersection
 	pseudo->x = pos.X();
 	pseudo->y = pos.Y();
