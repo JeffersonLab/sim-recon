@@ -51,7 +51,7 @@ bool CDCSortByStereoPhiincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const
 //------------------
 jerror_t DTrackCandidate_factory_CDC::init(void)
 {
-	MAX_ALLOWED_CDC_HITS = 200;
+	MAX_ALLOWED_CDC_HITS = 400;
 	MAX_SUBSEED_STRAW_DIFF = 1;
 	MIN_SEED_HITS  = 2;
 	MAX_SUBSEED_LINKED_HITS = 12;
@@ -262,7 +262,7 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 	
 	// If there are too many hits, bail with a warning message
 	if(cdctrackhits.size()>MAX_ALLOWED_CDC_HITS){
-		_DBG_<<"Too many hits in CDC! Track finding in CDC bypassed for event "<<loop->GetJEvent().GetEventNumber()<<endl;
+		_DBG_<<"Too many hits in CDC ("<<cdctrackhits.size()<<", max="<<MAX_ALLOWED_CDC_HITS<<")! Track finding in CDC bypassed for event "<<loop->GetJEvent().GetEventNumber()<<endl;
 		cdctrackhits.clear();
 		return;
 	}
