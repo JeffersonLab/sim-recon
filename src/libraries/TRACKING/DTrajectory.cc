@@ -236,6 +236,7 @@ void DTrajectory::CalcPosMom(double h, RTdirs &dirs, ThreeVector &pos, double *p
 //---------------------------------
 void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, double smax)
 {
+#if 0  // disable for now
 	swim_step_t *swim_step = swim_steps;
 	
 	// Copy starting parameters into first step
@@ -459,6 +460,7 @@ void DTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, doubl
 	if(Nswim_steps > Max_swim_steps){
 		_DBG_<<"Maximum number of steps ("<<Max_swim_steps<<") reached. Swimming truncated."<<endl;
 	}
+#endif
 }
 
 //---------------------------------
@@ -495,7 +497,7 @@ int DTrajectory::GetMaterialInfo(double P, DVector3 &pos, DVector3 &mom, double 
 	if(mass==0.0){
 		_DBG_<<"DTrajectory::GetMaterialInfo called for mass=0.0 particle!"<<endl;
 		dP_dx = 0.0;
-		return 0.0; // no ionization losses for neutrals
+		return 0; // no ionization losses for neutrals
 	}
 	
 	double gammabeta = P/mass;
