@@ -260,6 +260,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   int pass;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
+  
+  // Min. momentum needed for fit before returning fitSuccess
+  double MIN_FIT_P;
 
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;

@@ -149,6 +149,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   //  DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
   //DEBUG_LEVEL=2;
+  
+  MIN_FIT_P = 0.050; // GeV
+  gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
 
   if(DEBUG_HISTS){
     DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -354,7 +357,11 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   fit_status = kFitSuccess;
   cdchits_used_in_fit = cdchits; // this should be changed to reflect hits dropped by the filter
   fdchits_used_in_fit = fdchits; // this should be changed to reflect hits dropped by the filter
-  
+
+  // Check that the momentum is above some minimal amount. If
+  // not, return that the fit failed.
+  if(fit_params.momentum().Mag() < MIN_FIT_P)fit_status = kFitFailed;
+
   return fit_status;
 }
 
