@@ -76,18 +76,20 @@ jerror_t DEventProcessor_pulls_tree::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DChargedTrack*> tracks;
 	const DMCThrown * thrown;
-	
+
 	try{
 		loop->Get(tracks);
 		loop->GetSingle(thrown);
 	}catch(...){
-		return NOERROR;
+		//return NOERROR;
 	}
 	pthread_mutex_lock(&mutex);
 	loop->GetJApplication()->Lock();
 	
 	if(thrown){
-		pullWB.pthrown = pullTB.pthrown = thrown->momentum();
+		const DVector3 &x = thrown->momentum();
+		TVector3 x_tvec(x.X(), x.Y(), x.Z());
+		pullWB.pthrown = pullTB.pthrown = x_tvec;
 	}else{
 		pullWB.pthrown.SetXYZ(0,0,0);
 		pullTB.pthrown.SetXYZ(0,0,0);
@@ -100,24 +102,27 @@ jerror_t DEventProcessor_pulls_tree::evnt(JEventLoop *loop, int eventnumber)
 				pullTB.eventnumber = eventnumber;
 				pullTB.trk_chisq = tbtrk->chisq;
 				pullTB.trk_Ndof = tbtrk->Ndof;
+
 				for(unsigned int j=0; j<tbtrk->pulls.size(); j++){
 					pullTB.resi = tbtrk->pulls[j].resi;
 					pullTB.err  = tbtrk->pulls[j].err;
-					pullTB.s		= tbtrk->pulls[j].s;
+					//pullTB.s		= tbtrk->pulls[j].s;
 					pullTB.pull = pullTB.resi/pullTB.err;
 					pullsTB->Fill();
 				}
 				
 				const DTrackWireBased* wbtrk;
 				tbtrk->GetSingle(wbtrk);
+
 				if(wbtrk){
 					pullWB.eventnumber = eventnumber;
 					pullWB.trk_chisq = wbtrk->chisq;
 					pullWB.trk_Ndof = wbtrk->Ndof;
-					for(unsigned int j=0; j<tbtrk->pulls.size(); j++){
+
+					for(unsigned int j=0; j<wbtrk->pulls.size(); j++){
 						pullWB.resi = wbtrk->pulls[j].resi;
 						pullWB.err  = wbtrk->pulls[j].err;
-						pullWB.s		= wbtrk->pulls[j].s;
+						//pullWB.s		= wbtrk->pulls[j].s;
 						pullWB.pull = pullWB.resi/pullWB.err;
 						pullsWB->Fill();
 					}
