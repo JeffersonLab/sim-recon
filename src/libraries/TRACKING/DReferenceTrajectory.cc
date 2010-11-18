@@ -332,10 +332,15 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			DVector3 pos, mom;
 			stepper.GetPosMom(pos, mom);
 			double ptot = mom.Mag() - dP; // correct for energy loss
-			if(ptot<0.0)break;
-			if(dP<0.0 && ploss_direction==kForward)break;
-			if(dP>0.0 && ploss_direction==kBackward)break;
-			if(mom.Mag()==0.0)break;
+			bool ranged_out = false;
+			if(ptot<0.0)ranged_out=true;
+			if(dP<0.0 && ploss_direction==kForward)ranged_out=true;
+			if(dP>0.0 && ploss_direction==kBackward)ranged_out=true;
+			if(mom.Mag()==0.0)ranged_out=true;
+			if(ranged_out){
+				Nswim_steps++; // This will at least allow for very low momentum particles to have 1 swim step
+				break;
+			}
 			mom.SetMag(ptot);
 			stepper.SetStartingParams(q, &pos, &mom);
 		}
@@ -1000,6 +1005,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	
 	if(Nswim_steps<1){
 		_DBG_<<"No swim steps! You must \"Swim\" the track before calling FindPlaneCrossing(...)"<<endl;
+*((int*)NULL) = 1; // force seg. fault
 	}
 
 	// Make sure normal vector is unit lenght
