@@ -149,9 +149,9 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
     
     if(HS_DEBUG_LEVEL>10){
       _DBG_;
-      if(probability>=MIN_HIT_PROB)cerr<<ansi_bold<<ansi_green;
-      cerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" sigma="<<sigma_total<<" prob="<<probability<<endl;
-      cerr<<ansi_normal;
+      if(probability>=MIN_HIT_PROB)jerr<<ansi_bold<<ansi_green;
+      jerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" sigma="<<sigma_total<<" prob="<<probability<<endl;
+      jerr<<ansi_normal;
     }
   }
 
@@ -282,9 +282,9 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
     }
     if(HS_DEBUG_LEVEL>10){
       _DBG_;
-      if(probability>=MIN_HIT_PROB)cerr<<ansi_bold<<ansi_blue;
-      cerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" resic="<<resic<<" chisq="<<chisq<<" prob="<<probability<<endl;
-      cerr<<ansi_normal;
+      if(probability>=MIN_HIT_PROB)jerr<<ansi_bold<<ansi_blue;
+      jerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" resic="<<resic<<" chisq="<<chisq<<" prob="<<probability<<endl;
+      jerr<<ansi_normal;
     }
   }
   // Order according to layer number and probability,then put the hits in the 

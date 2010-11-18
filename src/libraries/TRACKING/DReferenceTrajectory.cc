@@ -222,7 +222,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
 
 		if(Nswim_steps>=this->max_swim_steps){
-			cerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
+			jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
 			break;
 		}
 
