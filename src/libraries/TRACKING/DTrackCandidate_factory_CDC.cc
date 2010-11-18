@@ -51,7 +51,7 @@ bool CDCSortByStereoPhiincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const
 //------------------
 jerror_t DTrackCandidate_factory_CDC::init(void)
 {
-	MAX_ALLOWED_CDC_HITS = 400;
+	MAX_ALLOWED_CDC_HITS = 1000;
 	MAX_SUBSEED_STRAW_DIFF = 1;
 	MIN_SEED_HITS  = 2;
 	MAX_SUBSEED_LINKED_HITS = 12;
