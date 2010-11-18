@@ -46,7 +46,7 @@ using namespace std;
 #include "FCAL/DFCALHit.h"
 #include "PID/DPhoton.h"
 #include "PID/DTwoGammaFit.h"
-#include "BCAL/DHDDMBCALHit.h"
+#include "BCAL/DBCALHit.h"
 #include "DVector2.h"
 
 extern hdv_mainframe *hdvmf;
@@ -193,11 +193,11 @@ void MyProcessor::FillGraphics(void)
 	
 	// BCAL hits
 	if(hdvmf->GetCheckButton("bcal")){
-		vector<const DHDDMBCALHit*> bcalhits;
+		vector<const DBCALHit*> bcalhits;
 		loop->Get(bcalhits);
 		
 		for(unsigned int i=0; i<bcalhits.size(); i++){
-			const DHDDMBCALHit *hit = bcalhits[i];
+			const DBCALHit *hit = bcalhits[i];
 			TPolyLine *poly = hdvmf->GetBCALPolyLine(hit->module, hit->layer, hit->sector);
 			if(!poly)continue;
 
@@ -1193,7 +1193,7 @@ void MyProcessor::GetAllWireHits(vector<pair<const DCoordinateSystem*,double> > 
 	for(unsigned int i=0; i<fdchits.size(); i++){
 		pair<const DCoordinateSystem*,double> hit;
 		hit.first = fdchits[i]->wire;
-		hit.second = fdchits[i]->dist;
+		hit.second = 0.0055*fdchits[i]->time;
 		allhits.push_back(hit);
 	}
 }
