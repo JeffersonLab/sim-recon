@@ -109,6 +109,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		vector<vector<DFDCWire*> >fdcwires;
 
 		double ROUT_FIDUCIAL;
+		unsigned int MAX_ALLOWED_FDC_HITS;
 
 		JStreamLog* _log;
 };
