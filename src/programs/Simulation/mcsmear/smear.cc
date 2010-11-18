@@ -708,17 +708,17 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 
     	for(unsigned int i=0; i<PE->mult; i++){ 
 
-	  float eUpStore[49][11][5] = {0}; //store energies [mod][lay][sect]
-	  float eDownStore[49][11][5]= {0};	  
+	  float eUpStore[49][11][5] = {{{0}}}; //store energies [mod][lay][sect]
+	  float eDownStore[49][11][5]= {{{0}}};	  
 
-	  float eUpfADC[49][5][5]={0};
-	  float eDownfADC[49][5][5]={0};
+	  float eUpfADC[49][5][5]={{{0}}};
+	  float eDownfADC[49][5][5]={{{0}}};
 
-	  float tUpStore[49][11][5] = {0}; //store times [mod][lay][sect]
-	  float tDownStore[49][11][5]= {0};
+	  float tUpStore[49][11][5] = {{{0}}}; //store times [mod][lay][sect]
+	  float tDownStore[49][11][5]= {{{0}}};
 
-	  float tUpfADC[49][5][5]={0};
-	  float tDownfADC[49][5][5]={0};
+	  float tUpfADC[49][5][5]={{{0}}};
+	  float tDownfADC[49][5][5]={{{0}}};
 
 	  int fADCCellCount = 0;
 
