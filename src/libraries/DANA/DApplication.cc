@@ -158,11 +158,11 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 		}
 	}
 
-	cout<<"Creating DGeometry:"<<endl;
-	cout<<"  Run requested:"<<jgeom->GetRunRequested()<<"  found:"<<jgeom->GetRunFound()<<endl;
-	cout<<"  Run validity range: "<<jgeom->GetRunMin()<<"-"<<jgeom->GetRunMax()<<endl;
-	cout<<"  URL=\""<<jgeom->GetURL()<<"\""<<"  context=\""<<jgeom->GetContext()<<"\""<<endl;
-	cout<<"  Type=\""<<jgeom->className()<<"\""<<endl;
+	jout<<"Creating DGeometry:"<<endl;
+	jout<<"  Run requested:"<<jgeom->GetRunRequested()<<"  found:"<<jgeom->GetRunFound()<<endl;
+	jout<<"  Run validity range: "<<jgeom->GetRunMin()<<"-"<<jgeom->GetRunMax()<<endl;
+	jout<<"  URL=\""<<jgeom->GetURL()<<"\""<<"  context=\""<<jgeom->GetContext()<<"\""<<endl;
+	jout<<"  Type=\""<<jgeom->className()<<"\""<<endl;
 	
 	// Couldn't find a DGeometry object that uses this JGeometry object.
 	// Create one and add it to the list.
@@ -196,21 +196,21 @@ DMagneticFieldMap* DApplication::GetBfield(void)
 	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
 	if(bfield_type=="CalibDB"){
 		bfield = new DMagneticFieldMapCalibDB(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapCalibDB."<<endl;
+		jout<<"Created Magnetic field map of type DMagneticFieldMapCalibDB."<<endl;
 	}
 	else if(bfield_type=="FineMesh"){
 		bfield = new DMagneticFieldMapFineMesh(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
+		jout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
 	}
 	else if(bfield_type=="Const"){
 		bfield = new DMagneticFieldMapConst(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
+		jout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
 	}else if(bfield_type=="Spoiled"){
 		bfield = new DMagneticFieldMapSpoiled(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
+		jout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
 	}else if(bfield_type=="Parameterized"){
 		bfield = new DMagneticFieldMapParameterized(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapParameterized."<<endl;
+		jout<<"Created Magnetic field map of type DMagneticFieldMapParameterized."<<endl;
 	}else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type<<"\" !!"<<endl;
 		exit(-1);

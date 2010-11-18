@@ -65,11 +65,11 @@ unsigned int DLorentzMapCalibDB::GetLorentzDeflections(unsigned int runno){
   }
   
   // Notify user
-  cout<<"Read "<<tvals.size()<<" values from FDC/lorentz_deflections in calibDB"<<endl;
-  cout<<"   lorentz_deflections columns (alphabetical): ";
+  jout<<"Read "<<tvals.size()<<" values from FDC/lorentz_deflections in calibDB"<<endl;
+  jout<<"   lorentz_deflections columns (alphabetical): ";
   map<string,float>::iterator iter;
-  for(iter=tvals[0].begin(); iter!=tvals[0].end(); iter++)cout<<iter->first<<" ";
-  cout<<endl;
+  for(iter=tvals[0].begin(); iter!=tvals[0].end(); iter++)jout<<iter->first<<" ";
+  jout<<endl;
 
   // Copy values into tables. We preserve the order since that is how it was
   // originally done in hitFDC.c

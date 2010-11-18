@@ -61,8 +61,6 @@ jerror_t DFDCPseudo_factory::init(void)
   gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm");
   gPARMS->SetDefaultParameter("FDC:MAX_ALLOWED_FDC_HITS",MAX_ALLOWED_FDC_HITS, "Max. number of FDC hits (includes both cathode strips and wires hits) to allow before considering event too busy to attempt FDC tracking");
 
-  _DBG_ << "Using FDC fiducial radius r=" << ROUT_FIDUCIAL << " cm" <<endl;
-
   return NOERROR;
 }
 
@@ -102,7 +100,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	// we can't reconstruct them so bail early
 	// Feb. 8, 2008  D.L. (updated to config param. Nov. 18, 2010 D.L.)
 	if(fdcHits.size()>MAX_ALLOWED_FDC_HITS){
-		_DBG_<<"Too many hits in FDC! Pseudopoint reconstruction in FDC bypassed for event "<<eventLoop->GetJEvent().GetEventNumber()<<endl;
+		_DBG_<<"Too many hits in FDC ("<<fdcHits.size()<<", max="<<MAX_ALLOWED_FDC_HITS<<")! Pseudopoint reconstruction in FDC bypassed for event "<<eventLoop->GetJEvent().GetEventNumber()<<endl;
 		return NOERROR;
 	}
 
