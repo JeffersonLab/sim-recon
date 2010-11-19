@@ -21,14 +21,17 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 
 #include <PID/DKinematicData.h>
+#include <PID/DPhoton.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DTrackWireBased.h>
+#include <TRACKING/DTrackTimeBased.h>
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
 
 #include "Event.h"
+#include "Particle.h"
 
 class DMCTrajectoryPoint;
 class DCoordinateSystem;
@@ -41,12 +44,12 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		
 		class particle_set{
 			public:
-				vector<TLorentzVector> photons;
-				vector<TLorentzVector> piplus;
-				vector<TLorentzVector> piminus;
-				vector<TLorentzVector> protons;
-				vector<TLorentzVector> Kplus;
-				vector<TLorentzVector> Kminus;
+				vector<Particle> photons;
+				vector<Particle> piplus;
+				vector<Particle> piminus;
+				vector<Particle> protons;
+				vector<Particle> Kplus;
+				vector<Particle> Kminus;
 		};
 
 		Event *evt_recon;
@@ -63,11 +66,13 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 		
-		TLorentzVector MakeTLorentz(const DKinematicData *kd, double mass);
+		Particle MakeParticle(const DKinematicData *kd, double mass);
+		Particle MakeParticle(const DTrackTimeBased *trk, double mass);
+		Particle MakeParticle(const DPhoton *phtn, double mass);
 		bool IsFiducial(const DKinematicData *kd);
 		void FillEvent(Event *evt, particle_set &pset, particle_set &pset_match);
-		TLorentzVector FindBestMatch(const TLorentzVector &primary, vector<TLorentzVector> &secondaries);
-		double GetFOM(const TLorentzVector &a, const TLorentzVector &b) const;
+		Particle FindBestMatch(const Particle &primary, vector<Particle> &secondaries);
+		double GetFOM(const Particle &a, const Particle &b) const;
 };
 
 #endif // _DEventProcessor_trackres_tree_

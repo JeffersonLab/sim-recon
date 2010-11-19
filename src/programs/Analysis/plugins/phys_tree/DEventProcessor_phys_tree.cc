@@ -31,10 +31,9 @@ using namespace jana;
 #include <PID/DPhysicsEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackTimeBased.h>
-#include "Particle.h"
 
-bool static CompareLorentzEnergy(const TLorentzVector &a, const TLorentzVector &b){
-  return a.E()<b.E();
+bool static CompareLorentzEnergy(const Particle &a, const Particle &b){
+  return a.p.E()<b.p.E();
 }
 
 // Routine used to create our DEventProcessor
@@ -122,10 +121,13 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(chargedtracks);
 	loop->Get(physicsevents);
 
-	// Make TLorentzVector for beam photon
-	TLorentzVector beam_photon = TLorentzVector(0.0, 0.0, 9.0, 9.0);
-	if(beam_photons.size()>0)beam_photon = MakeTLorentz(beam_photons[0], 0.0);
-		
+	// Make Particle object for beam photon
+	TLorentzVector beam_photon(0.0, 0.0, 9.0, 9.0);
+	if(beam_photons.size()>0){
+		const DLorentzVector &lv = beam_photons[0]->lorentzMomentum();
+		beam_photon.SetPxPyPzE(lv.Px(), lv.Py(), lv.Pz(), lv.E());
+	}
+
 	// Target is proton at rest in lab frame
 	TLorentzVector target(0.0, 0.0, 0.0, 0.93827);
 	
@@ -146,57 +148,57 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 		}
 	}
 	
-	// Created TLorentzVector objects for each of the common particle types
+	// Create Particle objects for each of the common particle types
 	particle_set rec;
 	if (physicsevent!=NULL){
 	  for(unsigned int j=0; j<physicsevent->photon.size(); j++){
 		// photon
-	    rec.photons.push_back(MakeTLorentz(physicsevent->photon[j], 0.0));
+	    rec.photons.push_back(MakeParticle(physicsevent->photon[j], 0.0));
 	  }
 	  for(unsigned int j=0; j<physicsevent->pip.size(); j++){
 	    // pi+
-	    rec.piplus.push_back(MakeTLorentz(physicsevent->pip[j], 0.13957));
+	    rec.piplus.push_back(MakeParticle(physicsevent->pip[j], 0.13957));
 	  }
 	  for(unsigned int j=0; j<physicsevent->pim.size(); j++){
 	    // pi-
-	    rec.piminus.push_back(MakeTLorentz(physicsevent->pim[j], 0.13957));
+	    rec.piminus.push_back(MakeParticle(physicsevent->pim[j], 0.13957));
 	  }
 	  for(unsigned int j=0; j<physicsevent->proton.size(); j++){
 	    // proton
-	    rec.protons.push_back(MakeTLorentz(physicsevent->proton[j], 0.93827));
+	    rec.protons.push_back(MakeParticle(physicsevent->proton[j], 0.93827));
 	  }
 	  for(unsigned int j=0; j<physicsevent->Kp.size(); j++){
 	    // K+
-	    rec.Kplus.push_back(MakeTLorentz(physicsevent->Kp[j], 0.493677));
+	    rec.Kplus.push_back(MakeParticle(physicsevent->Kp[j], 0.493677));
 	  }
 	  for(unsigned int j=0; j<physicsevent->Km.size(); j++){
 	    // Ki+
-	    rec.Kminus.push_back(MakeTLorentz(physicsevent->Km[j], 0.493677));
+	    rec.Kminus.push_back(MakeParticle(physicsevent->Km[j], 0.493677));
 	  }  
 	}
-	// Create TLorentzVectors for thrown particles
+	// Create Particle objects for thrown particles
 	bool all_mesons_fiducial = true;
 	bool all_photons_fiducial = true;
 	bool all_protons_fiducial = true;
 	particle_set thr;
 	for(unsigned int k=0; k<mcthrowns.size(); k++){
 	  switch(mcthrowns[k]->type){
-	  case  1: thr.photons.push_back(MakeTLorentz(mcthrowns[k], 0.0));
+	  case  1: thr.photons.push_back(MakeParticle(mcthrowns[k], 0.0));
 	    all_photons_fiducial &= IsFiducial(mcthrowns[k]);
 	    break;
-	  case  8: thr.piplus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));
+	  case  8: thr.piplus.push_back(MakeParticle(mcthrowns[k], 0.13957));
 	      all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
 	      break;
-	  case  9: thr.piminus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));
+	  case  9: thr.piminus.push_back(MakeParticle(mcthrowns[k], 0.13957));
 	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
 	    break;
-	  case 11: thr.Kplus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));
+	  case 11: thr.Kplus.push_back(MakeParticle(mcthrowns[k], 0.493677));
 	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
 	    break;
-	  case 12: thr.Kminus.push_back(MakeTLorentz(mcthrowns[k], 0.493677));
+	  case 12: thr.Kminus.push_back(MakeParticle(mcthrowns[k], 0.493677));
 	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
 	    break;
-	  case 14: thr.protons.push_back(MakeTLorentz(mcthrowns[k], 0.93827));
+	  case 14: thr.protons.push_back(MakeParticle(mcthrowns[k], 0.93827));
 	    all_protons_fiducial &= IsFiducial(mcthrowns[k]);
 	      break;
 	  }
@@ -237,9 +239,9 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 
 
 //------------------
-// MakeTLorentz
+// MakeParticle
 //------------------
-TLorentzVector DEventProcessor_phys_tree::MakeTLorentz(const DKinematicData *kd, double mass)
+Particle DEventProcessor_phys_tree::MakeParticle(const DKinematicData *kd, double mass)
 {
 	// Create a ROOT TLorentzVector object out of a Hall-D DKinematic Data object.
 	// Here, we have the mass passed in explicitly rather than use the mass contained in
@@ -253,8 +255,51 @@ TLorentzVector DEventProcessor_phys_tree::MakeTLorentz(const DKinematicData *kd,
 	double py = p*sin(theta)*sin(phi);
 	double pz = p*cos(theta);
 	double E = sqrt(mass*mass + p*p);
+	double x = kd->position().X();
+	double y = kd->position().Y();
+	double z = kd->position().Z();
 	
-	return TLorentzVector(px,py,pz,E);
+	Particle part;
+	part.p.SetPxPyPzE(px,py,pz,E);
+	part.x.SetXYZ(x, y, z);
+	part.is_fiducial = IsFiducial(kd);
+	part.chisq = -1.0;
+	part.Ndof = 0;
+	part.FOM_pid = -1.0;
+	
+	return part;
+}
+
+//------------------
+// MakeParticle
+//------------------
+Particle DEventProcessor_phys_tree::MakeParticle(const DTrackTimeBased *trk, double mass)
+{
+	// Most values get set using DKinematicData part
+	Particle part = MakeParticle((DKinematicData*)trk, mass);
+
+	// Things specific to DTrackTimeBased
+	part.chisq = trk->chisq;
+	part.Ndof = trk->Ndof;
+	part.FOM_pid = trk->FOM;
+
+	return part;
+}
+
+//------------------
+// MakeParticle
+//------------------
+Particle DEventProcessor_phys_tree::MakeParticle(const DPhoton *phtn, double mass)
+{
+	// Most values get set using DKinematicData part
+	Particle part = MakeParticle((DKinematicData*)phtn, mass);
+
+	// Things specific to DPhoton
+	//part.chisq = ;
+	//part.Ndof = ;
+	//part.FOM_pid = ;
+	
+	return part;
 }
 
 //------------------
@@ -262,19 +307,19 @@ TLorentzVector DEventProcessor_phys_tree::MakeTLorentz(const DKinematicData *kd,
 //------------------
 void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, particle_set &pset_match)
 {
-	vector<TLorentzVector> &photon = pset.photons;
-	vector<TLorentzVector> &pip = pset.piplus;
-	vector<TLorentzVector> &pim = pset.piminus;
-	vector<TLorentzVector> &Kp = pset.Kplus;
-	vector<TLorentzVector> &Km = pset.Kminus;
-	vector<TLorentzVector> &proton = pset.protons;
+	vector<Particle> &photon = pset.photons;
+	vector<Particle> &pip = pset.piplus;
+	vector<Particle> &pim = pset.piminus;
+	vector<Particle> &Kp = pset.Kplus;
+	vector<Particle> &Km = pset.Kminus;
+	vector<Particle> &proton = pset.protons;
 
-	vector<TLorentzVector> &photon_match = pset_match.photons;
-	vector<TLorentzVector> &pip_match = pset_match.piplus;
-	vector<TLorentzVector> &pim_match = pset_match.piminus;
-	vector<TLorentzVector> &Kp_match = pset_match.Kplus;
-	vector<TLorentzVector> &Km_match = pset_match.Kminus;
-	vector<TLorentzVector> &proton_match = pset_match.protons;
+	vector<Particle> &photon_match = pset_match.photons;
+	vector<Particle> &pip_match = pset_match.piplus;
+	vector<Particle> &pim_match = pset_match.piminus;
+	vector<Particle> &Kp_match = pset_match.Kplus;
+	vector<Particle> &Km_match = pset_match.Kminus;
+	vector<Particle> &proton_match = pset_match.protons;
 
 	// Sort particle arrays by energy
 	sort(photon.begin(), photon.end(), CompareLorentzEnergy);
@@ -288,99 +333,88 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 	for(unsigned int i=0; i<photon.size(); i++){
 		TClonesArray &prts_match = *(evt->photon_match);
 		Particle *prt_match = new(prts_match[evt->Nphoton]) Particle();
-		prt_match->p = FindBestMatch(photon[i], photon_match);
-		prt_match->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt_match = FindBestMatch(photon[i], photon_match);
 
 		TClonesArray &prts = *(evt->photon);
 		Particle *prt = new(prts[evt->Nphoton++]) Particle();
-		prt->p = photon[i];
-		prt->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt = photon[i];
 	}
 
 	// Add piplus
 	for(unsigned int i=0; i<pip.size(); i++){
 		TClonesArray &prts_match = *(evt->pip_match);
 		Particle *prt_match = new(prts_match[evt->Npip]) Particle();
-		prt_match->p = FindBestMatch(pip[i], pip_match);
-		prt_match->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt_match = FindBestMatch(pip[i], pip_match);
 
 		TClonesArray &prts = *(evt->pip);
 		Particle *prt = new(prts[evt->Npip++]) Particle();
-		prt->p = pip[i];
-		prt->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt = pip[i];
 	}
 
 	// Add piminus
 	for(unsigned int i=0; i<pim.size(); i++){
 		TClonesArray &prts_match = *(evt->pim_match);
 		Particle *prt_match = new(prts_match[evt->Npim]) Particle();
-		prt_match->p = FindBestMatch(pim[i], pim_match);
-		prt_match->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt_match = FindBestMatch(pim[i], pim_match);
 
 		TClonesArray &prts = *(evt->pim);
 		Particle *prt = new(prts[evt->Npim++]) Particle();
-		prt->p = pim[i];
-		prt->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt = pim[i];
 	}
 
 	// Add Kplus
 	for(unsigned int i=0; i<Kp.size(); i++){
 		TClonesArray &prts_match = *(evt->Kp_match);
 		Particle *prt_match = new(prts_match[evt->NKp]) Particle();
-		prt_match->p = FindBestMatch(Kp[i], Kp_match);
-		prt_match->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt_match = FindBestMatch(Kp[i], Kp_match);
 
 		TClonesArray &prts = *(evt->Kp);
 		Particle *prt = new(prts[evt->NKp++]) Particle();
-		prt->p = Kp[i];
-		prt->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt = Kp[i];
 	}
 
 	// Add Kminus
 	for(unsigned int i=0; i<Km.size(); i++){
 		TClonesArray &prts_match = *(evt->Km_match);
 		Particle *prt_match = new(prts_match[evt->NKm]) Particle();
-		prt_match->p = FindBestMatch(Km[i], Km_match);
-		prt_match->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt_match = FindBestMatch(Km[i], Km_match);
 
 		TClonesArray &prts = *(evt->Km);
 		Particle *prt = new(prts[evt->NKm++]) Particle();
-		prt->p = Km[i];
-		prt->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt = Km[i];
 	}
 
 	// Add proton
 	for(unsigned int i=0; i<proton.size(); i++){
 		TClonesArray &prts_match = *(evt->proton_match);
 		Particle *prt_match = new(prts_match[evt->Nproton]) Particle();
-		prt_match->p = FindBestMatch(proton[i], proton_match);
-		prt_match->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt_match = FindBestMatch(proton[i], proton_match);
 
 		TClonesArray &prts = *(evt->proton);
 		Particle *prt = new(prts[evt->Nproton++]) Particle();
-		prt->p = proton[i];
-		prt->x.SetXYZ(0,0,65); // FIXME!!!
+		*prt = proton[i];
 	}
 	
 	// Calculate W of reconstructed particles
-	for(unsigned int i=0; i<photon.size(); i++)evt->W += photon[i];
-	for(unsigned int i=0; i<pip.size(); i++)evt->W += pip[i];
-	for(unsigned int i=0; i<pim.size(); i++)evt->W += pim[i];
-	for(unsigned int i=0; i<Kp.size(); i++)evt->W += Kp[i];
-	for(unsigned int i=0; i<Km.size(); i++)evt->W += Km[i];
+	for(unsigned int i=0; i<photon.size(); i++)evt->W += photon[i].p;
+	for(unsigned int i=0; i<pip.size(); i++)evt->W += pip[i].p;
+	for(unsigned int i=0; i<pim.size(); i++)evt->W += pim[i].p;
+	for(unsigned int i=0; i<Kp.size(); i++)evt->W += Kp[i].p;
+	for(unsigned int i=0; i<Km.size(); i++)evt->W += Km[i].p;
 
 }
 
 //------------------
 // FindBestMatch
 //------------------
-TLorentzVector DEventProcessor_phys_tree::FindBestMatch(const TLorentzVector &primary, vector<TLorentzVector> &secondaries)
+Particle DEventProcessor_phys_tree::FindBestMatch(const Particle &primary, vector<Particle> &secondaries)
 {
 	// Loop over secondaries and keep the one with the best figure of merit
 	// to return. Initialize return vector with zeros in case not good match
 	// is found.
 	double max_fom = 0.1;
-	TLorentzVector best_match(0.0, 0.0, 0.0);
+	Particle best_match;
+	best_match.p.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	for(unsigned int i=0; i<secondaries.size(); i++){
 		double fom = GetFOM(primary, secondaries[i]);
 		if(fom > max_fom){
@@ -395,7 +429,7 @@ TLorentzVector DEventProcessor_phys_tree::FindBestMatch(const TLorentzVector &pr
 //------------------
 // GetFOM
 //------------------
-double DEventProcessor_phys_tree::GetFOM(const TLorentzVector &a, const TLorentzVector &b) const
+double DEventProcessor_phys_tree::GetFOM(const Particle &a, const Particle &b) const
 {
 	// This is a kind of brain-dead algorithm. It wants to use both the
 	// momentum direction and magnitude to determine the FOM. For the
@@ -413,12 +447,12 @@ double DEventProcessor_phys_tree::GetFOM(const TLorentzVector &a, const TLorentz
 
 	double epsilon = 1.0E-6; // prevent reciprocals from resulting in infinity
 
-	double curature_a = 1.0/a.P();
-	double curature_b = 1.0/b.P();
+	double curature_a = 1.0/a.p.P();
+	double curature_b = 1.0/b.p.P();
 	double curvature_diff = fabs(curature_a - curature_b);
 	double curvature_fom = 1.0/(curvature_diff + epsilon);
 
-	double theta_rel = fabs(a.Angle(b.Vect()));
+	double theta_rel = fabs(a.p.Angle(b.p.Vect()));
 	double theta_fom = 1.0/(theta_rel + epsilon);
 	
 	double fom = curvature_fom*theta_fom;

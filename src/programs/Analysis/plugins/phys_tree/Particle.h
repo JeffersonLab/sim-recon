@@ -22,6 +22,9 @@ class Particle:public TObject{
 		TLorentzVector p;	// paritcle 4-momentum
 		TVector3 x;			// vertex position
 		Bool_t is_fiducial;	// True if particle is in fiducial region based on particle type
+		Double_t chisq;
+		Int_t Ndof;
+		Double_t FOM_pid;
 
 		// This is used to sort a TClonesArray of this type of object
 		Bool_t IsSortable(void) const { return kTRUE;}
@@ -36,6 +39,9 @@ class Particle:public TObject{
 			this->p = prt.p;
 			this->x = prt.x;
 			this->is_fiducial = prt.is_fiducial;
+			this->chisq = prt.chisq;
+			this->Ndof = prt.Ndof;
+			this->FOM_pid = prt.FOM_pid;
 			return *this;
 		}
 
