@@ -14,6 +14,7 @@ using namespace std;
 #include "units.h"
 #include "HDDM/hddm_s.h"
 #include <TF1.h>
+#include <TH2.h>
 #include <TRandom3.h>
 
 float RANDOM_MAX = (float)(0x7FFFFFFF);
@@ -23,7 +24,9 @@ float RANDOM_MAX = (float)(0x7FFFFFFF);
 #endif
 
 
-extern TF1 *fdc_smear_function[8];
+extern vector<vector<float> >fdc_smear_parms; 
+extern TF1 *fdc_smear_function;
+extern TH2F *fdc_drift_smear_hist;
 
 void SmearCDC(s_HDDM_t *hddm_s);
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
@@ -431,35 +434,24 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				// on the drift distance.  We use the root TF1
 				// random generator using functions representing
 				// the degree of smearing in various bins in x
-	      
-				double dx=0.;
-				if (truthhit->d<0.25){
-				  dx=fdc_smear_function[0]->GetRandom();
+	  
+				int ind=(truthhit->d<0.5?int(truthhit->d/0.02+0.5):25);
+				double dt=0.;
+				/*
+				dt=SampleGaussian((5.96642*exp(-54.2745*truthhit->d)
+							  +1.64413e-11*exp(56.1646*truthhit->d)
+							  +2.48224));
+				*/
+				for (unsigned int p=0;p<9;p++){
+				  // printf("rel %f\n",truthhit->d-0.02*ind);
+				  fdc_smear_function->SetParameter(p,fdc_smear_parms[ind][p]);
 				}
-				else if (truthhit->d<0.75){
-				  dx=fdc_smear_function[1]->GetRandom();
-				}
-				else if (truthhit->d<1.5){
-				  dx=fdc_smear_function[2]->GetRandom();
-				}
-				else if (truthhit->d<2.5){
-				  dx=fdc_smear_function[3]->GetRandom();
-				}
-				else if (truthhit->d<3.5){
-				  dx=fdc_smear_function[4]->GetRandom();
-				}
-				else if (truthhit->d<4.25){
-				  dx=fdc_smear_function[5]->GetRandom();
-				}
-				else if (truthhit->d<4.75){
-				dx=fdc_smear_function[6]->GetRandom();
-				}
-				else{
-				  dx=fdc_smear_function[7]->GetRandom();
-				}
-				// dx is mm so we divide by 0.055 mm/ns for the
-				// drift speed
-				hit->t=truthhit->t+dx/0.055;
+				dt=fdc_smear_function->GetRandom();
+				
+				hit->t=truthhit->t+dt;
+				fdc_drift_smear_hist->Fill(truthhit->d,dt);
+				
+
 			      }
 			      hit->dE = truthhit->dE;
 			    }
