@@ -2956,6 +2956,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
   // Initialize the chi2 for this part of the track
   chisq=0.;
+  pulls.clear();
 
   // path length increment
   double ds2=0.;
@@ -3227,7 +3228,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	// Update chi2 for this hit
 	var=V*(1.-H*K);
 	chisq+=dm*dm/var;      
-	
+
+	pulls.push_back(pull_t(dm, sqrt(var), central_traj[k].s));
+		
 	// Estimate for time at vertex
 	if (cdc_index<my_cdchits.size()-1)
 	  {
@@ -3393,6 +3396,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
   // Initialize chi squared
   chisq=0;
+  pulls.clear();
 
   // Variables for estimating t0 from tracking
   mInvVarT0=mT0wires=0.;
@@ -3520,6 +3524,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       // Update chi2 for this segment
       chisq+=RC.Chi2(R);
 
+      pulls.push_back(pull_t(R(0), sqrt(fabs(RC(0,0)/anneal_factor)), forward_traj[k].s));
+      pulls.push_back(pull_t(R(1), sqrt(fabs(RC(1,1)/anneal_factor)), forward_traj[k].s));
+
+_DBG_<<k<<" resi="<<R(0)<<" err="<<sqrt(fabs(RC(0,0)/anneal_factor))<<" s="<<forward_traj[k].s<<endl;
+
       // Estimate t0
       if (id<my_fdchits.size()-1){
 	du=S(state_x)*cosa-S(state_y)*sina-u;
@@ -3559,9 +3568,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	
 	//printf("id %d fdc myvar %f cumulative %f \n",id,var_t0,1./mInvVarT0);
       }
-
-      pulls.push_back(pull_t(R(0), sqrt(fabs(RC(0,0)/anneal_factor))));
-      pulls.push_back(pull_t(R(1), sqrt(fabs(RC(1,1)/anneal_factor))));
     }
 
     // Save the current state and covariance matrix in the deque
@@ -3867,7 +3873,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	  //  printf("id %d/%d forward cdc myvar %f cumulative %f \n",cdc_index,cdchits.size(),var,1./mInvVarT0);
 	}
       
-	pulls.push_back(pull_t(res, sqrt(fabs(err2/anneal))));
+	pulls.push_back(pull_t(res, sqrt(fabs(err2/anneal)), forward_traj_cdc[k].s));
 
 	/*
 	printf("chisq %f res %f chisq contrib %f varpred %f\n",chisq,res,

@@ -78,9 +78,10 @@ class DTrackFitter:public jana::JObject{
 
 		class pull_t{
 		public:
-		  pull_t(double resi, double err):resi(resi),err(err){}
+		  pull_t(double resi, double err, double s=0.0):resi(resi),err(err),s(s){}
 		    double resi;	// residual of measurement
 		    double err;		// estimated error of measurement
+			 double s;
 		};
 		
 		// Constructor and destructor
