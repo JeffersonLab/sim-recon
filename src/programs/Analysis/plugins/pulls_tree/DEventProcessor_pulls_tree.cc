@@ -106,7 +106,7 @@ jerror_t DEventProcessor_pulls_tree::evnt(JEventLoop *loop, int eventnumber)
 				for(unsigned int j=0; j<tbtrk->pulls.size(); j++){
 					pullTB.resi = tbtrk->pulls[j].resi;
 					pullTB.err  = tbtrk->pulls[j].err;
-					//pullTB.s		= tbtrk->pulls[j].s;
+					pullTB.s		= tbtrk->pulls[j].s;
 					pullTB.pull = pullTB.resi/pullTB.err;
 					pullsTB->Fill();
 				}
@@ -122,7 +122,7 @@ jerror_t DEventProcessor_pulls_tree::evnt(JEventLoop *loop, int eventnumber)
 					for(unsigned int j=0; j<wbtrk->pulls.size(); j++){
 						pullWB.resi = wbtrk->pulls[j].resi;
 						pullWB.err  = wbtrk->pulls[j].err;
-						//pullWB.s		= wbtrk->pulls[j].s;
+						pullWB.s		= wbtrk->pulls[j].s;
 						pullWB.pull = pullWB.resi/pullWB.err;
 						pullsWB->Fill();
 					}
