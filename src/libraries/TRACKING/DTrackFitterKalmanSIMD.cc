@@ -3527,8 +3527,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       pulls.push_back(pull_t(R(0), sqrt(fabs(RC(0,0)/anneal_factor)), forward_traj[k].s));
       pulls.push_back(pull_t(R(1), sqrt(fabs(RC(1,1)/anneal_factor)), forward_traj[k].s));
 
-_DBG_<<k<<" resi="<<R(0)<<" err="<<sqrt(fabs(RC(0,0)/anneal_factor))<<" s="<<forward_traj[k].s<<endl;
-
       // Estimate t0
       if (id<my_fdchits.size()-1){
 	du=S(state_x)*cosa-S(state_y)*sina-u;
