@@ -9,6 +9,7 @@ using namespace std;
 #include <TF1.h>
 #include <TFile.h>
 #include <TH2.h>
+#include <TH1.h>
 
 #include <signal.h>
 #include <time.h>
@@ -49,8 +50,9 @@ using namespace jana;
 static JCalibration *jcalib=NULL;
 
 // histogram
-TH2F *fdc_drift_smear_hist;
-
+TH2F *fdc_drift_time_smear_hist;
+TH2F *fdc_drift_dist_smear_hist;
+TH1F *fdc_drift_time;
 
 //-----------
 // main
@@ -64,8 +66,11 @@ int main(int narg,char* argv[])
 	
 	// hist file
 	TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");
-	fdc_drift_smear_hist=new TH2F("fdc_drift_smear_hist","Drift time smearing for FDC",100,0,0.5,
-				      400,-200,200);
+	fdc_drift_time_smear_hist=new TH2F("fdc_drift_time_smear_hist","Drift time smearing for FDC",
+					   260,-0.01,0.51,400,-200,200);
+	fdc_drift_dist_smear_hist=new TH2F("fdc_drift_dist_smear_hist","Drift distance smearing for FDC",
+					   260,-0.01,0.51,200,-0.5,0.5);
+	fdc_drift_time=new TH1F("fdc_drift_time","FDC drift time",400,-20,380);
 	
 
 	// Create a JCalibration object using the JANA_CALIB_URL environment variable

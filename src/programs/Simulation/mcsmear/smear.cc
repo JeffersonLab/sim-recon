@@ -26,7 +26,9 @@ float RANDOM_MAX = (float)(0x7FFFFFFF);
 
 extern vector<vector<float> >fdc_smear_parms; 
 extern TF1 *fdc_smear_function;
-extern TH2F *fdc_drift_smear_hist;
+extern TH2F *fdc_drift_time_smear_hist;
+extern TH2F *fdc_drift_dist_smear_hist;
+extern TH1F *fdc_drift_time;
 
 void SmearCDC(s_HDDM_t *hddm_s);
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
@@ -157,6 +159,44 @@ float Bcal_CellInnerThreshold;
 // Forward TOF resolution
 double TOF_SIGMA = 100.*k_psec;
 
+// Polynomial interpolation on a grid.
+// Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
+void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
+  int i,m,ns=0;
+  float den,dif,dift,ho,hp,w;
+
+  float *c=(float *)calloc(n,sizeof(float));
+  float *d=(float *)calloc(n,sizeof(float));
+
+  dif=fabs(x-xa[0]);
+  for (i=0;i<n;i++){
+    if ((dift=fabs(x-xa[i]))<dif){
+      ns=i;
+      dif=dift;
+    }
+    c[i]=ya[i];
+    d[i]=ya[i];
+  }
+  *y=ya[ns--];
+
+  for (m=1;m<n;m++){
+    for (i=1;i<=n-m;i++){
+      ho=xa[i-1]-x;
+      hp=xa[i+m-1]-x;
+      w=c[i+1-1]-d[i-1];
+      if ((den=ho-hp)==0.0) return;
+      
+      den=w/den;
+      d[i-1]=hp*den;
+      c[i-1]=ho*den;
+      
+    }
+    
+    *y+=(*dy=(2*ns<(n-m) ?c[ns+1]:d[ns--]));
+  }
+  free(c);
+  free(d);
+}
 
 //-----------
 // Smear
@@ -442,15 +482,51 @@ void SmearFDC(s_HDDM_t *hddm_s)
 							  +1.64413e-11*exp(56.1646*truthhit->d)
 							  +2.48224));
 				*/
+				float xarray[26]={0.00,0.02,0.04,0.06,0.08,0.10,0.12,0.14,0.16,0.18,0.20,0.22,
+						  0.24,0.26,0.28,0.30,0.32,0.34,0.36,0.38,0.40,0.42,0.44,0.46,
+						  0.48,0.50};
+				int imin=0;
+				if (ind>0 && ind<25) imin=ind-1;
+				else if (ind>=25) imin=24;
+				else if (ind<1) imin=0;
+				float my_parms[9];
+				//printf("imin %d imax %d\n",imin,imin+3);
+				
+			     
+				for (int m=0;m<9;m++){
+				  if (false && truthhit->d<0.01){
+				    my_parms[m]=fdc_smear_parms[0][m];
+				    // printf("parms %f\n",my_parms[m]);
+				  }
+				  else{
+				    float dpar;
+				    float parlist[26];
+				    int  num=2;
+				    for (int p=0;p<num;p++){
+				      parlist[p]=fdc_smear_parms[imin+p][m];
+				      // printf("%f\n",parlist[p]);
+				    }
+				  //if (ind==0||ind>23) num=3;
+				    polint(&xarray[imin],parlist,num,truthhit->d,&my_parms[m],&dpar);
+				  //printf("d %f par %f\n",truthhit->d,my_parms[m]);
+				  }
+				}
+
 				for (unsigned int p=0;p<9;p++){
 				  // printf("rel %f\n",truthhit->d-0.02*ind);
-				  fdc_smear_function->SetParameter(p,fdc_smear_parms[ind][p]);
+				  if ((p+2)%3 && my_parms[p]<0.) my_parms[p]*=-1.;
+				  fdc_smear_function->SetParameter(p,my_parms[p]);
 				}
 				dt=fdc_smear_function->GetRandom();
 				
 				hit->t=truthhit->t+dt;
-				fdc_drift_smear_hist->Fill(truthhit->d,dt);
-				
+				fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
+
+				double temp=90.99*tanh((truthhit->d-0.2915)/0.1626);
+				fdc_drift_dist_smear_hist->Fill(truthhit->d,
+								0.08211*0.01097*dt/
+								(1.-0.01097*0.01097*temp*temp));
+				fdc_drift_time->Fill(temp+86.67+dt);
 
 			      }
 			      hit->dE = truthhit->dE;
