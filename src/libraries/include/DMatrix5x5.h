@@ -101,7 +101,13 @@ class DMatrix5x5{
       }
     }
   }
-  
+ 
+  // return a column of the 5x5 matrix as a DMatrix5x1 object 
+  DMatrix5x1 GetColumn(int col){
+    return DMatrix5x1(mA[col].v[0],mA[col].v[1],mA[col].v[2]);
+
+  }
+ 
   // Access by indices
   double &operator() (int row, int col){
     return mA[col].d[row];

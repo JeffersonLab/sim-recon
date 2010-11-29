@@ -10,6 +10,14 @@
       mA.v[1]=v2;
       mA.v[2]=v3;
     }
+    DMatrix5x1(double a1, double a2, double a3, double a4, double a5){
+      mA.d[0]=a1;
+      mA.d[1]=a2;
+      mA.d[2]=a3;
+      mA.d[3]=a4;
+      mA.d[4]=a5;
+      mA.d[5]=0.;
+    }
     ~DMatrix5x1(){};
 
     __m128d GetV(int pair) const{
