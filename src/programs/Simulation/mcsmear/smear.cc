@@ -8,6 +8,7 @@
 using namespace std;
 
 #include <FCAL/DFCALGeometry.h>
+#include <CCAL/DCCALGeometry.h>
 #include <BCAL/DBCALGeometry.h>
 
 #include <math.h>
@@ -35,6 +36,7 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
 void SmearFDC(s_HDDM_t *hddm_s);
 void AddNoiseHitsFDC(s_HDDM_t *hddm_s);
 void SmearFCAL(s_HDDM_t *hddm_s);
+void SmearCCAL(s_HDDM_t *hddm_s);
 void SmearBCAL(s_HDDM_t *hddm_s);
 void SmearTOF(s_HDDM_t *hddm_s);
 void SmearUPV(s_HDDM_t *hddm_s);
@@ -53,6 +55,7 @@ vector<unsigned int> NCDC_STRAWS;
 vector<double> CDC_RING_RADIUS;
 
 DFCALGeometry *fcalGeom = NULL;
+DCCALGeometry *ccalGeom = NULL;
 bool FDC_GEOMETRY_INITIALIZED = false;
 unsigned int NFDC_WIRES_PER_PLANE;
 vector<double> FDC_LAYER_Z;
@@ -125,6 +128,14 @@ double FCAL_PHOT_STAT_COEF = 0.035;
 
 // Single block energy threshold (applied after smearing)
 double FCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
+
+// Photon-statistics factor for smearing hit energy for CompCal
+// (This is just a rough estimate 11/30/2010 DL)
+double CCAL_PHOT_STAT_COEF = FCAL_PHOT_STAT_COEF/2.0;
+
+// Single block energy threshold (applied after smearing)
+// (This is just a rough estimate 11/30/2010 DL)
+double CCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
 
 // setup response parameters
 float BCAL_DARKRATE_GHZ         = 0.041;
@@ -208,6 +219,7 @@ void Smear(s_HDDM_t *hddm_s)
 	if(SMEAR_HITS)SmearFDC(hddm_s);
 	if(ADD_NOISE)AddNoiseHitsFDC(hddm_s);
 	if(SMEAR_HITS)SmearFCAL(hddm_s);
+	if(SMEAR_HITS)SmearCCAL(hddm_s);
 	if(SMEAR_HITS)SmearBCAL(hddm_s);
 	if(SMEAR_HITS)SmearTOF(hddm_s);
 	if(SMEAR_HITS)SmearUPV(hddm_s);
@@ -742,6 +754,65 @@ void SmearFCAL(s_HDDM_t *hddm_s)
 	} // i  (physicsEvents)
 
 }
+
+//-----------
+// SmearCCAL
+//-----------
+void SmearCCAL(s_HDDM_t *hddm_s)
+{
+	/// Smear the CCAL hits using the same procedure as the FCAL above.
+	/// See those comments for details.
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return;
+	
+	if(!ccalGeom)ccalGeom = new DCCALGeometry();
+
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			 hits->ComptonEMcal == HDDM_NULL ||
+			 hits->ComptonEMcal->ccalBlocks == HDDM_NULL)continue;
+		
+		s_CcalBlocks_t *blocks = hits->ComptonEMcal->ccalBlocks;
+		for(unsigned int j=0; j<blocks->mult; j++){
+			s_CcalBlock_t *block = &blocks->in[j];
+
+			// Create FCAL hits structures to put smeared data into
+			if(block->ccalHits!=HDDM_NULL)free(block->ccalHits);
+			block->ccalHits = make_s_CcalHits(block->ccalTruthHits->mult);
+			block->ccalHits->mult = block->ccalTruthHits->mult;
+
+			for(unsigned int k=0; k<block->ccalTruthHits->mult; k++){
+				s_CcalTruthHit_t *ccaltruthhit = &block->ccalTruthHits->in[k];
+				s_CcalHit_t *ccalhit = &block->ccalHits->in[k];
+
+				// Copy info from truth stream before doing anything else
+				ccalhit->E = ccaltruthhit->E;
+				ccalhit->t = ccaltruthhit->t;
+
+				// Simulation simulates a grid of blocks for simplicity. 
+				// Do not bother smearing inactive blocks. They will be
+				// discarded in DEventSourceHDDM.cc while being read in
+				// anyway.
+				if(!ccalGeom->isBlockActive( block->row, block->column ))continue;
+
+				// Smear the energy and timing of the hit
+				double sigma = CCAL_PHOT_STAT_COEF/sqrt(ccalhit->E) ;
+				ccalhit->E *= 1.0 + SampleGaussian(sigma);
+				ccalhit->t += SampleGaussian(200.0E-3); // smear by 200 ps fixed for now 7/2/2009 DL
+				
+				// Apply a single block threshold. If the (smeared) energy is below this,
+				// then set the energy and time to zero. 
+				if(ccalhit->E < CCAL_BLOCK_THRESHOLD){ccalhit->E = ccalhit->t = 0.0;}
+
+			} // k  (fcalhits)
+		} // j  (blocks)
+	} // i  (physicsEvents)
+
+}
+
 //-----------
 // SmearBCAL
 //-----------

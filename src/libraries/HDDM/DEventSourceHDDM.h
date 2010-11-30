@@ -26,6 +26,8 @@ using namespace std;
 #include "FDC/DFDCHit.h"
 #include "FCAL/DFCALTruthShower.h"
 #include "FCAL/DFCALHit.h"
+#include "CCAL/DCCALTruthShower.h"
+#include "CCAL/DCCALHit.h"
 #include "TOF/DTOFTruth.h"
 #include "TOF/DHDDMTOFHit.h"
 #include "START_COUNTER/DSCTruthHit.h"
@@ -53,6 +55,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t GetTOFTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
 		jerror_t GetCherenkovTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
 		jerror_t GetFCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
+		jerror_t GetCCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
 		jerror_t GetSCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
 
 		jerror_t Extract_DBCALTruthShower(s_HDDM_t *hddm_s, JFactory<DBCALTruthShower> *factory);
@@ -62,6 +65,8 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DCDCHit(s_HDDM_t *hddm_s, JFactory<DCDCHit> *factory, string tag);
 		jerror_t Extract_DFDCHit(s_HDDM_t *hddm_s, JFactory<DFDCHit> *factory, string tag);
 		jerror_t Extract_DFCALTruthShower(s_HDDM_t *hddm_s, JFactory<DFCALTruthShower> *factory);
+		jerror_t Extract_DCCALHit(s_HDDM_t *hddm_s, JFactory<DCCALHit> *factory, JEventLoop* eventLoop, string tag);
+		jerror_t Extract_DCCALTruthShower(s_HDDM_t *hddm_s, JFactory<DCCALTruthShower> *factory);
 		jerror_t Extract_DFCALHit(s_HDDM_t *hddm_s, JFactory<DFCALHit> *factory, JEventLoop* eventLoop, string tag);
 		jerror_t Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s, JFactory<DMCTrajectoryPoint> *factory);
 		jerror_t Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTruth> *factory);

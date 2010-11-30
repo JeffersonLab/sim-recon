@@ -24,6 +24,8 @@ using namespace std;
 #include <FDC/DFDCGeometry.h>
 #include <FCAL/DFCALGeometry.h>
 #include <FCAL/DFCALHit.h>
+#include <CCAL/DCCALGeometry.h>
+#include <CCAL/DCCALHit.h>
 
 //------------------------------------------------------------------
 // Binary predicate used to sort hits
@@ -189,6 +191,12 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	
 	if(dataClassName == "DFCALHit" && (tag=="" || tag=="TRUTH"))
 	  return Extract_DFCALHit(my_hddm_s, dynamic_cast<JFactory<DFCALHit>*>(factory), event.GetJEventLoop(), tag);
+	
+	if(dataClassName == "DCCALTruthShower" && tag=="")
+	  return Extract_DCCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DCCALTruthShower>*>(factory));
+	
+	if(dataClassName == "DCCALHit" && (tag=="" || tag=="TRUTH"))
+	  return Extract_DCCALHit(my_hddm_s, dynamic_cast<JFactory<DCCALHit>*>(factory), event.GetJEventLoop(), tag);
 	
 	if(dataClassName =="DMCTrajectoryPoint" && tag=="")
 	  return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
@@ -444,6 +452,41 @@ jerror_t DEventSourceHDDM::GetFCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit
 	return NOERROR;
 }
 
+//-------------------
+// GetCCALTruthHits
+//-------------------
+jerror_t DEventSourceHDDM::GetCCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
+{
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+#if 0	
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardEMcal == HDDM_NULL ||
+			hits->forwardEMcal->fcalTruthShowers == HDDM_NULL)continue;
+		
+		s_FcalTruthShowers_t *fcalTruthShowers = hits->forwardEMcal->fcalTruthShowers;
+		s_FcalTruthShower_t *fcalTruthShower = fcalTruthShowers->in;
+		for(unsigned int j=0; j<fcalTruthShowers->mult; j++, fcalTruthShower++){
+			float x = fcalTruthShower->x;
+			float y = fcalTruthShower->y;
+			DMCTrackHit *mctrackhit = new DMCTrackHit;
+			mctrackhit->r			= sqrt(x*x + y*y);
+			mctrackhit->phi		= atan2(y,x);
+			mctrackhit->z			= fcalTruthShower->z;
+			mctrackhit->track		= fcalTruthShower->track;
+			mctrackhit->primary	= fcalTruthShower->primary;
+			mctrackhit->ptype		= fcalTruthShower->ptype;
+			mctrackhit->system	= SYS_FCAL;
+			data.push_back(mctrackhit);
+		}
+	}
+#endif
+
+	return NOERROR;
+}
 
 
 //-------------------
@@ -1108,6 +1151,144 @@ jerror_t DEventSourceHDDM::Extract_DFCALHit(s_HDDM_t *hddm_s,  JFactory<DFCALHit
 					  data.push_back(mchit);
 					  
 				 } // k  (fcalhits)
+			} // tag
+		} // j  (blocks)
+	} // i  (physicsEvents)
+  
+  // Copy into factory
+  factory->CopyTo(data);
+  
+  return NOERROR;
+}
+
+//------------------
+// Extract_DCCALTruthShower
+//------------------
+jerror_t DEventSourceHDDM::Extract_DCCALTruthShower(s_HDDM_t *hddm_s,  JFactory<DCCALTruthShower> *factory)
+{
+  	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DCCALTruthShower*> data;
+
+		// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	JObject::oid_t id=1;
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->ComptonEMcal == HDDM_NULL ||
+			hits->ComptonEMcal->ccalTruthShowers == HDDM_NULL)continue;
+
+		s_CcalTruthShowers_t *showers = hits->ComptonEMcal->ccalTruthShowers;
+		for(unsigned int j=0; j<showers->mult; j++){
+			s_CcalTruthShower_t *shower = &showers->in[j];
+			
+			DCCALTruthShower *dccaltruthshower = new DCCALTruthShower(
+				id++,
+				shower->x,
+				shower->y,
+				shower->z,
+				shower->px,
+				shower->py,
+				shower->pz,
+				shower->E,
+				shower->t,
+				shower->primary,
+				shower->track,
+				shower->ptype
+				);
+			
+			data.push_back(dccaltruthshower);
+		}
+
+	} // i  (physicsEvents)
+
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_DCCALHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DCCALHit(s_HDDM_t *hddm_s,  JFactory<DCCALHit> *factory, JEventLoop* eventLoop, string tag)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returs OBJECT_NOT_AVAILABLE immediately.
+	
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+	// extract the CCAL Geometry (for isBlockActive() and positionOnFace())
+	vector<const DCCALGeometry*> ccalGeomVect;
+	eventLoop->Get( ccalGeomVect );
+	if(ccalGeomVect.size()<1)return OBJECT_NOT_AVAILABLE;
+	const DCCALGeometry& ccalGeom = *(ccalGeomVect[0]);
+
+	vector<DCCALHit*> data;
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+
+	int hitId = 0;
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			 hits->ComptonEMcal == HDDM_NULL ||
+			 hits->ComptonEMcal->ccalBlocks == HDDM_NULL)continue;
+		
+		s_CcalBlocks_t *blocks = hits->ComptonEMcal->ccalBlocks;		
+		for(unsigned int j=0; j<blocks->mult; j++){
+			 s_CcalBlock_t *block = &blocks->in[j];
+			 
+			 // Filter out non-physical blocks here
+			 if(!ccalGeom.isBlockActive(block->row, block->column))continue;
+			 
+			 // Get position of blocks on front face. (This should really come from
+			 // hdgeant directly so the poisitions can be shifted in mcsmear.)
+			 DVector2 pos = ccalGeom.positionOnFace(block->row, block->column);
+			 
+			 // Real hits
+			 if(tag==""){
+				 for(unsigned int k=0; k<block->ccalHits->mult; k++){
+					  s_CcalHit_t *ccalhit = &block->ccalHits->in[k];
+					  
+					  DCCALHit *mchit = new DCCALHit();
+					  mchit->row = block->row;
+					  mchit->column = block->column;
+					  mchit->x = pos.X();
+					  mchit->y = pos.Y();
+					  mchit->E = ccalhit->E;
+					  mchit->t = ccalhit->t;
+					  mchit->id = hitId++;
+					  
+					  data.push_back(mchit);
+					  
+				 } // k  (ccalhits)
+			}else if(tag=="TRUTH"){
+				 for(unsigned int k=0; k<block->ccalTruthHits->mult; k++){
+					  s_CcalTruthHit_t *ccalhit = &block->ccalTruthHits->in[k];
+					  
+					  DCCALHit *mchit = new DCCALHit();
+					  mchit->row = block->row;
+					  mchit->column = block->column;
+					  mchit->x = pos.X();
+					  mchit->y = pos.Y();
+					  mchit->E = ccalhit->E;
+					  mchit->t = ccalhit->t;
+					  mchit->id = hitId++;
+					  
+					  data.push_back(mchit);
+					  
+				 } // k  (ccalhits)
 			} // tag
 		} // j  (blocks)
 	} // i  (physicsEvents)
