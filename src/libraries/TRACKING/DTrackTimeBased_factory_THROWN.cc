@@ -12,6 +12,7 @@ using namespace std;
 
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
+#include <TRACKING/DTrackWireBased.h>
 
 #include "DTrackTimeBased_factory_THROWN.h"
 #include "DMCThrown.h"
@@ -64,22 +65,9 @@ jerror_t DTrackTimeBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnum
 	}
 	hitselector = hitselectors[0];
 
-	// Set pointers for DRootGeom and DGeometry pointers so they could be used
-	// by the DReferenceTrajectory class
-	string MATERIAL_MAP_MODEL="";
-	try{
-		gPARMS->GetParameter("TRKFIT:MATERIAL_MAP_MODEL", MATERIAL_MAP_MODEL);
-	}catch(...){}
+	// Set DGeometry pointers so it can be used by the DReferenceTrajectory class
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-	if(MATERIAL_MAP_MODEL=="DRootGeom"){
-		RootGeom = dapp->GetRootGeom();
-	}else if(MATERIAL_MAP_MODEL=="DGeometry"){
-		geom = dapp->GetDGeometry(runnumber);
-	}else if(MATERIAL_MAP_MODEL=="NONE"){
-	}else{
-		_DBG_<<"ERROR: Invalid value for TRKFIT:MATERIAL_MAP_MODEL (=\""<<MATERIAL_MAP_MODEL<<"\")"<<endl;
-		exit(-1);
-	}
+	geom = dapp->GetDGeometry(runnumber);
 	
 	// Set magnetic field pointer
 	bfield = dapp->GetBfield();
@@ -95,9 +83,11 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCPseudo*> fdcpseudos;
+	vector<const DTrackWireBased*> wbtracks;
 	loop->Get(mcthrowns);
 	loop->Get(cdctrackhits);
 	loop->Get(fdcpseudos);
+	loop->Get(wbtracks, "THROWN");
 
 	for(unsigned int i=0; i< mcthrowns.size(); i++){
 		const DMCThrown *thrown = mcthrowns[i];
@@ -149,9 +139,11 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 			fitter->AddHits(fdchits);
 			double chisq;
 			int Ndof;
-			fitter->ChiSq(DTrackFitter::kWireBased, rt, &chisq, &Ndof);
+			vector<DTrackFitter::pull_t> pulls;
+			fitter->ChiSq(DTrackFitter::kTimeBased, rt, &chisq, &Ndof, &pulls);
 			track->chisq = chisq;
 			track->Ndof = Ndof;
+			track->pulls = pulls;
 		}else{
 			track->chisq = 0.0;
 			track->Ndof = 0;
@@ -165,6 +157,16 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		track->candidateid = thrown->id;
 		track->trackid = thrown->id;
 		track->FOM = 1.0;
+
+		// Add wire-based track as associated object. Even though they should
+		// be in the same order, we verify it is the correct one by checking
+		// that the candidateid is the same as ours (i.e. the same thrown track)
+		for(unsigned int j=0; j<wbtracks.size(); j++){
+			if(wbtracks[j]->candidateid == track->candidateid){
+				track->AddAssociatedObject(wbtracks[j]);
+				break;
+			}
+		}
 
 		_data.push_back(track);
 	}

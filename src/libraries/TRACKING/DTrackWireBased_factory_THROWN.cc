@@ -28,6 +28,9 @@ DTrackWireBased_factory_THROWN::DTrackWireBased_factory_THROWN()
 {
 	fitter = NULL;
 	hitselector=NULL;
+	
+	RootGeom = NULL;
+	geom = NULL;
 }
 
 //------------------
@@ -60,6 +63,13 @@ jerror_t DTrackWireBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnum
 		return RESOURCE_UNAVAILABLE;
 	}
 	hitselector = hitselectors[0];
+
+	// Set DGeometry pointers so it can be used by the DReferenceTrajectory class
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	geom = dapp->GetDGeometry(runnumber);
+	
+	// Set magnetic field pointer
+	bfield = dapp->GetBfield();
 
 	return NOERROR;
 }
@@ -97,13 +107,15 @@ jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		if(rt_pool.size()<=_data.size()){
 			// This is a little ugly, but only gets called a few times throughout the life of the process
 			// Note: these never get deleted, even at the end of process.
-			DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-			rt_pool.push_back(new DReferenceTrajectory(dapp->GetBfield()));
+			rt_pool.push_back(new DReferenceTrajectory(bfield));
 		}
 		DReferenceTrajectory *rt = rt_pool[_data.size()];
 		track->rt = rt;
 		DVector3 pos = track->position();
 		DVector3 mom = track->momentum();
+		rt->SetMass(thrown->mass());
+		rt->SetDGeometry(geom);
+		rt->SetDRootGeom(RootGeom);
 		rt->Swim(pos, mom, track->charge());
 
 		// Find hits that should be on this track and add them as associated objects
@@ -124,13 +136,24 @@ jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 			fitter->AddHits(fdchits);
 			double chisq;
 			int Ndof;
-			fitter->ChiSq(DTrackFitter::kWireBased, rt, &chisq, &Ndof);
+			vector<DTrackFitter::pull_t> pulls;
+			fitter->ChiSq(DTrackFitter::kWireBased, rt, &chisq, &Ndof, &pulls);
 			track->chisq = chisq;
 			track->Ndof = Ndof;
+			track->pulls = pulls;
 		}else{
 			track->chisq = 0.0;
 			track->Ndof = 0;
 		}
+
+		//
+		//
+		// These are to provide symmetry with DTrackTimeBased_factory_THROWN.cc
+		//
+		//
+		track->candidateid = thrown->id;
+		//track->trackid = thrown->id;
+		//track->FOM = 1.0;
 
 		_data.push_back(track);
 	}

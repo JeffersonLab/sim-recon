@@ -10,6 +10,9 @@
 
 #include <JANA/JFactory.h>
 #include <TRACKING/DReferenceTrajectory.h>
+#include <HDGEOMETRY/DRootGeom.h>
+#include <HDGEOMETRY/DGeometry.h>
+#include <HDGEOMETRY/DMagneticFieldMap.h>
 #include "DTrackWireBased.h"
 
 class DTrackFitter;
@@ -31,7 +34,10 @@ class DTrackWireBased_factory_THROWN:public JFactory<DTrackWireBased>{
 		DTrackFitter *fitter;
 		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rt_pool;
-
+	
+		DRootGeom *RootGeom;
+		DGeometry *geom;
+		DMagneticFieldMap *bfield;
 };
 
 #endif // _DTrackWireBased_factory_THROWN_
