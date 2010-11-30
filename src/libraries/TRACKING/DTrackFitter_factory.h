@@ -24,7 +24,11 @@ class DTrackFitter_factory:public jana::JFactory<DTrackFitter>{
 			// that the default can be changed easily by simply
 			// changing the tag here or on the command line.
 			vector<const DTrackFitter*> fitters;
+#ifdef USE_SIMD			
 			loop->Get(fitters, "KalmanSIMD");
+#else
+			loop->Get(fitters, "ALT1");
+#endif
 			for(unsigned int i=0; i< fitters.size(); i++){
 				_data.push_back(const_cast<DTrackFitter*>(fitters[i]));
 			}
