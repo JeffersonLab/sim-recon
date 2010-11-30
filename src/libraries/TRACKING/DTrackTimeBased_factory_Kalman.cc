@@ -51,10 +51,10 @@ jerror_t DTrackTimeBased_factory_Kalman::init(void)
 	fitter = NULL;
 
 	DEBUG_LEVEL = 0;
-	DEBUG_HISTS=true;
+	DEBUG_HISTS=false;
 	//DEBUG_HISTS=false;
 	MOMENTUM_CUT_FOR_DEDX=0.5;
-	MOMENTUM_CUT_FOR_PROTON_ID=2.0;
+	MOMENTUM_CUT_FOR_PROTON_ID=3.0;
 
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_DEDX",MOMENTUM_CUT_FOR_DEDX);

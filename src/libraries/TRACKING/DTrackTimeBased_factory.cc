@@ -49,7 +49,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 	fitter = NULL;
 
 	//DEBUG_HISTS = false;
-	DEBUG_HISTS = true;
+	DEBUG_HISTS = false;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
 	MOMENTUM_CUT_FOR_PROTON_ID=3.0;
