@@ -1,0 +1,400 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-11-29
+   Date: November 29, 2010
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 7044 of trunk/sim-recon .
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+  HDDS 1.1
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.1
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.26
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.1
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r6791 | davidl | 2010-10-12 06:35:29 -0400 (Tue, 12 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+Make name array long enough to hold function name and terminating zero.
+------------------------------------------------------------------------
+r6797 | dwbennet | 2010-10-14 10:31:53 -0400 (Thu, 14 Oct 2010) | 26 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPhoton_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTruthShower.h
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/SampleGaussian.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+
+10/13/10 Daniel Bennett - Indiana University
+dwbennet@indiana.edu
+
+Geometry:
+	BarrelEMcal_HDDS.xml - Modified the Barrel Calorimeter to fit summing scheme outlined in "Production Geometry for the BCAL Modules", Z. Papandreou, GlueX-doc-1536-v1.  Changed the number of layers from 8 to 10, and small changes in radii of cells and thickness of aluminum inner and outer plates as specified in the document.
+
+mcsmear:
+	smear.cc - Moved all of the BCAL smearing from DBCALMCResponse_factory.cc to smear.cc.  Also summed the output of individual SiPM cells into groups of three or four, now known to the program as fADC cells.  These groupings are outlined in GlueX-doc-1536-v1.  After smearing, all reconstruction uses information from summed fADC cells only.
+	SampleGaussian.cc - Added SamplePoisson, used in getDarkHits() for BCAL smearing.
+
+
+BCAL Library:
+     Got rid of DBCALMCResponse_factory.cc, DBCALMCResponse_factory.h DBCALMCResponse.h, and DHDDMBCALHit.h.  The smearing from the factory was moved to mcsmear, and the function of the JObjects MCResponse and HDDMBCALHit were merged into BCALHit, since all of the smearing is done later.  The main purpose of this change is to remove any randomization in the BCAL from hdgeant to mcsmear only.  
+     DBCALGeometry.h - Added in public constant for smear.cc
+     DBCALPhoton_factory.cc - Re-calibrated photon energy (with only scale and nonlin fits).  This was needed due to all the changes in the BCAL Photon code and grouping of SiPM cells.
+     DBCALShower_factory.cc - Replaced MCResponse objects to BCALHit
+     DBCALShower_factory.h - Set layermax_bcal = 4 for new SiPM grouping.
+     DBCALShower.h, DBCALTruthShower.h - Output string was mislabeled.  Changed to r and phi from x and y to make them easier to compare to DBCALPhoton.
+
+HDDM Library:
+     DEventSource.cc - Changed HDDMBCALHits to BCALHits, and Extract_DBCALHits now uses fADC groupings of SiPMs instead of individual cells.
+     DEventSource.h - Changed HDDMBCALHits to BCALHits at various places
+     Event.xml - Added in SiPM cells and fADC groupings for upstream and downstream hits, which occur after BCAL smearing through MCSmear.  Since Event.xml is changed, this means different hddm_s.c and hddm_s.h files are generated.
+
+
+------------------------------------------------------------------------
+r6799 | staylor | 2010-10-14 11:07:49 -0400 (Thu, 14 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Modified how correction for lorentz effect is handled.
+------------------------------------------------------------------------
+r6809 | davidl | 2010-10-18 18:34:01 -0400 (Mon, 18 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/bfield2root/bfield2root.cc
+
+Make Bz_vs_r_vs_z histo limits be defined from input parameters for map range/density in bfield2root.
+------------------------------------------------------------------------
+r6822 | staylor | 2010-10-21 10:10:41 -0400 (Thu, 21 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Check for cases where the step size is zero, which can happen in the FDC if there are more than one hit in a given plan for a particular segment.
+------------------------------------------------------------------------
+r6834 | staylor | 2010-10-25 16:37:06 -0400 (Mon, 25 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory.h
+
+Change default fitter from ALT1 to KalmanSIMD
+------------------------------------------------------------------------
+r6841 | marki | 2010-10-27 14:42:59 -0400 (Wed, 27 Oct 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trkfitterLSLM/residFDCCathode.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trkfitterLSLM/residFDCCathode.h
+
+essentially a copy of the anodes
+------------------------------------------------------------------------
+r6843 | zihlmann | 2010-10-27 15:01:43 -0400 (Wed, 27 Oct 2010) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/CDC_init.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit.h
+   M /trunk/sim-recon/src/libraries/FDC/FDC_init.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+Fix some bugs to make sure that track number and particle type of primary
+paritcles appear properly in the drift chamber TruthHit container class both
+for CDC and FDC. Also the DOCA (distance of closest apporach) is copied 
+to the TruthHit iformation.
+
+
+------------------------------------------------------------------------
+r6844 | zihlmann | 2010-10-27 16:02:29 -0400 (Wed, 27 Oct 2010) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+
+Fix one small issue that the value d (DOCA) in the container classes of FDC
+and CDC are initialized to zero for the smeared hits.
+
+
+------------------------------------------------------------------------
+r6845 | staylor | 2010-10-27 17:42:20 -0400 (Wed, 27 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Modifications to minimize bias in phi at the vertex.
+------------------------------------------------------------------------
+r6849 | zihlmann | 2010-10-29 08:39:15 -0400 (Fri, 29 Oct 2010) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+
+add line  
+iflgk(i) = 1
+before the call to gsking(i) to give each secondary particle
+a unique tracking number. basically making it a primary particle.
+In this way hits in the detector can be unambiguously identified
+to which particle track it belongs.
+
+
+------------------------------------------------------------------------
+r6859 | staylor | 2010-10-29 17:39:47 -0400 (Fri, 29 Oct 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Added code to estimate the time at the vertex using the FDC and CDC hits themselves at the wire-based fitting stage.
+------------------------------------------------------------------------
+r6860 | zihlmann | 2010-10-30 17:06:02 -0400 (Sat, 30 Oct 2010) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+
+modify slightly when to declare secondaries primaries to get
+independent track number. When in calorimeter volume only make
+primaries if the secondaries were generated in HADR reaction.
+
+------------------------------------------------------------------------
+r6872 | staylor | 2010-11-03 10:11:27 -0400 (Wed, 03 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Improvements to algorithm for estimating t0 from hits on the track.  Added another diagnostic histogram.
+------------------------------------------------------------------------
+r6877 | staylor | 2010-11-05 13:51:24 -0400 (Fri, 05 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+In KalmanCentral routine, simplify calculation of predicted drift distance and the resulting partial derivatives in the matrix H.  Also implemented further work on estimating t0 from the track itself.
+------------------------------------------------------------------------
+r6878 | staylor | 2010-11-05 13:52:38 -0400 (Fri, 05 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory.h
+
+Switch to header file for base DTrackFitter class instead of the one for ALT1.
+------------------------------------------------------------------------
+r6879 | staylor | 2010-11-05 13:53:32 -0400 (Fri, 05 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Minor mods to diagnostic histograms
+------------------------------------------------------------------------
+r6884 | staylor | 2010-11-09 09:03:17 -0500 (Tue, 09 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+
+Added check for NULLness of physicsevent.
+------------------------------------------------------------------------
+r6894 | staylor | 2010-11-10 19:22:14 -0500 (Wed, 10 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Move calculation of FDC residuals to the smoothing stage.  Further (hopefully) refine t0 calculation.  Make sure the CDC smoother for forward-going tracks that contain both FDC and CDC hits.
+------------------------------------------------------------------------
+r6908 | davidl | 2010-11-15 14:14:58 -0500 (Mon, 15 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALGeometry.cc
+
+Fix a problem introduced (by me) when line stating "FCAL Geometry initalized with ..." is printed was changed to use jout instead of cout. This caused seg. faults when running hdview2 because it creates a DFCALGeometry object in global code space (outside of main) causing it to call the constructor before jout was properly set up. This at least caused seg. faults (prior to ever reaching main()) on OS X 10.6. I have a vague recollection of contradictory evidence on Linux.
+
+------------------------------------------------------------------------
+r6912 | staylor | 2010-11-15 18:25:28 -0500 (Mon, 15 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Fix one index in scaling operator
+------------------------------------------------------------------------
+r6917 | davidl | 2010-11-16 11:33:07 -0500 (Tue, 16 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DTwoGammaFit.h
+
+Add toStrings method to DTwoGammaFit class.
+------------------------------------------------------------------------
+r6919 | staylor | 2010-11-16 14:55:10 -0500 (Tue, 16 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory_WIRESONLY.cc
+
+(1) Introduce ROUT_FIDUCIAL, the outer radius of the fiducial volume, currently set to 48 cm. (2) Remove variable dist, which is not meaningful at the stage of the analysis, because the reported time includes an unknown amount of flight time. (2) store centroid positions in the cathode planes as u and v in units of strip number.
+------------------------------------------------------------------------
+r6920 | staylor | 2010-11-16 14:56:06 -0500 (Tue, 16 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterALT1.cc
+
+The dist variable in the pseudopoint is deprecated.
+------------------------------------------------------------------------
+r6922 | nsparks | 2010-11-16 16:10:27 -0500 (Tue, 16 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+updated PID_FORCE_TRUTH
+------------------------------------------------------------------------
+r6927 | davidl | 2010-11-17 10:13:54 -0500 (Wed, 17 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.cc
+
+Return 0 rather than 0.0 to avoid compiler warnings about returning double rather than int
+------------------------------------------------------------------------
+r6930 | davidl | 2010-11-17 13:13:04 -0500 (Wed, 17 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Impose minimum fit momentum in KalmanSIMD fitter before returinging kFitSuccess. Default is set to 50MeV/c, but is taken from config. parameters TRKFIT:MIN_FIT_P
+------------------------------------------------------------------------
+r6931 | davidl | 2010-11-17 13:21:15 -0500 (Wed, 17 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Increase default value of MAX_ALLOWED_CDC_HITS from 200 to 400.
+------------------------------------------------------------------------
+r6939 | davidl | 2010-11-18 07:56:58 -0500 (Thu, 18 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+When swimming a DReferenceTrajectory that ranges out on the first step (due to a low initial momentum), go ahead and keep the 1 swim step to avoid issues later when 0 swim steps are detected.
+------------------------------------------------------------------------
+r6940 | staylor | 2010-11-18 07:58:25 -0500 (Thu, 18 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+
+The dist variable is deprecated in DFDCPseudo
+------------------------------------------------------------------------
+r6941 | davidl | 2010-11-18 07:59:00 -0500 (Thu, 18 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.h
+
+Make limit on FDC hits a configuration parameter and set it's default value to the equivalent of 10 tracks. Previously, it was hardwired to 6.
+------------------------------------------------------------------------
+r6942 | staylor | 2010-11-18 08:02:11 -0500 (Thu, 18 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Add some brackets to get rid of some compiler warnings.
+------------------------------------------------------------------------
+r6943 | davidl | 2010-11-18 08:17:44 -0500 (Thu, 18 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Increase the default value of MAX_ALLOWED_CDC_HITS from 400 to 1000.
+------------------------------------------------------------------------
+r6944 | davidl | 2010-11-18 08:21:05 -0500 (Thu, 18 Nov 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALGeometry.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/FDC_init.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DLorentzMapCalibDB.cc
+
+Cleanup up output when running a DANA program. This included moving some things from cout to jout. Also, some messages were removed that were not necessarily critical info being printed at startup. Some of these were being printed for every thread making for lots of identical messages.
+
+------------------------------------------------------------------------
+r6945 | davidl | 2010-11-18 08:33:12 -0500 (Thu, 18 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+
+Replaced a few cerr with jerr
+------------------------------------------------------------------------
+r6946 | davidl | 2010-11-18 12:35:20 -0500 (Thu, 18 Nov 2010) | 2 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/pulls_tree (from /trunk/Studies/2010.02.22.track_resolutions/src/programs/Analysis/plugins/pulls_tree:6945)
+
+Copying over pulls_tree plugin to common area.
+
+------------------------------------------------------------------------
+r6949 | davidl | 2010-11-18 17:21:13 -0500 (Thu, 18 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/pulls_tree/DEventProcessor_pulls_tree.cc
+
+Updated to work with current trunk. Need to add s to DTrackFitter::pull_t and fill it still.
+------------------------------------------------------------------------
+r6951 | davidl | 2010-11-19 08:29:57 -0500 (Fri, 19 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/Particle.h
+
+Modified phys_tree plugin to include tracking chisq, Ndof, and FOM from PID.
+------------------------------------------------------------------------
+r6953 | davidl | 2010-11-19 10:06:48 -0500 (Fri, 19 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Add distance along trajectory (s) to DTrackFitter::pull_t. Fill it in all three KalmanSIMD track propagator routines as well as in ALT1.
+------------------------------------------------------------------------
+r6954 | davidl | 2010-11-19 10:07:47 -0500 (Fri, 19 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/pulls_tree/DEventProcessor_pulls_tree.cc
+
+Copy distance along trajectory into pull trees
+------------------------------------------------------------------------
+r6955 | davidl | 2010-11-19 10:10:04 -0500 (Fri, 19 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Remove debug print statement accidentally left in during last commit.
+------------------------------------------------------------------------
+r6966 | staylor | 2010-11-19 17:52:56 -0500 (Fri, 19 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Get parameters for smearing the FDC drift time from the calibration DB (the code now uses JCalibration from JANA).  Modified how random numbers are generated by using only one TF1 with parameters that depend on drift distance.  Added a root file with one diagonistic histogram for this smearing.
+------------------------------------------------------------------------
+r6967 | staylor | 2010-11-19 19:09:54 -0500 (Fri, 19 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Replaced steptype histogram with a stepsize histogram that shows the average step size as a function of position.  Make the maximum step size in the CDC active region smaller than outside the active region.  Use the smoothed state vector to obtain a better estimate for the flight time during the iterations for each reference trajectory.  Modified the drift time variance function for the FDC hits to be more consistent with the new smearing available in mcsmear.  The latter still needs some work.
+------------------------------------------------------------------------
+r6992 | staylor | 2010-11-24 15:57:39 -0500 (Wed, 24 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Add a couple of diagnostic histograms.  Interpolate over the grid of fdc smear parameters.
+------------------------------------------------------------------------
+r7044 | staylor | 2010-11-29 14:32:24 -0500 (Mon, 29 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Added some more useful methods to the matrix classes.
+------------------------------------------------------------------------
