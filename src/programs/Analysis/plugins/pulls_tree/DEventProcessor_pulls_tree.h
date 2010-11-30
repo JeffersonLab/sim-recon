@@ -11,6 +11,7 @@
 #include <TTree.h>
 
 #include <JANA/JEventProcessor.h>
+#include <TRACKING/DTrackFitter.h>
 
 #include <pull_t.h>
 
@@ -19,6 +20,8 @@ class DEventProcessor_pulls_tree:public jana::JEventProcessor{
 		DEventProcessor_pulls_tree();
 		~DEventProcessor_pulls_tree();
 		const char* className(void){return "DEventProcessor_pulls_tree";}
+		
+		void RecalculateChisq(DTrackFitter::fit_type_t fit_type, const DKinematicData *kd, double &chisq, int &Ndof, vector<DTrackFitter::pull_t> &pulls);
 
 		TTree *pullsWB, *pullsTB;
 		pull_t pullWB, pullTB;
@@ -32,6 +35,9 @@ class DEventProcessor_pulls_tree:public jana::JEventProcessor{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		pthread_mutex_t mutex;
+		
+		bool RECALCULATE_CHISQ;
+		const DTrackFitter *fitter;
 };
 
 #endif // _DEventProcessor_pulls_tree_

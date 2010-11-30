@@ -30,6 +30,8 @@ void InitPlugin(JApplication *app){
 DEventProcessor_pulls_tree::DEventProcessor_pulls_tree()
 {
 	pthread_mutex_init(&mutex, NULL);
+
+	fitter = NULL;
 }
 
 //------------------
@@ -66,6 +68,10 @@ jerror_t DEventProcessor_pulls_tree::init(void)
 //------------------
 jerror_t DEventProcessor_pulls_tree::brun(JEventLoop *eventLoop, int runnumber)
 {
+	RECALCULATE_CHISQ = false;
+	
+	gPARMS->SetDefaultParameter("RECALCULATE_CHISQ", RECALCULATE_CHISQ, "Recalculate Chisq, Ndof, and pulls based on track parameters and hits rather than use what's recorded in track objects");
+
 	return NOERROR;
 }
 
@@ -75,38 +81,61 @@ jerror_t DEventProcessor_pulls_tree::brun(JEventLoop *eventLoop, int runnumber)
 jerror_t DEventProcessor_pulls_tree::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DChargedTrack*> tracks;
-	const DMCThrown * thrown;
+	const DMCThrown * thrown_single=NULL;
+	fitter=NULL;
 
 	try{
 		loop->Get(tracks);
-		loop->GetSingle(thrown);
+		loop->GetSingle(thrown_single);
+		loop->GetSingle(fitter, "ALT1"); // use ALT1 as the stand-alone chisq calculator
 	}catch(...){
 		//return NOERROR;
 	}
 	pthread_mutex_lock(&mutex);
 	loop->GetJApplication()->Lock();
 	
-	if(thrown){
-		const DVector3 &x = thrown->momentum();
-		TVector3 x_tvec(x.X(), x.Y(), x.Z());
-		pullWB.pthrown = pullTB.pthrown = x_tvec;
-	}else{
+	for(unsigned int i=0; i<tracks.size(); i++){
+
+		// Initialize in case these don't get set below
 		pullWB.pthrown.SetXYZ(0,0,0);
 		pullTB.pthrown.SetXYZ(0,0,0);
-	}
-	
-	for(unsigned int i=0; i<tracks.size(); i++){
+
 		if(tracks[i]->hypotheses.size()>0){
 			const DTrackTimeBased *tbtrk = tracks[i]->hypotheses[0];
 			if(tbtrk){
+				
+				// Try filling in pthrown. First, by looking for an
+				// associated object, then by checking if thrown_single
+				// is not NULL. The latter case being for single
+				// track events, the former for when DTrackTimeBased::THROWN
+				// is used.
+				const DMCThrown *thrown;
+				tbtrk->GetSingle(thrown);
+				if(!thrown)thrown = thrown_single;
+				if(thrown){
+					const DVector3 &x = thrown->momentum();
+					pullTB.pthrown.SetXYZ(x.X(), x.Y(), x.Z());
+				}
+				
+				// Copy chisq/Ndof/pull values to local variables in case we need to
+				// replace them with ones we recalculate
+				double chisq = tbtrk->chisq;
+				int Ndof = tbtrk->Ndof;
+				vector<DTrackFitter::pull_t> pulls = tbtrk->pulls;
+				
+				// Optionally replace chisq values
+				if(RECALCULATE_CHISQ){
+					RecalculateChisq(DTrackFitter::kTimeBased, tbtrk, chisq, Ndof, pulls);
+				}
+				
 				pullTB.eventnumber = eventnumber;
-				pullTB.trk_chisq = tbtrk->chisq;
-				pullTB.trk_Ndof = tbtrk->Ndof;
+				pullTB.trk_chisq = chisq;
+				pullTB.trk_Ndof = Ndof;
 
-				for(unsigned int j=0; j<tbtrk->pulls.size(); j++){
-					pullTB.resi = tbtrk->pulls[j].resi;
-					pullTB.err  = tbtrk->pulls[j].err;
-					pullTB.s		= tbtrk->pulls[j].s;
+				for(unsigned int j=0; j<pulls.size(); j++){
+					pullTB.resi = pulls[j].resi;
+					pullTB.err  = pulls[j].err;
+					pullTB.s		= pulls[j].s;
 					pullTB.pull = pullTB.resi/pullTB.err;
 					pullsTB->Fill();
 				}
@@ -118,6 +147,15 @@ jerror_t DEventProcessor_pulls_tree::evnt(JEventLoop *loop, int eventnumber)
 					pullWB.eventnumber = eventnumber;
 					pullWB.trk_chisq = wbtrk->chisq;
 					pullWB.trk_Ndof = wbtrk->Ndof;
+
+					// See comment above for TB tracks
+					const DMCThrown *thrown;
+					wbtrk->GetSingle(thrown);
+					if(!thrown)thrown = thrown_single;
+					if(thrown){
+						const DVector3 &x = thrown->momentum();
+						pullWB.pthrown.SetXYZ(x.X(), x.Y(), x.Z());
+					}
 
 					for(unsigned int j=0; j<wbtrk->pulls.size(); j++){
 						pullWB.resi = wbtrk->pulls[j].resi;
@@ -155,5 +193,18 @@ jerror_t DEventProcessor_pulls_tree::fini(void)
 	// Called at very end. This will be called only once
 
 	return NOERROR;
+}
+
+//------------------
+// RecalculateChisq
+//------------------
+void DEventProcessor_pulls_tree::RecalculateChisq(DTrackFitter::fit_type_t fit_type, const DKinematicData *kd, double &chisq, int &Ndof, vector<DTrackFitter::pull_t> &pulls)
+{
+	if(!fitter){
+		_DBG_<<"DTrackFitter:ALT1 not available when RECALCULATE_CHISQ is set!"<<endl;
+		return;
+	}
+
+	
 }
 
