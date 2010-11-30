@@ -355,7 +355,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		   && swim_step->origin.Z()<407.0){Nswim_steps++; break;} // ran into BCAL
 		if (swim_step->origin.X()>129.  || swim_step->origin.Y()>129.)
 		  {Nswim_steps++; break;} // left extent of TOF 
-		if(swim_step->origin.Z()>650.0){Nswim_steps++; break;} // ran into FCAL
+		if(swim_step->origin.Z()>1100.0){Nswim_steps++; break;} // ran into FCAL
 		if(swim_step->origin.Z()<0.0){Nswim_steps++; break;} // exit upstream
 		if(wire && Nswim_steps>0){ // optionally check if we passed a wire we're supposed to be swimming to
 			swim_step_t *closest_step = FindClosestSwimStep(wire);
