@@ -29,35 +29,25 @@ public:
     
     JOBJECT_PUBLIC(DBCALGeometry);
     
+    DBCALGeometry();
+    
     enum End { kUpstream, kDownstream };
-    
-    int NBCALMODS;         ///> number of modules
-    int NBCALLAYS1;        ///> number of layers in first 10 ccm 
-    int NBCALLAYS2;        ///> number of layers in last  15 cm 
-    int NBCALSECS1;        ///> number of sectors in first 10cm of Mod 
-    int NBCALSECS2;        ///> number of sectors in last 15cm of Mod 
-    float BCALINNERRAD;    ///> innner radius of BCAL in cm
+        
+    static int NBCALMODS;         ///> number of modules
+    static int NBCALLAYS1;        ///> number of layers in first 10 ccm 
+    static int NBCALLAYS2;        ///> number of layers in last  15 cm 
+    static int NBCALSECS1;        ///> number of sectors in first 10cm of Mod 
+    static int NBCALSECS2;        ///> number of sectors in last 15cm of Mod 
+    static float BCALINNERRAD;    ///> innner radius of BCAL in cm
+    static int BCALMID;         ///> first outer layer (default 7)
+    static float m_radius[11];
     float BCALMIDRAD;      ///> mid radius of BCAL in cm
-    float BCALOUTERRAD;    ///> outer radius of BCAL in cm
-    float BCALFIBERLENGTH; ///> BCAL Scintilator fiber lenth in cm
-    float GLOBAL_CENTER;  ///> center of BCAL in gloobal coordinate system
+    static float BCALOUTERRAD;    ///> outer radius of BCAL in cm
+    static float BCALFIBERLENGTH; ///> BCAL Scintilator fiber lenth in cm
+    static float GLOBAL_CENTER;  ///> center of BCAL in gloobal coordinate system
     
-    float ATTEN_LENGTH;   ///> attenuation length
-    float C_EFFECTIVE;    ///> speed of light in fibers
-
-    //Public Data Members for smear.cc
-    static int NBcalMods() { return 48; }  
-    static int NBcalLays1() { return 2; }
-    static int NBcalLays2() { return 2; }
-    static int NBcalSecs1() { return 4; }
-    static int NBcalSecs2() { return 2; }
-    static float BcalInnerRad() { return 64.3; }
-    static float BcalMidRad() { return 76.3; }
-    static float BcalOuterRad() { return 86.17; }
-    static float BcalFiberLength() { return 390.0; }
-    static float Global_Center() { return 212; }
-    static float Atten_Length() { return 300.; }
-    static float C_Effective() { return 16.75;}
+    static float ATTEN_LENGTH;   ///> attenuation length
+    static float C_EFFECTIVE;    ///> speed of light in fibers 
     
     static inline int module( int cellId ) { return ( cellId & MODULE_MASK ) >> MODULE_SHIFT; };
     static inline int layer( int cellId ) { return ( cellId & LAYER_MASK ) >> LAYER_SHIFT; };
@@ -67,20 +57,6 @@ public:
         return ( ( module << MODULE_SHIFT ) | ( layer << LAYER_SHIFT ) | 
                  ( sector << SECTOR_SHIFT ) ); }
 
-	void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "mod", "%d", NBCALMODS);
-			AddString(items, "layn1", "%d", NBCALLAYS1);
-			AddString(items, "layn2", "%d", NBCALLAYS2);
-			AddString(items, "secn1", "%d", NBCALSECS1);
-			AddString(items, "secn2", "%d", NBCALSECS2);
-			AddString(items, "inr", "%6.3f", BCALINNERRAD);
-			AddString(items, "midr", "%6.3f", BCALMIDRAD);
-			AddString(items, "otr", "%6.3f", BCALOUTERRAD);
-			AddString(items, "length", "%6.3f", BCALFIBERLENGTH);
-			AddString(items, "cntr", "%3.2g", GLOBAL_CENTER);
-			AddString(items, "atten len", "%3.2g", ATTEN_LENGTH);
-			AddString(items, "c eff.", "%3.2g", C_EFFECTIVE);
-	}
 };
 
 #endif // _DBCALGeometry_

@@ -55,7 +55,7 @@ private:
 #undef layermax_bcal
 
 #define modulemax_bcal 48
-#define layermax_bcal 4
+#define layermax_bcal 10
 #define colmax_bcal 4
 #define cellmax_bcal modulemax_bcal*layermax_bcal*colmax_bcal
 #define clsmax_bcal modulemax_bcal*layermax_bcal*colmax_bcal
