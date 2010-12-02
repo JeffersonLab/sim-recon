@@ -24,7 +24,7 @@ class DTrackFitter_factory:public jana::JFactory<DTrackFitter>{
 			// that the default can be changed easily by simply
 			// changing the tag here or on the command line.
 			vector<const DTrackFitter*> fitters;
-#ifdef USE_SIMD			
+#if USE_SSE3			
 			loop->Get(fitters, "KalmanSIMD");
 #else
 			loop->Get(fitters, "ALT1");
