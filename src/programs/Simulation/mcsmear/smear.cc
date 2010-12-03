@@ -168,6 +168,7 @@ float Bcal_CellInnerThreshold;
 
 // Forward TOF resolution
 double TOF_SIGMA = 100.*k_psec;
+double TOF_PHOTONS_PERMEV = 8000.;
 
 // Polynomial interpolation on a grid.
 // Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
@@ -287,7 +288,10 @@ void SmearCDC(s_HDDM_t *hddm_s)
 				
 				// Currently no additional smearing of energy deposition
 				strawhit->dE = strawtruthhit->dE;
-				
+		
+				// to be consistent initialize the value d=DOCA to zero
+				strawhit->d = 0.;
+
 				// If the time is negative, reject this smear and try again
 				//if(strawhit->t<0)j--;
 			}
@@ -393,6 +397,7 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 				s_CdcStrawHit_t *strawhit = &strawhits->in[strawhits->mult++];
 				strawhit->dE = 1.0;
 				strawhit->t = SampleRange(-CDC_TIME_WINDOW/2.0, +CDC_TIME_WINDOW/2.0)*1.e9;
+				strawhit->d = 0.; // be consistent to initialize d=DOCA to zero
 			}
 		}
 	}
@@ -541,6 +546,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 
 			      }
 			      hit->dE = truthhit->dE;
+			      hit->d  = 0.; // initialize d=DOCA to zero for consistency.
 			    }
 			  }
 			}
@@ -674,6 +680,7 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 				
 				fdcanodehit->dE = 0.1; // what should this be?
 				fdcanodehit->t = SampleRange(-FDC_TIME_WINDOW/2., +FDC_TIME_WINDOW/2.)*1.e9;
+				fdcanodehit->d = 0.; // d=DOCA initialize to avoid any NAN
 				
 				fdcAnodeWire->wire = wire_number[j];
 				
@@ -1288,27 +1295,53 @@ void SmearTOF(s_HDDM_t *hddm_s)
     if (hits == HDDM_NULL ||
 	hits->forwardTOF == HDDM_NULL ||
 	hits->forwardTOF->ftofCounters == HDDM_NULL)continue;
-		
+    
+    
     s_FtofCounters_t* ftofCounters = hits->forwardTOF->ftofCounters;
 		
     // Loop over counters
-    s_FtofCounter_t *ftofCounter = ftofCounters->in;
-    for(unsigned int j=0;j<ftofCounters->mult; j++, ftofCounter++){
-			 
-      // Loop over north AND south hits
-      s_FtofNorthHits_t *ftofNorthHits = ftofCounter->ftofNorthHits;
-      s_FtofNorthHit_t *ftofNorthHit = ftofNorthHits->in;
-      s_FtofSouthHits_t *ftofSouthHits = ftofCounter->ftofSouthHits;
-      s_FtofSouthHit_t *ftofSouthHit = ftofSouthHits->in;
-      
-      for (unsigned int m=0;m<ftofNorthHits->mult;m++,ftofNorthHit++){
+   
+    for(unsigned int j=0;j<ftofCounters->mult; j++){
+      s_FtofCounter_t *ftofCounter = ftofCounters->in[j];		 
+
+      // take care of North Hits
+      s_FtofTruthHits_t *ftofTruthHits = ftofCounter->ftofTruthHits;
+      ftofCounter->ftofHits = make_s_FtofHits(ftofTruthHits->mult);
+      ftofCounter->ftofHits->mult = ftofTruthHits->mult;
+
+      for (unsigned int m=0;m<ftofTruthHits->mult;m++,ftofTruthHit++){
+	s_FtofTruthHit_t *ftofTruthHit = ftofTruthHits->in[m];
+	s_FtofHit_t *ftofHit = ftofCounter->ftofHits->in[m];
+
 	// Smear the time
-	ftofNorthHit->t +=SampleGaussian(TOF_SIGMA);
+	ftofHit->tNorth = ftofTruthHit->tNorth + SampleGaussian(TOF_SIGMA);
+	ftofHit->tSouth = ftofTruthHit->tSouth + SampleGaussian(TOF_SIGMA);
+
+	// Smear the energy
+	double npe = (double)ftofTruthHit->dENorth * 1000. *  TOF_PHOTONS_PERMEV;
+	npe = npe +  SampleGaussian(sqrt(npe));
+	float NewE = npe/TOF_PHOTONS_PERMEV/1000.;
+	ftofHit->dENorth = NewE;
+	
+	npe = (double)ftofTruthHit->dESouth * 1000. *  TOF_PHOTONS_PERMEV;
+	npe = npe +  SampleGaussian(sqrt(npe));
+	NewE = npe/TOF_PHOTONS_PERMEV/1000.;
+	ftofHit->dESouth = NewE;
+
+	// just copy the rest of the data
+	
+	ftofHit->x      = ftofTruthHit->x     ;
+	ftofHit->y      = ftofTruthHit->y     ;
+	ftofHit->z      = ftofTruthHit->z     ;
+	ftofHit->px     = ftofTruthHit->px    ;
+	ftofHit->py     = ftofTruthHit->py    ;
+	ftofHit->pz     = ftofTruthHit->pz    ;
+	ftofHit->E      = ftofTruthHit->E     ;
+	ftofHit->dist   = ftofTruthHit->dist  ;
+	ftofHit->ptype  = ftofTruthHit->ptype ;
+	ftofHit->itrack = ftofTruthHit->itrack;
+
       } 
-      for (unsigned int m=0;m<ftofSouthHits->mult;m++,ftofSouthHit++){
-	// Smear the time
-	ftofSouthHit->t +=SampleGaussian(TOF_SIGMA);
-      }
 
     }
   }
@@ -1473,3 +1506,23 @@ void InitFDCGeometry(void)
 	// an emprical factor:
 	FDC_RATE_COEFFICIENT *= 0.353;
 }
+
+// -------------
+// SmearTofEnergy
+// --------------
+
+ float SmearTofEnergy(float Energy, float dist){
+
+    float nph = Energy * 1000. * (PHOTONS_PERMEV);
+
+    
+
+
+
+
+
+
+
+
+ }
+

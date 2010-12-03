@@ -204,8 +204,8 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DTOFTruth" && tag=="")
 	  return Extract_DTOFTruth(my_hddm_s, dynamic_cast<JFactory<DTOFTruth>*>(factory));
 	
-	if(dataClassName =="DHDDMTOFHit" && tag=="")
-	  return Extract_DHDDMTOFHit(my_hddm_s, dynamic_cast<JFactory<DHDDMTOFHit>*>(factory));
+	if(dataClassName =="DTOFHitRaw" && (tag=="" || tag=="TRUTH"))
+	  return Extract_DTOFHitRaw(my_hddm_s, dynamic_cast<JFactory<DTOFHitRaw>*>(factory), tag);
 	
 	if(dataClassName =="DSCHit" && tag=="")
 	  return Extract_DSCHit(my_hddm_s, dynamic_cast<JFactory<DSCHit>*>(factory));
@@ -1411,7 +1411,7 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
 //------------------
 // Extract_DHDDMTOFHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDDMTOFHit>* factory)
+jerror_t DEventSourceHDDM::Extract_DTOFHitRaw( s_HDDM_t *hddm_s,  JFactory<DTOFHitRaw>* factory, string tag)
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1419,7 +1419,7 @@ jerror_t DEventSourceHDDM::Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDD
 	
   if(factory==NULL)return OBJECT_NOT_AVAILABLE;
 
-  vector<DHDDMTOFHit*> data;
+  vector<DTOFHitRaw*> data;
   
   s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
   if(!PE) return NOERROR;
@@ -1438,32 +1438,62 @@ jerror_t DEventSourceHDDM::Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDD
     s_FtofCounter_t *ftofCounter = ftofCounters->in;
     for(unsigned int j=0;j<ftofCounters->mult; j++, ftofCounter++){
 			 
-      // Loop over north AND south hits
-      s_FtofNorthHits_t *ftofNorthHits = ftofCounter->ftofNorthHits;
-      s_FtofNorthHit_t *ftofNorthHit = ftofNorthHits->in;
-      s_FtofSouthHits_t *ftofSouthHits = ftofCounter->ftofSouthHits;
-      s_FtofSouthHit_t *ftofSouthHit = ftofSouthHits->in;
 
-      for(unsigned int k=0;k<ftofNorthHits->mult; k++, ftofNorthHit++, ftofSouthHit++){
-	DHDDMTOFHit *tofhit = new DHDDMTOFHit;
-	tofhit->bar	= ftofCounter->bar;
-	tofhit->plane	= ftofCounter->plane;
-	tofhit->t_north		= ftofNorthHit->t;
-	tofhit->dE_north	= ftofNorthHit->dE;
-	tofhit->t_south		= ftofSouthHit->t;
-	tofhit->dE_south	= ftofSouthHit->dE;
-	tofhit->x               = ftofNorthHit->x;
-	tofhit->y               = ftofNorthHit->y;
-	tofhit->z               = ftofNorthHit->z;
-	tofhit->px              = ftofNorthHit->px;
-	tofhit->py              = ftofNorthHit->py;
-	tofhit->pz              = ftofNorthHit->pz;
-	tofhit->E               = ftofNorthHit->E;
-	tofhit->ptype           = ftofNorthHit->ptype;
-	tofhit->id              = id++;
-	data.push_back(tofhit);
-      }
-			 
+      if (tag==""){
+	
+	// Loop over north AND south hits
+	s_FtofHits_t *ftofHits = ftofCounter->ftofHits;
+	s_FtofHit_t  *ftofHit =  ftofHits->in;
+	
+	for(unsigned int k=0;k<ftofHits->mult; k++, ftofHit++){
+	  DTOFHitRaw *tofhit = new DTOFHitRaw;
+	  tofhit->bar	         = ftofCounter->bar;
+	  tofhit->plane	         = ftofCounter->plane;
+	  tofhit->t_north	 = ftofHit->tNorth;
+	  tofhit->dE_north	 = ftofHit->dENorth;
+	  tofhit->t_south	 = ftofHit->tSouth;
+	  tofhit->dE_south	 = ftofHit->dESouth;
+	  tofhit->dist           = ftofHit->dist;
+	  tofhit->x              = ftofHit->x;
+	  tofhit->y              = ftofHit->y;
+	  tofhit->z              = ftofHit->z;
+	  tofhit->px             = ftofHit->px;
+	  tofhit->py             = ftofHit->py;
+	  tofhit->pz             = ftofHit->pz;
+	  tofhit->E              = ftofHit->E;
+	  tofhit->ptype          = ftofHit->ptype;
+	  tofhit->itrack         = ftofHit->itrack;
+	  tofhit->id             = id++;
+	  data.push_back(tofhit);
+	}
+      } else if (tag=="TRUTH"){
+	
+	// Loop over north AND south hits
+	s_FtofTruthHits_t *ftofHits = ftofCounter->ftofTruthHits;
+	s_FtofTruthHit_t *ftofHit = ftofHits->in;
+	
+	for(unsigned int k=0;k<ftofHits->mult; k++, ftofHit++){
+	  DTOFHitRaw *tofhit = new DTOFHitRaw;
+	  tofhit->bar	         = ftofCounter->bar;
+	  tofhit->plane	         = ftofCounter->plane;
+	  tofhit->t_north	 = ftofHit->tNorth;
+	  tofhit->dE_north	 = ftofHit->dENorth;
+	  tofhit->t_south	 = ftofHit->tSouth;
+	  tofhit->dE_south	 = ftofHit->dESouth;
+	  tofhit->dist           = ftofHit->dist;
+	  tofhit->x              = ftofHit->x;
+	  tofhit->y              = ftofHit->y;
+	  tofhit->z              = ftofHit->z;
+	  tofhit->px             = ftofHit->px;
+	  tofhit->py             = ftofHit->py;
+	  tofhit->pz             = ftofHit->pz;
+	  tofhit->E              = ftofHit->E;
+	  tofhit->ptype          = ftofHit->ptype;
+	  tofhit->itrack         = ftofHit->itrack;
+	  tofhit->id             = id++;
+	  data.push_back(tofhit);
+	}
+      }      
     }
   }
 

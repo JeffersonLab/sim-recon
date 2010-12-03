@@ -72,8 +72,8 @@
       </Cerenkov>
       <forwardTOF minOccurs="0">
         <ftofCounter bar="int" maxOccurs="unbounded" minOccurs="0" plane="int">
-          <ftofNorthHit E="float" dE="float" maxOccurs="unbounded" minOccurs="0" ptype="int" px="float" py="float" pz="float" t="float" x="float" y="float" z="float"/>
-          <ftofSouthHit E="float" dE="float" maxOccurs="unbounded" minOccurs="0" ptype="int" px="float" py="float" pz="float" t="float" x="float" y="float" z="float"/>
+          <ftofTruthHit E="float" dENorth="float" dESouth="float" tNorth="float" tSouth="float" dist="float" ptype="int" itrack="int" px="float" py="float" pz="float" x="float" y="float" z="float" maxOccurs="unbounded" minOccurs="0" />
+          <ftofHit      E="float" dENorth="float" dESouth="float" tNorth="float" tSouth="float" dist="float" ptype="int" itrack="int" px="float" py="float" pz="float" x="float" y="float" z="float" maxOccurs="unbounded" minOccurs="0" />
         </ftofCounter>
         <ftofTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
       </forwardTOF>

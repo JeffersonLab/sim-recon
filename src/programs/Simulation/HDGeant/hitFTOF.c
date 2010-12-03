@@ -157,8 +157,8 @@ void hitForwardTOF (float xin[4], float xout[4],
   // in other words now store the simulated detector response
   if (dEsum > 0) {
     int nhit;
-    s_FtofNorthHits_t* northHits;
-    s_FtofSouthHits_t* southHits;
+    s_FtofTruthHits_t* Hits;
+
     // getrow and getcolumn are both coded in
     // src/programs/Simulation/HDGeant/hddsGeant3.F
     // see above for function getplane()
@@ -184,11 +184,11 @@ void hitForwardTOF (float xin[4], float xout[4],
     float tsouth = (column == 1) ? 0 : t + dxsouth/C_EFFECTIVE;
     
     // calculate energy seen by PM for this track step using attenuation factor
-    // float dEnorth  = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
-    // float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
+     float dEnorth  = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
+     float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
     // do not propagate energy
-    float dEnorth  = (column == 2) ? 0 : dEsum ;
-    float dEsouth = (column == 1) ? 0 : dEsum ;
+    //float dEnorth  = (column == 2) ? 0 : dEsum ;
+    //float dEsouth = (column == 1) ? 0 : dEsum ;
     
     int mark = (plane<<20) + (row<<10) + column;
     void** twig = getTwig(&forwardTOFTree, mark);
@@ -201,23 +201,14 @@ void hitForwardTOF (float xin[4], float xout[4],
       counters->mult = 1;
       counters->in[0].plane = plane;
       counters->in[0].bar = row;
-      northHits = HDDM_NULL;
-      southHits = HDDM_NULL;
+      Hits = HDDM_NULL;
       
-      // get space for the left/top or right/down PMT data for a total
-      // of MAX_HITS possible hits in a single paddle
-
       // ok get memory space for north and south regardless if the paddle
       // is one of the short once with only one PMT.
 
-      //      if (column == 0 || column == 1) {
-      counters->in[0].ftofNorthHits = northHits
-	= make_s_FtofNorthHits(MAX_HITS);
-      //}
-      //      if (column == 0 || column == 2) {
-      counters->in[0].ftofSouthHits = southHits
-	= make_s_FtofSouthHits(MAX_HITS);
-      //}
+      counters->in[0].ftofTruthHits = Hits
+	= make_s_FtofTruthHits(MAX_HITS);
+
       tof->ftofCounters = counters;
       counterCount++;
     } else { 
@@ -225,56 +216,69 @@ void hitForwardTOF (float xin[4], float xout[4],
       // this paddle is already registered (was hit before)
       // get the hit list back
       s_ForwardTOF_t* tof = *twig;
-      northHits = tof->ftofCounters->in[0].ftofNorthHits;
-      southHits = tof->ftofCounters->in[0].ftofSouthHits;
+      Hits = tof->ftofCounters->in[0].ftofTruthHits;
     }
     
-    if (northHits != HDDM_NULL) {
+    if (Hits != HDDM_NULL) {
       
       // loop over hits in this PM to find correct time slot
       
-      for (nhit = 0; nhit < northHits->mult; nhit++) {
+      for (nhit = 0; nhit < Hits->mult; nhit++) {
 
-	if (fabs(northHits->in[nhit].t - t) < TWO_HIT_RESOL) {
+	if (fabs(Hits->in[nhit].tNorth - t) < TWO_HIT_RESOL) {
 	  break;
 	}
       }
       
       // this hit is within the time frame of a previous hit
       // combine the times of this weighted by the energy of the hit
-      if (nhit < northHits->mult) {         /* merge with former hit */
-	northHits->in[nhit].t = 
-	  (northHits->in[nhit].t * northHits->in[nhit].dE 
+
+      if (nhit < Hits->mult) {         /* merge with former hit */
+	Hits->in[nhit].tNorth = 
+	  (Hits->in[nhit].tNorth * Hits->in[nhit].dENorth 
 	   + tnorth * dEnorth)
-	  / (northHits->in[nhit].dE += dEnorth);
-	if (northHits->in[nhit].E<pin[3]){
+	  / (Hits->in[nhit].dENorth += dEnorth);
+
+	Hits->in[nhit].tSouth = 
+	  (Hits->in[nhit].tSouth * Hits->in[nhit].dESouth 
+	   + tnorth * dEsouth)
+	  / (Hits->in[nhit].dESouth += dEsouth);
+
+	if (Hits->in[nhit].E<pin[3]){
 	  // save position, momenum, energy and particle type with the largest energy
-	  northHits->in[nhit].dE = dEnorth;
-	  northHits->in[nhit].x = x[0];
-	  northHits->in[nhit].y = x[1];
-	  northHits->in[nhit].z = x[2];
-	  northHits->in[nhit].E = pin[3];
-	  northHits->in[nhit].px = pin[0]*pin[4];
-	  northHits->in[nhit].py = pin[1]*pin[4];
-	  northHits->in[nhit].pz = pin[2]*pin[4];
-	  northHits->in[nhit].ptype = ipart;
+	  Hits->in[nhit].dENorth = dEnorth;
+	  Hits->in[nhit].dESouth = dEsouth;
+	  Hits->in[nhit].dist = dist;
+	  Hits->in[nhit].x = x[0];
+	  Hits->in[nhit].y = x[1];
+	  Hits->in[nhit].z = x[2];
+	  Hits->in[nhit].E = pin[3];
+	  Hits->in[nhit].px = pin[0]*pin[4];
+	  Hits->in[nhit].py = pin[1]*pin[4];
+	  Hits->in[nhit].pz = pin[2]*pin[4];
+	  Hits->in[nhit].ptype = ipart;
+	  Hits->in[nhit].itrack = track;
 	}
       }
       
       // this hit has its own new time frame
       else if (nhit < MAX_HITS){         /* create new hit */
-	northHits->in[nhit].t = tnorth;
-	northHits->in[nhit].dE = dEnorth;
-	northHits->in[nhit].x = x[0];
-	northHits->in[nhit].y = x[1];
-	northHits->in[nhit].z = x[2];
+	Hits->in[nhit].tNorth = tnorth;
+	Hits->in[nhit].dENorth = dEnorth;
+	Hits->in[nhit].tSouth = tnorth;
+	Hits->in[nhit].dESouth = dEnorth;
+	Hits->in[nhit].dist = dist;
+	Hits->in[nhit].x = x[0];
+	Hits->in[nhit].y = x[1];
+	Hits->in[nhit].z = x[2];
 	// save momenum, energy and particle type
-	northHits->in[nhit].E = pin[3];
-	northHits->in[nhit].px = pin[0]*pin[4];
-	northHits->in[nhit].py = pin[1]*pin[4];
-	northHits->in[nhit].pz = pin[2]*pin[4];
-	northHits->in[nhit].ptype = ipart;
-	northHits->mult++;
+	Hits->in[nhit].E = pin[3];
+	Hits->in[nhit].px = pin[0]*pin[4];
+	Hits->in[nhit].py = pin[1]*pin[4];
+	Hits->in[nhit].pz = pin[2]*pin[4];
+	Hits->in[nhit].ptype = ipart;
+	Hits->in[nhit].itrack = track;
+	Hits->mult++;
       }
       else {
 	fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
@@ -282,53 +286,6 @@ void hitForwardTOF (float xin[4], float xout[4],
       }
     }
     
-    if (southHits != HDDM_NULL) {
-
-      // loop over hits in this PM to find correct time slot
-      for (nhit = 0; nhit < southHits->mult; nhit++) {
-	if (fabs(southHits->in[nhit].t - t) < TWO_HIT_RESOL) {
-	  break;
-	}
-      }
-      
-      // hit found with similar time as this one
-      if (nhit < southHits->mult) {        /* merge with former hit */
-	southHits->in[nhit].t = 
-	  (southHits->in[nhit].t * southHits->in[nhit].dE
-	   + tsouth * dEsouth) / (southHits->in[nhit].dE += dEsouth);
-	// save position, momenum, energy and particle type with the largest energy
-	if (southHits->in[nhit].E<pin[3]){
-	  southHits->in[nhit].x = x[0];
-	  southHits->in[nhit].y = x[1];
-	  southHits->in[nhit].z = x[2];
-	  southHits->in[nhit].E = pin[3];
-	  southHits->in[nhit].px = pin[0];
-	  southHits->in[nhit].py = pin[1];
-	  southHits->in[nhit].pz = pin[2];
-	  southHits->in[nhit].ptype = ipart;	  
-	}
-      }
-      
-      // no hit found for this PM with similar timing
-      else if (nhit < MAX_HITS) {        /* create new hit */
-	southHits->in[nhit].t = tsouth;
-	southHits->in[nhit].dE = dEsouth;
-	// save position energy momentum and particle type
-	southHits->in[nhit].x = x[0];
-	southHits->in[nhit].y = x[1];
-	southHits->in[nhit].z = x[2];
-	southHits->in[nhit].E = pin[3];
-	southHits->in[nhit].px = pin[0];
-	southHits->in[nhit].py = pin[1];
-	southHits->in[nhit].pz = pin[2];
-	southHits->in[nhit].ptype = ipart;
-	southHits->mult++;
-      }
-      else {
-	fprintf(stderr,"HDGeant error in hitForwardTOF: ");
-	fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
-      }
-    }
   }
 }
 
@@ -367,21 +324,20 @@ s_ForwardTOF_t* pickForwardTOF ()
     int point;
     
     for (counter=0; counter < counters->mult; ++counter) {
-      s_FtofNorthHits_t* northHits = counters->in[counter].ftofNorthHits;
-      s_FtofSouthHits_t* southHits = counters->in[counter].ftofSouthHits;
+      s_FtofTruthHits_t* Hits = counters->in[counter].ftofTruthHits;
       
       /* compress out the hits below threshold */
       // cut off parameter is THRESH_MEV
       int iok,i;
       int mok=0;
       // loop over all hits in a counter for the left/up PMT
-      for (iok=i=0; i < northHits->mult; i++) {
+      for (iok=i=0; i < Hits->mult; i++) {
 	
 	// check threshold
-	if (northHits->in[i].dE >= THRESH_MEV/1e3) {
+	if ((Hits->in[i].dENorth >= THRESH_MEV/1e3) || (Hits->in[i].dESouth >= THRESH_MEV/1e3)) {
 	  
 	  if (iok < i) {
-	    northHits->in[iok] = northHits->in[i];
+	    Hits->in[iok] = Hits->in[i];
 	  }
 	  ++mok;
 	  ++iok;
@@ -389,31 +345,12 @@ s_ForwardTOF_t* pickForwardTOF ()
       }
       
       if (iok) {
-	northHits->mult = iok;
-      } else if (northHits != HDDM_NULL){ // no hits left over for this PMT	    
-	counters->in[counter].ftofNorthHits = HDDM_NULL;
-	FREE(northHits);
+	Hits->mult = iok;
+      } else if (Hits != HDDM_NULL){ // no hits left over for this PMT	    
+	counters->in[counter].ftofTruthHits = HDDM_NULL;
+	FREE(Hits);
       }
       
-      // now same loop for the right/bottom PMT of a paddle
-      for (iok=i=0; i < southHits->mult; i++){
-	
-	if (southHits->in[i].dE >= THRESH_MEV/1e3){	      
-	  if (iok < i){
-	    southHits->in[iok] = southHits->in[i];
-	  }
-	  ++mok;
-	  ++iok;
-	}
-      }
-      
-      if (iok){
-	southHits->mult = iok;
-      }
-      else if (southHits != HDDM_NULL) {
-	counters->in[counter].ftofSouthHits = HDDM_NULL;
-	FREE(southHits);
-      }
       if (mok){ // total number of time independent FTOF hits in this counter
 	int m = box->ftofCounters->mult++;
 	// add the hit list of this counter to the list
@@ -457,3 +394,4 @@ s_ForwardTOF_t* pickForwardTOF ()
   }
   return box;
 }
+

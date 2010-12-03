@@ -29,7 +29,7 @@ using namespace std;
 #include "CCAL/DCCALTruthShower.h"
 #include "CCAL/DCCALHit.h"
 #include "TOF/DTOFTruth.h"
-#include "TOF/DHDDMTOFHit.h"
+#include "TOF/DTOFHitRaw.h"
 #include "START_COUNTER/DSCTruthHit.h"
 #include "START_COUNTER/DSCHit.h"
 #include <PID/DBeamPhoton.h>
@@ -70,7 +70,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DFCALHit(s_HDDM_t *hddm_s, JFactory<DFCALHit> *factory, JEventLoop* eventLoop, string tag);
 		jerror_t Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s, JFactory<DMCTrajectoryPoint> *factory);
 		jerror_t Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTruth> *factory);
-		jerror_t Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDDMTOFHit>* factory);
+		jerror_t Extract_DTOFHitRaw( s_HDDM_t *hddm_s,  JFactory<DTOFHitRaw>* factory, string tag);
 		jerror_t Extract_DSCHit(s_HDDM_t *hddm_s,  JFactory<DSCHit> *factory);
 		jerror_t Extract_DSCTruthHit(s_HDDM_t *hddm_s,  JFactory<DSCTruthHit> *factory);
 

@@ -5,6 +5,7 @@ MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad -lhitutil
 CFLAGS += -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
 ADDITIONAL_MODULES += HDDM HDGEOMETRY hddsGeant3
 LIB_DIRS += $(HDDS_HOME)/lib/$(BMS_OSNAME)
+LIB_DIRS += /local/scratch/zihlmann/local/lib
 
 # A compatible motif is not so easily available on OSX
 ifneq ($(shell uname), Darwin)

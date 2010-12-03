@@ -70,12 +70,12 @@ $(BINDIR)/hddm-xml: hddm-xml.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
 $(BINDIR)/hddm-c: hddm-c.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
-	-L$(XERCESCROOT)/lib -lxerces-c
+	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 $(BINDIR)/hddm-cpp: hddm-cpp.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
-	-L$(XERCESCROOT)/lib -lxerces-c
+	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 $(BINDIR)/hddmcat: hddmcat.cpp
 	$(CPP) $(LD_FLAGS) -o $@ $^
