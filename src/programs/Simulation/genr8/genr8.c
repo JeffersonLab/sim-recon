@@ -17,6 +17,7 @@
  ******************************************************** */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -81,6 +82,8 @@ int PrintFlag=10;
 int WriteAscii=0;
 int runNo=9000;
 int NFinalParts=0;
+unsigned int RandomSeed=0;
+int UseCurrentTimeForRandomSeed = TRUE;
 /***********************/
 /* Declarations         */
 /***********************/
@@ -127,6 +130,8 @@ int PrintUsage(char *processName)
   /* fprintf(stderr,"\t-R Save recoiling baryon information. \n"); */
  
   fprintf(stderr,"\t-A<filename> Save in ascii format. \n");
+  fprintf(stderr,"\t-s<seed> Set random number seed to <seed>. \n");
+  fprintf(stderr,"\t         (default is to set using current time + pid) \n");
   fprintf(stderr,"\t-h Print this help message\n\n");
 
 }
@@ -154,7 +159,6 @@ main(int argc,char **argv)
   double CMenergy, t_max,slope=5.0;
   double X_momentum, X_threshold, X_energy,xmass,ymass;
   double costheta,theta,phi,lf,lfmax;
-  time_t now;
   int isacomment=TRUE,haveChildren=TRUE;
 
   Y= &(particle[0]);
@@ -206,7 +210,7 @@ main(int argc,char **argv)
 	  break;
 	case 'l':
 	  lfevents = atoi(++argptr);
-	  fprintf(stderr,"Using %d events to determine the lorentz factor: %d\n",lfevents);
+	  fprintf(stderr,"Using %d events to determine the lorentz factor\n",lfevents);
 	  break;
 	case 'M':
 	  max = atoi(++argptr);
@@ -215,6 +219,10 @@ main(int argc,char **argv)
 	case 'r':
 	  runNo = atoi(++argptr);
 	  fprintf(stderr,"Using runNo: %d\n",runNo);
+	  break;
+	case 's':
+	  RandomSeed = atoi(++argptr);
+	  UseCurrentTimeForRandomSeed = FALSE;
 	  break;
 	default:
 	  fprintf(stderr,"Unrecognized argument -%s\n\n",argptr);
@@ -230,8 +238,12 @@ main(int argc,char **argv)
   /*
    *  Seed the random number generator.
    */
-  now=time(NULL);
-  srand48(now); 
+  if(UseCurrentTimeForRandomSeed){
+    RandomSeed=time(NULL);
+	RandomSeed += getpid();
+  }
+  printf("Setting random number seed to: %d\n",RandomSeed);
+  srand48(RandomSeed); 
 
   /*
    * Now read the input.gen file 
