@@ -1409,7 +1409,7 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
 }
 
 //------------------
-// Extract_DHDDMTOFHit
+// Extract_DTOFHitRaw
 //------------------
 jerror_t DEventSourceHDDM::Extract_DTOFHitRaw( s_HDDM_t *hddm_s,  JFactory<DTOFHitRaw>* factory, string tag)
 {
