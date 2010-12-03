@@ -1302,16 +1302,16 @@ void SmearTOF(s_HDDM_t *hddm_s)
     // Loop over counters
    
     for(unsigned int j=0;j<ftofCounters->mult; j++){
-      s_FtofCounter_t *ftofCounter = ftofCounters->in[j];		 
+      s_FtofCounter_t *ftofCounter = &(ftofCounters->in[j]);		 
 
       // take care of North Hits
       s_FtofTruthHits_t *ftofTruthHits = ftofCounter->ftofTruthHits;
       ftofCounter->ftofHits = make_s_FtofHits(ftofTruthHits->mult);
       ftofCounter->ftofHits->mult = ftofTruthHits->mult;
 
-      for (unsigned int m=0;m<ftofTruthHits->mult;m++,ftofTruthHit++){
-	s_FtofTruthHit_t *ftofTruthHit = ftofTruthHits->in[m];
-	s_FtofHit_t *ftofHit = ftofCounter->ftofHits->in[m];
+      for (unsigned int m=0;m<ftofTruthHits->mult;m++){
+	s_FtofTruthHit_t *ftofTruthHit = &(ftofTruthHits->in[m]);
+	s_FtofHit_t *ftofHit = &(ftofCounter->ftofHits->in[m]);
 
 	// Smear the time
 	ftofHit->tNorth = ftofTruthHit->tNorth + SampleGaussian(TOF_SIGMA);
@@ -1506,23 +1506,4 @@ void InitFDCGeometry(void)
 	// an emprical factor:
 	FDC_RATE_COEFFICIENT *= 0.353;
 }
-
-// -------------
-// SmearTofEnergy
-// --------------
-
- float SmearTofEnergy(float Energy, float dist){
-
-    float nph = Energy * 1000. * (PHOTONS_PERMEV);
-
-    
-
-
-
-
-
-
-
-
- }
 
