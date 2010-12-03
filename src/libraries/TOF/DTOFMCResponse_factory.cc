@@ -12,7 +12,7 @@
 using namespace std;
 
 #include "DTOFMCResponse_factory.h"
-#include "DHDDMTOFHit.h"
+#include "DTOFHitRaw.h"
 #include "DTOFGeometry.h"
 
 // root specific stuff
@@ -36,7 +36,7 @@ int adc[2],t1,tdc[2];
 jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 
-  vector<const DHDDMTOFHit*> hddmhits;
+  vector<const DTOFHitRaw*> hddmhits;
   eventLoop->Get(hddmhits);
 
   vector<const DTOFGeometry*> tofGeomVect;
@@ -49,7 +49,7 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 
   for (unsigned int i = 0; i < hddmhits.size(); i++){
 
-    const DHDDMTOFHit *hddmhit = hddmhits[i];
+    const DTOFHitRaw *hddmhit = hddmhits[i];
     DTOFMCResponse *response = new DTOFMCResponse;
 
     // do any run-dependent smearing here

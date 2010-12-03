@@ -10,7 +10,7 @@
 
 #include "JANA/JFactory.h"
 #include "DTOFPoint.h"
-#include "DHDDMTOFHit.h"
+#include "DTOFHitRaw.h"
 
 class DTOFPoint_factory:public JFactory<DTOFPoint>{
  public:

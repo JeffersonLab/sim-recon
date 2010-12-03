@@ -825,365 +825,365 @@ void SmearCCAL(s_HDDM_t *hddm_s)
 void SmearBCAL(s_HDDM_t *hddm_s)
 {
   DBCALGeometry *bcalGeom = new DBCALGeometry();
-
-	map< int, pair< int, int > > darkHits;
-	map< int, pair< int, int > >::iterator darkHitItr;
-
-       
-	for( int m = 1; m <= 48; ++m ){
-	  for( int l = 1; l <= 4; ++l ){
-	    for( int s = 1; s <= 10; ++s ){
-
-	      pair< int, int > nHits( getDarkHits(), getDarkHits() );
-
-	      darkHits[DBCALGeometry::cellId( m, l, s )] = nHits;
-	    }
-	  }
-	}
-
-	double mevPerPE = 1 / 
-	  ( BCAL_PHOTONSPERSIDEPERMEV_INFIBER * BCAL_DEVICEPDE *
-	    BCAL_SAMPLING_FRACT );
-
-	bcalInit(); //find inner cell threshold E
-
-       	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return;
-
-    	for(unsigned int i=0; i<PE->mult; i++){ 
-
-	  float eUpStore[49][11][5] = {{{0}}}; //store energies [mod][lay][sect]
-	  float eDownStore[49][11][5]= {{{0}}};	  
-
-	  float eUpfADC[49][11][5]={{{0}}};
-	  float eDownfADC[49][11][5]={{{0}}};
-
-	  float tUpStore[49][11][5] = {{{0}}}; //store times [mod][lay][sect]
-	  float tDownStore[49][11][5]= {{{0}}};
-
-	  float tUpfADC[49][11][5]={{{0}}};
-	  float tDownfADC[49][11][5]={{{0}}};
-
-	  int fADCCellCount = 0;
-
-	       s_HitView_t *hits = PE->in[i].hitView;
-	       if (hits == HDDM_NULL ||
-		      hits->barrelEMcal == HDDM_NULL ||
-		      hits->barrelEMcal->bcalCells == HDDM_NULL)continue;
-
-
-	       s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
-
-	       
-	       
-	       for(unsigned int j=0; j<cells->mult; j++){
-			s_BcalCell_t *cell = &cells->in[j];
-
-			// dcell is needed for dark hits cellID
-			int dcell = DBCALGeometry::cellId( cell->module, cell->layer, cell->sector);
-			darkHitItr = darkHits.find( dcell );
-			
-
-			//Create BCAL hits structure to put smeared data into
-
-			    if(cell->bcalSiPMUpHits!=HDDM_NULL)free(cell->bcalSiPMUpHits);
-			    cell->bcalSiPMUpHits = make_s_BcalSiPMUpHits(cell->bcalHits->mult);
-			    cell->bcalSiPMUpHits->mult = cell->bcalHits->mult;
-
-			    if(cell->bcalSiPMDownHits!=HDDM_NULL)free(cell->bcalSiPMDownHits);
-			    cell->bcalSiPMDownHits = make_s_BcalSiPMDownHits(cell->bcalHits->mult);
-			    cell->bcalSiPMDownHits->mult = cell->bcalHits->mult;			
-			   
-			for(unsigned int k=0; k<cell->bcalHits->mult; k++){
-				s_BcalHit_t *bcalhit = &cell->bcalHits->in[k];
-				s_BcalSiPMUpHit_t *bcaluphit = &cell->bcalSiPMUpHits->in[k];
-				s_BcalSiPMDownHit_t *bcaldownhit = &cell->bcalSiPMDownHits->in[k];
-						      
-				float smearedE = bcalSamplingSmear( bcalhit->E );
-				
-				float upDist = ( bcalGeom->BCALFIBERLENGTH / 2 ) + bcalhit->zLocal;
-				float downDist = ( bcalGeom->BCALFIBERLENGTH / 2 ) - bcalhit->zLocal;
-				
-				// sampling fluctuations are correlated between ends
-				float upEnergy = smearedE * exp( -upDist / bcalGeom->ATTEN_LENGTH );
-				float downEnergy = smearedE * exp( -downDist / bcalGeom->ATTEN_LENGTH );
-							
-				// independently smear time for both ends -- time smearing 
-				// parameters come from data taken with beam at the center of 
-				// the module so there is an implicit exp( ( -L / 2 ) / lambda ) 
-				// that needs to be canceled out since we are working
-				// at this stage with attenuated energies 
-				float smearedtUp = 
-				  bcalTimeSmear( bcalhit->t, 
-					     upEnergy * exp( ( bcalGeom->BCALFIBERLENGTH / 2 ) / 
-							     bcalGeom->ATTEN_LENGTH ) );
-				float smearedtDown = 
-				  bcalTimeSmear( bcalhit->t, 
-					     downEnergy * exp( ( bcalGeom->BCALFIBERLENGTH / 2 ) / 
-							       bcalGeom->ATTEN_LENGTH ) );
-				
-				darkHitItr = darkHits.find( dcell );
-				if( darkHitItr != darkHits.end() ){
-
-				  upEnergy += ( darkHitItr->second.first * mevPerPE * k_MeV );
-				  downEnergy += ( darkHitItr->second.second * mevPerPE * k_MeV );
-	  
-				  // now delete this from the map so we don't create
-				  // additional hits later
-				  darkHits.erase( darkHitItr );
-				  }
+  
+  map< int, pair< int, int > > darkHits;
+  map< int, pair< int, int > >::iterator darkHitItr;
+  
+  
+  for( int m = 1; m <= 48; ++m ){
+    for( int l = 1; l <= 4; ++l ){
+      for( int s = 1; s <= 10; ++s ){
 	
-				// now offset times for propagation distance
-				float upTime = smearedtUp + upDist / bcalGeom->C_EFFECTIVE;
-				float downTime = smearedtDown + downDist / bcalGeom->C_EFFECTIVE;
-				
-				//If energy is smeared to negative, set to 0.
-				if(upEnergy <= 0 || upTime!=upTime)
-				  {
-				    upEnergy = 0;
-				    upTime = 0;
-				  }
-				if(downEnergy <= 0|| downTime!=downTime)
-				  {
-				    downEnergy = 0;
-				    downTime = 0;
-				  }
-
-				  bcaluphit->E = upEnergy;
-				  eUpStore[cell->module][cell->layer][cell->sector]+= upEnergy;
-				  bcaluphit->t = upTime;
-				  tUpStore[cell->module][cell->layer][cell->sector]= upTime;
-
-
-				  bcaldownhit->E = downEnergy;
-				  eDownStore[cell->module][cell->layer][cell->sector]+= downEnergy;
-				  bcaldownhit->t = downTime;
-				  tDownStore[cell->module][cell->layer][cell->sector]= downTime;
-				  
-
-			} //k (bcal hits)
-					      
-	       } //j (cells)
-
-	       //Add in dark hits to empty cells
-	       for(int i = 1; i<=48;i++)
-	       {
-		 for(int j = 1; j<=10;j++)
-		 {
-		   for(int k = 1; k<=4; k++)
-		   {
-		     int dcell = DBCALGeometry::cellId( i, j, k);
-		     darkHitItr = darkHits.find( dcell );
-		     if( darkHitItr != darkHits.end() ){
-			  eUpStore[i][j][k] += ( darkHitItr->second.first * mevPerPE * k_MeV );
-			  eDownStore[i][j][k] += ( darkHitItr->second.second * mevPerPE * k_MeV );
-			  tUpStore[i][j][k] = SampleRange( -0.25 * BCAL_INTWINDOW_NS,
-					    0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
-			  tDownStore[i][j][k] = SampleRange( -0.25 * BCAL_INTWINDOW_NS,
-					    0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
-		     }
-		   }
-		 }
-	       }		     
-	       
-	       //Inner Cells, Summing
-	       for(int i=1;i<=48;i++)
-	       {
-		 for(int j=1;j<=bcalGeom->NBCALLAYS1;j++)
-		 {
-		   for(int k=1;k<=bcalGeom->NBCALSECS1;k++)
-		   {
-		     for(int l=1;l<=(bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1;l++)
-		     {
-		       for(int m=1;m<=4/bcalGeom->NBCALSECS1;m++)
-		       {			 
-			 eUpfADC[i][j][k]+= eUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];//Sum energies
-		 	 eDownfADC[i][j][k]+= eDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
-			 
-			 tUpfADC[i][j][k]+= eUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m] //Sum times weighted by Energy
-			                   *tUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
-			 tDownfADC[i][j][k]+= eDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m]
-			                   *tDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
-			 
-		       }
-		     }
-		     
-		     if(eUpfADC[i][j][k]!=0) //Divide time by Energy, to average weighted by energy, but make sure nonzero energy present.
-		       tUpfADC[i][j][k] = tUpfADC[i][j][k]/eUpfADC[i][j][k];
-		     else
-		       tUpfADC[i][j][k] = 0;
-		     
-		     if(eDownfADC[i][j][k]!=0)
-		       tDownfADC[i][j][k] = tDownfADC[i][j][k]/eDownfADC[i][j][k];
-		     else
-		       tDownfADC[i][j][k] = 0;
-		   }
-		 }
-	       }
-	       //Outer Cells, Summing
-	       for(int i=1;i<=48;i++)
-	       {
-		 for(int j=bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1;j++)
-		 {
-		   for(int k=1;k<=bcalGeom->NBCALSECS2;k++)
-		   {
-		     for(int l=1;l<=(11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2;l++)
-		     {
-		       for(int m=1;m<=4/bcalGeom->NBCALSECS2;m++)
-		       {			 
-			 eUpfADC[i][j][k]+= eUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];//Sum energies
-		 	 eDownfADC[i][j][k]+= eDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];
-			 
-			 tUpfADC[i][j][k]+= eUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m] //Sum times weighted by energy
-			                   *tUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];
-			 tDownfADC[i][j][k]+= eDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m]
-			                     *tDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];			 
-		       }
-		     }
-		     
-		     if(eUpfADC[i][j][k]!=0) //Divide time by Energy, to average weighted by energy, but make sure nonzero energy present.
-		       tUpfADC[i][j][k] = tUpfADC[i][j][k]/eUpfADC[i][j][k];
-		     else
-		       tUpfADC[i][j][k] = 0;
-		     
-		     if(eDownfADC[i][j][k]!=0)
-		       tDownfADC[i][j][k] = tDownfADC[i][j][k]/eDownfADC[i][j][k];
-		     else
-		       tDownfADC[i][j][k] = 0;
-		   }
-		 }
-	       }
-	       
-		 //Naively multiply threshold by number of summed cells
-		 //in order to apply an effective 95% cut on fADC dark counts
-		 //passing.  Needs more thought.	
-	       float InnerThreshold = Bcal_CellInnerThreshold * ((bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1) * (4/bcalGeom->NBCALSECS1);
-	       float OuterThreshold = Bcal_CellInnerThreshold * ((11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2) * (4/bcalGeom->NBCALSECS2);	
-
-	       for(int i = 1;i<=48;i++)
-		 {
-		   for(int j = 1;j<=bcalGeom->NBCALLAYS1 ;j++)
-		     {
-		       for(int k = 1;k<=bcalGeom->NBCALSECS1;k++)
-			 {
-			     if(eUpfADC[i][j][k]>InnerThreshold||eDownfADC[i][j][k]>InnerThreshold)
-			     {		
-			       fADCCellCount++;
-			     }
-			 }
-		     }
-		 }
-	       for(int i = 1;i<=48;i++)
-		   {
-		     for(int j = bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1 ;j++)
-		       {
-			 for(int k = 1;k<=bcalGeom->NBCALSECS2 ;k++)
-			   {
-			     if(eUpfADC[i][j][k]> OuterThreshold ||eDownfADC[i][j][k]>OuterThreshold)
-			     {	
-			       fADCCellCount++;
-			     }
-			   }
-		       }
-		   }
-
-	       if(hits->barrelEMcal->bcalfADCCells!=HDDM_NULL)free(hits->barrelEMcal->bcalfADCCells);
-	       hits->barrelEMcal->bcalfADCCells = make_s_BcalfADCCells(fADCCellCount);
-	       hits->barrelEMcal->bcalfADCCells->mult = fADCCellCount;
-	       
-	       for(unsigned int j=0; j<hits->barrelEMcal->bcalfADCCells->mult; j++)
-		 {
-		 s_BcalfADCCell_t *fADCcell = &hits->barrelEMcal->bcalfADCCells->in[j];
-		 
-		 bool Etrigg = FALSE;		 
-
-		 //Inner Cells
-		 for(int i = 1;i<=48 && !Etrigg ;i++)
-		   {
-		     for(int j = 1;j<=bcalGeom->NBCALLAYS1 && !Etrigg ;j++)
-		       {
-			 for(int k = 1;k<=bcalGeom->NBCALSECS1 && !Etrigg ;k++)
-			   {
-			     if(eUpfADC[i][j][k]>InnerThreshold||eDownfADC[i][j][k]>InnerThreshold)
-			     {			       
-			       fADCcell->module = i;
-			       fADCcell->layer = j;
-			       fADCcell->sector = k;
-			       
-			       if(fADCcell->bcalfADCUpHits!=HDDM_NULL)free(fADCcell->bcalfADCUpHits);
-			       fADCcell->bcalfADCUpHits = make_s_BcalfADCUpHits(1);
-			       fADCcell->bcalfADCUpHits->mult = 1;
-
-			       if(fADCcell->bcalfADCDownHits!=HDDM_NULL)free(fADCcell->bcalfADCDownHits);
-			       fADCcell->bcalfADCDownHits = make_s_BcalfADCDownHits(1);
-			       fADCcell->bcalfADCDownHits->mult = 1;
-
-			       s_BcalfADCUpHit_t *fadcuphit = &fADCcell->bcalfADCUpHits->in[0];
-			       s_BcalfADCDownHit_t *fadcdownhit = &fADCcell->bcalfADCDownHits->in[0];				   
-			       
-			       if( eUpfADC[i][j][k] > InnerThreshold){
-				 fadcuphit->E = eUpfADC[i][j][k];
-				 fadcuphit->t = tUpfADC[i][j][k];
-				 }
-			       else {fadcuphit->E = 0; fadcuphit->t = 0;}
-
-			       if( eDownfADC[i][j][k] > InnerThreshold){
-				 fadcdownhit->E = eDownfADC[i][j][k];
-				 fadcdownhit->t = tDownfADC[i][j][k];
-				 }
-			       else {fadcdownhit->E = 0; fadcdownhit->t = 0;}			       
-
-			       Etrigg = TRUE;
-			       eUpfADC[i][j][k]=eDownfADC[i][j][k]=0;
-			     }			        	   
-			   }
-		       }
-		   }
-	       //Outer Cells
-	       for(int i = 1;i<=48 && !Etrigg ;i++)
-		   {
-		     for(int j = bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1 && !Etrigg ;j++)
-		       {
-			 for(int k = 1;k<=bcalGeom->NBCALSECS2 && !Etrigg ;k++)
-			   {
-			     if(eUpfADC[i][j][k]> OuterThreshold ||eDownfADC[i][j][k]>OuterThreshold)
-			     {			  
-			       fADCcell->module = i;
-			       fADCcell->layer = j;
-			       fADCcell->sector = k;
-			       
-			       if(fADCcell->bcalfADCUpHits!=HDDM_NULL)free(fADCcell->bcalfADCUpHits);
-			       fADCcell->bcalfADCUpHits = make_s_BcalfADCUpHits(1);
-			       fADCcell->bcalfADCUpHits->mult = 1;
-
-			       if(fADCcell->bcalfADCDownHits!=HDDM_NULL)free(fADCcell->bcalfADCDownHits);
-			       fADCcell->bcalfADCDownHits = make_s_BcalfADCDownHits(1);
-			       fADCcell->bcalfADCDownHits->mult = 1;
-
-			       s_BcalfADCUpHit_t *fadcuphit = &fADCcell->bcalfADCUpHits->in[0];
-			       s_BcalfADCDownHit_t *fadcdownhit = &fADCcell->bcalfADCDownHits->in[0];
-				   			       
-			       if( eUpfADC[i][j][k] > OuterThreshold){
-				 fadcuphit->E = eUpfADC[i][j][k];
-				 fadcuphit->t = tUpfADC[i][j][k];
-			       }
-			       else {fadcuphit->E = 0; fadcuphit->t = 0;}
-
-			       if( eDownfADC[i][j][k] > OuterThreshold){
-				 fadcdownhit->E = eDownfADC[i][j][k];
-				 fadcdownhit->t = tDownfADC[i][j][k];
-			       }
-			       else {fadcdownhit->E = 0; fadcdownhit->t = 0;}			       
-
-			       Etrigg = TRUE;
-			       eUpfADC[i][j][k]=eDownfADC[i][j][k]=0;
-			     }			        	   
-			   }
-		       }
-		   }
-		 }		                   		       
-	} //i (PhysicsEvents)
-
+	pair< int, int > nHits( getDarkHits(), getDarkHits() );
+	
+	darkHits[DBCALGeometry::cellId( m, l, s )] = nHits;
+      }
+    }
+  }
+  
+  double mevPerPE = 1 / 
+    ( BCAL_PHOTONSPERSIDEPERMEV_INFIBER * BCAL_DEVICEPDE *
+      BCAL_SAMPLING_FRACT );
+  
+  bcalInit(); //find inner cell threshold E
+  
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return;
+  
+  for(unsigned int i=0; i<PE->mult; i++){ 
+    
+    float eUpStore[49][11][5] = {{{0}}}; //store energies [mod][lay][sect]
+    float eDownStore[49][11][5]= {{{0}}};	  
+    
+    float eUpfADC[49][11][5]={{{0}}};
+    float eDownfADC[49][11][5]={{{0}}};
+    
+    float tUpStore[49][11][5] = {{{0}}}; //store times [mod][lay][sect]
+    float tDownStore[49][11][5]= {{{0}}};
+    
+    float tUpfADC[49][11][5]={{{0}}};
+    float tDownfADC[49][11][5]={{{0}}};
+    
+    int fADCCellCount = 0;
+    
+    s_HitView_t *hits = PE->in[i].hitView;
+    if (hits == HDDM_NULL ||
+	hits->barrelEMcal == HDDM_NULL ||
+	hits->barrelEMcal->bcalCells == HDDM_NULL)continue;
+    
+    
+    s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
+    
+    
+    
+    for(unsigned int j=0; j<cells->mult; j++){
+      s_BcalCell_t *cell = &cells->in[j];
+      
+      // dcell is needed for dark hits cellID
+      int dcell = DBCALGeometry::cellId( cell->module, cell->layer, cell->sector);
+      darkHitItr = darkHits.find( dcell );
+      
+      
+      //Create BCAL hits structure to put smeared data into
+      
+      if(cell->bcalSiPMUpHits!=HDDM_NULL)free(cell->bcalSiPMUpHits);
+      cell->bcalSiPMUpHits = make_s_BcalSiPMUpHits(cell->bcalHits->mult);
+      cell->bcalSiPMUpHits->mult = cell->bcalHits->mult;
+      
+      if(cell->bcalSiPMDownHits!=HDDM_NULL)free(cell->bcalSiPMDownHits);
+      cell->bcalSiPMDownHits = make_s_BcalSiPMDownHits(cell->bcalHits->mult);
+      cell->bcalSiPMDownHits->mult = cell->bcalHits->mult;			
+      
+      for(unsigned int k=0; k<cell->bcalHits->mult; k++){
+	s_BcalHit_t *bcalhit = &cell->bcalHits->in[k];
+	s_BcalSiPMUpHit_t *bcaluphit = &cell->bcalSiPMUpHits->in[k];
+	s_BcalSiPMDownHit_t *bcaldownhit = &cell->bcalSiPMDownHits->in[k];
+	
+	float smearedE = bcalSamplingSmear( bcalhit->E );
+	
+	float upDist = ( bcalGeom->BCALFIBERLENGTH / 2 ) + bcalhit->zLocal;
+	float downDist = ( bcalGeom->BCALFIBERLENGTH / 2 ) - bcalhit->zLocal;
+	
+	// sampling fluctuations are correlated between ends
+	float upEnergy = smearedE * exp( -upDist / bcalGeom->ATTEN_LENGTH );
+	float downEnergy = smearedE * exp( -downDist / bcalGeom->ATTEN_LENGTH );
+	
+	// independently smear time for both ends -- time smearing 
+	// parameters come from data taken with beam at the center of 
+	// the module so there is an implicit exp( ( -L / 2 ) / lambda ) 
+	// that needs to be canceled out since we are working
+	// at this stage with attenuated energies 
+	float smearedtUp = 
+	  bcalTimeSmear( bcalhit->t, 
+			 upEnergy * exp( ( bcalGeom->BCALFIBERLENGTH / 2 ) / 
+					 bcalGeom->ATTEN_LENGTH ) );
+	float smearedtDown = 
+	  bcalTimeSmear( bcalhit->t, 
+			 downEnergy * exp( ( bcalGeom->BCALFIBERLENGTH / 2 ) / 
+					   bcalGeom->ATTEN_LENGTH ) );
+	
+	darkHitItr = darkHits.find( dcell );
+	if( darkHitItr != darkHits.end() ){
+	  
+	  upEnergy += ( darkHitItr->second.first * mevPerPE * k_MeV );
+	  downEnergy += ( darkHitItr->second.second * mevPerPE * k_MeV );
+	  
+	  // now delete this from the map so we don't create
+	  // additional hits later
+	  darkHits.erase( darkHitItr );
+	}
+	
+	// now offset times for propagation distance
+	float upTime = smearedtUp + upDist / bcalGeom->C_EFFECTIVE;
+	float downTime = smearedtDown + downDist / bcalGeom->C_EFFECTIVE;
+	
+	//If energy is smeared to negative, set to 0.
+	if(upEnergy <= 0 || upTime!=upTime)
+	  {
+	    upEnergy = 0;
+	    upTime = 0;
+	  }
+	if(downEnergy <= 0|| downTime!=downTime)
+	  {
+	    downEnergy = 0;
+	    downTime = 0;
+	  }
+	
+	bcaluphit->E = upEnergy;
+	eUpStore[cell->module][cell->layer][cell->sector]+= upEnergy;
+	bcaluphit->t = upTime;
+	tUpStore[cell->module][cell->layer][cell->sector]= upTime;
+	
+	
+	bcaldownhit->E = downEnergy;
+	eDownStore[cell->module][cell->layer][cell->sector]+= downEnergy;
+	bcaldownhit->t = downTime;
+	tDownStore[cell->module][cell->layer][cell->sector]= downTime;
+	
+	
+      } //k (bcal hits)
+      
+    } //j (cells)
+    
+    //Add in dark hits to empty cells
+    for(int i = 1; i<=48;i++)
+      {
+	for(int j = 1; j<=10;j++)
+	  {
+	    for(int k = 1; k<=4; k++)
+	      {
+		int dcell = DBCALGeometry::cellId( i, j, k);
+		darkHitItr = darkHits.find( dcell );
+		if( darkHitItr != darkHits.end() ){
+		  eUpStore[i][j][k] += ( darkHitItr->second.first * mevPerPE * k_MeV );
+		  eDownStore[i][j][k] += ( darkHitItr->second.second * mevPerPE * k_MeV );
+		  tUpStore[i][j][k] = SampleRange( -0.25 * BCAL_INTWINDOW_NS,
+						   0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
+		  tDownStore[i][j][k] = SampleRange( -0.25 * BCAL_INTWINDOW_NS,
+						     0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
+		}
+	      }
+	  }
+      }		     
+    
+    //Inner Cells, Summing
+    for(int i=1;i<=48;i++)
+      {
+	for(int j=1;j<=bcalGeom->NBCALLAYS1;j++)
+	  {
+	    for(int k=1;k<=bcalGeom->NBCALSECS1;k++)
+	      {
+		for(int l=1;l<=(bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1;l++)
+		  {
+		    for(int m=1;m<=4/bcalGeom->NBCALSECS1;m++)
+		      {			 
+			eUpfADC[i][j][k]+= eUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];//Sum energies
+			eDownfADC[i][j][k]+= eDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
+			
+			tUpfADC[i][j][k]+= eUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m] //Sum times weighted by Energy
+			  *tUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
+			tDownfADC[i][j][k]+= eDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m]
+			  *tDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
+			
+		      }
+		  }
+		
+		if(eUpfADC[i][j][k]!=0) //Divide time by Energy, to average weighted by energy, but make sure nonzero energy present.
+		  tUpfADC[i][j][k] = tUpfADC[i][j][k]/eUpfADC[i][j][k];
+		else
+		  tUpfADC[i][j][k] = 0;
+		
+		if(eDownfADC[i][j][k]!=0)
+		  tDownfADC[i][j][k] = tDownfADC[i][j][k]/eDownfADC[i][j][k];
+		else
+		  tDownfADC[i][j][k] = 0;
+	      }
+	  }
+      }
+    //Outer Cells, Summing
+    for(int i=1;i<=48;i++)
+      {
+	for(int j=bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1;j++)
+	  {
+	    for(int k=1;k<=bcalGeom->NBCALSECS2;k++)
+	      {
+		for(int l=1;l<=(11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2;l++)
+		  {
+		    for(int m=1;m<=4/bcalGeom->NBCALSECS2;m++)
+		      {			 
+			eUpfADC[i][j][k]+= eUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];//Sum energies
+			eDownfADC[i][j][k]+= eDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];
+			
+			tUpfADC[i][j][k]+= eUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m] //Sum times weighted by energy
+			  *tUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];
+			tDownfADC[i][j][k]+= eDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m]
+			  *tDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];			 
+		      }
+		  }
+		
+		if(eUpfADC[i][j][k]!=0) //Divide time by Energy, to average weighted by energy, but make sure nonzero energy present.
+		  tUpfADC[i][j][k] = tUpfADC[i][j][k]/eUpfADC[i][j][k];
+		else
+		  tUpfADC[i][j][k] = 0;
+		
+		if(eDownfADC[i][j][k]!=0)
+		  tDownfADC[i][j][k] = tDownfADC[i][j][k]/eDownfADC[i][j][k];
+		else
+		  tDownfADC[i][j][k] = 0;
+	      }
+	  }
+      }
+    
+    //Naively multiply threshold by number of summed cells
+    //in order to apply an effective 95% cut on fADC dark counts
+    //passing.  Needs more thought.	
+    float InnerThreshold = Bcal_CellInnerThreshold * ((bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1) * (4/bcalGeom->NBCALSECS1);
+    float OuterThreshold = Bcal_CellInnerThreshold * ((11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2) * (4/bcalGeom->NBCALSECS2);	
+    
+    for(int i = 1;i<=48;i++)
+      {
+	for(int j = 1;j<=bcalGeom->NBCALLAYS1 ;j++)
+	  {
+	    for(int k = 1;k<=bcalGeom->NBCALSECS1;k++)
+	      {
+		if(eUpfADC[i][j][k]>InnerThreshold||eDownfADC[i][j][k]>InnerThreshold)
+		  {		
+		    fADCCellCount++;
+		  }
+	      }
+	  }
+      }
+    for(int i = 1;i<=48;i++)
+      {
+	for(int j = bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1 ;j++)
+	  {
+	    for(int k = 1;k<=bcalGeom->NBCALSECS2 ;k++)
+	      {
+		if(eUpfADC[i][j][k]> OuterThreshold ||eDownfADC[i][j][k]>OuterThreshold)
+		  {	
+		    fADCCellCount++;
+		  }
+	      }
+	  }
+      }
+    
+    if(hits->barrelEMcal->bcalfADCCells!=HDDM_NULL)free(hits->barrelEMcal->bcalfADCCells);
+    hits->barrelEMcal->bcalfADCCells = make_s_BcalfADCCells(fADCCellCount);
+    hits->barrelEMcal->bcalfADCCells->mult = fADCCellCount;
+    
+    for(unsigned int j=0; j<hits->barrelEMcal->bcalfADCCells->mult; j++)
+      {
+	s_BcalfADCCell_t *fADCcell = &hits->barrelEMcal->bcalfADCCells->in[j];
+	
+	bool Etrigg = FALSE;		 
+	
+	//Inner Cells
+	for(int i = 1;i<=48 && !Etrigg ;i++)
+	  {
+	    for(int j = 1;j<=bcalGeom->NBCALLAYS1 && !Etrigg ;j++)
+	      {
+		for(int k = 1;k<=bcalGeom->NBCALSECS1 && !Etrigg ;k++)
+		  {
+		    if(eUpfADC[i][j][k]>InnerThreshold||eDownfADC[i][j][k]>InnerThreshold)
+		      {			       
+			fADCcell->module = i;
+			fADCcell->layer = j;
+			fADCcell->sector = k;
+			
+			if(fADCcell->bcalfADCUpHits!=HDDM_NULL)free(fADCcell->bcalfADCUpHits);
+			fADCcell->bcalfADCUpHits = make_s_BcalfADCUpHits(1);
+			fADCcell->bcalfADCUpHits->mult = 1;
+			
+			if(fADCcell->bcalfADCDownHits!=HDDM_NULL)free(fADCcell->bcalfADCDownHits);
+			fADCcell->bcalfADCDownHits = make_s_BcalfADCDownHits(1);
+			fADCcell->bcalfADCDownHits->mult = 1;
+			
+			s_BcalfADCUpHit_t *fadcuphit = &fADCcell->bcalfADCUpHits->in[0];
+			s_BcalfADCDownHit_t *fadcdownhit = &fADCcell->bcalfADCDownHits->in[0];				   
+			
+			if( eUpfADC[i][j][k] > InnerThreshold){
+			  fadcuphit->E = eUpfADC[i][j][k];
+			  fadcuphit->t = tUpfADC[i][j][k];
+			}
+			else {fadcuphit->E = 0; fadcuphit->t = 0;}
+			
+			if( eDownfADC[i][j][k] > InnerThreshold){
+			  fadcdownhit->E = eDownfADC[i][j][k];
+			  fadcdownhit->t = tDownfADC[i][j][k];
+			}
+			else {fadcdownhit->E = 0; fadcdownhit->t = 0;}			       
+			
+			Etrigg = TRUE;
+			eUpfADC[i][j][k]=eDownfADC[i][j][k]=0;
+		      }			        	   
+		  }
+	      }
+	  }
+	//Outer Cells
+	for(int i = 1;i<=48 && !Etrigg ;i++)
+	  {
+	    for(int j = bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1 && !Etrigg ;j++)
+	      {
+		for(int k = 1;k<=bcalGeom->NBCALSECS2 && !Etrigg ;k++)
+		  {
+		    if(eUpfADC[i][j][k]> OuterThreshold ||eDownfADC[i][j][k]>OuterThreshold)
+		      {			  
+			fADCcell->module = i;
+			fADCcell->layer = j;
+			fADCcell->sector = k;
+			
+			if(fADCcell->bcalfADCUpHits!=HDDM_NULL)free(fADCcell->bcalfADCUpHits);
+			fADCcell->bcalfADCUpHits = make_s_BcalfADCUpHits(1);
+			fADCcell->bcalfADCUpHits->mult = 1;
+			
+			if(fADCcell->bcalfADCDownHits!=HDDM_NULL)free(fADCcell->bcalfADCDownHits);
+			fADCcell->bcalfADCDownHits = make_s_BcalfADCDownHits(1);
+			fADCcell->bcalfADCDownHits->mult = 1;
+			
+			s_BcalfADCUpHit_t *fadcuphit = &fADCcell->bcalfADCUpHits->in[0];
+			s_BcalfADCDownHit_t *fadcdownhit = &fADCcell->bcalfADCDownHits->in[0];
+			
+			if( eUpfADC[i][j][k] > OuterThreshold){
+			  fadcuphit->E = eUpfADC[i][j][k];
+			  fadcuphit->t = tUpfADC[i][j][k];
+			}
+			else {fadcuphit->E = 0; fadcuphit->t = 0;}
+			
+			if( eDownfADC[i][j][k] > OuterThreshold){
+			  fadcdownhit->E = eDownfADC[i][j][k];
+			  fadcdownhit->t = tDownfADC[i][j][k];
+			}
+			else {fadcdownhit->E = 0; fadcdownhit->t = 0;}			       
+			
+			Etrigg = TRUE;
+			eUpfADC[i][j][k]=eDownfADC[i][j][k]=0;
+		      }			        	   
+		  }
+	      }
+	  }
+      }		                   		       
+  } //i (PhysicsEvents)
+  
 }
 
 void bcalInit()
@@ -1298,25 +1298,25 @@ void SmearTOF(s_HDDM_t *hddm_s)
     
     
     s_FtofCounters_t* ftofCounters = hits->forwardTOF->ftofCounters;
-		
+    
     // Loop over counters
-   
+    
     for(unsigned int j=0;j<ftofCounters->mult; j++){
       s_FtofCounter_t *ftofCounter = &(ftofCounters->in[j]);		 
-
+      
       // take care of North Hits
       s_FtofTruthHits_t *ftofTruthHits = ftofCounter->ftofTruthHits;
       ftofCounter->ftofHits = make_s_FtofHits(ftofTruthHits->mult);
       ftofCounter->ftofHits->mult = ftofTruthHits->mult;
-
+      
       for (unsigned int m=0;m<ftofTruthHits->mult;m++){
 	s_FtofTruthHit_t *ftofTruthHit = &(ftofTruthHits->in[m]);
 	s_FtofHit_t *ftofHit = &(ftofCounter->ftofHits->in[m]);
-
+	
 	// Smear the time
 	ftofHit->tNorth = ftofTruthHit->tNorth + SampleGaussian(TOF_SIGMA);
 	ftofHit->tSouth = ftofTruthHit->tSouth + SampleGaussian(TOF_SIGMA);
-
+	
 	// Smear the energy
 	double npe = (double)ftofTruthHit->dENorth * 1000. *  TOF_PHOTONS_PERMEV;
 	npe = npe +  SampleGaussian(sqrt(npe));
@@ -1327,7 +1327,7 @@ void SmearTOF(s_HDDM_t *hddm_s)
 	npe = npe +  SampleGaussian(sqrt(npe));
 	NewE = npe/TOF_PHOTONS_PERMEV/1000.;
 	ftofHit->dESouth = NewE;
-
+	
 	// just copy the rest of the data
 	
 	ftofHit->x      = ftofTruthHit->x     ;
@@ -1340,12 +1340,12 @@ void SmearTOF(s_HDDM_t *hddm_s)
 	ftofHit->dist   = ftofTruthHit->dist  ;
 	ftofHit->ptype  = ftofTruthHit->ptype ;
 	ftofHit->itrack = ftofTruthHit->itrack;
-
+	
       } 
-
+      
     }
   }
-
+  
 }
 
 //-----------
@@ -1373,77 +1373,77 @@ void SmearCherenkov(s_HDDM_t *hddm_s)
 //-----------
 void InitCDCGeometry(void)
 {
-	CDC_GEOMETRY_INITIALIZED = true;
-
-	CDC_MAX_RINGS = 25;
-
-	//-- This was cut and pasted from DCDCTrackHit_factory.cc on 10/11/2007 --
-
-	float degrees0 = 0.0;
-	float degrees6 = 6.0*M_PI/180.0;
-
-	for(int ring=1; ring<=CDC_MAX_RINGS; ring++){
-		int myNstraws=0;
-		float radius = 0.0;
-		float stereo=0.0;
-		float phi_shift=0.0;
-		float deltaX=0.0, deltaY=0.0;
-		float rotX=0.0, rotY=0.0;
-		switch(ring){
-			// axial
-			case  1:	myNstraws=  42;	radius= 10.7219;	stereo=  degrees0; phi_shift= 0.00000;	break;
-			case  2:	myNstraws=  42;	radius= 12.097;	        stereo=  degrees0; phi_shift= 4.285714;	break;
-			case  3:	myNstraws=  54;	radius= 13.7803;	stereo=  degrees0; phi_shift= 2.00000;	break;
-			case  4:	myNstraws=  54;	radius= 15.1621;	stereo=  degrees0; phi_shift= 5.3333333;	break;
-
-			// -stereo
-			case  5:	myNstraws=  66;	radius= 16.9321;	stereo= -degrees6; phi_shift= 0.33333;	break;
-			case  6:	myNstraws=  66;	phi_shift= 0.33333;	deltaX= 18.2948 ;	deltaY= 0.871486;	rotX=-6.47674;	rotY=-0.302853;	break;
-			case  7:	myNstraws=  80;	radius= 20.5213;	stereo= -degrees6; phi_shift= -0.5000;	break;
-			case  8:	myNstraws=  80;	phi_shift= -0.5000;	deltaX= 21.8912;	deltaY= 0.860106;	rotX=-6.39548;	rotY=-0.245615;	break;
-
-			// +stereo
-			case  9:	myNstraws=  93;	radius= 23.8544;	stereo= +degrees6; phi_shift= 1.1000;	break;
-			case 10:	myNstraws=  93;	phi_shift= 1.1000;	deltaX= 25.229;	deltaY= 0.852573;	rotX=+6.34142;	rotY=+0.208647;	break;
-			case 11:	myNstraws= 106;	radius= 27.1877;	stereo= +degrees6; phi_shift= -1.40;	break;
-			case 12:	myNstraws= 106;	phi_shift= -1.400;	deltaX= 28.5658;	deltaY= 0.846871;	rotX=+6.30035;	rotY=+0.181146;	break;
-
-			// axial
-			case 13:	myNstraws= 123;	radius= 31.3799;	stereo=  degrees0; phi_shift= 0.5000000;	break;
-			case 14:	myNstraws= 123;	radius= 32.7747;	stereo=  degrees0; phi_shift= 1.9634146;	break;
-			case 15:	myNstraws= 135;	radius= 34.4343;	stereo=  degrees0; phi_shift= 1.0000000;	break;
-			case 16:	myNstraws= 135;	radius= 35.8301;	stereo=  degrees0; phi_shift= 2.3333333;	break;
-
-			// -stereo
-			case 17:	myNstraws= 146;	radius= 37.4446;	stereo= -degrees6; phi_shift= 0.2;	break;
-			case 18:	myNstraws= 146;	phi_shift= 0.2;	deltaX= 38.8295;	deltaY= 0.835653;	rotX=-6.21919 ;	rotY=-0.128247;	break;
-			case 19:	myNstraws= 158;	radius= 40.5364;	stereo= -degrees6; phi_shift= 0.7;	break;
-			case 20:	myNstraws= 158;	phi_shift= 0.7;	deltaX=41.9225 ;	deltaY= 0.833676;	rotX=-6.20274;	rotY=-0.118271;	break;
-
-			// +stereo
-			case 21:	myNstraws= 170;	radius= 43.6152;	stereo= +degrees6; phi_shift= 1.1000;	break;
-			case 22:	myNstraws= 170;	phi_shift= 1.1000;	deltaX=45.0025  ;	deltaY= 0.831738;	rotX=+6.18859;	rotY=+0.109325;	break;
-			case 23:	myNstraws= 182;	radius= 46.6849;	stereo= +degrees6; phi_shift= 1.40;	break;
-			case 24:	myNstraws= 182;	phi_shift= 1.400;	deltaX= 48.0733;	deltaY= 0.829899;	rotX=+6.1763;	rotY=+0.101315;	break;
-
-			// axial
-			case 25:	myNstraws= 197;	radius= 50.37;	stereo=  degrees0; phi_shift= 0.200000000;	break;
-			case 26:	myNstraws= 197;	radius= 51.77;	stereo=  degrees0; phi_shift= 1.113705000;	break;
-			case 27:	myNstraws= 209;	radius= 53.363;	stereo=  degrees0; phi_shift= 0.800000000;	break;
-			case 28:	myNstraws= 209;	radius= 54.76;	stereo=  degrees0; phi_shift= 1.661244;	break;
-			default:
-				cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-28 inclusive!"<<endl;
-		}
-		NCDC_STRAWS.push_back(myNstraws);
-		CDC_RING_RADIUS.push_back(radius);
-	}
-
-	double Nstraws = 0;
-	double alpha = 0.0;
-	for(unsigned int i=0; i<NCDC_STRAWS.size(); i++){
-		Nstraws += (double)NCDC_STRAWS[i];
-		alpha += (double)NCDC_STRAWS[i]/CDC_RING_RADIUS[i];
-	}
+  CDC_GEOMETRY_INITIALIZED = true;
+  
+  CDC_MAX_RINGS = 25;
+  
+  //-- This was cut and pasted from DCDCTrackHit_factory.cc on 10/11/2007 --
+  
+  float degrees0 = 0.0;
+  float degrees6 = 6.0*M_PI/180.0;
+  
+  for(int ring=1; ring<=CDC_MAX_RINGS; ring++){
+    int myNstraws=0;
+    float radius = 0.0;
+    float stereo=0.0;
+    float phi_shift=0.0;
+    float deltaX=0.0, deltaY=0.0;
+    float rotX=0.0, rotY=0.0;
+    switch(ring){
+      // axial
+    case  1:	myNstraws=  42;	radius= 10.7219;	stereo=  degrees0; phi_shift= 0.00000;	break;
+    case  2:	myNstraws=  42;	radius= 12.097;	        stereo=  degrees0; phi_shift= 4.285714;	break;
+    case  3:	myNstraws=  54;	radius= 13.7803;	stereo=  degrees0; phi_shift= 2.00000;	break;
+    case  4:	myNstraws=  54;	radius= 15.1621;	stereo=  degrees0; phi_shift= 5.3333333;	break;
+      
+      // -stereo
+    case  5:	myNstraws=  66;	radius= 16.9321;	stereo= -degrees6; phi_shift= 0.33333;	break;
+    case  6:	myNstraws=  66;	phi_shift= 0.33333;	deltaX= 18.2948 ;	deltaY= 0.871486;	rotX=-6.47674;	rotY=-0.302853;	break;
+    case  7:	myNstraws=  80;	radius= 20.5213;	stereo= -degrees6; phi_shift= -0.5000;	break;
+    case  8:	myNstraws=  80;	phi_shift= -0.5000;	deltaX= 21.8912;	deltaY= 0.860106;	rotX=-6.39548;	rotY=-0.245615;	break;
+      
+      // +stereo
+    case  9:	myNstraws=  93;	radius= 23.8544;	stereo= +degrees6; phi_shift= 1.1000;	break;
+    case 10:	myNstraws=  93;	phi_shift= 1.1000;	deltaX= 25.229;	deltaY= 0.852573;	rotX=+6.34142;	rotY=+0.208647;	break;
+    case 11:	myNstraws= 106;	radius= 27.1877;	stereo= +degrees6; phi_shift= -1.40;	break;
+    case 12:	myNstraws= 106;	phi_shift= -1.400;	deltaX= 28.5658;	deltaY= 0.846871;	rotX=+6.30035;	rotY=+0.181146;	break;
+      
+      // axial
+    case 13:	myNstraws= 123;	radius= 31.3799;	stereo=  degrees0; phi_shift= 0.5000000;	break;
+    case 14:	myNstraws= 123;	radius= 32.7747;	stereo=  degrees0; phi_shift= 1.9634146;	break;
+    case 15:	myNstraws= 135;	radius= 34.4343;	stereo=  degrees0; phi_shift= 1.0000000;	break;
+    case 16:	myNstraws= 135;	radius= 35.8301;	stereo=  degrees0; phi_shift= 2.3333333;	break;
+      
+      // -stereo
+    case 17:	myNstraws= 146;	radius= 37.4446;	stereo= -degrees6; phi_shift= 0.2;	break;
+    case 18:	myNstraws= 146;	phi_shift= 0.2;	deltaX= 38.8295;	deltaY= 0.835653;	rotX=-6.21919 ;	rotY=-0.128247;	break;
+    case 19:	myNstraws= 158;	radius= 40.5364;	stereo= -degrees6; phi_shift= 0.7;	break;
+    case 20:	myNstraws= 158;	phi_shift= 0.7;	deltaX=41.9225 ;	deltaY= 0.833676;	rotX=-6.20274;	rotY=-0.118271;	break;
+      
+      // +stereo
+    case 21:	myNstraws= 170;	radius= 43.6152;	stereo= +degrees6; phi_shift= 1.1000;	break;
+    case 22:	myNstraws= 170;	phi_shift= 1.1000;	deltaX=45.0025  ;	deltaY= 0.831738;	rotX=+6.18859;	rotY=+0.109325;	break;
+    case 23:	myNstraws= 182;	radius= 46.6849;	stereo= +degrees6; phi_shift= 1.40;	break;
+    case 24:	myNstraws= 182;	phi_shift= 1.400;	deltaX= 48.0733;	deltaY= 0.829899;	rotX=+6.1763;	rotY=+0.101315;	break;
+      
+      // axial
+    case 25:	myNstraws= 197;	radius= 50.37;	stereo=  degrees0; phi_shift= 0.200000000;	break;
+    case 26:	myNstraws= 197;	radius= 51.77;	stereo=  degrees0; phi_shift= 1.113705000;	break;
+    case 27:	myNstraws= 209;	radius= 53.363;	stereo=  degrees0; phi_shift= 0.800000000;	break;
+    case 28:	myNstraws= 209;	radius= 54.76;	stereo=  degrees0; phi_shift= 1.661244;	break;
+    default:
+      cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-28 inclusive!"<<endl;
+    }
+    NCDC_STRAWS.push_back(myNstraws);
+    CDC_RING_RADIUS.push_back(radius);
+  }
+  
+  double Nstraws = 0;
+  double alpha = 0.0;
+  for(unsigned int i=0; i<NCDC_STRAWS.size(); i++){
+    Nstraws += (double)NCDC_STRAWS[i];
+    alpha += (double)NCDC_STRAWS[i]/CDC_RING_RADIUS[i];
+  }
 }
 
 
@@ -1452,58 +1452,58 @@ void InitCDCGeometry(void)
 //-----------
 void InitFDCGeometry(void)
 {
-	FDC_GEOMETRY_INITIALIZED = true;
-	
-	int FDC_NUM_LAYERS = 24;
-	//int WIRES_PER_PLANE = 96;
-	//int WIRE_SPACING = 1.116;
-
-	for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
-		
-		float degrees00 = 0.0;
-		float degrees60 = M_PI*60.0/180.0;
-		
-		float angle=0.0;
-		float z_anode=212.0+95.5;
-		switch(layer){
-			case  1: z_anode+= -92.5-2.0;	angle=  degrees00; break;
-			case  2: z_anode+= -92.5+0.0;	angle= +degrees60; break;
-			case  3: z_anode+= -92.5+2.0;	angle= -degrees60; break;
-			case  4: z_anode+= -86.5-2.0;	angle=  degrees00; break;
-			case  5: z_anode+= -86.5+0.0;	angle= +degrees60; break;
-			case  6: z_anode+= -86.5+2.0;	angle= -degrees60; break;
-
-			case  7: z_anode+= -32.5-2.0;	angle=  degrees00; break;
-			case  8: z_anode+= -32.5+0.0;	angle= +degrees60; break;
-			case  9: z_anode+= -32.5+2.0;	angle= -degrees60; break;
-			case 10: z_anode+= -26.5-2.0;	angle=  degrees00; break;
-			case 11: z_anode+= -26.5+0.0;	angle= +degrees60; break;
-			case 12: z_anode+= -26.5+2.0;	angle= -degrees60; break;
-
-			case 13: z_anode+= +26.5-2.0;	angle=  degrees00; break;
-			case 14: z_anode+= +26.5+0.0;	angle= +degrees60; break;
-			case 15: z_anode+= +26.5+2.0;	angle= -degrees60; break;
-			case 16: z_anode+= +32.5-2.0;	angle=  degrees00; break;
-			case 17: z_anode+= +32.5+0.0;	angle= +degrees60; break;
-			case 18: z_anode+= +32.5+2.0;	angle= -degrees60; break;
-
-			case 19: z_anode+= +86.5-2.0;	angle=  degrees00; break;
-			case 20: z_anode+= +86.5+0.0;	angle= +degrees60; break;
-			case 21: z_anode+= +86.5+2.0;	angle= -degrees60; break;
-			case 22: z_anode+= +92.5-2.0;	angle=  degrees00; break;
-			case 23: z_anode+= +92.5+0.0;	angle= +degrees60; break;
-			case 24: z_anode+= +92.5+2.0;	angle= -degrees60; break;
-		}
-		
-		FDC_LAYER_Z.push_back(z_anode);
-	}
-
-	// Coefficient used to calculate FDCsingle wire rate. We calculate
-	// it once here just to save calculating it for every wire in every event
-	FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
-	
-	// Something is a little off in my calculation above so I scale it down via
-	// an emprical factor:
-	FDC_RATE_COEFFICIENT *= 0.353;
+  FDC_GEOMETRY_INITIALIZED = true;
+  
+  int FDC_NUM_LAYERS = 24;
+  //int WIRES_PER_PLANE = 96;
+  //int WIRE_SPACING = 1.116;
+  
+  for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
+    
+    float degrees00 = 0.0;
+    float degrees60 = M_PI*60.0/180.0;
+    
+    float angle=0.0;
+    float z_anode=212.0+95.5;
+    switch(layer){
+    case  1: z_anode+= -92.5-2.0;	angle=  degrees00; break;
+    case  2: z_anode+= -92.5+0.0;	angle= +degrees60; break;
+    case  3: z_anode+= -92.5+2.0;	angle= -degrees60; break;
+    case  4: z_anode+= -86.5-2.0;	angle=  degrees00; break;
+    case  5: z_anode+= -86.5+0.0;	angle= +degrees60; break;
+    case  6: z_anode+= -86.5+2.0;	angle= -degrees60; break;
+      
+    case  7: z_anode+= -32.5-2.0;	angle=  degrees00; break;
+    case  8: z_anode+= -32.5+0.0;	angle= +degrees60; break;
+    case  9: z_anode+= -32.5+2.0;	angle= -degrees60; break;
+    case 10: z_anode+= -26.5-2.0;	angle=  degrees00; break;
+    case 11: z_anode+= -26.5+0.0;	angle= +degrees60; break;
+    case 12: z_anode+= -26.5+2.0;	angle= -degrees60; break;
+      
+    case 13: z_anode+= +26.5-2.0;	angle=  degrees00; break;
+    case 14: z_anode+= +26.5+0.0;	angle= +degrees60; break;
+    case 15: z_anode+= +26.5+2.0;	angle= -degrees60; break;
+    case 16: z_anode+= +32.5-2.0;	angle=  degrees00; break;
+    case 17: z_anode+= +32.5+0.0;	angle= +degrees60; break;
+    case 18: z_anode+= +32.5+2.0;	angle= -degrees60; break;
+      
+    case 19: z_anode+= +86.5-2.0;	angle=  degrees00; break;
+    case 20: z_anode+= +86.5+0.0;	angle= +degrees60; break;
+    case 21: z_anode+= +86.5+2.0;	angle= -degrees60; break;
+    case 22: z_anode+= +92.5-2.0;	angle=  degrees00; break;
+    case 23: z_anode+= +92.5+0.0;	angle= +degrees60; break;
+    case 24: z_anode+= +92.5+2.0;	angle= -degrees60; break;
+    }
+    
+    FDC_LAYER_Z.push_back(z_anode);
+  }
+  
+  // Coefficient used to calculate FDCsingle wire rate. We calculate
+  // it once here just to save calculating it for every wire in every event
+  FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
+  
+  // Something is a little off in my calculation above so I scale it down via
+  // an emprical factor:
+  FDC_RATE_COEFFICIENT *= 0.353;
 }
 

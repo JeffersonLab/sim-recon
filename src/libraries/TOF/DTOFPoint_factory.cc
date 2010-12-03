@@ -23,14 +23,14 @@ using namespace std;
 jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 {
   // Get TOF hits
-  vector<const DHDDMTOFHit*> hits;
+  vector<const DTOFHitRaw*> hits;
   eventLoop->Get(hits);
 
   // Local vectors for separating hits by plane
-  vector<const DHDDMTOFHit *>uhits;
-  vector<const DHDDMTOFHit *>vhits;
+  vector<const DTOFHitRaw *>uhits;
+  vector<const DTOFHitRaw *>vhits;
   for (unsigned int j = 0; j < hits.size(); j++){
-    const DHDDMTOFHit *hit=hits[j];
+    const DTOFHitRaw *hit=hits[j];
 
     if (hit->plane) uhits.push_back(hit);
     else vhits.push_back(hit);
