@@ -51,7 +51,7 @@ class DTOFHitRaw:public JObject{
     AddString(items, "pz", "%12.4e", pz);
     AddString(items, "E", "%12.4e", E);
     AddString(items, "ptype", "%d", ptype);
-    AddString(items, "itrack", "%d", ptype);
+    AddString(items, "itrack", "%d", itrack);
   }
 };
 
