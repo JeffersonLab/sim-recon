@@ -17,9 +17,8 @@ class DTOFHit_factory:public JFactory<DTOFHit>{
   DTOFHit_factory(){};
   ~DTOFHit_factory(){};
   
-  float C_EFFECTIVE;
-  float HALFPADDLE;
-  float BARWIDTH;
+  double C_EFFECTIVE;
+  double HALFPADDLE;
 
  protected:
   //jerror_t init(void);					///< Called once at program start.

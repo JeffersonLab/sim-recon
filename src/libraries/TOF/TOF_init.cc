@@ -3,10 +3,8 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-//#include "DTOFHit_factory.h"
-//#include "DTOFMCResponse_factory.h"
-#include "DTOFPoint_factory.h"
 #include "DTOFHit_factory.h"
+#include "DTOFPoint_factory.h"
 #include "DTOFGeometry_factory.h"
 
 #include "DTOFHitRaw.h"

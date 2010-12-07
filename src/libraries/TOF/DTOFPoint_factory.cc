@@ -29,12 +29,12 @@ jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int runnumber)
     VELOCITY = 15.;  // set to some reasonable value
     HALFPADDLE = 126;   // set to some reasonable value
     BARWIDTH = 6.;
-    return (jerror_t) 1;
+    return NOERROR;
   }
 
   VELOCITY    =    tofparms["TOF_C_EFFECTIVE"];
-  HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
-  BARWIDTH     =    tofparms["TOF_PADDLEWIDTH"];
+  HALFPADDLE  =    tofparms["TOF_HALFPADDLE"];
+  BARWIDTH    =    tofparms["TOF_PADDLEWIDTH"];
 
   return NOERROR;
 
@@ -47,7 +47,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 {
   // Get TOF hits
   vector<const DTOFHit*> hits;
-  eventLoop->Get(hits);
+  loop->Get(hits);
 
   // Local vectors for separating hits by plane
   vector<const DTOFHit *>uhits;

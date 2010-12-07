@@ -17,9 +17,9 @@ class DTOFPoint_factory:public JFactory<DTOFPoint>{
   DTOFPoint_factory(){};
   ~DTOFPoint_factory(){};
 
-  float VELOCITY   ;
-  float HALFPADDLE ;
-  float BARWIDTH   ;
+  double VELOCITY   ;
+  double HALFPADDLE ;
+  double BARWIDTH   ;
   
   private:
   jerror_t brun(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method

@@ -27,7 +27,7 @@ jerror_t DTOFHit_factory::brun(JEventLoop *loop, int runnumber)
 
     C_EFFECTIVE = 15.;  // set to some reasonable value
     HALFPADDLE = 126;   // set to some reasonable value
-    return (jerror_t) 1;
+    return NOERROR;
   }
 
   C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
@@ -40,11 +40,11 @@ jerror_t DTOFHit_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTOFHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 
   vector<const DTOFHitRaw*> mcresponses;
-  eventLoop->Get(mcresponses);
+  loop->Get(mcresponses);
 
   for (unsigned int i = 0; i < mcresponses.size(); i++){
 
@@ -60,7 +60,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
     hit->t_south     = mcresponse->t_south;
     hit->E_south     = mcresponse->dE_south;
 
-    hit->meantime = ((hit->t_north+hit->t_south)/2. - HALFPADDLE)/C_EFFECTIVE;
+    hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/C_EFFECTIVE;
     hit->timediff = (hit->t_south - hit->t_north)/2.*C_EFFECTIVE;
 
     _data.push_back(hit);
