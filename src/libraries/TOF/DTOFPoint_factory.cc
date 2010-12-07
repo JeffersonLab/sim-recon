@@ -55,12 +55,17 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int j = 0; j < hits.size(); j++){
     const DTOFHit *hit=hits[j];
 
+    // zero is vertical plane, one is horizontal plane
     if (hit->orientation) uhits.push_back(hit);
     else vhits.push_back(hit);
   }
 
   // Match hits in the two planes by bar number and position as determined from
   // the time difference between two ends, where available.
+
+
+
+
   for (unsigned int i=0;i<uhits.size();i++){
     double ux    = uhits[i]->timediff;
     double utof  = uhits[i]->meantime;

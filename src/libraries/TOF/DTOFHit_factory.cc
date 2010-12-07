@@ -55,6 +55,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
     hit->id          = mcresponse->id;
     hit->orientation = mcresponse->plane;
+    hit->bar         = mcresponse->bar;
     hit->t_north     = mcresponse->t_north;
     hit->E_north     = mcresponse->dE_north;
     hit->t_south     = mcresponse->t_south;
