@@ -10,14 +10,19 @@
 
 #include "JANA/JFactory.h"
 #include "DTOFPoint.h"
-#include "DTOFHitRaw.h"
+#include "DTOFHit.h"
 
 class DTOFPoint_factory:public JFactory<DTOFPoint>{
  public:
   DTOFPoint_factory(){};
   ~DTOFPoint_factory(){};
+
+  float VELOCITY   ;
+  float HALFPADDLE ;
+  float BARWIDTH   ;
   
   private:
+  jerror_t brun(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
   jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
  
 
