@@ -9,14 +9,19 @@
 #define _DTOFHit_factory_
 
 #include "JANA/JFactory.h"
+#include "JANA/JApplication.h"
+#include "JANA/JParameterManager.h"
 #include "JANA/JEventLoop.h"
 #include "DTOFHit.h"
 
+using namespace jana;
+
 class DTOFHit_factory:public JFactory<DTOFHit>{
  public:
-  DTOFHit_factory(){};
+  DTOFHit_factory(){TOF_POINT_TAG="";gPARMS->SetDefaultParameter("TOF:TOF_POINT_TAG", TOF_POINT_TAG,"");};
   ~DTOFHit_factory(){};
   
+  string TOF_POINT_TAG;
   double C_EFFECTIVE;
   double HALFPADDLE;
 

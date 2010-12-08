@@ -44,7 +44,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 
   vector<const DTOFHitRaw*> mcresponses;
-  loop->Get(mcresponses);
+  loop->Get(mcresponses,TOF_POINT_TAG.c_str());
 
   for (unsigned int i = 0; i < mcresponses.size(); i++){
 
