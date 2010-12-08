@@ -32,6 +32,7 @@ extern bool CDC_USE_PARAMETERIZED_SIGMA;
 extern bool FDC_USE_PARAMETERIZED_SIGMA;
 extern double CDC_TDRIFT_SIGMA;
 extern double CDC_TIME_WINDOW;
+extern double CDC_PEDESTAL_SIGMA;
 extern double FDC_TDRIFT_SIGMA;
 extern double FDC_CATHODE_SIGMA;
 extern double FDC_PED_NOISE;
@@ -41,6 +42,7 @@ extern double FDC_HIT_DROP_FRACTION;
 extern double FCAL_PHOT_STAT_COEF;
 extern double FCAL_BLOCK_THRESHOLD;
 extern double TOF_SIGMA;
+extern double START_SIGMA;
 
 vector<vector<float> >fdc_smear_parms;
 TF1 *fdc_smear_function;
@@ -52,7 +54,7 @@ static JCalibration *jcalib=NULL;
 // histogram
 TH2F *fdc_drift_time_smear_hist;
 TH2F *fdc_drift_dist_smear_hist;
-TH1F *fdc_drift_time;
+TH2F *fdc_drift_time;
 
 //-----------
 // main
@@ -67,10 +69,10 @@ int main(int narg,char* argv[])
 	// hist file
 	TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");
 	fdc_drift_time_smear_hist=new TH2F("fdc_drift_time_smear_hist","Drift time smearing for FDC",
-					   260,-0.01,0.51,400,-200,200);
+					   300,0.0,0.6,400,-200,200);
 	fdc_drift_dist_smear_hist=new TH2F("fdc_drift_dist_smear_hist","Drift distance smearing for FDC",
-					   260,-0.01,0.51,200,-0.5,0.5);
-	fdc_drift_time=new TH1F("fdc_drift_time","FDC drift time",400,-20,380);
+					   100,0.0,0.6,400,-0.5,0.5);
+	fdc_drift_time=new TH2F("fdc_drift_time","FDC drift distance vs. time",100,-20,380,100,0,1.);
 	
 
 	// Create a JCalibration object using the JANA_CALIB_URL environment variable
@@ -89,7 +91,7 @@ int main(int narg,char* argv[])
 	}
 	
 	if (FDC_USE_PARAMETERIZED_SIGMA==true){ // Get the drift time smearing parameters from the calib DB
-	  fdc_smear_function=new TF1("f1","gaus(0)+gaus(3)+gaus(6)",-200,200);
+	  fdc_smear_function=new TF1("f1","gaus(0)+gaus(3)+gaus(6)",-0.5,0.5);
 	  
 	  vector< map<string, float> > tvals;
 	  jcalib->Get("FDC/drift_smear_parms", tvals);
@@ -191,11 +193,13 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
       case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
       case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
-      case 'e': FDC_ELOSS_OFF = true;									break;
+      case 'e': FDC_ELOSS_OFF = true;	break;
+      case 'E': CDC_PEDESTAL_SIGMA = atof(&ptr[2])*k_keV; break;
       case 'd': FDC_HIT_DROP_FRACTION=atof(&ptr[2]);				break;
       case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);				break;
       case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;		break;
       case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; break;
+      case 'S': START_SIGMA= atof(&ptr[2])*k_psec; break;
       }
     }else{
       INFILENAME = argv[i];

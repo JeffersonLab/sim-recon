@@ -29,7 +29,7 @@ extern vector<vector<float> >fdc_smear_parms;
 extern TF1 *fdc_smear_function;
 extern TH2F *fdc_drift_time_smear_hist;
 extern TH2F *fdc_drift_dist_smear_hist;
-extern TH1F *fdc_drift_time;
+extern TH2F *fdc_drift_time;
 
 void SmearCDC(s_HDDM_t *hddm_s);
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
@@ -39,7 +39,7 @@ void SmearFCAL(s_HDDM_t *hddm_s);
 void SmearCCAL(s_HDDM_t *hddm_s);
 void SmearBCAL(s_HDDM_t *hddm_s);
 void SmearTOF(s_HDDM_t *hddm_s);
-void SmearUPV(s_HDDM_t *hddm_s);
+void SmearSTC(s_HDDM_t *hddm_s);
 void SmearCherenkov(s_HDDM_t *hddm_s);
 void InitCDCGeometry(void);
 void InitFDCGeometry(void);
@@ -85,6 +85,9 @@ double CDC_TDRIFT_SIGMA = 150.0/55.0*1E-9;	// in seconds
 // This is used to determine the number of background
 // hits in the CDC for a given event.
 double CDC_TIME_WINDOW = 1000.0E-9; // in seconds
+
+// The error in the energy deposition measurement in the CDC due to pedestal noise
+double CDC_PEDESTAL_SIGMA = 0.06*k_keV;
  
 // If the following flag is true, then include the drift-distance
 // dependency on the error in the FDC position. Otherwise, use a
@@ -170,6 +173,10 @@ float Bcal_CellInnerThreshold;
 double TOF_SIGMA = 100.*k_psec;
 double TOF_PHOTONS_PERMEV = 8000.;
 
+// Start counter resolution
+double START_SIGMA = 300.*k_psec;
+double START_PHOTONS_PERMEV = 8000.;
+
 // Polynomial interpolation on a grid.
 // Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
 void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
@@ -222,7 +229,7 @@ void Smear(s_HDDM_t *hddm_s)
 	if(SMEAR_HITS)SmearCCAL(hddm_s);
 	if(SMEAR_HITS)SmearBCAL(hddm_s);
 	if(SMEAR_HITS)SmearTOF(hddm_s);
-	if(SMEAR_HITS)SmearUPV(hddm_s);
+	if(SMEAR_HITS)SmearSTC(hddm_s);
 	if(SMEAR_HITS)SmearCherenkov(hddm_s);
 }
 
@@ -286,8 +293,8 @@ void SmearCDC(s_HDDM_t *hddm_s)
 				double delta_t = SampleGaussian(sigma_t)*1.0E9; // delta_t is in ns
 				strawhit->t = strawtruthhit->t + delta_t;
 				
-				// Currently no additional smearing of energy deposition
-				strawhit->dE = strawtruthhit->dE;
+				// Smear energy deposition
+				strawhit->dE = strawtruthhit->dE+SampleGaussian(CDC_PEDESTAL_SIGMA);
 		
 				// to be consistent initialize the value d=DOCA to zero
 				strawhit->d = 0.;
@@ -491,7 +498,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				// random generator using functions representing
 				// the degree of smearing in various bins in x
 	  
-				int ind=(truthhit->d<0.5?int(truthhit->d/0.02+0.5):25);
+				int ind=(truthhit->d<0.5?int(floor(truthhit->d/0.02+0.5)):25);
 				double dt=0.;
 				/*
 				dt=SampleGaussian((5.96642*exp(-54.2745*truthhit->d)
@@ -501,31 +508,25 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				float xarray[26]={0.00,0.02,0.04,0.06,0.08,0.10,0.12,0.14,0.16,0.18,0.20,0.22,
 						  0.24,0.26,0.28,0.30,0.32,0.34,0.36,0.38,0.40,0.42,0.44,0.46,
 						  0.48,0.50};
-				int imin=0;
-				if (ind>0 && ind<25) imin=ind-1;
-				else if (ind>=25) imin=24;
-				else if (ind<1) imin=0;
+	     
 				float my_parms[9];
 				//printf("imin %d imax %d\n",imin,imin+3);
-				
-			     
+					     
 				for (int m=0;m<9;m++){
-				  if (false && truthhit->d<0.01){
-				    my_parms[m]=fdc_smear_parms[0][m];
-				    // printf("parms %f\n",my_parms[m]);
+				  float dpar;
+				  float parlist[26];
+				  int  num=3;
+				  if (ind>=23){
+				    num=2;
+				    if (ind==25) ind=24;
 				  }
-				  else{
-				    float dpar;
-				    float parlist[26];
-				    int  num=2;
-				    for (int p=0;p<num;p++){
-				      parlist[p]=fdc_smear_parms[imin+p][m];
-				      // printf("%f\n",parlist[p]);
-				    }
-				  //if (ind==0||ind>23) num=3;
-				    polint(&xarray[imin],parlist,num,truthhit->d,&my_parms[m],&dpar);
+				  for (int p=0;p<num;p++){
+				    parlist[p]=fdc_smear_parms[ind+p][m];
+				    // printf("%f\n",parlist[p]);
+				  }
+				  polint(&xarray[ind],parlist,num,truthhit->d,&my_parms[m],&dpar);
 				  //printf("d %f par %f\n",truthhit->d,my_parms[m]);
-				  }
+			
 				}
 
 				for (unsigned int p=0;p<9;p++){
@@ -533,17 +534,18 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				  if ((p+2)%3 && my_parms[p]<0.) my_parms[p]*=-1.;
 				  fdc_smear_function->SetParameter(p,my_parms[p]);
 				}
-				dt=fdc_smear_function->GetRandom();
+				// The calib database contains the smearing in cm, so one needs to 
+				// convert into nanoseconds...
+				double dx=fdc_smear_function->GetRandom();
+				dt=dx/0.0055;
+				fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
+				double t_temp=90.99*tanh((truthhit->d-0.2915)/0.1626);
+
+				fdc_drift_dist_smear_hist->Fill(truthhit->d,dx);
+				fdc_drift_time->Fill(t_temp+86.67+dx*(1.-t_temp*t_temp*0.01097*0.01097)
+						     /(0.01097*0.08211),truthhit->d);
 				
 				hit->t=truthhit->t+dt;
-				fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
-
-				double temp=90.99*tanh((truthhit->d-0.2915)/0.1626);
-				fdc_drift_dist_smear_hist->Fill(truthhit->d,
-								0.08211*0.01097*dt/
-								(1.-0.01097*0.01097*temp*temp));
-				fdc_drift_time->Fill(temp+86.67+dt);
-
 			      }
 			      hit->dE = truthhit->dE;
 			      hit->d  = 0.; // initialize d=DOCA to zero for consistency.
@@ -1349,13 +1351,44 @@ void SmearTOF(s_HDDM_t *hddm_s)
 }
 
 //-----------
-// SmearUPV
+// SmearSTC - smear hits in the start counter
 //-----------
-void SmearUPV(s_HDDM_t *hddm_s)
+void SmearSTC(s_HDDM_t *hddm_s)
 {
+  
+ // Loop over Physics Events
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return;
+  
+  for(unsigned int i=0; i<PE->mult; i++){
+    s_HitView_t *hits = PE->in[i].hitView;
+    if (hits == HDDM_NULL ||
+	hits->startCntr == HDDM_NULL ||
+	hits->startCntr->stcPaddles == HDDM_NULL)continue;
+    s_StcPaddles_t *stcPaddles= hits->startCntr->stcPaddles;
+    
+    // Loop over counters
+    for(unsigned int j=0;j<stcPaddles->mult; j++){
+      s_StcPaddle_t *stcPaddle = &(stcPaddles->in[j]);
+ 
+      s_StcTruthHits_t *stcTruthHits=stcPaddle->stcTruthHits;
+      stcPaddle->stcHits=make_s_StcHits(stcTruthHits->mult);
+      stcPaddle->stcHits->mult=stcTruthHits->mult;
+      for (unsigned int m=0;m<stcTruthHits->mult;m++){
+	s_StcTruthHit_t *stcTruthHit=&(stcTruthHits->in[m]);	
+	s_StcHit_t *stcHit=&(stcPaddle->stcHits->in[m]);
+	
+	// smear the time
+	stcHit->t=stcTruthHit->t + SampleGaussian(START_SIGMA);
 
-
-
+	// Smear the energy
+	double npe = (double)stcTruthHit->dE * 1000. *  START_PHOTONS_PERMEV;
+	npe = npe +  SampleGaussian(sqrt(npe));
+	float NewE = npe/START_PHOTONS_PERMEV/1000.;
+	stcHit->dE = NewE;
+      }
+    }
+  }
 }
 
 //-----------
