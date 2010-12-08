@@ -139,7 +139,7 @@ void hitStartCntr (float xin[4], float xout[4],
    if (dEsum > 0)
    {
       int nhit;
-      s_StcHits_t* hits;
+      s_StcTruthHits_t* hits;
       int sector = getsector_();
       float phim = atan2(xvrtx[1],xvrtx[0]);
 
@@ -161,14 +161,14 @@ void hitStartCntr (float xin[4], float xout[4],
          s_StcPaddles_t* paddles = make_s_StcPaddles(1);
          paddles->mult = 1;
          paddles->in[0].sector = sector;
-         paddles->in[0].stcHits = hits = make_s_StcHits(MAX_HITS);
+         paddles->in[0].stcTruthHits = hits = make_s_StcTruthHits(MAX_HITS);
          stc->stcPaddles = paddles;
          paddleCount++;
       }
       else
       {
          s_StartCntr_t* stc = *twig;
-         hits = stc->stcPaddles->in[0].stcHits;
+         hits = stc->stcPaddles->in[0].stcTruthHits;
       }
 
       for (nhit = 0; nhit < hits->mult; nhit++)
@@ -235,7 +235,7 @@ s_StartCntr_t* pickStartCntr ()
       {
          int m = box->stcPaddles->mult;
 
-         s_StcHits_t* hits = paddles->in[paddle].stcHits;
+         s_StcTruthHits_t* hits = paddles->in[paddle].stcTruthHits;
 
          /* compress out the hits below threshold */
          int i,iok;
