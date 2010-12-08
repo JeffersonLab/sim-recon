@@ -43,6 +43,7 @@
       <startCntr minOccurs="0">
         <stcPaddle maxOccurs="unbounded" minOccurs="0" sector="int">
           <stcHit dE="float" maxOccurs="unbounded" t="float"/>
+          <stcTruthHit dE="float" maxOccurs="unbounded" t="float"/>
         </stcPaddle>
         <stcTruthPoint E="float" dEdx="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" sector="int" t="float" track="int" z="float"/>
       </startCntr>
