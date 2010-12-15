@@ -311,7 +311,7 @@ inline DMatrix5x5 operator*(const double c,const DMatrix5x5 &M){
   DMatrix5x5 temp;
   for (unsigned int i=0;i<5;i++){
     for (unsigned int j=0;j<5;j++){
-      temp(i,j)=c*temp(i,j);
+      temp(i,j)=c*M(i,j);
     }
   }
   return temp;
