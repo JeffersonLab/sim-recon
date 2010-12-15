@@ -1,3 +1,8 @@
+#ifndef USE_SIMD
+
+
+#else
+
 class DMatrix4x4{
  public:
   DMatrix4x4(){
@@ -140,3 +145,4 @@ class DMatrix4x4{
   };
   union dvec mA[4];
 };
+#endif

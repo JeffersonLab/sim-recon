@@ -1,3 +1,75 @@
+#ifndef USE_SIMD 
+
+// Matrix class without SIMD instructions
+
+class DMatrix2x5{
+public:
+  DMatrix2x5(){
+    for (unsigned int i=0;i<2;i++){
+      for (unsigned int j=0;j<5;j++){
+	mA[i][j]=0.;
+      }
+    }
+  }
+  DMatrix2x5(const double a1, const double a2, const double a3, const double a4, const double a5,
+	      const double b1, const double b2, const double b3, const double b4, const double b5){
+    mA[0][0]=a1;
+    mA[0][1]=a2;
+    mA[0][2]=a3;
+    mA[0][3]=a4;
+    mA[0][4]=a5;  
+    mA[1][0]=b1;
+    mA[1][1]=b2;
+    mA[1][2]=b3;
+    mA[1][3]=b4;
+    mA[1][4]=b5;
+  }
+	      
+  ~DMatrix2x5(){};
+
+  double &operator() (int row, int col){
+    return mA[row][col];
+  } 
+  double operator() (int row, int col) const{
+    return mA[row][col];
+  }  
+  // Matrix multiplication:  (2x5) x (5x2)
+#define MUL5(i,j) mA[(i)][0]*m2(0,(j))+mA[(i)][1]*m2(1,(j))+mA[(i)][2]*m2(2,(j))+mA[(i)][3]*m2(3,(j))+mA[(i)][4]*m2(4,(j))
+
+  DMatrix2x2 operator*(const DMatrix5x2 &m2) const{
+    return DMatrix2x2(MUL5(0,0),MUL5(0,1),MUL5(1,0),MUL5(1,1));
+  }
+
+  // Matrix multiplication: (2x5) x (5x5)
+  DMatrix2x5 operator*(const DMatrix5x5 &m2) const{
+    return 
+      DMatrix2x5(MUL5(0,0),MUL5(0,1),MUL5(0,2),MUL5(0,3),MUL5(0,4),
+		  MUL5(1,0),MUL5(1,1),MUL5(1,2),MUL5(1,3),MUL5(1,4)
+		  );
+  }
+
+  void Print(){
+    cout << "DMatrix2x5:" <<endl;
+    cout << "     |      0    |      1    |      2    |      3    |      4    |" <<endl;
+    cout << "-------------------------------------------------------------------" <<endl;  
+    for (unsigned int i=0;i<2;i++){   
+      cout <<"   "<< i << " |";
+      for (unsigned int j=0;j<5;j++){
+	cout  <<setw(11)<<setprecision(4)<< mA[i][j] <<" "; 
+      } 
+      cout << endl;
+    }      
+  }
+
+private:
+  double mA[2][5];
+
+};
+
+#else
+
+// Matrix class with SIMD instructions
+
 class DMatrix2x5{
  public:
   DMatrix2x5(){
@@ -88,5 +160,5 @@ class DMatrix2x5{
   union dvec mA[5];
 
 };
-
+#endif
 

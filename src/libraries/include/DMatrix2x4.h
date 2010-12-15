@@ -1,3 +1,7 @@
+#ifndef USE_SIMD
+
+#else
+
 class DMatrix2x4{
  public:
   DMatrix2x4(){
@@ -83,4 +87,4 @@ class DMatrix2x4{
 
 };
 
-
+#endif

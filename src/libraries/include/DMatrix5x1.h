@@ -1,3 +1,83 @@
+#ifndef USE_SIMD 
+
+// Matrix class without SIMD instructions
+class DMatrix5x1{
+public:
+  DMatrix5x1(){
+    for (unsigned int i=0;i<5;i++) mA[i]=0.;
+  }
+  DMatrix5x1(double a1, double a2, double a3, double a4, double a5){
+    mA[0]=a1;
+    mA[1]=a2;
+    mA[2]=a3;
+    mA[3]=a4;
+    mA[4]=a5;
+  }
+  ~DMatrix5x1(){};
+
+  // Access by row number
+  double &operator() (int row){
+    return mA[row];
+  } 
+  double operator() (int row) const{
+    return mA[row];
+  }
+  // Copy constructor
+  DMatrix5x1(const DMatrix5x1 &m2){
+    for (unsigned int i=0;i<5;i++){
+      mA[i]=m2(i);
+    }
+  }  
+  // Assignment operator
+  DMatrix5x1 &operator=(const DMatrix5x1 &m2){
+    for (unsigned int i=0;i<5;i++){
+      mA[i]=m2(i);
+    }
+    return *this;
+  }
+  // Matrix addition
+  DMatrix5x1 operator+(const DMatrix5x1 &m2) const{
+    return DMatrix5x1(mA[0]+m2(0),mA[1]+m2(1),mA[2]+m2(2),mA[3]+m2(3),
+		      mA[4]+m2(4));
+
+  }
+  DMatrix5x1 &operator+=(const DMatrix5x1 &m2){
+    for (unsigned int i=0;i<5;i++){
+      mA[i]+=m2(i);
+    }
+    return *this;
+  }
+
+  // Matrix subtraction
+  DMatrix5x1 operator-(const DMatrix5x1 &m2) const{
+    return DMatrix5x1(mA[0]-m2(0),mA[1]-m2(1),mA[2]-m2(2),mA[3]-m2(3),
+		      mA[4]-m2(4));
+
+  }
+
+  
+  void Print(){
+      cout << "DMatrix5x1:" <<endl;
+      cout << "     |      0    |" <<endl;
+      cout << "----------------------" <<endl;
+      for (unsigned int i=0;i<5;i++){
+	cout <<"   "<<i<<" |" <<  setw(11)<<setprecision(4) << mA[i] << endl;
+      }      
+    }
+
+private:
+  double mA[5];
+};
+
+// Scale 5x1 matrix by a floating point number
+inline DMatrix5x1 operator*(const double c,const DMatrix5x1 &M){ 
+  return DMatrix5x1(c*M(0),c*M(1),c*M(2),c*M(3),c*M(4));
+}
+
+#else
+
+// Matrix class with SIMD instructions
+
  class DMatrix5x1{
   public:
     DMatrix5x1(){
@@ -65,7 +145,7 @@
 			_mm_sub_pd(GetV(1),m2.GetV(1)),
 			_mm_sub_pd(GetV(2),m2.GetV(2)));
     }
-
+      
     void Print(){
       cout << "DMatrix5x1:" <<endl;
       cout << "     |      0    |" <<endl;
@@ -90,3 +170,5 @@ inline DMatrix5x1 operator*(const double c,const DMatrix5x1 &M){
   return DMatrix5x1(_mm_mul_pd(scale,M.GetV(0)),_mm_mul_pd(scale,M.GetV(1)),
 		    _mm_mul_pd(scale,M.GetV(2)));
 }
+
+#endif

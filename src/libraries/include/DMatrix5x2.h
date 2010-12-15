@@ -1,5 +1,87 @@
- class DMatrix5x2{
-  public:
+#ifndef USE_SIMD 
+
+// Matrix class without SIMD instructions
+
+class DMatrix5x2{
+public:
+  DMatrix5x2(){
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<2;j++){
+	mA[i][j]=0.;
+      }
+    }
+  }
+  DMatrix5x2(double A1,double A2,double B1,double B2,double C1,double C2,
+	      double D1,double D2,double E1,double E2){
+    mA[0][0]=A1;
+    mA[0][1]=A2;
+    mA[1][0]=B1;
+    mA[1][1]=B2;  
+    mA[2][0]=C1;
+    mA[2][1]=C2;
+    mA[3][0]=D1;
+    mA[3][1]=D2; 
+    mA[4][0]=E1;
+    mA[4][1]=E2;
+  }
+  ~DMatrix5x2(){};
+
+  // Access by indices
+  double &operator() (int row,int col){
+    return mA[row][col];
+  } 
+  double operator() (int row,int col) const{
+    return mA[row][col];
+  }
+
+  // multiplication:  (5x2) x (2x1)
+  DMatrix5x1 operator*(const DMatrix2x1 &m2){
+    return DMatrix5x1(mA[0][0]*m2(0)+mA[0][1]*m2(1),
+		      mA[1][0]*m2(0)+mA[1][1]*m2(1),
+		      mA[2][0]*m2(0)+mA[2][1]*m2(1),
+		      mA[3][0]*m2(0)+mA[3][1]*m2(1), 
+		      mA[4][0]*m2(0)+mA[4][1]*m2(1));
+  }
+  // multiplication:  (5x2) x (2x2)
+  DMatrix5x2 operator*(const DMatrix2x2 &m2){
+    return DMatrix5x2(mA[0][0]*m2(0,0)+mA[0][1]*m2(1,0),
+		       mA[0][0]*m2(0,1)+mA[0][1]*m2(1,1),
+
+		       mA[1][0]*m2(0,0)+mA[1][1]*m2(1,0), 
+		       mA[1][0]*m2(0,1)+mA[1][1]*m2(1,1),
+
+		       mA[2][0]*m2(0,0)+mA[2][1]*m2(1,0),
+		       mA[2][0]*m2(0,1)+mA[2][1]*m2(1,1),
+
+		       mA[3][0]*m2(0,0)+mA[3][1]*m2(1,0), 
+		       mA[3][0]*m2(0,1)+mA[3][1]*m2(1,1), 
+
+		       mA[4][0]*m2(0,0)+mA[4][1]*m2(1,0),
+		       mA[4][0]*m2(0,1)+mA[4][1]*m2(1,1)
+		       );
+  }
+
+  void Print(){
+    cout << "DMatrix5x2:" <<endl;
+    cout << "     |      0    |      1    |" <<endl;
+    cout << "----------------------------------" <<endl;
+    for (unsigned int i=0;i<5;i++){
+      cout <<"   "<<i<<" |"<< setw(11)<<setprecision(4) << mA[i][0] 
+	   << setw(11)<<setprecision(4) << mA[i][1]<< endl;
+    }      
+  }
+
+private:
+  double mA[5][2];
+};
+
+
+#else
+
+// Matrix class with SIMD instructions
+
+class DMatrix5x2{
+ public:
     DMatrix5x2(){
       for (unsigned int j=0;j<3;j++){
 	mA[0].v[j]=_mm_setzero_pd();
@@ -83,3 +165,4 @@
     union dvec mA[2];
     
   };
+#endif

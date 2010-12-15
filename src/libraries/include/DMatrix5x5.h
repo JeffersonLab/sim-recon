@@ -1,3 +1,327 @@
+#ifndef USE_SIMD 
+
+// Matrix class without SIMD instructions
+
+class DMatrix5x5{
+public:
+  DMatrix5x5(){
+    for (unsigned int i=0;i<5;i++)
+      for (unsigned int j=0;j<5;j++)
+	mA[i][j]=0.;
+  }
+  // Copy constructor
+  DMatrix5x5(const DMatrix5x5 &m2){
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<5;j++){
+	mA[i][j]=m2(i,j);
+      }
+    }
+  }
+  ~DMatrix5x5(){};
+
+  // Constructor using block matrices from matrix inversion 
+  DMatrix5x5(const DMatrix2x2 &A,const DMatrix2x3 &B,
+	     const DMatrix3x2 &C,const DMatrix3x3 &D){
+    mA[0][0]=A(0,0);
+    mA[0][1]=A(0,1);
+    mA[1][0]=A(1,0);
+    mA[1][1]=A(1,1);
+    for (unsigned int i=0;i<2;i++){
+      for (unsigned int j=0;j<3;j++){
+	mA[i][j+2]=B(i,j);
+      }
+    }
+    for (unsigned int i=0;i<3;i++){
+      for (unsigned int j=0;j<2;j++){
+	mA[i+2][j]=C(i,j);
+	mA[i+2][j+2]=D(i,j);
+      }
+      mA[i+2][4]=D(i,2);
+    }
+  }
+
+
+  // Access by indices
+  double &operator() (int row, int col){
+    return mA[row][col];
+  } 
+  double operator() (int row, int col) const{
+    return mA[row][col];
+  }
+  
+  // Assignment operator
+  DMatrix5x5 &operator=(const DMatrix5x5 &m1){
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<5;j++){
+	mA[i][j]=m1(i,j);
+      }
+    }    
+    return *this;
+  }
+  
+  // Find the transpose of this matrix
+  DMatrix5x5 Transpose(){
+    DMatrix5x5 temp;
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<5;j++){
+	temp(i,j)=mA[j][i];
+      }
+    }
+    return temp;
+  }
+  // Matrix addition
+  DMatrix5x5 operator+(const DMatrix5x5 &m2) const{
+    DMatrix5x5 temp;
+
+    for (unsigned int row=0;row<5;row++){
+      for (unsigned int col=0;col<5;col++){
+	temp(row,col)=mA[row][col]+m2(row,col);
+      }
+    }
+    return temp;
+  }
+  DMatrix5x5 &operator+=(const DMatrix5x5 &m2){
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<3;j++){
+	mA[i][j]+=m2(i,j);
+      }
+    }
+    return *this;
+  }
+  
+  // Method for adding symmetric matrices
+  DMatrix5x5 AddSym(const DMatrix5x5 &m2) const{
+    DMatrix5x5 temp;
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=i;j<5;j++){
+	temp(i,j)=mA[i][j]+m2(i,j);
+	temp(j,i)=temp(i,j);
+      }
+    }
+    return temp;
+  } 
+
+  // Method for subtracting  symmetric matrices
+  DMatrix5x5 SubSym(const DMatrix5x5 &m2) const{
+    DMatrix5x5 temp;
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=i;j<5;j++){
+	temp(i,j)=mA[i][j]-m2(i,j);
+	temp(j,i)=temp(i,j);
+      }
+    }
+    return temp;
+  }
+
+  // Matrix subtraction
+  DMatrix5x5 operator-(const DMatrix5x5 &m2) const{
+    DMatrix5x5 temp;
+
+    for (unsigned int row=0;row<5;row++){
+      for (unsigned int col=0;col<5;col++){
+	temp(row,col)=mA[row][col]-m2(row,col);
+      }
+    }
+    return temp;
+  }
+  DMatrix5x5 &operator-=(const DMatrix5x5 &m2){
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<3;j++){
+	mA[i][j]-=m2(i,j);
+      }
+    }
+    return *this;
+  }
+  // Matrix multiplication:  (5x5) x (5x1)
+  DMatrix5x1 operator*(const DMatrix5x1 &m2){
+    return DMatrix5x1(mA[0][0]*m2(0)+mA[0][1]*m2(1)+mA[0][2]*m2(2)
+		       +mA[0][3]*m2(3)+mA[0][4]*m2(4),
+		       mA[1][0]*m2(0)+mA[1][1]*m2(1)+mA[1][2]*m2(2)
+		       +mA[1][3]*m2(3)+mA[1][4]*m2(4),
+		       mA[2][0]*m2(0)+mA[2][1]*m2(1)+mA[2][2]*m2(2)
+		       +mA[2][3]*m2(3)+mA[2][4]*m2(4),
+		       mA[3][0]*m2(0)+mA[3][1]*m2(1)+mA[3][2]*m2(2)
+		       +mA[3][3]*m2(3)+mA[3][4]*m2(4),  
+		       mA[4][0]*m2(0)+mA[4][1]*m2(1)+mA[4][2]*m2(2)
+		       +mA[4][3]*m2(3)+mA[4][4]*m2(4));
+
+  }
+  
+  // Matrix multiplication:  (5x5) x (5x2)
+  DMatrix5x2 operator*(const DMatrix5x2 &m2){
+    return DMatrix5x2(mA[0][0]*m2(0,0)+mA[0][1]*m2(1,0)+mA[0][2]*m2(2,0)
+		      +mA[0][3]*m2(3,0)+mA[0][4]*m2(4,0),
+		      mA[0][0]*m2(0,1)+mA[0][1]*m2(1,1)+mA[0][2]*m2(2,1)
+		      +mA[0][3]*m2(3,1)+mA[0][4]*m2(4,1),
+
+		       mA[1][0]*m2(0,0)+mA[1][1]*m2(1,0)+mA[1][2]*m2(2,0)
+		       +mA[1][3]*m2(3,0)+mA[1][4]*m2(4,0),
+		       mA[1][0]*m2(0,1)+mA[1][1]*m2(1,1)+mA[1][2]*m2(2,1)
+		       +mA[1][3]*m2(3,1)+mA[1][4]*m2(4,1),
+
+		       mA[2][0]*m2(0,0)+mA[2][1]*m2(1,0)+mA[2][2]*m2(2,0)
+		       +mA[2][3]*m2(3,0)+mA[2][4]*m2(4,0),
+		       mA[2][0]*m2(0,1)+mA[2][1]*m2(1,1)+mA[2][2]*m2(2,1)
+		       +mA[2][3]*m2(3,1)+mA[2][4]*m2(4,1),
+
+		       mA[3][0]*m2(0,0)+mA[3][1]*m2(1,0)+mA[3][2]*m2(2,0)
+		       +mA[3][3]*m2(3,0)+mA[3][4]*m2(4,0),  
+		       mA[3][0]*m2(0,1)+mA[3][1]*m2(1,1)+mA[3][2]*m2(2,1)
+		       +mA[3][3]*m2(3,1)+mA[3][4]*m2(4,1),  
+
+		       mA[4][0]*m2(0,0)+mA[4][1]*m2(1,0)+mA[4][2]*m2(2,0)
+		       +mA[4][3]*m2(3,0)+mA[4][4]*m2(4,0),
+		       mA[4][0]*m2(0,1)+mA[4][1]*m2(1,1)+mA[4][2]*m2(2,1)
+		       +mA[4][3]*m2(3,1)+mA[4][4]*m2(4,1)
+		       );
+    
+
+  }
+  // Matrix multiplication: (5x5) x (5x5)
+  DMatrix5x5 operator*(const DMatrix5x5 &m2){
+    DMatrix5x5 temp;
+
+    for (unsigned int j=0;j<5;j++){
+      for (unsigned int i=0;i<5;i++){
+	double temp2=0.;
+	for (unsigned int k=0;k<5;k++){
+	  temp2+=mA[j][k]*m2(k,i);
+	}
+	temp(j,i)=temp2;
+      }
+    }
+    return temp;
+  }
+
+  // Zero out the matrix
+  DMatrix5x5 Zero(){
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<5;j++){
+	mA[i][j]=0.;
+      }
+    }
+    return *this;
+  }
+
+  
+  // Matrix inversion by blocks for a symmetric matrix
+  DMatrix5x5 InvertSym(){
+    DMatrix2x2 A(mA[0][0],mA[0][1],mA[1][0],mA[1][1]);
+    DMatrix3x2 C(mA[2][0],mA[2][1],mA[3][0],mA[3][1],mA[4][0],mA[4][1]);
+    DMatrix3x2 CAinv=C*A.Invert();
+    DMatrix3x3 D(mA[2][2],mA[2][3],mA[2][4],mA[3][2],mA[3][3],mA[3][4],
+		  mA[4][2],mA[4][3],mA[4][4]);
+    DMatrix2x3 B(mA[0][2],mA[0][3],mA[0][4],mA[1][2],mA[1][3],mA[1][4]);
+    DMatrix2x3 BDinv=B*D.InvertSym();
+    DMatrix2x2 AA=(A-BDinv*C).Invert();
+    DMatrix3x3 DD=(D-CAinv*B).InvertSym();
+    return DMatrix5x5(AA,-AA*BDinv,-DD*CAinv,DD);
+  }
+  // The following code performs the matrix operation ABA^T, where B is a symmetric matrix.   The end 
+  // result is also a symmetric matrix.
+  DMatrix5x5 SandwichMultiply(const DMatrix5x5 &A){
+    DMatrix5x5 temp;
+    double sums[5]={0};
+    // First row/column of ACA^T
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned k=0;k<5;k++){
+	sums[i]+=mA[i][k]*A(0,k);
+      }
+    }
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int k=0;k<5;k++){
+	temp(i,0)+=A(i,k)*sums[k];
+      }
+      temp(0,i)=temp(i,0);
+    }
+    // Second row/column of ACA^T
+    for (unsigned i=0;i<5;i++){
+      sums[i]=0.;
+      for (unsigned k=0;k<5;k++){
+	sums[i]+=mA[i][k]*A(1,k);
+      }
+    }    
+    for (unsigned int i=1;i<5;i++){
+      for (unsigned int k=0;k<5;k++){
+	temp(i,1)+=A(i,k)*sums[k];
+      }
+      temp(1,i)=temp(i,1);
+    } 
+    // Third row/column of ACA^T
+    for (unsigned i=0;i<5;i++){
+      sums[i]=0.;
+      for (unsigned k=0;k<5;k++){
+	sums[i]+=mA[i][k]*A(2,k);
+      }
+    }      
+    for (unsigned int i=2;i<5;i++){
+      for (unsigned int k=0;k<5;k++){
+	temp(i,2)+=A(i,k)*sums[k];
+      }
+      temp(2,i)=temp(i,2);
+    } 
+    // Fourth row/column of ACA^T
+    for (unsigned i=0;i<5;i++){
+      sums[i]=0.;
+      for (unsigned k=0;k<5;k++){
+	sums[i]+=mA[i][k]*A(3,k);
+      }
+    }      
+    for (unsigned int i=3;i<5;i++){
+      for (unsigned int k=0;k<5;k++){
+	temp(i,3)+=A(i,k)*sums[k];
+      }
+      temp(3,i)=temp(i,3);
+    }
+    // Last entry ACA^T[4][4]   
+    for (unsigned i=0;i<5;i++){
+      sums[i]=0.;
+      for (unsigned k=0;k<5;k++){
+	sums[i]+=mA[i][k]*A(4,k);
+      }
+    }
+    for (unsigned int k=0;k<5;k++){
+      temp(4,4)+=A(4,k)*sums[k];
+    }
+    return temp;
+  }
+
+  void Print(){
+    cout << "DMatrix5x5:" <<endl;
+    cout << "     |      0    |      1    |      2    |      3    |      4    |" <<endl;
+    cout << "----------------------------------------------------------------------" <<endl;
+    
+    for (unsigned int i=0;i<5;i++){
+      cout <<"   "<< i << " |";
+      for (unsigned int j=0;j<5;j++){
+	cout << setw(11)<<setprecision(4)<<mA[i][j] <<" "; 
+      } 
+      cout << endl;
+    }      
+  }
+
+ private:
+  double mA[5][5];
+
+};
+
+
+// Scale 5x5 matrix by a floating point number
+inline DMatrix5x5 operator*(const double c,const DMatrix5x5 &M){
+  DMatrix5x5 temp;
+  for (unsigned int i=0;i<5;i++){
+    for (unsigned int j=0;j<5;j++){
+      temp(i,j)=c*temp(i,j);
+    }
+  }
+  return temp;
+}
+
+
+#else
+
+// Matrix class with SIMD instructions
+
 class DMatrix5x5{
  public:
   DMatrix5x5(){
@@ -107,6 +431,11 @@ class DMatrix5x5{
     return DMatrix5x1(mA[col].v[0],mA[col].v[1],mA[col].v[2]);
 
   }
+  // return the trace of the matrix
+  double Trace(){
+    return(mA[0].d[0]+mA[1].d[1]+mA[2].d[2]+mA[3].d[3]+mA[4].d[4]);
+  }
+
  
   // Access by indices
   double &operator() (int row, int col){
@@ -625,5 +954,6 @@ inline DMatrix5x5 operator*(const double c,const DMatrix5x5 &M){
 
 }
 
+#endif
 
 
