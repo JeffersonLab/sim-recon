@@ -82,7 +82,7 @@ public:
   }
   DMatrix5x5 &operator+=(const DMatrix5x5 &m2){
     for (unsigned int i=0;i<5;i++){
-      for (unsigned int j=0;j<3;j++){
+      for (unsigned int j=0;j<5;j++){
 	mA[i][j]+=m2(i,j);
       }
     }
@@ -126,7 +126,7 @@ public:
   }
   DMatrix5x5 &operator-=(const DMatrix5x5 &m2){
     for (unsigned int i=0;i<5;i++){
-      for (unsigned int j=0;j<3;j++){
+      for (unsigned int j=0;j<5;j++){
 	mA[i][j]-=m2(i,j);
       }
     }
