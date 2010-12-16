@@ -2,9 +2,6 @@
 // DTrackFitterKalmanSIMD.cc
 //************************************************************************
 
-#if USE_SSE3
-
-
 #include "DTrackFitterKalmanSIMD.h"
 #include "CDC/DCDCTrackHit.h"
 #include "HDGEOMETRY/DLorentzDeflections.h"
@@ -4504,7 +4501,4 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
   return C7x7;
 }
 
-
-
-#endif  // USE_SIMD
 
