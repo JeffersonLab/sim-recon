@@ -224,6 +224,7 @@ void DRootGeom::InitTable(void)
 //---------------------------------
 void DRootGeom::InitDRGeom(void)
 {
+	if(!gGeoManager)new TGeoManager();
 	DRGeom = hddsroot();
 }
 
