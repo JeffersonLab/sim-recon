@@ -224,7 +224,12 @@ void DRootGeom::InitTable(void)
 //---------------------------------
 void DRootGeom::InitDRGeom(void)
 {
-	if(!gGeoManager)new TGeoManager();
+	if(!gGeoManager){
+		// Seems 64bit Linux needs the following line commented out
+		// while 32bit Linux needs it to be there(???).
+		//new TGeoManager();
+		//cout<<"Created TGeoManager :"<<gGeoManager<<endl;
+	}
 	DRGeom = hddsroot();
 }
 
