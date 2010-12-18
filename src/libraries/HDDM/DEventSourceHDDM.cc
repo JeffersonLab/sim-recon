@@ -1660,6 +1660,18 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<D
 			track->candidateid = tbt->candidateid;
 			track->id = tbt->id;
 			
+			// Reconstitute errorMatrix
+			string str_vals = tbt->errorMatrix->vals;
+			DMatrixDSym errMatrix;
+			StringToDMatrixDSym(str_vals, errMatrix, tbt->errorMatrix->Nrows, tbt->errorMatrix->Ncols);
+			track->setErrorMatrix(errMatrix);
+			
+			// Reconstitute TrackingErrorMatrix
+			str_vals = tbt->TrackingErrorMatrix->vals;
+			DMatrixDSym TrackingErrorMatrix;
+			StringToDMatrixDSym(str_vals, TrackingErrorMatrix, tbt->TrackingErrorMatrix->Nrows, tbt->TrackingErrorMatrix->Ncols);
+			track->setTrackingErrorMatrix(TrackingErrorMatrix);
+			
 			// Use DReferenceTrajectory objects (either recycled or new)
 			DReferenceTrajectory *rt = my_rts.back();
 			my_rts.pop_back();
@@ -1704,6 +1716,27 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<D
 	return OBJECT_NOT_AVAILABLE;
 }
 
+
+//-------------------------------
+// StringToDMatrixDSym
+//-------------------------------
+string DEventSourceHDDM::StringToDMatrixDSym(string &str_vals, DMatrixDSym &mat, int &Nrows, int Ncols)
+{
+	/// This is the inverse of the DMatrixDSymToString method in the
+	/// danahddm plugin.
+
+	// Convert the given string into a symmetric matrix
+	mat.ResizeTo(Nrows, Ncols);
+	stringstream ss(str_vals);
+	for(int irow=0; irow<mat.GetNrows(); irow++) {
+		for(int icol=irow; icol<mat.GetNcols(); icol++) {
+			ss >> mat[irow][icol];
+			mat[icol][irow] = mat[irow][icol];
+		}
+	}
+	
+	return ss.str();
+}
 
 //------------------
 // Extract_DTagger

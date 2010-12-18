@@ -75,6 +75,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DSCTruthHit(s_HDDM_t *hddm_s,  JFactory<DSCTruthHit> *factory);
 
 		jerror_t Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory);
+		string StringToDMatrixDSym(string &str_vals, DMatrixDSym &mat, int &Nrows, int Ncols);
 
 		jerror_t Extract_DTagger( s_HDDM_t *hddm_s,  JFactory<DTagger>* factory);
 
