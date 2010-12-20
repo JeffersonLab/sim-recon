@@ -298,7 +298,8 @@ void SmearCDC(s_HDDM_t *hddm_s)
 		
 				// to be consistent initialize the value d=DOCA to zero
 				strawhit->d = 0.;
-
+				strawhit->itrack = strawtruthhit->itrack;
+				strawhit->ptype = strawtruthhit->ptype;
 				// If the time is negative, reject this smear and try again
 				//if(strawhit->t<0)j--;
 			}
