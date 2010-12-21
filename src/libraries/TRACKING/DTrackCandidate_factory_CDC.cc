@@ -1611,9 +1611,12 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     tanl=(sumv*sumxy-sumx*sumy)/Delta;
     z0=(sumxx*sumy-sumx*sumxy)/Delta;
   }
-  else{
+  else if(arclengths.size()==2){
     z0=Z_TARGET;
     tanl=(intersections[1].z()-z0)/arclengths[1];
+  }else{
+	if(DEBUG_LEVEL>5)_DBG_<<"Fit failed for theta-z via regressionz due to too few hits with z-info"<<endl;
+	return VALUE_OUT_OF_RANGE;
   }
   
   if (z0>TARGET_Z_MAX || z0<TARGET_Z_MIN){
