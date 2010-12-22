@@ -58,17 +58,39 @@ ifndef CERN
 	@echo ==============================================
 else  # CERN
 
-@echo CERN = $(CERN)
+	@echo CERN = $(CERN)
 
 ifndef CERN_LEVEL
- @echo error: CERN_LEVEL not defined ; exit 1
+	@echo error: CERN_LEVEL not defined ; exit 1
 else
- @echo CERN_LEVEL = $(CERN_LEVEL)
+	@echo CERN_LEVEL = $(CERN_LEVEL)
 endif
 ifeq ($(strip $(WHICH_CERNLIB)),)
- @echo error: cernlib not in path ; exit 1
+	@echo error: cernlib not in path ; exit 1
 else
- @echo WHICH_CERNLIB = $(WHICH_CERNLIB)
+	@echo WHICH_CERNLIB = $(WHICH_CERNLIB)
+endif
+endif  # CERN
+
+
+# right now these two dependencies are linked...
+# AmpTools is the only package that depends on CLHEP
+
+	@echo AMPTOOLS = $(AMPTOOLS)
+	@echo CLHEP = $(CLHEP)
+
+ifdef AMPTOOLS
+ifdef CLHEP
+AMPTOOLS_CLHEP = 1
+endif
 endif
 
-endif  # CERN
+ifndef AMPTOOLS_CLHEP
+	@echo ==============================================
+	@echo WARNING: AMPTOOLS or CLHEP is not defined
+	@echo Build proceeding, but various amplitude
+	@echo analysis libraries and generators will not
+	@echo be built.
+	@echo ==============================================
+endif
+
