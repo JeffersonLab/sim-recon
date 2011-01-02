@@ -35,11 +35,19 @@ int main( int argc, char* argv[] ){
   Kinematics* event;
   while( ( event = in.getEvent() ) != NULL ){
     
-    HepLorentzVector res = event->particle( 2 ) + 
-      event->particle( 3 );
+    vector< HepLorentzVector > fs = event->particleList();
+
+    HepLorentzVector x;
+    // the first two entries in this list are the beam and the recoil
+    // skip them in computing the mass
+		for( vector< HepLorentzVector >::iterator particle = fs.begin() + 2;
+        particle != fs.end(); ++particle ){
+			
+			x += *particle;
+		}
 
     // an acceptance that is linearly rising with mass
-    if( res.m() > drand48() * 3 )
+    if( x.m() > drand48() * 3 )
       out.writeEvent( *event );
     
     delete event;
