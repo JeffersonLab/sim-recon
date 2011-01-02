@@ -2,7 +2,7 @@
 {
 
   ifstream in;
-  in.open( "threepi_0pol_fit.txt" );
+  in.open( "threepi_fit.txt" );
 
   enum { kMaxPoints = 100 };
 
@@ -104,12 +104,5 @@
   h6.SetStats( 0 );
   h6.Draw();
   allGraph.Draw( "P" );
-
-  //  TLegend leg( 0.65, 0.5, 0.85, 0.8 );
-  //  leg.AddEntry( &rhoPiSWaveGraph, "S Wave", "p" );
-  //  leg.AddEntry( &rhoPiXWaveGraph, "D Wave", "p" );
-  //  leg.AddEntry( &rhoPiDWaveGraph, "G Wave", "p" );
-  //  leg.AddEntry( &allGraph, "All Waves", "p" );
-  //  leg.Draw();
 }
 
