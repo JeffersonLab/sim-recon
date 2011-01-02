@@ -147,8 +147,9 @@ int main( int argc, char* argv[] ){
     cout << "Calculating amplitudes..." << endl;
     aVecs->allocateAmps( ampManager, true );
     
-    // include factor of 1.5 to be safe in case we miss peak
-    double maxInten = 1.5 * ampManager.calcIntensities( *aVecs );
+    // include factor of 1.5 to be safe in case we miss peak -- avoid
+    // intensity calculation of we are generating flat data
+    double maxInten = ( genFlat ? 1 : 1.5 * ampManager.calcIntensities( *aVecs ) );
     
     cout << "Processing events.." << endl;
     
