@@ -11,8 +11,6 @@ class ROOTDataWriter
 
 public:
 	
-	enum { kMaxFSParticles = 10 };
-	
 	ROOTDataWriter( const string& outFile );
 	~ROOTDataWriter();
 	
@@ -27,10 +25,10 @@ private:
 	int m_eventCounter;
     
 	int m_nPart;
-	float m_e[kMaxFSParticles];
-	float m_px[kMaxFSParticles];
-	float m_py[kMaxFSParticles];
-	float m_pz[kMaxFSParticles];
+	float m_e[Kinematics::kMaxParticles];
+	float m_px[Kinematics::kMaxParticles];
+	float m_py[Kinematics::kMaxParticles];
+	float m_pz[Kinematics::kMaxParticles];
 	
 	float m_eBeam;
 	float m_pxBeam;

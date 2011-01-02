@@ -48,7 +48,7 @@ ROOTDataWriter::writeEvent( const Kinematics& kin )
 	
 	m_nPart = particleList.size() - 2;
 	
-	assert( particleList.size() <= kMaxFSParticles );
+	assert( particleList.size() <= Kinematics::kMaxParticles );
 
   m_eBeam = particleList[0].t();
 	m_pxBeam = particleList[0].px();

@@ -2,6 +2,7 @@
 #define ROOTDATAREADER
 
 #include "IUAmpTools/DataReader.h"
+#include "IUAmpTools/Kinematics.h"
 
 #include "TString.h"
 #include "TFile.h"
@@ -15,29 +16,26 @@ class ROOTDataReader : public DataReader
 {
 	
 public:
-	
-	enum { kMaxFSParticles = 10 };
-	
+  
 	ROOTDataReader( const string& inFileName, 
-                  const string& inTreeName = "kin" );
+                 const string& inTreeName );
 	
-	Kinematics* getEvent();
-	void resetSource();
+	virtual Kinematics* getEvent();
+	virtual void resetSource();
 	
-	unsigned int numEvents() const;
-	int eventCounter() const { return m_eventCounter; }
+	virtual unsigned int numEvents() const;
 	
 private:
 	
 	TFile* m_inFile;
 	TTree* m_inTree;
-    int m_eventCounter;
+  unsigned int m_eventCounter;
 	
 	int m_nPart;
-	float m_e[kMaxFSParticles];
-	float m_px[kMaxFSParticles];
-	float m_py[kMaxFSParticles];
-	float m_pz[kMaxFSParticles];
+	float m_e[Kinematics::kMaxParticles];
+	float m_px[Kinematics::kMaxParticles];
+	float m_py[Kinematics::kMaxParticles];
+	float m_pz[Kinematics::kMaxParticles];
 	float m_eBeam;
 	float m_pxBeam;
 	float m_pyBeam;

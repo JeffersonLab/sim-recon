@@ -14,7 +14,7 @@ ROOTDataReader::ROOTDataReader( const string& inFileName,
                                const string& inTreeName ) :
 m_eventCounter( 0 )
 {
-
+  
 	TH1::AddDirectory( kFALSE );
 	
 	m_inFile = new TFile( inFileName.c_str() );
@@ -49,17 +49,18 @@ ROOTDataReader::resetSource()
 Kinematics*
 ROOTDataReader::getEvent()
 {
-  if( m_eventCounter < static_cast<int>( m_inTree->GetEntries() ) ){
+  if( m_eventCounter < static_cast< unsigned int >( m_inTree->GetEntries() ) ){
+    //  if( m_eventCounter < 10 ){
  		
 		m_inTree->GetEntry( m_eventCounter++ );
-		assert( m_nPart < kMaxFSParticles );
+		assert( m_nPart < Kinematics::kMaxParticles );
     
 		vector< HepLorentzVector > particleList;
 		
     particleList.
-      push_back( HepLorentzVector( m_pxBeam, m_pyBeam, m_pzBeam, m_eBeam ) );
+    push_back( HepLorentzVector( m_pxBeam, m_pyBeam, m_pzBeam, m_eBeam ) );
     particleList.
-      push_back( HepLorentzVector( m_pxRecoil, m_pyRecoil, m_pzRecoil, m_eRecoil ) );
+    push_back( HepLorentzVector( m_pxRecoil, m_pyRecoil, m_pzRecoil, m_eRecoil ) );
     
 		for( int i = 0; i < m_nPart; ++i ){
 			
@@ -77,5 +78,6 @@ ROOTDataReader::getEvent()
 unsigned int
 ROOTDataReader::numEvents() const
 {	
+  //  return 10;
   return static_cast< unsigned int >( m_inTree->GetEntries() );
 }
