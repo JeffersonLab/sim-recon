@@ -4,19 +4,33 @@ $lowMass = 0.7;
 $highMass = 2.0;
 $nBins = 65;
 
+$fitName = "threepi_fit";
+
 # put a limit on the number of data events to process
 # gen MC and acc MC smaples are not limited
-$maxEvts = 100000;
+$maxEvts = 1E9;
 
-$bin = "/Users/mashephe/iu_cvs/GlueXAmpExe";
-$workingDir = "/Users/mashephe/amptools/examples/threepi_example";
+# this directory can be adjusted if you want to do the fit elsewhere
+$workingDir = $ENV{ 'HALLD_HOME' }."/src/programs/AmplitudeAnalysis/Examples/threepi";
 
-$dataFile = "$workingDir/threepi_res_0pol.root";
-$accMCFile = "$workingDir/threepi_flat.root";
-$genMCFile = "$workingDir/threepi_flat.root";
-$cfgTempl = "$workingDir/threepi_unpol_TEMPLATE.cfg";
+# these files must exist in the working directory.  If you don't know how
+# to generate them or don't have them, see the documentation in gen_3pi
+# the Simulation area of the repository
+$dataFile = "$workingDir/threepi_data.root";
+$accMCFile = "$workingDir/threepi_acc.root";
+$genMCFile = "$workingDir/threepi_gen.root";
 
-$fitDir = "$workingDir/threepi_0pol_fit/";
+# this file sould be used for partially polarized or unpolarized beam fits
+#$cfgTempl = "$workingDir/threepi_unpol_TEMPLATE.cfg";
+
+# this file should be used when there is 100% beam polarization
+$cfgTempl = "$workingDir/threepi_pol_TEMPLATE.cfg";
+
+
+### things below here probably don't need to be modified
+
+# this is where the goodies for the fit will end eup
+$fitDir = "$workingDir/$fitName/";
 
 if( ! -d $fitDir ){
 
@@ -33,17 +47,17 @@ for( $i = 0; $i < $nBins; ++$i ){
 @dataParts = split /\//, $dataFile;
 $dataTag = pop @dataParts;
 $dataTag =~ s/\.root//;
-system( "$bin/split_mass $dataFile $dataTag $lowMass $highMass $nBins $maxEvts" );
+system( "split_mass $dataFile $dataTag $lowMass $highMass $nBins $maxEvts" );
 
 @accMCParts = split /\//, $accMCFile;
 $accMCTag = pop @accMCParts;
 $accMCTag =~ s/\.root//;
-system( "$bin/split_mass $accMCFile $accMCTag $lowMass $highMass $nBins" );
+system( "split_mass $accMCFile $accMCTag $lowMass $highMass $nBins" );
 
 @genMCParts = split /\//, $genMCFile;
 $genMCTag = pop @genMCParts;
 $genMCTag =~ s/\.root//;
-system( "$bin/split_mass $genMCFile $genMCTag $lowMass $highMass $nBins" );
+system( "split_mass $genMCFile $genMCTag $lowMass $highMass $nBins" );
 
 for( $i = 0; $i < $nBins; ++$i ){
 

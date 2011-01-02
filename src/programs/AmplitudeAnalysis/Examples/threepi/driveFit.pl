@@ -1,13 +1,16 @@
 #!/usr/bin/perl
 
+# be sure that these settings agree with what was used in the divideData script
 $nBins = 65;
-$fitName = "threepi_0pol_fit";
+$fitName = "threepi_fit";
 
-$workingDir = "/Users/mashephe/amptools/examples/threepi_example";
-$bin = "/Users/mashephe/iu_cvs/GlueXAmpExe";
+# this directory can be adjusted if you want to do the fit elsewhere
+$workingDir = $ENV{ 'HALLD_HOME' }."/src/programs/AmplitudeAnalysis/Examples/threepi";
+
+### things below here probably don't need to be modified
 
 $fitDir = "$workingDir/$fitName";
-$lastParams = "$workingDir/$fitName/par_seed.txt";
+$lastParams = "$fitDir/par_seed.txt";
 
 for( $i = 0; $i < $nBins; ++$i ){
 
@@ -53,7 +56,7 @@ for( $i = 0; $i < $nBins; ++$i ){
 
 	if( $nLine == 2 ){
 
-	  print PARINIT "initialize $amp cartesian $re $im fixedphase\n";
+	  print PARINIT "initialize $amp cartesian $re $im real\n";
 	}
 	else{
 
@@ -72,8 +75,8 @@ for( $i = 0; $i < $nBins; ++$i ){
   }
   close PARINIT;
 
-  print  "$bin/fit -c bin_$i.cfg\n";
-  system( "$bin/fit -c bin_$i.cfg" );
+  print  "fit -c bin_$i.cfg\n";
+  system( "fit -c bin_$i.cfg" );
 
   $lastParams = "$fitDir/bin_$i/fit.bin_$i.txt";
 
