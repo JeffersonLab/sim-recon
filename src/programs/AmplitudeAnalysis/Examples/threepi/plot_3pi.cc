@@ -21,7 +21,7 @@ int main( int argc, char* argv[] ){
   double lowMass = 0.7;
 	double highMass = 2.0;
 	enum{ kNumBins = 65 };
-  string fitDir( "threepi_0pol_fit" );
+  string fitDir( "threepi_fit" );
   
   // set default parameters
   
@@ -89,7 +89,7 @@ int main( int argc, char* argv[] ){
 		
     GlueXPlotGenerator plotGen( cfgInfo, parFile.str() );
     
-    bool yPol = true;
+    bool yPol = false;
     
     vector< string > rhoPiS;
 		rhoPiS.push_back( "Pi+Pi-Pi+::xpol::a1_rhopi_S" );
