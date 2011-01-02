@@ -1,0 +1,37 @@
+
+Instructions for generating and fitting some gamma p -> 3 pi n data.
+
+First generate a file that will serve as a data sample.  The configuration 
+file can be tailored to adjust the amplitudes that are included.
+
+gen_3pi -c ../../../Simulation/gen_3pi/gen_3pi.cfg -o threepi_data_gen.root -l 0.7 -u 2.0 -n 50000
+toy_detector threepi_data_gen.root threepi_data.root
+
+Also generate a sample of MC that will be used for normalization integrals.
+
+gen_3pi -c ../../../Simulation/gen_3pi/gen_3pi.cfg -o threepi_gen.root -f -l 0.7 -u 2.0 -n 200000
+toy_detector threepi_gen.root threepi_acc.root
+
+now split up the samples into a bunch of bins
+
+./divideData.pl
+
+We need a seed to start with so do the fit in bin 10 (any bin will do)
+
+cd threepi_fit/bin_10
+fit -c bin_10.cfg
+cp fit.bin_10.txt ../par_seed.txt
+cd ../..
+
+Now do the fits in all the bins
+
+./driveFit.pl
+
+Collate the fit results into a file we can pass to ROOT
+
+plot_3pi -o threepi_fit.txt
+
+And run a ROOT script to make the plots
+
+root drawWaves.C
+
