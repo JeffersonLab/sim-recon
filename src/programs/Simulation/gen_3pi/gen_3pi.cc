@@ -125,11 +125,11 @@ int main( int argc, char* argv[] ){
   // open output file
 	ROOTDataWriter rootOut( outname );
   
-  TH1F* mass = new TH1F( "M", "Resonance Mass", 180, 0.7, 2.5 );
-  TH1F* massW = new TH1F( "M_W", "Weighted Resonance Mass", 180, 0.7, 2.5 );
+  TH1F* mass = new TH1F( "M", "Resonance Mass", 180, lowMass, highMass );
+  TH1F* massW = new TH1F( "M_W", "Weighted Resonance Mass", 180, lowMass, highMass );
   massW->Sumw2();
   TH1F* intenW = new TH1F( "intenW", "True PDF / Gen. PDF", 1000, 0, 100 );
-  TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, .7, 2.5, 1000, 0, 10 );
+  TH2F* intenWVsM = new TH2F( "intenWVsM", "Ratio vs. M", 100, lowMass, highMass, 1000, 0, 10 );
   
   TH2F* dalitz = new TH2F( "dalitz", "Dalitz Plot", 100, 0, 3.0, 100, 0, 3.0 );
   
