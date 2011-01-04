@@ -11,7 +11,7 @@ gen_3pi -c ../../../Simulation/gen_3pi/gen_3pi.cfg -o threepi_data_gen.root -l 0
 toy_detector threepi_data_gen.root threepi_data.root
 gen_3pi -c ../../../Simulation/gen_3pi/gen_3pi.cfg -o threepi_gen.root -f -l 0.7 -u 2.0 -n 200000
 toy_detector threepi_gen.root threepi_acc.root
-./dividedata.pl
+./divideData.pl
 cd threepi_fit/bin_10
 fit -c bin_10.cfg
 cp fit.bin_10.txt ../par_seed.txt
