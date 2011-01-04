@@ -75,7 +75,6 @@ ThreePiAngles::calcAmplitude( GDouble** pKin ) const
   
   HepLorentzVector beam_res   = resRestBoost * beam;
   HepLorentzVector recoil_res = resRestBoost * recoil;
-  HepLorentzVector iso_res    = resRestBoost * isobar;
   HepLorentzVector p3_res     = resRestBoost * p3;
 
   Hep3Vector zRes = -recoil_res.vect().unit();
