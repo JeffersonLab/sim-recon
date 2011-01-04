@@ -1,4 +1,6 @@
 
+#include <stdlib.h>
+
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -34,14 +36,14 @@ m_iZ2( iZ2 )    // z component of isospin of final state particle 2
   assert( ( polBeam == 0 ) || ( polBeam == 1 ) );
   assert( ( polFrac >= 0 ) && ( polFrac <= 1 ) );
   assert( jX >= 0  );
-  assert( abs( parX ) == 1 );
-  assert( abs( iX )   <= 1 );
+  assert( abs( (double)parX ) == 1 );
+  assert( abs( (double)iX )   <= 1 );
   assert( lX <= jX );
   assert( jI >= 0  );
-  assert( abs( iI )  <= 1 );
-  assert( abs( iZ0 ) <= 1 );
-  assert( abs( iZ1 ) <= 1 );
-  assert( abs( iZ2 ) <= 1 );
+  assert( abs( (double)iI )  <= 1 );
+  assert( abs( (double)iZ0 ) <= 1 );
+  assert( abs( (double)iZ1 ) <= 1 );
+  assert( abs( (double)iZ2 ) <= 1 );
     
   registerParameter( m_polFrac );
   
