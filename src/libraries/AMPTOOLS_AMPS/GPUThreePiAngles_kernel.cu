@@ -55,8 +55,7 @@ GPUThreePiAngles_kernel( GPU_AMP_PROTO, int polBeam, GDouble polFrac, int jX,
 
   boostToRest( beam   , res );
   boostToRest( recoil , res );
-  boostToRest( iso    , res ); 
-  boostToRest( p1     , res );
+  boostToRest( p3     , res );
 
   // now beam, recoil, iso, and p1 are at rest in the resonance frame
 
@@ -75,9 +74,9 @@ GPUThreePiAngles_kernel( GPU_AMP_PROTO, int polBeam, GDouble polFrac, int jX,
   cross( xRes, zRes );
 
   // rewrite the isobar direction in this coordinate system
-  GDouble angRes[3] = { dot( &(iso[1]), xRes ), 
-                        dot( &(iso[1]), yRes ),
-                        dot( &(iso[1]), zRes )  };
+  GDouble angRes[3] = { dot( &(p3[1]), xRes ), 
+                        dot( &(p3[1]), yRes ),
+                        dot( &(p3[1]), zRes )  };
 
   // and record the angles
   GDouble cosThRes  = cosTheta( angRes );
