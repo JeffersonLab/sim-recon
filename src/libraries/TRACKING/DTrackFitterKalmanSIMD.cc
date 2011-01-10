@@ -57,7 +57,7 @@
 #define DE_PER_STEP_TIME_BASED 0.000025
 #define BFIELD_FRAC 0.001
 #define MIN_STEP_SIZE 0.05
-#define CDC_INTERNAL_STEP_SIZE 0.25
+#define CDC_INTERNAL_STEP_SIZE 0.5
 
 #define ELECTRON_MASS 0.000511 // GeV
 
@@ -261,11 +261,12 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 // Step sizes
 	 mStepSizeS=1.0;
 	 mStepSizeZ=1.0;
+	 /*
 	 if (fit_type==kTimeBased){
 	   mStepSizeS=0.5;
 	   mStepSizeZ=0.5;
 	 }
-
+	 */
 }
 
 //-----------------
@@ -762,7 +763,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   // Determine the step size based on energy loss 
   double step=mStepSizeZ;
   if (fabs(dEdx)>EPS){
-    step=(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+    //step=(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+    step=DE_PER_STEP_WIRE_BASED
       /fabs(dEdx)*dz_ds;
   }  
   if (fabs(dBzdz)>EPS){
@@ -1208,7 +1210,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   // Determine the step size based on energy loss 
   step=mStepSizeZ;
   if (fabs(dEdx)>EPS){
-    step=(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+    //step=(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+    step=DE_PER_STEP_WIRE_BASED
       /fabs(dEdx)*dz_ds;
   } 
   if (fabs(dBzdz)>EPS){
