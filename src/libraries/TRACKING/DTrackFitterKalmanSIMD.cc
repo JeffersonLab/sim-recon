@@ -2178,7 +2178,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?1:1);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
 
@@ -2390,7 +2390,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?2:1);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
       
@@ -2591,7 +2591,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // iteration 
     double anneal_factor=1.;
     double chisq_iter=chisq;
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){  
+    for (int iter2=0;iter2<(fit_type==kTimeBased?2:1);iter2++){  
       // Break out of loop if p is too small
       double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
       if (fabs(q_over_p)>Q_OVER_P_MAX) break;
@@ -3275,12 +3275,13 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	Cc=Cc.SubSym(K*(H*Cc));
 	
 	// calculate the residual
-	dm*=1.-H*K;
+	double res_scale=1.-H*K;
+	dm*=res_scale;
 	//dm=measurement-prediction;
 	my_cdchits[cdc_index]->residual=dm;
 	
 	// Update chi2 for this hit
-	var=V*(1.-H*K);
+	var=V*(res_scale);
 	chisq+=dm*dm/var;      
 
 	pulls.push_back(pull_t(dm, sqrt(var), central_traj[k].s));
@@ -4139,11 +4140,12 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	
 	// Residual
 	//double res=dm-d;
-	double res=(dm-d)*(1.-H*K);
+	double res_scale=1.-H*K;
+	double res=(dm-d)*(res_scale);
 	my_cdchits[cdc_index]->residual=res;
 
 	// Update chi2 for this segment
-	double err2 = V-H*(C*H_T);
+	double err2 = V*res_scale;
 	chisq+=anneal*res*res/err2;
 	
 	// Use the track parameters to estimate t0 for forward-going tracks
