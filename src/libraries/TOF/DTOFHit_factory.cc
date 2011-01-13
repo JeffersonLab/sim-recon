@@ -10,6 +10,7 @@ using namespace std;
 #include "DTOFHit_factory.h"
 #include "DTOFHitRaw.h"
 #include "DTOFHit.h"
+#include <math.h>
 
 
 //------------------
@@ -32,7 +33,8 @@ jerror_t DTOFHit_factory::brun(JEventLoop *loop, int runnumber)
 
   C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
   HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
-
+  E_THRESHOLD    =    tofparms["TOF_E_THRESHOLD"];
+  ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"];
   return NOERROR;
 
 }
@@ -56,13 +58,46 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
     hit->id          = mcresponse->id;
     hit->orientation = mcresponse->plane;
     hit->bar         = mcresponse->bar;
-    hit->t_north     = mcresponse->t_north;
-    hit->E_north     = mcresponse->dE_north;
-    hit->t_south     = mcresponse->t_south;
-    hit->E_south     = mcresponse->dE_south;
 
-    hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/C_EFFECTIVE;
-    hit->timediff = (hit->t_south - hit->t_north)/2.*C_EFFECTIVE;
+    int check = -1;
+    if (mcresponse->dE_north > E_THRESHOLD) {
+      hit->t_north     = mcresponse->t_north;
+      hit->E_north     = mcresponse->dE_north;
+      check++;
+    } else {
+      hit->t_north  = -999.;
+      hit->E_north  = -999.;
+    }
+    if (mcresponse->dE_south > E_THRESHOLD) {
+      hit->t_south     = mcresponse->t_south;
+      hit->E_south     = mcresponse->dE_south;
+      check++;
+    } else {
+      hit->t_south     = -999.;
+      hit->E_south     = -999.;
+    }
+    
+    if (check > 0 ) {
+      hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/C_EFFECTIVE;
+      hit->timediff = (hit->t_south - hit->t_north)/2.;
+      float pos = hit->timediff * C_EFFECTIVE;  
+      hit->pos = pos;
+      hit->dpos      = 2.;  // manually/artificially set to 2cm. 
+  
+    // mean energy deposition at the location of the hit position
+      // devide by two to be comparable with single PMT hits
+      float en = hit->E_north  * exp((HALFPADDLE-pos)/ATTEN_LENGTH) ;
+      float es = hit->E_south  * exp((HALFPADDLE+pos)/ATTEN_LENGTH) ;
+      float emean = (en+es)/2.; 
+      hit->dE = emean;
+ 
+    } else {
+      hit->meantime = -999.;
+      hit->timediff = -999.;
+      hit->pos = -999.;
+      hit->dpos = -999.;
+      hit->dE = -999.;
+   }
 
     _data.push_back(hit);
 

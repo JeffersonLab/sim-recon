@@ -28,6 +28,8 @@ class DTOFHit_factory:public JFactory<DTOFHit>{
   string TOF_POINT_TAG;
   double C_EFFECTIVE;
   double HALFPADDLE;
+  double E_THRESHOLD;
+  double ATTEN_LENGTH;
 
  protected:
   //jerror_t init(void);					///< Called once at program start.
