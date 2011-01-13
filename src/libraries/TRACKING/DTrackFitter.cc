@@ -12,6 +12,10 @@
 #include "HDGEOMETRY/DRootGeom.h"
 using namespace jana;
 
+// hi-res timers for profiling
+#include <prof_time.h>
+static map<string, prof_time::time_diffs> prof_times;
+
 #define TCUT 100.e-6 // energy cut for bethe-bloch 
 
 extern bool FDCSortByZincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const &hit2);
@@ -56,6 +60,10 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 			  radlen);
 	mLnIGas=rho_Z_over_A_LnI/mRhoZoverAGas;
 	mKRhoZoverAGas=0.1535*mRhoZoverAGas;
+	
+	// Use a special entry to hold how many tracks we fit
+	prof_time::time_diffs tdiff_zero;
+	prof_times["Ntracks"] = tdiff_zero;
 }
 
 //-------------------
@@ -70,6 +78,8 @@ DTrackFitter::~DTrackFitter()
 //-------------------
 void DTrackFitter::Reset(void)
 {
+	prof_time start_time;
+	
 	cdchits.clear();
 	fdchits.clear();
 	fit_type = kWireBased;
@@ -78,6 +88,8 @@ void DTrackFitter::Reset(void)
 	cdchits_used_in_fit.clear();
 	fdchits_used_in_fit.clear();
 	fit_status = kFitNotDone;
+	
+	start_time.TimeDiffNow(prof_times, "Reset");
 }
 
 //-------------------
@@ -121,13 +133,19 @@ void DTrackFitter::AddHits(vector<const DFDCPseudo*> fdchits)
 //-------------------
 DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0)
 {
+	prof_time start_time;
+
 	input_params.setPosition(pos);
 	input_params.setMomentum(mom);
 	input_params.setCharge(q);
 	input_params.setMass(mass);
 	input_params.setT0(t0,0.,SYS_NULL);
-	
-	return FitTrack();
+
+	DTrackFitter::fit_status_t status = FitTrack();
+
+	start_time.TimeDiffNow(prof_times, "Fit Track 1");
+
+	return status;
 }
 
 //-------------------
@@ -135,9 +153,14 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 //-------------------
 DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting_params)
 {
+	prof_time start_time;
+
 	SetInputParameters(starting_params);
+	DTrackFitter::fit_status_t status = FitTrack();
+
+	start_time.TimeDiffNow(prof_times, "Fit Track 2");
 	
-	return FitTrack();
+	return status;
 }
 
 //-------------------
@@ -156,6 +179,8 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 	/// The JEventLoop given will be used to get the hits (CDC
 	/// and FDC) and default DTrackHitSelector to use for the
 	/// fit.
+	prof_times["Ntracks"].real += 1.0; // keep count of the number of tracks we fit
+	prof_time start_time;
 
 	// Reset fitter saving the type of fit we're doing
 	fit_type_t save_type = fit_type;
@@ -225,8 +250,14 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 	//fit_params.setMass(starting_params.mass());
 	fit_params.setMass(mass);
 
+	start_time.TimeDiffNow(prof_times, "Find Hits");
+
 	// Do the fit
-	return fit_status = FitTrack(pos, mom,q, mass,t0);
+	fit_status = FitTrack(pos, mom,q, mass,t0);
+
+	start_time.TimeDiffNow(prof_times, "Find Hits and Fit Track");
+	
+	return fit_status;
 }
 
 //------------------
@@ -681,4 +712,12 @@ jerror_t DTrackFitter::GetdEdx(const DReferenceTrajectory *rt,
   sort(dEdx_list.begin(),dEdx_list.end(),DTrackFitter_dedx_cmp2);  
  
   return NOERROR;
+}
+
+//------------------
+// GetProfilingTimes
+//------------------
+void DTrackFitter::GetProfilingTimes(map<string, prof_time::time_diffs> &my_prof_times) const
+{
+	my_prof_times = prof_times;
 }

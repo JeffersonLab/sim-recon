@@ -12,6 +12,7 @@
 #include <JANA/JFactory.h>
 #include <JANA/JEventLoop.h>
 
+#include <prof_time.h>
 #include <DANA/DApplication.h>
 #include <PID/DKinematicData.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
@@ -151,7 +152,8 @@ class DTrackFitter:public jana::JObject{
 		double GetdEdxVariance(double p,double mass_hyp,double dx,
 				       DVector3 pos);
 
-
+		void GetProfilingTimes(std::map<std::string, prof_time::time_diffs> &my_prof_times) const;
+		
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
 		virtual fit_status_t FitTrack(void)=0;
@@ -187,6 +189,7 @@ class DTrackFitter:public jana::JObject{
 		
 		// gas material properties
 		double mKRhoZoverAGas,mRhoZoverAGas,mLnIGas;
+		
 };
 
 #endif // _DTrackFitter_
