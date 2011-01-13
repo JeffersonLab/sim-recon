@@ -203,7 +203,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int i=0;i<tracks.size();i++){
     const DTrackWireBased *track = tracks[i];
   
-    if (track->t0()>-999.){
+    if (!isnan(track->t0()) && track->t0()>-999.){
       mStartTime+=track->t0();
       //mStartTime+=(track->position().z()-65.)/SPEED_OF_LIGHT;
       num+=1.;

@@ -16,6 +16,8 @@
 #include <iomanip>
 #include <math.h>
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
+
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 #define EPS 3.0e-8
 #define BIG 1.0e8
@@ -284,7 +286,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   if (my_fdchits.size()+my_cdchits.size()<6) return kFitFailed;
   
   // start time and variance
-  mT0=-999.;
+  mT0=NaN;
   mVarT0=0.09;
   if (fit_type==kTimeBased){
     mT0=input_params.t0();

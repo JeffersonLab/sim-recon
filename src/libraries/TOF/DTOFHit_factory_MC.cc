@@ -11,6 +11,8 @@
 #include <math.h>
 using namespace std;
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
+
 //------------------
 // evnt
 //------------------
@@ -80,11 +82,11 @@ jerror_t DTOFHit_factory_MC::evnt(JEventLoop *eventLoop, int eventnumber)
       hit->E_north = en;
       hit->t_south = ts;
       hit->E_south = es;
-      hit->meantime = -999.;
-      hit->timediff = -999.;
-      hit->pos      = -999.;
-      hit->dpos     = -999.;
-      hit->dE       = -999.;	
+      hit->meantime = NaN;
+      hit->timediff = NaN;
+      hit->pos      = NaN;
+      hit->dpos     = NaN;
+      hit->dE       = NaN;	
     }
 
 
