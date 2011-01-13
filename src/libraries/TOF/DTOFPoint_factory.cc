@@ -56,8 +56,13 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
     const DTOFHit *hit=hits[j];
 
     // zero is vertical plane, one is horizontal plane
-    if (hit->orientation) uhits.push_back(hit);
-    else vhits.push_back(hit);
+    if (hit->E_north>0 ||  hit->E_south>0) {
+      if (hit->orientation) {
+	uhits.push_back(hit);
+      } else { 
+	vhits.push_back(hit);
+      }
+    }
   }
 
   // Match hits in the two planes by bar number and position as determined from
@@ -67,7 +72,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 
 
   for (unsigned int i=0;i<uhits.size();i++){
-    double ux    = uhits[i]->timediff;
+    double ux    = uhits[i]->timediff * VELOCITY ;
     double utof  = uhits[i]->meantime;
     double dy    = uhits[i]->bar > 20 ? BARWIDTH : -BARWIDTH;
     double uy    = BARWIDTH*(uhits[i]->bar-20.5)+dy;
@@ -106,7 +111,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
     }
 
     for (unsigned int j=0;j<vhits.size();j++){
-      double vy    = vhits[j]->timediff;
+      double vy    = vhits[j]->timediff * VELOCITY;
       double vtof  = vhits[j]->meantime;
       double dx    = vhits[j]->bar > 20 ?  BARWIDTH:-BARWIDTH;
       double vx    = BARWIDTH*(vhits[j]->bar-20.5)+dx;
@@ -144,6 +149,9 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
       
       // If we have a match in both position and time, output the point with 
       // the combined 2-layer data
+
+      //cout<<fabs(ux-vx)<<"  "<<fabs(uy-vy)<<"  "<<fabs(utof-vtof)<<endl;
+
       if (fabs(ux-vx)<x_cut && fabs(uy-vy)<y_cut && fabs(utof-vtof)<t_cut){
 	 DTOFPoint *point = new DTOFPoint;
 
