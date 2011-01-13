@@ -180,12 +180,14 @@ void hitForwardTOF (float xin[4], float xout[4],
     // center will have time "t" at both PMTs
     // the speed of signal travel is C_EFFECTIVE
     // propagte time to the end of the bar
+    // column = 0 is a full paddle column ==1,2 is a half paddle
     float tnorth  = (column == 2) ? 0 : t + dxnorth/C_EFFECTIVE;
     float tsouth = (column == 1) ? 0 : t + dxsouth/C_EFFECTIVE;
-    
+        
     // calculate energy seen by PM for this track step using attenuation factor
-     float dEnorth  = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
+    float dEnorth  = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
      float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
+    
     // do not propagate energy
     //float dEnorth  = (column == 2) ? 0 : dEsum ;
     //float dEsouth = (column == 1) ? 0 : dEsum ;
@@ -265,8 +267,8 @@ void hitForwardTOF (float xin[4], float xout[4],
       else if (nhit < MAX_HITS){         /* create new hit */
 	Hits->in[nhit].tNorth = tnorth;
 	Hits->in[nhit].dENorth = dEnorth;
-	Hits->in[nhit].tSouth = tnorth;
-	Hits->in[nhit].dESouth = dEnorth;
+	Hits->in[nhit].tSouth = tsouth;
+	Hits->in[nhit].dESouth = dEsouth;
 	Hits->in[nhit].dist = dist;
 	Hits->in[nhit].x = x[0];
 	Hits->in[nhit].y = x[1];
