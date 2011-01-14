@@ -28,6 +28,7 @@ int QUIT = 0;
 
 extern bool ADD_NOISE;
 extern bool SMEAR_HITS;
+extern bool SMEAR_BCAL;
 extern bool CDC_USE_PARAMETERIZED_SIGMA;
 extern bool FDC_USE_PARAMETERIZED_SIGMA;
 extern double CDC_TDRIFT_SIGMA;
@@ -193,13 +194,14 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
       case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
       case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
-      case 'e': FDC_ELOSS_OFF = true;	break;
-      case 'E': CDC_PEDESTAL_SIGMA = atof(&ptr[2])*k_keV; break;
+      case 'e': FDC_ELOSS_OFF = true;									break;
+      case 'E': CDC_PEDESTAL_SIGMA = atof(&ptr[2])*k_keV; 		break;
       case 'd': FDC_HIT_DROP_FRACTION=atof(&ptr[2]);				break;
       case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);				break;
       case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;		break;
-      case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; break;
-      case 'S': START_SIGMA= atof(&ptr[2])*k_psec; break;
+      case 'B': SMEAR_BCAL = false;										break;
+      case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; 					break;
+      case 'S': START_SIGMA= atof(&ptr[2])*k_psec; 				break;
       }
     }else{
       INFILENAME = argv[i];
@@ -228,6 +230,9 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	char str[256];
 	sprintf(str, "%s_%ssmeared.hddm", path_stripped, ADD_NOISE ? "n":"");
 	OUTFILENAME = strdup(str);
+	
+	cout<<"BCAL values will "<< (SMEAR_BCAL ? "":"not") <<" be smeared"<<endl;
+	cout<<"BCAL values will "<< (SMEAR_BCAL ? "":"not") <<" be added"<<endl;
 }
 
 
@@ -248,7 +253,7 @@ void Usage(void)
 	cout<<endl;
 	cout<<"  options:"<<endl;
 	cout<<"    -N       Add random background hits to CDC and FDC (default is not to add)"<<endl;
-	cout<<"    -s       Don't smear real hits (default is to smear)"<<endl;
+	cout<<"    -s       Don't smear real hits (see -B for BCAL, default is to smear)"<<endl;
 	cout<<"    -u#      Sigma CDC anode drift time in ns (def:"<<CDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
 	cout<<"             (NOTE: this is only used if -y is also specified!)"<<endl;
 	cout<<"    -y       Do NOT apply drift distance dependence error to"<<endl;
@@ -265,6 +270,7 @@ void Usage(void)
 	cout<<"             default is to drop none."<<endl;
 	cout<<"    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:"<<FCAL_PHOT_STAT_COEF<<")"<<endl;
 	cout<<"    -b#      FCAL single block threshold in MeV (def:"<<FCAL_BLOCK_THRESHOLD/k_MeV<<")"<<endl;
+	cout<<"    -B       Don't smear or add dark noise hits to BCAL (def. smear and add)"<<endl;
 	cout<<"    -f#      TOF sigma in psec (def: "<< TOF_SIGMA/k_psec<<")"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;

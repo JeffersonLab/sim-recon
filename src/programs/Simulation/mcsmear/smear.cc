@@ -71,6 +71,9 @@ bool ADD_NOISE = false;
 // Do we or do we not smear real hits
 bool SMEAR_HITS = true;
 
+// Flag used specifically for BCAL
+bool SMEAR_BCAL = true;
+
 // If the following flag is true, then include the drift-distance
 // dependency on the error in the CDC position. Otherwise, use a
 // flat distribution given by the CDC_TDRIFT_SIGMA below.
@@ -227,7 +230,7 @@ void Smear(s_HDDM_t *hddm_s)
 	if(ADD_NOISE)AddNoiseHitsFDC(hddm_s);
 	if(SMEAR_HITS)SmearFCAL(hddm_s);
 	if(SMEAR_HITS)SmearCCAL(hddm_s);
-	if(SMEAR_HITS)SmearBCAL(hddm_s);
+	if(SMEAR_BCAL)SmearBCAL(hddm_s);
 	if(SMEAR_HITS)SmearTOF(hddm_s);
 	if(SMEAR_HITS)SmearSTC(hddm_s);
 	if(SMEAR_HITS)SmearCherenkov(hddm_s);
