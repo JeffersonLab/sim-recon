@@ -41,6 +41,9 @@
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
+
+#define NUM_SIGMA 3.5
+
 #define CDC_VARIANCE 0.000225
 #define FDC_CATHODE_VARIANCE 0.000225
 #define FDC_ANODE_VARIANCE 0.0004
@@ -1340,20 +1343,34 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
       forward_traj.pop_front();
     }
   }
+
   my_id=my_fdchits.size();
   for (unsigned int m=0;m<forward_traj.size();m++){
-    if (my_id>0 && fabs(forward_traj[m].pos.z()-my_fdchits[my_id-1]->z)<EPS){
-      forward_traj[m].h_id=my_id;
-      // Lorentz correction slope parameters
-      double tanr=0.,tanz=0.;
-      lorentz_def->GetLorentzCorrectionParameters(forward_traj[m].pos.x(),
-						  forward_traj[m].pos.y(),
-						  forward_traj[m].pos.z(),
-						  tanz,tanr);
-      my_fdchits[my_id-1]->nr=tanr;
-      my_fdchits[my_id-1]->nz=tanz;
-
-      my_id--;
+    if (my_id>0){
+      unsigned int hit_id=my_id-1;
+      if (fabs(forward_traj[m].pos.z()-my_fdchits[hit_id]->z)<EPS){
+	forward_traj[m].h_id=my_id;
+	// Lorentz correction slope parameters
+	double tanr=0.,tanz=0.;
+	lorentz_def->GetLorentzCorrectionParameters(forward_traj[m].pos.x(),
+						    forward_traj[m].pos.y(),
+						    forward_traj[m].pos.z(),
+						    tanz,tanr);
+	my_fdchits[hit_id]->nr=tanr;
+	my_fdchits[hit_id]->nz=tanz;
+	
+	my_id--;
+	
+	unsigned int num=1;
+	while (hit_id>0 
+	       && fabs(my_fdchits[hit_id]->z-my_fdchits[hit_id-1]->z)<EPS){
+	  hit_id=my_id-1;
+	  num++;
+	  my_id--;
+	}
+	forward_traj[m].num_hits=num;
+      }
+      
     }
   }
 
@@ -2128,6 +2145,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
   // Initialize path length variable
   //  len=0;
+  // number of degrees of freedom
+  unsigned int my_ndf=0;
 
   // deal with hits in FDC
   if (my_fdchits.size()>0){   
@@ -2215,7 +2234,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  
 	  C=C0;	  
 	  // perform the kalman filter 
-	  error=KalmanForward(anneal_factor,S,C,chisq);
+	  error=KalmanForward(anneal_factor,S,C,chisq,my_ndf);
 	  if (error!=NOERROR) break;
 
 	  // Check the charge relative to the hypothesis for protons
@@ -2270,6 +2289,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	   || chisq_forward-chisq_iter>0.)) break; 
       }
       chisq_iter=chisq_forward;
+      ndf=my_ndf;
    
       C=Clast;
       S=Slast;
@@ -2323,7 +2343,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     // total chisq and ndf
     chisq_=chisq_iter;
-    ndf=2*my_fdchits.size()+my_cdchits.size()-5;
+    //ndf=2*my_fdchits.size()+my_cdchits.size()-5;
         
     if (DEBUG_HISTS && fit_type==kTimeBased){
       TH2F *fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
@@ -3433,7 +3453,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor, 
 					       DMatrix5x1 &S, 
 					       DMatrix5x5 &C,
-					       double &chisq){
+					       double &chisq, 
+					       unsigned int &numdof){
   DMatrix2x1 Mdiff; // difference between measurement and prediction 
   DMatrix2x5 H;  // Track projection matrix
   DMatrix5x2 H_T; // Transpose of track projection matrix 
@@ -3458,6 +3479,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   // Initialize chi squared
   chisq=0;
   pulls.clear();
+
+  // Initialize number of degrees of freedom
+  numdof=0;
 
   // Variables for estimating t0 from tracking
   mInvVarT0=mT0wires=0.;
@@ -3503,9 +3527,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
     if (num_fdc_hits>0){
       if (forward_traj[k].h_id>0){
 	unsigned int id=forward_traj[k].h_id-1;
-	
-	//printf("z %f\n",forward_traj[k].pos.z());
-      
+	      
 	double cosa=my_fdchits[id]->cosa;
 	double sina=my_fdchits[id]->sina;
 	double u=my_fdchits[id]->uwire;
@@ -3520,24 +3542,26 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	double alpha=atan(tu);
 	double cosalpha=cos(alpha);
 	double sinalpha=sin(alpha);
+	// (signed) distance of closest approach to wire
+	double doca=du*cosalpha;
 	// Correction for lorentz effect
 	double nz=my_fdchits[id]->nz;
 	double nr=my_fdchits[id]->nr;
 	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
 	
 	// variance for coordinate along the wire
-	V(1,1)=anneal_factor*fdc_y_variance(alpha,du*alpha);
+	V(1,1)=anneal_factor*fdc_y_variance(alpha,doca);
 	
 	// Difference between measurement and projection
-	Mdiff(1)=v-(y*cosa+x*sina+du*cosalpha*nz_sinalpha_plus_nr_cosalpha);
+	Mdiff(1)=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
 	if (fit_type==kWireBased){
-	  Mdiff(0)=-du*cosalpha;
+	  Mdiff(0)=-doca;
 	}
 	else{
 	  // Compute drift distance
 	  double drift_time=my_fdchits[id]->t-mT0-forward_traj[k].t;
 	  double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
-	  Mdiff(0)=drift-du*cosalpha;
+	  Mdiff(0)=drift-doca;
 	  
 	  // Variance in drift distance
 	  V(0,0)=anneal_factor*fdc_drift_variance(drift);
@@ -3565,70 +3589,85 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	H(1,state_tx)=H_T(state_tx,1)=cosa*temp;
 	H(1,state_ty)=H_T(state_ty,1)=-sina*temp;
 	
-	// Compute Kalman gain matrix
-	K=C*H_T*(V+H*(C*H_T)).Invert();
+        InvV=(V+H*(C*H_T)).Invert();
 	
-      // Update the state vector 
-	S+=K*Mdiff;
+	double chi2_hit=Mdiff(0)*Mdiff(0)*InvV(0,0)
+	  +2.*Mdiff(0)*Mdiff(1)*InvV(0,1)+Mdiff(1)*Mdiff(1)*InvV(1,1);
+	if (forward_traj[k].num_hits>1){
+	  for (unsigned int m=1;m<forward_traj[k].num_hits;m++){
+	    
+	  }
+	}
+	else{
+	  // Compute Kalman gain matrix
+	  K=C*H_T*InvV;
+	  
+	  // Update the state vector 
+	  S+=K*Mdiff;
+	  
+	  //.      printf("z %f Diff\n",forward_traj[k].pos.z());
+	  //Mdiff.Print();
+	  
+	  // Update state vector covariance matrix
+	  //C=C-K*(H*C);    
+	  C=C.SubSym(K*(H*C));
+	  
+	  // Filtered residual and covariance of filtered residual
+	  R=Mdiff-H*K*Mdiff;   
+	  RC=V-H*(C*H_T);
+	
+	  //my_fdchits[id]->xres=R(0);
+	  //my_fdchits[id]->yres=R(1);
+	  
+	  // Update chi2 for this segment
+	  chisq+=RC.Chi2(R);
 
-	//.      printf("z %f Diff\n",forward_traj[k].pos.z());
-	//Mdiff.Print();
-	
-	// Update state vector covariance matrix
-	//C=C-K*(H*C);    
-	C=C.SubSym(K*(H*C));
-      
-	// Filtered residual and covariance of filtered residual
-	R=Mdiff-H*K*Mdiff;   
-	RC=V-H*(C*H_T);
-	
-	//my_fdchits[id]->xres=R(0);
-	//my_fdchits[id]->yres=R(1);
-      
-	// Update chi2 for this segment
-	chisq+=RC.Chi2(R);
-	
-	pulls.push_back(pull_t(R(0), sqrt(fabs(RC(0,0)/anneal_factor)), forward_traj[k].s));
-	pulls.push_back(pull_t(R(1), sqrt(fabs(RC(1,1)/anneal_factor)), forward_traj[k].s));
-	
-	// Estimate t0
-	if (id<my_fdchits.size()-1){
-	  du=S(state_x)*cosa-S(state_y)*sina-u;
-	  // First estimate t0 using the distance along the wire
-	  double tdiff=my_fdchits[id]->t-forward_traj[k].t;
-	  //double d=(M(1)-S(state_y)*cosa-S(state_x)*sina)
-	  //  /nz_sinalpha_plus_nr_cosalpha;
-	  //double t0=tdiff-fabs(d)/DRIFT_SPEED;
-	  double sina2=sina*sina;
-	  double cosa2=cosa*cosa;
-	  double twosinacosa=2.*sina*cosa;
-	  double speed2=DRIFT_SPEED*DRIFT_SPEED;
-	  alpha=atan(S(state_tx)*cosa-S(state_ty)*sina);
-	  cosalpha=cos(alpha);
-	  double d=fabs(du*cosalpha);
-	  double var_drift=fdc_drift_variance(d);
-	  //double var_t0=(var_drift+(V(1,1)+C(state_y,state_y)*cosa2
-	  //			  +C(state_x,state_x)*sina2
-	  //			  +C(state_x,state_y)*twosinacosa)
-	  //	       /(nz_sinalpha_plus_nr_cosalpha
-	  //		 *nz_sinalpha_plus_nr_cosalpha))/speed2;
-	  //mT0wires+=t0/var_t0;
-	  //mInvVarT0+=1./var_t0;
+	  // update number of degrees of freedom
+	  numdof+=2;
+
 	  
-	  // estimate t0 from distance away from wire	
-	  double one_plus_alpha2=1.+alpha*alpha;
-	  double t0=tdiff-d/DRIFT_SPEED;
-	  double var_t0=(var_drift+(C(state_x,state_x)*cosa2+C(state_y,state_y)*sina2
-				    -twosinacosa*C(state_x,state_y))*cosalpha*cosalpha
-			 +du*du*sinalpha*sinalpha*(cosa2*C(state_tx,state_tx)
+	  pulls.push_back(pull_t(R(0), sqrt(fabs(RC(0,0)/anneal_factor)), forward_traj[k].s));
+	  pulls.push_back(pull_t(R(1), sqrt(fabs(RC(1,1)/anneal_factor)), forward_traj[k].s));
+	
+	  // Estimate t0
+	  if (id<my_fdchits.size()-1){
+	    du=S(state_x)*cosa-S(state_y)*sina-u;
+	    // First estimate t0 using the distance along the wire
+	    double tdiff=my_fdchits[id]->t-forward_traj[k].t;
+	    //double d=(M(1)-S(state_y)*cosa-S(state_x)*sina)
+	    //  /nz_sinalpha_plus_nr_cosalpha;
+	    //double t0=tdiff-fabs(d)/DRIFT_SPEED;
+	    double sina2=sina*sina;
+	    double cosa2=cosa*cosa;
+	    double twosinacosa=2.*sina*cosa;
+	    double speed2=DRIFT_SPEED*DRIFT_SPEED;
+	    alpha=atan(S(state_tx)*cosa-S(state_ty)*sina);
+	    cosalpha=cos(alpha);
+	    double d=fabs(du*cosalpha);
+	    double var_drift=fdc_drift_variance(d);
+	    //double var_t0=(var_drift+(V(1,1)+C(state_y,state_y)*cosa2
+	    //			  +C(state_x,state_x)*sina2
+	    //			  +C(state_x,state_y)*twosinacosa)
+	    //	       /(nz_sinalpha_plus_nr_cosalpha
+	    //		 *nz_sinalpha_plus_nr_cosalpha))/speed2;
+	    //mT0wires+=t0/var_t0;
+	    //mInvVarT0+=1./var_t0;
+	    
+	    // estimate t0 from distance away from wire	
+	    double one_plus_alpha2=1.+alpha*alpha;
+	    double t0=tdiff-d/DRIFT_SPEED;
+	    double var_t0=(var_drift+(C(state_x,state_x)*cosa2+C(state_y,state_y)*sina2
+				      -twosinacosa*C(state_x,state_y))*cosalpha*cosalpha
+			   +du*du*sinalpha*sinalpha*(cosa2*C(state_tx,state_tx)
 						   +sina2*C(state_ty,state_ty)
-						   -twosinacosa*C(state_tx,state_ty))
-			 /(one_plus_alpha2*one_plus_alpha2))/speed2;
-	  mT0wires+=t0/var_t0;
-	  mInvVarT0+=1./var_t0;
-	  
-	
+						     -twosinacosa*C(state_tx,state_ty))
+			   /(one_plus_alpha2*one_plus_alpha2))/speed2;
+	    mT0wires+=t0/var_t0;
+	    mInvVarT0+=1./var_t0;
+	    
+	    
 	  //printf("id %d fdc myvar %f cumulative %f \n",id,var_t0,1./mInvVarT0);
+	  }
 	}
 	num_fdc_hits--;
       }
@@ -3815,6 +3854,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  double err2 = Vc-Hc*(C*Hc_T);
 	  chisq+=anneal_factor*res*res/err2;
 
+	  // update number of degrees of freedom
+	  numdof++;
+
 	  pulls.push_back(pull_t(res, sqrt(fabs(err2/anneal_factor)), forward_traj[k].s));
 
 	  //Use the track parameters to estimate t0
@@ -3880,6 +3922,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   if (chisq<EPS) return UNRECOVERABLE_ERROR;
 
   chisq*=anneal_factor;
+  
+  // Final mumber of degrees of freedom
+  numdof-=5;
 
   // t0 estimate
   if (mInvVarT0>0) mT0wires/=mInvVarT0;

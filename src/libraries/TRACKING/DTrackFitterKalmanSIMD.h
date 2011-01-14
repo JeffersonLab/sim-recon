@@ -33,6 +33,7 @@ typedef struct{
 
 typedef struct{
   unsigned int h_id;
+  unsigned int num_hits;
   DVector3 pos;
   DMatrix5x1 S,Skk;
   DMatrix5x5 J,JT,Q,Ckk;
@@ -84,7 +85,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(void);
   jerror_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
-			 double &chisq);
+			 double &chisq,unsigned int &numdof);
   jerror_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			    double &chisq);
   jerror_t KalmanCentral(double anneal_factor,DMatrix5x1 &S,DMatrix5x5 &C,
