@@ -65,6 +65,12 @@ class DMatrix2x2{
 		       -one_over_det*mA[1][0],one_over_det*mA[0][0]);
 
   }
+  
+  // Compute the determinant
+  double Determinant(){
+    return mA[0][0]*mA[1][1]-mA[0][1]*mA[1][0];
+  }
+
 
   //Compute the chi2 contribution for a pair of hits with residual R and covariance "this"
   double Chi2(const DMatrix2x1 &R) const{
@@ -172,7 +178,12 @@ class DMatrix2x2{
       return DMatrix2x2( _mm_mul_pd(scale,_mm_setr_pd(mA[1].d[1],-mA[0].d[1])),
 		      _mm_mul_pd(scale,_mm_setr_pd(-mA[1].d[0],mA[0].d[0])));
 
-    }
+    } 
+    // Compute the determinant
+    double Determinant(){
+    return mA[0].d[0]*mA[1].d[1]-mA[0].d[1]*mA[1].d[0];
+  }
+
    
     //Compute the chi2 contribution for a pair of hits with residual R and covariance "this"
     double Chi2(const DMatrix2x1 &R) const{
