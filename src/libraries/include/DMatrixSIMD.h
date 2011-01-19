@@ -139,6 +139,12 @@ inline DMatrix2x4 operator*(const DMatrix2x2 &m1,const DMatrix2x4 &m2){
 
 #ifndef USE_SIMD
 
+// Find the tranpose of a 5x2 matrix
+inline DMatrix2x5 Transpose(const DMatrix5x2 &M){
+  return DMatrix2x5(M(0,0),M(1,0),M(2,0),M(3,0),M(4,0),
+		    M(0,1),M(1,1),M(2,1),M(3,1),M(4,1));
+}
+
 // Multiply a 5x1 matrix by its transpose 
 inline DMatrix5x5 MultiplyTranspose(const DMatrix5x1 &m1){
   DMatrix5x5 temp;
@@ -174,6 +180,14 @@ inline DMatrix5x5 operator*(const DMatrix5x2 &m1,const DMatrix2x5 &m2){
 }
 
 #else
+
+// Find the tranpose of a 5x2 matrix
+inline DMatrix2x5 Transpose(const DMatrix5x2 &M){
+  return DMatrix2x5(_mm_setr_pd(M(0,0),M(0,1)),_mm_setr_pd(M(1,0),M(1,1)),
+		    _mm_setr_pd(M(2,0),M(2,1)),_mm_setr_pd(M(3,0),M(3,1)),
+		    _mm_setr_pd(M(4,0),M(4,1)));
+}
+
 
 // Multiply a 5x1 matrix by its transpose 
 inline DMatrix5x5 MultiplyTranspose(const DMatrix5x1 &m1){

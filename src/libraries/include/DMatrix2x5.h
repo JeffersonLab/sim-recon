@@ -141,12 +141,13 @@ class DMatrix2x5{
   
   void Print(){
     cout << "DMatrix2x5:" <<endl;
-    cout << "         |      0    |      1    |      2    |      3    |      4    |" <<endl;
-    cout << "----------------------------------------------------------------------" <<endl;
+    cout << "     |      0    |      1    |      2    |      3    |      4    |" <<endl;
+    cout << "------------------------------------------------------------------" <<endl;
     
-    for (unsigned int i=0;i<2;i++){
+    for (unsigned int i=0;i<2;i++){  
+      cout <<"   "<< i << " |";
       for (unsigned int j=0;j<5;j++){
-	cout << mA[j].d[i] <<" "; 
+	cout << setw(11)<<setprecision(4) << mA[j].d[i] <<" ";
       } 
       cout << endl;
     }      
