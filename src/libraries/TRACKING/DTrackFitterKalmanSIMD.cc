@@ -107,7 +107,7 @@ inline double fdc_drift_variance(double x){
     // ={0.0234641,-14.3964,0.0298645,20.6634,-0.029864,20.6631,0.00453856};
     ={0.0234641,-14.3964,0.0298645,20.6634,-0.029864,20.6628,0.00453856};
   x=fabs(x);
-  double fdc_scale_factor=1.25;
+  double fdc_scale_factor=1.0;
   double sigma=fdc_scale_factor*(par[0]*exp(par[1]*x)+par[2]*exp(par[3]*x)
 				 +par[4]*exp(par[5]*x)+par[6]);
   
@@ -3471,6 +3471,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   DMatrix5x1 S0,S0_; //State vector
   //DMatrix5x1 dS;  // perturbation in state vector
   DMatrix2x2 InvV; // Inverse of error matrix
+  DMatrix5x5 I; // identity matrix
+  for (unsigned int i=0;i<5;i++)I(i,i)=1.;
+  
 
   // Save the starting values for C and S in the deque
   forward_traj[0].Skk=S;
@@ -3588,19 +3591,116 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 				       -2.*nr*cosalpha*sinalpha);
 	H(1,state_tx)=H_T(state_tx,1)=cosa*temp;
 	H(1,state_ty)=H_T(state_ty,1)=-sina*temp;
-	
-        InvV=(V+H*(C*H_T)).Invert();
-	
-	double chi2_hit=Mdiff(0)*Mdiff(0)*InvV(0,0)
-	  +2.*Mdiff(0)*Mdiff(1)*InvV(0,1)+Mdiff(1)*Mdiff(1)*InvV(1,1);
-	if (forward_traj[k].num_hits>1){
-	  for (unsigned int m=1;m<forward_traj[k].num_hits;m++){
-	    
+    
+	// Check to see if we have multiple hits in the same plane
+	if (forward_traj[k].num_hits>1){ 
+	  // If we do have multiple hits, then all of the hits within some
+	  // validation region are included with weights determined by how
+	  // close the hits are to the track projection of the state to the
+	  // "hit space".
+	  vector<DMatrix5x2> Klist;
+	  vector<DMatrix2x1> Mlist;
+	  vector<DMatrix2x5> Hlist;
+	  vector<DMatrix2x2> Vlist;
+	  vector<double>probs;
+	  DMatrix2x2 Vtemp;
+
+	  // Deal with the first hit:
+	  Vtemp=V+H*C*H_T;
+	  InvV=Vtemp.Invert();
+       
+	  //probability
+	  double chi2_hit=Vtemp.Chi2(Mdiff);
+	  double prob_hit=exp(-0.5*chi2_hit)
+	    /(2.*M_PI*sqrt(Vtemp.Determinant()));
+
+	  // Cut out outliers
+	  if (sqrt(chi2_hit)<NUM_SIGMA){
+	    probs.push_back(prob_hit);
+	    Vlist.push_back(V);
+	    Hlist.push_back(H);
+	    Mlist.push_back(Mdiff);
+	    Klist.push_back(C*H_T*InvV); // Kalman gain
 	  }
+	  
+	  // loop over the remaining hits
+	  for (unsigned int m=1;m<forward_traj[k].num_hits;m++){
+	    unsigned int my_id=id-m;
+	    u=my_fdchits[my_id]->uwire;
+	    v=my_fdchits[my_id]->vstrip;
+	    double du=x*cosa-y*sina-u;
+	    doca=du*cosalpha;
+	    
+	    // variance for coordinate along the wire
+	    V(1,1)=anneal_factor*fdc_y_variance(alpha,doca);
+	    
+	    // Difference between measurement and projection
+	    Mdiff(1)=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
+	    if (fit_type==kWireBased){
+	      Mdiff(0)=-doca;
+	    }
+	    else{
+	      // Compute drift distance
+	      double drift_time=my_fdchits[id]->t-mT0-forward_traj[k].t;
+	      double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
+	      Mdiff(0)=drift-doca;
+	      
+	      // Variance in drift distance
+	      V(0,0)=anneal_factor*fdc_drift_variance(drift);
+	      V(0,0)+=DRIFT_SPEED*DRIFT_SPEED*mVarT0;
+	    }
+	   
+
+	    // Update the terms in H/H_T that depend on the particular hit
+	    factor=du*tu/sqrt(one_plus_tu2)/one_plus_tu2;
+	    H(0,state_ty)=H_T(state_ty,0)=sina*factor;
+	    H(0,state_tx)=H_T(state_tx,0)=-cosa*factor;
+	    temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
+				    -2.*nr*cosalpha*sinalpha);
+	    H(1,state_tx)=H_T(state_tx,1)=cosa*temp;
+	    H(1,state_ty)=H_T(state_ty,1)=-sina*temp;
+						
+	    // Calculate the kalman gain for this hit 
+	    Vtemp=V+H*C*H_T;
+	    InvV=Vtemp.Invert();
+	
+	    // probability
+	    chi2_hit=Vtemp.Chi2(Mdiff);
+	    prob_hit=exp(-0.5*chi2_hit)/(2.*M_PI*sqrt(Vtemp.Determinant()));
+
+	    // Cut out outliers
+	    if(sqrt(chi2_hit)<NUM_SIGMA){	      
+	      probs.push_back(prob_hit);	
+	      Mlist.push_back(Mdiff);
+	      Vlist.push_back(V);
+	      Hlist.push_back(H);  
+	      Klist.push_back(C*H_T*InvV);
+	    }
+	  }
+	  double prob_tot=0.;
+	  for (unsigned int m=0;m<probs.size();m++){
+	    prob_tot+=probs[m];
+	  }
+
+	  // Adjust the state vector and the covariance using the hit 
+	  //information
+	  DMatrix5x5 sum=I;
+	  DMatrix5x5 sum2;
+	  for (unsigned int m=0;m<Klist.size();m++){
+	    double my_prob=probs[m]/prob_tot;
+	    S+=my_prob*(Klist[m]*Mlist[m]);
+	    sum+=my_prob*(Klist[m]*Hlist[m]);
+	    sum2+=(my_prob*my_prob)*(Klist[m]*Vlist[m]*Transpose(Klist[m]));
+	  }
+	  C=C.SandwichMultiply(sum)+sum2;
+
+	  // update number of degrees of freedom
+	  numdof+=2;
+
 	}
 	else{
 	  // Compute Kalman gain matrix
-	  K=C*H_T*InvV;
+	  K=C*H_T*(V+H*(C*H_T)).Invert();
 	  
 	  // Update the state vector 
 	  S+=K*Mdiff;
