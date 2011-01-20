@@ -5,6 +5,8 @@
 // Creator: davidl (on Darwin harriet.jlab.org 9.6.0 i386)
 //
 
+#include <TROOT.h>
+
 #include <TRACKING/DReferenceTrajectory.h>
 
 #include "DTrackHitSelectorALT1.h"
@@ -40,8 +42,33 @@ bool static DTrackHitSelector_fdchit_cmp(pair<double,const DFDCPseudo *>a,
 DTrackHitSelectorALT1::DTrackHitSelectorALT1(jana::JEventLoop *loop):DTrackHitSelector(loop)
 {
 	HS_DEBUG_LEVEL = 0;
-	gPARMS->SetDefaultParameter("TRKFIT:HS_DEBUG_LEVEL", HS_DEBUG_LEVEL);
+	MAKE_DEBUG_TREES = false;
 
+	gPARMS->SetDefaultParameter("TRKFIT:HS_DEBUG_LEVEL", HS_DEBUG_LEVEL);
+	gPARMS->SetDefaultParameter("TRKFIT:MAKE_DEBUG_TREES", MAKE_DEBUG_TREES);
+	
+	cdchitsel = NULL;
+	fdchitsel = NULL;
+	if(MAKE_DEBUG_TREES){
+		loop->GetJApplication()->Lock();
+		
+		 cdchitsel= (TTree*)gROOT->FindObject("cdchitsel");
+		if(!cdchitsel){
+			cdchitsel = new TTree("cdchitsel", "CDC Hit Selector");
+			cdchitsel->Branch("H", &cdchitdbg, "fit_type/I:p/F:theta:mass:sigma:mom_factor:x:y:z:s:s_factor:itheta02:itheta02s:itheta02s2:dist:doca:resi:sigma_total:chisq:prob");
+		}else{
+			_DBG__;
+			jerr<<" !!! WARNING !!!"<<endl;
+			jerr<<"It appears that the cdchitsel TTree is already defined."<<endl;
+			jerr<<"This is probably means you are running with multiple threads."<<endl;
+			jerr<<"To avoid complication, filling of the hit selector debug"<<endl;
+			jerr<<"trees will be disabled for this thread."<<endl;
+			_DBG__;
+			cdchitsel = NULL;
+		}
+
+		loop->GetJApplication()->Unlock();
+	}
 }
 
 //---------------------------------
@@ -72,8 +99,9 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
   /// wire-based tracks.
   
   // Calculate beta of particle.
+  double p = rt->swim_steps[0].mom.Mag();
   double my_mass=rt->GetMass();
-  double one_over_beta =sqrt(1.0+my_mass*my_mass/rt->swim_steps[0].mom.Mag2());
+  double one_over_beta =sqrt(1.0+my_mass*my_mass/(p*p));
   
   // The error on the residual. This will be different based on the
   // quality of the track and whether MULS is on or not etc.
@@ -95,9 +123,10 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
   // Low-momentum tracks are more poorly defined than high-momentum tracks.
   // We account for that here by increasing the error as a function of momentum
   double g = 0.350/sqrt(log(2.0)); // total guess
-  double p_over_g=rt->swim_steps[0].mom.Mag()/g;
+  double p_over_g=p/g;
   //sigma *= 1.0 + exp(-pow(rt->swim_steps[0].mom.Mag()/g,2.0));
-  sigma*=1.0+exp(-p_over_g*p_over_g);
+  double mom_factor = 1.0+exp(-p_over_g*p_over_g);
+  sigma *= mom_factor;
   
   // Minimum probability of hit belonging to wire and still be accepted
   double MIN_HIT_PROB = 0.05;
@@ -129,8 +158,10 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
     // track. Take this into account here by enhancing the
     // error for hits further from the vertex
     double sigma_total = sigma;
+	double s_factor = 1.0;
     if(fit_type == kTimeBased || fit_type == kWireBased){
-      sigma_total *= 1.0 + s/50.0; // double error at 50cm out (guess for now)
+      s_factor = 1.0 + s/50.0; // double error at 50cm out (guess for now)
+      sigma_total *= s_factor;
     }
     
     // Residual
@@ -145,6 +176,62 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
       myhit.first=probability;
       myhit.second=hit;
       cdchits_tmp.push_back(myhit);
+    }
+
+	// Optionally fill debug tree
+    if(cdchitsel){
+		DVector3 pos = rt->GetLastDOCAPoint();
+		const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
+
+		cdchitdbg.fit_type = fit_type;
+		cdchitdbg.p = p;
+		cdchitdbg.theta = rt->swim_steps[0].mom.Theta();
+		cdchitdbg.mass = my_mass;
+		cdchitdbg.sigma = sigma;
+		cdchitdbg.mom_factor = mom_factor;
+        cdchitdbg.x = pos.X();
+        cdchitdbg.y = pos.Y();
+        cdchitdbg.z = pos.Z();
+        cdchitdbg.s = s;
+        cdchitdbg.s_factor = s_factor;
+        cdchitdbg.itheta02 = last_step->itheta02;
+        cdchitdbg.itheta02s = last_step->itheta02s;
+        cdchitdbg.itheta02s2 = last_step->itheta02s2;
+        cdchitdbg.dist = dist;
+        cdchitdbg.doca = doca;
+        cdchitdbg.resi = resi;
+        cdchitdbg.sigma_total = sigma_total;
+        cdchitdbg.chisq = chisq;
+        cdchitdbg.prob = probability;
+		
+		cdchitsel->Fill();
+		
+		static bool printed_first = false;
+		if(!printed_first){
+			_DBG_<<"=== Printing first entry for CDC hit selector debug tree ==="<<endl;
+			_DBG_<<"   fit_type = "<<cdchitdbg.fit_type<<endl;
+			_DBG_<<"          p = "<<cdchitdbg.p<<endl;
+			_DBG_<<"      theta = "<<cdchitdbg.theta<<endl;
+			_DBG_<<"       mass = "<<cdchitdbg.mass<<endl;
+			_DBG_<<"      sigma = "<<cdchitdbg.sigma<<endl;
+			_DBG_<<" mom_factor = "<<cdchitdbg.mom_factor<<endl;
+			_DBG_<<"          x = "<<cdchitdbg.x<<endl;
+			_DBG_<<"          y = "<<cdchitdbg.y<<endl;
+			_DBG_<<"          z = "<<cdchitdbg.z<<endl;
+			_DBG_<<"          s = "<<cdchitdbg.s<<endl;
+			_DBG_<<"   s_factor = "<<cdchitdbg.s_factor<<endl;
+			_DBG_<<"   itheta02 = "<<cdchitdbg.itheta02<<endl;
+			_DBG_<<"  itheta02s = "<<cdchitdbg.itheta02s<<endl;
+			_DBG_<<" itheta02s2 = "<<cdchitdbg.itheta02s2<<endl;
+			_DBG_<<"       dist = "<<cdchitdbg.dist<<endl;
+			_DBG_<<"       doca = "<<cdchitdbg.doca<<endl;
+			_DBG_<<"       resi = "<<cdchitdbg.resi<<endl;
+			_DBG_<<"sigma_total = "<<cdchitdbg.sigma_total<<endl;
+			_DBG_<<"      chisq = "<<cdchitdbg.chisq<<endl;
+			_DBG_<<"       prob = "<<cdchitdbg.prob<<endl;
+			
+			printed_first = true;
+		}
     }
     
     if(HS_DEBUG_LEVEL>10){

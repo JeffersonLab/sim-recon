@@ -8,6 +8,7 @@
 #ifndef _DTrackHitSelectorALT1_
 #define _DTrackHitSelectorALT1_
 #include <TMath.h>
+#include <TTree.h>
 #include <JANA/jerror.h>
 
 #include <TRACKING/DTrackHitSelector.h>
@@ -22,6 +23,34 @@ class DTrackHitSelectorALT1:public DTrackHitSelector{
 
 	private:
 		int HS_DEBUG_LEVEL;
+		bool MAKE_DEBUG_TREES;
+		
+		TTree *cdchitsel;
+		TTree *fdchitsel;
+		
+		typedef struct{
+			int fit_type;
+			float p;
+			float theta;
+			float mass;
+			float sigma;
+			float mom_factor;
+			float x;
+			float y;
+			float z;
+			float s;
+			float s_factor;
+			float itheta02;
+			float itheta02s;
+			float itheta02s2;
+			float dist;
+			float doca;
+			float resi;
+			float sigma_total;
+			float chisq;
+			float prob;
+		}cdchitdbg_t;
+		mutable cdchitdbg_t cdchitdbg;
 };
 
 #endif // _DTrackHitSelectorALT1_
