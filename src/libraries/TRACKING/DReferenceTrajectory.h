@@ -107,6 +107,11 @@ class DReferenceTrajectory{
 		double GetMaxStepSize(void) const {return MAX_STEP_SIZE;}
 		inline double dPdx_from_A_Z_rho(double ptot, double A, double Z, double density) const;
 		inline double dPdx(double ptot, double KrhoZ_overA, double rhoZ_overA,double LogI) const;
+		
+		int GetDebugLevel(void){return debug_level;}
+		void SetDebugLevel(int new_level){debug_level=new_level;}
+
+		void Dump(double zmin=-1000.0, double zmax=1000.0);
 
 		const swim_step_t *GetLastSwimStep(void) const {return last_swim_step;}
 		swim_step_t *swim_steps;
@@ -114,6 +119,8 @@ class DReferenceTrajectory{
 		float q;
 
 	protected:
+	
+		int debug_level;
 	
 		int max_swim_steps;
 		bool own_swim_steps;

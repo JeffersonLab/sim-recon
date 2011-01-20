@@ -46,6 +46,8 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->last_dist_along_wire = 0.0;
 	this->last_dz_dphi = 0.0;
 	
+	this->debug_level = 0;
+	
 	// Initialize some values from configuration parameters
 	BOUNDARY_STEP_FRACTION = 0.80;
 	MIN_STEP_SIZE = 0.05;	// cm
@@ -898,7 +900,8 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
   uy = wire->udir.Y();
   uz = wire->udir.Z();
   
-  for(int i=0; i<Nswim_steps; i++, swim_step++){
+  int i;
+  for(i=0; i<Nswim_steps; i++, swim_step++){
 		// Find the point's position along the wire. If the point
 		// is past the end of the wire, calculate the distance
 		// from the end of the wire.
@@ -924,18 +927,22 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
       // printf("step %d\n",i);
 		}
 
-		
+		if(debug_level>3)_DBG_<<"delta2="<<delta2<<"  old_delta2="<<old_delta2<<endl;
 		if (delta2>old_delta2) break;
+
 		//if(delta2 < min_delta2){
 		//	min_delta2 = delta2;
 		step = swim_step;
 		istep=i;
+
 		//}
 		//printf("%d delta %f min %f\n",i,delta2,min_delta2);
 		old_delta2=delta2;
 	}
 
 	if(istep_ptr)*istep_ptr=istep;
+	
+	if(debug_level>3)_DBG_<<"found closest step at i="<<i<<"  istep_ptr="<<istep_ptr<<endl;
 
 	return step;	
 }
@@ -1408,7 +1415,11 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	double Rodphi = Ro*phi;
 	double ds = sqrt(dz*dz + Rodphi*Rodphi);
 	if(s)*s=step->s + (phi>0.0 ? ds:-ds);
-	
+	if(debug_level>3){
+		_DBG_<<"distance to rt: "<<*s<<" from step at "<<step->s<<" with ds="<<ds<<" d="<<d<<" dz="<<dz<<" Rodphi="<<Rodphi<<endl;
+		_DBG_<<"phi="<<phi<<" U="<<U<<" u="<<u<<endl;
+	}
+
 	// Remember phi and step so additional info on the point can be obtained
 	this->last_phi = phi;
 	this->last_swim_step = step;
@@ -1697,5 +1708,28 @@ double DReferenceTrajectory::dPdx(double ptot, double KrhoZ_overA,
 	return dP_dx;
 }
 
+//------------------
+// Dump
+//------------------
+void DReferenceTrajectory::Dump(double zmin, double zmax)
+{	
+	swim_step_t *step = swim_steps;
+	for(int i=0; i<Nswim_steps; i++, step++){
+		vector<pair<string,string> > item;
+		double x = step->origin.X();
+		double y = step->origin.Y();
+		double z = step->origin.Z();
+		if(z<zmin || z>zmax)continue;
 
-
+		double px = step->mom.X();
+		double py = step->mom.Y();
+		double pz = step->mom.Z();
+		
+		cout<<i<<": ";
+		cout<<"(x,y,z)=("<<x<<","<<y<<","<<z<<") ";
+		cout<<"(px,py,pz)=("<<px<<","<<py<<","<<pz<<") ";
+		cout<<"(Ro,s,t)=("<<step->Ro<<","<<step->s<<","<<step->t<<") ";
+		cout<<endl;
+	}
+	
+}
