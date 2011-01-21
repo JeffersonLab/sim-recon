@@ -149,6 +149,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t CalcDerivAndJacobian(double z,double dz,const DMatrix5x1 &S,
 				double dEdx,
 				DMatrix5x5 &J,DMatrix5x1 &D);
+  jerror_t CalcJacobian(double z,double dz,const DMatrix5x1 &S,
+			double dEdx,DMatrix5x5 &J);
   jerror_t CalcDeriv(double z,double dz,const DMatrix5x1 &S, double dEdx, 
 		     DMatrix5x1 &D);
   jerror_t CalcDeriv(double ds,const DVector3 &pos,DVector3 &dpos,
