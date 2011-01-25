@@ -12,7 +12,7 @@ include $(HALLD_HOME)/src/BMS/Makefile.common
 first: install
 
 #Make sure directories and dependancy files exist
-all: mkdirs $(LIBNAME)($(OBJS))
+all: mkdirs $(foreach obj,$(OBJS),$(LIBNAME)($(obj)))
 	@rm -f $(DICT_FILES)
 ifeq ($(BMS_OSNAME),Darwin)
 	ranlib $(LIBNAME)
