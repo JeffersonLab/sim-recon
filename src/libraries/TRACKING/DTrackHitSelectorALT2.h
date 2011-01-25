@@ -24,6 +24,8 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 	private:
 		int HS_DEBUG_LEVEL;
 		bool MAKE_DEBUG_TREES;
+		double MIN_HIT_PROB_CDC;
+		double MIN_HIT_PROB_FDC;
 		
 		TTree *cdchitsel;
 		TTree *fdchitsel;
@@ -51,6 +53,41 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 			float prob;
 		}cdchitdbg_t;
 		mutable cdchitdbg_t cdchitdbg;
+		
+		typedef struct{
+			int fit_type;
+			float p;
+			float theta;
+			float mass;
+			float sigma_anode;
+			float sigma_cathode;
+			float mom_factor_anode;
+			float mom_factor_cathode;
+			float x;
+			float y;
+			float z;
+			float s;
+			float s_factor_anode;
+			float s_factor_cathode;
+			float itheta02;
+			float itheta02s;
+			float itheta02s2;
+			float dist;
+			float doca;
+			float resi;
+			float u;
+			float u_cathodes;
+			float resic;
+			float sigma_anode_total;
+			float sigma_cathode_total;
+			float chisq;
+			float prob;
+			float prob_anode;
+			float prob_cathode;
+			float pull_anode;
+			float pull_cathode;
+		}fdchitdbg_t;
+		mutable fdchitdbg_t fdchitdbg;
 };
 
 #endif // _DTrackHitSelectorALT2_

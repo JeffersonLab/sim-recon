@@ -44,8 +44,8 @@ DTrackHitSelectorALT1::DTrackHitSelectorALT1(jana::JEventLoop *loop):DTrackHitSe
 	HS_DEBUG_LEVEL = 0;
 	MAKE_DEBUG_TREES = false;
 
-	gPARMS->SetDefaultParameter("TRKFIT:HS_DEBUG_LEVEL", HS_DEBUG_LEVEL);
-	gPARMS->SetDefaultParameter("TRKFIT:MAKE_DEBUG_TREES", MAKE_DEBUG_TREES);
+	gPARMS->SetDefaultParameter("TRKFIT:HS_DEBUG_LEVEL", HS_DEBUG_LEVEL, "Debug verbosity level for hit selector used in track fitting (0=no debug messages)");
+	gPARMS->SetDefaultParameter("TRKFIT:MAKE_DEBUG_TREES", MAKE_DEBUG_TREES, "Create a TTree with debugging info on hit selection for the FDC and CDC");
 	
 	cdchitsel = NULL;
 	fdchitsel = NULL;
@@ -65,6 +65,21 @@ DTrackHitSelectorALT1::DTrackHitSelectorALT1(jana::JEventLoop *loop):DTrackHitSe
 			jerr<<"trees will be disabled for this thread."<<endl;
 			_DBG__;
 			cdchitsel = NULL;
+		}
+
+		fdchitsel= (TTree*)gROOT->FindObject("fdchitsel");
+		if(!fdchitsel){
+			fdchitsel = new TTree("fdchitsel", "FDC Hit Selector");
+			fdchitsel->Branch("H", &fdchitdbg, "fit_type/I:p/F:theta:mass:sigma_anode:sigma_cathode:mom_factor_anode:mom_factor_cathode:x:y:z:s:s_factor_anode:s_factor_cathode:itheta02:itheta02s:itheta02s2:dist:doca:resi:u:u_cathodes:resic:sigma_anode_total:sigma_cathode_total:chisq:prob:prob_anode:prob_cathode:pull_anode:pull_cathode");
+		}else{
+			_DBG__;
+			jerr<<" !!! WARNING !!!"<<endl;
+			jerr<<"It appears that the fdchitsel TTree is already defined."<<endl;
+			jerr<<"This is probably means you are running with multiple threads."<<endl;
+			jerr<<"To avoid complication, filling of the hit selector debug"<<endl;
+			jerr<<"trees will be disabled for this thread."<<endl;
+			_DBG__;
+			fdchitsel = NULL;
 		}
 
 		loop->GetJApplication()->Unlock();
@@ -282,7 +297,8 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   // particles is really a proton or an electron, the residual
   // calculated below will only be off by a little.
   double my_mass=rt->GetMass();
-  double one_over_beta =sqrt(1.0+my_mass*my_mass/rt->swim_steps[0].mom.Mag2());
+  double p = rt->swim_steps[0].mom.Mag();
+  double one_over_beta =sqrt(1.0+my_mass*my_mass/(p*p));
   
   // The error on the residual. This will be different based on the
   // quality of the track and whether MULS is on or not etc.
@@ -307,20 +323,15 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   
   // Scale the errors up by 1/p for p<1GeV/c. This accounts for the poorer knowledge
   // of the track parameters contained in the candidate for low momentum tracks
-  double ptot = rt->swim_steps[0].mom.Mag();
-  if(ptot<1.0){
-    sigma_anode /= ptot;
-    sigma_cathode /= ptot;
-  }
+  double mom_factor = 1.0;
+  if(p<1.0)mom_factor = 1.0/p;
   
   // Higher mass particles (protons) lose energy quicker and therefore have even
   // less helical shapes for candidates and larger errors due to eloss straggling.
   // These next 2 lines are here mainly to improve the situation for protons so
   // we take a stab at scaling up the errors by the number of pion masses since
   // this worked reasonably well for pions before.
-  double mass_scale=my_mass/0.13957;
-  sigma_anode *= mass_scale;
-  sigma_cathode *= mass_scale;
+  double mass_factor=my_mass/0.13957;
   
   // Minimum probability of hit belonging to wire and still be accepted
   double MIN_HIT_PROB = 0.01;
@@ -332,6 +343,7 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
     // Find the DOCA to this wire
     double s;
     double doca = rt->DistToRT(hit->wire, &s);  
+	const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
        
     // Get "measured" distance to wire. For time-based tracks
     // this is calculated from the drift time. For all other
@@ -352,14 +364,17 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
     
     // Cathode Residual
     double u=rt->GetLastDistAlongWire();
-    double resic = u - hit->s;
+	double u_cathodes = hit->s;
+    double resic = u - u_cathodes;
     
     // Probability of this hit being on the track
     //double chisq = pow(resi/sigma_anode, 2.0) + pow(resic/sigma_cathode, 2.0);
-    double chisq
-      =resi*resi/(sigma_anode*sigma_anode)
-      +resic*resic/(sigma_cathode*sigma_cathode);
-      
+	double sigma_anode_total = sigma_anode*mom_factor*mass_factor;
+	double sigma_cathode_total = sigma_cathode*mom_factor*mass_factor;
+	double pull_anode = resi/sigma_anode_total;
+	double pull_cathode = resic/sigma_cathode_total;
+	double chisq = pull_anode*pull_anode + pull_cathode*pull_cathode;
+
     double probability = TMath::Prob(chisq, 2);
     if(probability>=MIN_HIT_PROB){
       pair<double,const DFDCPseudo*>myhit;
@@ -367,6 +382,47 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
       myhit.second=hit;
       fdchits_tmp.push_back(myhit);
     }
+
+	// Optionally fill debug tree
+    if(fdchitsel){
+		DVector3 pos = rt->GetLastDOCAPoint();
+
+		fdchitdbg.fit_type = fit_type;
+		fdchitdbg.p = p;
+		fdchitdbg.theta = rt->swim_steps[0].mom.Theta();
+		fdchitdbg.mass = my_mass;
+		fdchitdbg.sigma_anode = sigma_anode;
+		fdchitdbg.sigma_cathode = sigma_cathode;
+		fdchitdbg.mom_factor_anode = mom_factor;
+		fdchitdbg.mom_factor_cathode = mom_factor;
+        fdchitdbg.x = pos.X();
+        fdchitdbg.y = pos.Y();
+        fdchitdbg.z = pos.Z();
+        fdchitdbg.s = s;
+        fdchitdbg.s_factor_anode = 1.0;
+        fdchitdbg.s_factor_cathode = 1.0;
+        fdchitdbg.itheta02 = last_step->itheta02;
+        fdchitdbg.itheta02s = last_step->itheta02s;
+        fdchitdbg.itheta02s2 = last_step->itheta02s2;
+        fdchitdbg.dist = dist;
+        fdchitdbg.doca = doca;
+        fdchitdbg.resi = resi;
+        fdchitdbg.u = u;
+        fdchitdbg.u_cathodes = u_cathodes;
+        fdchitdbg.resic = resic;
+        fdchitdbg.sigma_anode_total = sigma_anode_total;
+        fdchitdbg.sigma_cathode_total = sigma_cathode_total;
+        fdchitdbg.chisq = chisq;
+        fdchitdbg.prob = probability;
+		fdchitdbg.prob_anode = TMath::Prob(pull_anode*pull_anode, 1);
+        fdchitdbg.prob_cathode = TMath::Prob(pull_cathode*pull_cathode, 1);
+		fdchitdbg.pull_anode = pull_anode;
+		fdchitdbg.pull_cathode = pull_cathode;
+//_DBG_<<"fdchitdbg.pull_anode="<<fdchitdbg.pull_anode<<" pull_anode="<<pull_anode<<" resi/sigma_anode_total="<<resi/sigma_anode_total<<endl;
+		
+		fdchitsel->Fill();
+	}
+
     if(HS_DEBUG_LEVEL>10){
       _DBG_;
       if(probability>=MIN_HIT_PROB)jerr<<ansi_bold<<ansi_blue;
