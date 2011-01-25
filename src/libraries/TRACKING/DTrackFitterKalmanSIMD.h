@@ -87,9 +87,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			 double &chisq,unsigned int &numdof);
   jerror_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
-			    double &chisq);
+			    double &chisq,unsigned int &numdof);
   jerror_t KalmanCentral(double anneal_factor,DMatrix5x1 &S,DMatrix5x5 &C,
-			 DVector3 &pos,double &chisq);
+			 DVector3 &pos,double &chisq,unsigned int &myndf);
   jerror_t ExtrapolateToVertex(DVector3 &pos,DMatrix5x1 &Sc,DMatrix5x5 &Cc);
   jerror_t ExtrapolateToVertex(DMatrix5x1 &S, DMatrix5x5 &C);
   jerror_t SetReferenceTrajectory(DMatrix5x1 &S);
