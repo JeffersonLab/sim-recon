@@ -173,8 +173,8 @@ float BCAL_CELLOUTERTHRESHOLD = 1 * k_MeV;
 float Bcal_CellInnerThreshold;
 
 // Forward TOF resolution
-double TOF_SIGMA = 100.*k_psec;
-double TOF_PHOTONS_PERMEV = 8000.;
+extern double TOF_SIGMA;
+extern double TOF_PHOTONS_PERMEV;
 
 // Start counter resolution
 double START_SIGMA = 300.*k_psec;
@@ -1311,47 +1311,45 @@ void SmearTOF(s_HDDM_t *hddm_s)
       s_FtofCounter_t *ftofCounter = &(ftofCounters->in[j]);		 
       
       // take care of North Hits
-      s_FtofTruthHits_t *ftofTruthHits = ftofCounter->ftofTruthHits;
-      ftofCounter->ftofHits = make_s_FtofHits(ftofTruthHits->mult);
-      ftofCounter->ftofHits->mult = ftofTruthHits->mult;
+      s_FtofNorthTruthHits_t *ftofNorthTruthHits = ftofCounter->ftofNorthTruthHits;
+      ftofCounter->ftofNorthHits = make_s_FtofNorthHits(ftofNorthTruthHits->mult);
+      ftofCounter->ftofNorthHits->mult = ftofNorthTruthHits->mult;
       
-      for (unsigned int m=0;m<ftofTruthHits->mult;m++){
-	s_FtofTruthHit_t *ftofTruthHit = &(ftofTruthHits->in[m]);
-	s_FtofHit_t *ftofHit = &(ftofCounter->ftofHits->in[m]);
+      for (unsigned int m=0;m<ftofNorthTruthHits->mult;m++){
+	s_FtofNorthTruthHit_t *ftofNorthTruthHit = &(ftofNorthTruthHits->in[m]);
+	s_FtofNorthHit_t *ftofHit = &(ftofCounter->ftofNorthHits->in[m]);
 	
 	// Smear the time
-	ftofHit->tNorth = ftofTruthHit->tNorth + SampleGaussian(TOF_SIGMA);
-	ftofHit->tSouth = ftofTruthHit->tSouth + SampleGaussian(TOF_SIGMA);
+	ftofHit->t = ftofNorthTruthHit->t + SampleGaussian(TOF_SIGMA);
 	
 	// Smear the energy
-	double npe = (double)ftofTruthHit->dENorth * 1000. *  TOF_PHOTONS_PERMEV;
+	double npe = (double)ftofNorthTruthHit->dE * 1000. *  TOF_PHOTONS_PERMEV;
 	npe = npe +  SampleGaussian(sqrt(npe));
 	float NewE = npe/TOF_PHOTONS_PERMEV/1000.;
-	ftofHit->dENorth = NewE;
-	
-	npe = (double)ftofTruthHit->dESouth * 1000. *  TOF_PHOTONS_PERMEV;
-	npe = npe +  SampleGaussian(sqrt(npe));
-	NewE = npe/TOF_PHOTONS_PERMEV/1000.;
-	ftofHit->dESouth = NewE;
-	
-	// just copy the rest of the data
-	
-	ftofHit->x      = ftofTruthHit->x     ;
-	ftofHit->y      = ftofTruthHit->y     ;
-	ftofHit->z      = ftofTruthHit->z     ;
-	ftofHit->px     = ftofTruthHit->px    ;
-	ftofHit->py     = ftofTruthHit->py    ;
-	ftofHit->pz     = ftofTruthHit->pz    ;
-	ftofHit->E      = ftofTruthHit->E     ;
-	ftofHit->dist   = ftofTruthHit->dist  ;
-	ftofHit->ptype  = ftofTruthHit->ptype ;
-	ftofHit->itrack = ftofTruthHit->itrack;
-	
+	ftofHit->dE = NewE;
       } 
       
-    }
-  }
-  
+      // take care of South Hits
+      s_FtofSouthTruthHits_t *ftofSouthTruthHits = ftofCounter->ftofSouthTruthHits;
+      ftofCounter->ftofSouthHits = make_s_FtofSouthHits(ftofSouthTruthHits->mult);
+      ftofCounter->ftofSouthHits->mult = ftofSouthTruthHits->mult;
+      
+      for (unsigned int m=0;m<ftofSouthTruthHits->mult;m++){
+	s_FtofSouthTruthHit_t *ftofSouthTruthHit = &(ftofSouthTruthHits->in[m]);
+	s_FtofSouthHit_t *ftofHit = &(ftofCounter->ftofSouthHits->in[m]);
+	
+	// Smear the time
+	ftofHit->t = ftofSouthTruthHit->t + SampleGaussian(TOF_SIGMA);
+	
+	// Smear the energy
+	double npe = (double)ftofSouthTruthHit->dE * 1000. *  TOF_PHOTONS_PERMEV;
+	npe = npe +  SampleGaussian(sqrt(npe));
+	float NewE = npe/TOF_PHOTONS_PERMEV/1000.;
+	ftofHit->dE = NewE;
+
+      }    
+    } // end loop over all counters
+  } 
 }
 
 //-----------

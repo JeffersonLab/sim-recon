@@ -42,8 +42,11 @@ extern double FDC_TIME_WINDOW;
 extern double FDC_HIT_DROP_FRACTION;
 extern double FCAL_PHOT_STAT_COEF;
 extern double FCAL_BLOCK_THRESHOLD;
-extern double TOF_SIGMA;
 extern double START_SIGMA;
+
+// TOF parameters will be read from data base later
+double TOF_SIGMA = 100.*k_psec;
+double TOF_PHOTONS_PERMEV = 400.;
 
 vector<vector<float> >fdc_smear_parms;
 TF1 *fdc_smear_function;
@@ -119,6 +122,15 @@ int main(int narg,char* argv[])
 	    fdc_smear_parms.push_back(dummy);
 	    dummy.clear();
 	  }
+	}
+
+	{
+
+	  cout<<"get tof parameters for smearing from calibDB"<<endl;
+	  map<string, double> tofparms;
+	  jcalib->Get("TOF/tof_parms", tofparms);
+	  TOF_SIGMA =  tofparms["TOF_SIGMA"];
+	  TOF_PHOTONS_PERMEV =  tofparms["TOF_PHOTONS_PERMEV"];
 	}
 
 

@@ -161,16 +161,20 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 	   point->t=(utof+vtof)/2.;
 	   point->dedx=(sqrt(uhits[i]->E_north*uhits[i]->E_south)
 			+sqrt(vhits[j]->E_north*vhits[j]->E_south))/2.;
+	   point->AddAssociatedObject(uhits[i]);
+	   point->AddAssociatedObject(vhits[j]);
 	 }
 	 else if (vhits[j]->bar<41 && uhits[i]->bar>40){   
 	   point->pos.SetXYZ(vx,vy,617.52);
 	   point->t=vtof;
 	   point->dedx=sqrt(vhits[j]->E_north*vhits[j]->E_south);
+	   point->AddAssociatedObject(vhits[j]);
 	 }
 	 else{
 	   point->pos.SetXYZ(ux,uy,620.10);
 	   point->t=utof;
 	   point->dedx=sqrt(uhits[i]->E_north*uhits[i]->E_south);
+	   point->AddAssociatedObject(uhits[i]);
 	 }
       	 _data.push_back(point);
       }

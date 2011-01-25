@@ -73,8 +73,14 @@
       </Cerenkov>
       <forwardTOF minOccurs="0">
         <ftofCounter bar="int" maxOccurs="unbounded" minOccurs="0" plane="int">
-          <ftofTruthHit E="float" dENorth="float" dESouth="float" tNorth="float" tSouth="float" dist="float" ptype="int" itrack="int" px="float" py="float" pz="float" x="float" y="float" z="float" maxOccurs="unbounded" minOccurs="0" />
-          <ftofHit      E="float" dENorth="float" dESouth="float" tNorth="float" tSouth="float" dist="float" ptype="int" itrack="int" px="float" py="float" pz="float" x="float" y="float" z="float" maxOccurs="unbounded" minOccurs="0" />
+          <ftofNorthTruthHit maxOccurs="unbounded" minOccurs="0" dE="float" t="float">
+             <ftofMCHit maxOccurs="unbounded" minOccurs="0" ptype="int" itrack="int" px="float" py="float" pz="float" x="float" y="float" z="float" E="float" dist="float"/>
+          </ftofNorthTruthHit>
+          <ftofSouthTruthHit maxOccurs="unbounded" minOccurs="0" dE="float" t="float">
+             <ftofMCHit maxOccurs="unbounded" minOccurs="0" ptype="int" itrack="int" px="float" py="float" pz="float" x="float" y="float" z="float" E="float" dist="float"/>
+          </ftofSouthTruthHit>
+          <ftofNorthHit maxOccurs="unbounded" minOccurs="0" dE="float" t="float"/>
+          <ftofSouthHit maxOccurs="unbounded" minOccurs="0" dE="float" t="float"/>
         </ftofCounter>
         <ftofTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
       </forwardTOF>

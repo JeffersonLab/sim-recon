@@ -49,7 +49,10 @@
 #define THRESH_MEV      0.   // do not through away any hits, one can do that later
 
 // maximum particle tracks per counter
-#define MAX_HITS        100
+#define MAX_HITS        25   // was 100 changed to 25
+
+// maximum MC hits per paddle
+#define MAX_PAD_HITS    25   
 
 // top level pointer of FTOF hit tree
 binTree_t* forwardTOFTree = 0;
@@ -157,10 +160,13 @@ void hitForwardTOF (float xin[4], float xout[4],
   // in other words now store the simulated detector response
   if (dEsum > 0) {
     int nhit;
-    s_FtofTruthHits_t* Hits;
+    s_FtofNorthTruthHits_t* northHits;
+    s_FtofSouthTruthHits_t* southHits;
 
-    // getrow and getcolumn are both coded in
-    // src/programs/Simulation/HDGeant/hddsGeant3.F
+    s_FtofMCHits_t* noMCHits;
+    s_FtofMCHits_t* soMCHits;
+
+    // getrow and getcolumn are both coded in hddsGeant3.F
     // see above for function getplane()
     
     int row = getrow_();
@@ -171,6 +177,7 @@ void hitForwardTOF (float xin[4], float xout[4],
     // point vertically up as z is the beam axis.
     // plane==0 horizontal plane, plane==1 vertical plane
     //    float dist = xlocal[0];
+
     float dist = x[1]; // do not use local coordinate for x and y
     if (plane==1) dist = x[0];
     float dxnorth = BAR_LENGTH/2.-dist;
@@ -181,16 +188,13 @@ void hitForwardTOF (float xin[4], float xout[4],
     // the speed of signal travel is C_EFFECTIVE
     // propagte time to the end of the bar
     // column = 0 is a full paddle column ==1,2 is a half paddle
-    float tnorth  = (column == 2) ? 0 : t + dxnorth/C_EFFECTIVE;
+
+    float tnorth = (column == 2) ? 0 : t + dxnorth/C_EFFECTIVE;
     float tsouth = (column == 1) ? 0 : t + dxsouth/C_EFFECTIVE;
-        
-    // calculate energy seen by PM for this track step using attenuation factor
-    float dEnorth  = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
-     float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
     
-    // do not propagate energy
-    //float dEnorth  = (column == 2) ? 0 : dEsum ;
-    //float dEsouth = (column == 1) ? 0 : dEsum ;
+    // calculate energy seen by PM for this track step using attenuation factor
+    float dEnorth = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
+    float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
     
     int mark = (plane<<20) + (row<<10) + column;
     void** twig = getTwig(&forwardTOFTree, mark);
@@ -203,91 +207,171 @@ void hitForwardTOF (float xin[4], float xout[4],
       counters->mult = 1;
       counters->in[0].plane = plane;
       counters->in[0].bar = row;
-      Hits = HDDM_NULL;
-      
-      // ok get memory space for north and south regardless if the paddle
-      // is one of the short once with only one PMT.
+      northHits = HDDM_NULL;
+      southHits = HDDM_NULL;
+      noMCHits = HDDM_NULL;
+      soMCHits = HDDM_NULL;
 
-      counters->in[0].ftofTruthHits = Hits
-	= make_s_FtofTruthHits(MAX_HITS);
+      // get space for the left/top or right/down PMT data for a total
+      // of MAX_HITS possible hits in a single paddle
+      // and space for up to MAX_PAD_HITS hits in a paddle to store MC track information 
+      // Note: column=0 means paddle read out on both ends coumn=1or2 means single ended readout
+
+      if (column == 0 || column == 1) {
+	counters->in[0].ftofNorthTruthHits = northHits
+	  = make_s_FtofNorthTruthHits(MAX_HITS);
+      }
+      if (column == 0 || column == 2) {
+	counters->in[0].ftofSouthTruthHits = southHits
+	  = make_s_FtofSouthTruthHits(MAX_HITS);
+      }
 
       tof->ftofCounters = counters;
       counterCount++;
+
     } else { 
 
       // this paddle is already registered (was hit before)
       // get the hit list back
       s_ForwardTOF_t* tof = *twig;
-      Hits = tof->ftofCounters->in[0].ftofTruthHits;
+      northHits = tof->ftofCounters->in[0].ftofNorthTruthHits;
+      southHits = tof->ftofCounters->in[0].ftofSouthTruthHits;
+      
     }
     
-    if (Hits != HDDM_NULL) {
+    if (northHits != HDDM_NULL) {
       
       // loop over hits in this PM to find correct time slot
       
-      for (nhit = 0; nhit < Hits->mult; nhit++) {
-
-	if (fabs(Hits->in[nhit].tNorth - t) < TWO_HIT_RESOL) {
+      for (nhit = 0; nhit < northHits->mult; nhit++) {
+	
+	if (fabs(northHits->in[nhit].t - t) < TWO_HIT_RESOL) {
 	  break;
 	}
       }
       
       // this hit is within the time frame of a previous hit
       // combine the times of this weighted by the energy of the hit
-
-      if (nhit < Hits->mult) {         /* merge with former hit */
-	Hits->in[nhit].tNorth = 
-	  (Hits->in[nhit].tNorth * Hits->in[nhit].dENorth 
-	   + tnorth * dEnorth)
-	  / (Hits->in[nhit].dENorth += dEnorth);
-
-	Hits->in[nhit].tSouth = 
-	  (Hits->in[nhit].tSouth * Hits->in[nhit].dESouth 
-	   + tnorth * dEsouth)
-	  / (Hits->in[nhit].dESouth += dEsouth);
-
-	if (Hits->in[nhit].E<pin[3]){
-	  // save position, momenum, energy and particle type with the largest energy
-	  Hits->in[nhit].dENorth = dEnorth;
-	  Hits->in[nhit].dESouth = dEsouth;
-	  Hits->in[nhit].dist = dist;
-	  Hits->in[nhit].x = x[0];
-	  Hits->in[nhit].y = x[1];
-	  Hits->in[nhit].z = x[2];
-	  Hits->in[nhit].E = pin[3];
-	  Hits->in[nhit].px = pin[0]*pin[4];
-	  Hits->in[nhit].py = pin[1]*pin[4];
-	  Hits->in[nhit].pz = pin[2]*pin[4];
-	  Hits->in[nhit].ptype = ipart;
-	  Hits->in[nhit].itrack = track;
-	}
-      }
       
-      // this hit has its own new time frame
-      else if (nhit < MAX_HITS){         /* create new hit */
-	Hits->in[nhit].tNorth = tnorth;
-	Hits->in[nhit].dENorth = dEnorth;
-	Hits->in[nhit].tSouth = tsouth;
-	Hits->in[nhit].dESouth = dEsouth;
-	Hits->in[nhit].dist = dist;
-	Hits->in[nhit].x = x[0];
-	Hits->in[nhit].y = x[1];
-	Hits->in[nhit].z = x[2];
-	// save momenum, energy and particle type
-	Hits->in[nhit].E = pin[3];
-	Hits->in[nhit].px = pin[0]*pin[4];
-	Hits->in[nhit].py = pin[1]*pin[4];
-	Hits->in[nhit].pz = pin[2]*pin[4];
-	Hits->in[nhit].ptype = ipart;
-	Hits->in[nhit].itrack = track;
-	Hits->mult++;
-      }
-      else {
+      if (nhit < northHits->mult) {         /* merge with former hit */
+	northHits->in[nhit].t = 
+	  (northHits->in[nhit].t * northHits->in[nhit].dE 
+	   + tnorth * dEnorth)
+	  / (northHits->in[nhit].dE += dEnorth);
+	
+	northHits->in[nhit].dE = dEnorth;
+	
+	// now add MC tracking information 
+	// first get MC pointer of this paddle
+
+	noMCHits = northHits->in[nhit].ftofMCHits;
+	unsigned int nMChit = noMCHits->mult;
+	if (nMChit<MAX_PAD_HITS) {
+	  noMCHits->in[nMChit].x = x[0];
+	  noMCHits->in[nMChit].y = x[1];
+	  noMCHits->in[nMChit].z = x[2];
+	  noMCHits->in[nMChit].E = pin[3];
+	  noMCHits->in[nMChit].px = pin[0]*pin[4];
+	  noMCHits->in[nMChit].py = pin[1]*pin[4];
+	  noMCHits->in[nMChit].pz = pin[2]*pin[4];
+	  noMCHits->in[nMChit].ptype = ipart;
+	  noMCHits->in[nMChit].itrack = track;
+	  noMCHits->in[nMChit].dist = dist;
+	  noMCHits->mult++;
+	}
+	
+      }  else if (nhit < MAX_HITS){  // hit in new time window
+	northHits->in[nhit].t = tnorth;
+	northHits->in[nhit].dE = dEnorth;
+	northHits->mult++;
+
+	// create memory for MC track hit information
+	northHits->in[nhit].ftofMCHits = noMCHits = make_s_FtofMCHits(MAX_PAD_HITS);
+
+	noMCHits->in[0].x = x[0];
+	noMCHits->in[0].y = x[1];
+	noMCHits->in[0].z = x[2];
+	noMCHits->in[0].E = pin[3];
+	noMCHits->in[0].px = pin[0]*pin[4];
+	noMCHits->in[0].py = pin[1]*pin[4];
+	noMCHits->in[0].pz = pin[2]*pin[4];
+	noMCHits->in[0].ptype = ipart;
+	noMCHits->in[0].itrack = track;
+	noMCHits->in[0].dist = dist;
+	noMCHits->mult = 1;
+	
+      } else {
 	fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
 	fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
       }
     }
     
+    if (southHits != HDDM_NULL) {
+      
+      // loop over hits in this PM to find correct time slot
+      
+      for (nhit = 0; nhit < southHits->mult; nhit++) {
+	
+	if (fabs(southHits->in[nhit].t - t) < TWO_HIT_RESOL) {
+	  break;
+	}
+      }
+      
+      // this hit is within the time frame of a previous hit
+      // combine the times of this weighted by the energy of the hit
+      
+      if (nhit < southHits->mult) {         /* merge with former hit */
+	southHits->in[nhit].t = 
+	  (southHits->in[nhit].t * southHits->in[nhit].dE 
+	   + tsouth * dEsouth)
+	  / (southHits->in[nhit].dE += dEsouth);
+	
+	southHits->in[nhit].dE = dEsouth;
+	
+	soMCHits = southHits->in[nhit].ftofMCHits;
+
+	// now add MC tracking information 
+	unsigned int nMChit = soMCHits->mult;	
+	if (nMChit<MAX_PAD_HITS) {
+	  
+	  soMCHits->in[nMChit].x = x[0];
+	  soMCHits->in[nMChit].y = x[1];
+	  soMCHits->in[nMChit].z = x[2];
+	  soMCHits->in[nMChit].E = pin[3];
+	  soMCHits->in[nMChit].px = pin[0]*pin[4];
+	  soMCHits->in[nMChit].py = pin[1]*pin[4];
+	  soMCHits->in[nMChit].pz = pin[2]*pin[4];
+	  soMCHits->in[nMChit].ptype = ipart;
+	  soMCHits->in[nMChit].itrack = track;
+	  soMCHits->in[nMChit].dist = dist;
+	  soMCHits->mult++;
+	}
+	
+      }  else if (nhit < MAX_HITS){  // hit in new time window
+	southHits->in[nhit].t = tsouth;
+	southHits->in[nhit].dE = dEsouth;
+	southHits->mult++;
+
+	// create memory space for MC track hit information
+	southHits->in[nhit].ftofMCHits = soMCHits = make_s_FtofMCHits(MAX_PAD_HITS);
+
+	soMCHits->in[0].x = x[0];
+	soMCHits->in[0].y = x[1];
+	soMCHits->in[0].z = x[2];
+	soMCHits->in[0].E = pin[3];
+	soMCHits->in[0].px = pin[0]*pin[4];
+	soMCHits->in[0].py = pin[1]*pin[4];
+	soMCHits->in[0].pz = pin[2]*pin[4];
+	soMCHits->in[0].ptype = ipart;
+	soMCHits->in[0].itrack = track;
+	soMCHits->in[0].dist = dist;
+	soMCHits->mult = 1;
+	
+      } else {
+	fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
+	fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+      }
+    }
   }
 }
 
@@ -326,20 +410,21 @@ s_ForwardTOF_t* pickForwardTOF ()
     int point;
     
     for (counter=0; counter < counters->mult; ++counter) {
-      s_FtofTruthHits_t* Hits = counters->in[counter].ftofTruthHits;
+      s_FtofNorthTruthHits_t* northHits = counters->in[counter].ftofNorthTruthHits;
+      s_FtofSouthTruthHits_t* southHits = counters->in[counter].ftofSouthTruthHits;
       
       /* compress out the hits below threshold */
       // cut off parameter is THRESH_MEV
       int iok,i;
       int mok=0;
       // loop over all hits in a counter for the left/up PMT
-      for (iok=i=0; i < Hits->mult; i++) {
+      for (iok=i=0; i < northHits->mult; i++) {
 	
 	// check threshold
-	if ((Hits->in[i].dENorth >= THRESH_MEV/1e3) || (Hits->in[i].dESouth >= THRESH_MEV/1e3)) {
+	if (northHits->in[i].dE >= THRESH_MEV/1e3) {
 	  
 	  if (iok < i) {
-	    Hits->in[iok] = Hits->in[i];
+	    northHits->in[iok] = northHits->in[i];
 	  }
 	  ++mok;
 	  ++iok;
@@ -347,12 +432,31 @@ s_ForwardTOF_t* pickForwardTOF ()
       }
       
       if (iok) {
-	Hits->mult = iok;
-      } else if (Hits != HDDM_NULL){ // no hits left over for this PMT	    
-	counters->in[counter].ftofTruthHits = HDDM_NULL;
-	FREE(Hits);
+	northHits->mult = iok;
+      } else if (northHits != HDDM_NULL){ // no hits left over for this PMT	    
+	counters->in[counter].ftofNorthHits = HDDM_NULL;
+	FREE(northHits);
       }
       
+      // now same loop for the right/bottom PMT of a paddle
+      for (iok=i=0; i < southHits->mult; i++){
+	
+	if (southHits->in[i].dE >= THRESH_MEV/1e3){	      
+	  if (iok < i){
+	    southHits->in[iok] = southHits->in[i];
+	  }
+	  ++mok;
+	  ++iok;
+	}
+      }
+      
+      if (iok){
+	southHits->mult = iok;
+      }
+      else if (southHits != HDDM_NULL) {
+	counters->in[counter].ftofSouthHits = HDDM_NULL;
+	FREE(southHits);
+      }
       if (mok){ // total number of time independent FTOF hits in this counter
 	int m = box->ftofCounters->mult++;
 	// add the hit list of this counter to the list

@@ -204,9 +204,17 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DTOFTruth" && tag=="")
 	  return Extract_DTOFTruth(my_hddm_s, dynamic_cast<JFactory<DTOFTruth>*>(factory));
 	
-	if(dataClassName =="DTOFHitRaw" && (tag=="" || tag=="TRUTH"))
-	  return Extract_DTOFHitRaw(my_hddm_s, dynamic_cast<JFactory<DTOFHitRaw>*>(factory), tag);
-	
+	// TOF is a special case: TWO factories are needed at the same time
+	// DTOFRawHit and DTOFRawHitMC
+	if(dataClassName == "DTOFRawHit" && (tag=="" || tag=="TRUTH")) {
+	  JFactory_base* factory2 = loop->GetFactory("DTOFRawHitMC", tag.c_str()); 
+	  return Extract_DTOFRawHit(my_hddm_s, dynamic_cast<JFactory<DTOFRawHit>*>(factory),  dynamic_cast<JFactory<DTOFRawHitMC>*>(factory2), tag);
+	}
+	if(dataClassName == "DTOFRawHitMC" && (tag=="" || tag=="TRUTH")) {
+	  JFactory_base* factory2 = loop->GetFactory("DTOFRawHit", tag.c_str()); 
+	  return Extract_DTOFRawHit(my_hddm_s, dynamic_cast<JFactory<DTOFRawHit>*>(factory2), dynamic_cast<JFactory<DTOFRawHitMC>*>(factory),  tag);
+	}
+
 	if(dataClassName =="DSCHit" && tag=="")
 	  return Extract_DSCHit(my_hddm_s, dynamic_cast<JFactory<DSCHit>*>(factory));
 
@@ -1371,7 +1379,6 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
   s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
   if(!PE) return NOERROR;
 	
-  int id = 0;
   for(unsigned int i=0; i<PE->mult; i++){
     s_HitView_t *hits = PE->in[i].hitView;
     if (hits == HDDM_NULL ||
@@ -1385,7 +1392,6 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
     for(unsigned int j=0;j<ftofTruthPoints->mult; j++, ftofTruthPoint++){
       DTOFTruth *toftruth = new DTOFTruth;
 		
-      toftruth->id          = id++;
       toftruth->primary     = ftofTruthPoint->primary;
       toftruth->track       = ftofTruthPoint->track;
       toftruth->x           = ftofTruthPoint->x;
@@ -1409,9 +1415,9 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
 }
 
 //------------------
-// Extract_DTOFHitRaw
+// Extract_DTOFRawHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DTOFHitRaw( s_HDDM_t *hddm_s,  JFactory<DTOFHitRaw>* factory, string tag)
+jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFRawHit>* factory, JFactory<DTOFRawHitMC> *factoryMC, string tag)
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1419,13 +1425,12 @@ jerror_t DEventSourceHDDM::Extract_DTOFHitRaw( s_HDDM_t *hddm_s,  JFactory<DTOFH
 	
   if(factory==NULL)return OBJECT_NOT_AVAILABLE;
 
-  vector<DTOFHitRaw*> data;
-  
+  vector<DTOFRawHit*> data;
+  vector<DTOFRawHitMC*> dataMC;
+
   s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
   if(!PE) return NOERROR;
   
-  int id = 0;
-
   for(unsigned int i=0; i<PE->mult; i++){
     s_HitView_t *hits = PE->in[i].hitView;
     if (hits == HDDM_NULL ||
@@ -1442,56 +1447,139 @@ jerror_t DEventSourceHDDM::Extract_DTOFHitRaw( s_HDDM_t *hddm_s,  JFactory<DTOFH
       if (tag==""){
 	
 	// Loop over north AND south hits
-	s_FtofHits_t *ftofHits = ftofCounter->ftofHits;
-	s_FtofHit_t  *ftofHit =  ftofHits->in;
+	s_FtofNorthHits_t *ftofNorthHits = ftofCounter->ftofNorthHits;
+	s_FtofNorthHit_t  *ftofNorthHit =  ftofNorthHits->in;
 	
-	for(unsigned int k=0;k<ftofHits->mult; k++, ftofHit++){
-	  DTOFHitRaw *tofhit = new DTOFHitRaw;
+	for(unsigned int k=0;k<ftofNorthHits->mult; k++, ftofNorthHit++){
+	  DTOFRawHit *tofhit = new DTOFRawHit;
 	  tofhit->bar	         = ftofCounter->bar;
 	  tofhit->plane	         = ftofCounter->plane;
-	  tofhit->t_north	 = ftofHit->tNorth;
-	  tofhit->dE_north	 = ftofHit->dENorth;
-	  tofhit->t_south	 = ftofHit->tSouth;
-	  tofhit->dE_south	 = ftofHit->dESouth;
-	  tofhit->dist           = ftofHit->dist;
-	  tofhit->x              = ftofHit->x;
-	  tofhit->y              = ftofHit->y;
-	  tofhit->z              = ftofHit->z;
-	  tofhit->px             = ftofHit->px;
-	  tofhit->py             = ftofHit->py;
-	  tofhit->pz             = ftofHit->pz;
-	  tofhit->E              = ftofHit->E;
-	  tofhit->ptype          = ftofHit->ptype;
-	  tofhit->itrack         = ftofHit->itrack;
-	  tofhit->id             = id++;
+	  tofhit->lr             = 0;
+	  tofhit->dE     	 = ftofNorthHit->dE;
+	  tofhit->t     	 = ftofNorthHit->t;
 	  data.push_back(tofhit);
+
+	  s_FtofMCHits_t *MCHits = ftofCounter->ftofNorthTruthHits->in[k].ftofMCHits;
+	  for (unsigned int j=0; j<MCHits->mult; j++){
+	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	    tofmchit->bar      = tofhit->bar;
+	    tofmchit->plane    = tofhit->plane;
+	    tofmchit->lr       = tofhit->lr;
+	    tofmchit->itrack   = MCHits->in[j].itrack;
+	    tofmchit->ptype    = MCHits->in[j].ptype;
+	    tofmchit->dist     = MCHits->in[j].dist;
+	    tofmchit->x        = MCHits->in[j].x;
+	    tofmchit->y        = MCHits->in[j].y;
+	    tofmchit->z        = MCHits->in[j].z;
+	    tofmchit->px       = MCHits->in[j].px;
+	    tofmchit->py       = MCHits->in[j].py;
+	    tofmchit->pz       = MCHits->in[j].pz;
+	    tofmchit->E        = MCHits->in[j].E;
+	    dataMC.push_back(tofmchit);
+	    tofhit->AddAssociatedObject(tofmchit);
+	  }
+	}
+	
+	s_FtofSouthHits_t *ftofSouthHits = ftofCounter->ftofSouthHits;
+	s_FtofSouthHit_t  *ftofSouthHit =  ftofSouthHits->in;
+	
+	for(unsigned int k=0;k<ftofSouthHits->mult; k++, ftofSouthHit++){
+	  DTOFRawHit *tofhit = new DTOFRawHit;
+	  tofhit->bar	         = ftofCounter->bar;
+	  tofhit->plane	         = ftofCounter->plane;
+	  tofhit->lr             = 1;
+	  tofhit->dE     	 = ftofSouthHit->dE;
+	  tofhit->t     	 = ftofSouthHit->t;
+	  data.push_back(tofhit);
+
+	  s_FtofMCHits_t *MCHits = ftofCounter->ftofSouthTruthHits->in[k].ftofMCHits;
+	  for (unsigned int j=0; j<MCHits->mult; j++){
+	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	    tofmchit->bar      = tofhit->bar;
+	    tofmchit->plane    = tofhit->plane;
+	    tofmchit->lr       = tofhit->lr;
+	    tofmchit->itrack   = MCHits->in[j].itrack;
+	    tofmchit->ptype    = MCHits->in[j].ptype;
+	    tofmchit->dist     = MCHits->in[j].dist;
+	    tofmchit->x        = MCHits->in[j].x;
+	    tofmchit->y        = MCHits->in[j].y;
+	    tofmchit->z        = MCHits->in[j].z;
+	    tofmchit->px       = MCHits->in[j].px;
+	    tofmchit->py       = MCHits->in[j].py;
+	    tofmchit->pz       = MCHits->in[j].pz;
+	    tofmchit->E        = MCHits->in[j].E;
+	    dataMC.push_back(tofmchit);
+	    tofhit->AddAssociatedObject(tofmchit);
+	  }
 	}
       } else if (tag=="TRUTH"){
 	
 	// Loop over north AND south hits
-	s_FtofTruthHits_t *ftofHits = ftofCounter->ftofTruthHits;
-	s_FtofTruthHit_t *ftofHit = ftofHits->in;
+	s_FtofNorthTruthHits_t *ftofNorthTruthHits = ftofCounter->ftofNorthTruthHits;
+	s_FtofNorthTruthHit_t *ftofNorthTruthHit = ftofNorthTruthHits->in;
 	
-	for(unsigned int k=0;k<ftofHits->mult; k++, ftofHit++){
-	  DTOFHitRaw *tofhit = new DTOFHitRaw;
+	for(unsigned int k=0;k<ftofNorthTruthHits->mult; k++, ftofNorthTruthHit++){
+	  DTOFRawHit *tofhit = new DTOFRawHit;
 	  tofhit->bar	         = ftofCounter->bar;
 	  tofhit->plane	         = ftofCounter->plane;
-	  tofhit->t_north	 = ftofHit->tNorth;
-	  tofhit->dE_north	 = ftofHit->dENorth;
-	  tofhit->t_south	 = ftofHit->tSouth;
-	  tofhit->dE_south	 = ftofHit->dESouth;
-	  tofhit->dist           = ftofHit->dist;
-	  tofhit->x              = ftofHit->x;
-	  tofhit->y              = ftofHit->y;
-	  tofhit->z              = ftofHit->z;
-	  tofhit->px             = ftofHit->px;
-	  tofhit->py             = ftofHit->py;
-	  tofhit->pz             = ftofHit->pz;
-	  tofhit->E              = ftofHit->E;
-	  tofhit->ptype          = ftofHit->ptype;
-	  tofhit->itrack         = ftofHit->itrack;
-	  tofhit->id             = id++;
+	  tofhit->lr	         = 0;
+	  tofhit->dE    	 = ftofNorthTruthHit->dE;
+	  tofhit->t     	 = ftofNorthTruthHit->t;
 	  data.push_back(tofhit);
+
+	  s_FtofMCHits_t *MCHits = ftofNorthTruthHit->ftofMCHits;
+	  for (unsigned int j=0; j<MCHits->mult; j++){
+	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	    tofmchit->bar      = tofhit->bar;
+	    tofmchit->plane    = tofhit->plane;
+	    tofmchit->lr       = tofhit->lr;
+	    tofmchit->itrack   = MCHits->in[j].itrack;
+	    tofmchit->ptype    = MCHits->in[j].ptype;
+	    tofmchit->dist     = MCHits->in[j].dist;
+	    tofmchit->x        = MCHits->in[j].x;
+	    tofmchit->y        = MCHits->in[j].y;
+	    tofmchit->z        = MCHits->in[j].z;
+	    tofmchit->px       = MCHits->in[j].px;
+	    tofmchit->py       = MCHits->in[j].py;
+	    tofmchit->pz       = MCHits->in[j].pz;
+	    tofmchit->E        = MCHits->in[j].E;
+	    dataMC.push_back(tofmchit);
+	    tofhit->AddAssociatedObject(tofmchit);
+	  }
+
+	}
+
+	s_FtofSouthTruthHits_t *ftofSouthTruthHits = ftofCounter->ftofSouthTruthHits;
+	s_FtofSouthTruthHit_t *ftofSouthTruthHit = ftofSouthTruthHits->in;
+
+	for(unsigned int k=0;k<ftofSouthTruthHits->mult; k++, ftofSouthTruthHit++){
+	  DTOFRawHit *tofhit = new DTOFRawHit;
+	  tofhit->bar	         = ftofCounter->bar;
+	  tofhit->plane	         = ftofCounter->plane;
+	  tofhit->lr	         = 1;
+	  tofhit->dE    	 = ftofSouthTruthHit->dE;
+	  tofhit->t     	 = ftofSouthTruthHit->t;
+	  data.push_back(tofhit);
+
+	  s_FtofMCHits_t *MCHits = ftofSouthTruthHit->ftofMCHits;
+	  for (unsigned int j=0; j<MCHits->mult; j++){
+	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	    tofmchit->bar      = tofhit->bar;
+	    tofmchit->plane    = tofhit->plane;
+	    tofmchit->lr       = tofhit->lr;
+	    tofmchit->itrack   = MCHits->in[j].itrack;
+	    tofmchit->ptype    = MCHits->in[j].ptype;
+	    tofmchit->dist     = MCHits->in[j].dist;
+	    tofmchit->x        = MCHits->in[j].x;
+	    tofmchit->y        = MCHits->in[j].y;
+	    tofmchit->z        = MCHits->in[j].z;
+	    tofmchit->px       = MCHits->in[j].px;
+	    tofmchit->py       = MCHits->in[j].py;
+	    tofmchit->pz       = MCHits->in[j].pz;
+	    tofmchit->E        = MCHits->in[j].E;
+	    dataMC.push_back(tofmchit);
+	    tofhit->AddAssociatedObject(tofmchit);
+	  }
 	}
       }      
     }
@@ -1499,6 +1587,7 @@ jerror_t DEventSourceHDDM::Extract_DTOFHitRaw( s_HDDM_t *hddm_s,  JFactory<DTOFH
 
   // Copy into factory
   factory->CopyTo(data);
+  factoryMC->CopyTo(dataMC);
 
   return NOERROR;
 }
