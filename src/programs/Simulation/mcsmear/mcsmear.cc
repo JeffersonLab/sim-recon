@@ -26,22 +26,41 @@ char *INFILENAME = NULL;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
 
-extern bool ADD_NOISE;
-extern bool SMEAR_HITS;
-extern bool SMEAR_BCAL;
-extern bool CDC_USE_PARAMETERIZED_SIGMA;
-extern bool FDC_USE_PARAMETERIZED_SIGMA;
-extern double CDC_TDRIFT_SIGMA;
-extern double CDC_TIME_WINDOW;
-extern double CDC_PEDESTAL_SIGMA;
-extern double FDC_TDRIFT_SIGMA;
-extern double FDC_CATHODE_SIGMA;
-extern double FDC_PED_NOISE;
-extern bool FDC_ELOSS_OFF;
-extern double FDC_TIME_WINDOW;
-extern double FDC_HIT_DROP_FRACTION;
-extern double FCAL_PHOT_STAT_COEF;
-extern double FCAL_BLOCK_THRESHOLD;
+bool ADD_NOISE      = false;
+bool SMEAR_HITS     = true;
+bool SMEAR_BCAL     = true;
+bool FDC_ELOSS_OFF  = false;
+bool CDC_USE_PARAMETERIZED_SIGMA = true;
+bool FDC_USE_PARAMETERIZED_SIGMA = true;
+
+// setup response parameters
+float BCAL_DARKRATE_GHZ         = 0.;// 0.041;
+float BCAL_XTALK_FRACT          = 0.;//0.03;
+float BCAL_INTWINDOW_NS         = 0.;//100;
+float BCAL_DEVICEPDE            = 0.;//0.12;
+float BCAL_SAMPLING_FRACT       = 0.;//0.15;
+float BCAL_MAXOCCUPANCY_FRACT   = 0.;//0.05;
+float BCAL_PHOTONSPERSIDEPERMEV_INFIBER = 0.0;//75;
+float BCAL_SAMPLINGCOEFA        = 0.0; //0.042;
+float BCAL_SAMPLINGCOEFB        = 0.0; //.013;
+float BCAL_TIMEDIFFCOEFA        = 0.0; //0.07 * sqrt( 2 );
+float BCAL_TIMEDIFFCOEFB        = 0.0; //0.0 * sqrt( 2 );
+float BCAL_CELLOUTERTHRESHOLD   = 0.0;//1 * k_MeV;
+float Bcal_CellInnerThreshold   = 0.0;
+
+double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
+double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
+
+double CDC_TDRIFT_SIGMA      = 0.0; // 150.0/55.0*1E-9 seconds
+double CDC_TIME_WINDOW       = 0.0; // 1000.0E-9 seconds
+double CDC_PEDESTAL_SIGMA    = 0.0; // 0.06*k_keV 
+
+double FDC_TDRIFT_SIGMA      = 0.0; // 200.0/55.0*1.0E-9 seconds
+double FDC_CATHODE_SIGMA     = 0.0; // 150.0 microns
+double FDC_PED_NOISE         = 0.0; // in pC calculated in SmearFDC
+double FDC_HIT_DROP_FRACTION = 0.0; // 1000.0E-9
+double FDC_TIME_WINDOW       = 0.0; // 1000.0E-9 in seconds
+
 extern double START_SIGMA;
 
 // TOF parameters will be read from data base later
@@ -124,15 +143,77 @@ int main(int narg,char* argv[])
 	  }
 	}
 
-	{
 
-	  cout<<"get tof parameters for smearing from calibDB"<<endl;
+	// get the TOF parameters
+	{
+	  cout<<"get TOF/tof_parms parameters from calibDB"<<endl;
 	  map<string, double> tofparms;
 	  jcalib->Get("TOF/tof_parms", tofparms);
 	  TOF_SIGMA =  tofparms["TOF_SIGMA"];
 	  TOF_PHOTONS_PERMEV =  tofparms["TOF_PHOTONS_PERMEV"];
 	}
 
+	// get the BCAL parameters
+	{
+	  cout<<"get BCAL/bcal_parms parameters from calibDB"<<endl;
+	  map<string, double> bcalparms;
+	  jcalib->Get("BCAL/bcal_parms", bcalparms);
+	  BCAL_DARKRATE_GHZ =  bcalparms["BCAL_DARKRATE_GHZ"];
+	  BCAL_XTALK_FRACT        = bcalparms["BCAL_XTALK_FRACT"];
+	  BCAL_INTWINDOW_NS       = bcalparms["BCAL_INTWINDOW_NS"];
+	  BCAL_DEVICEPDE          = bcalparms["BCAL_DEVICEPDE"];
+	  BCAL_SAMPLING_FRACT     = bcalparms["BCAL_SAMPLING_FRACT"];
+	  BCAL_MAXOCCUPANCY_FRACT = bcalparms["BCAL_MAXOCCUPANCY_FRACT"];
+	  BCAL_PHOTONSPERSIDEPERMEV_INFIBER = bcalparms[" BCAL_PHOTONSPERSIDEPERMEV_INFIBER"];
+	  BCAL_SAMPLINGCOEFA = bcalparms["BCAL_SAMPLINGCOEFA"];
+	  BCAL_SAMPLINGCOEFB = bcalparms["BCAL_SAMPLINGCOEFB"];
+	  BCAL_TIMEDIFFCOEFA = bcalparms["BCAL_TIMEDIFFCOEFA"];
+	  BCAL_TIMEDIFFCOEFB = bcalparms["BCAL_TIMEDIFFCOEFB"];
+	  BCAL_CELLOUTERTHRESHOLD = bcalparms["BCAL_CELLOUTERTHRESHOLD"];
+	  Bcal_CellInnerThreshold = bcalparms["Bcal_CellInnerThreshold"];
+	}
+
+	{
+	  cout<<"get FCAL/fcal_parms parameters from calibDB"<<endl;
+	  map<string, double> fcalparms;
+	  jcalib->Get("FCAL/fcal_parms", fcalparms);
+	  if (FCAL_PHOT_STAT_COEF == 0.0)
+	    FCAL_PHOT_STAT_COEF   = fcalparms["FCAL_PHOT_STAT_COEF"]; 
+	  if (FCAL_BLOCK_THRESHOLD == 0.0)
+	    FCAL_BLOCK_THRESHOLD  = fcalparms["FCAL_BLOCK_THRESHOLD"];
+	}
+	{
+	  cout<<"get CDC/cdc_parms parameters from calibDB"<<endl;
+	  map<string, double> cdcparms;
+	  jcalib->Get("CDC/cdc_parms", cdcparms);
+	  if (CDC_TDRIFT_SIGMA == 0.0)
+	    CDC_TDRIFT_SIGMA   = cdcparms["CDC_TDRIFT_SIGMA"]; 
+	  if (CDC_TIME_WINDOW == 0.0)
+	    CDC_TIME_WINDOW    = cdcparms["CDC_TIME_WINDOW"];
+	  if (CDC_PEDESTAL_SIGMA == 0.0)
+	    CDC_PEDESTAL_SIGMA = cdcparms["CDC_PEDESTAL_SIGMA"];
+	}
+
+	{
+	  cout<<"get FDC/fdc_parms parameters from calibDB"<<endl;
+	  map<string, double> fdcparms;
+	  jcalib->Get("FDC/fdc_parms", fdcparms);
+
+	  if (FDC_TDRIFT_SIGMA == 0.0)
+	    FDC_TDRIFT_SIGMA      = fdcparms["FDC_TDRIFT_SIGMA"];
+	  if (FDC_CATHODE_SIGMA ==0.0)
+	    FDC_CATHODE_SIGMA     = fdcparms["FDC_CATHODE_SIGMA"];
+
+	  FDC_PED_NOISE         = fdcparms["FDC_PED_NOISE"];
+
+	  if (FDC_TIME_WINDOW == 0.0)
+	    FDC_TIME_WINDOW       = fdcparms["FDC_TIME_WINDOW"];
+
+	  if (FDC_HIT_DROP_FRACTION == 0.0)
+	    FDC_HIT_DROP_FRACTION = fdcparms["FDC_HIT_DROP_FRACTION"]; 
+
+
+	}
 
 	cout<<" input file: "<<INFILENAME<<endl;
 	cout<<" output file: "<<OUTFILENAME<<endl;

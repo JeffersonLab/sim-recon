@@ -66,111 +66,113 @@ int SamplePoisson(float lambda);
 double SampleRange(double x1, double x2);
 
 // Do we or do we not add noise hits
-bool ADD_NOISE = false;
+extern bool ADD_NOISE;
 
 // Do we or do we not smear real hits
-bool SMEAR_HITS = true;
+extern bool SMEAR_HITS;
 
 // Flag used specifically for BCAL
-bool SMEAR_BCAL = true;
+extern bool SMEAR_BCAL;
 
 // If the following flag is true, then include the drift-distance
 // dependency on the error in the CDC position. Otherwise, use a
 // flat distribution given by the CDC_TDRIFT_SIGMA below.
-bool CDC_USE_PARAMETERIZED_SIGMA = true;
+extern bool CDC_USE_PARAMETERIZED_SIGMA;
 
 // The error on the drift time in the CDC. The drift times
 // for the actual CDC hits coming from the input file
 // are smeared by a gaussian with this sigma.
-double CDC_TDRIFT_SIGMA = 150.0/55.0*1E-9;	// in seconds
+extern double CDC_TDRIFT_SIGMA;
 
 // The time window for which CDC hits are accumulated.
 // This is used to determine the number of background
 // hits in the CDC for a given event.
-double CDC_TIME_WINDOW = 1000.0E-9; // in seconds
+extern double CDC_TIME_WINDOW;
 
 // The error in the energy deposition measurement in the CDC due to pedestal noise
-double CDC_PEDESTAL_SIGMA = 0.06*k_keV;
+extern double CDC_PEDESTAL_SIGMA;
  
 // If the following flag is true, then include the drift-distance
 // dependency on the error in the FDC position. Otherwise, use a
 // flat distribution given by the FDC_TDRIFT_SIGMA below.
-bool FDC_USE_PARAMETERIZED_SIGMA = true;
+extern bool FDC_USE_PARAMETERIZED_SIGMA;
 
 // The error on the drift time in the FDC. The drift times
 // for the actual FDC hits coming from the input file
 // are smeared by a gaussian with this sigma.
-double FDC_TDRIFT_SIGMA = 200.0/55.0*1.0E-9;	// in seconds
+extern double FDC_TDRIFT_SIGMA;
 
 // The error in the distance along the wire as measured by
 // the cathodes. This should NOT include the Lorentz
 // effect which is already included in hdgeant. It
 // should include any fluctuations due to ion trail density
 // etc.
-double FDC_CATHODE_SIGMA = 150.0; // in microns 
+extern double FDC_CATHODE_SIGMA;
 
 // The FDC pedestal noise is used to smear the cathode ADC
 // values such that the position along the wire has the resolution
 // specified by FDC_CATHODE_SIGMA.
-double FDC_PED_NOISE; //pC (calculated from FDC_CATHODE_SIGMA in SmearFDC)
+extern double FDC_PED_NOISE; //pC (calculated from FDC_CATHODE_SIGMA in SmearFDC)
 
 // If energy loss was turned off in the FDC then the pedestal
 // noise will not be scaled properly to give the nominal 200 micron
 // resolution along the wires. This flag is used to indicated
 // the magic scale factor should be applied to FDC_PED_NOISE
 // when it is calculated below to get the correct resolution.
-bool FDC_ELOSS_OFF = false;
+extern bool FDC_ELOSS_OFF;
 
 // Time window for acceptance of FDC hits
-double FDC_TIME_WINDOW = 1000.0E-9; // in seconds
+extern double FDC_TIME_WINDOW;
 
 // Fraction of FDC hits to randomly drop (0=drop nothing 1=drop everything)
-double FDC_HIT_DROP_FRACTION = 0.0;
+extern double FDC_HIT_DROP_FRACTION;
 
 // Photon-statistics factor for smearing hit energy (from Criss's MC)
 // (copied from DFCALMCResponse_factory.cc 7/2/2009 DL)
-double FCAL_PHOT_STAT_COEF = 0.035;
+extern double FCAL_PHOT_STAT_COEF;
 
 // Single block energy threshold (applied after smearing)
-double FCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
+extern double FCAL_BLOCK_THRESHOLD;
 
 // Photon-statistics factor for smearing hit energy for CompCal
 // (This is just a rough estimate 11/30/2010 DL)
-double CCAL_PHOT_STAT_COEF = FCAL_PHOT_STAT_COEF/2.0;
+double CCAL_PHOT_STAT_COEF = 0.035/2.0;
 
 // Single block energy threshold (applied after smearing)
 // (This is just a rough estimate 11/30/2010 DL)
 double CCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
 
 // setup response parameters
-float BCAL_DARKRATE_GHZ         = 0.041;
-float BCAL_XTALK_FRACT          = 0.03;
-float BCAL_INTWINDOW_NS         = 100;
-float BCAL_DEVICEPDE            = 0.12;
-float BCAL_SAMPLING_FRACT       = 0.15;
-float BCAL_MAXOCCUPANCY_FRACT   = 0.05;
+extern float BCAL_DARKRATE_GHZ        ;// 0.041;
+extern float BCAL_XTALK_FRACT         ;//0.03;
+extern float BCAL_INTWINDOW_NS        ;//100;
+extern float BCAL_DEVICEPDE           ;//0.12;
+extern float BCAL_SAMPLING_FRACT      ;//0.15;
+extern float BCAL_MAXOCCUPANCY_FRACT  ;//0.05;
 
-      // GX-doc 1069, Table 1 -- try to extract back to
-      // photons per side per MeV in fiber
-      // 4.6 / PDE / attentuation  (meaurements performed in center)
-      // 75 = 4.6  / 0.12 / exp( -200 / 300 )
-float BCAL_PHOTONSPERSIDEPERMEV_INFIBER = 75;
+// GX-doc 1069, Table 1 -- try to extract back to
+// photons per side per MeV in fiber
+// 4.6 / PDE / attentuation  (meaurements performed in center)
+// 75 = 4.6  / 0.12 / exp( -200 / 300 )
+extern float BCAL_PHOTONSPERSIDEPERMEV_INFIBER; // 75
 
-      // set the sampling smearing coefficients:
-      // (from GlueX-doc 827 v3 Figure 13 )
-float BCAL_SAMPLINGCOEFA = 0.042;
-float BCAL_SAMPLINGCOEFB = 0.013;
+// set the sampling smearing coefficients:
+// (from GlueX-doc 827 v3 Figure 13 )
+extern float BCAL_SAMPLINGCOEFA ; //= 0.042;
+extern float BCAL_SAMPLINGCOEFB ; //= 0.013;
 
-      // time smearing comes from beam test time difference resolution with
-      // beam incident on the center of the module
-float BCAL_TIMEDIFFCOEFA = 0.07 * sqrt( 2 );
-      // no floor term, but leave the option here:
-float BCAL_TIMEDIFFCOEFB = 0.0 * sqrt( 2 );
+// time smearing comes from beam test time difference resolution with
+// beam incident on the center of the module
+extern float BCAL_TIMEDIFFCOEFA ; //= 0.07 * sqrt( 2 );
+
+// no floor term, but leave the option here:
+extern float BCAL_TIMEDIFFCOEFB ; //= 0.0 * sqrt( 2 );
     
-      // set this low for now -- needs more thought later
-float BCAL_CELLOUTERTHRESHOLD = 1 * k_MeV;
-      // calculated later in based on number of photons and ph threshold
-float Bcal_CellInnerThreshold;
+// set this low for now -- needs more thought later
+extern float BCAL_CELLOUTERTHRESHOLD ; // = 1 * k_MeV;
+
+// calculated later in based on number of photons and ph threshold
+extern float Bcal_CellInnerThreshold ;
 
 // Forward TOF resolution
 extern double TOF_SIGMA;
