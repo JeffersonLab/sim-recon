@@ -179,8 +179,8 @@ extern double TOF_SIGMA;
 extern double TOF_PHOTONS_PERMEV;
 
 // Start counter resolution
-double START_SIGMA = 300.*k_psec;
-double START_PHOTONS_PERMEV = 8000.;
+extern double START_SIGMA ;
+extern double START_PHOTONS_PERMEV;
 
 // Polynomial interpolation on a grid.
 // Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.

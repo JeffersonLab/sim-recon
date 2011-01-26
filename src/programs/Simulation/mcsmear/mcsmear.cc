@@ -61,7 +61,8 @@ double FDC_PED_NOISE         = 0.0; // in pC calculated in SmearFDC
 double FDC_HIT_DROP_FRACTION = 0.0; // 1000.0E-9
 double FDC_TIME_WINDOW       = 0.0; // 1000.0E-9 in seconds
 
-extern double START_SIGMA;
+double START_SIGMA           = 0.0; // 300ps
+double START_PHOTONS_PERMEV  = 0.0; // used to be 8000 should be more like 200
 
 // TOF parameters will be read from data base later
 double TOF_SIGMA = 100.*k_psec;
@@ -211,9 +212,18 @@ int main(int narg,char* argv[])
 
 	  if (FDC_HIT_DROP_FRACTION == 0.0)
 	    FDC_HIT_DROP_FRACTION = fdcparms["FDC_HIT_DROP_FRACTION"]; 
+	}
 
+	{
+	  cout<<"get START_COUNTER/start_parms parameters from calibDB"<<endl;
+	  map<string, double> startparms;
+	  jcalib->Get("START_COUNTER/start_parms", startparms);
+
+	  START_SIGMA = startparms["START_SIGMA"] ;
+	  START_PHOTONS_PERMEV = startparms["START_PHOTONS_PERMEV"];
 
 	}
+
 
 	cout<<" input file: "<<INFILENAME<<endl;
 	cout<<" output file: "<<OUTFILENAME<<endl;
