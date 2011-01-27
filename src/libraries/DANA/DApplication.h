@@ -44,6 +44,8 @@ class DApplication:public JApplication{
 	
 		DMagneticFieldMap *bfield;
 		DLorentzDeflections *lorentz_def;
+		JEventSourceGenerator *event_source_generator;
+		JFactoryGenerator *factory_generator;
   		//DMaterialMap *material;
 	 	DRootGeom *RootGeom;	
 		vector<DGeometry*> geometries;

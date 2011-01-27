@@ -36,8 +36,10 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	/// Add DEventSourceHDDMGenerator and
 	/// DFactoryGenerator, which adds the default
 	/// list of Hall-D factories
-	AddEventSourceGenerator(new DEventSourceHDDMGenerator());
-	AddFactoryGenerator(new DFactoryGenerator());
+	event_source_generator = new DEventSourceHDDMGenerator();
+	factory_generator = new DFactoryGenerator();
+	AddEventSourceGenerator(event_source_generator);
+	AddFactoryGenerator(factory_generator);
 	
 	// Add plugin paths to Hall-D specific binary directories
 	const char *bms = getenv("BMS_OSNAME");
@@ -87,7 +89,12 @@ jerror_t DApplication::Init(void)
 //---------------------------------
 DApplication::~DApplication()
 {
-
+	if(bfield) delete bfield;
+	if(lorentz_def) delete lorentz_def;
+	if(event_source_generator) delete event_source_generator;
+	if(factory_generator) delete factory_generator;
+	if(RootGeom) delete RootGeom;
+	for(unsigned int i=0; i<geometries.size(); i++) delete geometries[i];
 }
 
 //---------------------------------
