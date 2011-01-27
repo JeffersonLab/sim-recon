@@ -10,9 +10,7 @@ using namespace jana;
 #include "DTwoGammaFit_factory_ETA.h"
 #include "DParticle_factory.h"
 #include "DParticle_factory_THROWN.h"
-#include "DParticle_factory_Kalman.h"
 #include "DChargedTrack_factory.h"
-#include "DChargedTrack_factory_Kalman.h"
 #include "DChargedTruthMatch_factory.h"
 #include "DVertex_factory.h"
 #include "DPhysicsEvent_factory.h"
@@ -33,9 +31,7 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DBeamPhoton_factory);
 	loop->AddFactory(new DParticle_factory);
 	loop->AddFactory(new DParticle_factory_THROWN);
-	loop->AddFactory(new DParticle_factory_Kalman);
 	loop->AddFactory(new DChargedTrack_factory);
-	loop->AddFactory(new DChargedTrack_factory_Kalman);
 	loop->AddFactory(new DChargedTruthMatch_factory);
 	loop->AddFactory(new DPhoton_factory_THROWN);
 	loop->AddFactory(new DVertex_factory);

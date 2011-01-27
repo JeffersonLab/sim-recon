@@ -13,7 +13,11 @@ using namespace std;
 #include "DChargedTrack_factory.h"
 using namespace jana;
 
-extern bool DChargedTrack_track_cmp(const DTrackTimeBased *a,const DTrackTimeBased *b);
+bool DChargedTrack_track_cmp(const DTrackTimeBased *a,const DTrackTimeBased *b){
+ return (a->FOM>b->FOM);
+}
+
+;
 //------------------
 // init
 //------------------
