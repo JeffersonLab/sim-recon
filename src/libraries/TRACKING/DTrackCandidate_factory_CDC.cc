@@ -1407,6 +1407,24 @@ int DTrackCandidate_factory_CDC::NumEligibleSeedHits(vector<DCDCTrkHit*> &hits)
 }
 
 //------------------
+// DCDCSeed::DCDCSeed
+//------------------
+DTrackCandidate_factory_CDC::DCDCSeed::DCDCSeed()
+{	
+	phi_avg = 0.0;
+	tdrift_avg = 0.0;
+	linked = false;
+	valid = false;
+	theta = 0.0;
+	z_vertex = 0.0;
+	q = 0.0;
+	theta_min = 0.0;
+	theta_max = 0.0;
+	z_min = 0.0;
+	z_max = 0.0;
+}
+
+//------------------
 // DCDCSeed::Merge
 //------------------
 void DTrackCandidate_factory_CDC::DCDCSeed::Merge(DCDCSeed& seed)

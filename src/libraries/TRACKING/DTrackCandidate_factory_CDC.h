@@ -76,6 +76,8 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 				void Merge(DCDCSeed& seed);
 				double MinDist2(DCDCSeed& seed);
 				double FindAverageBz(JEventLoop *loop);
+				
+				DCDCSeed();
 		};
 
 	private:
