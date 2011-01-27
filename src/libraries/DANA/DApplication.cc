@@ -192,7 +192,7 @@ DMagneticFieldMap* DApplication::GetBfield(void)
 	// Create magnetic field object for use by everyone
 	// Allow a trivial homogeneous map to be used if 
 	// specified on the command line
-	string bfield_type = "CalibDB";
+	string bfield_type = "FineMesh";
 	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
 	if(bfield_type=="CalibDB"){
 		bfield = new DMagneticFieldMapCalibDB(this);
