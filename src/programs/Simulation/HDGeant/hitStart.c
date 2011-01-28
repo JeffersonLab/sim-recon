@@ -29,22 +29,21 @@
 #include <hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+#include "calibDB.h"
 
-#define ATTEN_LENGTH	150.
-#define C_EFFECTIVE	15.
-#define TWO_HIT_RESOL	25.
-#define MAX_HITS 	100
-#define THRESH_MEV      0.150
-
-#define LIGHT_GUIDE     140.
-#define ANGLE_COR       1.17
-#define BENT_REGION     50.
-
-
+static float ATTEN_LENGTH    = 150.;
+static float C_EFFECTIVE     = 15.;
+static float TWO_HIT_RESOL   = 25.;
+static int   MAX_HITS 	     = 100;
+static float THRESH_MEV      = 0.150;
+static float LIGHT_GUIDE     = 140.;
+static float ANGLE_COR       = 1.17;
+static float BENT_REGION     = 50.;
 
 binTree_t* startCntrTree = 0;
 static int paddleCount = 0;
 static int pointCount = 0;
+static int initialized = 0;
 
 
 /* register hits during tracking (from gustep) */
@@ -58,6 +57,62 @@ void hitStartCntr (float xin[4], float xout[4],
    float dEdx;
    float xlocal[3];
    float xvrtx[3];
+
+   if (!initialized) {
+
+    mystr_t strings[50];
+    float values[50];
+    int nvalues = 50;
+    int status = GetConstants("START_COUNTER/start_parms", &nvalues, values, strings);
+
+    if (!status) {
+      int ncounter = 0;
+      int i;
+      for ( i=0;i<(int)nvalues;i++){
+        //printf("%d %s \n",i,strings[i].str);
+        if (!strcmp(strings[i].str,"START_ATTEN_LENGTH")) {
+          ATTEN_LENGTH  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"START_C_EFFECTIVE")) {
+          C_EFFECTIVE  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"START_TWO_HIT_RESOL")) {
+          TWO_HIT_RESOL  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"START_MAX_HITS")) {
+          MAX_HITS  = (int)values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"START_THRESH_MEV")) {
+          TWO_HIT_RESOL  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"START_LIGHT_GUIDE")) {
+          LIGHT_GUIDE  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"START_ANGLE_COR")) {
+          ANGLE_COR  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"START_BENT_REGION")) {
+          BENT_REGION  = values[i];
+          ncounter++;
+        }	
+      }
+      if (ncounter==8){
+        printf("START: ALL parameters loaded from Data Base\n");
+      } else if (ncounter<8){
+        printf("START: NOT ALL necessary parameters found in Data Base %d out of 8\n",ncounter);
+      } else {
+        printf("START: SOME parameters found more than once in Data Base\n");
+      }
+    }
+    initialized = 1;
+   }
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
