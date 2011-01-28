@@ -175,4 +175,40 @@ void GetLorentzDefelections(float *lorentz_x, float *lorentz_z, float **lorentz_
 		lorentz_nz[xindex][zindex] = row["nz"];
 	}	
 }
+//----------------
+// GetConstants
+//----------------
+int GetConstants(const char* namepath, int *Nvals, float* vals, mystr_t *strings)
+{
+	/// C-callable routine for accessing calibraion constants.
+	/// The values specified by "namepath" will be read into the array
+	/// "vals". The "vals" array should have enough memory allocated
+	/// to hold *Nvals elements. If not, only the first *Nvals elements
+	/// will be copied and a non-zero value returned. If the number
+	/// of values in the database are less than *Nvals, then all values
+	/// are copied, *Nvals is updated to reflect the number of valid
+	/// elements in "vals", and a value of 0 is returned.
+        /// Similar the variable names are stored in the array strings.
+	
+	if(!jcalib){
+		_DBG_<<"ERROR - GetConstants() called when jcalib not set!"<<endl;
+		_DBG_<<"ERROR - request for \""<<namepath<<"\""<<endl;
+		_DBG_<<"ERROR - Exiting ..."<<endl;
+		exit(-1);
+	}
+
+	map <string, float> detparms;
+	jcalib->Get(namepath, detparms);
+
+	if((int)detparms.size()<*Nvals)
+	  *Nvals = (int)detparms.size();
+	int i=0;
+	for( map<string, float>::iterator ii=detparms.begin(); ii!=detparms.end(); ++ii){
+	  if (i<*Nvals){
+	    strcpy (strings[i].str, (*ii).first.c_str());
+	    vals[i++] = (*ii).second;
+	  }
+	}
+	return (int)detparms.size()>*Nvals; // return 0 if OK, 1 if not
+}
 
