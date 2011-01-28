@@ -18,6 +18,8 @@
 #include <geant3.h>
 #include <bintree.h>
 
+#include "calibDB.h"
+
 const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 //const float wire_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
 //const float strip_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
@@ -27,26 +29,25 @@ const float strip_dead_zone_radius[4]={1.3,1.3,1.3,1.3};
 #define CATHODE_ROT_ANGLE 1.309 // 75 degrees
 
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
-#define DRIFT_SPEED           .0055
-//#define WIRE_DEAD_ZONE_RADIUS 3.5
-//#define STRIP_DEAD_ZONE_RADIUS 5.0
-#define ACTIVE_AREA_OUTER_RADIUS 48.5
-#define ANODE_CATHODE_SPACING 0.5
-#define TWO_HIT_RESOL         25.
-#define WIRES_PER_PLANE       96
-#define WIRE_SPACING          1.0
-#define U_OF_WIRE_ZERO        (-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2)
-#define STRIPS_PER_PLANE      192
-#define STRIP_SPACING         0.5
-#define U_OF_STRIP_ZERO		  (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2)
-#define STRIP_GAP             0.1
-#define MAX_HITS             100
-#define K2                  1.15
-#define STRIP_NODES           3
-#define THRESH_KEV           1. 
-#define THRESH_STRIPS        5.   /* pC */
-#define ELECTRON_CHARGE 1.6022e-4 /* fC */
-#define DIFFUSION_COEFF     1.1e-6 // cm^2/s --> 200 microns at 1 cm
+static float DRIFT_SPEED           =.0055;
+static float ACTIVE_AREA_OUTER_RADIUS =48.5;
+static float ANODE_CATHODE_SPACING =0.5;
+static float TWO_HIT_RESOL         =25.;
+static int   WIRES_PER_PLANE       =96;
+static float WIRE_SPACING          =1.0;
+static float U_OF_WIRE_ZERO        =0;//(-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2)
+static float STRIPS_PER_PLANE      =192;
+static float STRIP_SPACING         =0.5;
+static float U_OF_STRIP_ZERO	   =0;//  (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2)
+static float STRIP_GAP             =0.1;
+static int   MAX_HITS             =100;
+static float K2                  =1.15;
+static float STRIP_NODES          = 3;
+static float THRESH_KEV           =1. ;
+static float THRESH_STRIPS        =5. ;  /* pC */
+static float ELECTRON_CHARGE =1.6022e-4; /* fC */
+static float DIFFUSION_COEFF  =   1.1e-6; // cm^2/s --> 200 microns at 1 cm
+
 /* The folowing are for interpreting grid of Lorentz deflection data */
 #define PACKAGE_Z_POINTS 10
 #define LORENTZ_X_POINTS 21
@@ -57,6 +58,7 @@ static int stripCount = 0;
 static int wireCount = 0;
 static int pointCount = 0;
 static int initialized=0;
+static int initializedx=0;
 
 // Variables for implementing lorentz effect (deflections of avalanche position
 // due to the magnetic field).
@@ -144,6 +146,96 @@ void hitForwardDC (float xin[4], float xout[4],
   float alpha;
   int i,j;
   float u_of_wire0=U_OF_WIRE_ZERO;
+
+  if (!initializedx){
+      mystr_t strings[50];
+      float values[50];
+      int nvalues = 50;
+      int status = GetConstants("CDC/cdc_parms", &nvalues, values, strings);
+
+      if (!status) {
+        int ncounter = 0;
+        int i;
+        for ( i=0;i<(int)nvalues;i++){
+          //printf("%d %s \n",i,strings[i].str);
+          if (!strcmp(strings[i].str,"FDC_DRIFT_SPEED")) {
+            DRIFT_SPEED  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_ACTIVE_AREA_OUTER_RADIUS")) {
+            ACTIVE_AREA_OUTER_RADIUS  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_ANODE_CATHODE_SPACING")) {
+            ANODE_CATHODE_SPACING  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_TWO_HIT_RESOL")) {
+            TWO_HIT_RESOL  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_WIRES_PER_PLANE")) {
+            WIRES_PER_PLANE  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_WIRE_SPACING")) {
+            WIRE_SPACING  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_STRIPS_PER_PLANE")) {
+            STRIPS_PER_PLANE  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_STRIP_SPACING")) {
+            STRIP_SPACING  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_STRIP_GAP")) {
+            STRIP_GAP  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_MAX_HITS")) {
+            MAX_HITS  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_K2")) {
+            K2  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_STRIP_NODES")) {
+            STRIP_NODES  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_THRESH_KEV")) {
+            THRESH_KEV  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_THRESH_STRIPS")) {
+            THRESH_STRIPS  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_ELECTRON_CHARGE")) {
+            ELECTRON_CHARGE  = values[i];
+            ncounter++;
+          }
+          if (!strcmp(strings[i].str,"FDC_DIFFUSION_COEFF")) {
+            DIFFUSION_COEFF  = values[i];
+            ncounter++;
+          }
+	}
+	U_OF_WIRE_ZERO     = (-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2);
+	U_OF_STRIP_ZERO	   = (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2);
+  
+	if (ncounter==16){
+          printf("CDC: ALL parameters loaded from Data Base\n");
+        } else if (ncounter<16){
+          printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 16\n",ncounter);
+        } else {
+          printf("CDC: SOME parameters found more than once in Data Base\n");
+        }       
+      }
+      initializedx = 1 ;
+  }
 
   /* Get chamber information */ 
   int layer = getlayer_(); 
