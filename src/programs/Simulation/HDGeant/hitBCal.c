@@ -21,13 +21,17 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define THRESH_MEV	     1.
-#define TWO_HIT_RESOL	50.
-#define MAX_HITS 	   100
+#include "calibDB.h"
+
+
+static float THRESH_MEV	     = 1.;
+static float TWO_HIT_RESOL   = 50.;
+static int   MAX_HITS 	     = 100;
 
 binTree_t* barrelEMcalTree = 0;
 static int cellCount = 0;
 static int showerCount = 0;
+static int initialized = 0;
 
 /* register hits during tracking (from gustep) */
 
@@ -40,6 +44,43 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    float xlocal[3];
    float xbcal[3];
    float xHat[] = {1,0,0};
+
+  if (!initialized) {
+
+    mystr_t strings[50];
+    float values[50];
+    int nvalues = 50;
+    int status = GetConstants("BCAL/bcal_parms", &nvalues, values, strings);
+
+    if (!status) {
+     int ncounter = 0;
+      int i;
+      for ( i=0;i<(int)nvalues;i++){
+        //printf("%d %s \n",i,strings[i].str);
+        if (!strcmp(strings[i].str,"BCAL_THRESH_MEV")) {
+          THRESH_MEV  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"BCAL_TWO_HIT_RESOL")) {
+          TWO_HIT_RESOL  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"BCAL_MAX_HITS")) {
+          MAX_HITS  = (int)values[i];
+          ncounter++;
+        }
+      }
+      if (ncounter==3){
+        printf("BCAL: ALL parameters loaded from Data Base\n");
+      } else if (ncounter<3){
+        printf("BCAL: NOT ALL necessary parameters found in Data Base %d out of 7\n",ncounter);
+      } else {
+        printf("BCAL: SOME parameters found more than once in Data Base\n");
+      }
+    }
+    initialized = 1;
+
+  }
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;

@@ -114,11 +114,11 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  ncounter++;
 	}
 	if (!strcmp(strings[i].str,"TOF_MAX_HITS")){
-	  MAX_HITS      = values[i];
+	  MAX_HITS      = (int)values[i];
 	  ncounter++;
 	}
 	if (!strcmp(strings[i].str,"TOF_MAX_PAD_HITS")) {
-	  MAX_PAD_HITS  = values[i];
+	  MAX_PAD_HITS  = (int)values[i];
 	  ncounter++;
 	}
       }

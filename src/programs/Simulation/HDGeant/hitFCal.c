@@ -94,7 +94,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
 	   ncounter++;
 	 }
 	 if (!strcmp(strings[i].str,"FCAL_MAX_HITS")) {
-	   MAX_HITS  = values[i];
+	   MAX_HITS  = (int)values[i];
 	   ncounter++;
 	 }
 	 if (!strcmp(strings[i].str,"FCAL_THRESH_MEV")) {
@@ -106,11 +106,11 @@ void hitForwardEMcal (float xin[4], float xout[4],
 	   ncounter++;
 	 }
 	 if (!strcmp(strings[i].str,"FCAL_CENTRAL_ROW")) {
-	   CENTRAL_ROW  = values[i];
+	   CENTRAL_ROW  = (int)values[i];
 	   ncounter++;
 	 }
 	 if (!strcmp(strings[i].str,"FCAL_CENTRAL_COLUMN")) {
-	   CENTRAL_COLUMN  = values[i];
+	   CENTRAL_COLUMN  = (int)values[i];
 	   ncounter++;
 	 }
        }
