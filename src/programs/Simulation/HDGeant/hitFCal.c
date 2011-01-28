@@ -19,23 +19,27 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define ATTEN_LENGTH1	100.  //Outer Glass
-#define ATTEN_LENGTH2   73.1  //Inner Glass
-#define RHG_RADIUS      30.   //Radius of inner glass
-#define C_EFFECTIVE	15.
-#define WIDTH_OF_BLOCK  4.
-#define LENGTH_OF_BLOCK 45.
-#define TWO_HIT_RESOL   75.
-#define MAX_HITS        100
-#define THRESH_MEV      5.
-#define ACTIVE_RADIUS   120.
-#define CENTRAL_ROW     29
-#define CENTRAL_COLUMN  29
+#include "calibDB.h"
+
+
+static float ATTEN_LENGTH1    =	100.;   //Outer Glass
+static float  ATTEN_LENGTH2   =  73.1;  //Inner Glass
+static float  RHG_RADIUS      =  30.;   //Radius of inner glass
+static float  C_EFFECTIVE     =  15.;   // cm/ns
+static float  WIDTH_OF_BLOCK  =   4.;   //cm
+static float  LENGTH_OF_BLOCK =  45.;   //cm
+static float  TWO_HIT_RESOL   =  75.;   // ns
+static int    MAX_HITS        =  100;   // maximum hits per block
+static float  THRESH_MEV      =   5.;
+static float  ACTIVE_RADIUS   = 120.;
+static int    CENTRAL_ROW     =  29;
+static int    CENTRAL_COLUMN  =  29;
 
 
 binTree_t* forwardEMcalTree = 0;
 static int blockCount = 0;
 static int showerCount = 0;
+static int initialized = 0;
 
 
 /* register hits during tracking (from gustep) */
@@ -48,6 +52,79 @@ void hitForwardEMcal (float xin[4], float xout[4],
    float xfcal[3];
    float zeroHat[] = {0,0,0};
 
+   if (!initialized){
+     
+     mystr_t strings[50];
+     float values[50];
+     int nvalues = 50;
+     int status = GetConstants("FCAL/fcal_parms", &nvalues, values, strings);
+     
+     if (!status) {
+       
+       int ncounter = 0;
+       int i;
+       for ( i=0;i<(int)nvalues;i++){
+	 //printf("%d %s \n",i,strings[i].str);
+	 if (!strcmp(strings[i].str,"FCAL_ATTEN_LENGTH1")) {
+	   ATTEN_LENGTH1  = values[i];
+	   ncounter++;
+	 }
+         if (!strcmp(strings[i].str,"FCAL_ATTEN_LENGTH2")) {
+	   ATTEN_LENGTH2  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_RHG_RADIUS")) {
+	   RHG_RADIUS  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_C_EFFECTIVE")) {
+	   C_EFFECTIVE  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_WIDTH_OF_BLOCK")) {
+	   WIDTH_OF_BLOCK  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_LENGTH_OF_BLOCK")) {
+	   LENGTH_OF_BLOCK  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_TWO_HIT_RESOL")) {
+	   TWO_HIT_RESOL  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_MAX_HITS")) {
+	   MAX_HITS  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_THRESH_MEV")) {
+	   THRESH_MEV  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_ACTIVE_RADIUS")) {
+	   ACTIVE_RADIUS  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_CENTRAL_ROW")) {
+	   CENTRAL_ROW  = values[i];
+	   ncounter++;
+	 }
+	 if (!strcmp(strings[i].str,"FCAL_CENTRAL_COLUMN")) {
+	   CENTRAL_COLUMN  = values[i];
+	   ncounter++;
+	 }
+       }
+       if (ncounter==12){
+	 printf("FCAL: ALL parameters loaded from Data Base\n");
+       } else if (ncounter<12){
+	 printf("FCAL: NOT ALL necessary parameters found in Data Base %d out of 7\n",ncounter);
+       } else {
+	 printf("FCAL: SOME parameters found more than once in Data Base\n");
+       }
+     }
+     initialized = 1;
+   }
+   
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
