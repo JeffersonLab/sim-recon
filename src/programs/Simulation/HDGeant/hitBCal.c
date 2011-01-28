@@ -73,7 +73,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       if (ncounter==3){
         printf("BCAL: ALL parameters loaded from Data Base\n");
       } else if (ncounter<3){
-        printf("BCAL: NOT ALL necessary parameters found in Data Base %d out of 7\n",ncounter);
+        printf("BCAL: NOT ALL necessary parameters found in Data Base %d out of 3\n",ncounter);
       } else {
         printf("BCAL: SOME parameters found more than once in Data Base\n");
       }

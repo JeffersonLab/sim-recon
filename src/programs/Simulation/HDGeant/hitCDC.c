@@ -18,17 +18,20 @@
 #include <geant3.h>
 #include <bintree.h>
 
+#include "calibDB.h"
+
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
-#define DRIFT_SPEED	.0055
-#define TWO_HIT_RESOL	25.
-#define MAX_HITS 	100
-#define THRESH_KEV	1.
-#define STRAW_RADIUS 0.8
+static float DRIFT_SPEED     =   0.0055;
+static float TWO_HIT_RESOL   =  25.;
+static int   MAX_HITS 	     = 100;
+static float THRESH_KEV	     =   1.;
+static float STRAW_RADIUS    =   0.8;
 
 binTree_t* centralDCTree = 0;
 static int strawCount = 0;
 static int pointCount = 0;
 static int stripCount = 0;
+static int initialized = 0;
 
 /* void GetDOCA(int ipart, float x[3], float p[5], float doca[3]);  disabled 6/24/2009 */
 
@@ -45,7 +48,52 @@ void hitCentralDC (float xin[4], float xout[4],
    float xinlocal[3];
    float xoutlocal[3];
    float dradius,drin,drout;
-	float doca[3];
+   float doca[3];
+
+    if (!initialized) {
+      mystr_t strings[50];
+      float values[50];
+      int nvalues = 50;
+      int status = GetConstants("CDC/cdc_parms", &nvalues, values, strings);
+ 
+      if (!status) {
+	int ncounter = 0;
+	int i;
+	for ( i=0;i<(int)nvalues;i++){
+	  //printf("%d %s \n",i,strings[i].str);
+	  if (!strcmp(strings[i].str,"CDC_DRIFT_SPEED")) {
+	    DRIFT_SPEED  = values[i];
+	    ncounter++;
+	  }
+	  if (!strcmp(strings[i].str,"CDC_TWO_HIT_RESOL")) {
+	    TWO_HIT_RESOL  = values[i];
+	    ncounter++;
+	  }
+	  if (!strcmp(strings[i].str,"CDC_MAX_HITS")) {
+	    MAX_HITS  = (int)values[i];
+	    ncounter++;
+	  }
+	  if (!strcmp(strings[i].str,"CDC_THRESH_KEV")) {
+	    THRESH_KEV  = values[i];
+	    ncounter++;
+	  }
+	  if (!strcmp(strings[i].str,"CDC_STRAW_RADIUS")) {
+	    THRESH_KEV  = values[i];
+	    ncounter++;
+	  }
+	}
+	if (ncounter==5){
+	  printf("CDC: ALL parameters loaded from Data Base\n");
+	} else if (ncounter<5){
+	  printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 5\n",ncounter);
+	} else {
+	  printf("CDC: SOME parameters found more than once in Data Base\n");
+	} 	
+      }
+      initialized = 1;
+    }
+
+
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;

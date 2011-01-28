@@ -117,7 +117,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
        if (ncounter==12){
 	 printf("FCAL: ALL parameters loaded from Data Base\n");
        } else if (ncounter<12){
-	 printf("FCAL: NOT ALL necessary parameters found in Data Base %d out of 7\n",ncounter);
+	 printf("FCAL: NOT ALL necessary parameters found in Data Base %d out of 12\n",ncounter);
        } else {
 	 printf("FCAL: SOME parameters found more than once in Data Base\n");
        }
