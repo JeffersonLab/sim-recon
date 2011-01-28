@@ -151,7 +151,7 @@ void hitForwardDC (float xin[4], float xout[4],
       mystr_t strings[50];
       float values[50];
       int nvalues = 50;
-      int status = GetConstants("CDC/cdc_parms", &nvalues, values, strings);
+      int status = GetConstants("FDC/fdc_parms", &nvalues, values, strings);
 
       if (!status) {
         int ncounter = 0;
@@ -227,11 +227,11 @@ void hitForwardDC (float xin[4], float xout[4],
 	U_OF_STRIP_ZERO	   = (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2);
   
 	if (ncounter==16){
-          printf("CDC: ALL parameters loaded from Data Base\n");
+          printf("FDC: ALL parameters loaded from Data Base\n");
         } else if (ncounter<16){
-          printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 16\n",ncounter);
+          printf("FDC: NOT ALL necessary parameters found in Data Base %d out of 16\n",ncounter);
         } else {
-          printf("CDC: SOME parameters found more than once in Data Base\n");
+          printf("FDC: SOME parameters found more than once in Data Base\n");
         }       
       }
       initializedx = 1 ;
