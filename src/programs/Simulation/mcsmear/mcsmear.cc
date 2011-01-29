@@ -2,6 +2,11 @@
 //
 // Created June 22, 2005  David Lawrence
 
+
+// The following flag can be used to switch from the classic mode where
+// the event loop is implemented in main() to a JANA based event-loop.
+#define USE_JANA 0
+
 #include <iostream>
 #include <iomanip>
 using namespace std;
@@ -14,13 +19,21 @@ using namespace std;
 #include <signal.h>
 #include <time.h>
 
+#if USE_JANA
+#include <DANA/DApplication.h>
+#include "MyProcessor.h"
+#endif
+
 #include "units.h"
 #include "HDDM/hddm_s.h"
 
 void Smear(s_HDDM_t *hddm_s);
 void ParseCommandLineArguments(int narg, char* argv[]);
 void Usage(void);
-void ctrlCHandle(int x);
+
+#if ! USE_JANA
+void ctrlCHandleMCSmear(int x);
+#endif
 
 char *INFILENAME = NULL;
 char *OUTFILENAME = NULL;
@@ -85,9 +98,10 @@ TH2F *fdc_drift_time;
 //-----------
 int main(int narg,char* argv[])
 {
+#if ! USE_JANA
 	// Set up to catch SIGINTs for graceful exits
-	signal(SIGINT,ctrlCHandle);
-
+	signal(SIGINT,ctrlCHandleMCSmear);
+#endif
 	ParseCommandLineArguments(narg, argv);
 	
 	// hist file
@@ -225,6 +239,7 @@ int main(int narg,char* argv[])
 	}
 
 
+#if ! USE_JANA
 	cout<<" input file: "<<INFILENAME<<endl;
 	cout<<" output file: "<<OUTFILENAME<<endl;
 	
@@ -268,6 +283,14 @@ int main(int narg,char* argv[])
 	close_s_HDDM(fout);
 
 	cout<<" "<<NEvents<<" events read"<<endl;
+#else
+	DApplication dapp(narg, argv);
+	
+	MyProcessor myproc;
+	
+	dapp.Run(&myproc);
+
+#endif
 	
 	hfile->Write();
 
@@ -395,11 +418,13 @@ void Usage(void)
 	exit(0);
 }
 
+#if ! USE_JANA
 //-----------------------------------------------------------------
-// ctrlCHandle
+// ctrlCHandleMCSmear
 //-----------------------------------------------------------------
-void ctrlCHandle(int x)
+void ctrlCHandleMCSmear(int x)
 {
 	QUIT++;
 	cerr<<endl<<"SIGINT received ("<<QUIT<<")....."<<endl;
 }
+#endif
