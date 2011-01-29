@@ -140,6 +140,32 @@ int main(int narg, char *argv[])
 		}
 	}
 
+	// Create 2D histos in X and Z that cover a larger range
+	TH2D *Btot_vs_x_vs_z = new TH2D("Btot_vs_x_vs_z", "", 800, -100.0, 700.0, 400, -200.0, 200.0);
+	Btot_vs_x_vs_z->SetXTitle("x (cm)");
+	Btot_vs_x_vs_z->SetYTitle("r (cm)");
+	Btot_vs_x_vs_z->SetStats(0);
+	for(int ibin=1; ibin<=Btot_vs_x_vs_z->GetNbinsX(); ibin++){
+		double z = Btot_vs_x_vs_z->GetXaxis()->GetBinCenter(ibin);
+		for(int jbin=1; jbin<=Btot_vs_x_vs_z->GetNbinsY(); jbin++){
+			double x = Btot_vs_x_vs_z->GetYaxis()->GetBinCenter(jbin);
+			
+			double Bx, By, Bz;
+			double dBxdx, dBxdy, dBxdz;
+			double dBydx, dBydy, dBydz;
+			double dBzdx, dBzdy, dBzdz;
+
+			bfield->GetFieldAndGradient(x, 0.0, z-Z0, Bx, By, Bz, 
+				dBxdx, dBxdy, dBxdz,
+				dBydx, dBydy, dBydz,
+				dBzdx, dBzdy, dBzdz);
+			double Btot = sqrt(Bx*Bx + By*By + Bz*Bz);
+			
+			Btot_vs_x_vs_z->SetBinContent(ibin, jbin, Btot);
+		}
+	}
+
+	// Angle 
 	TH2D *cos_theta_vs_r_vs_z = new TH2D("cos_theta_vs_r_vs_z", "", 651, -25, 625.0, 400, 0.0, 200.0);
 	cos_theta_vs_r_vs_z->SetXTitle("z (cm)");
 	cos_theta_vs_r_vs_z->SetYTitle("r (cm)");
