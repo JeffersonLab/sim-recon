@@ -49,6 +49,8 @@ float bcalSamplingSmear( float E );
 float bcalTimeSmear(float t, float e);
 int getDarkHits();
 
+pthread_mutex_t mutex_fdc_smear_function = PTHREAD_MUTEX_INITIALIZER;
+
 bool CDC_GEOMETRY_INITIALIZED = false;
 int CDC_MAX_RINGS=0;
 vector<unsigned int> NCDC_STRAWS;
@@ -535,6 +537,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 			
 				}
 
+				pthread_mutex_lock(&mutex_fdc_smear_function);
 				for (unsigned int p=0;p<9;p++){
 				  // printf("rel %f\n",truthhit->d-0.02*ind);
 				  if ((p+2)%3 && my_parms[p]<0.) my_parms[p]*=-1.;
@@ -543,6 +546,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				// The calib database contains the smearing in cm, so one needs to 
 				// convert into nanoseconds...
 				double dx=fdc_smear_function->GetRandom();
+				pthread_mutex_unlock(&mutex_fdc_smear_function);
 				dt=dx/0.0055;
 				fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
 				double t_temp=90.99*tanh((truthhit->d-0.2915)/0.1626);
