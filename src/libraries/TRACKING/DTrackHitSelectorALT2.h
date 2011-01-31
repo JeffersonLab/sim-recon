@@ -26,9 +26,24 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 		bool MAKE_DEBUG_TREES;
 		double MIN_HIT_PROB_CDC;
 		double MIN_HIT_PROB_FDC;
+		double MIN_FDC_SIGMA_ANODE_CANDIDATE;
+		double MIN_FDC_SIGMA_CATHODE_CANDIDATE;
+		double MIN_FDC_SIGMA_ANODE_WIREBASED;
+		double MIN_FDC_SIGMA_CATHODE_WIREBASED;
 		
 		TTree *cdchitsel;
 		TTree *fdchitsel;
+		
+		typedef struct{
+			// parameters for material correction factor for residual sigma
+			// s_factor = exp(s1 + s2*itheta02s2)
+			double s1_anode;
+			double s2_anode;
+			double s1_cathode;
+			double s2_cathode;
+		}correction_parms_t;
+		
+		correction_parms_t correction_parms[4];
 		
 		typedef struct{
 			int fit_type;
@@ -56,6 +71,7 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 		
 		typedef struct{
 			int fit_type;
+			int hit_cdc_endplate;
 			float p;
 			float theta;
 			float mass;

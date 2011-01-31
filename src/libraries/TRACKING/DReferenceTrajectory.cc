@@ -36,6 +36,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->Nswim_steps = 0;
 	this->dist_to_rt_depth = 0;
 	this->mass = 0.13957; // assume pion mass until otherwise specified
+	this->hit_cdc_endplate = false;
 	this->RootGeom=NULL;
 	this->geom = NULL;
 	this->ploss_direction = kForward;
@@ -216,6 +217,27 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	// Magnetic field
 	double Bz_old=0;
 	
+	// Reset flag indicating whether we hit the CDC endplate
+	// and get the parameters of the endplate so we can check
+	// if we hit it while swimming.
+	hit_cdc_endplate = false;
+#if 0 // The GetCDCEndplate call goes all the way back to the XML and slows down
+      // overall tracking by a factor of 20. Therefore, we skip finding it
+	  // and just hard-code the values instead.  1/28/2011  DL
+	double cdc_endplate_z=150+17;  // roughly, from memory
+	double cdc_endplate_dz=5.0;	   // roughly, from memory
+	double cdc_endplate_rmin=10.0; // roughly, from memory
+	double cdc_endplate_rmax=55.0; // roughly, from memory
+	if(geom)geom->GetCDCEndplate(cdc_endplate_z, cdc_endplate_dz, cdc_endplate_rmin, cdc_endplate_rmax);
+	double cdc_endplate_zmin = cdc_endplate_z - cdc_endplate_dz/2.0;
+	double cdc_endplate_zmax = cdc_endplate_zmin + cdc_endplate_dz;
+#else
+	double cdc_endplate_rmin=10.0; // roughly, from memory
+	double cdc_endplate_rmax=55.0; // roughly, from memory
+	double cdc_endplate_zmin = 167.6;
+	double cdc_endplate_zmax = 168.2;
+#endif	
+	
 	// Get Bfield from stepper to initialize Bz_old
 	DVector3 B;
 	stepper.GetBField(B);
@@ -262,6 +284,15 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 					err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0, &s_to_boundary);
 				}else{
 					err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0);
+				}
+				
+				// Check if we hit the CDC endplate
+				double z = swim_step->origin.Z();
+				if(z>=cdc_endplate_zmin && z<=cdc_endplate_zmax){
+					double r = swim_step->origin.Perp();
+					if(r>=cdc_endplate_rmin && r<=cdc_endplate_rmax){
+						hit_cdc_endplate = true;
+					}
 				}
 			}
 

@@ -45,11 +45,19 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSe
 	MAKE_DEBUG_TREES = false;
 	MIN_HIT_PROB_CDC = 0.05;
 	MIN_HIT_PROB_FDC = 0.05;
+	MIN_FDC_SIGMA_ANODE_CANDIDATE = 0.1000;
+	MIN_FDC_SIGMA_CATHODE_CANDIDATE = 0.1000;
+	MIN_FDC_SIGMA_ANODE_WIREBASED = 0.0100;
+	MIN_FDC_SIGMA_CATHODE_WIREBASED = 0.0100;
 
 	gPARMS->SetDefaultParameter("TRKFIT:HS_DEBUG_LEVEL", HS_DEBUG_LEVEL, "Debug verbosity level for hit selector used in track fitting (0=no debug messages)");
 	gPARMS->SetDefaultParameter("TRKFIT:MAKE_DEBUG_TREES", MAKE_DEBUG_TREES, "Create a TTree with debugging info on hit selection for the FDC and CDC");
 	gPARMS->SetDefaultParameter("TRKFIT:MIN_HIT_PROB_CDC", MIN_HIT_PROB_CDC, "Minimum probability a CDC hit may have to be associated with a track to be included in list passed to fitter");
 	gPARMS->SetDefaultParameter("TRKFIT:MIN_HIT_PROB_FDC", MIN_HIT_PROB_FDC, "Minimum probability a FDC hit may have to be associated with a track to be included in list passed to fitter");
+	gPARMS->SetDefaultParameter("TRKFIT:MIN_FDC_SIGMA_ANODE_CANDIDATE", MIN_FDC_SIGMA_ANODE_CANDIDATE, "Minimum sigma used for FDC anode hits on track candidates");
+	gPARMS->SetDefaultParameter("TRKFIT:MIN_FDC_SIGMA_CATHODE_CANDIDATE", MIN_FDC_SIGMA_CATHODE_CANDIDATE, "Minimum sigma used for FDC cathode hits on track candidates");
+	gPARMS->SetDefaultParameter("TRKFIT:MIN_FDC_SIGMA_ANODE_WIREBASED", MIN_FDC_SIGMA_ANODE_WIREBASED, "Minimum sigma used for FDC anode hits on wire-based tracks");
+	gPARMS->SetDefaultParameter("TRKFIT:MIN_FDC_SIGMA_CATHODE_WIREBASED", MIN_FDC_SIGMA_CATHODE_WIREBASED, "Minimum sigma used for FDC cathode hits on wire-based tracks");
 	
 	cdchitsel = NULL;
 	fdchitsel = NULL;
@@ -74,7 +82,7 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSe
 		fdchitsel= (TTree*)gROOT->FindObject("fdchitsel");
 		if(!fdchitsel){
 			fdchitsel = new TTree("fdchitsel", "FDC Hit Selector");
-			fdchitsel->Branch("H", &fdchitdbg, "fit_type/I:p/F:theta:mass:sigma_anode:sigma_cathode:mom_factor_anode:mom_factor_cathode:x:y:z:s:s_factor_anode:s_factor_cathode:itheta02:itheta02s:itheta02s2:dist:doca:resi:u:u_cathodes:resic:sigma_anode_total:sigma_cathode_total:chisq:prob:prob_anode:prob_cathode:pull_anode:pull_cathode");
+			fdchitsel->Branch("H", &fdchitdbg, "fit_type/I:hit_cdc_endplate:p/F:theta:mass:sigma_anode:sigma_cathode:mom_factor_anode:mom_factor_cathode:x:y:z:s:s_factor_anode:s_factor_cathode:itheta02:itheta02s:itheta02s2:dist:doca:resi:u:u_cathodes:resic:sigma_anode_total:sigma_cathode_total:chisq:prob:prob_anode:prob_cathode:pull_anode:pull_cathode");
 		}else{
 			_DBG__;
 			jerr<<" !!! WARNING !!!"<<endl;
@@ -88,6 +96,29 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSe
 
 		loop->GetJApplication()->Unlock();
 	}
+	
+	// Calibration constants
+	correction_parms_t &cp0 = correction_parms[0]; // miss endplate, helical
+	correction_parms_t &cp1 = correction_parms[1]; // miss endplate, wire-based
+	correction_parms_t &cp2 = correction_parms[2]; // hit endplate, helical
+	correction_parms_t &cp3 = correction_parms[3]; // hit endplate, wire-based
+	
+	// These values come from macros fitting single track data.
+	// The macros have names like "s_factor_candidates_anodes.C"
+	// This is temporary and these will eventually need to be moved
+	// to the CCDB one the technique is proven.
+	// 1/31/2011 DL
+	cp0.s1_anode=1.61482;    cp0.s2_anode=0.572955;
+	cp0.s1_cathode=1.59351;  cp0.s2_cathode=0.513831;
+	
+	cp1.s1_anode=1.35426;     cp1.s2_anode=0.594413;
+	cp1.s1_cathode=0.188271;  cp1.s2_cathode=0.21525;
+	
+	cp2.s1_anode=0.108834;    cp2.s2_anode=0.373974;
+	cp2.s1_cathode=0.257157;  cp2.s2_cathode=0.357933;
+	
+	cp3.s1_anode=-0.152481;    cp3.s2_anode=0.556112;
+	cp3.s1_cathode=-0.856589;  cp3.s2_cathode=0.0705065;
 }
 
 //---------------------------------
@@ -126,7 +157,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
   // In principle, this could also depend on the momentum parameters
   // of the track.
   double sigma;
-  switch(fit_type){
+   switch(fit_type){
   case kTimeBased:
     sigma = 0.8*ONE_OVER_SQRT12;
     break;
@@ -300,6 +331,26 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 	/// of the trajectory to the wire and the drift time
 	/// and the distance along the wire.
 
+	// The residual sigma has a dependence on both material and total
+	// momentum. In addition, the parameters used to account for this
+	// dependence are different based on whether it is:
+	//
+	// 1. anode or cathode
+	// 2. candidate or wire-based
+	// 3. the track hit the CDC endplate or not
+	//
+	// In principle, 3. should be included in the material integral
+	// naturally, but it is empirically seen to be different.
+	//
+	// Since each FDC hit contains both anode and cathode information,
+	// the parameter sets are indexed only by 2. and 3. from the 
+	// above list. This is done using bits in the index variable.
+	bool hit_cdc_endplate = rt->GetHitCDCEndplate();
+	int iparms = 0;
+	iparms += (fit_type==kHelical ? 0:1)<<0;
+	iparms += (hit_cdc_endplate ? 1:0)<<1;
+	const correction_parms_t &corr_parms = correction_parms[iparms];
+	
 	// Calculate beta of particle assuming its a pion for now. If the
 	// particles is really a proton or an electron, the residual
 	// calculated below will only be off by a little.
@@ -313,25 +364,34 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 	// of the track.
 	double sigma_anode = 0.5*ONE_OVER_SQRT12;
 	double sigma_cathode = 0.5*ONE_OVER_SQRT12;
+	double min_sigma_anode;
+	double min_sigma_cathode;
 	switch(fit_type){
 		case kTimeBased:
 			sigma_anode = 0.5*ONE_OVER_SQRT12;
 			sigma_cathode = 0.5*ONE_OVER_SQRT12;
+			min_sigma_anode = MIN_FDC_SIGMA_ANODE_WIREBASED;
+			min_sigma_cathode = MIN_FDC_SIGMA_CATHODE_WIREBASED;
 			break;
 		case kWireBased:
 			sigma_anode = ONE_OVER_SQRT12;
 			sigma_cathode = ONE_OVER_SQRT12;
+			min_sigma_anode = MIN_FDC_SIGMA_ANODE_WIREBASED;
+			min_sigma_cathode = MIN_FDC_SIGMA_CATHODE_WIREBASED;
 			break;
 		case kHelical:
 		default:
 			sigma_anode = 5.0*ONE_OVER_SQRT12;
 			sigma_cathode = 5.0*ONE_OVER_SQRT12;
+			min_sigma_anode = MIN_FDC_SIGMA_ANODE_CANDIDATE;
+			min_sigma_cathode = MIN_FDC_SIGMA_CATHODE_CANDIDATE;
 	}
   
 	// Scale the errors as a function of total momentum.
 	// Note that this simultaneously scales it up quite a bit
 	double mom_factor_anode = 1.0;
 	double mom_factor_cathode = 1.0;
+#if 0
 	switch(fit_type){
 		case kWireBased:
 			mom_factor_anode = 0.297 - 0.0847*p;
@@ -344,8 +404,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 		default:
 			break;
 	}
-   
-  
+#endif
 	// Loop over hits
 	vector<const DFDCPseudo*>::const_iterator iter;
 	for(iter=fdchits_in.begin(); iter!=fdchits_in.end(); iter++){
@@ -357,28 +416,10 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 		const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
 		double itheta02s2 = last_step->itheta02s2;
 
-		// For time-based and wire-based tracks, the fit was
-		// weighted for multiple scattering by material times 
-		// angle giving preference to the begining of the 
-		// track. Take this into account here by enhancing the
-		// error for hits further from the vertex
-		double s_shift_anode = 0.0;
-		double s_factor_anode = 1.0;
-		double s_factor_cathode = 1.0;
-		switch(fit_type){
-			case kWireBased:
-				s_shift_anode = 0.012 + itheta02s2*(-5.1 + itheta02s2*57.34);
-				s_factor_anode = 0.751 + itheta02s2*6.98;
-				s_factor_cathode = 1.05 + itheta02s2*(-0.862 - itheta02s2*1.316);
-				break;
-			case kHelical:
-				s_shift_anode = 0.0018 + itheta02s2*(-31.17 + itheta02s2*329.3);
-				s_factor_anode = 0.913 + itheta02s2*0.577;
-				s_factor_cathode = 0.443 + itheta02s2*(41.14 - itheta02s2*449.84);
-				break;
-			default:
-				break;
-		}
+		// Calculated correction factors due to material. See comment at top of routine
+		double log_itheta02s2 = log(itheta02s2);
+		double s_factor_anode   = exp(corr_parms.s1_anode   + corr_parms.s2_anode*log_itheta02s2  );
+		double s_factor_cathode = exp(corr_parms.s1_cathode + corr_parms.s2_cathode*log_itheta02s2);
 
 		// Get "measured" distance to wire. For time-based tracks
 		// this is calculated from the drift time. For all other
@@ -402,14 +443,18 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 		double u_cathodes = hit->s;
 		double resic = u - u_cathodes;
 
-		// Probability of this hit being on the track
-		//double chisq = pow(resi/sigma_anode, 2.0) + pow(resic/sigma_cathode, 2.0);
+		// Calculate sigma for both anode and cathode hits (imposing lower limit)
 		double sigma_anode_total = sigma_anode*mom_factor_anode*s_factor_anode;
 		double sigma_cathode_total = sigma_cathode*mom_factor_cathode*s_factor_cathode;
-		double pull_anode = resi/sigma_anode_total - s_shift_anode;
+		if(sigma_anode_total<min_sigma_anode) sigma_anode_total = min_sigma_anode;
+		if(sigma_cathode_total<min_sigma_cathode) sigma_cathode_total = min_sigma_cathode;
+
+		// Calculate pulls and chisq
+		double pull_anode = resi/sigma_anode_total;
 		double pull_cathode = resic/sigma_cathode_total;
 		double chisq = pull_anode*pull_anode + pull_cathode*pull_cathode;
 		  
+		// Probability of this hit being on the track
 		double probability = TMath::Prob(chisq, 2);
 		if(probability>=MIN_HIT_PROB_FDC){
 		  pair<double,const DFDCPseudo*>myhit;
@@ -423,6 +468,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 		DVector3 pos = rt->GetLastDOCAPoint();
 
 		fdchitdbg.fit_type = fit_type;
+		fdchitdbg.hit_cdc_endplate = hit_cdc_endplate;
 		fdchitdbg.p = p;
 		fdchitdbg.theta = rt->swim_steps[0].mom.Theta();
 		fdchitdbg.mass = my_mass;
