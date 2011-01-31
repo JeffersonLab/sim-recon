@@ -879,7 +879,10 @@ class DMatrix5x5{
 
     return DMatrix5x5(SWAP(0,0,0,1),SWAP(1,0,1,1),SWAP(2,0,2,1),SWAP(3,0,3,1),SWAP(4,0,4,1),
 		      SWAP(0,2,0,3),SWAP(1,2,1,3),SWAP(2,2,2,3),SWAP(3,2,3,3),SWAP(4,2,4,3),
-		      SWAP(0,4,0,5),SWAP(1,4,1,5),SWAP(2,4,2,5),SWAP(3,4,3,5),SWAP(4,4,4,5));
+		      
+		      _mm_setr_pd(mA[4].d[0],0.),_mm_setr_pd(mA[4].d[1],0.),
+		      _mm_setr_pd(mA[4].d[2],0.),_mm_setr_pd(mA[4].d[3],0.),
+		      _mm_setr_pd(mA[4].d[4],0.));
   }
 
   // Matrix inversion by blocks   
