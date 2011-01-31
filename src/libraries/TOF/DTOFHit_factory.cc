@@ -13,7 +13,8 @@ using namespace std;
 #include "DTOFHit.h"
 #include <math.h>
 
-#define NaN std::numeric_limits<double>::quiet_NaN()
+//#define NaN std::numeric_limits<double>::quiet_NaN()
+#define NaN __builtin_nan("")
 
 //------------------
 // brun
