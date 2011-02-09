@@ -1,0 +1,1123 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-02-02
+   Date: February 9, 2011
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 7372 of trunk/sim-recon .
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+  HDDS 1.1
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.1
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.6.2
+  ROOT 5.26
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.1
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r7061 | davidl | 2010-11-30 16:51:39 -0500 (Tue, 30 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Increase hardwired max in z for DReferenceTrajectory to swim to from z=650cm to z=1100cm. This allows hdview2 to draw out to the CompCal location.
+------------------------------------------------------------------------
+r7062 | davidl | 2010-11-30 16:53:34 -0500 (Tue, 30 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.cc
+
+Re-align defaults for config parameters to avoid warnings at startup.
+------------------------------------------------------------------------
+r7063 | davidl | 2010-11-30 16:54:41 -0500 (Tue, 30 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory_THROWN.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory_THROWN.h
+
+Update 'THROWN' factories for both wire-based and time-based tracks. This is just a debugging tool.
+------------------------------------------------------------------------
+r7064 | davidl | 2010-11-30 16:57:07 -0500 (Tue, 30 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/pulls_tree/DEventProcessor_pulls_tree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/pulls_tree/DEventProcessor_pulls_tree.h
+
+Updating pulls_tree plugin for looking at pulls from tracking chisq. Work is in progress.
+------------------------------------------------------------------------
+r7065 | davidl | 2010-11-30 17:00:50 -0500 (Tue, 30 Nov 2010) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+   A /trunk/sim-recon/src/libraries/CCAL
+   A /trunk/sim-recon/src/libraries/CCAL/CCAL_init.cc
+   A /trunk/sim-recon/src/libraries/CCAL/DCCALGeometry.cc
+   A /trunk/sim-recon/src/libraries/CCAL/DCCALGeometry.h
+   A /trunk/sim-recon/src/libraries/CCAL/DCCALGeometry_factory.cc
+   A /trunk/sim-recon/src/libraries/CCAL/DCCALGeometry_factory.h
+   A /trunk/sim-recon/src/libraries/CCAL/DCCALHit.h
+   A /trunk/sim-recon/src/libraries/CCAL/DCCALTruthShower.h
+   A /trunk/sim-recon/src/libraries/CCAL/DCCALTruthShower_factory.cc
+   A /trunk/sim-recon/src/libraries/CCAL/DCCALTruthShower_factory.h
+   A /trunk/sim-recon/src/libraries/CCAL/Makefile
+   M /trunk/sim-recon/src/libraries/DANA/DFactoryGenerator.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/sim-recon/src/libraries/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Add in CCAL library for the PrimEx CompCal ("Compton Calorimeter").
+
+The geometry and mods to HDGeant were done by Pawel A. last summer. These changes bring the values into DANA in a way that is consistent with how the FCAL is done. This makes the DCCALHit and DCCALHit:TRUTH objects available (the former only after running mcsmear). Also, the DCCALTruthShower objects are now available to DANA programs.
+
+No reconstruction of CCAL data is included yet.
+
+------------------------------------------------------------------------
+r7066 | staylor | 2010-11-30 18:44:19 -0500 (Tue, 30 Nov 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory.h
+
+if USE_SIMD is not set, use ALT1 instead of KalmanSIMD as the default fitter.
+------------------------------------------------------------------------
+r7084 | staylor | 2010-12-02 09:52:35 -0500 (Thu, 02 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory.h
+
+Fix preprocessor directive for selecting default track fitter.
+------------------------------------------------------------------------
+r7089 | dwbennet | 2010-12-02 16:11:55 -0500 (Thu, 02 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry_factory.cc
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALMCResponse.h
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALMCResponse_factory.cc
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALMCResponse_factory.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h
+   D /trunk/sim-recon/src/libraries/BCAL/DHDDMBCALHit.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Modified BCAL fADC Grouping in mcsmear and BCAL Library
+------------------------------------------------------------------------
+r7094 | davidl | 2010-12-03 08:51:07 -0500 (Fri, 03 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genr8/genr8.c
+
+Make random seed be set by adding current time and process id by default.
+Also added option for setting it explicitly via command line.
+
+------------------------------------------------------------------------
+r7101 | zihlmann | 2010-12-03 16:08:11 -0500 (Fri, 03 Dec 2010) | 10 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.bin
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit.h
+   M /trunk/sim-recon/src/libraries/TOF/TOF_init.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFTOF.c
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm/Makefile
+
+Major change of TOF staring with the data model and Monte Carlo.
+remove the separation between north and south. Now both left
+and right PMTs are in the same data structure called "ftofTruthHit"
+with dENorth, dESouth, tNorth and tSouth.
+TOF digitization/smearing is done in smear.cc and DTOFMCResponse_factory
+is disabled and will be removed at a later stage when I am ready
+for clean up in the TOF directory. 
+
+
+
+------------------------------------------------------------------------
+r7102 | zihlmann | 2010-12-03 16:08:58 -0500 (Fri, 03 Dec 2010) | 4 lines
+Changed paths:
+   D /trunk/sim-recon/src/libraries/TOF/DHDDMTOFHit.h
+   A /trunk/sim-recon/src/libraries/TOF/DTOFHitRaw.h
+
+remove the DHDDMTOFHit.h container class which has been replaced by
+DTOFHitRaw.h container class.
+
+
+------------------------------------------------------------------------
+r7103 | zihlmann | 2010-12-03 16:16:47 -0500 (Fri, 03 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+fix all the bugs I introduced.
+
+
+------------------------------------------------------------------------
+r7104 | zihlmann | 2010-12-03 16:28:44 -0500 (Fri, 03 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+fixed more bugs. There is still a problem with mcsmear though.
+
+
+------------------------------------------------------------------------
+r7105 | zihlmann | 2010-12-03 16:40:23 -0500 (Fri, 03 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Fix some some brackes again ???
+
+
+------------------------------------------------------------------------
+r7106 | zihlmann | 2010-12-03 17:06:16 -0500 (Fri, 03 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFMCResponse_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+replace DHDDMTOFHit by DTOFHitRaw whereever it was needed.
+
+
+------------------------------------------------------------------------
+r7108 | zihlmann | 2010-12-03 18:08:54 -0500 (Fri, 03 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/TOF_init.cc
+
+disable DTOFMCResponse_factory, DTOFHit_factory and DTOFHit_factory_MC
+
+
+------------------------------------------------------------------------
+r7117 | dwbennet | 2010-12-05 15:47:34 -0500 (Sun, 05 Dec 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+
+Added DBCALGeometry.cc in BCAL Library
+------------------------------------------------------------------------
+r7118 | zihlmann | 2010-12-05 17:14:29 -0500 (Sun, 05 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHitRaw.h
+
+fixed type. output of itrack was the value of ptype rather than
+itrack.
+
+------------------------------------------------------------------------
+r7120 | marki | 2010-12-06 14:27:15 -0500 (Mon, 06 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/doc/Makefile
+   D /trunk/sim-recon/src/doc/htaccess
+
+stop making a .htaccess file, causes error with new apache configuration
+------------------------------------------------------------------------
+r7124 | zihlmann | 2010-12-07 11:19:39 -0500 (Tue, 07 Dec 2010) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/TOF_init.cc
+
+refurbish container and factory DTOFHit.h and DTOFHit_factory
+to hold calculated meantime and time differece to be used in the
+DTOFPoint factory where it is used instead of DTOFHitRaw.
+Also the use of parameters from the database is implemented to avoid
+hard coded parameters in the DTOFPoint factory.
+
+
+------------------------------------------------------------------------
+r7126 | zihlmann | 2010-12-07 16:30:24 -0500 (Tue, 07 Dec 2010) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/TOF_init.cc
+
+fixed some bugs. But the main bug is not fixed yet. DTOFPoint_factory
+produces random output. Sourc not yet identified.
+
+
+------------------------------------------------------------------------
+r7127 | zihlmann | 2010-12-07 17:39:51 -0500 (Tue, 07 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.cc
+
+Finaly found the bug. the variable "bar" was not tranferred properly from
+the RAW data to DTOFHit.
+
+------------------------------------------------------------------------
+r7128 | staylor | 2010-12-08 10:49:02 -0500 (Wed, 08 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+(1) Add start counter smearing. (2) improve FDC drift time smearing interpolation. (3) add CDC dE smearing.  The sigma is in keV and is a total guess right now.
+------------------------------------------------------------------------
+r7129 | staylor | 2010-12-08 10:51:09 -0500 (Wed, 08 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitStart.c
+
+Use stcTruthHit instead of stcHit following our convention -- stcHit is reserved for the smeared quantities.
+------------------------------------------------------------------------
+r7130 | staylor | 2010-12-08 10:51:31 -0500 (Wed, 08 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+Add stcTruthHit to the data model
+------------------------------------------------------------------------
+r7132 | nsparks | 2010-12-08 10:57:29 -0500 (Wed, 08 Dec 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/pid_hists
+   A /trunk/sim-recon/src/programs/Analysis/plugins/pid_hists/DEventProcessor_pid_hists.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/pid_hists/DEventProcessor_pid_hists.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/pid_hists/Makefile
+
+This plugin fills histograms that are useful in monitoring the PID quality.
+------------------------------------------------------------------------
+r7133 | zihlmann | 2010-12-08 11:42:09 -0500 (Wed, 08 Dec 2010) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+
+add capablity to use TRUTH information (unsmeared TOF hits) to calculate
+the TOFPoints using command line parameter as follows:
+-PTOF:TOF_POINT_TAG=TRUTH
+this will cause DTOFHit to use DTOFHitRaw with tag TRUTH thereby using 
+the unsmeared TOF data.
+
+
+------------------------------------------------------------------------
+r7134 | zihlmann | 2010-12-08 11:56:05 -0500 (Wed, 08 Dec 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+
+add comments for doxygen
+
+------------------------------------------------------------------------
+r7135 | zihlmann | 2010-12-08 18:01:14 -0500 (Wed, 08 Dec 2010) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.bin
+
+somehow this file got corrupted by me and had an additional link
+to my private directory. hope this fixes it.
+
+ 
+
+------------------------------------------------------------------------
+r7140 | staylor | 2010-12-10 15:21:00 -0500 (Fri, 10 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+For forward-going tracks with both cdc and fdc hits, the code no longer breaks up the reference trajectory into two parts, one taking the trajectory up to the endplate, and the second continuing into the fdc; now only one reference trajectory is used and the cdc hits are handled in the KalmanForward code.  This cleans up the calling sequence in KalmanLoop and I no longer have to worry about the transition through the interface at the cdc endplate.  Also updated the drift time variance for the fdc to be more consistent with the smearing in mcsmear.
+------------------------------------------------------------------------
+r7149 | staylor | 2010-12-15 08:08:23 -0500 (Wed, 15 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x3.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x4.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x5.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix3x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix3x3.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x4.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Added non-SIMD-ized versions of the matrix classes.  These are not fully debugged yet, so caveat emptor...
+------------------------------------------------------------------------
+r7150 | staylor | 2010-12-15 09:14:23 -0500 (Wed, 15 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+bug fix, more coming...
+------------------------------------------------------------------------
+r7154 | staylor | 2010-12-15 15:48:03 -0500 (Wed, 15 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+bug fixes
+------------------------------------------------------------------------
+r7156 | staylor | 2010-12-15 19:49:36 -0500 (Wed, 15 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory.h
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+
+Modifications to allow the KalmanSIMD code to be used even if the SIMD instructions are not available.  The default fitter for both cases is now KalmanSIMD, except in one case the matrix classes do not have SSE instructions and so the code will run slower.
+------------------------------------------------------------------------
+r7165 | davidl | 2010-12-16 23:22:53 -0500 (Thu, 16 Dec 2010) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DRootGeom.cc
+
+If the global gGeoManager (a ROOT global variable) is set to NULL,
+then instantiate a TGeoManager object before calling hddsroot().
+This is needed because hddsroot contains code that uses the
+gGeoManager pointer which is set once a TGeoManager object is created.
+
+This was causing sudden and quiet deaths in the reconstruction code
+making this a bit of a mystery. Why did this all seem to work before
+without the instantiation of a TGeoManager???!!!
+
+------------------------------------------------------------------------
+r7167 | davidl | 2010-12-17 14:47:03 -0500 (Fri, 17 Dec 2010) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DRootGeom.cc
+
+Reversing change committed yesterday that caused explicit instantiation
+of a TGeoManager object. This was needed on 32bit Linux systems in order
+for hd_ana not to crash. On 64bit systems, however, having it there causes
+the same behavior (I just can't win!). Switching back to configuration where
+it works for 64bit until the true cause can be determined and fixed for all architectures.
+
+------------------------------------------------------------------------
+r7169 | davidl | 2010-12-18 15:01:02 -0500 (Sat, 18 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+Extract error matrices when extracting DTrackTimeBased objects from hddm file produced by danahddm plugin.
+------------------------------------------------------------------------
+r7181 | zihlmann | 2010-12-20 05:16:59 -0500 (Mon, 20 Dec 2010) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+htis is the third time I commit smear.cc with adding the particle 
+type and track id to the smeared MC CDC hits.
+
+------------------------------------------------------------------------
+r7182 | shepherd | 2010-12-20 10:36:56 -0500 (Mon, 20 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+adjust the number of bcal layers and sectors
+------------------------------------------------------------------------
+r7186 | davidl | 2010-12-21 11:46:54 -0500 (Tue, 21 Dec 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Fix bug identified by Matt Shepherd that causes out-of-bounds vector accessing when no hits with z-info are present on CDC track candidate.
+
+------------------------------------------------------------------------
+r7189 | shepherd | 2010-12-21 20:51:55 -0500 (Tue, 21 Dec 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/BMS/Makefile.AmpTools
+   A /trunk/sim-recon/src/BMS/Makefile.CLHEP
+
+Add makefiles to provide compiler flags that are needed to find external libraries and headers needed to compile amplitude analysis code.
+------------------------------------------------------------------------
+r7190 | shepherd | 2010-12-21 20:53:09 -0500 (Tue, 21 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.dirs
+
+Add checking of CLHEP and AMPTOOLS environment variables.  Print a warning that a limited build will take place (no amplitude analysis code) in the case that these are not provided.
+------------------------------------------------------------------------
+r7191 | shepherd | 2010-12-21 21:04:46 -0500 (Tue, 21 Dec 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/BreitWigner.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/BreitWigner.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/GPUBreitWigner_kernel.cu
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/GPUThreePiAngles_kernel.cu
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/GPUTwoPSAngles_kernel.cu
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/Makefile
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/ThreePiAngles.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/ThreePiAngles.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/TwoPSAngles.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/TwoPSAngles.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/barrierFactor.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/barrierFactor.cuh
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/barrierFactor.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/breakupMomentum.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/breakupMomentum.cuh
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/breakupMomentum.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/clebschGordan.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/clebschGordan.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/wignerD.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/wignerD.h
+
+adding new directory that will contain GlueX specific amplitudes written in the AmpTools framework
+------------------------------------------------------------------------
+r7192 | shepherd | 2010-12-21 21:05:31 -0500 (Tue, 21 Dec 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/GlueXPlotGenerator.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/GlueXPlotGenerator.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/Makefile
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataWriter.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataWriter.h
+
+adding new library that will contain data I/O and plotting routines written for the AmpTools framework
+------------------------------------------------------------------------
+r7193 | shepherd | 2010-12-21 21:06:30 -0500 (Tue, 21 Dec 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/BreitWignerGenerator.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/BreitWignerGenerator.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/DalitzDecayFactory.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/DalitzDecayFactory.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/DecayChannelGenerator.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/DecayChannelGenerator.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToXYP.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToXYP.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToXYZP.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToXYZP.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/Makefile
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/NBodyPhaseSpaceFactory.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/NBodyPhaseSpaceFactory.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/ProductionMechanism.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/ProductionMechanism.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/ResonanceDecayFactory.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/ResonanceDecayFactory.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/TwoBodyDecayFactory.cc
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/TwoBodyDecayFactory.h
+
+adding new library that will be useful for writing Monte Carlo generators using the AmpTools framework
+------------------------------------------------------------------------
+r7194 | shepherd | 2010-12-21 21:07:50 -0500 (Tue, 21 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/Makefile
+
+Modify Makefile to build AmpTools-based libraries if CLHEP and AMPTOOLS variables are set -- they should point to the appropriate external packages
+------------------------------------------------------------------------
+r7197 | shepherd | 2010-12-23 17:25:19 -0500 (Thu, 23 Dec 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/gen_3pi
+   A /trunk/sim-recon/src/programs/Simulation/gen_3pi/Makefile
+   A /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cc
+   A /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cfg
+   A /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi_ypol.cfg
+
+add generator for generating three pi final state with amplitudes
+------------------------------------------------------------------------
+r7198 | shepherd | 2010-12-23 17:26:19 -0500 (Thu, 23 Dec 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/Makefile
+
+Modify makefile to build 3pi generator if AmpTools and CLHEP are present
+------------------------------------------------------------------------
+r7201 | shepherd | 2011-01-02 15:29:30 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.h
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataWriter.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataWriter.h
+
+updated classes to derive maximum number of particles from Kinematics class in AmpTools
+------------------------------------------------------------------------
+r7202 | shepherd | 2011-01-02 15:31:22 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis
+
+make new directory to hold Amplitude Analysis programs
+------------------------------------------------------------------------
+r7203 | shepherd | 2011-01-02 15:36:52 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cc
+
+adjust histogram creation parameters to use command line arguments
+------------------------------------------------------------------------
+r7204 | shepherd | 2011-01-02 15:55:58 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/Makefile
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/fit.cc
+
+check in first version of fitting executable
+------------------------------------------------------------------------
+r7205 | shepherd | 2011-01-02 15:56:23 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector/Makefile
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector/toy_detector.cc
+
+check in toy_detector executable
+------------------------------------------------------------------------
+r7206 | shepherd | 2011-01-02 15:57:08 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/plot
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/plot/Makefile
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/plot/plot.cc
+
+check in plot executable that computes wave intensities
+------------------------------------------------------------------------
+r7207 | shepherd | 2011-01-02 15:57:43 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass/Makefile
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass/split_mass.cc
+
+check in split_mass executable for dividing data up into bins of mass
+------------------------------------------------------------------------
+r7208 | shepherd | 2011-01-02 15:58:15 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Makefile
+
+checkin top level makefile
+------------------------------------------------------------------------
+r7209 | shepherd | 2011-01-02 15:59:04 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Makefile
+
+modify programs top level makefile to build AmplitudeAnalysis executables if AmpTools and CLHEP are available
+------------------------------------------------------------------------
+r7210 | shepherd | 2011-01-02 16:05:38 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector/toy_detector.cc
+
+modify algorithm so it doesn't make an assumption about the number of final state particles (good for both eta pi and 3 pi)
+------------------------------------------------------------------------
+r7211 | shepherd | 2011-01-02 16:14:24 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/plot
+
+removed plotter -- renamed and put in other place since this is not a generic piece of code.  It must be modified for every final state.
+------------------------------------------------------------------------
+r7212 | shepherd | 2011-01-02 16:15:41 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Makefile
+
+modify makefile to build in the Examples directory
+------------------------------------------------------------------------
+r7213 | shepherd | 2011-01-02 16:17:05 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/Makefile
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/Makefile
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/divideData.pl
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/drawWaves.C
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/driveFit.pl
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/plot_3pi.cc
+
+added Examples directory
+------------------------------------------------------------------------
+r7214 | shepherd | 2011-01-02 16:58:33 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cc
+
+now doesn't calculate intensities if we are generating flat MC
+------------------------------------------------------------------------
+r7215 | shepherd | 2011-01-02 17:11:50 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Makefile
+
+remove plot from the list of directories to build
+------------------------------------------------------------------------
+r7216 | shepherd | 2011-01-02 17:28:58 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/README
+
+added README for example
+------------------------------------------------------------------------
+r7217 | shepherd | 2011-01-02 17:29:19 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/drawWaves.C
+
+change name of fit directory to be consistent with other files
+------------------------------------------------------------------------
+r7218 | shepherd | 2011-01-02 17:29:30 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/divideData.pl
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/driveFit.pl
+
+updated paths and comments
+------------------------------------------------------------------------
+r7219 | shepherd | 2011-01-02 17:29:52 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/plot_3pi.cc
+
+updated amplitude selection to be consistent with sample files
+------------------------------------------------------------------------
+r7220 | shepherd | 2011-01-02 19:37:56 -0500 (Sun, 02 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/README
+
+updated README
+------------------------------------------------------------------------
+r7223 | shepherd | 2011-01-03 18:54:21 -0500 (Mon, 03 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/threepi_pol_TEMPLATE.cfg
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/threepi_unpol_TEMPLATE.cfg
+
+add template configuration files
+------------------------------------------------------------------------
+r7224 | shepherd | 2011-01-03 19:05:10 -0500 (Mon, 03 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/README
+
+improved README
+------------------------------------------------------------------------
+r7227 | davidl | 2011-01-04 09:14:43 -0500 (Tue, 04 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/Makefile
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/Makefile
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass/Makefile
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector/Makefile
+
+Changed AMPTOOLS to AmpTools in Makefile PACKAGES variable to match filename in src/BMS.
+------------------------------------------------------------------------
+r7229 | shepherd | 2011-01-04 09:57:25 -0500 (Tue, 04 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/GPUThreePiAngles_kernel.cu
+
+remove extra boost to make GPU code consistent with CPU code
+------------------------------------------------------------------------
+r7230 | shepherd | 2011-01-04 09:58:01 -0500 (Tue, 04 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/ThreePiAngles.cc
+
+remove unused variable
+------------------------------------------------------------------------
+r7231 | davidl | 2011-01-04 10:22:07 -0500 (Tue, 04 Jan 2011) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/ThreePiAngles.cc
+
+-Explicitly cast int arguments to abs as doubles. This is required due to compiler errors with gcc 4.4.
+
+-Added stdlib.h which is needed for atoi by gcc 4.4.
+
+
+------------------------------------------------------------------------
+r7232 | davidl | 2011-01-04 10:28:53 -0500 (Tue, 04 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/Makefile
+
+Amptools -> AmpTools
+------------------------------------------------------------------------
+r7233 | davidl | 2011-01-04 10:30:05 -0500 (Tue, 04 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/Makefile
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass/Makefile
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/toy_detector/Makefile
+
+Amptools -> AmpTools
+------------------------------------------------------------------------
+r7234 | davidl | 2011-01-04 10:32:51 -0500 (Tue, 04 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/Makefile
+
+AMPTOOLS -> AmpTools
+------------------------------------------------------------------------
+r7236 | davidl | 2011-01-04 11:05:30 -0500 (Tue, 04 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi/README
+
+dividedata.pl -> divideData.pl
+------------------------------------------------------------------------
+r7259 | staylor | 2011-01-10 11:07:12 -0500 (Mon, 10 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Reduce the number of iterations over reference trajectories to 1 for forward-going WB/TB tracks and  to 2 for more central TB tracks.
+------------------------------------------------------------------------
+r7260 | staylor | 2011-01-10 14:17:42 -0500 (Mon, 10 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Increase the values of some step size parameters by a factor of 2
+------------------------------------------------------------------------
+r7265 | marki | 2011-01-12 09:16:52 -0500 (Wed, 12 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/Makefile
+
+put HDGeant back into the build
+------------------------------------------------------------------------
+r7267 | davidl | 2011-01-13 11:02:36 -0500 (Thu, 13 Jan 2011) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.h
+   A /trunk/sim-recon/src/libraries/include/prof_time.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trk_profile
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trk_profile/DEventProcessor_trk_profile.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trk_profile/DEventProcessor_trk_profile.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trk_profile/Makefile
+
+Added a general use hi-res timing tool in prof_time.h. The tool is
+used to record the integrated times of a few blocks of code in the
+DTrackFitter class.
+
+Also added is a trk_profile plugin that gets the results of the timing
+at the end of event processing and prints it to the screen.
+
+------------------------------------------------------------------------
+r7271 | zihlmann | 2011-01-13 15:34:43 -0500 (Thu, 13 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFTOF.c
+
+fix typo that caused north and south energy and time to be identical
+
+
+------------------------------------------------------------------------
+r7274 | zihlmann | 2011-01-13 16:38:45 -0500 (Thu, 13 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.cc
+
+fixed a mistake that I introduced after makeing all the TOF changes
+
+
+------------------------------------------------------------------------
+r7275 | zihlmann | 2011-01-13 17:01:22 -0500 (Thu, 13 Jan 2011) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+
+apply an energy threshold to remove low energy backsplash from 
+the calorimeter. At the same time initialize zero values to -999
+the newly introduce energy threshold is a calibration parameter
+defined in the calib data base. TOF_E_TREHSHOLD.
+ 
+
+------------------------------------------------------------------------
+r7277 | davidl | 2011-01-13 17:09:09 -0500 (Thu, 13 Jan 2011) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory_MC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+
+Replace -999 initialization value for times with NaN. 
+Tracking still seems to work as evidenced by scanning
+a few events with hdview2.  
+
+
+------------------------------------------------------------------------
+r7281 | davidl | 2011-01-14 15:55:05 -0500 (Fri, 14 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Add option to turn on/off BCAL smearing and dark noise hit generation explicitly rather than have it controlled by same flag used for all other detectors.
+------------------------------------------------------------------------
+r7282 | staylor | 2011-01-14 16:03:36 -0500 (Fri, 14 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Added code to keep track of the number of hits in a given fdc plane that have been associated with the track through the hit selection method.
+------------------------------------------------------------------------
+r7288 | staylor | 2011-01-18 10:12:24 -0500 (Tue, 18 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x2.h
+
+Add determinant
+------------------------------------------------------------------------
+r7292 | staylor | 2011-01-19 07:48:31 -0500 (Wed, 19 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x5.h
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Prettify output of Print() method
+------------------------------------------------------------------------
+r7293 | staylor | 2011-01-19 08:37:56 -0500 (Wed, 19 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+more progress in taking care of multiple hits associated with a track in a single FDC layer.  Those hits that are more than some number of sigmas away from the expected position from the track projection are cut; the remaining are all added with some weight.
+------------------------------------------------------------------------
+r7294 | davidl | 2011-01-19 09:29:02 -0500 (Wed, 19 Jan 2011) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_root/hd_root.cc
+
+Allow output filename used by hd_root to be set via the
+OUTPUT_FILENAME configuration parameter. The -o fname
+command line option is still available and takes precedence.
+
+Also, the -o fname arguments (if present) are removed from
+the argument list passed to DApplication. This is so JANA
+won't think the "fname" part is an input file and print the
+misleading "Unable to open event source" message.
+
+------------------------------------------------------------------------
+r7296 | davidl | 2011-01-20 16:08:37 -0500 (Thu, 20 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+
+Added Dump method and debug_level member to DReferenceTrajectory to give additional debugging capability.
+------------------------------------------------------------------------
+r7297 | davidl | 2011-01-20 16:10:44 -0500 (Thu, 20 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.h
+
+Added ability to produce ROOT tree with some useful accounting to ALT1 hit selector. To use, set TRKFIT:MAKE_DEBUG_TREES. Only implemented for CDC at the moment.
+------------------------------------------------------------------------
+r7298 | davidl | 2011-01-20 16:12:57 -0500 (Thu, 20 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.h
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+
+Added ALT2 hit selector. This does a much better job estimating the residual sigmas such that the confidence level cut used to determine which hits belong to a track is more meaningful. ALT1 hit selector is still the default for the moment.
+------------------------------------------------------------------------
+r7304 | staylor | 2011-01-21 17:04:30 -0500 (Fri, 21 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Simplify calculations of Jacobian matrices.
+------------------------------------------------------------------------
+r7305 | staylor | 2011-01-21 17:05:16 -0500 (Fri, 21 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+New routine needed to simplify calculations of Jacobian matrices.
+------------------------------------------------------------------------
+r7306 | davidl | 2011-01-24 08:21:05 -0500 (Mon, 24 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelector_factory_ALT2.h
+
+Forgot to add ALT2 hit selector factory in earlier commit.
+------------------------------------------------------------------------
+r7311 | davidl | 2011-01-25 07:16:00 -0500 (Tue, 25 Jan 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.h
+
+
+Add debug info for FDC hits to hit selector and refine probability calculation.
+
+
+------------------------------------------------------------------------
+r7321 | zihlmann | 2011-01-25 15:44:01 -0500 (Tue, 25 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+   D /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory_MC.cc
+   D /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory_MC.h
+   D /trunk/sim-recon/src/libraries/TOF/DTOFMCResponse.h
+   D /trunk/sim-recon/src/libraries/TOF/DTOFMCResponse_factory.cc
+   D /trunk/sim-recon/src/libraries/TOF/DTOFMCResponse_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.cc
+   A /trunk/sim-recon/src/libraries/TOF/DTOFRawHit.h (from /trunk/home/zihlmann/sim-recon/src/libraries/TOF/DTOFRawHit.h:7320)
+   A /trunk/sim-recon/src/libraries/TOF/DTOFRawHitMC.h (from /trunk/home/zihlmann/sim-recon/src/libraries/TOF/DTOFRawHitMC.h:7320)
+   M /trunk/sim-recon/src/libraries/TOF/TOF_init.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFTOF.c
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+This comprises all necessary changes to separate Monte Carlo 
+track data from energy deposition and timing for TOF
+
+------------------------------------------------------------------------
+r7322 | staylor | 2011-01-25 15:48:38 -0500 (Tue, 25 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+added code to implement filters to remove outliers (not currently turned on, but the way the number of degrees of freedom is calculated was revamped in anticipation of turning it on).
+------------------------------------------------------------------------
+r7323 | marki | 2011-01-25 16:16:26 -0500 (Tue, 25 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.lib
+
+add a foreach for object targets in archive
+------------------------------------------------------------------------
+r7327 | zihlmann | 2011-01-26 13:11:03 -0500 (Wed, 26 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+move all detector parameters used in smearing from being hardwired 
+into the code to the calibartion data base files
+
+------------------------------------------------------------------------
+r7329 | zihlmann | 2011-01-26 15:19:08 -0500 (Wed, 26 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+add the start counter parameters to data base and do not
+use hard coded values
+
+------------------------------------------------------------------------
+r7331 | zihlmann | 2011-01-27 09:24:42 -0500 (Thu, 27 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+fix one small typo [" B... to ["B....
+
+------------------------------------------------------------------------
+r7332 | staylor | 2011-01-27 09:49:24 -0500 (Thu, 27 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DChargedTrack_factory_Kalman.cc
+   D /trunk/sim-recon/src/libraries/PID/DChargedTrack_factory_Kalman.h
+   D /trunk/sim-recon/src/libraries/PID/DParticle_factory_Kalman.cc
+   D /trunk/sim-recon/src/libraries/PID/DParticle_factory_Kalman.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+
+Removing references to obsolete non-SIMD-enabled Kalman code
+------------------------------------------------------------------------
+r7333 | staylor | 2011-01-27 10:02:36 -0500 (Thu, 27 Jan 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalman.cc
+   D /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalman.h
+   D /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory_Kalman.h
+   D /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.cc
+   D /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.h
+   D /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory_Kalman.cc
+   D /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory_Kalman.h
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+
+Removing references to obsolete non-SIMD-enabled Kalman code
+------------------------------------------------------------------------
+r7334 | staylor | 2011-01-27 10:12:30 -0500 (Thu, 27 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+
+Make the FineMesh mode for the magnetic field the default
+------------------------------------------------------------------------
+r7335 | davidl | 2011-01-27 14:50:09 -0500 (Thu, 27 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.h
+   M /trunk/sim-recon/src/libraries/DANA/DFactoryGenerator.cc
+
+Delete some objects allocated by DApplication's constructor (or elsewhere) when the destructor is called. This is mainly to try and clean things up to run cleaner in valgrind for debugging.
+------------------------------------------------------------------------
+r7336 | davidl | 2011-01-27 14:53:30 -0500 (Thu, 27 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+
+Add constructor to DTrackCandidate_factory_CDC::DCDCSeed utility class and use it to initialize all member data of that class. This fixes a number of warnings from valgrind's memcheck since it detected the phi_avg being used without necessarily being set first.
+------------------------------------------------------------------------
+r7339 | zihlmann | 2011-01-28 10:01:24 -0500 (Fri, 28 Jan 2011) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFTOF.c
+
+add function GetConstants to calibDB code to be used in hitFTOF.c
+this allows to read all constant parameters unsed in the Monte Carlo
+for tof to be read from the calib data base to avoid hard coded
+numbers in the code.
+
+------------------------------------------------------------------------
+r7340 | zihlmann | 2011-01-28 10:04:59 -0500 (Fri, 28 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+
+remove line with personal data than sneaked into the file
+
+------------------------------------------------------------------------
+r7342 | zihlmann | 2011-01-28 10:45:19 -0500 (Fri, 28 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFCal.c
+
+read parameters from data base rather then beeing hardcoded
+
+------------------------------------------------------------------------
+r7345 | zihlmann | 2011-01-28 13:49:44 -0500 (Fri, 28 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFTOF.c
+
+read all bcal parameters from the data base and to proper type casting of
+some of the parameters int fcal and tof code
+
+------------------------------------------------------------------------
+r7347 | zihlmann | 2011-01-28 14:05:43 -0500 (Fri, 28 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFCal.c
+
+all hard coded parameters removed from hitCDC and read from data base
+fix typos in hitBCal and hitFCal
+
+------------------------------------------------------------------------
+r7349 | zihlmann | 2011-01-28 14:39:23 -0500 (Fri, 28 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+all hard coded parameters are now read from data base
+
+------------------------------------------------------------------------
+r7351 | zihlmann | 2011-01-28 14:48:43 -0500 (Fri, 28 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+fix some typos 
+
+------------------------------------------------------------------------
+r7353 | zihlmann | 2011-01-28 15:08:01 -0500 (Fri, 28 Jan 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitStart.c
+
+put all hard coded parameters into the data base and read them
+from there into the code
+
+------------------------------------------------------------------------
+r7354 | davidl | 2011-01-29 08:03:52 -0500 (Sat, 29 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/bfield2root/bfield2root.cc
+
+Added Btot_vs_x_vs_z histogram. (This is an old change that was apparently never committed.
+------------------------------------------------------------------------
+r7355 | davidl | 2011-01-29 11:06:27 -0500 (Sat, 29 Jan 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.cc
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+Add an option controlled through preprocessor directives to use JANA as the main event loop instead of the one implemented in main. This is disabled at the moment so the program should function just as before unless one changes the value of USE_JANA at the top of mcsmear.cc and recompiles.
+------------------------------------------------------------------------
+r7356 | davidl | 2011-01-30 00:06:33 -0500 (Sun, 30 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Add mutex lock around accesses to fdc_smear_function so it can run with multiple threads.
+------------------------------------------------------------------------
+r7360 | staylor | 2011-01-31 13:37:22 -0500 (Mon, 31 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Fix bug that caused warnings on ubuntu with gcc 4.4.5
+------------------------------------------------------------------------
+r7361 | davidl | 2011-01-31 14:30:10 -0500 (Mon, 31 Jan 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.h
+
+New parameterization for ALT2 hit selector for FDC hits.
+------------------------------------------------------------------------
+r7365 | zihlmann | 2011-01-31 17:56:59 -0500 (Mon, 31 Jan 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+
+define NaN using math.h function to be compatible with gcc 4.4.5
+
+------------------------------------------------------------------------
