@@ -63,7 +63,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	// vertexes
 	DVertex *vertex = new DVertex();
 	_data.push_back(vertex);
-	vertex->x.SetXYZ(0.0, 0.0, target_z);
+	vertex->x.SetXYZT(0.0, 0.0, target_z,0.0);
 	vertex->cov.ResizeTo(3,3);
 	vertex->beamline_used = true;
 	
@@ -71,21 +71,24 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	if(trks.size()==0)return NOERROR;
 	
 	// Simply average POCA to beamline for all tracks
-	vertex->x.SetXYZ(0.0, 0.0, 0.0);
+	vertex->beamline_used=false;
+	DVector3 temp;
 	for(unsigned int i=0; i<trks.size(); i++){
 		const DTrackTimeBased *trk = trks[i];
-		vertex->x += trk->position();
+		temp += trk->position();
 		vertex->AddAssociatedObject(trk);
 	}
-	vertex->x *= (1.0/(double)trks.size());
+	temp *= (1.0/(double)trks.size());
 	
 	// Make sure the vertex is finite
-	if(!finite(vertex->x.Mag2())){
-		 vertex->x.SetXYZ(0.0, 0.0, target_z);
-		 // Remove any associated objects we added
-		 for(unsigned int i=0; i<trks.size(); i++){
-			vertex->RemoveAssociatedObject(trks[i]);
-		 }
+	if(finite(temp.Mag2())){
+	  vertex->x.SetVect(temp);
+	}
+	else{
+	  // Remove any associated objects we added
+	  for(unsigned int i=0; i<trks.size(); i++){
+	    vertex->RemoveAssociatedObject(trks[i]);
+	  }
 	}
 	
 	return NOERROR;

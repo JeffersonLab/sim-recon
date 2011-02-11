@@ -17,7 +17,7 @@ class DVertex:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DVertex);
 		
-		DVector3 x;		// vertex position in cm
+		DLorentzVector x; // vertex position in cm + vertex time in ns
 		DMatrix cov;	// covariance matrix
 		bool beamline_used;
 		
@@ -29,6 +29,7 @@ class DVertex:public jana::JObject{
 			AddString(items, "x", "%3.2f", x.X());
 			AddString(items, "y", "%3.2f", x.Y());
 			AddString(items, "z", "%3.2f", x.Z());
+			AddString(items, "t", "%3.2f", x.T());
 			AddString(items, "beamline_used", "%d", beamline_used);
 			AddString(items, "Ntracks", "%d", trks.size());
 		}
