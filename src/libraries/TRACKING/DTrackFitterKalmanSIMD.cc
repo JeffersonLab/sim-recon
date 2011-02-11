@@ -46,7 +46,7 @@
 
 #define CDC_VARIANCE 0.000225
 #define FDC_CATHODE_VARIANCE 0.000225
-#define FDC_ANODE_VARIANCE (0.0004)
+#define FDC_ANODE_VARIANCE 0.0006
 
 #define ONE_THIRD  0.33333333333333333
 #define ONE_SIXTH  0.16666666666666667
@@ -90,17 +90,18 @@ bool static DKalmanSIMDCDCHit_cmp(DKalmanSIMDCDCHit_t *a, DKalmanSIMDCDCHit_t *b
 // diffusion, and an intrinsic resolution of 127 microns.
 #define DIFFUSION_COEFF     1.1e-6 // cm^2/s --> 200 microns at 1 cm
 #define DRIFT_SPEED           .0055
-
-inline double fdc_y_variance(double alpha,double x){
+#define FDC_CATHODE_SIGMA_FACTOR 0.022
+inline double fdc_y_variance(double alpha,double x,double dE){
   double diffusion=2.*DIFFUSION_COEFF*fabs(x)/DRIFT_SPEED;
-  //return FDC_CATHODE_VARIANCE;
+  double sigma_from_dE=FDC_CATHODE_SIGMA_FACTOR/dE;
+  //return sigma_from_dE*sigma_from_dE;
   double tanalpha=tan(alpha);
-  return (diffusion+FDC_CATHODE_VARIANCE+0.0064*tanalpha*tanalpha);
+  return (diffusion+sigma_from_dE*sigma_from_dE+0.0064*tanalpha*tanalpha);
 }
 
 // Crude approximation for the variance in drift distance due to smearing
 inline double fdc_drift_variance(double x){
-  //return FDC_ANODE_VARIANCE;
+  return FDC_ANODE_VARIANCE;
   // root fit function:
   //  TF1 *f1=new TF1("f1","[0]*exp([1]*x)+[2]*exp([3]*x)+[4]*exp([5]*x)+[6]",0.,5.);
   double par[7]
@@ -454,6 +455,7 @@ jerror_t DTrackFitterKalmanSIMD::AddFDCHit(const DFDCPseudo *fdchit){
   hit->sina=fdchit->wire->udir.x();
   hit->nr=0.;
   hit->nz=0.;
+  hit->dE=1e6*fdchit->dE;
   hit->xres=hit->yres=1000.;
 
   my_fdchits.push_back(hit);
@@ -2267,13 +2269,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
 
     DMatrix5x1 Slast(S);
-    DMatrix5x5 Clast(C0);
+    DMatrix5x5 Clast(C0); 
+    DMatrix5x1 Sbest(S);
+    DMatrix5x5 Cbest(C0);
     
     double chisq_iter=chisq;
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?1:1);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
 
@@ -2363,8 +2367,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       chisq_iter=chisq_forward;
       //ndf=my_ndf;
    
-      C=Clast;
-      S=Slast;
+      Cbest=C=Clast;
+      Sbest=S=Slast;
       zvertex=z_;
       
       if (fit_type==kWireBased){
@@ -2375,10 +2379,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     // Extrapolate to the point of closest approach to the beam line
     z_=zvertex;
-    ExtrapolateToVertex(Slast,Clast);
+    ExtrapolateToVertex(Sbest,Cbest);
 
     // Convert from forward rep. to central rep.
-    ConvertStateVector(z_,0.,0.,Slast,Clast,Sc,Cc);
+    ConvertStateVector(z_,0.,0.,Sbest,Cbest,Sc,Cc);
 
     // Track Parameters at "vertex"
     phi_=Sc(state_phi);
@@ -2489,7 +2493,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?2:1);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
       
@@ -2699,7 +2703,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // iteration 
     double anneal_factor=1.;
     double chisq_iter=chisq;
-    for (int iter2=0;iter2<(fit_type==kTimeBased?2:1);iter2++){  
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:10);iter2++){  
       // Break out of loop if p is too small
       double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
       if (fabs(q_over_p)>Q_OVER_P_MAX) break;
@@ -3652,7 +3656,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  V(0,0)=anneal_factor*fdc_drift_variance(drift);
 	  V(0,0)+=DRIFT_SPEED*DRIFT_SPEED*mVarT0;
 	  // variance for coordinate along the wire
-	  V(1,1)=anneal_factor*fdc_y_variance(alpha,doca);
+	  V(1,1)=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[id]->dE);
 	}
 	
 	// To transform from (x,y) to (u,v), need to do a rotation:
@@ -3716,7 +3720,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    doca=du*cosalpha;
 	    
 	    // variance for coordinate along the wire
-	    V(1,1)=anneal_factor*fdc_y_variance(alpha,doca);
+	    V(1,1)=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[my_id]->dE);
 	    
 	    // Difference between measurement and projection
 	    Mdiff(1)=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);

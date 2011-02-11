@@ -25,7 +25,7 @@ typedef struct{
 }DKalmanSIMDCDCHit_t;
 
 typedef struct{
-  double t,cosa,sina;
+  double t,cosa,sina,dE;
   double uwire,vstrip,z;
   double xres,yres;
   double nr,nz;
