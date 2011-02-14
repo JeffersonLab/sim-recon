@@ -366,7 +366,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			colnames.push_back("z");
 			colnames.push_back("chisq/Ndof");
 			colnames.push_back("Ndof");
-			colnames.push_back("FOM");
+			colnames.push_back("FOM");	
+			colnames.push_back("cand");
 			
 			// Create a vertical frame for each column and insert the label as the first item
 			for(unsigned int i=0; i<colnames.size(); i++){

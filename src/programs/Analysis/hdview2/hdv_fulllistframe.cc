@@ -88,6 +88,7 @@ hdv_fulllistframe::hdv_fulllistframe(hdv_mainframe *hdvmf, const TGWindow *p, UI
 			colnames.push_back("chisq/Ndof");
 			colnames.push_back("Ndof");
 			colnames.push_back("FOM");
+			colnames.push_back("cand");
 
 			TGTextView *tview = new TGTextView(throwninfo, 700, 400);
 			throwninfo->AddFrame(tview);

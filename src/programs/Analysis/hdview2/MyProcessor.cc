@@ -866,7 +866,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		int row = reconlabs["trk"].size()-i-1;
 		if(row<1)break;
 		
-		stringstream trkno, type, p, theta, phi, z, chisq_per_dof, Ndof;
+		stringstream trkno, type, p, theta, phi, z, chisq_per_dof, Ndof,cand;
 		stringstream fom;
 		trkno<<setprecision(4)<<i+1;
 		reconlabs["trk"][row]->SetText(trkno.str().c_str());
@@ -922,6 +922,17 @@ void MyProcessor::UpdateTrackLabels(void)
 		reconlabs["chisq/Ndof"][row]->SetText(chisq_per_dof.str().c_str());
 		reconlabs["Ndof"][row]->SetText(Ndof.str().c_str());
 		reconlabs["FOM"][row]->SetText(fom.str().c_str());
+		
+		if (timetrack){
+		  cand << timetrack->candidateid;
+		}
+		else if (track){
+		  cand << track->candidateid;
+		}
+		else {
+		  cand << "--------";
+		}
+		reconlabs["cand"][row]->SetText(cand.str().c_str());
 	}
 	
 	// Have the pop-up window with the full particle list update it's labels
