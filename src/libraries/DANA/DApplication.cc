@@ -91,10 +91,15 @@ DApplication::~DApplication()
 {
 	if(bfield) delete bfield;
 	if(lorentz_def) delete lorentz_def;
-	if(event_source_generator) delete event_source_generator;
-	if(factory_generator) delete factory_generator;
-	if(RootGeom) delete RootGeom;
-	for(unsigned int i=0; i<geometries.size(); i++) delete geometries[i];
+	
+	// As of JANA 0.6.3 and later, the following are 
+	// automatically deleted when ~JApplication is called.
+	// Freeing them a second time causes seg. faults. so
+	// we disable that here.  2/14/2011 DL
+	//if(event_source_generator) delete event_source_generator;
+	//if(factory_generator) delete factory_generator;
+	//if(RootGeom) delete RootGeom;
+	//for(unsigned int i=0; i<geometries.size(); i++) delete geometries[i];
 }
 
 //---------------------------------
