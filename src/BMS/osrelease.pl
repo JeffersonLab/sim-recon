@@ -38,51 +38,54 @@ if ($compiler_version eq '') {
 $uname = `uname`;
 chomp $uname;
 if ($uname eq 'Linux') {
-    if (-e '/etc/fedora-release') {
-	$release_string = `cat /etc/fedora-release`;
-	if ($release_string =~ /^Fedora release 11.*/) {
-	    $release = '_Fedora11';
-	} elsif ($release_string =~ /^Fedora release 10.*/) {
-	    $release = '_Fedora10';
-	} elsif ($release_string =~ /^Fedora release 9.*/) {
-	    $release = '_Fedora9';
-	} elsif ($release_string =~ /^Fedora release 8.*/) {
-	    $release = '_Fedora8';
-	} elsif ($release_string =~ /^Fedora release 7.*/) {
-	    $release = '_Fedora7';
-	} elsif ($release_string =~ /^Fedora Core release 6.*/) {
-	    $release = '_FC6';
-	} else {
-	    print STDERR "unrecognized Fedora release\n";
-	    $release = '_Fedora';
-	}
-    } elsif (-e '/etc/redhat-release') {
-	$release_string = `cat /etc/redhat-release`;
-	if ($release_string =~ /^Red Hat Enterprise Linux WS release 3.*/) {
-	    $release = '_RHEL3';
-	} elsif ($release_string =~ /^Red Hat Enterprise Linux WS release 4.*/) {
-	    $release = '_RHEL4';
-	} elsif ($release_string =~ /^Red Hat Enterprise Linux Client release 5.*/) {
-	    $release = '_RHEL5';
-	} elsif ($release_string =~ /^CentOS release 4.*/ ){
-	    $release = '_CentOS4';
-	} elsif ($release_string =~ /^CentOS release 5.*/ ){
-	    $release = '_CentOS5';
-	} else {
-	    print STDERR "unrecognized Red Hat release\n";
-	    $release = '_RH';
-	}
-    } elsif (-e '/etc/lsb-release') { # Ubuntu
+	if (-e '/etc/fedora-release') {
+		$release_string = `cat /etc/fedora-release`;
+		if ($release_string =~ /^Fedora release 11.*/) {
+			$release = '_Fedora11';
+		} elsif ($release_string =~ /^Fedora release 10.*/) {
+			$release = '_Fedora10';
+		} elsif ($release_string =~ /^Fedora release 9.*/) {
+			$release = '_Fedora9';
+		} elsif ($release_string =~ /^Fedora release 8.*/) {
+			$release = '_Fedora8';
+		} elsif ($release_string =~ /^Fedora release 7.*/) {
+			$release = '_Fedora7';
+		} elsif ($release_string =~ /^Fedora Core release 6.*/) {
+			$release = '_FC6';
+		} else {
+			print STDERR "unrecognized Fedora release\n";
+			$release = '_Fedora';
+		}
+	} elsif (-e '/etc/redhat-release') {
+		$release_string = `cat /etc/redhat-release`;
+		if ($release_string =~ /^Red Hat Enterprise Linux WS release 3.*/) {
+			$release = '_RHEL3';
+		} elsif ($release_string =~ /^Red Hat Enterprise Linux WS release 4.*/) {
+			$release = '_RHEL4';
+		} elsif ($release_string =~ /^Red Hat Enterprise Linux Client release 5.*/) {
+			$release = '_RHEL5';
+		} elsif ($release_string =~ /^CentOS release 4.*/ ){
+			$release = '_CentOS4';
+		} elsif ($release_string =~ /^CentOS release 5.*/ ){
+			$release = '_CentOS5';
+		} else {
+			print STDERR "unrecognized Red Hat release\n";
+			$release = '_RH';
+		}
+	} elsif (-e '/etc/lsb-release') { # Ubuntu
     	$distrib_id = `cat /etc/lsb-release | grep DISTRIB_ID`;
-	$distrib_id =~ s/DISTRIB_ID=//;
-    	$distrib_release = `cat /etc/lsb-release | grep DISTRIB_RELEASE`;
-	$distrib_release =~ s/DISTRIB_RELEASE=//;
-	chomp $distrib_id;
-	chomp $distrib_release;
-	$release = "_${distrib_id}${distrib_release}";	
-    } else {
+		$distrib_id =~ s/DISTRIB_ID=//;
+		$distrib_release = `cat /etc/lsb-release | grep DISTRIB_RELEASE`;
+		$distrib_release =~ s/DISTRIB_RELEASE=//;
+		chomp $distrib_id;
+		chomp $distrib_release;
+		$release = "_${distrib_id}${distrib_release}";	
+		if( $processor eq "unknown" ){
+			$processor=$ENV{"MACHTYPE"};
+		}
+	} else {
 	$release = '';
-    }
+	}
 } elsif ($uname eq 'SunOS') {
 	$release = '_' . `uname -r`;
 	chomp $release;
@@ -91,6 +94,11 @@ if ($uname eq 'Linux') {
 	$compiler_version = "CC${CC_version}";
 } elsif ($uname eq 'Darwin') {
 	$processor = $ENV{"MACHTYPE"};  # override uname -p with MACHTYPE for Mac OS X (uname -p is wrong for Snow Leopard)
+	unless($processor){ # running as sudo seems to not set MACHTYPE on Snow Leopard (Arrgh!!)
+		$dir=dirname(File::Spec->rel2abs( __FILE__ ));
+		$processor = `$dir/get_macos_arch`;
+		chomp($processor);
+	}
  	$release_string = `uname -r`;
 	if ($release_string =~ /^6.*/) {
 	    $release = '_macosx10.2';
