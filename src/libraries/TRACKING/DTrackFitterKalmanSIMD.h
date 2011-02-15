@@ -65,8 +65,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     cov.clear();
     fcov.clear();
 
-    len = 0.0;
-    ftime=0.0;
+    len=ftime=0.0;
     x_=y_=tx_=ty_=q_over_p_ = 0.0;
     z_=phi_=tanl_=q_over_pt_ = D_= 0.0;
     chisq_ = 0.0;
@@ -228,10 +227,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   vector<double>cdc_resid;
   vector<double>cdc_pulls;
 
-  // path length
-  double len;
-  // flight time
-  double ftime;
+  // flight time and path length
+  double ftime, len;
 
   // B-field and gradient
   double Bx,By,Bz;
@@ -242,8 +239,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double endplate_z, endplate_dz, endplate_rmin, endplate_rmax;
   // upstream cdc start position
   vector<double>cdc_origin;
-  // upstream fdc start position 
-  vector<double>fdc_origin;
 
   // Mass hypothesis
   double MASS,mass2;
@@ -256,11 +251,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double mVarT0;
   // inverse of vertex time variance;
   double mInvVarT0;
-	
-  bool do_multiple_scattering;
-  bool do_energy_loss;
-  bool passed_endplate;
-  int pass;
+
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
   
