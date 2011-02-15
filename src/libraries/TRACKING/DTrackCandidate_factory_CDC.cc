@@ -894,15 +894,21 @@ void DTrackCandidate_factory_CDC::FilterCloneSeeds(vector<DCDCSeed> &seeds)
 				if(d<1.5) are_clones = true;
 				if(DEBUG_LEVEL>3)_DBG_<<"d="<<d<<endl;
 			}
-			
+			// Check that the charges are the same
+			if (are_clones){
+			  if (seed1.fit.q!=seed2.fit.q) are_clones=false;
+			  
+			}
 			// Remove a clone in necessary
 			if(are_clones){
 				// These seeds appear to be clones of one another. Mark one as not valid.
+			  
 				if(seed1.fit.chisq<=seed2.fit.chisq){
 					seed2.valid = false;
 				}else{
 					seed1.valid = false;
 				}
+			  
 				if(DEBUG_LEVEL>3)_DBG_<<"Filtering clone circle seed (seed1.fit.chisq="<<seed1.fit.chisq<<" seed2.fit.chisq="<<seed2.fit.chisq<<endl;
 			}
 		}
