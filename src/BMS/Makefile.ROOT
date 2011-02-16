@@ -3,9 +3,12 @@ ROOTCFLAGS   := $(shell root-config --cflags)
 ROOTLIBS     := $(shell root-config --glibs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTINC      := $(shell root-config --incdir)
+ROOT_MAJOR   := $(shell $(HALLD_HOME)/src/BMS/get_root_version MAJOR)
+ROOT_MINOR   := $(shell $(HALLD_HOME)/src/BMS/get_root_version MINOR)
+ROOT_SUBMINOR := $(shell $(HALLD_HOME)/src/BMS/get_root_version SUBMINOR)
 
 CFLAGS		+= -D_ROOT_ $(ROOTCFLAGS) -I$(ROOTINC)
-CXXFLAGS		+= -D_ROOT_ $(ROOTCFLAGS) -I$(ROOTINC)
+CXXFLAGS		+= -D_ROOT_ -DROOT_MAJOR=$(ROOT_MAJOR) -DROOT_MINOR=$(ROOT_MINOR) $(ROOTCFLAGS) -I$(ROOTINC)
 
 ifeq ($(OS),SunOS)
 MISC_LIBS 	+= $(ROOTGLIBS) -lMinuit -lGeom

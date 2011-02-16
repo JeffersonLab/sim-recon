@@ -225,10 +225,13 @@ void DRootGeom::InitTable(void)
 void DRootGeom::InitDRGeom(void)
 {
 	if(!gGeoManager){
-		// Seems 64bit Linux needs the following line commented out
-		// while 32bit Linux needs it to be there(???).
-		//new TGeoManager();
-		//cout<<"Created TGeoManager :"<<gGeoManager<<endl;
+		
+#if ROOT_MAJOR>=5 && ROOT_MINOR>=28	
+		new TGeoManager();
+		cout<<"Created TGeoManager :"<<gGeoManager<<endl;
+#else
+		cout<<"Skipping explicit TGeoManager creation due to ROOT ver. < 5.28"<<endl;
+#endif
 	}
 	DRGeom = hddsroot();
 }
