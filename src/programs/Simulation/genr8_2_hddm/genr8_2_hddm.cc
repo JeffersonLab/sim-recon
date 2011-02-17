@@ -8,7 +8,7 @@ using namespace std;
 #include "particleType.h"
 
 char *INPUT_FILE=NULL;
-char *OUTPUT_FILE = "output.hddm";
+char OUTPUT_FILE[] = "output.hddm";
 
 void ParseCommandLineArguments(int narg,char *argv[]);
 int Str2GeantParticleID(char *str);
