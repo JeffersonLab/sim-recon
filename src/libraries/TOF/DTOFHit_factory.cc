@@ -195,7 +195,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
     if (check > 0 ) {
       hit->meantime = (hit->t_north+hit->t_south)/2. - HALFPADDLE/C_EFFECTIVE;
-      hit->timediff = (hit->t_north - hit->t_south)/2.;
+      hit->timediff = (hit->t_south - hit->t_north)/2.;
       float pos = hit->timediff * C_EFFECTIVE;  
       hit->pos = pos;
       hit->dpos      = 2.;  // manually/artificially set to 2cm. 
