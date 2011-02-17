@@ -55,7 +55,7 @@ int process_event(s_HDDM_t *event)
          printf("  phi=%f,",point->phi);
          printf("  primary=%s,",point->primary ? "true":"false");
          printf("  r=%f,",point->r);
-         printf("  track=%f,",point->track);
+         printf("  track=%d,",point->track);
          printf("  z=%f,",point->z);
          printf("  dE/dx=%f\n",point->dEdx * 1e6);
       }
