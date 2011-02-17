@@ -1635,7 +1635,8 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "   {"						<< std::endl
 	 << "      if (p-head < 999000)"			<< std::endl
 	 << "      {"						<< std::endl
-	 << "         fgets(p,1000,fp->fd);"			<< std::endl
+	 << "         char *pbuf;"				<< std::endl
+	 << "         pbuf = fgets(p,1000,fp->fd);"		<< std::endl
 	 << "      }"						<< std::endl
 	 << "      else"					<< std::endl
 	 << "      {"						<< std::endl
