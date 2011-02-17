@@ -261,7 +261,7 @@ main(int argc,char **argv)
 
   isacomment=TRUE;
   while(isacomment==TRUE){
-    fgets(line,sizeof(line),stdin);
+    char *pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -280,7 +280,7 @@ main(int argc,char **argv)
 
   isacomment=TRUE;
   while(isacomment==TRUE){
-    fgets(line,sizeof(line),stdin);
+    char *pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -299,7 +299,7 @@ main(int argc,char **argv)
 
   isacomment=TRUE;
   while(isacomment==TRUE){
-    fgets(line,sizeof(line),stdin);
+    char *pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -311,7 +311,7 @@ main(int argc,char **argv)
 
   isacomment=TRUE;
   while(isacomment==TRUE){
-    fgets(line,sizeof(line),stdin);
+    char *pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -332,7 +332,7 @@ main(int argc,char **argv)
     haveChildren=TRUE;
     isacomment=TRUE;
     while(isacomment==TRUE){
-      fgets(line,sizeof(line),stdin);
+      char *pline = fgets(line,sizeof(line),stdin);
       token=strtok(line," ");
       if(!(*token == '%'))
 	isacomment=FALSE;
@@ -412,7 +412,7 @@ main(int argc,char **argv)
     }
   isacomment=TRUE;
   while(isacomment==TRUE){
-    fgets(line,sizeof(line),stdin);
+    char *pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
