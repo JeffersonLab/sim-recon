@@ -30,14 +30,15 @@ int main(int narg, char *argv[])
 		cout<<endl;
 		cout<<cmd<<endl;
 		cout<<endl;
-		system(cmd.c_str());
+                int retcode;
+		retcode = system(cmd.c_str());
 		
 		if(DELETEUNSMEARED){
 			cmd = "rm -f "+OUTFILE;
 			cout<<endl;
 			cout<<"Deleting unsmeared file:"<<endl;
 			cout<<"   "<<cmd<<endl;
-			system(cmd.c_str());
+			retcode = system(cmd.c_str());
 		}
 	}else{
 		if(DELETEUNSMEARED){
