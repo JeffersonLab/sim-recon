@@ -205,7 +205,10 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		Usage();
 	}
 	
-	if(OUTFILENAME==NULL)OUTFILENAME = "merged.hddm";
+	if(OUTFILENAME==NULL){
+		char *default_outfile = (char*)malloc(20);
+		OUTFILENAME = strcpy(default_outfile,"merged.hddm");
+	}
 }
 
 
