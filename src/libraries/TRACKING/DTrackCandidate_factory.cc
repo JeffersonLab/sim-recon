@@ -23,21 +23,60 @@
 #define Z_MAX 85.
 #define EPS 0.001
 
+//------------------
+// cdc_fdc_match
+//------------------
 bool cdc_fdc_match(double p, double dist){
   if (dist<10. && dist < 1.5+1.5/p) return true;
   return false;
 }
 
-bool cdchit_cmp(const DCDCTrackHit *a, const DCDCTrackHit *b){
-  if (a->wire==NULL || b->wire==NULL){
-    cout << "Null pointer in CDC hit list??" << endl;
-    return false;
-  }
-  return (b->wire->ring>a->wire->ring);
+//------------------
+// SegmentSortByLayerincreasing
+//------------------
+bool SegmentSortByLayerincreasing(const DFDCSegment* const &segment1, const DFDCSegment* const &segment2) {
+	// Compare DFDCSegment->DFDCPseudo[0]->DFDCWire->layer
+	int layer1 = 100; // defaults just in case there is a segment with no hits
+	int layer2 = 100;
+	
+	if(segment1->hits.size()>0)layer1=segment1->hits[0]->wire->layer;
+	if(segment2->hits.size()>0)layer2=segment2->hits[0]->wire->layer;
+
+	return layer1 < layer2;
+}
+
+//------------------
+// CDCHitSortByLayerincreasing
+//------------------
+bool CDCHitSortByLayerincreasing(const DCDCTrackHit* const &hit1, const DCDCTrackHit* const &hit2) {
+	// Used to sort CDC hits by layer (ring) with innermost layer hits first
+
+	// if same ring, sort by wire number
+	if(hit1->wire->ring == hit2->wire->ring){
+		return hit1->wire->straw < hit2->wire->straw;
+	}
+
+	return hit1->wire->ring < hit2->wire->ring;
+}
+
+//------------------
+// FDCHitSortByLayerincreasing
+//------------------
+bool FDCHitSortByLayerincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const &hit2) {
+	// Used to sort CDC hits by layer (ring) with innermost layer hits first
+
+	// if same ring, sort by wire number
+	if(hit1->wire->layer == hit2->wire->layer){
+		return hit1->wire->wire < hit2->wire->wire;
+	}
+
+	return hit1->wire->layer < hit2->wire->layer;
 }
 
 
-
+//------------------
+// brun
+//------------------
 jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
@@ -129,6 +168,11 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     // Get the segment data
     vector<const DFDCSegment *>segments;
     srccan->GetT(segments);
+	
+	// JANA does not maintain the order that the segments were added
+	// as associated objects. Therefore, we need to reorder them here
+	// so segment[0] is the most upstream segment.
+	sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 
     bool got_match=false;
     // Initialize the stepper 
@@ -177,6 +221,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // Get the associated cdc hits
 	  vector<const DCDCTrackHit *>cdchits;
 	  cdctrackcandidates[cdc_index]->GetT(cdchits);
+	  
+	  // Sort CDC hits by layer
+	  sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
 
 	  // Create new track candidate object 
 	  DTrackCandidate *can = new DTrackCandidate;
@@ -253,7 +300,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // Set the mass and momentum
 	  can->setMass(srccan->mass());
 	  can->setMomentum(mom);
-
 	  if (srccan->position().Z()>Z_MIN && srccan->position().Z()<Z_MAX)
 	    can->setPosition(srccan->position());
 	  else if (cdctrackcandidates[cdc_index]->position().Z()>Z_MIN 
@@ -295,7 +341,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       for (unsigned int j=0;j<cdc_forward_ids.size();j++){
 	vector<const DCDCTrackHit *>cdchits;
 	cdctrackcandidates[cdc_forward_ids[j]]->GetT(cdchits);	 
-	sort(cdchits.begin(),cdchits.end(),cdchit_cmp);
+	sort(cdchits.begin(),cdchits.end(),CDCHitSortByLayerincreasing);
 	
 	unsigned int num_match=0;
 	unsigned int num_axial=0;
@@ -402,6 +448,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     // Get hits already linked to this candidate from associated objects
     vector<const DCDCTrackHit *>cdchits;
     srccan->GetT(cdchits);
+	sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
     
       // loop over fdc candidates
     for (unsigned int k=0;k<fdctrackcandidates.size();k++){
@@ -411,6 +458,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Get the segment data
 	vector<const DFDCSegment *>segments;
 	fdccan->GetT(segments);
+	sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 	
 	// Initialize the stepper 
 	DMagneticFieldStepper stepper(bfield,srccan->charge());
@@ -520,7 +568,10 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       vector<const DCDCTrackHit *>cdchits;
       _data[j]->GetT(cdchits);
       vector<const DFDCPseudo *>fdchits;
-      _data[j]->GetT(fdchits);	 	 
+      _data[j]->GetT(fdchits);
+	  
+      sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
+	  sort(fdchits.begin(), fdchits.end(), FDCHitSortByLayerincreasing);
 
       for (unsigned int k=0;k<fdctrackcandidates.size();k++){
 	if (forward_matches[k]==0){
@@ -529,7 +580,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // Get the segment data
 	  vector<const DFDCSegment *>segments;
 	  fdccan->GetT(segments);
-	  
+      sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
+
 	  // Initialize the stepper 
 	  DMagneticFieldStepper stepper(bfield,srccan->charge());
 
@@ -641,6 +693,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       // Get the segment data
       vector<const DFDCSegment *>segments;
       fdccan->GetT(segments);
+      sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
       for (unsigned int m=0;m<segments.size();m++){
 	for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	  can->AddAssociatedObject(segments[m]->hits[n]);
@@ -658,6 +711,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       const DTrackCandidate *cdccan = cdctrackcandidates[cdc_forward_ids[j]];
       vector<const DCDCTrackHit *>cdchits;
       cdccan->GetT(cdchits);
+	  sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
       
       can->setMass(cdccan->mass());
       can->setMomentum(cdccan->momentum());
@@ -675,6 +729,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     const DTrackCandidate *cdccan = cdctrackcandidates[cdc_backward_ids[j]]; 
     vector<const DCDCTrackHit *>cdchits;
     cdccan->GetT(cdchits);
+	sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
     
     can->setMass(cdccan->mass());
     can->setMomentum(cdccan->momentum());
