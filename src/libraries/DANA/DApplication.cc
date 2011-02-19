@@ -63,9 +63,14 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	// Since we defer reading in some tables until they are requested
 	// (likely while processing the first event) that time gets counted
 	// against the thread as being non-reponsive. The default timeout
-	// of 8 seconds is therefore too small. Change it to 30 here.
-	GetJParameterManager()->SetParameter("THREAD_TIMEOUT", "30 seconds"); // when converted to a number, it via string stream, it will be 30
-	
+	// of 8 seconds is therefore too small. Change it to 30 here,
+	// unless the user has set it explicitly on the command line.
+	map<string,string> parmap;
+	JParameterManager *pm = GetJParameterManager();
+	pm->GetParameters(parmap, "THREAD_TIMEOUT");
+	if (parmap.empty()) {
+		pm->SetParameter("THREAD_TIMEOUT", "30 seconds");
+	}
 	if(JVersion::minor<5)Init();
 }
 
