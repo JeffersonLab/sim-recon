@@ -162,6 +162,11 @@ hddm_s.o: $(HDDM)/hddm_s.c
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
 
+hddmcp: hddmcp.c hddm_s.o memcheck.o bintree.o
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -o $@ $^
+
 cdcdump: cdcdump.c hddm_s.o memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
