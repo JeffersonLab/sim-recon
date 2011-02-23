@@ -521,7 +521,11 @@ c     write(6,*) norm
 
       real function sigma2MS(tt)
       real tt
-      sigma2MS=sigma2MS_Geant(tt)
+C--Chose one of the available implementations of this function below.
+c  Some formulas, although valid for a reasonable range of target thickness,
+c  can go negative for extremely small target thicknesses.  Here I protect
+c  against these unusual cases by taking the absolute value. [rtj]
+      sigma2MS=abs(sigma2MS_Geant(tt))
       end
 
       real function sigma2MS_Kaune(tt)
