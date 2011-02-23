@@ -145,7 +145,6 @@ void hitForwardDC (float xin[4], float xout[4],
   float dradius;
   float alpha;
   int i,j;
-  float u_of_wire0=U_OF_WIRE_ZERO;
 
   if (!initializedx){
       mystr_t strings[50];
@@ -256,9 +255,6 @@ void hitForwardDC (float xin[4], float xout[4],
   int wire1,wire2;
   int wire,dwire;
 
-  // For offset wire planes
-  //if (layer%2) u_of_wire0+=WIRE_SPACING/2.;
-
   // transform layer number into Richard's scheme
   layer=(layer-1)%3+1;
 
@@ -309,9 +305,9 @@ void hitForwardDC (float xin[4], float xout[4],
 
   transformCoord(xin,"global",xinlocal,"local");
 
-  wire1 = ceil((xinlocal[0] - u_of_wire0)/WIRE_SPACING +0.5);
+  wire1 = ceil((xinlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
   transformCoord(xout,"global",xoutlocal,"local");
-  wire2 = ceil((xoutlocal[0] - u_of_wire0)/WIRE_SPACING +0.5);
+  wire2 = ceil((xoutlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
   // Check that wire numbers are not out of range
   if ((wire1>WIRES_PER_PLANE && wire2==WIRES_PER_PLANE) ||
       (wire2>WIRES_PER_PLANE && wire1==WIRES_PER_PLANE)) 
@@ -327,7 +323,7 @@ void hitForwardDC (float xin[4], float xout[4],
   xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
   xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
   xlocal[2] = (xinlocal[2] + xoutlocal[2])/2;
-  wire = ceil((xlocal[0] - u_of_wire0)/WIRE_SPACING +0.5);
+  wire = ceil((xlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
   x[0] = (xin[0] + xout[0])/2;
   x[1] = (xin[1] + xout[1])/2;
   x[2] = (xin[2] + xout[2])/2;
@@ -365,7 +361,7 @@ void hitForwardDC (float xin[4], float xout[4],
       s_ForwardDC_t* fdc = *twig = make_s_ForwardDC();
       s_FdcChambers_t* chambers = make_s_FdcChambers(1);
       s_FdcTruthPoints_t* points = make_s_FdcTruthPoints(1);
-      float xwire = u_of_wire0 + (wire-1)*WIRE_SPACING;
+      float xwire = U_OF_WIRE_ZERO + (wire-1)*WIRE_SPACING;
       float u[2];
       u[0] = xinlocal[2];
       u[1] = xinlocal[0]-xwire;
@@ -409,7 +405,7 @@ void hitForwardDC (float xin[4], float xout[4],
       float u[2];
       float x0[3],x1[3];
       float avalanche_y;
-      float xwire = u_of_wire0 + (wire-1)*WIRE_SPACING;
+      float xwire = U_OF_WIRE_ZERO + (wire-1)*WIRE_SPACING;
          
       x0[0] = xwire-0.5*dwire*WIRE_SPACING;
       x0[1] = xinlocal[1] + (x0[0]-xinlocal[0]+1e-20)*
