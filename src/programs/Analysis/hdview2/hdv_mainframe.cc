@@ -1274,8 +1274,18 @@ void hdv_mainframe::DrawDetectorsXY(void)
 			double mod_phi = (double)imod*dmodule;
 			for(int isec=0; isec<BCAL_SECS1; isec++){
 				double rmin = BCAL_Rmin;
-				double rmax = (isec%2)==1 ? BCAL_MIDRAD:BCAL_Rmax;
+				double rmax = BCAL_MIDRAD;
 				double phi = mod_phi + (double)isec*dsector1;
+
+				TLine *l = new TLine(rmin*cos(phi), rmin*sin(phi), rmax*cos(phi), rmax*sin(phi));
+				l->SetLineColor(isec==0 ? kBlack:12);
+				l->SetLineWidth((Width_t)(isec==0 ? 1.5:1.0));
+				graphics_endA.push_back(l);
+			}
+			for(int isec=0; isec<BCAL_SECS2; isec++){
+				double rmin = BCAL_MIDRAD;
+				double rmax = BCAL_Rmax;
+				double phi = mod_phi + (double)isec*dsector2;
 
 				TLine *l = new TLine(rmin*cos(phi), rmin*sin(phi), rmax*cos(phi), rmax*sin(phi));
 				l->SetLineColor(isec==0 ? kBlack:12);
