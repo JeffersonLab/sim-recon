@@ -407,10 +407,10 @@ void DBCALShower_factory::CeleToArray(void)
                 float   ta  = tcel_a[k][i][j];
                 float   tb  = tcel_b[k][i][j];
                 
-                if(min(ea,eb)>ethr_cell & fabs(ta-tb)<35.&ta!=0.&tb!=0.) 
-                    celtot=celtot+1;             
-                else {
-                    continue;
+                if( (min(ea,eb)>ethr_cell) & (fabs(ta-tb)<35.) & (ta!=0.) & (tb!=0.)) { 
+		  celtot=celtot+1;             
+		} else {
+		  continue;
                 }
                 
                 
@@ -495,7 +495,7 @@ void DBCALShower_factory::PreCluster(JEventLoop *loop)
         
         
         for (int j = 1; j < (celtot+1); j++){
-            if(j!=i & nclus[j]!=nclus[i] & e_cel[j]>emin) {
+	  if ( (j!=i) & (nclus[j]!=nclus[i]) & (e_cel[j]>emin)) {
                 
                 int k1= narr[1][i];
                 int k2= narr[1][j];
@@ -507,7 +507,7 @@ void DBCALShower_factory::PreCluster(JEventLoop *loop)
                 int amodif = abs(modiff);
                 
                 //  the following if is to check module and row distance.         
-                if(abs(i1-i2)<=k&(amodif<=1||amodif==47)) { 
+                if ( (abs(i1-i2)<=k) & ((amodif<=1) || (amodif==47)) ) { 
                     //   further check col distance 
                     int   j1= narr[3][i];
                     int   j2= narr[3][j];
@@ -515,14 +515,14 @@ void DBCALShower_factory::PreCluster(JEventLoop *loop)
                     if(amodif==0) {   // same module       
                         
                         //   further check col distance if both are on first 5 rows
-                        if(i1<=rowmax1 & i2<=rowmax1 & abs(j2-j1)<=k) {
+		      if ( (i1<=rowmax1) & (i2<=rowmax1) & (abs(j2-j1)<=k) ) {
                             emin=e_cel[j];
                             maxnn=j;
                         }
                         
                         //   further check col distance if both are on last 4 rows
                         
-                        if(i1>=rowmin2 & i2>=rowmin2 & abs(j2-j1)<=k) {
+		      if ( (i1>=rowmin2) & (i2>=rowmin2) & (abs(j2-j1)<=k) ) {
                             emin=e_cel[j];
                             maxnn=j;
                         }
@@ -531,45 +531,45 @@ void DBCALShower_factory::PreCluster(JEventLoop *loop)
                     
                     
                     if(amodif>0) {  // different module          
-                        if(modiff==1||modiff==-47) {      
-                            if(i1<=rowmax1 & i2<=rowmax1){ 
-                                if(abs((j1+colmax1)-j2)<=k){
-                                    emin=e_cel[j];
-                                    maxnn=j;
-                                }
-                            }
-                            
-                            if(i1>=rowmin2 & i2>=rowmin2) {
-                                if(abs((j1+colmax2)-j2)<=k){
-                                    emin=e_cel[j];
-                                    maxnn=j;
-                                }
-                            }              
-                        }
+		      if( (modiff==1) || (modiff==-47) ) {      
+			if ( (i1<=rowmax1) & (i2<=rowmax1) ){ 
+			  if(abs((j1+colmax1)-j2)<=k){
+			    emin=e_cel[j];
+			    maxnn=j;
+			  }
+			}
                         
-                        if(modiff==-1||modiff==47) {      
-                            
-                            if(i1<=rowmax1 & i2<=rowmax1){
-                                if(abs((j2+colmax1)-j1)<=k){
-                                    emin=e_cel[j];
-                                    maxnn=j;
-                                }
-                            } 
-                            
-                            if(i1>=rowmin2 & i2>=rowmin2) {
-                                if(abs((j2+colmax2)-j1)<=k){
-                                    emin=e_cel[j];
-                                    maxnn=j;
-                                }
-                            }              
-                        }
+			if ( (i1>=rowmin2) & (i2>=rowmin2) ) {
+			  if(abs((j1+colmax2)-j2)<=k){
+			    emin=e_cel[j];
+			    maxnn=j;
+			  }
+			}              
+		      }
+		      
+		      if ( (modiff==-1) || (modiff==47) ) {      
+			
+			if ( (i1<=rowmax1) & (i2<=rowmax1) ){
+			  if(abs((j2+colmax1)-j1)<=k){
+			    emin=e_cel[j];
+			    maxnn=j;
+			  }
+			} 
+                        
+			if(i1>=rowmin2 & i2>=rowmin2) {
+			  if(abs((j2+colmax2)-j1)<=k){
+			    emin=e_cel[j];
+			    maxnn=j;
+			  }
+			}              
+		      }
                     }
                     
                     // further check col distance if one is in row5, another is in row6
                     // so that the two are between the boundary of two different size
                     // of cells.
-                    if( ( i1 == rowmax1 & i2 == rowmin2 ) || 
-                        ( i1 == rowmin2 & i2 == rowmax1) ) {
+                    if( ( (i1 == rowmax1) & (i2 == rowmin2) ) || 
+                        ( (i1 == rowmin2) & (i2 == rowmax1) ) ) {
 
                         float delta_xx=xx[k1-1][i1-1][j1-1]-xx[k2-1][i2-1][j2-1];
                         float delta_yy=yy[k1-1][i1-1][j1-1]-yy[k2-1][i2-1][j2-1];
@@ -785,7 +785,7 @@ void DBCALShower_factory::ClusAnalysis()
             int iy=clspoi[j];
             
             
-            if(e_cls[ix]>0.0 & e_cls[iy]>0.0) {
+            if ( (e_cls[ix]>0.0) & (e_cls[iy]>0.0) ) {
                 
                 float delta_x=x_cls[ix]-x_cls[iy];
                 float delta_y=y_cls[ix]-y_cls[iy];          
@@ -801,7 +801,7 @@ void DBCALShower_factory::ClusAnalysis()
                     float zdif=fabs(z_cls[ix]-z_cls[iy]);
                     float distran=sqrt(delta_x*delta_x+delta_y*delta_y);
                     
-                    if(zdif<MERGE_THRESH_ZDIST & distran<MERGE_THRESH_XYDIST){
+                    if ( (zdif<MERGE_THRESH_ZDIST) & (distran<MERGE_THRESH_XYDIST) ){
                         if(e_cls[ix]>=e_cls[iy]) {
                             icls[1]=ix;
                             icls[2]=iy;
@@ -942,7 +942,7 @@ void DBCALShower_factory::Clus_Break(int nclust)
             next[nseed[i]]=nseed[i];
 
             for (int j =1; j < (celtot+1); j++){
-                if(nclus[j]==nclust & j!=nseed[i]) {
+	      if ( (nclus[j]==nclust) & (j!=nseed[i]) ){
                     if(selcel[j]==i) {
                         nclus[j]=j;
                         next[j]=j;
