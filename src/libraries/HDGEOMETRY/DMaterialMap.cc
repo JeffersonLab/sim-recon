@@ -314,10 +314,11 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	// away from the map first.
 	double z = pos.Z();
 	double pz = mom.Z();
-	if(pz>0.0)
-		if(z>zmax)return s_to_boundary;
-	else
-		if(z<zmin)return s_to_boundary;
+	if(pz>0.0){
+	  if(z>zmax)return s_to_boundary;
+	} else {
+	  if(z<zmin)return s_to_boundary;
+	}
 
 	double pos_x = pos.X();
 	double pos_y = pos.Y();
@@ -325,11 +326,11 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	double mom_y = mom.Y();
 	double x_dot_p = pos_x*mom_x + pos_y*mom_y;
 	double r = sqrt(pos_x*pos_x + pos_y*pos_y);
-	if(x_dot_p>0.0)
-		if(r>rmax)return s_to_boundary;
-	else
-		if(r<rmin)return s_to_boundary;
-	
+	if(x_dot_p>0.0){
+	  if(r>rmax)return s_to_boundary;
+	} else {
+	  if(r<rmin)return s_to_boundary;
+	}
 
 	double pr = sqrt(mom_x*mom_x + mom_y*mom_y) * (x_dot_p>0 ? +1.0:-1.0); // sign of pr depends on x_dot_p
 	
