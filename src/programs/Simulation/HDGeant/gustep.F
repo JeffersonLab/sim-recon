@@ -400,12 +400,14 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 ********************************************************************************
 #endif
  
-      CALL GDEBUG
+* Stop wimpy charged particles that are taking forever to range out
 
-* Register hits in sensitive detectors here
-
-      if (ISVOL.ne.0.or.ISTOP.ne.0.or.INWVOL.ge.2) then
-        call savehits
+      if ((NSTEP.ge.99999).and.(CHARGE.ne.0).or.
+     +    (ILOSS.eq.0).and.(GEKIN.lt.1e-3)) then
+        DESTEP = GEKIN
+        ISTOP = 98
+        NMEC = NMEC+1
+        LMEC(NMEC) = 30
       endif
 
 * Place any secondaries generated during this step onto the stack
@@ -447,14 +449,6 @@ c             print *, cchar
         enddo
       endif
 
-* Stop wimpy charged particles that are taking forever to range out
-
-      if ((NSTEP.ge.9999).and.(CHARGE.ne.0).or.
-     +    (ILOSS.eq.0).and.(GEKIN.lt.1e-3)) then
-        DESTEP = GEKIN
-        ISTOP = 1
-      endif
-
 #ifdef ACTIVE_COLLIMATOR_SIMS
       if (IDEVT.ne.evno) then
         if (IDEVT.eq.1) then
@@ -490,8 +484,9 @@ c             print *, cchar
         call gfvert(1,vertx1,ntbeamx1,nttargx1,tofgx1,ubuf1,nubuf1)
       endif
       if (cnames(NLEVEL).eq.'COL1') then
-        ISTOP = 1
-        return
+        ISTOP = 3
+        NMEC = NMEC+1
+        LMEC(NMEC) = 30
       elseif (NLEVEL.ge.7.and.cnames(7).eq.'ACWI') then
         if (INWVOL.eq.2) then
           qsum(NUMBER(7)) = qsum(NUMBER(7))-CHARGE
@@ -552,8 +547,9 @@ c           print *, '*-* entering ACWO'
         z = VECT(3)
         r = sqrt(VECT(1)**2 + VECT(2)**2)
         if (cnames(NLEVEL).eq.'COL1') then
-          ISTOP = 1
-          return
+          ISTOP = 3
+          NMEC = NMEC+1
+          LMEC(NMEC) = 30
         elseif ((cnames(NLEVEL).eq.'UWIT' .and. abs(z-0.02).lt.0.1)
      +    .or.  (cnames(NLEVEL).eq.'VRTX' .and. abs(r-4.95).lt.0.1)
      +    .or.  (cnames(NLEVEL).eq.'CDCI' .and. abs(r-15.0).lt.0.1)
@@ -789,7 +785,9 @@ c     #ifndef TRACK_SHOWERS_IN_COLLIMATOR
       if(showersincol.eq.0) then
          if ((cnames(NLEVEL).eq.'INSU').or.
      +        (cnames(NLEVEL).eq.'COL1')) then
-            ISTOP=1
+            ISTOP = 3
+            NMEC = NMEC+1
+            LMEC(NMEC) = 30
          endif
       endif
 *     #endif
@@ -807,5 +805,13 @@ c     #ifndef TRACK_SHOWERS_IN_COLLIMATOR
         call HFILL(IDEVT+1000000,VECT(3),0.,STEP/RADL)
       endif
 #endif
+
+* Register hits in sensitive detectors here
+
+      if (ISVOL.ne.0.or.ISTOP.ne.0.or.INWVOL.ge.2) then
+        call savehits
+      endif
+
+      CALL GDEBUG
 
       END

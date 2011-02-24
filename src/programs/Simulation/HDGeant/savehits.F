@@ -24,6 +24,8 @@
 
       integer nlevellast,nameslast,numberlast
       common /gcvolulast/nlevellast,nameslast(15),numberlast(15)
+      character*4 cnameslast(15)
+      equivalence (nameslast(1),cnameslast(1))
       save /gcvolulast/
       data nlevellast/0/
 
@@ -37,38 +39,50 @@
       integer isame
       integer level,nlevel_in
 
-* Initialize a new hit when a particle enters a sensitive volume, unless
-* it was here before and never left, in which case the existing hit should
-* be allowed to continue to collect statistics without being disturbed.
-
+C  Reason 1 for being here: entry to a sensitive volume
       if (INWVOL.eq.1) then
-        if (NLEVEL.eq.nlevellast) then
-          do level=NLEVEL,1,-1
-            if (NAMES(level).ne.nameslast(level).or.
-     +          NUMBER(level).ne.numberlast(level)) then
-              goto 3
-            endif
-          enddo
-          return
+        if (hitopen) then
+          if (NLEVEL.eq.nlevellast) then
+            do level=NLEVEL,1,-1
+              if (NAMES(level).ne.nameslast(level).or.
+     +            NUMBER(level).ne.numberlast(level)) then
+                write(6,*) 'Warning in savehits: unsaved hit',
+     +                     ' information found from sensitive volume ',
+     +                     cnameslast(level),', hit discarded.'
+                hitopen = .false.
+                goto 3
+              endif
+            enddo
+            return
+          endif
+    3     continue
         endif
-    3   continue
-        do level=1,NLEVEL
-          nameslast(level) = NAMES(level)
-          numberlast(level) = NUMBER(level)
-        enddo
-        nlevellast = NLEVEL
-        xin(1) = VECT(1)
-        xin(2) = VECT(2)
-        xin(3) = VECT(3)
-        xin(4) = TOFG
-        pin(1) = VECT(4)
-        pin(2) = VECT(5)
-        pin(3) = VECT(6)
-        pin(4) = GETOT
-        pin(5) = VECT(7)
-        dEsum = 0
-        hitopen = .true.
+
+*	Initialize a new hit when a particle enters a sensitive volume,
+*	unless it is just coming out from an inner daughter volume,
+*	in which case it should just continue to add to the existing hit.
+
+        if (istop.eq.0) then
+          do level=1,NLEVEL
+            nameslast(level) = NAMES(level)
+            numberlast(level) = NUMBER(level)
+          enddo
+          nlevellast = NLEVEL
+          xin(1) = VECT(1)
+          xin(2) = VECT(2)
+          xin(3) = VECT(3)
+          xin(4) = TOFG
+          pin(1) = VECT(4)
+          pin(2) = VECT(5)
+          pin(3) = VECT(6)
+          pin(4) = GETOT
+          pin(5) = VECT(7)
+          dEsum = 0
+          hitopen = .true.
+        endif
         return
+
+C  Reason 2 for being here: stepping inside a sensitive volume
       elseif (INWVOL.eq.0) then
         dEsum = dEsum + DESTEP
         if (ISTOP.eq.0) then
@@ -83,6 +97,8 @@
         pout(3) = VECT(6)
         pout(4) = GETOT
         pout(5) = VECT(7)
+
+C  Reason 3 for being here: exiting from *ANY* volume
       elseif (ISVOL.eq.1) then
         dEsum = dEsum + DESTEP
         xout(1) = VECT(1)
@@ -96,38 +112,25 @@
         pout(5) = VECT(7)
       endif
 
-* At this point, we know that the particle is leaving the current volume
-* for some reason.  If no hit is being accumulated then ignore it, and
-* clear the block on the last hit volume if not the current one.
+* 	At this point, we know that the particle is either leaving the
+*	current volume or stopping inside it.
 
+C  If no hit is being recorded then nothing to do
       if (.not.hitopen) then
-        if (NLEVEL.ne.nlevellast) then
-          nlevellast = 0
-        else
-          do level=NLEVEL,1,-1
-            if (NAMES(level).ne.nameslast(level).or.
-     +          NUMBER(level).ne.numberlast(level)) then
-              nlevellast = 0
-              return
-            endif
-          enddo
-        endif
         return
       endif
 
-* A hit is being accumulated, but we may be about to enter a daughter
-* volume inside the current one.  If so, we ignore the transition.
-
+*  If about to enter a daughter volume then nothing to do
       if (INWVOL.eq.2.and.INGOTO.ne.0) then
         return
       endif
 
-* Otherwise, we may be exiting a sensitive region or one of its contents;
-* if a content then we have no way of knowing whether we are at the same
-* time leaving the outer sensitive volume or merely passing through one
-* of its interior interfaces.  At this point there is no way to find out
-* except to do the rather expensive call to GINVOL for the current point.
-* To do that we will need to save and restore the geometry state info.
+*	Otherwise, we may be exiting a sensitive region or one of its contents;
+*	if a content then we have no way of knowing whether we are at the same
+*	time leaving the outer sensitive volume or merely passing through one
+*	of its interior interfaces.  At this point there is no way to find out
+*	except to do the rather expensive call to GINVOL for the current point.
+*	To do that we will need to save and restore the geometry state info.
 
       if (INWVOL.eq.2.and.NLEVEL.gt.nlevellast) then
         call GSCVOL
@@ -139,14 +142,25 @@
         endif
       endif
 
-* At this point we hide any inner volumes that should not interrupt the
-* formation of a single hit by pretending that we are still in the mother;
-* the true geometry information is restored before we exit.
+*	At this point we back out to the level of the sensitive volume
+*	to save the hits information, then make sure that the true
+*	geometry information is restored before we exit.
 
+      do level=nlevellast,1,-1
+        if (level.gt.NLEVEL.or.
+     +      NAMES(level).ne.nameslast(level).or.
+     +      NUMBER(level).ne.numberlast(level)) then
+          write(6,*) 'Warning in savehits: unsaved hit',
+     +               ' information found from sensitive volume ',
+     +               cnameslast(level),', hit discarded.'
+          hitopen = .false.
+          return
+        endif
+      enddo
       nlevel_in = NLEVEL
       NLEVEL = nlevellast
 
-* At end of track segment in sensitive medium: register hit
+*	At end of track segment in sensitive medium: register hit
 
       if ((cnames(NLEVEL).eq.'STRC').or.		! vertex cylinder
      +    (cnames(NLEVEL).eq.'STRP')) then		! vertex endcap
