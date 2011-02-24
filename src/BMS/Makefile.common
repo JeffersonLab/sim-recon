@@ -112,16 +112,34 @@ OBJS  += $(sort $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC))))
 ODEPS = $(filter-out $(NO_DEP_OBJS),$(OBJS))
 DEPS	+= $(ODEPS:.o=.d)
 
+# If DEBUG mode is requested, add "_d" suffix and turn on
+# debugging symbols
 ifdef DEBUG
+	DEBUG_SUFFIX = _d
+	FFLAGS   += -g
+	CFLAGS	+= -g
+	CXXFLAGS	+= -g
+endif
+
+# If PROFILE mode is requested, add "_d" suffix and turn on
+# profiling as well as debug symbols
+ifdef PROFILE
 	DEBUG_SUFFIX = _d
 	FFLAGS   += -g -pg
 	CFLAGS	+= -g -pg
 	CXXFLAGS	+= -g -pg
-else
-#	Do NOT turn on optimization in FFLAGS. Compilation will fail on hddsGeant3.F
-	CFLAGS	+= -O2
-	CXXFLAGS	+= -O2
 endif
+
+# Set default optimization level to 2, but allow OPTIMIZE=X
+# command line option to set it to something else
+ifndef OPTIMIZE
+	OPTIMIZE := 2
+endif
+
+#	Do NOT turn on optimization in FFLAGS. Compilation will fail on hddsGeant3.F
+CFLAGS	+= -O$(OPTIMIZE)
+CXXFLAGS	+= -O$(OPTIMIZE)
+
 
 ifndef MODULE_NAME
  MODULE_NAME = $(shell basename $(shell pwd))
