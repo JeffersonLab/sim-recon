@@ -556,7 +556,7 @@ void DBCALShower_factory::PreCluster(JEventLoop *loop)
 			  }
 			} 
                         
-			if(i1>=rowmin2 & i2>=rowmin2) {
+			if ( (i1>=rowmin2) & (i2>=rowmin2) ){
 			  if(abs((j2+colmax2)-j1)<=k){
 			    emin=e_cel[j];
 			    maxnn=j;
@@ -797,7 +797,7 @@ void DBCALShower_factory::ClusAnalysis()
                 //	  float  distz=abs(z_cls[ix]-z_cls[iy]);
                 //         cout<<"dist="<<dist<<" distz="<<distz<<" tdif="<<tdif<<"\n";    
                 
-                if( dist<MERGE_THRESH_DIST & tdif<MERGE_THRESH_TIME ){
+                if ( (dist<MERGE_THRESH_DIST) & (tdif<MERGE_THRESH_TIME) ){
                     float zdif=fabs(z_cls[ix]-z_cls[iy]);
                     float distran=sqrt(delta_x*delta_x+delta_y*delta_y);
                     
