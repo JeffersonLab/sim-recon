@@ -2,7 +2,7 @@
 #define _DMatrixSIMD_
 
 #include <math.h>
-#ifdef USE_SIMD
+#ifdef USE_SSE2
 #include <emmintrin.h> // Header file for SSE2 SIMD instructions
 #endif
 #ifdef USE_SSE3
@@ -22,7 +22,7 @@ using namespace std;
 #include "DMatrix2x4.h"
 
 
-#ifndef USE_SIMD
+#ifndef USE_SSE2
 
 // Matrix multiplication:  (3x2) x (2x3)
 inline DMatrix3x3 operator*(const DMatrix3x2 &m1,const DMatrix2x3 &m2){
@@ -137,7 +137,7 @@ inline DMatrix2x4 operator*(const DMatrix2x2 &m1,const DMatrix2x4 &m2){
 #include "DMatrix2x5.h"
 #include "DMatrix1x5.h"
 
-#ifndef USE_SIMD
+#ifndef USE_SSE2
 
 // Find the tranpose of a 5x2 matrix
 inline DMatrix2x5 Transpose(const DMatrix5x2 &M){

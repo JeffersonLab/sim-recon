@@ -9,7 +9,7 @@
 #ifndef _DLorentzVector_
 #define _DLorentzVector_
 
-#ifndef USE_SIMD 
+#ifndef USE_SSE2
 
 #include <TLorentzVector.h>
 typedef TLorentzVector DLorentzVector;
@@ -101,7 +101,7 @@ inline DLorentzVector operator-(const DLorentzVector &v1,const DLorentzVector &v
   return DLorentzVector(v1.Vect()-v2.Vect(),v1.E()-v2.E());
 }
 
-#endif // USE_SIMD
+#endif // USE_SSE2
 
 #endif // _DLorentzVector_
 

@@ -1,4 +1,4 @@
-#ifndef USE_SIMD 
+#ifndef USE_SSE2
 
 // Matrix class without SIMD instructions
 

@@ -1,25 +1,67 @@
-
-# For gcc 4.1.2 on 32-bit Linux systems we have seen problems
-# with using sse2 causing seg. faults. The same code and compiler
+# For gcc 4.1.2 on 32-bit Linux systems there have been claims of
+# building with sse2 causing faults. The same code and compiler
 # version for 64-bit machines seems to run fine. We also have
-# not observed the problems with 32-bit OS X machines. Therefore,
-# we check and enable sse2 only if it is NOT for 32-bit Linux. 
+# not observed the problems with 32-bit OS X machines. If you are
+# having trouble with faulting applications, try turning off SIMD
+# extensions by rebuilding with environment variable DISABLE_SIMD=1.
+ifndef $(DISABLE_SIMD)
+  DISABLE_SIMD=no
+endif
+ifndef $(DISABLE_SSE2)
+  DISABLE_SSE2=no
+endif
+ifndef $(DISABLE_SSE3)
+  DISABLE_SSE3=no
+endif
 
-DISABLE_SIMD=no
 ifeq ($(OS),Linux)
-  ifeq ($(ARCH),i686)
-    DISABLE_SIMD=yes
-  endif
+  HAS_SSE =  $(shell if grep -q '^flags.* sse' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE2 = $(shell if grep -q '^flags.* sse2' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE3 = $(shell if grep -q '^flags.*.sse3' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSSE3 = $(shell if grep -q '^flags.* ssse3' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE41 = $(shell if grep -q '^flags.* sse4_1' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE42 = $(shell if grep -q '^flags.* sse4_2' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE4A = $(shell if grep -q '^flags.* sse4a' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+else
+# Here someone should put some check for the availability of sse extensions
+# on Mac and other non-Linux systems, set some reasonable defaults for now.
+  HAS_SSE =  1
+  HAS_SSE2 = 1
+  HAS_SSE3 = 1
+  HAS_SSSE3 = no
+  HAS_SSE41 = no
+  HAS_SSE42 = no
+  HAS_SSE4A = no
 endif
 
 ifeq ($(DISABLE_SIMD),no)
-  SIMD_CFLAGS = -DUSE_SIMD -msse2 -mfpmath=sse
-
-  DISABLE_SSE3=no
-# here one would put some check for the availability of sse3, but I don't know
-# what check that would be...
-  ifeq ($(DISABLE_SSE3),no)
-  	SIMD_CFLAGS += -DUSE_SSE3 -msse3
+  ifneq ($(HAS_SSE),no)
+    SIMD_CFLAGS = -DUSE_SIMD -mfpmath=sse -msse
+    ifeq ($(DISABLE_SSE2),no)
+      ifneq ($(HAS_SSE2),no)
+        SIMD_CFLAGS += -DUSE_SSE2 -msse2
+        ifeq ($(DISABLE_SSE3),no)
+          ifneq ($(HAS_SSE3),no)
+            SIMD_CFLAGS += -DUSE_SSE3 -msse3
+          else
+            SIMD_CFLAGS += -mno-sse3
+          endif
+        else
+          SIMD_CFLAGS += -mno-sse3
+        endif
+      else
+        SIMD_CFLAGS += -mno-sse2
+      endif
+    else
+      SIMD_CFLAGS += -mno-sse2
+    endif
   endif
  
   CFLAGS += $(SIMD_CFLAGS)

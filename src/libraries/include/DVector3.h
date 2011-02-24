@@ -8,7 +8,7 @@
 #ifndef _DVector3_
 #define _DVector3_
 
-#ifndef USE_SIMD 
+#ifndef USE_SSE2
 
 #include <TVector3.h>
 typedef TVector3 DVector3;
@@ -368,6 +368,6 @@ inline DVector3 operator*(const double c,const DVector3 &v1){
 };
 
 
-#endif // USE_SIMD
+#endif // USE_SSE2
 #endif // _DVector3_
 

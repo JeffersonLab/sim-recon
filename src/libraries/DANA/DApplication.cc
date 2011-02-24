@@ -86,6 +86,63 @@ jerror_t DApplication::Init(void)
 	GetJParameterManager()->SetDefaultParameter("ROOT_ERROR_LEVEL_SUPRESS", ROOT_ERROR_LEVEL_SUPRESS);
 	InitDANARootErrorHandler(ROOT_ERROR_LEVEL_SUPRESS);
 	
+	// Check if running on a cpu that supports the instruction set
+	// extensions that were assumed when this application was built
+	unsigned int cpeinfo;
+	unsigned int cpsse3;
+	unsigned int amdinfo;
+	asm("mov $0x01, %%eax\ncpuid\n"
+          : "=d" (cpeinfo), "=c" (cpsse3)
+        );
+	asm("mov $0x80000001, %%eax\ncpuid\n"
+          : "=d" (amdinfo)
+        );
+        int mmx,sse,sse2,sse3,ssse3,sse4_1,sse4_2,sse4a;
+        mmx = ((cpeinfo >> 23) & 0x1 );
+        sse = ((cpeinfo >> 25) & 0x1 );
+        sse2 = ((cpeinfo >> 26) & 0x1 );
+        sse3 = ((cpsse3       ) & 0x1 );
+        ssse3 = ((cpsse3 >>  9) & 0x1 );
+        sse4_1 = ((cpsse3 >> 19) & 0x1 );
+        sse4_2 = ((cpsse3 >> 20) & 0x1 );
+        sse4a = ((amdinfo >>  6) & 0x1 );
+
+#if USE_SIMD
+	if (sse == 0) {
+		jerr<<"DApplication::Init error - application was built"
+		    <<" to run only on machines" << endl
+                    <<"supporting the SSE processor extensions."
+		    <<"  Please run on a processor that" << endl
+                    <<"supports SSE, or rebuild with DISABLE_SIMD=yes."
+                    << endl;
+		return UNRECOVERABLE_ERROR;
+	}
+#endif
+
+#if USE_SSE2
+	if (sse2 == 0) {
+		jerr<<"DApplication::Init error - application was built"
+		    <<" to run only on machines" << endl
+                    <<"supporting the SSE2 processor extensions."
+		    <<"  Please run on a processor that" << endl
+                    <<"supports SSE2, or rebuild with DISABLE_SSE2=yes."
+                    << endl;
+		return UNRECOVERABLE_ERROR;
+	}
+#endif
+
+#if USE_SSE3
+	if (sse3 == 0) {
+		jerr<<"DApplication::Init error - application was built"
+		    <<" to run only on machines" << endl
+                    <<"supporting the SSE3 processor extensions."
+		    <<"  Please run on a processor that" << endl
+                    <<"supports SSE3, or rebuild with DISABLE_SSE3=yes."
+                    << endl;
+		return UNRECOVERABLE_ERROR;
+	}
+#endif
+
 	return NOERROR;
 }
 

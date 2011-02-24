@@ -3,7 +3,7 @@
 #ifndef _DVector2_
 #define _DVector2_
 
-#ifndef USE_SIMD 
+#ifndef USE_SSE2
 
 #include <TVector2.h>
 typedef TVector2 DVector2;
@@ -131,5 +131,5 @@ inline DVector2 operator/(const DVector2 &v1,const double c){
   return DVector2(_mm_mul_pd(v1.GetV(),scale));
 }
 
-#endif // USE_SIMD
+#endif // USE_SSE2
 #endif // _DVector2_
