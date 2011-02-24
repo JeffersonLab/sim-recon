@@ -12,7 +12,7 @@ static void locate(const double *xx,int n,double x,int *j){
   ascnd=(xx[n-1]>=xx[0]);
   while(ju-jl>1){
     jm=(ju+jl)>>1;
-    if (x>=xx[jm]==ascnd)
+    if ( (x>=xx[jm])==ascnd)
       jl=jm;
     else
       ju=jm;
