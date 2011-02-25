@@ -870,6 +870,222 @@ class DMatrix5x5{
 						       _mm_add_pd(MUL(2,3,4),
 								  MUL(2,4,4))))));    
   }
+
+ // The following code performs the matrix operation ABA^T, where B is a symmetric matrix
+  DMatrix5x5 SandwichMultiply(const DMatrix5x5 &A){
+    __m128d A5=_mm_set1_pd(A(0,4));
+    __m128d A4=_mm_set1_pd(A(0,3));
+    __m128d A3=_mm_set1_pd(A(0,2));
+    __m128d A2=_mm_set1_pd(A(0,1));
+    __m128d A1=_mm_set1_pd(A(0,0));
+
+    // BA^T column 1 
+    union dvec2{
+      __m128d v;
+      double d[2];
+    }temp2;
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(0,3)),
+							_mm_mul_pd(A5,GetV(0,4))))));
+    __m128d BA1=_mm_set1_pd(temp2.d[0]);
+    __m128d BA2=_mm_set1_pd(temp2.d[1]);
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(1,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(1,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
+							_mm_mul_pd(A5,GetV(1,4))))));
+    __m128d BA3=_mm_set1_pd(temp2.d[0]);
+    __m128d BA4=_mm_set1_pd(temp2.d[1]);
+    __m128d BA5=_mm_set1_pd(mA[0].d[4]*A(0,0)+mA[1].d[4]*A(0,1)+mA[2].d[4]*A(0,2)+mA[3].d[4]*A(0,3)+mA[4].d[4]*A(0,4));
+
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(0,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(0,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(0,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(0,3),BA4),
+							_mm_mul_pd(A.GetV(0,4),BA5)))));
+    double C11=temp2.d[0];
+    double C12=temp2.d[1];
+
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(1,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(1,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(1,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(1,3),BA4),
+							_mm_mul_pd(A.GetV(1,4),BA5)))));
+
+    double C13=temp2.d[0];
+    double C14=temp2.d[1];
+  
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(2,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(2,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(2,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(2,3),BA4),
+							_mm_mul_pd(A.GetV(2,4),BA5)))));
+
+    double C15=temp2.d[0];
+
+    
+    // BA^T column 2 
+    A5=_mm_set1_pd(A(1,4));
+    A4=_mm_set1_pd(A(1,3));
+    A3=_mm_set1_pd(A(1,2));
+    A2=_mm_set1_pd(A(1,1));
+    A1=_mm_set1_pd(A(1,0));
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(0,3)),
+							_mm_mul_pd(A5,GetV(0,4))))));
+    BA1=_mm_set1_pd(temp2.d[0]);
+    BA2=_mm_set1_pd(temp2.d[1]);
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(1,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(1,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
+							_mm_mul_pd(A5,GetV(1,4))))));
+    BA3=_mm_set1_pd(temp2.d[0]);
+    BA4=_mm_set1_pd(temp2.d[1]);
+    BA5=_mm_set1_pd(mA[0].d[4]*A(1,0)+mA[1].d[4]*A(1,1)+mA[2].d[4]*A(1,2)+mA[3].d[4]*A(1,3)+mA[4].d[4]*A(1,4));
+
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(0,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(0,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(0,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(0,3),BA4),
+							_mm_mul_pd(A.GetV(0,4),BA5)))));
+ 
+    double C22=temp2.d[1];
+
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(1,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(1,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(1,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(1,3),BA4),
+							_mm_mul_pd(A.GetV(1,4),BA5)))));
+
+    double C23=temp2.d[0];
+    double C24=temp2.d[1];
+    
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(2,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(2,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(2,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(2,3),BA4),
+							_mm_mul_pd(A.GetV(2,4),BA5)))));
+
+    double C25=temp2.d[0];
+
+    
+    // BA^T column 3 
+    A5=_mm_set1_pd(A(2,4));
+    A4=_mm_set1_pd(A(2,3));
+    A3=_mm_set1_pd(A(2,2));
+    A2=_mm_set1_pd(A(2,1));
+    A1=_mm_set1_pd(A(2,0));
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(0,3)),
+							_mm_mul_pd(A5,GetV(0,4))))));
+    BA1=_mm_set1_pd(temp2.d[0]);
+    BA2=_mm_set1_pd(temp2.d[1]);
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(1,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(1,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
+							_mm_mul_pd(A5,GetV(1,4))))));
+    BA3=_mm_set1_pd(temp2.d[0]);
+    BA4=_mm_set1_pd(temp2.d[1]);
+    BA5=_mm_set1_pd(mA[0].d[4]*A(2,0)+mA[1].d[4]*A(2,1)+mA[2].d[4]*A(2,2)+mA[3].d[4]*A(2,3)+mA[4].d[4]*A(2,4));
+
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(1,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(1,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(1,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(1,3),BA4),
+							_mm_mul_pd(A.GetV(1,4),BA5)))));
+    
+    double C33=temp2.d[0];
+    double C34=temp2.d[1];
+
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(2,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(2,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(2,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(2,3),BA4),
+							_mm_mul_pd(A.GetV(2,4),BA5)))));
+
+    double C35=temp2.d[0];
+
+    
+    // BA^T column 4
+    A5=_mm_set1_pd(A(3,4));
+    A4=_mm_set1_pd(A(3,3));
+    A3=_mm_set1_pd(A(3,2));
+    A2=_mm_set1_pd(A(3,1));
+    A1=_mm_set1_pd(A(3,0));
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(0,3)),
+							_mm_mul_pd(A5,GetV(0,4))))));
+    BA1=_mm_set1_pd(temp2.d[0]);
+    BA2=_mm_set1_pd(temp2.d[1]);
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(1,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(1,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
+							_mm_mul_pd(A5,GetV(1,4))))));
+    BA3=_mm_set1_pd(temp2.d[0]);
+    BA4=_mm_set1_pd(temp2.d[1]);
+    BA5=_mm_set1_pd(mA[0].d[4]*A(3,0)+mA[1].d[4]*A(3,1)+mA[2].d[4]*A(3,2)+mA[3].d[4]*A(3,3)+mA[4].d[4]*A(3,4));
+
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(1,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(1,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(1,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(1,3),BA4),
+							_mm_mul_pd(A.GetV(1,4),BA5)))));
+    double C44=temp2.d[1];
+    
+    
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(2,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(2,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(2,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(2,3),BA4),
+							_mm_mul_pd(A.GetV(2,4),BA5)))));
+
+    double C45=temp2.d[0];
+     
+    // BA^T column 5
+    A5=_mm_set1_pd(A(4,4));
+    A4=_mm_set1_pd(A(4,3));
+    A3=_mm_set1_pd(A(4,2));
+    A2=_mm_set1_pd(A(4,1));
+    A1=_mm_set1_pd(A(4,0));
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(0,3)),
+							_mm_mul_pd(A5,GetV(0,4))))));
+    BA1=_mm_set1_pd(temp2.d[0]);
+    BA2=_mm_set1_pd(temp2.d[1]);
+    temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(1,0)),
+		       _mm_add_pd(_mm_mul_pd(A2,GetV(1,1)),
+				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
+					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
+							_mm_mul_pd(A5,GetV(1,4))))));
+
+    BA3=_mm_set1_pd(temp2.d[0]);
+    BA4=_mm_set1_pd(temp2.d[1]);
+    BA5=_mm_set1_pd(mA[0].d[4]*A(4,0)+mA[1].d[4]*A(4,1)+mA[2].d[4]*A(4,2)+mA[3].d[4]*A(4,3)+mA[4].d[4]*A(4,4));
+
+
+    temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(2,0),BA1),
+		       _mm_add_pd(_mm_mul_pd(A.GetV(2,1),BA2),
+				  _mm_add_pd(_mm_mul_pd(A.GetV(2,2),BA3),
+					     _mm_add_pd(_mm_mul_pd(A.GetV(2,3),BA4),
+							_mm_mul_pd(A.GetV(2,4),BA5)))));
+    double C55=temp2.d[0];
+  
+    return DMatrix5x5(C11,C12,C13,C14,C15,C22,C23,C24,C25,C33,C34,C35,C44,C45,C55);
+  }
+
 #endif
 
 
