@@ -13,7 +13,7 @@
          version     = "1.0"
          date        = "2006-01-14"
          author      = "R.T. Jones"
-         top_volume  = "electronArm"
+         top_volume  = "AREA"
          specification = "v1.0">
 
 <!-- The spectrometer consists of a series of independently placed
@@ -21,144 +21,271 @@
      and dipoles) are the geometric centers of their field regions.
      For other components see further comments below.              -->
 
-  <composition name="quadrupoleAsy">
-    <posXYZ volume="quadrupoleVacPipe" X_Y_Z="0 0 -135.0 "/>
-    <posXYZ volume="QUAD" X_Y_Z="0 0 -150.0 "/>
+
+
+<!-- ====== Quadrupole Magnet ====== -->
+
+  <composition name="quadAssembly">
+    <posXYZ volume="quadrupoleVacPipe" X_Y_Z="0 0 92.389 "/>
+    <posXYZ volume="QUAD" X_Y_Z="0 0 0.0 "/>
   </composition>
+
+
   <composition name="quadrupoleVacPipe" envelope="QUAV">
     <posXYZ volume="QUAP"/>
   </composition>
-  <tubs name="QUAV" Rio_Z="0.0 1.9 274.2" material="TaggerVacuum">
+
+  <tubs name="QUAV" Rio_Z="0.0 1.9 293.444" material="TaggerVacuum">
     <apply region="babySteps"/>
   </tubs>
-  <tubs name="QUAP" Rio_Z="1.75 1.9 274.0" material="Iron" />
-  <tubs name="QUAD" Rio_Z="2.0 12.0 60.0" material="Iron" />
 
-<!-- The two dipoles are identical, except that the first one has
-     a hole cut through the yoke to allow the photons to exit      -->
+  <tubs name="QUAP" Rio_Z="1.75 1.9 293.222" material="Iron" /> 
 
-  <composition name="taggerDipole1">
-    <posXYZ volume="SHOE" X_Y_Z="0 +12.0 0"/>
-    <posXYZ volume="SHOE" X_Y_Z="0 -12.0 0"/>
-    <posXYZ volume="YOK1" X_Y_Z="62.5 0 0"/>
-    <posXYZ volume="YOKC" X_Y_Z="32.0 +46.5 0"/>
-    <posXYZ volume="YOKC" X_Y_Z="32.0 -46.5 0"/>
-  </composition>
-  <composition name="taggerDipole2">
-    <posXYZ volume="SHOE" X_Y_Z="0 +12.0 0"/>
-    <posXYZ volume="SHOE" X_Y_Z="0 -12.0 0"/>
-    <posXYZ volume="dipoleYoke2" X_Y_Z="62.5 0 0"/>
-    <posXYZ volume="YOKC" X_Y_Z="32.0 +46.5 0"/>
-    <posXYZ volume="YOKC" X_Y_Z="32.0 -46.5 0"/>
-  </composition>
-  <box name="SHOE" X_Y_Z="45.0 21.0 306.4623" material="Iron"/>
-  <box name="YOKC" X_Y_Z="109.0 48.0 306.4623" material="Iron"/>
-  <box name="YOK1" X_Y_Z="48.0 45.0 306.4623" material="Iron"/>
-  <box name="YOK2" X_Y_Z="48.0 45.0 306.4623" material="Iron"/>
-  <composition name="dipoleYoke2" envelope="YOK2">
-    <posXYZ volume="PXHO" X_Y_Z="-4.536 0 0" rot="0 6.79 0"/>
-  </composition>
-  <tubs name="PXHO" Rio_Z="0.0 1.5 309.0" material="TaggerVacuum"/>
+  <tubs name="QUAD" Rio_Z="1.9 12.0 31.26" material="Iron" />
 
-<!-- The vacuum box is a complicated shape with many oblique angles
-     that are difficult to model exactly using simple CSG shapes.  I
-     decided instead to approximate it by a series of trd volumes that
-     are placed so as to abutt each other.  When they are placed they
-     have the effect of making one large volume.  The origin of the
-     vacuum box is the place where the nominal electron beam axis enters
-     the entrance plane of the vacuum box.                                -->
 
-  <composition name="vacuumBox">
-    <posXYZ volume="vacuumBoxSegment1" X_Y_Z="-28.337 0 148.742"/>
-    <posXYZ volume="vacuumBoxSegment2" X_Y_Z="-81.804 0 477.485"/>
-    <posXYZ volume="vacuumBoxSegment3" X_Y_Z="-165.953 0 887.485"/>
-    <posXYZ volume="vacuumBoxSegment4" X_Y_Z="-217.565 0 1177.756"/>
-    <posXYZ volume="vacuumBoxSnout" X_Y_Z="-221.308 0 1238.528"
-                                                 rot="0 -13.4 0"/>
-    <!--posXYZ volume="vacuumBoxExitFlange" X_Y_Z="-154.238 0 603.582"
-                                                 rot="0 -9.94 0"/-->
-    <posXYZ volume="vacuumBoxExitFlange" X_Y_Z="-145.603 0 554.333"
-                                                 rot="0 -9.94 0"/>
-  </composition>
-  <composition name="vacuumBoxSegment1" envelope="VBS1">
-    <posXYZ volume="VBF1" X_Y_Z="0 -3.3 0"/>
-    <posXYZ volume="VBF1" X_Y_Z="0 +3.3 0"/>
-    <posXYZ volume="VBB1" X_Y_Z="45.133 0 0" rot="0 -4.73 0"/>
-    <posXYZ volume="vacuumBoxEntryWall" X_Y_Z="19.187 0 -148.242"/>
-    <posXYZ volume="VBW1" X_Y_Z="-45.334 0 0" rot="0 -9.94 0"/>
-  </composition>
-  <composition name="vacuumBoxSegment2" envelope="VBS2">
-    <posXYZ volume="VBF2" X_Y_Z="0 -3.3 0"/>
-    <posXYZ volume="VBF2" X_Y_Z="0 +3.3 0"/>
-    <posXYZ volume="VBB2" X_Y_Z="51.304 0 0" rot="0 -6.97 0"/>
-    <posXYZ volume="VBW2" X_Y_Z="-49.504 0 0" rot="0 -9.94 0"/>
-  </composition>
-  <composition name="vacuumBoxSegment3" envelope="VBS3">
-    <posXYZ volume="VBF3" X_Y_Z="0 -3.3 0"/>
-    <posXYZ volume="VBF3" X_Y_Z="0 +3.3 0"/>
-    <posXYZ volume="VBB3" X_Y_Z="37.038 0 0" rot="0 -13.55 0"/>
-    <posXYZ volume="VBW3" X_Y_Z="-37.238 0 0" rot="0 -9.94 0"/>
-  </composition>
-  <composition name="vacuumBoxSegment4" envelope="VBS4">
-    <posXYZ volume="VBF4" X_Y_Z="0 -3.3 0"/>
-    <posXYZ volume="VBF4" X_Y_Z="0 +3.3 0"/>
-    <posXYZ volume="VBB4" X_Y_Z="18.877 0 0" rot="0 -13.4 0"/>
-    <posXYZ volume="VBW4" X_Y_Z="-19.077 0 0" rot="0 6.53 0"/>
-  </composition>
-  <composition name="vacuumBoxSnout" envelope="VBS5">
-    <posXYZ volume="VBF5" X_Y_Z="0 -3.3 0"/>
-    <posXYZ volume="VBF5" X_Y_Z="0 +3.3 0"/>
-    <posXYZ volume="VBB5" X_Y_Z="8.023 0 0"/>
-    <posXYZ volume="VBW5" X_Y_Z="-5.0 0 2.030"/>
+
+<!--  ====== Dipole Magnet with Vacuum Chambers ====== -->
+
+  <composition name="dipAssembly">
+
+    <posXYZ volume="DipoleMagnet" X_Y_Z="0.0 0.0 0.0"/> 
+
+    <posXYZ volume="VacChamber1"  X_Y_Z="-67.31498   0  0.0"/> 
+
+<!-- Vacuum Chambers for  d_offset = 150 cm -->
+    <posXYZ volume="VacChamber2"  X_Y_Z=" -73.887203  0  511.401039 "/>
+    <posXYZ volume="VacChamber3"  X_Y_Z=" -81.011067  0  709.900851 "/>
+    <posXYZ volume="ExitPlateFlange" X_Y_Z=" -88.863918  0  711.161653" rot="0 -6.9 0" unit_angle="deg"/>
+    <posXYZ volume="ExitFlange" X_Y_Z="-90.686287  0  196.680215" rot="0 -1.55 0" unit_angle="deg"/>
+
+
   </composition>
 
-  <trd name="VBS1" Xmp_Ymp_Z="77.485 105.049 7.6 7.6 297.485"
-       material="TaggerVacuum" inclination="-7.35 0" unit_angle="deg"/>
-  <trd name="VBF1" Xmp_Ymp_Z="77.485 105.049 1.0 1.0 297.485"
-       material="Iron" inclination="-7.35 0" unit_angle="deg"/>
-  <trd name="VBS2" Xmp_Ymp_Z="88.049 111.166 7.6 7.6 360.0" 
-       material="TaggerVacuum" inclination="-8.15 0" unit_angle="deg"/>
-  <trd name="VBF2" Xmp_Ymp_Z="88.049 111.166 1.0 1.0 360.0"
-       material="Iron" inclination="-8.15 0" unit_angle="deg"/>
-  <trd name="VBS3" Xmp_Ymp_Z="90.166 59.986 7.6 7.6 460.0"
-       material="TaggerVacuum" inclination="-11.76 0" unit_angle="deg"/>
-  <trd name="VBF3" Xmp_Ymp_Z="90.166 59.986 1.0 1.0 460.0"
-       material="Iron" inclination="-11.76 0" unit_angle="deg"/>
-  <trd name="VBS4" Xmp_Ymp_Z="59.986 17.522 7.6 7.6 120.543"
-       material="TaggerVacuum" inclination="-3.55 0" unit_angle="deg"/>
-  <trd name="VBF4" Xmp_Ymp_Z="59.986 17.522 1.0 1.0 120.543"
-       material="Iron" inclination="-3.55 0" unit_angle="deg"/>
-  <box name="VBS5" X_Y_Z="17.045 7.6 5.060" material="TaggerVacuum"/>
-  <box name="VBF5" X_Y_Z="17.045 1.0 5.060" material="Iron"/>
 
-  <box name="VBB1" X_Y_Z="1.0 5.6 298.500" material="Iron"/>
-  <box name="VBB2" X_Y_Z="1.0 5.6 362.679" material="Iron"/>
-  <box name="VBB3" X_Y_Z="1.0 5.6 473.163" material="Iron"/>
-  <box name="VBB4" X_Y_Z="1.0 5.6 123.917" material="Iron"/>
-  <box name="VBB5" X_Y_Z="1.0 5.6 5.060" material="Iron"/>
-  <box name="VBW1" X_Y_Z="0.1 5.6 302.022" material="Aluminum"/>
-  <box name="VBW2" X_Y_Z="0.1 5.6 365.491" material="Aluminum"/>
-  <box name="VBW3" X_Y_Z="0.1 5.6 467.017" material="Aluminum"/>
-  <box name="VBW4" X_Y_Z="1.0 5.6 121.324" material="Aluminum"/>
-  <box name="VBW5" X_Y_Z="7.045 5.6 1.0" material="Aluminum"/>
 
-  <composition name="vacuumBoxEntryWall" envelope="VBE1">
-    <posXYZ volume="VBX1" X_Y_Z="9.149 0 0"/>
+<!--  ============  Dipole Magnet ============  -->
+
+  <composition name="DipoleMagnet" envelope="MAG1">
+
+    <posXYZ volume="MGTB" X_Y_Z="0.0   +43.5   0.0"/>
+    <posXYZ volume="MGTB" X_Y_Z="0.0   -43.5   0.0"/>
+
+    <posXYZ volume="PhotPipe" X_Y_Z="28.9  0.0    0.0"/>
+
+<!--    <posXYZ volume="PPMG"  X_Y_Z="1.4     0.0   -14.2164" rot="0  -83.5  0" unit_angle="deg" />  -->
+
+    <posXYZ volume="SEC1" X_Y_Z="-27.5 +16.95  0.0"/>
+    <posXYZ volume="SEC1" X_Y_Z="-27.5 -16.95  0.0"/>
+
+
+    <posXYZ volume="SEC2" X_Y_Z="-27.5 +6.958  0.0" rot="90  0  0"/>
+    <posXYZ volume="SEC2" X_Y_Z="-27.5 -6.958  0.0" rot="-90 0  0"/>
+
+
+    <posXYZ volume="SEC3" X_Y_Z="-27.5 +2.008  0.0" rot="90  0  0"/>
+    <posXYZ volume="SEC3" X_Y_Z="-27.5 -2.008  0.0" rot="-90 0  0"/>
+
+<!--    <posXYZ volume="BackPlane" X_Y_Z="-6.05 0.0 0.0"/>  
+
+    <posXYZ volume="SDPL" X_Y_Z="-54.95 +6.825 0.0"/>
+    <posXYZ volume="SDPL" X_Y_Z="-54.95 -6.825 0.0"/>
+
+    <posXYZ volume="EntrancePlate" X_Y_Z="-30.5 0.0 -313.2025"/> -->
+
+  </composition> 
+
+
+
+  <box name="MAG1" X_Y_Z="99.8  129.0 629.48" material="TaggerVacuum"/>
+
+  <box name="MGTB" X_Y_Z="99.8 42.0  629.48" material="Iron"/>
+
+
+
+<!--  ======= Photon pipe going through the magnet  ======= -->
+
+  <composition name="PhotPipe" envelope="MGLT">
+    <posXYZ volume="MGLU" X_Y_Z="-5.58992  0 179.4876" rot="0  -83.5  0" unit_angle="deg"/>
+  </composition> 
+
+
+  <box name="MGLT" X_Y_Z="42.0  45.0  629.48" material="Iron"/>
+
+
+  <trd name="MGLU" Xmp_Ymp_Z="294.83791  249.6730  5.08  5.08  5.08" 
+     material="TaggerVacuum" inclination="77.0  0" unit_angle="deg"/>
+
+
+
+  <box name="SEC1" X_Y_Z="44.8  11.1  629.48" material="Iron"/>
+
+  <trd name="SEC2" Xmp_Ymp_Z="41.0  36.02  623.13  618.15  8.884"
+      material="Iron"/>
+
+  <trd name="SEC3" Xmp_Ymp_Z="36.02  32.5  618.15  614.63  1.016"
+      material="Iron"/>
+
+
+
+
+<!--  ========== Back Plane ==========   -->
+
+  <composition name="BackPlane" envelope="BKPL">
+    <posXYZ volume="BPLH" X_Y_Z="0.0  0  -79.622" rot="0  -83.5  0" unit_angle="deg"/>
+  </composition> 
+
+  <box name="BKPL" X_Y_Z="1.9  22.8  623.23" material="Iron"/>
+
+  <trd name="BPLH" Xmp_Ymp_Z="16.784  16.784  4.5  4.5  4.5" 
+     material="TaggerVacuum" inclination="83.5  0" unit_angle="deg"/>
+
+
+
+  <box name="SDPL" X_Y_Z="1.9  9.15  623.23" material="Iron"/>
+
+
+  <composition name="EntrancePlate" envelope="ENTP">
+    <posXYZ volume="ENTW" X_Y_Z="-2.2 0 0"/>
+  </composition> 
+
+  <box name="ENTP" X_Y_Z="50.8 22.8 3.175" material="Iron"/>
+  <tubs name="ENTW" Rio_Z="0.0 2.2  3.175" material="TaggerVacuum"/>
+
+
+
+<!--  ============  Vacuum Chamber 1 ============  -->
+
+  <composition name="VacChamber1" envelope="VCH1">
+    <posXYZ volume="CHP1" X_Y_Z="0 +2.5675 0"/>
+    <posXYZ volume="CHP1" X_Y_Z="0 -2.5675 0"/> 
+  </composition> 
+
+  <trd name="CHP1" Xmp_Ymp_Z="26.3134 43.3465 0.635 0.635 629.476"
+       material="Iron" inclination="-0.77514 0" unit_angle="deg"/>
+
+
+  <trd name="VCH1" Xmp_Ymp_Z="26.3134  43.3465  5.77  5.77  629.476"
+       material="TaggerVacuum" inclination="-0.77514 0" unit_angle="deg"/>
+
+
+
+<!--  ============  Vacuum Chamber 2 ============  -->
+
+
+  <composition name="VacChamber2" envelope="VCH2">
+    <posXYZ volume="CHP2" X_Y_Z="0 +2.5675 0"/>
+    <posXYZ volume="CHP2" X_Y_Z="0 -2.5675 0"/>
   </composition>
-  <box name="VBE1" X_Y_Z="77.485 5.6 1.0" material="Iron"/>
-  <tubs name="VBX1" Rio_Z="0 1.5 1.05" material="TaggerVacuum"/>
 
-  <composition name="electronExitTube" envelope="EDUT">
-    <posXYZ volume="EDIT" X_Y_Z="-0.5 0 0"/>
-  </composition>
-  <box name="EDUT" X_Y_Z="10.0 5.0 279.487" material="Iron"/>
-  <box name="EDIT" X_Y_Z="8.0 4.0 279.587" material="TaggerVacuum"/>
+  <trd name="VCH2" Xmp_Ymp_Z="67.755703  30.801109  5.77 5.77  393.326077"
+       material="TaggerVacuum" inclination="-4.233675  0" unit_angle="deg"/>
 
-  <composition name="vacuumBoxExitFlange" envelope="VBXF">
-    <posXYZ volume="VBXS"/>
+  <trd name="CHP2" Xmp_Ymp_Z="67.755703  30.801109  0.635 0.635  393.326077"
+       material="Iron" inclination="-4.233675  0" unit_angle="deg"/>
+
+
+<!--  ============  Vacuum Chamber 3 ============  -->
+
+  <composition name="VacChamber3" envelope="VCH3">
+    <posXYZ volume="CHP3" X_Y_Z="0 +2.5675 0"/>
+    <posXYZ volume="CHP3" X_Y_Z="0 -2.5675 0"/>
   </composition>
-  <box name="VBXF" X_Y_Z="1.0 5.0 1100.0" material="Iron"/>
-  <box name="VBXS" X_Y_Z="1.0 3.0 1080.0" material="Air"/>
+
+
+  <trd name="VCH3" Xmp_Ymp_Z="30.801109 0  5.77  5.77  3.673547"
+       material="TaggerVacuum" inclination="+76.20 0" unit_angle="deg"/>
+
+
+  <trd name="CHP3" Xmp_Ymp_Z="30.801109  0  0.635  0.635  3.673547"
+       material="Iron" inclination="+76.20 0" unit_angle="deg"/>
+
+
+
+<!--  ============  ExitPlateFlange  ============  -->
+
+  <composition name="ExitPlateFlange" envelope="VCF3">
+     <posXYZ volume="VCFW" X_Y_Z="0.281440  0.0   0.0"/>
+  </composition>
+
+  <box name="VCF3" X_Y_Z="30.578027  9.58  2.54" material="Iron"/>
+  <box name="VCFW" X_Y_Z="15.24  4.5  2.54" material="TaggerVacuum"/>
+
+
+
+<!--  ============  ExitFlange  ============  -->
+
+  <composition name="ExitFlange" envelope="EWFL">
+    <posXYZ volume="EWVA" X_Y_Z="0.0125    0.0   0.0"/>
+    <posXYZ volume="EWAL" X_Y_Z="-0.6225   0.0   0.0"/>
+  </composition>
+
+  <box name="EWFL" X_Y_Z="1.27   10.16 1022.857451" material="Iron"/>
+  <box name="EWVA" X_Y_Z="1.245  4.5   1012.857451" material="TaggerVacuum"/>
+  <box name="EWAL" X_Y_Z="0.025  4.5   1012.857451" material="Aluminum"/>
+
+
+
+  <trd name="PPMG" Xmp_Ymp_Z="114.838  114.838  4.5  4.5  4.5" 
+     material="TaggerVacuum" inclination="83.5  0" unit_angle="deg"/> 
+
+
+
+
+ <composition name="VacChamber0">
+    <posXYZ volume="Chamber0" X_Y_Z="0.0 0.0 0.0" rot="0  55.192 0" unit_angle="deg"/>
+    <posXYZ volume="CHE0" X_Y_Z="-6.2418 0 -9.0019" rot="0  55.192 0" unit_angle="deg"/>
+  </composition> 
+
+  <composition name="Chamber0" envelope="VCH0">
+    <posXYZ volume="CHP0" X_Y_Z="0.0  +2.5675  0.0"/>
+    <posXYZ volume="CHP0" X_Y_Z="0.0  -2.5675  0.0"/>
+  </composition> 
+
+
+  <trd name="VCH0" Xmp_Ymp_Z="38.377  0  5.77  5.77  17.9868"
+      material="TaggerVacuum" inclination="-20.3845 0" unit_angle="deg"/>
+ <trd name="CHP0" Xmp_Ymp_Z="38.377  0  0.635  0.635  17.9868"
+      material="Iron" inclination="-20.3845 0" unit_angle="deg"/>
+
+
+  <trd name="CHE0" Xmp_Ymp_Z="43.7963  38.377  5.77  5.77  2.54"
+      material="Iron" inclination="-20.3847 0" unit_angle="deg"/>
+
+
+
+<!--  ====== Control Volume positioned at the detector plane ====== -->
+
+
+  <composition name="DET7Comp">
+    <posXYZ volume="DET7" X_Y_Z="0.0 0.0 0.0"/>
+
+<!-- Shielded Focal Plane 
+    <posXYZ volume="NSCF" X_Y_Z="5.5     74.0  -53.0"/>
+    <posXYZ volume="NSCF" X_Y_Z="5.5    -74.0  -53.0"/>
+    <posXYZ volume="NSCB" X_Y_Z="-15.0  -74.0  -53.0"/>
+    <posXYZ volume="NSCB" X_Y_Z="-15.0   74.0  -53.0"/>
+    <posXYZ volume="NSCS" X_Y_Z="-6.0   -74.0   17.0"/>
+    <posXYZ volume="NSCS" X_Y_Z="-6.0    74.0   17.0"/>
+-->
+  </composition>
+
+
+
+  <!--  <box name="DET7" X_Y_Z="0.2 20.0  1200.0" material="TaggerVacuum"/> -->
+
+  <box name="DET7" X_Y_Z="0.2  200.0  852.0" material="TaggerVacuum"/> 
+
+
+<!-- Schielding of the microscope detectors
+  <box name="NSCF" X_Y_Z="10.0  140.0  110.0" material="Polyethylene"/> 
+  <box name="NSCB" X_Y_Z="10.0  140.0  150.0" material="Polyethylene"/> 
+  <box name="NSCS" X_Y_Z="8.0   140.0  10.0" material="Polyethylene"/> 
+-->
+
+
+  <box name="DET8" X_Y_Z="550.0   550.0   0.01" material="Vacuum" /> 
+
 
 </section>
 
