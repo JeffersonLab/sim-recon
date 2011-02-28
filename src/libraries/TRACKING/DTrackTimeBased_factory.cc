@@ -196,31 +196,19 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   vector<const DSCHit*>sc_hits;
   eventLoop->Get(sc_hits);
 
-  //Find the start time
+  //Initialize some variables
   mStartTime=0.;
   mStartDetector=SYS_NULL;
-  double num=0.;
-  for (unsigned int i=0;i<tracks.size();i++){
-    const DTrackWireBased *track = tracks[i];
-  
-    if (!isnan(track->t0()) && track->t0()>-999.){
-      mStartTime+=track->t0();
-      //mStartTime+=(track->position().z()-65.)/SPEED_OF_LIGHT;
-      num+=1.;
-    }
-  }
-  if (num>0.){
-    mStartTime/=num;
-    if (DEBUG_HISTS){
-      time_based_start->Fill(mStartTime);
-    }
-  }
-  else return NOERROR;
-  
+   
   // Loop over candidates
   for(unsigned int i=0; i<tracks.size(); i++){
     const DTrackWireBased *track = tracks[i];
-    
+    //mStartTime=track->t0();
+    mStartDetector=track->t0_detector();
+    //    mStartTime=0.;
+
+    //printf("%f %s\n",track->t0(),SystemName(track->t0_detector()));
+
     // Make sure there are enough DReferenceTrajectory objects
     while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
     DReferenceTrajectory *rt = rtv[_data.size()];
@@ -375,6 +363,7 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
     // Get the expected (most probable) dE/dx for a particle with this mass
     // and momentum for this hit
     double dEdx_mp=fitter->GetdEdx(p,mass,dx);
+
     dEdx+=my_dedx;
     dEdx_diff+=my_dedx-dEdx_mp;
     p_avg+=p;
@@ -426,7 +415,9 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
     fom->Fill(TMath::Prob(chi2_sum,ndof));
   }
 
-  //     _DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<dtrack->chisq<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<" sc_chi2="<<sc_chi2<<endl;
+  if (DEBUG_LEVEL>1){
+      _DBG_<<"FOM="<<TMath::Prob(chi2_sum,ndof)<<"  chi2_sum="<<chi2_sum<<" ndof="<<ndof<<" trk_chi2="<<dtrack->chisq<<" dedx_chi2="<<dedx_chi2<<" tof_chi2="<<tof_chi2<<" bcal_chi2="<<bcal_chi2<<" sc_chi2="<<sc_chi2<<endl;
+  }
 
   // Return a combined FOM that includes the tracking chi2 information, the 
   // dEdx result and the tof result where available.
