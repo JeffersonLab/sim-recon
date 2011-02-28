@@ -46,6 +46,12 @@ bool FDCSortByZincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const
 	return hit1->wire->layer < hit2->wire->layer;
 }
 
+
+bool DTrackWireBased_T0_cmp(DStartTime_t a,DStartTime_t b){
+  return (a.t0_sigma<b.t0_sigma);
+}
+
+
 //------------------
 // count_common_members
 //------------------
@@ -148,7 +154,8 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 	  if (!Hsc_match) Hsc_match=new TH1F("Hsc_match","#delta#phi match to SC",300,0.,1.);
 	  Hstart_time= (TH2F*)gROOT->FindObject("Hstart_time");
 	  if (!Hstart_time) Hstart_time=new TH2F("Hstart_time",
-		    "vertex time source vs time",300,-5,25,5,-0.5,4.5);
+						 "vertex time source vs time",
+						 300,-50,50,257,-0.5,256.5);
 	  Htof_match= (TH2F*)gROOT->FindObject("Htof_match");
 	  if (!Htof_match) Htof_match=new TH2F("Htof_match","#deltar match to TOF vs p",100,0.,5.,200,0,100.);
 	  Hbcal_match= (TH2F*)gROOT->FindObject("Hbcal_match");
@@ -196,7 +203,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   if(Ntracks_to_fit>rts_to_keep)rts_to_keep=Ntracks_to_fit;
   for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
   if(rts_to_keep<rtv.size())rtv.resize(rts_to_keep);
-  
+
   // Loop over candidates
   for(unsigned int i=0; i<candidates.size(); i++){
     const DTrackCandidate *candidate = candidates[i];
@@ -266,6 +273,13 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // Add DTrackCandidate as associated object
 	  track->AddAssociatedObject(candidate);
        
+	  // Add the t0 estimate from the tracking
+	  DStartTime_t start_time;
+	  start_time.t0=track->t0();
+	  start_time.t0_sigma=5.;
+	  start_time.system=track->t0_detector();
+	  track->start_times.push_back(start_time);
+      
 	  // Try to match to start counter and outer detectors 
 	  jerror_t error=VALUE_OUT_OF_RANGE;
 	  
@@ -275,6 +289,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	    error=MatchToSC(track,sc_hits);
 	  }
 	   
+	
 	  if (error!=NOERROR && tof_points.size()>0){
 	    error=MatchToTOF(track,tof_points);
 	  }  
@@ -299,14 +314,28 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  //
 	  //}
 	  
+	  // Sort the list of start times according to uncertainty and set 
+	  // t0 for the fit to the first entry
+	  sort(track->start_times.begin(),track->start_times.end(),
+	       DTrackWireBased_T0_cmp);
+	  track->setT0(track->start_times[0].t0,track->start_times[0].t0_sigma,
+		       track->start_times[0].system);
+
 	  if (DEBUG_HISTS){
-	    if (track->t0_detector()==SYS_FDC)
-	      Hstart_time->Fill(track->t0(),0); 
-	    if (track->t0_detector()==SYS_CDC)
-	      Hstart_time->Fill(track->t0(),4);
+	    TH2F *Hstart_time=(TH2F*)gROOT->FindObject("Hstart_time"); 
+	    if (Hstart_time){
+	      Hstart_time->Fill(track->start_times[0].t0,
+				track->start_times[0].system);
+	    }
 	  }
 
-
+	  /*
+	  for (unsigned int m=0;m<track->start_times.size();m++){
+	    printf("%d t0 %f sig %f det %s\n",m,track->start_times[m].t0,
+		   track->start_times[m].t0_sigma,
+		   SystemName(track->start_times[m].system));
+	  }
+	  */
 	  //printf("source %x, num %d\n",start_time_source,start_times.size());
 	  //printf("sc hits %d\n",sc_hits.size());
 
@@ -457,14 +486,15 @@ jerror_t DTrackWireBased_factory::MatchToTOF(DTrackWireBased *track,
   if (dmin<4.+0.488/track->momentum().Mag2()){
     double t0=tof_points[tof_match_id]->t-tflight;
 
-    // Add the time to the outer detector and the vertex time to the track 
-    // object
+    // Add the time to the outer detector
     track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF); 
-    track->setT0(t0,0.,SYS_TOF);
+    // Fill in the start time vector
+    DStartTime_t start_time;
+    start_time.t0=t0;
+    start_time.t0_sigma=0.1;
+    start_time.system=SYS_TOF;
+    track->start_times.push_back(start_time);
   
-    if (DEBUG_HISTS){
-      Hstart_time->Fill(t0,2);
-    }
     // Add DTOFPoint object as associate object
     track->AddAssociatedObject(tof_points[tof_match_id]);
 
@@ -556,11 +586,13 @@ jerror_t DTrackWireBased_factory::MatchToSC(DTrackWireBased *track,
     else{
       t0-=flight_time+myz/C_EFFECTIVE;
     }
-    track->setT0(t0,0.,SYS_START);
+    // Fill in the start time vector
+    DStartTime_t start_time;
+    start_time.t0=t0;
+    start_time.t0_sigma=0.3;
+    start_time.system=SYS_START;
+    track->start_times.push_back(start_time);
 
-    if (DEBUG_HISTS){
-    Hstart_time->Fill(t0,1);
-    }
     return NOERROR;
   }
   return VALUE_OUT_OF_RANGE;
@@ -612,14 +644,16 @@ jerror_t DTrackWireBased_factory::MatchToBCAL(DTrackWireBased *track,
 
     // Add the time to the outer detector to the track object
     track->setT1(bcal_clusters[bcal_match_id]->t, 0., SYS_BCAL);
-    track->setT0(t0,0.,SYS_BCAL);
-
+ 
     // Add DBCALShower object as associate object
     track->AddAssociatedObject(bcal_clusters[bcal_match_id]);
 
-    if (DEBUG_HISTS){
-      Hstart_time->Fill(t0,3);
-    }
+    // Fill in the start time vector
+    DStartTime_t start_time;
+    start_time.t0=t0;
+    start_time.t0_sigma=0.5;
+    start_time.system=SYS_BCAL;
+    track->start_times.push_back(start_time);
 	
     return NOERROR;
   }
