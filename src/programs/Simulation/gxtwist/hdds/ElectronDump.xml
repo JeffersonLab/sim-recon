@@ -23,347 +23,223 @@
      of the photon beam axis with the unscattered electron beam axis
      after it exits the tagger.                                  -->
 
+
+
   <composition name="electronDump">
-    <posXYZ volume="electronDumpPassageway" X_Y_Z="0 45.0 2040.794"/>
-  </composition>
-  <composition name="electronDumpPassageway" envelope="TUNL">
-    <posXYZ volume="electronDumpTube" X_Y_Z="-1.50 -45 -319.225"/>
-    <posXYZ volume="labyrinth_wall_1" X_Y_Z="27.94 0 -108.0"/>
-    <posXYZ volume="labyrinth_wall_2" X_Y_Z="-29.21 0 -311.2"/>
-    <posXYZ volume="labyrinth_wall_3" X_Y_Z="-27.94 0 95.2"/>
-    <posXYZ volume="electronBeamDump" X_Y_Z="-1.50 -45 600.0"/>
-  </composition>
-  <box name="TUNL" X_Y_Z="346. 450. 1650.413" material="Air"
-       				comment="electron beam dump access tunnel"/>
+        <posXYZ volume="Labyrinth1" X_Y_Z=" -49.53   0.0  -250.19" />
+        <posXYZ volume="Labyrinth2" X_Y_Z="  49.53   0.0  -29.21"  />
+        <posXYZ volume="Labyrinth3" X_Y_Z=" -49.53   0.0   186.69" /> 
 
-<!-- Create the labyrinth walls as concrete boxes with holes for beam pipe -->
+        <posXYZ volume="DumpDoor" X_Y_Z=" 197.5  0.0  -186.5 " rot="0  -54.904  0" unit_angle="deg"/>
 
-  <composition name="labyrinth_wall_1" envelope="LAB1">
-    <posXYZ volume="labyrinth_wall_beam_hole" X_Y_Z="-29.44 -45 0"/>
-  </composition>
-  <composition name="labyrinth_wall_2" envelope="LAB2">
-    <posXYZ volume="labyrinth_wall_beam_hole" X_Y_Z="27.71 -45 0"/>
-  </composition>
-  <composition name="labyrinth_wall_3" envelope="LAB3">
-    <posXYZ volume="labyrinth_wall_beam_hole" X_Y_Z="26.44 -45 0"/>
-  </composition>
-  <composition name="labyrinth_wall_beam_hole" envelope="BEHO">
-    <posXYZ volume="BEHV" X_Y_Z="-0.5 0 0"/>
-  </composition>
-  <box name="LAB1" X_Y_Z="290.120 450 60.960" material="Concrete"
-		comment="first labyrinth wall in electron beam dump passage"/>
-  <box name="LAB2" X_Y_Z="287.580 450 60.960" material="Concrete"
-		comment="second labyrinth wall in electron beam dump passage"/>
-  <box name="LAB3" X_Y_Z="290.120 450 60.960" material="Concrete"
-		comment="third labyrinth wall in electron beam dump passage"/>
-  <box name="BEHO" X_Y_Z="10 5 60.960" material="Iron"
-		comment="hole for beam pipe through labyrinth walls"/>
-  <box name="BEHV" X_Y_Z="8 4 60.970" material="TaggerVacuum"
-		comment="hole for beam vacuum through labyrinth walls"/>
+<!-- 5 + 1 =  6 inches  pipe; shift by 2 inches -->
+        <posXYZ volume="Pipe12" X_Y_Z=" -5.08  -45.0  -156.21 " />
+        <posXYZ volume="Pipe23" X_Y_Z=" -5.08  -45.0   95.25" />
 
-  <composition name="electronDumpTube" envelope="EDMT">
-    <posXYZ volume="EDMV" X_Y_Z="-0.5 0 0"/>
-  </composition>
-  <box name="EDMT" X_Y_Z="10.0 5.0 1012.0" material="Iron"/>
-  <box name="EDMV" X_Y_Z="8.0 4.0 1012.1" material="TaggerVacuum"/>
 
-  <composition name="electronBeamDump" envelope="EDHS">
-    <posXYZ volume="EDUM" X_Y_Z="0 0 -131.140"/>
+        <posXYZ volume="SEG1" X_Y_Z=" -247.65   0.0   -264.16" /> 
+        <posXYZ volume="SEG2" X_Y_Z="  231.14   0.0    119.38" /> 
+
+        <posXYZ volume="BDSW" X_Y_Z="  -410.07635   0.0   17.3810888" rot="0  90.  0" unit_angle="deg"/> 
+        <posXYZ volume="BDNW" X_Y_Z="   364.16      0.0   593.41803"  rot="0  90.  0" unit_angle="deg"/> 
+
+         <posXYZ volume="IronDump" X_Y_Z="0.0 0.0 598.17" /> 
+
   </composition>
-  <box name="EDHS" X_Y_Z="346.0 360.0 462.280" material="Iron"/>
-  <tubs name="EDUM" Rio_Z="0 33.0 200.0" material="Aluminum"/>
+
+
+<!-- ====== Labyrinth 1 ====== -->
+  <composition name="Labyrinth1" envelope="LBO1">
+        <posXYZ volume="LBI1" X_Y_Z=" 44.45  -45.0  0.0" /> 
+  </composition>
+
+  <box name="LBI1" X_Y_Z=" 15.24  5.08  66.04  " material="TaggerVacuum"  
+       comment="1st Labyrinth hole">
+  </box> 
+
+
+  <box name="LBO1" X_Y_Z=" 363.22  450.0  66.04" material="Iron"  
+       comment="1st Labyrinth wall">
+  </box> 
+
+
+<!-- ====== Labyrinth 2 ====== -->
+  <composition name="Labyrinth2" envelope="LBO2">
+        <posXYZ volume="LBI2" X_Y_Z="-54.61  -45.0  0.0" /> 
+  </composition>
+
+
+ <box name="LBI2" X_Y_Z="15.24  5.08  132.08  " material="TaggerVacuum"  
+       comment="2nd Labyrinth hole">
+  </box> 
+
+
+  <box name="LBO2" X_Y_Z="297.18  450.0  132.08" material="Iron"  
+       comment="2nd Labyrinth wall">
+  </box> 
+
+
+<!-- ====== Labyrinth 3 ====== -->
+  <composition name="Labyrinth3" envelope="LBO3">
+        <posXYZ volume="LBI3" X_Y_Z="44.45  -45.0  0.0" /> 
+  </composition>
+
+
+  <box name="LBI3" X_Y_Z="15.24  5.08  66.04  " material="TaggerVacuum"  
+       comment="3rd Labyrinth hole">
+  </box> 
+
+  <box name="LBO3" X_Y_Z="363.22  450.0  66.04" material="Iron"  
+       comment="3rd  Labyrinth wall">
+  </box> 
+
+
+<!-- ====== Dump Door ====== -->
+  <composition name="DumpDoor" envelope="DOOR">
+     <posXYZ volume="OUTD" X_Y_Z="0.0  0.0  -2.5" />
+  </composition>
+
+
+  <box name="DOOR" X_Y_Z="216.971  450.  6.0  " material="Polyethylene"  
+       comment="Labyrinth Door">
+  </box> 
+
+  <box name="OUTD" X_Y_Z="216.971  450.  1.0  " material="Boron"  
+       comment="Labyrinth Door">
+  </box> 
+
+
+<!-- ====== Pipe between Lab 1 and  2.  5 + 1 = 6 inches, 1.5 mm thick ======  -->
+  <composition name="Pipe12" envelope="LPO1">
+        <posXYZ volume="LPI1" X_Y_Z="0.0  0.0  0.0" /> 
+  </composition>
+
+  <box name="LPO1" X_Y_Z="15.54  5.38  121.92" material="Iron"  
+       comment="Pipe between Lab 1 and 2">
+  </box> 
+
+  <box name="LPI1" X_Y_Z="15.24 5.08 121.92" material="TaggerVacuum"  
+       comment="Pipe between Lab 1 and 2">
+  </box> 
+
+
+
+<!-- ======  Pipe between Lab 2 and 3. 5 + 1 = 6 inches, 1.5 mm thick ======   -->
+ <composition name="Pipe23" envelope="LPO2">
+        <posXYZ volume="LPI2" X_Y_Z="0.0  0.0  0.0" /> 
+  </composition>
+
+  <box name="LPO2" X_Y_Z="15.54 5.38 116.84" material="Iron"  
+       comment="Pipe between Lab 2 and 3">
+  </box> 
+
+  <box name="LPI2" X_Y_Z="15.24  5.08 116.84" material="TaggerVacuum"  
+       comment="Pipe between Lab 3 and 4">
+  </box> 
+
+
+<!-- ====== Iron slabs along the wall inside the beam dump ====== -->
+  <box name="SEG1" X_Y_Z="33.02  450. 1196.34 " material="Iron"  
+       comment="SEG block slab in the Hall">
+  </box> 
+
+  <box name="SEG2" X_Y_Z="66.04  450. 429.26 " material="Iron"  
+       comment="SEG block slab in the Hall">
+  </box> 
+
+  <trd name="BDSW" Xmp_Ymp_Z="1655.1356  1724.66  450.  450. 291.8327" 
+     material="Concrete" inclination="6.79288  0" unit_angle="deg"/>
+
+  <trd name="BDNW" Xmp_Ymp_Z="957.58  118.06787  450.  450. 200." 
+     material="Concrete" inclination="-64.5237  0" unit_angle="deg"/>
+
+
+
+<!-- ====== Iron Dump ====== -->
+
+  <composition name="IronDump" envelope="DIRN">
+            <posXYZ volume="BDhole" X_Y_Z=" 0.0  -45.0  -165.1 " />
+  </composition>
+
+
+  <box name="DIRN" X_Y_Z="528.32  450.0  528.32" material="Iron"
+         				comment="Dump Iron House" />
+
+
+  <composition name="BDhole" envelope="BSYV">
+            <posXYZ volume="WINT" X_Y_Z=" 0.0  0.0  -91.69  " /> 
+            <posXYZ volume="WINF" X_Y_Z=" 0.0  0.0  -86.135 " />
+
+            <posXYZ volume="WIN1" X_Y_Z=" 0.0  0.0  -96.135 " />
+            <posXYZ volume="WIN1" X_Y_Z=" 0.0  0.0  -89.785 " />
+
+            <posXYZ volume="WIN2" X_Y_Z=" 0.0  0.0  -96.135 " />
+            <posXYZ volume="WIN2" X_Y_Z=" 0.0  0.0  -89.785 " />
+
+            <posXYZ volume="FrontSection" X_Y_Z=" 0.0  0.0  -69.86 "  />
+
+            <posXYZ volume="FSEF" X_Y_Z=" 0.0  0.0  -83.29 "  />
+
+            <posXYZ volume="FSSF" X_Y_Z=" 0.0  0.0  -55.48 "  />
+
+            <posXYZ volume="CenterSection" X_Y_Z=" 0.0  0.0  -1.68 "  />
+
+            <posXYZ volume="CopperSection" X_Y_Z=" 0.0  0.0  66.265 "  />
+  </composition>
+
+
+  <box name="BSYV" X_Y_Z="66.04   66.04  198.12" material="Air"
+         				comment="Air volume for the iron dump" />
+
+  <tubs name="WINT" Rio_Z="2.48  3.66   12.7" material="Aluminum" comment="Win Section Tube"/> 
+
+  <tubs name="WINF" Rio_Z="3.66  5.84   1.59" material="Aluminum" comment="Win Section Flange"/> 
+
+  <tubs name="WIN1" Rio_Z="0.0  1.5   0.3" material="Copper" comment="Inner Copper Windows"/> 
+
+  <tubs name="WIN2" Rio_Z="1.5  2.48   0.9" material="Copper" comment="Outer Copper Windows"/> 
+
+ 
+  <composition name="FrontSection" envelope="FSST">
+      <posXYZ volume="FSTW" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <tubs name="FSST" Rio_Z="3.81  8.4   30.96" material="Aluminum" comment="Front Section Tube"/>
+
+  <tubs name="FSTW" Rio_Z="7.0  7.62  30.96" material="H2O" comment="Front Section Tube Water"/>
+
+  <tubs name="FSEF" Rio_Z="3.175  3.81  4.1" material="Aluminum" comment="Front Section Tube entrance flange inside"/>
+  <tubs name="FSSF" Rio_Z="8.4  12.065  2.2" material="Aluminum" comment="Front Section Flange"/>
+
+  <composition name="CenterSection" envelope="ACST">
+     <posXYZ volume="CenterSectHole" X_Y_Z="0.0  0.0  -27.8" />
+     <posXYZ volume="ACTW" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <tubs name="ACST" Rio_Z="0.0  12.7  105.4" material="Aluminum" comment="Al Center Section Tube"/>
+
+ <composition name="CenterSectHole" envelope="ACHT">
+     <posXYZ volume="ACCT" X_Y_Z="0.0  0.0  23.47" />
+  </composition>
+
+  <tubs name="ACHT" Rio_Z="0.0  2.86  49.8" material="Air" comment="Hole in Al Center Section Tube"/>
+
+  <cons name="ACCT" Rio1_Rio2_Z="2.86 2.86 0.0 2.86 2.86"  material="Aluminum" comment="Cone in the Hole in Al Center Section Tube"/>
+
+  <tubs name="ACTW" Rio_Z="4.45  5.08  105.4" material="H2O" comment="Al Center Section Tube Water"/>
+
+
+  <composition name="CopperSection" envelope="CEST">
+     <posXYZ volume="CETW" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <tubs name="CEST" Rio_Z="0.0  12.7  29.21" material="Copper" comment="Copper End Section Tube"/>
+
+  <tubs name="CETW" Rio_Z="11.43  12.1  29.21" material="H2O" comment="Copper End Section Tube Water"/>
+
+
 
 </section>
 
 <!-- </HDDS> -->
 
-<!--
-C
-C - Create iron shield blocks in the TUNA (IRON)
-C
-      PAR(1) = cic*TunnISzX/2.
-      PAR(2) = cic*HousHgt/2.
-      PAR(3) = cic*HousLen/2.
-      X = 0.
-      Y = -cic*(TunnISzY-HousHgt)/2.
-      Z = -par(3) + cic*TunnISzZ/2.
-      CALL GSVOLU('IRON', 'BOX ', MS+10, PAR, 3, IVOLU)
-      CALL GSPOS ('IRON',1,'TUNA',X,Y,Z,0,'ONLY')
-C
-C - Create the BD-hole in the iron shield blocks (BSYV)
-C
-      PAR(1) = cic*BdholeX/2.
-      PAR(2) = cic*BdholeY/2.
-      PAR(3) = cic*BdholeZ/2.
-      X = 0.
-      Y = cic*BeamElev - cic*HousHgt/2.
-      Z = par(3) - cic*HousLen/2.
-      CALL GSVOLU('BSYV', 'BOX ', MS+31, PAR, 3, IVOLU)
-      CALL GSPOS ('BSYV',1,'IRON',X,Y,Z,0,'ONLY')
-C
-C - Mid Win center relative to BSYV center (negative)
-      shftBSYV = cic*(HousLen - CWBDDist) - par(3)
-C
-C - Create the Win Section Tube (WINT)
-C
-      PAR(1) = cic*CWinDia/2.
-      PAR(2) = cic*CWoutDia/2.
-      PAR(3) = cic*(CWEnDist+CWExDist)/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV + cic*(CWExDist-CWEnDist)/2.
-      CALL GSVOLU('WINT', 'TUBE', MS+9, PAR, 3, IVOLU)
-      CALL GSPOS ('WINT',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the Win Section Flange (WINF)
-C
-      PAR(1) = cic*CWoutDia/2.
-      PAR(2) = cic*CWFlDi/2.
-      PAR(3) = cic*CWFlTh/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV - par(3) + cic*CWExDist
-      CALL GSVOLU('WINF', 'TUBE', MS+9, PAR, 3, IVOLU)
-      CALL GSPOS ('WINF',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the copper Windows (WIND)
-C
-      CALL GSVOLU('WIND', 'TUBE', MS+11, PAR, 0, IVOLU)
-      PAR(1) = 0.
-      PAR(2) = cic*CWDiam/2.
-      PAR(3) = cic*CWThick/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV - cic*CWWDist
-      CALL GSPOSP('WIND',1,'BSYV',X,Y,Z,0,'ONLY',PAR,3)
-      Z = shftBSYV + cic*CWWDist
-      CALL GSPOSP('WIND',2,'BSYV',X,Y,Z,0,'ONLY',PAR,3)
-C
-      PAR(1) = cic*CWDiam/2.
-      PAR(2) = cic*CWinDia/2.
-      PAR(3) = cic*CW2Th/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV - cic*CWWDist
-      CALL GSPOSP('WIND',3,'BSYV',X,Y,Z,0,'ONLY',PAR,3)
-      Z = shftBSYV + cic*CWWDist
-      CALL GSPOSP('WIND',4,'BSYV',X,Y,Z,0,'ONLY',PAR,3)
-C
-C - Create the Front Section Tube (FSST)
-C
-      PAR(1) = cic*FSinDia/2.
-      PAR(2) = cic*FSoutDia/2.
-      PAR(3) = cic*FSLeng/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV + par(3) + cic*CWExDist
-      CALL GSVOLU('FSST', 'TUBE', MS+9, PAR, 3, IVOLU)
-      CALL GSPOS ('FSST',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the Front Section Tube entrance flange inside (FSEF)
-C
-      PAR(1) = cic*FSEFlDi/2.
-      PAR(2) = cic*FSinDia/2.
-      PAR(3) = cic*FSEFlTh/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV + par(3) + cic*CWExDist
-      CALL GSVOLU('FSEF', 'TUBE', MS+9, PAR, 3, IVOLU)
-      CALL GSPOS ('FSEF',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the Front Section Flange (FSSF)
-C
-      PAR(1) = cic*FSoutDia/2.
-      PAR(2) = cic*FSFlDi/2.
-      PAR(3) = cic*FSFlTh/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV - par(3) + cic*FSLeng + cic*CWExDist
-      CALL GSVOLU('FSSF', 'TUBE', MS+9, PAR, 3, IVOLU)
-      CALL GSPOS ('FSSF',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the Front Section Tube Water (FSTW)
-C
-      PAR(1) = cic*FSWCinD/2.
-      PAR(2) = cic*(FSWCinD/2. + FSWCThk)
-      PAR(3) = cic*FSLeng/2.
-      X = 0.
-      Y = 0.
-      Z = 0.
-      CALL GSVOLU('FSTW', 'TUBE',MS+18, PAR, 3, IVOLU)
-      CALL GSPOS ('FSTW',1,'FSST',X,Y,Z,0,'ONLY')
-C
-C - Create the Al Center Section Tube (ACST)
-C
-      PAR(1) = 0.
-      PAR(2) = cic*ACSDiam/2.
-      PAR(3) = cic*ACSLeng/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV + par(3) + cic*(CWExDist+FSLeng)
-      CALL GSVOLU('ACST', 'TUBE', MS+9, PAR, 3, IVOLU)
-      CALL GSPOS ('ACST',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the Hole in Al Center Section Tube (ACHT)
-C
-      PAR(1) = 0.
-      PAR(2) = cic*ACHDiam/2.
-      PAR(3) = cic*ACHLeng/2.
-      X = 0.
-      Y = 0.
-      Z = par(3) - cic*ACSLeng/2.
-      CALL GSVOLU('ACHT', 'TUBE', MS+31, PAR, 3, IVOLU)
-      CALL GSPOS ('ACHT',1,'ACST',X,Y,Z,0,'ONLY')
-C
-C - Create the cone in the Hole in Al Center Section Tube (ACCT)
-C
-      PAR(1) = cic*ACHDiam/4.
-      PAR(2) = cic*ACHDiam/2.
-      PAR(3) = cic*ACHDiam/2.
-      PAR(4) = 0.
-      PAR(5) = cic*ACHDiam/2.
-      X = 0.
-      Y = 0.
-      Z =  - par(1) + cic*ACHLeng/2.
-      CALL GSVOLU('ACCT', 'CONE', MS+9, PAR, 5, IVOLU)
-      CALL GSPOS ('ACCT',1,'ACHT',X,Y,Z,0,'ONLY')
-C
-C - Create the Al Center Section Tube Water (ACTW)
-C
-      PAR(1) = cic*ACWCinD/2.
-      PAR(2) = cic*ACWCinD/2. + cic*ACWCThk
-      PAR(3) = cic*ACSLeng/2.
-      X = 0.
-      Y = 0.
-      Z = 0.
-      CALL GSVOLU('ACTW', 'TUBE', MS+18, PAR, 3, IVOLU)
-      CALL GSPOS ('ACTW',1,'ACST',X,Y,Z,0,'ONLY')
-C
-C - Create the Copper End Section Tube (CEST)
-C
-      PAR(1) = 0.
-      PAR(2) = cic*CESDiam/2.
-      PAR(3) = cic*CESLeng/2.
-      X = 0.
-      Y = 0.
-      Z = shftBSYV + par(3) + cic*(CWExDist+FSLeng+ACSLeng+CESgap)
-      CALL GSVOLU('CEST', 'TUBE', MS+11, PAR, 3, IVOLU)
-      CALL GSPOS ('CEST',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the Copper End Section Tube Water (CETW)
-C
-      PAR(1) = cic*CEWCinD/2.
-      PAR(2) = cic*CEWCinD/2. + cic*CEWCThk
-      PAR(3) = cic*CESLeng/2.
-      X = 0.
-      Y = 0.
-      Z = 0.
-      CALL GSVOLU('CETW', 'TUBE',MS+18, PAR, 3, IVOLU)
-      CALL GSPOS ('CETW',1,'CEST',X,Y,Z,0,'ONLY')
-C
-C ==- Create Amplification Volumes CMxx
-C
-C - Create the side cyl. outside BD
-C
-      PAR(1) = cic*ACSDiam/2.
-      PAR(2) = par(1) + 0.5
-      PAR(3) = cic*(CWEnDist+CWExDist+FSLeng+ACSLeng+CESgap+CESLeng)/2.
-      SizeBD = par(3)
-      X = 0.
-      Y = 0.
-      Z = shftBSYV - cic*CWEnDist + par(3)
-      CALL GSVOLU('CMB0', 'TUBE', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMB0',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the forward cyl. outside BD 
-C
-      PAR(1) = 0.
-      PAR(2) = cic*ACSDiam/2. + 0.5
-      PAR(3) = 0.25
-      X = 0.
-      Y = 0.
-      Z = shftBSYV - cic*CWEnDist + 2.*SizeBD + par(3)
-      CALL GSVOLU('CMB1', 'TUBE', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMB1',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create the backward cyl. outside BD 
-C
-      PAR(1) = 0.
-      PAR(2) = cic*ACSDiam/2. + 0.5
-      PAR(3) = 0.25
-      X = 0.
-      Y = 0.
-      Z = shftBSYV - cic*CWEnDist - par(3)
-      CALL GSVOLU('CMB2', 'TUBE', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMB2',1,'BSYV',X,Y,Z,0,'ONLY')
-C
-C - Create Air Plates in the TUNC (entrance from TUNA)
-      CV_Zsize = WL1Dist + HousLen - CWBDDist  - 300./cic + TunnISzZ/2.
-C - +X
-      PAR(1) = 0.25
-      PAR(2) = cic*TunnISzY/2.
-c#      PAR(3) = cic*TunnISzZ/2.
-      PAR(3) = cic*CV_Zsize/2.
-      X = par(1) + cic*TunnISzX/2.
-      Y = 0.
-c#      Z = 0.
-      Z = cic*TunnISzZ/2. - PAR(3)
-      CALL GSVOLU('CMC1', 'BOX ', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMC1',1,'TUNC',X,Y,Z,0,'ONLY')
-C - -X
-      PAR(1) = 0.25
-      PAR(2) = cic*TunnISzY/2.
-c#      PAR(3) = cic*TunnISzZ/2.
-      PAR(3) = cic*CV_Zsize/2.
-      X = - par(1) - cic*TunnISzX/2.
-      Y = 0.
-c#      Z = 0.
-      Z = cic*TunnISzZ/2. - PAR(3)
-      CALL GSVOLU('CMC2', 'BOX ', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMC2',1,'TUNC',X,Y,Z,0,'ONLY')
-C
-C - +Y
-      PAR(1) = 0.5+cic*TunnISzX/2.
-      PAR(2) = 0.25
-c#      PAR(3) = cic*TunnISzZ/2.
-      PAR(3) = cic*CV_Zsize/2.
-      X = 0.
-      Y = par(2) + cic*TunnISzY/2.
-c#      Z = 0.
-      Z = cic*TunnISzZ/2. - PAR(3)
-      CALL GSVOLU('CMC3', 'BOX ', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMC3',1,'TUNC',X,Y,Z,0,'ONLY')
-C - -Y
-      PAR(1) = 0.5+cic*TunnISzX/2.
-      PAR(2) = 0.25
-c#      PAR(3) = cic*TunnISzZ/2.
-      PAR(3) = cic*CV_Zsize/2.
-      X = 0.
-      Y = - par(2) - cic*TunnISzY/2.
-c#      Z = 0.
-      Z = cic*TunnISzZ/2. - PAR(3)
-      CALL GSVOLU('CMC4', 'BOX ', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMC4',1,'TUNC',X,Y,Z,0,'ONLY')
-C
-C - +Z
-      PAR(1) = 0.5+cic*TunnISzX/2.
-      PAR(2) = 0.5+cic*TunnISzY/2.
-      PAR(3) = 0.25
-      X = 0.
-      Y = 0.
-      Z = par(3) + cic*TunnISzZ/2.
-      CALL GSVOLU('CMC5', 'BOX ', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMC5',1,'TUNC',X,Y,Z,0,'ONLY')
-C - -Z
-      PAR(1) = cic*TunnISzX/2.
-      PAR(2) = cic*TunnISzY/2.
-      PAR(3) = 0.25
-      X = 0. 
-      Y = 0.
-C#      Z = - par(3) - cic*TunnISzZ/2.
-      Z = par(3) - cic*(WL1Dist + HousLen - CWBDDist - 300./cic)
-      CALL GSVOLU('CMC6', 'BOX ', MS+16, PAR, 3, IVOLU)
-      CALL GSPOS ('CMC6',1,'TUNC',X,Y,Z,0,'ONLY')
-C
-      end
--->
