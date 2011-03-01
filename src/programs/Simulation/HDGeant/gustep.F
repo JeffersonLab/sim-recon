@@ -400,6 +400,19 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 ********************************************************************************
 #endif
  
+
+* Stop beam photons which are initially generated outside the 12.4 cm 
+* radius beam pipe at the entrance to the collimator cave
+
+      IF(vect(3).eq.-2200.) THEN
+         ph_radius = sqrt(vect(1)*vect(1)+vect(2)*vect(2))
+         IF(ph_radius.ge.12.4) THEN
+           ISTOP = 1
+         ENDIF
+      ENDIF
+
+
+
 * Stop wimpy charged particles that are taking forever to range out
 
       if ((NSTEP.ge.99999).and.(CHARGE.ne.0).or.
