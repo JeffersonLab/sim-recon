@@ -660,9 +660,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcJacobian(double z,double dz,
   double dsdz=sqrt(1.+tx2+ty2);
   double kdsdz=qBr2p*dsdz;
   double kq_over_p_over_dsdz=kq_over_p/dsdz;
-  double one_over_dsdz_sq=1./(dsdz*dsdz);
   double kq_over_p_dsdz=kq_over_p*dsdz;
-  double kq_over_p_ds=0.5*dz*kq_over_p_dsdz;
   double dtx_Bdep=ty*Bz+txty*Bx-one_plus_tx2*By;
   double dty_Bdep=Bx*one_plus_ty2-txty*By-tx*Bz;
   double Bxty=Bx*ty;
@@ -693,25 +691,6 @@ jerror_t DTrackFitterKalmanSIMD::CalcJacobian(double z,double dz,
 					     -Bxtx*one_plus_ty2);
   J(state_ty,state_x)=kq_over_p_dsdz*(one_plus_ty2*dBxdx-txty*dBydx
 				      -tx*dBzdx);
-  
-  // Second order
-  //if (fit_type==kTimeBased)
-  {
-    double dz_over_2=0.5*dz;
-    J(state_x,state_tx)+=kq_over_p_ds*(dtx_Bdep*tx*one_over_dsdz_sq+Bxty
-				       -2.*Bytx);
-    J(state_x,state_ty)=kq_over_p_ds*(dtx_Bdep*ty*one_over_dsdz_sq+Bz+Bxtx);
-    J(state_x,state_q_over_p)=J(state_tx,state_q_over_p)*dz_over_2;
-    J(state_x,state_x)=J(state_tx,state_x)*dz_over_2;
-    J(state_x,state_y)=J(state_tx,state_y)*dz_over_2;
-    J(state_y,state_tx)=kq_over_p_ds*(dty_Bdep*tx*one_over_dsdz_sq-Byty-Bz);
-    J(state_y,state_ty)+=kq_over_p_ds*(dty_Bdep*ty*one_over_dsdz_sq
-				       +2.*Bxty-Bytx);
-    J(state_y,state_q_over_p)=J(state_ty,state_q_over_p)*dz_over_2;
-    J(state_y,state_x)=J(state_ty,state_x)*dz_over_2;
-    J(state_y,state_y)=J(state_ty,state_y)*dz_over_2;
-  }
-
   J(state_q_over_p,state_q_over_p)=0.;
   if (fabs(dEdx)>EPS){
     double p2=1./(q_over_p*q_over_p);
@@ -2273,7 +2252,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?2:2);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:2);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
 
@@ -2336,7 +2315,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    break;
 	  
 	  chisq_forward=chisq; 
-	  ndf=my_ndf;
+	  //ndf=my_ndf;
 	  Slast=S;
 	  Clast=C;	 
 
@@ -2366,6 +2345,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       Cbest=C=Clast;
       Sbest=S=Slast;
       zvertex=z_;
+      ndf=my_ndf;
       
       if (fit_type==kWireBased){
 	mT0=mT0wires;
@@ -2489,7 +2469,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double zvertex=65.;
     double anneal_factor=1.;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?2:2);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:2);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
       
@@ -2555,7 +2535,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  chisq_forward=chisq;
 	  Slast=S;
 	  Clast=C;
-	  ndf=my_ndf;
+	  //ndf=my_ndf;
 	} //iteration
       }
       else{
@@ -2584,6 +2564,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       Cbest=C=Clast;
       Sbest=S=Slast;
       zvertex=z_;
+      ndf=my_ndf;
 
       if (fit_type==kWireBased){
 	mT0=mT0wires;
@@ -2699,7 +2680,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // iteration 
     double anneal_factor=1.;
     double chisq_iter=chisq;
-    for (int iter2=0;iter2<(fit_type==kTimeBased?2:2);iter2++){  
+    for (int iter2=0;iter2<(fit_type==kTimeBased?10:2);iter2++){  
       // Break out of loop if p is too small
       double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
       if (fabs(q_over_p)>Q_OVER_P_MAX) break;
@@ -2781,7 +2762,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  Sclast=Sc;
 	  pos0=pos;
 	  chisq=chisq_central;
-	  ndf=my_ndf;
+	  //	  ndf=my_ndf;
 
 	} //iteration
       }
@@ -2811,7 +2792,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       Ccbest=Cc=Cclast;
       Scbest=Sc=Sclast;
       best_pos=pos0;
-
+      ndf=my_ndf;
+      
       if (fit_type==kWireBased){
 	mT0=mT0wires;
 	mVarT0=1./mInvVarT0;
@@ -3473,7 +3455,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	if (cdc_index>0) cdc_index--;
 	else cdc_index=0;	
       }
-
+    
     
 
 
