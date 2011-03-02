@@ -1,10 +1,11 @@
 # For gcc 4.1.2 on 32-bit Linux systems there have been claims of
 # building with sse2 causing faults. The same code and compiler
 # version for 64-bit machines seems to run fine. We also have
-# not observed the problems with 32-bit OS X machines. If you are
-# having trouble with faulting applications, try turning off SIMD
-# extensions by rebuilding with environment variable DISABLE_SIMD=1.
-ifndef $(DISABLE_SIMD)
+# not observed the problems with 32-bit OS X machines. In order to provide 
+# working code for both 32 bit and 64 bit systems regardless of whether or 
+# not SIMD is supported by the hardware, by default the SIMD instructions are
+# turned off and must be explicitly enabled by setting ENABLE_SIMD=1
+ifdef ENABLE_SIMD
   DISABLE_SIMD=no
 endif
 ifndef $(DISABLE_SSE2)
