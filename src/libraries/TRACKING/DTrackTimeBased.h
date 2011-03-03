@@ -28,7 +28,12 @@ class DTrackTimeBased:public DKinematicData{
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
-		double FOM;
+
+		int itrack;
+
+		double FOM,chi2_dedx;
+		unsigned int num_dedx;
+
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);
 			AddString(items, "candidate","%d",candidateid);

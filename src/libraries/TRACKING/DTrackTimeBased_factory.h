@@ -12,6 +12,7 @@
 
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackFitter.h>
+#include <PID/DParticleID.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALPhoton.h>
 #include <TOF/DTOFPoint.h>
@@ -20,6 +21,7 @@
 
 class DTrackWireBased;
 class DTrackHitSelector;
+class DParticleID;
 
 #include "DTrackTimeBased.h"
 
@@ -44,35 +46,17 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   double MOMENTUM_CUT_FOR_PROTON_ID;
   bool PID_FORCE_TRUTH;
   DTrackFitter *fitter;
+  DParticleID *pid_algorithm;
   vector<DReferenceTrajectory*> rtv;
  
   // Optional debugging histograms
-  TH2F *fom_tdiff_bcal;
-  TH1F *fom_tdiff_tof;
   TH1F *fom_chi2_trk;
   TH1F *fom_chi2_dedx;
-  TH1F *fom_chi2_tof;
-  TH1F *fom_chi2_bcal;
   TH1F *fom;
   TH1F *hitMatchFOM;
   TH2F *chi2_trk_mom;
-  TH1F *time_based_start;
-  TH1F *fom_sc_match;
-  TH2F *fom_sc_delta_dedx_vs_p;
-  TH1F *fom_chi2_sc ;
-  TH2F *fom_bcal_E_over_p;
-
+ 
   void FilterDuplicates(void);  
-  double GetFOM(DTrackTimeBased *dtrack,
-		vector<const DBCALShower*>bcal_clusters,
-		vector<const DFCALPhoton*>fcal_clusters,
-		vector<const DTOFPoint*>tof_points,
-		vector<const DSCHit*>sc_hits);
-  double MatchToTOF(DTrackTimeBased *track,
-		    vector<const DTOFPoint*>tof_points);
-  double MatchToBCAL(DTrackTimeBased *track,
-		     vector<const DBCALShower*>bcal_clusters);
-  double MatchToSC(DTrackTimeBased *track,vector<const DSCHit*>sc_hits);
   double GetTruthMatchingFOM(int trackIndex,DTrackTimeBased *dtrack,vector<const DMCThrown*>mcthrowns);
   void GetThrownIndex(const DKinematicData *kd, int &MAX_TRACKS, double &f, int &track);
 
