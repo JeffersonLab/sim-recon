@@ -277,6 +277,7 @@ int main(int narg,char* argv[])
 		
 		if(QUIT)break;
 	}
+	cout<<endl;
 	
 	// close input and output files
 	close_s_HDDM(fin);
