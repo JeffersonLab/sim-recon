@@ -124,10 +124,6 @@ class DTrackFitter:public jana::JObject{
 		fit_status_t FindHitsAndFitTrack(const DKinematicData &starting_params, DReferenceTrajectory *rt, JEventLoop *loop, double mass=-1.0,
 						 double t0=NaN); ///< mass<0 means get it from starting_params
 		jerror_t CorrectForELoss(const DKinematicData &starting_params, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom, double mass);
-		jerror_t CalcdEdxHit(const DVector3 &mom,
-				     const DVector3 &pos,
-				     const DCDCTrackHit *hit,
-				     pair <double,double> &dedx);
 		double CalcDensityEffect(double p,double mass,double density,
 					 double Z_over_A,double I);  
 		double CalcDensityEffect(double p,double mass,
@@ -135,26 +131,6 @@ class DTrackFitter:public jana::JObject{
 		double CalcDensityEffect(double betagamma,
 					 double rho_Z_over_A,double LnI);
 		
-		double GetdEdxSigma(unsigned int num_hits,double p, 
-				    double mass,double mean_path_length);
-		double GetdEdxSigma(double num_hits,double p, 
-				    double mass,double mean_path_length);
-		double GetdEdx(double p,double mass_hyp,double mean_path_length);
-		double GetdEdx(double p,double mass_hyp,double dx,DVector3 pos);
-		jerror_t GetdEdxMPandSigma(unsigned int num_hits,double p,
-					   double mass,
-					   double mean_path_length,
-					   double &dedx_mp,
-					   double &dedx_sigma);
-		jerror_t GetdEdx(const DReferenceTrajectory *rt, double &dedx,
-				 double &mean_path_length, double &p_avg,
-				 unsigned int &num_hits);
-		jerror_t GetdEdx(const DReferenceTrajectory *rt,
-				 vector<dedx_t>&dEdx_list);
-
-		double GetdEdxVariance(double p,double mass_hyp,double dx,
-				       DVector3 pos);
-
 		void GetProfilingTimes(std::map<std::string, prof_time::time_diffs> &my_prof_times) const;
 		
 		//---- The following need to be supplied by the subclass ----
