@@ -110,7 +110,6 @@ class DKinFit {
       _cov = __covMat;
     }
 
-    /// Set the input 4-momenta.
     inline void SetVerbose(int __verbose){_verbose = __verbose;}
 
     /// Set the initial tracks
@@ -121,12 +120,14 @@ class DKinFit {
     inline void SetFinal(std::vector<DKinematicData> &__kd)
     { _kDataFinal_in = __kd; }
 
-    /// Get the momenta BEFORE the kinematic fit
+    /// Get the momenta BEFORE the kinematic fit (initial particles)
     inline std::vector<DKinematicData> GetInitial_in() { return _kDataInitial_in;}
+    /// Get the momenta BEFORE the kinematic fit (final state particles)
     inline std::vector<DKinematicData> GetFinal_in()   { return _kDataFinal_in;}
 
-    /// Get the momenta AFTER the kinematic fit
+    /// Get the momenta AFTER the kinematic fit (initial particles)
     inline std::vector<DKinematicData> GetInitial_out() { return _kDataInitial_out;}
+    /// Get the momenta AFTER the kinematic fit (final particles)
     inline std::vector<DKinematicData> GetFinal_out()   { return _kDataFinal_out;}
 
     // Getters:
@@ -139,10 +140,12 @@ class DKinFit {
 
     /// Returns the @a n pull quantity
     /** Pulls are stored as 
-     *	\f$ (E_{\gamma},p_1,\lambda_1,\phi_1,...,p_n,\lambda_n,\phi_n) \f$ 
+     *	\f$ (p_{0x},p_{0y},p_{0z},p_{1x},...) \f$.
+     *  Initial particles first, then final particles.
      */
     inline double GetPull(int __n) const { return _pulls[__n]; }
 
+    //This function actually does use (p,lambda,phi) even though everything everthing else in this class is px,py,pz
     /// Returns the @a n missing particle error (p,lambda,phi)
     inline double GetMissingError(int __n) const { return _sigma_missing[__n]; }
 

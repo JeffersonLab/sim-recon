@@ -12,31 +12,18 @@ using namespace std;
 /** @class DKinFit
  * @brief Utility class used to perform kinematic fitting. 
  * 
- * The interface with 
- * this class is a little primative since it was meant to be called by 
- * ClasEvent. However, it can be used as a stand alone class. 
+ * Specify the particles (i.e. DKinematicData) to be fit using SetInitial() and
+ * SetFinal() .
+ * Each DKinematicData must have a proper covariance matrix set.
  *
- * For each event, the DKinFit object must be given the tagged photon energy,
- * detected charged particle 4-momenta, target mass and the covariance matrix.
- * All of these can be set using DKinFit::SetEvent. The covariance matrix for
- * all types of fits should have the following format:
+ * If needed you also SetMissingParticle() or SetMassConstraint()
+ * appropriately
  *
- * \f$ C = \left(\begin{array}{cccccccc} \sigma^2_{E_{\gamma}} & 0 & 0 & 0 & \ldots & 0 & 0 & 0 \\ 0 & C^{pp}_1 & C^{p\lambda}_1 & C^{p\phi}_1 & \ldots & 0 & 0 & 0 \\ 0 & C^{p\lambda}_1 & C^{\lambda \lambda}_1 & C^{\lambda \phi}_1 & \ldots & 0 & 0 & 0 \\ 0 & C^{p \phi}_1 & C^{\lambda \phi}_1 & C^{\phi \phi}_1 & \ldots & 0 & 0 & 0 \\ \vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots & \vdots \\ 0 & 0 & 0 & 0 & \ldots & C^{pp}_k & C^{p\lambda}_k & C^{p\phi}_k \\ 0 & 0 & 0 & 0 & \ldots & C^{p\lambda}_k & C^{\lambda \lambda}_k & C^{\lambda \phi}_k \\ 0 & 0 & 0 & 0 & \ldots &  C^{p \phi}_k & C^{\lambda \phi}_k & C^{\phi \phi}_k \end{array}\right) \f$
- *
- * where \f$ \sigma^2_{E_{\gamma}} \f$ is the tagged photon energy resolution,
- * and \f$ C^{ab}_i \f$ are the <em>i</em>'th particle's covaraince matrix 
- * elements (where the particles are in the same order as they were passed in
- * to set the 4-momentum).
- *
- * Once these quantities are set, then any of the different types of kinematic
- * fits can be run (see Fit and Fit2MissingTagged).
+ * Then just Fit() !
  *
  * The results of the fit can be obtained thru various DKinFit member functions.
  * All @a getter member functions return results of the last fit run.
  *
- * <b> Example Usage: </b>
- *
- * \include DKinFit.ex
  */
 //_____________________________________________________________________________
 
@@ -192,8 +179,8 @@ void DKinFit::Fit()
   //
   DLorentzVector missingMomentum;
 
-  // y(i) ==> measured particle quantities. i = 0 is the tagged photon energy,
-  // i = 3*n+1,3*n+2,3*n+3 are particle n's |p|,lambda,phi respectively.
+  // y(i) ==> measured particle quantities.
+  // i = 3*n+0,3*n+1,3*n+2 are particle n's p_x,p_y,p_z respectively.
   TMatrixD yi(dim,1),y(dim,1); // yi will be intial values
   // x(i) ==> missing particle quantities (0,1,2) = (px,py,pz)
   TMatrixD x(3,1);
@@ -931,8 +918,8 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   //
   DLorentzVector missingMomentum;
 
-  // y(i) ==> measured particle quantities. i = 0 is the tagged photon energy,
-  // i = 3*n+1,3*n+2,3*n+3 are particle n's |p|,lambda,phi respectively.
+  // y(i) ==> measured particle quantities.
+  // i = 3*n+0,3*n+1,3*n+=2 are particle n's p_x,p_y,p_z respectively.
   TMatrixD yi(dim,1),y(dim,1); // yi will be intial values
   // x(i) ==> missing particle quantities (0,1,2) = (px,py,pz)
   TMatrixD x(3,1);
