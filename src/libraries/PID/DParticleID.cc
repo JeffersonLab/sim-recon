@@ -53,7 +53,7 @@ DParticleID::~DParticleID()
 }
 
 // Group fitted tracks according to candidate id
-jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> tracks,
+jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
 			      vector<vector<const DTrackTimeBased*> >&grouped_tracks){ 
   if (tracks.size()==0) return RESOURCE_UNAVAILABLE;
  

@@ -33,6 +33,7 @@ class DParticleID:public jana::JObject{
       
   };
 
+
   virtual jerror_t GetdEdxChiSq(const DTrackTimeBased *track,double &dEdx,
 				unsigned int &num,double &chi2)=0;
   double GetdEdxSigma(double num_hits,double p,double mass,
@@ -43,8 +44,10 @@ class DParticleID:public jana::JObject{
 		       const DVector3 &pos,
 		       const DCDCTrackHit *hit,
 		       pair <double,double> &dedx);
-  jerror_t GroupTracks(vector<const DTrackTimeBased *> tracks,
+  jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks,
 		       vector<vector<const DTrackTimeBased*> >&grouped_tracks);
+
+
 
  private: 
   //< DGeometry pointer used to access materials through calibDB maps for eloss
