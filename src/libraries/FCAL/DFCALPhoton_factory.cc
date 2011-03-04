@@ -92,9 +92,15 @@ jerror_t DFCALPhoton_factory::brun(JEventLoop *loop, int runnumber)
 jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 	vector<const DFCALCluster*> fcalClusters;
-	const DVertex *vertex;
 	eventLoop->Get(fcalClusters);
-	eventLoop->GetSingle(vertex);
+
+	//------------- the following is a temporary kludge...
+	const DVertex *vertex=NULL;
+	//loop->GetSingle(vertex);
+	vector<const DVertex *>vertices;
+	eventLoop->Get(vertices);
+	if (vertices.size()) vertex=vertices[0];
+
 
 	// Return immediately if there isn't even one cluster
 	if(fcalClusters.size()<1)return NOERROR;

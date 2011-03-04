@@ -166,8 +166,12 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
 	vector< const DBCALShower* > showerVect;
 	loop->Get( showerVect );
 
-	const DVertex *vertex;
-	loop->GetSingle(vertex);
+	//------------- the following is a temporary kludge...
+	const DVertex *vertex=NULL;
+	//loop->GetSingle(vertex);
+	vector<const DVertex *>vertices;
+	loop->Get(vertices);
+	if (vertices.size()) vertex=vertices[0];
 
 	// Make a list with a single DBCALPhoton for each DBCALShower object
 	vector<vector<DBCALPhoton*> > merge_lists;
