@@ -345,8 +345,10 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   // by the DKinematicData class
   DMatrixDSym errMatrix(5);
   // The error matrix for the central parameterization always gets filled
+  // We MUST fill the entire matrix (not just upper right) even though this is
+  // a DMatrixDSym
   for (unsigned int i=0;i<5;i++){
-    for (unsigned int j=i;j<5;j++){
+    for (unsigned int j=0;j<5;j++){
       errMatrix(i,j)=cov[i][j];
     }
   }
@@ -361,7 +363,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   if (fcov.size()!=0){
     fit_params.setForwardParmFlag(true);
     for (unsigned int i=0;i<5;i++){
-      for (unsigned int j=i;j<5;j++){
+      for (unsigned int j=0;j<5;j++){
 	errMatrix(i,j)=fcov[i][j];
       }
     }
@@ -2387,7 +2389,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     for (unsigned int i=0;i<5;i++){
       dummy.clear();
       for(unsigned int j=0;j<5;j++){
-	  dummy.push_back(Clast(i,j));
+	  dummy.push_back(Cbest(i,j));
       }
       fcov.push_back(dummy);
     }
@@ -2599,7 +2601,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     for (unsigned int i=0;i<5;i++){
       dummy.clear();
       for(unsigned int j=0;j<5;j++){
-	dummy.push_back(Clast(i,j));
+	dummy.push_back(Cbest(i,j));
       }
       fcov.push_back(dummy);
     }  
