@@ -78,13 +78,22 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                 DLorentzVector P4 = kinout[0].lorentzMomentum() + kinout[1].lorentzMomentum(); 
 		DVector3 vertex = 0.5*(photons[i]->position() + photons[j]->position());
 
+		DMatrixDSym errorMatrix(7);
+
+		for (int k=0; k<3; k++) {
+		  for (int l=0; l<3; l++) {
+		    errorMatrix[k][l]=kinout[0].errorMatrix()[k][l] + kinout[1].errorMatrix()[k][l];
+		  }
+		}
+
                 fit2g->setUMass( P4U.M() );
                 fit2g->setMass( P4.M() );
                 fit2g->setMomentum( P4.Vect() );
+		fit2g->setErrorMatrix(errorMatrix);
                 fit2g->setPosition( vertex );
                 fit2g->setProb( kfit->Prob());
                 fit2g->setChi2( kfit->Chi2());
-					 fit2g->setNdf( kfit->Ndf());
+		fit2g->setNdf( kfit->Ndf());
                 for (int k=0; k < 6; k++) {
                    fit2g->setPulls( kfit->GetPull(k),  k);
                 }
