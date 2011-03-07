@@ -246,3 +246,100 @@ jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
   return VALUE_OUT_OF_RANGE;
 }
   
+//------------------
+// MatchToTOF
+//------------------
+// Loop over TOF points, looking for minimum distance of closest approach
+// of track to a point in the TOF and using this to check for a match. 
+jerror_t DParticleID::MatchToTOF(const DTrackTimeBased *track,
+				 vector<const DTOFPoint*>&tof_points,
+				 double &tproj, unsigned int &tof_match_id){
+  tproj=NaN;
+  tof_match_id=0;
+  if (tof_points.size()==0) return RESOURCE_UNAVAILABLE;
+
+  double dmin=10000.;
+  // loop over tof points
+  double match_flight_time=0.;
+  for (unsigned int k=0;k<tof_points.size();k++){
+    // Get the TOF cluster position and normal vector for the TOF plane
+    DVector3 tof_pos=tof_points[k]->pos;
+    DVector3 norm(0,0,1);
+    DVector3 proj_pos,dir;
+    
+    // Find the distance of closest approach between the track trajectory
+    // and the tof cluster position, looking for the minimum
+    double my_s=0.;
+    double tflight=0.;
+    track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,&my_s,
+                                        &tflight);
+    double d=(tof_pos-proj_pos).Mag();
+
+    if (d<dmin){
+      dmin=d;
+      match_flight_time=tflight;
+      tof_match_id=k;
+    }
+  }
+  
+  // Check for a match 
+  //double p=track->momentum().Mag();
+  double match_cut=3.624+0.488/track->momentum().Mag();
+  if (dmin<match_cut){
+    // Projected time at the target
+    tproj=tof_points[tof_match_id]->t-match_flight_time;
+
+    return NOERROR;
+  }
+    
+  return VALUE_OUT_OF_RANGE;
+}
+
+//------------------
+// MatchToBCAL
+//------------------
+// Loop over bcal clusters, looking for minimum distance of closest approach
+// of track to a cluster and using this to check for a match. 
+jerror_t DParticleID::MatchToBCAL(const DTrackTimeBased *track,
+				vector<const DBCALShower*>&bcal_clusters,
+				double &tproj,unsigned int &bcal_match_id){ 
+  tproj=NaN;
+  bcal_match_id=0;
+  if (bcal_clusters.size()==0) return RESOURCE_UNAVAILABLE;
+
+  //Loop over bcal clusters
+  double dmin=10000.;
+  double dphi=1000.,dz=1000.,match_flight_time=0.;
+  for (unsigned int k=0;k<bcal_clusters.size();k++){
+    // Get the BCAL cluster position and normal
+    const DBCALShower *shower = bcal_clusters[k];
+    DVector3 bcal_pos(shower->x, shower->y, shower->z); 
+    DVector3 proj_pos;
+    // and the bcal cluster position, looking for the minimum
+    double my_s=0.;
+    double tflight=0.;
+    double d = track->rt->DistToRTwithTime(bcal_pos,&my_s,&tflight);
+    proj_pos = track->rt->GetLastDOCAPoint();
+    
+    if (d<dmin){
+      dmin=d;
+      match_flight_time=tflight;
+      bcal_match_id=k; 
+      dz=proj_pos.z()-bcal_pos.z();
+      dphi=proj_pos.Phi()-bcal_pos.Phi();
+    }
+  }
+  
+  // Check for a match 
+   double p=track->momentum().Mag();
+   dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
+   double phi_sigma=0.025+5.8e-4/p/p/p;
+   if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
+     // Projected time at the target
+     tproj=bcal_clusters[bcal_match_id]->t-match_flight_time;
+    
+     return NOERROR;
+   }
+   
+   return VALUE_OUT_OF_RANGE;
+}

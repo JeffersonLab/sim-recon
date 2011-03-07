@@ -13,6 +13,10 @@
 #include <DVector3.h>
 #include "HDGEOMETRY/DRootGeom.h"
 #include <TRACKING/DTrackTimeBased_factory.h>
+#include <BCAL/DBCALShower.h>
+#include <FCAL/DFCALPhoton.h>
+#include <TOF/DTOFPoint.h>
+
 class DTrackTimeBased;
 class DCDCTrackHit;
 
@@ -47,7 +51,12 @@ class DParticleID:public jana::JObject{
   jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks,
 		       vector<vector<const DTrackTimeBased*> >&grouped_tracks);
 
-
+  jerror_t MatchToTOF(const DTrackTimeBased *track,
+		      vector<const DTOFPoint*>&tof_points,
+		      double &tproj, unsigned int &tof_match_id);
+  jerror_t MatchToBCAL(const DTrackTimeBased *track,
+		       vector<const DBCALShower*>&bcal_clusters,
+		       double &tproj,unsigned int &bcal_match_id); 
 
  private: 
   //< DGeometry pointer used to access materials through calibDB maps for eloss
