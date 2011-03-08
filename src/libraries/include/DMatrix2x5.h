@@ -1,3 +1,5 @@
+#include <align_16.h>
+
 #ifndef USE_SSE2
 
 // Matrix class without SIMD instructions
@@ -11,8 +13,8 @@ public:
       }
     }
   }
-  DMatrix2x5(const double a1, const double a2, const double a3, const double a4, const double a5,
-	      const double b1, const double b2, const double b3, const double b4, const double b5){
+  DMatrix2x5(double a1, double a2, double a3, double a4, double a5,
+	     double b1, double b2, double b3, double b4, double b5){
     mA[0][0]=a1;
     mA[0][1]=a2;
     mA[0][2]=a3;
@@ -72,22 +74,47 @@ private:
 
 class DMatrix2x5{
  public:
-  DMatrix2x5(){
-    for (unsigned int i=0;i<5;i++){
-      mA[i].v=_mm_setzero_pd();
-    }
+  DMatrix2x5()
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
+    mA[0].v=_mm_setzero_pd();
+    mA[1].v=_mm_setzero_pd();
+    mA[2].v=_mm_setzero_pd();
+    mA[3].v=_mm_setzero_pd();
+    mA[4].v=_mm_setzero_pd();
   }
-  DMatrix2x5(__m128d c1,__m128d c2,__m128d c3,__m128d c4,__m128d c5){
+  DMatrix2x5(__m128d c1, __m128d c2, __m128d c3, __m128d c4, __m128d c5)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
     mA[0].v=c1;
     mA[1].v=c2;
     mA[2].v=c3;
     mA[3].v=c4;
     mA[4].v=c5;
   }
+  DMatrix2x5(const DMatrix2x5& dm)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
+    mA[0].v=dm.mA[0].v;
+    mA[1].v=dm.mA[1].v;
+    mA[2].v=dm.mA[2].v;
+    mA[3].v=dm.mA[3].v;
+    mA[4].v=dm.mA[4].v;
+  }
   ~DMatrix2x5(){};
 
-  __m128d GetV(int col) const{
+  __m128d GetV(const int col) const{
     return mA[col].v;
+  }
+
+  // Assignment
+  DMatrix2x5& operator=(const DMatrix2x5& dm){
+    mA[0].v=dm.mA[0].v;
+    mA[1].v=dm.mA[1].v;
+    mA[2].v=dm.mA[2].v;
+    mA[3].v=dm.mA[3].v;
+    mA[4].v=dm.mA[4].v;
+    return *this;
   }
 
   double &operator() (int row, int col){
@@ -158,8 +185,7 @@ class DMatrix2x5{
     __m128d v;
     double d[2];
   };
-  union dvec mA[5];
-
+  ALIGNED_16_BLOCK(union dvec, 5, mA)
 };
 #endif
 

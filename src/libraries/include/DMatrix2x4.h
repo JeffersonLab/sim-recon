@@ -1,24 +1,49 @@
+#include <align_16.h>
+
 #ifndef USE_SSE2
+#error Woops, a non-SSE2 implementation of DMatrix2x4 is not yet available
 
 #else
 
 class DMatrix2x4{
  public:
-  DMatrix2x4(){
-    for (unsigned int i=0;i<4;i++){
-      mA[0].v=_mm_setzero_pd();
-    }
+  DMatrix2x4()
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 4, mA) )
+  {
+    mA[0].v=_mm_setzero_pd();
+    mA[1].v=_mm_setzero_pd();
+    mA[2].v=_mm_setzero_pd();
+    mA[3].v=_mm_setzero_pd();
   }
-  DMatrix2x4(__m128d c1,__m128d c2,__m128d c3,__m128d c4){
+  DMatrix2x4(__m128d c1, __m128d c2, __m128d c3, __m128d c4)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 4, mA) )
+  {
     mA[0].v=c1;
     mA[1].v=c2;
     mA[2].v=c3;
     mA[3].v=c4;
   }
+  DMatrix2x4(const DMatrix2x4& dm)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 4, mA) )
+  {
+    mA[0].v=dm.mA[0].v;
+    mA[1].v=dm.mA[1].v;
+    mA[2].v=dm.mA[2].v;
+    mA[3].v=dm.mA[3].v;
+  }
   ~DMatrix2x4(){};
 
   __m128d GetV(int col) const{
     return mA[col].v;
+  }
+
+  // Assignment
+  DMatrix2x4& operator=(const DMatrix2x4& dm){
+    mA[0].v=dm.mA[0].v;
+    mA[1].v=dm.mA[1].v;
+    mA[2].v=dm.mA[2].v;
+    mA[3].v=dm.mA[3].v;
+    return *this;
   }
 
   double &operator() (int row, int col){
@@ -83,8 +108,7 @@ class DMatrix2x4{
     __m128d v;
     double d[2];
   };
-  union dvec mA[4];
-
+  ALIGNED_16_BLOCK(union dvec, 4, mA)
 };
 
 #endif

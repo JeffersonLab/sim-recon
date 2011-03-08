@@ -1,3 +1,5 @@
+#include <align_16.h>
+
 #ifndef USE_SSE2
 
 // Matrix class without SIMD instructions
@@ -324,17 +326,20 @@ inline DMatrix5x5 operator*(const double c,const DMatrix5x5 &M){
 
 class DMatrix5x5{
  public:
-  DMatrix5x5(){
+  DMatrix5x5()
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
     for (unsigned int i=0;i<5;i++){
       for (unsigned int j=0;j<3;j++){
 	mA[i].v[j]=_mm_setzero_pd();
       }
     }
   }
-  DMatrix5x5(__m128d m11,__m128d m12,__m128d m13,__m128d m14,__m128d m15,
-	     __m128d m21,__m128d m22,__m128d m23,__m128d m24,__m128d m25,
-	     __m128d m31,__m128d m32,__m128d m33,__m128d m34,__m128d m35
-	     ){
+  DMatrix5x5( __m128d m11, __m128d m12, __m128d m13, __m128d m14, __m128d m15,
+	      __m128d m21, __m128d m22, __m128d m23, __m128d m24, __m128d m25,
+	      __m128d m31, __m128d m32, __m128d m33, __m128d m34, __m128d m35)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
     mA[0].v[0]=m11;
     mA[1].v[0]=m12;  
     mA[2].v[0]=m13;
@@ -352,9 +357,11 @@ class DMatrix5x5{
     mA[4].v[2]=m35;
   }
   // Constructor for a symmetric matrix
-  DMatrix5x5(__m128d m11,__m128d m12,__m128d m13,__m128d m14,__m128d m15,
-	     __m128d m23,__m128d m24,__m128d m25,__m128d m35
-	     ){
+  DMatrix5x5( __m128d m11, __m128d m12, __m128d m13, __m128d m14, __m128d m15,
+	                                __m128d m23, __m128d m24, __m128d m25,
+                                                                  __m128d m35)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
     mA[0].v[0]=m11;
     mA[1].v[0]=m12;  
     mA[2].v[0]=m13;
@@ -372,8 +379,13 @@ class DMatrix5x5{
     mA[4].v[2]=m35;
   }
   // Constructor for symmetric matrix by elements
-  DMatrix5x5(double C11,double C12,double C13,double C14,double C15,double C22,double C23,double C24,double C25,
-	     double C33,double C34,double C35,double C44,double C45,double C55){
+  DMatrix5x5(double C11, double C12, const double C13, double C14, double C15,
+                         double C22, const double C23, double C24, double C25,
+	                                   double C33, double C34, double C35,
+                                                       double C44, double C45,
+                                                                   double C55)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
     mA[0].v[0]=_mm_setr_pd(C11,C12);
     mA[1].v[0]=_mm_setr_pd(C12,C22);
     mA[2].v[0]=_mm_setr_pd(C13,C23);
@@ -394,7 +406,9 @@ class DMatrix5x5{
 
   // Constructor using block matrices from matrix inversion 
   DMatrix5x5(const DMatrix2x2 &A,const DMatrix2x3 &B,
-	     const DMatrix3x2 &C,const DMatrix3x3 &D){
+	     const DMatrix3x2 &C,const DMatrix3x3 &D)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
     mA[0].v[0]=A.GetV(0);
     mA[1].v[0]=A.GetV(1);
     for (unsigned int i=0;i<3;i++){
@@ -413,12 +427,14 @@ class DMatrix5x5{
   __m128d GetV(int pair, int col) const{
     return mA[col].v[pair];
   }
-  void SetV(int pair,int col,__m128d v){
+  void SetV(int pair, int col, __m128d v){
     mA[col].v[pair]=v;
   }
   
   // Copy constructor
-  DMatrix5x5(const DMatrix5x5 &m2){
+  DMatrix5x5(const DMatrix5x5 &m2)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 5, mA) )
+  {
     for (unsigned int i=0;i<5;i++){
       for (unsigned int j=0;j<3;j++){
 	mA[i].v[j]=m2.GetV(j,i);
@@ -491,12 +507,17 @@ class DMatrix5x5{
 
   // Matrix multiplication:  (5x5) x (5x1)
   DMatrix5x1 operator*(const DMatrix5x1 &m2){
-    __m128d a1=_mm_set1_pd(m2(0));
-    __m128d a2=_mm_set1_pd(m2(1));
-    __m128d a3=_mm_set1_pd(m2(2));
-    __m128d a4=_mm_set1_pd(m2(3));
-    __m128d a5=_mm_set1_pd(m2(4));
-
+    ALIGNED_16_BLOCK_WITH_PTR(__m128d, 5, p)
+    __m128d &a1=p[0];
+    __m128d &a2=p[1];
+    __m128d &a3=p[2];
+    __m128d &a4=p[3];
+    __m128d &a5=p[4];
+    a1=_mm_set1_pd(m2(0));
+    a2=_mm_set1_pd(m2(1));
+    a3=_mm_set1_pd(m2(2));
+    a4=_mm_set1_pd(m2(3));
+    a5=_mm_set1_pd(m2(4));
     return 
       DMatrix5x1(_mm_add_pd(_mm_mul_pd(GetV(0,0),a1),
 			    _mm_add_pd(_mm_mul_pd(GetV(0,1),a2),
@@ -519,16 +540,27 @@ class DMatrix5x5{
 
   // Matrix multiplication:  (5x5) x (5x2)
   DMatrix5x2 operator*(const DMatrix5x2 &m2){
-    __m128d m11=_mm_set1_pd(m2(0,0));
-    __m128d m12=_mm_set1_pd(m2(0,1)); 
-    __m128d m21=_mm_set1_pd(m2(1,0));
-    __m128d m22=_mm_set1_pd(m2(1,1));  
-    __m128d m31=_mm_set1_pd(m2(2,0));
-    __m128d m32=_mm_set1_pd(m2(2,1)); 
-    __m128d m41=_mm_set1_pd(m2(3,0));
-    __m128d m42=_mm_set1_pd(m2(3,1)); 
-    __m128d m51=_mm_set1_pd(m2(4,0));
-    __m128d m52=_mm_set1_pd(m2(4,1));
+    ALIGNED_16_BLOCK_WITH_PTR(__m128d, 10, p)
+    __m128d &m11=p[0];
+    __m128d &m12=p[1];
+    __m128d &m21=p[2];
+    __m128d &m22=p[3];
+    __m128d &m31=p[4];
+    __m128d &m32=p[5];
+    __m128d &m41=p[6];
+    __m128d &m42=p[7];
+    __m128d &m51=p[8];
+    __m128d &m52=p[9];
+    m11=_mm_set1_pd(m2(0,0));
+    m12=_mm_set1_pd(m2(0,1)); 
+    m21=_mm_set1_pd(m2(1,0));
+    m22=_mm_set1_pd(m2(1,1));  
+    m31=_mm_set1_pd(m2(2,0));
+    m32=_mm_set1_pd(m2(2,1)); 
+    m41=_mm_set1_pd(m2(3,0));
+    m42=_mm_set1_pd(m2(3,1)); 
+    m51=_mm_set1_pd(m2(4,0));
+    m52=_mm_set1_pd(m2(4,1));
     return 
       DMatrix5x2(_mm_add_pd(_mm_mul_pd(GetV(0,0),m11),
 			    _mm_add_pd(_mm_mul_pd(GetV(0,1),m21),
@@ -571,11 +603,19 @@ class DMatrix5x5{
 #define A1112 _mm_setr_pd(A(0,0),A(0,1))
 #define A1314 _mm_setr_pd(A(0,2),A(0,3))
     //__m128d A15=_mm_set1_pd(A(0,4));
-    union dvec temp;
+    union dvec1{
+      __m128d v[3];
+        double d[6];
+    };
+    ALIGNED_16_BLOCK_WITH_PTR(union dvec1, 1, p1)
+    union dvec1 &temp=p1[0];
+
     union dvec2{
       __m128d v;
       double d[2];
-    }temp2;
+    };
+    ALIGNED_16_BLOCK_WITH_PTR(union dvec2, 1, p2)
+    union dvec2 &temp2=p2[0];
     temp2.v=_mm_set1_pd(A(0,4));
 
     // BA^T column 1
@@ -731,16 +771,24 @@ class DMatrix5x5{
 
   // Matrix multiplication. Requires the SSE3 instruction HADD (horizontal add)
   DMatrix5x5 operator*(const DMatrix5x5 &m2){
-    __m128d A11A12=_mm_setr_pd(mA[0].d[0],mA[1].d[0]);
-    __m128d A13A14=_mm_setr_pd(mA[2].d[0],mA[3].d[0]);
-    __m128d A21A22=_mm_setr_pd(mA[0].d[1],mA[1].d[1]);
-    __m128d A23A24=_mm_setr_pd(mA[2].d[1],mA[3].d[1]);
-    __m128d A31A32=_mm_setr_pd(mA[0].d[2],mA[1].d[2]);
-    __m128d A33A34=_mm_setr_pd(mA[2].d[2],mA[3].d[2]);
-    __m128d A41A42=_mm_setr_pd(mA[0].d[3],mA[1].d[3]);
-    __m128d A43A44=_mm_setr_pd(mA[2].d[3],mA[3].d[3]);
-
-   return
+    ALIGNED_16_BLOCK_WITH_PTR(__m128d, 8, p)
+    __m128d &A11A12=p[0];
+    __m128d &A13A14=p[1];
+    __m128d &A21A22=p[2];
+    __m128d &A23A24=p[3];
+    __m128d &A31A32=p[4];
+    __m128d &A33A34=p[5];
+    __m128d &A41A42=p[6];
+    __m128d &A43A44=p[7];
+    A11A12=_mm_setr_pd(mA[0].d[0],mA[1].d[0]);
+    A13A14=_mm_setr_pd(mA[2].d[0],mA[3].d[0]);
+    A21A22=_mm_setr_pd(mA[0].d[1],mA[1].d[1]);
+    A23A24=_mm_setr_pd(mA[2].d[1],mA[3].d[1]);
+    A31A32=_mm_setr_pd(mA[0].d[2],mA[1].d[2]);
+    A33A34=_mm_setr_pd(mA[2].d[2],mA[3].d[2]);
+    A41A42=_mm_setr_pd(mA[0].d[3],mA[1].d[3]);
+    A43A44=_mm_setr_pd(mA[2].d[3],mA[3].d[3]);
+    return
      DMatrix5x5(_mm_add_pd(_mm_add_pd(_mm_hadd_pd(_mm_mul_pd(A11A12,m2.GetV(0,0)),_mm_mul_pd(A21A22,m2.GetV(0,0))),
 				      _mm_hadd_pd(_mm_mul_pd(A13A14,m2.GetV(1,0)),_mm_mul_pd(A23A24,m2.GetV(1,0)))),
 			   _mm_mul_pd(mA[4].v[0],_mm_set1_pd(m2(4,0)))),
@@ -785,14 +833,18 @@ class DMatrix5x5{
 #else 
   // Matrix multiplication: (5x5) x (5x5)
   DMatrix5x5 operator*(const DMatrix5x5 &m2){
-    __m128d temp[5][5];
+    struct dvec1{
+      __m128d v[5][5];
+    };
+    ALIGNED_16_BLOCK_WITH_PTR(struct dvec1, 1, p)
+    struct dvec1 &temp=p[0];
     for (unsigned int i=0;i<5;i++){
       for (unsigned int j=0;j<5;j++){
-	temp[i][j]=_mm_set1_pd(m2(i,j));
+	temp.v[i][j]=_mm_set1_pd(m2(i,j));
       }
     }
     // Preprocessor macro for multiplying two __m128d elements together
-#define MUL(i,j,k) _mm_mul_pd(GetV((i),(j)),temp[(j)][(k)])
+#define MUL(i,j,k) _mm_mul_pd(GetV((i),(j)),temp.v[(j)][(k)])
     
     return DMatrix5x5(_mm_add_pd(MUL(0,0,0),
 				 _mm_add_pd(MUL(0,1,0),
@@ -873,32 +925,46 @@ class DMatrix5x5{
 
  // The following code performs the matrix operation ABA^T, where B is a symmetric matrix
   DMatrix5x5 SandwichMultiply(const DMatrix5x5 &A){
-    __m128d A5=_mm_set1_pd(A(0,4));
-    __m128d A4=_mm_set1_pd(A(0,3));
-    __m128d A3=_mm_set1_pd(A(0,2));
-    __m128d A2=_mm_set1_pd(A(0,1));
-    __m128d A1=_mm_set1_pd(A(0,0));
+    ALIGNED_16_BLOCK_WITH_PTR(__m128d, 5, p)
+    __m128d &A1=p[0];
+    __m128d &A2=p[1];
+    __m128d &A3=p[2];
+    __m128d &A4=p[3];
+    __m128d &A5=p[4];
+    A5=_mm_set1_pd(A(0,4));
+    A4=_mm_set1_pd(A(0,3));
+    A3=_mm_set1_pd(A(0,2));
+    A2=_mm_set1_pd(A(0,1));
+    A1=_mm_set1_pd(A(0,0));
 
     // BA^T column 1 
     union dvec2{
       __m128d v;
       double d[2];
-    }temp2;
+    };
+    ALIGNED_16_BLOCK_WITH_PTR(union dvec2, 1, p2)
+    union dvec2 &temp2=p2[0];
     temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
 		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
 					     _mm_add_pd(_mm_mul_pd(A4,GetV(0,3)),
 							_mm_mul_pd(A5,GetV(0,4))))));
-    __m128d BA1=_mm_set1_pd(temp2.d[0]);
-    __m128d BA2=_mm_set1_pd(temp2.d[1]);
+    ALIGNED_16_BLOCK_WITH_PTR(__m128d, 5, p3)
+    __m128d &BA1=p3[0];
+    __m128d &BA2=p3[1];
+    __m128d &BA3=p3[2];
+    __m128d &BA4=p3[3];
+    __m128d &BA5=p3[4];
+    BA1=_mm_set1_pd(temp2.d[0]);
+    BA2=_mm_set1_pd(temp2.d[1]);
     temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(1,0)),
 		       _mm_add_pd(_mm_mul_pd(A2,GetV(1,1)),
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
-					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
-							_mm_mul_pd(A5,GetV(1,4))))));
-    __m128d BA3=_mm_set1_pd(temp2.d[0]);
-    __m128d BA4=_mm_set1_pd(temp2.d[1]);
-    __m128d BA5=_mm_set1_pd(mA[0].d[4]*A(0,0)+mA[1].d[4]*A(0,1)+mA[2].d[4]*A(0,2)+mA[3].d[4]*A(0,3)+mA[4].d[4]*A(0,4));
+					     _mm_add_pd(_mm_mul_pd(p->A4,GetV(1,3)),
+							_mm_mul_pd(p->A5,GetV(1,4))))));
+    BA3=_mm_set1_pd(temp2.d[0]);
+    BA4=_mm_set1_pd(temp2.d[1]);
+    BA5=_mm_set1_pd(mA[0].d[4]*A(0,0)+mA[1].d[4]*A(0,1)+mA[2].d[4]*A(0,2)+mA[3].d[4]*A(0,3)+mA[4].d[4]*A(0,4));
 
     temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(0,0),BA1),
 		       _mm_add_pd(_mm_mul_pd(A.GetV(0,1),BA2),
@@ -927,11 +993,11 @@ class DMatrix5x5{
 
     
     // BA^T column 2 
-    A5=_mm_set1_pd(A(1,4));
-    A4=_mm_set1_pd(A(1,3));
-    A3=_mm_set1_pd(A(1,2));
-    A2=_mm_set1_pd(A(1,1));
-    A1=_mm_set1_pd(A(1,0));
+    p->A5=_mm_set1_pd(A(1,4));
+    p->A4=_mm_set1_pd(A(1,3));
+    p->A3=_mm_set1_pd(A(1,2));
+    p->A2=_mm_set1_pd(A(1,1));
+    p->A1=_mm_set1_pd(A(1,0));
     temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
 		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
@@ -975,11 +1041,11 @@ class DMatrix5x5{
 
     
     // BA^T column 3 
-    A5=_mm_set1_pd(A(2,4));
-    A4=_mm_set1_pd(A(2,3));
-    A3=_mm_set1_pd(A(2,2));
-    A2=_mm_set1_pd(A(2,1));
-    A1=_mm_set1_pd(A(2,0));
+    p->A5=_mm_set1_pd(A(2,4));
+    p->A4=_mm_set1_pd(A(2,3));
+    p->A3=_mm_set1_pd(A(2,2));
+    p->A2=_mm_set1_pd(A(2,1));
+    p->A1=_mm_set1_pd(A(2,0));
     temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
 		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
@@ -992,9 +1058,9 @@ class DMatrix5x5{
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
 					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
 							_mm_mul_pd(A5,GetV(1,4))))));
-    BA3=_mm_set1_pd(temp2.d[0]);
-    BA4=_mm_set1_pd(temp2.d[1]);
-    BA5=_mm_set1_pd(mA[0].d[4]*A(2,0)+mA[1].d[4]*A(2,1)+mA[2].d[4]*A(2,2)+mA[3].d[4]*A(2,3)+mA[4].d[4]*A(2,4));
+    p3->BA3=_mm_set1_pd(temp2.d[0]);
+    p3->BA4=_mm_set1_pd(temp2.d[1]);
+    p3->BA5=_mm_set1_pd(mA[0].d[4]*A(2,0)+mA[1].d[4]*A(2,1)+mA[2].d[4]*A(2,2)+mA[3].d[4]*A(2,3)+mA[4].d[4]*A(2,4));
 
     temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(1,0),BA1),
 		       _mm_add_pd(_mm_mul_pd(A.GetV(1,1),BA2),
@@ -1015,26 +1081,26 @@ class DMatrix5x5{
 
     
     // BA^T column 4
-    A5=_mm_set1_pd(A(3,4));
-    A4=_mm_set1_pd(A(3,3));
-    A3=_mm_set1_pd(A(3,2));
-    A2=_mm_set1_pd(A(3,1));
-    A1=_mm_set1_pd(A(3,0));
+    p->A5=_mm_set1_pd(A(3,4));
+    p->A4=_mm_set1_pd(A(3,3));
+    p->A3=_mm_set1_pd(A(3,2));
+    p->A2=_mm_set1_pd(A(3,1));
+    p->A1=_mm_set1_pd(A(3,0));
     temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
 		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
 					     _mm_add_pd(_mm_mul_pd(A4,GetV(0,3)),
 							_mm_mul_pd(A5,GetV(0,4))))));
-    BA1=_mm_set1_pd(temp2.d[0]);
-    BA2=_mm_set1_pd(temp2.d[1]);
+    p3->BA1=_mm_set1_pd(temp2.d[0]);
+    p3->BA2=_mm_set1_pd(temp2.d[1]);
     temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(1,0)),
 		       _mm_add_pd(_mm_mul_pd(A2,GetV(1,1)),
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
 					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
 							_mm_mul_pd(A5,GetV(1,4))))));
-    BA3=_mm_set1_pd(temp2.d[0]);
-    BA4=_mm_set1_pd(temp2.d[1]);
-    BA5=_mm_set1_pd(mA[0].d[4]*A(3,0)+mA[1].d[4]*A(3,1)+mA[2].d[4]*A(3,2)+mA[3].d[4]*A(3,3)+mA[4].d[4]*A(3,4));
+    p3->BA3=_mm_set1_pd(temp2.d[0]);
+    p3->BA4=_mm_set1_pd(temp2.d[1]);
+    p3->BA5=_mm_set1_pd(mA[0].d[4]*A(3,0)+mA[1].d[4]*A(3,1)+mA[2].d[4]*A(3,2)+mA[3].d[4]*A(3,3)+mA[4].d[4]*A(3,4));
 
     temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(1,0),BA1),
 		       _mm_add_pd(_mm_mul_pd(A.GetV(1,1),BA2),
@@ -1053,27 +1119,27 @@ class DMatrix5x5{
     double C45=temp2.d[0];
      
     // BA^T column 5
-    A5=_mm_set1_pd(A(4,4));
-    A4=_mm_set1_pd(A(4,3));
-    A3=_mm_set1_pd(A(4,2));
-    A2=_mm_set1_pd(A(4,1));
-    A1=_mm_set1_pd(A(4,0));
+    p->A5=_mm_set1_pd(A(4,4));
+    p->A4=_mm_set1_pd(A(4,3));
+    p->A3=_mm_set1_pd(A(4,2));
+    p->A2=_mm_set1_pd(A(4,1));
+    p->A1=_mm_set1_pd(A(4,0));
     temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(0,0)),
 		       _mm_add_pd(_mm_mul_pd(A2,GetV(0,1)),
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(0,2)),
 					     _mm_add_pd(_mm_mul_pd(A4,GetV(0,3)),
 							_mm_mul_pd(A5,GetV(0,4))))));
-    BA1=_mm_set1_pd(temp2.d[0]);
-    BA2=_mm_set1_pd(temp2.d[1]);
+    p3->BA1=_mm_set1_pd(temp2.d[0]);
+    p3->BA2=_mm_set1_pd(temp2.d[1]);
     temp2.v=_mm_add_pd(_mm_mul_pd(A1,GetV(1,0)),
 		       _mm_add_pd(_mm_mul_pd(A2,GetV(1,1)),
 				  _mm_add_pd(_mm_mul_pd(A3,GetV(1,2)),
 					     _mm_add_pd(_mm_mul_pd(A4,GetV(1,3)),
 							_mm_mul_pd(A5,GetV(1,4))))));
 
-    BA3=_mm_set1_pd(temp2.d[0]);
-    BA4=_mm_set1_pd(temp2.d[1]);
-    BA5=_mm_set1_pd(mA[0].d[4]*A(4,0)+mA[1].d[4]*A(4,1)+mA[2].d[4]*A(4,2)+mA[3].d[4]*A(4,3)+mA[4].d[4]*A(4,4));
+    p3->BA3=_mm_set1_pd(temp2.d[0]);
+    p3->BA4=_mm_set1_pd(temp2.d[1]);
+    p3->BA5=_mm_set1_pd(mA[0].d[4]*A(4,0)+mA[1].d[4]*A(4,1)+mA[2].d[4]*A(4,2)+mA[3].d[4]*A(4,3)+mA[4].d[4]*A(4,4));
 
 
     temp2.v=_mm_add_pd(_mm_mul_pd(A.GetV(2,0),BA1),
@@ -1158,13 +1224,14 @@ class DMatrix5x5{
     __m128d v[3];
       double d[6];
   };
-  union dvec mA[5];
-    
+  ALIGNED_16_BLOCK(union dvec, 5, mA)
 };
   
 // Scale 5x5 matrix by a floating point number
 inline DMatrix5x5 operator*(const double c,const DMatrix5x5 &M){
-  __m128d scale=_mm_set1_pd(c);
+  ALIGNED_16_BLOCK_WITH_PTR(__m128d, 1, p)
+  __m128d &scale=p[0];
+  scale=_mm_set1_pd(c);
 
 #define SCALE(i,j) _mm_mul_pd(scale,M.GetV((i),(j)))
   return DMatrix5x5(SCALE(0,0),SCALE(0,1),SCALE(0,2),SCALE(0,3),SCALE(0,4),

@@ -1,3 +1,5 @@
+#include <align_16.h>
+
 #ifndef USE_SSE2
 
 // Matrix class without SIMD instructions
@@ -11,8 +13,8 @@ public:
       }
     }
   }
-  DMatrix2x3(const double c11,const double c12,const double c13,
-	      const double c21,const double c22,const double c23){
+  DMatrix2x3(double c11, double c12, double c13,
+	     double c21, double c22, double c23){
     mA[0][0]=c11;
     mA[0][1]=c12;
     mA[0][2]=c13;
@@ -74,20 +76,39 @@ private:
 
 class DMatrix2x3{
  public:
-  DMatrix2x3(){
-    for (unsigned int i=0;i<3;i++){
-      mA[0].v=_mm_setzero_pd();
-    }
+  DMatrix2x3()
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 3, mA) )
+  {
+    mA[0].v=_mm_setzero_pd();
+    mA[1].v=_mm_setzero_pd();
+    mA[2].v=_mm_setzero_pd();
   }
-  DMatrix2x3(__m128d c1,__m128d c2,__m128d c3){
+  DMatrix2x3(__m128d c1, __m128d c2, __m128d c3)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 3, mA) )
+  {
     mA[0].v=c1;
     mA[1].v=c2;
     mA[2].v=c3;
+  }
+  DMatrix2x3(const DMatrix2x3& dm)
+  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 3, mA) )
+  {
+    mA[0].v=dm.mA[0].v;
+    mA[1].v=dm.mA[1].v;
+    mA[2].v=dm.mA[2].v;
   }
   ~DMatrix2x3(){};
 
   __m128d GetV(int col) const{
     return mA[col].v;
+  }
+
+  // Assignment
+  DMatrix2x3& operator=(const DMatrix2x3& dm){
+    mA[0].v=dm.mA[0].v;
+    mA[1].v=dm.mA[1].v;
+    mA[2].v=dm.mA[2].v;
+    return *this;
   }
 
   double &operator() (int row, int col){
@@ -137,8 +158,7 @@ class DMatrix2x3{
     __m128d v;
     double d[2];
   };
-  union dvec mA[3];
-
+  ALIGNED_16_BLOCK(union dvec, 3, mA)
 };
 #endif
 
