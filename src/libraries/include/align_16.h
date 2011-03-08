@@ -22,7 +22,7 @@ uint32_t padded_space_for_pointer_##PTR \
 TYPE * const PTR;
 
 #define ALIGNED_16_BLOCK_PTR(TYPE,NUM,PTR) \
-reinterpret_cast< TYPE *> ((reinterpret_cast<uint32_t>(padded_space_for_pointer_##PTR) + 15) & (~ 15))
+reinterpret_cast< TYPE *> ((reinterpret_cast<uintptr_t>(padded_space_for_pointer_##PTR) + 15) & (~ 15))
 
 #define ALIGNED_16_BLOCK_WITH_PTR(TYPE,NUM,PTR) \
 uint32_t padded_space_for_pointer_##PTR \
