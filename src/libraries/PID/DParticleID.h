@@ -14,7 +14,7 @@
 #include "HDGEOMETRY/DRootGeom.h"
 #include <TRACKING/DTrackTimeBased_factory.h>
 #include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALPhoton.h>
+#include <FCAL/DFCALCluster.h>
 #include <TOF/DTOFPoint.h>
 
 class DTrackTimeBased;
@@ -57,12 +57,15 @@ class DParticleID:public jana::JObject{
   jerror_t MatchToBCAL(const DTrackTimeBased *track,
 		       vector<const DBCALShower*>&bcal_clusters,
 		       double &tproj,unsigned int &bcal_match_id); 
+  jerror_t MatchToFCAL(const DTrackTimeBased *track,
+		       vector<const DFCALCluster*>&fcal_clusters,
+		       double &tproj,unsigned int &fcal_match_id,
+		       double &dmin);
 
  private: 
   //< DGeometry pointer used to access materials through calibDB maps for eloss
   const DRootGeom *RootGeom;                                 
  
-  
   int DEBUG_LEVEL;
   // Prohibit default constructor
   DParticleID();

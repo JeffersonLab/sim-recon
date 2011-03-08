@@ -7,6 +7,7 @@
 
 #include "DParticleID.h"
 #include "TRACKING/DReferenceTrajectory.h"
+#include "FCAL/DFCALGeometry.h"
 
 // Routine for sorting dEdx data
 bool static DParticleID_dedx_cmp(DParticleID::dedx_t a,DParticleID::dedx_t b){
@@ -342,4 +343,55 @@ jerror_t DParticleID::MatchToBCAL(const DTrackTimeBased *track,
    }
    
    return VALUE_OUT_OF_RANGE;
+}
+
+//------------------
+// MatchToFCAL
+//------------------
+// Loop over fcal clusters, looking for minimum distance of closest approach
+// of track to a cluster and using this to check for a match. 
+jerror_t DParticleID::MatchToFCAL(const DTrackTimeBased *track,
+				  vector<const DFCALCluster*>&fcal_clusters,
+				  double &tproj,unsigned int &fcal_match_id,
+				  double &dmin){ 
+  tproj=NaN;
+  fcal_match_id=0;
+  if (fcal_clusters.size()==0) return RESOURCE_UNAVAILABLE;
+  
+  // Set minimum matching distance to a large default value
+  dmin=10000.;
+  // loop over clusters
+  double match_flight_time=0.;
+  for (unsigned int k=0;k<fcal_clusters.size();k++){
+    // Get the FCAL cluster position and normal vector for the TOF plane
+    DVector3 fcal_pos=fcal_clusters[k]->getCentroid();
+    // This is a bit of a kludge...
+    fcal_pos.SetZ(DFCALGeometry::fcalFaceZ());
+    DVector3 norm(0,0,1);
+    DVector3 proj_pos,dir;
+
+    // Find the distance of closest approach between the track trajectory
+    // and the tof cluster position, looking for the minimum
+    double my_s=0.;
+    double tflight=0.;
+    track->rt->GetIntersectionWithPlane(fcal_pos,norm,proj_pos,dir,&my_s,
+                                        &tflight);
+    double d=(fcal_pos-proj_pos).Mag();
+
+    if (d<dmin){
+      dmin=d;
+      match_flight_time=tflight;
+      fcal_match_id=k;
+    }
+  }
+ 
+  // Check for a match 
+  if(dmin<5.0 /* temporary */){
+    tproj=fcal_clusters[fcal_match_id]->getTime()-match_flight_time;
+    
+    return NOERROR;
+  }
+
+
+  return VALUE_OUT_OF_RANGE;
 }
