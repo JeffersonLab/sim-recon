@@ -14,6 +14,10 @@
 #include <TRACKING/DHoughFind.h>
 #include <PID/DPhoton.h>
 
+#include <TH1.h>
+#include <TH2.h>
+
+
 class DVertex_factory:public jana::JFactory<DVertex>{
  public:
   DVertex_factory(){};
@@ -67,6 +71,9 @@ class DVertex_factory:public jana::JFactory<DVertex>{
  
   DParticleID *pid_algorithm;
 
+  bool DEBUG_HISTS;
+  TH2F *fcal_match;
+  TH2F *fcal_dt;
 };
 
 #endif // _DVertex_factory_

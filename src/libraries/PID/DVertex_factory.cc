@@ -10,7 +10,7 @@
 #include <iomanip>
 using namespace std;
 
-#include <PID/DChargedTrack.h>
+#include <TROOT.h>
 #include <TMath.h>
 #include "DVertex_factory.h"
 using namespace jana;
@@ -72,6 +72,21 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
   zmin = 0.0;
   zmax = 100.0;
   
+  //DEBUG_HISTS=true;
+  DEBUG_HISTS=false;
+  if (DEBUG_HISTS){
+    dapp->Lock();
+    
+    fcal_match= (TH2F *)gROOT->FindObject("fcal_match");
+    if (!fcal_match) fcal_match=new TH2F("fcal_match","#delta r vs p for FCAL/track matching",100,0,10,100,0,20);
+    
+    fcal_dt=(TH2F *)gROOT->FindObject("fcal_dt");
+    if (!fcal_dt) fcal_dt=new TH2F("fcal_dt","projected time at target for FCAL vs momentum",100,0,10,100,-10,10.);
+
+    
+    dapp->Unlock();
+  }
+
        
   return NOERROR;
 }
@@ -93,6 +108,100 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
   
   // Make list of vertices
   MakeVertices(tracks_by_candidate);
+
+  // Get ToF points
+  vector<const DTOFPoint *>tof_points;
+  loop->Get(tof_points);
+
+  // Get BCAL and FCAL clusters
+  vector<const DBCALShower*>bcal_clusters;
+  eventLoop->Get(bcal_clusters);
+  vector<const DFCALCluster*>fcal_clusters;
+  eventLoop->Get(fcal_clusters);
+
+
+  // Find the time at the vertex by locking to the RF clock and match the
+  // tracks with the outer detectors.  If a match is found, compute a FOM for
+  // quality of the PID from the time projected from the outer detector back
+  // toward the vertex.
+  for (unsigned int i=0;i<_data.size();i++){
+    // Match vertex time to RF bucket
+    double corrected_rf_time=(_data[i]->x.Z()-target_z)/SPEED_OF_LIGHT;
+    double tdiff=corrected_rf_time-_data[i]->x.T();
+    if (tdiff<-1.){
+      _data[i]->x.SetT(corrected_rf_time-2.);
+    }
+    else if (tdiff>1.){
+      _data[i]->x.SetT(corrected_rf_time+2.);
+    }
+    else{
+      _data[i]->x.SetT(corrected_rf_time);
+    }
+
+    // Here we loop over the mass hypotheses for each track
+    for (unsigned int j=0;j<_data[i]->hypotheses.size();j++){
+      vector<DVertex::track_info_t>tracks=_data[i]->hypotheses[j];
+      for (unsigned int k=0;k<tracks.size();k++){
+	bool matched_outer_detector=false;
+	double tproj=0.,dmin=1000.;
+	unsigned int bcal_id=0,tof_id=0,fcal_id=0;
+	// Try matching the track with hits in the outer detectors
+	if (pid_algorithm->MatchToBCAL(tracks[k].track,bcal_clusters,tproj,
+				       bcal_id)
+	    ==NOERROR){
+	  matched_outer_detector=true;
+	  tracks[k].tprojected=tproj;
+	  tdiff=tproj-_data[i]->x.T();
+	  double p=tracks[k].track->momentum().Mag();
+	  double bcal_sigma=0.00255*pow(p,-2.52)+0.220;
+	  double bcal_chi2=tdiff*tdiff/(bcal_sigma*bcal_sigma);
+	  tracks[k].FOM=TMath::Prob(tracks[k].track->chi2_dedx+bcal_chi2,2);
+	}
+	else if (pid_algorithm->MatchToTOF(tracks[k].track,tof_points,tproj,
+					   tof_id)
+		 ==NOERROR){
+	  matched_outer_detector=true;
+	  tracks[k].tprojected=tproj;
+	  tdiff=tproj-_data[i]->x.T();
+	  double tof_sigma=0.08;
+	  double tof_chi2=tdiff*tdiff/(tof_sigma*tof_sigma);
+	  tracks[k].FOM=TMath::Prob(tracks[k].track->chi2_dedx+tof_chi2,2);
+	}
+	if (pid_algorithm->MatchToFCAL(tracks[k].track,fcal_clusters,tproj,
+				       fcal_id,dmin)
+	    ==NOERROR){
+	  if (matched_outer_detector==false){
+	    matched_outer_detector=true;
+	    tracks[k].tprojected=tproj-2.218; // correction determine from fit to simulated data
+	    tdiff=tproj-2.218-_data[i]->x.T();
+	    double fcal_sigma=0.6; // straight-line fit to high momentum data
+	    double fcal_chi2=tdiff*tdiff/(fcal_sigma*fcal_sigma);
+	    tracks[k].FOM=TMath::Prob(tracks[k].track->chi2_dedx+fcal_chi2,2);
+	  }
+	  if (DEBUG_HISTS){
+	    TH2F *fcal_dt=(TH2F*)gROOT->FindObject("fcal_dt");
+	    if (fcal_dt) fcal_dt->Fill(tracks[k].track->momentum().Mag(),tproj);
+	  }
+
+	}
+	if (DEBUG_HISTS){
+	  TH2F *fcal_match=(TH2F *) gROOT->FindObject("fcal_match");
+	  if (fcal_match) fcal_match->Fill(tracks[k].track->momentum().Mag(),
+					   dmin);
+	}
+	  
+
+	// If we did not succeed in matching to an outer detector, we are are
+	// left with only the track info (dedx, chi2) for the FOM...
+	if (matched_outer_detector==false){
+	  tracks[k].FOM=tracks[k].track->FOM;
+	}
+      }
+    }
+
+  }
+
+
 
   return NOERROR;
 }
@@ -269,7 +378,6 @@ jerror_t DVertex_factory::MakeVertices(vector<vector<const DTrackTimeBased*> >&t
     
     _data.push_back(my_vertex);
   }
-
   
   return NOERROR;
 }
