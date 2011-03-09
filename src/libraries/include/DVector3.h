@@ -316,7 +316,7 @@ class DVector3{
         __m128d &zero_sa=p[6];
         __m128d &zero_ca=p[7];
         __m128d &scale=p[8];
-        __m128d &dxdy=p[0];
+        __m128d &dxdy=p[9];
         __m128d &dzdx=p[10];
         __m128d &dxdx=p[11];
         __m128d &dydy=p[12];
