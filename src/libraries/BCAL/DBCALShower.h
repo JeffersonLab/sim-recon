@@ -38,10 +38,12 @@ class DBCALShower:public JObject{
 			AddString(items, "x", "%5.2f", x);
 			AddString(items, "y", "%5.2f", y);
 			*/
-	                AddString(items, "r", "%5.2f", sqrt(x*x+y*y));	      			        AddString(items, "phi", "%5.2f",atan2(y,x));
+	      AddString(items, "r", "%5.2f", sqrt(x*x+y*y));
+			AddString(items, "phi", "%5.2f",atan2(y,x));
 			AddString(items, "z", "%5.2f", z);
 			AddString(items, "t", "%5.2f", t);
 			AddString(items, "E", "%5.2f", E);
+			AddString(items, "N_cell", "%d", N_cell);
 	}
 };
 
