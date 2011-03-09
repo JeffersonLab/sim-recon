@@ -25,12 +25,12 @@ using namespace std;
 class DVector3{
  public:
   DVector3()
-  : xy( ALIGNED_16_BLOCK_PTR(union dvec, 1, xy) )
-  , zx(xy + 1)
-  {
-    xy->v=_mm_setzero_pd();
+    : xy( ALIGNED_16_BLOCK_PTR(union dvec, 1, xy) )
+    , zx(xy + 1)
+    {
+      xy->v=_mm_setzero_pd();
     zx->v=_mm_setzero_pd();
-  };
+    };
   DVector3(double x, double y, double z)
   : xy( ALIGNED_16_BLOCK_PTR(union dvec, 1, xy) )
   , zx(xy + 1)
@@ -45,6 +45,13 @@ class DVector3{
     xy->v=v1;
     zx->v=v2;
   }
+    // Copy constructor
+    DVector3(const DVector3 &v1): xy( ALIGNED_16_BLOCK_PTR(union dvec, 1, xy) )
+    , zx(xy + 1){
+      xy->v=v1.GetVxy();
+      zx->v=v1.GetVzx();
+    }
+
   ~DVector3(){};
 
   // Routines to set the components of the vector
