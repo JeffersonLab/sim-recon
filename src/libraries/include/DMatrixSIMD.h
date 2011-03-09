@@ -17,9 +17,10 @@ using namespace std;
 #include "DMatrix3x2.h"
 #include "DMatrix3x3.h"
 #include "DMatrix2x3.h"
-#include "DMatrix4x2.h"
-#include "DMatrix4x4.h"
-#include "DMatrix2x4.h"
+// We are not currently using any of the 4x2,4x4,etc matrices in the code
+//#include "DMatrix4x2.h"
+//#include "DMatrix4x4.h"
+//#include "DMatrix2x4.h"
 #include "align_16.h"
 
 
@@ -94,11 +95,15 @@ inline DMatrix2x3 operator*(const DMatrix2x2 &m1,const DMatrix2x3 &m2){
 			       _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,2)))));
 }
 
-
-
+//----------------------------------------------------------------------------
+// NOTE:  We are not currently using any of the 2x4,4x2, etc matrices in the 
+// code.  As a consequence I am commenting out the following routines until 
+// I get around to writing the non-SIMD versions of this code... whenever that 
+// may be...
 // Matrix multiplication:  (4x2) x (2x4)
-inline DMatrix4x4 operator*(const DMatrix4x2 &m1,
-			    const DMatrix2x4 &m2){
+/*
+  inline DMatrix4x4 operator*(const DMatrix4x2 &m1,
+  const DMatrix2x4 &m2){
   ALIGNED_16_BLOCK_WITH_PTR(__m128d, 8, p)
   __m128d &a11=p[0];
   __m128d &a12=p[1];
@@ -117,34 +122,36 @@ inline DMatrix4x4 operator*(const DMatrix4x2 &m1,
   a23=_mm_set1_pd(m2(1,2));
   a24=_mm_set1_pd(m2(1,3));
   return DMatrix4x4(_mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a11),
-			       _mm_mul_pd(m1.GetV(0,1),a21)),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a12),
-			       _mm_mul_pd(m1.GetV(0,1),a22)),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a13),
-			       _mm_mul_pd(m1.GetV(0,1),a23)),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a14),
-			       _mm_mul_pd(m1.GetV(0,1),a24)),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a11),
-			       _mm_mul_pd(m1.GetV(1,1),a21)),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a12),
-			       _mm_mul_pd(m1.GetV(1,1),a22)),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a13),
-			       _mm_mul_pd(m1.GetV(1,1),a23)),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a14),
-			       _mm_mul_pd(m1.GetV(1,1),a24)));
-}
-
-// Matrix multiplication:  (2x2) x (2x4)
-inline DMatrix2x4 operator*(const DMatrix2x2 &m1,const DMatrix2x4 &m2){
+  _mm_mul_pd(m1.GetV(0,1),a21)),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a12),
+  _mm_mul_pd(m1.GetV(0,1),a22)),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a13),
+  _mm_mul_pd(m1.GetV(0,1),a23)),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(0,0),a14),
+  _mm_mul_pd(m1.GetV(0,1),a24)),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a11),
+  _mm_mul_pd(m1.GetV(1,1),a21)),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a12),
+  _mm_mul_pd(m1.GetV(1,1),a22)),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a13),
+  _mm_mul_pd(m1.GetV(1,1),a23)),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(1,0),a14),
+  _mm_mul_pd(m1.GetV(1,1),a24)));
+  }
+  
+  // Matrix multiplication:  (2x2) x (2x4)
+  inline DMatrix2x4 operator*(const DMatrix2x2 &m1,const DMatrix2x4 &m2){
   return DMatrix2x4(_mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,0))),
-			       _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,0)))),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,1))),
-			       _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,1)))),
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,2))),
-			       _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,2)))), 
-		    _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,3))),
-			       _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,3)))));
-}
+  _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,0)))),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,1))),
+  _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,1)))),
+  _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,2))),
+  _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,2)))), 
+  _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,3))),
+  _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,3)))));
+  }
+*/
+// end of un-used matrix block...
 #endif
 
 
