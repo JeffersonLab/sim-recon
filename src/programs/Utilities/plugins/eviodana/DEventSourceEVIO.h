@@ -59,10 +59,10 @@ class DEventSourceEVIO:public JEventSource{
 template<class T>
 const vector<T>& DEventSourceEVIO::GetVector(evioDOMNodeList* nodeList, string name) const
 {
-	// Attempt to get the pointer to a const vector of the specified type for the node
-	// matching the given name (as appearing in tagMap). If the pointer can't be obtained
-	// for any reason (e.g. name doesn't appear in tagMap or nodelist doesn't contain
-	// the tag/num correpsonding to name) then an exception is thrown.
+	/// Attempt to get the pointer to a const vector of the specified type for the node
+	/// matching the given name (as appearing in tagMap). If the pointer can't be obtained
+	/// for any reason (e.g. name doesn't appear in tagMap or nodelist doesn't contain
+	/// the tag/num correpsonding to name) then an exception is thrown.
 	
 	// Check that tagMap has name in it
 	map<string, pair<int, int> >::const_iterator iter = tagMap.find(name);
