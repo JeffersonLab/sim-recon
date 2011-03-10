@@ -208,7 +208,7 @@ c DEBUG first last step
 c  - first (int) = event number of first event to debug
 c  - last (int) = event number of last event to debug
 c  - step (int) = only debug one event every step events
-DEBUG 1 10 1000
+DEBU 1 10 1000
 
 c The following card can be used to turn off generation of secondary
 c particles in the simulation, ordinarily it should be 0 (or omitted).
