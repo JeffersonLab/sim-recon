@@ -450,8 +450,8 @@ DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower, con
 													shower->error_Cy,
 													shower->error_Cz ) );
 
-	photon->AddAssociatedObject(shower);
-	photon->AddAssociatedObject(vertex);
+	if(shower)photon->AddAssociatedObject(shower);
+	if(vertex)photon->AddAssociatedObject(vertex);
 
 	return photon;
 }
