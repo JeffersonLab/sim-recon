@@ -497,8 +497,7 @@ c             print *, cchar
         call gfvert(1,vertx1,ntbeamx1,nttargx1,tofgx1,ubuf1,nubuf1)
       endif
       if (cnames(NLEVEL).eq.'PCTT' .or.
-     +    cnames(NLEVEL).eq.'PCTB' .or.
-     +    cnames(NLEVEL).eq.'PCSD') then
+     +    cnames(NLEVEL).eq.'PCPB') then
         ISTOP = 3
         NMEC = NMEC+1
         LMEC(NMEC) = 30
@@ -562,8 +561,7 @@ c           print *, '*-* entering ACWO'
         z = VECT(3)
         r = sqrt(VECT(1)**2 + VECT(2)**2)
         if (cnames(NLEVEL).eq.'PCTT' .or.
-     +      cnames(NLEVEL).eq.'PCTB' .or.
-     +      cnames(NLEVEL).eq.'PCSD') then
+     +      cnames(NLEVEL).eq.'PCPB') then
           ISTOP = 3
           NMEC = NMEC+1
           LMEC(NMEC) = 30
@@ -802,8 +800,7 @@ c     #ifndef TRACK_SHOWERS_IN_COLLIMATOR
       if(showersincol.eq.0) then
          if ((cnames(NLEVEL).eq.'INSU').or.
      +        (cnames(NLEVEL).eq.'PCTT').or.
-     +        (cnames(NLEVEL).eq.'PCTB').or.
-     +        (cnames(NLEVEL).eq.'PCSD')) then
+     +        (cnames(NLEVEL).eq.'PCPB')) then
             ISTOP = 3
             NMEC = NMEC+1
             LMEC(NMEC) = 30
