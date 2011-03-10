@@ -119,6 +119,13 @@ ifdef DEBUG
 	FFLAGS   += -g
 	CFLAGS	+= -g
 	CXXFLAGS	+= -g
+
+	# Default optimization level for debug mode is 0.
+	# User can override with "make OPTIMIZE=X" (see below)
+	ifndef OPTIMIZE
+		OPTIMIZE := 0
+	endif
+
 endif
 
 # If PROFILE mode is requested, add "_d" suffix and turn on
