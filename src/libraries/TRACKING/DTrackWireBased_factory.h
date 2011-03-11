@@ -11,11 +11,6 @@
 #include <JANA/JFactory.h>
 #include <JANA/JObject.h>
 
-#include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALPhoton.h>
-#include <TOF/DTOFPoint.h>
-#include <START_COUNTER/DSCHit.h>
-
 #include <TRACKING/DTrackFitter.h>
 #include <TRACKING/DTrackHitSelector.h>
 
@@ -67,28 +62,11 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		vector<double> mass_hypotheses_positive;
 		vector<double> mass_hypotheses_negative;
 
-		jerror_t MatchToTOF(DTrackWireBased *track, 
-				    vector<const DTOFPoint*>tof_points);
-		jerror_t MatchToBCAL(DTrackWireBased *track,   
-				     vector<const DBCALShower*>bcal_clusters);
-		jerror_t MatchToSC(DTrackWireBased *track, 
-				   vector<const DSCHit*>sc_hits);
 		void FilterDuplicates(void);
-
 
 		const DGeometry *geom;
 
-		// start counter geometry parameters
-		double sc_leg_tcor;
-		double sc_angle_cor;
-		vector<DVector3>sc_pos;
-		vector<DVector3>sc_norm;
-
-
 		bool DEBUG_HISTS;
-		TH1F* Hsc_match;
-		TH2F* Htof_match;
-		TH2F *Hstart_time,*Hbcal_match;
 
 };
 
