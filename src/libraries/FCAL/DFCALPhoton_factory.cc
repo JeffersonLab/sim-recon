@@ -101,6 +101,10 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	eventLoop->Get(vertices);
 	if (vertices.size()) vertex=vertices[0];
 
+	// If no DVertex object exists, then we cannot calculate the
+	// momentum vectors of the photons. We punt here and refuse 
+	// to make any DFCALPhotons.
+	if(vertex==NULL)return NOERROR;
 
 	// Return immediately if there isn't even one cluster
 	if(fcalClusters.size()<1)return NOERROR;
