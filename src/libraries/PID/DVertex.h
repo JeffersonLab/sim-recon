@@ -12,6 +12,7 @@
 #include <JANA/JFactory.h>
 
 #include <TRACKING/DTrackTimeBased.h>
+#include <BCAL/DBCALShower.h>
 
 class DVertex:public jana::JObject{
  public:
@@ -28,6 +29,13 @@ class DVertex:public jana::JObject{
   }track_info_t;
 
   vector<vector<track_info_t> >hypotheses;
+
+  typedef struct{
+    const DBCALShower *bcal_shower;
+    //const DFCAlShower *fcal_shower;
+    bool matched_to_track;
+  }shower_info_t;
+  vector<shower_info_t>showers;
 
   // Objects used to calculate this added as Associated Objects
   void toStrings(vector<pair<string,string> > &items)const{
