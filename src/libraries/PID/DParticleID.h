@@ -16,6 +16,9 @@
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALCluster.h>
 #include <TOF/DTOFPoint.h>
+#include <START_COUNTER/DSCHit.h>
+#include <TRACKING/DTrackFitter.h>
+#include <TRACKING/DReferenceTrajectory.h>
 
 class DTrackTimeBased;
 class DCDCTrackHit;
@@ -51,16 +54,23 @@ class DParticleID:public jana::JObject{
   jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks,
 		       vector<vector<const DTrackTimeBased*> >&grouped_tracks);
 
-  jerror_t MatchToTOF(const DTrackTimeBased *track,
+  jerror_t MatchToTOF(const DReferenceTrajectory *rt,
+		      DTrackFitter::fit_type_t fit_type,
 		      vector<const DTOFPoint*>&tof_points,
 		      double &tproj, unsigned int &tof_match_id);
-  jerror_t MatchToBCAL(const DTrackTimeBased *track,
-		       vector<const DBCALShower*>&bcal_clusters,
+  jerror_t MatchToBCAL(const DReferenceTrajectory *rt,
+		      DTrackFitter::fit_type_t fit_type,
+		       vector<const DBCALShower*>&bcal_showers,
 		       double &tproj,unsigned int &bcal_match_id); 
-  jerror_t MatchToFCAL(const DTrackTimeBased *track,
+  jerror_t MatchToFCAL(const DReferenceTrajectory *rt,
+		      DTrackFitter::fit_type_t fit_type,
 		       vector<const DFCALCluster*>&fcal_clusters,
 		       double &tproj,unsigned int &fcal_match_id,
 		       double &dmin);
+  jerror_t MatchToSC(const DReferenceTrajectory *rt, 
+		     DTrackFitter::fit_type_t fit_type,
+		     vector<const DSCHit*>&sc_hits,
+		     double &tproj,unsigned int &sc_match_id);
 
  private: 
   //< DGeometry pointer used to access materials through calibDB maps for eloss
@@ -74,6 +84,13 @@ class DParticleID:public jana::JObject{
   // gas material properties
   double mKRhoZoverAGas,mRhoZoverAGas,mLnIGas;
 
+  const DGeometry *geom;
+  
+  // start counter geometry parameters
+  double sc_leg_tcor;
+  double sc_angle_cor;
+  vector<DVector3>sc_pos;
+  vector<DVector3>sc_norm;  
 		
 };
 

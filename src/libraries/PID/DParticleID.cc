@@ -6,8 +6,10 @@
 //
 
 #include "DParticleID.h"
-#include "TRACKING/DReferenceTrajectory.h"
+#include <TRACKING/DTrackFitter.h>
 #include "FCAL/DFCALGeometry.h"
+
+#define C_EFFECTIVE 15. // start counter light propagation speed
 
 // Routine for sorting dEdx data
 bool static DParticleID_dedx_cmp(DParticleID::dedx_t a,DParticleID::dedx_t b){
@@ -43,6 +45,32 @@ DParticleID::DParticleID(JEventLoop *loop)
   mLnIGas=rho_Z_over_A_LnI/mRhoZoverAGas;
   mKRhoZoverAGas=0.1535*mRhoZoverAGas;
 
+
+  // Get the geometry
+  geom = dapp->GetDGeometry(0);  // should have run number argument...
+
+  vector<double>sc_origin;
+  geom->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z",sc_origin);
+  
+  vector<double>sc_light_guide;
+  geom->Get("//tubs[@name='STLG']/@Rio_Z",sc_light_guide); 
+  //sc_light_guide_length=sc_light_guide[2];
+  
+  vector<vector<double> > sc_rioz;
+  geom->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+  
+  for (unsigned int k=0;k<sc_rioz.size()-1;k++){
+    DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
+    DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,
+		 -sc_rioz[k+1][0]+sc_rioz[k][0]);
+    dir.SetMag(1.);
+    
+    sc_pos.push_back(pos);
+    sc_norm.push_back(dir);    
+  }
+  sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
+  double theta=sc_norm[sc_norm.size()-1].Theta();
+  sc_angle_cor=1./cos(M_PI-theta); 
 }
 
 //---------------------------------
@@ -252,7 +280,8 @@ jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
 //------------------
 // Loop over TOF points, looking for minimum distance of closest approach
 // of track to a point in the TOF and using this to check for a match. 
-jerror_t DParticleID::MatchToTOF(const DTrackTimeBased *track,
+jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt,
+				 DTrackFitter::fit_type_t fit_type,
 				 vector<const DTOFPoint*>&tof_points,
 				 double &tproj, unsigned int &tof_match_id){
   tproj=NaN;
@@ -270,10 +299,8 @@ jerror_t DParticleID::MatchToTOF(const DTrackTimeBased *track,
     
     // Find the distance of closest approach between the track trajectory
     // and the tof cluster position, looking for the minimum
-    double my_s=0.;
     double tflight=0.;
-    track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,&my_s,
-                                        &tflight);
+    rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,NULL,&tflight);
     double d=(tof_pos-proj_pos).Mag();
 
     if (d<dmin){
@@ -284,8 +311,10 @@ jerror_t DParticleID::MatchToTOF(const DTrackTimeBased *track,
   }
   
   // Check for a match 
-  //double p=track->momentum().Mag();
-  double match_cut=3.624+0.488/track->momentum().Mag();
+  double p=rt->swim_steps[0].mom.Mag();
+  double match_cut=0.;
+  if (fit_type==DTrackFitter::kTimeBased) match_cut=3.624+0.488/p;
+  else match_cut=4.0+0.488/p;
   if (dmin<match_cut){
     // Projected time at the target
     tproj=tof_points[tof_match_id]->t-match_flight_time;
@@ -301,26 +330,27 @@ jerror_t DParticleID::MatchToTOF(const DTrackTimeBased *track,
 //------------------
 // Loop over bcal clusters, looking for minimum distance of closest approach
 // of track to a cluster and using this to check for a match. 
-jerror_t DParticleID::MatchToBCAL(const DTrackTimeBased *track,
-				vector<const DBCALShower*>&bcal_clusters,
+jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,
+				  DTrackFitter::fit_type_t fit_type,
+				vector<const DBCALShower*>&bcal_showers,
 				double &tproj,unsigned int &bcal_match_id){ 
   tproj=NaN;
   bcal_match_id=0;
-  if (bcal_clusters.size()==0) return RESOURCE_UNAVAILABLE;
+  if (bcal_showers.size()==0) return RESOURCE_UNAVAILABLE;
 
-  //Loop over bcal clusters
+  //Loop over bcal showers
   double dmin=10000.;
   double dphi=1000.,dz=1000.,match_flight_time=0.;
-  for (unsigned int k=0;k<bcal_clusters.size();k++){
+  for (unsigned int k=0;k<bcal_showers.size();k++){
     // Get the BCAL cluster position and normal
-    const DBCALShower *shower = bcal_clusters[k];
+    const DBCALShower *shower = bcal_showers[k];
     DVector3 bcal_pos(shower->x, shower->y, shower->z); 
     DVector3 proj_pos;
     // and the bcal cluster position, looking for the minimum
     double my_s=0.;
     double tflight=0.;
-    double d = track->rt->DistToRTwithTime(bcal_pos,&my_s,&tflight);
-    proj_pos = track->rt->GetLastDOCAPoint();
+    double d = rt->DistToRTwithTime(bcal_pos,&my_s,&tflight);
+    proj_pos = rt->GetLastDOCAPoint();
     
     if (d<dmin){
       dmin=d;
@@ -332,12 +362,12 @@ jerror_t DParticleID::MatchToBCAL(const DTrackTimeBased *track,
   }
   
   // Check for a match 
-   double p=track->momentum().Mag();
-   dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
+  double p=rt->swim_steps[0].mom.Mag();
+  dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
    double phi_sigma=0.025+5.8e-4/p/p/p;
    if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
      // Projected time at the target
-     tproj=bcal_clusters[bcal_match_id]->t-match_flight_time;
+     tproj=bcal_showers[bcal_match_id]->t-match_flight_time;
     
      return NOERROR;
    }
@@ -350,7 +380,8 @@ jerror_t DParticleID::MatchToBCAL(const DTrackTimeBased *track,
 //------------------
 // Loop over fcal clusters, looking for minimum distance of closest approach
 // of track to a cluster and using this to check for a match. 
-jerror_t DParticleID::MatchToFCAL(const DTrackTimeBased *track,
+jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, 
+				  DTrackFitter::fit_type_t fit_type,
 				  vector<const DFCALCluster*>&fcal_clusters,
 				  double &tproj,unsigned int &fcal_match_id,
 				  double &dmin){ 
@@ -372,10 +403,8 @@ jerror_t DParticleID::MatchToFCAL(const DTrackTimeBased *track,
 
     // Find the distance of closest approach between the track trajectory
     // and the tof cluster position, looking for the minimum
-    double my_s=0.;
     double tflight=0.;
-    track->rt->GetIntersectionWithPlane(fcal_pos,norm,proj_pos,dir,&my_s,
-                                        &tflight);
+    rt->GetIntersectionWithPlane(fcal_pos,norm,proj_pos,dir,NULL,&tflight);
     double d=(fcal_pos-proj_pos).Mag();
 
     if (d<dmin){
@@ -392,6 +421,89 @@ jerror_t DParticleID::MatchToFCAL(const DTrackTimeBased *track,
     return NOERROR;
   }
 
+  return VALUE_OUT_OF_RANGE;
+}
 
+
+//------------------
+// MatchToSC
+//------------------
+// Match track to the start counter paddles with hits.  If a match
+// is found, use the z-position of the track projection to the start counter 
+// planes to correct for the light propagation within the scintillator and 
+// estimate the "vertex" time.
+jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, 
+				DTrackFitter::fit_type_t fit_type,
+				vector<const DSCHit*>&sc_hits,
+				double &tproj,unsigned int &sc_match_id){
+  tproj=NaN;
+  sc_match_id=0;
+  if (sc_hits.size()==0) return RESOURCE_UNAVAILABLE;
+   double myz=0.,flight_time=0.;
+  double dphi_min=10000.,myphi=0.;
+  DVector3 proj_pos;
+
+  // Find intersection with a "barrel" approximation for the start counter
+  rt->GetIntersectionWithRadius(sc_pos[1].x(),proj_pos,NULL,&flight_time);
+  double proj_phi=proj_pos.Phi();
+  if (proj_phi<0) proj_phi+=2.*M_PI;
+
+  // loop over sc hits, looking for the one with closest phi value to the 
+  // projected phi value
+  for (unsigned int i=0;i<sc_hits.size();i++){
+    double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
+    double dphi=phi-proj_phi;
+
+    if (fabs(dphi)<dphi_min){
+      dphi_min=fabs(dphi);
+      myphi=phi;
+      myz=proj_pos.z();
+      sc_match_id=i;
+    }
+  }
+  // Look for a match in phi
+  if (dphi_min<0.16){
+    // Now check to see if the intersection is in the nose region and find the
+    // start time
+    tproj=sc_hits[sc_match_id]->t-sc_leg_tcor;
+    if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
+    if (myz>sc_pos[1].z()){
+      unsigned int num=sc_norm.size()-1;
+      for (unsigned int i=1;i<num;i++){
+	double xhat=sc_norm[i].x();
+	DVector3 norm(cos(myphi)*xhat,sin(myphi)*xhat,sc_norm[i].z());
+	double r=sc_pos[i].X();
+	DVector3 pos(r*cos(myphi),r*sin(myphi),sc_pos[i].z());
+	rt->GetIntersectionWithPlane(pos,norm,proj_pos,NULL,&flight_time);
+	myz=proj_pos.z();
+	if (myz<sc_pos[i+1].z()){
+	  break;
+	}
+      }
+      double sc_pos1=sc_pos[1].z();
+      if (myz<sc_pos1){
+	tproj-=flight_time+sc_pos1/C_EFFECTIVE;
+      }
+      else if (myz>sc_pos[num].z()){
+	// Assume that the particle hit the most downstream z position of the
+	// start counter
+	double costheta=rt->swim_steps[0].mom.CosTheta();
+	double s=(sc_pos[num].z()-rt->swim_steps[0].origin.z())/costheta;
+	double mass=rt->GetMass();
+	double p2=rt->swim_steps[0].mom.Mag2();
+	double one_over_beta=sqrt(1.+mass*mass/p2);
+	
+	tproj-=s*one_over_beta/SPEED_OF_LIGHT
+	+((sc_pos[num].z()-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
+      }
+      else{
+	tproj-=flight_time+((myz-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
+      }
+  }
+    else{
+      tproj-=flight_time+myz/C_EFFECTIVE;
+    }
+    return NOERROR;
+  }
   return VALUE_OUT_OF_RANGE;
 }
