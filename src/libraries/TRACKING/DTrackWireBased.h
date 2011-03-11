@@ -15,10 +15,6 @@
 
 class DReferenceTrajectory;
 
-typedef struct{
-  double t0,t0_sigma;
-  DetectorSystem_t system;
-}DStartTime_t;
 
 class DTrackWireBased:public DKinematicData{
 	public:
@@ -29,7 +25,6 @@ class DTrackWireBased:public DKinematicData{
 		int Ndof;				///< Number of degrees of freedom in the fit
 		vector<DTrackFitter::pull_t> pulls;	///< Holds pulls used in chisq calc. (not including off-diagonals)
 
-		vector<DStartTime_t>start_times;
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 

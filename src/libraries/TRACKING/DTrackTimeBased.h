@@ -29,7 +29,11 @@ class DTrackTimeBased:public DKinematicData{
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
 
-		int itrack;
+		typedef struct{
+		  double t0,t0_sigma;
+		  DetectorSystem_t system;
+		}DStartTime_t;
+		vector<DStartTime_t>start_times;
 
 		double FOM,chi2_dedx;
 		unsigned int num_dedx;
