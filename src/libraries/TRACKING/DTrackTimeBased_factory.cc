@@ -25,6 +25,13 @@ using namespace std;
 
 using namespace jana;
 
+// Routine for sorting start times
+bool DTrackTimeBased_T0_cmp(DTrackTimeBased::DStartTime_t a,
+			    DTrackTimeBased::DStartTime_t b){
+  return (a.t0_sigma<b.t0_sigma);
+}
+
+
 // count_common_members
 //------------------
 template<typename T>
@@ -50,7 +57,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 	fitter = NULL;
 
 	//DEBUG_HISTS = false;
-	DEBUG_HISTS = false;
+	DEBUG_HISTS = true;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
 	MOMENTUM_CUT_FOR_PROTON_ID=3.0;
@@ -128,6 +135,12 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		if(!chi2_trk_mom)chi2_trk_mom = new TH2F("chi2_trk_mom","Track #chi^{2}/Ndf versus Kinematic #chi^{2}/Ndf", 1000, 0.0, 100.0, 1000, 0.,100.);
 
 
+		Hstart_time=(TH2F*)gROOT->FindObject("Hstart_time");
+		if (!Hstart_time) Hstart_time=new TH2F("Hstart_time",
+						       "vertex time source vs. time",
+						 300,-50,50,257,-0.5,256.5);
+	  
+
 		dapp->Unlock();
 
 	}
@@ -148,14 +161,32 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   loop->Get(tracks);
   if (tracks.size()==0) return NOERROR;
   
+  // get start counter hits
+  vector<const DSCHit*>sc_hits;
+  eventLoop->Get(sc_hits);
+  
+  // Get TOF points
+  vector<const DTOFPoint*> tof_points;
+  eventLoop->Get(tof_points);
+  
+  // Get BCAL and FCAL showers
+  vector<const DBCALShower*>bcal_showers;
+  eventLoop->Get(bcal_showers);
+  //vector<const DFCALPhoton*>fcal_clusters;
+  //eventLoop->Get(fcal_clusters);
+
+  
+
   vector<const DMCThrown*> mcthrowns;
   loop->Get(mcthrowns);
    
   // Loop over candidates
   for(unsigned int i=0; i<tracks.size(); i++){
     const DTrackWireBased *track = tracks[i];
-    mStartTime=track->t0();
-    mStartDetector=track->t0_detector();
+
+    // Create vector of start times from various sources,ordered by uncertainty
+    vector<DTrackTimeBased::DStartTime_t>start_times;
+    CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,start_times);
 
     // Make sure there are enough DReferenceTrajectory objects
     while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
@@ -205,8 +236,18 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	timebased_track->trackid = track->id;
 	timebased_track->candidateid=track->candidateid;
 
-	// Set the start time
-	timebased_track->setT0(mStartTime, 2., mStartDetector);
+	// Set the start time and add the list of start times
+	timebased_track->setT0(mStartTime,start_times[0].t0_sigma, 
+			       mStartDetector);
+	timebased_track->start_times.assign(start_times.begin(),
+					    start_times.end());
+
+	if (DEBUG_HISTS){
+	  if (Hstart_time) Hstart_time->Fill(start_times[0].t0,
+					     start_times[0].system);
+	  
+	}
+	
 
 	// Add hits used as associated objects
 	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
@@ -481,3 +522,54 @@ void DTrackTimeBased_factory::GetThrownIndex(const DKinematicData *kd, int &MAX_
 	track = tot_hits_max>0 ? track_with_max_hits:-1;
 }
 
+
+// Create a list of start (vertex) times from various sources, ordered by 
+// uncertainty.
+void DTrackTimeBased_factory
+  ::CreateStartTimeList(const DTrackWireBased *track,
+			vector<const DSCHit*>&sc_hits,
+			vector<const DTOFPoint*>&tof_points,
+			vector<const DBCALShower*>&bcal_showers,
+			vector<DTrackTimeBased::DStartTime_t>&start_times){
+  // Add the t0 estimate from the tracking
+  DTrackTimeBased::DStartTime_t start_time;
+  start_time.t0=track->t0();
+  start_time.t0_sigma=5.;
+  start_time.system=track->t0_detector();
+  start_times.push_back(start_time);
+
+  // Match to the start counter and the outer detectors
+  double tproj=0.;
+  unsigned int bcal_id=0,tof_id=0,sc_id=0;
+  if (pid_algorithm->MatchToSC(track->rt,DTrackFitter::kWireBased,sc_hits,
+				tproj,sc_id)==NOERROR){
+    // Fill in the start time vector
+    start_time.t0=tproj;
+    start_time.t0_sigma=0.3;
+    start_time.system=SYS_START;
+    start_times.push_back(start_time); 
+  }
+  if (pid_algorithm->MatchToTOF(track->rt,DTrackFitter::kWireBased,tof_points,
+				tproj,tof_id)==NOERROR){
+    // Fill in the start time vector
+    start_time.t0=tproj;
+    start_time.t0_sigma=0.1;
+    start_time.system=SYS_TOF;
+    start_times.push_back(start_time); 
+  }
+  if (pid_algorithm->MatchToBCAL(track->rt,DTrackFitter::kWireBased,
+				      bcal_showers,tproj,bcal_id)
+	   ==NOERROR){
+    // Fill in the start time vector
+    start_time.t0=tproj;
+    start_time.t0_sigma=0.5;
+    start_time.system=SYS_BCAL;
+    start_times.push_back(start_time);
+  }
+  // Sort the list of start times according to uncertainty and set 
+  // t0 for the fit to the first entry
+  sort(start_times.begin(),start_times.end(),DTrackTimeBased_T0_cmp);
+  mStartTime=start_times[0].t0;
+  mStartDetector=start_times[0].system;
+  
+}
