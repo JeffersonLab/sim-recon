@@ -13,7 +13,15 @@ using namespace std;
 #include <TROOT.h>
 #include <TMath.h>
 #include "DVertex_factory.h"
+#include "TRACKING/DTrackFitter.h"
 using namespace jana;
+
+bool static DVertex_hypothesis_cmp(DVertex::track_info_t a,
+				   DVertex::track_info_t b)
+{
+  return (a.FOM>b.FOM);
+}
+
 
 //------------------
 // init
@@ -72,8 +80,8 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
   zmin = 0.0;
   zmax = 100.0;
   
-  //DEBUG_HISTS=true;
-  DEBUG_HISTS=false;
+  DEBUG_HISTS=true;
+  //DEBUG_HISTS=false;
   if (DEBUG_HISTS){
     dapp->Lock();
     
@@ -113,12 +121,15 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
   vector<const DTOFPoint *>tof_points;
   loop->Get(tof_points);
 
-  // Get BCAL and FCAL clusters
-  vector<const DBCALShower*>bcal_clusters;
-  eventLoop->Get(bcal_clusters);
-  vector<const DFCALCluster*>fcal_clusters;
-  eventLoop->Get(fcal_clusters);
+  // Get BCAL and FCAL showers
+  vector<const DBCALShower*>bcal_showers;
+  eventLoop->Get(bcal_showers);
+  vector<const DFCALCluster*>fcal_showers;
+  eventLoop->Get(fcal_showers);
 
+  // Creat a vector to keep track of the BCAL showers that have been matched 
+  // to tracks
+  vector<int>bcal_matches(bcal_showers.size());
 
   // Find the time at the vertex by locking to the RF clock and match the
   // tracks with the outer detectors.  If a match is found, compute a FOM for
@@ -140,15 +151,18 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 
     // Here we loop over the mass hypotheses for each track
     for (unsigned int j=0;j<_data[i]->hypotheses.size();j++){
-      vector<DVertex::track_info_t>tracks=_data[i]->hypotheses[j];
+      vector<DVertex::track_info_t>&tracks=_data[i]->hypotheses[j];
       for (unsigned int k=0;k<tracks.size();k++){
 	bool matched_outer_detector=false;
 	double tproj=0.,dmin=1000.;
 	unsigned int bcal_id=0,tof_id=0,fcal_id=0;
 	// Try matching the track with hits in the outer detectors
-	if (pid_algorithm->MatchToBCAL(tracks[k].track,bcal_clusters,tproj,
+	if (pid_algorithm->MatchToBCAL(tracks[k].track->rt,
+				       DTrackFitter::kTimeBased,
+				       bcal_showers,tproj,
 				       bcal_id)
 	    ==NOERROR){
+	  bcal_matches[bcal_id]=1;
 	  matched_outer_detector=true;
 	  tracks[k].tprojected=tproj;
 	  tdiff=tproj-_data[i]->x.T();
@@ -157,7 +171,9 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	  double bcal_chi2=tdiff*tdiff/(bcal_sigma*bcal_sigma);
 	  tracks[k].FOM=TMath::Prob(tracks[k].track->chi2_dedx+bcal_chi2,2);
 	}
-	else if (pid_algorithm->MatchToTOF(tracks[k].track,tof_points,tproj,
+	else if (pid_algorithm->MatchToTOF(tracks[k].track->rt,
+					   DTrackFitter::kTimeBased,
+					   tof_points,tproj,
 					   tof_id)
 		 ==NOERROR){
 	  matched_outer_detector=true;
@@ -167,7 +183,9 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	  double tof_chi2=tdiff*tdiff/(tof_sigma*tof_sigma);
 	  tracks[k].FOM=TMath::Prob(tracks[k].track->chi2_dedx+tof_chi2,2);
 	}
-	if (pid_algorithm->MatchToFCAL(tracks[k].track,fcal_clusters,tproj,
+	if (pid_algorithm->MatchToFCAL(tracks[k].track->rt,
+				       DTrackFitter::kTimeBased,
+				       fcal_showers,tproj,
 				       fcal_id,dmin)
 	    ==NOERROR){
 	  if (matched_outer_detector==false){
@@ -197,11 +215,11 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	  tracks[k].FOM=tracks[k].track->FOM;
 	}
       }
-    }
+      // Sort hypotheses according to figure of merit
+      sort(tracks.begin(),tracks.end(),DVertex_hypothesis_cmp);
 
+    }// loop over tracks 
   }
-
-
 
   return NOERROR;
 }
