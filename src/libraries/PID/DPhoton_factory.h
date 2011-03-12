@@ -16,7 +16,6 @@
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "TRACKING/DReferenceTrajectory.h"
-#include "PID/DParticle.h"
 #include "TRACKING/DMagneticFieldStepper.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DANA/DApplication.h"
