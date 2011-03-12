@@ -31,7 +31,6 @@ using namespace std;
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DTrackWireBased.h"
 #include "TRACKING/DTrackTimeBased.h"
-#include "PID/DParticle.h"
 #include "PID/DChargedTrack.h"
 #include "TRACKING/DReferenceTrajectory.h"
 #include "JANA/JGeometry.h"
