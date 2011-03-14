@@ -271,36 +271,6 @@ void hitForwardDC (float xin[4], float xout[4],
 		// Get tables from database
 		GetLorentzDefelections(lorentz_x, lorentz_z, lorentz_nx, lorentz_nz, LORENTZ_X_POINTS, LORENTZ_Z_POINTS);
 		initialized=1;
-
-		// Below is Simon's original code for reading in the lorentz deflection
-		// tables. It is preserved for now for easy reference, but may be deleted
-		// in the future once the calib DB method is considered stable and working.
-		// 7/24/07  D. L.
-#if 0
-    FILE *fp=fopen("fdc_deflections.dat","r");
-    if (fp){
-      char dummy[80];
-      float fdummy;
-      size_t len=0;
-		while(fgetc(fp)!='\n'); // Skip header line
-      //getline(dummy,&len,fp); // Skip header line
-   
-      // Read deflection plane data
-      for (i=0;i<LORENTZ_X_POINTS;i++){
-	for (j=0;j<LORENTZ_Z_POINTS;j++){
-	  fscanf(fp,"%f %f %f %f %f %f\n",&lorentz_x[i],&lorentz_z[j],
-		 &fdummy, &fdummy,
-		 &lorentz_nx[i][j],&lorentz_nz[i][j]);
-	}
-      }
-      initialized=1;
-    }
-    else{
-      fprintf(stderr,"HDGeant error in hitFDC.c: ");
-      fprintf(stderr,"no deflection parameterization file found.\n");
-      exit(1);
-    }
-#endif
   }  
 
   transformCoord(xin,"global",xinlocal,"local");
