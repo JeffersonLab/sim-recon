@@ -229,7 +229,7 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView
 		tbt_hddm->momentum->py = mom.y();
 		tbt_hddm->momentum->pz = mom.z();
 
-		tbt_hddm->properties->charge = tbt_dana->charge();
+		tbt_hddm->properties->charge = (int)tbt_dana->charge();
 		tbt_hddm->properties->mass = tbt_dana->mass();
 		
 		tbt_hddm->origin->t = 0.0;
