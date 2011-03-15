@@ -200,7 +200,7 @@ C  If no hit is being recorded then nothing to do
           call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif (cnames(NLEVEL).eq.'CPMT') then		! Cerenkov counter
+      elseif (cnames(NLEVEL).eq.'CPPC') then		! Cerenkov counter
         if ((dEsum.gt.0).and.(IPART.eq.50)) then
           call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
