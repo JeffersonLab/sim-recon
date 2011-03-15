@@ -13,6 +13,7 @@
 
 #include <TRACKING/DTrackTimeBased.h>
 #include <BCAL/DBCALShower.h>
+#include <FCAL/DFCALCluster.h>
 
 class DVertex:public jana::JObject{
  public:
@@ -21,6 +22,7 @@ class DVertex:public jana::JObject{
   DLorentzVector x; // vertex position in cm + vertex time in ns
   DMatrix cov;	// covariance matrix
   bool beamline_used;
+  double t_sigma;
   
   typedef struct{
     const DTrackTimeBased *track;
@@ -31,9 +33,9 @@ class DVertex:public jana::JObject{
   vector<vector<track_info_t> >hypotheses;
 
   typedef struct{
-    const DBCALShower *bcal_shower;
-    //const DFCAlShower *fcal_shower;
-    bool matched_to_track;
+    const DBCALShower *bcal;
+    const DFCALCluster *fcal;
+    const DTrackTimeBased *matched_track;
   }shower_info_t;
   vector<shower_info_t>showers;
 
@@ -46,6 +48,7 @@ class DVertex:public jana::JObject{
     AddString(items, "t", "%3.2f", x.T());
     AddString(items, "beamline_used", "%d", beamline_used);
     AddString(items, "Ntracks", "%d", hypotheses.size());
+    AddString(items, "Nphotons","%d", showers.size());
   }
 };
 

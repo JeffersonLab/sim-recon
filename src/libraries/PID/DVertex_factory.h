@@ -26,8 +26,11 @@ class DVertex_factory:public jana::JFactory<DVertex>{
   class vertexInfo_t : public DHoughFind {
   public:
     bool is_in_group;
+    bool is_matched_to_vertex;
+    // Only one of the next three will be non-NULL
     vector<const DTrackTimeBased *>*hypotheses;
-    const DPhoton *photon;
+    const DBCALShower *bcal;
+    const DFCALCluster *fcal;
     double t;
     double sigmat;
     double z;
@@ -36,15 +39,22 @@ class DVertex_factory:public jana::JFactory<DVertex>{
     void Reset(void){
       ResetHist(); // (from DHoughFind)
       is_in_group = false;
+      is_matched_to_vertex=false;
       hypotheses = NULL;
-      photon = NULL;
+      fcal = NULL;
+      bcal = NULL;
     }
   };
   jerror_t MakeVertices(vector<vector<const DTrackTimeBased*> >&tracks_by_candidate);
   void FillVertexInfoChargedTrack(DVertex_factory::vertexInfo_t *pi, 
 				  vector<const DTrackTimeBased *>*hypotheses);
+  void FillVertexInfoBCAL(DVertex_factory::vertexInfo_t *vi,
+			  const DBCALShower *bcal);
+  void FillVertexInfoFCAL(DVertex_factory::vertexInfo_t *vi,
+			  const DFCALCluster *fcal);
   bool AllInGroups(vector<vertexInfo_t*> &vertices);
-  
+  void AssignParticlesToGroups(vector<vertexInfo_t*> &vertices,
+			       vector< vector<vertexInfo_t *> > &groups);
  private:
   jerror_t init(void);						///< Called once at program start.
   jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.

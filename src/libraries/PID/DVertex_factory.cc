@@ -110,26 +110,50 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
   vector<const DTrackTimeBased*> tracks;
   loop->Get(tracks);
   
-  // group according to candidate id
-  vector<vector<const DTrackTimeBased*> >tracks_by_candidate;
-  pid_algorithm->GroupTracks(tracks,tracks_by_candidate);
-  
-  // Make list of vertices
-  MakeVertices(tracks_by_candidate);
-
   // Get ToF points
   vector<const DTOFPoint *>tof_points;
   loop->Get(tof_points);
-
+  
   // Get BCAL and FCAL showers
   vector<const DBCALShower*>bcal_showers;
   eventLoop->Get(bcal_showers);
   vector<const DFCALCluster*>fcal_showers;
   eventLoop->Get(fcal_showers);
 
+  // group tracks according to candidate id
+  vector<vector<const DTrackTimeBased*> >tracks_by_candidate;
+  pid_algorithm->GroupTracks(tracks,tracks_by_candidate);
+
+  // To minimize memory usage and time in allocation, we maintain a
+  // pool of vertexInfo_t objects. Make sure the pool is large enough to hold
+  // all of the particles we have in this event. 
+  unsigned int Nparticles_total =tracks_by_candidate.size()+bcal_showers.size()
+    +fcal_showers.size();
+  for(unsigned int i=vertexInfos_pool.size(); i<Nparticles_total; i++){
+    vertexInfo_t *vi = new vertexInfo_t();
+    
+    vi->SetLimits(tmin, tmax, zmin, zmax, Nbinst, Nbinsz);
+    vertexInfos_pool.push_back(vi);
+  }
+  // Periodically delete some vertexInfo_t objects if the pool gets too large.
+  // This prevents memory-leakage-like behavor.
+  if((Nparticles_total < MAX_VERTEXINFOS) && (vertexInfos_pool.size()>MAX_VERTEXINFOS)){
+    for(unsigned int i=MAX_VERTEXINFOS; i<vertexInfos_pool.size(); i++)delete vertexInfos_pool[i];
+    vertexInfos_pool.resize(MAX_VERTEXINFOS);
+  }
+  
+  // Make list of vertices
+  MakeVertices(tracks_by_candidate);
+
   // Creat a vector to keep track of the BCAL showers that have been matched 
-  // to tracks
-  vector<int>bcal_matches(bcal_showers.size());
+  // to tracks and keep track of how many are left
+  unsigned int remaining_bcal_showers=bcal_showers.size();
+  vector<int>bcal_matches(remaining_bcal_showers);
+
+  // Creat a vector to keep track of the FCAL showers that have been matched 
+  // to tracks and keep track of how many are left
+  unsigned int remaining_fcal_showers=fcal_showers.size();
+  vector<int>fcal_matches(remaining_fcal_showers);
 
   // Find the time at the vertex by locking to the RF clock and match the
   // tracks with the outer detectors.  If a match is found, compute a FOM for
@@ -162,6 +186,17 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 				       bcal_showers,tproj,
 				       bcal_id)
 	    ==NOERROR){
+	  // Store this shower in the showers vector
+	  if (bcal_matches[bcal_id]!=1){
+	    DVertex::shower_info_t shower;
+	    shower.fcal=NULL;
+	    shower.bcal=bcal_showers[bcal_id];
+	    shower.matched_track=tracks[k].track;
+	    _data[i]->showers.push_back(shower);
+
+	    // Decrement the shower counter
+	    remaining_bcal_showers--;
+	  }
 	  bcal_matches[bcal_id]=1;
 	  matched_outer_detector=true;
 	  tracks[k].tprojected=tproj;
@@ -170,6 +205,8 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	  double bcal_sigma=0.00255*pow(p,-2.52)+0.220;
 	  double bcal_chi2=tdiff*tdiff/(bcal_sigma*bcal_sigma);
 	  tracks[k].FOM=TMath::Prob(tracks[k].track->chi2_dedx+bcal_chi2,2);
+
+
 	}
 	else if (pid_algorithm->MatchToTOF(tracks[k].track->rt,
 					   DTrackFitter::kTimeBased,
@@ -189,6 +226,19 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 				       fcal_id,dmin)
 	    ==NOERROR){
 	  if (matched_outer_detector==false){
+	    // Store this shower in the showers vector
+	    if (fcal_matches[fcal_id]!=1){
+	      DVertex::shower_info_t shower;
+	      shower.fcal=fcal_showers[fcal_id];
+	      shower.bcal=NULL;
+	      shower.matched_track=tracks[k].track;
+	      _data[i]->showers.push_back(shower);
+
+	      // Decrement the shower counter
+	      remaining_fcal_showers--;
+	    }
+	    fcal_matches[fcal_id]=1;
+
 	    matched_outer_detector=true;
 	    tracks[k].tprojected=tproj-2.218; // correction determine from fit to simulated data
 	    tdiff=tproj-2.218-_data[i]->x.T();
@@ -221,6 +271,100 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
     }// loop over tracks 
   }
 
+  // Vector to hold list of vertexInfo_t objects for all unmatched showers
+  vector<vertexInfo_t*> vertices;  
+  if (remaining_bcal_showers>0){
+    for (unsigned int i=0;i<bcal_showers.size();i++){
+      if (bcal_matches[i]==0){
+	vertexInfo_t *vi = vertexInfos_pool[vertices.size()];
+	FillVertexInfoBCAL(vi,bcal_showers[i]);
+	vertices.push_back(vi);	
+      }
+    }
+  }
+  if (remaining_fcal_showers>0){
+    for (unsigned int i=0;i<fcal_showers.size();i++){
+      if (fcal_matches[i]==0){
+	vertexInfo_t *vi = vertexInfos_pool[vertices.size()];
+	FillVertexInfoFCAL(vi,fcal_showers[i]);
+	vertices.push_back(vi);	
+      }
+    }
+  }
+
+  // Now try to associate BCAL and FCAL showers with the vertex
+  for (unsigned int i=0;i<_data.size();i++){
+    // Correct for flight time to this particular vertex
+    for (unsigned int k=0;k<vertices.size();k++){
+      vertexInfo_t *vi=vertices[k];
+      if (vi->bcal!=NULL && vi->is_matched_to_vertex==false){
+	double tflight=(DVector3(vi->bcal->x,vi->bcal->y,vi->bcal->z)
+			-_data[i]->x.Vect()).Mag()/SPEED_OF_LIGHT;
+	vi->t-=tflight;
+	vi->Fill(vi->t,vi->sigmat,vi->z,vi->sigmaz);
+      }
+      if (vi->fcal!=NULL && vi->is_matched_to_vertex==false){
+	double tflight=(vi->fcal->getCentroid()-_data[i]->x.Vect()).Mag()
+	  /SPEED_OF_LIGHT;
+	vi->t-=tflight;
+	vi->Fill(vi->t,vi->sigmat,vi->z,vi->sigmaz);
+      }
+    }
+    // Group photons together by time
+    vector< vector<vertexInfo_t *> > groups;
+    AssignParticlesToGroups(vertices,groups);
+
+    // Try to associate a group of photons with this vertex
+    double t0=0.;
+    double sum_invar=0, invar=0;
+    for (unsigned int k=0;k<groups.size();k++){
+      vector<vertexInfo_t *> &group = groups[k];
+      for (unsigned int m=0;m<group.size();m++){
+	invar=1./(group[m]->sigmat*group[m]->sigmat);
+	sum_invar+=invar;
+	t0+=group[m]->t*invar;
+      }  
+      t0*=1./sum_invar;
+      double t_sigma_photons=1./sqrt(sum_invar);
+      double t_sigma_tot=sqrt(t_sigma_photons*t_sigma_photons
+			      +_data[i]->t_sigma*_data[i]->t_sigma);
+      if (fabs(t0-_data[i]->x.T())/t_sigma_tot<3.0){
+	for (unsigned int m=0;m<group.size();m++){
+	  DVertex::shower_info_t shower;
+	  shower.fcal=group[m]->fcal;
+	  shower.bcal=group[m]->bcal;
+	  shower.matched_track=NULL;
+	  _data[i]->showers.push_back(shower);
+
+	  // Flag that we have associated the showers in this group with a 
+	  // vertex
+	  group[m]->is_matched_to_vertex=true;
+	  // Decrement the bcal and fcal shower counters
+	  if (shower.fcal!=NULL) remaining_fcal_showers--;
+	  if (shower.bcal!=NULL) remaining_bcal_showers--;
+	}
+      }
+    }
+
+    // Clear the groups vector so that new groups can be formed
+    groups.clear();
+    // Allow those photons that have not been matched to a vertex already 
+    // to form a new group with a different vertex
+    for (unsigned int k=0;k<vertices.size();k++){
+      vertexInfo_t *vi=vertices[k];
+      if (vi->is_matched_to_vertex==false) vi->is_in_group=false;
+    }
+  }
+
+  // Deal with bcal and fcal showers that have not already been matched to 
+  // tracks or associated with a vertex
+  if (remaining_bcal_showers>0){
+  }
+  if (remaining_fcal_showers>0){
+
+  }
+
+
   return NOERROR;
 }
 
@@ -241,119 +385,24 @@ jerror_t DVertex_factory::fini(void)
 }
 
 
+
+
 // Form vertices from grouping charged particle tracks together according to
 // proximity in time and position of the closest approach to the beam line
-jerror_t DVertex_factory::MakeVertices(vector<vector<const DTrackTimeBased*> >&tracks_by_candidate){
-  // To minimize memory usage and time in allocation, we maintain a
-  // pool of vertexInfo_t objects. Make sure the pool is large enough to hold
-  // all of the charged particles we have this event. 
-  unsigned int Nparticles_total =tracks_by_candidate.size();
-  for(unsigned int i=vertexInfos_pool.size(); i<Nparticles_total; i++){
-    vertexInfo_t *pi = new vertexInfo_t();
-    
-    pi->SetLimits(tmin, tmax, zmin, zmax, Nbinst, Nbinsz);
-    vertexInfos_pool.push_back(pi);
-  }
-  // Periodically delete some vertexInfo_t objects if the pool gets too large.
-  // This prevents memory-leakage-like behavor.
-  if((Nparticles_total < MAX_VERTEXINFOS) && (vertexInfos_pool.size()>MAX_VERTEXINFOS)){
-    for(unsigned int i=MAX_VERTEXINFOS; i<vertexInfos_pool.size(); i++)delete vertexInfos_pool[i];
-    vertexInfos_pool.resize(MAX_VERTEXINFOS);
-  }
-  
+jerror_t DVertex_factory::MakeVertices(vector<vector<const DTrackTimeBased*> >&tracks_by_candidate){  
   // Vector to hold list of vertexInfo_t objects for all charged tracks
   vector<vertexInfo_t*> vertices;
 
   // Assign and fill vertexInfo_t objects for each charged track
   for(unsigned int i=0; i<tracks_by_candidate.size(); i++){
-    vertexInfo_t *pi = vertexInfos_pool[vertices.size()];
+    vertexInfo_t *vi = vertexInfos_pool[vertices.size()];
     // Use the fit result with the highest figure of merit
-    FillVertexInfoChargedTrack(pi, &tracks_by_candidate[i]);
-    vertices.push_back(pi);
+    FillVertexInfoChargedTrack(vi, &tracks_by_candidate[i]);
+    vertices.push_back(vi);
   }
-
-  // Each charged particle has a histogram of t vs.z
-  // values filled using approriate uncertainties (no covariance). We
-  // can now use this list to identify resonances in the t/z plane which
-  // indicate a vertex location. Particles within 3sigma in both t and
-  // z of the resonance will be grouped together as belonging to the 
-  // same vertex. We loop until all particles have been assigned
-  // to a group, even if that means assigning particles to their own
-  // "group of one".
-  
-  // Loop until all particles have been assigned to a group.
+  // Group tracks together
   vector< vector<vertexInfo_t *> > groups;
-  while(!AllInGroups(vertices)){
-    // Make a list of all particles that have not been assigned
-    // to a group
-    vector<const DHoughFind*> unassigned;
-    for(unsigned int i=0; i<vertices.size(); i++){
-      if(!vertices[i]->is_in_group)unassigned.push_back(vertices[i]);
-    }
-    // Find the maximum t,z coordinate by adding all unassigned
-    // particle's histos together
-    DVector2 maxloc = DHoughFind::GetMaxBinLocation(unassigned);
-    
-    if(debug_level>0)_DBG_<<"Location of maximum: t="<<maxloc.X()<<"  z="<<maxloc.Y()<<endl;		
-
-    // Loop over all unassigned particles, assigning any within
-    // 3 sigma in both t and z to the new group. We loop over
-    // the vertices vector just because it saves a dynamic_cast
-    // if we were to use the unassigned vector.
-    vector<vertexInfo_t *> new_group;
-    for(unsigned int i=0; i<vertices.size(); i++){
-      vertexInfo_t *pi = vertices[i];
-      if(pi->is_in_group)continue;
-			
-      double delta_t = fabs(maxloc.X() - pi->t);
-      if(delta_t/pi->sigmat > 3.0)continue;
-      
-      double delta_z = fabs(maxloc.Y() - pi->z);
-      if(delta_z/pi->sigmaz > 3.0)continue;
-      
-      // Assign this particle to the group
-      pi->is_in_group=true;
-      new_group.push_back(pi);
-    }
-    
-    // At this point it's possible (but hopefully unlikely) that the
-    // maximum in the t,z sum histo was generated at an in-between place
-    // with no single particle nearby. In that case, the new_group is
-    // empty, even though there are unassigned particles. The best we
-    // can do here is to assign one particle to the new_group and hope
-    // that the next iteration groups the remaining ones appropriately.
-    // To try and minimize the chances of placing a particle from the
-    // L1 trigger event in its own group, we choose the particle with a time
-    // the furthest away from t=0.
-    if(new_group.size()==0){
-      vertexInfo_t *pi_with_max_t = NULL;
-      double delta_t_max=0.0;
-      for(unsigned int i=0; i<vertices.size(); i++){
-	vertexInfo_t *pi = vertices[i];
-	if(pi->is_in_group)continue;
-			
-	double delta_t = fabs(maxloc.X() - pi->t);
-	if(delta_t>delta_t_max || pi_with_max_t==NULL){
-	  delta_t_max = delta_t;
-	  pi_with_max_t = pi;
-	}
-      }
-			
-      if(pi_with_max_t==NULL){
-	_DBG_<<"pi_with_max_t==NULL. This should never happen! Complain to davidl@jlab.org"<<endl;
-	_DBG_<<"event number: "<<eventnumber<<endl;
-	break;
-			}
-			
-      new_group.push_back(pi_with_max_t);
-    }
-		
-    // Set the is_in_group flags for all of the members of the new group
-    for(unsigned int i=0; i<new_group.size(); i++)new_group[i]->is_in_group = true;
-    
-    // Add the new group to the list of groups
-    groups.push_back(new_group);  
-  }
+  AssignParticlesToGroups(vertices,groups);
 
   // OK, we've now grouped the particles together into groups. Create a new
   // DVertex for each group	
@@ -380,6 +429,7 @@ jerror_t DVertex_factory::MakeVertices(vector<vector<const DTrackTimeBased*> >&t
     temp*=1./double(group.size());
     my_vertex->x.SetVect(temp);
     my_vertex->x.SetT(t0);
+    my_vertex->t_sigma=0.; // <------ this needs to be fixed
 
     // Add list of tracks used to create this vertex
     for(unsigned int j=0; j<group.size(); j++){
@@ -400,21 +450,53 @@ jerror_t DVertex_factory::MakeVertices(vector<vector<const DTrackTimeBased*> >&t
   return NOERROR;
 }
 
+//------------------
+// FillVertexInfoBCAL
+//------------------
+#define EPS 1.e-8
+void DVertex_factory::FillVertexInfoBCAL(DVertex_factory::vertexInfo_t *vi,
+					 const DBCALShower *bcal){
+   vi->Reset();
+   vi->bcal=bcal;
+   vi->fcal=NULL;
+   vi->z=0;  //will be filled in later
+   vi->sigmaz=30.0/sqrt(12); // in cm. Use length of target for z-resolution of photons
+   vi->t=bcal->t; // will be propagated to vertex later
+   // For some reason sometimes both t_rms_a and t_rms_b are zero...
+   if (bcal->t_rms_a*bcal->t_rms_b<EPS) vi->sigmat=0.5; // guess!
+   else vi->sigmat=0.5*sqrt(bcal->t_rms_a*bcal->t_rms_a
+			    +bcal->t_rms_b*bcal->t_rms_b);
+   
+}
+
+//------------------
+// FillVertexInfoFCAL
+//------------------
+void DVertex_factory::FillVertexInfoFCAL(DVertex_factory::vertexInfo_t *vi,
+					 const DFCALCluster *fcal){
+   vi->Reset();
+   vi->fcal=fcal;
+   vi->bcal=NULL;
+   vi->z=0;  //will be filled in later
+   vi->sigmaz=30.0/sqrt(12); // in cm. Use length of target for z-resolution of photons
+   vi->t=fcal->getTime(); // will be propagated to vertex later
+   vi->sigmat=0.5;		   
+}
 
 //------------------
 // FillVertexInfoChargedTrack
 //------------------
-void DVertex_factory::FillVertexInfoChargedTrack(DVertex_factory::vertexInfo_t *pi, vector<const DTrackTimeBased *>*hypotheses)
+void DVertex_factory::FillVertexInfoChargedTrack(DVertex_factory::vertexInfo_t *vi, vector<const DTrackTimeBased *>*hypotheses)
 {
-	pi->Reset();
-	pi->hypotheses = hypotheses;
+	vi->Reset();
+	vi->hypotheses = hypotheses;
 
-	pi->t = (*hypotheses)[0]->t0();
-	pi->sigmat = (*hypotheses)[0]->t0_err();
-	pi->z = (*hypotheses)[0]->z();
-	pi->sigmaz = 0.8/sin((*hypotheses)[0]->momentum().Theta()); // in cm.  For now, use 3mm wide angle track resolution scaled by sin(theta)
+	vi->t = (*hypotheses)[0]->t0();
+	vi->sigmat = (*hypotheses)[0]->t0_err();
+	vi->z = (*hypotheses)[0]->z();
+	vi->sigmaz = 0.8/sin((*hypotheses)[0]->momentum().Theta()); // in cm.  For now, use 3mm wide angle track resolution scaled by sin(theta)
 
-	pi->Fill(pi->t, pi->sigmat, pi->z, pi->sigmaz);
+	vi->Fill(vi->t, vi->sigmat, vi->z, vi->sigmaz);
 }
 
 //------------------
@@ -428,3 +510,92 @@ bool DVertex_factory::AllInGroups(vector<vertexInfo_t*> &vertices)
   return true;
 }
 
+// Group "particles" (either tracks or photon candidates) together by time 
+// and z position
+void DVertex_factory::AssignParticlesToGroups(vector<vertexInfo_t*> &vertices,
+					      vector< vector<vertexInfo_t *> > &groups
+					      ){
+  
+  // Each particle has a histogram of t vs.z
+  // values filled using approriate uncertainties (no covariance). We
+  // can now use this list to identify resonances in the t/z plane which
+  // indicate a vertex location. Particles within 3sigma in both t and
+  // z of the resonance will be grouped together as belonging to the 
+  // same vertex. We loop until all particles have been assigned
+  // to a group, even if that means assigning particles to their own
+  // "group of one".
+  
+  // Loop until all particles have been assigned to a group.
+  while(!AllInGroups(vertices)){
+    // Make a list of all particles that have not been assigned
+    // to a group
+    vector<const DHoughFind*> unassigned;
+    for(unsigned int i=0; i<vertices.size(); i++){
+      if(!vertices[i]->is_in_group)unassigned.push_back(vertices[i]);
+    }
+    // Find the maximum t,z coordinate by adding all unassigned
+    // particle's histos together
+    DVector2 maxloc = DHoughFind::GetMaxBinLocation(unassigned);
+    
+    if(debug_level>0)_DBG_<<"Location of maximum: t="<<maxloc.X()<<"  z="<<maxloc.Y()<<endl;		
+
+    // Loop over all unassigned particles, assigning any within
+    // 3 sigma in both t and z to the new group. We loop over
+    // the vertices vector just because it saves a dynamic_cast
+    // if we were to use the unassigned vector.
+    vector<vertexInfo_t *> new_group;
+    for(unsigned int i=0; i<vertices.size(); i++){
+      vertexInfo_t *vi = vertices[i];
+      if(vi->is_in_group)continue;
+      if (vi->is_matched_to_vertex) continue;
+			
+      double delta_t = fabs(maxloc.X() - vi->t);
+      if(delta_t/vi->sigmat > 3.0)continue;
+      
+      double delta_z = fabs(maxloc.Y() - vi->z);
+      if(delta_z/vi->sigmaz > 3.0)continue;
+      
+      // Assign this particle to the group
+      vi->is_in_group=true;
+      new_group.push_back(vi);
+    }
+    
+    // At this point it's possible (but hopefully unlikely) that the
+    // maximum in the t,z sum histo was generated at an in-between place
+    // with no single particle nearby. In that case, the new_group is
+    // empty, even though there are unassigned particles. The best we
+    // can do here is to assign one particle to the new_group and hope
+    // that the next iteration groups the remaining ones appropriately.
+    // To try and minimize the chances of placing a particle from the
+    // L1 trigger event in its own group, we choose the particle with a time
+    // the furthest away from t=0.
+    if(new_group.size()==0){
+      vertexInfo_t *vi_with_max_t = NULL;
+      double delta_t_max=0.0;
+      for(unsigned int i=0; i<vertices.size(); i++){
+	vertexInfo_t *vi = vertices[i];
+	if(vi->is_in_group)continue;
+			
+	double delta_t = fabs(maxloc.X() - vi->t);
+	if(delta_t>delta_t_max || vi_with_max_t==NULL){
+	  delta_t_max = delta_t;
+	  vi_with_max_t = vi;
+	}
+      }
+			
+      if(vi_with_max_t==NULL){
+	_DBG_<<"vi_with_max_t==NULL. This should never happen! Complain to davidl@jlab.org"<<endl;
+	_DBG_<<"event number: "<<eventnumber<<endl;
+	break;
+			}
+			
+      new_group.push_back(vi_with_max_t);
+    }
+		
+    // Set the is_in_group flags for all of the members of the new group
+    for(unsigned int i=0; i<new_group.size(); i++)new_group[i]->is_in_group = true;
+    
+    // Add the new group to the list of groups
+    groups.push_back(new_group);  
+  }
+}
