@@ -14,7 +14,7 @@ if ( ! $?LD_LIBRARY_PATH ) then
 endif
  
 # HALLD
-setenv HALLD_HOME /group/halld/Software/builds/sim-recon/sim-recon-2010-02-02
+setenv HALLD_HOME /group/halld/Software/builds/sim-recon/sim-recon-2011-02-02
 setenv HDDS_HOME /group/halld/Software/builds/hdds/hdds-1.1
 setenv BMS_OSNAME Linux_RHEL5-i686-gcc4.1.2
 setenv PATH ${HALLD_HOME}/bin/${BMS_OSNAME}:$PATH
