@@ -30,7 +30,9 @@ class DVertex_factory:public jana::JFactory<DVertex>{
     // Only one of the next three will be non-NULL
     vector<const DTrackTimeBased *>*hypotheses;
     const DBCALShower *bcal;
+    unsigned int bcal_index;
     const DFCALCluster *fcal;
+    unsigned int fcal_index;
     double t;
     double sigmat;
     double z;
@@ -49,13 +51,16 @@ class DVertex_factory:public jana::JFactory<DVertex>{
   void FillVertexInfoChargedTrack(DVertex_factory::vertexInfo_t *pi, 
 				  vector<const DTrackTimeBased *>*hypotheses);
   void FillVertexInfoBCAL(DVertex_factory::vertexInfo_t *vi,
-			  const DBCALShower *bcal);
+			  const DBCALShower *bcal, unsigned int index);
   void FillVertexInfoFCAL(DVertex_factory::vertexInfo_t *vi,
-			  const DFCALCluster *fcal);
+			  const DFCALCluster *fcal,unsigned int index);
   bool AllInGroups(vector<vertexInfo_t*> &vertices);
   void AssignParticlesToGroups(vector<vertexInfo_t*> &vertices,
 			       vector< vector<vertexInfo_t *> > &groups);
  private:
+  vector<vector<DVertex::shower_info_t> >orphan_showers;
+
+
   jerror_t init(void);						///< Called once at program start.
   jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
   jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.

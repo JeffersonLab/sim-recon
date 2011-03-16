@@ -106,6 +106,9 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 {
   this->eventnumber=eventnumber;
 
+  // clear the list of orphan showers
+  orphan_showers.clear();
+
   // Get list of all charged tracks
   vector<const DTrackTimeBased*> tracks;
   loop->Get(tracks);
@@ -188,12 +191,8 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	    ==NOERROR){
 	  // Store this shower in the showers vector
 	  if (bcal_matches[bcal_id]!=1){
-	    DVertex::shower_info_t shower;
-	    shower.fcal=NULL;
-	    shower.bcal=bcal_showers[bcal_id];
-	    shower.matched_track=tracks[k].track;
-	    _data[i]->showers.push_back(shower);
-
+	    _data[i]->showers.push_back(DVertex::shower_info_t(bcal_showers[bcal_id],
+							       tracks[k].track));
 	    // Decrement the shower counter
 	    remaining_bcal_showers--;
 	  }
@@ -228,12 +227,8 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	  if (matched_outer_detector==false){
 	    // Store this shower in the showers vector
 	    if (fcal_matches[fcal_id]!=1){
-	      DVertex::shower_info_t shower;
-	      shower.fcal=fcal_showers[fcal_id];
-	      shower.bcal=NULL;
-	      shower.matched_track=tracks[k].track;
-	      _data[i]->showers.push_back(shower);
-
+	      _data[i]->showers.push_back(DVertex::shower_info_t(fcal_showers[fcal_id],
+								 tracks[k].track));
 	      // Decrement the shower counter
 	      remaining_fcal_showers--;
 	    }
@@ -277,7 +272,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
     for (unsigned int i=0;i<bcal_showers.size();i++){
       if (bcal_matches[i]==0){
 	vertexInfo_t *vi = vertexInfos_pool[vertices.size()];
-	FillVertexInfoBCAL(vi,bcal_showers[i]);
+	FillVertexInfoBCAL(vi,bcal_showers[i],i);
 	vertices.push_back(vi);	
       }
     }
@@ -286,7 +281,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
     for (unsigned int i=0;i<fcal_showers.size();i++){
       if (fcal_matches[i]==0){
 	vertexInfo_t *vi = vertexInfos_pool[vertices.size()];
-	FillVertexInfoFCAL(vi,fcal_showers[i]);
+	FillVertexInfoFCAL(vi,fcal_showers[i],i);
 	vertices.push_back(vi);	
       }
     }
@@ -330,18 +325,20 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 			      +_data[i]->t_sigma*_data[i]->t_sigma);
       if (fabs(t0-_data[i]->x.T())/t_sigma_tot<3.0){
 	for (unsigned int m=0;m<group.size();m++){
-	  DVertex::shower_info_t shower;
-	  shower.fcal=group[m]->fcal;
-	  shower.bcal=group[m]->bcal;
-	  shower.matched_track=NULL;
-	  _data[i]->showers.push_back(shower);
+	  _data[i]->showers.push_back(DVertex::shower_info_t(group[m]->bcal,group[m]->fcal));
 
 	  // Flag that we have associated the showers in this group with a 
 	  // vertex
 	  group[m]->is_matched_to_vertex=true;
 	  // Decrement the bcal and fcal shower counters
-	  if (shower.fcal!=NULL) remaining_fcal_showers--;
-	  if (shower.bcal!=NULL) remaining_bcal_showers--;
+	  if (group[m]->fcal!=NULL){
+	    fcal_matches[group[m]->fcal_index]=1;
+	    remaining_fcal_showers--;
+	  }
+	  if (group[m]->bcal!=NULL){
+	    bcal_matches[group[m]->bcal_index]=1;
+	    remaining_bcal_showers--;
+	  }
 	}
       }
     }
@@ -357,13 +354,52 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
   }
 
   // Deal with bcal and fcal showers that have not already been matched to 
-  // tracks or associated with a vertex
-  if (remaining_bcal_showers>0){
+  // tracks or associated with a vertex.  Since we have no vertex information 
+  // for these showers, assume they came from the center of the target.  These 
+  // photons are put in a separate container called "orphaned_showers".
+  if (remaining_bcal_showers>0 || remaining_fcal_showers>0){
+    DVector3 target_center(0.,0.,65.);
+    vertices.clear();
+    if (remaining_bcal_showers>0){
+      for (unsigned int i=0;i<bcal_showers.size();i++){
+	if (bcal_matches[i]!=1){
+	  vertexInfo_t *vi = vertexInfos_pool[vertices.size()];
+	  FillVertexInfoBCAL(vi,bcal_showers[i],i);
+	  double tflight=(DVector3(vi->bcal->x,vi->bcal->y,vi->bcal->z)
+			  -target_center).Mag()/SPEED_OF_LIGHT;
+	  vi->t-=tflight;
+	  vi->Fill(vi->t,vi->sigmat,vi->z,vi->sigmaz);
+	  vertices.push_back(vi);	
+	}
+      }
+      
+    }
+    if (remaining_fcal_showers>0){
+      for (unsigned int i=0;i<fcal_showers.size();i++){
+	if (fcal_matches[i]!=1){
+	  vertexInfo_t *vi = vertexInfos_pool[vertices.size()];
+	  FillVertexInfoFCAL(vi,fcal_showers[i],i);
+	  double tflight=(vi->fcal->getCentroid()-target_center).Mag()
+	  /SPEED_OF_LIGHT;
+	  vi->t-=tflight;
+	  vi->Fill(vi->t,vi->sigmat,vi->z,vi->sigmaz);
+	  vertices.push_back(vi);		  
+	}
+      }
+    }
+    // group the photons together
+    vector< vector<vertexInfo_t *> > groups;
+    AssignParticlesToGroups(vertices,groups);
+    for (unsigned int k=0;k<groups.size();k++){
+      vector<DVertex::shower_info_t >shower_group;
+      vector<vertexInfo_t *> &group = groups[k];
+      for (unsigned int m=0;m<group.size();m++){
+	shower_group.push_back(DVertex::shower_info_t(group[m]->bcal,group[m]->fcal));
+      }
+      orphan_showers.push_back(shower_group);
+      shower_group.clear();
+    }
   }
-  if (remaining_fcal_showers>0){
-
-  }
-
 
   return NOERROR;
 }
@@ -455,9 +491,12 @@ jerror_t DVertex_factory::MakeVertices(vector<vector<const DTrackTimeBased*> >&t
 //------------------
 #define EPS 1.e-8
 void DVertex_factory::FillVertexInfoBCAL(DVertex_factory::vertexInfo_t *vi,
-					 const DBCALShower *bcal){
+					 const DBCALShower *bcal,
+					 unsigned int index){
    vi->Reset();
    vi->bcal=bcal;
+   vi->bcal_index=index;
+   vi->fcal_index=0;
    vi->fcal=NULL;
    vi->z=0;  //will be filled in later
    vi->sigmaz=30.0/sqrt(12); // in cm. Use length of target for z-resolution of photons
@@ -473,9 +512,12 @@ void DVertex_factory::FillVertexInfoBCAL(DVertex_factory::vertexInfo_t *vi,
 // FillVertexInfoFCAL
 //------------------
 void DVertex_factory::FillVertexInfoFCAL(DVertex_factory::vertexInfo_t *vi,
-					 const DFCALCluster *fcal){
+					 const DFCALCluster *fcal,
+					 unsigned int index){
    vi->Reset();
    vi->fcal=fcal;
+   vi->fcal_index=index;
+   vi->bcal_index=0;
    vi->bcal=NULL;
    vi->z=0;  //will be filled in later
    vi->sigmaz=30.0/sqrt(12); // in cm. Use length of target for z-resolution of photons

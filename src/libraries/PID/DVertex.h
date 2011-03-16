@@ -32,11 +32,27 @@ class DVertex:public jana::JObject{
 
   vector<vector<track_info_t> >hypotheses;
 
-  typedef struct{
+  class shower_info_t:public DKinematicData{
+  public:
+    shower_info_t(const DBCALShower *bcal,const DFCALCluster *fcal){
+      this->bcal=bcal;
+      this->fcal=fcal;
+      this->matched_track=NULL;
+    }
+    shower_info_t(const DBCALShower *bcal,const DTrackTimeBased *track){
+      this->bcal=bcal;
+      this->matched_track=track;
+      this->fcal=NULL;
+    }
+    shower_info_t(const DFCALCluster *fcal,const DTrackTimeBased *track){
+      this->fcal=fcal;
+      this->matched_track=track;
+      this->bcal=NULL;      
+    }
     const DBCALShower *bcal;
     const DFCALCluster *fcal;
     const DTrackTimeBased *matched_track;
-  }shower_info_t;
+  };
   vector<shower_info_t>showers;
 
   // Objects used to calculate this added as Associated Objects
