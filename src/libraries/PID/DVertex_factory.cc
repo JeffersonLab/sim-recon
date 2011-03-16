@@ -80,8 +80,8 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
   zmin = 0.0;
   zmax = 100.0;
   
-  DEBUG_HISTS=true;
-  //DEBUG_HISTS=false;
+  //DEBUG_HISTS=true;
+  DEBUG_HISTS=false;
   if (DEBUG_HISTS){
     dapp->Lock();
     
