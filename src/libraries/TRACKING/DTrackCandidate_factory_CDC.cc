@@ -19,10 +19,20 @@ using namespace std;
 
 #include "DTrackCandidate_factory_CDC.h"
 
-bool SortIntersections(const DVector3 &a,const DVector3 &b){
-  double Ra=a.Perp();
-  double Rb=b.Perp();
-  if (Ra<Rb) return true;
+class DVector3_with_perp:public DVector3
+{
+	public:
+		DVector3_with_perp():DVector3(){CalcPerp();}
+		DVector3_with_perp(double x, double y, double z):DVector3(x,y,z){CalcPerp();}
+		double CalcPerp(void){
+			perp = Perp();
+			return perp;
+		}
+		double perp;
+};
+
+bool SortIntersections(const DVector3_with_perp &a,const DVector3_with_perp &b){
+  if (a.perp<b.perp) return true;
   return false;
 }
 
@@ -1523,8 +1533,8 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
   if (seed.fit.normal.Mag()==0.) return VALUE_OUT_OF_RANGE;
   // Vector of intersections between the circles of the measurements and the plane intersecting the Riemann surface
-  vector<DVector3>intersections;
-  DVector3 beam(0,0,65.);
+  vector<DVector3_with_perp>intersections;
+  DVector3_with_perp beam(0,0,65.);
   intersections.push_back(beam);
   
   // CDC stereo hits
@@ -1532,7 +1542,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     DCDCTrkHit *trkhit=&seed.stereo_hits[m];
     double R2=trkhit->x_stereo*trkhit->x_stereo+trkhit->y_stereo*trkhit->y_stereo;
 
-    DVector3 intersection;
+    DVector3_with_perp intersection;
     DVector3 N=seed.fit.normal;
     //double c0=seed.fit.c_origin;
     double A=seed.fit.c_origin+R2*N.Z();
@@ -1568,7 +1578,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     const DFDCPseudo *trkhit=seed.fdchits[m];
     double R2=trkhit->x*trkhit->x+trkhit->y*trkhit->y;
 
-    DVector3 intersection;
+    DVector3_with_perp intersection;
     DVector3 N=seed.fit.normal;
     //double c0=seed.fit.c_origin;
     double A=seed.fit.c_origin+R2*N.Z();
@@ -1598,6 +1608,11 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
   }
   
+  // The SortIntersections method requires the perp field to be valid
+  // for all objects. Go through and fill in those fields now.
+  for(unsigned int i=0; i<intersections.size(); i++)intersections[i].CalcPerp();
+  
+  // Now, sort the entries
   sort(intersections.begin(),intersections.end(),SortIntersections);
 
   // Compute the arc lengths between (0,0) and (xi,yi)
