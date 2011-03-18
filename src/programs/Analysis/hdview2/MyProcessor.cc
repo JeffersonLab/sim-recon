@@ -336,7 +336,8 @@ void MyProcessor::FillGraphics(void)
 			const DFDCWire *wire = fdcpseudos[i]->wire;
 			
 			// Pseudo point
-			TVector3 pos(fdcpseudos[i]->x, fdcpseudos[i]->y, wire->origin.Z());
+			TVector3 pos(fdcpseudos[i]->xy.X(), 
+				     fdcpseudos[i]->xy.Y(), wire->origin.Z());
 			gsetp.points.push_back(pos);
 		}
 		graphics.push_back(gsetp);
