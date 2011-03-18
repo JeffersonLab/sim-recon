@@ -80,6 +80,19 @@ class DLorentzVector{
     double mm = Mag2();
     return mm < 0.0 ? -sqrt(-mm) : sqrt(mm);
   }
+  
+  // Addition and subtraction
+  DLorentzVector &operator+=(const DLorentzVector &v1){
+    mP+=v1.Vect();
+    mE+=v1.E();
+    return *this;
+  } 
+  DLorentzVector &operator-=(const DLorentzVector &v1){
+    mP-=v1.Vect();
+    mE-=v1.E();
+    return *this;
+  }
+
 
   void Print() const{
     cout << "DLorentzVector (x,y,z,t)=(" << X() << "," << Y() << "," << Z()
