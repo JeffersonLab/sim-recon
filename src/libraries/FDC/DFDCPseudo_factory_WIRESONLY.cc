@@ -10,7 +10,7 @@ using namespace std;
 
 #include "DVector2.h"
 #include "FDC/DFDCIntersection.h"
-
+#include "DMatrix.h"
 #include "DFDCPseudo_factory_WIRESONLY.h"
 
 //------------------
@@ -51,8 +51,7 @@ void DFDCPseudo_factory_WIRESONLY::MakePseudo(const DFDCHit *hit, const DFDCWire
 	pseudo->wire = wire;
 	pseudo->time = hit->t;
 	pseudo->status = 1;  // 1 external hit used to find intersection
-	pseudo->x = pos.X();
-	pseudo->y = pos.Y();
+	pseudo->xy.Set(pos.X(),pos.Y());
 	
 	// Intialize covariance matrix in w/s coordinate system
 	DMatrix cov(2,2);

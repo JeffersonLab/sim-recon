@@ -98,52 +98,41 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 // Also returns predicted positions along the helical path.
 //
 jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
-					     DMatrix CR,DMatrix &XYZ){
+					     DMatrix &CR,vector<xyz_t>&XYZ){
   unsigned int n=points.size()+1;
   vector<int>bad(n);  // Keep track of "bad" intersection points
   // Fill matrix of intersection points
   for (unsigned int m=0;m<n-1;m++){
-    double r2=points[m]->x*points[m]->x+points[m]->y*points[m]->y;
-    double x_int0,temp,y_int0;
+    double r2=points[m]->xy.Mod2();
     double denom= N[0]*N[0]+N[1]*N[1];
     double numer=dist_to_origin+r2*N[2];
     double ratio=numer/denom;
-   
-    x_int0=-N[0]*ratio;
-    y_int0=-N[1]*ratio;
-    temp=denom*r2-numer*numer;
+
+    DVector2 xy_int0(-N[0]*ratio,-N[1]*ratio);
+    double temp=denom*r2-numer*numer;
     if (temp<0){    
       bad[m]=1;
-      XYZ(m,0)=x_int0;
-      XYZ(m,1)=y_int0;
+      XYZ[m].xy=xy_int0;
       continue; 
     }
     temp=sqrt(temp)/denom;
     
     // Choose sign of square root based on proximity to actual measurements
-    double deltax=N[1]*temp;
-    double deltay=-N[0]*temp;
-    double x1=x_int0+deltax;
-    double y1=y_int0+deltay;
-    double x2=x_int0-deltax;
-    double y2=y_int0-deltay;
-    double diffx1=x1-points[m]->x;
-    double diffx2=x2-points[m]->x;
-    double diffy1=y1-points[m]->y;
-    double diffy2=y2-points[m]->y;		       
-    
-    if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
-      XYZ(m,0)=x2;
-      XYZ(m,1)=y2;
+    DVector2 delta(N[1]*temp,-N[0]*temp);
+    DVector2 xy1=xy_int0+delta;
+    DVector2 xy2=xy_int0-delta;
+    double diff1=(xy1-points[m]->xy).Mod2();
+    double diff2=(xy2-points[m]->xy).Mod2();
+    if (diff1>diff2){
+      XYZ[m].xy=xy2;
     }
     else{
-      XYZ(m,0)=x1;
-      XYZ(m,1)=y1;
+      XYZ[m].xy=xy1;
     }
   }
   // Fake target point
-  XYZ(n-1,0)=XYZ(n-1,1)=0.;
-  
+  XYZ[n-1].xy.Set(0.,0.);
+
   // All arc lengths are measured relative to some reference plane with a hit.
   // Don't use a "bad" hit for the reference...
   unsigned int start=0;
@@ -160,31 +149,30 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   double sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,sperp_old=0.,ratio,Delta;
   double z=0,zlast=0;
-  double oldx=XYZ(start,0);
-  double oldy=XYZ(start,1);
-  // printf("<<<<<<<<\n");
-  //for (unsigned int k=start;k<n-1;k++){
+  DVector2 oldxy=XYZ[start].xy;
   for (unsigned int k=start;k<n;k++){
     zlast=z;
     sperp_old=sperp;
     if (!bad[k]){
-      double diffx=XYZ(k,0)-oldx;
-      double diffy=XYZ(k,1)-oldy;
-      ratio=sqrt(diffx*diffx+diffy*diffy)/(2.*rc); 
+      DVector2 diffxy=XYZ[k].xy-oldxy;
+      ratio=diffxy.Mod()/(2.*rc);
       // Make sure the argument for the arcsin does not go out of range...
       sperp=sperp_old+(ratio>1?2.*rc*(M_PI/2.):2.*rc*asin(ratio));
-      z=XYZ(k,2);
+      //z=XYZ(k,2);
+      z=XYZ[k].z;
+
       // Assume errors in s dominated by errors in R 
       double inv_var=1./CR(k,k);
       sumv+=inv_var;
       sumy+=sperp*inv_var;
-      sumx+=XYZ(k,2)*inv_var;
-      sumxx+=XYZ(k,2)*XYZ(k,2)*inv_var;
-      sumxy+=sperp*XYZ(k,2)*inv_var;
+      sumx+=z*inv_var;
+      sumxx+=z*z*inv_var;
+      sumxy+=sperp*z*inv_var;
       
       // Save the current x and y coordinates
-      oldx=XYZ(k,0);
-      oldy=XYZ(k,1);
+      //oldx=XYZ(k,0);
+      //oldy=XYZ(k,1);
+      oldxy=XYZ[k].xy;
     }
   }
   Delta=sumv*sumxx-sumx*sumx;
@@ -193,7 +181,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
   // Error in tanl 
   var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
-  
+
   // Vertex position
   sperp-=sperp_old; 
   if (tanl<0){ 
@@ -213,9 +201,9 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
 // update the R and RPhi covariance matrices.
 //
 jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
-     double r1sq,DMatrix &XYZ,DMatrix &CRPhi,DMatrix &CR){
-  double delta_x=XYZ(ref_plane,0)-xc; 
-  double delta_y=XYZ(ref_plane,1)-yc;
+     double r1sq,vector<xyz_t>&XYZ,DMatrix &CRPhi,DMatrix &CR){
+  double delta_x=XYZ[ref_plane].xy.X()-xc; 
+  double delta_y=XYZ[ref_plane].xy.Y()-yc;
   double r1=sqrt(r1sq);
   double denom=delta_x*delta_x+delta_y*delta_y;
 
@@ -228,22 +216,21 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
 
   // Predicted positions
   Phi1=atan2(delta_y,delta_x);
-  double z1=XYZ(ref_plane,2);
-  double y1=XYZ(ref_plane,1);
-  double x1=XYZ(ref_plane,0);
+  double z1=XYZ[ref_plane].z;
+  double y1=XYZ[ref_plane].xy.X();
+  double x1=XYZ[ref_plane].xy.Y();
   double var_R1=CR(ref_plane,ref_plane);
   for (unsigned int k=0;k<n;k++){       
-    double sperp=charge*(XYZ(k,2)-z1)/tanl;
+    double sperp=charge*(XYZ[k].z-z1)/tanl;
     double sinp=sin(Phi1+sperp/rc);
     double cosp=cos(Phi1+sperp/rc);
-    XYZ(k,0)=xc+rc*cosp;
-    XYZ(k,1)=yc+rc*sinp;
+    XYZ[k].xy.Set(xc+rc*cosp,yc+rc*sinp);
  
     // Error analysis.  We ignore errors in N because there doesn't seem to 
     // be any obvious established way to estimate errors in eigenvalues for 
     // small eigenvectors.  We assume that most of the error comes from 
     // the measurement for the reference plane radius and the dip angle anyway.
-    double Phi=atan2(XYZ(k,1),XYZ(k,0));
+    double Phi=XYZ[k].xy.Phi();
     double sinPhi=sin(Phi);
     double cosPhi=cos(Phi);
     double dRPhi_dx=Phi*cosPhi-sinPhi;
@@ -281,7 +268,8 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     CR(k,k)=dR_dx1*dR_dx1*var_x1+dR_dy1*dR_dy1*var_y1
       +dR_dtanl*dR_dtanl*var_tanl;
     
-    double stemp=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1))/(4.*rc);
+    // double stemp=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1))/(4.*rc);
+    double stemp=XYZ[k].xy.Mod()/(4.*rc);
     double ctemp=1.-stemp*stemp;
     if (ctemp>0){
       S(k,k)=stemp;
@@ -299,50 +287,13 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   return NOERROR;
 }
 
-// Variance of projected multiple scattering angle for a single layer 
-double DFDCSegment_factory::GetProcessNoise(unsigned int i,DMatrix XYZ){
-  double cosl=cos(atan(tanl));
-  double sinl=sin(atan(tanl));
- 
-  // Try to prevent division-by-zero errors 
-  if (sinl<EPS) sinl=EPS;
-  if (cosl<EPS) cosl=EPS;
-
-  // Get Bfield
-  double x=XYZ(i,0);
-  double y=XYZ(i,1);
-  double z=XYZ(i,2);
-  double Bx,By,Bz,B;
-  bfield->GetField(x,y,z,Bx,By,Bz);
-  B=sqrt(Bx*Bx+By*By+Bz*Bz);
-   
-  // Momentum
-  double p=0.003*B*rc/cosl;
-  // Assume pion
-  double beta=p/sqrt(p*p+0.14*0.14);
- 
-  //Materials: copper, Kapton, Mylar, Air, Argon, CO2
-  double thickness[6]={4e-4,50e-4,13e-4,1.0,0.4,0.6};
-  double density[6]={8.96,1.42,1.39,1.2931e-3,1.782e-3,1.977e-3};
-  double X0[6]={12.86,40.56,39.95,36.66,19.55,36.2};
-  double material_sum=0.;
-  for (unsigned int j=0;j<6;j++){
-    material_sum+=thickness[j]*density[j]/X0[j];
-  }
- 
-  // Variance from multiple scattering
-  return (0.0136*0.0136/p/p/beta/beta*material_sum/sinl
-	  *(1.+0.038*log(material_sum/sinl))
-	  *(1.+0.038*log(material_sum/sinl)));
-}
-
 // Riemann Circle fit:  points on a circle in x,y project onto a plane cutting
 // the circular paraboloid surface described by (x,y,x^2+y^2).  Therefore the
 // task of fitting points in (x,y) to a circle is transormed to the taks of
 // fitting planes in (x,y, w=x^2+y^2) space
 //
 jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
-					       DMatrix CRPhi){
+					       DMatrix &CRPhi){
   unsigned int n=points.size()+1;
   DMatrix X(n,3);
   DMatrix Xavg(1,3);
@@ -362,9 +313,9 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
   // diagonal elements in W.
   // At this stage we ignore the multiple scattering.
   for (unsigned int i=0;i<n-1;i++){
-    X(i,0)=points[i]->x;
-    X(i,1)=points[i]->y;
-    X(i,2)=X(i,0)*X(i,0)+X(i,1)*X(i,1);
+    X(i,0)=points[i]->xy.X();
+    X(i,1)=points[i]->xy.Y();
+    X(i,2)=points[i]->xy.Mod2();
     OnesT(0,i)=1.;
     W(i,i)=1./CRPhi(i,i);
     W_sum+=W(i,i);
@@ -456,17 +407,18 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
 // length versus z. Uses RiemannCircleFit and RiemannLineFit.
 //
 jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
-						DMatrix &CR,DMatrix &XYZ){
+						DMatrix &CR,vector<xyz_t>&XYZ){
   double Phi;
   unsigned int num_points=points.size()+1;
   DMatrix CRPhi(num_points,num_points); 
  
   // Fill initial matrices for R and RPhi measurements
-  XYZ(num_points-1,2)=Z_TARGET;
+  XYZ[num_points-1].z=Z_TARGET;
   for (unsigned int m=0;m<points.size();m++){
-    XYZ(m,2)=points[m]->wire->origin.z();
+    XYZ[m].z=points[m]->wire->origin.z();
 
-    Phi=atan2(points[m]->y,points[m]->x);
+    //Phi=atan2(points[m]->y,points[m]->x);
+    Phi=points[m]->xy.Phi();
     double cosPhi=cos(Phi);
     double sinPhi=sin(Phi);
     double Phi_cosPhi=Phi*cosPhi;
@@ -497,8 +449,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // Guess particle charge (+/-1);
   charge=GetCharge(points.size(),XYZ,CR,CRPhi);
 
-  double r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)
-    +XYZ(ref_plane,1)*XYZ(ref_plane,1);
+  double r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
   
   // Preliminary circle fit 
@@ -512,7 +463,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // Guess particle charge (+/-1);
   charge=GetCharge(points.size(),XYZ,CR,CRPhi);
   
-  r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
+  r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
   
   // Final circle fit 
@@ -528,17 +479,16 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   
   // Final update to covariance matrices
   ref_plane=0;
-  r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
+  r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
   // Store residuals and path length for each measurement
   chisq=0.;
   for (unsigned int m=0;m<points.size();m++){
-    double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl;
+    double sperp=charge*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
     double phi_s=Phi1+sperp/rc;
-    double dx=xc+rc*cos(phi_s)-points[m]->x; // residuals
-    double dy=yc+rc*sin(phi_s)-points[m]->y;
-    chisq+=(dx*dx+dy*dy)/CR(m,m);
+    DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
+    chisq+=(XY-points[m]->xy).Mod2()/CR(m,m);
   }
   return NOERROR;
 }
@@ -588,21 +538,18 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	charge=1.;
 	
 	// Point in the current plane in the package 
-	double x=points[i]->x;
-	double y=points[i]->y; 
+	DVector2 XY=points[i]->xy;
 	
 	// Create list of nearest neighbors
 	vector<const DFDCPseudo*>neighbors;
 	neighbors.push_back(points[i]);
 	unsigned int match=0;
-	double delta,delta_min=1000.,xtemp,ytemp;
+	double delta,delta_min=1000.;
 	for (unsigned int k=0;k<x_list.size()-1;k++){
 	  delta_min=1000.;
 	  match=0;
 	  for (unsigned int m=x_list[k];m<x_list[k+1];m++){
-	    xtemp=points[m]->x;
-	    ytemp=points[m]->y;
-	    delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
+	    delta=(XY-points[m]->xy).Mod();
 	    if (delta<delta_min && delta<MATCH_RADIUS){
 	      delta_min=delta;
 	      match=m;
@@ -611,8 +558,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	  if (match!=0 
 	      && used[match]==false
 	      ){
-	    x=points[match]->x;
-	    y=points[match]->y;
+	    XY=points[match]->xy;
 	    used[match]=true;
 	    neighbors.push_back(points[match]);	  
 	  }
@@ -627,11 +573,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	// Look for hits adjacent to the ones we have in our segment candidate
 	for (unsigned int k=0;k<points.size();k++){
 	  for (unsigned int j=0;j<num_neighbors;j++){
-	    xtemp=points[k]->x;
-	    ytemp=points[k]->y;
-	    x=neighbors[j]->x;
-	    y=neighbors[j]->y;
-	    delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
+	    delta=(points[k]->xy-neighbors[j]->xy).Mod();
 	    if (delta<ADJACENT_MATCH_RADIUS && 
 		abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
 		&& neighbors[j]->wire->origin.z()==points[k]->wire->origin.z()){
@@ -645,8 +587,8 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	if (do_sort)
 	  std::sort(neighbors.begin(),neighbors.end(),DFDCSegment_package_cmp);
     
-	// Matrix of points on track 
-	DMatrix XYZ(neighbors.size()+1,3);
+	// list of points on track and the corresponding covariances
+	vector<xyz_t>XYZ(neighbors.size()+1);
 	DMatrix CR(neighbors.size()+1,neighbors.size()+1);
    	
 	// Arc lengths in helical model are referenced relative to the plane
@@ -697,25 +639,25 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 }
 
 // Linear regression to find charge
-double DFDCSegment_factory::GetCharge(unsigned int n,DMatrix XYZ, DMatrix CR, 
-				      DMatrix CRPhi){
+double DFDCSegment_factory::GetCharge(unsigned int n,vector<xyz_t>&XYZ, 
+				      DMatrix &CR, 
+				      DMatrix &CRPhi){
   double inv_var=0.; 
   double sumv=0.;
   double sumy=0.;
   double sumx=0.;
   double sumxx=0.,sumxy=0,Delta;
   double slope,r2;
-  double phi_old=atan2(XYZ(0,1),XYZ(0,0));
+  double phi_old=XYZ[0].xy.Phi();
   for (unsigned int k=0;k<n;k++){   
-    double tempz=XYZ(k,2);
-    double phi_z=atan2(XYZ(k,1),XYZ(k,0));
+    double tempz=XYZ[k].z;
+    double phi_z=XYZ[k].xy.Phi();
     // Check for problem regions near +pi and -pi
     if (fabs(phi_z-phi_old)>M_PI){  
       if (phi_old<0) phi_z-=2.*M_PI;
       else phi_z+=2.*M_PI;
     }
-    r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
-    //var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
+    r2=XYZ[k].xy.Mod2();
     inv_var=r2/(CRPhi(k,k)+phi_z*phi_z*CR(k,k));
     sumv+=inv_var;
     sumy+=phi_z*inv_var;

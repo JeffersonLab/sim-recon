@@ -16,6 +16,7 @@
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DLorentzDeflections.h"
 #include <TDecompLU.h>
+#include <DVector2.h>
 
 #include <algorithm>
 #include <map>
@@ -32,39 +33,41 @@
 /// produces space points from pseudopoints.
 /// 
 class DFDCSegment_factory : public JFactory<DFDCSegment> {
-	public:
+ public:
 		
-		///
-		/// DFDCSegment_factory::DFDCSegment_factory():
-		/// default constructor -- initializes log file
-		///
-		DFDCSegment_factory();
+  ///
+  /// DFDCSegment_factory::DFDCSegment_factory():
+  /// default constructor -- initializes log file
+  ///
+  DFDCSegment_factory();
 		
-		///
-		/// DFDCSegment_factory::~DFDCSegment_factory():
-		/// default destructor -- closes log file
-		///
-		~DFDCSegment_factory();	
+  ///
+  /// DFDCSegment_factory::~DFDCSegment_factory():
+  /// default destructor -- closes log file
+  ///
+  ~DFDCSegment_factory();
 
-		jerror_t FindSegments(vector<const DFDCPseudo*>points);
-//		jerror_t CorrectPoints(vector<DFDCPseudo*>point, DMatrix XYZ);
-		jerror_t GetHelicalTrackPosition(double z,
-						 const DFDCSegment *segment,
-						 double &xpos,
-						 double &ypos);
-		jerror_t RiemannHelicalFit(vector<const DFDCPseudo*>points,
-					   DMatrix &CR,
-					   DMatrix &XYZ);
-	        jerror_t RiemannCircleFit(vector<const DFDCPseudo*>points,
-			DMatrix CRPhi);
-		jerror_t RiemannLineFit(vector<const DFDCPseudo *>points,
-					DMatrix CR,DMatrix &XYZ);
-	        jerror_t UpdatePositionsAndCovariance(unsigned int n,
-						      double r1sq,
-			DMatrix &XYZ, DMatrix &CRPhi,DMatrix &CR);
-		double GetProcessNoise(unsigned int i, DMatrix XYZ);
-		double GetCharge(unsigned int n,
-				 DMatrix XYZ, DMatrix CR, DMatrix CRPhi);
+  typedef struct{
+    DVector2 xy;
+    double z;
+  }xyz_t;
+	
+  
+  jerror_t FindSegments(vector<const DFDCPseudo*>points);
+  //		jerror_t CorrectPoints(vector<DFDCPseudo*>point,DMatrix XYZ);
+  jerror_t GetHelicalTrackPosition(double z,const DFDCSegment *segment,
+				   double &xpos,double &ypos);
+  jerror_t RiemannHelicalFit(vector<const DFDCPseudo*>points,
+			     DMatrix &CR,vector<xyz_t>&XYZ);
+  jerror_t RiemannCircleFit(vector<const DFDCPseudo*>points,
+			    DMatrix &CRPhi);
+  jerror_t RiemannLineFit(vector<const DFDCPseudo *>points,
+			  DMatrix &CR,vector<xyz_t>&XYZ);
+  jerror_t UpdatePositionsAndCovariance(unsigned int n,double r1sq,
+					vector<xyz_t> &XYZ,DMatrix &CRPhi,
+					DMatrix &CR);
+  double GetCharge(unsigned int n,vector<xyz_t>&XYZ,DMatrix &CR, 
+		   DMatrix &CRPhi);
 
 	protected:
 		///

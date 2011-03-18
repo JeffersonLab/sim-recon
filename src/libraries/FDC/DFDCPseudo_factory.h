@@ -29,11 +29,11 @@ using namespace jana;
 #include <cmath>
 
 typedef struct {
-  float pos;
-  float q;
+  double pos;
+  double q;
   int numstrips;
-  float t; // mean time of strips in peak
-  float t_rms; // rms of strips in peak
+  double t; // mean time of strips in peak
+  double t_rms; // rms of strips in peak
   unsigned int cluster; // index for cluster from which this centroid was generated
 }centroid_t;
 
@@ -85,8 +85,8 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// DFDCPseudo_factory::CalcMeanTime()
 		/// Calculates mean and RMS time for a cluster of cathode hits
 		///
-		void CalcMeanTime(const vector<const DFDCHit*>& H, float &t, float &t_rms);
-		void CalcMeanTime(vector<const DFDCHit *>::const_iterator peak, float &t, float &t_rms);
+		void CalcMeanTime(const vector<const DFDCHit*>& H, double &t, double &t_rms);
+		void CalcMeanTime(vector<const DFDCHit *>::const_iterator peak, double &t, double &t_rms);
 		
 		///
 		/// DFDCPseudo_factory::FindCentroid()

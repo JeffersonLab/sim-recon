@@ -165,7 +165,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 {
   vector<const DFDCHit*>::iterator xIt;
   centroid_t temp;
-  float E1,E2,pos1,pos2;
+  double E1,E2,pos1,pos2;
   
   // Loop over all U and V clusters looking for peaks
   upeaks.clear();
@@ -337,9 +337,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       for (unsigned int j=0;j<vpeaks.size();j++){
 	// In the layer local coordinate system, wires are quantized 
 	// in the x-direction and y is along the wire.
-	float x_from_strips=DFDCGeometry::getXLocalStrips(upeaks[i].pos,
+	double x_from_strips=DFDCGeometry::getXLocalStrips(upeaks[i].pos,
 						 vpeaks[j].pos);
-	float y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
+	double y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
 							  vpeaks[j].pos);
 	for(xIt=x.begin();xIt!=x.end();xIt++){
 	  if ((*xIt)->element<=WIRES_PER_PLANE && (*xIt)->element>0){
@@ -347,23 +347,23 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    // There are 3 values to compare so we look at the RMS
 	    // of the 3 differences. (I'm just making this up!)
 	    // 1/2/2008 D. L.
-	    float dt1 = (*xIt)->t - upeaks[i].t;
-	    float dt2 = (*xIt)->t - vpeaks[j].t;
-	    float dt3 = upeaks[i].t - vpeaks[j].t;
-	    float trms = sqrt((dt1*dt1 + dt2*dt2 + dt3*dt3)/3.0);
+	    double dt1 = (*xIt)->t - upeaks[i].t;
+	    double dt2 = (*xIt)->t - vpeaks[j].t;
+	    double dt3 = upeaks[i].t - vpeaks[j].t;
+	    double trms = sqrt((dt1*dt1 + dt2*dt2 + dt3*dt3)/3.0);
 	    if(trms>20.0)continue;	
 	    
 	   
-	    float x_from_wire=DFDCGeometry::getWireR(*xIt);
+	    double x_from_wire=DFDCGeometry::getWireR(*xIt);
 	    // Test radial value for checking whether or not the hit is within
 	    // the fiducial region of the detector
-	    float rtest=sqrt(x_from_wire*x_from_wire
+	    double rtest=sqrt(x_from_wire*x_from_wire
 			     +y_from_strips*y_from_strips);
 	    double delta_x=x_from_wire-x_from_strips;
 	    if (fabs(delta_x)<WIRE_SPACING/2. && rtest<ROUT_FIDUCIAL){
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
-	      float xres=WIRE_SPACING/2./sqrt(12.);
-	      float cosangle,sinangle;	   
+	      double xres=WIRE_SPACING/2./sqrt(12.);
+	      double cosangle,sinangle;	   
 	      
 	      DFDCPseudo* newPseu = new DFDCPseudo;
 	      newPseu->u = upeaks[i].pos;
@@ -375,6 +375,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->wire   = fdcwires[layer-1][(*xIt)->element-1];
 	      newPseu->time   = (*xIt)->t;
 	      newPseu->status = status;
+	      newPseu->itrack = (*xIt)->itrack;
 
 	      newPseu->AddAssociatedObject(v[vpeaks[j].cluster]);
 	      newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
@@ -393,8 +394,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      sinangle=newPseu->wire->udir(0);
 	      cosangle=newPseu->wire->udir(1);
 
-	      newPseu->x=(newPseu->w)*cosangle+(newPseu->s)*sinangle;
-	      newPseu->y=-(newPseu->w)*sinangle+(newPseu->s)*cosangle;
+	      newPseu->xy.Set((newPseu->w)*cosangle+(newPseu->s)*sinangle,
+			       -(newPseu->w)*sinangle+(newPseu->s)*cosangle);
 	      
 	      double sigx2=HALF_CELL*HALF_CELL/3.;
 	      double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
@@ -402,10 +403,10 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->covyy=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
 	      newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
 
-			// Try matching truth hit with this "real" hit.
-			const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, DRIFT_SPEED*newPseu->time, mctrackhits);
-			if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
-
+	      // Try matching truth hit with this "real" hit.
+	      const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, DRIFT_SPEED*newPseu->time, mctrackhits);
+	      if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
+	      
 	      _data.push_back(newPseu);
 	    } // match in x
 	  } else _DBG_ << "Bad wire " << (*xIt)->element <<endl;
@@ -421,22 +422,22 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 /// The contents of H should be pointers to a single cluster in a
 /// cathode plane. 
 //  1/2/2008 D.L.
-void DFDCPseudo_factory::CalcMeanTime(const vector<const DFDCHit*>& H, float &t, float &t_rms)
+void DFDCPseudo_factory::CalcMeanTime(const vector<const DFDCHit*>& H, double &t, double &t_rms)
 {
 	// Calculate mean
 	t=0.0;
 	for(unsigned int i=0; i<H.size(); i++)t+=H[i]->t;
-	if(H.size()>0)t/=(float)H.size();
+	if(H.size()>0)t/=(double)H.size();
 	
 	// Calculate RMS
 	t_rms=0.0;
 	for(unsigned int i=0; i<H.size(); i++)t_rms+=pow((double)(H[i]->t-t),2.0);
-	if(H.size()>0)t_rms = sqrt(t_rms/(float)H.size());
+	if(H.size()>0)t_rms = sqrt(t_rms/(double)H.size());
 }
 
 // Find the mean time and rms for a group of 3 hits with a maximum in the 
 // center hit
-void DFDCPseudo_factory::CalcMeanTime(vector<const DFDCHit *>::const_iterator peak, float &t, float &t_rms)
+void DFDCPseudo_factory::CalcMeanTime(vector<const DFDCHit *>::const_iterator peak, double &t, double &t_rms)
 {
   // Calculate mean
   t=0.0;
@@ -469,16 +470,16 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
   centroid_t temp;
   // Make sure we do not exceed the range of the vector
   if (peak>H.begin() && peak+1!=H.end()){
-    float err_diff1=0.,err_diff2=0.;
+    double err_diff1=0.,err_diff2=0.;
 	 
     // Fill in time info in temp  1/2/2008 D.L.
     //CalcMeanTime(H, temp.t, temp.t_rms);
 
     // Some code for checking for significance of fluctuations.
     // Currently disabled.
-    //float dq1=(*(peak-1))->dq;
-    //float dq2=(*peak)->dq;
-    //float dq3=(*(peak+1))->dq;
+    //double dq1=(*(peak-1))->dq;
+    //double dq2=(*peak)->dq;
+    //double dq3=(*(peak+1))->dq;
     //err_diff1=sqrt(dq1*dq1+dq2*dq2);
     //err_diff2=sqrt(dq2*dq2+dq3*dq3);
    
