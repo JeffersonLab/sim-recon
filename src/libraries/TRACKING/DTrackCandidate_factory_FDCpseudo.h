@@ -51,20 +51,21 @@ class DTrackCandidate_factory_FDCpseudo:public JFactory<DTrackCandidate>{
 		};
 		
 		class DFDCTrkHit{
-			public:
-				const DFDCPseudo *hit;
-				double phi_hit;
-				unsigned int flags;
-				double theta_min;
-				double theta_max;
-				double zmin;
-				double zmax;
-				
-				double Dist2(const DFDCTrkHit* trkhit){
-					double dx = trkhit->hit->x - this->hit->x;
-					double dy = trkhit->hit->y - this->hit->y;
-					return dx*dx + dy*dy;
-				}
+		public:
+		  const DFDCPseudo *hit;
+		  double phi_hit;
+		  unsigned int flags;
+		  double theta_min;
+		  double theta_max;
+		  double zmin;
+		  double zmax;
+		  
+		  double Dist2(const DFDCTrkHit* trkhit){
+		    //double dx = trkhit->hit->x - this->hit->x;
+		    //double dy = trkhit->hit->y - this->hit->y;
+		    //return dx*dx + dy*dy;
+		    return (trkhit->hit->xy-this->hit->xy).Mod2();
+		  }
 		};
 		
 		class DFDCSeed{

@@ -197,7 +197,7 @@ void DTrackCandidate_factory_FDCpseudo::FindSeeds(vector<DFDCSeed> &seeds)
 			if(fdctrkhit->flags&OUT_OF_TIME)continue;
 			const DFDCPseudo *hit = fdctrkhit->hit;
 		
-			hough.AddPoint(hit->x, hit->y);
+			hough.AddPoint(hit->xy.X(), hit->xy.Y());
 		}
 	
 		DVector2 Ro = hough.Find();
@@ -268,7 +268,7 @@ void DTrackCandidate_factory_FDCpseudo::FillSeedHits(DFDCSeed &seed)
 		// Calculate distance between Hough transformed line (i.e.
 		// the line on which a circle that passes through both the
 		// origin and the point at hit->pos) and the circle center.
-		DVector2 h(hit->x/2.0, hit->y/2.0);
+		DVector2 h(hit->xy.X()/2.0, hit->xy.Y()/2.0);
 		DVector2 g(h.Y(), -h.X()); 
 		g /= g.Mod();
 		DVector2 Ro_minus_h(seed.x0-h.X(), seed.y0-h.Y());
@@ -304,7 +304,8 @@ void DTrackCandidate_factory_FDCpseudo::FillSeedHits(DFDCSeed &seed)
 		//const DVector3 &pos = fdctrkhit->hit->pos;
 		
 		// Calculate phi. We do this trivially for now
-		DVector2 p(fdctrkhit->hit->x , fdctrkhit->hit->y);
+		//DVector2 p(fdctrkhit->hit->x , fdctrkhit->hit->y);
+		DVector2 p=fdctrkhit->hit->xy;
 		DVector2 p_minus_Ro = p - Ro;
 		p_minus_Ro/=p_minus_Ro.Mod();
 		double delta_phi = p_minus_Ro.Phi() - last_dir.Phi();

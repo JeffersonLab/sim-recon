@@ -635,7 +635,7 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	// Add in any FDC hits
 	for(unsigned int j=0; j<seed.fdchits.size(); j++){
 		const DFDCPseudo *hit = seed.fdchits[j];
-		seed.fit.AddHitXYZ(hit->x, hit->y, hit->wire->origin.Z());
+		seed.fit.AddHitXYZ(hit->xy.X(), hit->xy.Y(), hit->wire->origin.Z());
 	}
 
 	// Try and fit the circle using a Riemann fit. If 
@@ -673,8 +673,8 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	}
 	for(unsigned int i=0; i<seed.fdchits.size(); i++){
 		const DFDCPseudo *hit = seed.fdchits[i];
-		double dx = hit->x - x0;
-		double dy = hit->y - y0;
+		double dx = hit->xy.X() - x0;
+		double dy = hit->xy.Y() - y0;
 		double d = sqrt(dx*dx + dy*dy);
 		if(DEBUG_LEVEL>10)_DBG_<<"dist="<<d-r0<<endl;
 		if(fabs(d-r0)<=MAX_HIT_DIST)N++;
@@ -770,7 +770,7 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 			const DFDCPseudo *fdchit = fdchits[j];
 			if(fdchit->wire->layer>6)continue; // only interested in 1st package
 			DVector2 sl1(sl1_wire->origin.X(), sl1_wire->origin.Y());
-			DVector2 fdc1(fdchit->x, fdchit->y);
+			DVector2 fdc1=fdchit->xy;
 			double a = sl1.DeltaPhi(fdc1);
 
 			if(fabs(a)<MAX_FDC_MATCH_ANGLE/57.3){
@@ -1056,7 +1056,9 @@ void DTrackCandidate_factory_CDC::FindThetaZ(DCDCSeed &seed)
 	// Decide whether to use the histogramming method or the
 	// straight track method base on the transverse momentum
 if(DEBUG_LEVEL>2)_DBG_<<"p_trans:"<<seed.fit.p_trans<<endl;
-	if(seed.fit.p_trans<3.0){
+//if(seed.fit.p_trans<3.0)
+ if (true)
+	  {
 		FindTheta(seed, TARGET_Z_MIN, TARGET_Z_MAX);
 		FindZ(seed, seed.theta_min, seed.theta_max);
 	}else{
@@ -1111,7 +1113,8 @@ void DTrackCandidate_factory_CDC::FindThetaZStraightTrack(DCDCSeed &seed)
 	for(unsigned int i=0; i<seed.fdchits.size(); i++){
 		const DFDCPseudo *fdchit = seed.fdchits[i];
 		//double R = sqrt(pow((double)fdchit->x,2.0) + pow((double)fdchit->y,2.0));
-		double R=sqrt(fdchit->x*fdchit->x+fdchit->y*fdchit->y);
+		//double R=sqrt(fdchit->x*fdchit->x+fdchit->y*fdchit->y);
+		double R=fdchit->xy.Mod();
 		r.push_back(R);
 		z.push_back(fdchit->wire->origin.Z());
 	}
@@ -1238,7 +1241,8 @@ void DTrackCandidate_factory_CDC::FindTheta(DCDCSeed &seed, double target_z_min,
 		
 		// Calculate upper and lower limits in theta
 		DVector2 R(seed.fit.x0, seed.fit.y0);
-		double phi_stereo = atan2(fdchit->y-R.Y(), fdchit->x-R.X());
+		double phi_stereo = atan2(fdchit->xy.Y()-R.Y(), 
+					  fdchit->xy.X()-R.X());
 		double alpha = -r0*phi_stereo;
 		if(seed.fit.q<0.0)alpha = -alpha;
 		double tmin = atan2(alpha, fdchit->wire->origin.Z() - target_z_min);
@@ -1357,7 +1361,8 @@ void DTrackCandidate_factory_CDC::FindZ(DCDCSeed &seed, double theta_min, double
 		
 		// Calculate upper and lower limits in z
 		DVector2 R(seed.fit.x0, seed.fit.y0);
-		double phi_stereo = atan2(fdchit->y-R.Y(), fdchit->x-R.X());
+		double phi_stereo = atan2(fdchit->xy.Y()-R.Y(), 
+					  fdchit->xy.X()-R.X());
 		double z = fdchit->wire->origin.Z();
 		double q_sign = seed.fit.q>0.0 ? +1.0:-1.0;
 		double zmin = z - q_sign*phi_stereo/tan_alpha_min;
@@ -1516,7 +1521,8 @@ double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
 	// If there are no stereo hits, fall back on available FDC hits
 	for (unsigned int i=0; i<fdchits.size();i++){
 	  const DFDCPseudo *hit= fdchits[i];
-	  Bz_sum += bfield->GetBz(hit->x, hit->y, hit->wire->origin.z());
+	  Bz_sum += bfield->GetBz(hit->xy.X(), hit->xy.Y(), 
+				  hit->wire->origin.z());
 	}
 	
 	return Bz_sum/(double)(stereo_hits.size()+fdchits.size());
@@ -1576,8 +1582,8 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
   // FDC pseudo hits
   for (unsigned int m=0;m<seed.fdchits.size();m++){
     const DFDCPseudo *trkhit=seed.fdchits[m];
-    double R2=trkhit->x*trkhit->x+trkhit->y*trkhit->y;
-
+    //double R2=trkhit->x*trkhit->x+trkhit->y*trkhit->y;
+    double R2=trkhit->xy.Mod2();
     DVector3_with_perp intersection;
     DVector3 N=seed.fit.normal;
     //double c0=seed.fit.c_origin;
@@ -1592,7 +1598,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
       double x2=(-N.X()*A-N.Y()*sqrtC)/B;
       double y2=(-N.Y()*A+N.X()*sqrtC)/B;
       
-      if (fabs(trkhit->y-y1)<fabs(trkhit->y-y2)){
+      if (fabs(trkhit->xy.Y()-y1)<fabs(trkhit->xy.Y()-y2)){
 	intersection.SetX(x1);
 	intersection.SetY(y1);
       }
@@ -1619,8 +1625,8 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
   vector<double>arclengths(intersections.size());
   vector<double>var_z(intersections.size());
   arclengths[0]=0.;
-  double temp=1.6/sin(6.*M_PI/180.);
-  double varz=temp*temp/12.;
+  //double temp=1.6/sin(6.*M_PI/180.);
+  //double varz=temp*temp/12.;
   for (unsigned int m=1;m<arclengths.size();m++){
     double diffx=intersections[m].x()-intersections[0].x();
     double diffy=intersections[m].y()-intersections[0].y();
@@ -1628,21 +1634,24 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     double s=2*seed.fit.r0*asin(chord/2./seed.fit.r0);
     
     arclengths[m]=s;
-    var_z[m]=varz;
+    //var_z[m]=varz;
+    var_z[m]=19.52;
   }
 
   //Linear regression to find z0, tanl
   double tanl=0.,z0=0.;
   if (arclengths.size()>2){ // Do fit only if have more than one measurement
-    var_z[0]=30.*30./12.;  // Use length of the target
+    //var_z[0]=30.*30./12.;  // Use length of the target
+    var_z[0]=75.;
     double sumv=0.,sumx=0.;
     double sumy=0.,sumxx=0.,sumxy=0.;
     for (unsigned int m=0;m<intersections.size();m++){
-      sumv+=1./var_z[m];
-      sumx+=arclengths[m]/var_z[m];
-      sumy+=intersections[m].z()/var_z[m];
-      sumxx+=arclengths[m]*arclengths[m]/var_z[m];
-      sumxy+=arclengths[m]*intersections[m].z()/var_z[m];
+      double temp=1./var_z[m];
+      sumv+=temp;
+      sumx+=arclengths[m]*temp;
+      sumy+=intersections[m].z()*temp;;
+      sumxx+=arclengths[m]*arclengths[m]*temp;
+      sumxy+=arclengths[m]*intersections[m].z()*temp;
     }
     double Delta=sumv*sumxx-sumx*sumx;
     if (Delta==0.) return VALUE_OUT_OF_RANGE;

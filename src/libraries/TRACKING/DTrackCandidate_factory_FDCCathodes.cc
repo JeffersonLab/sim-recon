@@ -223,14 +223,16 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<segment->hits.size();n++){
 	    const DFDCPseudo *hit=segment->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
+	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				  hit->wire->origin.z());
 	  }
 	}
 	if (match2){
 	  for (unsigned int n=0;n<match2->hits.size();n++){
 	    const DFDCPseudo *hit=match2->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
+	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				  hit->wire->origin.z());	    
 	  }
 	  num_hits+=match2->hits.size();
 	}
@@ -238,7 +240,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<match3->hits.size();n++){
 	    const DFDCPseudo *hit=match3->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
+	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				  hit->wire->origin.z());
 	  }
 	  num_hits+=match3->hits.size();
 	}
@@ -246,7 +249,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<match4->hits.size();n++){
 	    const DFDCPseudo *hit=match4->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
+	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				  hit->wire->origin.z());
 	  }
 	  num_hits+=match4->hits.size();
 	}
@@ -289,7 +293,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    for (unsigned int n=0;n<match2->hits.size();n++){
 	      const DFDCPseudo *hit=match2->hits[n];
 	      fit.AddHit(hit);
-	      Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
+	      Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				    hit->wire->origin.z());
 	    }
 	    num_hits+=match2->hits.size();
 	    
@@ -337,7 +342,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    for (unsigned int n=0;n<match3->hits.size();n++){
 	      const DFDCPseudo *hit=match3->hits[n];
 	      fit.AddHit(hit);
-	      Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
+	      Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				    hit->wire->origin.z());
 	    }
 	    num_hits+=match3->hits.size();
 	    
@@ -396,9 +402,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	// Try to fix tracks that appear to point upstream
 	if (tanl<0){ 
-	  double x=segment->hits[0]->x;
-	  double y=segment->hits[0]->y;
-	  double ratio=sqrt(x*x+y+y)/2./rc;
+	  double x=segment->hits[0]->xy.X();
+	  double y=segment->hits[0]->xy.Y();
+	  double ratio=sqrt(x*x+y+y)/(2.*rc);
 	  if (ratio<1.){
 	    double sperp=2.*rc*asin(ratio);
 	    tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
@@ -412,7 +418,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	track->setPosition(pos);
 	track->setMomentum(mom);
 	track->setCharge(q);
-	
+
 	for (unsigned int m=0;m<mysegments.size();m++)
 	  track->AddAssociatedObject(mysegments[m]);
 	
@@ -503,14 +509,16 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<segment->hits.size();n++){
 	    const DFDCPseudo *hit=segment->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
+	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				  hit->wire->origin.z());
 	  }
 	}
 	if (match3){
 	  for (unsigned int n=0;n<match3->hits.size();n++){
 	    const DFDCPseudo *hit=match3->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
+	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				  hit->wire->origin.z());	    
 	  }
 	  num_hits+=match3->hits.size();
 	}
@@ -520,8 +528,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    double covxx=2.*hit->covxx;
 	    double covyy=2.*hit->covyy;
 	    double covxy=2.*hit->covxy;
-	    double x=hit->x;
-	    double y=hit->y;
+	    double x=hit->xy.X();
+	    double y=hit->xy.Y();
 	    double z=hit->wire->origin.z();
 	    fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);  
 	    Bz_avg-=bfield->GetBz(x,y,z);
@@ -572,7 +580,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	      for (unsigned int n=0;n<match1->hits.size();n++){
 		const DFDCPseudo *hit=match1->hits[n];
 		fit.AddHit(hit);
-		Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());
+		Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				      hit->wire->origin.z());
 	      }
 	      num_hits+=match1->hits.size();
 
@@ -599,7 +608,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       } // if mysegments.size()>1
       else{
 	for (unsigned int n=0;n<segment->hits.size();n++){
-	  Bz_avg-=bfield->GetBz(segment->hits[n]->x,segment->hits[n]->y,
+	  Bz_avg-=bfield->GetBz(segment->hits[n]->xy.X(),
+				segment->hits[n]->xy.Y(),
 				segment->hits[n]->wire->origin.z());
 	}
       }
@@ -609,9 +619,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       
       // Try to fix tracks that appear to point upstream
       if (tanl<0){
-	double x=segment->hits[0]->x;
-	double y=segment->hits[0]->y;
-	double ratio=sqrt(x*x+y+y)/2./rc;
+	//double x=segment->hits[0]->xy.X();
+	//double y=segment->hits[0]->xy.Y();
+	//double ratio=sqrt(x*x+y+y)/(2.*rc);
+	double ratio=segment->hits[0]->xy.Mod()/(2.*rc);
 	if (ratio<1.){
 	  double sperp=2.*rc*asin(ratio);
 	  tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
@@ -682,7 +693,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<mysegments[m]->hits.size();n++){
 	    const DFDCPseudo *hit=mysegments[m]->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
+	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				  hit->wire->origin.z());	    
 	  }
 	  num_hits+=mysegments[m]->hits.size();
 	}
@@ -720,7 +732,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  for (unsigned int n=0;n<match2->hits.size();n++){
 	    const DFDCPseudo *hit=match2->hits[n];
 	    fit.AddHit(hit);
-	    Bz_avg-=bfield->GetBz(hit->x,hit->y,hit->wire->origin.z());	    
+	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
+				  hit->wire->origin.z());	    
 	  }
 	  num_hits+=match2->hits.size();
 
@@ -757,7 +770,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       } // if mysegments.size()>1
       else{
 	for (unsigned int n=0;n<segment->hits.size();n++){
-	  Bz_avg-=bfield->GetBz(segment->hits[n]->x,segment->hits[n]->y,
+	  Bz_avg-=bfield->GetBz(segment->hits[n]->xy.X(),
+				segment->hits[n]->xy.Y(),
 				segment->hits[n]->wire->origin.z());
 	}
       }
@@ -767,9 +781,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       // Try to fix tracks that appear to point downstream
       if (tanl<0){ 
-	double x=segment->hits[0]->x;
-	double y=segment->hits[0]->y;
-	double ratio=sqrt(x*x+y+y)/2./rc;
+	//double x=segment->hits[0]->x;
+	//double y=segment->hits[0]->y;
+	//double ratio=sqrt(x*x+y+y)/2./rc;
+	double ratio=segment->hits[0]->xy.Mod()/(2.*rc);
 	if (ratio<1.){
 	  double sperp=2.*rc*asin(ratio);
 	  tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
@@ -808,7 +823,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     double Bz_avg=0.;
     // Compute average magnitic field for the segment
     for (unsigned int m=0;m<segment->hits.size();m++){
-      Bz_avg-=bfield->GetBz(segment->hits[m]->x,segment->hits[m]->y,
+      Bz_avg-=bfield->GetBz(segment->hits[m]->xy.X(),segment->hits[m]->xy.Y(),
 			    segment->hits[m]->wire->origin.z());
     }
     Bz_avg/=double(segment->hits.size());
@@ -843,7 +858,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     double Bz_avg=0.;
     // Compute average magnitic field for the segment
     for (unsigned int m=0;m<segment->hits.size();m++){
-      Bz_avg-=bfield->GetBz(segment->hits[m]->x,segment->hits[m]->y,
+      Bz_avg-=bfield->GetBz(segment->hits[m]->xy.X(),segment->hits[m]->xy.Y(),
 			    segment->hits[m]->wire->origin.z());
     }
     Bz_avg/=double(segment->hits.size());
@@ -891,8 +906,8 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
     for (unsigned int j=0;j<package.size();j++){
       DFDCSegment *segment2=package[j];
  
-      double x2=segment2->hits[segment2->hits.size()-1]->x;
-      double y2=segment2->hits[segment2->hits.size()-1]->y;
+      double x2=segment2->hits[segment2->hits.size()-1]->xy.X();
+      double y2=segment2->hits[segment2->hits.size()-1]->xy.Y();
       diff=sqrt((pos.x()-x2)*(pos.x()-x2)+(pos.y()-y2)*(pos.y()-y2));
       if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	diff_min=diff;
@@ -912,8 +927,8 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
         mom=-1.0*mom;
         origin.SetZ(segment->hits[0]->wire->origin.z());
         if (stepper.SwimToPlane(pos,mom,origin,norm,NULL)==false){
-          double x2=segment->hits[0]->x;
-          double y2=segment->hits[0]->y;
+          double x2=segment->hits[0]->xy.X();
+          double y2=segment->hits[0]->xy.Y();
           diff=sqrt((pos.x()-x2)*(pos.x()-x2)+(pos.y()-y2)*(pos.y()-y2));
           if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	    diff_min=diff;
@@ -945,8 +960,8 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
     for (unsigned int j=0;j<package.size();j++){
       DFDCSegment *segment2=package[j];
  
-      double x2=segment2->hits[segment2->hits.size()-1]->x;
-      double y2=segment2->hits[segment2->hits.size()-1]->y;
+      double x2=segment2->hits[segment2->hits.size()-1]->xy.X();
+      double y2=segment2->hits[segment2->hits.size()-1]->xy.Y();
       diff=sqrt((pos.x()-x2)*(pos.x()-x2)+(pos.y()-y2)*(pos.y()-y2));
       if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	diff_min=diff;
@@ -972,8 +987,8 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
         mom=-1.0*mom;
         origin.SetZ(segment->hits[0]->wire->origin.z());
         if (stepper.SwimToPlane(pos,mom,origin,norm,NULL)==false){
-          double x2=segment->hits[0]->x;
-          double y2=segment->hits[0]->y;
+          double x2=segment->hits[0]->xy.X();
+          double y2=segment->hits[0]->xy.Y();
           diff=sqrt((pos.x()-x2)*(pos.x()-x2)+(pos.y()-y2)*(pos.y()-y2));
           if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	    diff_min=diff;

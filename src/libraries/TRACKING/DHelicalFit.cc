@@ -125,8 +125,8 @@ DHelicalFit::~DHelicalFit()
 //-----------------
 jerror_t DHelicalFit::AddHit(const DFDCPseudo *fdchit){
   DHFHit_t *hit = new DHFHit_t;
-  hit->x = fdchit->x;
-  hit->y = fdchit->y;
+  hit->x = fdchit->xy.X();
+  hit->y = fdchit->xy.Y();
   hit->z = fdchit->wire->origin.z();
   hit->covx=fdchit->covxx;
   hit->covy=fdchit->covyy;

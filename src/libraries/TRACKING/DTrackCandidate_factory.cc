@@ -258,8 +258,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double covxx=segments[k]->hits[n]->covxx;
 	      double covyy=segments[k]->hits[n]->covyy;
 	      double covxy=segments[k]->hits[n]->covxy;
-	      double x=segments[k]->hits[n]->x;
-	      double y=segments[k]->hits[n]->y;
+	      double x=segments[k]->hits[n]->xy.X();
+	      double y=segments[k]->hits[n]->xy.Y();
 	      double z=segments[k]->hits[n]->wire->origin.z();
 	      
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
@@ -392,8 +392,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double covxx=segments[k]->hits[n]->covxx;
 	      double covyy=segments[k]->hits[n]->covyy;
 	      double covxy=segments[k]->hits[n]->covxy;
-	      double x=segments[k]->hits[n]->x;
-	      double y=segments[k]->hits[n]->y;
+	      double x=segments[k]->hits[n]->xy.X();
+	      double y=segments[k]->hits[n]->xy.Y();
 	      double z=segments[k]->hits[n]->wire->origin.z();
 	      
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
@@ -477,8 +477,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 				    segments[m]->hits[ind]->wire->origin,
 				    norm,NULL)
 		==false){
-	      double dx=segments[m]->hits[ind]->x-pos.x();
-	      double dy=segments[m]->hits[ind]->y-pos.y();
+	      double dx=segments[m]->hits[ind]->xy.X()-pos.x();
+	      double dy=segments[m]->hits[ind]->xy.Y()-pos.y();
 	      double dr=sqrt(dx*dx+dy*dy);
 	      
 	      // Use an un-normalized gaussian so that for a residual
@@ -525,8 +525,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double covxx=segments[m]->hits[n]->covxx;
 	      double covyy=segments[m]->hits[n]->covyy;
 	      double covxy=segments[m]->hits[n]->covxy;
-	      double x=segments[m]->hits[n]->x;
-	      double y=segments[m]->hits[n]->y;
+	      double x=segments[m]->hits[n]->xy.X();
+	      double y=segments[m]->hits[n]->xy.Y();
 	      double z=segments[m]->hits[n]->wire->origin.z();
 	      
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
@@ -599,8 +599,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 				      segments[m]->hits[ind]->wire->origin,
 				      norm,NULL)
 		==false){
-		double dx=segments[m]->hits[ind]->x-pos.x();
-		double dy=segments[m]->hits[ind]->y-pos.y();
+		double dx=segments[m]->hits[ind]->xy.X()-pos.x();
+		double dy=segments[m]->hits[ind]->xy.Y()-pos.y();
 		double dr=sqrt(dx*dx+dy*dy);
 		
 		// Use an un-normalized gaussian so that for a residual
@@ -630,8 +630,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      }
 	    }
 	    for (unsigned int m=0;m<fdchits.size();m++){
-	      double x=fdchits[m]->x;
-	      double y=fdchits[m]->y;
+	      double x=fdchits[m]->xy.X();
+	      double y=fdchits[m]->xy.Y();
 	      double z=fdchits[m]->wire->origin.z();
 	      double covxx=fdchits[m]->covxx;
 	      double covyy=fdchits[m]->covyy;
@@ -647,8 +647,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		double covxx=segments[m]->hits[n]->covxx;
 		double covyy=segments[m]->hits[n]->covyy;
 		double covxy=segments[m]->hits[n]->covxy;
-		double x=segments[m]->hits[n]->x;
-		double y=segments[m]->hits[n]->y;
+		double x=segments[m]->hits[n]->xy.X();
+		double y=segments[m]->hits[n]->xy.Y();
 		double z=segments[m]->hits[n]->wire->origin.z();
 		
 		fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
