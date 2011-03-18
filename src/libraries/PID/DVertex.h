@@ -14,6 +14,7 @@
 #include <TRACKING/DTrackTimeBased.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALCluster.h>
+#include <DMatrix.h>
 
 class DVertex:public jana::JObject{
  public:
