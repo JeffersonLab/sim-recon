@@ -17,6 +17,7 @@ using namespace std;
 #define ONE_THIRD 0.33333333333333333
 #define TWO_THIRD 0.66666666666666667
 #define EPS 1e-8
+#define NaN std::numeric_limits<double>::quiet_NaN()
 
 struct StepStruct {DReferenceTrajectory::swim_step_t steps[256];};
 
@@ -1607,8 +1608,8 @@ void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const
 			last_swim_step = &swim_steps[0];
 			last_phi = 0.0;
 		}else{
-			pos.SetXYZ(0,0,0);
-			mom.SetXYZ(0,0,0);
+			pos.SetXYZ(NaN,NaN,NaN);
+			mom.SetXYZ(NaN,NaN,NaN);
 			return;
 		}
 	}
@@ -1638,6 +1639,14 @@ DVector3 DReferenceTrajectory::GetLastDOCAPoint(void) const
 	/// Use values saved by the last call to one of the DistToRT functions
 	/// to calculate the 3-D DOCA position in lab coordinates. This is
 	/// mainly intended for debugging.
+	if(last_swim_step==NULL){
+		if(Nswim_steps>0){
+			last_swim_step = &swim_steps[0];
+			last_phi = 0.0;
+		}else{
+			return DVector3(NaN,NaN,NaN);
+		}
+	}
 	const DVector3 &xdir = last_swim_step->sdir;
 	const DVector3 &ydir = last_swim_step->tdir;
 	const DVector3 &zdir = last_swim_step->udir;
