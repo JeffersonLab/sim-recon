@@ -253,6 +253,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double mInvVarT0;
 
   bool DEBUG_HISTS;
+  bool USE_MATERIAL_BOUNDARIES;
   int DEBUG_LEVEL;
   
   // Min. momentum needed for fit before returning fitSuccess
