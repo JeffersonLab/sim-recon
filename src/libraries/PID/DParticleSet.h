@@ -18,11 +18,11 @@ class DParticleSet:public jana::JObject{
   
   const DVertex *vertex;
   vector<const DVertex::shower_info_t *>photon;
-  vector<const DVertex::track_info_t *>pip;  // list of pi pluses
-  vector<const DVertex::track_info_t *>pim;  // list of pi minuses
-  vector<const DVertex::track_info_t *>Kp; // list of K pluses
-  vector<const DVertex::track_info_t *>Km;  // list of K minuses
-  vector<const DVertex::track_info_t *>proton; // list of protons
+  vector<vector<const DVertex::track_info_t *> >pip;  // list of pi pluses
+  vector<vector<const DVertex::track_info_t *> >pim;  // list of pi minuses
+  vector<vector<const DVertex::track_info_t *> >Kp; // list of K pluses
+  vector<vector<const DVertex::track_info_t *> >Km;  // list of K minuses
+  vector<vector<const DVertex::track_info_t *> >proton; // list of protons
 
   // Print out some summary information about the contents of this class
   void toStrings(vector<pair<string,string> > &items)const{

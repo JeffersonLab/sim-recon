@@ -50,22 +50,30 @@ jerror_t DParticleSet_factory::evnt(JEventLoop *loop, int eventnumber)
       const DVertex::track_info_t *track_info=&vertices[i]->hypotheses[k][0];
       const DTrackTimeBased *track=track_info->track;
       double mass=track->mass();
+      
+      // Create a list of pointers to the results for the various hypotheses for this track
+      vector<const DVertex::track_info_t*>hypothesis_list;
+      for (unsigned int m=0;m<vertices[i]->hypotheses[k].size();m++){
+	hypothesis_list.push_back(&vertices[i]->hypotheses[k][m]);
+      }
 
       // Deal with positive particles
       if (track->charge()>0){
-	if (mass<0.3) particle_set->pip.push_back(track_info);
-	else if (mass>=0.3 && mass<0.7) particle_set->Kp.push_back(track_info);
-	else if (mass>=0.7 && mass<1.0) particle_set->proton.push_back(track_info);
+	if (mass<0.3) particle_set->pip.push_back(hypothesis_list);
+	else if (mass>=0.3 && mass<0.7) particle_set->Kp.push_back(hypothesis_list);
+	else if (mass>=0.7 && mass<1.0) particle_set->proton.push_back(hypothesis_list);
 	
       }
       else{ // Deal with negative particles
-	if (mass<0.3) particle_set->pim.push_back(track_info);
-	else if (mass>=0.3 && mass<0.7) particle_set->Km.push_back(track_info);
+	if (mass<0.3) particle_set->pim.push_back(hypothesis_list);
+	else if (mass>=0.3 && mass<0.7) particle_set->Km.push_back(hypothesis_list);
       }
     }
     // Now deal with photons
     for (unsigned int k=0;k<vertices[i]->showers.size();k++){
-      particle_set->photon.push_back(&vertices[i]->showers[k]);
+      if (vertices[i]->showers[k].matched_track==NULL){
+	particle_set->photon.push_back(&vertices[i]->showers[k]);
+      }
     }
 
 
