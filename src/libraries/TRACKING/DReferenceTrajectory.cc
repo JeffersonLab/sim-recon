@@ -187,6 +187,72 @@ void DReferenceTrajectory::CopyWithShift(const DReferenceTrajectory *rt, DVector
 	for(int i=0; i<Nswim_steps; i++)swim_steps[i].origin += shift;
 }
 
+
+//---------------------------------
+// FastSwim -- light-weight swim to a wire that does not treat multiple 
+// scattering but does handle energy loss.
+// No checks for distance to boundaries are done.
+//---------------------------------
+void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
+				    DVector3 &last_pos,DVector3 &last_mom,
+				    double q,double smax,
+				    const DCoordinateSystem *wire){
+  DVector3 mypos(pos);
+  DVector3 mymom(mom);
+
+  // Initialize the stepper
+  DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
+  double s=0,doca=1000.,old_doca=1000.,dP_dx=0.;
+  double mass=GetMass();
+  while (s<smax){
+    // Save old value of doca
+    old_doca=doca;
+
+    // Adjust step size to take smaller steps in regions of high momentum loss
+    if(mass>0. && step_size<0.0 && geom){	
+      double KrhoZ_overA=0.0;
+      double rhoZ_overA=0.0;
+      double LogI=0.0;
+      double X0=0.0;
+      if (geom->FindMatALT1(mypos,mymom,KrhoZ_overA,rhoZ_overA,LogI,X0)
+	  ==NOERROR){ 
+	// Calculate momentum loss due to ionization
+	dP_dx = dPdx(mymom.Mag(), KrhoZ_overA, rhoZ_overA,LogI);
+	double my_step_size = 0.0001/fabs(dP_dx);
+		
+	if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
+	if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
+
+	stepper.SetStepSize(my_step_size);
+      }
+    }
+    // Swim to next
+    double ds=stepper.Step(NULL);
+    s+=ds;
+
+    stepper.GetPosMom(mypos,mymom);
+    if (mass>0 && dP_dx<0.){
+      double ptot=mymom.Mag();
+      if (ploss_direction==kForward) ptot+=dP_dx*ds;
+      else ptot-=dP_dx*ds;
+      mymom.SetMag(ptot);
+      stepper.SetStartingParams(q, &mypos, &mymom);
+    }
+    
+    // Break if we have passed the wire
+    DVector3 wirepos=wire->origin;
+    if (fabs(wire->udir.z())>0.){ // for CDC wires
+      wirepos+=((mypos.z()-wire->origin.z())/wire->udir.z())*wire->udir;
+    }
+    doca=(wirepos-mypos).Mag();
+    if (doca>old_doca) break;
+
+    // Store the position and momentum for this step
+    last_pos=mypos;
+    last_mom=mymom;
+  }  
+}
+
 //---------------------------------
 // Swim
 //---------------------------------
@@ -245,6 +311,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	Bz_old = B.z();
 	
 	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
+
 
 		if(Nswim_steps>=this->max_swim_steps){
 			jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;

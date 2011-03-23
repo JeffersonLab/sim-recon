@@ -266,10 +266,8 @@ jerror_t DTrackFitter::CorrectForELoss(const DKinematicData &starting_params, DR
 	// Swim from vertex to first wire hit. Disable momentum loss.
 	rt->SetDGeometry(geom);
 	rt->SetMass(0.0);
-	rt->Swim(starting_params.position(), starting_params.momentum(), starting_params.charge(), 1000.0, first_wire);
-	if(rt->Nswim_steps<2)return NOERROR; // no enough swim steps to make this correction worthwile
-	rt->DistToRT(first_wire);
-	rt->GetLastDOCAPoint(pos, mom);
+	rt->FastSwim(starting_params.position(),starting_params.momentum(),
+		     pos,mom,starting_params.charge(), 1000.0, first_wire);
 
 	// Define target center
 	DCoordinateSystem target;
@@ -282,11 +280,9 @@ jerror_t DTrackFitter::CorrectForELoss(const DKinematicData &starting_params, DR
 	// Swim backwards to target, setting momentum to *increase* due to material
 	rt->SetMass(mass);
 	rt->SetPLossDirection(DReferenceTrajectory::kBackward);
-	rt->Swim(pos, -mom, -starting_params.charge(), 1000.0, &target);
-	if(rt->Nswim_steps<2)return NOERROR; // no enough swim steps to make this correction worthwile
+	rt->FastSwim(pos,-mom,pos,mom,-starting_params.charge(), 1000.0, 
+		     &target);
 	rt->SetPLossDirection(DReferenceTrajectory::kForward);
-	rt->DistToRT(&target);
-	rt->GetLastDOCAPoint(pos, mom);
 	
 	// Reverse momentum
 	mom = -mom;
