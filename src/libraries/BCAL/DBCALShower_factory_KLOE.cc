@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DBCALShower_factory.cc
+//    File: DBCALShower_factory_KLOE.cc
 // Created: Tue Jul  3 18:25:12 EDT 2007
 // Creator: Matthew Shepherd
 //
@@ -11,14 +11,14 @@
 
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALGeometry.h"
-#include "BCAL/DBCALShower_factory.h"
+#include "BCAL/DBCALShower_factory_KLOE.h"
 
 using namespace std;
 
 //------------------
-// DBCALShower_factory
+// DBCALShower_factory_KLOE
 //------------------
-DBCALShower_factory::DBCALShower_factory()
+DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
 {
     // this should be lower than cut in BCALMCResponse
 	ethr_cell=0.0001;     // MIN ENERGY THRESD OF cell in GeV
@@ -51,7 +51,7 @@ DBCALShower_factory::DBCALShower_factory()
 //------------------
 // brun
 //------------------
-jerror_t DBCALShower_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
 {
     
     vector<const DBCALGeometry*> bcalGeomVect;
@@ -148,7 +148,7 @@ jerror_t DBCALShower_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DBCALShower_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
 {
     CellRecon(loop);
     CeleToArray();   
@@ -202,7 +202,7 @@ jerror_t DBCALShower_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // CellRecon()
 //------------------
-void DBCALShower_factory::CellRecon(JEventLoop *loop)
+void DBCALShower_factory_KLOE::CellRecon(JEventLoop *loop)
 {
     //======================================================================
     // This code is used to reconstruct cell information cell by cell.
@@ -365,7 +365,7 @@ void DBCALShower_factory::CellRecon(JEventLoop *loop)
 //------------------
 // CeleToArray()
 //------------------
-void DBCALShower_factory::CeleToArray(void)
+void DBCALShower_factory_KLOE::CeleToArray(void)
 {
     //  THis code is adpapted from kloe code by Chuncheng Xu on June29,2005
     //  The following part is taken from kaloe's clurec_lib.f's subroutine
@@ -448,7 +448,7 @@ void DBCALShower_factory::CeleToArray(void)
 //------------------
 // PreCluster()
 //------------------        
-void DBCALShower_factory::PreCluster(JEventLoop *loop)
+void DBCALShower_factory_KLOE::PreCluster(JEventLoop *loop)
 {
     int k=1;     // NUMBER OF NEARBY ROWS &/OR TO LOOK FOR MAX E CELL
     
@@ -599,7 +599,7 @@ void DBCALShower_factory::PreCluster(JEventLoop *loop)
 //------------------
 // Connect(n,m);
 //------------------   
-void DBCALShower_factory::Connect(int n,int m)
+void DBCALShower_factory_KLOE::Connect(int n,int m)
 {
     //----------------------------------------------------------------------
     //   Purpose and Methods :CONNECTS CELL M TO THE NEAREST MAX NEIGHBOR N
@@ -622,7 +622,7 @@ void DBCALShower_factory::Connect(int n,int m)
 //------------------
 // ClusNorm()
 //------------------   
-void DBCALShower_factory::ClusNorm(void)
+void DBCALShower_factory_KLOE::ClusNorm(void)
 {    
     // fast initialization of arrays:
     memset( e_cls,  0, ( clsmax_bcal + 1 ) * sizeof( float ) );
@@ -742,7 +742,7 @@ void DBCALShower_factory::ClusNorm(void)
 //------------------
 // ClusAnalysis()
 //------------------  
-void DBCALShower_factory::ClusAnalysis()
+void DBCALShower_factory_KLOE::ClusAnalysis()
 {
     // track when clusters change to cut down
     // on excess calles to expensive ClusNorm
@@ -832,7 +832,7 @@ void DBCALShower_factory::ClusAnalysis()
 //------------------
 // Clus_Break(ix);
 //------------------
-void DBCALShower_factory::Clus_Break(int nclust)
+void DBCALShower_factory_KLOE::Clus_Break(int nclust)
 {
     int   nseed[5],selnum,selcel[cellmax_bcal+1];
     float tdif,tdif_a,tdif_b,tseed[5];  
@@ -962,7 +962,7 @@ void DBCALShower_factory::Clus_Break(int nclust)
 // routine modified by MRS to do expensive filling of layer information
 // contains code previously in ClusNorm which is called multiple times
 // per event, but there is no need to call Trakfit multiple times per event
-void DBCALShower_factory::Trakfit( void )
+void DBCALShower_factory_KLOE::Trakfit( void )
 {
  
     float emin=0.0001;
@@ -1119,7 +1119,7 @@ void DBCALShower_factory::Trakfit( void )
 //------------------
 // Fit_ls()
 //------------------  
-void DBCALShower_factory::Fit_ls()
+void DBCALShower_factory_KLOE::Fit_ls()
 {      
     float a,b,c;
     float d,e,f,chi2,q,norm;
@@ -1167,7 +1167,7 @@ void DBCALShower_factory::Fit_ls()
 //------------------
 // Linefit(x,y,ndata,sig,mwt,a,b,siga,sigb,chi2,q)
 //------------------  
-void DBCALShower_factory::Linefit(int ixyz,int mwt,float &a,
+void DBCALShower_factory_KLOE::Linefit(int ixyz,int mwt,float &a,
                                   float &b,float &siga,float &sigb,float &chi2,float &q)
 {
     
@@ -1297,7 +1297,7 @@ void DBCALShower_factory::Linefit(int ixyz,int mwt,float &a,
 //------------------
 // Gammq(a_gammq,x_gammq)
 //------------------  
-float DBCALShower_factory::Gammq(float a_gammq,float x_gammq)
+float DBCALShower_factory_KLOE::Gammq(float a_gammq,float x_gammq)
 {
     
     //============================================================================
@@ -1338,7 +1338,7 @@ float DBCALShower_factory::Gammq(float a_gammq,float x_gammq)
 //------------------
 // Gser(gamser,a_gser,x_gser,gln)
 //------------------  
-void DBCALShower_factory::Gser(float &gamser,float a_gser,float x_gser)
+void DBCALShower_factory_KLOE::Gser(float &gamser,float a_gser,float x_gser)
 {
     //============================================================================
     int itmax=100;
@@ -1384,7 +1384,7 @@ void DBCALShower_factory::Gser(float &gamser,float a_gser,float x_gser)
 //------------------
 //  Gcf(gammcf,a,x,gln)
 //------------------  
-void DBCALShower_factory::Gcf(float &gammcf,float a_gcf,float x_gcf)
+void DBCALShower_factory_KLOE::Gcf(float &gammcf,float a_gcf,float x_gcf)
 {
     //========================================================================
     
@@ -1434,7 +1434,7 @@ void DBCALShower_factory::Gcf(float &gammcf,float a_gcf,float x_gcf)
 //------------------
 // Gammln(xx)
 //------------------  
-float DBCALShower_factory::Gammln(float xx_gln)
+float DBCALShower_factory_KLOE::Gammln(float xx_gln)
 {
     //    Returns the value ln[Gamma(xx_gln)] for xx_gln>0.0
     

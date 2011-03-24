@@ -1,19 +1,19 @@
 // $Id$
 //
-//    File: DBCALShower_factory.h
+//    File: DBCALShower_factory_KLOE.h
 // Created: Tue Jul  3 18:25:12 EDT 2007
 // Creator: Matthew Shepherd
 //
-//  Author's Note: This class started as a functional clone of the default DBCALShower_factory --
+//  Author's Note: This class started as a functional clone of the default DBCALShower_factory_KLOE --
 //  much of the logic and data structure is as written by C. Xu.
 //  Revisions were made to get approx 10x speed gain.  The intial version in the repository
 //  It has undergone subsequent reision and as of 8-Aug-08 merged back in as the default
-//  DBCALShower_factory
+//  DBCALShower_factory_KLOE
 //
 
 
-#ifndef _DBCALShower_factory_
-#define _DBCALShower_factory_
+#ifndef _DBCALShower_factory_KLOE_
+#define _DBCALShower_factory_KLOE_
 
 #include <JANA/JFactory.h>
 #include <JANA/JEventLoop.h>
@@ -21,12 +21,14 @@ using namespace jana;
 
 #include "BCAL/DBCALShower.h"
 
-class DBCALShower_factory:public JFactory<DBCALShower>{
+class DBCALShower_factory_KLOE:public JFactory<DBCALShower>{
     
 public:
     
-    DBCALShower_factory();
-    ~DBCALShower_factory(){};
+  DBCALShower_factory_KLOE();
+  ~DBCALShower_factory_KLOE(){};
+  
+  const char* Tag(void){return "KLOE";}
     
 private:
         jerror_t brun(JEventLoop *loop, int runnumber);
@@ -191,5 +193,5 @@ private:
     float C_EFFECTIVE;          // Effective v of light in scintillator    
 };
 
-#endif // _DBCALShower_factory_
+#endif // _DBCALShower_factory_KLOE_
 
