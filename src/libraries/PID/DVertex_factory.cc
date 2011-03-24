@@ -119,7 +119,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
   
   // Get BCAL and FCAL showers
   vector<const DBCALShower*>bcal_showers;
-  eventLoop->Get(bcal_showers);
+  eventLoop->Get(bcal_showers, "KLOE" );
   vector<const DFCALCluster*>fcal_showers;
   eventLoop->Get(fcal_showers);
 
