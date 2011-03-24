@@ -10,13 +10,16 @@ class DBCALShower:public JObject{
 	public:
 		JOBJECT_PUBLIC(DBCALShower);
 
-    float E;    
-    float Ecorr;
+    float E;
     float x;
     float y;
     float z;   
     float t;
     int N_cell;
+  
+  // member data below are filled by the original KLOE
+  // clusterizer, but not by new clusterizing routine
+  
     int total_layer_cluster;
     float Apx_x;
     float Apx_y;
