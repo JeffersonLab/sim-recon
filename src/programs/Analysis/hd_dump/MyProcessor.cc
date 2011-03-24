@@ -10,6 +10,8 @@ using namespace std;
 #include <stdio.h>
 #include <unistd.h>
 
+#include <JANA/JApplication.h>
+
 #include "MyProcessor.h"
 
 
@@ -155,6 +157,9 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 			// exception thrown
 		}
 	}
+	
+	// If the program is quitting, then don't bother waiting for the user
+	if(eventLoop->GetJApplication()->GetQuittingStatus())return NOERROR;
 	
 	// Wait for user input if pausing
 	if(PAUSE_BETWEEN_EVENTS && !event_is_boring){
