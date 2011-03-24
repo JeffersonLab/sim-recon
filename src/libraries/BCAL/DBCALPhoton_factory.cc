@@ -164,7 +164,7 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// Get DBCALShower objects
 	vector< const DBCALShower* > showerVect;
-	loop->Get( showerVect );
+	loop->Get( showerVect, "KLOE" );
 
 	//------------- the following is a temporary kludge...
 	const DVertex *vertex=NULL;
