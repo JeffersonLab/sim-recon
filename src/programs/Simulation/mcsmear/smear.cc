@@ -1066,11 +1066,13 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	  }
       }
     
-    //Naively multiply threshold by number of summed cells
+    //Naively multiply threshold by the square root of the number summed cells
     //in order to apply an effective 95% cut on fADC dark counts
     //passing.  Needs more thought.	
-    float InnerThreshold = Bcal_CellInnerThreshold * ((bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1) * (4/bcalGeom->NBCALSECS1);
-    float OuterThreshold = Bcal_CellInnerThreshold * ((11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2) * (4/bcalGeom->NBCALSECS2);	
+    float InnerThreshold = Bcal_CellInnerThreshold * 
+      sqrt( ((bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1) * (4/bcalGeom->NBCALSECS1) );
+    float OuterThreshold = Bcal_CellInnerThreshold * 
+      sqrt( ((11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2) * (4/bcalGeom->NBCALSECS2) );	
     
     for(int i = 1;i<=48;i++)
       {
