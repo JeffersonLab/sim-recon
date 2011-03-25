@@ -501,10 +501,9 @@ void DVertex_factory::FillVertexInfoBCAL(DVertex_factory::vertexInfo_t *vi,
    vi->z=0;  //will be filled in later
    vi->sigmaz=30.0/sqrt(12); // in cm. Use length of target for z-resolution of photons
    vi->t=bcal->t; // will be propagated to vertex later
-   // For some reason sometimes both t_rms_a and t_rms_b are zero...
-   if (bcal->t_rms_a*bcal->t_rms_b<EPS) vi->sigmat=0.5; // guess!
-   else vi->sigmat=0.5*sqrt(bcal->t_rms_a*bcal->t_rms_a
-			    +bcal->t_rms_b*bcal->t_rms_b);
+   vi->sigmat = bcal->tErr;
+   // somtimes KLOE algorithm returns a zero RMS..
+   if (vi->sigmat<EPS) vi->sigmat=0.5; // guess!
    
 }
 
