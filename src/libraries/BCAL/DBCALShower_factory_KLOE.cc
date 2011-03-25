@@ -13,6 +13,8 @@
 #include "BCAL/DBCALGeometry.h"
 #include "BCAL/DBCALShower_factory_KLOE.h"
 
+#include "units.h"
+
 using namespace std;
 
 //------------------
@@ -20,7 +22,7 @@ using namespace std;
 //------------------
 DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
 {
-    // this should be lower than cut in BCALMCResponse
+    // this should be lower than cut in mcsmear
 	ethr_cell=0.0001;     // MIN ENERGY THRESD OF cell in GeV
 
 	CLUST_THRESH = 0.02;  // MIN ENERGY THRESD OF CLUSTER IN GEV
@@ -31,21 +33,34 @@ DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
 	zlyr = 4; 
 	tlyr = 5;
     
-    // these four parameters are used in merging clusters
+  // these four parameters are used in merging clusters
 	MERGE_THRESH_DIST   = 40.0;  // CENTROID DISTANCE THRESHOLD
 	MERGE_THRESH_TIME   =  2.5;  // CENTROID TIME THRESHOLD
 	MERGE_THRESH_ZDIST  = 30.0;  // FIBER DISTANCE THRESHOLD
 	MERGE_THRESH_XYDIST = 40.0;  // CENTROID TRANSVERSE DISTANCE THRESHOLD
 
-    // this parameter is used to break clusters based on rms time
-    BREAK_THRESH_TRMS= 5.0;   // T RMS THRESHOLD
+  // this parameter is used to break clusters based on rms time
+  BREAK_THRESH_TRMS= 5.0;   // T RMS THRESHOLD
     
-    gPARMS->SetDefaultParameter( "BCALRECON:CLUST_THRESH", CLUST_THRESH );
-    gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_DIST", MERGE_THRESH_DIST );
-    gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_TIME", MERGE_THRESH_TIME );
-    gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_ZDIST", MERGE_THRESH_ZDIST );
-    gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_XYDIST", MERGE_THRESH_XYDIST );
-    gPARMS->SetDefaultParameter( "BCALRECON:BREAK_THRESH_TRMS", BREAK_THRESH_TRMS );
+  gPARMS->SetDefaultParameter( "BCALRECON:CLUST_THRESH", CLUST_THRESH );
+  gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_DIST", MERGE_THRESH_DIST );
+  gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_TIME", MERGE_THRESH_TIME );
+  gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_ZDIST", MERGE_THRESH_ZDIST );
+  gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_XYDIST", MERGE_THRESH_XYDIST );
+  gPARMS->SetDefaultParameter( "BCALRECON:BREAK_THRESH_TRMS", BREAK_THRESH_TRMS );
+  
+  // these are energy calibration parameters
+  
+  m_scaleZ_p0 =  0.660299;
+  m_scaleZ_p1 =  0.00229035;
+  m_scaleZ_p2 =  -7.8725e-06;
+  m_scaleZ_p3 =  8.05729e-09;
+  
+  m_nonlinZ_p0 =  0.117;
+  m_nonlinZ_p1 =  -3.79638e-04;
+  m_nonlinZ_p2 =  3.770e-07;    
+  m_nonlinZ_p3 =  1.9274e-10;
+  
 }
 
 //------------------
@@ -170,29 +185,40 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
         DBCALShower *shower = new DBCALShower;
   
         shower->id                  = id++;
-        shower->E                   = e_cls[j];
+        shower->E_raw               = e_cls[j];
         shower->x                   = x_cls[j];
         shower->y                   = y_cls[j];
         shower->z                   = z_cls[j] + zOffset;   
         shower->t                   = t_cls[j];
         shower->N_cell              = ncltot[j];
-        shower->total_layer_cluster = nlrtot[j];
-        shower->Apx_x               = apx[1][j];
-        shower->Apx_y               = apx[2][j];
-        shower->Apx_z               = apx[3][j] + zOffset;
-        shower->error_Apx_x         = eapx[1][j];
-        shower->error_Apx_y         = eapx[2][j];
-        shower->error_Apx_z         = eapx[3][j];
-        shower->Cx                  = ctrk[1][j];
-        shower->Cy                  = ctrk[2][j];
-        shower->Cz                  = ctrk[3][j];
-        shower->error_Cx            = ectrk[1][j];
-        shower->error_Cy            = ectrk[2][j];
-        shower->error_Cz            = ectrk[3][j];
-        shower->t_rms_a             = trms_a[j];
-        shower->t_rms_b             = trms_b[j];
-        
-        _data.push_back(shower);  
+      
+        shower->xErr                = eapx[1][j];
+        shower->yErr                = eapx[2][j];
+        shower->zErr                = eapx[3][j];
+
+        shower->tErr                = 0.5 * sqrt( trms_a[j] * trms_a[j] +
+                                                  trms_b[j] * trms_b[j] );
+      
+        // calibrate energy:
+        // Energy calibration has a z dependence -- the
+        // calibration comes from fitting E_rec / E_gen to scale * E_gen^nonlin
+        // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
+        // as a function of z and fit.
+  
+        // center of target should be a geometry lookup
+        float zTarget = 65*k_cm;
+        float r = sqrt( shower->x * shower->x + shower->y * shower->y );
+      
+        float zEntry = ( shower->z - zTarget ) * ( DBCALGeometry::BCALINNERRAD / r );
+      
+        float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
+                      m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
+        float nonlin = m_nonlinZ_p0  + m_nonlinZ_p1*zEntry + 
+                       m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
+
+        shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
+
+      _data.push_back(shower);  
     }
     
 	return NOERROR;

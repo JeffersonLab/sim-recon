@@ -190,7 +190,18 @@ private:
     float BREAK_THRESH_TRMS;    // T RMS THRESHOLD    
     float CLUST_THRESH;         // MIN ENERGY THRESD OF CLUSTER IN GEV    
     float ATTEN_LENGTH;         // Attenuation lenth and other parameters    
-    float C_EFFECTIVE;          // Effective v of light in scintillator    
+    float C_EFFECTIVE;          // Effective v of light in scintillator 
+  
+    // energy calibration parameters
+    float m_scaleZ_p0;
+    float m_scaleZ_p1;
+    float m_scaleZ_p2;
+    float m_scaleZ_p3;
+
+    float m_nonlinZ_p0;
+    float m_nonlinZ_p1;
+    float m_nonlinZ_p2;
+    float m_nonlinZ_p3;
 };
 
 #endif // _DBCALShower_factory_KLOE_
