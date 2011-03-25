@@ -74,22 +74,19 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   float attUp = exp( -dUp / DBCALGeometry::ATTEN_LENGTH );
   float attDown = exp( -dDown / DBCALGeometry::ATTEN_LENGTH );
  
-  // use these to correct the energy -- perform an average that is
-  // weighted by the square root of the energy at each end
-  m_E =  ( sqrt( upHit.E ) * ( upHit.E / attUp ) + 
-           sqrt( downHit.E ) * ( downHit.E / attDown ) ) / 
-  ( sqrt( upHit.E ) + sqrt( downHit.E ) );
+  // use these to correct the energy
+  m_E =  ( upHit.E / attUp + downHit.E / attDown ) / 2; 
   
   m_r = DBCALGeometry::r( cellId );
-  m_sig_r = DBCALGeometry::rSize( cellId ) / sqrt( 12 );
+  m_sig_r = DBCALGeometry::rSize( cellId );
   
   m_phi = DBCALGeometry::phi( cellId );
-  m_sig_phi = DBCALGeometry::phiSize( cellId ) / sqrt( 12 );
+  m_sig_phi = DBCALGeometry::phiSize( cellId );
   
   // this needs more careful examination.. for now assume that the error on the
-  // time is 400 picoseconds independent of energy and position
+  // 1/2 the time difference is 70 ps / sqrt( E ), as was reported in the BCAL NIM
   
-  m_sig_z = cEff * 400 * k_psec;
+  m_sig_z = cEff * 70 * k_psec / sqrt( m_E );
   
   // recast in terms of spherical coordinates
   convertCylindricalToSpherical();
@@ -119,10 +116,10 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit, float zTarget )
   m_E =  hit.E / att;
   
   m_r = DBCALGeometry::r( cellId );
-  m_sig_r = DBCALGeometry::rSize( cellId ) / sqrt( 12 );
+  m_sig_r = DBCALGeometry::rSize( cellId );
   
   m_phi = DBCALGeometry::phi( cellId );
-  m_sig_phi = DBCALGeometry::phiSize( cellId ) / sqrt( 12 );
+  m_sig_phi = DBCALGeometry::phiSize( cellId );
   
   // this needs more careful examination.. especially for single end
   // hits like this one
