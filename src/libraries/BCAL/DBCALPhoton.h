@@ -30,23 +30,15 @@ public:
     ~DBCALPhoton(){}
         
     inline DVector3 showerPosition() const { return m_position; }
+    inline DVector3 showerPositionErr() const { return m_positionErr; }
     inline double showerTime() const { return m_time; }
     inline DLorentzVector lorentzMomentum() const { return m_p4; }
-
-    inline DVector3 fitLayPoint()    const { return m_fitLayPoint;    }
-    inline DVector3 fitLayPointErr() const { return m_fitLayPointErr; }
-    inline DVector3 fitLaySlope()    const { return m_fitLayPoint;    }
-    inline DVector3 fitLaySlopeErr() const { return m_fitLaySlopeErr; }
     
     void setShowerPosition( const DVector3& vec3 ) { m_position = vec3; }
+    void setShowerPositionErr( const DVector3& vec3 ) { m_positionErr = vec3; }
     void setShowerTime( const double t ) { m_time = t; }
     void setLorentzMomentum( const DLorentzVector& p4 ) { m_p4 = p4; }
     
-    void setFitLayPoint( const DVector3& vec3 )    { m_fitLayPoint = vec3;    }
-    void setFitLayPointErr( const DVector3& vec3 ) { m_fitLayPointErr = vec3; }
-    void setFitLaySlope( const DVector3& vec3 )    { m_fitLaySlope = vec3;    }
-    void setFitLaySlopeErr( const DVector3& vec3 ) { m_fitLaySlopeErr = vec3; }
-
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "x", "%3.2f", m_position.X());
 			AddString(items, "y", "%3.2f", m_position.Y());
@@ -61,13 +53,9 @@ public:
 private:
       
     DVector3 m_position;
+    DVector3 m_positionErr;
     double m_time;
     DLorentzVector m_p4;
-    
-    DVector3 m_fitLayPoint;
-    DVector3 m_fitLayPointErr;
-    DVector3 m_fitLaySlope;
-    DVector3 m_fitLaySlopeErr;
 };
 
 
