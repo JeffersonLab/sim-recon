@@ -244,9 +244,9 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
         photon->setTag( DPhoton::kBcal );
         DMatrixDSym sigmas(7);
 
-        sigmas(0,0) = pow( gamma->fitLayPointErr().X(), 2.0); // 
-        sigmas(1,1) = pow( gamma->fitLayPointErr().Y(), 2.0); // 
-        sigmas(2,2) = pow( gamma->fitLayPointErr().Z(), 2.0); // 
+        sigmas(0,0) = pow( gamma->showerPositionErr().X(), 2.0); // 
+        sigmas(1,1) = pow( gamma->showerPositionErr().Y(), 2.0); // 
+        sigmas(2,2) = pow( gamma->showerPositionErr().Z(), 2.0); // 
 
         sigmas[3][3] = 1.; // From Blake's simulation
         if ( energy>=0 ) sigmas[3][3] = pow( 0.0445*sqrt( energy ) + 0.009*energy, 2.0);
