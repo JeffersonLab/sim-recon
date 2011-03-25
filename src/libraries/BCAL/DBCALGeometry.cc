@@ -5,18 +5,38 @@
 #include "DBCALGeometry.h"
 
 int DBCALGeometry::NBCALMODS = 48;
+
+// On each module there is a 10x4 (r/phi) array of SiPMs -- this factory
+// allows two different "rectangular" groupings, an inner (1) and an outer (2)
+
+/*
+// The configuration below has 3x1 (r/phi) summed cells in the inner
+// and 2x2 summed cells in the outer region
+int DBCALGeometry::NBCALLAYS1 =  2;
+int DBCALGeometry::NBCALLAYS2 =  2; 
+int DBCALGeometry::NBCALSECS1 =  4; 
+int DBCALGeometry::NBCALSECS2 =  2;
+// end of summing configuration
+*/
+
+// The configuration below has no summing of SiPMs
 int DBCALGeometry::NBCALLAYS1 =  6;
 int DBCALGeometry::NBCALLAYS2 =  4; 
 int DBCALGeometry::NBCALSECS1 =  4; 
 int DBCALGeometry::NBCALSECS2 =  4;
-int DBCALGeometry::BCALMID = 7; //Enter the first layer in "outer cells" (default 7)
+// end of no summing configuration
+
+
+// Enter the index of the SiPM that designates the first
+// (counting radially outward) of the outer cells (default 7)
+int DBCALGeometry::BCALMID = 7;
+
 float DBCALGeometry::BCALINNERRAD = 64.3;   
 float DBCALGeometry::BCALOUTERRAD = 86.17;
 float DBCALGeometry::BCALFIBERLENGTH = 390.0;
 float DBCALGeometry::GLOBAL_CENTER = 212;
   
 float DBCALGeometry::ATTEN_LENGTH = 300.;
-   
 float DBCALGeometry::C_EFFECTIVE  = 16.75;
 
 float DBCALGeometry::m_radius[] = { 64.3, 
