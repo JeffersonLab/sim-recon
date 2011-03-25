@@ -70,6 +70,8 @@ DBCALShower_factory::evnt( JEventLoop *loop, int eventnumber ){
                          dphi * dphi * dz_dphi * dz_dphi +
                          dth * dth * dz_dth * dz_dth );
     
+    shower->tErr = (**clItr).sigT();
+    
     // set these the same for now -- need calibration correction
     shower->E = shower->E_raw;
 
