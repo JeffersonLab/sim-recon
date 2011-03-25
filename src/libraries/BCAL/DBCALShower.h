@@ -11,31 +11,17 @@ class DBCALShower:public JObject{
 		JOBJECT_PUBLIC(DBCALShower);
 
     float E;
+    float E_raw;
     float x;
     float y;
-    float z;   
+    float z;
     float t;
+    float xErr;
+    float yErr;
+    float zErr;
+    float tErr;
     int N_cell;
   
-  // member data below are filled by the original KLOE
-  // clusterizer, but not by new clusterizing routine
-  
-    int total_layer_cluster;
-    float Apx_x;
-    float Apx_y;
-    float Apx_z;
-    float error_Apx_x;
-    float error_Apx_y;
-    float error_Apx_z;
-    float Cx;
-    float Cy;
-    float Cz;
-    float error_Cx;
-    float error_Cy;
-    float error_Cz;
-    float t_rms_a;
-    float t_rms_b;
-
 	void toStrings(vector<pair<string,string> > &items)const{
 	                /*Old, easier to compare r-phi rather than x-y, for Truth Hits
 			AddString(items, "x", "%5.2f", x);
