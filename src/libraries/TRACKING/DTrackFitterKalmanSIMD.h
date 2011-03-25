@@ -21,6 +21,7 @@ using namespace std;
 typedef struct{
   int status;
   double residual;
+  bool used_in_fit;
   const DCDCTrackHit *hit;
 }DKalmanSIMDCDCHit_t;
 
@@ -28,6 +29,7 @@ typedef struct{
   double t,cosa,sina,dE;
   double uwire,vstrip,z;
   double xres,yres;
+  bool used_in_fit;
   double nr,nz;
 }DKalmanSIMDFDCHit_t;
 
@@ -60,8 +62,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     central_traj.clear();
     forward_traj.clear();
     forward_traj_cdc.clear();
-    cdc_resid.clear();
-    cdc_pulls.clear();
     cov.clear();
     fcov.clear();
 
@@ -192,6 +192,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C);
 
+  void ComputeT0FromCDC(double z,double tflight,double dEdx,
+			unsigned int cdc_index,
+			const DMatrix5x1 &S,const DMatrix5x5 &C);
+
 
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
@@ -224,9 +228,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   deque<DKalmanSIMDState_t>forward_traj;
   deque<DKalmanSIMDState_t>forward_traj_cdc;
 
-  vector<double>cdc_resid;
-  vector<double>cdc_pulls;
-
   // flight time and path length
   double ftime, len;
 
@@ -246,15 +247,16 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double m_ratio_sq; // .. and its square
 
   // Vertex time
-  double mT0,mT0wires;
+  double mT0,mT0wires,mT0best;
   // Variance in vertex time
   double mVarT0;
   // inverse of vertex time variance;
-  double mInvVarT0;
+  double mInvVarT0,mInvVarT0best;
 
   bool DEBUG_HISTS;
   bool USE_MATERIAL_BOUNDARIES;
   int DEBUG_LEVEL;
+  bool USE_T0_FROM_WIRES;
   
   // Min. momentum needed for fit before returning fitSuccess
   double MIN_FIT_P;
@@ -262,7 +264,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
   TH2F *Hstepsize,*HstepsizeDenom;
-  TH2F *fdc_t0,*fdc_t0_vs_theta;
+  TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
   TH2F *cdc_drift;
 };
 
