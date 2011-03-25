@@ -11,7 +11,7 @@
 
 #include <math.h>
 
-DBCALCluster::DBCALCluster( const DBCALPoint* point ){
+DBCALCluster::DBCALCluster( const DBCALPoint* point ) : m_points ( 0 ) {
 
   m_points.push_back( point );
   makeFromPoints();

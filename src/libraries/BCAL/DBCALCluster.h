@@ -46,7 +46,7 @@ public:
   float t0() const; 
   
   // location of cluster in spherical coordinates with the origin
-  // at the center of the target -- errors are not rigrously derived!
+  // at the center of the target -- WARNING: errors are not rigrously derived!
   float rho() const { return m_rho; }
   float sigRho() const { return m_sig_rho; }
   
