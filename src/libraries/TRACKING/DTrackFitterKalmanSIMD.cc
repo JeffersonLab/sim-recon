@@ -2421,9 +2421,18 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	for (unsigned int iter=0;iter<10;iter++) {      	  
 	  if (iter>0){
 	    // Use the smoother to find the state vector at the first (most
-	    // downstream) plane and use it as the seed data to the KalmanSIMD 
+	    // downstream) plane and use it as the seed data to the Kalman
 	    // filter 
 	    SmoothForward(S);
+	    // Empirical correction for offset of unknown origin...
+	    if (fit_type==kWireBased){
+	      if (USE_T0_FROM_WIRES){
+		if (iter==0) mT0wires-=1.56;
+	      }
+	      else{
+		mT0wires-=1.56;
+	      }
+	    }
 	  } 
 	  
 	  C=C0;	  
@@ -2435,10 +2444,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  }
 		  
 	  // Check the charge relative to the hypothesis for protons
-	  if (MASS>0.9){
-	    if (iter2>0) break;
+	  if (MASS>0.9){	   
 	    double my_q=S(state_q_over_p)>0?1.:-1.;
 	    if (q!=my_q){
+	      if (iter2>0) break;
 	      if (DEBUG_LEVEL>0)
 		_DBG_ << "Sign change in fit for protons" <<endl;
 	      return VALUE_OUT_OF_RANGE;
@@ -2533,7 +2542,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
   // Deal with CDC-only tracks with theta<50 degrees using forward 
   //parameters
-  if (my_cdchits.size()>0 && tanl_>0.839 /* tanl_>0.57735 */){
+  if (my_cdchits.size()>0 && tanl_>0.57735){
     // Order the CDC hits by ring number
     sort(my_cdchits.begin(),my_cdchits.end(),DKalmanSIMDCDCHit_cmp);
 
@@ -2613,6 +2622,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    // downstream) plane and use it as the seed data to the KalmanSIMD 
 	    // filter 
 	    SmoothForwardCDC(S);
+	    // Empirical correction for offset of unknown origin...
+	    if (fit_type==kWireBased){
+	      if (USE_T0_FROM_WIRES){
+		if (iter==0) mT0wires+=15.63;
+	      }
+	      else{
+		mT0wires+=15.63;
+	      }
+	    }
 	  } 
 	  
 	  C=C0;
@@ -2624,10 +2642,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  }
 
 	  // Check the charge relative to the hypothesis for protons
-	  if (MASS>0.9){
-	    if (iter2>0) break;
+	  if (MASS>0.9){	  
 	    double my_q=S(state_q_over_p)>0?1.:-1.;
 	    if (q!=my_q){
+	      if (iter2>0) break;
 	      if (DEBUG_LEVEL>0)
 		_DBG_ << "Sign change in fit for protons" <<endl;
 	      return VALUE_OUT_OF_RANGE;
@@ -2813,6 +2831,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    // step along the trajectory and use it as the seed data to the 
 	    // KalmanSIMD filter 
 	    SmoothCentral(Sc);
+	    // Empirical correction for offset of unknown origin...
+	    if (fit_type==kWireBased){
+	      if (USE_T0_FROM_WIRES){
+		if (iter==0) mT0wires+=10.26;
+	      }
+	      else{
+		mT0wires+=10.26;
+	      }
+	    }
 	  }
 	  // Perform the filter
 	  error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq_central,my_ndf);
@@ -2822,10 +2849,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  }
 	  	  
 	  // Check the charge relative to the hypothesis for protons
-	  if (MASS>0.9){
-	    if (iter2>0) break;
+	  if (MASS>0.9){	   
 	    double my_q=Sc(state_q_over_pt)>0?1.:-1.;
 	    if (q!=my_q){
+	      if (iter2>0) break;
 	      if (DEBUG_LEVEL>0)
 		_DBG_ << "Sign change in fit for protons" <<endl;
 	      return VALUE_OUT_OF_RANGE;
