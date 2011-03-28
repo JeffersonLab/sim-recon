@@ -834,7 +834,7 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
 		return false;
 	}
   
-  z=cdc_origin[2]+cdc_center[2]+cdc_endplate_pos[2]+cdc_endplate_dim[2];
+  z=cdc_origin[2]+cdc_center[2]+cdc_endplate_pos[2];
   dz=cdc_endplate_dim[2];
   rmin=cdc_endplate_dim[0];
   rmax=cdc_endplate_dim[1];
