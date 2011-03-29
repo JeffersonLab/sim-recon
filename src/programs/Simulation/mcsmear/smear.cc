@@ -843,8 +843,8 @@ void SmearBCAL(s_HDDM_t *hddm_s)
   
   
   for( int m = 1; m <= 48; ++m ){
-    for( int l = 1; l <= 4; ++l ){
-      for( int s = 1; s <= 10; ++s ){
+    for( int l = 1; l <= 10; ++l ){
+      for( int s = 1; s <= 4; ++s ){
 	
 	pair< int, int > nHits( getDarkHits(), getDarkHits() );
 	
@@ -1070,9 +1070,9 @@ void SmearBCAL(s_HDDM_t *hddm_s)
     //in order to apply an effective 95% cut on fADC dark counts
     //passing.  Needs more thought.	
     float InnerThreshold = Bcal_CellInnerThreshold * 
-      sqrt( ((bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1) * (4/bcalGeom->NBCALSECS1) );
+      ((bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1) * (4/bcalGeom->NBCALSECS1);
     float OuterThreshold = Bcal_CellInnerThreshold * 
-      sqrt( ((11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2) * (4/bcalGeom->NBCALSECS2) );	
+      ((11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2) * (4/bcalGeom->NBCALSECS2);	
     
     for(int i = 1;i<=48;i++)
       {
