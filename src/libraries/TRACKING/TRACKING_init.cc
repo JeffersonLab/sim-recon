@@ -20,6 +20,7 @@
 #include "DTrackHitSelector_factory_ALT2.h"
 #include "DTrackHitSelector_factory_THROWN.h"
 #include "DTrackFitter_factory_KalmanSIMD.h"
+#include "DTrackFitter_factory_KalmanSIMD_ALT1.h"
 
 #include "DMCThrown.h"
 #include "DMCTrackHit.h"
@@ -52,7 +53,8 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrackHitSelector_factory_ALT1());
 	loop->AddFactory(new DTrackHitSelector_factory_ALT2());
 	loop->AddFactory(new DTrackHitSelector_factory_THROWN());
-	loop->AddFactory(new DTrackFitter_factory_KalmanSIMD());
+	loop->AddFactory(new DTrackFitter_factory_KalmanSIMD());	
+	loop->AddFactory(new DTrackFitter_factory_KalmanSIMD_ALT1());
 
 	return NOERROR;
 }
