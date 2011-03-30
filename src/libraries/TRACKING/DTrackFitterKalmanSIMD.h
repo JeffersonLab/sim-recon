@@ -16,6 +16,55 @@
 #include <TH2.h>
 #include <TH1.h>
 
+#define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
+#define EPS 3.0e-8
+#define BIG 1.0e8
+#define EPS2 1.e-4
+#define BEAM_RADIUS  0.1 
+#define MAX_ITER 25
+#define MAX_CHI2 1e8
+#define CDC_BACKWARD_STEP_SIZE 0.5
+#define NUM_ITER 10
+#define Z_MIN 0.
+#define Z_MAX 370.
+#define R_MAX 65.0
+#define R_MAX_FORWARD 88.0
+#ifndef SPEED_OF_LIGHT
+#define SPEED_OF_LIGHT 29.98
+#endif
+#define CDC_DRIFT_SPEED 55e-4
+#define VAR_S 0.09
+#define Q_OVER_P_MAX 100. // 10 MeV/c
+#define PT_MIN 0.01 // 10 MeV/c
+#define MAX_PATH_LENGTH 500.
+#define TAN_MAX 10.
+
+
+#define NUM_SIGMA 100.0
+
+#define CDC_VARIANCE 0.000225
+#define FDC_CATHODE_VARIANCE 0.000225
+#define FDC_ANODE_VARIANCE 0.0004
+
+#define ONE_THIRD  0.33333333333333333
+#define ONE_SIXTH  0.16666666666666667
+#define TWO_THIRDS 0.66666666666666667
+
+#define CHISQ_DIFF_CUT 20.
+#define MAX_DEDX 40.
+#define MIN_ITER 2
+#define MIN_CDC_ITER 0
+
+#define MOLIERE_FRACTION 0.99
+#define DE_PER_STEP_WIRE_BASED 0.0001 // 100 keV
+#define DE_PER_STEP_TIME_BASED 0.0001
+#define BFIELD_FRAC 0.002
+#define MIN_STEP_SIZE 0.1 // 1 mm
+#define CDC_INTERNAL_STEP_SIZE 0.2
+#define FDC_INTERNAL_STEP_SIZE 0.2
+
+#define ELECTRON_MASS 0.000511 // GeV
+
 using namespace std;
 
 typedef struct{
@@ -83,8 +132,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(void);
-  jerror_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
-			 double &chisq,unsigned int &numdof);
+  virtual jerror_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
+				 double &chisq,unsigned int &numdof);
+  virtual jerror_t SmoothForward(DMatrix5x1 &S);   
+
   jerror_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			    double &chisq,unsigned int &numdof);
   jerror_t KalmanCentral(double anneal_factor,DMatrix5x1 &S,DMatrix5x5 &C,
@@ -112,9 +163,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double GetEnergyVariance(double ds,double beta2,double K_rho_Z_over_A);
 
  protected:
-
-  
- private:
   enum state_types_forward{
     state_x,
     state_y,
@@ -138,6 +186,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     state_Y,
     state_Z,
   };
+  double fdc_y_variance(double alpha,double x,double dE);
+  double cdc_variance(double x);  
+
   void ResetKalmanSIMD(void);
   jerror_t GetProcessNoise(double ds,double Z, double rho_Z_over_A, 
 			   const DMatrix5x1 &S,DMatrix5x5 &Q);
@@ -171,8 +222,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
 			      const DMatrix5x1 &S,DMatrix5x1 &Sc);
   jerror_t GetProcessNoiseCentral(double ds,double Z,double rho_Z_over_A, 
-				  const DMatrix5x1 &S,DMatrix5x5 &Q);
-  jerror_t SmoothForward(DMatrix5x1 &S);   
+				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
   jerror_t SmoothForwardCDC(DMatrix5x1 &S);   
   jerror_t SmoothCentral(DMatrix5x1 &S);  
   jerror_t SwimToPlane(DMatrix5x1 &S);
@@ -260,6 +310,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   
   // Min. momentum needed for fit before returning fitSuccess
   double MIN_FIT_P;
+
+ private:
 
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;

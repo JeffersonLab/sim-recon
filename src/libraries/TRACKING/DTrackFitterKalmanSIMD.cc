@@ -18,55 +18,6 @@
 
 #define NaN std::numeric_limits<double>::quiet_NaN()
 
-#define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
-#define EPS 3.0e-8
-#define BIG 1.0e8
-#define EPS2 1.e-4
-#define BEAM_RADIUS  0.1 
-#define MAX_ITER 25
-#define MAX_CHI2 1e8
-#define CDC_BACKWARD_STEP_SIZE 0.5
-#define NUM_ITER 10
-#define Z_MIN 0.
-#define Z_MAX 370.
-#define R_MAX 65.0
-#define R_MAX_FORWARD 88.0
-#ifndef SPEED_OF_LIGHT
-#define SPEED_OF_LIGHT 29.98
-#endif
-#define CDC_DRIFT_SPEED 55e-4
-#define VAR_S 0.09
-#define Q_OVER_P_MAX 100. // 10 MeV/c
-#define PT_MIN 0.01 // 10 MeV/c
-#define MAX_PATH_LENGTH 500.
-#define TAN_MAX 10.
-
-
-#define NUM_SIGMA 100.0
-
-#define CDC_VARIANCE 0.000225
-#define FDC_CATHODE_VARIANCE 0.000225
-#define FDC_ANODE_VARIANCE 0.0003
-
-#define ONE_THIRD  0.33333333333333333
-#define ONE_SIXTH  0.16666666666666667
-#define TWO_THIRDS 0.66666666666666667
-
-#define CHISQ_DIFF_CUT 20.
-#define MAX_DEDX 40.
-#define MIN_ITER 0
-#define MIN_CDC_ITER 0
-
-#define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.0001 // 100 keV
-#define DE_PER_STEP_TIME_BASED 0.0001
-#define BFIELD_FRAC 0.002
-#define MIN_STEP_SIZE 0.1 // 1 mm
-#define CDC_INTERNAL_STEP_SIZE 0.2
-#define FDC_INTERNAL_STEP_SIZE 0.2
-
-#define ELECTRON_MASS 0.000511 // GeV
-
 // Local boolean routines for sorting
 //bool static DKalmanSIMDHit_cmp(DKalmanSIMDHit_t *a, DKalmanSIMDHit_t *b){
 //  return a->z<b->z;
@@ -91,8 +42,9 @@ bool static DKalmanSIMDCDCHit_cmp(DKalmanSIMDCDCHit_t *a, DKalmanSIMDCDCHit_t *b
 // diffusion, and an intrinsic resolution of 127 microns.
 #define DIFFUSION_COEFF     1.1e-6 // cm^2/s --> 200 microns at 1 cm
 #define DRIFT_SPEED           .0055
-#define FDC_CATHODE_SIGMA_FACTOR 0.022
-inline double fdc_y_variance(double alpha,double x,double dE){
+#define FDC_CATHODE_SIGMA_FACTOR 0.0223
+double DTrackFitterKalmanSIMD::fdc_y_variance(double alpha,double x,double dE){
+  //return FDC_CATHODE_VARIANCE;
   double diffusion=2.*DIFFUSION_COEFF*fabs(x)/DRIFT_SPEED;
   double sigma_from_dE=FDC_CATHODE_SIGMA_FACTOR/dE;
   //return sigma_from_dE*sigma_from_dE;
@@ -102,24 +54,11 @@ inline double fdc_y_variance(double alpha,double x,double dE){
 
 // Crude approximation for the variance in drift distance due to smearing
 inline double fdc_drift_variance(double x){
-  //return FDC_ANODE_VARIANCE;
-  // root fit function:
-  //  TF1 *f1=new TF1("f1","[0]*exp([1]*x)+[2]*exp([3]*x)+[4]*exp([5]*x)+[6]",0.,5.);
-  double par[7]
-    //={0.0234641,-14.3964,0.0298645,20.6634,-0.029864,20.6631,0.00453856};
-    ={0.0234641,-14.3964,0.0298645,20.6634,-0.029864,20.663,0.00453856};
-  x=fabs(x);
-  double fdc_scale_factor=1.1;
-  double sigma=fdc_scale_factor*(par[0]*exp(par[1]*x)+par[2]*exp(par[3]*x)
-				 +par[4]*exp(par[5]*x)+par[6]);
-  
-  
-  //  printf("x %f sigma %f\n",x,sigma);
-  return sigma*sigma;
+  return FDC_ANODE_VARIANCE;
 }
 
 // Smearing function from Yves
-inline double cdc_variance(double x){  
+double DTrackFitterKalmanSIMD::cdc_variance(double x){  
   //return CDC_VARIANCE;
 
   x*=10.; // mm
@@ -136,17 +75,18 @@ inline double cdc_variance(double x){
 DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(loop){
   // Get the position of the CDC downstream endplate from DGeometry
   geom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
-  endplate_z-=endplate_dz;
+  endplate_z-=0.5*endplate_dz;
 
   // Beginning of the cdc
   vector<double>cdc_center;
-  vector<double>cdc_upstream_endplate_pos;  
+  vector<double>cdc_upstream_endplate_pos; 
+  vector<double>cdc_endplate_dim;
   geom->Get("//posXYZ[@volume='CentralDC'/@X_Y_Z",cdc_origin);
   geom->Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_center);
   geom->Get("//posXYZ[@volume='CDPU']/@X_Y_Z",cdc_upstream_endplate_pos);
-  for (unsigned int i=0;i<3;i++){
-    cdc_origin[i]+=cdc_center[i]+cdc_upstream_endplate_pos[i];
-  }
+  geom->Get("//tubs[@name='CDPU']/@Rio_Z",cdc_endplate_dim);
+  cdc_origin[2]+=cdc_center[2]+cdc_upstream_endplate_pos[2]
+    +0.5*cdc_endplate_dim[2];
 
   DEBUG_HISTS=false; 
   gPARMS->SetDefaultParameter("KALMAN:DEBUG_HISTS", DEBUG_HISTS);
@@ -310,7 +250,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   if (fit_type==kTimeBased){
     mT0=input_params.t0();
   }
-  
+
   // Set starting parameters
   jerror_t error = SetSeed(input_params.charge(), input_params.position(), 
 			   input_params.momentum());
@@ -2459,10 +2399,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    if (DEBUG_LEVEL>0) _DBG_<< "-- forward fit failed --" <<endl;
 	    return VALUE_OUT_OF_RANGE;
 	  }
+	  if (DEBUG_LEVEL>0)
+	    cout << "iter " << iter2 << " chi2 " << chisq << endl;
 
 	  if (!isfinite(chisq)){
-	    if (DEBUG_LEVEL>0)
-	      cout << "iter " << iter2 << " chi2 " << chisq << endl;
 	    if (iter2>0) break;
 	    return VALUE_OUT_OF_RANGE;
 	  }
@@ -2480,6 +2420,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	if (iter2==0) return UNRECOVERABLE_ERROR;	
 	break;
       }
+
+      if (DEBUG_LEVEL>0)
+	cout << "Outer loop iter " << iter2 << " chisq " << chisq_forward
+	     << " ndf " << last_ndf << endl;
 
       // Abort loop if the chisq is increasing or not changing much
       if (chisq_forward>chisq_iter||fabs(chisq_forward-chisq_iter)<0.1) break;
@@ -2735,6 +2679,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // total chisq and ndf
     chisq_=chisq_iter;
     ndf=best_ndf-5;
+    
+    //printf("cdc forward NDof %d\n",ndf);
 
     return NOERROR;
   }  
@@ -2952,6 +2898,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // total chisq and ndf
     chisq_=chisq_iter;
     ndf=best_ndf-5;
+    //printf("NDof %d\n",ndf);
   }
 
   return NOERROR;
@@ -3400,7 +3347,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
 	  // Measurement error
 	  //V=anneal_factor*CDC_VARIANCE;
-	  V=cdc_variance(measurement)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
+	  if (Sc(state_z)>cdc_origin[2])  
+	    V=cdc_variance(measurement)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
+
 	}
 	else if (USE_T0_FROM_WIRES && mInvVarT0>EPS){
 	  measurement=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
@@ -3700,22 +3649,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	double nz=my_fdchits[id]->nz;
 	double nr=my_fdchits[id]->nr;
 	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
+
+	// Variance in coordinate along wire
+	V(1,1)=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[id]->dE);
 		
 	// Difference between measurement and projection
 	Mdiff(1)=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
 	if (fit_type==kWireBased){
 	  Mdiff(0)=-doca;
-	  /* Experimental */
-	  if (USE_T0_FROM_WIRES && mInvVarT0>EPS){
-	    double drift_time=my_fdchits[id]->t-mT0wires-forward_traj[k].t;
-	    double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
-	    Mdiff(0)+=drift;  
-	    // Variance in drift distance
-	    V(0,0)=anneal_factor*fdc_drift_variance(drift);
-	    V(0,0)+=DRIFT_SPEED*DRIFT_SPEED/mInvVarT0;
-	    // variance for coordinate along the wire
-	    V(1,1)=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[id]->dE);
-	  }
 	}
 	else{
 	  // Compute drift distance
@@ -3723,12 +3664,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
 	  
 	  Mdiff(0)=drift-doca;
-	  
+
+	  if (DEBUG_LEVEL>2){
+	    printf("drift time %f sigma %f\n",drift,sqrt(fdc_drift_variance(drift)));
+	  }
+
 	  // Variance in drift distance
 	  V(0,0)=anneal_factor*fdc_drift_variance(drift);
 	  V(0,0)+=DRIFT_SPEED*DRIFT_SPEED*mVarT0;
-	  // variance for coordinate along the wire
-	  V(1,1)=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[id]->dE);
 	}
 	
 	// To transform from (x,y) to (u,v), need to do a rotation:
@@ -3893,7 +3836,12 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    // Update chi2 for this segment
 	    chisq+=RC.Chi2(R);
 	    
-	    //printf("hit %d p %f chi2 %f z %f\n",id,1./S(state_q_over_p),RC.Chi2(R),forward_traj[k].pos.z());
+	    if (DEBUG_LEVEL>2){
+	      printf("hit %d p %5.2f dm %5.2f %5.2f sig %5.3f %5.3f chi2 %5.2f z %5.2f\n",
+		     id,1./S(state_q_over_p),Mdiff(0),Mdiff(1),
+		     sqrt(RC(0,0)),sqrt(RC(1,1)),RC.Chi2(R),forward_traj[k].pos.z());
+	    
+	    }
 	      // update number of degrees of freedom
 	    numdof+=2;
 	    
@@ -4024,23 +3972,18 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  if (fit_type==kTimeBased)
 	    {
 	      dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
-				  -forward_traj[k].t);
-	      /*
-	      printf("z %f cdc hit %d dm %f t %f %f\n",forward_traj[k].pos.z(),
-		     cdc_index,dm,
-		my_cdchits[cdc_index]->hit->tdrift,forward_traj[k].t);
-	      */
+				  -forward_traj[k-1].t);
 	      // variance
-	      //V=CDC_VARIANCE*anneal;
-	      Vc=cdc_variance(dm)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
+	      //Vc=CDC_VARIANCE*10.0;
+	      if (newz<endplate_z)
+		Vc=cdc_variance(dm)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
 	    }
 	  else if (USE_T0_FROM_WIRES && mInvVarT0>EPS){
 	    dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
 				-mT0wires
-				-forward_traj[k].t);
-	  Vc=cdc_variance(dm)
-	    +CDC_DRIFT_SPEED*CDC_DRIFT_SPEED/mInvVarT0;
-	}
+				-forward_traj[k-1].t);
+	    Vc=cdc_variance(d)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED/mInvVarT0;
+	  }
 
 	  // inverse variance including prediction
 	  double InvV1=1./(Vc+Hc*(C*Hc_T));
@@ -4050,7 +3993,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    return VALUE_OUT_OF_RANGE;
 	  }
 	  
-	  if (DEBUG_LEVEL==2)
+	  if (DEBUG_LEVEL>2)
 	    printf("Ring %d straw %d pred %f meas %f V %f %f sig %f\n",
 		   my_cdchits[cdc_index]->hit->wire->ring,
 		   my_cdchits[cdc_index]->hit->wire->straw,
@@ -4349,7 +4292,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	    */
 	    // variance
 	    //V=CDC_VARIANCE*anneal;
-	    V=cdc_variance(dm)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
+	    if (newz<endplate_z)
+	      V=cdc_variance(dm)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
 	   
 	}
 	else if (USE_T0_FROM_WIRES && mInvVarT0>EPS){
