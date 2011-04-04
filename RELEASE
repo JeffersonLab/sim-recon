@@ -1,0 +1,1211 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-03-31
+   Date: April 4, 2011
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 7661 of trunk/sim-recon .
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.1
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.1
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r7380 | davidl | 2011-02-07 07:55:20 -0500 (Mon, 07 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+Add newline to end of mcsmear.cc to avoid compiler warnings.
+------------------------------------------------------------------------
+r7401 | staylor | 2011-02-11 13:26:42 -0500 (Fri, 11 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+smearing for FDC coordinate determined from strips now depends on energy deposition in the drift cell. Also increased the number of iterations in the fit because this improves the fit results.
+------------------------------------------------------------------------
+r7402 | staylor | 2011-02-11 13:49:25 -0500 (Fri, 11 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+
+Convert vertex to a DLorentzVector in order to add the vertex time, currently set to zero.  To access, use for example vector->x.T().
+------------------------------------------------------------------------
+r7403 | staylor | 2011-02-11 13:50:41 -0500 (Fri, 11 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPhoton_factory.cc
+
+Make code consistent with new version of DVertex
+------------------------------------------------------------------------
+r7409 | elton | 2011-02-11 17:04:08 -0500 (Fri, 11 Feb 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/bggen/paw/pi_plot.f
+   A /trunk/sim-recon/src/programs/Simulation/bggen/paw/plot_pi0_photons.kumac
+
+add scripts to plot photons from pi0 and eta decays
+------------------------------------------------------------------------
+r7418 | davidl | 2011-02-14 16:36:29 -0500 (Mon, 14 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+
+Disable deletion of objects owned by the base class JApplication when DApplication::~DApplication() is called. This was leading to double frees and causing seg. faults at program exit.
+------------------------------------------------------------------------
+r7419 | staylor | 2011-02-14 18:07:08 -0500 (Mon, 14 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_fulllistframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+Add candidate number to display for wire-based and time-based tracks
+------------------------------------------------------------------------
+r7420 | staylor | 2011-02-15 10:38:26 -0500 (Tue, 15 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Remove some unused parameters.  Adjust the number of iterations -- still trying to get this right.  Enable code to get rid of extreme outlier hits.  Turn off debug hists by default.
+------------------------------------------------------------------------
+r7423 | davidl | 2011-02-15 15:06:20 -0500 (Tue, 15 Feb 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/BMS/get_macos_arch
+   M /trunk/sim-recon/src/BMS/osrelease.pl
+
+Update osrelease.pl to properly return that the ARCH on Ubuntu 64-bit systems is x86_64 instead of unknown
+------------------------------------------------------------------------
+r7424 | staylor | 2011-02-15 18:16:47 -0500 (Tue, 15 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Do not consider two seeds to be clones if they do not have the same charge.
+------------------------------------------------------------------------
+r7425 | davidl | 2011-02-16 06:46:04 -0500 (Wed, 16 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.ROOT
+   A /trunk/sim-recon/src/BMS/get_root_version
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DRootGeom.cc
+
+Conditionally compile instantiation of TGeoManager only when ROOT version is 5.28 or greater. This is not a great solution, but I can't seem to think of a better one at the moment.
+------------------------------------------------------------------------
+r7434 | jonesrt | 2011-02-17 04:17:51 -0500 (Thu, 17 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+
+hddm-c.cpp [rtj]
+	* create dummy pointer pbuf to hold return from fgets, otherwise compiler warnings flag it
+
+------------------------------------------------------------------------
+r7435 | jonesrt | 2011-02-17 04:45:29 -0500 (Thu, 17 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_events/hddm_merge_events.cc
+
+hddm_merge_events.cc [rtj]
+	* fixed a bug in how global c string OUTFILENAME was being initialized
+
+------------------------------------------------------------------------
+r7436 | jonesrt | 2011-02-17 04:48:27 -0500 (Thu, 17 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/hddm_merge_files.cc
+
+hddm_merge_files.cc [rtj]
+	* fixed a bug in how c string OUTFILENAME was being initialized
+
+------------------------------------------------------------------------
+r7437 | jonesrt | 2011-02-17 04:53:20 -0500 (Thu, 17 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genr8/genr8.c
+
+genr8.c [rtj]
+	* save return value from fgets in dummy var to suppress compiler warnings
+
+------------------------------------------------------------------------
+r7438 | jonesrt | 2011-02-17 04:56:26 -0500 (Thu, 17 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm/genr8_2_hddm.cc
+
+genr8_2_hddm.cc [rtj]
+	* fix string initialization to suppress compiler warning
+
+------------------------------------------------------------------------
+r7439 | jonesrt | 2011-02-17 04:58:34 -0500 (Thu, 17 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cdcdump.c
+
+cdcdump.c [rtj]
+	* fixed a bug in a printf format string
+
+------------------------------------------------------------------------
+r7440 | jonesrt | 2011-02-17 05:10:27 -0500 (Thu, 17 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hdgeant.cc
+
+hdgeant.cc [rtj]
+	* fixed to eat the return code from system() call, to avoid compiler warnings
+
+------------------------------------------------------------------------
+r7441 | zihlmann | 2011-02-17 09:00:39 -0500 (Thu, 17 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+
+fixed but: time difference had wrong sign it was calculated 
+south minus north instead of north minus south
+
+------------------------------------------------------------------------
+r7442 | zihlmann | 2011-02-17 09:10:59 -0500 (Thu, 17 Feb 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.cc
+
+previous fix was of course a bug 
+
+------------------------------------------------------------------------
+r7449 | davidl | 2011-02-18 11:12:01 -0500 (Fri, 18 Feb 2011) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+
+Fixed bug which caused non-deterministic results for track candidates when derived from combining FDC and CDC candidates. The underlying cause was due to the JANA associated object mechanism re-ordering the objects from how they were added. (It orders them by the address of the object in memory).
+
+sorting algorithms were added in numerous places since the first fix was incomplete. There are some places where sorts are being done where they are almost certainly not required.
+
+
+------------------------------------------------------------------------
+r7462 | jonesrt | 2011-02-18 19:02:51 -0500 (Fri, 18 Feb 2011) | 10 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+
+DApplication.cc [rtj]
+	* fix the problem that THREAD_TIMEOUT is hard-wired to 30 seconds,
+	  disabling the -PTHREAD_TIMEOUT= command line parameter.  Now it
+	  respects this parameter on the command line, and defaults to 30
+	  seconds if not given.  This was a disaster before, because it
+	  typically takes 2 minutes or so to read the magnetic field map
+	  from the calibdb and compute the fine-mesh map from what it pulls
+	  in from the database.  Mysteriously, sometimes it wants to compute
+	  the fine-mesh map and sometimes not -- don't ask.
+
+------------------------------------------------------------------------
+r7473 | jonesrt | 2011-02-23 08:32:22 -0500 (Wed, 23 Feb 2011) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.orig
+
+Makefile.bms [rtj]
+   * add $(DEBUG_SUFFIX) to gelhad and hitutil library names so that
+     building with DEBUG=1 invokes debug versions of these libraries.
+Makefile.orig [rtj]
+   * add a special build section for another small utility app.
+
+------------------------------------------------------------------------
+r7474 | staylor | 2011-02-23 08:48:30 -0500 (Wed, 23 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+use U_OF_WIRE_ZERO instead of u_of_wire0, left over from wire-staggering studies
+------------------------------------------------------------------------
+r7476 | davidl | 2011-02-23 10:48:18 -0500 (Wed, 23 Feb 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+Draw radial lines in outer layers of BCAL to indicate segmentation. Previously, the colorization of hit segments was being done correctly, but the lines separating them were just not draw. Note that this still relies on the numbers of modules, layers, and sectors that are set in global variables rather than the ones in DBCALGeometry.
+
+------------------------------------------------------------------------
+r7477 | zihlmann | 2011-02-23 16:35:35 -0500 (Wed, 23 Feb 2011) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.cc
+
+fix code to remove the following compiler warinigs
+DMaterialMap.cc:317: warning: suggest explicit braces to avoid ambiguous ‘else’
+DMaterialMap.cc:328: warning: suggest explicit braces to avoid ambiguous ‘else’
+ 
+
+------------------------------------------------------------------------
+r7478 | zihlmann | 2011-02-23 16:55:26 -0500 (Wed, 23 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+
+fix a lot of compiler warnings related to if statments with minimalistic
+use of ()
+
+------------------------------------------------------------------------
+r7479 | jonesrt | 2011-02-23 18:42:47 -0500 (Wed, 23 Feb 2011) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cobrems.F
+
+cobrems.F [rtj]
+   * add protection in the sigma2MS() function against negative values of
+     variance, which some treatments give if the target thickness is very
+     thin (eg. < 1e-12 m) which can sometimes occur in Monte Carlo.
+
+------------------------------------------------------------------------
+r7480 | davidl | 2011-02-24 08:41:34 -0500 (Thu, 24 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.common
+
+Add PROFILE and OPTIMIZE flags to BMS to decouple the use of debugging symbols, profiling, and optimization.
+------------------------------------------------------------------------
+r7485 | jonesrt | 2011-02-24 13:41:54 -0500 (Thu, 24 Feb 2011) | 44 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/savehits.F
+
+savehits.F, gustep.F [rtj]
+   * This is a coupled set of fixes to gustep() and savehits() that deals
+     with an unintended side-effecti of the policy in gustep to cut off
+     tracking after following a particle for 9999 steps.  Problems include:
+        1. Particles are being dropped without warning.  What if some set
+           of magnetic field and material parameters result in tracks that
+           regularly exceed 9999 steps?  I think this should be impossible
+           to ignore -- lots of "TRACKING ABANDONED" messages in the log
+           file will make sure the user knows about it.  What should the
+           user do about it?  That depends on where and how often it happens,
+           and what kinds of particles it happens to.  Let the user decide.
+           Modification: move the cut to 99999 steps, above the cutoff
+           imposed internally by GEANT3 itself, which comes with warnings.
+        2. When particles are silently dropped, if they were moving inside
+           a sensitive volume when they were assasinated, they leave behind
+           dangling hit information in savehits that confuses the next
+           particle that enters a sensitive volume thinks that a hit is
+           already underway.  Modification: change around the logic in
+           savehits so that whenever dangling hit information is found,
+           it is deleted and a warning message is printed in the log.
+       3. In gustep, there are various conditions under which one wants
+           to abandon a track.  The minimal way to abandon a track is just
+           to set ISTOP=1 and return.  But if you return without calling
+           savehits, it might leave behind a dangling hit.  Modification:
+           I moved things around in gustep() so that savehits should see
+           all of these STOP events and clean up dangling hits.
+        4. Add a check in savehits() in case a STOP occurs during the
+           same step as the track enters a new volume.  This is ordinarily
+           not supposed to occur in Geant3, because entering a new volume
+           is a zero-length pseudo-step in which no physical processes
+           happen, but sometimes user code in gustep() wants to STOP the
+           track because it enters some killer volume.  This fix catches
+           that condition, and prevents savehits() from starting a new
+           hit that will be left dangling after the particle disappears.
+   * Several additions and changes to comments in savehits() to make it
+     easier to figure out what the logic of the decision tree is.
+   * Moved the call to gdebug() to the end of gustep() so that it can
+     report a STOP that is triggered by user code in gustep in its list
+     of mechanisms that act on a track during the given step.
+   * The above changes came about while investigating the occasional
+     error message, "FDC layer number evaluates to zero - THIS SHOULD
+     NEVER HAPPEN".  Indeed.  If it does again, please report it!
+
+
+------------------------------------------------------------------------
+r7486 | jonesrt | 2011-02-24 14:36:35 -0500 (Thu, 24 Feb 2011) | 94 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.SIMD
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+   M /trunk/sim-recon/src/libraries/include/DLorentzVector.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x3.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x4.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x5.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix3x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix3x3.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x4.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+   M /trunk/sim-recon/src/libraries/include/DVector2.h
+   M /trunk/sim-recon/src/libraries/include/DVector3.h
+
+This is a synchronized patch to several components related to the SIMD
+extensions introduced by Simon.  This is a very long log entry, but it
+takes a while to explained why.
+
+   SIMD is not a simple yes/no issue, but involves quite a number of related
+   architectural extensions to the basic x86 instruction set, including:
+   3dnow, mmx, sse, sse2, sse3, ssse3, sse4.1, sse4.2, sse4a (AMD's answer
+   to Intel's sse4.x), sse5 (there are several variations, so far only AMD),
+   and the new AVX (Intel's answer to AMD's sse5).  I am all for taking
+   advantage of these, but what this buys us is a host of platform support
+   issues.
+
+   Remember back when we used to have to build for Sun, HP, AIX, IRIX, Linux,
+   and OSX?  Thanks, Simon!
+
+   The prior BMS scheme allowed you two options: either build the gluex
+   libraries "with SIMD support" (which turns out to mean sse & sse2 & sse3)
+   or without, with the claim "it works".  Kinda sorta, but the results are
+   different.  The gcc docs warn that as soon as you enable sse in the
+   compiler, even the results from the intrinsics (sin, cos, log) are
+   different.  So grad students working on analysis are not going to want
+   to run anything without sse enabled, if they want their work to be
+   reproducible by someone else -- you do.  Once sse is enabled, going from
+   sse to sse2 to sse3 to ssse3 ... makes very little difference, except in
+   speed.  Happily, sse has been around since the Pentium III, and just about
+   all machines support it, Intel and AMD.  But there are subtleties that
+   require care in orchestrating the builds.  If you build hdgeant with the
+   options "-mathfp=sse -msse" and then try to run it on an Intel Coppermine
+   you will get illegal instruction faults.  You need to explicitly tell it
+   NOT to use sse2 extensions, as in "-mathfp=sse -msse -mno-sse2".  This
+   old hardware will not run Simon's supercharged vector and matrix methods,
+   but at least, when running a binary built with this last set of flags, it
+   will produce the same answers as his code does!
+
+   So what needs to be done is that the compiler needs to be told exactly
+   what sse capabilities are available for it to use, and it will build a
+   binary that will run on any hardware with at least those capabilities.
+
+   How to implement this in make?  I wrote a simple assembler program to
+   query the processor for its capabilities and report which of these
+   SIMD extensions it supports, which I have posted at the following URL.
+	http://zeus.phys.uconn.edu/halld/gridwork/cpuid.cc
+   Invoking cpuid from a Makefile requires a prior build step to make cpuid,
+   which is awkward.  For Linux machines, it is easy to discover their SIMD
+   extensions support, by looking at the flags: line in /proc/cpuinfo.  I
+   use this mechanism in the revised Makefile.SIMD to auto-discover the
+   cpu capabilities of the build host and configure the switches based on
+   that.  After that change, I went into Simon's header files where he
+   defines his inlined supercharged vector/matrix methods and changed the
+   conditionals from #ifndef DISABLE_SIMD / #endif to the appropriate 
+   specific extension actually required to run his code, for example
+   #ifndef DISABLE_SSE2 / #endif or #ifndef DISABLE_SSE3 / #endif.  These
+   are the two specific extensions needed to fully exploit his code as it
+   now stands, but there will surely be future developments.  I have tried
+   to anticipate those by adding new macros like DISABLE_SSE4_1, and so on,
+   the the Makefile.SIMD in BMS.
+
+   The final component of this patch is an addition to the Init() method of
+   DApplication class, which actually verifies that the cpu is able to run
+   the extensions for which the build was done.  It does this by directly
+   invoking a couple of machine-language instructions (you can do that in
+   c) that queries the processor for its SIMD capabilities.  If the processor
+   is not fully capable of running the code, the Init() method returns
+   UNRECOVERABLE_ERROR, which apparently does nothing at all, but anyway
+   the warning message has been printed, so the user can ignore it or not.
+
+src/BMS/Makefile.SIMD [rtj]
+   * changed to actually check for processor capabilities in SIMD
+     instruction extensions, instead of just guessing.
+src/libraries/include/DVector2.h,
+src/libraries/include/DVector3.h,
+src/libraries/include/DMatrix2x1.h,
+src/libraries/include/DMatrix2x2.h,
+src/libraries/include/DMatrix2x3.h,
+src/libraries/include/DMatrix3x2.h,
+src/libraries/include/DMatrix2x4.h,
+src/libraries/include/DMatrix3x3.h,
+src/libraries/include/DMatrix4x2.h,
+src/libraries/include/DMatrix5x1.h,
+src/libraries/include/DMatrix5x2.h,
+src/libraries/include/DMatrix2x5.h,
+src/libraries/include/DMatrix4x4.h,
+src/libraries/include/DMatrix5x5.h,
+src/libraries/include/DLorentzVector.h,
+src/libraries/include/DMatrixSIMD.h [rtj]
+   * changed the conditionals from using the ambiguous DISABLE_SIMD macro,
+     to instead query specific cpu capabilities that are required for certain
+     code inclusions: DISABLE_SSE / DISABLE_SSE2 / DISABLE_SSE3 / ...
+src/libraries/DANA/DApplication.cc [rtj]
+   * added checks in the Init() function to verify that the cpu is capable
+     of running the instruction set extensions that were enabled during
+     the build (SSE / SSE2 / SSE3 / SSSE3 / SSE4_1 / SSE4_2 / SSE4A / ...).
+
+
+------------------------------------------------------------------------
+r7487 | zihlmann | 2011-02-24 17:36:19 -0500 (Thu, 24 Feb 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+
+fix two more compiler warnings
+
+------------------------------------------------------------------------
+r7488 | zihlmann | 2011-02-24 17:40:04 -0500 (Thu, 24 Feb 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DLorentzDeflections.cc
+
+fix one more compiler warning
+
+------------------------------------------------------------------------
+r7489 | staylor | 2011-02-25 13:37:10 -0500 (Fri, 25 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Implement ABA^T method with SSE2 instructions in addition to the method that uses SSE3 instructions in case SSE3 is not available.
+------------------------------------------------------------------------
+r7490 | staylor | 2011-02-28 07:59:54 -0500 (Mon, 28 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Add a vector of start times from various sources ordered by uncertainty
+------------------------------------------------------------------------
+r7491 | staylor | 2011-02-28 08:38:08 -0500 (Mon, 28 Feb 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Use separate start time for each track
+------------------------------------------------------------------------
+r7492 | somov | 2011-02-28 17:33:45 -0500 (Mon, 28 Feb 2011) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Regions.xml
+
+New dipole magnet field map corresponding to 6 cm narrower
+magnet generated with TOSCA simulation:
+
+  - The number of bins in x has been changed from 351 to 361 cm.
+    The map coveres the range in X between 10 cm and  -350 cm
+
+  - The origin of the map is at the electron beam entrance
+    point at the dipole magnet pole edge (z = 319.22 cm)
+
+------------------------------------------------------------------------
+r7493 | somov | 2011-02-28 17:54:32 -0500 (Mon, 28 Feb 2011) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/TaggerArea.xml
+
+
+Main geometry modifications:
+
+ - 6 cm narrower dipole magnet
+ - new position of the focal plane corresponding
+   to the new magnet optics simulation
+ - updated geometry of the dipole magnet vacuum chamber
+       - the distance between the focal plane and the VC exit window is 12 cm
+       - 'long' vaccum chamber corresponding to Fig.3 of the GlueX-doc-1646
+ - the VC is followed by a 6 inch round pipe leading to the beam dump
+ 
+
+------------------------------------------------------------------------
+r7494 | somov | 2011-02-28 17:55:20 -0500 (Mon, 28 Feb 2011) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Spectrometer.xml
+
+
+Main geometry modifications:
+
+ - 6 cm narrower dipole magnet
+ - new position of the focal plane corresponding
+   to the new magnet optics simulation
+ - updated geometry of the dipole magnet vacuum chamber
+       - the distance between the focal plane and the VC exit window is 12 cm
+       - 'long' vaccum chamber corresponding to Fig.3 of the GlueX-doc-1646
+ - the VC is followed by a 6 inch round pipe leading to the beam dump
+ 
+
+------------------------------------------------------------------------
+r7495 | somov | 2011-02-28 17:56:45 -0500 (Mon, 28 Feb 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/ElectronDump.xml
+
+New geometry of the electron beam dump corresponding
+to the latest technical drawings.
+
+------------------------------------------------------------------------
+r7502 | somov | 2011-03-01 11:49:38 -0500 (Tue, 01 Mar 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+
+Stop beam photons which are initially generated outside the 12.4 cm 
+radius beam pipe at the entrance to the collimator cave
+
+------------------------------------------------------------------------
+r7505 | staylor | 2011-03-02 07:53:33 -0500 (Wed, 02 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Minor adjustment to how the number of degres of freedom is handled.  Adjust number of iterations.
+------------------------------------------------------------------------
+r7507 | staylor | 2011-03-02 18:01:08 -0500 (Wed, 02 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.SIMD
+
+Make the non-SIMD-enabled version of the code the default.  If one wants to take advantage of the SIMD instructions, one needs to explicitly enable the code via make ENABLE_SIMD=yes.
+------------------------------------------------------------------------
+r7508 | staylor | 2011-03-02 18:50:04 -0500 (Wed, 02 Mar 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   A /trunk/sim-recon/src/libraries/PID/DParticleID.h
+   A /trunk/sim-recon/src/libraries/PID/DParticleID_PID1.cc
+   A /trunk/sim-recon/src/libraries/PID/DParticleID_PID1.h
+   A /trunk/sim-recon/src/libraries/PID/DParticleID_factory.h
+   A /trunk/sim-recon/src/libraries/PID/DParticleID_factory_PID1.h
+
+Create a new helper class containing tools and algorithms for particle identification, such as computation of dEdx in the chambers, matching of time-based tracks and hits in the outer detectors and computation of a figure-of-merit for the quality of a mass hypothesis.
+------------------------------------------------------------------------
+r7509 | staylor | 2011-03-02 19:09:16 -0500 (Wed, 02 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+
+Add new DParticleID factories
+------------------------------------------------------------------------
+r7510 | davidl | 2011-03-03 08:55:03 -0500 (Thu, 03 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+Print extra endl after event loop ends.
+------------------------------------------------------------------------
+r7512 | staylor | 2011-03-03 10:51:32 -0500 (Thu, 03 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Get dEdx routines from the new DParticleID helper class.  Compute FOM from dEdx alone (this of course is not the final answer for the figure-of-merit but is still useful for initial sorting of the hypotheses). Remove matching to outer detectors; these will be moved to DParticleID. Remove some diagnostic histograms; these may be reinstated elsewhere in the code but no longer belong here.
+------------------------------------------------------------------------
+r7513 | staylor | 2011-03-03 15:20:32 -0500 (Thu, 03 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.h
+
+Remove particle-id-related dEdx calculations out of this class; they are redundant with the implementation in DParticleID and have nothing to do with the actual fitting of the track anyway.
+------------------------------------------------------------------------
+r7519 | staylor | 2011-03-04 13:14:43 -0500 (Fri, 04 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+
+minor mod to GroupTracks
+------------------------------------------------------------------------
+r7520 | staylor | 2011-03-04 13:16:18 -0500 (Fri, 04 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPhoton_factory.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALPhoton_factory.cc
+
+Use the Get() mechanism instead of GetSingle() for the vertex.
+------------------------------------------------------------------------
+r7521 | staylor | 2011-03-04 13:23:21 -0500 (Fri, 04 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+
+Adapt the hough transform method Dave developed in DPhysicsEvent to find the vertexes using only charged tracks.  Use a simple average of the positions of the tracks grouped together during the hough transformation procedure to compute a vertex position for each group of tracks.  The new code allows for more than one possible vertex in the event.  The tracks that were grouped together during the calculation of the vertex are added to the DVertex object.
+------------------------------------------------------------------------
+r7522 | wilevine | 2011-03-04 13:48:11 -0500 (Fri, 04 Mar 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+fcov should be filled from CBest, DMatrixDSym's must be filled completely
+
+
+------------------------------------------------------------------------
+r7523 | wilevine | 2011-03-04 14:02:38 -0500 (Fri, 04 Mar 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DKinFit.cc
+   M /trunk/sim-recon/src/libraries/PID/DKinFit.h
+
+Fix some wrong comments in DKinFit. Comment-only change.
+
+------------------------------------------------------------------------
+r7525 | wilevine | 2011-03-04 15:28:47 -0500 (Fri, 04 Mar 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DTwoGammaFit_factory.cc
+
+Fill error matrix in DTwoGammaFit_factory
+
+------------------------------------------------------------------------
+r7526 | jonesrt | 2011-03-06 21:22:51 -0500 (Sun, 06 Mar 2011) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+
+gustep.F [rtj]
+   * responding to the recent geometry updates from Sascha to the beam line,
+     change the check for particles entering the primary collimator from
+     volume named 'COL1' (no longer exists) to volumes 'PCTT' (tungsten core),
+     'PCTB' and 'PCSD' (surrounding lead collimator frame).
+
+------------------------------------------------------------------------
+r7527 | staylor | 2011-03-07 10:03:34 -0500 (Mon, 07 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+
+Added routines to match tracks with the TOF and the BCAL
+------------------------------------------------------------------------
+r7541 | staylor | 2011-03-08 13:27:39 -0500 (Tue, 08 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+
+First version of a routine that matches a track to the FCAL.
+------------------------------------------------------------------------
+r7542 | staylor | 2011-03-08 13:38:58 -0500 (Tue, 08 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+
+Add track matching to outer detectors and calculation of figure-of-merit for quality of PID.  Add some diagnostic histograms.
+------------------------------------------------------------------------
+r7543 | jonesrt | 2011-03-08 14:28:29 -0500 (Tue, 08 Mar 2011) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x3.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x4.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x5.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix3x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix3x3.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x4.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+   M /trunk/sim-recon/src/libraries/include/DVector2.h
+   M /trunk/sim-recon/src/libraries/include/DVector3.h
+   A /trunk/sim-recon/src/libraries/include/align_16.h
+
+align_16.h [rtj]
+   * a new set of macros that facilitate instantiation of variables whose
+     storage is guaranteed to be aligned with 16-byte boundaries in memory.
+
+DVector3.h, DMatrix2x1.h, DMatrix2x2.h, DMatrix2x3.h, DMatrix3x2.h,
+DMatrix2x4.h, DMatrix3x3.h, DMatrix4x2.h, DMatrix5x1.h, DMatrix5x2.h,
+DMatrix2x5.h, DMatrix4x4.h, DMatrix5x5.h, DMatrixSIMD.h, DVector2.h   [rtj]
+   * sections of these class definitions that entail creation of 16-byte
+     aligned storage variables are now refitted to use 16-byte alignment
+     macros defined in <align_16.h> to guarantee proper placement in memory.
+
+
+------------------------------------------------------------------------
+r7544 | jonesrt | 2011-03-08 14:51:19 -0500 (Tue, 08 Mar 2011) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/align_16.h
+
+align_16.h [rtj]
+   * fix a bug in the macro where the value of the pointer to the 16-byte
+     aligned memory block is computed, correcting the spelling of the
+     pointer-valued integer type from "uint32_t" to "uintptr_t".
+
+------------------------------------------------------------------------
+r7547 | staylor | 2011-03-08 19:36:04 -0500 (Tue, 08 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Comment out 2x4,4x4,4x2 matrix include files and methods, because we are not currently using any of these and the non-SIMD versions have not been written yet.
+------------------------------------------------------------------------
+r7548 | staylor | 2011-03-08 19:37:50 -0500 (Tue, 08 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Remove many extraneous p-> and p3-> pointer operators.
+------------------------------------------------------------------------
+r7549 | staylor | 2011-03-09 09:54:57 -0500 (Wed, 09 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DVector3.h
+
+Add copy constructor for SIMD code.
+------------------------------------------------------------------------
+r7550 | davidl | 2011-03-09 12:02:46 -0500 (Wed, 09 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower.h
+
+Add N_cell to toStrings method of DBCALShower
+------------------------------------------------------------------------
+r7552 | staylor | 2011-03-09 16:04:59 -0500 (Wed, 09 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DVector3.h
+
+Fix typo in index for one element in one of the Rotate() methods.
+------------------------------------------------------------------------
+r7556 | jonesrt | 2011-03-10 07:05:45 -0500 (Thu, 10 Mar 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/control.in
+
+control.in [rtj]
+   * fix the spelling of the line beginning with DEBUG, should be DEBU
+     without the trailing G, otherwise it is ignored by geant.
+
+------------------------------------------------------------------------
+r7557 | jonesrt | 2011-03-10 07:07:37 -0500 (Thu, 10 Mar 2011) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+
+gustep.F [rtj]
+   * change the name of the primary collimator lead volume, 
+     to keep the code up to date with the geometry.
+     NOTE: Please do an update in hdds at the same time as
+     this one.
+
+------------------------------------------------------------------------
+r7558 | davidl | 2011-03-10 08:29:11 -0500 (Thu, 10 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/eviodana/DEventSourceEVIO.h
+
+Make description comment at top Doxygen enabled.
+------------------------------------------------------------------------
+r7559 | davidl | 2011-03-10 08:59:44 -0500 (Thu, 10 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.common
+
+Changed default optimization level to 0 when DEBUG isset. Otherwise, the default optimization level is 2. This can be overridden with OPTIMIZE=X for all cases.
+------------------------------------------------------------------------
+r7560 | davidl | 2011-03-10 09:32:58 -0500 (Thu, 10 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPhoton_factory.cc
+
+Only try adding DVertex as associated object if the pointer is non-NULL. This is a stop-gap fix until the new PID scheme is fully implemeted.
+------------------------------------------------------------------------
+r7561 | staylor | 2011-03-10 16:19:44 -0500 (Thu, 10 Mar 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/libraries/PID/DParticle.h
+   D /trunk/sim-recon/src/libraries/PID/DParticle_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DParticle_factory.h
+
+Remove unused factory
+------------------------------------------------------------------------
+r7562 | staylor | 2011-03-10 17:56:04 -0500 (Thu, 10 Mar 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/libraries/PID/DParticle_factory_THROWN.cc
+   D /trunk/sim-recon/src/libraries/PID/DParticle_factory_THROWN.h
+
+Remove more unused routines.
+------------------------------------------------------------------------
+r7564 | staylor | 2011-03-11 11:15:43 -0500 (Fri, 11 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+
+(1) Add matching of tracks with start counter hits. (2) Changed first argument of matching routines from track to reference trajectory and added a fit_type argument so that the same routines can be used for both time-based and wire-based tracks.
+------------------------------------------------------------------------
+r7565 | staylor | 2011-03-11 11:45:03 -0500 (Fri, 11 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+
+add first prototype for a structure containing info about FCAL/BCAL showers
+------------------------------------------------------------------------
+r7566 | staylor | 2011-03-11 11:47:38 -0500 (Fri, 11 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+
+Use new versions of matching routines that take a reference trajectory as the first argument, instead of a track.  Add vector to keep track of the bcal showers that have been matched to time-based tracks
+------------------------------------------------------------------------
+r7567 | staylor | 2011-03-11 11:48:56 -0500 (Fri, 11 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased.h
+
+Remove start_time vector from the DTrackWireBaed class; now it is in the DTrackTimeBased class.
+------------------------------------------------------------------------
+r7568 | staylor | 2011-03-11 11:50:06 -0500 (Fri, 11 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.h
+
+Remove routines matching tracks with other detectors.  These are now in the DParticleID helper class.
+------------------------------------------------------------------------
+r7569 | staylor | 2011-03-11 11:51:46 -0500 (Fri, 11 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Add routine to find a start time for the tracking from the results of matching to the start counter, the TOF, and the BCAL, in addition to the value computed from using the track itself.
+------------------------------------------------------------------------
+r7570 | davidl | 2011-03-11 13:13:15 -0500 (Fri, 11 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALPhoton_factory.cc
+
+If not DVertex objects exist, then do not attempt to make DFCALPhoton objects.
+------------------------------------------------------------------------
+r7571 | shepherd | 2011-03-12 14:06:44 -0500 (Sat, 12 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DPhoton_factory.h
+
+remove unneeded reference to DParticle.h
+------------------------------------------------------------------------
+r7572 | shepherd | 2011-03-12 14:25:11 -0500 (Sat, 12 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+
+remove unneeded reference to DParticle.h
+------------------------------------------------------------------------
+r7574 | jonesrt | 2011-03-14 16:56:51 -0400 (Mon, 14 Mar 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danahddm/JEventProcessor_danahddm.cc
+
+JEventProcessor_danahddm.cc [rtj]
+   * explicitly cast conversion of charge from double to int,
+     to suppress the compiler warning.
+
+------------------------------------------------------------------------
+r7575 | shepherd | 2011-03-14 17:01:10 -0400 (Mon, 14 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.h
+
+Fix BUG in SECTOR_SHIFT for encoding layer, module, and sector into a single integer.  Versions prior to this that utilized the routines to convert to cellId and then back to layer, sector would have had corrupted layer, sector values.  Add additional functions to get the location of the center and size of cells in r, phi.
+------------------------------------------------------------------------
+r7576 | staylor | 2011-03-14 17:48:37 -0400 (Mon, 14 Mar 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/fdc_deflections.dat
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+Remove old fdc_deflections.dat file and any reference to it in hitFDC.c.  This information is obtained from calib database.
+------------------------------------------------------------------------
+r7577 | shepherd | 2011-03-14 19:02:07 -0400 (Mon, 14 Mar 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.h
+
+First submission of alternate BCAL reconstruction algorithm.  This code is very experimental at this stage.  In fact there is no easy path yet from it to top level DBCALPhoton objects.  Users may extract DBCALCluster objects from the factory, but that is it for now.
+------------------------------------------------------------------------
+r7578 | shepherd | 2011-03-14 19:02:54 -0400 (Mon, 14 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+
+Add experimental BCALCluster factory to list of factories to initialize 
+------------------------------------------------------------------------
+r7579 | jonesrt | 2011-03-14 20:04:35 -0400 (Mon, 14 Mar 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/savehits.F
+
+savehits.F [rtj]
+   * changed the active volume for recording Cerenkov hits from CPMT
+     to CPPC (Cerenkov Phototube PhotoCathode) where photoelectrons are made.
+
+------------------------------------------------------------------------
+r7581 | staylor | 2011-03-15 10:27:09 -0400 (Tue, 15 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+
+Progress toward adding photons to a vertex.  The vertex position is used in the calculation of the flight time and all photon candidates are grouped together by time and then associated with the vertex by cutting on the difference between the average photon time at the target and the vertex time scaled by the expected error.  I am  working on dealing with those photons that are not matched with any vertex at the end of the current algorithm.
+------------------------------------------------------------------------
+r7584 | staylor | 2011-03-16 13:25:28 -0400 (Wed, 16 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+
+Change shower_info_t from a struct to a class that inherits from DKinematicData.
+------------------------------------------------------------------------
+r7585 | staylor | 2011-03-16 13:29:22 -0400 (Wed, 16 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+
+Set the DEBUG_HIST flag to false by default.  This gives me the opportunity to add to the comment for the previous commit:  I have added a container called orphan_showers that is a member of the DVertex_factory class whose purpose is to store the photons that were not associated with a vertex.
+------------------------------------------------------------------------
+r7586 | staylor | 2011-03-17 09:01:39 -0400 (Thu, 17 Mar 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/PID/DParticleSet.h
+   A /trunk/sim-recon/src/libraries/PID/DParticleSet_factory.cc
+   A /trunk/sim-recon/src/libraries/PID/DParticleSet_factory.h
+
+First prototype for factory that sorts the particles attached to a vertex into particle types: protons, pi pluses, photons, etc.
+------------------------------------------------------------------------
+r7587 | davidl | 2011-03-17 11:16:39 -0400 (Thu, 17 Mar 2011) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+This is a fix for the seg. fault/hang problem that has been plaguing us 
+for the last ~4 months. It precalculates the values used in the comparison
+in the SortIntersections routine to avoid issues with values calculated
+with 80bit precision being compared with values having been copied to and
+from a 64bit register. See the report on the GlueX wiki here:
+
+http://www.jlab.org/Hall-D/software/wiki/index.php/Diagnosing_segmentation_faults_in_reconstruction_software
+
+
+------------------------------------------------------------------------
+r7588 | staylor | 2011-03-18 09:41:53 -0400 (Fri, 18 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+
+DVertex.h needs the matrix class
+------------------------------------------------------------------------
+r7598 | staylor | 2011-03-18 17:33:20 -0400 (Fri, 18 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory_WIRESONLY.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.h
+
+In DFDCPseudo.h, convert floats to doubles and put x and y positions into a DVector2 so that I can get rid of the XYZ() matrix in the segment factory and use the faster SIMD-ized DVector2 operations.   Changes made to DFDCSegment_factory to take advantage of this new functionality.
+------------------------------------------------------------------------
+r7599 | staylor | 2011-03-18 17:36:16 -0400 (Fri, 18 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.h
+
+Changes to make code consistent with revised version of the DFDCPseudo class.
+------------------------------------------------------------------------
+r7600 | staylor | 2011-03-18 17:37:45 -0400 (Fri, 18 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+
+Changes to make code consistent with revised version of DFDCPseudo
+------------------------------------------------------------------------
+r7601 | staylor | 2011-03-18 17:54:54 -0400 (Fri, 18 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DLorentzVector.h
+
+Add addition and subtraction operators
+------------------------------------------------------------------------
+r7602 | staylor | 2011-03-18 17:56:17 -0400 (Fri, 18 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+
+Initialize the DParticleSet factory.
+------------------------------------------------------------------------
+r7603 | davidl | 2011-03-21 10:13:28 -0400 (Mon, 21 Mar 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Fixed bug where last_swim_step was not being checked to be non-NULL in GetLastDOCAPoint before using it.
+
+Also, modified check in other GetLastDOCAPoint to return position and momentum vectors set to NaN for all values rather than zeros.
+
+------------------------------------------------------------------------
+r7604 | staylor | 2011-03-21 18:08:16 -0400 (Mon, 21 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Make DEBUG_HISTS and DEBUG_LEVEL parameters configurable on the command line.  Add another command line parameter for turning on boundary checking for dealing with the material.  Fix book-keeping for number of degrees of freedom.  Incorporate small change in error handling.
+------------------------------------------------------------------------
+r7605 | staylor | 2011-03-22 11:10:47 -0400 (Tue, 22 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleSet.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleSet_factory.cc
+
+Keep other hypotheses together with the one with the best FOM for each particle (pip,Kp, etc.).  Only add showers to photon list that do not match tracks.
+------------------------------------------------------------------------
+r7606 | staylor | 2011-03-23 10:56:58 -0400 (Wed, 23 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.cc
+
+Added stripped-down version of Swim in DReferenceTrajectory for use in CorrectForEloss in DTrackFitter
+------------------------------------------------------------------------
+r7612 | shepherd | 2011-03-24 08:45:27 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower.h
+
+remove unused variable Ecorr
+------------------------------------------------------------------------
+r7614 | shepherd | 2011-03-24 09:25:48 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc:7570)
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h:7570)
+
+rename default BCALShower_factory to have the KLOE tag -- this will make room for new default BCAL shower reconstruction
+------------------------------------------------------------------------
+r7615 | shepherd | 2011-03-24 09:26:29 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPhoton_factory.cc
+
+modify to use KLOE tag DBCALShower factory
+------------------------------------------------------------------------
+r7616 | shepherd | 2011-03-24 09:27:44 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+modify to use KLOE tag DBCALShower factory
+------------------------------------------------------------------------
+r7617 | shepherd | 2011-03-24 09:28:04 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/bcal_hists/DEventProcessor_bcal_hists.cc
+
+modify to use KLOE tag DBCALShower factory
+------------------------------------------------------------------------
+r7618 | shepherd | 2011-03-24 09:31:19 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h
+
+removed try to use svn rename
+------------------------------------------------------------------------
+r7619 | shepherd | 2011-03-24 09:31:31 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc
+
+removed try to use svn rename
+------------------------------------------------------------------------
+r7620 | shepherd | 2011-03-24 09:33:37 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc:7570)
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h:7570)
+
+renamed default BCAL shower factory to have KLOE tag
+------------------------------------------------------------------------
+r7621 | shepherd | 2011-03-24 09:35:05 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+
+modify to use KLOE tag DBCALShower factory
+------------------------------------------------------------------------
+r7622 | davidl | 2011-03-24 09:52:22 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_dump/MyProcessor.cc
+
+If application has quitting flag set, do not bother looking for user input. Just exit right away. This fixes a bug where a missing factory is detected (do to request that can't be fulfilled) and the default behavior of the program is to print a message and quit gracefully. The program would keep printing a 'Telling all threads to exit...' message while waiting for user input just so it could actually quit. Now it behaves better.
+------------------------------------------------------------------------
+r7623 | wolin | 2011-03-24 15:45:12 -0400 (Thu, 24 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Due to recent changes to the DANA framework I removed banks with HDDM in their name, removed DParticle and modified DFDCPseudo.  New banks need to be added.
+------------------------------------------------------------------------
+r7627 | shepherd | 2011-03-25 10:46:09 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+when summing cells in the BCAL set the electronics threshold to be cell threshold times the square root of the number of cells in the sum instead of the cell threshold times the number of cells in the sum
+------------------------------------------------------------------------
+r7628 | shepherd | 2011-03-25 10:50:58 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h
+
+create new DBCALShower_factory that will eventually become the default algorithm
+------------------------------------------------------------------------
+r7629 | shepherd | 2011-03-25 10:59:18 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower.h
+
+reduce number of member data to make a BCAL shower object that can be commonly filled by both KLOE and alternate algorithm
+------------------------------------------------------------------------
+r7630 | shepherd | 2011-03-25 10:59:50 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+
+get timing error from new BCALShower object
+------------------------------------------------------------------------
+r7631 | shepherd | 2011-03-25 11:00:16 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+
+fill time error
+------------------------------------------------------------------------
+r7632 | shepherd | 2011-03-25 11:01:21 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h
+
+move energy calibration from DBCALPhoton into this factory -- it now does KLOE clusterizing and scaling of the cluster energy (although the latter has not been calibrated yet)
+------------------------------------------------------------------------
+r7633 | shepherd | 2011-03-25 11:02:49 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.h
+
+add diagnostic trees that can be filled by setting BCAL_CLUSTER_DIAGNOSTIC
+------------------------------------------------------------------------
+r7634 | shepherd | 2011-03-25 11:03:34 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.h
+
+revised comments
+------------------------------------------------------------------------
+r7635 | shepherd | 2011-03-25 11:04:48 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.cc
+
+remove factors of sqrt(12) in cell sizes and also put in an energy dependent z size due to varying timing resolution
+------------------------------------------------------------------------
+r7636 | shepherd | 2011-03-25 11:07:19 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPhoton.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPhoton_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPhoton_factory.h
+
+remove merging algorithm for BCAL showers generated by the KLOE algorithm -- merging parameters exist within the algorithm and should be optimized there.  Make this factory consistent with more streamlined DBCALPhoton object.  Eventually this factory and the DBCALPhoton object will vanish as the functionality is moved over into DVertex objects.
+------------------------------------------------------------------------
+r7637 | shepherd | 2011-03-25 11:07:47 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+
+register new shower factory
+------------------------------------------------------------------------
+r7638 | shepherd | 2011-03-25 11:08:11 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DPhoton_factory.cc
+
+make consistent with revised DBCALPhoton object
+------------------------------------------------------------------------
+r7639 | shepherd | 2011-03-25 11:08:49 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+
+add more detailed comments regarding how to switch between summing and no summing -- for now no summing remains the default
+------------------------------------------------------------------------
+r7640 | staylor | 2011-03-25 18:31:57 -0400 (Fri, 25 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+More progress in determining t0 from the hits themselves.  Moved calculation to the smoothing stage.  Added highly experimental option to use the average t0 derived from the wires in the wire-based fitting after the first iteration (option off by default).
+------------------------------------------------------------------------
+r7641 | staylor | 2011-03-27 18:29:03 -0400 (Sun, 27 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Empirical offset for t0 determined from wire fit.
+------------------------------------------------------------------------
+r7643 | staylor | 2011-03-28 10:41:24 -0400 (Mon, 28 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.cc
+
+return position of cdc_endplate as center of the endplate.
+------------------------------------------------------------------------
+r7650 | shepherd | 2011-03-29 18:52:30 -0400 (Tue, 29 Mar 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+BUG fix:  layer and sector indices were swapped in generation of dark hits causing fewer than normal dark hits.
+
+Also I have removed scaling the thresholds by the square root of the number of cells and reverted by to scaling by the number of cells.  Scaling by the square root, which seems natural for Gaussian statistics, produces a huge number of spurious showers due to dark hits above threshold.  This clearly needs some more careful study to understand how to properly set the threshold of the sum of channels.
+------------------------------------------------------------------------
+r7652 | staylor | 2011-03-30 18:06:49 -0400 (Wed, 30 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+(1) move #defines to DTrackFitterKalmanSIMD.h file. (2) make KalmanForward virtual so that I can experiment with alternate algorithms. (3) move fdc_y_variance and cdc_variance into the class. (4) use large errors for cdc hits whose doca appears to be beyond the length of the straw.
+------------------------------------------------------------------------
+r7653 | staylor | 2011-03-30 18:09:49 -0400 (Wed, 30 Mar 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.h
+   A /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter_factory_KalmanSIMD_ALT1.h
+
+Derived version of the Kalman filter that currently only modifies the KalmanForward method
+------------------------------------------------------------------------
+r7654 | staylor | 2011-03-30 18:10:56 -0400 (Wed, 30 Mar 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/TRACKING_init.cc
+
+Added alternate KalmanSIMD factory
+------------------------------------------------------------------------
