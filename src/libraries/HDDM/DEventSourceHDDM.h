@@ -16,6 +16,7 @@ using namespace std;
 
 #include <JANA/JEventSource.h>
 #include <JANA/jerror.h>
+#include <JANA/JCalibration.h>
 #include "hddm_s.h"
 #include "TRACKING/DMCTrackHit.h"
 #include "TRACKING/DMCThrown.h"
@@ -90,10 +91,14 @@ class DEventSourceHDDM:public JEventSource
 		const DGeometry *geom;
 		
 	private:
+		bool initialized;
 	
 		pthread_mutex_t rt_mutex;
 		map<s_HDDM_t*, vector<DReferenceTrajectory*> > rt_by_event;
 		list<DReferenceTrajectory*> rt_pool;
+
+		JCalibration *jcalib;
+		float uscale[192],vscale[192];
 
 };
 

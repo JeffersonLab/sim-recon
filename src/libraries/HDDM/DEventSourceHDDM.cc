@@ -53,6 +53,7 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name):JEventSource(source_
 	
 	if(fin)source_is_open = 1;
 	flush_on_free = true;
+	initialized=false;
 	
 	pthread_mutex_init(&rt_mutex, NULL);
 }
@@ -96,17 +97,17 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
 	// Get event/run numbers from HDDM
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(PE && PE->mult>0){
-		event_number = PE->in[0].eventNo;
-		run_number = PE->in[0].runNo;
+	  event_number = PE->in[0].eventNo;	  
+	  run_number = PE->in[0].runNo;
 	}
 
 	// Copy the reference info into the JEvent object
 	event.SetJEventSource(this);
-	event.SetEventNumber(event_number);
-	event.SetRunNumber(run_number);
+        event.SetEventNumber(event_number);
+        event.SetRunNumber(run_number);
 	event.SetRef(hddm_s);
-	
-	return NOERROR;
+ 
+        return NOERROR;
 }
 
 //----------------
@@ -151,12 +152,46 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 
 	// Get pointer to the B-field object and Geometry object
 	JEventLoop *loop = event.GetJEventLoop();
-	if(loop){
-		DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-		if(dapp){
-			bfield = dapp->GetBfield();
-			geom = dapp->GetDGeometry(event.GetRunNumber());
-		}
+	if(initialized==false && loop){
+	  initialized=true;
+	  DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	  if(dapp){
+	    bfield = dapp->GetBfield();
+	    geom = dapp->GetDGeometry(event.GetRunNumber());
+	    
+	    jcalib = dapp->GetJCalibration(event.GetRunNumber());
+	    // Make sure jcalib is set
+	    if(!jcalib){
+	      _DBG_ << "ERROR - no jcalib set!" <<endl;
+	      return RESOURCE_UNAVAILABLE;
+	    }
+	    // Get constants and do basic check on number of elements
+	    vector< map<string, float> > tvals;
+	      jcalib->Get("FDC/strip_calib", tvals);
+	      
+	      if (tvals.size()!=192){
+		_DBG_ << "ERROR - strip calibration vectors are not the right size!" <<endl;
+		return VALUE_OUT_OF_RANGE;
+	      }
+	      // Notify user
+	      jout<<"Read "<<tvals.size()
+		  <<" values from FDC/strip_calib in calibDB"
+		  <<endl;
+	      jout<<"   strip_calib columns (alphabetical): ";
+	      map<string,float>::iterator iter;
+	      for(iter=tvals[0].begin(); iter!=tvals[0].end(); iter++)jout<<iter->first<<" "
+		;
+	      jout<<endl;
+	      
+	      // Copy values into tables. We preserve the order since that is how it was
+	      // originally done in hitFDC.c
+	      for(unsigned int i=0; i<tvals.size(); i++){
+		map<string, float> &row = tvals[i];
+		uscale[i]=row["qru"];
+		vscale[i]=row["qrv"];
+	      }
+	    }
+       
 	}
 
 	// Get name of data class we're trying to extract
@@ -183,7 +218,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DCDCHit" && (tag=="" || tag=="TRUTH") )
 	  return Extract_DCDCHit(my_hddm_s, dynamic_cast<JFactory<DCDCHit>*>(factory) , tag );
 	
-	if(dataClassName =="DFDCHit" && (tag=="" || tag=="TRUTH") )
+	if(dataClassName =="DFDCHit" && (tag=="" || tag=="TRUTH" || tag=="CALIB") )
 	  return Extract_DFDCHit(my_hddm_s, dynamic_cast<JFactory<DFDCHit>*>(factory), tag);
 	
 	if(dataClassName == "DFCALTruthShower" && tag=="")
@@ -977,6 +1012,71 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 		    }
 		    
 		    
+		  }
+		  else if (tag=="CALIB"){
+		    // Deal with the wires
+		    for (unsigned int j=0; j < wireSet->mult; j++) {
+
+		      s_FdcAnodeWire_t anodeWire		= wireSet->in[j];
+		      s_FdcAnodeHits_t* wireHitSet	        = anodeWire.fdcAnodeHits;
+
+		      for (unsigned int k=0; k < wireHitSet->mult; k++) {
+
+			s_FdcAnodeHit_t wireHit		        = wireHitSet->in[k];
+			DFDCHit* newHit				= new DFDCHit();
+			newHit->layer		 		= fdcChamber.layer;
+			newHit->module		 		= fdcChamber.module;
+			newHit->element				= anodeWire.wire;
+			newHit->q				= wireHit.dE;
+			newHit->t				= wireHit.t;
+ 		        newHit->d                               = 0.; // initialize to zero to avoid any NaN
+			newHit->itrack                          = wireHit.itrack;
+			newHit->ptype                           = wireHit.ptype;
+			newHit->plane				= 2;
+			newHit->type				= 0;
+			newHit->gPlane				= DFDCGeometry::gPlane(newHit);
+			newHit->gLayer				= DFDCGeometry::gLayer(newHit);
+			newHit->r				= DFDCGeometry::getWireR(newHit);
+			
+			data.push_back(newHit);
+		      }
+		    }
+		      // Ditto for the cathodes.
+		    for (unsigned int j=0; j < stripSet->mult; j++) {
+
+		      s_FdcCathodeStrip_t cathodeStrip          = stripSet->in[j];
+		      s_FdcCathodeHits_t* stripHitSet           = cathodeStrip.fdcCathodeHits;
+		      
+		      for (unsigned int k=0; k < stripHitSet->mult; k++) {
+
+			s_FdcCathodeHit_t stripHit	        = stripHitSet->in[k];
+			DFDCHit* newHit				= new DFDCHit();
+			newHit->layer				= fdcChamber.layer;
+			newHit->module				= fdcChamber.module;
+			newHit->element				= cathodeStrip.strip;
+			if (newHit->element>1000) newHit->element-=1000;
+			
+			newHit->plane				= cathodeStrip.plane;
+			if (newHit->plane==1){ // v 
+			  newHit->q = stripHit.q*vscale[newHit->element-1];
+			}
+			else{ // u
+			  newHit->q = stripHit.q*uscale[newHit->element-1];
+			}
+
+			newHit->t				= stripHit.t;
+		        newHit->d                               = 0.; // initialize to zero to avoid any NaN
+			newHit->itrack                          = stripHit.itrack;
+			newHit->ptype                           = stripHit.ptype;
+			newHit->type				= 1;
+			newHit->gPlane				= DFDCGeometry::gPlane(newHit);	 
+			newHit->gLayer				= DFDCGeometry::gLayer(newHit);
+			newHit->r				= DFDCGeometry::getStripR(newHit);
+			
+			data.push_back(newHit);
+		      }
+		    }
+
 		  }
 		  
 		  
