@@ -16,7 +16,6 @@ using namespace std;
 
 #include "units.h"
 
-
 bool PointSort( const DBCALPoint* p1, const DBCALPoint* p2 ){
   
   return ( p1->E() > p2->E() );
@@ -27,10 +26,9 @@ bool ClusterSort( const DBCALCluster& c1, const DBCALCluster& c2 ){
   return ( c1.E() > c2.E() );
 }
 
-// right now mergeSig is the only parameter that is used to control
-// merging of clusters and points
-
-DBCALCluster_factory::DBCALCluster_factory() : m_mergeSig( 8 ){
+DBCALCluster_factory::DBCALCluster_factory() : 
+m_mergeSig( 5 ), 
+m_moliereRadius( 3.7*k_cm ) {
   
 }
 
@@ -68,6 +66,7 @@ DBCALCluster_factory::init(void){
   m_ovrlpTr = new TTree( "ovrlpTr", "Point Cluster Overlap" );
   m_ovrlpTr->Branch( "dPhi", &m_dPhi, "dPhi/F" );
   m_ovrlpTr->Branch( "dThe", &m_dThe, "dThe/F" );
+  m_ovrlpTr->Branch( "sep", &m_sep, "sep/F" );
   m_ovrlpTr->Branch( "sigPhi", &m_sigPhi, "sigPhi/F" );
   m_ovrlpTr->Branch( "sigThe", &m_sigThe, "sigThe/F" );
   m_ovrlpTr->Branch( "eClus", &m_eClus, "eClus/F" );
@@ -200,7 +199,15 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
   
 #endif // BCAL_CLUSTER_DIAGNOSTIC
   
-  
+  /*
+   
+    MRS (6-Apr-11):  needs work!  most single end hits are actually SiPM
+    dark noise -- this causes shower to accumulate tons of extra energy.
+    This is likely due to a poorly written overlap routine.  The routine
+    for example, should take into acount radial separation of the hit from
+    the cluster center.
+   
+   
   // now we should try to add on single hits...
   for( map< int, vector< const DBCALHit* > >::iterator mapItr = cellHitMap.begin();
       mapItr != cellHitMap.end();
@@ -244,7 +251,8 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
       }
     }
   }
-
+*/
+  
   // load our vector of clusters into the factory member data
   for( vector< DBCALCluster >::iterator clust = clusters.begin();
       clust != clusters.end();
@@ -394,11 +402,11 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
 bool
 DBCALCluster_factory::overlap( const DBCALCluster& clust,
                                const DBCALPoint* point ) const {
-    
-  float sigTheta = fabs( clust.theta() - point->theta() ) / 
-  sqrt( clust.sigTheta() * clust.sigTheta() +
-       point->sigTheta()  * point->sigTheta() );
-
+  
+  float deltaTheta = fabs( clust.theta() - point->theta() );
+  float sigTheta = deltaTheta / sqrt( clust.sigTheta() * clust.sigTheta() +
+                                      point->sigTheta()  * point->sigTheta() );
+ 
   // difference in phi is tricky due to overlap at 0/2pi
   // order based on phi and then take the minimum of the difference
   // and the difference with 2pi added to the smallest
@@ -414,10 +422,17 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
   sqrt( clust.sigPhi() * clust.sigPhi() +
        point->sigPhi()  * point->sigPhi() );
   
+  float rho = ( clust.rho() + point->rho() ) / 2;
+  float theta = ( clust.theta() + point->theta() ) / 2;
+  
+  float sep = sqrt( ( rho * deltaTheta ) * ( rho * deltaTheta ) +
+      ( rho * sin( theta ) * deltaPhi ) * ( rho * sin( theta ) * deltaPhi ) );
+  
 #ifdef BCAL_CLUSTER_DIAGNOSTIC
   
   m_dPhi = deltaPhi;
   m_dThe = fabs( clust.theta() - point->theta() );
+  m_sep  = sep;
   m_sigPhi = sigPhi;
   m_sigThe = sigTheta;
   m_eClus = clust.E();
@@ -430,10 +445,20 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
   
 #endif // BCAL_CLUSTER_DIAGNOSTIC
   
+  
+  if( point->E() / clust.E() < 0.1 ){
+    
+    return ( sep < 5 * m_moliereRadius );
+  }
+  else{
+    
+    return ( sep < 2 * m_moliereRadius );
+  }
+
   // right now this is a rectangular cut, but it could be circular
   // or elliptical
-  
-  return( ( sigTheta < m_mergeSig ) && ( sigPhi < m_mergeSig ) );
+
+//  return( ( sigTheta < m_mergeSig ) && ( sigPhi < m_mergeSig ) );
 }
 
 bool

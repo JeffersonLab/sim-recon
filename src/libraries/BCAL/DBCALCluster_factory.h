@@ -19,7 +19,7 @@ using namespace jana;
 #include "TTree.h"
 #include "TFile.h"
 
-//#define BCAL_CLUSTER_DIAGNOSTIC
+#define BCAL_CLUSTER_DIAGNOSTIC
 
 class DBCALCluster_factory : public JFactory< DBCALCluster > {
   
@@ -52,6 +52,7 @@ private:
                 const DBCALHit* hit ) const; 
   
   float m_mergeSig;
+  float m_moliereRadius;
   
   // we may consider a separate factory to provide the BCAL points at
   // a future stage; for now have this factory own and maintain them
@@ -95,6 +96,7 @@ private:
   
   mutable float m_dPhi;
   mutable float m_dThe;
+  mutable float m_sep;
   mutable float m_sigPhi;
   mutable float m_sigThe;
   mutable float m_eClus;
