@@ -13,9 +13,7 @@
 
 // Routine for sorting dEdx data
 bool static DParticleID_dedx_cmp(DParticleID::dedx_t a,DParticleID::dedx_t b){
-  double dEdx1=a.dE/a.dx;
-  double dEdx2=b.dE/b.dx;
-  return dEdx1<dEdx2;
+  return a.dEdx < b.dEdx;
 }
 
 // Routine for sorting hypotheses according to FOM

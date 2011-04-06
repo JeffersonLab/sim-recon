@@ -33,9 +33,10 @@ class DParticleID:public jana::JObject{
 
   class dedx_t{
   public:
-    dedx_t(double dE,double dx, double p):dE(dE),dx(dx),p(p){}
+    dedx_t(double dE,double dx, double p):dE(dE),dx(dx),p(p){dEdx = dE/dx;}
       double dE; // energy loss in layer
       double dx; // path length in layer
+	  double dEdx; // ratio dE/dx
       double p;  // momentum at this dE/dx measurement
       
   };
