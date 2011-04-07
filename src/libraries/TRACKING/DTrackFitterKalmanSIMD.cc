@@ -100,7 +100,10 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   USE_MATERIAL_BOUNDARIES=false;
   gPARMS->SetDefaultParameter("TRKFIT:USE_MATERIAL_BOUNDARIES",
 			      USE_MATERIAL_BOUNDARIES);
-
+  
+  USE_MULS_COVARIANCE=true;
+  gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",
+			      USE_MULS_COVARIANCE);
   MIN_FIT_P = 0.050; // GeV
   gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
 
@@ -1867,7 +1870,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,double Z,
 						    DMatrix5x5 &Q){
   Q.Zero();
   //return NOERROR;
-  if (Z>0. && fabs(ds)>EPS){
+  if (USE_MULS_COVARIANCE && Z>0. && fabs(ds)>EPS){
     double tanl=Sc(state_tanl);
     double tanl2=tanl*tanl;
     double one_plus_tanl2=1.+tanl2;
@@ -1915,7 +1918,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,double Z,
 
  Q.Zero();
  //return NOERROR;
- if (Z>0. && fabs(ds)>EPS){
+ if (USE_MULS_COVARIANCE && Z>0. && fabs(ds)>EPS){
    double tx=S(state_tx),ty=S(state_ty);
    double one_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
    double my_ds=fabs(ds);
@@ -1948,7 +1951,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,double Z,
    double one_plus_nu=1.+nu;
    double sig2_ms=2.*chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
    
-   //printf("lynch/dahl sig2ms %g\n",sig2_ms);
+   //   printf("lynch/dahl sig2ms %g\n",sig2_ms);
    //sig2_ms*=0.1;
 
    Q=sig2_ms*Q;

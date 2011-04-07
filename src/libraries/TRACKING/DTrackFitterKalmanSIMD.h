@@ -307,7 +307,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   bool USE_MATERIAL_BOUNDARIES;
   int DEBUG_LEVEL;
   bool USE_T0_FROM_WIRES;
-  
+  bool USE_MULS_COVARIANCE;
+
   // Min. momentum needed for fit before returning fitSuccess
   double MIN_FIT_P;
 
