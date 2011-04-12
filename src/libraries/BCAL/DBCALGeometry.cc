@@ -9,7 +9,8 @@ int DBCALGeometry::NBCALMODS = 48;
 // On each module there is a 10x4 (r/phi) array of SiPMs -- this factory
 // allows two different "rectangular" groupings, an inner (1) and an outer (2)
 
-/*
+#ifdef BCAL_SUM_CELL
+
 // The configuration below has 3x1 (r/phi) summed cells in the inner
 // and 2x2 summed cells in the outer region
 int DBCALGeometry::NBCALLAYS1 =  2;
@@ -17,7 +18,8 @@ int DBCALGeometry::NBCALLAYS2 =  2;
 int DBCALGeometry::NBCALSECS1 =  4; 
 int DBCALGeometry::NBCALSECS2 =  2;
 // end of summing configuration
-*/
+
+#else
 
 // The configuration below has no summing of SiPMs
 int DBCALGeometry::NBCALLAYS1 =  6;
@@ -26,6 +28,7 @@ int DBCALGeometry::NBCALSECS1 =  4;
 int DBCALGeometry::NBCALSECS2 =  4;
 // end of no summing configuration
 
+#endif
 
 // Enter the index of the SiPM that designates the first
 // (counting radially outward) of the outer cells (default 7)

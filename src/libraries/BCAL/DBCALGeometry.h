@@ -25,6 +25,16 @@ using namespace jana;
 
 #define PI 3.1416
 
+// with this set one will utilize the default summing -- see DBCALGeometry.cc
+// for a description of summed geometry.
+//
+// Author's note:  this is seen as a temporary feature to study effects of
+// two different summing schemes.  A preprocessor macro is not the best way
+// to change the functionality of code, but mcsmear doesn't use factories to
+// provide objects so it is parameters aren't helpful.
+
+//#define BCAL_SUM_CELL
+
 class DBCALGeometry : public JObject {
   
 public:
@@ -50,6 +60,15 @@ public:
   
   static float ATTEN_LENGTH;   ///> attenuation length
   static float C_EFFECTIVE;    ///> speed of light in fibers 
+  
+  static bool summingOn() {
+    
+#ifdef BCAL_SUM_CELL
+    return true;
+#else
+    return false;
+#endif
+  }
   
   static int module( int cellId );  
   static int layer( int cellId );
