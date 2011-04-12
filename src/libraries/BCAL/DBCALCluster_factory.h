@@ -19,7 +19,7 @@ using namespace jana;
 #include "TTree.h"
 #include "TFile.h"
 
-#define BCAL_CLUSTER_DIAGNOSTIC
+//#define BCAL_CLUSTER_DIAGNOSTIC
 
 class DBCALCluster_factory : public JFactory< DBCALCluster > {
   
