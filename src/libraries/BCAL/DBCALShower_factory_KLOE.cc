@@ -49,17 +49,35 @@ DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
   gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_XYDIST", MERGE_THRESH_XYDIST );
   gPARMS->SetDefaultParameter( "BCALRECON:BREAK_THRESH_TRMS", BREAK_THRESH_TRMS );
   
-  // these are energy calibration parameters
+  if( !DBCALGeometry::summingOn() ){
+
+    // these are energy calibration parameters -- no summing of cells
+
+    m_scaleZ_p0 =  0.867288;
+    m_scaleZ_p1 =  0.00192052;
+    m_scaleZ_p2 =  -9.21828e-06;
+    m_scaleZ_p3 =  1.19395e-08;
   
-  m_scaleZ_p0 =  0.660299;
-  m_scaleZ_p1 =  0.00229035;
-  m_scaleZ_p2 =  -7.8725e-06;
-  m_scaleZ_p3 =  8.05729e-09;
+    m_nonlinZ_p0 =  0.00163174;
+    m_nonlinZ_p1 =  -2.22283e-05;
+    m_nonlinZ_p2 =  1.50361e-07;    
+    m_nonlinZ_p3 =  0;
   
-  m_nonlinZ_p0 =  0.117;
-  m_nonlinZ_p1 =  -3.79638e-04;
-  m_nonlinZ_p2 =  3.770e-07;    
-  m_nonlinZ_p3 =  1.9274e-10;
+  }
+  else{
+    
+    // these are energy calibration parameters -- 2-2-4-2 summing
+  
+    m_scaleZ_p0 = 0.840632;
+    m_scaleZ_p1 = 0.0017686;
+    m_scaleZ_p2 = -7.74686e-06;
+    m_scaleZ_p3 = 9.21245e-09;
+  
+    m_nonlinZ_p0 = 0.0422915;
+    m_nonlinZ_p1 = -8.20709e-05;
+    m_nonlinZ_p2 = 0;
+    m_nonlinZ_p3 = 0;
+  }
   
 }
 

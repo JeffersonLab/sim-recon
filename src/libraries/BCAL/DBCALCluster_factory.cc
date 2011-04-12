@@ -329,7 +329,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
     // lower the threshold to look for new seeds if none of 
     // the existing points were used as new clusters or assigned
     // to existing clusters
-    if( !usedPoint ) seedThresh /= 2.;
+    if( !usedPoint ) seedThresh /= 2;
   }
   
   return clusters;
@@ -444,7 +444,6 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
   m_ovrlpTr->Fill();
   
 #endif // BCAL_CLUSTER_DIAGNOSTIC
-  
   
   if( point->E() / clust.E() < 0.1 ){
     

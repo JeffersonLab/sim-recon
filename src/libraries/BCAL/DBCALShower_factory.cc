@@ -13,6 +13,35 @@
 DBCALShower_factory::DBCALShower_factory(){
   
   m_zTarget = 65*k_cm;
+
+  if( ! DBCALGeometry::summingOn() ) {
+  
+    // these are energy calibration parameters -- no summing of cells
+    
+    m_scaleZ_p0 =  0.876376;
+    m_scaleZ_p1 =  0.00150273;
+    m_scaleZ_p2 =  -6.57424e-06;
+    m_scaleZ_p3 =  7.79246e-09;
+    
+    m_nonlinZ_p0 =  0.0305786;
+    m_nonlinZ_p1 =  -0.00014641;
+    m_nonlinZ_p2 =  3.26065e-07;    
+    m_nonlinZ_p3 =  0;
+  }
+  else{
+    
+    // these are energy calibration parameters -- 2.2.4.2 summing
+    
+    m_scaleZ_p0 =  0.785604;
+    m_scaleZ_p1 =  0.0023703;
+    m_scaleZ_p2 =  -9.47468e-06;
+    m_scaleZ_p3 =  1.06317e-08;
+    
+    m_nonlinZ_p0 =  0.0468635;
+    m_nonlinZ_p1 =  -9.69989e-05;
+    m_nonlinZ_p2 =  0;    
+    m_nonlinZ_p3 =  0;
+  }
 }
 
 jerror_t
@@ -72,9 +101,25 @@ DBCALShower_factory::evnt( JEventLoop *loop, int eventnumber ){
     
     shower->tErr = (**clItr).sigT();
     
-    // set these the same for now -- need calibration correction
-    shower->E = shower->E_raw;
-
+    // calibrate energy:
+    // Energy calibration has a z dependence -- the
+    // calibration comes from fitting E_rec / E_gen to scale * E_gen^nonlin
+    // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
+    // as a function of z and fit.
+    
+    // center of target should be a geometry lookup
+    float zTarget = 65*k_cm;
+    float r = sqrt( shower->x * shower->x + shower->y * shower->y );
+    
+    float zEntry = ( shower->z - zTarget ) * ( DBCALGeometry::BCALINNERRAD / r );
+    
+    float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
+    m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
+    float nonlin = m_nonlinZ_p0  + m_nonlinZ_p1*zEntry + 
+    m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
+    
+    shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
+    
     _data.push_back( shower );
   }
   

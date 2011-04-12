@@ -26,8 +26,20 @@ private:
   
   jerror_t evnt(JEventLoop *loop, int eventnumber);	
 
-  
   float m_zTarget;
+
+// energy calibration parameters
+  
+  float m_scaleZ_p0;
+  float m_scaleZ_p1;
+  float m_scaleZ_p2;
+  float m_scaleZ_p3;
+  
+  float m_nonlinZ_p0;
+  float m_nonlinZ_p1;
+  float m_nonlinZ_p2;
+  float m_nonlinZ_p3;
+  
 };
 
 #endif
