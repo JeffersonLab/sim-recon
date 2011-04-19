@@ -13,7 +13,7 @@
 <HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.gluex.org/hdds 
-          http://zeus.phys.uconn.edu/halld/schemas/HDDS-1_0.xsd">
+          file:///group/halld/Software/builds/hdds/hdds-1.1/HDDS-1_0.xsd">
 
 <!-- Include materials -->
      &Material_s;
@@ -77,15 +77,24 @@
 
       <posXYZ volume="goniometer" X_Y_Z="0.0 0.0 0.0" />
       <posXYZ volume="quadAssembly" X_Y_Z="0.0 0.0 83.2374" />
-      <posXYZ volume="dipAssembly" X_Y_Z="-2.455685  0.0  632.2844"
+
+
+      <posXYZ volume="dipAssembly" X_Y_Z="-2.482062  0.0  632.51593"
                                    rot="0 -6.500 0" unit_angle="deg" /> 
 
-       <posXYZ volume="electronBeamPipe" X_Y_Z="-279.570866  0.0  1806.615686"
+
+       <posXYZ volume="electronBeamPipe" X_Y_Z="-282.462285  0.0  1818.752590"
                                    rot="0 -13.4 0" unit_angle="deg" /> 
 
 
       <posXYZ volume="DET7Comp" X_Y_Z="-129.05453  0.0  836.89"
-                                   rot="0 -8.05 0" unit_angle="deg" /> 
+                                   rot="0 -8.05 0" unit_angle="deg" />  
+
+<!-- Focal plane moved by 6 cm closer to the Vacuum Chamber -->
+<!--      <posXYZ volume="DET7Comp" X_Y_Z="-122.9944  0.0  836.89"
+                                   rot="0 -8.05 0" unit_angle="deg" />  -->
+
+
 
       <posXYZ volume="electronDump"  X_Y_Z="-458.44206  45.0  2557.438372" rot="0  -13.4  0" unit_angle="deg"/> 
 
@@ -159,14 +168,13 @@
 
 
 
-  <box name="XTAL" X_Y_Z="0.5 0.5 20e-4" material="Diamond" sensitive="true"
-                                        comment="goniometer crystal"/> 
-
-
 <!-- 
+  <box name="XTAL" X_Y_Z="0.5 0.5 20e-4" material="Diamond" sensitive="true"
+                                        comment="goniometer crystal"/>  -->
+
+
   <box name="XTAL" X_Y_Z="0.5 0.5 20e-4" material="Vacuum" sensitive="true"
                                         comment="goniometer crystal"/> 
--->
 
 
   <pgon name="XFRA" segments="4" profile="-45 360" material="Aluminum"
@@ -187,10 +195,10 @@
     <posXYZ volume="BPAI" X_Y_Z="0 0 0"/>
   </composition>
 
-  <box name="BPAO" X_Y_Z="15.54  5.38  977.250453" material="Iron"
+  <box name="BPAO" X_Y_Z="15.54  5.38  952.297318" material="Iron"
                                  comment="electron pipe AREA"/> 
 
-  <box name="BPAI" X_Y_Z="15.24  5.08  977.250453" material="TaggerVacuum"
+  <box name="BPAI" X_Y_Z="15.24  5.08  952.297318" material="TaggerVacuum"
                                  comment="electron pipe AREA inner part"/>
 
 
