@@ -161,8 +161,12 @@ class DTrackFitter:public jana::JObject{
 		vector<const DCDCTrackHit*> cdchits_used_in_fit;	//< The CDC hits actually used in the fit
 		vector<const DFDCPseudo*> fdchits_used_in_fit;		//< The FDC hits actually used in the fit
 
+
+		bool CORRECT_FOR_ELOSS;
+
 	private:
-		int DEBUG_LEVEL;		
+		int DEBUG_LEVEL;			
+
 		// Prohibit default constructor
 		DTrackFitter();
 		

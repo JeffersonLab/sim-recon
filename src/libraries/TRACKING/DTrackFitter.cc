@@ -29,6 +29,9 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	fit_status = kFitNotDone;
 	DEBUG_LEVEL=0;
 
+	CORRECT_FOR_ELOSS=true;
+	gPARMS->SetDefaultParameter("TRKFIT:CORRECT_FOR_ELOSS",CORRECT_FOR_ELOSS);
+
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(!dapp){
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
@@ -170,7 +173,7 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 
 	// Correct for energy loss in target etc. based on particle mass in starting_params
 	DVector3 pos, mom; // (holds parameters at vertex after correction)
-	if(fit_type==kWireBased){
+	if(CORRECT_FOR_ELOSS && fit_type==kWireBased){
 		jerror_t err = CorrectForELoss(starting_params, rt, pos, mom, mass);
 		if(err != NOERROR){
 			pos = starting_params.position();

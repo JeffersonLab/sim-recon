@@ -103,7 +103,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   
   USE_MULS_COVARIANCE=true;
   gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",
-			      USE_MULS_COVARIANCE);
+			      USE_MULS_COVARIANCE);  
+ 
   MIN_FIT_P = 0.050; // GeV
   gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
 
@@ -488,7 +489,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,double dz,
   D(state_ty)=kq_over_p_dsdz*dty_Bfac;
 
   D(state_q_over_p)=0.;
-  if (fabs(dEdx)>EPS){
+  if (CORRECT_FOR_ELOSS && fabs(dEdx)>EPS){
     double q_over_p_sq=q_over_p*q_over_p;
     double E=sqrt(1./q_over_p_sq+mass2); 
     D(state_q_over_p)=-q_over_p_sq*q_over_p*E*dEdx*dsdz;
@@ -596,7 +597,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double z,double dz,
 
   D(state_q_over_p)=0.;
   J(state_q_over_p,state_q_over_p)=0.;
-  if (fabs(dEdx)>EPS){
+  if (CORRECT_FOR_ELOSS && fabs(dEdx)>EPS){
     double p2=1./(q_over_p*q_over_p);
     double E=sqrt(p2+mass2); 
     D(state_q_over_p)=-q_over_p/p2*E*dEdx*dsdz;
@@ -672,7 +673,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcJacobian(double z,double dz,
   J(state_ty,state_x)=kq_over_p_dsdz*(one_plus_ty2*dBxdx-txty*dBydx
 				      -tx*dBzdx);
   J(state_q_over_p,state_q_over_p)=0.;
-  if (fabs(dEdx)>EPS){
+  if (CORRECT_FOR_ELOSS && fabs(dEdx)>EPS){
     double p2=1./(q_over_p*q_over_p);
     double E=sqrt(p2+mass2); 
     J(state_q_over_p,state_q_over_p)=-dEdx*dsdz/E*(2.+3.*mass2/p2);
@@ -798,8 +799,10 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     }
 
     // Get dEdx for the upcoming step
-    dEdx=GetdEdx(S(state_q_over_p),temp.K_rho_Z_over_A,temp.rho_Z_over_A,
+    if (CORRECT_FOR_ELOSS){
+      dEdx=GetdEdx(S(state_q_over_p),temp.K_rho_Z_over_A,temp.rho_Z_over_A,
 		 temp.LnI); 
+    }
   }
   index++; 
   if (index<=length){
@@ -869,11 +872,12 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   GetProcessNoise(ds,temp.Z,temp.rho_Z_over_A,S,Q);
   
   // Energy loss straggling
-  double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);
-  Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
-
-  if (Q(state_q_over_pt,state_q_over_pt)>1.) 
-    Q(state_q_over_pt,state_q_over_pt)=1.;
+  if (CORRECT_FOR_ELOSS){
+    double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);
+    Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;   
+    if (Q(state_q_over_pt,state_q_over_pt)>1.) 
+      Q(state_q_over_pt,state_q_over_pt)=1.;
+  }
 	  
   // Compute the Jacobian matrix and its transpose
   StepJacobian(newz,z,S,dEdx,J);
@@ -968,9 +972,10 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	}	
       }
       // Get dEdx for this step
-      dedx=GetdEdx(q_over_p,central_traj[m].K_rho_Z_over_A,
-		   central_traj[m].rho_Z_over_A,central_traj[m].LnI);
-    
+      if (CORRECT_FOR_ELOSS){
+	dedx=GetdEdx(q_over_p,central_traj[m].K_rho_Z_over_A,
+		     central_traj[m].rho_Z_over_A,central_traj[m].LnI);
+      }
       // Adjust the step size
       step_size=mStepSizeS;
       if (fabs(dedx)>EPS){
@@ -1021,14 +1026,16 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 			       central_traj[m].rho_Z_over_A,Sc,Q);
 
       // Energy loss straggling
-      varE=GetEnergyVariance(step_size,one_over_beta2,
-			     central_traj[m].K_rho_Z_over_A);	
-      Q(state_q_over_pt,state_q_over_pt)
-	=varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
+      if (CORRECT_FOR_ELOSS){
+	varE=GetEnergyVariance(step_size,one_over_beta2,
+			       central_traj[m].K_rho_Z_over_A);	
+	Q(state_q_over_pt,state_q_over_pt)
+	  =varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
 	  *q_over_p_sq;
-   
-      if (Q(state_q_over_pt,state_q_over_pt)>1.) 
-	Q(state_q_over_pt,state_q_over_pt)=1.;
+	
+	if (Q(state_q_over_pt,state_q_over_pt)>1.) 
+	  Q(state_q_over_pt,state_q_over_pt)=1.;
+      }
 
       // Compute the Jacobian matrix for back-tracking towards target
       StepJacobian(pos,origin,dir,-step_size,Sc,dedx,J);
@@ -1080,8 +1087,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       return UNRECOVERABLE_ERROR;
       }
     }
-    dedx=GetdEdx(q_over_p,temp.K_rho_Z_over_A,temp.rho_Z_over_A,temp.LnI);
- 
+    if (CORRECT_FOR_ELOSS){
+      dedx=GetdEdx(q_over_p,temp.K_rho_Z_over_A,temp.rho_Z_over_A,temp.LnI);
+    }
     // New state vector
     temp.S=Sc;
     
@@ -1131,14 +1139,15 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
     GetProcessNoiseCentral(step_size,temp.Z,temp.rho_Z_over_A,Sc,Q);
     
     // Energy loss straggling in the approximation of thick absorbers    
-    varE=GetEnergyVariance(step_size,one_over_beta2,temp.K_rho_Z_over_A);    
-    Q(state_q_over_pt,state_q_over_pt)
-      =varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
-      *q_over_p_sq;
-    
-    if (Q(state_q_over_pt,state_q_over_pt)>1.) 
-      Q(state_q_over_pt,state_q_over_pt)=1.;
-    
+    if (CORRECT_FOR_ELOSS){
+      varE=GetEnergyVariance(step_size,one_over_beta2,temp.K_rho_Z_over_A);    
+      Q(state_q_over_pt,state_q_over_pt)
+	=varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
+	*q_over_p_sq;
+      
+      if (Q(state_q_over_pt,state_q_over_pt)>1.) 
+	Q(state_q_over_pt,state_q_over_pt)=1.;
+    }
 
     // Compute the Jacobian matrix and its transpose
     StepJacobian(pos,origin,dir,-step_size,Sc,dedx,J);
@@ -1240,8 +1249,11 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     }       
   }
   // Get dEdx for the upcoming step
-  double dEdx=GetdEdx(S(state_q_over_p),temp.K_rho_Z_over_A,
-		      temp.rho_Z_over_A,temp.LnI); 
+  double dEdx=0.;
+  if (CORRECT_FOR_ELOSS){
+    dEdx=GetdEdx(S(state_q_over_p),temp.K_rho_Z_over_A,
+		 temp.rho_Z_over_A,temp.LnI);
+  }
   i++;
   my_i=length-i;
   if (i<=length){
@@ -1322,12 +1334,14 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   GetProcessNoise(ds,temp.Z,temp.rho_Z_over_A,S,Q);
       
   // Energy loss straggling  
-  double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);	
-  Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
-			            
-  if (Q(state_q_over_pt,state_q_over_pt)>1.) 
-    Q(state_q_over_pt,state_q_over_pt)=1.;
-
+  if (CORRECT_FOR_ELOSS){
+    double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);	
+    Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
+    
+    if (Q(state_q_over_pt,state_q_over_pt)>1.) 
+      Q(state_q_over_pt,state_q_over_pt)=1.;
+  }
+    
   // Compute the Jacobian matrix and its transpose
   StepJacobian(newz,z,S,dEdx,J);
       
@@ -1555,7 +1569,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
   D1(state_q_over_pt)
     =kq_over_pt*q_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
   double one_over_cosl=1./cosl;
-  if (fabs(dEdx)>EPS){    
+  if (CORRECT_FOR_ELOSS && fabs(dEdx)>EPS){    
     double p=pt*one_over_cosl;
     double p_sq=p*p;
     double E=sqrt(p_sq+mass2);
@@ -1673,7 +1687,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double ds,
     =2.*kq_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
   J1(state_q_over_pt,state_tanl)
     =kq_over_pt*q_over_pt*cosl3*By_cosphi_minus_Bx_sinphi;
-  if (fabs(dEdx)>EPS){  
+  if (CORRECT_FOR_ELOSS && fabs(dEdx)>EPS){  
     double p=pt*one_over_cosl;
     double p_sq=p*p;
     double m2_over_p2=mass2/p_sq;
@@ -2046,10 +2060,13 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(DMatrix5x1 &Ss){
       unsigned int cdc_index=forward_traj[m].h_id-1000; 	
   
       // Energy loss at this position along the trajectory
-      double dEdx=GetdEdx(Ss(state_q_over_p), 
-			  forward_traj[m].K_rho_Z_over_A,
-			  forward_traj[m].rho_Z_over_A,
-			  forward_traj[m].LnI);
+      double dEdx=0.;
+      if (CORRECT_FOR_ELOSS){
+	GetdEdx(Ss(state_q_over_p), 
+		forward_traj[m].K_rho_Z_over_A,
+		forward_traj[m].rho_Z_over_A,
+		forward_traj[m].LnI);
+      }
       // Add contribution to estimate to T0 from this hit
       ComputeT0FromCDC(forward_traj[m].pos.z(),ftime,dEdx,cdc_index,Ss,Cs);
 
@@ -2246,10 +2263,13 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(DMatrix5x1 &Ss){
       unsigned int cdc_index=forward_traj_cdc[m].h_id-1; 	
 
       // Energy loss at this position along the trajectory
-      double dEdx=GetdEdx(Ss(state_q_over_p), 
-			  forward_traj_cdc[m].K_rho_Z_over_A,
-			  forward_traj_cdc[m].rho_Z_over_A,
-			  forward_traj_cdc[m].LnI);
+      double dEdx=0.;
+      if (CORRECT_FOR_ELOSS){
+	dEdx=GetdEdx(Ss(state_q_over_p), 
+		     forward_traj_cdc[m].K_rho_Z_over_A,
+		     forward_traj_cdc[m].rho_Z_over_A,
+		     forward_traj_cdc[m].LnI);
+      }
       // Add contribution to estimate to T0 from this hit
       ComputeT0FromCDC(forward_traj_cdc[m].pos.z(),ftime,dEdx,cdc_index,
 		       Ss,Cs);
@@ -2343,7 +2363,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double anneal_factor=1.;
     unsigned int last_ndf=0,best_ndf=0;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:2);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?20:5);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
 
@@ -2410,7 +2430,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    return VALUE_OUT_OF_RANGE;
 	  }
 	  // Break out of loop if the chisq is increasing or not changing much
-	  if (iter>1 && chisq>chisq_forward || fabs(chisq-chisq_forward)<0.1) break;
+	  if (chisq>chisq_forward || fabs(chisq-chisq_forward)<0.1) break;
 		  
 	  chisq_forward=chisq; 
 	  last_ndf=my_ndf;
@@ -2542,7 +2562,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double anneal_factor=1.;
     unsigned int last_ndf=0,best_ndf=0;
     // Iterate over reference trajectories
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:2);iter2++){   
+    for (int iter2=0;iter2<(fit_type==kTimeBased?20:5);iter2++){   
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) break;
       
@@ -2614,7 +2634,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
 	  //printf("iter %d chi2 %f %f\n",iter,chisq,chisq_forward);
 	  if (!isfinite(chisq)) return VALUE_OUT_OF_RANGE;
-	  if (iter>1 && chisq>chisq_forward || fabs(chisq-chisq_forward)<0.1) break;
+	  if (chisq>chisq_forward || fabs(chisq-chisq_forward)<0.1) break;
 	  chisq_forward=chisq;
 	  Slast=S;
 	  Clast=C;
@@ -2747,7 +2767,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double anneal_factor=1.;
     double chisq_iter=chisq;
     unsigned int best_ndf=0,last_ndf=0;
-    for (int iter2=0;iter2<(fit_type==kTimeBased?10:2);iter2++){  
+    for (int iter2=0;iter2<(fit_type==kTimeBased?20:5);iter2++){  
       // Break out of loop if p is too small
       double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
       if (fabs(q_over_p)>Q_OVER_P_MAX) break;
@@ -2828,7 +2848,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    if (iter2>0) break;
 	    return VALUE_OUT_OF_RANGE;
 	  }
-	  if (iter>1 && chisq_central>chisq || fabs(chisq_central-chisq)<0.1) break; 
+	  if (chisq_central>chisq || fabs(chisq_central-chisq)<0.1) break; 
 	  // Save the current "best" state vector and covariance matrix
 	  Cclast=Cc;
 	  Sclast=Sc;
@@ -3245,9 +3265,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	
 	// dEdx for current position along trajectory
 	double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
-	dedx=GetdEdx(q_over_p, central_traj[k].K_rho_Z_over_A,
+	if (CORRECT_FOR_ELOSS){
+	  dedx=GetdEdx(q_over_p, central_traj[k].K_rho_Z_over_A,
 		     central_traj[k].rho_Z_over_A,central_traj[k].LnI);
-	
+	}
 	// Variables for the computation of D at the doca to the wire
 	double D=Sc(state_D);
 	double q=(Sc(state_q_over_pt)>0)?1.:-1.;
@@ -3879,10 +3900,13 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       if (doca>old_doca){
 	if(my_cdchits[cdc_index]->status==0){	
 	  // Get energy loss 
-	  double dedx=GetdEdx(S(state_q_over_p), 
-			      forward_traj[k].K_rho_Z_over_A,
-			      forward_traj[k].rho_Z_over_A,
-			      forward_traj[k].LnI);
+	  double dedx=0.;
+	  if (CORRECT_FOR_ELOSS){
+	    dedx=GetdEdx(S(state_q_over_p), 
+			 forward_traj[k].K_rho_Z_over_A,
+			 forward_traj[k].rho_Z_over_A,
+			 forward_traj[k].LnI);
+	  }
 	  double tx=S(state_tx);
 	  double ty=S(state_ty);	
 	  double tanl=1./sqrt(tx*tx+ty*ty);
@@ -4198,10 +4222,13 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
     if ((doca>old_doca || z>endplate_z)&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Get energy loss 
-	double dedx=GetdEdx(S(state_q_over_p), 
-			    forward_traj_cdc[k].K_rho_Z_over_A,
-			    forward_traj_cdc[k].rho_Z_over_A,
-			    forward_traj_cdc[k].LnI);
+	double dedx=0.;
+	if (CORRECT_FOR_ELOSS){
+	  dedx=GetdEdx(S(state_q_over_p), 
+		       forward_traj_cdc[k].K_rho_Z_over_A,
+		       forward_traj_cdc[k].rho_Z_over_A,
+		       forward_traj_cdc[k].LnI);
+	}
 	double tx=S(state_tx);
 	double ty=S(state_ty);	
 	double tanl=1./sqrt(tx*tx+ty*ty);
@@ -4464,7 +4491,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     }
 
     // Get dEdx for the upcoming step
-    dEdx=GetdEdx(S(state_q_over_p),K_rho_Z_over_A,rho_Z_over_A,LnI); 
+    if (CORRECT_FOR_ELOSS){
+      dEdx=GetdEdx(S(state_q_over_p),K_rho_Z_over_A,rho_Z_over_A,LnI); 
+    }
 
     // Adjust the step size
     double sign=(dz>0)?1.:-1.;
@@ -4579,8 +4608,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
 
       // Get dEdx for the upcoming step
       double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
-      dedx=GetdEdx(q_over_p,K_rho_Z_over_A,rho_Z_over_A,LnI); 
-      
+      if (CORRECT_FOR_ELOSS){
+	dedx=GetdEdx(q_over_p,K_rho_Z_over_A,rho_Z_over_A,LnI); 
+      }
       // Adjust the step size
       double sign=(ds>0)?1.:-1.;
       if (fabs(dedx)>EPS){
