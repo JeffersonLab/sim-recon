@@ -51,13 +51,23 @@
 
     <posXYZ volume="DipoleMagnet" X_Y_Z="0.0 0.0 0.0"/> 
 
-    <posXYZ volume="VacChamber1"  X_Y_Z="-67.31498   0  0.0"/> 
+    <posXYZ volume="VacChamber1"  X_Y_Z=" -69.048772  0  0.0"/>  
 
-<!-- Vacuum Chambers for  d_offset = 150 cm -->
-    <posXYZ volume="VacChamber2"  X_Y_Z=" -73.887203  0  511.401039 "/>
-    <posXYZ volume="VacChamber3"  X_Y_Z=" -81.011067  0  709.900851 "/>
-    <posXYZ volume="ExitPlateFlange" X_Y_Z=" -88.863918  0  711.161653" rot="0 -6.9 0" unit_angle="deg"/>
-    <posXYZ volume="ExitFlange" X_Y_Z="-90.686287  0  196.680215" rot="0 -1.55 0" unit_angle="deg"/>
+
+<!--   Vacuum Chambers for  d_offset = 150 cm  -->
+
+
+    <posXYZ volume="VacChamber2"  X_Y_Z=" -76.535841  0  523.602365"/>
+
+    <posXYZ volume="VacChamber3"  X_Y_Z=" -84.287243  0  734.371883"/>
+
+
+    <posXYZ volume="ExitPlateFlange" X_Y_Z="-92.426756   0  735.632685" rot="0 -6.9 0" unit_angle="deg"/> 
+
+
+
+
+    <posXYZ volume="ExitFlange" X_Y_Z=" -94.484015 0  208.881542" rot="0 -1.55 0" unit_angle="deg"/> 
 
 
   </composition>
@@ -161,11 +171,11 @@
     <posXYZ volume="CHP1" X_Y_Z="0 -2.5675 0"/> 
   </composition> 
 
-  <trd name="CHP1" Xmp_Ymp_Z="26.3134 43.3465 0.635 0.635 629.476"
+  <trd name="CHP1" Xmp_Ymp_Z="29.781 46.8141  0.635 0.635  629.476"
        material="Iron" inclination="-0.77514 0" unit_angle="deg"/>
 
 
-  <trd name="VCH1" Xmp_Ymp_Z="26.3134  43.3465  5.77  5.77  629.476"
+  <trd name="VCH1" Xmp_Ymp_Z="29.781 46.8141  5.77  5.77  629.476"
        material="TaggerVacuum" inclination="-0.77514 0" unit_angle="deg"/>
 
 
@@ -178,10 +188,10 @@
     <posXYZ volume="CHP2" X_Y_Z="0 -2.5675 0"/>
   </composition>
 
-  <trd name="VCH2" Xmp_Ymp_Z="67.755703  30.801109  5.77 5.77  393.326077"
+  <trd name="VCH2" Xmp_Ymp_Z="71.195078  31.947755  5.77 5.77  417.728731"
        material="TaggerVacuum" inclination="-4.233675  0" unit_angle="deg"/>
 
-  <trd name="CHP2" Xmp_Ymp_Z="67.755703  30.801109  0.635 0.635  393.326077"
+  <trd name="CHP2" Xmp_Ymp_Z="71.195078  31.947755  0.635 0.635  417.728731"
        material="Iron" inclination="-4.233675  0" unit_angle="deg"/>
 
 
@@ -193,11 +203,11 @@
   </composition>
 
 
-  <trd name="VCH3" Xmp_Ymp_Z="30.801109 0  5.77  5.77  3.673547"
+  <trd name="VCH3" Xmp_Ymp_Z="31.947755  0  5.77  5.77  3.810304"
        material="TaggerVacuum" inclination="+76.20 0" unit_angle="deg"/>
 
 
-  <trd name="CHP3" Xmp_Ymp_Z="30.801109  0  0.635  0.635  3.673547"
+  <trd name="CHP3" Xmp_Ymp_Z="31.947755  0  0.635  0.635  3.810304"
        material="Iron" inclination="+76.20 0" unit_angle="deg"/>
 
 
@@ -205,10 +215,10 @@
 <!--  ============  ExitPlateFlange  ============  -->
 
   <composition name="ExitPlateFlange" envelope="VCF3">
-     <posXYZ volume="VCFW" X_Y_Z="0.281440  0.0   0.0"/>
+     <posXYZ volume="VCFW" X_Y_Z="0.850611  0.0   0.0"/>
   </composition>
 
-  <box name="VCF3" X_Y_Z="30.578027  9.58  2.54" material="Iron"/>
+  <box name="VCF3" X_Y_Z="31.716368  9.58  2.54" material="Iron"/>
   <box name="VCFW" X_Y_Z="15.24  4.5  2.54" material="TaggerVacuum"/>
 
 
@@ -216,13 +226,13 @@
 <!--  ============  ExitFlange  ============  -->
 
   <composition name="ExitFlange" envelope="EWFL">
-    <posXYZ volume="EWVA" X_Y_Z="0.0125    0.0   0.0"/>
+    <posXYZ volume="EWVA" X_Y_Z=" 0.0125   0.0   0.0"/>
     <posXYZ volume="EWAL" X_Y_Z="-0.6225   0.0   0.0"/>
   </composition>
 
-  <box name="EWFL" X_Y_Z="1.27   10.16 1022.857451" material="Iron"/>
-  <box name="EWVA" X_Y_Z="1.245  4.5   1012.857451" material="TaggerVacuum"/>
-  <box name="EWAL" X_Y_Z="0.025  4.5   1012.857451" material="Aluminum"/>
+  <box name="EWFL" X_Y_Z="1.27   10.16 1047.265733" material="Iron"/>
+  <box name="EWVA" X_Y_Z="1.245  4.5   1037.265733" material="TaggerVacuum"/>
+  <box name="EWAL" X_Y_Z="0.025  4.5   1037.265733" material="Aluminum"/>
 
 
 
@@ -258,7 +268,7 @@
 
 
   <composition name="DET7Comp">
-    <posXYZ volume="DET7" X_Y_Z="0.0 0.0 0.0"/>
+    <posXYZ volume="DET7" X_Y_Z="-0.1  0.0  0.0"/>
 
 <!-- Shielded Focal Plane 
     <posXYZ volume="NSCF" X_Y_Z="5.5     74.0  -53.0"/>
@@ -274,7 +284,14 @@
 
   <!--  <box name="DET7" X_Y_Z="0.2 20.0  1200.0" material="TaggerVacuum"/> -->
 
-  <box name="DET7" X_Y_Z="0.2  200.0  852.0" material="TaggerVacuum"/> 
+
+   <box name="DET7" X_Y_Z="0.2  200.0  852.0" material="TaggerVacuum"/> 
+
+<!-- Just longer focal plane -->
+<!--  <box name="DET7" X_Y_Z="0.2  200.0  952.0" material="TaggerVacuum"/>  -->
+
+
+
 
 
 <!-- Schielding of the microscope detectors
