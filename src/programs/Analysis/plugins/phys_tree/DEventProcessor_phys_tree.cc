@@ -28,6 +28,7 @@ using namespace jana;
 #include <PID/DChargedTrack.h>
 #include <PID/DPhoton.h>
 #include <PID/DBeamPhoton.h>
+#include <PID/DParticleSet.h>
 #include <PID/DPhysicsEvent.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackTimeBased.h>
@@ -137,13 +138,13 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	const DPhysicsEvent *physicsevent = NULL;
 	int max_parts=0;
 	for(unsigned int i=0; i<physicsevents.size(); i++){
-		const DPhysicsEvent *pe = physicsevents[i];
-		int Nparts = pe->pip.size() + pe->pim.size()
-		        + pe->photon.size() + pe->proton.size()
-		        + pe->Kp.size()     + pe->Km.size()
-		        + pe->otherp.size() + pe->otherm.size();
-		if(Nparts>max_parts || physicsevent==NULL){
-			physicsevent = pe;
+		const DParticleSet *ps = physicsevents[i]->particle_sets[0];
+		int Nparts = ps->pip.size() + ps->pim.size()
+		        + ps->photon.size() + ps->proton.size()
+		        + ps->Kp.size()     + ps->Km.size()
+		        + ps->otherp.size() + ps->otherm.size();
+		if(Nparts>max_parts || physicsevents[i]==NULL){
+			physicsevent = physicsevents[i];
 			max_parts = Nparts;
 		}
 	}
@@ -151,29 +152,30 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	// Create Particle objects for each of the common particle types
 	particle_set rec;
 	if (physicsevent!=NULL){
-	  for(unsigned int j=0; j<physicsevent->photon.size(); j++){
+	  const DParticleSet *particle_set=physicsevent->particle_sets[0];
+	  for(unsigned int j=0; j<particle_set->photon.size(); j++){
 		// photon
-	    rec.photons.push_back(MakeParticle(physicsevent->photon[j], 0.0));
+	    rec.photons.push_back(MakeParticle(particle_set->photon[j], 0.0));
 	  }
-	  for(unsigned int j=0; j<physicsevent->pip.size(); j++){
+	  for(unsigned int j=0; j<particle_set->pip.size(); j++){
 	    // pi+
-	    rec.piplus.push_back(MakeParticle(physicsevent->pip[j], 0.13957));
+	    rec.piplus.push_back(MakeParticle(particle_set->pip[j][0]->track, 0.13957));
 	  }
-	  for(unsigned int j=0; j<physicsevent->pim.size(); j++){
+	  for(unsigned int j=0; j<particle_set->pim.size(); j++){
 	    // pi-
-	    rec.piminus.push_back(MakeParticle(physicsevent->pim[j], 0.13957));
+	    rec.piminus.push_back(MakeParticle(particle_set->pim[j][0]->track, 0.13957));
 	  }
-	  for(unsigned int j=0; j<physicsevent->proton.size(); j++){
+	  for(unsigned int j=0; j<particle_set->proton.size(); j++){
 	    // proton
-	    rec.protons.push_back(MakeParticle(physicsevent->proton[j], 0.93827));
+	    rec.protons.push_back(MakeParticle(particle_set->proton[j][0]->track, 0.93827));
 	  }
-	  for(unsigned int j=0; j<physicsevent->Kp.size(); j++){
+	  for(unsigned int j=0; j<particle_set->Kp.size(); j++){
 	    // K+
-	    rec.Kplus.push_back(MakeParticle(physicsevent->Kp[j], 0.493677));
+	    rec.Kplus.push_back(MakeParticle(particle_set->Kp[j][0]->track, 0.493677));
 	  }
-	  for(unsigned int j=0; j<physicsevent->Km.size(); j++){
+	  for(unsigned int j=0; j<particle_set->Km.size(); j++){
 	    // Ki+
-	    rec.Kminus.push_back(MakeParticle(physicsevent->Km[j], 0.493677));
+	    rec.Kminus.push_back(MakeParticle(particle_set->Km[j][0]->track, 0.493677));
 	  }  
 	}
 	// Create Particle objects for thrown particles
@@ -289,7 +291,7 @@ Particle DEventProcessor_phys_tree::MakeParticle(const DTrackTimeBased *trk, dou
 //------------------
 // MakeParticle
 //------------------
-Particle DEventProcessor_phys_tree::MakeParticle(const DPhoton *phtn, double mass)
+Particle DEventProcessor_phys_tree::MakeParticle(const DVertex::shower_info_t *phtn, double mass)
 {
 	// Most values get set using DKinematicData part
 	Particle part = MakeParticle((DKinematicData*)phtn, mass);

@@ -29,6 +29,7 @@ using namespace std;
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
+#include <PID/DVertex.h>
 
 #include "Event.h"
 #include "Particle.h"
@@ -68,7 +69,7 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		
 		Particle MakeParticle(const DKinematicData *kd, double mass);
 		Particle MakeParticle(const DTrackTimeBased *trk, double mass);
-		Particle MakeParticle(const DPhoton *phtn, double mass);
+		Particle MakeParticle(const DVertex::shower_info_t *phtn, double mass);
 		bool IsFiducial(const DKinematicData *kd);
 		void FillEvent(Event *evt, particle_set &pset, particle_set &pset_match);
 		Particle FindBestMatch(const Particle &primary, vector<Particle> &secondaries);
