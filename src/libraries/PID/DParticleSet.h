@@ -23,6 +23,8 @@ class DParticleSet:public jana::JObject{
   vector<vector<const DVertex::track_info_t *> >Kp; // list of K pluses
   vector<vector<const DVertex::track_info_t *> >Km;  // list of K minuses
   vector<vector<const DVertex::track_info_t *> >proton; // list of protons
+  vector<vector<const DVertex::track_info_t *> >otherp; // unidentified positively charged particles
+  vector<vector<const DVertex::track_info_t *> >otherm; // unidentified negatively charged particles
 
   // Print out some summary information about the contents of this class
   void toStrings(vector<pair<string,string> > &items)const{
@@ -36,6 +38,8 @@ class DParticleSet:public jana::JObject{
     AddString(items, "Nproton",      "%d", proton.size());
     AddString(items, "NK_plus",      "%d", Kp.size());
     AddString(items, "NK_minus",     "%d", Km.size());    
+    AddString(items, "Notherp",      "%d",  otherp.size());      
+    AddString(items, "Notherm",      "%d",  otherm.size());      
 	
   }
 };
