@@ -3257,7 +3257,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     doca=(pos-wirepos).Perp();
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca)
+    if ((doca>old_doca && pos.z()>cdc_origin[2])
 	&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Save values at end of current step
@@ -3320,33 +3320,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  // See Numerical Recipes in C, pp 404-405
 	  ds2=BrentsAlgorithm(-step1,-step2,dedx,pos,origin,dir,Sc);
 	}
-
-	int numstep=(int)(ds2/mStepSizeS);
-	double myds=mStepSizeS;
-	if (ds2<0) myds*=-1.;
-	double ds3=ds2-mStepSizeS*numstep;
 	// propagate covariance matrix along the reference trajectory.
-	for (int j=0;j<abs(numstep);j++){
-	  // Compute the Jacobian matrix
-	  StepJacobian(pos0,origin,dir,myds,S0,dedx,J);
+	// Compute the Jacobian matrix
+	StepJacobian(pos0,origin,dir,ds2,S0,dedx,J);
 	  
-	  // Update covariance matrix
-	  // Cc=J*Cc*J.Transpose();
-	  Cc=Cc.SandwichMultiply(J);
-
-	  // Step along reference trajectory 
-	  FixedStep(pos0,myds,S0,dedx);	
-	}
-	if (fabs(ds3)>EPS2){
-	  // Compute the Jacobian matrix
-	  StepJacobian(pos0,origin,dir,ds3,S0,dedx,J);
-	  
-	  // Step along reference trajectory 
-	  FixedStep(pos0,ds3,S0,dedx);
-	  
-	  // Update covariance matrix
-	  Cc=J*Cc*J.Transpose();
-	}
+	// Step along reference trajectory 
+	FixedStep(pos0,ds2,S0,dedx);
+	
+	// Update covariance matrix
+	Cc=J*Cc*J.Transpose();
 	
 	// Compute the value of D (signed distance to the reference trajectory)
 	// at the doca to the wire
@@ -3467,30 +3449,12 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  my_cdchits[cdc_index]->used_in_fit=false;
 	}
 	// propagate the covariance matrix to the next point on the trajectory
-	for (int j=0;j<abs(numstep);j++){
-	  DMatrix5x1 Stemp(S0);
-	  
-	  // Compute the Jacobian matrix
-	  StepJacobian(pos0,origin,dir,-myds,S0,dedx,J);
-	  
-	  // Update covariance matrix
-	  //Cc=J*Cc*J.Transpose();
-	  Cc=Cc.SandwichMultiply(J);
- 
-	  // Step along reference trajectory 
-	  FixedStep(pos0,-myds,S0,dedx);	
-	  
-	  // Step to the next point on the trajectory
-	  Sc=S0+J*(Sc-Stemp); 
-	}
-	if (fabs(ds3)>EPS){
-	  // Compute the Jacobian matrix
-	  StepJacobian(pos0,origin,dir,-ds3,S0,dedx,J);
-	  
-	  // Update covariance matrix
-	  //Cc=J*Cc*J.Transpose();
-	  Cc=Cc.SandwichMultiply(J);
-	}
+	// Compute the Jacobian matrix
+	StepJacobian(pos0,origin,dir,-ds2,S0,dedx,J);
+	
+	// Update covariance matrix
+	//Cc=J*Cc*J.Transpose();
+	Cc=Cc.SandwichMultiply(J);
 	
 	// Step to the next point on the trajectory
 	Sc=S0_+J*(Sc-S0); 
@@ -4219,7 +4183,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
     doca=sqrt(dx*dx+dy*dy);
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca || z>endplate_z)&& more_measurements){
+    if ((doca>old_doca && z<endplate_z)&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Get energy loss 
 	double dedx=0.;
