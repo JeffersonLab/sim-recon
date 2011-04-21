@@ -2529,8 +2529,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    *my_cdchits[i]=b;
 	    *my_cdchits[i+1]=a;
 	  }
-	  if (my_cdchits[i+1]->hit->wire->stereo==0.)
-	    my_cdchits[i+1]->status=1;
+	  my_cdchits[i+1]->status=1;
 	}
       }
     }
@@ -2729,6 +2728,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    *my_cdchits[i]=b;
 	    *my_cdchits[i+1]=a;
 	  }
+	  my_cdchits[i+1]->status=1;
 	}
       }
     }      
