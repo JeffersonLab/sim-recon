@@ -135,6 +135,7 @@ ifdef PROFILE
 	FFLAGS   += -g -pg
 	CFLAGS	+= -g -pg
 	CXXFLAGS	+= -g -pg
+	LD_FLAGS	+= -g -pg
 endif
 
 # Set default optimization level to 2, but allow OPTIMIZE=X
