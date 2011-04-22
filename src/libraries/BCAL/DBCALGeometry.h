@@ -50,6 +50,10 @@ public:
   static int NBCALLAYS2;        ///> number of layers in last  15 cm 
   static int NBCALSECS1;        ///> number of sectors in first 10cm of Mod 
   static int NBCALSECS2;        ///> number of sectors in last 15cm of Mod 
+  static int NSUMLAYS1;        ///> number of layers summed for digitization in inner region 
+  static int NSUMLAYS2;        ///> number of layers summed for digitization in outer region 
+  static int NSUMSECS1;        ///> number of sectors summed for digitization in inner region 
+  static int NSUMSECS2;        ///> number of sectors summed for digitization in outer region 
   static float BCALINNERRAD;    ///> innner radius of BCAL in cm
   static int BCALMID;         ///> first outer layer (default 7)
   static float m_radius[11];
@@ -75,6 +79,7 @@ public:
   static int sector( int cellId );
 
   static int cellId( int module, int layer, int sector );
+  static int fADCId( int module, int layer, int sector );
 
   static float phi( int cellId );
   static float phiSize( int cellId );

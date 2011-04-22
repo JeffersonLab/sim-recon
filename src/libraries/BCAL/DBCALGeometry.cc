@@ -30,6 +30,11 @@ int DBCALGeometry::NBCALSECS2 =  4;
 
 #endif
 
+int DBCALGeometry::NSUMLAYS1 = 6/DBCALGeometry::NBCALLAYS1;
+int DBCALGeometry::NSUMLAYS2 = 4/DBCALGeometry::NBCALLAYS2;
+int DBCALGeometry::NSUMSECS1 = 4/DBCALGeometry::NBCALSECS1;
+int DBCALGeometry::NSUMSECS2 = 4/DBCALGeometry::NBCALSECS2;
+
 // Enter the index of the SiPM that designates the first
 // (counting radially outward) of the outer cells (default 7)
 int DBCALGeometry::BCALMID = 7;
@@ -92,6 +97,28 @@ DBCALGeometry::cellId( int module, int layer, int sector ) {
   return ( ( module << MODULE_SHIFT ) | 
            ( layer << LAYER_SHIFT   ) | 
            ( sector << SECTOR_SHIFT ) );
+}
+
+int
+DBCALGeometry::fADCId( int module, int layer, int sector ) {
+	// This is used to return the readout channel ID which may
+	// differ from the cellID if summing is implemented.
+	//
+	// n.b. this method recycles the cellId() system so that the
+	// valid fADCId values will not be contiguous when summing is
+	// implemented! (4/13/2011 DL)
+#ifdef BCAL_SUM_CELL
+	if(layer<DBCALGeometry::BCALMID){
+		// inner
+		layer = 1+ (layer-1)/NSUMLAYS1;
+		sector = 1 + (sector-1)/NSUMSECS1;
+	}else{
+		// outer
+		layer = 1+ (layer-1)/NSUMLAYS2;
+		sector = 1 + (sector-1)/NSUMSECS2;
+	}
+#endif
+	return cellId(module, layer, sector);
 }
 
 float
