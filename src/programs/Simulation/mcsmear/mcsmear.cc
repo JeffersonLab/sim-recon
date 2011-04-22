@@ -5,7 +5,7 @@
 
 // The following flag can be used to switch from the classic mode where
 // the event loop is implemented in main() to a JANA based event-loop.
-#define USE_JANA 0
+#define USE_JANA 1
 
 #include <iostream>
 #include <iomanip>
@@ -50,6 +50,7 @@ bool FDC_USE_PARAMETERIZED_SIGMA = true;
 float BCAL_DARKRATE_GHZ         = 0.;// 0.041;
 float BCAL_XTALK_FRACT          = 0.;//0.03;
 float BCAL_INTWINDOW_NS         = 0.;//100;
+float BCAL_TIME_WINDOW          = 0.;// 1000.0E-9 seconds
 float BCAL_DEVICEPDE            = 0.;//0.12;
 float BCAL_SAMPLING_FRACT       = 0.;//0.15;
 float BCAL_MAXOCCUPANCY_FRACT   = 0.;//0.05;
