@@ -163,6 +163,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double GetEnergyVariance(double ds,double beta2,double K_rho_Z_over_A);
 
  protected:
+  enum hit_status{
+    good_hit,
+    bad_hit,
+  };
   enum state_types_forward{
     state_x,
     state_y,
