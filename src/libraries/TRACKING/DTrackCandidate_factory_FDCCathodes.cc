@@ -22,7 +22,7 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_VAR 0.09 // cm^2
+#define BEAM_VAR 1.0 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
 #define Z_MAX 85.0
@@ -819,7 +819,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     rc=segment->rc;
     // Sign of the charge
     q=segment->q;
-       
+    // z-position at "vertex"
+    z_vertex=segment->z_vertex;
+
     double Bz_avg=0.;
     // Compute average magnitic field for the segment
     for (unsigned int m=0;m<segment->hits.size();m++){
@@ -854,7 +856,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     rc=segment->rc;
     // Sign of the charge
     q=segment->q;
-   
+    // z-position at "vertex"
+    z_vertex=segment->z_vertex;
+
     double Bz_avg=0.;
     // Compute average magnitic field for the segment
     for (unsigned int m=0;m<segment->hits.size();m++){
