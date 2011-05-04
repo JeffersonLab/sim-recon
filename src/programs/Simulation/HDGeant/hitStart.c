@@ -30,6 +30,7 @@
 #include <geant3.h>
 #include <bintree.h>
 #include "calibDB.h"
+extern s_HDDM_t* thisInputEvent;
 
 static float ATTEN_LENGTH    = 150.;
 static float C_EFFECTIVE     = 15.;
@@ -163,7 +164,8 @@ void hitStartCntr (float xin[4], float xout[4],
          s_StartCntr_t* stc = *twig = make_s_StartCntr();
          s_StcTruthPoints_t* points = make_s_StcTruthPoints(1);
          stc->stcTruthPoints = points;
-         points->in[0].primary = (stack == 0);
+        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         points->in[0].primary = (stack <= a);
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];

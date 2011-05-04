@@ -19,6 +19,7 @@
 #include <bintree.h>
 
 #include "calibDB.h"
+extern s_HDDM_t* thisInputEvent;
 
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
 static float DRIFT_SPEED     =   0.0055;
@@ -270,7 +271,8 @@ void hitCentralDC (float xin[4], float xout[4],
       {
          s_CentralDC_t* cdc = *twig = make_s_CentralDC();
          s_CdcTruthPoints_t* points = make_s_CdcTruthPoints(1);
-         points->in[0].primary = (stack == 0);
+        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         points->in[0].primary = (stack <= a);
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];

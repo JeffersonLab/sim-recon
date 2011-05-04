@@ -23,7 +23,6 @@
 
 #include "calibDB.h"
 
-
 static float THRESH_MEV	     = 1.;
 static float TWO_HIT_RESOL   = 50.;
 static int   MAX_HITS 	     = 100;
@@ -33,27 +32,29 @@ static int cellCount = 0;
 static int showerCount = 0;
 static int initialized = 0;
 
+extern s_HDDM_t* thisInputEvent;
+
 /* register hits during tracking (from gustep) */
 
 void hitBarrelEMcal (float xin[4], float xout[4],
                      float pin[5], float pout[5], float dEsum,
                      int track, int stack, int history, int ipart)
 {
-   float x[3], t;
-   float dx[3], dr;
-   float xlocal[3];
-   float xbcal[3];
-   float xHat[] = {1,0,0};
-
+  float x[3], t;
+  float dx[3], dr;
+  float xlocal[3];
+  float xbcal[3];
+  float xHat[] = {1,0,0};
+  
   if (!initialized) {
-
+    
     mystr_t strings[50];
     float values[50];
     int nvalues = 50;
     int status = GetConstants("BCAL/bcal_parms", &nvalues, values, strings);
-
+    
     if (!status) {
-     int ncounter = 0;
+      int ncounter = 0;
       int i;
       for ( i=0;i<(int)nvalues;i++){
         //printf("%d %s \n",i,strings[i].str);
@@ -79,53 +80,54 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       }
     }
     initialized = 1;
-
+    
   }
-
-   x[0] = (xin[0] + xout[0])/2;
-   x[1] = (xin[1] + xout[1])/2;
-   x[2] = (xin[2] + xout[2])/2;
-   t    = (xin[3] + xout[3])/2 * 1e9;
-   transformCoord(x,"global",xlocal,"BCAL");
-   transformCoord(xHat,"local",xbcal,"BCAL");
-
-	/* Under certain conditions the time in xout[3] will
-	   be invalid (unusually large). Check for this and
-		use only the in time in these cases
-	*/
-	if(xout[3] > 1.0){
-		 t = xin[3] * 1e9;
-	}
-
-   /* post the hit to the truth tree */
-
-   if ((history == 0) && (pin[3] > THRESH_MEV/1e3)) {
-      s_BcalTruthShowers_t* showers;
-      float r = sqrt(xin[0]*xin[0]+xin[1]*xin[1]);
-      float phi = atan2(xin[1],xin[0]);
-      int mark = (1<<30) + showerCount;
-      void** twig = getTwig(&barrelEMcalTree, mark);
-      if (*twig == 0) 
+  
+  x[0] = (xin[0] + xout[0])/2;
+  x[1] = (xin[1] + xout[1])/2;
+  x[2] = (xin[2] + xout[2])/2;
+  t    = (xin[3] + xout[3])/2 * 1e9;
+  transformCoord(x,"global",xlocal,"BCAL");
+  transformCoord(xHat,"local",xbcal,"BCAL");
+  
+  /* Under certain conditions the time in xout[3] will
+     be invalid (unusually large). Check for this and
+     use only the in time in these cases
+  */
+  if(xout[3] > 1.0){
+    t = xin[3] * 1e9;
+  }
+  
+  /* post the hit to the truth tree */
+  
+  if ((history == 0) && (pin[3] > THRESH_MEV/1e3)) {
+    s_BcalTruthShowers_t* showers;
+    float r = sqrt(xin[0]*xin[0]+xin[1]*xin[1]);
+    float phi = atan2(xin[1],xin[0]);
+    int mark = (1<<30) + showerCount;
+    void** twig = getTwig(&barrelEMcalTree, mark);
+    if (*twig == 0) 
       {
-         s_BarrelEMcal_t* bcal = *twig = make_s_BarrelEMcal();
-         bcal->bcalTruthShowers = showers = make_s_BcalTruthShowers(1);
-         showers->in[0].primary = (stack == 0);
-         showers->in[0].track = track;
-         showers->in[0].z = xin[2];
-         showers->in[0].r = r;
-         showers->in[0].phi = phi;
-         showers->in[0].t = xin[3]*1e9;
-         showers->in[0].px = pin[0]*pin[4];
-         showers->in[0].py = pin[1]*pin[4];
-         showers->in[0].pz = pin[2]*pin[4];
-         showers->in[0].E = pin[3];
-         showers->in[0].ptype = ipart;
-         showers->mult = 1;
-         showerCount++;
+	s_BarrelEMcal_t* bcal = *twig = make_s_BarrelEMcal();
+	bcal->bcalTruthShowers = showers = make_s_BcalTruthShowers(1);
+	int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+	showers->in[0].primary = (track <= a);
+	showers->in[0].track = track;
+	showers->in[0].z = xin[2];
+	showers->in[0].r = r;
+	showers->in[0].phi = phi;
+	showers->in[0].t = xin[3]*1e9;
+	showers->in[0].px = pin[0]*pin[4];
+	showers->in[0].py = pin[1]*pin[4];
+	showers->in[0].pz = pin[2]*pin[4];
+	showers->in[0].E = pin[3];
+	showers->in[0].ptype = ipart;
+	showers->mult = 1;
+	showerCount++;
       }
-   }
-
-   /* post the hit to the hits tree, mark sector as hit */
+  }
+  
+  /* post the hit to the hits tree, mark sector as hit */
 
    if (dEsum > 0)
    {

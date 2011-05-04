@@ -16,6 +16,7 @@
 #include <hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+extern s_HDDM_t* thisInputEvent;
 
 #define ATTEN_LENGTH	60.  //effective attenuation length in PbWO
 #define C_EFFECTIVE	13.  //effective speed of light in PbWO
@@ -60,7 +61,8 @@ void hitComptonEMcal (float xin[4], float xout[4],
       {
          s_ComptonEMcal_t* cal = *twig = make_s_ComptonEMcal();
          cal->ccalTruthShowers = showers = make_s_CcalTruthShowers(1);
-         showers->in[0].primary = (stack == 0);
+        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         showers->in[0].primary = (stack <= a);
          showers->in[0].track = track;
          showers->in[0].t = xin[3]*1e9;
          showers->in[0].x = xin[0];

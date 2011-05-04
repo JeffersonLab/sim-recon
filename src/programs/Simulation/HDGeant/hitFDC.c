@@ -19,6 +19,7 @@
 #include <bintree.h>
 
 #include "calibDB.h"
+extern s_HDDM_t* thisInputEvent;
 
 const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 //const float wire_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
@@ -337,7 +338,8 @@ void hitForwardDC (float xin[4], float xout[4],
       u[1] = xinlocal[0]-xwire;
       dradius = fabs(u[1]*cos(alpha)-u[0]*sin(alpha));
       points->mult = 1;
-      points->in[0].primary = (stack == 0);
+        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+      points->in[0].primary = (stack <= a);
       points->in[0].track = track;
       points->in[0].x = x[0];
       points->in[0].y = x[1];

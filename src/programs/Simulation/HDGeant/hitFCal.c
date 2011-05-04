@@ -20,6 +20,7 @@
 #include <bintree.h>
 
 #include "calibDB.h"
+extern s_HDDM_t* thisInputEvent;
 
 
 static float ATTEN_LENGTH1    =	100.;   //Outer Glass
@@ -142,7 +143,8 @@ void hitForwardEMcal (float xin[4], float xout[4],
       {
          s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
          cal->fcalTruthShowers = showers = make_s_FcalTruthShowers(1);
-         showers->in[0].primary = (stack == 0);
+        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         showers->in[0].primary = (stack <= a);
          showers->in[0].track = track;
          showers->in[0].t = xin[3]*1e9;
          showers->in[0].x = xin[0];

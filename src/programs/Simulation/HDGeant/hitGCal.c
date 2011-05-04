@@ -17,6 +17,7 @@
 #include <hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+extern s_HDDM_t* thisInputEvent;
 
 //#define ATTEN_LENGTH	100.
 #define ATTEN_LENGTH	1e6
@@ -65,7 +66,8 @@ void hitGapEMcal (float xin[4], float xout[4],
       {
          s_GapEMcal_t* cal = *twig = make_s_GapEMcal();
          cal->gcalTruthShowers = showers = make_s_GcalTruthShowers(1);
-         showers->in[0].primary = (stack == 0);
+        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         showers->in[0].primary = (stack <= a);
          showers->in[0].track = track;
          showers->in[0].z = xin[2];
          showers->in[0].r = r;

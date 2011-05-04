@@ -18,6 +18,8 @@
 #include <geant3.h>
 #include <bintree.h>
 
+extern s_HDDM_t* thisInputEvent;
+
 #define TWO_HIT_RESOL   50.
 #define MAX_HITS        100
 #define THRESH_PE       2
@@ -52,7 +54,8 @@ void hitCerenkov (float xin[4], float xout[4],
          s_Cerenkov_t* cere = *twig = make_s_Cerenkov();
          s_CereTruthPoints_t* points = make_s_CereTruthPoints(1);
          cere->cereTruthPoints = points;
-         points->in[0].primary = (stack == 0);
+        int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
+         points->in[0].primary = (stack <= a);
          points->in[0].track = track;
          points->in[0].x = xin[0];
          points->in[0].y = xin[1];
