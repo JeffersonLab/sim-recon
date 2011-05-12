@@ -19,7 +19,8 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-#include "BCAL/DBCALShower.h"
+#include <BCAL/DBCALShower.h>
+#include <BCAL/DBCALHit.h>
 
 class DBCALShower_factory_KLOE:public JFactory<DBCALShower>{
     
@@ -33,6 +34,8 @@ public:
 private:
         jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+
+    void FindHitsInShower(int indx, vector<const DBCALHit*> &bcalhits, vector<const DBCALHit*> &hitsInShower);
     void CellRecon(JEventLoop *loop);
     void CeleToArray(void);            
     void PreCluster(JEventLoop *loop);

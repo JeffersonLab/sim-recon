@@ -210,6 +210,9 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject
         sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0) ; // z_t
 
         photon->makeErrorMatrix( sigmas );
+
+		  photon->AddAssociatedObject(gamma);
+
         return photon;
 }
 
@@ -256,6 +259,9 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
         sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0); // z_t
 
         photon->makeErrorMatrix( sigmas );
+		  
+		  photon->AddAssociatedObject(gamma);
+		  
         return photon;
 }
 

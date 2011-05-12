@@ -183,6 +183,11 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
 {
+    // Needed for associated objects later
+    vector<const DBCALHit*> bcalhits;
+    loop->Get(bcalhits);
+
+    // Call core KLOE reconstruction routines
     CellRecon(loop);
     CeleToArray();   
     PreCluster(loop); 
@@ -190,6 +195,7 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
     ClusAnalysis();
     Trakfit();
     
+    // Loop over reconstructed clusters and make DBCALShower objects out of them
     vector<DBCALShower*> clusters;
     
     int id = 0;
@@ -235,11 +241,66 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
                        m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
 
         shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
+	
+	// Trace back to the DBCALHit objects used in this shower and
+	// add them as associated objects.
+	vector<const DBCALHit*> hitsInShower;
+	FindHitsInShower(j, bcalhits, hitsInShower);
+	for(unsigned int j=0; j<hitsInShower.size(); j++){
+		shower->AddAssociatedObject(hitsInShower[j]);
+	}
 
       _data.push_back(shower);  
     }
     
 	return NOERROR;
+}
+
+
+//------------------
+// FindHitsInShower()
+//------------------
+void DBCALShower_factory_KLOE::FindHitsInShower(int indx, vector<const DBCALHit*> &bcalhits, vector<const DBCALHit*> &hitsInShower)
+{
+	/// This is called after the clusters have been completely formed. Our
+	/// job is simply to find the DBCALHit objects used to form a given cluster.
+	/// This is so the DBCALHit objects can be added to the DBCALShower object
+	/// as AssociatedObjects.
+
+	// The variable indx indexes the next[] array as the starting cell for the
+	// cluster. It also indexes the narr[][] array which holds the module, layer,
+	// sector(column) values for the hits.
+	//
+	// Here, we need to loop over next[] elements starting at next[indx] until
+	// we find the one pointing to element "indx" (i.e. the start of the list of
+	// cells in the cluster.) For each of these, we must find the LAST 
+	// member in bcalhits to have the same module, layer, number indicating 
+	// that is a DBCALHit to be added.
+	
+	int start_indx = indx;
+	do{
+		int module = narr[1][indx];
+		int layer  = narr[2][indx];
+		int sector = narr[3][indx];
+		
+		// Loop over BCAL hits, trying to find this one
+		const DBCALHit *uphit=NULL;
+		const DBCALHit *downhit=NULL;
+		for(unsigned int i=0; i<bcalhits.size(); i++){
+			if(bcalhits[i]->module !=module)continue;
+			if(bcalhits[i]->layer  !=layer)continue;
+			if(bcalhits[i]->sector !=sector)continue;
+			
+			if(bcalhits[i]->end == DBCALGeometry::kUpstream) uphit = bcalhits[i];
+			if(bcalhits[i]->end == DBCALGeometry::kDownstream) downhit = bcalhits[i];
+		}
+		
+		if(uphit)hitsInShower.push_back(uphit);
+		if(downhit)hitsInShower.push_back(downhit);
+
+		indx = next[indx];
+	}while(indx != start_indx);
+
 }
 
 
@@ -650,6 +711,34 @@ void DBCALShower_factory_KLOE::Connect(int n,int m)
     //   Created  31-JUL-1992   WON KIM
     //----------------------------------------------------------------------
     
+    // This little piece of code wasn't so easy to decipher, but I *think* I
+    // understand what it's doing. The idea is the following:
+    //
+    // (Prior to entering this routine)
+    // The sparsified list of hits is copied into some 1-D arrays with
+    // dimension cellmax_bcal+1. This includes the nclus[] and next[]
+    // arrays. The nclus[] array keeps the cluster number which is initalized
+    // to the sparsified hit number. Thus, every (double-ended) hit cell
+    // is it's own cluster. A loop over pairs of hits is done above to find
+    // nearest neighbors that should be merged into the same cluster.
+    //
+    // The next[] array contains an index to the "next" cell in the cluster
+    // for the given hit cell. This is a circular list such that if one follows
+    // the "next[next[next[...]]]" values, the last element points back to 
+    // the first element of the cluster. As such, these are also initialized
+    // to index themselves as all single hits are considered a cluster of
+    // one element prior to calling this Connect() routine.
+    //
+    // When we are called, the value of "m" will be less than than value
+    // of "n". The cluster number (kept in nclus[]) is therefore updated
+    // for all members of nclus[m] to be the same as nclus[n]. Furthermore,
+    // the hit cell "m" is appended to the cluster nclus[n]. This also means
+    // that the cluster numbers become non-sequential since all elements of
+    // nclus whose value is "m" will be changed such that their values are
+    // "n".
+    //
+    // 5/10/2011 DL
+    
     if(nclus[n]!=nclus[m]){
         int j=m;
         nclus[j]=nclus[n];
@@ -687,6 +776,15 @@ void DBCALShower_factory_KLOE::ClusNorm(void)
     memset( clspoi, 0, ( clsmax_bcal + 1 ) * sizeof( float ) );
     memset( ncltot, 0, ( clsmax_bcal + 1 ) * sizeof( float ) );
     memset( ntopol, 0, ( clsmax_bcal + 1 ) * sizeof( float ) );
+    
+    // Part of what is being done here is to further sparsify the
+    // data into a list of clusters. This starts to fill arrays
+    // with dimension clsmax_bcal+1. One important thing is that
+    // the clspoi[] array is being filled with the cluster number
+    // of what should be the index of the first cell hit in the
+    // cluster. 
+    //
+    // 5/10/2011 DL
 
     clstot=0;
     

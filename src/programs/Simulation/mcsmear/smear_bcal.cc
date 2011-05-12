@@ -26,6 +26,12 @@ static float RANDOM_MAX = (float)(0x7FFFFFFF);
 #endif
 
 
+// Uncomment any of the following to turn off the specific feature
+#define NO_E_SMEAR
+#define NO_T_SMEAR
+#define NO_DARK_PULSES
+//#define NO_THRESHOLD_CUT
+
 
 bool BCAL_INITIALIZED = false;
 void bcalInit();
@@ -759,6 +765,10 @@ void bcalInit()
     ( photonThresh / BCAL_PHOTONSPERSIDEPERMEV_INFIBER ) / 
     BCAL_SAMPLING_FRACT * k_MeV; 
 
+#ifdef NO_THRESHOLD_CUT
+	Bcal_CellInnerThreshold = 0.0; // n.b. the outer threshold is derived from this too
+#endif
+
 	// MeV per PhotoElectron in SiPM
 	BCAL_mevPerPE = 1 /
 		( BCAL_PHOTONSPERSIDEPERMEV_INFIBER * BCAL_DEVICEPDE * BCAL_SAMPLING_FRACT );
@@ -801,6 +811,10 @@ void bcalInit()
 
 float bcalSamplingSmear( float E )
 {
+#ifdef NO_E_SMEAR
+return E;
+#endif
+
     double sigmaSamp = BCAL_SAMPLINGCOEFA / sqrt( E ) + BCAL_SAMPLINGCOEFB;
     
     return( E * (1.0 + SampleGaussian(sigmaSamp)) );
@@ -808,6 +822,9 @@ float bcalSamplingSmear( float E )
 
 float bcalTimeSmear( float t, float E )
 {
+#ifdef NO_T_SMEAR
+return t;
+#endif
   double sigmaT = BCAL_TIMEDIFFCOEFA / sqrt( E ) + BCAL_TIMEDIFFCOEFB;
 
   return( t + SampleGaussian(sigmaT) );
@@ -815,6 +832,9 @@ float bcalTimeSmear( float t, float E )
 
 int getDarkHits()
 {
+#ifdef NO_DARK_PULSES
+	return 0;
+#endif
 
   int darkPulse = SamplePoisson( BCAL_DARKRATE_GHZ* BCAL_INTWINDOW_NS );
 

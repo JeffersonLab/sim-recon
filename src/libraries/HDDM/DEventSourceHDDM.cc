@@ -212,6 +212,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName == "DBCALTruthShower" && tag=="")
 	  return Extract_DBCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DBCALTruthShower>*>(factory));
 	
+	if(dataClassName == "DBCALTruthCell" && tag=="")
+	  return Extract_DBCALTruthCell(my_hddm_s, dynamic_cast<JFactory<DBCALTruthCell>*>(factory));
+	
 	if(dataClassName =="DBCALHit" && tag=="")
 	  return Extract_DBCALHit(my_hddm_s, dynamic_cast<JFactory<DBCALHit>*>(factory));
 	
@@ -1122,6 +1125,60 @@ jerror_t DEventSourceHDDM::Extract_DBCALTruthShower(s_HDDM_t *hddm_s,  JFactory<
 			bcaltruth->t = bcalTruthShowers->in[j].t;
 			bcaltruth->E = bcalTruthShowers->in[j].E;
 			data.push_back(bcaltruth);
+		}
+	}
+
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_DBCALTruthCell
+//------------------
+jerror_t DEventSourceHDDM::Extract_DBCALTruthCell(s_HDDM_t *hddm_s,  JFactory<DBCALTruthCell> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+	vector<DBCALTruthCell*> data;
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->barrelEMcal == HDDM_NULL ||
+			hits->barrelEMcal->bcalCells == HDDM_NULL)continue;
+		
+		// Loop over BCAL cells
+		s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
+		for(unsigned int j=0;j<cells->mult;j++){
+			s_BcalCell_t *cell = &cells->in[j];
+
+			if(cell->bcalHits != HDDM_NULL){
+				for(unsigned int k=0; k<cell->bcalHits->mult; k++){
+			     
+					s_BcalHit_t *hit = &cell->bcalHits->in[k];
+
+					DBCALTruthCell *truthcell = new DBCALTruthCell();
+					
+					truthcell->module = cell->module;
+					truthcell->layer = cell->layer;
+					truthcell->sector = cell->sector;
+					truthcell->E = hit->E;
+					truthcell->t = hit->t;
+					truthcell->zLocal = hit->zLocal;
+					
+					data.push_back(truthcell);
+				}
+			}
 		}
 	}
 
