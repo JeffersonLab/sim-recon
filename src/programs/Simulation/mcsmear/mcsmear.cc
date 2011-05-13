@@ -59,7 +59,7 @@ float BCAL_SAMPLINGCOEFA        = 0.0; //0.042;
 float BCAL_SAMPLINGCOEFB        = 0.0; //.013;
 float BCAL_TIMEDIFFCOEFA        = 0.0; //0.07 * sqrt( 2 );
 float BCAL_TIMEDIFFCOEFB        = 0.0; //0.0 * sqrt( 2 );
-float BCAL_CELLOUTERTHRESHOLD   = 0.0;//1 * k_MeV;
+float BCAL_CELLOUTERTHRESHOLD   = 0.0;//1 * k_MeV;  n.b. UNUSED!
 float Bcal_CellInnerThreshold   = 0.0;
 
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
