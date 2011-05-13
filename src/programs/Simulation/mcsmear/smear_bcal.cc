@@ -26,9 +26,9 @@ using namespace std;
 
 
 // Uncomment any of the following to turn off the specific feature
-#define NO_E_SMEAR
-#define NO_T_SMEAR
-#define NO_DARK_PULSES
+//#define NO_E_SMEAR
+//#define NO_T_SMEAR
+//#define NO_DARK_PULSES
 //#define NO_THRESHOLD_CUT
 
 
@@ -36,9 +36,16 @@ void bcalInit(DBCALGeometry &bcalGeom);
 float bcalSamplingSmear( float E );
 float bcalTimeSmear(float t, float e);
 int getDarkHits();
+
+// The following are set in bcalInit below
 bool BCAL_INITIALIZED = false;
 double BCAL_mevPerPE=0.0;
 float BCAL_UNATTENUATE_TO_CENTER = 0.0;
+int BCAL_Nsum_inner = 0;
+int BCAL_Nsum_outer = 0;
+double BCAL_mean_darkpulse_energy_SiPM = 0.0;
+double BCAL_mean_darkpulse_energy_inner = 0.0;
+double BCAL_mean_darkpulse_energy_outer = 0.0;
 
 map<int, DBCALReadoutChannel> bcal_fADCs; // key is DBCALGeometry::fADCId()
 
@@ -77,9 +84,6 @@ extern float BCAL_TIMEDIFFCOEFA ; //= 0.07 * sqrt( 2 );
 
 // no floor term, but leave the option here:
 extern float BCAL_TIMEDIFFCOEFB ; //= 0.0 * sqrt( 2 );
-    
-// set this low for now -- needs more thought later
-extern float BCAL_CELLOUTERTHRESHOLD ; // = 1 * k_MeV;
 
 // calculated later in based on number of photons and ph threshold
 extern float Bcal_CellInnerThreshold ;
@@ -108,7 +112,7 @@ extern float Bcal_CellInnerThreshold ;
 //
 // 3. Speed optimization.
 //
-#if 1
+#if 0
 
 //-----------
 // SmearBCAL
@@ -820,7 +824,16 @@ void bcalInit(DBCALGeometry &bcalGeom)
 	// applied based on the 2006 beam test results which shot photons into the center
 	// of the module.
 	BCAL_UNATTENUATE_TO_CENTER = exp(bcalGeom.BCALFIBERLENGTH/2/ bcalGeom.ATTEN_LENGTH);
-		
+	
+	// Calculate the mean energy (effective) due to dark pulses. The dark pulses
+	// effectively add to the pedestal and so this value should be subtracted before
+	// the threshold is applied.
+	BCAL_Nsum_inner = DBCALGeometry::NSUMLAYS1 * DBCALGeometry::NSUMSECS1;
+	BCAL_Nsum_outer = DBCALGeometry::NSUMLAYS2 * DBCALGeometry::NSUMSECS2;
+	BCAL_mean_darkpulse_energy_SiPM = BCAL_DARKRATE_GHZ * BCAL_INTWINDOW_NS * (1.0 + BCAL_XTALK_FRACT) * BCAL_mevPerPE;
+	BCAL_mean_darkpulse_energy_inner = BCAL_mean_darkpulse_energy_SiPM * (double)BCAL_Nsum_inner;
+	BCAL_mean_darkpulse_energy_outer = BCAL_mean_darkpulse_energy_SiPM * (double)BCAL_Nsum_outer;
+	
 	//
 	// NOTE!!! This scheme needs to be changed if we want to get any
 	// advantage from multi-threading! Otherwise, a mutex lock needs
@@ -857,6 +870,7 @@ void bcalInit(DBCALGeometry &bcalGeom)
 		}
 	}
 
+	// Flag that we have been called
 	BCAL_INITIALIZED = true;
 }
 
