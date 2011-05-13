@@ -73,24 +73,36 @@ DBCALGeometry::DBCALGeometry()
     }
 }
 
+//--------------
+// module
+//--------------
 int
 DBCALGeometry::module( int cellId ) {
   
   return ( cellId & MODULE_MASK ) >> MODULE_SHIFT;
 }
 
+//--------------
+// layer
+//--------------
 int
 DBCALGeometry::layer( int cellId ) {
   
   return ( cellId & LAYER_MASK ) >> LAYER_SHIFT;
 }
 
+//--------------
+// sector
+//--------------
 int
 DBCALGeometry::sector( int cellId ) {
   
   return ( cellId & SECTOR_MASK ) >> SECTOR_SHIFT;
 }
 
+//--------------
+// cellId
+//--------------
 int
 DBCALGeometry::cellId( int module, int layer, int sector ) {
   
@@ -99,14 +111,57 @@ DBCALGeometry::cellId( int module, int layer, int sector ) {
            ( sector << SECTOR_SHIFT ) );
 }
 
+//--------------
+// fADC_layer
+//--------------
+int
+DBCALGeometry::fADC_layer( int cellId ) {
+  
+  int cell_layer = DBCALGeometry::layer( cellId );
+  int fADC_layer = cell_layer;
+#ifdef BCAL_SUM_CELL
+	if(cell_layer<DBCALGeometry::BCALMID){
+		// inner
+		fADC_layer = 1+ (cell_layer-1)/NSUMLAYS1;
+	}else{
+		// outer
+		int max_inner_layer = (DBCALGeometry::BCALMID-1)/NSUMLAYS1;
+		fADC_layer = 1 + max_inner_layer + (cell_layer-DBCALGeometry::BCALMID)/NSUMLAYS2;
+	}
+#endif
+  return fADC_layer;
+}
+
+//--------------
+// fADC_sector
+//--------------
+int
+DBCALGeometry::fADC_sector( int cellId ) {
+
+  int cell_layer  = DBCALGeometry::layer( cellId );
+  int cell_sector = DBCALGeometry::sector( cellId );
+  int fADC_sector = cell_sector;
+#ifdef BCAL_SUM_CELL
+	if(cell_layer<DBCALGeometry::BCALMID){
+		// inner
+		fADC_sector = 1 + (sector-1)/NSUMSECS1;
+	}else{
+		// outer
+		fADC_sector = 1 + (sector-1)/NSUMSECS2;
+	}
+#endif
+  return fADC_sector;
+}
+
+//--------------
+// fADCId
+//--------------
 int
 DBCALGeometry::fADCId( int module, int layer, int sector ) {
 	// This is used to return the readout channel ID which may
 	// differ from the cellID if summing is implemented.
 	//
-	// n.b. this method recycles the cellId() system so that the
-	// valid fADCId values will not be contiguous when summing is
-	// implemented! (4/13/2011 DL)
+	// (5/12/2011 DL)
 #ifdef BCAL_SUM_CELL
 	if(layer<DBCALGeometry::BCALMID){
 		// inner
@@ -114,13 +169,17 @@ DBCALGeometry::fADCId( int module, int layer, int sector ) {
 		sector = 1 + (sector-1)/NSUMSECS1;
 	}else{
 		// outer
-		layer = 1+ (layer-1)/NSUMLAYS2;
+		int max_inner_layer = (DBCALGeometry::BCALMID-1)/NSUMLAYS1;
+		layer = 1 + max_inner_layer + (layer-DBCALGeometry::BCALMID)/NSUMLAYS2;
 		sector = 1 + (sector-1)/NSUMSECS2;
 	}
 #endif
 	return cellId(module, layer, sector);
 }
 
+//--------------
+// r
+//--------------
 float
 DBCALGeometry::r( int cell ) {
  
@@ -154,6 +213,9 @@ DBCALGeometry::r( int cell ) {
   return 0.5 * ( innerRad + outerRad );
 }
 
+//--------------
+// rSize
+//--------------
 float
 DBCALGeometry::rSize( int cell ) {
   
@@ -187,6 +249,9 @@ DBCALGeometry::rSize( int cell ) {
   return ( outerRad - innerRad );
 }
 
+//--------------
+// phi
+//--------------
 float
 DBCALGeometry::phi( int cell ) {
  
@@ -209,6 +274,9 @@ DBCALGeometry::phi( int cell ) {
   return sectSize * ( sect - 0.5 );
 }
 
+//--------------
+// phiSize
+//--------------
 float
 DBCALGeometry::phiSize( int cell ) {
   

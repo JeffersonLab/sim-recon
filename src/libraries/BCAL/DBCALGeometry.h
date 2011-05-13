@@ -77,6 +77,8 @@ public:
   static int module( int cellId );  
   static int layer( int cellId );
   static int sector( int cellId );
+  static int fADC_layer( int cellId );
+  static int fADC_sector( int cellId );
 
   static int cellId( int module, int layer, int sector );
   static int fADCId( int module, int layer, int sector );
