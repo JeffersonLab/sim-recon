@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <set>
 using namespace std;
 
 #include <BCAL/DBCALGeometry.h>
@@ -17,9 +18,7 @@ using namespace std;
 #include <TRandom3.h>
 
 #include "DBCALReadoutChannel.h"
-#include "DBCALHitGroup.h"
 
-static float RANDOM_MAX = (float)(0x7FFFFFFF);
 #ifndef _DBG_
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
@@ -33,12 +32,13 @@ static float RANDOM_MAX = (float)(0x7FFFFFFF);
 //#define NO_THRESHOLD_CUT
 
 
-bool BCAL_INITIALIZED = false;
-void bcalInit();
+void bcalInit(DBCALGeometry &bcalGeom);
 float bcalSamplingSmear( float E );
 float bcalTimeSmear(float t, float e);
 int getDarkHits();
-double BCAL_mevPerPE;
+bool BCAL_INITIALIZED = false;
+double BCAL_mevPerPE=0.0;
+float BCAL_UNATTENUATE_TO_CENTER = 0.0;
 
 map<int, DBCALReadoutChannel> bcal_fADCs; // key is DBCALGeometry::fADCId()
 
@@ -136,7 +136,7 @@ void SmearBCAL(s_HDDM_t *hddm_s)
     ( BCAL_PHOTONSPERSIDEPERMEV_INFIBER * BCAL_DEVICEPDE *
       BCAL_SAMPLING_FRACT );
   
-  bcalInit(); //find inner cell threshold E
+  bcalInit(*bcalGeom); //find inner cell threshold E
   
   s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
   if(!PE) return;
@@ -489,11 +489,15 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	DBCALGeometry bcalGeom;
 
 	// Initialize BCAL globals on first call
-	if(!BCAL_INITIALIZED)bcalInit();
+	if(!BCAL_INITIALIZED)bcalInit(bcalGeom);
+	
+	// Container to keep track of the elements in bcal_fADCs that
+	// have hits so we can sparsely clear them at the end of this
+	set<int> fADC_ids_with_hits;
 	
 	// Clear DBCALReadoutChannel objects
-	map<int, DBCALReadoutChannel>::iterator iter=bcal_fADCs.begin();
-	for(; iter!= bcal_fADCs.end(); iter++)iter->second.Clear();
+	//map<int, DBCALReadoutChannel>::iterator iter=bcal_fADCs.begin();
+	//for(; iter!= bcal_fADCs.end(); iter++)iter->second.Clear();
 
 	// Loop over PhysicsEvents
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -529,23 +533,22 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 				s_BcalSiPMUpHit_t *bcaluphit = &cell->bcalSiPMUpHits->in[k];
 				s_BcalSiPMDownHit_t *bcaldownhit = &cell->bcalSiPMDownHits->in[k];
 	
-				float smearedE = bcalSamplingSmear( bcalhit->E );
-	
+				// Distance from location of energy deposition to each end of BCAL
 				float upDist   = ( bcalGeom.BCALFIBERLENGTH / 2 ) + bcalhit->zLocal;
 				float downDist = ( bcalGeom.BCALFIBERLENGTH / 2 ) - bcalhit->zLocal;
 	
 				// sampling fluctuations are correlated between ends
+				float smearedE = bcalSamplingSmear( bcalhit->E );
 				float upEnergy   = smearedE * exp( -upDist / bcalGeom.ATTEN_LENGTH );
 				float downEnergy = smearedE * exp( -downDist / bcalGeom.ATTEN_LENGTH );
-	
+
 				// independently smear time for both ends -- time smearing 
 				// parameters come from data taken with beam at the center of 
 				// the module so there is an implicit exp( ( -L / 2 ) / lambda ) 
 				// that needs to be canceled out since we are working
 				// at this stage with attenuated energies
-				float full_length_atten = exp(bcalGeom.BCALFIBERLENGTH/2/ bcalGeom.ATTEN_LENGTH);
-				float smearedtUp   = bcalTimeSmear( bcalhit->t,   upEnergy*full_length_atten );
-				float smearedtDown = bcalTimeSmear( bcalhit->t, downEnergy*full_length_atten );
+				float smearedtUp   = bcalTimeSmear( bcalhit->t,   upEnergy*BCAL_UNATTENUATE_TO_CENTER );
+				float smearedtDown = bcalTimeSmear( bcalhit->t, downEnergy*BCAL_UNATTENUATE_TO_CENTER );
 
 				// Add dark noise hits
 				upEnergy   += ( getDarkHits() * BCAL_mevPerPE * k_MeV );
@@ -556,18 +559,18 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 				float downTime = smearedtDown + downDist / bcalGeom.C_EFFECTIVE;
 	
 				// If energy is smeared to negative, set to 0.
-				if(upEnergy <= 0 || upTime!=upTime){
+				if(upEnergy <= 0){
 					upEnergy = 0;
 					upTime = 0;
 				}
-				if(downEnergy <= 0|| downTime!=downTime){
+				if(downEnergy <= 0){
 					downEnergy = 0;
 					downTime = 0;
 				}
 
 				// Record upstream SiPM values in HDDM
 				bcaluphit->E = upEnergy;
-				bcaluphit->t = upTime;	
+				bcaluphit->t = upTime;
 
 				// Record downstream SiPM values in HDDM
 				bcaldownhit->E = downEnergy;
@@ -577,127 +580,166 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 				int fADC_Id = bcalGeom.fADCId( cell->module, cell->layer, cell->sector);
 				bcal_fADCs[fADC_Id].uphits.push_back(bcaluphit);
 				bcal_fADCs[fADC_Id].downhits.push_back(bcaldownhit);
-			
+				fADC_ids_with_hits.insert(fADC_Id);
 			} //k (bcal hits)
 		} //j (cells)
 
 		// Above, we looped over GEANT hits to create SiPM hits. Below we loop
 		// over fADC (readout) channels which may contain multiple SiPMs.
 		// For each channel, we determine how many hits occurred in
-		// BCAL_TIME_WINDOW, including cumulative dark hits.
+		// BCAL_TIME_WINDOW, including cumulative dark hits. The number of 
+		// cells over threshold are counted and the values recorded so that
+		// we can create the correct number of bcalfADCCell stuctures in HDDM
+		// later.
 
 		// Loop over readout channels
+		set<int> fADC_ids_over_thresh;
 		map<int, DBCALReadoutChannel>::iterator iter;
 		for(iter = bcal_fADCs.begin(); iter!=bcal_fADCs.end(); iter++){
 
+			int fADC_id = iter->first;
 			DBCALReadoutChannel &bcalfADC = iter->second;
-
-			// Here, we need to group the Uphit and Downhit objects
-			// in time. (Some hits may be due to background events that are
-			// far away in time.) We do this by forming groups in which every
-			// member is within BCAL_INTWINDOW_NS of at least one other
-			// member. We do this by making an initial pass, grouping hits
-			// together and a second pass where groups are merged.
-			vector<DBCALHitGroup> hitgroups;
-
-			// Loop over uphits in this fADC channel
 			vector<s_BcalSiPMUpHit_t*> &uphits = bcalfADC.uphits;
-			for(unsigned int j=0; j<uphits.size(); j++){
-
-				// Loop over existing hit groups
-				bool is_in_group = false;
-				for(unsigned int i=0; i<hitgroups.size(); i++){
-					is_in_group |= hitgroups[i].AddIfInTime(uphits[j], BCAL_INTWINDOW_NS);
-					if(is_in_group)break;
-				}
-				
-				// If hit wasn't in an existing group, then create a new hit group
-				if(!is_in_group)hitgroups.push_back(DBCALHitGroup(uphits[j]));
-			}
-
-			// Loop over downhits in this fADC channel
 			vector<s_BcalSiPMDownHit_t*> &downhits = bcalfADC.downhits;
+
+			//--------- Upstream -------------
+			// Initialize
+			bcalfADC.Eup = 0.0;
+			bcalfADC.tup = 0.0;
+
+			// Sum upstream hits
+			for(unsigned int j=0; j<uphits.size(); j++){
+				bcalfADC.Eup += uphits[j]->E;
+				bcalfADC.tup += uphits[j]->t * uphits[j]->E; // energy weighted time for sum
+			}
+			
+			// Add in dark pulses for upstream SiPMs not hit, but that are included in sum
+			unsigned int Ndark_channels_up = bcalfADC.NSiPM - uphits.size();
+			if(uphits.size() > bcalfADC.NSiPM)Ndark_channels_up = 0;
+			for(unsigned int j=0; j<Ndark_channels_up; j++){
+				double Edark = ( getDarkHits() * BCAL_mevPerPE * k_MeV );
+				double tdark = SampleRange( -0.25 * BCAL_INTWINDOW_NS, 0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
+				bcalfADC.Eup += Edark;
+				bcalfADC.tup += tdark * Edark;
+			}
+			
+			// normalize time
+			bcalfADC.tup /= bcalfADC.Eup;
+
+			//--------- Downstream -------------
+			// Initialize
+			bcalfADC.Edown = 0.0;
+			bcalfADC.tdown = 0.0;
+
+			// Sum downstream hits
 			for(unsigned int j=0; j<downhits.size(); j++){
-
-				// Loop over existing hit groups
-				bool is_in_group = false;
-				for(unsigned int i=0; i<hitgroups.size(); i++){
-					is_in_group |= hitgroups[i].AddIfInTime(downhits[j], BCAL_INTWINDOW_NS);
-					if(is_in_group)break;
-				}
-				
-				// If hit wasn't in an existing group, then create a new hit group
-				if(!is_in_group)hitgroups.push_back(DBCALHitGroup(downhits[j]));
+				bcalfADC.Edown += downhits[j]->E;
+				bcalfADC.tdown += downhits[j]->t * downhits[j]->E; // energy weighted time for sum
 			}
 			
-			// Merge all overlapping hit groups together
-			for(unsigned int i=0; i<hitgroups.size(); i++){
-				for(unsigned int j=i+1; j<hitgroups.size(); j++){
-					hitgroups[j].MergeHitsIfInRange(&hitgroups[i]);
-				}
-			}
-
-			// At this point the hitgroups are formed for this readout channel.
-			// Some of the hitgroups are empty due to merging and that's normal.
-			// We now need to form s_BcalfADCUpHit_t and s_BcalfADCDownHit_t
-			// objects for each hit group which has a sum over threshold.
-			
-			// Make a single list of dark hits from all SiPMs feeding this fADC
-			// channel.
-			
-			
-			// Loop over hitgroups
-			for(unsigned int i=0; i<hitgroups.size(); i++){
-				
-				// Add energy for all uphits and keep earliest time
-				float Etot = 0.0;
-				float t_earliest = 0.0;
-				vector<s_BcalSiPMUpHit_t*> &uphits = hitgroups[i].uphits;
-				for(unsigned int j=0; j<uphits.size(); j++){
-					
-					Etot += uphits[j]->E;
-
-					if(j==0){
-						t_earliest = uphits[j]->t;
-					}else{
-						if(uphits[j]->t < t_earliest)t_earliest = uphits[j]->t;
-					}
-				}
-				
-				// Add dark noise hits for remaining SiPMs that didn't have a GEANT hit
-				for(unsigned int j=uphits.size(); j<uphits.size(); j++){
-					
-				}
-				
+			// Add in dark pulses for downstream SiPMs not hit, but that are included in sum
+			unsigned int Ndark_channels_down = bcalfADC.NSiPM - downhits.size();
+			if(downhits.size() > bcalfADC.NSiPM)Ndark_channels_down = 0;
+			for(unsigned int j=0; j<Ndark_channels_down; j++){
+				double Edark = ( getDarkHits() * BCAL_mevPerPE * k_MeV );
+				double tdark = SampleRange( -0.25 * BCAL_INTWINDOW_NS, 0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
+				bcalfADC.Edown += Edark;
+				bcalfADC.tdown += tdark * Edark;
 			}
 			
-			
-		} // iter (bcal_fADCs)
+			// normalize time
+			bcalfADC.tdown /= bcalfADC.Edown;
+
+
+			// If either the upstream or downstream hit is over threshold, then
+			// a bcalfADCCell will need to be created so remember this id if needed.
+			if((bcalfADC.Eup >= bcalfADC.threshold) || (bcalfADC.Edown >= bcalfADC.threshold)){
+				fADC_ids_over_thresh.insert(fADC_id);
+			}
+		} // readout channel
 		
+		
+		// At this point we have summed all SiPMs with dark hits included. Any cell with
+		// either the upstream or downstream fADC over threshold has its id stored in
+		// the fADC_ids_over_thresh container. We now need to create bcalfADCCell,
+		// bcalfADCUpHit, and bcalfADCDownHit structures within the HDDM tree to hold
+		// the fADC values.
+		
+		
+		// Delete any existing bcalfADCCell structures (along with their bcalfADCUpHit
+		// and bcalfADCDownHit structures).
+		if(hits->barrelEMcal->bcalfADCCells!=HDDM_NULL){
+			for(unsigned int i=0; i<hits->barrelEMcal->bcalfADCCells->mult; i++){
+				if(hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCUpHits)
+					free(hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCUpHits);
+				if(hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCDownHits)
+					free(hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCDownHits);
+			}
+			free(hits->barrelEMcal->bcalfADCCells);
+		}
+		
+		// Make sure bcalfADCCells pointer is empty in case we return early below
+		hits->barrelEMcal->bcalfADCCells = (s_BcalfADCCells_t*)HDDM_NULL;
 
-		// Loop over fADC readout channels creating s_BcalfADCUpHit_t
-		// and s_BcalfADCDownHit_t objects for each that has a sum above
-		// threshold.
-		//
-		// For each fADC channel we must count how many different "real"
-		// hits actually occurred since multiple hits may be separated
-		// in time. Dark hits will be added for channels not containing
-		// real hits.
-		//
-		// For time in the readout window not accounted for by the 
-		// real hits, dark hits are added for every channel and 
-		// the sum checked against threshold to allow for purely dark
-		// hits.
-	
+		// If we have no cells over threshold, then bail now.
+		if(fADC_ids_over_thresh.size()==0) continue; // next iphysics_event
+		
+		// Create bcalfADCCell structures to hold all of our hits
+		hits->barrelEMcal->bcalfADCCells = make_s_BcalfADCCells(fADC_ids_over_thresh.size());
+		unsigned int &mult = hits->barrelEMcal->bcalfADCCells->mult;
+		set<int>::iterator it = fADC_ids_over_thresh.begin();
+		for(mult=0; mult<fADC_ids_over_thresh.size(); mult++, it++){
+		
+			// Get pointer to this fADC cell in the HDDM tree
+			s_BcalfADCCell_t *fADCcell = &hits->barrelEMcal->bcalfADCCells->in[mult];
+			
+			// Get pointer to our fADC cell information that needs to be copied to HDDM
+			DBCALReadoutChannel &bcalfADC = bcal_fADCs[*it];
+			
+			fADCcell->module = bcalfADC.module;
+			fADCcell->layer  = bcalfADC.layer;
+			fADCcell->sector = bcalfADC.sector;
 
+			// Upstream hit
+			if(bcalfADC.Eup >= bcalfADC.threshold){
+				fADCcell->bcalfADCUpHits = make_s_BcalfADCUpHits(1);
+				fADCcell->bcalfADCUpHits->mult = 1;
+				s_BcalfADCUpHit_t *fadcuphit = &fADCcell->bcalfADCUpHits->in[0];
+				
+				fadcuphit->E = bcalfADC.Eup;
+				fadcuphit->t = bcalfADC.tup;
+			}else{
+				fADCcell->bcalfADCUpHits = (s_BcalfADCUpHits_t*)HDDM_NULL;
+			}
+
+			// Downstream hit
+			if(bcalfADC.Edown >= bcalfADC.threshold){
+				fADCcell->bcalfADCDownHits = make_s_BcalfADCDownHits(1);
+				fADCcell->bcalfADCDownHits->mult = 1;
+				s_BcalfADCDownHit_t *fadcdownhit = &fADCcell->bcalfADCDownHits->in[0];
+				
+				fadcdownhit->E = bcalfADC.Edown;
+				fadcdownhit->t = bcalfADC.Edown;
+			}else{
+				fADCcell->bcalfADCDownHits = (s_BcalfADCDownHits_t*)HDDM_NULL;
+			}
+		} // fADC_ids_over_thresh
 	} // iphysics_event
 
+	
+	// Clear the bcal_fADCs elements that have hits.
+	// We keep track above so we can do a sparse clear here to
+	// save time clearing every fADC array for every event.
+	set<int>::iterator iter=fADC_ids_with_hits.begin();
+	for(; iter!=fADC_ids_with_hits.end(); iter++){
+		bcal_fADCs[*iter].Clear();
+	}
 }
 
 #endif // end of Dave's verison of SmearBCAL
 
 
-void bcalInit()
+void bcalInit(DBCALGeometry &bcalGeom)
 {
 
 // this the average number of (assumed single PE) 
@@ -772,6 +814,12 @@ void bcalInit()
 	// MeV per PhotoElectron in SiPM
 	BCAL_mevPerPE = 1 /
 		( BCAL_PHOTONSPERSIDEPERMEV_INFIBER * BCAL_DEVICEPDE * BCAL_SAMPLING_FRACT );
+	
+	// Factor to unattenuate the energy at the end to what it *would* be if it came
+	// from the center of the module. This is so the proper time smearing can be
+	// applied based on the 2006 beam test results which shot photons into the center
+	// of the module.
+	BCAL_UNATTENUATE_TO_CENTER = exp(bcalGeom.BCALFIBERLENGTH/2/ bcalGeom.ATTEN_LENGTH);
 		
 	//
 	// NOTE!!! This scheme needs to be changed if we want to get any
@@ -787,20 +835,24 @@ void bcalInit()
 	for(int i = 1; i<=48;i++){
 
 		// inner
+		unsigned int NSiPM_up = DBCALGeometry::NSUMLAYS1 * DBCALGeometry::NSUMSECS1;
 		for(int j = 1; j<=6;j++){
 			for(int k = 1; k<=4; k++){
+				int cellId = DBCALGeometry::cellId( i, j, k);
 				int fADCId = DBCALGeometry::fADCId( i, j, k);
 				double thresh = Bcal_CellInnerThreshold; /// FIXME!!!!
-				bcal_fADCs[fADCId] = DBCALReadoutChannel(DBCALGeometry::NSUMLAYS1, DBCALGeometry::NSUMSECS1, thresh);
+				bcal_fADCs[fADCId] = DBCALReadoutChannel(NSiPM_up, thresh, i, DBCALGeometry::fADC_layer(cellId), DBCALGeometry::fADC_sector(cellId));
 			}
 		}
 
 		// outer
+		unsigned int NSiPM_down = DBCALGeometry::NSUMLAYS2 * DBCALGeometry::NSUMSECS2;
 		for(int j = 1; j<=4;j++){
 			for(int k = 1; k<=4; k++){
+				int cellId = DBCALGeometry::cellId( i, j+6, k);
 				int fADCId = DBCALGeometry::fADCId( i, j+6, k);
 				double thresh = Bcal_CellInnerThreshold; /// FIXME!!!!
-				bcal_fADCs[fADCId] = DBCALReadoutChannel(DBCALGeometry::NSUMLAYS1, DBCALGeometry::NSUMSECS1, thresh);
+				bcal_fADCs[fADCId] = DBCALReadoutChannel(NSiPM_down, thresh, i, DBCALGeometry::fADC_layer(cellId), DBCALGeometry::fADC_sector(cellId));
 			}
 		}
 	}
@@ -809,6 +861,9 @@ void bcalInit()
 }
 
 
+//-----------
+// bcalSamplingSmear
+//-----------
 float bcalSamplingSmear( float E )
 {
 #ifdef NO_E_SMEAR
@@ -820,6 +875,9 @@ return E;
     return( E * (1.0 + SampleGaussian(sigmaSamp)) );
 }
 
+//-----------
+// bcalTimeSmear
+//-----------
 float bcalTimeSmear( float t, float E )
 {
 #ifdef NO_T_SMEAR
@@ -830,6 +888,9 @@ return t;
   return( t + SampleGaussian(sigmaT) );
 }
 
+//-----------
+// getDarkHits
+//-----------
 int getDarkHits()
 {
 #ifdef NO_DARK_PULSES

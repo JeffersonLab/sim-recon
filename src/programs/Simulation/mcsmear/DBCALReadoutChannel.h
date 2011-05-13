@@ -17,12 +17,13 @@
 /// structs are created in the HDDM tree.
 ///
 /// The s_BcalfADCUpHit_t and s_BcalfADCDownHit_t structs are made
-/// later using the uphits and downhits. The values of Nup and Ndown
-/// are used to hold how many SiPMs are being added together for
+/// later using the uphits and downhits. The value of NSiPM
+/// is used to hold how many SiPMs are being added together for
 /// this readout channel. The number of channels to generate dark
 /// hits for the readout channel is calculated from:
 ///
-/// Ndark_channels = Nup - uphits.size();
+/// Ndark_channels_up   = NSiPM - uphits.size();
+/// Ndark_channels_down = NSiPM - downhits.size();
 ///
 /// This is susceptable to a problem when more than one s_BcalSiPMUpHit_t
 /// is generated for a given cell and they are not properly separated 
@@ -39,14 +40,21 @@
 
 class DBCALReadoutChannel{
 	public:
-		DBCALReadoutChannel():Nup(0),Ndown(0),threshold(0){}
-		DBCALReadoutChannel(unsigned int Nup, unsigned int Ndown, double threshold):Nup(Nup),Ndown(Ndown),threshold(threshold){}
+		DBCALReadoutChannel():NSiPM(0),threshold(0){}
+		DBCALReadoutChannel(unsigned int NSiPM, double threshold, int module, int layer, int sector):NSiPM(NSiPM),threshold(threshold),module(module),layer(layer),sector(sector){}
 		virtual ~DBCALReadoutChannel(){}
 		
 		// Assigned at object creation and never changed
-		unsigned int Nup;
-		unsigned int Ndown;
+		unsigned int NSiPM;
 		double threshold;
+		int module;
+		int layer;
+		int sector;
+		
+		// Assigned during event
+		double Eup, Edown;
+		double tup, tdown;
+		
 		
 		// Cleared at the start of each event.
 		std::vector<s_BcalSiPMUpHit_t*> uphits;
@@ -55,6 +63,8 @@ class DBCALReadoutChannel{
 		void Clear(void){
 			uphits.clear();
 			downhits.clear();
+			Eup = Edown = 0.0;
+			tup = tdown = 0.0;
 		}
 
 	private:
