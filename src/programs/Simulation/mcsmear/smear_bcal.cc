@@ -91,27 +91,14 @@ extern float Bcal_CellInnerThreshold ;
 
 // Below are two versions of the BCAL smearing code. The first
 // is Beni's version copied from smear.cc and the second is
-// Dave's (incomplete) version. The following #define can be
+// Dave's version. The following #define can be
 // used to switch between the two with 1=Beni and 0=Dave.
 //
-// You do not want to use the Dave version. It is being included
-// here since some non-trivial amount of work has been put into it
-// and I want to back it up in the repository, but without
-// making it the default yet. Once it is completed and tested,
-// The Dave version will be made the default and the Beni version
-// removed.
-//
-// The "Dave" version is based on the "Beni" version, but tries
-// to address a few things:
-//
-// 1. Multiple hits in the same readout channel that are out 
-//    of time are made into separate fADC hits
-//
-// 2. Multiple dark pulses whose sum exceeds threshold to create
-//    purely dark noise hits
-//
-// 3. Speed optimization.
-//
+// The two have been tested and shown to produce statistically 
+// identical results in E and t distributions for both individual
+// SiPM hits and sum fADC hits. This was also verified for both
+// the fine segmentation scheme and the course. The "Beni" version
+// will be removed in the near future.
 #if 0
 
 //-----------
@@ -243,6 +230,7 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	    downEnergy = 0;
 	    downTime = 0;
 	  }
+
 	
 	bcaluphit->E = upEnergy;
 	eUpStore[cell->module][cell->layer][cell->sector]+= upEnergy;
@@ -356,7 +344,7 @@ void SmearBCAL(s_HDDM_t *hddm_s)
       ((bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1) * (4/bcalGeom->NBCALSECS1);
     float OuterThreshold = Bcal_CellInnerThreshold * 
       ((11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2) * (4/bcalGeom->NBCALSECS2);	
-    
+
     for(int i = 1;i<=48;i++)
       {
 	for(int j = 1;j<=bcalGeom->NBCALLAYS1 ;j++)
@@ -562,12 +550,12 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 				float upTime = smearedtUp + upDist / bcalGeom.C_EFFECTIVE;
 				float downTime = smearedtDown + downDist / bcalGeom.C_EFFECTIVE;
 	
-				// If energy is smeared to negative, set to 0.
-				if(upEnergy <= 0){
+				// If energy is smeared to negative or time is nan, set to 0.
+				if(upEnergy <= 0 || !finite(upTime)){
 					upEnergy = 0;
 					upTime = 0;
 				}
-				if(downEnergy <= 0){
+				if(downEnergy <= 0 || !finite(downTime)){
 					downEnergy = 0;
 					downTime = 0;
 				}
@@ -657,7 +645,7 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 
 			// If either the upstream or downstream hit is over threshold, then
 			// a bcalfADCCell will need to be created so remember this id if needed.
-			if((bcalfADC.Eup >= bcalfADC.threshold) || (bcalfADC.Edown >= bcalfADC.threshold)){
+			if((bcalfADC.Eup > bcalfADC.threshold) || (bcalfADC.Edown > bcalfADC.threshold)){
 				fADC_ids_over_thresh.insert(fADC_id);
 			}
 		} // readout channel
@@ -705,7 +693,7 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 			fADCcell->sector = bcalfADC.sector;
 
 			// Upstream hit
-			if(bcalfADC.Eup >= bcalfADC.threshold){
+			if(bcalfADC.Eup > bcalfADC.threshold){
 				fADCcell->bcalfADCUpHits = make_s_BcalfADCUpHits(1);
 				fADCcell->bcalfADCUpHits->mult = 1;
 				s_BcalfADCUpHit_t *fadcuphit = &fADCcell->bcalfADCUpHits->in[0];
@@ -717,13 +705,13 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 			}
 
 			// Downstream hit
-			if(bcalfADC.Edown >= bcalfADC.threshold){
+			if(bcalfADC.Edown > bcalfADC.threshold){
 				fADCcell->bcalfADCDownHits = make_s_BcalfADCDownHits(1);
 				fADCcell->bcalfADCDownHits->mult = 1;
 				s_BcalfADCDownHit_t *fadcdownhit = &fADCcell->bcalfADCDownHits->in[0];
 				
 				fadcdownhit->E = bcalfADC.Edown;
-				fadcdownhit->t = bcalfADC.Edown;
+				fadcdownhit->t = bcalfADC.tdown;
 			}else{
 				fADCcell->bcalfADCDownHits = (s_BcalfADCDownHits_t*)HDDM_NULL;
 			}
@@ -811,6 +799,20 @@ void bcalInit(DBCALGeometry &bcalGeom)
     ( photonThresh / BCAL_PHOTONSPERSIDEPERMEV_INFIBER ) / 
     BCAL_SAMPLING_FRACT * k_MeV; 
 
+	// When comparing the new to old verison of the BCAL smearing
+	// code it was noticed that a number of hits right at threshold
+	// were being accepted by the new and rejected by the old. It
+	// is believed this is due to round-off errors arising from the
+	// former using doubles in several places. That coupled with the
+	// threshold being determined by the number of photo-electrons in
+	// the dark hits. Therefore, for channels with only dark hits and
+	// that number happening to be exactly the same as the threshold,
+	// the round-off determined whether the hit was accepted or not.
+	// This turned out to be a significant number. Thus,we add 10keV
+	// to the threshold to nudge it out of range of the round-off,
+	// replicating the result from the old code.
+	Bcal_CellInnerThreshold += 0.00001;
+
 #ifdef NO_THRESHOLD_CUT
 	Bcal_CellInnerThreshold = 0.0; // n.b. the outer threshold is derived from this too
 #endif
@@ -853,7 +855,7 @@ void bcalInit(DBCALGeometry &bcalGeom)
 			for(int k = 1; k<=4; k++){
 				int cellId = DBCALGeometry::cellId( i, j, k);
 				int fADCId = DBCALGeometry::fADCId( i, j, k);
-				double thresh = Bcal_CellInnerThreshold; /// FIXME!!!!
+				double thresh = Bcal_CellInnerThreshold * (double)BCAL_Nsum_inner;
 				bcal_fADCs[fADCId] = DBCALReadoutChannel(NSiPM_up, thresh, i, DBCALGeometry::fADC_layer(cellId), DBCALGeometry::fADC_sector(cellId));
 			}
 		}
@@ -864,7 +866,7 @@ void bcalInit(DBCALGeometry &bcalGeom)
 			for(int k = 1; k<=4; k++){
 				int cellId = DBCALGeometry::cellId( i, j+6, k);
 				int fADCId = DBCALGeometry::fADCId( i, j+6, k);
-				double thresh = Bcal_CellInnerThreshold; /// FIXME!!!!
+				double thresh = Bcal_CellInnerThreshold * (double)BCAL_Nsum_outer;
 				bcal_fADCs[fADCId] = DBCALReadoutChannel(NSiPM_down, thresh, i, DBCALGeometry::fADC_layer(cellId), DBCALGeometry::fADC_sector(cellId));
 			}
 		}
