@@ -144,10 +144,10 @@ DBCALGeometry::fADC_sector( int cellId ) {
 #ifdef BCAL_SUM_CELL
 	if(cell_layer<DBCALGeometry::BCALMID){
 		// inner
-		fADC_sector = 1 + (sector-1)/NSUMSECS1;
+		fADC_sector = 1 + (cell_sector-1)/NSUMSECS1;
 	}else{
 		// outer
-		fADC_sector = 1 + (sector-1)/NSUMSECS2;
+		fADC_sector = 1 + (cell_sector-1)/NSUMSECS2;
 	}
 #endif
   return fADC_sector;
