@@ -54,6 +54,9 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name):JEventSource(source_
 	if(fin)source_is_open = 1;
 	flush_on_free = true;
 	initialized=false;
+	dapp = NULL;
+	bfield = NULL;
+	geom = NULL;
 	
 	pthread_mutex_init(&rt_mutex, NULL);
 }
@@ -154,10 +157,8 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	JEventLoop *loop = event.GetJEventLoop();
 	if(initialized==false && loop){
 	  initialized=true;
-	  DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	  dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	  if(dapp){
-	    bfield = dapp->GetBfield();
-	    geom = dapp->GetDGeometry(event.GetRunNumber());
 	    
 	    jcalib = dapp->GetJCalibration(event.GetRunNumber());
 	    // Make sure jcalib is set
@@ -215,6 +216,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName == "DBCALTruthCell" && tag=="")
 	  return Extract_DBCALTruthCell(my_hddm_s, dynamic_cast<JFactory<DBCALTruthCell>*>(factory));
 	
+	if(dataClassName =="DBCALSiPMHit" && tag=="")
+	  return Extract_DBCALSiPMHit(my_hddm_s, dynamic_cast<JFactory<DBCALSiPMHit>*>(factory));
+	
 	if(dataClassName =="DBCALHit" && tag=="")
 	  return Extract_DBCALHit(my_hddm_s, dynamic_cast<JFactory<DBCALHit>*>(factory));
 	
@@ -260,7 +264,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	  return Extract_DSCTruthHit(my_hddm_s, dynamic_cast<JFactory<DSCTruthHit>*>(factory));
 
 	if(dataClassName =="DTrackTimeBased" && tag=="")
-	  return Extract_DTrackTimeBased(my_hddm_s, dynamic_cast<JFactory<DTrackTimeBased>*>(factory));
+	  return Extract_DTrackTimeBased(my_hddm_s, dynamic_cast<JFactory<DTrackTimeBased>*>(factory), event.GetRunNumber());
 
 	return OBJECT_NOT_AVAILABLE;
 }
@@ -570,6 +574,81 @@ jerror_t DEventSourceHDDM::GetSCTruthHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit*
 	return NOERROR;
 }
 
+//------------------
+// Extract_DBCALSiPMHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DBCALSiPMHit(s_HDDM_t *hddm_s, JFactory<DBCALSiPMHit> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DBCALSiPMHit*> data;
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->barrelEMcal == HDDM_NULL ||
+			hits->barrelEMcal->bcalCells == HDDM_NULL)continue;
+		
+		// Loop over BCAL cells
+		s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
+		for(unsigned int j=0;j<cells->mult;j++){
+			s_BcalCell_t *cell = &cells->in[j];
+			int cellIdent = DBCALGeometry::cellId( cell->module, cell->layer, 
+				  cell->sector );
+			if(cell->bcalSiPMUpHits != HDDM_NULL){
+				for(unsigned int k=0; k<cell->bcalSiPMUpHits->mult; k++){
+			     
+					s_BcalSiPMUpHit_t *uphit = &cell->bcalSiPMUpHits->in[k];
+
+					DBCALSiPMHit *response = new DBCALSiPMHit;
+					
+					response->module =cell->module;
+					response->layer = cell->layer;
+					response->sector = cell->sector;
+					response->E = uphit->E;
+					response->t = uphit->t;
+					response->end = DBCALGeometry::kUpstream;
+					response->cellId = cellIdent;
+
+					data.push_back(response);
+				}
+			}
+			
+			if(cell->bcalSiPMDownHits != HDDM_NULL){
+				for(unsigned int k=0; k<cell->bcalSiPMDownHits->mult; k++){
+
+					s_BcalSiPMDownHit_t *downhit = &cell->bcalSiPMDownHits->in[k];
+					
+					DBCALSiPMHit *response = new DBCALSiPMHit;
+	    
+					response->module =cell->module;
+					response->layer = cell->layer;
+					response->sector = cell->sector;
+					response->E = downhit->E;
+					response->t = downhit->t;
+					response->end = DBCALGeometry::kDownstream;
+
+					response->cellId = cellIdent;
+
+					data.push_back(response);
+				}
+			}
+		} // j   (cells)
+	} // i   (physicsEvents)
+	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
 
 //------------------
 // Extract_DBCALHit
@@ -592,7 +671,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 		s_HitView_t *hits = PE->in[i].hitView;
 		if (hits == HDDM_NULL ||
 			hits->barrelEMcal == HDDM_NULL ||
-			hits->barrelEMcal->bcalCells == HDDM_NULL)continue;
+			hits->barrelEMcal->bcalfADCCells == HDDM_NULL)continue;
 		
 		// Loop over BCAL cells
 		s_BcalfADCCells_t *cells = hits->barrelEMcal->bcalfADCCells;
@@ -600,7 +679,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 			s_BcalfADCCell_t *cell = &cells->in[j];
 			int cellIdent = DBCALGeometry::cellId( cell->module, cell->layer, 
 				  cell->sector );
-			if(cell->bcalfADCUpHits != HDDM_NULL || cell->bcalfADCDownHits != HDDM_NULL){
+			if(cell->bcalfADCUpHits != HDDM_NULL){
 				for(unsigned int k=0; k<cell->bcalfADCUpHits->mult; k++){
 			     
 					s_BcalfADCUpHit_t *uphit = &cell->bcalfADCUpHits->in[k];
@@ -617,10 +696,13 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 
 					data.push_back(response);
 				}
+			}
 
+			if(cell->bcalfADCDownHits != HDDM_NULL){
 				for(unsigned int k=0; k<cell->bcalfADCDownHits->mult; k++){
 
 					s_BcalfADCDownHit_t *downhit = &cell->bcalfADCDownHits->in[k];
+
 					DBCALHit *response = new DBCALHit;
 	    
 					response->module =cell->module;
@@ -633,16 +715,6 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 					response->cellId = cellIdent;
 
 					data.push_back(response);
-
-					//Old BCALHit code
-					//DHDDMBCALHit *bcalhit = new DHDDMBCALHit();
-					//bcalhit->module = cell->module;
-					//bcalhit->layer = cell->layer;
-					//bcalhit->sector = cell->sector;
-					//bcalhit->E = hit->E;
-					//bcalhit->t = hit->t;
-					//bcalhit->zLocal = hit->zLocal;
-					//data.push_back(bcalhit);
 				}
 			}
 		} // j   (cells)
@@ -1849,7 +1921,7 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit( s_HDDM_t *hddm_s,  JFactory<DSCT
 //------------------
 // Extract_DTrackTimeBased
 //------------------
-jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory)
+jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory, int runnumber)
 {
 	// Note: Since this is a reconstructed factory, we want to generally return OBJECT_NOT_AVAILABLE
 	// rather than NOERROR. The reason being that the caller interprets "NOERROR" to mean "yes I
@@ -1881,6 +1953,8 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<D
 				my_rts.push_back(rt_pool.back());
 				rt_pool.pop_back();
 			}else{
+				if(dapp && !bfield)bfield = dapp->GetBfield(); // delay getting the bfield object until we have to!
+				if(dapp && !geom  )geom   = dapp->GetDGeometry(runnumber);
 				my_rts.push_back(new DReferenceTrajectory(bfield));
 			}
 		}

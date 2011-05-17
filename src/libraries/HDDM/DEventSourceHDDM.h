@@ -21,6 +21,7 @@ using namespace std;
 #include "TRACKING/DMCTrackHit.h"
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
+#include "BCAL/DBCALSiPMHit.h"
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALTruthShower.h"
 #include "BCAL/DBCALTruthCell.h"
@@ -63,6 +64,7 @@ class DEventSourceHDDM:public JEventSource
 
 		jerror_t Extract_DBCALTruthShower(s_HDDM_t *hddm_s, JFactory<DBCALTruthShower> *factory);
 		jerror_t Extract_DBCALTruthCell(s_HDDM_t *hddm_s, JFactory<DBCALTruthCell> *factory);
+		jerror_t Extract_DBCALSiPMHit(s_HDDM_t *hddm_s, JFactory<DBCALSiPMHit> *factory);
 		jerror_t Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory);
 		jerror_t Extract_DBeamPhoton(s_HDDM_t *hddm_s, JFactory<DBeamPhoton> *factory);
 		jerror_t Extract_DMCThrown(s_HDDM_t *hddm_s, JFactory<DMCThrown> *factory);
@@ -81,7 +83,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DSCHit(s_HDDM_t *hddm_s,  JFactory<DSCHit> *factory);
 		jerror_t Extract_DSCTruthHit(s_HDDM_t *hddm_s,  JFactory<DSCTruthHit> *factory);
 
-		jerror_t Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory);
+		jerror_t Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory, int runnumber);
 		string StringToDMatrixDSym(string &str_vals, DMatrixDSym &mat, int &Nrows, int Ncols);
 
 		jerror_t Extract_DTagger( s_HDDM_t *hddm_s,  JFactory<DTagger>* factory);
@@ -89,6 +91,7 @@ class DEventSourceHDDM:public JEventSource
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;
 		bool flush_on_free;
+		DApplication *dapp;
 		const DMagneticFieldMap *bfield;
 		const DGeometry *geom;
 		
