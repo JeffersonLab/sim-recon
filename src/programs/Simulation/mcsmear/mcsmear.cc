@@ -62,6 +62,11 @@ float BCAL_TIMEDIFFCOEFB        = 0.0; //0.0 * sqrt( 2 );
 float BCAL_CELLOUTERTHRESHOLD   = 0.0;//1 * k_MeV;  n.b. UNUSED!
 float Bcal_CellInnerThreshold   = 0.0;
 
+bool NO_E_SMEAR = false;
+bool NO_T_SMEAR = false;
+bool NO_DARK_PULSES = false;
+bool NO_THRESHOLD_CUT = false;
+
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
 
@@ -311,24 +316,28 @@ void ParseCommandLineArguments(int narg, char* argv[])
     
     if(ptr[0] == '-'){
       switch(ptr[1]){
-      case 'h': Usage();													break;
-      case 'n': warn_obsolete=true;										break;
-      case 'N': ADD_NOISE=true;											break;
-      case 's': SMEAR_HITS=false;										break;
+      case 'h': Usage();										break;
+      case 'n': warn_obsolete=true;								break;
+      case 'N': ADD_NOISE=true;									break;
+      case 's': SMEAR_HITS=false;								break;
       case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
-      case 'y': CDC_USE_PARAMETERIZED_SIGMA=false;					break; 
-      case 'Y': FDC_USE_PARAMETERIZED_SIGMA=false;					break;
-      case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
+      case 'y': CDC_USE_PARAMETERIZED_SIGMA=false;				break; 
+      case 'Y': FDC_USE_PARAMETERIZED_SIGMA=false;				break;
+      case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;			break;
       case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
       case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
-      case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
-      case 'e': FDC_ELOSS_OFF = true;									break;
+      case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;			break;
+      case 'e': FDC_ELOSS_OFF = true;							break;
       case 'E': CDC_PEDESTAL_SIGMA = atof(&ptr[2])*k_keV; 		break;
-      case 'd': FDC_HIT_DROP_FRACTION=atof(&ptr[2]);				break;
-      case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);				break;
+      case 'd': FDC_HIT_DROP_FRACTION=atof(&ptr[2]);			break;
+      case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);			break;
       case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;		break;
-      case 'B': SMEAR_BCAL = false;										break;
-      case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; 					break;
+      case 'B': SMEAR_BCAL = false;								break;
+      case 'F': NO_E_SMEAR = true;								break;
+      case 'G': NO_T_SMEAR = true;								break;
+      case 'H': NO_DARK_PULSES = true;							break;
+      case 'I': NO_THRESHOLD_CUT = true;						break;
+      case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; 				break;
       case 'S': START_SIGMA= atof(&ptr[2])*k_psec; 				break;
       }
     }else{
@@ -398,7 +407,11 @@ void Usage(void)
 	cout<<"             default is to drop none."<<endl;
 	cout<<"    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:"<<FCAL_PHOT_STAT_COEF<<")"<<endl;
 	cout<<"    -b#      FCAL single block threshold in MeV (def:"<<FCAL_BLOCK_THRESHOLD/k_MeV<<")"<<endl;
-	cout<<"    -B       Don't smear or add dark noise hits to BCAL (def. smear and add)"<<endl;
+	cout<<"    -B       Don't process BCAL hits at all (def. process)"<<endl;
+	cout<<"    -F       Don't smear BCAL energy (def. smear)"<<endl;
+	cout<<"    -G       Don't smear BCAL times (def. smear)"<<endl;
+	cout<<"    -H       Don't add BCAL dark hits (def. add)"<<endl;
+	cout<<"    -I       Don't apply discrim. thresh. to BCAL hits (def. cut)"<<endl;
 	cout<<"    -f#      TOF sigma in psec (def: "<< TOF_SIGMA/k_psec<<")"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;

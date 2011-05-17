@@ -25,13 +25,6 @@ using namespace std;
 #endif
 
 
-// Uncomment any of the following to turn off the specific feature
-//#define NO_E_SMEAR
-//#define NO_T_SMEAR
-//#define NO_DARK_PULSES
-//#define NO_THRESHOLD_CUT
-
-
 void bcalInit(DBCALGeometry &bcalGeom);
 float bcalSamplingSmear( float E );
 float bcalTimeSmear(float t, float e);
@@ -88,390 +81,14 @@ extern float BCAL_TIMEDIFFCOEFB ; //= 0.0 * sqrt( 2 );
 // calculated later in based on number of photons and ph threshold
 extern float Bcal_CellInnerThreshold ;
 
+// The following are all false by default, but can be
+// set to true via command line parameters. Setting
+// one of these to true will turn off the feature.
+extern bool NO_E_SMEAR;
+extern bool NO_T_SMEAR;
+extern bool NO_DARK_PULSES;
+extern bool NO_THRESHOLD_CUT;
 
-// Below are two versions of the BCAL smearing code. The first
-// is Beni's version copied from smear.cc and the second is
-// Dave's version. The following #define can be
-// used to switch between the two with 1=Beni and 0=Dave.
-//
-// The two have been tested and shown to produce statistically 
-// identical results in E and t distributions for both individual
-// SiPM hits and sum fADC hits. This was also verified for both
-// the fine segmentation scheme and the course. The "Beni" version
-// will be removed in the near future.
-#if 0
-
-//-----------
-// SmearBCAL
-//-----------
-void SmearBCAL(s_HDDM_t *hddm_s)
-{
-  DBCALGeometry *bcalGeom = new DBCALGeometry();
-  
-  map< int, pair< int, int > > darkHits;
-  map< int, pair< int, int > >::iterator darkHitItr;
-  
-  
-  for( int m = 1; m <= 48; ++m ){
-    for( int l = 1; l <= 10; ++l ){
-      for( int s = 1; s <= 4; ++s ){
-	
-	pair< int, int > nHits( getDarkHits(), getDarkHits() );
-	
-	darkHits[DBCALGeometry::cellId( m, l, s )] = nHits;
-      }
-    }
-  }
-  
-  double mevPerPE = 1 / 
-    ( BCAL_PHOTONSPERSIDEPERMEV_INFIBER * BCAL_DEVICEPDE *
-      BCAL_SAMPLING_FRACT );
-  
-  bcalInit(*bcalGeom); //find inner cell threshold E
-  
-  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-  if(!PE) return;
-  
-  for(unsigned int i=0; i<PE->mult; i++){ 
-    
-    float eUpStore[49][11][5] = {{{0}}}; //store energies [mod][lay][sect]
-    float eDownStore[49][11][5]= {{{0}}};	  
-    
-    float eUpfADC[49][11][5]={{{0}}};
-    float eDownfADC[49][11][5]={{{0}}};
-    
-    float tUpStore[49][11][5] = {{{0}}}; //store times [mod][lay][sect]
-    float tDownStore[49][11][5]= {{{0}}};
-    
-    float tUpfADC[49][11][5]={{{0}}};
-    float tDownfADC[49][11][5]={{{0}}};
-    
-    int fADCCellCount = 0;
-    
-    s_HitView_t *hits = PE->in[i].hitView;
-    if (hits == HDDM_NULL ||
-	hits->barrelEMcal == HDDM_NULL ||
-	hits->barrelEMcal->bcalCells == HDDM_NULL)continue;
-    
-    
-    s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
-    
-    
-    
-    for(unsigned int j=0; j<cells->mult; j++){
-      s_BcalCell_t *cell = &cells->in[j];
-      
-      // dcell is needed for dark hits cellID
-      int dcell = DBCALGeometry::cellId( cell->module, cell->layer, cell->sector);
-      darkHitItr = darkHits.find( dcell );
-      
-      
-      //Create BCAL hits structure to put smeared data into
-      
-      if(cell->bcalSiPMUpHits!=HDDM_NULL)free(cell->bcalSiPMUpHits);
-      cell->bcalSiPMUpHits = make_s_BcalSiPMUpHits(cell->bcalHits->mult);
-      cell->bcalSiPMUpHits->mult = cell->bcalHits->mult;
-      
-      if(cell->bcalSiPMDownHits!=HDDM_NULL)free(cell->bcalSiPMDownHits);
-      cell->bcalSiPMDownHits = make_s_BcalSiPMDownHits(cell->bcalHits->mult);
-      cell->bcalSiPMDownHits->mult = cell->bcalHits->mult;			
-      
-      for(unsigned int k=0; k<cell->bcalHits->mult; k++){
-	s_BcalHit_t *bcalhit = &cell->bcalHits->in[k];
-	s_BcalSiPMUpHit_t *bcaluphit = &cell->bcalSiPMUpHits->in[k];
-	s_BcalSiPMDownHit_t *bcaldownhit = &cell->bcalSiPMDownHits->in[k];
-	
-	float smearedE = bcalSamplingSmear( bcalhit->E );
-	
-	float upDist = ( bcalGeom->BCALFIBERLENGTH / 2 ) + bcalhit->zLocal;
-	float downDist = ( bcalGeom->BCALFIBERLENGTH / 2 ) - bcalhit->zLocal;
-	
-	// sampling fluctuations are correlated between ends
-	float upEnergy = smearedE * exp( -upDist / bcalGeom->ATTEN_LENGTH );
-	float downEnergy = smearedE * exp( -downDist / bcalGeom->ATTEN_LENGTH );
-	
-	// independently smear time for both ends -- time smearing 
-	// parameters come from data taken with beam at the center of 
-	// the module so there is an implicit exp( ( -L / 2 ) / lambda ) 
-	// that needs to be canceled out since we are working
-	// at this stage with attenuated energies 
-	float smearedtUp = 
-	  bcalTimeSmear( bcalhit->t, 
-			 upEnergy * exp( ( bcalGeom->BCALFIBERLENGTH / 2 ) / 
-					 bcalGeom->ATTEN_LENGTH ) );
-	float smearedtDown = 
-	  bcalTimeSmear( bcalhit->t, 
-			 downEnergy * exp( ( bcalGeom->BCALFIBERLENGTH / 2 ) / 
-					   bcalGeom->ATTEN_LENGTH ) );
-	
-	darkHitItr = darkHits.find( dcell );
-	if( darkHitItr != darkHits.end() ){
-	  
-	  upEnergy += ( darkHitItr->second.first * mevPerPE * k_MeV );
-	  downEnergy += ( darkHitItr->second.second * mevPerPE * k_MeV );
-	  
-	  // now delete this from the map so we don't create
-	  // additional hits later
-	  darkHits.erase( darkHitItr );
-	}
-	
-	// now offset times for propagation distance
-	float upTime = smearedtUp + upDist / bcalGeom->C_EFFECTIVE;
-	float downTime = smearedtDown + downDist / bcalGeom->C_EFFECTIVE;
-	
-	//If energy is smeared to negative, set to 0.
-	if(upEnergy <= 0 || upTime!=upTime)
-	  {
-	    upEnergy = 0;
-	    upTime = 0;
-	  }
-	if(downEnergy <= 0|| downTime!=downTime)
-	  {
-	    downEnergy = 0;
-	    downTime = 0;
-	  }
-
-	
-	bcaluphit->E = upEnergy;
-	eUpStore[cell->module][cell->layer][cell->sector]+= upEnergy;
-	bcaluphit->t = upTime;
-	tUpStore[cell->module][cell->layer][cell->sector]= upTime;
-	
-	
-	bcaldownhit->E = downEnergy;
-	eDownStore[cell->module][cell->layer][cell->sector]+= downEnergy;
-	bcaldownhit->t = downTime;
-	tDownStore[cell->module][cell->layer][cell->sector]= downTime;
-	
-	
-      } //k (bcal hits)
-      
-    } //j (cells)
-    
-    //Add in dark hits to empty cells
-    for(int i = 1; i<=48;i++)
-      {
-	for(int j = 1; j<=10;j++)
-	  {
-	    for(int k = 1; k<=4; k++)
-	      {
-		int dcell = DBCALGeometry::cellId( i, j, k);
-		darkHitItr = darkHits.find( dcell );
-		if( darkHitItr != darkHits.end() ){
-		  eUpStore[i][j][k] += ( darkHitItr->second.first * mevPerPE * k_MeV );
-		  eDownStore[i][j][k] += ( darkHitItr->second.second * mevPerPE * k_MeV );
-		  tUpStore[i][j][k] = SampleRange( -0.25 * BCAL_INTWINDOW_NS,
-						   0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
-		  tDownStore[i][j][k] = SampleRange( -0.25 * BCAL_INTWINDOW_NS,
-						     0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
-		}
-	      }
-	  }
-      }		     
-    
-    //Inner Cells, Summing
-    for(int i=1;i<=48;i++)
-      {
-	for(int j=1;j<=bcalGeom->NBCALLAYS1;j++)
-	  {
-	    for(int k=1;k<=bcalGeom->NBCALSECS1;k++)
-	      {
-		for(int l=1;l<=(bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1;l++)
-		  {
-		    for(int m=1;m<=4/bcalGeom->NBCALSECS1;m++)
-		      {			 
-			eUpfADC[i][j][k]+= eUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];//Sum energies
-			eDownfADC[i][j][k]+= eDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
-			
-			tUpfADC[i][j][k]+= eUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m] //Sum times weighted by Energy
-			  *tUpStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
-			tDownfADC[i][j][k]+= eDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m]
-			  *tDownStore[i][(j-1)*(bcalGeom->BCALMID-1)/(bcalGeom->NBCALLAYS1)+l][(k-1)*4/(bcalGeom->NBCALSECS1)+m];
-			
-		      }
-		  }
-		
-		if(eUpfADC[i][j][k]!=0) //Divide time by Energy, to average weighted by energy, but make sure nonzero energy present.
-		  tUpfADC[i][j][k] = tUpfADC[i][j][k]/eUpfADC[i][j][k];
-		else
-		  tUpfADC[i][j][k] = 0;
-		
-		if(eDownfADC[i][j][k]!=0)
-		  tDownfADC[i][j][k] = tDownfADC[i][j][k]/eDownfADC[i][j][k];
-		else
-		  tDownfADC[i][j][k] = 0;
-	      }
-	  }
-      }
-    //Outer Cells, Summing
-    for(int i=1;i<=48;i++)
-      {
-	for(int j=bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1;j++)
-	  {
-	    for(int k=1;k<=bcalGeom->NBCALSECS2;k++)
-	      {
-		for(int l=1;l<=(11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2;l++)
-		  {
-		    for(int m=1;m<=4/bcalGeom->NBCALSECS2;m++)
-		      {			 
-			eUpfADC[i][j][k]+= eUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];//Sum energies
-			eDownfADC[i][j][k]+= eDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];
-			
-			tUpfADC[i][j][k]+= eUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m] //Sum times weighted by energy
-			  *tUpStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];
-			tDownfADC[i][j][k]+= eDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m]
-			  *tDownStore[i][(bcalGeom->BCALMID-1)+(j-bcalGeom->NBCALLAYS1-1)*(11-bcalGeom->BCALMID)/(bcalGeom->NBCALLAYS2)+l][(k-1)*4/(bcalGeom->NBCALSECS2)+m];			 
-		      }
-		  }
-		
-		if(eUpfADC[i][j][k]!=0) //Divide time by Energy, to average weighted by energy, but make sure nonzero energy present.
-		  tUpfADC[i][j][k] = tUpfADC[i][j][k]/eUpfADC[i][j][k];
-		else
-		  tUpfADC[i][j][k] = 0;
-		
-		if(eDownfADC[i][j][k]!=0)
-		  tDownfADC[i][j][k] = tDownfADC[i][j][k]/eDownfADC[i][j][k];
-		else
-		  tDownfADC[i][j][k] = 0;
-	      }
-	  }
-      }
-    
-    //Naively multiply threshold by the square root of the number summed cells
-    //in order to apply an effective 95% cut on fADC dark counts
-    //passing.  Needs more thought.	
-    float InnerThreshold = Bcal_CellInnerThreshold * 
-      ((bcalGeom->BCALMID-1)/bcalGeom->NBCALLAYS1) * (4/bcalGeom->NBCALSECS1);
-    float OuterThreshold = Bcal_CellInnerThreshold * 
-      ((11-bcalGeom->BCALMID)/bcalGeom->NBCALLAYS2) * (4/bcalGeom->NBCALSECS2);	
-
-    for(int i = 1;i<=48;i++)
-      {
-	for(int j = 1;j<=bcalGeom->NBCALLAYS1 ;j++)
-	  {
-	    for(int k = 1;k<=bcalGeom->NBCALSECS1;k++)
-	      {
-		if(eUpfADC[i][j][k]>InnerThreshold||eDownfADC[i][j][k]>InnerThreshold)
-		  {		
-		    fADCCellCount++;
-		  }
-	      }
-	  }
-      }
-    for(int i = 1;i<=48;i++)
-      {
-	for(int j = bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1 ;j++)
-	  {
-	    for(int k = 1;k<=bcalGeom->NBCALSECS2 ;k++)
-	      {
-		if(eUpfADC[i][j][k]> OuterThreshold ||eDownfADC[i][j][k]>OuterThreshold)
-		  {	
-		    fADCCellCount++;
-		  }
-	      }
-	  }
-      }
-    
-    if(hits->barrelEMcal->bcalfADCCells!=HDDM_NULL)free(hits->barrelEMcal->bcalfADCCells);
-    hits->barrelEMcal->bcalfADCCells = make_s_BcalfADCCells(fADCCellCount);
-    hits->barrelEMcal->bcalfADCCells->mult = fADCCellCount;
-    
-    for(unsigned int j=0; j<hits->barrelEMcal->bcalfADCCells->mult; j++)
-      {
-	s_BcalfADCCell_t *fADCcell = &hits->barrelEMcal->bcalfADCCells->in[j];
-	
-	bool Etrigg = FALSE;		 
-	
-	//Inner Cells
-	for(int i = 1;i<=48 && !Etrigg ;i++)
-	  {
-	    for(int j = 1;j<=bcalGeom->NBCALLAYS1 && !Etrigg ;j++)
-	      {
-		for(int k = 1;k<=bcalGeom->NBCALSECS1 && !Etrigg ;k++)
-		  {
-		    if(eUpfADC[i][j][k]>InnerThreshold||eDownfADC[i][j][k]>InnerThreshold)
-		      {			       
-			fADCcell->module = i;
-			fADCcell->layer = j;
-			fADCcell->sector = k;
-			
-			if(fADCcell->bcalfADCUpHits!=HDDM_NULL)free(fADCcell->bcalfADCUpHits);
-			fADCcell->bcalfADCUpHits = make_s_BcalfADCUpHits(1);
-			fADCcell->bcalfADCUpHits->mult = 1;
-			
-			if(fADCcell->bcalfADCDownHits!=HDDM_NULL)free(fADCcell->bcalfADCDownHits);
-			fADCcell->bcalfADCDownHits = make_s_BcalfADCDownHits(1);
-			fADCcell->bcalfADCDownHits->mult = 1;
-			
-			s_BcalfADCUpHit_t *fadcuphit = &fADCcell->bcalfADCUpHits->in[0];
-			s_BcalfADCDownHit_t *fadcdownhit = &fADCcell->bcalfADCDownHits->in[0];				   
-			
-			if( eUpfADC[i][j][k] > InnerThreshold){
-			  fadcuphit->E = eUpfADC[i][j][k];
-			  fadcuphit->t = tUpfADC[i][j][k];
-			}
-			else {fadcuphit->E = 0; fadcuphit->t = 0;}
-			
-			if( eDownfADC[i][j][k] > InnerThreshold){
-			  fadcdownhit->E = eDownfADC[i][j][k];
-			  fadcdownhit->t = tDownfADC[i][j][k];
-			}
-			else {fadcdownhit->E = 0; fadcdownhit->t = 0;}			       
-			
-			Etrigg = TRUE;
-			eUpfADC[i][j][k]=eDownfADC[i][j][k]=0;
-		      }			        	   
-		  }
-	      }
-	  }
-	//Outer Cells
-	for(int i = 1;i<=48 && !Etrigg ;i++)
-	  {
-	    for(int j = bcalGeom->NBCALLAYS1+1;j<=bcalGeom->NBCALLAYS2+bcalGeom->NBCALLAYS1 && !Etrigg ;j++)
-	      {
-		for(int k = 1;k<=bcalGeom->NBCALSECS2 && !Etrigg ;k++)
-		  {
-		    if(eUpfADC[i][j][k]> OuterThreshold ||eDownfADC[i][j][k]>OuterThreshold)
-		      {			  
-			fADCcell->module = i;
-			fADCcell->layer = j;
-			fADCcell->sector = k;
-			
-			if(fADCcell->bcalfADCUpHits!=HDDM_NULL)free(fADCcell->bcalfADCUpHits);
-			fADCcell->bcalfADCUpHits = make_s_BcalfADCUpHits(1);
-			fADCcell->bcalfADCUpHits->mult = 1;
-			
-			if(fADCcell->bcalfADCDownHits!=HDDM_NULL)free(fADCcell->bcalfADCDownHits);
-			fADCcell->bcalfADCDownHits = make_s_BcalfADCDownHits(1);
-			fADCcell->bcalfADCDownHits->mult = 1;
-			
-			s_BcalfADCUpHit_t *fadcuphit = &fADCcell->bcalfADCUpHits->in[0];
-			s_BcalfADCDownHit_t *fadcdownhit = &fADCcell->bcalfADCDownHits->in[0];
-			
-			if( eUpfADC[i][j][k] > OuterThreshold){
-			  fadcuphit->E = eUpfADC[i][j][k];
-			  fadcuphit->t = tUpfADC[i][j][k];
-			}
-			else {fadcuphit->E = 0; fadcuphit->t = 0;}
-			
-			if( eDownfADC[i][j][k] > OuterThreshold){
-			  fadcdownhit->E = eDownfADC[i][j][k];
-			  fadcdownhit->t = tDownfADC[i][j][k];
-			}
-			else {fadcdownhit->E = 0; fadcdownhit->t = 0;}			       
-			
-			Etrigg = TRUE;
-			eUpfADC[i][j][k]=eDownfADC[i][j][k]=0;
-		      }			        	   
-		  }
-	      }
-	  }
-      }		                   		       
-  } //i (PhysicsEvents)
-  
-}
-
-#else // Beni's version above. Dave's version below
 
 //-----------
 // SmearBCAL
@@ -728,8 +345,6 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	}
 }
 
-#endif // end of Dave's verison of SmearBCAL
-
 
 void bcalInit(DBCALGeometry &bcalGeom)
 {
@@ -813,9 +428,9 @@ void bcalInit(DBCALGeometry &bcalGeom)
 	// replicating the result from the old code.
 	Bcal_CellInnerThreshold += 0.00001;
 
-#ifdef NO_THRESHOLD_CUT
-	Bcal_CellInnerThreshold = 0.0; // n.b. the outer threshold is derived from this too
-#endif
+	if(NO_THRESHOLD_CUT){
+		Bcal_CellInnerThreshold = 0.0; // n.b. the outer threshold is derived from this too
+	}
 
 	// MeV per PhotoElectron in SiPM
 	BCAL_mevPerPE = 1 /
@@ -882,9 +497,7 @@ void bcalInit(DBCALGeometry &bcalGeom)
 //-----------
 float bcalSamplingSmear( float E )
 {
-#ifdef NO_E_SMEAR
-return E;
-#endif
+	if(NO_E_SMEAR)return E;
 
     double sigmaSamp = BCAL_SAMPLINGCOEFA / sqrt( E ) + BCAL_SAMPLINGCOEFB;
     
@@ -896,9 +509,8 @@ return E;
 //-----------
 float bcalTimeSmear( float t, float E )
 {
-#ifdef NO_T_SMEAR
-return t;
-#endif
+	if(NO_T_SMEAR)return t;
+
   double sigmaT = BCAL_TIMEDIFFCOEFA / sqrt( E ) + BCAL_TIMEDIFFCOEFB;
 
   return( t + SampleGaussian(sigmaT) );
@@ -909,9 +521,7 @@ return t;
 //-----------
 int getDarkHits()
 {
-#ifdef NO_DARK_PULSES
-	return 0;
-#endif
+	if(NO_DARK_PULSES)return 0;
 
   int darkPulse = SamplePoisson( BCAL_DARKRATE_GHZ* BCAL_INTWINDOW_NS );
 
