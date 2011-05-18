@@ -36,9 +36,8 @@ double BCAL_mevPerPE=0.0;
 float BCAL_UNATTENUATE_TO_CENTER = 0.0;
 int BCAL_Nsum_inner = 0;
 int BCAL_Nsum_outer = 0;
-double BCAL_mean_darkpulse_energy_SiPM = 0.0;
-double BCAL_mean_darkpulse_energy_inner = 0.0;
-double BCAL_mean_darkpulse_energy_outer = 0.0;
+double BCAL_sigma_singlePE_sq = 0.0;
+double BCAL_sigma_ped_sq = 0.0;
 
 map<int, DBCALReadoutChannel> bcal_fADCs; // key is DBCALGeometry::fADCId()
 
@@ -104,10 +103,6 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	// have hits so we can sparsely clear them at the end of this
 	set<int> fADC_ids_with_hits;
 	
-	// Clear DBCALReadoutChannel objects
-	//map<int, DBCALReadoutChannel>::iterator iter=bcal_fADCs.begin();
-	//for(; iter!= bcal_fADCs.end(); iter++)iter->second.Clear();
-
 	// Loop over PhysicsEvents
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return;
@@ -159,9 +154,24 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 				float smearedtUp   = bcalTimeSmear( bcalhit->t,   upEnergy*BCAL_UNATTENUATE_TO_CENTER );
 				float smearedtDown = bcalTimeSmear( bcalhit->t, downEnergy*BCAL_UNATTENUATE_TO_CENTER );
 
-				// Add dark noise hits
-				upEnergy   += ( getDarkHits() * BCAL_mevPerPE * k_MeV );
-				downEnergy += ( getDarkHits() * BCAL_mevPerPE * k_MeV );
+				// To get a realistic distribution we have to convert the smeared energy into 
+				// an integer number of photoelectrons. We'll add the dark hits to that and
+				// then calculate a sigma in energy based on the total number of pixels that
+				// fired. The number of photoelectrons will be converted back into energy
+				// and then smeared using this sigma.
+				double upPE = floor(0.5 + upEnergy/(BCAL_mevPerPE * k_MeV)) + getDarkHits();
+				double downPE = floor(0.5 + downEnergy/(BCAL_mevPerPE * k_MeV)) + getDarkHits();
+
+				double sigma_up = sqrt(BCAL_sigma_ped_sq + upPE*BCAL_sigma_singlePE_sq);
+				double sigma_down = sqrt(BCAL_sigma_ped_sq + downPE*BCAL_sigma_singlePE_sq);
+				
+				// Convert integer # of PE back into energy
+				upEnergy = upPE * BCAL_mevPerPE * k_MeV;
+				downEnergy = downPE * BCAL_mevPerPE * k_MeV;
+
+				// Add in pedestal widths due to SiPMs
+				upEnergy += SampleGaussian(sigma_up);
+				downEnergy += SampleGaussian(sigma_down);
 	
 				// now offset times for propagation distance
 				float upTime = smearedtUp + upDist / bcalGeom.C_EFFECTIVE;
@@ -226,7 +236,9 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 			unsigned int Ndark_channels_up = bcalfADC.NSiPM - uphits.size();
 			if(uphits.size() > bcalfADC.NSiPM)Ndark_channels_up = 0;
 			for(unsigned int j=0; j<Ndark_channels_up; j++){
-				double Edark = ( getDarkHits() * BCAL_mevPerPE * k_MeV );
+				double darkPE = getDarkHits();
+				double sigma_up = sqrt(BCAL_sigma_ped_sq + darkPE*BCAL_sigma_singlePE_sq);				
+				double Edark = (darkPE * BCAL_mevPerPE * k_MeV) + SampleGaussian(sigma_up);
 				double tdark = SampleRange( -0.25 * BCAL_INTWINDOW_NS, 0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
 				bcalfADC.Eup += Edark;
 				bcalfADC.tup += tdark * Edark;
@@ -250,7 +262,9 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 			unsigned int Ndark_channels_down = bcalfADC.NSiPM - downhits.size();
 			if(downhits.size() > bcalfADC.NSiPM)Ndark_channels_down = 0;
 			for(unsigned int j=0; j<Ndark_channels_down; j++){
-				double Edark = ( getDarkHits() * BCAL_mevPerPE * k_MeV );
+				double darkPE = getDarkHits();
+				double sigma_down = sqrt(BCAL_sigma_ped_sq + darkPE*BCAL_sigma_singlePE_sq);				
+				double Edark = (darkPE * BCAL_mevPerPE * k_MeV) + SampleGaussian(sigma_down);
 				double tdark = SampleRange( -0.25 * BCAL_INTWINDOW_NS, 0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
 				bcalfADC.Edown += Edark;
 				bcalfADC.tdown += tdark * Edark;
@@ -442,15 +456,18 @@ void bcalInit(DBCALGeometry &bcalGeom)
 	// of the module.
 	BCAL_UNATTENUATE_TO_CENTER = exp(bcalGeom.BCALFIBERLENGTH/2/ bcalGeom.ATTEN_LENGTH);
 	
-	// Calculate the mean energy (effective) due to dark pulses. The dark pulses
-	// effectively add to the pedestal and so this value should be subtracted before
-	// the threshold is applied.
+	// Number SiPMs added to give one fADC signal in inner and outer regions
 	BCAL_Nsum_inner = DBCALGeometry::NSUMLAYS1 * DBCALGeometry::NSUMSECS1;
 	BCAL_Nsum_outer = DBCALGeometry::NSUMLAYS2 * DBCALGeometry::NSUMSECS2;
-	BCAL_mean_darkpulse_energy_SiPM = BCAL_DARKRATE_GHZ * BCAL_INTWINDOW_NS * (1.0 + BCAL_XTALK_FRACT) * BCAL_mevPerPE;
-	BCAL_mean_darkpulse_energy_inner = BCAL_mean_darkpulse_energy_SiPM * (double)BCAL_Nsum_inner;
-	BCAL_mean_darkpulse_energy_outer = BCAL_mean_darkpulse_energy_SiPM * (double)BCAL_Nsum_outer;
-	
+
+	// The values of 0.108 and 0.143 came from the plot on slide 10 of GlueX-doc-1754-v3
+	// 6.489/602 = 0.108
+	// 8.585/602 = 0.143
+	double sigma_singlePE = 0.108*BCAL_mevPerPE * k_MeV;
+	double sigma_ped = sqrt(16.0)*0.143*BCAL_mevPerPE * k_MeV; // 0.143 is for single tile. sqrt(16) scales up to 16 tile SiPM array
+	BCAL_sigma_singlePE_sq = sigma_singlePE*sigma_singlePE;
+	BCAL_sigma_ped_sq = sigma_ped*sigma_ped;
+
 	//
 	// NOTE!!! This scheme needs to be changed if we want to get any
 	// advantage from multi-threading! Otherwise, a mutex lock needs
