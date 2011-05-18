@@ -68,6 +68,9 @@ float lorentz_z[LORENTZ_Z_POINTS];
 float *lorentz_nx[LORENTZ_X_POINTS];
 float *lorentz_nz[LORENTZ_X_POINTS];
 
+// Array of parameters for drift time smearing
+float fdc_smear_parms[9*26];
+
 void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
 void rnorml_(float*,int*);
 
@@ -130,6 +133,40 @@ void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
   free(d);
 }
 
+// Function for modelling the variation of the drift distance (or time)
+float drift_smear_function(float x,float parms[]){
+  float sum=0;
+  unsigned int i;
+  for (i=0;i<3;i++){
+    float sigma=parms[6+i];
+    if (sigma>0.){
+      float norm_xdiff=(x-parms[3+i])/sigma;
+      sum+=parms[i]*exp(-0.5*norm_xdiff*norm_xdiff)/(sigma*sqrt(2.*M_PI));
+    }
+  }
+  return sum;
+}
+
+// Rejection method for determining amount of smearing of the drift distance
+float get_drift_smear(float parms[]){
+  float smear,smear_max=2.0;
+  float f,f_prime,f_max=drift_smear_function(0.,parms);
+  int goodf=0;
+  float rndno[2];
+  int two=2;
+
+  while (!goodf){
+    grndm_(rndno,&two);
+    smear=smear_max*(rndno[0]-0.5);
+    f=drift_smear_function(smear,parms);
+    f_prime=f_max*rndno[1];
+    if (f>f_prime) goodf=1;
+  }
+
+  return smear;
+}
+
+
 
 /* register hits during tracking (from gustep) */
 
@@ -148,16 +185,20 @@ void hitForwardDC (float xin[4], float xout[4],
   int i,j;
 
   if (!initializedx){
-      mystr_t strings[50];
-      float values[50];
-      int nvalues = 50;
-      int status = GetConstants("FDC/fdc_parms", &nvalues, values, strings);
-
+      mystr_t strings[250];
+      float values[250];
+      int nvalues = 250;
+      // Get the parameters for the drift time smearing from the data base
+      int status = GetArrayConstants("FDC/drift_smear_parms", &nvalues, 
+				     fdc_smear_parms,
+				     strings); 
+      // Get other parameters related to the geometry and the signals 
+      status = GetConstants("FDC/fdc_parms", &nvalues,values,strings);
       if (!status) {
         int ncounter = 0;
         int i;
         for ( i=0;i<(int)nvalues;i++){
-          //printf("%d %s \n",i,strings[i].str);
+          //printf("%d %s %f\n",i,strings[i].str,values[i]);
           if (!strcmp(strings[i].str,"FDC_DRIFT_SPEED")) {
             DRIFT_SPEED  = values[i];
             ncounter++;
@@ -262,7 +303,7 @@ void hitForwardDC (float xin[4], float xout[4],
   // Initialize arrays of deflection data from the Lorentz effect
   if (!initialized){
 		// Allocate memory for 2-D tables. By "faking" a 2-D array this way,
-		// we can pass the pointers into GetLorentzDefelections() without
+		// we can pass the pointers into GetLorentzDeflections() without
 		// having to hardwire array sizes into the data types of the arguments.
 		for (i=0;i<LORENTZ_X_POINTS;i++){
 			lorentz_nx[i] = (float*)malloc(LORENTZ_Z_POINTS*sizeof(float));
@@ -270,7 +311,7 @@ void hitForwardDC (float xin[4], float xout[4],
 		}
 		
 		// Get tables from database
-		GetLorentzDefelections(lorentz_x, lorentz_z, lorentz_nx, lorentz_nz, LORENTZ_X_POINTS, LORENTZ_Z_POINTS);
+		GetLorentzDeflections(lorentz_x, lorentz_z, lorentz_nx, lorentz_nz, LORENTZ_X_POINTS, LORENTZ_Z_POINTS);
 		initialized=1;
   }  
 
@@ -368,12 +409,20 @@ void hitForwardDC (float xin[4], float xout[4],
     int nhit;
     s_FdcAnodeTruthHits_t* ahits;    
     s_FdcCathodeTruthHits_t* chits;    
-    float tdrift;    
+    float tdrift,tdrift_unsmeared;    
+    // Array of drift distance grid points needed for drift time smearing
+    float xarray[26]={0.00,0.02,0.04,0.06,0.08,0.10,0.12,0.14,0.16,0.18,0.20,0.22,
+		      0.24,0.26,0.28,0.30,0.32,0.34,0.36,0.38,0.40,0.42,0.44,0.46,
+		      0.48,0.50};
+    // array of parameters for drift time smearing
+    float my_parms[9];
+    int m=0,ind;
+
 
     for (wire=wire1; wire-dwire != wire2; wire+=dwire)
     {
       int valid_hit=1;
-      float dE;
+      float dE,dt;
       float u[2];
       float x0[3],x1[3];
       float avalanche_y;
@@ -404,10 +453,33 @@ void hitForwardDC (float xin[4], float xout[4],
       u[0] = xinlocal[2];
       u[1] = xinlocal[0]-xwire;
       dradius = fabs(u[1]*cos(alpha)-u[0]*sin(alpha));
-      tdrift = t + dradius/DRIFT_SPEED;
+      tdrift_unsmeared = t + dradius/DRIFT_SPEED;
       dE = dEsum*(x1[2]-x0[2])/(xoutlocal[2]-xinlocal[2]);
 
-       /* Compute Lorentz deflection of avalanche position */
+      /* Simulate smearing of drift time due to diffusion in the gas */
+      // First interpolate over the grid of smearing parameters 
+      ind=(dradius<0.5?(int)floor(dradius/0.02):25);
+      for (m=0;m<9;m++){
+	if (ind<25){
+	  float dpar;
+	  float parlist[26];
+	  int  num=3;
+	  int p;
+	  if (ind>=23){
+	    ind=23;
+	  }
+	  for (p=0;p<num;p++){
+	    parlist[p]=fdc_smear_parms[9*(ind+p)+m];
+	  }
+	  polint(&xarray[ind],parlist,num,dradius,&my_parms[m],&dpar);
+	}
+	// .. avoid doing an extrapolation...
+	else my_parms[m]=fdc_smear_parms[9*ind+m];
+      }
+      dt=get_drift_smear(my_parms)/DRIFT_SPEED;
+      tdrift=tdrift_unsmeared+dt;
+
+      /* Compute Lorentz deflection of avalanche position */
       /* Checks to see if deflection would push avalanche out of active area */
       if (dE > 0){
 	float tanr,tanz,r;
@@ -462,7 +534,7 @@ void hitForwardDC (float xin[4], float xout[4],
 	// Angular dependence from PHENIX data
 	avalanche_y+=0.16*ANODE_CATHODE_SPACING*tan(alpha)*rndno[0];
 	// Crude approximation for transverse diffusion
-	avalanche_y+=sqrt(2.*DIFFUSION_COEFF*(tdrift-t))*rndno[1];
+	avalanche_y+=sqrt(2.*DIFFUSION_COEFF*dradius/DRIFT_SPEED)*rndno[1];
 
 	/* If the Lorentz effect would deflect the avalanche out of the active 
 	   region, mark as invalid hit */
@@ -513,6 +585,7 @@ void hitForwardDC (float xin[4], float xout[4],
 				/* Feb. 11, 2008 D. L. */
 				if(ahits->in[nhit].t>tdrift){
 					ahits->in[nhit].t = tdrift;
+					ahits->in[nhit].t_unsmeared=tdrift_unsmeared;
 					ahits->in[nhit].d = dradius;
 					ahits->in[nhit].dE = dEsum;
 					ahits->in[nhit].itrack = track;
@@ -527,6 +600,7 @@ void hitForwardDC (float xin[4], float xout[4],
         else if (nhit < MAX_HITS)              /* create new hit */
         {
           ahits->in[nhit].t = tdrift;
+	  ahits->in[nhit].t_unsmeared=tdrift_unsmeared;
           ahits->in[nhit].dE = dE;
 	  ahits->in[nhit].d = dradius;
 	  ahits->in[nhit].itrack = track;
