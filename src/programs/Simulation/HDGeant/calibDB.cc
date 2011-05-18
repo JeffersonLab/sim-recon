@@ -125,9 +125,9 @@ int GetCalib(const char* namepath, unsigned int *Nvals, float* vals)
 }
 
 //----------------
-// GetLorentzDefelections
+// GetLorentzDeflections
 //----------------
-void GetLorentzDefelections(float *lorentz_x, float *lorentz_z, float **lorentz_nx, float **lorentz_nz
+void GetLorentzDeflections(float *lorentz_x, float *lorentz_z, float **lorentz_nx, float **lorentz_nz
 	, const unsigned int Nxpoints, const unsigned int Nzpoints)
 {
 	/// C-callable routine for accessing calibraion constants.
@@ -141,7 +141,7 @@ void GetLorentzDefelections(float *lorentz_x, float *lorentz_z, float **lorentz_
 	
 	// Make sure jcalib is set
 	if(!jcalib){
-		_DBG_<<"ERROR - GetLorentzDefelections() called when jcalib not set!"<<endl;
+		_DBG_<<"ERROR - GetLorentzDeflections() called when jcalib not set!"<<endl;
 		_DBG_<<"ERROR - Exiting ..."<<endl;
 		exit(-1);
 	}
@@ -150,7 +150,7 @@ void GetLorentzDefelections(float *lorentz_x, float *lorentz_z, float **lorentz_
 	vector< map<string, float> > tvals;
 	jcalib->Get("FDC/lorentz_deflections", tvals);
 	if(tvals.size() != Nxpoints*Nzpoints){
-		_DBG_<<"ERROR - GetLorentzDefelections() number of elements in calib DB"<<endl;
+		_DBG_<<"ERROR - GetLorentzDeflections() number of elements in calib DB"<<endl;
 		_DBG_<<"ERROR - not the same as expected. DB="<<tvals.size()<<" expected"<<Nxpoints*Nzpoints<<endl;
 		_DBG_<<"ERROR - Exiting ..."<<endl;
 		exit(-1);
@@ -210,5 +210,48 @@ int GetConstants(const char* namepath, int *Nvals, float* vals, mystr_t *strings
 	  }
 	}
 	return (int)detparms.size()>*Nvals; // return 0 if OK, 1 if not
+}
+
+
+//----------------
+// GetArrayConstants
+//----------------
+int GetArrayConstants(const char* namepath, int *Nvals, float* vals, mystr_t *strings)
+{
+	/// C-callable routine for accessing calibration constants.
+	/// The values specified by "namepath" will be read into the array
+	/// "vals". The "vals" array should have enough memory allocated
+	/// to hold *Nvals elements. If not, only the first *Nvals elements
+	/// will be copied and a non-zero value returned. If the number
+	/// of values in the database are less than *Nvals, then all values
+	/// are copied, *Nvals is updated to reflect the number of valid
+	/// elements in "vals", and a value of 0 is returned.
+        /// Similar the variable names are stored in the array strings.
+	
+	if(!jcalib){
+		_DBG_<<"ERROR - GetArrayConstants() called when jcalib not set!"<<endl;
+		_DBG_<<"ERROR - request for \""<<namepath<<"\""<<endl;
+		_DBG_<<"ERROR - Exiting ..."<<endl;
+		exit(-1);
+	}
+
+	vector<map <string, float> >detparms;
+	jcalib->Get(namepath, detparms);
+
+	unsigned int i=0;
+	int j=0;
+	for (i=0;i<detparms.size();i++){
+	  for( map<string, float>::iterator ii=detparms[i].begin(); ii!=detparms[i].end(); ++ii){
+	    if (j<*Nvals){
+	      strcpy (strings[j].str, (*ii).first.c_str());
+	      vals[j] = (*ii).second;
+	      j++;
+	    }
+	    else return 1;
+	  }
+	}
+	*Nvals=j;
+
+	return 0; // return 0 if OK, 1 if not
 }
 
