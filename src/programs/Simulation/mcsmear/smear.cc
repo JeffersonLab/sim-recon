@@ -27,7 +27,6 @@ float RANDOM_MAX = (float)(0x7FFFFFFF);
 
 
 extern vector<vector<float> >fdc_smear_parms; 
-extern TF1 *fdc_smear_function;
 extern TH2F *fdc_drift_time_smear_hist;
 extern TH2F *fdc_drift_dist_smear_hist;
 extern TH2F *fdc_drift_time;
@@ -421,15 +420,6 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 //-----------
 void SmearFDC(s_HDDM_t *hddm_s)
 {
-	// The fdc_smear_function (A TF1) is used to randomly sample
-	// a function whose parameters are set on a hit by hit basis.
-	// If this program is run in JANA (multi-threaded) mode, a
-	// would need to be locked to avoid threads from stepping on
-	// each other by setting this function's parameters simultaneously.
-	// The mutex locking/unlocking tends to be costly considering
-	// how often it is done so we duplicate the function to a local
-	// one to avoid the mutex lock.
-	TF1 my_fdc_smear_function(*fdc_smear_function);
 
 	// Calculate ped noise level based on position resolution
 	FDC_PED_NOISE=-0.004594+0.008711*FDC_CATHODE_SIGMA+0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
@@ -476,7 +466,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 						hit->t = 1.0E6;
 					}else{
 						hit->q = truthhit->q + SampleGaussian(FDC_PED_NOISE);
-						hit->t = truthhit->t;
+						hit->t = truthhit->t + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;;
 					}
 			    }
 			  }
@@ -505,67 +495,18 @@ void SmearFDC(s_HDDM_t *hddm_s)
 			    s_FdcAnodeHit_t *hit=hits->in;
 			    s_FdcAnodeTruthHit_t *truthhit=truthhits->in;
 			    for (unsigned int s=0;s<hits->mult;s++, hit++, truthhit++){
-			      if (FDC_USE_PARAMETERIZED_SIGMA==false){
-				hit->t = truthhit->t + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;
-			      }
-			      else{		
-				// The scale of the smearing in time depends 
-				// on the drift distance.  We use the root TF1
-				// random generator using functions representing
-				// the degree of smearing in various bins in x
-	  
-				int ind=(truthhit->d<0.5?int(floor(truthhit->d/0.02+0.5)):25);
-				double dt=0.;
-				/*
-				dt=SampleGaussian((5.96642*exp(-54.2745*truthhit->d)
-							  +1.64413e-11*exp(56.1646*truthhit->d)
-							  +2.48224));
-				*/
-				float xarray[26]={0.00,0.02,0.04,0.06,0.08,0.10,0.12,0.14,0.16,0.18,0.20,0.22,
-						  0.24,0.26,0.28,0.30,0.32,0.34,0.36,0.38,0.40,0.42,0.44,0.46,
-						  0.48,0.50};
-	     
-				float my_parms[9];
-				//printf("imin %d imax %d\n",imin,imin+3);
-					     
-				for (int m=0;m<9;m++){
-				  float dpar;
-				  float parlist[26];
-				  int  num=3;
-				  if (ind>=23){
-				    num=2;
-				    if (ind==25) ind=24;
-				  }
-				  for (int p=0;p<num;p++){
-				    parlist[p]=fdc_smear_parms[ind+p][m];
-				    // printf("%f\n",parlist[p]);
-				  }
-				  polint(&xarray[ind],parlist,num,truthhit->d,&my_parms[m],&dpar);
-				  //printf("d %f par %f\n",truthhit->d,my_parms[m]);
-			
-				}
-
-				for (unsigned int p=0;p<9;p++){
-				  // printf("rel %f\n",truthhit->d-0.02*ind);
-				  if ((p+2)%3 && my_parms[p]<0.) my_parms[p]*=-1.;
-				  my_fdc_smear_function.SetParameter(p,my_parms[p]);
-				}
-				// The calib database contains the smearing in cm, so one needs to 
-				// convert into nanoseconds...
-				double dx=my_fdc_smear_function.GetRandom();
-
-				dt=dx/0.0055;
-				fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
-				double t_temp=90.99*tanh((truthhit->d-0.2915)/0.1626);
-
-				fdc_drift_dist_smear_hist->Fill(truthhit->d,dx);
-				fdc_drift_time->Fill(t_temp+86.67+dx*(1.-t_temp*t_temp*0.01097*0.01097)
-						     /(0.01097*0.08211),truthhit->d);
-				
-				hit->t=truthhit->t+dt;
-			      }
+			      hit->t = truthhit->t + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;
 			      hit->dE = truthhit->dE;
 			      hit->d  = 0.; // initialize d=DOCA to zero for consistency.
+			      
+			      double dt=hit->t-truthhit->t_unsmeared;
+			      fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
+			      /*
+				double t_temp=90.99*tanh((truthhit->d-0.2915)/0.1626);
+				fdc_drift_dist_smear_hist->Fill(truthhit->d,dx);
+			      fdc_drift_time->Fill(t_temp+86.67+dx*(1.-t_temp*t_temp*0.01097*0.01097)
+			      -                                                    /(0.01097*0.08211),truthhit->d);
+			      */
 			    }
 			  }
 			}

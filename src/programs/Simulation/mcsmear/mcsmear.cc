@@ -87,9 +87,6 @@ double START_PHOTONS_PERMEV  = 0.0; // used to be 8000 should be more like 200
 double TOF_SIGMA = 100.*k_psec;
 double TOF_PHOTONS_PERMEV = 400.;
 
-vector<vector<float> >fdc_smear_parms;
-TF1 *fdc_smear_function;
-
 #include <JANA/JCalibrationFile.h>
 using namespace jana;
 static JCalibration *jcalib=NULL;
@@ -134,37 +131,6 @@ int main(int narg,char* argv[])
 	  return 0;
 	}
 	
-	if (FDC_USE_PARAMETERIZED_SIGMA==true){ // Get the drift time smearing parameters from the calib DB
-	  fdc_smear_function=new TF1("f1","gaus(0)+gaus(3)+gaus(6)",-0.5,0.5);
-	  
-	  vector< map<string, float> > tvals;
-	  jcalib->Get("FDC/drift_smear_parms", tvals);
-	  // Notify user
-	  cout<<"Read "<<tvals.size()<<" values from FDC/drift_smear_parms in calibDB"
-	      <<endl;
-	  cout << "Columns:  " ;
-	  map<string,float>::iterator iter;
-	  for(iter=tvals[0].begin(); iter!=tvals[0].end(); iter++)cout<<iter->first<<" ";
-	  cout<<endl;
-
-	  for(unsigned int i=0; i<tvals.size(); i++){
-	    map<string, float> &row = tvals[i];
-	    vector<float>dummy;
-	    dummy.push_back(row["h0"]);
-	    dummy.push_back(row["m0"]);
-	    dummy.push_back(row["s0"]);
-	    dummy.push_back(row["h1"]);
-	    dummy.push_back(row["m1"]);
-	    dummy.push_back(row["s1"]);
-	    dummy.push_back(row["h2"]);
-	    dummy.push_back(row["m2"]);
-	    dummy.push_back(row["s2"]);
-	    fdc_smear_parms.push_back(dummy);
-	    dummy.clear();
-	  }
-	}
-
-
 	// get the TOF parameters
 	{
 	  cout<<"get TOF/tof_parms parameters from calibDB"<<endl;
