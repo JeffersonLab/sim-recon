@@ -31,10 +31,10 @@
         <fdcChamber layer="int" maxOccurs="unbounded" module="int">
           <fdcAnodeWire maxOccurs="unbounded" minOccurs="0" wire="int">
             <fdcAnodeHit dE="float" maxOccurs="unbounded" t="float" itrack="int" d="float" ptype="int"/>
-            <fdcAnodeTruthHit dE="float" maxOccurs="unbounded" t="float" d="float" itrack="int" ptype="int"/>
+            <fdcAnodeTruthHit dE="float" maxOccurs="unbounded" t="float" d="float" t_unsmeared="float" itrack="int" ptype="int"/>
           </fdcAnodeWire>
           <fdcCathodeStrip maxOccurs="unbounded" minOccurs="0" plane="int" strip="int">
-            <fdcCathodeHit maxOccurs="unbounded" q="float" t="float" itrack="int" ptype="int"/>
+            <fdcCathodeHit maxOccurs="unbounded" q="float" t="float"  itrack="int" ptype="int"/>
             <fdcCathodeTruthHit maxOccurs="unbounded" q="float" t="float" itrack="int" ptype="int"/>
           </fdcCathodeStrip>
           <fdcTruthPoint E="float" dEdx="float" dradius="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
