@@ -181,7 +181,7 @@ void hitForwardDC (float xin[4], float xout[4],
   float xinlocal[3];
   float xoutlocal[3];
   float dradius;
-  float alpha;
+  float alpha,sinalpha,cosalpha;
   int i,j;
 
   if (!initializedx){
@@ -332,6 +332,8 @@ void hitForwardDC (float xin[4], float xout[4],
   if (wire1==0 && wire2==0) return;
   dwire = (wire1 < wire2)? 1 : -1;
   alpha = atan2(xoutlocal[0]-xinlocal[0],xoutlocal[2]-xinlocal[2]);
+  sinalpha=sin(alpha);
+  cosalpha=cos(alpha);
   xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
   xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
   xlocal[2] = (xinlocal[2] + xoutlocal[2])/2;
@@ -377,7 +379,7 @@ void hitForwardDC (float xin[4], float xout[4],
       float u[2];
       u[0] = xinlocal[2];
       u[1] = xinlocal[0]-xwire;
-      dradius = fabs(u[1]*cos(alpha)-u[0]*sin(alpha));
+      dradius = fabs(u[1]*cosalpha-u[0]*sinalpha);
       points->mult = 1;
         int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
       points->in[0].primary = (stack <= a);
@@ -417,7 +419,7 @@ void hitForwardDC (float xin[4], float xout[4],
     // array of parameters for drift time smearing
     float my_parms[9];
     int m=0,ind;
-
+    float sign=1.; // for dealing with the y-position for tracks crossing two cells
 
     for (wire=wire1; wire-dwire != wire2; wire+=dwire)
     {
@@ -427,35 +429,47 @@ void hitForwardDC (float xin[4], float xout[4],
       float x0[3],x1[3];
       float avalanche_y;
       float xwire = U_OF_WIRE_ZERO + (wire-1)*WIRE_SPACING;
-         
-      x0[0] = xwire-0.5*dwire*WIRE_SPACING;
-      x0[1] = xinlocal[1] + (x0[0]-xinlocal[0]+1e-20)*
-             (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
-      x0[2] = xinlocal[2] + (x0[0]-xinlocal[0]+1e-20)*
-             (xoutlocal[2]-xinlocal[2])/(xoutlocal[0]-xinlocal[0]+1e-20);
-      if (fabs(x0[2]-xoutlocal[2]) > fabs(xinlocal[2]-xoutlocal[2]))
-      {
-        x0[0] = xinlocal[0];
-        x0[1] = xinlocal[1];
-        x0[2] = xinlocal[2];
+
+     
+      if (wire1==wire2){
+	dE=dEsum; 
+	x0[0] = xinlocal[0];
+	x0[1] = xinlocal[1];
+	x0[2] = xinlocal[2]; 
+	x1[0] = xoutlocal[0];
+	x1[1] = xoutlocal[1];
+	x1[2] = xoutlocal[2];
       }
-      x1[0] = xwire+0.5*dwire*WIRE_SPACING;
-      x1[1] = xinlocal[1] + (x1[0]-xinlocal[0]+1e-20)*
-             (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
-      x1[2] = xinlocal[2] + (x1[0]-xinlocal[0]+1e-20)*
-             (xoutlocal[2]-xinlocal[2])/(xoutlocal[0]-xinlocal[0]+1e-20);
-      if (fabs(x1[2]-xinlocal[2]) > fabs(xoutlocal[2]-xinlocal[2]))
-      {
-        x1[0] = xoutlocal[0];
-        x1[1] = xoutlocal[1];
-        x1[2] = xoutlocal[2];
+      else{
+	x0[0] = xwire-0.5*dwire*WIRE_SPACING;
+	x0[1] = xinlocal[1] + (x0[0]-xinlocal[0]+1e-20)*
+	  (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
+	x0[2] = xinlocal[2] + (x0[0]-xinlocal[0]+1e-20)*
+	  (xoutlocal[2]-xinlocal[2])/(xoutlocal[0]-xinlocal[0]+1e-20);
+	if (fabs(x0[2]-xoutlocal[2]) > fabs(xinlocal[2]-xoutlocal[2]))
+	  {
+	    x0[0] = xinlocal[0];
+	    x0[1] = xinlocal[1];
+	    x0[2] = xinlocal[2];
+	  }
+	x1[0] = xwire+0.5*dwire*WIRE_SPACING;
+	x1[1] = xinlocal[1] + (x1[0]-xinlocal[0]+1e-20)*
+	  (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
+	x1[2] = xinlocal[2] + (x1[0]-xinlocal[0]+1e-20)*
+	  (xoutlocal[2]-xinlocal[2])/(xoutlocal[0]-xinlocal[0]+1e-20);
+	if (fabs(x1[2]-xinlocal[2]) > fabs(xoutlocal[2]-xinlocal[2]))
+	  {
+	    x1[0] = xoutlocal[0];
+	    x1[1] = xoutlocal[1];
+	    x1[2] = xoutlocal[2];
+	  }
+	dE = dEsum*(x1[2]-x0[2])/(xoutlocal[2]-xinlocal[2]);
       }
       u[0] = xinlocal[2];
       u[1] = xinlocal[0]-xwire;
-      dradius = fabs(u[1]*cos(alpha)-u[0]*sin(alpha));
+      dradius = fabs(u[1]*cosalpha-u[0]*sinalpha);
       tdrift_unsmeared = t + dradius/DRIFT_SPEED;
-      dE = dEsum*(x1[2]-x0[2])/(xoutlocal[2]-xinlocal[2]);
-
+      
       /* Simulate smearing of drift time due to diffusion in the gas */
       // First interpolate over the grid of smearing parameters 
       ind=(dradius<0.5?(int)floor(dradius/0.02):25);
@@ -489,8 +503,11 @@ void hitForwardDC (float xin[4], float xout[4],
 	int imin,imax,ind,ind2;
 	float rndno[2];
 	int two=2;
-	
-	avalanche_y = (x0[1]+x1[1])/2;
+	float tany=(xoutlocal[1]-xinlocal[1])/(xoutlocal[2]-xinlocal[2]);
+
+	//avalanche_y = (x0[1]+x1[1])/2;
+	avalanche_y=xinlocal[1]+tany*(ANODE_CATHODE_SPACING-dradius*sign*sinalpha);	
+
 	r=sqrt((x0[0]+x1[0])*(x0[0]+x1[0])+(x0[1]+x1[1])*(x0[1]+x1[1]))/2.;
 
 	// Locate positions in x and z arrays given r and z=x[2]
@@ -515,8 +532,8 @@ void hitForwardDC (float xin[4], float xout[4],
 
 
 	// Correct avalanche position with deflection along wire	
- 	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)
-	  +tanr*dist_to_wire*cos(alpha);
+ 	avalanche_y+=-tanz*dist_to_wire*sinalpha*cos(phi)
+	  +tanr*dist_to_wire*cosalpha;
 
 	// Only and always use the built-in Geant random generator,
         // otherwise debugging is a problem because sequences are not
@@ -542,8 +559,9 @@ void hitForwardDC (float xin[4], float xout[4],
 	if (r>ACTIVE_AREA_OUTER_RADIUS || r<wire_dead_zone_radius[PackNo]){
 	  valid_hit=0;
 	}
+	sign*=-1; // for dealing with the y-position for tracks crossing two cells
       }
-
+    
     /* first record the anode wire hit */
 
       if (dE > 0 && valid_hit)
@@ -587,7 +605,7 @@ void hitForwardDC (float xin[4], float xout[4],
 					ahits->in[nhit].t = tdrift;
 					ahits->in[nhit].t_unsmeared=tdrift_unsmeared;
 					ahits->in[nhit].d = dradius;
-					ahits->in[nhit].dE = dEsum;
+					ahits->in[nhit].dE = dE;
 					ahits->in[nhit].itrack = track;
 					ahits->in[nhit].ptype = ipart;
 				}
