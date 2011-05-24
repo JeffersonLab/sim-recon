@@ -42,214 +42,151 @@ void hitCentralDC (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum,
                    int track, int stack, int history, int ipart )
 {
-   float x[3], t;
-   float dx[3], dr;
-   float dEdx;
-   float xlocal[3];
-   float xinlocal[3];
-   float xoutlocal[3];
-   float dradius,drin,drout;
-   float doca[3];
-
-    if (!initialized) {
-      mystr_t strings[50];
-      float values[50];
-      int nvalues = 50;
-      int status = GetConstants("CDC/cdc_parms", &nvalues, values, strings);
- 
-      if (!status) {
-	int ncounter = 0;
-	int i;
-	for ( i=0;i<(int)nvalues;i++){
-	  //printf("%d %s \n",i,strings[i].str);
-	  if (!strcmp(strings[i].str,"CDC_DRIFT_SPEED")) {
-	    DRIFT_SPEED  = values[i];
-	    ncounter++;
-	  }
-	  if (!strcmp(strings[i].str,"CDC_TWO_HIT_RESOL")) {
-	    TWO_HIT_RESOL  = values[i];
-	    ncounter++;
-	  }
-	  if (!strcmp(strings[i].str,"CDC_MAX_HITS")) {
-	    MAX_HITS  = (int)values[i];
-	    ncounter++;
-	  }
-	  if (!strcmp(strings[i].str,"CDC_THRESH_KEV")) {
-	    THRESH_KEV  = values[i];
-	    ncounter++;
-	  }
-	  if (!strcmp(strings[i].str,"CDC_STRAW_RADIUS")) {
-	    THRESH_KEV  = values[i];
-	    ncounter++;
-	  }
+  float x[3], t;
+  float dx[3], dr;
+  float dEdx;
+  float xlocal[3];
+  float xinlocal[3];
+  float xoutlocal[3];
+  float dradius,drin,drout;
+  float doca[3]; 
+  float trackdir[3];
+  float alpha;
+  
+  if (!initialized) {
+    mystr_t strings[50];
+    float values[50];
+    int nvalues = 50;
+    int status = GetConstants("CDC/cdc_parms", &nvalues, values, strings);
+    
+    if (!status) {
+      int ncounter = 0;
+      int i;
+      for ( i=0;i<(int)nvalues;i++){
+	//printf("%d %s \n",i,strings[i].str);
+	if (!strcmp(strings[i].str,"CDC_DRIFT_SPEED")) {
+	  DRIFT_SPEED  = values[i];
+	  ncounter++;
 	}
-	if (ncounter==5){
-	  printf("CDC: ALL parameters loaded from Data Base\n");
-	} else if (ncounter<5){
-	  printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 5\n",ncounter);
-	} else {
-	  printf("CDC: SOME parameters found more than once in Data Base\n");
-	} 	
+	if (!strcmp(strings[i].str,"CDC_TWO_HIT_RESOL")) {
+	  TWO_HIT_RESOL  = values[i];
+	  ncounter++;
+	}
+	if (!strcmp(strings[i].str,"CDC_MAX_HITS")) {
+	  MAX_HITS  = (int)values[i];
+	  ncounter++;
+	}
+	if (!strcmp(strings[i].str,"CDC_THRESH_KEV")) {
+	  THRESH_KEV  = values[i];
+	  ncounter++;
+	}
+	if (!strcmp(strings[i].str,"CDC_STRAW_RADIUS")) {
+	  THRESH_KEV  = values[i];
+	  ncounter++;
+	}
       }
-      initialized = 1;
+      if (ncounter==5){
+	printf("CDC: ALL parameters loaded from Data Base\n");
+      } else if (ncounter<5){
+	printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 5\n",ncounter);
+      } else {
+	printf("CDC: SOME parameters found more than once in Data Base\n");
+      } 	
     }
+    initialized = 1;
+  }
+    
+  x[0] = (xin[0] + xout[0])/2;
+  x[1] = (xin[1] + xout[1])/2;
+  x[2] = (xin[2] + xout[2])/2;
+  t    = (xin[3] + xout[3])/2 * 1e9;
+  dx[0] = xin[0] - xout[0];
+  dx[1] = xin[1] - xout[1];
+  dx[2] = xin[2] - xout[2];
+  transformCoord(xin,"global",xinlocal,"local");
+  transformCoord(xout,"global",xoutlocal,"local");
+  /*
+  xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
+  xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
+  xlocal[2] = (xinlocal[2] + xoutlocal[2])/2;
+  */
+  
+  /* For particles that range out inside the active volume, the
+   * "out" time seems to be set to something enormously high.
+   * This screws up the hit. Check for this case here by looking
+   * at xout[3] and making sure it is less than 1 second. If it's
+   * not, then just use xin[3] for "t".
+   */
+  if(xout[3] > 1.0) t = xin[3] * 1e9;
+	 
+  drin = sqrt(xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1]);
+  drout = sqrt(xoutlocal[0]*xoutlocal[0] + xoutlocal[1]*xoutlocal[1]);
+  
+  trackdir[0] =-xinlocal[0] + xoutlocal[0];
+  trackdir[1] =-xinlocal[1] + xoutlocal[1];
+  trackdir[2] =-xinlocal[2] + xoutlocal[2];
+  alpha=-(xinlocal[0]*trackdir[0]+xinlocal[1]*trackdir[1])
+    /(trackdir[0]*trackdir[0]+trackdir[1]*trackdir[1]);
+  xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
+  xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
+  xlocal[2]=xinlocal[2]+trackdir[2]*alpha;
+  
+  // Deal with tracks exiting the ends of the straws
+  if (fabs(xlocal[2])>=75.0){
+    int ring = getring_();
+    float sign=(xoutlocal[2]>0)?1.:-1.;
+    if (ring<=4 || (ring>=13 && ring<=16) || ring>=25){
+      alpha=(sign*75.0-xinlocal[2])/trackdir[2];
+      xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
+      xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
+      xlocal[2]=sign*75.0;
+    }
+    else if (fabs(xlocal[2])>=75.415){
+      alpha=(sign*75.415-xinlocal[2])/trackdir[2]; 
+      xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
+      xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
+      xlocal[2]=sign*75.415;
+    }
+  } 
 
+  /* This will get called when the particle actually passes through
+   * the wire volume itself. For these cases, we should set the 
+   * location of the hit to be the point on the wire itself. Do
+   * determine if this is what is happening, we check drout to
+   * see if it is very close to the wire and drin to see if it is
+   * close to the tube.
+   *
+   * For the other case, when drin is close to the wire, we assume
+   * it is because it is emerging from the wire volume and
+   * automatically ignore those hits by returning immediately.
+   */
+  if(drin < 0.0050)return; /* entering straw within 50 microns of wire. ignore */
+  if(drin>(STRAW_RADIUS-0.0200) && drout<0.0050){
+    /* We entered within 200 microns of the straw tube and left
+     * within 50 microns of the wire. Assume the track passed through
+     * the wire volume.
+     */
+    
+    x[0] = xin[0];
+    x[1] = xin[1];
+    x[2] = xin[2];
+    t = xin[3] * 1e9;
+    xlocal[0] = xinlocal[0];
+    xlocal[1] = xinlocal[1];
+    xlocal[2] = xinlocal[2];
+    
+    /* For dx, we will just assume it is twice the distance from
+     * the straw to wire.
+     */
+    dx[0] *= 2.0;
+    dx[1] *= 2.0;
+    dx[2] *= 2.0;
+  }
+  
+  /* Distance of hit from center of wire */
+  dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
 
-
-   x[0] = (xin[0] + xout[0])/2;
-   x[1] = (xin[1] + xout[1])/2;
-   x[2] = (xin[2] + xout[2])/2;
-   t    = (xin[3] + xout[3])/2 * 1e9;
-   dx[0] = xin[0] - xout[0];
-   dx[1] = xin[1] - xout[1];
-   dx[2] = xin[2] - xout[2];
-   transformCoord(xin,"global",xinlocal,"local");
-   transformCoord(xout,"global",xoutlocal,"local");
-   xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
-   xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
-   xlocal[2] = (xinlocal[2] + xoutlocal[2])/2;
-
-	/* For particles that range out inside the active volume, the
-	 * "out" time seems to be set to something enormously high.
-	 * This screws up the hit. Check for this case here by looking
-	 * at xout[3] and making sure it is less than 1 second. If it's
-	 * not, then just use xin[3] for "t".
-	*/
-	if(xout[3] > 1.0) t = xin[3] * 1e9;
-
-   drin = sqrt(xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1]);
-   drout = sqrt(xoutlocal[0]*xoutlocal[0] + xoutlocal[1]*xoutlocal[1]);
-		
-	/* This will get called when the particle actually passes through
-	 * the wire volume itself. For these cases, we should set the 
-	 * location of the hit to be the point on the wire itself. Do
-	 * determine if this is what is happening, we check drout to
-	 * see if it is very close to the wire and drin to see if it is
-	 * close to the tube.
-	 *
-	 * For the other case, when drin is close to the wire, we assume
-	 * it is because it is emerging from the wire volume and
-	 * automatically ignore those hits by returning immediately.
-	*/
-	if(drin < 0.0050)return; /* entering straw within 50 microns of wire. ignore */
-	if(drin>(STRAW_RADIUS-0.0200) && drout<0.0050){
-		/* We entered within 200 microns of the straw tube and left
-		 * within 50 microns of the wire. Assume the track passed through
-		 * the wire volume.
-		*/
-		
-		x[0] = xin[0];
-		x[1] = xin[1];
-		x[2] = xin[2];
-		t = xin[3] * 1e9;
-		xlocal[0] = xinlocal[0];
-		xlocal[1] = xinlocal[1];
-		xlocal[2] = xinlocal[2];
-		
-		/* For dx, we will just assume it is twice the distance from
-		 * the straw to wire.
-		*/
-		dx[0] *= 2.0;
-		dx[1] *= 2.0;
-		dx[2] *= 2.0;
-	}
-	
-	/* Distance of hit from center of wire */
-   dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
-	
-	/* If the particle exits from the end of the tube, then the midpoint
-	 * from entrance to exit will not necessarily correspond
-	 * to the DOCA.  This is important since many tracks that exit through
-	 * the CDC endplate will exit through the end of the straw tube. In
-	 * these cases, there are two possibilities:
-	 *  1.) The DOCA is at the exit point itself
-	 *  2.) The DOCA is at the mid-point between the entrance and where the
-	 *      exit would have been if the tube were infinitely long.
-	 *
-	 * If we determine that the particle exited the end of the tube,
-	 * we calculate the DOCA (dradius) for both possibilities
-	 * and keep the one that is smallest.
-	 *
-	 * We'll assume that track left through the end of the tube if
-	 * its exiting point was more than 200 microns from the straw.
-	 * Since this will be the case for particles going through the wire
-	 * volume, we make sure the entrance point is within 200 microns
-	 * of the straw. 
-	 */
-	if(drin>(STRAW_RADIUS-0.0200) && drout<(STRAW_RADIUS-0.0200)){
-		/* Particle exited from end of the straw.
-		 *
-		 * Calculate exit point from an infinite straw 
-		 * We do this by defining the direction of the
-		 * track and finding the amount we need to extend 
-		 * in that direction in order to be at the tube
-		 * radius (determined by the entrance point).
-		 *
-		 * xout_local = xin_local + alpha*trackdir
-		 *
-		 * where xout_local, xin_local, and trackdir are all
-		 * vectors. "alpha" is a scaler multiplier to be
-		 * be solved for. The values of xin_local and trackdir
-		 * are detemined from xin and xout, while xout_local
-		 * is to be calculated once alpha is determined.
-		 *
-		 * We solve for alpha by setting the transverse
-		 * distance of xout_local to drin, the radius
-		 * of the tube. This leads to an equation quadratic
-		 * in alpha. 
-		 */
-
-		float alpha;
-		float A,B,C;
-		float trackdir[3];
-		float xoutlocal_i[3], xout_i[3];
-		float docaout;
-		transformCoord(dx,"global",trackdir,"local");
-		A = trackdir[0]*trackdir[0] + trackdir[1]*trackdir[1];
-		B = 2.0*(trackdir[0]*xinlocal[0] + trackdir[1]*xinlocal[1]);
-		C = drin*drin + xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1];
-		/* Check that we don't try to take the square root of a 
-		 * negative number. */
-		if (B*B - 4.0*A*C<0.) return;
-		
-		alpha = (-B + sqrt(B*B - 4.0*A*C))/(2.0*A);
-		xoutlocal_i[0] = xinlocal[0] + alpha*trackdir[0];
-		xoutlocal_i[1] = xinlocal[1] + alpha*trackdir[1];
-		xoutlocal_i[2] = xinlocal[2] + alpha*trackdir[2];
-			
-		/* Here, we have to figure out whether the DOCA point
-		 * of the track is within the tube or not. If the track
-		 * is in the tube, then the absolute value of 
-		 * xoutlocal_i[2] should be smaller than that of
-		 * xoutlocal[2].
-		 */
-		if (fabs(xoutlocal_i[2]) > fabs(xoutlocal[2]))
-		{
-			/* DOCA point is on end of tube */
-			x[0] = xout[0];
-			x[1] = xout[1];
-			x[2] = xout[2];
-			t = xout[3]*1e9;
-			xlocal[0]=xoutlocal[0];
-			xlocal[1]=xoutlocal[1];
-			xlocal[2]=xoutlocal[2];
-			dradius = drout;
-		}else{
-			/* DOCA point is inside the tube */
-			docaout = sqrt(xoutlocal_i[0]*xoutlocal_i[0] + xoutlocal_i[1]*xoutlocal_i[1]);
-			transformCoord(xoutlocal_i,"local",xout_i,"global");
-			x[0] = xout_i[0];
-			x[1] = xout_i[1];
-			x[2] = xout_i[2];
-			t = xout[3]*1e9; /* Don't bother adjusting time */
-			xlocal[0]=xoutlocal_i[0];
-			xlocal[1]=xoutlocal_i[1];
-			xlocal[2]=xoutlocal_i[2];
-			dradius = docaout;
-		}
-	}
-
-   /* Calculate dE/dx */
+  /* Calculate dE/dx */
 
    dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
    if (dr > 1e-3)
