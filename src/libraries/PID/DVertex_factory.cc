@@ -277,6 +277,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
       }
     }
   }
+
   if (remaining_fcal_showers>0){
     for (unsigned int i=0;i<fcal_showers.size();i++){
       if (fcal_matches[i]==0){
@@ -399,6 +400,43 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
       orphan_showers.push_back(shower_group);
       shower_group.clear();
     }
+  }
+  
+  // At this point, any orphan showers have been grouped together
+  // into lists with each list containing the showers believed to 
+  // have come from the same vertex. A DVertex object needs to be
+  // created for each of these lists. The DVertex will be located
+  // at the center of the target for lack of any better information.
+  for(unsigned int i=0; i<orphan_showers.size(); i++)
+  {
+	DVertex *my_vertex = new DVertex;
+	my_vertex->x.SetXYZT(0.0, 0.0, target_z,0.0);
+	my_vertex->cov.ResizeTo(3,3);
+    	my_vertex->beamline_used = true;
+        
+        // Set errors for photon-only vertex. The error in "t"
+        // is given by the length of the target and the amount
+        // of time it would take a photon to traverse the target.
+        // This may be very unrealistic since the time is set to
+        // "0" which for simulated data is too perfect.
+        my_vertex->t_sigma = 30.0/sqrt(12.0) * (1.0/30.0); // 30cm target, 1/(30 cm/ns)
+        
+        // For the covariance of the position, use beam dimensions
+        // at the target (rough). The radial dimension of the beam
+        // is ~3mm in diameter. For both x and y, assume 0.3/2.0
+        // and for z assume 30cm/sqrt(12). We could also divide the
+        // radial error by sqrt(12), but this is already too accurate
+        // compared to vertices obtained through tracking!
+        double sigma_r2 = pow(0.3/2.0,2.0);
+        double sigma_z2 = pow(30.0/sqrt(12.0),2.0);
+        DMatrix &cov = my_vertex->cov;
+        cov[0][0] = sigma_r2;  cov[0][1] =   0.0;     cov[0][2] =   0.0;
+        cov[1][0] =   0.0;     cov[1][1] = sigma_r2;  cov[1][2] =   0.0;
+        cov[2][0] =   0.0;     cov[2][1] =   0.0;     cov[2][2] = sigma_z2;
+        
+        my_vertex->showers = orphan_showers[i]; // copy entire list of showers for this vertex
+        
+        _data.push_back(my_vertex);
   }
 
   return NOERROR;
