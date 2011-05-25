@@ -25,6 +25,8 @@ DFCALPhoton_factory::DFCALPhoton_factory()
 {
 
 // Set of coefficients for non-linear energy corrections 
+
+  m_zTarget = 65*k_cm;
   
   //Regular Lead Glass Fit values for 30cm RHG radius
   NON_LIN_COEF_A1 = 0.53109;
@@ -64,6 +66,8 @@ DFCALPhoton_factory::DFCALPhoton_factory()
 	gPARMS->SetDefaultParameter("FCAL:FCAL_RADIATION_LENGTH", FCAL_RADIATION_LENGTH);
 	gPARMS->SetDefaultParameter("FCAL:FCAL_CRITICAL_ENERGY", FCAL_CRITICAL_ENERGY);
 	gPARMS->SetDefaultParameter("FCAL:FCAL_SHOWER_OFFSET", FCAL_SHOWER_OFFSET);
+
+  
 	
 }
 
@@ -96,15 +100,11 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 	//------------- the following is a temporary kludge...
 	const DVertex *vertex=NULL;
+
 	//loop->GetSingle(vertex);
 	vector<const DVertex *>vertices;
 	eventLoop->Get(vertices);
-	if (vertices.size()) vertex=vertices[0];
-
-	// If no DVertex object exists, then we cannot calculate the
-	// momentum vectors of the photons. We punt here and refuse 
-	// to make any DFCALPhotons.
-	if(vertex==NULL)return NOERROR;
+	if (vertices.size())   vertex=vertices[0];
 
 	// Return immediately if there isn't even one cluster
 	if(fcalClusters.size()<1)return NOERROR;
@@ -192,6 +192,11 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(vector<const DFCALCluster*> &cluste
 	// Loop over list of DFCALCluster objects and calculate the "Non-linear" corrected
 	// energy and position for each. We'll use a logarithmic energy-weighting to 
 	// find the final position and error.
+
+// Use target center if vertex does not exist 
+        DVector3 my_vertex(0.0, 0.0, m_zTarget);
+        if(vertex) my_vertex = vertex->x.Vect();
+
 	double earliest_time = 1.0E6; // initialize to something large
 	double Ecorrected_total = 0.0;
 	DVector3 posInCal(0.0, 0.0, 0.0);
@@ -212,7 +217,7 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(vector<const DFCALCluster*> &cluste
 		// Get corrected energy, position, and errZ
 		double Ecorrected;
 		DVector3 pos_corrected;
-		GetCorrectedEnergyAndPosition(clusters[i], Ecorrected, pos_corrected, errZ, vertex);
+		GetCorrectedEnergyAndPosition(clusters[i], Ecorrected, pos_corrected, errZ, &my_vertex);
 		
 		double weight = log(Ecorrected/0.001);
 		if(weight<0.0)continue; // ignore clusters with less than 1MeV
@@ -234,14 +239,16 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(vector<const DFCALCluster*> &cluste
 	DFCALPhoton* photon = new DFCALPhoton;
 
 	photon->setEnergy( Ecorrected_total );
-	photon->setMom3( Ecorrected_total, posInCal - DVector3(vertex->x.X(), vertex->x.Y(), vertex->x.Z()) );
-	photon->setMom4();
+        if (vertex) {
+	   photon->setMom3( Ecorrected_total, posInCal - DVector3(vertex->x.X(), vertex->x.Y(), vertex->x.Z()) );
+	   photon->setMom4();
+        }
 	photon->setPosition( posInCal );   
 	photon->setPosError(posErr.X(), posErr.Y(), posErr.Z() );
 	photon->setTime ( earliest_time );
 	
 	// Add associated objects
-	photon->AddAssociatedObject(vertex);
+	if ( vertex != NULL ) photon->AddAssociatedObject(vertex);
 	for(unsigned int i=0; i<clusters_used.size(); i++)photon->AddAssociatedObject(clusters_used[i]);
 	
 
@@ -253,7 +260,7 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(vector<const DFCALCluster*> &cluste
 //
 // Non-linear and depth corrections should be fixed within DFCALPhoton member functions
 //--------------------------------
-void DFCALPhoton_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVertex *vertex)
+void DFCALPhoton_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *vertex)
 {
 // Non-linar energy correction are done here
        int MAXITER = 1000;
@@ -373,10 +380,11 @@ void DFCALPhoton_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* clus
 // then depth corrections 
 
        if ( Egamma > 0 ) { 
+               float xV = vertex->X();
+               float yV = vertex->Y();
+               float zV = vertex->Z();
+            
 
-           float xV = vertex->x.X();
-           float yV = vertex->x.Y();
-           float zV = vertex->x.Z();
            double z0 = DFCALGeometry::fcalFaceZ() - zV;
            double zMax = (FCAL_RADIATION_LENGTH*(
                        FCAL_SHOWER_OFFSET + log(Egamma/FCAL_CRITICAL_ENERGY)));

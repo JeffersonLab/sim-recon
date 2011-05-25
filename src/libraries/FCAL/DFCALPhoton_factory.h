@@ -26,7 +26,9 @@ class DFCALPhoton_factory:public JFactory<DFCALPhoton>{
 		jerror_t brun(JEventLoop *loop, int runnumber);
 
 		DFCALPhoton* makePhoton(vector<const DFCALCluster*> &clusters, const DVertex *vertex);
-		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVertex *vertex);
+		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *vertex);
+
+                double m_zTarget;
 
 		double NON_LIN_COEF_A1;
 		double NON_LIN_COEF_B1;
