@@ -389,9 +389,9 @@ int getDarkHits()
 {
 	if(NO_DARK_PULSES)return 0;
 
-  int darkPulse = floor(0.5+SamplePoisson( BCAL_DARKRATE_GHZ* BCAL_INTWINDOW_NS ));
+  int darkPulse = (int)floor(0.5+SamplePoisson( BCAL_DARKRATE_GHZ* BCAL_INTWINDOW_NS ));
 
-  int xTalk = floor(0.5+SamplePoisson( (double)darkPulse * BCAL_XTALK_FRACT ));
+  int xTalk = (int)floor(0.5+SamplePoisson( (double)darkPulse * BCAL_XTALK_FRACT ));
 
   return( xTalk + darkPulse );
 }
@@ -607,7 +607,7 @@ void CalculateThresholds(void)
 		// Loop over Npe
 		double prob = 0.0;
 		for(int Npe=0; Npe<100; Npe++){
-			double sigma_tot = sqrt(BCAL_sigma_ped_sq + (double)Npe*BCAL_sigma_singlePE_sq)/1000.0; // in MeV
+			double sigma_tot = sqrt(BCAL_sigma_ped_sq + (double)Npe*BCAL_sigma_singlePE_sq)*1000.0; // in MeV
 			double E = (double)Npe * BCAL_mevPerPE; // in MeV
 			
 			prob += TMath::Gaus(x, E , sigma_tot)*pdf[Npe];
