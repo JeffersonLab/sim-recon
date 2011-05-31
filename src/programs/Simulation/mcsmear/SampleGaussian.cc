@@ -30,7 +30,7 @@ double SampleGaussian(double sigma)
 //--------------------------
 // SamplePoisson
 //--------------------------
-int SamplePoisson(float lambda)
+double SamplePoisson(double lambda)
 {
         if(!rnd)rnd = new TRandom3;
 	
