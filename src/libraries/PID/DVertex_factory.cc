@@ -47,7 +47,15 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
     geom->GetTargetLength(target_length);
     geom->GetTargetZ(target_z);
   }
-  
+
+  // Configuration parameters
+  GROUP_NUM_SIGMAS_TIME = 100.0; // originally was 3, but changed as temporary measure
+  GROUP_NUM_SIGMAS_Z    = 100.0; // originally was 3, but changed as temporary measure
+  DEBUG_HISTS           = false; 
+  gPARMS->SetDefaultParameter("PID:GROUP_NUM_SIGMAS_TIME", GROUP_NUM_SIGMAS_TIME, "Number of sigmas particles (tracks and or photons) can be apart in time and still be associated with same vertex");
+  gPARMS->SetDefaultParameter("PID:GROUP_NUM_SIGMAS_Z"   , GROUP_NUM_SIGMAS_Z   , "Number of sigmas particles (tracks and or photons) can be apart in z and still be associated with same vertex");
+  gPARMS->SetDefaultParameter("PID:DEBUG_HISTS"   , DEBUG_HISTS   , "Enable generation and filling if PID related debugging histos");
+
   // Get the particle ID algorithms
   vector<const DParticleID *> pid_algorithms;
   loop->Get(pid_algorithms);
@@ -80,8 +88,6 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
   zmin = 0.0;
   zmax = 100.0;
   
-  //DEBUG_HISTS=true;
-  DEBUG_HISTS=false;
   if (DEBUG_HISTS){
     dapp->Lock();
     
@@ -90,6 +96,15 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
     
     fcal_dt=(TH2F *)gROOT->FindObject("fcal_dt");
     if (!fcal_dt) fcal_dt=new TH2F("fcal_dt","projected time at target for FCAL vs momentum",100,0,10,100,-10,10.);
+
+    Nsigmas_t_photons=(TH1F *)gROOT->FindObject("Nsigmas_t_photons");
+    if (!Nsigmas_t_photons) Nsigmas_t_photons=new TH1F("Nsigmas_t_photons","Number of sigmas in t (evnt)",5000, 0.0 , 500.0);
+
+    Nsigmas_t_particles=(TH1F *)gROOT->FindObject("Nsigmas_t_particles");
+    if (!Nsigmas_t_particles) Nsigmas_t_particles=new TH1F("Nsigmas_t_particles","Number of sigmas in t (AssignParticlesToGroups)",5000, 0.0 , 500.0);
+
+    Nsigmas_z_particles=(TH1F *)gROOT->FindObject("Nsigmas_z_particles");
+    if (!Nsigmas_z_particles) Nsigmas_z_particles=new TH1F("Nsigmas_z_particles","Number of sigmas in z (AssignParticlesToGroups)",5000, 0.0 , 500.0);
 
     
     dapp->Unlock();
@@ -324,7 +339,10 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
       double t_sigma_photons=1./sqrt(sum_invar);
       double t_sigma_tot=sqrt(t_sigma_photons*t_sigma_photons
 			      +_data[i]->t_sigma*_data[i]->t_sigma);
-      if (fabs(t0-_data[i]->x.T())/t_sigma_tot<3.0){
+
+      double Nsigmas_t = fabs(t0-_data[i]->x.T())/t_sigma_tot;
+      if(DEBUG_HISTS)Nsigmas_t_photons->Fill(Nsigmas_t);
+      if (Nsigmas_t < GROUP_NUM_SIGMAS_TIME){
 	for (unsigned int m=0;m<group.size();m++){
 	  _data[i]->showers.push_back(DVertex::shower_info_t(group[m]->bcal,group[m]->fcal));
 
@@ -629,10 +647,14 @@ void DVertex_factory::AssignParticlesToGroups(vector<vertexInfo_t*> &vertices,
       if (vi->is_matched_to_vertex) continue;
 			
       double delta_t = fabs(maxloc.X() - vi->t);
-      if(delta_t/vi->sigmat > 3.0)continue;
+      double Nsigmas_t = delta_t/vi->sigmat;
+      if(DEBUG_HISTS)Nsigmas_t_particles->Fill(Nsigmas_t);
+      if(Nsigmas_t > GROUP_NUM_SIGMAS_TIME)continue;
       
       double delta_z = fabs(maxloc.Y() - vi->z);
-      if(delta_z/vi->sigmaz > 3.0)continue;
+      double Nsigmas_z = delta_z/vi->sigmaz;
+      if(DEBUG_HISTS)Nsigmas_z_particles->Fill(Nsigmas_z);
+      if(Nsigmas_z > GROUP_NUM_SIGMAS_Z)continue;
       
       // Assign this particle to the group
       vi->is_in_group=true;

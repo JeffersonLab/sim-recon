@@ -69,6 +69,9 @@ class DVertex_factory:public jana::JFactory<DVertex>{
   
   double target_length;
   double target_z;
+
+  double GROUP_NUM_SIGMAS_TIME;
+  double GROUP_NUM_SIGMAS_Z;
   
   // Pool of memory heavy partInfo_t objects
   unsigned int MAX_VERTEXINFOS;
@@ -89,6 +92,9 @@ class DVertex_factory:public jana::JFactory<DVertex>{
   bool DEBUG_HISTS;
   TH2F *fcal_match;
   TH2F *fcal_dt;
+  TH1F *Nsigmas_t_photons;
+  TH1F *Nsigmas_t_particles;
+  TH1F *Nsigmas_z_particles;
 };
 
 #endif // _DVertex_factory_
