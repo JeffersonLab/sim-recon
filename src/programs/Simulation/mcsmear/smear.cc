@@ -59,7 +59,7 @@ vector<double> FDC_LAYER_Z;
 double FDC_RATE_COEFFICIENT;
 
 double SampleGaussian(double sigma);
-int SamplePoisson(float lambda);
+double SamplePoisson(double lambda);
 double SampleRange(double x1, double x2);
 
 // Do we or do we not add noise hits
@@ -68,10 +68,6 @@ extern bool ADD_NOISE;
 // Do we or do we not smear real hits
 extern bool SMEAR_HITS;
 
-// Flag used specifically for BCAL
-extern bool SMEAR_BCAL;
-
-extern double BCAL_TIME_WINDOW;
 
 // If the following flag is true, then include the drift-distance
 // dependency on the error in the CDC position. Otherwise, use a
@@ -141,37 +137,6 @@ double CCAL_PHOT_STAT_COEF = 0.035/2.0;
 // (This is just a rough estimate 11/30/2010 DL)
 double CCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
 
-// setup response parameters
-extern float BCAL_DARKRATE_GHZ        ;// 0.041;
-extern float BCAL_XTALK_FRACT         ;//0.03;
-extern float BCAL_INTWINDOW_NS        ;//100;
-extern float BCAL_DEVICEPDE           ;//0.12;
-extern float BCAL_SAMPLING_FRACT      ;//0.15;
-extern float BCAL_MAXOCCUPANCY_FRACT  ;//0.05;
-
-// GX-doc 1069, Table 1 -- try to extract back to
-// photons per side per MeV in fiber
-// 4.6 / PDE / attentuation  (meaurements performed in center)
-// 75 = 4.6  / 0.12 / exp( -200 / 300 )
-extern float BCAL_PHOTONSPERSIDEPERMEV_INFIBER; // 75
-
-// set the sampling smearing coefficients:
-// (from GlueX-doc 827 v3 Figure 13 )
-extern float BCAL_SAMPLINGCOEFA ; //= 0.042;
-extern float BCAL_SAMPLINGCOEFB ; //= 0.013;
-
-// time smearing comes from beam test time difference resolution with
-// beam incident on the center of the module
-extern float BCAL_TIMEDIFFCOEFA ; //= 0.07 * sqrt( 2 );
-
-// no floor term, but leave the option here:
-extern float BCAL_TIMEDIFFCOEFB ; //= 0.0 * sqrt( 2 );
-    
-// set this low for now -- needs more thought later
-extern float BCAL_CELLOUTERTHRESHOLD ; // = 1 * k_MeV;
-
-// calculated later in based on number of photons and ph threshold
-extern float Bcal_CellInnerThreshold ;
 
 // Forward TOF resolution
 extern double TOF_SIGMA;
@@ -180,6 +145,8 @@ extern double TOF_PHOTONS_PERMEV;
 // Start counter resolution
 extern double START_SIGMA ;
 extern double START_PHOTONS_PERMEV;
+
+extern bool SMEAR_BCAL;
 
 // Polynomial interpolation on a grid.
 // Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.

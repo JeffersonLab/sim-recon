@@ -47,20 +47,19 @@ bool CDC_USE_PARAMETERIZED_SIGMA = true;
 bool FDC_USE_PARAMETERIZED_SIGMA = true;
 
 // setup response parameters
-float BCAL_DARKRATE_GHZ         = 0.;// 0.041;
-float BCAL_XTALK_FRACT          = 0.;//0.03;
-float BCAL_INTWINDOW_NS         = 0.;//100;
-float BCAL_TIME_WINDOW          = 0.;// 1000.0E-9 seconds
-float BCAL_DEVICEPDE            = 0.;//0.12;
-float BCAL_SAMPLING_FRACT       = 0.;//0.15;
-float BCAL_MAXOCCUPANCY_FRACT   = 0.;//0.05;
-float BCAL_PHOTONSPERSIDEPERMEV_INFIBER = 0.0;//75;
-float BCAL_SAMPLINGCOEFA        = 0.0; //0.042;
-float BCAL_SAMPLINGCOEFB        = 0.0; //.013;
-float BCAL_TIMEDIFFCOEFA        = 0.0; //0.07 * sqrt( 2 );
-float BCAL_TIMEDIFFCOEFB        = 0.0; //0.0 * sqrt( 2 );
-float BCAL_CELLOUTERTHRESHOLD   = 0.0;//1 * k_MeV;  n.b. UNUSED!
-float Bcal_CellInnerThreshold   = 0.0;
+double BCAL_DARKRATE_GHZ         = 0.;// 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
+double BCAL_SIGMA_SIG_RELATIVE   = 0.;// 0.105  (from calibDB BCAL/bcal_parms)
+double BCAL_SIGMA_PED_RELATIVE   = 0.;// 0.139  (from calibDB BCAL/bcal_parms)
+double BCAL_XTALK_FRACT          = 0.;// 0.157  (from calibDB BCAL/bcal_parms)
+double BCAL_INTWINDOW_NS         = 0.;// 100    (from calibDB BCAL/bcal_parms)
+double BCAL_DEVICEPDE            = 0.;// 0.21   (from calibDB BCAL/bcal_parms)
+double BCAL_SAMPLING_FRACT       = 0.;// 0.095  (from calibDB BCAL/bcal_parms)
+double BCAL_PHOTONSPERSIDEPERMEV_INFIBER = 0.0;// 75 (from calibDB BCAL/bcal_parms)
+double BCAL_AVG_DARK_DIGI_VALS_PER_EVENT = 0.0; // 240 used to set thresholds
+double BCAL_SAMPLINGCOEFA        = 0.0; // 0.042 (from calibDB BCAL/bcal_parms)
+double BCAL_SAMPLINGCOEFB        = 0.0; // 0.013 (from calibDB BCAL/bcal_parms)
+double BCAL_TIMEDIFFCOEFA        = 0.0; // 0.07 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
+double BCAL_TIMEDIFFCOEFB        = 0.0; // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
 
 bool NO_E_SMEAR = false;
 bool NO_T_SMEAR = false;
@@ -145,19 +144,19 @@ int main(int narg,char* argv[])
 	  cout<<"get BCAL/bcal_parms parameters from calibDB"<<endl;
 	  map<string, double> bcalparms;
 	  jcalib->Get("BCAL/bcal_parms", bcalparms);
-	  BCAL_DARKRATE_GHZ =  bcalparms["BCAL_DARKRATE_GHZ"];
-	  BCAL_XTALK_FRACT        = bcalparms["BCAL_XTALK_FRACT"];
-	  BCAL_INTWINDOW_NS       = bcalparms["BCAL_INTWINDOW_NS"];
-	  BCAL_DEVICEPDE          = bcalparms["BCAL_DEVICEPDE"];
-	  BCAL_SAMPLING_FRACT     = bcalparms["BCAL_SAMPLING_FRACT"];
-	  BCAL_MAXOCCUPANCY_FRACT = bcalparms["BCAL_MAXOCCUPANCY_FRACT"];
+	  BCAL_DARKRATE_GHZ			=  bcalparms["BCAL_DARKRATE_GHZ"];
+	  BCAL_SIGMA_SIG_RELATIVE	= bcalparms["BCAL_SIGMA_SIG_RELATIVE"];
+	  BCAL_SIGMA_PED_RELATIVE	= bcalparms["BCAL_SIGMA_PED_RELATIVE"];
+	  BCAL_XTALK_FRACT			= bcalparms["BCAL_XTALK_FRACT"];
+	  BCAL_INTWINDOW_NS			= bcalparms["BCAL_INTWINDOW_NS"];
+	  BCAL_DEVICEPDE			= bcalparms["BCAL_DEVICEPDE"];
+	  BCAL_SAMPLING_FRACT		= bcalparms["BCAL_SAMPLING_FRACT"];
+	  BCAL_AVG_DARK_DIGI_VALS_PER_EVENT		= bcalparms["BCAL_AVG_DARK_DIGI_VALS_PER_EVENT"];
 	  BCAL_PHOTONSPERSIDEPERMEV_INFIBER = bcalparms["BCAL_PHOTONSPERSIDEPERMEV_INFIBER"];
 	  BCAL_SAMPLINGCOEFA = bcalparms["BCAL_SAMPLINGCOEFA"];
 	  BCAL_SAMPLINGCOEFB = bcalparms["BCAL_SAMPLINGCOEFB"];
 	  BCAL_TIMEDIFFCOEFA = bcalparms["BCAL_TIMEDIFFCOEFA"];
 	  BCAL_TIMEDIFFCOEFB = bcalparms["BCAL_TIMEDIFFCOEFB"];
-	  BCAL_CELLOUTERTHRESHOLD = bcalparms["BCAL_CELLOUTERTHRESHOLD"];
-	  Bcal_CellInnerThreshold = bcalparms["Bcal_CellInnerThreshold"];
 	}
 
 	{
