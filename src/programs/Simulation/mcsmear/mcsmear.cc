@@ -50,6 +50,7 @@ bool FDC_USE_PARAMETERIZED_SIGMA = true;
 double BCAL_DARKRATE_GHZ         = 0.;// 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
 double BCAL_SIGMA_SIG_RELATIVE   = 0.;// 0.105  (from calibDB BCAL/bcal_parms)
 double BCAL_SIGMA_PED_RELATIVE   = 0.;// 0.139  (from calibDB BCAL/bcal_parms)
+double BCAL_SIPM_GAIN_VARIATION  = 0.;// 0.04   (from calibDB BCAL/bcal_parms)
 double BCAL_XTALK_FRACT          = 0.;// 0.157  (from calibDB BCAL/bcal_parms)
 double BCAL_INTWINDOW_NS         = 0.;// 100    (from calibDB BCAL/bcal_parms)
 double BCAL_DEVICEPDE            = 0.;// 0.21   (from calibDB BCAL/bcal_parms)
@@ -147,6 +148,7 @@ int main(int narg,char* argv[])
 	  BCAL_DARKRATE_GHZ			=  bcalparms["BCAL_DARKRATE_GHZ"];
 	  BCAL_SIGMA_SIG_RELATIVE	= bcalparms["BCAL_SIGMA_SIG_RELATIVE"];
 	  BCAL_SIGMA_PED_RELATIVE	= bcalparms["BCAL_SIGMA_PED_RELATIVE"];
+	  BCAL_SIPM_GAIN_VARIATION	= bcalparms["BCAL_SIPM_GAIN_VARIATION"];
 	  BCAL_XTALK_FRACT			= bcalparms["BCAL_XTALK_FRACT"];
 	  BCAL_INTWINDOW_NS			= bcalparms["BCAL_INTWINDOW_NS"];
 	  BCAL_DEVICEPDE			= bcalparms["BCAL_DEVICEPDE"];

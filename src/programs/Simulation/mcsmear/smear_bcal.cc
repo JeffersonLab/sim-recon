@@ -74,6 +74,7 @@ extern bool NO_THRESHOLD_CUT;
 extern double BCAL_DARKRATE_GHZ;                // 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
 extern double BCAL_SIGMA_SIG_RELATIVE;          // 0.105  (from calibDB BCAL/bcal_parms)
 extern double BCAL_SIGMA_PED_RELATIVE;          // 0.139  (from calibDB BCAL/bcal_parms)
+extern double BCAL_SIPM_GAIN_VARIATION;         // 0.04   (from calibDB BCAL/bcal_parms)
 extern double BCAL_XTALK_FRACT;                 // 0.157  (from calibDB BCAL/bcal_parms)
 extern double BCAL_INTWINDOW_NS;                // 100    (from calibDB BCAL/bcal_parms)
 extern double BCAL_DEVICEPDE;                   // 0.21   (from calibDB BCAL/bcal_parms)
@@ -531,8 +532,9 @@ void CalculateThresholds(void)
 	// Single PE signal and pedestal widths (values in calibDB are for single tile)
 	double sigma_singlePE = BCAL_SIGMA_SIG_RELATIVE * BCAL_mevPerPE * k_MeV;
 	double sigma_ped = sqrt(Ntiles) * BCAL_SIGMA_PED_RELATIVE * BCAL_mevPerPE * k_MeV;
+	double sigma_gain_variation = BCAL_SIPM_GAIN_VARIATION * BCAL_mevPerPE * k_MeV;
 	
-	BCAL_sigma_singlePE_sq = sigma_singlePE*sigma_singlePE;
+	BCAL_sigma_singlePE_sq = sigma_singlePE*sigma_singlePE + sigma_gain_variation*sigma_gain_variation; // gain variation contributes in same way as single PE width
 	BCAL_sigma_ped_sq = sigma_ped*sigma_ped;
 
 	// Mean number of dark pulses from one SiPM inside integration window
