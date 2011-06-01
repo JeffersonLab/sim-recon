@@ -31,8 +31,8 @@ class DPhysicsEvent:public jana::JObject{
 
 		vector<const DParticleSet*>particle_sets;
 
-		void toStrings(vector<pair<string,string> > &items)const{
-
+		void toStrings(vector<pair<string,string> > &items)const{			
+			AddString(items, "Num particle sets", "%d", particle_sets.size());
 		}
 };
 
