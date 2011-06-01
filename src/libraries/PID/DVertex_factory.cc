@@ -456,6 +456,42 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
         
         _data.push_back(my_vertex);
   }
+  
+  // We now have all of the reconstructed particles grouped together
+  // by vertex. Well, almost... The objects stored in the "showers" 
+  // vector of each vertex contain a pointer to either a DBCALShower
+  // or a DFCALCluster (soon to be renamed to DFCALShower). Those
+  // objects have a position and energy of the shower, but no momentum
+  // vector as the vertex position wasn't known until now. Here, we
+  // loop over all vertexes, and all showers within the vertex and
+  // calculate the momentum vector of each, storing it in the 
+  // DKinematicData part of the shower_info_t.
+  for(unsigned int i=0; i<_data.size(); i++){
+  	DVertex *vertex = _data[i];
+	DVector3 vpos(vertex->x.X(), vertex->x.Y(), vertex->x.Z());
+	for(unsigned int j=0; j<vertex->showers.size(); j++){
+		DVertex::shower_info_t &si = vertex->showers[j];
+		DVector3 pos;
+		double E = 0.0;
+		if(si.bcal){
+			pos.SetXYZ(si.bcal->x, si.bcal->y, si.bcal->z);
+			E = si.bcal->E;
+		}
+		if(si.fcal){
+			pos = si.fcal->getCentroid();
+			E = si.fcal->getEnergy();
+		}
+		
+		// Calculate momentum vector and fill in DKinematicData
+		// part of shower_info_t
+		DVector3 p = pos - vpos;
+		p.SetMag(E);
+		si.setMomentum(p);
+		si.setMass(0.0);
+		si.clearErrorMatrix(); // FIXME!!!
+		si.clearTrackingErrorMatrix();
+	}
+  }
 
   return NOERROR;
 }
