@@ -56,8 +56,8 @@
 #define MIN_CDC_ITER 0
 
 #define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.0001 // 100 keV
-#define DE_PER_STEP_TIME_BASED 0.0001
+#define DE_PER_STEP_WIRE_BASED 0.00025 // 250 keV
+#define DE_PER_STEP_TIME_BASED 0.00025
 #define BFIELD_FRAC 0.002
 #define MIN_STEP_SIZE 0.1 // 1 mm
 #define CDC_INTERNAL_STEP_SIZE 0.2
@@ -110,7 +110,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     my_cdchits.clear();
     central_traj.clear();
     forward_traj.clear();
-    forward_traj_cdc.clear();
     cov.clear();
     fcov.clear();
 
@@ -280,7 +279,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Lists containing state, covariance, and jacobian at each step
   deque<DKalmanSIMDState_t>central_traj;
   deque<DKalmanSIMDState_t>forward_traj;
-  deque<DKalmanSIMDState_t>forward_traj_cdc;
 
   // flight time and path length
   double ftime, len;
