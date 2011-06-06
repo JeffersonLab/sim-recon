@@ -1,0 +1,472 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-06-02
+   Date: June 6, 2011
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 7980 of trunk/sim-recon .
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.1
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.1
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r7698 | staylor | 2011-04-05 15:25:07 -0400 (Tue, 05 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+Code no longer gets the geometry and bfield for every event.  Added some code to get some FDC calibration constants from the claibration database.  Added a CALIB tagged version of the DFDCHit for using these calibration constants.
+------------------------------------------------------------------------
+r7700 | davidl | 2011-04-06 11:55:17 -0400 (Wed, 06 Apr 2011) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+
+Added dEdx member to DParticleID::dedx_t class so it could be
+used in the DParticleID_dedx_cmp comparison function without
+being exposed to the FPU/sort bug.
+
+This change has not been completely verified at this point as
+I'm not the original author. Calculation of dE/dx is done only
+in the constructor.
+
+------------------------------------------------------------------------
+r7701 | shepherd | 2011-04-06 12:06:47 -0400 (Wed, 06 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.h
+
+Remove addition of single ended hits.  This is problematic when SiPM dark hits exist.  Revise how cluster building is performed by utilizing the Moliere radius.  This is an incremental improvement on clusterizing -- more work is still needed.
+------------------------------------------------------------------------
+r7704 | staylor | 2011-04-07 09:07:57 -0400 (Thu, 07 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Implement TRKFIT:USE_MULS_COVARIANCE parameter to enable turning on and off the covariance terms for multiple scattering. By default the process noise (multiple scattering) covariance contribution is on.
+------------------------------------------------------------------------
+r7716 | shepherd | 2011-04-12 10:33:55 -0400 (Tue, 12 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.h
+
+turn off diagnostic histograms by default in the repository
+------------------------------------------------------------------------
+r7717 | shepherd | 2011-04-12 10:36:30 -0400 (Tue, 12 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.h
+
+Add preprocessor directive to switch between summed and not summed configurations -- this is a temporary feature until the final design is settled
+------------------------------------------------------------------------
+r7718 | shepherd | 2011-04-12 10:37:17 -0400 (Tue, 12 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc
+
+update energy calibration parameters for both summed and not summed configurations
+------------------------------------------------------------------------
+r7737 | staylor | 2011-04-19 11:09:34 -0400 (Tue, 19 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Add TRKFIT:CORRECT_FOR_ELOSS parameter for turning on/off energy loss correction in fitting.  By default the correction is on.
+------------------------------------------------------------------------
+r7738 | somov | 2011-04-19 15:02:21 -0400 (Tue, 19 Apr 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Spectrometer.xml
+
+Change the distance between the focal plane
+and the VC exit window flange to 6 cm. The 
+flange thickness is 1 inch.
+------------------------------------------------------------------------
+r7739 | somov | 2011-04-19 15:02:53 -0400 (Tue, 19 Apr 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/TaggerArea.xml
+
+Change the distance between the focal plane
+and the VC exit window flange to 6 cm. The 
+flange thickness is 1 inch.
+------------------------------------------------------------------------
+r7743 | staylor | 2011-04-20 09:55:16 -0400 (Wed, 20 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleSet.h
+
+Add place holders for vectors of other particles not in the standard list of kaons, protons, and pions.  Currently these otherm and otherp vectors are empty.
+------------------------------------------------------------------------
+r7744 | staylor | 2011-04-20 09:58:05 -0400 (Wed, 20 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DPhysicsEvent.h
+   M /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.h
+
+Revamped version of DPhysicsEvent to consist of a vector of DParticleSets.  Currently there is a one-to-one correspondence between DPhysicsEvents and DParticleSets.
+------------------------------------------------------------------------
+r7745 | staylor | 2011-04-20 09:58:43 -0400 (Wed, 20 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.h
+
+Modify to be consistent with new DPhysicsEvent/DParticleSet structure.
+------------------------------------------------------------------------
+r7751 | staylor | 2011-04-21 10:57:32 -0400 (Thu, 21 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Some simplification of the code for tracks with hits in the cdc.  Also try to handle tracks exiting the upstream endplate a little better.
+------------------------------------------------------------------------
+r7752 | staylor | 2011-04-21 11:09:25 -0400 (Thu, 21 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Some simplification of the code for tracks with hits in the cdc.  Also try to handle tracks exiting the upstream endplate a little better.
+------------------------------------------------------------------------
+r7754 | davidl | 2011-04-21 16:53:31 -0400 (Thu, 21 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.common
+
+Add optimization flags to LD_FLAGS as well since this is apparently needed to actually produce the gmon.out file.
+------------------------------------------------------------------------
+r7755 | davidl | 2011-04-22 09:14:43 -0400 (Fri, 22 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.h
+
+Add fADCId() method as well as a few more data members to DBCALGeometry to allow easier navigation between SiPM channels and electronics read out channels.
+------------------------------------------------------------------------
+r7756 | davidl | 2011-04-22 09:40:45 -0400 (Fri, 22 Apr 2011) | 18 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/DBCALHitGroup.h
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/DBCALReadoutChannel.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+- Modified how FDC smearing function was used so that a
+  mutex does not need to be locked whenever it is accessed
+
+- Switched default compile mode to JANA (using #define at
+  top of mcsmear.cc). This allows one to run mcsmear
+  multi-threaded giving some speed benefit (though not
+  with a slope of ~1 as with the reconstruction. This
+  is due to the larger fraction of time spent on I/O in
+  mcsmear.)
+
+- Moved BCAL smearing over to a separate file smear_bcal.cc
+
+- Began work on alternate BCAL smearing to address issues
+  related to out of time hits and speed optimization. The
+  default is still the same algorithm as before.
+
+
+
+------------------------------------------------------------------------
+r7764 | staylor | 2011-04-22 18:34:39 -0400 (Fri, 22 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Change how variance for cdc hits is computed by using the doca from the track instead of the measured drift distance as the argument to cdc_variance.
+------------------------------------------------------------------------
+r7768 | davidl | 2011-04-25 11:04:23 -0400 (Mon, 25 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit.h
+
+Print out to 10s of ps for DBCALHit objects when using hd_dump.
+------------------------------------------------------------------------
+r7779 | zihlmann | 2011-04-27 07:57:30 -0400 (Wed, 27 Apr 2011) | 4 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/DEventProcessor_trackanal.cc
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/DEventProcessor_trackanal.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/Makefile
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/README
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/readhist.C
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/src
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/src/Makefile
+   A /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/src/check2.cc
+
+plugin trackanal
+this plugin can be used to diagnose the tracking quality of a
+given event topology. The useage if explained in the README file.
+
+------------------------------------------------------------------------
+r7784 | staylor | 2011-04-28 13:12:26 -0400 (Thu, 28 Apr 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Fix bug in assignment of z-vertex for stray segments not matched to any other segments.
+------------------------------------------------------------------------
+r7791 | zihlmann | 2011-05-04 08:13:00 -0400 (Wed, 04 May 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCerenkov.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitGCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitStart.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitUPV.c
+
+restore the meaning of the variable "primary" in all the xxxxTruthxxxx structures to be 1 
+when the hit is created by an initially thrown particle and zero otherwise
+
+------------------------------------------------------------------------
+r7813 | davidl | 2011-05-12 08:42:54 -0400 (Thu, 12 May 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALTruthCell.h (from /trunk/home/davidl/Studies/2011.04.22.bcal_segmentation/sim-recon/src/libraries/BCAL/DBCALTruthCell.h:7810)
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/sim-recon/src/libraries/PID/DPhoton_factory.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Merging in changes to BCAL code that were made in a private area of repository, back into the main trunk. To see the comments on the original changes, do the following:
+
+svn log -r7760:7810 https://halldsvn.jlab.org/repos/trunk/home/davidl/Studies/2011.04.22.bcal_segmentation/sim-recon
+
+------------------------------------------------------------------------
+r7817 | davidl | 2011-05-13 08:47:46 -0400 (Fri, 13 May 2011) | 2 lines
+Changed paths:
+   D /trunk/sim-recon/src/programs/Simulation/mcsmear/DBCALHitGroup.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/DBCALReadoutChannel.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Updated revised bcal smearing code. The default is still the same as before so there should be no effective change unless the preprocessor directive is changed in the code and a recompile executed.
+
+------------------------------------------------------------------------
+r7818 | davidl | 2011-05-13 09:20:09 -0400 (Fri, 13 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.h
+
+Add fADC_layer() and fADC_sector() to DBCALGeometry to get the fADC channel info from the cell Id.
+------------------------------------------------------------------------
+r7819 | davidl | 2011-05-13 12:46:29 -0400 (Fri, 13 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+Add note to BCAL_CELLOUTERTHRESHOLD warning that it is unused. It will be removed entirely in the near future.
+------------------------------------------------------------------------
+r7820 | davidl | 2011-05-13 12:48:06 -0400 (Fri, 13 May 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Comment out NO_E_SMEAR, NO_T_SMEAR, and NO_DARK_PULSES which were accidentally left on previously.
+
+Also, made some tweaks to new smearing routine.
+
+------------------------------------------------------------------------
+r7829 | davidl | 2011-05-17 13:37:51 -0400 (Tue, 17 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+
+Fix typo in BCAL summed cell calculation of fADC_sector.
+------------------------------------------------------------------------
+r7830 | davidl | 2011-05-17 13:39:25 -0400 (Tue, 17 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALSiPMHit.h
+
+Added DBCALSiPMHit class to allow debugging by looking at pre-summed, no threshold SiPM values.
+------------------------------------------------------------------------
+r7831 | davidl | 2011-05-17 13:44:54 -0400 (Tue, 17 May 2011) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+- Added DBCALSiPMHit object extraction from HDDM file
+
+- Moved calls to DApplication::GetBfield and DApplication::GetGeometry
+  to only happen when DTrackTimeBased objects are being read from
+  HDDM file. Previously, this was done always forcing the several
+  second delay while reading in the B-field map(s). When looking
+  only data objects that don't require tracking, program startup
+  is now much faster.
+
+- Fixed typo that could potentially have led to seg. fault.
+
+
+------------------------------------------------------------------------
+r7832 | davidl | 2011-05-17 13:48:44 -0400 (Tue, 17 May 2011) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+- Fixed a few bugs such that smearing output of new BCAL smearing code
+  appears statistically identical to old code. Default is now set to
+  use the new code.
+
+- Old code still exists and and be selected using #if near top of file.
+  (see descriptive comments there) This should now be considered
+  deprectated and will be removed in the near future.
+
+------------------------------------------------------------------------
+r7834 | davidl | 2011-05-17 16:31:57 -0400 (Tue, 17 May 2011) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+-Make options for turning off BCAL smearing, dark
+ pulses, and thresholds command line selectable.
+
+-Remove old code that was #if 0'd out.
+
+------------------------------------------------------------------------
+r7843 | davidl | 2011-05-18 13:07:22 -0400 (Wed, 18 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Convert energy measured at SiPM into photoelectrons, then  back into energy, then smeared based on sigma calculated from number of photoelectrons.
+------------------------------------------------------------------------
+r7845 | staylor | 2011-05-18 18:14:38 -0400 (Wed, 18 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+I am moving the drift time smearing due to diffusion in the gas from mcsmear into hitFDC.c because it is common to the signals on the anode and the cathodes for a given avalanche.  In order to allow study of the amount of this smearing (which will be gas-dependent), I have added an extra field, namely t_unsmeared to the data model for fdcAnodeTruthHit.
+------------------------------------------------------------------------
+r7846 | staylor | 2011-05-18 18:16:27 -0400 (Wed, 18 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.h
+
+Added routine to get an array of constants (columns of the same type) from the calibDB.
+------------------------------------------------------------------------
+r7847 | staylor | 2011-05-18 18:19:01 -0400 (Wed, 18 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+Moved smearing of drift time from mcsmear to hitFDC.c so that the correlation between cathode signal and anode signal timing can be easily preserved.
+------------------------------------------------------------------------
+r7848 | staylor | 2011-05-18 18:24:27 -0400 (Wed, 18 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+move the part of the FDC smearing that modelled the effect of diffusion in the gas out of mcsmear and into hitFDC.  Additional smearing due to sources outside the chamber itself is still allowed for, modelled at the momentum with a simple gaussian distribution.
+------------------------------------------------------------------------
+r7870 | staylor | 2011-05-24 13:48:19 -0400 (Tue, 24 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+
+Modified code dealing with tracks exiting the ends of the straws for which the true doca to a wire extending to infinity would be beyond the physical extent of the straw.  The previous code dealing with this never actually got called.
+------------------------------------------------------------------------
+r7871 | staylor | 2011-05-24 13:54:58 -0400 (Tue, 24 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+Simplify the calculation of the scale factor for dEsum to create dE, which is used to create q_anode (which is then distributed over the strips) for the case that one one wire fire (the code takes into account that dEsum will be shared between two adjacent wires firing as far as the signals are concerned).  This modification has the side effect that now negative energy depositions (leading to zero-value signals on the strips) no longer occur.Also modified slightly the calculation of the y-position (along the wire) corresponding to the doca, which previously used to be set to the plane of the wires.
+------------------------------------------------------------------------
+r7872 | kornicer | 2011-05-25 09:01:21 -0400 (Wed, 25 May 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALPhoton_factory.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALPhoton_factory.h
+
+DFCALPhoton_factory: temporary fix for vertex problem. If no vertex info, use target center for depth correction. 
+
+------------------------------------------------------------------------
+r7873 | davidl | 2011-05-25 09:51:59 -0400 (Wed, 25 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+
+Create DVertex objects at center of target for all orphan shower groups.
+------------------------------------------------------------------------
+r7878 | davidl | 2011-05-31 09:12:40 -0400 (Tue, 31 May 2011) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+
+Increased the default number of sigmas that particles could be separated in time and z-position each to 100 from 3. This is to temporarily address the issue of having too many vertexes reconstructed leading to multiple DPhysicsEvent objects for nearly every generated b1pi event.
+
+The above number of sigmas were put into two configuration parameters so they are adjustable at run time. They are PID:GROUP_NUM_SIGMAS_TIME and PID:GROUP_NUM_SIGMAS_Z.
+
+Debugging histograms were added to monitor the number of sigmas actually calculated for the data set being analyzed. These are disabled by default, but can be enabled by setting the PID:DEBUG_HISTS to "1".
+
+The PID:DEBUG_HISTS was also made to control creation and filling of the other two existing debug histos so the decision could be made at run time as opposed to compile time.
+
+------------------------------------------------------------------------
+r7879 | davidl | 2011-05-31 09:37:21 -0400 (Tue, 31 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/SampleGaussian.cc
+
+Have SamplePoisson return a double rather than an int.
+------------------------------------------------------------------------
+r7881 | davidl | 2011-05-31 10:08:30 -0400 (Tue, 31 May 2011) | 16 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Significant change to how the BCAL readout threshold is calculated in mcsmear.
+
+The algorithm now develops a fully smeared, smooth distribution
+of dark pulse amplitudes based on the parameters in the calibDB.
+The thresholds are set independently for the inner and outer
+regions based on the BCAL_AVG_DARK_DIGI_VALS_PER_EVENT calibration
+value. The thresholds are both set such that an equal fraction of
+the readout channels will be read out due to dark pulses only.
+The fraction itself is set by the limit on event size as given
+by BCAL_AVG_DARK_DIGI_VALS_PER_EVENT.
+
+Also, all "float"s were changed to "double"s.
+
+Code is currently not thread safe so should be run in single
+threaded mode only.
+
+------------------------------------------------------------------------
+r7883 | davidl | 2011-05-31 11:44:11 -0400 (Tue, 31 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Include BCAL_SIPM_GAIN_VARIATION calib parameter so the contribution to the signal width due to gain variation between tiles can be included in mcsmear.
+------------------------------------------------------------------------
+r7884 | davidl | 2011-05-31 17:00:42 -0400 (Tue, 31 May 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Fixed typo in conversion from GeV to MeV used for calculating sigmas in threshold calculation.
+------------------------------------------------------------------------
+r7885 | davidl | 2011-06-01 08:52:24 -0400 (Wed, 01 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DPhysicsEvent.h
+
+Added one column output string to DPhysicsEvent's toStrings method that just prints the number of particle sets.
+------------------------------------------------------------------------
+r7886 | davidl | 2011-06-01 08:56:30 -0400 (Wed, 01 Jun 2011) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+
+Added loop over vertexes at end of DVertex_factory to calculate momentum vector for photons based on the vertex position. The energy and momentum info are then copied into the DKinematicData part of the DVertex::shower_info_t objects.
+
+Note that the error matrix in DKinematicData is not being filled.
+
+This addresses the issue of all photons obtained via DPhysicsEvent having zero energy and zero momentum.
+
+------------------------------------------------------------------------
