@@ -1,0 +1,12 @@
+
+
+6/7/2011 David Lawrence
+
+This plugin will provide a factory that produces DTrigger objects
+that contain a flag indicating whether the level 1 trigger *would*
+have fired for the event based on the raw data in the event.
+
+This is for use with Simulated Data only.
+
+
+
