@@ -73,11 +73,10 @@ jerror_t JEventProcessor_event_size::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, int eventnumber)
 {
-	// Ignore events not passing Level 1 trigger
+	// Ignore events with no Level 1 trigger info
 	const DTrigger *trig=NULL;
 	try{
 		loop->GetSingle(trig);
-		if(!trig->L1fired)return NOERROR;
 	}catch(...){
 		return NOERROR;
 	};
@@ -130,6 +129,12 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, int eventnumber)
 	
 	evt->event = eventnumber;
 	evt->Egamma = beamphotons.size()>0 ? beamphotons[0]->momentum().Mag():0.0;
+	evt->L1a_fired = trig->L1a_fired;
+	evt->L1b_fired = trig->L1b_fired;
+	evt->Ebcal_trig = trig->Ebcal;
+	evt->Efcal_trig = trig->Efcal;
+	evt->Nsc_trig = trig->Nschits;
+	
 	evt->Nbcalhits_inner = Nbcalhits_inner;
 	evt->Nbcalhits_outer = Nbcalhits_outer;
 	evt->Nfcalhits = fcalhits.size();

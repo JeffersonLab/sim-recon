@@ -18,10 +18,16 @@
 /// to process or ignore the event.
 ///
 /// Much of this is based on the information GlueX-doc-1043. What is
-/// currently implemented is the algorithm described on page 13 where
-/// BCAL + 0.25*FCAL >= 2.0GeV. The start counter is ignored here unless
-/// the TRIG:REQUIRE_START_COUNTER config. parameter is set to a non-zero
-/// value.
+/// currently implemented are two algorithms described on page 13.
+/// both require BCAL + 4*FCAL >= 2.0GeV. Additional requirements are:
+///
+/// L1afired: BCAL > 200 MeV  &&  FCAL > 30 MeV
+///
+/// L1bfired: BCAL > 30 MeV  &&  FCAL > 30 MeV  &&  NSC > 0
+///
+/// The values of BCAL and FCAL and NSC used to make the decision
+/// are kept in the DTrigger object at Ebcal, Efcal, and Nschits
+/// respectively.
 
 class DTrigger_factory:public jana::JFactory<DTrigger>{
 	public:

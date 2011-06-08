@@ -46,6 +46,12 @@ class Event:public TObject{
 		
 		ULong64_t event;
 		float Egamma;
+		bool L1a_fired;
+		bool L1b_fired;
+		float Ebcal_trig;
+		float Efcal_trig;
+		unsigned int Nsc_trig;
+		
 		unsigned int Nbcalhits_inner;
 		unsigned int Nbcalhits_outer;
 		unsigned int Nfcalhits;

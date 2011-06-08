@@ -42,10 +42,6 @@ jerror_t DTrigger_factory::init(void)
 //------------------
 jerror_t DTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	REQUIRE_START_COUNTER = false;
-	
-	gPARMS->SetDefaultParameter("TRIG:REQUIRE_START_COUNTER", REQUIRE_START_COUNTER, "require at least 1 start counter hit for the (simulated) level 1 trigger to fire");
-
 	// Get attenuation parameters
 	double L_over_2 = DBCALGeometry::BCALFIBERLENGTH/2.0;
 	double Xo = DBCALGeometry::ATTEN_LENGTH;
@@ -124,17 +120,13 @@ jerror_t DTrigger_factory::evnt(JEventLoop *loop, int eventnumber)
 	DTrigger *trig = new DTrigger;
 
 	// BCAL and FCAL
-	trig->L1fired = (Ebcal + 0.25*Efcal)>=2.0;
-	if(Ebcal<0.030)trig->L1fired = false; // pg. 12 of GlueX-doc-1043 suggests this be 0.200 GeV, but pg. 13 says 0.030 GeV
-	if(Efcal<0.030)trig->L1fired = false;
+	bool sum_cut = (Ebcal + 4.0*Efcal)>=2.0;
+	trig->L1a_fired = sum_cut && Ebcal>0.200 && Efcal>0.030;
+	trig->L1b_fired = sum_cut && Ebcal>0.030 && Efcal>0.030 && Nschits>0;
 
-	// Optionally impose start counter requirement
-	if(REQUIRE_START_COUNTER && Nschits<1)trig->L1fired = false;
-	
 	trig->Ebcal = Ebcal;
 	trig->Efcal = Efcal;
 	trig->Nschits = Nschits;
-	trig->SCrequired = REQUIRE_START_COUNTER;
 	
 	_data.push_back(trig);
 

@@ -15,20 +15,21 @@ class DTrigger:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DTrigger);
 		
-		bool L1fired;
+		bool L1a_fired; // BCAL + 4FCAL >2 GeV && BCAL > 200 MeV && FCAL > 30 MeV
+		bool L1b_fired; // BCAL + 4FCAL >2 GeV && BCAL > 30 MeV && FCAL > 30 MeV && NSC>0
+
 		double Ebcal;
 		double Efcal;
 		unsigned int Nschits;
-		bool SCrequired;
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "L1fired", "%d", L1fired ? 1:0);
+			AddString(items, "L1a_fired", "%d", L1a_fired ? 1:0);
+			AddString(items, "L1b_fired", "%d", L1b_fired ? 1:0);
 			AddString(items, "Ebcal", "%5.3f", Ebcal);
 			AddString(items, "Efcal", "%5.3f", Efcal);
 			AddString(items, "Nschits", "%2d", Nschits);
-			AddString(items, "SCrequired", "%d", SCrequired);
 		}
 		
 };
