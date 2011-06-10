@@ -162,12 +162,12 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject
 
         DPhoton* photon = new DPhoton( id );
         
-        double energy = gamma->getEnergy();
+        double energy = gamma->lorentzMomentum().Energy();
 
 // default vertex is (0,0,65) and this has been taken into account in FCAL libraries
 // during MC calibration, make sure FCALPhoton returns centroid position in 
 // GlueX coordinates in the future..., in case we need it
-        DVector3 centroid = gamma->getPosition();  
+        DVector3 centroid = gamma->showerPosition();
 
         DVector3 vertex( PHOTON_VERTEX_X, PHOTON_VERTEX_Y, PHOTON_VERTEX_Z);
         DVector3 photonVector = centroid - vertex;
@@ -185,7 +185,7 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject
         photon->setPositionCal( centroid );
         photon->setMass( 0. );
         photon->setTag( DPhoton::kFcal );
-        photon->setTime( gamma->getTime() );
+        photon->setTime( gamma->showerTime() );
 
 // create the simplest error matrix:
 // At this point, it is assumed that error matrix of measured quantities is diagonal,
@@ -197,11 +197,10 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject
 
 //        sigmas[0][0] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
 //        sigmas[1][1] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
-        sigmas[0][0] = pow( 0.7 , 2.0 ); // x_c, y_c
-        sigmas[1][1] = pow( 0.7 , 2.0 ); // x_c, y_c
 
-//        sigmas[2][2] = pow( 2.54, 2.0); //  z_c = rms of average depth for photons from 0-5 GeV
-        sigmas[2][2] = pow( gamma->getPositionError().Z() , 2.0); 
+        sigmas(0,0) = pow( gamma->showerPositionErr().X(), 2.0); // 
+        sigmas(1,1) = pow( gamma->showerPositionErr().Y(), 2.0); // 
+        sigmas(2,2) = pow( gamma->showerPositionErr().Z(), 2.0); // 
 
         sigmas[3][3] =  (energy >= 0)  ? pow( 0.042*sqrt(energy) + 0.0001, 2.0 ) : 1e-6 ;
 

@@ -380,22 +380,23 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,
 // of track to a cluster and using this to check for a match. 
 jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, 
 				  DTrackFitter::fit_type_t fit_type,
-				  vector<const DFCALCluster*>&fcal_clusters,
+				  //vector<const DFCALCluster*>&fcal_clusters,
+				  vector<const DFCALShower*>&fcal_showers,
 				  double &tproj,unsigned int &fcal_match_id,
 				  double &dmin){ 
   tproj=NaN;
   fcal_match_id=0;
-  if (fcal_clusters.size()==0) return RESOURCE_UNAVAILABLE;
+  if (fcal_showers.size()==0) return RESOURCE_UNAVAILABLE;
   
   // Set minimum matching distance to a large default value
   dmin=10000.;
   // loop over clusters
   double match_flight_time=0.;
-  for (unsigned int k=0;k<fcal_clusters.size();k++){
+  for (unsigned int k=0;k<fcal_showers.size();k++){
     // Get the FCAL cluster position and normal vector for the TOF plane
-    DVector3 fcal_pos=fcal_clusters[k]->getCentroid();
+    DVector3 fcal_pos=fcal_showers[k]->getPosition();
     // This is a bit of a kludge...
-    fcal_pos.SetZ(DFCALGeometry::fcalFaceZ());
+    //fcal_pos.SetZ(DFCALGeometry::fcalFaceZ());
     DVector3 norm(0,0,1);
     DVector3 proj_pos,dir;
 
@@ -414,7 +415,7 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt,
  
   // Check for a match 
   if(dmin<5.0 /* temporary */){
-    tproj=fcal_clusters[fcal_match_id]->getTime()-match_flight_time;
+    tproj=fcal_showers[fcal_match_id]->getTime()-match_flight_time;
     
     return NOERROR;
   }

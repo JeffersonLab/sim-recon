@@ -135,7 +135,8 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
   // Get BCAL and FCAL showers
   vector<const DBCALShower*>bcal_showers;
   eventLoop->Get(bcal_showers, "KLOE" );
-  vector<const DFCALCluster*>fcal_showers;
+  //vector<const DFCALCluster*>fcal_showers;
+  vector<const DFCALShower*>fcal_showers;
   eventLoop->Get(fcal_showers);
 
   // group tracks according to candidate id
@@ -315,7 +316,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	vi->Fill(vi->t,vi->sigmat,vi->z,vi->sigmaz);
       }
       if (vi->fcal!=NULL && vi->is_matched_to_vertex==false){
-	double tflight=(vi->fcal->getCentroid()-_data[i]->x.Vect()).Mag()
+	double tflight=(vi->fcal->getPosition()-_data[i]->x.Vect()).Mag()
 	  /SPEED_OF_LIGHT;
 	vi->t-=tflight;
 	vi->Fill(vi->t,vi->sigmat,vi->z,vi->sigmaz);
@@ -398,7 +399,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	if (fcal_matches[i]!=1){
 	  vertexInfo_t *vi = vertexInfos_pool[vertices.size()];
 	  FillVertexInfoFCAL(vi,fcal_showers[i],i);
-	  double tflight=(vi->fcal->getCentroid()-target_center).Mag()
+	  double tflight=(vi->fcal->getPosition()-target_center).Mag()
 	  /SPEED_OF_LIGHT;
 	  vi->t-=tflight;
 	  vi->Fill(vi->t,vi->sigmat,vi->z,vi->sigmaz);
@@ -478,7 +479,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 			E = si.bcal->E;
 		}
 		if(si.fcal){
-			pos = si.fcal->getCentroid();
+			pos = si.fcal->getPosition();
 			E = si.fcal->getEnergy();
 		}
 		
@@ -603,7 +604,7 @@ void DVertex_factory::FillVertexInfoBCAL(DVertex_factory::vertexInfo_t *vi,
 // FillVertexInfoFCAL
 //------------------
 void DVertex_factory::FillVertexInfoFCAL(DVertex_factory::vertexInfo_t *vi,
-					 const DFCALCluster *fcal,
+					 const DFCALShower *fcal,
 					 unsigned int index){
    vi->Reset();
    vi->fcal=fcal;

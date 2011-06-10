@@ -31,7 +31,7 @@ class DVertex_factory:public jana::JFactory<DVertex>{
     vector<const DTrackTimeBased *>*hypotheses;
     const DBCALShower *bcal;
     unsigned int bcal_index;
-    const DFCALCluster *fcal;
+    const DFCALShower *fcal;
     unsigned int fcal_index;
     double t;
     double sigmat;
@@ -53,7 +53,7 @@ class DVertex_factory:public jana::JFactory<DVertex>{
   void FillVertexInfoBCAL(DVertex_factory::vertexInfo_t *vi,
 			  const DBCALShower *bcal, unsigned int index);
   void FillVertexInfoFCAL(DVertex_factory::vertexInfo_t *vi,
-			  const DFCALCluster *fcal,unsigned int index);
+			  const DFCALShower *fcal,unsigned int index);
   bool AllInGroups(vector<vertexInfo_t*> &vertices);
   void AssignParticlesToGroups(vector<vertexInfo_t*> &vertices,
 			       vector< vector<vertexInfo_t *> > &groups);

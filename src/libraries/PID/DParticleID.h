@@ -14,7 +14,8 @@
 #include "HDGEOMETRY/DRootGeom.h"
 #include <TRACKING/DTrackTimeBased_factory.h>
 #include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALCluster.h>
+//#include <FCAL/DFCALCluster.h>
+#include <FCAL/DFCALShower.h>
 #include <TOF/DTOFPoint.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TRACKING/DTrackFitter.h>
@@ -65,7 +66,7 @@ class DParticleID:public jana::JObject{
 		       double &tproj,unsigned int &bcal_match_id); 
   jerror_t MatchToFCAL(const DReferenceTrajectory *rt,
 		      DTrackFitter::fit_type_t fit_type,
-		       vector<const DFCALCluster*>&fcal_clusters,
+		       vector<const DFCALShower*>&fcal_showers,
 		       double &tproj,unsigned int &fcal_match_id,
 		       double &dmin);
   jerror_t MatchToSC(const DReferenceTrajectory *rt, 
