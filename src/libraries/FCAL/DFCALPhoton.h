@@ -1,101 +1,58 @@
-// $Id: DFCALPhoton.h 1899 2006-07-13 16:29:56Z davidl $
-//
-//    File: DFCALPhoton.h
-// Created: Tue Jan 22 11:57:50 EST 2005
-// Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
-//
+/*
+ *  DFCALPhoton.h
+ *  Hall D
+ *
+ */
 
 #ifndef _DFCALPhoton_
 #define _DFCALPhoton_
 
-#include <math.h>
-#include <DVector3.h>
-#include <DLorentzVector.h>
-#include "DFCALCluster.h"
-using namespace std;
+#include "DVector3.h"
+#include "DLorentzVector.h"
+
+#include "FCAL/DFCALShower.h"
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 using namespace jana;
 
-class DFCALPhoton:public JObject{
-	public:
-		JOBJECT_PUBLIC(DFCALPhoton);
-                
-			DFCALPhoton();
-			~DFCALPhoton();
+class DFCALPhoton : public JObject {
 
-		// getter functions
-			DVector3 getPosition() const; 
-                        DVector3 getPositionError() const;
-			double getEnergy() const;  
-			double getTime() const;  
-			DVector3 getMom3() const; 
-			DLorentzVector getMom4() const;
+public:
 
-		// set photon energy and position 
-			void setPosition( const DVector3 aPosition );  
-			void setEnergy(const double energy);  
-			void setTime(const double time);  
-
-                        void setPosError(const double aXerr, const double aYerr, const double aZerr);
-
-                // set photon momentum
-			void setMom3(const double energy, const DVector3 pos);    
-			void setMom4();  
-
+    JOBJECT_PUBLIC( DFCALPhoton );
+    
+    DFCALPhoton(){}
+    ~DFCALPhoton(){}
+        
+    inline DVector3 showerPosition() const { return m_position; }
+    inline DVector3 showerPositionErr() const { return m_positionErr; }
+    inline double showerTime() const { return m_time; }
+    inline DLorentzVector lorentzMomentum() const { return m_p4; }
+    
+    void setShowerPosition( const DVector3& vec3 ) { m_position = vec3; }
+    void setShowerPositionErr( const DVector3& vec3 ) { m_positionErr = vec3; }
+    void setShowerTime( const double t ) { m_time = t; }
+    void setLorentzMomentum( const DLorentzVector& p4 ) { m_p4 = p4; }
+    
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "E(GeV)", "%6.2f", getEnergy());
-			AddString(items, "Px(GeV)", "%6.2f", getMom3().X());
-			AddString(items, "Py(GeV)", "%6.2f", getMom3().Y());
-			AddString(items, "Pz(GeV)", "%6.2f", getMom3().Z());
-			AddString(items, "X(cm)", "%7.2f", getPosition().X());
-			AddString(items, "Y(cm)", "%7.2f", getPosition().Y());
-			AddString(items, "Z(cm)", "%7.2f", getPosition().Z());
-			AddString(items, "t(ns)", "%7.2f", getTime());
+			AddString(items, "x", "%3.2f", m_position.X());
+			AddString(items, "y", "%3.2f", m_position.Y());
+			AddString(items, "z", "%3.2f", m_position.Z());
+			AddString(items, "px", "%5.2f", m_p4.Px());
+			AddString(items, "py", "%5.2f", m_p4.Py());
+			AddString(items, "pz", "%5.2f", m_p4.Pz());
+			AddString(items, "E" , "%5.2f", m_p4.E());
+			AddString(items, "t" , "%5.2f", m_time);
 		}
 
-	private:
-
-			double fEnergy; 
-			double fTime; 
-			DVector3 fPosition;  // Photon position in the FCAL
-                        DVector3 fPositionError;  // Errors in X and Y are estimated from
-			DVector3 fMom3;  // Photon 3-momentum
-			DLorentzVector fMom4;  // Photon 4-momentum
+private:
+      
+    DVector3 m_position;
+    DVector3 m_positionErr;
+    double m_time;
+    DLorentzVector m_p4;
 };
-
-
-inline DVector3 DFCALPhoton::getPosition() const
-{
-      return fPosition;
-}
-
-inline DVector3 DFCALPhoton::getPositionError() const
-{
-      return fPositionError;
-}
-
-inline DVector3 DFCALPhoton::getMom3() const
-{
-      return fMom3;
-}
-
-inline double DFCALPhoton::getEnergy() const
-{
-      return fEnergy;
-}
-
-inline double DFCALPhoton::getTime() const
-{
-      return fTime;
-}
-
-
-inline DLorentzVector DFCALPhoton::getMom4() const
-{
-      return fMom4;
-}
 
 
 #endif // _DFCALPhoton_

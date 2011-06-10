@@ -5,6 +5,7 @@ using namespace jana;
 
 #include "DFCALCluster_factory.h"
 #include "DFCALGeometry_factory.h"
+#include "DFCALShower_factory.h"
 #include "DFCALPhoton_factory.h"
 
 #include "DFCALTruthShower.h"
@@ -18,6 +19,7 @@ jerror_t FCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DFCALHit_factory());
 	loop->AddFactory(new DFCALHit_factory("TRUTH"));
 	loop->AddFactory(new DFCALCluster_factory());
+	loop->AddFactory(new DFCALShower_factory());
 	loop->AddFactory(new DFCALPhoton_factory());
 	loop->AddFactory(new DFCALGeometry_factory());
 	loop->AddFactory(new DFCALTruthShower_factory());
