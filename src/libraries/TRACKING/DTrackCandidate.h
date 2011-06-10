@@ -18,6 +18,11 @@ class DReferenceTrajectory;
 
 #define MAX_IHITS 256
 
+/// DTrackCandidate objects are the result of track finding and the
+/// input to track fitting. Several algorithms exist for making
+/// these and then merging them. For the default, see
+/// DTrackCandidate_factory .
+
 class DTrackCandidate:public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DTrackCandidate);
