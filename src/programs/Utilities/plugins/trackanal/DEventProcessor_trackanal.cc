@@ -47,6 +47,7 @@ void InitPlugin(JApplication *app){
 }
 } // "C"
 
+#define DEBUG 0
 
 //------------------
 // DEventProcessor_trackanal (Constructor)
@@ -73,7 +74,7 @@ jerror_t DEventProcessor_trackanal::init(void)
   // create Tree to hold TOF data
     
   ROOTFile = new TFile("trackanal.root", "recreate");
-  ROOTFile->cd();
+  //ROOTFile->cd();
   
   TrackTree = new TTree("TrackTree", "Track raw data");
   
@@ -91,6 +92,13 @@ jerror_t DEventProcessor_trackanal::init(void)
   TrackTree->Branch("TrCandQ",      TrCandQ,     "TrCandQ[NTrCand]/F"); 
   TrackTree->Branch("TrCandP",      TrCandP,     "TrCandP[NTrCand]/F"); 
   TrackTree->Branch("TrCandN",      TrCandN,     "TrCandN[NTrCand]/F"); 
+  TrackTree->Branch("TrCandM",      TrCandM,     "TrCandM[NTrCand]/F"); 
+
+  // NTRCand: number of track candidates
+  // TrCandQ: charge of the track candidates
+  // TrCandP: particle momentum of the track candidates
+  // TrCandN: number of detrees of freedom of track candidates
+  // TrCandM: number of hits in track candidate with found match to TruthPoints
 
   TrackTree->Branch("NTrFit",      &NTrFit,      "NTrFit/I");
   TrackTree->Branch("trlistcand",  trlistcand,   "trlistcand[NTrFit]/I");
@@ -105,7 +113,7 @@ jerror_t DEventProcessor_trackanal::init(void)
   TrackTree->Branch("ptypes",      ptypes,       "ptypes[NTrCandHits]/F");
 
   MaxT = MaxTrThrown;
-  MaxC = MaxTrFit;
+  MaxC = MaxTrCand;
   MaxF = MaxTrFit;
 
   Int_t MaxArray = MaxF*MaxF;
@@ -169,13 +177,8 @@ jerror_t DEventProcessor_trackanal::evnt(JEventLoop *loop, int eventnumber)
 
   NTrFit = ntr;
 
-  //cout<<"==== "<<ntr<<endl;
-
-  for (int i=0;i<ntr;i++){
+  for (int i=0;i<NTrFit;i++){
     int cid = trFit[i]->candidateid;
-
-    //cout<<eventnumber<<" : "<<i<<"  "<<cid<<" "<<trFit[i]->FOM<<"  "
-    //<<trFit[i]->rt->GetMass()<<"  "<< trFit[i]->pmag() <<endl;
 
     trlistcand[i] = cid; 
     trlistFOM[i] = trFit[i]->FOM;
@@ -207,17 +210,12 @@ jerror_t DEventProcessor_trackanal::evnt(JEventLoop *loop, int eventnumber)
   ntr  = trCand.size();
 
   if (ntr>MaxC){
-    //  cout<<"too Many Track candidates!!!! "<<NTrCand<<endl;;
     NTrCand = MaxC;
   } else {
     NTrCand = ntr;
   }
   
   NTrCandHits = NTrCand*MaxTrFit;
-
-  //cout<<endl;
-  //cout<<"Event "<<eventnumber<<"    with thrown tracks: "<<NTrThrown<<"     and "<<NTrCand<<" track Candidates"<<endl;
-
 
   // loop over all track candidates and find how many wire chamber hits contribute
   // and from which particle track they stem.
@@ -238,27 +236,29 @@ jerror_t DEventProcessor_trackanal::evnt(JEventLoop *loop, int eventnumber)
 
     TrCandQ[k] = trCand[k]->charge();
     TrCandP[k] = trCand[k]->pmag();
-    TrCandN[k] = trCand[k]->Ndof;
+    TrCandN[k] = 0.;
+    TrCandM[k] = 0.;
 
     vector<const DFDCPseudo*> fdcPHits;
     trCand[k]->Get(fdcPHits);
     int npfdc = fdcPHits.size();
-    int nhitsfdc = 0;
+    TrCandN[k] += (Float_t)npfdc;
 
-    // first get hits associated with the FDC Pseudo hits
     hitcounter = 0;
     for (int j=0;j<npfdc;j++){
 
+      // for each FDC Pseudo hit get associated object DMCTrackHit
       vector<const DMCTrackHit*> mcTrackHits;
       fdcPHits[j]->Get(mcTrackHits);
-      nhitsfdc += mcTrackHits.size();
-      
-      for (int i=0;i<(int)mcTrackHits.size();i++) {
+      Int_t asize = mcTrackHits.size();
+
+      for (int i=0;i<asize;i++) {
 	int tr = mcTrackHits[i]->track; // track number if >NTrThrown scondary
-	//cout<<k<<"  "<<tr<<endl;
+
 	if (tr > NTrThrown){
 	  tr = 0; // any track other than thrown is set as zero
 	}
+
 	// this means nh contains only hits from initially thrown particles.
 	nh[k*MaxF + tr] += 1.0;
 	hitcounter++;
@@ -268,22 +268,27 @@ jerror_t DEventProcessor_trackanal::evnt(JEventLoop *loop, int eventnumber)
 	}
 	ptypes[k*MaxF + pt] += 1.0;
       }
+      TrCandM[k] += (Float_t) asize;
     }
-    
+
     
     vector<const DCDCTrackHit*> cdcTrackHits;
     trCand[k]->Get(cdcTrackHits);
     int nhitscdc = cdcTrackHits.size();
-    
-    // now get hits associated with the CDC
+    TrCandN[k] += (Float_t)nhitscdc;
+
+    // loop over cdc hits used for this track candiate
     for (int j=0;j<nhitscdc;j++){
+
+      // for each hit get the associated hit object DMCTrackHit 
       vector<const DMCTrackHit*> cdcHits;
       cdcTrackHits[j]->Get(cdcHits);
 
-      for (int n=0;n<(int)cdcHits.size();n++) {
+      Int_t asize = cdcHits.size();
+
+      for (int n=0;n<asize;n++) {
 	int tr = cdcHits[n]->track;
-	//if (k==2)
-	  //cout<<tr<<endl;
+
 	if (tr > NTrThrown){
 	  tr = 0;
 	}
@@ -295,26 +300,21 @@ jerror_t DEventProcessor_trackanal::evnt(JEventLoop *loop, int eventnumber)
 	}
 	ptypes[k*MaxF + pt] += 1.;
       }
+
+      TrCandM[k] += (Float_t)asize;
     }
-    
-    //cout<< k << "  " << ptypes[k*15+0] << "  " << ptypes[k*15+8] << "  " << ptypes[k*15+9];
-    //cout<< "  "<< ptypes[k*15+14] << endl;
-    //if (hitcounter<1){
-    //  cout<<endl;
-    //  cout<<"Event "<<eventnumber<<endl;
-    //  cout<< k << "  "<< nh[k*15+0] << "  " << nh[k*15+1] << "  "<< nh[k*15+2] << "  ";
-    //  cout<< nh[k*15+3] << "  "<< nh[k*15+4] <<endl;
-    //}
+
   }
 
-  //cout<< EventNum << "  " << NTrThrown << "  " << NTrFit << "  " <<NTrCand<<"  "<<NTrCandHits<<" ...END"<<endl;
+  if (DEBUG){
+    cout<<EventNum << "  " << NTrThrown << "  " << NTrCand << "  " << NTrFit 
+	<< "  " << NTrCandHits << endl;
+      }
 
   TrackTree->Fill();
   
   pthread_mutex_unlock(&mutex);
 
-  //cout<<"End of Event "<< eventnumber <<endl;
-  
   return NOERROR;
 }
 
@@ -334,13 +334,16 @@ jerror_t DEventProcessor_trackanal::erun(void)
 jerror_t DEventProcessor_trackanal::fini(void)
 {
 	// Called at very end. This will be called only once
+  pthread_mutex_lock(&mutex);
 
-  ROOTFile->cd();
+  //ROOTFile->cd();
   ROOTFile->Write();
   ROOTFile->Close();
   //delete ROOTFile;
   cout<<endl<<"Close ROOT file"<<endl;
-  
+
+  pthread_mutex_unlock(&mutex);
+
   return NOERROR;
 }
 

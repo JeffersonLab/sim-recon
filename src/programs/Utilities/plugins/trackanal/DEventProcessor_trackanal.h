@@ -14,8 +14,9 @@ using namespace std;
 #include <TFile.h>
 
 #include <JANA/JEventProcessor.h>
-#define MaxTrThrown 25
-#define MaxTrFit 30
+#define MaxTrThrown 30
+#define MaxTrCand 35
+#define MaxTrFit 60
 
 class DEventProcessor_trackanal:public jana::JEventProcessor{
  public:
@@ -36,9 +37,10 @@ class DEventProcessor_trackanal:public jana::JEventProcessor{
   Float_t ThrownPp[MaxTrThrown];  // particle momentum of thrown tracks
   Float_t ThrownQ[MaxTrThrown];   // electric charge of thrown particle
   Int_t NTrCand;
-  Float_t TrCandP[MaxTrThrown];   // momentum of track candidate
-  Float_t TrCandQ[MaxTrThrown];   // charge of track candidate
-  Float_t TrCandN[MaxTrThrown];   // number of hits of track candidate
+  Float_t TrCandP[MaxTrCand];   // momentum of track candidate
+  Float_t TrCandQ[MaxTrCand];   // charge of track candidate
+  Float_t TrCandN[MaxTrCand];   // number of hits of track candidate
+  Float_t TrCandM[MaxTrCand];   // number of hits with match found in TruthPoint
   Int_t NTrCandHits;
   Int_t NTrFit;
   Int_t   trlistPtype[MaxTrFit];  // particle type of track candidate with best FOM

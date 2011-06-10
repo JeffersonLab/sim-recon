@@ -41,8 +41,6 @@ int main(int argc, char **argv) {
   INF = new TFile(InFile);
   INF->ls();
   
-  TTree *TrackTree = (TTree*)INF->Get("TrackTree");
-  
   Int_t EventNum;
   Int_t NTrThrown;
   Int_t ThrownPType[200]; // particle type of thrown tracks
@@ -52,6 +50,7 @@ int main(int argc, char **argv) {
   Float_t TrCandP[200];   // momentum of track candidate
   Float_t TrCandQ[200];   // charge of track candidate
   Float_t TrCandN[200];   // number of hits(Ndof) of track candidate
+  Float_t TrCandM[200];   // number of hits with match in TruthPoints for track candidates
   Int_t NTrCandHits;
   Int_t NTrFit;
   Int_t NTrHits;
@@ -64,6 +63,9 @@ int main(int argc, char **argv) {
   Float_t nh[900] ;        // for each track candidate the chamber hits of each thrown particle track     
   Float_t ptypes[900];     // for each track candidate the chamer hits for each particle type
   
+  TTree *TrackTree = (TTree*)INF->Get("TrackTree");
+  TrackTree->Print();
+
   TrackTree->SetBranchAddress("EventNum", &EventNum);
   TrackTree->SetBranchAddress("MaxT", &MaxT);
   TrackTree->SetBranchAddress("MaxC", &MaxC);
@@ -78,6 +80,7 @@ int main(int argc, char **argv) {
   TrackTree->SetBranchAddress("TrCandQ", TrCandQ);
   TrackTree->SetBranchAddress("TrCandP", TrCandP);
   TrackTree->SetBranchAddress("TrCandN", TrCandN);
+  TrackTree->SetBranchAddress("TrCandM", TrCandM);
 
   TrackTree->SetBranchAddress("NTrFit", &NTrFit);
   TrackTree->SetBranchAddress("trlistPtype", trlistPtype);
@@ -153,14 +156,19 @@ int main(int argc, char **argv) {
       Int_t SumHits = 0;
       Int_t MaxHits1 = 0;
       Int_t ptype = 0;
+      
+      // ratio of hits with a mach in TruthPoint to all hits
+      hist[Offset[4]-1]->Fill(TrCandM[j]/TrCandN[j]);
 
-      for (Int_t k=0;k<SZ;k++){
+      for (Int_t k=0;k<NTrThrown+1;k++){
 	//cout<<j<<" and "<<k<<endl;
 	SumHits += nh[j*SZ+k];
 	if (((Int_t)nh[j*SZ+k])>MaxHits){ // original thrown track with most hits
 	  MaxHits = nh[j*SZ+k];
 	  idx = k;
 	}
+      }
+      for (Int_t k=0;k<SZ;k++){
 	if (((Int_t)ptypes[j*SZ+k])>MaxHits1){ // particle type with most hits
 	  MaxHits1 = ptypes[j*SZ+k];
 	  ptype = k;
@@ -172,13 +180,14 @@ int main(int argc, char **argv) {
 
       TotHits[j]  = SumHits;      
       hist[3]->Fill((Float_t)SumHits);
-      if (idx>-1){
-	hist[4+idx]->Fill((Float_t)SumHits);
+      if (idx==0){
+	hist[4]->Fill(SumHits);
       }
 
       if (idx>0){
 	Float_t rat = (Float_t)MostHits[j]/(Float_t) TotHits[j]*100.;
 	hist[Offset[2]+idx-1]->Fill(rat);
+	hist[4+idx]->Fill(SumHits);
 	MultCount[idx-1]++;
       }
      
@@ -324,18 +333,22 @@ void setupHists(TH1F** hist, TH2F** hist2d, Int_t NTrThrown,
   hist[2]->GetXaxis()->SetTitle("Number of track per event");
   hist[3]->GetXaxis()->SetTitle("Number of hits for track candidates");
 
-  for (Int_t i=0;i<NTrThrown+1;i++) {
+  for (Int_t i=0;i<NTrThrown;i++) {
     char str1[128];
     char str2[128];
-    sprintf(str1,"hist%d",i+4);
-    sprintf(str2,"Thrown Track %d, Ptype=%d : Cand Hits ",i,ThrownPType[i]);
-    if (i==0){
-      sprintf(str2,"Track X Cand Hits ");
-    }
-    hist[i+4] = new TH1F(str1, str2, 41, -0.5, 40.5);
-    hist[i+4]->GetXaxis()->SetTitle("Number of hits per track");
+    sprintf(str1,"hist%d",i+5);
+    sprintf(str2,"Thrown Track %d, Ptype=%d : Cand Hits ",i+1,ThrownPType[i]);
+    hist[i+5] = new TH1F(str1, str2, 41, -0.5, 40.5);
+    hist[i+5]->GetXaxis()->SetTitle("Number of hits per track");
   }
-
+  char str1[128];
+  char str2[128];
+  sprintf(str1,"hist%d",4+NTrThrown);
+  sprintf(str2,"Track X Cand Hits ");
+  
+  hist[4] = new TH1F("hist4", str2, 41, -0.5, 40.5);
+  
+ 
   Offset[0] = NTrThrown + 4 + 1;
   for (Int_t i=0;i<NTrThrown;i++) {
     char str1[128];
@@ -358,7 +371,7 @@ void setupHists(TH1F** hist, TH2F** hist2d, Int_t NTrThrown,
     hist[i+Offset[1]]->GetXaxis()->SetTitle("pid_det/pid_gen");
     k = i;
   } 
-  char str1[128];
+ 
   sprintf(str1,"hist%d",k+1+Offset[1]);
   hist[k+1+Offset[1]] = new TH1F(str1, "PID_Tracking/True_PID secondary Track X", 50, -0.5, 2.5); 
   hist[k+1+Offset[1]]->GetXaxis()->SetTitle("pid_det/pid_gen");
@@ -389,6 +402,11 @@ void setupHists(TH1F** hist, TH2F** hist2d, Int_t NTrThrown,
 
   Offset[4] =  Offset[3] + NTrThrown;
 
+  sprintf(str1,"hist%d",Offset[4]);
+  hist[Offset[4]] = new TH1F(str1, "Matched_Hits/Hits", 100, 0.5, 1.5);
+  hist[Offset[4]]->GetXaxis()->SetTitle("Ratio Associated_Hits/All_Hits");
+  Offset[4]+=1;
+
   // now setup the 2 dimensional histograms
   for (Int_t i=0;i<NTrThrown;i++) {
     char str1[128];
@@ -417,6 +435,7 @@ void setupHists(TH1F** hist, TH2F** hist2d, Int_t NTrThrown,
   hist2d[Offset[5]]->GetXaxis()->SetTitle("ID_det/ID_true");
   hist2d[Offset[5]]->GetYaxis()->SetTitle("Number of Hits");
 
+
 }
 //
 //
@@ -424,9 +443,9 @@ void moreHists(TH1F** hist, TH2F** hist2d, Int_t NTrThrown,
 	       Int_t *Offset, Int_t *ThrownPType, Float_t *PMax){
 
 
+  char str1[128];
+  char str2[128];
   for (Int_t i=0;i<NTrThrown;i++) {
-    char str1[128];
-    char str2[128];
     sprintf(str1,"hist%d",i+Offset[4]);
     sprintf(str2,"Thrown Track %d PType=%d",i+1,ThrownPType[i]);
     hist[i+Offset[4]] = new TH1F(str1, str2, 50, 0.0, PMax[i]*1.1);
