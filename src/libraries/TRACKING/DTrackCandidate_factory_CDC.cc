@@ -751,14 +751,14 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 		// inefficiency can cause the 1 or 2 hits we would get there
 		// to be lost). In principle, the first package of the FDC
 		// can get enough hits to form a candidate that is then matched
-		// either matched with the CDC candidate in DTrackCandidate_factory.cc
+		// either with the CDC candidate in DTrackCandidate_factory.cc
 		// or extends close enough to the real track in the CDC to be
 		// used outright.
 		//
 		// There are a few tracks though that will not have enough hits in
 		// package 1 of the FDC to form a candidate. For these, we need to
 		// pick up any lone hits in the FDC and try and add them to 
-		// our SL1 seed in order to get a better candiate.
+		// our SL1 seed in order to get a better candidate.
 		//
 		// Note that this is being done while looking at single track
 		// events with no noise. In the presence of noice hits, using
