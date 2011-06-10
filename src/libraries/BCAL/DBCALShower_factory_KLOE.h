@@ -4,12 +4,6 @@
 // Created: Tue Jul  3 18:25:12 EDT 2007
 // Creator: Matthew Shepherd
 //
-//  Author's Note: This class started as a functional clone of the default DBCALShower_factory_KLOE --
-//  much of the logic and data structure is as written by C. Xu.
-//  Revisions were made to get approx 10x speed gain.  The intial version in the repository
-//  It has undergone subsequent reision and as of 8-Aug-08 merged back in as the default
-//  DBCALShower_factory_KLOE
-//
 
 
 #ifndef _DBCALShower_factory_KLOE_
@@ -21,6 +15,19 @@ using namespace jana;
 
 #include <BCAL/DBCALShower.h>
 #include <BCAL/DBCALHit.h>
+
+/// Form fully reconstructed showers from BCAL data based on the KLOE algorithm.
+/// The showers produced by this do have calibration applied to correct the
+/// output energy based on cluster energy and z-location. This used DBCALHit objects
+/// as input. All clustering, merging etc. are done here as described in
+/// <A href="http://argus.phys.uregina.ca/cgi-bin/private/DocDB/ShowDocument?docid=569">GlueX-doc-569</A>
+///
+///  Author's Note: This class started as a functional clone of the default DBCALShower_factory_KLOE --
+///  much of the logic and data structure is as written by C. Xu.
+///  Revisions were made to get approx 10x speed gain.  The intial version in the repository
+///  It has undergone subsequent reision and as of 8-Aug-08 merged back in as the default
+///  DBCALShower_factory_KLOE
+///
 
 class DBCALShower_factory_KLOE:public JFactory<DBCALShower>{
     
