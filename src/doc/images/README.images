@@ -20,3 +20,6 @@ For example:
 Images should all have a .gif, .jpg, or .png suffix.
 
 
+The files jana_map.gif and jana_map.html were generated from
+the jana.dot file using the script janadot2html.py that is
+kept in the scripts directory in subversion. 
