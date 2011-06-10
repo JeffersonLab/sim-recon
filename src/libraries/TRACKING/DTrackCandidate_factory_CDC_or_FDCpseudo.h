@@ -11,6 +11,18 @@
 #include <JANA/JFactory.h>
 #include "DTrackCandidate.h"
 
+/// This class is not used as part of the baseline reconstruction. It is 
+/// mainly for debugging purposes.
+///
+/// This will essentially make a single list of DTrackCandidate objects by
+/// merging the CDC and FDCPseudo candidates. There is a weak attempt to filter
+/// clones of candidates found in both lists, but no merging is done, one of
+/// the clones is simply dropped.
+///
+/// Note that this merges candidates from the DTrackCandidate_factory_FDCpseudo  
+/// class which is also not the default FDC track finder (see DTrackCandidate_factory_FDCCathodes
+/// for that).
+
 class DTrackCandidate_factory_CDC_or_FDCpseudo:public jana::JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_CDC_or_FDCpseudo(){};

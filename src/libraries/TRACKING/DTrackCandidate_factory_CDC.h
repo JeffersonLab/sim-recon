@@ -17,6 +17,30 @@ using namespace jana;
 
 class DFDCPseudo;
 
+
+/// Find track candidates in the Central Drift Chambers (CDC).
+/// This will try to form candidates from hits found in the CDC
+/// but will also look for hits in the first FDC package consistent
+/// with a cluster of CDC hits.
+///
+/// The general algorithm is the following:
+/// clusters of hits in axial layers are found and matched so that a 
+/// circle may be fit to the x/y locations of the hit wires. Stereo
+/// layers that are hit and that cross the circle are used to get
+/// z-information based on the point the circle crosses the stereo
+/// wire. The z-locations and their corresponding &phi; coordinate
+/// (relative to the center of the circle fit) are fit using a
+/// linear regression to determine &theta; and z-vertex.
+/// The momentum and &phi;
+/// of the candidate in lab coordinates comes the center of the 
+/// circle.
+///
+/// This effectively gives a helical fit, but in two stages since
+/// the stereo and axial wires contain different information.
+///
+/// These candidates will be merged with those from the FDC in
+/// the DTrackCandidate_factory class.
+
 class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_CDC(){};

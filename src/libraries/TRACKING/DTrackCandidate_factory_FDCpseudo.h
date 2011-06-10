@@ -24,6 +24,11 @@ using namespace jana;
 
 class DMagneticFieldMap;
 
+
+/// This is an alternate FDC track finder that is not used as part of the default
+/// reconstruction. It is no longer maintained, but is kept around as an independent
+/// check against the default FDC finder in DTrackCandiate_factory_FDCpseudo .
+
 class DTrackCandidate_factory_FDCpseudo:public JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_FDCpseudo();

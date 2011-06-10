@@ -24,6 +24,15 @@ using namespace jana;
 
 class DMagneticFieldMap;
 
+/// This is an alternate FDC track finder that is not used as part of the default
+/// reconstruction. It is no longer maintained, but is kept around as an independent
+/// check against the default FDC finder in DTrackCandiate_factory_FDCpseudo .
+///
+/// This was originally written to help study the possibility of a wires only
+/// design of the FDC. As such, it uses the DFDCIntersection objects as inputs
+/// which have a far worse position resolution than what is achievable with the
+/// the cathode strips. Consequently, this tended to produce more ghost tracks. 
+
 class DTrackCandidate_factory_FDC:public JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_FDC();

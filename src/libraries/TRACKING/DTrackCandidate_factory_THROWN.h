@@ -15,6 +15,16 @@
 class DTrackFitter;
 class DTrackHitSelector;
 
+/// Generate DTrackCandiate objects based on the generated particles.
+/// This uses "truth" information (information that won't be available
+/// in read data) to make a list of more or less perfect track candidates.
+/// Because tracks can multiple scatter or even hadronically scatter in
+/// the target, the generated value may not always be correct. However,
+/// on average, it is going to be very accurate.
+///
+/// This is used for debugging purposes in the tracking code and is not
+/// normally used otherwise. 
+
 class DTrackCandidate_factory_THROWN:public jana::JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_THROWN();

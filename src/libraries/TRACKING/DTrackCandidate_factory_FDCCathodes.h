@@ -16,6 +16,18 @@
 #include <TH1F.h>
 #include <TH2F.h>
 
+
+/// Find track candidates in the Forward Drift Chambers (FDC).
+/// This will try to form candidates from hits found in the FDC.
+/// Roughly, clusters of hits in single packages (6 wire planes)
+/// are found and fit. The fit is propagated to adjacent packages
+/// to link them up with hit clusters there. Eventually, all hits
+/// are used to fit using a Reimann method to obtain the parameters
+/// of the candidate.
+///
+/// These candidates will be merged with those from the FDC in
+/// the DTrackCandidate_factory class.
+
 class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_FDCCathodes(){

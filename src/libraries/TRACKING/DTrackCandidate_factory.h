@@ -19,6 +19,21 @@ using namespace jana;
 
 class DMagneticFieldMap;
 
+/// Form complete list of DTrackCandidate objects using the lists formed
+/// from the CDC and FDCCathodes candidate factories (DTrackCandidate_factory_CDC
+/// and DTrackCandidate_factory_FDCCathodes). 
+///
+/// Track finding starts by looking for candidates independently in the CDC
+/// and FDC. The results of those first passes are used as input here where
+/// a single list is made containijng all candidates.
+///
+/// This will attempt to identify any candidates that should be merged into a
+/// single candidate, mainly if a both a CDC and FDC candidate were found for
+/// the same track.
+///
+/// In addition, stray CDC hits that did not belong to any candidate are
+/// merged into existing candidates if possible.
+
 class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
  public:
   DTrackCandidate_factory(){
