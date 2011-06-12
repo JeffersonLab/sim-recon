@@ -5,18 +5,15 @@
 /**
 	\mainpage Hall-D Analysis Software
 	
-	\section intro Introduction
+	\section about About
 
 	This documentation was generated automatically from the source
 	code using the doxygen program. The content of this page is
 	taken from the file sim-recon/src/doc/mainpage.c++
 
-	Use the links at the top to help navigate through this documentation.
-	Use the search form to search the documentation.
-
 	To view repository statistics, <A href="SVNstats">look here</A>.
 
-	\section starting Getting Started
+	\section intro Introduction
 
 	The Hall-D reconstruction software is built upon the C++ <A href="http://www.jlab.org/JANA">JANA</A>
 	framework. The JANA framework was designed for Hall-D but is maintained separately as an
@@ -33,17 +30,25 @@
 	hit objects as inputs. The cluster making factory requests the hit objects from the JANA framework
 	whose job is to locate them and return their pointers.
 	
-	This design provides a loose coupling between the factory classes and the data classes. The
+	This design provides a loose coupling between the factory classes. The
 	factory needing a type of data object as input doesn't need direct knowledge of the factory that
 	actually generates those objects. Furthermore, multiple factory classes can exist that
 	implement different algorithms, but deliver the same type of data objects. Which exact algorithm
 	that is used can be specified by the user at run time rather than at compile time.
 	
-	Below is a thumbnail of the call graph between factories implemented in DANA. Click on it to get
-	a larger picture where individual factories can be clicked to jump to the corresponding 
-	page. In the image, the "first" request comes at the top from the JEventProcessor object asking
-	for DPhysicsEvent objects. The DPhysicsEvent algorithm requires other inputs as shown by the
-	arrows. Eventually, requests lead back to data from the input file which at the classes shown
+	The naming convention used for classes is to have the factory class name be the name of the data
+	class of the objects it provides, but with "_factory" appended. For example, the algorithm that
+	produces DBCALCluster objects would be named DBCALCluster_factory. If an alternate algorithm
+	exists that produces the same type of data objects, it will be "tagged" and the tag appended
+	to the end of the name (e.g. DBCALCluster_factory_HOUGH). All Hall-D specific classes start
+	with the letter "D". (JANA classes start with "J").
+	
+	Below is a thumbnail of the call graph between factories implemented in DANA. For practical
+	reasons, only the names of the data classes are shown. Click on it to get
+	a larger picture where individual classes can be clicked to jump to the corresponding 
+	factory page. In the image, the "first" request comes at the top from the JEventProcessor object asking
+	for DPhysicsEvent objects. The DPhysicsEvent algorithm requires DParticleSet as (its only) input as
+	shown by the arrows. Eventually, requests lead back to data from the input file which are the classes shown
 	in green trapazoids at the bottom of the graph.
 	
 	\htmlonly
@@ -57,6 +62,8 @@
 	reconstruction as well as utility classes that aren't passed through the framework won't
 	show up here. The plot itself is generated automatically by JANA using the <i>janadot</i>
 	plugin and specifying only the defaults be used.
+	
+
 	
 */
 
