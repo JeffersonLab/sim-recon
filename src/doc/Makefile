@@ -5,6 +5,7 @@ JLAB_WWW_DIR = /group/halld/WWW/software
 
 all: clean
 	doxygen Doxyfile
+	cp images/* html
 
 install:
 	rm -rf $(JLAB_WWW_DIR)/junk/HDSoftware_Documentation
