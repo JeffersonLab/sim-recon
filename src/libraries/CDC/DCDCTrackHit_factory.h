@@ -15,6 +15,12 @@
 #define CDC_MAX_STRAWS 222
 #define CDC_MAX_RINGS 28
 
+/// Provide CDC track hit objects. Currently, these objects are
+/// supplied by the simulated data file. Once real data is 
+/// available, this factory will be made to take lower-level
+/// uncalibrated hit objects and apply calibrations to generate
+/// the DCDCHit objects.
+
 class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 	public:
 		DCDCTrackHit_factory(){};
