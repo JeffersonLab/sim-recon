@@ -107,10 +107,17 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	if(!PE) return;
 	for(unsigned int iphysics_event=0; iphysics_event<PE->mult; iphysics_event++){
 	
-		// Verify BCAL hits exist
+		// Get pointer to HDDM hits structure
 		s_HitView_t *hits = PE->in[iphysics_event].hitView;
-		if (hits == HDDM_NULL || hits->barrelEMcal == HDDM_NULL || hits->barrelEMcal->bcalCells == HDDM_NULL)continue;
-    
+		
+		// Make sure HDDM stuctures exist.
+		// In the case of no real BCAL hits, we may still want to emit
+		// dark hit only events. In this case, we must create the BCAL 
+		// tree here.
+		if(hits==HDDM_NULL)hits = PE->in[iphysics_event].hitView = make_s_HitView();
+		if(hits->barrelEMcal == HDDM_NULL)hits->barrelEMcal = make_s_BarrelEMcal();
+		if(hits->barrelEMcal->bcalCells == HDDM_NULL)hits->barrelEMcal->bcalCells = make_s_BcalCells(0);
+
 		// Loop over GEANT hits in BCAL
 		s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
 		for(unsigned int j=0; j<cells->mult; j++){
@@ -234,6 +241,7 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 			// Add in dark pulses for upstream SiPMs not hit, but that are included in sum
 			unsigned int Ndark_channels_up = bcalfADC.NSiPM - uphits.size();
 			if(uphits.size() > bcalfADC.NSiPM)Ndark_channels_up = 0;
+
 			for(unsigned int j=0; j<Ndark_channels_up; j++){
 				double darkPE = getDarkHits();
 				double sigma_up = sqrt(BCAL_sigma_ped_sq + darkPE*BCAL_sigma_singlePE_sq);				
