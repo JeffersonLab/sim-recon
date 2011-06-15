@@ -66,8 +66,38 @@
 
 	\section legend Using This Site
 	
+	Not all code in the repository is considered part of the core reconstruction/simulation 
+	software for Hall-D. As software development is continuous, some code will naturally be replaced
+	with newer code that implements different algorithms. Alternatively, some code will exist
+	purely to aid in debugging or to understand certain aspects of the data, but will not be
+	used for production level processing. As such, classes may fall into one or more categories.
+	Which categories the class belongs in may be very useful for someone browsing through this
+	documentation. The following icons are used to provide quick visual cues to flag classes that
+	you probably don't want to spend a lot of time understanding. These are described in the 
+	table below. 
+
 	\htmlonly
 	<table border="1" cellpadding="10" width="650">
+
+		<TR>
+			<TD><IMG src="CORE.png" width="125"></TD>
+			<TD>
+				<font size="+1"><b><u> Core Package: </u></b></font><br>
+				This indicates the class is part of the core package. It should be safe to
+				use the class in an analysis.
+			</TD>
+		</TR>
+
+
+		<TR>
+			<TD><IMG src="DEP.png" width="125"></TD>
+			<TD>
+				<font size="+1"><b><u> Deprecated: </u></b></font><br>
+				This flags the class as one that is likely to be removed in the near future.
+				This class should no longer be used in any analysis.
+			</TD>
+		</TR>
+
 		<TR>
 			<TD><IMG src="ND.png" width="125"></TD>
 			<TD>
