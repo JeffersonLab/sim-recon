@@ -64,6 +64,20 @@
 	plugin and specifying only the defaults be used.
 	
 
+	\section legend Using This Site
 	
+	\htmlonly
+	<table border="1" cellpadding="10" width="650">
+		<TR>
+			<TD><IMG src="ND.png" width="125"></TD>
+			<TD>
+				<font size="+1"><b><u> Not Default: </u></b></font><br>
+				This flags the class as one not normally used in the reconstruction.
+				It usually will indicate alternate algorithms that are maintained for debugging
+				or comparisons puposes but are not used otherwise used.
+			</TD>
+		</TR>
+	</table>
+	\endhtmlonly
 */
 
