@@ -19,6 +19,12 @@ using namespace jana;
 
 class DMagneticFieldMap;
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="CORE.png" width="100">
+///	</A>
+/// \endhtmlonly
+
 /// Form complete list of DTrackCandidate objects using the lists formed
 /// from the CDC and FDCCathodes candidate factories (DTrackCandidate_factory_CDC
 /// and DTrackCandidate_factory_FDCCathodes). 

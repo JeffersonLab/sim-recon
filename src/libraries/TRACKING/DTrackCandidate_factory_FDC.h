@@ -24,6 +24,13 @@ using namespace jana;
 
 class DMagneticFieldMap;
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="ND.png" width="100">
+///	<IMG src="DEP.png" width="100">
+///	</A>
+/// \endhtmlonly
+
 /// This is an alternate FDC track finder that is not used as part of the default
 /// reconstruction. It is no longer maintained, but is kept around as an independent
 /// check against the default FDC finder in DTrackCandiate_factory_FDCpseudo .

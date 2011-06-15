@@ -18,6 +18,12 @@ using namespace jana;
 class DFDCPseudo;
 
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="CORE.png" width="100">
+///	</A>
+/// \endhtmlonly
+
 /// Find track candidates in the Central Drift Chambers (CDC).
 /// This will try to form candidates from hits found in the CDC
 /// but will also look for hits in the first FDC package consistent

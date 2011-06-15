@@ -17,6 +17,12 @@
 #include <TH2F.h>
 
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="CORE.png" width="100">
+///	</A>
+/// \endhtmlonly
+
 /// Find track candidates in the Forward Drift Chambers (FDC).
 /// This will try to form candidates from hits found in the FDC.
 /// Roughly, clusters of hits in single packages (6 wire planes)

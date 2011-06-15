@@ -18,6 +18,12 @@ class DReferenceTrajectory;
 
 #define MAX_IHITS 256
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="CORE.png" width="100">
+///	</A>
+/// \endhtmlonly
+
 /// DTrackCandidate objects are the result of track finding and the
 /// input to track fitting. Several algorithms exist for making
 /// these and then merging them. For the default, see

@@ -11,6 +11,12 @@
 #include <JANA/JFactory.h>
 #include "DTrackCandidate.h"
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="ND.png" width="100">
+///	</A>
+/// \endhtmlonly
+
 /// This class is not used as part of the baseline reconstruction. It is 
 /// mainly for debugging purposes.
 ///

@@ -29,6 +29,15 @@ class DCDCTrackHit;
 class DFDCPseudo;
 class DMCThrown;
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="ND.png" width="100">
+///	<IMG src="DEP.png" width="100">
+///	</A>
+/// \endhtmlonly
+
+/// A global least-squares track fitter. This has been superceded by the DTrackFitterKalmanSIMD class.
+
 class DTrackFitterALT1:public DTrackFitter{
 	public:
 		DTrackFitterALT1(JEventLoop *loop);

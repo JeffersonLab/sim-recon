@@ -15,6 +15,12 @@
 class DTrackFitter;
 class DTrackHitSelector;
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="ND.png" width="100">
+///	</A>
+/// \endhtmlonly
+
 /// Generate DTrackCandiate objects based on the generated particles.
 /// This uses "truth" information (information that won't be available
 /// in read data) to make a list of more or less perfect track candidates.
