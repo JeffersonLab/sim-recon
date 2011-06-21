@@ -305,12 +305,12 @@ void DDANAEVIO_factory::get_tagNum_dictionary(void) {
       
 
   // set defaults by parsing internal string
-  if(XML_Parse(xmlParser,dana_evio_dict_String.c_str(),dana_evio_dict_String.size(),true)==0) {
-    jerr << endl << endl << endl << "  ?get_tagNum_dictionary...parse error for default string"
-         << endl << endl << XML_ErrorString(XML_GetErrorCode(xmlParser))
-         << endl << endl << endl;
-  } else {
+  if(XML_Parse(xmlParser,dana_evio_dict_String.c_str(),dana_evio_dict_String.size(),true)!=0) {
     jout << endl << endl << "  Successfully loaded default tag/num dictionary" << endl << endl << endl;
+  } else {
+    jerr << endl << endl << endl << "  ?get_tagNum_dictionary...parse error for default string"
+         << endl << endl << "   " << XML_ErrorString(XML_GetErrorCode(xmlParser))
+         << endl << endl << endl;
   }
   XML_ParserFree(xmlParser);
 

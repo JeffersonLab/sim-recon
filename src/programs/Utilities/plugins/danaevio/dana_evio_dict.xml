@@ -267,7 +267,7 @@
   <danaevioDictEntry name="DFDCPseudo.objId"                          tag="12000"    num="1"/>
   <danaevioDictEntry name="DFDCPseudo.u"                              tag="12000"    num="2"/>
   <danaevioDictEntry name="DFDCPseudo.v"                              tag="12000"    num="3"/>
-  <danaevioDictEntry name="DFDCPseudo.w"                              tag="12000"    num="4/>
+  <danaevioDictEntry name="DFDCPseudo.w"                              tag="12000"    num="4"/>
   <danaevioDictEntry name="DFDCPseudo.s"                              tag="12000"    num="5"/>
   <danaevioDictEntry name="DFDCPseudo.layer"                          tag="12000"    num="6"/>
   <danaevioDictEntry name="DFDCPseudo.wire"                           tag="12000"    num="7"/>
