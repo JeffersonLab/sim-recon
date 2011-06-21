@@ -2166,14 +2166,14 @@ void DDANAEVIO_factory::addDFCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree)
     // add track data to banks
     for(unsigned int i=0; i<dataObjects.size(); i++) {
       *objIdBank   << dataObjects[i]->id;
-      *var1Bank    << dataObjects[i]->getPosition().X();
-      *var2Bank    << dataObjects[i]->getPosition().Y();
-      *var3Bank    << dataObjects[i]->getPosition().Z();
-      *var4Bank    << dataObjects[i]->getMom3().Px();
-      *var5Bank    << dataObjects[i]->getMom3().Py();
-      *var6Bank    << dataObjects[i]->getMom3().Pz();
-      *var7Bank    << dataObjects[i]->getEnergy();
-      *var8Bank    << dataObjects[i]->getTime();
+      *var1Bank    << dataObjects[i]->lorentzMomentum().X();
+      *var2Bank    << dataObjects[i]->lorentzMomentum().Y();
+      *var3Bank    << dataObjects[i]->lorentzMomentum().Z();
+      *var4Bank    << dataObjects[i]->lorentzMomentum().Px();
+      *var5Bank    << dataObjects[i]->lorentzMomentum().Py();
+      *var6Bank    << dataObjects[i]->lorentzMomentum().Pz();
+      *var7Bank    << dataObjects[i]->lorentzMomentum().E();
+      *var8Bank    << dataObjects[i]->showerTime();
       
       objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
 
