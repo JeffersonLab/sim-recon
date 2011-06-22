@@ -284,8 +284,10 @@
   <danaevioDictEntry name="DVertex.x"                                 tag="12100"    num="2"/>
   <danaevioDictEntry name="DVertex.y"                                 tag="12100"    num="3"/>
   <danaevioDictEntry name="DVertex.z"                                 tag="12100"    num="4"/>
-  <danaevioDictEntry name="DVertex.beamline_used"                     tag="12100"    num="5"/>
-  <danaevioDictEntry name="DVertex.NTracks"                           tag="12100"    num="6"/>
+  <danaevioDictEntry name="DVertex.t"                                 tag="12100"    num="5"/>
+  <danaevioDictEntry name="DVertex.beamline_used"                     tag="12100"    num="6"/>
+  <danaevioDictEntry name="DVertex.NTracks"                           tag="12100"    num="7"/>
+  <danaevioDictEntry name="DVertex.NShowers"                          tag="12100"    num="8"/>
   <danaevioDictEntry name="DVertex.assocObjectBanks"                  tag="12100"    num="254"/>
   <danaevioDictEntry name="DVertex.assocObjects"                      tag="12100"    num="255"/>
 

@@ -1913,9 +1913,11 @@ void DDANAEVIO_factory::addDVertex(JEventLoop *eventLoop, evioDOMTree &tree) {
   evioDOMNodeP var1Bank    = createLeafNode<float>     (objName+".x");
   evioDOMNodeP var2Bank    = createLeafNode<float>     (objName+".y");
   evioDOMNodeP var3Bank    = createLeafNode<float>     (objName+".z");
-  evioDOMNodeP var4Bank    = createLeafNode<int>       (objName+".beamline_used");
-  evioDOMNodeP var5Bank    = createLeafNode<int>       (objName+".NTracks");
-  *mainBank << objIdBank << var1Bank << var2Bank << var3Bank << var4Bank << var5Bank;
+  evioDOMNodeP var4Bank    = createLeafNode<float>     (objName+".t");
+  evioDOMNodeP var5Bank    = createLeafNode<int>       (objName+".beamline_used");
+  evioDOMNodeP var6Bank    = createLeafNode<int>       (objName+".NTracks");
+  evioDOMNodeP var7Bank    = createLeafNode<int>       (objName+".Nphotons");
+  *mainBank << objIdBank << var1Bank << var2Bank << var3Bank << var4Bank << var5Bank << var6Bank;
 
 
   // create associated object bank and add to main bank
@@ -1941,12 +1943,18 @@ void DDANAEVIO_factory::addDVertex(JEventLoop *eventLoop, evioDOMTree &tree) {
       *var1Bank    << dataObjects[i]->x.X();
       *var2Bank    << dataObjects[i]->x.Y();
       *var3Bank    << dataObjects[i]->x.Z();
-      *var4Bank    << dataObjects[i]->beamline_used;
+      *var4Bank    << dataObjects[i]->x.T();
+      *var5Bank    << dataObjects[i]->beamline_used;
 
       vector<const DTrackTimeBased*> trks;
       dataObjects[i]->Get(trks);
-      *var5Bank    << trks.size();
+      *var6Bank    << trks.size();
       
+      vector<const DFCALShower*> showers;
+      dataObjects[i]->Get(showers);
+      *var7Bank    << showers.size();
+
+
       objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
       
       
