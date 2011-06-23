@@ -286,8 +286,8 @@
   <danaevioDictEntry name="DVertex.z"                                 tag="12100"    num="4"/>
   <danaevioDictEntry name="DVertex.t"                                 tag="12100"    num="5"/>
   <danaevioDictEntry name="DVertex.beamline_used"                     tag="12100"    num="6"/>
-  <danaevioDictEntry name="DVertex.NTracks"                           tag="12100"    num="7"/>
-  <danaevioDictEntry name="DVertex.NShowers"                          tag="12100"    num="8"/>
+  <danaevioDictEntry name="DVertex.Ntracks"                           tag="12100"    num="7"/>
+  <danaevioDictEntry name="DVertex.Nphotons"                          tag="12100"    num="8"/>
   <danaevioDictEntry name="DVertex.assocObjectBanks"                  tag="12100"    num="254"/>
   <danaevioDictEntry name="DVertex.assocObjects"                      tag="12100"    num="255"/>
 
@@ -410,5 +410,33 @@
   <danaevioDictEntry name="DFDCSegment.Nhits"                         tag="13400"    num="6"/>
   <danaevioDictEntry name="DFDCSegment.assocObjectBanks"              tag="13400"    num="254"/>
   <danaevioDictEntry name="DFDCSegment.assocObjects"                  tag="13400"    num="255"/>
+
+  <danaevioDictEntry name="DTOFRawHit"                                tag="13500"    num="0"/>
+  <danaevioDictEntry name="DTOFRawHit.objId"                          tag="13500"    num="1"/>
+  <danaevioDictEntry name="DTOFRawHit.bar"                            tag="13500"    num="2"/>
+  <danaevioDictEntry name="DTOFRawHit.plane"                          tag="13500"    num="3"/>
+  <danaevioDictEntry name="DTOFRawHit.lr"                             tag="13500"    num="4"/>
+  <danaevioDictEntry name="DTOFRawHit.dE"                             tag="13500"    num="5"/>
+  <danaevioDictEntry name="DTOFRawHit.t"                              tag="13500"    num="6"/>
+  <danaevioDictEntry name="DTOFRawHit.assocObjectBanks"               tag="13500"    num="254"/>
+  <danaevioDictEntry name="DTOFRawHit.assocObjects"                   tag="13500"    num="255"/>
+
+  <danaevioDictEntry name="DTOFRawHitMC"                              tag="13500"    num="0"/>
+  <danaevioDictEntry name="DTOFRawHitMC.objId"                        tag="13600"    num="1"/>
+  <danaevioDictEntry name="DTOFRawHitMC.bar"                          tag="13600"    num="2"/>
+  <danaevioDictEntry name="DTOFRawHitMC.plane"                        tag="13600"    num="3"/>
+  <danaevioDictEntry name="DTOFRawHitMC.lr"                           tag="13600"    num="4"/>
+  <danaevioDictEntry name="DTOFRawHitMC.dist"                         tag="13600"    num="5"/>
+  <danaevioDictEntry name="DTOFRawHitMC.x"                            tag="13600"    num="6"/>
+  <danaevioDictEntry name="DTOFRawHitMC.y"                            tag="13600"    num="7"/>
+  <danaevioDictEntry name="DTOFRawHitMC.z"                            tag="13600"    num="8"/>
+  <danaevioDictEntry name="DTOFRawHitMC.px"                           tag="13600"    num="9"/>
+  <danaevioDictEntry name="DTOFRawHitMC.py"                           tag="13600"    num="10"/>
+  <danaevioDictEntry name="DTOFRawHitMC.pz"                           tag="13600"    num="11"/>
+  <danaevioDictEntry name="DTOFRawHitMC.E"                            tag="13600"    num="12"/>
+  <danaevioDictEntry name="DTOFRawHitMC.ptype"                        tag="13600"    num="13"/>
+  <danaevioDictEntry name="DTOFRawHitMC.itrack"                       tag="13600"    num="14"/>
+  <danaevioDictEntry name="DTOFRawHitMC.assocObjectBanks"             tag="13600"    num="254"/>
+  <danaevioDictEntry name="DTOFRawHitMC.assocObjects"                 tag="13600"    num="255"/>
 
 </xmlDict>

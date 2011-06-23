@@ -74,6 +74,8 @@ class DDANAEVIO_factory : public JFactory<DDANAEVIODOMTree> {
   void addDBCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDFCALPhoton(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDChargedTruthMatch(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDTOFRawHitMC(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDTOFRawHit(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDTOFHit(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDTOFPoint(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDTOFMCResponse(JEventLoop *eventLoop, evioDOMTree &tree);
