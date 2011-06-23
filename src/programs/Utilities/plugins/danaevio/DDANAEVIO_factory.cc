@@ -9,20 +9,21 @@
 // JANA factory plugin creates EVIO DOM tree from DANA objects
 //
 //
-// Implements JANA command-line parameters:
+// Implements the following JANA command-line parameters:
 //
 //    EVIO:DANAEVIO         specify which objects to add to DOM tree, see below for defaults
-//    EVIO:DANADICT         use custom XML tag/num dictionary instead of built-in tag/num scheme
+//    EVIO:DANADICT         use custom XML tag/num dictionary instead of built-in version
+//    EVIO:WRITEOUT         default file writeout is true, to turn off use -PEVIO::WRITEOUT=0
 //
 //
-//  Specifying which objects to add to tree:
+//  To specify which objects to add to EVIO tree:
 //    
-//    Comma-separated, case-insensitive list (best not to included embedded whitespace)
+//    Use comma-separated, case-insensitive list (best not to included embedded whitespace)
 //    Accepts "all", "none", "truth" and "hits", as well as individual DANA object names
 //    Use prefix "-" to invert selection, "+" also accepted
 //
 //
-//  default dictionary is dana_evio_dict.xml
+//  Built-in dictionary can be found in dana_evio_dict.xml
 //
 //
 //
@@ -232,7 +233,6 @@ void DDANAEVIO_factory::decode_DANAEVIO_parameter(void) {
 
       } else if(value=="none") {
         for(iter=evioMap.begin(); iter!=evioMap.end(); iter++) if(minus)  iter->second.insert(""); else iter->second.erase("");
-
       } else if(value=="truth") {
         if(!minus) evioMap["dbeamphoton"].insert("");      else evioMap["dbeamphoton"].erase("");
         if(!minus) evioMap["dmcthrown"].insert("");        else evioMap["dmcthrown"].erase("");
