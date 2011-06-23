@@ -12,6 +12,16 @@
 #include "DTOFPoint.h"
 #include "DTOFHit.h"
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="CORE.png" width="100">
+///	</A>
+/// \endhtmlonly
+
+/// 2-plane (4-fold) TOF coincidences. The 2-hit coincidences come from DTOFHit objects
+/// which are combined into coincidnces between the two planes to form 4-D space points
+/// which are represented by DTOFPoint objects.
+
 class DTOFPoint_factory:public JFactory<DTOFPoint>{
  public:
   DTOFPoint_factory(){};

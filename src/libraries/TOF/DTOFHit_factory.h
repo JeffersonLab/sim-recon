@@ -20,6 +20,16 @@
 
 using namespace jana;
 
+/// \htmlonly
+/// <A href="index.html#legend">
+///	<IMG src="CORE.png" width="100">
+///	</A>
+/// \endhtmlonly
+
+/// 2-ended TOF coincidences. The individual hits come from DTOFRawHit objects and
+/// the 2 planes are combined into single hits in the DTOFPoint objects. This is the
+/// intermediate set of objects between the two.
+
 class DTOFHit_factory:public JFactory<DTOFHit>{
  public:
   DTOFHit_factory(){TOF_POINT_TAG="";gPARMS->SetDefaultParameter("TOF:TOF_POINT_TAG", TOF_POINT_TAG,"");};
