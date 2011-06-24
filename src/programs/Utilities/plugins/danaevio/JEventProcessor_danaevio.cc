@@ -208,8 +208,8 @@ jerror_t JEventProcessor_danaevio::brun(JEventLoop *eventLoop, int runnumber) {
       evioDOMNodeP num  =  evioDOMNode::createEvioDOMNode<uint8_t>  (1,3);
       tree << name << tag << num;
       
-      map< string, pair<uint16_t,uint8_t> > *theMap = DDANAEVIO_factory::getTagMapPointer();
-      map< string, pair<uint16_t,uint8_t> >::iterator iter;
+      const map< string, pair<uint16_t,uint8_t> > *theMap = DDANAEVIO_factory::getTagMapPointer();
+      map< string, pair<uint16_t,uint8_t> >::const_iterator iter;
       for(iter=theMap->begin(); iter!=theMap->end(); iter++) {
         *name << iter->first;
         *tag  << iter->second.first;

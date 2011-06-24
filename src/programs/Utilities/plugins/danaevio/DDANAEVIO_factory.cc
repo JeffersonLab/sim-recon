@@ -36,13 +36,54 @@
 //    DTwoGammaFit needs toString() method
 //    optimize multi-threading
 //    add evio to external packages
-
+//    lock when changing map
 
 
 #include <iostream>
 #include <iomanip>
 #include <map>
+#include <set>
 using namespace std;
+
+
+
+// DANA objects processed by DANAEVIO
+static string danaObjs[] =  {
+  "dmctrackhit",
+  "dbeamphoton",
+  "dmcthrown",
+  "dfcaltruthshower",
+  "dbcaltruthshower",
+  "dtoftruth",
+  "dsctruthhit",
+  "dmctrajectorypoint",
+  "dcdchit",
+  "dfdchit",
+  "dfcalhit",
+  "dschit",
+  "dtrackwirebased",
+  "dtracktimebased",
+  "dchargedtrack",
+  "dphoton",
+  "dcdctrackhit",
+  "dfdcpseudo",
+  "dvertex",
+  "dtrackcandidate",
+  "dbcalphoton",
+  "dfcalphoton",
+  "dchargedtruthmatch",
+  "dtofrawhitmc",
+  "dtofrawhit",
+  "dtofhit",
+  "dtofpoint",
+  "dbcalhit",
+  "dbcalshower",
+  "dfcalcluster",
+  "dfdccathodecluster",
+  "dfdcsegment",
+};
+
+
 
 #include <expat.h>
 
@@ -103,63 +144,50 @@ using namespace jana;
 using namespace evio;
 
 
+// for DANAEVIO
+#include "dana_evio_dict.h"
 #include "DDANAEVIO_factory.h"
 
 
-// list of factory tags for dana objects that to be added to tree by default
-// use -PEVIO:DANAEVIO to override
-// *** NOTE:  if you add to this list be sure to modify decode_object_parameters() appropriately ***
-static set<string> emptySet;
-static string untagged[] = {string("")};
-static set<string> untaggedSet(untagged,untagged+1);
-static pair< string, set<string> > danaObs[] =  {
-  pair< string, set<string> > ("dmctrackhit",          emptySet),
-  pair< string, set<string> > ("dbeamphoton",          untaggedSet),
-  pair< string, set<string> > ("dmcthrown",            untaggedSet),
-  pair< string, set<string> > ("dfcaltruthshower",     untaggedSet),
-  pair< string, set<string> > ("dbcaltruthshower",     untaggedSet),
-  pair< string, set<string> > ("dtoftruth",            untaggedSet),
-  pair< string, set<string> > ("dsctruthhit",          untaggedSet),
-  pair< string, set<string> > ("dmctrajectorypoint",   emptySet),
-  pair< string, set<string> > ("dcdchit",              untaggedSet),
-  pair< string, set<string> > ("dfdchit",              untaggedSet),
-  pair< string, set<string> > ("dfcalhit",             untaggedSet),
-  pair< string, set<string> > ("dschit",               untaggedSet),
-  pair< string, set<string> > ("dtrackwirebased",      emptySet),
-  pair< string, set<string> > ("dtracktimebased",      emptySet),
-  pair< string, set<string> > ("dchargedtrack",        emptySet),
-  pair< string, set<string> > ("dphoton",              emptySet),
-  pair< string, set<string> > ("dcdctrackhit",         emptySet),
-  pair< string, set<string> > ("dfdcpseudo",           emptySet),
-  pair< string, set<string> > ("dvertex",              emptySet),
-  pair< string, set<string> > ("dtrackcandidate",      emptySet),
-  pair< string, set<string> > ("dbcalphoton",          emptySet),
-  pair< string, set<string> > ("dfcalphoton",          emptySet),
-  pair< string, set<string> > ("dchargedtruthmatch",   emptySet),
-  pair< string, set<string> > ("dtofrawhitmc",         emptySet),
-  pair< string, set<string> > ("dtofrawhit",           emptySet),
-  pair< string, set<string> > ("dtofhit",              emptySet),
-  pair< string, set<string> > ("dtofpoint",            emptySet),
-  pair< string, set<string> > ("dbcalhit",             emptySet),
-  pair< string, set<string> > ("dbcalshower",          emptySet),
-  pair< string, set<string> > ("dfcalcluster",         emptySet),
-  pair< string, set<string> > ("dfdccathodecluster",   emptySet),
-  pair< string, set<string> > ("dfdcsegment",          emptySet),
-  //  pair< string, set<string> > ("dtwogammafit",         emptySet),   
-};
-
-
-// global map of which factory/tags to convert
-static map<string, set<string> > evioMap(danaObs,danaObs+sizeof(danaObs)/sizeof(danaObs[0]));
+// // which objects to output by default
+// static pair<string,bool> danaevioInit[] =  {
+//   pair<string,bool>("dmctrackhit",          true),
+//   pair<string,bool>("dbeamphoton",          false),
+//   pair<string,bool>("dmcthrown",            false),
+//   pair<string,bool>("dfcaltruthshower",     false),
+//   pair<string,bool>("dbcaltruthshower",     false),
+//   pair<string,bool>("dtoftruth",            false),
+//   pair<string,bool>("dsctruthhit",          false),
+//   pair<string,bool>("dmctrajectorypoint",   false),
+//   pair<string,bool>("dcdchit",              false),
+//   pair<string,bool>("dfdchit",              false),
+//   pair<string,bool>("dfcalhit",             false),
+//   pair<string,bool>("dschit",               false),
+//   pair<string,bool>("dtrackwirebased",      false),
+//   pair<string,bool>("dtracktimebased",      false),
+//   pair<string,bool>("dchargedtrack",        false),
+//   pair<string,bool>("dphoton",              false),
+//   pair<string,bool>("dcdctrackhit",         false),
+//   pair<string,bool>("dfdcpseudo",           false),
+//   pair<string,bool>("dvertex",              false),
+//   pair<string,bool>("dtrackcandidate",      false),
+//   pair<string,bool>("dbcalphoton",          false),
+//   pair<string,bool>("dfcalphoton",          false),
+//   pair<string,bool>("dchargedtruthmatch",   false),
+//   pair<string,bool>("dtofrawhitmc",         false),
+//   pair<string,bool>("dtofrawhit",           false),
+//   pair<string,bool>("dtofhit",              false),
+//   pair<string,bool>("dtofpoint",            false),
+//   pair<string,bool>("dbcalhit",             false),
+//   pair<string,bool>("dbcalshower",          false),
+//   pair<string,bool>("dfcalcluster",         false),
+//   pair<string,bool>("dfdccathodecluster",   false),
+//   pair<string,bool>("dfdcsegment",          false),
+// };
 
 
 // holds tag/num pairs for all DANA objects
 static map< string, pair<uint16_t,uint8_t> > tagMap;
-
-
-
-// contains encoding of the default XML tag/num definition file in a C++ string
-#include "dana_evio_dict.h"
 
 
 // for one-time initialization
@@ -172,31 +200,65 @@ static pthread_mutex_t initMutex = PTHREAD_MUTEX_INITIALIZER;
 
 DDANAEVIO_factory::DDANAEVIO_factory() {
 
-  static bool first_time = true;
-  
+  static bool done_once_only = false;
+  static string danaevio = "";
 
-  // get mutex and initialize once only
+
+  // initialize evio hash map (insert empty set<string> into map for each danaObj)
+  for(unsigned int i=0; i<sizeof(danaObjs)/sizeof(danaObjs[0]); i++) {
+    evioMap[danaObjs[i]]=set<string>();
+  }
+
+
+  // get mutex and initialize, some stuff done once-only
   pthread_mutex_lock(&initMutex);
-  if(first_time) {
-    first_time=false;
+  if(!done_once_only) {
+    done_once_only=true;
     
-    // fill evioMap based on EVIO:DANAEVIO parameter
-    decode_DANAEVIO_parameter();
+    // get danaevio command line parameter
+    gPARMS->SetDefaultParameter("EVIO:DANAEVIO",danaevio);
 
-    // parse file (using EVIO:DANADICT parameter) or default string to get tag/num pairs
+    // parse tag/num file (using EVIO:DANADICT parameter) our use default string to get tag/num pairs
     get_tagNum_dictionary();
+
+    // fill evioMap based on EVIO:DANAEVIO parameter
+    setEVIOMap(danaevio);
+
+
+    // print factory/tag selection flags
+    map<string, set<string> >::iterator iter1;
+    set<string>::iterator iter2;
+    jout << endl << endl << endl << "  DANA object output flags:" << endl << endl;
+    for(iter1=evioMap.begin(); iter1!=evioMap.end(); iter1++) {
+      jout << "     " << setiosflags(ios::left) << setw(20) << iter1->first+":";
+      if(iter1->second.size()>0) {
+        for(iter2=iter1->second.begin(); iter2!=iter1->second.end(); iter2++) {
+          jout << setw(20) << string(((*iter2).size()>0)?(*iter2):("untagged")) << string("    ");
+        }
+      } else {
+        jout << setw(20) << "(not selected)";
+      }
+      jout << endl;
+    }
+    jout << endl << endl<< endl;
+    
+  } else {
+
+    // just fill evioMap based on EVIO:DANAEVIO parameter
+    setEVIOMap(danaevio);
+
   }
   pthread_mutex_unlock(&initMutex);
-  
+
 }
-                                       
-
-//--------------------------------------------------------------------------------------
 
 
-void DDANAEVIO_factory::decode_DANAEVIO_parameter(void) {
+//----------------------------------------------------------------------------
 
-  // decodes JANA parameters    
+
+void DDANAEVIO_factory::setEVIOMap(string danaevio) {
+
+  // decodes danaevio string and fills map
 
   // parameters are comma-separated and case-insensitive
   // "-" means invert
@@ -209,96 +271,75 @@ void DDANAEVIO_factory::decode_DANAEVIO_parameter(void) {
   // NOTE: factory tag names are case sensitive
 
 
-  // check for parameter:  EVIO:DANAEVIO
+  if(danaevio==NULL)return;
+  if(danaevio.size()<=0)return;
+
+
   map< string, set<string> >::iterator iter;   
-  string danaevio= "";
-  gPARMS->SetDefaultParameter("EVIO:DANAEVIO",danaevio);
-  if(danaevio!="") {
+  vector<string> params;
+  SplitString<string>(danaevio,params,",");
+  for(unsigned int i=0; i<params.size(); i++) {
 
-    vector<string> params;
-    SplitString<string>(danaevio,params,",");
-    for(unsigned int i=0; i<params.size(); i++) {
+    vector<string> paramsCS(params);  // factory tags are Case Sensitive
+    std::transform(params[i].begin(), params[i].end(), params[i].begin(), (int(*)(int)) tolower);
+    bool plus=(params[i][0]=='+');
+    bool minus=(params[i][0]=='-');
 
-      vector<string> paramsCS(params);  // factory tags are Case Sensitive
-      std::transform(params[i].begin(), params[i].end(), params[i].begin(), (int(*)(int)) tolower);
-      bool plus=(params[i][0]=='+');
-      bool minus=(params[i][0]=='-');
-
-      string value   =   params[i].substr((plus||minus)?1:0);
-      string valueCS = paramsCS[i].substr((plus||minus)?1:0);
+    string value   =   params[i].substr((plus||minus)?1:0);
+    string valueCS = paramsCS[i].substr((plus||minus)?1:0);
 
 
-      if(value=="all") {
-        for(iter=evioMap.begin(); iter!=evioMap.end(); iter++) if(!minus) iter->second.insert(""); else iter->second.erase("");
+    if(value=="all") {
+      for(iter=evioMap.begin(); iter!=evioMap.end(); iter++) if(!minus) iter->second.insert(""); else iter->second.erase("");
 
-      } else if(value=="none") {
-        for(iter=evioMap.begin(); iter!=evioMap.end(); iter++) if(minus)  iter->second.insert(""); else iter->second.erase("");
-      } else if(value=="truth") {
-        if(!minus) evioMap["dbeamphoton"].insert("");      else evioMap["dbeamphoton"].erase("");
-        if(!minus) evioMap["dmcthrown"].insert("");        else evioMap["dmcthrown"].erase("");
-        if(!minus) evioMap["dmctrackhit"].insert("");      else evioMap["dmctrackhit"].erase("");
-        if(!minus) evioMap["dfcaltruthshower"].insert(""); else evioMap["dfcaltruthshower"].erase("");
-        if(!minus) evioMap["dbcaltruthshower"].insert(""); else evioMap["dbcaltruthshower"].erase("");
-        if(!minus) evioMap["dtoftruth"].insert("");        else evioMap["dtoftruth"].erase("");
-        if(!minus) evioMap["dsctruth"].insert("");         else evioMap["dsctruth"].erase("");
-        if(!minus) evioMap["dtofrawhitmc"].insert("");     else evioMap["dtofrawhitmc"].erase("");
-
-
-      } else if(value=="hits") {
-        if(!minus) evioMap["dcdchit"].insert("");          else evioMap["dcdchit"].erase("");
-        if(!minus) evioMap["dfdchit"].insert("");          else evioMap["dfdchit"].erase("");
-        if(!minus) evioMap["dfcalhit"].insert("");         else evioMap["dfcalhit"].erase("");
-        if(!minus) evioMap["dbcalhit"].insert("");         else evioMap["dbcalhit"].erase("");
-        if(!minus) evioMap["dschit"].insert("");           else evioMap["dschit"].erase("");
-        if(!minus) evioMap["dtofrawhit"].insert("");       else evioMap["dtofrawhit"].erase("");
-
-      } else if(value=="tracks") {
-        if(!minus) evioMap["dtrackwirebased"].insert("");  else evioMap["dtrackwirebased"].erase("");
-        if(!minus) evioMap["dtracktimebased"].insert("");  else evioMap["dtracktimebased"].erase("");
-        if(!minus) evioMap["dchargedtrack"].insert("");    else evioMap["dchargedtrack"].erase("");
-        if(!minus) evioMap["dphoton"].insert("");          else evioMap["dphoton"].erase("");
-        if(!minus) evioMap["dcdctrackhit"].insert("");     else evioMap["dcdctrackhit"].erase("");
-        if(!minus) evioMap["dfdcpseudo"].insert("");       else evioMap["dfdcpseudo"].erase("");
-
-      } else {
-
-        string::size_type colon = value.find(":");
-        string name = value;
-        string tag = "";
-        if(colon!=string::npos) {
-          name = value.substr(0,colon);
-          tag  = valueCS.substr(colon+1);
-        }
-
-        map< string, set<string> >::iterator found = evioMap.find(name);
-        if(found!=evioMap.end()) {
-          if(!minus)found->second.insert(tag); else found->second.erase(tag);
-        } else {
-          jerr << endl << "  ?unknown DANAEVIO parameter: " << params[i] << endl;
-        }
-
-      }
-    }
-  }
+    } else if(value=="none") {
+      for(iter=evioMap.begin(); iter!=evioMap.end(); iter++) if(minus)  iter->second.insert(""); else iter->second.erase("");
+    } else if(value=="truth") {
+      if(!minus) evioMap["dbeamphoton"].insert("");      else evioMap["dbeamphoton"].erase("");
+      if(!minus) evioMap["dmcthrown"].insert("");        else evioMap["dmcthrown"].erase("");
+      if(!minus) evioMap["dmctrackhit"].insert("");      else evioMap["dmctrackhit"].erase("");
+      if(!minus) evioMap["dfcaltruthshower"].insert(""); else evioMap["dfcaltruthshower"].erase("");
+      if(!minus) evioMap["dbcaltruthshower"].insert(""); else evioMap["dbcaltruthshower"].erase("");
+      if(!minus) evioMap["dtoftruth"].insert("");        else evioMap["dtoftruth"].erase("");
+      if(!minus) evioMap["dsctruth"].insert("");         else evioMap["dsctruth"].erase("");
+      if(!minus) evioMap["dtofrawhitmc"].insert("");     else evioMap["dtofrawhitmc"].erase("");
 
 
-  // print factory/tag selection flags
-  map<string, set<string> >::iterator iter1;
-  set<string>::iterator iter2;
-  jout << endl << endl << endl << "  DANA object output flags:" << endl << endl;
-  for(iter1=evioMap.begin(); iter1!=evioMap.end(); iter1++) {
-    jout << "     " << setiosflags(ios::left) << setw(20) << iter1->first+":";
-    if(iter1->second.size()>0) {
-      for(iter2=iter1->second.begin(); iter2!=iter1->second.end(); iter2++) {
-        jout << setw(20) << string(((*iter2).size()>0)?(*iter2):("untagged")) << string("    ");
-      }
+    } else if(value=="hits") {
+      if(!minus) evioMap["dcdchit"].insert("");          else evioMap["dcdchit"].erase("");
+      if(!minus) evioMap["dfdchit"].insert("");          else evioMap["dfdchit"].erase("");
+      if(!minus) evioMap["dfcalhit"].insert("");         else evioMap["dfcalhit"].erase("");
+      if(!minus) evioMap["dbcalhit"].insert("");         else evioMap["dbcalhit"].erase("");
+      if(!minus) evioMap["dschit"].insert("");           else evioMap["dschit"].erase("");
+      if(!minus) evioMap["dtofrawhit"].insert("");       else evioMap["dtofrawhit"].erase("");
+
+    } else if(value=="tracks") {
+      if(!minus) evioMap["dtrackwirebased"].insert("");  else evioMap["dtrackwirebased"].erase("");
+      if(!minus) evioMap["dtracktimebased"].insert("");  else evioMap["dtracktimebased"].erase("");
+      if(!minus) evioMap["dchargedtrack"].insert("");    else evioMap["dchargedtrack"].erase("");
+      if(!minus) evioMap["dphoton"].insert("");          else evioMap["dphoton"].erase("");
+      if(!minus) evioMap["dcdctrackhit"].insert("");     else evioMap["dcdctrackhit"].erase("");
+      if(!minus) evioMap["dfdcpseudo"].insert("");       else evioMap["dfdcpseudo"].erase("");
+
     } else {
-      jout << setw(20) << "(not selected)";
-    }
-    jout << endl;
-  }
-  jout << endl << endl;
 
+      string::size_type colon = value.find(":");
+      string name = value;
+      string tag = "";
+      if(colon!=string::npos) {
+        name = value.substr(0,colon);
+        tag  = valueCS.substr(colon+1);
+      }
+
+      map< string, set<string> >::iterator found = evioMap.find(name);
+      if(found!=evioMap.end()) {
+        if(!minus)found->second.insert(tag); else found->second.erase(tag);
+      } else {
+        jerr << endl << "  ?unknown DANAEVIO parameter: " << params[i] << endl;
+      }
+
+    }
+  }
 }
 
 
@@ -407,7 +448,7 @@ void DDANAEVIO_factory::startElement(void *userData, const char *xmlname, const 
 //--------------------------------------------------------------------------
 
 
-map< string, pair<uint16_t,uint8_t> > *DDANAEVIO_factory::getTagMapPointer() {
+const map< string, pair<uint16_t,uint8_t> > *DDANAEVIO_factory::getTagMapPointer() {
   return(&tagMap);
 }  
 

@@ -33,18 +33,16 @@ class DDANAEVIO_factory : public JFactory<DDANAEVIODOMTree> {
   DDANAEVIO_factory();
   ~DDANAEVIO_factory() {};
 
-  static map< string, pair<uint16_t,uint8_t> > *getTagMapPointer();
+  static const map< string, pair<uint16_t,uint8_t> > *getTagMapPointer();
 
 
  private:
   jerror_t evnt(JEventLoop *eventLoop, int eventnumber);
-  void decode_DANAEVIO_parameter(void);
   void get_tagNum_dictionary(void);
   static void startElement(void *userData, const char *xmlname, const char **atts);
 
   template<typename T> evioDOMNodeP createLeafNode(string nameId);
   evioDOMNodeP createContainerNode(string nameId);
-
 
 
   void addObjIdBank(evioDOMTree &tree);
@@ -89,9 +87,16 @@ class DDANAEVIO_factory : public JFactory<DDANAEVIODOMTree> {
   void addDParticle(JEventLoop *eventLoop, evioDOMTree &tree);
 
 
+  // map of which factory/tags to convert, can be set on-the-fly via setEVIOMap()
+  map< string, set<string> > evioMap;
+
+
   // event-specific global object id map
   map<int,string> objIdMap;
 
+
+public:
+  void setEVIOMap(string danaevio);
 
 };
 
