@@ -77,8 +77,12 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 
 
   // close old and open new output file channel
-  if(chan!=NULL)chan->close();
-  chan = new evioFileChannel("fileName.evio","w",evioBufSize);
+  if(chan!=NULL) {
+    chan->close();
+    delete(chan);
+    chan=NULL;
+  }
+  chan = new evioFileChannel("someFileName.evio","w",evioBufSize);
   chan->open();
 
   return NOERROR;
@@ -88,8 +92,8 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //----------------------------------------------------------------------------
 
 
-// evnt called once per event, in every processing thread
-// MUST be thread-safe!
+// evnt called once per event, by every processing thread
+// *** MUST be thread-safe ***
 jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) {
 
   unsigned short tag;
@@ -100,10 +104,9 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   evioDOMTree eventTree(tag=1,num=0);
 
 
-  // create and fill header bank with vector of ints and add to tree
+  // create and fill header bank (with vector of ints) and add to tree
   evioDOMNodeP head =  evioDOMNode::createEvioDOMNode<int>(tag=1,num=1);
-  vector<int> v(10,1);
-  *head << v;
+  *head << vector<int>(10,1);
   eventTree << head;
 
 
@@ -146,9 +149,12 @@ jerror_t JEventProcessor_rawevent::erun(void) {
   jout << endl << "   erun called for run " << runNumber << endl << endl;
 
 
-  // close evio output file
-  if(chan!=NULL)chan->close();
-  chan=NULL;
+  // close evio output file and delete channel
+  if(chan!=NULL) {
+    chan->close();
+    delete(chan);
+    chan=NULL;
+  }
 
   return NOERROR;
 }
