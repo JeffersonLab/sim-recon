@@ -4,10 +4,26 @@
 // Created: Fri Jun 24 12:05:19 EDT 2011
 // Creator: wolin (on Linux stan.jlab.org 2.6.18-194.11.1.el5 x86_64)
 //
-
-// JANA event processor plugin "rawevent" is run as follows:
 //
-//     $ hd_ana --plugin=rawevent input_file.hddm
+//
+// JANA event processor plugin "rawevent"
+//
+//  Gets raw hit data from hddm file, converts to (crate,slot,channel), then creates
+//   simulated raw output evio event and writes to file.
+//
+//  Default is to open new file for every run.
+//
+//
+// To run:
+//
+//     $ hd_ana --plugin=rawevent inputFile.hddm
+//
+//
+//
+// still to do:
+//    translation table
+//    specify output file name base on command line
+//
 //
 //
 //  ejw, 27-jun-2011
@@ -16,13 +32,20 @@
 
 #include "JEventProcessor_rawevent.h"
 
+#include<sstream>
+#include<iomanip>
 
+
+
+// to protect writing to output file
 static pthread_mutex_t rawMutex = PTHREAD_MUTEX_INITIALIZER;
 
 
-// for evio output file
-static evioFileChannel *chan = NULL;
-static int evioBufSize       = 750000;
+// for evio output
+static evioFileChannel *chan   = NULL;
+static int evioBufSize         = 750000;
+static string fileBase         = "rawevent.evio";
+static string outputFileName;
 
 
 // current run number
@@ -76,14 +99,29 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
   jout << endl << "   brun called for run " << runNumber << endl << endl;
 
 
-  // close old and open new output file channel
+  // close old output file
   if(chan!=NULL) {
     chan->close();
     delete(chan);
     chan=NULL;
   }
-  chan = new evioFileChannel("someFileName.evio","w",evioBufSize);
+
+
+  // get new file name
+  stringstream ss;
+  ss << fileBase << "." << setw(6) << setfill('0') << runNumber << ends;
+  outputFileName=ss.str();
+
+
+  // open new output file
+  chan = new evioFileChannel(outputFileName,"w",evioBufSize);
   chan->open();
+  jout << endl << "   opening output file:   " << outputFileName << endl << endl << endl;
+
+
+  // add header event if required
+  // ...
+
 
   return NOERROR;
 }
@@ -92,42 +130,124 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //----------------------------------------------------------------------------
 
 
-// evnt called once per event, by every processing thread
-// *** MUST be thread-safe ***
+// called once per event in many different processing threads, so:
+//
+//    *** MUST be thread-safe ***
+//
 jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) {
 
   unsigned short tag;
   unsigned char num;
+  unsigned int i;
 
 
-  // create evio output event tree
+  // create evio output event tree in CODA raw data format
   evioDOMTree eventTree(tag=1,num=0);
 
 
-  // create and fill header bank (with vector of ints) and add to tree
-  evioDOMNodeP head =  evioDOMNode::createEvioDOMNode<int>(tag=1,num=1);
-  *head << vector<int>(10,1);
-  eventTree << head;
+
+  // example how to create and fill bank and add to event tree
+  evioDOMNodeP testBank =  evioDOMNode::createEvioDOMNode<int>(tag=1,num=1);
+  *testBank << vector<int>(10,1);
+  eventTree << testBank;
 
 
-  // get DTOFRAWHIT banks
+
+  // DTOFRawHit
   vector<const DTOFRawHit*> dtofrawhits; 
   eventLoop->Get(dtofrawhits);
-  for(unsigned int i=0; i<dtofrawhits.size(); i++) {
+  for(i=0; i<dtofrawhits.size(); i++) {
     int bar   = dtofrawhits[i]->bar;
     int plane = dtofrawhits[i]->plane;
     int lr    = dtofrawhits[i]->lr;
     float dE  = dtofrawhits[i]->dE;
     float t   = dtofrawhits[i]->t;
 
-    // now do something with hit information
+    // do something with raw hit information
   }
 
 
-  // also need to process DBCALHIT,DFCALHIT,DFDCHIT,DCDCHIT,DSCHIT
+  // DBCALHit
+  vector<const DBCALHit*> dbcalhits;
+  eventLoop->Get(dbcalhits);
+  for(i=0; i<dbcalhits.size(); i++) {
+    int module   = dbcalhits[i]->module;
+    int layer    = dbcalhits[i]->layer;
+    int sector   = dbcalhits[i]->sector;
+    int end      = dbcalhits[i]->end;       // 0 for upstream
+    float E      = dbcalhits[i]->E;
+    float t      = dbcalhits[i]->t;
+
+    // do something with raw hit information
+  }      
 
 
-  // lock and write to file
+
+  // DFCALHit
+  vector<const DFCALHit*> dfcalhits;
+  eventLoop->Get(dfcalhits);
+  for(i=0; i<dfcalhits.size(); i++) {
+    int row      = dfcalhits[i]->row;
+    int column   = dfcalhits[i]->column;
+    float x      = dfcalhits[i]->x;
+    float y      = dfcalhits[i]->y;
+    float E      = dfcalhits[i]->E;
+    float t      = dfcalhits[i]->t;
+    
+    // do something with raw hit information
+  }      
+
+
+  // DFDCHit
+  vector<const DFDCHit*> dfdchits; 
+  eventLoop->Get(dfdchits);
+  for(unsigned int i=0; i<dfdchits.size(); i++) {
+    int layer    = dfdchits[i]->layer;
+    int module   = dfdchits[i]->module;
+    int element  = dfdchits[i]->element;
+    int plane    = dfdchits[i]->plane;
+    int gPlane   = dfdchits[i]->gPlane;
+    int gLayer   = dfdchits[i]->gLayer;
+    float q      = dfdchits[i]->q;
+    float t      = dfdchits[i]->t;
+    float r      = dfdchits[i]->r;
+    int type     = dfdchits[i]->type;
+
+    // do something with raw hit information
+  }
+
+
+  // DFDCHit
+  vector<const DCDCHit*> dcdchits; 
+  eventLoop->Get(dcdchits);
+  for(i=0; i<dcdchits.size(); i++) {
+    int ring     = dcdchits[i]->ring;
+    int straw    = dcdchits[i]->straw;
+    float dE     = dcdchits[i]->dE;
+    float t      = dcdchits[i]->t;
+
+    // do something with raw hit information
+  }      
+
+
+  // DSCHit
+  vector<const DSCHit*> dschits;
+  eventLoop->Get(dschits);
+  for(unsigned int i=0; i<dschits.size(); i++) {
+    float dE     = dschits[i]->dE;
+    float t      = dschits[i]->t;
+    int sector   = dschits[i]->sector;
+
+    // do something with raw hit information
+  }      
+
+
+
+  // construct evio banks from hit data collected earlier and add to event tree
+  // ...
+
+
+  // get lock, write event tree to file, unlock
   pthread_mutex_lock(&rawMutex);
   chan->write(eventTree);
   pthread_mutex_unlock(&rawMutex);
@@ -149,11 +269,16 @@ jerror_t JEventProcessor_rawevent::erun(void) {
   jout << endl << "   erun called for run " << runNumber << endl << endl;
 
 
+  // add end event if required
+  // ...
+
+
   // close evio output file and delete channel
   if(chan!=NULL) {
     chan->close();
     delete(chan);
     chan=NULL;
+    jout << endl << "  output file " << outputFileName << " closed" << endl << endl;
   }
 
   return NOERROR;
@@ -165,8 +290,7 @@ jerror_t JEventProcessor_rawevent::erun(void) {
 
 // fini called once-only when done, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::fini(void) {
-	// Called before program exit after event processing is finished.
-	return NOERROR;
+  return NOERROR;
 }
 
 
