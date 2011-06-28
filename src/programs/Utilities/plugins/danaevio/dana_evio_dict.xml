@@ -439,4 +439,13 @@
   <danaevioDictEntry name="DTOFRawHitMC.assocObjectBanks"             tag="13600"    num="254"/>
   <danaevioDictEntry name="DTOFRawHitMC.assocObjects"                 tag="13600"    num="255"/>
 
+  <danaevioDictEntry name="DTagger"                                   tag="13700"    num="0"/>
+  <danaevioDictEntry name="DTagger.objId"                             tag="13700"    num="1"/>
+  <danaevioDictEntry name="DTagger.row"                               tag="13700"    num="2"/>
+  <danaevioDictEntry name="DTagger.column"                            tag="13700"    num="3"/>
+  <danaevioDictEntry name="DTagger.E"                                 tag="13700"    num="4"/>
+  <danaevioDictEntry name="DTagger.t"                                 tag="13700"    num="5"/>
+  <danaevioDictEntry name="DTagger.assocObjectBanks"                  tag="13700"    num="254"/>
+  <danaevioDictEntry name="DTagger.assocObjects"                      tag="13700"    num="255"/>
+
 </xmlDict>

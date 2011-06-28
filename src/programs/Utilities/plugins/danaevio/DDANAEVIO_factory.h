@@ -85,6 +85,7 @@ class DDANAEVIO_factory : public JFactory<DDANAEVIODOMTree> {
   void addDFDCSegment(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDTwoGammaFit(JEventLoop *eventLoop, evioDOMTree &tree);
   void addDParticle(JEventLoop *eventLoop, evioDOMTree &tree);
+  void addDTagger(JEventLoop *eventLoop, evioDOMTree &tree);
 
 
   // map of which factory/tags to convert, can be set on-the-fly via setEVIOMap()

@@ -81,6 +81,7 @@ static string danaObjs[] =  {
   "dfcalcluster",
   "dfdccathodecluster",
   "dfdcsegment",
+  "dtagger",
 };
 
 
@@ -136,6 +137,8 @@ using namespace jana;
 
 #include "PID/DVertex.h"
 
+#include "TAGGER/DTagger.h"
+
 #include "SplitString.h"
 
 
@@ -147,43 +150,6 @@ using namespace evio;
 // for DANAEVIO
 #include "dana_evio_dict.h"
 #include "DDANAEVIO_factory.h"
-
-
-// // which objects to output by default
-// static pair<string,bool> danaevioInit[] =  {
-//   pair<string,bool>("dmctrackhit",          true),
-//   pair<string,bool>("dbeamphoton",          false),
-//   pair<string,bool>("dmcthrown",            false),
-//   pair<string,bool>("dfcaltruthshower",     false),
-//   pair<string,bool>("dbcaltruthshower",     false),
-//   pair<string,bool>("dtoftruth",            false),
-//   pair<string,bool>("dsctruthhit",          false),
-//   pair<string,bool>("dmctrajectorypoint",   false),
-//   pair<string,bool>("dcdchit",              false),
-//   pair<string,bool>("dfdchit",              false),
-//   pair<string,bool>("dfcalhit",             false),
-//   pair<string,bool>("dschit",               false),
-//   pair<string,bool>("dtrackwirebased",      false),
-//   pair<string,bool>("dtracktimebased",      false),
-//   pair<string,bool>("dchargedtrack",        false),
-//   pair<string,bool>("dphoton",              false),
-//   pair<string,bool>("dcdctrackhit",         false),
-//   pair<string,bool>("dfdcpseudo",           false),
-//   pair<string,bool>("dvertex",              false),
-//   pair<string,bool>("dtrackcandidate",      false),
-//   pair<string,bool>("dbcalphoton",          false),
-//   pair<string,bool>("dfcalphoton",          false),
-//   pair<string,bool>("dchargedtruthmatch",   false),
-//   pair<string,bool>("dtofrawhitmc",         false),
-//   pair<string,bool>("dtofrawhit",           false),
-//   pair<string,bool>("dtofhit",              false),
-//   pair<string,bool>("dtofpoint",            false),
-//   pair<string,bool>("dbcalhit",             false),
-//   pair<string,bool>("dbcalshower",          false),
-//   pair<string,bool>("dfcalcluster",         false),
-//   pair<string,bool>("dfdccathodecluster",   false),
-//   pair<string,bool>("dfdcsegment",          false),
-// };
 
 
 // holds tag/num pairs for all DANA objects
@@ -506,6 +472,7 @@ jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, int eventnumber) {
   if(evioMap["dfcalcluster"       ].size()>0)  addDFCALCluster(         eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dfdccathodecluster" ].size()>0)  addDFDCCathodeCluster(   eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dfdcsegment"        ].size()>0)  addDFDCSegment(          eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dtagger"            ].size()>0)  addDTagger(              eventLoop, myDDANAEVIODOMTree->tree); 
   //  if(evioMap["dtwogammafit"       ].size()>0)  addDTwoGammaFit(         eventLoop, myDDANAEVIODOMTree->tree); 
 
 
@@ -3020,6 +2987,78 @@ void DDANAEVIO_factory::addDFDCSegment(JEventLoop *eventLoop, evioDOMTree &tree)
   }
   if(assocCount==0)assocBank->cutAndDelete();
 
+}
+
+
+//------------------------------------------------------------------------------
+
+
+void DDANAEVIO_factory::addDTagger(JEventLoop *eventLoop, evioDOMTree &tree) {
+
+  string objName             = "DTagger";
+  string objNameLC(objName);
+  std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
+  
+
+  // create main bank and add to event tree
+  evioDOMNodeP mainBank = createContainerNode(objName);
+  tree << mainBank;
+
+
+  // create data banks and add to bank
+  evioDOMNodeP objIdBank   = createLeafNode<uint64_t>  (objName+".objId");
+  evioDOMNodeP var1Bank    = createLeafNode<int>       (objName+".row");
+  evioDOMNodeP var2Bank    = createLeafNode<int>       (objName+".column");
+  evioDOMNodeP var3Bank    = createLeafNode<float>     (objName+".E");
+  evioDOMNodeP var4Bank    = createLeafNode<float>     (objName+".t");
+  *mainBank << objIdBank << var1Bank << var2Bank << var3Bank << var4Bank;
+
+
+  // create associated object bank and add to main bank
+  evioDOMNodeP assocBank = createContainerNode(objName+".assocObjectBanks");
+  *mainBank << assocBank;
+
+
+  // loop over each requested factory, indexed by object name in lower case
+  int assocCount = 0;
+  set<string>::iterator iter;
+  for(iter=evioMap[objNameLC].begin(); iter!=evioMap[objNameLC].end(); iter++) {
+
+
+    // is there any data
+    vector<const DTagger*> dataObjects;
+    eventLoop->Get(dataObjects,(*iter).c_str()); 
+    if(dataObjects.size()<=0)continue;
+
+
+    // add track data to banks
+    for(unsigned int i=0; i<dataObjects.size(); i++) {
+      *objIdBank   << dataObjects[i]->id;
+      *var1Bank    << dataObjects[i]->row;
+      *var2Bank    << dataObjects[i]->column;
+      *var3Bank    << dataObjects[i]->E;
+      *var3Bank    << dataObjects[i]->t;
+
+
+      objIdMap[dataObjects[i]->id]=dataObjects[i]->GetNameTag();
+      
+      
+      // get associated object id bank and add to associated object bank
+      evioDOMNodeP assocObjs = createLeafNode<uint64_t> (objName+".assocObjects");
+      *assocBank << assocObjs;
+      
+      // get id's, add to id bank and to global object id map
+      vector<const JObject*> objs;
+      dataObjects[i]->GetT(objs); 
+      for(unsigned int j=0; j<objs.size(); j++) {
+        assocCount++;
+        *assocObjs << objs[j]->id;
+        objIdMap[objs[j]->id]=objs[j]->GetNameTag();
+      }
+    }
+  }
+  if(assocCount==0)assocBank->cutAndDelete();
+  
 }
 
 
