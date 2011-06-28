@@ -11,7 +11,8 @@
 //  Gets raw hit data from hddm file, converts to (crate,slot,channel), then creates
 //   simulated raw output evio event and writes to file.
 //
-//  Default is to open new file for every run.
+//  Opens new file for every run.
+//  Default output file name is rawevent_xxxxxx.evio where xxxxxx is the run number.
 //
 //
 // To run:
@@ -22,7 +23,6 @@
 //
 // still to do:
 //    translation table
-//    specify output file name base on command line
 //
 //
 //
@@ -44,7 +44,7 @@ static pthread_mutex_t rawMutex = PTHREAD_MUTEX_INITIALIZER;
 // for evio output
 static evioFileChannel *chan   = NULL;
 static int evioBufSize         = 750000;
-static string fileBase         = "rawevent.evio";
+static string fileBase         = "rawevent";
 static string outputFileName;
 
 
@@ -70,6 +70,10 @@ void InitPlugin(JApplication *app){
 
 // JEventProcessor_rawevent (Constructor) invoked once only
 JEventProcessor_rawevent::JEventProcessor_rawevent() {
+
+  // get fileBase from command line params
+  gPARMS->SetDefaultParameter("RAW:FILEBASE",fileBase);
+
 }
 
 
@@ -109,7 +113,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 
   // get new file name
   stringstream ss;
-  ss << fileBase << "." << setw(6) << setfill('0') << runNumber << ends;
+  ss << fileBase << "_" << setw(6) << setfill('0') << runNumber << ".evio" << ends;
   outputFileName=ss.str();
 
 
@@ -163,7 +167,13 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float dE  = dtofrawhits[i]->dE;
     float t   = dtofrawhits[i]->t;
 
-    // do something with raw hit information
+    // translate to crate/slot/channel
+    cscVal csc  = DTOFRawHitTranslation(bar,plane,lr);
+    int crate   = csc.get<0>();
+    int slot    = csc.get<1>();
+    int channel = csc.get<2>();
+
+    // do something...
   }
 
 
@@ -178,7 +188,13 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float E      = dbcalhits[i]->E;
     float t      = dbcalhits[i]->t;
 
-    // do something with raw hit information
+    // translate to crate/slot/channel
+    cscVal csc  = DBCALHitTranslation(module,layer,sector,end);
+    int crate   = csc.get<0>();
+    int slot    = csc.get<1>();
+    int channel = csc.get<2>();
+
+    // do something...
   }      
 
 
@@ -194,7 +210,13 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float E      = dfcalhits[i]->E;
     float t      = dfcalhits[i]->t;
     
-    // do something with raw hit information
+    // translate to crate/slot/channel
+    cscVal csc  = DFCALHitTranslation(row,column,x,y);
+    int crate   = csc.get<0>();
+    int slot    = csc.get<1>();
+    int channel = csc.get<2>();
+
+    // do something...
   }      
 
 
@@ -213,7 +235,13 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float r      = dfdchits[i]->r;
     int type     = dfdchits[i]->type;
 
-    // do something with raw hit information
+    // translate to crate/slot/channel
+    cscVal csc  = DFDCHitTranslation(layer,module,element,plane,gPlane,gLayer);
+    int crate   = csc.get<0>();
+    int slot    = csc.get<1>();
+    int channel = csc.get<2>();
+
+    // do something...
   }
 
 
@@ -226,7 +254,13 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float dE     = dcdchits[i]->dE;
     float t      = dcdchits[i]->t;
 
-    // do something with raw hit information
+    // translate to crate/slot/channel
+    cscVal csc  = DCDCHitTranslation(ring,straw);
+    int crate   = csc.get<0>();
+    int slot    = csc.get<1>();
+    int channel = csc.get<2>();
+
+    // do something...
   }      
 
 
@@ -238,8 +272,34 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dschits[i]->t;
     int sector   = dschits[i]->sector;
 
-    // do something with raw hit information
+    // translate to crate/slot/channel
+    cscVal csc  = DSCHitTranslation(sector);
+    int crate   = csc.get<0>();
+    int slot    = csc.get<1>();
+    int channel = csc.get<2>();
+
+    // do something...
   }      
+
+
+  // DTagger
+  vector<const DTagger*> dtaggerhits;
+  eventLoop->Get(dtaggerhits);
+  for(i=0; i<dtaggerhits.size(); i++) {
+    int row      = dtaggerhits[i]->row;
+    int column   = dtaggerhits[i]->column;
+    float E      = dtaggerhits[i]->E;
+    float t      = dtaggerhits[i]->t;
+
+    // translate to crate/slot/channel
+    cscVal csc  = DTaggerTranslation(row,column);
+    int crate   = csc.get<0>();
+    int slot    = csc.get<1>();
+    int channel = csc.get<2>();
+
+    // do something...
+  }      
+
 
 
 
@@ -247,7 +307,9 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   // ...
 
 
-  // get lock, write event tree to file, unlock
+
+
+  // write out event tree:  get lock, write to file, unlock
   pthread_mutex_lock(&rawMutex);
   chan->write(eventTree);
   pthread_mutex_unlock(&rawMutex);
@@ -295,3 +357,72 @@ jerror_t JEventProcessor_rawevent::fini(void) {
 
 
 //----------------------------------------------------------------------------
+
+
+
+
+
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// the following routines access the translation table
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DTOFRawHitTranslation(int bar,int plane, int lr) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DBCALHitTranslation(int module,int layer,int sector,int end) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DFCALHitTranslation(int row,int column,float x,float y) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DFDCHitTranslation(int layer,int module,int element,int plane,int gPlane,int gLayer) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DCDCHitTranslation(int ring,int straw) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DSCHitTranslation(int sector) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DTaggerTranslation(int row,int column) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+

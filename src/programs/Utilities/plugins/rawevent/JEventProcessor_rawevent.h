@@ -27,30 +27,50 @@
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
 #include "START_COUNTER/DSCHit.h"
+#include "TAGGER/DTagger.h"
 
+
+#include<boost/tuple/tuple.hpp>
 
 
 using namespace std;
 using namespace jana;
 using namespace evio;
+using namespace boost;
+
+
+typedef tuple<int,int,int> cscVal;
 
 
 
 //----------------------------------------------------------------------------
 
 
-class JEventProcessor_rawevent:public jana::JEventProcessor{
+class JEventProcessor_rawevent : public jana::JEventProcessor {
+
 	public:
 		JEventProcessor_rawevent();
 		~JEventProcessor_rawevent();
 		const char* className(void){return "JEventProcessor_rawevent";}
 
 	private:
-		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+		jerror_t init(void);
+		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);
+		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);
+		jerror_t erun(void);
+		jerror_t fini(void);
+
+
+                // these routines access the translation table
+                cscVal DTOFRawHitTranslation(int bar,int plane, int lr);
+                cscVal DBCALHitTranslation(int module,int layer,int sector,int end);
+                cscVal DFCALHitTranslation(int row,int column,float x,float y);
+                cscVal DFDCHitTranslation(int layer,int module,int element,int plane,int gPlane,int gLayer);
+                cscVal DCDCHitTranslation(int ring,int straw);
+                cscVal DSCHitTranslation(int sector);
+                cscVal DTaggerTranslation(int row,int column);
+
+
 };
 
 #endif // _JEventProcessor_rawevent_
