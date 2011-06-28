@@ -22,8 +22,6 @@
   <danaevioDictEntry name="objIdBank.nameTag"                         tag="10001"     num="2"/>
 
 
- <!-- MC truth data -->
-
   <danaevioDictEntry name="DMCTrackHit"                               tag="10100"    num="0"/>
   <danaevioDictEntry name="DMCTrackHit.objId"                         tag="10100"    num="1"/>
   <danaevioDictEntry name="DMCTrackHit.r"                             tag="10100"    num="2"/>
@@ -142,11 +140,6 @@
   <danaevioDictEntry name="DMCTrajectoryPoint.assocObjectBanks"       tag="10800"    num="254"/>
   <danaevioDictEntry name="DMCTrajectoryPoint.assocObjects"           tag="10800"    num="255"/>
 
-
-
-
-  <!-- hit data -->
-
   <danaevioDictEntry name="DCDCHit"                                   tag="10900"    num="0"/>
   <danaevioDictEntry name="DCDCHit.objId"                             tag="10900"    num="1"/>
   <danaevioDictEntry name="DCDCHit.ring"                              tag="10900"    num="2"/>
@@ -182,16 +175,34 @@
   <danaevioDictEntry name="DFCALHit.assocObjectBanks"                 tag="11100"    num="254"/>
   <danaevioDictEntry name="DFCALHit.assocObjects"                     tag="11100"    num="255"/>
 
-  <danaevioDictEntry name="DSCHit"                                    tag="11400"    num="0"/>
-  <danaevioDictEntry name="DSCHit.objId"                              tag="11400"    num="1"/>
-  <danaevioDictEntry name="DSCHit.dE"                                 tag="11400"    num="2"/>
-  <danaevioDictEntry name="DSCHit.t"                                  tag="11400"    num="3"/>
-  <danaevioDictEntry name="DSCHit.sector"                             tag="11400"    num="4"/>
-  <danaevioDictEntry name="DSCHit.assocObjectBanks"                   tag="11400"    num="254"/>
-  <danaevioDictEntry name="DSCHit.assocObjects"                       tag="11400"    num="255"/>
+  <danaevioDictEntry name="DSCHit"                                    tag="11200"    num="0"/>
+  <danaevioDictEntry name="DSCHit.objId"                              tag="11200"    num="1"/>
+  <danaevioDictEntry name="DSCHit.dE"                                 tag="11200"    num="2"/>
+  <danaevioDictEntry name="DSCHit.t"                                  tag="11200"    num="3"/>
+  <danaevioDictEntry name="DSCHit.sector"                             tag="11200"    num="4"/>
+  <danaevioDictEntry name="DSCHit.assocObjectBanks"                   tag="11200"    num="254"/>
+  <danaevioDictEntry name="DSCHit.assocObjects"                       tag="11200"    num="255"/>
+
+  <danaevioDictEntry name="DTagger"                                   tag="11300"    num="0"/>
+  <danaevioDictEntry name="DTagger.objId"                             tag="11300"    num="1"/>
+  <danaevioDictEntry name="DTagger.row"                               tag="11300"    num="2"/>
+  <danaevioDictEntry name="DTagger.column"                            tag="11300"    num="3"/>
+  <danaevioDictEntry name="DTagger.E"                                 tag="11300"    num="4"/>
+  <danaevioDictEntry name="DTagger.t"                                 tag="11300"    num="5"/>
+  <danaevioDictEntry name="DTagger.assocObjectBanks"                  tag="11300"    num="254"/>
+  <danaevioDictEntry name="DTagger.assocObjects"                      tag="11300"    num="255"/>
+
+  <danaevioDictEntry name="DTOFRawHit"                                tag="11400"    num="0"/>
+  <danaevioDictEntry name="DTOFRawHit.objId"                          tag="11400"    num="1"/>
+  <danaevioDictEntry name="DTOFRawHit.bar"                            tag="11400"    num="2"/>
+  <danaevioDictEntry name="DTOFRawHit.plane"                          tag="11400"    num="3"/>
+  <danaevioDictEntry name="DTOFRawHit.lr"                             tag="11400"    num="4"/>
+  <danaevioDictEntry name="DTOFRawHit.dE"                             tag="11400"    num="5"/>
+  <danaevioDictEntry name="DTOFRawHit.t"                              tag="11400"    num="6"/>
+  <danaevioDictEntry name="DTOFRawHit.assocObjectBanks"               tag="11400"    num="254"/>
+  <danaevioDictEntry name="DTOFRawHit.assocObjects"                   tag="11400"    num="255"/>
 
 
-<!-- Tracking info -->
   <danaevioDictEntry name="DTrackTimeBased"                           tag="11500"    num="0"/>
   <danaevioDictEntry name="DTrackTimeBased.objId"                     tag="11500"    num="1"/>
   <danaevioDictEntry name="DTrackTimeBased.chisq"                     tag="11500"    num="2"/>
@@ -261,8 +272,6 @@
   <danaevioDictEntry name="DCDCTrackHit.assocObjectBanks"             tag="11900"    num="254"/>
   <danaevioDictEntry name="DCDCTrackHit.assocObjects"                 tag="11900"    num="255"/>
 
-
-<!-- modified -->
   <danaevioDictEntry name="DFDCPseudo"                                tag="12000"    num="0"/>
   <danaevioDictEntry name="DFDCPseudo.objId"                          tag="12000"    num="1"/>
   <danaevioDictEntry name="DFDCPseudo.u"                              tag="12000"    num="2"/>
@@ -361,6 +370,24 @@
   <danaevioDictEntry name="DTOFPoint.assocObjectBanks"                tag="12700"    num="254"/>
   <danaevioDictEntry name="DTOFPoint.assocObjects"                    tag="12700"    num="255"/>
 
+  <danaevioDictEntry name="DTOFRawHitMC"                              tag="12800"    num="0"/>
+  <danaevioDictEntry name="DTOFRawHitMC.objId"                        tag="12800"    num="1"/>
+  <danaevioDictEntry name="DTOFRawHitMC.bar"                          tag="12800"    num="2"/>
+  <danaevioDictEntry name="DTOFRawHitMC.plane"                        tag="12800"    num="3"/>
+  <danaevioDictEntry name="DTOFRawHitMC.lr"                           tag="12800"    num="4"/>
+  <danaevioDictEntry name="DTOFRawHitMC.dist"                         tag="12800"    num="5"/>
+  <danaevioDictEntry name="DTOFRawHitMC.x"                            tag="12800"    num="6"/>
+  <danaevioDictEntry name="DTOFRawHitMC.y"                            tag="12800"    num="7"/>
+  <danaevioDictEntry name="DTOFRawHitMC.z"                            tag="12800"    num="8"/>
+  <danaevioDictEntry name="DTOFRawHitMC.px"                           tag="12800"    num="9"/>
+  <danaevioDictEntry name="DTOFRawHitMC.py"                           tag="12800"    num="10"/>
+  <danaevioDictEntry name="DTOFRawHitMC.pz"                           tag="12800"    num="11"/>
+  <danaevioDictEntry name="DTOFRawHitMC.E"                            tag="12800"    num="12"/>
+  <danaevioDictEntry name="DTOFRawHitMC.ptype"                        tag="12800"    num="13"/>
+  <danaevioDictEntry name="DTOFRawHitMC.itrack"                       tag="12800"    num="14"/>
+  <danaevioDictEntry name="DTOFRawHitMC.assocObjectBanks"             tag="12800"    num="254"/>
+  <danaevioDictEntry name="DTOFRawHitMC.assocObjects"                 tag="12800"    num="255"/>
+
   <danaevioDictEntry name="DBCALHit"                                  tag="12900"    num="0"/>
   <danaevioDictEntry name="DBCALHit.objId"                            tag="12900"    num="1"/>
   <danaevioDictEntry name="DBCALHit.module"                           tag="12900"    num="2"/>
@@ -371,6 +398,17 @@
   <danaevioDictEntry name="DBCALHit.t"                                tag="12900"    num="7"/>
   <danaevioDictEntry name="DBCALHit.assocObjectBanks"                 tag="12900"    num="254"/>
   <danaevioDictEntry name="DBCALHit.assocObjects"                     tag="12900"    num="255"/>
+
+  <danaevioDictEntry name="DFDCSegment"                               tag="13000"    num="0"/>
+  <danaevioDictEntry name="DFDCSegment.objId"                         tag="13000"    num="1"/>
+  <danaevioDictEntry name="DFDCSegment.xc"                            tag="13000"    num="2"/>
+  <danaevioDictEntry name="DFDCSegment.yc"                            tag="13000"    num="3"/>
+  <danaevioDictEntry name="DFDCSegment.rc"                            tag="13000"    num="4"/>
+  <danaevioDictEntry name="DFDCSegment.Phi1"                          tag="13000"    num="5"/>
+  <danaevioDictEntry name="DFDCSegment.Nhits"                         tag="13000"    num="6"/>
+  <danaevioDictEntry name="DFDCSegment.assocObjectBanks"              tag="13000"    num="254"/>
+  <danaevioDictEntry name="DFDCSegment.assocObjects"                  tag="13000"    num="255"/>
+
 
   <danaevioDictEntry name="DBCALShower"                               tag="13100"    num="0"/>
   <danaevioDictEntry name="DBCALShower.objId"                         tag="13100"    num="1"/>
@@ -401,51 +439,5 @@
   <danaevioDictEntry name="DFDCCathodeCluster.assocObjectBanks"       tag="13300"    num="254"/>
   <danaevioDictEntry name="DFDCCathodeCluster.assocObjects"           tag="13300"    num="255"/>
 
-  <danaevioDictEntry name="DFDCSegment"                               tag="13400"    num="0"/>
-  <danaevioDictEntry name="DFDCSegment.objId"                         tag="13400"    num="1"/>
-  <danaevioDictEntry name="DFDCSegment.xc"                            tag="13400"    num="2"/>
-  <danaevioDictEntry name="DFDCSegment.yc"                            tag="13400"    num="3"/>
-  <danaevioDictEntry name="DFDCSegment.rc"                            tag="13400"    num="4"/>
-  <danaevioDictEntry name="DFDCSegment.Phi1"                          tag="13400"    num="5"/>
-  <danaevioDictEntry name="DFDCSegment.Nhits"                         tag="13400"    num="6"/>
-  <danaevioDictEntry name="DFDCSegment.assocObjectBanks"              tag="13400"    num="254"/>
-  <danaevioDictEntry name="DFDCSegment.assocObjects"                  tag="13400"    num="255"/>
-
-  <danaevioDictEntry name="DTOFRawHit"                                tag="13500"    num="0"/>
-  <danaevioDictEntry name="DTOFRawHit.objId"                          tag="13500"    num="1"/>
-  <danaevioDictEntry name="DTOFRawHit.bar"                            tag="13500"    num="2"/>
-  <danaevioDictEntry name="DTOFRawHit.plane"                          tag="13500"    num="3"/>
-  <danaevioDictEntry name="DTOFRawHit.lr"                             tag="13500"    num="4"/>
-  <danaevioDictEntry name="DTOFRawHit.dE"                             tag="13500"    num="5"/>
-  <danaevioDictEntry name="DTOFRawHit.t"                              tag="13500"    num="6"/>
-  <danaevioDictEntry name="DTOFRawHit.assocObjectBanks"               tag="13500"    num="254"/>
-  <danaevioDictEntry name="DTOFRawHit.assocObjects"                   tag="13500"    num="255"/>
-
-  <danaevioDictEntry name="DTOFRawHitMC"                              tag="13500"    num="0"/>
-  <danaevioDictEntry name="DTOFRawHitMC.objId"                        tag="13600"    num="1"/>
-  <danaevioDictEntry name="DTOFRawHitMC.bar"                          tag="13600"    num="2"/>
-  <danaevioDictEntry name="DTOFRawHitMC.plane"                        tag="13600"    num="3"/>
-  <danaevioDictEntry name="DTOFRawHitMC.lr"                           tag="13600"    num="4"/>
-  <danaevioDictEntry name="DTOFRawHitMC.dist"                         tag="13600"    num="5"/>
-  <danaevioDictEntry name="DTOFRawHitMC.x"                            tag="13600"    num="6"/>
-  <danaevioDictEntry name="DTOFRawHitMC.y"                            tag="13600"    num="7"/>
-  <danaevioDictEntry name="DTOFRawHitMC.z"                            tag="13600"    num="8"/>
-  <danaevioDictEntry name="DTOFRawHitMC.px"                           tag="13600"    num="9"/>
-  <danaevioDictEntry name="DTOFRawHitMC.py"                           tag="13600"    num="10"/>
-  <danaevioDictEntry name="DTOFRawHitMC.pz"                           tag="13600"    num="11"/>
-  <danaevioDictEntry name="DTOFRawHitMC.E"                            tag="13600"    num="12"/>
-  <danaevioDictEntry name="DTOFRawHitMC.ptype"                        tag="13600"    num="13"/>
-  <danaevioDictEntry name="DTOFRawHitMC.itrack"                       tag="13600"    num="14"/>
-  <danaevioDictEntry name="DTOFRawHitMC.assocObjectBanks"             tag="13600"    num="254"/>
-  <danaevioDictEntry name="DTOFRawHitMC.assocObjects"                 tag="13600"    num="255"/>
-
-  <danaevioDictEntry name="DTagger"                                   tag="13700"    num="0"/>
-  <danaevioDictEntry name="DTagger.objId"                             tag="13700"    num="1"/>
-  <danaevioDictEntry name="DTagger.row"                               tag="13700"    num="2"/>
-  <danaevioDictEntry name="DTagger.column"                            tag="13700"    num="3"/>
-  <danaevioDictEntry name="DTagger.E"                                 tag="13700"    num="4"/>
-  <danaevioDictEntry name="DTagger.t"                                 tag="13700"    num="5"/>
-  <danaevioDictEntry name="DTagger.assocObjectBanks"                  tag="13700"    num="254"/>
-  <danaevioDictEntry name="DTagger.assocObjects"                      tag="13700"    num="255"/>
 
 </xmlDict>
