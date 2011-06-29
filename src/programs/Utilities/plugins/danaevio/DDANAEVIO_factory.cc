@@ -31,9 +31,16 @@
 //
 //
 //
+//  n.b. to get factory pointer in event processor
+//
+//    DDANAEVIO_factory *f = dynamic_cast<DDANAEVIO_factory*>(eventLoop->GetFactory("DDANAEVIODOMTree"));
+//    if(f!=NULL) { ... }
+//
+//
+//
 // still to do:
 //    enable associated objects in DTOFRawHit when JANA fixed
-//    DTwoGammaFit needs toString() method
+//    Add new objects when Paul M. is done
 //    optimize multi-threading
 //    add evio to external packages
 //    lock when changing map
@@ -148,8 +155,8 @@ using namespace evio;
 
 
 // for DANAEVIO
-#include "dana_evio_dict.h"
-#include "DDANAEVIO_factory.h"
+#include "danaevio/dana_evio_dict.h"
+#include "danaevio/DDANAEVIO_factory.h"
 
 
 // holds tag/num pairs for all DANA objects
