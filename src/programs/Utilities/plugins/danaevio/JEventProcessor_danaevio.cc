@@ -25,10 +25,10 @@
 //  Elliott Wolin, 19-Jul-2010
 
 
-#include <DDANAEVIODOMTree.h>
-#include <DDANAEVIO_factory.h>
-#include <JEventProcessor_danaevio.h>
-#include <dana_evio_dict.h>
+#include <danaevio/DDANAEVIODOMTree.h>
+#include <danaevio/DDANAEVIO_factory.h>
+#include <danaevio/JEventProcessor_danaevio.h>
+#include <danaevio/dana_evio_dict.h>
 
 
 

@@ -20,7 +20,7 @@ using namespace std;
 using namespace jana;
 
 
-#include <DDANAEVIODOMTree.h>
+#include <danaevio/DDANAEVIODOMTree.h>
 
 
 

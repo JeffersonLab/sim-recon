@@ -60,7 +60,9 @@ static string danaObjs[] =  {
   "dcdchit",
   "dfdchit",
   "dfcalhit",
+  "dtofrawhit",
   "dschit",
+  "dtagger",
   "dtrackwirebased",
   "dtracktimebased",
   "dchargedtrack",
@@ -73,7 +75,6 @@ static string danaObjs[] =  {
   "dfcalphoton",
   "dchargedtruthmatch",
   "dtofrawhitmc",
-  "dtofrawhit",
   "dtofhit",
   "dtofpoint",
   "dbcalhit",
@@ -81,7 +82,6 @@ static string danaObjs[] =  {
   "dfcalcluster",
   "dfdccathodecluster",
   "dfdcsegment",
-  "dtagger",
 };
 
 
@@ -223,6 +223,7 @@ DDANAEVIO_factory::DDANAEVIO_factory() {
 
 
 void DDANAEVIO_factory::setEVIOMap(string danaevio) {
+
 
   // decodes danaevio string and fills map
 
@@ -448,8 +449,11 @@ jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, int eventnumber) {
   
   if(evioMap["dcdchit"            ].size()>0)  addDCDCHit(              eventLoop, myDDANAEVIODOMTree->tree);
   if(evioMap["dfdchit"            ].size()>0)  addDFDCHit(              eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dbcalhit"           ].size()>0)  addDBCALHit(             eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dfcalhit"           ].size()>0)  addDFCALHit(             eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dtofrawhitmc"       ].size()>0)  addDTOFRawHitMC(         eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dschit"             ].size()>0)  addDSCHit(               eventLoop, myDDANAEVIODOMTree->tree);
+  if(evioMap["dtagger"            ].size()>0)  addDTagger(              eventLoop, myDDANAEVIODOMTree->tree); 
   
   if(evioMap["dcdctrackhit"       ].size()>0)  addDCDCTrackHit(         eventLoop, myDDANAEVIODOMTree->tree);
   if(evioMap["dfdcpseudo"         ].size()>0)  addDFDCPseudo(           eventLoop, myDDANAEVIODOMTree->tree);
@@ -463,16 +467,12 @@ jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, int eventnumber) {
   if(evioMap["dfcalphoton"        ].size()>0)  addDFCALPhoton(          eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dchargedtruthmatch" ].size()>0)  addDChargedTruthMatch(   eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dtofrawhit"         ].size()>0)  addDTOFRawHit(           eventLoop, myDDANAEVIODOMTree->tree); 
-  if(evioMap["dtofrawhitmc"       ].size()>0)  addDTOFRawHitMC(         eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dtofhit"            ].size()>0)  addDTOFHit(              eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dtofpoint"          ].size()>0)  addDTOFPoint(            eventLoop, myDDANAEVIODOMTree->tree); 
-
-  if(evioMap["dbcalhit"           ].size()>0)  addDBCALHit(             eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dbcalshower"        ].size()>0)  addDBCALShower(          eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dfcalcluster"       ].size()>0)  addDFCALCluster(         eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dfdccathodecluster" ].size()>0)  addDFDCCathodeCluster(   eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dfdcsegment"        ].size()>0)  addDFDCSegment(          eventLoop, myDDANAEVIODOMTree->tree); 
-  if(evioMap["dtagger"            ].size()>0)  addDTagger(              eventLoop, myDDANAEVIODOMTree->tree); 
   //  if(evioMap["dtwogammafit"       ].size()>0)  addDTwoGammaFit(         eventLoop, myDDANAEVIODOMTree->tree); 
 
 
