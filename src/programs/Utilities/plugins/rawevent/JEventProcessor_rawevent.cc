@@ -159,127 +159,115 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 
 
-  // DTOFRawHit
+  // DTOFRawHit - FADC250 and F1TDC (60 ps)
   vector<const DTOFRawHit*> dtofrawhits; 
   eventLoop->Get(dtofrawhits);
   for(i=0; i<dtofrawhits.size(); i++) {
-    int bar   = dtofrawhits[i]->bar;
-    int plane = dtofrawhits[i]->plane;
-    int lr    = dtofrawhits[i]->lr;
     float dE  = dtofrawhits[i]->dE;
     float t   = dtofrawhits[i]->t;
 
     // translate to crate/slot/channel
-    cscVal csc  = DTOFRawHitTranslation(bar,plane,lr);
-    int crate   = csc.get<0>();
-    int slot    = csc.get<1>();
-    int channel = csc.get<2>();
+    cscVal cscADC  = DTOFRawHitTranslationADC(dtofrawhits[i]);
+    cscVal cscTDC  = DTOFRawHitTranslationTDC(dtofrawhits[i]);
+
+    int crateADC     = cscADC.get<0>();
+    int slotADC      = cscADC.get<1>();
+    int channelADC   = cscADC.get<2>();
+
 
     // do something...
   }
 
 
-  // DBCALHit
+  // DBCALHit - FADC250 and F1TDC (60 ps)
   vector<const DBCALHit*> dbcalhits;
   eventLoop->Get(dbcalhits);
   for(i=0; i<dbcalhits.size(); i++) {
-    int module   = dbcalhits[i]->module;
-    int layer    = dbcalhits[i]->layer;
-    int sector   = dbcalhits[i]->sector;
-    int end      = dbcalhits[i]->end;       // 0 for upstream
     float E      = dbcalhits[i]->E;
     float t      = dbcalhits[i]->t;
 
-    // translate to crate/slot/channel
-    cscVal csc  = DBCALHitTranslation(module,layer,sector,end);
+    // translate ADC to crate/slot/channel
+    cscVal cscADC  = DBCALHitTranslationADC(dbcalhits[i]);
+    cscVal cscTDC  = DBCALHitTranslationTDC(dbcalhits[i]);
 
     // do something...
   }      
 
 
 
-  // DFCALHit
+  // DFCALHit - FADC250
   vector<const DFCALHit*> dfcalhits;
   eventLoop->Get(dfcalhits);
   for(i=0; i<dfcalhits.size(); i++) {
-    int row      = dfcalhits[i]->row;
-    int column   = dfcalhits[i]->column;
-    float x      = dfcalhits[i]->x;
-    float y      = dfcalhits[i]->y;
     float E      = dfcalhits[i]->E;
     float t      = dfcalhits[i]->t;
     
     // translate to crate/slot/channel
-    cscVal csc  = DFCALHitTranslation(row,column,x,y);
+    cscVal cscADC  = DFCALHitTranslationADC(dfcalhits[i]);
 
     // do something...
   }      
 
 
-  // DFDCHit
+  // DFDCHit - cathode strips FADC125 or anode wires F1TDC (115 ps)
   vector<const DFDCHit*> dfdchits; 
   eventLoop->Get(dfdchits);
   for(unsigned int i=0; i<dfdchits.size(); i++) {
-    int layer    = dfdchits[i]->layer;
-    int module   = dfdchits[i]->module;
-    int element  = dfdchits[i]->element;
-    int plane    = dfdchits[i]->plane;
-    int gPlane   = dfdchits[i]->gPlane;
-    int gLayer   = dfdchits[i]->gLayer;
     float q      = dfdchits[i]->q;
     float t      = dfdchits[i]->t;
-    float r      = dfdchits[i]->r;
-    int type     = dfdchits[i]->type;
 
     // translate to crate/slot/channel
-    cscVal csc  = DFDCHitTranslation(layer,module,element,plane,gPlane,gLayer);
+    cscVal csc  = DFDCHitTranslation(dfdchits[i]);
 
-    // do something...
+    int type = dfdchits[i]->type;
+    if(type==0) {           // F1TDC
+      // do something...
+    } else if(type==1) {    // FADC125
+      // do something...
+    }
+
   }
 
 
-  // DFDCHit
+  // DCDCHit - FADC125
   vector<const DCDCHit*> dcdchits; 
   eventLoop->Get(dcdchits);
   for(i=0; i<dcdchits.size(); i++) {
-    int ring     = dcdchits[i]->ring;
-    int straw    = dcdchits[i]->straw;
     float dE     = dcdchits[i]->dE;
     float t      = dcdchits[i]->t;
 
     // translate to crate/slot/channel
-    cscVal csc  = DCDCHitTranslation(ring,straw);
+    cscVal cscADC  = DCDCHitTranslationADC(dcdchits[i]);
 
     // do something...
   }      
 
 
-  // DSCHit
+  // DSCHit - FADC250 and F1TDC (60 ps)
   vector<const DSCHit*> dschits;
   eventLoop->Get(dschits);
   for(unsigned int i=0; i<dschits.size(); i++) {
     float dE     = dschits[i]->dE;
     float t      = dschits[i]->t;
-    int sector   = dschits[i]->sector;
 
     // translate to crate/slot/channel
-    cscVal csc  = DSCHitTranslation(sector);
+    cscVal cscADC  = DSCHitTranslationADC(dschits[i]);
+    cscVal cscTDC  = DSCHitTranslationTDC(dschits[i]);
 
     // do something...
   }      
 
 
-  // DTagger
+  // DTagger - FADC250 and F1TDC (60 ps)
   vector<const DTagger*> dtaggerhits;
   eventLoop->Get(dtaggerhits);
   for(i=0; i<dtaggerhits.size(); i++) {
-    int row      = dtaggerhits[i]->row;
-    int column   = dtaggerhits[i]->column;
     float E      = dtaggerhits[i]->E;
     float t      = dtaggerhits[i]->t;
 
     // translate to crate/slot/channel
-    cscVal csc  = DTaggerTranslation(row,column);
+    cscVal cscADC  = DTaggerTranslationADC(dtaggerhits[i]);
+    cscVal cscTDC  = DTaggerTranslationTDC(dtaggerhits[i]);
 
     // do something...
   }      
@@ -354,7 +342,7 @@ jerror_t JEventProcessor_rawevent::fini(void) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DTOFRawHitTranslation(int bar,int plane, int lr) {
+cscVal JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit) {
   return(make_tuple(1,2,3));
 }
 
@@ -362,7 +350,7 @@ cscVal JEventProcessor_rawevent::DTOFRawHitTranslation(int bar,int plane, int lr
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DBCALHitTranslation(int module,int layer,int sector,int end) {
+cscVal JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit) {
   return(make_tuple(1,2,3));
 }
 
@@ -370,7 +358,7 @@ cscVal JEventProcessor_rawevent::DBCALHitTranslation(int module,int layer,int se
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DFCALHitTranslation(int row,int column,float x,float y) {
+cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
   return(make_tuple(1,2,3));
 }
 
@@ -378,7 +366,7 @@ cscVal JEventProcessor_rawevent::DFCALHitTranslation(int row,int column,float x,
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DFDCHitTranslation(int layer,int module,int element,int plane,int gPlane,int gLayer) {
+cscVal JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) {
   return(make_tuple(1,2,3));
 }
 
@@ -386,7 +374,7 @@ cscVal JEventProcessor_rawevent::DFDCHitTranslation(int layer,int module,int ele
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DCDCHitTranslation(int ring,int straw) {
+cscVal JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) {
   return(make_tuple(1,2,3));
 }
 
@@ -394,7 +382,7 @@ cscVal JEventProcessor_rawevent::DCDCHitTranslation(int ring,int straw) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DSCHitTranslation(int sector) {
+cscVal JEventProcessor_rawevent::DFDCHitTranslation(const DFDCHit* hit) {
   return(make_tuple(1,2,3));
 }
 
@@ -402,7 +390,39 @@ cscVal JEventProcessor_rawevent::DSCHitTranslation(int sector) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DTaggerTranslation(int row,int column) {
+cscVal JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DSCHitTranslationTDC(const DSCHit* hit) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) {
+  return(make_tuple(1,2,3));
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) {
   return(make_tuple(1,2,3));
 }
 

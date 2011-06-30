@@ -62,15 +62,23 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
 
                 // these routines access the translation table
-                cscVal DTOFRawHitTranslation(int bar,int plane, int lr);
-                cscVal DBCALHitTranslation(int module,int layer,int sector,int end);
-                cscVal DFCALHitTranslation(int row,int column,float x,float y);
-                cscVal DFDCHitTranslation(int layer,int module,int element,int plane,int gPlane,int gLayer);
-                cscVal DCDCHitTranslation(int ring,int straw);
-                cscVal DSCHitTranslation(int sector);
-                cscVal DTaggerTranslation(int row,int column);
+                cscVal DTOFRawHitTranslationADC(const DTOFRawHit* hit);
+                cscVal DTOFRawHitTranslationTDC(const DTOFRawHit* hit);
 
+                cscVal DBCALHitTranslationADC(const DBCALHit* hit);
+                cscVal DBCALHitTranslationTDC(const DBCALHit* hit);
 
+                cscVal DFCALHitTranslationADC(const DFCALHit* hit);
+
+                cscVal DFDCHitTranslation(const DFDCHit* hit);
+
+                cscVal DCDCHitTranslationADC(const DCDCHit* hit);
+
+                cscVal DSCHitTranslationADC(const DSCHit* hit);
+                cscVal DSCHitTranslationTDC(const DSCHit* hit);
+
+                cscVal DTaggerTranslationADC(const DTagger* hit);
+                cscVal DTaggerTranslationTDC(const DTagger* hit);
 };
 
 #endif // _JEventProcessor_rawevent_
