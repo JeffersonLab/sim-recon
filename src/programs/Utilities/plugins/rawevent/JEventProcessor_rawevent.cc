@@ -13,11 +13,12 @@
 //
 //  Opens new file for every run.
 //  Default output file name is rawevent_xxxxxx.evio where xxxxxx is the run number.
+//    Can change via -PRAWEVENT:FILEBASE=newBaseName
 //
 //
 // To run:
 //
-//     $ hd_ana --plugin=rawevent inputFile.hddm
+//     $ hd_ana -PPLUGINS=rawevent inputFile.hddm
 //
 //
 //
@@ -30,7 +31,7 @@
 
 
 
-#include "JEventProcessor_rawevent.h"
+#include "rawevent/JEventProcessor_rawevent.h"
 
 #include<sstream>
 #include<iomanip>
@@ -72,7 +73,7 @@ void InitPlugin(JApplication *app){
 JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
   // get fileBase from command line params
-  gPARMS->SetDefaultParameter("RAW:FILEBASE",fileBase);
+  gPARMS->SetDefaultParameter("RAWEVENT:FILEBASE",fileBase);
 
 }
 
@@ -138,6 +139,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //
 //    *** MUST be thread-safe ***
 //
+//
 jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) {
 
   unsigned short tag;
@@ -190,9 +192,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
     // translate to crate/slot/channel
     cscVal csc  = DBCALHitTranslation(module,layer,sector,end);
-    int crate   = csc.get<0>();
-    int slot    = csc.get<1>();
-    int channel = csc.get<2>();
 
     // do something...
   }      
@@ -212,9 +211,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     
     // translate to crate/slot/channel
     cscVal csc  = DFCALHitTranslation(row,column,x,y);
-    int crate   = csc.get<0>();
-    int slot    = csc.get<1>();
-    int channel = csc.get<2>();
 
     // do something...
   }      
@@ -237,9 +233,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
     // translate to crate/slot/channel
     cscVal csc  = DFDCHitTranslation(layer,module,element,plane,gPlane,gLayer);
-    int crate   = csc.get<0>();
-    int slot    = csc.get<1>();
-    int channel = csc.get<2>();
 
     // do something...
   }
@@ -256,9 +249,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
     // translate to crate/slot/channel
     cscVal csc  = DCDCHitTranslation(ring,straw);
-    int crate   = csc.get<0>();
-    int slot    = csc.get<1>();
-    int channel = csc.get<2>();
 
     // do something...
   }      
@@ -274,9 +264,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
     // translate to crate/slot/channel
     cscVal csc  = DSCHitTranslation(sector);
-    int crate   = csc.get<0>();
-    int slot    = csc.get<1>();
-    int channel = csc.get<2>();
 
     // do something...
   }      
@@ -293,9 +280,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
     // translate to crate/slot/channel
     cscVal csc  = DTaggerTranslation(row,column);
-    int crate   = csc.get<0>();
-    int slot    = csc.get<1>();
-    int channel = csc.get<2>();
 
     // do something...
   }      
