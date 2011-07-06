@@ -39,6 +39,7 @@
 #include<sstream>
 #include<iomanip>
 #include <expat.h>
+#include <boost/lexical_cast.hpp>
 
 
 // to protect writing to output file
@@ -224,12 +225,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float q      = dfdchits[i]->q;
     float t      = dfdchits[i]->t;
 
-    cscVal csc  = DFDCHitTranslation(dfdchits[i]);
 
+    cscVal csc;
     int type = dfdchits[i]->type;
     if(type==0) {           // F1TDC
+      csc  = DFDCAnodeHitTranslation(dfdchits[i]);
       // do something...
     } else if(type==1) {    // FADC125
+      csc  = DFDCCathodeHitTranslation(dfdchits[i]);
       // do something...
     }
 
@@ -397,7 +400,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
   string Detector,detector;
   string end;
   string row,column,module,sector,layer,chan;
-  string ring,straw,package,strip,wire,plane,bar;
+  string ring,straw,plane,bar,element;
 
 
   if(strcasecmp(xmlname,"translation_table")==0) {
@@ -450,12 +453,8 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         ring = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"straw")==0) {
         straw = string(atts[i+1]);
-      } else if(strcasecmp(atts[i],"package")==0) {
-        package = string(atts[i+1]);
-      } else if(strcasecmp(atts[i],"strip")==0) {
-        strip = string(atts[i+1]);
-      } else if(strcasecmp(atts[i],"wire")==0) {
-        wire = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"element")==0) {
+        element = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"plane")==0) {
         plane = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"bar")==0) {
@@ -488,7 +487,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         s = "unknownBCAL::";
         jerr << endl << endl << "?startElement...illegal type for BCAL: " << Type << endl << endl;
       }
-      cscMap[s + module + ":" + sector + ":" + layer + ":" + end + ":" + chan] = csc;
+      cscMap[s + module + ":" + sector + ":" + layer + ":" + end] = csc;
       
 
     } else if(detector=="cdc") {
@@ -510,7 +509,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         s = "unknownSC::";
         jerr << endl << endl << "?startElement...illegal type for SC: " << Type << endl << endl;
       }
-      cscMap[s + ring + ":" + straw] = csc;
+      cscMap[s + sector] = csc;
     
 
     } else if(detector=="fdccathode") {
@@ -520,7 +519,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         s = "unknownFDCCathode::";
         jerr << endl << endl << "?startElement...illegal type for FDC Cathode: " << Type << endl << endl;
       }
-      cscMap[s + package + ":" + layer + ":" + strip] = csc;
+      cscMap[s + layer + ":" + module + ":" + element] = csc;
 
       
     } else if(detector=="fdcanode") {
@@ -530,7 +529,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         s = "unknownFDCAnode::";
         jerr << endl << endl << "?startElement...illegal type for FDC Anode: " << Type << endl << endl;
       }
-      cscMap[s + package + ":" + layer + ":" + wire] = csc;
+      cscMap[s + layer + ":" + module + ":" + element] = csc;
 
       
     } else if(detector=="tof") {
@@ -554,7 +553,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         s = "unknownTagger::";
         jerr << endl << endl << "?startElement...illegal type for TAGGER: " << Type << endl << endl;
       }
-      cscMap[s + chan] = csc;
+      cscMap[s + row + ":" + column] = csc;
 
       
     } else {
@@ -573,7 +572,8 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
 
 cscVal JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit) {
-  string s = "";
+  string s = "tofadc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
+    + ":" + lexical_cast<string>(hit->lr);
   return(cscMap[s]);
 }
 
@@ -582,7 +582,8 @@ cscVal JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit)
 
 
 cscVal JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit) {
-  string s = "";
+  string s = "toftdc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
+    + ":" + lexical_cast<string>(hit->lr);
   return(cscMap[s]);
 }
 
@@ -591,7 +592,8 @@ cscVal JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit)
 
 
 cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
-  string s = "";
+  string s = "bcaladc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
+    + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->end);
   return(cscMap[s]);
 }
 
@@ -600,7 +602,8 @@ cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
 
 
 cscVal JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) {
-  string s = "";
+  string s = "bcaltdc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
+    + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->end);
   return(cscMap[s]);
 }
 
@@ -609,7 +612,7 @@ cscVal JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) {
 
 
 cscVal JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) {
-  string s = "";
+  string s = "fcaltdc::" + lexical_cast<string>(hit->row) + ":" + lexical_cast<string>(hit->column);
   return(cscMap[s]);
 }
 
@@ -617,8 +620,19 @@ cscVal JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DFDCHitTranslation(const DFDCHit* hit) {
-  string s = "";
+cscVal JEventProcessor_rawevent::DFDCAnodeHitTranslation(const DFDCHit* hit) {
+  string s = "fdcanode::"  + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->module) 
+    + ":" + lexical_cast<string>(hit->element);
+  return(cscMap[s]);
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DFDCCathodeHitTranslation(const DFDCHit* hit) {
+  string s = "fdccathode::"  + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->module) 
+    + ":" + lexical_cast<string>(hit->element);
   return(cscMap[s]);
 }
 
@@ -627,7 +641,7 @@ cscVal JEventProcessor_rawevent::DFDCHitTranslation(const DFDCHit* hit) {
 
 
 cscVal JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) {
-  string s = "";
+  string s = "cdcadc::" + lexical_cast<string>(hit->ring) + ":" + lexical_cast<string>(hit->straw);
   return(cscMap[s]);
 }
 
@@ -636,7 +650,7 @@ cscVal JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) {
 
 
 cscVal JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) {
-  string s = "";
+  string s = "scadc::" + lexical_cast<string>(hit->sector);
   return(cscMap[s]);
 }
 
@@ -645,7 +659,7 @@ cscVal JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) {
 
 
 cscVal JEventProcessor_rawevent::DSCHitTranslationTDC(const DSCHit* hit) {
-  string s = "";
+  string s = "sctdc::" + lexical_cast<string>(hit->sector);
   return(cscMap[s]);
 }
 
@@ -654,7 +668,7 @@ cscVal JEventProcessor_rawevent::DSCHitTranslationTDC(const DSCHit* hit) {
 
 
 cscVal JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) {
-  string s = "";
+  string s = "taggertdc::" + lexical_cast<string>(hit->row) +":" + lexical_cast<string>(hit->column);
   return(cscMap[s]);
 }
 
@@ -663,7 +677,7 @@ cscVal JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) {
 
 
 cscVal JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) {
-  string s = "";
+  string s = "taggeradc::" + lexical_cast<string>(hit->row) +":" + lexical_cast<string>(hit->column);
   return(cscMap[s]);
 }
 

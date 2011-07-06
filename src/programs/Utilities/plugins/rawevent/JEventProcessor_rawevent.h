@@ -76,7 +76,8 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
                 cscVal DFCALHitTranslationADC(const DFCALHit* hit);
 
-                cscVal DFDCHitTranslation(const DFDCHit* hit);
+                cscVal DFDCAnodeHitTranslation(const DFDCHit* hit);
+                cscVal DFDCCathodeHitTranslation(const DFDCHit* hit);
 
                 cscVal DCDCHitTranslationADC(const DCDCHit* hit);
 
