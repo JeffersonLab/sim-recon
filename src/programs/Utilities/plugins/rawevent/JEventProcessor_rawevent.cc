@@ -592,8 +592,8 @@ cscVal JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit)
 
 
 cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
-  string s = "bcaladc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
-    + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->end);
+  string s = "bcaltdc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
+    + lexical_cast<string>(hit->layer) + ((hit->end==0)?":upstream":":downstream");
   return(cscMap[s]);
 }
 
@@ -603,7 +603,7 @@ cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
 
 cscVal JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) {
   string s = "bcaltdc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
-    + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->end);
+    + lexical_cast<string>(hit->layer) + ((hit->end==0)?":upstream":":downstream");
   return(cscMap[s]);
 }
 
