@@ -62,10 +62,12 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 		jerror_t fini(void);
 
 
-                // these routines access the translation table
+                // these routines read and fill the translation tables
                 void readTranslationTable(void);
                 static void startElement(void *userData, const char *xmlname, const char **atts);
 
+
+                // these routines access the translation tables
                 cscVal DTOFRawHitTranslationADC(const DTOFRawHit* hit);
                 cscVal DTOFRawHitTranslationTDC(const DTOFRawHit* hit);
 
@@ -85,16 +87,9 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
                 cscVal DTaggerTranslationTDC(const DTagger* hit);
 
 
-                // maps
-                static map< string, tuple<int,int,int> >   fcalMap;
-                static map< string, tuple<int,int,int> >   bcalMap;
-                static map< string, tuple<int,int,int> >   cdcMap;
-                static map< string, tuple<int,int,int> >   scMap;
-                static map< string, tuple<int,int,int> >   hodoscopeMap;
-                static map< string, tuple<int,int,int> >   fdcCathodeMap;
-                static map< string, tuple<int,int,int> >   fdcAnodeMap;
-                static map< string, tuple<int,int,int> >   tofMap;
-                static map< string, tuple<int,int,int> >   microscopeMap;
+                // maps convert from detector spec to (crate,slot,channel)
+                // key is detector-dependent encoded string (e.g. "ring:straw" for CDC)
+                static map<string,cscVal>  cscMap;
 };
 
 #endif // _JEventProcessor_rawevent_

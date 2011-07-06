@@ -196,7 +196,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float E      = dbcalhits[i]->E;
     float t      = dbcalhits[i]->t;
 
-    // translate ADC to crate/slot/channel
     cscVal cscADC  = DBCALHitTranslationADC(dbcalhits[i]);
     cscVal cscTDC  = DBCALHitTranslationTDC(dbcalhits[i]);
 
@@ -212,7 +211,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float E      = dfcalhits[i]->E;
     float t      = dfcalhits[i]->t;
     
-    // translate to crate/slot/channel
     cscVal cscADC  = DFCALHitTranslationADC(dfcalhits[i]);
 
     // do something...
@@ -226,7 +224,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float q      = dfdchits[i]->q;
     float t      = dfdchits[i]->t;
 
-    // translate to crate/slot/channel
     cscVal csc  = DFDCHitTranslation(dfdchits[i]);
 
     int type = dfdchits[i]->type;
@@ -246,7 +243,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float dE     = dcdchits[i]->dE;
     float t      = dcdchits[i]->t;
 
-    // translate to crate/slot/channel
     cscVal cscADC  = DCDCHitTranslationADC(dcdchits[i]);
 
     // do something...
@@ -260,7 +256,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float dE     = dschits[i]->dE;
     float t      = dschits[i]->t;
 
-    // translate to crate/slot/channel
     cscVal cscADC  = DSCHitTranslationADC(dschits[i]);
     cscVal cscTDC  = DSCHitTranslationTDC(dschits[i]);
 
@@ -275,7 +270,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float E      = dtaggerhits[i]->E;
     float t      = dtaggerhits[i]->t;
 
-    // translate to crate/slot/channel
     cscVal cscADC  = DTaggerTranslationADC(dtaggerhits[i]);
     cscVal cscTDC  = DTaggerTranslationTDC(dtaggerhits[i]);
 
@@ -347,7 +341,7 @@ jerror_t JEventProcessor_rawevent::fini(void) {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-// the following routines access the translation table
+//  The following routines access the translation table
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -397,16 +391,18 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
 void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname, const char **atts) {
   
   static int crate=0, slot=0;
-  static string slotType=NULL;
+  static string Type=NULL,type=NULL;
 
   int channel = 0;
-  string type,Detector,detector,end;
+  string Detector,detector;
+  string end;
   string row,column,module,sector,layer,chan;
   string ring,straw,package,strip,wire,plane,bar;
 
 
   if(strcasecmp(xmlname,"translation_table")==0) {
     // do nothing
+
 
   } else if(strcasecmp(xmlname,"crate")==0) {
     for (int i=0; atts[i]; i+=2) {
@@ -416,12 +412,14 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       }
     }
 
+
   } else if(strcasecmp(xmlname,"slot")==0) {
     for (int i=0; atts[i]; i+=2) {
       if(strcasecmp(atts[i],"number")==0) {
         slot = atoi(atts[i+1]);
       } else if(strcasecmp(atts[i],"type")==0) {
-        slotType==string(atts[i+1]);
+        Type==string(atts[i+1]);
+        std::transform(Type.begin(), Type.end(), type.begin(), (int(*)(int)) tolower);
       }
     }
 
@@ -433,6 +431,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         channel = atoi(atts[i+1]);
       } else if(strcasecmp(atts[i],"detector")==0) {
         Detector = string(atts[i+1]);
+        std::transform(Detector.begin(), Detector.end(), detector.begin(), (int(*)(int)) tolower);
       } else if(strcasecmp(atts[i],"row")==0) {
         row = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"column")==0) {
@@ -464,42 +463,100 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       }
     }
 
+
+
     // fill maps
+    cscVal csc = make_tuple<int,int,int>(crate,slot,channel);
+
     string s;
-    std::transform(Detector.begin(), Detector.end(), detector.begin(), (int(*)(int)) tolower);
     if(detector=="fcal") {
-      s = row + ":" + column;
-      fcalMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      if(type=="fadc250") {
+        s = "fcaladc::";
+      } else {
+        s = "unknownFCAL::";
+        jerr << endl << endl << "?startElement...illegal type for FCAL: " << Type << endl << endl;
+      }
+      cscMap[s + row + ":" + column] = csc;
+
 
     } else if(detector=="bcal") {
-      s = module + ":" + sector + ":" + layer + ":" + end + ":" + chan;
-      bcalMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      if(type=="f1tdc") {
+        s = "bcaltdc::";
+      } else if (type=="fadc250") {
+        s = "bcaladc::";
+      } else {
+        s = "unknownBCAL::";
+        jerr << endl << endl << "?startElement...illegal type for BCAL: " << Type << endl << endl;
+      }
+      cscMap[s + module + ":" + sector + ":" + layer + ":" + end + ":" + chan] = csc;
       
+
     } else if(detector=="cdc") {
-      s = ring + ":" + straw;
-      cdcMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      if(type=="fadc125") {
+        s = "cdcadc::";
+      } else {
+        s = "unknownCDC::";
+        jerr << endl << endl << "?startElement...illegal type for CDC: " << Type << endl << endl;
+      }
+      cscMap[s + ring + ":" + straw] = csc;
+        
       
     } else if(detector=="sc") {
-      scMap[sector] = make_tuple<int,int,int>(crate,slot,channel);
+      if(type=="f1tdc") {
+        s = "scadc::";
+      } else if (type=="fadc250") {
+        s = "sctdc::";
+      } else {
+        s = "unknownSC::";
+        jerr << endl << endl << "?startElement...illegal type for SC: " << Type << endl << endl;
+      }
+      cscMap[s + ring + ":" + straw] = csc;
     
-    } else if(detector=="hodoscope") {
-      hodoscopeMap[chan] = make_tuple<int,int,int>(crate,slot,channel);
-      
+
     } else if(detector=="fdccathode") {
-      s = package + ":" + layer + ":" + strip;
-      fdcCathodeMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      if(type=="f1tdc") {
+        s = "fdccathode::";
+      } else {
+        s = "unknownFDCCathode::";
+        jerr << endl << endl << "?startElement...illegal type for FDC Cathode: " << Type << endl << endl;
+      }
+      cscMap[s + package + ":" + layer + ":" + strip] = csc;
+
       
     } else if(detector=="fdcanode") {
-      s = package + ":" + layer + ":" + wire;
-      fdcAnodeMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      if(type=="fadc125") {
+        s = "fdcanode::";
+      } else {
+        s = "unknownFDCAnode::";
+        jerr << endl << endl << "?startElement...illegal type for FDC Anode: " << Type << endl << endl;
+      }
+      cscMap[s + package + ":" + layer + ":" + wire] = csc;
+
       
     } else if(detector=="tof") {
-      s = plane + ":" + bar + ":" + end;
-      tofMap[s] = make_tuple<int,int,int>(crate,slot,channel);
-     
-    } else if(detector=="microscope") {
-      microscopeMap[chan] =  make_tuple<int,int,int>(crate,slot,channel);
+      if(type=="f1tdc") {
+        s = "toftdc::";
+      } else if (type=="fadc250") {
+        s = "tofadc::";
+      } else {
+        s = "unknownTOF::";
+        jerr << endl << endl << "?startElement...illegal type for TOF: " << Type << endl << endl;
+      }
+      cscMap[s + plane + ":" + bar + ":" + end] = csc;
 
+     
+    } else if(detector=="tagger") {
+      if(type=="f1tdc") {
+        s = "taggertdc::";
+      } else if (type=="fadc250") {
+        s = "taggeradc::";
+      } else {
+        s = "unknownTagger::";
+        jerr << endl << endl << "?startElement...illegal type for TAGGER: " << Type << endl << endl;
+      }
+      cscMap[s + chan] = csc;
+
+      
     } else {
       jerr << endl << endl << "?startElement...unknown detector " << Detector << endl << endl;
     }
@@ -516,7 +573,8 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
 
 cscVal JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -524,7 +582,8 @@ cscVal JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit)
 
 
 cscVal JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -532,7 +591,8 @@ cscVal JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit)
 
 
 cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -540,7 +600,8 @@ cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
 
 
 cscVal JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -548,7 +609,8 @@ cscVal JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) {
 
 
 cscVal JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -556,7 +618,8 @@ cscVal JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) {
 
 
 cscVal JEventProcessor_rawevent::DFDCHitTranslation(const DFDCHit* hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -564,7 +627,8 @@ cscVal JEventProcessor_rawevent::DFDCHitTranslation(const DFDCHit* hit) {
 
 
 cscVal JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -572,7 +636,8 @@ cscVal JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) {
 
 
 cscVal JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -580,15 +645,8 @@ cscVal JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) {
 
 
 cscVal JEventProcessor_rawevent::DSCHitTranslationTDC(const DSCHit* hit) {
-  return(make_tuple(1,2,3));
-}
-
-
-//----------------------------------------------------------------------------
-
-
-cscVal JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
 }
 
 
@@ -596,7 +654,17 @@ cscVal JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) {
 
 
 cscVal JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) {
-  return(make_tuple(1,2,3));
+  string s = "";
+  return(cscMap[s]);
+}
+
+
+//----------------------------------------------------------------------------
+
+
+cscVal JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) {
+  string s = "";
+  return(cscMap[s]);
 }
 
 
