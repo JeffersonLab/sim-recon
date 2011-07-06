@@ -10,6 +10,7 @@
 
 
 #include <vector>
+#include <map>
 
 
 #include <JANA/JApplication.h>
@@ -62,6 +63,9 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
 
                 // these routines access the translation table
+                void readTranslationTable(void);
+                static void startElement(void *userData, const char *xmlname, const char **atts);
+
                 cscVal DTOFRawHitTranslationADC(const DTOFRawHit* hit);
                 cscVal DTOFRawHitTranslationTDC(const DTOFRawHit* hit);
 
@@ -79,6 +83,18 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
                 cscVal DTaggerTranslationADC(const DTagger* hit);
                 cscVal DTaggerTranslationTDC(const DTagger* hit);
+
+
+                // maps
+                static map< string, tuple<int,int,int> >   fcalMap;
+                static map< string, tuple<int,int,int> >   bcalMap;
+                static map< string, tuple<int,int,int> >   cdcMap;
+                static map< string, tuple<int,int,int> >   scMap;
+                static map< string, tuple<int,int,int> >   hodoscopeMap;
+                static map< string, tuple<int,int,int> >   fdcCathodeMap;
+                static map< string, tuple<int,int,int> >   fdcAnodeMap;
+                static map< string, tuple<int,int,int> >   tofMap;
+                static map< string, tuple<int,int,int> >   microscopeMap;
 };
 
 #endif // _JEventProcessor_rawevent_

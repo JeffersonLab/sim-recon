@@ -15,6 +15,8 @@
 //  Default output file name is rawevent_xxxxxx.evio where xxxxxx is the run number.
 //    Can change via -PRAWEVENT:FILEBASE=newBaseName
 //
+//  Reads translation table in via -PRAWEVENT:TRANSLATION=fileName.xml
+//
 //
 // To run:
 //
@@ -24,6 +26,7 @@
 //
 // still to do:
 //    translation table
+//    pair spectrometer
 //
 //
 //
@@ -35,7 +38,7 @@
 
 #include<sstream>
 #include<iomanip>
-
+#include <expat.h>
 
 
 // to protect writing to output file
@@ -43,9 +46,10 @@ static pthread_mutex_t rawMutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 // for evio output
-static evioFileChannel *chan   = NULL;
-static int evioBufSize         = 750000;
-static string fileBase         = "rawevent";
+static evioFileChannel *chan       = NULL;
+static int evioBufSize             = 750000;
+static string fileBase             = "rawevent";
+static string translationTableName = "translation.xml";
 static string outputFileName;
 
 
@@ -74,6 +78,12 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
   // get fileBase from command line params
   gPARMS->SetDefaultParameter("RAWEVENT:FILEBASE",fileBase);
+
+  // get translation table file name from command line 
+  gPARMS->SetDefaultParameter("RAWEVENT:TRANSLATION",translationTableName);
+
+  // read translation table
+  readTranslationTable();
 
 }
 
@@ -340,6 +350,169 @@ jerror_t JEventProcessor_rawevent::fini(void) {
 // the following routines access the translation table
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+
+void JEventProcessor_rawevent::readTranslationTable(void) {
+
+  // create parser and specify start element handler
+  XML_Parser xmlParser = XML_ParserCreate(NULL);
+  XML_SetElementHandler(xmlParser,startElement,NULL);
+
+
+  // open and parse the file
+  FILE *f = fopen(translationTableName.c_str(),"r");
+  if(f!=NULL) {
+    int status,len;
+    bool done;
+    const int bufSize = 50000;
+    char buf[bufSize];
+    do {
+      len  = fread(buf,1,bufSize,f);
+      done = len!=bufSize;
+      status=XML_Parse(xmlParser,buf,len,done);
+      if((!done)&&(status==0)) {
+        jerr << endl << endl << endl << "  ?readTranslationTable...parseXMLFile parse error for " << translationTableName
+             << endl << endl << XML_ErrorString(XML_GetErrorCode(xmlParser))
+             << endl << endl << endl;
+        fclose(f);
+        XML_ParserFree(xmlParser);
+        return;
+      }
+    } while (!done);
+    fclose(f);
+    jout << endl << endl << "Successfully read translation table " << translationTableName << endl << endl << endl;
+
+  } else {
+    jerr << endl << endl << endl << "  ?readTranslationTable...unable to open " << translationTableName
+         << endl << endl << endl;
+  }
+  XML_ParserFree(xmlParser);
+
+}
+
+
+//----------------------------------------------------------------------------
+
+
+void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname, const char **atts) {
+  
+  static int crate=0, slot=0;
+  static string slotType=NULL;
+
+  int channel = 0;
+  string type,Detector,detector,end;
+  string row,column,module,sector,layer,chan;
+  string ring,straw,package,strip,wire,plane,bar;
+
+
+  if(strcasecmp(xmlname,"translation_table")==0) {
+    // do nothing
+
+  } else if(strcasecmp(xmlname,"crate")==0) {
+    for (int i=0; atts[i]; i+=2) {
+      if(strcasecmp(atts[i],"number")==0) {
+        crate = atoi(atts[i+1]);
+        break;
+      }
+    }
+
+  } else if(strcasecmp(xmlname,"slot")==0) {
+    for (int i=0; atts[i]; i+=2) {
+      if(strcasecmp(atts[i],"number")==0) {
+        slot = atoi(atts[i+1]);
+      } else if(strcasecmp(atts[i],"type")==0) {
+        slotType==string(atts[i+1]);
+      }
+    }
+
+
+  } else if(strcasecmp(xmlname,"channel")==0) {
+
+    for (int i=0; atts[i]; i+=2) {
+      if(strcasecmp(atts[i],"number")==0) {
+        channel = atoi(atts[i+1]);
+      } else if(strcasecmp(atts[i],"detector")==0) {
+        Detector = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"row")==0) {
+        row = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"column")==0) {
+        column = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"module")==0) {
+        module = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"sector")==0) {
+        sector = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"layer")==0) {
+        layer = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"end")==0) {
+        end = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"chan")==0) {
+        chan = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"ring")==0) {
+        ring = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"straw")==0) {
+        straw = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"package")==0) {
+        package = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"strip")==0) {
+        strip = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"wire")==0) {
+        wire = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"plane")==0) {
+        plane = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"bar")==0) {
+        bar = string(atts[i+1]);
+      }
+    }
+
+    // fill maps
+    string s;
+    std::transform(Detector.begin(), Detector.end(), detector.begin(), (int(*)(int)) tolower);
+    if(detector=="fcal") {
+      s = row + ":" + column;
+      fcalMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+
+    } else if(detector=="bcal") {
+      s = module + ":" + sector + ":" + layer + ":" + end + ":" + chan;
+      bcalMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      
+    } else if(detector=="cdc") {
+      s = ring + ":" + straw;
+      cdcMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      
+    } else if(detector=="sc") {
+      scMap[sector] = make_tuple<int,int,int>(crate,slot,channel);
+    
+    } else if(detector=="hodoscope") {
+      hodoscopeMap[chan] = make_tuple<int,int,int>(crate,slot,channel);
+      
+    } else if(detector=="fdccathode") {
+      s = package + ":" + layer + ":" + strip;
+      fdcCathodeMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      
+    } else if(detector=="fdcanode") {
+      s = package + ":" + layer + ":" + wire;
+      fdcAnodeMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+      
+    } else if(detector=="tof") {
+      s = plane + ":" + bar + ":" + end;
+      tofMap[s] = make_tuple<int,int,int>(crate,slot,channel);
+     
+    } else if(detector=="microscope") {
+      microscopeMap[chan] =  make_tuple<int,int,int>(crate,slot,channel);
+
+    } else {
+      jerr << endl << endl << "?startElement...unknown detector " << Detector << endl << endl;
+    }
+
+
+  } else {
+    jerr << endl << endl << "?startElement...unknown xml tag " << xmlname << endl << endl;
+  }
+
+}
+    
+
+//--------------------------------------------------------------------------
 
 
 cscVal JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit) {
