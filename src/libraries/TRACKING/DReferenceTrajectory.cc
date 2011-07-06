@@ -1163,7 +1163,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, double *s) 
 	/// the wire with the wire running in the direction of udir.
 	swim_step_t *step=FindClosestSwimStep(wire);
 
-	return step ? DistToRT(wire, step, s):std::numeric_limits<double>::quiet_NaN();
+	return (step && step->s>0) ? DistToRT(wire, step, s):std::numeric_limits<double>::quiet_NaN();
 }
 
 //---------------------------------
