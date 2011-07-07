@@ -40,7 +40,8 @@ using namespace evio;
 using namespace boost;
 
 
-typedef tuple<int,int,int> cscVal;
+typedef tuple<int,int,int>  cscVal;
+typedef const tuple<int,int,int> &cscRef;
 
 
 
@@ -63,34 +64,33 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
 
                 // these routines read and fill the translation tables
-                void readTranslationTable(void);
+                static void readTranslationTable(void);
                 static void startElement(void *userData, const char *xmlname, const char **atts);
 
 
                 // these routines access the translation tables
-                cscVal DTOFRawHitTranslationADC(const DTOFRawHit* hit);
-                cscVal DTOFRawHitTranslationTDC(const DTOFRawHit* hit);
+                cscRef DTOFRawHitTranslationADC(const DTOFRawHit* hit) const;
+                cscRef DTOFRawHitTranslationTDC(const DTOFRawHit* hit) const;
 
-                cscVal DBCALHitTranslationADC(const DBCALHit* hit);
-                cscVal DBCALHitTranslationTDC(const DBCALHit* hit);
+                cscRef DBCALHitTranslationADC(const DBCALHit* hit) const;
+                cscRef DBCALHitTranslationTDC(const DBCALHit* hit) const;
 
-                cscVal DFCALHitTranslationADC(const DFCALHit* hit);
+                cscRef DFCALHitTranslationADC(const DFCALHit* hit) const;
 
-                cscVal DFDCAnodeHitTranslation(const DFDCHit* hit);
-                cscVal DFDCCathodeHitTranslation(const DFDCHit* hit);
+                cscRef DFDCAnodeHitTranslation(const DFDCHit* hit) const;
+                cscRef DFDCCathodeHitTranslation(const DFDCHit* hit) const;
 
-                cscVal DCDCHitTranslationADC(const DCDCHit* hit);
+                cscRef DCDCHitTranslationADC(const DCDCHit* hit) const;
 
-                cscVal DSCHitTranslationADC(const DSCHit* hit);
-                cscVal DSCHitTranslationTDC(const DSCHit* hit);
+                cscRef DSCHitTranslationADC(const DSCHit* hit) const;
+                cscRef DSCHitTranslationTDC(const DSCHit* hit) const;
 
-                cscVal DTaggerTranslationADC(const DTagger* hit);
-                cscVal DTaggerTranslationTDC(const DTagger* hit);
+                cscRef DTaggerTranslationADC(const DTagger* hit) const;
+                cscRef DTaggerTranslationTDC(const DTagger* hit) const;
 
 
                 // maps convert from detector spec to (crate,slot,channel)
                 // key is detector-dependent encoded string (e.g. "ring:straw" for CDC)
-                static map<string,cscVal>  cscMap;
 };
 
 #endif // _JEventProcessor_rawevent_

@@ -50,12 +50,17 @@ static pthread_mutex_t rawMutex = PTHREAD_MUTEX_INITIALIZER;
 static evioFileChannel *chan       = NULL;
 static int evioBufSize             = 750000;
 static string fileBase             = "rawevent";
-static string translationTableName = "translation.xml";
+static string translationTableName = "trans.xml";
 static string outputFileName;
 
 
 // current run number
 static int runNumber;
+
+
+// maps convert from detector spec to (crate,slot,channel)
+// key is detector-dependent encoded string (e.g. "ring:straw" for CDC)
+static map<string,cscVal> cscMap;
 
 
 
@@ -170,6 +175,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 
 
+
   // DTOFRawHit - FADC250 and F1TDC (60 ps)
   vector<const DTOFRawHit*> dtofrawhits; 
   eventLoop->Get(dtofrawhits);
@@ -178,15 +184,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t   = dtofrawhits[i]->t;
 
     // translate to crate/slot/channel
-    cscVal cscADC  = DTOFRawHitTranslationADC(dtofrawhits[i]);
-    cscVal cscTDC  = DTOFRawHitTranslationTDC(dtofrawhits[i]);
+    cscRef cscADC  = DTOFRawHitTranslationADC(dtofrawhits[i]);
+    cscRef cscTDC  = DTOFRawHitTranslationTDC(dtofrawhits[i]);
 
-    int crateADC     = cscADC.get<0>();
-    int slotADC      = cscADC.get<1>();
-    int channelADC   = cscADC.get<2>();
+      int crateADC     = cscADC.get<0>();
+      int slotADC      = cscADC.get<1>();
+      int channelADC   = cscADC.get<2>();
+      // do something...
 
-
-    // do something...
   }
 
 
@@ -197,8 +202,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float E      = dbcalhits[i]->E;
     float t      = dbcalhits[i]->t;
 
-    cscVal cscADC  = DBCALHitTranslationADC(dbcalhits[i]);
-    cscVal cscTDC  = DBCALHitTranslationTDC(dbcalhits[i]);
+    cscRef cscADC  = DBCALHitTranslationADC(dbcalhits[i]);
+    cscRef cscTDC  = DBCALHitTranslationTDC(dbcalhits[i]);
 
     // do something...
   }      
@@ -212,7 +217,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float E      = dfcalhits[i]->E;
     float t      = dfcalhits[i]->t;
     
-    cscVal cscADC  = DFCALHitTranslationADC(dfcalhits[i]);
+    cscRef cscADC  = DFCALHitTranslationADC(dfcalhits[i]);
 
     // do something...
   }      
@@ -226,13 +231,12 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dfdchits[i]->t;
 
 
-    cscVal csc;
     int type = dfdchits[i]->type;
     if(type==0) {           // F1TDC
-      csc  = DFDCAnodeHitTranslation(dfdchits[i]);
+      cscRef csc  = DFDCAnodeHitTranslation(dfdchits[i]);
       // do something...
     } else if(type==1) {    // FADC125
-      csc  = DFDCCathodeHitTranslation(dfdchits[i]);
+      cscRef csc  = DFDCCathodeHitTranslation(dfdchits[i]);
       // do something...
     }
 
@@ -246,9 +250,9 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float dE     = dcdchits[i]->dE;
     float t      = dcdchits[i]->t;
 
-    cscVal cscADC  = DCDCHitTranslationADC(dcdchits[i]);
-
-    // do something...
+    cscRef cscADC  = DCDCHitTranslationADC(dcdchits[i]);
+    cout << "found csc = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
+         << "   for ring,straw = " << dcdchits[i]->ring << "," << dcdchits[i]->straw << endl;
   }      
 
 
@@ -259,8 +263,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float dE     = dschits[i]->dE;
     float t      = dschits[i]->t;
 
-    cscVal cscADC  = DSCHitTranslationADC(dschits[i]);
-    cscVal cscTDC  = DSCHitTranslationTDC(dschits[i]);
+    cscRef cscADC  = DSCHitTranslationADC(dschits[i]);
+    cscRef cscTDC  = DSCHitTranslationTDC(dschits[i]);
 
     // do something...
   }      
@@ -273,8 +277,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float E      = dtaggerhits[i]->E;
     float t      = dtaggerhits[i]->t;
 
-    cscVal cscADC  = DTaggerTranslationADC(dtaggerhits[i]);
-    cscVal cscTDC  = DTaggerTranslationTDC(dtaggerhits[i]);
+    cscRef cscADC  = DTaggerTranslationADC(dtaggerhits[i]);
+    cscRef cscTDC  = DTaggerTranslationTDC(dtaggerhits[i]);
 
     // do something...
   }      
@@ -353,6 +357,10 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
 
   // create parser and specify start element handler
   XML_Parser xmlParser = XML_ParserCreate(NULL);
+  if(xmlParser==NULL) {
+    jerr << endl << endl << "readTranslationTable...unable to create parser" << endl << endl;
+    exit(EXIT_FAILURE);
+  }
   XML_SetElementHandler(xmlParser,startElement,NULL);
 
 
@@ -394,10 +402,10 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
 void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname, const char **atts) {
   
   static int crate=0, slot=0;
-  static string Type=NULL,type=NULL;
+  static string Type="Unknown",type="unknown";
 
   int channel = 0;
-  string Detector,detector;
+  string Detector;
   string end;
   string row,column,module,sector,layer,chan;
   string ring,straw,plane,bar,element;
@@ -421,7 +429,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       if(strcasecmp(atts[i],"number")==0) {
         slot = atoi(atts[i+1]);
       } else if(strcasecmp(atts[i],"type")==0) {
-        Type==string(atts[i+1]);
+        Type = string(atts[i+1]);
         std::transform(Type.begin(), Type.end(), type.begin(), (int(*)(int)) tolower);
       }
     }
@@ -434,7 +442,6 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         channel = atoi(atts[i+1]);
       } else if(strcasecmp(atts[i],"detector")==0) {
         Detector = string(atts[i+1]);
-        std::transform(Detector.begin(), Detector.end(), detector.begin(), (int(*)(int)) tolower);
       } else if(strcasecmp(atts[i],"row")==0) {
         row = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"column")==0) {
@@ -463,9 +470,10 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
     }
 
 
-
     // fill maps
     cscVal csc = make_tuple<int,int,int>(crate,slot,channel);
+    string detector = Detector;
+    std::transform(detector.begin(), detector.end(), detector.begin(), (int(*)(int)) tolower);
 
     string s;
     if(detector=="fcal") {
@@ -571,7 +579,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 //--------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit) {
+cscRef JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit) const {
   string s = "tofadc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
     + ":" + lexical_cast<string>(hit->lr);
   return(cscMap[s]);
@@ -581,7 +589,7 @@ cscVal JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit)
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit) {
+cscRef JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit) const {
   string s = "toftdc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
     + ":" + lexical_cast<string>(hit->lr);
   return(cscMap[s]);
@@ -591,7 +599,7 @@ cscVal JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit)
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
+cscRef JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) const {
   string s = "bcaltdc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
     + lexical_cast<string>(hit->layer) + ((hit->end==0)?":upstream":":downstream");
   return(cscMap[s]);
@@ -601,7 +609,7 @@ cscVal JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) {
+cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) const {
   string s = "bcaltdc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
     + lexical_cast<string>(hit->layer) + ((hit->end==0)?":upstream":":downstream");
   return(cscMap[s]);
@@ -611,7 +619,7 @@ cscVal JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) {
+cscRef JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) const {
   string s = "fcaltdc::" + lexical_cast<string>(hit->row) + ":" + lexical_cast<string>(hit->column);
   return(cscMap[s]);
 }
@@ -620,7 +628,7 @@ cscVal JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DFDCAnodeHitTranslation(const DFDCHit* hit) {
+cscRef JEventProcessor_rawevent::DFDCAnodeHitTranslation(const DFDCHit* hit) const {
   string s = "fdcanode::"  + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->module) 
     + ":" + lexical_cast<string>(hit->element);
   return(cscMap[s]);
@@ -630,7 +638,7 @@ cscVal JEventProcessor_rawevent::DFDCAnodeHitTranslation(const DFDCHit* hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DFDCCathodeHitTranslation(const DFDCHit* hit) {
+cscRef JEventProcessor_rawevent::DFDCCathodeHitTranslation(const DFDCHit* hit) const {
   string s = "fdccathode::"  + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->module) 
     + ":" + lexical_cast<string>(hit->element);
   return(cscMap[s]);
@@ -640,7 +648,7 @@ cscVal JEventProcessor_rawevent::DFDCCathodeHitTranslation(const DFDCHit* hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) {
+cscRef JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) const {
   string s = "cdcadc::" + lexical_cast<string>(hit->ring) + ":" + lexical_cast<string>(hit->straw);
   return(cscMap[s]);
 }
@@ -649,7 +657,7 @@ cscVal JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) {
+cscRef JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) const {
   string s = "scadc::" + lexical_cast<string>(hit->sector);
   return(cscMap[s]);
 }
@@ -658,7 +666,7 @@ cscVal JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DSCHitTranslationTDC(const DSCHit* hit) {
+cscRef JEventProcessor_rawevent::DSCHitTranslationTDC(const DSCHit* hit) const {
   string s = "sctdc::" + lexical_cast<string>(hit->sector);
   return(cscMap[s]);
 }
@@ -667,7 +675,7 @@ cscVal JEventProcessor_rawevent::DSCHitTranslationTDC(const DSCHit* hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) {
+cscRef JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) const {
   string s = "taggertdc::" + lexical_cast<string>(hit->row) +":" + lexical_cast<string>(hit->column);
   return(cscMap[s]);
 }
@@ -676,7 +684,7 @@ cscVal JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) {
 //----------------------------------------------------------------------------
 
 
-cscVal JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) {
+cscRef JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) const {
   string s = "taggeradc::" + lexical_cast<string>(hit->row) +":" + lexical_cast<string>(hit->column);
   return(cscMap[s]);
 }
