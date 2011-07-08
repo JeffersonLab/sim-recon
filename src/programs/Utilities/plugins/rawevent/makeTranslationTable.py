@@ -89,7 +89,7 @@ if (detectorOn['CDC']==1):
                     file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                     slot = 1
                 file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-            file.write('      <channel number="%i" detector="CDC" "ring="%i" straw="%i" />\n' % (channel,ring,straw) )
+            file.write('      <channel number="%i" detector="CDC" ring="%i" straw="%i" />\n' % (channel,ring,straw) )
             channel = channel+1
     file.write('    </slot>\n\n')
                 
@@ -119,7 +119,7 @@ if (detectorOn['SC']==1):
                 file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                 slot = 1
             file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-        file.write('      <channel number="%i" detector="SC" "sector="%i"  />\n' % (channel,sector) )
+        file.write('      <channel number="%i" detector="SC" sector="%i"  />\n' % (channel,sector) )
         channel = channel+1
     file.write('    </slot>\n\n')
 
@@ -148,7 +148,7 @@ if (detectorOn['SC']==1):
                 file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                 slot = 1
             file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-        file.write('      <channel number="%i" detector="SC" "sector="%i"  />\n' % (channel,sector) )
+        file.write('      <channel number="%i" detector="SC" sector="%i"  />\n' % (channel,sector) )
         channel = channel+1
     file.write('    </slot>\n\n')
             
