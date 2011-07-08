@@ -176,7 +176,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 
 
-  // DTOFRawHit - FADC250 and F1TDC (60 ps)
+  // DTOFRawHit - FADC250 and F1TDC32 (60 ps)
   vector<const DTOFRawHit*> dtofrawhits; 
   eventLoop->Get(dtofrawhits);
   for(i=0; i<dtofrawhits.size(); i++) {
@@ -195,7 +195,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   }
 
 
-  // DBCALHit - FADC250 and F1TDC (60 ps)
+  // DBCALHit - FADC250 and F1TDC32 (60 ps)
   vector<const DBCALHit*> dbcalhits;
   eventLoop->Get(dbcalhits);
   for(i=0; i<dbcalhits.size(); i++) {
@@ -223,7 +223,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   }      
 
 
-  // DFDCHit - cathode strips FADC125 or anode wires F1TDC (115 ps)
+  // DFDCHit - cathode strips FADC125 or anode wires F1TDC64 (115 ps)
   vector<const DFDCHit*> dfdchits; 
   eventLoop->Get(dfdchits);
   for(unsigned int i=0; i<dfdchits.size(); i++) {
@@ -232,7 +232,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 
     int type = dfdchits[i]->type;
-    if(type==0) {           // F1TDC
+    if(type==0) {           // F1TDC64
       cscRef csc  = DFDCAnodeHitTranslation(dfdchits[i]);
       // do something...
     } else if(type==1) {    // FADC125
@@ -256,7 +256,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   }      
 
 
-  // DSCHit - FADC250 and F1TDC (60 ps)
+  // DSCHit - FADC250 and F1TDC32 (60 ps)
   vector<const DSCHit*> dschits;
   eventLoop->Get(dschits);
   for(unsigned int i=0; i<dschits.size(); i++) {
@@ -270,7 +270,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   }      
 
 
-  // DTagger - FADC250 and F1TDC (60 ps)
+  // DTagger - FADC250 and F1TDC32 (60 ps)
   vector<const DTagger*> dtaggerhits;
   eventLoop->Get(dtaggerhits);
   for(i=0; i<dtaggerhits.size(); i++) {
@@ -487,7 +487,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
 
     } else if(detector=="bcal") {
-      if(type=="f1tdc") {
+      if(type=="f1tdc32") {
         s = "bcaltdc::";
       } else if (type=="fadc250") {
         s = "bcaladc::";
@@ -509,7 +509,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         
       
     } else if(detector=="sc") {
-      if(type=="f1tdc") {
+      if(type=="f1tdc32") {
         s = "scadc::";
       } else if (type=="fadc250") {
         s = "sctdc::";
@@ -521,7 +521,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
     
 
     } else if(detector=="fdccathode") {
-      if(type=="f1tdc") {
+      if(type=="f1tdc64") {
         s = "fdccathode::";
       } else {
         s = "unknownFDCCathode::";
@@ -541,7 +541,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
       
     } else if(detector=="tof") {
-      if(type=="f1tdc") {
+      if(type=="f1tdc32") {
         s = "toftdc::";
       } else if (type=="fadc250") {
         s = "tofadc::";
@@ -553,7 +553,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
      
     } else if(detector=="tagger") {
-      if(type=="f1tdc") {
+      if(type=="f1tdc32") {
         s = "taggertdc::";
       } else if (type=="fadc250") {
         s = "taggeradc::";

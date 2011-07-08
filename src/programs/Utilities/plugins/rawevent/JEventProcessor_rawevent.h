@@ -87,10 +87,6 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
                 cscRef DTaggerTranslationADC(const DTagger* hit) const;
                 cscRef DTaggerTranslationTDC(const DTagger* hit) const;
-
-
-                // maps convert from detector spec to (crate,slot,channel)
-                // key is detector-dependent encoded string (e.g. "ring:straw" for CDC)
 };
 
 #endif // _JEventProcessor_rawevent_
