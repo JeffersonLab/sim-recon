@@ -168,8 +168,8 @@ if (detectorOn['FCAL']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for row in range(1,56):
-        for column in range(1,56):
+    for row in range(1,57):
+        for column in range(1,57):
             if (channel>channelCount[type]):
                 file.write('    </slot>\n\n')
                 slot = slot+1
@@ -198,10 +198,10 @@ if (detectorOn['BCAL']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for end in ("upstream","downstream"):
+    for end in range(2):
         for module in range(1,49):
             for sector in range(1,5):
-                for layer in range(1,7):
+                for layer in range(1,11):
                     if (channel>channelCount[type]):
                         file.write('    </slot>\n\n')
                         slot = slot+1
@@ -232,10 +232,10 @@ if (detectorOn['BCAL']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for end in ("upstream","downstream"):
+    for end in range(2):
         for module in range(1,49):
             for sector in range(1,5):
-                for layer in range(1,7):
+                for layer in range(1,11):
                     if (channel>channelCount[type]):
                         file.write('    </slot>\n\n')
                         slot = slot+1
@@ -253,6 +253,9 @@ if (detectorOn['BCAL']==1):
             
 
 
+
+
+
 # FDC: FADC125, 72 channels/slot, 4 packages, 6 triplets(cathode,anode,cathode) per package, 216 cathode strips/layer
 if (detectorOn['FDC']==1):
     type = 'FADC125'
@@ -265,9 +268,9 @@ if (detectorOn['FDC']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for module in range(1,5):
+    for package in range(4):
         for triplet in range(6):
-            for subLayer in [1,3]:
+            for plane in [1,3]:
                 for element in range(1,217):
                     if (channel>channelCount[type]):
                         file.write('    </slot>\n\n')
@@ -278,12 +281,15 @@ if (detectorOn['FDC']==1):
                             crate = crate+1
                             file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                             slot = 1
-                            file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-                    layer=((module-1)*18)+triplet*3+subLayer
-                    file.write('      <channel number="%i" detector="FDCCathode" module="%i" layer="%i" element="%i" />\n'
-                               % (channel,module,layer,element) )
+                        file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
+                    gplane = package*18 + triplet*3 + plane
+                    file.write('      <channel number="%i" detector="FDCCathode" gPlane ="%i" element="%i" />\n'
+                               % (channel,gplane,element) )
                     channel = channel+1
     file.write('    </slot>\n\n')
+
+
+
 
             
 # FDC: F1TDC64, 64 channels/slot, 4 packages, 6 triplets(cathode,anode,cathode) per package, 96 anodes/layer
@@ -298,7 +304,7 @@ if (detectorOn['FDC']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for module in range(1,5):
+    for package in range(4):
         for triplet in range(6):
             for element in range(1,97):
                 if (channel>channelCount[type]):
@@ -311,9 +317,9 @@ if (detectorOn['FDC']==1):
                         file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                         slot = 1
                     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-                layer=((module-1)*18)+triplet*3+2
-                file.write('      <channel number="%i" detector="FDCAnode" module="%i" layer="%i" element="%i" />\n'
-                           % (channel,module,layer,element) )
+                gplane = package*18 + triplet*3 + 2
+                file.write('      <channel number="%i" detector="FDCAnode" gPlane="%i" element="%i" />\n'
+                           % (channel,gplane,element) )
                 channel = channel+1
     file.write('    </slot>\n\n')
             
@@ -332,9 +338,9 @@ if (detectorOn['TOF']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for end in ("top","bottom","left","right"):
-        for plane in range(1,3):
-            for bar in range(1,21):
+    for end in range(2):
+        for plane in range(2):
+            for bar in range(45):
                 if (channel>channelCount[type]):
                     file.write('    </slot>\n\n')
                     slot = slot+1
@@ -364,9 +370,9 @@ if (detectorOn['TOF']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for end in ("top","bottom","left","right"):
-        for plane in range(1,3):
-            for bar in range(1,21):
+    for end in range(2):
+        for plane in range(2):
+            for bar in range(45):
                 if (channel>channelCount[type]):
                     file.write('    </slot>\n\n')
                     slot = slot+1
