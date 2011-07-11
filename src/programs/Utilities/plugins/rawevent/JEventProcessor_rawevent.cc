@@ -521,7 +521,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
     
 
     } else if(detector=="fdccathode") {
-      if(type=="f1tdc64") {
+      if(type=="fadc125") {
         s = "fdccathode::";
       } else {
         s = "unknownFDCCathode::";
@@ -531,7 +531,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
       
     } else if(detector=="fdcanode") {
-      if(type=="fadc125") {
+      if(type=="f1tdc64") {
         s = "fdcanode::";
       } else {
         s = "unknownFDCAnode::";
