@@ -212,7 +212,7 @@ if (detectorOn['BCAL']==1):
                             file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                             slot = 1
                         file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-                    file.write('      <channel number="%i" detector="BCAL" module="%i" sector="%i" layer="%i" end="%s" />\n'
+                    file.write('      <channel number="%i" detector="BCAL" module="%i" sector="%i" layer="%i" end="%i" />\n'
                                % (channel,module,sector,layer,end) )
                     channel = channel+1
     file.write('    </slot>\n\n')
@@ -246,7 +246,7 @@ if (detectorOn['BCAL']==1):
                             file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                             slot = 1
                         file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-                    file.write('      <channel number="%i" detector="BCAL" module="%i" sector="%i" layer="%i" end="%s" />\n'
+                    file.write('      <channel number="%i" detector="BCAL" module="%i" sector="%i" layer="%i" end="%i" />\n'
                                % (channel,module,sector,layer,end) )
                     channel = channel+1
     file.write('    </slot>\n\n')
@@ -351,7 +351,7 @@ if (detectorOn['TOF']==1):
                         file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                         slot = 1
                     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-                file.write('      <channel number="%i" detector="TOF" plane="%i" bar="%i" end="%s" />\n'
+                file.write('      <channel number="%i" detector="TOF" plane="%i" bar="%i" end="%i" />\n'
                            % (channel,plane,bar,end) )
                 channel = channel+1
     file.write('    </slot>\n\n')
@@ -383,7 +383,7 @@ if (detectorOn['TOF']==1):
                         file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
                         slot = 1
                     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
-                file.write('      <channel number="%i" detector="TOF" plane="%i" bar="%i" end="%s" />\n'
+                file.write('      <channel number="%i" detector="TOF" plane="%i" bar="%i" end="%i" />\n'
                            % (channel,plane,bar,end) )
                 channel = channel+1
     file.write('    </slot>\n\n')
