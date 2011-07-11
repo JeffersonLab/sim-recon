@@ -246,31 +246,19 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float q      = dfdchits[i]->q;
     float t      = dfdchits[i]->t;
 
-
     int type = dfdchits[i]->type;
     if(type==0) {           // F1TDC64
       cscRef cscTDC  = DFDCAnodeHitTranslation(dfdchits[i]);
       cout << "found FDC cscTDC = " << cscTDC.get<0>() << "," << cscTDC.get<1>() << "," << cscTDC.get<2>() 
            << "   for gPlane,element = " << dfdchits[i]->gPlane << "," << dfdchits[i]->element << endl;
       // do something...
+
     } else if(type==1) {    // FADC125
       cscRef cscADC  = DFDCCathodeHitTranslation(dfdchits[i]);
       cout << "found FDC cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
            << "   for gPlane,element= " << dfdchits[i]->gPlane << "," << dfdchits[i]->element << endl;
       // do something...
-
-      if(cscADC.get<0>()==0) {
-        vector< pair<string,string> > v;
-        dfdchits[i]->toStrings(v);
-        for(unsigned int i=0; i<v.size(); i++) {
-          cout << v[i].first << "   " << v[i].second << endl;
-        }
-      }
-
-
-
     }
-
   }
 
 
@@ -295,7 +283,12 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dschits[i]->t;
 
     cscRef cscADC  = DSCHitTranslationADC(dschits[i]);
+    cout << "found SC cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
+         << "   for sector= " << dschits[i]->sector << endl;
+
     cscRef cscTDC  = DSCHitTranslationTDC(dschits[i]);
+    cout << "found SC cscTDC = " << cscTDC.get<0>() << "," << cscTDC.get<1>() << "," << cscTDC.get<2>() 
+         << "   for sector= " << dschits[i]->sector << endl;
 
     // do something...
   }      
@@ -309,7 +302,13 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dtaggerhits[i]->t;
 
     cscRef cscADC  = DTaggerTranslationADC(dtaggerhits[i]);
+    cout << "found Tagger cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
+         << "   for row,column= " << dtaggerhits[i]->row << "," << dtaggerhits[i]->column << endl;
+
     cscRef cscTDC  = DTaggerTranslationTDC(dtaggerhits[i]);
+    cout << "found Tagger cscTDC = " << cscTDC.get<0>() << "," << cscTDC.get<1>() << "," << cscTDC.get<2>() 
+         << "   for row,column= " << dtaggerhits[i]->row << "," << dtaggerhits[i]->column << endl;
+
 
     // do something...
   }      

@@ -168,8 +168,8 @@ if (detectorOn['FCAL']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for row in range(1,57):
-        for column in range(1,57):
+    for row in range(59):
+        for column in range(59):
             if (channel>channelCount[type]):
                 file.write('    </slot>\n\n')
                 slot = slot+1
@@ -402,8 +402,8 @@ if (detectorOn['TAGGER']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for row in range(1,51):
-        for column in range(1,8):
+    for row in range(9):
+        for column in range(101):
             if (channel>channelCount[type]):
                 file.write('    </slot>\n\n')
                 slot = slot+1
@@ -432,8 +432,8 @@ if (detectorOn['TAGGER']==1):
         slot=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
-    for row in range(1,51):
-        for column in range(1,8):
+    for row in range(9):
+        for column in range(101):
             if (channel>channelCount[type]):
                 file.write('    </slot>\n\n')
                 slot = slot+1
