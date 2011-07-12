@@ -143,12 +143,20 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
   double mom_factor = 1.0+exp(-p_over_g*p_over_g);
   sigma *= mom_factor;
   
+  int old_straw=1000,old_ring=1000;
+
   // Minimum probability of hit belonging to wire and still be accepted
   double MIN_HIT_PROB = 0.05;
   vector<const DCDCTrackHit*>::const_iterator iter;
   for(iter=cdchits_in.begin(); iter!=cdchits_in.end(); iter++){
     const DCDCTrackHit *hit = *iter;
-    
+
+    // Skip hit if it is on the same wire as the previous hit
+    if (fit_type!=kTimeBased){
+      if (hit->wire->ring == old_ring && hit->wire->straw==old_straw) continue;
+      old_ring=hit->wire->ring;
+      old_straw=hit->wire->straw;
+    }
     // Find the DOCA to this wire
     double s;
     double doca = rt->DistToRT(hit->wire, &s);
@@ -264,7 +272,7 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
   // that are within +/-1 of the straw # of the most probable hit are added 
   // to the list.
   sort(cdchits_tmp.begin(),cdchits_tmp.end(),DTrackHitSelector_cdchit_cmp);
-  int old_straw=1000,old_ring=1000;
+  old_straw=1000,old_ring=1000;
   for (unsigned int i=0;i<cdchits_tmp.size();i++){
     if (cdchits_tmp[i].second->wire->ring!=old_ring || 
 	abs(cdchits_tmp[i].second->wire->straw-old_straw)==1){
@@ -336,10 +344,17 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   // Minimum probability of hit belonging to wire and still be accepted
   double MIN_HIT_PROB = 0.01;
   
+  int old_wire=1000, old_layer=1000;
   vector<const DFDCPseudo*>::const_iterator iter;
   for(iter=fdchits_in.begin(); iter!=fdchits_in.end(); iter++){
     const DFDCPseudo *hit = *iter;
     
+    if (fit_type!=kTimeBased){
+      if (hit->wire->layer==old_layer && hit->wire->wire==old_wire) continue;
+      old_wire=hit->wire->wire;
+      old_layer=hit->wire->layer;
+    }
+
     // Find the DOCA to this wire
     double s;
     double doca = rt->DistToRT(hit->wire, &s);  
@@ -437,7 +452,7 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   // that are within +/-1 of the wire # of the most probable hit are added 
   // to the list.
   sort(fdchits_tmp.begin(),fdchits_tmp.end(),DTrackHitSelector_fdchit_cmp);
-  int old_layer=1000,old_wire=1000;
+  old_layer=1000,old_wire=1000;
   for (unsigned int i=0;i<fdchits_tmp.size();i++){
     if (fdchits_tmp[i].second->wire->layer!=old_layer || 
 	abs(fdchits_tmp[i].second->wire->wire-old_wire)==1){
