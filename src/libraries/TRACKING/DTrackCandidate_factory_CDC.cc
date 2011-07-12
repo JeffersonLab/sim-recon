@@ -67,7 +67,7 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	MAX_SUBSEED_LINKED_HITS = 12;
 	MAX_RING_SUBSEED_HITS = 4;
 	MAX_HIT_DIST = 4.0; // cm
-	MAX_SEED_TIME_DIFF = 450.0; // ns
+	MAX_SEED_TIME_DIFF = 1000.0; // ns
 	MAX_CDC_MATCH_ANGLE = 20.0; // degrees
 	MAX_FDC_MATCH_ANGLE = 40.0; // degrees
 	MAX_SEED_LINK_ANGLE = M_PI/6.0*57.3; // degrees
@@ -597,7 +597,7 @@ void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<
 		unsigned int Nin_time=0;
 		for(unsigned int j=0; j<seed.hits.size(); j++){
 			double tdrift = seed.hits[j]->hit->tdrift;
-			if(tdrift>500.0){
+			if(tdrift>1000.0){
 				seed.hits[j]->flags |= OUT_OF_TIME;
 				continue;
 			}
