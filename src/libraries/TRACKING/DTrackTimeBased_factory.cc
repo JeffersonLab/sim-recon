@@ -28,7 +28,7 @@ using namespace jana;
 // Routine for sorting start times
 bool DTrackTimeBased_T0_cmp(DTrackTimeBased::DStartTime_t a,
 			    DTrackTimeBased::DStartTime_t b){
-  return (a.t0_sigma<b.t0_sigma);
+  return (a.system>b.system);
 }
 
 
@@ -61,6 +61,15 @@ jerror_t DTrackTimeBased_factory::init(void)
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
 	MOMENTUM_CUT_FOR_PROTON_ID=3.0;
+
+	MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING=3;
+	BYPASS_TB_FOR_FORWARD_TRACKS=false;
+
+	gPARMS->SetDefaultParameter("TRKFIT:BYPASS_TB_FOR_FORWARD_TRACKS",
+				    BYPASS_TB_FOR_FORWARD_TRACKS);
+	gPARMS->SetDefaultParameter("TRKFIT:MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING",
+				    MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING);
+
 
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
@@ -138,9 +147,10 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		Hstart_time=(TH2F*)gROOT->FindObject("Hstart_time");
 		if (!Hstart_time) Hstart_time=new TH2F("Hstart_time",
 						       "vertex time source vs. time",
-						 300,-50,50,257,-0.5,256.5);
-	  
-
+						 300,-50,50,9,-0.5,8.5);
+		fom_dedx=(TH2F*)gROOT->FindObject("fom_dedx");
+		if (!fom_dedx) fom_dedx=new TH2F("fom_dedx","dedx chi2 vs p",100,0,10,100,0,10);
+		
 		dapp->Unlock();
 
 	}
@@ -184,109 +194,164 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   for(unsigned int i=0; i<tracks.size(); i++){
     const DTrackWireBased *track = tracks[i];
 
-    // Create vector of start times from various sources,ordered by uncertainty
-    vector<DTrackTimeBased::DStartTime_t>start_times;
-    CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,start_times);
+    // Lists of hits used in the previous pass
+    vector<const DCDCTrackHit *>cdchits;
+    track->GetT(cdchits);
+    vector<const DFDCPseudo *>fdchits;
+    track->GetT(fdchits);
 
-    // Make sure there are enough DReferenceTrajectory objects
-    while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-    DReferenceTrajectory *rt = rtv[_data.size()];
-    rt->SetMass(track->mass());	
-    rt->SetDGeometry(geom);
+    if (BYPASS_TB_FOR_FORWARD_TRACKS && fdchits.size()>0
+	&& cdchits.size()<MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING){
+      // Copy over the results of the wire-based fit to DTrackTimeBased
+      DTrackTimeBased *timebased_track = new DTrackTimeBased;
+      
+      // Copy over DKinematicData part
+      DKinematicData *track_kd = timebased_track;
+      *track_kd = *track;
     
-    if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<< track->mass()<<endl;}
+      timebased_track->rt = track->rt;
+      timebased_track->chisq = track->chisq;
+      timebased_track->Ndof = track->Ndof;
+      timebased_track->pulls = track->pulls;
+      timebased_track->trackid = track->id;
+      timebased_track->candidateid=track->candidateid;
+
+      for(unsigned int m=0; m<fdchits.size(); m++)
+	timebased_track->AddAssociatedObject(fdchits[m]); 
+      for(unsigned int m=0; m<cdchits.size(); m++)
+	timebased_track->AddAssociatedObject(cdchits[m]);
+      
+      // Compute the dEdx for the hits on the track
+      double dEdx=0.,chi2_dedx=0.;
+      unsigned int num_dedx=0;
+      pid_algorithm->GetdEdxChiSq(timebased_track,dEdx,num_dedx,chi2_dedx);
+      timebased_track->setdEdx(dEdx);
+      timebased_track->num_dedx=num_dedx;
+      timebased_track->chi2_dedx=chi2_dedx;
     
-    // Do the fit
-    fitter->SetFitType(DTrackFitter::kTimeBased);
-    DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, loop, track->mass(),mStartTime);
+      if (DEBUG_HISTS){
+	fom_dedx->Fill(timebased_track->momentum().Mag(),chi2_dedx);
+      }
+	       
+      // Add figure-of-merit based on dEdx
+      timebased_track->FOM=TMath::Prob(chi2_dedx,1);
 
-    // Check the status value from the fit
-    switch(status){
-    case DTrackFitter::kFitNotDone:
-      _DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
-    case DTrackFitter::kFitFailed:
-      continue;
-      break;
-    case DTrackFitter::kFitSuccess:
-    case DTrackFitter::kFitNoImprovement:
-      {
-	// Allocate a DReferenceTrajectory object if needed.
-	// These each have a large enough memory footprint that
-	// it causes noticable performance problems if we allocated
-	// and deallocated them every event. Therefore, we allocate
-	// when needed, but recycle them on the next event.
-	// They are deleted in the fini method.
-	while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-	DReferenceTrajectory *rt = rtv[_data.size()];
-	
-	// Create a new time-based track object
-	DTrackTimeBased *timebased_track = new DTrackTimeBased;
-	
-	// Copy over DKinematicData part
-	DKinematicData *track_kd = timebased_track;
-	*track_kd = fitter->GetFitParameters();
-	rt->SetMass(track_kd->mass());
-	rt->SetDGeometry(geom);
-	rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
-	
-	timebased_track->rt = rt;
-	timebased_track->chisq = fitter->GetChisq();
-	timebased_track->Ndof = fitter->GetNdof();
-	timebased_track->pulls = fitter->GetPulls();
-	timebased_track->trackid = track->id;
-	timebased_track->candidateid=track->candidateid;
+      _data.push_back(timebased_track);
+    }
+    else{
+      // Create vector of start times from various sources
+      vector<DTrackTimeBased::DStartTime_t>start_times;
+      CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,start_times);
 
-	// Set the start time and add the list of start times
-	timebased_track->setT0(mStartTime,start_times[0].t0_sigma, 
-			       mStartDetector);
-	timebased_track->start_times.assign(start_times.begin(),
-					    start_times.end());
-
-	if (DEBUG_HISTS){
-	  if (Hstart_time) Hstart_time->Fill(start_times[0].t0,
-					     start_times[0].system);
+      // Make sure there are enough DReferenceTrajectory objects
+      while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+      DReferenceTrajectory *rt = rtv[_data.size()];
+      rt->SetMass(track->mass());	
+      rt->SetDGeometry(geom);
+      
+      if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<< track->mass()<<endl;}
+    
+      // Do the fit
+      fitter->SetFitType(DTrackFitter::kTimeBased);
+      DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, loop, track->mass(),mStartTime);
+      
+      // Check the status value from the fit
+      switch(status){
+      case DTrackFitter::kFitNotDone:
+	_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
+      case DTrackFitter::kFitFailed:
+	continue;
+	break;
+      case DTrackFitter::kFitSuccess:
+      case DTrackFitter::kFitNoImprovement:
+	{
+	  // Allocate a DReferenceTrajectory object if needed.
+	  // These each have a large enough memory footprint that
+	  // it causes noticable performance problems if we allocated
+	  // and deallocated them every event. Therefore, we allocate
+	  // when needed, but recycle them on the next event.
+	  // They are deleted in the fini method.
+	  while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+	  DReferenceTrajectory *rt = rtv[_data.size()];
 	  
-	}
+	  // Create a new time-based track object
+	  DTrackTimeBased *timebased_track = new DTrackTimeBased;
 	
+	  // Copy over DKinematicData part
+	  DKinematicData *track_kd = timebased_track;
+	  *track_kd = fitter->GetFitParameters();
+	  rt->SetMass(track_kd->mass());
+	  rt->SetDGeometry(geom);
+	  rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
+	  
+	  timebased_track->rt = rt;
+	  timebased_track->chisq = fitter->GetChisq();
+	  timebased_track->Ndof = fitter->GetNdof();
+	  timebased_track->pulls = fitter->GetPulls();
+	  timebased_track->trackid = track->id;
+	  timebased_track->candidateid=track->candidateid;
 
-	// Add hits used as associated objects
-	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
-	const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
-
-	for(unsigned int m=0; m<cdchits.size(); m++)
-	  timebased_track->AddAssociatedObject(cdchits[m]);
-	for(unsigned int m=0; m<fdchits.size(); m++)
-	  timebased_track->AddAssociatedObject(fdchits[m]);
-	
-	// Add DTrack object as associate object
-	timebased_track->AddAssociatedObject(track);
-	//_DBG_<< "eventnumber:   " << eventnumber << endl;
-	if (PID_FORCE_TRUTH) {
-	  // Add figure-of-merit based on difference between thrown and reconstructed momentum 
-	  // if more than half of the track's hits match MC truth hits and also (charge,mass)
-	  // match; add FOM=0 otherwise
-	  timebased_track->FOM=GetTruthMatchingFOM(i,timebased_track,mcthrowns);
-	}
-	else {
-	  // Compute the dEdx for the hits on the track
-	  double dEdx=0.,chi2_dedx=0.;
-	  unsigned int num_dedx=0;
-	  pid_algorithm->GetdEdxChiSq(timebased_track,dEdx,num_dedx,chi2_dedx);
-	  timebased_track->setdEdx(dEdx);
-	  timebased_track->num_dedx=num_dedx;
-	  timebased_track->chi2_dedx=chi2_dedx;
-
-	  // Add figure-of-merit based on dEdx
-	  timebased_track->FOM=TMath::Prob(chi2_dedx,1);
+	  // Set the start time and add the list of start times
+	  timebased_track->setT0(mStartTime,start_times[0].t0_sigma, 
+				 mStartDetector);
+	  timebased_track->start_times.assign(start_times.begin(),
+					      start_times.end());
+	  
+	  if (DEBUG_HISTS){
+	    if (start_times[0].system==SYS_START){
+	      Hstart_time->Fill(start_times[0].t0,0.);
+	    }
+	    else{
+	      Hstart_time->Fill(start_times[0].t0,start_times[0].system);
+	    }
 	    
-	}
-	//_DBG_<< "FOM:   " << timebased_track->FOM << endl;
+	  }
+	
+	  
+	  // Add hits used as associated objects
+	  const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
+	  const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
 
-	_data.push_back(timebased_track);
+	  for(unsigned int m=0; m<cdchits.size(); m++)
+	    timebased_track->AddAssociatedObject(cdchits[m]);
+	  for(unsigned int m=0; m<fdchits.size(); m++)
+	    timebased_track->AddAssociatedObject(fdchits[m]);
+	  
+	  // Add DTrack object as associate object
+	  timebased_track->AddAssociatedObject(track);
+	  //_DBG_<< "eventnumber:   " << eventnumber << endl;
+	  if (PID_FORCE_TRUTH) {
+	    // Add figure-of-merit based on difference between thrown and reconstructed momentum 
+	    // if more than half of the track's hits match MC truth hits and also (charge,mass)
+	    // match; add FOM=0 otherwise
+	    timebased_track->FOM=GetTruthMatchingFOM(i,timebased_track,mcthrowns);
+	  }
+	  else {
+	    // Compute the dEdx for the hits on the track
+	    double dEdx=0.,chi2_dedx=0.;
+	    unsigned int num_dedx=0;
+	    pid_algorithm->GetdEdxChiSq(timebased_track,dEdx,num_dedx,chi2_dedx);
+	    timebased_track->setdEdx(dEdx);
+	    timebased_track->num_dedx=num_dedx;
+	    timebased_track->chi2_dedx=chi2_dedx;
+	    
+	    if (DEBUG_HISTS){
+	      fom_dedx->Fill(timebased_track->momentum().Mag(),chi2_dedx);
+	    }
+	    
+	    // Add figure-of-merit based on dEdx
+	    timebased_track->FOM=TMath::Prob(chi2_dedx,1);
+	    
+	  }
+	  //_DBG_<< "FOM:   " << timebased_track->FOM << endl;
+	  
+	  _data.push_back(timebased_track);
+	  break;
+	
+	}
+      default:
 	break;
       }
-    default:
-      break;
     }
   }
 
