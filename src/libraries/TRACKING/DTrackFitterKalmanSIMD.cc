@@ -44,8 +44,13 @@ bool static DKalmanSIMDCDCHit_cmp(DKalmanSIMDCDCHit_t *a, DKalmanSIMDCDCHit_t *b
 #define DRIFT_SPEED           .0055
 #define FDC_CATHODE_SIGMA_FACTOR 0.0223
 double DTrackFitterKalmanSIMD::fdc_y_variance(double alpha,double x,double dE){
-  //return FDC_CATHODE_VARIANCE;
-  double diffusion=2.*DIFFUSION_COEFF*fabs(x)/DRIFT_SPEED;
+  double cosalpha=cos(alpha);
+  double sinalpha=sin(alpha);
+  double dx=x*cosalpha;
+  double dz=x*sinalpha;
+  double diffusion=0.01*pow(dx*dx+dz*dz,0.125)+0.0061*dx*dx;
+  return diffusion*diffusion;
+    
   double sigma_from_dE=FDC_CATHODE_SIGMA_FACTOR/dE;
   //return sigma_from_dE*sigma_from_dE;
   double tanalpha=tan(alpha);
@@ -53,22 +58,21 @@ double DTrackFitterKalmanSIMD::fdc_y_variance(double alpha,double x,double dE){
 }
 
 // Crude approximation for the variance in drift distance due to smearing
-inline double fdc_drift_variance(double x){
+inline double fdc_drift_variance(double d){
   return FDC_ANODE_VARIANCE;
+  double sigma=0.1;
+  d=fabs(d);
+  if (d<0.5){
+    sigma=0.0001309/(d+EPS)-0.0008347/(d-0.5)-0.008037*d;
+  }
+  return sigma*sigma;
 }
 
-// Smearing function from Yves
+// Smearing function derived from MC for 50/50 mixture
 double DTrackFitterKalmanSIMD::cdc_variance(double x){  
-  //return CDC_VARIANCE;
-
-  x*=10.; // mm
-  if (x>7.895) x=7.895; // straw radius in mm
-  else if (x<0) x=0.;
-  double sigma_d 
-    =(108.55 + 7.62391*x + 556.176*exp(-(1.12566)*pow(x,1.29645)))*1e-4;
-  //sigma_d*=2.;
-
-  return sigma_d*sigma_d;
+  //  return CDC_VARIANCE;
+  double sigma=3.788e-3/sqrt(x)+6.417e-3*x;
+  return sigma*sigma;
 }
 
 
@@ -834,7 +838,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     }
   }
   if(step>mStepSizeZ) step=mStepSizeZ; 
-  if (fit_type==kTimeBased && z_to_boundary<step) step=z_to_boundary; 
+  if (z_to_boundary<step) step=z_to_boundary; 
   double my_r=sqrt(S(state_x)*S(state_x)+S(state_y)*S(state_y));
   if (step>CDC_INTERNAL_STEP_SIZE && my_r>endplate_rmin
       && my_r<endplate_rmax && z<endplate_z) 
@@ -1284,7 +1288,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
    }
   }
   if(step>mStepSizeZ) step=mStepSizeZ;
-  if (fit_type==kTimeBased && z_to_boundary<step) step=z_to_boundary;
+  if (z_to_boundary<step) step=z_to_boundary;
   double my_r=sqrt(S(state_x)*S(state_x)+S(state_y)*S(state_y));
 
   // Reduce the step size inside the FDC packages
@@ -1408,20 +1412,33 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
     }
   }
 
+  // Fill in Lorentz deflection parameters
   my_id=my_fdchits.size();
   for (unsigned int m=0;m<forward_traj.size();m++){
     if (my_id>0){
       unsigned int hit_id=my_id-1;
       if (fabs(forward_traj[m].pos.z()-my_fdchits[hit_id]->z)<EPS){
 	forward_traj[m].h_id=my_id;
-	// Lorentz correction slope parameters
-	double tanr=0.,tanz=0.;
+
+	// Get the magnetic field at this position along the trajectory
+	bfield->GetField(forward_traj[m].pos.x(),forward_traj[m].pos.y(),
+			 forward_traj[m].pos.z(),Bx,By,Bz);
+	double Br=sqrt(Bx*Bx+By*By);
+
+	// Angle between B and wire
+	double my_phi=0.;
+	if (Br>0.) my_phi=acos((Bx*my_fdchits[hit_id]->sina 
+				+By*my_fdchits[hit_id]->cosa)/Br);
+	/*
 	lorentz_def->GetLorentzCorrectionParameters(forward_traj[m].pos.x(),
 						    forward_traj[m].pos.y(),
 						    forward_traj[m].pos.z(),
 						    tanz,tanr);
 	my_fdchits[hit_id]->nr=tanr;
 	my_fdchits[hit_id]->nz=tanz;
+	*/
+	my_fdchits[hit_id]->nr=0.1458*Bz*(1.-0.048*Br);
+	my_fdchits[hit_id]->nz=(0.1717+0.01227*Bz)*(Br*cos(my_phi));
 	
 	my_id--;
 	
@@ -1749,6 +1766,8 @@ jerror_t DTrackFitterKalmanSIMD::ConvertStateVector(double z,double wire_x,
   J(state_tanl,state_ty)=-ty_*tanl3;
   J(state_z,state_x)=1./tx_;
   J(state_z,state_y)=1./ty_;
+  J(state_z,state_ty)=-y_/(ty_*ty_);
+  J(state_z,state_tx)=-x_/(tx_*tx_);
   J(state_q_over_pt,state_q_over_p)=1./cosl;
   J(state_q_over_pt,state_tx)=-tx_*q_over_p_*tanl3*factor;
   J(state_q_over_pt,state_ty)=-ty_*q_over_p_*tanl3*factor;
@@ -2081,36 +2100,57 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(DMatrix5x1 &Ss){
       double tx=Ss(state_tx);
       double ty=Ss(state_ty);
       double du=x*cosa-y*sina-u;
+
       double tu=tx*cosa-ty*sina;
       //double one_plus_tu2=1.+tu*tu;
       double alpha=atan(tu);
       double cosalpha=cos(alpha);
       double sinalpha=sin(alpha);
+      double cosalpha2=cosalpha*cosalpha;
+      double sinalpha2=sinalpha*sinalpha;
+      double cosalpha_sinalpha=cosalpha*sinalpha;
 
       // estimate t0 from distance away from wire	
       double one_plus_alpha2=1.+alpha*alpha;
-      double d=fabs(du*cosalpha);
+      double dx=du*cosalpha2;
+      double dx2=dx*dx;
+      double dz=du*cosalpha_sinalpha;
+      double dz2=dz*dz;
+
+      // Get the magnetic field
+      bfield->GetField(x,y,forward_traj[m].pos.z(),Bx,By,Bz);
+      
       double tdiff=my_fdchits[id]->t-ftime;
-      double t0=tdiff-d/DRIFT_SPEED; 
-
+      //double t0=tdiff-d/DRIFT_SPEED; 
+      double c1=1086.0-106.7*Bz;
+      double c2=1068.0;
+      double tdrift=c1*dx2+c2*dz2;
+      
+      double t0=tdiff-tdrift;
+      
       // Compute the variance in t0
-      double sina2=sina*sina;
-      double cosa2=cosa*cosa;
-      double twosinacosa=2.*sina*cosa;
-      double speed2=DRIFT_SPEED*DRIFT_SPEED;
-      double var_t0
-	=(fdc_drift_variance(d)
-	  +(Cs(state_x,state_x)*cosa2
-	    +Cs(state_y,state_y)*sina2
-	    -twosinacosa*Cs(state_x,state_y))*cosalpha*cosalpha
-	  +du*du*sinalpha*sinalpha*(cosa2*Cs(state_tx,state_tx)
-				    +sina2*Cs(state_ty,state_ty)
-				    -twosinacosa*Cs(state_tx,state_ty))
-		     /(one_plus_alpha2*one_plus_alpha2))/speed2;
+      double dt_du=2.*du*cosalpha2*(c1*cosalpha2+c2*sinalpha2);
+      double dt_dalpha=-2.*du*du*(2.*c1*cosalpha2*cosalpha_sinalpha
+				  +c2*(sinalpha2-cosalpha2)*cosalpha_sinalpha);
+      double dt_dx=dt_du*cosa;
+      double dt_dy=-dt_du*sina;
+      double dt_dtx=(dt_dalpha/one_plus_alpha2)*cosa;
+      double dt_dty=-(dt_dalpha/one_plus_alpha2)*sina;
+      double sigma_t=( 39.44   )*dx2*dx2/(0.5-dz2)+( 56.0  )*dz2*dz2/(0.5-dx2);
+      
+      double var_t0=sigma_t*sigma_t
+	+dt_dx*dt_dx*Cs(state_x,state_x)+2.*dt_dx*dt_dy*Cs(state_x,state_y)
+	+dt_dy*dt_dy*Cs(state_y,state_y)+dt_dtx*dt_dtx*Cs(state_tx,state_tx)
+	+2.*dt_dtx*dt_dty*Cs(state_tx,state_ty)
+	+dt_dty*dt_dty*Cs(state_ty,state_ty)
+	+2.*dt_dx*dt_dtx*Cs(state_x,state_tx)
+	+2.*dt_dy*dt_dty*Cs(state_y,state_ty)
+	+2.*dt_dy*dt_dtx*Cs(state_y,state_tx)
+	+2.*dt_dx*dt_dty*Cs(state_x,state_ty);
+      
       mT0wires+=t0/var_t0;
-      mInvVarT0+=1./var_t0;
+      mInvVarT0+=1./var_t0;     
     }
-
     S=forward_traj[m].Skk;
     C=forward_traj[m].Ckk;
     JT=forward_traj[m].JT;
@@ -2187,22 +2227,33 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss){
       double dx=diff.x();
       double dy=diff.y();
       
+      // Get the magnetic field
+      bfield->GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
+      double Bmag=sqrt(Bx*Bx+By*By+Bz*Bz);
+
       // t0 estimate
       double tdiff=my_cdchits[cdc_index]->hit->tdrift-central_traj[m].t;
       double doca=d*cosstereo;
-      double t0=tdiff-doca/CDC_DRIFT_SPEED;
-	      
+      //double t0=tdiff-doca/CDC_DRIFT_SPEED;
+      double c1=-49.41+4.74*Bmag;
+      double c2=1129.0+78.66*Bmag;
+      double t0=tdiff-(c1*doca+c2*doca*doca);    
+ 
       // Calculate the variance
-      DMatrix1x5 H;
-      DMatrix5x1 H_T;
-      double my_var=cdc_variance(doca);
-      H(state_D)=H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo/d;
-      H(state_phi)=H_T(state_phi)
-	=-Ss(state_D)*cosstereo*(dx*cosphi+dy*sinphi)/d;
-      H(state_z)=H_T(state_z)=-cosstereo*(dx*ux+dy*uy)/(uz*d);	  
-      my_var+=H*(Cs*H_T);
-      my_var/=CDC_DRIFT_SPEED*CDC_DRIFT_SPEED;
+      double dd_dz=-cosstereo*(dx*ux+dy*uy)/(d*uz);
+      double dd_dD=cosstereo*(dy*cosphi-dx*cosphi)/d;
+      double dd_dphi=-Ss(state_D)*cosstereo*(dx*cosphi+dy*sinphi)/d;
+
+      double sigma_t=7.515*doca-2.139*doca*doca+12.63*doca*doca*doca;
       
+      double my_var=sigma_t*sigma_t
+	+(c1+2.*c2*doca)*(c1+2.*c2*doca)*cosstereo*cosstereo
+	*(dd_dz*dd_dz*Cs(state_z,state_z)+dd_dD*dd_dD*Cs(state_D,state_D)
+	+dd_dphi*dd_dphi*Cs(state_phi,state_phi)
+	+2.*dd_dz*dd_dphi*Cs(state_z,state_phi)
+	+2.*dd_dz*dd_dD*Cs(state_z,state_D)
+	  +2.*dd_dphi*dd_dD*Cs(state_phi,state_D));
+
       // weighted average
       mT0wires+=t0/my_var;
       mInvVarT0+=1./my_var;
@@ -2386,15 +2437,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    // downstream) plane and use it as the seed data to the Kalman
 	    // filter 
 	    SmoothForward(S);
-	    // Empirical correction for offset of unknown origin...
-	    if (fit_type==kWireBased){
-	      if (USE_T0_FROM_WIRES){
-		if (iter==0) mT0wires-=1.56;
-	      }
-	      else{
-		mT0wires-=1.56;
-	      }
-	    }
 	  } 
 	  
 	  C=C0;	  
@@ -2589,15 +2631,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    // downstream) plane and use it as the seed data to the KalmanSIMD 
 	    // filter 
 	    SmoothForwardCDC(S);
-	    // Empirical correction for offset of unknown origin...
-	    if (fit_type==kWireBased){
-	      if (USE_T0_FROM_WIRES){
-		if (iter==0) mT0wires+=15.63;
-	      }
-	      else{
-		mT0wires+=15.63;
-	      }
-	    }
 	  } 
 	  
 	  C=C0;
@@ -2801,15 +2834,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	    // step along the trajectory and use it as the seed data to the 
 	    // KalmanSIMD filter 
 	    SmoothCentral(Sc);
-	    // Empirical correction for offset of unknown origin...
-	    if (fit_type==kWireBased){
-	      if (USE_T0_FROM_WIRES){
-		if (iter==0) mT0wires+=10.26;
-	      }
-	      else{
-		mT0wires+=10.26;
-	      }
-	    }
 	  }
 	  // Perform the filter
 	  error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq_central,my_ndf);
@@ -3355,13 +3379,17 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	double measurement=0.;
 	if (fit_type==kTimeBased)
 	  {	
+	    double dt=my_cdchits[cdc_index]->hit->tdrift-mT0
+	      -central_traj[k].t;
+	    if (dt>0.){
+	      measurement=0.02887*sqrt(dt)-1.315e-5*dt;
+	    }
+	    /*
 	  measurement=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
 				       -central_traj[k].t);
-
-	  // Measurement error
-	  //V=anneal_factor*CDC_VARIANCE;
-	  //if (Sc(state_z)>cdc_origin[2])  
-	    V=cdc_variance(prediction)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
+	    */
+	    // Measurement error
+	    V=cdc_variance(prediction);
 
 	}
 	else if (USE_T0_FROM_WIRES && mInvVarT0>EPS){
@@ -3431,7 +3459,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
 	  if (DEBUG_LEVEL>0) 
 	    cout 
-	    << "ring " << my_cdchits[cdc_index]->hit->wire->ring << 
+	    << "ring " << my_cdchits[cdc_index]->hit->wire->ring 
+	    << " t " << my_cdchits[cdc_index]->hit->tdrift <<
 	      " Dm " << measurement << " sigma " << sqrt(V) <<  
 	    " Dm-Dpred " << dm/res_scale 
 	    << " chi2 " << dm*dm/var
@@ -3643,8 +3672,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	else{
 	  // Compute drift distance
 	  double drift_time=my_fdchits[id]->t-mT0-forward_traj[k].t;
-	  double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
-	  
+	  //double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
+	  double drift=0.;
+	  if (drift_time>0.){	  
+	    drift=(du>0?1.:-1.)*(0.02421*sqrt(drift_time)+5.09e-4*drift_time);
+	  }
 	  Mdiff(0)=drift-doca;
 
 	  if (DEBUG_LEVEL>2){
@@ -3652,8 +3684,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  }
 
 	  // Variance in drift distance
-	  V(0,0)=anneal_factor*fdc_drift_variance(drift);
-	  V(0,0)+=DRIFT_SPEED*DRIFT_SPEED*mVarT0;
+	  V(0,0)=anneal_factor*fdc_drift_variance(doca);
 	}
 	
 	// To transform from (x,y) to (u,v), need to do a rotation:
@@ -3727,12 +3758,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    else{
 	      // Compute drift distance
 	      double drift_time=my_fdchits[id]->t-mT0-forward_traj[k].t;
-	      double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
+	      //double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
+	      double drift=0.;
+	      if (drift_time>0.){
+		drift=(0.02421*sqrt(drift_time)+5.09e-4*drift_time)*(du>0?1.:-1.);
+	      }
 	      Mdiff(0)=drift-doca;
 	      
 	      // Variance in drift distance
-	      V(0,0)=anneal_factor*fdc_drift_variance(drift);
-	      V(0,0)+=DRIFT_SPEED*DRIFT_SPEED*mVarT0;
+	      V(0,0)=anneal_factor*fdc_drift_variance(doca);
 	    }
 	   
 
@@ -3952,12 +3986,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  
 	  if (fit_type==kTimeBased)
 	    {
-	      dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
-				  -forward_traj[k-1].t);
+	      // dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
+	      //-forward_traj[k-1].t);
+	      double tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
+		-forward_traj[k-1].t;
+	      if (tdrift>0.) dm=0.02887*sqrt(tdrift)-1.315e-5*tdrift;
+	 
+
 	      // variance
-	      //Vc=CDC_VARIANCE*10.0;
-	      //if (newz<endplate_z)
-		Vc=cdc_variance(d)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
+	      Vc=cdc_variance(d);
 	    }
 	  else if (USE_T0_FROM_WIRES && mInvVarT0>EPS){
 	    dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
@@ -3975,10 +4012,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  }
 	  
 	  if (DEBUG_LEVEL>2)
-	    printf("Ring %d straw %d pred %f meas %f V %f %f sig %f\n",
+	    printf("Ring %d straw %d pred %f meas %f V %f %f sig %f t %f %f t0 %f\n",
 		   my_cdchits[cdc_index]->hit->wire->ring,
 		   my_cdchits[cdc_index]->hit->wire->straw,
-		   d,dm,Vc,1./InvV1,1./sqrt(InvV1));
+		   d,dm,Vc,1./InvV1,1./sqrt(InvV1),
+		   my_cdchits[cdc_index]->hit->tdrift,
+		   forward_traj[k-1].t,
+		   mT0
+		   );
 	  // Check if this hit is an outlier
 	  double chi2_hit=(dm-d)*(dm-d)*InvV1;
 	  if (sqrt(chi2_hit)<NUM_SIGMA){
@@ -4265,24 +4306,25 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	double dm=0.;
 	if (fit_type==kTimeBased)
 	  {
+	    double dt=my_cdchits[cdc_index]->hit->tdrift-mT0
+	      -forward_traj[k].t;
+	    if (dt>0.) dm=0.02887*sqrt(dt)-1.315e-5*dt;
+
+	    /*
 	    dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
 				-forward_traj[k].t);
-	    /*
-	      printf("cdc hit %d dm %f t %f %f\n",cdc_index,dm,
-	      my_cdchits[cdc_index]->hit->tdrift,forward_traj[k].t);
+
 	    */
+	    	    
 	    // variance
-	    //V=CDC_VARIANCE*anneal;
-	    // if (newz<endplate_z)
-	      V=cdc_variance(d)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
+	    V=cdc_variance(d);
 	   
 	}
 	else if (USE_T0_FROM_WIRES && mInvVarT0>EPS){
 	  dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
 				       -mT0wires
 				       -forward_traj[k].t);
-	  V=cdc_variance(d)
-	    +CDC_DRIFT_SPEED*CDC_DRIFT_SPEED/mInvVarT0;
+	  V=cdc_variance(d);
 	}
 	
 	// inverse of variance including prediction
@@ -4680,16 +4722,26 @@ void DTrackFitterKalmanSIMD::ComputeT0FromCDC(double z,double tflight,
   double dy=S(state_y)-wirepos.y();
   double d=sqrt(dx*dx+dy*dy)*cosstereo;
   
+  // Get the magnetic field
+  bfield->GetField(S(state_x),S(state_y),z,Bx,By,Bz);
+  double Bmag=sqrt(Bx*Bx+By*By+Bz*Bz);
+
   // Use the track information to estimate t0
   double tdiff=my_cdchits[cdc_index]->hit->tdrift-tflight;
-  double t0=tdiff-d/CDC_DRIFT_SPEED;
-  double speed2=CDC_DRIFT_SPEED*CDC_DRIFT_SPEED;
-  double var_drift=cdc_variance(d);
-  double var
-    =(var_drift+cosstereo*cosstereo*(dx*dx*C(state_x,state_x)
-				     +dy*dy*C(state_y,state_y)
-				     +2.*dx*dy*C(state_x,state_y))
-      /(dx*dx+dy*dy))/speed2;
+  //double t0=tdiff-d/CDC_DRIFT_SPEED;
+  double c1=-49.41+4.74*Bmag;
+  double c2=1129.0+78.66*Bmag;
+  double t0=tdiff-(c1*d+c2*d*d);
+
+  double temp=cosstereo*cosstereo*(c1/d+2.*c2);
+  double dt_dx=dx*temp;
+  double dt_dy=dy*temp;
+  double sigma_t=7.515*d-2.139*d*d+12.63*d*d*d;
+
+  double var=sigma_t*sigma_t
+    +dt_dx*dt_dx*C(state_x,state_x)+dt_dy*dt_dy*C(state_y,state_y)
+    +2.*dt_dx*dt_dy*C(state_x,state_y);
+
   mT0wires+=t0/var;
   mInvVarT0+=1./var;  
 }
