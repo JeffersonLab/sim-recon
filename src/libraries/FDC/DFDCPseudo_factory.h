@@ -23,6 +23,8 @@ using namespace jana;
 
 #include <DMatrix.h>
 #include <TDecompLU.h>
+#include <TH2.h>
+#include <TH1.h>
 
 #include <algorithm>
 #include <map>
@@ -103,13 +105,17 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 						       DMatrix J,DMatrix par,
 						       DMatrix &newpar);
  		
-	private:
-		std::vector<centroid_t>upeaks;
-		std::vector<centroid_t>vpeaks;
+	private:		
 		vector<vector<DFDCWire*> >fdcwires;
 
-		double ROUT_FIDUCIAL;
+		double ROUT_FIDUCIAL,RIN_FIDUCIAL;
+		double STRIP_ANODE_TIME_CUT;
 		unsigned int MAX_ALLOWED_FDC_HITS;
+		bool DEBUG_HISTS;
+
+		TH2F *qa_qc_diff;
+		TH2F *qa_vs_qc, *dtv_vs_dtu;
+		TH2F *uv_dt_vs_u,*uv_dt_vs_v,*v_wire_dt_vs_wire,*u_wire_dt_vs_wire;
 
 		JStreamLog* _log;
 };

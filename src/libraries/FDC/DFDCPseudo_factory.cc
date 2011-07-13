@@ -10,6 +10,7 @@
 #include "HDGEOMETRY/DGeometry.h"
 #include "DFDCGeometry.h"
 #include <TRACKING/DTrackHitSelectorTHROWN.h>
+#include <TROOT.h>
 
 #define HALF_CELL 0.5
 #define MAX_DEFLECTION 0.15
@@ -21,7 +22,9 @@
 #define TOLF 1e-4
 #define A_OVER_H 0.4
 #define ALPHA 1e-4 // rate parameter for Newton step backtracking algorithm
-#define CHARGE_TO_ENERGY 5.9e-9 //place holder 
+#define W_EFF 0.0302 // keV
+#define GAS_GAIN 8e4
+#define ELECTRON_CHARGE 1.6022e-4 // fC
 
 
 ///
@@ -55,11 +58,20 @@ DFDCPseudo_factory::~DFDCPseudo_factory() {
 //------------------
 jerror_t DFDCPseudo_factory::init(void)
 {
-  ROUT_FIDUCIAL=48.;
+  RIN_FIDUCIAL = 1.5;
+  ROUT_FIDUCIAL=48.0;
   MAX_ALLOWED_FDC_HITS=(5+5+1)*24*10;
+  STRIP_ANODE_TIME_CUT=10.;
 
-  gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm");
+  gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm"); 
+  gPARMS->SetDefaultParameter("FDC:RIN_FIDUCIAL",RIN_FIDUCIAL, "Inner fiducial radius of FDC in cm");
   gPARMS->SetDefaultParameter("FDC:MAX_ALLOWED_FDC_HITS",MAX_ALLOWED_FDC_HITS, "Max. number of FDC hits (includes both cathode strips and wires hits) to allow before considering event too busy to attempt FDC tracking");
+  gPARMS->SetDefaultParameter("FDC:STRIP_ANODE_TIME_CUT",STRIP_ANODE_TIME_CUT,
+			      "maximum time difference between strips and wires (in ns)"); 
+
+  DEBUG_HISTS = false;
+  gPARMS->SetDefaultParameter("FDC:DEBUG_HISTS",DEBUG_HISTS);
+
 
   return NOERROR;
 }
@@ -74,6 +86,37 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
   dgeom->GetFDCWires(fdcwires);
+
+  if(DEBUG_HISTS){
+    dapp->Lock();
+
+    // Histograms may already exist. (Another thread may have created them)
+    // Try and get pointers to the existing ones.
+
+    qa_vs_qc= (TH2F*) gROOT->FindObject("qa_vs_qc");
+    if (!qa_vs_qc) qa_vs_qc=new TH2F("qa_vs_qc","Anode charge from wire versus charge derived from cathodes",200,0,10,200,0,10);
+
+    qa_qc_diff=(TH2F*)gROOT->FindObject("qa_qc_diff");
+    if (!qa_qc_diff) qa_qc_diff=new TH2F("qa_qc_diff","(qa-qcv) vs (qa-qcu)",
+					 200,-25,25,200,-25,25);
+
+     dtv_vs_dtu= (TH2F*) gROOT->FindObject("dtv_vs_dtu");
+    if (!dtv_vs_dtu) dtv_vs_dtu=new TH2F("dtv_vs_dtu","t(wire)-t(v) vs t(wire)-t(u)",100,-50,50,100,-50,50);
+
+    u_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("u_wire_dt_vs_wire");
+    if (!u_wire_dt_vs_wire) u_wire_dt_vs_wire=new TH2F("u_wire_dt_vs_wire","wire/u cathode time difference vs wire number",
+			   96,0.5,96.5,100,-50,50);
+    v_wire_dt_vs_wire=(TH2F *) gROOT->FindObject("v_wire_dt_vs_wire");
+    if (!v_wire_dt_vs_wire) v_wire_dt_vs_wire=new TH2F("v_wire_dt_vs_wire","wire/v cathode time difference vs wire number",
+						       96,0.5,96.5,100,-50,50);
+ uv_dt_vs_u=(TH2F *) gROOT->FindObject("uv_dt_vs_u");
+    if (!uv_dt_vs_u) uv_dt_vs_u=new TH2F("uv_dt_vs_u","uv time difference vs u",
+			   192,0.5,192.5,100,-50,50); 
+    uv_dt_vs_v=(TH2F *) gROOT->FindObject("uv_dt_vs_v");
+    if (!uv_dt_vs_v) uv_dt_vs_v=new TH2F("uv_dt_vs_v","uv time difference vs v",
+			   192,0.5,192.5,100,-50,50);
+    dapp->Unlock();
+  }
 
   return NOERROR;
 }
@@ -106,7 +149,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 
 	// Get cathode clusters
 	eventLoop->Get(cathClus);
-	
+
 	// Sift through hits and select out anode hits.
 	for (unsigned int i=0; i < fdcHits.size(); i++)
 		if (fdcHits[i]->type == 0)
@@ -164,171 +207,37 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 				    vector<const DMCTrackHit*> &mctrackhits)
 {
   vector<const DFDCHit*>::iterator xIt;
-  centroid_t temp;
-  double E1,E2,pos1,pos2;
-  
+  vector<centroid_t>upeaks;
+  vector<centroid_t>vpeaks;
+
+
+  //printf("---------u clusters --------\n");
   // Loop over all U and V clusters looking for peaks
-  upeaks.clear();
   for (unsigned int i=0;i<u.size();i++){
-    vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin();
-    unsigned int nmembers=u[i]->members.size();
-    switch(nmembers){
-    case 0: // Make sure we have data!!
-      break;
-    case 1: // One isolated hit in the cluster:  use element number itself
-      temp.pos=(*strip)->element;
-      temp.q=2.*((*strip)->q);  // Each cathode view should see half the 
-                                 // anode charge
-      temp.numstrips=1; 
-      temp.t=(*strip)->t;
-      temp.t_rms=0.;
-      temp.cluster=i;
-      upeaks.push_back(temp);
-      break;
-    case 2: //Two adjacent hits: use average for the centroid
-      pos1=(*strip)->element;
-      pos2=(*(strip+1))->element;
-      E1=(*strip)->q;
-      E2=(*(strip+1))->q;      
-      temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
-      temp.q=2.*(E1+E2);
-      temp.numstrips=2; 
-      temp.t=0.5*((*strip)->t+(*(strip+1))->t);
-      temp.t_rms=
-	sqrt((temp.t-(*strip)->t)*(temp.t-(*strip)->t)
-	     +(temp.t-(*(strip+1))->t)*(temp.t-(*(strip+1))->t))/1.414;
-      temp.cluster=i;
-      upeaks.push_back(temp);
-      break;
-    default:    
-      // Deal with case where the maximimum is at the beginning or end of the
-      // sequence of hits. Use average of the hit at the end and the hit right
-      // next to it.
-      bool do_find_centroid=true;
-      if ((*strip)->q>(*(strip+1))->q){
-	pos1=(*strip)->element;
-	pos2=(*(strip+1))->element;
-	E1=(*strip)->q;
-	E2=(*(strip+1))->q;      
-	temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
-	temp.q=2.*(E1+E2);
-	temp.numstrips=2;
-	temp.t=0.5*((*strip)->t+(*(strip+1))->t);
-	temp.t_rms=
-	  sqrt((temp.t-(*strip)->t)*(temp.t-(*strip)->t)
-	       +(temp.t-(*(strip+1))->t)*(temp.t-(*(strip+1))->t))/1.414;
-	temp.cluster=i;
-	upeaks.push_back(temp);  
-	if (nmembers==3) do_find_centroid=false;
-      }
-      const DFDCHit *h1=u[i]->members[nmembers-1];
-      const DFDCHit *h2=u[i]->members[nmembers-2];
-      if(h1->q>h2->q){
-	pos1=h1->element;
-	pos2=h2->element;
-	E1=h1->q;
-	E2=h2->q;      
-	temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
-	temp.q=2.*(E1+E2);
-	temp.numstrips=2;
-	temp.cluster=i;
-	temp.t=0.5*(h1->t+h2->t);
-	temp.t_rms=sqrt((h1->t-temp.t)*(h1->t-temp.t)
-			+(h2->t-temp.t)*(h2->t-temp.t))/1.414;
-	upeaks.push_back(temp);  
-	if (nmembers==3) do_find_centroid=false;
-      }
-      // Deal with peaks within the cluster
-      if (do_find_centroid){  
-	for (strip=u[i]->members.begin();
-	     strip!=u[i]->members.end();strip++){  
-	  if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
-	    upeaks[upeaks.size()-1].cluster=i;
-	  }
+    //printf("Cluster %d\n",i);
+    if (u[i]->members.size()>2)
+      {
+      for (vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin();
+	   strip!=u[i]->members.end();strip++){  
+	//printf("  %d %f %f\n",(*strip)->element,(*strip)->q,(*strip)->t);
+	if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
+	  upeaks[upeaks.size()-1].cluster=i;
 	}
       }
-      break;
     }
-  }	
-  vpeaks.clear();
+  }  
+  //printf("---------v cluster --------\n");	
   for (unsigned int i=0;i<v.size();i++){
-    vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin();
-    unsigned int nmembers=v[i]->members.size();
-    switch(nmembers){
-    case 0: // Make sure we have data!!
-      break;
-    case 1: // One isolated hit in the cluster:  use element number itself
-      temp.pos=(*strip)->element;
-      temp.q=2.*((*strip)->q);
-      temp.numstrips=1;
-      temp.t=(*strip)->t;
-      temp.t_rms=0.;
-      temp.cluster=i;
-      vpeaks.push_back(temp);
-      break;
-    case 2: //Two adjacent hits: use average for the centroid
-      pos1=(*strip)->element;
-      pos2=(*(strip+1))->element;
-      E1=(*strip)->q;
-      E2=(*(strip+1))->q;      
-      temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
-      temp.q=2.*(E1+E2);
-      temp.numstrips=2;
-      temp.t=0.5*((*strip)->t+(*(strip+1))->t);
-      temp.t_rms=
-	sqrt((temp.t-(*strip)->t)*(temp.t-(*strip)->t)
-	     +(temp.t-(*(strip+1))->t)*(temp.t-(*(strip+1))->t))/1.414;
-      temp.cluster=i;
-      vpeaks.push_back(temp);  
-      break;
-    default:      
-      // Deal with case where the maximimum is at the beginning or end of the
-      // sequence of hits. Use average of the hit at the end and the hit right
-      // next to it.
-      bool do_find_centroid=true;
-      if ((*strip)->q>(*(strip+1))->q){
-	pos1=(*strip)->element;
-	pos2=(*(strip+1))->element;
-	E1=(*strip)->q;
-	E2=(*(strip+1))->q;      
-	temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
-	temp.q=2.*(E1+E2);
-	temp.numstrips=2;
-	temp.t=0.5*((*strip)->t+(*(strip+1))->t);
-	temp.t_rms=
-	  sqrt((temp.t-(*strip)->t)*(temp.t-(*strip)->t)
-	       +(temp.t-(*(strip+1))->t)*(temp.t-(*(strip+1))->t))/1.414;
-	temp.cluster=i;
-	vpeaks.push_back(temp);  
-	if (nmembers==3) do_find_centroid=false;
-      }
-      const DFDCHit *h1=v[i]->members[nmembers-1];
-      const DFDCHit *h2=v[i]->members[nmembers-2];
-      if(h1->q>h2->q){
-	pos1=h1->element;
-	pos2=h2->element;
-	E1=h1->q;
-	E2=h2->q;      
-	temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
-	temp.q=2.*(E1+E2);
-	temp.numstrips=2;
-	temp.cluster=i;
-	temp.t=0.5*(h1->t+h2->t);
-	temp.t_rms=sqrt((h1->t-temp.t)*(h1->t-temp.t)
-			+(h2->t-temp.t)*(h2->t-temp.t))/1.414;
-	vpeaks.push_back(temp);  
-	if (nmembers==3) do_find_centroid=false;
-      }
-      // Deal with peaks within the cluster
-      if (do_find_centroid){
-	for (strip=v[i]->members.begin();
-	     strip!=v[i]->members.end();strip++){	
-	  if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
-	    vpeaks[vpeaks.size()-1].cluster=i;
-	  }
+    //printf("Cluster %d\n",i);
+    if (v[i]->members.size()>2)
+      {
+      for (vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin();
+	   strip!=v[i]->members.end();strip++){		
+	//printf("  %d %f %f\n",(*strip)->element,(*strip)->q,(*strip)->t);
+	if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
+	  vpeaks[vpeaks.size()-1].cluster=i;
 	}
       }
-      break;
     }
   }
   if (upeaks.size()*vpeaks.size()>0){
@@ -343,28 +252,38 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 							  vpeaks[j].pos);
 	for(xIt=x.begin();xIt!=x.end();xIt++){
 	  if ((*xIt)->element<=WIRES_PER_PLANE && (*xIt)->element>0){
-	    // First check if mean times of strips and wire are close.
-	    // There are 3 values to compare so we look at the RMS
-	    // of the 3 differences. (I'm just making this up!)
-	    // 1/2/2008 D. L.
-	    double dt1 = (*xIt)->t - upeaks[i].t;
-	    double dt2 = (*xIt)->t - vpeaks[j].t;
-	    double dt3 = upeaks[i].t - vpeaks[j].t;
-	    double trms = sqrt((dt1*dt1 + dt2*dt2 + dt3*dt3)/3.0);
-	    if(trms>20.0)continue;	
-	    
-	   
 	    double x_from_wire=DFDCGeometry::getWireR(*xIt);
 	    // Test radial value for checking whether or not the hit is within
 	    // the fiducial region of the detector
 	    double rtest=sqrt(x_from_wire*x_from_wire
 			     +y_from_strips*y_from_strips);
 	    double delta_x=x_from_wire-x_from_strips;
-	    if (fabs(delta_x)<WIRE_SPACING/2. && rtest<ROUT_FIDUCIAL){
+	 
+	    if (fabs(delta_x)<0.5*WIRE_SPACING && rtest<ROUT_FIDUCIAL
+		&& rtest>RIN_FIDUCIAL){
+	      double dt1 = (*xIt)->t - upeaks[i].t;
+	      double dt2 = (*xIt)->t - vpeaks[j].t;
+	      double q_cathodes=0.5*(upeaks[i].q+vpeaks[j].q);
+	      double charge_to_energy=W_EFF/(GAS_GAIN*ELECTRON_CHARGE);
+	      double dE=charge_to_energy*q_cathodes;
+
+	      if (DEBUG_HISTS){
+		qa_vs_qc->Fill(dE,((*xIt)->q));
+		
+		qa_qc_diff->Fill(((*xIt)->q-charge_to_energy*upeaks[i].q),
+				 ((*xIt)->q-charge_to_energy*vpeaks[i].q));
+		dtv_vs_dtu->Fill(dt1,dt2);
+		u_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-upeaks[i].t);
+		v_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-vpeaks[j].t);
+		uv_dt_vs_u->Fill(upeaks[i].pos,upeaks[i].t-vpeaks[j].t);
+		uv_dt_vs_v->Fill(vpeaks[j].pos,upeaks[i].t-vpeaks[j].t);
+	      }
+	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
+	      
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
 	      double xres=WIRE_SPACING/2./sqrt(12.);
 	      double cosangle,sinangle;	   
-	      
+
 	      DFDCPseudo* newPseu = new DFDCPseudo;
 	      newPseu->u = upeaks[i].pos;
 	      newPseu->v = vpeaks[j].pos;
@@ -380,8 +299,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->AddAssociatedObject(v[vpeaks[j].cluster]);
 	      newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
 	      
-	      newPseu->dE = CHARGE_TO_ENERGY*(upeaks[i].q+vpeaks[j].q)/2.;
+	      newPseu->dE = dE;
 	      
+	    
 	      // It can occur (although rarely) that newPseu->wire is NULL
 	      // which causes us to crash below. In these cases, we can't really
 	      // make a psuedo point so we delete the current object
@@ -449,7 +369,7 @@ void DFDCPseudo_factory::CalcMeanTime(vector<const DFDCHit *>::const_iterator pe
   // Calculate RMS
   t_rms=0.0;
   for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-    t_rms+=((*j)->t-t)*((*j)->t);
+    t_rms+=((*j)->t-t)*((*j)->t-t);
   }
   t_rms=sqrt(t_rms/3.);
 }
@@ -527,8 +447,10 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	if (errf<TOLF){	
 	  temp.pos=par(X0,0);
 	  temp.q=par(QA,0);
-	  temp.numstrips=3;
-	  CalcMeanTime(peak,temp.t,temp.t_rms);
+	  temp.numstrips=3;  
+	  temp.t=(*peak)->t;
+	  temp.t_rms=0.;
+	  //CalcMeanTime(peak,temp.t,temp.t_rms);
 	  centroids.push_back(temp);
   
 	  return NOERROR;
@@ -557,7 +479,9 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
           temp.pos=par(X0,0);
           temp.q=par(QA,0);
           temp.numstrips=3;
-	  CalcMeanTime(peak,temp.t,temp.t_rms);
+	  temp.t=(*peak)->t;
+	  temp.t_rms=0.;
+	  //CalcMeanTime(peak,temp.t,temp.t_rms);
           centroids.push_back(temp);
         
           return NOERROR;

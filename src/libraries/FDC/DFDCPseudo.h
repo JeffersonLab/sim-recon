@@ -30,18 +30,16 @@ class DFDCPseudo : public JObject {
 		DFDCPseudo(){}
 	
 
-		double u,v; // centroid positions in the two cathode views
-		double w,dw; //local coordinate of pseudopoint in the direction 
-		            //perpendicular to the wires and its uncertainty
-		double s,ds; //local coordinate of pseudopoint in the direction 
-		            // along the wire and its uncertainty
+		double u,v; ///< centroid positions in the two cathode views
+		double w,dw; ///< local coordinate of pseudopoint in the direction perpendicular to the wires and its uncertainty
+		double s,ds; ///< local coordinate of pseudopoint in the direction along the wire and its uncertainty
 		const DFDCWire* wire; ///< DFDCWire for this wire 
-		double time; // time corresponding to this pseudopoint.
-		int status; // status word for pseudopoint
-		double covxx,covxy,covyy;
-		double dE;
+		double time; ///< time corresponding to this pseudopoint.
+		int status; ///< status word for pseudopoint
+		double covxx,covxy,covyy; ///< Covariance terms for (x,y) 
+		double dE; ///< 
 		int itrack;
-		DVector2 xy; // rough x,y coordinates in lab coordinate system
+		DVector2 xy; ///< rough x,y coordinates in lab coordinate system
 
 		void toStrings(vector<pair<string,string> > &items)const{ 
 		  AddString(items,"u","%3.2f",u);

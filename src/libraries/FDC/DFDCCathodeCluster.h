@@ -22,11 +22,11 @@ class DFDCCathodeCluster : public JObject {
  public:
   JOBJECT_PUBLIC(DFDCCathodeCluster);		/// DANA identifier
   
-  vector<const DFDCHit*> members; /// DFDCHits that make up this cluster
-  int plane;			  /// V=1, U=3
-  int gLayer;   /// #1-24, which detection layer of all FDC  
-  int gPlane;	/// #1-74, which plane out of all FDC modules
-  float q_tot;		   /// total energy/charge deposited in the cluster
+  vector<const DFDCHit*> members; ///< DFDCHits that make up this cluster
+  int plane;			  ///< V=1, U=3
+  int gLayer;   ///< #1-24, which detection layer of all FDC  
+  int gPlane;	///< #1-74, which plane out of all FDC modules
+  float q_tot;		   ///< total energy/charge deposited in the cluster
 		
   /// Return a sensible string representation of this object
   void toStrings(vector<pair<string,string> > &items)const{
