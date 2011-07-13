@@ -29,7 +29,7 @@ channelCount = {
     'FADC250':  16,
     'FADC125':  72,
     'F1TDC32':  32,
-    'F1TDC64':  64
+    'F1TDC48':  48
     }    
 
 
@@ -68,8 +68,7 @@ file.write('\n')
 # start new slot with each new detector
 max_slot  = 16
 crate     = 1
-slot      = 1
-channel   = 1
+slot      = 0
 file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
 
 
@@ -77,6 +76,8 @@ file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
 # CDC:  FADC125, 72 channels/slot
 if (detectorOn['CDC']==1):
     type = 'FADC125'
+    slot=1
+    channel=1
     file.write(('    <slot number="%i"'  % slot) + '  type="' + type + '">\n')
 
     for ring in range(len(cdcStrawCount)):
@@ -292,9 +293,9 @@ if (detectorOn['FDC']==1):
 
 
             
-# FDC: F1TDC64, 64 channels/slot, 4 packages, 6 triplets(cathode,anode,cathode) per package, 96 anodes/layer
+# FDC: F1TDC48, 48 channels/slot, 4 packages, 6 triplets(cathode,anode,cathode) per package, 96 anodes/layer
 if (detectorOn['FDC']==1):
-    type = 'F1TDC64'
+    type = 'F1TDC48'
     slot = slot+1
     channel = 1
     if (slot>max_slot):
