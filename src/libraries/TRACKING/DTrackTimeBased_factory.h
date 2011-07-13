@@ -47,6 +47,9 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   double MOMENTUM_CUT_FOR_DEDX;
   double MOMENTUM_CUT_FOR_PROTON_ID;
   bool PID_FORCE_TRUTH;
+  unsigned int MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING;
+  bool BYPASS_TB_FOR_FORWARD_TRACKS;
+
   DTrackFitter *fitter;
   DParticleID *pid_algorithm;
   vector<DReferenceTrajectory*> rtv;
@@ -58,6 +61,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   TH1F *hitMatchFOM;
   TH2F *chi2_trk_mom;
   TH2F *Hstart_time;
+  TH2F *fom_dedx;
  
   void FilterDuplicates(void);  
   double GetTruthMatchingFOM(int trackIndex,DTrackTimeBased *dtrack,vector<const DMCThrown*>mcthrowns);
