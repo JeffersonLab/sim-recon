@@ -21,12 +21,18 @@
 #include "calibDB.h"
 extern s_HDDM_t* thisInputEvent;
 
+void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
+
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
 static float DRIFT_SPEED     =   0.0055;
-static float TWO_HIT_RESOL   =  25.;
-static int   MAX_HITS 	     = 100;
+static float TWO_HIT_RESOL   = 1.;
+static int   MAX_HITS 	     = 1000;
 static float THRESH_KEV	     =   1.;
+static float THRESH_MV = 1.;
 static float STRAW_RADIUS    =   0.8;
+static float CDC_TIME_WINDOW = 1000.0; //time window for accepting CDC hits, ns
+static float ELECTRON_CHARGE =1.6022e-4; /* fC */
+static float GAS_GAIN = 1e5;
 
 binTree_t* centralDCTree = 0;
 static int strawCount = 0;
@@ -35,6 +41,52 @@ static int stripCount = 0;
 static int initialized = 0;
 
 /* void GetDOCA(int ipart, float x[3], float p[5], float doca[3]);  disabled 6/24/2009 */
+
+typedef int (*compfn)(const void*, const void*);
+
+// Sort function for sorting clusters
+int cdc_cluster_sort(const void *a,const void *b){
+  const s_CdcStrawTruthHit_t *ca=a;
+  const s_CdcStrawTruthHit_t *cb=b;
+  if (ca->t<cb->t) return -1;
+  else if (ca->t>cb->t) return 1;
+  else return 0;
+}
+
+// Simulation of the ASIC response to a pulse due to a cluster
+double asic_response(double t){
+  double func=0;
+  double par[11]={-0.01986,0.01802,-0.001097,10.3,11.72,-0.03701,35.84,
+		  15.93,0.006141,80.95,24.77};
+  if (t<par[3]){
+    func=par[0]*t+par[1]*t*t+par[2]*t*t*t;
+  }
+  else{
+    func+=(par[0]*par[3]+par[1]*par[3]*par[3]+par[2]*par[3]*par[3]*par[3])
+      *exp(-(t-par[3])*(t-par[3])/(par[4]*par[4]));
+    func+=par[5]*exp(-(t-par[6])*(t-par[6])/(par[7]*par[7]));
+    func+=par[8]*exp(-(t-par[9])*(t-par[9])/(par[10]*par[10]));
+  }
+  return func;
+}
+
+// Simulation of signal on a wire
+double cdc_wire_signal(double t,s_CdcStrawTruthHits_t* chits){
+  double t0=1.0; // ns; rough order of magnitude
+  int m;
+  double asic_gain=0.5; // mV/fC
+  double func=0;
+  for (m=0;m<chits->mult;m++){
+    if (t>chits->in[m].t){
+      double my_time=t-chits->in[m].t;
+      func+=asic_gain*chits->in[m].dE*asic_response(my_time);
+    }
+  }
+  return func;
+}
+
+
+
 
 /* register hits during tracking (from gustep) */
 
@@ -240,13 +292,13 @@ void hitCentralDC (float xin[4], float xout[4],
       int layer = getlayer_();
       int ring = getring_();
       int sector = getsector_();
-      float tdrift = t + dradius/DRIFT_SPEED;
+
       if (layer == 0)		/* in a straw */
-      {
-         int mark = (ring<<20) + sector;
-         void** twig = getTwig(&centralDCTree, mark);
-         if (*twig == 0)
-         {
+      {	
+	int mark = (ring<<20) + sector;
+	void** twig = getTwig(&centralDCTree, mark);
+	if (*twig == 0)
+	{
             s_CentralDC_t* cdc = *twig = make_s_CentralDC();
             s_CdcStraws_t* straws = make_s_CdcStraws(1);
             straws->mult = 1;
@@ -262,45 +314,102 @@ void hitCentralDC (float xin[4], float xout[4],
             hits = cdc->cdcStraws->in[0].cdcStrawTruthHits;
          }
 
-         for (nhit = 0; nhit < hits->mult; nhit++)
-         {
-            if (fabs(hits->in[nhit].t - tdrift) < TWO_HIT_RESOL)
-            {
-               break;
-            }
-         }
-         if (nhit < hits->mult)		/* merge with former hit */
-         {
-				/* keep the earlier hit and discard the later one */
-				/* Feb. 11, 2008 D. L. */
-				if(hits->in[nhit].t>tdrift){
-					hits->in[nhit].t = tdrift;
-					hits->in[nhit].dE = dEsum;
-					hits->in[nhit].d = dradius;
-					hits->in[nhit].itrack = track;
-					hits->in[nhit].ptype = ipart;
-				}
-			
-           /* hits->in[nhit].t =
-                    (hits->in[nhit].t * hits->in[nhit].dE + tdrift * dEsum)
-                  / (hits->in[nhit].dE += dEsum);
-				*/
-         }
-         else if (nhit < MAX_HITS)		/* create new hit */
-         {
-            hits->in[nhit].t = tdrift;
-            hits->in[nhit].dE = dEsum;
-	    hits->in[nhit].d = dradius;
-	    hits->in[nhit].itrack = track;
-	    hits->in[nhit].ptype = ipart;
-	    
-            hits->mult++;
-         }
-         else
-         {
-            fprintf(stderr,"HDGeant error in hitCentralDC: ");
-            fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
-         }
+	/* Simulate number of primary ion pairs*/
+	/* The total number of ion pairs depends on the energy deposition 
+	   and the effective average energy to produce a pair, w_eff.
+	   On average for each primary ion pair produced there are n_s_per_p 
+	   secondary ion pairs produced. 
+	*/
+	int one=1;
+	// Average number of secondary ion pairs for 50/50 Ar/CO2 mixture
+	float n_s_per_p=1.94; 
+	//Average energy needed to produce an ion pair for 50/50 mixture
+	float w_eff=29.5e-9; // GeV
+	// Average number of primary ion pairs
+	float n_p_mean = dEsum/w_eff/(1.+n_s_per_p);
+	int n_p; // number of primary ion pairs
+	gpoiss_(&n_p_mean,&n_p,&one);
+	
+	// Loop over the number of primary ion pairs
+	int n;
+	for (n=0;n<n_p;n++){
+	  // Generate a cluster at a random position along the path within the 
+	  // straw
+	  int two=2;
+	  float rndno[2];
+	  grndm_(rndno,&two);
+	  xlocal[0]=xinlocal[0]+trackdir[0]*rndno[0];
+	  xlocal[1]=xinlocal[1]+trackdir[1]*rndno[0];
+	  xlocal[2]=xinlocal[2]+trackdir[2]*rndno[0];
+	  dradius=sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1]);
+
+	  // Find the drift time for this cluster. Drift time depends on B:
+	  // (dependence derived from Garfield calculations)
+	  float B[3],Bmag; 
+	  transformCoord(xlocal,"local",x,"global");
+	  gufld2_(x,B);
+	  Bmag=sqrt(B[0]*B[0]+B[1]*B[1]+B[2]*B[2]);
+	  float d2=dradius*dradius;
+	  float d3=d2*dradius;
+	  float tdrift=t+(-49.41+4.74*Bmag)*dradius+(1129.0+78.66*Bmag)*d2;
+
+	  //Longitudinal diffusion
+	  float rho = sqrt(-2*log(rndno[0]));
+	  float phi = rndno[1]*2*M_PI;
+	  float dt=(7.515*dradius-2.139*d2+12.63*d3)*rho*cos(phi);
+	  tdrift+=dt;
+
+	  // Skip cluster if the time would go beyond readout window
+	  if (tdrift>CDC_TIME_WINDOW) continue;
+	  
+	  // Distribute the number of secondary ionizations for this primary
+	  // ionization according to a Poisson distribution with mean n_s_over_p.
+	  // For simplicity we assume these secondary electrons and the primary
+	  // electron stay together as a cluster.
+	  int n_s;
+	  gpoiss_(&n_s_per_p,&n_s,&one);
+	  // Energy deposition, equivalent to anode charge, in units of fC
+	  float dE=GAS_GAIN*ELECTRON_CHARGE*(float)(1+n_s);
+
+	  for (nhit = 0; nhit < hits->mult; nhit++)
+	    {
+	      if (fabs(hits->in[nhit].t - tdrift) < TWO_HIT_RESOL)
+		{
+		  break;
+		}
+	    }
+	  if (nhit < hits->mult)		/* merge with former hit */
+	    {
+	      /* Use the time from the earlier hit but add the charge*/
+	      hits->in[nhit].dE += dE;
+	      if(hits->in[nhit].t>tdrift){
+		hits->in[nhit].t = tdrift;
+		hits->in[nhit].d = dradius;
+		hits->in[nhit].itrack = track;
+		hits->in[nhit].ptype = ipart;
+	      }
+	      
+	      /* hits->in[nhit].t =
+		 (hits->in[nhit].t * hits->in[nhit].dE + tdrift * dEsum)
+		 / (hits->in[nhit].dE += dEsum);
+	      */
+	    }
+	  else if (nhit < MAX_HITS)		/* create new hit */
+	    {
+	      hits->in[nhit].t = tdrift;
+	      hits->in[nhit].dE = dE;
+	      hits->in[nhit].d = dradius;
+	      hits->in[nhit].itrack = track;
+	      hits->in[nhit].ptype = ipart;
+	      
+	      hits->mult++;
+	    }
+	  else
+	    {
+	      fprintf(stderr,"HDGeant error in hitCentralDC: ");
+	      fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+	    }
+	}
       }
 #if CATHODE_STRIPS_IN_CDC
       else			/* in one of the z-readout (strip) layers */
@@ -400,19 +509,46 @@ s_CentralDC_t* pickCentralDC ()
 
          s_CdcStrawTruthHits_t* hits = straws->in[straw].cdcStrawTruthHits;
 
+	 // Sort the clusters by time
+	 qsort(hits->in,hits->mult,sizeof(s_CdcStrawTruthHit_t),(compfn)cdc_cluster_sort);
+	
          /* compress out the hits below threshold */
-         int i,iok;
-         for (iok=i=0; i < hits->mult; i++)
-         {
-            if (hits->in[i].dE >= THRESH_KEV/1e6)
-            {
-               if (iok < i)
-               {
-                  hits->in[iok] = hits->in[i];
-               }
-               ++iok;
-            }
-         }
+         int i,iok=0;
+
+	 // Temporary histogram in 1 ns bins to store waveform data
+	 int num_samples=(int)CDC_TIME_WINDOW;
+	 float *samples=(float *)malloc(num_samples*sizeof(float));
+	 for (i=0;i<num_samples;i++){
+	   samples[i]=cdc_wire_signal((float)i,hits);
+	   //printf("%f %f\n",(float)i,samples[i]);
+	 }
+	 
+	 int returned_to_baseline=0;
+	 float q=0.; 
+	 float w_eff=0.0295; //keV	
+	 int FADC_BIN_SIZE=1;
+	 for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
+	   if (samples[i]>=THRESH_MV){
+	     if (returned_to_baseline==0){
+	       hits->in[iok] = hits->in[0];
+	       hits->in[iok].t=(float) i;
+	       returned_to_baseline=1;
+	       iok++;
+	     }
+	     q+=(float)FADC_BIN_SIZE*samples[i];
+	   }
+	   if (samples[i]<THRESH_MV || i==num_samples-1){
+	     returned_to_baseline=0;   
+	     if (iok>0 && q>0.){
+	       hits->in[iok-1].dE=q*w_eff/(GAS_GAIN*ELECTRON_CHARGE);;
+	       q=0.;
+	     }
+	   }
+	 }
+	 if (q>0){
+	   hits->in[iok-1].dE=q*w_eff/(GAS_GAIN*ELECTRON_CHARGE);
+	 }
+	 free(samples);
 
          if (iok)
          {
