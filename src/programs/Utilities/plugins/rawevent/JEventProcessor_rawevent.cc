@@ -25,7 +25,6 @@
 //
 //
 // still to do:
-//    translation table
 //    pair spectrometer
 //
 //
@@ -39,9 +38,13 @@
 #include<sstream>
 #include<iomanip>
 #include <expat.h>
-#include <boost/lexical_cast.hpp>
 
-//#include <boost/unsorted_map.hpp>
+#include <boost/lexical_cast.hpp>
+using namespace boost;
+
+
+// needs to be tested
+//#include <boost/unordered_map.hpp>
 
 
 // to protect writing to output file
@@ -60,16 +63,17 @@ static string outputFileName;
 static int runNumber;
 
 
-// maps convert from detector spec to (crate,slot,channel)
-// key is detector-dependent encoded string (e.g. "ring:straw" for CDC)
+// csc map converts from detector spec to (crate,slot,channel)
+// key is detector-dependent encoded string (e.g. "cdcadc::2:25" for CDC ring 2 straw 25)
 static map<string,cscVal> cscMap;
 
 
-// could create detector map here, e.g:
+// create detector map (inverse of csc map) as 3-dimensional array, indices are (crate,slot,channel)
+//  content is detector-dependent encoded string
 #define MAX_CRATE   58+1
 #define MAX_SLOT    16+1
 #define MAX_CHANNEL 72+1
-//   static string detectorMap[MAX_CRATE][MAX_SLOT][MAX_CHANNEL];
+static string detectorMap[MAX_CRATE][MAX_SLOT][MAX_CHANNEL];
 
 
 
@@ -194,11 +198,9 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
     // translate to crate/slot/channel
     cscRef cscADC  = DTOFRawHitTranslationADC(dtofrawhits[i]);
-//     cout << "found TOF cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
-//          << "   for plane,bar,lr = " << dtofrawhits[i]->plane<< "," << dtofrawhits[i]->bar << "," << dtofrawhits[i]->lr << endl;
-
     cscRef cscTDC  = DTOFRawHitTranslationTDC(dtofrawhits[i]);
-//     cout << "found TOF cscTDC = " << cscTDC.get<0>() << "," << cscTDC.get<1>() << "," << cscTDC.get<2>() 
+
+//     cout << "found TOF cscADC = " << cscADC.crate << "," << cscADC.slot << "," << cscADC.channel 
 //          << "   for plane,bar,lr = " << dtofrawhits[i]->plane<< "," << dtofrawhits[i]->bar << "," << dtofrawhits[i]->lr << endl;
 
       // do something...
@@ -213,14 +215,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dbcalhits[i]->t;
 
     cscRef cscADC  = DBCALHitTranslationADC(dbcalhits[i]);
-//     cout << "found BCAL cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
-//          << "   for module,sector,layer,end= " << dbcalhits[i]->module << "," << dbcalhits[i]->sector << "," 
-//          << dbcalhits[i]->layer << "," << dbcalhits[i]->end << endl;
-
     cscRef cscTDC  = DBCALHitTranslationTDC(dbcalhits[i]);
-//     cout << "found BCAL cscTDC = " << cscTDC.get<0>() << "," << cscTDC.get<1>() << "," << cscTDC.get<2>() 
-//          << "   for module,sector,layer,end= " << dbcalhits[i]->module << "," << dbcalhits[i]->sector << "," 
-//          << dbcalhits[i]->layer << "," << dbcalhits[i]->end << endl;
 
     // do something...
   }      
@@ -235,14 +230,15 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dfcalhits[i]->t;
     
     cscRef cscADC  = DFCALHitTranslationADC(dfcalhits[i]);
-//     cout << "found FCAL cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
-//          << "   for row,column = " << dfcalhits[i]->row << "," << dfcalhits[i]->column << endl;
+
+    cout << "found FCAL cscADC = " << cscADC.crate << "," << cscADC.slot << "," << cscADC.channel 
+         << "   for row,column = " << dfcalhits[i]->row << "," << dfcalhits[i]->column << endl;
 
     // do something...
   }      
 
 
-  // DFDCHit - cathode strips FADC125 or anode wires F1TDC64 (115 ps)
+  // DFDCHit - cathode strips FADC125 or anode wires F1TDC48 (115 ps)
   vector<const DFDCHit*> dfdchits; 
   eventLoop->Get(dfdchits);
   for(unsigned int i=0; i<dfdchits.size(); i++) {
@@ -250,16 +246,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dfdchits[i]->t;
 
     int type = dfdchits[i]->type;
-    if(type==0) {           // F1TDC64
+    if(type==0) {           // F1TDC48
       cscRef cscTDC  = DFDCAnodeHitTranslation(dfdchits[i]);
-//       cout << "found FDC cscTDC = " << cscTDC.get<0>() << "," << cscTDC.get<1>() << "," << cscTDC.get<2>() 
-//            << "   for gPlane,element = " << dfdchits[i]->gPlane << "," << dfdchits[i]->element << endl;
+
       // do something...
 
     } else if(type==1) {    // FADC125
       cscRef cscADC  = DFDCCathodeHitTranslation(dfdchits[i]);
-//       cout << "found FDC cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
-//            << "   for gPlane,element= " << dfdchits[i]->gPlane << "," << dfdchits[i]->element << endl;
+
       // do something...
     }
   }
@@ -273,8 +267,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dcdchits[i]->t;
 
     cscRef cscADC  = DCDCHitTranslationADC(dcdchits[i]);
-//     cout << "found CDC cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
-//          << "   for ring,straw = " << dcdchits[i]->ring << "," << dcdchits[i]->straw << endl;
 
     // do something...
   }      
@@ -288,12 +280,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dschits[i]->t;
 
     cscRef cscADC  = DSCHitTranslationADC(dschits[i]);
-//     cout << "found SC cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
-//          << "   for sector= " << dschits[i]->sector << endl;
-
     cscRef cscTDC  = DSCHitTranslationTDC(dschits[i]);
-//     cout << "found SC cscTDC = " << cscTDC.get<0>() << "," << cscTDC.get<1>() << "," << cscTDC.get<2>() 
-//          << "   for sector= " << dschits[i]->sector << endl;
 
     // do something...
   }      
@@ -307,12 +294,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     float t      = dtaggerhits[i]->t;
 
     cscRef cscADC  = DTaggerTranslationADC(dtaggerhits[i]);
-//     cout << "found Tagger cscADC = " << cscADC.get<0>() << "," << cscADC.get<1>() << "," << cscADC.get<2>() 
-//          << "   for row,column= " << dtaggerhits[i]->row << "," << dtaggerhits[i]->column << endl;
-
     cscRef cscTDC  = DTaggerTranslationTDC(dtaggerhits[i]);
-//     cout << "found Tagger cscTDC = " << cscTDC.get<0>() << "," << cscTDC.get<1>() << "," << cscTDC.get<2>() 
-//          << "   for row,column= " << dtaggerhits[i]->row << "," << dtaggerhits[i]->column << endl;
 
     // do something...
   }      
@@ -507,7 +489,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
 
     // fill maps
-    cscVal csc = make_tuple<int,int,int>(crate,slot,channel);
+    cscVal csc = {crate,slot,channel};
     string detector = Detector;
     std::transform(detector.begin(), detector.end(), detector.begin(), (int(*)(int)) tolower);
 
@@ -572,7 +554,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
       
     } else if(detector=="fdcanode") {
-      if(type=="f1tdc64") {
+      if(type=="f1tdc48") {
         s = "fdcanode::";
       } else {
         s = "unknownFDCAnode::";
@@ -613,8 +595,8 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
     }
 
 
-    // could fill detector map, indexed by crate/slot/channel, here, e.g:
-    //    detectorMap[crate][slot][channel] = s;
+    // fill detector map, index is crate,slot,channel
+    detectorMap[crate][slot][channel] = s;
     
 
 

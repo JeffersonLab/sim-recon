@@ -31,17 +31,18 @@
 #include "TAGGER/DTagger.h"
 
 
-#include<boost/tuple/tuple.hpp>
-
-
 using namespace std;
 using namespace jana;
 using namespace evio;
-using namespace boost;
 
 
-typedef tuple<int,int,int>  cscVal;
-typedef const tuple<int,int,int> &cscRef;
+// holds crate/slot/channel
+typedef struct {
+  int crate;
+  int slot;
+  int channel;
+} cscVal;
+typedef const cscVal &cscRef;
 
 
 
