@@ -823,7 +823,9 @@ double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t)
 //---------------------------------
 double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 {
-if(Nswim_steps<1)_DBG__;
+	last_swim_step=NULL;
+	if(Nswim_steps<1)_DBG__;
+
 	// First, find closest step to point
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;
@@ -952,6 +954,10 @@ if(Nswim_steps<1)_DBG__;
 		double ds = sqrt(dz*dz + Rodphi*Rodphi);
 		*s = step->s + (phi>0.0 ? ds:-ds);
 	}
+
+	this->last_phi = phi;
+	this->last_swim_step = step;
+	this->last_dz_dphi = dz_dphi;
 
 	return sqrt(dist2);
 }
