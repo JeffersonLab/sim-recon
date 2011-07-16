@@ -22,16 +22,16 @@ LIBXDR =
 
 ifeq ($(OStype),Linux)
 	ifeq ($(ARCHtype),alpha)
-		CPP     := /usr/bin/g++ -g
+		CPP     := g++ -g
 	else
-		CPP	:= /usr/bin/g++ -g -D_REENTRANT
+		CPP	:= g++ -g -D_REENTRANT
 	endif
 endif
 ifeq ($(OStype),OSF1)
-	CPP	:= /usr/bin/g++ -g -DBASENAME_USE_BUILTIN
+	CPP	:= g++ -g -DBASENAME_USE_BUILTIN
 endif
 ifeq ($(OStype),Darwin)
-	CPP	:= /usr/bin/g++ -g -DBASENAME_IN_LIBGEN -DXDR_LONGLONG_MISSING
+	CPP	:= g++ -g -DBASENAME_IN_LIBGEN -DXDR_LONGLONG_MISSING
 endif
 ifeq ($(OStype),SunOS)
 	CPP	:= CC -g -DBASENAME_IN_LIBGEN
