@@ -54,6 +54,9 @@ class DVertex:public jana::JObject{
     const DBCALShower *bcal;
     const DFCALShower *fcal;
     const DTrackTimeBased *matched_track;
+	 
+	 private:
+	 	shower_info_t(){}
   };
   vector<shower_info_t>showers;
 
