@@ -1580,6 +1580,7 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 	}
 	double d2 = min_d2;
 	double d = sqrt(d2);
+	this->last_phi = phi;
 	this->last_swim_step = step;
 	this->last_dz_dphi = dz_dphi;
 	
