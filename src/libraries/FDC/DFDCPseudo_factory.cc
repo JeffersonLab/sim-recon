@@ -22,7 +22,7 @@
 #define TOLF 1e-4
 #define A_OVER_H 0.4
 #define ALPHA 1e-4 // rate parameter for Newton step backtracking algorithm
-#define W_EFF 0.0302 // keV
+#define W_EFF 30.2e-9 // GeV
 #define GAS_GAIN 8e4
 #define ELECTRON_CHARGE 1.6022e-4 // fC
 
@@ -35,6 +35,20 @@
 bool DFDCAnode_gLayer_cmp(const DFDCHit* a, const DFDCHit* b) {
 	return a->gLayer < b->gLayer;
 }
+
+
+
+bool DFDCPseudo_cmp(const DFDCPseudo* a, const DFDCPseudo *b){
+  if (a->wire->wire == b->wire->wire && a->wire->layer==b->wire->layer){
+    return a->time<b->time;
+  }
+  if (a->wire->layer!=b->wire->layer) return a->wire->layer<b->wire->layer;
+  
+  return a->wire->wire<b->wire->wire;
+}
+
+
+
 
 ///
 /// DFDCPseudo_factory::DFDCPseudo_factory():
@@ -94,7 +108,7 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
     // Try and get pointers to the existing ones.
 
     qa_vs_qc= (TH2F*) gROOT->FindObject("qa_vs_qc");
-    if (!qa_vs_qc) qa_vs_qc=new TH2F("qa_vs_qc","Anode charge from wire versus charge derived from cathodes",200,0,10,200,0,10);
+    if (!qa_vs_qc) qa_vs_qc=new TH2F("qa_vs_qc","Anode charge from wire versus charge derived from cathodes",100,0,5,100,0,5);
 
     qa_qc_diff=(TH2F*)gROOT->FindObject("qa_qc_diff");
     if (!qa_qc_diff) qa_qc_diff=new TH2F("qa_qc_diff","(qa-qcv) vs (qa-qcu)",
@@ -192,6 +206,8 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	  oneLayerV.clear();
 	  oneLayerX.clear();
 	}
+	// Make sure the data are both time- and z-ordered
+	std::sort(_data.begin(),_data.end(),DFDCPseudo_cmp);
 	
 	return NOERROR;
 }
@@ -211,7 +227,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   vector<centroid_t>vpeaks;
 
 
-  //printf("---------u clusters --------\n");
+  // printf("---------u clusters --------\n");
   // Loop over all U and V clusters looking for peaks
   for (unsigned int i=0;i<u.size();i++){
     //printf("Cluster %d\n",i);
@@ -263,15 +279,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 		&& rtest>RIN_FIDUCIAL){
 	      double dt1 = (*xIt)->t - upeaks[i].t;
 	      double dt2 = (*xIt)->t - vpeaks[j].t;
-	      double q_cathodes=0.5*(upeaks[i].q+vpeaks[j].q);
-	      double charge_to_energy=W_EFF/(GAS_GAIN*ELECTRON_CHARGE);
-	      double dE=charge_to_energy*q_cathodes;
 
 	      if (DEBUG_HISTS){
-		qa_vs_qc->Fill(dE,((*xIt)->q));
-		
-		qa_qc_diff->Fill(((*xIt)->q-charge_to_energy*upeaks[i].q),
-				 ((*xIt)->q-charge_to_energy*vpeaks[i].q));
 		dtv_vs_dtu->Fill(dt1,dt2);
 		u_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-upeaks[i].t);
 		v_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-vpeaks[j].t);
@@ -279,6 +288,18 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 		uv_dt_vs_v->Fill(vpeaks[j].pos,upeaks[i].t-vpeaks[j].t);
 	      }
 	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
+
+	      // Charge and energy loss
+	      double q_cathodes=0.5*(upeaks[i].q+vpeaks[j].q);
+	      double charge_to_energy=W_EFF/(GAS_GAIN*ELECTRON_CHARGE);
+	      double dE=charge_to_energy*q_cathodes;
+      
+	      if (DEBUG_HISTS){
+		qa_vs_qc->Fill(1e6*dE,1e6*((*xIt)->q));
+		
+		qa_qc_diff->Fill(1e6*(((*xIt)->q-charge_to_energy*upeaks[i].q)),
+				 1e6*(((*xIt)->q-charge_to_energy*vpeaks[i].q)));
+	      }
 	      
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
 	      double xres=WIRE_SPACING/2./sqrt(12.);
@@ -334,6 +355,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       } // vpeaks loop
     } // upeaks loop
   } // if we have peaks in both u and v views
+
 }			
 
 //
