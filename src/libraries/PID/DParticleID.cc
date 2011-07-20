@@ -177,7 +177,10 @@ jerror_t DParticleID::GetdEdx(const DTrackTimeBased *track,
 
   // Loop over cdc hits
   for (unsigned int i=0;i<cdchits.size();i++){
-    my_rt->DistToRT(cdchits[i]->wire);
+    double locReturnValue = my_rt->DistToRT(cdchits[i]->wire);
+    if(!((locReturnValue >= 0.0) || (locReturnValue <= 0.0)))
+      continue; //NaN
+
     my_rt->GetLastDOCAPoint(pos, mom);
 
     // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
@@ -194,7 +197,9 @@ jerror_t DParticleID::GetdEdx(const DTrackTimeBased *track,
 
   // loop over fdc hits
   for (unsigned int i=0;i<fdchits.size();i++){
-    my_rt->DistToRT(fdchits[i]->wire);
+    double locReturnValue = my_rt->DistToRT(fdchits[i]->wire);
+    if(!((locReturnValue >= 0.0) || (locReturnValue <= 0.0)))
+      continue; //NaN
     my_rt->GetLastDOCAPoint(pos, mom);
    
     double gas_thickness=1.0; // cm
