@@ -18,9 +18,10 @@ using namespace std;
 #include "DMatrix3x3.h"
 #include "DMatrix2x3.h"
 // We are not currently using any of the 4x2,4x4,etc matrices in the code
-//#include "DMatrix4x2.h"
-//#include "DMatrix4x4.h"
-//#include "DMatrix2x4.h"
+#include "DMatrix4x1.h"
+#include "DMatrix4x2.h"
+#include "DMatrix4x4.h"
+#include "DMatrix2x4.h"
 #include "align_16.h"
 
 
@@ -52,6 +53,31 @@ inline DMatrix2x3 operator*(const DMatrix2x2 &m1,const DMatrix2x3 &m2){
   
 
 }
+
+// Matrix multiplication:  (4x2) x (2x4)
+inline DMatrix4x4 operator*(const DMatrix4x2 &m1,const DMatrix2x4 &m2){
+  return DMatrix4x4(m1(0,0)*m2(0,0)+m1(0,1)*m2(1,0),
+		    m1(0,0)*m2(0,1)+m1(0,1)*m2(1,1),
+		    m1(0,0)*m2(0,2)+m1(0,1)*m2(1,2),
+		    m1(0,0)*m2(0,3)+m1(0,1)*m2(1,3),
+
+		    m1(1,0)*m2(0,0)+m1(1,1)*m2(1,0),
+		    m1(1,0)*m2(0,1)+m1(1,1)*m2(1,1),
+		    m1(1,0)*m2(0,2)+m1(1,1)*m2(1,2),
+		    m1(1,0)*m2(0,3)+m1(1,1)*m2(1,3),
+
+		    m1(2,0)*m2(0,0)+m1(2,1)*m2(1,0),
+		    m1(2,0)*m2(0,1)+m1(2,1)*m2(1,1),
+		    m1(2,0)*m2(0,2)+m1(2,1)*m2(1,2),
+		    m1(2,0)*m2(0,3)+m1(2,1)*m2(1,3),    
+
+		    m1(3,0)*m2(0,0)+m1(3,1)*m2(1,0),
+		    m1(3,0)*m2(0,1)+m1(3,1)*m2(1,1),
+		    m1(3,0)*m2(0,2)+m1(3,1)*m2(1,2),
+		    m1(3,0)*m2(0,3)+m1(3,1)*m2(1,3)
+		    );
+}
+
 
 #else
 
@@ -101,11 +127,11 @@ inline DMatrix2x3 operator*(const DMatrix2x2 &m1,const DMatrix2x3 &m2){
 // I get around to writing the non-SIMD versions of this code... whenever that 
 // may be...
 // Matrix multiplication:  (4x2) x (2x4)
-/*
-  inline DMatrix4x4 operator*(const DMatrix4x2 &m1,
-  const DMatrix2x4 &m2){
+
+inline DMatrix4x4 operator*(const DMatrix4x2 &m1,
+			    const DMatrix2x4 &m2){
   ALIGNED_16_BLOCK_WITH_PTR(__m128d, 8, p)
-  __m128d &a11=p[0];
+    __m128d &a11=p[0];
   __m128d &a12=p[1];
   __m128d &a13=p[2];
   __m128d &a14=p[3];
@@ -150,7 +176,7 @@ inline DMatrix2x3 operator*(const DMatrix2x2 &m1,const DMatrix2x3 &m2){
   _mm_add_pd(_mm_mul_pd(m1.GetV(0),_mm_set1_pd(m2(0,3))),
   _mm_mul_pd(m1.GetV(1),_mm_set1_pd(m2(1,3)))));
   }
-*/
+
 // end of un-used matrix block...
 #endif
 

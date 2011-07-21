@@ -1,7 +1,181 @@
 #include <align_16.h>
 
 #ifndef USE_SSE2
-#error Woops, DMatrix4x4 has not yet been implemented for non-SSE2 architectures
+// Matrix class without SIMD instructions
+
+class DMatrix4x4{
+ public:
+  DMatrix4x4(){
+    for (unsigned int i=0;i<4;i++){
+      for (unsigned int j=0;j<4;j++){
+	mA[i][j]=0.;
+      }
+    }
+  } 
+  DMatrix4x4(double c11, double c12, double c13, double c14,
+	     double c21, double c22, double c23, double c24,
+	     double c31, double c32, double c33, double c34,
+	     double c41, double c42, double c43, double c44
+	     ){
+    mA[0][0]=c11;
+    mA[0][1]=c12;
+    mA[0][2]=c13;
+    mA[0][3]=c14;
+    mA[1][0]=c21;
+    mA[1][1]=c22;
+    mA[1][2]=c23; 
+    mA[1][3]=c24;
+    mA[2][0]=c31;
+    mA[2][1]=c32;
+    mA[2][2]=c33;    
+    mA[2][3]=c34;
+    mA[3][0]=c41;
+    mA[3][1]=c42;
+    mA[3][2]=c43;
+    mA[3][3]=c44;
+
+  }
+  DMatrix4x4(const DMatrix2x2 &m1,const DMatrix2x2 &m2,
+	     const DMatrix2x2 &m3,const DMatrix2x2 &m4){
+    mA[0][0]=m1(0,0);
+    mA[0][1]=m1(0,1);
+    mA[1][0]=m1(1,0);
+    mA[1][1]=m1(1,1);
+    mA[0][2]=m2(0,0);
+    mA[0][3]=m2(0,1);
+    mA[1][2]=m2(1,0);
+    mA[1][3]=m2(1,1);
+    mA[2][0]=m3(0,0);
+    mA[2][1]=m3(0,1);
+    mA[3][0]=m3(1,0);
+    mA[3][1]=m3(1,1);
+    mA[2][2]=m4(0,0);
+    mA[2][3]=m4(0,1);
+    mA[3][2]=m4(1,0);
+    mA[3][3]=m4(1,1);
+  }
+
+  ~DMatrix4x4(){};
+
+  double &operator() (int row, int col){
+    return mA[row][col];
+  } 
+  double operator() (int row, int col) const{
+    return mA[row][col];
+  }
+  // unary minus
+  DMatrix4x4 operator-(){
+    return DMatrix4x4(-mA[0][0],-mA[0][1],-mA[0][2],-mA[0][3],
+		      -mA[1][0],-mA[1][1],-mA[1][2],-mA[1][3],
+		      -mA[2][0],-mA[2][1],-mA[2][2],-mA[2][3],
+		      -mA[3][0],-mA[3][1],-mA[3][2],-mA[3][3]
+		      );
+  }
+  // Matrix subtraction
+  DMatrix4x4 operator-(const DMatrix4x4 &m2){
+    return DMatrix4x4(mA[0][0]-m2(0,0),mA[0][1]-m2(0,1),mA[0][2]-m2(0,2),mA[0][3]-m2(0,3),
+		      mA[1][0]-m2(1,0),mA[1][1]-m2(1,1),mA[1][2]-m2(1,2),mA[1][3]-m2(1,3),
+		      mA[2][0]-m2(2,0),mA[2][1]-m2(2,1),mA[2][2]-m2(2,2),mA[2][3]-m2(2,3),
+		      mA[3][0]-m2(3,0),mA[3][1]-m2(3,1),mA[3][2]-m2(3,2),mA[3][3]-m2(3,3)
+		      );
+  }
+
+  // Matrix multiplication:  (4x4) x (4x4)
+  DMatrix4x4 operator*(const DMatrix4x4 &m2){
+    return DMatrix4x4(mA[0][0]*m2(0,0)+mA[0][1]*m2(1,0)+mA[0][2]*m2(2,0)+mA[0][3]*m2(3,0),
+		      mA[0][0]*m2(0,1)+mA[0][1]*m2(1,1)+mA[0][2]*m2(2,1)+mA[0][3]*m2(3,1),
+		      mA[0][0]*m2(0,2)+mA[0][1]*m2(1,2)+mA[0][2]*m2(2,2)+mA[0][3]*m2(3,2),
+		      mA[0][0]*m2(0,3)+mA[0][1]*m2(1,3)+mA[0][2]*m2(2,3)+mA[0][3]*m2(3,3),
+
+		      mA[1][0]*m2(0,0)+mA[1][1]*m2(1,0)+mA[1][2]*m2(2,0)+mA[1][3]*m2(3,0),
+		      mA[1][0]*m2(0,1)+mA[1][1]*m2(1,1)+mA[1][2]*m2(2,1)+mA[1][3]*m2(3,1),
+		      mA[1][0]*m2(0,2)+mA[1][1]*m2(1,2)+mA[1][2]*m2(2,2)+mA[1][3]*m2(3,2),
+		      mA[1][0]*m2(0,3)+mA[1][1]*m2(1,3)+mA[1][2]*m2(2,3)+mA[1][3]*m2(3,3),
+
+		      mA[2][0]*m2(0,0)+mA[2][1]*m2(1,0)+mA[2][2]*m2(2,0)+mA[2][3]*m2(3,0),
+		      mA[2][0]*m2(0,1)+mA[2][1]*m2(1,1)+mA[2][2]*m2(2,1)+mA[2][3]*m2(3,1),
+		      mA[2][0]*m2(0,2)+mA[2][1]*m2(1,2)+mA[2][2]*m2(2,2)+mA[2][3]*m2(3,2),
+		      mA[2][0]*m2(0,3)+mA[2][1]*m2(1,3)+mA[2][2]*m2(2,3)+mA[2][3]*m2(3,3),
+
+		      mA[3][0]*m2(0,0)+mA[3][1]*m2(1,0)+mA[3][2]*m2(2,0)+mA[3][3]*m2(3,0),
+		      mA[3][0]*m2(0,1)+mA[3][1]*m2(1,1)+mA[3][2]*m2(2,1)+mA[3][3]*m2(3,1),
+		      mA[3][0]*m2(0,2)+mA[3][1]*m2(1,2)+mA[3][2]*m2(2,2)+mA[3][3]*m2(3,2),
+		      mA[3][0]*m2(0,3)+mA[3][1]*m2(1,3)+mA[3][2]*m2(2,3)+mA[3][3]*m2(3,3)
+		      );
+  }
+
+  // Matrix multiplication:  (4x4) x (4x2)
+  DMatrix4x2 operator*(const DMatrix4x2 &m2){
+    return DMatrix4x2(mA[0][0]*m2(0,0)+mA[0][1]*m2(1,0)+mA[0][2]*m2(2,0)+mA[0][3]*m2(3,0),
+		      mA[0][0]*m2(0,1)+mA[0][1]*m2(1,1)+mA[0][2]*m2(2,1)+mA[0][3]*m2(3,1),
+
+		      mA[1][0]*m2(0,0)+mA[1][1]*m2(1,0)+mA[1][2]*m2(2,0)+mA[1][3]*m2(3,0),
+		      mA[1][0]*m2(0,1)+mA[1][1]*m2(1,1)+mA[1][2]*m2(2,1)+mA[1][3]*m2(3,1),
+
+		      mA[2][0]*m2(0,0)+mA[2][1]*m2(1,0)+mA[2][2]*m2(2,0)+mA[2][3]*m2(3,0),
+		      mA[2][0]*m2(0,1)+mA[2][1]*m2(1,1)+mA[2][2]*m2(2,1)+mA[2][3]*m2(3,1),  
+
+		      mA[3][0]*m2(0,0)+mA[3][1]*m2(1,0)+mA[3][2]*m2(2,0)+mA[3][3]*m2(3,0),
+		      mA[3][0]*m2(0,1)+mA[3][1]*m2(1,1)+mA[3][2]*m2(2,1)+mA[3][3]*m2(3,1)
+		      
+		      );
+  } 
+  
+  
+  // Matrix multiplication:  (4x4) x (4x1)
+  DMatrix4x1 operator*(const DMatrix4x1 &m2){
+    return DMatrix4x1(mA[0][0]*m2(0)+mA[0][1]*m2(1)+mA[0][2]*m2(2)+mA[0][3]*m2(3),
+		      mA[1][0]*m2(0)+mA[1][1]*m2(1)+mA[1][2]*m2(2)+mA[1][3]*m2(3),
+		      mA[2][0]*m2(0)+mA[2][1]*m2(1)+mA[2][2]*m2(2)+mA[2][3]*m2(3),
+		      mA[3][0]*m2(0)+mA[3][1]*m2(1)+mA[3][2]*m2(2)+mA[3][3]*m2(3)
+		      );
+  } 
+  
+
+
+
+  DMatrix4x4 Invert(){
+    DMatrix2x2 F(mA[0][0],mA[0][1],mA[1][0],mA[1][1]);
+    DMatrix2x2 Finv=F.Invert();
+    DMatrix2x2 G(mA[0][2],mA[0][3],mA[1][2],mA[1][3]); 
+    DMatrix2x2 H(mA[2][0],mA[2][1],mA[3][0],mA[3][1]);
+    DMatrix2x2 J(mA[2][2],mA[2][3],mA[3][2],mA[3][3]);
+    DMatrix2x2 Jinv=J.Invert();
+    DMatrix2x2 FF=(F-G*Jinv*H).Invert();
+    DMatrix2x2 JJ=(J-H*Finv*G).Invert();
+    return DMatrix4x4(FF,-FF*G*Jinv,-JJ*H*Finv,JJ);     
+  }
+  
+  // Find the transpose of this matrix
+  DMatrix4x4 Transpose(){
+    DMatrix4x4 temp;
+    for (unsigned int i=0;i<4;i++){
+      for (unsigned int j=0;j<4;j++){
+	temp(i,j)=mA[j][i];
+      }
+    }
+    return temp;
+  }
+
+  void Print(){
+    cout << "DMatrix4x4:" <<endl;
+    cout << "     |      0    |      1    |      2    |      3    |" <<endl;
+    cout << "------------------------------------------------------" <<endl;
+    
+    for (unsigned int i=0;i<4;i++){
+      cout << "   " << i <<" |";
+      for (unsigned int j=0;j<4;j++){
+	cout <<setw(11)<<setprecision(4)<< mA[i][j] <<" "; 
+      } 
+      cout << endl;
+    }      
+  }
+
+
+private:
+  double mA[4][4];
+
+};
 
 #else
 
@@ -154,6 +328,85 @@ class DMatrix4x4{
     return DMatrix4x4(FF,-FF*G*Jinv,-JJ*H*Finv,JJ);     
   }
   
+  // Find the transpose of this matrix
+  DMatrix4x4 Transpose(){
+#define SWAP(i,j,k,m) _mm_setr_pd(mA[(j)].d[(i)],mA[(m)].d[(k)])
+
+    return DMatrix4x4(SWAP(0,0,0,1),SWAP(1,0,1,1),SWAP(2,0,2,1),SWAP(3,0,3,1),
+		      SWAP(0,2,0,3),SWAP(1,2,1,3),SWAP(2,2,2,3),SWAP(3,2,3,3));
+
+  }
+
+  // Matrix multiplication:  (4x4) x (4x1)
+  DMatrix4x1 operator*(const DMatrix4x1 &m2){
+    ALIGNED_16_BLOCK_WITH_PTR(__m128d, 4, p)
+    __m128d &a1=p[0];
+    __m128d &a2=p[1];
+    __m128d &a3=p[2];
+    __m128d &a4=p[3];
+    a1=_mm_set1_pd(m2(0));
+    a2=_mm_set1_pd(m2(1));
+    a3=_mm_set1_pd(m2(2));
+    a4=_mm_set1_pd(m2(3));
+    return 
+      DMatrix4x1(_mm_add_pd(_mm_mul_pd(GetV(0,0),a1),
+			    _mm_add_pd(_mm_mul_pd(GetV(0,1),a2),
+				       _mm_add_pd(_mm_mul_pd(GetV(0,2),a3),
+						  _mm_mul_pd(GetV(0,3),a4)))),
+		 _mm_add_pd(_mm_mul_pd(GetV(1,0),a1),
+			    _mm_add_pd(_mm_mul_pd(GetV(1,1),a2),
+				       _mm_add_pd(_mm_mul_pd(GetV(1,2),a3),
+						  _mm_mul_pd(GetV(1,3),a4)))));
+  }
+
+  // Matrix multiplication: (4x4) x (4x4)
+  DMatrix4x4 operator*(const DMatrix4x4 &m2){
+    struct dvec1{
+      __m128d v[4][4];
+    };
+    ALIGNED_16_BLOCK_WITH_PTR(struct dvec1, 1, p)
+    struct dvec1 &temp=p[0];
+    for (unsigned int i=0;i<4;i++){
+      for (unsigned int j=0;j<4;j++){
+	temp.v[i][j]=_mm_set1_pd(m2(i,j));
+      }
+    }
+    // Preprocessor macro for multiplying two __m128d elements together
+#define MUL(i,j,k) _mm_mul_pd(GetV((i),(j)),temp.v[(j)][(k)])
+    
+    return DMatrix4x4(_mm_add_pd(MUL(0,0,0),
+				 _mm_add_pd(MUL(0,1,0),
+					    _mm_add_pd(MUL(0,2,0),
+						       MUL(0,3,0)))),
+		      _mm_add_pd(MUL(0,0,1),
+				 _mm_add_pd(MUL(0,1,1),
+					    _mm_add_pd(MUL(0,2,1),
+						       MUL(0,3,1)))),
+		      _mm_add_pd(MUL(0,0,2),
+				 _mm_add_pd(MUL(0,1,2),
+					    _mm_add_pd(MUL(0,2,2),
+						       MUL(0,3,2)))),
+		      _mm_add_pd(MUL(0,0,3),
+				 _mm_add_pd(MUL(0,1,3),
+					    _mm_add_pd(MUL(0,2,3),
+						       MUL(0,3,3)))),  
+		      _mm_add_pd(MUL(1,0,0),
+				 _mm_add_pd(MUL(1,1,0),
+					    _mm_add_pd(MUL(1,2,0),
+						       MUL(1,3,0)))),
+		      _mm_add_pd(MUL(1,0,1),
+				 _mm_add_pd(MUL(1,1,1),
+					    _mm_add_pd(MUL(1,2,1),
+						       MUL(1,3,1)))),
+		      _mm_add_pd(MUL(1,0,2),
+				 _mm_add_pd(MUL(1,1,2),
+					    _mm_add_pd(MUL(1,2,2),
+						       MUL(1,3,2)))),
+		      _mm_add_pd(MUL(1,0,3),
+				 _mm_add_pd(MUL(1,1,3),
+					    _mm_add_pd(MUL(1,2,3),
+						       MUL(1,3,3)))));  
+  }
 
   
   void Print(){
