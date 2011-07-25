@@ -251,7 +251,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    my_fdchits[id]->used_in_fit=false;
 	  }
 	}
-	num_fdc_hits--;
+	num_fdc_hits-=forward_traj[k].num_hits;
       }
     }
     else if (num_cdc_hits>0){
@@ -362,27 +362,14 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  double Vc=0.2133; //1.6*1.6/12.;
 	  
 	  if (fit_type==kTimeBased){
-	    /*
-	    dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift-mT0
-				-forward_traj[k-1].t);
-	    */
 	    double tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
 		-forward_traj[k-1].t;
-	    if (tdrift>0.) dm=0.02887*sqrt(tdrift)-1.315e-5*tdrift;
-	 
+	    if (tdrift>0.){
+	      dm=0.02887*sqrt(tdrift)-1.315e-5*tdrift;
 
-
-	    // variance
-	    //Vc=CDC_VARIANCE*10.0;
-	    if (newz<endplate_z)
-	      Vc=cdc_variance(dm)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED*mVarT0;
+	      // variance
+	      Vc=cdc_variance(tdrift);
 	    }
-	  else if (USE_T0_FROM_WIRES && mInvVarT0>EPS){
-	    dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
-				-mT0wires
-				-forward_traj[k-1].t);
-	    if (newz<endplate_z)
-	      Vc=cdc_variance(d)+CDC_DRIFT_SPEED*CDC_DRIFT_SPEED/mInvVarT0;
 	  }
 
 	  // inverse variance including prediction
@@ -465,7 +452,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	dy=S(state_y)-wirepos.y();
 	doca=sqrt(dx*dx+dy*dy);
 	num_cdc_hits--;
-	if (cdc_index==0) num_cdc_hits=0;
       }
       old_doca=doca;
     }

@@ -42,7 +42,7 @@
 
 #define NUM_SIGMA 100.0
 
-#define CDC_VARIANCE 0.01
+#define CDC_VARIANCE 0.000225
 #define FDC_CATHODE_VARIANCE 0.01 // 0.000225
 #define FDC_ANODE_VARIANCE 0.01
 
@@ -190,7 +190,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     state_Z,
   };
   double fdc_y_variance(double alpha,double x,double dE);
-  double cdc_variance(double x);  
+  double cdc_variance(double t);  
 
   void ResetKalmanSIMD(void);
   jerror_t GetProcessNoise(double ds,double Z, double rho_Z_over_A, 
@@ -219,11 +219,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t CalcDerivAndJacobian(double ds,const DVector3 &pos,DVector3 &dpos,
 				const DMatrix5x1 &S,double dEdx,
 				DMatrix5x5 &J1,DMatrix5x1 &D1);
-  jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
-			      const DMatrix5x1 &S,const DMatrix5x5 &C,
-			      DMatrix5x1 &Sc,DMatrix5x5 &Cc);
-  jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
-			      const DMatrix5x1 &S,DMatrix5x1 &Sc);
+  jerror_t ConvertStateVector(double z,const DMatrix5x1 &S,DMatrix5x1 &Sc);
   jerror_t GetProcessNoiseCentral(double ds,double Z,double rho_Z_over_A, 
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
   jerror_t SmoothForwardCDC(DMatrix5x1 &S);   
@@ -243,7 +239,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t PropagateForward(int length,int &index,double &z,double zhit,
 			    double &step,DMatrix5x1 &S,bool &done);
 
-  DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C);
+  DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
+  DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
 
   void ComputeT0FromCDC(double z,double tflight,double dEdx,
 			unsigned int cdc_index,
@@ -299,11 +296,11 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double m_ratio_sq; // .. and its square
 
   // Vertex time
-  double mT0,mT0wires,mT0best;
+  double mT0,mT0wires;
   // Variance in vertex time
   double mVarT0;
   // inverse of vertex time variance;
-  double mInvVarT0,mInvVarT0best;
+  double mInvVarT0;
 
   bool DEBUG_HISTS;
   bool USE_MATERIAL_BOUNDARIES;
@@ -315,12 +312,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double MIN_FIT_P;
 
  private:
+  bool last_smooth;
 
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
   TH2F *Hstepsize,*HstepsizeDenom;
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
-  TH2F *cdc_drift;
+  TH2F *cdc_drift,*fdc_drift,*cdc_sigma;
 };
 
 
