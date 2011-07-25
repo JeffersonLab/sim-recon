@@ -63,6 +63,19 @@ class DMatrix4x4{
   double operator() (int row, int col) const{
     return mA[row][col];
   }
+  // Assignment
+  DMatrix4x4 &operator=(const DMatrix4x4 &m1){
+    for (unsigned int i=0;i<4;i++){
+      for (unsigned int j=0;j<4;j++){
+	mA[i][j]=m1(i,j);
+      }
+    }    
+    return *this;
+  }
+
+
+
+
   // unary minus
   DMatrix4x4 operator-(){
     return DMatrix4x4(-mA[0][0],-mA[0][1],-mA[0][2],-mA[0][3],
