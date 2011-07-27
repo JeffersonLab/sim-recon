@@ -52,7 +52,7 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 		cout<<endl;
 		exit(0);
 	}
-	cout<<"Opened \""<<ti.file->GetName()<<"\""<<endl;
+	//cout<<"Opened \""<<ti.file->GetName()<<"\""<<endl;
 	
 	// An earlier version used a slightly different naming scheme. We check for the
 	// new name first, but if that fails, then look for the old name in case they 

@@ -1,7 +1,10 @@
 
 #include <stdio.h>
 #include <string.h>
+
+#ifdef HAS_CURL
 #include <curl/curl.h>
+#endif // HAS_CURL
 
 #include "getwebfile.h"
 
@@ -13,7 +16,6 @@ static int getwebfile_printprogress(void *clientp, double dltotal, double dlnow,
 int getwebfile(const char *url)
 {
 	FILE *f;
-	CURL *curl;
 	int ungzip = 0;
 
 	/* Check if file is already here */
@@ -29,7 +31,9 @@ int getwebfile(const char *url)
 		fclose(f);
 		printf("Using local file \"%s\"\n", fname);
 	}else{
+#ifdef HAS_CURL
 		/* File does not exist. Try downloading. */
+		CURL *curl;
 		printf("No local file: \"%s\".\nAttempting download from %s \n", fname, url);
 		
 		/* This should be done globally when there is only one thread */
@@ -61,6 +65,28 @@ int getwebfile(const char *url)
 		
 		/* Set flag to automatically ungzip if this is a gzipped file */
 		ungzip = 1;
+
+#else // HAS_CURL
+		static int message_printed=0;
+		if(!message_printed){
+			printf("\nFile not compiled with CURL support! This is most likely\n");
+			printf("because the curl-config script was not in the PATH when\n");
+			printf("this was compiled. It was most likely not in your path\n");
+			printf("because the curl-devel package was not installed on your\n");
+			printf("system. \n");
+			printf("The curl package is only used to automatically download\n");
+			printf("the data tables needed by this package. I will now attempt\n");
+			printf("to get them by running curl externally via the following:\n");
+			printf("\n");
+			
+			message_printed = 1;
+		}
+		
+		char cmd[256];
+		sprintf(cmd," curl %s -o %s\n", url, fname);
+		printf("%s\n", cmd);
+		system(cmd);
+#endif // HAS_CURL
 	}
 	
 	/* If the file is gzipped (and has a .gz suffix) then unzip it */

@@ -43,7 +43,7 @@ DTrackingResolutionGEANTphoton::DTrackingResolutionGEANTphoton()
 		cout<<endl;
 		exit(0);
 	}
-	cout<<"Opened \""<<file->GetName()<<"\""<<endl;
+	//cout<<"Opened \""<<file->GetName()<<"\""<<endl;
 
 	// Read pt resolution histogram
 	E_res_hist = (TH2D*)gROOT->FindObject("dE_over_E_vs_p_vs_theta");
