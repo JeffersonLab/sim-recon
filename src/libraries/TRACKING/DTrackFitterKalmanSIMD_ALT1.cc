@@ -67,6 +67,10 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     //C=J*(C*J_T)+Q;   
     C=Q.AddSym(C.SandwichMultiply(J));
 
+    // Save the current state and covariance matrix in the deque
+    forward_traj[k].Skk=S;
+    forward_traj[k].Ckk=C;
+    
     // Save the current state of the reference trajectory
     S0_=S0;
 
@@ -201,6 +205,9 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  }
 	  C=C.SandwichMultiply(sum)+sum2;
 
+	  fdc_updates[id].S=S;
+	  fdc_updates[id].C=C;
+
 	  // update number of degrees of freedom
 	  numdof++;
 
@@ -226,6 +233,9 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    //C=C-K*(H*C);    
 	    C=C.SubSym(K*(H*C));
 	    
+	    fdc_updates[id].S=S;
+	    fdc_updates[id].C=C;
+
 	    // Filtered residual and covariance of filtered residual
 	    double R=Mdiff*(1.-H*K);   
 	    double RC=V-H*(C*H_T);
@@ -388,8 +398,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // Check if this hit is an outlier
 	  double chi2_hit=(dm-d)*(dm-d)*InvV1;
 	  if (sqrt(chi2_hit)<NUM_SIGMA){
-	    // Flag the place along the reference trajectory closest to the 
-	    // doca position
+	    // Flag the place along the reference trajectory with hit id
 	    forward_traj[k-1].h_id=1000+cdc_index;
 
 	    // Flag that we used this hit
@@ -405,10 +414,21 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // Update state vector covariance matrix
 	    //C=C-K*(H*C);    
 	    C=C.SubSym(K*(H*C));
-
+	  
+	    	  
+	    // Store the "improved" values of the state and covariance matrix
+	    cdc_updates[cdc_index].S=S;
+	    cdc_updates[cdc_index].C=C;	  
+	    // Step state back to previous z positio
+	    Step(newz,forward_traj[k-1].pos.z(),dedx,cdc_updates[cdc_index].S);
+	    // propagate error matrix to z-position of hit
+	    StepJacobian(newz,forward_traj[k-1].pos.z(),
+			 cdc_updates[cdc_index].S,dedx,J);
+	    cdc_updates[cdc_index].C
+	      =cdc_updates[cdc_index].C.SandwichMultiply(J);	 
+	    
 	    // Residual
 	    res*=1.-H*K;
-	  
 	  
 	    // Update chi2 for this segment
 	    double err2 = Vc-H*(C*H_T);
@@ -455,11 +475,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
       }
       old_doca=doca;
     }
-
-    // Save the current state and covariance matrix in the deque
-    forward_traj[k].Skk=S;
-    forward_traj[k].Ckk=C;
-
   }
   
   // If chisq is still zero after the fit, something went wrong...

@@ -13,6 +13,7 @@
 #include "HDGEOMETRY/DMaterialMap.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
+#include <TH3.h>
 #include <TH2.h>
 #include <TH1.h>
 
@@ -69,7 +70,7 @@ using namespace std;
 
 typedef struct{
   int status;
-  double residual;
+  double residual,sigma;
   bool used_in_fit;
   const DCDCTrackHit *hit;
 }DKalmanSIMDCDCHit_t;
@@ -77,7 +78,7 @@ typedef struct{
 typedef struct{
   double t,cosa,sina,dE;
   double uwire,vstrip,z;
-  double xres,yres;
+  double xres,yres,xsig,ysig;
   bool used_in_fit;
   double nr,nz;
 }DKalmanSIMDFDCHit_t;
@@ -91,6 +92,12 @@ typedef struct{
   double s,t;
   double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
 }DKalmanSIMDState_t;
+
+typedef struct{
+  DMatrix5x1 S;
+  DMatrix5x5 C;  
+}DKalmanUpdate_t;
+
 
 class DTrackFitterKalmanSIMD: public DTrackFitter{
  public:
@@ -133,7 +140,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t KalmanLoop(void);
   virtual jerror_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 				 double &chisq,unsigned int &numdof);
-  virtual jerror_t SmoothForward(DMatrix5x1 &S);   
+  virtual jerror_t SmoothForward(DMatrix5x1 &S,DMatrix5x5 &C);   
 
   jerror_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			    double &chisq,unsigned int &numdof);
@@ -222,8 +229,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t ConvertStateVector(double z,const DMatrix5x1 &S,DMatrix5x1 &Sc);
   jerror_t GetProcessNoiseCentral(double ds,double Z,double rho_Z_over_A, 
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
-  jerror_t SmoothForwardCDC(DMatrix5x1 &S);   
-  jerror_t SmoothCentral(DMatrix5x1 &S);  
+  jerror_t SmoothForwardCDC(DMatrix5x1 &S,DMatrix5x5 &C);   
+  jerror_t SmoothCentral(DMatrix5x1 &S,DMatrix5x5 &C);  
   jerror_t SwimToPlane(DMatrix5x1 &S);
   jerror_t SwimCentral(DVector3 &pos,DMatrix5x1 &Sc);
   double BrentsAlgorithm(double ds1,double ds2,
@@ -277,6 +284,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   deque<DKalmanSIMDState_t>central_traj;
   deque<DKalmanSIMDState_t>forward_traj;
 
+  // lists containing updated state vector and covariance at measurement point
+  vector<DKalmanUpdate_t>fdc_updates;
+  vector<DKalmanUpdate_t>cdc_updates;
+
   // flight time and path length
   double ftime, len;
 
@@ -319,6 +330,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *Hstepsize,*HstepsizeDenom;
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
   TH2F *cdc_drift,*fdc_drift,*cdc_sigma;
+  TH3F *fdc_ysigma;
 };
 
 
