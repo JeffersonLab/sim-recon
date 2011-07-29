@@ -12,7 +12,6 @@
 #include <JANA/JFactoryGenerator.h>
 using namespace jana;
 
-#include "DParticle_factory_HDParSim.h"
 #include "DTrackTimeBased_factory_HDParSim.h"
 #include "DPhoton_factory_HDParSim.h"
 
@@ -26,7 +25,6 @@ class DFactoryGeneratorHDParSim: public JFactoryGenerator{
 		jerror_t GenerateFactories(JEventLoop *loop){
 			pthread_mutex_lock(&root_mutex);
 			
-			//loop->AddFactory(new DParticle_factory_HDParSim());
 			loop->AddFactory(new DTrackTimeBased_factory_HDParSim());
 			loop->AddFactory(new DPhoton_factory_HDParSim());
 
