@@ -650,10 +650,9 @@ void MyProcessor::FillGraphics(void)
 		loop->Get(mctrajectorypoints);
 		//sort(mctrajectorypoints.begin(), mctrajectorypoints.end(), DMCTrajectoryPoint_track_cmp);
 		
-		int colors[] = {kBlack, kMagenta, kGreen, 13, 14, 39};
-		int Ncolors = 1;
-		int Ntraj=0;
-		DGraphicSet gset(colors[Ntraj%Ncolors], kLine, 3.0);
+		poly_type drawtype = hdvmf->GetCheckButton("trajectories_lines") ? kLine:kMarker;
+		double drawsize  = hdvmf->GetCheckButton("trajectories_lines") ? 1.0:0.3;
+		DGraphicSet gset(kBlack, drawtype, drawsize);
 		//gset.marker_style = 7;
 		TVector3 last_point;
 		int last_track=-1;
@@ -693,9 +692,32 @@ void MyProcessor::FillGraphics(void)
 			if(i>0){
 				//if((v-last_point).Mag() > 10.0){
 				if(pt->track!=last_track || pt->part!=last_part){
+					if(hdvmf->GetCheckButton("trajectories_colors")){
+			 			switch(last_part){
+							case	Gamma:
+				 				gset.color = kOrange;
+					 			break;
+				 			case	Electron:
+				 			case	PiMinus:
+				 				gset.color = kRed+2;
+					 			break;
+				 			case	Positron:
+				 			case	Proton:
+				 			case	PiPlus:
+				 				gset.color = kBlue+1;
+					 			break;
+				 			case	Neutron:
+				 				gset.color = kGreen+2;
+					 			break;
+							default:
+				 				gset.color = kBlack;
+					 			break;
+			 			}
+					}else{
+						gset.color = kBlack;
+					}
 					graphics.push_back(gset);
 					gset.points.clear();
-					gset.color = colors[(++Ntraj)%Ncolors];
 				}
 			}
 			
@@ -703,6 +725,31 @@ void MyProcessor::FillGraphics(void)
 			last_point = v;
 			last_track = pt->track;
 			last_part = pt->part;
+		}
+		
+		if(hdvmf->GetCheckButton("trajectories_colors")){
+			switch(last_part){
+				case	Gamma:
+					gset.color = kOrange;
+					 break;
+				case	Electron:
+				case	PiMinus:
+					gset.color = kRed+2;
+					break;
+				case	Positron:
+				case	Proton:
+				case	PiPlus:
+				 	gset.color = kBlue+1;
+					break;
+				case	Neutron:
+				 	gset.color = kGreen+2;
+					break;
+				default:
+				 	gset.color = kBlack;
+					break;
+			 }
+		}else{
+			gset.color = kBlack;
 		}
 		graphics.push_back(gset);
 	}

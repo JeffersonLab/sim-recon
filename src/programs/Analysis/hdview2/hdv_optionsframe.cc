@@ -88,6 +88,8 @@ hdv_optionsframe::hdv_optionsframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt
 	checkbuttons["trajectories_piplus"]			= new TGCheckButton(hitdrawopts,	"When drawing DMCTrajectoryPoint, draw piplus tracks");
 	checkbuttons["trajectories_piminus"]		= new TGCheckButton(hitdrawopts,	"When drawing DMCTrajectoryPoint, draw piminus tracks");
 	checkbuttons["trajectories_other"]			= new TGCheckButton(hitdrawopts,	"When drawing DMCTrajectoryPoint, draw all other tracks");
+	checkbuttons["trajectories_lines"]			= new TGCheckButton(hitdrawopts,	"When drawing DMCTrajectoryPoint, draw lines between points");
+	checkbuttons["trajectories_colors"]			= new TGCheckButton(hitdrawopts,	"When drawing DMCTrajectoryPoint, draw color based on charge");
 
 	hitdrawopts->AddFrame(checkbuttons["fdcintersection"], lhints);
 	hitdrawopts->AddFrame(separator0, chints);
@@ -113,6 +115,8 @@ hdv_optionsframe::hdv_optionsframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt
 	hitdrawopts->AddFrame(checkbuttons["trajectories_piplus"], lhints);
 	hitdrawopts->AddFrame(checkbuttons["trajectories_piminus"], lhints);
 	hitdrawopts->AddFrame(checkbuttons["trajectories_other"], lhints);
+	hitdrawopts->AddFrame(checkbuttons["trajectories_lines"], lhints);
+	hitdrawopts->AddFrame(checkbuttons["trajectories_colors"], lhints);
 
 	//========== Done Button ===========
 	TGTextButton *done = new TGTextButton(botframe,	"Done");

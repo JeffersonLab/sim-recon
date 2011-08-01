@@ -157,6 +157,7 @@ hdv_fulllistframe::hdv_fulllistframe(hdv_mainframe *hdvmf, const TGWindow *p, UI
 	MapSubwindows();
 	Resize(GetDefaultSize());
 	
+	tview->Update();
 }
 
 //-------------------
