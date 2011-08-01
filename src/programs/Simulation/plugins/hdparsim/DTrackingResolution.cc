@@ -10,6 +10,15 @@
 using namespace std;
 
 #include "DTrackingResolution.h"
+#include "DFactoryGeneratorHDParSim.h"
+
+// Routine used If we're a plugin
+extern "C"{
+void InitPlugin(JApplication *app){
+	InitJANAPlugin(app);
+	app->AddFactoryGenerator(new DFactoryGeneratorHDParSim());
+}
+} // "C"
 
 
 //---------------------------------
