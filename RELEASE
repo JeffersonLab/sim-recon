@@ -1,0 +1,681 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-07-31
+   Date: July 31, 2011
+Builder: David Lawrence <davidl@jlab.org>
+
+This release is based on revision 8113 of trunk/sim-recon .
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.3 (i686)
+-----------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26d
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.2
+
+CentOS release 5.3 (Final) (x86_64)
+------------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26d
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.2
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r7910 | staylor | 2011-06-06 11:22:52 -0400 (Mon, 06 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Removed redundant deque.  Fixed bugs (thanks to Kei for pointing them out) in transformation from 5x5 to 7x7 error matrix.
+------------------------------------------------------------------------
+r7912 | davidl | 2011-06-07 11:59:56 -0400 (Tue, 07 Jun 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger
+   A /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger_factory.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger_factory.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/JFactoryGenerator_DTrigger.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/Makefile
+   A /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/README
+
+A plugin to simulate a level 1 trigger response. Provides DTrigger objects whose L1fired field contains a boolean as to whether it fired or not.
+------------------------------------------------------------------------
+r7914 | davidl | 2011-06-07 15:41:23 -0400 (Tue, 07 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DBeamPhoton.h
+
+Fixed unit label on incident photon energy when displaying in hd_dump.
+------------------------------------------------------------------------
+r7915 | davidl | 2011-06-07 16:29:29 -0400 (Tue, 07 Jun 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/Event.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/JEventProcessor_event_size.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/JEventProcessor_event_size.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/Makefile
+
+plugin to calculate event size based on inpiuts from various detectors
+------------------------------------------------------------------------
+r7919 | davidl | 2011-06-08 13:20:56 -0400 (Wed, 08 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/event_size/Event.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/event_size/JEventProcessor_event_size.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger_factory.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger_factory.h
+
+Updated level1_trigger and event_size plugins to include both L1 trigger algorithms described in GlueX-doc-1043 as well as allow implementing another based on the same inputs using the tree generated in event_size plugin.
+------------------------------------------------------------------------
+r7933 | kornicer | 2011-06-10 14:18:43 -0400 (Fri, 10 Jun 2011) | 5 lines
+Changed paths:
+   D /trunk/sim-recon/src/libraries/FCAL/DFCALPhoton.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALPhoton.h
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALPhoton_factory.cc
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALPhoton_factory.h
+   A /trunk/sim-recon/src/libraries/FCAL/DFCALShower.cc
+   A /trunk/sim-recon/src/libraries/FCAL/DFCALShower.h
+   A /trunk/sim-recon/src/libraries/FCAL/DFCALShower_factory.cc
+   A /trunk/sim-recon/src/libraries/FCAL/DFCALShower_factory.h
+   M /trunk/sim-recon/src/libraries/FCAL/FCAL_init.cc
+
+FCAL: Create DFCALShower to contain calibrated cluster energy and position in the forward calorimeter, 
+      which was previously done by DFCALPhoton factory. 
+      Removed cluster-merging algorithm but keep DFCALPhoton object for compatibility.
+PID:  Make DVertex, DParticleID and DPhoton compatible with a new FCAL shower object. 
+
+------------------------------------------------------------------------
+r7934 | kornicer | 2011-06-10 14:22:12 -0400 (Fri, 10 Jun 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+   M /trunk/sim-recon/src/libraries/PID/DPhoton_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+
+PID:  Make DVertex, DParticleID and DPhoton compatible with a new FCAL shower object. 
+
+------------------------------------------------------------------------
+r7935 | davidl | 2011-06-10 14:44:32 -0400 (Fri, 10 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/doc/Doxyfile
+
+Tweaked settings of Doxygen configuration file.
+------------------------------------------------------------------------
+r7936 | davidl | 2011-06-10 14:45:56 -0400 (Fri, 10 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h
+
+Doxygen accessible description.
+------------------------------------------------------------------------
+r7937 | davidl | 2011-06-10 15:09:44 -0400 (Fri, 10 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Fixed some typos in comments
+------------------------------------------------------------------------
+r7938 | davidl | 2011-06-10 15:45:27 -0400 (Fri, 10 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDC.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_THROWN.h
+
+Doxygen descriptions of DTrackCandidate factories.
+------------------------------------------------------------------------
+r7939 | davidl | 2011-06-10 15:51:53 -0400 (Fri, 10 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate.h
+
+Doxygen description
+------------------------------------------------------------------------
+r7940 | davidl | 2011-06-10 16:57:10 -0400 (Fri, 10 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/doc/images/README.images
+   A /trunk/sim-recon/src/doc/images/jana.dot
+   A /trunk/sim-recon/src/doc/images/jana_map.gif
+   A /trunk/sim-recon/src/doc/images/jana_map.html
+
+Add image map to doc directory
+------------------------------------------------------------------------
+r7941 | zihlmann | 2011-06-10 18:02:11 -0400 (Fri, 10 Jun 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/DEventProcessor_trackanal.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/DEventProcessor_trackanal.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/trackanal/src/check2.cc
+
+fixed some bugs and added one more histogram to the analsysis
+showing the ratio of found associated hits to all hits for
+the track candidates.
+
+------------------------------------------------------------------------
+r7942 | davidl | 2011-06-11 23:55:04 -0400 (Sat, 11 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/doc/Makefile
+   M /trunk/sim-recon/src/doc/mainpage.c++
+
+Started re-writing mainpage of Doxygen documentation. This includes building in a clickable image map of the reconstruction call graph.
+------------------------------------------------------------------------
+r7943 | davidl | 2011-06-12 11:20:36 -0400 (Sun, 12 Jun 2011) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/doc/dana.c++
+   A /trunk/sim-recon/src/doc/modules.c++ (from /trunk/sim-recon/src/doc/dana.c++:7941)
+
+Rename dana.c++ to modules.c++
+------------------------------------------------------------------------
+r7944 | davidl | 2011-06-12 11:21:33 -0400 (Sun, 12 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/doc/Doxyfile
+
+Turn HAVE_DOT off in the doxygen configuration for now until we get a working version in place on the CUE.
+------------------------------------------------------------------------
+r7945 | davidl | 2011-06-12 11:22:14 -0400 (Sun, 12 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/doc/mainpage.c++
+
+Revised and tweaked doxygen mainpage a bit.
+------------------------------------------------------------------------
+r7946 | marki | 2011-06-12 15:58:47 -0400 (Sun, 12 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree
+
+ignore made directories
+------------------------------------------------------------------------
+r7947 | marki | 2011-06-12 15:59:35 -0400 (Sun, 12 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CCAL
+
+ignore made directories
+------------------------------------------------------------------------
+r7949 | davidl | 2011-06-14 14:42:26 -0400 (Tue, 14 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Force HDDM structures to exist to hold BCAL hits in case we are generating dark pulse only hits.
+------------------------------------------------------------------------
+r7950 | davidl | 2011-06-14 14:43:23 -0400 (Tue, 14 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.h
+
+Doxygen comments
+------------------------------------------------------------------------
+r7951 | davidl | 2011-06-14 15:10:39 -0400 (Tue, 14 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/doc/images/jana_map.html
+   A /trunk/sim-recon/src/doc/images/jana_map_big.gif
+   A /trunk/sim-recon/src/doc/images/jana_map_big.pdf
+
+Add links to large format image files one can use to more easily read the numbers.
+------------------------------------------------------------------------
+r7952 | davidl | 2011-06-14 15:31:07 -0400 (Tue, 14 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/doc/images/jana_map.html
+
+Change URLs back to relative instead of absolute.
+------------------------------------------------------------------------
+r7954 | davidl | 2011-06-14 21:31:43 -0400 (Tue, 14 Jun 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/doc/images/ND.png
+   M /trunk/sim-recon/src/doc/mainpage.c++
+
+Starting legend for icons
+------------------------------------------------------------------------
+r7955 | davidl | 2011-06-14 22:28:31 -0400 (Tue, 14 Jun 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/doc/images/CORE.png
+   A /trunk/sim-recon/src/doc/images/DEP.png
+   M /trunk/sim-recon/src/doc/mainpage.c++
+   M /trunk/sim-recon/src/doc/modules.c++
+
+Adding DEP and CORE icons to doxygen documentation
+------------------------------------------------------------------------
+r7956 | davidl | 2011-06-14 22:30:18 -0400 (Tue, 14 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDC.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_THROWN.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterALT1.h
+
+Updating Doxygen comments
+------------------------------------------------------------------------
+r7965 | davidl | 2011-06-21 08:55:58 -0400 (Tue, 21 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+
+Update danaevio plugin to use new form of DFCALPhoton.
+------------------------------------------------------------------------
+r7967 | wolin | 2011-06-21 12:31:31 -0400 (Tue, 21 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Typo in dictionary, other minor changes
+------------------------------------------------------------------------
+r7971 | wolin | 2011-06-22 11:28:05 -0400 (Wed, 22 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Updated DVertex
+------------------------------------------------------------------------
+r7972 | wolin | 2011-06-23 09:12:09 -0400 (Thu, 23 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Updated DVertex
+------------------------------------------------------------------------
+r7973 | wolin | 2011-06-23 15:23:44 -0400 (Thu, 23 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIOFactoryGenerator.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+
+Use -PEVIO:WRITEOUT=0 to turn off output file
+------------------------------------------------------------------------
+r7974 | davidl | 2011-06-23 16:32:47 -0400 (Thu, 23 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFHit_factory.h
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.h
+
+Added doxygen comments
+------------------------------------------------------------------------
+r7982 | wolin | 2011-06-24 11:51:43 -0400 (Fri, 24 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+
+Each factory thread gets its own object map, can change map on-the-fly, other minor mods
+------------------------------------------------------------------------
+r7985 | davidl | 2011-06-24 17:04:22 -0400 (Fri, 24 Jun 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/CDC.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/FCAL.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/FDC_anode.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/FDC_cathode.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/event_size/JEventProcessor_event_size.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/event_size/JEventProcessor_event_size.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/event_size/TOF.h
+
+Adding individual trees to event_size plugin so hot channel distributions can be seen.
+------------------------------------------------------------------------
+r7991 | wolin | 2011-06-27 11:52:33 -0400 (Mon, 27 Jun 2011) | 4 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent
+
+rawevent plugin is framework for writing out simulated raw events in CODA format based on hddm hit data.  The DAQ group will write this plugin.   This is currently an empty plugin they will fill out.
+
+
+
+------------------------------------------------------------------------
+r7992 | wolin | 2011-06-27 11:54:21 -0400 (Mon, 27 Jun 2011) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/Makefile
+
+Initial versions of header, event processor and makefile
+
+
+------------------------------------------------------------------------
+r7993 | wolin | 2011-06-27 12:14:13 -0400 (Mon, 27 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Bombproof file open/close
+------------------------------------------------------------------------
+r7994 | wolin | 2011-06-27 17:19:43 -0400 (Mon, 27 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Now accesses hit banks
+------------------------------------------------------------------------
+r7995 | wolin | 2011-06-28 10:04:46 -0400 (Tue, 28 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added DTagger
+------------------------------------------------------------------------
+r7996 | wolin | 2011-06-28 10:40:00 -0400 (Tue, 28 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Added DTagger, empty translation table routines, command-line params, some reorganization.
+------------------------------------------------------------------------
+r7997 | wolin | 2011-06-28 13:39:04 -0400 (Tue, 28 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Reordered some tag/num pairs
+------------------------------------------------------------------------
+r7998 | wolin | 2011-06-29 15:00:42 -0400 (Wed, 29 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+
+Minor changes
+------------------------------------------------------------------------
+r7999 | wolin | 2011-06-29 15:39:12 -0400 (Wed, 29 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danaevio/DDANAEVIO_factory.cc
+
+Use plugin name in include statement
+------------------------------------------------------------------------
+r8000 | wolin | 2011-06-30 08:48:19 -0400 (Thu, 30 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Very minor changes
+------------------------------------------------------------------------
+r8002 | wolin | 2011-06-30 16:53:00 -0400 (Thu, 30 Jun 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Handles both ADC and TDC hits from the same detector element
+------------------------------------------------------------------------
+r8010 | wolin | 2011-07-06 10:58:10 -0400 (Wed, 06 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Reads translation table and fills maps, not done yet...
+------------------------------------------------------------------------
+r8011 | wolin | 2011-07-06 16:08:19 -0400 (Wed, 06 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Unified and simplified translation table.  Currently using STL map and boost::tuple.  still not done.  Optimizations for speed will come later.
+------------------------------------------------------------------------
+r8012 | wolin | 2011-07-06 17:29:03 -0400 (Wed, 06 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Using translation table
+------------------------------------------------------------------------
+r8013 | wolin | 2011-07-06 17:41:59 -0400 (Wed, 06 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Reverted to default BCAL and Tagger variables, may need to modify this one day
+------------------------------------------------------------------------
+r8014 | staylor | 2011-07-06 17:48:55 -0400 (Wed, 06 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Require that the path length of the step corresponding to the doca to a wire be greater than zero.  This prevents spurious matches to wires at wildly different phi positions relative to the actual trajectory in question for multi-particle events.
+------------------------------------------------------------------------
+r8017 | wolin | 2011-07-07 15:19:27 -0400 (Thu, 07 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Reads fake translation table now
+------------------------------------------------------------------------
+r8020 | wolin | 2011-07-08 16:02:56 -0400 (Fri, 08 Jul 2011) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+ Makes fake translation table
+------------------------------------------------------------------------
+r8021 | wolin | 2011-07-08 16:31:46 -0400 (Fri, 08 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+ Handles all detectors, need to get channel limits correct
+------------------------------------------------------------------------
+r8022 | wolin | 2011-07-08 16:38:31 -0400 (Fri, 08 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Minor typos
+------------------------------------------------------------------------
+r8023 | wolin | 2011-07-08 16:39:41 -0400 (Fri, 08 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Minor reformatting
+------------------------------------------------------------------------
+r8031 | wolin | 2011-07-11 13:06:08 -0400 (Mon, 11 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Correct channel count for CDC and FDC
+------------------------------------------------------------------------
+r8032 | wolin | 2011-07-11 13:07:13 -0400 (Mon, 11 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Typo
+------------------------------------------------------------------------
+r8034 | wolin | 2011-07-11 16:33:16 -0400 (Mon, 11 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Using gPlane for FDC, other minor fixes
+------------------------------------------------------------------------
+r8035 | wolin | 2011-07-11 16:58:25 -0400 (Mon, 11 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+All channels found in 1000 events.  Many generated channels actually do not exist, must get correct limits from detector builders.
+------------------------------------------------------------------------
+r8036 | wolin | 2011-07-11 17:02:12 -0400 (Mon, 11 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Minor
+------------------------------------------------------------------------
+r8038 | wolin | 2011-07-12 09:26:19 -0400 (Tue, 12 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Added and tested detectorMap (inverse of cscMap), but it is commented out
+------------------------------------------------------------------------
+r8041 | staylor | 2011-07-12 11:47:16 -0400 (Tue, 12 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+
+if the fit_type flag is not set to kTimeBased, skip hit if the wire is the same as the wire from the previous hit.
+------------------------------------------------------------------------
+r8051 | staylor | 2011-07-12 19:06:05 -0400 (Tue, 12 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Increased time cut for out-of-time hits.
+------------------------------------------------------------------------
+r8052 | staylor | 2011-07-12 19:46:46 -0400 (Tue, 12 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Added parameter to allow one to skip time-based tracking for forward-going tracks (default setting is false).  Also added parameter to allow one to ignore the time from a small number of CDC hits for these forward-going tracks.
+------------------------------------------------------------------------
+r8058 | staylor | 2011-07-13 15:22:40 -0400 (Wed, 13 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+
+Modified code to generate clusters at random positions along the trajectory of a charged particle within a straw.  Calculate the drift time for each cluster according to a distance-to-time relationship derived from fitting Garfield simulations of a single CDC straw with the 50/50 Ar/CO2 mixture.  Smear the time to account for longitidunal diffussion of the drifting electrons within the gas.  Convolute the current signal induced on the wire for each cluster with the ASIC preamp response.  The next step is to simulate the effect of the cable and the shaping in the flash-ADC but this is not ready to go yet.
+------------------------------------------------------------------------
+r8059 | staylor | 2011-07-13 15:29:32 -0400 (Wed, 13 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+Modified to generate clusters along the path of a particle passing through an FDC layer using position-dependent drift times derived from Garfield simulations.  Instead of reading the Lorentz deflection parameters from the database, I have parameterized the deflection as a function of the magnetic field.  Also compute the transverse and longitudinal diffusion based on the results of the Garfield simulations.  As with the CDC, the signal induced on the wire is convoluted with the ASIC response.  The code approximates a leading-edge discriminator for the anode wire but the cable and flash-ADC shaping still need to be implemented.
+------------------------------------------------------------------------
+r8060 | staylor | 2011-07-13 15:34:36 -0400 (Wed, 13 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Make the time-to-distance relationships for the FDC anodes and the CDC wires consistent with the recent revision (8059) to the hitFDC.c and hitCDC.c routines in HDGeant.  Use the parameterized version of the Lorentz deflection as opposed to the interpolation over the table.
+------------------------------------------------------------------------
+r8061 | staylor | 2011-07-13 15:35:35 -0400 (Wed, 13 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+New parameters for turning off time-based tracking for forward-going tracks
+------------------------------------------------------------------------
+r8062 | wolin | 2011-07-13 16:04:32 -0400 (Wed, 13 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+No 64 channel TDC, just 48 channel for FDC
+------------------------------------------------------------------------
+r8063 | staylor | 2011-07-13 16:16:50 -0400 (Wed, 13 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCCathodeCluster.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCCathodeCluster_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.h
+
+Modified the clusterization and pseudo-point algorithms to take into account the possibility that there could be multiple hits at different times on a single strip or wire.  With the new more realistic simulation in hitFDC.c this is now much more likely to occur.
+------------------------------------------------------------------------
+r8065 | wolin | 2011-07-14 14:55:31 -0400 (Thu, 14 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+
+Using struct instead of boost::tuple for cscVal
+------------------------------------------------------------------------
+r8076 | davidl | 2011-07-16 00:12:34 -0400 (Sat, 16 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex.h
+
+Bomb proof shower_info_t by disallowing use of default constructor.
+------------------------------------------------------------------------
+r8077 | davidl | 2011-07-16 00:17:58 -0400 (Sat, 16 Jul 2011) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Store last_phi in overloaded DistToRT method of DReferenceTrajectory. The lack of this was causing non-deterministic behavior because the particle ID would fail due to lack of matching to outer detectors. Apparently random behavior due to DReferenceTrajectory objects being reallocated occasionally for pool(?).
+
+------------------------------------------------------------------------
+r8079 | jonesrt | 2011-07-16 05:52:19 -0400 (Sat, 16 Jul 2011) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/Makefile
+
+Makefile [rtj]
+   - got rid of the hard-coded path to the g++ compiler at /usr/bin/g++, the user should be
+     allowed to chose which installed version of the compiler gets used by setting the
+     search order in PATH.
+
+------------------------------------------------------------------------
+r8080 | davidl | 2011-07-18 08:58:11 -0400 (Mon, 18 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Remember last_phi in DistToRTBruteForce. I don't believe this method is used, but in case it is, this could be needed.
+------------------------------------------------------------------------
+r8084 | staylor | 2011-07-19 10:48:34 -0400 (Tue, 19 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+
+(1) Change how debug hists are handled. (2) Sort pseudopoints by time if the hits correspond to the same wire in the same layer
+------------------------------------------------------------------------
+r8088 | pmatt | 2011-07-20 15:13:22 -0400 (Wed, 20 Jul 2011) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+Added checks for NaN on the DReferenceTrajectory::DistToRT call in DParticleID::GetdEdx.  Without these checks, the figure-of-merit of the DTrackTimeBased objects is sometimes (non-deterministically) calculated incorrectly.  This is because the point on the trajectory for the given DCDCTrackHit is then calculated (in DReferenceTrajectory::GetLastDOCAPoint) using the swim-step from the previous DCDCTrackHit because it was never updated by the DistToRT function.  
+
+The DistToRT function returns NaN because the first swim-step on the reference trajectory is the closest to the wire hit.  I don't know what the cause of this is, and whether or not it's a bad thing, but the function returns NaN nonetheless.  
+
+This process was non-deterministic because the vector of DCDCTrackHit objects grabbed in GetdEdx are in random order.  They are in random order because they are associated objects, and are stored in a map with their pointer address as the key.  
+
+
+------------------------------------------------------------------------
+r8089 | staylor | 2011-07-21 07:42:16 -0400 (Thu, 21 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x4.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix4x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x2.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x4.h
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Add non-SIMD functionality for 4x4, 4x2, 2x4, and 4x1 matrices.
+------------------------------------------------------------------------
+r8095 | staylor | 2011-07-25 07:52:27 -0400 (Mon, 25 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+(0) Improve errors for CDC and FDC hits. (1) Add drift time histo for FDC. (2) run smoother one last time after fit convergence and use this compute t0 (not before). (3) add routine to compute 7x7 matrix directly from forward parameters. (4) remove calculation of C from ConvertStateVector.
+------------------------------------------------------------------------
+r8097 | staylor | 2011-07-25 10:04:44 -0400 (Mon, 25 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix4x4.h
+
+Assigment operator for non-SIMD version
+------------------------------------------------------------------------
+r8100 | davidl | 2011-07-27 08:46:53 -0400 (Wed, 27 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.CURL
+
+Set HAS_CURL preprocessor flag if the curl-config script is in our path indicating that the curl-devel library exists. This allows conditionally compiled code to use it if it is available, but use an alternative method if it is not.
+------------------------------------------------------------------------
+r8101 | davidl | 2011-07-27 08:49:24 -0400 (Wed, 27 Jul 2011) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/DFactoryGeneratorHDParSim.h
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.cc
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANTphoton.cc
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/getwebfile.c
+
+- Updated to run curl command line utility to grab data files
+  if the curl library wasn't linked in.
+- Disable the deprecated DParticle objects
+- Remove a couple of print statements to make prettier output
+
+------------------------------------------------------------------------
+r8107 | davidl | 2011-07-29 15:05:23 -0400 (Fri, 29 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/Makefile
+
+Turn on building of hdparsim plugin as part of default build.
+------------------------------------------------------------------------
+r8111 | davidl | 2011-07-29 17:18:55 -0400 (Fri, 29 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/DFactoryGeneratorHDParSim.h
+   D /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/DParticle_factory_HDParSim.cc
+   D /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/DParticle_factory_HDParSim.h
+
+Remove references to old DParticle class from hdparsim.
+------------------------------------------------------------------------
+r8112 | staylor | 2011-07-29 18:04:40 -0400 (Fri, 29 Jul 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Reduced the number of iterations per fit by elinating what turns out to be unnecessary internal iterations that were present for each iteration over reference trajectories.  Also worked on smoothing code and variances for fdc hits.
+------------------------------------------------------------------------
