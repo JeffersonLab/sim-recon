@@ -74,8 +74,10 @@ jerror_t DPhoton_factory_HDParSim::evnt(JEventLoop *loop, int eventnumber)
 		// Simultaneously smear the momentum of the particle and test whether
 		// it passes the efficiency/acceptance cut.
 		DVector3 mom = photon->momentum();
-		bool keep = res->Smear(thrown->type, mom);
+		TVector3 tmom(mom.X(), mom.Y(), mom.Z());
+		bool keep = res->Smear(thrown->type, tmom);
 		if(keep || !APPLY_EFFICIENCY_PHOTON){
+			mom.SetXYZ(tmom.X(), tmom.Y(), tmom.Z());
 			photon->setMomentum(mom);
 			_data.push_back(photon);
 		}else{

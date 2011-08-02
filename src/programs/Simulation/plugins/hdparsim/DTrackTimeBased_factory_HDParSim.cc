@@ -119,8 +119,10 @@ jerror_t DTrackTimeBased_factory_HDParSim::evnt(JEventLoop *loop, int eventnumbe
 		// Simultaneously smear the momentum of the particle and test whether
 		// it passes the efficiency/acceptance cut.
 		DVector3 mom = part->momentum();
-		bool keep = res->Smear(thrown->type, mom);
+		TVector3 tmom(mom.X(), mom.Y(), mom.Z());
+		bool keep = res->Smear(thrown->type, tmom);
 		if(keep || !APPLY_EFFICIENCY_CHARGED){
+			mom.SetXYZ(tmom.X(), tmom.Y(), tmom.Z());
 			part->setMomentum(mom);
 			_data.push_back(part);
 		}else{
