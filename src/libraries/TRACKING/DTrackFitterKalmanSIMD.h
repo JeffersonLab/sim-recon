@@ -41,11 +41,12 @@
 #define TAN_MAX 10.
 
 
-#define NUM_SIGMA 100.0
+#define NUM_SIGMA 1000.0
+#define NUM_FDC_SIGMA 1000.0
 
-#define CDC_VARIANCE 0.000225
-#define FDC_CATHODE_VARIANCE 0.01 // 0.000225
-#define FDC_ANODE_VARIANCE 0.01
+#define CDC_VARIANCE 0.000032
+#define FDC_CATHODE_VARIANCE 0.0005 // 0.000225
+#define FDC_ANODE_VARIANCE 0.0006
 
 #define ONE_THIRD  0.33333333333333333
 #define ONE_SIXTH  0.16666666666666667
@@ -173,6 +174,12 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     good_hit,
     bad_hit,
   };
+  enum fit_region{
+    kForward,
+    kForwardCDC,
+    kCentral,
+  };
+
   enum state_types_forward{
     state_x,
     state_y,
@@ -197,7 +204,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     state_Z,
   };
   double fdc_y_variance(double alpha,double x,double dE);
-  double cdc_variance(double t);  
+  double cdc_variance(fit_region region,double t);  
+  double cdc_drift_distance(double t);
 
   void ResetKalmanSIMD(void);
   jerror_t GetProcessNoise(double ds,double Z, double rho_Z_over_A, 
@@ -249,11 +257,11 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
   DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
 
-  void ComputeT0FromCDC(double z,double tflight,double dEdx,
-			unsigned int cdc_index,
-			const DMatrix5x1 &S,const DMatrix5x5 &C);
 
-
+  jerror_t FindSmoothedResidual(unsigned int id,double z,double t,
+				double dEdx,
+				const DMatrix5x1 &Ss, 
+				const DMatrix5x5 &Cs);
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
@@ -329,7 +337,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *thetay_vs_thetax;
   TH2F *Hstepsize,*HstepsizeDenom;
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
-  TH2F *cdc_drift,*fdc_drift,*cdc_sigma;
+  TH2F *cdc_drift,*fdc_drift,*cdc_sigma,*fdc_xsigma;
   TH3F *fdc_ysigma;
 };
 

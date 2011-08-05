@@ -37,7 +37,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
   // Initialize chi squared
   chisq=0;
-  pulls.clear();
 
   // Initialize number of degrees of freedom
   numdof=0;
@@ -63,6 +62,16 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
     // Update the actual state vector and covariance matrix
     S=S0+J*(S-S0_);
+
+    // Bail if the momentum has dropped below some minimum
+    if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+      if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
+	}
+      return VALUE_OUT_OF_RANGE;
+    }
+
 
     //C=J*(C*J_T)+Q;   
     C=Q.AddSym(C.SandwichMultiply(J));
@@ -143,7 +152,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  double prob_hit=exp(-0.5*chi2_hit)/sqrt(2.*M_PI*Vtemp);
 
 	  // Cut out outliers
-	  if (sqrt(chi2_hit)<NUM_SIGMA){
+	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA){
 	    probs.push_back(prob_hit);
 	    Vlist.push_back(V);
 	    Hlist.push_back(H);
@@ -180,7 +189,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    prob_hit=exp(-0.5*chi2_hit)/sqrt(2.*M_PI*Vtemp);
 
 	    // Cut out outliers
-	    if(sqrt(chi2_hit)<NUM_SIGMA){	      
+	    if(sqrt(chi2_hit)<NUM_FDC_SIGMA){	      
 	      probs.push_back(prob_hit);	
 	      Mlist.push_back(Mdiff);
 	      Vlist.push_back(V);
@@ -219,7 +228,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	
 	  // Check if this hit is an outlier
 	  double chi2_hit=Mdiff*Mdiff*InvV;
-	  if (sqrt(chi2_hit)<NUM_SIGMA){
+	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA)
+	    {
 	    // Flag that we used this hit in the fit
 	    my_fdchits[id]->used_in_fit=true;
 	    
@@ -251,10 +261,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    }
 	      // update number of degrees of freedom
 	    numdof++;
-	    
-	    my_fdchits[id]->yres=R/sqrt(RC);
-	    pulls.push_back(pull_t(R, sqrt(fabs(RC)/anneal_factor), forward_traj[k].s));
-	      
 	  }
 	  else{
 	    // Flag that we did not use this hit after all
@@ -337,17 +343,58 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    newz=endplate_z;
 	    dz=endplate_z-z;
 	  }
-	  
-	  // Step current state by dz
-	  Step(z,newz,dedx,S);
-	  
-	  // Step reference trajectory by dz
-	  Step(z,newz,dedx,S0); 
-	  
-	  // propagate error matrix to z-position of hit
-	  StepJacobian(z,newz,S0,dedx,J);
-	  //C=J*C*J.Transpose();
-	  C=C.SandwichMultiply(J);
+	  // Step the state and covariance through the field
+	  int num_steps=0;
+	  double dz3=0.;
+	  double my_dz=0.;
+	  if (fabs(dz)>mStepSizeZ){
+	    my_dz=(dz>0?1.0:-1.)*mStepSizeZ;
+	    num_steps=int(fabs(dz/my_dz));
+	    dz3=dz-num_steps*my_dz;
+	    
+	    double my_z=z;
+	    for (int m=0;m<num_steps;m++){
+	      newz=my_z+my_dz;
+	      
+	      // Step current state by my_dz
+	      Step(z,newz,dedx,S);
+	      	      
+	      // propagate error matrix to z-position of hit
+	      StepJacobian(z,newz,S0,dedx,J);
+	      //C=J*C*J.Transpose();
+	      C=C.SandwichMultiply(J);
+	      
+	      // Step reference trajectory by my_dz
+	      Step(z,newz,dedx,S0); 
+	      
+	      my_z=newz;
+	    }
+	    
+	    newz=my_z+dz3;
+	    
+	    // Step current state by dz3
+	    Step(my_z,newz,dedx,S);	  
+	    
+	    // propagate error matrix to z-position of hit
+	    StepJacobian(my_z,newz,S0,dedx,J);
+	    //C=J*C*J.Transpose();
+	    C=C.SandwichMultiply(J);
+
+	    // Step reference trajectory by dz3
+	    Step(my_z,newz,dedx,S0); 	    
+	  }
+	  else{
+	    // Step current state by dz
+	    Step(z,newz,dedx,S);
+	    
+	    // propagate error matrix to z-position of hit
+	    StepJacobian(z,newz,S0,dedx,J);
+	    //C=J*C*J.Transpose();
+	    C=C.SandwichMultiply(J);
+
+	    // Step reference trajectory by dz
+	    Step(z,newz,dedx,S0); 
+	  }
 	  
 	  // Wire position at current z
 	  wirepos=origin+((newz-z0w)/uz)*dir;
@@ -374,12 +421,10 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  if (fit_type==kTimeBased){
 	    double tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
 		-forward_traj[k-1].t;
-	    if (tdrift>0.){
-	      dm=0.02887*sqrt(tdrift)-1.315e-5*tdrift;
-
-	      // variance
-	      Vc=cdc_variance(tdrift);
-	    }
+	    dm=cdc_drift_distance(tdrift);
+	    
+	    // variance
+	    Vc=cdc_variance(kForward,tdrift);
 	  }
 
 	  // inverse variance including prediction
@@ -397,7 +442,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		   d,dm,Vc,1./InvV1,1./sqrt(InvV1));
 	  // Check if this hit is an outlier
 	  double chi2_hit=(dm-d)*(dm-d)*InvV1;
-	  if (sqrt(chi2_hit)<NUM_SIGMA){
+	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA){
 	    // Flag the place along the reference trajectory with hit id
 	    forward_traj[k-1].h_id=1000+cdc_index;
 
@@ -419,14 +464,16 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // Store the "improved" values of the state and covariance matrix
 	    cdc_updates[cdc_index].S=S;
 	    cdc_updates[cdc_index].C=C;	  
-	    // Step state back to previous z positio
-	    Step(newz,forward_traj[k-1].pos.z(),dedx,cdc_updates[cdc_index].S);
+
 	    // propagate error matrix to z-position of hit
 	    StepJacobian(newz,forward_traj[k-1].pos.z(),
 			 cdc_updates[cdc_index].S,dedx,J);
 	    cdc_updates[cdc_index].C
 	      =cdc_updates[cdc_index].C.SandwichMultiply(J);	 
-	    
+
+	    // Step state back to previous z positio
+	    Step(newz,forward_traj[k-1].pos.z(),dedx,cdc_updates[cdc_index].S);
+
 	    // Residual
 	    res*=1.-H*K;
 	  
@@ -437,22 +484,50 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // update number of degr  virtual jerror_t SmoothForward(DMatrix5x1 &S);   ees of freedom
 	    numdof++;
 	    
-	    my_cdchits[cdc_index]->residual=res/sqrt(err2);
-	    pulls.push_back(pull_t(res, sqrt(fabs(err2/anneal_factor)), forward_traj[k].s));
-	    
 	  }
 	  else{
 	    // Flag that we did not use this hit
 	    my_cdchits[cdc_index]->used_in_fit=false;
 	  }
 
-	  // Step C back to the z-position on the reference trajectory
-	  StepJacobian(newz,z,S0,dedx,J);
-	  //C=J*C*J.Transpose();
-	  C=C.SandwichMultiply(J);
+	  if (num_steps==0){
+	    // Step C back to the z-position on the reference trajectory
+	    StepJacobian(newz,z,S0,dedx,J);
+	    //C=J*C*J.Transpose();
+	    C=C.SandwichMultiply(J);
+	    
+	    // Step S to current position on the reference trajectory
+	    Step(newz,z,dedx,S);
+	  }
+	  else{
+	    double my_z=newz;
+	    for (int m=0;m<num_steps;m++){
+	      z=my_z-my_dz;
+	      
+	      // Step C along z
+	      StepJacobian(my_z,z,S0,dedx,J);
+	      //C=J*C*J.Transpose();
+	      C=C.SandwichMultiply(J);
+	    
+	      // Step S along z
+	      Step(my_z,z,dedx,S); 
+
+	      // Step S0 along z
+	      Step(my_z,z,dedx,S0);
+	    
+	      my_z=z;
+	    }
+	    z=my_z-dz3;
+	    
+	    // Step C back to the z-position on the reference trajectory
+	    StepJacobian(my_z,z,S0,dedx,J);
+	    //C=J*C*J.Transpose();
+	    C=C.SandwichMultiply(J);
+	    
+	    // Step S to current position on the reference trajectory
+	    Step(my_z,z,dedx,S);
+	  }
 	  
-	  // Step S to current position on the reference trajectory
-	  Step(newz,z,dedx,S);
 	}
 
 	// new wire origin and direction
