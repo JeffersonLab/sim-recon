@@ -860,6 +860,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
   sperp-=sperp_old;
   z_vertex=z_last-sperp*tanl;
 
+  /*
   if (z_vertex<Z_MIN){
     z_vertex=Z_MIN;
     tanl=(z_last-Z_MIN)/sperp;
@@ -868,6 +869,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
     z_vertex=Z_MAX;
     tanl=(z_last-Z_MAX)/sperp;
   }
+  */
   theta=M_PI_2-atan(tanl);
 
   return NOERROR;
