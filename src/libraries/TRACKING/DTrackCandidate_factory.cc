@@ -85,7 +85,7 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   // Get the position of the exit of the CDC endplate from DGeometry
   double endplate_z,endplate_dz,endplate_rmin;
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
-  cdc_endplate.SetZ(endplate_z);
+  cdc_endplate.SetZ(endplate_z+0.5*endplate_dz);
 
   if(DEBUG_HISTS){
     dapp->Lock();
@@ -174,149 +174,139 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	// so segment[0] is the most upstream segment.
 	sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 
-    bool got_match=false;
-    // Initialize the stepper 
-    DMagneticFieldStepper stepper(bfield,srccan->charge());
- 
+	bool got_match=false;
     if (cdc_forward_ids.size()>0){
       double diff_min=1000.; // candidate matching difference
+      unsigned int jmin=0;
+      double radius=0.;
 
-      // Propagate FDC track candidate back to CDC endplate 
-      DVector3 mom_back,pos_back;
-      GetPositionAndMomentum(segments[0],pos_back,mom_back);
-      mom_back=-1.0*mom_back;
-      if (stepper.SwimToPlane(pos_back,mom_back,cdc_endplate,norm,NULL)
-	  ==false){
-	unsigned int jmin=0;
-	double radius=0.;
-
-	for (unsigned int j=0;j<cdc_forward_ids.size();j++){
-	  unsigned int cdc_index=cdc_forward_ids[j];
+      for (unsigned int j=0;j<cdc_forward_ids.size();j++){
+	unsigned int cdc_index=cdc_forward_ids[j];
+	
+	// Check that the charges match
+	if (cdctrackcandidates[cdc_index]->charge()==srccan->charge()){
+	  double diff=(cdc_endplate_projections[j]-pos).Mag();
 	  
-	  // Check that the charges match
-	  if (cdctrackcandidates[cdc_index]->charge()==srccan->charge()){
-	    double diff=(cdc_endplate_projections[j]-pos_back).Mag();
- 
-	    if (diff<diff_min){
-	      diff_min=diff;
-	      jmin=j;
-	      radius=pos_back.Perp();
-	    }
+	  if (diff<diff_min){
+	    diff_min=diff;
+	    jmin=j;
+	    radius=pos.Perp();
 	  }
 	}
-	if (DEBUG_HISTS){
-	  match_dist->Fill(radius,diff_min);
-	  match_dist_vs_p->Fill(srccan->momentum().Mag(),diff_min);
-	}
-
-	got_match=cdc_fdc_match(mom.Mag(),diff_min);
+      }
+      if (DEBUG_HISTS){
+	match_dist->Fill(radius,diff_min);
+	match_dist_vs_p->Fill(srccan->momentum().Mag(),diff_min);
+      }
+      
+      got_match=cdc_fdc_match(mom.Mag(),diff_min);
 		
-	if (got_match){
-	  unsigned int cdc_index=cdc_forward_ids[jmin];
-
-	  // Mark the FDC candidate as matched
-	  forward_matches[i]=1;
-	  num_fdc_cands_remaining--;
-
-	  // Get the associated cdc hits
-	  vector<const DCDCTrackHit *>cdchits;
-	  cdctrackcandidates[cdc_index]->GetT(cdchits);
-	  
-	  // Sort CDC hits by layer
-	  sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
-
-	  // Create new track candidate object 
-	  DTrackCandidate *can = new DTrackCandidate;
-	  can->setCharge(srccan->charge());
-	  
-	  // Add cdc and fdc hits to the track as associated objects
-	  unsigned int num_fdc_hits=0;
-	  for (unsigned int m=0;m<segments.size();m++)
-	    for (unsigned int n=0;n<segments[m]->hits.size();n++){
-	      can->AddAssociatedObject(segments[m]->hits[n]);
-	      num_fdc_hits++;
-	    }
-	  for (unsigned int n=0;n<cdchits.size();n++)
-	    can->AddAssociatedObject(cdchits[n]); 
-	  
-	  // variables for calculating average Bz
-	  double Bz_avg=0.,Bx,By,Bz;
-	  unsigned int num_hits=0;
-	  
-	  // Redo circle fit with additional hits
-	  DHelicalFit fit;
-	  for (unsigned int k=0;k<cdchits.size();k++){	
-	    if (fabs(cdchits[k]->wire->stereo)<EPS){
-	      double cov=0.8*0.8/12.;  //guess
-	      fit.AddHitXYZ(cdchits[k]->wire->origin.x(),
-			    cdchits[k]->wire->origin.y(),
-			    cdchits[k]->wire->origin.z(),cov,cov,0.);
-	    }
+      if (got_match){
+	unsigned int cdc_index=cdc_forward_ids[jmin];
+	
+	// Mark the FDC candidate as matched
+	forward_matches[i]=1;
+	num_fdc_cands_remaining--;
+	
+	// Get the associated cdc hits
+	vector<const DCDCTrackHit *>cdchits;
+	cdctrackcandidates[cdc_index]->GetT(cdchits);
+	
+	// Sort CDC hits by layer
+	sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
+	
+	// Create new track candidate object 
+	DTrackCandidate *can = new DTrackCandidate;
+	can->setCharge(srccan->charge());
+	
+	// Add cdc and fdc hits to the track as associated objects
+	unsigned int num_fdc_hits=0;
+	for (unsigned int m=0;m<segments.size();m++)
+	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
+	    can->AddAssociatedObject(segments[m]->hits[n]);
+	    num_fdc_hits++;
 	  }
-	  for (unsigned int k=0;k<segments.size();k++){
-	    for (unsigned int n=0;n<segments[k]->hits.size();n++){
-	      double covxx=segments[k]->hits[n]->covxx;
-	      double covyy=segments[k]->hits[n]->covyy;
-	      double covxy=segments[k]->hits[n]->covxy;
-	      double x=segments[k]->hits[n]->xy.X();
-	      double y=segments[k]->hits[n]->xy.Y();
-	      double z=segments[k]->hits[n]->wire->origin.z();
-	      
-	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
-	      bfield->GetField(x,y,z,Bx,By,Bz);
-	      Bz_avg-=Bz;
-	    }
-	    num_hits+=segments[k]->hits.size();
-	  }	
-	  // Fake point at origin
-	  fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
-
-	  // if the cdc and fdc candidates do not agree as to the particle's
-	  // charge, set the charge according to which detector has more hits
-	  if (srccan->charge()!=cdctrackcandidates[cdc_index]->charge() 
-	      && cdchits.size()>num_fdc_hits){
-	    can->setCharge(cdctrackcandidates[cdc_index]->charge());
+	for (unsigned int n=0;n<cdchits.size();n++)
+	  can->AddAssociatedObject(cdchits[n]); 
+	
+	// variables for calculating average Bz
+	double Bz_avg=0.;
+	unsigned int num_hits=0;
+	
+	// Redo circle fit with additional hits
+	DHelicalFit fit;
+	for (unsigned int k=0;k<cdchits.size();k++){	
+	  if (fabs(cdchits[k]->wire->stereo)<EPS){
+	    double cov=0.8*0.8/12.;  //guess
+	    fit.AddHitXYZ(cdchits[k]->wire->origin.x(),
+			  cdchits[k]->wire->origin.y(),
+			  cdchits[k]->wire->origin.z(),cov,cov,0.);
 	  }
-
-	  // Fit the points to a circle
-	  if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){	  
-	    // Compute new transverse momentum
-	    Bz_avg/=double(num_hits);
-	    double pt=0.003*Bz_avg*fit.r0;
+	}
+	for (unsigned int k=0;k<segments.size();k++){
+	  for (unsigned int n=0;n<segments[k]->hits.size();n++){
+	    double covxx=segments[k]->hits[n]->covxx;
+	    double covyy=segments[k]->hits[n]->covyy;
+	    double covxy=segments[k]->hits[n]->covxy;
+	    double x=segments[k]->hits[n]->xy.X();
+	    double y=segments[k]->hits[n]->xy.Y();
+	    double z=segments[k]->hits[n]->wire->origin.z();
 	    
-	    // Determine the polar angle
-	    double theta=srccan->momentum().Theta();
-	    if (num_fdc_hits<cdchits.size())
-	      theta=cdctrackcandidates[cdc_index]->momentum().Theta();
-
-	    // Determine the azimuthal angle
-	    double phi=atan2(-fit.x0,fit.y0);
+	    fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
+	    //bfield->GetField(x,y,z,Bx,By,Bz);
+	    //Bz_avg-=Bz;
+	    Bz_avg-=bfield->GetBz(x,y,z);
+	  }
+	  num_hits+=segments[k]->hits.size();
+	}	
+	// Fake point at origin
+	fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	
+	// if the cdc and fdc candidates do not agree as to the particle's
+	// charge, set the charge according to which detector has more hits
+	if (srccan->charge()!=cdctrackcandidates[cdc_index]->charge() 
+	    && cdchits.size()>num_fdc_hits){
+	  can->setCharge(cdctrackcandidates[cdc_index]->charge());
+	}
+	
+	// Fit the points to a circle
+	if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){	  
+	  // Compute new transverse momentum
+	  Bz_avg/=double(num_hits);
+	  double pt=0.003*Bz_avg*fit.r0;
+	  
+	  // Determine the polar angle
+	  double theta=srccan->momentum().Theta();
+	  if (num_fdc_hits<cdchits.size())
+	    theta=cdctrackcandidates[cdc_index]->momentum().Theta();
+	  
+	  // Determine the azimuthal angle
+	  double phi=atan2(-fit.x0,fit.y0);
 	    if (can->charge()<0) phi+=M_PI;
-
+	    
 	    // Set the momentum
 	    mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
-	  }
-
-	  // Set the mass and momentum
-	  can->setMass(srccan->mass());
-	  can->setMomentum(mom);
-	  if (srccan->position().Z()>Z_MIN && srccan->position().Z()<Z_MAX)
-	    can->setPosition(srccan->position());
-	  else if (cdctrackcandidates[cdc_index]->position().Z()>Z_MIN 
-		   && cdctrackcandidates[cdc_index]->position().Z()<Z_MAX)
-	    can->setPosition(cdctrackcandidates[cdc_index]->position());
-	  else{
-	      DVector3 center(0,0,Z_VERTEX);
-	      can->setPosition(center);
-	  }
-	  	 	  
-	  _data.push_back(can);	    
-	
-	  // Remove the CDC candidate from the id list because we 
-	  // found a match
-	  cdc_forward_ids.erase(cdc_forward_ids.begin()+jmin);
-	  num_forward_cdc_cands_remaining--;
 	}
+	
+	// Set the mass and momentum
+	can->setMass(srccan->mass());
+	can->setMomentum(mom);
+	if (srccan->position().Z()>Z_MIN && srccan->position().Z()<Z_MAX)
+	  can->setPosition(srccan->position());
+	else if (cdctrackcandidates[cdc_index]->position().Z()>Z_MIN 
+		 && cdctrackcandidates[cdc_index]->position().Z()<Z_MAX)
+	  can->setPosition(cdctrackcandidates[cdc_index]->position());
+	else{
+	  DVector3 center(0,0,Z_VERTEX);
+	  can->setPosition(center);
+	}
+	
+	_data.push_back(can);	    
+	
+	// Remove the CDC candidate from the id list because we 
+	// found a match
+	cdc_forward_ids.erase(cdc_forward_ids.begin()+jmin);
+	num_forward_cdc_cands_remaining--;
       }
     }
    
@@ -345,6 +335,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	
 	unsigned int num_match=0;
 	unsigned int num_axial=0;
+	
+	// Initialize the stepper 
+	DMagneticFieldStepper stepper(bfield,srccan->charge());
 
 	DVector3 pos=srccan->position();
 	DVector3 mom=srccan->momentum();
@@ -373,7 +366,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  num_fdc_cands_remaining--;
 
 	  // variables for calculating average Bz
-	  double Bz_avg=0.,Bx,By,Bz;
+	  double Bz_avg=0.;
 	  unsigned int num_hits=0;
 	  
 	  // Add the CDC hits to the track candidate and redo helical fit
@@ -397,8 +390,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double z=segments[k]->hits[n]->wire->origin.z();
 	      
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
-	      bfield->GetField(x,y,z,Bx,By,Bz);
-	      Bz_avg-=Bz;
+	      //bfield->GetField(x,y,z,Bx,By,Bz);
+	      //Bz_avg-=Bz;
+	      Bz_avg-=bfield->GetBz(x,y,z);
 	    }
 	    num_hits+=segments[k]->hits.size();
 	  }	
@@ -444,7 +438,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int i=0;i<cdc_forward_ids.size();i++){ 
     const DTrackCandidate *srccan=cdctrackcandidates[cdc_forward_ids[i]];
     cdc_forward_matches[i]=0;
-    
+ 
     // Get hits already linked to this candidate from associated objects
     vector<const DCDCTrackHit *>cdchits;
     srccan->GetT(cdchits);
@@ -506,7 +500,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  cdc_forward_matches[i]=1;
 	  
 	  // variables for calculating average Bz
-	  double Bz_avg=0.,Bx,By,Bz;
+	  double Bz_avg=0.;
 	  unsigned int num_hits=0;
 	  
 	  // Redo helical fit with all available hits
@@ -530,9 +524,10 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double z=segments[m]->hits[n]->wire->origin.z();
 	      
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
-	      bfield->GetField(x,y,z,Bx,By,Bz);
-	      Bz_avg-=Bz;
-		
+	      //bfield->GetField(x,y,z,Bx,By,Bz);
+	      //Bz_avg-=Bz;
+	      Bz_avg-=bfield->GetBz(x,y,z);
+
 	      can->AddAssociatedObject(segments[m]->hits[n]);
 	    }
 	    num_hits+=segments[m]->hits.size();
@@ -616,7 +611,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    forward_matches[k]=1; 
 	    
 	    // variables for calculating average Bz
-	    double Bz_avg=0.,Bx,By,Bz;
+	    double Bz_avg=0.;
 	    unsigned int num_hits=0;
 	    
 	    // Redo helical fit with all available hits
@@ -638,8 +633,10 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double covxy=fdchits[m]->covxy;
 	      fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
 	      
-	      bfield->GetField(x,y,z,Bx,By,Bz);
-	      Bz_avg-=Bz;
+	      //bfield->GetField(x,y,z,Bx,By,Bz);
+	      //Bz_avg-=Bz;
+	      Bz_avg-=bfield->GetBz(x,y,z);
+
 	      num_hits++;
 	    }
 	    for (unsigned int m=0;m<segments.size();m++){
@@ -652,8 +649,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		double z=segments[m]->hits[n]->wire->origin.z();
 		
 		fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
-		bfield->GetField(x,y,z,Bx,By,Bz);
-		Bz_avg-=Bz;
+		//bfield->GetField(x,y,z,Bx,By,Bz);
+		//Bz_avg-=Bz;
+		Bz_avg-=bfield->GetBz(x,y,z);
 		
 		_data[j]->AddAssociatedObject(segments[m]->hits[n]);
 	      }
