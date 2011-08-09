@@ -94,6 +94,10 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 //------------------
 jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *eventLoop, int runnumber)
 {
+  DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+  bfield = dapp->GetBfield();
+
+
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_ALLOWED_CDC_HITS", MAX_ALLOWED_CDC_HITS);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SUBSEED_STRAW_DIFF", MAX_SUBSEED_STRAW_DIFF);
 	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_HITS", MIN_SEED_HITS);
@@ -212,7 +216,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		//double par[] = {0.984463, 0.150759, -0.414933, 0.257472, -0.055801};
 		//double theta = seed.theta;
 		//double ff = par[0]+theta*(par[1]+theta*(par[2]+theta*(par[3]+theta*par[4])));
-		double p_trans = seed.fit.p_trans*seed.FindAverageBz(loop)/2.0;
+		double p_trans = seed.fit.p_trans*seed.FindAverageBz(bfield)/2.0;
 		double phi = seed.fit.phi;
 		double q = seed.fit.q;
 		double theta = seed.theta;
@@ -1502,14 +1506,10 @@ double DTrackCandidate_factory_CDC::DCDCSeed::MinDist2(DCDCSeed& seed)
 //------------------
 // DCDCSeed::FindAverageBz
 //------------------
-double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
+double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz( const DMagneticFieldMap *bfield
+)
 {
-  //return 2.0;
-	if(!loop)return 0.0;
-	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-	if(!dapp)return 0.0;
-
-	DMagneticFieldMap *bfield = dapp->GetBfield();
+   //return 2.0;
 	if(!bfield)return 0.0;
 
 	double Bz_sum=0.0;
