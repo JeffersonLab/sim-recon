@@ -105,7 +105,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 				double z_min, z_max;
 				void Merge(DCDCSeed& seed);
 				double MinDist2(DCDCSeed& seed);
-				double FindAverageBz(JEventLoop *loop);
+				double FindAverageBz(const DMagneticFieldMap *bfield);
 				
 				DCDCSeed();
 		};
@@ -140,6 +140,9 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		int NumEligibleSeedHits(vector<DCDCTrkHit*> &hits);
 
 		vector<int> superlayer_boundaries;
+
+		const DMagneticFieldMap *bfield;
+		 
 
 		unsigned int MAX_ALLOWED_CDC_HITS;
 		unsigned int MAX_SUBSEED_STRAW_DIFF;
