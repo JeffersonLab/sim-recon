@@ -21,6 +21,12 @@ class DVertexIndependentResults : public jana::JObject {
 
 		vector <const DChargedTrack*> dChargedTracks;
 		vector <const DNeutralShowerCandidate*> dNeutralShowerCandidates;
+
+		void toStrings(vector<pair<string,string> > &items) const{
+			AddString(items, "NChargedTracks", "%d", dChargedTracks.size());
+			AddString(items, "NShowerCandidates", "%d", dNeutralShowerCandidates.size());
+		}
+
 };
 
 #endif // _DVertexIndependentResults_

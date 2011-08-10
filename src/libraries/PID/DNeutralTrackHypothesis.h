@@ -27,6 +27,17 @@ class DNeutralTrackHypothesis : public jana::JObject {
 		float dChiSq;
 		unsigned int dNDF;
 		float dFOM;
+
+		void toStrings(vector<pair<string,string> > &items) const{
+			AddString(items, "PID", "%d", int(dPID));
+			dKinematicData->toStrings(items);
+			AddString(items, "T_Proj", "%3.2f", dProjectedTime);
+			AddString(items, "Path", "%3.2f", dPathLength);
+			AddString(items, "TOF", "%3.2f", dFlightTime);
+			AddString(items, "PID_ChiSq", "%f", dChiSq);
+			AddString(items, "PID_FOM", "%f", dFOM);
+		}
+
 };
 
 #endif // _DNeutralTrackHypothesis_

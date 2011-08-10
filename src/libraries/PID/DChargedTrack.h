@@ -19,6 +19,11 @@ class DChargedTrack:public jana::JObject{
 		JOBJECT_PUBLIC(DChargedTrack);
 
 		vector<const DChargedTrackHypothesis *> dChargedTrackHypotheses;
+
+		void toStrings(vector<pair<string,string> > &items) const{
+			AddString(items, "Nhypotheses", "%d", dChargedTrackHypotheses.size());
+		}
+
 };
 
 #endif // _DChargedTrack_

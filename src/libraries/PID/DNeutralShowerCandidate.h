@@ -44,6 +44,15 @@ class DNeutralShowerCandidate : public jana::JObject{
 			dSpacetimeVertexUncertainties.SetVect(locFCALShower->getPositionError());
 			dSpacetimeVertexUncertainties.SetT(0.0); //not stored in DFCALShower
 		}
+
+		void toStrings(vector<pair<string,string> > &items) const{
+			AddString(items, "E", "%3.5f", dEnergy);
+			AddString(items, "x", "%3.2f", dSpacetimeVertex.X());
+			AddString(items, "y", "%3.2f", dSpacetimeVertex.Y());
+			AddString(items, "z", "%3.2f", dSpacetimeVertex.Z());
+			AddString(items, "t", "%3.2f", dSpacetimeVertex.T());
+		}
+
 };
 
 #endif // _DNeutralShowerCandidate_

@@ -19,6 +19,11 @@ class DNeutralTrack:public jana::JObject{
 		JOBJECT_PUBLIC(DNeutralTrack);
 
 		vector<const DNeutralTrackHypothesis *> dNeutralTrackHypotheses;
+
+		void toStrings(vector<pair<string,string> > &items) const{
+			AddString(items, "Nhypotheses", "%d", dNeutralTrackHypotheses.size());
+		}
+
 };
 
 #endif // _DNeutralTrack_
