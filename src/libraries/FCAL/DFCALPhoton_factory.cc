@@ -73,7 +73,7 @@ DFCALPhoton* DFCALPhoton_factory::MakeDFCALPhoton(const DFCALShower* shower, con
 
 	// Get vertex position as DVector3
 	DVector3 my_vertex(0.0, 0.0, m_zTarget);
-	if(vertex)my_vertex = vertex->x.Vect();
+	if(vertex)my_vertex = vertex->dSpacetimeVertex.Vect();
 	
 	// Momentum direction is vector pointing from vertex to shower center
 	DVector3 pdir = shower->getPosition() - my_vertex;
