@@ -800,8 +800,9 @@ s_ForwardDC_t* pickForwardDC ()
 	 for (i=0;i<num_samples;i++){
 	   if (samples[i]>=THRESH_ANODE){
 	     if (returned_to_baseline==0){
-	       ahits->in[iok] = ahits->in[0]; // smallest doca
-	       
+	       ahits->in[iok].itrack = ahits->in[0].itrack;
+	       ahits->in[iok].ptype = ahits->in[0].ptype;
+
 	       // Do an interpolation to find the time at which the threshold
 	       // was crossed.
 	       float t_array[4];
@@ -817,13 +818,9 @@ s_ForwardDC_t* pickForwardDC ()
 	     }
 	     q+=samples[i];
 	   }
-	   if (samples[i]<THRESH_ANODE || i==num_samples-1){
+	   if (returned_to_baseline 
+	       && (samples[i]<THRESH_ANODE)){
 	     returned_to_baseline=0;   
-	     if (iok>0 && q>0.){
-	       float w_eff=0.0302; //keV
-	       ahits->in[iok-1].dE=q*w_eff/(GAS_GAIN*ELECTRON_CHARGE);
-	       q=0.;
-	     }
 	   }
 	 }
 	 free(samples);
@@ -861,23 +858,25 @@ s_ForwardDC_t* pickForwardDC ()
 	   //printf("t %f V %f\n",(float)i,samples[i]);
 	 }	 
 
-	 int returned_to_baseline=0;
+	 int threshold_toggle=0;
 	 int istart=0;
 	 float q=0;
 	 int FADC_BIN_SIZE=1;
 	 for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
 	   if (samples[i]>=THRESH_STRIPS){
-	     if (returned_to_baseline==0){
-	       chits->in[iok] = chits->in[0];
+	     if (threshold_toggle==0){
+	       chits->in[iok].itrack = chits->in[0].itrack;
+	       chits->in[iok].ptype = chits->in[0].ptype;
 	       chits->in[iok].t=(float) i;
 	       //chits->in[iok].q=samples[i];
 	       istart=i-1;
-	       returned_to_baseline=1;
-	       iok++;
-	       mok++;
+	       threshold_toggle=1;
+	       //iok++;
+	       //mok++;
 	     }
 	   }
-	   if (samples[i]<THRESH_STRIPS || i==num_samples-1){
+	   if (threshold_toggle && 
+	       (samples[i]<THRESH_STRIPS)){
 	     int j;
 	     // Find the first peak
 	     for (j=istart+1;j<i-1;j++){
@@ -885,17 +884,31 @@ s_ForwardDC_t* pickForwardDC ()
 		 chits->in[iok].q=samples[j];
 		 break;
 	       }
-	     }
-	     istart=i;
-	     returned_to_baseline=0;   
+	     } 
+	     threshold_toggle=0; 
+	     iok++;
+	     mok++;
+	     //break;
 	   }
 	 }
+	 i=num_samples-1;
+	 if (samples[i]>=THRESH_STRIPS&&threshold_toggle){
+	   int j;
+	   for (j=istart+1;j<i-1;j++){
+	     if (samples[j]>samples[j-1] && samples[j]>samples[j+1]){
+	       chits->in[iok].q=samples[j];
+	       break;
+	     }
+	   }
+	 }
+
 	 free(samples);
 
 
          if (iok)
          {
-            chits->mult = iok;
+	   chits->mult = iok;
+	   //chits->mult=1;
          }
          else if (chits != HDDM_NULL)
          {
