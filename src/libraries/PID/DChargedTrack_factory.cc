@@ -13,11 +13,10 @@ using namespace std;
 #include "DChargedTrack_factory.h"
 using namespace jana;
 
-bool DChargedTrack_track_cmp(const DTrackTimeBased *a,const DTrackTimeBased *b){
- return (a->FOM>b->FOM);
-}
+bool Compare_ChargedTrackHypotheses_FOM(const DChargedTrackHypothesis *locTrack1, const DChargedTrackHypothesis *locTrack2){
+	return (locTrack1->dFOM > locTrack2->dFOM);
+};
 
-;
 //------------------
 // init
 //------------------
@@ -29,7 +28,7 @@ jerror_t DChargedTrack_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DChargedTrack_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DChargedTrack_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
 	return NOERROR;
 }
@@ -37,48 +36,37 @@ jerror_t DChargedTrack_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DChargedTrack_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
- // Get tracks 
-  vector<const DTrackTimeBased*> tracks;
-  loop->Get(tracks);
-  if (tracks.size()==0) return RESOURCE_UNAVAILABLE;
+	unsigned int loc_i, loc_j;
+	const DChargedTrackHypothesis* locChargedTrackHypothesis;
+	DChargedTrack *locChargedTrack;
+	bool locIDMatchFlag;
 
-  // loop over the tracks, sorting them according to figure-of-merit and 
-  // grouping them by trackid
-  JObject::oid_t old_id=tracks[0]->candidateid;
-  vector<const DTrackTimeBased *>hypotheses;
-  for (unsigned int i=0;i<tracks.size();i++){
-    const DTrackTimeBased *track=tracks[i];
-    
-    if (old_id != track->candidateid){
-      // Create a new DChargedTrack object
-      DChargedTrack *charged_track = new DChargedTrack;
+	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
+	locEventLoop->Get(locChargedTrackHypotheses);
 
-      // Sort the hypothesis list according to figure-of-merit
-      sort(hypotheses.begin(),hypotheses.end(),DChargedTrack_track_cmp);
-      charged_track->hypotheses=hypotheses;
+	for(loc_i = 0; loc_i < locChargedTrackHypotheses.size(); loc_i++){
+		locChargedTrackHypothesis = locChargedTrackHypotheses[loc_i];
+		locIDMatchFlag = false;
+		for (loc_j = 0; loc_j < _data.size(); loc_j++){
+			if(locChargedTrackHypothesis->dTrackTimeBased->candidateid == _data[loc_j]->dChargedTrackHypotheses[0]->dTrackTimeBased->candidateid){
+				_data[loc_j]->dChargedTrackHypotheses.push_back(locChargedTrackHypothesis);
+				locIDMatchFlag = true;
+				break;
+			}
+		}
+		if(locIDMatchFlag == true)
+			continue;
+		locChargedTrack = new DChargedTrack();
+		locChargedTrack->dChargedTrackHypotheses.push_back(locChargedTrackHypothesis);
+		_data.push_back(locChargedTrack);
+	}
 
-      // Add to the data vector
-      _data.push_back(charged_track);
+	for(loc_i = 0; loc_i < _data.size(); loc_i++)
+      sort(_data[loc_i]->dChargedTrackHypotheses.begin(), _data[loc_i]->dChargedTrackHypotheses.end(), Compare_ChargedTrackHypotheses_FOM);
 
-      // Clear the hypothesis list for the next track
-      hypotheses.clear();
-    }
-    hypotheses.push_back(track);
-    old_id=track->candidateid;
-  }
-  // Final set
-  DChargedTrack *charged_track = new DChargedTrack;
-  
-  // Sort the hypothesis list according to figure-of-merit
-  sort(hypotheses.begin(),hypotheses.end(),DChargedTrack_track_cmp);
-  charged_track->hypotheses=hypotheses;
-  
-  // Add to the data vector
-  _data.push_back(charged_track);
-
-  return NOERROR;
+	return NOERROR;
 }
 
 //------------------

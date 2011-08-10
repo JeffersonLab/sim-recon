@@ -11,35 +11,46 @@
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 #include <PID/DVertex.h>
+#include <PID/DChargedTrack.h>
+#include <PID/DNeutralTrack.h>
 
-class DParticleSet:public jana::JObject{
- public:
-  JOBJECT_PUBLIC(DParticleSet);
+class DParticleSet : public jana::JObject{
+	public:
+		JOBJECT_PUBLIC(DParticleSet);
   
-  const DVertex *vertex;
-  vector<const DVertex::shower_info_t *>photon;
-  vector<vector<const DVertex::track_info_t *> >pip;  // list of pi pluses
-  vector<vector<const DVertex::track_info_t *> >pim;  // list of pi minuses
-  vector<vector<const DVertex::track_info_t *> >Kp; // list of K pluses
-  vector<vector<const DVertex::track_info_t *> >Km;  // list of K minuses
-  vector<vector<const DVertex::track_info_t *> >proton; // list of protons
-  vector<vector<const DVertex::track_info_t *> >otherp; // unidentified positively charged particles
-  vector<vector<const DVertex::track_info_t *> >otherm; // unidentified negatively charged particles
+		const DVertex *vertex;
+
+		vector<const DChargedTrack*> pip; // list of pi pluses
+		vector<const DChargedTrack*> pim; // list of pi minuses
+		vector<const DChargedTrack*> Kp; // list of K pluses
+		vector<const DChargedTrack*> Km; // list of K minuses
+		vector<const DChargedTrack*> proton; // list of protons
+		vector<const DChargedTrack*> otherp; // unidentified positively charged particles
+		vector<const DChargedTrack*> othern; // unidentified negatively charged particles
+
+		vector<const DNeutralTrack*> photon; //list of photons
+		vector<const DNeutralTrack*> neutron; //list of photons
+		vector<const DNeutralTrack*> otherz; //unidentified neutrally charged particles
+
+		vector<const DChargedTrack*> dChargedTracks; // list of all charged tracks associated with this DVertex
+		vector<const DNeutralTrack*> dNeutralTracks; // list of all neutral tracks associated with this DVertex
 
   // Print out some summary information about the contents of this class
   void toStrings(vector<pair<string,string> > &items)const{
-    AddString(items, "x", "%3.2f", vertex->x.X());
-    AddString(items, "y", "%3.2f", vertex->x.Y());
-    AddString(items, "z", "%3.2f", vertex->x.Z());
-    AddString(items, "t", "%3.2f", vertex->x.T());
+    AddString(items, "x", "%3.2f", vertex->dSpacetimeVertex.X());
+    AddString(items, "y", "%3.2f", vertex->dSpacetimeVertex.Y());
+    AddString(items, "z", "%3.2f", vertex->dSpacetimeVertex.Z());
+    AddString(items, "t", "%3.2f", vertex->dSpacetimeVertex.T());
     AddString(items, "Nphoton",      "%d", photon.size());
+    AddString(items, "Nneutron",      "%d", neutron.size());
     AddString(items, "Npi_plus",     "%d", pip.size());
     AddString(items, "Npi_minus",    "%d", pim.size());
     AddString(items, "Nproton",      "%d", proton.size());
     AddString(items, "NK_plus",      "%d", Kp.size());
     AddString(items, "NK_minus",     "%d", Km.size());    
-    AddString(items, "Notherp",      "%d",  otherp.size());      
-    AddString(items, "Notherm",      "%d",  otherm.size());      
+    AddString(items, "Notherp",      "%d",  otherp.size());
+    AddString(items, "Nothern",      "%d",  othern.size());
+    AddString(items, "Notherz",      "%d",  otherz.size());
 	
   }
 };

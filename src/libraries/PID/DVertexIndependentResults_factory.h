@@ -1,23 +1,20 @@
 // $Id$
 //
-//    File: DParticleSet_factory.h
-// Created: Tue Mar 15 11:17:35 EDT 2011
-// Creator: staylor (on Linux ifarml1 2.6.18-128.el5 x86_64)
+//    File: DVertexIndependentResults_factory.h
+// Created: Tue Aug  9 14:29:24 EST 2011
+// Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
-#ifndef _DParticleSet_factory_
-#define _DParticleSet_factory_
+#ifndef _DVertexIndependentResults_factory_
+#define _DVertexIndependentResults_factory_
 
 #include <JANA/JFactory.h>
-#include <PID/DParticleSet.h>
-#include <PID/DVertex.h>
-#include <PID/DChargedTrack.h>
-#include <PID/DNeutralTrack.h>
+#include <PID/DVertexIndependentResults.h>
 
-class DParticleSet_factory:public jana::JFactory<DParticleSet>{
+class DVertexIndependentResults_factory:public jana::JFactory<DVertexIndependentResults>{
 	public:
-		DParticleSet_factory(){};
-		~DParticleSet_factory(){};
+		DVertexIndependentResults_factory(){};
+		~DVertexIndependentResults_factory(){};
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -27,5 +24,5 @@ class DParticleSet_factory:public jana::JFactory<DParticleSet>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 };
 
-#endif // _DParticleSet_factory_
+#endif // _DVertexIndependentResults_factory_
 

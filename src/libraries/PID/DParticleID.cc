@@ -283,17 +283,14 @@ jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
 //------------------
 // Loop over TOF points, looking for minimum distance of closest approach
 // of track to a point in the TOF and using this to check for a match. 
-jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt,
-				 DTrackFitter::fit_type_t fit_type,
-				 vector<const DTOFPoint*>&tof_points,
-				 double &tproj, unsigned int &tof_match_id){
+jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime){
   tproj=NaN;
   tof_match_id=0;
   if (tof_points.size()==0) return RESOURCE_UNAVAILABLE;
 
   double dmin=10000.;
   // loop over tof points
-  double match_flight_time=0.;
+  double locTempPathLength;
   for (unsigned int k=0;k<tof_points.size();k++){
     // Get the TOF cluster position and normal vector for the TOF plane
     DVector3 tof_pos=tof_points[k]->pos;
@@ -302,13 +299,14 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt,
     
     // Find the distance of closest approach between the track trajectory
     // and the tof cluster position, looking for the minimum
-    double tflight=0.;
-    rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,NULL,&tflight);
+    double locTempFlightTime=0.;
+    rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,&locTempPathLength,&locTempFlightTime);
     double d=(tof_pos-proj_pos).Mag();
 
     if (d<dmin){
       dmin=d;
-      match_flight_time=tflight;
+      locPathLength = locTempPathLength;
+      locFlightTime = locTempFlightTime;
       tof_match_id=k;
     }
   }
@@ -320,7 +318,7 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt,
   else match_cut=4.0+0.488/p;
   if (dmin<match_cut){
     // Projected time at the target
-    tproj=tof_points[tof_match_id]->t-match_flight_time;
+    tproj=tof_points[tof_match_id]->t - locFlightTime;
 
     return NOERROR;
   }
@@ -333,31 +331,29 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt,
 //------------------
 // Loop over bcal clusters, looking for minimum distance of closest approach
 // of track to a cluster and using this to check for a match. 
-jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,
-				  DTrackFitter::fit_type_t fit_type,
-				vector<const DBCALShower*>&bcal_showers,
-				double &tproj,unsigned int &bcal_match_id){ 
+jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DBCALShower*>&bcal_showers, double &tproj, unsigned int &bcal_match_id, double &locPathLength, double &locFlightTime){
   tproj=NaN;
   bcal_match_id=0;
   if (bcal_showers.size()==0) return RESOURCE_UNAVAILABLE;
 
   //Loop over bcal showers
   double dmin=10000.;
-  double dphi=1000.,dz=1000.,match_flight_time=0.;
+  double dphi=1000.,dz=1000.;
+  double locTempPathLength;
   for (unsigned int k=0;k<bcal_showers.size();k++){
     // Get the BCAL cluster position and normal
     const DBCALShower *shower = bcal_showers[k];
     DVector3 bcal_pos(shower->x, shower->y, shower->z); 
     DVector3 proj_pos;
     // and the bcal cluster position, looking for the minimum
-    double my_s=0.;
-    double tflight=0.;
-    double d = rt->DistToRTwithTime(bcal_pos,&my_s,&tflight);
+    double locTempFlightTime=0.;
+    double d = rt->DistToRTwithTime(bcal_pos,&locTempPathLength,&locTempFlightTime);
     proj_pos = rt->GetLastDOCAPoint();
     
     if (d<dmin){
       dmin=d;
-      match_flight_time=tflight;
+      locPathLength = locTempPathLength;
+      locFlightTime = locTempFlightTime;
       bcal_match_id=k; 
       dz=proj_pos.z()-bcal_pos.z();
       dphi=proj_pos.Phi()-bcal_pos.Phi();
@@ -370,7 +366,7 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,
    double phi_sigma=0.025+5.8e-4/p/p/p;
    if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
      // Projected time at the target
-     tproj=bcal_showers[bcal_match_id]->t-match_flight_time;
+     tproj=bcal_showers[bcal_match_id]->t - locFlightTime;
     
      return NOERROR;
    }
@@ -383,20 +379,15 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,
 //------------------
 // Loop over fcal clusters, looking for minimum distance of closest approach
 // of track to a cluster and using this to check for a match. 
-jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, 
-				  DTrackFitter::fit_type_t fit_type,
-				  //vector<const DFCALCluster*>&fcal_clusters,
-				  vector<const DFCALShower*>&fcal_showers,
-				  double &tproj,unsigned int &fcal_match_id,
-				  double &dmin){ 
+jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DFCALShower*>&fcal_showers, double &tproj, unsigned int &fcal_match_id, double &locPathLength, double &locFlightTime){
   tproj=NaN;
   fcal_match_id=0;
   if (fcal_showers.size()==0) return RESOURCE_UNAVAILABLE;
   
   // Set minimum matching distance to a large default value
-  dmin=10000.;
+  double dmin=10000.;
   // loop over clusters
-  double match_flight_time=0.;
+  double locTempPathLength;
   for (unsigned int k=0;k<fcal_showers.size();k++){
     // Get the FCAL cluster position and normal vector for the TOF plane
     DVector3 fcal_pos=fcal_showers[k]->getPosition();
@@ -407,21 +398,22 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt,
 
     // Find the distance of closest approach between the track trajectory
     // and the tof cluster position, looking for the minimum
-    double tflight=0.;
-    rt->GetIntersectionWithPlane(fcal_pos,norm,proj_pos,dir,NULL,&tflight);
+    double locTempFlightTime=0.;
+    rt->GetIntersectionWithPlane(fcal_pos,norm,proj_pos,dir,&locTempPathLength,&locTempFlightTime);
     double d=(fcal_pos-proj_pos).Mag();
 
     if (d<dmin){
       dmin=d;
-      match_flight_time=tflight;
+      locPathLength = locTempPathLength;
+      locFlightTime = locTempFlightTime;
       fcal_match_id=k;
     }
   }
  
   // Check for a match 
   if(dmin<5.0 /* temporary */){
-    tproj=fcal_showers[fcal_match_id]->getTime()-match_flight_time;
-    
+    tproj=fcal_showers[fcal_match_id]->getTime() - locFlightTime;
+    tproj -= 2.218; // correction determined from fit to simulated data 
     return NOERROR;
   }
 
@@ -511,3 +503,31 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt,
   }
   return VALUE_OUT_OF_RANGE;
 }
+
+Particle_t DParticleID::IDTrack(float locCharge, float locMass){
+	float locMassTolerance = 0.010;
+	if (locCharge > 0.0){ // Positive particles
+		if (fabs(locMass - ParticleMass(Proton)) < locMassTolerance) return Proton;
+		if (fabs(locMass - ParticleMass(PiPlus)) < locMassTolerance) return PiPlus;
+		if (fabs(locMass - ParticleMass(KPlus)) < locMassTolerance) return KPlus;
+		if (fabs(locMass - ParticleMass(Positron)) < locMassTolerance) return Positron;
+		if (fabs(locMass - ParticleMass(MuonPlus)) < locMassTolerance) return MuonPlus;
+//		if (locMass < 0.3) return PiPlus;
+//		else if (locMass >= 0.3 && locMass < 0.7) return KPlus;
+//		else if (locMass >= 0.7 && locMass < 1.0) return Proton;
+	} else if (locCharge < 0.0){ // Negative particles
+		if (fabs(locMass - ParticleMass(PiMinus)) < locMassTolerance) return PiMinus;
+		if (fabs(locMass - ParticleMass(KMinus)) < locMassTolerance) return KMinus;
+		if (fabs(locMass - ParticleMass(MuonMinus)) < locMassTolerance) return MuonMinus;
+		if (fabs(locMass - ParticleMass(Electron)) < locMassTolerance) return Electron;
+		if (fabs(locMass - ParticleMass(AntiProton)) < locMassTolerance) return AntiProton;
+//		if (locMass < 0.3) return PiMinus;
+//		else if (locMass >= 0.3 && locMass < 0.7) return KMinus;
+	} else { //Neutral Track
+		if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
+		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
+//		return ((locMass > 0.4) ? Neutron : Gamma);
+	}
+	return Unknown;
+}
+

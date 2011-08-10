@@ -26,7 +26,6 @@ jerror_t DPhysicsEvent_factory::init(void)
 //------------------
 jerror_t DPhysicsEvent_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-
   return NOERROR;
 }
 
@@ -35,21 +34,14 @@ jerror_t DPhysicsEvent_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 jerror_t DPhysicsEvent_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-  vector<const DParticleSet *>particle_sets;
-  loop->Get(particle_sets);
+	//Only one DPhysicsEvent is generated.  
+	DPhysicsEvent *locPhysicsEvent = new DPhysicsEvent;
+	loop->Get(locPhysicsEvent->particle_sets); //DParticleSet
 
-  // DPhysicsEvent for each particle set
-  for(unsigned int i=0; i<particle_sets.size(); i++){
-    DPhysicsEvent *pe = new DPhysicsEvent;
-    
-    pe->particle_sets.push_back(particle_sets[i]);
-    
-		
-    // "Publish" the DPhysicsEvent object 
-    _data.push_back(pe);
-  }
-	
-  return NOERROR;
+	// "Publish" the DPhysicsEvent object 
+	_data.push_back(locPhysicsEvent);
+
+	return NOERROR;
 }
 
 //------------------

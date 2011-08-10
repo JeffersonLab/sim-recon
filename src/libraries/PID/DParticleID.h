@@ -20,6 +20,8 @@
 #include <START_COUNTER/DSCHit.h>
 #include <TRACKING/DTrackFitter.h>
 #include <TRACKING/DReferenceTrajectory.h>
+#include <particleType.h>
+#include <PID/DChargedTrackHypothesis.h>
 
 class DTrackTimeBased;
 class DCDCTrackHit;
@@ -56,23 +58,16 @@ class DParticleID:public jana::JObject{
   jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks,
 		       vector<vector<const DTrackTimeBased*> >&grouped_tracks);
 
-  jerror_t MatchToTOF(const DReferenceTrajectory *rt,
-		      DTrackFitter::fit_type_t fit_type,
-		      vector<const DTOFPoint*>&tof_points,
-		      double &tproj, unsigned int &tof_match_id);
-  jerror_t MatchToBCAL(const DReferenceTrajectory *rt,
-		      DTrackFitter::fit_type_t fit_type,
-		       vector<const DBCALShower*>&bcal_showers,
-		       double &tproj,unsigned int &bcal_match_id); 
-  jerror_t MatchToFCAL(const DReferenceTrajectory *rt,
-		      DTrackFitter::fit_type_t fit_type,
-		       vector<const DFCALShower*>&fcal_showers,
-		       double &tproj,unsigned int &fcal_match_id,
-		       double &dmin);
+  jerror_t MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime);
+  jerror_t MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DBCALShower*>&bcal_showers, double &tproj, unsigned int &bcal_match_id, double &locPathLength, double &locFlightTime); 
+  jerror_t MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DFCALShower*>&fcal_showers, double &tproj, unsigned int &fcal_match_id, double &locPathLength, double &locFlightTime);
   jerror_t MatchToSC(const DReferenceTrajectory *rt, 
 		     DTrackFitter::fit_type_t fit_type,
 		     vector<const DSCHit*>&sc_hits,
 		     double &tproj,unsigned int &sc_match_id);
+
+  virtual Particle_t IDTrack(float locCharge, float locMass);
+
 
  private: 
   //< DGeometry pointer used to access materials through calibDB maps for eloss

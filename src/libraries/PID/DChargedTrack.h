@@ -10,18 +10,15 @@
 
 #include <vector>
 #include <JANA/JObject.h>
-#include <JANA/JFactory.h>
-#include <TRACKING/DTrackTimeBased.h>
+#include <PID/DChargedTrackHypothesis.h>
+
 using namespace std;
 
 class DChargedTrack:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DChargedTrack);
 
-		vector<const DTrackTimeBased *>hypotheses;
-		                
-	
-
+		vector<const DChargedTrackHypothesis *> dChargedTrackHypotheses;
 };
 
 #endif // _DChargedTrack_

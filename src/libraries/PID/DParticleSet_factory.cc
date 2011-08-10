@@ -11,7 +11,6 @@
 using namespace std;
 
 #include "DParticleSet_factory.h"
-#include <TRACKING/DTrackTimeBased.h>
 using namespace jana;
 
 //------------------
@@ -25,7 +24,7 @@ jerror_t DParticleSet_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DParticleSet_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DParticleSet_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
 	return NOERROR;
 }
@@ -33,54 +32,73 @@ jerror_t DParticleSet_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DParticleSet_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DParticleSet_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
-  // Get vertices
-  vector<const DVertex *>vertices;
-  loop->Get(vertices);
+	unsigned int loc_i, loc_j;
+	const DChargedTrack *locChargedTrack;
+	const DNeutralTrack *locNeutralTrack;
+	DParticleSet *locParticleSet;
 
-  // Sort according to particle type
-  for (unsigned int i=0;i<vertices.size();i++){
-    DParticleSet *particle_set = new DParticleSet;
-    particle_set->vertex=vertices[i];
+	vector<const DVertex *> locVertices;
+	vector<const DNeutralTrack *> locNeutralTracks;
+	vector<const DVertex *> locAssociatedVertices;
+	locEventLoop->Get(locVertices);
+	locEventLoop->Get(locNeutralTracks);
 
-    // Charged particles:  take the first entry in each hypothesis list; this entry has the 
-    // highest figure of merit.
-    for (unsigned int k=0;k<vertices[i]->hypotheses.size();k++){
-      const DVertex::track_info_t *track_info=&vertices[i]->hypotheses[k][0];
-      const DTrackTimeBased *track=track_info->track;
-      double mass=track->mass();
-      
-      // Create a list of pointers to the results for the various hypotheses for this track
-      vector<const DVertex::track_info_t*>hypothesis_list;
-      for (unsigned int m=0;m<vertices[i]->hypotheses[k].size();m++){
-	hypothesis_list.push_back(&vertices[i]->hypotheses[k][m]);
-      }
+	// Sort according to particle type
+	for (loc_i = 0; loc_i < locVertices.size(); loc_i++){
+		locParticleSet = new DParticleSet;
+		locParticleSet->vertex = locVertices[loc_i];
 
-      // Deal with positive particles
-      if (track->charge()>0){
-	if (mass<0.3) particle_set->pip.push_back(hypothesis_list);
-	else if (mass>=0.3 && mass<0.7) particle_set->Kp.push_back(hypothesis_list);
-	else if (mass>=0.7 && mass<1.0) particle_set->proton.push_back(hypothesis_list);
-	
-      }
-      else{ // Deal with negative particles
-	if (mass<0.3) particle_set->pim.push_back(hypothesis_list);
-	else if (mass>=0.3 && mass<0.7) particle_set->Km.push_back(hypothesis_list);
-      }
-    }
-    // Now deal with photons
-    for (unsigned int k=0;k<vertices[i]->showers.size();k++){
-      if (vertices[i]->showers[k].matched_track==NULL){
-	particle_set->photon.push_back(&vertices[i]->showers[k]);
-      }
-    }
+		// Charged particles
+		for (loc_j = 0; loc_j < locVertices[loc_i]->dChargedTracks.size(); loc_j++){
+			locChargedTrack = locVertices[loc_i]->dChargedTracks[loc_j];
+			locParticleSet->dChargedTracks.push_back(locChargedTrack);
+			switch (locChargedTrack->dChargedTrackHypotheses[0]->dPID) {
+				case PiPlus :
+					locParticleSet->pip.push_back(locChargedTrack);
+					break;
+				case PiMinus :
+					locParticleSet->pim.push_back(locChargedTrack);
+					break;
+				case KPlus :
+					locParticleSet->Kp.push_back(locChargedTrack);
+					break;
+				case KMinus :
+					locParticleSet->Km.push_back(locChargedTrack);
+					break;
+				case Proton :
+					locParticleSet->proton.push_back(locChargedTrack);
+					break;
+				default :
+					(locChargedTrack->dChargedTrackHypotheses[0]->dTrackTimeBased->charge() > 0.0) ? locParticleSet->otherp.push_back(locChargedTrack) : locParticleSet->othern.push_back(locChargedTrack);
+					break;
+			}
+		}
 
+		// Neutral particles
+		for (loc_j = 0; loc_j < locNeutralTracks.size(); loc_j++){
+			locNeutralTrack = locNeutralTracks[loc_j];
+			locNeutralTrack->dNeutralTrackHypotheses[0]->GetT(locAssociatedVertices);
+			if (locAssociatedVertices[0]->id != locVertices[loc_i]->id)
+				continue;
+			locParticleSet->dNeutralTracks.push_back(locNeutralTrack);
+			switch (locNeutralTrack->dNeutralTrackHypotheses[0]->dPID) {
+				case Gamma :
+					locParticleSet->photon.push_back(locNeutralTrack);
+					break;
+				case Neutron :
+					locParticleSet->neutron.push_back(locNeutralTrack);
+					break;
+				default :
+					locParticleSet->otherz.push_back(locNeutralTrack);
+					break;
+			}
+		}
+		_data.push_back(locParticleSet);
+	}
 
-    _data.push_back(particle_set);
-  }
-
-  return NOERROR;
+	return NOERROR;
 }
 
 //------------------
