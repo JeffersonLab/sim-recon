@@ -614,8 +614,10 @@ void DTrackTimeBased_factory
     start_time.system=SYS_START;
     start_times.push_back(start_time); 
   }
+
+  double locPathLength, locFlightTime;
   if (pid_algorithm->MatchToTOF(track->rt,DTrackFitter::kWireBased,tof_points,
-				tproj,tof_id)==NOERROR){
+				tproj,tof_id, locPathLength, locFlightTime)==NOERROR){
     // Fill in the start time vector
     start_time.t0=tproj;
     start_time.t0_sigma=0.1;
@@ -623,7 +625,7 @@ void DTrackTimeBased_factory
     start_times.push_back(start_time); 
   }
   if (pid_algorithm->MatchToBCAL(track->rt,DTrackFitter::kWireBased,
-				      bcal_showers,tproj,bcal_id)
+				      bcal_showers,tproj,bcal_id, locPathLength, locFlightTime)
 	   ==NOERROR){
     // Fill in the start time vector
     start_time.t0=tproj;
