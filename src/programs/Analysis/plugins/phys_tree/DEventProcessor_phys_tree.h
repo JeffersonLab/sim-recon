@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DEventProcessor_trackres_tree.h
+//    File: DEventProcessor_phys_tree.h
 // Created: Wed Sep  2 20:25:05 EDT 2009
 // Creator: davidl (on Darwin harriet.jlab.org 9.6.0 i386)
 //
@@ -21,7 +21,8 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 
 #include <PID/DKinematicData.h>
-#include <PID/DPhoton.h>
+#include <PID/DChargedTrack.h>
+#include <PID/DNeutralTrack.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DTrackWireBased.h>
@@ -46,6 +47,7 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		class particle_set{
 			public:
 				vector<Particle> photons;
+				vector<Particle> neutrons;
 				vector<Particle> piplus;
 				vector<Particle> piminus;
 				vector<Particle> protons;
@@ -68,8 +70,8 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 		
 		Particle MakeParticle(const DKinematicData *kd, double mass);
-		Particle MakeParticle(const DTrackTimeBased *trk, double mass);
-		Particle MakeParticle(const DVertex::shower_info_t *phtn, double mass);
+		Particle MakeParticle(const DChargedTrackHypothesis *locChargedTrackHypothesis, double mass);
+		Particle MakeParticle(const DNeutralTrackHypothesis *locNeutralTrackHypothesis, double mass);
 		bool IsFiducial(const DKinematicData *kd);
 		void FillEvent(Event *evt, particle_set &pset, particle_set &pset_match);
 		Particle FindBestMatch(const Particle &primary, vector<Particle> &secondaries);

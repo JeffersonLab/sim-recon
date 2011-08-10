@@ -30,12 +30,15 @@ class Event:public TObject{
 		UInt_t NKm;
 		UInt_t Nproton;
 		UInt_t Nphoton;
+		UInt_t Nneutron;
+
 		TClonesArray *pip;
 		TClonesArray *pim;
 		TClonesArray *Kp;
 		TClonesArray *Km;
 		TClonesArray *proton;
 		TClonesArray *photon;
+		TClonesArray *neutron;
 
 		TClonesArray *pip_match;		///< Closest match pi+ (truth or recon, whatever is not in pip)
 		TClonesArray *pim_match;		///< Closest match pi- (truth or recon, whatever is not in pim)
@@ -43,15 +46,17 @@ class Event:public TObject{
 		TClonesArray *Km_match;			///< Closest match K- (truth or recon, whatever is not in Km)
 		TClonesArray *proton_match;	///< Closest match proton (truth or recon, whatever is not in proton)
 		TClonesArray *photon_match;	///< Closest match photon (truth or recon, whatever is not in photon)
+		TClonesArray *neutron_match;	///< Closest match neutron (truth or recon, whatever is not in neutron)
 
 		TLorentzVector target;	// Initial state target momentum
 		TLorentzVector beam;		// Initial state target beam photon momentum
 		TVector3 vertex;			// Vertex position
 		TLorentzVector W;			// Final state 4-momentum of everything *except* the proton(s)
 
-		bool all_fiducial;			// True if the following three are true
+		bool all_fiducial;			// True if the following four are true
 		bool all_mesons_fiducial;	// True if all pi+ and pi- are in fiducial region
 		bool all_photons_fiducial;	// True if all photons are in fiducial region
+		bool all_neutrons_fiducial;	// True if all neutrons are in fiducial region
 		bool all_protons_fiducial;	// True if all protons are in fiducial region
 
 	private:

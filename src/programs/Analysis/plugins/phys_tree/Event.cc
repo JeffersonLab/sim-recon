@@ -21,6 +21,7 @@ Event::Event()
 	Km = new TClonesArray("Particle", MAX_PART);
 	proton = new TClonesArray("Particle", MAX_PART);
 	photon = new TClonesArray("Particle", MAX_PART);
+	neutron = new TClonesArray("Particle", MAX_PART);
 
 	pip_match = new TClonesArray("Particle", MAX_PART);
 	pim_match = new TClonesArray("Particle", MAX_PART);
@@ -28,6 +29,7 @@ Event::Event()
 	Km_match = new TClonesArray("Particle", MAX_PART);
 	proton_match = new TClonesArray("Particle", MAX_PART);
 	photon_match = new TClonesArray("Particle", MAX_PART);
+	neutron_match = new TClonesArray("Particle", MAX_PART);
 }
 
 //------------------
@@ -41,6 +43,7 @@ Event::~Event()
 	delete Km;
 	delete proton;
 	delete photon;
+	delete neutron;
 
 	delete pip_match;
 	delete pim_match;
@@ -48,6 +51,7 @@ Event::~Event()
 	delete Km_match;
 	delete proton_match;
 	delete photon_match;
+	delete neutron_match;
 }
 
 //------------------
@@ -61,12 +65,14 @@ void Event::Clear(void)
 	NKm = 0;
 	Nproton = 0;
 	Nphoton = 0;
+	Nneutron = 0;
 	pip->Clear();		// delete entries in TClonesArray (without freeing memory)
 	pim->Clear();		// delete entries in TClonesArray (without freeing memory)
 	Kp->Clear();		// delete entries in TClonesArray (without freeing memory)
 	Km->Clear();		// delete entries in TClonesArray (without freeing memory)
 	proton->Clear();	// delete entries in TClonesArray (without freeing memory)
 	photon->Clear();	// delete entries in TClonesArray (without freeing memory)
+	neutron->Clear();	// delete entries in TClonesArray (without freeing memory)
 
 	pip_match->Clear();
 	pim_match->Clear();
@@ -74,6 +80,7 @@ void Event::Clear(void)
 	Km_match->Clear();
 	proton_match->Clear();
 	photon_match->Clear();
+	neutron_match->Clear();
 	
 	target.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	beam.SetXYZT(0.0, 0.0, 0.0, 0.0);
@@ -83,6 +90,7 @@ void Event::Clear(void)
 	all_fiducial = false;
 	all_mesons_fiducial = false;
 	all_photons_fiducial = false;
+	all_neutrons_fiducial = false;
 	all_protons_fiducial = false;
 }
 

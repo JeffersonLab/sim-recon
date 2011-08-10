@@ -25,13 +25,10 @@ using namespace std;
 using namespace jana;
 
 #include <PID/DKinematicData.h>
-#include <PID/DChargedTrack.h>
-#include <PID/DPhoton.h>
 #include <PID/DBeamPhoton.h>
 #include <PID/DParticleSet.h>
 #include <PID/DPhysicsEvent.h>
 #include <TRACKING/DMCThrown.h>
-#include <TRACKING/DTrackTimeBased.h>
 
 bool static CompareLorentzEnergy(const Particle &a, const Particle &b){
   return a.p.E()<b.p.E();
@@ -112,14 +109,10 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	// Get reconstructed objects and make TLorentz vectors out of each of them
 	vector<const DBeamPhoton*> beam_photons;
 	vector<const DMCThrown*> mcthrowns;
-	vector<const DPhoton*> photons;
-	vector<const DChargedTrack*> chargedtracks;
 	vector<const DPhysicsEvent*> physicsevents;
 
 	loop->Get(beam_photons);
 	loop->Get(mcthrowns);
-	loop->Get(photons);
-	loop->Get(chargedtracks);
 	loop->Get(physicsevents);
 
 	// Make Particle object for beam photon
@@ -142,65 +135,76 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 		int Nparts = ps->pip.size() + ps->pim.size()
 		        + ps->photon.size() + ps->proton.size()
 		        + ps->Kp.size()     + ps->Km.size()
-		        + ps->otherp.size() + ps->otherm.size();
+		        + ps->otherp.size() + ps->othern.size()
+		        + ps->otherz.size() + ps->neutron.size();
 		if(Nparts>max_parts || physicsevents[i]==NULL){
 			physicsevent = physicsevents[i];
 			max_parts = Nparts;
 		}
 	}
-	
+
 	// Create Particle objects for each of the common particle types
 	particle_set rec;
+
 	if (physicsevent!=NULL){
 	  const DParticleSet *particle_set=physicsevent->particle_sets[0];
 	  for(unsigned int j=0; j<particle_set->photon.size(); j++){
 		// photon
-	    rec.photons.push_back(MakeParticle(particle_set->photon[j], 0.0));
+	    rec.photons.push_back(MakeParticle(particle_set->photon[j]->dNeutralTrackHypotheses[0], 0.0));
+	  }
+	  for(unsigned int j=0; j<particle_set->neutron.size(); j++){
+		// neutron
+	    rec.neutrons.push_back(MakeParticle(particle_set->neutron[j]->dNeutralTrackHypotheses[0], 0.939565));
 	  }
 	  for(unsigned int j=0; j<particle_set->pip.size(); j++){
 	    // pi+
-	    rec.piplus.push_back(MakeParticle(particle_set->pip[j][0]->track, 0.13957));
+	    rec.piplus.push_back(MakeParticle(particle_set->pip[j]->dChargedTrackHypotheses[0], 0.13957));
 	  }
 	  for(unsigned int j=0; j<particle_set->pim.size(); j++){
 	    // pi-
-	    rec.piminus.push_back(MakeParticle(particle_set->pim[j][0]->track, 0.13957));
+	    rec.piminus.push_back(MakeParticle(particle_set->pim[j]->dChargedTrackHypotheses[0], 0.13957));
 	  }
 	  for(unsigned int j=0; j<particle_set->proton.size(); j++){
 	    // proton
-	    rec.protons.push_back(MakeParticle(particle_set->proton[j][0]->track, 0.93827));
+	    rec.protons.push_back(MakeParticle(particle_set->proton[j]->dChargedTrackHypotheses[0], 0.93827));
 	  }
 	  for(unsigned int j=0; j<particle_set->Kp.size(); j++){
 	    // K+
-	    rec.Kplus.push_back(MakeParticle(particle_set->Kp[j][0]->track, 0.493677));
+	    rec.Kplus.push_back(MakeParticle(particle_set->Kp[j]->dChargedTrackHypotheses[0], 0.493677));
 	  }
 	  for(unsigned int j=0; j<particle_set->Km.size(); j++){
-	    // Ki+
-	    rec.Kminus.push_back(MakeParticle(particle_set->Km[j][0]->track, 0.493677));
+	    // K-
+	    rec.Kminus.push_back(MakeParticle(particle_set->Km[j]->dChargedTrackHypotheses[0], 0.493677));
 	  }  
 	}
+
 	// Create Particle objects for thrown particles
 	bool all_mesons_fiducial = true;
 	bool all_photons_fiducial = true;
+	bool all_neutrons_fiducial = true;
 	bool all_protons_fiducial = true;
 	particle_set thr;
 	for(unsigned int k=0; k<mcthrowns.size(); k++){
 	  switch(mcthrowns[k]->type){
-	  case  1: thr.photons.push_back(MakeParticle(mcthrowns[k], 0.0));
+	  case  1: thr.photons.push_back(MakeParticle((DKinematicData*)mcthrowns[k], 0.0));
 	    all_photons_fiducial &= IsFiducial(mcthrowns[k]);
 	    break;
-	  case  8: thr.piplus.push_back(MakeParticle(mcthrowns[k], 0.13957));
+	  case  8: thr.piplus.push_back(MakeParticle((DKinematicData*)mcthrowns[k], 0.13957));
 	      all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
 	      break;
-	  case  9: thr.piminus.push_back(MakeParticle(mcthrowns[k], 0.13957));
+	  case  9: thr.piminus.push_back(MakeParticle((DKinematicData*)mcthrowns[k], 0.13957));
 	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
 	    break;
-	  case 11: thr.Kplus.push_back(MakeParticle(mcthrowns[k], 0.493677));
+	  case 11: thr.Kplus.push_back(MakeParticle((DKinematicData*)mcthrowns[k], 0.493677));
 	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
 	    break;
-	  case 12: thr.Kminus.push_back(MakeParticle(mcthrowns[k], 0.493677));
+	  case 12: thr.Kminus.push_back(MakeParticle((DKinematicData*)mcthrowns[k], 0.493677));
 	    all_mesons_fiducial &= IsFiducial(mcthrowns[k]);
 	    break;
-	  case 14: thr.protons.push_back(MakeParticle(mcthrowns[k], 0.93827));
+	  case 13: thr.neutrons.push_back(MakeParticle((DKinematicData*)mcthrowns[k], 0.939565));
+	    all_neutrons_fiducial &= IsFiducial(mcthrowns[k]);
+	    break;
+	  case 14: thr.protons.push_back(MakeParticle((DKinematicData*)mcthrowns[k], 0.93827));
 	    all_protons_fiducial &= IsFiducial(mcthrowns[k]);
 	      break;
 	  }
@@ -216,15 +220,17 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	FillEvent(evt_thrown, thr, rec);
 
 	// Copy fiducial cuts (based only on thrown values) to both trees
-	bool all_fiducial = all_mesons_fiducial && all_photons_fiducial && all_protons_fiducial;
+	bool all_fiducial = all_mesons_fiducial && all_photons_fiducial && all_protons_fiducial && all_neutrons_fiducial;
 	evt_recon->all_fiducial = all_fiducial;
 	evt_recon->all_mesons_fiducial = all_mesons_fiducial;
 	evt_recon->all_photons_fiducial = all_photons_fiducial;
+	evt_recon->all_neutrons_fiducial = all_neutrons_fiducial;
 	evt_recon->all_protons_fiducial = all_protons_fiducial;
 
 	evt_thrown->all_fiducial = all_fiducial;
 	evt_thrown->all_mesons_fiducial = all_mesons_fiducial;
 	evt_thrown->all_photons_fiducial = all_photons_fiducial;
+	evt_thrown->all_neutrons_fiducial = all_neutrons_fiducial;
 	evt_thrown->all_protons_fiducial = all_protons_fiducial;
 
 	// Copy event number to both trees and add this event to them
@@ -275,15 +281,15 @@ Particle DEventProcessor_phys_tree::MakeParticle(const DKinematicData *kd, doubl
 //------------------
 // MakeParticle
 //------------------
-Particle DEventProcessor_phys_tree::MakeParticle(const DTrackTimeBased *trk, double mass)
+Particle DEventProcessor_phys_tree::MakeParticle(const DChargedTrackHypothesis *locChargedTrackHypothesis, double mass)
 {
 	// Most values get set using DKinematicData part
-	Particle part = MakeParticle((DKinematicData*)trk, mass);
+	Particle part = MakeParticle((DKinematicData*)locChargedTrackHypothesis->dTrackTimeBased, mass);
 
-	// Things specific to DTrackTimeBased
-	part.chisq = trk->chisq;
-	part.Ndof = trk->Ndof;
-	part.FOM_pid = trk->FOM;
+	// Things specific to DChargedTrackHypothesis
+	part.chisq = locChargedTrackHypothesis->dChiSq;
+	part.Ndof = locChargedTrackHypothesis->dNDF;
+	part.FOM_pid = locChargedTrackHypothesis->dFOM;
 
 	return part;
 }
@@ -291,16 +297,16 @@ Particle DEventProcessor_phys_tree::MakeParticle(const DTrackTimeBased *trk, dou
 //------------------
 // MakeParticle
 //------------------
-Particle DEventProcessor_phys_tree::MakeParticle(const DVertex::shower_info_t *phtn, double mass)
+Particle DEventProcessor_phys_tree::MakeParticle(const DNeutralTrackHypothesis *locNeutralTrackHypothesis, double mass)
 {
 	// Most values get set using DKinematicData part
-	Particle part = MakeParticle((DKinematicData*)phtn, mass);
+	Particle part = MakeParticle(locNeutralTrackHypothesis->dKinematicData, mass);
 
-	// Things specific to DPhoton
-	//part.chisq = ;
-	//part.Ndof = ;
-	//part.FOM_pid = ;
-	
+	// Things specific to DNeutralTrackHypothesis
+	part.chisq = locNeutralTrackHypothesis->dChiSq;
+	part.Ndof = locNeutralTrackHypothesis->dNDF;
+	part.FOM_pid = locNeutralTrackHypothesis->dFOM;
+
 	return part;
 }
 
@@ -309,7 +315,9 @@ Particle DEventProcessor_phys_tree::MakeParticle(const DVertex::shower_info_t *p
 //------------------
 void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, particle_set &pset_match)
 {
+
 	vector<Particle> &photon = pset.photons;
+	vector<Particle> &neutron = pset.neutrons;
 	vector<Particle> &pip = pset.piplus;
 	vector<Particle> &pim = pset.piminus;
 	vector<Particle> &Kp = pset.Kplus;
@@ -317,6 +325,7 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 	vector<Particle> &proton = pset.protons;
 
 	vector<Particle> &photon_match = pset_match.photons;
+	vector<Particle> &neutron_match = pset_match.neutrons;
 	vector<Particle> &pip_match = pset_match.piplus;
 	vector<Particle> &pim_match = pset_match.piminus;
 	vector<Particle> &Kp_match = pset_match.Kplus;
@@ -325,6 +334,7 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 
 	// Sort particle arrays by energy
 	sort(photon.begin(), photon.end(), CompareLorentzEnergy);
+	sort(neutron.begin(), neutron.end(), CompareLorentzEnergy);
 	sort(pip.begin(), pip.end(), CompareLorentzEnergy);
 	sort(pim.begin(), pim.end(), CompareLorentzEnergy);
 	sort(Kp.begin(), Kp.end(), CompareLorentzEnergy);
@@ -340,6 +350,17 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 		TClonesArray &prts = *(evt->photon);
 		Particle *prt = new(prts[evt->Nphoton++]) Particle();
 		*prt = photon[i];
+	}
+
+	// Add neutrons
+	for(unsigned int i=0; i<neutron.size(); i++){
+		TClonesArray &prts_match = *(evt->neutron_match);
+		Particle *prt_match = new(prts_match[evt->Nneutron]) Particle();
+		*prt_match = FindBestMatch(neutron[i], neutron_match);
+
+		TClonesArray &prts = *(evt->neutron);
+		Particle *prt = new(prts[evt->Nneutron++]) Particle();
+		*prt = neutron[i];
 	}
 
 	// Add piplus
@@ -399,11 +420,11 @@ void DEventProcessor_phys_tree::FillEvent(Event *evt, particle_set &pset, partic
 	
 	// Calculate W of reconstructed particles
 	for(unsigned int i=0; i<photon.size(); i++)evt->W += photon[i].p;
+	for(unsigned int i=0; i<neutron.size(); i++)evt->W += neutron[i].p;
 	for(unsigned int i=0; i<pip.size(); i++)evt->W += pip[i].p;
 	for(unsigned int i=0; i<pim.size(); i++)evt->W += pim[i].p;
 	for(unsigned int i=0; i<Kp.size(); i++)evt->W += Kp[i].p;
 	for(unsigned int i=0; i<Km.size(); i++)evt->W += Km[i].p;
-
 }
 
 //------------------
