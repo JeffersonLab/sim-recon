@@ -33,7 +33,6 @@ class DNeutralShowerCandidate : public jana::JObject{
 			dEnergyUncertainty = (dEnergy >= 0.0) ? pow( 0.0445*sqrt( dEnergy ) + 0.009*dEnergy, 2.0) : 1e-6; //from old DPhoton_factory::makeBCalPhoton() function
 			dSpacetimeVertex.SetXYZT(locBCALShower->x, locBCALShower->y, locBCALShower->z, locBCALShower->t);
 			dSpacetimeVertexUncertainties.SetXYZT(locBCALShower->xErr, locBCALShower->yErr, locBCALShower->zErr, locBCALShower->tErr);
-			this->AddAssociatedObject(locBCALShower);
 		}
 
 		DNeutralShowerCandidate(const DFCALShower *locFCALShower){
@@ -44,7 +43,6 @@ class DNeutralShowerCandidate : public jana::JObject{
 			dSpacetimeVertex.SetT(locFCALShower->getTime());
 			dSpacetimeVertexUncertainties.SetVect(locFCALShower->getPositionError());
 			dSpacetimeVertexUncertainties.SetT(0.0); //not stored in DFCALShower
-			this->AddAssociatedObject(locFCALShower);
 		}
 };
 

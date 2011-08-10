@@ -126,7 +126,7 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				locChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
 				locFOM = TMath::Prob(locChiSq, locNDF);
 				if(locPIDHypotheses[loc_k] == Neutron)
-					locFOM = 0.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
+					locFOM = -1.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
 
 				// Build DKinematicData
 				locKinematicData = new DKinematicData;
