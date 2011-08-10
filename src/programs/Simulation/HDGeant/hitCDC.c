@@ -530,19 +530,22 @@ s_CentralDC_t* pickCentralDC ()
 	 for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
 	   if (samples[i]>=THRESH_MV){
 	     if (returned_to_baseline==0){
-	       hits->in[iok] = hits->in[0];
+	       hits->in[iok].itrack = hits->in[0].itrack;
+	       hits->in[iok].ptype = hits->in[0].ptype;
 	       hits->in[iok].t=(float) i;
 	       returned_to_baseline=1;
 	       iok++;
 	     }
 	     q+=(float)FADC_BIN_SIZE*samples[i];
 	   }
-	   if (samples[i]<THRESH_MV || i==num_samples-1){
+	   if (returned_to_baseline 
+	       && (samples[i]<THRESH_MV)){
 	     returned_to_baseline=0;   
 	     if (iok>0 && q>0.){
 	       hits->in[iok-1].dE=q*w_eff/(GAS_GAIN*ELECTRON_CHARGE);;
 	       q=0.;
 	     }
+	     break;
 	   }
 	 }
 	 if (q>0){
