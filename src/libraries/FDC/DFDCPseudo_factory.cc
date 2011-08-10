@@ -74,7 +74,7 @@ jerror_t DFDCPseudo_factory::init(void)
 {
   RIN_FIDUCIAL = 1.5;
   ROUT_FIDUCIAL=48.0;
-  MAX_ALLOWED_FDC_HITS=(5+5+1)*24*10;
+  MAX_ALLOWED_FDC_HITS=20000;
   STRIP_ANODE_TIME_CUT=10.;
 
   gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm"); 
