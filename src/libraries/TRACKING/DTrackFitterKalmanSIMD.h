@@ -27,7 +27,7 @@
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
 #define Z_MIN 0.
-#define Z_MAX 370.
+#define Z_MAX 600.
 #define R_MAX 65.0
 #define R_MAX_FORWARD 88.0
 #ifndef SPEED_OF_LIGHT

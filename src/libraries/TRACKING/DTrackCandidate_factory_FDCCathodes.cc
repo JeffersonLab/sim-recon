@@ -22,7 +22,7 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_VAR 10.0 // cm^2
+#define BEAM_VAR 1.0 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
 #define Z_MAX 85.0
@@ -261,7 +261,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  num_hits+=match4->hits.size();
 	}
 	// Fake point at origin
-	//fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitTrackRiemann(mysegments[0]->rc)==NOERROR){      
 	  // Charge
 	  //if (q==0) 
@@ -638,11 +638,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  z_vertex=Z_VERTEX;
 	}
       }		
-      	pos.SetX(segment->hits[0]->xy.X());
-	pos.SetY(segment->hits[0]->xy.Y());
-      if (z_vertex<Z_MIN) pos.SetZ(Z_MIN);
-      else pos.SetZ(z_vertex);	
-      	pos.SetZ(segment->hits[0]->wire->origin.z());
+      pos.SetXYZ(segment->hits[0]->xy.X(),segment->hits[0]->xy.Y(),
+		 segment->hits[0]->wire->origin.z());
       GetPositionAndMomentum(Bz_avg,pos,mom);
 
       // Create new track, starting with the current segment
@@ -805,11 +802,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  z_vertex=Z_VERTEX;
 	}
       }	
-      	pos.SetX(segment->hits[0]->xy.X());
-	pos.SetY(segment->hits[0]->xy.Y());
-      if (z_vertex<Z_MIN) pos.SetZ(Z_MIN);
-      else pos.SetZ(z_vertex);
-      	pos.SetZ(segment->hits[0]->wire->origin.z());
+      pos.SetXYZ(segment->hits[0]->xy.X(),segment->hits[0]->xy.Y(),
+		 segment->hits[0]->wire->origin.z());
       GetPositionAndMomentum(Bz_avg,pos,mom);
       
       // Create new track, starting with the current segment
@@ -849,11 +843,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     }
     Bz_avg/=double(segment->hits.size());
   
-    pos.SetX(segment->hits[0]->xy.X());
-    pos.SetY(segment->hits[0]->xy.Y());
-    if (z_vertex<Z_MIN) pos.SetZ(Z_MIN);
-    else pos.SetZ(z_vertex);	
-    pos.SetZ(segment->hits[0]->wire->origin.z());
+    pos.SetXYZ(segment->hits[0]->xy.X(),segment->hits[0]->xy.Y(),
+		 segment->hits[0]->wire->origin.z());    
     GetPositionAndMomentum(Bz_avg,pos,mom);
     
     // Create new track, starting with the current segment
@@ -891,11 +882,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     }
     Bz_avg/=double(segment->hits.size());
 
-    pos.SetX(segment->hits[0]->xy.X());
-    pos.SetY(segment->hits[0]->xy.Y());
-    if (z_vertex<Z_MIN) pos.SetZ(Z_MIN);
-    else pos.SetZ(z_vertex);
-    pos.SetZ(segment->hits[0]->wire->origin.z());
+    pos.SetXYZ(segment->hits[0]->xy.X(),segment->hits[0]->xy.Y(),
+	     segment->hits[0]->wire->origin.z());
     GetPositionAndMomentum(Bz_avg,pos,mom);
     
     // Create new track, starting with the current segment

@@ -192,7 +192,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     }
     fdc_t0_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_vs_theta");
     if (!fdc_t0_vs_theta){
-      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,200,-50,50);
+      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,200,-250,250);
     }  
     fdc_t0_timebased_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_timebased_vs_theta");
     if (!fdc_t0_timebased_vs_theta){
@@ -262,8 +262,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 Bz=-2.;
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
-	 mStepSizeS=2.0;
-	 mStepSizeZ=3.0;
+	 mStepSizeS=1.0;
+	 mStepSizeZ=2.0;
 	 /*
 	 if (fit_type==kTimeBased){
 	   mStepSizeS=0.5;
@@ -925,8 +925,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   if (CORRECT_FOR_ELOSS){
     double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);
     Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;   
-    if (Q(state_q_over_pt,state_q_over_pt)>1.) 
-      Q(state_q_over_pt,state_q_over_pt)=1.;
+    if (Q(state_q_over_p,state_q_over_p)>1.) 
+      Q(state_q_over_p,state_q_over_p)=1.;
   }
 	  
   // Compute the Jacobian matrix and its transpose
@@ -2720,6 +2720,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	return UNRECOVERABLE_ERROR;	
       }
     }
+    
+    // Call the smoother to get smoothed residuals 
+    SmoothForward(S,C);
 
     // Extrapolate to the point of closest approach to the beam line
     z_=forward_traj[forward_traj.size()-1].pos.z();
@@ -2733,8 +2736,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     q_over_pt_=Sc(state_q_over_pt);
     tanl_=Sc(state_tanl);
     D_=Sc(state_D);
-
-
+    
     if (DEBUG_LEVEL>0)
       cout
 	<< "Vertex:  p " 
@@ -2751,8 +2753,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       }
       fcov.push_back(dummy);
     }
-
-    SmoothForward(S,C);
 
     // total chisq and ndf
     chisq_=chisq_forward;
@@ -2882,7 +2882,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	if (iter2==0) return UNRECOVERABLE_ERROR;
 	break;
       }
-    }
+    } 
+    // Call the smoother to get smoothed residuals 
+    SmoothForwardCDC(S,C);
 
     // Extrapolate to the point of closest approach to the beam line
     z_=forward_traj[forward_traj.size()-1].pos.z();
@@ -2919,9 +2921,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // total chisq and ndf
     chisq_=chisq_forward;
     ndf=last_ndf-5;
-
-    SmoothForwardCDC(S,C);
-    //printf("cdc forward NDof %d\n",ndf);
 
     return NOERROR;
   }  
@@ -3067,7 +3066,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       if (DEBUG_LEVEL>0) _DBG_ << "Central fit failed!" <<endl;
       return VALUE_OUT_OF_RANGE;
     }
-   
+    SmoothCentral(Sc,Cc);
     ExtrapolateToVertex(last_pos,Sclast,Cclast); 
 
     // Track Parameters at "vertex"
@@ -3106,8 +3105,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       }
       cov.push_back(dummy);
     }
- 
-    SmoothCentral(Sclast,Cclast);
+
 
     // total chisq and ndf
     chisq_=chisq_iter;
@@ -4803,14 +4801,14 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   S0=S;
   Step(z,z+dz,dEdx,S0);
   double r2=S0(state_x)*S0(state_x)+S0(state_y)*S0(state_y);
-  if (r2>r2_old) dz*=-1.;
+  //if (r2>r2_old && z<100.0) dz*=-1.;
   //printf("vertex z %f r2 %f old %f %f\n",z+dz,r2,z,r2_old);
 
   // material properties
   double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
   DVector3 pos;  // current position along trajectory
 
-  while (z>Z_MIN && sqrt(r2_old)<65. && z<Z_MAX){
+  while (z>Z_MIN && sqrt(r2_old)<R_MAX_FORWARD && z<Z_MAX){
     // get material properties from the Root Geometry
     pos.SetXYZ(S(state_x),S(state_y),z);
     if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
@@ -4850,6 +4848,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
     // Step through field
     ds=Step(z,newz,dEdx,S);
+
+    double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+    double one_over_beta2=1.+mass2*q_over_p_sq;
+    mT0wires+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
 
     // Check if we passed the minimum doca to the beam line
     r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
@@ -4951,6 +4953,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
       }
       if(fabs(ds)>mStepSizeS) ds=sign*mStepSizeS;
       if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
+
+      double one_over_beta2=1.+mass2*q_over_p*q_over_p;
+      mT0wires+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
 
       // Compute the Jacobian matrix
       StepJacobian(pos,origin,dir,ds,Sc,dedx,Jc);
