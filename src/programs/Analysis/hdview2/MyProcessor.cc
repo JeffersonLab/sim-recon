@@ -792,10 +792,10 @@ void MyProcessor::FillGraphics(void)
 		for(unsigned int i=0; i<chargedtracks.size(); i++){
 		  int color=kViolet-3;
 		  double size=1.25;
-		  if (chargedtracks[i]->hypotheses[0]->charge()>0) color=kMagenta;
+		  if (chargedtracks[i]->dChargedTrackHypotheses[0]->dTrackTimeBased->charge()>0) color=kMagenta;
 		
-		  if (chargedtracks[i]->hypotheses[0]->mass()>0.9) size=2.5;
-		  AddKinematicDataTrack(chargedtracks[i]->hypotheses[0],color,size);
+		  if (chargedtracks[i]->dChargedTrackHypotheses[0]->dTrackTimeBased->mass()>0.9) size=2.5;
+		  AddKinematicDataTrack(chargedtracks[i]->dChargedTrackHypotheses[0]->dTrackTimeBased,color,size);
 		}
 	}
 
@@ -834,7 +834,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		vector<const DChargedTrack*> chargedtracks;
 		if(loop)loop->Get(chargedtracks, tag.c_str());
 		for(unsigned int i=0; i<chargedtracks.size(); i++){
-		  trks.push_back(chargedtracks[i]->hypotheses[0]);
+		  trks.push_back(chargedtracks[i]->dChargedTrackHypotheses[0]->dTrackTimeBased);
 		}
 	}	
 	if(name=="DTrackTimeBased"){
@@ -1148,11 +1148,11 @@ _DBG__;
 		vector<const DChargedTrack*> chargedtracks;
 		loop->Get(chargedtracks, tag.c_str());
 		if(index>=chargedtracks.size())return;
-		q = chargedtracks[index]->hypotheses[0]->charge();
-		pos = chargedtracks[index]->hypotheses[0]->position();
-		mom = chargedtracks[index]->hypotheses[0]->momentum();
-		chargedtracks[index]->hypotheses[0]->Get(cdchits);
-		mass = chargedtracks[index]->hypotheses[0]->mass();
+		q = chargedtracks[index]->dChargedTrackHypotheses[0]->dTrackTimeBased->charge();
+		pos = chargedtracks[index]->dChargedTrackHypotheses[0]->dTrackTimeBased->position();
+		mom = chargedtracks[index]->dChargedTrackHypotheses[0]->dTrackTimeBased->momentum();
+		chargedtracks[index]->dChargedTrackHypotheses[0]->dTrackTimeBased->Get(cdchits);
+		mass = chargedtracks[index]->dChargedTrackHypotheses[0]->dTrackTimeBased->mass();
 	}
 
 	if(dataname=="DTrackTimeBased"){
