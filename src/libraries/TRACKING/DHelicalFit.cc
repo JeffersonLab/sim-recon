@@ -66,6 +66,7 @@ void DHelicalFit::Copy(const DHelicalFit &fit)
 {
 	x0 = fit.x0;
 	y0 = fit.y0;
+	r0 = fit.r0;
 	q = fit.q;
 	p = fit.p;
 	p_trans = fit.p_trans;
