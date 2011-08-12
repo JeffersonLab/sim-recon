@@ -269,6 +269,10 @@ c showers in the primary and secondary collimators placed in the collimator cave
 c The default value is set to 0.
   SHOWERSINCOL 0
 
+c This card enables/disables (DRIFTCLUSTERS 1/0) simulation of electron 
+c clusters within a drift cell in the FDC or the CDC
+c The default value is 0.  
+  DRIFTCLUSTERS 0
 
 c The following cards allow one to switch on/off some physics processes in GEANT:
 c MULS 0 no multiple scattering

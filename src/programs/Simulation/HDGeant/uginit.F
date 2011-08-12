@@ -170,7 +170,7 @@ c The following parameters are declared in hdtrackparams.inc above.
       data tlog_particle_gun/0/
       data writenohits/0/
       data showersincol/0/
-
+      data driftclusters/0/
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
@@ -240,6 +240,7 @@ C..geant..
       CALL FFKEY('bggate',bggate,2,'REAL')
       CALL FFKEY('savehits',writenohits,1,'INTEGER')
       CALL FFKEY('showersincol',showersincol,1,'INTEGER')
+      call FFKEY('driftclusters',driftclusters,1,'INTEGER')
       call gtgamaff()
       CALL GFFGO
 *

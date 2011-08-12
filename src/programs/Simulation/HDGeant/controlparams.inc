@@ -1,2 +1,2 @@
-      integer writenohits, showersincol
-      common /controlparams/ writenohits, showersincol
+      integer writenohits, showersincol, driftclusters
+      common /controlparams/ writenohits, showersincol, driftclusters
