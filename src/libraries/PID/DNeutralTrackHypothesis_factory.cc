@@ -153,7 +153,7 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 
 				Calc_Variances(locNeutralShowerCandidate, locParticleEnergyUncertainty, locVariances);
 				Build_ErrorMatrix(locPathVector, locParticleEnergy, locVariances, locErrorMatrix);
-cout << "size3 = " << locErrorMatrix.GetNrows() << endl;
+
 				locKinematicData->setErrorMatrix(locErrorMatrix);
 				locKinematicData->clearTrackingErrorMatrix();
 				locPathVector.SetMag(locMomentum);
@@ -257,12 +257,8 @@ void DNeutralTrackHypothesis_factory::Build_ErrorMatrix(const DVector3 &locPathV
 		}
 	}
 
-cout << "size-1 = " << locErrorMatrix.GetNrows() << endl;
 	locErrorMatrix.ResizeTo(7, 7);
-cout << "size0 = " << locErrorMatrix.GetNrows() << endl;
    locErrorMatrix = locVariances;
-cout << "size1 = " << locErrorMatrix.GetNrows() << endl;
    locErrorMatrix = locErrorMatrix.Similarity(A);
-cout << "size2 = " << locErrorMatrix.GetNrows() << endl;
 }
 
