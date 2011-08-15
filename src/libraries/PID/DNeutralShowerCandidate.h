@@ -30,7 +30,7 @@ class DNeutralShowerCandidate : public jana::JObject{
 		DNeutralShowerCandidate(const DBCALShower *locBCALShower){
 			dDetectorSystem = SYS_BCAL;
 			dEnergy = locBCALShower->E;
-			dEnergyUncertainty = (dEnergy >= 0.0) ? pow( 0.0445*sqrt( dEnergy ) + 0.009*dEnergy, 2.0) : 1e-6; //from old DPhoton_factory::makeBCalPhoton() function
+			dEnergyUncertainty = (dEnergy >= 0.0) ? 0.0445*sqrt( dEnergy ) + 0.009*dEnergy : 1e-3; //from old DPhoton_factory::makeBCalPhoton() function
 			dSpacetimeVertex.SetXYZT(locBCALShower->x, locBCALShower->y, locBCALShower->z, locBCALShower->t);
 			dSpacetimeVertexUncertainties.SetXYZT(locBCALShower->xErr, locBCALShower->yErr, locBCALShower->zErr, locBCALShower->tErr);
 		}
@@ -38,7 +38,7 @@ class DNeutralShowerCandidate : public jana::JObject{
 		DNeutralShowerCandidate(const DFCALShower *locFCALShower){
 			dDetectorSystem = SYS_FCAL;
 			dEnergy = locFCALShower->getEnergy();
-			dEnergyUncertainty = (dEnergy >= 0.0) ? pow( 0.042*sqrt(dEnergy) + 0.0001, 2.0 ) : 1e-6; //from old DPhoton_factory::makeFCalPhoton() function
+			dEnergyUncertainty = (dEnergy >= 0.0) ? 0.042*sqrt(dEnergy) + 0.0001 : 1e-3; //from old DPhoton_factory::makeFCalPhoton() function
 			dSpacetimeVertex.SetVect(locFCALShower->getPosition());
 			dSpacetimeVertex.SetT(locFCALShower->getTime());
 			dSpacetimeVertexUncertainties.SetVect(locFCALShower->getPositionError());

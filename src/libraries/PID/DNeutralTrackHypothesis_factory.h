@@ -19,14 +19,20 @@
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
 #include <DVector3.h>
+#include <DMatrixDSym.h>
 
 class DNeutralTrackHypothesis_factory:public jana::JFactory<DNeutralTrackHypothesis>{
 	public:
 		DNeutralTrackHypothesis_factory(){};
 		~DNeutralTrackHypothesis_factory(){};
 
+		void Build_ErrorMatrix(const DVector3 &locPathVector, double locEnergy, const DMatrixDSym& locVariances, DMatrixDSym& locErrorMatrix);
+		void Calc_Variances(const DNeutralShowerCandidate *locNeutralShowerCandidate, double locParticleEnergyUncertainty, DMatrixDSym &locVariances);
+
 	private:
 		DParticleID *dPIDAlgorithm;
+		double dTargetLength;
+		double dTargetRadius;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.
