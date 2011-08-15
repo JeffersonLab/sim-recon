@@ -290,7 +290,10 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		DCDCTrackHit *hit = new DCDCTrackHit;
 		hit->wire = &wire[cdchit->ring-1][cdchit->straw-1];
 		hit->tdrift = cdchit->t;
-		hit->dE=cdchit->dE;
+		double w_eff=29.5e-9;
+		double gas_gain=1e5;
+		double electron_charge=1.6022e-4; /* fC */
+		hit->dE=cdchit->dE*w_eff/(gas_gain*electron_charge);
 		hit->dist = hit->tdrift*55.0E-4; // Use number hardwired in simulation for now
 		
 		// Try matching truth hit with this "real" hit.
@@ -301,8 +304,20 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		
 		_data.push_back(hit);
 	}
-
-
+	/*
+	int ring=0,straw=0;
+	double t=0;
+	for (unsigned int i=0;i<_data.size();i++){
+	  if (_data[i]->wire->ring==ring && _data[i]->wire->straw==straw
+	      && _data[i]->tdrift<t) printf("out of order\n");
+	  printf("r %d s %d t %f\n",_data[i]->wire->ring,_data[i]->wire->straw,
+		 _data[i]->tdrift);
+	  ring=_data[i]->wire->ring;
+	  straw=_data[i]->wire->straw;
+	  t=_data[i]->tdrift;
+	}
+	*/
+	
 	return NOERROR;
 }
 
