@@ -91,15 +91,19 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			locChargedTrackHypothesis->dFlightTime = locFlightTime;
 			locChargedTrackHypothesis->dPathLength = locPathLength;
 			locChargedTrackHypothesis->AddAssociatedObject(locBCALShowers[locBCALIndex]);
+			locChargedTrackHypothesis->dMatchedTimeDetector = SYS_BCAL;
 			locMatchedOuterDetectorFlag = true;
 		}
-		else if (dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locProjectedTime, locTOFIndex, locPathLength, locFlightTime) == NOERROR){
-			locChargedTrackHypothesis->dProjectedTime = locProjectedTime;
-			locProjectedTimeUncertainty = 0.08;
-			locChargedTrackHypothesis->dFlightTime = locFlightTime;
-			locChargedTrackHypothesis->dPathLength = locPathLength;
+		if (dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locProjectedTime, locTOFIndex, locPathLength, locFlightTime) == NOERROR){
 			locChargedTrackHypothesis->AddAssociatedObject(locTOFPoints[locTOFIndex]);
-			locMatchedOuterDetectorFlag = true;
+			if (locMatchedOuterDetectorFlag == false){
+				locChargedTrackHypothesis->dProjectedTime = locProjectedTime;
+				locProjectedTimeUncertainty = 0.08;
+				locChargedTrackHypothesis->dFlightTime = locFlightTime;
+				locChargedTrackHypothesis->dPathLength = locPathLength;
+				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_TOF;
+				locMatchedOuterDetectorFlag = true;
+			}
 		}
 		if (dPIDAlgorithm->MatchToFCAL(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locFCALShowers, locProjectedTime, locFCALIndex, locPathLength, locFlightTime) == NOERROR){
 			locChargedTrackHypothesis->AddAssociatedObject(locFCALShowers[locFCALIndex]);
@@ -109,12 +113,17 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				locProjectedTimeUncertainty = 0.6; // straight-line fit to high momentum data
 				locChargedTrackHypothesis->dFlightTime = locFlightTime;
 				locChargedTrackHypothesis->dPathLength = locPathLength;
+				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_FCAL;
 			}
 		}
-		if (locMatchedOuterDetectorFlag == false){ //make sure these variables are initialized
-			locChargedTrackHypothesis->dProjectedTime = 0.0;
-			locChargedTrackHypothesis->dPathLength = 0.0;
-			locChargedTrackHypothesis->dFlightTime = 0.0;
+		if (locMatchedOuterDetectorFlag == false){
+			locChargedTrackHypothesis->dPathLength = 0.0; //initialize
+			locChargedTrackHypothesis->dFlightTime = 0.0; //initialize
+			if(locTrackTimeBased->t0_detector() == SYS_START){
+				locChargedTrackHypothesis->dProjectedTime = locTrackTimeBased->t0();
+				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_START;
+			}else
+				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_NULL;
 		}
 
 		locChargedTrackHypothesis->dPID = dPIDAlgorithm->IDTrack(locTrackTimeBased->charge(), locTrackTimeBased->mass()); //mass used in track fit to create DTrackWireBased

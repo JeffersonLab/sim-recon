@@ -49,7 +49,7 @@ jerror_t DNeutralShowerCandidate_factory::evnt(jana::JEventLoop *locEventLoop, i
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DFCALShower*> locFCALShowers;
 	locEventLoop->Get(locChargedTracks);
-	locEventLoop->Get(locBCALShowers);
+	locEventLoop->Get(locBCALShowers, "KLOE");
 	locEventLoop->Get(locFCALShowers);
 
 	// Loop over all DBCALShowers, see if they match to DChargedTrackHypotheses.  
