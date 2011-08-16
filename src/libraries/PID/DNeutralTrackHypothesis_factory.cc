@@ -26,15 +26,6 @@ jerror_t DNeutralTrackHypothesis_factory::init(void)
 //------------------
 jerror_t DNeutralTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
-
-	// Get Target parameters from XML
-	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
-	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
-	dTargetLength = 30.0;
-	dTargetRadius = 1.5; //FIX: grab from database!!!
-	if(locGeometry)
-		locGeometry->GetTargetLength(dTargetLength);
-
   // Get the particle ID algorithms
 	vector<const DParticleID *> locPIDAlgorithms;
 	locEventLoop->Get(locPIDAlgorithms);
@@ -62,7 +53,7 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	unsigned int loc_i, loc_j, loc_k, locNDF = 1;
 	bool locShowerMatchFlag;
 	float locMass, locMomentum, locShowerEnergy, locParticleEnergy, locPathLength, locFlightTime, locProjectedTime, locTimeDifference;
-	float locParticleEnergyUncertainty, locShowerEnergyUncertainty, locTimeDifferenceVariance, locChiSq, locFOM;
+	float locTimeDifferenceVariance, locChiSq, locFOM;
 	DVector3 locPathVector;
 
 	const DNeutralShowerCandidate *locNeutralShowerCandidate;
@@ -70,7 +61,6 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	const DVertex *locVertex;
 	DNeutralTrackHypothesis *locNeutralTrackHypothesis;
 	DKinematicData *locKinematicData;
-	DMatrixDSym locVariances, locErrorMatrix;
 	vector<const DBCALShower*> locAssociatedBCALShowers_NeutralShowerCandidate;
 	vector<const DFCALShower*> locAssociatedFCALShowers_NeutralShowerCandidate;
 	vector<const DBCALShower*> locAssociatedBCALShowers_ChargedTrack;
@@ -124,16 +114,8 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				locMass = ParticleMass(locPIDHypotheses[loc_k]);
 				locShowerEnergy = locNeutralShowerCandidate->dEnergy;
 				locParticleEnergy = locShowerEnergy; //need to correct this for neutrons!
-				if (locParticleEnergy < locMass)
-					continue; //not enough energy for PID hypothesis
-
-				locShowerEnergyUncertainty = locNeutralShowerCandidate->dEnergyUncertainty;
-				locParticleEnergyUncertainty = locShowerEnergyUncertainty; //need to correct this for neutrons!
-
 				locPathVector = locNeutralShowerCandidate->dSpacetimeVertex.Vect() - locVertex->dSpacetimeVertex.Vect();
 				locPathLength = locPathVector.Mag();
-				if(!(locPathLength > 0.0))
-					continue; //invalid, will divide by zero when creating error matrix, so skip!
 				locMomentum = sqrt(locParticleEnergy*locParticleEnergy - locMass*locMass);
 				locFlightTime = locPathLength*locParticleEnergy/(locMomentum*SPEED_OF_LIGHT);
 				locProjectedTime = locNeutralShowerCandidate->dSpacetimeVertex.T() - locFlightTime;
@@ -146,22 +128,18 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				if(locPIDHypotheses[loc_k] == Neutron)
 					locFOM = -1.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
 
-				// Build DKinematicData //dEdx not set
+				// Build DKinematicData
 				locKinematicData = new DKinematicData;
 				locKinematicData->setMass(locMass);
 				locKinematicData->setCharge(0.0);
-
-				Calc_Variances(locNeutralShowerCandidate, locParticleEnergyUncertainty, locVariances);
-				Build_ErrorMatrix(locPathVector, locParticleEnergy, locVariances, locErrorMatrix);
-
-				locKinematicData->setErrorMatrix(locErrorMatrix);
+				locKinematicData->clearErrorMatrix(); // FIXME!!!
 				locKinematicData->clearTrackingErrorMatrix();
 				locPathVector.SetMag(locMomentum);
 				locKinematicData->setMomentum(locPathVector);
 				locKinematicData->setPosition(locVertex->dSpacetimeVertex.Vect());
-				locKinematicData->setT0(locVertex->dSpacetimeVertex.T(), locVertex->dTimeUncertainty, SYS_NULL);
 				locKinematicData->setT1(locNeutralShowerCandidate->dSpacetimeVertex.T(), locNeutralShowerCandidate->dSpacetimeVertexUncertainties.T(), locNeutralShowerCandidate->dDetectorSystem);
 				locKinematicData->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
+				//error matrix & dEdx not set
 
 				// Build DNeutralTrackHypothesis
 				locNeutralTrackHypothesis = new DNeutralTrackHypothesis;
@@ -200,65 +178,4 @@ jerror_t DNeutralTrackHypothesis_factory::fini(void)
 	return NOERROR;
 }
 
-#define DELTA(i,j) ((i==j) ? 1 : 0)
-void DNeutralTrackHypothesis_factory::Calc_Variances(const DNeutralShowerCandidate *locNeutralShowerCandidate, double locParticleEnergyUncertainty, DMatrixDSym &locVariances){
-	DLorentzVector locShowerPositionUncertainties = locNeutralShowerCandidate->dSpacetimeVertexUncertainties;
-
-	// create the simplest error matrix:
-	// At this point, it is assumed that error matrix of measured quantities is diagonal,
-	// with elements like: sigma_Z_t = L/sqrt(12) sigma_X_t = sigma_Y_t = r0/2 
-	// L=target length, r0 = target radius...
-	// This means that energy-depth-polar angle relation  is neglected.
-	// the order of sigmas is:  x_c, y_c, z_c, E, x_t, y_t, z_t
-
-	locVariances.Clear();
-	locVariances.ResizeTo(7, 7);
-
-	locVariances(0,0) = pow(locShowerPositionUncertainties.X(), 2.0);
-	locVariances(1,1) = pow(locShowerPositionUncertainties.Y(), 2.0);
-	locVariances(2,2) = pow(locShowerPositionUncertainties.Z(), 2.0);
-
-	locVariances[3][3] = pow(locParticleEnergyUncertainty, 2.0);
-
-	locVariances[4][4] = pow(0.5*dTargetRadius, 2.0) ; // x_t, y_t
-	locVariances[5][5] = pow(0.5*dTargetRadius, 2.0) ; // x_t, y_t
-	locVariances[6][6] = pow(dTargetLength/sqrt(12.0), 2.0) ; // z_t
-}
-
-void DNeutralTrackHypothesis_factory::Build_ErrorMatrix(const DVector3 &locPathVector, double locEnergy, const DMatrixDSym& locVariances, DMatrixDSym& locErrorMatrix)
-{
-	unsigned int loc_i, loc_j, loc_ik, loc_jk;
-   double R = locPathVector.Mag(); //path length
-   double R2= locPathVector.Mag2(); //path length ^ 2
-   double R3 = R*R2; //path length ^ 3
-   double E_R3 = locEnergy/R3; 
-
-	// init and fill rotation matrix, first with momentum derivatives
-	DMatrix A(7, 7);
-	for (loc_i = 0; loc_i < 3; loc_i++) {
-		for (loc_j = 0; loc_j <3; loc_j++) {
-			A[loc_i][loc_j] = E_R3*( R2*DELTA(loc_i, loc_j) - locPathVector(loc_i) * locPathVector(loc_j) );
-			A[loc_i][loc_j + 4] = - A[loc_i][loc_j];
-		}
-	}
-
-	// fill energy part and remember: relation between energy and photon position in calorimeter is neglected!
-	A[3][3] = 1.;
-	for (loc_j = 0; loc_j < 3; loc_j++)
-		A[loc_j][3] = locPathVector(loc_j)/R;
-
-	// fill spatial part where: dp_r_x/dp_x_c = - dp_r_x/dp_x_v ....
-	for (loc_i = 0; loc_i < 3; loc_i++) {
-		for ( loc_j = 0; loc_j < 3; loc_j++) {
-			loc_ik = loc_i + 4;
-			loc_jk = loc_j + 4;
-			A[loc_ik][loc_j] = DELTA(loc_i, loc_j);
-			A[loc_ik][loc_jk] = - A[loc_ik][loc_j];
-		}
-	}
-
-	locErrorMatrix.ResizeTo(7, 7);
-   locErrorMatrix = locVariances;
-   locErrorMatrix = locErrorMatrix.Similarity(A);
-}
 
