@@ -263,7 +263,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
 	 mStepSizeS=1.0;
-	 mStepSizeZ=2.0;
+	 mStepSizeZ=1.0;
 	 /*
 	 if (fit_type==kTimeBased){
 	   mStepSizeS=0.5;
@@ -4790,19 +4790,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   // position variables
   double z=z_,newz=z_;
   double dz=-mStepSizeZ;
-  double ds=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty))
-    *dz;
   double r2_old=S(state_x)*S(state_x)+S(state_y)*S(state_y);
   double dz_old=0.;
   double dEdx=0.;
-
-  // Check the direction of propagation
-  DMatrix5x1 S0;
-  S0=S;
-  Step(z,z+dz,dEdx,S0);
-  double r2=S0(state_x)*S0(state_x)+S0(state_y)*S0(state_y);
-  //if (r2>r2_old && z<100.0) dz*=-1.;
-  //printf("vertex z %f r2 %f old %f %f\n",z+dz,r2,z,r2_old);
 
   // material properties
   double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
@@ -4823,19 +4813,18 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     }
 
     // Adjust the step size
-    double sign=(dz>0)?1.:-1.;
-    double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+     double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
     if (fabs(dEdx)>EPS){
-      dz=sign
+      dz=(-1.)
     	*(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
     	/fabs(dEdx)/ds_dz;
     }
-    if(fabs(dz)>mStepSizeZ) dz=sign*mStepSizeZ;
-    if(fabs(dz)<MIN_STEP_SIZE)dz=sign*MIN_STEP_SIZE;
+    if(fabs(dz)>mStepSizeZ) dz=-mStepSizeZ;
+    if(fabs(dz)<MIN_STEP_SIZE)dz=-MIN_STEP_SIZE;
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    ds=ds_dz*dz;
+    double ds=ds_dz*dz;
     GetProcessNoise(ds,Z,rho_Z_over_A,S,Q);
    
     newz=z+dz;
@@ -4854,31 +4843,86 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     mT0wires+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
 
     // Check if we passed the minimum doca to the beam line
-    r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-    if (r2>r2_old && z<endplate_z){  
+    double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+    if (r2>r2_old && z<endplate_z){
+      // Make sure we have bracketed the minimum
+      //if (fit_type==kTimeBased)
+	{
+	DMatrix5x1 S1(S);
+	newz=z-2.0*dz;
+	
+	// Step test state through the field and compute squared radius
+	ds=Step(z,newz,dEdx,S1);	
+	r2=S1(state_x)*S1(state_x)+S1(state_y)*S1(state_y);
+
+	if (r2<r2_old && newz<endplate_z){   
+	  // Correct estimate for mT0wires
+	  q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+	  double one_over_beta2=1.+mass2*q_over_p_sq;
+	  mT0wires+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+
+	  // Compute the Jacobian matrix
+	  StepJacobian(z,newz,S,dEdx,J);  
+
+	  // Propagate the covariance matrix
+	  //C=Q.AddSym(J*C*J.Transpose());
+	  C=Q.AddSym(C.SandwichMultiply(J));
+	  
+	  // Set the state vector
+	  S=S1;
+
+	  // Change the sign of dz (we needed to back-track)
+	  dz*=-1;
+	  dz_old=dz;
+	  
+	  z=newz;
+	  // Now check for minimum radius
+	  while (r2<r2_old){
+	    r2_old=r2;
+	    newz=z+dz;
+	    
+	    // Compute the Jacobian matrix
+	    StepJacobian(z,newz,S,dEdx,J);  
+	    
+	    // Propagate the covariance matrix
+	    //C=Q.AddSym(J*C*J.Transpose());
+	    C=Q.AddSym(C.SandwichMultiply(J));
+	    
+	    // Step through the field
+	    ds=Step(z,newz,dEdx,S);
+
+	    // Correct estimate for mT0wires
+	    q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+	    double one_over_beta2=1.+mass2*q_over_p_sq;
+	    mT0wires+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+
+	    // Compute new squared radius
+	    r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+
+	    z=newz;
+	  }
+	}
+      }
+  
       double two_step=dz+dz_old;
-      double tx=S(state_tx);
-      double ty=S(state_ty);
-      double tsquare=tx*tx+ty*ty;
-      double sinl=sin(atan(1./sqrt(tsquare)));
-      if (fabs(qBr2p*S(state_q_over_p)*Bz*two_step/sinl)<0.01){
-	dz=-(tx*S(state_x)+ty*S(state_y))/tsquare;
-      }
-      else{
-	DVector3 dir(0,0,1);
-	DVector3 origin(0,0,65);
-	dz=BrentsAlgorithm(z,0.5*two_step,dEdx,origin,dir,S);
-      }
+
+      // Find the increment/decrement in z to get to the minimum doca to the
+      // beam line
+      DVector3 dir(0,0,1);
+      DVector3 origin(0,0,65);
+      dz=BrentsAlgorithm(z,0.5*two_step,dEdx,origin,dir,S);
+      
       // Compute the Jacobian matrix
-      StepJacobian(newz,newz+dz,S,dEdx,J);
+      newz=z+dz;
+      StepJacobian(z,newz,S,dEdx,J);
       
       // Propagate the covariance matrix
       //C=J*C*J.Transpose()+(dz/(newz-z))*Q;
       //C=((dz/newz-z)*Q).AddSym(C.SandwichMultiply(J));
       C=C.SandwichMultiply(J);
-   
-      Step(newz,newz+dz,dEdx,S);
-      newz+=dz;
+
+      // Step to the "z vertex"
+      Step(z,newz,dEdx,S);
 
       break;
     }
