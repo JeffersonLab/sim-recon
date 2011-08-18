@@ -252,7 +252,14 @@ cases = {
 
 #call
 def call():
-	os.system("ls >& hdgeant.log")
+	RUNNER = open("runner.py","w")
+	RUNNER.write("import os\n")
+	RUNNER.write("newFile = 'pid'\n")
+	RUNNER.write("FILE = open(newFile,\"w\")\n")
+	RUNNER.write("FILE.write(str(os.getpid()))\n")
+	RUNNER.write("FILE.close()\n")
+	RUNNER.close()
+	os.system("sleep 5;python runner.py")
 	
 #------------------------------------------------------------
 
