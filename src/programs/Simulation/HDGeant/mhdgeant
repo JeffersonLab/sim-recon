@@ -259,7 +259,7 @@ def call():
 	RUNNER.write("FILE.write(str(os.getpid()))\n")
 	RUNNER.write("FILE.close()\n")
 	RUNNER.close()
-	os.system("sleep 5;python runner.py")
+	os.system("python runner.py")
 	
 #------------------------------------------------------------
 
