@@ -8,6 +8,7 @@
 #include "HDGEOMETRY/DMaterialMap.h"
 #include "HDGEOMETRY/DRootGeom.h"
 #include "DANA/DApplication.h"
+#include <JANA/JCalibration.h>
 
 #include <TH2F.h>
 #include <TROOT.h>
@@ -43,6 +44,29 @@ bool static DKalmanSIMDCDCHit_cmp(DKalmanSIMDCDCHit_t *a, DKalmanSIMDCDCHit_t *b
   return (b->hit->wire->ring>a->hit->wire->ring);
 }
 
+
+// Locate a position in array xx given x
+static void locate(const double *xx,int n,double x,int *j){
+  int ju,jm,jl;
+  int ascnd;
+  
+  jl=-1;
+  ju=n;
+  ascnd=(xx[n-1]>=xx[0]);
+  while(ju-jl>1){
+    jm=(ju+jl)>>1;
+    if ( (x>=xx[jm])==ascnd)
+      jl=jm;
+    else
+      ju=jm;
+  }
+  if (x==xx[0]) *j=0;
+  else if (x==xx[n-1]) *j=n-2;
+  else *j=jl; 
+}
+
+
+
 // Variance for position along wire
 double DTrackFitterKalmanSIMD::fdc_y_variance(double alpha,double x,double dE){
   //double sigma=0.01/dE+0.008;
@@ -54,7 +78,9 @@ double DTrackFitterKalmanSIMD::fdc_y_variance(double alpha,double x,double dE){
 // Crude approximation for the variance in drift distance due to smearing
 double fdc_drift_variance(double t){
   //return FDC_ANODE_VARIANCE;
-  double sigma=0.02656-0.0002515*t+1.972e-6*t*t;
+  if (t<165) t=165.;
+  double sigma=0.0212-0.0002197*t+1.976e-6*t*t;
+ 
   return sigma*sigma;
 }
 
@@ -62,34 +88,42 @@ double fdc_drift_variance(double t){
 double DTrackFitterKalmanSIMD::cdc_variance(fit_region region,double t){ 
   //return CDC_VARIANCE;
   double sigma=0.;
-  if (region==kCentral || region==kForwardCDC){
+  //  if (region==kCentral || region==kForwardCDC){
     if (t<0) t*=-1;
-    sigma=0.0538253/sqrt(t+0.9535)+7.0187e-6*t;
+    sigma=0.04952/sqrt(t+1.925)+6.6457e-6*t;
+    /*
   }
   else{
     if (t<0) t*=-1;
     sigma=0.3414/(t+16.5625)+6.95e-6*t;
   }
+    */
   return sigma*sigma;
 }
 
+#define CDC_T0_OFFSET 20.9
+// Interpolate on a table to convert time to distance for the cdc
 double DTrackFitterKalmanSIMD::cdc_drift_distance(double t){
-  double par[5]={11.3203,0.0295587,-3.81325e-5,0.00918615,0.000112053};
+  int id=int((t+CDC_T0_OFFSET)/2.);
+  if (id<0) id=0;
+  if (id>398) id=398;
+  double frac=0.5*(t+CDC_T0_OFFSET-2.*double(id));
+  double dd=cdc_drift_table[id+1]-cdc_drift_table[id];
+  double d=cdc_drift_table[id]+frac*dd;
 
-  double d=0.;
-  if (t>par[0]){
-    d=par[1]*sqrt(t)+par[2]*t;
-    d-=0.587256/(t*t);
-  }
-  else{
-    double t1=par[0];
-    double dt=t-t1;
-    d=par[1]*sqrt(t1)+par[2]*t1+par[3]*dt+par[4]*dt*dt;
-    d-=0.00178421*t-6.34852e-5*t*t;
-  }
+  return d;
+}
 
-  d-=-0.00134514+1.43e-5*t-1.934e-8*t*t;
-  d-=-0.00139431+1.553e-5*t-4.06669e-8*t*t+3.123e-11*t*t*t;
+#define FDC_T0_OFFSET 20.
+// Interpolate on a table to convert time to distance for the fdc
+double DTrackFitterKalmanSIMD::fdc_drift_distance(double t){
+  int id=int((t+FDC_T0_OFFSET)/2.);
+  if (id<0) id=0;
+  if (id>198) id=198;
+  double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
+  double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
+
+  double d=fdc_drift_table[id]+frac*dd;
 
   return d;
 }
@@ -131,9 +165,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   MIN_FIT_P = 0.050; // GeV
   gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
 
-  if(DEBUG_HISTS){
-    DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+  DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 
+  if(DEBUG_HISTS){
     dapp->Lock();
     
     Hstepsize=(TH2F*)gROOT->FindObject("Hstepsize");
@@ -192,7 +226,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     }
     fdc_t0_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_vs_theta");
     if (!fdc_t0_vs_theta){
-      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,200,-250,250);
+      fdc_t0_vs_theta=new TH2F("fdc_t0_vs_theta","t0 estimate from tracks vs. #theta",140,0,140,200,-50,50);
     }  
     fdc_t0_timebased_vs_theta=(TH2F*)gROOT->FindObject("fdc_t0_timebased_vs_theta");
     if (!fdc_t0_timebased_vs_theta){
@@ -200,18 +234,28 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     }
     cdc_drift=(TH2F*)gROOT->FindObject("cdc_drift");
     if (!cdc_drift){
-      cdc_drift=new TH2F("cdc_drift","cdc drift distance vs time",1600,-20,780.,
+      cdc_drift=new TH2F("cdc_drift","cdc drift distance vs time",400,-20,780.,
 			 100,0.0,1.0);
     }  
     cdc_sigma=(TH2F*)gROOT->FindObject("cdc_sigma");
     if (!cdc_sigma){
       cdc_sigma=new TH2F("cdc_sigma","cdc #deltad vs time",400,-20,780,
 			 200,-0.1,0.1);
+    }   
+    cdc_drift_forward=(TH2F*)gROOT->FindObject("cdc_drift_forward");
+    if (!cdc_drift_forward){
+      cdc_drift_forward=new TH2F("cdc_drift_forward","cdc drift distance vs time",400,-20,780.,
+			 100,0.0,1.0);
+    }  
+    cdc_sigma_forward=(TH2F*)gROOT->FindObject("cdc_sigma_forward");
+    if (!cdc_sigma_forward){
+      cdc_sigma_forward=new TH2F("cdc_sigma_forward","cdc #deltad vs time",400,-20,780,
+			 200,-0.1,0.1);
     }  
     fdc_drift=(TH2F*)gROOT->FindObject("fdc_drift");
     if (!fdc_drift){
-      fdc_drift=new TH2F("fdc_drift","fdc drift distance vs time",200,-20,780.,
-			 50,0.0,1.0);
+      fdc_drift=new TH2F("fdc_drift","fdc drift distance vs time",200,-20,380.,
+			 100,0.0,1.0);
     } 
     fdc_ysigma=(TH3F*)gROOT->FindObject("fdc_ysigma");
     if (!fdc_ysigma){
@@ -222,12 +266,36 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     fdc_xsigma=(TH2F*)gROOT->FindObject("fdc_xsigma");
     if (!fdc_xsigma){
       fdc_xsigma=new TH2F("fdc_xsigma",
-			  "fdc xres vs tdrift",400,-20,780,
+			  "fdc xres vs tdrift",200,-20,380,
 			  50,-0.5,0.5);
     }
     dapp->Unlock();
   }
 
+  
+  JCalibration *jcalib = dapp->GetJCalibration(0);  // need run number here
+  vector< map<string, float> > tvals;
+  if (jcalib->Get("CDC/cdc_drift", tvals)==false){    
+    for(unsigned int i=0; i<tvals.size(); i++){
+      map<string, float> &row = tvals[i];
+      cdc_drift_table[i]=row["0"];
+    }
+  }
+  else{
+    jerr << " CDC time-to-distance table not available... bailing..." << endl;
+    exit(0);
+  }
+
+  if (jcalib->Get("FDC/fdc_drift", tvals)==false){
+    for(unsigned int i=0; i<tvals.size(); i++){
+      map<string, float> &row = tvals[i];
+      fdc_drift_table[i]=row["0"];
+    }
+  }
+  else{
+    jerr << " FDC time-to-distance table not available... bailing..." << endl;
+    exit(0);
+  }
 }
 
 //-----------------
@@ -299,7 +367,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   if (fit_type==kTimeBased){
     mT0=input_params.t0();
   }
-
+  
   // Set starting parameters
   jerror_t error = SetSeed(input_params.charge(), input_params.position(), 
 			   input_params.momentum());
@@ -2196,35 +2264,44 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForward(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
 	// estimate t0 from distance away from wire	
 	double tdiff=my_fdchits[id]->t-ftime;
 	double d=fabs(du*cosalpha);
-	double c1=114.0,c2=125.2,c3=0.3082,c4=0.2107;
-	temp=(d-c3)/c4;
-	double t=c1+c2*tanh(temp);
-	double t0=tdiff-t;
-	// Compute the variance in t0
-	double dt_dd=(c2/c4)/(cosh(temp)*cosh(temp));
-	double dd_dx=cosa*cosalpha;
-	double dd_dy=-sina*cosalpha;
-	temp=1./(1.+tu*tu);
-	double dd_dtx=-sinalpha*cosa*temp;
-	double dd_dty=sinalpha*sina*temp;
-	
-	double var_t0=(dt_dd*dt_dd)*(dd_dx*dd_dx*Cs(state_x,state_x)
-				   +dd_dy*dd_dy*Cs(state_y,state_y)
-				     +dd_dtx*dd_dtx*Cs(state_tx,state_tx)
-				     +dd_dty*dd_dty*Cs(state_ty,state_ty)
-				     +2.*dd_dtx*dd_dty*Cs(state_tx,state_ty)
-				     +2.*dd_dtx*dd_dx*Cs(state_tx,state_x)
-				   +2.*dd_dtx*dd_dy*Cs(state_tx,state_y)
-				   +2.*dd_dty*dd_dy*Cs(state_ty,state_y)
-				     +2.*dd_dty*dd_dx*Cs(state_ty,state_x)
+	//if (fabs(du)<0.5)
+	  {
+	  int t_ind=0;
+	  locate(fdc_drift_table,200,d,&t_ind);
+	  double frac=(d-fdc_drift_table[t_ind])
+	    /(fdc_drift_table[t_ind+1]-fdc_drift_table[t_ind]);
+	  double t=2.*(double(t_ind+1)+frac)-20.;
+	  //double c1=114.0;
+	  double c2=125.2,c3=0.3082,c4=0.2107;
+	  temp=(d-c3)/c4;
+	  //double t=c1+c2*tanh(temp);
+	  double t0=tdiff-t;
+	  // Compute the variance in t0
+	  double dt_dd=(c2/c4)/(cosh(temp)*cosh(temp));
+	  double dd_dx=cosa*cosalpha;
+	  double dd_dy=-sina*cosalpha;
+	  temp=1./(1.+tu*tu);
+	  double dd_dtx=-sinalpha*cosa*temp;
+	  double dd_dty=sinalpha*sina*temp;
+	  
+	  double var_t0=(dt_dd*dt_dd)*(dd_dx*dd_dx*Cs(state_x,state_x)
+				       +dd_dy*dd_dy*Cs(state_y,state_y)
+				       +dd_dtx*dd_dtx*Cs(state_tx,state_tx)
+				       +dd_dty*dd_dty*Cs(state_ty,state_ty)
+				       +2.*dd_dtx*dd_dty*Cs(state_tx,state_ty)
+				       +2.*dd_dtx*dd_dx*Cs(state_tx,state_x)
+				       +2.*dd_dtx*dd_dy*Cs(state_tx,state_y)
+				       +2.*dd_dty*dd_dy*Cs(state_ty,state_y)
+				       +2.*dd_dty*dd_dx*Cs(state_ty,state_x)
 				     +2.*dd_dx*dd_dy*Cs(state_x,state_y));
-	double sigma_t=1.567+44.3*d-1.979*d*d; // crude approximation
-	var_t0+=sigma_t*sigma_t;
-	
-	mT0wires+=t0/var_t0;
-	mInvVarT0+=1./var_t0;     
-
-	if (DEBUG_HISTS && fit_type==kTimeBased){
+	  double sigma_t=1.567+44.3*d-1.979*d*d; // crude approximation
+	  var_t0+=sigma_t*sigma_t;
+	  
+	  mT0wires+=t0/var_t0;
+	  mInvVarT0+=1./var_t0;     
+	}
+	if (DEBUG_HISTS && fit_type==kTimeBased 
+	    && fabs(Mdiff(0))/sqrt(RC(0,0))<3.0){
 	  fdc_drift->Fill(tdiff-mT0,d);
 	  fdc_ysigma->Fill(d,my_fdchits[id]->dE,my_fdchits[id]->yres);
 	  fdc_xsigma->Fill(tdiff-mT0,my_fdchits[id]->xres);
@@ -2343,11 +2420,10 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
       double ux=dir.x();
       double uy=dir.y();
       double cosstereo=cos(my_cdchits[id]->hit->wire->stereo);
-
       DVector3 wirepos=origin+(pos.z()-origin.z())/dir.z()*dir;
+   
       double doca=(pos-wirepos).Perp();
     
- 
       StepJacobian(pos,origin,dir,1.0,Splus,dedx,J);
       // Update covariance matrix
       Cplus=Cplus.SandwichMultiply(J);
@@ -2369,52 +2445,119 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
       double docaminus=(pos1-wirepos).Perp();  
      	
       if (docaminus>doca && docaplus>doca){
-	Sminus=Splus;
+	S=Splus;
 	double ds=BrentsAlgorithm(1.0,1.0,dedx,pos,origin,dir,Splus);
-	StepJacobian(pos1,origin,dir,ds,Sminus,dedx,J);
+	StepJacobian(pos,origin,dir,ds,S,dedx,J);
 	// Update covariance matrix
-	Cplus=Cplus.SandwichMultiply(J);
-      
-	wirepos=origin+(pos.z()-origin.z())/dir.z()*dir;
+	C=Cplus.SandwichMultiply(J);
+    	
+      }
+      else if (docaplus>doca && doca>docaminus){
+	pos=pos1;
+       	while (doca>docaminus
+	       && pos.Perp()<R_MAX 
+	       && pos.z()>cdc_origin[2]&&pos.z()<endplate_z){
+	  docaminus=doca;
 
-	DVector3 diff=pos-wirepos;
-	double d=diff.Perp();
-	doca=d*cosstereo;
+	  StepJacobian(pos,origin,dir,-1.0,Sminus,dedx,J);
+	  // Update covariance matrix
+	  Cminus=Cminus.SandwichMultiply(J);
 
-       	// Projection matrix        
-	DMatrix5x1 H_T;
-	DMatrix1x5 H;
+	  FixedStep(pos,-1.0,Sminus,dedx);
 
-	double sinphi=sin(Splus(state_phi));
-	double cosphi=cos(Splus(state_phi));
-	double dx=diff.x();
-	double dy=diff.y();
-	H(state_D)=H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo/d;
-	H(state_phi)=H_T(state_phi)
-	  =-Splus(state_D)*cosstereo*(dx*cosphi+dy*sinphi)/d;
-	H(state_z)=H_T(state_z)=-cosstereo*(dx*ux+dy*uy)/(uz*d);
-
-	double V=0.2133;
-	double res=-d*cosstereo;
-	if (fit_type==kTimeBased){	
-	  double dt=my_cdchits[id]->hit->tdrift-mT0-central_traj[m].t;
-	  res+=cdc_drift_distance(dt);
-
-	  // Measurement error
-	  V=cdc_variance(kCentral,dt);
+	  wirepos=origin+(pos.z()-origin.z())/dir.z()*dir;
+	  doca=(pos-wirepos).Perp();  
+	  
+	  break;
 	}
-	double var=V-H*Cplus*H_T;
-	my_cdchits[id]->residual=res;
-	my_cdchits[id]->sigma=sqrt(var);
 
+	S=Sminus;
+	double ds=BrentsAlgorithm(-1.0,-1.0,dedx,pos,origin,dir,Sminus);
+	StepJacobian(pos,origin,dir,ds,S,dedx,J);
+	// Update covariance matrix
+	C=Cminus.SandwichMultiply(J);
+      }
+      else{
+	while (doca<docaplus
+	       && pos.Perp()<R_MAX 
+	       && pos.z()>cdc_origin[2]&&pos.z()<endplate_z){
+	  docaplus=doca;
 
-	pulls.push_back(pull_t(my_cdchits[id]->residual,
+	  StepJacobian(pos,origin,dir,1.0,Splus,dedx,J);
+	  // Update covariance matrix
+	  Cplus=Cplus.SandwichMultiply(J);
+
+	  FixedStep(pos,1.0,Splus,dedx);
+
+	  wirepos=origin+(pos.z()-origin.z())/dir.z()*dir;
+	  doca=(pos-wirepos).Perp();  
+	  
+	  break;
+	}
+
+	S=Splus;
+	double ds=BrentsAlgorithm(1.0,1.0,dedx,pos1,origin,dir,Splus);
+	StepJacobian(pos,origin,dir,ds,S,dedx,J);
+	// Update covariance matrix
+	C=Cplus.SandwichMultiply(J);
+      }
+	
+
+      // Wire position at doca
+      wirepos=origin+(pos.z()-origin.z())/dir.z()*dir;
+      // Difference between it and track position
+      DVector3 diff=pos-wirepos; 
+      double dx=diff.x();
+      double dy=diff.y();
+      double d=diff.Perp();
+      doca=d*cosstereo;
+
+      // Projection matrix        
+      DMatrix5x1 H_T;
+      DMatrix1x5 H;
+
+      double sinphi=sin(S(state_phi));
+      double cosphi=cos(S(state_phi));
+      H(state_D)=H_T(state_D)=(dy*cosphi-dx*sinphi)*cosstereo/d;
+      H(state_phi)=H_T(state_phi)
+	=-S(state_D)*cosstereo*(dx*cosphi+dy*sinphi)/d;
+      H(state_z)=H_T(state_z)=-cosstereo*(dx*ux+dy*uy)/(uz*d);
+      
+      double V=0.2133;
+      double res=-d*cosstereo;
+      if (fit_type==kTimeBased){	
+	double dt=my_cdchits[id]->hit->tdrift-mT0-central_traj[m].t;
+	res+=cdc_drift_distance(dt);
+	
+	// Measurement error
+	  V=cdc_variance(kCentral,dt);
+      }
+      double var=V-H*C*H_T;
+      my_cdchits[id]->residual=res;
+      my_cdchits[id]->sigma=sqrt(var);
+        
+      pulls.push_back(pull_t(my_cdchits[id]->residual,
 			     my_cdchits[id]->sigma,s));
-     
-	// Use the track information to estimate t0
-	double tdiff=my_cdchits[id]->hit->tdrift-ftime;
+
+      if (DEBUG_HISTS && fit_type==kTimeBased && var>0 
+	  && fabs(res)/sqrt(var)<3.0){
+	double tdrift=my_cdchits[id]->hit->tdrift-mT0-central_traj[m].t;
+	cdc_drift->Fill(tdrift,doca);
+	cdc_sigma->Fill(tdrift,res);
+      }
+
+      
+      // Use the track information to estimate t0
+      double tdiff=my_cdchits[id]->hit->tdrift-ftime;
+	//if (doca<0.8)
+      {
 	double c1=1.181e3;
-	double t0=tdiff-c1*doca*doca;
+	int t_ind=0;
+	locate(cdc_drift_table,400,doca,&t_ind);
+	double frac=(doca-cdc_drift_table[t_ind])
+	  /(cdc_drift_table[t_ind+1]-cdc_drift_table[t_ind]);
+	double t=2.*(double(t_ind+1)+frac)-CDC_T0_OFFSET;
+	double t0=tdiff-t;
 	
 	// Calculate the variance
 	double dt_dd=2.*c1*doca;
@@ -2425,55 +2568,18 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
 	double sigma_t=2.948+35.7*doca;
 	
 	double my_var=sigma_t*sigma_t
-	+ dt_dd*dt_dd*(dd_dz*dd_dz*Cplus(state_z,state_z)
-		       +dd_dD*dd_dD*Cplus(state_D,state_D)
-		       +dd_dphi*dd_dphi*Cplus(state_phi,state_phi)
-		       +2.*dd_dz*dd_dphi*Cplus(state_z,state_phi)
-		       +2.*dd_dz*dd_dD*Cplus(state_z,state_D)
-		       +2.*dd_dphi*dd_dD*Cplus(state_phi,state_D));
+	  + dt_dd*dt_dd*(dd_dz*dd_dz*C(state_z,state_z)
+			 +dd_dD*dd_dD*C(state_D,state_D)
+			 +dd_dphi*dd_dphi*C(state_phi,state_phi)
+			 +2.*dd_dz*dd_dphi*C(state_z,state_phi)
+			 +2.*dd_dz*dd_dD*C(state_z,state_D)
+			 +2.*dd_dphi*dd_dD*C(state_phi,state_D));
 	
 	// weighted average
 	mT0wires+=t0/my_var;
 	mInvVarT0+=1./my_var;
-	
       }
-      else if (docaplus>doca && doca>docaminus){
-	/*
-	printf("id %d/%d %f %f %f\n",id+1,my_cdchits.size(),docaplus,doca,docaminus);
-	Sminus.Print();
-	while (doca>docaminus
-	       && pos.Perp()<R_MAX 
-	       && pos1.z()>cdc_origin[2]&&pos1.z()<endplate_z){
-	  docaminus=doca;
-
-	  StepJacobian(pos1,origin,dir,-1.0,Sminus,dedx,J);
-	  // Update covariance matrix
-	  Cminus=Cminus.SandwichMultiply(J);
-	  printf("z %f ",pos1.z());
-	  FixedStep(pos1,-1.0,Sminus,dedx);
-
-	  printf("z- %f\n",pos1.z());
-	  wirepos=origin+(pos1.z()-origin.z())/dir.z()*dir;
-	  doca=(pos1-wirepos).Perp();  
-	  
-	  printf("doca %f d- %f\n",doca,docaminus);
-	  break;
-	}
-	
-	Splus=Sminus;
-	double ds=BrentsAlgorithm(-1.0,-1.0,dedx,pos1,origin,dir,Splus);
-	StepJacobian(pos1,origin,dir,ds,Sminus,dedx,J);
-	// Update covariance matrix
-	Cplus=Cminus.SandwichMultiply(J);
-      
-	wirepos=origin+(pos1.z()-origin.z())/dir.z()*dir;
-	doca=(pos1-wirepos).Perp();  
-	  
-	Sminus.Print();
-	
-	printf("ds %f doca %f\n",ds,doca);
-	*/
-      }
+   
       
       // Clear hit id for next iteration
       central_traj[m].h_id=0;
@@ -3856,7 +3962,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  double drift_time=my_fdchits[id]->t-mT0-forward_traj[k].t;
 	  double drift=0.;
 	  if (drift_time>0.){	  
-	    drift=(du>0?1.:-1.)*(0.02421*sqrt(drift_time)+5.09e-4*drift_time);
+	    drift=(du>0?1.:-1.)*fdc_drift_distance(drift_time);
 	  }
 	  Mdiff(0)=drift-doca;
 
@@ -4798,6 +4904,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
   DVector3 pos;  // current position along trajectory
 
+  //  printf("-----------\n");
+
   while (z>Z_MIN && sqrt(r2_old)<R_MAX_FORWARD && z<Z_MAX){
     // get material properties from the Root Geometry
     pos.SetXYZ(S(state_x),S(state_y),z);
@@ -4838,6 +4946,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     // Step through field
     ds=Step(z,newz,dEdx,S);
 
+    //printf("z %f T0 %f ds %f \n",z,mT0wires,ds);
     double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
     double one_over_beta2=1.+mass2*q_over_p_sq;
     mT0wires+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
@@ -4855,7 +4964,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 	ds=Step(z,newz,dEdx,S1);	
 	r2=S1(state_x)*S1(state_x)+S1(state_y)*S1(state_y);
 
-	if (r2<r2_old && newz<endplate_z){   
+	if (r2<r2_old && newz<endplate_z){
+	  // printf("z %f T0 %f ds %f \n",z,mT0wires,ds);
+   
 	  // Correct estimate for mT0wires
 	  q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
 	  double one_over_beta2=1.+mass2*q_over_p_sq;
@@ -4890,12 +5001,16 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 	    
 	    // Step through the field
 	    ds=Step(z,newz,dEdx,S);
+	    
+	    //printf("z %f T0 %f ds %f \n",z,mT0wires,ds);
 
 	    // Correct estimate for mT0wires
 	    q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
 	    double one_over_beta2=1.+mass2*q_over_p_sq;
 	    mT0wires+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
-
+	    
+	    // printf("T0 %f\n",mT0wires);
+	    
 	    // Compute new squared radius
 	    r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
 
@@ -4922,7 +5037,14 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       C=C.SandwichMultiply(J);
 
       // Step to the "z vertex"
-      Step(z,newz,dEdx,S);
+      ds=Step(z,newz,dEdx,S);
+
+      // Correct estimate for mT0wires
+      q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+      double one_over_beta2=1.+mass2*q_over_p_sq;
+      mT0wires+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+      
+      //printf("Final ds %f T0 %f\n",ds,mT0wires);
 
       break;
     }
@@ -5177,7 +5299,7 @@ jerror_t DTrackFitterKalmanSIMD::FindSmoothedResidual(unsigned int id,
   Cplus=Cplus.SandwichMultiply(J);	
   
   // Step the state vector through the field
-  Step(z,zplus,dEdx,Splus);
+  double ds2=Step(z,zplus,dEdx,Splus);
   
   wirepos=origin+((zplus-z0w)/uz)*dir;
   dx=Splus(state_x)-wirepos.x();
@@ -5193,7 +5315,7 @@ jerror_t DTrackFitterKalmanSIMD::FindSmoothedResidual(unsigned int id,
   Cminus=Cminus.SandwichMultiply(J);
 
   // Step through the field
-  Step(z,zminus,dEdx,Sminus);
+  double ds3=Step(z,zminus,dEdx,Sminus);
   
   wirepos=origin+((zminus-z0w)/uz)*dir;
   dx=Sminus(state_x)-wirepos.x();
@@ -5239,6 +5361,10 @@ jerror_t DTrackFitterKalmanSIMD::FindSmoothedResidual(unsigned int id,
     C=Cplus;
   }
   else if (doca3>doca && doca>doca2){ 
+    double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+    double one_over_beta2=1.+mass2*q_over_p_sq;
+    tflight+=ds2*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+
     // we haven't bracketed the minimum yet, but we know which direction to go
     z=zplus;
     double new_z=z;
@@ -5246,16 +5372,22 @@ jerror_t DTrackFitterKalmanSIMD::FindSmoothedResidual(unsigned int id,
       doca=doca2;
       new_z=z+1;
       
-      StepJacobian(zminus,endplate_z,Splus,dEdx,J);
+      StepJacobian(z,new_z,Splus,dEdx,J);
       //C=J*C*J.Transpose();
       Cplus=Cplus.SandwichMultiply(J);
       
-      Step(z,new_z,0,Splus);
+      q_over_p_sq=Splus(state_q_over_p)*Splus(state_q_over_p);
+      one_over_beta2=1.+mass2*q_over_p_sq;
+
+      double ds=Step(z,new_z,dEdx,Splus);
       wirepos=origin+((new_z-z0w)/uz)*dir;
       dx=Splus(state_x)-wirepos.x();
       dy=Splus(state_y)-wirepos.y(); 
       doca2=sqrt(dx*dx+dy*dy);
       z=new_z;
+
+      tflight+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+
     }
     double dz=BrentsAlgorithm(z,1.0,dEdx,origin,dir,Splus);
     new_z=z+dz;
@@ -5274,6 +5406,55 @@ jerror_t DTrackFitterKalmanSIMD::FindSmoothedResidual(unsigned int id,
     doca=sqrt(dx*dx+dy*dy)*cosstereo;
     
     C=Cplus;
+  }
+  else{
+    double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+    double one_over_beta2=1.+mass2*q_over_p_sq;
+    tflight+=ds3*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+    
+    // we haven't bracketed the minimum yet, but we know which direction to go
+    z=zminus;
+    double new_z=z;
+    while (doca>doca3 && z>cdc_origin[2]){
+      doca=doca3;
+      new_z=z-1;
+      
+      StepJacobian(z,new_z,Sminus,dEdx,J);
+      //C=J*C*J.Transpose();
+      Cminus=Cminus.SandwichMultiply(J);
+      
+      q_over_p_sq=Splus(state_q_over_p)*Sminus(state_q_over_p);
+      one_over_beta2=1.+mass2*q_over_p_sq;
+
+      double ds=Step(z,new_z,dEdx,Sminus);
+      wirepos=origin+((new_z-z0w)/uz)*dir;
+      dx=Sminus(state_x)-wirepos.x();
+      dy=Sminus(state_y)-wirepos.y(); 
+      doca3=sqrt(dx*dx+dy*dy);
+
+      tflight+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+
+      z=new_z;
+    }
+    double dz=BrentsAlgorithm(z,-1.0,dEdx,origin,dir,Sminus);
+    new_z=z+dz;
+
+    StepJacobian(z,new_z,Sminus,dEdx,J);
+    //C=J*C*J.Transpose();
+    Cminus=Cminus.SandwichMultiply(J);
+    
+    Step(z,new_z,dEdx,Sminus);
+    wirepos=origin+((new_z-z0w)/uz)*dir;
+
+    x=Sminus(state_x);
+    y=Sminus(state_y);
+    dx=x-wirepos.x();
+    dy=y-wirepos.y(); 
+    doca=sqrt(dx*dx+dy*dy)*cosstereo;
+    
+    C=Cminus;
+
+   
   }
   
   // Track projection
@@ -5300,35 +5481,39 @@ jerror_t DTrackFitterKalmanSIMD::FindSmoothedResidual(unsigned int id,
   my_cdchits[id]->residual=res;
   my_cdchits[id]->sigma=sqrt(V);
 
-  // Use the track information to estimate t0
   double tdiff=my_cdchits[id]->hit->tdrift-tflight;
-  double c1=1.181e3;
-  double t=c1*doca*doca;
-  double t0=tdiff-t;
+  //if (doca<0.8)
+    {
+    // Use the track information to estimate t0   
+    double c1=1.181e3;	  
+    int t_ind=0;
+    locate(cdc_drift_table,400,doca,&t_ind);
+    double frac=(doca-cdc_drift_table[t_ind])
+      /(cdc_drift_table[t_ind+1]-cdc_drift_table[t_ind]);
+    double t=2.*(double(t_ind+1)+frac)-CDC_T0_OFFSET;
+    // double t=c1*doca*doca;
+    double t0=tdiff-t;
 
-  //printf("t0 %f t %f %f d %f\n",t0,tdiff,t,d);
-
-
-  // Compute variance in t0
-  double dt_dd=2.*c1*doca;
-  double cos2=cosstereo*cosstereo;
-  double dd_dx=x*cos2/doca;
-  double dd_dy=y*cos2/doca;
-  double var_t0=(dt_dd*dt_dd)*(dd_dx*dd_dx*C(state_x,state_x)
-			       +dd_dy*dd_dy*C(state_y,state_y)
-			       +2.*dd_dx*dd_dy*C(state_x,state_y));
-  double sigma_t=2.948+35.7*doca;
-  var_t0+=sigma_t*sigma_t;
-
-  mT0wires+=t0/var_t0;
-  mInvVarT0+=1./var_t0;  
-
-  if (DEBUG_HISTS && fit_type==kTimeBased && V>0){
-    double tdrift=tdiff-mT0;
-    cdc_drift->Fill(tdrift,doca);
-    cdc_sigma->Fill(tdrift,res);
+    // Compute variance in t0
+    double dt_dd=2.*c1*doca;
+    double cos2=cosstereo*cosstereo;
+    double dd_dx=x*cos2/doca;
+    double dd_dy=y*cos2/doca;
+    double var_t0=(dt_dd*dt_dd)*(dd_dx*dd_dx*C(state_x,state_x)
+				 +dd_dy*dd_dy*C(state_y,state_y)
+				 +2.*dd_dx*dd_dy*C(state_x,state_y));
+    double sigma_t=2.948+35.7*doca;
+    var_t0+=sigma_t*sigma_t;
+    
+    mT0wires+=t0/var_t0;
+    mInvVarT0+=1./var_t0;  
   }
-
-
+  
+  if (DEBUG_HISTS && fit_type==kTimeBased && V>0 && fabs(res)/sqrt(V)<3.0){
+    double tdrift=tdiff-mT0;
+    cdc_drift_forward->Fill(tdrift,doca);
+    cdc_sigma_forward->Fill(tdrift,res);
+  }
+  
   return NOERROR;
 }

@@ -205,7 +205,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   };
   double fdc_y_variance(double alpha,double x,double dE);
   double cdc_variance(fit_region region,double t);  
-  double cdc_drift_distance(double t);
+  double cdc_drift_distance(double t);  
+  double fdc_drift_distance(double t);
 
   void ResetKalmanSIMD(void);
   jerror_t GetProcessNoise(double ds,double Z, double rho_Z_over_A, 
@@ -333,11 +334,15 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
  private:
   bool last_smooth;
 
+  double cdc_drift_table[400],fdc_drift_table[200];
+
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
   TH2F *Hstepsize,*HstepsizeDenom;
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
-  TH2F *cdc_drift,*fdc_drift,*cdc_sigma,*fdc_xsigma;
+  TH2F *cdc_drift,*fdc_drift;
+  TH2F *cdc_sigma,*fdc_xsigma;
+  TH2F *cdc_drift_forward,*cdc_sigma_forward;
   TH3F *fdc_ysigma;
 };
 
