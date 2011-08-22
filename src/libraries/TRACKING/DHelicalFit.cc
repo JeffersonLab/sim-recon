@@ -40,7 +40,7 @@ bool RiemannFit_hit_cmp(DHFHit_t *a,DHFHit_t *b){
 //-----------------
 DHelicalFit::DHelicalFit(void)
 {
-  x0 = y0 = r0 = 0;
+  x0 = y0 = r0 = tanl = z_vertex = p_trans = phi= theta = q = p = dzdphi =0;
   chisq = 0;
   chisq_source = NOFIT;
   bfield = NULL;
@@ -69,6 +69,7 @@ void DHelicalFit::Copy(const DHelicalFit &fit)
 	r0 = fit.r0;
 	q = fit.q;
 	p = fit.p;
+	tanl=fit.tanl;
 	p_trans = fit.p_trans;
 	phi = fit.phi;
 	theta = fit.theta;
@@ -1178,6 +1179,22 @@ jerror_t DHelicalFit::FitTrackRiemann(float rc_input){
 
   return error;
 }
+
+
+jerror_t DHelicalFit::FitCircleAndLineRiemann(float rc_input){
+  jerror_t error=NOERROR;
+
+  if (CovR_!=NULL) delete CovR_;
+  if (CovRPhi_!=NULL) delete CovRPhi_; 
+  CovR_=NULL;
+  CovRPhi_=NULL;
+
+  error=FitCircleRiemannCorrected(rc_input);
+  error=FitLineRiemann();
+
+  return error;
+}
+
 
 
 

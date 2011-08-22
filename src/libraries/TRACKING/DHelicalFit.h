@@ -114,7 +114,8 @@ class DHelicalFit{
   void     QuickPtrans(void);
   jerror_t GuessChargeFromCircleFit(void);
   jerror_t FitTrack(void);
-  jerror_t FitTrackRiemann(float rc);
+  jerror_t FitTrackRiemann(float rc); 
+  jerror_t FitCircleAndLineRiemann(float rc);
   jerror_t FitTrack_FixedZvertex(float z_vertex);
   jerror_t FitLine_FixedZvertex(float z_vertex);
   jerror_t Fill_phi_circle(vector<DHFHit_t*> hits, float x0, float y0);
