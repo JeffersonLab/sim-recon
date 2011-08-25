@@ -421,10 +421,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  if (fit_type==kTimeBased){
 	    double tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
 		-forward_traj[k-1].t;
-	    dm=cdc_drift_distance(tdrift);
+	    dm=cdc_drift_distance(tdrift,forward_traj[k].B);
 	    
 	    // variance
-	    Vc=cdc_variance(kForward,tdrift);
+	    double tx=S(state_tx),ty=S(state_ty);
+	    double tanl=1./sqrt(tx*tx+ty*ty);
+	    Vc=cdc_variance(tanl,tdrift);
 	  }
 
 	  // inverse variance including prediction

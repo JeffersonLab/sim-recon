@@ -41,10 +41,10 @@
 #define TAN_MAX 10.
 
 
-#define NUM_SIGMA 1000.0
-#define NUM_FDC_SIGMA 1000.0
+#define NUM_SIGMA 50.0
+#define NUM_FDC_SIGMA 50.0
 
-#define CDC_VARIANCE 0.000032
+#define CDC_VARIANCE 0.0001
 #define FDC_CATHODE_VARIANCE 0.0005 // 0.000225
 #define FDC_ANODE_VARIANCE 0.0006
 
@@ -56,14 +56,15 @@
 #define MAX_DEDX 40.
 #define MIN_ITER 2
 #define MIN_CDC_ITER 0
+#define MIN_FDC_HITS 2
 
 #define MOLIERE_FRACTION 0.99
 #define DE_PER_STEP_WIRE_BASED 0.00025 // 250 keV
 #define DE_PER_STEP_TIME_BASED 0.00025
 #define BFIELD_FRAC 0.002
 #define MIN_STEP_SIZE 0.1 // 1 mm
-#define CDC_INTERNAL_STEP_SIZE 0.2
-#define FDC_INTERNAL_STEP_SIZE 0.2
+#define CDC_INTERNAL_STEP_SIZE 0.25
+#define FDC_INTERNAL_STEP_SIZE 0.25
 
 #define ELECTRON_MASS 0.000511 // GeV
 
@@ -90,7 +91,7 @@ typedef struct{
   DVector3 pos;
   DMatrix5x1 S,Skk;
   DMatrix5x5 J,JT,Q,Ckk;
-  double s,t;
+  double s,t,B;
   double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
 }DKalmanSIMDState_t;
 
@@ -204,8 +205,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     state_Z,
   };
   double fdc_y_variance(double alpha,double x,double dE);
-  double cdc_variance(fit_region region,double t);  
-  double cdc_drift_distance(double t);  
+  double cdc_variance(double tanl,double t);  
+  double cdc_drift_distance(double t,double Bz);  
   double fdc_drift_distance(double t);
 
   void ResetKalmanSIMD(void);
@@ -301,7 +302,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double ftime, len;
 
   // B-field and gradient
-  double Bx,By,Bz;
+  double Bx,By,Bz,B;
   double dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
   bool get_field;
 
@@ -333,6 +334,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
  private:
   bool last_smooth;
+  DMatrix5x5 I5x5;
 
   double cdc_drift_table[400],fdc_drift_table[200];
 
@@ -341,9 +343,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *Hstepsize,*HstepsizeDenom;
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
   TH2F *cdc_drift,*fdc_drift;
-  TH2F *cdc_sigma,*fdc_xsigma;
-  TH2F *cdc_drift_forward,*cdc_sigma_forward;
-  TH3F *fdc_ysigma;
+  TH2F *cdc_res,*fdc_xres,*cdc_drift_vs_B;
+  TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B;
+  TH3F *fdc_yres;
 };
 
 
