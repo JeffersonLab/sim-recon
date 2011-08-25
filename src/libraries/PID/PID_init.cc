@@ -3,8 +3,6 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-#include "DPhoton_factory.h"
-#include "DPhoton_factory_THROWN.h"
 #include "DTwoGammaFit_factory.h"
 #include "DTwoGammaFit_factory_PI0.h"
 #include "DTwoGammaFit_factory_ETA.h"
@@ -29,7 +27,6 @@ typedef JFactory<DBeamPhoton> DBeamPhoton_factory;
 jerror_t PID_init(JEventLoop *loop)
 {
 	/// Create and register PID data factories
-//	loop->AddFactory(new DPhoton_factory());
 //	loop->AddFactory(new DPi0_factory());
 //	loop->AddFactory(new DTwoGammaFit_factory(0.135));
 	loop->AddFactory(new DTwoGammaFit_factory_PI0);
@@ -44,7 +41,6 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DNeutralTrackHypothesis_factory);
 	loop->AddFactory(new DNeutralShowerCandidate_factory);
 	loop->AddFactory(new DVertexIndependentResults_factory);
-//	loop->AddFactory(new DPhoton_factory_THROWN);
 	loop->AddFactory(new DVertex_factory);
 	loop->AddFactory(new DParticleSet_factory);
 	loop->AddFactory(new DPhysicsEvent_factory);
