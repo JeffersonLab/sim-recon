@@ -14,7 +14,6 @@
 #include <TRACKING/DTrackFitter.h>
 #include <PID/DParticleID.h>
 #include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALPhoton.h>
 #include <TOF/DTOFPoint.h>
 #include <TRACKING/DMCThrown.h>
 #include <START_COUNTER/DSCHit.h>
