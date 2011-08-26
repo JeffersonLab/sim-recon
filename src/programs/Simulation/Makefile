@@ -1,4 +1,4 @@
-DIRS += genr8 genr8_2_hddm HDGeant mcsmear genpi plugins/hdparsim
+DIRS += genr8 genr8_2_hddm HDGeant mcsmear genpi
 
 ifdef AMPTOOLS
 ifdef CLHEP
