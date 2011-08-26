@@ -5,6 +5,11 @@
 // Creator: M. Kornicer (on Linux stan)
 //
 
+
+
+#if 0 // disabling due to obsolete DPhoton class being no longer available
+
+
 #include <math.h>
 
 #include <JANA/JEvent.h>
@@ -12,7 +17,7 @@ using namespace jana;
 
 #include "DTwoGammaFit.h"
 #include "DKinFit.h"
-#include "DPhoton.h"
+//#include "DPhoton.h"
 #include "DTwoGammaFit_factory.h"
 
 
@@ -120,5 +125,7 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 	return NOERROR;
 }
+
+#endif // disabling due to DPhoton
 
 

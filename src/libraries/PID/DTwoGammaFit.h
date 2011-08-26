@@ -4,11 +4,16 @@
 // Creator: M. Kornicer (on Linux stan)
 //
 
+
+// WARNING: This file and the corresponding DTwoGammaFit_factory have been effectively 
+// DISABLED due to DPhoton being removed.  8/25/2011  DL
+
+
 #ifndef _DTwoGammaFit_
 #define _DTwoGammaFit_
 
 #include "DKinematicData.h"
-#include "DPhoton.h"
+//#include "DPhoton.h"
 
 #include <JANA/JObject.h>
 using namespace jana;
@@ -20,6 +25,9 @@ class DTwoGammaFit:public DKinematicData {
                 DTwoGammaFit();
                 DTwoGammaFit(const JObject::oid_t id);
 		~DTwoGammaFit();
+
+#if 0 // disabling due to obsolete DPhoton class being no longer available
+
 // Getters: 
                inline double getChi2() const { return fChi2; }
 
@@ -78,7 +86,12 @@ class DTwoGammaFit:public DKinematicData {
                DKinematicData fChildFits[2];
                DLorentzVector fChildMoms[2];
 
+#endif // disabling due to DPhoton
+
 };
+
+
+#if 0 // disabling due to obsolete DPhoton class being no longer available
 
 // Getters
 
@@ -145,6 +158,9 @@ inline void DTwoGammaFit::setChildID(const oid_t aID, const int i )
 {
    fIDs[i] = aID;
 }
+
+#endif // disabling due to DPhoton
+
 
 
 #endif // _DTwoGammaFit_
