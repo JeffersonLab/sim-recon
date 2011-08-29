@@ -5,11 +5,6 @@
 // Creator: M. Kornicer (on Linux stan)
 //
 
-
-
-#if 0 // disabling due to obsolete DPhoton class being no longer available
-
-
 #include <math.h>
 
 #include <JANA/JEvent.h>
@@ -17,7 +12,8 @@ using namespace jana;
 
 #include "DTwoGammaFit.h"
 #include "DKinFit.h"
-//#include "DPhoton.h"
+#include "DVertex.h"
+#include "DNeutralTrackHypothesis.h"
 #include "DTwoGammaFit_factory.h"
 
 
@@ -31,14 +27,14 @@ bool SortByProb(const DTwoGammaFit *a,const DTwoGammaFit *b){
 //----------------
 DTwoGammaFit_factory::DTwoGammaFit_factory(double aMass)
 {
-	// Set defaults
-        if (aMass > 0) { 
-           fMass = aMass; 
-         }
-         else {
-           cout << "Mass undefined, set to pi0" << endl; 
-           fMass = 0.135; 
-         }
+  // Set defaults
+  if (aMass > 0) { 
+    fMass = aMass; 
+  }
+  else {
+    cout << "Mass undefined, set to pi0" << endl; 
+    fMass = 0.135; 
+  }
 
 }
 
@@ -50,82 +46,114 @@ DTwoGammaFit_factory::DTwoGammaFit_factory(double aMass)
 //			factories.
 //------------------
 jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
-{
-	vector<const DPhoton*> photons;
-	eventLoop->Get(photons);
+{ 
+  //so the way this works is that for a given DBCALShower/DFCALShower, a
+  //DNeutralTrackHypothesis is created for each DVertex (DVertex's are
+  //determined by grouping together DChargedTrackHypothesis). We
+  //obviously don't want to consider combinations of hypotheses from
+  //different vertices.
+
+  vector<const DVertex*> vertices;
+  vector<const DNeutralTrackHypothesis*> neutrals;
+  eventLoop->Get(vertices);
+  eventLoop->Get(neutrals);
    
-        JObject::oid_t nPairs=0;
-	// Loop over all fit candidates.
-        for (unsigned int i = 0; i < photons.size() ; i++) {
-            if ( photons[i]->getTag() == DPhoton::kCharge  ) continue;
-            for (unsigned int j = i+1; j < photons.size() ; j++) {
-                if ( photons[j]->getTag() == DPhoton::kCharge  ) continue;
+  JObject::oid_t nPairs=0;
+  //Loop over all fit candidates (all combinations of two
+  //photon-hypotheses from a common vertex)
+  for (unsigned int h=0; h<vertices.size(); h++) {
+    for (unsigned int i=0; i<neutrals.size(); i++) {
 
-                nPairs++;
-                DKinFit *kfit = new DKinFit(); 
-                kfit->SetVerbose(0);
+      //only consider photon hypotheses
+      if ( neutrals[i]->dPID != Gamma ) continue;
 
-                vector<DKinematicData> kindata;
-                kindata.clear();
-                kindata.push_back( *photons[i] );
-                kindata.push_back( *photons[j] );
+      //each hypothesis has a vertex associated with it
+      vector<const DVertex*> hypothesisVertex;
+      neutrals[i]->Get(hypothesisVertex);
+      //each hypothesis should have exactly one vertex asscoiated with it
+      //if not, something's wrong
+      if (hypothesisVertex.size() != 1) continue;
 
-                kfit->SetFinal(kindata);
-                kfit->FitTwoGammas(fMass,1.); // second parameter is scale for photon error matrix
+      //check if this hypothesis comes from the vertex currently under
+      //consideration
+      if (hypothesisVertex[0] != vertices[h]) continue;
+
+      for (unsigned int j = i+1; j < neutrals.size() ; j++) {
+	//same checks as above
+	if ( neutrals[j]->dPID != Gamma ) continue;
+	neutrals[j]->Get(hypothesisVertex);
+	if (hypothesisVertex.size() != 1) continue;
+	if (hypothesisVertex[0] != vertices[h]) continue;
+
+	nPairs++;
+
+	//set up the fit
+	DKinFit *kfit = new DKinFit(); 
+	kfit->SetVerbose(0);
+
+	vector<DKinematicData> kindata;
+	kindata.clear();
+	kindata.push_back( *(neutrals[i]->dKinematicData) );
+	kindata.push_back( *(neutrals[j]->dKinematicData) );
+
+	kfit->SetFinal(kindata);
+	//fit!
+	kfit->FitTwoGammas(fMass,1.); // second parameter is scale for photon error matrix
  
-                vector<DKinematicData> kinout = kfit->GetFinal_out();
-                if (kinout.size() != 2) continue;
+	vector<DKinematicData> kinout = kfit->GetFinal_out();
+	if (kinout.size() != 2) continue;
 
-                DTwoGammaFit* fit2g = new DTwoGammaFit( nPairs );
+	DTwoGammaFit* fit2g = new DTwoGammaFit( nPairs );
 
-// set two gamma kinematics
-                DLorentzVector P4U = photons[i]->lorentzMomentum() + photons[j]->lorentzMomentum(); 
-                DLorentzVector P4 = kinout[0].lorentzMomentum() + kinout[1].lorentzMomentum(); 
-		DVector3 vertex = 0.5*(photons[i]->position() + photons[j]->position());
+	// set two gamma kinematics
+	DLorentzVector P4U = kindata[0].lorentzMomentum() + kindata[1].lorentzMomentum();
+	DLorentzVector P4 = kinout[0].lorentzMomentum() + kinout[1].lorentzMomentum();
+	DVector3 vertex = vertices[h]->dSpacetimeVertex.Vect();
 
-		DMatrixDSym errorMatrix(7);
+	DMatrixDSym errorMatrix(7);
 
-		for (int k=0; k<3; k++) {
-		  for (int l=0; l<3; l++) {
-		    errorMatrix[k][l]=kinout[0].errorMatrix()[k][l] + kinout[1].errorMatrix()[k][l];
-		  }
-		}
+	for (int k=0; k<3; k++) {
+	  for (int l=0; l<3; l++) {
+	    errorMatrix[k][l]=kinout[0].errorMatrix()[k][l] + kinout[1].errorMatrix()[k][l];
+	  }
+	}
 
-                fit2g->setUMass( P4U.M() );
-                fit2g->setMass( P4.M() );
-                fit2g->setMomentum( P4.Vect() );
-		fit2g->setErrorMatrix(errorMatrix);
-                fit2g->setPosition( vertex );
-                fit2g->setProb( kfit->Prob());
-                fit2g->setChi2( kfit->Chi2());
-		fit2g->setNdf( kfit->Ndf());
-                for (int k=0; k < 6; k++) {
-                   fit2g->setPulls( kfit->GetPull(k),  k);
-                }
-                fit2g->setChildTag( photons[i]->getTag(), 0);
-                fit2g->setChildTag( photons[j]->getTag(), 1);
-                fit2g->setChildID( photons[i]->id, 0);
-                fit2g->setChildID( photons[j]->id, 1);
-                fit2g->setChildMom(  photons[i]->lorentzMomentum() , 0);
-                fit2g->setChildMom(  photons[j]->lorentzMomentum() , 1);
+	fit2g->setUMass( P4U.M() );
+	fit2g->setMass( P4.M() );
+	fit2g->setMomentum( P4.Vect() );
+	fit2g->setErrorMatrix(errorMatrix);
+	fit2g->setPosition( vertex );
+	fit2g->setProb( kfit->Prob());
+	fit2g->setChi2( kfit->Chi2());
+	fit2g->setNdf( kfit->Ndf());
+	for (int k=0; k < 6; k++) {
+	  fit2g->setPulls( kfit->GetPull(k),  k);
+	}
+	fit2g->setChildID( kindata[0].id, 0);
+	fit2g->setChildID( kindata[1].id, 1);
+	fit2g->setChildMom( kindata[0].lorentzMomentum() , 0);
+	fit2g->setChildMom( kindata[1].lorentzMomentum() , 1);
 
-                fit2g->setChildFit(  kinout[0] , 0);
-                fit2g->setChildFit(  kinout[1] , 1);
+	fit2g->setChildFit( kinout[0] , 0);
+	fit2g->setChildFit( kinout[1] , 1);
+
+	//we add the DVertex as an associated object to ease comparison of pi0
+	//vertices with charged track vertices (you need only compare DVertex
+	//pointers, rather than doing a fuzzy comparison of vertex coordinates)
+	fit2g->AddAssociatedObject(vertices[h]);
  
-
-		_data.push_back( fit2g );
+	//must check if nan to prevent problems (crashes) in sort()
+	//still need to look into avoiding nan's in first place
+	if ( !isnan(fit2g->getProb()) ) _data.push_back( fit2g );
  
-		delete kfit;
+	delete kfit;
 
-           } 
-        } 
+      } 
+    }
+  }
 
-	// sort by probability so most probable fits are listed first
-	sort(_data.begin(), _data.end(), SortByProb);
+  // sort by probability so most probable fits are listed first
+  sort(_data.begin(), _data.end(), SortByProb);
 
-	return NOERROR;
+  return NOERROR;
 }
-
-#endif // disabling due to DPhoton
-
-

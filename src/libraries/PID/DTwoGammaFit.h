@@ -4,16 +4,10 @@
 // Creator: M. Kornicer (on Linux stan)
 //
 
-
-// WARNING: This file and the corresponding DTwoGammaFit_factory have been effectively 
-// DISABLED due to DPhoton being removed.  8/25/2011  DL
-
-
 #ifndef _DTwoGammaFit_
 #define _DTwoGammaFit_
 
 #include "DKinematicData.h"
-//#include "DPhoton.h"
 
 #include <JANA/JObject.h>
 using namespace jana;
@@ -25,8 +19,6 @@ class DTwoGammaFit:public DKinematicData {
                 DTwoGammaFit();
                 DTwoGammaFit(const JObject::oid_t id);
 		~DTwoGammaFit();
-
-#if 0 // disabling due to obsolete DPhoton class being no longer available
 
 // Getters: 
                inline double getChi2() const { return fChi2; }
@@ -41,9 +33,6 @@ class DTwoGammaFit:public DKinematicData {
 // mass before the fit
                inline double getUMass() const { return fUMass; }  
 
-// the origin of the  photon (FCAL, BCAL, charged)
-               inline DPhoton::PhotonTag getChildTag(int child) const { return fTags[child]; }
-
 // look-up children
                inline oid_t getChildID(int child)  const { return fIDs[child]; }
 
@@ -51,18 +40,17 @@ class DTwoGammaFit:public DKinematicData {
                const DKinematicData* getChildFit(const int i) const ;
 
 // Get momenta before the fit
-               const DLorentzVector* getChildMom(const int i) const ; 
+               const DLorentzVector* getChildMom(const int i) const ;
 
 // Setters:
                void setChi2(double const aChi2);  
-					void setNdf(int const aNdf);  
+	       void setNdf(int const aNdf);  
                void setProb(double const aProb);  
                void setPulls(double const aPull, const int i);  
-               void setUMass(double const uMass);  
-               void setChildTag(const DPhoton::PhotonTag aTag, const int i ); 
+               void setUMass(double const uMass);
                void setChildID(const JObject::oid_t aID, const int i ); 
-               void setChildFit(const DKinematicData& aChildFit, const int i);  
-               void setChildMom(const DLorentzVector& aChildMom, const int i);  
+               void setChildFit(const DKinematicData& aChildFit, const int i);
+               void setChildMom(const DLorentzVector& aChildMom, const int i);
 
 
 			void toStrings(vector<pair<string,string> > &items)const{
@@ -75,23 +63,16 @@ class DTwoGammaFit:public DKinematicData {
 			}
 	private:
 
-               JObject::oid_t fIDs[2];  
-               DPhoton::PhotonTag fTags[2]; // tag children origin (FCAL/BCAL/charged)
+               JObject::oid_t fIDs[2];
                double fProb;  
                double fChi2;  
-					int fNdf;
+	       int fNdf;
                double fMass;  
                double fUMass;  // unconstrained mass
                double fPulls[6]; 
                DKinematicData fChildFits[2];
                DLorentzVector fChildMoms[2];
-
-#endif // disabling due to DPhoton
-
 };
-
-
-#if 0 // disabling due to obsolete DPhoton class being no longer available
 
 // Getters
 
@@ -148,20 +129,10 @@ inline void DTwoGammaFit::setUMass(const double uMass)
      fUMass = uMass;
 }
 
-// set bits with respect to the photon detection 
-inline void DTwoGammaFit::setChildTag(const DPhoton::PhotonTag aTag, const int i )
-{
-   fTags[i] = aTag;
-}
-
 inline void DTwoGammaFit::setChildID(const oid_t aID, const int i )
 {
    fIDs[i] = aID;
 }
 
-#endif // disabling due to DPhoton
-
-
 
 #endif // _DTwoGammaFit_
-

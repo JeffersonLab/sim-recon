@@ -1,11 +1,4 @@
-// DPhoton member functions
-
 #include "DTwoGammaFit.h"
-
-// WARNING: This file and the corresponding DTwoGammaFit_factory have been effectively 
-// DISABLED due to DPhoton being removed.  8/25/2011  DL
-
-#if 0 // disabling due to obsolete DPhoton class being no longer available
 
 DTwoGammaFit::DTwoGammaFit()
 {
@@ -14,7 +7,6 @@ DTwoGammaFit::DTwoGammaFit()
         fChildFits[i].setPosition( null );
         fChildFits[i].setMomentum( null );
         fChildFits[i].setMass(0.);
-        fTags[i] = DPhoton::kDefaultTag;
         fIDs[i] = 0;
     }
     fChi2 = 0;
@@ -33,7 +25,6 @@ DTwoGammaFit::DTwoGammaFit(const oid_t id) :
         fChildFits[i].setPosition( null );
         fChildFits[i].setMomentum( null );
         fChildFits[i].setMass(0.);
-        fTags[i] = DPhoton::kDefaultTag;
         fIDs[i] = 0;
     }
     fChi2 = 0;
@@ -47,6 +38,3 @@ DTwoGammaFit::DTwoGammaFit(const oid_t id) :
 DTwoGammaFit::~DTwoGammaFit()
 {
 }
-
-#endif // disabling due to DPhoton
-
