@@ -146,8 +146,12 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				if(locPIDHypotheses[loc_k] == Neutron)
 					locFOM = -1.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
 
+				// Expand DKinematicData vector if necessary
+		      while(dKinematicDataVector.size() <=_data.size())
+					dKinematicDataVector.push_back(new DKinematicData);
+
 				// Build DKinematicData //dEdx not set
-				locKinematicData = new DKinematicData;
+		      locKinematicData = dKinematicDataVector[_data.size()];
 				locKinematicData->setMass(locMass);
 				locKinematicData->setCharge(0.0);
 
@@ -197,6 +201,10 @@ jerror_t DNeutralTrackHypothesis_factory::erun(void)
 //------------------
 jerror_t DNeutralTrackHypothesis_factory::fini(void)
 {
+	for(unsigned int loc_i = 0; loc_i < dKinematicDataVector.size(); loc_i++)
+		delete dKinematicDataVector[loc_i];
+	dKinematicDataVector.clear();
+
 	return NOERROR;
 }
 

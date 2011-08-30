@@ -33,6 +33,7 @@ class DNeutralTrackHypothesis_factory:public jana::JFactory<DNeutralTrackHypothe
 		DParticleID *dPIDAlgorithm;
 		double dTargetLength;
 		double dTargetRadius;
+		vector<DKinematicData*> dKinematicDataVector;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.
