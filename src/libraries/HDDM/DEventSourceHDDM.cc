@@ -204,8 +204,11 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DMCTrackHit" && tag=="")
 	  return Extract_DMCTrackHit(my_hddm_s, dynamic_cast<JFactory<DMCTrackHit>*>(factory));
 	
+	if(dataClassName =="DMCReaction" && tag=="")
+	  return Extract_DMCReaction(my_hddm_s, dynamic_cast<JFactory<DMCReaction>*>(factory), loop);
+	
 	if(dataClassName =="DBeamPhoton" && tag=="")
-	  return Extract_DBeamPhoton(my_hddm_s, dynamic_cast<JFactory<DBeamPhoton>*>(factory));
+	  return Extract_DBeamPhoton(my_hddm_s, dynamic_cast<JFactory<DBeamPhoton>*>(factory), loop);
 	
 	if(dataClassName =="DMCThrown" && tag=="")
 	  return Extract_DMCThrown(my_hddm_s, dynamic_cast<JFactory<DMCThrown>*>(factory));
@@ -727,17 +730,21 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 }
 
 //------------------
-// Extract_DBeamPhoton
+// Extract_DMCReaction
 //------------------
-jerror_t DEventSourceHDDM::Extract_DBeamPhoton(s_HDDM_t *hddm_s,  JFactory<DBeamPhoton> *factory)
+jerror_t DEventSourceHDDM::Extract_DMCReaction(s_HDDM_t *hddm_s,  JFactory<DMCReaction> *factory, JEventLoop *loop)
 {
 	/// Copies the data from the given hddm_s structure. This is called
 	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
 	/// returns OBJECT_NOT_AVAILABLE immediately.
 	
-	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	JFactory_base* tmp_fac = loop->GetFactory("DBeamPhoton", "");
+	JFactory<DBeamPhoton> *factory2 = dynamic_cast<JFactory<DBeamPhoton>*> (tmp_fac);
 	
-	vector<DBeamPhoton*> data;
+	if(factory==NULL || factory2==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DMCReaction*> dmcreactions;
+	vector<DBeamPhoton*> dbeam_photons;
 
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -747,33 +754,99 @@ jerror_t DEventSourceHDDM::Extract_DBeamPhoton(s_HDDM_t *hddm_s,  JFactory<DBeam
 		// ------------ Reactions --------------
 		s_Reactions_t *reactions=PE->in[i].reactions;
 		if(!reactions)continue;
-
+		
 		for(unsigned int j=0; j<reactions->mult; j++){
+
+			DMCReaction *mcreaction = new DMCReaction;
+			dmcreactions.push_back(mcreaction);
+
+			mcreaction->type = reactions->in[j].type;
+			mcreaction->weight = reactions->in[j].weight;
+
 			s_Beam_t *beam = reactions->in[j].beam;
 			if(beam!=HDDM_NULL){
-				s_Momentum_t *momentum = beam->momentum;
+
+				s_Momentum_t *mom_beam = beam->momentum;
+				s_Properties_t *prop_beam = beam->properties;
 				
+				// Copy values into DBeamPhoton
 				DVector3 pos(0.0, 0.0, 65.0);
-				DVector3 mom(momentum->px, momentum->py, momentum->pz);
-				DBeamPhoton *photon = new DBeamPhoton;
-				photon->setPosition(pos);
-				photon->setMomentum(mom);
-				photon->setMass(0.0);
-				photon->setCharge(0.0);
-				photon->clearErrorMatrix();
-				photon->t = 0.0;
-		
-				data.push_back(photon);
+				DVector3 mom(mom_beam->px, mom_beam->py, mom_beam->pz);
+				mcreaction->beam.setPosition(pos);
+				mcreaction->beam.setMomentum(mom);
+				mcreaction->beam.setMass(prop_beam->mass);
+				mcreaction->beam.setCharge(prop_beam->charge);
+				mcreaction->beam.clearErrorMatrix();
+				mcreaction->beam.setT0(0.0, 0.0, SYS_NULL);
+				
+				DBeamPhoton *beamphoton = new DBeamPhoton;
+				*(DKinematicData*)beamphoton = mcreaction->beam;
+				beamphoton->t = 0.0;
+				dbeam_photons.push_back(beamphoton);
+				
+			}else{
+				// fake values for DMCReaction
+				DVector3 pos(0.0, 0.0, 65.0);
+				DVector3 mom(0.0, 0.0, 0.0);
+				mcreaction->beam.setPosition(pos);
+				mcreaction->beam.setMomentum(mom);
+				mcreaction->beam.setMass(0.0);
+				mcreaction->beam.setCharge(0.0);
+				mcreaction->beam.clearErrorMatrix();
+				mcreaction->beam.setT0(0.0, 0.0, SYS_NULL);
+			}
+
+			s_Target_t *target = reactions->in[j].target;
+			DKinematicData target_kd;
+			if(target!=HDDM_NULL){
+				s_Momentum_t *mom_target = target->momentum;				
+				s_Properties_t *prop_target = target->properties;
+				
+				// Create DMCReaction
+				DVector3 pos(0.0, 0.0, 65.0);
+				DVector3 mom(mom_target->px, mom_target->py, mom_target->pz);
+				
+				mcreaction->target.setPosition(pos);
+				mcreaction->target.setMomentum(mom);
+				mcreaction->target.setMass(prop_target->mass);
+				mcreaction->target.setCharge(prop_target->charge);
+				mcreaction->target.clearErrorMatrix();
+				mcreaction->target.setT0(0.0, 0.0, SYS_NULL);
+			}else{
+				// fake values for DMCReaction
+				DVector3 pos(0.0, 0.0, 65.0);
+				DVector3 mom(0.0, 0.0, 0.0);
+				mcreaction->target.setPosition(pos);
+				mcreaction->target.setMomentum(mom);
+				mcreaction->target.setMass(0.0);
+				mcreaction->target.setCharge(0.0);
+				mcreaction->target.clearErrorMatrix();
+				mcreaction->target.setT0(0.0, 0.0, SYS_NULL);
 			}
 		}
 	}
 	
-	// Copy into factory
-	factory->CopyTo(data);
+	// Copy into factories
+_DBG_<<"Creating "<<dmcreactions.size()<<" DMCReaction objects"<<endl;
+_DBG_<<"Creating "<<dbeam_photons.size()<<" DBeamPhoton objects"<<endl;
+
+	factory->CopyTo(dmcreactions);
+	factory2->CopyTo(dbeam_photons);
 
 	return NOERROR;
 }
 
+//------------------
+// Extract_DBeamPhoton
+//------------------
+jerror_t DEventSourceHDDM::Extract_DBeamPhoton(s_HDDM_t *hddm_s,  JFactory<DBeamPhoton> *factory, JEventLoop *loop)
+{
+	/// This defers to the Extract_DMCReaction method which extracts both the DMCReaction and DBeamPhoton
+	/// objects at the same time. Note that only empty tags are honored by this source.
+
+	JFactory_base* factory2 = loop->GetFactory("DMCReaction", "");
+	return Extract_DMCReaction(hddm_s, dynamic_cast<JFactory<DMCReaction>*>(factory2), loop);
+}
 
 //------------------
 // Extract_DMCThrown

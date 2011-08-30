@@ -36,6 +36,7 @@ using namespace std;
 #include "TOF/DTOFRawHitMC.h"
 #include "START_COUNTER/DSCTruthHit.h"
 #include "START_COUNTER/DSCHit.h"
+#include <PID/DMCReaction.h>
 #include <PID/DBeamPhoton.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <TAGGER/DTagger.h>
@@ -66,7 +67,8 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DBCALTruthCell(s_HDDM_t *hddm_s, JFactory<DBCALTruthCell> *factory);
 		jerror_t Extract_DBCALSiPMHit(s_HDDM_t *hddm_s, JFactory<DBCALSiPMHit> *factory);
 		jerror_t Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory);
-		jerror_t Extract_DBeamPhoton(s_HDDM_t *hddm_s, JFactory<DBeamPhoton> *factory);
+		jerror_t Extract_DMCReaction(s_HDDM_t *hddm_s, JFactory<DMCReaction> *factory, JEventLoop *loop);
+		jerror_t Extract_DBeamPhoton(s_HDDM_t *hddm_s, JFactory<DBeamPhoton> *factory, JEventLoop *loop);
 		jerror_t Extract_DMCThrown(s_HDDM_t *hddm_s, JFactory<DMCThrown> *factory);
 		jerror_t Extract_DCDCHit(s_HDDM_t *hddm_s, JFactory<DCDCHit> *factory, string tag);
 		jerror_t Extract_DFDCHit(s_HDDM_t *hddm_s, JFactory<DFDCHit> *factory, string tag);
