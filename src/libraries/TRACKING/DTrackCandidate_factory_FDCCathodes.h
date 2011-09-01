@@ -57,6 +57,9 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 		jerror_t GetPositionAndMomentum(const double Bz_avg,
 						DVector3 &pos,DVector3 &mom);
 		
+		double GetCharge(const DVector3 &pos,
+				 const DFDCSegment *segment);
+
                 DFDCSegment *GetTrackMatch(double z,
                                            DFDCSegment *segment,
                                            vector<DFDCSegment*>package,
