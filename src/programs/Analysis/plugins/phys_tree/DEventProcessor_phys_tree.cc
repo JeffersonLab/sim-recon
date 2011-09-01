@@ -115,6 +115,8 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(mcthrowns);
 	loop->Get(physicsevents);
 
+	TVector3 VertexRec, VertexGen;
+	VertexGen = mcthrowns[0]->position();
 	// Make Particle object for beam photon
 	TLorentzVector beam_photon(0.0, 0.0, 9.0, 9.0);
 	if(beam_photons.size()>0){
@@ -141,6 +143,9 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 			physicsevent = physicsevents[i];
 			max_parts = Nparts;
 		}
+		VertexRec.SetX(ps->vertex->dSpacetimeVertex.X());
+		VertexRec.SetY(ps->vertex->dSpacetimeVertex.Y());
+		VertexRec.SetZ(ps->vertex->dSpacetimeVertex.Z());
 	}
 
 	// Create Particle objects for each of the common particle types
@@ -226,12 +231,14 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	evt_recon->all_photons_fiducial = all_photons_fiducial;
 	evt_recon->all_neutrons_fiducial = all_neutrons_fiducial;
 	evt_recon->all_protons_fiducial = all_protons_fiducial;
+	evt_recon->vertex = VertexRec;
 
 	evt_thrown->all_fiducial = all_fiducial;
 	evt_thrown->all_mesons_fiducial = all_mesons_fiducial;
 	evt_thrown->all_photons_fiducial = all_photons_fiducial;
 	evt_thrown->all_neutrons_fiducial = all_neutrons_fiducial;
 	evt_thrown->all_protons_fiducial = all_protons_fiducial;
+	evt_thrown->vertex = VertexGen;
 
 	// Copy event number to both trees and add this event to them
 	evt_recon->event = eventnumber;
