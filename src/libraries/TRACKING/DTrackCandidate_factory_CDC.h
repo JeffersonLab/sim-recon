@@ -139,6 +139,11 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		void FindZ(DCDCSeed &seed, double theta_min, double theta_max);
 		int NumEligibleSeedHits(vector<DCDCTrkHit*> &hits);
 
+
+		jerror_t GetPositionAndMomentum(DCDCSeed &seed,
+						DVector3 &pos,
+						DVector3 &mom);
+
 		vector<int> superlayer_boundaries;
 
 		const DMagneticFieldMap *bfield;

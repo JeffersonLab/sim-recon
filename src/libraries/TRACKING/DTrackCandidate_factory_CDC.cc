@@ -216,22 +216,17 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		//double par[] = {0.984463, 0.150759, -0.414933, 0.257472, -0.055801};
 		//double theta = seed.theta;
 		//double ff = par[0]+theta*(par[1]+theta*(par[2]+theta*(par[3]+theta*par[4])));
-		double p_trans = seed.fit.p_trans*seed.FindAverageBz(bfield)/2.0;
-		double phi = seed.fit.phi;
-		double q = seed.fit.q;
-		double theta = seed.theta;
+	
+		DVector3 pos, mom;		
+		GetPositionAndMomentum(seed,pos,mom);
 
 		//Make a track candidate from results
 		DTrackCandidate *can = new DTrackCandidate;
-		DVector3 pos, mom;
-		pos.SetXYZ(0.0, 0.0, seed.z_vertex);
-		mom.SetMagThetaPhi(p_trans/sin(theta), theta, phi);
-		//pos.SetXYZ(0.0, 0.0, 65.0);
-		//mom.SetMagThetaPhi(p_trans, M_PI/2.0, phi);
+
 		can->setPosition(pos);
 		can->setMomentum(mom);
 		//can->setCharge(seed.q);
-		can->setCharge(q);
+		can->setCharge(seed.fit.q);
 	
 		for (unsigned int n=0;n<seed.hits.size();n++){
 		  const DCDCTrackHit *cdchit=(seed.hits[n])->hit;
@@ -281,7 +276,8 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 		return;
 	}
 	
-	// Create DCDCTrkHit objects out of these.
+	// Create DCDCTrkHit objects out of these.	
+	int oldwire = -1;
 	for(unsigned int i=0; i<cdctrackhits.size(); i++){
 	  DCDCTrkHit *cdctrkhit = new DCDCTrkHit;
 	  cdctrkhit->hit = cdctrackhits[i];
@@ -289,25 +285,33 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 	  cdctrkhit->flags |= NOISE; // (see below)
 	  
 	  // Add to "master" list
-	  cdctrkhits.push_back(cdctrkhit);
+	  // ONLY FIRST HIT OF A WIRE
+	  int newwire = cdctrackhits[i]->wire->ring*1000 + cdctrackhits[i]->wire->straw;
+	  if (newwire!=oldwire){
+
+	    oldwire = newwire;
 	  
-		// Sort into list of hits by superlayer
+	    // Add to "master" list
+	    cdctrkhits.push_back(cdctrkhit);
+	    
+	    // Sort into list of hits by superlayer
 #if 1
-		for(unsigned int j=0; j<superlayer_boundaries.size(); j++){
-			if(cdctrkhit->hit->wire->ring<=superlayer_boundaries[j]){
-				cdchits_by_superlayer[j].push_back(cdctrkhit);
-				break;
-			}
-		}
+	    for(unsigned int j=0; j<superlayer_boundaries.size(); j++){
+	      if(cdctrkhit->hit->wire->ring<=superlayer_boundaries[j]){
+		cdchits_by_superlayer[j].push_back(cdctrkhit);
+		break;
+	      }
+	    }
 #else
-	  if(cdctrkhit->hit->wire->ring<=4)cdchits_by_superlayer[0].push_back(cdctrkhit);
-	  else if(cdctrkhit->hit->wire->ring<= 12)cdchits_by_superlayer[1].push_back(cdctrkhit);
-	  else if(cdctrkhit->hit->wire->ring<=16)cdchits_by_superlayer[2].push_back(cdctrkhit);
+	    if(cdctrkhit->hit->wire->ring<=4)cdchits_by_superlayer[0].push_back(cdctrkhit);
+	    else if(cdctrkhit->hit->wire->ring<= 12)cdchits_by_superlayer[1].push_back(cdctrkhit);
+	    else if(cdctrkhit->hit->wire->ring<=16)cdchits_by_superlayer[2].push_back(cdctrkhit);
 	  else if(cdctrkhit->hit->wire->ring<=24)cdchits_by_superlayer[3].push_back(cdctrkhit);
 	  else if(cdctrkhit->hit->wire->ring<=28)cdchits_by_superlayer[4].push_back(cdctrkhit);
 #endif
+	  }
 	}
-	
+
 	// Sort the individual superlayer lists by decreasing values of R
 	for(unsigned int i=0; i<cdchits_by_superlayer.size(); i++){
 		sort(cdchits_by_superlayer[i].begin(), cdchits_by_superlayer[i].end(), CDCSortByRdecreasing);
@@ -663,6 +667,7 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	double x0 = seed.fit.x0;
 	double y0 = seed.fit.y0;
 	double r0 = seed.fit.r0;
+
 	unsigned int N=0;
 	for(unsigned int i=0; i<seed.hits.size(); i++){
 		if(seed.hits[i]->flags&OUT_OF_TIME){
@@ -1674,6 +1679,103 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
   seed.theta=M_PI/2-atan(tanl);
   seed.z_vertex=z0;
+
+  return NOERROR;
+}
+
+// Get the position and momentum at a fixed radius from the beam line
+jerror_t DTrackCandidate_factory_CDC::GetPositionAndMomentum(DCDCSeed &seed,
+							     DVector3 &pos,
+							     DVector3 &mom){
+  // Direction tangent and transverse momentum
+  double tanl=tan(M_PI_2-seed.theta);
+  double pt=seed.fit.p_trans*fabs(seed.FindAverageBz(bfield))/2.0;
+
+  // Squared radius of cylinder outside start counter but inside CDC inner 
+  // radius
+  double r2=100.0;
+
+  // Circle parameters
+  double xc=seed.fit.x0;
+  double yc=seed.fit.y0;
+  double rc=seed.fit.r0;
+  double rc2=rc*rc;
+  double xc2=xc*xc;
+  double yc2=yc*yc;
+  double xc2_plus_yc2=xc2+yc2;
+
+  // variables needed for intersection of circles
+  double a=(r2-xc2_plus_yc2-rc2)/(2.*rc);
+  double temp1=yc*sqrt(xc2_plus_yc2-a*a);
+  double temp2=xc*a;
+  double cosphi_plus=(temp2+temp1)/xc2_plus_yc2;
+  double cosphi_minus=(temp2-temp1)/xc2_plus_yc2;
+
+  // Check for intersections
+  if(!isfinite(temp1) || !isfinite(temp2)){
+    // We did not find an intersection between the two circles, so return 
+    // sensible defaults for pos and 
+    double my_phi=seed.fit.phi;
+    double sinphi=sin(my_phi);
+    double cosphi=cos(my_phi);
+    double D=-seed.fit.q*rc-xc/sinphi;
+    pos.SetXYZ(-D*sinphi,D*cosphi,seed.z_vertex);
+    mom.SetXYZ(pt*cosphi,pt*sinphi,pt*tanl);
+
+    return NOERROR;
+  }
+
+  // if we have intersections, find both solutions
+  double phi_plus=acos(cosphi_plus);
+  double phi_minus=acos(cosphi_minus);
+  double x_plus=xc+rc*cosphi_plus;
+  double x_minus=xc+rc*cosphi_minus;
+  double y_plus=yc+rc*sin(phi_plus);
+  double y_minus=yc+rc*sin(phi_minus);
+
+  // Determine the sign of phi based on y 
+  if (fabs(y_plus)>10.){
+    phi_plus*=-1.;
+    y_plus=yc+rc*sin(phi_plus);
+  }
+  if (fabs(y_minus)>10.){
+    phi_minus*=-1.;
+    y_minus=yc+rc*sin(phi_minus);
+  }
+
+  // Choose phi- or phi+ depending on proximity to one of the cdc hits
+  double xwire=seed.hits[0]->hit->wire->origin.x();
+  double ywire=seed.hits[0]->hit->wire->origin.y();
+  double dx=x_minus-xwire;
+  double dy=y_minus-ywire;
+  double d2_minus=dx*dx+dy*dy;
+  dx=x_plus-xwire;
+  dy=y_plus-ywire;
+  double d2_plus=dx*dx+dy*dy;
+  if (d2_plus>d2_minus){
+    phi_minus*=-1.;
+    if (seed.fit.q<0) phi_minus+=M_PI;  
+    double dphi=M_PI_2-phi_minus-seed.fit.phi;
+    while (dphi>2.*M_PI) dphi-=2*M_PI;
+    while (dphi<-2.*M_PI) dphi+=2*M_PI;   
+    if (dphi<-M_PI) dphi+=2*M_PI;
+    if (dphi>M_PI) dphi-=2*M_PI;
+    pos.SetXYZ(x_minus,y_minus,seed.z_vertex+seed.fit.q*rc*dphi*tanl);
+    mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
+
+  }
+  else{
+    phi_plus*=-1.;   
+    if (seed.fit.q<0) phi_plus+=M_PI;
+    double dphi=M_PI_2-phi_plus-seed.fit.phi;
+    while (dphi>2.*M_PI) dphi-=2*M_PI;
+    while (dphi<-2.*M_PI) dphi+=2*M_PI;
+    if (dphi<-M_PI) dphi+=2*M_PI;
+    if (dphi>M_PI) dphi-=2*M_PI;
+    pos.SetXYZ(x_plus,y_plus,seed.z_vertex+seed.fit.q*rc*dphi*tanl); 
+    mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
+
+  }
 
   return NOERROR;
 }
