@@ -43,8 +43,6 @@ bool ADD_NOISE      = false;
 bool SMEAR_HITS     = true;
 bool SMEAR_BCAL     = true;
 bool FDC_ELOSS_OFF  = false;
-bool CDC_USE_PARAMETERIZED_SIGMA = true;
-bool FDC_USE_PARAMETERIZED_SIGMA = true;
 
 // setup response parameters
 double BCAL_DARKRATE_GHZ         = 0.;// 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
@@ -95,6 +93,9 @@ static JCalibration *jcalib=NULL;
 TH2F *fdc_drift_time_smear_hist;
 TH2F *fdc_drift_dist_smear_hist;
 TH2F *fdc_drift_time;
+TH2F *cdc_drift_time;
+TH1F *fdc_anode_mult;
+TH2F *cdc_drift_smear;
 
 //-----------
 // main
@@ -115,6 +116,13 @@ int main(int narg,char* argv[])
 					   100,0.0,0.6,400,-0.5,0.5);
 	fdc_drift_time=new TH2F("fdc_drift_time","FDC drift distance vs. time",100,-20,380,100,0,1.);
 	
+	fdc_anode_mult = new TH1F("fdc_anode_mult","wire hit multiplicity",20,-0.5,19.5);
+
+	
+	cdc_drift_time = new TH2F("cdc_drift_time","CDC drift distance vs time",100,-20,800,100,0.,0.8);
+
+	cdc_drift_smear = new TH2F("cdc_drift_smear","CDC drift smearing",
+				   100,0.0,0.8,100,-0.8,0.8);
 
 	// Create a JCalibration object using the JANA_CALIB_URL environment variable
 	// Right now, we hardwire this to use JCalibrationFile.
@@ -288,8 +296,6 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'N': ADD_NOISE=true;									break;
       case 's': SMEAR_HITS=false;								break;
       case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
-      case 'y': CDC_USE_PARAMETERIZED_SIGMA=false;				break; 
-      case 'Y': FDC_USE_PARAMETERIZED_SIGMA=false;				break;
       case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;			break;
       case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
       case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;

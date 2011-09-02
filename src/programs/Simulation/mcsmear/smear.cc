@@ -30,6 +30,9 @@ extern vector<vector<float> >fdc_smear_parms;
 extern TH2F *fdc_drift_time_smear_hist;
 extern TH2F *fdc_drift_dist_smear_hist;
 extern TH2F *fdc_drift_time;
+extern TH2F *cdc_drift_time;
+extern TH1F *fdc_anode_mult;
+extern TH2F *cdc_drift_smear;
 
 void SmearCDC(s_HDDM_t *hddm_s);
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
@@ -67,12 +70,6 @@ extern bool ADD_NOISE;
 
 // Do we or do we not smear real hits
 extern bool SMEAR_HITS;
-
-
-// If the following flag is true, then include the drift-distance
-// dependency on the error in the CDC position. Otherwise, use a
-// flat distribution given by the CDC_TDRIFT_SIGMA below.
-extern bool CDC_USE_PARAMETERIZED_SIGMA;
 
 // The error on the drift time in the CDC. The drift times
 // for the actual CDC hits coming from the input file
@@ -243,26 +240,17 @@ void SmearCDC(s_HDDM_t *hddm_s)
 				s_CdcStrawTruthHit_t *strawtruthhit = &cdcstraw->cdcStrawTruthHits->in[j];
 
 				double sigma_t = CDC_TDRIFT_SIGMA;
-				if(CDC_USE_PARAMETERIZED_SIGMA){
-					// Convert drift time back to drift distance assuming standard 55 um/ns
-					//double drift_d = strawtruthhit->t*55.0E-3; // use mm since that's what the error function was paramaterized
-				  double drift_d=strawtruthhit->d*10.;
-					
-					// The following is from a fit to Yves' numbers circa Aug 2009. The values fit were
-					// resolution (microns) vs. drift distance (mm).
-					// par[8] = {699.875, -559.056, 149.391, 25.6929, -22.0238, 4.75091, -0.452373, 0.0163858};
-					double x = drift_d;
-					//double sigma_d = (699.875) + x*((-559.056) + x*((149.391) + x*((25.6929) + x*((-22.0238) + x*((4.75091) + x*((-0.452373) + x*((0.0163858))))))));
-					double sigma_d = 108.55 + 7.62391*x + 556.176*exp(-(1.12566)*pow(x,1.29645));
-					sigma_t = sigma_d/55.0; // remember that sigma_d is already in microns here!
-					sigma_t *= 1.0E-9; // convert sigma_t to seconds
-				}
-
 				// Smear out the CDC drift time using the specified sigma.
-				// This should include both timing resolution and ion trail
-				// density effects.
+				// This is for timing resolution from the electronics; diffusion is handled in hdgeant.
 				double delta_t = SampleGaussian(sigma_t)*1.0E9; // delta_t is in ns
 				strawhit->t = strawtruthhit->t + delta_t;
+
+				if (j==0){
+				  cdc_drift_time->Fill(strawhit->t,strawtruthhit->d);
+			
+				  cdc_drift_smear->Fill(strawtruthhit->d,
+							strawtruthhit->d-(0.02887*sqrt(strawhit->t)-1.315e-5*strawtruthhit->t));
+				}
 				
 				// Smear energy deposition
 				strawhit->dE = strawtruthhit->dE+SampleGaussian(CDC_PEDESTAL_SIGMA);
@@ -389,7 +377,8 @@ void SmearFDC(s_HDDM_t *hddm_s)
 {
 
 	// Calculate ped noise level based on position resolution
-	FDC_PED_NOISE=-0.004594+0.008711*FDC_CATHODE_SIGMA+0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
+  //	FDC_PED_NOISE=-0.004594+0.008711*FDC_CATHODE_SIGMA+0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
+  FDC_PED_NOISE=-0.0938+0.0485*FDC_CATHODE_SIGMA;
 	if(FDC_ELOSS_OFF)FDC_PED_NOISE*=7.0; // empirical  4/29/2009 DL
 
 	// Loop over Physics Events
@@ -461,19 +450,20 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				 
 			    s_FdcAnodeHit_t *hit=hits->in;
 			    s_FdcAnodeTruthHit_t *truthhit=truthhits->in;
+			    fdc_anode_mult->Fill(hits->mult);
 			    for (unsigned int s=0;s<hits->mult;s++, hit++, truthhit++){
 			      hit->t = truthhit->t + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;
 			      hit->dE = truthhit->dE;
 			      hit->d  = 0.; // initialize d=DOCA to zero for consistency.
 			      
-			      double dt=hit->t-truthhit->t_unsmeared;
-			      fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
-			      /*
-				double t_temp=90.99*tanh((truthhit->d-0.2915)/0.1626);
-				fdc_drift_dist_smear_hist->Fill(truthhit->d,dx);
-			      fdc_drift_time->Fill(t_temp+86.67+dx*(1.-t_temp*t_temp*0.01097*0.01097)
-			      -                                                    /(0.01097*0.08211),truthhit->d);
-			      */
+			      double dt=hit->t-truthhit->t_unsmeared-2.;
+			      // Fill diagnostic histograms for first hit
+			      if (s==0){
+				fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
+				fdc_drift_dist_smear_hist->Fill(truthhit->d,dt*(0.5*0.02421/sqrt(truthhit->t_unsmeared)+5.09e-4));
+				
+				fdc_drift_time->Fill(hit->t,truthhit->d);
+			      }
 			    }
 			  }
 			}
