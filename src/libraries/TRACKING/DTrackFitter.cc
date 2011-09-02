@@ -173,6 +173,7 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 
 	// Correct for energy loss in target etc. based on particle mass in starting_params
 	DVector3 pos, mom; // (holds parameters at vertex after correction)
+	/*
 	if(CORRECT_FOR_ELOSS && fit_type==kWireBased){
 		jerror_t err = CorrectForELoss(starting_params, rt, pos, mom, mass);
 		if(err != NOERROR){
@@ -180,9 +181,10 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 			mom = starting_params.momentum();
 		}
 	}else{
+	*/
 	  pos = starting_params.position();
 	  mom = starting_params.momentum();
-	}
+	  //}
 	double q=starting_params.charge();
 
 	// Swim a reference trajectory with this candidate's parameters
