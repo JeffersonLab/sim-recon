@@ -314,8 +314,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       DTrackCandidate *can = new DTrackCandidate;
       
       can->setMass(srccan->mass());
-      can->setMomentum(srccan->momentum());
-      can->setPosition(srccan->position());
+      //can->setMomentum(srccan->momentum());
+      //can->setPosition(srccan->position());
       can->setCharge(srccan->charge());
 
       unsigned int num_fdc_hits=0;
@@ -410,13 +410,27 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
 	    // Compute new transverse momentum
 	    Bz_avg/=double(num_hits);
-	    double pt=0.003*Bz_avg*fit.r0;
-	    double theta=srccan->momentum().Theta();
-	    double phi=atan2(-fit.x0,fit.y0);
-	    if (can->charge()<0) phi+=M_PI;
-	    mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
+
+	    // Determine the polar angle
+	    unsigned int num_cdc_hits=cdchits.size();
+	    double theta
+	      =(srccan->momentum().Theta()*num_fdc_hits
+	      +cdctrackcandidates[cdc_index]->momentum().Theta()*num_cdc_hits)/
+	    (num_fdc_hits+num_cdc_hits);
+  
+	    fit.tanl=tan(M_PI_2-theta);
+	    fit.z_vertex=cdctrackcandidates[cdc_index]->position().Z();
+	    fit.q=can->charge();
+	    
+	    GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
 	    can->setMomentum(mom);
+	    can->setPosition(pos);
 	  }
+	  else{
+	    can->setMomentum(srccan->momentum());
+	    can->setPosition(srccan->position());	    
+	  }
+	  
 	    
 	  _data.push_back(can);
 	
@@ -487,9 +501,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  DTrackCandidate *can = new DTrackCandidate;
 	  
 	  can->setMass(srccan->mass());
-	  can->setPosition(srccan->position());
 	  can->setCharge(srccan->charge());
-	  can->setMomentum(srccan->momentum());
 	  
 	  // mark the fdc track candidate as matched
 	  forward_matches[k]=1; 
@@ -537,12 +549,24 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
 	    // Compute new transverse momentum
 	    Bz_avg/=double(num_hits);
-	    double pt=0.003*Bz_avg*fit.r0;
-	    double theta=srccan->momentum().Theta();
-	    double phi=atan2(-fit.x0,fit.y0);
-	    if (can->charge()<0) phi+=M_PI;
-	    mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
+
+	    // Determine the polar angle
+	    unsigned int num_cdc_hits=cdchits.size();
+	    double theta
+	      =(fdccan->momentum().Theta()*num_match
+		+srccan->momentum().Theta()*num_cdc_hits)/
+	      (num_match+num_cdc_hits);
+	    
+	    fit.tanl=tan(M_PI_2-theta);
+	    fit.z_vertex=srccan->position().Z();
+	    fit.q=can->charge();
+	    GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
 	    can->setMomentum(mom);
+	    can->setPosition(pos);
+	  }
+	  else{
+	    can->setMomentum(srccan->momentum());
+	    can->setPosition(srccan->position());
 	  }
 	  
 	  _data.push_back(can);
@@ -663,13 +687,26 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
 	      // Compute new transverse momentum
 	      Bz_avg/=double(num_hits);
-	      double pt=0.003*Bz_avg*fit.r0;
-	      double theta=_data[j]->momentum().Theta();
-	      double phi=atan2(-fit.x0,fit.y0);
-	      if (_data[j]->charge()<0) phi+=M_PI;
-	      mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
+
+	      unsigned int num_cdc_hits=cdchits.size();
+	      double theta
+		=(fdccan->momentum().Theta()*num_match
+		  +srccan->momentum().Theta()*num_cdc_hits)/
+		(num_match+num_cdc_hits);
+	      
+	      fit.tanl=tan(M_PI_2-theta);
+	      fit.z_vertex=srccan->position().Z();
+	      fit.q=_data[j]->charge();
+	      GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
 	      _data[j]->setMomentum(mom);
+	      _data[j]->setPosition(pos);
 	    }
+	    else{
+	      _data[j]->setMomentum(srccan->momentum());
+	      _data[j]->setPosition(srccan->position());
+	    }
+	  
+
 	  }
 	}
       } // loop over fdc track candidates
