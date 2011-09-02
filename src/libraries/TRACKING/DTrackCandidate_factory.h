@@ -16,6 +16,7 @@ using namespace jana;
 #include "DTrackCandidate.h"
 #include <DVector3.h>
 #include "FDC/DFDCSegment.h"
+#include "DHelicalFit.h"
 
 class DMagneticFieldMap;
 
@@ -50,6 +51,10 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   
   jerror_t GetPositionAndMomentum(const DFDCSegment *segment,
 				  DVector3 &pos, DVector3 &mom);
+  jerror_t GetPositionAndMomentum(DHelicalFit &fit,double Bz,
+				  const DVector3 &origin,
+				  DVector3 &pos,
+				  DVector3 &mom);
   
  protected:
   virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method

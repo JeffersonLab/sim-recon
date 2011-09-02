@@ -11,7 +11,7 @@
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCSegment.h"
 #include "DMagneticFieldStepper.h"
-#include "DHelicalFit.h"
+
 #include <TROOT.h>
 #include <TH2F.h>
 
@@ -85,7 +85,7 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   // Get the position of the exit of the CDC endplate from DGeometry
   double endplate_z,endplate_dz,endplate_rmin;
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
-  cdc_endplate.SetZ(endplate_z+0.5*endplate_dz);
+  cdc_endplate.SetZ(endplate_z+endplate_dz);
 
   if(DEBUG_HISTS){
     dapp->Lock();
@@ -273,33 +273,32 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){	  
 	  // Compute new transverse momentum
 	  Bz_avg/=double(num_hits);
-	  double pt=0.003*Bz_avg*fit.r0;
 	  
 	  // Determine the polar angle
-	  double theta=srccan->momentum().Theta();
-	  if (num_fdc_hits<cdchits.size())
-	    theta=cdctrackcandidates[cdc_index]->momentum().Theta();
+	  unsigned int num_cdc_hits=cdchits.size();
+	  double theta
+	    =(srccan->momentum().Theta()*num_fdc_hits
+	      +cdctrackcandidates[cdc_index]->momentum().Theta()*num_cdc_hits)/
+	    (num_fdc_hits+num_cdc_hits);
+  
+	  //if (num_fdc_hits<cdchits.size())
+	  //  theta=cdctrackcandidates[cdc_index]->momentum().Theta();
+	  fit.tanl=tan(M_PI_2-theta);
+	  fit.z_vertex=cdctrackcandidates[cdc_index]->position().Z();
+	  fit.q=can->charge();
+
+	  GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
+	  can->setMomentum(mom);
+	  can->setPosition(pos);
+	}
+	else{
+	  can->setMomentum(srccan->momentum());
+	  can->setPosition(srccan->position());
 	  
-	  // Determine the azimuthal angle
-	  double phi=atan2(-fit.x0,fit.y0);
-	    if (can->charge()<0) phi+=M_PI;
-	    
-	    // Set the momentum
-	    mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
 	}
 	
 	// Set the mass and momentum
 	can->setMass(srccan->mass());
-	can->setMomentum(mom);
-	if (srccan->position().Z()>Z_MIN && srccan->position().Z()<Z_MAX)
-	  can->setPosition(srccan->position());
-	else if (cdctrackcandidates[cdc_index]->position().Z()>Z_MIN 
-		 && cdctrackcandidates[cdc_index]->position().Z()<Z_MAX)
-	  can->setPosition(cdctrackcandidates[cdc_index]->position());
-	else{
-	  DVector3 center(0,0,Z_VERTEX);
-	  can->setPosition(center);
-	}
 	
 	_data.push_back(can);	    
 	
@@ -412,7 +411,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    // Compute new transverse momentum
 	    Bz_avg/=double(num_hits);
 	    double pt=0.003*Bz_avg*fit.r0;
-	    double theta=can->momentum().Theta();
+	    double theta=srccan->momentum().Theta();
 	    double phi=atan2(-fit.x0,fit.y0);
 	    if (can->charge()<0) phi+=M_PI;
 	    mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
@@ -784,3 +783,100 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(
 }
 
 
+// Get the position and momentum at a fixed radius from the beam line
+jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
+							 double Bz,
+							 const DVector3 &origin,
+							 DVector3 &pos,
+							 DVector3 &mom){
+  double r2=100.0;
+  double xc=fit.x0;
+  double yc=fit.y0;
+  double rc=fit.r0;
+  double rc2=rc*rc;
+  double xc2=xc*xc;
+  double yc2=yc*yc;
+  double xc2_plus_yc2=xc2+yc2;
+  double a=(r2-xc2_plus_yc2-rc2)/(2.*rc);
+  double temp1=yc*sqrt(xc2_plus_yc2-a*a);
+  double temp2=xc*a;
+  double cosphi_plus=(temp2+temp1)/xc2_plus_yc2;
+  double cosphi_minus=(temp2-temp1)/xc2_plus_yc2;
+
+  // Direction tangent and transverse momentum
+  double tanl=fit.tanl;
+  double pt=0.003*Bz*rc;
+
+  if(!isfinite(temp1) || !isfinite(temp2)){
+    // We did not find an intersection between the two circles, so return 
+    // sensible defaults for pos and mom.
+
+    double my_phi=fit.phi;
+    double sinphi=sin(my_phi);
+    double cosphi=cos(my_phi);
+    double D=-fit.q*rc-xc/sinphi;
+    pos.SetXYZ(-D*sinphi,D*cosphi,fit.z_vertex);
+    mom.SetXYZ(pt*cosphi,pt*sinphi,pt*tanl);
+
+    return NOERROR;
+
+  }
+
+  double phi_plus=acos(cosphi_plus);
+  double phi_minus=acos(cosphi_minus);
+  double x_plus=xc+rc*cosphi_plus;
+  double x_minus=xc+rc*cosphi_minus;
+  double y_plus=yc+rc*sin(phi_plus);
+  double y_minus=yc+rc*sin(phi_minus);
+
+  // Determine the sign of phi based on y 
+  if (fabs(y_plus)>10.){
+    phi_plus*=-1.;
+    y_plus=yc+rc*sin(phi_plus);
+  }
+  if (fabs(y_minus)>10.){
+    phi_minus*=-1.;
+    y_minus=yc+rc*sin(phi_minus);
+  }
+
+
+ 
+
+  // Choose phi- or phi+ depending on proximity to one of the cdc hits
+  double xwire=origin.x();
+  double ywire=origin.y();
+  double dx=x_minus-xwire;
+  double dy=y_minus-ywire;
+  double d2_minus=dx*dx+dy*dy;
+  dx=x_plus-xwire;
+  dy=y_plus-ywire;
+  double d2_plus=dx*dx+dy*dy;
+  if (d2_plus>d2_minus){
+    phi_minus*=-1.;
+    if (fit.q<0) phi_minus+=M_PI;  
+    double dphi=M_PI_2-phi_minus-fit.phi;
+    while (dphi>2.*M_PI) dphi-=2*M_PI;
+    while (dphi<-2.*M_PI) dphi+=2*M_PI;   
+    if (dphi<-M_PI) dphi+=2*M_PI;
+    if (dphi>M_PI) dphi-=2*M_PI;
+    dphi=0.;
+    pos.SetXYZ(x_minus,y_minus,fit.z_vertex+fit.q*rc*dphi*tanl);
+    mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
+
+  }
+  else{
+    phi_plus*=-1.;   
+    if (fit.q<0) phi_plus+=M_PI;
+    double dphi=M_PI_2-phi_plus-fit.phi;
+    while (dphi>2.*M_PI) dphi-=2*M_PI;
+    while (dphi<-2.*M_PI) dphi+=2*M_PI;
+    if (dphi<-M_PI) dphi+=2*M_PI;
+    if (dphi>M_PI) dphi-=2*M_PI;
+    dphi=0.;
+    pos.SetXYZ(x_plus,y_plus,fit.z_vertex+fit.q*rc*dphi*tanl); 
+    mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
+
+  }
+
+  return NOERROR;
+}
