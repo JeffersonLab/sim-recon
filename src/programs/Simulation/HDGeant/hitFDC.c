@@ -370,7 +370,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
   // Lorentz force.
   xyz[1]+=( 0.1458*B[2]*(1.-0.048*Br) )*dx
     +( 0.1717+0.01227*B[2] )*(Br*cos(phi))*xyz[2]
-    +( -0.000176 )*dx2/(dz2+0.001);
+    +( -0.000176 )*dx*dx2/(dz2+0.001);
   // Add transverse diffusion
   xyz[1]+=(( 0.01 )*pow(dx2+dz2,0.125)+( 0.0061 )*dx2)*rndno[1];
 
@@ -857,6 +857,10 @@ s_ForwardDC_t* pickForwardDC ()
       for (wire=0; wire < wires->mult; wire++)
       {
          s_FdcAnodeTruthHits_t* ahits = wires->in[wire].fdcAnodeTruthHits;
+	   
+	 // Sort the clusters by time
+	 qsort(ahits->in,ahits->mult,sizeof(s_FdcAnodeTruthHit_t),
+	       (compfn)fdc_anode_cluster_sort);
 	 
 	 int i,iok=0;
 
@@ -875,10 +879,7 @@ s_ForwardDC_t* pickForwardDC ()
 	     }
 	 }
 	 else{  // Simulate clusters within the cell
-	   // Sort the clusters by time
-	   qsort(ahits->in,ahits->mult,sizeof(s_FdcAnodeTruthHit_t),
-		 (compfn)fdc_anode_cluster_sort);
-	   
+	
 	   // printf("-------------\n");
 	  
 	   
@@ -942,6 +943,10 @@ s_ForwardDC_t* pickForwardDC ()
 	{
 	  s_FdcCathodeTruthHits_t* chits = strips->in[strip].fdcCathodeTruthHits;
 	  
+	  // Sort the clusters by time
+	  qsort(chits->in,chits->mult,sizeof(s_FdcCathodeTruthHit_t),
+		  (compfn)fdc_cathode_cluster_sort);
+	  
 	  int i,iok=0;
 	  
 	  if (controlparams_.driftclusters==0){
@@ -960,10 +965,7 @@ s_ForwardDC_t* pickForwardDC ()
 	    
 	  }
 	  else{
-	    // Sort the clusters by time
-	    qsort(chits->in,chits->mult,sizeof(s_FdcCathodeTruthHit_t),
-		  (compfn)fdc_cathode_cluster_sort);
-	       
+	   
 	    // Temporary histogram in 1 ns bins to store waveform data
 	    int num_samples=(int)(FDC_TIME_WINDOW);
 	    float *samples=(float *)malloc(num_samples*sizeof(float));
