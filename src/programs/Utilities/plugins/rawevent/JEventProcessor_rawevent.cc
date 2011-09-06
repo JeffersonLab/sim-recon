@@ -16,6 +16,7 @@
 //    Can change via -PRAWEVENT:FILEBASE=newBaseName
 //
 //  Reads translation table in via -PRAWEVENT:TRANSLATION=fileName.xml
+//    default is fakeTranslationTable.xml
 //
 //
 // To run:
@@ -23,10 +24,8 @@
 //     $ hd_ana -PPLUGINS=rawevent inputFile.hddm
 //
 //
-//
 // still to do:
 //    pair spectrometer
-//
 //
 //
 //  ejw, 27-jun-2011
@@ -43,10 +42,6 @@
 using namespace boost;
 
 
-// needs to be tested
-//#include <boost/unordered_map.hpp>
-
-
 // to protect writing to output file
 static pthread_mutex_t rawMutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -55,7 +50,7 @@ static pthread_mutex_t rawMutex = PTHREAD_MUTEX_INITIALIZER;
 static evioFileChannel *chan       = NULL;
 static int evioBufSize             = 750000;
 static string fileBase             = "rawevent";
-static string translationTableName = "trans.xml";
+static string translationTableName = "fakeTranslationTable.xml";
 static string outputFileName;
 
 
@@ -64,11 +59,12 @@ static int runNumber;
 
 
 // csc map converts from detector spec to (crate,slot,channel)
-// key is detector-dependent encoded string (e.g. "cdcadc::2:25" for CDC ring 2 straw 25)
+//  key is detector-dependent encoded string (e.g. "cdcadc::2:25" for CDC ring 2 straw 25)
+//  value is struct containing (crate,slot,channel)
 static map<string,cscVal> cscMap;
 
 
-// create detector map (inverse of csc map) as 3-dimensional array, indices are (crate,slot,channel)
+// detector map (inverse of csc map) is 3-dimensional array of strings with indices (crate,slot,channel)
 //  content is detector-dependent encoded string
 #define MAX_CRATE   58+1
 #define MAX_SLOT    16+1
@@ -164,28 +160,22 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //----------------------------------------------------------------------------
 
 
-// called once per event in many different processing threads, so:
+// Called once per event in many different processing threads, so:
 //
 //    *** MUST be thread-safe ***
 //
 //
+// Note:  Accesses MC hit data in DANA objects and converts to crate/slot/channel/energy/time.
+//        DAQ group task is to take this data, sort and combine the hits, then create an EVIO
+//          buffer in the format planned for disentangled events.
+//        The buffer is written to disk using a mutex-locked EVIO write.
+//
 jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) {
 
-  unsigned short tag;
-  unsigned char num;
   unsigned int i;
 
 
-  // create evio output event tree in CODA raw data format
-  evioDOMTree eventTree(tag=1,num=0);
-
-
-
-  // example how to create and fill bank and add to event tree
-  evioDOMNodeP testBank =  evioDOMNode::createEvioDOMNode<int>(tag=1,num=1);
-  *testBank << vector<int>(10,1);
-  eventTree << testBank;
-
+  // get all raw hit data, feed to Dave A's collection function
 
 
 
@@ -200,10 +190,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     cscRef cscADC  = DTOFRawHitTranslationADC(dtofrawhits[i]);
     cscRef cscTDC  = DTOFRawHitTranslationTDC(dtofrawhits[i]);
 
-//     cout << "found TOF cscADC = " << cscADC.crate << "," << cscADC.slot << "," << cscADC.channel 
-//          << "   for plane,bar,lr = " << dtofrawhits[i]->plane<< "," << dtofrawhits[i]->bar << "," << dtofrawhits[i]->lr << endl;
-
-      // do something...
+      // feed data to DAQ function...
   }
 
 
@@ -217,7 +204,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     cscRef cscADC  = DBCALHitTranslationADC(dbcalhits[i]);
     cscRef cscTDC  = DBCALHitTranslationTDC(dbcalhits[i]);
 
-    // do something...
+    // feed data to DAQ function...
   }      
 
 
@@ -231,10 +218,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     
     cscRef cscADC  = DFCALHitTranslationADC(dfcalhits[i]);
 
-    cout << "found FCAL cscADC = " << cscADC.crate << "," << cscADC.slot << "," << cscADC.channel 
-         << "   for row,column = " << dfcalhits[i]->row << "," << dfcalhits[i]->column << endl;
-
-    // do something...
+    // feed data to DAQ function...
   }      
 
 
@@ -249,12 +233,12 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if(type==0) {           // F1TDC48
       cscRef cscTDC  = DFDCAnodeHitTranslation(dfdchits[i]);
 
-      // do something...
+      // feed data to DAQ function...
 
     } else if(type==1) {    // FADC125
       cscRef cscADC  = DFDCCathodeHitTranslation(dfdchits[i]);
 
-      // do something...
+      // feed data to DAQ function...
     }
   }
 
@@ -268,7 +252,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
     cscRef cscADC  = DCDCHitTranslationADC(dcdchits[i]);
 
-    // do something...
+    // feed data to DAQ function...
   }      
 
 
@@ -282,7 +266,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     cscRef cscADC  = DSCHitTranslationADC(dschits[i]);
     cscRef cscTDC  = DSCHitTranslationTDC(dschits[i]);
 
-    // do something...
+    // feed data to DAQ function...
   }      
 
 
@@ -296,21 +280,19 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     cscRef cscADC  = DTaggerTranslationADC(dtaggerhits[i]);
     cscRef cscTDC  = DTaggerTranslationTDC(dtaggerhits[i]);
 
-    // do something...
+    // feed data to DAQ function...
   }      
 
 
 
-
-  // construct evio banks from hit data collected earlier and add to event tree
-  // ...
-
+  // construct evio buffer from hit data collected above
+  uint32_t *buffer;
 
 
 
-  // write out event tree:  get lock, write to file, unlock
+  // write out event:  get lock, write to file, unlock
 //   pthread_mutex_lock(&rawMutex);
-//   chan->write(eventTree);
+//   chan->write(buffer);
 //   pthread_mutex_unlock(&rawMutex);
 
 
@@ -323,9 +305,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 // erun called once-only at end of run, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::erun(void) {
-  // This is called whenever the run number changes, before it is
-  // changed to give you a chance to clean up before processing
-  // events from the next run number.
 
   jout << endl << "   erun called for run " << runNumber << endl << endl;
 
