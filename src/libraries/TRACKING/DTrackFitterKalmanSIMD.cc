@@ -71,7 +71,8 @@ static void locate(const double *xx,int n,double x,int *j){
 double DTrackFitterKalmanSIMD::fdc_y_variance(double alpha,double x,double dE){
   //double sigma=0.01/dE+0.008;
   //if (dE<2.4) sigma+=(0.024-0.01*dE)*x*x;
-  double sigma=0.001/dE+0.01;
+  double sigma=0.039/dE;
+  sigma*=1+fabs(x);
   return sigma*sigma;
 }
 
@@ -118,7 +119,7 @@ double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double Bz){
 double DTrackFitterKalmanSIMD::fdc_drift_distance(double t){
   int id=int((t+FDC_T0_OFFSET)/2.);
   if (id<0) id=0;
-  if (id>198) id=198;
+  if (id>138) id=138;
   double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
   double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
 
@@ -4094,7 +4095,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	      //double drift=DRIFT_SPEED*drift_time*(du>0?1.:-1.); 
 	      double drift=0.;
 	      if (drift_time>0.){
-		drift=(0.02421*sqrt(drift_time)+5.09e-4*drift_time)*(du>0?1.:-1.);
+		drift=(du>0?1.:-1.)*fdc_drift_distance(drift_time);;
 	      }
 	      Mdiff(0)=drift-doca;
 	      
