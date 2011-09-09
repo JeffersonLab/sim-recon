@@ -16,7 +16,9 @@ using namespace std;
 #include "FCAL/DFCALGeometry.h"
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
-#include "PID/DPhoton.h"
+#include <PID/DNeutralTrack.h>
+#include <PID/DParticleSet.h>
+#include <PID/DPhysicsEvent.h>
 #include <PID/DTwoGammaFit.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <TRACKING/DTrackWireBased.h>

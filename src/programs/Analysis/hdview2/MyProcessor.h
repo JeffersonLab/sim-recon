@@ -13,10 +13,12 @@
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
 
+#include <GlueX.h>
+
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 #include <HDGEOMETRY/DRootGeom.h>
 #include <HDGEOMETRY/DGeometry.h>
-#include <PID/DPhoton.h>
+#include <PID/DNeutralTrack.h>
 #include <PID/DKinematicData.h>
 #include <DCoordinateSystem.h>
 #include <TRACKING/DReferenceTrajectory.h>
@@ -109,7 +111,7 @@ class MyProcessor:public JEventProcessor
 		double DELTA_R_FCAL;
 		
 		void AddKinematicDataTrack(const DKinematicData* kd, int color, double size);
-		void GetIntersectionWithCalorimeter(const DKinematicData* kd, DVector3 &pos, DPhoton::PhotonTag &who);
+		void GetIntersectionWithCalorimeter(const DKinematicData* kd, DVector3 &pos, DetectorSystem_t &who);
 		
 		//DTrackCandidate_factory* factory;
 		//void DrawTrackXY(const DKinematicData *, int color, float size);

@@ -17,7 +17,9 @@ using namespace std;
 #include "FCAL/DFCALGeometry.h"
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
-#include "PID/DPhoton.h"
+#include <PID/DParticleSet.h>
+#include <PID/DPhysicsEvent.h>
+#include <PID/DNeutralTrack.h>
 
 #include <TPolyMarker.h>
 #include <TLine.h>
@@ -314,7 +316,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				
 
 
-				checkbuttons["photon"]			= new TGCheckButton(trkdrawopts,	"DPhoton");
+				checkbuttons["photon"]			= new TGCheckButton(trkdrawopts,	"DNeutralTrack");
 				checkbuttons["thrown"]			= new TGCheckButton(trkdrawopts,	"DMCThrown");
 				checkbuttons["trajectories"]	= new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
 				trkdrawopts->AddFrame(checkbuttons["photon"], lhints);
@@ -388,10 +390,10 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				tv.push_back(tl);
 				rv.push_back(rl);
 
-				// Add 6 labels to each column
+				// Add 8 labels to each column
 				// These have to be added in reverse order so we can pack them from
 				// the bottom. Otherwise, it doesn't draw correctly.
-				for(int j=0; j<6; j++){
+				for(int j=0; j<8; j++){
 					stringstream ss;
 					ss<<(5-j);
 					if(i<6)tl = new TGLabel(tf, i==0 ? ss.str().c_str():"--------");
@@ -1862,10 +1864,10 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	}
 	
 	
-	// Add DPhoton factories
-	reconfactory->AddEntry("DPhoton:", id++);
+	// Add DNeutralTrack factories
+	reconfactory->AddEntry("DNeutralTrack:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DPhoton:";
+		string name = "DNeutralTrack:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());

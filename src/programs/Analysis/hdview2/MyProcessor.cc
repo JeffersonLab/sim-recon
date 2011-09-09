@@ -43,7 +43,10 @@ using namespace std;
 #include "HDGEOMETRY/DGeometry.h"
 #include "FCAL/DFCALGeometry.h"
 #include "FCAL/DFCALHit.h"
-#include "PID/DPhoton.h"
+#include <PID/DParticleSet.h>
+#include <PID/DPhysicsEvent.h>
+#include "PID/DNeutralTrack.h"
+#include "PID/DNeutralShowerCandidate.h"
 #include "PID/DTwoGammaFit.h"
 #include "BCAL/DBCALHit.h"
 #include "DVector2.h"
@@ -457,34 +460,41 @@ void MyProcessor::FillGraphics(void)
 
 	// BCAL reconstructed photons
 	if(hdvmf->GetCheckButton("recon_photons_bcal")){
-		vector<const DPhoton*> photons;
-		loop->Get(photons);
+		vector<const DNeutralTrack*> neutrals;
+		loop->Get(neutrals);
 		DGraphicSet gset(kYellow+2, kMarker, 1.25);
 		gset.marker_style=21;
-		for(unsigned int i=0; i<photons.size(); i++){
-			const DPhoton *photon = photons[i];
-			if(photon->getTag()!=DPhoton::kBcal)continue;
-			
-			TVector3 pos(photon->getPositionCal().X(), photon->getPositionCal().Y(), photon->getPositionCal().Z());
-			gset.points.push_back(pos);
+		for(unsigned int i=0; i<neutrals.size(); i++){
+		  vector<const DNeutralShowerCandidate*> locShowerCandidates;
+		  neutrals[i]->GetT(locShowerCandidates);
+		  DetectorSystem_t locDetectorSystem = locShowerCandidates[0]->dDetectorSystem;
+		  if(locDetectorSystem == SYS_BCAL) continue;	
+		  TVector3 pos( locShowerCandidates[0]->dSpacetimeVertex.X(), 
+				locShowerCandidates[0]->dSpacetimeVertex.Y(), 
+				locShowerCandidates[0]->dSpacetimeVertex.Z());
+		  gset.points.push_back(pos);
 		}
 		graphics.push_back(gset);
 	}
 
 	// FCAL reconstructed photons
 	if(hdvmf->GetCheckButton("recon_photons_fcal")){
-		vector<const DPhoton*> photons;
-		loop->Get(photons);
+		vector<const DNeutralTrack*> neutrals;
+		loop->Get(neutrals);
 		DGraphicSet gset(kOrange, kMarker, 1.25);
-		for(unsigned int i=0; i<photons.size(); i++){
-			const DPhoton *photon = photons[i];
-			if(photon->getTag()!=DPhoton::kFcal)continue;
+		for(unsigned int i=0; i<neutrals.size(); i++){
+		  vector<const DNeutralShowerCandidate*> locShowerCandidates;
+		  neutrals[i]->GetT(locShowerCandidates);
+		  DetectorSystem_t locDetectorSystem = locShowerCandidates[0]->dDetectorSystem;
+		  if(locDetectorSystem == SYS_FCAL) continue;
 			
-			TVector3 pos(photon->getPositionCal().X(), photon->getPositionCal().Y(), photon->getPositionCal().Z());
+			TVector3 pos( locShowerCandidates[0]->dSpacetimeVertex.X(), 
+				      locShowerCandidates[0]->dSpacetimeVertex.Y(), 
+				      locShowerCandidates[0]->dSpacetimeVertex.Z());
 			gset.points.push_back(pos);
 			
-			double dist2 = 2.0 + 2.0*photon->energy();
-			TEllipse *e = new TEllipse(photon->getPositionCal().X(), photon->getPositionCal().Y(), dist2, dist2);
+			double dist2 = 2.0 + 2.0*locShowerCandidates[0]->dEnergy;
+			TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
 			e->SetLineColor(kOrange);
 			e->SetFillStyle(0);
 			e->SetLineWidth(2);
@@ -495,38 +505,42 @@ void MyProcessor::FillGraphics(void)
 
 	// Reconstructed photons matched with tracks
 	if(hdvmf->GetCheckButton("recon_photons_track_match")){
-		vector<const DPhoton*> photons;
-		loop->Get(photons);
-		for(unsigned int i=0; i<photons.size(); i++){
-			const DPhoton *photon = photons[i];
-			if(photon->getTag()!=DPhoton::kCharge)continue;
-			
-			// Decide if this hit BCAL of FCAL based on z of position on calorimeter
-			bool is_bcal = photon->getPositionCal().Z()<(FCAL_Zmin-10.0);
-			
-			// Draw on all frames except FCAL frame
-			DGraphicSet gset(kRed, kMarker, 1.25);
-			gset.marker_style = is_bcal ? 22:3;
-			TVector3 tpos(photon->getPositionCal().X(),
-				      photon->getPositionCal().Y(),
-				      photon->getPositionCal().Z());
-			gset.points.push_back(tpos);
-			graphics.push_back(gset);
-			
-			// For BCAL hits, don't draw them on FCAL pane
-			if(is_bcal)continue;
+		vector<const DChargedTrack*> ctracks;
+		loop->Get(ctracks);
+		for(unsigned int i=0; i<ctracks.size(); i++){
+		  const DChargedTrack *locCTrack = ctracks[i];
+		  vector<const DNeutralShowerCandidate*> locShowerCandidates;
+		  locCTrack->GetT(locShowerCandidates);
 
-			// Draw on FCAL pane
-			double dist2 = 2.0 + 2.0*photon->energy();
-			TEllipse *e = new TEllipse(photon->getPositionCal().X(), photon->getPositionCal().Y(), dist2, dist2);
-			e->SetLineColor(gset.color);
-			e->SetFillStyle(0);
-			e->SetLineWidth(1);
-			TMarker *m = new TMarker(photon->getPositionCal().X(), photon->getPositionCal().Y(), gset.marker_style);
-			m->SetMarkerColor(gset.color);
-			m->SetMarkerSize(1.75);
-			graphics_xyB.push_back(e);
-			graphics_xyB.push_back(m);
+		  if (!locShowerCandidates.size()) continue;
+		  
+		  
+		  // Decide if this hit BCAL of FCAL based on z of position on calorimeter
+		  bool is_bcal = (locShowerCandidates[0]->dDetectorSystem == SYS_BCAL );
+		  
+		  // Draw on all frames except FCAL frame
+		  DGraphicSet gset(kRed, kMarker, 1.25);
+		  gset.marker_style = is_bcal ? 22:3;
+		  TVector3 tpos( locShowerCandidates[0]->dSpacetimeVertex.X(), 
+				 locShowerCandidates[0]->dSpacetimeVertex.Y(), 
+				 locShowerCandidates[0]->dSpacetimeVertex.Z());
+		  gset.points.push_back(tpos);
+		  graphics.push_back(gset);
+		  
+		  // For BCAL hits, don't draw them on FCAL pane
+		  if(is_bcal)continue;
+		  
+		  // Draw on FCAL pane
+		  double dist2 = 2.0 + 2.0*locShowerCandidates[0]->dEnergy;
+		  TEllipse *e = new TEllipse(tpos.X(), tpos.Y(), dist2, dist2);
+		  e->SetLineColor(gset.color);
+		  e->SetFillStyle(0);
+		  e->SetLineWidth(1);
+		  TMarker *m = new TMarker(tpos.X(), tpos.Y(), gset.marker_style);
+		  m->SetMarkerColor(gset.color);
+		  m->SetMarkerSize(1.75);
+		  graphics_xyB.push_back(e);
+		  graphics_xyB.push_back(m);
 		}
 	}
 	
@@ -545,17 +559,17 @@ void MyProcessor::FillGraphics(void)
 			// or if it doesn't hit either of them. Then, we decide to draw the marker based
 			// on whether the flag is set to draw the calorimeter it hit or not.
 			DVector3 pos;
-			DPhoton::PhotonTag who;
+			DetectorSystem_t who;
 			GetIntersectionWithCalorimeter(thrown, pos, who);
 			
-			if(who!=DPhoton::kFcal && who!=DPhoton::kBcal)continue;
-			if(who==DPhoton::kFcal && !hdvmf->GetCheckButton("thrown_photons_fcal"))continue;
-			if(who==DPhoton::kBcal && !hdvmf->GetCheckButton("thrown_photons_bcal"))continue;
+			if(who!=SYS_FCAL && who!=SYS_BCAL)continue;
+			if(who==SYS_FCAL && !hdvmf->GetCheckButton("thrown_photons_fcal"))continue;
+			if(who==SYS_BCAL && !hdvmf->GetCheckButton("thrown_photons_bcal"))continue;
 			TVector3 tpos(pos.X(),pos.Y(),pos.Z());
 			gset.points.push_back(tpos);
 			
 			// Only draw on FCAL pane if photon hits FCAL
-			if(who==DPhoton::kBcal)continue;
+			if(who==SYS_BCAL)continue;
 			
 			double dist2 = 2.0 + 2.0*thrown->energy();
 			TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
@@ -582,12 +596,12 @@ void MyProcessor::FillGraphics(void)
 			// or if it doesn't hit either of them. Then, we decide to draw the marker based
 			// on whether the flag is set to draw the calorimeter it hit or not.
 			DVector3 pos;
-			DPhoton::PhotonTag who;
+			DetectorSystem_t who;
 			GetIntersectionWithCalorimeter(thrown, pos, who);
 			
-			if(who!=DPhoton::kFcal && who!=DPhoton::kBcal)continue;
-			if(who==DPhoton::kFcal && !hdvmf->GetCheckButton("thrown_charged_fcal"))continue;
-			if(who==DPhoton::kBcal && !hdvmf->GetCheckButton("thrown_charged_bcal"))continue;
+			if(who!=SYS_FCAL && who!=SYS_BCAL)continue;
+			if(who==SYS_FCAL && !hdvmf->GetCheckButton("thrown_charged_fcal"))continue;
+			if(who==SYS_BCAL && !hdvmf->GetCheckButton("thrown_charged_bcal"))continue;
 			
 			DGraphicSet gset(thrown->charge()>0.0 ? kBlue:kRed, kMarker, 1.25);
 			TVector3 tpos(pos.X(),pos.Y(),pos.Z());
@@ -620,19 +634,19 @@ void MyProcessor::FillGraphics(void)
 			
 			// See notes for above sections
 			DVector3 pos;
-			DPhoton::PhotonTag who;
+			DetectorSystem_t who;
 			GetIntersectionWithCalorimeter(track, pos, who);
 			
-			if(who!=DPhoton::kFcal && who!=DPhoton::kBcal)continue;
-			if(who==DPhoton::kFcal && !hdvmf->GetCheckButton("recon_charged_fcal"))continue;
-			if(who==DPhoton::kBcal && !hdvmf->GetCheckButton("recon_charged_bcal"))continue;
+			if(who!=SYS_FCAL && who!=SYS_BCAL)continue;
+			if(who==SYS_FCAL && !hdvmf->GetCheckButton("recon_charged_fcal"))continue;
+			if(who==SYS_BCAL && !hdvmf->GetCheckButton("recon_charged_bcal"))continue;
 			
 			DGraphicSet gset(track->charge()>0.0 ? kBlue:kRed, kMarker, 1.25);
 			TVector3 tpos(pos.X(),pos.Y(),pos.Z());
 			gset.points.push_back(tpos);
 			graphics.push_back(gset);
 			
-			if(who==DPhoton::kBcal)continue; // Don't draw tracks hitting BCAL on FCAL pane
+			if(who==SYS_BCAL)continue; // Don't draw tracks hitting BCAL on FCAL pane
 			
 			//double dist2 = 6.0 + 2.0*track->momentum().Mag();
 			double dist2 = DELTA_R_FCAL;
@@ -799,16 +813,19 @@ void MyProcessor::FillGraphics(void)
 		}
 	}
 
-	// DPhoton
-	if(hdvmf->GetCheckButton("photon")){
-		vector<const DPhoton*> photons;
-		loop->Get(photons, hdvmf->GetFactoryTag("DPhoton"));
+	// DNeutralTracks
+	if(hdvmf->GetCheckButton("DNeutralTracks")){
+		vector<const DNeutralTrack*> photons;
+		loop->Get(photons, hdvmf->GetFactoryTag("DNeutralTrack"));
 		for(unsigned int i=0; i<photons.size(); i++){
-			int color = kBlack;
-			if(photons[i]->getTag()==DPhoton::kFcal)color = kOrange;
-			if(photons[i]->getTag()==DPhoton::kBcal)color = kYellow+2;
-			if(photons[i]->getTag()==DPhoton::kCharge)color = kRed;
-			AddKinematicDataTrack(photons[i], color, 1.00);
+		  int color = kBlack;
+		  vector<const DNeutralShowerCandidate*> locShowerCandidates;
+		  photons[i]->GetT(locShowerCandidates);
+		  DetectorSystem_t locDetSys = locShowerCandidates[0]->dDetectorSystem;
+		  if(locDetSys==SYS_FCAL)color = kOrange;
+		  if(locDetSys==SYS_BCAL)color = kYellow+2;
+		  //if(locDetSys==DPhoton::kCharge)color = kRed;
+		  AddKinematicDataTrack(photons[i]->dNeutralTrackHypotheses[0]->dKinematicData, color, 1.00);
 		}
 	}
 }
@@ -852,10 +869,12 @@ void MyProcessor::UpdateTrackLabels(void)
 		if(loop)loop->Get(candidates, tag.c_str());
 		for(unsigned int i=0; i<candidates.size(); i++)trks.push_back(candidates[i]);
 	}
-	if(name=="DPhoton"){
-		vector<const DPhoton*> photons;
+	if(name=="DNeutralTrack"){
+		vector<const DNeutralTrack*> photons;
 		if(loop)loop->Get(photons, tag.c_str());
-		for(unsigned int i=0; i<photons.size(); i++)trks.push_back(photons[i]);
+		for(unsigned int i=0; i<photons.size(); i++) {
+		  trks.push_back(photons[i]->dNeutralTrackHypotheses[0]->dKinematicData);
+		}
 	}
 	if(name=="DTwoGammaFit"){
 		vector<const DTwoGammaFit*> twogammafits;
@@ -1023,7 +1042,7 @@ void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, dou
 //------------------------------------------------------------------
 // GetIntersectionWithCalorimeter 
 //------------------------------------------------------------------
-void MyProcessor::GetIntersectionWithCalorimeter(const DKinematicData* kd, DVector3 &pos, DPhoton::PhotonTag &who)
+void MyProcessor::GetIntersectionWithCalorimeter(const DKinematicData* kd, DVector3 &pos, DetectorSystem_t &who)
 {
 	// Create a reference trajectory with the given kinematic data and swim
 	// it through the detector.
@@ -1058,15 +1077,15 @@ void MyProcessor::GetIntersectionWithCalorimeter(const DKinematicData* kd, DVect
 
 	if(s_fcal>1000.0 && s_bcal>1000.0){
 		// neither calorimeter hit
-		who = DPhoton::kDefaultTag;
+		who = SYS_NULL;
 		pos.SetXYZ(0.0,0.0,0.0);
 	}else if(s_fcal<s_bcal){
 		// FCAL hit
-		who = DPhoton::kFcal;
+		who = SYS_FCAL;
 		pos = pos_fcal;
 	}else{
 		// BCAL hit
-		who = DPhoton::kBcal;
+		who = SYS_BCAL;
 		pos = pos_bcal;
 	}
 }
