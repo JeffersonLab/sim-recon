@@ -257,13 +257,13 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			TGHorizontalFrame *sideviewBframe = new TGHorizontalFrame(sideviews);
 			sideviews->AddFrame(sideviewAframe, lhints);
 			sideviews->AddFrame(sideviewBframe, lhints);
-				sideviewA = new TRootEmbeddedCanvas("sideviewA Canvas", sideviewAframe, width, width/2, kSunkenFrame, GetWhitePixel());
-				sideviewB = new TRootEmbeddedCanvas("sideviewB Canvas", sideviewBframe, width, width/2, kSunkenFrame, GetWhitePixel());
-				sideviewAframe->AddFrame(sideviewA, lhints);
-				sideviewBframe->AddFrame(sideviewB, lhints);
-				sideviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
-				sideviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
-
+			sideviewA = new TRootEmbeddedCanvas("sideviewA Canvas", sideviewAframe, width, width/2, kSunkenFrame, GetWhitePixel());
+			sideviewB = new TRootEmbeddedCanvas("sideviewB Canvas", sideviewBframe, width, width/2, kSunkenFrame, GetWhitePixel());
+			sideviewAframe->AddFrame(sideviewA, lhints);
+			sideviewBframe->AddFrame(sideviewB, lhints);
+			sideviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
+			sideviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
+			
 			// End views
 			endviewA = new TRootEmbeddedCanvas("endviewA Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
 			endviewB = new TRootEmbeddedCanvas("endviewB Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
@@ -278,76 +278,80 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			drawopts->AddFrame(trkdrawopts, lhints);
 			drawopts->AddFrame(hitdrawopts, hints);
 			
-				// Track
-				TGHorizontalFrame *candidatesf = new TGHorizontalFrame(trkdrawopts);
-					checkbuttons["candidates"]	= new TGCheckButton(candidatesf,	"DTrackCandidate:");
-					candidatesfactory = new TGComboBox(candidatesf, "<default>", 0);
-					candidatesfactory->Resize(80,20);
-					candidatesf->AddFrame(checkbuttons["candidates"], lhints);
-					for(int i=0; i<100; i++)candidatesfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-					candidatesf->AddFrame(candidatesfactory, lhints);
-				trkdrawopts->AddFrame(candidatesf, lhints);
-					
-				TGHorizontalFrame *wiretracksf		= new TGHorizontalFrame(trkdrawopts);
-					checkbuttons["wiretracks"]		= new TGCheckButton(wiretracksf,	"DTrackWireBased:");
-					wiretracksfactory	= new TGComboBox(wiretracksf, "<default>", 0);
-					wiretracksfactory->Resize(80,20);
-					wiretracksf->AddFrame(checkbuttons["wiretracks"], lhints);
-					for(int i=0; i<100; i++)wiretracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-					wiretracksf->AddFrame(wiretracksfactory, lhints);
-				trkdrawopts->AddFrame(wiretracksf, lhints);
-					
-				TGHorizontalFrame *timetracksf		= new TGHorizontalFrame(trkdrawopts);
-					checkbuttons["timetracks"]		= new TGCheckButton(timetracksf,	"DTrackTimeBased:");
-					timetracksfactory	= new TGComboBox(timetracksf, "<default>", 0);
-					timetracksfactory->Resize(80,20);
-					timetracksf->AddFrame(checkbuttons["timetracks"], lhints);
-					for(int i=0; i<100; i++)timetracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-					timetracksf->AddFrame(timetracksfactory, lhints);
-				trkdrawopts->AddFrame(timetracksf, lhints);
-				TGHorizontalFrame *chargedtracksf		= new TGHorizontalFrame(trkdrawopts);
-					checkbuttons["chargedtracks"]		= new TGCheckButton(chargedtracksf,	"DChargedTrack:");
-					chargedtracksfactory	= new TGComboBox(chargedtracksf, "<default>", 0);
-					chargedtracksfactory->Resize(80,20);
-					chargedtracksf->AddFrame(checkbuttons["chargedtracks"], lhints);
-					for(int i=0; i<100; i++)chargedtracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-					chargedtracksf->AddFrame(chargedtracksfactory, lhints);
-				trkdrawopts->AddFrame(chargedtracksf, lhints);
-				
-
-
-				checkbuttons["photon"]			= new TGCheckButton(trkdrawopts,	"DNeutralTrack");
-				checkbuttons["thrown"]			= new TGCheckButton(trkdrawopts,	"DMCThrown");
-				checkbuttons["trajectories"]	= new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
-				trkdrawopts->AddFrame(checkbuttons["photon"], lhints);
-				trkdrawopts->AddFrame(checkbuttons["thrown"], lhints);
-				trkdrawopts->AddFrame(checkbuttons["trajectories"], lhints);
-
-				// Hit
-				checkbuttons["cdc"]					= new TGCheckButton(hitdrawopts,	"CDC");
-				checkbuttons["cdcdrift"]			= new TGCheckButton(hitdrawopts,	"CDC Drift Time");
-				checkbuttons["cdctruth"]			= new TGCheckButton(hitdrawopts,	"CDCTruth");
-				checkbuttons["fdcwire"]				= new TGCheckButton(hitdrawopts,	"FDC Wire");
-				checkbuttons["fdcpseudo"]			= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
-				checkbuttons["fdctruth"]			= new TGCheckButton(hitdrawopts,	"FDCTruth");
-				checkbuttons["tof"]					= new TGCheckButton(hitdrawopts,	"TOF");
-				checkbuttons["toftruth"]			= new TGCheckButton(hitdrawopts,	"TOFTruth");
-				checkbuttons["fcal"]					= new TGCheckButton(hitdrawopts,	"FCAL");
-				checkbuttons["bcal"]					= new TGCheckButton(hitdrawopts,	"BCAL");
-				hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["cdcdrift"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["fdcwire"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["fdcpseudo"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["fdctruth"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["tof"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["toftruth"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["fcal"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["bcal"], lhints);
-				
-				TGTextButton *moreOptions	= new TGTextButton(hitdrawopts,	"More options");
-				hitdrawopts->AddFrame(moreOptions, lhints);
-
+			// Track
+			TGHorizontalFrame *candidatesf = new TGHorizontalFrame(trkdrawopts);
+			checkbuttons["candidates"]	= new TGCheckButton(candidatesf,	"DTrackCandidate:");
+			candidatesfactory = new TGComboBox(candidatesf, "<default>", 0);
+			candidatesfactory->Resize(80,20);
+			candidatesf->AddFrame(checkbuttons["candidates"], lhints);
+			for(int i=0; i<100; i++)candidatesfactory->AddEntry("a",i); 
+			// For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+			candidatesf->AddFrame(candidatesfactory, lhints);
+			trkdrawopts->AddFrame(candidatesf, lhints);
+			
+			TGHorizontalFrame *wiretracksf		= new TGHorizontalFrame(trkdrawopts);
+			checkbuttons["wiretracks"]		= new TGCheckButton(wiretracksf,	"DTrackWireBased:");
+			wiretracksfactory	= new TGComboBox(wiretracksf, "<default>", 0);
+			wiretracksfactory->Resize(80,20);
+			wiretracksf->AddFrame(checkbuttons["wiretracks"], lhints);
+			for(int i=0; i<100; i++)wiretracksfactory->AddEntry("a",i); 
+			// For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+			wiretracksf->AddFrame(wiretracksfactory, lhints);
+			trkdrawopts->AddFrame(wiretracksf, lhints);
+			
+			TGHorizontalFrame *timetracksf		= new TGHorizontalFrame(trkdrawopts);
+			checkbuttons["timetracks"]		= new TGCheckButton(timetracksf,	"DTrackTimeBased:");
+			timetracksfactory	= new TGComboBox(timetracksf, "<default>", 0);
+			timetracksfactory->Resize(80,20);
+			timetracksf->AddFrame(checkbuttons["timetracks"], lhints);
+			for(int i=0; i<100; i++)timetracksfactory->AddEntry("a",i); 
+			// For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+			timetracksf->AddFrame(timetracksfactory, lhints);
+			trkdrawopts->AddFrame(timetracksf, lhints);
+			TGHorizontalFrame *chargedtracksf		= new TGHorizontalFrame(trkdrawopts);
+			checkbuttons["chargedtracks"]		= new TGCheckButton(chargedtracksf,	"DChargedTrack:");
+			chargedtracksfactory	= new TGComboBox(chargedtracksf, "<default>", 0);
+			chargedtracksfactory->Resize(80,20);
+			chargedtracksf->AddFrame(checkbuttons["chargedtracks"], lhints);
+			for(int i=0; i<100; i++)chargedtracksfactory->AddEntry("a",i); 
+			// For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+			chargedtracksf->AddFrame(chargedtracksfactory, lhints);
+			trkdrawopts->AddFrame(chargedtracksf, lhints);
+			
+			
+			
+			checkbuttons["neutrals"]     = new TGCheckButton(trkdrawopts,"DNeutralTrack");
+			checkbuttons["thrown"]       = new TGCheckButton(trkdrawopts,"DMCThrown");
+			checkbuttons["trajectories"] = new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
+			trkdrawopts->AddFrame(checkbuttons["neutrals"], lhints);
+			trkdrawopts->AddFrame(checkbuttons["thrown"], lhints);
+			trkdrawopts->AddFrame(checkbuttons["trajectories"], lhints);
+			
+			// Hit
+			checkbuttons["cdc"]		= new TGCheckButton(hitdrawopts,	"CDC");
+			checkbuttons["cdcdrift"]	= new TGCheckButton(hitdrawopts,	"CDC Drift Time");
+			checkbuttons["cdctruth"]	= new TGCheckButton(hitdrawopts,	"CDCTruth");
+			checkbuttons["fdcwire"]		= new TGCheckButton(hitdrawopts,	"FDC Wire");
+			checkbuttons["fdcpseudo"]	= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
+			checkbuttons["fdctruth"]	= new TGCheckButton(hitdrawopts,	"FDCTruth");
+			checkbuttons["tof"]		= new TGCheckButton(hitdrawopts,	"TOF");
+			checkbuttons["toftruth"]	= new TGCheckButton(hitdrawopts,	"TOFTruth");
+			checkbuttons["fcal"]		= new TGCheckButton(hitdrawopts,	"FCAL");
+			checkbuttons["bcal"]		= new TGCheckButton(hitdrawopts,	"BCAL");
+			hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["cdcdrift"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["fdcwire"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["fdcpseudo"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["fdctruth"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["tof"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["toftruth"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["fcal"], lhints);
+			hitdrawopts->AddFrame(checkbuttons["bcal"], lhints);
+			
+			TGTextButton *moreOptions	= new TGTextButton(hitdrawopts,	"More options");
+			hitdrawopts->AddFrame(moreOptions, lhints);
+			
 	//========== BOT FRAME ============
 	TGGroupFrame *trackinfo = new TGGroupFrame(botframe, "Track Info", kHorizontalFrame);
 	botframe->AddFrame(trackinfo, xhints);
@@ -463,7 +467,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["wiretracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["timetracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");	
 	checkbuttons["chargedtracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["photon"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["neutrals"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["thrown"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 
 	checkbuttons["cdc"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
