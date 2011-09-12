@@ -41,7 +41,7 @@ DParticleID::DParticleID(JEventLoop *loop)
   RootGeom->FindMat("CDchamberGas",mRhoZoverAGas,rho_Z_over_A_LnI,
 		    radlen);
   mLnIGas=rho_Z_over_A_LnI/mRhoZoverAGas;
-  mKRhoZoverAGas=0.1535*mRhoZoverAGas;
+  mKRhoZoverAGas=0.1535E-3*mRhoZoverAGas;
 
 
   // Get the geometry
@@ -112,7 +112,7 @@ jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
 
 
 // Calculate the most probable energy loss per unit length in units of 
-// MeV/cm in the FDC or CDC gas for a particle of momentum p and mass "mass"
+// GeV/cm in the FDC or CDC gas for a particle of momentum p and mass "mass"
 double DParticleID::GetMostProbabledEdx(double p,double mass,double dx){
   double betagamma=p/mass;
   double beta2=1./(1.+1./betagamma/betagamma);
@@ -125,8 +125,8 @@ double DParticleID::GetMostProbabledEdx(double p,double mass,double dx){
   double mean_dedx=mKRhoZoverAGas/beta2;
  
   // Most probable energy loss from Landau theory (see Leo, pp. 51-52)
-  return mean_dedx*(log(mean_dedx*dx/1000.)
-		    -log((1.-beta2)/2./Me/beta2)-2.*mLnIGas-beta2+0.198);
+  return mean_dedx*(log(mean_dedx*dx)
+		    -log((1.-beta2)/2./Me/beta2)-2.*mLnIGas-beta2+0.200);
 }
 
 // Empirical form for sigma/mean for gaseous detectors with num_dedx 
@@ -203,7 +203,7 @@ jerror_t DParticleID::GetdEdx(const DTrackTimeBased *track,
     my_rt->GetLastDOCAPoint(pos, mom);
    
     double gas_thickness=1.0; // cm
-    dEdx_list.push_back(dedx_t(1000.*fdchits[i]->dE,
+    dEdx_list.push_back(dedx_t(fdchits[i]->dE,
 			       gas_thickness/cos(mom.Theta()),
 			       mom.Mag()));
   }
@@ -270,7 +270,7 @@ jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
     // arc length and energy deposition
     //dedx.second=gas_density*sqrt(temp)/a/cosl; // g/cm^2
     dedx.second=sqrt(temp)/a/cosl;
-    dedx.first=1000.*hit->dE; //MeV
+    dedx.first=hit->dE; //GeV
 
     return NOERROR;
   }
