@@ -140,6 +140,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  vector<DMatrix5x1> Klist;
 	  vector<double> Mlist;
 	  vector<DMatrix1x5> Hlist;
+	  vector<DMatrix5x1> HTlist;
 	  vector<double> Vlist;
 	  vector<double>probs;
 
@@ -156,6 +157,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    probs.push_back(prob_hit);
 	    Vlist.push_back(V);
 	    Hlist.push_back(H);
+	    HTlist.push_back(H_T);
 	    Mlist.push_back(Mdiff);
 	    Klist.push_back(InvV*(C*H_T)); // Kalman gain
 	  }
@@ -193,7 +195,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      probs.push_back(prob_hit);	
 	      Mlist.push_back(Mdiff);
 	      Vlist.push_back(V);
-	      Hlist.push_back(H);  
+	      Hlist.push_back(H);   
+	      HTlist.push_back(H_T); 
 	      Klist.push_back(InvV*(C*H_T));
 	    }
 	  }
@@ -216,6 +219,15 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	  fdc_updates[id].S=S;
 	  fdc_updates[id].C=C;
+
+	  // update chi2
+	  for (unsigned int m=0;m<Klist.size();m++){
+	    double R=Mlist[m]*(1-Hlist[m]*Klist[m]);
+	    double RC=Vlist[m]-Hlist[m]*(C*HTlist[m]);
+	    chisq+=probs[m]*R*R/(prob_tot*RC);
+	  }
+	  fdc_updates[id].chi2sum=chisq;
+	  
 
 	  // update number of degrees of freedom
 	  numdof++;
@@ -252,6 +264,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    
 	    // Update chi2 for this segment
 	    chisq+=R*R/RC;
+	    fdc_updates[id].chi2sum=chisq;
 	    
 	    if (DEBUG_LEVEL>2){
 	      printf("hit %d p %5.2f dm %5.2f sig %5.3f chi2 %5.2f z %5.2f\n",
