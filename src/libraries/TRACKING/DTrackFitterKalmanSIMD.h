@@ -41,12 +41,12 @@
 #define TAN_MAX 10.
 
 
-#define NUM_SIGMA 50.0
-#define NUM_FDC_SIGMA 50.0
+#define NUM_SIGMA 150.0
+#define NUM_FDC_SIGMA 150.0
 
 #define CDC_VARIANCE 0.0001
-#define FDC_CATHODE_VARIANCE 0.0005 // 0.000225
-#define FDC_ANODE_VARIANCE 0.0006
+#define FDC_CATHODE_VARIANCE 0.000225
+#define FDC_ANODE_VARIANCE 0.000225
 
 #define ONE_THIRD  0.33333333333333333
 #define ONE_SIXTH  0.16666666666666667
@@ -56,15 +56,16 @@
 #define MAX_DEDX 40.
 #define MIN_ITER 2
 #define MIN_CDC_ITER 0
-#define MIN_FDC_HITS 2
+#define MIN_FDC_HITS 3
+#define MIN_CDC_HITS 3
 
 #define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.00025 // 250 keV
+#define DE_PER_STEP_WIRE_BASED 0.00025 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.00025
-#define BFIELD_FRAC 0.002
-#define MIN_STEP_SIZE 0.1 // 1 mm
-#define CDC_INTERNAL_STEP_SIZE 0.25
-#define FDC_INTERNAL_STEP_SIZE 0.25
+#define BFIELD_FRAC 0.001
+#define MIN_STEP_SIZE 0.1 // in cm
+#define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
+#define FDC_INTERNAL_STEP_SIZE 0.5 // in cm
 
 #define ELECTRON_MASS 0.000511 // GeV
 
@@ -78,6 +79,7 @@ typedef struct{
 }DKalmanSIMDCDCHit_t;
 
 typedef struct{
+  int layer;
   double t,cosa,sina,dE;
   double uwire,vstrip,z;
   double xres,yres,xsig,ysig;
@@ -97,7 +99,8 @@ typedef struct{
 
 typedef struct{
   DMatrix5x1 S;
-  DMatrix5x5 C;  
+  DMatrix5x5 C;
+  double chi2sum;
 }DKalmanUpdate_t;
 
 
@@ -205,7 +208,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     state_Z,
   };
   double fdc_y_variance(double alpha,double x,double dE);
-  double cdc_variance(double tanl,double t);  
+  double cdc_variance(double tanl,double t);   
+  double cdc_forward_variance(double tanl,double t);  
   double cdc_drift_distance(double t,double Bz);  
   double fdc_drift_distance(double t);
 
@@ -277,6 +281,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // Step sizes
   double mStepSizeZ,mStepSizeS;
+  double mCDCInternalStepSize;
 
   // Track parameters for forward region
   double x_,y_,tx_,ty_,q_over_p_;
@@ -331,21 +336,25 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // Min. momentum needed for fit before returning fitSuccess
   double MIN_FIT_P;
+  // Maximum seed momentum
+  double MAX_SEED_P;
 
  private:
   bool last_smooth;
   DMatrix5x5 I5x5;
 
-  double cdc_drift_table[400],fdc_drift_table[200];
+  double cdc_drift_table[400],fdc_drift_table[140];
 
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
   TH2F *Hstepsize,*HstepsizeDenom;
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
-  TH2F *cdc_drift,*fdc_drift;
-  TH2F *cdc_res,*fdc_xres,*cdc_drift_vs_B;
+  TH2F *cdc_drift,*fdc_drift,*fdc_yres_vs_dE;
+  TH2F *cdc_res,*fdc_xres,*cdc_drift_vs_B,*fdc_drift_vs_B;
   TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B;
   TH3F *fdc_yres;
+  TH2F *fdc_dy_vs_d;
+  TH3F *fdc_yres3d;
 };
 
 

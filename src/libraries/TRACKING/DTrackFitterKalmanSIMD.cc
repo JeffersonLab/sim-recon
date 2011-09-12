@@ -69,16 +69,16 @@ static void locate(const double *xx,int n,double x,int *j){
 
 // Variance for position along wire
 double DTrackFitterKalmanSIMD::fdc_y_variance(double alpha,double x,double dE){
-  //double sigma=0.01/dE+0.008;
-  //if (dE<2.4) sigma+=(0.024-0.01*dE)*x*x;
-  double sigma=0.039/dE;
-  sigma*=1+fabs(x);
+  double sigma=0.0395/dE;
+  double tanalpha=tan(alpha);
+  double tan2=tanalpha*tanalpha;
+  sigma*=(1+fabs(x))*(1+tan2*tan2);
   return sigma*sigma;
 }
 
 // Crude approximation for the variance in drift distance due to smearing
 double fdc_drift_variance(double t){
-  //return FDC_ANODE_VARIANCE;
+  return FDC_ANODE_VARIANCE;
   // if (t<165) t=165.;
   //double sigma=0.0212-0.0002197*t+1.976e-6*t*t;
   double par[5]={0.0258364,0.0195047,0.0257388,141.543,0.0315308};
@@ -91,13 +91,23 @@ double fdc_drift_variance(double t){
 double DTrackFitterKalmanSIMD::cdc_variance(double tanl,double t){ 
   //return CDC_VARIANCE;
   if (t<0) t=0.;
-  double sigma=0.04/sqrt(t+1.)+5e-6*t+10.e-4;
-  //double tanl2=tanl*tanl;
-  //sigma*=1.+0.01327*tanl2+0.0858*tanl2*tanl2;
+  //double sigma=0.04/sqrt(t+1.)+5e-6*t+10.e-4;
+  double sigma=0.04/sqrt(t+1.)+4.00e-6*t+1.1e-3;
+  //  double tanl2=tanl*tanl;
+  // if (tanl>0.57735) sigma*=1.+1./tanl2;
   return sigma*sigma;
 }
 
-#define CDC_T0_OFFSET 17.0
+double DTrackFitterKalmanSIMD::cdc_forward_variance(double tanl,double t){
+  if (t<0.) t=0.;
+  double sigma=0.0352/sqrt(t+1.)+4.06e-6*t+10.0e-4;
+  //  sigma=0.03736/sqrt(t+1.)+4.28e-6*t+1.35e-3; 15 deg
+  sigma=0.04/sqrt(t+1.)+4.e-6*t+1.22e-3*(1+0.1/(tanl*tanl));
+  //  sigma+=6.37e-4/(tanl*tanl);
+  return sigma*sigma;
+}
+
+#define CDC_T0_OFFSET 17.25
 // Interpolate on a table to convert time to distance for the cdc
 double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double Bz){
   if (t<0.) return 0.;
@@ -351,7 +361,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
 	 mStepSizeS=1.0;
-	 mStepSizeZ=1.0;
+	 mStepSizeZ=2.0;
 	 /*
 	 if (fit_type==kTimeBased){
 	   mStepSizeS=0.5;
@@ -362,6 +372,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 mT0=mT0wires=0.;
 	 mInvVarT0=0.;
 	 mVarT0=0.;
+
+	 mCDCInternalStepSize=0.25;
 	 
 }
 
@@ -378,7 +390,8 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   if (cdchits.size()+fdchits.size()<6) return kFitFailed;
 
   // Copy hits from base class into structures specific to DTrackFitterKalmanSIMD  
-  for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
+  if (cdchits.size()>=MIN_CDC_HITS)
+    for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
   if (fdchits.size()>=MIN_FDC_HITS) 
     for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
   
@@ -983,11 +996,11 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     }
   }
   if(step>mStepSizeZ) step=mStepSizeZ; 
-  if (z_to_boundary<step) step=z_to_boundary; 
+  if (z_to_boundary<step) step=z_to_boundary;
   double my_r=sqrt(S(state_x)*S(state_x)+S(state_y)*S(state_y));
-  if (step>CDC_INTERNAL_STEP_SIZE && my_r>endplate_rmin
+  if (step>mCDCInternalStepSize && my_r>endplate_rmin
       && my_r<endplate_rmax && z<endplate_z) 
-    step=CDC_INTERNAL_STEP_SIZE;
+    step=mCDCInternalStepSize;
   if(step<MIN_STEP_SIZE)step=MIN_STEP_SIZE;
   if (DEBUG_HISTS && fit_type==kTimeBased){
     TH2F *Hstepsize=(TH2F*)gROOT->FindObject("Hstepsize"); 
@@ -1143,11 +1156,11 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       }
       if(step_size>mStepSizeS) step_size=mStepSizeS;     
       if (s_to_boundary<step_size) step_size=s_to_boundary;
-      if (step_size>CDC_INTERNAL_STEP_SIZE 
+      if (step_size>mCDCInternalStepSize 
 	  && my_r>endplate_rmin
 	  && my_r<endplate_rmax
 	  && pos.Z()>cdc_origin[2]) 
-	step_size=CDC_INTERNAL_STEP_SIZE; 
+	step_size=mCDCInternalStepSize; 
       if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
       if (DEBUG_HISTS && fit_type==kTimeBased){
 	TH2F *Hstepsize=(TH2F*)gROOT->FindObject("Hstepsize"); 
@@ -1263,10 +1276,11 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
     if(step_size>mStepSizeS) step_size=mStepSizeS; 
     if (s_to_boundary<step_size) step_size=s_to_boundary;
     double my_r=pos.Perp();
-    if (step_size>CDC_INTERNAL_STEP_SIZE && my_r>endplate_rmin
+    if (fit_type==kTimeBased 
+	&& step_size>mCDCInternalStepSize && my_r>endplate_rmin
 	&& my_r<endplate_rmax
 	&& pos.Z()>cdc_origin[2]) 
-      step_size=CDC_INTERNAL_STEP_SIZE;
+      step_size=mCDCInternalStepSize;
     
     if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
     if (DEBUG_HISTS && fit_type==kTimeBased){
@@ -1444,9 +1458,9 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   // Reduce the step size inside the FDC packages
   if (fabs(z-zhit)<1.0) step=FDC_INTERNAL_STEP_SIZE;
 
-  if (step>CDC_INTERNAL_STEP_SIZE && my_r>endplate_rmin
+  if (step>mCDCInternalStepSize && my_r>endplate_rmin
       && my_r<R_MAX && z<endplate_z)
-    step=CDC_INTERNAL_STEP_SIZE;
+    step=mCDCInternalStepSize;
   if(step<MIN_STEP_SIZE)step=MIN_STEP_SIZE;
   if (DEBUG_HISTS && fit_type==kTimeBased){
     TH2F *Hstepsize=(TH2F*)gROOT->FindObject("Hstepsize"); 
@@ -2069,9 +2083,8 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,double Z,
       *(1.+3.34*Z*Z*alpha*alpha*one_over_beta2)/p2;
     double nu=0.5*chi2c/(chi2a*(1.-F));
     double one_plus_nu=1.+nu;
-    double sig2_ms=2.*chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
+    double sig2_ms=chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
 
-    //printf("lynch/dahl sig2ms %g\n",sig2_ms);
     Q=sig2_ms*Q;
   }
   
@@ -2118,11 +2131,12 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,double Z,
      *(1.+3.34*Z*Z*alpha*alpha*one_over_beta2)*one_over_p_sq;
    double nu=0.5*chi2c/(chi2a*(1.-F));
    double one_plus_nu=1.+nu;
-   double sig2_ms=2.*chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
+   double sig2_ms=chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
    
    //   printf("lynch/dahl sig2ms %g\n",sig2_ms);
    //sig2_ms*=0.1;
 
+   // printf("lynch/dahl sig2ms %g %f\n",sig2_ms,(one_plus_nu)/nu*log(one_plus_nu)-1.);
    Q=sig2_ms*Q;
  }
 
@@ -2814,6 +2828,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double anneal_factor=1.;
     unsigned int last_ndf=0;
 
+
+    // Initialize CDC internal step size
+    mCDCInternalStepSize=0.25;
     
     for (unsigned int iter=0;
 	 iter<(fit_type==kTimeBased?MAX_TB_PASSES:MAX_WB_PASSES);
@@ -2952,6 +2969,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Initial charge
     double q=q_over_p_>0?1.:-1.;
 
+    // Initialize CDC internal step size
+    mCDCInternalStepSize=0.25;
+  
     // Initial guess for forward representation covariance matrix
     C0(state_x,state_x)=0.1;
     C0(state_y,state_y)=0.1;
@@ -3101,6 +3121,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	}
       }
     }      
+   
     
     // Initialize the state vector and covariance matrix
     Sc(state_q_over_pt)=q_over_pt_;
@@ -3131,6 +3152,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     cdc_updates=vector<DKalmanUpdate_t>(my_cdchits.size());
 
+    // Initialize CDC internal step size
+    if (fit_type==kTimeBased)
+      mCDCInternalStepSize=0.1;
+   
     // iteration 
     double anneal_factor=1.;
     double chisq_iter=chisq;
@@ -3138,6 +3163,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     for (int iter2=0;
 	 iter2<(fit_type==kTimeBased?MAX_TB_PASSES:MAX_WB_PASSES);
 	 iter2++){  
+     
       // Break out of loop if p is too small
       double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
       if (fabs(q_over_p)>Q_OVER_P_MAX) break;
@@ -4383,7 +4409,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    // variance 
 	    double tx=S(state_tx),ty=S(state_ty);
 	    double tanl=1./sqrt(tx*tx+ty*ty);
-	    Vc=cdc_variance(tanl,tdrift);
+	    Vc=cdc_forward_variance(tanl,tdrift);
 	
 	  }
 
@@ -4785,7 +4811,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	   
 	  double tx=S(state_tx),ty=S(state_ty);
 	  double tanl=1./sqrt(tx*tx+ty*ty);
-	  V=cdc_variance(tanl,dt);
+	  V=cdc_forward_variance(tanl,dt);
 
 	  //printf("V %f vart0 %f\n",V,0.0073*0.0073*0.09);
 	}
@@ -5538,7 +5564,7 @@ jerror_t DTrackFitterKalmanSIMD::FindSmoothedResidual(unsigned int id,
       
     // variance
     double tanl=1./sqrt(tx*tx+ty*ty);
-    Vc=cdc_variance(tanl,tdrift);
+    Vc=cdc_forward_variance(tanl,tdrift);
   }
   
   // Covariance matrix for smoothed residual
