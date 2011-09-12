@@ -826,7 +826,7 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
 							 const DVector3 &origin,
 							 DVector3 &pos,
 							 DVector3 &mom){
-  double r2=100.0;
+  double r2=90.0;
   double xc=fit.x0;
   double yc=fit.y0;
   double rc=fit.r0;

@@ -1693,7 +1693,7 @@ jerror_t DTrackCandidate_factory_CDC::GetPositionAndMomentum(DCDCSeed &seed,
 
   // Squared radius of cylinder outside start counter but inside CDC inner 
   // radius
-  double r2=100.0;
+  double r2=90.0;
 
   // Circle parameters
   double xc=seed.fit.x0;
