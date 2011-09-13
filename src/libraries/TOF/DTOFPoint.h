@@ -19,16 +19,14 @@ class DTOFPoint:public JObject{
 
 	DVector3 pos;   	//reconstructed position
         float t;               //reconstructed time
-        float dedx;            //reconstructed dedx
-        float chisq;           //chisquare of this point
+        float dE;            //reconstructed deposited energy
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "x", "%1.3f", pos.x());
 			AddString(items, "y", "%1.3f", pos.y());
 			AddString(items, "z", "%1.3f", pos.z());
 			AddString(items, "t", "%1.3f", t);
-			AddString(items, "dedx", "%1.3f", dedx);
-			AddString(items, "chisq", "%1.3f", chisq);
+			AddString(items, "dE", "%1.3f", dE);
 		}
 };
 
