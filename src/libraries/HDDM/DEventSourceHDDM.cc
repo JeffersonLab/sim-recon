@@ -827,8 +827,8 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(s_HDDM_t *hddm_s,  JFactory<DMCRe
 	}
 	
 	// Copy into factories
-_DBG_<<"Creating "<<dmcreactions.size()<<" DMCReaction objects"<<endl;
-_DBG_<<"Creating "<<dbeam_photons.size()<<" DBeamPhoton objects"<<endl;
+	//_DBG_<<"Creating "<<dmcreactions.size()<<" DMCReaction objects"<<endl;
+	//_DBG_<<"Creating "<<dbeam_photons.size()<<" DBeamPhoton objects"<<endl;
 
 	factory->CopyTo(dmcreactions);
 	factory2->CopyTo(dbeam_photons);
