@@ -110,7 +110,7 @@ double DTrackFitterKalmanSIMD::cdc_forward_variance(double tanl,double t){
 #define CDC_T0_OFFSET 17.25
 // Interpolate on a table to convert time to distance for the cdc
 double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double Bz){
-  if (t<0.) return 0.;
+  //if (t<0.) return 0.;
   double a=616.3,b=50.39,Bref=1.83;
   t*=(a+b*Bref)/(a+b*Bz);
   int id=int((t+CDC_T0_OFFSET)/2.);
@@ -164,9 +164,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   USE_T0_FROM_WIRES=0;
   gPARMS->SetDefaultParameter("KALMAN:USE_T0_FROM_WIRES", USE_T0_FROM_WIRES);
 
-  USE_MATERIAL_BOUNDARIES=false;
-  gPARMS->SetDefaultParameter("TRKFIT:USE_MATERIAL_BOUNDARIES",
-			      USE_MATERIAL_BOUNDARIES);
+  ENABLE_BOUNDARY_CHECK=false;
+  gPARMS->SetDefaultParameter("GEOM:ENABLE_BOUNDARY_CHECK",
+			      ENABLE_BOUNDARY_CHECK);
   
   USE_MULS_COVARIANCE=true;
   gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",
@@ -943,7 +943,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   //if (r<r_outer_hit)
   {
     // get material properties from the Root Geometry
-    if (USE_MATERIAL_BOUNDARIES){
+    if (ENABLE_BOUNDARY_CHECK){
       DVector3 mom(S(state_tx),S(state_ty),1.);
       if(geom->FindMatKalman(temp.pos,mom,temp.Z,temp.K_rho_Z_over_A,
 			     temp.rho_Z_over_A,temp.LnI,&s_to_boundary)!=NOERROR){
@@ -1117,7 +1117,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       //      t+=step_size*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
       // get material properties from the Root Geometry
-      if (USE_MATERIAL_BOUNDARIES){
+      if (ENABLE_BOUNDARY_CHECK){
         DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
 	if(geom->FindMatKalman(pos,mom,central_traj[m].Z,
 			       central_traj[m].K_rho_Z_over_A,
@@ -1238,7 +1238,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
     //t+=step_size*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
     // get material properties from the Root Geometry
-    if (USE_MATERIAL_BOUNDARIES){
+    if (ENABLE_BOUNDARY_CHECK){
       DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
       if(geom->FindMatKalman(pos,mom,temp.Z,temp.K_rho_Z_over_A,
 			     temp.rho_Z_over_A,temp.LnI,&s_to_boundary)
@@ -1399,7 +1399,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.Z=temp.LnI=0.; //initialize
   
   // get material properties from the Root Geometry
-  if (USE_MATERIAL_BOUNDARIES){
+  if (ENABLE_BOUNDARY_CHECK){
     DVector3 mom(S(state_tx),S(state_ty),1.);
     if (geom->FindMatKalman(temp.pos,mom,temp.Z,temp.K_rho_Z_over_A,
   			    temp.rho_Z_over_A,temp.LnI,&s_to_boundary)
@@ -2180,7 +2180,7 @@ inline double DTrackFitterKalmanSIMD::GetEnergyVariance(double ds,
   //return 0;
 
   // Scale factor = 4.018/2.354 (Gamma -> sigma)
-  double sigma=1.70688*K_rho_Z_over_A*one_over_beta2;
+  double sigma=1.70688*K_rho_Z_over_A*one_over_beta2*ds;
   //double sigma=4.018*K_rho_Z_over_A*one_over_beta2;
   return sigma*sigma;
 }
