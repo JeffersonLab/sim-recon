@@ -41,8 +41,8 @@
 #define TAN_MAX 10.
 
 
-#define NUM_SIGMA 150.0
-#define NUM_FDC_SIGMA 150.0
+#define NUM_SIGMA 200.0
+#define NUM_FDC_SIGMA 200.0
 
 #define CDC_VARIANCE 0.0001
 #define FDC_CATHODE_VARIANCE 0.000225
@@ -321,6 +321,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double m_ratio; // electron mass/MASS
   double m_ratio_sq; // .. and its square
 
+  // minimum drift time 
+  double mMinDriftTime;
+  unsigned int mMinDriftID;
+
   // Vertex time
   double mT0,mT0wires;
   // Variance in vertex time
@@ -329,7 +333,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double mInvVarT0;
 
   bool DEBUG_HISTS;
-  bool USE_MATERIAL_BOUNDARIES;
+  bool ENABLE_BOUNDARY_CHECK;
   int DEBUG_LEVEL;
   bool USE_T0_FROM_WIRES;
   bool USE_MULS_COVARIANCE;
