@@ -22,7 +22,7 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_VAR 10.0 // cm^2
+#define BEAM_VAR 0.001 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
 #define Z_MAX 85.0
@@ -272,7 +272,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  num_hits+=match4->hits.size();
 	}
 	// Fake point at origin
-	fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	//fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){      
 	  // Charge
 	  //if (q==0) 
@@ -416,18 +416,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       
 	DVector3 mom,pos;
 	Bz_avg/=double(num_hits);
-
-	// Try to fix tracks that appear to point upstream
-	if (tanl<0){ 
-	  double x=segment->hits[0]->xy.X();
-	  double y=segment->hits[0]->xy.Y();
-	  double ratio=sqrt(x*x+y+y)/(2.*rc);
-	  if (ratio<1.){
-	    double sperp=2.*rc*asin(ratio);
-	    tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
-	    z_vertex=Z_VERTEX;
-	  }
-	}
 
 	pos.SetX(segment->hits[0]->xy.X());
 	pos.SetY(segment->hits[0]->xy.Y());
@@ -652,16 +640,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       DVector3 mom,pos;
       Bz_avg/=double(num_hits);
       
-      // Try to fix tracks that appear to point upstream
-      if (tanl<0){
-	//double x=segment->hits[0]->xy.X();
-	//double y=segment->hits[0]->xy.Y();
-	//double ratio=sqrt(x*x+y+y)/(2.*rc);
+      // Try to fix relatively high momentum tracks in the very forward 
+      // direction that look like low momentum tracks due to small pt.
+      // Assume that the particle came from the center of the target.
+      if (rc<1.0 && segment && match3 && match4 
+	  && segment->hits[0]->xy.Mod()<10.0 
+	  && match3->hits[0]->xy.Mod()<10.0 && match4->hits[0]->xy.Mod()<10.0){
+	rc=segment->rc;
+	xc=segment->xc;
+	yc=segment->yc;
 	double ratio=segment->hits[0]->xy.Mod()/(2.*rc);
 	if (ratio<1.){
 	  double sperp=2.*rc*asin(ratio);
 	  tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
-	  z_vertex=Z_VERTEX;
 	}
       }		
 
@@ -673,7 +664,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       DTrackCandidate *track = new DTrackCandidate;
       //track->setPosition(pos);
       //track->setMomentum(mom);
-
+     
       if (match4){
 	q=GetCharge(pos,match4);
       }
@@ -833,18 +824,23 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       DVector3 mom,pos;
       Bz_avg/=double(num_hits);
 
-      // Try to fix tracks that appear to point downstream
-      if (tanl<0){ 
-	//double x=segment->hits[0]->x;
-	//double y=segment->hits[0]->y;
-	//double ratio=sqrt(x*x+y+y)/2./rc;
+      
+      // Try to fix relatively high momentum tracks in the very forward 
+      // direction that look like low momentum tracks due to small pt.
+      // Assume that the particle came from the center of the target.
+      if (rc<1.0 && segment && match4 
+	  && segment->hits[0]->xy.Mod()<10.0 
+	  && match4->hits[0]->xy.Mod()<10.0){
+	rc=segment->rc;
+	xc=segment->xc;
+	yc=segment->yc;
 	double ratio=segment->hits[0]->xy.Mod()/(2.*rc);
 	if (ratio<1.){
 	  double sperp=2.*rc*asin(ratio);
 	  tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
-	  z_vertex=Z_VERTEX;
 	}
       }	
+     
       pos.SetXYZ(segment->hits[0]->xy.X(),segment->hits[0]->xy.Y(),
 		 segment->hits[0]->wire->origin.z());
       //GetPositionAndMomentum(Bz_avg,pos,mom);
@@ -890,6 +886,17 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     // z-position at "vertex"
     z_vertex=segment->z_vertex;
 
+    // Try to fix relatively high momentum tracks in the very forward 
+    // direction that look like low momentum tracks due to small pt.
+    // Assume that the particle came from the center of the target.
+    if (rc<1.0 && segment->hits[0]->xy.Mod()<10.0 ){
+      double ratio=segment->hits[0]->xy.Mod()/(2.*rc);
+      if (ratio<1.){
+	double sperp=2.*rc*asin(ratio);
+	tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
+      }
+    }	
+    
     double Bz_avg=0.;
     // Compute average magnitic field for the segment
     for (unsigned int m=0;m<segment->hits.size();m++){
@@ -1168,7 +1175,7 @@ double DTrackCandidate_factory_FDCCathodes::GetCharge(const DVector3 &pos,
   double d2plus=(plus-segment->hits[0]->xy).Mod2();
   double d2minus=(minus-segment->hits[0]->xy).Mod2();
 
-  //  printf("z0 %f d+ %f d- %f \n",pos.z(),d2plus,d2minus);
+  //printf("z0 %f d+ %f d- %f \n",pos.z(),d2plus,d2minus);
   // Look for smallest difference to determine q
   if (d2minus<d2plus){
     return -1.;
