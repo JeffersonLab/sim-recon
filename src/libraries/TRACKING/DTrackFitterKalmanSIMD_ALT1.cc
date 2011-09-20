@@ -20,8 +20,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x1 K;  // Kalman gain matrix for cdc hits
   DMatrix5x1 S0,S0_; //State vector
-  DMatrix5x5 I; // identity matrix
-  for (unsigned int i=0;i<5;i++)I(i,i)=1.;
 
   // Set the "used_in_fit" flags to false for all hits
   for (unsigned int i=0;i<my_fdchits.size();i++){
@@ -207,7 +205,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	  // Adjust the state vector and the covariance using the hit 
 	  //information
-	  DMatrix5x5 sum=I;
+	  DMatrix5x5 sum=I5x5;
 	  DMatrix5x5 sum2;
 	  for (unsigned int m=0;m<Klist.size();m++){
 	    double my_prob=probs[m]/prob_tot;
@@ -441,6 +439,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    double tanl=1./sqrt(tx*tx+ty*ty);
 	    Vc=cdc_variance(tanl,tdrift);
 	  }
+	  // Residual
+	  double res=dm-d;
 
 	  // inverse variance including prediction
 	  double InvV1=1./(Vc+H*(C*H_T));
@@ -456,7 +456,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		   my_cdchits[cdc_index]->hit->wire->straw,
 		   d,dm,Vc,1./InvV1,1./sqrt(InvV1));
 	  // Check if this hit is an outlier
-	  double chi2_hit=(dm-d)*(dm-d)*InvV1;
+	  double chi2_hit=res*res*InvV1;
 	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA){
 	    // Flag the place along the reference trajectory with hit id
 	    forward_traj[k-1].h_id=1000+cdc_index;

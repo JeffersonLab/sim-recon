@@ -207,6 +207,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     state_Y,
     state_Z,
   };
+  void locate(const double *xx,int n,double x,int *j);
   double fdc_y_variance(double alpha,double x,double dE);
   double cdc_variance(double tanl,double t);   
   double cdc_forward_variance(double tanl,double t);  
@@ -324,6 +325,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // minimum drift time 
   double mMinDriftTime;
   unsigned int mMinDriftID;
+  
+  // tables of time-to-drift values
+  double cdc_drift_table[400],fdc_drift_table[140];
 
   // Vertex time
   double mT0,mT0wires;
@@ -343,12 +347,12 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Maximum seed momentum
   double MAX_SEED_P;
 
- private:
-  bool last_smooth;
+  // Identity matrix
   DMatrix5x5 I5x5;
 
-  double cdc_drift_table[400],fdc_drift_table[140];
-
+ private:
+  bool last_smooth;
+ 
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
   TH2F *Hstepsize,*HstepsizeDenom;
