@@ -64,7 +64,10 @@ jerror_t DEventProcessor_mcthrown_hists::init(void)
 	pmom_vs_theta = new TH2F("pmom_vs_theta","Thrown momentum vs. #theta",1000, 0.0, 180.0, 300, 0.0, 10.0);
 	pmom_vs_theta_pip = new TH2F("pmom_vs_theta_pip","Thrown momentum vs. #theta for #pi^{+}",1000, 0.0, 180.0, 300, 0.0, 10.0);
 	pmom_vs_theta_pim = new TH2F("pmom_vs_theta_pim","Thrown momentum vs. #theta for #pi^{-}",1000, 0.0, 180.0, 300, 0.0, 10.0);
+	pmom_vs_theta_Kp = new TH2F("pmom_vs_theta_Kp","Thrown momentum vs. #theta for K^{+}",1000, 0.0, 180.0, 300, 0.0, 10.0);
+	pmom_vs_theta_Km = new TH2F("pmom_vs_theta_Km","Thrown momentum vs. #theta for K^{-}",1000, 0.0, 180.0, 300, 0.0, 10.0);
 	pmom_vs_theta_proton = new TH2F("pmom_vs_theta_proton","Thrown momentum vs. #theta for protons",1000, 0.0, 180.0, 300, 0.0, 10.0);
+	pmom_vs_theta_neutron = new TH2F("pmom_vs_theta_neutron","Thrown momentum vs. #theta for neutrons",1000, 0.0, 180.0, 300, 0.0, 10.0);
 	pmom_vs_theta_gamma = new TH2F("pmom_vs_theta_gamma","Thrown momentum vs. theta for gammas",1000, 0.0, 180.0, 300, 0.0, 10.0);
 
 	vertex = new TH3F("vertex", "Position of vertex from which thrown particles were thrown", 50, -5.0, 5.0, 50, -5.0, 5.0, 150, 0.0, 150.0);
@@ -109,6 +112,15 @@ jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, int eventnumber)
 				break;
 			case 9:
 				pmom_vs_theta_pim->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
+				break;
+			case 11:
+				pmom_vs_theta_Kp->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
+				break;
+			case 12:
+				pmom_vs_theta_Km->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
+				break;
+			case 13:
+				pmom_vs_theta_neutron->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
 				break;
 			case 14:
 				pmom_vs_theta_proton->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());

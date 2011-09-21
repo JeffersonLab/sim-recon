@@ -28,7 +28,10 @@ class DEventProcessor_mcthrown_hists:public JEventProcessor{
 		TH2F *pmom_vs_theta;
 		TH2F *pmom_vs_theta_pip;
 		TH2F *pmom_vs_theta_pim;
+		TH2F *pmom_vs_theta_Kp;
+		TH2F *pmom_vs_theta_Km;
 		TH2F *pmom_vs_theta_proton;
+		TH2F *pmom_vs_theta_neutron;
 		TH2F *pmom_vs_theta_gamma;
 		TH1F *Nparticles_per_event, *particle_type;
 		TH3F *vertex;
