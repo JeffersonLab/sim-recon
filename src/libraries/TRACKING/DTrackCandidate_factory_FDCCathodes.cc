@@ -427,14 +427,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	//track->setPosition(pos);
 	//track->setMomentum(mom);
 
-	if (match4){
-	  q=GetCharge(pos,match4);
+	if (match2){
+	  q=GetCharge(pos,match2);
 	}
 	else if (match3){
 	  q=GetCharge(pos,match3);
 	}
-	else if (match2){
-	  q=GetCharge(pos,match2);
+	else if (match4){
+	  q=GetCharge(pos,match4);
 	}
 		
 	GetPositionAndMomentum(Bz_avg,pos,mom);
@@ -665,11 +665,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       //track->setPosition(pos);
       //track->setMomentum(mom);
      
-      if (match4){
-	q=GetCharge(pos,match4);
-      }
-      else if (match3){
+      if (match3){
 	q=GetCharge(pos,match3);
+      }
+      else if (match4){
+	q=GetCharge(pos,match4);
       }
       else{
 	q=GetCharge(pos,segment);
@@ -1175,7 +1175,8 @@ double DTrackCandidate_factory_FDCCathodes::GetCharge(const DVector3 &pos,
   double d2plus=(plus-segment->hits[0]->xy).Mod2();
   double d2minus=(minus-segment->hits[0]->xy).Mod2();
 
-  //printf("z0 %f d+ %f d- %f \n",pos.z(),d2plus,d2minus);
+  //  printf("z0 %f z %f d+ %f d- %f \n",pos.z(),
+  //	 segment->hits[0]->wire->origin.z(),d2plus,d2minus);
   // Look for smallest difference to determine q
   if (d2minus<d2plus){
     return -1.;
