@@ -263,7 +263,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
   DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
-
+  jerror_t EstimateT0(const DKalmanSIMDFDCHit_t *hit,double ftime,
+		      double d, double cosalpha,
+		      double sinalpha, double tu,
+		      const DMatrix5x5 &C);
+  jerror_t EstimateT0(const DCDCTrackHit *hit,double ftime,double doca,
+		      double x,double y,
+		      const DMatrix5x5 &C);
 
   jerror_t FindSmoothedResidual(unsigned int id,double z,double t,
 				double dEdx,
