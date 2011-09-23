@@ -3712,9 +3712,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  // Measurement error
 	  V=cdc_variance(Sc(state_tanl),tdrift);
 
-	  cdc_drift->Fill(tdrift,prediction);
-	  cdc_res->Fill(tdrift,measurement-prediction);
-	  //cdc_res_vs_tanl->Fill(Sc(state_tanl),measurement-prediction);
+	  if (DEBUG_HISTS){
+	    cdc_drift->Fill(tdrift,prediction);
+	    cdc_res->Fill(tdrift,measurement-prediction);
+	    //cdc_res_vs_tanl->Fill(Sc(state_tanl),measurement-prediction);
+	  }
 	}
 
        	// Projection matrix        
