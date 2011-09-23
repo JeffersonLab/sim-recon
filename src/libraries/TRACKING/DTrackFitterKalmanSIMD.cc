@@ -2610,6 +2610,8 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
 	// weighted average
 	mT0wires+=t0/my_var;
 	mInvVarT0+=1./my_var;
+
+	mT0=mT0wires/mInvVarT0;
       }
    
       
@@ -3107,8 +3109,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Initial charge
     double q=q_over_pt_>0?1.:-1.;
 
-    //C0(state_z,state_z)=1.;
-    C0(state_z,state_z)=0.1;
+    C0(state_z,state_z)=1.;
+    //C0(state_z,state_z)=0.1;
     C0(state_q_over_pt,state_q_over_pt)=0.01*q_over_pt_*q_over_pt_;
     C0(state_phi,state_phi)=0.01;
     C0(state_D,state_D)=0.1;
