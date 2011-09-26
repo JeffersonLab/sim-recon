@@ -13,6 +13,10 @@ using namespace std;
 
 #define MAXTOFHITS 50
 
+bool Compare_TOFSpacetimeHitMatches_Distance(DTOFPoint_factory::tof_spacetimehitmatch_t *locTOFSpacetimeHitMatch1, DTOFPoint_factory::tof_spacetimehitmatch_t *locTOFSpacetimeHitMatch2){
+	return (locTOFSpacetimeHitMatch1->delta_r < locTOFSpacetimeHitMatch2->delta_r);
+};
+
 //------------------
 // brun
 //------------------
@@ -32,10 +36,15 @@ jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int runnumber)
     return NOERROR;
   }
 
-  VELOCITY    =    tofparms["TOF_C_EFFECTIVE"];
-  HALFPADDLE  =    tofparms["TOF_HALFPADDLE"];
-  BARWIDTH    =    tofparms["TOF_PADDLEWIDTH"];
+  VELOCITY     =    tofparms["TOF_C_EFFECTIVE"];
+  HALFPADDLE   =    tofparms["TOF_HALFPADDLE"];
+  BARWIDTH     =    tofparms["TOF_PADDLEWIDTH"];
+  E_THRESHOLD  =    tofparms["TOF_E_THRESHOLD"];
+  ATTEN_LENGTH =    tofparms["TOF_ATTEN_LENGTH"];
 
+	MAX_TOFSpacetimeHits = 20;
+	MAX_TOFSpacetimeHitMatches = 10;
+	dPositionMatchCut_DoubleEnded = 0.5*BARWIDTH + 1.05*3.0; //max if perfect precision (1/2 bar width) + ~3 sigma
   return NOERROR;
 
 }
@@ -45,140 +54,271 @@ jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-  // Get TOF hits
-  vector<const DTOFHit*> hits;
-  loop->Get(hits);
+	unsigned int loc_i, loc_j;
+	tof_spacetimehit_t *locTOFSpacetimeHit;
+	tof_spacetimehit_t *locTOFSpacetimeHit_Horizontal;
+	tof_spacetimehit_t *locTOFSpacetimeHit_Vertical;
+	const DTOFHit *locTOFHit, *locTOFHit_Horizontal, *locTOFHit_Vertical;
+	float locTimeCut, locDeltaX, locDeltaY, locDeltaT;
+	DTOFPoint *locTOFPoint;
+	float locMatchX, locMatchY, locMatchZ, locMatchdE, locMatchT;
 
-  // Local vectors for separating hits by plane
-  vector<const DTOFHit *>uhits;
-  vector<const DTOFHit *>vhits;
-  for (unsigned int j = 0; j < hits.size(); j++){
-    const DTOFHit *hit=hits[j];
+	vector<const DTOFHit*> locTOFHitVector;
+	loop->Get(locTOFHitVector);
 
-    // zero is vertical plane, one is horizontal plane
-    if (hit->E_north>0 ||  hit->E_south>0) {
-      if (hit->orientation) {
-	uhits.push_back(hit);
-      } else { 
-	vhits.push_back(hit);
-      }
-    }
-  }
+	vector<tof_spacetimehit_t*> locTOFSpacetimeHits_Horizontal;
+	vector<tof_spacetimehit_t*> locTOFSpacetimeHits_Vertical;
 
-  // Match hits in the two planes by bar number and position as determined from
-  // the time difference between two ends, where available.
+	//increase pool size if necessary (used to minimize memory allocation time)
+	for(loc_i = dTOFSpacetimeHitPool.size(); loc_i < locTOFHitVector.size(); loc_i++){
+		locTOFSpacetimeHit = new tof_spacetimehit_t();
+		dTOFSpacetimeHitPool.push_back(locTOFSpacetimeHit);
+	}
+	// delete pool sizes if too large, preventing memory-leakage-like behavor.
+	if((locTOFHitVector.size() < MAX_TOFSpacetimeHits) && (dTOFSpacetimeHitPool.size() > MAX_TOFSpacetimeHits)){
+		for(loc_i = MAX_TOFSpacetimeHits; loc_i < dTOFSpacetimeHitPool.size(); loc_i++) delete dTOFSpacetimeHitPool[loc_i];
+		dTOFSpacetimeHitPool.resize(MAX_TOFSpacetimeHits);
+	}
 
+	// create the hit spacetime information, fill the vectors
+	for (loc_i = 0; loc_i < locTOFHitVector.size(); loc_i++){
+		locTOFHit = locTOFHitVector[loc_i];
+		if (!((locTOFHit->E_north > E_THRESHOLD) || (locTOFHit->E_south > E_THRESHOLD)))
+			continue; //
 
+		locTOFSpacetimeHit = dTOFSpacetimeHitPool[loc_i];
+		if (locTOFHit->orientation) { //horizontal
+			if (locTOFHit->bar <= 40){ //double-ended bars
+				locTOFSpacetimeHit->y = BARWIDTH*(locTOFHit->bar - 20.5) + ((locTOFHit->bar > 20) ? BARWIDTH : -1.0*BARWIDTH);
+				if(!((locTOFHit->meantime >= 0.0) || (locTOFHit->meantime <= 0.0))){ //NaN: only one energy hit above threshold on the double-ended bar
+					locTOFSpacetimeHit->x = 0.0;
+					if (locTOFHit->E_north > E_THRESHOLD)
+						locTOFSpacetimeHit->t = locTOFHit->t_north - HALFPADDLE/VELOCITY;
+					else
+						locTOFSpacetimeHit->t = locTOFHit->t_south - HALFPADDLE/VELOCITY;
+					locTOFSpacetimeHit->pos_cut = 252.0;
+					locTOFSpacetimeHit->t_cut = 10.0;
+				}else{
+					locTOFSpacetimeHit->x = locTOFHit->pos;
+					locTOFSpacetimeHit->t = locTOFHit->meantime;
+					locTOFSpacetimeHit->pos_cut = dPositionMatchCut_DoubleEnded;
+					locTOFSpacetimeHit->t_cut = 1.0;
+				}
+			}else{ //single-ended bars
+				locTOFSpacetimeHit->pos_cut = 120.;
+				locTOFSpacetimeHit->t_cut = 10.;
+				switch(locTOFHit->bar){
+					case 41:
+						locTOFSpacetimeHit->x = -66.; //paddle extends from -6 -> -126
+						locTOFSpacetimeHit->y = -3.;
+						locTOFSpacetimeHit->t = locTOFHit->t_south - 0.5*HALFPADDLE/VELOCITY;
+						break;
+					case 43:
+						locTOFSpacetimeHit->x = -66.; //paddle extends from -6 -> -126
+						locTOFSpacetimeHit->y = 3.;
+						locTOFSpacetimeHit->t = locTOFHit->t_south - 0.5*HALFPADDLE/VELOCITY;
+						break;
+					case 42:
+						locTOFSpacetimeHit->x = 66.; //paddle extends from 6 -> 126
+						locTOFSpacetimeHit->y = -3.;
+						locTOFSpacetimeHit->t = locTOFHit->t_north - 0.5*HALFPADDLE/VELOCITY;
+						break;
+					case 44:
+						locTOFSpacetimeHit->x = 66.; //paddle extends from 6 -> 126
+						locTOFSpacetimeHit->y = 3.;
+						locTOFSpacetimeHit->t = locTOFHit->t_north - 0.5*HALFPADDLE/VELOCITY;
+						break;
+					default:
+						break;
+				}
+			}
+			locTOFSpacetimeHit->TOFHit = locTOFHit;
+			locTOFSpacetimeHits_Horizontal.push_back(locTOFSpacetimeHit);
+		} else {  //vertical
 
+			if (locTOFHit->bar <= 40){ //double-ended bars
+				locTOFSpacetimeHit->x = BARWIDTH*(locTOFHit->bar - 20.5) + ((locTOFHit->bar > 20) ? BARWIDTH : -1.0*BARWIDTH);
+				if(!((locTOFHit->meantime >= 0.0) || (locTOFHit->meantime <= 0.0))){ //NaN: only one energy hit above threshold on the double-ended bar
+					locTOFSpacetimeHit->y = 0.0;
+					if (locTOFHit->E_north > E_THRESHOLD)
+						locTOFSpacetimeHit->t = locTOFHit->t_north - HALFPADDLE/VELOCITY;
+					else
+						locTOFSpacetimeHit->t = locTOFHit->t_south - HALFPADDLE/VELOCITY;
+					locTOFSpacetimeHit->pos_cut = 252.0;
+					locTOFSpacetimeHit->t_cut = 10.0;
+				}else{
+					locTOFSpacetimeHit->y = locTOFHit->pos;
+					locTOFSpacetimeHit->t = locTOFHit->meantime;
+					locTOFSpacetimeHit->pos_cut = dPositionMatchCut_DoubleEnded;
+					locTOFSpacetimeHit->t_cut = 1.0;
+				}
+			} else { //single-ended bars
+				locTOFSpacetimeHit->pos_cut = 120.;
+				locTOFSpacetimeHit->t_cut = 10.;
+				switch(locTOFHit->bar){
+					case 41:
+						locTOFSpacetimeHit->x = -3.;
+						locTOFSpacetimeHit->y = 66.; //paddle extends from 6 -> 126
+						locTOFSpacetimeHit->t = locTOFHit->t_south - 0.5*HALFPADDLE/VELOCITY;
+						break;
+					case 43:
+						locTOFSpacetimeHit->x = 3.;
+						locTOFSpacetimeHit->y = 66.; //paddle extends from 6 -> 126
+						locTOFSpacetimeHit->t = locTOFHit->t_south - 0.5*HALFPADDLE/VELOCITY;
+						break;
+					case 42:
+						locTOFSpacetimeHit->x = -3.;
+						locTOFSpacetimeHit->y = -66.; //paddle extends from -6 -> -126
+						locTOFSpacetimeHit->t = locTOFHit->t_north - 0.5*HALFPADDLE/VELOCITY;
+						break;
+					case 44:
+						locTOFSpacetimeHit->x = 3.;
+						locTOFSpacetimeHit->y = -66.; //paddle extends from -6 -> -126
+						locTOFSpacetimeHit->t = locTOFHit->t_north - 0.5*HALFPADDLE/VELOCITY;
+						break;
+					default:
+						break;
+				}
+			}
+			locTOFSpacetimeHit->TOFHit = locTOFHit;
+			locTOFSpacetimeHits_Vertical.push_back(locTOFSpacetimeHit);
+		} //end vertical hit
+	} //end DTOFHit loop
 
-  for (unsigned int i=0;i<uhits.size();i++){
-    double ux    = uhits[i]->timediff * VELOCITY ;
-    double utof  = uhits[i]->meantime;
-    double dy    = uhits[i]->bar > 20 ? BARWIDTH : -BARWIDTH;
-    double uy    = BARWIDTH*(uhits[i]->bar-20.5)+dy;
-    double x_cut = BARWIDTH*0.55; // changed to "*0.55" from "/2." 4/28/2010  DL
-    double t_cut = 1.;
-    
-    // Handle the single-ended bars
-    if (uhits[i]->bar>40){
-      x_cut=120.;
-      t_cut=10.;
-      switch(uhits[i]->bar){
-      case 41:
-	uy=-3.;
-	ux=-72.;
-	utof=uhits[i]->t_south-HALFPADDLE/VELOCITY;
-	break;
-      case 43:
-	uy=3.;
-	ux=-72.;
-	utof=uhits[i]->t_south-HALFPADDLE/VELOCITY;
-	break;
-      case 42:
-	uy=-3.;	
-	ux=+72.;
-	utof=uhits[i]->t_north-HALFPADDLE/VELOCITY;
-	break;
-      case 44:
-	uy=+3.;
-	ux=+72.;
-	utof=uhits[i]->t_north-HALFPADDLE/VELOCITY;
-	break;
-      default:
-	break;
-      }
+	//find matches and sort them
+	list<tof_spacetimehitmatch_t*> locTOFSpacetimeHitMatchList; //use list for sorting, vector for resource pool
+	list<tof_spacetimehitmatch_t*>::iterator locListIterator;
+	tof_spacetimehitmatch_t *locTOFSpacetimeHitMatch;
+	for(loc_i = 0; loc_i < locTOFSpacetimeHits_Horizontal.size(); loc_i++){
+		locTOFSpacetimeHit_Horizontal = locTOFSpacetimeHits_Horizontal[loc_i];
+		for(loc_j = 0; loc_j < locTOFSpacetimeHits_Vertical.size(); loc_j++){
+			locTOFSpacetimeHit_Vertical = locTOFSpacetimeHits_Vertical[loc_j];
+			locDeltaX = locTOFSpacetimeHit_Horizontal->x - locTOFSpacetimeHit_Vertical->x;
 
-    }
+			if (fabs(locDeltaX) >= locTOFSpacetimeHit_Horizontal->pos_cut)
+				continue;
+			locDeltaY = locTOFSpacetimeHit_Horizontal->y - locTOFSpacetimeHit_Vertical->y;
+			if (fabs(locDeltaY) >= locTOFSpacetimeHit_Vertical->pos_cut)
+				continue;
+			locDeltaT = locTOFSpacetimeHit_Horizontal->t - locTOFSpacetimeHit_Vertical->t;
+			locTimeCut = (locTOFSpacetimeHit_Horizontal->t_cut > locTOFSpacetimeHit_Vertical->t_cut) ? locTOFSpacetimeHit_Horizontal->t_cut : locTOFSpacetimeHit_Vertical->t_cut;
+			if (fabs(locDeltaT) >= locTimeCut)
+				continue;
+			if(locTOFSpacetimeHitMatchList.size() == dTOFSpacetimeHitMatchPool.size()){ //increase pool size if necessary (used to minimize memory allocation time)
+				locTOFSpacetimeHitMatch = new tof_spacetimehitmatch_t();
+				dTOFSpacetimeHitMatchPool.push_back(locTOFSpacetimeHitMatch);
+			}
+			locTOFSpacetimeHitMatch = dTOFSpacetimeHitMatchPool[locTOFSpacetimeHitMatchList.size()];
+			locTOFSpacetimeHitMatch->delta_t = locDeltaT;
+			locTOFSpacetimeHitMatch->delta_r = sqrt(locDeltaX*locDeltaX + locDeltaY*locDeltaY);
+			locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Horizontal = locTOFSpacetimeHit_Horizontal;
+			locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Vertical = locTOFSpacetimeHit_Vertical;
+			locTOFSpacetimeHitMatchList.push_back(locTOFSpacetimeHitMatch);
+		}
+	}
+	locTOFSpacetimeHitMatchList.sort(Compare_TOFSpacetimeHitMatches_Distance); //sort matches by delta_r
 
-    for (unsigned int j=0;j<vhits.size();j++){
-      double vy    = vhits[j]->timediff * VELOCITY;
-      double vtof  = vhits[j]->meantime;
-      double dx    = vhits[j]->bar > 20 ?  BARWIDTH:-BARWIDTH;
-      double vx    = BARWIDTH*(vhits[j]->bar-20.5)+dx;
-      double y_cut = BARWIDTH*0.55; // changed to "*0.55" from "/2." 4/28/2010  DL
+	// delete pool size if too large, preventing memory-leakage-like behavor.
+	if((locTOFSpacetimeHitMatchList.size() < MAX_TOFSpacetimeHitMatches) && (dTOFSpacetimeHitMatchPool.size() > MAX_TOFSpacetimeHitMatches)){
+		for(loc_i = MAX_TOFSpacetimeHitMatches; loc_i < dTOFSpacetimeHitMatchPool.size(); loc_i++) delete dTOFSpacetimeHitMatchPool[loc_i];
+		dTOFSpacetimeHitMatchPool.resize(MAX_TOFSpacetimeHitMatches);
+	}
 
-      // Handle the single-ended bars
-      if (vhits[j]->bar>40){
-	y_cut=120.;
-	t_cut=10.;
-	switch(vhits[j]->bar){
-	case 41:
-	  vx=-3.;
-	  vy=72.;
-	  vtof=vhits[j]->t_south-HALFPADDLE/VELOCITY;
-	  break;
-	case 43:
-	  vx=3.;
-	  vy=72.;
-	  vtof=vhits[j]->t_south-HALFPADDLE/VELOCITY;
-	  break;
-	case 42:
-	  vx=-3.;
-	  vy=-72.;
-	  vtof=vhits[j]->t_north-HALFPADDLE/VELOCITY;
-	  break;
-	case 44:
-	  vx=3.;
-	  vy=-72;
-	  vtof=vhits[j]->t_north-HALFPADDLE/VELOCITY;
-	  break;
-	default:
-	  break;
-	}	
-      }
-      
-      // If we have a match in both position and time, output the point with 
-      // the combined 2-layer data
+	// select best matches by delta_r
+	while(locTOFSpacetimeHitMatchList.size() > 0){
+		locTOFSpacetimeHitMatch = *(locTOFSpacetimeHitMatchList.begin());
+		locTOFSpacetimeHit_Horizontal = locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Horizontal;
+		locTOFSpacetimeHit_Vertical = locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Vertical;
+		locTOFHit_Horizontal = locTOFSpacetimeHit_Horizontal->TOFHit;
+		locTOFHit_Vertical = locTOFSpacetimeHit_Vertical->TOFHit;
 
-      //cout<<fabs(ux-vx)<<"  "<<fabs(uy-vy)<<"  "<<fabs(utof-vtof)<<endl;
+		//see which bars had both PMT signals above threshold
+		bool locOneSideBelowEThresholdFlag_Horizontal = false;
+		bool locOneSideBelowEThresholdFlag_Vertical = false;
+		if(!((locTOFHit_Horizontal->meantime >= 0.0) || (locTOFHit_Horizontal->meantime <= 0.0)))
+			locOneSideBelowEThresholdFlag_Horizontal = true; //NaN: only one PMT signal above threshold
+		if(!((locTOFHit_Vertical->meantime >= 0.0) || (locTOFHit_Vertical->meantime <= 0.0)))
+			locOneSideBelowEThresholdFlag_Vertical = true; //NaN: only one PMT signal above threshold
 
-      if (fabs(ux-vx)<x_cut && fabs(uy-vy)<y_cut && fabs(utof-vtof)<t_cut){
-	 DTOFPoint *point = new DTOFPoint;
+		//Disable matching for certain scenarios until hit differentiation is improved
+		if((locOneSideBelowEThresholdFlag_Horizontal == true) && (locOneSideBelowEThresholdFlag_Vertical == true)){ //both bars have only one PMT signal above threshold
+			//currently, the software isn't optimized for this scenario, so disabled for now
+				//e.g. separate DTOFPoints due to energy deposited in adjacent paddles, PID routine for picking the correct DTOFPoint if adjacent, etc.
+			locTOFSpacetimeHitMatchList.erase(locTOFSpacetimeHitMatchList.begin());
+			continue;
+		}else if((locOneSideBelowEThresholdFlag_Horizontal == true) && (locTOFHit_Horizontal->bar < 41)){ //a horizontal double-sided bar has only one PMT signal above threshold
+			//currently, the software isn't optimized for this scenario, so disabled for now
+				//e.g. separate DTOFPoints due to energy deposited in adjacent paddles, PID routine for picking the correct DTOFPoint if adjacent, etc.
+			locTOFSpacetimeHitMatchList.erase(locTOFSpacetimeHitMatchList.begin());
+			continue;
+		}else if((locOneSideBelowEThresholdFlag_Vertical == true) && (locTOFHit_Vertical->bar < 41)){ //a vertical double-sided bar has only one PMT signal above threshold
+			//currently, the software isn't optimized for this scenario, so disabled for now
+				//e.g. separate DTOFPoints due to energy deposited in adjacent paddles, PID routine for picking the correct DTOFPoint if adjacent, etc.
+			locTOFSpacetimeHitMatchList.erase(locTOFSpacetimeHitMatchList.begin());
+			continue;
+		}
 
-	 if (vhits[j]->bar<41 && uhits[i]->bar<41){
-	   point->pos.SetXYZ(ux,vy,618.81);
-	   point->t=(utof+vtof)/2.;
-	   point->dE = (uhits[i]->dE + vhits[j]->dE)/2.0;
-	   point->AddAssociatedObject(uhits[i]);
-	   point->AddAssociatedObject(vhits[j]);
-	 }
-	 else if (vhits[j]->bar<41 && uhits[i]->bar>40){   
-	   point->pos.SetXYZ(vx,vy,617.52);
-	   point->t=vtof;
-	   point->dE = vhits[j]->dE;
-	   point->AddAssociatedObject(vhits[j]);
-	 }
-	 else{
-	   point->pos.SetXYZ(ux,uy,620.10);
-	   point->t=utof;
-	   point->dE = uhits[i]->dE;
-	   point->AddAssociatedObject(uhits[i]);
-	 }
-      	 _data.push_back(point);
-      }
-    }
-  }
-  
-  return NOERROR;
+		locTOFPoint = new DTOFPoint;
+
+		//reconstruct TOF hit information, using information from the best bar: one or both of the bars may have a PMT signal below threshold
+		if((locOneSideBelowEThresholdFlag_Horizontal == true) && (locOneSideBelowEThresholdFlag_Vertical == true)){ //both bars have only one PMT signal above threshold
+			locMatchX = locTOFSpacetimeHit_Vertical->x;
+			locMatchY = locTOFSpacetimeHit_Horizontal->y;
+			locMatchZ = 618.81; //z: midpoint between tof planes
+			float locDepositedEnergy_Horizontal, locDepositedEnergy_Vertical;
+			if(locTOFHit_Horizontal->E_north > E_THRESHOLD)
+				locDepositedEnergy_Horizontal = locTOFHit_Horizontal->E_north * exp((HALFPADDLE - locMatchX)/ATTEN_LENGTH);
+			else
+				locDepositedEnergy_Horizontal = locTOFHit_Horizontal->E_south * exp((HALFPADDLE + locMatchX)/ATTEN_LENGTH);
+			if(locTOFHit_Vertical->E_north > E_THRESHOLD)
+				locDepositedEnergy_Vertical = locTOFHit_Vertical->E_north * exp((HALFPADDLE - locMatchY)/ATTEN_LENGTH);
+			else
+				locDepositedEnergy_Vertical = locTOFHit_Vertical->E_south * exp((HALFPADDLE + locMatchY)/ATTEN_LENGTH);
+			locMatchdE = 0.5*(locDepositedEnergy_Horizontal + locDepositedEnergy_Vertical);
+		}else if(locOneSideBelowEThresholdFlag_Horizontal == true){ //the horizontal bar has only one PMT signal above threshold (and the vertical bar has both)
+			locMatchX = locTOFSpacetimeHit_Vertical->x;
+			locMatchY = locTOFSpacetimeHit_Vertical->y;
+			locMatchT = locTOFSpacetimeHit_Vertical->t;
+			locMatchZ = 617.52; //z: center of vertical plane
+			locMatchdE = locTOFHit_Vertical->dE;
+		}else if(locOneSideBelowEThresholdFlag_Vertical == true){ //the vertical bar has only one PMT signal above threshold (and the horizontal bar has both)
+			locMatchX = locTOFSpacetimeHit_Horizontal->x;
+			locMatchY = locTOFSpacetimeHit_Horizontal->y;
+			locMatchT = locTOFSpacetimeHit_Horizontal->t;
+			locMatchZ = 620.10; //z: center of horizontal plane
+			locMatchdE = locTOFHit_Horizontal->dE;
+		}else{ //both bars have both PMT signals above threshold
+			locMatchX = locTOFSpacetimeHit_Horizontal->x;
+			locMatchY = locTOFSpacetimeHit_Vertical->y;
+			locMatchZ = 618.81; //z: midpoint between tof planes
+			locMatchT = 0.5*(locTOFSpacetimeHit_Horizontal->t + locTOFSpacetimeHit_Vertical->t);
+			locMatchdE = 0.5*(locTOFHit_Horizontal->dE + locTOFHit_Vertical->dE);
+		}
+
+		locTOFPoint->AddAssociatedObject(locTOFHit_Horizontal);
+		locTOFPoint->AddAssociatedObject(locTOFHit_Vertical);
+		locTOFPoint->pos.SetXYZ(locMatchX, locMatchY, locMatchZ);
+		locTOFPoint->t = locMatchT;
+		locTOFPoint->dE = locMatchdE;
+
+		_data.push_back(locTOFPoint);
+
+		//remove matches that contain the hits that were just used
+		for(locListIterator = locTOFSpacetimeHitMatchList.begin(); locListIterator != locTOFSpacetimeHitMatchList.end(); locListIterator++){
+			locTOFSpacetimeHitMatch = *locListIterator;
+			if(locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Horizontal == locTOFSpacetimeHit_Horizontal){
+				locTOFSpacetimeHitMatchList.erase(locListIterator);
+				locListIterator--;
+				continue;
+			}
+			if(locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Vertical == locTOFSpacetimeHit_Vertical){
+				locTOFSpacetimeHitMatchList.erase(locListIterator);
+				locListIterator--;
+			}
+		}
+	}
+
+	return NOERROR;
 }
+
 

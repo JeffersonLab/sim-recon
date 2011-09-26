@@ -11,6 +11,7 @@
 #include "JANA/JFactory.h"
 #include "DTOFPoint.h"
 #include "DTOFHit.h"
+#include <list>
 
 /// \htmlonly
 /// <A href="index.html#legend">
@@ -23,19 +24,47 @@
 /// which are represented by DTOFPoint objects.
 
 class DTOFPoint_factory:public JFactory<DTOFPoint>{
- public:
-  DTOFPoint_factory(){};
-  ~DTOFPoint_factory(){};
+	public:
+		DTOFPoint_factory(){};
+		~DTOFPoint_factory(){};
 
-  double VELOCITY   ;
-  double HALFPADDLE ;
-  double BARWIDTH   ;
+		double VELOCITY;
+		double HALFPADDLE;
+		double BARWIDTH;
+		double E_THRESHOLD;
+		double ATTEN_LENGTH;
   
-  private:
-  jerror_t brun(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
-  jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
- 
+		class tof_spacetimehit_t {
+			public:
+				tof_spacetimehit_t(){}
 
+				double x;
+				double y;
+				double t;
+				double pos_cut; //x_cut for horizontal bars, y_cut for vertical bars
+				double t_cut;
+				const DTOFHit *TOFHit;
+	  };
+
+		class tof_spacetimehitmatch_t {
+			public:
+				tof_spacetimehitmatch_t(){}
+
+				double delta_r;
+				double delta_t;
+				tof_spacetimehit_t* dTOFSpacetimeHit_Horizontal;
+				tof_spacetimehit_t* dTOFSpacetimeHit_Vertical;
+		};
+
+		private:
+			jerror_t brun(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+			jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+ 
+			unsigned int MAX_TOFSpacetimeHits;
+			unsigned int MAX_TOFSpacetimeHitMatches;
+			float dPositionMatchCut_DoubleEnded;
+			vector<tof_spacetimehit_t*> dTOFSpacetimeHitPool;
+			vector<tof_spacetimehitmatch_t*> dTOFSpacetimeHitMatchPool;
 };
 
 #endif // _DTOFPoint_factory_
