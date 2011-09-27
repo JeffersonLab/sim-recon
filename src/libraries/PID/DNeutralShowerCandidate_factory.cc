@@ -17,6 +17,18 @@ using namespace jana;
 //------------------
 jerror_t DNeutralShowerCandidate_factory::init(void)
 {
+	//this parameter controls what BCAL reconstruction algorithm to use
+ 	USE_KLOE = 1;
+	gPARMS->SetDefaultParameter("BCALRECON:USE_KLOE", USE_KLOE);
+
+
+	if(USE_KLOE){    
+		cout << "Using KLOE BCAL clustering." << endl;
+	}
+	else{   
+		cout << "Using alternative (experimental) BCAL clustering." << endl;
+	}
+
 	return NOERROR;
 }
 
@@ -49,7 +61,11 @@ jerror_t DNeutralShowerCandidate_factory::evnt(jana::JEventLoop *locEventLoop, i
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DFCALShower*> locFCALShowers;
 	locEventLoop->Get(locChargedTracks);
-	locEventLoop->Get(locBCALShowers, "KLOE");
+	if (USE_KLOE) {
+		locEventLoop->Get(locBCALShowers, "KLOE");
+	} else {	  
+		locEventLoop->Get(locBCALShowers);
+	}
 	locEventLoop->Get(locFCALShowers);
 
 	// Loop over all DBCALShowers, see if they match to DChargedTrackHypotheses.  

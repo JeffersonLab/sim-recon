@@ -10,6 +10,8 @@
 #include <iomanip>
 using namespace std;
 
+#include <TMath.h>
+
 #include "DChargedTrackHypothesis_factory.h"
 using namespace jana;
 
@@ -18,6 +20,11 @@ using namespace jana;
 //------------------
 jerror_t DChargedTrackHypothesis_factory::init(void)
 {
+	//this parameter controls what BCAL reconstruction algorithm to use
+	//the same parameter is used in DNeutralShowerCandidate_factory
+	USE_KLOE = 1;
+	gPARMS->SetDefaultParameter("BCALRECON:USE_KLOE", USE_KLOE);
+
 	return NOERROR;
 }
 
@@ -76,7 +83,11 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	vector<const DFCALShower*> locFCALShowers;
 	locEventLoop->Get(locTrackTimeBasedVector);
 	locEventLoop->Get(locTOFPoints);
-  	locEventLoop->Get(locBCALShowers, "KLOE");
+	if (USE_KLOE) {
+		locEventLoop->Get(locBCALShowers, "KLOE");
+	} else { 
+		locEventLoop->Get(locBCALShowers);
+	}
 	locEventLoop->Get(locFCALShowers);
 
   for (loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++){

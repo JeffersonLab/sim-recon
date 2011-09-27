@@ -30,6 +30,8 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		jerror_t evnt(jana::JEventLoop *locEventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		int USE_KLOE;
 };
 
 #endif // _DChargedTrackHypothesis_factory_

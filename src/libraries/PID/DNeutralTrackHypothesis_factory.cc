@@ -10,6 +10,8 @@
 #include <iomanip>
 using namespace std;
 
+#include <TMath.h>
+
 #include "DNeutralTrackHypothesis_factory.h"
 using namespace jana;
 
