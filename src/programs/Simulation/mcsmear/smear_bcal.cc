@@ -44,16 +44,18 @@ TH1D* CombineSiPM_PDFs(const char *hname, TH1D *single, int NSiPM);
 bool BCAL_INITIALIZED = false;
 double BCAL_mevPerPE=0.0;
 double BCAL_UNATTENUATE_TO_CENTER = 0.0;
-int BCAL_Nsum_inner = 0;
-int BCAL_Nsum_outer = 0;
 double BCAL_sigma_singlePE_sq = 0.0;
 double BCAL_sigma_ped_sq = 0.0;
-double BCAL_inner_thresh = 0.0;
-double BCAL_outer_thresh = 0.0;
-double BCAL_inner_mean = 0.0; // Mean of dark hit distribution in GeV
-double BCAL_outer_mean = 0.0; // Mean of dark hit distribution in GeV
-int Nsum_inner;
-int Nsum_outer;
+
+// since the size of a readout unit can vary even among the inner layers, we need to store the following values for each layer individually
+double BCAL_inner_thresh[DBCALGeometry::NBCALLAYSIN];
+double BCAL_outer_thresh[DBCALGeometry::NBCALLAYSOUT];
+
+//number of SiPM's summed in one readout unit for each layer
+int Nsum_inner[DBCALGeometry::NBCALLAYSIN];
+int Nsum_outer[DBCALGeometry::NBCALLAYSOUT];
+
+
 map<int, DBCALReadoutChannel> bcal_fADCs; // key is DBCALGeometry::fADCId()
 
 
@@ -415,13 +417,15 @@ void bcalInit(void)
 	// and BCAL_outer_thresh.
 	CalculateThresholds();
 
-	if(NO_THRESHOLD_CUT){
-		BCAL_inner_thresh = 0.0;
-		BCAL_outer_thresh = 0.0;
+	for (int i=0;i<DBCALGeometry::NBCALLAYSIN;i++) {
+	  if(NO_THRESHOLD_CUT) BCAL_inner_thresh[i]=0.0;
+	  cout<<"BCAL threshold for layer " << i+1 << ": "<<BCAL_inner_thresh[i]*1000.0<<" MeV"<<" ("<<Nsum_inner[i]<<" SiPMs summed)"<<endl;
 	}
 
-	cout<<"BCAL inner threshold: "<<BCAL_inner_thresh*1000.0<<" MeV"<<" ("<<Nsum_inner<<" SiPMs summed)"<<endl;
-	cout<<"BCAL outer threshold: "<<BCAL_outer_thresh*1000.0<<" MeV"<<" ("<<Nsum_outer<<" SiPMs summed)"<<endl;
+	for (int i=0;i<DBCALGeometry::NBCALLAYSOUT;i++) {
+	  if(NO_THRESHOLD_CUT) BCAL_outer_thresh[i]=0.0;
+	  cout<<"BCAL threshold for layer " << i+1+DBCALGeometry::NBCALLAYSIN << ": "<<BCAL_outer_thresh[i]*1000.0<<" MeV"<<" ("<<Nsum_outer[i]<<" SiPMs summed)"<<endl;
+	}
 	
 	// Factor to unattenuate the energy at the end to what it *would* be if it came
 	// from the center of the module. This is so the proper time smearing can be
@@ -446,8 +450,9 @@ void bcalInit(void)
 			for(int k = 1; k<=4; k++){
 				int cellId = DBCALGeometry::cellId( i, j, k);
 				int fADCId = DBCALGeometry::fADCId( i, j, k);
-				double thresh = BCAL_inner_thresh;
-				bcal_fADCs[fADCId] = DBCALReadoutChannel(Nsum_inner, thresh, i, DBCALGeometry::fADC_layer(cellId), DBCALGeometry::fADC_sector(cellId));
+				int fADC_layer = DBCALGeometry::fADC_layer(cellId);
+				double thresh = BCAL_inner_thresh[fADC_layer-1];
+				bcal_fADCs[fADCId] = DBCALReadoutChannel(Nsum_inner[fADC_layer-1], thresh, i, fADC_layer, DBCALGeometry::fADC_sector(cellId));
 			}
 		}
 
@@ -456,8 +461,9 @@ void bcalInit(void)
 			for(int k = 1; k<=4; k++){
 				int cellId = DBCALGeometry::cellId( i, j+6, k);
 				int fADCId = DBCALGeometry::fADCId( i, j+6, k);
-				double thresh = BCAL_outer_thresh;
-				bcal_fADCs[fADCId] = DBCALReadoutChannel(Nsum_outer, thresh, i, DBCALGeometry::fADC_layer(cellId), DBCALGeometry::fADC_sector(cellId));
+				int fADC_layer = DBCALGeometry::fADC_layer(cellId);
+				double thresh = BCAL_outer_thresh[fADC_layer-1-DBCALGeometry::NBCALLAYSIN];
+				bcal_fADCs[fADCId] = DBCALReadoutChannel(Nsum_outer[fADC_layer-1-DBCALGeometry::NBCALLAYSIN], thresh, i, fADC_layer, DBCALGeometry::fADC_sector(cellId));
 			}
 		}
 	}
@@ -503,8 +509,9 @@ void CalculateThresholds(void)
 	
 	// Number of readout channels total
 	DBCALGeometry g;
-	int Nchan_inner = 2*g.NBCALMODS * g.NBCALLAYS1 * g.NBCALSECS1;
-	int Nchan_outer = 2*g.NBCALMODS * g.NBCALLAYS2 * g.NBCALSECS2;
+	
+	int Nchan_inner=2*g.NBCALMODS*(4/g.NSUMSECSIN)*g.NBCALLAYSIN;
+	int Nchan_outer=2*g.NBCALMODS*(4/g.NSUMSECSOUT)*g.NBCALLAYSOUT;
 	
 	// The inner BCAL region will have both an fADC and a TDC with
 	// the fADC supplying both an amplitude and a time. The outer
@@ -528,6 +535,7 @@ void CalculateThresholds(void)
 	// The desired fraction of readout channels firing is then:
 	//
 	// fraction_above_threshold = Nouter/Nchan_outer
+
 	double Nouter = BCAL_AVG_DARK_DIGI_VALS_PER_EVENT/(3.0*(double)Nchan_inner/(double)Nchan_outer + 2.0);
 	double fraction_above_threshold = Nouter/(double)Nchan_outer; // also equals Ninner/Nchan_inner
 
@@ -605,6 +613,8 @@ void CalculateThresholds(void)
 	// At this point we add in electronic noise using the sigma_singlePE
 	// and sigma_ped calculated above. This is done by creating a histogram
 	// and filling it with contributions from Npe=0 to Npe=99
+
+	// we don't need to delete this because because ROOT owns it, I think?
 	TH1D *bcal_dark_signal = new TH1D("bcal_dark_signal", "fADC signal", 1001, -0.05, 100.05);
 	bcal_dark_signal->SetXTitle("fADC (MeV)");
 	for(int bin=1; bin<=bcal_dark_signal->GetNbinsX(); bin++){
@@ -629,39 +639,58 @@ void CalculateThresholds(void)
 	// in units of MeV. We wish to convolute that with itself
 	// multiple times to get the PDF for multiple SiPMs added together
 	// (in the case of summing).
-	Nsum_inner = g.NSUMLAYS1 * g.NSUMSECS1;
-	Nsum_outer = g.NSUMLAYS2 * g.NSUMSECS2;
-	
-	TH1D *bcal_dark_signal_sum_inner = CombineSiPM_PDFs("bcal_dark_signal_sum_inner", bcal_dark_signal, Nsum_inner);
-	TH1D *bcal_dark_signal_sum_outer = CombineSiPM_PDFs("bcal_dark_signal_sum_outer", bcal_dark_signal, Nsum_outer);
-	
-	// Integrate the combined PDFs
-	TH1D *ibcal_dark_signal_sum_inner = (TH1D*)bcal_dark_signal_sum_inner->Clone("ibcal_dark_signal_sum_inner");
-	TH1D *ibcal_dark_signal_sum_outer = (TH1D*)bcal_dark_signal_sum_outer->Clone("ibcal_dark_signal_sum_outer");
-	for(int bin=2; bin<=ibcal_dark_signal_sum_inner->GetNbinsX(); bin++){
-		double sum1 = ibcal_dark_signal_sum_inner->GetBinContent(bin-1) + ibcal_dark_signal_sum_inner->GetBinContent(bin);
-		ibcal_dark_signal_sum_inner->SetBinContent(bin, sum1);
 
-		double sum2 = ibcal_dark_signal_sum_outer->GetBinContent(bin-1) + ibcal_dark_signal_sum_outer->GetBinContent(bin);
-		ibcal_dark_signal_sum_outer->SetBinContent(bin, sum2);
-	}
+	for (int i=0;i<DBCALGeometry::NBCALLAYSIN;i++) {
+	  Nsum_inner[i] = g.NSUMLAYSIN[i]*g.NSUMSECSIN;
 
-	
-	// Normalize
-	int last_bin = ibcal_dark_signal_sum_inner->GetNbinsX();
-	ibcal_dark_signal_sum_inner->Scale(1.0/ibcal_dark_signal_sum_inner->GetBinContent(last_bin));
-	ibcal_dark_signal_sum_outer->Scale(1.0/ibcal_dark_signal_sum_outer->GetBinContent(last_bin));
+	  TH1D *bcal_dark_signal_sum_inner = CombineSiPM_PDFs("bcal_dark_signal_sum_inner", bcal_dark_signal, Nsum_inner[i]);
 
-	// Finally, search the integrated, normalized histograms for the bin
-	// where the integral fraction above it is less than fraction_above_threshold
-	for(int bin=1 ; bin<=last_bin; bin++){
-		if(ibcal_dark_signal_sum_inner->GetBinContent(bin) < (1.0 - fraction_above_threshold)){
-			BCAL_inner_thresh = ibcal_dark_signal_sum_inner->GetBinCenter(bin) * k_MeV;
-		}
-		if(ibcal_dark_signal_sum_outer->GetBinContent(bin) < (1.0 - fraction_above_threshold)){
-			BCAL_outer_thresh = ibcal_dark_signal_sum_inner->GetBinCenter(bin) * k_MeV;
-		}
-	}
+	  // Integrate the combined PDFs
+	  TH1D *ibcal_dark_signal_sum_inner = (TH1D*)bcal_dark_signal_sum_inner->Clone("ibcal_dark_signal_sum_inner");
+
+	  for(int bin=2; bin<=ibcal_dark_signal_sum_inner->GetNbinsX(); bin++){
+	    double sum = ibcal_dark_signal_sum_inner->GetBinContent(bin-1) + ibcal_dark_signal_sum_inner->GetBinContent(bin);
+	    ibcal_dark_signal_sum_inner->SetBinContent(bin, sum);
+	  }
+
+	  // Normalize
+	  int last_bin = ibcal_dark_signal_sum_inner->GetNbinsX();
+	  ibcal_dark_signal_sum_inner->Scale(1.0/ibcal_dark_signal_sum_inner->GetBinContent(last_bin));
+
+	  // Finally, search the integrated, normalized histograms for the bin
+	  // where the integral fraction above it is less than fraction_above_threshold
+	  for(int bin=1 ; bin<=last_bin; bin++){
+	    if(ibcal_dark_signal_sum_inner->GetBinContent(bin) < (1.0 - fraction_above_threshold)){
+	      BCAL_inner_thresh[i] = ibcal_dark_signal_sum_inner->GetBinCenter(bin) * k_MeV;
+	    }
+	  }
+    }
+
+	for (int i=0;i<DBCALGeometry::NBCALLAYSOUT;i++) {
+	  Nsum_outer[i] = g.NSUMLAYSOUT[i]*g.NSUMSECSOUT;
+
+	  TH1D *bcal_dark_signal_sum_outer = CombineSiPM_PDFs("bcal_dark_signal_sum_outer", bcal_dark_signal, Nsum_outer[i]);
+
+	  // Integrate the combined PDFs
+	  TH1D *ibcal_dark_signal_sum_outer = (TH1D*)bcal_dark_signal_sum_outer->Clone("ibcal_dark_signal_sum_outer");
+
+	  for(int bin=2; bin<=ibcal_dark_signal_sum_outer->GetNbinsX(); bin++){
+	    double sum = ibcal_dark_signal_sum_outer->GetBinContent(bin-1) + ibcal_dark_signal_sum_outer->GetBinContent(bin);
+	    ibcal_dark_signal_sum_outer->SetBinContent(bin, sum);
+	  }
+
+	  // Normalize
+	  int last_bin = ibcal_dark_signal_sum_outer->GetNbinsX();
+	  ibcal_dark_signal_sum_outer->Scale(1.0/ibcal_dark_signal_sum_outer->GetBinContent(last_bin));
+
+	  // Finally, search the integrated, normalized histograms for the bin
+	  // where the integral fraction above it is less than fraction_above_threshold
+	  for(int bin=1 ; bin<=last_bin; bin++){
+	    if(ibcal_dark_signal_sum_outer->GetBinContent(bin) < (1.0 - fraction_above_threshold)){
+	      BCAL_outer_thresh[i] = ibcal_dark_signal_sum_outer->GetBinCenter(bin) * k_MeV;
+	    }
+	  }
+    }
 }
 
 
@@ -709,8 +738,8 @@ TH1D* CombineSiPM_PDFs(const char *hname, TH1D *single, int NSiPM)
 				}
 			}
 		}
-		
-		delete tmp;
+        
+        delete tmp;
 	}
 	
 	return summed;

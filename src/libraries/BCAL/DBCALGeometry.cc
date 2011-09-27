@@ -4,40 +4,36 @@
 
 #include "DBCALGeometry.h"
 
-int DBCALGeometry::NBCALMODS = 48;
-
-// On each module there is a 10x4 (r/phi) array of SiPMs -- this factory
-// allows two different "rectangular" groupings, an inner (1) and an outer (2)
+// On each module there is a 10x4 (r/phi) array of SiPMs
 
 #ifdef BCAL_SUM_CELL
 
+//int DBCALGeometry::NSUMSECSIN = 1;
+//int DBCALGeometry::NSUMSECSOUT = 1;
+//int DBCALGeometry::NSUMLAYSIN[] = {1,2,3};
+//int DBCALGeometry::NSUMLAYSOUT[] = {4};
+
 // The configuration below has 3x1 (r/phi) summed cells in the inner
 // and 2x2 summed cells in the outer region
-int DBCALGeometry::NBCALLAYS1 =  2;
-int DBCALGeometry::NBCALLAYS2 =  2; 
-int DBCALGeometry::NBCALSECS1 =  4; 
-int DBCALGeometry::NBCALSECS2 =  2;
+int DBCALGeometry::NSUMSECSIN = 1;
+int DBCALGeometry::NSUMSECSOUT = 2;
+int DBCALGeometry::NSUMLAYSIN[] = {3,3};
+int DBCALGeometry::NSUMLAYSOUT[] = {2,2};
 // end of summing configuration
 
 #else
 
 // The configuration below has no summing of SiPMs
-int DBCALGeometry::NBCALLAYS1 =  6;
-int DBCALGeometry::NBCALLAYS2 =  4; 
-int DBCALGeometry::NBCALSECS1 =  4; 
-int DBCALGeometry::NBCALSECS2 =  4;
+int DBCALGeometry::NSUMSECSIN = 1;
+int DBCALGeometry::NSUMSECSOUT = 1;
+int DBCALGeometry::NSUMLAYSIN[] = {1,1,1,1,1,1};
+int DBCALGeometry::NSUMLAYSOUT[] = {1,1,1,1};
 // end of no summing configuration
 
 #endif
 
-int DBCALGeometry::NSUMLAYS1 = 6/DBCALGeometry::NBCALLAYS1;
-int DBCALGeometry::NSUMLAYS2 = 4/DBCALGeometry::NBCALLAYS2;
-int DBCALGeometry::NSUMSECS1 = 4/DBCALGeometry::NBCALSECS1;
-int DBCALGeometry::NSUMSECS2 = 4/DBCALGeometry::NBCALSECS2;
-
-// Enter the index of the SiPM that designates the first
-// (counting radially outward) of the outer cells (default 7)
-int DBCALGeometry::BCALMID = 7;
+int DBCALGeometry::NBCALSECSIN = 4/DBCALGeometry::NSUMSECSIN;
+int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
 
 float DBCALGeometry::BCALINNERRAD = 64.3;   
 float DBCALGeometry::BCALOUTERRAD = 86.17;
@@ -59,18 +55,39 @@ float DBCALGeometry::m_radius[] = { 64.3,
 				  83.70,
 				  86.17};
 
+
+float DBCALGeometry::BCALMIDRAD = DBCALGeometry::m_radius[DBCALGeometry::BCALMID-1];
+
 DBCALGeometry::DBCALGeometry()  
 {
-  BCALMIDRAD = m_radius[BCALMID-1];
   /// End if groupings do not evenly divide SiPM cells
-  if(  (BCALMID-1) % NBCALLAYS1 != 0 
-       || (11-BCALMID) % NBCALLAYS2 != 0
-       ||  4 % NBCALSECS1 != 0
-       ||  4 % NBCALSECS2 != 0)
-    {
+  bool goodGeometry=true;
+
+  if (NSUMSECSIN <= 0) goodGeometry=false;
+  if (4 % NSUMSECSIN != 0) goodGeometry=false;
+  if (NSUMSECSOUT <= 0) goodGeometry=false;
+  if (4 % NSUMSECSOUT != 0) goodGeometry=false;
+
+  int totalLayersIn=0;
+  for (int i=0;i<NBCALLAYSIN;i++) {
+    if (NSUMLAYSIN[i] <= 0) goodGeometry=false;
+    totalLayersIn += NSUMLAYSIN[i];
+  }
+
+  int totalLayersOut=0;
+  for (int i=0;i<NBCALLAYSOUT;i++) {
+    if (NSUMLAYSOUT[i] <= 0) goodGeometry=false;
+    totalLayersOut += NSUMLAYSOUT[i];
+  }
+
+  if (totalLayersIn != BCALMID-1) goodGeometry=false;
+  if (totalLayersOut != 10-(BCALMID-1)) goodGeometry=false;
+
+  if(!goodGeometry) {
       std::cout<<"ERROR: Bad BCAL fADC groupings, do not evenly divide cells";
       assert (false);
-    }
+  }
+
 }
 
 //--------------
@@ -115,20 +132,29 @@ DBCALGeometry::cellId( int module, int layer, int sector ) {
 // fADC_layer
 //--------------
 int
-DBCALGeometry::fADC_layer( int cellId ) {
+DBCALGeometry::fADC_layer( int SiPM_cellId ) {
   
-  int cell_layer = DBCALGeometry::layer( cellId );
-  int fADC_layer = cell_layer;
-#ifdef BCAL_SUM_CELL
-	if(cell_layer<DBCALGeometry::BCALMID){
-		// inner
-		fADC_layer = 1+ (cell_layer-1)/NSUMLAYS1;
-	}else{
-		// outer
-		int max_inner_layer = (DBCALGeometry::BCALMID-1)/NSUMLAYS1;
-		fADC_layer = 1 + max_inner_layer + (cell_layer-DBCALGeometry::BCALMID)/NSUMLAYS2;
-	}
-#endif
+  int cell_layer = DBCALGeometry::layer( SiPM_cellId );
+  int fADC_layer = 0;
+  int tally=0;
+  if (cell_layer < BCALMID) {
+    for (int i=0;i<NBCALLAYSIN;i++) {
+      tally+=NSUMLAYSIN[i];
+      if (cell_layer <= tally) {
+        fADC_layer=i+1;
+        break;
+      }
+    }
+  } else {
+    tally=BCALMID-1;
+    for (int i=0;i<NBCALLAYSOUT;i++) {
+      tally+=NSUMLAYSOUT[i];
+      if (cell_layer <= tally) {
+        fADC_layer=NBCALLAYSIN+i+1;
+        break;
+      }
+    }
+  }
   return fADC_layer;
 }
 
@@ -136,20 +162,18 @@ DBCALGeometry::fADC_layer( int cellId ) {
 // fADC_sector
 //--------------
 int
-DBCALGeometry::fADC_sector( int cellId ) {
+DBCALGeometry::fADC_sector( int SiPM_cellId ) {
 
-  int cell_layer  = DBCALGeometry::layer( cellId );
-  int cell_sector = DBCALGeometry::sector( cellId );
-  int fADC_sector = cell_sector;
-#ifdef BCAL_SUM_CELL
-	if(cell_layer<DBCALGeometry::BCALMID){
-		// inner
-		fADC_sector = 1 + (cell_sector-1)/NSUMSECS1;
-	}else{
-		// outer
-		fADC_sector = 1 + (cell_sector-1)/NSUMSECS2;
-	}
-#endif
+  int cell_layer = DBCALGeometry::layer( SiPM_cellId );
+  int cell_sector = DBCALGeometry::sector( SiPM_cellId );
+  int fADC_sector;
+
+  if (cell_layer < BCALMID) {
+    fADC_sector = 1 + (cell_sector-1)/NSUMSECSIN;
+  } else {
+    fADC_sector = 1 + (cell_sector-1)/NSUMSECSOUT;
+  }
+
   return fADC_sector;
 }
 
@@ -157,57 +181,49 @@ DBCALGeometry::fADC_sector( int cellId ) {
 // fADCId
 //--------------
 int
-DBCALGeometry::fADCId( int module, int layer, int sector ) {
-	// This is used to return the readout channel ID which may
-	// differ from the cellID if summing is implemented.
-	//
-	// (5/12/2011 DL)
-#ifdef BCAL_SUM_CELL
-	if(layer<DBCALGeometry::BCALMID){
-		// inner
-		layer = 1+ (layer-1)/NSUMLAYS1;
-		sector = 1 + (sector-1)/NSUMSECS1;
-	}else{
-		// outer
-		int max_inner_layer = (DBCALGeometry::BCALMID-1)/NSUMLAYS1;
-		layer = 1 + max_inner_layer + (layer-DBCALGeometry::BCALMID)/NSUMLAYS2;
-		sector = 1 + (sector-1)/NSUMSECS2;
-	}
-#endif
-	return cellId(module, layer, sector);
+DBCALGeometry::fADCId( int module, int SiPM_layer, int SiPM_sector ) {
+  // This is used to return the readout channel ID which may
+  // differ from the cellID if summing is implemented.
+  //
+  // (5/12/2011 DL)
+
+  int SiPM_cell = cellId(module, SiPM_layer, SiPM_sector);
+
+  int fADC_lay = fADC_layer(SiPM_cell);
+  int fADC_sect = fADC_sector(SiPM_cell);
+
+  return cellId(module, fADC_lay, fADC_sect);
 }
 
 //--------------
 // r
 //--------------
 float
-DBCALGeometry::r( int cell ) {
- 
-  int lay = layer( cell );
-  
-  float innerRad, outerRad;
- 
-  if( lay <= NBCALLAYS1 ) { // we're in the inner region
-   
-    // the size of the layer in SiPM units
-    int laySize = ( BCALMID - 1 ) / NBCALLAYS1;
-    
-    innerRad = m_radius[ laySize * ( lay - 1 ) ];
-    
-    // index below is same as:  laySize * ( lay - 1 ) + laySize
-    outerRad = m_radius[ laySize * lay ];
-  }
-  else{
-    
-    // find the size of the outer layer in SiPM units
-    int laySize = ( 11 - BCALMID ) / NBCALLAYS2;
-    
-    // subtract the number of inner layers to get
-    // layer number within the outer section
-    lay -= NBCALLAYS1;
-    
-    innerRad = m_radius[ BCALMID - 1 + laySize * ( lay - 1 ) ];
-    outerRad = m_radius[ BCALMID - 1 + laySize * lay ];
+DBCALGeometry::r( int fADC_cell ) {
+
+  int fADC_lay = layer( fADC_cell );
+
+  float innerRad;
+  float outerRad;
+
+  if (fADC_lay <= NBCALLAYSIN) {
+    innerRad=m_radius[0];
+    outerRad=m_radius[0];
+    int innerIndex=0;
+    for (int i=0;i<fADC_lay;i++) {
+      innerRad=outerRad;
+      outerRad=m_radius[innerIndex+NSUMLAYSIN[i]];
+      innerIndex=innerIndex+NSUMLAYSIN[i];
+    }
+  } else {
+    innerRad=m_radius[BCALMID-1];
+    outerRad=m_radius[BCALMID-1];
+    int innerIndex=BCALMID-1;
+    for (int i=0;i < (fADC_lay-NBCALLAYSIN);i++) {
+      innerRad=outerRad;
+      outerRad=m_radius[innerIndex+NSUMLAYSOUT[i]];
+      innerIndex=innerIndex+NSUMLAYSOUT[i];
+    }
   }
   
   return 0.5 * ( innerRad + outerRad );
@@ -217,33 +233,31 @@ DBCALGeometry::r( int cell ) {
 // rSize
 //--------------
 float
-DBCALGeometry::rSize( int cell ) {
-  
-  int lay = layer( cell );
-  
-  float innerRad, outerRad;
-  
-  if( lay <= NBCALLAYS1 ) { // in the inner region
-    
-    // the size of the layer in SiPM units
-    int laySize = ( BCALMID - 1 ) / NBCALLAYS1;
-    
-    innerRad = m_radius[ laySize * ( lay - 1 ) ];
-    
-    // index below is same as:  laySize * ( lay - 1 ) + laySize
-    outerRad = m_radius[ laySize * lay ];
-  }
-  else{ // in the outer region
-    
-    // find the size of the outer layer in SiPM units
-    int laySize = ( 11 - BCALMID ) / NBCALLAYS2;
-    
-    // subtract the number of inner layers to get
-    // layer number within the outer section
-    lay -= NBCALLAYS1;
-    
-    innerRad = m_radius[ BCALMID - 1 + laySize * ( lay - 1 ) ];
-    outerRad = m_radius[ BCALMID - 1 + laySize * lay ];
+DBCALGeometry::rSize( int fADC_cell ) {
+
+  int fADC_lay = layer( fADC_cell );
+
+  float innerRad;
+  float outerRad;
+
+  if (fADC_lay <= NBCALLAYSIN) {
+    innerRad=m_radius[0];
+    outerRad=m_radius[0];
+    int innerIndex=0;
+    for (int i=0;i<fADC_lay;i++) {
+      innerRad=outerRad;
+      outerRad=m_radius[innerIndex+NSUMLAYSIN[i]];
+      innerIndex=innerIndex+NSUMLAYSIN[i];
+    }
+  } else {
+    innerRad=m_radius[BCALMID-1];
+    outerRad=m_radius[BCALMID-1];
+    int innerIndex=BCALMID-1;
+    for (int i=0;i < (fADC_lay-NBCALLAYSIN);i++) {
+      innerRad=outerRad;
+      outerRad=m_radius[innerIndex+NSUMLAYSOUT[i]];
+      innerIndex=innerIndex+NSUMLAYSOUT[i];
+    }
   }
   
   return ( outerRad - innerRad );
@@ -253,45 +267,42 @@ DBCALGeometry::rSize( int cell ) {
 // phi
 //--------------
 float
-DBCALGeometry::phi( int cell ) {
- 
-  int lay = layer( cell );
-  int sect = sector( cell );
+DBCALGeometry::phi( int fADC_cell ) {
+
+  int fADC_lay = layer( fADC_cell );
+  int fADC_sect = sector( fADC_cell );
   
   float sectSize;
-  
-  if( lay <= NBCALLAYS1 ) { 
-    
-    sect += NBCALSECS1 * ( module( cell ) - 1 );
-    sectSize = 2 * PI / ( NBCALMODS * NBCALSECS1 );
+
+  int nSects;
+  if (fADC_lay <= NBCALLAYSIN) {
+    nSects = 4/NSUMSECSIN;
+  } else {
+    nSects = 4/NSUMSECSOUT;
   }
-  else {
-    
-    sect += NBCALSECS2 * ( module( cell ) - 1 );
-    sectSize = 2 * PI / ( NBCALMODS * NBCALSECS2 );
-  }
+
+  fADC_sect += nSects * ( module( fADC_cell ) - 1 );
+  sectSize = 2 * PI / (NBCALMODS*nSects);
   
-  return sectSize * ( sect - 0.5 );
+  return sectSize * ( fADC_sect - 0.5 );
 }
 
 //--------------
 // phiSize
 //--------------
 float
-DBCALGeometry::phiSize( int cell ) {
-  
-  int lay = layer( cell );
-  
-  float sectSize;
-  
-  if( lay <= NBCALLAYS1 ) { 
-    
-    sectSize = 2 * 3.1416 / ( NBCALMODS * NBCALSECS1 );
+DBCALGeometry::phiSize( int fADC_cell ) {
+
+  int fADC_lay = layer( fADC_cell );
+
+  int nSects;
+  if (fADC_lay <= NBCALLAYSIN) {
+    nSects = 4/NSUMSECSIN;
+  } else {
+    nSects = 4/NSUMSECSOUT;
   }
-  else {
-    
-    sectSize = 2 * 3.1416 / ( NBCALMODS * NBCALSECS2 );
-  }
+
+  float sectSize = 2 * PI / ( NBCALMODS * nSects );
   
   return sectSize;
 }

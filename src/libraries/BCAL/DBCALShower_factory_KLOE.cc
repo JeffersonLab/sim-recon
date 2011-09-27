@@ -98,33 +98,36 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
     ATTEN_LENGTH = bcalGeom.ATTEN_LENGTH;
     C_EFFECTIVE = bcalGeom.C_EFFECTIVE;
     
-    fiberLength = bcalGeom.BCALFIBERLENGTH; // fiber lenth in cm
+    fiberLength = bcalGeom.BCALFIBERLENGTH; // fiber length in cm
     zOffset = bcalGeom.GLOBAL_CENTER;
+
+    //the following uses some sad notation in which modmin=0 and modmax=48, when in fact there are 48 modules labelled either 0-47 or 1-48 depending on one's whim, although if we are using the methods from DBCALGeometry (e.g. cellId()), we must start counting from 1 and if we are accessing arrays we must of course start from 0
     int   modmin = 0;
     int   modmax = bcalGeom.NBCALMODS;
     int   rowmin1=0;
-    int   rowmax1= bcalGeom.NBCALLAYS1;
-    int   rowmin2= rowmax1;  
-    int   rowmax2= bcalGeom.NBCALLAYS2+rowmin2; 
+    int   rowmax1= bcalGeom.NBCALLAYSIN;
+    int   rowmin2= rowmax1;
+    int   rowmax2= bcalGeom.NBCALLAYSOUT+rowmin2; 
     int   colmin1=0;
-    int   colmax1=bcalGeom.NBCALSECS1;
+    int   colmax1=bcalGeom.NBCALSECSIN;
     int   colmin2=0;
-    int   colmax2=bcalGeom.NBCALSECS2;
+    int   colmax2=bcalGeom.NBCALSECSOUT;
     
     float r_inner= bcalGeom.BCALINNERRAD;
-    float r_middle= bcalGeom.BCALMIDRAD;
-    float r_outer= bcalGeom.BCALOUTERRAD;
     
     for (int i = (rowmin1+1); i < (rowmax1+1); i++){
-        float thick_innerlayers=(r_middle-r_inner)/(rowmax1-rowmin1); 
-        rt[i]=thick_innerlayers/2+thick_innerlayers*(i-rowmin1-1);
+        //this loop starts from 1, so we can use i in cellId with no adjustment
+        int cellId = bcalGeom.cellId(1,i,1); //this gives us a cellId that we can use to get the radius. the module and sector numbers are irrelevant
+        //rt is radius of center of layer - BCAL inner radius
+        rt[i]=bcalGeom.r(cellId)-r_inner;
     }
     
     for (int i = (rowmin2+1); i < (rowmax2+1); i++){
-        float thick_outerlayers=(r_outer-r_middle)/(rowmax2-rowmin2);
-        rt[i]=r_middle+thick_outerlayers/2+thick_outerlayers*(i-rowmin2-1)-r_inner;
+        int cellId = bcalGeom.cellId(1,i,1);
+        rt[i]=bcalGeom.r(cellId)-r_inner;
     }
     
+    //these are r and phi positions of readout cells
     float r[modulemax_bcal][layermax_bcal][colmax_bcal];
     float phi[modulemax_bcal][layermax_bcal][colmax_bcal];
     
@@ -132,24 +135,23 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
     for (int k = modmin; k < modmax; k++){
         for (int i = rowmin1; i < rowmax1; i++){
             for (int j = colmin1; j < colmax1; j++){
-                int layer=rowmax1-rowmin1;
-                float thick_inner=(r_middle-r_inner)/layer;
-                r[k][i][j]=r_inner+thick_inner/2+thick_inner*(i-rowmin1);
-                float b=360.0/(modmax-modmin);
-                float c=b/(colmax1-colmin1);
-                phi[k][i][j]=(c/2.0+c*(j-colmin1)+b*(k-modmin))*3.141593/180.0;
+                //in this case the loops start at 0, so we have to add 1 to the indices when calling cellId(). hooray!
+                //use DBCALGeometry to get r/phi position of each cell
+                int cellId = bcalGeom.cellId(k+1,i+1,j+1);
+                r[k][i][j]=bcalGeom.r(cellId);
+                phi[k][i][j]=bcalGeom.phi(cellId);
+                //set x and y positions
                 xx[k][i][j]=r[k][i][j]*cos(phi[k][i][j]);
                 yy[k][i][j]=r[k][i][j]*sin(phi[k][i][j]);          
             }
         }
         
         for (int i = rowmin2; i < rowmax2; i++){
-            for (int j = colmin2; j < colmax2; j++){                 
-                float thick_outer=(r_outer-r_middle)/(rowmax2-rowmin2);
-                r[k][i][j]=r_middle+thick_outer/2+thick_outer*(i-rowmin2);
-                float b=360.0/(modmax-modmin);
-                float c=b/(colmax2-colmin2);            
-                phi[k][i][j]=(c/2.0+c*(j-colmin2)+b*(k-modmin))*3.141593/180;
+            for (int j = colmin2; j < colmax2; j++){
+                int cellId = bcalGeom.cellId(k+1,i+1,j+1);
+                r[k][i][j]=bcalGeom.r(cellId);
+                phi[k][i][j]=bcalGeom.phi(cellId);
+
                 xx[k][i][j]=r[k][i][j]*cos(phi[k][i][j]);
                 yy[k][i][j]=r[k][i][j]*sin(phi[k][i][j]);          
             }
@@ -315,12 +317,14 @@ void DBCALShower_factory_KLOE::CellRecon(JEventLoop *loop)
     
     //**********************************************************************
     // The main purpose of this function is extracting information
-    // from  DBCALHit class 
-    // objects and form the array: ecel_a,tcel_a,ecel_b,tcel_b 
+    // from DBCALHit
+    // objects to form the arrays: ecel_a,tcel_a,ecel_b,tcel_b 
     // and xcel,ycel,zcel,tcel,ecel,tcell_anor,tcell_bnor;
     // Among these arrays,
     // ecel_a,tcel_a,ecel_b,tcel_b, xcel,ycel,zcel,tcel,ecel,tcell_anor and
     // tcell_bnor are the input of function CeleToArray()
+    // These arrys are 3-D arrays and are rather logically are indexed by
+    // [module][layer][column]
     //********************************************************************** 
     
     /////////////////////////////////////////////////////////////////////
@@ -500,6 +504,13 @@ void DBCALShower_factory_KLOE::CeleToArray(void)
     //  This way we can keep good use of their strategy of clusterization
     //  as much as possible, although we know that Fortran has it's bad fame 
     //  of not so easy to be reused.
+
+
+    // Essentially this function takes the cell information (e.g. E,x,y,z,t)
+    // from the 3D arrays filled in CellRecon() and puts it into 1D arrays.
+    // These 1D arrays are indexed by an identifier. The module/layer/sector
+    // associated with this identifier can be found using the narr[][] array,
+    // as described above.
     
     celtot=0;
     
@@ -555,148 +566,160 @@ void DBCALShower_factory_KLOE::CeleToArray(void)
 //------------------        
 void DBCALShower_factory_KLOE::PreCluster(JEventLoop *loop)
 {
-    int k=1;     // NUMBER OF NEARBY ROWS &/OR TO LOOK FOR MAX E CELL
-    
-    // extract the BCAL Geometry
-    vector<const DBCALGeometry*> bcalGeomVect;
-    loop->Get( bcalGeomVect );
-    const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
-    
-    // calculate cell position
-    
-    int   modmin = 0;
-    int   modmax = bcalGeom.NBCALMODS;
-    
-    int   rowmax1= bcalGeom.NBCALLAYS1;
-    int   rowmin2= rowmax1+1;  
-    int   rowmax2= bcalGeom.NBCALLAYS2+rowmin2-1; 
-    int   colmax1=bcalGeom.NBCALSECS1;
-    int   colmax2=bcalGeom.NBCALSECS2;
-    
-    float r_inner= bcalGeom.BCALINNERRAD;
-    float r_middle= bcalGeom.BCALMIDRAD;
-    float r_outer= bcalGeom.BCALOUTERRAD;
-    
-    float thick_inner=(r_middle-r_inner)/rowmax1; //thickness for first 5 layers
-                                                  //thickness for last 4 layers:
-    float thick_outer=(r_outer-r_middle)/(rowmax2-rowmin2+1);
-    // distance of two cells in row 5 and 6 of r direction:  
-    float dis_in_out=(thick_outer+thick_inner)/2.0;
-    
-    float degree_permodule=360.0/(modmax-modmin);
-    
-    float half_degree_permodule=degree_permodule/2.0;
-    float width_1=2.0*(r_middle-thick_inner/2.0)*
-        sin(half_degree_permodule*3.141593/180)/colmax1;
-    float width_2=2.0*(r_middle+thick_outer/2.0)*
-        sin(half_degree_permodule*3.141593/180)/colmax2;
-    float disthres=width_2*1.5-width_1*0.5+0.0001;
-    //  cout<<"disthres="<<disthres<<"\n";
-    
-    for (int i = 1; i < (celtot+1); i++){
-        
-        int maxnn=0;
-        float emin=0.;
-        
-        
-        for (int j = 1; j < (celtot+1); j++){
-	  if ( (j!=i) & (nclus[j]!=nclus[i]) & (e_cel[j]>emin)) {
-                
-                int k1= narr[1][i];
-                int k2= narr[1][j];
-                int i1= narr[2][i];
-                int i2= narr[2][j];
-                
-                
-                int  modiff = k1-k2;
-                int amodif = abs(modiff);
-                
-                //  the following if is to check module and row distance.         
-                if ( (abs(i1-i2)<=k) & ((amodif<=1) || (amodif==47)) ) { 
-                    //   further check col distance 
-                    int   j1= narr[3][i];
-                    int   j2= narr[3][j];
-                    
-                    if(amodif==0) {   // same module       
-                        
-                        //   further check col distance if both are on first 5 rows
-		      if ( (i1<=rowmax1) & (i2<=rowmax1) & (abs(j2-j1)<=k) ) {
-                            emin=e_cel[j];
-                            maxnn=j;
-                        }
-                        
-                        //   further check col distance if both are on last 4 rows
-                        
-		      if ( (i1>=rowmin2) & (i2>=rowmin2) & (abs(j2-j1)<=k) ) {
-                            emin=e_cel[j];
-                            maxnn=j;
-                        }
-                    }
-                    
-                    
-                    
-                    if(amodif>0) {  // different module          
-		      if( (modiff==1) || (modiff==-47) ) {      
-			if ( (i1<=rowmax1) & (i2<=rowmax1) ){ 
-			  if(abs((j1+colmax1)-j2)<=k){
-			    emin=e_cel[j];
-			    maxnn=j;
-			  }
-			}
-                        
-			if ( (i1>=rowmin2) & (i2>=rowmin2) ) {
-			  if(abs((j1+colmax2)-j2)<=k){
-			    emin=e_cel[j];
-			    maxnn=j;
-			  }
-			}              
-		      }
-		      
-		      if ( (modiff==-1) || (modiff==47) ) {      
-			
-			if ( (i1<=rowmax1) & (i2<=rowmax1) ){
-			  if(abs((j2+colmax1)-j1)<=k){
-			    emin=e_cel[j];
-			    maxnn=j;
-			  }
-			} 
-                        
-			if ( (i1>=rowmin2) & (i2>=rowmin2) ){
-			  if(abs((j2+colmax2)-j1)<=k){
-			    emin=e_cel[j];
-			    maxnn=j;
-			  }
-			}              
-		      }
-                    }
-                    
-                    // further check col distance if one is in row5, another is in row6
-                    // so that the two are between the boundary of two different size
-                    // of cells.
-                    if( ( (i1 == rowmax1) & (i2 == rowmin2) ) || 
-                        ( (i1 == rowmin2) & (i2 == rowmax1) ) ) {
+  //what this function does: for each cell with a hit it finds the maximum
+  //energy neighbor and Connect()'s the two. Two cells are neighbors if they
+  //are within one column of each other and within one row. The situation is
+  //slightly more complicated for two cells on opposite sides of the boundary
+  //between inner cells and outer and is described in more detail below, but
+  //essentially works out the same way. The purpose of Connect() is described
+  //in that function itself.
 
-                        float delta_xx=xx[k1-1][i1-1][j1-1]-xx[k2-1][i2-1][j2-1];
-                        float delta_yy=yy[k1-1][i1-1][j1-1]-yy[k2-1][i2-1][j2-1];
-                        
-                        float dis = sqrt( delta_xx * delta_xx + delta_yy * delta_yy );
-                        dis = sqrt( dis*dis - dis_in_out * dis_in_out );               
-                        if( dis < disthres ){
-                            
-                            emin = e_cel[j];
-                            maxnn = j;
-                        }
-                    }                    
-                }             
+  int k=1;     // NUMBER OF NEARBY ROWS &/OR TO LOOK FOR MAX E CELL
+    
+  // extract the BCAL Geometry
+  vector<const DBCALGeometry*> bcalGeomVect;
+  loop->Get( bcalGeomVect );
+  const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
+    
+  // calculate cell position
+    
+  int   modmin = 0;
+  int   modmax = bcalGeom.NBCALMODS;
+
+
+  //these values make sense as actually minima/maxima if it is implied that rowmin1=1,colmin1=1,colmin2=1
+  int   rowmax1= bcalGeom.NBCALLAYSIN;
+  int   rowmin2= rowmax1+1;
+  //int   rowmax2= bcalGeom.NBCALLAYSOUT+rowmin2-1;
+  int   colmax1=bcalGeom.NBCALSECSIN;
+  int   colmax2=bcalGeom.NBCALSECSOUT;
+
+  float r_middle= bcalGeom.BCALMIDRAD;
+
+  //radial size of the outermost inner layer
+  float thick_inner=bcalGeom.rSize(bcalGeom.cellId(1,bcalGeom.NBCALLAYSIN,1));
+  //radial size of the innermost outer layer
+  float thick_outer=bcalGeom.rSize(bcalGeom.cellId(1,bcalGeom.NBCALLAYSIN+1,1));
+
+  // this is the radial distance between the center of the innermost outer layer and the outermost inner layer
+  float dis_in_out=bcalGeom.r(bcalGeom.cellId(1,bcalGeom.NBCALLAYSIN+1,1))-bcalGeom.r(bcalGeom.cellId(1,bcalGeom.NBCALLAYSIN,1));
+    
+  float degree_permodule=360.0/(modmax-modmin);
+  float half_degree_permodule=degree_permodule/2.0;
+
+  //roughly the width of a single cell in the outermost inner layer
+  float width_1=2.0*(r_middle-thick_inner/2.0)*
+    sin(half_degree_permodule*3.141593/180)/colmax1;
+  //roughly the width of a single cell in the innermost outer layer
+  float width_2=2.0*(r_middle+thick_outer/2.0)*
+    sin(half_degree_permodule*3.141593/180)/colmax2;
+
+  //disthres is roughly the azimuthal distance between the center of an outer cell and the center of the most distant inner cell bordering an adjacent outer cell (a picture would be nice wouldn't it)
+  //this value is used for determining if two cells that straddle the boundary between inner and outer layers should be considered as neighboring
+  float disthres=width_2*1.5-width_1*0.5+0.0001;
+    
+  for (int i = 1; i < (celtot+1); i++){
+        
+    int maxnn=0; //cell index of the maximum energy neighbor (if one is found)
+    float emin=0.; //energy of maximum energy neighbor
+        
+        
+    for (int j = 1; j < (celtot+1); j++){
+      if ( (j!=i) & (nclus[j]!=nclus[i]) & (e_cel[j]>emin)) {
+                
+        int k1= narr[1][i];
+        int k2= narr[1][j];
+        int i1= narr[2][i];
+        int i2= narr[2][j];
+
+
+        int  modiff = k1-k2;
+        int amodif = abs(modiff);
+                
+        //  the following if is to check module and row distance.         
+        if ( (abs(i1-i2)<=k) & ((amodif<=1) || (amodif==47)) ) { 
+          //   further check col distance 
+          int   j1= narr[3][i];
+          int   j2= narr[3][j];
+
+          if(amodif==0) {   // same module       
+            //   further check col distance if both are inner layers
+            if ( (i1<=rowmax1) & (i2<=rowmax1) & (abs(j2-j1)<=k) ) {
+              emin=e_cel[j];
+              maxnn=j;
             }
-        }        // finish second loop
-        
-        
-        if(maxnn>0){
-            
-            Connect(maxnn,i);
-        }
-    }       // finish first loop
+
+            //   further check col distance if both are outer layers
+ 
+            if ( (i1>=rowmin2) & (i2>=rowmin2) & (abs(j2-j1)<=k) ) {
+              emin=e_cel[j];
+              maxnn=j;
+            }
+          }
+
+          if(amodif>0) {  // different module          
+            if( (modiff==1) || (modiff==-47) ) {      
+              if ( (i1<=rowmax1) & (i2<=rowmax1) ){ 
+                if(abs((j1+colmax1)-j2)<=k){
+                  emin=e_cel[j];
+                  maxnn=j;
+                }
+              }
+                        
+              if ( (i1>=rowmin2) & (i2>=rowmin2) ) {
+                if(abs((j1+colmax2)-j2)<=k){
+                  emin=e_cel[j];
+                  maxnn=j;
+                }
+              }              
+            }
+
+            if ( (modiff==-1) || (modiff==47) ) {      
+
+              if ( (i1<=rowmax1) & (i2<=rowmax1) ){
+                if(abs((j2+colmax1)-j1)<=k){
+                  emin=e_cel[j];
+                  maxnn=j;
+                }
+              } 
+                        
+              if ( (i1>=rowmin2) & (i2>=rowmin2) ){
+                if(abs((j2+colmax2)-j1)<=k){
+                  emin=e_cel[j];
+                  maxnn=j;
+                }
+              }              
+            }
+          }
+                    
+          // further check col distance if one is inner layer, another is outer
+          // so that the two may be between the boundary of two different size
+          // of cells.
+          if( ( (i1 == rowmax1) & (i2 == rowmin2) ) || 
+              ( (i1 == rowmin2) & (i2 == rowmax1) ) ) {
+
+            float delta_xx=xx[k1-1][i1-1][j1-1]-xx[k2-1][i2-1][j2-1];
+            float delta_yy=yy[k1-1][i1-1][j1-1]-yy[k2-1][i2-1][j2-1];
+
+            //distance between centers of two cells
+            float dis = sqrt( delta_xx * delta_xx + delta_yy * delta_yy );
+            //dis_in_out is the distance in radial direction, so we now isolate distance in direction perpendicular to radius
+            dis = sqrt( dis*dis - dis_in_out * dis_in_out );
+            //disthres is described above
+            if( dis < disthres ){
+              emin = e_cel[j];
+              maxnn = j;
+            }
+          }                    
+        }             
+      }
+    }        // finish second loop
+
+    if(maxnn>0){
+
+      Connect(maxnn,i);
+    }
+  }       // finish first loop
 }
 
 

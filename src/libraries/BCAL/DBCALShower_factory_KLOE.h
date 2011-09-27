@@ -83,8 +83,11 @@ private:
     float  ecel_b[modulemax_bcal][layermax_bcal][colmax_bcal]; 
     float  tcel_a[modulemax_bcal][layermax_bcal][colmax_bcal];   
     float  tcel_b[modulemax_bcal][layermax_bcal][colmax_bcal];
+
+    //xx and yy are x and y positions of center of readout cells
     float  xx[modulemax_bcal][layermax_bcal][colmax_bcal];   
     float  yy[modulemax_bcal][layermax_bcal][colmax_bcal];
+
     float  fiberLength;
     float  zOffset;
     
@@ -185,6 +188,8 @@ private:
     float y[layermax_bcal+1];  
     float z[layermax_bcal+1];
     float e[layermax_bcal+1];
+
+    //this is (center_radius-BCAL_inner_radius) of the n'th layer
     float rt[layermax_bcal+1];
     
     float sigx[layermax_bcal+1];  // cm

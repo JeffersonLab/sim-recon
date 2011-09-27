@@ -31,7 +31,7 @@ using namespace jana;
 // Author's note:  this is seen as a temporary feature to study effects of
 // two different summing schemes.  A preprocessor macro is not the best way
 // to change the functionality of code, but mcsmear doesn't use factories to
-// provide objects so it is parameters aren't helpful.
+// provide objects so its parameters aren't helpful.
 
 //#define BCAL_SUM_CELL
 
@@ -45,19 +45,30 @@ public:
   
   enum End { kUpstream, kDownstream };
   
-  static int NBCALMODS;         ///> number of modules
-  static int NBCALLAYS1;        ///> number of layers in first 10 ccm 
-  static int NBCALLAYS2;        ///> number of layers in last  15 cm 
-  static int NBCALSECS1;        ///> number of sectors in first 10cm of Mod 
-  static int NBCALSECS2;        ///> number of sectors in last 15cm of Mod 
-  static int NSUMLAYS1;        ///> number of layers summed for digitization in inner region 
-  static int NSUMLAYS2;        ///> number of layers summed for digitization in outer region 
-  static int NSUMSECS1;        ///> number of sectors summed for digitization in inner region 
-  static int NSUMSECS2;        ///> number of sectors summed for digitization in outer region 
+  static const int NBCALMODS=48;         ///> number of modules
+
+  //the distinction between inner layers and outer layers is important, since only the inner layers have TDC readout
+#ifdef BCAL_SUM_CELL
+  static const int NBCALLAYSIN=2;        ///> number of readout layers in inner BCAL (first 6 SiPM layers)
+  static const int NBCALLAYSOUT=2;       ///> number of readout layers in outer BCAL (outer 4 SiPM layers)
+#else
+  static const int NBCALLAYSIN=6;
+  static const int NBCALLAYSOUT=4;
+#endif
+  static int NSUMLAYSIN[NBCALLAYSIN];        ///> number of radial SiPM layers summed for digitization in each inner readout layer
+  static int NSUMLAYSOUT[NBCALLAYSOUT];        ///> number of radial SiPM layers summed for digitization in each outer readout layer
+  static int NSUMSECSIN;        ///> for the inner layers, the number of SiPM that will be summed in the azimuthal direction
+  static int NSUMSECSOUT;        ///> for the outer layer(s), the number of SiPM that will be summed in the azimuthal direction
+  static int NBCALSECSIN;   ///>number of sectors in inner region
+  static int NBCALSECSOUT;  ///>number of sectors in outer region
   static float BCALINNERRAD;    ///> innner radius of BCAL in cm
-  static int BCALMID;         ///> first outer layer (default 7)
+
+  // Enter the index of the SiPM that designates the first
+  // (counting radially outward) of the outer cells (default 7)
+  static const int BCALMID=7;         ///> first outer layer (default 7)
+
   static float m_radius[11];
-  float BCALMIDRAD;      ///> mid radius of BCAL in cm
+  static float BCALMIDRAD;     ///> mid radius of BCAL in cm (boundary between inner and outer layers)
   static float BCALOUTERRAD;    ///> outer radius of BCAL in cm
   static float BCALFIBERLENGTH; ///> BCAL Scintilator fiber lenth in cm
   static float GLOBAL_CENTER;  ///> center of BCAL in gloobal coordinate system
@@ -66,28 +77,30 @@ public:
   static float C_EFFECTIVE;    ///> speed of light in fibers 
   
   static bool summingOn() {
-    
+  
 #ifdef BCAL_SUM_CELL
     return true;
 #else
     return false;
 #endif
   }
-  
+
+  //these functions are about encoding/decoding module/layer/sector info in a cellId
+  static int cellId( int module, int layer, int sector );  
   static int module( int cellId );  
   static int layer( int cellId );
   static int sector( int cellId );
-  static int fADC_layer( int cellId );
-  static int fADC_sector( int cellId );
 
-  static int cellId( int module, int layer, int sector );
-  static int fADCId( int module, int layer, int sector );
+  //these functions are about finding which readout cell contains a specific SiPM cell
+  static int fADC_layer( int SiPM_cellId );
+  static int fADC_sector( int SiPM_cellId );
+  static int fADCId( int module, int SiPM_layer, int SiPM_sector );
 
-  static float phi( int cellId );
-  static float phiSize( int cellId );
-  
-  static float r( int cellId );
-  static float rSize( int cellId );
+  //these functions are about the physical location and dimensions of a readout cell
+  static float phi( int fADC_cellId );
+  static float phiSize( int fADC_cellId );  
+  static float r( int fADC_cellId );
+  static float rSize( int fADC_cellId );
   
 };
 
