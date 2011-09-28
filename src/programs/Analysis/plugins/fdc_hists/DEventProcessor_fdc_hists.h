@@ -10,6 +10,7 @@
 
 #include <pthread.h>
 #include <map>
+#include <vector>
 using std::map;
 
 #include <TTree.h>
@@ -26,11 +27,29 @@ using std::map;
 #include <TRACKING/DMCTrackHit.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
+#include <FDC/DFDCGeometry.h>
+
+#include <FDC/DFDCPseudo.h>
+#include <FDC/DFDCIntersection.h>
+#include <DMatrixSIMD.h>
 
 #include "FDC_branch.h"
 #include "FDChit_branch.h"
 
 class DCDCTrackHit;
+
+typedef struct{
+  DMatrix4x1 S;
+  DMatrix4x4 J;
+  DMatrix4x1 Skk;
+  DMatrix4x4 Ckk;
+  DMatrix4x1 Skkp;
+  DMatrix4x4 Ckkp;
+  double z;
+  int num_hits;
+  unsigned int h_id;
+}trajectory_t;
+
 
 class DEventProcessor_fdc_hists:public JEventProcessor{
 
@@ -45,15 +64,39 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		FDChit_branch fdchit;
 		FDChit_branch *fdchit_ptr;
 		TBranch *fdcbranch, *fdchitbranch;
+
+		enum track_type{
+		  kWireBased,
+		  kTimeBased,
+		};
+		enum state_vector{
+		  state_x,
+		  state_y,
+		  state_tx,
+		  state_ty,
+		};
+		
 		
 	private:
+		vector<vector<DFDCWire*> >fdcwires;
+
+		
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
 		jerror_t brun(JEventLoop *loop, int runnumber);
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
-		
+		DMatrix4x1 SetSeed(vector<const DFDCIntersection*> fdchits);
+		jerror_t Fit(int fit_type,DMatrix4x1 &S,DMatrix4x4 &C,
+			     double &chi2,unsigned int &ndof);
+		jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs);
+		jerror_t SetReferenceTrajectory(DMatrix4x1 &S,
+						int layer_to_skip);
+
+		vector<DFDCPseudo *>points;
+		vector<trajectory_t>trajectory;
+
 		pthread_mutex_t mutex;
 };
 
