@@ -49,8 +49,8 @@ public:
 
   //the distinction between inner layers and outer layers is important, since only the inner layers have TDC readout
 #ifdef BCAL_SUM_CELL
-  static const int NBCALLAYSIN=2;        ///> number of readout layers in inner BCAL (first 6 SiPM layers)
-  static const int NBCALLAYSOUT=2;       ///> number of readout layers in outer BCAL (outer 4 SiPM layers)
+  static const int NBCALLAYSIN=3;        ///> number of readout layers in inner BCAL (first 6 SiPM layers)
+  static const int NBCALLAYSOUT=1;       ///> number of readout layers in outer BCAL (outer 4 SiPM layers)
 #else
   static const int NBCALLAYSIN=6;
   static const int NBCALLAYSOUT=4;

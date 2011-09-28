@@ -66,15 +66,15 @@ DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
   }
   else{
     
-    // these are energy calibration parameters -- 2-2-4-2 summing
+    // these are energy calibration parameters -- 1.2.3.4 summing
   
-    m_scaleZ_p0 = 0.840632;
-    m_scaleZ_p1 = 0.0017686;
-    m_scaleZ_p2 = -7.74686e-06;
-    m_scaleZ_p3 = 9.21245e-09;
+    m_scaleZ_p0 = 9.843814e-01;
+    m_scaleZ_p1 = 3.999033e-04;
+    m_scaleZ_p2 = -2.821851e-06;
+    m_scaleZ_p3 = 1.971016e-09;
   
-    m_nonlinZ_p0 = 0.0422915;
-    m_nonlinZ_p1 = -8.20709e-05;
+    m_nonlinZ_p0 = 1.137532e-02;
+    m_nonlinZ_p1 = 1.106708e-04;
     m_nonlinZ_p2 = 0;
     m_nonlinZ_p3 = 0;
   }

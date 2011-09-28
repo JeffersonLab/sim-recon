@@ -30,15 +30,15 @@ DBCALShower_factory::DBCALShower_factory(){
   }
   else{
     
-    // these are energy calibration parameters -- 2.2.4.2 summing
+    // these are energy calibration parameters -- 1.2.3.4 summing
     
-    m_scaleZ_p0 =  0.785604;
-    m_scaleZ_p1 =  0.0023703;
-    m_scaleZ_p2 =  -9.47468e-06;
-    m_scaleZ_p3 =  1.06317e-08;
+    m_scaleZ_p0 =  9.418970e-01;
+    m_scaleZ_p1 =  7.907352e-05;
+    m_scaleZ_p2 =  -4.857548e-07;
+    m_scaleZ_p3 =  -1.478834e-09;
     
-    m_nonlinZ_p0 =  0.0468635;
-    m_nonlinZ_p1 =  -9.69989e-05;
+    m_nonlinZ_p0 =  4.909458e-02;
+    m_nonlinZ_p1 =  9.540881e-06;
     m_nonlinZ_p2 =  0;    
     m_nonlinZ_p3 =  0;
   }

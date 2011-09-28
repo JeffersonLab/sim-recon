@@ -8,17 +8,19 @@
 
 #ifdef BCAL_SUM_CELL
 
-//int DBCALGeometry::NSUMSECSIN = 1;
-//int DBCALGeometry::NSUMSECSOUT = 1;
-//int DBCALGeometry::NSUMLAYSIN[] = {1,2,3};
-//int DBCALGeometry::NSUMLAYSOUT[] = {4};
-
 // The configuration below has 3x1 (r/phi) summed cells in the inner
 // and 2x2 summed cells in the outer region
+//int DBCALGeometry::NSUMSECSIN = 1;
+//int DBCALGeometry::NSUMSECSOUT = 2;
+//int DBCALGeometry::NSUMLAYSIN[] = {3,3};
+//int DBCALGeometry::NSUMLAYSOUT[] = {2,2};
+
+// 1.2.3.4 summing configuration
 int DBCALGeometry::NSUMSECSIN = 1;
-int DBCALGeometry::NSUMSECSOUT = 2;
-int DBCALGeometry::NSUMLAYSIN[] = {3,3};
-int DBCALGeometry::NSUMLAYSOUT[] = {2,2};
+int DBCALGeometry::NSUMSECSOUT = 1;
+int DBCALGeometry::NSUMLAYSIN[] = {1,2,3};
+int DBCALGeometry::NSUMLAYSOUT[] = {4};
+
 // end of summing configuration
 
 #else
