@@ -22,6 +22,7 @@ using namespace std;
 #include "DMatrix4x2.h"
 #include "DMatrix4x4.h"
 #include "DMatrix2x4.h"
+#include "DMatrix1x4.h"
 #include "align_16.h"
 
 
@@ -189,6 +190,19 @@ inline DMatrix4x4 operator*(const DMatrix4x2 &m1,
 
 #ifndef USE_SSE2
 
+// Multiply a 4x1 matrix by a 1x4 matrix
+inline DMatrix4x4 operator*(const DMatrix4x1 &m1,const DMatrix1x4 &m2){
+  DMatrix4x4 temp;
+  for (unsigned int i=0;i<4;i++){
+    for (unsigned int j=0;j<4;j++){
+      temp(i,j)=m1(i)*m2(j);      
+    }
+  }
+  return temp;
+}
+
+
+
 // Find the tranpose of a 5x2 matrix
 inline DMatrix2x5 Transpose(const DMatrix5x2 &M){
   return DMatrix2x5(M(0,0),M(1,0),M(2,0),M(3,0),M(4,0),
@@ -230,6 +244,27 @@ inline DMatrix5x5 operator*(const DMatrix5x2 &m1,const DMatrix2x5 &m2){
 }
 
 #else
+
+// Multiply a 4x1 matrix by a 1x4 matrix
+inline DMatrix4x4 operator*(const DMatrix4x1 &m1,const DMatrix1x4 &m2){
+  ALIGNED_16_BLOCK_WITH_PTR(__m128d, 4, p)
+  __m128d &b1=p[0];
+  __m128d &b2=p[1];
+  __m128d &b3=p[2];
+  __m128d &b4=p[3];
+  b1=_mm_set1_pd(m2(0));
+  b2=_mm_set1_pd(m2(1));
+  b3=_mm_set1_pd(m2(2));
+  b4=_mm_set1_pd(m2(3));
+  return DMatrix4x4(_mm_mul_pd(m1.GetV(0),b1),_mm_mul_pd(m1.GetV(0),b2),
+		    _mm_mul_pd(m1.GetV(0),b3),_mm_mul_pd(m1.GetV(0),b4),
+		    _mm_mul_pd(m1.GetV(1),b1),_mm_mul_pd(m1.GetV(1),b2),
+		    _mm_mul_pd(m1.GetV(1),b3),_mm_mul_pd(m1.GetV(1),b4),
+		    );
+}
+
+
+
 
 // Find the tranpose of a 5x2 matrix
 inline DMatrix2x5 Transpose(const DMatrix5x2 &M){

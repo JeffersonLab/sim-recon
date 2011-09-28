@@ -84,6 +84,16 @@ class DMatrix4x4{
 		      -mA[3][0],-mA[3][1],-mA[3][2],-mA[3][3]
 		      );
   }
+  // Matrix Addition
+  DMatrix4x4 operator+(const DMatrix4x4 &m2){
+    return DMatrix4x4(mA[0][0]+m2(0,0),mA[0][1]+m2(0,1),mA[0][2]+m2(0,2),mA[0][3]+m2(0,3),
+		      mA[1][0]+m2(1,0),mA[1][1]+m2(1,1),mA[1][2]+m2(1,2),mA[1][3]+m2(1,3),
+		      mA[2][0]+m2(2,0),mA[2][1]+m2(2,1),mA[2][2]+m2(2,2),mA[2][3]+m2(2,3),
+		      mA[3][0]+m2(3,0),mA[3][1]+m2(3,1),mA[3][2]+m2(3,2),mA[3][3]+m2(3,3)
+		      );
+  }
+
+
   // Matrix subtraction
   DMatrix4x4 operator-(const DMatrix4x4 &m2){
     return DMatrix4x4(mA[0][0]-m2(0,0),mA[0][1]-m2(0,1),mA[0][2]-m2(0,2),mA[0][3]-m2(0,3),
@@ -279,6 +289,17 @@ class DMatrix4x4{
 		      _mm_sub_pd(GetV(1,1),m2.GetV(1,1)),
 		      _mm_sub_pd(GetV(1,2),m2.GetV(1,2)),
 		      _mm_sub_pd(GetV(1,3),m2.GetV(1,3)));
+  }
+
+  DMatrix4x4 operator+(const DMatrix4x4 &m2){
+    return DMatrix4x4(_mm_add_pd(GetV(0,0),m2.GetV(0,0)),
+		      _mm_add_pd(GetV(0,1),m2.GetV(0,1)),
+		      _mm_add_pd(GetV(0,2),m2.GetV(0,2)),
+		      _mm_add_pd(GetV(0,3),m2.GetV(0,3)),
+		      _mm_add_pd(GetV(1,0),m2.GetV(1,0)),
+		      _mm_add_pd(GetV(1,1),m2.GetV(1,1)),
+		      _mm_add_pd(GetV(1,2),m2.GetV(1,2)),
+		      _mm_add_pd(GetV(1,3),m2.GetV(1,3)));
   }
 
 
