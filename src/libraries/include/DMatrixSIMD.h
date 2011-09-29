@@ -259,7 +259,7 @@ inline DMatrix4x4 operator*(const DMatrix4x1 &m1,const DMatrix1x4 &m2){
   return DMatrix4x4(_mm_mul_pd(m1.GetV(0),b1),_mm_mul_pd(m1.GetV(0),b2),
 		    _mm_mul_pd(m1.GetV(0),b3),_mm_mul_pd(m1.GetV(0),b4),
 		    _mm_mul_pd(m1.GetV(1),b1),_mm_mul_pd(m1.GetV(1),b2),
-		    _mm_mul_pd(m1.GetV(1),b3),_mm_mul_pd(m1.GetV(1),b4),
+		    _mm_mul_pd(m1.GetV(1),b3),_mm_mul_pd(m1.GetV(1),b4)
 		    );
 }
 
