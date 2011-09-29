@@ -25,7 +25,9 @@ class DChargedTrackHypothesis : public jana::JObject {
 		float dPathLength; //Path length from the track position in the DTrackTimeBased object to the matched hit in either the FCAL, BCAL, or TOF
 		float dFlightTime; //The amount of time that the track took to traverse the dPathLength
 		float dChiSq;
+		float dChiSq_Timing;
 		unsigned int dNDF;
+		unsigned int dNDF_Timing;
 		float dFOM;
 		DetectorSystem_t dMatchedTimeDetector;
 

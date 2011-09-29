@@ -151,10 +151,14 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->dProjectedTime;
 			// Calculate ChiSq, FOM
 			locTimingChiSq = locTimeDifference*locTimeDifference/(locProjectedTimeUncertainty*locProjectedTimeUncertainty);
+			locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
+			locChargedTrackHypothesis->dNDF_Timing = 1;
 			locChargedTrackHypothesis->dChiSq = locTimingChiSq + locTrackTimeBased->chi2_dedx;
 			locChargedTrackHypothesis->dNDF = 2;
 			locChargedTrackHypothesis->dFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq, locChargedTrackHypothesis->dNDF);
 		}else{ //not enough timing information, use results from DTrackTimeBased (dEdx chisq from tracking as of July 25th, 2011)
+			locChargedTrackHypothesis->dChiSq_Timing = 0.0;
+			locChargedTrackHypothesis->dNDF_Timing = 0;
 			locChargedTrackHypothesis->dChiSq = locTrackTimeBased->chi2_dedx;
 			locChargedTrackHypothesis->dNDF = 1;
 			locChargedTrackHypothesis->dFOM = locTrackTimeBased->FOM;
