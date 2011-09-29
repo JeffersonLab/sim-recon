@@ -20,8 +20,6 @@ using namespace jana;
 
 #include <PID/DKinematicData.h>
 #include <PID/DChargedTrack.h>
-#include <PID/DPhoton.h>
-#include <PID/DBeamPhoton.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackWireBased.h>
 #include <TRACKING/DTrackTimeBased.h>
@@ -145,14 +143,14 @@ jerror_t DEventProcessor_pid_hists::evnt(JEventLoop *loop, int eventnumber)
 
   // calculate time differences between tracks found using normal PID (best hypothesis) and the other hypotheses 
   for(unsigned int j=0; j<chargedtracks.size(); j++){
-    if(chargedtracks[j]->hypotheses.size()==0)continue;
-    const DTrackTimeBased *track = chargedtracks[j]->hypotheses[0];
+    if(chargedtracks[j]->dChargedTrackHypotheses.size()==0)continue;
+    const DTrackTimeBased *track = chargedtracks[j]->dChargedTrackHypotheses[0]->dTrackTimeBased;
     if (DEBUG) printInfo(track,eventnumber,j,truthTracks.size(),"track");
     double T1 = 1000.*track->pathLength()/track->lorentzMomentum().Beta()/SPEED_OF_LIGHT; // in ps
     int type1 = GetType(track);
     double mom = track->momentum().Mag(); // momentum of reconstructed best hypothesis
-    for (unsigned int k=1;k<chargedtracks[j]->hypotheses.size();k++) {
-      const DTrackTimeBased *track_can = chargedtracks[j]->hypotheses[k];
+    for (unsigned int k=1;k<chargedtracks[j]->dChargedTrackHypotheses.size();k++) {
+      const DTrackTimeBased *track_can = chargedtracks[j]->dChargedTrackHypotheses[k]->dTrackTimeBased;
       if (DEBUG) printInfo(track_can,eventnumber,k,truthTracks.size(),"track_can");
       double T2 = 1000.*track_can->pathLength()/track_can->lorentzMomentum().Beta()/SPEED_OF_LIGHT; // in ps
       int type2 = GetType(track_can);
@@ -169,8 +167,8 @@ jerror_t DEventProcessor_pid_hists::evnt(JEventLoop *loop, int eventnumber)
 
   // loop over tracks found using normal PID and use the truth information to count the misidentified tracks
   for(unsigned int j=0; j<chargedtracks.size(); j++){
-    if(chargedtracks[j]->hypotheses.size()==0)continue;
-    const DTrackTimeBased *track = chargedtracks[j]->hypotheses[0];
+    if(chargedtracks[j]->dChargedTrackHypotheses.size()==0)continue;
+    const DTrackTimeBased *track = chargedtracks[j]->dChargedTrackHypotheses[0]->dTrackTimeBased;
 
     // skip tracks with a low FOM
     if (track->FOM<=cut)continue; 
