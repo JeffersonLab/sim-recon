@@ -20,6 +20,7 @@
 #include <FCAL/DFCALShower.h>
 #include <DVector3.h>
 #include <DMatrixDSym.h>
+#include <TMath.h>
 
 class DNeutralTrackHypothesis_factory:public jana::JFactory<DNeutralTrackHypothesis>{
 	public:

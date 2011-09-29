@@ -15,6 +15,7 @@
 #include <TOF/DTOFPoint.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
+#include <TMath.h>
 
 class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothesis>{
 	public:
