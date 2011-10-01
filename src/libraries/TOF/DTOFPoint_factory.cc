@@ -65,9 +65,8 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	vector<const DTOFHit*> locTOFHitVector;
 	loop->Get(locTOFHitVector);
-
-	vector<tof_spacetimehit_t*> locTOFSpacetimeHits_Horizontal;
-	vector<tof_spacetimehit_t*> locTOFSpacetimeHits_Vertical;
+	deque<tof_spacetimehit_t*> locTOFSpacetimeHits_Horizontal;
+	deque<tof_spacetimehit_t*> locTOFSpacetimeHits_Vertical;
 
 	//increase pool size if necessary (used to minimize memory allocation time)
 	for(loc_i = dTOFSpacetimeHitPool.size(); loc_i < locTOFHitVector.size(); loc_i++){
@@ -111,22 +110,22 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 					case 41:
 						locTOFSpacetimeHit->x = -66.; //paddle extends from -6 -> -126
 						locTOFSpacetimeHit->y = -3.;
-						locTOFSpacetimeHit->t = locTOFHit->t_south - 0.5*HALFPADDLE/VELOCITY;
+						locTOFSpacetimeHit->t = locTOFHit->t_south - 60.0/VELOCITY; //60 is HALFPADDLE for signle-ended bars
 						break;
 					case 43:
 						locTOFSpacetimeHit->x = -66.; //paddle extends from -6 -> -126
 						locTOFSpacetimeHit->y = 3.;
-						locTOFSpacetimeHit->t = locTOFHit->t_south - 0.5*HALFPADDLE/VELOCITY;
+						locTOFSpacetimeHit->t = locTOFHit->t_south - 60.0/VELOCITY;
 						break;
 					case 42:
 						locTOFSpacetimeHit->x = 66.; //paddle extends from 6 -> 126
 						locTOFSpacetimeHit->y = -3.;
-						locTOFSpacetimeHit->t = locTOFHit->t_north - 0.5*HALFPADDLE/VELOCITY;
+						locTOFSpacetimeHit->t = locTOFHit->t_north - 60.0/VELOCITY;
 						break;
 					case 44:
 						locTOFSpacetimeHit->x = 66.; //paddle extends from 6 -> 126
 						locTOFSpacetimeHit->y = 3.;
-						locTOFSpacetimeHit->t = locTOFHit->t_north - 0.5*HALFPADDLE/VELOCITY;
+						locTOFSpacetimeHit->t = locTOFHit->t_north - 60.0/VELOCITY;
 						break;
 					default:
 						break;
@@ -159,22 +158,22 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 					case 41:
 						locTOFSpacetimeHit->x = -3.;
 						locTOFSpacetimeHit->y = 66.; //paddle extends from 6 -> 126
-						locTOFSpacetimeHit->t = locTOFHit->t_south - 0.5*HALFPADDLE/VELOCITY;
+						locTOFSpacetimeHit->t = locTOFHit->t_south - 60.0/VELOCITY;
 						break;
 					case 43:
 						locTOFSpacetimeHit->x = 3.;
 						locTOFSpacetimeHit->y = 66.; //paddle extends from 6 -> 126
-						locTOFSpacetimeHit->t = locTOFHit->t_south - 0.5*HALFPADDLE/VELOCITY;
+						locTOFSpacetimeHit->t = locTOFHit->t_south - 60.0/VELOCITY;
 						break;
 					case 42:
 						locTOFSpacetimeHit->x = -3.;
 						locTOFSpacetimeHit->y = -66.; //paddle extends from -6 -> -126
-						locTOFSpacetimeHit->t = locTOFHit->t_north - 0.5*HALFPADDLE/VELOCITY;
+						locTOFSpacetimeHit->t = locTOFHit->t_north - 60.0/VELOCITY;
 						break;
 					case 44:
 						locTOFSpacetimeHit->x = 3.;
 						locTOFSpacetimeHit->y = -66.; //paddle extends from -6 -> -126
-						locTOFSpacetimeHit->t = locTOFHit->t_north - 0.5*HALFPADDLE/VELOCITY;
+						locTOFSpacetimeHit->t = locTOFHit->t_north - 60.0/VELOCITY;
 						break;
 					default:
 						break;
@@ -193,8 +192,8 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 		locTOFSpacetimeHit_Horizontal = locTOFSpacetimeHits_Horizontal[loc_i];
 		for(loc_j = 0; loc_j < locTOFSpacetimeHits_Vertical.size(); loc_j++){
 			locTOFSpacetimeHit_Vertical = locTOFSpacetimeHits_Vertical[loc_j];
-			locDeltaX = locTOFSpacetimeHit_Horizontal->x - locTOFSpacetimeHit_Vertical->x;
 
+			locDeltaX = locTOFSpacetimeHit_Horizontal->x - locTOFSpacetimeHit_Vertical->x;
 			if (fabs(locDeltaX) >= locTOFSpacetimeHit_Horizontal->pos_cut)
 				continue;
 			locDeltaY = locTOFSpacetimeHit_Horizontal->y - locTOFSpacetimeHit_Vertical->y;
@@ -204,6 +203,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 			locTimeCut = (locTOFSpacetimeHit_Horizontal->t_cut > locTOFSpacetimeHit_Vertical->t_cut) ? locTOFSpacetimeHit_Horizontal->t_cut : locTOFSpacetimeHit_Vertical->t_cut;
 			if (fabs(locDeltaT) >= locTimeCut)
 				continue;
+
 			if(locTOFSpacetimeHitMatchList.size() == dTOFSpacetimeHitMatchPool.size()){ //increase pool size if necessary (used to minimize memory allocation time)
 				locTOFSpacetimeHitMatch = new tof_spacetimehitmatch_t();
 				dTOFSpacetimeHitMatchPool.push_back(locTOFSpacetimeHitMatch);
@@ -259,7 +259,6 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 		}
 
 		locTOFPoint = new DTOFPoint;
-
 		//reconstruct TOF hit information, using information from the best bar: one or both of the bars may have a PMT signal below threshold
 		if((locOneSideBelowEThresholdFlag_Horizontal == true) && (locOneSideBelowEThresholdFlag_Vertical == true)){ //both bars have only one PMT signal above threshold
 			locMatchX = locTOFSpacetimeHit_Vertical->x;
@@ -275,6 +274,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 			else
 				locDepositedEnergy_Vertical = locTOFHit_Vertical->E_south * exp((HALFPADDLE + locMatchY)/ATTEN_LENGTH);
 			locMatchdE = 0.5*(locDepositedEnergy_Horizontal + locDepositedEnergy_Vertical);
+			locMatchT = 0.5*(locTOFSpacetimeHit_Horizontal->t + locTOFSpacetimeHit_Vertical->t);
 		}else if(locOneSideBelowEThresholdFlag_Horizontal == true){ //the horizontal bar has only one PMT signal above threshold (and the vertical bar has both)
 			locMatchX = locTOFSpacetimeHit_Vertical->x;
 			locMatchY = locTOFSpacetimeHit_Vertical->y;
@@ -294,7 +294,6 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 			locMatchT = 0.5*(locTOFSpacetimeHit_Horizontal->t + locTOFSpacetimeHit_Vertical->t);
 			locMatchdE = 0.5*(locTOFHit_Horizontal->dE + locTOFHit_Vertical->dE);
 		}
-
 		locTOFPoint->AddAssociatedObject(locTOFHit_Horizontal);
 		locTOFPoint->AddAssociatedObject(locTOFHit_Vertical);
 		locTOFPoint->pos.SetXYZ(locMatchX, locMatchY, locMatchZ);
@@ -302,18 +301,19 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 		locTOFPoint->dE = locMatchdE;
 
 		_data.push_back(locTOFPoint);
-
 		//remove matches that contain the hits that were just used
 		for(locListIterator = locTOFSpacetimeHitMatchList.begin(); locListIterator != locTOFSpacetimeHitMatchList.end(); locListIterator++){
 			locTOFSpacetimeHitMatch = *locListIterator;
 			if(locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Horizontal == locTOFSpacetimeHit_Horizontal){
-				locTOFSpacetimeHitMatchList.erase(locListIterator);
-				locListIterator--;
-				continue;
-			}
-			if(locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Vertical == locTOFSpacetimeHit_Vertical){
-				locTOFSpacetimeHitMatchList.erase(locListIterator);
-				locListIterator--;
+				locListIterator = locTOFSpacetimeHitMatchList.erase(locListIterator); //erase advances the iterator
+				if(locTOFSpacetimeHitMatchList.size() == 0)
+					break;
+				locListIterator--; //for loop will advance iterator
+			}else if(locTOFSpacetimeHitMatch->dTOFSpacetimeHit_Vertical == locTOFSpacetimeHit_Vertical){
+				locListIterator = locTOFSpacetimeHitMatchList.erase(locListIterator); //erase advances the iterator
+				if(locTOFSpacetimeHitMatchList.size() == 0)
+					break; //is also the end, don't --, just break
+				locListIterator--; //for loop will advance iterator
 			}
 		}
 	}

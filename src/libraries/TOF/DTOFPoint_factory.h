@@ -12,6 +12,7 @@
 #include "DTOFPoint.h"
 #include "DTOFHit.h"
 #include <list>
+#include <deque>
 
 /// \htmlonly
 /// <A href="index.html#legend">
@@ -22,6 +23,8 @@
 /// 2-plane (4-fold) TOF coincidences. The 2-hit coincidences come from DTOFHit objects
 /// which are combined into coincidnces between the two planes to form 4-D space points
 /// which are represented by DTOFPoint objects.
+
+using namespace std;
 
 class DTOFPoint_factory:public JFactory<DTOFPoint>{
 	public:
@@ -63,8 +66,8 @@ class DTOFPoint_factory:public JFactory<DTOFPoint>{
 			unsigned int MAX_TOFSpacetimeHits;
 			unsigned int MAX_TOFSpacetimeHitMatches;
 			float dPositionMatchCut_DoubleEnded;
-			vector<tof_spacetimehit_t*> dTOFSpacetimeHitPool;
-			vector<tof_spacetimehitmatch_t*> dTOFSpacetimeHitMatchPool;
+			deque<tof_spacetimehit_t*> dTOFSpacetimeHitPool;
+			deque<tof_spacetimehitmatch_t*> dTOFSpacetimeHitMatchPool;
 };
 
 #endif // _DTOFPoint_factory_
