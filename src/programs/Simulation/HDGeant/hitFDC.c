@@ -385,9 +385,22 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
     +dx4*(( -2.675 )/(dz2+0.001)+( 2.4e4 )*dz2);	
   float dt=(( 39.44   )*dx4/(0.5-dz2)+( 56.0  )*dz4/(0.5-dx2)
       +( 0.01566 )*dx4/(dz4+0.002)/(0.251-dx2))*rndno[1];
-  
+  // Only allow deviations to longer times if near the cell border
+  double dradius=sqrt(dx2+dz2);
+  if (dradius-0.5>=0. && dt<0){ 
+    dt=0.;
+  }
+
+  // Minimum drift time for docas near wire (very crude approximation)
+  double v_max=0.08; // guess for now based on Garfield, near wire 
+  double tmin=dradius/v_max;
+  double tdrift_smeared=tdrift_unsmeared+dt;
+  if (tdrift_smeared<tmin){
+    tdrift_smeared=tmin;
+  }
+
   // Avalanche time
-  *tdrift=t+tdrift_unsmeared+dt;
+  *tdrift=t+tdrift_smeared;
 	  
   // Skip cluster if the time would go beyond readout window
   if (t>FDC_TIME_WINDOW) return 0;
@@ -761,18 +774,27 @@ void hitForwardDC (float xin[4], float xout[4],
 	float tdrift=0;
 
 	if (controlparams_.driftclusters==0){
-	  float zrange=xoutlocal[2]-xinlocal[2];
-	  float tany=(xoutlocal[1]-xinlocal[1])/zrange;
-	  float tanx=(xoutlocal[0]-xinlocal[0])/zrange;
+	  float zrange=x1[2]-x0[2];
+	  float tany=(x1[1]-x0[1])/zrange;
+	  float tanx=(x1[0]-x0[0])/zrange;
 	  float dz=ANODE_CATHODE_SPACING-dradius*sign*sinalpha;
-	  xlocal[0]=xinlocal[0]+tanx*dz;
-	  xlocal[1]=xinlocal[1]+tany*dz;
-	  xlocal[2]=xinlocal[2]+dz;
+       
+	  xlocal[0]=x0[0]+tanx*dz;
+	  if (fabs(xlocal[0]-xwire)>0.5){
+	    xlocal[0]=x1[0];
+	    xlocal[1]=x1[1];
+	    xlocal[2]=x1[2];
+	  }
+	  else{
+	    xlocal[1]=x0[1]+tany*dz;
+	    xlocal[2]=x0[2]+dz;
+	  }
+	  
 	  /* If the cluster position is within the wire-deadened region of the 
 	     detector, skip this cluster 
 	  */
 	  if (sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1])
-	      >=wire_dead_zone_radius[PackNo]){	   
+	      >=wire_dead_zone_radius[PackNo]){	 
 	    if (AddFDCAnodeHit(ahits,layer,ipart,track,xwire,xlocal,dE,t,
 			       &tdrift)){
 	      AddFDCCathodeHits(PackNo,xwire,xlocal[1],tdrift,n_p,track,ipart,

@@ -121,6 +121,14 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
   float dt=(7.515*dradius-2.139*d2+12.63*d3)*rho*cos(phi);
   tdrift+=dt;
 
+  // Prevent unphysical times (drift electrons arriving at wire before particle
+  // passes the doca to the wire) 
+  double v_max=0.08; // guess for now based on Garfield, near wire 
+  double tmin=dradius/v_max;
+  if (tdrift<tmin){
+    tdrift=tmin;
+  }
+
   // Skip cluster if the time would go beyond readout window
   if (tdrift>CDC_TIME_WINDOW) return;
   
@@ -551,7 +559,10 @@ s_CentralDC_t* pickCentralDC ()
 	  int m = box->cdcStraws->mult;
 	  
 	  s_CdcStrawTruthHits_t* hits = straws->in[straw].cdcStrawTruthHits;
-	  
+	
+	  // Sort the clusters by time
+	  qsort(hits->in,hits->mult,sizeof(s_CdcStrawTruthHit_t),(compfn)cdc_cluster_sort);
+  
 	  /* compress out the hits below threshold */
 	  int i,iok=0;
 	  
@@ -569,9 +580,7 @@ s_CentralDC_t* pickCentralDC ()
 	      }
 	  }
 	  else{
-	    // Sort the clusters by time
-	    qsort(hits->in,hits->mult,sizeof(s_CdcStrawTruthHit_t),(compfn)cdc_cluster_sort);
-	    
+  	    
 	    // Temporary histogram in 1 ns bins to store waveform data
 	    int num_samples=(int)CDC_TIME_WINDOW;
 	    float *samples=(float *)malloc(num_samples*sizeof(float));
