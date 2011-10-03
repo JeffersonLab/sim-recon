@@ -205,14 +205,30 @@ private:
 class DMatrix4x4{
  public:
   DMatrix4x4()
-  : mA( ALIGNED_16_BLOCK_PTR(union dvec, 4, mA) )
-  {
-    for (unsigned int i=0;i<4;i++){
-      mA[i].v[0]=_mm_setzero_pd();
-      mA[i].v[1]=_mm_setzero_pd();
+    : mA( ALIGNED_16_BLOCK_PTR(union dvec, 4, mA) )
+    {
+      for (unsigned int i=0;i<4;i++){
+	mA[i].v[0]=_mm_setzero_pd();
+	mA[i].v[1]=_mm_setzero_pd();
+      }
     }
-  }
-  DMatrix4x4(__m128d m11, __m128d m12, __m128d m13, __m128d m14,
+    DMatrix4x4(double c11, double c12, double c13, double c14,
+	       double c21, double c22, double c23, double c24,
+	       double c31, double c32, double c33, double c34,
+	       double c41, double c42, double c43, double c44)
+    : mA( ALIGNED_16_BLOCK_PTR(union dvec, 4, mA) )
+      {
+	mA[0].v[0]=_mm_setr_pd(c11,c21);
+	mA[0].v[1]=_mm_setr_pd(c31,c41);
+	mA[1].v[0]=_mm_setr_pd(c12,c22);
+	mA[1].v[1]=_mm_setr_pd(c32,c42);
+	mA[2].v[0]=_mm_setr_pd(c13,c23);
+	mA[2].v[1]=_mm_setr_pd(c33,c43);
+	mA[3].v[0]=_mm_setr_pd(c14,c24);
+	mA[3].v[1]=_mm_setr_pd(c34,c44);	
+      }
+
+    DMatrix4x4(__m128d m11, __m128d m12, __m128d m13, __m128d m14,
 	     __m128d m21, __m128d m22, __m128d m23, __m128d m24)
   : mA( ALIGNED_16_BLOCK_PTR(union dvec, 4, mA) )
   {
