@@ -56,12 +56,10 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
  
   // Optional debugging histograms
   TH1F *fom_chi2_trk;
-  TH1F *fom_chi2_dedx;
   TH1F *fom;
   TH1F *hitMatchFOM;
   TH2F *chi2_trk_mom;
   TH2F *Hstart_time;
-  TH2F *fom_dedx;
  
   void FilterDuplicates(void);  
   double GetTruthMatchingFOM(int trackIndex,DTrackTimeBased *dtrack,vector<const DMCThrown*>mcthrowns);

@@ -137,13 +137,11 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		// Histograms may already exist. (Another thread may have created them)
 		// Try and get pointers to the existing ones.
 		fom_chi2_trk = (TH1F*)gROOT->FindObject("fom_chi2_trk");
-		fom_chi2_dedx = (TH1F*)gROOT->FindObject("fom_chi2_dedx");
 		fom = (TH1F*)gROOT->FindObject("fom");
 		hitMatchFOM = (TH1F*)gROOT->FindObject("hitMatchFOM");
 		chi2_trk_mom = (TH2F*)gROOT->FindObject("chi2_trk_mom");
 
 		if(!fom_chi2_trk)fom_chi2_trk = new TH1F("fom_chi2_trk","PID FOM: #chi^{2}/Ndf from tracking", 1000, 0.0, 100.0);
-		if(!fom_chi2_dedx)fom_chi2_dedx = new TH1F("fom_chi2_dedx","PID FOM: #chi^{2}/Ndf from dE/dx", 1000, 0.0, 100.0);
 		if(!fom)fom = new TH1F("fom","Combined PID FOM", 1000, 0.0, 1.01);
 		if(!hitMatchFOM)hitMatchFOM = new TH1F("hitMatchFOM","Total Fraction of Hit Matches", 101, 0.0, 1.01);
 		if(!chi2_trk_mom)chi2_trk_mom = new TH2F("chi2_trk_mom","Track #chi^{2}/Ndf versus Kinematic #chi^{2}/Ndf", 1000, 0.0, 100.0, 1000, 0.,100.);
@@ -153,9 +151,7 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		if (!Hstart_time) Hstart_time=new TH2F("Hstart_time",
 						       "vertex time source vs. time",
 						 300,-50,50,9,-0.5,8.5);
-		fom_dedx=(TH2F*)gROOT->FindObject("fom_dedx");
-		if (!fom_dedx) fom_dedx=new TH2F("fom_dedx","dedx chi2 vs p",100,0,10,100,0,10);
-		
+
 		dapp->Unlock();
 
 	}
@@ -226,20 +222,8 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
       for(unsigned int m=0; m<cdchits.size(); m++)
 	timebased_track->AddAssociatedObject(cdchits[m]);
       
-      // Compute the dEdx for the hits on the track
-      double dEdx=0.,chi2_dedx=0.;
-      unsigned int num_dedx=0;
-      pid_algorithm->GetdEdxChiSq(timebased_track,dEdx,num_dedx,chi2_dedx);
-      timebased_track->setdEdx(dEdx);
-      timebased_track->num_dedx=num_dedx;
-      timebased_track->chi2_dedx=chi2_dedx;
-    
-      if (DEBUG_HISTS){
-	fom_dedx->Fill(timebased_track->momentum().Mag(),chi2_dedx);
-      }
-	       
-      // Add figure-of-merit based on dEdx
-      timebased_track->FOM=TMath::Prob(chi2_dedx,1);
+	    // Compute the figure-of-merit based on tracking
+	    timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
 
       _data.push_back(timebased_track);
     }
@@ -332,21 +316,8 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	    timebased_track->FOM=GetTruthMatchingFOM(i,timebased_track,mcthrowns);
 	  }
 	  else {
-	    // Compute the dEdx for the hits on the track
-	    double dEdx=0.,chi2_dedx=0.;
-	    unsigned int num_dedx=0;
-	    pid_algorithm->GetdEdxChiSq(timebased_track,dEdx,num_dedx,chi2_dedx);
-	    timebased_track->setdEdx(dEdx);
-	    timebased_track->num_dedx=num_dedx;
-	    timebased_track->chi2_dedx=chi2_dedx;
-	    
-	    if (DEBUG_HISTS){
-	      fom_dedx->Fill(timebased_track->momentum().Mag(),chi2_dedx);
-	    }
-	    
-	    // Add figure-of-merit based on dEdx
-	    timebased_track->FOM=TMath::Prob(chi2_dedx,1);
-	    
+	    // Compute the figure-of-merit based on tracking
+	    timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
 	  }
 	  //_DBG_<< "FOM:   " << timebased_track->FOM << endl;
 	  
