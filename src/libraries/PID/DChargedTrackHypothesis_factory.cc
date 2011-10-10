@@ -97,9 +97,9 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 
 		// Calculate DC dE/dx
 		// Compute the dEdx for the hits on the track
-		double locdEdx = 0.0, locChiSq_DCdEdx = 0.0;
+		double locdEdx = 0.0, locChiSq_DCdEdx = 0.0, locDCPath = 0.0;
 		unsigned int locNumTrackHits = 0;
-		dPIDAlgorithm->GetdEdxChiSq(locTrackTimeBased, locdEdx, locNumTrackHits, locChiSq_DCdEdx);
+		dPIDAlgorithm->GetdEdxChiSq(locTrackTimeBased, locdEdx, locNumTrackHits, locChiSq_DCdEdx, locDCPath);
 		locChargedTrackHypothesis->dDCdEdx = locdEdx;
 		locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq_DCdEdx;
 		locChargedTrackHypothesis->dNDF_DCdEdx = 1;

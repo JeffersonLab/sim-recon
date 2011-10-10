@@ -16,8 +16,8 @@ class DParticleID_PID1:public DParticleID{
   DParticleID_PID1(JEventLoop *loop); // require JEventLoop in constructor;
   ~DParticleID_PID1();
 
-  jerror_t GetdEdxChiSq(const DTrackTimeBased *track,double &dEdx,
-			unsigned int &num,double &chi2);
+  jerror_t GetdEdxChiSq(const DTrackTimeBased *track, double &locActualdEdx, unsigned int &num, double &chi2, double &path);
+
  protected:
   
   

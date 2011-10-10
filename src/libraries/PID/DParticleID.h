@@ -45,8 +45,7 @@ class DParticleID:public jana::JObject{
   };
 
 
-  virtual jerror_t GetdEdxChiSq(const DTrackTimeBased *track,double &dEdx,
-				unsigned int &num,double &chi2)=0;
+  virtual jerror_t GetdEdxChiSq(const DTrackTimeBased *track,double &dEdx, unsigned int &num, double &chi2, double &path)=0;
   double GetdEdxSigma(double num_hits,double p,double mass,
 		      double mean_path_length);
   double GetMostProbabledEdx(double p,double mass,double dx);
