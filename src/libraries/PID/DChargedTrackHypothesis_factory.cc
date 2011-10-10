@@ -94,6 +94,16 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		locChargedTrackHypothesis = new DChargedTrackHypothesis();
 		locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 		locChargedTrackHypothesis->dTrackTimeBased = locTrackTimeBased;
+
+		// Calculate DC dE/dx
+		// Compute the dEdx for the hits on the track
+		double locdEdx = 0.0, locChiSq_DCdEdx = 0.0;
+		unsigned int locNumTrackHits = 0;
+		dPIDAlgorithm->GetdEdxChiSq(locTrackTimeBased, locdEdx, locNumTrackHits, locChiSq_DCdEdx);
+		locChargedTrackHypothesis->dDCdEdx = locdEdx;
+		locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq_DCdEdx;
+		locChargedTrackHypothesis->dNDF_DCdEdx = 1;
+
 		locMatchedOuterDetectorFlag = false;
 		// Try matching the track with hits in the outer detectors
 		if (dPIDAlgorithm->MatchToBCAL(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locBCALShowers, locProjectedTime, locBCALIndex, locPathLength, locFlightTime) == NOERROR){
@@ -153,16 +163,16 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			locTimingChiSq = locTimeDifference*locTimeDifference/(locProjectedTimeUncertainty*locProjectedTimeUncertainty);
 			locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
 			locChargedTrackHypothesis->dNDF_Timing = 1;
-			locChargedTrackHypothesis->dChiSq = locTimingChiSq + locTrackTimeBased->chi2_dedx;
-			locChargedTrackHypothesis->dNDF = 2;
-			locChargedTrackHypothesis->dFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq, locChargedTrackHypothesis->dNDF);
+			locChargedTrackHypothesis->dChiSq = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
+			locChargedTrackHypothesis->dNDF = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
 		}else{ //not enough timing information, use results from DTrackTimeBased (dEdx chisq from tracking as of July 25th, 2011)
 			locChargedTrackHypothesis->dChiSq_Timing = 0.0;
 			locChargedTrackHypothesis->dNDF_Timing = 0;
-			locChargedTrackHypothesis->dChiSq = locTrackTimeBased->chi2_dedx;
-			locChargedTrackHypothesis->dNDF = 1;
-			locChargedTrackHypothesis->dFOM = locTrackTimeBased->FOM;
+			locChargedTrackHypothesis->dChiSq = locChargedTrackHypothesis->dChiSq_DCdEdx;
+			locChargedTrackHypothesis->dNDF = locChargedTrackHypothesis->dNDF_DCdEdx;
 		}
+
+		locChargedTrackHypothesis->dFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq, locChargedTrackHypothesis->dNDF);
 		_data.push_back(locChargedTrackHypothesis);
 	}
 

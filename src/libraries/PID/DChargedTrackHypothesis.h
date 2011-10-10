@@ -24,12 +24,18 @@ class DChargedTrackHypothesis : public jana::JObject {
 		float dProjectedTime; //Time at the track position in the DTrackTimeBased object, calculated from matching to either the FCAL, BCAL, or TOF
 		float dPathLength; //Path length from the track position in the DTrackTimeBased object to the matched hit in either the FCAL, BCAL, or TOF
 		float dFlightTime; //The amount of time that the track took to traverse the dPathLength
+		DetectorSystem_t dMatchedTimeDetector;
+		float dDCdEdx;
+
 		float dChiSq;
 		float dChiSq_Timing;
+		float dChiSq_DCdEdx;
+
 		unsigned int dNDF;
 		unsigned int dNDF_Timing;
+		unsigned int dNDF_DCdEdx;
+
 		float dFOM;
-		DetectorSystem_t dMatchedTimeDetector;
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "PID", "%d", int(dPID));
