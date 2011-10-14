@@ -42,9 +42,10 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   // Variables for estimating t0 from tracking
   //mInvVarT0=mT0wires=0.;
 
-  int num_fdc_hits=my_fdchits.size();
-  int num_cdc_hits=my_cdchits.size(); 
-  int cdc_index=num_cdc_hits-1;
+  unsigned int num_fdc_hits=my_fdchits.size();
+  unsigned int num_cdc_hits=my_cdchits.size(); 
+  unsigned int cdc_index=0;
+  if (num_cdc_hits>0) cdc_index=num_cdc_hits-1;
   double old_doca=1000.;
 
   S0_=(forward_traj[0].S);
@@ -107,13 +108,18 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	double nr=my_fdchits[id]->nr;
 	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
 
+	// t0 estimate
+	if (fit_type==kWireBased && id==mMinDriftID-1){
+	  mT0wires=mMinDriftTime-forward_traj[k].t;
+	} 
+	
 	// Variance in coordinate along wire
 	double V=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[id]->dE);
 		
 	// Difference between measurement and projection
 	double Mdiff=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
 	
-	// To transform from (x,y) to (u,v), need to do a rotation:
+       	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
 	//   v = y*cosa+x*sina
 	H(state_x)=H_T(state_x)=sina;
@@ -167,6 +173,11 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    v=my_fdchits[my_id]->vstrip;
 	    double du=x*cosa-y*sina-u;
 	    doca=du*cosalpha;
+
+	    // t0 estimate
+	    if (fit_type==kWireBased && my_id==mMinDriftID-1){
+	      mT0wires=mMinDriftTime-forward_traj[k].t;
+	    } 
 	    
 	    // variance for coordinate along the wire
 	    V=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[my_id]->dE);
@@ -278,7 +289,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    my_fdchits[id]->used_in_fit=false;
 	  }
 	}
-	num_fdc_hits-=forward_traj[k].num_hits;
+	if (num_fdc_hits>=forward_traj[k].num_hits)
+	  num_fdc_hits-=forward_traj[k].num_hits;
       }
     }
     else if (num_cdc_hits>0){
@@ -439,6 +451,13 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    double tanl=1./sqrt(tx*tx+ty*ty);
 	    Vc=cdc_variance(tanl,tdrift);
 	  }
+	  else{
+	    // t0 estimate
+	    if (cdc_index==mMinDriftID-1000){
+	      mT0wires=mMinDriftTime-forward_traj[k].t;
+	    } 
+	  }
+
 	  // Residual
 	  double res=dm-d;
 
@@ -561,7 +580,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	dx=S(state_x)-wirepos.x();
 	dy=S(state_y)-wirepos.y();
 	doca=sqrt(dx*dx+dy*dy);
-	num_cdc_hits--;
+	if (num_cdc_hits>0) num_cdc_hits--;	
+	if (cdc_index==0) num_cdc_hits=0;
       }
       old_doca=doca;
     }
