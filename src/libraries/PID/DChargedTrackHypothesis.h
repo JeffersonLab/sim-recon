@@ -37,9 +37,29 @@ class DChargedTrackHypothesis : public jana::JObject {
 
 		float dFOM;
 
+		float mass() const{return ParticleMass(dPID);} //this may be different than the value in DTrackTimeBased!!
+		float charge() const{return ParticleCharge(dPID);} //this may be different than the value in DTrackTimeBased!!
+		DVector3 momentum() const{return dTrackTimeBased->momentum();}
+		DVector3 position() const{return dTrackTimeBased->position();}
+		float energy() const{
+			float locMomentum = momentum().Mag();
+			float locMass = mass();
+			return sqrt(locMomentum*locMomentum + locMass*locMass);
+		}
+
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "PID", "%d", int(dPID));
-			dTrackTimeBased->toStrings(items);
+
+			AddString(items, "q", "%+1.0f", charge());
+			AddString(items, "x(cm)", "%3.1f", position().x());
+			AddString(items, "y(cm)", "%3.1f", position().y());
+			AddString(items, "z(cm)", "%3.1f", position().z());
+			AddString(items, "E(GeV)", "%2.3f", energy());
+			AddString(items, "t(ns)", "%2.3f", dTrackTimeBased->t0());
+			AddString(items, "p(GeV/c)", "%2.3f", momentum().Mag());
+			AddString(items, "theta(deg)", "%2.3f", momentum().Theta()*180.0/M_PI);
+			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
+
 			AddString(items, "T_Proj", "%3.5f", dProjectedTime);
 			AddString(items, "Path", "%3.2f", dPathLength);
 			AddString(items, "TOF", "%3.5f", dFlightTime);
