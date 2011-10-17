@@ -404,8 +404,10 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
                                const DBCALPoint* point ) const {
   
   float deltaTheta = fabs( clust.theta() - point->theta() );
+  /* sigTheta not used
   float sigTheta = deltaTheta / sqrt( clust.sigTheta() * clust.sigTheta() +
                                       point->sigTheta()  * point->sigTheta() );
+  */
  
   // difference in phi is tricky due to overlap at 0/2pi
   // order based on phi and then take the minimum of the difference
@@ -418,9 +420,11 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 
   deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
   
+  /* sigPhi not used
   float sigPhi = deltaPhi / 
   sqrt( clust.sigPhi() * clust.sigPhi() +
        point->sigPhi()  * point->sigPhi() );
+  */
   
   float rho = ( clust.rho() + point->rho() ) / 2;
   float theta = ( clust.theta() + point->theta() ) / 2;
