@@ -38,11 +38,11 @@ DParticleID::DParticleID(JEventLoop *loop)
 
   // Get material properties for chamber gas
   double rho_Z_over_A_LnI=0,radlen=0;
-  RootGeom->FindMat("CDchamberGas",mRhoZoverAGas,rho_Z_over_A_LnI,
-		    radlen);
+  RootGeom->FindMat("CDchamberGas",mRhoZoverAGas,rho_Z_over_A_LnI, radlen);
   mLnIGas=rho_Z_over_A_LnI/mRhoZoverAGas;
   mKRhoZoverAGas=0.1535E-3*mRhoZoverAGas;
 
+//  RootGeom->FindMat("FDchamberGas",mRhoZoverAGas,rho_Z_over_A_LnI, radlen);
 
   // Get the geometry
   geom = dapp->GetDGeometry(0);  // should have run number argument...
@@ -428,80 +428,82 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::
 // is found, use the z-position of the track projection to the start counter 
 // planes to correct for the light propagation within the scintillator and 
 // estimate the "vertex" time.
-jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, 
-				DTrackFitter::fit_type_t fit_type,
-				vector<const DSCHit*>&sc_hits,
-				double &tproj,unsigned int &sc_match_id){
-  tproj=NaN;
-  sc_match_id=0;
-  if (sc_hits.size()==0) return RESOURCE_UNAVAILABLE;
-   double myz=0.,flight_time=0.;
-  double dphi_min=10000.,myphi=0.;
-  DVector3 proj_pos;
+jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime){
 
-  // Find intersection with a "barrel" approximation for the start counter
-  rt->GetIntersectionWithRadius(sc_pos[1].x(),proj_pos,NULL,&flight_time);
-  double proj_phi=proj_pos.Phi();
-  if (proj_phi<0) proj_phi+=2.*M_PI;
+	tproj=NaN;
+	sc_match_id=0;
+	if (sc_hits.size()==0) return RESOURCE_UNAVAILABLE;
+	double myz=0.;
+	double dphi_min=10000.,myphi=0.;
+	double locTempPathLength, locTempFlightTime = 0.0;
+	DVector3 proj_pos;
 
-  // loop over sc hits, looking for the one with closest phi value to the 
-  // projected phi value
-  for (unsigned int i=0;i<sc_hits.size();i++){
-    double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
-    double dphi=phi-proj_phi;
+	// Find intersection with a "barrel" approximation for the start counter
+	rt->GetIntersectionWithRadius(sc_pos[1].x(),proj_pos,&locTempPathLength,&locTempFlightTime);
+	double proj_phi=proj_pos.Phi();
+	if (proj_phi<0) proj_phi+=2.*M_PI;
 
-    if (fabs(dphi)<dphi_min){
-      dphi_min=fabs(dphi);
-      myphi=phi;
-      myz=proj_pos.z();
-      sc_match_id=i;
-    }
-  }
-  // Look for a match in phi
-  if (dphi_min<0.16){
-    // Now check to see if the intersection is in the nose region and find the
-    // start time
-    tproj=sc_hits[sc_match_id]->t-sc_leg_tcor;
-    if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
-    if (myz>sc_pos[1].z()){
-      unsigned int num=sc_norm.size()-1;
-      for (unsigned int i=1;i<num;i++){
-	double xhat=sc_norm[i].x();
-	DVector3 norm(cos(myphi)*xhat,sin(myphi)*xhat,sc_norm[i].z());
-	double r=sc_pos[i].X();
-	DVector3 pos(r*cos(myphi),r*sin(myphi),sc_pos[i].z());
-	rt->GetIntersectionWithPlane(pos,norm,proj_pos,NULL,&flight_time);
-	myz=proj_pos.z();
-	if (myz<sc_pos[i+1].z()){
-	  break;
+	// loop over sc hits, looking for the one with closest phi value to the 
+	// projected phi value
+	for (unsigned int i=0;i<sc_hits.size();i++){
+		double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
+		double dphi=phi-proj_phi;
+
+		if (fabs(dphi)<dphi_min){
+			dphi_min=fabs(dphi);
+			myphi=phi;
+			myz=proj_pos.z();
+			sc_match_id=i;
+		}
 	}
-      }
-      double sc_pos1=sc_pos[1].z();
-      if (myz<sc_pos1){
-	tproj-=flight_time+sc_pos1/C_EFFECTIVE;
-      }
-      else if (myz>sc_pos[num].z()){
-	// Assume that the particle hit the most downstream z position of the
-	// start counter
-	double costheta=rt->swim_steps[0].mom.CosTheta();
-	double s=(sc_pos[num].z()-rt->swim_steps[0].origin.z())/costheta;
-	double mass=rt->GetMass();
-	double p2=rt->swim_steps[0].mom.Mag2();
-	double one_over_beta=sqrt(1.+mass*mass/p2);
+	// Look for a match in phi
+	if (dphi_min<0.16){
+		// Now check to see if the intersection is in the nose region and find the
+		// start time
+		tproj=sc_hits[sc_match_id]->t-sc_leg_tcor;
+		if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
+		if (myz>sc_pos[1].z()){
+			unsigned int num=sc_norm.size()-1;
+			for (unsigned int i=1;i<num;i++){
+				double xhat=sc_norm[i].x();
+				DVector3 norm(cos(myphi)*xhat,sin(myphi)*xhat,sc_norm[i].z());
+				double r=sc_pos[i].X();
+				DVector3 pos(r*cos(myphi),r*sin(myphi),sc_pos[i].z());
+				rt->GetIntersectionWithPlane(pos,norm,proj_pos,&locTempPathLength,&locTempFlightTime);
+				myz=proj_pos.z();
+				if (myz<sc_pos[i+1].z())
+					break;
+			}
+			double sc_pos1=sc_pos[1].z();
+			if (myz<sc_pos1){
+				tproj-=locTempFlightTime+sc_pos1/C_EFFECTIVE;
+				locFlightTime = locTempFlightTime;
+				locPathLength = locTempPathLength;
+			}else if (myz>sc_pos[num].z()){
+				// Assume that the particle hit the most downstream z position of the
+				// start counter
+				double costheta=rt->swim_steps[0].mom.CosTheta();
+				double s=(sc_pos[num].z()-rt->swim_steps[0].origin.z())/costheta;
+				double mass=rt->GetMass();
+				double p2=rt->swim_steps[0].mom.Mag2();
+				double one_over_beta=sqrt(1.+mass*mass/p2);
 	
-	tproj-=s*one_over_beta/SPEED_OF_LIGHT
-	+((sc_pos[num].z()-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
-      }
-      else{
-	tproj-=flight_time+((myz-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
-      }
-  }
-    else{
-      tproj-=flight_time+myz/C_EFFECTIVE;
-    }
-    return NOERROR;
-  }
-  return VALUE_OUT_OF_RANGE;
+				tproj -= s*one_over_beta/SPEED_OF_LIGHT + ((sc_pos[num].z()-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
+				locFlightTime = s*one_over_beta/SPEED_OF_LIGHT;
+				locPathLength = s;
+			}else{
+				tproj-=locTempFlightTime+((myz-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
+				locFlightTime = locTempFlightTime;
+				locPathLength = locTempPathLength;
+			}
+		}else{
+			tproj-=locTempFlightTime+myz/C_EFFECTIVE;
+			locFlightTime = locTempFlightTime;
+			locPathLength = locTempPathLength;
+		}
+		return NOERROR;
+	}
+	return VALUE_OUT_OF_RANGE;
 }
 
 Particle_t DParticleID::IDTrack(float locCharge, float locMass){

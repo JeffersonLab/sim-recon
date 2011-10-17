@@ -60,10 +60,7 @@ class DParticleID:public jana::JObject{
   jerror_t MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime);
   jerror_t MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DBCALShower*>&bcal_showers, double &tproj, unsigned int &bcal_match_id, double &locPathLength, double &locFlightTime); 
   jerror_t MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DFCALShower*>&fcal_showers, double &tproj, unsigned int &fcal_match_id, double &locPathLength, double &locFlightTime);
-  jerror_t MatchToSC(const DReferenceTrajectory *rt, 
-		     DTrackFitter::fit_type_t fit_type,
-		     vector<const DSCHit*>&sc_hits,
-		     double &tproj,unsigned int &sc_match_id);
+  jerror_t MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime);
 
   virtual Particle_t IDTrack(float locCharge, float locMass);
 

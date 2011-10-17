@@ -582,8 +582,10 @@ void DTrackTimeBased_factory
   // Match to the start counter and the outer detectors
   double tproj=0.;
   unsigned int bcal_id=0,tof_id=0,sc_id=0;
+  double locPathLength, locFlightTime;
+
   if (pid_algorithm->MatchToSC(track->rt,DTrackFitter::kWireBased,sc_hits,
-				tproj,sc_id)==NOERROR){
+				tproj,sc_id, locPathLength, locFlightTime)==NOERROR){
     // Fill in the start time vector
     start_time.t0=tproj;
     start_time.t0_sigma=0.3;
@@ -591,7 +593,6 @@ void DTrackTimeBased_factory
     start_times.push_back(start_time); 
   }
 
-  double locPathLength, locFlightTime;
   if (pid_algorithm->MatchToTOF(track->rt,DTrackFitter::kWireBased,tof_points,
 				tproj,tof_id, locPathLength, locFlightTime)==NOERROR){
     // Fill in the start time vector

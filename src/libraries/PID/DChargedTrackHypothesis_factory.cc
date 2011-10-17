@@ -69,7 +69,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	const DTrackTimeBased *locTrackTimeBased;
 	DChargedTrackHypothesis *locChargedTrackHypothesis;
 
-	unsigned int locBCALIndex, locFCALIndex, locTOFIndex;
+	unsigned int locBCALIndex, locFCALIndex, locTOFIndex, locSCIndex;
 	double locProjectedTime = 0.0, locPathLength = 0.0, locProjectedTimeUncertainty = 0.0, locFlightTime = 0.0;
 	double locPropagatedRFTime, locSTHitTime, locSTRFTimeDifference, locTimeDifference, locTimingChiSq;
 
@@ -81,6 +81,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	vector<const DTOFPoint*> locTOFPoints;
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DFCALShower*> locFCALShowers;
+	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locTrackTimeBasedVector);
 	locEventLoop->Get(locTOFPoints);
 	if (USE_KLOE) {
@@ -138,13 +139,18 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			}
 		}
 		if (locMatchedOuterDetectorFlag == false){
-			locChargedTrackHypothesis->dPathLength = 0.0; //initialize
-			locChargedTrackHypothesis->dFlightTime = 0.0; //initialize
-			if(locTrackTimeBased->t0_detector() == SYS_START){
-				locChargedTrackHypothesis->dProjectedTime = locTrackTimeBased->t0();
+			if (dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locProjectedTime, locSCIndex, locPathLength, locFlightTime) == NOERROR){
+				locChargedTrackHypothesis->dProjectedTime = locProjectedTime;
+				locProjectedTimeUncertainty = 1.0; // uncertainty unknown
+				locChargedTrackHypothesis->dFlightTime = locFlightTime;
+				locChargedTrackHypothesis->dPathLength = locPathLength;
 				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_START;
-			}else
+				locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
+			}else{
+				locChargedTrackHypothesis->dPathLength = 0.0; //initialize
+				locChargedTrackHypothesis->dFlightTime = 0.0; //initialize
 				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_NULL;
+			}
 		}
 
 		locChargedTrackHypothesis->dPID = dPIDAlgorithm->IDTrack(locTrackTimeBased->charge(), locTrackTimeBased->mass()); //mass used in track fit to create DTrackWireBased
