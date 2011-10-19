@@ -147,6 +147,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_START;
 				locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
 			}else{
+				locChargedTrackHypothesis->dProjectedTime = 0.0; //initialize
 				locChargedTrackHypothesis->dPathLength = 0.0; //initialize
 				locChargedTrackHypothesis->dFlightTime = 0.0; //initialize
 				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_NULL;
