@@ -314,8 +314,9 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::f
   // Check for a match 
   double p=rt->swim_steps[0].mom.Mag();
   double match_cut=0.;
-  if (fit_type==DTrackFitter::kTimeBased) match_cut=3.624+0.488/p;
-  else match_cut=4.0+0.488/p;
+  match_cut = 6.15; //current dPositionMatchCut_DoubleEnded variable in DTOFPoint_factory.cc
+//  if (fit_type==DTrackFitter::kTimeBased) match_cut=3.624+0.488/p;
+//  else match_cut=4.0+0.488/p;
   if (dmin<match_cut){
     // Projected time at the target
     tproj=tof_points[tof_match_id]->t - locFlightTime;
@@ -367,7 +368,7 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::
    if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
      // Projected time at the target
      tproj=bcal_showers[bcal_match_id]->t - locFlightTime;
-    
+//     tproj += 0.03; // correction determined from observation of simulated data //Paul Mattione
      return NOERROR;
    }
    
