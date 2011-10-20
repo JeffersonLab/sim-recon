@@ -50,6 +50,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
   S0_=(forward_traj[0].S);
   for (unsigned int k=1;k<forward_traj.size();k++){
+    // Check that C matrix is positive definite
+    if (C(0,0)<0 || C(1,1)<0 || C(2,2)<0 || C(3,3)<0 || C(4,4)<0){
+      if (DEBUG_LEVEL>0) _DBG_ << "Broken covariance matrix!" <<endl;
+      return UNRECOVERABLE_ERROR;
+    }
+
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
     S0=(forward_traj[k].S);
@@ -109,8 +115,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
 
 	// t0 estimate
-	if (fit_type==kWireBased && id==mMinDriftID-1){
-	  mT0wires=mMinDriftTime-forward_traj[k].t;
+	if (id==mMinDriftID-1){
+	  mT0MinimumDriftTime=mMinDriftTime-forward_traj[k].t;
 	} 
 	
 	// Variance in coordinate along wire
@@ -175,8 +181,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    doca=du*cosalpha;
 
 	    // t0 estimate
-	    if (fit_type==kWireBased && my_id==mMinDriftID-1){
-	      mT0wires=mMinDriftTime-forward_traj[k].t;
+	    if (my_id==mMinDriftID-1){
+	      mT0MinimumDriftTime=mMinDriftTime-forward_traj[k].t;
 	    } 
 	    
 	    // variance for coordinate along the wire
@@ -227,7 +233,9 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  C=C.SandwichMultiply(sum)+sum2;
 
 	  fdc_updates[id].S=S;
-	  fdc_updates[id].C=C;
+	  fdc_updates[id].C=C; 
+	  fdc_updates[id].index=k;
+
 
 	  // update chi2
 	  for (unsigned int m=0;m<Klist.size();m++){
@@ -266,6 +274,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    
 	    fdc_updates[id].S=S;
 	    fdc_updates[id].C=C;
+	    fdc_updates[id].index=k;
 
 	    // Filtered residual and covariance of filtered residual
 	    double R=Mdiff*(1.-H*K);   
@@ -451,12 +460,10 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    double tanl=1./sqrt(tx*tx+ty*ty);
 	    Vc=cdc_variance(tanl,tdrift);
 	  }
-	  else{
-	    // t0 estimate
-	    if (cdc_index==mMinDriftID-1000){
-	      mT0wires=mMinDriftTime-forward_traj[k].t;
-	    } 
-	  }
+	  // t0 estimate
+	  if (cdc_index==mMinDriftID-1000){
+	    mT0MinimumDriftTime=mMinDriftTime-forward_traj[k].t;
+	  } 
 
 	  // Residual
 	  double res=dm-d;
@@ -497,7 +504,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    	  
 	    // Store the "improved" values of the state and covariance matrix
 	    cdc_updates[cdc_index].S=S;
-	    cdc_updates[cdc_index].C=C;	  
+	    cdc_updates[cdc_index].C=C;	 
+	    cdc_updates[cdc_index].index=k-1;
 
 	    // propagate error matrix to z-position of hit
 	    StepJacobian(newz,forward_traj[k-1].pos.z(),

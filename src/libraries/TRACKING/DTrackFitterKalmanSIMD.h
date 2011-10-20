@@ -41,8 +41,8 @@
 #define TAN_MAX 10.
 
 
-#define NUM_SIGMA 200.0
-#define NUM_FDC_SIGMA 200.0
+#define NUM_SIGMA 1200.0
+#define NUM_FDC_SIGMA 1200.0
 
 #define CDC_VARIANCE 0.0001
 #define FDC_CATHODE_VARIANCE 0.000225
@@ -100,6 +100,7 @@ typedef struct{
 typedef struct{
   DMatrix5x1 S;
   DMatrix5x5 C;
+  unsigned int index;
   double chi2sum;
 }DKalmanUpdate_t;
 
@@ -247,6 +248,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t SmoothForwardCDC(DMatrix5x1 &S,DMatrix5x5 &C);   
   jerror_t SmoothCentral(DMatrix5x1 &S,DMatrix5x5 &C);  
   jerror_t SwimToPlane(DMatrix5x1 &S);
+  jerror_t FindCentralResiduals();
   jerror_t SwimCentral(DVector3 &pos,DMatrix5x1 &Sc);
   double BrentsAlgorithm(double ds1,double ds2,
 			 double dedx,DVector3 &pos,const DVector3 &origin,
@@ -263,18 +265,16 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
   DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
-  jerror_t EstimateT0(const DKalmanSIMDFDCHit_t *hit,double ftime,
+  jerror_t EstimateT0(const DKalmanSIMDFDCHit_t *hit,double ftime,double Bz,
 		      double d, double cosalpha,
 		      double sinalpha, double tu,
 		      const DMatrix5x5 &C);
   jerror_t EstimateT0(const DCDCTrackHit *hit,double ftime,double doca,
-		      double x,double y,
+		      double x,double y,double Bz,
 		      const DMatrix5x5 &C);
-
-  jerror_t FindSmoothedResidual(unsigned int id,double z,double t,
-				double dEdx,
-				const DMatrix5x1 &Ss, 
-				const DMatrix5x5 &Cs);
+  jerror_t FindForwardResiduals();
+  jerror_t FindResidual(unsigned int id,double z,double t,double dEdx,
+			DMatrix5x1 &Ss,DMatrix5x5 &Cs);
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
@@ -336,7 +336,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double cdc_drift_table[400],fdc_drift_table[140];
 
   // Vertex time
-  double mT0,mT0wires;
+  double mT0,mT0MinimumDriftTime,mT0Average;
   // Variance in vertex time
   double mVarT0;
   // inverse of vertex time variance;
