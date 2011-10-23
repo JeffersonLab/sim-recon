@@ -29,7 +29,7 @@
 #define Z_MIN 0.
 #define Z_MAX 600.
 #define R_MAX 65.0
-#define R_MAX_FORWARD 88.0
+#define R_MAX_FORWARD 65.0
 #ifndef SPEED_OF_LIGHT
 #define SPEED_OF_LIGHT 29.98
 #endif

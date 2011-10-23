@@ -323,7 +323,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     exit(0);
   }
 
-  if (jcalib->Get("FDC/fdc_drift", tvals)==false){
+  if (jcalib->Get("FDC/fdc_drift2", tvals)==false){
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, float> &row = tvals[i];
       fdc_drift_table[i]=row["0"];
@@ -1047,7 +1047,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   }
    
   // Determine the step size based on energy loss 
-  double step=mStepSizeZ;
+  //double step=mStepSizeZ;
+  double step=mStepSizeS*dz_ds;
   if (fabs(dEdx)>EPS){
     //step=(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
     step=DE_PER_STEP_WIRE_BASED
@@ -1503,7 +1504,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   }
  
   // Determine the step size based on energy loss 
-  step=mStepSizeZ;
+  //step=mStepSizeZ;
+  step=mStepSizeS*dz_ds;
   if (fabs(dEdx)>EPS){
     //step=(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
     step=DE_PER_STEP_WIRE_BASED
@@ -2386,7 +2388,7 @@ jerror_t DTrackFitterKalmanSIMD::FindForwardResiduals(){
 	V(0,0)=fdc_drift_variance(drift_time);
       }
 
-      // Smoothed measurement covariance
+      // Measurement covariance
       RC=V-Hf*C*Hf_T;
 
       my_fdchits[i]->yres=Mdiff(1);
@@ -3086,8 +3088,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     
     // Extrapolate to the point of closest approach to the beam line
     z_=forward_traj[forward_traj.size()-1].pos.z();
-    if (fit_type==kWireBased)
-      ExtrapolateToVertex(Slast,Clast);
+    if (sqrt(Slast(state_x)*Slast(state_x)+Slast(state_y)*Slast(state_y))
+	>BEAM_RADIUS)  
+      if ((error=ExtrapolateToVertex(Slast,Clast))!=NOERROR) return error;
 
     // Convert from forward rep. to central rep.
     ConvertStateVector(z_,Slast,Sc);
@@ -3232,13 +3235,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     } 
 
     if (last_error==NOERROR){
-      // Call the smoother to get smoothed residuals 
-      if (fit_type==kTimeBased) SmoothForwardCDC(S,C);
-      
       // Extrapolate to the point of closest approach to the beam line
       z_=forward_traj[forward_traj.size()-1].pos.z();
-      if (fit_type==kWireBased)
-	ExtrapolateToVertex(Slast,Clast);
+      if (sqrt(Slast(state_x)*Slast(state_x)+Slast(state_y)*Slast(state_y))
+	  >BEAM_RADIUS) 
+	if ((error=ExtrapolateToVertex(Slast,Clast))!=NOERROR) return error;
       
       // Convert from forward rep. to central rep.
       ConvertStateVector(z_,Slast,Sc);
@@ -3422,8 +3423,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Otherwise return the CDC error condition if the central fit failed
     if (iter2==0 && cdc_error!=NOERROR) return cdc_error;
 
-    if (fit_type==kWireBased)
-      ExtrapolateToVertex(last_pos,Sclast,Cclast); 
+    if (last_pos.Perp()>BEAM_RADIUS)
+      if ((error=ExtrapolateToVertex(last_pos,Sclast,Cclast))!=NOERROR) 
+	return error; 
       
     // Track Parameters at "vertex"
     phi_=Sclast(state_phi);
@@ -5220,7 +5222,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 						     DMatrix5x5 &C){
   DMatrix5x5 J;  // Jacobian matrix
   DMatrix5x5 Q;  // multiple scattering matrix
-
+  DMatrix5x1 S1(S);  // copy of S
+  
   // position variables
   double z=z_,newz=z_;
   double dz=-mStepSizeZ;
@@ -5235,23 +5238,77 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
   //  printf("-----------\n");
   if (fit_type==kTimeBased){
-    // Check direction of propagation	
-    DMatrix5x1 S1(S);
-    newz=z-dz;
+    // get material properties from the Root Geometry
+    pos.SetXYZ(S(state_x),S(state_y),z);
+    if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
+	!=NOERROR){
+      _DBG_ << "Material error in ExtrapolateToVertex! " << endl;
+      return UNRECOVERABLE_ERROR;
+    }
+    // Adjust the step size
+    double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+    dz=-mStepSizeS/ds_dz;
+    if (fabs(dEdx)>EPS){      
+      dz=(-1.)
+    	*(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+    	/fabs(dEdx)/ds_dz;
+    }
+    if(fabs(dz)>mStepSizeZ) dz=-mStepSizeZ;
+    if(fabs(dz)<MIN_STEP_SIZE)dz=-MIN_STEP_SIZE;
     
-    // Step test state through the field and compute squared radius
-    Step(z,newz,dEdx,S1);	
-    double r2=S1(state_x)*S1(state_x)+S1(state_y)*S1(state_y);
+    // Get dEdx for the upcoming step
+    if (CORRECT_FOR_ELOSS){
+      dEdx=GetdEdx(S(state_q_over_p),K_rho_Z_over_A,rho_Z_over_A,LnI); 
+    }
 
-    if (r2<r2_old){ 
+    // Check direction of propagation	
+    DMatrix5x1 S2(S); // second copy of S
+    
+    // Step test states through the field and compute squared radii
+    Step(z,z-dz,dEdx,S1);	
+    double r2minus=S1(state_x)*S1(state_x)+S1(state_y)*S1(state_y);    
+    Step(z,z+dz,dEdx,S2);	
+    double r2plus=S2(state_x)*S2(state_x)+S2(state_y)*S2(state_y);
+    // Check to see if we have already bracketed the minimum
+    if (r2plus>r2_old && r2minus>r2_old){
+      newz=z+dz;  
+      DVector3 dir(0,0,1);
+      DVector3 origin(0,0,65);
+      double dz2=BrentsAlgorithm(newz,dz,dEdx,origin,dir,S2);
+      z_=newz+dz2;
+
+      // Step to the position of the doca
+      Step(z,z_,dEdx,S);
+
+      // update internal variables
+      x_=S(state_x);
+      y_=S(state_y);
+
+      return NOERROR;
+    }
+
+    // Find direction to propagate toward minimum doca
+    if (r2minus<r2_old && r2_old<r2plus){   
+      S2=S;
+      S=S1;
+      S1=S2;
       dz*=-1.;
       sign=-1.;
       dz_old=dz;
+      r2_old=r2minus;
+      z=z+dz;
+    }
+    if (r2minus>r2_old && r2_old>r2plus){
+      S1=S;
+      S=S2;
+      dz_old=dz;
+      r2_old=r2plus;
+      z=z+dz;
     }
   }
 
-
-  while (z>Z_MIN && sqrt(r2_old)<R_MAX_FORWARD && z<Z_MAX){
+  double r=sqrt(r2_old);
+  while (z>Z_MIN && r<R_MAX_FORWARD && z<Z_MAX && r>BEAM_RADIUS){
     // get material properties from the Root Geometry
     pos.SetXYZ(S(state_x),S(state_y),z);
     if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
@@ -5266,9 +5323,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     }
 
     // Adjust the step size
-     double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
-    if (fabs(dEdx)>EPS){
-      
+    double ds_dz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+    dz=-sign*mStepSizeS/ds_dz;
+    if (fabs(dEdx)>EPS){      
       dz=(-1.)*sign
     	*(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
     	/fabs(dEdx)/ds_dz;
@@ -5283,7 +5340,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     
     double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
     double one_over_beta2=1.+mass2*q_over_p_sq;
-    mT0MinimumDriftTime+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+    double dt=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+    mT0MinimumDriftTime+=dt;
+    mT0Average+=dt;
 
     if (CORRECT_FOR_ELOSS){
       double varE=GetEnergyVariance(ds,one_over_beta2,K_rho_Z_over_A);
@@ -5311,11 +5370,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       // beam line
       DVector3 dir(0,0,1);
       DVector3 origin(0,0,65);
-      dz=BrentsAlgorithm(z,0.5*two_step,dEdx,origin,dir,S);
+      dz=BrentsAlgorithm(newz,0.5*two_step,dEdx,origin,dir,S);
       
       // Compute the Jacobian matrix
-      newz=z+dz;
-      StepJacobian(z,newz,S,dEdx,J);
+      z_=newz+dz;
+      StepJacobian(newz,z_,S,dEdx,J);
       
       // Propagate the covariance matrix
       //C=J*C*J.Transpose()+(dz/(newz-z))*Q;
@@ -5323,17 +5382,25 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       C=C.SandwichMultiply(J);
 
       // Step to the "z vertex"
-      ds=Step(z,newz,dEdx,S);
+      ds=Step(newz,z_,dEdx,S);
 
       // Correct estimate for mT0MinimumDriftTime
       q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
       double one_over_beta2=1.+mass2*q_over_p_sq;
-      mT0MinimumDriftTime+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+      double dt=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+      mT0MinimumDriftTime+=dt;
+      mT0Average+=dt;
+ 
+      // update internal variables
+      x_=S(state_x);
+      y_=S(state_y);
 
-      break;
+      return NOERROR;
     }
     r2_old=r2;
+    r=sqrt(r2_old);
     dz_old=dz;
+    S1=S;
     z=newz;
   }
   // update internal variables
@@ -5358,112 +5425,112 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
 
   // Position and step variables
   double r=pos.Perp();
-
-  // Check if we are outside the nominal beam radius 
-  if (r>BEAM_RADIUS){
-    double ds=-mStepSizeS; // step along path in cm
-    double r_old=r;
-    Sc(state_D)=r;
+  double ds=-mStepSizeS; // step along path in cm
+  double r_old=r;
+  Sc(state_D)=r;
+  
+  // Energy loss
+  double dedx=0.;
+  
+  // Check direction of propagation
+  DMatrix5x1 S0;
+  S0=Sc; 
+  DVector3 pos0=pos;
+  FixedStep(pos0,ds,S0,dedx);
+  r=pos0.Perp();
+  if (r>r_old) ds*=-1.;
+  double ds_old=ds;
+  
+  // Track propagation loop
+  while (Sc(state_z)>Z_MIN && Sc(state_z)<Z_MAX  
+	 && r<R_MAX){  
     
-    // Energy loss
-    double dedx=0.;
+    // get material properties from the Root Geometry
+    double rho_Z_over_A=0.,Z=0,LnI=0.,K_rho_Z_over_A=0.;
+    if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
+	!=NOERROR){
+      _DBG_ << "Material error in ExtrapolateToVertex! " << endl;
+      break;
+    }
     
-    // Check direction of propagation
-    DMatrix5x1 S0;
-    S0=Sc; 
-    DVector3 pos0=pos;
-    FixedStep(pos0,ds,S0,dedx);
-    r=pos0.Perp();
-    if (r>r_old) ds*=-1.;
-    double ds_old=ds;
-    
-    // Track propagation loop
-    while (Sc(state_z)>Z_MIN && Sc(state_z)<Z_MAX  
-	   && r<R_MAX){  
-
-      // get material properties from the Root Geometry
-      double rho_Z_over_A=0.,Z=0,LnI=0.,K_rho_Z_over_A=0.;
-      if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI)
-      	  !=NOERROR){
-      	_DBG_ << "Material error in ExtrapolateToVertex! " << endl;
-      	break;
-      }
-
-      // Get dEdx for the upcoming step
-      double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
-      if (CORRECT_FOR_ELOSS){
-	dedx=GetdEdx(q_over_p,K_rho_Z_over_A,rho_Z_over_A,LnI); 
-      }
-      // Adjust the step size
-      double sign=(ds>0)?1.:-1.;
-      if (fabs(dedx)>EPS){
+    // Get dEdx for the upcoming step
+    double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
+    if (CORRECT_FOR_ELOSS){
+      dedx=GetdEdx(q_over_p,K_rho_Z_over_A,rho_Z_over_A,LnI); 
+    }
+    // Adjust the step size
+    double sign=(ds>0)?1.:-1.;
+    if (fabs(dedx)>EPS){
       ds=sign
-        *(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
+	*(fit_type==kWireBased?DE_PER_STEP_WIRE_BASED:DE_PER_STEP_TIME_BASED)
         /fabs(dedx);
+    }
+    if(fabs(ds)>mStepSizeS) ds=sign*mStepSizeS;
+    if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
+    
+    double q_over_p_sq=q_over_p*q_over_p;
+    double one_over_beta2=1.+mass2*q_over_p*q_over_p;
+    double dt=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+    mT0MinimumDriftTime+=dt;
+    mT0Average+=dt;
+    
+    // Compute the Jacobian matrix
+    StepJacobian(pos,origin,dir,ds,Sc,dedx,Jc);
+    
+    // Multiple scattering
+    GetProcessNoiseCentral(ds,Z,rho_Z_over_A,Sc,Q);
+    
+    if (CORRECT_FOR_ELOSS){
+      double varE=GetEnergyVariance(ds,one_over_beta2,K_rho_Z_over_A);
+      Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
+    }
+    
+    // Propagate the covariance matrix
+    //Cc=Jc*Cc*Jc.Transpose()+Q;
+    Cc=Q.AddSym(Cc.SandwichMultiply(Jc));
+    
+    // Propagate the state through the field
+    S0=Sc;
+    DVector3 old_pos=pos;
+    FixedStep(pos,ds,Sc,dedx);
+    
+    r=pos.Perp();
+    //printf("r %f r_old %f \n",r,r_old);
+    if (r>r_old) {
+      // We've passed the true minimum; backtrack to find the "vertex" 
+      // position
+      double cosl=cos(atan(Sc(state_tanl)));
+      if (fabs((ds+ds_old)*cosl*Sc(state_q_over_pt)*Bz*qBr2p)<0.01){
+	ds=-(pos.X()*cos(Sc(state_phi))+pos.Y()*sin(Sc(state_phi)))
+	  /cosl;
+	FixedStep(pos,ds,Sc,dedx);
+	//printf ("min r %f\n",pos.Perp());
       }
-      if(fabs(ds)>mStepSizeS) ds=sign*mStepSizeS;
-      if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
-
-      double q_over_p_sq=q_over_p*q_over_p;
-      double one_over_beta2=1.+mass2*q_over_p*q_over_p;
-      mT0MinimumDriftTime+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
-
+      else{  
+	ds=BrentsAlgorithm(ds,ds_old,dedx,pos,origin,dir,Sc);
+	//printf ("Brent min r %f\n",pos.Perp());
+	}
       // Compute the Jacobian matrix
-      StepJacobian(pos,origin,dir,ds,Sc,dedx,Jc);
+      double my_ds=ds-ds_old;
+      StepJacobian(old_pos,origin,dir,my_ds,S0,dedx,Jc);
       
-      // Multiple scattering
-      GetProcessNoiseCentral(ds,Z,rho_Z_over_A,Sc,Q);
-
-      if (CORRECT_FOR_ELOSS){
-	double varE=GetEnergyVariance(ds,one_over_beta2,K_rho_Z_over_A);
-	Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
-      }
+      q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
+      q_over_p_sq=q_over_p*q_over_p;
+      one_over_beta2=1.+mass2*q_over_p*q_over_p;
+      dt=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
+      mT0MinimumDriftTime+=dt;
+      mT0Average+=dt;
 
       // Propagate the covariance matrix
-      //Cc=Jc*Cc*Jc.Transpose()+Q;
-      Cc=Q.AddSym(Cc.SandwichMultiply(Jc));
-
-      // Propagate the state through the field
-      S0=Sc;
-      DVector3 old_pos=pos;
-      FixedStep(pos,ds,Sc,dedx);
+      //Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
+      //Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
+      Cc=Cc.SandwichMultiply(Jc);
       
-      r=pos.Perp();
-      //printf("r %f r_old %f \n",r,r_old);
-      if (r>r_old) {
-	// We've passed the true minimum; backtrack to find the "vertex" 
-	// position
-	double cosl=cos(atan(Sc(state_tanl)));
-	if (fabs((ds+ds_old)*cosl*Sc(state_q_over_pt)*Bz*qBr2p)<0.01){
-	  ds=-(pos.X()*cos(Sc(state_phi))+pos.Y()*sin(Sc(state_phi)))
-	    /cosl;
-	  FixedStep(pos,ds,Sc,dedx);
-	  //printf ("min r %f\n",pos.Perp());
-	}
-	else{  
-	  ds=BrentsAlgorithm(ds,ds_old,dedx,pos,origin,dir,Sc);
-	  //printf ("min r %f\n",pos.Perp());
-	}
-	// Compute the Jacobian matrix
-	double my_ds=ds-ds_old;
-	StepJacobian(old_pos,origin,dir,my_ds,S0,dedx,Jc);
-       
-	q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
-	q_over_p_sq=q_over_p*q_over_p;
-	one_over_beta2=1.+mass2*q_over_p*q_over_p;
-	mT0MinimumDriftTime+=ds*sqrt(one_over_beta2)/SPEED_OF_LIGHT;
-
-	// Propagate the covariance matrix
-	//Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
-	//Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
-	Cc=Cc.SandwichMultiply(Jc);
-
-	break;
-      }
-      r_old=r;
-      ds_old=ds;
-    }   
-  } // if (r>BEAM_RADIUS)
+      break;
+    }
+    r_old=r;
+    ds_old=ds;
+  }   
   
   return NOERROR;
 }
@@ -5549,7 +5616,7 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
   return C7x7;
 }
 
-// Find the cdc residual and the covariance on the residual after smoothing.
+// Find the cdc residual and the covariance on the residual.
 // Also compute estimate for t0.
 jerror_t DTrackFitterKalmanSIMD::FindResidual(unsigned int id,double z,
 					      double tflight,double dEdx,
