@@ -147,9 +147,9 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_START;
 				locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
 			}else{
-				locChargedTrackHypothesis->dProjectedTime = 0.0; //initialize
-				locChargedTrackHypothesis->dPathLength = 0.0; //initialize
-				locChargedTrackHypothesis->dFlightTime = 0.0; //initialize
+				locChargedTrackHypothesis->dProjectedTime = NaN; //initialize
+				locChargedTrackHypothesis->dPathLength = NaN; //initialize
+				locChargedTrackHypothesis->dFlightTime = NaN; //initialize
 				locChargedTrackHypothesis->dMatchedTimeDetector = SYS_NULL;
 			}
 		}
@@ -170,8 +170,10 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			locTimingChiSq = locTimeDifference*locTimeDifference/(locProjectedTimeUncertainty*locProjectedTimeUncertainty);
 			locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
 			locChargedTrackHypothesis->dNDF_Timing = 1;
-			locChargedTrackHypothesis->dChiSq = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
-			locChargedTrackHypothesis->dNDF = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
+//			locChargedTrackHypothesis->dChiSq = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
+//			locChargedTrackHypothesis->dNDF = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
+			locChargedTrackHypothesis->dChiSq = locChargedTrackHypothesis->dChiSq_Timing;
+			locChargedTrackHypothesis->dNDF = locChargedTrackHypothesis->dNDF_Timing;
 		}else{ //not enough timing information, use results from DTrackTimeBased (dEdx chisq from tracking as of July 25th, 2011)
 			locChargedTrackHypothesis->dChiSq_Timing = 0.0;
 			locChargedTrackHypothesis->dNDF_Timing = 0;
