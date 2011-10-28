@@ -104,7 +104,12 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
     _DBG_<<"Unable to get a DTrackFitter object! NO Charged track fitting will be done!"<<endl;
     return RESOURCE_UNAVAILABLE;
   }
-	
+  SKIP_MASS_HYPOTHESES_WIRE_BASED=false; 
+  gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
+				    SKIP_MASS_HYPOTHESES_WIRE_BASED);
+
+  if (SKIP_MASS_HYPOTHESES_WIRE_BASED==false){
+
 	string MASS_HYPOTHESES_POSITIVE = "0.13957,0.93827";
 	string MASS_HYPOTHESES_NEGATIVE = "0.13957";
 	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
@@ -117,6 +122,7 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 	if(mass_hypotheses_negative.size()==0)mass_hypotheses_negative.push_back(0.0); // If empty string is specified, assume they want massless particle
 
 	
+  }
 	if(DEBUG_HISTS){
 	  dapp->Lock();
 	  
@@ -140,19 +146,26 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   // Get candidates and hits
   vector<const DTrackCandidate*> candidates;
   loop->Get(candidates);
+  if (candidates.size()==0) return NOERROR;
 
   // Count the number of tracks we'll be fitting
   unsigned int Ntracks_to_fit = 0;
-  for(unsigned int i=0; i<candidates.size(); i++){
-    Ntracks_to_fit += candidates[i]->charge()<0.0 ? mass_hypotheses_negative.size():mass_hypotheses_positive.size();
+  if (SKIP_MASS_HYPOTHESES_WIRE_BASED){
+    Ntracks_to_fit=candidates.size();
+  }
+  else{
+    for(unsigned int i=0; i<candidates.size(); i++){
+      Ntracks_to_fit += candidates[i]->charge()<0.0 ? mass_hypotheses_negative.size():mass_hypotheses_positive.size();
+    }
   }
 
   // Deallocate some reference trajectories occasionally
   unsigned int rts_to_keep = 10;
   if(Ntracks_to_fit>rts_to_keep)rts_to_keep=Ntracks_to_fit;
   for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
-  if(rts_to_keep<rtv.size())rtv.resize(rts_to_keep);
-
+  if(rts_to_keep<rtv.size()){
+    rtv.resize(rts_to_keep);
+  }
   // Loop over candidates
   for(unsigned int i=0; i<candidates.size(); i++){
     const DTrackCandidate *candidate = candidates[i];
@@ -160,74 +173,26 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
     // Make sure there are enough DReferenceTrajectory objects
     while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
     DReferenceTrajectory *rt = rtv[_data.size()];
-    
-	 // Choose list of mass hypotheses based on charge of candidate
-    vector<double> mass_hypotheses;
-	 if(candidate->charge()<0.0){
-		mass_hypotheses = mass_hypotheses_negative;
-	 }else{
-		mass_hypotheses = mass_hypotheses_positive;
-	 }
-	 
-    // Loop over potential particle masses
-    for(unsigned int j=0; j<mass_hypotheses.size(); j++){
-      if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
-      
-      // Do the fit
-      fitter->SetFitType(DTrackFitter::kWireBased);	
-      DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*candidate, rt, loop, mass_hypotheses[j]);
-
-      // Check the status of the fit
-      switch(status){
-      case DTrackFitter::kFitNotDone:
-	_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
-      case DTrackFitter::kFitFailed:
-	continue;
-	break;
-      case DTrackFitter::kFitSuccess:
-      case DTrackFitter::kFitNoImprovement:
-	{
-	  // Allocate a DReferenceTrajectory object if needed.
-	  // These each have a large enough memory footprint that
-	  // it causes noticable performance problems if we allocated
-	  // and deallocated them every event. Therefore, we allocate
-	  // when needed, but recycle them on the next event.
-	  // They are deleted in the fini method.
-	  while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-	  DReferenceTrajectory *rt = rtv[_data.size()];
-
-	  // Make a new wire-based track
-	  DTrackWireBased *track = new DTrackWireBased;
-	  
-	  // Copy over DKinematicData part
-	  DKinematicData *track_kd = track;
-	  *track_kd = fitter->GetFitParameters();
-	  rt->SetMass(track_kd->mass());
-	  rt->Swim(track->position(), track->momentum(), track->charge());
-	  
-	  track->rt = rt;
-	  track->chisq = fitter->GetChisq();
-	  track->Ndof = fitter->GetNdof();
-	  track->pulls = fitter->GetPulls();
-	  track->candidateid = i+1;
-	
-	  // Add hits used as associated objects
-	  vector<const DCDCTrackHit*> cdchits = fitter->GetCDCFitHits();
-	  vector<const DFDCPseudo*> fdchits = fitter->GetFDCFitHits();
-	  sort(cdchits.begin(), cdchits.end(), CDCSortByRincreasing);
-	  sort(fdchits.begin(), fdchits.end(), FDCSortByZincreasing);
-	  for(unsigned int m=0; m<cdchits.size(); m++)track->AddAssociatedObject(cdchits[m]);
-	  for(unsigned int m=0; m<fdchits.size(); m++)track->AddAssociatedObject(fdchits[m]);
-	  
-	  // Add DTrackCandidate as associated object
-	  track->AddAssociatedObject(candidate);
-
-	  _data.push_back(track);
-	  break;
-	}
-      default:
-	break;
+   
+    if (SKIP_MASS_HYPOTHESES_WIRE_BASED){
+      DoFit(i,candidate,rt,loop,0.13957);
+    }
+    else{
+      // Choose list of mass hypotheses based on charge of candidate
+      vector<double> mass_hypotheses;
+      if(candidate->charge()<0.0){
+	mass_hypotheses = mass_hypotheses_negative;
+      }else{
+	mass_hypotheses = mass_hypotheses_positive;
       }
+      
+      
+      // Loop over potential particle masses
+      for(unsigned int j=0; j<mass_hypotheses.size(); j++){
+	if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
+	DoFit(i,candidate,rt,loop,mass_hypotheses[j]);
+      }
+   
     }
   }
 
@@ -328,3 +293,66 @@ void DTrackWireBased_factory::FilterDuplicates(void)
 	_data = new_data;
 }
 
+// Routine to find the hits, do the fit, and fill the list of wire-based tracks
+void DTrackWireBased_factory::DoFit(unsigned int c_id,
+				    const DTrackCandidate *candidate,
+				    DReferenceTrajectory *rt,
+				    JEventLoop *loop, double mass){ 
+  // Do the fit
+  fitter->SetFitType(DTrackFitter::kWireBased);	
+  DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*candidate,
+								  rt,loop,mass);
+  
+  // Check the status of the fit
+  switch(status){
+  case DTrackFitter::kFitNotDone:
+    _DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
+  case DTrackFitter::kFitFailed:
+    break;
+  case DTrackFitter::kFitSuccess:
+  case DTrackFitter::kFitNoImprovement:
+    {
+      // Allocate a DReferenceTrajectory object if needed.
+      // These each have a large enough memory footprint that
+      // it causes noticable performance problems if we allocated
+      // and deallocated them every event. Therefore, we allocate
+      // when needed, but recycle them on the next event.
+      // They are deleted in the fini method.
+      while(rtv.size()<=_data.size()){
+	rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+      }
+      DReferenceTrajectory *rt = rtv[_data.size()];
+      
+      // Make a new wire-based track
+      DTrackWireBased *track = new DTrackWireBased;
+      
+      // Copy over DKinematicData part
+      DKinematicData *track_kd = track;
+      *track_kd = fitter->GetFitParameters();
+      rt->SetMass(track_kd->mass());
+      rt->Swim(track->position(), track->momentum(), track->charge());
+      
+      track->rt = rt;
+      track->chisq = fitter->GetChisq();
+      track->Ndof = fitter->GetNdof();
+      track->pulls = fitter->GetPulls();
+      track->candidateid = c_id+1;
+      
+      // Add hits used as associated objects
+      vector<const DCDCTrackHit*> cdchits = fitter->GetCDCFitHits();
+      vector<const DFDCPseudo*> fdchits = fitter->GetFDCFitHits();
+      sort(cdchits.begin(), cdchits.end(), CDCSortByRincreasing);
+      sort(fdchits.begin(), fdchits.end(), FDCSortByZincreasing);
+      for(unsigned int m=0; m<cdchits.size(); m++)track->AddAssociatedObject(cdchits[m]);
+      for(unsigned int m=0; m<fdchits.size(); m++)track->AddAssociatedObject(fdchits[m]);
+      
+      // Add DTrackCandidate as associated object
+      track->AddAssociatedObject(candidate);
+      
+      _data.push_back(track);
+      break;
+    }
+  default:
+    break;
+  }
+}

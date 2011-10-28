@@ -48,11 +48,15 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   bool PID_FORCE_TRUTH;
   unsigned int MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING;
   bool BYPASS_TB_FOR_FORWARD_TRACKS;
+  bool SKIP_MASS_HYPOTHESES_TIMEBASED;
   int USE_KLOE;
 
   DTrackFitter *fitter;
   DParticleID *pid_algorithm;
-  vector<DReferenceTrajectory*> rtv;
+  vector<DReferenceTrajectory*> rtv;	
+  vector<double> mass_hypotheses_positive;
+  vector<double> mass_hypotheses_negative;
+
  
   // Optional debugging histograms
   TH1F *fom_chi2_trk;
@@ -70,6 +74,11 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 			   vector<const DTOFPoint*>&tof_points,
 			   vector<const DBCALShower*>&bcal_showers,
 			   vector<DTrackTimeBased::DStartTime_t>&start_times);
+  void DoFit(const DTrackWireBased *track,
+	     vector<const DSCHit*>&sc_hits,
+	     vector<const DTOFPoint*>&tof_points,
+	     vector<const DBCALShower*>&bcal_showers,
+	     JEventLoop *loop,double mass);  
 
   // Geometry
   const DGeometry *geom;
@@ -77,6 +86,8 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   double mPathLength,mEndTime,mStartTime,mFlightTime;
   DetectorSystem_t mDetector, mStartDetector;
   
+  double SKIP_MASS_HYPOTHESES_WIRE_BASED;
+
   // start counter geometry
   double sc_light_guide_length_cor;
   double sc_angle_cor;

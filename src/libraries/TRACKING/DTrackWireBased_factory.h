@@ -63,10 +63,13 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		vector<double> mass_hypotheses_negative;
 
 		void FilterDuplicates(void);
-
+		void DoFit(unsigned int c_id,const DTrackCandidate *candidate,
+			   DReferenceTrajectory *rt,jana::JEventLoop *loop, 
+			   double mass); 
 		const DGeometry *geom;
 
 		bool DEBUG_HISTS;
+		bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
 
 };
 

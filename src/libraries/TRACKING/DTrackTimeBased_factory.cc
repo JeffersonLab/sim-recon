@@ -22,6 +22,7 @@ using namespace std;
 #include <TRACKING/DTrackFitter.h>
 #include <TRACKING/DTrackHitSelector.h>
 #include <TRACKING/DMCTrackHit.h>
+#include <SplitString.h>
 
 using namespace jana;
 
@@ -60,7 +61,7 @@ jerror_t DTrackTimeBased_factory::init(void)
 	DEBUG_HISTS = true;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
-	MOMENTUM_CUT_FOR_PROTON_ID=3.0;
+	MOMENTUM_CUT_FOR_PROTON_ID=2.0;
 
 	MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING=3;
 	BYPASS_TB_FOR_FORWARD_TRACKS=false;
@@ -79,6 +80,28 @@ jerror_t DTrackTimeBased_factory::init(void)
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_DEDX",MOMENTUM_CUT_FOR_DEDX);	
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_PROTON_ID",MOMENTUM_CUT_FOR_PROTON_ID);
 	
+	SKIP_MASS_HYPOTHESES_WIRE_BASED=false; 
+	gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
+				    SKIP_MASS_HYPOTHESES_WIRE_BASED);
+	
+	if (SKIP_MASS_HYPOTHESES_WIRE_BASED){
+	  string MASS_HYPOTHESES_POSITIVE = "0.13957,0.93827";
+	  string MASS_HYPOTHESES_NEGATIVE = "0.13957";
+	  gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
+	  gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_NEGATIVE", MASS_HYPOTHESES_NEGATIVE);
+	  
+	  // Parse MASS_HYPOTHESES strings to make list of masses to try
+	  SplitString(MASS_HYPOTHESES_POSITIVE, mass_hypotheses_positive, ",");
+	  SplitString(MASS_HYPOTHESES_NEGATIVE, mass_hypotheses_negative, ",");
+	  if(mass_hypotheses_positive.size()==0)mass_hypotheses_positive.push_back(0.0); // If empty string is specified, assume they want massless particle
+	  if(mass_hypotheses_negative.size()==0)mass_hypotheses_negative.push_back(0.0); // If empty string is specified, assume they want massless particle
+	  
+
+
+	}
+	
+
+
 	// Forces correct particle id (when available)
 	PID_FORCE_TRUTH = false;
 	gPARMS->SetDefaultParameter("TRKFIT:PID_FORCE_TRUTH", PID_FORCE_TRUTH);
@@ -195,138 +218,68 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   for(unsigned int i=0; i<tracks.size(); i++){
     const DTrackWireBased *track = tracks[i];
 
-    // Lists of hits used in the previous pass
-    vector<const DCDCTrackHit *>cdchits;
-    track->GetT(cdchits);
-    vector<const DFDCPseudo *>fdchits;
-    track->GetT(fdchits);
+    if (SKIP_MASS_HYPOTHESES_WIRE_BASED){  
+      // Choose list of mass hypotheses based on charge of candidate
+      vector<double> mass_hypotheses;
+      if(track->charge()<0.0){
+	mass_hypotheses = mass_hypotheses_negative;
+      }else{
+	mass_hypotheses = mass_hypotheses_positive;
+      }
 
-    if (BYPASS_TB_FOR_FORWARD_TRACKS && fdchits.size()>0
-	&& cdchits.size()<MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING){
-      // Copy over the results of the wire-based fit to DTrackTimeBased
-      DTrackTimeBased *timebased_track = new DTrackTimeBased;
-      
-      // Copy over DKinematicData part
-      DKinematicData *track_kd = timebased_track;
-      *track_kd = *track;
-    
-      timebased_track->rt = track->rt;
-      timebased_track->chisq = track->chisq;
-      timebased_track->Ndof = track->Ndof;
-      timebased_track->pulls = track->pulls;
-      timebased_track->trackid = track->id;
-      timebased_track->candidateid=track->candidateid;
-
-      for(unsigned int m=0; m<fdchits.size(); m++)
-	timebased_track->AddAssociatedObject(fdchits[m]); 
-      for(unsigned int m=0; m<cdchits.size(); m++)
-	timebased_track->AddAssociatedObject(cdchits[m]);
-      
-	    // Compute the figure-of-merit based on tracking
-	    timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
-
-      _data.push_back(timebased_track);
+      for (unsigned int j=0;j<mass_hypotheses.size();j++){
+	if (mass_hypotheses[j]>0.9 
+	    && track->momentum().Mag()>MOMENTUM_CUT_FOR_PROTON_ID) continue;
+	DoFit(track,sc_hits,tof_points,bcal_showers,loop,mass_hypotheses[j]);
+      }
     }
     else{
-      // Create vector of start times from various sources
-      vector<DTrackTimeBased::DStartTime_t>start_times;
-      CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,start_times);
-
-      // Make sure there are enough DReferenceTrajectory objects
-      while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-      DReferenceTrajectory *rt = rtv[_data.size()];
-      rt->SetMass(track->mass());	
-      rt->SetDGeometry(geom);
-      
-      if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<< track->mass()<<endl;}
-    
-      // Do the fit
-      fitter->SetFitType(DTrackFitter::kTimeBased);
-      DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, loop, track->mass(),mStartTime);
-      
-      // Check the status value from the fit
-      switch(status){
-      case DTrackFitter::kFitNotDone:
-	_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
-      case DTrackFitter::kFitFailed:
-	continue;
-	break;
-      case DTrackFitter::kFitSuccess:
-      case DTrackFitter::kFitNoImprovement:
-	{
-	  // Allocate a DReferenceTrajectory object if needed.
-	  // These each have a large enough memory footprint that
-	  // it causes noticable performance problems if we allocated
-	  // and deallocated them every event. Therefore, we allocate
-	  // when needed, but recycle them on the next event.
-	  // They are deleted in the fini method.
-	  while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-	  DReferenceTrajectory *rt = rtv[_data.size()];
-	  
-	  // Create a new time-based track object
-	  DTrackTimeBased *timebased_track = new DTrackTimeBased;
+      if (BYPASS_TB_FOR_FORWARD_TRACKS){
+	// Lists of hits used in the previous pass
+	vector<const DCDCTrackHit *>cdchits;
+	track->GetT(cdchits);
+	vector<const DFDCPseudo *>fdchits;
+	track->GetT(fdchits);
 	
+	if (fdchits.size()>0
+	    && cdchits.size()<MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING){
+	  // Copy over the results of the wire-based fit to DTrackTimeBased
+	  DTrackTimeBased *timebased_track = new DTrackTimeBased;
+	  
 	  // Copy over DKinematicData part
 	  DKinematicData *track_kd = timebased_track;
-	  *track_kd = fitter->GetFitParameters();
-	  rt->SetMass(track_kd->mass());
-	  rt->SetDGeometry(geom);
-	  rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
+	  *track_kd = *track;
 	  
-	  timebased_track->rt = rt;
-	  timebased_track->chisq = fitter->GetChisq();
-	  timebased_track->Ndof = fitter->GetNdof();
-	  timebased_track->pulls = fitter->GetPulls();
+	  timebased_track->rt = track->rt;
+	  timebased_track->chisq = track->chisq;
+	  timebased_track->Ndof = track->Ndof;
+	  timebased_track->pulls = track->pulls;
 	  timebased_track->trackid = track->id;
 	  timebased_track->candidateid=track->candidateid;
-
-	  // Set the start time and add the list of start times
-	  timebased_track->setT0(mStartTime,start_times[0].t0_sigma, 
-				 mStartDetector);
-	  timebased_track->start_times.assign(start_times.begin(),
-					      start_times.end());
 	  
-	  if (DEBUG_HISTS){
-	    if (start_times[0].system==SYS_START){
-	      Hstart_time->Fill(start_times[0].t0,0.);
-	    }
-	    else{
-	      Hstart_time->Fill(start_times[0].t0,start_times[0].system);
-	    }
-	    
-	  }
-	
-	  
-	  // Add hits used as associated objects
-	  const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
-	  const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
-
+	  for(unsigned int m=0; m<fdchits.size(); m++)
+	    timebased_track->AddAssociatedObject(fdchits[m]); 
 	  for(unsigned int m=0; m<cdchits.size(); m++)
 	    timebased_track->AddAssociatedObject(cdchits[m]);
-	  for(unsigned int m=0; m<fdchits.size(); m++)
-	    timebased_track->AddAssociatedObject(fdchits[m]);
-	  
-	  // Add DTrack object as associate object
-	  timebased_track->AddAssociatedObject(track);
-	  //_DBG_<< "eventnumber:   " << eventnumber << endl;
-	  if (PID_FORCE_TRUTH) {
-	    // Add figure-of-merit based on difference between thrown and reconstructed momentum 
-	    // if more than half of the track's hits match MC truth hits and also (charge,mass)
-	    // match; add FOM=0 otherwise
-	    timebased_track->FOM=GetTruthMatchingFOM(i,timebased_track,mcthrowns);
-	  }
-	  else {
-	    // Compute the figure-of-merit based on tracking
-	    timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
-	  }
-	  //_DBG_<< "FOM:   " << timebased_track->FOM << endl;
+      
+	  // Compute the figure-of-merit based on tracking
+	  timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
 	  
 	  _data.push_back(timebased_track);
-	  break;
-	
 	}
-      default:
-	break;
+      }
+      else{
+	unsigned int num=_data.size();
+	DoFit(track,sc_hits,tof_points,bcal_showers,loop,track->mass());
+  
+	//_DBG_<< "eventnumber:   " << eventnumber << endl;
+	if (PID_FORCE_TRUTH && _data.size()>num) {
+	  // Add figure-of-merit based on difference between thrown and reconstructed momentum 
+	  // if more than half of the track's hits match MC truth hits and also (charge,mass)
+	  // match; add FOM=0 otherwise	  
+	  _data[_data.size()-1]->FOM=GetTruthMatchingFOM(i,_data[_data.size()-1],
+							 mcthrowns);
+	}
       }
     }
   }
@@ -580,7 +533,7 @@ void DTrackTimeBased_factory
   start_times.push_back(start_time);
 
   // Match to the start counter and the outer detectors
-  double tproj=0.;
+  double tproj=track->t0();  // initial guess from tracking
   unsigned int bcal_id=0,tof_id=0,sc_id=0;
   double locPathLength, locFlightTime;
 
@@ -615,5 +568,125 @@ void DTrackTimeBased_factory
   sort(start_times.begin(),start_times.end(),DTrackTimeBased_T0_cmp);
   mStartTime=start_times[0].t0;
   mStartDetector=start_times[0].system;
+
+  //    for (unsigned int i=0;i<start_times.size();i++){
+  //  printf("%d t0 %f sys %d\n",i,start_times[i].t0,start_times[i].system);
+  // }
   
 }
+
+// Create a list of start times and do the fit for a particular mass hypothesis
+void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
+				    vector<const DSCHit*>&sc_hits,
+				    vector<const DTOFPoint*>&tof_points,
+				    vector<const DBCALShower*>&bcal_showers,
+				    JEventLoop *loop,
+				    double mass){  
+  // Create vector of start times from various sources
+  vector<DTrackTimeBased::DStartTime_t>start_times;
+  CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,start_times);
+  
+  // Make sure there are enough DReferenceTrajectory objects
+  while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+  DReferenceTrajectory *rt = rtv[_data.size()];
+  rt->SetMass(mass);	
+  rt->SetDGeometry(geom);
+      
+  if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<<mass<<endl;}
+  
+  // Do the fit
+  fitter->SetFitType(DTrackFitter::kTimeBased);
+  DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, 
+								  loop, mass,
+								  mStartTime);
+      
+  // Check the status value from the fit
+  switch(status){
+  case DTrackFitter::kFitNotDone:
+    _DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
+  case DTrackFitter::kFitFailed:
+    break;
+  case DTrackFitter::kFitSuccess:
+  case DTrackFitter::kFitNoImprovement:
+    {
+      // Allocate a DReferenceTrajectory object if needed.
+      // These each have a large enough memory footprint that
+      // it causes noticable performance problems if we allocated
+      // and deallocated them every event. Therefore, we allocate
+      // when needed, but recycle them on the next event.
+      // They are deleted in the fini method.
+      while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+      DReferenceTrajectory *rt = rtv[_data.size()];
+      
+      // Create a new time-based track object
+      DTrackTimeBased *timebased_track = new DTrackTimeBased;
+      
+      // Copy over DKinematicData part
+      DKinematicData *track_kd = timebased_track;
+      *track_kd = fitter->GetFitParameters();
+      rt->SetMass(mass);
+      rt->SetDGeometry(geom);
+      rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
+      
+      timebased_track->rt = rt;
+      timebased_track->chisq = fitter->GetChisq();
+      timebased_track->Ndof = fitter->GetNdof();
+      timebased_track->pulls = fitter->GetPulls();
+      timebased_track->trackid = track->id;
+      timebased_track->candidateid=track->candidateid;
+      
+      // Set the start time and add the list of start times
+      timebased_track->setT0(mStartTime,start_times[0].t0_sigma, 
+			     mStartDetector);
+      timebased_track->start_times.assign(start_times.begin(),
+					      start_times.end());
+	  
+      if (DEBUG_HISTS){
+	if (start_times[0].system==SYS_START){
+	  Hstart_time->Fill(start_times[0].t0,0.);
+	}
+	else{
+	  Hstart_time->Fill(start_times[0].t0,start_times[0].system);
+	}
+	
+      }
+      
+      
+      // Add hits used as associated objects
+      const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
+      const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
+      
+      for(unsigned int m=0; m<cdchits.size(); m++)
+	timebased_track->AddAssociatedObject(cdchits[m]);
+      for(unsigned int m=0; m<fdchits.size(); m++)
+	timebased_track->AddAssociatedObject(fdchits[m]);
+      
+      // dEdx
+      vector<DParticleID::dedx_t>dEdx_list;
+      pid_algorithm->GetdEdx(timebased_track,dEdx_list);
+      double dEdx=0.;
+      if (dEdx_list.size()){
+	unsigned int num=dEdx_list.size()/2+1;
+	for (unsigned int m=0;m<num;m++){
+	  dEdx+=dEdx_list[m].dE/dEdx_list[m].dx;
+	}
+	timebased_track->setdEdx(dEdx/double(num));
+      }
+      else timebased_track->setdEdx(-1000.);
+      
+      // Add DTrack object as associate object
+      timebased_track->AddAssociatedObject(track);
+    
+      // Compute the figure-of-merit based on tracking
+      timebased_track->FOM = TMath::Prob(timebased_track->chisq, timebased_track->Ndof);
+      //_DBG_<< "FOM:   " << timebased_track->FOM << endl;
+      
+      _data.push_back(timebased_track);
+      break;
+	  
+    }
+  default:
+    break;
+  }
+}
+
