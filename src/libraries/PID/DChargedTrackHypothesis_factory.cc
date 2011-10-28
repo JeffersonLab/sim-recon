@@ -105,6 +105,9 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq_DCdEdx;
 		locChargedTrackHypothesis->dNDF_DCdEdx = 1;
 
+		// Initialize projected time to estimate from track
+		locProjectedTime=locTrackTimeBased->t0();
+
 		locMatchedOuterDetectorFlag = false;
 		// Try matching the track with hits in the outer detectors
 		if (dPIDAlgorithm->MatchToBCAL(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locBCALShowers, locProjectedTime, locBCALIndex, locPathLength, locFlightTime) == NOERROR){

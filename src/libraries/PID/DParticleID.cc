@@ -10,6 +10,7 @@
 #include "FCAL/DFCALGeometry.h"
 
 #define C_EFFECTIVE 15. // start counter light propagation speed
+#define OUT_OF_TIME_CUT 200.
 
 // Routine for sorting dEdx data
 bool static DParticleID_dedx_cmp(DParticleID::dedx_t a,DParticleID::dedx_t b){
@@ -283,15 +284,24 @@ jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
 //------------------
 // Loop over TOF points, looking for minimum distance of closest approach
 // of track to a point in the TOF and using this to check for a match. 
+//
+// NOTE:  an initial guess for tproj is expected as input so that out-of-time 
+// hits can be skipped
 jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime){
-  tproj=NaN;
+  //tproj=NaN;
   tof_match_id=0;
-  if (tof_points.size()==0) return RESOURCE_UNAVAILABLE;
+  if (tof_points.size()==0){
+    tproj=NaN;
+    return RESOURCE_UNAVAILABLE;
+  }
 
   double dmin=10000.;
   // loop over tof points
   double locTempPathLength;
   for (unsigned int k=0;k<tof_points.size();k++){
+    // Check that the hit is not out of time with respect to the track
+    if (fabs(tproj-tof_points[k]->t)>OUT_OF_TIME_CUT) continue;
+
     // Get the TOF cluster position and normal vector for the TOF plane
     DVector3 tof_pos=tof_points[k]->pos;
     DVector3 norm(0,0,1);
@@ -323,7 +333,8 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::f
 
     return NOERROR;
   }
-    
+   
+  tproj=NaN;
   return VALUE_OUT_OF_RANGE;
 }
 
@@ -332,16 +343,25 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::f
 //------------------
 // Loop over bcal clusters, looking for minimum distance of closest approach
 // of track to a cluster and using this to check for a match. 
+//
+// NOTE:  an initial guess for tproj is expected as input so that out-of-time 
+// hits can be skipped
 jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DBCALShower*>&bcal_showers, double &tproj, unsigned int &bcal_match_id, double &locPathLength, double &locFlightTime){
-  tproj=NaN;
+  //tproj=NaN;
   bcal_match_id=0;
-  if (bcal_showers.size()==0) return RESOURCE_UNAVAILABLE;
-
+  if (bcal_showers.size()==0){
+    tproj=NaN;
+    return RESOURCE_UNAVAILABLE;
+  }
+    
   //Loop over bcal showers
   double dmin=10000.;
   double dphi=1000.,dz=1000.;
   double locTempPathLength;
-  for (unsigned int k=0;k<bcal_showers.size();k++){
+  for (unsigned int k=0;k<bcal_showers.size();k++){  
+    // Check that the hit is not out of time with respect to the track
+    if (fabs(tproj-bcal_showers[k]->t)>OUT_OF_TIME_CUT) continue;
+
     // Get the BCAL cluster position and normal
     const DBCALShower *shower = bcal_showers[k];
     DVector3 bcal_pos(shower->x, shower->y, shower->z); 
@@ -372,6 +392,7 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::
      return NOERROR;
    }
    
+   tproj=NaN;
    return VALUE_OUT_OF_RANGE;
 }
 
@@ -380,17 +401,26 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::
 //------------------
 // Loop over fcal clusters, looking for minimum distance of closest approach
 // of track to a cluster and using this to check for a match. 
+//
+// NOTE:  an initial guess for tproj is expected as input so that out-of-time 
+// hits can be skipped
 jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DFCALShower*>&fcal_showers, double &tproj, unsigned int &fcal_match_id, double &locPathLength, double &locFlightTime){
-  tproj=NaN;
+  //tproj=NaN;
   fcal_match_id=0;
-  if (fcal_showers.size()==0) return RESOURCE_UNAVAILABLE;
+  if (fcal_showers.size()==0){
+    tproj=NaN;
+    return RESOURCE_UNAVAILABLE;
+  }
   
   // Set minimum matching distance to a large default value
   double dmin=10000.;
   // loop over clusters
   double locTempPathLength;
   for (unsigned int k=0;k<fcal_showers.size();k++){
-    // Get the FCAL cluster position and normal vector for the TOF plane
+    // Check that the hit is not out of time with respect to the track
+    if (fabs(tproj-fcal_showers[k]->getTime())>OUT_OF_TIME_CUT) continue;
+
+    // Get the FCAL cluster position and normal vector for the FCAL plane
     DVector3 fcal_pos=fcal_showers[k]->getPosition();
     // This is a bit of a kludge...
     //fcal_pos.SetZ(DFCALGeometry::fcalFaceZ());
@@ -418,6 +448,7 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::
     return NOERROR;
   }
 
+  tproj=NaN;
   return VALUE_OUT_OF_RANGE;
 }
 
@@ -429,11 +460,17 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::
 // is found, use the z-position of the track projection to the start counter 
 // planes to correct for the light propagation within the scintillator and 
 // estimate the "vertex" time.
+//
+// NOTE:  an initial guess for tproj is expected as input so that out-of-time 
+// hits can be skipped
 jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime){
 
-	tproj=NaN;
+  //tproj=NaN;
 	sc_match_id=0;
-	if (sc_hits.size()==0) return RESOURCE_UNAVAILABLE;
+	if (sc_hits.size()==0){
+	  tproj=NaN;
+	  return RESOURCE_UNAVAILABLE;
+	}
 	double myz=0.;
 	double dphi_min=10000.,myphi=0.;
 	double locTempPathLength, locTempFlightTime = 0.0;
@@ -447,15 +484,18 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 	// loop over sc hits, looking for the one with closest phi value to the 
 	// projected phi value
 	for (unsigned int i=0;i<sc_hits.size();i++){
-		double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
-		double dphi=phi-proj_phi;
+	  // Check that the hit is not out of time with respect to the track
+	  if (fabs(tproj-sc_hits[i]->t)>OUT_OF_TIME_CUT) continue;
 
-		if (fabs(dphi)<dphi_min){
-			dphi_min=fabs(dphi);
-			myphi=phi;
-			myz=proj_pos.z();
-			sc_match_id=i;
-		}
+	  double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
+	  double dphi=phi-proj_phi;
+	  
+	  if (fabs(dphi)<dphi_min){
+	    dphi_min=fabs(dphi);
+	    myphi=phi;
+	    myz=proj_pos.z();
+	    sc_match_id=i;
+	  }
 	}
 	// Look for a match in phi
 	if (dphi_min<0.16){
@@ -504,6 +544,8 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 		}
 		return NOERROR;
 	}
+
+	tproj=NaN;
 	return VALUE_OUT_OF_RANGE;
 }
 
