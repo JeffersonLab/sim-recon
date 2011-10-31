@@ -25,7 +25,7 @@ DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
     // this should be lower than cut in mcsmear
 	ethr_cell=0.0001;     // MIN ENERGY THRESD OF cell in GeV
 
-	CLUST_THRESH = 0.02;  // MIN ENERGY THRESD OF CLUSTER IN GEV
+	CLUST_THRESH = 0.03;  // MIN ENERGY THRESD OF CLUSTER IN GEV (make this match the value used in the other algorithm)
     
 	elyr = 1;
 	xlyr = 2; 
@@ -53,14 +53,14 @@ DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
 
     // these are energy calibration parameters -- no summing of cells
 
-    m_scaleZ_p0 =  0.867288;
-    m_scaleZ_p1 =  0.00192052;
-    m_scaleZ_p2 =  -9.21828e-06;
-    m_scaleZ_p3 =  1.19395e-08;
+    m_scaleZ_p0 =  0.9597;
+    m_scaleZ_p1 =  0.000454875;
+    m_scaleZ_p2 =  -2.29912e-06;
+    m_scaleZ_p3 =  1.49757e-09;
   
-    m_nonlinZ_p0 =  0.00163174;
-    m_nonlinZ_p1 =  -2.22283e-05;
-    m_nonlinZ_p2 =  1.50361e-07;    
+    m_nonlinZ_p0 =  -0.00154122;
+    m_nonlinZ_p1 =  6.73594e-05;
+    m_nonlinZ_p2 =  0;
     m_nonlinZ_p3 =  0;
   
   }
@@ -68,13 +68,13 @@ DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
     
     // these are energy calibration parameters -- 1.2.3.4 summing
   
-    m_scaleZ_p0 = 9.843814e-01;
-    m_scaleZ_p1 = 3.999033e-04;
-    m_scaleZ_p2 = -2.821851e-06;
-    m_scaleZ_p3 = 1.971016e-09;
+    m_scaleZ_p0 = 0.983959;
+    m_scaleZ_p1 = 0.000377196;
+    m_scaleZ_p2 = -1.82384e-06;
+    m_scaleZ_p3 = 1.20302e-10;
   
-    m_nonlinZ_p0 = 1.137532e-02;
-    m_nonlinZ_p1 = 1.106708e-04;
+    m_nonlinZ_p0 = 0.00805048;
+    m_nonlinZ_p1 = 4.24678e-05;
     m_nonlinZ_p2 = 0;
     m_nonlinZ_p3 = 0;
   }

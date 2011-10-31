@@ -260,7 +260,6 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
    
     // put in an energy threshold for clusters
     if( clust->E() > 30*k_MeV ) {
-    
       _data.push_back( new DBCALCluster( *clust ) );
     }
   }
@@ -279,10 +278,10 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
   // ahh.. more hard coded numbers that should probably
   // come from a database or something
   float seedThresh = 1*k_GeV;
-  float minSeed = 20*k_MeV;
+  float minSeed = 10*k_MeV;
   
   while( seedThresh > minSeed ) {
-    
+
     bool usedPoint = false;
     
     for( vector< const DBCALPoint* >::iterator pt = points.begin();
@@ -314,12 +313,11 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
       // see if it can become a new seed
       
       if( (**pt).E() > seedThresh ){
-              
+
         clusters.push_back( DBCALCluster( *pt ) );
         points.erase( pt );
         usedPoint = true;
       }
-      else break;
       
       if( usedPoint ) break;
     }
@@ -395,7 +393,7 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
   
   // right now this is a rectangular cut, but it could be circular
   // or elliptical
-  
+
   return( ( sigTheta < m_mergeSig ) && ( sigPhi < m_mergeSig ) );  
 }
 
@@ -450,11 +448,11 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
 #endif // BCAL_CLUSTER_DIAGNOSTIC
   
   if( point->E() / clust.E() < 0.1 ){
-    
+
     return ( sep < 5 * m_moliereRadius );
   }
   else{
-    
+
     return ( sep < 2 * m_moliereRadius );
   }
 
@@ -478,7 +476,7 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
   float deltaPhi = clust.phi() - cellPhi;
   float deltaPhiAlt = ( clust.phi() > cellPhi ? 
                         clust.phi() - cellPhi - 2*PI :
-                        cellPhi - clust.phi() - 2*PI );        
+                        cellPhi - clust.phi() - 2*PI );
   deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
                
   float sigPhi = deltaPhi / 
@@ -486,8 +484,8 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
              
   return( sigPhi < m_mergeSig );
 }
-           
-           
+
+
 void
 DBCALCluster_factory::clearPoints() {
  

@@ -20,7 +20,8 @@ class DBCALTruthShower:public JObject{
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "track", "%d", track);
-			AddString(items, "phi", "%3.1f", phi);
+			AddString(items, "primary", "%d", primary);
+			AddString(items, "phi", "%1.3f", phi);
 			AddString(items, "r", "%4.3f", r);
 			AddString(items, "z", "%4.1f", z);
 			AddString(items, "t", "%4.3f", t);

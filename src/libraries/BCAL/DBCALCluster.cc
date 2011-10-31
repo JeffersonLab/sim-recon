@@ -73,55 +73,105 @@ DBCALCluster::makeFromPoints(){
   
   clear();
 
-  float wt;
-  float sum_wt = 0;
-  
+  //In this function we take a weighted average of the phis/thetas/etc
+  //of the individual DBCALPoint's to get the phi/theta/etc of the cluster. The
+  //average of phi is weighted by the energy of the hit, while the other
+  //quantities are weighted by energy squared. This sort of makes sense because
+  //the error of the phi measurement is independent of the energy of the hit,
+  //so it is only weighted because higher energy hits make up "more" of the
+  //cluster. In the case of theta/timing measurements, the error decreases with
+  //hit energy, so it makes sense to weight these with an extra factor of E, at
+  //least to some low level of rigor. In any case, the weighting scheme below
+  //produces far better angular resolutions for clusters than other
+  //weightings tested.
+  double wt1;
+  double wt2;
+  double sum_wt1 = 0;
+  double sum_wt1_sq = 0;
+  double sum_wt2 = 0;
+  double sum_wt2_sq = 0;
+  //to do an average of phi correctly for cases with angles near 0, we need to average cos(phi) and sin(phi) instead of phi itself
+  double sum_sin_phi=0;
+  double sum_cos_phi=0;
+
   for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
        pt != m_points.end();
       ++pt ){
    
-    m_E += (**pt).E();
+    double E = (**pt).E();
 
-    // the choice of weight should be considered and optimized 
-    // start with energy weighting for now
+    m_E += E;
 
-    wt = (**pt).E();
-    sum_wt += wt;
+    wt1 = E;
+    wt2 = E*E;
+
+    sum_wt1 += wt1;
+    sum_wt1_sq += wt1*wt1;
+    sum_wt2 += wt2;
+    sum_wt2_sq += wt2*wt2;
     
-    m_t += (**pt).tInnerRadius() * wt;
-    m_sig_t += (**pt).tInnerRadius() * (**pt).tInnerRadius() * wt;
+    m_t += (**pt).tInnerRadius() * wt2;
+    m_sig_t += (**pt).tInnerRadius() * (**pt).tInnerRadius() * wt2;
 
-    m_theta += (**pt).theta() * wt;
-    m_sig_theta += (**pt).theta() * (**pt).theta() * wt;
+    m_theta += (**pt).theta() * wt2;
+    m_sig_theta += (**pt).theta() * (**pt).theta() * wt2;
 
-    m_phi += (**pt).phi() * wt;
-    m_sig_phi += (**pt).phi() * (**pt).phi() * wt;
+    sum_sin_phi += sin((**pt).phi()) * wt1;
+    sum_cos_phi += cos((**pt).phi()) * wt1;
 
-    m_rho += (**pt).rho() * wt;
-    m_sig_rho += (**pt).rho() * (**pt).rho() * wt;
+    m_rho += (**pt).rho() * wt2;
+    m_sig_rho += (**pt).rho() * (**pt).rho() * wt2;
   }
   
   // now adjust the standard deviations and averages
+  // the variance of the mean of a weighted distribution is s^2/n_eff, where s^2 is the variance of the sample and n_eff is as calculated below
   
-  m_t /= sum_wt;
-  m_sig_t /= sum_wt;
+  //double n_eff1 = sum_wt1*sum_wt1/sum_wt1_sq;
+  double n_eff2 = sum_wt2*sum_wt2/sum_wt2_sq;
+  double n = m_points.size();
+
+  m_t /= sum_wt2;
+  m_sig_t /= sum_wt2;
   m_sig_t -= ( m_t * m_t );
   m_sig_t = sqrt( m_sig_t );
+  m_sig_t /= sqrt(n_eff2);
   
-  m_theta /= sum_wt;
-  m_sig_theta /= sum_wt;
+  m_theta /= sum_wt2;
+  m_sig_theta /= sum_wt2;
   m_sig_theta -= ( m_theta * m_theta );
   m_sig_theta = sqrt( fabs( m_sig_theta ) );
+  m_sig_theta /= sqrt(n_eff2);
   
-  m_phi /= sum_wt;
-  m_sig_phi /= sum_wt;
-  m_sig_phi -= ( m_phi * m_phi );
-  m_sig_phi = sqrt( fabs( m_sig_phi ) );
+  m_phi = atan2(sum_sin_phi,sum_cos_phi);
+  if( m_phi < 0 ) m_phi += 2*PI;
+  // calculate the RMS of phi
+  m_sig_phi=0;
+  for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
+       pt != m_points.end();
+       ++pt ){
 
-  m_rho /= sum_wt;
-  m_sig_rho /= sum_wt;
+    double E = (**pt).E();
+
+    wt1 = E;
+
+    double deltaPhi = (**pt).phi() - m_phi;
+    double deltaPhiAlt = ( (**pt).phi() > m_phi ?
+			   (**pt).phi() - m_phi - 2*PI :
+			   m_phi - (**pt).phi() - 2*PI );
+    deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
+    m_sig_phi += deltaPhi * deltaPhi * wt1;
+
+  }
+  m_sig_phi /= sum_wt1;
+  m_sig_phi = sqrt( fabs(m_sig_phi) );
+  //this should be division, by sqrt(n_eff1), but this works better
+  m_sig_phi /= sqrt(n);
+
+  m_rho /= sum_wt2;
+  m_sig_rho /= sum_wt2;
   m_sig_rho -= ( m_rho * m_rho );
   m_sig_rho = sqrt( fabs( m_sig_rho ) );
+  m_sig_rho /= sqrt(n_eff2);
   
   // if we only have one point, then set sizes based on the size
   // of the point
@@ -139,8 +189,8 @@ DBCALCluster::makeFromPoints(){
   // same layer in these cases set sigmas to the characteristic 
   // size of the cell
   
-  if( m_sig_phi   < 1E-6 ) m_sig_phi   = m_points.at(0)->sigPhi();
-  if( m_sig_theta < 1E-6 ) m_sig_theta = m_points.at(0)->sigPhi();
+  if( m_sig_phi   < 1E-6 ) m_sig_phi   = m_points.at(0)->sigPhi()/sqrt(n);
+  if( m_sig_theta < 1E-6 ) m_sig_theta = m_points.at(0)->sigPhi()/sqrt(n);
   
   // correct phi of the cluster if we've drifted outside of 0 - 2PI
   if( m_phi > 2*PI ) m_phi -= 2*PI;

@@ -15,30 +15,31 @@ DBCALShower_factory::DBCALShower_factory(){
   m_zTarget = 65*k_cm;
 
   if( ! DBCALGeometry::summingOn() ) {
-  
+    // in libraries/PID/DNeutralShowerCandidate.h, there are some constants used to calculate the energy uncertainty. If you are updating these constants, you might want to update that also...
+
     // these are energy calibration parameters -- no summing of cells
     
-    m_scaleZ_p0 =  0.876376;
-    m_scaleZ_p1 =  0.00150273;
-    m_scaleZ_p2 =  -6.57424e-06;
-    m_scaleZ_p3 =  7.79246e-09;
+    m_scaleZ_p0 =  0.950774;
+    m_scaleZ_p1 =  0.000483979;
+    m_scaleZ_p2 =  -2.08086e-06;
+    m_scaleZ_p3 =  8.08534e-10;
     
-    m_nonlinZ_p0 =  0.0305786;
-    m_nonlinZ_p1 =  -0.00014641;
-    m_nonlinZ_p2 =  3.26065e-07;    
+    m_nonlinZ_p0 =  0.0152548;
+    m_nonlinZ_p1 =  0;
+    m_nonlinZ_p2 =  0;    
     m_nonlinZ_p3 =  0;
   }
   else{
     
     // these are energy calibration parameters -- 1.2.3.4 summing
     
-    m_scaleZ_p0 =  9.418970e-01;
-    m_scaleZ_p1 =  7.907352e-05;
-    m_scaleZ_p2 =  -4.857548e-07;
-    m_scaleZ_p3 =  -1.478834e-09;
+    m_scaleZ_p0 =  0.955182;
+    m_scaleZ_p1 =  0.000266521;
+    m_scaleZ_p2 =  -1.15472e-07;
+    m_scaleZ_p3 =  -3.26844e-09;
     
-    m_nonlinZ_p0 =  4.909458e-02;
-    m_nonlinZ_p1 =  9.540881e-06;
+    m_nonlinZ_p0 =  0.0128104;
+    m_nonlinZ_p1 =  3.30893e-05;
     m_nonlinZ_p2 =  0;    
     m_nonlinZ_p3 =  0;
   }
@@ -119,6 +120,8 @@ DBCALShower_factory::evnt( JEventLoop *loop, int eventnumber ){
     m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
     
     shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
+
+    shower->AddAssociatedObject(*clItr);
     
     _data.push_back( shower );
   }

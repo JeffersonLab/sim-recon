@@ -60,7 +60,7 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   // set the z position relative to the center of the target -- this needs a database
   // lookup to get the target position (set for now at 65 cm)
   
-  m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - 65;
+  m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - 65.0;
   
   // compute the arrival time of the energy at the cell
   m_t = 0.5 * ( tUp + tDown - fibLen / cEff );
@@ -78,10 +78,11 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   m_E =  ( upHit.E / attUp + downHit.E / attDown ) / 2; 
   
   m_r = DBCALGeometry::r( cellId );
-  m_sig_r = DBCALGeometry::rSize( cellId );
+  //for a uniform distribution of width a, the RMS is a/sqrt(12)
+  m_sig_r = DBCALGeometry::rSize( cellId )/sqrt(12.0);
   
   m_phi = DBCALGeometry::phi( cellId );
-  m_sig_phi = DBCALGeometry::phiSize( cellId );
+  m_sig_phi = DBCALGeometry::phiSize( cellId )/sqrt(12.0);
   
   // this needs more careful examination.. for now assume that the error on the
   // 1/2 the time difference is 70 ps / sqrt( E ), as was reported in the BCAL NIM
