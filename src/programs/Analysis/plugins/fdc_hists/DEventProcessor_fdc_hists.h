@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <map>
 #include <vector>
+#include <deque>
 using std::map;
 
 #include <TTree.h>
@@ -45,7 +46,7 @@ typedef struct{
   DMatrix4x4 Ckk;
   DMatrix4x1 Skkp;
   DMatrix4x4 Ckkp;
-  double z;
+  double z,t;
   int num_hits;
   unsigned int h_id;
 }trajectory_t;
@@ -57,6 +58,7 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		DEventProcessor_fdc_hists();
 		~DEventProcessor_fdc_hists();
 
+		TDirectory *dir;
 		TTree *fdctree;
 		FDC_branch fdc;
 		FDC_branch *fdc_ptr;
@@ -90,14 +92,24 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		DMatrix4x1 SetSeed(vector<const DFDCIntersection*> fdchits);
 		jerror_t Fit(int fit_type,DMatrix4x1 &S,DMatrix4x4 &C,
 			     double &chi2,unsigned int &ndof);
-		jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs);
+		jerror_t Smooth(int fit_type,DMatrix4x1 &Ss,DMatrix4x4 &Cs);
 		jerror_t SetReferenceTrajectory(DMatrix4x1 &S,
 						int layer_to_skip);
+		double GetDriftDistance(double t);
+		double GetDriftVariance(double t);
 
 		vector<DFDCPseudo *>points;
-		vector<trajectory_t>trajectory;
+		deque<trajectory_t>trajectory;
 
 		pthread_mutex_t mutex;
+		TH1F *Hwire_prob,*Htime_prob;
+		TH2F *Hwire_res_vs_layer;	
+		TH2F *Htime_res_vs_layer;
+		TH2F *Hcand_ty_vs_tx,*Htime_ty_vs_tx,*Hwire_ty_vs_tx;
+		TH2F *Hres_vs_drift_time;
+
+		double mT0;
+		double fdc_drift_table[140];
 };
 
 #endif // _DEventProcessor_fdc_hists_

@@ -10,11 +10,14 @@
 using namespace std;
 
 #include <TThread.h>
+#include <TMath.h>
+#include <TROOT.h>
 
 #include "DEventProcessor_fdc_hists.h"
 
 #include <JANA/JApplication.h>
 #include <JANA/JEventLoop.h>
+#include <JANA/JCalibration.h>
 
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
@@ -24,7 +27,7 @@ using namespace std;
 #include <DVector2.h>
 
 #define EPS 1e-3
-#define ITER_MAX 20
+#define ITER_MAX 100
 
 // The executable should define the ROOTfile global variable. It will
 // be automatically linked when dlopen is called.
@@ -63,7 +66,7 @@ DEventProcessor_fdc_hists::~DEventProcessor_fdc_hists()
 jerror_t DEventProcessor_fdc_hists::init(void)
 {
 	// Create TRACKING directory
-	TDirectory *dir = new TDirectoryFile("FDC","FDC");
+	dir = new TDirectoryFile("FDC","FDC");
 	dir->cd();
 
 	// Create Tree
@@ -74,6 +77,7 @@ jerror_t DEventProcessor_fdc_hists::init(void)
 
 	dir->cd("../");
 	
+	mT0=0.;
 
 	return NOERROR;
 }
@@ -87,7 +91,69 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int runnumber)
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
   dgeom->GetFDCWires(fdcwires);
   
+  dapp->Lock();
+  if (dir){
+    dir->cd("FDC");
+    
+    Hwire_prob = (TH1F*)gROOT->FindObject("Hwire_prob");
+    if (!Hwire_prob) 
+      Hwire_prob=new TH1F("Hwire_prob","Confidence level for wire-based fit",
+			  100,0,1); 
+    Htime_prob = (TH1F*)gROOT->FindObject("Htime_prob");
+    if (!Htime_prob) 
+      Htime_prob=new TH1F("Htime_prob","Confidence level for time-based fit",
+			  100,0,1);
+
+    Hwire_res_vs_layer=(TH2F*)gROOT->FindObject("Hwire_res_vs_layer");
+    if (!Hwire_res_vs_layer){
+      Hwire_res_vs_layer=new TH2F("Hwire_res_vs_layer","wire-based residuals",
+				  24,0.5,24.5,100,-5,5);
+    } 
+    Htime_res_vs_layer=(TH2F*)gROOT->FindObject("Htime_res_vs_layer");
+    if (!Htime_res_vs_layer){
+      Htime_res_vs_layer=new TH2F("Htime_res_vs_layer","time-based residuals",
+				  24,0.5,24.5,100,-5,5);
+    }
+    Hcand_ty_vs_tx=(TH2F*)gROOT->FindObject("Hcand_ty_vs_tx");
+    if (!Hcand_ty_vs_tx){
+      Hcand_ty_vs_tx=new TH2F("Hcand_ty_vs_tx","candidate ty vs tx",100,-1,1,
+			      100,-1,1);
+    }    
+    Hwire_ty_vs_tx=(TH2F*)gROOT->FindObject("Hwire_ty_vs_tx");
+    if (!Hwire_ty_vs_tx){
+      Hwire_ty_vs_tx=new TH2F("Hwire_ty_vs_tx","wire-based ty vs tx",100,-1,1,
+			      100,-1,1);
+    }  
+    Htime_ty_vs_tx=(TH2F*)gROOT->FindObject("Htime_ty_vs_tx");
+    if (!Htime_ty_vs_tx){
+      Htime_ty_vs_tx=new TH2F("Htime_ty_vs_tx","time-based ty vs tx",100,-1,1,
+			      100,-1,1);
+    }
+    
+    Hres_vs_drift_time=(TH2F*)gROOT->FindObject("Hres_vs_drift_time");
+    if (!Hres_vs_drift_time){
+      Hres_vs_drift_time=new TH2F("Hres_vs_drift_time",
+				  "residual vs drift time",100,-20,200,100,-1,1);
+    }
+  }
+  dapp->Unlock();
+
   
+  JCalibration *jcalib = dapp->GetJCalibration(0);  // need run number here
+  vector< map<string, float> > tvals;
+  if (jcalib->Get("FDC/fdc_drift", tvals)==false){
+    for(unsigned int i=0; i<tvals.size(); i++){
+      map<string, float> &row = tvals[i];
+      fdc_drift_table[i]=row["0"];
+    }
+  }
+  else{
+    jerr << " FDC time-to-distance table not available... bailing..." << endl;
+    exit(0);
+  }
+
+
+
   return NOERROR;
 }
 
@@ -112,9 +178,7 @@ jerror_t DEventProcessor_fdc_hists::fini(void)
 //------------------
 jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
-  vector<const DMCTrackHit*> mctrackhits;
   vector<const DFDCIntersection*> fdchits;
-  loop->Get(mctrackhits);
   loop->Get(fdchits);
   
   for (unsigned int i=0;i<points.size();i++){
@@ -123,26 +187,32 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
   points.clear();
   trajectory.clear();
   
-  int layer_to_skip=0;
+  int layer_to_skip=1;
   if (fdchits.size()>=5){
-    // Use the interesections for a preliminary line fit
+    // Use the intersections for a preliminary line fit
     DMatrix4x1 S=SetSeed(fdchits);
 
+    Hcand_ty_vs_tx->Fill(S(state_tx),S(state_ty));
+
     // Put the hits used in the preliminary line fit into the point vector
-    for (unsigned int i=0;i<fdchits.size();i++){
+    for (unsigned int i=0;i<fdchits.size();i+=2){
       DFDCPseudo *pseudo = new DFDCPseudo;
       pseudo->wire=fdchits[i]->wire1;
       pseudo->v=0.;
+      pseudo->time=fdchits[i]->hit1->t;
       pseudo->w=DFDCGeometry::getWireR(fdchits[i]->hit1);
+      pseudo->dw=1.;
       points.push_back(pseudo);
+      
+      DFDCPseudo *pseudo2 = new DFDCPseudo;
+      pseudo2->wire=fdchits[i]->wire2;
+      pseudo2->v=0.;
+      pseudo2->time=fdchits[i]->hit2->t;
+      pseudo2->w=DFDCGeometry::getWireR(fdchits[i]->hit2);
+      pseudo2->dw=1000.;
+      points.push_back(pseudo2);
     }
-    // Last hit
-    unsigned int id=fdchits.size()-1;
-    DFDCPseudo *pseudo = new DFDCPseudo;
-    pseudo->wire=fdchits[id]->wire2;
-    pseudo->w=DFDCGeometry::getWireR(fdchits[id]->hit2);
-    points.push_back(pseudo);
-
+    
     // Use the result from the fit to the intersections to form a reference
     // trajectory for the track
     SetReferenceTrajectory(S,layer_to_skip);
@@ -151,20 +221,64 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
     DMatrix4x4 C;
     C(state_x,state_x)=C(state_y,state_y)=1.;
     C(state_tx,state_tx)=C(state_ty,state_ty)=0.01;
-       
-    // Fit the track using the Kalman Filter
+
+    // Fit the track using the Kalman Filter, first using wire positions
     double chi2=1e8;
     double chi2_old=0.;
     unsigned int ndof=0;
     unsigned int iter=0;
     for(;;){
       iter++;
-      chi2_old=chi2;
+      chi2_old=chi2;     
       Fit(kWireBased,S,C,chi2,ndof);
-      Smooth(S,C);
       if (chi2>chi2_old || fabs(chi2_old-chi2)<0.01 || iter==ITER_MAX) break;
+      Smooth(kWireBased,S,C); 
     }
+    if (iter>1){
+      Hwire_ty_vs_tx->Fill(S(state_tx),S(state_ty));
+      Hwire_prob->Fill(TMath::Prob(chi2,ndof));
+      
+      for (unsigned int i=0;i<points.size();i++){
+	if (points[i]->dw<1000){
+	  Hwire_res_vs_layer->Fill(points[i]->wire->layer,
+				   points[i]->dw/sqrt(points[i]->covxx));
+	}
+      }
+    }
+
+    // Use the result from the wire-based fit to form a new reference
+    // trajectory for the track
+    trajectory.clear();
+    SetReferenceTrajectory(S,layer_to_skip);
+
+    unsigned int id=trajectory.size()-1;
+    mT0=(trajectory[id].z-65.0)
+      *sqrt(1.+trajectory[id].S(state_tx)*trajectory[id].S(state_tx)
+	    +trajectory[id].S(state_ty)*trajectory[id].S(state_ty))/29.98;
+
+    //Time-based fit
+    chi2_old=chi2=1e8;
+    iter=ndof=0;
+    for(;;){
+      iter++;
+      chi2_old=chi2;
+      Fit(kTimeBased,S,C,chi2,ndof);  
+      if (chi2>chi2_old || fabs(chi2_old-chi2)<0.01 || iter==ITER_MAX) break;
+      Smooth(kTimeBased,S,C); 
+    }
+    if (iter>1){
+      Htime_ty_vs_tx->Fill(S(state_tx),S(state_ty));
+      Htime_prob->Fill(TMath::Prob(chi2,ndof));
+      for (unsigned int i=0;i<points.size();i++){
+	if (points[i]->dw<1000){
+	  Htime_res_vs_layer->Fill(points[i]->wire->layer,
+				 points[i]->dw/sqrt(points[i]->covxx));
+	}
+      }
+    }
+
   }
+ 
   
   return NOERROR;
 }
@@ -220,7 +334,8 @@ DEventProcessor_fdc_hists::SetSeed(vector<const DFDCIntersection*> fdchits){
 }
 
 // Kalman smoother 
-jerror_t DEventProcessor_fdc_hists::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs){
+jerror_t DEventProcessor_fdc_hists::Smooth(int fit_type,DMatrix4x1 &Ss,
+					   DMatrix4x4 &Cs){
   DMatrix4x1 S; 
   DMatrix4x4 C;
   DMatrix4x4 JT,A;
@@ -235,6 +350,52 @@ jerror_t DEventProcessor_fdc_hists::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs){
     A=trajectory[m].Ckk*JT*trajectory[m].Ckkp.Invert();
     Ss=trajectory[m].Skk+A*(Ss-trajectory[m].Skkp);
     Cs=trajectory[m].Ckk+A*(Cs-trajectory[m].Ckkp)*A.Transpose();
+    
+    if (trajectory[m].h_id>0){
+      unsigned int id=trajectory[m].h_id;
+      if (trajectory[m].h_id<1000)id-=1;
+      else id-=1000;
+      
+      // Orientation of wires
+      double cosa=points[id]->wire->udir.y();
+      double sina=points[id]->wire->udir.x();    
+      double tx=Ss(state_tx);
+      double ty=Ss(state_ty);
+      double tu=tx*cosa-ty*sina;
+      double alpha=atan(tu);
+      double cosalpha=cos(alpha);
+      double sinalpha=sin(alpha);
+      double du=(Ss(state_x)*cosa-Ss(state_y)*sina-points[id]->w)*cosalpha;
+	
+      DMatrix1x4 H;  // Track projection matrix
+      DMatrix4x1 H_T; // Transpose of track projection matrix  
+
+      // To transform from (x,y) to (u,v), need to do a rotation:
+      //   u = x*cosa-y*sina
+      //   v = y*cosa+x*sina
+      H(state_x)=H_T(state_x)=cosa*cosalpha;
+      H(state_y)=H_T(state_y)=-sina*cosalpha;
+      double factor=du*sinalpha/(1.+tu*tu);
+      H(state_ty)=H_T(state_ty)=sina*factor;
+      H(state_tx)=H_T(state_tx)=-cosa*factor;
+
+      // Residual
+      points[id]->dw=-du;
+      if (fit_type==kTimeBased){
+	double drift_time=points[id]->time-mT0-trajectory[m].t;
+	double drift=0.;
+	if (drift_time>0.){	  
+	  drift=(du>0?1.:-1.)*GetDriftDistance(drift_time);
+	}
+	points[id]->covxx=GetDriftVariance(drift_time)-H*Cs*H_T;
+	points[id]->dw+=drift;
+
+	if (trajectory[m].h_id>999){
+	  Hres_vs_drift_time->Fill(drift_time,points[id]->dw);
+	}
+      }
+      else points[id]->covxx=0.0833-H*Cs*H_T;
+    }
      
     S=trajectory[m].Skk;
     C=trajectory[m].Ckk;
@@ -255,7 +416,7 @@ jerror_t DEventProcessor_fdc_hists::Fit(int fit_type,DMatrix4x1 &S,
   DMatrix1x4 H;  // Track projection matrix
   DMatrix4x1 H_T; // Transpose of track projection matrix 
   DMatrix4x1 K;  // Kalman gain matrix
-  double V=0.0833;  // Measurement covariance   
+  double V=0.08333;  // Measurement covariance   
   double InvV; // Inverse of error
   DMatrix4x4 I; // identity matrix
   DMatrix4x4 J; // Jacobian matrix
@@ -279,7 +440,6 @@ jerror_t DEventProcessor_fdc_hists::Fit(int fit_type,DMatrix4x1 &S,
     trajectory[k-1].Skkp=S;
     trajectory[k-1].Ckkp=C;
 
-
     // Save S and J for the next step
     S0=trajectory[k].S;
     J=trajectory[k].J;
@@ -302,7 +462,8 @@ jerror_t DEventProcessor_fdc_hists::Fit(int fit_type,DMatrix4x1 &S,
       double sinalpha=sin(alpha);
       // (signed) distance of closest approach to wire
       double doca=du*cosalpha;
-      
+      double mdiff=0; // difference between track projection and measurement
+  
       // To transform from (x,y) to (u,v), need to do a rotation:
       //   u = x*cosa-y*sina
       //   v = y*cosa+x*sina
@@ -312,10 +473,20 @@ jerror_t DEventProcessor_fdc_hists::Fit(int fit_type,DMatrix4x1 &S,
       H(state_ty)=H_T(state_ty)=sina*factor;
       H(state_tx)=H_T(state_tx)=-cosa*factor;
 
-      // Difference between measurement and projection
-      double mdiff=-doca;
-      if (fit_type==kTimeBased){
-	
+      if (fit_type==kWireBased){
+	mdiff=-doca;
+      }
+      else{
+	// Compute drift distance
+	double drift_time=points[id]->time-mT0-trajectory[k].t;
+	double drift=0.;
+	if (drift_time>0.){	  
+	  drift=(du>0?1.:-1.)*GetDriftDistance(drift_time);
+	}
+	mdiff=drift-doca;
+
+	// Variance in drift distance
+	V=GetDriftVariance(drift_time);
       }
       // Variance for this hit
       InvV=1./(V+H*C*H_T);
@@ -356,6 +527,7 @@ jerror_t DEventProcessor_fdc_hists::SetReferenceTrajectory(DMatrix4x1 &S,
   DMatrix4x4 J(1.,0.,1.,0., 0.,1.,0.,1., 0.,0.,1.,0., 0.,0.,0.,1.);
     
   double dz=1.1;
+  double t=0.;
   double z=points[0]->wire->origin.z()-1.0;
 
   trajectory_t temp;
@@ -363,10 +535,11 @@ jerror_t DEventProcessor_fdc_hists::SetReferenceTrajectory(DMatrix4x1 &S,
   temp.J=J;
   temp.Skk=DMatrix4x1();
   temp.Ckk=DMatrix4x4();
-  temp.h_id=1;	  
-  temp.num_hits=1;
+  temp.h_id=0;	  
+  temp.num_hits=0;
   temp.z=z;
-  trajectory.push_back(temp);
+  temp.t=0.;
+  trajectory.push_front(temp);
   double zhit=z;
   double old_zhit=z;
   unsigned int itrajectory=0;
@@ -381,10 +554,16 @@ jerror_t DEventProcessor_fdc_hists::SetReferenceTrajectory(DMatrix4x1 &S,
       double new_z=z+dz;	      
       trajectory_t temp;
       temp.J=J;
-      temp.J(state_x,state_tx)=dz;
-      temp.J(state_y,state_ty)=dz;
+      temp.J(state_x,state_tx)=-dz;
+      temp.J(state_y,state_ty)=-dz;
+      // Flight time: assume particle is moving at the speed of light
+      temp.t=(t+=dz*sqrt(1+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty))
+	      /29.98);
       //propagate the state to the next z position
-      temp.S=J*S;
+      temp.S(state_x)=S(state_x)+S(state_tx)*dz;
+      temp.S(state_y)=S(state_y)+S(state_ty)*dz;
+      temp.S(state_tx)=S(state_tx);
+      temp.S(state_ty)=S(state_ty);
       temp.Skk=DMatrix4x1();
       temp.Ckk=DMatrix4x4();  
       temp.Skkp=DMatrix4x1();
@@ -394,14 +573,13 @@ jerror_t DEventProcessor_fdc_hists::SetReferenceTrajectory(DMatrix4x1 &S,
       if (new_z>zhit){
 	new_z=zhit;
 	temp.h_id=i+1;
-	if (points[i]->wire->layer==layer_to_skip) temp.h_id+=1000;
+	if (points[i]->wire->layer==layer_to_skip) temp.h_id+=999;
 	temp.num_hits=1;
 	done=true;
       }
       temp.z=new_z;
-      trajectory.push_back(temp); 
+      trajectory.push_front(temp); 
       S=temp.S;
-      J=temp.J;
       itrajectory++;
       z=new_z;
     }	   
@@ -411,7 +589,47 @@ jerror_t DEventProcessor_fdc_hists::SetReferenceTrajectory(DMatrix4x1 &S,
   temp.Ckk=DMatrix4x4();
   temp.h_id=0;	  
   temp.z=z+dz;
-  trajectory.push_back(temp);
-  
+  temp.J=J;
+  temp.J(state_x,state_tx)=-dz;
+  temp.J(state_y,state_ty)=-dz;
+  // Flight time: assume particle is moving at the speed of light
+  temp.t=(t+=dz*sqrt(1+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty))
+	  /29.98);
+  //propagate the state to the next z position
+  temp.S(state_x)=S(state_x)+S(state_tx)*dz;
+  temp.S(state_y)=S(state_y)+S(state_ty)*dz;
+  temp.S(state_tx)=S(state_tx);
+  temp.S(state_ty)=S(state_ty);
+  S=temp.S;
+  trajectory.push_front(temp);
+
+  if (false){
+    printf("Trajectory:\n");
+    for (unsigned int i=0;i<trajectory.size();i++){
+    printf(" x %f y %f z %f hit %d\n",trajectory[i].S(state_x),
+	   trajectory[i].S(state_y),trajectory[i].z,trajectory[i].h_id); 
+    }
+  }
+
   return NOERROR;
+}
+
+// Crude approximation for the variance in drift distance due to smearing
+double DEventProcessor_fdc_hists::GetDriftVariance(double t){
+  double sigma=0.073+0.001*t-2.6e-6*t*t;
+  return sigma*sigma;
+}
+
+#define FDC_T0_OFFSET 20.
+// Interpolate on a table to convert time to distance for the fdc
+double DEventProcessor_fdc_hists::GetDriftDistance(double t){
+  int id=int((t+FDC_T0_OFFSET)/2.);
+  if (id<0) id=0;
+  if (id>138) id=138;
+  double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
+  double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
+
+  double d=fdc_drift_table[id]+frac*dd;
+
+  return d;
 }
