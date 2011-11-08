@@ -95,7 +95,7 @@ double DTrackFitterKalmanSIMD::cdc_variance(double tanl,double t){
   //double sigma=0.04/sqrt(t+1.)+5e-6*t+10.e-4;
   double sigma=0.057/sqrt(t+1.)+3e-6*t;
   //  double tanl2=tanl*tanl;
-  // if (tanl>0.57735) sigma*=1.+1./tanl2;
+  //if (tanl>1)sigma*=0.5*(1.+tanl*tanl);
   return sigma*sigma;
 }
 
@@ -118,10 +118,12 @@ double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double Bz){
   int id=int((t+CDC_T0_OFFSET)/2.);
   if (id<0) id=0;
   if (id>398) id=398;
-  double frac=0.5*(t+CDC_T0_OFFSET-2.*double(id));
-  double dd=cdc_drift_table[id+1]-cdc_drift_table[id];
-  double d=cdc_drift_table[id]+frac*dd;
-
+  double d=cdc_drift_table[id];
+  if (id!=398){
+    double frac=0.5*(t+CDC_T0_OFFSET-2.*double(id));
+    double dd=cdc_drift_table[id+1]-cdc_drift_table[id];
+    d+=frac*dd;
+  }
   
   return d;
 }
@@ -132,10 +134,12 @@ double DTrackFitterKalmanSIMD::fdc_drift_distance(double t){
   int id=int((t+FDC_T0_OFFSET)/2.);
   if (id<0) id=0;
   if (id>138) id=138;
-  double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
-  double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
-
-  double d=fdc_drift_table[id]+frac*dd;
+  double d=fdc_drift_table[id];  
+  if (id!=138){
+    double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
+    double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
+    d+=frac*dd;
+  }
 
   return d;
 }
@@ -3293,10 +3297,12 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       
       forward_prob=TMath::Prob(chisq_forward,ndf);
       if (/*tanl_<1.732 && */forward_prob<0.001) last_error=VALUE_OUT_OF_RANGE;
-      else return NOERROR;
+      else return NOERROR; 
+
     }
   }  
-  
+ 
+
   // Fit in Central region:  deal with hits in the CDC 
   if (my_cdchits.size()>0){  
     // Initialize the state vector and covariance matrix
