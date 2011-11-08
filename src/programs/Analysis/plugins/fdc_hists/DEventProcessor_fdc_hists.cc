@@ -263,6 +263,8 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
       iter++;
       chi2_old=chi2;
       Fit(kTimeBased,S,C,chi2,ndof);  
+     
+      //printf("chi2 %f\n",chi2);
       if (chi2>chi2_old || fabs(chi2_old-chi2)<0.01 || iter==ITER_MAX) break;
       Smooth(kTimeBased,S,C); 
     }
@@ -616,7 +618,7 @@ jerror_t DEventProcessor_fdc_hists::SetReferenceTrajectory(DMatrix4x1 &S,
 
 // Crude approximation for the variance in drift distance due to smearing
 double DEventProcessor_fdc_hists::GetDriftVariance(double t){
-  double sigma=0.073+0.001*t-2.6e-6*t*t;
+  double sigma=0.06+0.00034*t;
   return sigma*sigma;
 }
 
@@ -626,10 +628,11 @@ double DEventProcessor_fdc_hists::GetDriftDistance(double t){
   int id=int((t+FDC_T0_OFFSET)/2.);
   if (id<0) id=0;
   if (id>138) id=138;
-  double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
-  double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
-
-  double d=fdc_drift_table[id]+frac*dd;
-
+  double d=fdc_drift_table[id];
+  if (id!=138){
+    double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
+    double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
+    d+=frac*dd;
+  }
   return d;
 }
