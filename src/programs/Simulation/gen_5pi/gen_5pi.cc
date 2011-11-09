@@ -9,10 +9,13 @@
 #include <cassert>
 #include <cstdlib>
 
+using std::complex;
+using namespace std;
+
 #include "particleType.h"
-#include <HDDM/hddm_s.h>
 #include "AMPTOOLS_DATAIO/ROOTDataWriter.h"
 #include "AMPTOOLS_DATAIO/ASCIIDataWriter.h"
+#include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
 #include "AMPTOOLS_AMPS/b1piAngAmp.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
@@ -31,10 +34,7 @@
 
 #include "b1piAmpCheck.h"
 
-using std::complex;
-using namespace std;
 using namespace CLHEP;
-
 
 
 int main( int argc, char* argv[] ){
@@ -115,6 +115,7 @@ int main( int argc, char* argv[] ){
 
   string rootfname=outname + ".root";
   string asciifname=outname + ".ascii";
+  string hddmfname=outname + ".hddm";
   //FILE *Ifid;
 
   // open config file
@@ -163,7 +164,7 @@ int main( int argc, char* argv[] ){
   }
   
   // open output file
-  //HDDMDataWriter hddmOut( outname );
+  HDDMDataWriter hddmOut( hddmfname );
   ROOTDataWriter rootOut( rootfname);
   ASCIIDataWriter asciiOut( asciifname );
 
@@ -279,7 +280,8 @@ int main( int argc, char* argv[] ){
 	evt->setWeight( 1.0 );
 	
 	rootOut.writeEvent( *evt ); 	  
-	asciiOut.writeEvent( *evt, part_types ); 	  
+	asciiOut.writeEvent( *evt, part_types );
+	hddmOut.writeEvent( *evt, part_types );
 	++eventCounter;
       }
       

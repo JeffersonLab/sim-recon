@@ -22,7 +22,7 @@ public:
   GammaPToNPartP( float lowMass, float highMass, 
 		  vector<float> &ChildMass,
 		  ProductionMechanism::Type type,
-		  float tcoef, float Ebeam);
+		  float tcoef=4.0, float Ebeam=9.0/*GeV*/);
   
   Kinematics* generateOne();
   AmpVecs* generateMany( int nEvents );

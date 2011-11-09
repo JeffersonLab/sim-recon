@@ -22,7 +22,7 @@
 GammaPToNPartP::GammaPToNPartP( float lowMass, float highMass, 
 				vector<float> &ChildMass,
 				ProductionMechanism::Type type, 
-				float tcoef=4.0, float Ebeam=9.0/*GeV*/) : 
+				float tcoef, float Ebeam) : 
   m_prodMech( ProductionMechanism::kProton, type, tcoef ), // last arg is t dependence
   m_beam( 0, 0, Ebeam, Ebeam ),
   m_target( 0, 0, 0, 0.938 )

@@ -1,5 +1,4 @@
 
-
 PACKAGES = AmpTools:CLHEP:ROOT
 
 ifdef HALLD_SHARED
