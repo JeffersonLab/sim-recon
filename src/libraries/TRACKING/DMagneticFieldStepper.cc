@@ -530,13 +530,26 @@ bool DMagneticFieldStepper::SwimToRadius(DVector3 &mypos, DVector3 &mymom, doubl
 	if(!finite(alpha))return true;
 	
 	DVector3 delta = mypos - last_pos;
-	mypos = last_pos + alpha*delta;
 	mymom = mom;
 
-	// The value of s actually represents the pathlength
-	// to the outside point. Adjust it back to the
-	// intersection point (approximately).
-	s -= (1.0-alpha)*delta.Mag();
+	DVector3 pos1=last_pos+alpha1*delta;
+	DVector3 pos2=last_pos+alpha2*delta;
+
+	// Choose the solution that is closer to the input point
+	if ((pos1-mypos).Mag()<(pos2-mypos).Mag()){
+	  mypos=pos1;
+	  // The value of s actually represents the pathlength
+	  // to the outside point. Adjust it back to the
+	  // intersection point (approximately).
+	  s -= (1.0-alpha1)*delta.Mag();
+	}
+	else{
+	  mypos=pos2;
+	  // The value of s actually represents the pathlength
+	  // to the outside point. Adjust it back to the
+	  // intersection point (approximately).
+	  s -= (1.0-alpha2)*delta.Mag();
+	}
 	
 	// Copy path length into caller's variable if supplied
 	if(pathlen)*pathlen=s;
