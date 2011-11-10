@@ -2,7 +2,9 @@
 #include "AMPTOOLS_DATAIO/GlueXPlotGenerator.h"
 #include "AMPTOOLS_AMPS/TwoPSAngles.h"
 #include "AMPTOOLS_AMPS/ThreePiAngles.h"
+#include "AMPTOOLS_AMPS/b1piAngAmp.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
+#include "AMPTOOLS_AMPS/Uniform.h"
 
 GlueXPlotGenerator::GlueXPlotGenerator( ConfigurationInfo* cfgInfo,
                                        const string& parFile ) :
@@ -31,5 +33,7 @@ GlueXPlotGenerator::registerPhysics( AmplitudeManager* ampManager ){
   ampManager->registerAmplitudeFactor( BreitWigner() );
   ampManager->registerAmplitudeFactor( TwoPSAngles() );
   ampManager->registerAmplitudeFactor( ThreePiAngles() );
+  ampManager->registerAmplitudeFactor( b1piAngAmp() );
+  ampManager->registerAmplitudeFactor( Uniform() );
 }
 
