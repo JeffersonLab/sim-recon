@@ -9,6 +9,7 @@
 #include <TRACKING/DTrackFitter.h>
 #include "FCAL/DFCALGeometry.h"
 
+
 #define C_EFFECTIVE 15. // start counter light propagation speed
 #define OUT_OF_TIME_CUT 200.
 
@@ -36,6 +37,8 @@ DParticleID::DParticleID(JEventLoop *loop)
 		return;
   }
   RootGeom = dapp->GetRootGeom();
+  bfield = dapp->GetBfield(); 
+  stepper= new DMagneticFieldStepper(bfield);
 
   // Get material properties for chamber gas
   double rho_Z_over_A_LnI=0,radlen=0;
@@ -452,6 +455,139 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::
   return VALUE_OUT_OF_RANGE;
 }
 
+//------------------
+// MatchToSC
+//------------------
+// Match track to the start counter paddles with hits.  If a match
+// is found, use the z-position of the track projection to the start counter 
+// planes to correct for the light propagation within the scintillator and 
+// estimate the "vertex" time.
+//
+// Unlike the next method, this method does not use the reference trajectory.
+//
+// NOTE:  an initial guess for tproj is expected as input so that out-of-time 
+// hits can be skipped
+jerror_t DParticleID::MatchToSC(const DKinematicData &parms, 
+				vector<const DSCHit*>&sc_hits, 
+				double &tproj,unsigned int &sc_match_id){ 
+  sc_match_id=0;
+  if (sc_hits.size()==0){
+    tproj=NaN;
+    return RESOURCE_UNAVAILABLE;
+  }
+  double myz=0.;
+  double dphi_min=10000.,myphi=0.;
+  unsigned int num=sc_norm.size()-1;
+
+  DVector3 pos(parms.position());
+  DVector3 mom(parms.momentum());
+  stepper->SetCharge(parms.charge());
+
+  // Swim to barrel representing the start counter straight portion
+  double ds=0.,myds=0;
+  if (stepper->SwimToRadius(pos,mom,sc_pos[1].x(),&ds)){
+    tproj=NaN;
+    return VALUE_OUT_OF_RANGE;
+  }
+  // Change the sign of ds -- most of the time we will need to add a small 
+  // amount of time to the time calculated at the start counter
+  ds*=-1.;
+
+  // Position along z and phi at intersection
+  double proj_z=pos.z();
+  double proj_phi=pos.Phi();
+  if (proj_phi<0) proj_phi+=2.*M_PI;
+
+  // Position of transition between start counter nose and leg
+  double sc_pos1=sc_pos[1].z();
+  // position in z at the end of the nose
+  double sc_posn=sc_pos[num].z();
+
+  // loop over sc hits, looking for the one with closest phi value to the 
+  // projected phi value
+  for (unsigned int i=0;i<sc_hits.size();i++){
+    // Check that the hit is not out of time with respect to the track
+    if (fabs(tproj-sc_hits[i]->t)>OUT_OF_TIME_CUT) continue;
+
+    double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
+    double dphi=phi-proj_phi;
+ 
+    // If the z position is in the nose region, match to the appropriate start
+    // counter plane
+    if (proj_z>sc_pos1){
+      double cosphi=cos(phi);
+      double sinphi=sin(phi);    
+      for (unsigned int i=1;i<num;i++){
+	DVector3 mymom=(-1.)*mom;
+	DVector3 mypos=pos;
+	double xhat=sc_norm[i].x(); 
+	double r=sc_pos[i].X();
+	double x=r*cosphi;
+	double y=r*sinphi;
+	double z=sc_pos[i].z();
+	DVector3 norm(x*xhat,y*xhat,z);  
+	DVector3 plane(x,y,z);
+	double ds2=0.;
+	if (stepper->SwimToPlane(mypos,mymom,plane,norm,&ds2)) continue;
+
+	proj_z=mypos.z();
+	if (proj_z<sc_pos[i+1].z()){
+	  proj_phi=mypos.Phi();
+	  if (proj_phi<0) proj_phi+=2.*M_PI;
+	  dphi=proj_phi-phi;
+	  ds+=ds2;
+
+	  break;
+	}
+      }
+    }
+
+    // Look for smallest difference in phi
+    if (fabs(dphi)<dphi_min){
+      dphi_min=fabs(dphi);
+      myphi=phi;
+      myz=proj_z;
+      myds=ds;
+      sc_match_id=i;
+    }
+  }
+  
+  // Look for a match in phi
+  if (dphi_min<0.16){
+    // Find the time at the start counter, before correcting for position
+    // along the start counter
+    tproj=sc_hits[sc_match_id]->t-sc_leg_tcor;
+    
+    // Check position along z
+    if (myz<sc_pos[0].z()) myz=sc_pos[0].z();
+    if (myz<sc_pos1){
+      // Leg region
+      tproj-=myz/C_EFFECTIVE;
+    }
+    else if (myz<sc_posn){
+      // Nose region
+      tproj-=((myz-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
+    }
+    else{
+      // Assume that the particle hit the most downstream z position of the
+      // start counter
+      tproj-=((sc_posn-sc_pos1)*sc_angle_cor+sc_pos1)/C_EFFECTIVE;
+    }
+	   
+    // Adjust for flight time to the position pos
+    double mass=parms.mass();
+    double p2=mom.Mag2();
+    double one_over_beta=sqrt(1.+mass*mass/p2);   
+    tproj += myds*one_over_beta/SPEED_OF_LIGHT;
+
+    return NOERROR;
+  }
+
+  tproj=NaN;
+  return VALUE_OUT_OF_RANGE;
+
+}
+
 
 //------------------
 // MatchToSC
@@ -489,7 +625,7 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 
 	  double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
 	  double dphi=phi-proj_phi;
-	  
+
 	  if (fabs(dphi)<dphi_min){
 	    dphi_min=fabs(dphi);
 	    myphi=phi;
