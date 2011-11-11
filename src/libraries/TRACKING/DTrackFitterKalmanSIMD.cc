@@ -3296,8 +3296,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       ndf=last_ndf-5;
       
       forward_prob=TMath::Prob(chisq_forward,ndf);
-      if (/*tanl_<1.732 && */forward_prob<0.001) last_error=VALUE_OUT_OF_RANGE;
-      else return NOERROR; 
+      if (/*tanl_<1.732 && */forward_prob<0.01) last_error=VALUE_OUT_OF_RANGE;
+      else 
+	return NOERROR; 
 
     }
   }  
@@ -3381,6 +3382,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	cdc_error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq,my_ndf);
 	if (cdc_error!=NOERROR){
 	  //printf("breaking out of loop iter %d error %d\n",iter2,cdc_error);
+	  if (last_error==VALUE_OUT_OF_RANGE) return NOERROR;
 	  if (iter2==0 && error==NOERROR) return cdc_error;
 	  break;
 	}
@@ -3390,6 +3392,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  double my_q=Sc(state_q_over_pt)>0?1.:-1.;
 	  if (q!=my_q){
 	      if (iter2>0) break;
+	      if (last_error==VALUE_OUT_OF_RANGE) return NOERROR;
 	      if (DEBUG_LEVEL>0)
 		_DBG_ << "Sign change in fit for protons" <<endl;
 	      return VALUE_OUT_OF_RANGE;
@@ -3399,13 +3402,15 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	//fom=anneal_factor*chisq_central;
 	if (chisq>=MAX_CHI2 ){
 	  if (iter2>0) break;
+	  if (last_error==VALUE_OUT_OF_RANGE) return NOERROR;
 	  if (DEBUG_LEVEL>0) _DBG_<< "-- central fit failed --" <<endl;
 	  return VALUE_OUT_OF_RANGE;
 	}
 	  
 	if (!isfinite(chisq)){
 	  if (iter2>0) break;
-	    return VALUE_OUT_OF_RANGE;
+	  if (last_error==VALUE_OUT_OF_RANGE) return NOERROR;
+	  return VALUE_OUT_OF_RANGE;
 	}
 	if (chisq>chisq_iter || fabs(chisq_iter-chisq)<0.1) break;
  
@@ -3419,17 +3424,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	// find best residuals and estimate t0
 	if (fit_type==kTimeBased) FindCentralResiduals();
       }
-      else{
-	if (iter2==0 && error==NOERROR) return UNRECOVERABLE_ERROR;
+      else{	
+	if (iter2==0 && error==NOERROR){
+	  if (last_error==VALUE_OUT_OF_RANGE) return NOERROR;
+	  return UNRECOVERABLE_ERROR;
+	}
 	break;
       }
     }
-
-    if (chisq_iter==1.e16) {
-      if (DEBUG_LEVEL>0) _DBG_ << "Central fit failed!" <<endl;
-      return VALUE_OUT_OF_RANGE;
-    }
-
    
     // if the result of the fit using the forward parameterization succeeded
     // but the chi2 was too high, it still may provide the best estimate for 
@@ -3720,6 +3722,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   //DMatrix5x5 JT; // transpose of this matrix
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x1 K;  // KalmanSIMD gain matrix
+  DMatrix5x5 Ctest; // covariance matrix
   double V=0.2028; //1.56*1.56/12.;  // Measurement variance
   // double V=0.05332; // 0.8*0.8/12
   double InvV; // inverse of variance
@@ -3981,8 +3984,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  //Cc=Cc-(K*(H*Cc));  
 	  // Joseph form
 	  // C = (I-KH)C(I-KH)^T + KVK^T
-	  DMatrix5x5 Ctest=Cc.SandwichMultiply(I5x5-K*H)+V*MultiplyTranspose(K);
-	  if (H*(Ctest*H_T)>0.){
+	  Ctest=Cc.SandwichMultiply(I5x5-K*H)+V*MultiplyTranspose(K);
+	  // Check that Ctest is positive definite
+	  if (Ctest(0,0)>0 && Ctest(1,1)>0 && Ctest(2,2)>0 && Ctest(3,3)>0 
+	      && Ctest(4,4)>0){
 	    Cc=Ctest;
 
 	    // Mark point on ref trajectory with a hit id for the straw
@@ -4783,6 +4788,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x1 K;  // KalmanSIMD gain matrix
   DMatrix5x1 S0,S0_; //State vector
+  DMatrix5x5 Ctest; // covariance matrix
   //DMatrix5x1 dS;  // perturbation in state vector
   double V=0.2028; // 1.56*1.56/12.;
   double InvV;  // inverse of variance
@@ -5065,55 +5071,53 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	//if (sqrt(chi2check)>NUM_SIGMA) InvV*=0.8;
 	if (sqrt(chi2check)<NUM_SIGMA)
 	  {
-	  // Mark point on ref trajectory with a hit id for the straw
-	  forward_traj[k-1].h_id=cdc_index+1;
-	  
-	  // Flag that we used this hit
-	  my_cdchits[cdc_index]->used_in_fit=true;
-
 	  // Compute KalmanSIMD gain matrix
 	  K=InvV*(C*H_T);
-		  
-	  // Update the state vector 
-	  //S=S+res*K;
-	  S+=res*K;
 
-	  /*
-	  printf("new d %f tdrift %f\n",sqrt((S(state_x)-xw)*(S(state_x)-xw)
-					  +(S(state_y)-yw)*(S(state_y)-yw)),
-		 my_cdchits[cdc_index]->hit->tdrift);
-		
-	  */
 	  // Update state vector covariance matrix
 	  //C=C-K*(H*C);
-
 	  // Joseph form
 	  // C = (I-KH)C(I-KH)^T + KVK^T
-	  C=C.SandwichMultiply(I5x5-K*H)+V*MultiplyTranspose(K);
-	  
-	  // Store the "improved" values of the state and covariance matrix
-	  cdc_updates[cdc_index].S=S;
-	  cdc_updates[cdc_index].C=C;	  
-	  cdc_updates[cdc_index].index=k-1;
-	  	 
-	  // propagate error matrix to z-position of hit
-	  StepJacobian(newz,forward_traj[k-1].pos.z(),cdc_updates[cdc_index].S,
-		       dedx,J);
-	  cdc_updates[cdc_index].C
-	    =cdc_updates[cdc_index].C.SandwichMultiply(J);
-	  
-	  // Step state back to previous z position
-	  Step(newz,forward_traj[k-1].pos.z(),dedx,cdc_updates[cdc_index].S);
+	  Ctest=C.SandwichMultiply(I5x5-K*H)+V*MultiplyTranspose(K);
+	  // Check that Ctest is positive definite
+	  if (Ctest(0,0)>0 && Ctest(1,1)>0 && Ctest(2,2)>0 && Ctest(3,3)>0 
+	      && Ctest(4,4)>0){
+	    C=Ctest;
+	    
+	    // Mark point on ref trajectory with a hit id for the straw
+	    forward_traj[k-1].h_id=cdc_index+1;
+	    
+	    // Flag that we used this hit
+	    my_cdchits[cdc_index]->used_in_fit=true;
 
-	  // Residual
-	  //double res=dm-d;
-	  double res_scale=1.-H*K;
-	  res*=res_scale;
-	  
-	  // Update chi2 for this segment
-	  double err2 = V*res_scale;
-	  chisq+=anneal*res*res/err2;
-	  numdof++;	
+	    // Update the state vector 
+	    //S=S+res*K;
+	    S+=res*K;
+	    
+	    // Store the "improved" values of the state and covariance matrix
+	    cdc_updates[cdc_index].S=S;
+	    cdc_updates[cdc_index].C=C;	  
+	    cdc_updates[cdc_index].index=k-1;
+	    
+	    // propagate error matrix to z-position of hit
+	    StepJacobian(newz,forward_traj[k-1].pos.z(),cdc_updates[cdc_index].S,
+			 dedx,J);
+	    cdc_updates[cdc_index].C
+	      =cdc_updates[cdc_index].C.SandwichMultiply(J);
+	    
+	    // Step state back to previous z position
+	    Step(newz,forward_traj[k-1].pos.z(),dedx,cdc_updates[cdc_index].S);
+	    
+	    // Residual
+	    //double res=dm-d;
+	    double res_scale=1.-H*K;
+	    res*=res_scale;
+	    
+	    // Update chi2 for this segment
+	    double err2 = V*res_scale;
+	    chisq+=anneal*res*res/err2;
+	    numdof++;	
+	  }
 	}
 
 	if (num_steps==0){

@@ -20,6 +20,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   DMatrix5x5 Q;  // Process noise covariance matrix
   DMatrix5x1 K;  // Kalman gain matrix for cdc hits
   DMatrix5x1 S0,S0_; //State vector
+  DMatrix5x5 Ctest; // Covariance matrix
 
   // Set the "used_in_fit" flags to false for all hits
   for (unsigned int i=0;i<my_fdchits.size();i++){
@@ -484,48 +485,53 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // Check if this hit is an outlier
 	  double chi2_hit=res*res*InvV1;
 	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA){
-	    // Flag the place along the reference trajectory with hit id
-	    forward_traj[k-1].h_id=1000+cdc_index;
-
-	    // Flag that we used this hit
-	    my_cdchits[cdc_index]->used_in_fit=true;
-	    
 	    // Compute KalmanSIMD gain matrix
 	    K=InvV1*(C*H_T);
 	    
-	    // Update the state vector
-	    double res=dm-d;
-	    S+=res*K;
-	      
+        
 	    // Update state vector covariance matrix
 	    //C=C-K*(H*C);    
-	    C=C.SubSym(K*(H*C));
+	    //C=C.SubSym(K*(H*C));
+	    Ctest=C.SandwichMultiply(I5x5-K*H)+Vc*MultiplyTranspose(K);	 
+	    // Check that Ctest is positive definite
+	    if (Ctest(0,0)>0 && Ctest(1,1)>0 && Ctest(2,2)>0 && Ctest(3,3)>0 
+		&& Ctest(4,4)>0){
+	      C=Ctest;
+
+	      // Flag the place along the reference trajectory with hit id
+	      forward_traj[k-1].h_id=1000+cdc_index;
+	      
+	      // Flag that we used this hit
+	      my_cdchits[cdc_index]->used_in_fit=true;
+	      
+	      // Update the state vector
+	      double res=dm-d;
+	      S+=res*K;
+	      
+	      // Store the "improved" values of the state and covariance matrix
+	      cdc_updates[cdc_index].S=S;
+	      cdc_updates[cdc_index].C=C;	 
+	      cdc_updates[cdc_index].index=k-1;
+	      
+	      // propagate error matrix to z-position of hit
+	      StepJacobian(newz,forward_traj[k-1].pos.z(),
+			   cdc_updates[cdc_index].S,dedx,J);
+	      cdc_updates[cdc_index].C
+		=cdc_updates[cdc_index].C.SandwichMultiply(J);	 
+	      
+	      // Step state back to previous z position
+	      Step(newz,forward_traj[k-1].pos.z(),dedx,cdc_updates[cdc_index].S);
+	      
+	      // Residual
+	      res*=1.-H*K;
 	  
-	    	  
-	    // Store the "improved" values of the state and covariance matrix
-	    cdc_updates[cdc_index].S=S;
-	    cdc_updates[cdc_index].C=C;	 
-	    cdc_updates[cdc_index].index=k-1;
-
-	    // propagate error matrix to z-position of hit
-	    StepJacobian(newz,forward_traj[k-1].pos.z(),
-			 cdc_updates[cdc_index].S,dedx,J);
-	    cdc_updates[cdc_index].C
-	      =cdc_updates[cdc_index].C.SandwichMultiply(J);	 
-
-	    // Step state back to previous z positio
-	    Step(newz,forward_traj[k-1].pos.z(),dedx,cdc_updates[cdc_index].S);
-
-	    // Residual
-	    res*=1.-H*K;
-	  
-	    // Update chi2 for this segment
-	    double err2 = Vc-H*(C*H_T);
-	    chisq+=anneal_factor*res*res/err2;
-	 	      
+	      // Update chi2 for this segment
+	      double err2 = Vc-H*(C*H_T);
+	      chisq+=anneal_factor*res*res/err2;
+	      
 	    // update number of degr  virtual jerror_t SmoothForward(DMatrix5x1 &S);   ees of freedom
-	    numdof++;
-	    
+	      numdof++;
+	    }
 	  }
 	  else{
 	    // Flag that we did not use this hit
