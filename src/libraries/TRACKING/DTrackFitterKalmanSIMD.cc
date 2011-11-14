@@ -952,7 +952,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
 
   // Continue adding to the trajectory until we have reached the endplate
   // or the maximum radius
-  while(z<endplate_z && r<R_MAX && fabs(S(state_q_over_p))<Q_OVER_P_MAX){
+  while(z<Z_MAX && r<R_MAX && fabs(S(state_q_over_p))<Q_OVER_P_MAX){
     if (PropagateForwardCDC(forward_traj_length,i,z,r,S)
 	!=NOERROR) return UNRECOVERABLE_ERROR;   
   }
@@ -1032,6 +1032,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   temp.Z=temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
   
   //if (r<r_outer_hit)
+  if (z<endplate_z && r<endplate_rmax)
   {
     // get material properties from the Root Geometry
     if (ENABLE_BOUNDARY_CHECK){
@@ -1106,10 +1107,10 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   double newz=z+step; // new z position  
 
   // Deal with the CDC endplate
-  if (newz>endplate_z){
-    step=endplate_z-z+0.01;
-    newz=endplate_z+0.01;
-  }
+  //if (newz>endplate_z){
+  //  step=endplate_z-z+0.01;
+  //  newz=endplate_z+0.01;
+  // }
 
   // Step through field
   double ds=Step(z,newz,dEdx,S); 
@@ -4889,7 +4890,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
     doca=sqrt(dx*dx+dy*dy);
     
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca && z<endplate_z)&& more_measurements){
+    if ((doca>old_doca/* && z<endplate_z*/)&& more_measurements){
       if (true /*my_cdchits[cdc_index]->status==0*/){
 	// Get energy loss 
 	double dedx=0.;
