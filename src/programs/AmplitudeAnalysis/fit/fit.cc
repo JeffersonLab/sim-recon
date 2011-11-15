@@ -83,6 +83,8 @@ int main( int argc, char* argv[] ){
     ampManagers[i]->registerAmplitudeFactor( BreitWigner() );
     ampManagers[i]->registerAmplitudeFactor( TwoPSAngles() );
     ampManagers[i]->registerAmplitudeFactor( ThreePiAngles() );
+    ampManagers[i]->registerAmplitudeFactor( b1piAngAmp() );
+    ampManagers[i]->registerAmplitudeFactor( Uniform() );
     ampManagers[i]->setupFromConfigurationInfo( cfgInfo );
     
     dataReaders.push_back( new ROOTDataReader( dataFiles[0], treeName ) );
