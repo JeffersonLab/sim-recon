@@ -317,7 +317,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
       double doca=sqrt(dx*dx+dy*dy);
      
       // Check if the doca is no longer decreasing
-      if (doca>old_doca){
+      if (doca>old_doca+EPS3){
 	if(my_cdchits[cdc_index]->status==0){	
 	  // Get energy loss 
 	  double dedx=GetdEdx(S(state_q_over_p), 
@@ -358,7 +358,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	       +(S(state_y)-origin.y()-uy*dzw)*my_uy)
 	      /(my_ux*my_ux+my_uy*my_uy);
 
-	    if (fabs(dz)>two_step) do_brent=true;
+	    if (fabs(dz)>two_step || dz<0) do_brent=true;
 	  }
 	  else do_brent=true;
 	  if (do_brent){
@@ -368,7 +368,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      =forward_traj_cdc[k].pos.z()-forward_traj_cdc[k-1].pos.z();
 	      dz=BrentsAlgorithm(z,step_size,dedx,origin,dir,S);
 	    */
-	    dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
+	    //dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
+	    dz=BrentsAlgorithm(z,-mStepSizeZ,dedx,origin,dir,S);
 	  }
 	  double newz=z+dz;
 	  // Check for exiting the straw

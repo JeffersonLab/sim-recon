@@ -3841,7 +3841,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     doca=(pos-wirepos).Perp();
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca && pos.z()>cdc_origin[2])
+    if ((doca>old_doca+EPS3/* && pos.z()>cdc_origin[2]*/)
 	&& more_measurements){
       if (my_cdchits[cdc_index]->status==good_hit){
 	// Save values at end of current step
@@ -3890,20 +3890,28 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  ds2=((pos.x()-origin.x()-ux*dzw)*my_ux
 	       +(pos.y()-origin.y()-uy*dzw)*my_uy)/denom;
 	 
-	  //if (fabs(ds2)<2.*mStepSizeS){
-	  if (fabs(ds2)<two_step){
-	    if(pos.z()+ds2*sinl<cdc_origin[2]){
-	      ds2=(cdc_origin[2]-pos.z())/sinl;
-	    }
-	    FixedStep(pos,ds2,Sc,dedx);
+	  if (ds2<0){
+	    do_brent=true;
 	  }
-	  else do_brent=true;
+	  else{
+	  //if (fabs(ds2)<2.*mStepSizeS){
+	    
+	    if (fabs(ds2)<two_step){
+	      if(pos.z()+ds2*sinl<cdc_origin[2]){
+		ds2=(cdc_origin[2]-pos.z())/sinl;
+	      }
+	      FixedStep(pos,ds2,Sc,dedx);
+	    }
+	    else do_brent=true;
+	  }
 	}
 	else do_brent=true;
 	if (do_brent){ 
 	  // ... otherwise, use Brent's algorithm.
 	  // See Numerical Recipes in C, pp 404-405
-	  ds2=BrentsAlgorithm(-step1,-step2,dedx,pos,origin,dir,Sc);
+	  //ds2=BrentsAlgorithm(-step1,-step2,dedx,pos,origin,dir,Sc);
+	  ds2=BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,pos,origin,dir,Sc);
+	  // printf("ds2 %f\n",ds2);
 	}
 	// propagate covariance matrix along the reference trajectory.
 	// Compute the Jacobian matrix
@@ -4890,7 +4898,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
     doca=sqrt(dx*dx+dy*dy);
     
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca/* && z<endplate_z*/)&& more_measurements){
+    if ((doca>old_doca+EPS3/* && z<endplate_z*/)&& more_measurements){
       if (true /*my_cdchits[cdc_index]->status==0*/){
 	// Get energy loss 
 	double dedx=0.;
@@ -4935,7 +4943,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 		      +(S(state_y)-origin.y()-uy*dzw)*my_uy)
 	    /(my_ux*my_ux+my_uy*my_uy);
 
-	  if (fabs(dz)>two_step) do_brent=true;
+	  if (fabs(dz)>two_step || dz<0) do_brent=true;
 	}
 	else do_brent=true;
 	if (do_brent){
@@ -4945,7 +4953,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	    =forward_traj[k].pos.z()-forward_traj[k-1].pos.z();
 	    dz=BrentsAlgorithm(z,step_size,dedx,origin,dir,S);
 	  */
-	  dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
+	  //dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
+	  dz=BrentsAlgorithm(z,-mStepSizeZ,dedx,origin,dir,S);
 	}
 	double newz=z+dz;
 	// Check for exiting the straw
