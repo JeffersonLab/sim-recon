@@ -21,13 +21,14 @@
 #define EPS 3.0e-8
 #define BIG 1.0e8
 #define EPS2 1.e-4
+#define EPS3 1.e-3
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
 #define MAX_CHI2 1e8
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
 #define Z_MIN 0.
-#define Z_MAX 600.
+#define Z_MAX 175.0
 #define R_MAX 65.0
 #define R_MAX_FORWARD 65.0
 #ifndef SPEED_OF_LIGHT
@@ -60,8 +61,8 @@
 #define MIN_CDC_HITS 3
 
 #define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.00025 // in GeV
-#define DE_PER_STEP_TIME_BASED 0.00025
+#define DE_PER_STEP_WIRE_BASED 0.0005 // 0.00025 // in GeV
+#define DE_PER_STEP_TIME_BASED 0.0005 // 0.00025
 #define BFIELD_FRAC 0.001
 #define MIN_STEP_SIZE 0.1 // in cm
 #define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
