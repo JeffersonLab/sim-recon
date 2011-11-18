@@ -21,7 +21,7 @@
 #define EPS 3.0e-8
 #define BIG 1.0e8
 #define EPS2 1.e-4
-#define EPS3 1.e-3
+#define EPS3 1.e-2
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
 #define MAX_CHI2 1e8
@@ -57,8 +57,8 @@
 #define MAX_DEDX 40.
 #define MIN_ITER 2
 #define MIN_CDC_ITER 0
-#define MIN_FDC_HITS 3
-#define MIN_CDC_HITS 3
+#define MIN_FDC_HITS 2
+#define MIN_CDC_HITS 2
 
 #define MOLIERE_FRACTION 0.99
 #define DE_PER_STEP_WIRE_BASED 0.0005 // 0.00025 // in GeV
