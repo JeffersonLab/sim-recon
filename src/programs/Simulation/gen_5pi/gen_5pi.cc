@@ -42,7 +42,7 @@ int main( int argc, char* argv[] ){
   string  configfile("gen_OmegaPiPi.cfg");
   string  outname("gen_test.ascii");
   b1piAmpCheck AmpCheck;
-  bool diag = false, genFlat = false;
+  bool diag = false, genFlat = false, StrictEvtLimit=false;
   
   // default upper and lower bounds 
   double lowMass = 0.7, highMass = 3.0, Mpipm,Mpi0;
@@ -74,6 +74,9 @@ int main( int argc, char* argv[] ){
     if (arg == "-n"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  nEvents = atoi( argv[++i] ); }
+    if (arg == "-N"){  
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else { nEvents = atoi( argv[++i] ); StrictEvtLimit=true;} }
     if (arg == "-b"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  batchSize = atoi( argv[++i] ); }
@@ -95,6 +98,7 @@ int main( int argc, char* argv[] ){
       cout << "\t -l <value>\t Low edge of mass range (GeV) [optional]" << endl;
       cout << "\t -u <value>\t Upper edge of mass range (GeV) [optional]" << endl;
       cout << "\t -n <value>\t Minimum number of events to generate [optional]" << endl;
+      cout << "\t -N <value>\t Exact number of events to generate [optional]" << endl;
       cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
       //cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl ;
       cout << "\t -s <value> Specify random number generator seed [optional]" << endl;
@@ -283,6 +287,7 @@ int main( int argc, char* argv[] ){
 	asciiOut.writeEvent( *evt, part_types );
 	hddmOut.writeEvent( *evt, part_types );
 	++eventCounter;
+	if(StrictEvtLimit && eventCounter>=nEvents) break;
       }
       
       
