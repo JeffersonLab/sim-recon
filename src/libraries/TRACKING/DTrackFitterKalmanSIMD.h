@@ -34,6 +34,10 @@
 #ifndef SPEED_OF_LIGHT
 #define SPEED_OF_LIGHT 29.98
 #endif
+// The next constant is 1/c and is intended to avoid too many unnecessary 
+// divisions by the speed of light
+#define TIME_UNIT_CONVERSION 3.33564095198152014e-02
+#define ONE_OVER_C TIME_UNIT_CONVERSION
 #define CDC_DRIFT_SPEED 55e-4
 #define VAR_S 0.09
 #define Q_OVER_P_MAX 100. // 10 MeV/c
