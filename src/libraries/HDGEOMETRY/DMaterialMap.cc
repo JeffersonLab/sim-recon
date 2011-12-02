@@ -339,7 +339,7 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	if(mod<1.0E-6)return s_to_boundary; // for when momentum is purely in phi direction
 	double p_hatR = pr/mod;
 	double p_hatZ = pz/mod;
-	DVector2 p_hat(p_hatR, p_hatZ);
+	//DVector2 p_hat(p_hatR, p_hatZ);
 
 	// Get shortest distance to boundary of entire map
 	s_to_boundary = DistanceToBox(r, z, p_hatR, p_hatZ, rmin, rmax, zmin, zmax);
@@ -355,7 +355,6 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	if(irregular_density_profile){
 		return EstimatedDistanceToBoundarySearch(r, z, p_hatR, p_hatZ, s_to_boundary);
 	}
-
 	
 	// Loop over boundaries stored in z_boundaries
 	for(unsigned int i=0; i<z_boundaries.size(); i++){
@@ -438,7 +437,7 @@ double DMaterialMap::EstimatedDistanceToBoundarySearch(double r, double z, doubl
 
 		// Check radiation length against start point's
 		double RadLen = nodes[ir][iz].RadLen;
-		if(RadLen < 0.5*RadLen_start){
+		if(RadLen < 0.5*RadLen_start || RadLen>2.0*RadLen_start ){
 			double rmin_cell = (double)last_ir*dr + rmin;
 			double rmax_cell = rmin_cell + dr;
 			double zmin_cell = (double)last_iz*dz + zmin;
@@ -465,7 +464,7 @@ double DMaterialMap::EstimatedDistanceToBoundarySearch(double r, double z, doubl
 //-----------------
 // DistanceToBox
 //-----------------
-double DMaterialMap::DistanceToBox(double &posx, double &posy, double &xdir, double &ydir, double xmin, double xmax, double ymin, double ymax)
+inline double DMaterialMap::DistanceToBox(double &posx, double &posy, double &xdir, double &ydir, double xmin, double xmax, double ymin, double ymax)
 {
 	/// Given a point in 2-D space, a direction, and the limits of a box, find the
 	/// closest distance to box edge in the given direction.
