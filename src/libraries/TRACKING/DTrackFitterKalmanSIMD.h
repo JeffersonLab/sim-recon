@@ -61,10 +61,10 @@
 #define MIN_CDC_HITS 2
 
 #define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.0005 // 0.00025 // in GeV
-#define DE_PER_STEP_TIME_BASED 0.0005 // 0.00025
-#define BFIELD_FRAC 0.001
-#define MIN_STEP_SIZE 0.1 // in cm
+#define DE_PER_STEP_WIRE_BASED 0.00025 // in GeV
+#define DE_PER_STEP_TIME_BASED 0.00025 // in GeV
+#define BFIELD_FRAC 0.0001
+#define MIN_STEP_SIZE 0.05 // in cm
 #define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
 #define FDC_INTERNAL_STEP_SIZE 0.5 // in cm
 
@@ -260,9 +260,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			 const DVector3 &dir,const DMatrix5x1 &S);
   
   jerror_t PropagateForwardCDC(int length,int &index,double &z,double &r,
-			       DMatrix5x1 &S); 
+			       DMatrix5x1 &S, bool &stepped_to_boundary); 
   jerror_t PropagateForward(int length,int &index,double &z,double zhit,
-			    double &step,DMatrix5x1 &S,bool &done);
+			    DMatrix5x1 &S,bool &done,
+			    bool &stepped_to_boundary);
 
   DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
   DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
@@ -360,6 +361,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
  private:
   bool last_smooth;
+  unsigned int last_material_map;
  
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
