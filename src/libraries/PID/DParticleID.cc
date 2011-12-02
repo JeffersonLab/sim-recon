@@ -325,7 +325,7 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::f
   }
   
   // Check for a match 
-  double p=rt->swim_steps[0].mom.Mag();
+  //  double p=rt->swim_steps[0].mom.Mag();
   double match_cut=0.;
   match_cut = 6.15; //current dPositionMatchCut_DoubleEnded variable in DTOFPoint_factory.cc
 //  if (fit_type==DTrackFitter::kTimeBased) match_cut=3.624+0.488/p;
