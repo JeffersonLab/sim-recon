@@ -22,6 +22,9 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   DMatrix5x1 S0,S0_; //State vector
   DMatrix5x5 Ctest; // Covariance matrix
 
+  // Vectors for cdc wires
+  DVector3 origin,dir,wirepos;
+
   // Set the "used_in_fit" flags to false for all hits
   for (unsigned int i=0;i<my_fdchits.size();i++){
     my_fdchits[i]->used_in_fit=false;
@@ -304,13 +307,13 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
       }
     }
     else if (num_cdc_hits>0){
-      DVector3 origin=my_cdchits[cdc_index]->hit->wire->origin;
+      origin=my_cdchits[cdc_index]->hit->wire->origin;
       double z0w=origin.z();
-      DVector3 dir=my_cdchits[cdc_index]->hit->wire->udir;
+      dir=my_cdchits[cdc_index]->hit->wire->udir;
       double uz=dir.z();
       double z=forward_traj[k].pos.z();
-      DVector3 wirepos=origin+((z-z0w)/uz)*dir;
-
+      wirepos=origin+((z-z0w)/uz)*dir;
+    
       // doca variables
       double dx=S(state_x)-wirepos.x();
       double dy=S(state_y)-wirepos.y();
