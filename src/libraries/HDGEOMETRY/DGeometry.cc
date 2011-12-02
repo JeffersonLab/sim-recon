@@ -183,22 +183,32 @@ jerror_t DGeometry::FindMatALT1(DVector3 &pos, DVector3 &mom,double &KrhoZ_overA
 jerror_t DGeometry::FindMatKalman(DVector3 &pos, DVector3 &mom,double &Z,
 				  double &KrhoZ_overA, 
 				  double &rhoZ_overA, 
-				  double &LnI,double *s_to_boundary) const
+				  double &LnI,unsigned int &last_index,
+				  double *s_to_boundary) const
 {
-  for(unsigned int i=0; i<materialmaps.size(); i++){
+  //last_index=0;
+  for(unsigned int i=last_index; i<materialmaps.size(); i++){
     jerror_t err = materialmaps[i]->FindMatKalman(pos,Z,KrhoZ_overA,
 						  rhoZ_overA,LnI);
     if(err==NOERROR){
-      	if(s_to_boundary==NULL)return NOERROR;	// User doesn't want distance to boundary
+      if (i==materialmaps.size()-1) last_index=0;
+      else last_index=i;
+      if(s_to_boundary==NULL)return NOERROR;	// User doesn't want distance to boundary
 
-      // We found the material map containing this point. Search through all
-      // material maps above and including this one to find the estimated
-      // distance to the nearest boundary the swimmer should step to. Maps
-      // after this one would only be considered outside of this one so
-      // there is no need to check them.
       *s_to_boundary = 1.0E6;
-      for(unsigned int j=0; j<=i; j++){
-	double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom);
+      // If we are in the main mother volume, search through all the maps for
+      // the nearest boundary
+      if (last_index==0){
+	for(unsigned int j=0; j<materialmaps.size();j++){
+	  double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom);
+	  if(s<*s_to_boundary){
+	    *s_to_boundary = s;
+	  }
+	}
+      }
+      else{
+	// otherwise, we found the material map containing this point. 
+	double s = materialmaps[last_index]->EstimatedDistanceToBoundary(pos, mom);
 	if(s<*s_to_boundary)*s_to_boundary = s;
       }
       return NOERROR;
@@ -209,17 +219,20 @@ return RESOURCE_UNAVAILABLE;
 }
 
 //---------------------------------
-// FindMatKalman - Kalman filter needs slightly different set of parms.
-//---------------------------------
 jerror_t DGeometry::FindMatKalman(DVector3 &pos,double &Z,
 				  double &KrhoZ_overA, 
 				  double &rhoZ_overA, 
-				  double &LnI) const
+				  double &LnI, unsigned int &last_index) const
 {
-  for(unsigned int i=0; i<materialmaps.size(); i++){
+  //last_index=0;
+  for(unsigned int i=last_index; i<materialmaps.size(); i++){
     jerror_t err = materialmaps[i]->FindMatKalman(pos,Z,KrhoZ_overA,
 						  rhoZ_overA,LnI);
-    if(err==NOERROR) return err;
+    if(err==NOERROR){
+      if (i==materialmaps.size()-1) last_index=0;
+      else last_index=i;
+      return err;
+    }
   }
        
   return RESOURCE_UNAVAILABLE;

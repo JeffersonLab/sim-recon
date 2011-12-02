@@ -77,10 +77,12 @@ class DGeometry{
 		jerror_t FindMatKalman(DVector3 &pos, DVector3 &mom,double &Z,
 				       double &KrhoZ_overA,
 				       double &rhoZ_overA,double &LnI,
+				       unsigned int &last_index,
 				       double *s_to_boundary=NULL) const;
 		jerror_t FindMatKalman(DVector3 &pos, double &Z,
 				      double &KrhoZ_overA,
-				      double &rhoZ_overA,double &LnI) const;
+				       double &rhoZ_overA,double &LnI,
+				       unsigned int &last_index) const;
 
 		const DMaterialMap::MaterialNode* FindMatNode(DVector3 &pos) const;
 		const DMaterialMap* FindDMaterialMap(DVector3 &pos) const;
