@@ -48,6 +48,8 @@ writeEvent( const Kinematics& kin, vector<int> ptype,
   s_PhysicsEvents_t* pes;
   s_Reactions_t* rs;
   s_Vertices_t* vs;
+  s_Beam_t* bs;
+  s_Target_t* ts;
   s_Origin_t* origin;
   s_Products_t* ps;
   s_HDDM_t *thisOutputEvent = make_s_HDDM();
@@ -68,8 +70,31 @@ writeEvent( const Kinematics& kin, vector<int> ptype,
   origin->vy = vy;
   origin->vz = vz;
   
+
+  rs->in[0].beam = bs = make_s_Beam();
+  bs->type = (Particle_t)1;
+  bs->momentum = make_s_Momentum();
+  bs->momentum->px = kin.particle(0).px();
+  bs->momentum->py = kin.particle(0).py();
+  bs->momentum->pz = kin.particle(0).pz();
+  bs->momentum->E  = kin.particle(0).e();
+  bs->properties = make_s_Properties();
+  bs->properties->charge = 0;
+  bs->properties->mass = 0.0;
+
+  rs->in[0].target = ts = make_s_Target();
+  ts->type = (Particle_t)14;
+  ts->momentum = make_s_Momentum();
+  ts->momentum->px = 0;
+  ts->momentum->py = 0;
+  ts->momentum->pz = 0;
+  ts->momentum->E  = 0.938272;
+  ts->properties = make_s_Properties();
+  ts->properties->charge=+1;
+  ts->properties->mass = 0.938272;
+
   
-  for(int i=0;i<nParticles;i++, ps->mult++){
+  for(int i=1;i<nParticles;i++, ps->mult++){
     
       ps->in[ps->mult].type = (Particle_t)ptype[i];
       ps->in[ps->mult].pdgtype = 0;    /* don't bother with the PDG type here */
