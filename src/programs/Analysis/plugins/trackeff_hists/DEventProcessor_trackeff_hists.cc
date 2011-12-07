@@ -165,7 +165,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 
 	// Loop over thrown tracks
 	for(unsigned int i=0; i<throwns.size(); i++){
-		const DParticle *thrown = throwns[i];
+		const DTrackTimeBased *thrown = throwns[i];
 
 		trk.pthrown = thrown->momentum();
 
@@ -223,7 +223,7 @@ void DEventProcessor_trackeff_hists::GetTrackInfo(const DKinematicData *kd, trac
 	// at the chisq and Ndof.
 	const DTrackCandidate *can = dynamic_cast<const DTrackCandidate*>(kd);
 	const DTrackWireBased *track = dynamic_cast<const DTrackWireBased*>(kd);
-	const DParticle *part = dynamic_cast<const DParticle*>(kd);
+	const DTrackTimeBased *part = dynamic_cast<const DTrackTimeBased*>(kd);
 	if(can!=NULL){
 		ti.trk_chisq = can->chisq;
 		ti.trk_Ndof = can->Ndof;
