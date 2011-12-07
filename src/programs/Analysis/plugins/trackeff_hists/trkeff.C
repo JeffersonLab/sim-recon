@@ -1,12 +1,3 @@
-double myfunc(double *x,double *par ){
-  //if (x[0]<1) return 1.;
-  //if (x[0]>130) return 130;
-  //return par[0]+par[1]*x[0]+par[2]*x[0]*x[0]+par[3]*x[0]*x[0]*x[0];
-
-  return 1.;
-}
-
-
 void trkeff(int pid)
 {
 	gROOT->Reset();
@@ -26,9 +17,9 @@ void trkeff(int pid)
 	TTree *trkeff = (TTree*)gROOT->FindObject("trkeff");
 
 	// Create histograms to calculate efficiency
-	TH2D *np = new TH2D("np","Numerator", 50,-1.5,148.5,70,-0.05,6.95);
-	TH2D *dp = new TH2D("dp","Denominator",50,-1.5,148.5,70,-0.05,6.95);	
-	TH2D *npcut = new TH2D("npcut","numerator",50,-1.5,148.5,70,-0.05,6.95);
+	TH2D *np = new TH2D("np","Numerator", 70,0,140,70,-0.05,6.95);
+	TH2D *dp = new TH2D("dp","Denominator",70,0,140,70,-0.05,6.95);	
+	TH2D *npcut = new TH2D("npcut","numerator",70,0,140,70,-0.05,6.95);
 
 	trkeff->Project("np", "F.pthrown.Mag():180./3.14159*F.pthrown.Theta()", "F.trktb.Nfdc>0 || F.trktb.Ncdc>0");
 	trkeff->Project("dp", "F.pthrown.Mag():180/3.14159*F.pthrown.Theta()", "");
@@ -56,8 +47,8 @@ void trkeff(int pid)
 
 	// Find the region where the efficiency drops through 50% and fit 
 	// the resulting ridge with a polynomial.
-	TH2D *ridge = new TH2D("ridge","ridge", 50,-1.5,148.5,70,-0.05,6.95);
-	for (unsigned int i=2;i<50;i++){
+	TH2D *ridge = new TH2D("ridge","ridge", 70,0,140,70,-0.05,6.95);
+	for (unsigned int i=2;i<65;i++){
 	  for (unsigned int j=2;j<70;j++){
 	    double frac=effp->GetBinContent(i,j);	  
 	    if (frac>0.0){
@@ -125,10 +116,35 @@ void trkeff(int pid)
 	if (pid==9) c2->SaveAs("pion_efficiency_with_chi2_cut.png");
 	else c2->SaveAs("proton_efficiency_with_chi2_cut.png");
 
-	
+	if (pid==9){
+	  ofstream ofile("pion.txt");
+	  ofile << "<html>" <<endl;
+	  ofile<<"<h1>Single track reconstruction</h1>" <<endl;
+	  ofile<<"<p> Yellow lines indicate recommended fiducial cuts </p>" 
+	    <<endl;
+	  ofile<<"<h2>Pion events</h6>" <<endl;
+	}
+	else{
+	  ofstream ofile("proton.txt");
+	  ofile<<"<h2>Proton events</h6>" <<endl;
+	}
 	double eff = np->GetEntries()/dp->GetEntries();
-	cout<<" eff = "<<eff<<endl;
+	ofile <<"<p>Overall efficiency = "<<eff<<"<br/>"<<endl;
 	double effcut = npcut->GetEntries()/dp->GetEntries();
-	cout<<" eff (Prob>0.01) = "<<effcut<<endl;
-
+	ofile <<"  Efficiency (Prob>0.01) = "<<effcut<<"<br/>" << endl;
+	ofile << "Momentum cut: p=" << par[0] << "&ensp;+&ensp;" 
+	      << par[1] << "&thinsp;&theta;&ensp;+&ensp;" 
+	      << par[2] << "&thinsp;&theta;<sup>2</sup>&ensp;+&ensp;" << par[3]
+	      <<"&thinsp;&theta;<sup>3</sup></p>" <<endl;
+	if (pid==9){
+	  ofile <<"<img src=\"pion_efficiency.png\">" <<endl;
+	  ofile <<"<img src=\"pion_efficiency_with_chi2_cut.png\">" <<endl;
+	}
+	else{
+	  ofile <<"<img src=\"proton_efficiency.png\">" <<endl;
+	  ofile <<"<img src=\"proton_efficiency_with_chi2_cut.png\">" <<endl;
+	  ofile << "</html>" <<endl;
+	}
+	
+	ofile.close();
 }
