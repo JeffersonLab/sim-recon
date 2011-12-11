@@ -662,18 +662,18 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 	timebased_track->AddAssociatedObject(fdchits[m]);
       
       // dEdx
-      vector<DParticleID::dedx_t>dEdx_list;
-      pid_algorithm->GetdEdx(timebased_track,dEdx_list);
-      double dEdx=0.;
-      if (dEdx_list.size()){
-	unsigned int num=dEdx_list.size()/2+1;
-	for (unsigned int m=0;m<num;m++){
-	  dEdx+=dEdx_list[m].dE/dEdx_list[m].dx;
-	}
-	timebased_track->setdEdx(dEdx/double(num));
-      }
-      else timebased_track->setdEdx(-1000.);
-      
+		double locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC;
+		unsigned int locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC;
+		pid_algorithm->CalcDCdEdx(timebased_track, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
+
+		timebased_track->ddEdx_FDC = locdEdx_FDC;
+		timebased_track->ddx_FDC = locdx_FDC;
+		timebased_track->dNumHitsUsedFordEdx_FDC = locNumHitsUsedFordEdx_FDC;
+		timebased_track->ddEdx_CDC = locdEdx_CDC;
+		timebased_track->ddx_CDC = locdx_CDC;
+		timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
+		timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC); //deprecated, should no longer be used!!
+
       // Add DTrack object as associate object
       timebased_track->AddAssociatedObject(track);
     

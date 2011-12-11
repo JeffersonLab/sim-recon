@@ -76,6 +76,9 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	bool locMatchedOuterDetectorFlag;
 	double locRFTime = 0.0;
 	double locRFBunchFrequency = 2.004;
+	double locChiSq_Total, locChiSq_DCdEdx;
+	unsigned int locNDF_Total, locNDF_DCdEdx;
+	bool locUseDCdEdxForPIDFlag;
 
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	vector<const DTOFPoint*> locTOFPoints;
@@ -96,17 +99,18 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 		locChargedTrackHypothesis->dTrackTimeBased = locTrackTimeBased;
 
-		// Calculate DC dE/dx
+		locChargedTrackHypothesis->dPID = dPIDAlgorithm->IDTrack(locTrackTimeBased->charge(), locTrackTimeBased->mass()); //mass used in track fit to create DTrackWireBased
+
+		// Calculate DC dE/dx ChiSq
 		// Compute the dEdx for the hits on the track
-		double locdEdx = 0.0, locChiSq_DCdEdx = 0.0, locDCPath = 0.0;
-		unsigned int locNumTrackHits = 0;
-		dPIDAlgorithm->GetdEdxChiSq(locTrackTimeBased, locdEdx, locNumTrackHits, locChiSq_DCdEdx, locDCPath);
-		locChargedTrackHypothesis->dDCdEdx = locdEdx;
+		locUseDCdEdxForPIDFlag = false; //true when enabled
+		if(dPIDAlgorithm->CalcDCdEdxChiSq(locChargedTrackHypothesis, locChiSq_DCdEdx, locNDF_DCdEdx) != NOERROR)
+			locUseDCdEdxForPIDFlag = false;
 		locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq_DCdEdx;
-		locChargedTrackHypothesis->dNDF_DCdEdx = 1;
+		locChargedTrackHypothesis->dNDF_DCdEdx = locNDF_DCdEdx;
 
 		// Initialize projected time to estimate from track
-		locProjectedTime=locTrackTimeBased->t0();
+		locProjectedTime = locTrackTimeBased->t0();
 
 		locMatchedOuterDetectorFlag = false;
 		// Try matching the track with hits in the outer detectors
@@ -157,7 +161,9 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			}
 		}
 
-		locChargedTrackHypothesis->dPID = dPIDAlgorithm->IDTrack(locTrackTimeBased->charge(), locTrackTimeBased->mass()); //mass used in track fit to create DTrackWireBased
+		//Calculate PID ChiSq, NDF, FOM
+		locNDF_Total = 0;
+		locChiSq_Total = 0.0;
 		if((locTrackTimeBased->t0_detector() == SYS_START) && (locMatchedOuterDetectorFlag == true)){ //use timing info to determine particle ID
 			// Use ST hit to select RF beam bucket
 			locPropagatedRFTime = locRFTime + (locTrackTimeBased->z() - dTargetZCenter)/SPEED_OF_LIGHT;
@@ -173,18 +179,21 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			locTimingChiSq = locTimeDifference*locTimeDifference/(locProjectedTimeUncertainty*locProjectedTimeUncertainty);
 			locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
 			locChargedTrackHypothesis->dNDF_Timing = 1;
-//			locChargedTrackHypothesis->dChiSq = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
-//			locChargedTrackHypothesis->dNDF = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
-			locChargedTrackHypothesis->dChiSq = locChargedTrackHypothesis->dChiSq_Timing;
-			locChargedTrackHypothesis->dNDF = locChargedTrackHypothesis->dNDF_Timing;
-		}else{ //not enough timing information, use results from DTrackTimeBased (dEdx chisq from tracking as of July 25th, 2011)
+
+			locChiSq_Total += locTimingChiSq;
+			locNDF_Total += 1;
+		}else{ //not enough timing information
 			locChargedTrackHypothesis->dChiSq_Timing = 0.0;
 			locChargedTrackHypothesis->dNDF_Timing = 0;
-			locChargedTrackHypothesis->dChiSq = locChargedTrackHypothesis->dChiSq_DCdEdx;
-			locChargedTrackHypothesis->dNDF = locChargedTrackHypothesis->dNDF_DCdEdx;
 		}
+		if(locUseDCdEdxForPIDFlag == true){
+			locChiSq_Total += locChargedTrackHypothesis->dChiSq_DCdEdx;
+			locNDF_Total += locChargedTrackHypothesis->dNDF_DCdEdx;
+		}
+		locChargedTrackHypothesis->dChiSq = locChiSq_Total;
+		locChargedTrackHypothesis->dNDF = locNDF_Total;
+		locChargedTrackHypothesis->dFOM = TMath::Prob(locChiSq_Total, locNDF_Total);
 
-		locChargedTrackHypothesis->dFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq, locChargedTrackHypothesis->dNDF);
 		_data.push_back(locChargedTrackHypothesis);
 	}
 

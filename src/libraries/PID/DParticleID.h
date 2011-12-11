@@ -45,28 +45,31 @@ class DParticleID:public jana::JObject{
       
   };
 
+  virtual jerror_t CalcDCdEdxChiSq(const DChargedTrackHypothesis *locChargedTrackHypothesis, double &locChiSq, unsigned int& locNDF) = 0;
 
-  virtual jerror_t GetdEdxChiSq(const DTrackTimeBased *track,double &dEdx, unsigned int &num, double &chi2, double &path)=0;
-  double GetdEdxSigma(double num_hits,double p,double mass,
-		      double mean_path_length);
-  double GetMostProbabledEdx(double p,double mass,double dx);
-  jerror_t GetdEdx(const DTrackTimeBased *track,vector<dedx_t>&dEdx_list);
-  jerror_t CalcdEdxHit(const DVector3 &mom,
-		       const DVector3 &pos,
-		       const DCDCTrackHit *hit,
-		       pair <double,double> &dedx);
-  jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks,
-		       vector<vector<const DTrackTimeBased*> >&grouped_tracks);
+  jerror_t GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>& dEdxHits_CDC, vector<dedx_t>& dEdxHits_FDC);
+  jerror_t CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC);
+  jerror_t CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC);
+
+  jerror_t CalcdEdxHit(const DVector3 &mom, const DVector3 &pos, const DCDCTrackHit *hit, pair <double,double> &dedx);
+  jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks, vector<vector<const DTrackTimeBased*> >&grouped_tracks);
 
   jerror_t MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime);
   jerror_t MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DBCALShower*>&bcal_showers, double &tproj, unsigned int &bcal_match_id, double &locPathLength, double &locFlightTime); 
   jerror_t MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DFCALShower*>&fcal_showers, double &tproj, unsigned int &fcal_match_id, double &locPathLength, double &locFlightTime);
   jerror_t MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime);
+  jerror_t MatchToSC(const DKinematicData &parms, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id);
 
   virtual Particle_t IDTrack(float locCharge, float locMass);
-  jerror_t MatchToSC(const DKinematicData &parms, 
-		     vector<const DSCHit*>&sc_hits, double &tproj,
-		     unsigned int &sc_match_id);
+
+  protected:
+		// gas material properties
+		double dKRhoZoverA_FDC, dRhoZoverA_FDC, dLnI_FDC;
+		double dKRhoZoverA_CDC, dRhoZoverA_CDC, dLnI_CDC;
+		double dDensity_FDC;
+		double dDensity_CDC;
+		double dA_CDC;
+		double dA_FDC;
 
  private: 
   //< DGeometry pointer used to access materials through calibDB maps for eloss
@@ -76,10 +79,6 @@ class DParticleID:public jana::JObject{
   // Prohibit default constructor
   DParticleID();
   
-
-  // gas material properties
-  double mKRhoZoverAGas,mRhoZoverAGas,mLnIGas;
-
   const DGeometry *geom;
   const DMagneticFieldMap *bfield;
   DMagneticFieldStepper *stepper;

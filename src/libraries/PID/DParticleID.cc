@@ -9,7 +9,6 @@
 #include <TRACKING/DTrackFitter.h>
 #include "FCAL/DFCALGeometry.h"
 
-
 #define C_EFFECTIVE 15. // start counter light propagation speed
 #define OUT_OF_TIME_CUT 200.
 
@@ -42,11 +41,14 @@ DParticleID::DParticleID(JEventLoop *loop)
 
   // Get material properties for chamber gas
   double rho_Z_over_A_LnI=0,radlen=0;
-  RootGeom->FindMat("CDchamberGas",mRhoZoverAGas,rho_Z_over_A_LnI, radlen);
-  mLnIGas=rho_Z_over_A_LnI/mRhoZoverAGas;
-  mKRhoZoverAGas=0.1535E-3*mRhoZoverAGas;
 
-//  RootGeom->FindMat("FDchamberGas",mRhoZoverAGas,rho_Z_over_A_LnI, radlen);
+  RootGeom->FindMat("CDchamberGas", dRhoZoverA_CDC, rho_Z_over_A_LnI, radlen);
+  dLnI_CDC = rho_Z_over_A_LnI/dRhoZoverA_CDC;
+  dKRhoZoverA_CDC = 0.1535E-3*dRhoZoverA_CDC;
+
+  RootGeom->FindMat("FDchamberGas", dRhoZoverA_FDC, rho_Z_over_A_LnI, radlen);
+  dLnI_FDC = rho_Z_over_A_LnI/dRhoZoverA_FDC;
+  dKRhoZoverA_FDC = 0.1535E-3*dRhoZoverA_FDC;
 
   // Get the geometry
   geom = dapp->GetDGeometry(0);  // should have run number argument...
@@ -113,59 +115,10 @@ jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
   return NOERROR;
 }
 
-
-
-// Calculate the most probable energy loss per unit length in units of 
-// GeV/cm in the FDC or CDC gas for a particle of momentum p and mass "mass"
-double DParticleID::GetMostProbabledEdx(double p,double mass,double dx){
-  double betagamma=p/mass;
-  double beta2=1./(1.+1./betagamma/betagamma);
-  if (beta2<1e-6) beta2=1e-6;
-  
-  // Electron mass 
-  double Me=0.000511; //GeV
-
-  // First (non-logarithmic) term in Bethe-Bloch formula
-  double mean_dedx=mKRhoZoverAGas/beta2;
- 
-  // Most probable energy loss from Landau theory (see Leo, pp. 51-52)
-  return mean_dedx*(log(mean_dedx*dx)
-		    -log((1.-beta2)/2./Me/beta2)-2.*mLnIGas-beta2+0.200);
-}
-
-// Empirical form for sigma/mean for gaseous detectors with num_dedx 
-// samples and sampling thickness path_length.  Assumes that the number of 
-// hits has already been converted from an (unsigned) int to a double.
-#define TCUT 100.e-6 // energy cut for bethe-bloch 
-double DParticleID::GetdEdxSigma(double num_hits,double p,double mass,
-				  double mean_path_length){
-  // kinematic quantities
-  double betagamma=p/mass;
-  double betagamma2=betagamma*betagamma;
-  double beta2=1./(1.+1./betagamma2);
-  if (beta2<1e-6) beta2=1e-6;
-
-  double Me=0.000511; //GeV
-  double m_ratio=Me/mass;
-  double two_Me_betagamma_sq=2.*Me*betagamma2;
-  double Tmax
-    =two_Me_betagamma_sq/(1.+2.*sqrt(1.+betagamma2)*m_ratio+m_ratio*m_ratio);
-  // Energy truncation for knock-on electrons
-  double T0=(Tmax>TCUT)?TCUT:Tmax;
-  
-  // Bethe-Bloch
-  double mean_dedx=mKRhoZoverAGas/beta2
-    *(log(two_Me_betagamma_sq*T0)-2.*mLnIGas-beta2*(1.+T0/Tmax));
-  
-  return 0.41*mean_dedx*pow(num_hits,-0.43)*pow(mean_path_length,-0.32);
-  //return 0.41*mean_dedx*pow(double(num_hits),-0.5)*pow(mean_path_length,-0.32);
-}
-
 // Compute the energy losses and the path lengths in the chambers for each hit 
 // on the track. Returns a list of dE and dx pairs with the momentum at the 
 // hit.
-jerror_t DParticleID::GetdEdx(const DTrackTimeBased *track,
-			       vector<dedx_t>&dEdx_list){
+jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>& dEdxHits_CDC, vector<dedx_t>& dEdxHits_FDC){
   // Position and momentum
   DVector3 pos,mom;
   
@@ -189,10 +142,8 @@ jerror_t DParticleID::GetdEdx(const DTrackTimeBased *track,
 
     // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
     // in the straw and keep track of the momentum in the active region of the detector
-    if (CalcdEdxHit(mom,pos,cdchits[i],de_and_dx)==NOERROR){
-      dEdx_list.push_back(dedx_t(de_and_dx.first,de_and_dx.second,
-				 mom.Mag()));
-    }
+    if (CalcdEdxHit(mom,pos,cdchits[i],de_and_dx)==NOERROR)
+      dEdxHits_CDC.push_back(dedx_t(de_and_dx.first, de_and_dx.second, mom.Mag()));
   }
   
   //Get the list of fdc hits used in the fit
@@ -206,21 +157,56 @@ jerror_t DParticleID::GetdEdx(const DTrackTimeBased *track,
       continue; //NaN
     my_rt->GetLastDOCAPoint(pos, mom);
    
-    double gas_thickness=1.0; // cm
-    dEdx_list.push_back(dedx_t(fdchits[i]->dE,
-			       gas_thickness/cos(mom.Theta()),
-			       mom.Mag()));
+    double gas_thickness = 1.0; // cm
+    dEdxHits_FDC.push_back(dedx_t(fdchits[i]->dE, gas_thickness/cos(mom.Theta()), mom.Mag()));
   }
     
   // Sort the dEdx entries from smallest to largest
-  sort(dEdx_list.begin(),dEdx_list.end(),DParticleID_dedx_cmp);  
+  sort(dEdxHits_FDC.begin(),dEdxHits_FDC.end(),DParticleID_dedx_cmp);  
+  sort(dEdxHits_CDC.begin(),dEdxHits_CDC.end(),DParticleID_dedx_cmp);  
  
   return NOERROR;
 }
 
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC){
+	vector<dedx_t> locdEdxHits_CDC, locdEdxHits_FDC;
+	jerror_t locReturnStatus = GetDCdEdxHits(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC);
+	if(locReturnStatus != NOERROR){
+		locdEdx_FDC = NaN;
+		locdx_FDC = NaN;
+		locNumHitsUsedFordEdx_FDC = 0;
+		locdEdx_CDC = NaN;
+		locdx_CDC = NaN;
+		locNumHitsUsedFordEdx_CDC = 0;
+		return locReturnStatus;
+	}
+	return CalcDCdEdx(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
+}
 
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC){
+	locdx_CDC = 0.0;
+	locdEdx_CDC = 0.0;
+	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()/2;
+	if(locNumHitsUsedFordEdx_CDC > 0){
+		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_CDC; ++loc_i){
+			locdEdx_CDC += locdEdxHits_CDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
+			locdx_CDC += locdEdxHits_CDC[loc_i].dx;
+		}
+		locdEdx_CDC /= locdx_CDC;
+	}
 
-
+	locdx_FDC = 0.0;
+	locdEdx_FDC = 0.0;
+	locNumHitsUsedFordEdx_FDC = locdEdxHits_FDC.size()/2;
+	if(locNumHitsUsedFordEdx_FDC > 0){
+		for(unsigned int loc_i = 0; loc_i < locNumHitsUsedFordEdx_FDC; ++loc_i){
+			locdEdx_FDC += locdEdxHits_FDC[loc_i].dE; //weight is ~ #e- (scattering sites): dx!
+			locdx_FDC += locdEdxHits_FDC[loc_i].dx;
+		}
+		locdEdx_FDC /= locdx_FDC; //weight is dx/dx_total
+	}
+	return NOERROR;
+}
 
 // Calculate the path length for a single hit in a straw and return ds and the 
 // energy deposition in the straw.  It returns dE as the first element in the 
@@ -693,21 +679,15 @@ Particle_t DParticleID::IDTrack(float locCharge, float locMass){
 		if (fabs(locMass - ParticleMass(KPlus)) < locMassTolerance) return KPlus;
 		if (fabs(locMass - ParticleMass(Positron)) < locMassTolerance) return Positron;
 		if (fabs(locMass - ParticleMass(MuonPlus)) < locMassTolerance) return MuonPlus;
-//		if (locMass < 0.3) return PiPlus;
-//		else if (locMass >= 0.3 && locMass < 0.7) return KPlus;
-//		else if (locMass >= 0.7 && locMass < 1.0) return Proton;
 	} else if (locCharge < 0.0){ // Negative particles
 		if (fabs(locMass - ParticleMass(PiMinus)) < locMassTolerance) return PiMinus;
 		if (fabs(locMass - ParticleMass(KMinus)) < locMassTolerance) return KMinus;
 		if (fabs(locMass - ParticleMass(MuonMinus)) < locMassTolerance) return MuonMinus;
 		if (fabs(locMass - ParticleMass(Electron)) < locMassTolerance) return Electron;
 		if (fabs(locMass - ParticleMass(AntiProton)) < locMassTolerance) return AntiProton;
-//		if (locMass < 0.3) return PiMinus;
-//		else if (locMass >= 0.3 && locMass < 0.7) return KMinus;
 	} else { //Neutral Track
 		if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
 		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
-//		return ((locMass > 0.4) ? Neutron : Gamma);
 	}
 	return Unknown;
 }

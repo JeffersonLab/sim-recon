@@ -36,6 +36,13 @@ class DTrackTimeBased:public DKinematicData{
 
 		double FOM;
 
+		double ddEdx_FDC;
+		double ddx_FDC;
+		unsigned int dNumHitsUsedFordEdx_FDC;
+		double ddEdx_CDC;
+		double ddx_CDC;
+		unsigned int dNumHitsUsedFordEdx_CDC;
+
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);
 			AddString(items, "candidate","%d",candidateid);

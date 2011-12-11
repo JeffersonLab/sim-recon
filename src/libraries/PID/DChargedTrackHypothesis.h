@@ -25,27 +25,27 @@ class DChargedTrackHypothesis : public jana::JObject {
 		float dPathLength; //Path length from the track position in the DTrackTimeBased object to the matched hit in either the FCAL, BCAL, or TOF
 		float dFlightTime; //The amount of time that the track took to traverse the dPathLength
 		DetectorSystem_t dMatchedTimeDetector;
-		float dDCdEdx;
 
-		float dChiSq;
+		unsigned int dNDF_Timing;
 		float dChiSq_Timing;
+
+		unsigned int dNDF_DCdEdx;
 		float dChiSq_DCdEdx;
 
 		unsigned int dNDF;
-		unsigned int dNDF_Timing;
-		unsigned int dNDF_DCdEdx;
-
+		float dChiSq;
 		float dFOM;
 
 		float mass() const{return ParticleMass(dPID);} //this may be different than the value in DTrackTimeBased!!
 		float charge() const{return ParticleCharge(dPID);} //this may be different than the value in DTrackTimeBased!!
 		DVector3 momentum() const{return dTrackTimeBased->momentum();}
 		DVector3 position() const{return dTrackTimeBased->position();}
-		float energy() const{
+		float energy() const{ //this may be different than the value in DTrackTimeBased!!
 			float locMomentum = momentum().Mag();
 			float locMass = mass();
 			return sqrt(locMomentum*locMomentum + locMass*locMass);
 		}
+		float beta() const{return momentum().Mag()/energy();}
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "PID", "%d", int(dPID));
