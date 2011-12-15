@@ -33,7 +33,7 @@ using namespace jana;
 // to change the functionality of code, but mcsmear doesn't use factories to
 // provide objects so its parameters aren't helpful.
 
-//#define BCAL_SUM_CELL
+#define BCAL_SUM_CELL
 
 class DBCALGeometry : public JObject {
   
