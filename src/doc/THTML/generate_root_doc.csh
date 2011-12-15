@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/tcsh -f
 
 set savedir=$PWD
 
@@ -32,7 +32,7 @@ end
 echo " "
 echo " "
 echo "=========== Compiling exectuable ========="
-g++ `root-config --cflags --libs` -lHtml -lThread -I.. -o gendoc *_Dict.C ../../../gendoc.cc -L$JANA_HOME/lib/$OSNAME -lJANA
+g++ `root-config --cflags --libs` -lHtml -lThread -I.. -o gendoc *_Dict.C ../../../gendoc.cc -L$JANA_HOME/lib/$BMS_OSNAME -lJANA
 ./gendoc
 
 rm -rf ../../../htmldoc
