@@ -306,28 +306,7 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   // calculated below will only be off by a little.
   double my_mass=rt->GetMass();
   double p = rt->swim_steps[0].mom.Mag();
-  double one_over_beta =sqrt(1.0+my_mass*my_mass/(p*p));
-  
-  // The error on the residual. This will be different based on the
-  // quality of the track and whether MULS is on or not etc.
-  // In principle, this could also depend on the momentum parameters
-  // of the track.
-  double sigma_anode = 0.5*ONE_OVER_SQRT12;
-  double sigma_cathode = 0.5*ONE_OVER_SQRT12;
-  switch(fit_type){
-  case kTimeBased:
-    sigma_anode = 0.5*ONE_OVER_SQRT12;
-    sigma_cathode = 0.5*ONE_OVER_SQRT12;
-    break;
-  case kWireBased:
-    sigma_anode = ONE_OVER_SQRT12;
-    sigma_cathode = ONE_OVER_SQRT12;
-    break;
-  case kHelical:
-  default:
-    sigma_anode = 5.0*ONE_OVER_SQRT12;
-    sigma_cathode = 5.0*ONE_OVER_SQRT12;
-  }
+  //double one_over_beta =sqrt(1.0+my_mass*my_mass/(p*p));
   
   // Scale the errors up by 1/p for p<1GeV/c. This accounts for the poorer knowledge
   // of the track parameters contained in the candidate for low momentum tracks
@@ -344,53 +323,19 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   // Minimum probability of hit belonging to wire and still be accepted
   double MIN_HIT_PROB = 0.01;
   
-  int old_wire=1000, old_layer=1000;
   vector<const DFDCPseudo*>::const_iterator iter;
   for(iter=fdchits_in.begin(); iter!=fdchits_in.end(); iter++){
     const DFDCPseudo *hit = *iter;
-    
-    if (fit_type!=kTimeBased){
-      if (hit->wire->layer==old_layer && hit->wire->wire==old_wire) continue;
-      old_wire=hit->wire->wire;
-      old_layer=hit->wire->layer;
-    }
 
     // Find the DOCA to this wire
     double s;
-    double doca = rt->DistToRT(hit->wire, &s);  
-	const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
-       
-    // Get "measured" distance to wire. For time-based tracks
-    // this is calculated from the drift time. For all other
-    // tracks, this is assumed to be half a cell size
-    double dist;
-    if(kTimeBased){
-      // Distance using drift time
-      // NOTE: Right now we assume pions for the TOF
-      // and a constant drift velocity of 55um/ns
-      double tof = s*one_over_beta/29.98;
-      dist = (hit->time - tof)*55E-4;
-    }else{
-      dist = 0.25; //= 0.5/2.0; half cell-size
-    }
-    
-    // Anode Residual
-    double resi = dist - doca;		
-    
-    // Cathode Residual
-    double u=rt->GetLastDistAlongWire();
-	double u_cathodes = hit->s;
-    double resic = u - u_cathodes;
-    
-    // Probability of this hit being on the track
-    //double chisq = pow(resi/sigma_anode, 2.0) + pow(resic/sigma_cathode, 2.0);
-	double sigma_anode_total = sigma_anode*mom_factor*mass_factor;
-	double sigma_cathode_total = sigma_cathode*mom_factor*mass_factor;
-	double pull_anode = resi/sigma_anode_total;
-	double pull_cathode = resic/sigma_cathode_total;
-	double chisq = pull_anode*pull_anode + pull_cathode*pull_cathode;
+    DVector3 fdc_pos(hit->xy.X(),hit->xy.Y(),hit->wire->origin.z());
+    double doca=rt->DistToRT(fdc_pos,&s);
+    double fdc_var=mom_factor*mom_factor*mass_factor*mass_factor*(1.0*1.0+0.3*0.3)/12.;
 
-    double probability = TMath::Prob(chisq, 2);
+    if (fit_type==kHelical) fdc_var*=25.;
+    double chisq=doca*doca/fdc_var;
+    double probability = TMath::Prob(chisq, 1);
     if(probability>=MIN_HIT_PROB){
       pair<double,const DFDCPseudo*>myhit;
       myhit.first=probability;
@@ -398,18 +343,21 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
       fdchits_tmp.push_back(myhit);
     }
 
-	// Optionally fill debug tree
+    // Optionally fill debug tree
+    /*
     if(fdchitsel){
-		DVector3 pos = rt->GetLastDOCAPoint();
+      DVector3 pos = rt->GetLastDOCAPoint();
+      const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
+      
 
-		fdchitdbg.fit_type = fit_type;
-		fdchitdbg.p = p;
-		fdchitdbg.theta = rt->swim_steps[0].mom.Theta();
-		fdchitdbg.mass = my_mass;
-		fdchitdbg.sigma_anode = sigma_anode;
-		fdchitdbg.sigma_cathode = sigma_cathode;
-		fdchitdbg.mom_factor_anode = mom_factor;
-		fdchitdbg.mom_factor_cathode = mom_factor;
+      fdchitdbg.fit_type = fit_type;
+      fdchitdbg.p = p;
+      fdchitdbg.theta = rt->swim_steps[0].mom.Theta();
+      fdchitdbg.mass = my_mass;
+      fdchitdbg.sigma_anode = sigma_anode;
+      fdchitdbg.sigma_cathode = sigma_cathode;
+      fdchitdbg.mom_factor_anode = mom_factor;
+      fdchitdbg.mom_factor_cathode = mom_factor;
         fdchitdbg.x = pos.X();
         fdchitdbg.y = pos.Y();
         fdchitdbg.z = pos.Z();
@@ -437,11 +385,12 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 		
 		fdchitsel->Fill();
 	}
+    */
 
     if(HS_DEBUG_LEVEL>10){
       _DBG_;
       if(probability>=MIN_HIT_PROB)jerr<<ansi_bold<<ansi_blue;
-      jerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" resic="<<resic<<" chisq="<<chisq<<" prob="<<probability<<endl;
+      jerr<<"s="<<s<<" doca="<<doca<<" chisq="<<chisq<<" prob="<<probability<<endl;
       jerr<<ansi_normal;
     }
   }
@@ -452,7 +401,7 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
   // that are within +/-1 of the wire # of the most probable hit are added 
   // to the list.
   sort(fdchits_tmp.begin(),fdchits_tmp.end(),DTrackHitSelector_fdchit_cmp);
-  old_layer=1000,old_wire=1000;
+  int old_layer=1000,old_wire=1000;
   for (unsigned int i=0;i<fdchits_tmp.size();i++){
     if (fdchits_tmp[i].second->wire->layer!=old_layer || 
 	abs(fdchits_tmp[i].second->wire->wire-old_wire)==1){
