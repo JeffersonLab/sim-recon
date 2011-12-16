@@ -203,6 +203,7 @@ C..geant..
       IANNI=1
       IPHOT=1
       IHADR=1
+		ILOSS=1
 *
 *             Make the default origin for the particle gun at 0,0,65cm.
 *

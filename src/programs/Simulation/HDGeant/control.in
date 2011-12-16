@@ -293,9 +293,8 @@ c         delta-rays below the threshold are added to the energy losses. The thr
 c         energies for delta-ray production can be set using the CUTS card (see above). 
 c         The fields 'dcute' and 'dcutm' in the CUTS card correspond to energy thresholds 
 c         for electron and muon delta-rays, respectively. The default energy threshold 
-c         value is 100 keV. 
-c      2  no delta-rays are produced. Complete fluctuations are calculated (default).
-LOSS 1
+c         value is 100 keV (default  see uginit.F  12/16/2011  DL). 
+c      2  no delta-rays are produced. Complete fluctuations are calculated .
 c
 c DCAY 0 no decay in flight
 c      1 decay in flight with generation of secondaries (default)
