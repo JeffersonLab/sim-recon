@@ -9,6 +9,7 @@
 
 #include <DVector3.h>
 using namespace std;
+#include <math.h>
 
 #include "DReferenceTrajectory.h"
 #include "DTrackCandidate.h"
@@ -1413,16 +1414,47 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	  */
 	  double b=ONE_THIRD*(a1-ONE_THIRD*a2sq);
 	  double c=0.5*(a0-ONE_THIRD*a1*a2)+a2*a2sq/27.0;
-		//double d = sqrt(pow(b, 3.0) + pow(c, 2.0)); // occasionally, this is zero. See below
-		double d=sqrt(b*b*b+c*c);
-		//double q = pow(d - c, ONE_THIRD);
-		//double p = pow(d + c, ONE_THIRD);
-		double q=cbrt(d-c);
-		double p=cbrt(d+c);
+	  double my_d2=b*b*b+c*c;
+	  if (my_d2>0){
+	    //double d = sqrt(pow(b, 3.0) + pow(c, 2.0)); // occasionally, this is zero. See below
+	    double d=sqrt(my_d2);
+	    //double q = pow(d - c, ONE_THIRD);
+	    //double p = pow(d + c, ONE_THIRD);
+	    double q=cbrt(d-c);
+	    double p=cbrt(d+c);
+	    
+	    double w0 = q - p;
+	    //phi = w0 - a2/3.0;
+	    phi = w0 - ONE_THIRD*a2;
+	  }
+	  else{
+	    // Use DeMoivre's theorem to find the cube root of a complex
+	    // number.  In this case there are three real solutions.
+	    double d=sqrt(-my_d2);
+	    c*=-1.;
+	    double temp=sqrt(cbrt(c*c+d*d));
+	    double theta1=ONE_THIRD*atan2(d,c);
+	    double sum_over_2=temp*cos(theta1);
+	    double diff_over_2=-temp*sin(theta1);
 
-		double w0 = q - p;
-		//phi = w0 - a2/3.0;
-		phi = w0 - ONE_THIRD*a2;
+	    double phi0=-a2/3+2.*sum_over_2;
+	    double phi1=-a2/3-sum_over_2+sqrt(3)*diff_over_2;
+	    double phi2=-a2/3-sum_over_2-sqrt(3)*diff_over_2;
+
+	    double d2_0 = U + phi0*(T + phi0*(S + phi0*(R + phi0*Q)));
+	    double d2_1 = U + phi1*(T + phi1*(S + phi1*(R + phi1*Q)));
+	    double d2_2 = U + phi2*(T + phi2*(S + phi2*(R + phi2*Q)));
+
+	    if (d2_0<d2_1 && d2_0<d2_2){
+	      phi=phi0;
+	    }
+	    else if (d2_1<d2_0 && d2_1<d2_2){
+	      phi=phi1;
+	    }
+	    else{
+	      phi=phi2;
+	    }
+	  }
 	}
 	
 	if(fabs(Q)<=1.0E-6 || !finite(phi)){
@@ -1500,16 +1532,6 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 		u=L_over_2;
 	}
 	this->last_dist_along_wire = u;
-
-	// Sometimes the "d" used in solving the 3rd order polynmial above 
-	// can be nan due to the sqrt argument being negative. I'm not sure
-	// exactly what this means (e.g. is this due to round-off, are there
-	// no roots, ...) Also unclear is how to handle it. The only two choices
-	// I can think of are : 1.) set phi to zero or 2.) return the nan
-	// value. Option 1.) tries to keep the hit while option 2 ties to ignore
-	// it. Both options should probably be studied at some point. For now
-	// though, it looks (at least preliminarily) like this occurs slightly
-	// less than 1% of the time on valid hits so we go ahead with option 2.
 
 	// Use phi to calculate DOCA
 	double d2 = U + phi*(T + phi*(S + phi*(R + phi*Q)));
