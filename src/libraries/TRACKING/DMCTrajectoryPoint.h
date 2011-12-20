@@ -29,7 +29,7 @@ class DMCTrajectoryPoint:public jana::JObject{
 			AddString(items, "x", "%1.3f", x);
 			AddString(items, "y", "%1.3f", y);
 			AddString(items, "z", "%1.3f", z);
-			AddString(items, "t", "%1.3f", t);
+			AddString(items, "t", "%1.3f", t/1.0E-9);
 			AddString(items, "px", "%1.3f", px);
 			AddString(items, "py", "%1.3f", py);
 			AddString(items, "pz", "%1.3f", pz);
