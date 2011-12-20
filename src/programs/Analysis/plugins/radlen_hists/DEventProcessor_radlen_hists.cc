@@ -87,8 +87,8 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 
 	nXo_vs_z = new TH1F("nXo_vs_z","Radiation lengths vs. z", 650, 0.0, 650.0);
 	inXo_vs_z = new TH1F("inXo_vs_z","Integrated radiation lengths vs. z", 650, 0.0, 650.0);
-	nXo_vs_r = new TH1F("nXo_vs_r","Radiation lengths vs. r", 180, 0.0, 90.0);
-	inXo_vs_r = new TH1F("inXo_vs_r","Integrated radiation lengths vs. r", 180, 0.0, 90.0);
+	nXo_vs_r = new TH1F("nXo_vs_r","Radiation lengths vs. r", 1000, 0.0, 90.0);
+	inXo_vs_r = new TH1F("inXo_vs_r","Integrated radiation lengths vs. r", 1000, 0.0, 90.0);
 
 	nXo_vs_z->SetStats(0);
 	nXo_vs_z->SetFillStyle(3000);
