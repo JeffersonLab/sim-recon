@@ -137,12 +137,35 @@
     2 if (int(ev).eq.ev) then
         write(LOUT,*) IDEVT," events simulated"
       endif
+
+*     Get the current values of the random number seeds. Do this
+*     here so we can overwrite them in the first "if" block below
+*     for the case when we find seeds in the generated events file.
+*     Not all generated events files will contain seeds so we want
+*     to record the seed values as they are (i.e. specified in control.in)
+*     If one of the built-in generators is used, the seed values
+*     will also come from control.in. In all cases, the seeds that are actually
+*     used are stored in the file via the storeseeds call at the end
+*     of this subroutine.
+*     
+      call GRNDMQ(iseed1,iseed2,0,'G')
+
+*
 *
 *              Try input from MonteCarlo generator first
 *
       itry = nextInput()
       if (itry .eq. 0) then
         itry = loadInput()
+*
+*       Check for random number seeds in the input file. If they are
+*       there, then the values of iseed1 and iseed2 will be overwritten
+*       by this call. If they are not there, then they will be untouched
+*       by the call.
+*
+        call getseeds(iseed1, iseed2)
+        call GRNDMQ(iseed1,iseed2,0,'S')
+
 *
 *	Fake a tagger hit of the correct energy by adding up the energy
 *	of all generated tracks and assigning them to the trigger time.
@@ -260,5 +283,12 @@ c         print *, ngen,' background photons generated this event'
       if (storetraj.ne.0) then
         call cleartrajectories()
       endif
+
+*     Store the random number seeds used for this event in the 
+*     output file. The values for the seeds are determined
+*     above since the coherent bremstrahlung generator uses the
+*     random number generator.
+*
+      call storeseeds(iseed1, iseed2)
 
       END

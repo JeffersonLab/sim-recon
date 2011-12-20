@@ -125,8 +125,9 @@ c Note, K is calculated assuming the beam energies Emax = 12, Epeak = 9.
 BGRATE 1.10
 BGGATE -200. 200.
 
-c The following card seeds the random number generator so it must be unique
-c for each run.  There are two ways to specify the random see for a run.
+c The following card seeds the random number generator, though it may be
+c overridden if seeds are found in the input file (see below). It must be
+c unique for each run.  There are two ways to specify the random seed here.
 c  1. One argument, must be an integer in the range [1,215]
 c  2. Two arguments, must be a pair of positive Integer*4 numbers
 c In the first case, one of a limited set of prepared starting seeds is
@@ -134,6 +135,14 @@ c chosen from a list.  These seeds have been certified to produce random
 c sequences that do not repeat within the first 10^9 or so random numbers.
 c For cases where more choices are needed, the two-argument form gives
 c access to a total of 2^62 choices, with no guarantees about closed loops.
+c
+c NOTE: If one uses events read from an HDDM file and that file contains
+c random number seeds for the event, those seeds will be used, overwriting
+c any value(s) specified here. Most event generators do not include the
+c seeds. The seeds are written to the output HDDM file though so if one
+c uses the output file for input to another invocation of hdgeant(++)
+c then the same seeds will be used. You may check for seeds in the input
+c file using hddm-xml file.hddm | grep random .
 RNDM 121
 
 c The following line controls the cutoffs for tracking of particles.
