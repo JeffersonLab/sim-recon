@@ -672,7 +672,7 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 		timebased_track->ddEdx_CDC = locdEdx_CDC;
 		timebased_track->ddx_CDC = locdx_CDC;
 		timebased_track->dNumHitsUsedFordEdx_CDC = locNumHitsUsedFordEdx_CDC;
-		timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC); //deprecated, should no longer be used!!
+		timebased_track->setdEdx((locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC) ? locdEdx_CDC : locdEdx_FDC);
 
       // Add DTrack object as associate object
       timebased_track->AddAssociatedObject(track);

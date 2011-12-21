@@ -192,7 +192,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		}
 		locChargedTrackHypothesis->dChiSq = locChiSq_Total;
 		locChargedTrackHypothesis->dNDF = locNDF_Total;
-		locChargedTrackHypothesis->dFOM = TMath::Prob(locChiSq_Total, locNDF_Total);
+		locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : NaN;
 
 		_data.push_back(locChargedTrackHypothesis);
 	}

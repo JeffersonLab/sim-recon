@@ -44,6 +44,11 @@ class DParticleID_PID1:public DParticleID{
 	vector<unsigned int> ddEdxSigmaNumHitsVector_CDC_KPlus;
 	vector<unsigned int> ddEdxSigmaNumHitsVector_FDC_KPlus;
 
+	vector<float> dBetaGamma_PiMinus_CDC;
+	vector<float> ddEdxMean_PiMinus_CDC;
+	vector<float> dBetaGamma_PiMinus_FDC;
+	vector<float> ddEdxMean_PiMinus_FDC;
+
  private:
   int DEBUG_LEVEL;
   // Prohibit default constructor
