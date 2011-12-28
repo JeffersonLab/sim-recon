@@ -22,8 +22,9 @@ char *OUTFILENAME = NULL;
 int QUIT = 0;
 unsigned int EVENTS_TO_SKIP = 0;
 unsigned int EVENTS_TO_KEEP = 1;
-unsigned int SPECIFIC_EVENT_TO_KEEP = 0;
 unsigned int SPECIFIC_OFFSET_TO_KEEP = 0;
+unsigned int SPECIFIC_EVENT_TO_KEEP = 0;
+bool EVENT_TO_KEEP_MODE = false;
 
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
@@ -71,8 +72,8 @@ int main(int narg,char* argv[])
 			bool write_this_event = false;
 			
 			// Loop over physics events within this event and see if one
-			// has the run number of interest
-			if(hddm_s->physicsEvents!=HDDM_NULL){
+			// has the event number of interest
+			if(EVENT_TO_KEEP_MODE && hddm_s->physicsEvents!=HDDM_NULL){
 				for(unsigned int i=0; i<hddm_s->physicsEvents->mult; i++){
 					int eventNo = hddm_s->physicsEvents->in[i].eventNo;
 					if((unsigned int)eventNo == SPECIFIC_EVENT_TO_KEEP){
@@ -124,48 +125,48 @@ int main(int narg,char* argv[])
 //-----------
 void ParseCommandLineArguments(int narg, char* argv[])
 {
-	INFILENAMES.clear();
-
-	for(int i=1; i<narg; i++){
-		char *ptr = argv[i];
-		
-		if(ptr[0] == '-'){
-			switch(ptr[1]){
-				case 'h': Usage();										break;
-				case 'o': OUTFILENAME=&ptr[2];						break;
-				case 's': EVENTS_TO_SKIP=atoi(&ptr[2]);			break;
-				case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]);			break;
-				case 'e': SPECIFIC_OFFSET_TO_KEEP=atoi(&ptr[2]);	break;
-				case 'E': SPECIFIC_EVENT_TO_KEEP=atoi(&ptr[2]);	break;
-			}
-		}else{
-			INFILENAMES.push_back(argv[i]);
-		}
-	}
-
-	if(INFILENAMES.size()==0){
-		cout<<endl<<"You must enter a filename!"<<endl<<endl;
-		Usage();
-	}
-	
-	if(SPECIFIC_OFFSET_TO_KEEP>0){
-		EVENTS_TO_KEEP=1;
-		EVENTS_TO_SKIP=SPECIFIC_OFFSET_TO_KEEP-1;
-	}
-
-	if(SPECIFIC_EVENT_TO_KEEP>0){
-		EVENTS_TO_KEEP=1;
-		EVENTS_TO_SKIP=1000000000; // Large number of events to read it while looking for the specified event
-	}
-	
-	if(OUTFILENAME==NULL){
-		if(SPECIFIC_OFFSET_TO_KEEP>0){
-			OUTFILENAME = new char[256];
-			sprintf(OUTFILENAME,"evt%d.hddm", SPECIFIC_OFFSET_TO_KEEP);
-		}else{
-			OUTFILENAME = (char*)"culled.hddm";
-		}
-	}
+  INFILENAMES.clear();
+  
+  for(int i=1; i<narg; i++){
+    char *ptr = argv[i];
+    
+    if(ptr[0] == '-'){
+      switch(ptr[1]){
+      case 'h': Usage(); break;
+      case 'o': OUTFILENAME=&ptr[2]; break;
+      case 's': EVENTS_TO_SKIP=atoi(&ptr[2]); break;
+      case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]); break;
+      case 'e': SPECIFIC_OFFSET_TO_KEEP=atoi(&ptr[2]); break;
+      case 'E': SPECIFIC_EVENT_TO_KEEP=atoi(&ptr[2]); EVENT_TO_KEEP_MODE=true; break;
+      }
+    }else{
+      INFILENAMES.push_back(argv[i]);
+    }
+  }
+  
+  if(INFILENAMES.size()==0){
+    cout<<endl<<"You must enter a filename!"<<endl<<endl;
+    Usage();
+  }
+  
+  if(SPECIFIC_OFFSET_TO_KEEP>0){
+    EVENTS_TO_KEEP=1;
+    EVENTS_TO_SKIP=SPECIFIC_OFFSET_TO_KEEP-1;
+  }
+  
+  if(SPECIFIC_EVENT_TO_KEEP>0){
+    EVENTS_TO_KEEP=1;
+    EVENTS_TO_SKIP=1000000000; // Large number of events to read in while looking for the specified event
+  }
+  
+  if(OUTFILENAME==NULL){
+    if(SPECIFIC_OFFSET_TO_KEEP>0){
+      OUTFILENAME = new char[256];
+      sprintf(OUTFILENAME,"evt%d.hddm", SPECIFIC_OFFSET_TO_KEEP);
+    }else{
+      OUTFILENAME = (char*)"culled.hddm";
+    }
+  }
 }
 
 
