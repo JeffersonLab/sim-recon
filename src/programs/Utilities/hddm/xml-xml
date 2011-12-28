@@ -38,7 +38,7 @@ if (open(HDDM,"<$infile") == 0) {
 # check the result for correctness and pretty-print it
 
 $parser = XML::Xerces::XercesDOMParser->new();
-$parser->setValidationScheme (XML::Xerces::XercesDOMParser::Val_Auto);
+$parser->setValidationScheme (2);
 $parser->setDoNamespaces (1);
 $parser->setCreateEntityReferenceNodes(0);
 $parser->setDoSchema (1);

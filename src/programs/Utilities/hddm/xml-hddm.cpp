@@ -526,6 +526,16 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
                           << "in the template." << std::endl;
                      exit(1);
                   }
+                  else if (repCount > rep) {
+                     std::cerr
+                          << "xml-hddm: Inconsistency in input xml document"
+                          << std::endl
+                          << "tag " << S(nameS) << " in the template has "
+                          << "maxOccurs=" << rep << std::endl
+                          << "but the input document contains more than "
+                          << rep << " instances." << std::endl;
+                     exit(1);
+                  }
                }
             }
          }
@@ -533,7 +543,7 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
          int size = (int)ofsbuf.tellp();
          if (rep > 1)
          {
-            ofx << (int32_t)((size > 0)? size+sizeof(int) : 0) << (int32_t)repCount;
+            ofx << (int32_t)((size > 0)? size+sizeof(int) : 1) << (int32_t)repCount;
          }
          else
          {
