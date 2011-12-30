@@ -570,8 +570,8 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
       }
       else if (nameS == "maxOccurs")
       {
-         int maxold = (oldS == "unbounded")? 9999 : atoi(S(oldS));
-         int maxnew = (newS == "unbounded")? 9999 : atoi(S(newS));
+         int maxold = (oldS == "unbounded")? INT_MAX : atoi(S(oldS));
+         int maxnew = (newS == "unbounded")? INT_MAX : atoi(S(newS));
 	 if (maxold*maxnew <= maxold)
          {
             std::cerr
@@ -601,8 +601,8 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
       }
       else if (nameS == "maxOccurs")
       {
-         int maxold = (oldS == "unbounded")? 9999 : atoi(S(oldS));
-         int maxnew = (newS == "unbounded")? 9999 : atoi(S(newS));
+         int maxold = (oldS == "unbounded")? INT_MAX : atoi(S(oldS));
+         int maxnew = (newS == "unbounded")? INT_MAX : atoi(S(newS));
 	 if (maxold*maxnew <= maxnew)
          {
             std::cerr
@@ -717,7 +717,7 @@ void CodeBuilder::writeHeader(DOMElement* el)
       {
          DOMElement* contEl = (DOMElement*) cont;
          XtString repS(contEl->getAttribute(X("maxOccurs")));
-	 int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+	 int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
          XtString ctypeRef = (rep > 1) ? nameS.listType()
 	                               : nameS.simpleType();
          XtString::size_type clen = ctypeRef.size();
@@ -734,7 +734,7 @@ void CodeBuilder::writeHeader(DOMElement* el)
    hFile << "} " << ctypeDef << ";" << std::endl;
 
    XtString repS(el->getAttribute(X("maxOccurs")));
-   int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+   int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
    if (rep > 1)
    {
       XtString ctypeRef = tagS.listType();
@@ -798,7 +798,7 @@ void CodeBuilder::constructConstructors()
       cFile << std::endl;
 
       XtString repS = tagEl->getAttribute(X("maxOccurs"));
-      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+      int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       if (rep > 1)
       {
          hFile << listType << "* ";
@@ -853,7 +853,7 @@ void CodeBuilder::constructConstructors()
                DOMElement* contEl = (DOMElement*) cont;
                XtString cnameS(contEl->getTagName());
                XtString crepS(contEl->getAttribute(X("maxOccurs")));
-	       int crep = (crepS == "unbounded")? 9999 : atoi(S(crepS));
+	       int crep = (crepS == "unbounded")? INT_MAX : atoi(S(crepS));
                if (crep > 1)
                {
                   cFile << "      pp->" << cnameS.plural()
@@ -918,7 +918,7 @@ void CodeBuilder::constructConstructors()
                DOMElement* contEl = (DOMElement*) cont;
                XtString cnameS(contEl->getTagName());
                XtString crepS(contEl->getAttribute(X("maxOccurs")));
-	       int crep = (crepS == "unbounded")? 9999 : atoi(S(crepS));
+	       int crep = (crepS == "unbounded")? INT_MAX : atoi(S(crepS));
                if (crep > 1)
                {
                   cFile << "   p->" << cnameS.plural()
@@ -956,7 +956,7 @@ void CodeBuilder::constructUnpackers()
 
       XtString tagType;
       XtString repS = tagEl->getAttribute(X("maxOccurs"));
-      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+      int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       if (rep > 1)
       {
          tagType = tagS.listType();
@@ -1009,7 +1009,7 @@ void CodeBuilder::constructUnpackers()
             DOMElement* contEl = (DOMElement*) cont;
             XtString nameS(contEl->getTagName());
             XtString reS(contEl->getAttribute(X("maxOccurs")));
-	    int re = (reS == "unbounded")? 9999 : atoi(S(reS));
+	    int re = (reS == "unbounded")? INT_MAX : atoi(S(reS));
             cFile << "         int p;"				<< std::endl
                   << "         void* (*ptr) = (void**) &this1->"
                   << ((rep > 1) ? "in[m]." : "" )
@@ -1197,7 +1197,7 @@ void CodeBuilder::constructPackers()
 
       XtString tagType;
       XtString repS(tagEl->getAttribute(X("maxOccurs")));
-      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+      int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       if (rep > 1)
       {
          tagType = listType;
@@ -1223,7 +1223,7 @@ void CodeBuilder::constructPackers()
 
       XtString tagType;
       XtString repS(tagEl->getAttribute(X("maxOccurs")));
-      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+      int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       if (rep > 1)
       {
          tagType = listType;
@@ -1342,7 +1342,7 @@ void CodeBuilder::constructPackers()
             DOMElement* contEl = (DOMElement*) cont;
             XtString nameS(contEl->getTagName());
             XtString reS(contEl->getAttribute(X("maxOccurs")));
-	    int re = (reS == "unbounded")? 9999 : atoi(S(reS));
+	    int re = (reS == "unbounded")? INT_MAX : atoi(S(reS));
             XtString contType;
             if (re > 1)
             {
@@ -1535,7 +1535,7 @@ void CodeBuilder::writeMatcher()
    {
       XtString tagS((*iter)->getTagName());
       XtString repS((*iter)->getAttribute(X("maxOccurs")));
-      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+      int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       XtString tagType;
       if (rep > 1)
       {

@@ -65,6 +65,8 @@ using namespace xercesc;
 #define X(str) XString(str).unicode_str()
 #define S(str) str.c_str()
 
+int explicit_repeat_count = 0;
+
 class HDDMmaker
 {
  public:
@@ -231,6 +233,8 @@ int main(int argC, char* argV[])
    docHeader = line;
 
    xstream::xdr::ostream ofx(*builder.ofs);
+   std::stringstream tmpFileStr;
+   tmpFileStr << "tmp" << getpid();
    while (getline(*ifs,line))
    {
       if (line.size() > 500000)
@@ -242,8 +246,6 @@ int main(int argC, char* argV[])
 
       XString text(line);
 
-      std::stringstream tmpFileStr;
-      tmpFileStr << "tmp" << getpid();
       std::ofstream ofs(tmpFileStr.str().c_str());
       if (! ofs.is_open())
       {
@@ -334,6 +336,7 @@ int main(int argC, char* argV[])
    if (builder.ofs != &std::cout) {
       ((std::ofstream*)builder.ofs)->close();
    }
+   unlink(tmpFileStr.str().c_str());
    XMLPlatformUtils::Terminate();
    return 0;
 }
@@ -493,11 +496,11 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
          DOMElement* model = (DOMElement*) mode;
          XString modelS(model->getTagName());
          XString reqS(model->getAttribute(X("minOccurs")));
-	 int req = (reqS == "unbounded")? 9999 : 
+	 int req = (reqS == "unbounded")? INT_MAX : 
                    (reqS == "")? 1 :
                    atoi(S(reqS));
          XString repS(model->getAttribute(X("maxOccurs")));
-	 int rep = (repS == "unbounded")? 9999 :
+	 int rep = (repS == "unbounded")? INT_MAX :
                    (repS == "")? 1 :
                    atoi(S(repS));
          int repCount=0;
@@ -541,9 +544,10 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
          }
 
          int size = (int)ofsbuf.tellp();
-         if (rep > 1)
+         if (explicit_repeat_count && rep > 1)
          {
-            ofx << (int32_t)((size > 0)? size+sizeof(int) : 1) << (int32_t)repCount;
+            ofx << (int32_t)((size > 0)? size+sizeof(int) : sizeof(int))
+                << (int32_t)repCount;
          }
          else
          {

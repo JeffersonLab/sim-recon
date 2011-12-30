@@ -38,7 +38,7 @@
  *    -o option.
  */
 
-//#define VERBOSE_HDDM_LOGGING 1
+// #define VERBOSE_HDDM_LOGGING 1
 
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/dom/DOMNamedNodeMap.hpp>
@@ -65,6 +65,8 @@
 
 using namespace xercesc;
 
+int explicit_repeat_count = 1;
+
 class XMLmaker
 {
  public:
@@ -74,7 +76,8 @@ class XMLmaker
    ~XMLmaker() {};
 
    void writeXML(const XString& s);
-   void constructXML(xstream::xdr::istream& ifx, DOMElement* el, int depth);
+   void constructXML(xstream::xdr::istream& ifx, DOMElement* el,
+                     int size, int depth);
 };
 
 void usage()
@@ -267,19 +270,23 @@ int main(int argC, char* argV[])
             ifx >> size;
 #ifdef VERBOSE_HDDM_LOGGING
             XString cnameS(contEl->getTagName());
-            std::cerr << "hddm-xml : tag " << S(cnameS)
+            std::cerr << "hddm-xml : top-level tag " << S(cnameS)
                       << " found with size " << size
                       << std::endl;
 #endif
             if (size > 0)
             {
-               builder.constructXML(ifx,contEl,1);
+               builder.constructXML(ifx,contEl,size,1);
             }
             else {
                XString repS(contEl->getAttribute(X("minOccurs")));
                int rep = (repS == "")? 1 : atoi(S(repS));
-               if (size != 0) {
-                  std::cerr << "hddm-xml : weird size, continue? [y/n] ";
+               if (rep != 0) {
+                  XString conameS(contEl->getTagName());
+                  std::cerr << "hddm-xml warning: top-level tag " << S(conameS)
+                            << " found with zero size "
+                            << "inside an event with size " << tsize
+                            << " continue? [y/n] ";
                   std::string ans;
                   std::cin >> ans;
                   if (ans[0] != 'y' && ans[0] != 'Y') {
@@ -320,20 +327,22 @@ void XMLmaker::writeXML(const XString& s)
  */
 
 void XMLmaker::constructXML(xstream::xdr::istream& ifx,
-                            DOMElement* el, int depth)
+                            DOMElement* el, int size, int depth)
 {
+   XString tagS(el->getTagName());
    XString repS(el->getAttribute(X("maxOccurs")));
-   int rep = (repS == "unbounded")? 9999 :
+   int rep = (repS == "unbounded")? INT_MAX :
              (repS == "")? 1 :
              atoi(S(repS));
-   if (rep > 1)
+   if (explicit_repeat_count && rep > 1)
    {
       ifx >> rep;
+      size -= 4;
    }
 
-   for (int r = 0; r < rep; r++)
+   int r;
+   for (r = 0; r < rep && size > 0; r++)
    {
-      XString tagS(el->getTagName());
       for (int d = 0; d < depth; d++)
       {
          writeXML("  ");
@@ -351,42 +360,50 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
          {
             int32_t value;
 	    ifx >> value;
+            size -= 4;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
 	 else if (typeS == "long")
          {
             int64_t value;
             ifx >> value;
+            size -= 8;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "float")
          {
             float value;
             ifx >> value;
+            size -= 4;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "double")
          {
             double value;
             ifx >> value;
+            size -= 8;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "boolean")
          {
             bool_t value;
             ifx >> value;
+            size -= 4;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "Particle_t")
          {
             int32_t value;
             ifx >> value;
+            size -= 4;
             attrStr << " " << nameS << "=\"" << ParticleType((Particle_t)value) << "\"";
          }
          else if (typeS == "string" || typeS == "anyURI")
          {
             std::string value;
             ifx >> value;
+            int strsize = value.size();
+            size -= strsize + 4 + ((strsize % 4)? 4-(strsize % 4) : 0);
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (nameS == "minOccurs" || nameS == "maxOccurs")
@@ -418,22 +435,28 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
          if (type == DOMNode::ELEMENT_NODE)
          {
             DOMElement* contEl = (DOMElement*) cont;
-            int size;
-            ifx >> size;
+            int csize;
+            ifx >> csize;
+            size -= 4;
 #ifdef VERBOSE_HDDM_LOGGING
             XString cnameS(contEl->getTagName());
             std::cerr << "hddm-xml : tag " << S(cnameS)
-                      << " found with size " << size
+                      << " found with size " << csize
                       << std::endl;
 #endif
-            if (size > 0) {
-               constructXML(ifx,contEl,depth +1);
+            if (csize > 0) {
+               constructXML(ifx,contEl,csize,depth +1);
+               size -= csize;
             }
+#ifdef VERBOSE_HDDM_LOGGING
             else {
                XString irepS(contEl->getAttribute(X("minOccurs")));
                int irep = (irepS == "")? 1 : atoi(S(irepS));
-               if (size != 0) {
-                  std::cerr << "hddm-xml : weird size, continue? [y/n] ";
+               if (irep != 0) {
+                  XString conameS(contEl->getTagName());
+                  std::cerr << "hddm-xml warning: tag " << S(conameS)
+                            << " found with zero size, "
+                            << "continue? [y/n] ";
                   std::string ans;
                   std::cin >> ans;
                   if (ans[0] != 'y' && ans[0] != 'Y') {
@@ -441,6 +464,7 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
                   }
                }
             }
+#endif
          }
       }
 
@@ -453,5 +477,17 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
          XString endTag("</"+tagS+">\n");
          writeXML(endTag);
       }
+   }
+   if (size != 0) {
+      std::cerr << "hddm-xml : size mismatch in tag " << S(tagS)
+                << ", remainder is " << size
+                << ", cannot continue." << std::endl;
+      exit(5);
+   }
+   else if (explicit_repeat_count && r != rep) {
+      std::cerr << "hddm-xml : repeat count mismatch in tag " << S(tagS)
+                << ", expected " << rep << " but saw " << r
+                << ", cannot continue." << std::endl;
+      exit(5);
    }
 }
