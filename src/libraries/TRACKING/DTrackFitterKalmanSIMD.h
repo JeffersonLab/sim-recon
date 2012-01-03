@@ -61,14 +61,14 @@
 #define MAX_DEDX 40.
 #define MIN_ITER 2
 #define MIN_CDC_ITER 0
-#define MIN_FDC_HITS 2
-#define MIN_CDC_HITS 2
+#define MIN_FDC_HITS 1
+#define MIN_CDC_HITS 1
 
 #define MOLIERE_FRACTION 0.99
 #define DE_PER_STEP_WIRE_BASED 0.00025 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.00025 // in GeV
 #define BFIELD_FRAC 0.0001
-#define MIN_STEP_SIZE 0.05 // in cm
+#define MIN_STEP_SIZE 0.1 // in cm
 #define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
 #define FDC_INTERNAL_STEP_SIZE 0.5 // in cm
 
@@ -218,7 +218,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double cdc_variance(double tanl,double t);   
   double cdc_forward_variance(double tanl,double t);  
   double cdc_drift_distance(double t,double Bz);  
-  double fdc_drift_distance(double t);
+  double fdc_drift_distance(double t,double Bz);
 
   void ResetKalmanSIMD(void);
   jerror_t GetProcessNoise(double ds,double Z, double rho_Z_over_A, 
@@ -377,6 +377,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH3F *fdc_yres;
   TH2F *fdc_dy_vs_d;
   TH3F *fdc_yres3d;
+  TH2F *fdc_yres_vs_tanl;
 };
 
 
