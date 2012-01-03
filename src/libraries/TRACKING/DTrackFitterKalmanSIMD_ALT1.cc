@@ -119,12 +119,14 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
 
 	// t0 estimate
-	if (id==mMinDriftID-1){
-	  mT0MinimumDriftTime=mMinDriftTime-forward_traj[k].t;
+	if (fit_type==kWireBased && id==mMinDriftID-1){
+	  mT0MinimumDriftTime=mMinDriftTime
+	    -forward_traj[k].t*TIME_UNIT_CONVERSION;
 	} 
 	
 	// Variance in coordinate along wire
-	double V=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[id]->dE);
+	double tanl=1./sqrt(tx*tx+ty*ty);
+	double V=anneal_factor*fdc_y_variance(tanl,doca,my_fdchits[id]->dE);
 		
 	// Difference between measurement and projection
 	double Mdiff=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
@@ -185,8 +187,9 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    doca=du*cosalpha;
 
 	    // t0 estimate
-	    if (my_id==mMinDriftID-1){
-	      mT0MinimumDriftTime=mMinDriftTime-forward_traj[k].t;
+	    if (fit_type==kWireBased && my_id==mMinDriftID-1){
+	      mT0MinimumDriftTime=mMinDriftTime
+		-forward_traj[k].t*TIME_UNIT_CONVERSION;
 	    } 
 	    
 	    // variance for coordinate along the wire
@@ -219,7 +222,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      Klist.push_back(InvV*(C*H_T));
 	    }
 	  }
-	  double prob_tot=0.;
+	  double prob_tot=1e-100;
 	  for (unsigned int m=0;m<probs.size();m++){
 	    prob_tot+=probs[m];
 	  }
@@ -457,7 +460,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  
 	  if (fit_type==kTimeBased){
 	    double tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
-		-forward_traj[k-1].t;
+		-forward_traj[k-1].t*TIME_UNIT_CONVERSION;
 	    dm=cdc_drift_distance(tdrift,forward_traj[k].B);
 	    
 	    // variance
@@ -466,8 +469,9 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    Vc=cdc_variance(tanl,tdrift);
 	  }
 	  // t0 estimate
-	  if (cdc_index==mMinDriftID-1000){
-	    mT0MinimumDriftTime=mMinDriftTime-forward_traj[k].t;
+	  else if (cdc_index==mMinDriftID-1000){
+	    mT0MinimumDriftTime=mMinDriftTime
+	      -forward_traj[k].t*TIME_UNIT_CONVERSION;
 	  } 
 
 	  // Residual
