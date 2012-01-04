@@ -10,7 +10,6 @@
 
 #include <JANA/jerror.h>
 #include "DParticleID.h"
-#include "TF1.h"
 
 class DParticleID_PID1:public DParticleID{
  public:
@@ -22,25 +21,28 @@ class DParticleID_PID1:public DParticleID{
 	jerror_t GetdEdxMean_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis);
 	jerror_t GetdEdxSigma_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis);
 	jerror_t CalcDCdEdxChiSq(const DChargedTrackHypothesis *locChargedTrackHypothesis, double &locChiSq, unsigned int& locNDF);
+	inline double Function_dEdx(double locBetaGamma, const vector<float> &locParams){return locParams[0]*exp(locParams[1]*locBetaGamma) + locParams[2] + locParams[3]*locBetaGamma;}
+	void Set_dEdxParams(vector<float>& locParamVector, float locParam1, float locParam2, float locParam3, float locParam4);
+
 
  protected:
-	TF1* ddEdxMeanFunc_FDC_Proton;
-	TF1* ddEdxMeanFunc_FDC_KPlus;
-	TF1* ddEdxMeanFunc_CDC_Proton;
-	TF1* ddEdxMeanFunc_CDC_KPlus;
+	vector<float> ddEdxMeanParams_FDC_Proton;
+	vector<float> ddEdxMeanParams_FDC_KPlus;
+	vector<float> ddEdxMeanParams_CDC_Proton;
+	vector<float> ddEdxMeanParams_CDC_KPlus;
 
-	vector<TF1*> ddEdxSigmaFuncVector_CDC_Proton;
-	vector<TF1*> ddEdxSigmaFuncVector_FDC_Proton;
+	vector<vector<float> > ddEdxSigmaParamVector_CDC_Proton;
+	vector<vector<float> > ddEdxSigmaParamVector_FDC_Proton;
 	vector<unsigned int> ddEdxSigmaNumHitsVector_FDC_Proton;
 	vector<unsigned int> ddEdxSigmaNumHitsVector_CDC_Proton;
 
-	vector<TF1*> ddEdxSigmaFuncVector_FDC_PiPlus;
-	vector<TF1*> ddEdxSigmaFuncVector_CDC_PiPlus;
+	vector<vector<float> > ddEdxSigmaParamVector_CDC_PiPlus;
+	vector<vector<float> > ddEdxSigmaParamVector_FDC_PiPlus;
 	vector<unsigned int> ddEdxSigmaNumHitsVector_CDC_PiPlus;
 	vector<unsigned int> ddEdxSigmaNumHitsVector_FDC_PiPlus;
 
-	vector<TF1*> ddEdxSigmaFuncVector_FDC_KPlus;
-	vector<TF1*> ddEdxSigmaFuncVector_CDC_KPlus;
+	vector<vector<float> > ddEdxSigmaParamVector_CDC_KPlus;
+	vector<vector<float> > ddEdxSigmaParamVector_FDC_KPlus;
 	vector<unsigned int> ddEdxSigmaNumHitsVector_CDC_KPlus;
 	vector<unsigned int> ddEdxSigmaNumHitsVector_FDC_KPlus;
 

@@ -7,136 +7,111 @@
 
 #include "DParticleID_PID1.h"
 
+void DParticleID_PID1::Set_dEdxParams(vector<float>& locParamVector, float locParam1, float locParam2, float locParam3, float locParam4)
+{
+	locParamVector.resize(4);
+	locParamVector[0] = locParam1;
+	locParamVector[1] = locParam2;
+	locParamVector[2] = locParam3;
+	locParamVector[3] = locParam4;
+}
+
 //---------------------------------
 // DParticleID_PID1    (Constructor)
 //---------------------------------
 DParticleID_PID1::DParticleID_PID1(JEventLoop *loop):DParticleID(loop)
 {
 
-	TF1 *locFunc;
+	vector<float> locParamVector;
 
 	//Means
-   ddEdxMeanFunc_FDC_Proton = new TF1("dPID_dEdxMeanFunc_FDC_Proton", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   ddEdxMeanFunc_FDC_Proton->SetParameters(41.6301, -4.51759, 1.98461, -0.29211);
-	
-   ddEdxMeanFunc_CDC_Proton = new TF1("dPID_dEdxMeanFunc_CDC_Proton", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   ddEdxMeanFunc_CDC_Proton->SetParameters(46.9116, -4.66336, 2.32353, -0.444754);
+	Set_dEdxParams(ddEdxMeanParams_FDC_Proton, 41.6301, -4.51759, 1.98461, -0.29211);
+	Set_dEdxParams(ddEdxMeanParams_CDC_Proton, 46.9116, -4.66336, 2.32353, -0.444754);
+	Set_dEdxParams(ddEdxMeanParams_FDC_KPlus, 13.4017, -2.92603, 1.41205, -0.0283139);
+	Set_dEdxParams(ddEdxMeanParams_CDC_KPlus, 11.3948, -2.47605, 1.40824, -0.0309194);
 
-   ddEdxMeanFunc_FDC_KPlus = new TF1("dPID_dEdxMeanFunc_FDC_KPlus", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   ddEdxMeanFunc_FDC_KPlus->SetParameters(13.4017, -2.92603, 1.41205, -0.0283139);
-	
-   ddEdxMeanFunc_CDC_KPlus = new TF1("dPID_dEdxMeanFunc_CDC_KPlus", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   ddEdxMeanFunc_CDC_KPlus->SetParameters(11.3948, -2.47605, 1.40824, -0.0309194);
-
-	//sigmas, protons
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_Proton1", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(9.14756, -3.25359, 0.367987, -0.0290751);
-	ddEdxSigmaFuncVector_CDC_Proton.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_Proton2", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(8.39024, -3.98806, 0.608273, -0.166997);
-	ddEdxSigmaFuncVector_CDC_Proton.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_Proton3", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(7.90078, -4.12579, 0.534348, -0.146632);
-	ddEdxSigmaFuncVector_CDC_Proton.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_Proton4", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(9.25127, -5.00809, 0.440321, -0.114403);
-	ddEdxSigmaFuncVector_CDC_Proton.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_Proton5", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(11.0353, -6.00159, 0.290354, -0.0621569);
-	ddEdxSigmaFuncVector_CDC_Proton.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_Proton6", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(8.83402, -5.93664, 0.245129, -0.0439422);
-	ddEdxSigmaFuncVector_CDC_Proton.push_back(locFunc);
+	//sigmas, protons, CDC
+	Set_dEdxParams(locParamVector, 9.14756, -3.25359, 0.367987, -0.0290751);
+	ddEdxSigmaParamVector_CDC_Proton.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 8.39024, -3.98806, 0.608273, -0.166997);
+	ddEdxSigmaParamVector_CDC_Proton.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 7.90078, -4.12579, 0.534348, -0.146632);
+	ddEdxSigmaParamVector_CDC_Proton.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 9.25127, -5.00809, 0.440321, -0.114403);
+	ddEdxSigmaParamVector_CDC_Proton.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 11.0353, -6.00159, 0.290354, -0.0621569);
+	ddEdxSigmaParamVector_CDC_Proton.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 8.83402, -5.93664, 0.245129, -0.0439422);
+	ddEdxSigmaParamVector_CDC_Proton.push_back(locParamVector);
 	for(unsigned int loc_i = 0; loc_i < 6; loc_i++)
 		ddEdxSigmaNumHitsVector_CDC_Proton.push_back(4 + 2*loc_i);
 
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_Proton1", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(28.0219, -5.54908, 0.501065, -0.104623);
-	ddEdxSigmaFuncVector_FDC_Proton.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_Proton2", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(8.95707, -4.22215, 0.300281, -0.0436824);
-	ddEdxSigmaFuncVector_FDC_Proton.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_Proton3", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(11.9735, -4.92211, 0.274352, -0.0472131);
-	ddEdxSigmaFuncVector_FDC_Proton.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_Proton4", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(14.2884, -5.91157, 0.274532, -0.0602249);
-	ddEdxSigmaFuncVector_FDC_Proton.push_back(locFunc);
+	//sigmas, protons, FDC
+	Set_dEdxParams(locParamVector, 28.0219, -5.54908, 0.501065, -0.104623);
+	ddEdxSigmaParamVector_FDC_Proton.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 8.95707, -4.22215, 0.300281, -0.0436824);
+	ddEdxSigmaParamVector_FDC_Proton.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 11.9735, -4.92211, 0.274352, -0.0472131);
+	ddEdxSigmaParamVector_FDC_Proton.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 14.2884, -5.91157, 0.274532, -0.0602249);
+	ddEdxSigmaParamVector_FDC_Proton.push_back(locParamVector);
 	for(unsigned int loc_i = 0; loc_i < 4; loc_i++)
 		ddEdxSigmaNumHitsVector_FDC_Proton.push_back(3 + 3*loc_i);
 
-	//sigmas, pi+
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_PiPlus1", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(2.22871, -2.3159, 0.379665, -0.00114537);
-	ddEdxSigmaFuncVector_CDC_PiPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_PiPlus2", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(1.05578, -2.02632, 0.287603, 0.000438264);
-	ddEdxSigmaFuncVector_CDC_PiPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_PiPlus3", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(0.786585, -1.59372, 0.237528, 0.0013845);
-	ddEdxSigmaFuncVector_CDC_PiPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_PiPlus4", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(0.413633, -1.23667, 0.192888, 0.00222538);
-	ddEdxSigmaFuncVector_CDC_PiPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_PiPlus5", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(0.488919, -1.33126, 0.154777, 0.000816022);
-	ddEdxSigmaFuncVector_CDC_PiPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_PiPlus6", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(0.827528, -2.07871, 0.142669, 0.00105942);
-	ddEdxSigmaFuncVector_CDC_PiPlus.push_back(locFunc);
+	//sigmas, pi+, CDC
+	Set_dEdxParams(locParamVector, 2.22871, -2.3159, 0.379665, -0.00114537);
+	ddEdxSigmaParamVector_CDC_PiPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 1.05578, -2.02632, 0.287603, 0.000438264);
+	ddEdxSigmaParamVector_CDC_PiPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 0.786585, -1.59372, 0.237528, 0.0013845);
+	ddEdxSigmaParamVector_CDC_PiPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 0.413633, -1.23667, 0.192888, 0.00222538);
+	ddEdxSigmaParamVector_CDC_PiPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 0.488919, -1.33126, 0.154777, 0.000816022);
+	ddEdxSigmaParamVector_CDC_PiPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 0.827528, -2.07871, 0.142669, 0.00105942);
+	ddEdxSigmaParamVector_CDC_PiPlus.push_back(locParamVector);
 	for(unsigned int loc_i = 0; loc_i < 6; loc_i++)
 		ddEdxSigmaNumHitsVector_CDC_PiPlus.push_back(4 + 2*loc_i);
 
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_PiPlus1", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(0.655229, -0.898369, 0.256156, 0.002824);
-	ddEdxSigmaFuncVector_FDC_PiPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_PiPlus2", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(0.51879, -0.817423, 0.16759, 0.00399836);
-	ddEdxSigmaFuncVector_FDC_PiPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_PiPlus3", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(0.49766, -1.16389, 0.155798, 0.0011712);
-	ddEdxSigmaFuncVector_FDC_PiPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_PiPlus4", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(0.585499, -1.32707, 0.130717, 0.00185828);
-	ddEdxSigmaFuncVector_FDC_PiPlus.push_back(locFunc);
+	//sigmas, pi+, FDC
+	Set_dEdxParams(locParamVector, 0.655229, -0.898369, 0.256156, 0.002824);
+	ddEdxSigmaParamVector_FDC_PiPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 0.51879, -0.817423, 0.16759, 0.00399836);
+	ddEdxSigmaParamVector_FDC_PiPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 0.49766, -1.16389, 0.155798, 0.0011712);
+	ddEdxSigmaParamVector_FDC_PiPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 0.585499, -1.32707, 0.130717, 0.00185828);
+	ddEdxSigmaParamVector_FDC_PiPlus.push_back(locParamVector);
 	for(unsigned int loc_i = 0; loc_i < 4; loc_i++)
 		ddEdxSigmaNumHitsVector_FDC_PiPlus.push_back(3 + 3*loc_i);
 
 
-	//sigmas, k+
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_KPlus1", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(1.08389, -0.727214, 0.101523, 0.0410826);
-	ddEdxSigmaFuncVector_CDC_KPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_KPlus2", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(8.3022, -3.45934, 0.399704, -0.0367945);
-	ddEdxSigmaFuncVector_CDC_KPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_KPlus3", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(6.15751, -3.06247, 0.312122, -0.0232223);
-	ddEdxSigmaFuncVector_CDC_KPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_KPlus4", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(2.34946, -2.25875, 0.213915, -0.0027382);
-	ddEdxSigmaFuncVector_CDC_KPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_KPlus5", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(1.66756, -2.43701, 0.167655, -0.00349099);
-	ddEdxSigmaFuncVector_CDC_KPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_CDC_KPlus6", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(1.5591, -2.59352, 0.158265, -0.00298591);
-	ddEdxSigmaFuncVector_CDC_KPlus.push_back(locFunc);
+	//sigmas, k+, CDC
+	Set_dEdxParams(locParamVector, 1.08389, -0.727214, 0.101523, 0.0410826);
+	ddEdxSigmaParamVector_CDC_KPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 8.3022, -3.45934, 0.399704, -0.0367945);
+	ddEdxSigmaParamVector_CDC_KPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 6.15751, -3.06247, 0.312122, -0.0232223);
+	ddEdxSigmaParamVector_CDC_KPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 2.34946, -2.25875, 0.213915, -0.0027382);
+	ddEdxSigmaParamVector_CDC_KPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 1.66756, -2.43701, 0.167655, -0.00349099);
+	ddEdxSigmaParamVector_CDC_KPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 1.5591, -2.59352, 0.158265, -0.00298591);
+	ddEdxSigmaParamVector_CDC_KPlus.push_back(locParamVector);
 	for(unsigned int loc_i = 0; loc_i < 6; loc_i++)
 		ddEdxSigmaNumHitsVector_CDC_KPlus.push_back(4 + 2*loc_i);
 
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_KPlus1", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(3.15915, -2.61119, 0.293622, -0.00531579);
-	ddEdxSigmaFuncVector_FDC_KPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_KPlus2", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(19.4517, -4.05641, 0.226242, -0.00897102);
-	ddEdxSigmaFuncVector_FDC_KPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_KPlus3", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(21.846, -4.08992, 0.188548, -0.00754031);
-	ddEdxSigmaFuncVector_FDC_KPlus.push_back(locFunc);
-   locFunc = new TF1("dPID_dEdxSigmaFunc_FDC_KPlus4", "[0]*exp([1]*x) + [2] + [3]*x", 0.0, 100.0);
-   locFunc->SetParameters(2.81826, -2.90351, 0.150354, -0.00140537);
-	ddEdxSigmaFuncVector_FDC_KPlus.push_back(locFunc);
+	//sigmas, k+, FDC
+	Set_dEdxParams(locParamVector, 3.15915, -2.61119, 0.293622, -0.00531579);
+	ddEdxSigmaParamVector_FDC_KPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 19.4517, -4.05641, 0.226242, -0.00897102);
+	ddEdxSigmaParamVector_FDC_KPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 21.846, -4.08992, 0.188548, -0.00754031);
+	ddEdxSigmaParamVector_FDC_KPlus.push_back(locParamVector);
+	Set_dEdxParams(locParamVector, 2.81826, -2.90351, 0.150354, -0.00140537);
+	ddEdxSigmaParamVector_FDC_KPlus.push_back(locParamVector);
 	for(unsigned int loc_i = 0; loc_i < 4; loc_i++)
 		ddEdxSigmaNumHitsVector_FDC_KPlus.push_back(3 + 3*loc_i);
 
@@ -149,7 +124,6 @@ DParticleID_PID1::DParticleID_PID1(JEventLoop *loop):DParticleID(loop)
 	ddEdxMean_PiMinus_FDC.resize(44);
 	dBetaGamma_PiMinus_FDC[0] = 0.48;  dBetaGamma_PiMinus_FDC[1] = 0.8;  dBetaGamma_PiMinus_FDC[2] = 1.12;  dBetaGamma_PiMinus_FDC[3] = 1.44;  dBetaGamma_PiMinus_FDC[4] = 1.76;  dBetaGamma_PiMinus_FDC[5] = 2.08;  dBetaGamma_PiMinus_FDC[6] = 2.4;  dBetaGamma_PiMinus_FDC[7] = 2.72;  dBetaGamma_PiMinus_FDC[8] = 3.04;  dBetaGamma_PiMinus_FDC[9] = 3.36;  dBetaGamma_PiMinus_FDC[10] = 3.68;  dBetaGamma_PiMinus_FDC[11] = 4;  dBetaGamma_PiMinus_FDC[12] = 4.32;  dBetaGamma_PiMinus_FDC[13] = 4.64;  dBetaGamma_PiMinus_FDC[14] = 4.96;  dBetaGamma_PiMinus_FDC[15] = 5.28;  dBetaGamma_PiMinus_FDC[16] = 5.6;  dBetaGamma_PiMinus_FDC[17] = 5.92;  dBetaGamma_PiMinus_FDC[18] = 6.24;  dBetaGamma_PiMinus_FDC[19] = 6.56;  dBetaGamma_PiMinus_FDC[20] = 6.88;  dBetaGamma_PiMinus_FDC[21] = 7.2;  dBetaGamma_PiMinus_FDC[22] = 7.52;  dBetaGamma_PiMinus_FDC[23] = 7.84;  dBetaGamma_PiMinus_FDC[24] = 8.16;  dBetaGamma_PiMinus_FDC[25] = 8.48;  dBetaGamma_PiMinus_FDC[26] = 8.8;  dBetaGamma_PiMinus_FDC[27] = 9.12;  dBetaGamma_PiMinus_FDC[28] = 9.44;  dBetaGamma_PiMinus_FDC[29] = 9.76;  dBetaGamma_PiMinus_FDC[30] = 10.08;  dBetaGamma_PiMinus_FDC[31] = 10.4;  dBetaGamma_PiMinus_FDC[32] = 10.72;  dBetaGamma_PiMinus_FDC[33] = 11.04;  dBetaGamma_PiMinus_FDC[34] = 11.36;  dBetaGamma_PiMinus_FDC[35] = 11.68;  dBetaGamma_PiMinus_FDC[36] = 12;  dBetaGamma_PiMinus_FDC[37] = 12.32;  dBetaGamma_PiMinus_FDC[38] = 12.64;  dBetaGamma_PiMinus_FDC[39] = 12.96;  dBetaGamma_PiMinus_FDC[40] = 13.28;  dBetaGamma_PiMinus_FDC[41] = 13.6;  dBetaGamma_PiMinus_FDC[42] = 13.92;  dBetaGamma_PiMinus_FDC[43] = 14.24;
 	ddEdxMean_PiMinus_FDC[0] = 1.37523;  ddEdxMean_PiMinus_FDC[1] = 1.47618;  ddEdxMean_PiMinus_FDC[2] = 1.59352;  ddEdxMean_PiMinus_FDC[3] = 1.47423;  ddEdxMean_PiMinus_FDC[4] = 1.40155;  ddEdxMean_PiMinus_FDC[5] = 1.34673;  ddEdxMean_PiMinus_FDC[6] = 1.31879;  ddEdxMean_PiMinus_FDC[7] = 1.31466;  ddEdxMean_PiMinus_FDC[8] = 1.31048;  ddEdxMean_PiMinus_FDC[9] = 1.3059;  ddEdxMean_PiMinus_FDC[10] = 1.30657;  ddEdxMean_PiMinus_FDC[11] = 1.3071;  ddEdxMean_PiMinus_FDC[12] = 1.30768;  ddEdxMean_PiMinus_FDC[13] = 1.31311;  ddEdxMean_PiMinus_FDC[14] = 1.3117;  ddEdxMean_PiMinus_FDC[15] = 1.32219;  ddEdxMean_PiMinus_FDC[16] = 1.32418;  ddEdxMean_PiMinus_FDC[17] = 1.33116;  ddEdxMean_PiMinus_FDC[18] = 1.33479;  ddEdxMean_PiMinus_FDC[19] = 1.33449;  ddEdxMean_PiMinus_FDC[20] = 1.34254;  ddEdxMean_PiMinus_FDC[21] = 1.3424;  ddEdxMean_PiMinus_FDC[22] = 1.3449;  ddEdxMean_PiMinus_FDC[23] = 1.34964;  ddEdxMean_PiMinus_FDC[24] = 1.35254;  ddEdxMean_PiMinus_FDC[25] = 1.35634;  ddEdxMean_PiMinus_FDC[26] = 1.36226;  ddEdxMean_PiMinus_FDC[27] = 1.36161;  ddEdxMean_PiMinus_FDC[28] = 1.36486;  ddEdxMean_PiMinus_FDC[29] = 1.36825;  ddEdxMean_PiMinus_FDC[30] = 1.37269;  ddEdxMean_PiMinus_FDC[31] = 1.37568;  ddEdxMean_PiMinus_FDC[32] = 1.38051;  ddEdxMean_PiMinus_FDC[33] = 1.38383;  ddEdxMean_PiMinus_FDC[34] = 1.38167;  ddEdxMean_PiMinus_FDC[35] = 1.3852;  ddEdxMean_PiMinus_FDC[36] = 1.39147;  ddEdxMean_PiMinus_FDC[37] = 1.39506;  ddEdxMean_PiMinus_FDC[38] = 1.39391;  ddEdxMean_PiMinus_FDC[39] = 1.39701;  ddEdxMean_PiMinus_FDC[40] = 1.39823;  ddEdxMean_PiMinus_FDC[41] = 1.40486;  ddEdxMean_PiMinus_FDC[42] = 1.40764;  ddEdxMean_PiMinus_FDC[43] = 1.40711;
-
 }
 
 //---------------------------------
@@ -168,7 +142,7 @@ jerror_t DParticleID_PID1::GetdEdxMean_CDC(double locBeta, unsigned int locNumHi
 		if(locBetaGammaValue > 2.15)
 			return RESOURCE_UNAVAILABLE;
 
-		locMeandEdx = (ddEdxMeanFunc_CDC_Proton->Eval(locBetaGammaValue))/1000000.0;
+		locMeandEdx = Function_dEdx(locBetaGammaValue, ddEdxMeanParams_CDC_Proton)/1000000.0;
 		return NOERROR;
 	}
 	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus)){
@@ -177,7 +151,7 @@ jerror_t DParticleID_PID1::GetdEdxMean_CDC(double locBeta, unsigned int locNumHi
 		if(locBetaGammaValue > 4.1)
 			return RESOURCE_UNAVAILABLE;
 
-		locMeandEdx = (ddEdxMeanFunc_CDC_KPlus->Eval(locBetaGammaValue))/1000000.0;
+		locMeandEdx = Function_dEdx(locBetaGammaValue, ddEdxMeanParams_CDC_KPlus)/1000000.0;
 		return NOERROR;
 	}
 
@@ -207,30 +181,30 @@ jerror_t DParticleID_PID1::GetdEdxSigma_CDC(double locBeta, unsigned int locNumH
 	double locSigmadEdx_LowSide, locSigmadEdx_HighSide; //for linear interpolation/extrapolation
 
 	vector<unsigned int> locNumHitsVector;
-	vector<TF1*> locdEdxSigmaVector;
+	vector<vector<float> > locdEdxSigmaParamVector;
 	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton)){
 		locNumHitsVector = ddEdxSigmaNumHitsVector_CDC_Proton;
-		locdEdxSigmaVector = ddEdxSigmaFuncVector_CDC_Proton;
+		locdEdxSigmaParamVector = ddEdxSigmaParamVector_CDC_Proton;
 	}
 	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus)){
 		locNumHitsVector = ddEdxSigmaNumHitsVector_CDC_KPlus;
-		locdEdxSigmaVector = ddEdxSigmaFuncVector_CDC_KPlus;
+		locdEdxSigmaParamVector = ddEdxSigmaParamVector_CDC_KPlus;
 	}
 	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus)){
 		locNumHitsVector = ddEdxSigmaNumHitsVector_CDC_PiPlus;
-		locdEdxSigmaVector = ddEdxSigmaFuncVector_CDC_PiPlus;
+		locdEdxSigmaParamVector = ddEdxSigmaParamVector_CDC_PiPlus;
 	}
 
 	double locSlope, locIntercept;
 
 	for(unsigned int loc_i = 0; loc_i < locNumHitsVector.size(); loc_i++){
 		if(locNumHitsUsedFordEdx == locNumHitsVector[loc_i]){
-			locSigmadEdx = ((locdEdxSigmaVector[loc_i])->Eval(locBetaGamma))/1000000.0;
+			locSigmadEdx = (Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]))/1000000.0;
 			return NOERROR;
 		}
 		if(loc_i == (locNumHitsVector.size() - 1)){
-			locSigmadEdx_LowSide = (locdEdxSigmaVector[loc_i - 1])->Eval(locBetaGamma);
-			locSigmadEdx_HighSide = (locdEdxSigmaVector[loc_i])->Eval(locBetaGamma);
+			locSigmadEdx_LowSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i - 1]);
+			locSigmadEdx_HighSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]);
 
 			locSlope = (locSigmadEdx_HighSide - locSigmadEdx_LowSide)/(locNumHitsVector[loc_i] - locNumHitsVector[loc_i - 1]);
 			locIntercept = locSigmadEdx_HighSide - locSlope*locNumHitsVector[loc_i]; //y = mx + b, b = y - mx
@@ -239,8 +213,8 @@ jerror_t DParticleID_PID1::GetdEdxSigma_CDC(double locBeta, unsigned int locNumH
 			return NOERROR;
 		}
 		if((locNumHitsUsedFordEdx > locNumHitsVector[loc_i]) && (locNumHitsUsedFordEdx < locNumHitsVector[loc_i + 1])){
-			locSigmadEdx_LowSide = (locdEdxSigmaVector[loc_i])->Eval(locBetaGamma);
-			locSigmadEdx_HighSide = (locdEdxSigmaVector[loc_i + 1])->Eval(locBetaGamma);
+			locSigmadEdx_LowSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]);
+			locSigmadEdx_HighSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i + 1]);
 
 			locSlope = (locSigmadEdx_HighSide - locSigmadEdx_LowSide)/(locNumHitsVector[loc_i + 1] - locNumHitsVector[loc_i]);
 			locIntercept = locSigmadEdx_HighSide - locSlope*locNumHitsVector[loc_i + 1]; //y = mx + b, b = y - mx
@@ -262,7 +236,7 @@ jerror_t DParticleID_PID1::GetdEdxMean_FDC(double locBeta, unsigned int locNumHi
 		if(locBetaGammaValue > 2.15)
 			return RESOURCE_UNAVAILABLE;
 
-		locMeandEdx = (ddEdxMeanFunc_FDC_Proton->Eval(locBetaGammaValue))/1000000.0;
+		locMeandEdx = Function_dEdx(locBetaGammaValue, ddEdxMeanParams_FDC_Proton)/1000000.0;
 		return NOERROR;
 	}
 	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus)){
@@ -271,7 +245,7 @@ jerror_t DParticleID_PID1::GetdEdxMean_FDC(double locBeta, unsigned int locNumHi
 		if(locBetaGammaValue > 4.1)
 			return RESOURCE_UNAVAILABLE;
 
-		locMeandEdx = (ddEdxMeanFunc_FDC_KPlus->Eval(locBetaGammaValue))/1000000.0;
+		locMeandEdx = Function_dEdx(locBetaGammaValue, ddEdxMeanParams_FDC_KPlus)/1000000.0;
 		return NOERROR;
 	}
 
@@ -301,30 +275,30 @@ jerror_t DParticleID_PID1::GetdEdxSigma_FDC(double locBeta, unsigned int locNumH
 	double locSigmadEdx_LowSide, locSigmadEdx_HighSide; //for linear interpolation/extrapolation
 
 	vector<unsigned int> locNumHitsVector;
-	vector<TF1*> locdEdxSigmaVector;
+	vector<vector<float> > locdEdxSigmaParamVector;
 	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton)){
 		locNumHitsVector = ddEdxSigmaNumHitsVector_FDC_Proton;
-		locdEdxSigmaVector = ddEdxSigmaFuncVector_FDC_Proton;
+		locdEdxSigmaParamVector = ddEdxSigmaParamVector_FDC_Proton;
 	}
 	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus)){
 		locNumHitsVector = ddEdxSigmaNumHitsVector_FDC_KPlus;
-		locdEdxSigmaVector = ddEdxSigmaFuncVector_FDC_KPlus;
+		locdEdxSigmaParamVector = ddEdxSigmaParamVector_FDC_KPlus;
 	}
 	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus)){
 		locNumHitsVector = ddEdxSigmaNumHitsVector_FDC_PiPlus;
-		locdEdxSigmaVector = ddEdxSigmaFuncVector_FDC_PiPlus;
+		locdEdxSigmaParamVector = ddEdxSigmaParamVector_FDC_PiPlus;
 	}
 
 	double locSlope, locIntercept;
 
 	for(unsigned int loc_i = 0; loc_i < locNumHitsVector.size(); loc_i++){
 		if(locNumHitsUsedFordEdx == locNumHitsVector[loc_i]){
-			locSigmadEdx = ((locdEdxSigmaVector[loc_i])->Eval(locBetaGamma))/1000000.0;
+			locSigmadEdx = (Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]))/1000000.0;
 			return NOERROR;
 		}
 		if(loc_i == (locNumHitsVector.size() - 1)){
-			locSigmadEdx_LowSide = (locdEdxSigmaVector[loc_i - 1])->Eval(locBetaGamma);
-			locSigmadEdx_HighSide = (locdEdxSigmaVector[loc_i])->Eval(locBetaGamma);
+			locSigmadEdx_LowSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i - 1]);
+			locSigmadEdx_HighSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]);
 
 			locSlope = (locSigmadEdx_HighSide - locSigmadEdx_LowSide)/(locNumHitsVector[loc_i] - locNumHitsVector[loc_i - 1]);
 			locIntercept = locSigmadEdx_HighSide - locSlope*locNumHitsVector[loc_i]; //y = mx + b, b = y - mx
@@ -333,8 +307,8 @@ jerror_t DParticleID_PID1::GetdEdxSigma_FDC(double locBeta, unsigned int locNumH
 			return NOERROR;
 		}
 		if((locNumHitsUsedFordEdx > locNumHitsVector[loc_i]) && (locNumHitsUsedFordEdx < locNumHitsVector[loc_i + 1])){
-			locSigmadEdx_LowSide = (locdEdxSigmaVector[loc_i])->Eval(locBetaGamma);
-			locSigmadEdx_HighSide = (locdEdxSigmaVector[loc_i + 1])->Eval(locBetaGamma);
+			locSigmadEdx_LowSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]);
+			locSigmadEdx_HighSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i + 1]);
 
 			locSlope = (locSigmadEdx_HighSide - locSigmadEdx_LowSide)/(locNumHitsVector[loc_i + 1] - locNumHitsVector[loc_i]);
 			locIntercept = locSigmadEdx_HighSide - locSlope*locNumHitsVector[loc_i + 1]; //y = mx + b, b = y - mx
