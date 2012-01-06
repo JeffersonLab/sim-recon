@@ -859,7 +859,7 @@ void InitCDCGeometry(void)
 {
   CDC_GEOMETRY_INITIALIZED = true;
   
-  CDC_MAX_RINGS = 25;
+  CDC_MAX_RINGS = 28;
   
   //-- This was cut and pasted from DCDCTrackHit_factory.cc on 10/11/2007 --
   
