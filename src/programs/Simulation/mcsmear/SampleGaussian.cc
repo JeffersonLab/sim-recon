@@ -9,7 +9,12 @@
 
 #include "DRandom2.h"
 
-DRandom2 gDRandom; // declared extern in DRandom2.h
+// Note, the argument is zero to cause the seeds to
+// be initialized using the UUID (see code for ROOT's
+// TRandom2 constructor) No argument, or an argument 
+// greater than zero will result in the same seeds 
+// being set every time mcsmear is run.
+DRandom2 gDRandom(0); // declared extern in DRandom2.h
 
 //--------------------------
 // SampleGaussian

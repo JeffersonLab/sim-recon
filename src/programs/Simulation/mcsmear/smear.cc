@@ -71,6 +71,9 @@ extern bool ADD_NOISE;
 // Do we or do we not smear real hits
 extern bool SMEAR_HITS;
 
+// Use or ignore random number seeds found in HDDM file
+extern bool IGNORE_SEEDS;
+
 // The error on the drift time in the CDC. The drift times
 // for the actual CDC hits coming from the input file
 // are smeared by a gaussian with this sigma.
@@ -226,14 +229,16 @@ void GetAndSetSeeds(s_HDDM_t *hddm_s)
 		my_rand = pe->reactions->in[0].random = make_s_Random();
 
 	}else{
-		// Copy seeds from file to local variables
-		seed1 = *((UInt_t*)&my_rand->seed_mcsmear1);
-		seed2 = *((UInt_t*)&my_rand->seed_mcsmear2);
-		seed3 = *((UInt_t*)&my_rand->seed_mcsmear3);
-		
-		// Set the seeds in the random generator with those found
-		// in the file, but ONLY if they are not all zeros
-		if((seed1+seed2+seed3) != 0)gDRandom.SetSeeds(seed1, seed2, seed3);
+		if(!IGNORE_SEEDS){
+			// Copy seeds from file to local variables
+			seed1 = *((UInt_t*)&my_rand->seed_mcsmear1);
+			seed2 = *((UInt_t*)&my_rand->seed_mcsmear2);
+			seed3 = *((UInt_t*)&my_rand->seed_mcsmear3);
+			
+			// Set the seeds in the random generator with those found
+			// in the file, but ONLY if they are not all zeros
+			if((seed1+seed2+seed3) != 0)gDRandom.SetSeeds(seed1, seed2, seed3);
+		}
 	}
 
 	// Copy seeds from generator to local variables

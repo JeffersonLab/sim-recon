@@ -19,6 +19,9 @@
 
 class DRandom2:public TRandom2{
 	public:
+		
+		DRandom2(UInt_t seed=1):TRandom2(seed){}
+	
 		void GetSeeds(UInt_t &seed, UInt_t &seed1, UInt_t &seed2){
 			seed = this->fSeed;
 			seed1 = this->fSeed1;

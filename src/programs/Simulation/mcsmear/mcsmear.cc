@@ -43,6 +43,7 @@ bool ADD_NOISE      = false;
 bool SMEAR_HITS     = true;
 bool SMEAR_BCAL     = true;
 bool FDC_ELOSS_OFF  = false;
+bool IGNORE_SEEDS   = false;
 
 // setup response parameters
 double BCAL_DARKRATE_GHZ         = 0.;// 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
@@ -295,6 +296,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'n': warn_obsolete=true;								break;
       case 'N': ADD_NOISE=true;									break;
       case 's': SMEAR_HITS=false;								break;
+      case 'i': IGNORE_SEEDS=true;								break;
       case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
       case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;			break;
       case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
@@ -364,6 +366,7 @@ void Usage(void)
 	cout<<"  options:"<<endl;
 	cout<<"    -N       Add random background hits to CDC and FDC (default is not to add)"<<endl;
 	cout<<"    -s       Don't smear real hits (see -B for BCAL, default is to smear)"<<endl;
+	cout<<"    -i       Ignore random number seeds found in input HDDM file"<<endl;
 	cout<<"    -u#      Sigma CDC anode drift time in ns (def:"<<CDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
 	cout<<"             (NOTE: this is only used if -y is also specified!)"<<endl;
 	cout<<"    -y       Do NOT apply drift distance dependence error to"<<endl;
