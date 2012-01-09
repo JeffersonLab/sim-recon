@@ -33,7 +33,7 @@ int main( int argc, char* argv[] ){
   
   string configfile( "" );
   string treeName( "kin" );
-  
+
   // parse command line
   
   for (int i = 1; i < argc; i++){
@@ -43,6 +43,9 @@ int main( int argc, char* argv[] ){
     if (arg == "-c"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  configfile = argv[++i]; }
+    if (arg == "-t"){  
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  treeName = argv[++i]; }
     if (arg == "-h"){
       cout << endl << " Usage for: " << argv[0] << endl << endl;
       cout << "\t -c <file>\t Config file" << endl;
@@ -53,7 +56,7 @@ int main( int argc, char* argv[] ){
     cout << "No config file specified" << endl;
     exit(1);
   }
-  
+
   ConfigFileParser parser(configfile);
   ConfigurationInfo* cfgInfo = parser.getConfigurationInfo();
   cfgInfo->display();
