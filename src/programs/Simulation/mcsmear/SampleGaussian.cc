@@ -1,40 +1,30 @@
 // $Id$
 //
-// Copied from PrimEx psim_digitize June 22, 2005  David Lawrence
 
-// Randomly sample a gaussian distribution with a sigma of 1.0
-// and mean of 0.0.
-// This is done by creating a table of error function values
-// on the first call to SampleGassian() and then inerpolating
-// on that and all subsequent calls. 
-// The sigma parameter is used to scale the result to the desired
-// units.
-
+// Random number routines used in mcsmear. All random numbers
+// should come from these routines.
+//
 #include <stdlib.h>
 #include <math.h>
 
-#include <TRandom3.h>
+#include "DRandom2.h"
 
-TRandom3 *rnd;
+DRandom2 gDRandom; // declared extern in DRandom2.h
 
 //--------------------------
 // SampleGaussian
 //--------------------------
 double SampleGaussian(double sigma)
 {
-	if(!rnd)rnd = new TRandom3;
-	
-	return rnd->Gaus(0.0, sigma);
+	return gDRandom.Gaus(0.0, sigma);
 }
 
 //--------------------------
 // SamplePoisson
 //--------------------------
 double SamplePoisson(double lambda)
-{
-        if(!rnd)rnd = new TRandom3;
-	
-	return rnd->Poisson(lambda);
+{	
+	return gDRandom.Poisson(lambda);
 }
 
 //--------------------------
@@ -53,8 +43,7 @@ double SampleRange(double x1, double x2)
 		xhi = x1;
 	}
 
-	if(!rnd)rnd = new TRandom3;
-	s  = rnd->Rndm();
+	s  = gDRandom.Rndm();
 	f  = xlo + s*(xhi-xlo);
 	
 	return f;

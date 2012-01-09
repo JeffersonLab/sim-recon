@@ -16,10 +16,9 @@ using namespace std;
 #include "HDDM/hddm_s.h"
 #include <TF1.h>
 #include <TH2.h>
-#include <TRandom3.h>
 
+#include "DRandom2.h"
 
-float RANDOM_MAX = (float)(0x7FFFFFFF);
 #ifndef _DBG_
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
@@ -34,6 +33,7 @@ extern TH2F *cdc_drift_time;
 extern TH1F *fdc_anode_mult;
 extern TH2F *cdc_drift_smear;
 
+void GetAndSetSeeds(s_HDDM_t *hddm_s);
 void SmearCDC(s_HDDM_t *hddm_s);
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
 void SmearFDC(s_HDDM_t *hddm_s);
@@ -189,6 +189,8 @@ void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
 //-----------
 void Smear(s_HDDM_t *hddm_s)
 {
+	GetAndSetSeeds(hddm_s);
+
 	if(SMEAR_HITS)SmearCDC(hddm_s);
 	if(ADD_NOISE)AddNoiseHitsCDC(hddm_s);
 	if(SMEAR_HITS)SmearFDC(hddm_s);
@@ -199,6 +201,48 @@ void Smear(s_HDDM_t *hddm_s)
 	if(SMEAR_HITS)SmearTOF(hddm_s);
 	if(SMEAR_HITS)SmearSTC(hddm_s);
 	if(SMEAR_HITS)SmearCherenkov(hddm_s);
+}
+
+//-----------
+// GetAndSetSeeds
+//-----------
+void GetAndSetSeeds(s_HDDM_t *hddm_s)
+{
+	// Check if a non-zero seed for mcsmear exists in the input
+	// HDDM file. If so, use it to set the seeds for the random number
+	// generator. Then, make sure the seeds that are used are stored
+	// in the output event.
+	
+	if(hddm_s == NULL)return;
+	if(hddm_s->physicsEvents == NULL || hddm_s->physicsEvents==HDDM_NULL)return;
+	if(hddm_s->physicsEvents->mult<1)return;
+	s_PhysicsEvent_t *pe = &hddm_s->physicsEvents->in[0];
+	if(pe->reactions == NULL || pe->reactions==HDDM_NULL)return;
+	if(pe->reactions->mult<1)return;
+	s_Random_t *my_rand = pe->reactions->in[0].random;
+	UInt_t seed1, seed2, seed3;
+	if(my_rand == NULL || my_rand==HDDM_NULL){
+		// No seeds stored in event. Add them
+		my_rand = pe->reactions->in[0].random = make_s_Random();
+
+	}else{
+		// Copy seeds from file to local variables
+		seed1 = *((UInt_t*)&my_rand->seed_mcsmear1);
+		seed2 = *((UInt_t*)&my_rand->seed_mcsmear2);
+		seed3 = *((UInt_t*)&my_rand->seed_mcsmear3);
+		
+		// Set the seeds in the random generator with those found
+		// in the file, but ONLY if they are not all zeros
+		if((seed1+seed2+seed3) != 0)gDRandom.SetSeeds(seed1, seed2, seed3);
+	}
+
+	// Copy seeds from generator to local variables
+	gDRandom.GetSeeds(seed1, seed2, seed3);
+
+	// Copy seeds from local variables to HDDM file
+	my_rand->seed_mcsmear1 = *((Int_t*)&seed1);
+	my_rand->seed_mcsmear2 = *((Int_t*)&seed2);
+	my_rand->seed_mcsmear3 = *((Int_t*)&seed3);
 }
 
 //-----------
@@ -227,8 +271,14 @@ void SmearCDC(s_HDDM_t *hddm_s)
 			
 			// If the event already contains a s_CdcStrawHits_t object then free it.
 			if(cdcstraw->cdcStrawHits!=HDDM_NULL){
+				static bool warned = false;
 				FREE(cdcstraw->cdcStrawHits);
-				cerr<<"Values exist!"<<endl;
+				if(!warned){
+					warned = true;
+					cerr<<endl;
+					cerr<<"WARNING: CDC hits already exist in input file! Overwriting!"<<endl;
+					cerr<<endl;
+				}
 			}
 			
 			// Create new s_CdcStrawHits_t

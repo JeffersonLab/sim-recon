@@ -333,7 +333,9 @@ int storeseeds_(int *iseed1, int *iseed2)
 	if(rnd == NULL || rnd==HDDM_NULL){
 		/* No seeds stored in event. Add them */
 		rnd = pe->reactions->in[0].random = make_s_Random();
-		rnd->seed_mcsmear = 0; /* initialize this here only if creating the "random" structure */
+		rnd->seed_mcsmear1 = 0; /* initialize this here only if creating the "random" structure */
+		rnd->seed_mcsmear2 = 0; /* initialize this here only if creating the "random" structure */
+		rnd->seed_mcsmear3 = 0; /* initialize this here only if creating the "random" structure */
 	}
 
 	rnd->seed1 = *iseed1;

@@ -302,10 +302,14 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 		// and bcalfADCDownHit structures).
 		if(hits->barrelEMcal->bcalfADCCells!=HDDM_NULL){
 			for(unsigned int i=0; i<hits->barrelEMcal->bcalfADCCells->mult; i++){
-				if(hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCUpHits)
-					free(hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCUpHits);
-				if(hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCDownHits)
-					free(hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCDownHits);
+				s_BcalfADCUpHits_t *uphits = hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCUpHits;
+				s_BcalfADCDownHits_t *downhits = hits->barrelEMcal->bcalfADCCells->in[i].bcalfADCDownHits;
+				if(uphits!=NULL && uphits!=HDDM_NULL){
+					free(uphits);
+				}
+				if(downhits!=NULL && downhits!=HDDM_NULL){
+					free(downhits);
+				}
 			}
 			free(hits->barrelEMcal->bcalfADCCells);
 		}
