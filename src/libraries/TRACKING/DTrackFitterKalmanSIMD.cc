@@ -433,6 +433,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
     // For 2 adjacent hits in a single ring, swap hits from the default
     // ordering according to the phi values relative to the phi of the
     // innermost hit.
+    /*
     if (my_cdchits.size()>1){
       double phi0=my_cdchits[0]->hit->wire->origin.Phi();
       for (unsigned int i=0;i<my_cdchits.size()-1;i++){
@@ -446,10 +447,14 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 	      *my_cdchits[i]=b;
 	      *my_cdchits[i+1]=a;
 	  }
+	  if (my_cdchits[i]->hit->wire->straw==my_cdchits[i+1]->hit->wire->straw)
+	    printf("two hits\n");
+	  printf("Swapping\n");
 	  // my_cdchits[i+1]->status=1;
 	}
       }
     }
+    */
   }
   // Order the fdc hits by z
   if (my_fdchits.size()>0){
@@ -3086,13 +3091,13 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Initial charge
     double q=q_over_p_>0?1.:-1.;
 
-    // Initial guess for forward representation covariance matrix
-    C0(state_x,state_x)=1.;
-    C0(state_y,state_y)=1.; 
+    // Initial guess for forward representation covariance matrix   
+    C0(state_x,state_x)=1.0;
+    C0(state_y,state_y)=1.0; 
     C0(state_tx,state_tx)=0.01;
     C0(state_ty,state_ty)=0.01;
-    C0(state_q_over_p,state_q_over_p)=0.01*q_over_p_*q_over_p_;
-
+    C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
+  
     DMatrix5x1 Slast(S);
     DMatrix5x5 Clast(C0); 
 
@@ -3239,20 +3244,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Initial guess for forward representation covariance matrix
     
     // Initial guess for forward representation covariance matrix
-    if (fit_type==kWireBased){
-      C0(state_x,state_x)=0.1;
-      C0(state_y,state_y)=0.1;  
-      C0(state_tx,state_tx)=0.001;
-      C0(state_ty,state_ty)=0.001;
-      C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
-    }
-    else{
-      C0(state_x,state_x)=0.01;
-      C0(state_y,state_y)=0.01;  
-      C0(state_tx,state_tx)=0.0001;
-      C0(state_ty,state_ty)=0.0001;
-      C0(state_q_over_p,state_q_over_p)=0.0225*q_over_p_*q_over_p_;
-    }
+    C0(state_x,state_x)=1.0;
+    C0(state_y,state_y)=1.0;  
+    C0(state_tx,state_tx)=0.01;
+    C0(state_ty,state_ty)=0.01;
+    C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
     
     DMatrix5x1 Slast(S);
     DMatrix5x5 Clast(C0); 
@@ -3395,10 +3391,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double q=q_over_pt_>0?1.:-1.;
 
     C0(state_z,state_z)=1.0;
-    C0(state_q_over_pt,state_q_over_pt)=0.01*q_over_pt_*q_over_pt_;
-    C0(state_phi,state_phi)=0.0001;
-    C0(state_D,state_D)=0.01;
-    double dlambda=0.01;
+    C0(state_q_over_pt,state_q_over_pt)=0.04*q_over_pt_*q_over_pt_;
+    C0(state_phi,state_phi)=0.01;
+    C0(state_D,state_D)=1.0;
+    double dlambda=0.1;
     double one_plus_tanl2=1.+tanl_*tanl_;
     C0(state_tanl,state_tanl)=(one_plus_tanl2)*(one_plus_tanl2)
       *dlambda*dlambda;
@@ -4855,7 +4851,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	dy=S(state_y)-wirepos.y();
 	doca=sqrt(dx*dx+dy*dy);
 	if (num_cdc_hits>0) num_cdc_hits--;
-	if (cdc_index==0) num_cdc_hits=0;
+	if (cdc_index==0 && num_cdc_hits>1) num_cdc_hits=0;
       }
       old_doca=doca;
     }

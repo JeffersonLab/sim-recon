@@ -50,6 +50,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   unsigned int num_cdc_hits=my_cdchits.size(); 
   unsigned int cdc_index=0;
   if (num_cdc_hits>0) cdc_index=num_cdc_hits-1;
+  bool more_cdc_measurements=(num_cdc_hits>0);
   double old_doca=1000.;
 
   S0_=(forward_traj[0].S);
@@ -255,7 +256,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	  // update number of degrees of freedom
 	  numdof++;
-
 	}
 	else{
 	   // Variance for this hit
@@ -309,7 +309,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  num_fdc_hits-=forward_traj[k].num_hits;
       }
     }
-    else if (num_cdc_hits>0){
+    else if (more_cdc_measurements){
       origin=my_cdchits[cdc_index]->hit->wire->origin;
       double z0w=origin.z();
       dir=my_cdchits[cdc_index]->hit->wire->udir;
@@ -592,6 +592,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  origin=my_cdchits[cdc_index]->hit->wire->origin;
 	  dir=my_cdchits[cdc_index]->hit->wire->udir;
 	}
+	else more_cdc_measurements=false;
       
 	// Update the wire position
 	uz=dir.z();
@@ -602,8 +603,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	dx=S(state_x)-wirepos.x();
 	dy=S(state_y)-wirepos.y();
 	doca=sqrt(dx*dx+dy*dy);
-	if (num_cdc_hits>0) num_cdc_hits--;	
-	if (cdc_index==0) num_cdc_hits=0;
       }
       old_doca=doca;
     }
