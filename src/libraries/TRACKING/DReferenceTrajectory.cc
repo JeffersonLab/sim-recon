@@ -937,16 +937,68 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 	//  double c = (beta/Ro2)/2.0;
 	double c = 0.5*(beta/Ro2);
 	//  double d = sqrt(pow(b,3.0) + pow(c,2.0));
-	double d=sqrt(b*b*b+c*c);
-	//double q = pow(d-c, ONE_THIRD);
-	//double p = pow(d+c, ONE_THIRD);
-	double p=cbrt(d+c);
-	double q=cbrt(d-c);
-	double phi = q - p;
-	double phi2=phi*phi;
+	double d2=b*b*b+c*c;
+	double phi=0.,dist2=1e8;
+	if (d2>=0){
+	  double d=sqrt(d2);
+	  //double q = pow(d-c, ONE_THIRD);
+	  //double p = pow(d+c, ONE_THIRD);
+	  double p=cbrt(d+c);
+	  double q=cbrt(d-c);
+	  phi = q - p;
+	  double phisq=phi*phi;
+	  
+	  dist2 = 0.25*Ro2*phisq*phisq + alpha*phisq + beta*phi 
+	    + x0*x0 + y0*y0 + z0*z0;
+	}
+	else{
+	  // Use DeMoivre's theorem to find the cube root of a complex
+	  // number.  In this case there are three real solutions.
+	  double d=sqrt(-d2);
+	  c*=-1.;
+	  double temp=sqrt(cbrt(c*c+d*d));
+	  double theta1=ONE_THIRD*atan2(d,c);
+	  double sum_over_2=temp*cos(theta1);
+	  double diff_over_2=-temp*sin(theta1);
 
-	//  double dist2 = Ro2/4.0*phi2*phi2 + alpha*phi2 + beta*phi + x0*x0 + y0*y0 + z0*z0;
-	double dist2 = 0.25*Ro2*phi2*phi2 + alpha*phi2 + beta*phi + x0*x0 + y0*y0 + z0*z0;
+	  double phi0=2.*sum_over_2;
+	  double phi0sq=phi0*phi0;
+	  double phi1=-sum_over_2+sqrt(3)*diff_over_2;
+	  double phi1sq=phi1*phi1;
+	  double phi2=-sum_over_2-sqrt(3)*diff_over_2;
+	  double phi2sq=phi2*phi2;
+	  double d2_2 = 0.25*Ro2*phi2sq*phi2sq + alpha*phi2sq + beta*phi2 + x0*x0 + y0*y0 + z0*z0;
+	  double d2_1 = 0.25*Ro2*phi1sq*phi1sq + alpha*phi1sq + beta*phi1 + x0*x0 + y0*y0 + z0*z0; 
+	  double d2_0 = 0.25*Ro2*phi0sq*phi0sq + alpha*phi0sq + beta*phi0 + x0*x0 + y0*y0 + z0*z0;
+ 
+	  if (d2_0<d2_1 && d2_0<d2_2){
+	    phi=phi0;
+	    dist2=d2_0;
+	  }
+	  else if (d2_1<d2_0 && d2_1<d2_2){
+	    phi=phi1;
+	    dist2=d2_1;
+	  }
+	  else{
+	    phi=phi2;
+	    dist2=d2_2;
+	  }
+	  
+	  if (isnan(Ro))
+	    {
+	  
+	    printf("b %f c %f Ro %f\n",b,c,Ro);
+	    
+	    
+	    
+	    printf("%f %f\n",c*c+d*d,cbrt(c*c+d*d));
+	    
+
+	    printf("final d2 %f Check %f\n",dist2,Ro2*phi*phi*phi + 2*alpha*phi + beta);
+	  }
+	}
+
+
 	
 	// Calculate distance along track ("s")
 	if(s!=NULL){
