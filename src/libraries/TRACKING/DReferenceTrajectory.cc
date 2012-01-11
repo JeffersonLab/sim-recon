@@ -986,15 +986,6 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 	  
 	  if (isnan(Ro))
 	    {
-	  
-	    printf("b %f c %f Ro %f\n",b,c,Ro);
-	    
-	    
-	    
-	    printf("%f %f\n",c*c+d*d,cbrt(c*c+d*d));
-	    
-
-	    printf("final d2 %f Check %f\n",dist2,Ro2*phi*phi*phi + 2*alpha*phi + beta);
 	  }
 	}
 
