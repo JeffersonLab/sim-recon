@@ -335,7 +335,8 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 
     if (fit_type==kHelical) fdc_var*=25.;
     double chisq=doca*doca/fdc_var;
-    double probability = TMath::Prob(chisq, 1);
+    double MAX_HIT_DOCA = 30;
+    double probability = (doca<MAX_HIT_DOCA)?TMath::Prob(chisq, 1):0.;
     if(probability>=MIN_HIT_PROB){
       pair<double,const DFDCPseudo*>myhit;
       myhit.first=probability;
