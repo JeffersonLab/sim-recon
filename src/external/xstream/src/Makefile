@@ -7,10 +7,10 @@ INCLUDES = -I../include
 EXTRA_DIST = debug.h md5_t.pl md5_t.h
 libxstream_a_SOURCES = debug.cpp common.cpp xdr.cpp base64.cpp \
 	digest.cpp tee.cpp md5.cpp bz.cpp dater.cpp fd.cpp \
-	posix.cpp z_digest.cpp
+	posix.cpp z_digest.cpp z.cpp
 libxstream_a_OBJECTS_0 = debug.o common.o xdr.o base64.o \
 	digest.o tee.o md5.o bz.o dater.o fd.o \
-	posix.o z_digest.o
+	posix.o z_digest.o z.o
 libxstream_a_OBJECTS = $(addprefix $(OBJDIR)/,$(libxstream_a_OBJECTS_0))
 lib_LIBRARIES = libxstream.a
 
