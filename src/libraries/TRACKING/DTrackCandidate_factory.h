@@ -15,6 +15,7 @@ using namespace jana;
 #include <TH2F.h>
 #include "DTrackCandidate.h"
 #include <DVector3.h>
+#include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCSegment.h"
 #include "DHelicalFit.h"
 
@@ -59,6 +60,9 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
  protected:
   virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
   virtual jerror_t brun(JEventLoop* eventLoop,int runnumber);
+
+  double DocaToHelix(const DCDCTrackHit *hit,double q,const DVector3 &pos,
+		     const DVector3 &mom);
   
  private:
   const DMagneticFieldMap *bfield;

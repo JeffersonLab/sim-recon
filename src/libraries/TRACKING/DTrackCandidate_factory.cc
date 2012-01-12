@@ -8,8 +8,6 @@
 
 #include "DTrackCandidate_factory.h"
 #include "DANA/DApplication.h"
-#include "CDC/DCDCTrackHit.h"
-#include "FDC/DFDCSegment.h"
 #include "DMagneticFieldStepper.h"
 
 #include <TROOT.h>
@@ -309,40 +307,31 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       }
       else{  
 	// Try to gather up stray CDC hits from candidates that were not 
-	// matched with the previous algorithm.  Use axial wires for now.
+	// matched with the previous algorithm. 
 	for (unsigned int j=0;j<cdc_forward_ids.size();j++){
 	  vector<const DCDCTrackHit *>cdchits;
 	  cdctrackcandidates[cdc_forward_ids[j]]->GetT(cdchits);	 
 	  sort(cdchits.begin(),cdchits.end(),CDCHitSortByLayerincreasing);
-	  
+	  	
 	  unsigned int num_match=0;
-	  unsigned int num_axial=0;
-	  
-	  // Initialize the stepper 
-	  DMagneticFieldStepper stepper(bfield,srccan->charge());
+	  unsigned int num_cdc=0;
 	  
 	  DVector3 pos=srccan->position();
 	  DVector3 mom=srccan->momentum();
+	  double q=srccan->charge();
 	  for (unsigned int m=0;m<cdchits.size();m++){
-	    if (fabs(cdchits[m]->wire->stereo)<EPS){
-	      double R=cdchits[m]->wire->origin.Perp();
-	      
-	      // Swim out from the "vertex"
-	      if (stepper.SwimToRadius(pos,mom,R,NULL)==false){
-		double dx=cdchits[m]->wire->origin.x()-pos.x();
-		double dy=cdchits[m]->wire->origin.y()-pos.y();
-		double dr=sqrt(dx*dx+dy*dy);
-		
-		// Use an un-normalized gaussian so that for a residual
-		// of zero, we get a probability of 1.0.
-		double variance=1.0;
-		double prob = finite(dr) ? exp(-dr*dr/2./variance):0.0;
-		if (prob>0.1) num_match++;
-	      }
-	      num_axial++;
-	    }
+	    // Use an un-normalized gaussian so that for a residual
+	    // of zero, we get a probability of 1.0.
+	    double variance=1.0;
+	    // Use a helical approximation to the track to match both axial and
+	    // stereo wires
+	    double dr2=DocaToHelix(cdchits[m],q,pos,mom);
+	    double prob=finite(dr2) ? exp(-dr2/(2.*variance)):0.0;
+	    if (prob>0.1) num_match++;
+	    
+	    num_cdc++;
 	  }
-	  if (num_match==num_axial && num_match>0){
+	  if (num_match>0 && float(num_match)/float(num_cdc)>0.5){
 	    // Put the fdc candidate in the combined list
 	    DTrackCandidate *can = new DTrackCandidate;
 	  
@@ -915,4 +904,57 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   }
 
   return NOERROR;
+}
+
+// Routine to do a crude match between cdc wires and a helical approximation to
+// the trajectory
+double DTrackCandidate_factory::DocaToHelix(const DCDCTrackHit *hit,
+					    double q,
+					    const DVector3 &pos,
+					    const DVector3 &mom){
+  double pt=mom.Perp();
+  double phi=mom.Phi();
+  double sinphi=sin(phi);
+  double cosphi=cos(phi);
+  double tanl=tan(M_PI_2-mom.Theta());
+  double x0=pos.X();
+  double y0=pos.Y();
+  double z0=pos.Z();
+  double B=bfield->GetBz(x0,y0,z0);
+  double twokappa=0.003*B*q/pt;
+  
+  double sperp=0;
+  DVector3 origin=hit->wire->origin;
+  double z0w=origin.z();
+  DVector3 dir=hit->wire->udir;
+  double uz=dir.z();
+  
+  DVector3 wirepos;
+  double old_doca2=1e8;
+  double doca2=old_doca2;
+  double z=z0;
+  double r2=x0*x0+y0*y0;
+  while (z>50. && z<170. && r2<3600.){
+    old_doca2=doca2;
+    
+    sperp-=1.;
+    double twoks=twokappa*sperp;
+    double sin2ks=sin(twoks);
+    double cos2ks=cos(twoks);
+    double x=x0+(cosphi*sin2ks-sinphi*(1.-cos2ks))/twokappa;
+    double y=y0+(sinphi*sin2ks+cosphi*(1.-cos2ks))/twokappa;
+    r2=x*x+y*y;
+    z=z0+sperp*tanl;
+    
+    wirepos=origin+((z-z0w)/uz)*dir;
+    double xw=wirepos.x();
+    double yw=wirepos.y();
+    
+    doca2=(x-xw)*(x-xw)+(y-yw)*(y-yw);
+    if (doca2>old_doca2){
+      break;
+    }
+    
+  }
+  return old_doca2;
 }
