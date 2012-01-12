@@ -76,6 +76,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		class DCDCTrkHit{
 			public:
 				const DCDCTrackHit *hit;
+				unsigned int index;
 				unsigned int flags;
 				double x_stereo;
 				double y_stereo;
@@ -123,7 +124,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		
 		typedef vector<vector<DCDCSeed > >::iterator ringiter;
 		
-		void GetCDCHits(JEventLoop *loop);
+		jerror_t GetCDCHits(JEventLoop *loop);
 		void FindSeeds(vector<DCDCTrkHit*> &hits, vector<DCDCSeed> &seeds);
 		void LinkSubSeeds(vector<DCDCSeed*> &parent, ringiter ring, ringiter ringend, vector<DCDCSeed> &seeds);
 		void LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<DCDCSeed> &in_seeds2, vector<DCDCSeed> &seeds, unsigned int max_linked_hits);

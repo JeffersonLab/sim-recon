@@ -137,7 +137,9 @@ jerror_t DTrackCandidate_factory_CDC::fini(void)
 jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 {
 	// Get CDC hits
-	GetCDCHits(loop);
+  if (GetCDCHits(loop)!=NOERROR){
+    return RESOURCE_UNAVAILABLE;
+  }
 	
 	// Find all seeds in all 3 axial superlayers
 	vector<DCDCSeed> seeds_sl5;
@@ -230,10 +232,12 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 	
 		for (unsigned int n=0;n<seed.hits.size();n++){
 		  const DCDCTrackHit *cdchit=(seed.hits[n])->hit;
+		  can->used_cdc_indexes.push_back(seed.hits[n]->index);
 		  can->AddAssociatedObject(cdchit);
 		}
 		for (unsigned int n=0;n<seed.stereo_hits.size();n++){
 		  const DCDCTrackHit *cdchit=(seed.stereo_hits[n]).hit;
+		  can->used_cdc_indexes.push_back((seed.stereo_hits[n]).index);
 		  can->AddAssociatedObject(cdchit);
 		}
 
@@ -249,41 +253,39 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		_data.push_back(can);
 	}
 
+	
+
 	return NOERROR;
 }
 
 //------------------
 // GetCDCHits
 //------------------
-void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
+jerror_t DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 {
 	// Delete old hits
 	for(unsigned int i=0; i<cdctrkhits.size(); i++)delete cdctrkhits[i];
 	cdctrkhits.clear();
 	for(unsigned int i=0; i<cdchits_by_superlayer.size(); i++)cdchits_by_superlayer[i].clear();
 
+       
 	// Get the "raw" hits. These already have the wire associated with them.
 	vector<const DCDCTrackHit*> cdctrackhits;
 	loop->Get(cdctrackhits);
 	
 	// If there are no hits, then bail now
-	if(cdctrackhits.size()==0)return;
+	if(cdctrackhits.size()==0)return RESOURCE_UNAVAILABLE;
 	
 	// If there are too many hits, bail with a warning message
 	if(cdctrackhits.size()>MAX_ALLOWED_CDC_HITS){
 		_DBG_<<"Too many hits in CDC ("<<cdctrackhits.size()<<", max="<<MAX_ALLOWED_CDC_HITS<<")! Track finding in CDC bypassed for event "<<loop->GetJEvent().GetEventNumber()<<endl;
 		cdctrackhits.clear();
-		return;
+		return UNRECOVERABLE_ERROR;
 	}
 	
 	// Create DCDCTrkHit objects out of these.	
 	int oldwire = -1;
-	for(unsigned int i=0; i<cdctrackhits.size(); i++){
-	  DCDCTrkHit *cdctrkhit = new DCDCTrkHit;
-	  cdctrkhit->hit = cdctrackhits[i];
-	  cdctrkhit->flags = cdctrkhit->hit->wire->stereo==0.0 ? NONE:IS_STEREO;
-	  cdctrkhit->flags |= NOISE; // (see below)
-	  
+	for(unsigned int i=0; i<cdctrackhits.size(); i++){	  
 	  // Add to "master" list
 	  // ONLY FIRST HIT OF A WIRE
 	  int newwire = cdctrackhits[i]->wire->ring*1000 + cdctrackhits[i]->wire->straw;
@@ -292,6 +294,12 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 	    oldwire = newwire;
 	  
 	    // Add to "master" list
+	    DCDCTrkHit *cdctrkhit = new DCDCTrkHit;
+	    cdctrkhit->index=i;
+	    cdctrkhit->hit = cdctrackhits[i];
+	    cdctrkhit->flags = cdctrkhit->hit->wire->stereo==0.0 ? NONE:IS_STEREO;
+	    cdctrkhit->flags |= NOISE; // (see below)
+	    
 	    cdctrkhits.push_back(cdctrkhit);
 	    
 	    // Sort into list of hits by superlayer
@@ -332,6 +340,7 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 			}// if
 		}// j
 	}// i
+	return NOERROR;
 }
 
 //------------------
