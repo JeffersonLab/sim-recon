@@ -39,6 +39,10 @@ class DTrackCandidate:public DKinematicData{
 		int Ndof;				///< Number of degrees of freedom in the fit
 
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track (if any)
+		
+		vector<int>used_cdc_indexes;
+		vector<int>used_fdc_indexes;
+
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);
