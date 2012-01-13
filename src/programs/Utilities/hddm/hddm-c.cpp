@@ -1569,7 +1569,7 @@ void CodeBuilder::writeMatcher()
          << MAX_POPLIST_LENGTH << ")"				<< std::endl
          << "            {"					<< std::endl
          << "               fprintf(stderr,"
-         << "\"hddm error - posList overflow.\\n\");"		<< std::endl
+         << "\"hddm error - popList overflow.\\n\");"		<< std::endl
          << "               fprintf(stderr,"
          << "\"Increase MAX_POPLIST_LENGTH and recompile.\\n\");" << std::endl
          << "               exit(9);"				<< std::endl

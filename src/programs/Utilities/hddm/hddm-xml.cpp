@@ -51,6 +51,8 @@
 #include <stdio.h>
 #include <rpc/rpc.h>
 #include <unistd.h>
+#include <xstream/z.h>
+#include <xstream/bz.h>
 #include <xstream/xdr.h>
 
 #include <iostream>
@@ -242,12 +244,18 @@ int main(int argC, char* argV[])
    builder.writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
    builder.writeXML(xmlHeader);
 
-   xstream::xdr::istream ifx(*ifs);
+   int event_buffer_size;
+   char *event_buffer = new char[event_buffer_size = 1000000];
+   std::istringstream iss;
+   iss.rdbuf()->pubsetbuf(event_buffer,event_buffer_size);
+   xstream::xdr::istream ifx(iss.rdbuf());
    while (--reqcount && ifs->good())
    {
       DOMNodeList* contList = rootEl->getChildNodes();
       int contLength = contList->getLength();
       int tsize;
+      ifs->read(event_buffer,4);
+      iss.seekg(0);
       ifx >> tsize;
 #ifdef VERBOSE_HDDM_LOGGING
       XString tnameS(rootEl->getTagName());
@@ -259,6 +267,39 @@ int main(int argC, char* argV[])
       {
          break;
       }
+      else if (tsize == 1) {
+         int size, format, flags;
+         ifs->read(event_buffer+4,4);
+         ifx >> size;
+         ifs->read(event_buffer+8,size);
+         ifx >> format >> flags;
+         if (size == 8 && format == 0 && flags == 0x00) {
+            continue;
+         }
+         else if (size == 8 && format == 0 && flags == 0x10) {
+            xstream::z::istreambuf *zin_sb;
+            zin_sb = new xstream::z::istreambuf(ifs->rdbuf());
+            ifs->rdbuf(zin_sb);
+            continue;
+         }
+         else if (size == 8 && format == 0 && flags == 0x20) {
+            xstream::bz::istreambuf *bzin_sb;
+            bzin_sb = new xstream::bz::istreambuf(ifs->rdbuf());
+            ifs->rdbuf(bzin_sb);
+            continue;
+         }
+         else {
+            break;
+         }
+      }
+      else if (tsize+4 > event_buffer_size) {
+         char *new_buffer = new char[event_buffer_size = tsize+1000];
+         iss.rdbuf()->pubsetbuf(new_buffer,event_buffer_size);
+         memcpy(new_buffer,event_buffer,4);
+         delete event_buffer;
+      }
+      ifs->read(event_buffer+4,tsize);
+
       for (int c = 0; c < contLength; c++)
       {
          DOMNode* cont = contList->item(c);

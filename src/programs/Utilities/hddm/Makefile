@@ -64,7 +64,7 @@ $(BINDIR)/hddm-xml: hddm-xml.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(HALLD_MY)/lib/$(BMS_OSNAME) \
-	-L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lxstream \
+	-L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lxstream -lbz2 -lz \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 $(BINDIR)/hddm-c: hddm-c.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
