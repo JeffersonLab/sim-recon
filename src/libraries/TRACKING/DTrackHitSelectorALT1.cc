@@ -160,7 +160,9 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
     // Find the DOCA to this wire
     double s;
     double doca = rt->DistToRT(hit->wire, &s);
-    
+    if(!finite(doca))
+      continue;
+
     // Get "measured" distance to wire. For time-based tracks
     // this is calculated from the drift time. For all other
     // tracks, this is assumed to be half a cell size
@@ -331,6 +333,8 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
     double s;
     DVector3 fdc_pos(hit->xy.X(),hit->xy.Y(),hit->wire->origin.z());
     double doca=rt->DistToRT(fdc_pos,&s);
+    if(!finite(doca))
+      continue;
     double fdc_var=mom_factor*mom_factor*mass_factor*mass_factor*(1.0*1.0+0.3*0.3)/12.;
 
     if (fit_type==kHelical) fdc_var*=25.;

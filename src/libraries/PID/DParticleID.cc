@@ -358,6 +358,8 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::
     // and the bcal cluster position, looking for the minimum
     double locTempFlightTime=0.;
     double d = rt->DistToRTwithTime(bcal_pos,&locTempPathLength,&locTempFlightTime);
+    if(!finite(d))
+      continue;
     proj_pos = rt->GetLastDOCAPoint();
     
     if (d<dmin){

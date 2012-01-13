@@ -178,6 +178,8 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
     // Find the DOCA to this wire
     double s;
     double doca = rt->DistToRT(hit->wire, &s);
+	if(!finite(doca))
+     continue;
 	if(!finite(s)) s = -999.0;
 	const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
 	double itheta02s2 = last_step->itheta02s2;
@@ -413,6 +415,8 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 		// Find the DOCA to this wire
 		double s;
 		double doca = rt->DistToRT(hit->wire, &s);  
+		if(!finite(doca))
+   			continue;
 		const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
 		double itheta02s2 = last_step->itheta02s2;
 

@@ -1676,7 +1676,9 @@ double DReferenceTrajectory::Straw_dx(const DCoordinateSystem *wire, double radi
 	// First, find the DOCA point for this wire
 	double s;
 	double doca = DistToRT(wire, &s);
-	
+	if(!finite(doca))
+		return 0.0;
+
 	// If doca is outside of the given radius, then we're done
 	if(doca>=radius)return 0.0;
 	
