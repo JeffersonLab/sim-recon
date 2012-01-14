@@ -1,11 +1,23 @@
 #include <iostream>
+#include <fstream>
 using namespace std;
 #include "hddm_v.h"
+#include "hddm_v.hpp"
+
+void test_hddm_c_interface(char *outfile);
+void test_hddm_cpp_interface(char *outfile);
 
 int main()
 {
-   char hddmfile[] = "test.hddm";
-   v_iostream_t *outputfp = init_v_HDDM(hddmfile);
+   // the following two output files should be identical
+   test_hddm_c_interface("test.hddm");
+   test_hddm_cpp_interface("test2.hddm");
+   return 0;
+}
+
+void test_hddm_c_interface(char *outfile)
+{
+   v_iostream_t *outputfp = init_v_HDDM(outfile);
    if (!outputfp) {
       cerr << "Test failed: error opening output file\n";
       exit(1);
@@ -38,4 +50,35 @@ int main()
 
    flush_v_HDDM(event,outputfp);
    close_v_HDDM(outputfp);
+}
+
+void test_hddm_cpp_interface(char *outfile)
+{
+   ofstream ofs(outfile);
+   if (!ofs.is_open()) {
+      cerr << "Test failed: error opening output file\n";
+      exit(1);
+   }
+
+   hddm_v::HDDM record;
+   hddm_v::GenericTagList generics = record.addGenericTags();
+   hddm_v::FloatTagList floats = generics().addFloatTags();
+   hddm_v::DoubleTagList doubles = generics().addDoubleTags();
+   hddm_v::ParticleTagList particles = generics().addParticleTags();
+   hddm_v::StringTagList strings = generics().addStringTags();
+   hddm_v::IntTagList ints = generics().addIntTags();
+   hddm_v::LongTagList longs = generics().addLongTags();
+   hddm_v::BooleanTagList booleans = generics().addBooleanTags();
+   hddm_v::AnyURITagList anyURIs = generics().addAnyURITags();
+   floats().pi(3.141593);
+   doubles().pi(3.141592592636);
+   particles().pi(PiPlus);
+   strings().quote("pass the red quarks, please");
+   ints().magic(133557799);
+   longs().magic(133557799002244668LL);
+   booleans().truth(1);
+   anyURIs().uri("http://portal.gluex.org");
+
+   hddm_v::ostream ostr(ofs);
+   ostr << record;
 }

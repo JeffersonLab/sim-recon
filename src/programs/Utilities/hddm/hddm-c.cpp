@@ -110,14 +110,10 @@ class XtString : public XString
    XtString(const std::string& s): XString(s) {};
    XtString(const XString& x): XString(x) {};
    XtString(const XtString& t): XString((XString&)t) {};
-   ~XtString();
 
-   XtString& plural();
-   XtString& simpleType();
-   XtString& listType();
-
- private:
-   std::list<XtString*> fStringCollection;
+   XtString plural();
+   XtString simpleType();
+   XtString listType();
 };
 
 class CodeBuilder
@@ -475,67 +471,54 @@ int main(int argC, char* argV[])
    return 0;
 }
 
-XtString::~XtString()
+XtString XtString::plural()
 {
-   std::list<XtString*>::iterator iter;
-   for (iter = fStringCollection.begin();
-        iter != fStringCollection.end();
-        ++iter)
+   XtString p(*this);
+   XtString::size_type len = p.size();
+   if (len > 3 && p.substr(len-3,3) == "tum")
    {
-      delete *iter;
+      p.replace(len-3,3,"ta");
    }
-}
-
-XtString& XtString::plural()
-{
-   XtString* p = new XtString(*this);
-   fStringCollection.push_back(p);
-   XtString::size_type len = p->size();
-   if (len > 3 && p->substr(len-3,3) == "tum")
+   else if (len > 1 && p.substr(len-3,3) == "ies")
    {
-      p->replace(len-3,3,"ta");
+      p.replace(len-3,3,"iesList");
    }
-   else if (len > 1 && p->substr(len-3,3) == "ies")
+   else if (len > 2 && p.substr(len-2,2) == "ex")
    {
-      p->replace(len-3,3,"iesList");
+      p.replace(len-2,2,"ices");
    }
-   else if (len > 2 && p->substr(len-2,2) == "ex")
+   else if (len > 2 && p.substr(len-2,2) == "sh")
    {
-      p->replace(len-2,2,"ices");
+      p.replace(len-2,2,"shes");
    }
-   else if (len > 2 && p->substr(len-2,2) == "sh")
+   else if (len > 1 && p.substr(len-1,1) == "s")
    {
-      p->replace(len-2,2,"shes");
-   }
-   else if (len > 1 && p->substr(len-1,1) == "s")
-   {
-      p->replace(len-1,1,"ses");
+      p.replace(len-1,1,"ses");
    }
    else if (len > 1)
    {
-      *p += "s";
+      p += "s";
    }
-   return *p;
+   return p;
 }
 
 /* Map from tag name to name of the corresponding c-structure
  * for the case of simple tags (those that do not repeat)
  */
-XtString& XtString::simpleType()
+XtString XtString::simpleType()
 {
-   XtString* p = new XtString(*this);
-   fStringCollection.push_back(p);
-   (*p)[0] = toupper((*p)[0]);
-   *p = classPrefix + "_" + *p + "_t";
-   return *p;
+   XtString p(*this);
+   p[0] = toupper(p[0]);
+   p = classPrefix + "_" + p + "_t";
+   return p;
 }
 
 /* Map from tag name to name of the corresponding c-structure
  * for the case of list tags (those that may repeat)
  */
-XtString& XtString::listType()
+XtString XtString::listType()
 {
-   XtString& r = plural();
+   XtString r = plural();
    r[0] = toupper(r[0]);
    r = classPrefix + "_" + r + "_t";
    return r;
@@ -837,10 +820,14 @@ void CodeBuilder::constructConstructors()
 	             typeS == "long" ||
                      typeS == "float" ||
                      typeS == "double" ||
-                     typeS == "boolean" ||
-                     typeS == "Particle_t")
+                     typeS == "boolean")
             {
                cFile << "      pp->" << nameS << " = 0;"	<< std::endl;
+            }
+            else if (typeS == "Particle_t")
+            {
+               cFile << "      pp->" << nameS
+                     << " = (Particle_t)0;"			<< std::endl;
             }
          }
          DOMNodeList* contList = tagEl->getChildNodes();
@@ -902,10 +889,14 @@ void CodeBuilder::constructConstructors()
 	             typeS == "long" ||
                      typeS == "float" ||
                      typeS == "double" ||
-                     typeS == "boolean" ||
-                     typeS == "Particle_t")
+                     typeS == "boolean")
             {
                cFile << "   p->" << nameS << " = 0;"		<< std::endl;
+            }
+            else if (typeS == "Particle_t")
+            {
+               cFile << "   p->" << nameS 
+                     << " = (Particle_t)0;"			<< std::endl;
             }
          }
          DOMNodeList* contList = tagEl->getChildNodes();
@@ -971,7 +962,8 @@ void CodeBuilder::constructUnpackers()
             << "(XDR* xdrs, popNode* pop)"
 								<< std::endl
             << "{"						<< std::endl
-            << "   " << tagType << "* this1 = HDDM_NULL;"	<< std::endl
+            << "   " << tagType << "* this1 = (" << tagType
+            << "*)HDDM_NULL;"					<< std::endl
             << "   unsigned int size;"				<< std::endl
 	    << "   if (! xdr_u_int(xdrs,&size))"		<< std::endl
             << "   {"						<< std::endl

@@ -80,11 +80,12 @@ $(BINDIR)/hddm-cpp: hddm-cpp.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
 $(BINDIR)/hddmcat: hddmcat.cpp
 	$(CPP) $(LD_FLAGS) -o $@ $^
 
-test: hddm-c hddm-xml test.xml
-	./hddm-c test.xml
+test: $(BINDIR)/hddm-c $(BINDIR)/hddm-cpp $(BINDIR)/hddm-xml test.xml
+	hddm-c test.xml
+	hddm-cpp test.xml
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/include -o testhddm \
-	testhddm.cpp hddm_v.c $(LIBXDR)
+	-I$(HALLD_HOME)/include -o testhddm -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	testhddm.cpp hddm_v.c hddm_v.cpp -lxstream $(LIBXDR) -lz -lbz2
 	./testhddm
 	hddm-xml test.hddm
 

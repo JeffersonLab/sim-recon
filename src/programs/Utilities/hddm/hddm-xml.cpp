@@ -86,7 +86,7 @@ void usage()
 {
    std::cerr
         << "\nUsage:\n"
-        << "    hddm-xml [-o <filename>] [HDDM file]\n\n"
+        << "    hddm-xml [-n count] [-o <filename>] [HDDM file]\n\n"
         << "Options:\n"
         <<  "    -o <filename>	write to <filename>.xml"
         << std::endl;
@@ -122,9 +122,13 @@ int main(int argC, char* argV[])
       {
          xFilename = argV[++argInd];
       }
-      else if (sscanf(argV[argInd],"%d",&reqcount))
+      else if (strcmp(argV[argInd],"-n") == 0)
       {
-	 reqcount = 1-reqcount;
+         if (!sscanf(argV[++argInd],"%d",&reqcount))
+         {
+            usage();
+            return 1;
+         }
       }
       else
       {
@@ -255,6 +259,9 @@ int main(int argC, char* argV[])
       int contLength = contList->getLength();
       int tsize;
       ifs->read(event_buffer,4);
+      if (ifs->eof()) {
+         break;
+      }
       iss.seekg(0);
       ifx >> tsize;
 #ifdef VERBOSE_HDDM_LOGGING
