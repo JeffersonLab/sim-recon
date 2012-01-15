@@ -135,11 +135,12 @@ class CodeBuilder
 
  private:
    std::vector<DOMElement*> tagList;
-   typedef std::map<const XtString,DOMNode*> parentList_t;
+   typedef std::vector<DOMNode*> parentList_t;
    typedef std::map<const XtString,parentList_t> parentTable_t;
    parentList_t parentList;
    parentTable_t parents;
    parentTable_t children;
+   int element_in_list(XtString &name, parentList_t list);
 };
 
 
@@ -435,7 +436,8 @@ int main(int argC, char* argV[])
    "    : m_host_plist(src.m_host_plist),\n"
    "      m_first_iter(src.m_first_iter),\n"
    "      m_last_iter(src.m_last_iter),\n"
-   "      m_parent(src.m_parent)\n"
+   "      m_parent(src.m_parent),\n"
+   "      m_size(src.m_size)\n"
    "   {}\n"
    "\n"
    "   bool empty() const { return (m_size == 0); }\n"
@@ -639,9 +641,11 @@ int main(int argC, char* argV[])
    "   }\n"
    "\n"
    "   void streamer(ostream &ostr) {\n"
-   "      *ostr.m_xstr << m_size;\n"
-   "      for (iterator iter = begin(); iter != end(); ++iter) {\n"
-   "         iter->streamer(ostr);\n"
+   "      if (m_size) {\n"
+   "         *ostr.m_xstr << m_size;\n"
+   "         for (iterator iter = begin(); iter != end(); ++iter) {\n"
+   "            iter->streamer(ostr);\n"
+   "         }\n"
    "      }\n"
    "   }\n"
    "\n"
@@ -777,7 +781,9 @@ int main(int argC, char* argV[])
    "   }\n"
    "\n"
    "   void streamer(ostream &ostr) {\n"
-   "      HDDM_ElementList<T>::begin()->streamer(ostr);\n"
+   "      if (HDDM_ElementList<T>::m_size) {\n"
+   "         HDDM_ElementList<T>::begin()->streamer(ostr);\n"
+   "      }\n"
    "   }\n"
    "\n"
    " protected:\n"
@@ -1129,7 +1135,7 @@ int main(int argC, char* argV[])
    "         if (s2tagname == r2tagname) {\n"
    "            if (s2tag != r2tag) {\n"
    "               collide(s2tag,r2tag);\n"
-   "               continue;\n"
+   "               break;\n"
    "            }\n"
    "            else {\n"
    "               gene->m_order = order_of_this_tag_in_ref;\n"
@@ -1216,6 +1222,25 @@ XtString XtString::linkType()
    r[0] = toupper(r[0]);
    r = r + "Link";
    return r;
+}
+
+/* Look for a named element in a list of element pointers
+ * and return index of first instance in the list if found,
+ * otherwise return -1;
+ */
+int CodeBuilder::element_in_list(XtString &name, parentList_t list)
+{
+   int n;
+   parentList_t::iterator iter;
+   for (iter = list.begin(); iter != list.end(); ++iter, ++n)
+   {
+      DOMElement *el = (DOMElement*)(*iter);
+      XtString cnameS(el->getTagName());
+      if (cnameS == name) {
+         return n;
+      }
+   }
+   return -1;
 }
 
 /* Verify that the tag group under this element does not collide
@@ -1339,47 +1364,61 @@ void CodeBuilder::writeClassdef(DOMElement* el)
    }
    hFile << "   ~" << tagS.simpleType() << "();" << std::endl;
 
+   std::map<XtString,XtString> attrList;
+   DOMNamedNodeMap *myAttr = el->getAttributes();
+   for (int n = 0; n < myAttr->getLength(); n++)
+   {
+      XtString attrS(myAttr->item(n)->getNodeName());
+      XtString typeS(el->getAttribute(X(attrS)));
+      attrList[attrS] = typeS;
+   }
    parentList_t::iterator iter;
    for (iter = parents[tagS].begin(); iter != parents[tagS].end(); ++iter)
    {
-      XtString hostS(iter->first);
-      DOMElement *hostEl = (DOMElement*)iter->second;
+      DOMElement *hostEl = (DOMElement*)(*iter);
+      XtString hostS(hostEl->getTagName());
       DOMNamedNodeMap *hostAttr = hostEl->getAttributes();
       for (int n = 0; n < hostAttr->getLength(); n++)
       {
          XtString attrS(hostAttr->item(n)->getNodeName());
+         if (attrList.find(attrS) != attrList.end())
+         {
+            continue;
+         }
          XtString typeS(hostEl->getAttribute(X(attrS)));
+         attrList[attrS] = typeS;
+         XtString getS("get"+attrS.simpleType());
          if (typeS == "int")
          {
-            hFile << "   int " << attrS << "() const;" << std::endl;
+            hFile << "   int " << getS << "() const;" << std::endl;
          }
          else if (typeS == "long")
          {
-            hFile << "   int64_t " << attrS << "() const;" << std::endl;
+            hFile << "   int64_t " << getS << "() const;" << std::endl;
          }
          else if (typeS == "float")
          {
-            hFile << "   float " << attrS << "() const;" << std::endl;
+            hFile << "   float " << getS << "() const;" << std::endl;
          }
          else if (typeS == "double")
          {
-            hFile << "   double " << attrS << "() const;" << std::endl;
+            hFile << "   double " << getS << "() const;" << std::endl;
          }
          else if (typeS == "boolean")
          {
-            hFile << "   bool " << attrS << "() const;" << std::endl;
+            hFile << "   bool " << getS << "() const;" << std::endl;
          }
          else if (typeS == "string")
          {
-            hFile << "   const std::string &" << attrS << "() const;" << std::endl;
+            hFile << "   const std::string &" << getS << "() const;" << std::endl;
          }
          else if (typeS == "anyURI")
          {
-            hFile << "   const std::string &" << attrS << "() const;" << std::endl;
+            hFile << "   const std::string &" << getS << "() const;" << std::endl;
          }
          else if (typeS == "Particle_t")
          {
-            hFile << "   Particle_t " << attrS << "() const;" << std::endl;
+            hFile << "   Particle_t " << getS << "() const;" << std::endl;
          }
          else
          {
@@ -1388,52 +1427,54 @@ void CodeBuilder::writeClassdef(DOMElement* el)
       }
    }
 
-   DOMNamedNodeMap *myAttr = el->getAttributes();
+   myAttr = el->getAttributes();
    for (int n = 0; n < myAttr->getLength(); n++)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
+      XtString getS("get" + attrS.simpleType());
+      XtString setS("set" + attrS.simpleType());
       if (typeS == "int")
       {
-         hFile << "   int " << attrS << "() const;" << std::endl
-               << "   void " << attrS << "(int " << attrS << ");" << std::endl;
+         hFile << "   int " << getS << "() const;" << std::endl
+               << "   void " << setS << "(int " << attrS << ");" << std::endl;
       }
       else if (typeS == "long")
       {
-         hFile << "   int64_t " << attrS << "() const;" << std::endl
-               << "   void " << attrS << "(int64_t " << attrS << ");" << std::endl;
+         hFile << "   int64_t " << getS << "() const;" << std::endl
+               << "   void " << setS << "(int64_t " << attrS << ");" << std::endl;
       }
       else if (typeS == "float")
       {
-         hFile << "   float " << attrS << "() const;" << std::endl
-               << "   void " << attrS << "(float " << attrS << ");" << std::endl;
+         hFile << "   float " << getS << "() const;" << std::endl
+               << "   void " << setS << "(float " << attrS << ");" << std::endl;
       }
       else if (typeS == "double")
       {
-         hFile << "   double " << attrS << "() const;" << std::endl
-               << "   void " << attrS << "(double " << attrS << ");" << std::endl;
+         hFile << "   double " << getS << "() const;" << std::endl
+               << "   void " << setS << "(double " << attrS << ");" << std::endl;
       }
       else if (typeS == "boolean")
       {
-         hFile << "   bool " << attrS << "() const;" << std::endl
-               << "   void " << attrS << "(bool " << attrS << ");" << std::endl;
+         hFile << "   bool " << getS << "() const;" << std::endl
+               << "   void " << setS << "(bool " << attrS << ");" << std::endl;
       }
       else if (typeS == "string")
       {
-         hFile << "   const std::string &" << attrS << "() const;" << std::endl
-               << "   void " << attrS << "(const std::string &" << attrS << ");"
+         hFile << "   const std::string &" << getS << "() const;" << std::endl
+               << "   void " << setS << "(const std::string &" << attrS << ");"
                << std::endl;
       }
       else if (typeS == "anyURI")
       {
-         hFile << "   const std::string &" << attrS << "() const;" << std::endl
-               << "   void " << attrS << "(const std::string &" << attrS << ");"
+         hFile << "   const std::string &" << getS << "() const;" << std::endl
+               << "   void " << setS << "(const std::string &" << attrS << ");"
                << std::endl;
       }
       else if (typeS == "Particle_t")
       {
-         hFile << "   Particle_t " << attrS << "() const;" << std::endl
-               << "   void " << attrS << "(Particle_t " << attrS << ");" << std::endl;
+         hFile << "   Particle_t " << getS << "() const;" << std::endl
+               << "   void " << setS << "(Particle_t " << attrS << ");" << std::endl;
       }
       else
       {
@@ -1446,11 +1487,10 @@ void CodeBuilder::writeClassdef(DOMElement* el)
       for (piter = parents.begin(); piter != parents.end(); ++piter)
       {
          XtString cnameS(piter->first);
-         if (cnameS != "HDDM" && 
-             children[tagS].find(cnameS) == children[tagS].end())
+         if (cnameS != "HDDM" && element_in_list(cnameS,children[tagS]) == -1)
          {
-            hFile << "   " << cnameS.listType() << " " 
-                  << cnameS.plural() << "();" << std::endl;
+            hFile << "   " << cnameS.listType() << " get"
+                  << cnameS.plural().simpleType() << "();" << std::endl;
          }
       }
    }
@@ -1458,14 +1498,15 @@ void CodeBuilder::writeClassdef(DOMElement* el)
    parentList_t::iterator citer;
    for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
    {
-      XtString cnameS(citer->first);
-      DOMElement *childEl = (DOMElement*)citer->second;
+      DOMElement *childEl = (DOMElement*)(*citer);
+      XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
-      hFile << "   " << cnameS.simpleType() << " &" << cnameS
-            << ((rep > 1)? "(int index);" : "();") << std::endl;
-      hFile << "   " << cnameS.listType() << " &" 
-            << cnameS.plural() << "();" << std::endl;
+      hFile << "   " << cnameS.simpleType() << " &get"
+            << cnameS.simpleType()
+            << ((rep > 1)? "(int index=0);" : "();") << std::endl;
+      hFile << "   " << cnameS.listType() << " &get" 
+            << cnameS.plural().simpleType() << "();" << std::endl;
       hFile << "   " << cnameS.listType() << " add"
             << cnameS.plural().simpleType()
             << "(int count=1, int start=-1);" << std::endl;
@@ -1548,8 +1589,8 @@ void CodeBuilder::writeClassdef(DOMElement* el)
 
    for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
    {
-      XtString cnameS(citer->first);
-      DOMElement *childEl = (DOMElement*)citer->second;
+      DOMElement *childEl = (DOMElement*)(*citer);
+      XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       hFile << "   " << ((rep > 1)? cnameS.listType() : cnameS.linkType())
@@ -1589,11 +1630,8 @@ void CodeBuilder::constructGroup(DOMElement* el)
 {
    XtString tagS(el->getTagName());
    parentList_t::iterator piter;
-   for (piter = parentList.begin(); piter != parentList.end(); ++piter)
-   {
-      parents[tagS].insert(*piter);
-   }
-
+   parents[tagS].insert(parents[tagS].begin(),
+                        parentList.begin(),parentList.end());
    std::vector<DOMElement*>::iterator iter;
    for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
@@ -1602,13 +1640,11 @@ void CodeBuilder::constructGroup(DOMElement* el)
       if (tagS == targS)
       {
          checkConsistency(el,targEl);
-         tagList.erase(iter);
-         tagList.push_back(targEl);
          return;
       }
    }
 
-   parentList[tagS] = el;
+   parentList.push_back(el);
    DOMNodeList* contList = el->getChildNodes();
    int contLength = contList->getLength();
    for (int c = 0; c < contLength; c++)
@@ -1619,11 +1655,11 @@ void CodeBuilder::constructGroup(DOMElement* el)
       {
          DOMElement* contEl = (DOMElement*) cont;
          XtString contS(contEl->getTagName());
-         children[tagS][contS] = contEl;
+         children[tagS].push_back(contEl);
          constructGroup(contEl);
       }
    }
-   parentList.erase(tagS);
+   parentList.pop_back();
 
    tagList.push_back(el);
 
@@ -1701,8 +1737,8 @@ void CodeBuilder::writeClassimp(DOMElement* el)
         citer != children[tagS].end();
         ++citer)
    {
-      XtString cnameS(citer->first);
-      DOMElement *childEl = (DOMElement*)citer->second;
+      DOMElement *childEl = (DOMElement*)(*citer);
+      XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       XtString hostS("m_host->");
@@ -1740,25 +1776,40 @@ void CodeBuilder::writeClassimp(DOMElement* el)
         citer != children[tagS].end();
         ++citer)
    {
-      XtString cnameS(citer->first);
+      DOMElement *childEl = (DOMElement*)(*citer);
+      XtString cnameS(childEl->getTagName());
       hFile << "   delete" << cnameS.plural().simpleType()
             << "();" << std::endl;
    }
    hFile << "}" << std::endl << std::endl;
 
+   std::map<XtString,XtString> attrList;
+   myAttr = el->getAttributes();
+   for (int n = 0; n < myAttr->getLength(); n++)
+   {
+      XtString attrS(myAttr->item(n)->getNodeName());
+      XtString typeS(el->getAttribute(X(attrS)));
+      attrList[attrS] = typeS;
+   }
    parentList_t::iterator iter;
    for (iter = parents[tagS].begin(); iter != parents[tagS].end(); ++iter)
    {
-      DOMElement *hostEl = (DOMElement*)iter->second;
+      DOMElement *hostEl = (DOMElement*)(*iter);
       DOMNamedNodeMap *hostAttr = hostEl->getAttributes();
       for (int n = 0; n < hostAttr->getLength(); n++)
       {
          XtString attrS(hostAttr->item(n)->getNodeName());
+         if (attrList.find(attrS) != attrList.end())
+         {
+            continue;
+         }
          XtString typeS(hostEl->getAttribute(X(attrS)));
+         attrList[attrS] = typeS;
+         XtString getS("get" + attrS.simpleType());
          if (typeS == "int")
          {
             hFile << "inline int " << tagS.simpleType()
-                  << "::" << attrS << "() const {" << std::endl
+                  << "::" << getS << "() const {" << std::endl
                   << "   return *(int*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
@@ -1766,7 +1817,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          else if (typeS == "long")
          {
             hFile << "inline int64_t " << tagS.simpleType()
-                  << "::" << attrS << "() const {" << std::endl
+                  << "::" << getS << "() const {" << std::endl
                   << "   return *(int64_t*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
@@ -1774,7 +1825,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          else if (typeS == "float")
          {
             hFile << "inline float " << tagS.simpleType()
-                  << "::" << attrS << "() const {" << std::endl
+                  << "::" << getS << "() const {" << std::endl
                   << "   return *(float*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
@@ -1782,7 +1833,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          else if (typeS == "double")
          {
             hFile << "inline double " << tagS.simpleType()
-                  << "::" << attrS << "() const {" << std::endl
+                  << "::" << getS << "() const {" << std::endl
                   << "   return *(double*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
@@ -1790,7 +1841,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          else if (typeS == "boolean")
          {
             hFile << "inline bool " << tagS.simpleType()
-                  << "::" << attrS << "() const {" << std::endl
+                  << "::" << getS << "() const {" << std::endl
                   << "   return *(bool*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
@@ -1798,7 +1849,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          else if (typeS == "string")
          {
             hFile << "inline const std::string &" << tagS.simpleType()
-                  << "::" << attrS << "() const {" << std::endl
+                  << "::" << getS << "() const {" << std::endl
                   << "   return *(const std::string*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
@@ -1806,7 +1857,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          else if (typeS == "anyURI")
          {
             hFile << "inline const std::string &" << tagS.simpleType()
-                  << "::" << attrS << "() const {" << std::endl
+                  << "::" << getS << "() const {" << std::endl
                   << "   return *(const std::string*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
@@ -1814,7 +1865,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          else if (typeS == "Particle_t")
          {
             hFile << "inline Particle_t " << tagS.simpleType()
-                  << "::" << attrS << "() const {" << std::endl
+                  << "::" << getS << "() const {" << std::endl
                   << "   return *(Particle_t*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
@@ -1830,90 +1881,92 @@ void CodeBuilder::writeClassimp(DOMElement* el)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
+      XtString getS("get" + attrS.simpleType());
+      XtString setS("set" + attrS.simpleType());
       if (typeS == "int")
       {
-         hFile << "inline int " << tagS.simpleType() << "::" << attrS
+         hFile << "inline int " << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
-               << "inline void " << tagS.simpleType() << "::" << attrS
+               << "inline void " << tagS.simpleType() << "::" << setS
                << "(int " << attrS << ") {" << std::endl
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
       }
       else if (typeS == "long")
       {
-         hFile << "inline int64_t " << tagS.simpleType() << "::" << attrS
+         hFile << "inline int64_t " << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
-               << "inline void " << tagS.simpleType() << "::" << attrS
+               << "inline void " << tagS.simpleType() << "::" << setS
                << "(int64_t " << attrS << ") {" << std::endl
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
       }
       else if (typeS == "float")
       {
-         hFile << "inline float " << tagS.simpleType() << "::" << attrS
+         hFile << "inline float " << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
-               << "inline void " << tagS.simpleType() << "::" << attrS
+               << "inline void " << tagS.simpleType() << "::" << setS
                << "(float " << attrS << ") {" << std::endl
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
       }
       else if (typeS == "double")
       {
-         hFile << "inline double " << tagS.simpleType() << "::" << attrS
+         hFile << "inline double " << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
-               << "inline void " << tagS.simpleType() << "::" << attrS
+               << "inline void " << tagS.simpleType() << "::" << setS
                << "(double " << attrS << ") {" << std::endl
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
       }
       else if (typeS == "boolean")
       {
-         hFile << "inline bool " << tagS.simpleType() << "::" << attrS
+         hFile << "inline bool " << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
-               << "inline void " << tagS.simpleType() << "::" << attrS
+               << "inline void " << tagS.simpleType() << "::" << setS
                << "(bool " << attrS << ") {" << std::endl
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
       }
       else if (typeS == "string")
       {
-         hFile << "inline const std::string &" << tagS.simpleType() << "::" << attrS
+         hFile << "inline const std::string &" << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
-               << "inline void " << tagS.simpleType() << "::" << attrS
+               << "inline void " << tagS.simpleType() << "::" << setS
                << "(const std::string &" << attrS << ") {" << std::endl
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
       }
       else if (typeS == "anyURI")
       {
-         hFile << "inline const std::string &" << tagS.simpleType() << "::" << attrS
+         hFile << "inline const std::string &" << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
-               << "inline void " << tagS.simpleType() << "::" << attrS
+               << "inline void " << tagS.simpleType() << "::" << setS
                << "(const std::string &" << attrS << ") {" << std::endl
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
       }
       else if (typeS == "Particle_t")
       {
-         hFile << "inline Particle_t " << tagS.simpleType() << "::" << attrS
+         hFile << "inline Particle_t " << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return (Particle_t)m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
-               << "inline void " << tagS.simpleType() << "::" << attrS
+               << "inline void " << tagS.simpleType() << "::" << setS
                << "(Particle_t " << attrS << ") {" << std::endl
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
@@ -1931,7 +1984,8 @@ void CodeBuilder::writeClassimp(DOMElement* el)
            citer != children[tagS].end();
            ++citer)
       {
-         XtString cnameS(citer->first);
+         DOMElement *childEl = (DOMElement*)(*citer);
+         XtString cnameS(childEl->getTagName());
          hFile << "   delete" << cnameS.simpleType().plural()
                << "();" << std::endl;
       }
@@ -1960,19 +2014,19 @@ void CodeBuilder::writeClassimp(DOMElement* el)
 
    for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
    {
-      XtString cnameS(citer->first);
-      DOMElement *childEl = (DOMElement*)citer->second;
+      DOMElement *childEl = (DOMElement*)(*citer);
+      XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
       if (rep > 1)
       {
          hFile << "inline " << cnameS.simpleType() << " &"
-               << tagS.simpleType() << "::" << cnameS 
+               << tagS.simpleType() << "::get" << cnameS.simpleType()
                << "(int index) {" << std::endl
                << "   return m_" << cnameS << "_list(index);" << std::endl
                << "}" << std::endl << std::endl
                << "inline " << cnameS.listType() << " &" 
-               << tagS.simpleType() << "::" << cnameS.plural()
+               << tagS.simpleType() << "::get" << cnameS.plural().simpleType()
                << "() {" << std::endl
                << "   return m_" << cnameS << "_list;" << std::endl
                << "}" << std::endl << std::endl
@@ -1990,12 +2044,12 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       else
       {
          hFile << "inline " << cnameS.simpleType() << " &"
-               << tagS.simpleType() << "::" << cnameS 
+               << tagS.simpleType() << "::get" << cnameS.simpleType()
                << "() {" << std::endl
                << "   return m_" << cnameS << "_link.front();" << std::endl
                << "}" << std::endl << std::endl
                << "inline " << cnameS.listType() << " &" 
-               << tagS.simpleType() << "::" << cnameS.plural() 
+               << tagS.simpleType() << "::get" << cnameS.plural().simpleType()
                << "() {" << std::endl
                << "   return m_" << cnameS << "_link;" << std::endl
                << "}" << std::endl << std::endl
@@ -2018,12 +2072,11 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       for (piter = parents.begin(); piter != parents.end(); ++piter)
       {
          XtString cnameS(piter->first);
-         if (children[tagS].find(cnameS) == children[tagS].end() &&
-             cnameS != "HDDM")
+         if (cnameS != "HDDM" && element_in_list(cnameS,children[tagS]) == -1)
          {
             hFile << "inline " << cnameS.listType() << " "
-                  << "HDDM::" << cnameS.plural() << "() {" << std::endl
-                  << "   return " << cnameS.listType()
+                  << "HDDM::get" << cnameS.plural().simpleType() << "() {"
+                  << std::endl << "   return " << cnameS.listType()
                   << "(&m_" << cnameS << "_plist," << std::endl
                   << "                   "
                   << "m_" << cnameS << "_plist.begin()," << std::endl

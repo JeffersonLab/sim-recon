@@ -70,14 +70,14 @@ void test_hddm_cpp_interface(char *outfile)
    hddm_v::LongTagList longs = generics().addLongTags();
    hddm_v::BooleanTagList booleans = generics().addBooleanTags();
    hddm_v::AnyURITagList anyURIs = generics().addAnyURITags();
-   floats().pi(3.141593);
-   doubles().pi(3.141592592636);
-   particles().pi(PiPlus);
-   strings().quote("pass the red quarks, please");
-   ints().magic(133557799);
-   longs().magic(133557799002244668LL);
-   booleans().truth(1);
-   anyURIs().uri("http://portal.gluex.org");
+   floats().setPi(3.141593);
+   doubles().setPi(3.141592592636);
+   particles().setPi(PiPlus);
+   strings().setQuote("pass the red quarks, please");
+   ints().setMagic(133557799);
+   longs().setMagic(133557799002244668LL);
+   booleans().setTruth(1);
+   anyURIs().setUri("http://portal.gluex.org");
 
    hddm_v::ostream ostr(ofs);
    ostr << record;
