@@ -65,7 +65,7 @@ using namespace xercesc;
 #define X(str) XString(str).unicode_str()
 #define S(str) str.c_str()
 
-int explicit_repeat_count = 0;
+int explicit_repeat_count = 1;
 
 class HDDMmaker
 {
@@ -471,7 +471,7 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
       else if (typeS == "Particle_t")
       {
          int32_t val;
-         for (val = 1; val < 99; val++)
+         for (val = 0; val < 99; val++)
          {
             if (valueS == ParticleType((Particle_t)val))
             {
@@ -479,6 +479,14 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
             }
          }
          ofx << val;
+      }
+      else if (typeS == "string" || typeS == "anyURI")
+      {
+         ofx << valueS;
+      }
+      else
+      {
+         // other types are treated as comments
       }
    }
 

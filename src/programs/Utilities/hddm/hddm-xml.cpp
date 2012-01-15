@@ -110,7 +110,7 @@ int main(int argC, char* argV[])
       return 1;
    }
 
-   int reqcount=0;
+   int reqcount=-1;
    int argInd;
    for (argInd = 1; argInd < argC; argInd++)
    {
@@ -253,7 +253,7 @@ int main(int argC, char* argV[])
    std::istringstream iss;
    iss.rdbuf()->pubsetbuf(event_buffer,event_buffer_size);
    xstream::xdr::istream ifx(iss.rdbuf());
-   while (--reqcount && ifs->good())
+   while (reqcount && ifs->good())
    {
       DOMNodeList* contList = rootEl->getChildNodes();
       int contLength = contList->getLength();
@@ -306,6 +306,7 @@ int main(int argC, char* argV[])
          delete event_buffer;
       }
       ifs->read(event_buffer+4,tsize);
+      --reqcount;
 
       for (int c = 0; c < contLength; c++)
       {
