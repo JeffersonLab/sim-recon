@@ -969,6 +969,16 @@ void CodeBuilder::constructUnpackers()
             << "   {"						<< std::endl
 	    << "       return this1;"				<< std::endl
             << "   }"						<< std::endl
+            << "   else if (size == 1)"				<< std::endl
+            << "   {"						<< std::endl
+            << "      fprintf(stderr,\"hddm error - \""		<< std::endl
+            << "      \"compressed data found in input stream.\\n\"" << std::endl
+            << "      \"Compression/decompression is not supported \"" << std::endl
+            << "      \"by the hddm c i/o interface.\\n\");"	<< std::endl
+            << "      fprintf(stderr,\"You must use the c++ \""	<< std::endl
+            << "      \"interface to read this file.\\n\");"	<< std::endl
+            << "      exit(9);"					<< std::endl
+            << "   }"						<< std::endl
             << "   else if (size > 0)"				<< std::endl
             << "   {"						<< std::endl
             << "      off_t start = xdr_getpos64(xdrs);"	<< std::endl;
@@ -1157,13 +1167,23 @@ void CodeBuilder::constructSkipFunc()
          << "      {"							<< std::endl
          << "         return skipped;"					<< std::endl
          << "      }"							<< std::endl
+         << "      else if (size == 1)"					<< std::endl
+         << "      {"							<< std::endl
+         << "         fprintf(stderr,\"hddm error - \""			<< std::endl
+         << "         \"compressed data found in input stream.\\n\"" 	<< std::endl
+         << "         \"Compression/decompression is not supported \"" 	<< std::endl
+         << "         \"by the hddm c i/o interface.\\n\");"		<< std::endl
+         << "         fprintf(stderr,\"You must use the c++ \""		<< std::endl
+         << "         \"interface to read this file.\\n\");"		<< std::endl
+         << "         exit(9);"						<< std::endl
+         << "      }"							<< std::endl
          << "      else if (size > 0)"					<< std::endl
          << "      {"							<< std::endl
          << "         off_t start = xdr_getpos64(fp->xdrs);"		<< std::endl
          << "         if (xdr_setpos64(fp->xdrs,start+size) != 0) {"	<< std::endl
          << "            fp->lerrno = errno;"				<< std::endl
          << "            return skipped;"				<< std::endl
-         << "         }"							<< std::endl
+         << "         }"						<< std::endl
          << "      }"							<< std::endl
          << "   }"							<< std::endl
          << "   return skipped;"					<< std::endl
