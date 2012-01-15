@@ -40,6 +40,7 @@ int main(int argc, char **argv)
                  argv[input]);
          exit(1);
       }
+      int count = 0;
       while (thisInputEvent = read_s_HDDM(thisInputFile)) {
          flush_s_HDDM(thisInputEvent,thisOutputFile);
       }

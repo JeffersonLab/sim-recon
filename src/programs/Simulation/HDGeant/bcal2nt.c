@@ -77,6 +77,7 @@ void hrout(int num, int icycle, char*opt)
    hrout_(&num, &icycle, opt, strlen(opt));
 }
 
+int process_event(s_HDDM_t *event);
 
 int main(int argc, char **argv)
 {

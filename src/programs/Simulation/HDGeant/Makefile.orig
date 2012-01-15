@@ -35,7 +35,7 @@ ifeq ($(OStype),Linux)
 		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
 		COPTS = -g $(SWITCHES)
 #		FOPTS = -g -Wno-globals $(SWITCHES)
-		FOPTS = -g $(SWITCHES)
+		FOPTS = -g $(SWITCHES) -fno-automatic
 		GLIBS	:= -lXmu -lSM -lICE -lpthread -lgfortran
 		EXPORTDYNAMIC = -Wl,-export-dynamic
 #		STATIC = -Wl,-Bstatic
@@ -90,12 +90,12 @@ endif
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o savehits.o \
        goptimize.o cobrems.o beamgen.o settofg.o seteventid.o \
-       gelhad/bimsel.o \
-       $(HDDS_HOME)/obj/$(BMS_OSNAME)/hddsGeant3.o
+       gelhad/bimsel.o glisur.o \
+       $(HDDS_HOME)/obj_d/$(BMS_OSNAME)/hddsGeant3.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
        hitFCal.o hitCCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
-       calibDB.o hitTag.o storeTrajectory.o hitGCal.o
+       calibDB.o hitTag.o storeTrajectory.o hitGCal.o copytocplusplus.o
 
 GXFIXED = gxcs.o gxphys.o
 GELHAD = gelhad/libgelhad.a
@@ -162,27 +162,55 @@ hddm_s.o: $(HDDM)/hddm_s.c
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
 
-hddmcp: hddmcp.c hddm_s.o memcheck.o bintree.o
+hddmtools: hddmcp cdcdump cdccount bcal2nt hddmcpXX cdcdumpXX cdccountXX bcal2ntXX
+
+hddmcp: hddmcp.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
-cdcdump: cdcdump.c hddm_s.o memcheck.o bintree.o
+cdcdump: cdcdump.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
-%count: %count.c hddm_s.o memcheck.o bintree.o
+%count: %count.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
-%2nt: %2nt.c hddm_s.o memcheck.o bintree.o
+%2nt: %2nt.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(JANA_HOME)/src \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^ \
 	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lgfortran
+
+hddmcpXX: hddmcp.cpp hddm_s.cpp
+	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	-I$(HALLD_HOME)/include -o $@ $^ \
+        -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-lxstream -lbz2 -lz
+
+cdcdumpXX: cdcdump.cpp hddm_s.cpp
+	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/include -o $@ $^ \
+        -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-lxstream -lbz2 -lz
+
+%countXX: %count.cpp hddm_s.cpp
+	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/include -o $@ $^ \
+        -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-lxstream -lbz2 -lz
+
+%2ntXX: %2nt.cpp hddm_s.cpp
+	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/include -o $@ $^ \
+        -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-lxstream -lbz2 -lz \
+	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lgfortran 
 
 $(GELHAD):
 	$(MAKE) -C gelhad
