@@ -325,6 +325,7 @@ int main(int argC, char* argV[])
    "\n"
    "class streamable {\n"
    " public:\n"
+   "   virtual ~streamable() {}\n"
    "   virtual void streamer(istream &istr) {}\n"
    "   virtual void streamer(ostream &ostr) {}\n"
    "};\n"
@@ -752,13 +753,14 @@ int main(int argC, char* argV[])
    "         }\n"
    "         return pos2;\n"
    "      }\n"
+   "      return m_last_iter+1;\n"
    "   }\n"
    "\n"
    " protected:\n"
    "   std::list<T*> *m_host_plist;\n"
-   "   HDDM_Element *m_parent;\n"
    "   iterator m_first_iter;\n"
    "   iterator m_last_iter;\n"
+   "   HDDM_Element *m_parent;\n"
    "   int m_size;\n"
    "};\n"
    "\n"
@@ -836,11 +838,11 @@ int main(int argC, char* argV[])
 
    builder.cFile <<
    "istream::istream(std::istream &src)\n"
-   " : m_status_bits(0),\n"
+   " : m_xstr(0),\n"
    "   m_istr(src),\n"
-   "   m_xstr(0),\n"
    "   m_xcmp(0),\n"
-   "   m_xraw(0)\n"
+   "   m_xraw(0),\n"
+   "   m_status_bits(0)\n"
    "{\n"
    "   std::string line;\n"
    "   m_documentString = \"\";\n"
@@ -958,11 +960,11 @@ int main(int argC, char* argV[])
    "}\n"
    "\n"
    "ostream::ostream(std::ostream &src)\n"
-   " : m_status_bits(k_default_status),\n"
+   " : m_xstr(0),\n"
    "   m_ostr(src),\n"
-   "   m_xstr(0),\n"
    "   m_xcmp(0),\n"
-   "   m_xraw(0)\n"
+   "   m_xraw(0),\n"
+   "   m_status_bits(k_default_status)\n"
    "{\n"
    "   m_ostr << DocumentString;\n"
    "   m_event_buffer = new char[m_event_buffer_size = 100000];\n"
@@ -1033,12 +1035,19 @@ int main(int argC, char* argV[])
    "                    std::string &tag, int &level)\n"
    "{\n"
    "   tag = \"\";\n"
-   "   int p_btag = src.find(\"<\",start);\n"
-   "   int p_bline = src.find_last_of(\"\\n\",p_btag);\n"
-   "   p_bline = (p_bline == std::string::npos)? 0 : ++p_bline;\n"
+   "   size_t p_btag = src.find(\"<\",start);\n"
+   "   size_t p_bline = src.find_last_of(\"\\n\",p_btag);\n"
+   "   if (p_bline == std::string::npos)\n"
+   "   {\n"
+   "      p_bline = 0;\n"
+   "   }\n"
+   "   else\n"
+   "   {\n"
+   "      ++p_bline;\n"
+   "   }\n"
    "   level = (p_btag-p_bline)/2;\n"
-   "   int p_etag = p_btag;\n"
-   "   for (int quotes=0; p_etag < src.size(); ++p_etag) {\n"
+   "   size_t p_etag = p_btag;\n"
+   "   for (size_t quotes=0; p_etag < src.size(); ++p_etag) {\n"
    "      if (src[p_etag] == '\"') {\n"
    "         tag += \"\\\"\";\n"
    "         ++quotes;\n"
@@ -1073,8 +1082,8 @@ int main(int argC, char* argV[])
    "   else {\n"
    "      std::string etag = \"</\";\n"
    "      etag += tag.substr(1,tag.find_first_of(' ')-1) + \">\";\n"
-   "      int p_etag = src.find(etag,start);\n"
-   "      int p_quote = src.find_first_of('\"',start);\n"
+   "      size_t p_etag = src.find(etag,start);\n"
+   "      size_t p_quote = src.find_first_of('\"',start);\n"
    "      while (p_quote != std::string::npos && p_quote < p_etag) {\n"
    "         p_quote = src.find_first_of('\"',p_quote+1);\n"
    "         if (p_quote > p_etag) {\n"
@@ -1587,6 +1596,18 @@ void CodeBuilder::writeClassdef(DOMElement* el)
       }
    }
 
+   if (tagS == "HDDM") {
+      parentTable_t::iterator piter;
+      for (piter = parents.begin(); piter != parents.end(); ++piter)
+      {
+         XtString dnameS(piter->first);
+         if (dnameS != "HDDM") {
+            hFile << "   std::list<" << dnameS.simpleType()
+                  << "*> m_" << dnameS << "_plist;" << std::endl;
+         }
+      }
+   }
+
    for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
    {
       DOMElement *childEl = (DOMElement*)(*citer);
@@ -1598,27 +1619,17 @@ void CodeBuilder::writeClassdef(DOMElement* el)
             << ((rep > 1)? "_list;" : "_link;") << std::endl;
    }
 
-   if (tagS == "HDDM") {
-      parentTable_t::iterator piter;
-      for (piter = parents.begin(); piter != parents.end(); ++piter)
-      {
-         XtString dnameS(piter->first);
-         if (dnameS != "HDDM") {
-            hFile << "   std::list<" << dnameS.simpleType()
-                  << "*> m_" << dnameS << "_plist;" << std::endl;
-         }
-      }
-      hFile << "};" << std::endl << std::endl;
-   }
-   else {
-      hFile << "};" << std::endl << std::endl
-            << "typedef HDDM_ElementList<"
+   hFile << "};" << std::endl << std::endl;
+
+   if (tagS != "HDDM")
+   {
+      hFile << "typedef HDDM_ElementList<"
             << tagS.simpleType() << "> "
             << tagS.listType() << ";" << std::endl
             << "typedef HDDM_ElementLink<"
             << tagS.simpleType() << "> "
-            << tagS.linkType() << ";" << std::endl;
-      hFile << std::endl;
+            << tagS.linkType() << ";"
+            << std::endl << std::endl;
    }
 }
 
