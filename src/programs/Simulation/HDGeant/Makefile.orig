@@ -164,47 +164,47 @@ hddm_s.o: $(HDDM)/hddm_s.c
 
 hddmtools: hddmcp cdcdump cdccount bcal2nt hddmcpXX cdcdumpXX cdccountXX bcal2ntXX
 
-hddmcp: hddmcp.c hddm_s.c memcheck.o bintree.o
+hddmcp_c: hddmcp_c.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
-cdcdump: cdcdump.c hddm_s.c memcheck.o bintree.o
+cdcdump_c: cdcdump_c.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
-%count: %count.c hddm_s.c memcheck.o bintree.o
+%count_c: %count_c.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
-%2nt: %2nt.c hddm_s.c memcheck.o bintree.o
+%2nt_c: %2nt_c.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(JANA_HOME)/src \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^ \
 	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lgfortran
 
-hddmcpXX: hddmcp.cpp hddm_s.cpp
+hddmcp: hddmcp.cpp hddm_s.cpp
 	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
         -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
 	-lxstream -lbz2 -lz
 
-cdcdumpXX: cdcdump.cpp hddm_s.cpp
+cdcdump: cdcdump.cpp hddm_s.cpp
 	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/include -o $@ $^ \
         -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
 	-lxstream -lbz2 -lz
 
-%countXX: %count.cpp hddm_s.cpp
+%count: %count.cpp hddm_s.cpp
 	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/include -o $@ $^ \
         -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
 	-lxstream -lbz2 -lz
 
-%2ntXX: %2nt.cpp hddm_s.cpp
+%2nt: %2nt.cpp hddm_s.cpp
 	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(JANA_HOME)/src \
 	-I$(HALLD_HOME)/include -o $@ $^ \
