@@ -58,6 +58,7 @@ int main(int argc, char **argv)
             istr >> record;
             ostr << record;
             record.clear();
+            ++count;
          }
       }
    }
