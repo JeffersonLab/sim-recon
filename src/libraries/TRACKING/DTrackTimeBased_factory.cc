@@ -587,8 +587,11 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,start_times);
   
   // Make sure there are enough DReferenceTrajectory objects
+  unsigned int locNumInitialReferenceTrajectories = rtv.size();
   while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
   DReferenceTrajectory *rt = rtv[_data.size()];
+  if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+    rt->Reset();
   rt->SetMass(mass);	
   rt->SetDGeometry(geom);
       
@@ -615,8 +618,11 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       // and deallocated them every event. Therefore, we allocate
       // when needed, but recycle them on the next event.
       // They are deleted in the fini method.
+      locNumInitialReferenceTrajectories = rtv.size();
       while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
       DReferenceTrajectory *rt = rtv[_data.size()];
+      if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+        rt->Reset();
       
       // Create a new time-based track object
       DTrackTimeBased *timebased_track = new DTrackTimeBased;

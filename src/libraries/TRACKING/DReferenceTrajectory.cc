@@ -190,6 +190,22 @@ void DReferenceTrajectory::CopyWithShift(const DReferenceTrajectory *rt, DVector
 
 
 //---------------------------------
+// Reset
+//---------------------------------
+void DReferenceTrajectory::Reset(void){
+	//reset DReferenceTrajectory for re-use
+	this->Nswim_steps = 0;
+	this->ploss_direction = kForward;
+	this->mass = 0.13957; // assume pion mass until otherwise specified
+	this->hit_cdc_endplate = false;
+	this->last_phi = 0.0;
+	this->last_swim_step = NULL;
+	this->last_dist_along_wire = 0.0;
+	this->last_dz_dphi = 0.0;
+	//do not reset "swim_steps" array: "ought" be ok as long as "Nswim_steps" is accurate
+}
+
+//---------------------------------
 // FastSwim -- light-weight swim to a wire that does not treat multiple 
 // scattering but does handle energy loss.
 // No checks for distance to boundaries are done.

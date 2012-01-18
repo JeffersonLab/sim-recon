@@ -107,12 +107,16 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		// of allocating/deallocating them every event, we keep a pool and
 		// re-use them. If the pool is not big enough, then add one to the
 		// pool.
+      unsigned int locNumInitialReferenceTrajectories = rt_pool.size();
 		if(rt_pool.size()<=_data.size()){
 			// This is a little ugly, but only gets called a few times throughout the life of the process
 			// Note: these never get deleted, even at the end of process.			
 			rt_pool.push_back(new DReferenceTrajectory(bfield));
 		}
+
 		DReferenceTrajectory *rt = rt_pool[_data.size()];
+      if(locNumInitialReferenceTrajectories == rt_pool.size()) //didn't create a new one
+        rt->Reset();
 		track->rt = rt;
 		DVector3 pos = track->position();
 		DVector3 mom = track->momentum();

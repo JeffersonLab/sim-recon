@@ -171,10 +171,14 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
     const DTrackCandidate *candidate = candidates[i];
     
     // Make sure there are enough DReferenceTrajectory objects
+    unsigned int locNumInitialReferenceTrajectories = rtv.size();
     while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
     DReferenceTrajectory *rt = rtv[_data.size()];
+    if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+      rt->Reset();
    
     if (SKIP_MASS_HYPOTHESES_WIRE_BASED){
+      rt->SetMass(0.13957);
       DoFit(i,candidate,rt,loop,0.13957);
     }
     else{
@@ -189,8 +193,9 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       
       // Loop over potential particle masses
       for(unsigned int j=0; j<mass_hypotheses.size(); j++){
-	if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
-	DoFit(i,candidate,rt,loop,mass_hypotheses[j]);
+        if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
+        rt->SetMass(mass_hypotheses[j]);
+        DoFit(i,candidate,rt,loop,mass_hypotheses[j]);
       }
    
     }
@@ -318,11 +323,14 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       // and deallocated them every event. Therefore, we allocate
       // when needed, but recycle them on the next event.
       // They are deleted in the fini method.
+      unsigned int locNumInitialReferenceTrajectories = rtv.size();
       while(rtv.size()<=_data.size()){
 	rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
       }
       DReferenceTrajectory *rt = rtv[_data.size()];
-      
+      if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+        rt->Reset();
+
       // Make a new wire-based track
       DTrackWireBased *track = new DTrackWireBased;
       

@@ -67,6 +67,7 @@ class DReferenceTrajectory{
 		static const char* static_className(void){return "DReferenceTrajectory";}
 
 		void CopyWithShift(const DReferenceTrajectory *rt, DVector3 shift);
+		void Reset(void);
 		
 		double DistToRT(double x, double y, double z) const {return DistToRT(DVector3(x,y,z));}
 		double DistToRT(DVector3 hit, double *s=NULL) const;
