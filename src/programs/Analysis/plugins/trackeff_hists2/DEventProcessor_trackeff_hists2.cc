@@ -5,32 +5,9 @@
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
-#include <iostream>
-#include <cmath>
-using namespace std;
-
-#include <TThread.h>
-
-#include <TROOT.h>
-
 #include "DEventProcessor_trackeff_hists2.h"
-#include "DTrackingResolutionGEANT.h"
 
-#include <JANA/JApplication.h>
-#include <JANA/JEventLoop.h>
-
-#include <DANA/DApplication.h>
-#include <TRACKING/DMCThrown.h>
-#include <TRACKING/DTrackCandidate.h>
-#include <TRACKING/DTrackWireBased.h>
-#include <TRACKING/DReferenceTrajectory.h>
-#include <PID/DParticle.h>
-#include <FDC/DFDCGeometry.h>
-#include <DVector2.h>
-#include <particleType.h>
-#include <CDC/DCDCTrackHit.h>
-#include <FDC/DFDCPseudo.h>
-#include <FDC/DFDCHit.h>
+using namespace std;
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -104,6 +81,24 @@ jerror_t DEventProcessor_trackeff_hists2::brun(JEventLoop *loop, int runnumber)
 	dgeom->GetCDCAxialLength(cdc_axial_length);
 	CDCZmin = CDCZmax-cdc_axial_length;
 
+  // Get the particle ID algorithms
+	vector<const DParticleID *> locPIDAlgorithms;
+	loop->Get(locPIDAlgorithms);
+	if(locPIDAlgorithms.size() < 1){
+		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
+		return RESOURCE_UNAVAILABLE;
+	}
+	// Drop the const qualifier from the DParticleID pointer (I'm surely going to hell for this!)
+	dPIDAlgorithm = const_cast<DParticleID*>(locPIDAlgorithms[0]);
+  
+	// Warn user if something happened that caused us NOT to get a dPIDAlgorithm object pointer
+	if(!dPIDAlgorithm){
+		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
+		return RESOURCE_UNAVAILABLE;
+	}
+
+	use_rt_thrown = true; //mctrajpoints.size()<20;
+
 	return NOERROR;
 }
 
@@ -128,23 +123,21 @@ jerror_t DEventProcessor_trackeff_hists2::fini(void)
 //------------------
 jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber)
 {
-	vector<const DCDCTrackHit*> cdctrackhits;
-	vector<const DFDCHit*> fdchits;
-	vector<const DParticle*> particles;
-	vector<const DMCThrown*> mcthrowns;
-	vector<const DMCTrajectoryPoint*> mctrajpoints;
 	
 	// Bail quick on events with too many or too few CDC hits
+	vector<const DCDCTrackHit*> cdctrackhits;
 	loop->Get(cdctrackhits);
 	//if(cdctrackhits.size()>30 || cdctrackhits.size()<6)return NOERROR;
 
 	// Bail quick on events with too many FDC hits
+	vector<const DFDCHit*> fdchits;
 	loop->Get(fdchits);
 	//if(fdchits.size()>30)return NOERROR;
 
-	loop->Get(particles);
-	loop->Get(mcthrowns);
+	vector<const DMCThrown*> mcthrowns;
+	vector<const DMCTrajectoryPoint*> mctrajpoints;
 	loop->Get(mctrajpoints);
+	loop->Get(mcthrowns);
 
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -155,7 +148,6 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 		
 		// If there aren't enough DMCTrajectoryPoint objects then we will need to
 		// get the LR information by swimming the thrown value ourself.
-		bool use_rt_thrown = true; //mctrajpoints.size()<20;
 		if(use_rt_thrown)rt_thrown->Swim(mcthrown->position(), mcthrown->momentum(), mcthrown->charge());
 
 		// if this isn't a charged track, then skip it
@@ -164,6 +156,8 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 		// Momentum of thrown particle
 		DVector3 pthrown = mcthrown->momentum();
 		trk.pthrown = pthrown;
+		trk.q_thrown = mcthrown->charge(); //make sure this value isn't bogus!!
+		trk.PID_thrown = mcthrown->type;
 
 		// Initialize with the "not found" values
 		trk.pfit.SetXYZ(0,0,0);
@@ -176,6 +170,12 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 		trk.delta_pt_over_pt=1.0E20;
 		trk.delta_theta=1.0E20;
 		trk.delta_phi=1.0E20;
+		trk.delta_pt_over_pt_wire=1.0E20;
+		trk.delta_theta_wire=1.0E20;
+		trk.delta_phi_wire=1.0E20;
+		trk.delta_pt_over_pt_can=1.0E20;
+		trk.delta_theta_can=1.0E20;
+		trk.delta_phi_can=1.0E20;
 		trk.isreconstructable = isReconstructable(mcthrown, mctrajpoints);
 		trk.Nstereo = 0;
 		trk.Ncdc = 0;
@@ -183,91 +183,32 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 		trk.NLR_bad_stereo = 0;
 		trk.NLR_bad = 0;
 		trk.event = eventnumber;
-		
-		double fom_best = 1.0E8;
+		trk.dTrackReconstructedFlag_Candidate = false;
+		trk.dTrackReconstructedFlag_WireBased = false;
+		trk.dTrackReconstructedFlag_TimeBased = false;
+		trk.q_candidate = 0.0;
+		trk.q_wirebased = 0.0;
+		trk.q_timebased = 0.0;
+		trk.PID_candidate = 0;
+		trk.PID_wirebased = 0;
+		trk.PID_timebased = 0;
+		trk.PID_hypothesized = 0;
+		trk.q_hypothesized = 0.0;
+		trk.FOM_hypothesized = 0.0;
 
-		// Loop over found/fit tracks
-		for(unsigned int j=0; j<particles.size(); j++){
-			const DParticle *particle = particles[j];
-			
-			// Get DTrackWireBased and DTrackCandidate objects for this DParticle
-			vector<const DTrackWireBased*> tracks;
-			particle->Get(tracks);
-			const DTrackWireBased *track = tracks.size()==1 ? tracks[0]:NULL;
-			vector<const DTrackCandidate*> trackcandidates;
-			if(track)track->Get(trackcandidates);
-			const DTrackCandidate *trackcandidate = trackcandidates.size()==1 ? trackcandidates[0]:NULL;
-
-			// Copy momentum vectors to convenient local variables
-			DVector3 pfit  = particle->momentum();
-			DVector3 pfit_wire  = track ? track->momentum():DVector3(0,0,0);
-			DVector3 pcan  = trackcandidate ? trackcandidate->momentum():DVector3(0,0,0);
-			
-			// Calculate residuals from momentum parameters from DParticle
-			double delta_pt_over_pt = (pfit.Perp() - pthrown.Perp())/pthrown.Perp();
-			double delta_theta = (pfit.Theta() - pthrown.Theta())*1000.0;
-			double delta_phi = (pfit.Phi() - pthrown.Phi())*1000.0;
-
-			// Formulate a figure of merit to decide if this fit track is closer to
-			// the thrown track than the best one we found so far. We hardwire
-			// dpt/pt=2%, dtheta=20mrad and dphi=20mrad for now.
-			double fom = pow(delta_pt_over_pt/0.02, 2.0) + pow(delta_theta/20.0, 2.0) + pow(delta_phi/20.0, 2.0);
-			if(fom<fom_best){
-				fom_best = fom;
-				
-				trk.pfit = pfit;
-				trk.pfit_wire = pfit_wire;
-				trk.pcan = pcan;
-				trk.trk_chisq = particle->chisq;
-				trk.trk_Ndof = particle->Ndof;
-				trk.trk_chisq_wb = track!=NULL ? track->chisq:1.0E6;
-				trk.trk_Ndof_wb = track!=NULL ? track->Ndof:0;
-				trk.delta_pt_over_pt = delta_pt_over_pt;
-				trk.delta_theta = delta_theta;
-				trk.delta_phi = delta_phi;
-
-				// Get Nstereo, Ncdc, and Nfdc
-				vector<const DCDCTrackHit*> cdchits;
-				particle->Get(cdchits);
-				trk.Nstereo = 0;
-				for(unsigned int k=0; k<cdchits.size(); k++)if(cdchits[k]->wire->stereo!=0.0)trk.Nstereo++;
-				trk.Ncdc = cdchits.size();
-				vector<const DFDCPseudo*> fdchits;
-				particle->Get(fdchits);
-				trk.Nfdc = fdchits.size();
-				
-				// Get the number LR signs for all hits used on this track. We have to 
-				// do this for the thrown track here so we get the list for the same hits
-				// used in fitting this track.
-				vector<int> LRthrown;
-				vector<int> LRfit;
-				vector<const DCoordinateSystem*> wires;
-				for(unsigned int k=0; k<cdchits.size(); k++)wires.push_back(cdchits[k]->wire);
-				for(unsigned int k=0; k<fdchits.size(); k++)wires.push_back(fdchits[k]->wire);
-				if(use_rt_thrown){
-					FindLR(wires, rt_thrown, LRthrown);
-				}else{
-					FindLR(wires, mctrajpoints, LRthrown);
-				}
-				FindLR(wires, particle->rt, LRfit);
-				
-				// Make sure the number of entries is the same for both LR vectors
-				if(LRfit.size()!=LRthrown.size() || LRfit.size()!=wires.size()){
-					_DBG_<<"LR vector sizes do not match! LRfit.size()="<<LRfit.size()<<" LRthrown.size()="<<LRthrown.size()<<" wires.size()="<<wires.size()<<endl;
-					continue;
-				}
-				
-				// count total number of incorrect LR choices and how many are stereo
-				trk.NLR_bad_stereo = trk.NLR_bad = 0;
-				for(unsigned int k=0; k<wires.size(); k++){
-					if(LRfit[k] == LRthrown[k])continue;
-					trk.NLR_bad++;
-					bool is_stereo = (wires[k]->udir.Theta()*57.3)>2.0;
-					if(is_stereo)trk.NLR_bad_stereo++;
-				}
+		bool locFoundFlag;
+		locFoundFlag = Search_ChargedTrackHypotheses(loop, eventnumber, mcthrown);
+		if(locFoundFlag == false){
+			trk.dTrackReconstructedFlag_TimeBased = false;
+			locFoundFlag = Search_WireBasedTracks(loop, eventnumber, mcthrown);
+			if(locFoundFlag == false){
+				trk.dTrackReconstructedFlag_WireBased = false;
+				locFoundFlag = Search_TrackCandidates(loop, eventnumber, mcthrown);
+				if(locFoundFlag == false)
+					trk.dTrackReconstructedFlag_Candidate = false;
 			}
-		}		
-		
+		}
+
 		trkeff->Fill();
 	}
 
@@ -275,6 +216,310 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 	pthread_mutex_unlock(&mutex);
 	
 	return NOERROR;
+}
+
+bool DEventProcessor_trackeff_hists2::Search_ChargedTrackHypotheses(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown){
+	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
+	vector<const DMCTrajectoryPoint*> mctrajpoints;
+	vector<const DCDCTrackHit*> cdctrackhits;
+	vector<const DFDCHit*> fdchits;
+
+	loop->Get(cdctrackhits);
+	loop->Get(fdchits);
+	loop->Get(locChargedTrackHypotheses);
+	loop->Get(mctrajpoints);
+
+	DVector3 pthrown = trk.pthrown;
+
+	bool locFoundFlag = false;
+	double fom_best = 1.0E8;
+
+	// Loop over found/fit tracks
+	trk.num_timebased = locChargedTrackHypotheses.size();
+	for(unsigned int j=0; j<locChargedTrackHypotheses.size(); j++){
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrackHypotheses[j];
+		const DTrackTimeBased *locTimeBasedTrack = locChargedTrackHypothesis->dTrackTimeBased;
+	
+		// Get DTrackWireBased and DTrackCandidate objects for this DTrackTimeBased
+		vector<const DTrackWireBased*> tracks;
+		locTimeBasedTrack->Get(tracks);
+		const DTrackWireBased *track = tracks.size()==1 ? tracks[0]:NULL;
+		vector<const DTrackCandidate*> trackcandidates;
+		if(track)track->Get(trackcandidates);
+		const DTrackCandidate *trackcandidate = trackcandidates.size()==1 ? trackcandidates[0]:NULL;
+
+		trk.num_wirebased = tracks.size();
+		trk.num_candidates = trackcandidates.size();
+
+		// Copy momentum vectors to convenient local variables
+		DVector3 pfit  = locTimeBasedTrack->momentum();
+		DVector3 pfit_wire  = track ? track->momentum():DVector3(0,0,0);
+		DVector3 pcan  = trackcandidate ? trackcandidate->momentum():DVector3(0,0,0);
+	
+		// Calculate residuals from momentum parameters from DTrackTimeBased
+		double delta_pt_over_pt = (pfit.Perp() - pthrown.Perp())/pthrown.Perp();
+		double delta_theta = (pfit.Theta() - pthrown.Theta())*1000.0;
+		double delta_phi = (pfit.Phi() - pthrown.Phi())*1000.0;
+
+		// Calculate residuals from momentum parameters from DTrackTimeBased
+		double delta_pt_over_pt_wire = track ? (pfit_wire.Perp() - pthrown.Perp())/pthrown.Perp() : 1.0E20;
+		double delta_theta_wire = track ? (pfit_wire.Theta() - pthrown.Theta())*1000.0 : 1.0E20;
+		double delta_phi_wire = track ? (pfit_wire.Phi() - pthrown.Phi())*1000.0 : 1.0E20;
+
+		// Calculate residuals from momentum parameters from DTrackTimeBased
+		double delta_pt_over_pt_can = trackcandidate ? (pcan.Perp() - pthrown.Perp())/pthrown.Perp() : 1.0E20;
+		double delta_theta_can = trackcandidate ? (pcan.Theta() - pthrown.Theta())*1000.0 : 1.0E20;
+		double delta_phi_can = trackcandidate ? (pcan.Phi() - pthrown.Phi())*1000.0 : 1.0E20;
+
+		// Formulate a figure of merit to decide if this fit track is closer to
+		// the thrown track than the best one we found so far. We hardwire
+		// dpt/pt=2%, dtheta=20mrad and dphi=20mrad for now.
+		double fom = pow(delta_pt_over_pt/0.02, 2.0) + pow(delta_theta/20.0, 2.0) + pow(delta_phi/20.0, 2.0);
+		if(fom<fom_best){
+			fom_best = fom;
+			locFoundFlag = true;
+			trk.PID_hypothesized = int(locChargedTrackHypothesis->dPID);
+			trk.q_hypothesized = locChargedTrackHypothesis->charge();
+			trk.FOM_hypothesized = locChargedTrackHypothesis->dFOM;
+
+			trk.dTrackReconstructedFlag_TimeBased = true;
+			trk.dTrackReconstructedFlag_WireBased = true;
+			trk.dTrackReconstructedFlag_Candidate = true;
+
+			trk.q_candidate = trackcandidate->charge();
+			trk.q_wirebased = track->charge();
+			trk.q_timebased = locTimeBasedTrack->charge();
+
+			trk.PID_candidate = int(dPIDAlgorithm->IDTrack(trackcandidate->charge(), trackcandidate->mass()));
+			trk.PID_wirebased = int(dPIDAlgorithm->IDTrack(track->charge(), track->mass()));
+			trk.PID_timebased = int(dPIDAlgorithm->IDTrack(locTimeBasedTrack->charge(), locTimeBasedTrack->mass()));
+
+			trk.pfit = pfit;
+			trk.pfit_wire = pfit_wire;
+			trk.pcan = pcan;
+			trk.trk_chisq = locTimeBasedTrack->chisq;
+			trk.trk_Ndof = locTimeBasedTrack->Ndof;
+			trk.trk_chisq_wb = track!=NULL ? track->chisq:1.0E6;
+			trk.trk_Ndof_wb = track!=NULL ? track->Ndof:0;
+			trk.delta_pt_over_pt = delta_pt_over_pt;
+			trk.delta_theta = delta_theta;
+			trk.delta_phi = delta_phi;
+			trk.delta_pt_over_pt_wire = delta_pt_over_pt_wire;
+			trk.delta_theta_wire = delta_theta_wire;
+			trk.delta_phi_wire = delta_phi_wire;
+			trk.delta_pt_over_pt_can = delta_pt_over_pt_can;
+			trk.delta_theta_can = delta_theta_can;
+			trk.delta_phi_can = delta_phi_can;
+
+			// Get Nstereo, Ncdc, and Nfdc
+			vector<const DCDCTrackHit*> cdchits;
+			locTimeBasedTrack->Get(cdchits);
+			trk.Nstereo = 0;
+			for(unsigned int k=0; k<cdchits.size(); k++)if(cdchits[k]->wire->stereo!=0.0)trk.Nstereo++;
+			trk.Ncdc = cdchits.size();
+			vector<const DFDCPseudo*> fdchits;
+			locTimeBasedTrack->Get(fdchits);
+			trk.Nfdc = fdchits.size();
+		
+			// Get the number LR signs for all hits used on this track. We have to 
+			// do this for the thrown track here so we get the list for the same hits
+			// used in fitting this track.
+			vector<int> LRthrown;
+			vector<int> LRfit;
+			vector<const DCoordinateSystem*> wires;
+			for(unsigned int k=0; k<cdchits.size(); k++)wires.push_back(cdchits[k]->wire);
+			for(unsigned int k=0; k<fdchits.size(); k++)wires.push_back(fdchits[k]->wire);
+			if(use_rt_thrown){
+				FindLR(wires, rt_thrown, LRthrown);
+			}else{
+				FindLR(wires, mctrajpoints, LRthrown);
+			}
+			FindLR(wires, locTimeBasedTrack->rt, LRfit);
+		
+			// Make sure the number of entries is the same for both LR vectors
+			if(LRfit.size()!=LRthrown.size() || LRfit.size()!=wires.size()){
+				_DBG_<<"LR vector sizes do not match! LRfit.size()="<<LRfit.size()<<" LRthrown.size()="<<LRthrown.size()<<" wires.size()="<<wires.size()<<endl;
+				continue;
+			}
+		
+			// count total number of incorrect LR choices and how many are stereo
+			trk.NLR_bad_stereo = trk.NLR_bad = 0;
+			for(unsigned int k=0; k<wires.size(); k++){
+				if(LRfit[k] == LRthrown[k])continue;
+				trk.NLR_bad++;
+				bool is_stereo = (wires[k]->udir.Theta()*57.3)>2.0;
+				if(is_stereo)trk.NLR_bad_stereo++;
+			}
+		}
+	}
+	return locFoundFlag;	
+}
+
+bool DEventProcessor_trackeff_hists2::Search_WireBasedTracks(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown){
+	vector<const DMCTrajectoryPoint*> mctrajpoints;
+	vector<const DCDCTrackHit*> cdctrackhits;
+	vector<const DFDCHit*> fdchits;
+	vector<const DTrackWireBased*> tracks;
+
+	loop->Get(cdctrackhits);
+	loop->Get(fdchits);
+	loop->Get(tracks);
+	loop->Get(mctrajpoints);
+
+	DVector3 pthrown = trk.pthrown;
+	double fom_best = 1.0E8;
+
+	bool locFoundFlag = false;
+	trk.num_wirebased = tracks.size();
+	// Loop over found/fit tracks
+	for(unsigned int j=0; j<tracks.size(); j++){
+		const DTrackWireBased *track = tracks[j];
+	
+		vector<const DTrackCandidate*> trackcandidates;
+		track->Get(trackcandidates);
+		const DTrackCandidate *trackcandidate = trackcandidates.size()==1 ? trackcandidates[0]:NULL;
+		trk.num_candidates = trackcandidates.size();
+
+		// Copy momentum vectors to convenient local variables
+		DVector3 pfit_wire = track->momentum();
+		DVector3 pcan  = trackcandidate ? trackcandidate->momentum():DVector3(0,0,0);
+	
+		// Calculate residuals from momentum parameters from DTrackTimeBased
+		double delta_pt_over_pt_wire = (pfit_wire.Perp() - pthrown.Perp())/pthrown.Perp();
+		double delta_theta_wire = (pfit_wire.Theta() - pthrown.Theta())*1000.0;
+		double delta_phi_wire = (pfit_wire.Phi() - pthrown.Phi())*1000.0;
+
+		// Calculate residuals from momentum parameters from DTrackTimeBased
+		double delta_pt_over_pt_can = trackcandidate ? (pcan.Perp() - pthrown.Perp())/pthrown.Perp() : 1.0E20;
+		double delta_theta_can = trackcandidate ? (pcan.Theta() - pthrown.Theta())*1000.0 : 1.0E20;
+		double delta_phi_can = trackcandidate ? (pcan.Phi() - pthrown.Phi())*1000.0 : 1.0E20;
+
+		// Formulate a figure of merit to decide if this fit track is closer to
+		// the thrown track than the best one we found so far. We hardwire
+		// dpt/pt=2%, dtheta=20mrad and dphi=20mrad for now.
+		double fom = pow(delta_pt_over_pt_wire/0.02, 2.0) + pow(delta_theta_wire/20.0, 2.0) + pow(delta_phi_wire/20.0, 2.0);
+		if(fom<fom_best){
+			fom_best = fom;
+			locFoundFlag = true;
+			trk.dTrackReconstructedFlag_WireBased = true;
+			trk.dTrackReconstructedFlag_Candidate = true;
+
+			trk.q_candidate = trackcandidate->charge();
+			trk.q_wirebased = track->charge();
+
+			trk.PID_candidate = int(dPIDAlgorithm->IDTrack(trackcandidate->charge(), trackcandidate->mass()));
+			trk.PID_wirebased = int(dPIDAlgorithm->IDTrack(track->charge(), track->mass()));
+
+			trk.pfit_wire = pfit_wire;
+			trk.pcan = pcan;
+			trk.trk_chisq_wb = track->chisq;
+			trk.trk_Ndof_wb = track->Ndof;
+			trk.delta_pt_over_pt_wire = delta_pt_over_pt_wire;
+			trk.delta_theta_wire = delta_theta_wire;
+			trk.delta_phi_wire = delta_phi_wire;
+			trk.delta_pt_over_pt_can = delta_pt_over_pt_can;
+			trk.delta_theta_can = delta_theta_can;
+			trk.delta_phi_can = delta_phi_can;
+
+			// Get Nstereo, Ncdc, and Nfdc
+			vector<const DCDCTrackHit*> cdchits;
+			track->Get(cdchits);
+			trk.Nstereo = 0;
+			for(unsigned int k=0; k<cdchits.size(); k++)if(cdchits[k]->wire->stereo!=0.0)trk.Nstereo++;
+			trk.Ncdc = cdchits.size();
+			vector<const DFDCPseudo*> fdchits;
+			track->Get(fdchits);
+			trk.Nfdc = fdchits.size();
+		
+			// Get the number LR signs for all hits used on this track. We have to 
+			// do this for the thrown track here so we get the list for the same hits
+			// used in fitting this track.
+			vector<int> LRthrown;
+			vector<int> LRfit;
+			vector<const DCoordinateSystem*> wires;
+			for(unsigned int k=0; k<cdchits.size(); k++)wires.push_back(cdchits[k]->wire);
+			for(unsigned int k=0; k<fdchits.size(); k++)wires.push_back(fdchits[k]->wire);
+			if(use_rt_thrown){
+				FindLR(wires, rt_thrown, LRthrown);
+			}else{
+				FindLR(wires, mctrajpoints, LRthrown);
+			}
+			FindLR(wires, track->rt, LRfit);
+		
+			// Make sure the number of entries is the same for both LR vectors
+			if(LRfit.size()!=LRthrown.size() || LRfit.size()!=wires.size()){
+				_DBG_<<"LR vector sizes do not match! LRfit.size()="<<LRfit.size()<<" LRthrown.size()="<<LRthrown.size()<<" wires.size()="<<wires.size()<<endl;
+				continue;
+			}
+		
+			// count total number of incorrect LR choices and how many are stereo
+			trk.NLR_bad_stereo = trk.NLR_bad = 0;
+			for(unsigned int k=0; k<wires.size(); k++){
+				if(LRfit[k] == LRthrown[k])continue;
+				trk.NLR_bad++;
+				bool is_stereo = (wires[k]->udir.Theta()*57.3)>2.0;
+				if(is_stereo)trk.NLR_bad_stereo++;
+			}
+		}
+	}
+	return locFoundFlag;	
+}
+
+bool DEventProcessor_trackeff_hists2::Search_TrackCandidates(JEventLoop *loop, int eventnumber, const DMCThrown *mcthrown){
+	vector<const DMCTrajectoryPoint*> mctrajpoints;
+	vector<const DCDCTrackHit*> cdctrackhits;
+	vector<const DFDCHit*> fdchits;
+	vector<const DTrackCandidate*> trackcandidates;
+
+	loop->Get(cdctrackhits);
+	loop->Get(fdchits);
+	loop->Get(mctrajpoints);
+	loop->Get(trackcandidates);
+
+	DVector3 pthrown = trk.pthrown;
+	double fom_best = 1.0E8;
+
+	bool locFoundFlag = false;
+	// Loop over found/fit tracks
+	trk.num_candidates = trackcandidates.size();
+	for(unsigned int j=0; j<trackcandidates.size(); j++){
+		const DTrackCandidate *trackcandidate = trackcandidates[j];
+
+		// Copy momentum vectors to convenient local variables
+		DVector3 pcan  = trackcandidate->momentum();
+	
+		// Calculate residuals from momentum parameters from DTrackTimeBased
+		double delta_pt_over_pt_can = (pcan.Perp() - pthrown.Perp())/pthrown.Perp();
+		double delta_theta_can = (pcan.Theta() - pthrown.Theta())*1000.0;
+		double delta_phi_can = (pcan.Phi() - pthrown.Phi())*1000.0;
+
+		// Formulate a figure of merit to decide if this fit track is closer to
+		// the thrown track than the best one we found so far. We hardwire
+		// dpt/pt=2%, dtheta=20mrad and dphi=20mrad for now.
+		double fom = pow(delta_pt_over_pt_can/0.02, 2.0) + pow(delta_theta_can/20.0, 2.0) + pow(delta_phi_can/20.0, 2.0);
+		if(fom<fom_best){
+			fom_best = fom;
+			locFoundFlag = true;
+			trk.dTrackReconstructedFlag_Candidate = true;
+			trk.q_candidate = trackcandidate->charge();
+			trk.PID_candidate = int(dPIDAlgorithm->IDTrack(trackcandidate->charge(), trackcandidate->mass()));
+			trk.pcan = pcan;
+			trk.delta_pt_over_pt_can = delta_pt_over_pt_can;
+			trk.delta_theta_can = delta_theta_can;
+			trk.delta_phi_can = delta_phi_can;
+
+			// Get Nstereo, Ncdc, and Nfdc
+			vector<const DCDCTrackHit*> cdchits;
+			trackcandidate->Get(cdchits);
+			trk.Nstereo = 0;
+			for(unsigned int k=0; k<cdchits.size(); k++)if(cdchits[k]->wire->stereo!=0.0)trk.Nstereo++;
+			trk.Ncdc = cdchits.size();
+			vector<const DFDCPseudo*> fdchits;
+			trackcandidate->Get(fdchits);
+			trk.Nfdc = fdchits.size();
+		}
+	}
+	return locFoundFlag;	
 }
 
 //------------------

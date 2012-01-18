@@ -16,24 +16,53 @@ class track2:public TObject{
 
 	public:
 
+		unsigned long event;
+
+		float q_thrown;
+		int PID_thrown;
 		TVector3 pthrown;
-		TVector3 pfit;
-		TVector3 pfit_wire;
-		TVector3 pcan;
-		double trk_chisq;
-		int trk_Ndof;
-		double trk_chisq_wb;
-		int trk_Ndof_wb;
-		double delta_pt_over_pt;
-		double delta_theta;	// mrad
-		double delta_phi;		// mrad
 		bool isreconstructable;
+
 		int Nstereo;
 		int Ncdc;
 		int Nfdc;
 		int NLR_bad_stereo;
 		int NLR_bad;
-		unsigned long event;
+
+		int PID_hypothesized;
+		float q_hypothesized;
+		float FOM_hypothesized;
+
+		float q_timebased;
+		int PID_timebased;
+		bool dTrackReconstructedFlag_TimeBased;
+		TVector3 pfit;
+		double trk_chisq;
+		int trk_Ndof;
+		double delta_pt_over_pt;
+		double delta_theta;	// mrad
+		double delta_phi;		// mrad
+		int num_timebased;
+
+		float q_wirebased;
+		int PID_wirebased;
+		bool dTrackReconstructedFlag_WireBased;
+		TVector3 pfit_wire;
+		double trk_chisq_wb;
+		int trk_Ndof_wb;
+		double delta_pt_over_pt_wire;
+		double delta_theta_wire;	// mrad
+		double delta_phi_wire;		// mrad
+		int num_wirebased;
+
+		float q_candidate;
+		int PID_candidate;
+		bool dTrackReconstructedFlag_Candidate;
+		TVector3 pcan;
+		double delta_pt_over_pt_can;
+		double delta_theta_can;	// mrad
+		double delta_phi_can;		// mrad
+		int num_candidates;
 
 	private:
 		ClassDef(track2,1);
