@@ -162,7 +162,17 @@ hddm_s.o: $(HDDM)/hddm_s.c
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
 
-hddmtools: hddmcp cdcdump cdccount bcal2nt hddmcpXX cdcdumpXX cdccountXX bcal2ntXX
+hddm_s.c: hddm_s.h
+
+hddm_s.h: $(HDDM)/event.xml
+	hddm-c $^
+
+hddm_s.cpp: hddm_h.hpp
+
+hddm_h.hpp: $(HDDM)/event.xml
+	hddm-cpp $^
+
+hddmtools: hddmcp_c cdcdump_c cdccount_c bcal2nt hddmcp cdcdump cdccount bcal2nt
 
 hddmcp_c: hddmcp_c.c hddm_s.c memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
