@@ -105,6 +105,7 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		DReferenceTrajectory *rt = rt_pool[_data.size()];
       if(locNumInitialReferenceTrajectories == rt_pool.size()) //didn't create a new one
         rt->Reset();
+      rt->q = candidate->charge();
 		candidate->rt = rt;
 		DVector3 pos = candidate->position();
 		DVector3 mom = candidate->momentum();

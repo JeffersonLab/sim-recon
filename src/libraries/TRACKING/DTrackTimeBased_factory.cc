@@ -592,7 +592,9 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   DReferenceTrajectory *rt = rtv[_data.size()];
   if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
     rt->Reset();
-  rt->SetMass(mass);	
+  rt->SetMass(mass);
+  rt->q = track->charge();
+
   rt->SetDGeometry(geom);
       
   if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<<mass<<endl;}
@@ -623,7 +625,7 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       DReferenceTrajectory *rt = rtv[_data.size()];
       if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
         rt->Reset();
-      
+
       // Create a new time-based track object
       DTrackTimeBased *timebased_track = new DTrackTimeBased;
       
@@ -632,6 +634,7 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       *track_kd = fitter->GetFitParameters();
       rt->SetMass(mass);
       rt->SetDGeometry(geom);
+      rt->q = timebased_track->charge();
       rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
       
       timebased_track->rt = rt;
