@@ -63,6 +63,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 
   double DocaToHelix(const DCDCTrackHit *hit,double q,const DVector3 &pos,
 		     const DVector3 &mom);
+  double GetCharge(DHelicalFit &fit,const DFDCPseudo *fdchit,const DVector3 &pos);
   
  private:
   const DMagneticFieldMap *bfield;
