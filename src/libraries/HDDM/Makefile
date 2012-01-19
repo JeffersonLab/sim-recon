@@ -1,4 +1,5 @@
 WHICH_HDDM-C = $(shell which hddm-c)
+WHICH_HDDM-CPP = $(shell which hddm-cpp)
 
 all: env_check library
 
@@ -8,8 +9,13 @@ ifeq ($(strip $(WHICH_HDDM-C)),)
 else
 	@echo hddm-c found in path: $(WHICH_HDDM-C)
 endif
+ifeq ($(strip $(WHICH_HDDM-CPP)),)
+	@echo error: hddm-cpp not in path ; exit 1
+else
+	@echo hddm-cpp found in path: $(WHICH_HDDM-CPP)
+endif
 
-library: hddm_s.h hddm_s.c
+library: hddm_s.h hddm_s.c hddm_s.hpp hddm_s++.cpp
 	make -f Makefile.static
 #	make -C shlib
 
@@ -29,3 +35,7 @@ pristine:
 
 hddm_s.h hddm_s.c: event.xml
 	hddm-c $<
+
+hddm_s.hpp hddm_s++.cpp: event.xml
+	hddm-cpp $<
+	mv hddm_s.cpp hddm_s++.cpp

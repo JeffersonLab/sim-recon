@@ -21,7 +21,7 @@ endif
 # To avoid errors if there are NO headers in a libraries source directory
 # (this happened with a FORTRAN library) we have to define the command
 # here.
-HEADERS := $(wildcard *.h)
+HEADERS := $(wildcard *.h *.hpp)
 ifeq ($(HEADERS),)
   HEADER_CP_CMD = @echo "No Header Files to copy."
 else
