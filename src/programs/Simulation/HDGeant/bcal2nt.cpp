@@ -10,6 +10,7 @@
  */
 
 #include <fstream>
+#include <stdlib.h>
 #include "hddm_s.hpp"
 
 extern "C" {
