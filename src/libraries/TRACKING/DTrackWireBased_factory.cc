@@ -108,6 +108,11 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
   gPARMS->SetDefaultParameter("TRKFIT:SKIP_MASS_HYPOTHESES_WIRE_BASED",
 				    SKIP_MASS_HYPOTHESES_WIRE_BASED);
 
+  USE_HITS_FROM_CANDIDATE=false;
+  gPARMS->SetDefaultParameter("TRKFIT:USE_HITS_FROM_CANDIDATE",
+			      USE_HITS_FROM_CANDIDATE);
+
+
   if (SKIP_MASS_HYPOTHESES_WIRE_BASED==false){
 
 	string MASS_HYPOTHESES_POSITIVE = "0.13957,0.93827";
@@ -305,10 +310,27 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
 				    DReferenceTrajectory *rt,
 				    JEventLoop *loop, double mass){ 
   // Do the fit
-  fitter->SetFitType(DTrackFitter::kWireBased);	
-  DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*candidate,
-								  rt,loop,mass);
-  
+  DTrackFitter::fit_status_t status = DTrackFitter::kFitNotDone;
+  if (USE_HITS_FROM_CANDIDATE) {
+    fitter->Reset();
+    fitter->SetFitType(DTrackFitter::kWireBased);	
+    
+    // Get the hits from the track candidate
+    vector<const DFDCPseudo*>myfdchits;
+    candidate->GetT(myfdchits);
+    fitter->AddHits(myfdchits);
+    vector<const DCDCTrackHit *>mycdchits;
+    candidate->GetT(mycdchits);
+    fitter->AddHits(mycdchits);
+
+    status=fitter->FitTrack(candidate->position(),candidate->momentum(),
+			    candidate->charge(),mass,0.);
+  }
+  else{
+    fitter->SetFitType(DTrackFitter::kWireBased);	
+    status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass);
+  }
+
   // Check the status of the fit
   switch(status){
   case DTrackFitter::kFitNotDone:
