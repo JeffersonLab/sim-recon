@@ -69,6 +69,10 @@ jerror_t DTrackTimeBased_factory::init(void)
     //which BCAL reconstruction algorithm to use
 	USE_KLOE=1;
 
+	USE_HITS_FROM_WIREBASED_FIT=false;
+	gPARMS->SetDefaultParameter("TRKFIT:USE_HITS_FROM_WIREBASED_FIT",
+			      USE_HITS_FROM_WIREBASED_FIT);
+
 	gPARMS->SetDefaultParameter("TRKFIT:BYPASS_TB_FOR_FORWARD_TRACKS",
 				    BYPASS_TB_FOR_FORWARD_TRACKS);
 	gPARMS->SetDefaultParameter("TRKFIT:MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING",
@@ -600,10 +604,26 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<<mass<<endl;}
   
   // Do the fit
-  fitter->SetFitType(DTrackFitter::kTimeBased);
-  DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, 
-								  loop, mass,
-								  mStartTime);
+  DTrackFitter::fit_status_t status = DTrackFitter::kFitNotDone;
+  if (USE_HITS_FROM_WIREBASED_FIT) {
+    fitter->Reset();
+    fitter->SetFitType(DTrackFitter::kTimeBased);	
+    
+    // Get the hits from the wire-based track
+    vector<const DFDCPseudo*>myfdchits;
+    track->GetT(myfdchits);
+    fitter->AddHits(myfdchits);
+    vector<const DCDCTrackHit *>mycdchits;
+    track->GetT(mycdchits);
+    fitter->AddHits(mycdchits);
+
+    status=fitter->FitTrack(track->position(),track->momentum(),
+			    track->charge(),mass,mStartTime);
+  }
+  else{
+    fitter->SetFitType(DTrackFitter::kTimeBased);	
+    status = fitter->FindHitsAndFitTrack(*track, rt,loop, mass, mStartTime);
+  }
       
   // Check the status value from the fit
   switch(status){

@@ -49,6 +49,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   unsigned int MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING;
   bool BYPASS_TB_FOR_FORWARD_TRACKS;
   bool SKIP_MASS_HYPOTHESES_TIMEBASED;
+  bool USE_HITS_FROM_WIREBASED_FIT;
   int USE_KLOE;
 
   DTrackFitter *fitter;
