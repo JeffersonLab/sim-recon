@@ -610,7 +610,9 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   
   // If chisq is still zero after the fit, something went wrong...
   if (chisq<EPS) return UNRECOVERABLE_ERROR;
-
+  // Check that there were enough hits to make this a valid fit
+  if (numdof<6) return UNRECOVERABLE_ERROR;
+  
   chisq*=anneal_factor;
   
 
