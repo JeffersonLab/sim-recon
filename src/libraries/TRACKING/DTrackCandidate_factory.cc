@@ -1027,18 +1027,19 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   double y_plus=yc+rc*sin(phi_plus);
   double y_minus=yc+rc*sin(phi_minus);
 
-  // Determine the sign of phi based on y 
-  if (fabs(y_plus)>10.){
+  // if the resulting radial position on the circle from the fit does not agree
+  // with the radius to which we are matching, we have the wrong sign for phi+ 
+  // or phi-
+  double r2_plus=x_plus*x_plus+y_plus*y_plus;
+  double r2_minus=x_minus*x_minus+y_minus*y_minus;  
+  if (fabs(r2-r2_plus)>EPS){
     phi_plus*=-1.;
     y_plus=yc+rc*sin(phi_plus);
   }
-  if (fabs(y_minus)>10.){
+  if (fabs(r2-r2_minus)>EPS){
     phi_minus*=-1.;
     y_minus=yc+rc*sin(phi_minus);
   }
-
-
- 
 
   // Choose phi- or phi+ depending on proximity to one of the cdc hits
   double xwire=origin.x();
@@ -1052,26 +1053,28 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   if (d2_plus>d2_minus){
     phi_minus*=-1.;
     if (fit.q<0) phi_minus+=M_PI;  
-    double dphi=M_PI_2-phi_minus-fit.phi;
-    while (dphi>2.*M_PI) dphi-=2*M_PI;
-    while (dphi<-2.*M_PI) dphi+=2*M_PI;   
-    if (dphi<-M_PI) dphi+=2*M_PI;
-    if (dphi>M_PI) dphi-=2*M_PI;
-    dphi=0.;
-    pos.SetXYZ(x_minus,y_minus,fit.z_vertex+fit.q*rc*dphi*tanl);
+    //double dphi=M_PI_2-phi_minus-fit.phi;
+    //while (dphi>2.*M_PI) dphi-=2*M_PI;
+    //while (dphi<-2.*M_PI) dphi+=2*M_PI;   
+    //if (dphi<-M_PI) dphi+=2*M_PI;
+    //if (dphi>M_PI) dphi-=2*M_PI;
+    //dphi=0.;
+    //pos.SetXYZ(x_minus,y_minus,fit.z_vertex+fit.q*rc*dphi*tanl);
+    pos.SetXYZ(x_minus,y_minus,fit.z_vertex);
     mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
 
   }
   else{
     phi_plus*=-1.;   
     if (fit.q<0) phi_plus+=M_PI;
-    double dphi=M_PI_2-phi_plus-fit.phi;
-    while (dphi>2.*M_PI) dphi-=2*M_PI;
-    while (dphi<-2.*M_PI) dphi+=2*M_PI;
-    if (dphi<-M_PI) dphi+=2*M_PI;
-    if (dphi>M_PI) dphi-=2*M_PI;
-    dphi=0.;
-    pos.SetXYZ(x_plus,y_plus,fit.z_vertex+fit.q*rc*dphi*tanl); 
+    //double dphi=M_PI_2-phi_plus-fit.phi;
+    //while (dphi>2.*M_PI) dphi-=2*M_PI;
+    //while (dphi<-2.*M_PI) dphi+=2*M_PI;
+    //if (dphi<-M_PI) dphi+=2*M_PI;
+    //if (dphi>M_PI) dphi-=2*M_PI; 
+    //dphi=0.;
+    //pos.SetXYZ(x_plus,y_plus,fit.z_vertex+fit.q*rc*dphi*tanl); 
+    pos.SetXYZ(x_plus,y_plus,fit.z_vertex); 
     mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
 
   }

@@ -15,6 +15,7 @@ using namespace std;
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 #include <FDC/DFDCPseudo.h>
 #define BeamRMS 0.1
+#define EPS 1e-3
 #define Z_TARGET 65.0
 
 #include "DTrackCandidate_factory_CDC.h"
@@ -31,27 +32,27 @@ class DVector3_with_perp:public DVector3
 		double perp;
 };
 
-bool SortIntersections(const DVector3_with_perp &a,const DVector3_with_perp &b){
+inline bool SortIntersections(const DVector3_with_perp &a,const DVector3_with_perp &b){
   if (a.perp<b.perp) return true;
   return false;
 }
 
-bool CDCSortByRdecreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
+inline bool CDCSortByRdecreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
 	// use the ring number to sort by R(decreasing) and then straw(increasing)
 	if(hit1->hit->wire->ring == hit2->hit->wire->ring){
 		return hit1->hit->wire->straw < hit2->hit->wire->straw;
 	}
 	return hit1->hit->wire->ring > hit2->hit->wire->ring;
 }
-bool CDCSortByRincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
+inline bool CDCSortByRincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
 	// use the ring number to sort by R
 	return hit1->hit->wire->ring < hit2->hit->wire->ring;
 }
-bool CDCSortByZincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
+inline bool CDCSortByZincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
 	// use the z_stereo position to sort
 	return hit1->z_stereo < hit2->z_stereo;
 }
-bool CDCSortByStereoPhiincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
+inline bool CDCSortByStereoPhiincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
 	// use the z_stereo position to sort
 	return hit1->phi_stereo < hit2->phi_stereo;
 }
@@ -1735,19 +1736,23 @@ jerror_t DTrackCandidate_factory_CDC::GetPositionAndMomentum(DCDCSeed &seed,
   }
 
   // if we have intersections, find both solutions
-  double phi_plus=acos(cosphi_plus);
-  double phi_minus=acos(cosphi_minus);
+  double phi_plus=-acos(cosphi_plus);
+  double phi_minus=-acos(cosphi_minus);
   double x_plus=xc+rc*cosphi_plus;
   double x_minus=xc+rc*cosphi_minus;
   double y_plus=yc+rc*sin(phi_plus);
   double y_minus=yc+rc*sin(phi_minus);
 
-  // Determine the sign of phi based on y 
-  if (fabs(y_plus)>10.){
+  // if the resulting radial position on the circle from the fit does not agree
+  // with the radius to which we are matching, we have the wrong sign for phi+ 
+  // or phi-
+  double r2_plus=x_plus*x_plus+y_plus*y_plus;
+  double r2_minus=x_minus*x_minus+y_minus*y_minus;  
+  if (fabs(r2-r2_plus)>EPS){
     phi_plus*=-1.;
     y_plus=yc+rc*sin(phi_plus);
   }
-  if (fabs(y_minus)>10.){
+  if (fabs(r2-r2_minus)>EPS){
     phi_minus*=-1.;
     y_minus=yc+rc*sin(phi_minus);
   }
@@ -1768,7 +1773,7 @@ jerror_t DTrackCandidate_factory_CDC::GetPositionAndMomentum(DCDCSeed &seed,
     while (dphi>2.*M_PI) dphi-=2*M_PI;
     while (dphi<-2.*M_PI) dphi+=2*M_PI;   
     if (dphi<-M_PI) dphi+=2*M_PI;
-    if (dphi>M_PI) dphi-=2*M_PI;
+    if (dphi>M_PI) dphi-=2*M_PI;  
     pos.SetXYZ(x_minus,y_minus,seed.z_vertex+seed.fit.q*rc*dphi*tanl);
     mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
 
@@ -1780,7 +1785,7 @@ jerror_t DTrackCandidate_factory_CDC::GetPositionAndMomentum(DCDCSeed &seed,
     while (dphi>2.*M_PI) dphi-=2*M_PI;
     while (dphi<-2.*M_PI) dphi+=2*M_PI;
     if (dphi<-M_PI) dphi+=2*M_PI;
-    if (dphi>M_PI) dphi-=2*M_PI;
+    if (dphi>M_PI) dphi-=2*M_PI;  
     pos.SetXYZ(x_plus,y_plus,seed.z_vertex+seed.fit.q*rc*dphi*tanl); 
     mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
 
