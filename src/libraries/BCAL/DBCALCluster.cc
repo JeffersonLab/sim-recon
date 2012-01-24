@@ -140,10 +140,18 @@ DBCALCluster::makeFromPoints(){
   m_sig_t /= sqrt(n_eff2);
   
   m_theta /= sum_wt2;
-  m_sig_theta /= sum_wt2;
+  /*m_sig_theta /= sum_wt2;
   m_sig_theta -= ( m_theta * m_theta );
   m_sig_theta = sqrt( fabs( m_sig_theta ) );
-  m_sig_theta /= sqrt(n_eff2);
+  m_sig_theta /= sqrt(n_eff2);*/
+
+  // The method below for determining sig_theta works better than the one
+  // above. sigma_z is determined by fitting. sigma_z is supposed to be of
+  // the form a/sqrt(E), but this form fits the data better. This discrepancy
+  // is probably due to contributions from dark hits and incomplete
+  // gathering of hits to form a cluster.
+  double sigma_z = 1.17/sqrt(m_E)+.17/m_E;
+  m_sig_theta = sigma_z*sin(m_theta)*sin(m_theta)/DBCALGeometry::BCALINNERRAD;
   
   m_phi = atan2(sum_sin_phi,sum_cos_phi);
   if( m_phi < 0 ) m_phi += 2*PI;
