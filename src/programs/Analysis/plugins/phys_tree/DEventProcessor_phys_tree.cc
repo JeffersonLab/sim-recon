@@ -116,7 +116,7 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(physicsevents);
 
 	TVector3 VertexRec, VertexGen;
-	VertexGen = mcthrowns[0]->position();
+	VertexGen = TVector3(mcthrowns[0]->position().X(),mcthrowns[0]->position().Y(),mcthrowns[0]->position().Z());
 	// Make Particle object for beam photon
 	TLorentzVector beam_photon(0.0, 0.0, 9.0, 9.0);
 	if(beam_photons.size()>0){
