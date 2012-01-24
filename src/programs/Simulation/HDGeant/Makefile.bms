@@ -2,7 +2,7 @@
 PACKAGES := CERNLIB:JANA:ROOT
 #FFLAGS = -Wno-globals
 CFLAGS += -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
-CPPFLAGS += -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
+CXXFLAGS += -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
 ADDITIONAL_MODULES += HDDM HDGEOMETRY hddsGeant3
 LIB_DIRS += $(HDDS_HOME)/lib/$(BMS_OSNAME)
 MISC_LIBS += -lgelhad$(DEBUG_SUFFIX)
