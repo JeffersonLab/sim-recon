@@ -10,9 +10,16 @@
 
 #include "BCAL/DBCALHit.h"
 
-class DBCALPoint {
-  
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+
+using namespace jana;
+
+class DBCALPoint : public JObject {
+
 public:
+
+  JOBJECT_PUBLIC(DBCALPoint);
   
   DBCALPoint(){}
   
@@ -43,10 +50,26 @@ public:
   // cylindrical coordinates, origin at the target
   float z()   const { return m_z; }
   float r()   const { return m_r; }
+
+  int module() const {return m_module;}
+  int layer() const {return m_layer;}
+  int sector() const {return m_sector;}
                       
   // these rotate point in phi by 2 pi -- effectively leaves point unchanged
   void add2Pi() const;
   void sub2Pi() const;
+
+  void toStrings(vector<pair<string,string> > &items) const {
+    AddString(items, "E(GeV)", "%5.3f", m_E);
+    AddString(items, "t(ns)", "%5.1f", m_t);
+    AddString(items, "z(cm)", "%5.1f", m_z);
+    AddString(items, "r(cm)", "%5.1f", m_r);
+    AddString(items, "phi", "%5.3f", m_phi);
+    AddString(items, "module", "%i", m_module);
+    AddString(items, "layer", "%i", m_layer);
+    AddString(items, "sector", "%i", m_sector);
+    
+  }
   
 private:
   
@@ -54,6 +77,8 @@ private:
   
   float m_E;
   float m_t;
+
+  int m_module, m_layer, m_sector;
   
   // cylindrical coordinate locations
   float m_zLocal;

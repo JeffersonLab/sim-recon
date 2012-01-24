@@ -5,6 +5,7 @@
 #include "DBCALShower_factory_KLOE.h"
 #include "DBCALShower_factory.h"
 #include "DBCALCluster_factory.h"
+#include "DBCALPoint_factory.h"
 #include "DBCALHit.h"
 #include "DBCALSiPMHit.h"
 #include "DBCALTruthCell.h"
@@ -24,10 +25,11 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALSiPMHit_factory());
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory_KLOE());
-  loop->AddFactory(new DBCALShower_factory());
-  loop->AddFactory(new DBCALCluster_factory());
+	loop->AddFactory(new DBCALShower_factory());
+	loop->AddFactory(new DBCALCluster_factory());
 	loop->AddFactory(new DBCALTruthShower_factory());
 	loop->AddFactory(new DBCALTruthCell_factory());
+	loop->AddFactory(new DBCALPoint_factory());
     
 	return NOERROR;
 }

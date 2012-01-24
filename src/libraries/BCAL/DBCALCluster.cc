@@ -14,6 +14,7 @@
 DBCALCluster::DBCALCluster( const DBCALPoint* point ) : m_points ( 0 ) {
 
   m_points.push_back( point );
+  AddAssociatedObject( point );
   makeFromPoints();
 }
 
@@ -39,6 +40,7 @@ DBCALCluster::addPoint( const DBCALPoint* point ){
   }
   
   m_points.push_back( point );
+  AddAssociatedObject( point );
   
   makeFromPoints();
 }
@@ -63,6 +65,7 @@ DBCALCluster::mergeClust( const DBCALCluster& clust ){
     }
     
     m_points.push_back( *pt );
+    AddAssociatedObject( *pt );
   }
   
   makeFromPoints();

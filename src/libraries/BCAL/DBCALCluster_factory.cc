@@ -99,55 +99,9 @@ jerror_t
 DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
 
   clearPoints();
-  
-  vector< const DBCALHit* > hits;
-  loop->Get( hits );
-  if( hits.size() <= 0 ) return NOERROR;
-  
-  // first arrange the list of hits so they are grouped by cell
-  map< int, vector< const DBCALHit* > > cellHitMap;
-  for( vector< const DBCALHit* >::const_iterator hitPtr = hits.begin();
-      hitPtr != hits.end();
-      ++hitPtr ){
-    
-    const DBCALHit& hit = (**hitPtr);
-    
-    // mcsmear will produce hits with energy zero if the hits do not
-    // exceed the threshold -- we want to suppress these hits so we know
-    // exactly how many "real" hits we have in a cell
-    
-    if( hit.E < 0.1*k_MeV ) continue;
-    
-    int id = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
-    
-    if( cellHitMap.find( id ) == cellHitMap.end() ){
-      
-      cellHitMap[id] = vector< const DBCALHit* >();
-    }
-    
-    cellHitMap[id].push_back( *hitPtr );
-  }
-  
-  // now go through this list and group hits into BCAL points
-  // this combines information from both ends 
-  
   vector< const DBCALPoint* > twoEndPoint;
-  
-  for( map< int, vector< const DBCALHit* > >::iterator mapItr = cellHitMap.begin();
-       mapItr != cellHitMap.end();
-       ++mapItr ){
-    
-    if( mapItr->second.size() == 2 && 
-        ( mapItr->second[0]->end != mapItr->second[1]->end ) ){
-      
-      // start with the good stuff -- one hit on each end of a cell
-      
-      m_bcalPoints.push_back( new DBCALPoint( *(mapItr->second[0]), 
-                                              *(mapItr->second[1]) ) );
+  loop->Get(twoEndPoint);
 
-      twoEndPoint.push_back( m_bcalPoints.back() );      
-    }
-  }
 
 #ifdef BCAL_CLUSTER_DIAGNOSTIC
   
@@ -206,6 +160,40 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
     This is likely due to a poorly written overlap routine.  The routine
     for example, should take into acount radial separation of the hit from
     the cluster center.
+
+    WL (21-Jan-12): There is some redundancy between the code below and
+    the code in the newly-created DBCALPoint_factory.cc. If the
+    single-ended hit code ends up in use again it might be worth
+    considering if it could or should be moved into that file.
+
+
+  vector< const DBCALHit* > hits;
+  loop->Get(hits);
+
+
+  // first arrange the list of hits so they are grouped by cell
+  map< int, vector< const DBCALHit* > > cellHitMap;
+  for( vector< const DBCALHit* >::const_iterator hitPtr = hits.begin();
+      hitPtr != hits.end();
+      ++hitPtr ){
+    
+    const DBCALHit& hit = (**hitPtr);
+    
+    // mcsmear will produce hits with energy zero if the hits do not
+    // exceed the threshold -- we want to suppress these hits so we know
+    // exactly how many "real" hits we have in a cell
+    
+    if( hit.E < 0.1*k_MeV ) continue;
+    
+    int id = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
+    
+    if( cellHitMap.find( id ) == cellHitMap.end() ){
+      
+      cellHitMap[id] = vector< const DBCALHit* >();
+    }
+    
+    cellHitMap[id].push_back( *hitPtr );
+  }
    
    
   // now we should try to add on single hits...

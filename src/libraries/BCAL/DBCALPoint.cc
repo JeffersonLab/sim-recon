@@ -88,6 +88,10 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   // 1/2 the time difference is 70 ps / sqrt( E ), as was reported in the BCAL NIM
   
   m_sig_z = cEff * 70 * k_psec / sqrt( m_E );
+
+  m_module = hit1.module;
+  m_layer = hit1.layer;
+  m_sector = hit1.sector;
   
   // recast in terms of spherical coordinates
   convertCylindricalToSpherical();
@@ -126,6 +130,10 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit, float zTarget )
   // hits like this one
   
   m_sig_z = cEff * 400 * k_psec;
+
+  m_module = hit.module;
+  m_layer = hit.layer;
+  m_sector = hit.sector;
   
   // recast in terms of spherical coordinates
   convertCylindricalToSpherical();
