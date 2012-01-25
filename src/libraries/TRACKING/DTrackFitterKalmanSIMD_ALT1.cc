@@ -55,6 +55,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
   S0_=(forward_traj[0].S);
   for (unsigned int k=1;k<forward_traj.size();k++){
+    unsigned int k_minus_1=k-1;
+
     // Check that C matrix is positive definite
     if (C(0,0)<0 || C(1,1)<0 || C(2,2)<0 || C(3,3)<0 || C(4,4)<0){
       if (DEBUG_LEVEL>0) _DBG_ << "Broken covariance matrix!" <<endl;
@@ -170,7 +172,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  double prob_hit=exp(-0.5*chi2_hit)/sqrt(2.*M_PI*Vtemp);
 
 	  // Cut out outliers
-	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA){
+	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){
 	    probs.push_back(prob_hit);
 	    Vlist.push_back(V);
 	    Hlist.push_back(H);
@@ -214,7 +216,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    prob_hit=exp(-0.5*chi2_hit)/sqrt(2.*M_PI*Vtemp);
 
 	    // Cut out outliers
-	    if(sqrt(chi2_hit)<NUM_FDC_SIGMA){	      
+	    if(sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){	      
 	      probs.push_back(prob_hit);	
 	      Mlist.push_back(Mdiff);
 	      Vlist.push_back(V);
@@ -264,7 +266,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	
 	  // Check if this hit is an outlier
 	  double chi2_hit=Mdiff*Mdiff*InvV;
-	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA)
+	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT)
 	    {
 	    // Flag that we used this hit in the fit
 	    my_fdchits[id]->used_in_fit=true;
@@ -350,8 +352,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  double step1=mStepSizeZ;
 	  double step2=mStepSizeZ;
 	  if (k>=2){
-	    step1=-forward_traj[k].pos.z()+forward_traj[k-1].pos.z();
-	    step2=-forward_traj[k-1].pos.z()+forward_traj[k-2].pos.z();
+	    step1=-forward_traj[k].pos.z()+forward_traj[k_minus_1].pos.z();
+	    step2=-forward_traj[k_minus_1].pos.z()+forward_traj[k-2].pos.z();
 	  }
 	  //printf("step1 %f step 2 %f \n",step1,step2);
 	  double two_step=step1+step2;
@@ -371,7 +373,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // We have bracketed the minimum doca:  use Brent's agorithm
 	    /*
 	      double step_size
-	      =forward_traj_cdc[k].pos.z()-forward_traj_cdc[k-1].pos.z();
+	      =forward_traj_cdc[k].pos.z()-forward_traj_cdc[k_minus_1].pos.z();
 	      dz=BrentsAlgorithm(z,step_size,dedx,origin,dir,S);
 	    */
 	    //dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
@@ -460,7 +462,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  
 	  if (fit_type==kTimeBased){
 	    double tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
-		-forward_traj[k-1].t*TIME_UNIT_CONVERSION;
+		-forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	    dm=cdc_drift_distance(tdrift,forward_traj[k].B);
 	    
 	    // variance
@@ -471,7 +473,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // t0 estimate
 	  else if (cdc_index==mMinDriftID-1000){
 	    mT0MinimumDriftTime=mMinDriftTime
-	      -forward_traj[k].t*TIME_UNIT_CONVERSION;
+	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	  } 
 
 	  // Residual
@@ -484,15 +486,10 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      _DBG_ << "Negative variance???" << endl;
 	    return VALUE_OUT_OF_RANGE;
 	  }
-	  
-	  if (DEBUG_LEVEL>2)
-	    printf("Ring %d straw %d pred %f meas %f V %f %f sig %f\n",
-		   my_cdchits[cdc_index]->hit->wire->ring,
-		   my_cdchits[cdc_index]->hit->wire->straw,
-		   d,dm,Vc,1./InvV1,1./sqrt(InvV1));
+	  	 
 	  // Check if this hit is an outlier
 	  double chi2_hit=res*res*InvV1;
-	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA){
+	  if (sqrt(chi2_hit)<NUM_CDC_SIGMA_CUT){
 	    // Compute KalmanSIMD gain matrix
 	    K=InvV1*(C*H_T);
 	    
@@ -507,7 +504,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      C=Ctest;
 
 	      // Flag the place along the reference trajectory with hit id
-	      forward_traj[k-1].h_id=1000+cdc_index;
+	      forward_traj[k_minus_1].h_id=1000+cdc_index;
 	      
 	      // Flag that we used this hit
 	      my_cdchits[cdc_index]->used_in_fit=true;
@@ -519,16 +516,16 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      // Store the "improved" values of the state and covariance matrix
 	      cdc_updates[cdc_index].S=S;
 	      cdc_updates[cdc_index].C=C;	 
-	      cdc_updates[cdc_index].index=k-1;
+	      cdc_updates[cdc_index].index=k_minus_1;
 	      
 	      // propagate error matrix to z-position of hit
-	      StepJacobian(newz,forward_traj[k-1].pos.z(),
+	      StepJacobian(newz,forward_traj[k_minus_1].pos.z(),
 			   cdc_updates[cdc_index].S,dedx,J);
 	      cdc_updates[cdc_index].C
 		=cdc_updates[cdc_index].C.SandwichMultiply(J);	 
 	      
 	      // Step state back to previous z position
-	      Step(newz,forward_traj[k-1].pos.z(),dedx,cdc_updates[cdc_index].S);
+	      Step(newz,forward_traj[k_minus_1].pos.z(),dedx,cdc_updates[cdc_index].S);
 	      
 	      // Residual
 	      res*=1.-H*K;
@@ -536,6 +533,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      // Update chi2 for this segment
 	      double err2 = Vc-H*(C*H_T);
 	      chisq+=anneal_factor*res*res/err2;
+
+	      if (DEBUG_LEVEL>2)
+		printf("Ring %d straw %d pred %f meas %f chi2 %f\n",
+		       my_cdchits[cdc_index]->hit->wire->ring,
+		       my_cdchits[cdc_index]->hit->wire->straw,
+		       d,dm,res*res/err2);
 	      
 	    // update number of degr  virtual jerror_t SmoothForward(DMatrix5x1 &S);   ees of freedom
 	      numdof++;

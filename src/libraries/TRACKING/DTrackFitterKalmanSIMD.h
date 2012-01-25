@@ -45,9 +45,7 @@
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
-
-#define NUM_SIGMA 1200.0
-#define NUM_FDC_SIGMA 1200.0
+#define DELTA_R 1.0 // distance in r to extend the trajectory beyond the last point
 
 #define CDC_VARIANCE 0.0001
 #define FDC_CATHODE_VARIANCE 0.000225
@@ -64,7 +62,7 @@
 #define MIN_FDC_HITS 1
 #define MIN_CDC_HITS 1
 
-#define MOLIERE_FRACTION 0.99
+#define MOLIERE_FRACTION 0.995
 #define DE_PER_STEP_WIRE_BASED 0.00025 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.00025 // in GeV
 #define BFIELD_FRAC 0.0001
@@ -354,6 +352,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   bool USE_T0_FROM_WIRES;
   bool USE_MULS_COVARIANCE;
   double FDC_CATHODE_SIGMA;
+
+  // Maximum number of sigma's away from the predicted position to include hit
+  double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
 
   // Min. momentum needed for fit before returning fitSuccess
   double MIN_FIT_P;
