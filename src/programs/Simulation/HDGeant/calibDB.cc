@@ -52,7 +52,10 @@ void initcalibdb_(char *bfield_type, char *bfield_map)
 		else
 			Bmap = new DMagneticFieldMapCalibDB(jcalib);
 	}else if(bfield_type_str=="Const"){
-		Bmap = new DMagneticFieldMapConst(jcalib);
+		if(strlen(bfield_map))
+			Bmap = new DMagneticFieldMapConst(jcalib, bfield_map);
+		else
+			Bmap = new DMagneticFieldMapConst(jcalib);
 	}else if(bfield_type_str=="Spoiled"){
 		if(strlen(bfield_map))
 			Bmap = new DMagneticFieldMapSpoiled(jcalib, bfield_map);
