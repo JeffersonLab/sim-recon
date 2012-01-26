@@ -88,7 +88,7 @@ int main(int argc, char **argv)
    int input;
    int lrec=65536;
    int status;
-   int cycle;
+   int cycle=1; // initialize to 1 just to avoid compiler warnings
 
    hlimit(PAWC_SIZE);
    hbset("BSIZE",&lrec,&status);
