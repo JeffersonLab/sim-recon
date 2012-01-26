@@ -73,10 +73,10 @@ extern "C" {
       hrend_(filename, strlen(filename));
       return;
    }
-   void hrout(int num, int icycle, char*opt)
+   void hrout(int num, int *icycle, char*opt)
    {
       void hrout_(int *,int *,char *,int);
-      hrout_(&num, &icycle, opt, strlen(opt));
+      hrout_(&num, icycle, opt, strlen(opt));
    }
    
 }
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
          record.clear();
       }
    }
-   hrout(1,cycle," ");
+   hrout(1,&cycle," ");
    hrend("RZfile");
 }
 
