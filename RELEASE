@@ -1,0 +1,593 @@
+Release Notes for sim-recon-2012-01-27
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2012-01-27
+   Date: January 29, 2012
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 8754 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.3 (i686)
+-----------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.2
+
+CentOS release 5.3 (Final) (x86_64)
+------------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.2
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r8663 | jonesrt | 2011-12-28 10:03:43 -0500 (Wed, 28 Dec 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+* event.xml [rtj]
+  - fixed bogus values for maxOccurs attribute in bcalCell and bcalfADCCell
+    elements, was set to 4 (why?) but actual instance files had many more.
+
+------------------------------------------------------------------------
+r8664 | jonesrt | 2011-12-28 10:11:15 -0500 (Wed, 28 Dec 2011) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/xml-hddm.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/xml-xml
+
+* xml-hddm.cpp [rtj]
+  - added a check for bogus value of maxOccurs attribute in tags with 
+    an explicit repetition count; before any value >1 was treated as unbounded.
+  - fixed the size field in output stream, in the case where a repeated
+    element is present with zero instances; before the size was set to zero
+    not taking into account the repeat count of 0 that followed it.
+* xml-xml [rtj]
+  - symbol XML::XercesDOMParser::Val_Auto is no longer defined in the
+    Xerces perl module, replaced it with the explicit value 2 defined in
+    AbstractDOMParser.hpp of xerces-c source as third in an enum sequence.
+   
+
+------------------------------------------------------------------------
+r8665 | senderov | 2011-12-28 15:26:02 -0500 (Wed, 28 Dec 2011) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/hddm_cull_events.cc
+
+Fixed a bug that made the utility look for a single event (default: 0) even when in "events to keep/skip" mode, returning always one event.
+------------------------------------------------------------------------
+r8666 | jonesrt | 2011-12-29 10:27:33 -0500 (Thu, 29 Dec 2011) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+* event.xml [rtj]
+   - If you want to be able to drop a tag from the data model, do the right
+     thing and annotate it with minOccurs="0", or data checks will flag it.
+
+------------------------------------------------------------------------
+r8667 | jonesrt | 2011-12-30 12:57:49 -0500 (Fri, 30 Dec 2011) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/xml-hddm.cpp
+
+* xml-hddm.cpp, hddm-xml.cpp, hddm-c.cpp [rtj]
+   - change the maximum number of repeat tags in a list from 9999 to MAX_INT.
+
+------------------------------------------------------------------------
+r8672 | jonesrt | 2012-01-02 16:12:14 -0500 (Mon, 02 Jan 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+
+* hddm-c.cpp [rtj]
+   - fix a bug introduced by a recent patch replacing the maximum count of a
+     tag in an event from 9999 to 2^31-1.
+
+------------------------------------------------------------------------
+r8673 | staylor | 2012-01-03 09:23:00 -0500 (Tue, 03 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+More work on measurement variance.  Also made change to prevent division by zero problems when dealing with hits in adjacent fdc wires.
+------------------------------------------------------------------------
+r8674 | staylor | 2012-01-03 09:24:44 -0500 (Tue, 03 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Minor changes to some #defines and new version of fdc_drift_distance
+------------------------------------------------------------------------
+r8675 | marki | 2012-01-03 13:37:58 -0500 (Tue, 03 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/include/Diostream.h
+
+redevine Dcout to dout before it is too late
+------------------------------------------------------------------------
+r8676 | pmatt | 2012-01-04 15:01:12 -0500 (Wed, 04 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID_PID1.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID_PID1.h
+
+Replaced dE/dx TF1 functions using vector<float>'s for thread safety.  
+
+
+------------------------------------------------------------------------
+r8688 | zihlmann | 2012-01-06 09:27:37 -0500 (Fri, 06 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+CDC_MAX_RINGS was set to 25 instead of 28
+
+------------------------------------------------------------------------
+r8691 | davidl | 2012-01-09 09:51:43 -0500 (Mon, 09 Jan 2012) | 11 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmInput.c
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/DRandom2.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/SampleGaussian.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Record random number seeds used by mcsmear in HDDM file so event can be re-smeared later starting from same seed. Changes include:
+
+- Data model changed to hold 3 integer seeds for mcsmear per event
+- Random number generator switched from TRandom3 to TRandom2 since
+  it only requires 3 seeds
+- HDGeant modified to initialize all 3 mcsmear seeds to zero indcating
+  "unset" condition.
+
+Default behavior is to use the seeds if they are found in the input
+file, but otherwise just use what is left in the generator.
+
+------------------------------------------------------------------------
+r8692 | senderov | 2012-01-09 10:36:18 -0500 (Mon, 09 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/fit.cc
+
+Added command line argument specification of the (root) data file tree name
+------------------------------------------------------------------------
+r8693 | davidl | 2012-01-09 11:04:25 -0500 (Mon, 09 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/DRandom2.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/SampleGaussian.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Initialize random number generator with UUID so if seeds are not present in input HDDM file, seeds will be different each time mcsmear is run.
+
+------------------------------------------------------------------------
+r8696 | staylor | 2012-01-10 10:09:43 -0500 (Tue, 10 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Handle second case where  b^3+c^2 is negative in the DistToRT method
+------------------------------------------------------------------------
+r8697 | staylor | 2012-01-10 10:13:49 -0500 (Tue, 10 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Change how the end of the list of cdc hits is handled when using the forward parametrization.  Also working on initial guesses for the covariance matrices.
+------------------------------------------------------------------------
+r8699 | staylor | 2012-01-11 08:14:55 -0500 (Wed, 11 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Remove extraneous printout
+------------------------------------------------------------------------
+r8702 | jonesrt | 2012-01-11 22:53:36 -0500 (Wed, 11 Jan 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/external/xstream/src/Makefile
+
+* xstream/src/Makefile [rtj]
+  - Somehow z.cpp got left out of the Makefile for the xstream library.
+    We need it for the C++ hddm interface.
+
+------------------------------------------------------------------------
+r8703 | staylor | 2012-01-12 08:41:04 -0500 (Thu, 12 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate.h
+
+Add vectors to keep track of indexes (in the master list of hits) used in the candidate
+------------------------------------------------------------------------
+r8704 | staylor | 2012-01-12 08:47:50 -0500 (Thu, 12 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+
+If there are no CDC hits or there are too many hits, return from the evnt method as soon as possible.  Also fixed a memory leak.
+------------------------------------------------------------------------
+r8705 | staylor | 2012-01-12 09:13:31 -0500 (Thu, 12 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Fixed a memory leak
+------------------------------------------------------------------------
+r8706 | staylor | 2012-01-12 10:58:49 -0500 (Thu, 12 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+
+Implement maximum matching radius for associating FDC hits with the track
+------------------------------------------------------------------------
+r8707 | staylor | 2012-01-12 11:41:12 -0500 (Thu, 12 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+Improve fall-back algorithm for matching fdc and cdc track candidates
+------------------------------------------------------------------------
+r8708 | jonesrt | 2012-01-12 23:50:25 -0500 (Thu, 12 Jan 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/Makefile
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+
+* hddm-c.cpp [rtj]
+  - fixed a misspelled word in one of the error messages.
+* hddm-xml.cpp [rtj]
+  - added support for a couple of new hddm features to be
+    introduced with the C++ hddm interface.
+* Makefile [rtj]
+  - new libraries to support the new hddm features, see above.
+
+------------------------------------------------------------------------
+r8709 | pmatt | 2012-01-13 17:41:39 -0500 (Fri, 13 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+
+Added handles for Quiet_NaN returns from the DReferenceTrajectory::DistToRT functions.  
+
+
+------------------------------------------------------------------------
+r8710 | jonesrt | 2012-01-14 12:55:26 -0500 (Sat, 14 Jan 2012) | 37 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/Makefile
+   M /trunk/sim-recon/src/programs/Utilities/hddm/exam2.c
+   A /trunk/sim-recon/src/programs/Utilities/hddm/exam2.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/testhddm.cpp
+
+* hddm-c.cpp, exam2.c [rtj]
+  - added casts so that the generated hddm_X.c code and the example
+    user code in exam2.c are compiled without errors by g++.
+    Formerly gcc would compile it without errors or warnings,
+    but g++ is more strict with respect to pointer conversions.
+* hddm-cpp.cpp, exam2.cpp [rtj]
+  - the first fully working release of the c++ hddm interface, which
+    provides the full functionality of the c interface using the data
+    encapsulation and polymorphic features of c++, and introduces
+    new leaf-access iterators, plus optional on-the-fly compression
+    and decompression that is user-selectable between zlib and bz2lib.
+    Compression with zlib is faster than bz2lib, but with a somewhat
+    smaller compression ratio.  Decompression on input is fast with
+    either algorithm.  Another advantage of using compression is that
+    data integrity checks are automatically computed and inserted at
+    regular intervals into the data stream.  HDDM streams are
+    binary compatible between applications using the c and c++
+    interfaces with compression turned off.  When the hddm-c i/o
+    interface encounters a point in a stream where compression is
+    turned on, it reports an error and exits.  There are no plans
+    to back-port compression functionality into the c interface.
+    A minimal user application in exam2.cpp is provided to
+    duplicate the behavior of exam2.c and provide a performance
+    comparison between the c++ and c i/o interfaces.
+* hddm-xml.cpp [rtj]
+   - updated this venerable utility so that it works with the
+     on-the-fly compression and data integrity checking facilities
+     of hddm that were introduced in the c++ interface.
+* testhddm.cpp [rtj]
+   - updated this test application to test both the c and c++
+     hddm interfaces with a data model that includes all of the
+     basic data types, built and invoked with "make test" in
+     the hddm directory.  
+* Makefile [rtj]
+   - extend "make test" to test both the c and c++ interfaces
+
+
+------------------------------------------------------------------------
+r8711 | jonesrt | 2012-01-15 02:03:30 -0500 (Sun, 15 Jan 2012) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/xml-hddm.cpp
+
+* hddm-xml.cpp [rtj]
+  - corrected a mistake in counting events when a stream crosses through
+    a transition from non-compressed to compressed.
+* xml-hddm.cpp [rtj]
+  - introduced the proper treatment of string and anyURI attributes.
+
+------------------------------------------------------------------------
+r8712 | jonesrt | 2012-01-15 02:05:58 -0500 (Sun, 15 Jan 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+
+* hddm-c.cpp [rtj]
+  - add code to detect the onset of compression in a data stream, report
+    an error and exit, rather than trying in vain to decode compressed data.
+
+------------------------------------------------------------------------
+r8713 | jonesrt | 2012-01-15 02:09:23 -0500 (Sun, 15 Jan 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/testhddm.cpp
+
+* hddm-cpp.cpp [rtj]
+  - add the string "get" to the front of getter methods of data model classes,
+    and "set" to the front of setter methods.  This was necessary to reduce
+    the chances of collisions between class names and method names.
+* testhddm.cpp [rtj]
+  - added the "get" and "set" prefixes to the methods in the test functions,
+    in keeping with the above changes.
+
+------------------------------------------------------------------------
+r8714 | jonesrt | 2012-01-15 02:20:12 -0500 (Sun, 15 Jan 2012) | 13 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.orig
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.c
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.cpp
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/cdccount.c
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/cdccount.cpp
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/cdcdump.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp.c
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp.cpp
+
+* cdccount.c,bcal2nt.c,hddmcp.c [rtj]
+  - committed some tools that sever as examples for how to use the
+    c interface to hddm (count hits, fill ntuples, cat data files).
+
+* cdccount.cpp,bcal2nt.cpp,hddmcp.cpp,cdcdump.cpp [rtj]
+  - c++ counterparts to the above hddm tools, can serve as examples
+    for how to use the new c++ hddm classes.
+
+* Makefile.orig [rtj]
+  - reference makefile for how one might build the above tools,
+    once hddm-c and hddm-cpp have been run in the current directory.
+
+
+------------------------------------------------------------------------
+r8718 | jonesrt | 2012-01-16 16:14:03 -0500 (Mon, 16 Jan 2012) | 4 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt_c.c (from /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.c:8715)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/cdccount_c.c (from /trunk/sim-recon/src/programs/Simulation/HDGeant/cdccount.c:8715)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/cdcdump_c.c (from /trunk/sim-recon/src/programs/Simulation/HDGeant/cdcdump.c:8715)
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp_c.c (from /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp.c:8715)
+
+* hddmcp_c.c, bcal2nt_c.c, cdccount_c.c, cdcdump_c.c [rtj]
+  - these c utilities had to renamed with the _c suffix to be able
+    to coexist in the BMS system with their c++ counterparts.
+
+------------------------------------------------------------------------
+r8719 | jonesrt | 2012-01-16 16:15:39 -0500 (Mon, 16 Jan 2012) | 4 lines
+Changed paths:
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.c
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/cdccount.c
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/cdcdump.c
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp.c
+
+* cdccount.c, bcal2nt.c, cdcdump.c, hddmcp.c [rtj]
+  - renamed with _c suffix, to prevent collision in the BMS system
+    with their similarly named c++ counterparts.
+
+------------------------------------------------------------------------
+r8720 | jonesrt | 2012-01-16 16:16:50 -0500 (Mon, 16 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp.cpp
+
+* hddmcp.cpp [rtj]
+  - trivial change to get rid of compiler warning.
+
+------------------------------------------------------------------------
+r8721 | jonesrt | 2012-01-16 16:18:16 -0500 (Mon, 16 Jan 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.orig
+
+* Makefile.bms, Makefile.orig [rtj]
+  - fixup to be able to build utilities based on the c++ hddm interface
+    instead of the older c interface.
+
+------------------------------------------------------------------------
+r8722 | jonesrt | 2012-01-16 16:21:09 -0500 (Mon, 16 Jan 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+
+* hddm-cpp.cpp [rtj]
+  - numerous fixups to produce code that does not get flagged by g++
+    with strict warnings enabled
+
+------------------------------------------------------------------------
+r8725 | pmatt | 2012-01-18 15:19:26 -0500 (Wed, 18 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists2.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists2.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/track2.h
+
+Added ability to study reconstructed track quantities after the track candidate and wire-based tracking stages.  
+
+
+------------------------------------------------------------------------
+r8726 | pmatt | 2012-01-18 15:21:38 -0500 (Wed, 18 Jan 2012) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/routines
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/routines/TrackEff2Selector.C
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/routines/TrackEff2Selector.h
+
+ROOT tree selector used to make and fill histograms.  
+
+
+------------------------------------------------------------------------
+r8727 | pmatt | 2012-01-18 17:11:53 -0500 (Wed, 18 Jan 2012) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_THROWN.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory_THROWN.cc
+
+Added Reset() method to DReferenceTrajectory.  This function resets a few key members of the reference trajectory to their default values.  
+This function should be called whenever a DReferenceTrajectory is re-used, so that variables such as "hit_cdc_endplate" and "last_swim_step" are accurate. 
+Incorrect values of these variables (especially when "last_swim_step" isn't NULL for new tracks) caused unexpected behavior.  
+
+This Reset() function is now called in the track reconstruction factories containing DReferenceTrajectory pools.  
+
+Also, wire-based fitting is now performed with the correct mass being set in the DReferenceTrajectory.  Before, it's default value (pion mass) was not being changed.  
+
+
+------------------------------------------------------------------------
+r8728 | jonesrt | 2012-01-18 18:52:44 -0500 (Wed, 18 Jan 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.orig
+
+* Makefile.orig [rtj]
+  - experimenting with different Makefile rules to be able to build bcal2nt,
+    which is failing now with the default BMS rules.
+
+------------------------------------------------------------------------
+r8729 | pmatt | 2012-01-18 19:25:37 -0500 (Wed, 18 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_THROWN.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory_THROWN.cc
+
+Set DReferenceTrajectory charge in factories prior to calling fit function (is already set during fitting function, but should be set here also, in case that changes). 
+
+
+------------------------------------------------------------------------
+r8730 | staylor | 2012-01-19 07:55:25 -0500 (Thu, 19 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+Keep track of cdc hits used in candidates and try to match any remaining unmatched cdc hits to fdc candidates.  Add routine to guess the correct charge for matches of fdc and cdc candidates that do not agree as to the charge.
+------------------------------------------------------------------------
+r8731 | davidl | 2012-01-19 15:09:57 -0500 (Thu, 19 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.lib
+   M /trunk/sim-recon/src/libraries/HDDM/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+
+Tweak Makefiles to allow C++ version of HDDM to be generated
+and built. This required renaming hddm_s.cpp to hddm_s++.cpp.
+
+------------------------------------------------------------------------
+r8732 | staylor | 2012-01-20 11:27:08 -0500 (Fri, 20 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.h
+
+Add flag called USE_HITS_FROM_CANDIDATE to tell the wire-based code to use the hits that were associated with the track candidate instead of swimming to associate hits with the track.
+------------------------------------------------------------------------
+r8733 | staylor | 2012-01-20 11:28:32 -0500 (Fri, 20 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Add flag called USE_HITS_FROM_WIREBASED_FIT to tell the time-based code to use the hits that were associated with the wire-based track instead of swimming to associate hits with the track.
+------------------------------------------------------------------------
+r8734 | davidl | 2012-01-20 11:42:34 -0500 (Fri, 20 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cdccount.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cdcdump.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp.cpp
+
+Add includes of string.h and stdlib.h to allow compiling of new C++ hddm code with newer compilers (Ubuntu 11). This was identified by Beni.
+------------------------------------------------------------------------
+r8735 | staylor | 2012-01-20 15:41:16 -0500 (Fri, 20 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Return an error if the number of degrees of freedom after the filter is less than 6.
+------------------------------------------------------------------------
+r8741 | staylor | 2012-01-23 15:22:32 -0500 (Mon, 23 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Improve algorithm for picking intersection between the circle from the fit and the circle with radius just outside the start counter that is closest to the innermost measurement.
+------------------------------------------------------------------------
+r8742 | wilevine | 2012-01-23 19:38:24 -0500 (Mon, 23 Jan 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.h
+
+Make DBCALPoint a JObject and move some code form DBCALCluster_factory to the new DBCALPoint_factory. This allows easier access to lower level hit information (thru associated objects) and makes debugging and diagnosing problems easier.
+
+
+
+------------------------------------------------------------------------
+r8743 | marki | 2012-01-24 12:27:44 -0500 (Tue, 24 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+
+Use CXXFLAGS rather than CPPFLAGS
+------------------------------------------------------------------------
+r8744 | wilevine | 2012-01-24 14:50:21 -0500 (Tue, 24 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.cc
+
+Change the way errors are calculated in DBCALCluster
+
+------------------------------------------------------------------------
+r8745 | wilevine | 2012-01-24 18:13:32 -0500 (Tue, 24 Jan 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+
+Convert DVector3 to TVector3
+
+------------------------------------------------------------------------
+r8746 | staylor | 2012-01-25 07:53:39 -0500 (Wed, 25 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Add parameters to control how close a hit needs to be from the projected position in order to be included in the fit.  Restrict extent of the reference trajectory in the cdc to a radial distance relative to the beam line just beyond the outermost cdc hit; this extra radial distance is currently set to 1 cm.
+------------------------------------------------------------------------
+r8751 | davidl | 2012-01-26 07:38:19 -0500 (Thu, 26 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.cpp
+
+Initialize 'cycle' variable to avoid compiler warnings.
+------------------------------------------------------------------------
+r8752 | jonesrt | 2012-01-26 10:35:45 -0500 (Thu, 26 Jan 2012) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt_c.c
+
+* bcal2nt_c.c, bcal2nt.cpp [rtj]
+  - changed the second argument to HBOOK routine hrout() to pass-by-reference
+    because it is an output parameter, not input.  Even though we don't
+    actually care about the value returned, do this to get rid of spurious
+    g++ compiler warnings.
+
+------------------------------------------------------------------------
+r8754 | davidl | 2012-01-26 16:07:49 -0500 (Thu, 26 Jan 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+
+Fixed bug where B-field map name specified in control.in was not being used if the type was set to 'Const'. This would effect pretty much no one since only one set of Const map parameters was in existence until today.
+------------------------------------------------------------------------
