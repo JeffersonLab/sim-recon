@@ -20,6 +20,7 @@ using namespace std;
 
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
+#include <PID/DChargedTrack.h>
 #include <DVector2.h>
 #include <particleType.h>
 
@@ -115,7 +116,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DFDCPseudo*> fdcpseudos;
 	vector<const DTrackCandidate*> trackcandidates;
 	vector<const DTrackWireBased*> trackWBs;
-	vector<const DTrackTimeBased*> trackTBs;
+	vector<const DChargedTrack*> trackTBs;
 	vector<const DTrackTimeBased*> throwns;
 	vector<const DMCTrajectoryPoint*> mctraj;
 	
@@ -137,7 +138,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<track_info> ti_trktb(MAX_TRACKS);
 	for(unsigned int i=0; i<trackcandidates.size(); i++)FillTrackInfo(trackcandidates[i], ti_can);
 	for(unsigned int i=0; i<trackWBs.size(); i++)FillTrackInfo(trackWBs[i], ti_trkwb);
-	for(unsigned int i=0; i<trackTBs.size(); i++)FillTrackInfo(trackTBs[i], ti_trktb);
+	for(unsigned int i=0; i<trackTBs.size(); i++)FillTrackInfo(trackTBs[i]->dChargedTrackHypotheses[0]->dTrackTimeBased, ti_trktb);
 
 	// The highest (and therefore, most interesting) GEANT mechansim for each track in the
 	// region before it gets to the BCAL.
