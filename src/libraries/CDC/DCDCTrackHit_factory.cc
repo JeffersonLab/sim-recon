@@ -161,7 +161,7 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
       // Define position of midpoint of wire, phi of midpoint, and m_x, m_y
       w->ring = ring;
       w->straw = straw;
-      if (rotY==0.){
+      if (fabs(rotY) < 1.0E-9){
 	w->origin.SetX(radius*cos(phi));
 	w->origin.SetY(radius*sin(phi));
       }
@@ -173,7 +173,8 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
       w->origin.SetZ((Z_MAX + Z_MIN)/2.0);
       w->phi = phi;
       //w->L = L/cos(stereo);
-      //w->L = L + (stereo==degrees0 ? 0.0:1.5); // to make consistent with HDDS
+
+      //w->L = L + ((fabs(stereo - degrees0) < 1.0E-9) ? 0.0:1.5); // to make consistent with HDDS
 			
       // Here, we need to define a coordinate system for the wire
       // in which the wire runs along one axis. We call the directions
@@ -182,7 +183,8 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
       // will be defined by the direction pointing from the beamline
       // to the midpoint of the wire.
       w->udir.SetXYZ(0.0, 0.0,1.0);
-      if (rotY==0.){
+      if (fabs(rotY) < 1.0E-9){
+
 	w->udir.RotateX(stereo);	
 	w->udir.RotateZ(phi);
 			}
