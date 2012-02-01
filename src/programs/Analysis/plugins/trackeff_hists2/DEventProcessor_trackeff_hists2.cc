@@ -197,6 +197,7 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 		trk.FOM_hypothesized = 0.0;
 
 		bool locFoundFlag;
+/*
 		locFoundFlag = Search_ChargedTrackHypotheses(loop, eventnumber, mcthrown);
 		if(locFoundFlag == false){
 			trk.dTrackReconstructedFlag_TimeBased = false;
@@ -208,6 +209,19 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 					trk.dTrackReconstructedFlag_Candidate = false;
 			}
 		}
+*/
+
+		locFoundFlag = Search_ChargedTrackHypotheses(loop, eventnumber, mcthrown);
+		if(locFoundFlag == false)
+			trk.dTrackReconstructedFlag_Candidate = false;
+
+		locFoundFlag = Search_WireBasedTracks(loop, eventnumber, mcthrown);
+		if(locFoundFlag == false)
+			trk.dTrackReconstructedFlag_WireBased = false;
+
+		locFoundFlag = Search_TrackCandidates(loop, eventnumber, mcthrown);
+		if(locFoundFlag == false)
+			trk.dTrackReconstructedFlag_Candidate = false;
 
 		trkeff->Fill();
 	}
@@ -234,8 +248,9 @@ bool DEventProcessor_trackeff_hists2::Search_ChargedTrackHypotheses(JEventLoop *
 	bool locFoundFlag = false;
 	double fom_best = 1.0E8;
 
-	// Loop over found/fit tracks
 	trk.num_timebased = locChargedTrackHypotheses.size();
+
+	// Loop over found/fit tracks
 	for(unsigned int j=0; j<locChargedTrackHypotheses.size(); j++){
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrackHypotheses[j];
 		const DTrackTimeBased *locTimeBasedTrack = locChargedTrackHypothesis->dTrackTimeBased;
@@ -246,30 +261,14 @@ bool DEventProcessor_trackeff_hists2::Search_ChargedTrackHypotheses(JEventLoop *
 		const DTrackWireBased *track = tracks.size()==1 ? tracks[0]:NULL;
 		vector<const DTrackCandidate*> trackcandidates;
 		if(track)track->Get(trackcandidates);
-		const DTrackCandidate *trackcandidate = trackcandidates.size()==1 ? trackcandidates[0]:NULL;
-
-		trk.num_wirebased = tracks.size();
-		trk.num_candidates = trackcandidates.size();
 
 		// Copy momentum vectors to convenient local variables
 		DVector3 pfit  = locTimeBasedTrack->momentum();
-		DVector3 pfit_wire  = track ? track->momentum():DVector3(0,0,0);
-		DVector3 pcan  = trackcandidate ? trackcandidate->momentum():DVector3(0,0,0);
 	
 		// Calculate residuals from momentum parameters from DTrackTimeBased
 		double delta_pt_over_pt = (pfit.Perp() - pthrown.Perp())/pthrown.Perp();
 		double delta_theta = (pfit.Theta() - pthrown.Theta())*1000.0;
 		double delta_phi = (pfit.Phi() - pthrown.Phi())*1000.0;
-
-		// Calculate residuals from momentum parameters from DTrackTimeBased
-		double delta_pt_over_pt_wire = track ? (pfit_wire.Perp() - pthrown.Perp())/pthrown.Perp() : 1.0E20;
-		double delta_theta_wire = track ? (pfit_wire.Theta() - pthrown.Theta())*1000.0 : 1.0E20;
-		double delta_phi_wire = track ? (pfit_wire.Phi() - pthrown.Phi())*1000.0 : 1.0E20;
-
-		// Calculate residuals from momentum parameters from DTrackTimeBased
-		double delta_pt_over_pt_can = trackcandidate ? (pcan.Perp() - pthrown.Perp())/pthrown.Perp() : 1.0E20;
-		double delta_theta_can = trackcandidate ? (pcan.Theta() - pthrown.Theta())*1000.0 : 1.0E20;
-		double delta_phi_can = trackcandidate ? (pcan.Phi() - pthrown.Phi())*1000.0 : 1.0E20;
 
 		// Formulate a figure of merit to decide if this fit track is closer to
 		// the thrown track than the best one we found so far. We hardwire
@@ -283,33 +282,17 @@ bool DEventProcessor_trackeff_hists2::Search_ChargedTrackHypotheses(JEventLoop *
 			trk.FOM_hypothesized = locChargedTrackHypothesis->dFOM;
 
 			trk.dTrackReconstructedFlag_TimeBased = true;
-			trk.dTrackReconstructedFlag_WireBased = true;
-			trk.dTrackReconstructedFlag_Candidate = true;
 
-			trk.q_candidate = trackcandidate->charge();
-			trk.q_wirebased = track->charge();
 			trk.q_timebased = locTimeBasedTrack->charge();
 
-			trk.PID_candidate = int(dPIDAlgorithm->IDTrack(trackcandidate->charge(), trackcandidate->mass()));
-			trk.PID_wirebased = int(dPIDAlgorithm->IDTrack(track->charge(), track->mass()));
 			trk.PID_timebased = int(dPIDAlgorithm->IDTrack(locTimeBasedTrack->charge(), locTimeBasedTrack->mass()));
 
 			trk.pfit = pfit;
-			trk.pfit_wire = pfit_wire;
-			trk.pcan = pcan;
 			trk.trk_chisq = locTimeBasedTrack->chisq;
 			trk.trk_Ndof = locTimeBasedTrack->Ndof;
-			trk.trk_chisq_wb = track!=NULL ? track->chisq:1.0E6;
-			trk.trk_Ndof_wb = track!=NULL ? track->Ndof:0;
 			trk.delta_pt_over_pt = delta_pt_over_pt;
 			trk.delta_theta = delta_theta;
 			trk.delta_phi = delta_phi;
-			trk.delta_pt_over_pt_wire = delta_pt_over_pt_wire;
-			trk.delta_theta_wire = delta_theta_wire;
-			trk.delta_phi_wire = delta_phi_wire;
-			trk.delta_pt_over_pt_can = delta_pt_over_pt_can;
-			trk.delta_theta_can = delta_theta_can;
-			trk.delta_phi_can = delta_phi_can;
 
 			// Get Nstereo, Ncdc, and Nfdc
 			vector<const DCDCTrackHit*> cdchits;
@@ -369,30 +352,20 @@ bool DEventProcessor_trackeff_hists2::Search_WireBasedTracks(JEventLoop *loop, i
 	DVector3 pthrown = trk.pthrown;
 	double fom_best = 1.0E8;
 
-	bool locFoundFlag = false;
 	trk.num_wirebased = tracks.size();
+
+	bool locFoundFlag = false;
 	// Loop over found/fit tracks
 	for(unsigned int j=0; j<tracks.size(); j++){
 		const DTrackWireBased *track = tracks[j];
-	
-		vector<const DTrackCandidate*> trackcandidates;
-		track->Get(trackcandidates);
-		const DTrackCandidate *trackcandidate = trackcandidates.size()==1 ? trackcandidates[0]:NULL;
-		trk.num_candidates = trackcandidates.size();
 
 		// Copy momentum vectors to convenient local variables
 		DVector3 pfit_wire = track->momentum();
-		DVector3 pcan  = trackcandidate ? trackcandidate->momentum():DVector3(0,0,0);
 	
 		// Calculate residuals from momentum parameters from DTrackTimeBased
 		double delta_pt_over_pt_wire = (pfit_wire.Perp() - pthrown.Perp())/pthrown.Perp();
 		double delta_theta_wire = (pfit_wire.Theta() - pthrown.Theta())*1000.0;
 		double delta_phi_wire = (pfit_wire.Phi() - pthrown.Phi())*1000.0;
-
-		// Calculate residuals from momentum parameters from DTrackTimeBased
-		double delta_pt_over_pt_can = trackcandidate ? (pcan.Perp() - pthrown.Perp())/pthrown.Perp() : 1.0E20;
-		double delta_theta_can = trackcandidate ? (pcan.Theta() - pthrown.Theta())*1000.0 : 1.0E20;
-		double delta_phi_can = trackcandidate ? (pcan.Phi() - pthrown.Phi())*1000.0 : 1.0E20;
 
 		// Formulate a figure of merit to decide if this fit track is closer to
 		// the thrown track than the best one we found so far. We hardwire
@@ -402,24 +375,17 @@ bool DEventProcessor_trackeff_hists2::Search_WireBasedTracks(JEventLoop *loop, i
 			fom_best = fom;
 			locFoundFlag = true;
 			trk.dTrackReconstructedFlag_WireBased = true;
-			trk.dTrackReconstructedFlag_Candidate = true;
 
-			trk.q_candidate = trackcandidate->charge();
 			trk.q_wirebased = track->charge();
 
-			trk.PID_candidate = int(dPIDAlgorithm->IDTrack(trackcandidate->charge(), trackcandidate->mass()));
 			trk.PID_wirebased = int(dPIDAlgorithm->IDTrack(track->charge(), track->mass()));
 
 			trk.pfit_wire = pfit_wire;
-			trk.pcan = pcan;
 			trk.trk_chisq_wb = track->chisq;
 			trk.trk_Ndof_wb = track->Ndof;
 			trk.delta_pt_over_pt_wire = delta_pt_over_pt_wire;
 			trk.delta_theta_wire = delta_theta_wire;
 			trk.delta_phi_wire = delta_phi_wire;
-			trk.delta_pt_over_pt_can = delta_pt_over_pt_can;
-			trk.delta_theta_can = delta_theta_can;
-			trk.delta_phi_can = delta_phi_can;
 
 			// Get Nstereo, Ncdc, and Nfdc
 			vector<const DCDCTrackHit*> cdchits;
@@ -479,9 +445,10 @@ bool DEventProcessor_trackeff_hists2::Search_TrackCandidates(JEventLoop *loop, i
 	DVector3 pthrown = trk.pthrown;
 	double fom_best = 1.0E8;
 
+	trk.num_candidates = trackcandidates.size();
+
 	bool locFoundFlag = false;
 	// Loop over found/fit tracks
-	trk.num_candidates = trackcandidates.size();
 	for(unsigned int j=0; j<trackcandidates.size(); j++){
 		const DTrackCandidate *trackcandidate = trackcandidates[j];
 
