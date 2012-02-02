@@ -74,7 +74,7 @@ void hrend(char*filename)
 void hrout(int num, int *icycle, char*opt)
 {
    void hrout_(int *,int *,char *,int);
-   hrout_(&num, &icycle, opt, strlen(opt));
+   hrout_(&num, icycle, opt, strlen(opt));
 }
 
 int process_event(s_HDDM_t *event);
