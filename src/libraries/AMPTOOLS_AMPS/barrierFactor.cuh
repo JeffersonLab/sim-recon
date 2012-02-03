@@ -2,7 +2,7 @@
 #define CUDA_BARRIERFACTOR
 
 #include "GPUManager/GPUCustomTypes.h"
-#include "GlueXAmp/breakupMomentum.cuh"
+#include "AMPTOOLS_AMPS/breakupMomentum.cuh"
 
 // q     = breakup momentum
 // spin  = angular momentum of the decay
