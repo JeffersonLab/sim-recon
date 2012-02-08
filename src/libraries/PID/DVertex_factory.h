@@ -11,6 +11,7 @@
 #include <JANA/JFactory.h>
 #include <DVertex.h>
 #include <TRACKING/DHoughFind.h>
+#include <TRACKING/DMCThrown.h>
 #include <PID/DChargedTrack.h>
 #include "HDGEOMETRY/DRootGeom.h"
 #include <PID/DNeutralShowerCandidate.h>
@@ -39,6 +40,7 @@ class DVertex_factory : public jana::JFactory<DVertex>{
 				}
 		};
 
+		jerror_t SetVertexFromMC(JEventLoop *loop);
 		virtual jerror_t MakeVertices(vector<const DChargedTrack*> &locChargedTracks);
 		void FillVertexInfoChargedTrack(DVertex_factory::vertexInfo_t *locVertexInfo, const DChargedTrack *locChargedTrack);
 		virtual void AssignParticlesToGroups(vector<vertexInfo_t*> &locVertexInfos, vector< vector<vertexInfo_t *> > &locVertexInfoGroups);
@@ -55,6 +57,7 @@ class DVertex_factory : public jana::JFactory<DVertex>{
 
 		float GROUP_NUM_SIGMAS_TIME;
 		float GROUP_NUM_SIGMAS_Z;
+		bool VERTEX_FROM_MC;
 		double dTargetCenter_Z;  
 
 		// Pool of memory heavy vertexInfo_t objects

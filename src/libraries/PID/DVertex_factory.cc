@@ -39,9 +39,11 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
   // Configuration parameters
   GROUP_NUM_SIGMAS_TIME = 100.0; // originally was 3, but changed as temporary measure
   GROUP_NUM_SIGMAS_Z    = 100.0; // originally was 3, but changed as temporary measure
+  VERTEX_FROM_MC        = false;
   DEBUG_HISTS           = false; 
   gPARMS->SetDefaultParameter("PID:GROUP_NUM_SIGMAS_TIME", GROUP_NUM_SIGMAS_TIME, "Number of sigmas particles (tracks and or photons) can be apart in time and still be associated with same vertex");
   gPARMS->SetDefaultParameter("PID:GROUP_NUM_SIGMAS_Z"   , GROUP_NUM_SIGMAS_Z   , "Number of sigmas particles (tracks and or photons) can be apart in z and still be associated with same vertex");
+  gPARMS->SetDefaultParameter("PID:VERTEX_FROM_MC", VERTEX_FROM_MC, "Whether or not the DVertex should be set from the thrown MC data.");
   gPARMS->SetDefaultParameter("PID:DEBUG_HISTS"   , DEBUG_HISTS   , "Enable generation and filling if PID related debugging histos");
 
   // Specify the size of the vertexInfo pool.
@@ -79,6 +81,9 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 {
+	if(VERTEX_FROM_MC == true)
+		return SetVertexFromMC(loop);
+
 	unsigned int loc_i;
 	vector<const DChargedTrack *> locChargedTracks;
 	loop->Get(locChargedTracks);
@@ -133,6 +138,32 @@ jerror_t DVertex_factory::fini(void)
 {
 	return NOERROR;
 }
+
+jerror_t DVertex_factory::SetVertexFromMC(JEventLoop *loop){
+	//assumes that there was only one thrown vertex in the event, and all charged tracks are assigned to it!
+
+	vector<const DChargedTrack*> locChargedTracks;
+	loop->Get(locChargedTracks);
+	vector<const DMCThrown*> locThrownTracks;
+	loop->Get(locThrownTracks);
+
+	if(locThrownTracks.size() == 0)
+		return RESOURCE_UNAVAILABLE;
+
+	DVertex* locVertex = new DVertex;
+	locVertex->locCovarianceMatrix.ResizeTo(3,3);
+	locVertex->dSpacetimeVertex.SetVect(locThrownTracks[0]->position());
+	locVertex->dSpacetimeVertex.SetT(0.0);
+	locVertex->dTimeUncertainty = 0.; // <------ this needs to be fixed
+
+	// Add list of tracks used to create this vertex
+	for(unsigned int loc_j = 0; loc_j < locChargedTracks.size(); loc_j++)
+		locVertex->dChargedTracks.push_back(locChargedTracks[loc_j]);
+	_data.push_back(locVertex);	
+
+	return NOERROR;
+}
+
 
 // Form vertices from grouping charged particle tracks together according to
 // proximity in time and position of the closest approach to the beam line
