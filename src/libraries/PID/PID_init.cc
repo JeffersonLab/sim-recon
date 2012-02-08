@@ -16,6 +16,7 @@ using namespace jana;
 #include "DNeutralShowerCandidate_factory.h"
 #include "DVertexIndependentResults_factory.h"
 #include "DVertex_factory.h"
+#include "DVertex_factory_THROWN.h"
 #include "DPhysicsEvent_factory.h"
 #include "DParticleSet_factory.h"
 
@@ -43,6 +44,7 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DNeutralShowerCandidate_factory);
 	loop->AddFactory(new DVertexIndependentResults_factory);
 	loop->AddFactory(new DVertex_factory);
+	loop->AddFactory(new DVertex_factory_THROWN);
 	loop->AddFactory(new DParticleSet_factory);
 	loop->AddFactory(new DPhysicsEvent_factory);
 
