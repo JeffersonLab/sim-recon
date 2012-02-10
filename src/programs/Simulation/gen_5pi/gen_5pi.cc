@@ -23,7 +23,7 @@ using namespace std;
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 #include "AMPTOOLS_MCGEN/GammaPToNPartP.h"
-#include "GammaPTob1piP.h"
+//#include "GammaPTob1piP.h"
 
 #include "IUAmpTools/AmplitudeManager.h"
 #include "IUAmpTools/ConfigFileParser.h"
@@ -244,7 +244,8 @@ int main( int argc, char* argv[] ){
     ( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
   
   //generate over a range mass -- the daughters are pi-,pi+,omega
-  GammaPTob1piP resProd( lowMass, highMass, type );
+  GammaPToNPartP resProd( lowMass, highMass, part_masses,type );
+  //GammaPTob1piP resProd( lowMass, highMass, type );
   
   // seed the distribution with a sum of noninterfering Breit-Wigners
   // we can easily compute the PDF for this and divide by that when
