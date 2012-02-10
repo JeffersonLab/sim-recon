@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <iomanip>
 #include <fstream>
@@ -13,6 +14,7 @@ using namespace std;
 char *INPUT_FILE=NULL;
 //char OUTPUT_FILE[] = "output.hddm";
 char *OUTPUT_FILE=NULL;
+char *MAX_EVENTS=NULL;
 string TREENAME;
 vector<int> PTYPE;
 
@@ -31,17 +33,26 @@ int main(int narg, char *argv[])
 {
   //some defaults
   TREENAME="kin";
-  char defOutFName[]="output.hddm";
+  char defOutFName[]="output.hddm",defMaxEvents[]="10000000000";
   OUTPUT_FILE=defOutFName;
+  MAX_EVENTS=defMaxEvents;
   
   ParseCommandLineArguments(narg,argv);
-	
-  
+
+  unsigned int NmaxEvents=atoi(MAX_EVENTS);
+
   // Seed the random generator
   now=time(NULL);
   srand48(now);
   
-  ROOTDataReader reader(INPUT_FILE,TREENAME);
+  ifstream filetest(INPUT_FILE);
+  if(!filetest.good()){
+    cerr<<"Unable to open input file \""<< INPUT_FILE <<"\" for reading."<<endl;
+    exit(-4);
+  }
+
+  ROOTDataReader reader(INPUT_FILE, TREENAME, true);
+  NmaxEvents = NmaxEvents < reader.numEvents() ? NmaxEvents : reader.numEvents(); 
 	
   // Open output file
   s_iostream_t* thisOutputStream = init_s_HDDM(OUTPUT_FILE);
@@ -56,7 +67,7 @@ int main(int narg, char *argv[])
   int runNumber=9000, Nevents=0;
   
   for (unsigned int eventNumber=0;
-       eventNumber < reader.numEvents() ; ++eventNumber){
+       eventNumber < NmaxEvents ; ++eventNumber){
     // get event
     kin=reader.getEvent();
     int nParticles=kin->particleList().size();
@@ -81,7 +92,7 @@ int main(int narg, char *argv[])
     vs->in[0].origin = origin = make_s_Origin();
     vs->in[0].products = ps = make_s_Products(nParticles);
     ps->mult = 0;
-    
+    rs->in[0].weight = kin->weight();
 
     rs->in[0].beam = bs = make_s_Beam();
     bs->type = (Particle_t)1;
@@ -179,6 +190,9 @@ void ParseCommandLineArguments(int narg,char *argv[])
 	break;
       case 'o':
 	OUTPUT_FILE=&ptr[1];
+	break;
+      case 'n':
+	MAX_EVENTS=&ptr[1];
 	break;
       default:
 	cerr<<"Unknown option \""<<argv[i]<<"\""<<endl;
