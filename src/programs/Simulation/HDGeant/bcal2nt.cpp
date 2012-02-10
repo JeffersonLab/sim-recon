@@ -41,25 +41,25 @@ extern "C" {
       void hlimit_(int *words);
       hlimit_(&size);
    }
-   void hbset(char* name, int *value, int *istat)
+   void hbset(const char* name, int *value, int *istat)
    {
-      void hbset_(char *,int *,int *,int);
+      void hbset_(const char *,int *,int *,int);
       hbset_(name, value, istat, strlen(name));
    }
-   void hropen(int lun, char *name, char*filename, char*status, int *lrec, int *istat)
+   void hropen(int lun, const char *name, const char *filename, const char *status, int *lrec, int *istat)
    {
-      void hropen_(int *,char *,char *,char *,int *,int *,int,int,int);
+      void hropen_(int *,const char *,const char *,const char *,int *,int *,int,int,int);
       hropen_(&lun, name, filename, status, lrec, istat, strlen(name),
               strlen(filename), strlen(status));
    }
-   void hbnt(int id,char*chtitle,char*chopt)
+   void hbnt(int id,const char*chtitle,const char*chopt)
    {
-      void hbnt_(int *id ,char* name, char* chmod,int ,int);
+      void hbnt_(int *id ,const char* name, const char* chmod,int ,int);
       hbnt_(&id,chtitle,chopt,strlen(chtitle),strlen(chopt));
    }
-   void hbname(int id,char*chblok,void*variable,char*chform)
+   void hbname(int id,const char*chblok,void*variable,const char*chform)
    {
-      void hbname_(int *id, char* chblok, void*variable, char*chform, int,int);
+      void hbname_(int *id, const char* chblok, void*variable, const char*chform, int,int);
       hbname_(&id,chblok,variable,chform,strlen(chblok),strlen(chform));
    }
    void hfnt(int id)
@@ -67,15 +67,15 @@ extern "C" {
       void hfnt_(int*id);
       hfnt_(&id);
    }
-   void hrend(char*filename)
+   void hrend(const char*filename)
    {
-      void hrend_(char *,int);
+      void hrend_(const char *,int);
       hrend_(filename, strlen(filename));
       return;
    }
-   void hrout(int num, int *icycle, char*opt)
+   void hrout(int num, int *icycle, const char *opt)
    {
-      void hrout_(int *,int *,char *,int);
+      void hrout_(int *,int *,const char *,int);
       hrout_(&num, icycle, opt, strlen(opt));
    }
    
