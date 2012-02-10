@@ -24,8 +24,9 @@
 //------------------
 // cdc_fdc_match
 //------------------
-inline bool cdc_fdc_match(double p, double dist){
-  if (dist<10. && dist < 1.5+1.5/p) return true;
+inline bool cdc_fdc_match(double p_fdc,double p_cdc,double dist){
+  double frac=fabs(1.-p_cdc/p_fdc);
+  if (dist<10. && dist < 1.5+1.5/p_fdc && frac<0.5) return true;
   return false;
 }
 
@@ -184,7 +185,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       double diff_min=1000.; // candidate matching difference
       unsigned int jmin=0;
       double radius=0.;
-
+      // Magnitude of the momentum of the potential cdc match
+      double p_cdc=0.;
+      
       for (unsigned int j=0;j<cdc_forward_ids.size();j++){
 	unsigned int cdc_index=cdc_forward_ids[j];
 	const DTrackCandidate *cdccan=cdctrackcandidates[cdc_index];
@@ -197,6 +200,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    diff_min=diff;
 	    jmin=j;
 	    radius=pos.Perp();
+	    p_cdc=cdctrackcandidates[cdc_forward_ids[jmin]]->momentum().Mag();
 	  }
 	}
       }
@@ -205,7 +209,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	match_dist_vs_p->Fill(srccan->momentum().Mag(),diff_min);
       }
       
-      got_match=cdc_fdc_match(mom.Mag(),diff_min);
+      got_match=cdc_fdc_match(mom.Mag(),p_cdc,diff_min);
 		
       if (got_match){
 	unsigned int cdc_index=cdc_forward_ids[jmin];
@@ -278,11 +282,14 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  Bz_avg/=double(num_hits);
 	  
 	  // Determine the polar angle
-	  unsigned int num_cdc_hits=cdchits.size();
-	  double theta
+	  /*
+	    unsigned int num_cdc_hits=cdchits.size();
+	    double theta
 	    =(srccan->momentum().Theta()*num_fdc_hits
-	      +cdccan->momentum().Theta()*num_cdc_hits)/
+	    +cdccan->momentum().Theta()*num_cdc_hits)/
 	    (num_fdc_hits+num_cdc_hits);
+	  */
+	  double theta=srccan->momentum().Theta();
   
 	  //if (num_fdc_hits<cdchits.size())
 	  //  theta=cdccan->momentum().Theta();
@@ -405,11 +412,14 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      Bz_avg/=double(num_hits);
 	      
 	      // Determine the polar angle
-	      unsigned int num_cdc_hits=cdchits.size();
-	      double theta
+	      /*
+		unsigned int num_cdc_hits=cdchits.size();
+		double theta
 		=(srccan->momentum().Theta()*num_fdc_hits
-		  +cdccan->momentum().Theta()*num_cdc_hits)/
+		+cdccan->momentum().Theta()*num_cdc_hits)/
 		(num_fdc_hits+num_cdc_hits);
+	      */
+	      double theta=srccan->momentum().Theta();
 	      
 	      fit.tanl=tan(M_PI_2-theta);
 	      fit.z_vertex=cdccan->position().Z();
@@ -556,12 +566,15 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    Bz_avg/=double(num_hits);
 
 	    // Determine the polar angle
+	    /*
 	    unsigned int num_cdc_hits=cdchits.size();
 	    double theta
 	      =(fdccan->momentum().Theta()*num_match
 		+srccan->momentum().Theta()*num_cdc_hits)/
 	      (num_match+num_cdc_hits);
-	    
+	    */
+	    double theta=fdccan->momentum().Theta();
+
 	    fit.tanl=tan(M_PI_2-theta);
 	    fit.z_vertex=srccan->position().Z();
 	    fit.q=can->charge();
@@ -705,12 +718,15 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
 	      // Compute new transverse momentum
 	      Bz_avg/=double(num_hits);
-
+	      
+	      /*
 	      unsigned int num_cdc_hits=cdchits.size();
 	      double theta
 		=(fdccan->momentum().Theta()*num_match
 		  +srccan->momentum().Theta()*num_cdc_hits)/
 		(num_match+num_cdc_hits);
+	      */
+	      double theta=fdccan->momentum().Theta();
 	      
 	      fit.tanl=tan(M_PI_2-theta);
 	      fit.z_vertex=srccan->position().Z();
