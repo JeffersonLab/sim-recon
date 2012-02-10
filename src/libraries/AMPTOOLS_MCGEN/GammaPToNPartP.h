@@ -37,7 +37,7 @@ private:
   HepLorentzVector m_target;
   
   double m_ChildMass[12];
-  int m_Npart;
+  unsigned int m_Npart;
 
 };
 

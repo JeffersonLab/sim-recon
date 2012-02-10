@@ -39,9 +39,9 @@ GammaPToNPartP::GammaPToNPartP( float lowMass, float highMass,
 }
 
 /**
- * The function generates a 5 particle final
- * state event consistent with 5-body phase space.
- * (No intermediate resonances are presumed)
+ * The function generates a N particle final
+ * state event consistent with N-body phase space.
+ * (No intermediate resonances are used for important sampling.)
  */
 Kinematics* 
 GammaPToNPartP::generateOne(){
@@ -66,7 +66,7 @@ GammaPToNPartP::generateOne(){
   genWeight *= Xdecay.Generate();
 
  
-  for(unsigned int i = 0 ; i<5 ; i++){
+  for(unsigned int i = 0 ; i<m_Npart ; ++i){
     TLorentzVector *tPart = Xdecay.GetDecay(i);
     HepLorentzVector Part(tPart->Px(),tPart->Py(),tPart->Pz(),tPart->Energy());
     allPart.push_back(Part);

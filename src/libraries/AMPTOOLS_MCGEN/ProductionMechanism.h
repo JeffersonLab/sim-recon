@@ -34,8 +34,9 @@ public:
 	
 private:
   
-	static const double kPi;
-  
+  static const double kPi;
+  double kMproton,kMneutron;
+
   double generateMass();
   
 	double cmMomentum( double M, double m1, double m2 ) const;

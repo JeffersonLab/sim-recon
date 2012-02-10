@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
+#include "particleType.h"
 
 #include "CLHEP/Vector/ThreeVector.h"
 #include "CLHEP/Vector/LorentzVector.h"
@@ -20,14 +21,15 @@ m_highMass( 0 ),
 m_slope( slope ),
 m_lastWeight( 1. )
 {	
-	switch( recoil ){
-      
-      // I'm sure the distinction between these doesn't matter!
-      
-		case kProton:  m_recMass = 0.9382; break;
-		case kNeutron: m_recMass = 0.9395; break;
-		default:       m_recMass = 0.9382; break;
-	}
+  kMproton=ParticleMass(Proton);
+  kMneutron=ParticleMass(Neutron);
+
+  switch( recoil ){
+    // I'm sure the distinction between these doesn't matter!  
+  case kProton:  m_recMass = kMproton; break; //old value: 0.9382
+  case kNeutron: m_recMass = kMneutron; break; //old value: 0.9395
+  default:       m_recMass = kMproton; break; //old value: 0.9382
+  }
 }
 
 void
@@ -47,7 +49,7 @@ ProductionMechanism::setGeneratorType( Type type ){
 HepLorentzVector
 ProductionMechanism::produceResonance( const HepLorentzVector& beam ){
 	
-	HepLorentzVector target( 0, 0, 0, 0.9382 );
+	HepLorentzVector target( 0, 0, 0, kMproton );
 	
 	HepLorentzRotation lab2cmBoost( -( target + beam ).boostVector() );
 	HepLorentzRotation cm2labBoost( ( target + beam ).boostVector() );
