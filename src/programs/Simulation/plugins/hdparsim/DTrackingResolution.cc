@@ -93,7 +93,11 @@ bool DTrackingResolution::Smear(int geanttype, TVector3 &mom)
 	// quite differently.
 	double theta_new=-1.0, phi_new=-1.0;
 	
-	while(theta_new<=0.0 || theta_new>M_PI)theta_new = mom.Theta() + rnd.Gaus(0.0, theta_res)/1000.0;
+	if(theta_res>0.0){
+		while(theta_new<=0.0 || theta_new>M_PI)theta_new = mom.Theta() + rnd.Gaus(0.0, theta_res)/1000.0;
+	}else{
+		theta_new = mom.Theta();
+	}
 	phi_new = mom.Phi() + rnd.Gaus(0.0, phi_res)/1000.0;
 	while(phi_new<-M_PI)phi_new+=M_PI;
 	while(phi_new>=M_PI)phi_new-=M_PI;
@@ -104,12 +108,20 @@ bool DTrackingResolution::Smear(int geanttype, TVector3 &mom)
 	if(geanttype==1){
 		// photons
 		double E_res = pt_res, E_new=-1.0;
-		while(E_new<=0.0) E_new = mom.Mag()*(1.0 + rnd.Gaus(0.0, E_res));
+		if(mom.Mag()>0.0){
+			while(E_new<=0.0) E_new = mom.Mag()*(1.0 + rnd.Gaus(0.0, E_res));
+		}else{
+			E_new = 0.0;
+		}
 		mom.SetMagThetaPhi(E_new, theta_new, phi_new);
 	}else{
 		// not photons
 		double pt_new=-1.0;
-		while(pt_new<=0.0) pt_new = mom.Perp()*(1.0 + rnd.Gaus(0.0, pt_res));
+		if(mom.Perp()>0.0){
+			while(pt_new<=0.0) pt_new = mom.Perp()*(1.0 + rnd.Gaus(0.0, pt_res));
+		}else{
+			pt_new = 0.0;
+		}
 		mom.SetMagThetaPhi(pt_new/sin(theta_new), theta_new, phi_new);
 	}
 	return is_reconstructed;
