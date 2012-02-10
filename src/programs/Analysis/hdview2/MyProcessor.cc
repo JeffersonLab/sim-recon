@@ -57,7 +57,7 @@ extern hdv_mainframe *hdvmf;
 static float FCAL_Zmin = 622.8;
 static float FCAL_Rmin = 6.0;
 static float FCAL_Rmax = 212.0/2.0;
-static float BCAL_Rmin=65.0;
+static float BCAL_Rmin = 65.0;
 static float BCAL_Zlen = 390.0;
 static float BCAL_Zmin = 212.0 - BCAL_Zlen/2.0;
 
@@ -113,13 +113,14 @@ jerror_t MyProcessor::init(void)
 		vector<string> facnames;
 		loops[0]->GetFactoryNames(facnames);
 
-		hdvmf = new hdv_mainframe(gClient->GetRoot(), 1000, 600);
+		hdvmf = new hdv_mainframe(gClient->GetRoot(), 1400, 700);
 		hdvmf->SetCandidateFactories(facnames);
 		hdvmf->SetWireBasedTrackFactories(facnames);
 		hdvmf->SetTimeBasedTrackFactories(facnames);
 		hdvmf->SetReconstructedFactories(facnames);
 		hdvmf->SetChargedTrackFactories(facnames);
 		fulllistmf = hdvmf->GetFullListFrame();
+		debugermf = hdvmf->GetDebugerFrame();
 	}
 	
 	return NOERROR;
@@ -192,64 +193,86 @@ void MyProcessor::FillGraphics(void)
 	graphics_yz.clear();  // The objects placed in these will be deleted by hdv_mainframe
 	
 	if(!loop)return;
+
+	vector<const DTrackCandidate*> trackCandidates;
+	loop->Get(trackCandidates);
+	hdv_debugerframe *p = hdvmf->GetDebugerFrame();
+	p->SetNTrCand(trackCandidates.size());
 	
 	// BCAL hits
 	if(hdvmf->GetCheckButton("bcal")){
-		vector<const DBCALHit*> bcalhits;
-		loop->Get(bcalhits);
-		
-		for(unsigned int i=0; i<bcalhits.size(); i++){
-			const DBCALHit *hit = bcalhits[i];
-			TPolyLine *poly = hdvmf->GetBCALPolyLine(hit->module, hit->layer, hit->sector);
-			if(!poly)continue;
+	  vector<const DBCALHit*> bcalhits;
+	  loop->Get(bcalhits);
+	  
+	  for(unsigned int i=0; i<bcalhits.size(); i++){
+	    const DBCALHit *hit = bcalhits[i];
+	    TPolyLine *poly = hdvmf->GetBCALPolyLine(hit->module, hit->layer, hit->sector);
 
-			double a = hit->E/0.02;
-			double f = sqrt(a>1.0 ? 1.0:a<0.0 ? 0.0:a);
-			double grey = 0.8;
-			double s = 1.0 - f;
-
-			float r = s*grey;
-			float g = s*grey;
-			float b = f*(1.0-grey) + grey;
-
-			poly->SetFillColor(TColor::GetColor(r,g,b));
-			//poly->SetLineColor(TColor::GetColor(r,g,b));
-			//poly->SetLineWidth(3.0);
-			poly->SetFillStyle(3001);
-		}
+	    if(!poly)continue;
+	   
+	    double a = hit->E/0.02;
+	    double f = sqrt(a>1.0 ? 1.0:a<0.0 ? 0.0:a);
+	    //double grey = 0.8;
+	    //double s = 1.0 - f;
+	    
+	    //float r = s*grey;
+	    //float g = s*grey;
+	    //float b = f*(1.0-grey) + grey;
+	    //float b = 0.;
+	    //float g = 0.;
+	    //float r = f*(1.0-grey) + grey;
+	    
+	    float r = 1.;
+	    float g = 1.-f;
+	    float b = 0.2;
+	    if(f<=0.0){
+	      r = 1.;
+	      g = 1.;
+	      b = 0.9;
+	    }
+	   
+	    poly->SetFillColor(TColor::GetColor(r,g,b));
+	    poly->SetLineColor(TColor::GetColor(r,g,b));
+	    poly->SetLineWidth(.01);
+	    poly->SetFillStyle(3001);	    
+	  }
 	}	
 
 	// FCAL hits
 	if(hdvmf->GetCheckButton("fcal")){
-		vector<const DFCALHit*> fcalhits;
-		loop->Get(fcalhits);
-		
-		for(unsigned int i=0; i<fcalhits.size(); i++){
-			const DFCALHit *hit = fcalhits[i];
-			TPolyLine *poly = hdvmf->GetFCALPolyLine(hit->x, hit->y);
-			if(!poly)continue;
-
+	  vector<const DFCALHit*> fcalhits;
+	  loop->Get(fcalhits);
+	  
+	  for(unsigned int i=0; i<fcalhits.size(); i++){
+	    const DFCALHit *hit = fcalhits[i];
+	    TPolyLine *poly = hdvmf->GetFCALPolyLine(hit->x, hit->y);
+	    if(!poly)continue;
+	    
 #if 0			
-			double a = hit->E/0.005;
-			double f = sqrt(a>1.0 ? 1.0:a<0.0 ? 0.0:a);
-			double grey = 0.8;
-			double s = 1.0 - f;
-
-			float r = s*grey;
-			float g = s*grey;
-			float b = f*(1.0-grey) + grey;
+	    double a = hit->E/0.005;
+	    double f = sqrt(a>1.0 ? 1.0:a<0.0 ? 0.0:a);
+	    double grey = 0.8;
+	    double s = 1.0 - f;
+	    
+	    float r = s*grey;
+	    float g = s*grey;
+	    float b = f*(1.0-grey) + grey;
 #endif
-			double s = log10(hit->E/0.005)/log10(1.0/0.005); // s=1 for 1GeV energy deposit
-			if(s<0.0) s=0.0;
-			float r = s;
-			float g = s;
-			float b = s;
-			
-
-			poly->SetFillColor(TColor::GetColor(r,g,b));
-		}
-	}	
+	    double s = log10(hit->E/0.005)/log10(1.0/0.005); // s=1 for 1GeV energy deposit
+	    float r = 1.;
+	    float g = 1.-s;
+	    float b = 0.2;
+	    if(s<0.0){
+	      r = 1.;
+	      g = 1.;
+	      b = 0.9;
+	    }
+	    
+	    poly->SetFillColor(TColor::GetColor(r,g,b));
+	  }
+	}
 	
+
 	// CDC hits
 	if(hdvmf->GetCheckButton("cdc")){
 		vector<const DCDCTrackHit*> cdctrackhits;
@@ -407,6 +430,58 @@ void MyProcessor::FillGraphics(void)
 		graphics.push_back(gset);
 	}
 
+	vector<const DTrackCandidate*> trCand;
+	loop->Get(trCand);
+	
+	for(unsigned int n=0; n<trCand.size(); n++){
+	  if (n>9)
+	    break;
+	  char str1[128];
+	  sprintf(str1,"Candidate%d",n+1);
+	  
+	  if(hdvmf->GetCheckButton(str1)){	
+	    
+	    vector<const DCDCTrackHit*> cdctrackhits;
+	    trCand[n]->Get(cdctrackhits);
+	    for(unsigned int i=0; i<cdctrackhits.size(); i++){
+	      const DCDCWire *wire = cdctrackhits[i]->wire;
+	      int color = n+1;
+	      if (color > 4)
+		color++;
+	      if (color > 6)
+		color++;	      
+	      DGraphicSet gset(color, kLine, 1.0);
+	      DVector3 dpoint=wire->origin-(wire->L/2.0)*wire->udir;
+	      TVector3 tpoint(dpoint.X(),dpoint.Y(),dpoint.Z());
+	      gset.points.push_back(tpoint);
+	      dpoint=wire->origin+(wire->L/2.0)*wire->udir;
+	      tpoint.SetXYZ(dpoint.X(),dpoint.Y(),dpoint.Z());
+	      gset.points.push_back(tpoint);
+	      graphics.push_back(gset);
+	      
+	    } // end loop of cdc hits of track candidate
+	    vector<const DFDCPseudo*> fdcpseudos;
+	    trCand[n]->Get(fdcpseudos);
+	    int color = n+1;
+	    if (color > 4)
+	      color++;
+	    if (color > 6)
+	      color++;	      
+	    DGraphicSet gsetp(color, kMarker, 0.5);
+	    
+	    for(unsigned int i=0; i<fdcpseudos.size(); i++){
+	      const DFDCWire *wire = fdcpseudos[i]->wire;
+	      
+	      // Pseudo point
+	      TVector3 pos(fdcpseudos[i]->xy.X(), 
+			   fdcpseudos[i]->xy.Y(), wire->origin.Z());
+	      gsetp.points.push_back(pos);
+	    }	
+	    graphics.push_back(gsetp);
+	    
+	  }
+	}
+	
 	// TOF Truth points
 	if(hdvmf->GetCheckButton("toftruth")){	
 		vector<const DMCTrackHit*> mctrackhits;
@@ -773,7 +848,7 @@ void MyProcessor::FillGraphics(void)
 		vector<const DTrackCandidate*> trackcandidates;
 		loop->Get(trackcandidates, hdvmf->GetFactoryTag("DTrackCandidate"));
 		for(unsigned int i=0; i<trackcandidates.size(); i++){
-			int color=30;
+			int color=i+1;
 			double size=2.0;
 			//if(trackcandidates[i]->charge() >0.0) color += 100; // lighter shade
 			//if(trackcandidates[i]->charge() <0.0) color += 150; // darker shade
@@ -847,6 +922,11 @@ void MyProcessor::UpdateTrackLabels(void)
 
 	// Get the track info as DKinematicData objects
 	vector<const DKinematicData*> trks;
+	vector<const DKinematicData*> TrksCand;
+	vector<const DTrackCandidate*> cand;
+	if(loop)loop->Get(cand);
+	for(unsigned int i=0; i<cand.size(); i++)TrksCand.push_back(cand[i]);
+	
 	if(name=="DChargedTrack"){
 		vector<const DChargedTrack*> chargedtracks;
 		if(loop)loop->Get(chargedtracks, tag.c_str());
@@ -1003,7 +1083,9 @@ void MyProcessor::UpdateTrackLabels(void)
 	
 	// Have the pop-up window with the full particle list update it's labels
 	fulllistmf->UpdateTrackLabels(throwns, trks);
-}
+	debugermf->SetTrackCandidates(TrksCand);
+	debugermf->UpdateTrackLabels();
+}                 
 
 //------------------------------------------------------------------
 // AddKinematicDataTrack 

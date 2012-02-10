@@ -30,11 +30,14 @@
 
 class trk_mainframe;
 class hdv_optionsframe;
+class hdv_debugerframe;
 class hdv_fulllistframe;
 class hdv_endviewBframe;
+class DKinematicData;
 #ifndef __CINT__
 #include "trk_mainframe.h"
 #include "hdv_optionsframe.h"
+#include "hdv_debugerframe.h"
 #include "hdv_fulllistframe.h"
 #include "hdv_endviewBframe.h"
 #endif
@@ -68,7 +71,8 @@ class hdv_mainframe:public TGMainFrame {
 		void DoOpenTOFInspector(void);
 		void DoOpenFCALInspector(void);
 		void DoOpenBCALInspector(void);
-		
+		void DoOpenDebugerWindow(void);
+
 		void DoClearTrackInspectorPointer(void);
 		void DoClearOptionsWindowPointer(void);
 		void DoClearTOFInspectorPointer(void);
@@ -105,6 +109,7 @@ class hdv_mainframe:public TGMainFrame {
 		bool GetDrawThrowns(void){return draw_throwns;}
 		bool GetDrawTrajectories(void){return draw_trajectories;}
 		hdv_fulllistframe* GetFullListFrame(void){return fulllistmf;}
+		hdv_debugerframe* GetDebugerFrame(void){return debugermf;}
 		map<string, vector<TGLabel*> >& GetThrownLabels(void){return thrownlabs;}
 		map<string, vector<TGLabel*> >& GetReconstructedLabels(void){return reconlabs;}
 		
@@ -113,7 +118,9 @@ class hdv_mainframe:public TGMainFrame {
 		void SetTimeBasedTrackFactories(vector<string> &facnames);
 		void SetReconstructedFactories(vector<string> &facnames);
 		void SetChargedTrackFactories(vector<string> &facnames);
-		
+		void SetDebugerFrame(hdv_debugerframe* d){debugermf = d;}
+		void SetFullListFrame(hdv_fulllistframe* d){fulllistmf = d;}
+
 		bool GetCheckButton(string who);
 		void AddCheckButtons(map<string, TGCheckButton*> &checkbuttons);
 		const char* GetFactoryTag(string who);
@@ -126,11 +133,13 @@ class hdv_mainframe:public TGMainFrame {
 		void AddGraphicsSideB(vector<TObject*> &v);
 		void AddGraphicsEndA(vector<TObject*> &v);
 		void AddGraphicsEndB(vector<TObject*> &v);
-		
+
+
 	private:
 	
 		trk_mainframe *trkmf;
 		hdv_optionsframe *optionsmf;
+		hdv_debugerframe *debugermf;
 		hdv_fulllistframe *fulllistmf;
 		hdv_endviewBframe *endviewBmf;
 	

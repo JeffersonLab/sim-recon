@@ -46,6 +46,8 @@ int main(int narg, char *argv[])
 	eventloop = new JEventLoop(japp);
 	eventloop->SetAutoFree(0); // prevent auto-freeing of event after OneEvent is called
 
+
+
 	// We need to re-call myproc->init here (it was already called from the japp->Init()
 	// call above). This is because the previous call was done before the JEventLoop
 	// object existed and so the hdv_mainframe object wasn't created etc... We have

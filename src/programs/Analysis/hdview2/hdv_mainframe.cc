@@ -90,414 +90,464 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   const DGeometry *dgeom  = dapp->GetDGeometry(9999);
   
   dgeom->GetFDCWires(fdcwires);
+  
+  UInt_t MainWidth = w;
+  
+  // First, define all of the of the graphics objects. Below that, make all
+  // of the connections to the methods so these things will work!
+  
+  // Use the "color wheel" rather than the classic palette.
+  //TColor::CreateColorWheel();
+  
+  // The main GUI window is divided into three sections, top, middle, and bottom.
+  // Create those frames here.
+  TGLayoutHints *hints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX|kLHintsExpandY|kLHintsLeft, 5,5,5,5);
+  TGLayoutHints *lhints = new TGLayoutHints(kLHintsNormal, 2,2,2,2);
+  TGLayoutHints *rhints = new TGLayoutHints(kLHintsCenterY|kLHintsRight, 2,2,2,2);
+  TGLayoutHints *chints = new TGLayoutHints(kLHintsCenterY|kLHintsCenterX, 2,2,2,2);
+  TGLayoutHints *bhints = new TGLayoutHints(kLHintsBottom|kLHintsCenterX, 2,2,2,2);
+  TGLayoutHints *xhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX, 2,2,2,2);
+  TGLayoutHints *yhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandY, 2,2,2,2);
+  TGLayoutHints *dhints = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0,0,0,0);
+  TGLayoutHints *ehints = new TGLayoutHints(kLHintsNormal, 2,2,0,0);
+  TGLayoutHints *thints = new TGLayoutHints(kLHintsTop|kLHintsCenterX, 2,2,0,0);
+  TGLayoutHints *lxhints = new TGLayoutHints(kLHintsLeft|kLHintsExpandX, 2,2,0,0);
+  TGHorizontalFrame *sourceframe = new TGHorizontalFrame(this,w,20);
+  TGHorizontalFrame *topframe = new TGHorizontalFrame(this, w, 200);
+  //	TGHorizontalFrame *midframe = new TGHorizontalFrame(this, w, 200);
+  TGCompositeFrame *midframe = new TGCompositeFrame(this, w, 200, kHorizontalFrame);
+  TGHorizontalFrame *botframe = new TGHorizontalFrame(this, w, 200);
+  AddFrame(sourceframe, lxhints);
+  AddFrame(topframe, lhints);
+  AddFrame(midframe, lhints);
+  AddFrame(botframe, lhints);
+  
+  //========== Source ===========
+  TGLabel *sourcelab = new TGLabel(sourceframe, "Source:");
+  sourceframe->AddFrame(sourcelab,ehints);
+  source = new TGLabel(sourceframe, "--");
+  sourceframe->AddFrame(source, lxhints);
+  source->SetTextJustify(1);
+  
+  //========== TOP FRAME ============
+  TGGroupFrame *viewcontrols = new TGGroupFrame(topframe, "View Controls", kHorizontalFrame);
+  TGGroupFrame *eventcontrols = new TGGroupFrame(topframe, "Event Controls", kHorizontalFrame);
+  TGGroupFrame *eventinfo = new TGGroupFrame(topframe, "Info", kHorizontalFrame);
+  TGGroupFrame *inspectors = new TGGroupFrame(topframe, "Inspectors", kVerticalFrame);
+  TGHorizontalFrame *programcontrols = new TGHorizontalFrame(topframe);
+  topframe->AddFrame(viewcontrols, lhints);
+  topframe->AddFrame(eventcontrols, hints);
+  topframe->AddFrame(eventinfo, yhints);
+  topframe->AddFrame(inspectors, yhints);
+  topframe->AddFrame(programcontrols, yhints);
+  
+  //-------------Pan buttons
+  TGVerticalFrame *panneg = new TGVerticalFrame(viewcontrols);
+  TGVerticalFrame *panpos = new TGVerticalFrame(viewcontrols);
+  viewcontrols->AddFrame(panneg,	hints);
+  viewcontrols->AddFrame(panpos,	hints);
+  TGTextButton *panxneg	= new TGTextButton(panneg,	"-X");
+  TGTextButton *panyneg	= new TGTextButton(panneg,	"-Y");
+  TGTextButton *panzneg	= new TGTextButton(panneg,	"-Z");
+  panneg->AddFrame(panxneg,	dhints);
+  panneg->AddFrame(panyneg,	dhints);
+  panneg->AddFrame(panzneg,	dhints);
+  
+  TGTextButton *panxpos	= new TGTextButton(panpos,	"X+");
+  TGTextButton *panypos	= new TGTextButton(panpos,	"Y+");
+  TGTextButton *panzpos	= new TGTextButton(panpos,	"Z+");
+  panpos->AddFrame(panxpos,	dhints);
+  panpos->AddFrame(panypos,	dhints);
+  panpos->AddFrame(panzpos,	dhints);
+  
+  panxneg->Connect("Clicked()","hdv_mainframe",this,"DoPanXneg()");
+  panyneg->Connect("Clicked()","hdv_mainframe",this,"DoPanYneg()");
+  panzneg->Connect("Clicked()","hdv_mainframe",this,"DoPanZneg()");
+  panxpos->Connect("Clicked()","hdv_mainframe",this,"DoPanXpos()");
+  panypos->Connect("Clicked()","hdv_mainframe",this,"DoPanYpos()");
+  panzpos->Connect("Clicked()","hdv_mainframe",this,"DoPanZpos()");
+  //------------- Zoom/Reset buttons
+  TGVerticalFrame *zoom = new TGVerticalFrame(viewcontrols);
+  viewcontrols->AddFrame(zoom,	lhints);
+  TGGroupFrame *zoomframe = new TGGroupFrame(zoom, "ZOOM", kHorizontalFrame);
+  zoom->AddFrame(zoomframe,	thints);
+  TGTextButton *zoomout = new TGTextButton(zoomframe,	" - ");
+  TGTextButton *zoomin	= new TGTextButton(zoomframe,	" + ");
+  zoomframe->AddFrame(zoomout,	thints);
+  zoomframe->AddFrame(zoomin,	thints);
+  TGTextButton *reset	= new TGTextButton(zoom,	"Reset");
+  zoom->AddFrame(reset, chints);
+  
+  //-------------- Transverse Coordinates
+  TGVButtonGroup *coordinates = new TGVButtonGroup(viewcontrols,"Transverse Coordinates");
+  viewcontrols->AddFrame(coordinates,	lhints);
+  TGRadioButton *xy = new TGRadioButton(coordinates, "x/y");
+  new TGRadioButton(coordinates, "r/phi");
+  
+  //-------------- Next, Previous
+  prev	= new TGTextButton(eventcontrols,	"<-- Prev");
+  next	= new TGTextButton(eventcontrols,	"Next -->");
+  TGVerticalFrame *contf = new TGVerticalFrame(eventcontrols);
+  eventcontrols->AddFrame(prev, chints);
+  eventcontrols->AddFrame(next, chints);
+  eventcontrols->AddFrame(contf, lhints);
+  
+  // continuous, delay
+  checkbuttons["continuous"] = new TGCheckButton(contf, "continuous");
+  TGHorizontalFrame *delayf = new TGHorizontalFrame(contf);
+  contf->AddFrame(checkbuttons["continuous"], lhints);
+  contf->AddFrame(delayf, lhints);
+  TGLabel *delaylab = new TGLabel(delayf, "delay:");
+  delay = new TGComboBox(delayf, "0.25");
+  delay->Resize(50,20);
+  float delays[]={0, 0.25, 0.5, 1, 2, 3, 5, 10};
+  for(int i=0; i<8; i++){
+    stringstream ss;
+    ss<<delays[i];
+    delay->AddEntry(ss.str().c_str(),i);
+  }
+  delayf->AddFrame(delaylab, lhints);
+  delayf->AddFrame(delay, lhints);
+  
+  //----------------- Event Info
+  TGVerticalFrame *eventlabs = new TGVerticalFrame(eventinfo);
+  TGVerticalFrame *eventvals = new TGVerticalFrame(eventinfo);
+  eventinfo->AddFrame(eventlabs, lhints);
+  eventinfo->AddFrame(eventvals, lhints);
+  
+  TGLabel *runlab = new TGLabel(eventlabs, "Run:");
+  TGLabel *eventlab = new TGLabel(eventlabs, "Event:");
+  run = new TGLabel(eventvals, "----------");
+  event = new TGLabel(eventvals, "----------");
+  eventlabs->AddFrame(runlab, rhints);
+  eventlabs->AddFrame(eventlab,rhints);
+  eventvals->AddFrame(run, lhints);
+  eventvals->AddFrame(event, lhints);
+  
+  //----------------- Inspectors
+  TGTextButton *trackinspector	= new TGTextButton(inspectors,	"Track Inspector");
+  //TGTextButton *tofinspector	= new TGTextButton(inspectors,	"TOF Inspector");
+  //TGTextButton *bcalinspector	= new TGTextButton(inspectors,	"BCAL Inspector");
+  //TGTextButton *fcalinspector	= new TGTextButton(inspectors,	"FCAL Inspector");
+  inspectors->AddFrame(trackinspector, xhints);
+  //inspectors->AddFrame(tofinspector, xhints);
+  //inspectors->AddFrame(bcalinspector, xhints);
+  //inspectors->AddFrame(fcalinspector, xhints);
+  //tofinspector->SetEnabled(kFALSE);
+  //bcalinspector->SetEnabled(kFALSE);
+  //fcalinspector->SetEnabled(kFALSE);
+  
+  //-------------- Program Controls
+  TGTextButton *quit	= new TGTextButton(programcontrols,	"&Quit");
+  programcontrols->AddFrame(quit, new TGLayoutHints(kLHintsTop|kLHintsRight|kLHintsExpandX, 2,2,2,2));
+  
+  //========== MID FRAME ============
+  TGHorizontalFrame *detectorframe = new TGHorizontalFrame(midframe);
+  midframe->AddFrame(detectorframe, hints);
+  
+  //------ Detector Frame ------
+  TGVerticalFrame *sideviews = new TGVerticalFrame(detectorframe);
+  TGVerticalFrame *endviews = new TGVerticalFrame(detectorframe);
+  TGVerticalFrame *drawopts = new TGVerticalFrame(detectorframe);
+  TGVerticalFrame *caloColorCodes = new TGVerticalFrame(detectorframe);		
+  detectorframe->AddFrame(sideviews, lhints);
+  detectorframe->AddFrame(endviews, lhints);
+  detectorframe->AddFrame(caloColorCodes, lhints);
+  detectorframe->AddFrame(drawopts, lhints);
+  
+  // Side views
+  int width = MainWidth/6*2;
+  TGHorizontalFrame *sideviewAframe = new TGHorizontalFrame(sideviews);
+  TGHorizontalFrame *sideviewBframe = new TGHorizontalFrame(sideviews);
+  sideviews->AddFrame(sideviewAframe, lhints);
+  sideviews->AddFrame(sideviewBframe, lhints);
+  sideviewA = new TRootEmbeddedCanvas("sideviewA Canvas", sideviewAframe, width, width/2, kSunkenFrame, GetWhitePixel());
+  sideviewB = new TRootEmbeddedCanvas("sideviewB Canvas", sideviewBframe, width, width/2, kSunkenFrame, GetWhitePixel());
+  sideviewAframe->AddFrame(sideviewA, lhints);
+  sideviewBframe->AddFrame(sideviewB, lhints);
+  sideviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
+  sideviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
+  sideviewA->SetBackgroundColor(0xafeeee);
+  sideviewB->SetBackgroundColor(0xafeeee);
+  
+  // End views
+  endviewA = new TRootEmbeddedCanvas("endviewA Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
+  endviewB = new TRootEmbeddedCanvas("endviewB Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
+  endviews->AddFrame(endviewA, lhints);
+  endviews->AddFrame(endviewB, lhints);
+  endviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
+  endviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
+  endviewA->GetCanvas()->SetFillColor(kGray+1);
+  endviewB->GetCanvas()->SetFillColor(kGray+1);
+  
+  // Draw opts
+  TGGroupFrame *trkdrawopts = new TGGroupFrame(drawopts, "Track Draw Options", kVerticalFrame);
+  TGGroupFrame *hitdrawopts = new TGGroupFrame(drawopts, "Hit Draw Options", kVerticalFrame);
+  drawopts->AddFrame(trkdrawopts, lhints);
+  drawopts->AddFrame(hitdrawopts, lhints);
+  
+  // Track
+  TGHorizontalFrame *candidatesf = new TGHorizontalFrame(trkdrawopts);
+  checkbuttons["candidates"]	= new TGCheckButton(candidatesf,	"DTrackCandidate:");
+  candidatesfactory = new TGComboBox(candidatesf, "<default>", 0);
+  candidatesfactory->Resize(80,20);
+  candidatesf->AddFrame(checkbuttons["candidates"], lhints);
+  for(int i=0; i<100; i++)candidatesfactory->AddEntry("a",i); 
+  // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+  candidatesf->AddFrame(candidatesfactory, lhints);
+  trkdrawopts->AddFrame(candidatesf, lhints);
+  
+  TGHorizontalFrame *wiretracksf		= new TGHorizontalFrame(trkdrawopts);
+  checkbuttons["wiretracks"]		= new TGCheckButton(wiretracksf,	"DTrackWireBased:");
+  wiretracksfactory	= new TGComboBox(wiretracksf, "<default>", 0);
+  wiretracksfactory->Resize(80,20);
+  wiretracksf->AddFrame(checkbuttons["wiretracks"], lhints);
+  for(int i=0; i<100; i++)wiretracksfactory->AddEntry("a",i); 
+  // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+  wiretracksf->AddFrame(wiretracksfactory, lhints);
+  trkdrawopts->AddFrame(wiretracksf, lhints);
+  
+  TGHorizontalFrame *timetracksf		= new TGHorizontalFrame(trkdrawopts);
+  checkbuttons["timetracks"]		= new TGCheckButton(timetracksf,	"DTrackTimeBased:");
+  timetracksfactory	= new TGComboBox(timetracksf, "<default>", 0);
+  timetracksfactory->Resize(80,20);
+  timetracksf->AddFrame(checkbuttons["timetracks"], lhints);
+  for(int i=0; i<100; i++)timetracksfactory->AddEntry("a",i); 
+  // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+  timetracksf->AddFrame(timetracksfactory, lhints);
+  trkdrawopts->AddFrame(timetracksf, lhints);
+  TGHorizontalFrame *chargedtracksf		= new TGHorizontalFrame(trkdrawopts);
+  checkbuttons["chargedtracks"]		= new TGCheckButton(chargedtracksf,	"DChargedTrack:");
+  chargedtracksfactory	= new TGComboBox(chargedtracksf, "<default>", 0);
+  chargedtracksfactory->Resize(80,20);
+  chargedtracksf->AddFrame(checkbuttons["chargedtracks"], lhints);
+  for(int i=0; i<100; i++)chargedtracksfactory->AddEntry("a",i); 
+  // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+  chargedtracksf->AddFrame(chargedtracksfactory, lhints);
+  trkdrawopts->AddFrame(chargedtracksf, lhints);
+  
+  checkbuttons["neutrals"]     = new TGCheckButton(trkdrawopts,"DNeutralTrack");
+  checkbuttons["thrown"]       = new TGCheckButton(trkdrawopts,"DMCThrown");
+  checkbuttons["trajectories"] = new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
+  trkdrawopts->AddFrame(checkbuttons["neutrals"], lhints);
+  trkdrawopts->AddFrame(checkbuttons["thrown"], lhints);
+  trkdrawopts->AddFrame(checkbuttons["trajectories"], lhints);
+  
+  // Hit
+  checkbuttons["cdc"]		= new TGCheckButton(hitdrawopts,	"CDC");
+  checkbuttons["cdcdrift"]	= new TGCheckButton(hitdrawopts,	"CDC Drift Time");
+  checkbuttons["cdctruth"]	= new TGCheckButton(hitdrawopts,	"CDCTruth");
+  checkbuttons["fdcwire"]		= new TGCheckButton(hitdrawopts,	"FDC Wire");
+  checkbuttons["fdcpseudo"]	= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
+  checkbuttons["fdctruth"]	= new TGCheckButton(hitdrawopts,	"FDCTruth");
+  checkbuttons["tof"]		= new TGCheckButton(hitdrawopts,	"TOF");
+  checkbuttons["toftruth"]	= new TGCheckButton(hitdrawopts,	"TOFTruth");
+  checkbuttons["fcal"]		= new TGCheckButton(hitdrawopts,	"FCAL");
+  checkbuttons["bcal"]		= new TGCheckButton(hitdrawopts,	"BCAL");
+  
+  hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["cdcdrift"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["fdcwire"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["fdcpseudo"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["fdctruth"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["tof"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["toftruth"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["fcal"], lhints);
+  hitdrawopts->AddFrame(checkbuttons["bcal"], lhints);
+  
+  TGTextButton *moreOptions	= new TGTextButton(hitdrawopts,	"More options");
+  hitdrawopts->AddFrame(moreOptions, lhints);
 
+  // Color codes
+  TGGroupFrame *bcalColorCodes = new TGGroupFrame(caloColorCodes, "BCAL colors", kVerticalFrame);
+  TGGroupFrame *fcalColorCodes = new TGGroupFrame(caloColorCodes, "FCAL colors", kVerticalFrame);
+  TGTextButton *debuger       = new TGTextButton(caloColorCodes,"Debuger");
 
-	// First, define all of the of the graphics objects. Below that, make all
-	// of the connections to the methods so these things will work!
+  caloColorCodes->AddFrame(bcalColorCodes, thints);
+  caloColorCodes->AddFrame(debuger,lhints);
+  caloColorCodes->AddFrame(fcalColorCodes, bhints);
+  bcalColorCodes->SetWidth(30);
+  fcalColorCodes->SetWidth(30);
 
-	// Use the "color wheel" rather than the classic palette.
-	TColor::CreateColorWheel();
+  // color lables BCAL
+  TGLabel* BCCLables[9]; 
+  unsigned int ccodes[9] = {0xFF0033,0xFF2233,0xFF4433,0xFF6633,0xFF8833,0xFFaa33,0xFFcc33,0xFFee33,0xFFFFaa};
+  for (int i=0;i<9;i++) {
+    double e = (1.-(double)i*0.11)*(1.-(double)i*0.11)*0.02;
+    char str1[128];
+    sprintf(str1,"%4.1f MeV",e*1000.);
+    BCCLables[i] =  new TGLabel(bcalColorCodes, (const char*)str1);
+    //BCCLables[i]->SetTextColor(1);
+    BCCLables[i]->SetBackgroundColor(ccodes[i]);
+    bcalColorCodes->AddFrame(BCCLables[i],lhints);
+  }
+  // color lables FCAL
+  TGLabel* FCCLables[9]; 
+  for (int i=0;i<9;i++) {
+    double E = pow(10.,((1. - (double)i*0.11)*log10(1./0.005)));
+    char str1[128];
+    sprintf(str1,"%5.1f MeV",E);
+    FCCLables[i] =  new TGLabel(fcalColorCodes, (const char*)str1);
+    FCCLables[i]->SetBackgroundColor(ccodes[i]);
+    fcalColorCodes->AddFrame(FCCLables[i],lhints);
+  }
 
-	// The main GUI window is divided into three sections, top, middle, and bottom.
-	// Create those frames here.
-	TGLayoutHints *hints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX|kLHintsExpandY, 5,5,5,5);
-	TGLayoutHints *lhints = new TGLayoutHints(kLHintsNormal, 2,2,2,2);
-	TGLayoutHints *rhints = new TGLayoutHints(kLHintsCenterY|kLHintsRight, 2,2,2,2);
-	TGLayoutHints *chints = new TGLayoutHints(kLHintsCenterY|kLHintsCenterX, 2,2,2,2);
-	TGLayoutHints *bhints = new TGLayoutHints(kLHintsBottom|kLHintsCenterX, 2,2,2,2);
-	TGLayoutHints *xhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX, 2,2,2,2);
-	TGLayoutHints *yhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandY, 2,2,2,2);
-	TGLayoutHints *dhints = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0,0,0,0);
-	TGLayoutHints *ehints = new TGLayoutHints(kLHintsNormal, 2,2,0,0);
-	TGLayoutHints *thints = new TGLayoutHints(kLHintsTop|kLHintsCenterX, 2,2,0,0);
-	TGLayoutHints *lxhints = new TGLayoutHints(kLHintsLeft|kLHintsExpandX, 2,2,0,0);
-	TGHorizontalFrame *sourceframe = new TGHorizontalFrame(this,w,20);
-	TGHorizontalFrame *topframe = new TGHorizontalFrame(this, w, h);
-	TGHorizontalFrame *midframe = new TGHorizontalFrame(this, w, h);
-	TGHorizontalFrame *botframe = new TGHorizontalFrame(this, w, h);
-	AddFrame(sourceframe, lxhints);
-	AddFrame(topframe, lhints);
-	AddFrame(midframe, hints);
-	AddFrame(botframe, lhints);
+  //========== BOT FRAME ============
+  TGGroupFrame *trackinfo = new TGGroupFrame(botframe, "Track Info", kHorizontalFrame);
+  botframe->AddFrame(trackinfo, xhints);
+  
+  //------ Track Info ------
+  throwninfo = new TGGroupFrame(trackinfo, "Thrown", kHorizontalFrame);
+  reconinfo = new TGGroupFrame(trackinfo, "Reconstructed", kHorizontalFrame);
+  trackinfo->AddFrame(throwninfo, lhints);
+  trackinfo->AddFrame(reconinfo, lhints);
+  
+  // Column names
+  vector<string> colnames;
+  colnames.push_back("trk");
+  colnames.push_back("type");
+  colnames.push_back("p");
+  colnames.push_back("theta");
+  colnames.push_back("phi");
+  colnames.push_back("z");
+  colnames.push_back("chisq/Ndof");
+  colnames.push_back("Ndof");
+  colnames.push_back("FOM");	
+  colnames.push_back("cand");
+  
+  // Create a vertical frame for each column and insert the label as the first item
+  for(unsigned int i=0; i<colnames.size(); i++){
+    // create frames
+    TGVerticalFrame *tf = new TGVerticalFrame(throwninfo);
+    TGVerticalFrame *rf = new TGVerticalFrame(reconinfo);
+    throwninfo->AddFrame(tf, bhints);
+    reconinfo->AddFrame(rf, bhints);
+    
+    // create column labels
+    string lab = colnames[i]+":";
+    TGLabel *tl = new TGLabel(tf, lab.c_str());
+    TGLabel *rl = new TGLabel(rf, lab.c_str());
+    if(i<6)tf->AddFrame(tl, chints);
+    rf->AddFrame(rl, chints);
+    vector<TGLabel*> tv;
+    vector<TGLabel*> rv;
+    tv.push_back(tl);
+    rv.push_back(rl);
+    
+    // Add 8 labels to each column
+    // These have to be added in reverse order so we can pack them from
+    // the bottom. Otherwise, it doesn't draw correctly.
+    for(int j=0; j<8; j++){
+      stringstream ss;
+      ss<<(5-j);
+      if(i<6)tl = new TGLabel(tf, i==0 ? ss.str().c_str():"--------");
+      rl = new TGLabel(rf, i==0 ? ss.str().c_str():"--------");
+      if(i<6)tf->AddFrame(tl, bhints);
+      rf->AddFrame(rl, bhints);
+      tv.push_back(tl);
+      rv.push_back(rl);
+    }
+    
+    // Record the label object pointers for later use
+    thrownlabs[colnames[i]] = tv;
+    reconlabs[colnames[i]] = rv;
+  }
+  
+  // Reconstruction factory and full list button
+  TGVerticalFrame *vf = new TGVerticalFrame(reconinfo);
+  reconinfo->AddFrame(vf, yhints);
+  reconfactory = new TGComboBox(vf, "DTrackCandidate:", 0);
+  reconfactory->Resize(160,20);
+  for(int i=0; i<100; i++)reconfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+  vf->AddFrame(reconfactory, thints);
+  
+  TGTextButton *listall	= new TGTextButton(vf,	"Full List");
+  vf->AddFrame(listall, new TGLayoutHints(kLHintsBottom|kLHintsExpandX, 2,2,2,2));
+  
+  // Pointers to optional daughter windows (these must be done before ReadPreferences in
+  // order for the options they implement to be filled into checkbuttons)
+  trkmf = NULL;
+  optionsmf = new hdv_optionsframe(this, NULL, 100, 100);
+  debugermf = new hdv_debugerframe(this, NULL, 400, 200);
+  fulllistmf = new hdv_fulllistframe(this, NULL, 100, 100);
+  endviewBmf = new hdv_endviewBframe(this, NULL, 600, 600);
+  
+  //&&&&&&&&&&&&&&&& Defaults
+  ReadPreferences();
+  xy->SetState(kButtonDown,kTRUE);
+  coordinatetype = COORD_XY;
+  r0 = 50.0;
+  phi0 = M_PI;
+  x0 = 0.0;
+  y0 = 0.0;
+  z0 = 350.0;
+  zoom_factor = 1.0;
+  
+  //&&&&&&&&&&&&&&&& Connections
+  zoomin->Connect("Clicked()","hdv_mainframe", this, "DoZoomIn()");
+  zoomout->Connect("Clicked()","hdv_mainframe", this, "DoZoomOut()");
+  reset->Connect("Clicked()","hdv_mainframe", this, "DoReset()");
+  
+  coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoSetCoordinates(Int_t)");
+  coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+  
+  quit->Connect("Clicked()","hdv_mainframe", this, "DoQuit()");
+  next->Connect("Clicked()","hdv_mainframe", this, "DoNext()");
+  prev->Connect("Clicked()","hdv_mainframe", this, "DoPrev()");
+  checkbuttons["continuous"]->Connect("Clicked()","hdv_mainframe", this, "DoCont()");
+  delay->Connect("Selected(Int_t)","hdv_mainframe", this, "DoSetDelay(Int_t)");
+  
+  trackinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenTrackInspector()");
+  moreOptions->Connect("Clicked()","hdv_mainframe", this, "DoOpenOptionsWindow()");
+  listall->Connect("Clicked()","hdv_mainframe", this, "DoOpenFullListWindow()");
+  debuger->Connect("Clicked()","hdv_mainframe", this, "DoOpenDebugerWindow()");
+  //tofinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenTOFInspector()");
+  //fcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenFCALInspector()");
+  //bcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenBCALInspector()");
+  
+  checkbuttons["candidates"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["wiretracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["timetracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");	
+  checkbuttons["chargedtracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["neutrals"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["thrown"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  
+  checkbuttons["cdc"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["cdcdrift"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["cdctruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["fdcwire"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["fdcpseudo"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["fdctruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["tof"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["toftruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["bcal"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["bcaltruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["fcal"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["fcaltruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  checkbuttons["trajectories"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  
+  for (Int_t n=1;n<11;n++){
+    char str1[128];
+    sprintf(str1,"Candidate%d",n);
+    checkbuttons[str1]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  }
 
-	//========== Source ===========
-	TGLabel *sourcelab = new TGLabel(sourceframe, "Source:");
-	sourceframe->AddFrame(sourcelab,ehints);
-	source = new TGLabel(sourceframe, "--");
-	sourceframe->AddFrame(source, lxhints);
-	source->SetTextJustify(1);
-
-	//========== TOP FRAME ============
-	TGGroupFrame *viewcontrols = new TGGroupFrame(topframe, "View Controls", kHorizontalFrame);
-	TGGroupFrame *eventcontrols = new TGGroupFrame(topframe, "Event Controls", kHorizontalFrame);
-	TGGroupFrame *eventinfo = new TGGroupFrame(topframe, "Info", kHorizontalFrame);
-	TGGroupFrame *inspectors = new TGGroupFrame(topframe, "Inspectors", kVerticalFrame);
-	TGHorizontalFrame *programcontrols = new TGHorizontalFrame(topframe);
-	topframe->AddFrame(viewcontrols, lhints);
-	topframe->AddFrame(eventcontrols, hints);
-	topframe->AddFrame(eventinfo, yhints);
-	topframe->AddFrame(inspectors, yhints);
-	topframe->AddFrame(programcontrols, yhints);
-	
-		//-------------Pan buttons
-		TGVerticalFrame *panneg = new TGVerticalFrame(viewcontrols);
-		TGVerticalFrame *panpos = new TGVerticalFrame(viewcontrols);
-		viewcontrols->AddFrame(panneg,	hints);
-		viewcontrols->AddFrame(panpos,	hints);
-			TGTextButton *panxneg	= new TGTextButton(panneg,	"-X");
-			TGTextButton *panyneg	= new TGTextButton(panneg,	"-Y");
-			TGTextButton *panzneg	= new TGTextButton(panneg,	"-Z");
-			panneg->AddFrame(panxneg,	dhints);
-			panneg->AddFrame(panyneg,	dhints);
-			panneg->AddFrame(panzneg,	dhints);
-
-			TGTextButton *panxpos	= new TGTextButton(panpos,	"X+");
-			TGTextButton *panypos	= new TGTextButton(panpos,	"Y+");
-			TGTextButton *panzpos	= new TGTextButton(panpos,	"Z+");
-			panpos->AddFrame(panxpos,	dhints);
-			panpos->AddFrame(panypos,	dhints);
-			panpos->AddFrame(panzpos,	dhints);
-
-			panxneg->Connect("Clicked()","hdv_mainframe",this,"DoPanXneg()");
-			panyneg->Connect("Clicked()","hdv_mainframe",this,"DoPanYneg()");
-			panzneg->Connect("Clicked()","hdv_mainframe",this,"DoPanZneg()");
-			panxpos->Connect("Clicked()","hdv_mainframe",this,"DoPanXpos()");
-			panypos->Connect("Clicked()","hdv_mainframe",this,"DoPanYpos()");
-			panzpos->Connect("Clicked()","hdv_mainframe",this,"DoPanZpos()");
-		//------------- Zoom/Reset buttons
-		TGVerticalFrame *zoom = new TGVerticalFrame(viewcontrols);
-		viewcontrols->AddFrame(zoom,	lhints);
-			TGGroupFrame *zoomframe = new TGGroupFrame(zoom, "ZOOM", kHorizontalFrame);
-			zoom->AddFrame(zoomframe,	thints);
-				TGTextButton *zoomout = new TGTextButton(zoomframe,	" - ");
-				TGTextButton *zoomin	= new TGTextButton(zoomframe,	" + ");
-				zoomframe->AddFrame(zoomout,	thints);
-				zoomframe->AddFrame(zoomin,	thints);
-			TGTextButton *reset	= new TGTextButton(zoom,	"Reset");
-			zoom->AddFrame(reset, chints);
-		
-		//-------------- Transverse Coordinates
-		TGVButtonGroup *coordinates = new TGVButtonGroup(viewcontrols,"Transverse Coordinates");
-		viewcontrols->AddFrame(coordinates,	lhints);
-			TGRadioButton *xy = new TGRadioButton(coordinates, "x/y");
-			new TGRadioButton(coordinates, "r/phi");
-		
-		//-------------- Next, Previous
-		prev	= new TGTextButton(eventcontrols,	"<-- Prev");
-		next	= new TGTextButton(eventcontrols,	"Next -->");
-		TGVerticalFrame *contf = new TGVerticalFrame(eventcontrols);
-		eventcontrols->AddFrame(prev, chints);
-		eventcontrols->AddFrame(next, chints);
-		eventcontrols->AddFrame(contf, lhints);
-		
-			// continuous, delay
-			checkbuttons["continuous"] = new TGCheckButton(contf, "continuous");
-			TGHorizontalFrame *delayf = new TGHorizontalFrame(contf);
-			contf->AddFrame(checkbuttons["continuous"], lhints);
-			contf->AddFrame(delayf, lhints);
-				TGLabel *delaylab = new TGLabel(delayf, "delay:");
-				delay = new TGComboBox(delayf, "0.25");
-				delay->Resize(50,20);
-				float delays[]={0, 0.25, 0.5, 1, 2, 3, 5, 10};
-				for(int i=0; i<8; i++){
-					stringstream ss;
-					ss<<delays[i];
-					delay->AddEntry(ss.str().c_str(),i);
-				}
-				delayf->AddFrame(delaylab, lhints);
-				delayf->AddFrame(delay, lhints);
-		
-		//----------------- Event Info
-		TGVerticalFrame *eventlabs = new TGVerticalFrame(eventinfo);
-		TGVerticalFrame *eventvals = new TGVerticalFrame(eventinfo);
-		eventinfo->AddFrame(eventlabs, lhints);
-		eventinfo->AddFrame(eventvals, lhints);
-
-			TGLabel *runlab = new TGLabel(eventlabs, "Run:");
-			TGLabel *eventlab = new TGLabel(eventlabs, "Event:");
-			run = new TGLabel(eventvals, "----------");
-			event = new TGLabel(eventvals, "----------");
-			eventlabs->AddFrame(runlab, rhints);
-			eventlabs->AddFrame(eventlab,rhints);
-			eventvals->AddFrame(run, lhints);
-			eventvals->AddFrame(event, lhints);
-			
-		//----------------- Inspectors
-		TGTextButton *trackinspector	= new TGTextButton(inspectors,	"Track Inspector");
-		//TGTextButton *tofinspector	= new TGTextButton(inspectors,	"TOF Inspector");
-		//TGTextButton *bcalinspector	= new TGTextButton(inspectors,	"BCAL Inspector");
-		//TGTextButton *fcalinspector	= new TGTextButton(inspectors,	"FCAL Inspector");
-		inspectors->AddFrame(trackinspector, xhints);
-		//inspectors->AddFrame(tofinspector, xhints);
-		//inspectors->AddFrame(bcalinspector, xhints);
-		//inspectors->AddFrame(fcalinspector, xhints);
-		//tofinspector->SetEnabled(kFALSE);
-		//bcalinspector->SetEnabled(kFALSE);
-		//fcalinspector->SetEnabled(kFALSE);
-
-		//-------------- Program Controls
-		TGTextButton *quit	= new TGTextButton(programcontrols,	"&Quit");
-		programcontrols->AddFrame(quit, new TGLayoutHints(kLHintsTop|kLHintsRight|kLHintsExpandX, 2,2,2,2));
-	
-	//========== MID FRAME ============
-	TGHorizontalFrame *detectorframe = new TGHorizontalFrame(midframe);
-	midframe->AddFrame(detectorframe, hints);
-	
-		//------ Detector Frame ------
-		TGVerticalFrame *sideviews = new TGVerticalFrame(detectorframe);
-		TGVerticalFrame *endviews = new TGVerticalFrame(detectorframe);
-		TGVerticalFrame *drawopts = new TGVerticalFrame(detectorframe);
-		detectorframe->AddFrame(sideviews, lhints);
-		detectorframe->AddFrame(endviews, lhints);
-		detectorframe->AddFrame(drawopts, lhints);
-		
-			// Side views
-			int width=500;
-			TGHorizontalFrame *sideviewAframe = new TGHorizontalFrame(sideviews);
-			TGHorizontalFrame *sideviewBframe = new TGHorizontalFrame(sideviews);
-			sideviews->AddFrame(sideviewAframe, lhints);
-			sideviews->AddFrame(sideviewBframe, lhints);
-			sideviewA = new TRootEmbeddedCanvas("sideviewA Canvas", sideviewAframe, width, width/2, kSunkenFrame, GetWhitePixel());
-			sideviewB = new TRootEmbeddedCanvas("sideviewB Canvas", sideviewBframe, width, width/2, kSunkenFrame, GetWhitePixel());
-			sideviewAframe->AddFrame(sideviewA, lhints);
-			sideviewBframe->AddFrame(sideviewB, lhints);
-			sideviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
-			sideviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
-			
-			// End views
-			endviewA = new TRootEmbeddedCanvas("endviewA Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
-			endviewB = new TRootEmbeddedCanvas("endviewB Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
-			endviews->AddFrame(endviewA, lhints);
-			endviews->AddFrame(endviewB, lhints);
-			endviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
-			endviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
-			
-			// Draw opts
-			TGGroupFrame *trkdrawopts = new TGGroupFrame(drawopts, "Track Draw Options", kVerticalFrame);
-			TGGroupFrame *hitdrawopts = new TGGroupFrame(drawopts, "Hit Draw Options", kVerticalFrame);
-			drawopts->AddFrame(trkdrawopts, lhints);
-			drawopts->AddFrame(hitdrawopts, hints);
-			
-			// Track
-			TGHorizontalFrame *candidatesf = new TGHorizontalFrame(trkdrawopts);
-			checkbuttons["candidates"]	= new TGCheckButton(candidatesf,	"DTrackCandidate:");
-			candidatesfactory = new TGComboBox(candidatesf, "<default>", 0);
-			candidatesfactory->Resize(80,20);
-			candidatesf->AddFrame(checkbuttons["candidates"], lhints);
-			for(int i=0; i<100; i++)candidatesfactory->AddEntry("a",i); 
-			// For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-			candidatesf->AddFrame(candidatesfactory, lhints);
-			trkdrawopts->AddFrame(candidatesf, lhints);
-			
-			TGHorizontalFrame *wiretracksf		= new TGHorizontalFrame(trkdrawopts);
-			checkbuttons["wiretracks"]		= new TGCheckButton(wiretracksf,	"DTrackWireBased:");
-			wiretracksfactory	= new TGComboBox(wiretracksf, "<default>", 0);
-			wiretracksfactory->Resize(80,20);
-			wiretracksf->AddFrame(checkbuttons["wiretracks"], lhints);
-			for(int i=0; i<100; i++)wiretracksfactory->AddEntry("a",i); 
-			// For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-			wiretracksf->AddFrame(wiretracksfactory, lhints);
-			trkdrawopts->AddFrame(wiretracksf, lhints);
-			
-			TGHorizontalFrame *timetracksf		= new TGHorizontalFrame(trkdrawopts);
-			checkbuttons["timetracks"]		= new TGCheckButton(timetracksf,	"DTrackTimeBased:");
-			timetracksfactory	= new TGComboBox(timetracksf, "<default>", 0);
-			timetracksfactory->Resize(80,20);
-			timetracksf->AddFrame(checkbuttons["timetracks"], lhints);
-			for(int i=0; i<100; i++)timetracksfactory->AddEntry("a",i); 
-			// For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-			timetracksf->AddFrame(timetracksfactory, lhints);
-			trkdrawopts->AddFrame(timetracksf, lhints);
-			TGHorizontalFrame *chargedtracksf		= new TGHorizontalFrame(trkdrawopts);
-			checkbuttons["chargedtracks"]		= new TGCheckButton(chargedtracksf,	"DChargedTrack:");
-			chargedtracksfactory	= new TGComboBox(chargedtracksf, "<default>", 0);
-			chargedtracksfactory->Resize(80,20);
-			chargedtracksf->AddFrame(checkbuttons["chargedtracks"], lhints);
-			for(int i=0; i<100; i++)chargedtracksfactory->AddEntry("a",i); 
-			// For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-			chargedtracksf->AddFrame(chargedtracksfactory, lhints);
-			trkdrawopts->AddFrame(chargedtracksf, lhints);
-			
-			
-			
-			checkbuttons["neutrals"]     = new TGCheckButton(trkdrawopts,"DNeutralTrack");
-			checkbuttons["thrown"]       = new TGCheckButton(trkdrawopts,"DMCThrown");
-			checkbuttons["trajectories"] = new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
-			trkdrawopts->AddFrame(checkbuttons["neutrals"], lhints);
-			trkdrawopts->AddFrame(checkbuttons["thrown"], lhints);
-			trkdrawopts->AddFrame(checkbuttons["trajectories"], lhints);
-			
-			// Hit
-			checkbuttons["cdc"]		= new TGCheckButton(hitdrawopts,	"CDC");
-			checkbuttons["cdcdrift"]	= new TGCheckButton(hitdrawopts,	"CDC Drift Time");
-			checkbuttons["cdctruth"]	= new TGCheckButton(hitdrawopts,	"CDCTruth");
-			checkbuttons["fdcwire"]		= new TGCheckButton(hitdrawopts,	"FDC Wire");
-			checkbuttons["fdcpseudo"]	= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
-			checkbuttons["fdctruth"]	= new TGCheckButton(hitdrawopts,	"FDCTruth");
-			checkbuttons["tof"]		= new TGCheckButton(hitdrawopts,	"TOF");
-			checkbuttons["toftruth"]	= new TGCheckButton(hitdrawopts,	"TOFTruth");
-			checkbuttons["fcal"]		= new TGCheckButton(hitdrawopts,	"FCAL");
-			checkbuttons["bcal"]		= new TGCheckButton(hitdrawopts,	"BCAL");
-			hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["cdcdrift"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["fdcwire"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["fdcpseudo"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["fdctruth"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["tof"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["toftruth"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["fcal"], lhints);
-			hitdrawopts->AddFrame(checkbuttons["bcal"], lhints);
-			
-			TGTextButton *moreOptions	= new TGTextButton(hitdrawopts,	"More options");
-			hitdrawopts->AddFrame(moreOptions, lhints);
-			
-	//========== BOT FRAME ============
-	TGGroupFrame *trackinfo = new TGGroupFrame(botframe, "Track Info", kHorizontalFrame);
-	botframe->AddFrame(trackinfo, xhints);
-	
-		//------ Track Info ------
-		throwninfo = new TGGroupFrame(trackinfo, "Thrown", kHorizontalFrame);
-		reconinfo = new TGGroupFrame(trackinfo, "Reconstructed", kHorizontalFrame);
-		trackinfo->AddFrame(throwninfo, lhints);
-		trackinfo->AddFrame(reconinfo, lhints);
-			
-			// Column names
-			vector<string> colnames;
-			colnames.push_back("trk");
-			colnames.push_back("type");
-			colnames.push_back("p");
-			colnames.push_back("theta");
-			colnames.push_back("phi");
-			colnames.push_back("z");
-			colnames.push_back("chisq/Ndof");
-			colnames.push_back("Ndof");
-			colnames.push_back("FOM");	
-			colnames.push_back("cand");
-			
-			// Create a vertical frame for each column and insert the label as the first item
-			for(unsigned int i=0; i<colnames.size(); i++){
-				// create frames
-				TGVerticalFrame *tf = new TGVerticalFrame(throwninfo);
-				TGVerticalFrame *rf = new TGVerticalFrame(reconinfo);
-				throwninfo->AddFrame(tf, bhints);
-				reconinfo->AddFrame(rf, bhints);
-
-				// create column labels
-				string lab = colnames[i]+":";
-				TGLabel *tl = new TGLabel(tf, lab.c_str());
-				TGLabel *rl = new TGLabel(rf, lab.c_str());
-				if(i<6)tf->AddFrame(tl, chints);
-				rf->AddFrame(rl, chints);
-				vector<TGLabel*> tv;
-				vector<TGLabel*> rv;
-				tv.push_back(tl);
-				rv.push_back(rl);
-
-				// Add 8 labels to each column
-				// These have to be added in reverse order so we can pack them from
-				// the bottom. Otherwise, it doesn't draw correctly.
-				for(int j=0; j<8; j++){
-					stringstream ss;
-					ss<<(5-j);
-					if(i<6)tl = new TGLabel(tf, i==0 ? ss.str().c_str():"--------");
-					rl = new TGLabel(rf, i==0 ? ss.str().c_str():"--------");
-					if(i<6)tf->AddFrame(tl, bhints);
-					rf->AddFrame(rl, bhints);
-					tv.push_back(tl);
-					rv.push_back(rl);
-				}
-				
-				// Record the label object pointers for later use
-				thrownlabs[colnames[i]] = tv;
-				reconlabs[colnames[i]] = rv;
-			}
-
-			// Reconstruction factory and full list button
-			TGVerticalFrame *vf = new TGVerticalFrame(reconinfo);
-			reconinfo->AddFrame(vf, yhints);
-			reconfactory = new TGComboBox(vf, "DTrackCandidate:", 0);
-			reconfactory->Resize(160,20);
-			for(int i=0; i<100; i++)reconfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-			vf->AddFrame(reconfactory, thints);
-			
-			TGTextButton *listall	= new TGTextButton(vf,	"Full List");
-			vf->AddFrame(listall, new TGLayoutHints(kLHintsBottom|kLHintsExpandX, 2,2,2,2));
-
-	// Pointers to optional daughter windows (these must be done before ReadPreferences in
-	// order for the options they implement to be filled into checkbuttons)
-	trkmf = NULL;
-	optionsmf = new hdv_optionsframe(this, NULL, 100, 100);
-	fulllistmf = new hdv_fulllistframe(this, NULL, 100, 100);
-	endviewBmf = new hdv_endviewBframe(this, NULL, 600, 600);
-
-	//&&&&&&&&&&&&&&&& Defaults
-	ReadPreferences();
-	xy->SetState(kButtonDown,kTRUE);
-	coordinatetype = COORD_XY;
-	r0 = 50.0;
-	phi0 = M_PI;
-	x0 = 0.0;
-	y0 = 0.0;
-	z0 = 350.0;
-	zoom_factor = 1.0;
-
-	//&&&&&&&&&&&&&&&& Connections
-	zoomin->Connect("Clicked()","hdv_mainframe", this, "DoZoomIn()");
-	zoomout->Connect("Clicked()","hdv_mainframe", this, "DoZoomOut()");
-	reset->Connect("Clicked()","hdv_mainframe", this, "DoReset()");
-
-	coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoSetCoordinates(Int_t)");
-	coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
-
-	quit->Connect("Clicked()","hdv_mainframe", this, "DoQuit()");
-	next->Connect("Clicked()","hdv_mainframe", this, "DoNext()");
-	prev->Connect("Clicked()","hdv_mainframe", this, "DoPrev()");
-	checkbuttons["continuous"]->Connect("Clicked()","hdv_mainframe", this, "DoCont()");
-	delay->Connect("Selected(Int_t)","hdv_mainframe", this, "DoSetDelay(Int_t)");
-	
-	trackinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenTrackInspector()");
-	moreOptions->Connect("Clicked()","hdv_mainframe", this, "DoOpenOptionsWindow()");
-	listall->Connect("Clicked()","hdv_mainframe", this, "DoOpenFullListWindow()");
-	//tofinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenTOFInspector()");
-	//fcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenFCALInspector()");
-	//bcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenBCALInspector()");
-	
-	checkbuttons["candidates"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["wiretracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["timetracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");	
-	checkbuttons["chargedtracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["neutrals"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["thrown"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-
-	checkbuttons["cdc"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["cdcdrift"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["cdctruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fdcwire"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fdcpseudo"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fdctruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["tof"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["toftruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["bcal"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["bcaltruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fcal"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fcaltruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["trajectories"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
-	wiretracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
-	timetracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");	
-	chargedtracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
-	reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
-	
-	endviewB->GetCanvas()->Connect("Selected(TVirtualPad*, TObject*, Int_t)", "hdv_mainframe", this, "DoEndViewBEvent(TVirtualPad*, TObject*, Int_t)");
-
-	// Set up timer to call the DoTimer() method repeatedly
-	// so events can be automatically advanced.
-	timer = new TTimer();
-	timer->Connect("Timeout()", "hdv_mainframe", this, "DoTimer()");
-	sleep_time = 250;
-	timer->Start(sleep_time, kFALSE);
-
+  candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+  wiretracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+  timetracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");	
+  chargedtracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+  reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
+  
+  endviewB->GetCanvas()->Connect("Selected(TVirtualPad*, TObject*, Int_t)", "hdv_mainframe", this, "DoEndViewBEvent(TVirtualPad*, TObject*, Int_t)");
+  
+  // Set up timer to call the DoTimer() method repeatedly
+  // so events can be automatically advanced.
+  timer = new TTimer();
+  timer->Connect("Timeout()", "hdv_mainframe", this, "DoTimer()");
+  sleep_time = 250;
+  timer->Start(sleep_time, kFALSE);
+  
 	// Finish up and map the window
 	SetWindowName("Hall-D Event Viewer");
 	SetIconName("HDView");
@@ -787,6 +837,20 @@ void hdv_mainframe::DoOpenOptionsWindow(void)
 		optionsmf->MapWindow();
 		optionsmf->RaiseWindow();
 		optionsmf->RequestFocus();
+	}
+}
+//-------------------
+// DoOpenDebugerWindow
+//-------------------
+void hdv_mainframe::DoOpenDebugerWindow(void)
+{
+	if(debugermf==NULL){
+		debugermf = new hdv_debugerframe(this, NULL, 100, 100);
+	}else{
+		debugermf->MapWindow();
+		debugermf->RaiseWindow();
+		debugermf->RequestFocus();
+		DoUpdateTrackLabels();
 	}
 }
 
@@ -1211,8 +1275,8 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		// ----- BCAL ------
 		TEllipse *bcal1 = new TEllipse(0.0, 0.0, BCAL_Rmax, BCAL_Rmax);
 		TEllipse *bcal2 = new TEllipse(0.0, 0.0, BCAL_Rmin, BCAL_Rmin);
-		bcal1->SetFillColor(28);
-		bcal2->SetFillColor(10);
+		bcal1->SetFillColor(0);
+		bcal2->SetFillColor(0);
 		graphics_endA.push_back(bcal1);
 		graphics_endA.push_back(bcal2);
 		
@@ -1241,7 +1305,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 						TPolyLine *poly = new TPolyLine(4, x, y);
 						poly->SetLineColor(12);
 						poly->SetLineWidth(1);
-						poly->SetFillColor(28);
+						poly->SetFillColor(0);
 						poly->SetFillStyle(0);
 						int chan = (imod+1)*1000 + (ilay+1)*100 + (isec+1)*10;
 						graphics_endA.push_back(poly);
@@ -1265,7 +1329,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 						TPolyLine *poly = new TPolyLine(5, x, y);
 						poly->SetLineColor(12);
 						poly->SetLineWidth(1);
-						poly->SetFillColor(28);
+						poly->SetFillColor(0);
 						poly->SetFillStyle(0);
 						int chan = (int)((imod+1)*1000 + (ilay+1+BCAL_LAYS1)*100 + (isec+1)*10);
 						graphics_endA.push_back(poly);
@@ -1376,7 +1440,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 				}
 				
 				TPolyLine *poly = new TPolyLine(4, x, y);
-				poly->SetFillColor(18);
+				poly->SetFillColor(0);
 				poly->SetLineColor(kBlack);
 				graphics_endB.push_back(poly);
 
