@@ -1,4 +1,4 @@
-
+#include <ctime>
 #include <stdlib.h>
 
 #include <cassert>
@@ -20,8 +20,9 @@ b1piAngAmp::b1piAngAmp(int polBeam, float polFrac,//const AmpParameter& polFrac,
 		       int J_X, int Par_X, int L_X, int I_X, int epsilon_R,
 		       int Iz_b1, int Iz_pi,
 		       float u_rho_1, float u_rho_3,
-		       float u_omega_1, float u_omega_3,
-		       float u_b1_0, float u_b1_2, bool orthocheck=false):
+		       float u_omega_1, float u_omega_3, 
+		       float u_b1_0, float u_b1_2, float G0_omega,float G0_b1,
+		       bool orthocheck=false, bool fastCalc=false):
   
   Amplitude(),
   mpolBeam( polBeam ),  // beam polarization component (X=0, Y=1)
@@ -42,10 +43,11 @@ b1piAngAmp::b1piAngAmp(int polBeam, float polFrac,//const AmpParameter& polFrac,
   m_u_omega_3(u_omega_3),
   m_u_b1_0(u_b1_0),
   m_u_b1_2(u_b1_2),
-  m_ORTHOCHECK(orthocheck)
-
+  mG0_omega(fabs(G0_omega)),
+  mG0_b1(fabs(G0_b1)),
+  m_ORTHOCHECK(orthocheck),
+  m_fastCalc(fastCalc)
 {
-  
   assert( ( polBeam == 0 ) || ( polBeam == 1 ) );
   //assert( ( polFrac >= 0 ) && ( polFrac <= 1 ) );
   if(!(( polFrac >= 0 ) && ( polFrac <= 1 ))){
@@ -63,6 +65,9 @@ b1piAngAmp::b1piAngAmp(int polBeam, float polFrac,//const AmpParameter& polFrac,
   assert( abs(Iz_pi) <= 1 );
 
   //registerParameter( mpolFrac );
+
+  m_disableBW_omega = G0_omega <= 0;
+  m_disableBW_b1 = G0_b1 <= 0;
   
   setDefaultStatus( false );
 }
@@ -77,7 +82,8 @@ void PrintArrVector(GDouble *v){
 
 
 
-inline GDouble N(int J){ return sqrt((2*J+1)/(4*M_PI)); }
+inline GDouble b1piAngAmp::N(int J) const
+{ return sqrt((2*J+1)/(4*M_PI)); }
 
 HepLorentzVector& MoveToRF(HepLorentzVector &parent,
 			  HepLorentzVector &daughter)
@@ -89,54 +95,51 @@ HepLorentzVector& MoveToRF(HepLorentzVector &parent,
 }
 
 
-inline complex <GDouble> BreitWigner(GDouble m0, GDouble Gamma0, int L,
-		    HepLorentzVector &P1,HepLorentzVector &P2)
+inline complex <GDouble> b1piAngAmp::
+BreitWigner(GDouble m0, GDouble Gamma0, int L,
+	    HepLorentzVector &P1, HepLorentzVector &P2) const
 {
-  //printf("L passed to BW: %d\n",L);
-
-   HepLorentzVector Ptot=P1+P2;
-   GDouble m  = Ptot.m();
-   GDouble mass1 = P1.m();
-   GDouble mass2 = P2.m();
-   
-
-   //printf("m0=%f m=%f\n",m0,m);
-
-   // assert positive breakup momenta     
-   GDouble q0 = fabs( breakupMomentum(m0, mass1, mass2) );
-   GDouble q  = fabs( breakupMomentum(m,  mass1, mass2) );
-
-   //printf("BW: (%5.3f, %5.3f, %d) m=%6.4f m1=%6.4f m2=%6.4f q=%6.4f q0=%6.4f\n",
-   //  m0,Gamma0,L,m,mass1,mass2,q,q0);
-
-   GDouble F0 = L==0 ? 1.0 : barrierFactor(q0, L);
-   GDouble F  = L==0 ? 1.0 : barrierFactor(q,  L);
-   
-   GDouble width_coef=Gamma0*(m0/m);
-   //GDouble qq0=q/q0;
-   //GDouble width_qdep = (L==0 ? qq0 : (L==1 ? qq0*qq0*qq0 : pow(qq0,2*L+1)))*((F*F)/(F0*F0));
-   GDouble width_qdep = q/q0  * (F*F)/(F0*F0);
-   //GDouble num_qdep = (L==0 ? q : (L==1 ? q*q*q : pow(q,2*L+1)))*(F*F);
-   GDouble num_qdep = q*(F*F);
-
-   GDouble width = width_coef * width_qdep;
-   
-   //complex<GDouble> bwtop(m0 * width, 0.0 );
-   complex<GDouble> bwtop(sqrt(m0*width_coef) * num_qdep, 0.0 );
-   //complex<GDouble> bwtop(sqrt(m0*width_coef), 0.0 );
-   
-   complex<GDouble> bwbottom( ( m0*m0 - m*m ) ,
-			      -1.0 * ( m0 * width ) );
   
-   return( bwtop / bwbottom );
-   //return 1.0;
+  HepLorentzVector Ptot=P1+P2;
+  GDouble m  = Ptot.m();
+  GDouble mass1 = P1.m();
+  GDouble mass2 = P2.m();
+  
+  
+  // assert positive breakup momenta     
+  GDouble q0 = fabs( breakupMomentum(m0, mass1, mass2) );
+  GDouble q  = fabs( breakupMomentum(m,  mass1, mass2) );
+  
+  //printf("BW: (%5.3f, %5.3f, %d) m=%6.4f m1=%6.4f m2=%6.4f q=%6.4f q0=%6.4f\n",
+  //  m0,Gamma0,L,m,mass1,mass2,q,q0);
+  
+  GDouble F0 = L==0 ? 1.0 : barrierFactor(q0, L);
+  GDouble F  = L==0 ? 1.0 : barrierFactor(q,  L);
+  
+  GDouble width_coef=Gamma0*(m0/m);
+  //GDouble qq0=q/q0;
+  //GDouble width_qdep = (L==0 ? qq0 : (L==1 ? qq0*qq0*qq0 : pow(qq0,2*L+1)))*((F*F)/(F0*F0));
+  GDouble width_qdep = q/q0  * (F*F)/(F0*F0);
+  //GDouble num_qdep = (L==0 ? q : (L==1 ? q*q*q : pow(q,2*L+1)))*(F*F);
+  GDouble num_qdep = q*(F*F);
+  
+  GDouble width = width_coef * width_qdep;
+  
+  //complex<GDouble> bwtop(m0 * width, 0.0 );
+  complex<GDouble> bwtop(sqrt(m0*width_coef) * num_qdep, 0.0 );
+  
+  complex<GDouble> bwbottom( ( m0*m0 - m*m ) ,
+			     -1.0 * ( m0 * width ) );
+  
+  return( bwtop / bwbottom );
+  
 }
 
 
-inline float CB(int j1, int j2, int m1, int m2, int J, int M)
+inline float b1piAngAmp::CB(int j1, int j2, int m1, int m2, int J, int M) const
 {
   if( j1*j2 == 0 ) return 1.0;
-
+  
   if(J == 1){
     if(j1==1 && j2==1){
       if(M == -1){
@@ -179,15 +182,6 @@ inline float CB(int j1, int j2, int m1, int m2, int J, int M)
   return clebschGordan(j1, j2, m1, m2, J, M);
 }
 
-/*
-void ReduceToOne(vector<int> &v,unsigned int n){
-  int selval=v[n];
-
-  v.clear();
-  v.push_back(selval);
-
-}
-*/
 
 
 float b1piAngAmp::u_rho(int J_rho) const 
@@ -213,15 +207,14 @@ return epsilon_R==-1 ? m_v_m : (epsilon_R==+1 ? m_v_p);
 complex< GDouble >
 b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 {
-  
+  int m_X,IMLnum=0;
+  bool useCutoff=true;
   HepLorentzVector beam  (pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0]); 
   HepLorentzVector recoil(pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0]);
   complex <GDouble> i(0, 1), COne(1, 0),CZero(0,0);  
   GDouble InvSqrt2=1/sqrt(2.0);
   GDouble m0_rho=0.775,G0_rho=0.149;
-  GDouble m0_omega=0.783,G0_omega=0.0085;
-  //GDouble m0_omega=1.083,G0_omega=0.0085;
-  GDouble m0_b1=1.223,G0_b1=0.143;
+  GDouble m0_omega=0.783, m0_b1=1.223;
 
   //Exprected particle list: 
   // pi- b1(pi+ omega(pi0 "rho"(pi- pi+)))
@@ -230,7 +223,6 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
   //Acquire the 4-vectors for the current particle permutation
   const vector< int >& perm = getCurrentPermutation();
 
-  //printf("PERM: %d %d %d %d %d\n",perm[6],perm[5],perm[4],perm[3],perm[2]);
 
   HepLorentzVector rhos_pip(pKin[perm[6]][1], pKin[perm[6]][2],
 			    pKin[perm[6]][3], pKin[perm[6]][0]);
@@ -238,20 +230,24 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 			    pKin[perm[5]][3], pKin[perm[5]][0]);
   HepLorentzVector rho = rhos_pip + rhos_pim;
 
-  if( rho.m()+0.135 > m0_omega+3*G0_omega) return CZero;
+  if( useCutoff && rho.m()+0.135 > m0_omega+3*mG0_omega) return CZero;
+
 
   HepLorentzVector omegas_pi(pKin[perm[4]][1], pKin[perm[4]][2],
 			     pKin[perm[4]][3], pKin[perm[4]][0]);
   HepLorentzVector omega = rho + omegas_pi;
 
-  if(fabs(omega.m()-m0_omega) > 3*G0_omega) return CZero; 
+  if(useCutoff && fabs(omega.m()-m0_omega) > 3*mG0_omega) return CZero; 
+
 
   HepLorentzVector b1s_pi(pKin[perm[3]][1], pKin[perm[3]][2],
 			  pKin[perm[3]][3], pKin[perm[3]][0]);
   HepLorentzVector b1 = omega + b1s_pi;
 
-  if( fabs(b1.m()-m0_b1) > 3*G0_b1 ||
-      b1.m() < (m0_omega - 3*G0_omega) ) return CZero;
+  if( useCutoff && (fabs(b1.m()-m0_b1) > 3*mG0_b1 ||
+		    b1.m() < (m0_omega - 3*mG0_omega)) ) return CZero;
+
+  //printf("DEBUG: proceeding with b1pi amp calc. mG0_omega=%f, disbale BWomega=%d\n",mG0_omega,m_disableBW_omega);
 
   HepLorentzVector Xs_pi(pKin[perm[2]][1], pKin[perm[2]][2],
 			  pKin[perm[2]][3], pKin[perm[2]][0]);
@@ -294,9 +290,6 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
   //printf("%f %f    %f %f \n",
   // omega.m(), (rho+omegas_pi).m(),
   //	 rho.m(), (rhos_pip+rhos_pim).m());
-
-  //going from x[y]=0[1] notation to reflectivity: -1[+1]
-  int m_X,IMLnum=0;
 
 
   // SUMMATION GUIDE:
@@ -357,13 +350,14 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
   
   //int aList_epsilon_R[]={-1,1}; 
   //vector<int> List_epsilon_R(aList_epsilon_R,aList_epsilon_R+2);
+
   // End of q.n. set prep ----------------------------------------
 
 
   complex <GDouble> ThelSum(0,0);
 
-  if(mJ_X==0) if(mPar_X*pol*(*epsilon_R) ==  -1 ) return ThelSum;
-  
+  if(mJ_X==0) if(mPar_X*pol*(*epsilon_R) ==  -1 ) return CZero;
+
   complex <GDouble> expFact(cos(alpha), sin(alpha));
   complex <GDouble> expFact_conj(conj(expFact));
   //summing positive and negative helicity terms
@@ -425,15 +419,14 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 		      IMLnum++;
 		    }
 
-		    J_rhoDepTerm += u_rho(*J_rho) *
-		      l_rhoDepTerm*BreitWigner(m0_rho,G0_rho, *J_rho,
-					       rhos_pip,rhos_pim);
+		    J_rhoDepTerm += u_rho(*J_rho) * l_rhoDepTerm *
+		      BreitWigner(m0_rho,G0_rho, *J_rho,rhos_pip,rhos_pim);
 		  }
 		  
-		  L_omegaDepTerm += u_omega(*L_omega)*
-		    J_rhoDepTerm*N(*L_omega)*
-		    BreitWigner(m0_omega,G0_omega, *L_omega,
-				omegas_pi,rho);
+		  if(!m_disableBW_omega) J_rhoDepTerm*=
+		    BreitWigner(m0_omega,mG0_omega, *L_omega, omegas_pi,rho);
+		  
+		  L_omegaDepTerm += u_omega(*L_omega)*J_rhoDepTerm*N(*L_omega);
 		}
 		
 		l_omegaDepTerm += 
@@ -443,10 +436,10 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 		  CB(*L_b1, 1, 0, *l_omega, 1, *l_omega);
 	      }
 	      
-	      L_b1DepTerm += u_b1(*L_b1)*
-		l_omegaDepTerm * N(*L_b1)*
-		BreitWigner(m0_b1,G0_b1,*L_b1,
-			    b1s_pi,omega);
+	      if(!m_disableBW_b1) l_omegaDepTerm*=
+		BreitWigner(m0_b1, mG0_b1, *L_b1, b1s_pi, omega);
+	      
+	      L_b1DepTerm += u_b1(*L_b1)*l_omegaDepTerm * N(*L_b1);
 	    }
 	    
 	    l_b1DepTerm += 
@@ -485,7 +478,7 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 
   if(m_ORTHOCHECK) {
     double I=abs(ThelSum);
-    printf("ORTHOCHECK %3.1f %3.1f  %3.1f %3.1f  %3.1f %3.1f\t%13.10f ", m_u_rho_1, m_u_rho_3, 
+    printf("ORTHOCHECK %3.1f %3.1f  %3.1f %3.1f  %3.1f %3.1f\t%17.10e ", m_u_rho_1, m_u_rho_3, 
 	   m_u_omega_1, m_u_omega_3, m_u_b1_0, m_u_b1_2, I*I);
     printf("%d %1.0f %d %d %d %d %d\n",mpolBeam,(double)mpolFrac,mJ_X,mPar_X,mL_X,mI_X,mepsilon_R);
 
@@ -498,9 +491,11 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
     
 b1piAngAmp*
 b1piAngAmp::newAmplitude( const vector< string >& args ) const {
-  
   const unsigned int base_arg_num=9;
-  assert( args.size() == base_arg_num || args.size() == 15 );
+  bool fastCalc=false;
+  bool tweakBW_omega = args.size() == base_arg_num+1;
+  bool tweakBW_omega_b1 = args.size() == base_arg_num+2;
+  assert(args.size() == base_arg_num || args.size() == 15 || tweakBW_omega || tweakBW_omega_b1);
   
   int polBeam = atoi( args[0].c_str() );
   float  polFrac = atof(args[1].c_str());
@@ -513,13 +508,21 @@ b1piAngAmp::newAmplitude( const vector< string >& args ) const {
   int Iz_b1    = atoi( args[7].c_str() );
   int Iz_pi    = atoi( args[8].c_str() );
   
-  bool use_emp = (args.size() == base_arg_num);
-  
+  bool use_emp = (args.size() == base_arg_num || tweakBW_omega || tweakBW_omega_b1);
+
+  // Note, the following have no effect since L_\omega & J_\rho
+  // have been restricted to value 1
   float u_rho_1  = use_emp ? sqrt(.9) : atoi( args[9].c_str());
   float u_rho_3  = use_emp ? sqrt(.1) : atoi( args[10].c_str());
   float u_omega_1= use_emp ? sqrt(.9) : atoi( args[11].c_str());
   float u_omega_3= use_emp ? sqrt(.1) : atoi( args[12].c_str());
 
+  float G0_omega=0.0085, G0_b1=0.143;
+  if(tweakBW_omega && args[9][0]=='F') fastCalc=true;
+  else{
+    if(tweakBW_omega || tweakBW_omega_b1) G0_omega = atof( args[9].c_str());
+    if(tweakBW_omega_b1) G0_b1 = atof( args[10].c_str());
+  }
 
   const float b1DSratio2 = 0.277*0.277; //from PDG: D/S amp ratio=0.277+/-0.027
   float u_b1_0   = use_emp ? sqrt(1/(1 + b1DSratio2)) 
@@ -531,7 +534,7 @@ b1piAngAmp::newAmplitude( const vector< string >& args ) const {
   return new b1piAngAmp( polBeam, polFrac, J_X, Par_X, L_X, I_X, epsilon_R,
 			 Iz_b1, Iz_pi,
 			 u_rho_1, u_rho_3, u_omega_1, u_omega_3, 
-			 u_b1_0, u_b1_2, !use_emp);    
+			 u_b1_0, u_b1_2, G0_omega, G0_b1, !use_emp,fastCalc);    
   
   
 }
@@ -544,5 +547,5 @@ b1piAngAmp::clone() const {
 			  mIz_b1, mIz_pi,
 			  m_u_rho_1, m_u_rho_3, 
 			  m_u_omega_1, m_u_omega_3, 
-			  m_u_b1_0, m_u_b1_2, m_ORTHOCHECK));
+			  m_u_b1_0, m_u_b1_2, mG0_omega, m_ORTHOCHECK));
 }
