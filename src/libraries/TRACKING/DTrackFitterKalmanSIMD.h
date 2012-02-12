@@ -59,8 +59,8 @@
 #define MAX_DEDX 40.
 #define MIN_ITER 2
 #define MIN_CDC_ITER 0
-#define MIN_FDC_HITS 1
-#define MIN_CDC_HITS 1
+#define MIN_FDC_HITS 2 
+#define MIN_CDC_HITS 2 
 
 #define MOLIERE_FRACTION 0.995
 #define DE_PER_STEP_WIRE_BASED 0.00025 // in GeV
@@ -82,7 +82,7 @@ typedef struct{
 }DKalmanSIMDCDCHit_t;
 
 typedef struct{
-  int layer;
+  int package;
   double t,cosa,sina,dE;
   double uwire,vstrip,z;
   double xres,yres,xsig,ysig;
@@ -235,8 +235,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t CalcDeriv(double ds,const DVector3 &pos,DVector3 &dpos,
 		     const DMatrix5x1 &S,double dEdx,DMatrix5x1 &D1);
 
-  jerror_t StepJacobian(const DVector3 &pos,const DVector3 &wire_pos,
-			const DVector3 &wiredir,double ds,const DMatrix5x1 &S, 
+  jerror_t StepJacobian(const DVector3 &pos,double ds,const DMatrix5x1 &S, 
 			double dEdx,DMatrix5x5 &J);
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx);
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx,
@@ -346,12 +345,17 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // inverse of vertex time variance;
   double mInvVarT0;
 
+  // indexes for kink/break-point analysis
+  unsigned int break_point_cdc_index,break_point_step_index;
+  unsigned int break_point_fdc_index;
+
   bool DEBUG_HISTS;
   bool ENABLE_BOUNDARY_CHECK;
   int DEBUG_LEVEL;
   bool USE_T0_FROM_WIRES;
   bool USE_MULS_COVARIANCE;
   double FDC_CATHODE_SIGMA;
+  bool RECOVER_BROKEN_TRACKS;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
@@ -363,6 +367,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // Identity matrix
   DMatrix5x5 I5x5;
+  // Matrices with zeroes in them
+  DMatrix5x5 Zero5x5;
+  DMatrix5x1 Zero5x1;
+
 
  private:
   bool last_smooth;

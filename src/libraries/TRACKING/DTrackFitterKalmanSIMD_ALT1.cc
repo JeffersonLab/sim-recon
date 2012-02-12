@@ -95,11 +95,14 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     // Save the current state of the reference trajectory
     S0_=S0;
 
+    // Z position along the trajectory 
+    double z=forward_traj[k].pos.z();
+
     // Add the hit
     if (num_fdc_hits>0){
-      if (forward_traj[k].h_id>0){
+      if (forward_traj[k].h_id>0 && forward_traj[k].h_id<1000){
 	unsigned int id=forward_traj[k].h_id-1;
-	      
+
 	double cosa=my_fdchits[id]->cosa;
 	double sina=my_fdchits[id]->sina;
 	double u=my_fdchits[id]->uwire;
@@ -284,23 +287,23 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    fdc_updates[id].S=S;
 	    fdc_updates[id].C=C;
 	    fdc_updates[id].index=k;
-
-	    // Filtered residual and covariance of filtered residual
-	    double R=Mdiff*(1.-H*K);   
-	    double RC=V-H*(C*H_T);
 	    
 	    // Update chi2 for this segment
-	    chisq+=R*R/RC;
+	    chisq+=(1.-H*K)*Mdiff*Mdiff/V;
 	    fdc_updates[id].chi2sum=chisq;
 	    
 	    if (DEBUG_LEVEL>2){
-	      printf("hit %d p %5.2f dm %5.2f sig %5.3f chi2 %5.2f z %5.2f\n",
-		     id,1./S(state_q_over_p),Mdiff,sqrt(RC),R*R/RC,
+	      printf("hit %d p %5.2f dm %5.2f chi2 %5.2f z %5.2f\n",
+		     id,1./S(state_q_over_p),Mdiff,(1.-H*K)*Mdiff*Mdiff/V,
 		     forward_traj[k].pos.z());
 	    
 	    }
 	      // update number of degrees of freedom
 	    numdof++;
+
+
+	    break_point_fdc_index=id+1;
+	    break_point_step_index=k;
 	  }
 	  else{
 	    // Flag that we did not use this hit after all
@@ -311,12 +314,11 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  num_fdc_hits-=forward_traj[k].num_hits;
       }
     }
-    else if (more_cdc_measurements){
+    else if (more_cdc_measurements && z<endplate_z){
       origin=my_cdchits[cdc_index]->hit->wire->origin;
       double z0w=origin.z();
       dir=my_cdchits[cdc_index]->hit->wire->udir;
-      double uz=dir.z();
-      double z=forward_traj[k].pos.z();
+      double uz=dir.z();   
       wirepos=origin+((z-z0w)/uz)*dir;
     
       // doca variables
@@ -527,21 +529,20 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      // Step state back to previous z position
 	      Step(newz,forward_traj[k_minus_1].pos.z(),dedx,cdc_updates[cdc_index].S);
 	      
-	      // Residual
-	      res*=1.-H*K;
-	  
 	      // Update chi2 for this segment
-	      double err2 = Vc-H*(C*H_T);
-	      chisq+=anneal_factor*res*res/err2;
+	      chisq+=(1.-H*K)*res*res/Vc;
 
 	      if (DEBUG_LEVEL>2)
 		printf("Ring %d straw %d pred %f meas %f chi2 %f\n",
 		       my_cdchits[cdc_index]->hit->wire->ring,
 		       my_cdchits[cdc_index]->hit->wire->straw,
-		       d,dm,res*res/err2);
+		       d,dm,(1.-H*K)*res*res/Vc);
 	      
-	    // update number of degr  virtual jerror_t SmoothForward(DMatrix5x1 &S);   ees of freedom
+	      // update number of degrees of freedom
 	      numdof++;
+
+	      break_point_cdc_index=cdc_index+1;
+	      break_point_step_index=k_minus_1;
 	    }
 	  }
 	  else{
@@ -611,13 +612,15 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     }
   }
   
-  // If chisq is still zero after the fit, something went wrong...
-  if (chisq<EPS) return UNRECOVERABLE_ERROR;
   // Check that there were enough hits to make this a valid fit
-  if (numdof<6) return UNRECOVERABLE_ERROR;
+  if (numdof<6){
+    chisq=1e8;
+    numdof=0;
+    return UNRECOVERABLE_ERROR;
+  }
   
   chisq*=anneal_factor;
-  
+  numdof-=5;
 
   // Final position for this leg
   x_=S(state_x);
