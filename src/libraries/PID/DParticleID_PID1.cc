@@ -330,8 +330,8 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(const DChargedTrackHypothesis *locCha
 	unsigned int locNumHitsUsedFordEdx_CDC = locTrackTimeBased->dNumHitsUsedFordEdx_CDC;
 	unsigned int locNumHitsUsedFordEdx_FDC = locTrackTimeBased->dNumHitsUsedFordEdx_FDC;
 
-	bool locUseCDCHitsFlag = (locNumHitsUsedFordEdx_CDC > locMinimumNumberUsedHitsForConfidence) ? true : false;
-	bool locUseFDCHitsFlag = (locNumHitsUsedFordEdx_FDC > locMinimumNumberUsedHitsForConfidence) ? true : false;
+	bool locUseCDCHitsFlag = (locNumHitsUsedFordEdx_CDC >= locMinimumNumberUsedHitsForConfidence) ? true : false;
+	bool locUseFDCHitsFlag = (locNumHitsUsedFordEdx_FDC >= locMinimumNumberUsedHitsForConfidence) ? true : false;
 
 	if((locUseCDCHitsFlag == false) && (locUseFDCHitsFlag == false))
 		return RESOURCE_UNAVAILABLE; //not enough hits, use other sources of information for PID

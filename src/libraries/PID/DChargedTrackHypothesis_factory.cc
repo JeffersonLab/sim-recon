@@ -101,13 +101,13 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 
 		locChargedTrackHypothesis->dPID = dPIDAlgorithm->IDTrack(locTrackTimeBased->charge(), locTrackTimeBased->mass()); //mass used in track fit to create DTrackWireBased
 
-		// Calculate DC dE/dx ChiSq
-		// Compute the dEdx for the hits on the track
-		locUseDCdEdxForPIDFlag = false; //true when enabled
-		if(dPIDAlgorithm->CalcDCdEdxChiSq(locChargedTrackHypothesis, locChiSq_DCdEdx, locNDF_DCdEdx) != NOERROR)
-			locUseDCdEdxForPIDFlag = false;
-		locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq_DCdEdx;
-		locChargedTrackHypothesis->dNDF_DCdEdx = locNDF_DCdEdx;
+			// Calculate DC dE/dx ChiSq
+			// Compute the dEdx for the hits on the track
+			locUseDCdEdxForPIDFlag = false; //true when enabled
+			if(dPIDAlgorithm->CalcDCdEdxChiSq(locChargedTrackHypothesis, locChiSq_DCdEdx, locNDF_DCdEdx) == NOERROR)
+				locUseDCdEdxForPIDFlag = true;
+			locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq_DCdEdx;
+			locChargedTrackHypothesis->dNDF_DCdEdx = locNDF_DCdEdx;
 
 		// Initialize projected time to estimate from track
 		locProjectedTime = locTrackTimeBased->t0();
