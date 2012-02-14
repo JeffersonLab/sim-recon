@@ -41,27 +41,34 @@ using namespace CLHEP;
 void Usage(char* progName )
 {
   cout << endl << " Usage for: " << progName << endl << endl;
-  cout << "\t -c <file>\t Config file" << endl;
-  cout << "\t -o <name>\t Output name base (ascii, hddm and root files generated)" << endl;
-  cout << "\t -a <file>\t File name to record events before accept/reject [optional]" << endl;
-  cout << "\t -l <value>\t Low edge of mass range (GeV) [optional]" << endl;
-  cout << "\t -u <value>\t Upper edge of mass range (GeV) [optional]" << endl;
-  cout << "\t -n <value>\t Minimum number of events to generate [optional]" << endl;
-  cout << "\t -N <value>\t Exact number of events to generate [optional]" << endl;
-  cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
-  //cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl ;
-  cout << "\t -s <value> Specify random number generator seed [optional]" << endl;
-  cout << "\t -b <value> Specify batch size for intensities in accept/reject alg. [optional]" << endl; 
-  cout << "\t -i <value> Specify maximum intensity (accept/reject range)" << endl << endl;
+  cout << "    -c <file>\t Config file [required]" << endl;
+  cout << "    -o <name>\t Output name base (ascii, hddm and root files generated)" << endl;
+  cout << "    -a <file>\t File to record events before accept/reject" << endl;
+  cout << "    -e <file>\t Input file with MC sample to use instead of generating" << endl;
+  cout << "    -l <value>\t Low edge of mass range (GeV)" << endl;
+  cout << "    -u <value>\t Upper edge of mass range (GeV)" << endl;
+  cout << "    -n <value>\t Minimum number of events to generate (allows spill-over)" << endl;
+  cout << "    -N <value>\t Exact number of events to generate" << endl;
+  cout << "    -f \t\t Generate flat in M(X) (no physics)" << endl;
+  //cout << "\t -d \t\t Plot only diagnostic histograms" << endl ;
+  cout << "    -s <value>\t Specify random number generator seed" << endl;
+  cout << "    -b <value>\t Batch size for intensities in accept/reject alg. (def. 200k)" << endl; 
+  cout << "    -i <value>\t Specify maximum intensity (accept/reject range)" << endl << endl;
   
 }
 
 
+bool fileGood(string fname)
+{
+  ifstream file(fname.c_str());
+  return file.good();
+}
+
 
 int main( int argc, char* argv[] ){
   
-  string  configfile("gen_OmegaPiPi.cfg");
-  string  outname("gen_test.ascii"), allGenFName, inMCFName;
+  string  configfile("");
+  string  outname("gen_5pi"), allGenFName, inMCFName;
   b1piAmpCheck AmpCheck;
   bool diag = false, genFlat = false, StrictEvtLimit=false;
   bool saveAll=false, readInEvents=false;
@@ -77,7 +84,7 @@ int main( int argc, char* argv[] ){
   int par_types_list[]={1,14,9,8,7,9,8};
   vector<int> part_types(par_types_list,par_types_list+7);
   float part_masses_list[]={Mpipm, Mpipm, Mpi0, Mpipm, Mpipm};
-  vector<float> part_masses(part_masses_list,part_masses_list+5);
+  vector<double> part_masses(part_masses_list,part_masses_list+5);
 
   
   double CustMaxInten=-1, maxInten=0, runs_maxInten=0.0;
@@ -134,11 +141,17 @@ int main( int argc, char* argv[] ){
     }
   }
   
-  if( configfile.size() == 0 || outname.size() == 0 ){
-    cout << "No config file or output specificed." << endl;
+  if( configfile.size() == 0 ){
+    cerr << "No config file specified." << endl;
     Usage(argv[0]);
     exit(1);
   }
+  if(!fileGood(configfile)){
+    cerr << "Invalid config file!" << endl;
+    exit(1);
+  }    
+     
+
   // END OF ARGUMENT PARSING/CHECKING /////////////////////////////////////////
 
   
