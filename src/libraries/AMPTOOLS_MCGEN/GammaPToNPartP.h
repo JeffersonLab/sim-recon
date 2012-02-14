@@ -20,7 +20,7 @@ class GammaPToNPartP {
 public:
   
   GammaPToNPartP( float lowMass, float highMass, 
-		  vector<float> &ChildMass,
+		  vector<double> &ChildMass,
 		  ProductionMechanism::Type type,
 		  float tcoef=4.0, float Ebeam=9.0/*GeV*/);
   
@@ -33,10 +33,12 @@ private:
   
   ProductionMechanism m_prodMech;
   
+  
   HepLorentzVector m_beam;
   HepLorentzVector m_target;
   
-  double m_ChildMass[12];
+  //double m_ChildMass[12];
+  vector<double> m_ChildMass;
   unsigned int m_Npart;
 
 };
