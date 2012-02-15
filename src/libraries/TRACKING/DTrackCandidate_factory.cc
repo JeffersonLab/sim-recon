@@ -909,36 +909,18 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    // Redo the fit
 	    fit.FitCircleRiemannCorrected(fit.r0);
 	  }
-	  // Phi angle at one of the fdc planes
-	  double Phi1=atan2(segments[0]->hits[0]->xy.Y()-fit.y0,
-			    segments[0]->hits[0]->xy.X()-fit.x0);
-	  
-	  // Estimate for azimuthal angle
-	  double phi0=atan2(-fit.x0,fit.y0); 
-	  if (q<0) phi0+=M_PI;
-	  double sinphi=sin(phi0);
-	  double cosphi=cos(phi0);
-	  
-	  // Look for distance of closest approach nearest to target
-	  double D=-q*fit.r0-fit.x0/sinphi; 
-	  double x0=-D*sinphi;
-	  double y0=D*cosphi;
-	  double Phi0=atan2(y0-fit.y0,x0-fit.x0);
-	  double tanl=tan(M_PI_2-mom.Theta());
-	  double dPhi=Phi1-Phi0;
-	    
-	  while (dPhi>2.*M_PI) dPhi-=2.*M_PI;
-	  while (dPhi<0) dPhi+=2.*M_PI;
-	  
-	  fit.z_vertex=segments[0]->hits[0]->wire->origin.z()-fit.r0*dPhi*tanl;
-	  if (fit.z_vertex>50.0 && fit.z_vertex<167.9){
-	    fit.tanl=tanl;
-	    fit.q=q;
-	    GetPositionAndMomentum(fit,Bz_avg,
-				   mycdchits[id_for_smallest_r]->wire->origin,
-				   pos,mom);
-	  }
-	} // if we succeeded in matching at least one cdc
+	  fit.tanl=tan(M_PI_2-mom.Theta());
+	  fit.z_vertex=0; // this will be changed later
+	  fit.q=q;
+	  GetPositionAndMomentum(fit,Bz_avg,
+				 mycdchits[id_for_smallest_r]->wire->origin,
+				 pos,mom);
+	  // Find the z-position at the new position in x and y
+	  DVector2 xy0(pos.X(),pos.Y());
+	  double tworc=2.*fit.r0;
+	  double sperp=tworc*asin((segments[0]->hits[0]->xy-xy0).Mod()/tworc);
+	  pos.SetZ(segments[0]->hits[0]->wire->origin.z()-sperp*fit.tanl);
+    	} // if we succeeded in matching at least one cdc
       } // if we have cdc hits not matched to candidates yet...
       
      
