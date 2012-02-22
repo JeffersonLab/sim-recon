@@ -6,9 +6,16 @@
  *
  *	version 1.0 	-Richard Jones July 16, 2001
  *
- * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
+ *  changes:
+ *          Wed Feb 22 08:06:31 EST 2012 D. Lawrence
+ *          - Convert to .cc suffix to compile with C++ compiler
+ *          - Modify to store full enrgy-weighted time spectra
+ *            in HDDM file
+ *
+ *          Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
  *          add ipart to the function hitBarrelEMcal
- * changes: Fri Jul 13 08:54:48 EDT 2007 M. Shepherd
+ *
+ *          Fri Jul 13 08:54:48 EDT 2007 M. Shepherd
  *          remove attenuation, condense up and dowstream hits
  *          pass up true z position and hit time
  */
@@ -17,11 +24,14 @@
 #include <stdio.h>
 #include <math.h>
 
+extern "C" {
 #include <hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
 
 #include "calibDB.h"
+}
+
 
 static float THRESH_MEV	     = 1.;
 static float TWO_HIT_RESOL   = 50.;
@@ -34,6 +44,18 @@ static int initialized = 0;
 
 extern s_HDDM_t* thisInputEvent;
 
+// Prevent name mangling so these routines keep their
+// C-style names in the object
+extern "C"{
+	void hitBarrelEMcal (float xin[4], float xout[4],
+                     	float pin[5], float pout[5], float dEsum,
+                     	int track, int stack, int history, int ipart);
+	void hitbarrelemcal_(float* xin, float* xout,
+                     	float* pin, float* pout, float* dEsum,
+                     	int* track, int* stack, int* history, int* ipart);
+	s_BarrelEMcal_t* pickBarrelEMcal();
+}
+
 /* register hits during tracking (from gustep) */
 
 void hitBarrelEMcal (float xin[4], float xout[4],
@@ -41,7 +63,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
                      int track, int stack, int history, int ipart)
 {
   float x[3], t;
-  float dx[3], dr;
+  //float dx[3], dr;
   float xlocal[3];
   float xbcal[3];
   float xHat[] = {1,0,0};
@@ -108,7 +130,8 @@ void hitBarrelEMcal (float xin[4], float xout[4],
     void** twig = getTwig(&barrelEMcalTree, mark);
     if (*twig == 0) 
       {
-	s_BarrelEMcal_t* bcal = *twig = make_s_BarrelEMcal();
+	s_BarrelEMcal_t* bcal = make_s_BarrelEMcal();
+	*twig = bcal;
 	bcal->bcalTruthShowers = showers = make_s_BcalTruthShowers(1);
 	int a = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
 	showers->in[0].primary = (track <= a);
@@ -136,15 +159,16 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       int sector = getsector_();
       int layer  = getlayer_();
       int module = getmodule_();
-      float phim = atan2(xbcal[1],xbcal[0]);
-      float radius=sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
+      //float phim = atan2(xbcal[1],xbcal[0]);
+      //float radius=sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
       float zLocal = xlocal[2];
       int mark = (module<<16)+ (layer<<9) + sector;
       
       void** twig = getTwig(&barrelEMcalTree, mark);
       if (*twig == 0)
       {
-         s_BarrelEMcal_t* bcal = *twig = make_s_BarrelEMcal();
+         s_BarrelEMcal_t* bcal = make_s_BarrelEMcal();
+	 *twig = bcal;
          s_BcalCells_t* cells = make_s_BcalCells(1);
          cells->mult = 1;
          cells->in[0].module = module;
@@ -157,18 +181,18 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       }
       else
       {
-         s_BarrelEMcal_t* bcal = *twig;
+         s_BarrelEMcal_t* bcal = (s_BarrelEMcal_t*)*twig;
          hits = bcal->bcalCells->in[0].bcalHits;
       }
 
-      for (nshot = 0; nshot < hits->mult; nshot++)
+      for (nshot = 0; nshot < (int)hits->mult; nshot++)
       {
          if (fabs(hits->in[nshot].t - t) < TWO_HIT_RESOL)
          {
             break;
          }
       }
-      if (nshot < hits->mult)		/* merge with former hit */
+      if (nshot < (int)hits->mult)		/* merge with former hit */
       {
          hits->in[nshot].t =
                   (hits->in[nshot].t * hits->in[nshot].E + t * dEsum)
@@ -191,6 +215,21 @@ void hitBarrelEMcal (float xin[4], float xout[4],
          fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
       }
    }
+
+	/* 
+	 Fill the data structures that hold the energy weighted timing
+	 spectra for the cells that are hit. This will eventually replace
+	 the hit mechanism above.
+	 
+	 Note that this is done differently from other hits in HDGeant in
+	 that the structures filled here are not HDDM defined structures.
+	 The data is copied (sparsely) into the HDDM structures in
+	 pickBarrelEMcal below as they are for other data structures.
+	*/
+	if (dEsum > 0)
+   {
+
+	}
 }
 
 /* entry point from fortran */
@@ -217,19 +256,19 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 
    if ((cellCount == 0) && (showerCount == 0))
    {
-      return HDDM_NULL;
+      return (s_BarrelEMcal_t*)HDDM_NULL;
    }
 
    box = make_s_BarrelEMcal();
    box->bcalCells = make_s_BcalCells(cellCount);
    box->bcalTruthShowers = make_s_BcalTruthShowers(showerCount);
-   while (item = (s_BarrelEMcal_t*) pickTwig(&barrelEMcalTree))
+   while ( (item = (s_BarrelEMcal_t*) pickTwig(&barrelEMcalTree)) )
    {
       s_BcalCells_t* cells = item->bcalCells;
       int cell;
       s_BcalTruthShowers_t* showers = item->bcalTruthShowers;
       int shower;
-      for (cell=0; cell < cells->mult; ++cell)
+      for (cell=0; cell < (int)cells->mult; ++cell)
       {
 	 int m = box->bcalCells->mult;
          int mok = 0;
@@ -238,7 +277,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
           
          /* compress out the hits below threshold */
          int i,iok;
-         for (iok=i=0; i < hits->mult; i++)
+         for (iok=i=0; i < (int)hits->mult; i++)
          {
             if (hits->in[i].E >= THRESH_MEV/1e3)
             {
@@ -258,7 +297,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
             hits->mult = iok;
             if (iok == 0)
             {
-               cells->in[cell].bcalHits = HDDM_NULL;
+               cells->in[cell].bcalHits = (s_BcalHits_t*)HDDM_NULL;
                FREE(hits);
             }
          }
@@ -274,7 +313,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
          FREE(cells);
       }
 
-      for (shower=0; shower < showers->mult; ++shower)
+      for (shower=0; shower < (int)showers->mult; ++shower)
       {
          int m = box->bcalTruthShowers->mult++;
          box->bcalTruthShowers->in[m] = showers->in[shower];
@@ -293,19 +332,19 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
        (box->bcalCells->mult == 0))
    {
       FREE(box->bcalCells);
-      box->bcalCells = HDDM_NULL;
+      box->bcalCells = (s_BcalCells_t*)HDDM_NULL;
    }
    if ((box->bcalTruthShowers != HDDM_NULL) &&
        (box->bcalTruthShowers->mult == 0))
    {
       FREE(box->bcalTruthShowers);
-      box->bcalTruthShowers = HDDM_NULL;
+      box->bcalTruthShowers = (s_BcalTruthShowers_t*)HDDM_NULL;
    }
    if ((box->bcalCells->mult == 0) &&
        (box->bcalTruthShowers->mult == 0))
    {
       FREE(box);
-      box = HDDM_NULL;
+      box = (s_BarrelEMcal_t*)HDDM_NULL;
    }
 #if TESTING_CAL_CONTAINMENT
   printf("BCal energy sum: %f\n",Etotal);
