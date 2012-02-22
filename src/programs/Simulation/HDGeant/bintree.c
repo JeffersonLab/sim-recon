@@ -17,12 +17,12 @@ void** getTwig(binTree_t** tree, int mark)
       node->mark = mark;
       node->left = 0;
       node->right = 0;
-      node->this = 0;
-      return &node->this;
+      node->this_node = 0;
+      return &node->this_node;
    }
    else if (mark == node->mark)
    {
-      return &node->this;
+      return &node->this_node;
    }
    else if (mark < node->mark)
    {
@@ -48,7 +48,7 @@ void* pickTwig(binTree_t** tree)
    }
    else
    {
-      void* twig = node->this;
+      void* twig = node->this_node;
       *tree = node->right;
       free(node);
       return twig;
