@@ -539,6 +539,12 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
     checkbuttons[str1]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
   }
 
+  for (Int_t n=1;n<debugermf->GetNTrTB();n++){
+    char str1[128];
+    sprintf(str1,"TimeBased%d",n);
+    checkbuttons[str1]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  }
+
   candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
   wiretracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
   timetracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");	

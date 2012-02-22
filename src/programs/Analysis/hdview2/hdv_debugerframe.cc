@@ -55,7 +55,8 @@ hdv_debugerframe::hdv_debugerframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt
   NTrCand = 0;
   NTrWireBased = 0;
   NTrTimeBased = 0;
-  InitMidFrame = 0;
+  InitMid1Frame = 0;
+  InitMid2Frame = 0;
 
   // First, define all of the of the graphics objects. Below that, make all
   // of the connections to the methods so these things will work!
@@ -67,14 +68,14 @@ hdv_debugerframe::hdv_debugerframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt
   TGLayoutHints *chints = new TGLayoutHints(kLHintsCenterY|kLHintsCenterX, 2,2,2,2);
   TGLayoutHints *xhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX, 2,2,2,2);
 
-  topframe = new TGHorizontalFrame(this,  500, 800);
-  mid1frame = new TGHorizontalFrame(this, 500, 800);
-  //  mid2frame = new TGHorizontalFrame(this, 400, 50);
+  topframe = new TGHorizontalFrame(this,  800, 500);
+  mid1frame = new TGHorizontalFrame(this, 800, 500);
+  mid2frame = new TGHorizontalFrame(this, 800, 500);
   botframe = new TGHorizontalFrame(this,  400, 50);
 
   AddFrame(topframe, lhints);
   AddFrame(mid1frame, lhints);
-  //AddFrame(mid2frame, hints);
+  AddFrame(mid2frame, lhints);
   AddFrame(botframe, chints);
 
 
@@ -175,12 +176,19 @@ hdv_debugerframe::hdv_debugerframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt
   // mid1 frame for Wire based Tracking
   hitdrawoptsWB = new TGGroupFrame(mid1frame, "Wire Based Hits", kVerticalFrame);
   mid1frame->AddFrame(hitdrawoptsWB, lhints);
-
   trackinfoWB = new TGGroupFrame(mid1frame, "    trk:       type:       p:       theta:     phi:       z:  chisq/Ndof: Ndof:    cand:", 
 					       kHorizontalFrame);
   mid1frame->AddFrame(trackinfoWB, hints);
-
   SetUpMid1Frame();
+
+
+
+  hitdrawoptsTB = new TGGroupFrame(mid2frame, "Time Based Hits", kVerticalFrame);
+  mid2frame->AddFrame(hitdrawoptsTB, lhints);
+  trackinfoTB = new TGGroupFrame(mid2frame, "    trk:       type:       p:       theta:     phi:       z:  chisq/Ndof: Ndof:    cand:", 
+					       kHorizontalFrame);
+  mid2frame->AddFrame(trackinfoTB, hints);
+  SetUpMid2Frame();
 
        
   //========== Done Button ===========
@@ -287,6 +295,7 @@ void hdv_debugerframe::UpdateTrackLabels()
   }
 
   SetUpMid1Frame();
+  SetUpMid2Frame();
 
   map<string, TGCheckButton*>::iterator iter = checkbuttons.begin();
   for(; iter!=checkbuttons.end(); iter++){
@@ -323,7 +332,7 @@ void hdv_debugerframe::SetUpMid1Frame(){
     } else{ 
       sprintf(str2,".......................");
     }
-    if (!InitMidFrame) {
+    if (!InitMid1Frame) {
       checkbuttons[str1] = new TGCheckButton(hitdrawoptsWB, str2); 
       hitdrawoptsWB->AddFrame(checkbuttons[str1], lhints);
     } else {
@@ -331,7 +340,7 @@ void hdv_debugerframe::SetUpMid1Frame(){
     }
   } 
 
-  if (!InitMidFrame) {    
+  if (!InitMid1Frame) {    
     vector<string> colnamesw;
     colnamesw.push_back("trk");
     colnamesw.push_back("type");
@@ -361,7 +370,7 @@ void hdv_debugerframe::SetUpMid1Frame(){
       wblabs[colnamesw[i]] = tv;
     }
     
-    InitMidFrame = 1;
+    InitMid1Frame = 1;
   }
   
   for (int k=0;k<10;k++){
@@ -420,6 +429,134 @@ void hdv_debugerframe::SetUpMid1Frame(){
       wblabs["chisq/Ndof"][k]->SetText("-----");
       wblabs["Ndof"][k]->SetText("-----");
       wblabs["cand"][k]->SetText("-----");
+
+    }
+      
+  }  
+
+}
+//************************
+//*
+//*    SetUpMid2Frame
+//*
+//************************
+void hdv_debugerframe::SetUpMid2Frame(){
+
+  TGLayoutHints *lhints = new TGLayoutHints(kLHintsNormal, 2,2,2,2);
+  TGLayoutHints *xhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX, 2,2,2,2);
+  TGLayoutHints *chints = new TGLayoutHints(kLHintsCenterY|kLHintsCenterX, 2,2,2,2);
+
+  
+  for (int k=0;k<10;k++){
+    char str1[128];
+    sprintf(str1,"TimeBased%d",k+1);
+    char str2[128];
+    if (k<NTrTimeBased){
+      if (k<10){ 
+	sprintf(str2,"Hits Time Based Track  %d",k+1);
+	if (k>9)
+	  sprintf(str2,"Hits Time Based Track %d",k+1);
+      }
+    } else{ 
+      sprintf(str2,".......................");
+    }
+    if (!InitMid2Frame) {
+      checkbuttons[str1] = new TGCheckButton(hitdrawoptsTB, str2); 
+      hitdrawoptsTB->AddFrame(checkbuttons[str1], lhints);
+    } else {
+      checkbuttons[str1]->SetText(str2);  
+    }
+  } 
+
+  if (!InitMid2Frame) {    
+    vector<string> colnamesw;
+    colnamesw.push_back("trk");
+    colnamesw.push_back("type");
+    colnamesw.push_back("p");
+    colnamesw.push_back("theta");
+    colnamesw.push_back("phi");
+    colnamesw.push_back("z");
+    colnamesw.push_back("chisq/Ndof");
+    colnamesw.push_back("Ndof");
+    colnamesw.push_back("cand");
+    
+    for(unsigned int i=0; i<colnamesw.size(); i++){
+      // create frames
+      tfTB[colnamesw[i]] = new TGVerticalFrame(trackinfoTB);
+      trackinfoTB->AddFrame( tfTB[colnamesw[i]], xhints);
+      //string lab = colnamesw[i]+":";
+      //TGLabel *tl = new TGLabel(tfWB[colnamesw[i]], lab.c_str());
+      //tfWB[colnamesw[i]]->AddFrame(tl, chints);
+      
+      vector<TGLabel*> tv;
+      //tv.push_back(tl);
+      for (int k=0;k<10;k++){
+	TGLabel *lab = new TGLabel(tfTB[colnamesw[i]],"-----"); 
+	tfTB[colnamesw[i]]->AddFrame(lab, chints);
+	tv.push_back(lab);
+      }
+      tblabs[colnamesw[i]] = tv;
+    }
+    
+    InitMid2Frame = 1;
+  }
+  
+  for (int k=0;k<10;k++){
+    
+    if (k<NTrTimeBased) {
+
+      const DTrackTimeBased *trk = subTrackTimeBased[k];
+      stringstream trkno, type, p, theta, phi, z, chisq_per_dof, Ndof, cand;
+      trkno<<setprecision(4)<<k+1;
+      
+      int row = k;
+      tblabs["trk"][row]->SetText(trkno.str().c_str());
+      
+      double mass = trk->mass();
+      if(fabs(mass-0.13957)<1.0E-4)type<<"pi";
+      else if(fabs(mass-0.93827)<1.0E-4)type<<"proton";
+      else if(fabs(mass-0.493677)<1.0E-4)type<<"K";
+      else if(fabs(mass-0.000511)<1.0E-4)type<<"e";
+      else if (fabs(mass)<1.e-4 && fabs(trk->charge())<1.e-4) type << "gamma";
+      else type<<"q=";
+      if (fabs(trk->charge())>1.e-4){
+	type<<(trk->charge()>0 ? "+":"-");
+      }
+      
+      tblabs["type"][row]->SetText(type.str().c_str());
+      
+      p<<setprecision(3)<<fixed<<trk->momentum().Mag();
+      tblabs["p"][row]->SetText(p.str().c_str());
+      
+      theta<<setprecision(2)<<fixed<<trk->momentum().Theta()*TMath::RadToDeg();
+      tblabs["theta"][row]->SetText(theta.str().c_str());
+      
+      double myphi = trk->momentum().Phi();
+      if(myphi<0.0)myphi+=2.0*M_PI;
+      phi<<setprecision(2)<<fixed<<myphi;
+      tblabs["phi"][row]->SetText(phi.str().c_str());
+      
+      z<<setprecision(2)<<fixed<<trk->position().Z();
+      tblabs["z"][row]->SetText(z.str().c_str());
+      
+      chisq_per_dof<<setprecision(1)<<fixed<<trk->chisq/trk->Ndof;
+      Ndof<<trk->Ndof;
+      cand << trk->candidateid;
+      
+      tblabs["chisq/Ndof"][row]->SetText(chisq_per_dof.str().c_str());
+      tblabs["Ndof"][row]->SetText(Ndof.str().c_str());
+      tblabs["cand"][row]->SetText(cand.str().c_str());
+
+    } else {
+      tblabs["trk"][k]->SetText("-----");
+      tblabs["type"][k]->SetText("-----");
+      tblabs["p"][k]->SetText("-----");
+      tblabs["theta"][k]->SetText("-----");
+      tblabs["phi"][k]->SetText("-----");
+      tblabs["z"][k]->SetText("-----");
+      tblabs["chisq/Ndof"][k]->SetText("-----");
+      tblabs["Ndof"][k]->SetText("-----");
+      tblabs["cand"][k]->SetText("-----");
 
     }
       

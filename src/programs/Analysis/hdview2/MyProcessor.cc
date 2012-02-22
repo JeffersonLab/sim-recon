@@ -194,14 +194,14 @@ void MyProcessor::FillGraphics(void)
 	
 	if(!loop)return;
 
-	vector<const DTrackCandidate*> trackCandidates;
-	loop->Get(trackCandidates);
+	vector<const DTrackCandidate*> trCand;
+	loop->Get(trCand);
 	vector<const DTrackTimeBased*> trTB;
 	loop->Get(trTB);
 	vector<const DTrackTimeBased*> trWB;
 	loop->Get(trWB);
 	hdv_debugerframe *p = hdvmf->GetDebugerFrame();
-	p->SetNTrCand(trackCandidates.size());
+	p->SetNTrCand(trCand.size());
 	p->SetNTrWireBased(trWB.size());
 	p->SetNTrTimeBased(trTB.size());
 	
@@ -436,9 +436,7 @@ void MyProcessor::FillGraphics(void)
 		graphics.push_back(gset);
 	}
 
-	vector<const DTrackCandidate*> trCand;
-	loop->Get(trCand);
-	
+	// Track Hits for Track Candidates and Candidate trajectory in Debuger Window
 	for(unsigned int n=0; n<trCand.size(); n++){
 	  if (n>9)
 	    break;
@@ -486,13 +484,60 @@ void MyProcessor::FillGraphics(void)
 	  }
 	}
 
-	// Time Based Track Hits
-
-	for(unsigned int n=0; n<trTB.size(); n++){
+	// Wire Based Track Hits and trajectory for Debuger Window
+	for(unsigned int n=0; n<trWB.size(); n++){
 	  if (n>9)
 	    break;
 	  char str1[128];
 	  sprintf(str1,"WireBased%d",n+1);
+	  
+	  if(hdvmf->GetCheckButton(str1)){	
+
+	    int color = n+1;
+	    if (color > 4)
+	      color++;
+	    if (color > 6)
+	      color++;	      
+
+	    AddKinematicDataTrack(trWB[n], color, 1.5);
+
+	    vector<const DCDCTrackHit*> cdctrackhits;
+	    trWB[n]->Get(cdctrackhits);
+	    for(unsigned int i=0; i<cdctrackhits.size(); i++){
+	      const DCDCWire *wire = cdctrackhits[i]->wire;
+	      DGraphicSet gset(color, kLine, 1.0);
+	      DVector3 dpoint=wire->origin-(wire->L/2.0)*wire->udir;
+	      TVector3 tpoint(dpoint.X(),dpoint.Y(),dpoint.Z());
+	      gset.points.push_back(tpoint);
+	      dpoint=wire->origin+(wire->L/2.0)*wire->udir;
+	      tpoint.SetXYZ(dpoint.X(),dpoint.Y(),dpoint.Z());
+	      gset.points.push_back(tpoint);
+	      graphics.push_back(gset);
+	      
+	    } // end loop of cdc hits of track candidate
+	    vector<const DFDCPseudo*> fdcpseudos;
+	    trWB[n]->Get(fdcpseudos);
+	    DGraphicSet gsetp(color, kMarker, 0.5);
+	    
+	    for(unsigned int i=0; i<fdcpseudos.size(); i++){
+	      const DFDCWire *wire = fdcpseudos[i]->wire;
+	      
+	      // Pseudo point
+	      TVector3 pos(fdcpseudos[i]->xy.X(), 
+			   fdcpseudos[i]->xy.Y(), wire->origin.Z());
+	      gsetp.points.push_back(pos);
+	    }
+	    graphics.push_back(gsetp);
+	    
+	  }
+	}
+
+	// Time Based Track Hits and trajectory for Debuger Window
+	for(unsigned int n=0; n<trTB.size(); n++){
+	  if (n>9)
+	    break;
+	  char str1[128];
+	  sprintf(str1,"TimeBased%d",n+1);
 	  
 	  if(hdvmf->GetCheckButton(str1)){	
 
@@ -534,6 +579,7 @@ void MyProcessor::FillGraphics(void)
 	    
 	  }
 	}
+
 
 
 	
@@ -612,6 +658,7 @@ void MyProcessor::FillGraphics(void)
 		vector<const DNeutralTrack*> neutrals;
 		loop->Get(neutrals);
 		DGraphicSet gset(kOrange, kMarker, 1.25);
+		gset.marker_style=21;
 		for(unsigned int i=0; i<neutrals.size(); i++){
 		  vector<const DNeutralShowerCandidate*> locShowerCandidates;
 		  neutrals[i]->GetT(locShowerCandidates);
@@ -626,11 +673,11 @@ void MyProcessor::FillGraphics(void)
 			double dist2 = 2.0 + 2.0*locShowerCandidates[0]->dEnergy;
 			TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
 			e->SetLineColor(kOrange);
-			e->SetFillStyle(0);
+			//e->SetFillStyle(1);
 			e->SetLineWidth(2);
 			graphics_xyB.push_back(e);
 		}
-		graphics.push_back(gset);
+		//graphics.push_back(gset);
 	}
 
 	// Reconstructed photons matched with tracks
@@ -979,13 +1026,13 @@ void MyProcessor::UpdateTrackLabels(void)
 	vector<const DKinematicData*> trks;
 	vector<const DKinematicData*> TrksCand;
 	vector<const DTrackWireBased*> TrksWireBased;
+	vector<const DTrackTimeBased*> TrksTimeBased;
 	vector<const DTrackCandidate*> cand;
 	if(loop)loop->Get(cand);
 	for(unsigned int i=0; i<cand.size(); i++)TrksCand.push_back(cand[i]);
 
-	vector<const DTrackWireBased*> WBtrk;
-	if(loop)loop->Get(WBtrk);
-	for(unsigned int i=0; i<WBtrk.size(); i++)TrksWireBased.push_back(WBtrk[i]);
+	if(loop)loop->Get(TrksWireBased);
+	if(loop)loop->Get(TrksTimeBased);
 	
 	if(name=="DChargedTrack"){
 		vector<const DChargedTrack*> chargedtracks;
@@ -1145,6 +1192,7 @@ void MyProcessor::UpdateTrackLabels(void)
 	fulllistmf->UpdateTrackLabels(throwns, trks);
 	debugermf->SetTrackCandidates(TrksCand);
 	debugermf->SetTrackWireBased(TrksWireBased);
+	debugermf->SetTrackTimeBased(TrksTimeBased);
 	debugermf->UpdateTrackLabels();
 }                 
 

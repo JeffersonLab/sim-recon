@@ -74,10 +74,12 @@ class hdv_debugerframe:public TGMainFrame {
   void SetTrackWireBased(vector<const DTrackWireBased*> d) {subTrackWireBased=d;}
   void SetTrackTimeBased(vector<const DTrackTimeBased*> d) {subTrackTimeBased=d;}
   void SetUpMid1Frame();
+  void SetUpMid2Frame();
 
  private:
 
-  Int_t InitMidFrame;
+  Int_t InitMid1Frame;
+  Int_t InitMid2Frame;
   Int_t NTrCand;
   Int_t NTrTimeBased;
   Int_t NTrWireBased;
