@@ -469,7 +469,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   // order for the options they implement to be filled into checkbuttons)
   trkmf = NULL;
   optionsmf = new hdv_optionsframe(this, NULL, 100, 100);
-  debugermf = new hdv_debugerframe(this, NULL, 400, 200);
+  debugermf = new hdv_debugerframe(this, NULL, 800, 800);
   fulllistmf = new hdv_fulllistframe(this, NULL, 100, 100);
   endviewBmf = new hdv_endviewBframe(this, NULL, 600, 600);
   
@@ -527,9 +527,15 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   checkbuttons["fcaltruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
   checkbuttons["trajectories"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
   
-  for (Int_t n=1;n<11;n++){
+  for (Int_t n=1;n<debugermf->GetNTrCand();n++){
     char str1[128];
     sprintf(str1,"Candidate%d",n);
+    checkbuttons[str1]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+  }
+
+  for (Int_t n=1;n<debugermf->GetNTrWB();n++){
+    char str1[128];
+    sprintf(str1,"WireBased%d",n);
     checkbuttons[str1]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
   }
 

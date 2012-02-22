@@ -196,8 +196,14 @@ void MyProcessor::FillGraphics(void)
 
 	vector<const DTrackCandidate*> trackCandidates;
 	loop->Get(trackCandidates);
+	vector<const DTrackTimeBased*> trTB;
+	loop->Get(trTB);
+	vector<const DTrackTimeBased*> trWB;
+	loop->Get(trWB);
 	hdv_debugerframe *p = hdvmf->GetDebugerFrame();
 	p->SetNTrCand(trackCandidates.size());
+	p->SetNTrWireBased(trWB.size());
+	p->SetNTrTimeBased(trTB.size());
 	
 	// BCAL hits
 	if(hdvmf->GetCheckButton("bcal")){
@@ -440,16 +446,19 @@ void MyProcessor::FillGraphics(void)
 	  sprintf(str1,"Candidate%d",n+1);
 	  
 	  if(hdvmf->GetCheckButton(str1)){	
+
+	    int color = n+1;
+	    if (color > 4)
+	      color++;
+	    if (color > 6)
+	      color++;	      
 	    
+	    AddKinematicDataTrack(trCand[n], color, 1.5);
+
 	    vector<const DCDCTrackHit*> cdctrackhits;
 	    trCand[n]->Get(cdctrackhits);
 	    for(unsigned int i=0; i<cdctrackhits.size(); i++){
 	      const DCDCWire *wire = cdctrackhits[i]->wire;
-	      int color = n+1;
-	      if (color > 4)
-		color++;
-	      if (color > 6)
-		color++;	      
 	      DGraphicSet gset(color, kLine, 1.0);
 	      DVector3 dpoint=wire->origin-(wire->L/2.0)*wire->udir;
 	      TVector3 tpoint(dpoint.X(),dpoint.Y(),dpoint.Z());
@@ -462,11 +471,6 @@ void MyProcessor::FillGraphics(void)
 	    } // end loop of cdc hits of track candidate
 	    vector<const DFDCPseudo*> fdcpseudos;
 	    trCand[n]->Get(fdcpseudos);
-	    int color = n+1;
-	    if (color > 4)
-	      color++;
-	    if (color > 6)
-	      color++;	      
 	    DGraphicSet gsetp(color, kMarker, 0.5);
 	    
 	    for(unsigned int i=0; i<fdcpseudos.size(); i++){
@@ -481,6 +485,57 @@ void MyProcessor::FillGraphics(void)
 	    
 	  }
 	}
+
+	// Time Based Track Hits
+
+	for(unsigned int n=0; n<trTB.size(); n++){
+	  if (n>9)
+	    break;
+	  char str1[128];
+	  sprintf(str1,"WireBased%d",n+1);
+	  
+	  if(hdvmf->GetCheckButton(str1)){	
+
+	    int color = n+1;
+	    if (color > 4)
+	      color++;
+	    if (color > 6)
+	      color++;	      
+
+	    AddKinematicDataTrack(trTB[n], color, 1.5);
+
+	    vector<const DCDCTrackHit*> cdctrackhits;
+	    trTB[n]->Get(cdctrackhits);
+	    for(unsigned int i=0; i<cdctrackhits.size(); i++){
+	      const DCDCWire *wire = cdctrackhits[i]->wire;
+	      DGraphicSet gset(color, kLine, 1.0);
+	      DVector3 dpoint=wire->origin-(wire->L/2.0)*wire->udir;
+	      TVector3 tpoint(dpoint.X(),dpoint.Y(),dpoint.Z());
+	      gset.points.push_back(tpoint);
+	      dpoint=wire->origin+(wire->L/2.0)*wire->udir;
+	      tpoint.SetXYZ(dpoint.X(),dpoint.Y(),dpoint.Z());
+	      gset.points.push_back(tpoint);
+	      graphics.push_back(gset);
+	      
+	    } // end loop of cdc hits of track candidate
+	    vector<const DFDCPseudo*> fdcpseudos;
+	    trTB[n]->Get(fdcpseudos);
+	    DGraphicSet gsetp(color, kMarker, 0.5);
+	    
+	    for(unsigned int i=0; i<fdcpseudos.size(); i++){
+	      const DFDCWire *wire = fdcpseudos[i]->wire;
+	      
+	      // Pseudo point
+	      TVector3 pos(fdcpseudos[i]->xy.X(), 
+			   fdcpseudos[i]->xy.Y(), wire->origin.Z());
+	      gsetp.points.push_back(pos);
+	    }
+	    graphics.push_back(gsetp);
+	    
+	  }
+	}
+
+
 	
 	// TOF Truth points
 	if(hdvmf->GetCheckButton("toftruth")){	
@@ -923,9 +978,14 @@ void MyProcessor::UpdateTrackLabels(void)
 	// Get the track info as DKinematicData objects
 	vector<const DKinematicData*> trks;
 	vector<const DKinematicData*> TrksCand;
+	vector<const DTrackWireBased*> TrksWireBased;
 	vector<const DTrackCandidate*> cand;
 	if(loop)loop->Get(cand);
 	for(unsigned int i=0; i<cand.size(); i++)TrksCand.push_back(cand[i]);
+
+	vector<const DTrackWireBased*> WBtrk;
+	if(loop)loop->Get(WBtrk);
+	for(unsigned int i=0; i<WBtrk.size(); i++)TrksWireBased.push_back(WBtrk[i]);
 	
 	if(name=="DChargedTrack"){
 		vector<const DChargedTrack*> chargedtracks;
@@ -1084,6 +1144,7 @@ void MyProcessor::UpdateTrackLabels(void)
 	// Have the pop-up window with the full particle list update it's labels
 	fulllistmf->UpdateTrackLabels(throwns, trks);
 	debugermf->SetTrackCandidates(TrksCand);
+	debugermf->SetTrackWireBased(TrksWireBased);
 	debugermf->UpdateTrackLabels();
 }                 
 

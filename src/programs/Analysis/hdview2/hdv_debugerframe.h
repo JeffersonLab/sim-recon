@@ -27,14 +27,19 @@
 #include <TVector3.h>
 #include <TGLabel.h>
 #include <TTimer.h>
+#include <TG3DLine.h>
 
 
 class hdv_mainframe;
 class DKinematicData;
+class DTrackWireBased;
+class DTrackTimeBased;
 
 #ifndef __CINT__
 #include "hdv_mainframe.h"
 #include <PID/DKinematicData.h>
+#include <TRACKING/DTrackWireBased.h>
+#include <TRACKING/DTrackTimeBased.h>
 #endif
 
 class hdv_debugerframe:public TGMainFrame {
@@ -46,21 +51,48 @@ class hdv_debugerframe:public TGMainFrame {
   void DoDone(void);
   void UpdateTrackLabels();
   TGHorizontalFrame *topframe;
+  TGHorizontalFrame *mid1frame;
+  TGHorizontalFrame *mid2frame;
   TGHorizontalFrame *botframe;
+  
   TGGroupFrame *hitdrawopts ;
+  TGGroupFrame *hitdrawoptsWB ;
+  TGGroupFrame *hitdrawoptsTB ;
+  TGGroupFrame *trackinfo;
+  TGGroupFrame *trackinfoWB ;
+  TGGroupFrame *trackinfoTB ;
+
   TGTextButton *done ;
 
   Int_t GetNTrCand(void) {return NTrCand;}
+  Int_t GetNTrWB(void) {return NTrWireBased;}
+  Int_t GetNTrTB(void) {return NTrTimeBased;}
   void SetNTrCand(Int_t d) { NTrCand = d;}
+  void SetNTrTimeBased(Int_t d) { NTrTimeBased = d;}
+  void SetNTrWireBased(Int_t d) { NTrWireBased = d;}
   void SetTrackCandidates(vector<const DKinematicData*> d) {TrackCandidates=d;}
+  void SetTrackWireBased(vector<const DTrackWireBased*> d) {subTrackWireBased=d;}
+  void SetTrackTimeBased(vector<const DTrackTimeBased*> d) {subTrackTimeBased=d;}
+  void SetUpMid1Frame();
 
  private:
 
+  Int_t InitMidFrame;
   Int_t NTrCand;
+  Int_t NTrTimeBased;
+  Int_t NTrWireBased;
   vector<const DKinematicData*> TrackCandidates;
+  vector<const DTrackWireBased*> subTrackWireBased;
+  vector<const DTrackTimeBased*> subTrackTimeBased;
 
   map<string, TGVerticalFrame *> tf;
   map<string, vector<TGLabel*> > candlabs;
+
+  map<string, TGVerticalFrame *> tfWB;
+  map<string, vector<TGLabel*> > wblabs;
+	       
+  map<string, TGVerticalFrame *> tfTB;
+  map<string, vector<TGLabel*> > tblabs;
 	       
   hdv_mainframe *hdvmf;
   map<string, TGCheckButton*> checkbuttons;
