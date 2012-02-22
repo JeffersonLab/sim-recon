@@ -423,17 +423,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      
 	      fit.tanl=tan(M_PI_2-theta);
 	      fit.z_vertex=cdccan->position().Z();
-	      fit.q=can->charge();
-
-	      // if the cdc and fdc candidates do not agree as to the particle's
-	      // charge, compare the position at one of the fdc wire planes to 
-	      // a helical projection from the "vertex"
-	      if (srccan->charge()!=cdccan->charge() 
-		  //	&& cdchits.size()>num_fdc_hits
-		  ){
-		fit.q=GetCharge(fit,segments[0]->hits[0],cdccan->position());
-		can->setCharge(fit.q);
-	      }
+	      fit.q=GetCharge(fit,segments[0]->hits[0],cdccan->position());
+	      can->setCharge(fit.q);
 	      GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
 	      can->setMomentum(mom);
 	      can->setPosition(pos);
@@ -577,16 +568,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	    fit.tanl=tan(M_PI_2-theta);
 	    fit.z_vertex=srccan->position().Z();
-	    fit.q=can->charge();
-
-	    // if the cdc and fdc candidates do not agree as to the particle's
-	    // charge, compare the position at one of the fdc wire planes to 
-	    // a helical projection from the "vertex"
-	    if (fdccan->charge()!=srccan->charge()){
-	      fit.q=GetCharge(fit,segments[0]->hits[0],srccan->position());
-	      can->setCharge(fit.q);
-	    }
-
+	    fit.q=GetCharge(fit,segments[0]->hits[0],srccan->position());
+	    can->setCharge(fit.q);
 	    GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
 	    can->setMomentum(mom);
 	    can->setPosition(pos);
