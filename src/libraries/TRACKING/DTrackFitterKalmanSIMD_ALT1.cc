@@ -315,7 +315,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    numdof++;
 
 
-	    break_point_fdc_index=id+1;
+	    break_point_fdc_index=id;
 	    break_point_step_index=k;
 	  }
 	}
@@ -555,7 +555,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      // update number of degrees of freedom
 	      numdof++;
 
-	      break_point_cdc_index=cdc_index+1;
+	      break_point_cdc_index=cdc_index;
 	      break_point_step_index=k_minus_1;
 	    }
 	  }

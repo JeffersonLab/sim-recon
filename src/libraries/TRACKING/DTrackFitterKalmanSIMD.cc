@@ -4167,7 +4167,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
   // Wire origin and direction
   //  unsigned int cdc_index=my_cdchits.size()-1;
-  unsigned int cdc_index=break_point_cdc_index-1;
+  unsigned int cdc_index=break_point_cdc_index;
   DVector3 origin=my_cdchits[cdc_index]->hit->wire->origin;
   double z0w=origin.z();
   DVector3 dir=my_cdchits[cdc_index]->hit->wire->udir;
