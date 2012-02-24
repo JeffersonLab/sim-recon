@@ -25,14 +25,10 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   // Vectors for cdc wires
   DVector3 origin,dir,wirepos;
 
-  // Set the "used_in_fit" flags to false for all hits
-  for (unsigned int i=0;i<my_fdchits.size();i++){
-    my_fdchits[i]->used_in_fit=false;
-  }
-  for (unsigned int i=0;i<my_cdchits.size();i++){
-    my_cdchits[i]->used_in_fit=false;
-  }
-
+  // Set used_in_fit flags to false for fdc and cdc hits
+  for (unsigned int i=0;i<cdc_updates.size();i++) cdc_updates[i].used_in_fit=false;
+  for (unsigned int i=0;i<fdc_updates.size();i++) fdc_updates[i].used_in_fit=false;
+  
   // Save the starting values for C and S in the deque
   forward_traj[0].Skk=S;
   forward_traj[0].Ckk=C;
@@ -182,11 +178,15 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    HTlist.push_back(H_T);
 	    Mlist.push_back(Mdiff);
 	    Klist.push_back(InvV*(C*H_T)); // Kalman gain
+
+	    fdc_updates[id].used_in_fit=true;
 	  }
 	  
 	  // loop over the remaining hits
 	  for (unsigned int m=1;m<forward_traj[k].num_hits;m++){
 	    unsigned int my_id=id-m;
+	    fdc_updates[my_id].used_in_fit=true;
+
 	    u=my_fdchits[my_id]->uwire;
 	    v=my_fdchits[my_id]->vstrip;
 	    double du=x*cosa-y*sina-u;
@@ -245,19 +245,28 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  }
 	  C=C.SandwichMultiply(sum)+sum2;
 
-	  fdc_updates[id].S=S;
-	  fdc_updates[id].C=C; 
-	  fdc_updates[id].index=k;
-
-
+	  if (fit_type==kTimeBased){
+	    for (unsigned int m=0;m<forward_traj[k].num_hits;m++){
+	      unsigned int my_id=id-m;
+	      if (fdc_updates[my_id].used_in_fit){
+		fdc_updates[my_id].S=S;
+		fdc_updates[my_id].C=C; 
+		fdc_updates[my_id].tflight
+		  =forward_traj[k].t*TIME_UNIT_CONVERSION;  
+		fdc_updates[my_id].pos=forward_traj[k].pos;
+		fdc_updates[my_id].dEdx=0.;
+		fdc_updates[my_id].B=forward_traj[k].B;
+		fdc_updates[my_id].s=forward_traj[k].s;
+	      }
+	    }
+	  }
+	  
 	  // update chi2
 	  for (unsigned int m=0;m<Klist.size();m++){
 	    double R=Mlist[m]*(1-Hlist[m]*Klist[m]);
 	    double RC=Vlist[m]-Hlist[m]*(C*HTlist[m]);
 	    chisq+=probs[m]*R*R/(prob_tot*RC);
 	  }
-	  fdc_updates[id].chi2sum=chisq;
-	  
 
 	  // update number of degrees of freedom
 	  numdof++;
@@ -271,9 +280,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  double chi2_hit=Mdiff*Mdiff*InvV;
 	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT)
 	    {
-	    // Flag that we used this hit in the fit
-	    my_fdchits[id]->used_in_fit=true;
-	    
 	    // Compute Kalman gain matrix
 	    K=InvV*(C*H_T);
 	    
@@ -283,15 +289,22 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // Update state vector covariance matrix
 	    //C=C-K*(H*C);    
 	    C=C.SubSym(K*(H*C));
-	    
-	    fdc_updates[id].S=S;
-	    fdc_updates[id].C=C;
-	    fdc_updates[id].index=k;
+
+	    if (fit_type==kTimeBased){
+	      fdc_updates[id].S=S;
+	      fdc_updates[id].C=C;
+	      fdc_updates[id].tflight
+		=forward_traj[k].t*TIME_UNIT_CONVERSION;  
+	      fdc_updates[id].pos=forward_traj[k].pos;
+	      fdc_updates[id].dEdx=0.;
+	      fdc_updates[id].B=forward_traj[k].B;
+	      fdc_updates[id].s=forward_traj[k].s;
+	    }
+	    fdc_updates[id].used_in_fit=true;
 	    
 	    // Update chi2 for this segment
 	    chisq+=(1.-H*K)*Mdiff*Mdiff/V;
-	    fdc_updates[id].chi2sum=chisq;
-	    
+		    
 	    if (DEBUG_LEVEL>2){
 	      printf("hit %d p %5.2f dm %5.2f chi2 %5.2f z %5.2f\n",
 		     id,1./S(state_q_over_p),Mdiff,(1.-H*K)*Mdiff*Mdiff/V,
@@ -304,10 +317,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	    break_point_fdc_index=id+1;
 	    break_point_step_index=k;
-	  }
-	  else{
-	    // Flag that we did not use this hit after all
-	    my_fdchits[id]->used_in_fit=false;
 	  }
 	}
 	if (num_fdc_hits>=forward_traj[k].num_hits)
@@ -507,28 +516,33 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	      // Flag the place along the reference trajectory with hit id
 	      forward_traj[k_minus_1].h_id=1000+cdc_index;
-	      
-	      // Flag that we used this hit
-	      my_cdchits[cdc_index]->used_in_fit=true;
-	      
+	      	      
 	      // Update the state vector
 	      double res=dm-d;
 	      S+=res*K;
 	      
 	      // Store the "improved" values of the state and covariance matrix
-	      cdc_updates[cdc_index].S=S;
-	      cdc_updates[cdc_index].C=C;	 
-	      cdc_updates[cdc_index].index=k_minus_1;
-	      
-	      // propagate error matrix to z-position of hit
-	      StepJacobian(newz,forward_traj[k_minus_1].pos.z(),
-			   cdc_updates[cdc_index].S,dedx,J);
-	      cdc_updates[cdc_index].C
-		=cdc_updates[cdc_index].C.SandwichMultiply(J);	 
-	      
-	      // Step state back to previous z position
-	      Step(newz,forward_traj[k_minus_1].pos.z(),dedx,cdc_updates[cdc_index].S);
-	      
+	      if (fit_type==kTimeBased){
+		cdc_updates[cdc_index].S=S;
+		cdc_updates[cdc_index].C=C;	 
+		cdc_updates[cdc_index].tflight
+		  =forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
+		cdc_updates[cdc_index].pos=forward_traj[k_minus_1].pos;
+		cdc_updates[cdc_index].dEdx=dedx;
+		cdc_updates[cdc_index].B=forward_traj[k_minus_1].B;
+		cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
+	     	      
+		// propagate error matrix to z-position of hit
+		StepJacobian(newz,forward_traj[k_minus_1].pos.z(),
+			     cdc_updates[cdc_index].S,dedx,J);
+		cdc_updates[cdc_index].C
+		  =cdc_updates[cdc_index].C.SandwichMultiply(J);	 
+		
+		// Step state back to previous z position
+		Step(newz,forward_traj[k_minus_1].pos.z(),dedx,cdc_updates[cdc_index].S);
+	      }
+	      cdc_updates[cdc_index].used_in_fit=true;
+ 
 	      // Update chi2 for this segment
 	      chisq+=(1.-H*K)*res*res/Vc;
 
@@ -544,10 +558,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      break_point_cdc_index=cdc_index+1;
 	      break_point_step_index=k_minus_1;
 	    }
-	  }
-	  else{
-	    // Flag that we did not use this hit
-	    my_cdchits[cdc_index]->used_in_fit=false;
 	  }
 
 	  if (num_steps==0){

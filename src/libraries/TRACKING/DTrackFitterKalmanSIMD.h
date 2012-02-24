@@ -62,7 +62,7 @@
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
 
-#define MOLIERE_FRACTION 0.995
+#define MOLIERE_FRACTION 0.99
 #define DE_PER_STEP_WIRE_BASED 0.00025 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.00025 // in GeV
 #define BFIELD_FRAC 0.0001
@@ -77,17 +77,16 @@ using namespace std;
 typedef struct{
   int status;
   double residual,sigma;
-  bool used_in_fit;
   const DCDCTrackHit *hit;
 }DKalmanSIMDCDCHit_t;
 
 typedef struct{
   int package;
-  double t,cosa,sina,dE;
-  double uwire,vstrip,z;
+  double t,cosa,sina;
+  double uwire,vstrip,z,dE;
   double xres,yres,xsig,ysig;
-  bool used_in_fit;
   double nr,nz;
+  const DFDCPseudo *hit;
 }DKalmanSIMDFDCHit_t;
 
 typedef struct{
@@ -101,10 +100,11 @@ typedef struct{
 }DKalmanSIMDState_t;
 
 typedef struct{
+  bool used_in_fit;
   DMatrix5x1 S;
   DMatrix5x5 C;
-  unsigned int index;
-  double chi2sum;
+  double tflight,s,B,dEdx;
+  DVector3 pos;
 }DKalmanUpdate_t;
 
 
@@ -126,6 +126,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     my_cdchits.clear();
     central_traj.clear();
     forward_traj.clear();
+    used_cdc_indices.clear();
+    used_fdc_indices.clear();
     cov.clear();
     fcov.clear();
 
@@ -250,7 +252,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t SmoothForwardCDC(DMatrix5x1 &S,DMatrix5x5 &C);   
   jerror_t SmoothCentral(DMatrix5x1 &S,DMatrix5x5 &C);  
   jerror_t SwimToPlane(DMatrix5x1 &S);
-  jerror_t FindCentralResiduals();
+  jerror_t FindCentralResiduals(vector<DKalmanUpdate_t>updates);
   jerror_t SwimCentral(DVector3 &pos,DMatrix5x1 &Sc);
   double BrentsAlgorithm(double ds1,double ds2,
 			 double dedx,DVector3 &pos,const DVector3 &origin,
@@ -275,7 +277,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t EstimateT0(const DCDCTrackHit *hit,double ftime,double doca,
 		      double x,double y,double Bz,
 		      const DMatrix5x5 &C);
-  jerror_t FindForwardResiduals();
+  jerror_t FindForwardResiduals(vector<DKalmanUpdate_t>cdc_updates,
+				vector<DKalmanUpdate_t>fdc_updates);
   jerror_t FindResidual(unsigned int id,double z,double t,double dEdx,
 			DMatrix5x1 &Ss,DMatrix5x5 &Cs);
 
@@ -287,7 +290,12 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
  
   // list of hits on track
   vector<DKalmanSIMDCDCHit_t *>my_cdchits;
-  vector<DKalmanSIMDFDCHit_t *>my_fdchits;
+  vector<DKalmanSIMDFDCHit_t *>my_fdchits;  
+  
+  // list of indices of hits used in the fit
+  vector<unsigned int>used_fdc_indices;
+  vector<unsigned int>used_cdc_indices;
+
 
   // Step sizes
   double mStepSizeZ,mStepSizeS;
