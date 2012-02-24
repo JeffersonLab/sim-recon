@@ -1075,6 +1075,7 @@ void hdv_mainframe::DoMyRedraw(void)
 	graphics_endA.clear();
 	graphics_endB.clear();
 
+
 	// Draw detectors depending on coordinate system we're using
 	if(coordinatetype == COORD_XY){
 		DrawDetectorsXY();			// Draw Detectors
@@ -1082,8 +1083,12 @@ void hdv_mainframe::DoMyRedraw(void)
 		DrawDetectorsRPhi();			// Draw Detectors
 	}
 
-	// Get tracks, hits etc in the form of space points
+	// Collect all hits for display
 	gMYPROC->FillGraphics();
+
+	// put collected hits into appropriate views 
+	AddGraphicsSideA(gMYPROC->graphics_xz);
+	AddGraphicsSideB(gMYPROC->graphics_yz);
 
 	// Draw detector hits and tracks for the correct coordinates in all views
 	vector<MyProcessor::DGraphicSet>::iterator iter = gMYPROC->graphics.begin();

@@ -609,8 +609,11 @@ void MyProcessor::FillGraphics(void)
 
 			TVector3 pos(hit->r*cos(hit->phi), hit->r*sin(hit->phi), hit->z);
 			gset.points.push_back(pos);
+
+			TMarker *m = new TMarker(pos.X(), pos.Y(), 2);	
+			graphics_xyA.push_back(m);
 		}
-		graphics.push_back(gset);
+		//graphics.push_back(gset);
 	}
 
 	// FCAL Truth points
@@ -629,8 +632,18 @@ void MyProcessor::FillGraphics(void)
 				DVector2 pos_face = fgeom->positionOnFace(hit->row, hit->column);
 				TVector3 pos(pos_face.X(), pos_face.Y(), FCAL_Zmin);
 				gset.points.push_back(pos);
+				
+				TMarker *m = new TMarker(pos.X(), pos.Y(), 2);	
+				//m->SetColor(kGreen);
+				//m->SetLineWidth(1);
+				graphics_xyB.push_back(m);
+
+				TMarker *m1 = new TMarker(pos.Z(), pos.X(), 2);	
+				graphics_xz.push_back(m1);
+				TMarker *m2 = new TMarker(pos.Z(), pos.Y(), 2);	
+				graphics_yz.push_back(m2);
 			}
-			graphics.push_back(gset);
+			//graphics.push_back(gset);
 		}
 	}
 
@@ -644,13 +657,21 @@ void MyProcessor::FillGraphics(void)
 		  vector<const DNeutralShowerCandidate*> locShowerCandidates;
 		  neutrals[i]->GetT(locShowerCandidates);
 		  DetectorSystem_t locDetectorSystem = locShowerCandidates[0]->dDetectorSystem;
-		  if(locDetectorSystem == SYS_BCAL) continue;	
-		  TVector3 pos( locShowerCandidates[0]->dSpacetimeVertex.X(), 
-				locShowerCandidates[0]->dSpacetimeVertex.Y(), 
-				locShowerCandidates[0]->dSpacetimeVertex.Z());
-		  gset.points.push_back(pos);
+		  if(locDetectorSystem == SYS_BCAL){
+		    TVector3 pos( locShowerCandidates[0]->dSpacetimeVertex.X(), 
+				  locShowerCandidates[0]->dSpacetimeVertex.Y(), 
+				  locShowerCandidates[0]->dSpacetimeVertex.Z());
+		    gset.points.push_back(pos);
+		    
+		    double dist2 = 2.0 + 5.0*locShowerCandidates[0]->dEnergy;
+		    TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
+		    e->SetLineColor(kGreen);
+		    e->SetFillStyle(0);
+		    e->SetLineWidth(2);
+		    graphics_xyA.push_back(e);
+		  }
 		}
-		graphics.push_back(gset);
+		//graphics.push_back(gset);
 	}
 
 	// FCAL reconstructed photons
@@ -658,24 +679,37 @@ void MyProcessor::FillGraphics(void)
 		vector<const DNeutralTrack*> neutrals;
 		loop->Get(neutrals);
 		DGraphicSet gset(kOrange, kMarker, 1.25);
-		gset.marker_style=21;
+		gset.marker_style=2;
 		for(unsigned int i=0; i<neutrals.size(); i++){
 		  vector<const DNeutralShowerCandidate*> locShowerCandidates;
 		  neutrals[i]->GetT(locShowerCandidates);
 		  DetectorSystem_t locDetectorSystem = locShowerCandidates[0]->dDetectorSystem;
-		  if(locDetectorSystem == SYS_FCAL) continue;
+		  if(locDetectorSystem == SYS_FCAL){
 			
 			TVector3 pos( locShowerCandidates[0]->dSpacetimeVertex.X(), 
 				      locShowerCandidates[0]->dSpacetimeVertex.Y(), 
 				      locShowerCandidates[0]->dSpacetimeVertex.Z());
 			gset.points.push_back(pos);
 			
-			double dist2 = 2.0 + 2.0*locShowerCandidates[0]->dEnergy;
+			double dist2 = 2.0 + 10.0*locShowerCandidates[0]->dEnergy;
 			TEllipse *e = new TEllipse(pos.X(), pos.Y(), dist2, dist2);
-			e->SetLineColor(kOrange);
-			//e->SetFillStyle(1);
+			e->SetLineColor(kGreen);
+			e->SetFillStyle(0);
 			e->SetLineWidth(2);
 			graphics_xyB.push_back(e);
+
+			TEllipse *e1 = new TEllipse(pos.Z(), pos.X(), dist2, dist2);
+			e1->SetLineColor(kGreen);
+			e1->SetFillStyle(0);
+			e1->SetLineWidth(2);
+			graphics_xz.push_back(e1);
+			TEllipse *e2 = new TEllipse(pos.Z(), pos.Y(), dist2, dist2);
+			e2->SetLineColor(kGreen);
+			e2->SetFillStyle(0);
+			e2->SetLineWidth(2);
+			graphics_yz.push_back(e2);
+
+		  }
 		}
 		//graphics.push_back(gset);
 	}
