@@ -5692,6 +5692,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   // material properties
   double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
   DVector3 pos;  // current position along trajectory
+  double xstart=S(state_x),ystart=S(state_y);
 
   //  printf("------Extrapolating\n");
 
@@ -5739,14 +5740,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       DVector3 origin(0,0,65);
       double dz2=BrentsAlgorithm(newz,dz,dEdx,origin,dir,S2);
       z_=newz+dz2;
-         
-      double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
-      double one_over_beta2=1.+mass2*q_over_p_sq;
-      double dt=(z_-z)*sqrt(one_over_beta2*(1.+S(state_tx)*S(state_tx)
-					    +S(state_ty)*S(state_ty)))
-	*ONE_OVER_C;
-      mT0MinimumDriftTime+=dt;
-      mT0Average+=dt;
 
       // Compute the Jacobian matrix
       StepJacobian(z,z_,S,dEdx,J);  
@@ -5775,14 +5768,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       // Propagate the covariance matrix
       //C=Q.AddSym(J*C*J.Transpose());
       C=C.SandwichMultiply(J);
-           
-      double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
-      double one_over_beta2=1.+mass2*q_over_p_sq;
-      double dt=-dz*sqrt(one_over_beta2*(1.+S(state_tx)*S(state_tx)
-					 +S(state_ty)*S(state_ty)))
-	*ONE_OVER_C;
-      mT0MinimumDriftTime+=dt;
-      mT0Average+=dt;
  
       S2=S;
       S=S1;
@@ -5802,15 +5787,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       // Propagate the covariance matrix
       //C=Q.AddSym(J*C*J.Transpose());
       C=C.SandwichMultiply(J);
-
-      double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
-      double one_over_beta2=1.+mass2*q_over_p_sq;
-      double dt=dz*sqrt(one_over_beta2*(1.+S(state_tx)*S(state_tx)
-					+S(state_ty)*S(state_ty)))
-	*ONE_OVER_C;
-      mT0MinimumDriftTime+=dt;
-      mT0Average+=dt;
-
 
       S1=S;
       S=S2;
@@ -5875,14 +5851,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
     GetProcessNoise(ds,Z,rho_Z_over_A,S,Q);
-    
-    double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
-    double one_over_beta2=1.+mass2*q_over_p_sq;
-    double dt=ds*sqrt(one_over_beta2)*ONE_OVER_C;
-    mT0MinimumDriftTime+=dt;
-    mT0Average+=dt;
-
+ 
     if (CORRECT_FOR_ELOSS){
+      double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+      double one_over_beta2=1.+mass2*q_over_p_sq;
       double varE=GetEnergyVariance(ds,one_over_beta2,K_rho_Z_over_A);
       Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
     }
@@ -5921,17 +5893,25 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
       // Step to the "z vertex"
       ds=Step(newz,z_,dEdx,S);
-
-      // Correct estimate for mT0MinimumDriftTime
-      q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
-      double one_over_beta2=1.+mass2*q_over_p_sq;
-      double dt=ds*sqrt(one_over_beta2)*ONE_OVER_C;
-      mT0MinimumDriftTime+=dt;
-      mT0Average+=dt;
  
       // update internal variables
       x_=S(state_x);
       y_=S(state_y);
+
+
+      if (fit_type==kWireBased){
+	// Make small correction to estimate for start time using helical model
+	double dx=xstart-x_;
+	double dy=ystart-y_;
+	double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+	double cosl=cos(atan(tanl));
+	double one_over_beta=sqrt(1.+mass2*S(state_q_over_p)*S(state_q_over_p));
+	double tworc=2.*cosl/fabs(S(state_q_over_p)*qBr2p*Bz);
+	double ratio=sqrt(dx*dx+dy*dy)/tworc;
+	double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
+	mT0MinimumDriftTime-=sperp*one_over_beta*ONE_OVER_C/cosl;
+      }
+
 
       return NOERROR;
     }
@@ -5974,6 +5954,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   DMatrix5x1 S0;
   S0=Sc; 
   DVector3 pos0=pos;
+  DVector3 pos1=pos;
   FixedStep(pos0,ds,S0,dedx);
   r=pos0.Perp();
   if (r>r_old) ds*=-1.;
@@ -6009,12 +5990,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     if(fabs(ds)>mStepSizeS) ds=sign*mStepSizeS;
     if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
     
-    double q_over_p_sq=q_over_p*q_over_p;
-    double one_over_beta2=1.+mass2*q_over_p*q_over_p;
-    double dt=ds*sqrt(one_over_beta2)*ONE_OVER_C;
-    mT0MinimumDriftTime+=dt;
-    mT0Average+=dt;
-    
     // Compute the Jacobian matrix
     StepJacobian(pos,ds,Sc,dedx,Jc);
     
@@ -6022,6 +5997,8 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     GetProcessNoiseCentral(ds,Z,rho_Z_over_A,Sc,Q);
     
     if (CORRECT_FOR_ELOSS){
+      double q_over_p_sq=q_over_p*q_over_p;
+      double one_over_beta2=1.+mass2*q_over_p*q_over_p;
       double varE=GetEnergyVariance(ds,one_over_beta2,K_rho_Z_over_A);
       Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
     }
@@ -6054,18 +6031,23 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
       // Compute the Jacobian matrix
       double my_ds=ds-ds_old;
       StepJacobian(old_pos,my_ds,S0,dedx,Jc);
-      
-      q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
-      q_over_p_sq=q_over_p*q_over_p;
-      one_over_beta2=1.+mass2*q_over_p*q_over_p;
-      dt=ds*sqrt(one_over_beta2)*ONE_OVER_C;
-      mT0MinimumDriftTime+=dt;
-      mT0Average+=dt;
 
       // Propagate the covariance matrix
       //Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
       //Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
       Cc=Cc.SandwichMultiply(Jc);
+
+      if (fit_type==kWireBased){
+	// Make small correction to estimate for start time using helical model
+	double cosl=cos(atan(Sc(state_tanl)));
+	double one_over_beta=sqrt(1.+mass2*Sc(state_q_over_pt)*Sc(state_q_over_pt)
+				  *cosl*cosl);
+	double tworc=2./fabs(Sc(state_q_over_pt)*qBr2p*Bz);
+	double ratio=(pos1-pos).Perp()/tworc;
+	double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
+	mT0MinimumDriftTime-=sperp*one_over_beta*ONE_OVER_C/cosl;
+      }
+
       
       break;
     }
