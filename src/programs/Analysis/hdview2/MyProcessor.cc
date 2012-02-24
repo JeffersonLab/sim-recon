@@ -198,7 +198,7 @@ void MyProcessor::FillGraphics(void)
 	loop->Get(trCand);
 	vector<const DTrackTimeBased*> trTB;
 	loop->Get(trTB);
-	vector<const DTrackTimeBased*> trWB;
+	vector<const DTrackWireBased*> trWB;
 	loop->Get(trWB);
 	hdv_debugerframe *p = hdvmf->GetDebugerFrame();
 	p->SetNTrCand(trCand.size());
@@ -493,7 +493,7 @@ void MyProcessor::FillGraphics(void)
 	  
 	  if(hdvmf->GetCheckButton(str1)){	
 
-	    int color = n+1;
+	    int color = trWB[n]->candidateid;
 	    if (color > 4)
 	      color++;
 	    if (color > 6)
@@ -541,7 +541,7 @@ void MyProcessor::FillGraphics(void)
 	  
 	  if(hdvmf->GetCheckButton(str1)){	
 
-	    int color = n+1;
+	    int color = trTB[n]->candidateid;
 	    if (color > 4)
 	      color++;
 	    if (color > 6)
