@@ -11,6 +11,8 @@ string OUTFILE;
 bool POSTSMEAR = false;
 string MCSMEAROPTS;
 bool DELETEUNSMEARED = false;
+float BGGATE1=-200.0;
+float BGGATE2= 200.0;
 
 // Declare routines callable from FORTRAN
 extern "C"{
@@ -27,6 +29,14 @@ extern "C"{
 			if(POSTSMEAR && mcsmearopts)MCSMEAROPTS = mcsmearopts;
 			DELETEUNSMEARED = *deleteunsmeared != 0;
 		}
+	}
+	
+	// Copy the values of BGGATE card to global variables
+	// visible from C++. This is to allow the bcalHit.cc
+	// routines to use them to set the histogram limits
+	void copygatetocplusplus_(float bggate1, float bggate2){
+		BGGATE1 = bggate1;
+		BGGATE2 = bggate2;
 	}
 }
 

@@ -354,6 +354,7 @@ C..geant..
       call initcalibdb(bfield_type, bfield_map)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts
      +,deleteunsmeared)
+	   call copygatetocplusplus(bggate(1), bggate(2))
 *
 *             Open the HBOOK file for output
 *
