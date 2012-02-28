@@ -4443,6 +4443,20 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	      cdc_updates[cdc_index].dEdx=dedx;
 	      cdc_updates[cdc_index].B=central_traj[k_minus_1].B;
 	      cdc_updates[cdc_index].s=central_traj[k_minus_1].s;
+	       
+	      // Find path length increment for swimming to position in trajectory 
+	      // deque
+	      double ds3=(central_traj[k_minus_1].Skk(state_z)-pos.z())
+		/sin(atan(Sc(state_tanl)));
+	      
+	      // Compute the Jacobian matrix
+	      StepJacobian(pos,ds3,cdc_updates[cdc_index].S,dedx,J);
+	      // Update covariance matrix
+	      cdc_updates[cdc_index].C
+		=cdc_updates[cdc_index].C.SandwichMultiply(J);
+	      
+	      // Swim to position in trajectory deque
+	      FixedStep(pos,ds3,cdc_updates[cdc_index].S,dedx);	
 	    }
 	    cdc_updates[cdc_index].used_in_fit=true;
 	    
@@ -4462,21 +4476,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    break_point_step_index=k_minus_1;
 	  }
 	  //else printf("Negative variance!!!\n");
-	  
-	  // Find path length increment for swimming to position in trajectory 
-	  // deque
-	  double ds3=(central_traj[k_minus_1].Skk(state_z)-pos.z())
-	    /sin(atan(Sc(state_tanl)));
-	  
-	  // Compute the Jacobian matrix
-	  StepJacobian(pos,ds3,cdc_updates[cdc_index].S,dedx,J);
-	  // Update covariance matrix
-	  cdc_updates[cdc_index].C
-	    =cdc_updates[cdc_index].C.SandwichMultiply(J);
-	  
-	  // Swim to position in trajectory deque
-	  FixedStep(pos,ds3,cdc_updates[cdc_index].S,dedx);	
-	  
+	 
 
 	}
 
