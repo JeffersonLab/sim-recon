@@ -14,7 +14,7 @@
 #define Z_TARGET 65.0
 #define Z_VERTEX_CUT 25.0
 #define MATCH_RADIUS 5.0
-#define ADJACENT_MATCH_RADIUS 1.0
+#define ADJACENT_MATCH_RADIUS 2.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
 #define BEAM_VARIANCE 0.01 // cm^2
 #define USED_IN_SEGMENT 0x8
@@ -149,15 +149,16 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   double sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,sperp_old=0.,ratio,Delta;
   double z=0,zlast=0;
+  double two_rc=2.*rc;
   DVector2 oldxy=XYZ[start].xy;
   for (unsigned int k=start;k<n;k++){
     zlast=z;
     sperp_old=sperp;
     if (!bad[k]){
       DVector2 diffxy=XYZ[k].xy-oldxy;
-      ratio=diffxy.Mod()/(2.*rc);
+      ratio=diffxy.Mod()/(two_rc);
       // Make sure the argument for the arcsin does not go out of range...
-      sperp=sperp_old+(ratio>1?2.*rc*(M_PI/2.):2.*rc*asin(ratio));
+      sperp=sperp_old+(ratio>1?two_rc*(M_PI_2):two_rc*asin(ratio));
       //z=XYZ(k,2);
       z=XYZ[k].z;
 
@@ -175,23 +176,24 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
       oldxy=XYZ[k].xy;
     }
   }
-  Delta=sumv*sumxx-sumx*sumx;
-  // Track parameters z0 and tan(lambda)
-  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
-  // Error in tanl 
-  var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
 
-  // Vertex position
-  sperp-=sperp_old; 
-  if (tanl<0){ 
-    // a negative tanl makes no sense for FDC segments if we 
+  Delta=sumv*sumxx-sumx*sumx;
+  if (fabs(Delta)>EPS){
+    // Track parameters z0 and tan(lambda)
+    tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+    //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+    // Error in tanl 
+    var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
+
+    // Vertex position
+    sperp-=sperp_old; 
+    zvertex=zlast-tanl*sperp;
+  }
+  else{
     // assume that the particle came from the target
     zvertex=Z_TARGET;
     tanl=(zlast-zvertex)/sperp;
-  }
-  else{
-    zvertex=zlast-tanl*sperp;
+    var_tanl=100.; // guess for now 
   }
 
   return NOERROR;
@@ -222,8 +224,9 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   double var_R1=CR(ref_plane,ref_plane);
   for (unsigned int k=0;k<n;k++){       
     double sperp=charge*(XYZ[k].z-z1)/tanl;
-    double sinp=sin(Phi1+sperp/rc);
-    double cosp=cos(Phi1+sperp/rc);
+    double phi_s=Phi1+sperp/rc;
+    double sinp=sin(phi_s);
+    double cosp=cos(phi_s);
     XYZ[k].xy.Set(xc+rc*cosp,yc+rc*sinp);
  
     // Error analysis.  We ignore errors in N because there doesn't seem to 
@@ -236,12 +239,18 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     double dRPhi_dx=Phi*cosPhi-sinPhi;
     double dRPhi_dy=Phi*sinPhi+cosPhi;
     
-    double dx_dx1=rc*sinp*delta_y/denom;
-    double dx_dy1=-rc*sinp*delta_x/denom;
+    double rc_sinphi_over_denom=rc*sinp/denom;
+    //double dx_dx1=rc*sinp*delta_y/denom;
+    //double dx_dy1=-rc*sinp*delta_x/denom;
+    double dx_dx1=rc_sinphi_over_denom*delta_y;
+    double dx_dy1=-rc_sinphi_over_denom*delta_x;
     double dx_dtanl=sinp*sperp/tanl;
     
-    double dy_dx1=-rc*cosp*delta_y/denom;
-    double dy_dy1=rc*cosp*delta_x/denom;
+    double rc_cosphi_over_denom=rc*cosp/denom;
+    //double dy_dx1=-rc*cosp*delta_y/denom;
+    //double dy_dy1=rc*cosp*delta_x/denom;
+    double dy_dx1=-rc_cosphi_over_denom*delta_y;
+    double dy_dy1=rc_cosphi_over_denom*delta_x;
     double dy_dtanl=-cosp*sperp/tanl;
  
     double dRPhi_dx1=dRPhi_dx*dx_dx1+dRPhi_dy*dy_dx1;
@@ -395,9 +404,10 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
   dist_to_origin=-(N[0]*Xavg(0,0)+N[1]*Xavg(0,1)+N[2]*Xavg(0,2));
 
   // Center and radius of the circle
-  xc=-N[0]/2./N[2];
-  yc=-N[1]/2./N[2];
-  rc=sqrt(1.-N[2]*N[2]-4.*dist_to_origin*N[2])/2./fabs(N[2]);
+  double two_N2=2.*N[2];
+  xc=-N[0]/two_N2;
+  yc=-N[1]/two_N2;
+  rc=sqrt(1.-N[2]*N[2]-4.*dist_to_origin*N[2])/fabs(two_N2);
 
   return NOERROR;
 }
@@ -572,15 +582,18 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	bool do_sort=false;
 	// Look for hits adjacent to the ones we have in our segment candidate
 	for (unsigned int k=0;k<points.size();k++){
-	  for (unsigned int j=0;j<num_neighbors;j++){
-	    delta=(points[k]->xy-neighbors[j]->xy).Mod();
-	    if (delta<ADJACENT_MATCH_RADIUS && 
-		abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
-		&& neighbors[j]->wire->origin.z()==points[k]->wire->origin.z()){
-	      used[k]=true;
-	      neighbors.push_back(points[k]);
-	      do_sort=true;
-	    }      
+	  if (!used[k]){
+	    for (unsigned int j=0;j<num_neighbors;j++){
+	      delta=(points[k]->xy-neighbors[j]->xy).Mod();
+
+	      if (delta<ADJACENT_MATCH_RADIUS && 
+		  abs(neighbors[j]->wire->wire-points[k]->wire->wire)<=1
+		  && neighbors[j]->wire->origin.z()==points[k]->wire->origin.z()){
+		used[k]=true;
+		neighbors.push_back(points[k]);
+		do_sort=true;
+	      }      
+	    }
 	  }
 	}
 	// Sort if we added another point
