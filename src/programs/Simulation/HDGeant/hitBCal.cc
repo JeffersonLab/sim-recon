@@ -90,6 +90,7 @@ static int cellCount = 0;
 static int showerCount = 0;
 static int initialized = 0;
 
+// The following will be changed in initializeBarrelEMcal
 static double ATTEN_LENGTH = 300.0;
 static double C_EFFECTIVE = 16.75;
 static double SiPM_tbin_width = 0.100;
@@ -153,6 +154,16 @@ map<bcal_index, DHistogram*> SiPMspectra;
 // filled.
 map<bcal_index, DHistogram*> histos_with_data;
 
+// This is used to hold the integrated energy in GeV for
+// each cell. This is only for the SiPMspectra hits. This 
+// map will be filled with entries for each cell at initialization
+// time, but only those elements corresponding to entries in
+// histos_with_data will be reset at the end of the event.
+// n.b. an entry will be made for each end, even though they
+// will be identical for each cell. It turns out to make it 
+// simpler in the pickBarrelEMcal (and elsewhere) to just
+// keep the duplicate information.
+map<bcal_index, double> E_CellTruth;
 
 //----------------------
 // initializeBarrelEMcal
@@ -246,13 +257,11 @@ void initializeBarrelEMcal(void)
 			  bcal_index idxUp(imodule, ilayer, isector, bcal_index::kUp);
 			  bcal_index idxDn(imodule, ilayer, isector, bcal_index::kDown);
 
-			  unsigned int Nbefore = SiPMspectra.size();
 			  SiPMspectra[idxUp] = new DHistogram(Nbins, BGGATE1, BGGATE2);
-			  if(SiPMspectra.size() == Nbefore){
-				  cout<<"New entry not created for module="<<imodule<<" layer="<<ilayer<<" sector="<<isector<<" end=Up"<<endl;
-			  }
-
 			  SiPMspectra[idxDn] = new DHistogram(Nbins, BGGATE1, BGGATE2);
+			  
+			  E_CellTruth[idxUp] = 0.0;
+			  E_CellTruth[idxDn] = 0.0;
 		  }
 	  }
 	}
@@ -438,6 +447,9 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 			hup->Fill(t_up, Eup);
 			hdn->Fill(t_dn, Edn);
 			
+			E_CellTruth[idxUp] += dEsum;
+			E_CellTruth[idxDn] += dEsum;
+			
 			histos_with_data[idxUp] = hup;
 			histos_with_data[idxDn] = hdn;
 		}
@@ -582,6 +594,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 			spectrum->layer = idx.layer;
 			spectrum->sector = idx.sector;
 			spectrum->end = (idx.end==bcal_index::kUp ? 0:1);
+			spectrum->Etruth = E_CellTruth[idx];
 			string vals = "";
 			double E_atten_sum = 0.0;
 			for(int ibin=bin_start; ibin<=bin_end; ibin++){
@@ -598,9 +611,16 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 			}
 		}
 		
+		// Clear energy sum. 
+		E_CellTruth[idx] = 0.0;
+		
 		// Reset the histo in preparation for the next event
 		iter->second->Reset();
-	}	
+	}
+	
+	// Clear the sparsified list of histo objects with data
+	histos_with_data.clear();
+	
 #endif //WRITE_OUT_BCAL_TIME_SPECTRA
 
 	// Reset counters for next event
