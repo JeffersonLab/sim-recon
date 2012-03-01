@@ -20,7 +20,7 @@ using namespace std;
 #include <TH2F.h>
 #include <TROOT.h>
 
-char *filename = "mctrk_ana.root";
+const char *filename = "mctrk_ana.root";
 
 typedef struct{
 	string message;
