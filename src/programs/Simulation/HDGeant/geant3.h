@@ -19,7 +19,7 @@ void grndm_(float v[], int* len);
 
 
 /* Type declarations to avoid "implicit function declaration" errors */
-void transformcoord_(float* xin, char* sin, float* xout, char* sout, int, int);
+void transformcoord_(float* xin, const char* sin, float* xout, const char* sout, int, int);
 int getsector_(void);
 int getlayer_(void);
 int getmodule_(void);
