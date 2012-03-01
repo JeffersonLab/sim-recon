@@ -147,6 +147,7 @@ class DHelicalFit{
   float phi, theta, tanl;
   float z_vertex;
   float chisq;
+  int ndof;
   float dzdphi;
   ChiSqSourceType_t chisq_source;
  

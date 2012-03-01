@@ -17,6 +17,7 @@ using namespace std;
 #define Z_MAX 85.0
 #define ONE_THIRD  0.33333333333333333
 #define SQRT3      1.73205080756887719
+#define EPS 1e-8
 
 // The following is for sorting hits by z
 class DHFHitLessThanZ{
@@ -26,10 +27,10 @@ class DHFHitLessThanZ{
 		}
 };
 
-bool DHFHitLessThanZ_C(DHFHit_t* const &a, DHFHit_t* const &b) {
+inline bool DHFHitLessThanZ_C(DHFHit_t* const &a, DHFHit_t* const &b) {
 	return a->z < b->z;
 }
-bool RiemannFit_hit_cmp(DHFHit_t *a,DHFHit_t *b){
+inline bool RiemannFit_hit_cmp(DHFHit_t *a,DHFHit_t *b){
   return (a->z>b->z);
 }
 
@@ -42,6 +43,7 @@ DHelicalFit::DHelicalFit(void)
 {
   x0 = y0 = r0 = tanl = z_vertex = p_trans = phi= theta = q = p = dzdphi =0;
   chisq = 0;
+  ndof=0;
   chisq_source = NOFIT;
   bfield = NULL;
   
@@ -75,6 +77,7 @@ void DHelicalFit::Copy(const DHelicalFit &fit)
 	theta = fit.theta;
 	z_vertex = fit.z_vertex;
 	chisq = fit.chisq;
+	ndof=fit.ndof;
 	dzdphi = fit.dzdphi;
 	chisq_source = fit.chisq_source;
 	bfield = fit.GetMagneticFieldMap();
@@ -275,6 +278,7 @@ jerror_t DHelicalFit::FitCircle(void)
 
 	float alpha=0.0, beta=0.0, gamma=0.0, deltax=0.0, deltay=0.0;
 	chisq_source = NOFIT; // in case we return early
+	ndof=hits.size()-2;
 	
 	// Loop over hits to calculate alpha, beta, gamma, and delta
 	// if a magnetic field map was given, use it to find average Z B-field
@@ -366,6 +370,9 @@ jerror_t DHelicalFit::FitCircleRiemann(float BeamRMS)
 
 	jerror_t err = FitCircleRiemann();
 	if(err!=NOERROR)return err;
+
+	// Number of degrees of freedom 
+	ndof=hits.size()-3;
 	
 	// Momentum depends on magnetic field. If bfield has been
 	// set, we should use it to determine an average value of Bz
@@ -834,13 +841,14 @@ jerror_t DHelicalFit::FitLineRiemann(){
   double sperp=0.,sperp_old=0., ratio=0, Delta;
   double z_last=0.,z=0.;
   DVector2 old_proj=projections[start];
+  double two_r0=2.*r0;
   for (unsigned int k=start;k<n;k++){
     if (!bad[k]){
       sperp_old=sperp;
       z_last=z;
-      ratio=(projections[k]-old_proj).Mod()/(2.*r0);
+      ratio=(projections[k]-old_proj).Mod()/(two_r0);
       // Make sure the argument for the arcsin does not go out of range...
-      sperp=sperp_old+(ratio>1? 2.*r0*(M_PI/2.) : 2.*r0*asin(ratio));
+      sperp=sperp_old+(ratio>1? two_r0*M_PI_2 : two_r0*asin(ratio));
       z=hits[k]->z;
 
       // Assume errors in s dominated by errors in R 
@@ -856,6 +864,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
     }
   }
   Delta=sumv*sumxx-sumx*sumx;
+
   // Track parameters tan(lambda) and z-vertex
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
   //z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
