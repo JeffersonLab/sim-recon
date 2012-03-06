@@ -12,7 +12,7 @@
 #include <JANA/JFactory.h>
 #include <PID/DVertex.h>
 #include <PID/DChargedTrack.h>
-#include <PID/DNeutralTrack.h>
+#include <PID/DNeutralParticle.h>
 
 class DParticleSet : public jana::JObject{
 	public:
@@ -28,12 +28,12 @@ class DParticleSet : public jana::JObject{
 		vector<const DChargedTrack*> otherp; // unidentified positively charged particles
 		vector<const DChargedTrack*> othern; // unidentified negatively charged particles
 
-		vector<const DNeutralTrack*> photon; //list of photons
-		vector<const DNeutralTrack*> neutron; //list of photons
-		vector<const DNeutralTrack*> otherz; //unidentified neutrally charged particles
+		vector<const DNeutralParticle*> photon; //list of photons
+		vector<const DNeutralParticle*> neutron; //list of photons
+		vector<const DNeutralParticle*> otherz; //unidentified neutrally charged particles
 
 		vector<const DChargedTrack*> dChargedTracks; // list of all charged tracks associated with this DVertex
-		vector<const DNeutralTrack*> dNeutralTracks; // list of all neutral tracks associated with this DVertex
+		vector<const DNeutralParticle*> dNeutralParticles; // list of all neutral tracks associated with this DVertex
 
   // Print out some summary information about the contents of this class
   void toStrings(vector<pair<string,string> > &items)const{

@@ -10,7 +10,7 @@
 
 #include <vector>
 #include <JANA/JObject.h>
-#include <PID/DNeutralShowerCandidate.h>
+#include <PID/DNeutralShower.h>
 #include <PID/DChargedTrack.h>
 
 using namespace std;
@@ -20,11 +20,11 @@ class DVertexIndependentResults : public jana::JObject {
 		JOBJECT_PUBLIC(DVertexIndependentResults);
 
 		vector <const DChargedTrack*> dChargedTracks;
-		vector <const DNeutralShowerCandidate*> dNeutralShowerCandidates;
+		vector <const DNeutralShower*> dNeutralShowers;
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "NChargedTracks", "%d", dChargedTracks.size());
-			AddString(items, "NShowerCandidates", "%d", dNeutralShowerCandidates.size());
+			AddString(items, "NShowerCandidates", "%d", dNeutralShowers.size());
 		}
 
 };

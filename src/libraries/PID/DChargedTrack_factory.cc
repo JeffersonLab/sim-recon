@@ -45,12 +45,15 @@ jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
 	locEventLoop->Get(locChargedTrackHypotheses);
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector, locTrackTimeBasedVector_BestFOM;
 
 	for(loc_i = 0; loc_i < locChargedTrackHypotheses.size(); loc_i++){
 		locChargedTrackHypothesis = locChargedTrackHypotheses[loc_i];
 		locIDMatchFlag = false;
 		for (loc_j = 0; loc_j < _data.size(); loc_j++){
-			if(locChargedTrackHypothesis->dTrackTimeBased->candidateid == _data[loc_j]->dChargedTrackHypotheses[0]->dTrackTimeBased->candidateid){
+			locChargedTrackHypothesis->GetT(locTrackTimeBasedVector);
+			_data[loc_j]->dChargedTrackHypotheses[0]->GetT(locTrackTimeBasedVector_BestFOM);
+			if(locTrackTimeBasedVector[0]->candidateid == locTrackTimeBasedVector_BestFOM[0]->candidateid){
 				_data[loc_j]->dChargedTrackHypotheses.push_back(locChargedTrackHypothesis);
 				locIDMatchFlag = true;
 				break;

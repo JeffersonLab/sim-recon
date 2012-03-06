@@ -9,22 +9,16 @@
 #define _DChargedTrackHypothesis_
 
 #include <vector>
-#include <JANA/JObject.h>
-#include <TRACKING/DTrackTimeBased.h>
+#include <PID/DKinematicData.h>
 #include <particleType.h>
 
 using namespace std;
 
-class DChargedTrackHypothesis : public jana::JObject {
+class DChargedTrackHypothesis : public DKinematicData {
 	public:
 		JOBJECT_PUBLIC(DChargedTrackHypothesis);
 
-		const DTrackTimeBased* dTrackTimeBased;
 		Particle_t dPID;
-		float dProjectedTime; //Time at the track position in the DTrackTimeBased object, calculated from matching to either the FCAL, BCAL, or TOF
-		float dPathLength; //Path length from the track position in the DTrackTimeBased object to the matched hit in either the FCAL, BCAL, or TOF
-		float dFlightTime; //The amount of time that the track took to traverse the dPathLength
-		DetectorSystem_t dMatchedTimeDetector;
 
 		unsigned int dNDF_Timing;
 		float dChiSq_Timing;
@@ -36,33 +30,11 @@ class DChargedTrackHypothesis : public jana::JObject {
 		float dChiSq;
 		float dFOM;
 
-		float mass() const{return ParticleMass(dPID);} //this may be different than the value in DTrackTimeBased!!
-		float charge() const{return ParticleCharge(dPID);} //this may be different than the value in DTrackTimeBased!!
-		DVector3 momentum() const{return dTrackTimeBased->momentum();}
-		DVector3 position() const{return dTrackTimeBased->position();}
-		float energy() const{ //this may be different than the value in DTrackTimeBased!!
-			float locMomentum = momentum().Mag();
-			float locMass = mass();
-			return sqrt(locMomentum*locMomentum + locMass*locMass);
-		}
-		float beta() const{return momentum().Mag()/energy();}
-
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "PID", "%d", int(dPID));
-
-			AddString(items, "q", "%+1.0f", charge());
-			AddString(items, "x(cm)", "%3.1f", position().x());
-			AddString(items, "y(cm)", "%3.1f", position().y());
-			AddString(items, "z(cm)", "%3.1f", position().z());
-			AddString(items, "E(GeV)", "%2.3f", energy());
-			AddString(items, "t(ns)", "%2.3f", dTrackTimeBased->t0());
-			AddString(items, "p(GeV/c)", "%2.3f", momentum().Mag());
-			AddString(items, "theta(deg)", "%2.3f", momentum().Theta()*180.0/M_PI);
-			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
-
-			AddString(items, "T_Proj", "%3.5f", dProjectedTime);
-			AddString(items, "Path", "%3.2f", dPathLength);
-			AddString(items, "TOF", "%3.5f", dFlightTime);
+			DKinematicData::toStrings(items);
+			AddString(items, "dEdx_ChiSq", "%f", dChiSq_DCdEdx);
+			AddString(items, "TOF_ChiSq", "%f", dChiSq_Timing);
 			AddString(items, "PID_ChiSq", "%f", dChiSq);
 			AddString(items, "PID_FOM", "%f", dFOM);
 		}

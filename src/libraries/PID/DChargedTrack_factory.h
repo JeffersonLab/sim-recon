@@ -10,6 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include <PID/DChargedTrack.h>
+#include <TRACKING/DTrackTimeBased.h>
 
 class DChargedTrack_factory:public jana::JFactory<DChargedTrack>{
 	public:
