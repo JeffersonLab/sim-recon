@@ -39,7 +39,7 @@
 // (e.g. module, layer, sector) as well as the type of data
 // (truth or hit). The bintree stores the pointers as void*
 // so that it can be used for any type of data structure. This
-// means though, that one must know the type cast it appropriately
+// means though, that one must know the type and cast it appropriately
 // when extracting a pointer from the bintree.
 //
 // After all of the particles in the event have been tracked,
@@ -50,6 +50,10 @@
 // and combines them into a single s_BarrelEMcal_t structure
 // that is in the hddm_s structure that will be written to
 // the output file.
+//
+// For the case of the BCAL timing spectra, a similar method is
+// used except global variable STL containers are used instead of
+// the bintree mechanism.
 //-----------------
 
 
@@ -601,8 +605,12 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 				char str[256];
 				double dE = h->GetBinContent(ibin);
 				E_atten_sum += dE;
-				sprintf(str, "%f", dE);
-				vals += str;
+				if(dE!=0.0){
+					sprintf(str, "%3.3f", dE*1000.0); // store in MeV since that cuts down on leading zeros
+					vals += str;
+				}else{
+					vals += "0"; // lots of zeros are written and this saves space
+				}
 				vals += " ";
 			}
 			if(E_atten_sum >= THRESH_ATTENUATED_GEV){
