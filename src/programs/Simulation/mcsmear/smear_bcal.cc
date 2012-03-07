@@ -6,7 +6,7 @@
 
 // Set the following to 1 to use the new timing spectrum scheme and 0 to use old scheme
 
-#if 0
+#if 1
 
 #include <iostream>
 #include <iomanip>
@@ -476,9 +476,6 @@ void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra)
 			double dE;
 			while(ss>>dE){
 
-				// Convert from GeV to MeV
-				dE *= 1000.0;
-				
 				h->Fill(t, dE);
 				t += bin_width;
 				
