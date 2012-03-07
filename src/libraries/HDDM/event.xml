@@ -54,9 +54,7 @@
           <bcalSiPMDownHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/> <!-- DEPRECATED -->
           <bcalHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float"/>
         </bcalCell>
-        <bcalSiPMSpectrum maxOccurs="unbounded" minOccurs="0" module="int" layer="int" sector="int" end="int" Etruth="float" tstart="float" bin_width="float" vals="string">
-          <bcalSiPMHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
-		  </bcalSiPMSpectrum>
+        <bcalSiPMSpectrum maxOccurs="unbounded" minOccurs="0" module="int" layer="int" sector="int" end="int" Etruth="float" tstart="float" bin_width="float" vals="string"/>
         <bcalfADCCell layer="int" maxOccurs="unbounded" minOccurs="0" module="int" sector="int">
           <bcalfADCUpHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
           <bcalfADCDownHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
