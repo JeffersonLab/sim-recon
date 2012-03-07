@@ -196,6 +196,26 @@ DBCALGeometry::fADCId( int module, int SiPM_layer, int SiPM_sector ) {
 
   return cellId(module, fADC_lay, fADC_sect);
 }
+  
+//--------------
+// NSiPMs
+//--------------
+int
+DBCALGeometry::NSiPMs(int fADCId)
+{
+	/// Return the number of SiPMs summed for the given fADCId
+	int fadc_lay = layer(fADCId);
+
+	if(fadc_lay<1 || fadc_lay>(NBCALLAYSOUT+NBCALLAYSIN))return 0;
+
+	if(fadc_lay <= NBCALLAYSIN){
+		// inner
+		return NSUMLAYSIN[fadc_lay-1]*NSUMSECSIN;
+	}else{
+		// outer
+		return NSUMLAYSOUT[fadc_lay-1]*NSUMSECSOUT;
+	}
+}
 
 //--------------
 // r

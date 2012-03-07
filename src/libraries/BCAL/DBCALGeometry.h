@@ -95,6 +95,7 @@ public:
   static int fADC_layer( int SiPM_cellId );
   static int fADC_sector( int SiPM_cellId );
   static int fADCId( int module, int SiPM_layer, int SiPM_sector );
+  static int NSiPMs(int fADCId);
 
   //these functions are about the physical location and dimensions of a readout cell
   static float phi( int fADC_cellId );
