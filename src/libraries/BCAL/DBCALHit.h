@@ -32,7 +32,7 @@ class DBCALHit:public JObject{
 			AddString(items, "layer", "%d", layer);
 			AddString(items, "sector", "%d", sector);
 			AddString(items, "end", "%s", end==0 ? "upstream":"downstream" );
-			AddString(items, "E(GeV)", "%2.3f", E);
+			AddString(items, "E(fADC)", "%2.3f", E);
 			AddString(items, "t(ns)", "%4.2f", t);
 		}
 };
