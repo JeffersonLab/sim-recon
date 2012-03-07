@@ -65,6 +65,7 @@ bool NO_E_SMEAR = false;
 bool NO_T_SMEAR = false;
 bool NO_DARK_PULSES = false;
 bool NO_THRESHOLD_CUT = false;
+bool BCAL_DEBUG_HISTS = false;
 
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
@@ -91,6 +92,7 @@ using namespace jana;
 static JCalibration *jcalib=NULL;
 
 // histogram
+pthread_mutex_t root_mutex = PTHREAD_MUTEX_INITIALIZER;
 TH2F *fdc_drift_time_smear_hist;
 TH2F *fdc_drift_dist_smear_hist;
 TH2F *fdc_drift_time;
@@ -276,6 +278,7 @@ int main(int narg,char* argv[])
 #endif
 	
 	hfile->Write();
+	hfile->Close();
 
 	return 0;
 }
@@ -312,6 +315,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'G': NO_T_SMEAR = true;								break;
       case 'H': NO_DARK_PULSES = true;							break;
       case 'I': NO_THRESHOLD_CUT = true;						break;
+	  case 'J': BCAL_DEBUG_HISTS = true;						break;
       case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; 				break;
       case 'S': START_SIGMA= atof(&ptr[2])*k_psec; 				break;
       }
@@ -388,6 +392,7 @@ void Usage(void)
 	cout<<"    -G       Don't smear BCAL times (def. smear)"<<endl;
 	cout<<"    -H       Don't add BCAL dark hits (def. add)"<<endl;
 	cout<<"    -I       Don't apply discrim. thresh. to BCAL hits (def. cut)"<<endl;
+	cout<<"    -J       Create BCAL debug hists (only use with 1 event!)"<<endl;
 	cout<<"    -f#      TOF sigma in psec (def: "<< TOF_SIGMA/k_psec<<")"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;
