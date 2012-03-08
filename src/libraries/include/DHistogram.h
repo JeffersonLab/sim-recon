@@ -115,7 +115,7 @@ inline void DHistogram::Add(const DHistogram *h)
 {
 	if(h->GetBinWidth()!=binWidth || h->GetNbins()!=Nbins){
 		_DBG_<<"Histogram parameters don't match!!"<<endl;
-		exit(-1);
+		return;
 	}
 	
 	for(int bin=1; bin<=Nbins; bin++){
