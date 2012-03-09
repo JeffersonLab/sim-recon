@@ -16,7 +16,7 @@ using namespace std;
 #include "FCAL/DFCALGeometry.h"
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
-#include <PID/DNeutralTrack.h>
+#include <PID/DNeutralParticle.h>
 #include <PID/DParticleSet.h>
 #include <PID/DPhysicsEvent.h>
 #include <PID/DTwoGammaFit.h>

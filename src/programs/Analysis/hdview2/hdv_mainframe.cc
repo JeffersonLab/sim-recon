@@ -19,7 +19,7 @@ using namespace std;
 #include "HDGEOMETRY/DGeometry.h"
 #include <PID/DParticleSet.h>
 #include <PID/DPhysicsEvent.h>
-#include <PID/DNeutralTrack.h>
+#include <PID/DNeutralParticle.h>
 
 #include <TPolyMarker.h>
 #include <TLine.h>
@@ -326,7 +326,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   chargedtracksf->AddFrame(chargedtracksfactory, lhints);
   trkdrawopts->AddFrame(chargedtracksf, lhints);
   
-  checkbuttons["neutrals"]     = new TGCheckButton(trkdrawopts,"DNeutralTrack");
+  checkbuttons["neutrals"]     = new TGCheckButton(trkdrawopts,"DNeutralParticle");
   checkbuttons["thrown"]       = new TGCheckButton(trkdrawopts,"DMCThrown");
   checkbuttons["trajectories"] = new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
   trkdrawopts->AddFrame(checkbuttons["neutrals"], lhints);
@@ -1950,9 +1950,9 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	
 	
 	// Add DNeutralTrack factories
-	reconfactory->AddEntry("DNeutralTrack:", id++);
+	reconfactory->AddEntry("DNeutralParticle:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DNeutralTrack:";
+		string name = "DNeutralParticle:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
