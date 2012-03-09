@@ -36,14 +36,14 @@ jerror_t DParticleSet_factory::evnt(jana::JEventLoop *locEventLoop, int eventnum
 {
 	unsigned int loc_i, loc_j;
 	const DChargedTrack *locChargedTrack;
-	const DNeutralTrack *locNeutralTrack;
+	const DNeutralParticle *locNeutralParticle;
 	DParticleSet *locParticleSet;
 
 	vector<const DVertex *> locVertices;
-	vector<const DNeutralTrack *> locNeutralTracks;
+	vector<const DNeutralParticle *> locNeutralParticles;
 	vector<const DVertex *> locAssociatedVertices;
 	locEventLoop->Get(locVertices);
-	locEventLoop->Get(locNeutralTracks);
+	locEventLoop->Get(locNeutralParticles);
 
 	// Sort according to particle type
 	for (loc_i = 0; loc_i < locVertices.size(); loc_i++){
@@ -54,7 +54,7 @@ jerror_t DParticleSet_factory::evnt(jana::JEventLoop *locEventLoop, int eventnum
 		for (loc_j = 0; loc_j < locVertices[loc_i]->dChargedTracks.size(); loc_j++){
 			locChargedTrack = locVertices[loc_i]->dChargedTracks[loc_j];
 			locParticleSet->dChargedTracks.push_back(locChargedTrack);
-			switch (locChargedTrack->dChargedTrackHypotheses[0]->dPID) {
+			switch (locChargedTrack->Get_BestFOM()->dPID) {
 				case PiPlus :
 					locParticleSet->pip.push_back(locChargedTrack);
 					break;
@@ -71,27 +71,27 @@ jerror_t DParticleSet_factory::evnt(jana::JEventLoop *locEventLoop, int eventnum
 					locParticleSet->proton.push_back(locChargedTrack);
 					break;
 				default :
-					(locChargedTrack->dChargedTrackHypotheses[0]->dTrackTimeBased->charge() > 0.0) ? locParticleSet->otherp.push_back(locChargedTrack) : locParticleSet->othern.push_back(locChargedTrack);
+					(locChargedTrack->Get_Charge() > 0.0) ? locParticleSet->otherp.push_back(locChargedTrack) : locParticleSet->othern.push_back(locChargedTrack);
 					break;
 			}
 		}
 
 		// Neutral particles
-		for (loc_j = 0; loc_j < locNeutralTracks.size(); loc_j++){
-			locNeutralTrack = locNeutralTracks[loc_j];
-			locNeutralTrack->dNeutralTrackHypotheses[0]->GetT(locAssociatedVertices);
+		for (loc_j = 0; loc_j < locNeutralParticles.size(); loc_j++){
+			locNeutralParticle = locNeutralParticles[loc_j];
+			locNeutralParticle->Get_BestFOM()->GetT(locAssociatedVertices);
 			if (locAssociatedVertices[0]->id != locVertices[loc_i]->id)
 				continue;
-			locParticleSet->dNeutralTracks.push_back(locNeutralTrack);
-			switch (locNeutralTrack->dNeutralTrackHypotheses[0]->dPID) {
+			locParticleSet->dNeutralParticles.push_back(locNeutralParticle);
+			switch (locNeutralParticle->Get_BestFOM()->dPID) {
 				case Gamma :
-					locParticleSet->photon.push_back(locNeutralTrack);
+					locParticleSet->photon.push_back(locNeutralParticle);
 					break;
 				case Neutron :
-					locParticleSet->neutron.push_back(locNeutralTrack);
+					locParticleSet->neutron.push_back(locNeutralParticle);
 					break;
 				default :
-					locParticleSet->otherz.push_back(locNeutralTrack);
+					locParticleSet->otherz.push_back(locNeutralParticle);
 					break;
 			}
 		}

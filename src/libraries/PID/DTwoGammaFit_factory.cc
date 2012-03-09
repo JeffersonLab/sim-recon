@@ -13,7 +13,7 @@ using namespace jana;
 #include "DTwoGammaFit.h"
 #include "DKinFit.h"
 #include "DVertex.h"
-#include "DNeutralTrackHypothesis.h"
+#include "DNeutralParticleHypothesis.h"
 #include "DTwoGammaFit_factory.h"
 
 
@@ -48,13 +48,13 @@ DTwoGammaFit_factory::DTwoGammaFit_factory(double aMass)
 jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 { 
   //so the way this works is that for a given DBCALShower/DFCALShower, a
-  //DNeutralTrackHypothesis is created for each DVertex (DVertex's are
+  //DNeutralParticleHypothesis is created for each DVertex (DVertex's are
   //determined by grouping together DChargedTrackHypothesis). We
   //obviously don't want to consider combinations of hypotheses from
   //different vertices.
 
   vector<const DVertex*> vertices;
-  vector<const DNeutralTrackHypothesis*> neutrals;
+  vector<const DNeutralParticleHypothesis*> neutrals;
   eventLoop->Get(vertices);
   eventLoop->Get(neutrals);
    
@@ -93,8 +93,8 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 	vector<DKinematicData> kindata;
 	kindata.clear();
-	kindata.push_back( *(neutrals[i]->dKinematicData) );
-	kindata.push_back( *(neutrals[j]->dKinematicData) );
+	kindata.push_back( *(neutrals[i]) );
+	kindata.push_back( *(neutrals[j]) );
 
 	kfit->SetFinal(kindata);
 	//fit!

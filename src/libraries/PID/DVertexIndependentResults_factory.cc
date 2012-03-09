@@ -35,7 +35,7 @@ jerror_t DVertexIndependentResults_factory::evnt(jana::JEventLoop *locEventLoop,
 {
 	DVertexIndependentResults *locVertexIndependentResults = new DVertexIndependentResults();
 	locEventLoop->Get(locVertexIndependentResults->dChargedTracks);
-	locEventLoop->Get(locVertexIndependentResults->dNeutralShowerCandidates);
+	locEventLoop->Get(locVertexIndependentResults->dNeutralShowers);
 	_data.push_back(locVertexIndependentResults);	
 
 	return NOERROR;

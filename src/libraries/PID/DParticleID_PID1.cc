@@ -326,7 +326,9 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(const DChargedTrackHypothesis *locCha
 	unsigned int locMinimumNumberUsedHitsForConfidence = 3; //dE/dx is landau-distributed, so to approximate Gaussian must remove hits with largest dE/dx //3 means 6 or more hits originally
 	Particle_t locPID = locChargedTrackHypothesis->dPID;
 
-	const DTrackTimeBased *locTrackTimeBased = locChargedTrackHypothesis->dTrackTimeBased;
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+	locChargedTrackHypothesis->GetT(locTrackTimeBasedVector);
+	const DTrackTimeBased *locTrackTimeBased = locTrackTimeBasedVector[0];
 	unsigned int locNumHitsUsedFordEdx_CDC = locTrackTimeBased->dNumHitsUsedFordEdx_CDC;
 	unsigned int locNumHitsUsedFordEdx_FDC = locTrackTimeBased->dNumHitsUsedFordEdx_FDC;
 
@@ -340,7 +342,7 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(const DChargedTrackHypothesis *locCha
 	double locMeandEdx_FDC, locMeandEdx_CDC, locSigmadEdx_FDC, locSigmadEdx_CDC;
 	double locDeltadEdx_CDC = 0.0, locDeltadEdx_FDC = 0.0;
 
-	double locBeta = locChargedTrackHypothesis->beta();
+	double locBeta = locChargedTrackHypothesis->momentum().Mag()/locChargedTrackHypothesis->energy();
 	if(locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC){
 		if(GetdEdxMean_CDC(locBeta, locNumHitsUsedFordEdx_CDC, locMeandEdx_CDC, locPID) != NOERROR)
 			return RESOURCE_UNAVAILABLE;

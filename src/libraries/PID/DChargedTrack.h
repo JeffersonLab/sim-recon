@@ -11,6 +11,7 @@
 #include <vector>
 #include <JANA/JObject.h>
 #include <PID/DChargedTrackHypothesis.h>
+#include <particleType.h>
 
 using namespace std;
 
@@ -18,7 +19,15 @@ class DChargedTrack:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DChargedTrack);
 
-		vector<const DChargedTrackHypothesis *> dChargedTrackHypotheses;
+		vector<const DChargedTrackHypothesis*> dChargedTrackHypotheses;
+
+		double Get_Charge(void) const;
+		const DChargedTrackHypothesis* Get_BestFOM(void) const;
+		const DChargedTrackHypothesis* Get_Proton(void) const;
+		const DChargedTrackHypothesis* Get_PiPlus(void) const;
+		const DChargedTrackHypothesis* Get_PiMinus(void) const;
+		const DChargedTrackHypothesis* Get_KPlus(void) const;
+		const DChargedTrackHypothesis* Get_KMinus(void) const;
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "Nhypotheses", "%d", dChargedTrackHypotheses.size());

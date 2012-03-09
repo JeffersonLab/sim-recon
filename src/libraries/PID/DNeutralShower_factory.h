@@ -1,24 +1,24 @@
 // $Id$
 //
-//    File: DNeutralShowerCandidate_factory.h
+//    File: DNeutralShower_factory.h
 // Created: Tue Aug  9 14:29:24 EST 2011
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
-#ifndef _DNeutralShowerCandidate_factory_
-#define _DNeutralShowerCandidate_factory_
+#ifndef _DNeutralShower_factory_
+#define _DNeutralShower_factory_
 
 #include <JANA/JFactory.h>
-#include <PID/DNeutralShowerCandidate.h>
+#include <PID/DNeutralShower.h>
 #include <PID/DChargedTrack.h>
 #include <PID/DChargedTrackHypothesis.h>
 #include <FCAL/DFCALShower.h>
 #include <BCAL/DBCALShower.h>
 
-class DNeutralShowerCandidate_factory:public jana::JFactory<DNeutralShowerCandidate>{
+class DNeutralShower_factory:public jana::JFactory<DNeutralShower>{
 	public:
-		DNeutralShowerCandidate_factory(){};
-		~DNeutralShowerCandidate_factory(){};
+		DNeutralShower_factory(){};
+		~DNeutralShower_factory(){};
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -30,5 +30,5 @@ class DNeutralShowerCandidate_factory:public jana::JFactory<DNeutralShowerCandid
 		int USE_KLOE;
 };
 
-#endif // _DNeutralShowerCandidate_factory_
+#endif // _DNeutralShower_factory_
 

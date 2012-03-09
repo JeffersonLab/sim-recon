@@ -12,7 +12,7 @@
 #include <PID/DParticleSet.h>
 #include <PID/DVertex.h>
 #include <PID/DChargedTrack.h>
-#include <PID/DNeutralTrack.h>
+#include <PID/DNeutralParticle.h>
 
 class DParticleSet_factory:public jana::JFactory<DParticleSet>{
 	public:

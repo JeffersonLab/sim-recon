@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DNeutralShowerCandidate.h
+//    File: DNeutralShower.h
 // Created: Tue Aug  9 14:29:24 EST 2011
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
-#ifndef _DNeutralShowerCandidate_
-#define _DNeutralShowerCandidate_
+#ifndef _DNeutralShower_
+#define _DNeutralShower_
 
 #include <vector>
 #include <JANA/JObject.h>
@@ -17,9 +17,9 @@
 
 using namespace std;
 
-class DNeutralShowerCandidate : public jana::JObject{
+class DNeutralShower : public jana::JObject{
 	public:
-		JOBJECT_PUBLIC(DNeutralShowerCandidate);
+		JOBJECT_PUBLIC(DNeutralShower);
 
 		DLorentzVector dSpacetimeVertex;
 		DLorentzVector dSpacetimeVertexUncertainties;
@@ -27,7 +27,7 @@ class DNeutralShowerCandidate : public jana::JObject{
 		float dEnergyUncertainty;
 		DetectorSystem_t dDetectorSystem;
 
-		DNeutralShowerCandidate(const DBCALShower *locBCALShower){
+		DNeutralShower(const DBCALShower *locBCALShower){
 			dDetectorSystem = SYS_BCAL;
 			dEnergy = locBCALShower->E;
 			dEnergyUncertainty = (dEnergy >= 0.0) ? 0.0445*sqrt( dEnergy ) + 0.009*dEnergy : 1e-3; //from old DPhoton_factory::makeBCalPhoton() function
@@ -35,7 +35,7 @@ class DNeutralShowerCandidate : public jana::JObject{
 			dSpacetimeVertexUncertainties.SetXYZT(locBCALShower->xErr, locBCALShower->yErr, locBCALShower->zErr, locBCALShower->tErr);
 		}
 
-		DNeutralShowerCandidate(const DFCALShower *locFCALShower){
+		DNeutralShower(const DFCALShower *locFCALShower){
 			dDetectorSystem = SYS_FCAL;
 			dEnergy = locFCALShower->getEnergy();
 			dEnergyUncertainty = (dEnergy >= 0.0) ? 0.042*sqrt(dEnergy) + 0.0001 : 1e-3; //from old DPhoton_factory::makeFCalPhoton() function
@@ -55,5 +55,5 @@ class DNeutralShowerCandidate : public jana::JObject{
 
 };
 
-#endif // _DNeutralShowerCandidate_
+#endif // _DNeutralShower_
 

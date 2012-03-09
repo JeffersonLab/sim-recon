@@ -104,9 +104,9 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// If no vertices but neutral showers present, create vertex at center of target
 	if(_data.size() == 0){
-		vector<const DNeutralShowerCandidate *> locNeutralShowerCandidates;
-		loop->Get(locNeutralShowerCandidates);
-		if(locNeutralShowerCandidates.size() > 0){ //use center of target
+		vector<const DNeutralShower *> locNeutralShowers;
+		loop->Get(locNeutralShowers);
+		if(locNeutralShowers.size() > 0){ //use center of target
 			DVertex *locVertex = new DVertex;
 			locVertex->dTimeUncertainty = 0.0;
 			DLorentzVector locSpacetimeVertex(0.0, 0.0, dTargetCenter_Z, 0.0);
@@ -140,7 +140,6 @@ jerror_t DVertex_factory::MakeVertices(vector<const DChargedTrack*> &locChargedT
 	unsigned int loc_i, loc_j;
 	// Vector to hold list of vertexInfo_t objects for all charged tracks
 	vector<vertexInfo_t*> locVertexInfos;
-	const DTrackTimeBased *locTrackTimeBased;
 
 	// Assign and fill vertexInfo_t objects for each charged track
 	for(loc_i = 0; loc_i < locChargedTracks.size(); loc_i++){
@@ -166,11 +165,10 @@ jerror_t DVertex_factory::MakeVertices(vector<const DChargedTrack*> &locChargedT
 		double t0 = 0.;
 		double sum_invar = 0.0, invar = 0.0;
 		for(loc_j = 0; loc_j < locVertexInfoGroup.size(); loc_j++){
-			locTrackTimeBased = locVertexInfoGroup[loc_j]->dChargedTrack->dChargedTrackHypotheses[0]->dTrackTimeBased;	 
 			invar = 1.0/(locVertexInfoGroup[loc_j]->sigmat*locVertexInfoGroup[loc_j]->sigmat);
 			sum_invar += invar;
 			t0 += locVertexInfoGroup[loc_j]->t*invar;
-			temp += locTrackTimeBased->position();
+			temp += locVertexInfoGroup[loc_j]->dChargedTrack->dChargedTrackHypotheses[0]->position();
 		}
 		t0 *= 1.0/sum_invar;
 		temp *= 1.0/double(locVertexInfoGroup.size());
@@ -194,12 +192,12 @@ void DVertex_factory::FillVertexInfoChargedTrack(DVertex_factory::vertexInfo_t *
 {
 	locVertexInfo->Reset();
 	locVertexInfo->dChargedTrack = locChargedTrack;
-	const DTrackTimeBased *locTimeBasedTrack = locChargedTrack->dChargedTrackHypotheses[0]->dTrackTimeBased;
+	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->dChargedTrackHypotheses[0];
 
-	locVertexInfo->t = locTimeBasedTrack->t0();
-	locVertexInfo->sigmat = locTimeBasedTrack->t0_err();
-	locVertexInfo->z = locTimeBasedTrack->z();
-	locVertexInfo->sigmaz = 0.8/sin(locTimeBasedTrack->momentum().Theta()); // in cm.  For now, use 3mm wide angle track resolution scaled by sin(theta)
+	locVertexInfo->t = locChargedTrackHypothesis->t0();
+	locVertexInfo->sigmat = locChargedTrackHypothesis->t0_err();
+	locVertexInfo->z = locChargedTrackHypothesis->z();
+	locVertexInfo->sigmaz = 0.8/sin(locChargedTrackHypothesis->momentum().Theta()); // in cm.  For now, use 3mm wide angle track resolution scaled by sin(theta)
 
 	locVertexInfo->Fill(locVertexInfo->t, locVertexInfo->sigmat, locVertexInfo->z, locVertexInfo->sigmaz);
 }

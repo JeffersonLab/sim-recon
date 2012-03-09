@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DNeutralTrackHypothesis_factory.cc
+//    File: DNeutralParticleHypothesis_factory.cc
 // Created: Thu Dec  3 17:27:55 EST 2009
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
@@ -12,13 +12,13 @@ using namespace std;
 
 #include <TMath.h>
 
-#include "DNeutralTrackHypothesis_factory.h"
+#include "DNeutralParticleHypothesis_factory.h"
 using namespace jana;
 
 //------------------
 // init
 //------------------
-jerror_t DNeutralTrackHypothesis_factory::init(void)
+jerror_t DNeutralParticleHypothesis_factory::init(void)
 {
 	return NOERROR;
 }
@@ -26,7 +26,7 @@ jerror_t DNeutralTrackHypothesis_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DNeutralTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
+jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
 
 	// Get Target parameters from XML
@@ -59,7 +59,7 @@ jerror_t DNeutralTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, i
 //------------------
 // evnt
 //------------------
-jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
+jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
 	unsigned int loc_i, loc_j, loc_k, locNDF = 1;
 	bool locShowerMatchFlag;
@@ -67,48 +67,47 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	float locParticleEnergyUncertainty, locShowerEnergyUncertainty, locTimeDifferenceVariance, locChiSq, locFOM;
 	DVector3 locPathVector;
 
-	const DNeutralShowerCandidate *locNeutralShowerCandidate;
+	const DNeutralShower *locNeutralShower;
 	const DChargedTrackHypothesis *locChargedTrackHypothesis;
 	const DVertex *locVertex;
-	DNeutralTrackHypothesis *locNeutralTrackHypothesis;
-	DKinematicData *locKinematicData;
+	DNeutralParticleHypothesis *locNeutralParticleHypothesis;
 	DMatrixDSym locVariances, locErrorMatrix;
-	vector<const DBCALShower*> locAssociatedBCALShowers_NeutralShowerCandidate;
-	vector<const DFCALShower*> locAssociatedFCALShowers_NeutralShowerCandidate;
+	vector<const DBCALShower*> locAssociatedBCALShowers_NeutralShower;
+	vector<const DFCALShower*> locAssociatedFCALShowers_NeutralShower;
 	vector<const DBCALShower*> locAssociatedBCALShowers_ChargedTrack;
 	vector<const DFCALShower*> locAssociatedFCALShowers_ChargedTrack;
 
 	vector<const DChargedTrack*> locChargedTracks;
-	vector<const DNeutralShowerCandidate*> locNeutralShowerCandidates;
+	vector<const DNeutralShower*> locNeutralShowers;
 	vector<const DVertex*> locVertices;
 	locEventLoop->Get(locChargedTracks);
-	locEventLoop->Get(locNeutralShowerCandidates);
+	locEventLoop->Get(locNeutralShowers);
 	locEventLoop->Get(locVertices);
 
 	vector<Particle_t> locPIDHypotheses;
 	locPIDHypotheses.push_back(Gamma);
 	locPIDHypotheses.push_back(Neutron);
 
-	// Loop over DNeutralShowerCandidates
-	for (loc_i = 0; loc_i < locNeutralShowerCandidates.size(); loc_i++){
-		locNeutralShowerCandidate = locNeutralShowerCandidates[loc_i];
-		locNeutralShowerCandidate->GetT(locAssociatedBCALShowers_NeutralShowerCandidate);
-		locNeutralShowerCandidate->GetT(locAssociatedFCALShowers_NeutralShowerCandidate);
+	// Loop over DNeutralShowers
+	for (loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++){
+		locNeutralShower = locNeutralShowers[loc_i];
+		locNeutralShower->GetT(locAssociatedBCALShowers_NeutralShower);
+		locNeutralShower->GetT(locAssociatedFCALShowers_NeutralShower);
 
-		// If the DNeutralShowerCandidate is matched to the DChargedTrackHypothesis with the highest FOM of ANY DChargedTrack, skip it
+		// If the DNeutralShower is matched to the DChargedTrackHypothesis with the highest FOM of ANY DChargedTrack, skip it
 		locShowerMatchFlag = false;
 		for (loc_j = 0; loc_j < locChargedTracks.size(); loc_j++){
 			locChargedTrackHypothesis = locChargedTracks[loc_j]->dChargedTrackHypotheses[0];
 			locChargedTrackHypothesis->GetT(locAssociatedBCALShowers_ChargedTrack);
 			locChargedTrackHypothesis->GetT(locAssociatedFCALShowers_ChargedTrack);
-			if ((locAssociatedBCALShowers_ChargedTrack.size() > 0) && (locAssociatedBCALShowers_NeutralShowerCandidate.size() > 0)){
-				if (locAssociatedBCALShowers_ChargedTrack[0]->id == locAssociatedBCALShowers_NeutralShowerCandidate[0]->id){
+			if ((locAssociatedBCALShowers_ChargedTrack.size() > 0) && (locAssociatedBCALShowers_NeutralShower.size() > 0)){
+				if (locAssociatedBCALShowers_ChargedTrack[0]->id == locAssociatedBCALShowers_NeutralShower[0]->id){
 					locShowerMatchFlag = true;
 					break;
 				}
 			}
-			if ((locShowerMatchFlag == false) && (locAssociatedFCALShowers_ChargedTrack.size() > 0) && (locAssociatedFCALShowers_NeutralShowerCandidate.size() > 0)){
-				if (locAssociatedFCALShowers_ChargedTrack[0]->id == locAssociatedFCALShowers_NeutralShowerCandidate[0]->id){
+			if ((locShowerMatchFlag == false) && (locAssociatedFCALShowers_ChargedTrack.size() > 0) && (locAssociatedFCALShowers_NeutralShower.size() > 0)){
+				if (locAssociatedFCALShowers_ChargedTrack[0]->id == locAssociatedFCALShowers_NeutralShower[0]->id){
 					locShowerMatchFlag = true;
 					break;
 				}
@@ -117,30 +116,30 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		if (locShowerMatchFlag == true)
 			continue; //shower matched to a DChargedTrackHypothesis with the highest FOM, not a neutral
 
-		// Loop over vertices and PID hypotheses & create DNeutralTrackHypotheses for each combination
+		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
 		for (loc_j = 0; loc_j < locVertices.size(); loc_j++){
 			locVertex = locVertices[loc_j];
 			for (loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++){
 
-				// Calculate DNeutralTrackHypothesis Quantities (projected time at vertex for given id, etc.)
+				// Calculate DNeutralParticleHypothesis Quantities (projected time at vertex for given id, etc.)
 				locMass = ParticleMass(locPIDHypotheses[loc_k]);
-				locShowerEnergy = locNeutralShowerCandidate->dEnergy;
+				locShowerEnergy = locNeutralShower->dEnergy;
 				locParticleEnergy = locShowerEnergy; //need to correct this for neutrons!
 				if (locParticleEnergy < locMass)
 					continue; //not enough energy for PID hypothesis
 
-				locShowerEnergyUncertainty = locNeutralShowerCandidate->dEnergyUncertainty;
+				locShowerEnergyUncertainty = locNeutralShower->dEnergyUncertainty;
 				locParticleEnergyUncertainty = locShowerEnergyUncertainty; //need to correct this for neutrons!
 
-				locPathVector = locNeutralShowerCandidate->dSpacetimeVertex.Vect() - locVertex->dSpacetimeVertex.Vect();
+				locPathVector = locNeutralShower->dSpacetimeVertex.Vect() - locVertex->dSpacetimeVertex.Vect();
 				locPathLength = locPathVector.Mag();
 				if(!(locPathLength > 0.0))
 					continue; //invalid, will divide by zero when creating error matrix, so skip!
 				locMomentum = sqrt(locParticleEnergy*locParticleEnergy - locMass*locMass);
 				locFlightTime = locPathLength*locParticleEnergy/(locMomentum*SPEED_OF_LIGHT);
-				locProjectedTime = locNeutralShowerCandidate->dSpacetimeVertex.T() - locFlightTime;
+				locProjectedTime = locNeutralShower->dSpacetimeVertex.T() - locFlightTime;
 
-				// Calculate DNeutralTrackHypothesis FOM
+				// Calculate DNeutralParticleHypothesis FOM
 				locTimeDifference = locVertex->dSpacetimeVertex.T() - locProjectedTime;
 				locTimeDifferenceVariance = 1.0; //completely random, ok because ID disabled for neutrons anyway
 				locChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
@@ -148,44 +147,35 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				if(locPIDHypotheses[loc_k] == Neutron)
 					locFOM = -1.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
 
-				// Expand DKinematicData vector if necessary
-		      while(dKinematicDataVector.size() <=_data.size())
-					dKinematicDataVector.push_back(new DKinematicData);
+				// Build DNeutralParticleHypothesis // dEdx not set
+				locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
+				locNeutralParticleHypothesis->AddAssociatedObject(locVertex);
+				locNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
-				// Build DKinematicData //dEdx not set
-		      locKinematicData = dKinematicDataVector[_data.size()];
-				locKinematicData->setMass(locMass);
-				locKinematicData->setCharge(0.0);
+				locNeutralParticleHypothesis->setMass(locMass);
+				locNeutralParticleHypothesis->setCharge(0.0);
 
-				Calc_Variances(locNeutralShowerCandidate, locParticleEnergyUncertainty, locVariances);
+				Calc_Variances(locNeutralShower, locParticleEnergyUncertainty, locVariances);
 				Build_ErrorMatrix(locPathVector, locParticleEnergy, locVariances, locErrorMatrix);
 
-				locKinematicData->setErrorMatrix(locErrorMatrix);
-				locKinematicData->clearTrackingErrorMatrix();
+				locNeutralParticleHypothesis->setErrorMatrix(locErrorMatrix);
+				locNeutralParticleHypothesis->clearTrackingErrorMatrix();
 				locPathVector.SetMag(locMomentum);
-				locKinematicData->setMomentum(locPathVector);
-				locKinematicData->setPosition(locVertex->dSpacetimeVertex.Vect());
-				locKinematicData->setT0(locVertex->dSpacetimeVertex.T(), locVertex->dTimeUncertainty, SYS_NULL);
-				locKinematicData->setT1(locNeutralShowerCandidate->dSpacetimeVertex.T(), locNeutralShowerCandidate->dSpacetimeVertexUncertainties.T(), locNeutralShowerCandidate->dDetectorSystem);
-				locKinematicData->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
+				locNeutralParticleHypothesis->setMomentum(locPathVector);
+				locNeutralParticleHypothesis->setPosition(locVertex->dSpacetimeVertex.Vect());
+				locNeutralParticleHypothesis->setT0(locVertex->dSpacetimeVertex.T(), locVertex->dTimeUncertainty, SYS_NULL);
+				locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), locNeutralShower->dSpacetimeVertexUncertainties.T(), locNeutralShower->dDetectorSystem);
+				locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 
-				// Build DNeutralTrackHypothesis
-				locNeutralTrackHypothesis = new DNeutralTrackHypothesis;
-				locNeutralTrackHypothesis->AddAssociatedObject(locVertex);
-				locNeutralTrackHypothesis->AddAssociatedObject(locNeutralShowerCandidate);
-				locNeutralTrackHypothesis->dKinematicData = locKinematicData;
-				locNeutralTrackHypothesis->dPID = locPIDHypotheses[loc_k];
-				locNeutralTrackHypothesis->dPathLength = locPathLength;
-				locNeutralTrackHypothesis->dFlightTime = locFlightTime;
-				locNeutralTrackHypothesis->dProjectedTime = locProjectedTime;
-				locNeutralTrackHypothesis->dChiSq = locChiSq;
-				locNeutralTrackHypothesis->dNDF = locNDF;
-				locNeutralTrackHypothesis->dFOM = locFOM;
+				locNeutralParticleHypothesis->dPID = locPIDHypotheses[loc_k];
+				locNeutralParticleHypothesis->dChiSq = locChiSq;
+				locNeutralParticleHypothesis->dNDF = locNDF;
+				locNeutralParticleHypothesis->dFOM = locFOM;
 
-				_data.push_back(locNeutralTrackHypothesis);	
+				_data.push_back(locNeutralParticleHypothesis);	
 			} //end PID loop
 		} //end DVertex loop
-	} //end DNeutralShowerCandidate loop
+	} //end DNeutralShower loop
 
 	return NOERROR;
 }
@@ -193,7 +183,7 @@ jerror_t DNeutralTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 //------------------
 // erun
 //------------------
-jerror_t DNeutralTrackHypothesis_factory::erun(void)
+jerror_t DNeutralParticleHypothesis_factory::erun(void)
 {
 	return NOERROR;
 }
@@ -201,18 +191,14 @@ jerror_t DNeutralTrackHypothesis_factory::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DNeutralTrackHypothesis_factory::fini(void)
+jerror_t DNeutralParticleHypothesis_factory::fini(void)
 {
-	for(unsigned int loc_i = 0; loc_i < dKinematicDataVector.size(); loc_i++)
-		delete dKinematicDataVector[loc_i];
-	dKinematicDataVector.clear();
-
 	return NOERROR;
 }
 
 #define DELTA(i,j) ((i==j) ? 1 : 0)
-void DNeutralTrackHypothesis_factory::Calc_Variances(const DNeutralShowerCandidate *locNeutralShowerCandidate, double locParticleEnergyUncertainty, DMatrixDSym &locVariances){
-	DLorentzVector locShowerPositionUncertainties = locNeutralShowerCandidate->dSpacetimeVertexUncertainties;
+void DNeutralParticleHypothesis_factory::Calc_Variances(const DNeutralShower *locNeutralShower, double locParticleEnergyUncertainty, DMatrixDSym &locVariances){
+	DLorentzVector locShowerPositionUncertainties = locNeutralShower->dSpacetimeVertexUncertainties;
 
 	// create the simplest error matrix:
 	// At this point, it is assumed that error matrix of measured quantities is diagonal,
@@ -235,7 +221,7 @@ void DNeutralTrackHypothesis_factory::Calc_Variances(const DNeutralShowerCandida
 	locVariances[6][6] = pow(dTargetLength/sqrt(12.0), 2.0) ; // z_t
 }
 
-void DNeutralTrackHypothesis_factory::Build_ErrorMatrix(const DVector3 &locPathVector, double locEnergy, const DMatrixDSym& locVariances, DMatrixDSym& locErrorMatrix)
+void DNeutralParticleHypothesis_factory::Build_ErrorMatrix(const DVector3 &locPathVector, double locEnergy, const DMatrixDSym& locVariances, DMatrixDSym& locErrorMatrix)
 {
 	unsigned int loc_i, loc_j, loc_ik, loc_jk;
    double R = locPathVector.Mag(); //path length

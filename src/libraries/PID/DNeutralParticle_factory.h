@@ -1,21 +1,21 @@
 // $Id$
 //
-//    File: DNeutralTrack_factory.h
+//    File: DNeutralParticle_factory.h
 // Created: Tue Aug  9 14:29:24 EST 2011
 // Creator: pmatt (on Linux ifarml6 2.6.18-128.el5 x86_64)
 //
 
-#ifndef _DNeutralTrack_factory_
-#define _DNeutralTrack_factory_
+#ifndef _DNeutralParticle_factory_
+#define _DNeutralParticle_factory_
 
 #include <JANA/JFactory.h>
-#include <PID/DNeutralTrack.h>
-#include <PID/DNeutralShowerCandidate.h>
+#include <PID/DNeutralParticle.h>
+#include <PID/DNeutralShower.h>
 
-class DNeutralTrack_factory:public jana::JFactory<DNeutralTrack>{
+class DNeutralParticle_factory:public jana::JFactory<DNeutralParticle>{
 	public:
-		DNeutralTrack_factory(){};
-		~DNeutralTrack_factory(){};
+		DNeutralParticle_factory(){};
+		~DNeutralParticle_factory(){};
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -25,5 +25,5 @@ class DNeutralTrack_factory:public jana::JFactory<DNeutralTrack>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 };
 
-#endif // _DNeutralTrack_factory_
+#endif // _DNeutralParticle_factory_
 

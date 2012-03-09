@@ -13,7 +13,7 @@
 #include <TRACKING/DHoughFind.h>
 #include <PID/DChargedTrack.h>
 #include "HDGEOMETRY/DRootGeom.h"
-#include <PID/DNeutralShowerCandidate.h>
+#include <PID/DNeutralShower.h>
 #include <TH1F.h>
 
 class DVertex_factory : public jana::JFactory<DVertex>{
