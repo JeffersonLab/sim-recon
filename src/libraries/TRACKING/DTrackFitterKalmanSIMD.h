@@ -63,8 +63,8 @@
 #define MIN_CDC_HITS 2 
 
 #define MOLIERE_FRACTION 0.99
-#define DE_PER_STEP_WIRE_BASED 0.00025 // in GeV
-#define DE_PER_STEP_TIME_BASED 0.00025 // in GeV
+#define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
+#define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001
 #define MIN_STEP_SIZE 0.1 // in cm
 #define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
@@ -239,6 +239,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   jerror_t StepJacobian(const DVector3 &pos,double ds,const DMatrix5x1 &S, 
 			double dEdx,DMatrix5x5 &J);
+  jerror_t StepJacobian(const DVector3 &pos,const DVector3 &dpos,double ds,
+			const DMatrix5x1 &S,double dEdx,DMatrix5x5 &J);
+  
+  jerror_t StepStateAndCovariance(DVector3 &pos,double ds,
+				  double dEdx,DMatrix5x1 &S,
+				  DMatrix5x5 &J,DMatrix5x5 &C);
+
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx);
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx,
 		     double &Bz);
@@ -275,7 +282,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 		      double sinalpha, double tu,
 		      const DMatrix5x5 &C);
   jerror_t EstimateT0(const DCDCTrackHit *hit,double ftime,double doca,
-		      double x,double y,double Bz,
+		      double delta_x,double delta_y,double Bz,
 		      const DMatrix5x5 &C);
   jerror_t FindForwardResiduals(vector<DKalmanUpdate_t>cdc_updates,
 				vector<DKalmanUpdate_t>fdc_updates);
@@ -379,6 +386,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   DMatrix5x5 Zero5x5;
   DMatrix5x1 Zero5x1;
 
+  TH2F *fdc_yres;
 
  private:
   bool last_smooth;
@@ -391,7 +399,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *cdc_drift,*fdc_drift,*fdc_yres_vs_dE;
   TH2F *cdc_res,*fdc_xres,*cdc_drift_vs_B,*fdc_drift_vs_B;
   TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B;
-  TH3F *fdc_yres;
+  TH2F *fdc_time_vs_d,*cdc_time_vs_d;
   TH2F *fdc_dy_vs_d;
   TH3F *fdc_yres3d;
   TH2F *fdc_yres_vs_tanl;

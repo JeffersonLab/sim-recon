@@ -203,7 +203,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    
 	    // Difference between measurement and projection
 	    Mdiff=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
-
+	 
 	    // Update the terms in H/H_T that depend on the particular hit
 	    temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
 				    -2.*nr*cosalpha*sinalpha);
@@ -278,8 +278,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	
 	  // Check if this hit is an outlier
 	  double chi2_hit=Mdiff*Mdiff*InvV;
-	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT)
-	    {
+	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){
+	    if (DEBUG_HISTS && fit_type==kTimeBased && id==0){
+	      fdc_yres->Fill(doca,Mdiff*my_fdchits[id]->dE/
+			     (2.6795e-4*FDC_CATHODE_SIGMA));
+	    }     
+
 	    // Compute Kalman gain matrix
 	    K=InvV*(C*H_T);
 	    
