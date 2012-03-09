@@ -155,11 +155,11 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	  const DParticleSet *particle_set=physicsevent->particle_sets[0];
 	  for(unsigned int j=0; j<particle_set->photon.size(); j++){
 		// photon
-	    rec.photons.push_back(MakeParticle(particle_set->photon[j]->dNeutralTrackHypotheses[0], 0.0));
+	    rec.photons.push_back(MakeParticle(particle_set->photon[j]->dNeutralParticleHypotheses[0], 0.0));
 	  }
 	  for(unsigned int j=0; j<particle_set->neutron.size(); j++){
 		// neutron
-	    rec.neutrons.push_back(MakeParticle(particle_set->neutron[j]->dNeutralTrackHypotheses[0], 0.939565));
+	    rec.neutrons.push_back(MakeParticle(particle_set->neutron[j]->dNeutralParticleHypotheses[0], 0.939565));
 	  }
 	  for(unsigned int j=0; j<particle_set->pip.size(); j++){
 	    // pi+
@@ -291,7 +291,7 @@ Particle DEventProcessor_phys_tree::MakeParticle(const DKinematicData *kd, doubl
 Particle DEventProcessor_phys_tree::MakeParticle(const DChargedTrackHypothesis *locChargedTrackHypothesis, double mass)
 {
 	// Most values get set using DKinematicData part
-	Particle part = MakeParticle((DKinematicData*)locChargedTrackHypothesis->dTrackTimeBased, mass);
+	Particle part = MakeParticle((DKinematicData*)locChargedTrackHypothesis, mass);
 
 	// Things specific to DChargedTrackHypothesis
 	part.chisq = locChargedTrackHypothesis->dChiSq;
@@ -304,15 +304,15 @@ Particle DEventProcessor_phys_tree::MakeParticle(const DChargedTrackHypothesis *
 //------------------
 // MakeParticle
 //------------------
-Particle DEventProcessor_phys_tree::MakeParticle(const DNeutralTrackHypothesis *locNeutralTrackHypothesis, double mass)
+Particle DEventProcessor_phys_tree::MakeParticle(const DNeutralParticleHypothesis *locNeutralParticleHypothesis, double mass)
 {
 	// Most values get set using DKinematicData part
-	Particle part = MakeParticle(locNeutralTrackHypothesis->dKinematicData, mass);
+	Particle part = MakeParticle((DKinematicData*)locNeutralParticleHypothesis, mass);
 
-	// Things specific to DNeutralTrackHypothesis
-	part.chisq = locNeutralTrackHypothesis->dChiSq;
-	part.Ndof = locNeutralTrackHypothesis->dNDF;
-	part.FOM_pid = locNeutralTrackHypothesis->dFOM;
+	// Things specific to DNeutralParticleHypothesis
+	part.chisq = locNeutralParticleHypothesis->dChiSq;
+	part.Ndof = locNeutralParticleHypothesis->dNDF;
+	part.FOM_pid = locNeutralParticleHypothesis->dFOM;
 
 	return part;
 }

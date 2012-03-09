@@ -22,7 +22,7 @@ using namespace std;
 
 #include <PID/DKinematicData.h>
 #include <PID/DChargedTrack.h>
-#include <PID/DNeutralTrack.h>
+#include <PID/DNeutralParticle.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DTrackWireBased.h>
@@ -71,7 +71,7 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		
 		Particle MakeParticle(const DKinematicData *kd, double mass);
 		Particle MakeParticle(const DChargedTrackHypothesis *locChargedTrackHypothesis, double mass);
-		Particle MakeParticle(const DNeutralTrackHypothesis *locNeutralTrackHypothesis, double mass);
+		Particle MakeParticle(const DNeutralParticleHypothesis *locNeutralParticleHypothesis, double mass);
 		bool IsFiducial(const DKinematicData *kd);
 		void FillEvent(Event *evt, particle_set &pset, particle_set &pset_match);
 		Particle FindBestMatch(const Particle &primary, vector<Particle> &secondaries);
