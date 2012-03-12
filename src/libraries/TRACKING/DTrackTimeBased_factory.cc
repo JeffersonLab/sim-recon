@@ -558,9 +558,8 @@ void DTrackTimeBased_factory
     start_time.system=SYS_TOF;
     start_times.push_back(start_time); 
   }
-  if (pid_algorithm->MatchToBCAL(track->rt,DTrackFitter::kWireBased,
-				      bcal_showers,tproj,bcal_id, locPathLength, locFlightTime)
-	   ==NOERROR){
+  vector<const DBCALShower*> locMatchedBCALShowers;
+  if (pid_algorithm->MatchToBCAL(track->rt, bcal_showers, locMatchedBCALShowers, tproj, locPathLength, locFlightTime) == NOERROR){
     // Fill in the start time vector
     start_time.t0=tproj;
     start_time.t0_sigma=0.5;

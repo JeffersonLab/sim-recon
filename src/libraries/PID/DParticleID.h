@@ -55,8 +55,8 @@ class DParticleID:public jana::JObject{
   jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks, vector<vector<const DTrackTimeBased*> >&grouped_tracks);
 
   jerror_t MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime);
-  jerror_t MatchToBCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DBCALShower*>&bcal_showers, double &tproj, unsigned int &bcal_match_id, double &locPathLength, double &locFlightTime); 
-  jerror_t MatchToFCAL(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DFCALShower*>&fcal_showers, double &tproj, unsigned int &fcal_match_id, double &locPathLength, double &locFlightTime);
+  jerror_t MatchToBCAL(const DReferenceTrajectory *rt, const vector<const DBCALShower*>& locInputBCALShowers, vector<const DBCALShower*>& locMatchedBCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime);
+  jerror_t MatchToFCAL(const DReferenceTrajectory *rt, const vector<const DFCALShower*>& locInputFCALShowers, vector<const DFCALShower*>& locMatchedFCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime);
   jerror_t MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime);
   jerror_t MatchToSC(const DKinematicData &parms, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id);
 
@@ -88,7 +88,9 @@ class DParticleID:public jana::JObject{
   double sc_angle_cor;
   vector<DVector3>sc_pos;
   vector<DVector3>sc_norm;  
-		
+
+  double DELTA_R_BCAL;
+  double DELTA_R_FCAL;
 };
 
 #endif // _DParticleID_
