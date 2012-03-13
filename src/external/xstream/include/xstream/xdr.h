@@ -159,7 +159,7 @@ class istream
 		 * 
 		 */
 		template <typename A, typename B>
-			ostream& operator>>(pair<A,B> &p){
+			istream& operator>>(pair<A,B> &p){
 				(*this)>>(p.first);
 				(*this)>>(p.second);
 				return *this;
