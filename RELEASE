@@ -1,0 +1,550 @@
+Release Notes for sim-recon-2012-03-13
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2012-03-13
+   Date: March 14, 2012
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 8884 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.7 (i686)
+-----------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.2
+
+CentOS release 5.3 (Final) (x86_64)
+------------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.2
+
+Red Hat Enterprise Linux 6.2 (x86_64)
+-----------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.30-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 1.2
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r8761 | pmatt | 2012-01-31 21:18:59 -0500 (Tue, 31 Jan 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.cc
+
+Replaced '==' comparisons between floats with tolerance ranges. 
+
+
+------------------------------------------------------------------------
+r8762 | staylor | 2012-02-01 09:08:59 -0500 (Wed, 01 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists/DEventProcessor_trackeff_hists.cc
+
+Use DChargedTrack to get time-based tracking result with best figure of merit.
+------------------------------------------------------------------------
+r8763 | pmatt | 2012-02-01 11:47:41 -0500 (Wed, 01 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists2.cc
+
+Fixes. 
+
+
+------------------------------------------------------------------------
+r8764 | jonesrt | 2012-02-02 08:12:02 -0500 (Thu, 02 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt_c.c
+
+* bcal2nt_c.c [rtj]
+  - second (useless) argument to hrout should be passed by reference to
+    fortran library routine.
+
+------------------------------------------------------------------------
+r8770 | jonesrt | 2012-02-03 18:36:04 -0500 (Fri, 03 Feb 2012) | 11 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.AmpTools
+   A /trunk/sim-recon/src/BMS/Makefile.CUDA
+
+* BMS/Makefile.CUDA [rtj]
+  - new package-type Makefile for BMS system, to be included by adding
+    the string "CUDA" to the colon-separated PACKAGES makefile variable.
+    This will only be invoked if the user defines GPU=1 when invoking make.
+* BMS/Makefile.AmpTools [rtj]
+  - modified to invoke the GPU-enabled version of the AmpTools library if
+    make was invoked with GPU=1 set.  It also includes Makefile.CUDA
+    explicitly in this case, so that including AmpTools in the PACKAGES
+    list of a project's Makefile will automatically get CUDA support when
+    built with GPU=1.
+
+------------------------------------------------------------------------
+r8771 | jonesrt | 2012-02-03 18:38:38 -0500 (Fri, 03 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/barrierFactor.cuh
+
+* barrierFactor.cuh [rtj]
+  - fix the path to one of the include files to match its location
+    in the sim-recon tree.
+
+------------------------------------------------------------------------
+r8775 | marki | 2012-02-06 13:56:41 -0500 (Mon, 06 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/Makefile
+
+Make trackeff_hists plugin by default
+------------------------------------------------------------------------
+r8779 | pmatt | 2012-02-08 15:45:07 -0500 (Wed, 08 Feb 2012) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+
+Added a new parameter called "PID:VERTEX_FROM_MC."  
+Setting this parameter to 1 from the command line will cause the program to generate only one DVertex, set it to the first thrown MC vertex 
+(regardless of how many vertices were thrown within a given event), sets the vertex time to zero, and assign all of the DChargedTracks to it.  
+This parameter is set to 0 by default.  
+
+
+------------------------------------------------------------------------
+r8780 | pmatt | 2012-02-08 17:55:35 -0500 (Wed, 08 Feb 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+   A /trunk/sim-recon/src/libraries/PID/DVertex_factory_THROWN.cc
+   A /trunk/sim-recon/src/libraries/PID/DVertex_factory_THROWN.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+
+Created new factory "DVertex_factory_THROWN." 
+Moved generation of DVertex from MC information to this factory. 
+No longer uses the original command line argument: now execute program with "-PDEFTAG:DVertex=THROWN" on the command line. 
+
+
+------------------------------------------------------------------------
+r8786 | senderov | 2012-02-09 21:42:55 -0500 (Thu, 09 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_5pi/gen_5pi.cc
+
+Interface enhancements + the ability to write out pre-accept/reject samples for later use
+------------------------------------------------------------------------
+r8787 | senderov | 2012-02-09 22:05:14 -0500 (Thu, 09 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/root2hddm/root2hddm.cc
+
+Added the ability to limit the number of entries converted and the writing of weights
+------------------------------------------------------------------------
+r8788 | senderov | 2012-02-09 23:24:17 -0500 (Thu, 09 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/b1piAngAmp.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/b1piAngAmp.h
+
+Added external knobs for b1 and omega widths + some minor tweaks
+------------------------------------------------------------------------
+r8789 | senderov | 2012-02-09 23:39:05 -0500 (Thu, 09 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/split_mass/split_mass.cc
+
+Fixed a memory leak (event object disposal) and updated to match other ROOTData~ capabilities - input/output tree specification, use of weights
+------------------------------------------------------------------------
+r8790 | senderov | 2012-02-10 00:51:33 -0500 (Fri, 10 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.h
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataWriter.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataWriter.h
+
+Enhancements to the ROOTData Reader/Writer: full kinematics tree name selection, selection of updating/overwriting the ROOT file, use of event weights, and opening files through xrootd
+------------------------------------------------------------------------
+r8791 | senderov | 2012-02-10 00:54:02 -0500 (Fri, 10 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToNPartP.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToNPartP.h
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/ProductionMechanism.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/ProductionMechanism.h
+
+Small fixes, including event particle number and more consistent use of particle masses
+------------------------------------------------------------------------
+r8792 | senderov | 2012-02-10 02:13:41 -0500 (Fri, 10 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_5pi/gen_5pi.cc
+
+fix: reference to file outside svn repository
+------------------------------------------------------------------------
+r8793 | davidl | 2012-02-10 07:22:13 -0500 (Fri, 10 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim/DTrackingResolution.cc
+
+Fixed infinite loop bug.
+------------------------------------------------------------------------
+r8795 | jonesrt | 2012-02-10 10:49:08 -0500 (Fri, 10 Feb 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.cpp
+
+* bcal2nt.cpp [rtj]
+  - change input char* arguments to fortran cernlib prototypes to const char*,
+    otherwise the latest g++ compiler warns about deprecated usage.
+
+------------------------------------------------------------------------
+r8796 | staylor | 2012-02-10 15:02:05 -0500 (Fri, 10 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+(1) when matching cdc and fdc candidates, require the momenta to be within +-50% of each other.  (2) when combining information between fdc and cdc matches, use the fdc to determine theta (previous version tried to use a weighted average of thetas from the cdc and the the fdc, with decidedly mixed results...)
+------------------------------------------------------------------------
+r8797 | zihlmann | 2012-02-10 18:01:21 -0500 (Fri, 10 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.h
+   A /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.cc
+   A /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.h
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_endviewBframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.h
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdview2.cc
+
+changed color coding for calorimeters and color lables.
+added debuger window for track candidate viewing.
+
+------------------------------------------------------------------------
+r8798 | staylor | 2012-02-12 17:42:56 -0500 (Sun, 12 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+(1) Added code to deal with tracks that, based on the initial guesses for the momentum, would stop somewhere in the tracking volume by truncating the reference trajectory and dropping hits if necessary.  (2) Added code to recover broken tracks that appear to have a kink or tracks that do not have enough hits survive the pruning to be considered a valid fit.  In this case the trajectory is also truncated so that, starting from the hits closesst to the target, only hits up to a certain break point are included.  This determinination can change from iteration to iteration.  I have included a command line parameter to turn on/off this feature: KALMAN:RECOVER_BROKEN_TRACKS so that one can study how well this recovery works.  The default setting is off.
+------------------------------------------------------------------------
+r8799 | pmatt | 2012-02-13 11:24:52 -0500 (Mon, 13 Feb 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID_PID1.cc
+
+Fixed usage of DC dE/dx for PID. 
+
+
+------------------------------------------------------------------------
+r8801 | senderov | 2012-02-14 04:14:45 -0500 (Tue, 14 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_5pi/gen_5pi.cc
+
+Interface tweaks + adjustment of arguments to GammaPToNPartP
+------------------------------------------------------------------------
+r8802 | senderov | 2012-02-14 04:18:01 -0500 (Tue, 14 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToNPartP.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToNPartP.h
+
+Changed phase space generator from TGenPhaseSpace to NBodyPhaseSpaceFactory
+------------------------------------------------------------------------
+r8810 | staylor | 2012-02-15 18:13:55 -0500 (Wed, 15 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Fix z position for fdc candidates that have extra non-candidate CDC hits added to them
+------------------------------------------------------------------------
+r8814 | davidl | 2012-02-22 07:53:49 -0500 (Wed, 22 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bintree.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bintree.h
+
+Rename the 'this' member of the hitTree_t structure to 'this_node' to avoid confusing the C++ compiler.
+------------------------------------------------------------------------
+r8815 | davidl | 2012-02-22 09:15:37 -0500 (Wed, 22 Feb 2012) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.c
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc (from /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.c:8813)
+
+Converted hitBCal.c to hitBCal.cc so it can be compiled with the C++ compiler. This is in preparation for some siginificant changes that will make use of STL containers available in C++.
+------------------------------------------------------------------------
+r8816 | staylor | 2012-02-22 10:01:48 -0500 (Wed, 22 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+(1) Remove matching to FDC hits. Matching to FDC segments is already done in the DTrackCandidate factory and it is not clear at the moment what to do for stray FDC hits that have not been associated with an FDC segment, because these could easily be noise hits.  (2) make sure that the argument in the sine used in the calculation of arc length does not exceed 1. (3) obtain values for tanl and z0 even if both the regression method and the histogramming method fail.
+------------------------------------------------------------------------
+r8817 | staylor | 2012-02-22 10:19:30 -0500 (Wed, 22 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+(1) Remove matching to FDC hits. Matching to FDC segments is already done in the DTrackCandidate factory and it is not clear at the moment what to do for stray FDC hits that have not been associated with an FDC segment, because these could easily be noise hits.  (2) make sure that the argument in the sine used in the calculation of arc length does not exceed 1. (3) obtain values for tanl and z0 even if both the regression method and the histogramming method fail.
+------------------------------------------------------------------------
+r8818 | zihlmann | 2012-02-22 16:12:47 -0500 (Wed, 22 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.h
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+added Track Wire based results to debuger window
+
+------------------------------------------------------------------------
+r8819 | zihlmann | 2012-02-22 18:24:11 -0500 (Wed, 22 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.h
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+add also the time based hit information and track information to the debuger frame
+
+------------------------------------------------------------------------
+r8820 | staylor | 2012-02-24 10:15:12 -0500 (Fri, 24 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Store the hits actually used in the fit in the cdchits_used_in_fit and fdchits_used_in_fit vectors as opposed to the hits that were input to the fit.  Call the FindCentralResiduals and FindForwardResiduals routines after the final iteration, not for each iteration.
+------------------------------------------------------------------------
+r8821 | zihlmann | 2012-02-24 14:05:35 -0500 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+
+fixed bug due to copy paste wire based vector contained time based data
+
+------------------------------------------------------------------------
+r8822 | staylor | 2012-02-24 14:36:41 -0500 (Fri, 24 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Fix minor off-by-one indexing problem related to break points.
+------------------------------------------------------------------------
+r8823 | staylor | 2012-02-24 16:25:57 -0500 (Fri, 24 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Simplify estimate for t0
+------------------------------------------------------------------------
+r8824 | zihlmann | 2012-02-24 18:25:09 -0500 (Fri, 24 Feb 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+save cleanup work on display
+
+------------------------------------------------------------------------
+r8828 | davidl | 2012-02-27 13:18:35 -0500 (Mon, 27 Feb 2012) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   A /trunk/sim-recon/src/libraries/include/DHistogram.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/copytocplusplus.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+
+Added bcalSiPMSpectrum to data model and significantly reworked
+hitBCal.cc in HDGeant to fill in time spectra for cells and record
+them to output HDDM file. Old method is still in place as default,
+but it can be turned on/off with #define at begining of file as
+can the new full spectrum method. Default will be switched to spectra
+method once mcsmear gets updated (work not started yet).
+
+------------------------------------------------------------------------
+r8829 | staylor | 2012-02-28 10:36:17 -0500 (Tue, 28 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Only do adjustment of the cdc update to the refrerence trajectory position in z for time-based tracking in KalmanCentral
+------------------------------------------------------------------------
+r8830 | staylor | 2012-02-28 19:13:11 -0500 (Tue, 28 Feb 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+
+Improved algorithm for determining if hits in the same plane as a hit that is already included in a segment should be added to the current segment.  Reduced the number of repeated operations (for example everywhere 2.*rc is computed) in various places in the code.
+------------------------------------------------------------------------
+r8831 | davidl | 2012-02-29 09:51:56 -0500 (Wed, 29 Feb 2012) | 10 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+
+Modified Data Model once more for BCAL to include:
+
+- Integrated energy (truth) for cell so mcmsear can use it to
+  include sampling fluctuations.
+
+- bcalSiPMHit structure inside of bcalSiPMSpectrum structure. This
+  will allow mcsmear to record found hits associated with each
+  spectrum. This should eventually take the place of the 
+  bcalSiPMUpHit and bcalSiPMDiwnHit structures in bcalCell.
+
+------------------------------------------------------------------------
+r8832 | davidl | 2012-03-01 08:26:07 -0500 (Thu, 01 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/geant3.h
+
+Declare strings passed into tranformCoord as const to avoid compiler warnings on RHEL6.
+------------------------------------------------------------------------
+r8833 | davidl | 2012-03-01 08:27:42 -0500 (Thu, 01 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/root2email/root2email.cc
+
+Declare global filename variable as const char* to avoid compiler warnings on RHEL6.
+------------------------------------------------------------------------
+r8835 | staylor | 2012-03-01 15:38:53 -0500 (Thu, 01 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.h
+
+Add number of degrees of freedom for circle fit
+------------------------------------------------------------------------
+r8838 | staylor | 2012-03-05 10:33:15 -0500 (Mon, 05 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+Change how magnetic field stepper is handling by moving the initalization into the brun method. Also clean up calculation of differences between fdc hits and projected positions when matching segments.
+------------------------------------------------------------------------
+r8839 | staylor | 2012-03-05 10:36:32 -0500 (Mon, 05 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+
+Implement algorithm to filter out seeds that share too many hits with other seeds -- most likely these are either clones or seeds where segments are erroneously associated together.  There is a new parameter for turning this algorithm on:  TRKFIND:FILTER_SEEDS.  By default this is off.
+------------------------------------------------------------------------
+r8845 | davidl | 2012-03-06 19:49:50 -0500 (Tue, 06 Mar 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Majorly revised BCAL smearing code to use timing spectra from hdgeant rather than integrated hit info.
+
+NOTE: The changes made were placed inside a preprocessor directive that 
+currently is set to compile the old smearing scheme and not the new one
+described above. One should therefore see no functional change between this revision and the last unless the "#if 0" at the top of smear_bcal is changed to "#if 1".
+
+The new code runs about 15 times slower and uses histogram binning that is 1ns wide. This will not be sufficient to achieve the ~50-100ps resolution expected (see https://halldweb1.jlab.org/wiki/images/6/63/20111031_bcal.pdf). Decreasing bin width will slow it down much further so additional profiling and optimization will be needed.
+
+------------------------------------------------------------------------
+r8846 | davidl | 2012-03-06 20:18:05 -0500 (Tue, 06 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+Remove bcalSiPMHit from data model. It turns out not to be needed.
+------------------------------------------------------------------------
+r8847 | davidl | 2012-03-06 20:19:50 -0500 (Tue, 06 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+
+Optimize values written out for time spectrum to save disk space. Only write single '0' for zeros and write in units of MeV instead of GeV, truncating at the 1keV level.
+------------------------------------------------------------------------
+r8848 | davidl | 2012-03-06 20:30:22 -0500 (Tue, 06 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.h
+
+Added NSiPMs method to DBCALGeometry
+------------------------------------------------------------------------
+r8849 | davidl | 2012-03-06 20:35:02 -0500 (Tue, 06 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALHit.h
+
+Change unit label on 'E' for DBCALHit objects from GeV to fADC to indicate the change imposed by the imminent switch to time-spectrum based BCAL hits.
+------------------------------------------------------------------------
+r8850 | davidl | 2012-03-06 20:37:15 -0500 (Tue, 06 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DHistogram.h
+
+Add a few methods for functionality needed by bcal_smear in mcsmear.
+------------------------------------------------------------------------
+r8851 | davidl | 2012-03-06 20:38:13 -0500 (Tue, 06 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Remove conversion to MeV since hdgeant now stores time spectra in units of MeV.
+------------------------------------------------------------------------
+r8852 | davidl | 2012-03-08 08:11:51 -0500 (Thu, 08 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DHistogram.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Switch BCAL smearing back to old method. It was inadvertenly checked in using the new method before it was ready. Also, fixed some errors/warnings coming from compiling on RHEL6.
+------------------------------------------------------------------------
+r8876 | pmatt | 2012-03-09 13:42:41 -0500 (Fri, 09 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.h
+
+Updated for DNeutralParticle* and DChargedTrack* changes. 
+
+
+------------------------------------------------------------------------
+r8877 | pmatt | 2012-03-09 13:48:18 -0500 (Fri, 09 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists/DEventProcessor_trackeff_hists.cc
+
+Updated for DNeutralParticle* and DChargedTrack* changes.
+
+
+------------------------------------------------------------------------
+r8878 | staylor | 2012-03-09 14:00:44 -0500 (Fri, 09 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Add method to step the covariance matrix and the state vector for the central parametrization with the same routine.  This allows for elimination of some duplicate calculations in some contexts.  Add some diagnostic histograms.  Adjust variance for position along the FDC wires.  Adjust variance for cdc drift time.  Fix bug in calculation of errors in the time when estimating t0 from the CDC wires.  Reduce the number of duplicate calculationsin various other places in the code.
+------------------------------------------------------------------------
+r8879 | pmatt | 2012-03-09 14:43:16 -0500 (Fri, 09 Mar 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.h
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_endviewBframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_fulllistframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_optionsframe.cc
+
+Updated for DNeutralParticle* and DChargedTrack* changes.
+
+
+------------------------------------------------------------------------
+r8880 | pmatt | 2012-03-09 14:55:10 -0500 (Fri, 09 Mar 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon
+   A /trunk/sim-recon/src/libraries/PID/DChargedTrack.cc (from /branches/sim-recon-pidchanges/src/libraries/PID/DChargedTrack.cc:8879)
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack.h
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis.h
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack_factory.h
+   A /trunk/sim-recon/src/libraries/PID/DNeutralParticle.cc (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralParticle.cc:8879)
+   A /trunk/sim-recon/src/libraries/PID/DNeutralParticle.h (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralParticle.h:8879)
+   A /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis.h (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralParticleHypothesis.h:8879)
+   A /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralParticleHypothesis_factory.cc:8879)
+   A /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.h (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralParticleHypothesis_factory.h:8879)
+   A /trunk/sim-recon/src/libraries/PID/DNeutralParticle_factory.cc (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralParticle_factory.cc:8879)
+   A /trunk/sim-recon/src/libraries/PID/DNeutralParticle_factory.h (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralParticle_factory.h:8879)
+   A /trunk/sim-recon/src/libraries/PID/DNeutralShower.h (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralShower.h:8879)
+   D /trunk/sim-recon/src/libraries/PID/DNeutralShowerCandidate.h
+   D /trunk/sim-recon/src/libraries/PID/DNeutralShowerCandidate_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DNeutralShowerCandidate_factory.h
+   A /trunk/sim-recon/src/libraries/PID/DNeutralShower_factory.cc (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralShower_factory.cc:8879)
+   A /trunk/sim-recon/src/libraries/PID/DNeutralShower_factory.h (from /branches/sim-recon-pidchanges/src/libraries/PID/DNeutralShower_factory.h:8879)
+   D /trunk/sim-recon/src/libraries/PID/DNeutralTrack.h
+   D /trunk/sim-recon/src/libraries/PID/DNeutralTrackHypothesis.h
+   D /trunk/sim-recon/src/libraries/PID/DNeutralTrackHypothesis_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DNeutralTrackHypothesis_factory.h
+   D /trunk/sim-recon/src/libraries/PID/DNeutralTrack_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DNeutralTrack_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleID_PID1.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleSet.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleSet_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleSet_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DTwoGammaFit_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertexIndependentResults.h
+   M /trunk/sim-recon/src/libraries/PID/DVertexIndependentResults_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+   M /trunk/sim-recon/src/programs/Simulation/plugins/hdparsim
+
+Merged updates for DNeutral* and DChargedTrack* into the trunk.
+------------------------------------------------------------------------
