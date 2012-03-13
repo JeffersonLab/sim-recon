@@ -19,7 +19,7 @@ c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 cINFILE 'rhop.hddm'
-TRIG 1000
+TRIG 30
 
 
 c The BEAM card configures the built-in coherent bremsstralung photon
@@ -35,7 +35,7 @@ c      Emax   - end-point energy of the electron beam (GeV)
 c      Epeak  - energy of the primary coherent peak edge (GeV)
 c      Emin   - minimum energy of the coherent bremsstrahlung beam (GeV)
 c Omitting the final parameter Emin results in the default value being used.
-BEAM 12. 9.
+cBEAM 12. 9.
 
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'hdgeant.hddm'
@@ -82,7 +82,7 @@ c PLOG 1
 c TLOG 1
 c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
-KINE   101      9.0       10.   0.      0.              3.        360.
+KINE   118      1.0       50.   0.      0.              0.        360.
 
 c The SCAP card determines the vertex position for the particle gun.  It
 c supports the following three arguments, all of which default to 0.

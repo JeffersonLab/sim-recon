@@ -228,7 +228,7 @@ c         print *, ngen,' background photons generated this event'
          TOFG=0
          VERTEX(1)=VSCAN(1)
          VERTEX(2)=VSCAN(2)
-         VERTEX(3)=VSCAN(3)
+         VERTEX(3)=VSCAN(3)+(15.-30.*RNDM(1))
          IF (IKINE.GT.100) THEN
             IK=IKINE-100
             CALL GRNDM(RNDM,3)

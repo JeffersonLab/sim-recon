@@ -231,6 +231,7 @@ int storeInput (int runNo, int eventNo, int ntracks)
    pes->mult = 1;
    rs->mult = 1;
    rs->in[0].vertices = vs = make_s_Vertices(99);
+   /*printf("Make 99 Vertices!!!!!!!\n");*/
    vs->mult = 0;
    for (itra = 1; itra <= ntracks; itra++)
    {
