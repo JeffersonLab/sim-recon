@@ -10,9 +10,25 @@
 #ifndef SAW_XPARSERS
 #define SAW_XPARSERS true
 
+#define XERCES3 1
+
+#if XERCES3
+
+// XERCES3
+#include <xercesc/parsers/XercesDOMParser.hpp>
+#include <xercesc/dom/DOM.hpp>
+#include <xercesc/sax/HandlerBase.hpp>
+#include <xercesc/util/XMLString.hpp>
+#include <xercesc/util/PlatformUtils.hpp>
+
+#else
+
+// XERCES2
 #include <xercesc/util/XercesDefs.hpp>
 #include <xercesc/sax/ErrorHandler.hpp>
 #include <xercesc/dom/DOM.hpp>
+
+#endif
 
 #include <iostream>
 
@@ -49,11 +65,21 @@ inline bool MyOwnErrorHandler::getSawErrors() const
 
 /* a simple error handler to install on DOMBuilder parser */
 
+#if XERCES3
+class MyDOMErrorHandler : public xercesc::ErrorHandler
+#else
 class MyDOMErrorHandler : public xercesc::DOMErrorHandler
+#endif
 {
 public:
    MyDOMErrorHandler();
    ~MyDOMErrorHandler();
+
+#if XERCES3
+   void warning(const xercesc::SAXParseException& exc){}
+   void error(const xercesc::SAXParseException& exc){}
+   void fatalError(const xercesc::SAXParseException& exc){}
+#endif
 
    bool getSawErrors() const;
    bool handleError(const xercesc::DOMError& domError);

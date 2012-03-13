@@ -29,6 +29,7 @@
 #include <xercesc/sax/SAXParseException.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/framework/LocalFileFormatTarget.hpp>
+using namespace xercesc;
 
 #include "XParsers.hpp"
 #include "XString.hpp"
@@ -38,7 +39,9 @@
  * to fully instantiate entity references on the document tree.
  * See xerces-c++ bug 12800 at http://nagoya.apache.org
  */
+#if !XERCES3
 #define FIX_XERCES_getElementById_BUG true
+#endif
 
 #define X(str) XString(str).unicode_str()
 #define S(str) str.c_str()
@@ -111,8 +114,33 @@ xercesc::DOMDocument* buildDOMDocument(const XString& xmlFile, bool keep)
 {
    xercesc::DOMImplementation *impl =
          xercesc:: DOMImplementationRegistry::getDOMImplementation(X("LS"));
-   static xercesc::DOMBuilder* scratchBuilder=0;
+#if XERCES3
+   // XERCES 3
+   static xercesc::XercesDOMParser* scratchBuilder = NULL;
+   xercesc::XercesDOMParser* builder;
+
+   if (keep)
+   {
+      builder = new XercesDOMParser();
+      builder->setValidationScheme(XercesDOMParser::Val_Always);
+      builder->setDoNamespaces(true);    // optional
+   }
+   else if (scratchBuilder == 0)
+   {
+      builder = new XercesDOMParser();
+      builder->setValidationScheme(XercesDOMParser::Val_Always);
+      builder->setDoNamespaces(true);    // optional
+      scratchBuilder = builder;
+   }
+   else
+   {
+      builder = scratchBuilder;
+   }
+#else
+   // XERCES 2
+   static xercesc::DOMBuilder* scratchBuilder = NULL;
    xercesc::DOMBuilder* builder;
+
    if (keep)
    {
       builder = ((xercesc::DOMImplementationLS*)impl)->createDOMBuilder(
@@ -128,14 +156,23 @@ xercesc::DOMDocument* buildDOMDocument(const XString& xmlFile, bool keep)
    {
       builder = scratchBuilder;
    }
+#endif
+
+   
    XString tmpFileS = ".tmp-"+xmlFile.basename();
 
+#if XERCES3
+   // XERCES 3
+   // ( What goes here? )
+#else
+   // XERCES 2
    builder->setFeature(xercesc::XMLUni::fgDOMValidation, false);
    builder->setFeature(xercesc::XMLUni::fgDOMNamespaces, true);
    builder->setFeature(xercesc::XMLUni::fgDOMDatatypeNormalization, true);
    builder->setFeature(xercesc::XMLUni::fgDOMEntities, false);
    builder->setFeature(xercesc::XMLUni::fgXercesSchemaFullChecking, false);
    builder->setFeature(xercesc::XMLUni::fgXercesSchema, false);
+#endif
 
    MyDOMErrorHandler errHandler;
    builder->setErrorHandler(&errHandler);
@@ -144,7 +181,15 @@ xercesc::DOMDocument* buildDOMDocument(const XString& xmlFile, bool keep)
 
    try {
       builder->resetDocumentPool();
+#if XERCES3
+      // XERCES 3
+      builder->parse(xmlFile.c_str());
+      doc = builder->getDocument();
+#else
+      // XERCES 2
       doc = builder->parseURI(xmlFile.c_str());
+#endif
+
 #if defined FIX_XERCES_getElementById_BUG
       xercesc::DOMWriter* writer = ((xercesc::DOMImplementationLS*)impl)->
                                     createDOMWriter();
