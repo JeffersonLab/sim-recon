@@ -259,7 +259,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 //#include "cmath"
-using namespace std;
+//using namespace std;
 
 /* Builtin functions */
 extern "C" {double sqrt(double), sin(double);}
