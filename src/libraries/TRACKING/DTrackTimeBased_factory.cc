@@ -407,7 +407,8 @@ double DTrackTimeBased_factory::GetTruthMatchingFOM(int trackIndex,DTrackTimeBas
   bool match=false;
   
   DLorentzVector fourMom = track->lorentzMomentum(); 
-  DLorentzVector gen_fourMom[mcthrowns.size()];
+  //DLorentzVector gen_fourMom[mcthrowns.size()];
+   vector<DLorentzVector> gen_fourMom(mcthrowns.size());
   for(unsigned int i=0; i<mcthrowns.size(); i++){
     gen_fourMom[i] = mcthrowns[i]->lorentzMomentum();
   }
