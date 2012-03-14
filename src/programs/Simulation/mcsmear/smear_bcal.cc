@@ -295,7 +295,6 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 		if(sumspectra.hdn)ReturnHistoToPool(sumspectra.hdn);
 	}
 	bcalfADC.clear();
-
 }
 
 //-----------
@@ -653,6 +652,9 @@ void ApplySiPMTimeJitter(map<bcal_index, CellSpectra> &SiPMspectra)
 			*cellspectra.hdn = *tmp; // overwrite histo with tmp
 		}
 	}
+   
+   // Return histogram to pool
+   ReturnHistoToPool(tmp);
 }
 
 //-----------
@@ -849,8 +851,22 @@ void AddDarkHitsForNonHitSiPMs(map<int, SumSpectra> &bcalfADC)
 				
 				// If we just created this, then grab some histos from pool.
 				// n.b. we try first to use the pre-grabbed histos
-				if(sumspectra.hup == NULL)sumspectra.hup = (hup_tmp==NULL ? GetHistoFromPool():hup_tmp);
-				if(sumspectra.hdn == NULL)sumspectra.hdn = (hdn_tmp==NULL ? GetHistoFromPool():hdn_tmp);
+            if(sumspectra.hup == NULL){
+               if(hup_tmp == NULL){
+                  sumspectra.hup = GetHistoFromPool();
+               }else{
+                  sumspectra.hup = hup_tmp;
+                  hup_tmp = NULL;
+               }
+            }
+            if(sumspectra.hdn == NULL){
+               if(hdn_tmp == NULL){
+                  sumspectra.hdn = GetHistoFromPool();
+               }else{
+                  sumspectra.hdn = hdn_tmp;
+                  hdn_tmp = NULL;
+               }
+            }
 
 				// Get the number of SiPMs in this readout channel.
 				int NSiPMs = DBCALGeometry::NSiPMs(fADCId);
@@ -920,10 +936,25 @@ void ApplyElectronicPulseShapeOneHisto(DHistogram *h)
 	h->Reset();
 	
 	int Nbins = h->GetNbins();
+   double bin_width = h->GetBinWidth();
+   
+   // Get pointers to the bin content arrays directly.
+   // This will allow the two nested loops below to
+   // work much more efficiently.
+   // n.b. DHistogram content arrays allocate an extra
+   // element at the beginning so it can use bin=1 as the
+   // first bin. Thus, we need to immediately increment these
+   // pointers to get to bin 1 (that first bin may eventually
+   // be used for underflow).
+   double* tmp_content = tmp.GetContentPointer();
+   double* h_content = h->GetContentPointer();
+   tmp_content++;
+   h_content++;
 
 	// Loop over bins of input histo
-	for(int ibin=1; ibin<=Nbins; ibin++){
-		double A = tmp.GetBinContent(ibin);
+	for(int ibin=1; ibin<=Nbins; ibin++, tmp_content++){
+		double A = *tmp_content;
+      if(A==0.0)continue; // no need to continue for empty bins
 		
 		// Get pointer to first element to row in the 
 		// pre-calculated matrix that converts the histo
@@ -931,12 +962,12 @@ void ApplyElectronicPulseShapeOneHisto(DHistogram *h)
 		int idx1 = (ibin-1)*Nbins;
 		
 		// Loop over bins of output histo
-		for(int jbin=1; jbin<=Nbins; jbin++){
+      double *h_content_tmp = h_content;
+      double *pulse_shape = &BCAL_PULSE_SHAPE_MATRIX[idx1];
+		for(int jbin=1; jbin<=Nbins; jbin++, h_content_tmp++, pulse_shape++){
 
-			double t = h->GetBinCenter(jbin);
-
-			double weight = A*BCAL_PULSE_SHAPE_MATRIX[(jbin-1)+idx1];
-			h->Fill(t, weight);
+			double weight = A*(*pulse_shape);
+         *h_content_tmp += weight;
 		}
 	}
 }
