@@ -38,6 +38,8 @@ class DHistogram{
 		inline double GetBinWidth(void) const;
 		inline double GetLowEdge(void) const;
 		inline double GetHighEdge(void) const;
+      inline double* GetContentPointer(void) const; ///< CAUTION!
+      inline double* GetXValsPointer(void) const;   ///< CAUTION!
 		
 		inline double Integral(void) const;
 		inline TH1D* MakeTH1D(string name, string title) const;
@@ -240,6 +242,22 @@ inline double DHistogram::GetLowEdge(void) const
 inline double DHistogram::GetHighEdge(void) const
 {
 	return highEdge;
+}
+
+//---------------------------------
+// GetContentPointer
+//---------------------------------
+inline double* DHistogram::GetContentPointer(void) const
+{
+   return content;
+}
+
+//---------------------------------
+// GetXValsPointer
+//---------------------------------
+inline double* DHistogram::GetXValsPointer(void) const
+{
+   return xvals;
 }
 
 //---------------------------------
