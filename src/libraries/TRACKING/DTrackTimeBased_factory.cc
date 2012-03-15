@@ -539,7 +539,7 @@ void DTrackTimeBased_factory
 
   // Match to the start counter and the outer detectors
   double tproj=track->t0();  // initial guess from tracking
-  unsigned int bcal_id=0,tof_id=0,sc_id=0;
+  unsigned int tof_id=0,sc_id=0;
   double locPathLength, locFlightTime;
 
   if (pid_algorithm->MatchToSC(track->rt,DTrackFitter::kWireBased,sc_hits,
