@@ -35,7 +35,7 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
   verts = NewVerts;
   //verts->in[VertexCount] = make_s_Vertex();
   verts->mult++;
-  printf("Number of stored Vertices is now: %d\n",verts->mult);
+  //printf("Number of stored Vertices is now: %d\n",verts->mult);
   
   // copy in the new vertex coordinates
   s_Origin_t* or = make_s_Origin();
