@@ -19,29 +19,34 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
 		   float vertex[3], float tofg, int ipart){
 
 
-  s_Vertices_t* verts;
-  int VertexCount;
-  s_Vertex_t* vert;
-  s_Products_t* ps;
-  s_Origin_t* or;
-  int i = 0;
+  // get pointer to all vertices
+  s_Vertices_t* verts = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices;
+  int VertexCount = verts->mult;
 
-  // get pointer to all verteces
-  verts = thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices;
-  VertexCount = verts->mult;
-  vert = &verts->in[VertexCount];
+  // create additional space for one more vertex
+  s_Vertices_t* NewVerts = make_s_Vertices(VertexCount+1);
+  int i;
+  for (i=0;i<VertexCount;i++){
+    NewVerts->in[i] = verts->in[i];
+  }
+  NewVerts->mult = VertexCount;
+  thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices = NewVerts;
+  free(verts);
+  verts = NewVerts;
+  //verts->in[VertexCount] = make_s_Vertex();
   verts->mult++;
+  printf("Number of stored Vertices is now: %d\n",verts->mult);
   
-  // make space for the vertex coordinates
-  or = make_s_Origin();
+  // copy in the new vertex coordinates
+  s_Origin_t* or = make_s_Origin();
   verts->in[VertexCount].origin = or;
   or->vx = vertex[0];
   or->vy = vertex[1];
   or->vz = vertex[2];
   or->t = tofg;
 
-  // make space for the particles at this vertex
-  ps = make_s_Products(Npart);
+  // copy in the new particles at this vertex
+  s_Products_t* ps = make_s_Products(Npart);
   verts->in[VertexCount].products = ps;
   ps->mult = Npart;
   for (i = 0;i<Npart;i++){
@@ -71,4 +76,3 @@ void savenewvertex_ (int *kcase, int *N, float* gkin,
   SaveNewVertex(*kcase, *N, gkin, vertex, *tofg, *ipart);
 
 }
-

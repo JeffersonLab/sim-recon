@@ -435,7 +435,9 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
          if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
 
             if ((cnames(NLEVEL).ne.'BCAL') .and.
-     +           (cnames(NLEVEL).ne.'FCAL')) then
+     +           (cnames(NLEVEL).ne.'FCAL').and.
+     +           (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
+     +           (VERT(3)<500.)) then
 
 c               print *," KCASE: ",chcase,"  ",NGKINE,"  ",IPART
                call savenewvertex(KCASE,NGKINE,GKIN,VECT,TOFG,IPART)
