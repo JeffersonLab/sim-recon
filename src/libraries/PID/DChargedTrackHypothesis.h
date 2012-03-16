@@ -18,6 +18,8 @@ class DChargedTrackHypothesis : public DKinematicData {
 	public:
 		JOBJECT_PUBLIC(DChargedTrackHypothesis);
 
+		oid_t candidateid;   ///< id of DTrackCandidate corresponding to this track
+
 		Particle_t dPID;
 
 		unsigned int dNDF_Timing;
@@ -26,9 +28,9 @@ class DChargedTrackHypothesis : public DKinematicData {
 		unsigned int dNDF_DCdEdx;
 		float dChiSq_DCdEdx;
 
-		unsigned int dNDF;
-		float dChiSq;
-		float dFOM;
+		unsigned int dNDF; //total NDF used for PID determination
+		float dChiSq; //total chi-squared used for PID determination
+		float dFOM; //overall FOM for PID determination
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "PID", "%d", int(dPID));

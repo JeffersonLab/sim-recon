@@ -100,6 +100,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		locChargedTrackHypothesis = new DChargedTrackHypothesis();
 		locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 		locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
+		locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
 
 		//Set DKinematicData Members
 		DKinematicData *locKinematicData = locChargedTrackHypothesis;
