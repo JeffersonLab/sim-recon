@@ -7,6 +7,7 @@
 
 #include "DParticleID.h"
 #include <TRACKING/DTrackFitter.h>
+#include <TMath.h>
 #include "FCAL/DFCALGeometry.h"
 
 #define C_EFFECTIVE 15. // start counter light propagation speed
