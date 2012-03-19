@@ -172,7 +172,9 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	for(unsigned int i=0; i<throwns.size(); i++){
 		const DTrackTimeBased *thrown = throwns[i];
 
-		trk.pthrown = thrown->momentum();
+		trk.pthrown.SetXYZ(thrown->momentum().x(),
+				   thrown->momentum().y(),
+				   thrown->momentum().z());
 
 		// Get info for thrown track
 		GetNhits(thrown, trk.Ncdc, trk.Nfdc, trk.track);
@@ -221,7 +223,7 @@ void DEventProcessor_trackeff_hists::FillTrackInfo(const DKinematicData *kd,  ve
 //------------------
 void DEventProcessor_trackeff_hists::GetTrackInfo(const DKinematicData *kd, track_info &ti, int &track_no)
 {
-	ti.p = kd->momentum();
+  ti.p.SetXYZ(kd->momentum().x(),kd->momentum().y(),kd->momentum().z());
 	GetNhits(kd, ti.Ncdc, ti.Nfdc, track_no);
 	
 	// Try dynamic casting DKinematicData into something that can be used to get
