@@ -23,7 +23,7 @@
 #
 
 # This part sets the processor type and GCC version number
-$processor = `uname -p`;
+$processor = `uname -m`;
 $gccversion = `gcc -dumpversion`;
 chomp $processor;
 chomp $gccversion;
