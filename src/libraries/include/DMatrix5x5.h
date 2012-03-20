@@ -288,6 +288,17 @@ public:
     return temp;
   }
 
+  double SandwichMultiply(const DMatrix5x1 &A){
+    double a1=A(0),a2=A(1),a3=A(2),a4=A(3),a5=A(4);
+    return a1*(a1*mA[0][0]+2.*a2*mA[0][1]+2.*a3*mA[0][2]+2.*a4*mA[0][3]
+	       +2.*a5*mA[0][4])
+      +a2*(a2*mA[1][1]+2.*a3*mA[1][2]+2.*a4*mA[1][3]+2.*a5*mA[1][4])
+      +a3*(a3*mA[2][2]+2.*a4*mA[2][3]+2.*a5*mA[2][4])
+      +a4*(a4*mA[3][3]+2.*a5*mA[3][4])
+      +a5*a5*mA[4][4];
+	       
+  }
+
   void Print(){
     cout << "DMatrix5x5:" <<endl;
     cout << "     |      0    |      1    |      2    |      3    |      4    |" <<endl;
@@ -922,6 +933,19 @@ class DMatrix5x5{
 						       _mm_add_pd(MUL(2,3,4),
 								  MUL(2,4,4))))));    
   }
+  
+  double SandwichMultiply(const DMatrix5x1 &A){
+    double a1=A(0),a2=A(1),a3=A(2),a4=A(3),a5=A(4);
+    return a1*(a1*mA[0].d[0]+2.*a2*mA[0].d[1]+2.*a3*mA[0].d[2]+2.*a4*mA[0].d[3]
+	       +2.*a5*mA[0].d[4])
+      +a2*(a2*mA[1].d[1]+2.*a3*mA[1].d[2]+2.*a4*mA[1].d[3]+2.*a5*mA[1].d[4])
+      +a3*(a3*mA[2].d[2]+2.*a4*mA[2].d[3]+2.*a5*mA[2].d[4])
+      +a4*(a4*mA[3].d[3]+2.*a5*mA[3].d[4])
+      +a5*a5*mA[4].d[4];
+    
+  }
+
+
 
  // The following code performs the matrix operation ABA^T, where B is a symmetric matrix
   DMatrix5x5 SandwichMultiply(const DMatrix5x5 &A){
