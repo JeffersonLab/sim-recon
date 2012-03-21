@@ -651,6 +651,7 @@ void MyProcessor::FillGraphics(void)
 	if(hdvmf->GetCheckButton("recon_photons_bcal")){
 		vector<const DNeutralParticle*> neutrals;
 		loop->Get(neutrals);
+	
 		DGraphicSet gset(kYellow+2, kMarker, 1.25);
 		gset.marker_style=21;
 		for(unsigned int i=0; i<neutrals.size(); i++){
@@ -1025,9 +1026,10 @@ void MyProcessor::FillGraphics(void)
 	}
 
 	// DNeutralParticles
-	if(hdvmf->GetCheckButton("DNeutralParticles")){
+	if(hdvmf->GetCheckButton("neutrals")){
 		vector<const DNeutralParticle*> photons;
 		loop->Get(photons, hdvmf->GetFactoryTag("DNeutralParticle"));
+    
 		for(unsigned int i=0; i<photons.size(); i++){
 		  int color = kBlack;
 		  vector<const DNeutralShower*> locNeutralShowers;
