@@ -17,6 +17,10 @@
 #include <TH2.h>
 #include <TH1.h>
 
+#ifndef M_TWO_PI
+#define M_TWO_PI 6.28318530717958647692
+#endif
+
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 #define EPS 3.0e-8
 #define BIG 1.0e8
@@ -62,7 +66,9 @@
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
 
-#define MOLIERE_FRACTION 0.99
+#define MOLIERE_FRACTION 0.98 // = F
+#define MOLIERE_RATIO1 25.0   // = 0.5/(1-F)
+#define MOLIERE_RATIO2 5.1e-7 // = 1e-6/(1+F*F)
 #define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001

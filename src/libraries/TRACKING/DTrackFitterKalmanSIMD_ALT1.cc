@@ -168,7 +168,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
        
 	  //probability
 	  double chi2_hit=Mdiff*Mdiff*InvV;
-	  double prob_hit=exp(-0.5*chi2_hit)/sqrt(2.*M_PI*Vtemp);
+	  double prob_hit=exp(-0.5*chi2_hit)/sqrt(M_TWO_PI*Vtemp);
 
 	  // Cut out outliers
 	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){
@@ -211,12 +211,13 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    H(state_ty)=H_T(state_ty)=-sina*temp;
 						
 	    // Calculate the kalman gain for this hit 
-	    Vtemp=V+H*C*H_T;
+	    //Vtemp=V+H*C*H_T;
+	    Vtemp=V+C.SandwichMultiply(H_T);
 	    InvV=1./Vtemp;
-	
+
 	    // probability
 	    chi2_hit=Mdiff*Mdiff*InvV;
-	    prob_hit=exp(-0.5*chi2_hit)/sqrt(2.*M_PI*Vtemp);
+	    prob_hit=exp(-0.5*chi2_hit)/sqrt(M_TWO_PI*Vtemp);
 
 	    // Cut out outliers
 	    if(sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){	      
@@ -273,7 +274,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	}
 	else{
 	   // Variance for this hit
-	  double Vtemp=V+H*C*H_T;
+	  //double Vtemp=V+H*C*H_T;
+	  double Vtemp=V+C.SandwichMultiply(H_T);
 	  double InvV=1./Vtemp;
 	
 	  // Check if this hit is an outlier
