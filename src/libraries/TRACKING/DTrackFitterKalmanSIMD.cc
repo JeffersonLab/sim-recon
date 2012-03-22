@@ -12,6 +12,7 @@
 
 #include <TH2F.h>
 #include <TROOT.h>
+#include <TMath.h>
 #include <DMatrix.h>
 
 #include <iomanip>
@@ -95,7 +96,7 @@ double DTrackFitterKalmanSIMD::cdc_variance(double tanl,double t){
   //return CDC_VARIANCE;
   if (t<0) t=0.;
   //  double sigma=0.057/sqrt(t+1.)+3e-6*t;
-  double sigma=0.0417/sqrt(t+1.0)+3.51e-6*t+1.e-3;
+  double sigma=0.0417/sqrt(t+1.0)+3.51e-6*t+1.1e-3;
 
   return sigma*sigma;
 }
@@ -764,8 +765,9 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,double dz,
   double tx2=tx*tx;
   double ty2=ty*ty;
   double txty=tx*ty;
-  double dsdz=sqrt(1.+tx2+ty2);
-  double dtx_Bfac=ty*Bz+txty*Bx-(1.+tx2)*By;
+  double one_plus_tx2=1.+tx2;
+  double dsdz=sqrt(one_plus_tx2+ty2);
+  double dtx_Bfac=ty*Bz+txty*Bx-one_plus_tx2*By;
   double dty_Bfac=Bx*(1.+ty2)-txty*By-tx*Bz;
   double kq_over_p_dsdz=kq_over_p*dsdz;
   //  double kq_over_p_ds=0.5*dz*kq_over_p_dsdz;
@@ -1201,7 +1203,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       q_over_p_sq=q_over_p*q_over_p;
       one_over_beta2=1.+mass2*q_over_p_sq;
       if (one_over_beta2>BIG) one_over_beta2=BIG;
-      t+=step_size*sqrt(one_over_beta2); ///SPEED_OF_LIGHT;
+      t+=step_size*sqrt(one_over_beta2); // in units of c=1 
 
       // Multiple scattering    
       GetProcessNoiseCentral(step_size,central_traj[m].Z,
@@ -1338,7 +1340,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       q_over_p_sq=q_over_p*q_over_p;
       one_over_beta2=1.+mass2*q_over_p_sq;
       if (one_over_beta2>BIG) one_over_beta2=BIG;
-      t+=step_size*sqrt(one_over_beta2); ///SPEED_OF_LIGHT;
+      t+=step_size*sqrt(one_over_beta2); // in units of c=1
       
       // Multiple scattering    
       GetProcessNoiseCentral(step_size,temp.Z,temp.rho_Z_over_A,Sc,Q);
@@ -1696,12 +1698,13 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
   for (unsigned int m=0;m<forward_traj.size();m++){
     if (my_id>0){
       unsigned int hit_id=my_id-1;
-      if (fabs(forward_traj[m].pos.z()-my_fdchits[hit_id]->z)<EPS2){
+      double z=forward_traj[m].pos.z();
+      if (fabs(z-my_fdchits[hit_id]->z)<EPS2){
 	forward_traj[m].h_id=my_id;
 
 	// Get the magnetic field at this position along the trajectory
-	bfield->GetField(forward_traj[m].pos.x(),forward_traj[m].pos.y(),
-			 forward_traj[m].pos.z(),Bx,By,Bz);
+	bfield->GetField(forward_traj[m].pos.x(),forward_traj[m].pos.y(),z,
+			 Bx,By,Bz);
 	double Br=sqrt(Bx*Bx+By*By);
 
 	// Angle between B and wire
@@ -2372,15 +2375,17 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,double Z,
     Q(state_z,state_z)=Q(state_D,state_D)/one_plus_tanl2;
 
     double one_over_p_sq=q_over_pt*q_over_pt/one_plus_tanl2;
-    double F=MOLIERE_FRACTION; // Fraction of Moliere distribution to be taken into account
     double one_over_beta2=1.+mass2*one_over_p_sq;
     double chi2c=0.157*(Z+1)*rho_Z_over_A*my_ds*one_over_beta2*one_over_p_sq;
     double cbrtZ=cbrt(Z);
     double chi2a=2.007e-5*cbrtZ*cbrtZ
       *(1.+3.34*Z*Z*ALPHA_SQ*one_over_beta2)*one_over_p_sq;
-    double nu=0.5*chi2c/(chi2a*(1.-F));
+    // F=Fraction of Moliere distribution to be taken into account
+    // nu=0.5*chi2c/(chi2a*(1.-F));
+    double nu=MOLIERE_RATIO1*chi2c/chi2a;
     double one_plus_nu=1.+nu;
-    double sig2_ms=chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
+    // sig2_ms=chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
+    double sig2_ms=chi2c*MOLIERE_RATIO2*(one_plus_nu/nu*log(one_plus_nu)-1.);
 
     Q=sig2_ms*Q;
   }
@@ -2420,14 +2425,15 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,double Z,
    Q(state_x,state_tx)=Q(state_tx,state_x)
      = my_ds_2*sqrt(one_plus_tsquare*one_plus_tx2);
 
-   double F=MOLIERE_FRACTION; // Fraction of Moliere distribution to be taken into account
    double one_over_beta2=1.+one_over_p_sq*mass2;
-   double chi2c=0.157*(Z+1)*rho_Z_over_A*my_ds*one_over_beta2*one_over_p_sq;
+   double chi2c=0.157*(Z+1)*rho_Z_over_A*my_ds*one_over_beta2*one_over_p_sq;   
    double chi2a=2.007e-5*pow(Z,TWO_THIRDS)
      *(1.+3.34*Z*Z*ALPHA_SQ*one_over_beta2)*one_over_p_sq;
-   double nu=0.5*chi2c/(chi2a*(1.-F));
+   // F=MOLIERE_FRACTION =Fraction of Moliere distribution to be taken into account
+   // nu=0.5*chi2c/(chi2a*(1.-F));
+   double nu=MOLIERE_RATIO1*chi2c/chi2a;
    double one_plus_nu=1.+nu;
-   double sig2_ms=chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
+   double sig2_ms=chi2c*MOLIERE_RATIO2*(one_plus_nu/nu*log(one_plus_nu)-1.);
    
    Q=sig2_ms*Q;
  }
@@ -2807,7 +2813,8 @@ DTrackFitterKalmanSIMD::FindCentralResiduals(vector<DKalmanUpdate_t>my_cdc_updat
 	// Measurement error
 	V=cdc_variance(S(state_tanl),dt);
       }
-      double var=V-H*C*H_T;
+      //double var=V-H*C*H_T;
+      double var=V-C.SandwichMultiply(H_T);
       my_cdchits[i]->residual=res;
       my_cdchits[i]->sigma=sqrt(var);
         
@@ -3075,7 +3082,8 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
 	// Measurement error
 	V=cdc_variance(S(state_tanl),dt);
       }
-      double var=V-H*C*H_T;
+      //double var=V-H*C*H_T;
+      double var=V-C.SandwichMultiply(H_T);
       my_cdchits[id]->residual=res;
       my_cdchits[id]->sigma=sqrt(var);
         
@@ -3391,8 +3399,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       // Extrapolate to the point of closest approach to the beam line
       z_=forward_traj[forward_traj.size()-1].pos.z();
       if (sqrt(Slast(state_x)*Slast(state_x)+Slast(state_y)*Slast(state_y))
-	  >BEAM_RADIUS)  
-	if ((error=ExtrapolateToVertex(Slast,Clast))!=NOERROR) return error;
+	  >EPS2)  
+      	if ((error=ExtrapolateToVertex(Slast,Clast))!=NOERROR) return error;
       
       // Convert from forward rep. to central rep.
       ConvertStateVector(z_,Slast,Sc);
@@ -3633,7 +3641,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       // Extrapolate to the point of closest approach to the beam line
       z_=forward_traj[forward_traj.size()-1].pos.z();
       if (sqrt(Slast(state_x)*Slast(state_x)+Slast(state_y)*Slast(state_y))
-	  >BEAM_RADIUS) 
+	  >EPS2) 
 	if ((error=ExtrapolateToVertex(Slast,Clast))!=NOERROR) return error;
 
       // Convert from forward rep. to central rep.
@@ -3884,7 +3892,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Otherwise return the CDC error condition if the central fit failed
     if (iter2==0 && cdc_error!=NOERROR) return cdc_error;
 
-    if (last_pos.Perp()>BEAM_RADIUS)
+    if (last_pos.Perp()>EPS2)
       if ((error=ExtrapolateToVertex(last_pos,Sclast,Cclast))!=NOERROR) 
 	return error; 
 
@@ -4433,7 +4441,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	H(state_z)=H_T(state_z)=-cosstereo_over_doca*(dx*ux+dy*uy)/uz;
 	
 	// Difference and inverse of variance
-	InvV=1./(V+H*(Cc*H_T));
+	//InvV=1./(V+H*(Cc*H_T));
+	InvV=1./(V+Cc.SandwichMultiply(H_T));
 	double dm=measurement-prediction;
 	
 	if (InvV<0.){
@@ -4771,7 +4780,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  //probability
 	  double chi2_hit=Vtemp.Chi2(Mdiff);
 	  double prob_hit=exp(-0.5*chi2_hit)
-	    /(2.*M_PI*sqrt(Vtemp.Determinant()));
+	    /(M_TWO_PI*sqrt(Vtemp.Determinant()));
 
 	  // Cut out outliers
 	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){
@@ -4832,7 +4841,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	
 	    // probability
 	    chi2_hit=Vtemp.Chi2(Mdiff);
-	    prob_hit=exp(-0.5*chi2_hit)/(2.*M_PI*sqrt(Vtemp.Determinant()));
+	    prob_hit=exp(-0.5*chi2_hit)/(M_TWO_PI*sqrt(Vtemp.Determinant()));
 
 	    // Cut out outliers
 	    if(sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){	      
@@ -5547,7 +5556,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	double res=dm-d;
 
 	// inverse of variance including prediction
-	InvV=1./(V+H*(C*H_T));
+	//InvV=1./(V+H*(C*H_T));
+	InvV=1./(V+C.SandwichMultiply(H_T));
 	if (InvV<0.){
 	  if (DEBUG_LEVEL>0)
 	    _DBG_ << "Negative variance???" << endl;
@@ -5731,7 +5741,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   DVector3 pos;  // current position along trajectory
   double xstart=S(state_x),ystart=S(state_y);
 
-  //  printf("------Extrapolating\n");
+  //  if (fit_type==kTimeBased)printf("------Extrapolating\n");
 
   //  printf("-----------\n");
   if (fit_type==kTimeBased){
@@ -5756,7 +5766,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     }
     if(fabs(dz)>mStepSizeZ) dz=-mStepSizeZ;
     if(fabs(dz)<MIN_STEP_SIZE)dz=-MIN_STEP_SIZE;
-    
+
     // Get dEdx for the upcoming step
     if (CORRECT_FOR_ELOSS){
       dEdx=GetdEdx(S(state_q_over_p),K_rho_Z_over_A,rho_Z_over_A,LnI); 
@@ -5834,7 +5844,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   }
 
   double r=sqrt(r2_old);
-  while (z>Z_MIN && r<R_MAX_FORWARD && z<Z_MAX && r>BEAM_RADIUS){
+  while (z>Z_MIN && r<R_MAX_FORWARD && z<Z_MAX && r>EPS2){
     // Relationship between arc length and z
     double dz_ds=1./sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
 
@@ -5997,7 +6007,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   if (r>r_old) ds*=-1.;
   double ds_old=ds;
   
-  //printf("------Extrapolating\n");
+  //  if (fit_type==kTimeBased)printf("------Extrapolating\n");
 
   // Track propagation loop
   while (Sc(state_z)>Z_MIN && Sc(state_z)<Z_MAX  
@@ -6026,7 +6036,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     }
     if(fabs(ds)>mStepSizeS) ds=sign*mStepSizeS;
     if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
-        
+  
     // Multiple scattering
     GetProcessNoiseCentral(ds,Z,rho_Z_over_A,Sc,Q);
     
