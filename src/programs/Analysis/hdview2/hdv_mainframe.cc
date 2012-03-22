@@ -53,8 +53,8 @@ static float BCAL_MIDRAD = 77.0;
 static float BCAL_Zlen = 390.0;
 static float BCAL_Zmin = 212.0 - BCAL_Zlen/2.0;
 static float BCAL_MODS  = 48;
-static float BCAL_LAYS1 =  6;
-static float BCAL_LAYS2 =  4; 
+static float BCAL_LAYS1 =  3;
+//static float BCAL_LAYS2 =  4; 
 static float BCAL_SECS1 =  4; 
 static float BCAL_SECS2 =  4;
 static float FCAL_Zlen = 45.0;
@@ -1297,63 +1297,70 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		graphics_endA.push_back(bcal1);
 		graphics_endA.push_back(bcal2);
 		
-		double dlayer1 = (BCAL_MIDRAD-BCAL_Rmin)/(double)BCAL_LAYS1;
-		double dlayer2 = (BCAL_Rmax-BCAL_MIDRAD)/(double)BCAL_LAYS2;
+		double dlayer1 = 0.5*(BCAL_MIDRAD-BCAL_Rmin)/(double)BCAL_LAYS1;
+		//double dlayer2 = (BCAL_Rmax-BCAL_MIDRAD)/(double)BCAL_LAYS2;
 		double dmodule = (double)TMath::TwoPi()/(double)BCAL_MODS;
 		double dsector1 = dmodule/(double)BCAL_SECS1;
 		double dsector2 = dmodule/(double)BCAL_SECS2;
 
 		// Create polygon for each readout segment for use in coloring hits
 		if(GetCheckButton("bcal")){
-			for(int imod=0; imod<BCAL_MODS; imod++){
-				double mod_phi = (double)imod*dmodule;
-				for(int ilay=0; ilay<BCAL_LAYS1; ilay++){
-					double r_min = BCAL_Rmin + (double)ilay*dlayer1;
-					double r_max = r_min+dlayer1;
-					for(int isec=0; isec<BCAL_SECS1; isec++){
-						double phimin = mod_phi + (double)isec*dsector1;
-						double phimax = phimin + dsector1;
+		  for(int imod=0; imod<BCAL_MODS; imod++){
+		    double mod_phi = (double)imod*dmodule;
+		    double r_min=BCAL_Rmin;
+		    for(int ilay=0; ilay<BCAL_LAYS1; ilay++){
+		      r_min+=dlayer1*ilay;
+		      double r_max = r_min+(ilay+1)*dlayer1;
+		      for(int isec=0; isec<BCAL_SECS1; isec++){
+			double phimin = mod_phi + (double)isec*dsector1;
+			double phimax = phimin + dsector1;
+			
+			double x[4], y[4];
+			x[0] = r_min*cos(phimin);		
+			y[0] = r_min*sin(phimin);
+			x[1] = r_max*cos(phimin);		
+			y[1] = r_max*sin(phimin);
+			x[2] = r_max*cos(phimax);		
+			y[2] = r_max*sin(phimax);
+			x[3] = r_min*cos(phimax);		
+			y[3] = r_min*sin(phimax);
 						
-						double x[4], y[4];
-						x[0] = r_min*cos(phimin);		y[0] = r_min*sin(phimin);
-						x[1] = r_max*cos(phimin);		y[1] = r_max*sin(phimin);
-						x[2] = r_max*cos(phimax);		y[2] = r_max*sin(phimax);
-						x[3] = r_min*cos(phimax);		y[3] = r_min*sin(phimax);
-						TPolyLine *poly = new TPolyLine(4, x, y);
-						poly->SetLineColor(12);
-						poly->SetLineWidth(1);
-						poly->SetFillColor(0);
-						poly->SetFillStyle(0);
-						int chan = (imod+1)*1000 + (ilay+1)*100 + (isec+1)*10;
-						graphics_endA.push_back(poly);
-						bcalblocks[chan] = poly; // record so we can set the color later
-					}
-				}
-
-				for(int ilay=0; ilay<BCAL_LAYS2; ilay++){
-					double r_min = BCAL_MIDRAD + (double)ilay*dlayer2;
-					double r_max = r_min+dlayer2;
-					for(int isec=0; isec<BCAL_SECS2; isec++){
-						double phimin = mod_phi + (double)isec*dsector2;
-						double phimax = phimin + dsector2;
-						
-						double x[5], y[5];
-						x[0] = r_min*cos(phimin);		y[0] = r_min*sin(phimin);
-						x[1] = r_max*cos(phimin);		y[1] = r_max*sin(phimin);
-						x[2] = r_max*cos(phimax);		y[2] = r_max*sin(phimax);
-						x[3] = r_min*cos(phimax);		y[3] = r_min*sin(phimax);
-						x[4] = x[0];						y[4] = y[0];
-						TPolyLine *poly = new TPolyLine(5, x, y);
-						poly->SetLineColor(12);
-						poly->SetLineWidth(1);
-						poly->SetFillColor(0);
-						poly->SetFillStyle(0);
-						int chan = (int)((imod+1)*1000 + (ilay+1+BCAL_LAYS1)*100 + (isec+1)*10);
-						graphics_endA.push_back(poly);
-						bcalblocks[chan] = poly; // record so we can set the color later
-					}
-				}
-			}
+			TPolyLine *poly = new TPolyLine(4, x, y);
+			poly->SetLineColor(12);
+			poly->SetLineWidth(1);
+			poly->SetFillColor(0);
+			poly->SetFillStyle(0);
+			int chan = (imod+1)*1000 + (ilay+1)*100 + (isec+1)*10;
+			graphics_endA.push_back(poly);
+			bcalblocks[chan] = poly; // record so we can set the color later
+		      }
+		    
+		      for(int isec=0; isec<BCAL_SECS2; isec++){
+			double phimin = mod_phi + (double)isec*dsector2;
+			double phimax = phimin + dsector2;
+			
+			double x[5], y[5];
+			x[0] = BCAL_MIDRAD*cos(phimin);	
+			y[0] = BCAL_MIDRAD*sin(phimin);
+			x[1] = BCAL_Rmax*cos(phimin);		
+			y[1] = BCAL_Rmax*sin(phimin);
+			x[2] = BCAL_Rmax*cos(phimax);		
+			y[2] = BCAL_Rmax*sin(phimax);
+			x[3] = BCAL_MIDRAD*cos(phimax);
+			y[3] = BCAL_MIDRAD*sin(phimax);
+			x[4] = x[0];
+			y[4] = y[0];
+			TPolyLine *poly = new TPolyLine(5, x, y);
+			poly->SetLineColor(12);
+			poly->SetLineWidth(1);
+			poly->SetFillColor(0);
+			poly->SetFillStyle(0);
+			int chan = (int)((imod+1)*1000 + (ilay+1+BCAL_LAYS1)*100 + (isec+1)*10);
+			graphics_endA.push_back(poly);
+			bcalblocks[chan] = poly; // record so we can set the color later
+		      }
+		    }
+		  }
 		}
 		// Draw lines to identify boundaries of readout segments
 		for(int imod=0; imod<BCAL_MODS; imod++){
@@ -1381,20 +1388,19 @@ void hdv_mainframe::DrawDetectorsXY(void)
 			}
 			
 			// Horizontal(layer) boundaries
+			double r=BCAL_Rmin;
 			for(int ilay=0; ilay<BCAL_LAYS1; ilay++){
-				double r = BCAL_Rmin + (double)ilay*dlayer1;
+			  r+=dlayer1*ilay;
 				TLine *l = new TLine(r*cos(mod_phi), r*sin(mod_phi), r*cos(mod_phi+dmodule), r*sin(mod_phi+dmodule));
 				l->SetLineColor(ilay==0 ? kBlack:12);
 				l->SetLineWidth((Width_t)(ilay==0 ? 1.0:1.0));
 				graphics_endA.push_back(l);
 			}
-			for(int ilay=0; ilay<=BCAL_LAYS2; ilay++){
-				double r = BCAL_MIDRAD + (double)ilay*dlayer2;
-				TLine *l = new TLine(r*cos(mod_phi), r*sin(mod_phi), r*cos(mod_phi+dmodule), r*sin(mod_phi+dmodule));
-				l->SetLineColor(ilay==BCAL_LAYS2 ? kBlack:12);
-				l->SetLineWidth((Width_t)(ilay==BCAL_LAYS2 ? 1.0:1.0));
-				graphics_endA.push_back(l);
-			}
+			
+			TLine *l = new TLine(BCAL_MIDRAD*cos(mod_phi), BCAL_MIDRAD*sin(mod_phi), BCAL_MIDRAD*cos(mod_phi+dmodule), BCAL_MIDRAD*sin(mod_phi+dmodule));
+			l->SetLineColor(12);
+			l->SetLineWidth((Width_t)(1.0));
+			graphics_endA.push_back(l);
 		}
 
 		// ----- CDC ------
