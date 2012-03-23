@@ -428,23 +428,6 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
       endif
 
 
-* check if particle did decay
-
-      if (ISTOP .eq. 1) then
-        mechanism = KCASE
-         if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
-
-            if ((cnames(NLEVEL).ne.'BCAL') .and.
-     +           (cnames(NLEVEL).ne.'FCAL').and.
-     +           (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
-     +           (VERT(3)<500.)) then
-
-c               print *," KCASE: ",chcase,"  ",NGKINE,"  ",IPART
-               call savenewvertex(KCASE,NGKINE,GKIN,VECT,TOFG,IPART)
-            endif
-         endif
-      endif
-
 
 * Place any secondaries generated during this step onto the stack
 
@@ -467,6 +450,26 @@ c             print *, cchar
           endif
        enddo
       endif
+
+* check if particle did decay in which case save vertex and particles
+
+      if (ISTOP .eq. 1) then
+        mechanism = KCASE
+         if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
+
+            if ((cnames(NLEVEL).ne.'BCAL') .and.
+     +           (cnames(NLEVEL).ne.'FCAL').and.
+     +           (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
+     +           (VERT(3)<500.)) then
+
+c               print *," KCASE: ",chcase,"  ",NGKINE,"  ",IPART
+               call savenewvertex(KCASE,NGKINE,GKIN,VECT,
+     +              TOFG,iflgk,IPART)
+            endif
+         endif
+      endif
+
+
       
 * For explicit Cerenkov generation, apply an inefficiency factor
 

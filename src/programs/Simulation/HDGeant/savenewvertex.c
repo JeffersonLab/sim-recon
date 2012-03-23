@@ -16,7 +16,7 @@ savenewvertex: particle stoped because it decayed
 extern s_HDDM_t* thisInputEvent;
 
 void SaveNewVertex(int kcase, int Npart, float *gkin, 
-		   float vertex[3], float tofg, int ipart){
+		   float vertex[3], float tofg, int *iflgk, int ipart){
 
 
   // get pointer to all vertices
@@ -58,7 +58,7 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
     ps->in[i].momentum->E  = gkin[i*5+3];
     ps->in[i].type = gkin[i*5+4];
     ps->in[i].parentid = ipart;
-    ps->in[i].id = i;
+    ps->in[i].id = iflgk[i];
     ps->in[i].mech = kcase;
     ps->in[i].decayVertex = VertexCount;
 
@@ -71,8 +71,8 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
 /* entry point from fortran */
 
 void savenewvertex_ (int *kcase, int *N, float* gkin, 
-		     float* vertex, float* tofg, int* ipart) {
+		     float* vertex, float* tofg, int* iflgk, int* ipart) {
 
-  SaveNewVertex(*kcase, *N, gkin, vertex, *tofg, *ipart);
+  SaveNewVertex(*kcase, *N, gkin, vertex, *tofg, iflgk, *ipart);
 
 }
