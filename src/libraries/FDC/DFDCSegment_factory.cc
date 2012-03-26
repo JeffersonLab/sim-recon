@@ -53,11 +53,13 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 /// Initialization: read in deflection map, get magnetic field map
 ///
 jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) { 
+  /*
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
   lorentz_def=dapp->GetLorentzDeflections();
 
   *_log << "Table of Lorentz deflections initialized." << endMsg;
+  */
   return NOERROR;
 }
 
@@ -433,10 +435,12 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
     double sinPhi=sin(Phi);
     double Phi_cosPhi=Phi*cosPhi;
     double Phi_sinPhi=Phi*sinPhi;
+    double Phi_cosPhi_minus_sinPhi=Phi_cosPhi-sinPhi;
+    double Phi_sinPhi_plus_cosPhi=Phi_sinPhi+cosPhi;
     CRPhi(m,m)
-      =(Phi_cosPhi-sinPhi)*(Phi_cosPhi-sinPhi)*points[m]->covxx
-      +(Phi_sinPhi+cosPhi)*(Phi_sinPhi+cosPhi)*points[m]->covyy
-      +2.*(Phi_sinPhi+cosPhi)*(Phi_cosPhi-sinPhi)*points[m]->covxy;
+      =Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*points[m]->covxx
+      +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*points[m]->covyy
+      +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*points[m]->covxy;
 
     CR(m,m)=cosPhi*cosPhi*points[m]->covxx
       +sinPhi*sinPhi*points[m]->covyy
@@ -601,8 +605,9 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	  std::sort(neighbors.begin(),neighbors.end(),DFDCSegment_package_cmp);
     
 	// list of points on track and the corresponding covariances
-	vector<xyz_t>XYZ(neighbors.size()+1);
-	DMatrix CR(neighbors.size()+1,neighbors.size()+1);
+	unsigned int num_points_on_segment=neighbors.size()+1;
+	vector<xyz_t>XYZ(num_points_on_segment);
+	DMatrix CR(num_points_on_segment,num_points_on_segment);
    	
 	// Arc lengths in helical model are referenced relative to the plane
 	// ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
