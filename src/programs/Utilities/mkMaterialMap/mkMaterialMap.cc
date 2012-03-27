@@ -21,13 +21,16 @@ void Usage(JApplication &app);
 
 
 class Material{
-	public:
-		double A;
-		double Z;
-		double Density;
-		double RadLen;
-		double rhoZ_overA;		// density*Z/A
-		double rhoZ_overA_logI;	// density*Z/A * log(mean excitation energy)
+public:
+  double A;
+  double Z;
+  double Density;
+  double RadLen;
+  double rhoZ_overA;		// density*Z/A
+  double rhoZ_overA_logI;	// density*Z/A * log(mean excitation energy)
+  double chi2c_factor;
+  double chi2a_factor;
+  double chi2a_corr;
 };
 
 
@@ -91,7 +94,7 @@ int main(int narg, char *argv[])
 			double d_r = dr/(double)n_r;
 			double d_z = dz/(double)n_z;
 			double d_phi = 2.0*M_PI/(double)n_phi;
-			Material avg_mat={0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+			Material avg_mat={0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 			for(int i_r=0; i_r<n_r; i_r++){
 				double my_r = r - dr/2.0 + (double)i_r*d_r;
 				for(int i_z=0; i_z<n_z; i_z++){
@@ -116,6 +119,9 @@ int main(int narg, char *argv[])
 						avg_mat.RadLen += 1.0/radlen; // use this to keep proper sum (will be flipped and normalized below)
 						avg_mat.rhoZ_overA += rhoZ_overA;
 						avg_mat.rhoZ_overA_logI += rhoZ_overA_logI;
+						avg_mat.chi2c_factor += 0.157*rhoZ_overA*(Z+1);
+						avg_mat.chi2a_factor += 2.007e-5*cbrt(Z*Z);
+						avg_mat.chi2a_corr += 3.34*Z*Z*5.32513e-05;
 					}
 				}
 			}
@@ -128,6 +134,9 @@ int main(int narg, char *argv[])
 			avg_mat.Density /= N;
 			avg_mat.rhoZ_overA /= N;
 			avg_mat.rhoZ_overA_logI /= N;
+			avg_mat.chi2c_factor/=N;
+			avg_mat.chi2a_factor/=N;
+			avg_mat.chi2a_corr/=N;
 			
 			if(!finite(avg_mat.RadLen))avg_mat.RadLen = 0.0;
 			
@@ -147,6 +156,9 @@ int main(int narg, char *argv[])
 	cols.push_back("radlen");
 	cols.push_back("rhoZ_overA");
 	cols.push_back("rhoZ_overA_logI");
+	cols.push_back("chi2c_factor");
+	cols.push_back("chi2a_factor");
+	cols.push_back("chi2a_corr");
 	
 	// Find max width of each column so we can print these in file with aligned columns
 	vector<unsigned int> max_width;
@@ -166,7 +178,10 @@ int main(int narg, char *argv[])
 			ss.str(""); ss<<mat.Density;				strs.push_back(ss.str());
 			ss.str(""); ss<<mat.RadLen;				strs.push_back(ss.str());
 			ss.str(""); ss<<mat.rhoZ_overA;			strs.push_back(ss.str());
-			ss.str(""); ss<<mat.rhoZ_overA_logI;	strs.push_back(ss.str());
+			ss.str(""); ss<<mat.rhoZ_overA_logI;	strs.push_back(ss.str());	
+			ss.str(""); ss<<mat.chi2c_factor;	strs.push_back(ss.str());
+			ss.str(""); ss<<mat.chi2a_factor;	strs.push_back(ss.str());
+			ss.str(""); ss<<mat.chi2a_corr;	strs.push_back(ss.str());
 			
 			for(unsigned int i=0; i<strs.size(); i++){
 				if(strs[i].size()+2 > max_width[i])max_width[i] = strs[i].size()+2;
@@ -214,7 +229,8 @@ int main(int narg, char *argv[])
 			Material &mat = MatTable[ir][iz];
 			
 			if(entries_written%50 == 0)of<<colheader.str()<<endl;
-			
+			if(entries_written==0) of <<"#% 00 01 02 03 04 05 06 07 08 09 10" <<endl;
+
 			of<<mkstr(r, max_width[0]);
 			of<<mkstr(z, max_width[1]);
 			of<<mkstr(mat.A, max_width[2]);
@@ -223,6 +239,10 @@ int main(int narg, char *argv[])
 			of<<mkstr(mat.RadLen, max_width[5]);
 			of<<mkstr(mat.rhoZ_overA, max_width[6]);
 			of<<mkstr(mat.rhoZ_overA_logI, max_width[7]);
+			of<<mkstr(mat.chi2c_factor, max_width[8]);
+			of<<mkstr(mat.chi2a_factor, max_width[9]);	
+			of<<mkstr(mat.chi2a_corr, max_width[10]);
+
 			of<<endl;
 			
 			entries_written++;
