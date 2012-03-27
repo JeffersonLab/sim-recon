@@ -222,6 +222,8 @@ DFCALShower* DFCALShower_factory::makeFcalShower( const DFCALCluster* cluster )
 	shower->setPosError( errX, errY, errZ );
 	shower->setTime ( cTime );
 
+	shower->AddAssociatedObject(cluster);
+
 	return shower;
 }
 
