@@ -8,6 +8,9 @@
  *
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
  *          add ipart to the function hitForwardEMcal
+ *
+ *			3/23/2012 B. Schaefer
+ *          Removed radiation hard insert functionality
  */
 
 #include <stdlib.h>
@@ -23,9 +26,7 @@
 extern s_HDDM_t* thisInputEvent;
 
 
-static float ATTEN_LENGTH1    =	100.;   //Outer Glass
-static float  ATTEN_LENGTH2   =  73.1;  //Inner Glass
-static float  RHG_RADIUS      =  30.;   //Radius of inner glass
+static float ATTEN_LENGTH    =	100.; 
 static float  C_EFFECTIVE     =  15.;   // cm/ns
 static float  WIDTH_OF_BLOCK  =   4.;   //cm
 static float  LENGTH_OF_BLOCK =  45.;   //cm
@@ -66,18 +67,11 @@ void hitForwardEMcal (float xin[4], float xout[4],
        int i;
        for ( i=0;i<(int)nvalues;i++){
 	 //printf("%d %s \n",i,strings[i].str);
-	 if (!strcmp(strings[i].str,"FCAL_ATTEN_LENGTH1")) {
-	   ATTEN_LENGTH1  = values[i];
+	 if (!strcmp(strings[i].str,"FCAL_ATTEN_LENGTH")) {
+	   ATTEN_LENGTH  = values[i];
 	   ncounter++;
 	 }
-         if (!strcmp(strings[i].str,"FCAL_ATTEN_LENGTH2")) {
-	   ATTEN_LENGTH2  = values[i];
-	   ncounter++;
-	 }
-	 if (!strcmp(strings[i].str,"FCAL_RHG_RADIUS")) {
-	   RHG_RADIUS  = values[i];
-	   ncounter++;
-	 }
+ 
 	 if (!strcmp(strings[i].str,"FCAL_C_EFFECTIVE")) {
 	   C_EFFECTIVE  = values[i];
 	   ncounter++;
@@ -115,10 +109,11 @@ void hitForwardEMcal (float xin[4], float xout[4],
 	   ncounter++;
 	 }
        }
-       if (ncounter==12){
+       const int nparams=10;
+       if (ncounter==nparams){
 	 printf("FCAL: ALL parameters loaded from Data Base\n");
-       } else if (ncounter<12){
-	 printf("FCAL: NOT ALL necessary parameters found in Data Base %d out of 12\n",ncounter);
+       } else if (ncounter<nparams){
+         printf("FCAL: NOT ALL necessary parameters found in Data Base %d out of %d\n",ncounter,nparams);
        } else {
 	 printf("FCAL: SOME parameters found more than once in Data Base\n");
        }
@@ -170,24 +165,9 @@ void hitForwardEMcal (float xin[4], float xout[4],
       int column = getcolumn_();
       
       float dist = 0.5*LENGTH_OF_BLOCK-xfcal[2];
-      float dEcorr;
-      float y0 = (row - CENTRAL_ROW)*WIDTH_OF_BLOCK;
-      float x0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
-      float rad = sqrt(x0*x0+y0*y0);
-    
+      float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
 
-      
-      if(rad>RHG_RADIUS){
-
-	dEcorr = dEsum * exp(-dist/ATTEN_LENGTH1);
-
-      }
-      
-      else{
-	
-	dEcorr = dEsum * exp(-dist/ATTEN_LENGTH2);
-      
-      }
+  
 
       float tcorr = t + dist/C_EFFECTIVE;
       int mark = ((row+1)<<16) + (column+1);

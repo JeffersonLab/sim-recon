@@ -3,7 +3,7 @@
 //    File: DFCALShower_factory.h
 // Created: Tue May 17 11:57:50 EST 2005
 // Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
-//
+// Edited: B. Schaefer 3/23/2012 removed radiation hard insert functionality
 
 #ifndef _DFCALShower_factory_
 #define _DFCALShower_factory_
@@ -31,19 +31,11 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
                 double m_zTarget;
 		double SHOWER_ENERGY_THRESHOLD;
 
-		double NON_LIN_COEF_A1;
-		double NON_LIN_COEF_B1;
-		double NON_LIN_COEF_C1;
-		double NON_LIN_COEF_alfa1;
-
+		double NON_LIN_COEF_A;
+		double NON_LIN_COEF_B;
+		double NON_LIN_COEF_C;
+		double NON_LIN_COEF_alfa;
 		
-		double NON_LIN_COEF_A2;
-		double NON_LIN_COEF_B2;
-		double NON_LIN_COEF_C2;
-		double NON_LIN_COEF_alfa2;
-
-		double BUFFER_RADIUS;
-		double RHG_RADIUS;
 
 		double FCAL_RADIATION_LENGTH;
 		double FCAL_CRITICAL_ENERGY;
