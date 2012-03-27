@@ -906,7 +906,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   temp.s=len;  
   temp.t=ftime;
   temp.Z=temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
-  
+  temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
+
   //if (r<r_outer_hit)
   if (z<endplate_z && r<endplate_rmax && z>cdc_origin[2])
   {
@@ -914,7 +915,10 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
       DVector3 mom(S(state_tx),S(state_ty),1.);
       if(geom->FindMatKalman(temp.pos,mom,temp.Z,temp.K_rho_Z_over_A,
-			     temp.rho_Z_over_A,temp.LnI,last_material_map,
+			     temp.rho_Z_over_A,temp.LnI,
+			     temp.chi2c_factor,temp.chi2a_factor,
+			     temp.chi2a_corr,
+			     last_material_map,
 			     &s_to_boundary)!=NOERROR){
     	return UNRECOVERABLE_ERROR;
       }
@@ -923,6 +927,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     {
       if(geom->FindMatKalman(temp.pos,temp.Z,temp.K_rho_Z_over_A,
 			     temp.rho_Z_over_A,temp.LnI,
+			     temp.chi2c_factor,temp.chi2a_factor,
+			     temp.chi2a_corr,
 			     last_material_map)!=NOERROR){
 	return UNRECOVERABLE_ERROR;
       }
@@ -1012,7 +1018,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   
   // Get the contribution to the covariance matrix due to multiple 
   // scattering
-  GetProcessNoise(ds,temp.Z,temp.rho_Z_over_A,S,Q);
+  GetProcessNoise(ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,S,Q);
   
   // Energy loss straggling
   if (CORRECT_FOR_ELOSS){
@@ -1125,7 +1131,11 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	  if(geom->FindMatKalman(pos,mom,central_traj[m].Z,
 				 central_traj[m].K_rho_Z_over_A,
 				 central_traj[m].rho_Z_over_A,
-				 central_traj[m].LnI,last_material_map,
+				 central_traj[m].LnI,
+				 central_traj[m].chi2c_factor,
+				 central_traj[m].chi2a_factor,
+				 central_traj[m].chi2a_corr,
+				 last_material_map,
 				 &s_to_boundary)!=NOERROR){
 	    return UNRECOVERABLE_ERROR;
 	  }
@@ -1136,6 +1146,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 				   central_traj[m].K_rho_Z_over_A,
 				   central_traj[m].rho_Z_over_A,
 				   central_traj[m].LnI,
+				   central_traj[m].chi2c_factor,
+				   central_traj[m].chi2a_factor,
+				   central_traj[m].chi2a_corr,
 				   last_material_map)!=NOERROR){
 	      return UNRECOVERABLE_ERROR;
 	    }	
@@ -1206,8 +1219,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       t+=step_size*sqrt(one_over_beta2); // in units of c=1 
 
       // Multiple scattering    
-      GetProcessNoiseCentral(step_size,central_traj[m].Z,
-			       central_traj[m].rho_Z_over_A,Sc,Q);
+      GetProcessNoiseCentral(step_size,central_traj[m].chi2c_factor,
+			     central_traj[m].chi2a_factor,
+			     central_traj[m].chi2a_corr,Sc,Q);
 
       // Energy loss straggling
       if (CORRECT_FOR_ELOSS){
@@ -1254,6 +1268,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       temp.t=t;
       temp.h_id=0;
       temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.Z=temp.LnI=0.; //initialize
+      temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
       
       // update path length and flight time
       len+=step_size;
@@ -1275,7 +1290,10 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
 	  DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
 	  if(geom->FindMatKalman(pos,mom,temp.Z,temp.K_rho_Z_over_A,
-				 temp.rho_Z_over_A,temp.LnI,last_material_map,
+				 temp.rho_Z_over_A,temp.LnI,
+				 temp.chi2c_factor,temp.chi2a_factor,
+				 temp.chi2a_corr,
+				 last_material_map,
 				 &s_to_boundary)
 	     !=NOERROR){
 	    return UNRECOVERABLE_ERROR;
@@ -1285,6 +1303,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	  {
 	    if(geom->FindMatKalman(pos,temp.Z,temp.K_rho_Z_over_A,
 				   temp.rho_Z_over_A,temp.LnI,
+				   temp.chi2c_factor,temp.chi2a_factor,
+				   temp.chi2a_corr,
 				   last_material_map)!=NOERROR){
 	      return UNRECOVERABLE_ERROR;
 	    }
@@ -1343,7 +1363,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       t+=step_size*sqrt(one_over_beta2); // in units of c=1
       
       // Multiple scattering    
-      GetProcessNoiseCentral(step_size,temp.Z,temp.rho_Z_over_A,Sc,Q);
+      GetProcessNoiseCentral(step_size,temp.chi2c_factor,temp.chi2a_factor,
+			     temp.chi2a_corr,Sc,Q);
       
       // Energy loss straggling in the approximation of thick absorbers    
       if (CORRECT_FOR_ELOSS){
@@ -1438,12 +1459,16 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   temp.t=ftime;
   temp.pos.SetXYZ(S(state_x),S(state_y),z);
   temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.Z=temp.LnI=0.; //initialize
+  temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
   
   // get material properties from the Root Geometry
   if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
     DVector3 mom(S(state_tx),S(state_ty),1.);
     if (geom->FindMatKalman(temp.pos,mom,temp.Z,temp.K_rho_Z_over_A,
-  			    temp.rho_Z_over_A,temp.LnI,last_material_map,
+  			    temp.rho_Z_over_A,temp.LnI,
+			    temp.chi2c_factor,temp.chi2a_factor,
+			    temp.chi2a_corr,
+			    last_material_map,
 			    &s_to_boundary)
   	!=NOERROR){
       return UNRECOVERABLE_ERROR;      
@@ -1453,6 +1478,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     {
     if (geom->FindMatKalman(temp.pos,temp.Z,temp.K_rho_Z_over_A,
 			    temp.rho_Z_over_A,temp.LnI,
+			    temp.chi2c_factor,temp.chi2a_factor,
+			    temp.chi2a_corr,
 			    last_material_map)!=NOERROR){
       return UNRECOVERABLE_ERROR;      
     }       
@@ -1545,7 +1572,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
        
   // Get the contribution to the covariance matrix due to multiple 
   // scattering
-  GetProcessNoise(ds,temp.Z,temp.rho_Z_over_A,S,Q);
+  GetProcessNoise(ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,S,Q);
       
   // Energy loss straggling  
   if (CORRECT_FOR_ELOSS){
@@ -2345,16 +2372,17 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector3 &pos,
   return NOERROR;
 }
 
-#define ALPHA_SQ 5.32513e-05 // Square of fine structure constant
 // Compute contributions to the covariance matrix due to multiple scattering
 // using the Lynch/Dahl empirical formulas
-jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,double Z, 
-						    double rho_Z_over_A, 
+jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,
+							double chi2c_factor,
+							double chi2a_factor,
+							double chi2a_corr,
 						    const DMatrix5x1 &Sc,
 						    DMatrix5x5 &Q){
   Q.Zero();
   //return NOERROR;
-  if (USE_MULS_COVARIANCE && Z>0. && fabs(ds)>EPS){
+  if (USE_MULS_COVARIANCE && chi2c_factor>0. && fabs(ds)>EPS){
     double tanl=Sc(state_tanl);
     double tanl2=tanl*tanl;
     double one_plus_tanl2=1.+tanl2;
@@ -2376,10 +2404,8 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,double Z,
 
     double one_over_p_sq=q_over_pt*q_over_pt/one_plus_tanl2;
     double one_over_beta2=1.+mass2*one_over_p_sq;
-    double chi2c=0.157*(Z+1)*rho_Z_over_A*my_ds*one_over_beta2*one_over_p_sq;
-    double cbrtZ=cbrt(Z);
-    double chi2a=2.007e-5*cbrtZ*cbrtZ
-      *(1.+3.34*Z*Z*ALPHA_SQ*one_over_beta2)*one_over_p_sq;
+    double chi2c=chi2c_factor*my_ds*one_over_beta2*one_over_p_sq;
+    double chi2a=chi2a_factor*(1.+chi2a_corr*one_over_beta2)*one_over_p_sq;
     // F=Fraction of Moliere distribution to be taken into account
     // nu=0.5*chi2c/(chi2a*(1.-F));
     double nu=MOLIERE_RATIO1*chi2c/chi2a;
@@ -2395,14 +2421,16 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,double Z,
 
 // Compute contributions to the covariance matrix due to multiple scattering
 // using the Lynch/Dahl empirical formulas
-jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,double Z,
-						 double rho_Z_over_A,
+jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,
+						 double chi2c_factor,
+						 double chi2a_factor,
+						 double chi2a_corr,
 						 const DMatrix5x1 &S,
 						 DMatrix5x5 &Q){
 
  Q.Zero();
  //return NOERROR;
- if (USE_MULS_COVARIANCE && Z>0. && fabs(ds)>EPS){
+ if (USE_MULS_COVARIANCE && chi2c_factor>0. && fabs(ds)>EPS){
    double tx=S(state_tx),ty=S(state_ty);
    double one_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
    double my_ds=fabs(ds);
@@ -2426,14 +2454,18 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,double Z,
      = my_ds_2*sqrt(one_plus_tsquare*one_plus_tx2);
 
    double one_over_beta2=1.+one_over_p_sq*mass2;
-   double chi2c=0.157*(Z+1)*rho_Z_over_A*my_ds*one_over_beta2*one_over_p_sq;   
-   double chi2a=2.007e-5*pow(Z,TWO_THIRDS)
-     *(1.+3.34*Z*Z*ALPHA_SQ*one_over_beta2)*one_over_p_sq;
+   double chi2c=chi2c_factor*my_ds*one_over_beta2*one_over_p_sq;   
+   double chi2a=chi2a_factor*(1.+chi2a_corr*one_over_beta2)*one_over_p_sq;
    // F=MOLIERE_FRACTION =Fraction of Moliere distribution to be taken into account
    // nu=0.5*chi2c/(chi2a*(1.-F));
    double nu=MOLIERE_RATIO1*chi2c/chi2a;
    double one_plus_nu=1.+nu;
    double sig2_ms=chi2c*MOLIERE_RATIO2*(one_plus_nu/nu*log(one_plus_nu)-1.);
+
+   
+   //   printf("fac %f %f %f\n",chi2c_factor,chi2a_factor,chi2a_corr);
+   //printf("omega %f\n",chi2c/chi2a);
+
    
    Q=sig2_ms*Q;
  }
@@ -5738,6 +5770,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
   // material properties
   double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
+  double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
   DVector3 pos;  // current position along trajectory
   double xstart=S(state_x),ystart=S(state_y);
 
@@ -5748,6 +5781,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     // get material properties from the Root Geometry
     pos.SetXYZ(S(state_x),S(state_y),z);
     if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+			    chi2c_factor,chi2a_factor,chi2a_corr,
 			    last_material_map)
 	!=NOERROR){
       if (DEBUG_LEVEL>1)
@@ -5854,6 +5888,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
       DVector3 mom(S(state_tx),S(state_ty),1.);
       if (geom->FindMatKalman(pos,mom,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+			      chi2c_factor,chi2a_factor,chi2a_corr,
 			      last_material_map,&s_to_boundary)
 	  !=NOERROR){
 	return UNRECOVERABLE_ERROR;      
@@ -5861,6 +5896,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     }
     else{
       if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+			      chi2c_factor,chi2a_factor,chi2a_corr,
 			      last_material_map)
 	  !=NOERROR){
 	_DBG_ << "Material error in ExtrapolateToVertex! " << endl;
@@ -5897,7 +5933,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(ds,Z,rho_Z_over_A,S,Q);
+    GetProcessNoise(ds,chi2c_factor,chi2a_factor,chi2a_corr,S,Q);
  
     if (CORRECT_FOR_ELOSS){
       double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
@@ -6015,7 +6051,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     
     // get material properties from the Root Geometry
     double rho_Z_over_A=0.,Z=0,LnI=0.,K_rho_Z_over_A=0.;
+    double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
     if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+			    chi2c_factor,chi2a_factor,chi2a_corr,
 			    last_material_map)
 	!=NOERROR){
       _DBG_ << "Material error in ExtrapolateToVertex! " << endl;
@@ -6038,7 +6076,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
   
     // Multiple scattering
-    GetProcessNoiseCentral(ds,Z,rho_Z_over_A,Sc,Q);
+    GetProcessNoiseCentral(ds,chi2c_factor,chi2a_factor,chi2a_corr,Sc,Q);
     
     if (CORRECT_FOR_ELOSS){
       double q_over_p_sq=q_over_p*q_over_p;

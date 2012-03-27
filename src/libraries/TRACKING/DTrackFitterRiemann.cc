@@ -782,9 +782,11 @@ jerror_t DTrackFitterRiemann::ComputeCz(){
 double DTrackFitterRiemann::GetProcessNoise(const DVector2 &XY,const double z){
   // Get the material properties for this position
   double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
+  double fdummy;
   DVector3 pos(XY.X(),XY.Y(),z);
   unsigned int dummy=0;
-  if(geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,dummy)!=NOERROR){
+  if(geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,fdummy,fdummy,
+			 fdummy,dummy)!=NOERROR){
 	return 0.;
   }
   

@@ -66,9 +66,9 @@
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
 
-#define MOLIERE_FRACTION 0.98 // = F
+// Functions of Moliere fraction F
 #define MOLIERE_RATIO1 25.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 5.1e-7 // = 1e-6/(1+F*F)
+#define MOLIERE_RATIO2 2.0*5.1e-7 // = (scale factor)*1e-6/(1+F*F)
 #define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001
@@ -103,6 +103,7 @@ typedef struct{
   DMatrix5x5 J,JT,Q,Ckk;
   double s,t,B;
   double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
+  double chi2c_factor,chi2a_factor,chi2a_corr;
 }DKalmanSIMDState_t;
 
 typedef struct{
@@ -227,7 +228,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double fdc_drift_distance(double t,double Bz);
 
   void ResetKalmanSIMD(void);
-  jerror_t GetProcessNoise(double ds,double Z, double rho_Z_over_A, 
+  jerror_t GetProcessNoise(double ds,double chi2c_factor,double chi2a_factor,
+			   double chi2a_corr,
 			   const DMatrix5x1 &S,DMatrix5x5 &Q);
 
   double Step(double oldz,double newz, double dEdx,DMatrix5x1 &S);
@@ -260,7 +262,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 				const DMatrix5x1 &S,double dEdx,
 				DMatrix5x5 &J1,DMatrix5x1 &D1);
   jerror_t ConvertStateVector(double z,const DMatrix5x1 &S,DMatrix5x1 &Sc);
-  jerror_t GetProcessNoiseCentral(double ds,double Z,double rho_Z_over_A, 
+  jerror_t GetProcessNoiseCentral(double ds,double chi2c_factor,
+				  double chi2a_factor,double chi2a_corr,
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
   jerror_t SmoothForwardCDC(DMatrix5x1 &S,DMatrix5x5 &C);   
   jerror_t SmoothCentral(DMatrix5x1 &S,DMatrix5x5 &C);  
