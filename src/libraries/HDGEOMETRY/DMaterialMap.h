@@ -26,6 +26,9 @@ class DMaterialMap{
 				double rhoZ_overA; // density*Z/A
 				double KrhoZ_overA; // 0.1535e-3*density*Z/A
 				double rhoZ_overA_logI;	// density*Z/A * log(mean excitation energy)
+				double chi2c_factor;  // prefactor for the characteristic angle for multiple scattering:  chi2c^2=(chi2c_factor)*X/p^/beta^2
+				double chi2a_factor; // prefactor for the screening angle 
+				double chi2a_corr;
 		};
 		
 		inline const MaterialNode* FindNode(DVector3 &pos) const;
@@ -37,7 +40,8 @@ class DMaterialMap{
 		jerror_t FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const;
 		jerror_t FindMatKalman(DVector3 &pos,double &Z,
 				       double &K_rho_Z_over_A,
-				       double &rho_Z_over_A,double &LogI) const;
+				       double &rho_Z_over_A,double &LogI,double &chi2c_factor,
+				       double &chi2a_factor,double &chi2a_corr) const;
 		bool IsInMap(const DVector3 &pos) const;
 		double EstimatedDistanceToBoundary(const DVector3 &pos, const DVector3 &mom);
 		double EstimatedDistanceToBoundarySearch(double r, double z, double p_hatR, double p_hatZ, double &s_to_boundary);

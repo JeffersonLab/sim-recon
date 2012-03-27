@@ -112,6 +112,9 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 		node.rhoZ_overA_logI = a[7];
 		node.LogI=node.rhoZ_overA_logI/(node.rhoZ_overA==0.0 ? 1.0:node.rhoZ_overA);
 		node.KrhoZ_overA=0.1535e-3*node.rhoZ_overA;
+		node.chi2c_factor=a[8];
+		node.chi2a_factor=a[9];
+		node.chi2a_corr=a[10];
 	}
 	
 	// Now find the r and z boundaries that will be used during swimming
@@ -255,8 +258,10 @@ jerror_t DMaterialMap::FindMat(DVector3 &pos, double &density, double &A, double
 jerror_t DMaterialMap::FindMatKalman(DVector3 &pos,double &Z,
 				     double &K_rho_Z_over_A,
 				     double &rho_Z_over_A,
-				     double &LogI) const
+				     double &LogI, double &chi2c_factor,
+				     double &chi2a_factor, double &chi2a_corr) const
 {
+
 	const MaterialNode *node = FindNode(pos);
 	if(!node)return RESOURCE_UNAVAILABLE;
 	
@@ -264,6 +269,9 @@ jerror_t DMaterialMap::FindMatKalman(DVector3 &pos,double &Z,
 	rho_Z_over_A = node->rhoZ_overA;
 	LogI = node->LogI;
 	K_rho_Z_over_A=node->KrhoZ_overA;
+	chi2a_factor=node->chi2a_factor;
+	chi2a_corr=node->chi2a_corr;
+	chi2c_factor=node->chi2c_factor;
 
 	return NOERROR;
 }
