@@ -74,7 +74,8 @@ double DTrackFitterKalmanSIMD::fdc_y_variance(double tanl,double x,double dE){
   double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE;
   //sigma*=(1+fabs(x));
   //  sigma*=(1.144e-3*cosh(11.62*x)+0.65)/0.6555;
-  sigma*=1.175;
+  //sigma*=1.175;
+  sigma*=1.2;
 
   return sigma*sigma;
 }
@@ -96,7 +97,7 @@ double DTrackFitterKalmanSIMD::cdc_variance(double tanl,double t){
   //return CDC_VARIANCE;
   if (t<0) t=0.;
   //  double sigma=0.057/sqrt(t+1.)+3e-6*t;
-  double sigma=0.0417/sqrt(t+1.0)+3.51e-6*t+1.1e-3;
+  double sigma=0.0417/sqrt(t+1.0)+3.51e-6*t+1.2e-3;
 
   return sigma*sigma;
 }
@@ -2411,7 +2412,7 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,
     double nu=MOLIERE_RATIO1*chi2c/chi2a;
     double one_plus_nu=1.+nu;
     // sig2_ms=chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
-    double sig2_ms=chi2c*MOLIERE_RATIO2*(one_plus_nu/nu*log(one_plus_nu)-1.);
+    double sig2_ms=chi2c*MOLIERE_RATIO3*(one_plus_nu/nu*log(one_plus_nu)-1.);
 
     Q=sig2_ms*Q;
   }
@@ -3458,9 +3459,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     return last_error;
   }
 
-  // Deal with CDC-only tracks with theta<60 degrees using forward 
+  // Deal with CDC-only tracks with theta<70 degrees using forward 
   //parameters
-  if (my_cdchits.size()>5 && tanl_>0.577){
+  if (my_cdchits.size()>5 && tanl_>0.364){
     // Initial position
     x_=input_params.position().x();
     y_=input_params.position().y();
@@ -6028,7 +6029,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   double r=pos.Perp();
   double ds=-mStepSizeS; // step along path in cm
   double r_old=r;
-  Sc(state_D)=r;
   
   // Energy loss
   double dedx=0.;
@@ -6164,15 +6164,9 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
   J(state_Z,state_x)=1./tx_;
   J(state_Z,state_y)=1./ty_;
   
-  bfield->GetField(x_,y_,z_,Bx,By,Bz);
-  double temp=sinl/(q_over_p_*qBr2p);
-  J(state_Z,state_tx)=temp/(ty_*Bz+tx_*ty_*Bx-(1.+tx_*tx_)*By);
-  J(state_Z,state_ty)=temp/(Bx*(1.+ty_*ty_)-tx_*ty_*By-tx_*Bz);
-  
-
   // C'= JCJ^T
   C7x7=C.Similarity(J);
-  
+ 
   return C7x7;
 
 }
@@ -6193,7 +6187,7 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
   double cosphi=cos(phi_);
   double sinphi=sin(phi_);
   double q=(q_over_pt_>0)?1.:-1.;
-  
+
   J(state_Px,state_q_over_pt)=-q*pt_sq*cosphi;
   J(state_Px,state_phi)=-pt*sinphi;
   

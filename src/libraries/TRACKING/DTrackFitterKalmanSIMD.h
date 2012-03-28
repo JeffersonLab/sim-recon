@@ -69,6 +69,7 @@
 // Functions of Moliere fraction F
 #define MOLIERE_RATIO1 25.0   // = 0.5/(1-F)
 #define MOLIERE_RATIO2 2.0*5.1e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO3 2.0*5.1e-7 // = (scale factor)*1e-6/(1+F*F)
 #define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001
