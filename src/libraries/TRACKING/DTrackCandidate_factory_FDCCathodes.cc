@@ -21,7 +21,7 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_VAR 0.001 // cm^2
+#define BEAM_VAR 1.0 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
 #define Z_MAX 85.0
@@ -241,12 +241,15 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	pack1_matched[i]=1;
 
 	DHelicalFit fit;
+	double max_r=0.;
 	if (segment){ 
 	  for (unsigned int n=0;n<segment->hits.size();n++){
 	    const DFDCPseudo *hit=segment->hits[n];
 	    fit.AddHit(hit);
 	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
 				  hit->wire->origin.z());
+	    double r=hit->xy.Mod();
+	    if (r>max_r) max_r=r;
 	  }
 	}
 	if (match2){
@@ -254,7 +257,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    const DFDCPseudo *hit=match2->hits[n];
 	    fit.AddHit(hit);
 	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
-				  hit->wire->origin.z());	    
+				  hit->wire->origin.z());
+	    double r=hit->xy.Mod();
+	    if (r>max_r) max_r=r;
 	  }
 	  num_hits+=match2->hits.size();
 	}
@@ -264,6 +269,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit);
 	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
 				  hit->wire->origin.z());
+	    double r=hit->xy.Mod();
+	    if (r>max_r) max_r=r;
 	  }
 	  num_hits+=match3->hits.size();
 	}
@@ -273,11 +280,13 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit);
 	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
 				  hit->wire->origin.z());
+	    double r=hit->xy.Mod();
+	    if (r>max_r) max_r=r;
 	  }
 	  num_hits+=match4->hits.size();
 	}
 	// Fake point at origin
-	//fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<10) fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){      
 	  // Charge
 	  //if (q==0) 
@@ -531,15 +540,18 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       // Variables for determining average Bz
       double Bz_avg=0.;
       unsigned int num_hits=segment->hits.size();
-
+ 
       if (mysegments.size()>1){
 	DHelicalFit fit;
+	double max_r=0.;
 	if (segment){ 
 	  for (unsigned int n=0;n<segment->hits.size();n++){
 	    const DFDCPseudo *hit=segment->hits[n];
 	    fit.AddHit(hit);
 	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
 				  hit->wire->origin.z());
+	    double r=hit->xy.Mod();
+	    if (r>max_r) max_r=r;
 	  }
 	}
 	if (match3){
@@ -547,7 +559,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    const DFDCPseudo *hit=match3->hits[n];
 	    fit.AddHit(hit);
 	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
-				  hit->wire->origin.z());	    
+				  hit->wire->origin.z()); 
+	    double r=hit->xy.Mod();
+	    if (r>max_r) max_r=r;	    
 	  }
 	  num_hits+=match3->hits.size();
 	}
@@ -562,11 +576,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    double z=hit->wire->origin.z();
 	    fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);  
 	    Bz_avg-=bfield->GetBz(x,y,z);
+
+	    double r=hit->xy.Mod();
+	    if (r>max_r) max_r=r;
 	  }
 	  num_hits+=match4->hits.size();
 	}
 	// Fake point at origin
-	//fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<10) fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){
 	  // Charge
 	  //if (q==0) 
@@ -741,17 +758,20 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
           
       if (mysegments.size()>1){
 	DHelicalFit fit;
+	double max_r=0.;
 	for (unsigned int m=0;m<mysegments.size();m++){
 	  for (unsigned int n=0;n<mysegments[m]->hits.size();n++){
 	    const DFDCPseudo *hit=mysegments[m]->hits[n];
 	    fit.AddHit(hit);
 	    Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
 				  hit->wire->origin.z());	    
+	    double r=hit->xy.Mod();
+	    if (r>max_r) max_r=r;
 	  }
 	  num_hits+=mysegments[m]->hits.size();
 	}
 	// Fake point at origin
-	//fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<10) fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){     	
 	  // Charge
 	  //if (q==0) 
