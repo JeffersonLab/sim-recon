@@ -133,6 +133,9 @@ void DKinFit::Fit()
       cerr << endl;
     }
   }
+  // Chi2 of fit
+  double chi2=0.,chi2old=1e16;
+
 
   // Get the number of constraint equations
   int numConstraints = 4;
@@ -195,18 +198,23 @@ void DKinFit::Fit()
   // c(i) is constraint eq. i ==> (0,1,2,3) are (e,px,py,pz) constraints, any
   // extra mass constraints are i = 4 and up.
   TMatrixD c(numConstraints,1);
+  TMatrixD c0(numConstraints,1);
   // eps(i) = yi(i)-y(i) are the overall changes in the measured quantities
   TMatrixD eps(dim,1),epsT(1,dim);
   // delta(i) is used to update the measured quantities. After an iteration of
-  // the fitting process, y -= delta is how y is updated.
+  // the fitting process, y =yi-delta is how y is updated.
   TMatrixD delta(dim,1);
   // xsi(i) same as delta (above) but for x.
   TMatrixD xsi(3,1);
   //TMatrixD xsi(4,1);
   // gb is a utility matrix used 
   TMatrixD gb(numConstraints,numConstraints);
+  TMatrixD gb0(numConstraints,numConstraints);
   // cov_fit is the covariance matrix OUTPUT by the fit.
   TMatrixD cov_fit(dim,dim);
+  // Lagrange multiplier array
+  TMatrixD L(numConstraints,1);
+  TMatrixD LT(1,numConstraints);
 
   /***************************** Initial Set Up ******************************/
 
@@ -292,32 +300,33 @@ void DKinFit::Fit()
     // c(0) (energy constraint): e_f - e_i = 0
     // c(i) (p3 constraint): p3_f - p3_i = 0
     if(_verbose>1) cerr << "setting up the constraints " << endl;
-    for(int j=0;j<4;j++) c(j,0) = 0.; 
+    for(int j=0;j<4;j++) c0(j,0) = 0.; 
     for(int k=0;k<numInitial;k++)
     {
       int offset = k*3;
       energy[k] = sqrt(pow(mass[k],2) + pow(y(offset+0,0),2) + pow(y(offset+1,0),2) + pow(y(offset+2,0),2));
-      c(0,0) += y(offset+0,0);
-      c(1,0) += y(offset+1,0);
-      c(2,0) += y(offset+2,0);
-      c(3,0) += energy[k];
+      c0(0,0) += y(offset+0,0);
+      c0(1,0) += y(offset+1,0);
+      c0(2,0) += y(offset+2,0);
+      c0(3,0) += energy[k];
     }
     for(int k=0;k<numFinal;k++)
     {
       int offset = (k+numInitial)*3;
       energy[k+numInitial]  = sqrt(pow(mass[k+numInitial],2) + pow(y(offset+0,0),2) + pow(y(offset+1,0),2) + pow(y(offset+2,0),2));
-      c(0,0) -= y(offset+0,0);
-      c(1,0) -= y(offset+1,0);
-      c(2,0) -= y(offset+2,0);
-      c(3,0) -= energy[k+numInitial];
+      c0(0,0) -= y(offset+0,0);
+      c0(1,0) -= y(offset+1,0);
+      c0(2,0) -= y(offset+2,0);
+      c0(3,0) -= energy[k+numInitial];
     }
+ 
     if(_missingParticle)
     {
       missingEnergy = sqrt(pow(_missingMass,2) + pow(x(0,0),2) + pow(x(1,0),2) + pow(x(2,0),2));
-      c(0,0) -= x(0,0);
-      c(1,0) -= x(1,0);
-      c(2,0) -= x(2,0);
-      c(3,0) -= missingEnergy;
+      c0(0,0) -= x(0,0);
+      c0(1,0) -= x(1,0);
+      c0(2,0) -= x(2,0);
+      c0(3,0) -= missingEnergy;
     }
 
     /// If there is a extra mass constraints
@@ -363,7 +372,7 @@ void DKinFit::Fit()
       }
       massTot[j] = sqrt(pow(ETot[j],2) - pow(pxTot[j],2) - pow(pyTot[j],2) - pow(pzTot[j],2));
       if(_verbose>1) cerr << "massTot/constraintMass: " << massTot[j] << " " <<  _constraintMasses[j] << endl;
-      c(cindex, 0) = massTot[j] - _constraintMasses[j];
+      c0(cindex, 0) = massTot[j] - _constraintMasses[j];
     }
 
     if(_verbose) 
@@ -385,11 +394,11 @@ void DKinFit::Fit()
     if(_verbose>1)
     {
       cerr << "c: " << endl;
-      for(int j=0;j<c.GetNrows();j++)
+      for(int j=0;j<c0.GetNrows();j++)
       {
-        for(int k=0;k<c.GetNcols();k++)
+        for(int k=0;k<c0.GetNcols();k++)
         {
-          cerr  << j << " " << k << " " << c(j,k) << " ";
+          cerr  << j << " " << k << " " << c0(j,k) << " ";
         }
         cerr << endl;
       }
@@ -483,6 +492,9 @@ void DKinFit::Fit()
       }
     }
 
+    c=c0+b*(yi-y);
+
+
     if(_verbose>1)
     {
       cerr << "b: " << endl;
@@ -513,6 +525,8 @@ void DKinFit::Fit()
 
     // gb is a utility matrix we'll need a lot below
     gb = b * _cov * bT;
+    gb0=gb;
+
     if(_verbose>1)
     {
       cerr << "gb: " << endl;
@@ -602,7 +616,8 @@ void DKinFit::Fit()
     }
 
     // update the measured quantities y
-    y -= delta;
+    //y -= delta;
+    y=yi-delta;
 
     if(_verbose>1)
     {
@@ -633,7 +648,16 @@ void DKinFit::Fit()
 
     eps = yi - y;
     epsT.Transpose(eps);
-    if(TMath::Prob((epsT * bT * gb * b * eps)(0,0),_ndf) < 1.e-10) break;
+
+    // Lagrange multiplier array and its transpose
+    L=gb*c;
+    LT.Transpose(L);
+
+    // Compute current chi2 value and check for convergence
+    chi2=(LT*gb0*L+2.*LT*c0)(0,0);
+    if (fabs(chi2-chi2old)<0.001) break;
+    chi2old=chi2;
+ 
     if(_verbose>1)
     {
       cerr << "eps: " << endl;
@@ -710,7 +734,9 @@ void DKinFit::Fit()
     _pulls[i] = -eps(i,0)/sqrt(_cov(i,i) - cov_fit(i,i));
   }
 
-  _chi2 = (epsT * bT * gb * b * eps)(0,0); // the (0,0)...only...element 
+  //  _chi2 = (epsT * bT * gb * b * eps)(0,0); // the (0,0)...only...element 
+  _chi2=chi2;
+
 
   DRandom rnd;
   rnd.SetSeed((unsigned int)(10000*_chi2));
@@ -879,7 +905,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
 
   // The following was commented out to avoid compiler warnings 7/31/07 D.L.
   //bool isEnergyMeasured[numInitial + numFinal];
-
+ 
   // Get the number of constraint equations
   int numConstraints = 4;
   if(_extraC) numConstraints = 5;
@@ -1245,7 +1271,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
 
     eps = yi - y;
     epsT.Transpose(eps);
-    if(TMath::Prob((epsT * bT * gb * b * eps)(0,0),_ndf) < 1.e-10) break;
+    //    if(TMath::Prob((epsT * bT * gb * b * eps)(0,0),_ndf) < 1.e-10) break;
     if(_verbose>1)
     {
       cerr << "eps: " << endl;
