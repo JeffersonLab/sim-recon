@@ -25,7 +25,7 @@
 // cdc_fdc_match
 //------------------
 inline bool cdc_fdc_match(double p_fdc,double p_cdc,double dist){
-  double frac=fabs(1.-p_cdc/p_fdc);
+  double frac=fabs(1.-p_cdc/p_fdc);  
   if (dist<10. && dist < 1.5+1.5/p_fdc && frac<0.5) return true;
   return false;
 }
@@ -189,11 +189,12 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       double p_cdc=0.;
       
       for (unsigned int j=0;j<cdc_forward_ids.size();j++){
-	unsigned int cdc_index=cdc_forward_ids[j];
-	const DTrackCandidate *cdccan=cdctrackcandidates[cdc_index];
+	//unsigned int cdc_index=cdc_forward_ids[j];
+	//const DTrackCandidate *cdccan=cdctrackcandidates[cdc_index];
 	
 	// Check that the charges match
-	if (cdccan->charge()==srccan->charge()){
+	//if (cdccan->charge()==srccan->charge())
+	  {
 	  double diff=(cdc_endplate_projections[j]-pos).Mag();
 	  
 	  if (diff<diff_min){
@@ -501,7 +502,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    }
 	  }
 	}
-	if (double(num_match)/double(num_hits)>0.5){
+	//if (double(num_match)/double(num_hits)>0.5)
+	if (num_match>3)
+	  {
 	  DTrackCandidate *can = new DTrackCandidate;
 	  
 	  can->setMass(srccan->mass());
@@ -713,16 +716,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      
 	      fit.tanl=tan(M_PI_2-theta);
 	      fit.z_vertex=srccan->position().Z();
-	      fit.q=_data[j]->charge();
-
-	       // if the cdc and fdc candidates do not agree as to the particle's
-	      // charge, compare the position at one of the fdc wire planes to 
-	      // a helical projection from the "vertex"
-	      if (fdccan->charge()!=_data[j]->charge() ){
-		fit.q=GetCharge(fit,segments[0]->hits[0],_data[j]->position());
-		_data[j]->setCharge(fit.q);
-	      }
-
+	      fit.q=GetCharge(fit,segments[0]->hits[0],_data[j]->position());
+	      _data[j]->setCharge(fit.q);
+	 
 	      GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
 	      _data[j]->setMomentum(mom);
 	      _data[j]->setPosition(pos);
@@ -855,9 +851,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    }
 	  }	 
 	} 
-	// If we matched to more than one cdc hit, try to improve the candidate
+	// If we matched to more than three cdc hits, try to improve the candidate
 	// parameters
-	if (num_match_cdc>1){
+	if (num_match_cdc>3){
 	  DHelicalFit fit;
 	  fit.r0=segments[0]->rc;
 	  fit.x0=segments[0]->xc;
