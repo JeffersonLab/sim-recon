@@ -22,6 +22,9 @@ class DChargedTrackHypothesis : public DKinematicData {
 
 		Particle_t dPID;
 
+		unsigned int dNDF_Track;
+		float dChiSq_Track;
+		
 		unsigned int dNDF_Timing;
 		float dChiSq_Timing;
 
@@ -34,7 +37,8 @@ class DChargedTrackHypothesis : public DKinematicData {
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "PID", "%d", int(dPID));
-			DKinematicData::toStrings(items);
+			DKinematicData::toStrings(items);	
+			AddString(items, "Track_ChiSq", "%f", dChiSq_Track);
 			AddString(items, "dEdx_ChiSq", "%f", dChiSq_DCdEdx);
 			AddString(items, "TOF_ChiSq", "%f", dChiSq_Timing);
 			AddString(items, "PID_ChiSq", "%f", dChiSq);

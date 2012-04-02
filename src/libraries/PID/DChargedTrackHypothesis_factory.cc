@@ -101,7 +101,11 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 		locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
 		locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
-
+		
+		// Chi square and degree-of-freedom data from the track fit
+		locChargedTrackHypothesis->dChiSq_Track=locTrackTimeBased->chisq;
+		locChargedTrackHypothesis->dNDF_Track=locTrackTimeBased->Ndof;	
+		
 		//Set DKinematicData Members
 		DKinematicData *locKinematicData = locChargedTrackHypothesis;
 		*locKinematicData = *locTrackTimeBased;
@@ -173,6 +177,8 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		//Calculate PID ChiSq, NDF, FOM
 		locNDF_Total = 0;
 		locChiSq_Total = 0.0;
+		//locNDF_Total=1;
+		//locChiSq_Total=	locChargedTrackHypothesis->dChiSq_Track/float(locChargedTrackHypothesis->dNDF_Track);
 
 		if((locChargedTrackHypothesis->t0_detector() == SYS_START) && (locMatchedOuterDetectorFlag == true)){ //use timing info to determine particle ID
 			// Use ST hit to select RF beam bucket
