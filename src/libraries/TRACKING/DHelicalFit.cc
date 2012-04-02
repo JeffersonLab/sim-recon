@@ -18,6 +18,9 @@ using namespace std;
 #define ONE_THIRD  0.33333333333333333
 #define SQRT3      1.73205080756887719
 #define EPS 1e-8
+#ifndef M_TWO_PI
+#define M_TWO_PI 6.28318530717958647692
+#endif
 
 // The following is for sorting hits by z
 class DHFHitLessThanZ{
@@ -307,7 +310,7 @@ jerror_t DHelicalFit::FitCircle(void)
 	double delta_phi=0.0;
 	if(a){ // a should be pointer to last hit from above loop
 		delta_phi = atan2(a->y-y0, a->x-x0);
-		if(delta_phi<0.0)delta_phi += 2.0*M_PI;
+		if(delta_phi<0.0)delta_phi += M_TWO_PI;
 	}
 
 	// Momentum depends on magnetic field. If bfield has been
@@ -323,8 +326,8 @@ jerror_t DHelicalFit::FitCircle(void)
 	if(p_trans<0.0){
 		p_trans = -p_trans;
 	}
-	if(phi<0)phi+=2.0*M_PI;
-	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+	if(phi<0)phi+=M_TWO_PI;
+	if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 	
 	// Calculate the chisq
 	ChisqCircle();
@@ -386,8 +389,8 @@ jerror_t DHelicalFit::FitCircleRiemann(float BeamRMS)
 		p_trans = -p_trans;
 	}
 	phi=atan2(-x0,y0);  
-	if(phi<0)phi+=2.0*M_PI;
-        if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+	if(phi<0)phi+=M_TWO_PI;
+        if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 	
 	// Normal vector for plane intersecting Riemann surface 
 	normal.SetXYZ(N[0],N[1],N[2]);
@@ -481,9 +484,9 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   // We divide Q and R by a safety factor to prevent multiplying together 
   // enormous numbers that cause unreliable results.
 
-  double Q=(3.*B1-B2*B2)/9.e4; 
-  double R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
-  double Q1=Q*Q*Q+R*R;
+  long double Q=(3.*B1-B2*B2)/9.e4; 
+  long double R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
+  long double Q1=Q*Q*Q+R*R;
   if (Q1<0) Q1=sqrt(-Q1);
   else{
     return VALUE_OUT_OF_RANGE;
@@ -494,12 +497,12 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   //                  = r^(p/q)*(cos(p*theta/q)+i sin(p*theta/q))
   //
   //double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
-  double temp=100.*sqrt(cbrt(R*R+Q1*Q1));
-  double theta1=ONE_THIRD*atan2(Q1,R);
-  double sum_over_2=temp*cos(theta1);
-  double diff_over_2=-temp*sin(theta1);
+  long double temp=100.*sqrt(cbrt(R*R+Q1*Q1));
+  long double theta1=ONE_THIRD*atan2(Q1,R);
+  long double sum_over_2=temp*cos(theta1);
+  long double diff_over_2=-temp*sin(theta1);
   // Third root
-  double lambda_min=-ONE_THIRD*B2-sum_over_2+SQRT3*diff_over_2;
+  long double lambda_min=-ONE_THIRD*B2-sum_over_2+SQRT3*diff_over_2;
  
   // Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
   N[0]=1.;
@@ -528,8 +531,8 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
  
   // Phi value at "vertex"
   phi=atan2(-x0,y0);  
-  if(phi<0)phi+=2.0*M_PI;
-  if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+  if(phi<0)phi+=M_TWO_PI;
+  if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 
   // Calculate the chisq
   ChisqCircle();
@@ -919,8 +922,8 @@ jerror_t DHelicalFit::FitCircleStraightTrack(void)
 		Y += a->y*r;
 	}
 	phi = atan2(Y,X);
-	if(phi<0)phi+=2.0*M_PI;
-	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+	if(phi<0)phi+=M_TWO_PI;
+	if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 
 	// Search the chi2 space for values for p_trans, x0, ...
 	SearchPtrans(9.0, 0.5);
@@ -945,8 +948,8 @@ jerror_t DHelicalFit::FitCircleStraightTrack(void)
 	double A = 2.0*Sxy;
 	double B = Sxx - Syy;
 	phi = B>A ? atan2(A,B)/2.0 : 1.0/atan2(B,A)/2.0;
-	if(phi<0)phi+=2.0*M_PI;
-	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+	if(phi<0)phi+=M_TWO_PI;
+	if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 #endif
 
 	return NOERROR;
@@ -1112,7 +1115,7 @@ jerror_t DHelicalFit::GuessChargeFromCircleFit(void)
 	if(N>hits.size()/2.0){
 		q = -1.0;
 		phi += M_PI;
-		if(phi>2.0*M_PI)phi-=2.0*M_PI;
+		if(phi>M_TWO_PI)phi-=M_TWO_PI;
 	}
 	
 	return NOERROR;
@@ -1179,7 +1182,8 @@ jerror_t DHelicalFit::FitTrackRiemann(float rc_input){
   CovR_=NULL;
   CovRPhi_=NULL;
 
-  error=FitCircleRiemannCorrected(rc_input);
+  error=FitCircleRiemannCorrected(rc_input); 
+  if (error!=NOERROR) return error;
   error=FitLineRiemann();
   GetChargeRiemann();
   
@@ -1199,6 +1203,7 @@ jerror_t DHelicalFit::FitCircleAndLineRiemann(float rc_input){
   CovRPhi_=NULL;
 
   error=FitCircleRiemannCorrected(rc_input);
+  if (error!=NOERROR) return error;
   error=FitLineRiemann();
 
   return error;
@@ -1341,8 +1346,8 @@ jerror_t DHelicalFit::FillTrackParams(void)
 	// of dphi/dz. Also, the value of phi will be PI out of phase
 	if(dzdphi<0.0){
 		phi += M_PI;
-		if(phi<0)phi+=2.0*M_PI;
-		if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+		if(phi<0)phi+=M_TWO_PI;
+		if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 	}else{
 		q = -q;
 	}
@@ -1359,8 +1364,8 @@ jerror_t DHelicalFit::FillTrackParams(void)
 		// back scattered particle
 		theta = M_PI - theta;
 		phi += M_PI;
-		if(phi<0)phi+=2.0*M_PI;
-		if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+		if(phi<0)phi+=M_TWO_PI;
+		if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 		q = -q;
 	}
 
