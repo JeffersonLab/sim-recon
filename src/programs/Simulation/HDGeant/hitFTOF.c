@@ -176,7 +176,7 @@ void hitForwardTOF (float xin[4], float xout[4],
   else {
     dEdx = 0;
   }
-  
+
   /* post the hit to the truth tree */
   // in other words: store the GENERATED track information
   
@@ -320,9 +320,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  (northHits->in[nhit].t * northHits->in[nhit].dE 
 	   + tnorth * dEnorth)
 	  / (northHits->in[nhit].dE += dEnorth);
-	
-	northHits->in[nhit].dE = dEnorth;
-	
+		
 	// now add MC tracking information 
 	// first get MC pointer of this paddle
 
@@ -387,8 +385,6 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  (southHits->in[nhit].t * southHits->in[nhit].dE 
 	   + tsouth * dEsouth)
 	  / (southHits->in[nhit].dE += dEsouth);
-	
-	southHits->in[nhit].dE = dEsouth;
 	
 	soMCHits = southHits->in[nhit].ftofMCHits;
 
