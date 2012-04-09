@@ -20,6 +20,7 @@ using namespace jana;
 //------------------
 jerror_t DVertex_factory_THROWN::init(void)
 {
+	dTargetCenter = 65.0;
 	return NOERROR;
 }
 
@@ -47,8 +48,8 @@ jerror_t DVertex_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 	DVertex* locVertex = new DVertex;
 	locVertex->locCovarianceMatrix.ResizeTo(3,3);
 	locVertex->dSpacetimeVertex.SetVect(locThrownTracks[0]->position());
-	locVertex->dSpacetimeVertex.SetT(0.0);
-	locVertex->dTimeUncertainty = 0.; // <------ this needs to be fixed
+	locVertex->dSpacetimeVertex.SetT(0.0 + (locThrownTracks[0]->position().Z() - dTargetCenter)/SPEED_OF_LIGHT);
+	locVertex->dTimeUncertainty = 0.;
 
 	// Add list of tracks used to create this vertex
 	for(unsigned int loc_j = 0; loc_j < locChargedTracks.size(); loc_j++)
