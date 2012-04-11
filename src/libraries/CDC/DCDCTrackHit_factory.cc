@@ -291,6 +291,9 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		DCDCTrackHit *hit = new DCDCTrackHit;
 		hit->wire = &wire[cdchit->ring-1][cdchit->straw-1];
+		hit->is_stereo=((cdchit->ring>4&&cdchit->ring<13)
+				||(cdchit->ring>16&&cdchit->ring<25))
+				?true:false;
 		hit->tdrift = cdchit->t;
 		double w_eff=29.5e-9;
 		double gas_gain=1e5;

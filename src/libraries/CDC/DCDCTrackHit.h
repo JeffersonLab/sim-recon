@@ -19,6 +19,7 @@ class DCDCTrackHit:public JObject{
 		JOBJECT_PUBLIC(DCDCTrackHit);
 
 		const DCDCWire *wire;	// DCDCWire structure for this hit
+		bool is_stereo; // true if this is stereo wire
 		float tdrift;				// Drift time of hit in ns
 		float dist;					// Measured DOCA in cm
 		float dE; // Energy deposition in GeV
