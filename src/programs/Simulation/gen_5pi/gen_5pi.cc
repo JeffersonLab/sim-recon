@@ -50,7 +50,7 @@ void Usage(char* progName )
   cout << "    -n <value>\t Minimum number of events to generate (allows spill-over)" << endl;
   cout << "    -N <value>\t Exact number of events to generate" << endl;
   cout << "    -f \t\t Generate flat in M(X) (no physics)" << endl;
-  //cout << "\t -d \t\t Plot only diagnostic histograms" << endl ;
+  cout << "    -d \t\t Compute diagnostic histograms" << endl ;
   cout << "    -s <value>\t Specify random number generator seed" << endl;
   cout << "    -b <value>\t Batch size for intensities in accept/reject alg. (def. 200k)" << endl; 
   cout << "    -i <value>\t Specify maximum intensity (accept/reject range)" << endl << endl;
@@ -297,6 +297,8 @@ int main( int argc, char* argv[] ){
       for(int i = 0; i < batchSize; ++i ) // Get the max. inten. for PS gen
 	if(aVecs->getEvent(i)->weight() > maxInten) 
 	  maxInten = aVecs->getEvent(i)->weight();
+
+    cout << "Beginning accept/reject..." << endl;
     
     printf("MAXINTEN: %25.20f\n",maxInten);
     if(runs_maxInten < maxInten) runs_maxInten=maxInten;
@@ -317,7 +319,6 @@ int main( int argc, char* argv[] ){
     for( int i = 0; i < batchSize ; ++i ){
       
       Kinematics* evt = aVecs->getEvent( i );
-      AmpCheck.SetEvent(*evt);
       
 
       double genWeight = evt->weight();
@@ -332,11 +333,8 @@ int main( int argc, char* argv[] ){
 	IbatchSum+=weightedInten;
       */
       //fprintf(Ifid,"%25.20f\n",weightedInten);
-      
-      if(saveAll) {
-	evt->setWeight( weightedInten );
-	rootAllOut->writeEvent( *evt );
-      }
+      //printf("I = %e\n",weightedInten);
+
 
       // obtain this by looking at the maximum value of intensity * genWeight
       if((!genFlat && weightedInten > drand48() * maxInten) ||
@@ -345,25 +343,27 @@ int main( int argc, char* argv[] ){
 	double histWeight = 1.0;//genFlat ? genWeight : 1.0; 
 	
 	//Fill some useful histograms
-	mass->Fill( AmpCheck.GetMX(), histWeight );
-	massW->Fill( AmpCheck.GetMX(), genWeight );
-        
-	intenW->Fill( weightedInten, histWeight );
-	intenWVsM->Fill( AmpCheck.GetMX(), weightedInten );
-        
-	dalitz->Fill( (AmpCheck.GetXsPi() + AmpCheck.Getb1sPi()).M2(),
-		      (AmpCheck.Getb1sPi() + AmpCheck.GetOmega()).M2(),histWeight);
-	M_rho->Fill(AmpCheck.GetMrho(), histWeight);
-	M_omega->Fill(AmpCheck.GetMomega(), histWeight);
-	M_b1->Fill(AmpCheck.GetMb1(), histWeight);
-	
-	// orientation of production plane in lab
-	prod_ang->Fill(AmpCheck.GetAlpha(), histWeight);
-	XAng->Fill(AmpCheck.GetXPhi(), AmpCheck.GetXCosTheta(), histWeight);
-	b1Ang->Fill(AmpCheck.Getb1Phi(), AmpCheck.Getb1CosTheta(), histWeight);
-	OmegaAng->Fill(AmpCheck.GetOmegaPhi(),AmpCheck.GetOmegaCosTheta(), histWeight);
-	RhoAng->Fill(AmpCheck.GetRhoPhi(), AmpCheck.GetRhoCosTheta(), histWeight);
-	
+	if(diag){
+	  AmpCheck.SetEvent(*evt);
+	  mass->Fill( AmpCheck.GetMX(), histWeight );
+	  massW->Fill( AmpCheck.GetMX(), genWeight );
+	  
+	  intenW->Fill( weightedInten, histWeight );
+	  intenWVsM->Fill( AmpCheck.GetMX(), weightedInten );
+	  
+	  dalitz->Fill( (AmpCheck.GetXsPi() + AmpCheck.Getb1sPi()).M2(),
+			(AmpCheck.Getb1sPi() + AmpCheck.GetOmega()).M2(),histWeight);
+	  M_rho->Fill(AmpCheck.GetMrho(), histWeight);
+	  M_omega->Fill(AmpCheck.GetMomega(), histWeight);
+	  M_b1->Fill(AmpCheck.GetMb1(), histWeight);
+	  
+	  // orientation of production plane in lab
+	  prod_ang->Fill(AmpCheck.GetAlpha(), histWeight);
+	  XAng->Fill(AmpCheck.GetXPhi(), AmpCheck.GetXCosTheta(), histWeight);
+	  b1Ang->Fill(AmpCheck.Getb1Phi(), AmpCheck.Getb1CosTheta(), histWeight);
+	  OmegaAng->Fill(AmpCheck.GetOmegaPhi(),AmpCheck.GetOmegaCosTheta(), histWeight);
+	  RhoAng->Fill(AmpCheck.GetRhoPhi(), AmpCheck.GetRhoCosTheta(), histWeight);
+	}
 	// we want to save events with weight 1
 	evt->setWeight( 1.0 );
 	
@@ -374,7 +374,10 @@ int main( int argc, char* argv[] ){
 	if(StrictEvtLimit && eventCounter>=nEvents) break;
       }
       
-      
+      if(saveAll) {
+	evt->setWeight( weightedInten );
+	rootAllOut->writeEvent( *evt );
+      }      
       delete evt;
     }
     //printf("BATCH AVERAGE:  %f\n",IbatchSum/batchSize);
