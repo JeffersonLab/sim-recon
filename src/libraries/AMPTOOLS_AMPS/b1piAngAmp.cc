@@ -16,9 +16,9 @@
 #include "CLHEP/Vector/LorentzRotation.h"
 #include "CLHEP/Vector/ThreeVector.h"
 
-b1piAngAmp::b1piAngAmp(int polBeam, float polFrac,//const AmpParameter& polFrac,
+b1piAngAmp::b1piAngAmp(int polBeam, const AmpParameter& polFrac,
 		       int J_X, int Par_X, int L_X, int I_X, int epsilon_R,
-		       int Iz_b1, int Iz_pi,
+		       int Iz1, int Iz2,
 		       float u_rho_1, float u_rho_3,
 		       float u_omega_1, float u_omega_3, 
 		       float u_b1_0, float u_b1_2, float G0_omega,float G0_b1,
@@ -34,8 +34,6 @@ b1piAngAmp::b1piAngAmp(int polBeam, float polFrac,//const AmpParameter& polFrac,
   mL_X( L_X >= 0 ? L_X : (J_X==0 ? 1 : 0) ),
   mI_X( I_X ),   // isospin of the resonance
   mepsilon_R(epsilon_R==1? 1 : -1), 
-  mIz_b1( Iz_b1 ),
-  mIz_pi( Iz_pi ),
 
   m_u_rho_1(u_rho_1),
   m_u_rho_3(u_rho_3),
@@ -48,12 +46,12 @@ b1piAngAmp::b1piAngAmp(int polBeam, float polFrac,//const AmpParameter& polFrac,
   m_ORTHOCHECK(orthocheck),
   m_fastCalc(fastCalc)
 {
+
   assert( ( polBeam == 0 ) || ( polBeam == 1 ) );
-  //assert( ( polFrac >= 0 ) && ( polFrac <= 1 ) );
-  if(!(( polFrac >= 0 ) && ( polFrac <= 1 ))){
+  /*if(!(( polFrac >= 0 ) && ( polFrac <= 1 ))){
     cout << "ERROR: polFrac set to " << polFrac << endl << "Should be 0.0-1.0" << endl;
     assert(false);
-  }
+    }*/
 
   assert( J_X >= 0 && J_X <=2 );
   assert( abs( (double)Par_X ) <= 1 );
@@ -61,13 +59,22 @@ b1piAngAmp::b1piAngAmp(int polBeam, float polFrac,//const AmpParameter& polFrac,
   //assert( L_X <= J_X );
   assert( (L_X+1 >= J_X && abs(L_X-1) <= J_X) || L_X==-1 );
   assert( abs(epsilon_R)<=1 );
-  assert( abs(Iz_b1) <= 1 );
-  assert( abs(Iz_pi) <= 1 );
+  assert( abs(Iz1) <= 1 );
+  assert( abs(Iz2) <= 1 );
 
-  //registerParameter( mpolFrac );
+  registerParameter( mpolFrac );
 
   m_disableBW_omega = G0_omega <= 0;
   m_disableBW_b1 = G0_b1 <= 0;
+
+  // create nominal Iz list: 0,0,-1,+1,0,-1,+1
+  // (proton isospin irrelevant at the moment)
+  mIz.assign(7, 0);
+  mIz[2]=Iz2;
+  mIz[3]=Iz1;
+  mIz[5]=-1;
+  mIz[6]=+1;
+
   
   setDefaultStatus( false );
 }
@@ -209,48 +216,55 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 {
   int m_X,IMLnum=0;
   bool useCutoff=true;
+  complex <GDouble> i(0, 1), COne(1, 0),CZero(0,0);  
+
+  const vector< int >& perm = getCurrentPermutation();  
+  int Iz_b1 = mIz[perm[2]];
+  int Iz_pi = mIz[perm[3]];
+
+  if(abs(Iz_b1+Iz_pi) > mI_X) return CZero;
+
   HepLorentzVector beam  (pKin[0][1], pKin[0][2], pKin[0][3], pKin[0][0]); 
   HepLorentzVector recoil(pKin[1][1], pKin[1][2], pKin[1][3], pKin[1][0]);
-  complex <GDouble> i(0, 1), COne(1, 0),CZero(0,0);  
   GDouble InvSqrt2=1/sqrt(2.0);
   GDouble m0_rho=0.775,G0_rho=0.149;
   GDouble m0_omega=0.783, m0_b1=1.223;
+
 
   //Exprected particle list: 
   // pi- b1(pi+ omega(pi0 "rho"(pi- pi+)))
   //  2      3         4         5   6
                         
-  //Acquire the 4-vectors for the current particle permutation
-  const vector< int >& perm = getCurrentPermutation();
 
-
-  HepLorentzVector rhos_pip(pKin[perm[6]][1], pKin[perm[6]][2],
-			    pKin[perm[6]][3], pKin[perm[6]][0]);
-  HepLorentzVector rhos_pim(pKin[perm[5]][1], pKin[perm[5]][2],
-			    pKin[perm[5]][3], pKin[perm[5]][0]);
+  HepLorentzVector rhos_pip(pKin[6][1], pKin[6][2], pKin[6][3], pKin[6][0]);
+  HepLorentzVector rhos_pim(pKin[5][1], pKin[5][2], pKin[5][3], pKin[5][0]);
   HepLorentzVector rho = rhos_pip + rhos_pim;
 
-  if( useCutoff && rho.m()+0.135 > m0_omega+3*mG0_omega) return CZero;
+  if( useCutoff && rho.m()+0.135 > m0_omega+3*mG0_omega){
+    //cout << "s";
+    return CZero;
+  }
 
-
-  HepLorentzVector omegas_pi(pKin[perm[4]][1], pKin[perm[4]][2],
-			     pKin[perm[4]][3], pKin[perm[4]][0]);
+  HepLorentzVector omegas_pi(pKin[4][1], pKin[4][2], pKin[4][3], pKin[4][0]);
   HepLorentzVector omega = rho + omegas_pi;
 
-  if(useCutoff && fabs(omega.m()-m0_omega) > 3*mG0_omega) return CZero; 
+  if(useCutoff && fabs(omega.m()-m0_omega) > 3*mG0_omega){
+    //cout << "s";
+    return CZero; 
+  }
 
-
-  HepLorentzVector b1s_pi(pKin[perm[3]][1], pKin[perm[3]][2],
-			  pKin[perm[3]][3], pKin[perm[3]][0]);
+  HepLorentzVector b1s_pi(pKin[3][1], pKin[3][2], pKin[3][3], pKin[3][0]);
   HepLorentzVector b1 = omega + b1s_pi;
 
   if( useCutoff && (fabs(b1.m()-m0_b1) > 3*mG0_b1 ||
-		    b1.m() < (m0_omega - 3*mG0_omega)) ) return CZero;
+		    b1.m() < (m0_omega - 3*mG0_omega)) ){
+    //cout << "s";
+    return CZero;
+  }
 
   //printf("DEBUG: proceeding with b1pi amp calc. mG0_omega=%f, disbale BWomega=%d\n",mG0_omega,m_disableBW_omega);
 
-  HepLorentzVector Xs_pi(pKin[perm[2]][1], pKin[perm[2]][2],
-			  pKin[perm[2]][3], pKin[perm[2]][0]);
+  HepLorentzVector Xs_pi(pKin[2][1], pKin[2][2], pKin[2][3], pKin[2][0]);
   HepLorentzVector X = b1 + Xs_pi;
 
   GDouble q = breakupMomentum( X.m(), b1.m(), Xs_pi.m() );
@@ -328,6 +342,7 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 
   int aList_l_omega[]={-1,0,1};   
   vector<int> List_l_omega(aList_l_omega, aList_l_omega+3);
+
   int aList_L_b1[]={0,2};  
   vector<int> List_L_b1(aList_L_b1,aList_L_b1+2);
 
@@ -467,13 +482,17 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
       //}
   }
   
-  
-  
+
+  /*printf("DEBUG: perm2=%d -> Iz_b1=%d\tperm3=%d -> Iz_pi=%d\t==>\t%f\t%d %d %d %d %d\n",
+	 perm[2],Iz_b1,perm[3],Iz_pi, CB(1, 1, Iz_b1, Iz_pi, mI_X, Iz_b1 + Iz_pi),
+	 mIz[2],mIz[3],mIz[4],mIz[5],mIz[6]);
+  */
+
   ThelSum *= N(mL_X) * (GDouble)(mL_X==0 ? 1.0 : (mL_X==1 ? q : pow(q,mL_X))) *
     // to apply polarization fraction weights: 
     (GDouble)sqrt((1.0-pol*mpolFrac)*0.5) * //(1+g) for x-pol, (1-g) for y-pol   
     (pol==1 ? i : COne)*InvSqrt2 * //to account for |eps_g> ~ sqrt(-eps/2)
-    CB(1, 1, mIz_b1, mIz_pi, mI_X, mIz_b1 + mIz_pi);
+    CB(1, 1, Iz_b1, Iz_pi, mI_X, Iz_b1 + Iz_pi);
 
 
   if(m_ORTHOCHECK) {
@@ -498,8 +517,8 @@ b1piAngAmp::newAmplitude( const vector< string >& args ) const {
   assert(args.size() == base_arg_num || args.size() == 15 || tweakBW_omega || tweakBW_omega_b1);
   
   int polBeam = atoi( args[0].c_str() );
-  float  polFrac = atof(args[1].c_str());
-  //AmpParameter polFrac( args[1] );
+  //float  polFrac = atof(args[1].c_str());
+  AmpParameter polFrac( args[1] );
   int J_X      = atoi( args[2].c_str() );
   int Par_X    = atoi( args[3].c_str() );
   int L_X      = atoi( args[4].c_str() );
@@ -543,9 +562,30 @@ b1piAngAmp*
 b1piAngAmp::clone() const {
   
   return ( isDefault() ? new b1piAngAmp() : 
-	   new b1piAngAmp(mpolBeam,mpolFrac, mJ_X,mPar_X, mL_X, mI_X,mepsilon_R,
-			  mIz_b1, mIz_pi,
+	   new b1piAngAmp(mpolBeam,mpolFrac, mJ_X,mPar_X, 
+			  mL_X, mI_X, mepsilon_R, mIz[2], mIz[3],
 			  m_u_rho_1, m_u_rho_3, 
 			  m_u_omega_1, m_u_omega_3, 
 			  m_u_b1_0, m_u_b1_2, mG0_omega, m_ORTHOCHECK));
 }
+
+
+
+#ifdef GPU_ACCELERATION
+
+void b1piAngAmp::
+launchGPUKernel( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO ) const {
+
+  const vector< int >& perm = getCurrentPermutation();  
+  int Iz_b1 = mIz[perm[2]];
+  int Iz_pi = mIz[perm[3]];
+
+  GPUb1piAngAmp_exec(dimGrid, dimBlock, GPU_AMP_ARGS, mpolBeam, mpolFrac,
+		     mJ_X, mPar_X, mL_X, mI_X, mepsilon_R, Iz_b1, Iz_pi,
+		     m_u_rho_1, m_u_rho_3, m_u_omega_1, m_u_omega_3,
+		     m_u_b1_0, m_u_b1_2, mG0_omega, mG0_b1, 
+		     /*m_ORTHOCHECK*/ false);
+  
+}
+
+#endif

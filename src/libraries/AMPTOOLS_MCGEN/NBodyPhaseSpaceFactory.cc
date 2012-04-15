@@ -42,7 +42,7 @@ struct CompareAsc {
 };
 
 vector<HepLorentzVector>
-NBodyPhaseSpaceFactory::generateDecay() const {
+NBodyPhaseSpaceFactory::generateDecay(bool uniformWeights) {
 	
 
   vector<HepLorentzVector> child( m_Nd );
@@ -93,8 +93,12 @@ NBodyPhaseSpaceFactory::generateDecay() const {
       pd[n] = pdk(invMas[n+1],invMas[n],m_childMass[n+1]);
       wt *= pd[n];
     }
-  }while( random(0.0,WtMax) > wt );
-  double fWt = wt;
+  }while( uniformWeights && (random(0.0,WtMax) > wt) );
+
+  if(uniformWeights) m_lastWt = 1.0;
+  else               m_lastWt = wt;
+
+  //double fWt = wt;
 
   //
   // Specification of 4-momenta (Raubold-Lynch method)

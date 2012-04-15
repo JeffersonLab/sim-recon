@@ -68,8 +68,8 @@ GammaPToNPartP::generateOne(){
   */
 
   NBodyPhaseSpaceFactory psFactory(resonance.m(),m_ChildMass);
-  vector< HepLorentzVector > children = psFactory.generateDecay();
-
+  vector< HepLorentzVector > children = psFactory.generateDecay(false);
+  genWeight *= psFactory.getLastGeneratedWeight();
 
   Hep3Vector b3(resonance.boostVector());   // boost vector from parent
   for (unsigned int n=0; n<children.size(); ++n ){
