@@ -19,6 +19,8 @@ using namespace jana;
 #include "DVertex_factory_THROWN.h"
 #include "DPhysicsEvent_factory.h"
 #include "DParticleSet_factory.h"
+#include "DPiPlus_factory.h"
+#include "DPiMinus_factory.h"
 
 #include "DBeamPhoton.h"
 #include "DMCReaction.h"
@@ -47,6 +49,8 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DVertex_factory_THROWN);
 	loop->AddFactory(new DParticleSet_factory);
 	loop->AddFactory(new DPhysicsEvent_factory);
+	loop->AddFactory(new DPiPlus_factory);
+	loop->AddFactory(new DPiMinus_factory);
 
 	return NOERROR;
 }
