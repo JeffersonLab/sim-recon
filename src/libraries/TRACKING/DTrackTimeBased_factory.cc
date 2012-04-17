@@ -618,11 +618,12 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     fitter->AddHits(mycdchits);
 
     status=fitter->FitTrack(track->position(),track->momentum(),
-			    track->charge(),mass,mStartTime);
+			    track->charge(),mass,mStartTime,mStartDetector);
   }
   else{
     fitter->SetFitType(DTrackFitter::kTimeBased);	
-    status = fitter->FindHitsAndFitTrack(*track, rt,loop, mass, mStartTime);
+    status = fitter->FindHitsAndFitTrack(*track, rt,loop, mass, mStartTime,
+					 mStartDetector);
   }
       
   // Check the status value from the fit
