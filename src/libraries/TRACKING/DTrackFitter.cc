@@ -112,7 +112,7 @@ void DTrackFitter::AddHits(vector<const DFDCPseudo*> fdchits)
 //-------------------
 // FitTrack
 //-------------------
-DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0)
+DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0,DetectorSystem_t t0_det)
 {
 	prof_time start_time;
 
@@ -120,7 +120,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 	input_params.setMomentum(mom);
 	input_params.setCharge(q);
 	input_params.setMass(mass);
-	input_params.setT0(t0,0.,SYS_NULL);
+	input_params.setT0(t0,0.,t0_det);
 
 	DTrackFitter::fit_status_t status = FitTrack();
 
@@ -147,8 +147,11 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting
 //-------------------
 // FindHitsAndFitTrack
 //-------------------
-DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, DReferenceTrajectory *rt, JEventLoop *loop, double mass,
-							     double t0)
+DTrackFitter::fit_status_t 
+DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, 
+				  DReferenceTrajectory *rt, JEventLoop *loop, 
+				  double mass,double t0,
+				  DetectorSystem_t t0_det)
 {
 	/// Fit a DTrackCandidate using a given mass hypothesis.
 	///
@@ -236,7 +239,7 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 	start_time.TimeDiffNow(prof_times, "Find Hits");
 
 	// Do the fit
-	fit_status = FitTrack(pos, mom,q, mass,t0);
+	fit_status = FitTrack(pos, mom,q, mass,t0,t0_det);
 
 	start_time.TimeDiffNow(prof_times, "Find Hits and Fit Track");
 	
