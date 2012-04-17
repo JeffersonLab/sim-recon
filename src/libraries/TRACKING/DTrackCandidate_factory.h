@@ -73,6 +73,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 
   DVector3 cdc_endplate;
   double endplate_rmax;
+  double TARGET_Z;
 };
 
 #endif // _DTrackCandidate_factory_

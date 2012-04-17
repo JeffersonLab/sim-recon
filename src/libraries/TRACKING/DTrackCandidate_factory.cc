@@ -16,9 +16,6 @@
 #define CUT 10.
 #define RADIUS_CUT 50.0
 #define BEAM_VAR 0.01 // cm^2
-#define Z_VERTEX 65.0
-#define Z_MIN 45.
-#define Z_MAX 85.
 #define EPS 0.001
 
 //------------------
@@ -88,6 +85,8 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   cdc_endplate.SetZ(endplate_z+endplate_dz);
 
+  dgeom->GetTargetZ(TARGET_Z);
+ 
   if(DEBUG_HISTS){
     dapp->Lock();
     match_dist=(TH2F*)gROOT->FindObject("match_dist");
@@ -279,7 +278,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    num_hits+=segments[k]->hits.size();
 	  }	
 	  // Fake point at origin
-	  fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	  fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	  
 	  // Fit the points to a circle
 	  if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){	  
@@ -409,7 +408,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		num_hits+=segments[k]->hits.size();
 	      }	
 	      // Fake point at origin
-	      fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	      fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	      
 	      // Fit the points to a circle
 	      if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
@@ -563,7 +562,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      num_hits+=segments[m]->hits.size();
 	    }	
 	    // Fake point at origin
-	    fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	    fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	    // Fit the points to a circle
 	    if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
 	      // Compute new transverse momentum
@@ -710,7 +709,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    }	
 
 	    // Fake point at origin
-	    fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	    fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	    // Fit the points to a circle
 	    if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
 	      // Compute new transverse momentum
@@ -895,7 +894,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      }
 	    }
 	    // Fake point at origin
-	    fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	    fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	    
 	    // Redo the fit
 	    fit.FitCircleRiemannCorrected(fit.r0);

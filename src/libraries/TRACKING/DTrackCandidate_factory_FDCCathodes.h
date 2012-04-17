@@ -70,6 +70,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 	TH2F *match_dist_fdc;
 	vector<double>z_wires;
 	double endplate_z;
+	double TARGET_Z;
 	
 	// Fit parameters
 	double xc,yc,rc,z_vertex,q,phi0,tanl;

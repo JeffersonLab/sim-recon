@@ -23,9 +23,6 @@
 #define FDC_OUTER_RADIUS 50.0 
 #define BEAM_VAR 1.0 // cm^2
 #define HIT_CHI2_CUT 10.0
-#define Z_VERTEX 65.0
-#define Z_MAX 85.0
-#define Z_MIN 45.0
 
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
@@ -40,6 +37,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   double endplate_dz,endplate_rmin,endplate_rmax;
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   endplate_z+=endplate_dz;
+  dgeom->GetTargetZ(TARGET_Z);
 
   DEBUG_HISTS=false;
   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS", DEBUG_HISTS);
@@ -286,7 +284,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  num_hits+=match4->hits.size();
 	}
 	// Fake point at origin
-	if (max_r<10) fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<10) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){      
 	  // Charge
 	  //if (q==0) 
@@ -583,7 +581,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  num_hits+=match4->hits.size();
 	}
 	// Fake point at origin
-	if (max_r<10) fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<10) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){
 	  // Charge
 	  //if (q==0) 
@@ -675,7 +673,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	double ratio=segment->hits[0]->xy.Mod()/(2.*rc);
 	if (ratio<1.){
 	  double sperp=2.*rc*asin(ratio);
-	  tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
+	  tanl=(segment->hits[0]->wire->origin.z()-TARGET_Z)/sperp;
 	}
       }		
 
@@ -771,7 +769,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  num_hits+=mysegments[m]->hits.size();
 	}
 	// Fake point at origin
-	if (max_r<10) fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<10) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){     	
 	  // Charge
 	  //if (q==0) 
@@ -864,7 +862,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	double ratio=segment->hits[0]->xy.Mod()/(2.*rc);
 	if (ratio<1.){
 	  double sperp=2.*rc*asin(ratio);
-	  tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
+	  tanl=(segment->hits[0]->wire->origin.z()-TARGET_Z)/sperp;
 	}
       }	
      
@@ -920,7 +918,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double ratio=segment->hits[0]->xy.Mod()/(2.*rc);
       if (ratio<1.){
 	double sperp=2.*rc*asin(ratio);
-	tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
+	tanl=(segment->hits[0]->wire->origin.z()-TARGET_Z)/sperp;
       }
     }	
     

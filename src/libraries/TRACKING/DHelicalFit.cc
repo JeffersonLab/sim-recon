@@ -12,9 +12,7 @@ using namespace std;
 
 #include "DHelicalFit.h"
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
-#define Z_VERTEX 65.0
-#define Z_MIN 45.0
-#define Z_MAX 85.0
+
 #define ONE_THIRD  0.33333333333333333
 #define SQRT3      1.73205080756887719
 #define EPS 1e-8
@@ -363,13 +361,13 @@ double DHelicalFit::ChisqCircle(void)
 //-----------------
 // FitCircleRiemann
 //-----------------
-jerror_t DHelicalFit::FitCircleRiemann(float BeamRMS)
+jerror_t DHelicalFit::FitCircleRiemann(float z_vertex,float BeamRMS)
 {
 	chisq_source = NOFIT; // in case we return early
 	
 	// Fake point at origin
 	float beam_var=BeamRMS*BeamRMS;
-	AddHitXYZ(0.,0.,Z_VERTEX,beam_var,beam_var,0.);
+	AddHitXYZ(0.,0.,z_vertex,beam_var,beam_var,0.);
 
 	jerror_t err = FitCircleRiemann();
 	if(err!=NOERROR)return err;
