@@ -11,8 +11,6 @@
 #define MAX_DEFLECTION 0.15
 #define EPS 1e-8
 #define KILL_RADIUS 5.0 
-#define Z_TARGET 65.0
-#define Z_VERTEX_CUT 25.0
 #define MATCH_RADIUS 5.0
 #define ADJACENT_MATCH_RADIUS 2.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
@@ -20,7 +18,6 @@
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
 #define MAX_ITER 10
-#define TARGET_LENGTH 30.0 //cm
 #define MIN_TANL 2.0
 #define ONE_THIRD  0.33333333333333333
 #define SQRT3      1.73205080756887719
@@ -52,9 +49,13 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 /// DFDCSegment_factory::brun():
 /// Initialization: read in deflection map, get magnetic field map
 ///
-jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) { 
-  /*
+jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) { 
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+  // get the geometry
+  const DGeometry *geom = dapp->GetDGeometry(runnumber);
+
+  geom->GetTargetZ(TARGET_Z);
+  /*    
   bfield = dapp->GetBfield();
   lorentz_def=dapp->GetLorentzDeflections();
 
@@ -193,7 +194,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   }
   else{
     // assume that the particle came from the target
-    zvertex=Z_TARGET;
+    zvertex=TARGET_Z;
     tanl=(zlast-zvertex)/sperp;
     var_tanl=100.; // guess for now 
   }
@@ -425,7 +426,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   DMatrix CRPhi(num_points,num_points); 
  
   // Fill initial matrices for R and RPhi measurements
-  XYZ[num_points-1].z=Z_TARGET;
+  XYZ[num_points-1].z=TARGET_Z;
   for (unsigned int m=0;m<points.size();m++){
     XYZ[m].z=points[m]->wire->origin.z();
 
@@ -732,10 +733,10 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
   // Correct start time for propagation from (0,0)
   double my_start_time=0.;
   if (use_tof){
-    //my_start_time=ref_time-(Z_TOF-Z_TARGET)/sin(lambda)/beta/29.98;
+    //my_start_time=ref_time-(Z_TOF-TARGET_Z)/sin(lambda)/beta/29.98;
     // If we need to use the tof, the angle relative to the beam line is 
     // small enough that sin(lambda) ~ 1.
-    my_start_time=ref_time-(Z_TOF-Z_TARGET)/beta/29.98;
+    my_start_time=ref_time-(Z_TOF-TARGET_Z)/beta/29.98;
     //my_start_time=0;
   }
   else{

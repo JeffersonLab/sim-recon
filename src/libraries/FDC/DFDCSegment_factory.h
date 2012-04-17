@@ -73,7 +73,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		///
 		/// DFDCSegment_factory::brun():
 		///
-		jerror_t brun(JEventLoop *eventLoop, int eventNo);
+		jerror_t brun(JEventLoop *eventLoop, int runnumber);
 
 		///
 		/// DFDCSegment_factory::evnt():
@@ -102,6 +102,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		const DLorentzDeflections *lorentz_def;
 //		double ref_time;
 //		bool use_tof,use_sc;
+		double TARGET_Z;
 
 		//vector of flags indicating whether or not a hit has been used
 		vector<bool>used;
