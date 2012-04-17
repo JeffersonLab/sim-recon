@@ -148,8 +148,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 
 		vector<int> superlayer_boundaries;
 
-		const DMagneticFieldMap *bfield;
-		 
+		const DMagneticFieldMap *bfield; 
 
 		unsigned int MAX_ALLOWED_CDC_HITS;
 		unsigned int MAX_SUBSEED_STRAW_DIFF;
@@ -162,6 +161,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		double MAX_CDC_MATCH_ANGLE; // degrees
 		double MAX_FDC_MATCH_ANGLE; // degrees
 		double MAX_SEED_LINK_ANGLE;
+		double TARGET_Z;
 		double TARGET_Z_MIN;
 		double TARGET_Z_MAX;
 		int DEBUG_LEVEL;
