@@ -239,7 +239,7 @@ void MyProcessor::FillGraphics(void)
 	   
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	    poly->SetLineColor(TColor::GetColor(r,g,b));
-	    poly->SetLineWidth(.01);
+	    poly->SetLineWidth(1);
 	    poly->SetFillStyle(3001);	    
 	  }
 	}	

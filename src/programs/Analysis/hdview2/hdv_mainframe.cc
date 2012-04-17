@@ -438,7 +438,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
     // Add 8 labels to each column
     // These have to be added in reverse order so we can pack them from
     // the bottom. Otherwise, it doesn't draw correctly.
-    for(int j=0; j<8; j++){
+    for(int j=0; j<14; j++){
       stringstream ss;
       ss<<(5-j);
       if(i<6)tl = new TGLabel(tf, i==0 ? ss.str().c_str():"--------");
