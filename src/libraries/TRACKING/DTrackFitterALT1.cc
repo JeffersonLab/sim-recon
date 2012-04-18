@@ -374,14 +374,17 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 			vertex_pos = tmprt->swim_steps[tmprt->Nswim_steps-1].origin;
 			vertex_mom = tmprt->swim_steps[tmprt->Nswim_steps-1].mom;
 			tmprt->Swim(vertex_pos, -vertex_mom, rt->q, 100.0, target);
-			tmprt->DistToRT(target);
-			tmprt->GetLastDOCAPoint(vertex_pos, vertex_mom);
+			
+	      double locReturnValue = tmprt->DistToRT(target);
+    	   if((locReturnValue >= -1.0) || (locReturnValue <= 1.0)){ //else NaN
+				tmprt->GetLastDOCAPoint(vertex_pos, vertex_mom);
 
-			// Now, swim out the rt one last time such that it starts at the POCA to
-			// the beamline. We need to do this so that we can calculate the
-			// chisq/Ndof based on the vertex parameters
-			rt->Swim(vertex_pos, vertex_mom);
-			ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
+				// Now, swim out the rt one last time such that it starts at the POCA to
+				// the beamline. We need to do this so that we can calculate the
+				// chisq/Ndof based on the vertex parameters
+				rt->Swim(vertex_pos, vertex_mom);
+				ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
+			}
 		}
 	}else{
 		_DBG_<<"NO WIRES IN CANDIDATE!! (event "<<eventnumber<<")"<<endl;
