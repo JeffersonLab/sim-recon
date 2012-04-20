@@ -16,7 +16,7 @@
       real *4 b/-1.0/
       real *4 value
       character *(*) command
-      integer *4 dum
+c      integer *4 dum
        mp=p(5)
        mk=k(5)
        ml=l(5)

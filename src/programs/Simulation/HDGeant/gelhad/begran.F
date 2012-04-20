@@ -8,11 +8,11 @@
  
 ******************************
 * BEGET
-      real function begran(I)
+      real function begran()
 ****************************** 
       implicit none
 #include "geant321/gcunit.inc"
-      integer*4 i
+c      integer*4 i
       real*4    r
       logical*4 first
       save first

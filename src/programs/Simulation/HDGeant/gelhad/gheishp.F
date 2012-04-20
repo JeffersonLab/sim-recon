@@ -136,7 +136,7 @@ c --- init output ---
       destep=0.0
 c
 c
- 9004 continue
+c 9004 continue
       kpart=kipart(ipart)
       kkpart=kpart
 c
@@ -499,7 +499,8 @@ c
 c
 c --- pi+ cascade ---
  307  continue
-      call caspip(j,int,nfl)
+c      call caspip(j,int,nfl) 
+      call caspip(int,nfl)
       go to 40
 c
 c --- pi0 ==> no cascade ---
@@ -508,7 +509,8 @@ c --- pi0 ==> no cascade ---
 c
 c --- pi- cascade ---
  309  continue
-      call caspim(j,int,nfl)
+c      call caspim(j,int,nfl)
+      call caspim(int,nfl)
       go to 40
 c
 c --- k+ cascade ---
@@ -539,7 +541,7 @@ c
 c --- proton bar cascade ---
  315  continue
 c      if (nprt(9)) print 2013
- 2013 format(' *gheish* routine caspb will be called')
+c 2013 format(' *gheish* routine caspb will be called')
       call caspb(j,int,nfl)
       go to 40
 c
@@ -564,7 +566,7 @@ c
 c --- lambda bar cascade ---
  319  continue
 c      if (nprt(9)) print 2018
- 2018 format(' *gheish* routine casal0 will be called')
+c 2018 format(' *gheish* routine casal0 will be called')
       call casal0(j,int,nfl)
       go to 40
 c
@@ -614,21 +616,21 @@ c
 c --- xi - bar cascade ---
  329  continue
 c      if (nprt(9)) print 2026
- 2026 format(' *gheish* routine casaxm will be called')
+c 2026 format(' *gheish* routine casaxm will be called')
       call casaxm(j,int,nfl)
       go to 40
 c
 c --- omega - cascade ---
  330  continue
 c      if (nprt(9)) print 2027
- 2027 format(' *gheish* routine casom will be called')
+c 2027 format(' *gheish* routine casom will be called')
       call casom(j,int,nfl)
       go to 40
 c
 c --- omega - bar cascade ---
  331  continue
 c      if (nprt(9)) print 2028
- 2028 format(' *gheish* routine casaom will be called')
+c 2028 format(' *gheish* routine casaom will be called')
       call casaom(j,int,nfl)
       go to 40
 c
@@ -679,7 +681,7 @@ c
 c
 c *** check whether secondaries have been generated and copy them ***
 c *** also on the geant stack ***
- 60   continue
+c 60   continue
 c
 c --- all quantities are taken from the gheisha stack where the ---
 c --- convention is the following ---

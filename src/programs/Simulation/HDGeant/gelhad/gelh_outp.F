@@ -36,9 +36,11 @@ C   from gelhad V00-00-05 and onwards
       Integer*4 Iskip           ! Output veto
 *..Local:
 #ifdef _GELH_
+#ifdef BABAR
       Logical*1 First/.true./
       Save First
 #endif 
+#endif
 
 *=====-================================================================-=======
 
@@ -103,5 +105,6 @@ C   from gelhad V00-00-05 and onwards
       if (gelhadused)   ninthad_gelh = ninthad_gelh + ngelhperev
 #endif 
 
- 999  Return
+c 999  Return
+      Return
       End
