@@ -39,6 +39,11 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   // Initialize number of degrees of freedom
   numdof=0;
 
+  double fdc_chi2cut
+    =anneal_factor*anneal_factor*NUM_FDC_SIGMA_CUT*NUM_FDC_SIGMA_CUT; 
+  double cdc_chi2cut
+    =anneal_factor*anneal_factor*NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
+
   // Variables for estimating t0 from tracking
   //mInvVarT0=mT0wires=0.;
 
@@ -128,7 +133,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	
 	// Variance in coordinate along wire
 	double tanl=1./sqrt(tx*tx+ty*ty);
-	double V=anneal_factor*fdc_y_variance(tanl,doca,my_fdchits[id]->dE);
+	double V=fdc_y_variance(tanl,doca,my_fdchits[id]->dE);
 		
 	// Difference between measurement and projection
 	double Mdiff=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
@@ -171,7 +176,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  double prob_hit=exp(-0.5*chi2_hit)/sqrt(M_TWO_PI*Vtemp);
 
 	  // Cut out outliers
-	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){
+	  if (chi2_hit<fdc_chi2cut){
 	    probs.push_back(prob_hit);
 	    Vlist.push_back(V);
 	    Hlist.push_back(H);
@@ -199,11 +204,11 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    } 
 	    
 	    // variance for coordinate along the wire
-	    V=anneal_factor*fdc_y_variance(alpha,doca,my_fdchits[my_id]->dE);
+	    V=fdc_y_variance(alpha,doca,my_fdchits[my_id]->dE);
 	    
 	    // Difference between measurement and projection
 	    Mdiff=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
-	 
+
 	    // Update the terms in H/H_T that depend on the particular hit
 	    temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
 				    -2.*nr*cosalpha*sinalpha);
@@ -220,7 +225,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    prob_hit=exp(-0.5*chi2_hit)/sqrt(M_TWO_PI*Vtemp);
 
 	    // Cut out outliers
-	    if(sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){	      
+	    if(chi2_hit<fdc_chi2cut){	      
 	      probs.push_back(prob_hit);	
 	      Mlist.push_back(Mdiff);
 	      Vlist.push_back(V);
@@ -280,7 +285,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	
 	  // Check if this hit is an outlier
 	  double chi2_hit=Mdiff*Mdiff*InvV;
-	  if (sqrt(chi2_hit)<NUM_FDC_SIGMA_CUT){
+	  if (chi2_hit<fdc_chi2cut){
 	    if (DEBUG_HISTS && fit_type==kTimeBased && id==0){
 	      fdc_yres->Fill(doca,Mdiff*my_fdchits[id]->dE/
 			     (2.6795e-4*FDC_CATHODE_SIGMA));
@@ -485,7 +490,9 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // variance
 	    double tx=S(state_tx),ty=S(state_ty);
 	    double tanl=1./sqrt(tx*tx+ty*ty);
-	    Vc=cdc_variance(tanl,tdrift);
+	    Vc=cdc_variance(tanl,tdrift);	  
+	    double temp=1./(1131.+2.*140.7*dm);
+	    Vc+=mVarT0*temp*temp;
 	  }
 	  // t0 estimate
 	  else if (cdc_index==mMinDriftID-1000){
@@ -506,7 +513,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  	 
 	  // Check if this hit is an outlier
 	  double chi2_hit=res*res*InvV1;
-	  if (sqrt(chi2_hit)<NUM_CDC_SIGMA_CUT){
+	  if (chi2_hit<cdc_chi2cut){
 	    // Compute KalmanSIMD gain matrix
 	    K=InvV1*(C*H_T);
 	    
@@ -522,7 +529,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	      // Flag the place along the reference trajectory with hit id
 	      forward_traj[k_minus_1].h_id=1000+cdc_index;
-	      	      
+      	      
 	      // Update the state vector
 	      double res=dm-d;
 	      S+=res*K;
@@ -635,7 +642,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     return UNRECOVERABLE_ERROR;
   }
   
-  chisq*=anneal_factor;
+  //  chisq*=anneal_factor;
   numdof-=5;
 
   // Final position for this leg

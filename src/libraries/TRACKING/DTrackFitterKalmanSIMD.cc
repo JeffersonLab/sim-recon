@@ -74,8 +74,7 @@ double DTrackFitterKalmanSIMD::fdc_y_variance(double tanl,double x,double dE){
   double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE;
   //sigma*=(1+fabs(x));
   //  sigma*=(1.144e-3*cosh(11.62*x)+0.65)/0.6555;
-  //sigma*=1.175;
-  sigma*=1.2;
+  sigma*=1.15;
 
   return sigma*sigma;
 }
@@ -95,10 +94,9 @@ double fdc_drift_variance(double t){
 // Smearing function derived from fitting residuals
 double DTrackFitterKalmanSIMD::cdc_variance(double tanl,double t){ 
   //return CDC_VARIANCE;
-  if (t<0) t=0.;
-  //  double sigma=0.057/sqrt(t+1.)+3e-6*t;
-  double sigma=0.0417/sqrt(t+1.0)+3.51e-6*t+1.2e-3;
-
+  
+  double sigma=0.125/(fabs(t)+1)+4e-3;// old =0.185/(t+5.886)+4.15e-3
+ 
   return sigma*sigma;
 }
 
@@ -113,7 +111,7 @@ double DTrackFitterKalmanSIMD::cdc_forward_variance(double tanl,double t){
 // Interpolate on a table to convert time to distance for the cdc
 double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double Bz){
   //if (t<0.) return 0.;
-  double a=606.8,b=54.96,Bref=1.83;
+  double a=602.0,b=58.22,Bref=1.83;
   t*=(a+b*Bref)/(a+b*Bz);
   int id=int((t+CDC_T0_OFFSET)/2.);
   if (id<0) id=0;
@@ -172,7 +170,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   USE_T0_FROM_WIRES=0;
   gPARMS->SetDefaultParameter("KALMAN:USE_T0_FROM_WIRES", USE_T0_FROM_WIRES);
 
-  ENABLE_BOUNDARY_CHECK=false;
+  ENABLE_BOUNDARY_CHECK=true;
   gPARMS->SetDefaultParameter("GEOM:ENABLE_BOUNDARY_CHECK",
 			      ENABLE_BOUNDARY_CHECK);
   
@@ -180,14 +178,14 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",
 			      USE_MULS_COVARIANCE);  
 
-  RECOVER_BROKEN_TRACKS=false;
+  RECOVER_BROKEN_TRACKS=true;
   gPARMS->SetDefaultParameter("KALMAN:RECOVER_BROKEN_TRACKS",RECOVER_BROKEN_TRACKS);
  
   MIN_FIT_P = 0.050; // GeV
   gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
 
-  NUM_CDC_SIGMA_CUT=10.0;
-  NUM_FDC_SIGMA_CUT=20.0;
+  NUM_CDC_SIGMA_CUT=3.0;
+  NUM_FDC_SIGMA_CUT=3.0;
   gPARMS->SetDefaultParameter("KALMAN:NUM_CDC_SIGMA_CUT",NUM_CDC_SIGMA_CUT,
 			      "maximum distance in number of sigmas away from projection to accept cdc hit");
   gPARMS->SetDefaultParameter("KALMAN:NUM_FDC_SIGMA_CUT",NUM_FDC_SIGMA_CUT,
@@ -443,7 +441,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   // Reset member data and free an memory associated with the last fit,
   // but some of which only for wire-based fits 
   ResetKalmanSIMD();
-  
+ 
   // Check that we have enough FDC and CDC hits to proceed
   if (cdchits.size()+fdchits.size()<6) return kFitFailed;
 
@@ -458,7 +456,6 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   // Create vectors of updates (from hits) to S and C
   if (my_cdchits.size()>0) cdc_updates=vector<DKalmanUpdate_t>(my_cdchits.size());
   if (my_fdchits.size()>0) fdc_updates=vector<DKalmanUpdate_t>(my_fdchits.size());
-
 
   // Order the cdc hits by ring number
   if (my_cdchits.size()>0){
@@ -497,7 +494,24 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
 
   // start time and variance
   mT0=NaN;
-  mVarT0=0.09;
+  switch(input_params.t0_detector()){
+  case SYS_TOF:
+    mVarT0=0.01;
+    break;
+  case SYS_CDC:
+    mVarT0=25.;
+    break;
+  case SYS_FDC:
+    mVarT0=25.;
+    break;
+  case SYS_BCAL:
+    mVarT0=0.25;
+    break;
+  default:
+    mVarT0=0.09;
+    break;
+  }
+ 
   if (fit_type==kTimeBased){
     mT0=input_params.t0();
   }
@@ -750,7 +764,6 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,double dz,
 
   //B-field at (x,y,z)
   bfield->GetField(x,y,z,Bx,By,Bz);
-  B=fabs(Bz);
 
   // Don't let the magnitude of the momentum drop below some cutoff
   if (fabs(q_over_p)>Q_OVER_P_MAX){
@@ -774,8 +787,8 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,double dz,
   //  double kq_over_p_ds=0.5*dz*kq_over_p_dsdz;
 
   // Derivative of S with respect to z
-  D(state_x)=tx;//+kq_over_p_ds*dtx_Bfac;
-  D(state_y)=ty;//+kq_over_p_ds*dty_Bfac;
+  D(state_x)=tx;
+  D(state_y)=ty;
   D(state_tx)=kq_over_p_dsdz*dtx_Bfac;
   D(state_ty)=kq_over_p_dsdz*dty_Bfac;
 
@@ -1040,13 +1053,13 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   // update the trajectory
   if (index<=length){
     // In the bore of the magnet the off-axis components are small
-    forward_traj[my_i].B=fabs(Bz);
+    forward_traj[my_i].B=sqrt(Bx*Bx+By*By+Bz*Bz);
     forward_traj[my_i].Q=Q;
     forward_traj[my_i].J=J;
     forward_traj[my_i].JT=J.Transpose();
   }
   else{	
-    temp.B=fabs(Bz);
+    temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
     temp.Q=Q;
     temp.J=J;
     temp.JT=J.Transpose();
@@ -1590,13 +1603,13 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   // update the trajectory data
   if (i<=length){
     // In the bore of magnet the off-axis components of B are small
-    forward_traj[my_i].B=fabs(Bz);
+    forward_traj[my_i].B=sqrt(Bx*Bx+By*By+Bz*Bz);
     forward_traj[my_i].Q=Q;
     forward_traj[my_i].J=J;
     forward_traj[my_i].JT=J.Transpose();
   }
   else{
-    temp.B=fabs(Bz);
+    temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
     temp.Q=Q;
     temp.J=J;
     temp.JT=J.Transpose();
@@ -2162,18 +2175,18 @@ jerror_t DTrackFitterKalmanSIMD::StepStateAndCovariance(DVector3 &pos,double ds,
 jerror_t DTrackFitterKalmanSIMD::FixedStep(DVector3 &pos,double ds,
 					   DMatrix5x1 &S,
 					   double dEdx){
-  double Bz_=0.;
-  FixedStep(pos,ds,S,dEdx,Bz_);
+  double B=0.;
+  FixedStep(pos,ds,S,dEdx,B);
   return NOERROR;
 }
 
 // Runga-Kutte for alternate parameter set {q/pT,phi,tanl(lambda),D,z}
 jerror_t DTrackFitterKalmanSIMD::FixedStep(DVector3 &pos,double ds,
 					   DMatrix5x1 &S,
-					   double dEdx,double &Bz_){  
+					   double dEdx,double &B){  
   // Magnetic field
   bfield->GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
-  Bz_=fabs(Bz);
+  B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
   if (fabs(ds)<EPS) return NOERROR; // break out if ds is too small
   
@@ -2303,7 +2316,9 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector3 &pos,
   J(state_z,state_tanl)=cosl3*ds;
 
   // Deal with changes in D
-  double qrc_old=qpt/(qBr2p*fabs(Bz));
+  double B=sqrt(Bx*Bx+By*By+Bz*Bz);
+  //double qrc_old=qpt/(qBr2p*fabs(Bz));
+  double qrc_old=qpt/(qBr2p*B);
   double qrc_plus_D=D+qrc_old;
   double dx=dpos.x();
   double dy=dpos.y();
@@ -2348,7 +2363,7 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector3 &pos,
   double D=S(state_D);
 
   CalcDerivAndJacobian(0.,pos,dpos1,S,dEdx,J1,D1);
-  double Bz_=fabs(Bz); // needed for computing D
+  // double Bz_=fabs(Bz); // needed for computing D
 
   // New Jacobian matrix
   J+=ds*J1;
@@ -2357,7 +2372,9 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector3 &pos,
   DVector3 dpos =ds*dpos1;
 
   // Deal with changes in D
-  double qrc_old=qpt/(qBr2p*Bz_);
+  double B=sqrt(Bx*Bx+By*By+Bz*Bz);
+  //double qrc_old=qpt/(qBr2p*Bz_);
+  double qrc_old=qpt/(qBr2p*B);
   double qrc_plus_D=D+qrc_old;
   double dx=dpos.x();
   double dy=dpos.y();
@@ -3286,8 +3303,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double theta_deg=(180/M_PI)*input_params.momentum().Theta();
 
     // Initial guess for forward representation covariance matrix   
-    C0(state_x,state_x)=1.0;
-    C0(state_y,state_y)=1.0; 
+    C0(state_x,state_x)=2.0;
+    C0(state_y,state_y)=2.0; 
     C0(state_tx,state_tx)=0.0001;
     C0(state_ty,state_ty)=0.0001;
     double dp_over_p=0.0833-0.016*theta_deg-0.00938*theta_deg*theta_deg;
@@ -3308,7 +3325,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       _DBG_ << "Using forward parameterization." <<endl;
     }
 
-    for (unsigned int iter=0;
+    for (int iter=0;
 	 iter<(fit_type==kTimeBased?MAX_TB_PASSES:MAX_WB_PASSES);
 	 iter++) {      
       // These variables provide the approximate location along the trajectory
@@ -3326,48 +3343,96 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       len=0;
       ftime=0.;
       
+      if (fit_type==kTimeBased){
+      	double scale_factor=ANNEAL_SCALE;
+      	double f=ANNEAL_POW_CONST;
+      	anneal_factor=scale_factor/pow(f,iter)+1.;
+      }
+
       // Swim once through the field out to the most upstream FDC hit
       error=SetReferenceTrajectory(S);
       if (error==NOERROR && forward_traj.size()> 1){
+	// Reset the status of the cdc hits 
+	for (unsigned int j=0;j<my_cdchits.size();j++){
+	  my_cdchits[j]->status=good_hit;
+	}	
+	
 	// perform the kalman filter 
 	C=C0;
 	error=KalmanForward(anneal_factor,S,C,chisq,my_ndf);
 
 	// Code to try to recover tracks that failed the fitting.  
 	if (RECOVER_BROKEN_TRACKS){
-	  // if my_ndf=0, then not enough hits survived the pruning for the fit to 
-	  // be valid.  This code tries to use hits in the cdc to recover the track.
-	  if ((my_ndf==0 || break_point_cdc_index>5) && my_cdchits.size()>5){
-	    if (break_point_cdc_index>0){
-	      break_point_cdc_index--;
+	  if (my_cdchits.size()>5){
+	    // save the status of the hits used in the fit
+	    unsigned int num_good=0;
+	    vector<int>old_cdc_used_status(cdc_updates.size());
+	    vector<int>old_fdc_used_status(fdc_updates.size());
+	    for (unsigned int j=0;j<fdc_updates.size();j++){
+	      old_fdc_used_status[j]=fdc_updates[j].used_in_fit;
 	    }
-	    else break_point_cdc_index=my_cdchits.size()-1;
-	    for (unsigned int j=0;j<break_point_cdc_index;j++){
-	      my_cdchits[j]->status=good_hit;
-	    }
-	    for (unsigned int j=break_point_cdc_index;j<my_cdchits.size();j++){
-	      my_cdchits[j]->status=bad_hit;
+	    for (unsigned int j=0;j<cdc_updates.size();j++){
+	      old_cdc_used_status[j]=cdc_updates[j].used_in_fit;
+	      if (old_cdc_used_status[j]) num_good++;
 	    }
 	    
-	    // Here's the part of the code that truncates the reference trajectory
-	    DVector3 origin=my_cdchits[break_point_cdc_index]->hit->wire->origin;
-	    DVector3 dir=my_cdchits[break_point_cdc_index]->hit->wire->udir;
-	    double uz=dir.z();
-	    double z0=origin.z();   
-	    unsigned int k=forward_traj.size()-1;
-	    for (;k>1;k--){
-	      double r=forward_traj[k].pos.Perp();
-	      double r_cdc=(origin+((forward_traj[k].pos.z()-z0)/uz)*dir).Perp();
-	      if (r>r_cdc) break;
-	    }
-	    for (unsigned int j=0;j<k;j++){
+	    // if my_ndf=0, then not enough hits survived the pruning for the fit to 
+	    // be valid.  This code tries to use hits in the cdc to recover the track.
+	    if (my_ndf==0 || break_point_cdc_index>4
+		|| (break_point_cdc_index<=4 
+		    && double(num_good)/double(my_cdchits.size())<0.5)
+		){
+	      if (break_point_cdc_index<5) break_point_cdc_index=5;
+	      for (unsigned int j=0;j<=break_point_cdc_index;j++){
+		my_cdchits[j]->status=good_hit;
+	      }
+	      for (unsigned int j=break_point_cdc_index+1;j<my_cdchits.size();j++){
+		my_cdchits[j]->status=bad_hit;
+	      }
+	      
+	      // Here's the part of the code that truncates the reference trajectory
+	      DVector3 origin=my_cdchits[break_point_cdc_index]->hit->wire->origin;
+	      DVector3 dir=my_cdchits[break_point_cdc_index]->hit->wire->udir;
+	      double uz=dir.z();
+	      double z0=origin.z();   
+	      unsigned int k=forward_traj.size()-1;
+	      for (;k>1;k--){
+		double r=forward_traj[k].pos.Perp();
+		double r_cdc=(origin+((forward_traj[k].pos.z()-z0)/uz)*dir).Perp();
+		if (r>r_cdc) break;
+	      }
+	      for (unsigned int j=0;j<k;j++){
 		forward_traj.pop_front();
-	    }
-	    // Now refit with the truncated trajectory and list of hits
-	    C=C0;
-	    S=forward_traj[0].S;
-	    error=KalmanForwardCDC(anneal_factor,S,C,chisq,my_ndf);
-	  }// if my_ndf==0 or we find a break point in the cdc
+	      }
+	      // Now refit with the truncated trajectory and list of hits
+	      DMatrix5x5 C1=C0;
+	      DMatrix5x1 S1=forward_traj[0].S;
+	      double refit_chisq=1e16;
+	      unsigned int refit_ndf=0;
+	      jerror_t refit_error=KalmanForwardCDC(anneal_factor,S1,C1,
+						    refit_chisq,refit_ndf);
+
+	      
+	      if (refit_error==NOERROR){
+		error=NOERROR;
+		C=C1;
+		S=S1;
+		chisq=refit_chisq;
+		my_ndf=refit_ndf;
+		for (unsigned int j=0;j<fdc_updates.size();j++){
+		  fdc_updates[j].used_in_fit=false;
+		}
+	      }
+	      else{
+		for (unsigned int k=0;k<cdc_updates.size();k++){
+		  cdc_updates[k].used_in_fit=old_cdc_used_status[k];
+		}	
+		for (unsigned int k=0;k<fdc_updates.size();k++){
+		  fdc_updates[k].used_in_fit=old_fdc_used_status[k];
+		}
+	      }	      
+	    }// if my_ndf==0 or we find a break point in the cdc
+	  }
 	}
        
 	if (error!=NOERROR){
@@ -3405,7 +3470,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	}
       } //iteration
       else{
-	if (my_cdchits.size()==0) return UNRECOVERABLE_ERROR;	
+	if (iter==0 && my_cdchits.size()==0) return UNRECOVERABLE_ERROR;  
       }
     }
     
@@ -3456,12 +3521,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       
       return NOERROR;
     }
-    return last_error;
+    if (my_cdchits.size()<=5) return last_error;
   }
 
   // Deal with CDC-only tracks with theta<70 degrees using forward 
   //parameters
   if (my_cdchits.size()>5 && tanl_>0.364){
+    last_error=UNKNOWN_ERROR;
+
     // Initial position
     x_=input_params.position().x();
     y_=input_params.position().y();
@@ -3491,10 +3558,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     }
     
     // Initial guess for forward representation covariance matrix
-    C0(state_x,state_x)=1.0;
-    C0(state_y,state_y)=1.0;  
-    C0(state_tx,state_tx)=0.001;
-    C0(state_ty,state_ty)=0.001;
+    C0(state_x,state_x)=2.0;
+    C0(state_y,state_y)=2.0;  
+    C0(state_tx,state_tx)=0.0001;
+    C0(state_ty,state_ty)=0.0001;
     
     double sig_lambda=0.017;
     if (theta_deg>28) 
@@ -3534,12 +3601,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	break;
       }
       
-      //if (fit_type==kTimeBased){
-      // 	double f=2.75;
-      //	double scale_factor=9.;
-      //	anneal_factor=scale_factor/pow(f,iter2)+1.;
-      //	printf("scale %f\n",scale_factor/pow(f,iter2)+1.);
-      //}
+      if (fit_type==kTimeBased){
+       	double f=ANNEAL_POW_CONST;
+      	double scale_factor=ANNEAL_SCALE;
+      	anneal_factor=scale_factor/pow(f,iter2)+1.;
+      }
   
       // Initialize path length variable and flight time
       len=0;
@@ -3549,10 +3615,23 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       error=SetCDCForwardReferenceTrajectory(S);
       C=C0;
       if (error==NOERROR && forward_traj.size()> 1){
+	// Reset the status of the cdc hits 
+	for (unsigned int j=0;j<my_cdchits.size();j++){
+	  my_cdchits[j]->status=good_hit;
+	}
+
 	// perform the filter 
 	error=KalmanForwardCDC(anneal_factor,S,C,chisq,my_ndf);	 
- 
+
 	if (RECOVER_BROKEN_TRACKS){
+	  // save the status of the hits used in the fit
+	  vector<int>old_used_status(cdc_updates.size());
+	  unsigned int num_used=0;
+	  for (unsigned int j=0;j<cdc_updates.size();j++){
+	    old_used_status[j]=cdc_updates[j].used_in_fit;
+	    if (cdc_updates[j].used_in_fit)num_used++;
+	  }
+
 	  // If the filter returns my_ndf=0, then less than 6 hits survived in the 
 	  // fit after pruning. The following code attempts to recover these tracks
 	  // by truncating the reference trajectory and restricting the number of
@@ -3560,34 +3639,62 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  // starting with the hits closest to the target.  The "break point" 
 	  // corresponds to the innermost hit that was actually used in the fit.
 	  // The code requires a minimum of 6 hits.	
-	  if (my_ndf==0){
-	    if (break_point_cdc_index<5) break_point_cdc_index=5;
-	    for (unsigned int j=0;j<break_point_cdc_index;j++){
+	  if (my_ndf==0
+	      || (break_point_cdc_index<=4 
+		  && double(num_used)/double(my_cdchits.size())<0.5)
+	      ){
+
+	    if (break_point_cdc_index<5){
+	      break_point_cdc_index=5;
+	      
+	      // Next determine where we need to truncate the trajectory  
+	      DVector3 origin
+		=my_cdchits[break_point_cdc_index]->hit->wire->origin;
+	      DVector3 dir=my_cdchits[break_point_cdc_index]->hit->wire->udir;
+	      double uz=dir.z();
+	      double z0=origin.z();
+	      unsigned int k=forward_traj.size()-1;
+	      for (;k>1;k--){
+		double r=forward_traj[k].pos.Perp();
+		double r_cdc=(origin+((forward_traj[k].pos.z()-z0)/uz)*dir).Perp();
+		
+		if (r>r_cdc) break;
+	      }
+	      break_point_step_index=k;
+	    }
+	    // Flag the cdc hits within the radius of the break point cdc index
+	    // as good, the rest as bad.
+	    for (unsigned int j=0;j<=break_point_cdc_index;j++){
 	      my_cdchits[j]->status=good_hit;
 	    }
-	    for (unsigned int j=break_point_cdc_index;j<my_cdchits.size();j++){
+	    for (unsigned int j=break_point_cdc_index+1;j<my_cdchits.size();j++){
 	      my_cdchits[j]->status=bad_hit;
 	    }
-	    
-	    // Here's the part of the code that truncates the reference trajectory
-	    DVector3 origin=my_cdchits[break_point_cdc_index]->hit->wire->origin;
-	    DVector3 dir=my_cdchits[break_point_cdc_index]->hit->wire->udir;
-	    double uz=dir.z();
-	    double z0=origin.z();
-	    unsigned int k=forward_traj.size()-1;
-	    for (;k>1;k--){
-	      double r=forward_traj[k].pos.Perp();
-	      double r_cdc=(origin+((forward_traj[k].pos.z()-z0)/uz)*dir).Perp();
-	      if (r>r_cdc) break;
-	    }
-	    for (unsigned int j=0;j<k;j++){
+	    // Truncate the trajectory
+	    for (unsigned int j=0;j<break_point_step_index;j++){
 	      forward_traj.pop_front();
 	    }
-	    
+	  
 	    // Now refit with the truncated trajectory and list of hits
-	    C=C0;
-	    S=forward_traj[0].S;
-	    error=KalmanForwardCDC(anneal_factor,S,C,chisq,my_ndf);
+	    DMatrix5x5 C1=C0;
+	    DMatrix5x1 S1=forward_traj[0].S;  
+	    unsigned refit_ndf=0;
+	    double refit_chisq=1e16;
+	    jerror_t refit_error=KalmanForwardCDC(anneal_factor,S1,C1,
+						  refit_chisq,refit_ndf);
+	   
+	    if (refit_error==NOERROR){
+	      error=NOERROR;
+	      C=C1;
+	      S=S1;
+	      chisq=refit_chisq;
+	      my_ndf=refit_ndf;
+	    }
+	    else{
+	      for (unsigned int k=0;k<cdc_updates.size();k++){
+		cdc_updates[k].used_in_fit=old_used_status[k];
+	      }
+	    }
 	  }
 	  // It may also be the case that even if we used enough hits for the fit to
 	  // be valid (i.e., make sense in terms of the number of degrees of freedom 
@@ -3597,27 +3704,39 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  // of a kink in the trajectory.   The following code attempts to get better
 	  // values for the parameters of a track coming from the target region by
 	  // truncating the trajectory and the hit list as above.
-	  else if (break_point_cdc_index>5 
+	  else if (break_point_cdc_index>4 
 		   && break_point_cdc_index<my_cdchits.size()-1
 		   && break_point_step_index>0 
 		   && break_point_step_index<forward_traj.size()-1){
-	    for (unsigned int j=break_point_cdc_index;j<my_cdchits.size();j++){
+
+	    for (unsigned int j=0;j<=break_point_cdc_index;j++){
+	      my_cdchits[j]->status=good_hit;
+	    }
+	    for (unsigned int j=break_point_cdc_index+1;j<my_cdchits.size();j++){
 	      my_cdchits[j]->status=bad_hit;
 	    }
-	    // Make sure we have at least 6 hits to work with
-	    unsigned int num_good_hits=0;
-	    for (unsigned int j=0;j<my_cdchits.size();j++){
-	      if (my_cdchits[j]->status==good_hit) num_good_hits++;
+	    for (unsigned int j=0;j<break_point_step_index;j++){
+	      forward_traj.pop_front();
 	    }
-	    if (num_good_hits>5){
-	      for (unsigned int j=0;j<break_point_step_index;j++){
-		forward_traj.pop_front();
+	    
+	    // Redo the fit with the truncated trajectory and list of hits
+	    DMatrix5x5 C1=C0;
+	    DMatrix5x1 S1=forward_traj[0].S;
+	    unsigned refit_ndf=0;
+	    double refit_chisq=1e16;
+	    jerror_t refit_error=KalmanForwardCDC(anneal_factor,S1,C1,
+						  refit_chisq,refit_ndf);
+	    if (refit_error==NOERROR){
+	      error=NOERROR;
+	      C=C1;
+	      S=S1;
+	      chisq=refit_chisq;
+	      my_ndf=refit_ndf;
+	    }
+	    else{  
+	      for (unsigned int k=0;k<cdc_updates.size();k++){
+		cdc_updates[k].used_in_fit=old_used_status[k];
 	      }
-	      
-	      // Redo the fit with the truncated trajectory and list of hits
-	      C=C0;
-	      S=forward_traj[0].S;
-	      error=KalmanForwardCDC(anneal_factor,S,C,chisq,my_ndf);
 	    }
 	  }
 	} // fix broken tracks
@@ -3626,7 +3745,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  break;
 	}
 
-	if (DEBUG_LEVEL>0) _DBG_ << "--> Chisq " << chisq << endl;
+	if (DEBUG_LEVEL>0)  _DBG_ << "--> Chisq " << chisq << " NDF " 
+				  << my_ndf << endl;
 
 	// Check the charge relative to the hypothesis for protons
 	if (MASS>0.9){	  
@@ -3720,15 +3840,12 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Initial charge
     double q=q_over_pt_>0?1.:-1.;
 
-    C0(state_z,state_z)=1.0;
+    C0(state_z,state_z)=4.0;
     double theta_deg=(180/M_PI)*input_params.momentum().Theta();
+    if (theta_deg<28.) theta_deg=28.;
 
-    double sig_lambda=0.017;
-    if (theta_deg>28) 
-      sig_lambda=-0.0365+0.00222*theta_deg-1.23e-5*theta_deg*theta_deg;
-
-
-    double dpt_over_pt=0.0604+0.00174*theta_deg-8.79e-6*theta_deg*theta_deg;
+    double sig_lambda=-0.0479+0.00253*theta_deg-1.423e-5*theta_deg*theta_deg;
+    double dpt_over_pt=0.0415+0.00261*theta_deg-1.38e-5*theta_deg*theta_deg;
     C0(state_q_over_pt,state_q_over_pt)
       =dpt_over_pt*dpt_over_pt*q_over_pt_*q_over_pt_;
     C0(state_phi,state_phi)=0.001;
@@ -3779,21 +3896,33 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       len=0.;
       ftime=0.;
       
-      // Calculate an annealing factor for the measurement errors that depends 
-      // on the iteration,so that we approach the "true' measurement errors
-      // by the last iteration.
-      //if (fit_type==kTimeBased){
-      //	double scale_factor=50.;
-      //	double f=3.5;
-      //	anneal_factor=scale_factor/pow(f,iter2)+1.;
-      //}
+    
+      if (fit_type==kTimeBased){
+      	double scale_factor=ANNEAL_SCALE;
+      	double f=ANNEAL_POW_CONST;
+      	anneal_factor=scale_factor/pow(f,iter2)+1.;
+      }
       // Initialize trajectory deque and position
       jerror_t ref_track_error=SetCDCReferenceTrajectory(last_pos,Sc);
       Cc=C0;       
       if (ref_track_error==NOERROR && central_traj.size()>1){
+	// Reset the status of the cdc hits 
+	for (unsigned int j=0;j<my_cdchits.size();j++){
+	  my_cdchits[j]->status=good_hit;
+	}
+
+	// perform the fit
 	cdc_error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq,my_ndf);
 
 	if (RECOVER_BROKEN_TRACKS){
+	  // Save the status of the hits in the fit
+	  vector<int>old_used_status(cdc_updates.size());
+	  unsigned int num_used=0;
+	  for (unsigned int j=0;j<cdc_updates.size();j++){ 
+	    old_used_status[j]=cdc_updates[j].used_in_fit;
+	    if (cdc_updates[j].used_in_fit) num_used++;
+	  }
+
 	  // If the filter returns my_ndf=0, then less than 6 hits survived in the 
 	  // fit after pruning. The following code attempts to recover these tracks
 	  // by truncating the reference trajectory and restricting the number of
@@ -3801,34 +3930,63 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  // starting with the hits closest to the target.  The "break point" 
 	  // corresponds to the innermost hit that was actually used in the fit.
 	  // The code requires a minimum of 6 hits.	
-	  if (my_ndf==0){
-	    if (break_point_cdc_index<5) break_point_cdc_index=5;
-	    for (unsigned int j=0;j<break_point_cdc_index;j++){
-	    my_cdchits[j]->status=good_hit;
+	  if (my_ndf==0 
+	      || (break_point_cdc_index<=4 
+		  && double(num_used)/double(my_cdchits.size())<0.5)
+	      ){
+	    if (DEBUG_LEVEL>1) _DBG_ << "---Trying to recover track---" <<endl;
+
+	    if (break_point_cdc_index<5){
+	      break_point_cdc_index=5;
+   
+	      // Next determine where we need to truncate the trajectory  
+	      DVector3 origin=my_cdchits[break_point_cdc_index]->hit->wire->origin;
+	      DVector3 dir=my_cdchits[break_point_cdc_index]->hit->wire->udir;
+	      double uz=dir.z();
+	      double z0=origin.z();
+	      unsigned int k=0;
+	      for (k=central_traj.size()-1;k>1;k--){
+		double r=central_traj[k].pos.Perp();
+		double r_cdc=(origin+((central_traj[k].pos.z()-z0)/uz)*dir).Perp();
+		if (r>r_cdc) break;
+	      }
+	      break_point_step_index=k;
 	    }
-	    for (unsigned int j=break_point_cdc_index;j<my_cdchits.size();j++){
+	    // Flag the cdc hits within the radius of the break point cdc index
+	    // as good, the rest as bad.
+	    for (unsigned int j=0;j<=break_point_cdc_index;j++){
+	      my_cdchits[j]->status=good_hit;
+	    }
+	    for (unsigned int j=break_point_cdc_index+1;j<my_cdchits.size();j++){
 	      my_cdchits[j]->status=bad_hit;
 	    }
-	    
-	    // Here's the part of the code that truncates the reference trajectory
-	    DVector3 origin=my_cdchits[break_point_cdc_index]->hit->wire->origin;
-	    DVector3 dir=my_cdchits[break_point_cdc_index]->hit->wire->udir;
-	    double uz=dir.z();
-	    double z0=origin.z();
-	    unsigned int k=0;
-	    for (k=central_traj.size()-1;k>1;k--){
-	      double r=central_traj[k].pos.Perp();
-	      double r_cdc=(origin+((central_traj[k].pos.z()-z0)/uz)*dir).Perp();
-	      if (r>r_cdc) break;
-	    }
-	    for (unsigned int j=0;j<k;j++){
+
+	    // Truncate the reference trajectory
+	    for (unsigned int j=0;j<break_point_step_index;j++){
 	      central_traj.pop_front();
 	    }
 	    
 	    // Now refit with the truncated trajectory and list of hits
-	    Cc=C0;
-	    Sc=central_traj[0].S;
-	    cdc_error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq,my_ndf);
+	    DMatrix5x5 Cc1=C0;
+	    DMatrix5x1 Sc1=central_traj[0].S;
+	    double refit_chisq=1e16;
+	    unsigned int refit_ndf=0;
+	    DVector3 refit_pos;
+	    jerror_t refit_error=KalmanCentral(anneal_factor,Sc1,Cc1,refit_pos,
+					       refit_chisq,refit_ndf);
+	    if (refit_error==NOERROR){
+	      cdc_error=NOERROR;
+	      Cc=Cc1;
+	      Sc=Sc1;
+	      pos=refit_pos;
+	      chisq=refit_chisq;
+	      my_ndf=refit_ndf;
+	    }
+	    else{  
+	      for (unsigned int k=0;k<cdc_updates.size();k++){
+		cdc_updates[k].used_in_fit=old_used_status[k];
+	      }
+	    }
 	  }	
 	  // It may also be the case that even if we used enough hits for the fit to
 	  // be valid (i.e., make sense in terms of the number of degrees of freedom 
@@ -3838,35 +3996,51 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  // of a kink in the trajectory.   The following code attempts to get better
 	  // values for the parameters of a track coming from the target region by
 	  // truncating the trajectory and the hit list as above.	
-	  else if (break_point_cdc_index>5 
+	  else if (break_point_cdc_index>4 
 		   && break_point_cdc_index<my_cdchits.size()-1
 		   && break_point_step_index>0 
 		   && break_point_step_index<central_traj.size()-1){
-	    for (unsigned int j=break_point_cdc_index;j<my_cdchits.size();j++){
+	     if (DEBUG_LEVEL>1) _DBG_ << "---trying to recover track---"<<endl;
+
+	    // Reset the status of the cdc hits 
+	    for (unsigned int j=0;j<=break_point_cdc_index;j++){
+	      my_cdchits[j]->status=good_hit;
+	    }
+	    for (unsigned int j=break_point_cdc_index+1;j<my_cdchits.size();j++){
 	      my_cdchits[j]->status=bad_hit;
 	    }
-	    // Make sure we have at least 6 hits to work with
-	    unsigned int num_good_hits=0;
-	    for (unsigned int j=0;j<my_cdchits.size();j++){
-	      if (my_cdchits[j]->status==good_hit) num_good_hits++;
+	    for (unsigned int j=0;j<break_point_step_index;j++){
+	      central_traj.pop_front();
 	    }
-	    if (num_good_hits>5){
-	      for (unsigned int j=0;j<break_point_step_index;j++){
-		central_traj.pop_front();
+	    
+	    // Redo the fit with the truncated trajectory and list of hits
+	    DMatrix5x5 Cc1=C0;
+	    DMatrix5x1 Sc1=central_traj[0].S;
+	    double refit_chisq=1e16;
+	    unsigned int refit_ndf=0;
+	    DVector3 refit_pos;
+	    jerror_t refit_error=KalmanCentral(anneal_factor,Sc1,Cc1,
+					       refit_pos,refit_chisq,
+					       refit_ndf);
+	    if (refit_error==NOERROR){
+	      cdc_error=NOERROR;
+	      Cc=Cc1;
+	      Sc=Sc1;
+	      pos=refit_pos;
+	      chisq=refit_chisq;
+	      my_ndf=refit_ndf;
+	    }
+	    else{
+	      for (unsigned int k=0;k<cdc_updates.size();k++){
+		cdc_updates[k].used_in_fit=old_used_status[k];
 	      }
-	      
-	      // Redo the fit with the truncated trajectory and list of hits
-	      Cc=C0;
-	      Sc=central_traj[0].S;
-	      cdc_error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq,my_ndf);
 	    }
 	  }
 	} // fix broken tracks
 	  
 	if (cdc_error!=NOERROR){
-	  //printf("breaking out of loop iter %d error %d\n",iter2,cdc_error);
-	  if (last_error==VALUE_OUT_OF_RANGE) return NOERROR;
-	  if (iter2==0 && error==NOERROR) return cdc_error;
+	  if (iter2==0 && error==NOERROR && last_error!=VALUE_OUT_OF_RANGE)
+	    return cdc_error;
 	  break;
 	}
 
@@ -4240,6 +4414,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   // Initialize the chi2 for this part of the track
   chisq=0.;
   my_ndf=0;
+  double chi2cut=anneal_factor*anneal_factor*NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
 
   // path length increment
   double ds2=0.;
@@ -4455,6 +4630,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	   
 	  // Measurement error
 	  V=cdc_variance(Sc(state_tanl),tdrift);
+	  double temp=1./(1131.+2.*140.7*measurement);
+	  V+=mVarT0*temp*temp;
 	}    
 	//compute t0 estimate
 	else if (cdc_index==mMinDriftID-1000){
@@ -4492,7 +4669,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 		
 	// Check how far this hit is from the expected position
 	double chi2check=dm*dm*InvV;
-	if (sqrt(chi2check)<NUM_CDC_SIGMA_CUT){	  
+	if (chi2check<chi2cut){	  
 	  // Compute Kalman gain matrix
 	  K=InvV*(Cc*H_T);
 	  
@@ -4618,7 +4795,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   }
   else my_ndf-=5;
 
-  chisq*=anneal_factor;
+  //chisq*=anneal_factor;
   
   return NOERROR;
 }
@@ -5336,6 +5513,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
   // initialize chi2 info
   chisq=0.;
   numdof=0;
+  double chi2cut=anneal*anneal*NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
 
   // Save the starting values for C and S in the deque
   forward_traj[0].Skk=S;
@@ -5571,6 +5749,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	  double tx=S(state_tx),ty=S(state_ty);
 	  double tanl=1./sqrt(tx*tx+ty*ty);
 	  V=cdc_variance(tanl,tdrift);
+	  double temp=1./(1131.+2.*140.7*dm);
+	  V+=mVarT0*temp*temp;
 
 	  if (DEBUG_HISTS){
 	    cdc_drift_forward->Fill(tdrift,d);
@@ -5600,7 +5780,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1 &S,
 	// Check how far this hit is from the expected position
 	double chi2check=res*res*InvV;
 	//if (sqrt(chi2check)>NUM_CDC_SIGMA_CUT) InvV*=0.8;
-	if (sqrt(chi2check)<NUM_CDC_SIGMA_CUT)
+	if (chi2check<chi2cut)
 	  {
 	  // Compute KalmanSIMD gain matrix
 	  K=InvV*(C*H_T);
@@ -6115,8 +6295,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
 
       // Propagate the covariance matrix
       //Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
-      //Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
-      Cc=Cc.SandwichMultiply(Jc);
+      Cc=((my_ds/ds_old)*Q).AddSym(Cc.SandwichMultiply(Jc));
 
       if (fit_type==kWireBased){
 	// Make small correction to estimate for start time using helical model
@@ -6166,7 +6345,7 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
   
   // C'= JCJ^T
   C7x7=C.Similarity(J);
- 
+
   return C7x7;
 
 }

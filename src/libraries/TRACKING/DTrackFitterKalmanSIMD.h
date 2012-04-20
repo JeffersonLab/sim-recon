@@ -49,6 +49,9 @@
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
+#define ANNEAL_POW_CONST 10.0
+#define ANNEAL_SCALE 9.0
+
 #define DELTA_R 1.0 // distance in r to extend the trajectory beyond the last point
 
 #define CDC_VARIANCE 0.0001
@@ -67,9 +70,9 @@
 #define MIN_CDC_HITS 2 
 
 // Functions of Moliere fraction F
-#define MOLIERE_RATIO1 25.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 2.0*5.1e-7 // = (scale factor)*1e-6/(1+F*F)
-#define MOLIERE_RATIO3 2.0*5.1e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO1 30.0   // = 0.5/(1-F)
+#define MOLIERE_RATIO2 10.0e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO3 10.0e-7 // = (scale factor)*1e-6/(1+F*F)
 #define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001
@@ -257,7 +260,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx);
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx,
-		     double &Bz);
+		     double &B);
 
   jerror_t CalcDerivAndJacobian(double ds,const DVector3 &pos,DVector3 &dpos,
 				const DMatrix5x1 &S,double dEdx,
@@ -342,7 +345,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double ftime, len;
 
   // B-field and gradient
-  double Bx,By,Bz,B;
+  double Bx,By,Bz;
   double dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
   bool get_field;
 
