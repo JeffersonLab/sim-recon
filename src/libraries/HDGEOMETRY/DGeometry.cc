@@ -193,14 +193,14 @@ jerror_t DGeometry::FindMatKalman(DVector3 &pos, DVector3 &mom,double &Z,
     jerror_t err = materialmaps[i]->FindMatKalman(pos,Z,KrhoZ_overA,
 						  rhoZ_overA,LnI,chi2c_factor,chi2a_factor,chi2a_corr);
     if(err==NOERROR){
-      if (i==materialmaps.size()-1) last_index=0;
+      if(i==materialmaps.size()-1) last_index=0;
       else last_index=i;
       if(s_to_boundary==NULL)return NOERROR;	// User doesn't want distance to boundary
 
       *s_to_boundary = 1.0E6;
       // If we are in the main mother volume, search through all the maps for
       // the nearest boundary
-      if (last_index==0){
+      if(last_index==0){
 	for(unsigned int j=0; j<materialmaps.size();j++){
 	  double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom);
 	  if(s<*s_to_boundary){
@@ -232,7 +232,7 @@ jerror_t DGeometry::FindMatKalman(DVector3 &pos,double &Z,
     jerror_t err = materialmaps[i]->FindMatKalman(pos,Z,KrhoZ_overA,
 						  rhoZ_overA,LnI,chi2c_factor,chi2a_factor,chi2a_corr);
     if(err==NOERROR){
-      if (i==materialmaps.size()-1) last_index=0;
+      if(i==materialmaps.size()-1) last_index=0;
       else last_index=i;
       return err;
     }
@@ -491,13 +491,9 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
   // Get geometrical information from database
   vector<double>z_wires;
   vector<double>stereo_angles;
-  
-  bool good=true;
 
-  good|=GetFDCZ(z_wires);
-  good|=GetFDCStereo(stereo_angles);
-  
-  if (!good) return good;
+  if(!GetFDCZ(z_wires)) return false;
+  if(!GetFDCStereo(stereo_angles)) return false;
 
   for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
     double angle=-stereo_angles[layer-1]*M_PI/180.;
@@ -539,7 +535,7 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
     fdcwires.push_back(temp);
   }
 
-  return good;
+  return true;
 }
 
 //---------------------------------
@@ -561,49 +557,42 @@ bool DGeometry::GetFDCZ(vector<double> &z_wires) const
 	vector<double> forwardDC_package[4];
 	vector<double> forwardDC_module[4];
 	vector<double> forwardDC_chamber[4][6];
-
-	bool good = true;
 	
-	good |= Get("//section/composition/posXYZ[@volume='ForwardDC']/@X_Y_Z", ForwardDC);
-	good |= Get("//composition[@name='ForwardDC']/posXYZ[@volume='forwardDC']/@X_Y_Z", forwardDC);
-	good |= Get("//posXYZ[@volume='forwardDC_package_1']/@X_Y_Z", forwardDC_package[0]);
-	good |= Get("//posXYZ[@volume='forwardDC_package_2']/@X_Y_Z", forwardDC_package[1]);
-	good |= Get("//posXYZ[@volume='forwardDC_package_3']/@X_Y_Z", forwardDC_package[2]);
-	good |= Get("//posXYZ[@volume='forwardDC_package_4']/@X_Y_Z", forwardDC_package[3]);
-	good |= Get("//posXYZ[@volume='forwardDC_module_1']/@X_Y_Z", forwardDC_module[0]);
-	good |= Get("//posXYZ[@volume='forwardDC_module_2']/@X_Y_Z", forwardDC_module[1]);
-	good |= Get("//posXYZ[@volume='forwardDC_module_3']/@X_Y_Z", forwardDC_module[2]);
-	good |= Get("//posXYZ[@volume='forwardDC_module_4']/@X_Y_Z", forwardDC_module[3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[0][0]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[0][1]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[0][2]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[0][3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[0][4]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[0][5]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[1][0]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[1][1]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[1][2]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[1][3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[1][4]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[1][5]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[2][0]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[2][1]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[2][2]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[2][3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[2][4]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[2][5]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[3][0]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[3][1]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[3][2]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[3][3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[3][4]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[3][5]);
-	
-	if(!good){
-		_DBG_<<"Unable to retrieve ForwardDC positions."<<endl;
-		return good;
-	}
-	
+	if(!Get("//section/composition/posXYZ[@volume='ForwardDC']/@X_Y_Z", ForwardDC)) return false;
+	if(!Get("//composition[@name='ForwardDC']/posXYZ[@volume='forwardDC']/@X_Y_Z", forwardDC)) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_package_1']/@X_Y_Z", forwardDC_package[0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_package_2']/@X_Y_Z", forwardDC_package[1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_package_3']/@X_Y_Z", forwardDC_package[2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_package_4']/@X_Y_Z", forwardDC_package[3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_module_1']/@X_Y_Z", forwardDC_module[0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_module_2']/@X_Y_Z", forwardDC_module[1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_module_3']/@X_Y_Z", forwardDC_module[2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_module_4']/@X_Y_Z", forwardDC_module[3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[0][0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[0][1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[0][2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[0][3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[0][4])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[0][5])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[1][0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[1][1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[1][2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[1][3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[1][4])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[1][5])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[2][0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[2][1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[2][2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[2][3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[2][4])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[2][5])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='1']", forwardDC_chamber[3][0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='2']", forwardDC_chamber[3][1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='3']", forwardDC_chamber[3][2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='4']", forwardDC_chamber[3][3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='5']", forwardDC_chamber[3][4])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@X_Y_Z/layer[@value='6']", forwardDC_chamber[3][5])) return false;
+		
 	// Offset due to global FDC envelopes
 	double zfdc = ForwardDC[2] + forwardDC[2];
 	
@@ -624,7 +613,7 @@ bool DGeometry::GetFDCZ(vector<double> &z_wires) const
 		}
 	}
 	
-	return good;
+	return true;
 }
 
 //---------------------------------
@@ -646,42 +635,35 @@ bool DGeometry::GetFDCStereo(vector<double> &stereo_angles) const
 
 	vector<double> forwardDC_module[4];
 	vector<double> forwardDC_chamber[4][6];
-
-	bool good = true;
 	
-	good |= Get("//posXYZ[@volume='forwardDC_module_1']/@X_Y_Z", forwardDC_module[0]);
-	good |= Get("//posXYZ[@volume='forwardDC_module_2']/@X_Y_Z", forwardDC_module[1]);
-	good |= Get("//posXYZ[@volume='forwardDC_module_3']/@X_Y_Z", forwardDC_module[2]);
-	good |= Get("//posXYZ[@volume='forwardDC_module_4']/@X_Y_Z", forwardDC_module[3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='1']", forwardDC_chamber[0][0]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='2']", forwardDC_chamber[0][1]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='3']", forwardDC_chamber[0][2]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='4']", forwardDC_chamber[0][3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='5']", forwardDC_chamber[0][4]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='6']", forwardDC_chamber[0][5]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='1']", forwardDC_chamber[1][0]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='2']", forwardDC_chamber[1][1]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='3']", forwardDC_chamber[1][2]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='4']", forwardDC_chamber[1][3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='5']", forwardDC_chamber[1][4]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='6']", forwardDC_chamber[1][5]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='1']", forwardDC_chamber[2][0]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='2']", forwardDC_chamber[2][1]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='3']", forwardDC_chamber[2][2]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='4']", forwardDC_chamber[2][3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='5']", forwardDC_chamber[2][4]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='6']", forwardDC_chamber[2][5]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='1']", forwardDC_chamber[3][0]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='2']", forwardDC_chamber[3][1]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='3']", forwardDC_chamber[3][2]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='4']", forwardDC_chamber[3][3]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='5']", forwardDC_chamber[3][4]);
-	good |= Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='6']", forwardDC_chamber[3][5]);
-
-	if(!good){
-		_DBG_<<"Unable to retrieve ForwardDC positions."<<endl;
-		return good;
-	}
+	if(!Get("//posXYZ[@volume='forwardDC_module_1']/@X_Y_Z", forwardDC_module[0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_module_2']/@X_Y_Z", forwardDC_module[1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_module_3']/@X_Y_Z", forwardDC_module[2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_module_4']/@X_Y_Z", forwardDC_module[3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='1']", forwardDC_chamber[0][0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='2']", forwardDC_chamber[0][1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='3']", forwardDC_chamber[0][2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='4']", forwardDC_chamber[0][3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='5']", forwardDC_chamber[0][4])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_1']/@rot/layer[@value='6']", forwardDC_chamber[0][5])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='1']", forwardDC_chamber[1][0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='2']", forwardDC_chamber[1][1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='3']", forwardDC_chamber[1][2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='4']", forwardDC_chamber[1][3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='5']", forwardDC_chamber[1][4])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_2']/@rot/layer[@value='6']", forwardDC_chamber[1][5])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='1']", forwardDC_chamber[2][0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='2']", forwardDC_chamber[2][1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='3']", forwardDC_chamber[2][2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='4']", forwardDC_chamber[2][3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='5']", forwardDC_chamber[2][4])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_3']/@rot/layer[@value='6']", forwardDC_chamber[2][5])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='1']", forwardDC_chamber[3][0])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='2']", forwardDC_chamber[3][1])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='3']", forwardDC_chamber[3][2])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='4']", forwardDC_chamber[3][3])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='5']", forwardDC_chamber[3][4])) return false;
+	if(!Get("//posXYZ[@volume='forwardDC_chamber_4']/@rot/layer[@value='6']", forwardDC_chamber[3][5])) return false;
 	
 	// Loop over packages
 	for(int package=1; package<=4; package++){
@@ -692,7 +674,7 @@ bool DGeometry::GetFDCStereo(vector<double> &stereo_angles) const
 		}
 	}
 
-	return good;
+	return true;
 }
 
 //---------------------------------
@@ -701,25 +683,18 @@ bool DGeometry::GetFDCStereo(vector<double> &stereo_angles) const
 bool DGeometry::GetFDCRmin(vector<double> &rmin_packages) const
 {
 	vector<double> FDA[4];
-
-	bool good = true;
 	
-	good |= Get("//section[@name='ForwardDC']/tubs[@name='FDA1']/@Rio_Z", FDA[0]);
-	good |= Get("//section[@name='ForwardDC']/tubs[@name='FDA2']/@Rio_Z", FDA[1]);
-	good |= Get("//section[@name='ForwardDC']/tubs[@name='FDA3']/@Rio_Z", FDA[2]);
-	good |= Get("//section[@name='ForwardDC']/tubs[@name='FDA4']/@Rio_Z", FDA[3]);
-	
-	if(!good){
-		_DBG_<<"Unable to retrieve FDC Rmin values."<<endl;
-		return good;
-	}
+	if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA1']/@Rio_Z", FDA[0])) return false;
+	if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA2']/@Rio_Z", FDA[1])) return false;
+	if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA3']/@Rio_Z", FDA[2])) return false;
+	if(!Get("//section[@name='ForwardDC']/tubs[@name='FDA4']/@Rio_Z", FDA[3])) return false;
 
 	rmin_packages.push_back(FDA[0][0]);
 	rmin_packages.push_back(FDA[1][0]);
 	rmin_packages.push_back(FDA[2][0]);
 	rmin_packages.push_back(FDA[3][0]);
 
-	return good;
+	return true;
 }
 
 //---------------------------------
@@ -731,9 +706,7 @@ bool DGeometry::GetFDCRmax(double &rmax_active_fdc) const
 	// active area.
 	vector<double> FDA1;
 
-	bool good = true;
-	
-	good |= Get("//section[@name='ForwardDC']/tubs[@name='FDA1']/@Rio_Z", FDA1);
+	bool good = Get("//section[@name='ForwardDC']/tubs[@name='FDA1']/@Rio_Z", FDA1);
 	
 	if(!good){
 		_DBG_<<"Unable to retrieve FDC Rmax values."<<endl;
@@ -817,21 +790,16 @@ bool DGeometry::GetCDCNwires(vector<int> &cdc_nwires) const
 //---------------------------------
 bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
   const{
-  bool good = true;
+
   vector<double>cdc_origin;
   vector<double>cdc_center;
   vector<double>cdc_endplate_pos;
   vector<double>cdc_endplate_dim;
   
-  good |= Get("//posXYZ[@volume='CentralDC'/@X_Y_Z",cdc_origin);
-  good |= Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_center);
-  good |= Get("//posXYZ[@volume='CDPD']/@X_Y_Z",cdc_endplate_pos);
-  good |= Get("//tubs[@name='CDPD']/@Rio_Z",cdc_endplate_dim);
-
-  if(!good){
-    _DBG_<<"Unable to retrieve CDC Endplate data."<<endl;
-    return good;
-  }
+  if(!Get("//posXYZ[@volume='CentralDC'/@X_Y_Z",cdc_origin)) return false;
+  if(!Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_center)) return false;
+  if(!Get("//posXYZ[@volume='CDPD']/@X_Y_Z",cdc_endplate_pos)) return false;
+  if(!Get("//tubs[@name='CDPD']/@Rio_Z",cdc_endplate_dim)) return false;
   
 	if(cdc_origin.size()<3){
   		_DBG_<<"cdc_origin.size()<3 !"<<endl;
@@ -855,7 +823,7 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
   rmin=cdc_endplate_dim[0];
   rmax=cdc_endplate_dim[1];
 
-  return good;
+  return true;
 }
 //---------------------------------
 // GetBCALRmin
@@ -928,16 +896,16 @@ bool DGeometry::GetTOFZ(vector<double> &z_tof) const
 	vector<double> ForwardTOF;
 	vector<double> forwardTOF[2];
 	vector<double> FTOC;
-	bool good = true;
-	good |= Get("//section/composition/posXYZ[@volume='ForwardTOF']/@X_Y_Z", ForwardTOF);
-	good |= Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='0']", forwardTOF[0]);
-	good |= Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='1']", forwardTOF[1]);
-	good |= Get("//box[@name='FTOC' and sensitive='true']/@X_Y_Z", FTOC);
+       
+	if(!Get("//section/composition/posXYZ[@volume='ForwardTOF']/@X_Y_Z", ForwardTOF)) return false;
+	if(!Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='0']", forwardTOF[0])) return false;
+	if(!Get("//composition[@name='ForwardTOF']/posXYZ[@volume='forwardTOF']/@X_Y_Z/plane[@value='1']", forwardTOF[1])) return false;
+	if(!Get("//box[@name='FTOC' and sensitive='true']/@X_Y_Z", FTOC)) return false;
 	
 	z_tof.push_back(ForwardTOF[2] + forwardTOF[0][2] - FTOC[2]/2.0);
 	z_tof.push_back(ForwardTOF[2] + forwardTOF[1][2] - FTOC[2]/2.0);
 
-	return good;
+	return true;
 }
 
 //---------------------------------
@@ -948,14 +916,16 @@ bool DGeometry::GetTargetZ(double &z_target) const
 	vector<double> xyz_vessel;
 	vector<double> xyz_target;
 	vector<double> xyz_detector;
-	bool good = true;
-	good |= Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel);
-	good |= Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target);
-	good |= Get("//composition[@name='GlueXdetector']/posXYZ[@volume='Target']/@X_Y_Z", xyz_detector);
-	
-	z_target = good ? (xyz_vessel[2] + xyz_target[2] + xyz_detector[2]):0.0;
+       
+	z_target=0.;
 
-	return good;
+	if(!Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel)) return false;
+	if(!Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target)) return false;
+	if(!Get("//composition[@name='GlueXdetector']/posXYZ[@volume='Target']/@X_Y_Z", xyz_detector)) return false;
+	
+	z_target = xyz_vessel[2] + xyz_target[2] + xyz_detector[2];
+
+	return true;
 }
 
 //---------------------------------
