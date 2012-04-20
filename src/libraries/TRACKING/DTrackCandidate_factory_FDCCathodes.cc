@@ -32,7 +32,13 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
-  dgeom->GetFDCZ(z_wires); 
+  
+  USE_FDC=true;
+  if (!dgeom->GetFDCZ(z_wires)){
+    _DBG_<< "FDC geometry not available!" <<endl;
+    USE_FDC=false;
+  }
+
   // Get the position of the CDC downstream endplate from DGeometry
   double endplate_dz,endplate_rmin,endplate_rmax;
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
@@ -74,6 +80,8 @@ inline bool DTrackCandidate_segment_cmp(const DFDCSegment *a, const DFDCSegment 
 //------------------
 jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnumber)
 {
+  if (!USE_FDC) return NOERROR;
+
   vector<const DFDCSegment*>segments;
   eventLoop->Get(segments);
   // abort if there are no segments
