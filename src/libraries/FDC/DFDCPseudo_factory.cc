@@ -99,7 +99,14 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
   // Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
-  dgeom->GetFDCWires(fdcwires);
+    
+  USE_FDC=true;
+  if (!dgeom->GetFDCWires(fdcwires)){
+    _DBG_<< "FDC geometry not available!" <<endl;
+    USE_FDC=false;
+  }
+
+
 
   if(DEBUG_HISTS){
     dapp->Lock();
@@ -141,6 +148,9 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
 /// this is the place that anode hits and DFDCCathodeClusters are organized into pseudopoints.
 ///
 jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
+  if (!USE_FDC) return NOERROR;
+
+
 	vector<const DFDCHit*> fdcHits;
 	vector<const DFDCHit*> xHits;
 	vector<const DFDCCathodeCluster*> cathClus;

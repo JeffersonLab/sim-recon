@@ -34,7 +34,10 @@ jerror_t DFDCIntersection_factory::brun(JEventLoop *loop, int runnumber)
   // Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
-  dgeom->GetFDCWires(fdcwires);
+  if (!dgeom->GetFDCWires(fdcwires)){
+    _DBG_<< "FDC geometry not available!" <<endl;
+    USE_FDC=false;
+  }
 
   return NOERROR;
 }
@@ -44,6 +47,8 @@ jerror_t DFDCIntersection_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DFDCIntersection_factory::evnt(JEventLoop *loop, int eventnumber)
 {
+  if (!USE_FDC) return NOERROR;
+
 	// Clear fdchits_by_package structure
 	for(int package=1; package<=4; package++){
 		for(int layer=1; layer<=6; layer++){

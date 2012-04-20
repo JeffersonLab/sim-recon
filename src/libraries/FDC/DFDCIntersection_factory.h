@@ -35,7 +35,7 @@ class DFDCIntersection_factory:public JFactory<DFDCIntersection>{
 		double MAX_DIST2;
 
 	vector<vector<DFDCWire*> >fdcwires;
-		
+	bool USE_FDC;
 
 };
 
