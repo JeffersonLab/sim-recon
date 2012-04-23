@@ -7,9 +7,9 @@ c |gelhadused| is set to |.true.| when |gphad| is called
      $  ,nevout_gelh
      $  ,ngelhperev
      $  ,ninthad_gelh
-      logical gelhadused	! there was an interaction in this event
-      integer nevtot_gelh	! total events
-      integer nevhad_gelh	! total hadronic interaction events
-      integer nevout_gelh	! total events output
-      integer ngelhperev        ! Number of gelhad interactions per event
-      integer ninthad_gelh	! total interactions
+      logical gelhadused  ! there was an interaction in this event
+      integer nevtot_gelh ! total events
+      integer nevhad_gelh ! total hadronic interaction events
+      integer nevout_gelh ! total events output
+      integer ngelhperev  ! Number of gelhad interactions per event
+      integer ninthad_gelh! total interactions
