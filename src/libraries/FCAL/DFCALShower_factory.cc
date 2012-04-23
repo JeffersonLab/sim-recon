@@ -25,15 +25,15 @@ DFCALShower_factory::DFCALShower_factory()
 
 // Set of coefficients for non-linear energy corrections 
 
-  m_zTarget = 65*k_cm;
   SHOWER_ENERGY_THRESHOLD = 50*k_MeV;
-  
-  //Regular Lead Glass Fit values for 30cm RHG radius
-  NON_LIN_COEF_A = 0.53109;
-  NON_LIN_COEF_B = 2.66426; 
-  NON_LIN_COEF_C = 2.70763;
-  NON_LIN_COEF_alfa = 1+0.0191858;
 
+  NON_LIN_COEF_A = 0.439287;
+  NON_LIN_COEF_B = 0.503378; 
+  NON_LIN_COEF_C = 1.80842;
+  NON_LIN_COEF_alfa = 1+0.0724789;
+
+  //Loose timing cut
+  SHOWER_TIMING_WINDOW = 5.0;
 
 // Parameters to make shower-depth correction taken from Radphi, 
 // slightly modifed to match photon-polar angle
@@ -47,22 +47,22 @@ DFCALShower_factory::DFCALShower_factory()
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B", NON_LIN_COEF_B);
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_C", NON_LIN_COEF_C);
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_alfa", NON_LIN_COEF_alfa);
+
+	gPARMS->SetDefaultParameter("FCAL:SHOWER_TIMING_WINDOW", SHOWER_TIMING_WINDOW);
 	
 	gPARMS->SetDefaultParameter("FCAL:FCAL_RADIATION_LENGTH", FCAL_RADIATION_LENGTH);
 	gPARMS->SetDefaultParameter("FCAL:FCAL_CRITICAL_ENERGY", FCAL_CRITICAL_ENERGY);
 	gPARMS->SetDefaultParameter("FCAL:FCAL_SHOWER_OFFSET", FCAL_SHOWER_OFFSET);
 
-  
-	
 }
 
 //------------------
 // brun
 //------------------
 // take merging out
-/* jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
 {
-	// Get calibration constants
+  /*// Get calibration constants
 	map<string, double> cluster_merging;
 	loop->GetCalib("FCAL/cluster_merging", cluster_merging);
 	if(cluster_merging.find("MIN_CLUSTER_SEPARATION")!=cluster_merging.end()){
@@ -71,11 +71,28 @@ DFCALShower_factory::DFCALShower_factory()
 	}else{
 		jerr<<"Unable to get from MIN_CLUSTER_SEPARATION FCAL/cluster_merging in Calib database!"<<endl;
 		loop->GetJApplication()->Quit();
-	}
+        }*/
 
-	return NOERROR;
+  // Get calibration constants
+  FCAL_C_EFFECTIVE=15.;
+  map<string, double> fcal_parms;
+  loop->GetCalib("FCAL/fcal_parms", fcal_parms);
+  if (fcal_parms.find("FCAL_C_EFFECTIVE")!=fcal_parms.end()){
+    FCAL_C_EFFECTIVE = fcal_parms["FCAL_C_EFFECTIVE"];
+    if(debug_level>0)jout<<"FCAL_C_EFFECTIVE = "<<FCAL_C_EFFECTIVE<<endl;
+  } else {
+    jerr<<"Unable to get FCAL_C_EFFECTIVE from FCAL/fcal_parms in Calib database!"<<endl;
+  }
+  
+  m_zTarget=65.0*k_cm;
+  DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+  if (dapp) {
+    const DGeometry *geom = dapp->GetDGeometry(runnumber);
+    geom->GetTargetZ(m_zTarget);
+  }
+
+  return NOERROR;
 }
-*/
 
 
 //------------------
@@ -175,11 +192,30 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 		DFCALShower* fcalShower = makeFcalShower( *clItr );
 
+		//Make a very loose timing cut here to eliminate out-of-time EM bkgd.
+		//Photon travels dist1 (from center of target to shower maximum
+		//position) at the speed of light and the remainder of the distance,
+		//dist2, to the back of the FCAL (where timing is measured) at c_eff.
+		//This travel time is the expected_time. Since this time is only used
+		//to make a very loose timing cut, we can ignore other factors such as
+		//the fact that not all particles originate exactly at the center of
+		//the target.
+		//Later analysis should use a tighter timing cut incoporating vertex
+		//position and time.
+		DVector3 pos = fcalShower->getPosition();
+		DVector3 vertex(0.0, 0.0, m_zTarget);
+		double dist1 = (pos-vertex).Mag();
+		double dist2 = DFCALGeometry::fcalFaceZ() + DFCALGeometry::blockLength() - pos.Z();
+		double expected_time = dist1/SPEED_OF_LIGHT + dist2/FCAL_C_EFFECTIVE;
+
 		if ( fcalShower->getEnergy() <= 0  ) {
 		  cout << "Deleting fcalShower " << endl;
 		  delete fcalShower; 
 		  continue;
-		}else {
+		} else if ( fabs(fcalShower->getTime() - expected_time) > SHOWER_TIMING_WINDOW ){
+		  delete fcalShower; 
+		  continue;          
+		} else {
 			_data.push_back(fcalShower);
 		}
 
