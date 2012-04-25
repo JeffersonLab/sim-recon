@@ -45,12 +45,12 @@ class DPiMinus:public DKinematicData{
 
 		double GetProb(void) const {
 			if(!hypoth)return -1.0;
-			return TMath::Prob((double)hypoth->dChiSq, (double)hypoth->dNDF);
+			return TMath::Prob((double)hypoth->dChiSq, (int)hypoth->dNDF);
 		}
 	
 		double GetProbTrack(void) const {
 			if(!hypoth)return -1.0;
-			return TMath::Prob((double)hypoth->dChiSq_Track, (double)hypoth->dNDF_Track);
+			return TMath::Prob((double)hypoth->dChiSq_Track, (int)hypoth->dNDF_Track);
 		}
 	
 		const DChargedTrackHypothesis* GetChargedTrackHypothesis(void) const {
