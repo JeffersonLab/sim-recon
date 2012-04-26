@@ -60,6 +60,12 @@ static float DIFFUSION_COEFF  =   1.1e-6; // cm^2/s --> 200 microns at 1 cm
 static float FDC_TIME_WINDOW = 1000.0; //time window for accepting FDC hits, ns
 static float GAS_GAIN = 8e4;
 
+
+#if 0
+static float wire_dx_offset[2304];
+static float wire_dz_offset[2304];
+#endif
+
 binTree_t* forwardDCTree = 0;
 static int stripCount = 0;
 static int wireCount = 0;
@@ -181,7 +187,7 @@ double cathode_signal(double t,s_FdcCathodeTruthHits_t* chits){
 // Generate hits in two cathode planes flanking the wire plane  
 void AddFDCCathodeHits(int PackNo,float xwire,float avalanche_y,float tdrift,
 		       int n_p,int track,int ipart,int chamber,int module,
-		       int layer){
+		       int layer, int global_wire_number){
 
   s_FdcCathodeTruthHits_t* chits;    	  
 
@@ -223,15 +229,21 @@ void AddFDCCathodeHits(int PackNo,float xwire,float avalanche_y,float tdrift,
     int strip1 = ceil((cathode_u-U_OF_STRIP_ZERO)/STRIP_SPACING +0.5);
     float cathode_u1 = (strip1-1)*STRIP_SPACING + U_OF_STRIP_ZERO;
     float delta = cathode_u-cathode_u1;
-    
+    float half_gap=ANODE_CATHODE_SPACING;
+
+#if 0
+    half_gap+=(plane==1)?+wire_dz_offset[global_wire_number]:
+	       -wire_dz_offset[global_wire_number];
+#endif
+
     for (node=-STRIP_NODES; node<=STRIP_NODES; node++){
       /* Induce charge on the strips according to the Mathieson 
 	 function tuned to results from FDC prototype
       */
       float lambda1=(((float)node-0.5)*STRIP_SPACING+STRIP_GAP/2.
-		     -delta)/ANODE_CATHODE_SPACING;
+		     -delta)/half_gap;
       float lambda2=(((float)node+0.5)*STRIP_SPACING-STRIP_GAP/2.
-		     -delta)/ANODE_CATHODE_SPACING;
+		     -delta)/half_gap;
       float factor=0.25*M_PI*K2;
       float q = 0.25*q_anode*(tanh(factor*lambda2)-tanh(factor*lambda1));
       
@@ -555,6 +567,23 @@ void hitForwardDC (float xin[4], float xout[4],
         } else {
           printf("FDC: SOME parameters found more than once in Data Base\n");
         }       
+#if 0
+	{
+	  int num_values=2304*2;
+	  float my_values[2304*2]; 
+	  mystr_t my_strings[2304*2];
+	  status=GetArrayConstants("FDC/fdc_wire_offsets",&num_values,
+				   my_values,my_strings);
+	  if (!status){
+	    int i;
+	    for (i=0;i<num_values;i+=2){
+	      int j=i/2;
+	      wire_dx_offset[j]=my_values[i];
+	      wire_dz_offset[j]=my_values[i+1];
+	    }
+	  }
+	}
+#endif
       }
       initializedx = 1 ;
   }
@@ -573,6 +602,7 @@ void hitForwardDC (float xin[4], float xout[4],
      printf("hitFDC: FDC package number evaluates to zero! THIS SHOULD NEVER HAPPEN! drop this particle.\n");
     return;
   }
+  int glayer=6*PackNo+layer-1;
   int module = 2*(PackNo)+(layer-1)/3+1;
   int chamber = (module*10)+(layer-1)%3+1;
   int wire1,wire2;
@@ -596,6 +626,12 @@ void hitForwardDC (float xin[4], float xout[4],
   // Make sure at least one wire number is valid
   if (wire1>WIRES_PER_PLANE&&wire2>WIRES_PER_PLANE) return;
   if (wire1==0 && wire2==0) return;
+
+  if (wire1>WIRES_PER_PLANE) wire1=wire2;
+  else if (wire2>WIRES_PER_PLANE) wire2=wire1;
+  if (wire1==0) wire1=wire2;
+  else if (wire2==0) wire2=wire1;
+
   dwire = (wire1 < wire2)? 1 : -1;
   alpha = atan2(xoutlocal[0]-xinlocal[0],xoutlocal[2]-xinlocal[2]);
   sinalpha=sin(alpha);
@@ -685,8 +721,12 @@ void hitForwardDC (float xin[4], float xout[4],
       float x0[3],x1[3];
       float avalanche_y;
       float xwire = U_OF_WIRE_ZERO + (wire-1)*WIRE_SPACING;
+      int global_wire_number=96*glayer+wire-1;
 
-     
+#if 0
+      xwire+=wire_dx_offset[global_wire_number];
+#endif     
+
       if (wire1==wire2){
 	dE=dEsum; 
 	x0[0] = xinlocal[0];
@@ -778,7 +818,9 @@ void hitForwardDC (float xin[4], float xout[4],
 	  float tany=(x1[1]-x0[1])/zrange;
 	  float tanx=(x1[0]-x0[0])/zrange;
 	  float dz=ANODE_CATHODE_SPACING-dradius*sign*sinalpha;
-       
+#if 0	  
+	  dz+=wire_dz_offset[global_wire_number];
+#endif
 	  xlocal[0]=x0[0]+tanx*dz;
 	  if (fabs(xlocal[0]-xwire)>0.5){
 	    xlocal[0]=x1[0];
@@ -798,7 +840,7 @@ void hitForwardDC (float xin[4], float xout[4],
 	    if (AddFDCAnodeHit(ahits,layer,ipart,track,xwire,xlocal,dE,t,
 			       &tdrift)){
 	      AddFDCCathodeHits(PackNo,xwire,xlocal[1],tdrift,n_p,track,ipart,
-				chamber,module,layer);
+				chamber,module,layer,global_wire_number);
 	    }
 	  
 	  }
@@ -823,7 +865,7 @@ void hitForwardDC (float xin[4], float xout[4],
 	      if (AddFDCAnodeHit(ahits,layer,ipart,track,xwire,xlocal,dE,t,
 				 &tdrift)){
 		AddFDCCathodeHits(PackNo,xwire,xlocal[1],tdrift,n_p,track,ipart,
-				  chamber,module,layer);
+				  chamber,module,layer,global_wire_number);
 	      }
 	    }
 
