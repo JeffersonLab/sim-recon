@@ -72,7 +72,7 @@ C.    ------------------------------------------------------------------
          IKCUT = GEKA*LOG10(CUTPRO) + GEKB
          GKR   = (CUTPRO - ELOW(IKCUT))/(ELOW(IKCUT+1) - ELOW(IKCUT))
          STOPC = (1.-GKR)*Q(JRANG+IKCUT) + GKR*Q(JRANG+IKCUT+1)
-	 if(a.eq.0) a=1.007970
+         if(a.eq.0) a=1.007970
          FACFLU = DME*(Z*DENS/A)
          CHAR23 = ONE/CHARGE**TWOTHR
          IF(IMCKOV.EQ.1) THEN

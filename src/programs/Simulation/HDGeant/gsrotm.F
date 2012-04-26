@@ -49,7 +49,8 @@ C.
 #endif
 #if !defined(CERNLIB_SINGLE)
       DOUBLE PRECISION ROTMAT(9),ONE,ZERO
-      DOUBLE PRECISION PROD1,PROD2,PROD3,HMOD,SINMIN
+c      DOUBLE PRECISION PROD1,PROD2,PROD3,HMOD,SINMIN
+      DOUBLE PRECISION PROD1,HMOD,SINMIN
       PARAMETER (ONE=1.D0,ZERO=0.D0)
       DATA SINMIN/1.00D-5/
 #endif
@@ -99,7 +100,7 @@ C.---       Test orthonormality
       DO 20 J=1,9
         ROTMAT(J)=Q(JR+J)
   20  CONTINUE
-	goto 110
+       goto 110
 c      PROD2=ZERO
 C.
 C.               X - Y
@@ -116,7 +117,7 @@ C.               Y - Z
 C      PROD3=
 C     +ROTMAT(7)*ROTMAT(4)+ROTMAT(8)*ROTMAT(5)+ROTMAT(9)*ROTMAT(6)
 C      IF(ABS(PROD3).LE.SINMIN) GO TO 110
-  30  CONTINUE
+c  30  CONTINUE
 C.
 C.---       Orthonormalization needed
 C.
@@ -156,11 +157,11 @@ C EJB - Added the following traps for HMOD, to solve arithmetic
 C problems on the alpha.
 C
       if(hmod.lt.0) then
-	write(*,*)'WARNING !!!!!!!! HMOD < 0, taking abs. value'
-	hmod=abs(hmod)
+       write(*,*)'WARNING !!!!!!!! HMOD < 0, taking abs. value'
+       hmod=abs(hmod)
       endif
       if(hmod.eq.0) then
-	write(*,*)'WARNING !!!!!!!! HMOD = 0, making it 1.0'
+       write(*,*)'WARNING !!!!!!!! HMOD = 0, making it 1.0'
         hmod=1.0
       endif
 C

@@ -309,7 +309,8 @@ C*****  End of Code Expanded From Routine:  GROT
 *   * Compute distance to boundary of current content
 *
 C*****  Code Expanded From Routine:  GITRAN
-  180 IF (IROTT .EQ. 0) THEN
+c  180 IF (IROTT .EQ. 0) THEN
+         IF (IROTT .EQ. 0) THEN
          XT(1) = XC(1) - Q(5+JIN)
          XT(2) = XC(2) - Q(6+JIN)
          XT(3) = XC(3) - Q(7+JIN)
@@ -972,7 +973,8 @@ c        print *, 'outside when assumed inside, rounding error!'
 *
 * *** Attempt to rescue negative SNXT due to rounding errors
 *
-  900 IF (SNXT.EQ.BIG1) THEN
+c  900 IF (SNXT.EQ.BIG1) THEN
+      IF (SNXT.EQ.BIG1) THEN
 CCC debug
          IF (ISWIT(9).EQ.123456789) THEN
             PRINT *,' GTNEXT : SNEXT,SAFETY,INGOTO=',SNEXT,SAFETY,INGOTO

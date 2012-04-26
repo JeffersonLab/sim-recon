@@ -14,7 +14,7 @@ C call it from the C++ main() which is in hdgeant.cc
       common /pawc/ hq(hspace)
       real secmax
       parameter (secmax=300000.)
-      integer istat,icycle
+c      integer istat,icycle
 
 C---- Initialization of HBOOK, ZEBRA, clock
       call GZEBRA(ispace)

@@ -20,7 +20,7 @@
 *
 #include "geant321/gcomis.inc"
 *
-      DIMENSION P(1)
+c      DIMENSION P(1)
 *
 *
       END

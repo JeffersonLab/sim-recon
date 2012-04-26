@@ -162,8 +162,8 @@ C  If no hit is being recorded then nothing to do
 
 *	At end of track segment in sensitive medium: register hit
 
-      if ((cnames(NLEVEL).eq.'STRC').or.		! vertex cylinder
-     +    (cnames(NLEVEL).eq.'STRP')) then		! vertex endcap
+      if ((cnames(NLEVEL).eq.'STRC').or.  ! vertex cylinder
+     +    (cnames(NLEVEL).eq.'STRP')) then  ! vertex endcap
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-3   ! 1 MeV in plastic
@@ -173,9 +173,9 @@ C  If no hit is being recorded then nothing to do
           call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
-     +        (cnames(NLEVEL).eq.'STLA').or.		! CDC stereo straw
-     +        (cnames(NLEVEL).eq.'STLB')) then	! CDC close-packed stereo straw
+      elseif ((cnames(NLEVEL).eq.'STRA').or.  ! CDC straight straw
+     +        (cnames(NLEVEL).eq.'STLA').or.  ! CDC stereo straw
+     +        (cnames(NLEVEL).eq.'STLB')) then ! CDC close-packed stereo straw
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-5   ! 10 KeV in gas
@@ -185,7 +185,7 @@ C  If no hit is being recorded then nothing to do
           call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif (cnames(NLEVEL)(1:3).eq.'FDA') then	! FDC anode drift cell
+      elseif (cnames(NLEVEL)(1:3).eq.'FDA') then ! FDC anode drift cell
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-5   ! 10 KeV in gas
@@ -195,17 +195,17 @@ C  If no hit is being recorded then nothing to do
           call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif (cnames(NLEVEL).eq.'CERW') then		! Cerenkov truth
+      elseif (cnames(NLEVEL).eq.'CERW') then  ! Cerenkov truth
         if (dEsum.gt.0) then
           call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif (cnames(NLEVEL).eq.'CPPC') then		! Cerenkov counter
+      elseif (cnames(NLEVEL).eq.'CPPC') then  ! Cerenkov counter
         if ((dEsum.gt.0).and.(IPART.eq.50)) then
           call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
+      elseif ((cnames(NLEVEL).eq.'FTOC').or.  ! forward TOF counter
      +        (cnames(NLEVEL).eq.'FTOH')) then
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
@@ -216,7 +216,7 @@ C  If no hit is being recorded then nothing to do
           call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif (cnames(NLEVEL)(1:2).eq.'BM') then		! BCal segment
+      elseif (cnames(NLEVEL)(1:2).eq.'BM') then  ! BCal segment
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2  ! 10 MeV in the calorimeter module
@@ -227,7 +227,7 @@ C  If no hit is being recorded then nothing to do
      >          IPART)
           ISTORY = 1  ! this particle has entered the BCal (inherited trait)
         endif
-      elseif (cnames(NLEVEL).eq.'GCAL') then		! GCal segment
+      elseif (cnames(NLEVEL).eq.'GCAL') then  ! GCal segment
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2  ! 10 MeV in the calorimeter module
@@ -238,7 +238,7 @@ C  If no hit is being recorded then nothing to do
      >          IPART)
           ISTORY = 1  ! this particle has entered the GCal (inherited trait)
         endif
-      elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
+      elseif (cnames(NLEVEL).eq.'LGBL') then  ! forward calorimeter
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2   ! 10 MeV in the calorimeter block
@@ -250,7 +250,7 @@ C  If no hit is being recorded then nothing to do
      >          IPART)
           ISTORY = 2  ! this particle has entered the FCal (inherited trait)
         endif
-      elseif (cnames(NLEVEL).eq.'LTBL') then		! Compton calorimeter
+      elseif (cnames(NLEVEL).eq.'LTBL') then  ! Compton calorimeter
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2   ! 10 MeV in the calorimeter block
@@ -262,7 +262,7 @@ C  If no hit is being recorded then nothing to do
      >          IPART)
           ISTORY = 2  ! this particle has entered the CCal (inherited trait)
         endif
-      elseif ((cnames(NLEVEL).eq.'UPVP').or.		! UPV channel
+      elseif ((cnames(NLEVEL).eq.'UPVP').or.  ! UPV channel
      +        (cnames(NLEVEL).eq.'UPVC')) then
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then

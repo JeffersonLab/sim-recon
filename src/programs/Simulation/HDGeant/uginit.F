@@ -203,7 +203,7 @@ C..geant..
       IANNI=1
       IPHOT=1
       IHADR=1
-		ILOSS=1
+              ILOSS=1
 *
 *             Make the default origin for the particle gun at 0,0,65cm.
 *
@@ -354,7 +354,7 @@ C..geant..
       call initcalibdb(bfield_type, bfield_map)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts
      +,deleteunsmeared)
-	   call copygatetocplusplus(bggate(1), bggate(2))
+          call copygatetocplusplus(bggate(1), bggate(2))
 *
 *             Open the HBOOK file for output
 *

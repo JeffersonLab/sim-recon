@@ -8,11 +8,11 @@
 * Revision 1.13  2003/12/10 15:32:57  jonesrt
 * -control.in : never mind [rtj]
 * -gukine.F : fixed a bug in the setting of polarization ppol used
-* 	for polarization studies of the coherent bremsstrahlung source [rtj]
+*        for polarization studies of the coherent bremsstrahlung source [rtj]
 * -gustep.F : changed background studies facility to split data across
-* 	separate ntuples, one for each virtual detector [rtj]
+*        separate ntuples, one for each virtual detector [rtj]
 * -hit*.F : modified behaviour from "quit" to "truncate" in the case where
-* 	the number of hits exceeds the maximum allowed for that counter [rtj]
+*        the number of hits exceeds the maximum allowed for that counter [rtj]
 *
 * Revision 1.12  2003/07/28 15:42:58  jonesrt
 * - gukine.F - added photon polarization as an additional attached info to
@@ -167,8 +167,8 @@
         call GRNDMQ(iseed1,iseed2,0,'S')
 
 *
-*	Fake a tagger hit of the correct energy by adding up the energy
-*	of all generated tracks and assigning them to the trigger time.
+*       Fake a tagger hit of the correct energy by adding up the energy
+*       of all generated tracks and assigning them to the trigger time.
 *
         PLAB(1) = 0
         PLAB(2) = 0
@@ -192,10 +192,10 @@
 
         if (bgrate.gt.0) then
 *
-* 	Superimpose background in the form of coherent bremsstrahlung
-* 	beam photons sent down the photon beam line.  They are generated
-*	with a random time distribution over the duration of the gate
-*	to simulate the actual conditions of a bremsstrahlung beam.
+*        Superimpose background in the form of coherent bremsstrahlung
+*        beam photons sent down the photon beam line.  They are generated
+*       with a random time distribution over the duration of the gate
+*       to simulate the actual conditions of a bremsstrahlung beam.
 *
           ngen=0
           tgen=bggate(1)
@@ -237,22 +237,22 @@ c         print *, ngen,' background photons generated this event'
 *           distribute evenly in the log of total momentum(theta).
 *           Otherwise, distribute evenly in total momentum(theta).
 *           3/17/2009  DL
-				IF (plog_particle_gun.EQ.0) THEN
+                            IF (plog_particle_gun.EQ.0) THEN
                PABS=PKINE(1)+PKINE(4)*(RNDM(1)-0.5)
-				ELSE
+                            ELSE
                pmin=PKINE(1)-0.5*PKINE(4)
                pmax=PKINE(1)+0.5*PKINE(4)
                IF (pmin.LE.0) pmin=0.100
                PABS=pmin*(pmax/pmin)**RNDM(1)
-				ENDIF
-				IF (tlog_particle_gun.EQ.0) THEN
+                            ENDIF
+                            IF (tlog_particle_gun.EQ.0) THEN
                THETA=(PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD
-				ELSE
+                            ELSE
                thetamin=PKINE(2)-0.5*PKINE(5)
                thetamax=PKINE(2)+0.5*PKINE(5)
                IF (thetamin.LE.0) thetamin=0.9
                THETA=(thetamin*(thetamax/thetamin)**RNDM(2))*DEGRAD
-				ENDIF
+                            ENDIF
             PHI=(PKINE(3)+PKINE(6)*(RNDM(3)-0.5))*DEGRAD
          ELSE
             IK=IKINE

@@ -70,8 +70,8 @@ C
  100         CONTINUE
           DO 200    K  =  1, KNOTS
              I  =  INDEX(K)
-	     if(abs(table(i)).lt.1.0E-10)table(i)=0.0
-	     if(abs(weight(k)).lt.1.0E-10)weight(k)=0.0
+            if(abs(table(i)).lt.1.0E-10)table(i)=0.0
+            if(abs(weight(k)).lt.1.0E-10)weight(k)=0.0
              FINT  =  FINT + WEIGHT(K) * TABLE(I)
  200         CONTINUE
           RETURN
