@@ -68,11 +68,12 @@
 #define MIN_CDC_ITER 0
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
+#define MIN_HITS_FOR_REFIT 8
 
 // Functions of Moliere fraction F
-#define MOLIERE_RATIO1 30.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 10.0e-7 // = (scale factor)*1e-6/(1+F*F)
-#define MOLIERE_RATIO3 10.0e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO1 25.0   // = 0.5/(1-F)
+#define MOLIERE_RATIO2 10.2e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO3 10.2e-7 // = (scale factor)*1e-6/(1+F*F)
 #define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001
