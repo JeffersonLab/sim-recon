@@ -412,7 +412,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
   TH2F *cdc_drift,*fdc_drift,*fdc_yres_vs_dE;
   TH2F *cdc_res,*fdc_xres,*cdc_drift_vs_B,*fdc_drift_vs_B;
-  TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B;
+  TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B,*cdc_res_vs_dE;
   TH2F *fdc_time_vs_d,*cdc_time_vs_d;
   TH2F *fdc_dy_vs_d;
   TH3F *fdc_yres3d;

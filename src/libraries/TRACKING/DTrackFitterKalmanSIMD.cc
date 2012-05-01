@@ -21,6 +21,8 @@
 #define MAX_TB_PASSES 20
 #define MAX_WB_PASSES 20
 #define MIN_PROTON_P 0.3
+#define MIN_PION_P 0.15
+#define MAX_P 12.0
 
 #define NaN std::numeric_limits<double>::quiet_NaN()
 
@@ -282,6 +284,12 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     if (!cdc_res_vs_tanl){
       cdc_res_vs_tanl=new TH2F("cdc_res_vs_tanl","cdc #deltad vs #theta",
 				  100,-5,5,
+				  200,-0.1,0.1);
+    }     
+    cdc_res_vs_dE=(TH2F*)gROOT->FindObject("cdc_res_vs_dE");
+    if (!cdc_res_vs_dE){
+      cdc_res_vs_dE=new TH2F("cdc_res_vs_dE","cdc #deltad vs #DeltaE",
+			       100,0,10e-5,
 				  200,-0.1,0.1);
     }     
     cdc_res_vs_B=(TH2F*)gROOT->FindObject("cdc_res_vs_B");
@@ -680,6 +688,8 @@ double DTrackFitterKalmanSIMD::ChiSq(fit_type_t fit_type, DReferenceTrajectory *
 jerror_t DTrackFitterKalmanSIMD::SetSeed(double q,DVector3 pos, DVector3 mom){
   if (!isfinite(pos.Mag()) || !isfinite(mom.Mag())){
     _DBG_ << "Invalid seed data." <<endl;
+    mom.Print();
+    pos.Print();
     return UNRECOVERABLE_ERROR;
   }
   if (mom.Mag()<MIN_FIT_P){
@@ -687,6 +697,12 @@ jerror_t DTrackFitterKalmanSIMD::SetSeed(double q,DVector3 pos, DVector3 mom){
   }
   else if (MASS>0.9 && mom.Mag()<MIN_PROTON_P){
     mom.SetMag(MIN_PROTON_P);
+  }
+  else if (MASS<0.9 && mom.Mag()<MIN_PION_P){
+    mom.SetMag(MIN_PION_P);
+  }
+  if (mom.Mag()>MAX_P){
+    mom.SetMag(MAX_P);
   }
 
   // Forward parameterization 
@@ -2519,7 +2535,7 @@ double DTrackFitterKalmanSIMD::GetdEdx(double q_over_p,double K_rho_Z_over_A,
   double delta=CalcDensityEffect(betagamma,rho_Z_over_A,LnI);
 
   return K_rho_Z_over_A/beta2*(-log(two_Me_betagamma_sq*Tmax)
-			       +2.*LnI +2.*beta2+delta);
+			       +2.*(LnI + beta2)+delta);
 }
 
 // Calculate the variance in the energy loss in a Gaussian approximation.
@@ -2887,6 +2903,7 @@ DTrackFitterKalmanSIMD::FindCentralResiduals(vector<DKalmanUpdate_t>my_cdc_updat
 	cdc_time_vs_d->Fill(doca,tdrift);
 	cdc_res->Fill(tdrift,res);
 	cdc_res_vs_tanl->Fill(S(state_tanl),res);
+	cdc_res_vs_dE->Fill(my_cdchits[i]->hit->dE,res);
 
 	bfield->GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
 	cdc_res_vs_B->Fill(fabs(Bz),res);
@@ -3294,6 +3311,22 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   unsigned int num_cdchits=my_cdchits.size();
   unsigned int max_cdc_index_for_refit=MIN_HITS_FOR_REFIT-1;
 
+  // Angle with respect to beam line
+  double theta_deg=(180/M_PI)*input_params.momentum().Theta();
+  // Guess for momentum error
+  double dp_over_p=0.;
+  if (theta_deg<15){
+    //dp_over_p=0.0833-0.016*theta_deg+0.00938*theta_deg*theta_deg;
+    dp_over_p=1.773-0.3566*theta_deg+0.01869*theta_deg*theta_deg;
+    //dp_over_p=0.05;
+  }
+  else if (theta_deg>28){
+    dp_over_p=0.079+0.00186*theta_deg-9.14e-6*theta_deg*theta_deg;
+  }
+  else{
+    dp_over_p=0.2;
+  }
+
   // deal with hits in FDC
   if (my_fdchits.size()>0){   
     // Only prune hits in the second "time-based" pass
@@ -3309,16 +3342,12 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     S(state_ty)=ty_;
     S(state_q_over_p)=q_over_p_;
 
-    // Angle with respect to beam line
-    double theta_deg=(180/M_PI)*input_params.momentum().Theta();
-
     // Initial guess for forward representation covariance matrix   
-    C0(state_x,state_x)=2.0;
-    C0(state_y,state_y)=2.0; 
-    C0(state_tx,state_tx)=0.0001;
-    C0(state_ty,state_ty)=0.0001;
-    double dp_over_p=0.0833-0.016*theta_deg-0.00938*theta_deg*theta_deg;
-    if (theta_deg>15.) dp_over_p=0.12;
+    C0(state_x,state_x)=1;
+    C0(state_y,state_y)=1; 
+    C0(state_tx,state_tx)=0.001;
+    C0(state_ty,state_ty)=0.001;
+    if (MASS>0.9 && fabs(1./q_over_p_)<0.5) dp_over_p*=2.;
     C0(state_q_over_p,state_q_over_p)=dp_over_p*dp_over_p*q_over_p_*q_over_p_;
    
     DMatrix5x1 Slast(S);
@@ -3552,11 +3581,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       pvec.SetMag(MIN_PROTON_P);
       p_mag=MIN_PROTON_P;
     }
+    else if (MASS<0.9 && p_mag<MIN_PION_P){
+      pvec.SetMag(MIN_PION_P);
+      p_mag=MIN_PION_P;
+    }
     double pz=pvec.z();
-
-    // Angle with respect to beam line
-    double theta_deg=(180/M_PI)*input_params.momentum().Theta();
-
 
     // Initialize the state vector and covariance matrix
     S(state_x)=x_;
@@ -3587,7 +3616,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double temp=sig_lambda*(1.+tx_*tx_+ty_*ty_);
     C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
 
-    double dp_over_p=0.0731+0.00149*theta_deg-7.35e-6*theta_deg*theta_deg;
+    if (MASS>0.9 && fabs(1./q_over_p_)<0.5) dp_over_p*=2.;
+
     C0(state_q_over_p,state_q_over_p)=dp_over_p*dp_over_p*q_over_p_*q_over_p_;
 
     DMatrix5x1 Slast(S);
@@ -3850,6 +3880,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       pvec.SetMag(MIN_PROTON_P);
       p_mag=MIN_PROTON_P;
     }
+    else if (MASS<0.9 && p_mag<MIN_PION_P){
+      pvec.SetMag(MIN_PION_P);
+      p_mag=MIN_PION_P;
+    }
 
     // Initialize the state vector and covariance matrix
     Sc(state_q_over_pt)=input_params.charge()/pvec.Perp();
@@ -3869,7 +3903,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     if (theta_deg<28.) theta_deg=28.;
 
     double sig_lambda=-0.0479+0.00253*theta_deg-1.423e-5*theta_deg*theta_deg;
-    double dpt_over_pt=0.0415+0.00261*theta_deg-1.38e-5*theta_deg*theta_deg;
+    //double dpt_over_pt=0.0415+0.00261*theta_deg-1.38e-5*theta_deg*theta_deg;
+    double dpt_over_pt=0.0986925+0.00174177*theta_deg -8.96234e-06*theta_deg*theta_deg;
+  
+    if (MASS>0.9 && p_mag<0.5) dpt_over_pt*=2.;
+
     C0(state_q_over_pt,state_q_over_pt)
       =dpt_over_pt*dpt_over_pt*q_over_pt_*q_over_pt_;
     C0(state_phi,state_phi)=0.001;
