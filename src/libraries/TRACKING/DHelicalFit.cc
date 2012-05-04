@@ -865,9 +865,11 @@ jerror_t DHelicalFit::FitLineRiemann(){
     }
   }
   Delta=sumv*sumxx-sumx*sumx;
+  double tanl_denom=sumv*sumxy-sumy*sumx;
+  if (fabs(Delta)<EPS || fabs(tanl_denom)<EPS) return VALUE_OUT_OF_RANGE;
 
   // Track parameters tan(lambda) and z-vertex
-  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+  tanl=-Delta/tanl_denom; 
   //z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
   sperp-=sperp_old;
   z_vertex=z_last-sperp*tanl;
