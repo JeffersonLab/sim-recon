@@ -181,9 +181,10 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   }
 
   Delta=sumv*sumxx-sumx*sumx;
-  if (fabs(Delta)>EPS){
+  double denom=sumv*sumxy-sumy*sumx;
+  if (fabs(Delta)>EPS && fabs(denom)>EPS){
     // Track parameters z0 and tan(lambda)
-    tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+    tanl=-Delta/denom; 
     //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
     // Error in tanl 
     var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
@@ -195,8 +196,16 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   else{
     // assume that the particle came from the target
     zvertex=TARGET_Z;
-    tanl=(zlast-zvertex)/sperp;
+    if (sperp<EPS){
+      // This is a rare failure mode where it seems that the arc length data
+      // cannot be reliably used.  Provide some default value of tanl to 
+      // avoid division by zero errors
+      tanl=57.3; // theta=1 degree
+    }
+    else tanl=(zlast-zvertex)/sperp;
     var_tanl=100.; // guess for now 
+
+  
   }
 
   return NOERROR;
@@ -643,6 +652,9 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	  segment->Phi1=Phi1;
 	  segment->chisq=chisq;
 	  
+	  //printf("tanl %f \n",tanl);
+	  //printf("xc %f yc %f rc %f\n",xc,yc,rc);
+
 	  _data.push_back(segment);
 	}
       }
