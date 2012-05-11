@@ -37,9 +37,9 @@ static float C_EFFECTIVE     = 15.;
 static float TWO_HIT_RESOL   = 25.;
 static int   MAX_HITS 	     = 100;
 static float THRESH_MEV      = 0.150;
-static float LIGHT_GUIDE     = 140.;
-static float ANGLE_COR       = 1.17;
-static float BENT_REGION     = 50.;
+static float LIGHT_GUIDE     = 0.;
+static float ANGLE_COR       = 1.038;
+static float BENT_REGION     = 39.465;
 
 binTree_t* startCntrTree = 0;
 static int paddleCount = 0;
@@ -137,9 +137,9 @@ void hitStartCntr (float xin[4], float xout[4],
    float dpath  = 0.0;
    if(xlocal[2] >= BENT_REGION){
      dbent = ( xlocal[2] - BENT_REGION )*ANGLE_COR;
-     dpath = LIGHT_GUIDE + BENT_REGION + dbent;
+     dpath =BENT_REGION + dbent;
    } else {
-     dpath  = LIGHT_GUIDE + xlocal[2];
+     dpath  = xlocal[2];
    }
 
    float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH);
