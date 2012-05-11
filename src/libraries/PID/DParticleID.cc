@@ -57,10 +57,10 @@ DParticleID::DParticleID(JEventLoop *loop)
   vector<double>sc_origin;
   geom->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z",sc_origin);
   
-  vector<double>sc_light_guide;
-  geom->Get("//tubs[@name='STLG']/@Rio_Z",sc_light_guide); 
+  vector<double>sc_light_guide(3);
+  //geom->Get("//tubs[@name='STLG']/@Rio_Z",sc_light_guide); 
   //sc_light_guide_length=sc_light_guide[2];
-  
+ 
   vector<vector<double> > sc_rioz;
   geom->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
   
@@ -528,7 +528,7 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
     // Check that the hit is not out of time with respect to the track
     if (fabs(tproj-sc_hits[i]->t)>OUT_OF_TIME_CUT) continue;
 
-    double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
+    double phi=(6.0+12.*(sc_hits[i]->sector-1))*M_PI/180.;
     double dphi=phi-proj_phi;
  
     // If the z position is in the nose region, match to the appropriate start
@@ -642,7 +642,7 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 	  // Check that the hit is not out of time with respect to the track
 	  if (fabs(tproj-sc_hits[i]->t)>OUT_OF_TIME_CUT) continue;
 
-	  double phi=(4.5+9.*(sc_hits[i]->sector-1))*M_PI/180.;
+	  double phi=(6.0+12.*(sc_hits[i]->sector-1))*M_PI/180.;
 	  double dphi=phi-proj_phi;
 
 	  if (fabs(dphi)<dphi_min){
