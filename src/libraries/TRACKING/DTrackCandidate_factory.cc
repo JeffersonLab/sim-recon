@@ -147,7 +147,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     double theta=mom.Theta();
     
     // Propagate track to CDC endplate
-    if (theta<M_PI/4. && fdctrackcandidates.size()>0){
+    if (theta<M_PI_4 && fdctrackcandidates.size()>0){
       DMagneticFieldStepper stepper(bfield,srccan->charge()); 
       if (stepper.SwimToPlane(pos,mom,cdc_endplate,norm,NULL)==false){
 	cdc_endplate_projections.push_back(pos);
@@ -345,6 +345,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      // stereo wires
 	      double dr2=DocaToHelix(cdchits[m],q,pos,mom);
 	      double prob=finite(dr2) ? exp(-dr2/(2.*variance)):0.0;
+
 	      if (prob>0.1) num_match++;
 	      
 	      num_cdc++;
@@ -654,8 +655,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    }
 	  }   
 	  if (double(num_match)/double(num_hits)>0.5){
-	    forward_matches[k]=1; 
-	    
+	    forward_matches[k]=1;
+			 
 	    // variables for calculating average Bz
 	    double Bz_avg=0.;
 	    unsigned int num_hits=0;
@@ -841,7 +842,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    // stereo wires
 	    double dr2=DocaToHelix(mycdchits[k],q,pos,mom);
 	    double prob=finite(dr2) ? exp(-dr2/(2.*variance)):0.0;  
-	    if (prob>0.1){
+
+	    if (prob>0.5){
 	      double r=mycdchits[k]->wire->origin.Perp();
 	      if (r<rmin){
 		rmin=r;
@@ -865,6 +867,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	// If we matched to more than three cdc hits, try to improve the candidate
 	// parameters
 	if (num_match_cdc>3){
+
 	  DHelicalFit fit;
 	  fit.r0=segments[0]->rc;
 	  fit.x0=segments[0]->xc;
@@ -908,7 +911,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // Find the z-position at the new position in x and y
 	  DVector2 xy0(pos.X(),pos.Y());
 	  double tworc=2.*fit.r0;
-	  double sperp=tworc*asin((segments[0]->hits[0]->xy-xy0).Mod()/tworc);
+	  double ratio=(segments[0]->hits[0]->xy-xy0).Mod()/tworc;
+	  double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
+
 	  pos.SetZ(segments[0]->hits[0]->wire->origin.z()-sperp*fit.tanl);
     	} // if we succeeded in matching at least one cdc
       } // if we have cdc hits not matched to candidates yet...
@@ -1100,7 +1105,6 @@ double DTrackCandidate_factory::DocaToHelix(const DCDCTrackHit *hit,
   double r2=x0*x0+y0*y0;
   while (z>50. && z<170. && r2<3600.){
     old_doca2=doca2;
-    
     sperp-=1.;
     double twoks=twokappa*sperp;
     double sin2ks=sin(twoks);
@@ -1117,9 +1121,9 @@ double DTrackCandidate_factory::DocaToHelix(const DCDCTrackHit *hit,
     doca2=(x-xw)*(x-xw)+(y-yw)*(y-yw);
     if (doca2>old_doca2){
       break;
-    }
-    
+    } 
   }
+
   return old_doca2;
 }
 
