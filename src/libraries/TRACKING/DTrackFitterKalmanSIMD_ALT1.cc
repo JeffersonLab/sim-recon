@@ -163,7 +163,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  vector<DMatrix5x1> Klist;
 	  vector<double> Mlist;
 	  vector<DMatrix1x5> Hlist;
-	  vector<DMatrix5x1> HTlist;
 	  vector<double> Vlist;
 	  vector<double>probs;
 
@@ -180,7 +179,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    probs.push_back(prob_hit);
 	    Vlist.push_back(V);
 	    Hlist.push_back(H);
-	    HTlist.push_back(H_T);
 	    Mlist.push_back(Mdiff);
 	    Klist.push_back(InvV*(C*H_T)); // Kalman gain
 
@@ -230,7 +228,6 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      Mlist.push_back(Mdiff);
 	      Vlist.push_back(V);
 	      Hlist.push_back(H);   
-	      HTlist.push_back(H_T); 
 	      Klist.push_back(InvV*(C*H_T));
 	    }
 	  }
@@ -269,9 +266,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  
 	  // update chi2
 	  for (unsigned int m=0;m<Klist.size();m++){
-	    double R=Mlist[m]*(1-Hlist[m]*Klist[m]);
-	    double RC=Vlist[m]-Hlist[m]*(C*HTlist[m]);
-	    chisq+=probs[m]*R*R/(prob_tot*RC);
+	    chisq+=(probs[m]/prob_tot)*(1.-Hlist[m]*Klist[m])*Mlist[m]*Mlist[m]/Vlist[m];
 	  }
 
 	  // update number of degrees of freedom
