@@ -50,7 +50,7 @@
 #define TAN_MAX 10.
 
 #define ANNEAL_POW_CONST 10.0
-#define ANNEAL_SCALE 9.0
+#define ANNEAL_SCALE 4.0
 
 #define DELTA_R 1.0 // distance in r to extend the trajectory beyond the last point
 
