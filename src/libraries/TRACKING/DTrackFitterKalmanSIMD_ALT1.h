@@ -17,7 +17,7 @@ class DTrackFitterKalmanSIMD_ALT1: public DTrackFitterKalmanSIMD{
     //DTrackFitterKalmanSIMD_ALT1();
     virtual ~DTrackFitterKalmanSIMD_ALT1(){};
     
-  jerror_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
+    kalman_error_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			 double &chisq,unsigned int &numdof);
   
   // Virtual methods from TrackFitter base class

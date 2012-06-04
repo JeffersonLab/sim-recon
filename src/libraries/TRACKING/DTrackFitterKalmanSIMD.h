@@ -28,7 +28,7 @@
 #define EPS3 1.e-2
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
-#define MAX_CHI2 1e8
+#define MAX_CHI2 1e16
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
 #define Z_MIN 0.
@@ -49,8 +49,8 @@
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
-#define ANNEAL_POW_CONST 10.0
-#define ANNEAL_SCALE 4.0
+#define ANNEAL_POW_CONST 15.0
+#define ANNEAL_SCALE 5.0
 
 #define DELTA_R 1.0 // distance in r to extend the trajectory beyond the last point
 
@@ -84,6 +84,22 @@
 #define ELECTRON_MASS 0.000511 // GeV
 
 using namespace std;
+
+enum kalman_error_t{
+  FIT_SUCCEEDED,
+  BREAK_POINT_FOUND,
+  PRUNED_TOO_MANY_HITS,
+  INVALID_FIT,
+  BROKEN_COVARIANCE_MATRIX,
+  MOMENTUM_OUT_OF_RANGE,
+  POSITION_OUT_OF_RANGE,
+  NEGATIVE_VARIANCE,
+  LOW_CL_FIT,
+  EXTRAPOLATION_FAILED,
+  FIT_FAILED,
+  FIT_NOT_DONE,
+};
+
 
 typedef struct{
   int status;
@@ -147,7 +163,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     x_=y_=tx_=ty_=q_over_p_ = 0.0;
     z_=phi_=tanl_=q_over_pt_ = D_= 0.0;
     chisq_ = 0.0;
-    ndf = 0;
+    ndf_ = 0;
 
    }
 
@@ -161,13 +177,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(void);
-  virtual jerror_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
+  virtual kalman_error_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 				 double &chisq,unsigned int &numdof);
   virtual jerror_t SmoothForward(DMatrix5x1 &S,DMatrix5x5 &C);   
 
-  jerror_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
+  kalman_error_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			    double &chisq,unsigned int &numdof);
-  jerror_t KalmanCentral(double anneal_factor,DMatrix5x1 &S,DMatrix5x5 &C,
+  kalman_error_t KalmanCentral(double anneal_factor,DMatrix5x1 &S,DMatrix5x5 &C,
 			 DVector3 &pos,double &chisq,unsigned int &myndf);
   jerror_t ExtrapolateToVertex(DVector3 &pos,DMatrix5x1 &Sc,DMatrix5x5 &Cc);
   jerror_t ExtrapolateToVertex(DMatrix5x1 &S, DMatrix5x5 &C);
@@ -186,7 +202,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   double GetCharge(void){return q_over_pt_>0?1.:-1.;};
   double GetChiSq(void){return chisq_;}
-  unsigned int GetNDF(void){return ndf;};
+  unsigned int GetNDF(void){return ndf_;};
   double GetdEdx(double q_over_p,double K_rho_Z_over_A,double rho_Z_over_A,
 		 double rho_Z_over_A_LnI); 
   double GetEnergyVariance(double ds,double beta2,double K_rho_Z_over_A);
@@ -225,6 +241,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     state_Y,
     state_Z,
   };
+ 
   void locate(const double *xx,int n,double x,int *j);
   double fdc_y_variance(double alpha,double x,double dE);
   double cdc_variance(double tanl,double t);   
@@ -303,6 +320,24 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t FindResidual(unsigned int id,double z,double t,double dEdx,
 			DMatrix5x1 &Ss,DMatrix5x5 &Cs);
 
+  kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
+  kalman_error_t ForwardCDCFit(const DMatrix5x1 &S,const DMatrix5x5 &C0);  
+  kalman_error_t CentralFit(const DMatrix5x1 &Sc,const DMatrix5x5 &C0);
+  kalman_error_t RecoverBrokenTracks(double anneal_factor, 
+				     DMatrix5x1 &S, 
+				     DMatrix5x5 &C,
+				     const DMatrix5x5 &C0,
+				     double &chisq, 
+				     unsigned int &numdof);
+  kalman_error_t RecoverBrokenTracks(double anneal_factor, 
+				     DMatrix5x1 &S, 
+				     DMatrix5x5 &C,
+				     const DMatrix5x5 &C0,
+				     DVector3 &pos,
+				     double &chisq, 
+				     unsigned int &numdof);
+    
+
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
   //const DLorentzDeflections *lorentz_def;// pointer to lorentz correction map
@@ -329,7 +364,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // chi2 of fit
   double chisq_;
   // number of degrees of freedom
-  unsigned int ndf;
+  unsigned int ndf_;
   // Covariance matrix
   vector< vector <double> > cov;
   vector< vector <double> > fcov;

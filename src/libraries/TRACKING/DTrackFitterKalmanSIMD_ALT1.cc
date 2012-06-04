@@ -9,7 +9,7 @@
 
 // Kalman engine for forward tracks.  For FDC hits only the position along 
 // the wire is used in the fit
-jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor, 
+kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor, 
 					       DMatrix5x1 &S, 
 					       DMatrix5x5 &C,
 					       double &chisq, 
@@ -61,7 +61,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     // Check that C matrix is positive definite
     if (C(0,0)<0 || C(1,1)<0 || C(2,2)<0 || C(3,3)<0 || C(4,4)<0){
       if (DEBUG_LEVEL>0) _DBG_ << "Broken covariance matrix!" <<endl;
-      return UNRECOVERABLE_ERROR;
+      return BROKEN_COVARIANCE_MATRIX;
     }
 
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
@@ -82,7 +82,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	{
 	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 	}
-      return VALUE_OUT_OF_RANGE;
+      return MOMENTUM_OUT_OF_RANGE;
     }
 
 
@@ -485,7 +485,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // variance
 	    double tx=S(state_tx),ty=S(state_ty);
 	    double tanl=1./sqrt(tx*tx+ty*ty);
-	    Vc=cdc_variance(tanl,tdrift);	  
+	    Vc=cdc_forward_variance(tanl,tdrift);	  
 	    double temp=1./(1131.+2.*140.7*dm);
 	    Vc+=mVarT0*temp*temp;
 	  }
@@ -503,7 +503,7 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  if (InvV1<0.){
 	    if (DEBUG_LEVEL>0)
 	      _DBG_ << "Negative variance???" << endl;
-	    return VALUE_OUT_OF_RANGE;
+	    return NEGATIVE_VARIANCE;
 	  }
 	  	 
 	  // Check if this hit is an outlier
@@ -515,8 +515,8 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
         
 	    // Update state vector covariance matrix
 	    //C=C-K*(H*C);    
-	    //C=C.SubSym(K*(H*C));
-	    Ctest=C.SandwichMultiply(I5x5-K*H)+Vc*MultiplyTranspose(K);	 
+	    Ctest=C.SubSym(K*(H*C));
+	    //Ctest=C.SandwichMultiply(I5x5-K*H)+Vc*MultiplyTranspose(K);	 
 	    // Check that Ctest is positive definite
 	    if (Ctest(0,0)>0 && Ctest(1,1)>0 && Ctest(2,2)>0 && Ctest(3,3)>0 
 		&& Ctest(4,4)>0){
@@ -632,11 +632,12 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   
   // Check that there were enough hits to make this a valid fit
   if (numdof<6){
-    chisq=1e8;
+    chisq=MAX_CHI2;
     numdof=0;
-    return UNRECOVERABLE_ERROR;
+   
+    return INVALID_FIT;
   }
-  
+
   //  chisq*=anneal_factor;
   numdof-=5;
 
@@ -649,6 +650,16 @@ jerror_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     cout << "Position after forward filter: " << x_ << ", " << y_ << ", " << z_ <<endl;
     cout << "Momentum " << 1./S(state_q_over_p) <<endl;
   }
+
+  // Check if we have a kink in the track or threw away too many cdc hits
+  if (cdc_updates.size()>=6){
+    unsigned int num_good=0; 
+    for (unsigned int j=0;j<cdc_updates.size();j++){
+      if (cdc_updates[j].used_in_fit) num_good++;
+    }
+    if (break_point_cdc_index>4) return BREAK_POINT_FOUND;
+    if (double(num_good)/double(my_cdchits.size())<0.5) return PRUNED_TOO_MANY_HITS;
+  }
     
-  return NOERROR;
+  return FIT_SUCCEEDED;
 }
