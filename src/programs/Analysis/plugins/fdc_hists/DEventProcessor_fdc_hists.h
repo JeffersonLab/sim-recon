@@ -41,7 +41,7 @@ using std::map;
 class DCDCTrackHit;
 
 typedef struct{
-  double w,cosa,sina;
+  double w,s,cosa,sina;
   double t,z;
   int wire,layer;
 }wire_t;
@@ -59,8 +59,16 @@ typedef struct{
 typedef struct{
   DMatrix4x1 S;
   DMatrix4x4 C;
+  DMatrix3x1 A;
+  DMatrix3x3 E;
   double drift,drift_time;
 }update_t;
+
+typedef struct{
+  bool matched;
+  DMatrix4x1 S;
+  vector<const DFDCPseudo *>hits;
+}segment_t;
 
 
 class DEventProcessor_fdc_hists:public JEventProcessor{
@@ -88,6 +96,11 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		  state_tx,
 		  state_ty,
 		};
+		enum align_parms{
+		  kDx,
+		  kDy,
+		  kDPhi,
+		};
 		
 		
 	private:
@@ -100,22 +113,26 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
-		DMatrix4x1 SetSeed(double slope_x,double slope_y,
-				   vector<int>&used_in_fit,
-				   vector<const DFDCIntersection*> fdchits);
-		jerror_t Fit(unsigned int id_to_skip,
-			     int fit_type,DMatrix4x1 &S,DMatrix4x4 &C,
-			     vector<wire_t>&wires,
+		DMatrix4x1 FitLine(vector<const DFDCPseudo*> &fdchits);
+		jerror_t DoFilter(vector<const DFDCPseudo*> &fdchits);
+
+		jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
+			     vector<const DFDCPseudo *>&hits,
 			     deque<trajectory_t>&trajectory,
 			     vector<update_t>&updates,
 			     double &chi2,unsigned int &ndof);
 		jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 				deque<trajectory_t>&trajectory,
 				vector<update_t>updates);
-		jerror_t SetReferenceTrajectory(DMatrix4x1 &S,
+		jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
 						deque<trajectory_t>&trajectory,
-						vector<wire_t>&wires);
-				
+						vector<const DFDCPseudo *>&wires);
+		
+		jerror_t FindSegments(vector<const DFDCPseudo*>&pseudos,
+				      vector<segment_t>&segments);
+		jerror_t LinkSegments(vector<segment_t>segments[4], 
+				      vector<vector<const DFDCPseudo *> >&LinkedSegments);
+
 		double GetDriftDistance(double t);
 		double GetDriftVariance(double t);
 
@@ -125,9 +142,9 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		TH2F *Htime_res_vs_wire;
 		TH2F *Hcand_ty_vs_tx,*Htime_ty_vs_tx,*Hwire_ty_vs_tx;
 		TH1F *Hdrift_time,*Hdrift_integral;
-		TH2F *Hres_vs_drift_time;
+		TH2F *Hres_vs_drift_time,*Hvres_vs_wire;
 		TH3F *Htime_y_vs_x;
-		TH2F *Hqratio_vs_wire;
+		TH2F *Hqratio_vs_wire,*Hdelta_z_vs_wire;
 		
 		double mT0;
 		double target_to_fcal_distance;
