@@ -61,6 +61,15 @@ class DMatrix3x3{
 		       mA[2][0]*m2(0,1)+mA[2][1]*m2(1,1)+mA[2][2]*m2(2,1)
 		       );
   } 
+
+  // Matrix multiplication:  (3x3) x (3x1)
+  DMatrix3x1 operator*(const DMatrix3x1 &m2){
+    return DMatrix3x1(mA[0][0]*m2(0)+mA[0][1]*m2(1)+mA[0][2]*m2(2),
+		      mA[1][0]*m2(0)+mA[1][1]*m2(1)+mA[1][2]*m2(2),
+		      mA[2][0]*m2(0)+mA[2][1]*m2(1)+mA[2][2]*m2(2)
+		      );
+  } 
+
   // Matrix multiplication:  (3x3) x (3x3)
   DMatrix3x3 operator*(const DMatrix3x3 &m2){
     return DMatrix3x3(mA[0][0]*m2(0,0)+mA[0][1]*m2(1,0)+mA[0][2]*m2(2,0),

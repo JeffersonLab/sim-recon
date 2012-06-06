@@ -14,10 +14,12 @@ using namespace std;
 
 #include "DMatrix2x1.h"
 #include "DMatrix2x2.h"
+#include "DMatrix3x1.h"
 #include "DMatrix3x2.h"
 #include "DMatrix3x3.h"
 #include "DMatrix2x3.h"
-// We are not currently using any of the 4x2,4x4,etc matrices in the code
+#include "DMatrix1x3.h"
+// We are not currently using any of the 4x2,4x4,etc matrices in the main code
 #include "DMatrix4x1.h"
 #include "DMatrix4x2.h"
 #include "DMatrix4x4.h"
@@ -27,6 +29,15 @@ using namespace std;
 
 
 #ifndef USE_SSE2
+
+// Matrix multiplication:  (3x1) x (1x3)
+inline DMatrix3x3 operator*(const DMatrix3x1 &m1,const DMatrix1x3 &m2){
+  return DMatrix3x3(m1(0)*m2(0),m1(0)*m2(1),m1(0)*m2(2),
+		    m1(1)*m2(0),m1(1)*m2(1),m1(1)*m2(2),
+		    m1(2)*m2(0),m1(2)*m2(1),m1(2)*m2(2)
+		    );
+}
+
 
 // Matrix multiplication:  (3x2) x (2x3)
 inline DMatrix3x3 operator*(const DMatrix3x2 &m1,const DMatrix2x3 &m2){
