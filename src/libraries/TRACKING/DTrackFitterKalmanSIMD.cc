@@ -77,7 +77,7 @@ double DTrackFitterKalmanSIMD::fdc_y_variance(double tanl,double x,double dE){
   double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE;
   //sigma*=(1+fabs(x));
   //  sigma*=(1.144e-3*cosh(11.62*x)+0.65)/0.6555;
-  sigma*=1.15;
+  sigma*=1.135;
 
   return sigma*sigma;
 }
@@ -100,7 +100,7 @@ double DTrackFitterKalmanSIMD::cdc_variance(double tanl,double t){
   t=fabs(t);
   double sigma=0.125/(t+1)+3.0e-3+2.75e-6*t;// old =0.185/(t+5.886)+4.15e-3
   //double sigma=4e-2;
-  sigma*=1.075;
+  sigma*=1.05;
 
   return sigma*sigma;
 }
@@ -3281,6 +3281,9 @@ jerror_t DTrackFitterKalmanSIMD::SmoothForwardCDC(DMatrix5x1 &Ss,
 jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   if (z_<Z_MIN) return VALUE_OUT_OF_RANGE;
 
+  // Vector to store the list of hits used in the fit for the forward parametrization
+  vector<const DCDCTrackHit*>forward_cdc_used_in_fit;
+
   // State vector and initial guess for covariance matrix
   DMatrix5x1 S0;
   DMatrix5x5 C0;
@@ -3350,6 +3353,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     C0(state_y,state_y)=1; 
     C0(state_tx,state_tx)=0.001;
     C0(state_ty,state_ty)=0.001;
+    if (theta_deg<1.) C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.1;
     C0(state_q_over_p,state_q_over_p)=dp_over_p*dp_over_p*q_over_p_*q_over_p_;
     
     kalman_error_t error=ForwardFit(S0,C0);
@@ -3384,8 +3388,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       S0(state_q_over_p)=q_over_p_=q/p_mag; 
 
       // Initial guess for forward representation covariance matrix
-      C0(state_x,state_x)=1.0;
-      C0(state_y,state_y)=1.0;        
+      C0(state_x,state_x)=2.0;
+      C0(state_y,state_y)=2.0;        
       double sig_lambda=0.017;
       if (theta_deg>28) 
 	sig_lambda=-0.0365+0.00222*theta_deg-1.23e-5*theta_deg_sq;
@@ -3407,6 +3411,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  tanl=tanl_;
 	  q_over_pt=q_over_pt_;
 
+	  // Save the list of hits used in the fit
+	  forward_cdc_used_in_fit.assign(cdchits_used_in_fit.begin(),cdchits_used_in_fit.end());
+
 	  error=LOW_CL_FIT;
 	}	  
 	else return NOERROR;
@@ -3427,8 +3434,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     // Initialize the covariance matrix
     double dz=2.5;
-    if (theta_deg<70) dz=3.0;
-    if (theta_deg<22.) dz=1.5;
+    //    if (theta_deg<70) dz=3.0;
+    //if (theta_deg<22.) dz=1.5;
+    
     C0(state_z,state_z)=dz*dz;
     if (theta_deg<28.){
       theta_deg=28.;
@@ -3459,7 +3467,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       if (error==LOW_CL_FIT){
 	double central_prob=TMath::Prob(chisq_,ndf_);
 	
-	if (DEBUG_LEVEL>2){
+	if (DEBUG_LEVEL>0){
 	 printf("chi2/nu f %f c %f\n",chisq_forward/ndof_forward,chisq_/ndf_);
 	 printf("Forward chi2 %f prob %g central chi2 %f prob %g\n",chisq_forward,forward_prob,chisq_,central_prob);
 	}
@@ -3472,6 +3480,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  z_=z;
 	  chisq_=chisq_forward;
 	  ndf_= ndof_forward;
+
+	  cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());
 	}
       return NOERROR;
       }
@@ -3485,6 +3495,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       z_=z;
       chisq_=chisq_forward;
       ndf_= ndof_forward;
+
+      cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());
 
       return NOERROR;
     }
@@ -4143,8 +4155,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     for (unsigned int j=0;j<cdc_updates.size();j++){
       if (cdc_updates[j].used_in_fit) num_good++;
     }
-    if (break_point_cdc_index>3) return BREAK_POINT_FOUND;
-    if (double(num_good)/double(my_cdchits.size())<0.5) return PRUNED_TOO_MANY_HITS;
+    if (break_point_cdc_index>0) return BREAK_POINT_FOUND;
+    if (double(num_good)/double(my_cdchits.size())<MINIMUM_HIT_FRACTION) return PRUNED_TOO_MANY_HITS;
   }
     
   return FIT_SUCCEEDED;
@@ -5286,8 +5298,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     for (unsigned int j=0;j<cdc_updates.size();j++){
       if (cdc_updates[j].used_in_fit) num_good++;
     }
-    if (break_point_cdc_index>3) return BREAK_POINT_FOUND;
-    if (double(num_good)/double(my_cdchits.size())<0.5) return PRUNED_TOO_MANY_HITS;
+    if (break_point_cdc_index>0) return BREAK_POINT_FOUND;
+    if (double(num_good)/double(my_cdchits.size())<MINIMUM_HIT_FRACTION) return PRUNED_TOO_MANY_HITS;
   }
 
   return FIT_SUCCEEDED;
@@ -6162,7 +6174,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
   unsigned old_cdc_index=break_point_cdc_index;
   unsigned int refit_iter=0;
   unsigned int num_cdchits=my_cdchits.size();
-  while (break_point_cdc_index>5 && break_point_step_index>0 && central_traj.size()>0){
+  while (break_point_cdc_index>4 && break_point_step_index>0 && central_traj.size()>0){
     refit_iter++;
 	      
     // Flag the cdc hits within the radius of the break point cdc index
@@ -6175,12 +6187,13 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
     }
 	      
     // Now refit with the truncated trajectory and list of hits
-    C1=C0;
+    C1=4.0*C0;
     S1=central_traj[0].S;
     refit_chisq=MAX_CHI2;
     refit_ndf=0; 
     refit_error=KalmanCentral(anneal_factor,S1,C1,refit_pos,
 			      refit_chisq,refit_ndf);
+
     if (refit_error==FIT_SUCCEEDED){
       C=C1;
       S=S1;
@@ -6190,6 +6203,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 	       
       return FIT_SUCCEEDED;
     }
+
     break_point_cdc_index=old_cdc_index-refit_iter;
     central_traj.pop_front();
   }
@@ -6278,7 +6292,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
   kalman_error_t refit_error=FIT_NOT_DONE;
   unsigned old_cdc_index=break_point_cdc_index;
   unsigned int refit_iter=0;
-  while (break_point_cdc_index>5 && break_point_step_index>0 && forward_traj.size()>0){
+  while (break_point_cdc_index>4 && break_point_step_index>0 && forward_traj.size()>0){
     refit_iter++;
 
     // Flag the cdc hits within the radius of the break point cdc index
@@ -6291,7 +6305,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
     }
     
     // Re-initialize the state vector, covariance, chisq and number of degrees of freedom    
-    C1=C0;
+    C1=4.0*C0;
     S1=forward_traj[0].S;
     refit_chisq=MAX_CHI2;
     refit_ndf=0;
@@ -6432,11 +6446,9 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       Clast=C;	 
 	
       if (fdc_updates.size()>0){      
-	last_fdc_updates.clear();
 	last_fdc_updates.assign(fdc_updates.begin(),fdc_updates.end());
       }
       if (cdc_updates.size()>0){
-	last_cdc_updates.clear();
 	last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
       }
     } //iteration
@@ -6605,7 +6617,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       Clast=C;
       last_ndf=my_ndf;
       //zlast=z_;
-      last_cdc_updates.clear();
+ 
       last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
 
     } //iteration
@@ -6778,7 +6790,6 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMa
       chisq_iter=chisq;
       last_ndf=my_ndf;
       
-      last_cdc_updates.clear();
       last_cdc_updates.assign(cdc_updates.begin(),cdc_updates.end());
     }
     else{	
@@ -6797,8 +6808,9 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMa
   // output lists of hits used in the fit
   cdchits_used_in_fit.clear();
   for (unsigned int m=0;m<last_cdc_updates.size();m++){
-    if (last_cdc_updates[m].used_in_fit) 
+    if (last_cdc_updates[m].used_in_fit){
       cdchits_used_in_fit.push_back(my_cdchits[m]->hit);
+    }
   }
       
   // Track Parameters at "vertex"

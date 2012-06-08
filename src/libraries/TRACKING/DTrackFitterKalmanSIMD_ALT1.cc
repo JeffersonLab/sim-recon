@@ -141,10 +141,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
        	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
 	//   v = y*cosa+x*sina
-	H(state_x)=H_T(state_x)=sina;
-	H(state_y)=H_T(state_y)=cosa;
-	
-	// Terms that depend on the correction for the Lorentz effect
 	H(state_x)=H_T(state_x)
 	  =sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;
 	H(state_y)=H_T(state_y)
@@ -658,7 +654,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
       if (cdc_updates[j].used_in_fit) num_good++;
     }
     if (break_point_cdc_index>4) return BREAK_POINT_FOUND;
-    if (double(num_good)/double(my_cdchits.size())<0.5) return PRUNED_TOO_MANY_HITS;
+    if (double(num_good)/double(my_cdchits.size())<MINIMUM_HIT_FRACTION) return PRUNED_TOO_MANY_HITS;
   }
     
   return FIT_SUCCEEDED;
