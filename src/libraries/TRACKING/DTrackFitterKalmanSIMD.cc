@@ -191,8 +191,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   MIN_FIT_P = 0.050; // GeV
   gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
 
-  NUM_CDC_SIGMA_CUT=3.0;
-  NUM_FDC_SIGMA_CUT=3.0;
+  NUM_CDC_SIGMA_CUT=3.5;
+  NUM_FDC_SIGMA_CUT=3.5;
   gPARMS->SetDefaultParameter("KALMAN:NUM_CDC_SIGMA_CUT",NUM_CDC_SIGMA_CUT,
 			      "maximum distance in number of sigmas away from projection to accept cdc hit");
   gPARMS->SetDefaultParameter("KALMAN:NUM_FDC_SIGMA_CUT",NUM_FDC_SIGMA_CUT,
@@ -3326,6 +3326,19 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   }
   double pz=pvec.z();
   
+  double momentum_factor=1.;
+  if (MASS>0.9){
+    double a=5.64e-3;
+    double b=8.98e-2;
+    momentum_factor=(a/(p_mag*p_mag)+b*p_mag)/(a/(0.5*0.5)+b*0.5);
+  }
+  else{
+    double a=2.21e-3;
+    double b=7.8e-2;
+    momentum_factor=(a/(p_mag*p_mag)+b*p_mag)/(a/(0.4*0.4)+b*0.4);
+  }
+  dp_over_p*=momentum_factor;
+
   // Initial position
   x_=input_params.position().x();
   y_=input_params.position().y();
@@ -3449,6 +3462,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     double sig_lambda=-0.0479+0.00253*theta_deg-1.423e-5*theta_deg_sq;
     double dpt_over_pt=0.00326+0.0029*theta_deg-2.715e-5*theta_deg_sq+9.242e-8*theta_deg*theta_deg_sq;
     if (fit_type==kWireBased && theta_deg<25.) dpt_over_pt=0.18;
+    dpt_over_pt*=momentum_factor;
     C0(state_q_over_pt,state_q_over_pt)
       =dpt_over_pt*dpt_over_pt*q_over_pt_*q_over_pt_;
     double dphi=0.017;
@@ -5641,7 +5655,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     S0=Sc;
     DVector3 old_pos=pos;
     StepStateAndCovariance(pos,ds,dedx,Sc,Jc,Cc);
-    
+   
     // Add contribution due to multiple scattering
     Cc=Q.AddSym(Cc);
 

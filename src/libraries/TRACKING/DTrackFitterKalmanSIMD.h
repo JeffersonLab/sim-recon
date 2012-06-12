@@ -50,9 +50,9 @@
 #define TAN_MAX 10.
 
 #define ANNEAL_POW_CONST 10.0
-#define ANNEAL_SCALE 9.0
+#define ANNEAL_SCALE 5.0
 
-#define MINIMUM_HIT_FRACTION 0.33
+#define MINIMUM_HIT_FRACTION 0.25
 
 #define DELTA_R 1.0 // distance in r to extend the trajectory beyond the last point
 
