@@ -94,7 +94,6 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->step_size = rt.step_size;
 	this->bfield = rt.bfield;
 	this->last_phi = rt.last_phi;
-	this->last_swim_step = rt.last_swim_step;
 	this->last_dist_along_wire = rt.last_dist_along_wire;
 	this->last_dz_dphi = rt.last_dz_dphi;
 	this->RootGeom = rt.RootGeom;
@@ -108,7 +107,14 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->MAX_STEP_SIZE = rt.GetMaxStepSize();
 
 	this->swim_steps = new swim_step_t[this->max_swim_steps];
-	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
+	this->last_swim_step = NULL;
+	for(int i=0; i<Nswim_steps; i++)
+	{
+		swim_steps[i] = rt.swim_steps[i];
+		if(&(rt.swim_steps[i]) == rt.last_swim_step)
+			this->last_swim_step = &(swim_steps[i]);
+	}
+
 }
 
 //---------------------------------
@@ -144,7 +150,6 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	this->step_size = rt.step_size;
 	this->bfield = rt.bfield;
 	this->last_phi = rt.last_phi;
-	this->last_swim_step = rt.last_swim_step;
 	this->last_dist_along_wire = rt.last_dist_along_wire;
 	this->last_dz_dphi = rt.last_dz_dphi;
 	this->RootGeom = rt.RootGeom;
@@ -161,7 +166,14 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	if(swim_steps==NULL)this->swim_steps = new swim_step_t[this->max_swim_steps];
 
 	// Copy swim steps
-	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
+	this->last_swim_step = NULL;
+	for(int i=0; i<Nswim_steps; i++)
+	{
+		swim_steps[i] = rt.swim_steps[i];
+		if(&(rt.swim_steps[i]) == rt.last_swim_step)
+			this->last_swim_step = &(swim_steps[i]);
+	}
+
 	
 	return *this;
 }
