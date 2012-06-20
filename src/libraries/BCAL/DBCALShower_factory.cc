@@ -33,13 +33,14 @@ DBCALShower_factory::DBCALShower_factory(){
     
     // these are energy calibration parameters -- 1.2.3.4 summing
     
-    m_scaleZ_p0 =  0.955182;
-    m_scaleZ_p1 =  0.000266521;
-    m_scaleZ_p2 =  -1.15472e-07;
-    m_scaleZ_p3 =  -3.26844e-09;
+    //last updated for svn revision 9233 
+    m_scaleZ_p0 =  0.992437;
+    m_scaleZ_p1 =  0.00039242;
+    m_scaleZ_p2 =  -2.23135e-06;
+    m_scaleZ_p3 =  1.40158e-09;
     
-    m_nonlinZ_p0 =  0.0128104;
-    m_nonlinZ_p1 =  3.30893e-05;
+    m_nonlinZ_p0 =  -0.0147086;
+    m_nonlinZ_p1 =  9.69207e-05;
     m_nonlinZ_p2 =  0;    
     m_nonlinZ_p3 =  0;
   }

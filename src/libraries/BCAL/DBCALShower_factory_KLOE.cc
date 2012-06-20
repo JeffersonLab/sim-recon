@@ -68,13 +68,14 @@ DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
     
     // these are energy calibration parameters -- 1.2.3.4 summing
   
-    m_scaleZ_p0 = 0.983959;
-    m_scaleZ_p1 = 0.000377196;
-    m_scaleZ_p2 = -1.82384e-06;
-    m_scaleZ_p3 = 1.20302e-10;
+    //last updated for svn revision 9233
+    m_scaleZ_p0 = 0.99798;
+    m_scaleZ_p1 = 0.000361096;
+    m_scaleZ_p2 = -2.17338e-06;
+    m_scaleZ_p3 = 1.32201e-09;
   
-    m_nonlinZ_p0 = 0.00805048;
-    m_nonlinZ_p1 = 4.24678e-05;
+    m_nonlinZ_p0 = -0.0201272;
+    m_nonlinZ_p1 = 0.000103649;
     m_nonlinZ_p2 = 0;
     m_nonlinZ_p3 = 0;
   }
@@ -243,7 +244,7 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
                        m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
 
         shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
-	
+
 	// Trace back to the DBCALHit objects used in this shower and
 	// add them as associated objects.
 	vector<const DBCALHit*> hitsInShower;
