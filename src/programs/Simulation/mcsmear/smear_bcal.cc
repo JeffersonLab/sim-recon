@@ -1698,22 +1698,30 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 				bcalfADC.Eup += uphits[j]->E;
 				bcalfADC.tup += uphits[j]->t * uphits[j]->E; // energy weighted time for sum
 			}
-	
+
+			//if we have some non-dark hits, we say these are the only ones that will contribute to the time
+ 			if (bcalfADC.Eup > 0.0) {
+				bcalfADC.tup /= bcalfADC.Eup; //take energy-weighted average
+			}
+
 			// Add in dark pulses for upstream SiPMs not hit, but that are included in sum
 			unsigned int Ndark_channels_up = bcalfADC.NSiPM - uphits.size();
 			if(uphits.size() > bcalfADC.NSiPM)Ndark_channels_up = 0;
 
+			double tdark_sum_up=0.0;
 			for(unsigned int j=0; j<Ndark_channels_up; j++){
 				double darkPE = getDarkHits();
 				double sigma_up = sqrt(BCAL_sigma_ped_sq + darkPE*BCAL_sigma_singlePE_sq);				
 				double Edark = (darkPE * BCAL_mevPerPE * k_MeV) + SampleGaussian(sigma_up);
 				double tdark = SampleRange( -0.25 * BCAL_INTWINDOW_NS, 0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
 				bcalfADC.Eup += Edark;
-				bcalfADC.tup += tdark * Edark;
+				tdark_sum_up += tdark * Edark;
 			}
 			
-			// normalize time
-			bcalfADC.tup /= bcalfADC.Eup;
+			//if this cell is completely dark, set the time using the dark hits
+			if (uphits.size()==0) {
+				bcalfADC.tup = tdark_sum_up/bcalfADC.Eup;
+			}
 
 			//--------- Downstream -------------
 			// Initialize
@@ -1725,21 +1733,30 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 				bcalfADC.Edown += downhits[j]->E;
 				bcalfADC.tdown += downhits[j]->t * downhits[j]->E; // energy weighted time for sum
 			}
-			
+
+			//if we have some non-dark hits, we say these are the only ones that will contribute to the time
+			if (bcalfADC.Edown > 0.0) {
+				bcalfADC.tdown /= bcalfADC.Edown; //take energy-weighted average
+			}
+
 			// Add in dark pulses for downstream SiPMs not hit, but that are included in sum
 			unsigned int Ndark_channels_down = bcalfADC.NSiPM - downhits.size();
 			if(downhits.size() > bcalfADC.NSiPM)Ndark_channels_down = 0;
+
+			double tdark_sum_down=0.0;
 			for(unsigned int j=0; j<Ndark_channels_down; j++){
 				double darkPE = getDarkHits();
 				double sigma_down = sqrt(BCAL_sigma_ped_sq + darkPE*BCAL_sigma_singlePE_sq);				
 				double Edark = (darkPE * BCAL_mevPerPE * k_MeV) + SampleGaussian(sigma_down);
 				double tdark = SampleRange( -0.25 * BCAL_INTWINDOW_NS, 0.75 * BCAL_INTWINDOW_NS ) * k_nsec;
 				bcalfADC.Edown += Edark;
-				bcalfADC.tdown += tdark * Edark;
+				tdark_sum_down += tdark * Edark;
 			}
 			
-			// normalize time
-			bcalfADC.tdown /= bcalfADC.Edown;
+			//if this cell is completely dark, set the time using the dark hits
+			if (downhits.size()==0) {
+				bcalfADC.tdown = tdark_sum_down/bcalfADC.Edown;
+			}
 
 
 			// If either the upstream or downstream hit is over threshold, then
