@@ -30,7 +30,7 @@ class DNeutralShower : public jana::JObject{
 		DNeutralShower(const DBCALShower *locBCALShower){
 			dDetectorSystem = SYS_BCAL;
 			dEnergy = locBCALShower->E;
-			dEnergyUncertainty = (dEnergy >= 0.0) ? 0.0445*sqrt( dEnergy ) + 0.009*dEnergy : 1e-3; //from old DPhoton_factory::makeBCalPhoton() function
+			dEnergyUncertainty = (dEnergy >= 0.0) ? dEnergy*sqrt( 0.0598*0.0598/dEnergy + 0.0094*0.0094 ) : 1e-3; //last updated at svn revision 9242
 			dSpacetimeVertex.SetXYZT(locBCALShower->x, locBCALShower->y, locBCALShower->z, locBCALShower->t);
 			dSpacetimeVertexUncertainties.SetXYZT(locBCALShower->xErr, locBCALShower->yErr, locBCALShower->zErr, locBCALShower->tErr);
 		}
