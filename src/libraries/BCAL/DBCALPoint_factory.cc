@@ -52,6 +52,28 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
       
       // start with the good stuff -- one hit on each end of a cell
 
+      // first check that the hits don't have absurd timing information
+
+      float fibLen = DBCALGeometry::BCALFIBERLENGTH;
+      float cEff = DBCALGeometry::C_EFFECTIVE;
+
+      const DBCALHit& upHit = 
+        ( mapItr->second[0]->end == DBCALGeometry::kUpstream ? *(mapItr->second[0]) :  *(mapItr->second[1]));
+      const DBCALHit& downHit = 
+        ( mapItr->second[0]->end == DBCALGeometry::kDownstream ? *(mapItr->second[0]) :  *(mapItr->second[1]));  
+
+      double tUp = upHit.t;
+      double tDown = downHit.t;
+  
+      // get the position with respect to the center of the module -- positive
+      // z in the downstream direction
+  
+      double zLocal = 0.5 * cEff * ( tUp - tDown );
+
+      // if the timing information indicates that the z position is more than 50 cm outside the BCAL, likely the hit is contamined by noise or entirely noise, skip this cell
+      double tol = 50*k_cm;
+      if ( zLocal > (0.5*fibLen + tol) || zLocal < (-0.5*fibLen - tol) ) continue;
+  
       DBCALPoint *point = new DBCALPoint( *(mapItr->second[0]),
                                           *(mapItr->second[1]) );
 
