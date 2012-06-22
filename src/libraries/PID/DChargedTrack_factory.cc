@@ -14,6 +14,8 @@ using namespace std;
 using namespace jana;
 
 bool Compare_ChargedTrackHypotheses_FOM(const DChargedTrackHypothesis *locTrack1, const DChargedTrackHypothesis *locTrack2){
+  if (isnan(locTrack2->dFOM) && isnan(locTrack1->dFOM)) return (locTrack1->mass()<locTrack2->mass());
+  if (isnan(locTrack2->dFOM)) return true; 
 	return (locTrack1->dFOM > locTrack2->dFOM);
 };
 
@@ -66,7 +68,7 @@ jerror_t DChargedTrack_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 
 	for(loc_i = 0; loc_i < _data.size(); loc_i++)
       sort(_data[loc_i]->dChargedTrackHypotheses.begin(), _data[loc_i]->dChargedTrackHypotheses.end(), Compare_ChargedTrackHypotheses_FOM);
-
+	  
 	return NOERROR;
 }
 
