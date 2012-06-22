@@ -197,6 +197,15 @@ public:
     void clearTrackingErrorMatrix(void);
     void setErrorMatrix( const DMatrixDSym& aMatrix ) ;
     void setTrackingErrorMatrix(const DMatrixDSym& aMatrix);
+    void setTrackingStateVector(const double a1, const double a2, 
+				const double a3, const double a4, 
+				const double a5){
+      m_TrackingStateVector[0]=a1;
+      m_TrackingStateVector[1]=a2;
+      m_TrackingStateVector[2]=a3;
+      m_TrackingStateVector[3]=a4;
+      m_TrackingStateVector[4]=a5;
+    };
 
     void setForwardParmFlag(bool aFlag);
 
@@ -229,6 +238,10 @@ public:
     bool hasFixedMass( void ) const ;
     virtual const DMatrixDSym& errorMatrix( void ) const ;
     const DMatrixDSym &TrackingErrorMatrix(void) const;
+
+    void TrackingStateVector(double aVec[5]) const {  
+      for (unsigned int i=0;i<5;i++) aVec[i]=m_TrackingStateVector[i];
+    };
 
     bool forwardParmFlag(void)const;
 
@@ -291,6 +304,7 @@ private:
     DVector3 m_position ;
     DMatrixDSym* m_errorMatrix ;   // Order is (px, py, pz, E, x, y, z)
     DMatrixDSym *m_TrackingErrorMatrix;  // order is q/pt,phi,tanl,D,z
+    double m_TrackingStateVector[5]; // order is q/pt,phi,tanl,D,z
 
     // Time of flight information
     double m_t0; /// Start time (ns)

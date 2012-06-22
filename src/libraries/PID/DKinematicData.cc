@@ -55,6 +55,9 @@ DKinematicData::DKinematicData() :
   m_pathLength_err = -999.0;
   m_dedx=0.;
   m_use_forward_parameters=false;
+
+  for (unsigned int i=0;i<5;i++) m_TrackingStateVector[i]=0.;
+
   return ;
 }
 
@@ -101,6 +104,10 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData) :
   m_pathLength_err = aKinematicData.m_pathLength_err;
   m_dedx=aKinematicData.m_dedx;
   m_use_forward_parameters=aKinematicData.m_use_forward_parameters;
+
+  for (unsigned int i=0;i<5;i++){
+    m_TrackingStateVector[i]=aKinematicData.m_TrackingStateVector[i];
+  }
   return ;
 }
 
@@ -135,6 +142,11 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData,
   m_pathLength_err = aKinematicData.m_pathLength_err;
   m_dedx=aKinematicData.m_dedx;
   m_use_forward_parameters=aKinematicData.m_use_forward_parameters;
+  
+  for (unsigned int i=0;i<5;i++){
+    m_TrackingStateVector[i]=aKinematicData.m_TrackingStateVector[i];
+  }
+
   return ;
 }
 
@@ -212,6 +224,10 @@ DKinematicData::operator=( const DKinematicData& aOtherKinematicData )
     m_pathLength_err = aOtherKinematicData.m_pathLength_err;
     m_dedx=aOtherKinematicData.m_dedx;
     m_use_forward_parameters=aOtherKinematicData.m_use_forward_parameters;
+    for (unsigned int i=0;i<5;i++){
+      m_TrackingStateVector[i]=aOtherKinematicData.m_TrackingStateVector[i];
+    }
+
   }
   return ( *this ) ;
 }
