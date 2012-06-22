@@ -653,7 +653,7 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 	  }
 	}
 	// Look for a match in phi
-	if (dphi_min<0.16){
+	if (dphi_min<0.21){
 		// Now check to see if the intersection is in the nose region and find the
 		// start time
 		tproj=sc_hits[sc_match_id]->t-sc_leg_tcor;
