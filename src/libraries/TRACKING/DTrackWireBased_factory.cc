@@ -84,7 +84,7 @@ jerror_t DTrackWireBased_factory::init(void)
 //------------------
 jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 {
-   // Get the geometry
+  // Get the geometry
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   geom = dapp->GetDGeometry(runnumber);
 
@@ -196,7 +196,9 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	mass_hypotheses = mass_hypotheses_positive;
       }
       
-      
+      if ((!isfinite(candidate->momentum().Mag())) || (!isfinite(candidate->position().Mag())))
+	_DBG_ << "Invalid seed data for event "<< eventnumber <<"..."<<endl;
+
       // Loop over potential particle masses
       for(unsigned int j=0; j<mass_hypotheses.size(); j++){
         if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
@@ -278,10 +280,17 @@ void DTrackWireBased_factory::FilterDuplicates(void)
 			if(total!=total1 && total!=total2)continue;
 
 			if(total1<total2){
+			  // The two track candidates actually correspond to 
+			  // a single track.  Set the candidate id for this 
+			  // track to the candidate id from the clone match to 
+			  // prevent multiple clone tracks confusing matters 
+			  // at a later stage of the reconstruction...
+			  _data[j]->candidateid=cand1;
 				indexes_to_delete.insert(i);
 			}else{
 				indexes_to_delete.insert(j);
 			}
+			
 		}
 	}
 	
@@ -329,6 +338,20 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
   else{
     fitter->SetFitType(DTrackFitter::kWireBased);	
     status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass);
+    if (status==DTrackFitter::kFitNotDone){
+      // Get the hits from the candidate
+      vector<const DFDCPseudo*>myfdchits;
+      candidate->GetT(myfdchits);
+      fitter->AddHits(myfdchits);
+      vector<const DCDCTrackHit *>mycdchits;
+      candidate->GetT(mycdchits);
+      fitter->AddHits(mycdchits);
+    
+      status=fitter->FitTrack(candidate->position(),candidate->momentum(),
+			      candidate->charge(),mass,0.);
+    }
+
+
   }
 
   // Check the status of the fit

@@ -228,7 +228,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	      _DBG_ << "Switching the charge and phi of the track..." <<endl;
 	  }
 	}
-	if (fdchits.size()+cdchits.size()==0) return fit_status=kFitFailed;
+	if (fdchits.size()+cdchits.size()==0) return fit_status=kFitNotDone;
 	
 	
 

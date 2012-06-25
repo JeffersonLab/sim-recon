@@ -619,11 +619,28 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 
     status=fitter->FitTrack(track->position(),track->momentum(),
 			    track->charge(),mass,mStartTime,mStartDetector);
-  }
+  }   
   else{
     fitter->SetFitType(DTrackFitter::kTimeBased);	
     status = fitter->FindHitsAndFitTrack(*track, rt,loop, mass, mStartTime,
 					 mStartDetector);
+    // If the status is kFitNotDone, then no hits were attached to this track
+    // using the hit-gathering algorithm.  In this case get the hits from the 
+    // wire-based track
+    if (status==DTrackFitter::kFitNotDone){
+      //_DBG_ << " Using wire-based hits " << endl;
+
+      vector<const DFDCPseudo*>myfdchits;
+      track->GetT(myfdchits);
+      fitter->AddHits(myfdchits);
+      vector<const DCDCTrackHit *>mycdchits;
+      track->GetT(mycdchits);
+      fitter->AddHits(mycdchits);
+      
+      status=fitter->FitTrack(track->position(),track->momentum(),
+			      track->charge(),mass,mStartTime,mStartDetector);
+    }
+
   }
       
   // Check the status value from the fit
