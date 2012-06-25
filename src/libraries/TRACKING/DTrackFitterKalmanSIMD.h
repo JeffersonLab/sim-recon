@@ -50,7 +50,7 @@
 #define TAN_MAX 10.
 
 #define ANNEAL_POW_CONST 10.0
-#define ANNEAL_SCALE 5.0
+#define ANNEAL_SCALE 6.0
 
 #define MINIMUM_HIT_FRACTION 0.25
 
@@ -73,9 +73,9 @@
 #define MIN_HITS_FOR_REFIT 8
 
 // Functions of Moliere fraction F
-#define MOLIERE_RATIO1 25.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 10.2e-7 // = (scale factor)*1e-6/(1+F*F)
-#define MOLIERE_RATIO3 10.2e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO1 10.0   // = 0.5/(1-F)
+#define MOLIERE_RATIO2 10.5e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO3 10.5e-7 // = (scale factor)*1e-6/(1+F*F)
 #define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001
