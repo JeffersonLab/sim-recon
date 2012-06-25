@@ -18,6 +18,7 @@ using namespace jana;
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCSegment.h"
 #include "DHelicalFit.h"
+#include "DMagneticFieldStepper.h"
 
 class DMagneticFieldMap;
 
@@ -67,6 +68,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   
  private:
   const DMagneticFieldMap *bfield;
+  DMagneticFieldStepper *stepper;
 
   bool DEBUG_HISTS;
   TH2F *match_dist,*match_dist_vs_p;

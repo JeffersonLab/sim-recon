@@ -8,7 +8,6 @@
 
 #include "DTrackCandidate_factory.h"
 #include "DANA/DApplication.h"
-#include "DMagneticFieldStepper.h"
 
 #include <TROOT.h>
 #include <TH2F.h>
@@ -87,6 +86,10 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
 
   dgeom->GetTargetZ(TARGET_Z);
  
+   // Initialize the stepper
+  stepper=new DMagneticFieldStepper(bfield);
+  stepper->SetStepSize(1.0);
+
   if(DEBUG_HISTS){
     dapp->Lock();
     match_dist=(TH2F*)gROOT->FindObject("match_dist");
@@ -148,8 +151,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     
     // Propagate track to CDC endplate
     if (theta<M_PI_4 && fdctrackcandidates.size()>0){
-      DMagneticFieldStepper stepper(bfield,srccan->charge()); 
-      if (stepper.SwimToPlane(pos,mom,cdc_endplate,norm,NULL)==false){
+      stepper->SetCharge(srccan->charge()); 
+      if (stepper->SwimToPlane(pos,mom,cdc_endplate,norm,NULL)==false){
 	cdc_endplate_projections.push_back(pos);
 	cdc_forward_ids.push_back(i);
       }
@@ -483,8 +486,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  fdccan->GetT(segments);
 	  sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 	  
-	  // Initialize the stepper 
-	  DMagneticFieldStepper stepper(bfield,srccan->charge());
+	  // Set the charge for the stepper 
+	  stepper->SetCharge(srccan->charge());
 	  
 	  // Momentum and position vectors for the CDC candidate
 	  DVector3 mom=srccan->momentum();
@@ -496,7 +499,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  for (unsigned int m=0;m<segments.size();m++){
 	    for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	      unsigned int ind=segments[m]->hits.size()-1-n;
-	      if (stepper.SwimToPlane(pos,mom,
+	      if (stepper->SwimToPlane(pos,mom,
 				      segments[m]->hits[ind]->wire->origin,
 				      norm,NULL)
 		  ==false){
@@ -624,8 +627,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  fdccan->GetT(segments);
       sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 
-	  // Initialize the stepper 
-	  DMagneticFieldStepper stepper(bfield,srccan->charge());
+	  // Set the charge for the stepper 
+      stepper->SetCharge(srccan->charge());
 
 	  // Momentum and position vectors for the CDC candidate
 	  DVector3 mom=srccan->momentum();
@@ -637,7 +640,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  for (unsigned int m=0;m<segments.size();m++){
 	    for (unsigned int i=0;i<segments[m]->hits.size();i++){
 	      unsigned int ind=segments[m]->hits.size()-1-i;
-	      if (stepper.SwimToPlane(pos,mom,
+	      if (stepper->SwimToPlane(pos,mom,
 				      segments[m]->hits[ind]->wire->origin,
 				      norm,NULL)
 		==false){
