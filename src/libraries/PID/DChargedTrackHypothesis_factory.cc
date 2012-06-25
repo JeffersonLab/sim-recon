@@ -89,6 +89,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locTrackTimeBasedVector);
 	locEventLoop->Get(locTOFPoints);
+	locEventLoop->Get(locSCHits);
 	if (USE_KLOE) {
 		locEventLoop->Get(locBCALShowers, "KLOE");
 	} else { 
@@ -122,6 +123,22 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		// Initialize projected time to estimate from track
 		locProjectedTime = locChargedTrackHypothesis->t0();
 
+		// Match to the start counter using the result of the time-based fit
+		bool locMatchedSC=false;
+		locSTHitTime=0.;
+		locTempProjectedTime = locChargedTrackHypothesis->t0();// to reject hits that are not in time with the track
+		if (dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits,locTempProjectedTime, locSCIndex, locPathLength, 
+					     locFlightTime) == NOERROR){
+		  locSTHitTime=locTempProjectedTime;
+		  locChargedTrackHypothesis->setT1(locSCHits[locSCIndex]->t, NaN, SYS_START);
+		  locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
+		  locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
+		  locMatchedSC=true;
+		}else{
+		  locChargedTrackHypothesis->setT1(NaN, 0.0, SYS_NULL); //initialize
+		  locChargedTrackHypothesis->setPathLength(NaN, 0.0); //zero uncertainty (for now)
+		}
+
 		locMatchedOuterDetectorFlag = false;
 		// Try matching the track with hits in the outer detectors
 		locMatchedBCALShowers.resize(0);
@@ -135,6 +152,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			locChargedTrackHypothesis->setT1(locMatchedBCALShowers[0]->t, locMatchedBCALShowers[0]->tErr, SYS_BCAL);
 			locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 			locMatchedOuterDetectorFlag = true;
+			//			printf("Matched BCAL t= %f tf = %f\n",locMatchedBCALShowers[0]->t,locFlightTime);
 		}
 		locTempProjectedTime = locChargedTrackHypothesis->t0(); // to reject hits that are not in time with the track
 		if (dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locTempProjectedTime, locTOFIndex, locPathLength, locFlightTime) == NOERROR){
@@ -159,20 +177,6 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 				locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 			}
 		}
-		if (locMatchedOuterDetectorFlag == false){
-			locTempProjectedTime = locChargedTrackHypothesis->t0(); // to reject hits that are not in time with the track
-			if (dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locTempProjectedTime, locSCIndex, locPathLength, locFlightTime) == NOERROR){
-				locProjectedTime = locTempProjectedTime;
-				locProjectedTimeUncertainty = 1.0; // uncertainty unknown
-				locChargedTrackHypothesis->setT1(locSCHits[locSCIndex]->t, NaN, SYS_START);
-				locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
-				locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
-			}else{
-				locProjectedTime = locChargedTrackHypothesis->t0();
-				locChargedTrackHypothesis->setT1(NaN, 0.0, SYS_NULL); //initialize
-				locChargedTrackHypothesis->setPathLength(NaN, 0.0); //zero uncertainty (for now)
-			}
-		}
 
 		//Calculate PID ChiSq, NDF, FOM
 		locNDF_Total = 0;
@@ -180,10 +184,9 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		//locNDF_Total=1;
 		//locChiSq_Total=	locChargedTrackHypothesis->dChiSq_Track/float(locChargedTrackHypothesis->dNDF_Track);
 
-		if((locChargedTrackHypothesis->t0_detector() == SYS_START) && (locMatchedOuterDetectorFlag == true)){ //use timing info to determine particle ID
+		if((locMatchedSC==true) && (locMatchedOuterDetectorFlag == true)){ //use timing info to determine particle ID
 			// Use ST hit to select RF beam bucket
 			locPropagatedRFTime = locRFTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-			locSTHitTime = locChargedTrackHypothesis->t0();
 			locSTRFTimeDifference = locSTHitTime - locPropagatedRFTime; 
 			while(fabs(locSTRFTimeDifference) > locRFBunchFrequency/2.0){
 				locPropagatedRFTime += (locSTRFTimeDifference > 0.0) ? locRFBunchFrequency : -1.0*locRFBunchFrequency;
