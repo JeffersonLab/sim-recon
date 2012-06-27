@@ -13,12 +13,12 @@
 #include <PID/DParticleID.h>
 #include <PID/DNeutralShower.h>
 #include <PID/DChargedTrackHypothesis.h>
-#include <PID/DVertex.h>
 #include <PID/DChargedTrack.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
 #include <DVector3.h>
 #include <DMatrixDSym.h>
+#include <DMatrix.h>
 #include <TMath.h>
 
 class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleHypothesis>{
@@ -33,6 +33,7 @@ class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleH
 		DParticleID *dPIDAlgorithm;
 		double dTargetLength;
 		double dTargetRadius;
+		DVector3 dTargetCenter;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.
