@@ -79,9 +79,6 @@ jerror_t DParticleSet_factory::evnt(jana::JEventLoop *locEventLoop, int eventnum
 		// Neutral particles
 		for (loc_j = 0; loc_j < locNeutralParticles.size(); loc_j++){
 			locNeutralParticle = locNeutralParticles[loc_j];
-			locNeutralParticle->Get_BestFOM()->GetT(locAssociatedVertices);
-			if (locAssociatedVertices[0]->id != locVertices[loc_i]->id)
-				continue;
 			locParticleSet->dNeutralParticles.push_back(locNeutralParticle);
 			switch (locNeutralParticle->Get_BestFOM()->dPID) {
 				case Gamma :
