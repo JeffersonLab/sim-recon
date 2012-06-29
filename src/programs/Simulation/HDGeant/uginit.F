@@ -168,9 +168,12 @@ c The following parameters are declared in hdtrackparams.inc above.
       data storetraj/0/
       data plog_particle_gun/0/
       data tlog_particle_gun/0/
+
+c The following parameters are declared in controlparams.inc above.
       data writenohits/0/
       data showersincol/0/
       data driftclusters/0/
+      data tgtwidth/2*0/
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
@@ -205,11 +208,14 @@ C..geant..
       IHADR=1
               ILOSS=1
 *
-*             Make the default origin for the particle gun at 0,0,65cm.
+*             Make the default origin for the particle gun at 0,0,65cm
+*             and the default widths of vertex volume dR=0,dZ=0cm.
 *
       VSCAN(1)=0
       VSCAN(2)=0
       VSCAN(3)=65
+      tgtwidth(1)=0.
+      tgtwidth(2)=0.
 *
 *             Initialize GEANT/ZBOOK data structures
 *
@@ -242,6 +248,7 @@ C..geant..
       CALL FFKEY('savehits',writenohits,1,'INTEGER')
       CALL FFKEY('showersincol',showersincol,1,'INTEGER')
       call FFKEY('driftclusters',driftclusters,1,'INTEGER')
+      call FFKEY('tgtwidth',tgtwidth,2,'REAL')
       call gtgamaff()
       CALL GFFGO
 *

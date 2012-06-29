@@ -109,6 +109,7 @@
 #include "geant321/gctrak.inc"
 #include "geant321/gcnum.inc"
 #include "hdtrackparams.inc"
+#include "controlparams.inc"
 #include "backgrounds.inc"
 #include "cobrems.inc"
 *
@@ -122,6 +123,7 @@
       integer nubuf
       real ubuf(99)
       real pmin, pmax, thetamin, thetamax
+      real vertex_r, vertex_phi
 
 *
 *     -----------------------------------------------------------------
@@ -225,10 +227,13 @@ c         print *, ngen,' background photons generated this event'
 *              If all else fails, do automatic single-track generation
 *
       else
+         CALL GRNDM(RNDM,3)
+         vertex_r=RNDM(1)*tgtwidth(1)
+         vertex_phi=RNDM(2)*6.28319
          TOFG=0
-         VERTEX(1)=VSCAN(1)
-         VERTEX(2)=VSCAN(2)
-         VERTEX(3)=VSCAN(3)+(15.-30.*RNDM(1))
+         VERTEX(1)=VSCAN(1)+vertex_r*cos(vertex_phi)
+         VERTEX(2)=VSCAN(2)+vertex_r*sin(vertex_phi)
+         VERTEX(3)=VSCAN(3)+((RNDM(3)-0.5)*tgtwidth(2))
          IF (IKINE.GT.100) THEN
             IK=IKINE-100
             CALL GRNDM(RNDM,3)

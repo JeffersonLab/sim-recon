@@ -90,6 +90,19 @@ c
 c    vertex_x vertex_y vertex_z
 SCAP    0.       0.      65.
 
+c The TGTWIDTH card is used to determine an extended volume from
+c which the particle gun will generate vertexes. The vertex position
+c is sampled evenly from a cylindrical volume whose radius is given
+c by the first parameter and whose full z-extent is given by the second.
+c The volume is centered on the coordinates specified by SCAP above.
+c If the card is not specified, then both the r and z extent default
+c to zero meaning the vertex is always located at the point specified
+c by SCAP. Note that this only affects the particle gun. Events read
+c from a file contain their own vertex information.
+c
+c            vertex_extent_r  vertext_extent_z
+c TGTWIDTH           0.0              30.0
+
 c If you specify a non-zero value for vertex_x and/or vertex_y above then
 c all tracks will emerge from the given point.  If you leave them at zero,
 c you have the option of specifying the HALO card which causes the simulation
