@@ -61,6 +61,7 @@ class DParticleID:public jana::JObject{
   jerror_t MatchToSC(const DKinematicData &parms, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id);
 
   virtual Particle_t IDTrack(float locCharge, float locMass);
+  void Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency);
 
   protected:
 		// gas material properties
@@ -82,6 +83,8 @@ class DParticleID:public jana::JObject{
   const DGeometry *geom;
   const DMagneticFieldMap *bfield;
   DMagneticFieldStepper *stepper;
+  double dTargetZCenter;
+
 
   // start counter geometry parameters
   double sc_leg_tcor;

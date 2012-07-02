@@ -22,11 +22,8 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		DChargedTrackHypothesis_factory(){};
 		~DChargedTrackHypothesis_factory(){};
 
-		void Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency);
-
 	private:
 		DParticleID *dPIDAlgorithm;
-		double dTargetZCenter;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.

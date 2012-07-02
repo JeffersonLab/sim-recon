@@ -52,7 +52,7 @@ DParticleID::DParticleID(JEventLoop *loop)
   dKRhoZoverA_FDC = 0.1535E-3*dRhoZoverA_FDC;
 
   // Get the geometry
-  geom = dapp->GetDGeometry(0);  // should have run number argument...
+  geom = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
 
   vector<double>sc_origin;
   geom->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z",sc_origin);
@@ -88,6 +88,9 @@ DParticleID::DParticleID(JEventLoop *loop)
     DELTA_R_BCAL = 15.0;
     DELTA_R_FCAL = 15.0;
   }
+
+	dTargetZCenter = 0.0;
+	geom->GetTargetZ(dTargetZCenter);
 }
 
 //---------------------------------
@@ -702,6 +705,34 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 
 	tproj=NaN;
 	return VALUE_OUT_OF_RANGE;
+}
+
+void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency)
+{
+	if((locChargedTrackHypothesis->t0_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_START))
+	{
+		//uncertainty so huge on SYS_START that for t1() it won't help distinguish PID anyway
+		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
+		locChargedTrackHypothesis->dNDF_Timing = 0;
+		return;
+	}
+
+	// Use ST hit to select RF beam bucket
+	double locPropagatedRFTime = locRFTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
+	double locSTRFTimeDifference = locChargedTrackHypothesis->t0() - locPropagatedRFTime; 
+	while(fabs(locSTRFTimeDifference) > locRFBunchFrequency/2.0){
+		locPropagatedRFTime += (locSTRFTimeDifference > 0.0) ? locRFBunchFrequency : -1.0*locRFBunchFrequency;
+		locSTRFTimeDifference = locChargedTrackHypothesis->t0() - locPropagatedRFTime;
+	}
+
+	// Compare time difference between RF & TOF/BCAL/FCAL times at the vertex
+	double locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->dProjectedStartTime;
+
+	// Calculate ChiSq, FOM
+	double locTUncertainty = locChargedTrackHypothesis->dProjectedStartTimeUncertainty;
+	double locTimingChiSq = locTimeDifference*locTimeDifference/(locTUncertainty*locTUncertainty);
+	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
+	locChargedTrackHypothesis->dNDF_Timing = 1;
 }
 
 Particle_t DParticleID::IDTrack(float locCharge, float locMass){

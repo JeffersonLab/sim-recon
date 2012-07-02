@@ -49,13 +49,6 @@ jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, i
 		return RESOURCE_UNAVAILABLE;
 	}
 
-	dTargetZCenter = 0.0;
-	// Get Target parameters from XML
-	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
-	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
-	if(locGeometry)
-		locGeometry->GetTargetZ(dTargetZCenter);
-
 	return NOERROR;
 }
 
@@ -183,7 +176,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		locNDF_Total = 0;
 		locChiSq_Total = 0.0;
 
-		Calc_TimingChiSq(locChargedTrackHypothesis, locRFTime, locRFBunchFrequency);
+		dPIDAlgorithm->Calc_TimingChiSq(locChargedTrackHypothesis, locRFTime, locRFBunchFrequency);
 		locChiSq_Total += locChargedTrackHypothesis->dChiSq_Timing;
 		locNDF_Total += locChargedTrackHypothesis->dNDF_Timing;
 
@@ -199,34 +192,6 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 	}
 
 	return NOERROR;
-}
-
-void DChargedTrackHypothesis_factory::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency)
-{
-	if((locChargedTrackHypothesis->t0_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_START))
-	{
-		//uncertainty so huge on SYS_START that for t1() it won't help distinguish PID anyway
-		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
-		locChargedTrackHypothesis->dNDF_Timing = 0;
-		return;
-	}
-
-	// Use ST hit to select RF beam bucket
-	double locPropagatedRFTime = locRFTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-	double locSTRFTimeDifference = locChargedTrackHypothesis->t0() - locPropagatedRFTime; 
-	while(fabs(locSTRFTimeDifference) > locRFBunchFrequency/2.0){
-		locPropagatedRFTime += (locSTRFTimeDifference > 0.0) ? locRFBunchFrequency : -1.0*locRFBunchFrequency;
-		locSTRFTimeDifference = locChargedTrackHypothesis->t0() - locPropagatedRFTime;
-	}
-
-	// Compare time difference between RF & TOF/BCAL/FCAL times at the vertex
-	double locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->dProjectedStartTime;
-
-	// Calculate ChiSq, FOM
-	double locTUncertainty = locChargedTrackHypothesis->dProjectedStartTimeUncertainty;
-	double locTimingChiSq = locTimeDifference*locTimeDifference/(locTUncertainty*locTUncertainty);
-	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
-	locChargedTrackHypothesis->dNDF_Timing = 1;
 }
 
 //------------------
