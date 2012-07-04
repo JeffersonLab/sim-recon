@@ -16,7 +16,7 @@
 #include "CLHEP/Vector/LorentzRotation.h"
 #include "CLHEP/Vector/ThreeVector.h"
 
-b1piAngAmp::b1piAngAmp(int polBeam, const AmpParameter& polFrac,
+b1piAngAmp::b1piAngAmp(int polBeam, //const AmpParameter& polFrac,
 		       int J_X, int Par_X, int L_X, int I_X, int epsilon_R,
 		       int Iz1, int Iz2,
 		       float u_rho_1, float u_rho_3,
@@ -26,7 +26,7 @@ b1piAngAmp::b1piAngAmp(int polBeam, const AmpParameter& polFrac,
   
   Amplitude(),
   mpolBeam( polBeam ),  // beam polarization component (X=0, Y=1)
-  mpolFrac( polFrac ),  // fraction of polarization 0=0% 1=100%. 
+  //mpolFrac( polFrac ),  // fraction of polarization 0=0% 1=100%. 
   mJ_X( J_X ),     // total J of produced resonance
   // parity of produced resonance
   mPar_X( Par_X==1 ? 1 : -1 ), // for convenience let Par_X=0 --> -1 
@@ -62,7 +62,7 @@ b1piAngAmp::b1piAngAmp(int polBeam, const AmpParameter& polFrac,
   assert( abs(Iz1) <= 1 );
   assert( abs(Iz2) <= 1 );
 
-  registerParameter( mpolFrac );
+  //registerParameter( mpolFrac );
 
   m_disableBW_omega = G0_omega <= 0;
   m_disableBW_b1 = G0_b1 <= 0;
@@ -490,16 +490,18 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
 
   ThelSum *= N(mL_X) * (GDouble)(mL_X==0 ? 1.0 : (mL_X==1 ? q : pow(q,mL_X))) *
     // to apply polarization fraction weights: 
-    (GDouble)sqrt((1.0-pol*mpolFrac)*0.5) * //(1+g) for x-pol, (1-g) for y-pol   
+    //(GDouble)sqrt((1.0-pol*mpolFrac)*0.5) * //(1+g) for x-pol, (1-g) for y-pol   
     (pol==1 ? i : COne)*InvSqrt2 * //to account for |eps_g> ~ sqrt(-eps/2)
     CB(1, 1, Iz_b1, Iz_pi, mI_X, Iz_b1 + Iz_pi);
 
 
   if(m_ORTHOCHECK) {
     double I=abs(ThelSum);
-    printf("ORTHOCHECK %3.1f %3.1f  %3.1f %3.1f  %3.1f %3.1f\t%17.10e ", m_u_rho_1, m_u_rho_3, 
+    printf("ORTHOCHECK %3.1f %3.1f  %3.1f %3.1f  %3.1f %3.1f\t%17.10e ",
+	   m_u_rho_1, m_u_rho_3, 
 	   m_u_omega_1, m_u_omega_3, m_u_b1_0, m_u_b1_2, I*I);
-    printf("%d %1.0f %d %d %d %d %d\n",mpolBeam,(double)mpolFrac,mJ_X,mPar_X,mL_X,mI_X,mepsilon_R);
+    printf("%d %d %d %d %d %d\n",mpolBeam,//(double)mpolFrac,
+	   mJ_X,mPar_X,mL_X,mI_X,mepsilon_R);
 
   }
 
@@ -510,47 +512,51 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
     
 b1piAngAmp*
 b1piAngAmp::newAmplitude( const vector< string >& args ) const {
-  const unsigned int base_arg_num=9;
+  const unsigned int base_arg_num=8;
   bool fastCalc=false;
   bool tweakBW_omega = args.size() == base_arg_num+1;
   bool tweakBW_omega_b1 = args.size() == base_arg_num+2;
-  assert(args.size() == base_arg_num || args.size() == 15 || tweakBW_omega || tweakBW_omega_b1);
+  //accept either base number of arguments, extended set (14)
+  // for orthogonality check diagnostics
+  // or base number plus omega width or base number plus omega and b1 widths
+  assert(args.size() == base_arg_num || args.size() == 14 || 
+	 tweakBW_omega || tweakBW_omega_b1);
   
   int polBeam = atoi( args[0].c_str() );
   //float  polFrac = atof(args[1].c_str());
-  AmpParameter polFrac( args[1] );
-  int J_X      = atoi( args[2].c_str() );
-  int Par_X    = atoi( args[3].c_str() );
-  int L_X      = atoi( args[4].c_str() );
-  int I_X      = atoi( args[5].c_str() );
-  int epsilon_R= atoi( args[6].c_str() );
-  int Iz_b1    = atoi( args[7].c_str() );
-  int Iz_pi    = atoi( args[8].c_str() );
+  //AmpParameter polFrac( args[1] );
+  int J_X      = atoi( args[1].c_str() );
+  int Par_X    = atoi( args[2].c_str() );
+  int L_X      = atoi( args[3].c_str() );
+  int I_X      = atoi( args[4].c_str() );
+  int epsilon_R= atoi( args[5].c_str() );
+  int Iz_b1    = atoi( args[6].c_str() );
+  int Iz_pi    = atoi( args[7].c_str() );
   
   bool use_emp = (args.size() == base_arg_num || tweakBW_omega || tweakBW_omega_b1);
 
   // Note, the following have no effect since L_\omega & J_\rho
   // have been restricted to value 1
-  float u_rho_1  = use_emp ? sqrt(.9) : atoi( args[9].c_str());
-  float u_rho_3  = use_emp ? sqrt(.1) : atoi( args[10].c_str());
-  float u_omega_1= use_emp ? sqrt(.9) : atoi( args[11].c_str());
-  float u_omega_3= use_emp ? sqrt(.1) : atoi( args[12].c_str());
+  float u_rho_1  = use_emp ? sqrt(.9) : atoi( args[8].c_str());
+  float u_rho_3  = use_emp ? sqrt(.1) : atoi( args[9].c_str());
+  float u_omega_1= use_emp ? sqrt(.9) : atoi( args[10].c_str());
+  float u_omega_3= use_emp ? sqrt(.1) : atoi( args[11].c_str());
 
   float G0_omega=0.0085, G0_b1=0.143;
-  if(tweakBW_omega && args[9][0]=='F') fastCalc=true;
+  if(tweakBW_omega && args[8][0]=='F') fastCalc=true;
   else{
-    if(tweakBW_omega || tweakBW_omega_b1) G0_omega = atof( args[9].c_str());
-    if(tweakBW_omega_b1) G0_b1 = atof( args[10].c_str());
+    if(tweakBW_omega || tweakBW_omega_b1) G0_omega = atof( args[8].c_str());
+    if(tweakBW_omega_b1) G0_b1 = atof( args[9].c_str());
   }
 
   const float b1DSratio2 = 0.277*0.277; //from PDG: D/S amp ratio=0.277+/-0.027
   float u_b1_0   = use_emp ? sqrt(1/(1 + b1DSratio2)) 
-    : atoi( args[13].c_str());
+    : atoi( args[12].c_str());
   float u_b1_2   = use_emp ? sqrt(b1DSratio2/(1 + b1DSratio2)) 
-    : atoi( args[14].c_str());
+    : atoi( args[13].c_str());
 
   
-  return new b1piAngAmp( polBeam, polFrac, J_X, Par_X, L_X, I_X, epsilon_R,
+  return new b1piAngAmp( polBeam, /*polFrac,*/ J_X, Par_X, L_X, I_X, epsilon_R,
 			 Iz_b1, Iz_pi,
 			 u_rho_1, u_rho_3, u_omega_1, u_omega_3, 
 			 u_b1_0, u_b1_2, G0_omega, G0_b1, !use_emp,fastCalc);    
@@ -562,7 +568,7 @@ b1piAngAmp*
 b1piAngAmp::clone() const {
   
   return ( isDefault() ? new b1piAngAmp() : 
-	   new b1piAngAmp(mpolBeam,mpolFrac, mJ_X,mPar_X, 
+	   new b1piAngAmp(mpolBeam,/*mpolFrac,*/ mJ_X,mPar_X, 
 			  mL_X, mI_X, mepsilon_R, mIz[2], mIz[3],
 			  m_u_rho_1, m_u_rho_3, 
 			  m_u_omega_1, m_u_omega_3, 
@@ -580,7 +586,7 @@ launchGPUKernel( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO ) const {
   int Iz_b1 = mIz[perm[2]];
   int Iz_pi = mIz[perm[3]];
 
-  GPUb1piAngAmp_exec(dimGrid, dimBlock, GPU_AMP_ARGS, mpolBeam, mpolFrac,
+  GPUb1piAngAmp_exec(dimGrid, dimBlock, GPU_AMP_ARGS, mpolBeam, //mpolFrac,
 		     mJ_X, mPar_X, mL_X, mI_X, mepsilon_R, Iz_b1, Iz_pi,
 		     m_u_rho_1, m_u_rho_3, m_u_omega_1, m_u_omega_3,
 		     m_u_b1_0, m_u_b1_2, mG0_omega, mG0_b1, 

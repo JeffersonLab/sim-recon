@@ -18,7 +18,7 @@ using namespace std;
 #ifdef GPU_ACCELERATION
 void
 GPUb1piAngAmp_exec(dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO,
-		   int polBeam, GDouble polFrac,
+		   int polBeam, //GDouble polFrac,
 		   int J_X, int Par_X, int L_X, int I_X, int epsilon_R, 
 		   int Iz_b1, int Iz_pi,
 		   GDouble u_rho_1, GDouble u_rho_3, 
@@ -37,7 +37,7 @@ class b1piAngAmp : public Amplitude
 public:
   
   b1piAngAmp() : Amplitude() { setDefaultStatus( true ); }
-  b1piAngAmp(int polBeam, const AmpParameter& polFrac,
+  b1piAngAmp(int polBeam, //const AmpParameter& polFrac,
 	     int J_X, int Par_X, int L_X, int I_X, int epsilon_R, 
 	     int Iz_b1, int Iz_pi,
 	     float u_rho_1, float u_rho_3,
