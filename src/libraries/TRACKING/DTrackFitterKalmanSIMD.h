@@ -85,6 +85,11 @@
 
 #define ELECTRON_MASS 0.000511 // GeV
 
+#define CDC_DRIFT_B_SCALE_PAR1 602.0
+#define CDC_DRIFT_B_SCALE_PAR2 58.22
+#define FDC_DRIFT_B_SCALE_PAR1 56.03
+#define FDC_DRIFT_B_SCALE_PAR2 9.122
+
 using namespace std;
 
 enum kalman_error_t{
@@ -133,7 +138,8 @@ typedef struct{
   bool used_in_fit;
   DMatrix5x1 S;
   DMatrix5x5 C;
-  double tflight,s,B,dEdx;
+  double tdrift,tflight,s,B;
+  double residual,variance;
   DVector3 pos;
 }DKalmanUpdate_t;
 
@@ -246,8 +252,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
  
   void locate(const double *xx,int n,double x,int *j);
   double fdc_y_variance(double alpha,double x,double dE);
-  double cdc_variance(double tanl,double t);   
-  double cdc_forward_variance(double tanl,double t);  
+  double cdc_variance(double B,double tanl,double t);   
+  double cdc_forward_variance(double B,double tanl,double t);  
   double cdc_drift_distance(double t,double Bz);  
   double fdc_drift_distance(double t,double Bz);
 
@@ -285,7 +291,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t CalcDerivAndJacobian(double ds,const DVector3 &pos,DVector3 &dpos,
 				const DMatrix5x1 &S,double dEdx,
 				DMatrix5x5 &J1,DMatrix5x1 &D1);
-  jerror_t ConvertStateVector(double z,const DMatrix5x1 &S,DMatrix5x1 &Sc);
+  jerror_t ConvertStateVectorAndCovariance(double z,const DMatrix5x1 &S,
+                                           DMatrix5x1 &Sc,const DMatrix5x5 &C,
+                                           DMatrix5x5 &Cc);
+
   jerror_t GetProcessNoiseCentral(double ds,double chi2c_factor,
 				  double chi2a_factor,double chi2a_corr,
 				  const DMatrix5x1 &S,DMatrix5x5 &Q);  
@@ -310,17 +319,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   DMatrixDSym Get7x7ErrorMatrix(DMatrixDSym C); 
   DMatrixDSym Get7x7ErrorMatrixForward(DMatrixDSym C);
-  jerror_t EstimateT0(const DKalmanSIMDFDCHit_t *hit,double ftime,double Bz,
-		      double d, double cosalpha,
-		      double sinalpha, double tu,
-		      const DMatrix5x5 &C);
-  jerror_t EstimateT0(const DCDCTrackHit *hit,double ftime,double doca,
-		      double delta_x,double delta_y,double Bz,
-		      const DMatrix5x5 &C);
-  jerror_t FindForwardResiduals(vector<DKalmanUpdate_t>cdc_updates,
-				vector<DKalmanUpdate_t>fdc_updates);
-  jerror_t FindResidual(unsigned int id,double z,double t,double dEdx,
-			DMatrix5x1 &Ss,DMatrix5x5 &Cs);
+
+  jerror_t EstimateT0(const DKalmanUpdate_t &fdc_update,
+		      const DKalmanSIMDFDCHit_t *hit);
+  jerror_t EstimateT0Central(const DCDCTrackHit *hit,
+			     const DKalmanUpdate_t &cdc_update); 
+  jerror_t EstimateT0Forward(const DCDCTrackHit *hit,
+			     const DKalmanUpdate_t &cdc_update);
 
   kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
   kalman_error_t ForwardCDCFit(const DMatrix5x1 &S,const DMatrix5x5 &C0);  
@@ -422,6 +427,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   bool USE_MULS_COVARIANCE;
   double FDC_CATHODE_SIGMA;
   bool RECOVER_BROKEN_TRACKS;
+  bool FORWARD_PARMS_COV;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
@@ -442,7 +448,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
  private:
   bool last_smooth;
   unsigned int last_material_map;
- 
+  double CDC_DRIFT_B_SCALE,FDC_DRIFT_B_SCALE;
+
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
   TH2F *thetay_vs_thetax;
   TH2F *Hstepsize,*HstepsizeDenom;

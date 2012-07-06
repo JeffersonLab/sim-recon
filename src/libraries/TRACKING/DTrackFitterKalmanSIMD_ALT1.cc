@@ -161,6 +161,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  vector<DMatrix1x5> Hlist;
 	  vector<double> Vlist;
 	  vector<double>probs;
+	  vector<unsigned int>used_ids;
 
 	  // Deal with the first hit:
 	  double Vtemp=V+H*C*H_T;
@@ -178,14 +179,13 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    Mlist.push_back(Mdiff);
 	    Klist.push_back(InvV*(C*H_T)); // Kalman gain
 
+	    used_ids.push_back(id);
 	    fdc_updates[id].used_in_fit=true;
 	  }
 	  
 	  // loop over the remaining hits
 	  for (unsigned int m=1;m<forward_traj[k].num_hits;m++){
 	    unsigned int my_id=id-m;
-	    fdc_updates[my_id].used_in_fit=true;
-
 	    u=my_fdchits[my_id]->uwire;
 	    v=my_fdchits[my_id]->vstrip;
 	    double du=x*cosa-y*sina-u;
@@ -224,7 +224,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      Mlist.push_back(Mdiff);
 	      Vlist.push_back(V);
 	      Hlist.push_back(H);   
-	      Klist.push_back(InvV*(C*H_T));
+	      Klist.push_back(InvV*(C*H_T));	  
+  
+	      used_ids.push_back(my_id);
+	      fdc_updates[my_id].used_in_fit=true;
+
 	    }
 	  }
 	  double prob_tot=1e-100;
@@ -243,25 +247,23 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    sum2+=(my_prob*my_prob*Vlist[m])*MultiplyTranspose(Klist[m]);
 	  }
 	  C=C.SandwichMultiply(sum)+sum2;
-
-	  if (fit_type==kTimeBased){
-	    for (unsigned int m=0;m<forward_traj[k].num_hits;m++){
-	      unsigned int my_id=id-m;
-	      if (fdc_updates[my_id].used_in_fit){
-		fdc_updates[my_id].S=S;
-		fdc_updates[my_id].C=C; 
-		fdc_updates[my_id].tflight
-		  =forward_traj[k].t*TIME_UNIT_CONVERSION;  
-		fdc_updates[my_id].pos=forward_traj[k].pos;
-		fdc_updates[my_id].dEdx=0.;
-		fdc_updates[my_id].B=forward_traj[k].B;
-		fdc_updates[my_id].s=forward_traj[k].s;
-	      }
-	    }
-	  }
 	  
-	  // update chi2
-	  for (unsigned int m=0;m<Klist.size();m++){
+	  for (unsigned int m=0;m<Hlist.size();m++){
+	    unsigned int my_id=used_ids[m];
+	    double scale=1.-Hlist[m]*Klist[m];
+	    if (fit_type==kTimeBased){
+	      fdc_updates[my_id].S=S;
+	      fdc_updates[my_id].C=C; 
+	      fdc_updates[my_id].tflight
+		=forward_traj[k].t*TIME_UNIT_CONVERSION;  
+	      fdc_updates[my_id].pos.SetXYZ(S(state_x),S(state_y),z);
+	      fdc_updates[my_id].B=forward_traj[k].B;
+	    }
+	    fdc_updates[my_id].s=forward_traj[k].s;
+	    fdc_updates[my_id].residual=scale*Mlist[m];
+	    fdc_updates[my_id].variance=scale*Vlist[m];
+	  
+	    // update chi2
 	    chisq+=(probs[m]/prob_tot)*(1.-Hlist[m]*Klist[m])*Mlist[m]*Mlist[m]/Vlist[m];
 	  }
 
@@ -292,20 +294,23 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    //C=C-K*(H*C);    
 	    C=C.SubSym(K*(H*C));
 
+	    // Store the "improved" values for the state vector and covariance
+	    double scale=1.-H*K;
 	    if (fit_type==kTimeBased){
 	      fdc_updates[id].S=S;
 	      fdc_updates[id].C=C;
 	      fdc_updates[id].tflight
 		=forward_traj[k].t*TIME_UNIT_CONVERSION;  
-	      fdc_updates[id].pos=forward_traj[k].pos;
-	      fdc_updates[id].dEdx=0.;
+	      fdc_updates[id].pos.SetXYZ(S(state_x),S(state_y),z);
 	      fdc_updates[id].B=forward_traj[k].B;
-	      fdc_updates[id].s=forward_traj[k].s;
 	    }
+	    fdc_updates[id].residual=scale*Mdiff;
+	    fdc_updates[id].variance=scale*V;
+	    fdc_updates[id].s=forward_traj[k].s;
 	    fdc_updates[id].used_in_fit=true;
 	    
 	    // Update chi2 for this segment
-	    chisq+=(1.-H*K)*Mdiff*Mdiff/V;
+	    chisq+=scale*Mdiff*Mdiff/V;
 		    
 	    if (DEBUG_LEVEL>2){
 	      printf("hit %d p %5.2f dm %5.2f chi2 %5.2f z %5.2f\n",
@@ -470,18 +475,19 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  //H.Print();
 	  
 	  // The next measurement
-	  double dm=0.;
+	  double dm=0.,tdrift=0.;
 	  double Vc=0.2133; //1.6*1.6/12.;
 	  
 	  if (fit_type==kTimeBased){
-	    double tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
+	    tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
 		-forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
-	    dm=cdc_drift_distance(tdrift,forward_traj[k].B);
+	    double B=forward_traj[k].B;
+	    dm=cdc_drift_distance(tdrift,B);
 	    
 	    // variance
 	    double tx=S(state_tx),ty=S(state_ty);
 	    double tanl=1./sqrt(tx*tx+ty*ty);
-	    Vc=cdc_forward_variance(tanl,tdrift);	  
+	    Vc=cdc_forward_variance(B,tanl,tdrift);	  
 	    double temp=1./(1131.+2.*140.7*dm);
 	    Vc+=mVarT0*temp*temp;
 	  }
@@ -524,31 +530,25 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      // Update the state vector
 	      double res=dm-d;
 	      S+=res*K;
-	      
+
 	      // Store the "improved" values of the state and covariance matrix
+	      double scale=1.-H*K;
 	      if (fit_type==kTimeBased){
 		cdc_updates[cdc_index].S=S;
-		cdc_updates[cdc_index].C=C;	 
+		cdc_updates[cdc_index].C=C;	  
 		cdc_updates[cdc_index].tflight
 		  =forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
-		cdc_updates[cdc_index].pos=forward_traj[k_minus_1].pos;
-		cdc_updates[cdc_index].dEdx=dedx;
+		cdc_updates[cdc_index].pos.SetXYZ(S(state_x),S(state_y),newz);
+		cdc_updates[cdc_index].tdrift=tdrift;
 		cdc_updates[cdc_index].B=forward_traj[k_minus_1].B;
-		cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
-	     	      
-		// propagate error matrix to z-position of hit
-		StepJacobian(newz,forward_traj[k_minus_1].pos.z(),
-			     cdc_updates[cdc_index].S,dedx,J);
-		cdc_updates[cdc_index].C
-		  =cdc_updates[cdc_index].C.SandwichMultiply(J);	 
-		
-		// Step state back to previous z position
-		Step(newz,forward_traj[k_minus_1].pos.z(),dedx,cdc_updates[cdc_index].S);
-	      }
+	      } 
+	      cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
+	      cdc_updates[cdc_index].residual=res*scale;
+	      cdc_updates[cdc_index].variance=Vc*scale;
 	      cdc_updates[cdc_index].used_in_fit=true;
- 
+	    
 	      // Update chi2 for this segment
-	      chisq+=(1.-H*K)*res*res/Vc;
+	      chisq+=scale*res*res/Vc;
 
 	      if (DEBUG_LEVEL>2)
 		printf("Ring %d straw %d pred %f meas %f chi2 %f\n",
