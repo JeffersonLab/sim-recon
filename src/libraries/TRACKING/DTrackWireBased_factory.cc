@@ -69,6 +69,7 @@ static unsigned int count_common_members(vector<T> &a, vector<T> &b)
 jerror_t DTrackWireBased_factory::init(void)
 {
 	fitter = NULL;
+	MAX_DReferenceTrajectoryPoolSize = 20;
 
 	DEBUG_HISTS = true;	
 	//DEBUG_HISTS = false;
@@ -148,6 +149,12 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 {
   if(!fitter)return NOERROR;
   
+	if(rtv.size() > MAX_DReferenceTrajectoryPoolSize){
+		for(size_t loc_i = MAX_DReferenceTrajectoryPoolSize; loc_i < rtv.size(); ++loc_i)
+			delete rtv[loc_i];
+		rtv.resize(MAX_DReferenceTrajectoryPoolSize);
+	}
+
   // Get candidates and hits
   vector<const DTrackCandidate*> candidates;
   loop->Get(candidates);

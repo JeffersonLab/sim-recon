@@ -61,6 +61,7 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		vector<DReferenceTrajectory*> rtv;
 		vector<double> mass_hypotheses_positive;
 		vector<double> mass_hypotheses_negative;
+		size_t MAX_DReferenceTrajectoryPoolSize;
 
 		void FilterDuplicates(void);
 		void DoFit(unsigned int c_id,const DTrackCandidate *candidate,

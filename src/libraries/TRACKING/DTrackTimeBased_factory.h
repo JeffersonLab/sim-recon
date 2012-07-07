@@ -57,6 +57,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   vector<DReferenceTrajectory*> rtv;	
   vector<double> mass_hypotheses_positive;
   vector<double> mass_hypotheses_negative;
+  size_t MAX_DReferenceTrajectoryPoolSize;
 
  
   // Optional debugging histograms
