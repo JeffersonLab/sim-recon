@@ -10,9 +10,9 @@
 #include <iostream>
 #include <cmath>
 // ROOT Headers:
-#include "TMatrixD.h"
 #include "TMath.h"
 // Local Headers
+#include "DMatrix.h"
 #include "DLorentzVector.h"
 #include "DVector3.h"
 #include "DKinematicData.h"
@@ -24,6 +24,22 @@ class DKinFit {
 
   private:
     // Data Members (private):
+  enum state_types_central{
+    state_q_over_pt,
+    state_phi,
+    state_tanl,
+    state_D,
+    state_z,
+  };
+  enum state_cartesian{
+    state_Px,
+    state_Py,
+    state_Pz,
+    state_E,
+    state_X,
+    state_Y,
+    state_Z,
+  };
 
     int _verbose; ///< Level of verbosity
 
@@ -42,7 +58,7 @@ class DKinFit {
     std::vector<DKinematicData> _kDataFinal_out; ///< Final particle 4-momenta (out)
 
     /* covariance matrix info */
-    TMatrixD _cov; ///< Covariance matrix
+    DMatrix _cov; ///< Covariance matrix
     double _sigma_missing[3]; ///< Fit errors on missing quantities
 
     /* missing particle info */
@@ -57,6 +73,10 @@ class DKinFit {
     std::vector< std::vector<int> > _constraintParticles; ///< Particles in the extra constraint equations
                                                           ///< -1 is the missing mass
     std::vector<bool> _extraC_miss; ///< Is missing particle used in extra mass constraint?
+  
+  // Conversion routine:  5x5 -> 7x7 error matrices
+  DMatrixDSym Get7x7ErrorMatrix(const double mass,const double vec[5],const DMatrixDSym &C);
+
 
     // Functions (private):
     // main kinematic fit function
@@ -72,7 +92,7 @@ class DKinFit {
     void _SetToBadFit();
 
     // set the missing particle errors
-    void _SetMissingParticleErrors(const TMatrixD &__missingCov, const TMatrixD &__x);
+    void _SetMissingParticleErrors(const DMatrix &__missingCov, const DMatrix &__x);
 
   public:
     // Create/Copy/Destroy:
@@ -104,7 +124,7 @@ class DKinFit {
     // get ready for a new fit
     inline void ResetForNewFit() { this->_ResetForNewFit();}
 
-    inline void SetCovMatrix(const TMatrixD &__covMat){ 
+    inline void SetCovMatrix(const DMatrix &__covMat){ 
       /// Set the covariance matrix.
       _cov.ResizeTo(__covMat);
       _cov = __covMat;
@@ -150,7 +170,7 @@ class DKinFit {
     inline double GetMissingError(int __n) const { return _sigma_missing[__n]; }
 
     /// Returns the covariance matrix
-    inline const TMatrixD& GetCovMat() const { return _cov; }
+    inline const DMatrix& GetCovMat() const { return _cov; }
 
     // Functions:
     /// Returns the confidence level of the last fit

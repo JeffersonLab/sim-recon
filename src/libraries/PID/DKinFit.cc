@@ -111,6 +111,13 @@ void DKinFit::Fit()
   }
   for(int i=0;i<numFinal;i++)
   {
+    // Convert from the 5x5 tracking error matrix to the 7x7 matrix currently
+    // used by the kinematic fitter
+    double vect[5];
+    _kDataFinal_in[i].TrackingStateVector(vect);
+    _kDataFinal_in[i].setErrorMatrix(Get7x7ErrorMatrix(_kDataFinal_in[i].mass(),vect,_kDataFinal_in[i].TrackingErrorMatrix()));
+    
+
     _kDataFinal_out.push_back(_kDataFinal_in[i]); /// Make sure we're not using the same pointer
     for(int j=0;j<numypar;j++)
     {
@@ -184,37 +191,37 @@ void DKinFit::Fit()
 
   // y(i) ==> measured particle quantities.
   // i = 3*n+0,3*n+1,3*n+2 are particle n's p_x,p_y,p_z respectively.
-  TMatrixD yi(dim,1),y(dim,1); // yi will be intial values
+  DMatrix yi(dim,1),y(dim,1); // yi will be intial values
   // x(i) ==> missing particle quantities (0,1,2) = (px,py,pz)
-  TMatrixD x(3,1);
-  //TMatrixD x(4,1);
+  DMatrix x(3,1);
+  //DMatrix x(4,1);
   // a(i,j) = dc(i)/dx(j) ==> derivatives of constraint eq's w/r to missing
   // particle quantities x.
-  TMatrixD a(numConstraints,3),aT(3,numConstraints);
-  //TMatrixD a(numConstraints,4),aT(4,numConstraints);
+  DMatrix a(numConstraints,3),aT(3,numConstraints);
+  //DMatrix a(numConstraints,4),aT(4,numConstraints);
   // b(i,j) = dc(i)/dy(j) ==> derivatives of constraint eq's w/r to measured
   // quantities y.
-  TMatrixD b(numConstraints,dim),bT(dim,numConstraints);
+  DMatrix b(numConstraints,dim),bT(dim,numConstraints);
   // c(i) is constraint eq. i ==> (0,1,2,3) are (e,px,py,pz) constraints, any
   // extra mass constraints are i = 4 and up.
-  TMatrixD c(numConstraints,1);
-  TMatrixD c0(numConstraints,1);
+  DMatrix c(numConstraints,1);
+  DMatrix c0(numConstraints,1);
   // eps(i) = yi(i)-y(i) are the overall changes in the measured quantities
-  TMatrixD eps(dim,1),epsT(1,dim);
+  DMatrix eps(dim,1),epsT(1,dim);
   // delta(i) is used to update the measured quantities. After an iteration of
   // the fitting process, y =yi-delta is how y is updated.
-  TMatrixD delta(dim,1);
+  DMatrix delta(dim,1);
   // xsi(i) same as delta (above) but for x.
-  TMatrixD xsi(3,1);
-  //TMatrixD xsi(4,1);
+  DMatrix xsi(3,1);
+  //DMatrix xsi(4,1);
   // gb is a utility matrix used 
-  TMatrixD gb(numConstraints,numConstraints);
-  TMatrixD gb0(numConstraints,numConstraints);
+  DMatrix gb(numConstraints,numConstraints);
+  DMatrix gb0(numConstraints,numConstraints);
   // cov_fit is the covariance matrix OUTPUT by the fit.
-  TMatrixD cov_fit(dim,dim);
+  DMatrix cov_fit(dim,dim);
   // Lagrange multiplier array
-  TMatrixD L(numConstraints,1);
-  TMatrixD LT(1,numConstraints);
+  DMatrix L(numConstraints,1);
+  DMatrix LT(1,numConstraints);
 
   /***************************** Initial Set Up ******************************/
 
@@ -946,32 +953,32 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
 
   // y(i) ==> measured particle quantities.
   // i = 3*n+0,3*n+1,3*n+=2 are particle n's p_x,p_y,p_z respectively.
-  TMatrixD yi(dim,1),y(dim,1); // yi will be intial values
+  DMatrix yi(dim,1),y(dim,1); // yi will be intial values
   // x(i) ==> missing particle quantities (0,1,2) = (px,py,pz)
-  TMatrixD x(3,1);
-  //TMatrixD x(4,1);
+  DMatrix x(3,1);
+  //DMatrix x(4,1);
   // a(i,j) = dc(i)/dx(j) ==> derivatives of constraint eq's w/r to missing
   // particle quantities x.
-  TMatrixD a(numConstraints,3),aT(3,numConstraints);
-  //TMatrixD a(numConstraints,4),aT(4,numConstraints);
+  DMatrix a(numConstraints,3),aT(3,numConstraints);
+  //DMatrix a(numConstraints,4),aT(4,numConstraints);
   // b(i,j) = dc(i)/dy(j) ==> derivatives of constraint eq's w/r to measured
   // quantities y.
-  TMatrixD b(numConstraints,dim),bT(dim,numConstraints);
+  DMatrix b(numConstraints,dim),bT(dim,numConstraints);
   // c(i) is constraint eq. i ==> (0,1,2,3) are (e,px,py,pz) constraints, any
   // extra mass constraints are i = 4 and up.
-  TMatrixD c(numConstraints,1);
+  DMatrix c(numConstraints,1);
   // eps(i) = yi(i)-y(i) are the overall changes in the measured quantities
-  TMatrixD eps(dim,1),epsT(1,dim);
+  DMatrix eps(dim,1),epsT(1,dim);
   // delta(i) is used to update the measured quantities. After an iteration of
   // the fitting process, y -= delta is how y is updated.
-  TMatrixD delta(dim,1);
+  DMatrix delta(dim,1);
   // xsi(i) same as delta (above) but for x.
-  TMatrixD xsi(3,1);
-  //TMatrixD xsi(4,1);
+  DMatrix xsi(3,1);
+  //DMatrix xsi(4,1);
   // gb is a utility matrix used 
-  TMatrixD gb(numConstraints,numConstraints);
+  DMatrix gb(numConstraints,numConstraints);
   // cov_fit is the covariance matrix OUTPUT by the fit.
-  TMatrixD cov_fit(dim,dim);
+  DMatrix cov_fit(dim,dim);
 
   /***************************** Initial Set Up ******************************/
 
@@ -1430,7 +1437,7 @@ void DKinFit::_SetToBadFit()
 }
 
 //_____________________________________________________________________________
-void DKinFit::_SetMissingParticleErrors(const TMatrixD &__missingCov, const TMatrixD &__x){
+void DKinFit::_SetMissingParticleErrors(const DMatrix &__missingCov, const DMatrix &__x){
   /// Calculate the missing particle errors from the last fit
 
   double p = sqrt(__x(0,0)*__x(0,0) + __x(1,0)*__x(1,0) + __x(2,0)*__x(2,0));
@@ -1534,4 +1541,54 @@ DLorentzVector DKinFit::MissingMomentum(vector<const DKinematicData*> initial, v
   ret.SetXYZT(px, py, pz, E);
 
   return ret;
+}
+
+// Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
+// coordinates
+ DMatrixDSym DKinFit::Get7x7ErrorMatrix(const double mass,const double vec[5],
+					const DMatrixDSym &C){
+  DMatrixDSym C7x7(7);
+  DMatrix J(7,5);
+  DMatrixDSym C5x5(C);
+
+  // State vector
+  double q_over_pt=vec[0];
+  double phi=vec[1];
+  double tanl=vec[2];
+  double D=vec[3];
+
+  double cosl=cos(atan(tanl));
+  double pt=1./fabs(q_over_pt);
+  double p=pt/cosl;
+  double p_sq=p*p;
+  double E=sqrt(mass*mass+p_sq);
+  double pt_sq=pt*pt;
+  double cosphi=cos(phi);
+  double sinphi=sin(phi);
+  double q=(q_over_pt>0)?1.:-1.;
+
+  J(state_Px,state_q_over_pt)=-q*pt_sq*cosphi;
+  J(state_Px,state_phi)=-pt*sinphi;
+  
+  J(state_Py,state_q_over_pt)=-q*pt_sq*sinphi;
+  J(state_Py,state_phi)=pt*cosphi;
+  
+  J(state_Pz,state_q_over_pt)=-q*pt_sq*tanl;
+  J(state_Pz,state_tanl)=pt;
+  
+  J(state_E,state_q_over_pt)=-q*pt*p_sq/E;
+  J(state_E,state_tanl)=pt_sq*tanl/E;
+
+  J(state_X,state_phi)=-D*cosphi;
+  J(state_X,state_D)=-sinphi;
+  
+  J(state_Y,state_phi)=-D*sinphi;
+  J(state_Y,state_D)=cosphi;
+  
+  J(state_Z,state_z)=1.;
+
+  // C'= JCJ^T
+  C7x7=C5x5.Similarity(J);
+  
+  return C7x7;
 }
