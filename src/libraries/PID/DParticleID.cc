@@ -36,7 +36,7 @@ DParticleID::DParticleID(JEventLoop *loop)
     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
 		return;
   }
-  RootGeom = dapp->GetRootGeom();
+  const DRootGeom *RootGeom = dapp->GetRootGeom();
   bfield = dapp->GetBfield(); 
   stepper= new DMagneticFieldStepper(bfield);
 
@@ -50,6 +50,8 @@ DParticleID::DParticleID(JEventLoop *loop)
   RootGeom->FindMat("FDchamberGas", dRhoZoverA_FDC, rho_Z_over_A_LnI, radlen);
   dLnI_FDC = rho_Z_over_A_LnI/dRhoZoverA_FDC;
   dKRhoZoverA_FDC = 0.1535E-3*dRhoZoverA_FDC;
+
+  delete RootGeom;
 
   // Get the geometry
   geom = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
@@ -98,7 +100,7 @@ DParticleID::DParticleID(JEventLoop *loop)
 //---------------------------------
 DParticleID::~DParticleID()
 {
-
+  if (stepper) delete stepper;
 }
 
 // Group fitted tracks according to candidate id

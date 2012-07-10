@@ -73,8 +73,6 @@ class DParticleID:public jana::JObject{
 		double dA_FDC;
 
  private: 
-  //< DGeometry pointer used to access materials through calibDB maps for eloss
-  const DRootGeom *RootGeom;                                 
  
   int DEBUG_LEVEL;
   // Prohibit default constructor
