@@ -17,6 +17,7 @@ class DTrigger:public jana::JObject{
 		
 		bool L1a_fired; // BCAL + 4FCAL >2 GeV && BCAL > 200 MeV && FCAL > 30 MeV
 		bool L1b_fired; // BCAL + 4FCAL >2 GeV && BCAL > 30 MeV && FCAL > 30 MeV && NSC>0
+		bool L1c_fired; // FCAL > 250MeV
 
 		double Ebcal;
 		double Efcal;

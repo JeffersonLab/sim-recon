@@ -123,6 +123,7 @@ jerror_t DTrigger_factory::evnt(JEventLoop *loop, int eventnumber)
 	bool sum_cut = (Ebcal + 4.0*Efcal)>=2.0;
 	trig->L1a_fired = sum_cut && Ebcal>0.200 && Efcal>0.030;
 	trig->L1b_fired = sum_cut && Ebcal>0.030 && Efcal>0.030 && Nschits>0;
+	trig->L1c_fired = Efcal>=0.250;
 
 	trig->Ebcal = Ebcal;
 	trig->Efcal = Efcal;
