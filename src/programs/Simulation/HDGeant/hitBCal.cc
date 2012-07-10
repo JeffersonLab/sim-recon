@@ -106,6 +106,7 @@ extern s_HDDM_t* thisInputEvent;
 // Prevent name mangling so these routines keep their
 // C-style names in the object
 extern "C"{
+	void recordbcalentry_(int *mech, int *itra, int*istak, int *ipart, float *vect, float *getot);
 	void hitBarrelEMcal (float xin[4], float xout[4],
                      	float pin[5], float pout[5], float dEsum,
                      	int track, int stack, int history, int ipart);
@@ -127,12 +128,13 @@ class bcal_index{
 			kDown
 		};
 		
-		bcal_index(unsigned int module, unsigned int layer, unsigned int sector, EndType end):
-			module(module),layer(layer),sector(sector),end(end){}
+		bcal_index(unsigned int module, unsigned int layer, unsigned int sector, unsigned int incident_id, EndType end):
+			module(module),layer(layer),sector(sector),incident_id(incident_id),end(end){}
 	
 		unsigned int module;
 		unsigned int layer;
 		unsigned int sector;
+		unsigned int incident_id;
 		EndType end;
 		
 		bool operator<(const bcal_index &idx) const{
@@ -142,6 +144,8 @@ class bcal_index{
 			if(layer>idx.layer)return false;
 			if(sector<idx.sector)return true;
 			if(sector>idx.sector)return false;
+			if(incident_id<idx.incident_id)return true;
+			if(incident_id>idx.incident_id)return false;
 			if((end==kUp) && (idx.end==kDown))return true;
 			return false;
 		}
@@ -168,6 +172,29 @@ map<bcal_index, DHistogram*> histos_with_data;
 // simpler in the pickBarrelEMcal (and elsewhere) to just
 // keep the duplicate information.
 map<bcal_index, double> E_CellTruth;
+
+// The IncidentParticle_t class is used to hold information on
+// a single particle entering the BCAL. This is used when timing
+// spectra are written out so that sampling fluctuations (and
+// any other smearing that depends on incident particle parameters)
+// may be done. A list of up to MAX_INCIDENT_PARTICLES is kept
+// in the BCAL_INCIDENT_PARTICLES vector. All particles in the
+// vector are written to the output file with an id that is also
+// written with each SiPM spectrum.
+class IncidentParticle_t{
+	public:
+		IncidentParticle_t(const float *v, int ptype, int track):x(v[0]),y(v[1]),z(v[2]),px(v[3]*v[6]),py(v[4]*v[6]),pz(v[5]*v[6]),ptype(ptype),track(track){}
+		float x,y,z;
+		float px, py, pz;
+		int ptype, track;
+		float dPhi(const IncidentParticle_t &pos){float a=(pos.x*x + pos.y*y)/sqrt((x*x + y*y)*(pos.x*pos.x+pos.y*pos.y)); return a<1.0 ? fabs(acos(a)):0.0;}
+		float dZ(const IncidentParticle_t &pos){return fabs(pos.z-z);}
+};
+#define MAX_INCIDENT_PARTICLES 10
+vector<IncidentParticle_t> BCAL_INCIDENT_PARTICLES;
+vector<int> INCIDENT_ID; // holds map of tracks to incident particle id
+bool SHOWED_INCIDENT_PARTICLE_LONG_WARNING = false;
+bool SHOWED_INCIDENT_PARTICLE_SHORT_WARNING = false;
 
 //----------------------
 // initializeBarrelEMcal
@@ -258,14 +285,16 @@ void initializeBarrelEMcal(void)
 	for(unsigned int imodule=1; imodule<=48; imodule++){
 	  for(unsigned int ilayer=1; ilayer<=10; ilayer++){
 	 	  for(unsigned int isector=1; isector<=4; isector++){
-			  bcal_index idxUp(imodule, ilayer, isector, bcal_index::kUp);
-			  bcal_index idxDn(imodule, ilayer, isector, bcal_index::kDown);
+	 	     for(unsigned int incident_id=1; incident_id<=MAX_INCIDENT_PARTICLES; incident_id++){
+				  bcal_index idxUp(imodule, ilayer, isector, incident_id, bcal_index::kUp);
+				  bcal_index idxDn(imodule, ilayer, isector, incident_id, bcal_index::kDown);
 
-			  SiPMspectra[idxUp] = new DHistogram(Nbins, BGGATE1, BGGATE2);
-			  SiPMspectra[idxDn] = new DHistogram(Nbins, BGGATE1, BGGATE2);
-			  
-			  E_CellTruth[idxUp] = 0.0;
-			  E_CellTruth[idxDn] = 0.0;
+				  SiPMspectra[idxUp] = new DHistogram(Nbins, BGGATE1, BGGATE2);
+				  SiPMspectra[idxDn] = new DHistogram(Nbins, BGGATE1, BGGATE2);
+
+				  E_CellTruth[idxUp] = 0.0;
+				  E_CellTruth[idxDn] = 0.0;
+		     }
 		  }
 	  }
 	}
@@ -274,7 +303,100 @@ void initializeBarrelEMcal(void)
 
    initialized = 1;
 }
- 
+
+//----------------------
+// recordbcalentry
+//----------------------
+void recordbcalentry_(int *mech, int *itra, int*istak, int *ipart, float *vect, float *getot)
+{
+#if WRITE_OUT_BCAL_TIME_SPECTRA
+	// This gets called from gustep whenever a particle is
+	// "entering" one of the inner 6 BCAL layers (volumes whose name
+	// starts with "BM0".) Its purpose is to record the parameters
+	// for all particles entering the BCAL so they can be used in
+	// mcsmear to apply the appropriate sampling fluctuations.
+	//
+	// A complication occurs in that particles created in the BCAL
+	// will also be flagged as "entering" it. So, we check to see if
+	// the particle of the current step is close to one already
+	// recorded and if so, assume it is part of the same shower so
+	// don't record it again. Low energy particles are also igonored.
+
+	IncidentParticle_t mypart(vect, *ipart, *itra);
+	
+	bool add_to_list = true;
+	for(unsigned int i=0; i<BCAL_INCIDENT_PARTICLES.size(); i++){
+		float dPhi = 1000.0*mypart.dPhi(BCAL_INCIDENT_PARTICLES[i]);
+		float dZ = mypart.dZ(BCAL_INCIDENT_PARTICLES[i]);
+		// if this is within 200 mrad and 30cm of a previously recorded
+		// particle entering BCAL, assume it is part of the same shower
+		// Also, ignore particles with less than 10MeV total energy.
+		if(dPhi<200.0 && dZ<30.0)add_to_list = false;
+		if(*getot<0.010)add_to_list = false;
+		if(!add_to_list)break;
+	}
+	if(add_to_list){
+		if(BCAL_INCIDENT_PARTICLES.size()>=MAX_INCIDENT_PARTICLES){
+			if(!SHOWED_INCIDENT_PARTICLE_LONG_WARNING){
+				cerr<<endl;
+				cerr<<"WARNING: The BCAL records information about certain"<<endl;
+				cerr<<"particles entering it so that information can be used"<<endl;
+				cerr<<"later in mcsmear to properly smear the signals. For"<<endl;
+				cerr<<"this event, more than the maximum number of incident"<<endl;
+				cerr<<"particles has occurred ("<<MAX_INCIDENT_PARTICLES<<") so the list is"<<endl;
+				cerr<<"being truncated to the first "<<MAX_INCIDENT_PARTICLES<<"."<<endl;
+				cerr<<"All of the signal in the BCAL is still being recorded,"<<endl;
+				cerr<<"but the smearing may be off by a few percent for this"<<endl;
+				cerr<<"event. It is probably nothing to worry about. This long"<<endl;
+				cerr<<"message will only appear once and the following line just"<<endl;
+				cerr<<"once per event whenever this occurs."<<endl;
+				cerr<<endl;
+				SHOWED_INCIDENT_PARTICLE_LONG_WARNING = true;
+			}
+			if(!SHOWED_INCIDENT_PARTICLE_SHORT_WARNING){
+				cerr<<__FILE__<<":"<<__LINE__<<" too many particles entering BCAL! Some information will be lost."<<endl;
+				SHOWED_INCIDENT_PARTICLE_SHORT_WARNING = true;
+			}
+		}else{
+			BCAL_INCIDENT_PARTICLES.push_back(mypart);
+		}
+	}
+#endif
+}
+
+//----------------------
+// find_incident_id
+//
+// Find the entry in BCAL_INCIDENT_PARTICLES that is physically
+// closest to the given location
+//----------------------
+unsigned int find_incident_id(float *x)
+{
+	// This should probably use the distance to the line
+	// projected by the incident particle, but that would
+	// be computationally expensive for something that is
+	// called for every step in the BCAL shower development.
+	//
+	// Even better, one could search through the particle
+	// stack tracing the ancestory until a track number
+	// associated with an incident particle is found. That
+	// too would be expensive. 
+
+	unsigned int closest_id=0;
+	float closest_dist2 = 1.0E6;
+	for(unsigned int i=0; i<BCAL_INCIDENT_PARTICLES.size(); i++){
+		float dx = x[0] - BCAL_INCIDENT_PARTICLES[i].x;
+		float dy = x[1] - BCAL_INCIDENT_PARTICLES[i].y;
+		float dz = x[2] - BCAL_INCIDENT_PARTICLES[i].z;
+		float dist2 = dx*dx + dy*dy + dz*dz;
+		if(dist2 < closest_dist2){
+			closest_dist2 = dist2;
+			closest_id = i+1;
+		}
+	}
+
+	return closest_id;
+}
 
 //----------------------
 // hitBarrelEMcal
@@ -298,6 +420,8 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 	t    = (xin[3] + xout[3])/2 * 1e9;
 	transformCoord(x,"global",xlocal,"BCAL");
 	transformCoord(xHat,"local",xbcal,"BCAL");
+
+//cout<<"track:"<<track<<" stack:"<<stack<<" history:"<<history<<" ipart:"<<ipart<<endl;
 
 	/* Under certain conditions the time in xout[3] will
 	  be invalid (unusually large). Check for this and
@@ -424,17 +548,36 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 	// truth structures).
 	if (dEsum > 0)
 	{
+		// We need the incident particle id associated with the current
+		// track. This is kept in an STL map so the association is made
+		// only once. The way this works is a little subtle so is worth 
+		// explaining:
+		// When access the map via "[]" operator, an entry in the map
+		// will be created if one does not already exist. For int types,
+		// the new entry will have a value of "0". By using particle id
+		// values starting from "1", we can test whether the association
+		// has been made.
+		// The map index is the track number and the value the
+		// incident particle id. We make the incident particle id numbers
+		// start from 1 so if we access the map
+
+		// Guarantee a value exists at INCIDENT_ID[track]
+		if(track>=(int)INCIDENT_ID.size())INCIDENT_ID.resize(track+1, 0);
+		int incident_id = INCIDENT_ID[track];
+		if(incident_id==0)incident_id = INCIDENT_ID[track] = find_incident_id(x);
+
+	
 		// Get map index based on layer and sector
       unsigned int sector = getsector_();
       unsigned int layer  = getlayer_();
       unsigned int module = getmodule_();
-		bcal_index idxUp(module, layer, sector, bcal_index::kUp);
-		bcal_index idxDn(module, layer, sector, bcal_index::kDown);
+		bcal_index idxUp(module, layer, sector, incident_id, bcal_index::kUp);
+		bcal_index idxDn(module, layer, sector, incident_id, bcal_index::kDown);
 		map<bcal_index, DHistogram*>::iterator iterUp = SiPMspectra.find(idxUp);
 		map<bcal_index, DHistogram*>::iterator iterDn = SiPMspectra.find(idxDn);
 		
 		if(iterUp==SiPMspectra.end() || iterDn==SiPMspectra.end()){
-			cout<<"Not found: module:"<<module<<" layer:"<<layer<<" sector:"<<sector<<endl;
+			cout<<"Not found: module:"<<module<<" layer:"<<layer<<" sector:"<<sector<<" incident_id:"<<incident_id<<endl;
 		}else{
 			double Z = xlocal[2];
 			double dist_up = 390.0/2.0 + Z;
@@ -578,6 +721,23 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
    }
 
 #if WRITE_OUT_BCAL_TIME_SPECTRA
+
+	// Copy incident particle information
+	box->bcalIncidentParticles = make_s_BcalIncidentParticles(BCAL_INCIDENT_PARTICLES.size());
+	box->bcalIncidentParticles->mult=0;
+	for(unsigned int i=0; i<BCAL_INCIDENT_PARTICLES.size(); i++){
+		s_BcalIncidentParticle_t *iphddm = &box->bcalIncidentParticles->in[box->bcalIncidentParticles->mult++];
+		IncidentParticle_t &ip = BCAL_INCIDENT_PARTICLES[i];
+		iphddm->id = i+1;
+		iphddm->ptype = ip.ptype;
+		iphddm->x = ip.x;
+		iphddm->y = ip.y;
+		iphddm->z = ip.z;
+		iphddm->px = ip.px;
+		iphddm->py = ip.py;
+		iphddm->pz = ip.pz;
+	}
+
 	// Sparsely copy timing spectra from local variables into HDDM structure
 	map<bcal_index, DHistogram*>::iterator iter;
 	for(iter=histos_with_data.begin(); iter!=histos_with_data.end(); iter++){
@@ -597,6 +757,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 			spectrum->module = idx.module;
 			spectrum->layer = idx.layer;
 			spectrum->sector = idx.sector;
+			spectrum->incident_id = idx.incident_id;
 			spectrum->end = (idx.end==bcal_index::kUp ? 0:1);
 			spectrum->Etruth = E_CellTruth[idx];
 			string vals = "";
@@ -628,6 +789,13 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 	
 	// Clear the sparsified list of histo objects with data
 	histos_with_data.clear();
+	
+	// Clear list of incident particles
+	BCAL_INCIDENT_PARTICLES.clear();
+	INCIDENT_ID.assign(INCIDENT_ID.size(), 0); // don't release memory so we save reallocation in next event
+	
+	// Clear warning message flag so it can be shown on the next event
+	SHOWED_INCIDENT_PARTICLE_SHORT_WARNING = false;
 	
 #endif //WRITE_OUT_BCAL_TIME_SPECTRA
 

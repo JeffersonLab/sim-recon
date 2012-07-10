@@ -23,6 +23,7 @@ using namespace std;
 #include "units.h"
 #include "HDDM/hddm_s.h"
 #include <TMath.h>
+#include <TH2D.h>
 #include <TSpline.h>
 #include <TDirectory.h>
 
@@ -45,15 +46,15 @@ class bcal_index{
 			kDown
 		};
 		
-		bcal_index(unsigned int module, unsigned int layer, unsigned int sector, EndType end):
-			module(module),layer(layer),sector(sector),end(end){}
+		bcal_index(unsigned int module, unsigned int layer, unsigned int sector, unsigned int incident_id, EndType end):
+			module(module),layer(layer),sector(sector),incident_id(incident_id),end(end){}
 	
 		unsigned int module;
 		unsigned int layer;
 		unsigned int sector;
+		unsigned int incident_id;
 		EndType end;
 		
-		// This is needed in order to use this class as the key in an STL map
 		bool operator<(const bcal_index &idx) const{
 			if(module<idx.module)return true;
 			if(module>idx.module)return false;
@@ -61,6 +62,8 @@ class bcal_index{
 			if(layer>idx.layer)return false;
 			if(sector<idx.sector)return true;
 			if(sector>idx.sector)return false;
+			if(incident_id<idx.incident_id)return true;
+			if(incident_id>idx.incident_id)return false;
 			if((end==kUp) && (idx.end==kDown))return true;
 			return false;
 		}
@@ -129,11 +132,33 @@ class fADCHitList{
 		
 };
 
+//..........................
+// IncidentParticle_t is a utility class for holding the
+// parameters of particles recorded as incident on the 
+// BCAL (shower causing)
+//..........................
+class IncidentParticle_t{
+	public:
+		IncidentParticle_t(const s_BcalIncidentParticle_t *iphddm){
+			x = iphddm->x;
+			y = iphddm->y;
+			z = iphddm->z;
+			px = iphddm->px;
+			py = iphddm->py;
+			pz = iphddm->pz;
+			ptype = iphddm->ptype;
+		}
+		float x,y,z;
+		float px, py, pz;
+		int ptype, track;
+};
+
 
 // Defined in this file
 void bcalInit(void);
-void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra);
-void ApplySamplingFluctuations(map<bcal_index, CellSpectra> &SiPMspectra);
+void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra, vector<IncidentParticle_t> &incident_particles);
+void ApplySamplingFluctuations(map<bcal_index, CellSpectra> &SiPMspectra, vector<IncidentParticle_t> &incident_particles);
+void MergeSpectra(map<bcal_index, CellSpectra> &SiPMspectra);
 void ApplyPoissonStatistics(map<bcal_index, CellSpectra> &SiPMspectra);
 void ApplySiPMTimeJitter(map<bcal_index, CellSpectra> &SiPMspectra);
 void AddDarkHits(map<bcal_index, CellSpectra> &SiPMspectra);
@@ -238,13 +263,18 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	
 	// First, we extract the time spectra for hit cells
 	map<bcal_index, CellSpectra> SiPMspectra;
-	GetSiPMSpectra(hddm_s, SiPMspectra);
+	vector<IncidentParticle_t> incident_particles;
+	GetSiPMSpectra(hddm_s, SiPMspectra, incident_particles);
 	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_Raw", "Amplitude (attenuated-MeV)");
 
 	// Sampling fluctuations
-	ApplySamplingFluctuations(SiPMspectra);
+	ApplySamplingFluctuations(SiPMspectra, incident_particles);
 	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_Sampling", "Amplitude (attenuated-MeV)");
-	
+
+	// Merge spectra associated with different incident particles
+	MergeSpectra(SiPMspectra);
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_Merged", "Amplitude (attenuated-MeV)");
+
 	// Poisson Statistics
 	ApplyPoissonStatistics(SiPMspectra);
 	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_Poisson", "Amplitude (attenuated-MeV)");
@@ -384,6 +414,16 @@ void bcalInit(void)
 	// time shift pulse shape just to bring it in frame better for zoomed in picture
 	double toffset = 6.0;
 	
+	// Optionally create ROOT 2-D histo of this
+	TH2D *h_pulse_shape = NULL;
+	if(BCAL_DEBUG_HISTS){
+		double hi = h->GetHighEdge();
+		double lo = h->GetLowEdge();
+		h_pulse_shape = new TH2D("pulse_shape_matrix","BCAL_PULSE_SHAPE_MATRIX", NBINS, lo, hi, NBINS, lo, hi);
+		h_pulse_shape->SetXTitle("Input time (ns)");
+		h_pulse_shape->SetYTitle("Output time (ns)");
+	}
+	
 	// Loop over bins of input histo (attenuated energy)
 	for(int ibin=1; ibin<=NBINS; ibin++){
 
@@ -401,8 +441,10 @@ void bcalInit(void)
 			if(t<-7.0 || t>180.0){
 				BCAL_PULSE_SHAPE_MATRIX[idx] = 0.0;
 			}else{
-				BCAL_PULSE_SHAPE_MATRIX[idx] = (mV_per_MeV/norm)*pulse_shape->Eval(t-t0+toffset);
+				BCAL_PULSE_SHAPE_MATRIX[idx] = (mV_per_MeV/norm)*pulse_shape->Eval(t);
 			}
+			
+			if(h_pulse_shape)h_pulse_shape->SetBinContent(ibin, jbin, BCAL_PULSE_SHAPE_MATRIX[idx]);
 		}
 	}
 	
@@ -421,11 +463,11 @@ void bcalInit(void)
 //-----------
 // GetSiPMSpectra
 //-----------
-void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra)
+void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra, vector<IncidentParticle_t> &incident_particles)
 {
 	/// Loop through input HDDM data and extract the timing spectrum info into
 	/// CellSpectra objects.
-
+	
 	// Loop over PhysicsEvents
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return;
@@ -444,9 +486,13 @@ void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra)
 
 		// Loop over GEANT hits in BCAL
 		s_BcalSiPMSpectrums_t *bcalSiPMSpectrums = hits->barrelEMcal->bcalSiPMSpectrums;
-		for(unsigned int j=0; j<bcalSiPMSpectrums->mult; j++){
+		unsigned int NbcalSiPMSpectrums=0;
+		if(bcalSiPMSpectrums!=HDDM_NULL && bcalSiPMSpectrums!=NULL){
+			NbcalSiPMSpectrums=bcalSiPMSpectrums->mult;
+		}
+		for(unsigned int j=0; j<NbcalSiPMSpectrums; j++){
 			s_BcalSiPMSpectrum_t *bcalSiPMSpectrum = &bcalSiPMSpectrums->in[j];
-			bcal_index idx(bcalSiPMSpectrum->module, bcalSiPMSpectrum->layer, bcalSiPMSpectrum->sector, bcalSiPMSpectrum->end==0 ? bcal_index::kUp:bcal_index::kDown);
+			bcal_index idx(bcalSiPMSpectrum->module, bcalSiPMSpectrum->layer, bcalSiPMSpectrum->sector, bcalSiPMSpectrum->incident_id, bcalSiPMSpectrum->end==0 ? bcal_index::kUp:bcal_index::kDown);
 	
 			// Get reference to existing CellSpectra, or create one if it doesn't exist
 			CellSpectra &cellspectra = SiPMspectra[idx];
@@ -484,13 +530,32 @@ void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra)
 				}
 			}
 		}
+		
+		// Loop over incident particle list
+		s_BcalIncidentParticles_t *incidentParticles = hits->barrelEMcal->bcalIncidentParticles;
+		unsigned int NbcalIncidentParticles=0;
+		if(incidentParticles!=HDDM_NULL && incidentParticles!=NULL){
+			NbcalIncidentParticles=incidentParticles->mult;
+		}
+		for(unsigned int j=0; j<NbcalIncidentParticles; j++){
+			s_BcalIncidentParticle_t *iphddm = &incidentParticles->in[j];
+			
+			incident_particles.push_back(IncidentParticle_t(iphddm));
+			if(iphddm->id != (int)(j+1)){
+				// If this ever gets called, we'll need to implement a sort routine
+				_DBG_<<"Incident particle order not preserved!"<<endl;
+				exit(-1);
+			}
+		}
 	}
+	
+	
 }
 
 //-----------
 // ApplySamplingFluctuations
 //-----------
-void ApplySamplingFluctuations(map<bcal_index, CellSpectra> &SiPMspectra)
+void ApplySamplingFluctuations(map<bcal_index, CellSpectra> &SiPMspectra, vector<IncidentParticle_t> &incident_particles)
 {
 	/// Loop over the CellSpectra objects and apply sampling fluctuations.
 	///
@@ -526,6 +591,75 @@ void ApplySamplingFluctuations(map<bcal_index, CellSpectra> &SiPMspectra)
 		// Scale attenuated energy histos for each end
 		if(cellspectra.hup)cellspectra.hup->Scale(ratio);
 		if(cellspectra.hdn)cellspectra.hdn->Scale(ratio);
+	}
+}
+
+//-----------
+// MergeSpectra
+//-----------
+void MergeSpectra(map<bcal_index, CellSpectra> &SiPMspectra)
+{
+	/// Combine all SiPM CellSpectra corresponding to the same
+	/// cell but different incident particles into a single
+	/// spectrum. This is done after the sampling fluctuations
+	/// have been applied so there is no more dependence on
+	/// the incident particle parameters.
+	
+	// Loop until no merges are made
+	while(true){
+		bool merged=false;
+		map<bcal_index, CellSpectra>::iterator iter1=SiPMspectra.begin();
+		for(;iter1!=SiPMspectra.end(); iter1++){
+			map<bcal_index, CellSpectra>::iterator iter2 = iter1;
+			for(++iter2; iter2!=SiPMspectra.end(); iter2++){
+			
+				// If spectra are not from same module,layer,sector,end
+				// then just continue the loop
+				if(iter1->first.module != iter2->first.module)continue;
+				if(iter1->first.layer  != iter2->first.layer )continue;
+				if(iter1->first.sector != iter2->first.sector)continue;
+				if(iter1->first.end    != iter2->first.end   )continue;
+
+				// ----- Merge spectra -----
+				// Get pointers to histograms
+				DHistogram *hup1 = iter1->second.hup;
+				DHistogram *hup2 = iter2->second.hup;
+				DHistogram *hdn1 = iter1->second.hdn;
+				DHistogram *hdn2 = iter2->second.hdn;
+				
+				// It's possible one or both of the histograms we wish to merge
+				// don't exist. Check for this and handle accordingly.
+				
+				// Upstream
+				if(hup1!=NULL && hup2!=NULL)hup1->Add(hup2);
+				if(hup1==NULL && hup2!=NULL){
+					iter1->second.hup=hup2;
+					hup2=NULL;
+				}
+
+				// Downstream
+				if(hdn1!=NULL && hdn2!=NULL)hdn1->Add(hdn2);
+				if(hdn1==NULL && hdn2!=NULL){
+					iter1->second.hdn=hdn2;
+					hdn2=NULL;
+				}
+
+				// Erase second one
+				if(hup2)ReturnHistoToPool(hup2);
+				if(hdn2)ReturnHistoToPool(hdn2);
+				SiPMspectra.erase(iter2);
+				
+				// Set flag that we did merge spectra and break
+				// the loops so we can try again.
+				merged = true;
+				break;
+			}
+			if(merged)break;
+		}
+		
+		// When we make it through without merging any spectra,
+		// we're done so break out of the infinite while loop.
+		if(!merged)break;
 	}
 }
 
@@ -936,7 +1070,6 @@ void ApplyElectronicPulseShapeOneHisto(DHistogram *h)
 	h->Reset();
 	
 	int Nbins = h->GetNbins();
-   double bin_width = h->GetBinWidth();
    
    // Get pointers to the bin content arrays directly.
    // This will allow the two nested loops below to
@@ -1325,7 +1458,7 @@ void SaveDebugHistos(map<bcal_index, CellSpectra> &SiPMspectra, const char *suff
 	/// events when this is being called.
 	
 	// This should probably only be called when running single-threaded
-	// but better safe than sorry!
+	// (better safe than sorry)!
 	pthread_mutex_lock(&root_mutex);
 
 	// Save the current ROOT directory so we can restore it before returning
@@ -1347,10 +1480,11 @@ void SaveDebugHistos(map<bcal_index, CellSpectra> &SiPMspectra, const char *suff
 		int module = idx.module;
 		int layer = idx.layer;
 		int sector = idx.sector;
+		int incident_id = idx.incident_id;
 		
 		// Create a directory to hold this readout cell's histos
 		char dirname[256];
-		sprintf(dirname, "SiPM_m%02dl%ds%d%s", module, layer, sector, suffix);
+		sprintf(dirname, "SiPM_m%02dl%ds%dip%d%s", module, layer, sector, incident_id, suffix);
 		
 		// Directory may already exist since separate entries may be kept
 		// for upstream and downstream. Check if it exists first and only
@@ -1400,7 +1534,7 @@ void SaveDebugHistos(map<int, SumSpectra> &bcalfADC, const char *suffix)
 	/// events when this is being called.
 	
 	// This should probably only be called when running single-threaded
-	// but better safe than sorry!
+	// (better safe than sorry)!
 	pthread_mutex_lock(&root_mutex);
 
 	// Save the current ROOT directory so we can restore it before returning

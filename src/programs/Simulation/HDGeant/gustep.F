@@ -469,6 +469,16 @@ c               print *," KCASE: ",chcase,"  ",NGKINE,"  ",IPART
          endif
       endif
 
+*  Record particles entering BCAL so the sampling fluctuations
+*  can be applied based on the incident particle's parameters
+*  Note that the first 6 layers the BCAL leadScint volume have
+*  names starting with 'BM0'. Particles entering through one
+*  of the outer layers will not have the proper parameters recorded.
+*  What's more, if the names of the volumes change, then this will
+*  break!      7/5/2012  DL
+      if ((cnames(NLEVEL)(1:3).eq.'BM0') .and. INWVOL.eq.1 ) then
+         call recordbcalentry(LMEC(NMEC),ITRA,ISTAK,IPART,VECT,GETOT)
+      endif
 
       
 * For explicit Cerenkov generation, apply an inefficiency factor
