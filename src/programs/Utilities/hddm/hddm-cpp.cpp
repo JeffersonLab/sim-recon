@@ -828,13 +828,17 @@ int main(int argC, char* argV[])
    builder.constructStreamers(rootEl);
 
    builder.hFile <<
+   "inline std::string HDDM::DocumentString() {\n"
+   "   return std::string(\n"
+   ;
+   builder.constructDocument(rootEl);
+   builder.hFile <<
+   "   );\n"
+   "}\n"
+   "\n"
    "}\n"
    "#endif /* SAW_" << classPrefix << "_HDDM */\n"
    ;
-
-   builder.cFile << "std::string DocumentString(\n";
-   builder.constructDocument(rootEl);
-   builder.cFile << ");\n" << std::endl;
 
    builder.cFile <<
    "istream::istream(std::istream &src)\n"
@@ -853,10 +857,11 @@ int main(int argC, char* argV[])
    "      }\n"
    "   }\n"
    "   if (src.bad()) {\n"
-   "      throw std::runtime_error(\"istream::istream - invalid hddm header\");\n"
+   "      throw std::runtime_error(\"hddm_" + classPrefix +
+   "::istream::istream error - invalid hddm header\");\n"
    "   }\n"
    "   m_genome.m_tagname = \"HDDM\";\n"
-   "   m_genome.m_sequence = synthesize(m_documentString,0,DocumentString,0);\n"
+   "   m_genome.m_sequence = synthesize(m_documentString,0,HDDM::DocumentString(),0);\n"
    "   m_event_buffer = new char[m_event_buffer_size = 100000];\n"
    "   m_sstr.rdbuf()->pubsetbuf(m_event_buffer,m_event_buffer_size);\n"
    "   configure_streambufs();\n"
@@ -865,7 +870,7 @@ int main(int argC, char* argV[])
    "}\n"
    "\n"
    "istream::~istream() {\n"
-   "   delete m_event_buffer;\n"
+   "   delete [] m_event_buffer;\n"
    "   clear_streambufs();\n"
    "}\n"
    "\n"
@@ -885,7 +890,8 @@ int main(int argC, char* argV[])
    "      m_istr.rdbuf(m_xcmp);\n"
    "   }\n"
    "   else if (m_status_bits & k_bits_compression) {\n"
-   "      throw std::runtime_error(\"hddm_x::istream::configure_streambufs error - \"\n"
+   "      throw std::runtime_error(\"hddm_" + classPrefix +
+   "::istream::configure_streambufs error - \"\n"
    "                               \"unrecognized compression flag requested.\");\n"
    "   }\n"
    "}\n"
@@ -909,7 +915,8 @@ int main(int argC, char* argV[])
    "   if (m_next_event_size == 0) {\n"
    "      m_istr.read(m_event_buffer,4);\n"
    "      if (!m_istr.good()) {\n"
-   "         throw std::runtime_error(\"istream::operator>> error - \"\n"
+   "         throw std::runtime_error(\"hddm_" + classPrefix +
+   "::istream::operator>> error - \"\n"
    "                                  \"attempt to read past end of file!\");\n"
    "      }\n"
    "      m_sstr.seekg(0);\n"
@@ -924,7 +931,8 @@ int main(int argC, char* argV[])
    "      int format, flags;\n"
    "      *m_xstr >> format >> flags;\n"
    "      if (format != 0) {\n"
-   "         throw std::runtime_error(\"istream::operator>> error - \"\n"
+   "         throw std::runtime_error(\"hddm_" + classPrefix +
+   "::istream::operator>> error - \"\n"
    "                                  \"unsupported compression format!\");\n"
    "      }\n"
    "      else if (flags != m_status_bits) {\n"
@@ -938,7 +946,7 @@ int main(int argC, char* argV[])
    "      char *newbuf = new char[m_event_buffer_size = m_next_event_size+1000];\n"
    "      m_sstr.rdbuf()->pubsetbuf(newbuf, m_event_buffer_size);\n"
    "      memcpy(newbuf,m_event_buffer,4);\n"
-   "      delete m_event_buffer;\n"
+   "      delete [] m_event_buffer;\n"
    "      m_event_buffer = newbuf;\n"
    "   }\n"
    " \n"
@@ -966,14 +974,14 @@ int main(int argC, char* argV[])
    "   m_xraw(0),\n"
    "   m_status_bits(k_default_status)\n"
    "{\n"
-   "   m_ostr << DocumentString;\n"
+   "   m_ostr << HDDM::DocumentString();\n"
    "   m_event_buffer = new char[m_event_buffer_size = 100000];\n"
    "   m_sstr.rdbuf()->pubsetbuf(m_event_buffer,m_event_buffer_size);\n"
    "   configure_streambufs();\n"
    "}\n"
    "\n"
    "ostream::~ostream() {\n"
-   "   delete m_event_buffer;\n"
+   "   delete [] m_event_buffer;\n"
    "   clear_streambufs();\n"
    "}\n"
    "\n"
@@ -1010,7 +1018,8 @@ int main(int argC, char* argV[])
    "      m_ostr.rdbuf(m_xcmp);\n"
    "   }\n"
    "   else if (m_status_bits & k_bits_compression) {\n"
-   "      throw std::runtime_error(\"ostream::configure_streambufs error - \"\n"
+   "      throw std::runtime_error(\"hddm_" + classPrefix +
+   "::ostream::configure_streambufs error - \"\n"
    "                               \"unrecognized compression flag requested.\");\n"
    "   }\n"
    "}\n"
@@ -1068,7 +1077,12 @@ int main(int argC, char* argV[])
    "      }\n"
    "   }\n"
    "   if (p_etag == src.size()) {\n"
-   "      throw std::runtime_error(\"istream::getTag - bad header format\");\n"
+   "      std::stringstream sstr;\n"
+   "      sstr << \"hddm_" + classPrefix + "::istream::getTag\"\n"
+   "           << \" error - bad header format\" << std::endl\n"
+   "           << \"   tag \" << tag << \" at position \" << start\n"
+   "           << std::endl;\n"
+   "      throw std::runtime_error(sstr.str());\n"
    "   }\n"
    "   return p_etag+2;\n"
    "}\n"
@@ -1077,7 +1091,7 @@ int main(int argC, char* argV[])
    "                       const std::string &tag)\n"
    "{\n"
    "   if (tag.rfind(\"/>\") == tag.size()-2) {\n"
-   "      return start + tag.size()+1;\n"
+   "      return src.find(tag,start) + tag.size()+1;\n"
    "   }\n"
    "   else {\n"
    "      std::string etag = \"</\";\n"
@@ -1092,7 +1106,14 @@ int main(int argC, char* argV[])
    "         p_quote = src.find_first_of('\"',p_quote+1);\n"
    "      }\n"
    "      if (p_etag == std::string::npos) {\n"
-   "         throw std::runtime_error(\"istream::getEndTag - bad header format\");\n"
+   "         std::stringstream sstr;\n"
+   "         sstr << \"hddm_" + classPrefix + "::istream::getEndTag\"\n"
+   "              << \" error - bad header format\" << std::endl\n"
+   "              << \"   tag \" << tag << \" at position \" << start\n"
+   "              << std::endl\n"
+   "              << \"   end tag \" << etag << \" not found.\"\n"
+   "              << std::endl;\n"
+   "         throw std::runtime_error(sstr.str());\n"
    "      }\n"
    "      return p_etag + etag.size()+1;\n"
    "   }\n"
@@ -1101,15 +1122,14 @@ int main(int argC, char* argV[])
    "void istream::collide(const std::string &itag, const std::string &rtag) {\n"
    "   std::string itagname = itag.substr(1,itag.find(\" \"));\n"
    "   std::string rtagname = rtag.substr(1,rtag.find(\" \"));\n"
-   "   std::cerr << \"HDDM warning: \"\n"
-   "             << \"tag \" << itagname << \" in input file \"\n"
-   "             << \"does not match c++ header hddm_" << classPrefix << ".hpp\"\n"
-   "             << std::endl\n"
-   "             << \"  input file: \" << itag << std::endl\n"
-   "             << \"  c++ header: \" << rtag << std::endl\n"
-   "             << \"  === Tag \" << itagname << \" will be ignored,\"\n"
-   "             << \" rebuild to cure the problem ===\"\n"
-   "             << std::endl;\n"
+   "   throw std::runtime_error(\"hddm_" + classPrefix +
+   "::istream::collide warning:\\n\"\n"
+   "         \"tag \" + itagname + \" in input file \"\n"
+   "         \"does not match c++ header hddm_" << classPrefix << ".hpp\\n\"\n"
+   "         \"  input file: \" + itag + \"\\n\"\n"
+   "         \"  c++ header: \" + rtag + \"\\n\"\n"
+   "         \"  === Tag \" + itagname + \" will be ignored,\"\n"
+   "         \" rebuild to cure the problem ===\");\n"
    "}\n"
    "\n"
    "chromosome istream::synthesize(const std::string &src, int p_src,\n"
@@ -1123,7 +1143,8 @@ int main(int argC, char* argV[])
    "   std::string stagname = stag.substr(1,stag.find(\" \")-1);\n"
    "   std::string rtagname = rtag.substr(1,rtag.find(\" \")-1);\n"
    "   if (stagname != rtagname) {\n"
-   "      throw std::runtime_error(\"matching algorithm error #2\");\n"
+   "      throw std::runtime_error(\"hddm_" + classPrefix +
+   "::istream::synthesize error - matching algorithm error #2\");\n"
    "   }\n"
    "   else if (stag != rtag) {\n"
    "      collide(stag,rtag);\n"
@@ -1536,6 +1557,7 @@ void CodeBuilder::writeClassdef(DOMElement* el)
                   << std::endl;
          }
       }
+      hFile << "   static std::string DocumentString();" << std::endl;
       hFile << " private:" << std::endl;
    }
    else
@@ -2275,14 +2297,14 @@ void CodeBuilder::constructIOstreams(DOMElement* el)
 void CodeBuilder::constructDocument(DOMElement* el)
 {
    static int indent = 0;
-   cFile << "\"";
+   hFile << "\"";
    for (int n = 0; n < indent; n++)
    {
-      cFile << "  ";
+      hFile << "  ";
    }
    
    XtString tagS(el->getTagName());
-   cFile << "<" << tagS;
+   hFile << "<" << tagS;
    DOMNamedNodeMap* attrList = el->getAttributes();
    int attrListLength = attrList->getLength();
    for (int a = 0; a < attrListLength; a++)
@@ -2290,14 +2312,14 @@ void CodeBuilder::constructDocument(DOMElement* el)
       DOMNode* node = attrList->item(a);
       XtString nameS(node->getNodeName());
       XtString valueS(node->getNodeValue());
-      cFile << " " << nameS << "=\\\"" << valueS << "\\\"";
+      hFile << " " << nameS << "=\\\"" << valueS << "\\\"";
    }
 
    DOMNodeList* contList = el->getChildNodes();
    int contListLength = contList->getLength();
    if (contListLength > 0)
    {
-      cFile << ">\\n\"" << std::endl;
+      hFile << ">\\n\"" << std::endl;
       indent++;
       for (int c = 0; c < contListLength; c++)
       {
@@ -2309,15 +2331,15 @@ void CodeBuilder::constructDocument(DOMElement* el)
          }
       }
       indent--;
-      cFile << "\"";
+      hFile << "\"";
       for (int n = 0; n < indent; n++)
       {
-         cFile << "  ";
+         hFile << "  ";
       }
-      cFile << "</" << tagS << ">\\n\"" << std::endl;
+      hFile << "</" << tagS << ">\\n\"" << std::endl;
    }
    else
    {
-      cFile << " />\\n\"" << std::endl;
+      hFile << " />\\n\"" << std::endl;
    }
 }
