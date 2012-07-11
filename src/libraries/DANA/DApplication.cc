@@ -13,6 +13,7 @@ using std::string;
 
 #include "DApplication.h"
 #include <HDDM/DEventSourceHDDMGenerator.h>
+#include <HDDM/DEventSourceRESTGenerator.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
 #include <HDGEOMETRY/DMagneticFieldMapFineMesh.h>
 #include <HDGEOMETRY/DMagneticFieldMapConst.h>
@@ -39,6 +40,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	event_source_generator = new DEventSourceHDDMGenerator();
 	factory_generator = new DFactoryGenerator();
 	AddEventSourceGenerator(event_source_generator);
+	AddEventSourceGenerator(new DEventSourceRESTGenerator());
 	AddFactoryGenerator(factory_generator);
 	
 	// Add plugin paths to Hall-D specific binary directories
