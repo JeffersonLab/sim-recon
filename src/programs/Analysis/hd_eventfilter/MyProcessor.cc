@@ -80,13 +80,21 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 	//----------------------- Filter Code End -----------------------
 	
 	// If write_out flag is set, write this event to our output file
+	// otherwise, just flush the memory.
+	//
+	// WARNING: If a plugin is used with this program that tries to
+	// access objects in the s_HDDM_t structure (pretty much every
+	// plugin out there), it will likely seg. fault due to the
+	// memory already being freed!
 	if(write_out){
 		flush_s_HDDM(hddm, file);
 		Nevents_written++;
+	}else{
+		flush_s_HDDM(hddm, 0);
 	}
 	
-	// If we write the event out, then tell source not to free it
-	hddm_source->flush_on_free = !write_out;
+	// Tell source not to free memory since we already did it here.
+	hddm_source->flush_on_free = false;
 
 	return NOERROR;
 }
