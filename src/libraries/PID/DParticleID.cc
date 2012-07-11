@@ -51,15 +51,13 @@ DParticleID::DParticleID(JEventLoop *loop)
   dLnI_FDC = rho_Z_over_A_LnI/dRhoZoverA_FDC;
   dKRhoZoverA_FDC = 0.1535E-3*dRhoZoverA_FDC;
 
-  delete RootGeom;
-
   // Get the geometry
   geom = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
 
   vector<double>sc_origin;
   geom->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z",sc_origin);
   
-  vector<double>sc_light_guide(3);
+  //vector<double>sc_light_guide(3);
   //geom->Get("//tubs[@name='STLG']/@Rio_Z",sc_light_guide); 
   //sc_light_guide_length=sc_light_guide[2];
  
@@ -75,7 +73,8 @@ DParticleID::DParticleID(JEventLoop *loop)
     sc_pos.push_back(pos);
     sc_norm.push_back(dir);    
   }
-  sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
+  // sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
+  sc_leg_tcor=-sc_pos[0].z()/C_EFFECTIVE;
   double theta=sc_norm[sc_norm.size()-1].Theta();
   sc_angle_cor=1./cos(M_PI-theta); 
 
