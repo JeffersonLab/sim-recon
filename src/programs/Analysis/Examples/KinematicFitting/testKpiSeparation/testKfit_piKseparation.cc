@@ -11,7 +11,6 @@ using namespace std;
 
 #include "MyProcessor.h"
 #include "DANA/DApplication.h"
-#include "HDDM/DEventSourceHDDMGenerator.h"
 
 void PrintFactoryList(DApplication *app);
 void ParseCommandLineArguments(int &narg, char *argv[]);
