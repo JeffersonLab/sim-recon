@@ -191,7 +191,7 @@ int fill_mc_part(int i, s_Vertices_t* vs, int v)
   Particle_t ptype;
   s_Origin_t* or = vs->in[v].origin;
   s_Products_t* ps = vs->in[v].products;
-  if (or == &hddm_nullTarget)
+  if (or == &hddm_s_nullTarget)
   {
     or = make_s_Origin();
     vs->in[v].origin = or;
@@ -199,7 +199,7 @@ int fill_mc_part(int i, s_Vertices_t* vs, int v)
     or->vy = hepevt_.vhep[i][1];
     or->vz = hepevt_.vhep[i][2];
   }
-  if (ps == &hddm_nullTarget)
+  if (ps == &hddm_s_nullTarget)
   {
     ps = make_s_Products(30);
     vs->in[v].products = ps;

@@ -119,7 +119,7 @@ stdhep2ascii: stdhep2ascii.o  $(STDHEP_DIR)/lib/libstdhepC.a
 hddm_s.c: hddm_s.h
 
 hddm_s.h:
-	$(BUILDS)/hddm/hddm-c $(BUILDS)/hddm/mc.xml
+	hddm-c $(HALLD_HOME)/src/programs/Utilities/hddm/mc.xml
 
 install: all
 	mv -f ascii2stdhep   $(HALLD_HOME)/bin/$(UNAME)/.  
