@@ -361,8 +361,9 @@ int main(int argC, char* argV[])
          << "#endif"						<< std::endl;
 
    builder.cFile
-	 << "int hddm_nullTarget=0;"				<< std::endl
-         << "#define HDDM_NULL (void*)&hddm_nullTarget"         << std::endl
+	 << "int hddm_" + classPrefix + "_nullTarget=0;"	<< std::endl
+         << "#define HDDM_NULL (void*)&hddm_" + classPrefix + "_nullTarget"
+								<< std::endl
                                                                 << std::endl
          << "#include \"" << hname << "\"" 			<< std::endl
 								<< std::endl;
@@ -463,8 +464,9 @@ int main(int argC, char* argV[])
 	 << "#endif"						<< std::endl
 	            						<< std::endl
 	 << "#if !defined HDDM_NULL"				<< std::endl
-         << "extern int hddm_nullTarget;"			<< std::endl
-         << "# define HDDM_NULL (void*)&hddm_nullTarget"        << std::endl
+         << "extern int hddm_" + classPrefix + "_nullTarget;"	<< std::endl
+         << "# define HDDM_NULL (void*)&hddm_" + classPrefix + "_nullTarget"
+								<< std::endl
 	 << "#endif"						<< std::endl;
 
    XMLPlatformUtils::Terminate();
@@ -814,7 +816,8 @@ void CodeBuilder::constructConstructors()
                 typeS == "anyURI")
             {
                cFile << "      pp->" << nameS
-                     << " = (string_t)&hddm_nullTarget;"	<< std::endl;
+                     << " = (string_t)&hddm_" + classPrefix + "_nullTarget;"
+								<< std::endl;
             }
             else if (typeS == "int" ||
 	             typeS == "long" ||
@@ -845,13 +848,15 @@ void CodeBuilder::constructConstructors()
                {
                   cFile << "      pp->" << cnameS.plural()
                         << " = (" << cnameS.listType()
-                        << "*)&hddm_nullTarget;"		<< std::endl;
+                        << "*)&hddm_" + classPrefix + "_nullTarget;"
+								<< std::endl;
                }
                else
                {
                   cFile << "      pp->" << cnameS
                         << " = (" << cnameS.simpleType()
-                        << "*)&hddm_nullTarget;"		<< std::endl;
+                        << "*)&hddm_" + classPrefix + "_nullTarget;"
+								<< std::endl;
                }
             }
          }
@@ -883,7 +888,8 @@ void CodeBuilder::constructConstructors()
                 typeS == "anyURI")
             {
                cFile << "   p->" << nameS
-                     << " = (string_t)&hddm_nullTarget;"	<< std::endl;
+                     << " = (string_t)&hddm_" + classPrefix + "_nullTarget;"
+								<< std::endl;
             }
             else if (typeS == "int" ||
 	             typeS == "long" ||
@@ -914,13 +920,15 @@ void CodeBuilder::constructConstructors()
                {
                   cFile << "   p->" << cnameS.plural()
                         << " = (" << cnameS.listType()
-                        << "*)&hddm_nullTarget;"		<< std::endl;
+                        << "*)&hddm_" + classPrefix + "_nullTarget;"
+								<< std::endl;
                }
                else
                {
                   cFile << "   p->" << cnameS
                         << " = (" << cnameS.simpleType()
-                        << "*)&hddm_nullTarget;"		<< std::endl;
+                        << "*)&hddm_" + classPrefix + "_nullTarget;"
+								<< std::endl;
                }
             }
          }
@@ -1370,32 +1378,34 @@ void CodeBuilder::constructPackers()
             cFile << "      if (this1->"
                   << ((rep > 1)? "in[m]." : "")
                   << ((re > 1)? nameS.plural(): nameS) << " != ("
-                  << contType << "*)&hddm_nullTarget)"			<< std::endl
-                  << "      {"						<< std::endl
+                  << contType << "*)&hddm_" + classPrefix + "_nullTarget)"
+								<< std::endl
+                  << "      {"					<< std::endl
 
                   << "         if (pack_" << contT << "(xdrs,this1->"
                   << ((rep > 1)? "in[m]." : "")
-                  << ((re > 1)? nameS.plural() : nameS) << ") < 0) {"	<< std::endl
-                  << "            return -1;"				<< std::endl
-                  << "         }"					<< std::endl
-                  << "      }"						<< std::endl
-                  << "      else"					<< std::endl
-                  << "      {"						<< std::endl
-		  << "         int zero=0;"				<< std::endl
-                  << "         xdr_int(xdrs,&zero);"			<< std::endl
-                  << "      }"						<< std::endl;
+                  << ((re > 1)? nameS.plural() : nameS) << ") < 0) {"
+								<< std::endl
+                  << "            return -1;"			<< std::endl
+                  << "         }"				<< std::endl
+                  << "      }"					<< std::endl
+                  << "      else"				<< std::endl
+                  << "      {"					<< std::endl
+		  << "         int zero=0;"			<< std::endl
+                  << "         xdr_int(xdrs,&zero);"		<< std::endl
+                  << "      }"					<< std::endl;
          }
       }
 
-      cFile << "   }"							<< std::endl
-            << "   FREE(this1);"					<< std::endl
-            << "   end = xdr_getpos64(xdrs);"				<< std::endl
-            << "   xdr_setpos64(xdrs,base);"				<< std::endl
-	    << "   size = end-start;"					<< std::endl
-            << "   xdr_u_int(xdrs,&size);"				<< std::endl
-            << "   xdr_setpos64(xdrs,end);"				<< std::endl
-            << "   return size;"					<< std::endl
-            << "}"							<< std::endl;
+      cFile << "   }"						<< std::endl
+            << "   FREE(this1);"				<< std::endl
+            << "   end = xdr_getpos64(xdrs);"			<< std::endl
+            << "   xdr_setpos64(xdrs,base);"			<< std::endl
+	    << "   size = end-start;"				<< std::endl
+            << "   xdr_u_int(xdrs,&size);"			<< std::endl
+            << "   xdr_setpos64(xdrs,end);"			<< std::endl
+            << "   return size;"				<< std::endl
+            << "}"						<< std::endl;
    }
 }
 
