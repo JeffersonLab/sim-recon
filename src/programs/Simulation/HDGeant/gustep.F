@@ -436,6 +436,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
           itypa  = GKIN(5,i)
           if (itypa.ne.4) then
 
+#if 0
 c     make primary except if in calorimeter volume and not hadronic interaction
              iflgk(i) = 1
              cint = KCASE
@@ -446,6 +447,7 @@ c             print *, cchar
      >            (cchar.ne.'HADR')) then
                 iflgk(i) = 0
              endif
+#endif
              call GSKING(i)
           endif
        enddo
@@ -464,7 +466,7 @@ c             print *, cchar
 
 c               print *," KCASE: ",chcase,"  ",NGKINE,"  ",IPART
                call savenewvertex(KCASE,NGKINE,GKIN,VECT,
-     +              TOFG,iflgk,IPART)
+     +              TOFG,iflgk,IPART,ITRA,ISTAK)
             endif
          endif
       endif
