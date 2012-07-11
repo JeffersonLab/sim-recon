@@ -453,13 +453,41 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
       else if (typeS == "float")
       {
          float val;
-         valueStr >> val;
+         if (valueS == "nan") {
+            val = NAN;
+         }
+         else if (valueS == "-nan") {
+            val = -NAN;
+         }
+         else if (valueS == "inf") {
+            val = INFINITY;
+         }
+         else if (valueS == "-inf") {
+            val = -INFINITY;
+         }
+         else {
+            valueStr >> val;
+         }
          ofx << val;
       }
       else if (typeS == "double")
       {
          double val;
-         valueStr >> val;
+         if (valueS == "nan") {
+            val = NAN;
+         }
+         else if (valueS == "-nan") {
+            val = -NAN;
+         }
+         else if (valueS == "inf") {
+            val = INFINITY;
+         }
+         else if (valueS == "-inf") {
+            val = -INFINITY;
+         }
+         else {
+            valueStr >> val;
+         }
          ofx << val;
       }
       else if (typeS == "boolean")
