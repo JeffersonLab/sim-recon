@@ -298,7 +298,7 @@ inline static int ParticleCharge(Particle_t p)
   case AntiXi0:		return  0;
   case AntiXiPlus:	return +1;
   case AntiOmegaPlus:	return +1;
-  case Geantino:		return  0;
+  case Geantino:	return  0;
   case Rho0:		return  0;
   case RhoPlus:		return +1;
   case RhoMinus:	return -1;
@@ -307,6 +307,55 @@ inline static int ParticleCharge(Particle_t p)
   case phiMeson:	return  0;
   case a0_980:		return  0;
   case f0_980:		return  0;
+  }
+}
+
+inline static int PDGtype(Particle_t p)
+{
+  switch (p) {
+  case Unknown:		return  0;
+  case Gamma:		return  22;
+  case Positron:	return -11;
+  case Electron:	return  11;
+  case Neutrino:	return  121416;
+  case MuonPlus:	return -13;
+  case MuonMinus:	return  13;
+  case Pi0:		return  111;
+  case PiPlus:		return  211;
+  case PiMinus:		return -211;
+  case KShort:		return  310;
+  case KLong:		return  130;
+  case KPlus:		return  321;
+  case KMinus:		return -321;
+  case Neutron:		return  2112;
+  case Proton:		return  2212;
+  case AntiProton:	return -2212;
+  case Eta:		return  221;
+  case Lambda:		return  3122;
+  case SigmaPlus:	return  3222;
+  case Sigma0:		return  3212;
+  case SigmaMinus:	return  3112;
+  case Xi0:		return  3322;
+  case XiMinus:		return  3312;
+  case OmegaMinus:	return  3332;
+  case AntiNeutron:	return -2112;
+  case AntiLambda:	return -3122;
+  case AntiSigmaMinus:	return -3112;
+  case AntiSigma0:	return -3212;
+  case AntiSigmaPlus:	return -3222;
+  case AntiXi0:		return -3322;
+  case AntiXiPlus:	return -3312;
+  case AntiOmegaPlus:	return -3332;
+  case Geantino:	return  0;
+  case Rho0:		return  113;
+  case RhoPlus:		return  213;
+  case RhoMinus:	return -213;
+  case omega:		return  223;
+  case EtaPrime:	return  331;
+  case phiMeson:	return  333;
+  case a0_980:		return  9000110;
+  case f0_980:		return  9010221;
+  default:		return  0;
   }
 }
 
