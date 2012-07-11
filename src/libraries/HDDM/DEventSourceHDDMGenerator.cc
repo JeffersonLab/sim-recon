@@ -25,7 +25,18 @@ const char* DEventSourceHDDMGenerator::Description(void)
 //---------------------------------
 double DEventSourceHDDMGenerator::CheckOpenable(string source)
 {
-	return source.find(".hddm",0)==string::npos ? 0.0:1.0;
+	ifstream ifs(source.c_str());
+        if (!ifs.good()) {
+           return 0.0;
+        }
+        try {
+        	hddm_s::istream fin(ifs);
+        }
+        catch (std::runtime_error err) {
+                std::cerr << err.what() << std::endl;
+		return 0.0;
+        }
+	return 1.0;
 }
 
 //---------------------------------
