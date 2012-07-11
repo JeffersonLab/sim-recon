@@ -11,6 +11,8 @@
 #include <JANA/jerror.h>
 #include <JANA/JObject.h>
 
+#include <PID/DKinematicData.h>
+
 class DMCReaction:public JObject{
 	public:
 		DMCReaction(){}
