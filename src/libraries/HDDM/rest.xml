@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="no" ?>
+<HDDM xmlns="http://www.gluex.org/hddm" class="r" version="1.0">
+
+  <reconstructedPhysicsEvent eventNo="int" runNo="int">
+    <reaction maxOccurs="unbounded" minOccurs="0" type="int" weight="float"
+                                                  Ebeam="float" Eunit="GeV">
+      <vertex maxOccurs="unbounded">
+        <origin t="float" vx="float" vy="float" vz="float" lunit="cm"/>
+        <product id="int" maxOccurs="unbounded" parentId="int" pdgtype="int">
+          <momentum E="float" px="float" py="float" pz="float" Eunit="GeV"
+                    punit="GeV/c"/>
+        </product>
+      </vertex>
+    </reaction>
+    <taggerHit maxOccurs="unbounded" minOccurs="0"
+                t="float" E="float" tunit="ns" Eunit="GeV"/>
+    <calorimeterCluster minOccurs="0" maxOccurs="unbounded" isNeutral="int"
+                x="float" y="float" z="float" t="float" E="float"
+                xerr="float" yerr="float" zerr="float" terr="float" Eerr="float"
+                lunit="cm" tunit="ns" Eunit="GeV"
+                xycorr="float" xzcorr="float" yzcorr="float"
+                tzcorr="float" Ezcorr="float"/>
+    <chargedTrack minOccurs="0" maxOccurs="unbounded" ptype="Particle_t"
+                candidateId="int">
+      <trackFit Ndof="int" chisq="float"
+                x0="float" y0="float" z0="float"
+                px="float" py="float" pz="float"
+                t0="float" t0err="float"
+                pathLength="float" pathLengthErr="float"
+                flightTime="float" flightTimeErr="float"
+                Ndof_RFtime="int" chisq_RFtime="float"
+                e11="float" e12="float" e13="float" e14="float" e15="float"
+                            e22="float" e23="float" e24="float" e25="float"
+                                        e33="float" e34="float" e35="float"
+                                                    e44="float" e45="float"
+                                                                e55="float"
+                punit="GeV/c" lunit="cm" tunit="ns"/>
+      <start minOccurs="0" t0="float" t0err="float"/>
+      <DCdEdx minOccurs="0" Ndof="int" chisq="float" dEdx="float"
+                dEdx_unit="GeV/cm"/>
+    </chargedTrack>
+    <RFtime tsync="0.0" tsyncerr="0.08" tunit="ns"/>
+  </reconstructedPhysicsEvent>
+</HDDM>
