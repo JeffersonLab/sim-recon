@@ -896,6 +896,7 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 							mcthrown->setMass(mass);
 							mcthrown->setMomentum(DVector3(px, py, pz));
 							mcthrown->setPosition(DVector3(origin->vx, origin->vy, origin->vz));
+							mcthrown->setT0(origin->t, 0, SYS_NULL);
 							mcthrown->setCharge(ParticleCharge(product->type));
 							
 							data.push_back(mcthrown);
