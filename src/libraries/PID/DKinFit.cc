@@ -111,10 +111,25 @@ void DKinFit::Fit()
   }
   for(int i=0;i<numFinal;i++)
   {
+    // Convert from cartesian coordinates to the 5x1 state vector corresponding
+    // to the tracking error matrix
+    double vect[5];
+    DVector3 mom=_kDataFinal_in[i].momentum();
+    DVector3 pos=_kDataFinal_in[i].position();
+    double x=pos.x();
+    double y=pos.y();    
+    vect[2]=tan(M_PI_2-mom.Theta());
+    vect[1]=mom.Phi();
+    double sinphi=sin(vect[1]);
+    double cosphi=cos(vect[1]);
+    vect[0]=_kDataFinal_in[i].charge()/mom.Perp();
+    vect[4]=pos.z();
+    vect[3]=pos.Perp();
+    if ((x>0 && sinphi>0) || (y<0 && cosphi>0) || (y>0 && cosphi<0) 
+      || (x<0 && sinphi<0)) vect[3]*=-1.; 
+
     // Convert from the 5x5 tracking error matrix to the 7x7 matrix currently
     // used by the kinematic fitter
-    double vect[5];
-    _kDataFinal_in[i].TrackingStateVector(vect);
     _kDataFinal_in[i].setErrorMatrix(Get7x7ErrorMatrix(_kDataFinal_in[i].mass(),vect,_kDataFinal_in[i].TrackingErrorMatrix()));
     
 
@@ -141,7 +156,7 @@ void DKinFit::Fit()
     }
   }
   // Chi2 of fit
-  double chi2=0.,chi2old=1e16;
+  double chi2=1e16,chi2old=0.;
 
 
   // Get the number of constraint equations
@@ -745,8 +760,8 @@ void DKinFit::Fit()
   _chi2=chi2;
 
 
-  DRandom rnd;
-  rnd.SetSeed((unsigned int)(10000*_chi2));
+  //  DRandom rnd;
+  // rnd.SetSeed((unsigned int)(10000*_chi2));
 
 
   if(_verbose>0) cerr << "Prob: " << TMath::Prob(_chi2, _ndf) << " " << _chi2 << " " << _ndf << endl;
