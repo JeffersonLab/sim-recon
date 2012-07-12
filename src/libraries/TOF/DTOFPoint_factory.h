@@ -29,7 +29,10 @@ using namespace std;
 class DTOFPoint_factory:public JFactory<DTOFPoint>{
 	public:
 		DTOFPoint_factory(){};
-		~DTOFPoint_factory(){};
+		~DTOFPoint_factory(){
+		  for (unsigned int i=0;i<dTOFSpacetimeHitMatchPool.size();i++) delete dTOFSpacetimeHitMatchPool[i];
+		  for (unsigned int i=0;i<dTOFSpacetimeHitPool.size();i++) delete dTOFSpacetimeHitPool[i];
+		};
 
 		double VELOCITY;
 		double HALFPADDLE;
