@@ -180,6 +180,8 @@ void SaveDebugHistos(map<int, SumSpectra> &bcalfADC, const char *suffix="");
 bool BCAL_INITIALIZED = false;
 double BCAL_mevPerPE=0.0;
 double *BCAL_PULSE_SHAPE_MATRIX=NULL;
+int *BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN=NULL;
+int *BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN=NULL;
 
 // Mutexes and histogram pool
 pthread_mutex_t bcal_init_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -237,7 +239,7 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	///
 	/// The time spectra must be smeared due to sampling fluctuations, which are
 	/// parameterized based on the total energy of the shower. The total
-	/// energy is kept in the Etruth field of the bcalSiPMSpectrum structures.
+	/// energy is kept in the s_BcalIncidentParticle_t structures in HDDM.
 	///
 	/// In addition to the sampling fluctuations, Poisson statistics, timing jitter,
 	/// dark pulses, and timewalk effects are all applied. The timewalk effect is obtained
@@ -346,7 +348,7 @@ void bcalInit(void)
 		pthread_mutex_unlock(&bcal_init_mutex);
 		return;
 	}
-	
+
 	//================ Conversion factor: MeV per PE =======================
 	BCAL_mevPerPE = 1.0/( BCAL_PHOTONSPERSIDEPERMEV_INFIBER * BCAL_DEVICEPDE * BCAL_SAMPLING_FRACT );
 	//======================================================================
@@ -373,6 +375,8 @@ void bcalInit(void)
 
 	int NBINS = h->GetNbins();
 	BCAL_PULSE_SHAPE_MATRIX = new double[NBINS*NBINS];
+	BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN = new int[NBINS];
+	BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN = new int[NBINS];
 	
 	// Get electronic pulse shape
 	TSpline *pulse_shape = MakeTSpline();
@@ -430,6 +434,8 @@ void bcalInit(void)
 		double t0 = h->GetBinCenter(ibin);
 
 		// Loop over bins of output histo (electronic pulse)
+		BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN[ibin] = NBINS;
+		BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN[ibin] = 1;
 		for(int jbin=1; jbin<=NBINS; jbin++){
 			double t1 = h->GetBinCenter(jbin);
 			double t = t1-t0+toffset;
@@ -444,6 +450,15 @@ void bcalInit(void)
 				BCAL_PULSE_SHAPE_MATRIX[idx] = (mV_per_MeV/norm)*pulse_shape->Eval(t);
 			}
 			
+			// Keep track of first and last non-zero bins in the BCAL_PULSE_SHAPE_MATRIX
+			// table. This is used to speed things up when it is finally applied later.
+			if(BCAL_PULSE_SHAPE_MATRIX[idx] > 0.0){
+				BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN[ibin] = jbin;
+				if(jbin<BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN[ibin]){
+					BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN[ibin] = jbin;
+				}
+			}
+
 			if(h_pulse_shape)h_pulse_shape->SetBinContent(ibin, jbin, BCAL_PULSE_SHAPE_MATRIX[idx]);
 		}
 	}
@@ -1095,9 +1110,11 @@ void ApplyElectronicPulseShapeOneHisto(DHistogram *h)
 		int idx1 = (ibin-1)*Nbins;
 		
 		// Loop over bins of output histo
-      double *h_content_tmp = h_content;
-      double *pulse_shape = &BCAL_PULSE_SHAPE_MATRIX[idx1];
-		for(int jbin=1; jbin<=Nbins; jbin++, h_content_tmp++, pulse_shape++){
+		double *h_content_tmp = h_content;
+		double *pulse_shape = &BCAL_PULSE_SHAPE_MATRIX[idx1];
+		int start_bin = BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN[ibin];
+		int end_bin = BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN[ibin];
+		for(int jbin=start_bin; jbin<=end_bin; jbin++, h_content_tmp++, pulse_shape++){
 
 			double weight = A*(*pulse_shape);
          *h_content_tmp += weight;
@@ -1171,12 +1188,20 @@ void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
 		int ibin = h->FindFirstBinAbove(thresh_mV, start_bin);
 		if(ibin<1 || ibin>Nbins)break;
 		
-		// Signal time. We simply use the center of the bin as the time.
-		// In reality, the FPGA will implement some algorithm to extract
-		// it from the surrounding samples, thus having higher accuracy
-		// than the bin width. Here, the histograms should have smaller bins
-		// than the 4ns the fADC uses.
+		// Signal time. Start with the center of the bin as the time then
+		// linearly interpolate (below) to the threshold crossing point.
+		// Notice that we will have 2 times from the BCAL, one from the
+		// fADC and one from the TDC. Here, we only specify one and make it
+		// more closely match the TDC resolution.
 		double t = h->GetBinCenter(ibin);
+		
+		// Linearly interpolate between this and previous bin
+		if(ibin>1){
+			double a1 = h->GetBinContent(ibin-1);
+			double a2 = h->GetBinContent(ibin);
+			double delta_t = bin_width*(a2-thresh_mV)/(a2-a1);
+			t -= delta_t;
+		}
 		
 		// Calculate integration limits for signal amplitude
 		int istart = ibin - Nbins_before;
@@ -1322,7 +1347,7 @@ DHistogram* GetHistoFromPool(void)
 	// Do this outside of mutex lock to speed things up
 	if(h==NULL){
 		// There wasn't a histo in the pool. Create a new one
-		h = new DHistogram(400, -100.0, 300.0);
+		h = new DHistogram(4000, -100.0, 300.0);
 	}else{
 		// Histo came from pool. Reset it
 		h->Reset();
