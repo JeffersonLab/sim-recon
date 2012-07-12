@@ -157,6 +157,7 @@ jerror_t DTrackCandidate_factory_CDC::erun(void)
 //------------------
 jerror_t DTrackCandidate_factory_CDC::fini(void)
 {
+  	for(unsigned int i=0; i<cdctrkhits.size(); i++)delete cdctrkhits[i];
 	return NOERROR;
 }
 
@@ -1150,11 +1151,13 @@ if(DEBUG_LEVEL>2)_DBG_<<"p_trans:"<<seed.fit.p_trans<<endl;
 	
 	// If z_vertex is not inside the target limits, then flag this
 	// seed as invalid.
+ /*
 	if(seed.z_vertex<TARGET_Z_MIN || seed.z_vertex>TARGET_Z_MAX){
 		if(DEBUG_LEVEL>3)_DBG_<<"Seed z-vertex outside of target range (z="<<seed.z_vertex<<" TARGET_Z_MIN="<<TARGET_Z_MIN<<" TARGET_Z_MAX="<<TARGET_Z_MAX<<endl;
 		seed.valid=false;
 	}
 	
+ */
 	return;
 }
 
