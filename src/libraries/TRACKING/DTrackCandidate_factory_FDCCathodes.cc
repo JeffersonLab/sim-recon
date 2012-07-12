@@ -65,6 +65,26 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   return NOERROR;
 }
 
+
+//------------------
+// erun
+//------------------
+jerror_t DTrackCandidate_factory_FDCCathodes::erun(void)
+{
+  if (stepper) delete stepper;
+        return NOERROR;
+}
+//------------------
+// fini
+//------------------
+jerror_t DTrackCandidate_factory_FDCCathodes::fini(void)
+{
+  
+  if (stepper) delete stepper;
+        return NOERROR;
+}
+
+
 // Local routine for sorting segments by charge and curvature
 inline bool DTrackCandidate_segment_cmp(const DFDCSegment *a, const DFDCSegment *b){
   //  double k1=a->S(0,0),k2=b->S(0,0);
