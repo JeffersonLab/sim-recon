@@ -19,7 +19,11 @@
 class DVertex_factory : public jana::JFactory<DVertex>{
 	public:
 		DVertex_factory(){};
-		~DVertex_factory(){};
+		~DVertex_factory(){
+		  for (unsigned int i=0;i<dVertexInfoPool.size();i++){
+		    delete dVertexInfoPool[i];
+		  }
+		};
 
 		class vertexInfo_t : public DHoughFind {
 			public:
