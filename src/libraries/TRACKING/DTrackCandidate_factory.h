@@ -61,6 +61,8 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
  protected:
   virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
   virtual jerror_t brun(JEventLoop* eventLoop,int runnumber);
+  virtual jerror_t erun(void);
+  virtual jerror_t fini(void);
 
   double DocaToHelix(const DCDCTrackHit *hit,double q,const DVector3 &pos,
 		     const DVector3 &mom);
