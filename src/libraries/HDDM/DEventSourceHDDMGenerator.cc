@@ -33,7 +33,7 @@ double DEventSourceHDDMGenerator::CheckOpenable(string source)
         	hddm_s::istream fin(ifs);
         }
         catch (std::runtime_error err) {
-                std::cerr << err.what() << std::endl;
+                //std::cerr << err.what() << std::endl;
 		return 0.0;
         }
 	return 1.0;
