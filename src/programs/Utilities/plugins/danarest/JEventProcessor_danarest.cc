@@ -12,6 +12,8 @@
 #include "PID/DPhysicsEvent.h"
 #include "PID/DParticleSet.h"
 #include "PID/DChargedTrack.h"
+#include "START_COUNTER/DSCHit.h"
+#include "TOF/DTOFPoint.h"
 
 
 // rest output file name, use rest:FILENAME configuration parameter to override
@@ -86,7 +88,7 @@ jerror_t JEventProcessor_danarest::brun(JEventLoop *loop, int runnumber)
       return UNRECOVERABLE_ERROR;
    }
    fout = new hddm_r::ostream(*ofs);
-   //fout->setCompression(hddm_r::k_bz2_compression);
+   fout->setCompression(hddm_r::k_bz2_compression);
    Nevents_written = 0;
    return NOERROR;
 }
@@ -115,6 +117,18 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
       rea().setType(reactions[i]->type);
       rea().setWeight(reactions[i]->weight);
       rea().setEbeam(reactions[i]->beam.energy());
+      Particle_t ptype = Unknown;
+      double mi = reactions[i]->target.mass();
+      double qi = reactions[i]->target.charge();
+      for (int p=1; p<99; ++p) {
+         double mp = ParticleMass((Particle_t)p);
+         double qp = ParticleCharge((Particle_t)p);
+         if (fabs(mp-mi) < mi*1e-4 && qi == qp) {
+            ptype = (Particle_t)p;
+            break;
+         }
+      }
+      rea().setTargetType(ptype);
 
       // Right now the DMCThrown object does not tell which of the listed
       // reactions gave rise to it, so associate them all to the first one.
@@ -161,42 +175,23 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
       hit().setE(taggerhits[i]->E);
    }
 
-   // push any DFCALShower or DBCALShower objects to the output record
-   std::vector<const DNeutralShower*> neutralshowers;
-   loop->Get(neutralshowers);
+   // push any DFCALShower objects to the output record
    std::vector<const DFCALShower*> fcalshowers;
    loop->Get(fcalshowers);
    for (unsigned int i=0; i < fcalshowers.size(); i++) {
       hddm_r::CalorimeterClusterList cal = res().addCalorimeterClusters(1);
       DVector3 pos = fcalshowers[i]->getPosition();
-      cal().setIsNeutral(0);
-      int ineutral = -1;
-      for (unsigned int j=0; j < neutralshowers.size(); j++) {
-         if (pos(0) == neutralshowers[j]->dSpacetimeVertex(0) &&
-             pos(1) == neutralshowers[j]->dSpacetimeVertex(1) &&
-             pos(2) == neutralshowers[j]->dSpacetimeVertex(2)) {
-            cal().setIsNeutral(1);
-            ineutral = j;
-            break;
-         }
-      }
-      const DNeutralShower *shower;
-      if (ineutral < 0) {
-         shower = new DNeutralShower(fcalshowers[i]);
-      }
-      else {
-         shower = neutralshowers[ineutral];
-      }
-      cal().setX(shower->dSpacetimeVertex(0));
-      cal().setY(shower->dSpacetimeVertex(1));
-      cal().setZ(shower->dSpacetimeVertex(2));
-      cal().setT(shower->dSpacetimeVertex(3));
-      cal().setE(shower->dEnergy);
-      cal().setXerr(shower->dSpacetimeVertexUncertainties(0));
-      cal().setYerr(shower->dSpacetimeVertexUncertainties(1));
-      cal().setZerr(shower->dSpacetimeVertexUncertainties(2));
-      cal().setTerr(shower->dSpacetimeVertexUncertainties(3));
-      cal().setEerr(shower->dEnergyUncertainty);
+      DVector3 poserr = fcalshowers[i]->getPositionError();
+      cal().setX(pos(0));
+      cal().setY(pos(1));
+      cal().setZ(pos(2));
+      cal().setT(fcalshowers[i]->getTime());
+      cal().setE(fcalshowers[i]->getEnergy());
+      cal().setXerr(poserr(0));
+      cal().setYerr(poserr(1));
+      cal().setZerr(poserr(2));
+      cal().setTerr(0);
+      cal().setEerr(0);
       cal().setXycorr(0);
       cal().setXzcorr(0);
       cal().setYzcorr(0);
@@ -204,37 +199,22 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
       cal().setTzcorr(0);
    }
 
+   // push any DBCALShower objects to the output record
    std::vector<const DBCALShower*> bcalshowers;
    loop->Get(bcalshowers);
    for (unsigned int i=0; i < bcalshowers.size(); i++) {
       hddm_r::CalorimeterClusterList cal = res().addCalorimeterClusters(1);
       DVector3 pos(bcalshowers[i]->x,bcalshowers[i]->y,bcalshowers[i]->z);
-      int ineutral = -1;
-      for (unsigned int j=0; j < neutralshowers.size(); j++) {
-         if (pos(0) == neutralshowers[j]->dSpacetimeVertex(0) &&
-             pos(1) == neutralshowers[j]->dSpacetimeVertex(1) &&
-             pos(2) == neutralshowers[j]->dSpacetimeVertex(2)) {
-            ineutral = j;
-            break;
-         }
-      }
-      const DNeutralShower *shower;
-      if (ineutral < 0) {
-         shower = new DNeutralShower(bcalshowers[i]);
-      }
-      else {
-         shower = neutralshowers[ineutral];
-      }
-      cal().setX(shower->dSpacetimeVertex(0));
-      cal().setY(shower->dSpacetimeVertex(1));
-      cal().setZ(shower->dSpacetimeVertex(2));
-      cal().setT(shower->dSpacetimeVertex(3));
-      cal().setE(shower->dEnergy);
-      cal().setXerr(shower->dSpacetimeVertexUncertainties(0));
-      cal().setYerr(shower->dSpacetimeVertexUncertainties(1));
-      cal().setZerr(shower->dSpacetimeVertexUncertainties(2));
-      cal().setTerr(shower->dSpacetimeVertexUncertainties(3));
-      cal().setEerr(shower->dEnergyUncertainty);
+      cal().setX(bcalshowers[i]->x);
+      cal().setY(bcalshowers[i]->y);
+      cal().setZ(bcalshowers[i]->z);
+      cal().setT(bcalshowers[i]->t);
+      cal().setE(bcalshowers[i]->E);
+      cal().setXerr(bcalshowers[i]->xErr);
+      cal().setYerr(bcalshowers[i]->yErr);
+      cal().setZerr(bcalshowers[i]->zErr);
+      cal().setTerr(bcalshowers[i]->tErr);
+      cal().setEerr(0);
       cal().setXycorr(0);
       cal().setXzcorr(0);
       cal().setYzcorr(0);
@@ -242,30 +222,58 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
       cal().setTzcorr(0);
    }
 
-   // push any DChargedTrackHypothesis objects to the output record
-   std::vector<const DChargedTrackHypothesis*> tracks;
+   // push any DTOFPoint objects to the output record
+   std::vector<const DTOFPoint*> tofpoints;
+   loop->Get(tofpoints);
+   for (unsigned int i=0; i < tofpoints.size(); i++) {
+      hddm_r::TofPointList tof = res().addTofPoints(1);
+      tof().setX(tofpoints[i]->pos(0));
+      tof().setY(tofpoints[i]->pos(1));
+      tof().setZ(tofpoints[i]->pos(2));
+      tof().setT(tofpoints[i]->t);
+      tof().setDE(tofpoints[i]->dE);
+   }
+
+   // push any DSCHit objects to the output record
+   std::vector<const DSCHit*> starthits;
+   loop->Get(starthits);
+   for (unsigned int i=0; i < starthits.size(); i++) {
+      hddm_r::StartHitList hit = res().addStartHits(1);
+      hit().setSector(starthits[i]->sector);
+      hit().setT(starthits[i]->t);
+      hit().setDE(starthits[i]->dE);
+   }
+
+   // push any DTrackTimeBased objects to the output record
+   std::vector<const DTrackTimeBased*> tracks;
    loop->Get(tracks);
    for (unsigned int i=0; i < tracks.size(); ++i) {
       hddm_r::ChargedTrackList tra = res().addChargedTracks(1);
       tra().setCandidateId(tracks[i]->candidateid);
-      tra().setPtype(tracks[i]->dPID);
+      Particle_t ptype = Unknown;
+      double mi = tracks[i]->mass();
+      double qi = tracks[i]->charge();
+      for (int p=1; p<99; ++p) {
+         double mp = ParticleMass((Particle_t)p);
+         double qp = ParticleCharge((Particle_t)p);
+         if (fabs(mp-mi) < mi*1e-4 && qi == qp) {
+            ptype = (Particle_t)p;
+            break;
+         }
+      }
+      tra().setPtype(ptype);
       hddm_r::TrackFitList fit = tra().addTrackFits(1);
-      fit().setNdof(tracks[i]->dNDF_Track);
-      fit().setChisq(tracks[i]->dChiSq_Track);
+      fit().setNdof(tracks[i]->Ndof);
+      fit().setChisq(tracks[i]->chisq);
       fit().setX0(tracks[i]->x());
       fit().setY0(tracks[i]->y());
       fit().setZ0(tracks[i]->z());
       fit().setPx(tracks[i]->px());
       fit().setPy(tracks[i]->py());
       fit().setPz(tracks[i]->pz());
-      fit().setPathLength(tracks[i]->pathLength());
-      fit().setPathLengthErr(tracks[i]->pathLength_err());
-      fit().setFlightTime(tracks[i]->TOF());
-      fit().setFlightTimeErr(tracks[i]->TOF_err());
-      fit().setT0(tracks[i]->dProjectedStartTime);
-      fit().setT0err(tracks[i]->dProjectedStartTimeUncertainty);
-      fit().setNdof_RFtime(tracks[i]->dNDF_Timing);
-      fit().setChisq_RFtime(tracks[i]->dChiSq_Timing);
+      fit().setT0(tracks[i]->t0());
+      fit().setT0err(tracks[i]->t0_err());
+      fit().setT0det(tracks[i]->t0_detector());
       DMatrixDSym errors = tracks[i]->TrackingErrorMatrix();
       fit().setE11(errors(0,0));
       fit().setE12(errors(0,1));
@@ -282,16 +290,15 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
       fit().setE44(errors(3,3));
       fit().setE45(errors(3,4));
       fit().setE55(errors(4,4));
-      if (tracks[i]->dNDF_DCdEdx) {
-         hddm_r::DCdEdxList edx = tra().addDCdEdxs(1);
-         edx().setNdof(tracks[i]->dNDF_DCdEdx);
-         edx().setChisq(tracks[i]->dChiSq_DCdEdx);
-         edx().setDEdx(tracks[i]->dEdx());
-      }
-      if (tracks[i]->t0() == tracks[i]->t0()) {
-         hddm_r::StartList sta = tra().addStarts(1);
-         sta().setT0(tracks[i]->t0());
-         sta().setT0err(tracks[i]->t0_err());
+      if (tracks[i]->dNumHitsUsedFordEdx_FDC +
+          tracks[i]->dNumHitsUsedFordEdx_CDC) {
+         hddm_r::DEdxDCList elo = tra().addDEdxDCs(1);
+         elo().setNsampleFDC(tracks[i]->dNumHitsUsedFordEdx_FDC);
+         elo().setNsampleCDC(tracks[i]->dNumHitsUsedFordEdx_CDC);
+         elo().setDxFDC(tracks[i]->ddx_FDC);
+         elo().setDxCDC(tracks[i]->ddx_CDC);
+         elo().setDEdxFDC(tracks[i]->ddEdx_FDC);
+         elo().setDEdxCDC(tracks[i]->ddEdx_CDC);
       }
    }
 
