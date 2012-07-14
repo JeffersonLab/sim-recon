@@ -23,10 +23,11 @@
 #include <PID/DBeamPhoton.h>
 #include <TAGGER/DTagger.h>
 #include "TRACKING/DMCThrown.h"
+#include <TRACKING/DTrackTimeBased.h>
 #include <FCAL/DFCALShower.h>
 #include <BCAL/DBCALShower.h>
-#include <PID/DNeutralShower.h>
-#include <PID/DChargedTrackHypothesis.h>
+#include <START_COUNTER/DSCHit.h>
+#include <TOF/DTOFPoint.h>
 
 class DEventSourceREST:public JEventSource
 {
@@ -52,22 +53,38 @@ class DEventSourceREST:public JEventSource
                     JFactory<DMCThrown> *factory);
    jerror_t Extract_DTagger(hddm_r::HDDM *record,
                     JFactory<DTagger>* factory);
+   jerror_t Extract_DSCHit(hddm_r::HDDM *record,
+                    JFactory<DSCHit>* factory);
+   jerror_t Extract_DTOFPoint(hddm_r::HDDM *record,
+                    JFactory<DTOFPoint>* factory);
    jerror_t Extract_DFCALShower(hddm_r::HDDM *record,
                     JFactory<DFCALShower>* factory);
    jerror_t Extract_DBCALShower(hddm_r::HDDM *record,
                     JFactory<DBCALShower>* factory);
-   jerror_t Extract_DNeutralShower(hddm_r::HDDM *record,
-                    JFactory<DNeutralShower>* factory);
-   jerror_t Extract_DChargedTrackHypothesis(hddm_r::HDDM *record,
-                    JFactory<DChargedTrackHypothesis>* factory);
+   jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record,
+                    JFactory<DTrackTimeBased>* factory);
+#if 0
+   jerror_t Extract_DRFTime(hddm_r::HDDM *record,
+                    JFactory<DRFTime>* factory);
+#endif
 
    Particle_t PDGtoPtype(int pdgtype);
 
  private:
    // Warning: Class JEventSource methods must be re-entrant, so do not
    // store any data here that might change from event to event.
-   std::ifstream *ifs;
-   hddm_r::istream *fin;
+
+   std::ifstream *ifs;		// input hddm file ifstream
+   hddm_r::istream *fin;	// provides hddm layer on top of ifstream
+
+   pthread_mutex_t rt_mutex;
+   std::map<hddm_r::HDDM*, std::vector<DReferenceTrajectory*> > rt_by_event;
+   std::list<DReferenceTrajectory*> rt_pool;
+
+   DApplication *dapp;
+   const DMagneticFieldMap *saved_bfield;
+   const DGeometry *saved_geom;
+   int saved_runnumber;
 };
 
 #endif //_JEVENT_SOURCEREST_H_

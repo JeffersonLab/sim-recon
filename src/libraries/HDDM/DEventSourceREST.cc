@@ -14,9 +14,6 @@
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
 
-#include "BCAL/DBCALShower.h"
-#include "FCAL/DFCALShower.h"
-
 #include <DVector2.h>
 #include <DEventSourceREST.h>
 
@@ -25,7 +22,9 @@
 // Constructor
 //----------------
 DEventSourceREST::DEventSourceREST(const char* source_name)
- : JEventSource(source_name)
+ : JEventSource(source_name), dapp(0), 
+   saved_bfield(0), saved_geom(0), 
+   saved_runnumber(-1)
 {
    /// Constructor for DEventSourceREST object
    ifs = new std::ifstream(source_name);
@@ -39,6 +38,7 @@ DEventSourceREST::DEventSourceREST(const char* source_name)
       // One might want to throw an exception or report an error here.
       fin = NULL;
    }
+   pthread_mutex_init(&rt_mutex, NULL);
 }
 
 //----------------
@@ -70,6 +70,8 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
    if (ifs->eof()) {
       delete fin;
       fin = NULL;
+      delete ifs;
+      ifs = NULL;
       return NO_MORE_EVENTS_IN_SOURCE;
    }
 
@@ -95,6 +97,19 @@ void DEventSourceREST::FreeEvent(JEvent &event)
 {
    hddm_r::HDDM *record = (hddm_r::HDDM*)event.GetRef();
    delete record;
+
+   // Check for DReferenceTrajectory objects we need to delete
+   pthread_mutex_lock(&rt_mutex);
+   std::map<hddm_r::HDDM*, std::vector<DReferenceTrajectory*> >::iterator
+                           iter = rt_by_event.find(record);
+   if (iter != rt_by_event.end()) {
+      std::vector<DReferenceTrajectory*> &rtvector = iter->second;
+      for (unsigned int i=0; i < rtvector.size(); ++i) {
+         rt_pool.push_back(rtvector[i]);
+      }
+      rt_by_event.erase(iter);
+   }
+   pthread_mutex_unlock(&rt_mutex);
 }
 
 //----------------
@@ -116,6 +131,14 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
    hddm_r::HDDM *record = (hddm_r::HDDM*)event.GetRef();
    if (!record) {
       throw RESOURCE_UNAVAILABLE;
+   }
+
+   if (dapp == 0) {
+      JEventLoop *loop = event.GetJEventLoop();
+      dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+      if (!dapp) {
+         throw RESOURCE_UNAVAILABLE;
+      }
    }
 
    // HDDM doesn't exactly support tagged factories, but the tag
@@ -141,6 +164,14 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DTagger(record,
                      dynamic_cast<JFactory<DTagger>*>(factory));
    }
+   if (dataClassName =="DTOFPoint" && tag=="") {
+      return Extract_DTOFPoint(record,
+                     dynamic_cast<JFactory<DTOFPoint>*>(factory));
+   }
+   if (dataClassName =="DSCHit" && tag=="") {
+      return Extract_DSCHit(record,
+                     dynamic_cast<JFactory<DSCHit>*>(factory));
+   }
    if (dataClassName =="DFCALShower" && tag=="") {
       return Extract_DFCALShower(record,
                      dynamic_cast<JFactory<DFCALShower>*>(factory));
@@ -149,14 +180,17 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DBCALShower(record,
                      dynamic_cast<JFactory<DBCALShower>*>(factory));
    }
-   if (dataClassName =="DNeutralShower" && tag=="") {
-      return Extract_DNeutralShower(record,
-                     dynamic_cast<JFactory<DNeutralShower>*>(factory));
+   if (dataClassName =="DTrackTimeBased" && tag=="") {
+      return Extract_DTrackTimeBased(record,
+                     dynamic_cast<JFactory<DTrackTimeBased>*>(factory));
    }
-   if (dataClassName =="DChargedTrackHypothesis" && tag=="") {
-      return Extract_DChargedTrackHypothesis(record,
-                     dynamic_cast<JFactory<DChargedTrackHypothesis>*>(factory));
+#if 0
+   // one day we will need a class to hold RF timing information
+   if (dataClassName =="DRFTime" && tag=="") {
+      return Extract_DRFTime(record,
+                     dynamic_cast<JFactory<DRFTime>*>(factory));
    }
+#endif
 
    return OBJECT_NOT_AVAILABLE;
 }
@@ -194,8 +228,9 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
       mcreaction->beam.setT0(0.0, 0.0, SYS_NULL);
       mcreaction->target.setPosition(DVector3(0.0, 0.0, 65.0));
       mcreaction->target.setMomentum(DVector3(0.0, 0.0, 0.0));
-      mcreaction->target.setMass(ParticleMass(Proton));
-      mcreaction->target.setCharge(ParticleCharge(Proton));
+      Particle_t ttype = iter->getTargetType();
+      mcreaction->target.setMass(ParticleMass(ttype));
+      mcreaction->target.setCharge(ParticleCharge(ttype));
       mcreaction->target.clearErrorMatrix();
       mcreaction->target.setT0(0.0, 0.0, SYS_NULL);
    }
@@ -310,7 +345,7 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
 jerror_t DEventSourceREST::Extract_DTagger(hddm_r::HDDM *record,
                                    JFactory<DTagger>* factory)
 {
-   /// Copies the data from the tagger hddm record. This is called
+   /// Copies the data from the taggerHit hddm record. This is called
    /// from JEventSourceREST::GetObjects. If factory is NULL, this
    /// returns OBJECT_NOT_AVAILABLE immediately.
 
@@ -337,6 +372,73 @@ jerror_t DEventSourceREST::Extract_DTagger(hddm_r::HDDM *record,
 
    return NOERROR;
 }
+
+//------------------
+// Extract_DTOFPoint
+//------------------
+jerror_t DEventSourceREST::Extract_DTOFPoint(hddm_r::HDDM *record,
+                                   JFactory<DTOFPoint>* factory)
+{
+   /// Copies the data from the tofPoint hddm record. This is called
+   /// from JEventSourceREST::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory==NULL) {
+      return OBJECT_NOT_AVAILABLE;
+   }
+
+   vector<DTOFPoint*> data;
+
+   // loop over tofPoint records
+   const hddm_r::TofPointList &tofs = record->getTofPoints();
+   hddm_r::TofPointList::iterator iter;
+   for (iter = tofs.begin(); iter != tofs.end(); ++iter) {
+      DTOFPoint *tofpoint = new DTOFPoint();
+      tofpoint->pos = DVector3(iter->getX(),iter->getY(),iter->getZ());
+      tofpoint->t = iter->getT();
+      tofpoint->dE = iter->getDE();
+      data.push_back(tofpoint);
+   }
+
+   // Copy into factory
+   factory->CopyTo(data);
+
+   return NOERROR;
+}
+
+//------------------
+// Extract_DSCHit
+//------------------
+jerror_t DEventSourceREST::Extract_DSCHit(hddm_r::HDDM *record,
+                                   JFactory<DSCHit>* factory)
+{
+   /// Copies the data from the startHit hddm record. This is called
+   /// from JEventSourceREST::GetObjects. If factory is NULL, this
+   /// returns OBJECT_NOT_AVAILABLE immediately.
+
+   if (factory==NULL) {
+      return OBJECT_NOT_AVAILABLE;
+   }
+
+   vector<DSCHit*> data;
+
+   // loop over startHit records
+   const hddm_r::StartHitList &starts = record->getStartHits();
+   hddm_r::StartHitList::iterator iter;
+   for (iter = starts.begin(); iter != starts.end(); ++iter) {
+      DSCHit *start = new DSCHit();
+      start->sector = iter->getSector();
+      start->dE = iter->getDE();
+      start->t = iter->getT();
+      data.push_back(start);
+   }
+
+   // Copy into factory
+   factory->CopyTo(data);
+
+   return NOERROR;
+}
+
 
 //-----------------------
 // Extract_DFCALShower
@@ -421,67 +523,11 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
    return NOERROR;
 }
 
-//-----------------------
-// Extract_DNeutralShower
-//-----------------------
-jerror_t DEventSourceREST::Extract_DNeutralShower(hddm_r::HDDM *record,
-                                   JFactory<DNeutralShower>* factory)
-{
-   /// Copies the data from the calorimeterCluster hddm record. This is
-   /// call from JEventSourceREST::GetObjects. If factory is NULL, this
-   /// returns OBJECT_NOT_AVAILABLE immediately.
-
-   if (factory==NULL) {
-      return OBJECT_NOT_AVAILABLE;
-   }
-
-   vector<DNeutralShower*> data;
-
-   // loop over calorimeterCluster records
-   const hddm_r::CalorimeterClusterList &clusters =
-                 record->getCalorimeterClusters();
-   hddm_r::CalorimeterClusterList::iterator iter;
-   for (iter = clusters.begin(); iter != clusters.end(); ++iter) {
-      if (!iter->getIsNeutral()) {
-         continue;
-      }
-      DNeutralShower *shower;
-      double x = iter->getX();
-      double y = iter->getY();
-      double z = iter->getZ();
-      double t = iter->getT();
-      double E = iter->getE();
-      if (z > 600) {
-         DFCALShower s;
-         shower = new DNeutralShower(&s);
-      }
-      else {
-         DBCALShower s;
-         shower = new DNeutralShower(&s);
-      }
-      double xerr = iter->getXerr();
-      double yerr = iter->getYerr();
-      double zerr = iter->getZerr();
-      double terr = iter->getTerr();
-      double Eerr = iter->getEerr();
-      shower->dSpacetimeVertex.SetXYZT(x,y,z,t);
-      shower->dSpacetimeVertexUncertainties.SetXYZT(xerr,yerr,zerr,terr);
-      shower->dEnergy = E;
-      shower->dEnergyUncertainty = Eerr;
-      data.push_back(shower);
-   }
-
-   // Copy into factory
-   factory->CopyTo(data);
-
-   return NOERROR;
-}
-
 //--------------------------------
-// Extract_DChargedTrackHypothesis
+// Extract_DTrackTimeBased
 //--------------------------------
-jerror_t DEventSourceREST::Extract_DChargedTrackHypothesis(hddm_r::HDDM *record,
-                                   JFactory<DChargedTrackHypothesis>* factory)
+jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
+                                   JFactory<DTrackTimeBased>* factory)
 {
    /// Copies the data from the chargedTrack hddm record. This is
    /// call from JEventSourceREST::GetObjects. If factory is NULL, this
@@ -491,40 +537,46 @@ jerror_t DEventSourceREST::Extract_DChargedTrackHypothesis(hddm_r::HDDM *record,
       return OBJECT_NOT_AVAILABLE;
    }
 
-   vector<DChargedTrackHypothesis*> data;
+   vector<DTrackTimeBased*> data;
+
+   // Allocate enough DReferenceTrajectory objects
+   // for all DTrackTimeBased objects found in this event.
+
+   const hddm_r::ChargedTrackList &tracks = record->getChargedTracks();
+   std::vector<DReferenceTrajectory*> free_rts;
+   std::vector<DReferenceTrajectory*> used_rts;
+   pthread_mutex_lock(&rt_mutex);
+   while ((int)free_rts.size() < tracks.size()) {
+      if (rt_pool.size() > 0) {
+         free_rts.push_back(rt_pool.back());
+         rt_pool.pop_back();
+      }
+      else {
+         if (saved_bfield == 0) {
+            saved_bfield = dapp->GetBfield();
+         }
+         free_rts.push_back(new DReferenceTrajectory(saved_bfield));
+      }
+   }
+   pthread_mutex_unlock(&rt_mutex);
 
    // loop over chargedTrack records
-   const hddm_r::ChargedTrackList &tracks = record->getChargedTracks();
    hddm_r::ChargedTrackList::iterator iter;
    for (iter = tracks.begin(); iter != tracks.end(); ++iter) {
-      DChargedTrackHypothesis *hyp = new DChargedTrackHypothesis();
-      hyp->candidateid = iter->getCandidateId();
+      DTrackTimeBased *tra = new DTrackTimeBased();
+      tra->candidateid = iter->getCandidateId();
       Particle_t ptype = iter->getPtype();
-      hyp->dPID = ptype;
+      tra->setMass(ParticleMass(ptype));
+      tra->setCharge(ParticleCharge(ptype));
 
       const hddm_r::TrackFit &fit = iter->getTrackFit();
-      hyp->dNDF_Track = fit.getNdof();
-      hyp->dChiSq_Track = fit.getChisq();
-      double pt0 = fit.getT0();
-      double pt0err = fit.getT0err();
-      hyp->dProjectedStartTime = pt0;
-      hyp->dProjectedStartTimeUncertainty = pt0err;
-      double x0 = fit.getX0();
-      double y0 = fit.getY0();
-      double z0 = fit.getZ0();
-      hyp->setPosition(DVector3(x0,y0,z0));
-      double px = fit.getPx();
-      double py = fit.getPy();
-      double pz = fit.getPz();
-      hyp->setMomentum(DVector3(px,py,pz));
-      hyp->setMass(ParticleMass(ptype));
-      hyp->setCharge(ParticleCharge(ptype));
-      hyp->dNDF_Timing = fit.getNdof_RFtime();
-      hyp->dChiSq_Timing = fit.getChisq_RFtime();
-      double tflight = fit.getFlightTime();
-      double tferror = fit.getFlightTimeErr();
-      double pathlen = fit.getPathLength();
-      double patherr = fit.getPathLengthErr();
+      tra->Ndof = fit.getNdof();
+      tra->chisq = fit.getChisq();
+      tra->setT0(fit.getT0(),fit.getT0err(),(DetectorSystem_t)fit.getT0det());
+      DVector3 track_pos(fit.getX0(),fit.getY0(),fit.getZ0());
+      DVector3 track_mom(fit.getPx(),fit.getPy(),fit.getPz());
+      tra->setPosition(track_pos);
+      tra->setMomentum(track_mom);
       DMatrixDSym mat(5);
       mat(0,0) = fit.getE11();
       mat(0,1) = mat(1,0) = fit.getE12();
@@ -541,39 +593,55 @@ jerror_t DEventSourceREST::Extract_DChargedTrackHypothesis(hddm_r::HDDM *record,
       mat(3,3) = fit.getE44();
       mat(3,4) = mat(4,3) = fit.getE45();
       mat(4,4) = fit.getE55();
-      hyp->setTrackingErrorMatrix(mat);
+      tra->setTrackingErrorMatrix(mat);
 
-      hyp->dNDF_DCdEdx = 0;
-      const hddm_r::DCdEdxList &el = iter->getDCdEdxs();
-      hddm_r::DCdEdxList::iterator diter;
-      for (diter = el.begin(); diter != el.end(); ++diter) {
-         hyp->dNDF_DCdEdx = diter->getNdof();
-         hyp->dChiSq_DCdEdx = diter->getChisq();
-         hyp->setdEdx(diter->getDEdx());
+      // configure the DReferenceTrajectory object
+      DReferenceTrajectory *rt = free_rts.back();
+      free_rts.pop_back();
+      rt->Reset();
+      rt->SetMass(tra->mass());
+      int run = record->getReconstructedPhysicsEvent().getRunNo();
+      if (run != saved_runnumber || saved_geom == 0) {
+         saved_geom = dapp->GetDGeometry(run);
+         saved_runnumber = run;
+      }
+      rt->SetDGeometry(saved_geom);
+      rt->Swim(track_pos,track_mom,tra->charge());
+      used_rts.push_back(rt);
+      tra->rt = rt;
+
+      // add the drift chamber dE/dx information
+      const hddm_r::DEdxDCList &el = iter->getDEdxDCs();
+      hddm_r::DEdxDCList::iterator diter = el.begin();
+      if (diter != el.end()) {
+         tra->dNumHitsUsedFordEdx_FDC = diter->getNsampleFDC();
+         tra->dNumHitsUsedFordEdx_CDC = diter->getNsampleCDC();
+         tra->ddEdx_FDC = diter->getDEdxFDC();
+         tra->ddEdx_CDC = diter->getDEdxCDC();
+         tra->ddx_FDC = diter->getDxFDC();
+         tra->ddx_CDC = diter->getDxCDC();
+      }
+      else {
+         tra->dNumHitsUsedFordEdx_FDC = 0;
+         tra->dNumHitsUsedFordEdx_CDC = 0;
+         tra->ddEdx_FDC = 0;
+         tra->ddEdx_CDC = 0;
+         tra->ddx_FDC = 0;
+         tra->ddx_CDC = 0;
       }
 
-      hyp->dNDF = hyp->dNDF_Timing+hyp->dNDF_DCdEdx;
-      hyp->dChiSq = hyp->dChiSq_Timing+hyp->dChiSq_DCdEdx;
-      hyp->dFOM = (hyp->dNDF > 0)? TMath::Prob(hyp->dChiSq,hyp->dNDF) : NAN;
-
-      hyp->setT0(NAN,0,SYS_NULL);
-      const hddm_r::StartList &st = iter->getStarts();
-      hddm_r::StartList::iterator siter;
-      for (siter = st.begin(); siter != st.end(); ++siter) {
-         double SCt0 = siter->getT0();
-         double SCt0err = siter->getT0err();
-         hyp->setT0(SCt0,SCt0err,SYS_START);
-      }
-      hyp->setT1(tflight+hyp->t0(),
-                 sqrt(tferror*tferror-pow(hyp->t0_err(),2)),SYS_NULL);
-      hyp->setPathLength(pathlen,patherr);
-
-      data.push_back(hyp);
+      data.push_back(tra);
    }
 
    // Copy into factory
    factory->CopyTo(data);
 
+   // Post the DReferenceTrajectory objects that were allocated above
+   // to a global list so that they can be reused when we are done with them.
+   pthread_mutex_lock(&rt_mutex);
+   rt_by_event[record] = used_rts;
+   pthread_mutex_unlock(&rt_mutex);
+   
    return NOERROR;
 }
 
