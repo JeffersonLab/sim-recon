@@ -9,11 +9,7 @@
 #include <HDDM/DEventSourceREST.h>
 
 #include "JEventProcessor_danarest.h"
-#include "PID/DPhysicsEvent.h"
-#include "PID/DParticleSet.h"
-#include "PID/DChargedTrack.h"
-#include "START_COUNTER/DSCHit.h"
-#include "TOF/DTOFPoint.h"
+#include "PID/DNeutralShower.h"
 
 
 // rest output file name, use rest:FILENAME configuration parameter to override
@@ -199,9 +195,23 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
       cal().setTzcorr(0);
    }
 
+   // determine which subclass tag to use for DBCALShowers
+   static std::string bcalClusterTag;
+   static int bcalClusterTagInit=0;
+   if (!bcalClusterTagInit) {
+      std::vector<const DNeutralShower*> neutralshowers;
+      loop->Get(neutralshowers);
+      bcalClusterTagInit = 1;
+      int useKloeClusters;
+      gPARMS->GetParameter("BCALRECON:USE_KLOE", useKloeClusters);
+      if (useKloeClusters) {
+         bcalClusterTag = "KLOE";
+      }
+   }
+
    // push any DBCALShower objects to the output record
    std::vector<const DBCALShower*> bcalshowers;
-   loop->Get(bcalshowers);
+   loop->Get(bcalshowers,bcalClusterTag.c_str());
    for (unsigned int i=0; i < bcalshowers.size(); i++) {
       hddm_r::CalorimeterClusterList cal = res().addCalorimeterClusters(1);
       DVector3 pos(bcalshowers[i]->x,bcalshowers[i]->y,bcalshowers[i]->z);
