@@ -176,7 +176,7 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DFCALShower(record,
                      dynamic_cast<JFactory<DFCALShower>*>(factory));
    }
-   if (dataClassName =="DBCALShower" && tag=="") {
+   if (dataClassName =="DBCALShower" && (tag=="" || tag=="KLOE")) {
       return Extract_DBCALShower(record,
                      dynamic_cast<JFactory<DBCALShower>*>(factory));
    }
