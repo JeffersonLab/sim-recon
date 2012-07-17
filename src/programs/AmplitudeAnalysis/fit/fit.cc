@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <complex>
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 #include "AMPTOOLS_AMPS/b1piAngAmp.h"
 #include "AMPTOOLS_AMPS/Uniform.h"
+#include "AMPTOOLS_AMPS/polCoef.h"
 
 #include "MinuitInterface/MinuitMinimizationManager.h"
 #include "IUAmpTools/AmplitudeManager.h"
@@ -31,8 +33,9 @@ int main( int argc, char* argv[] ){
 	
   // set default parameters
   
-  string configfile( "" );
-  string treeName( "kin" );
+  string configfile( "" ),dataTreeName,accTreeName,genTreeName;
+  stringstream treeNames( "kin,kin,kin" );
+  bool useMinos = false;
 
   // parse command line
   
@@ -45,15 +48,28 @@ int main( int argc, char* argv[] ){
       else  configfile = argv[++i]; }
     if (arg == "-t"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
-      else  treeName = argv[++i]; }
+      else  treeNames << argv[++i]; }
+    if (arg == "-n") useMinos = true;
     if (arg == "-h"){
       cout << endl << " Usage for: " << argv[0] << endl << endl;
-      cout << "\t -c <file>\t Config file" << endl;
+      cout << "   -n \t\t\t\t\t use MINOS instead of MIGRAD" << endl;
+      cout << "   -c <file>\t\t\t\t Config file" << endl;
+      cout << "   -t <dataTree>,<accTree>,<genTree>\t names of ROOT trees for the" 
+	   << endl << "\t\t\t\t\t three data sets (default: kin,kin,kin)" << endl;
       exit(1);}
   }
   
   if (configfile.size() == 0){
     cout << "No config file specified" << endl;
+    exit(1);
+  }
+
+  if(getline(treeNames,dataTreeName,',')==NULL || 
+     getline(treeNames,accTreeName,',')==NULL ||
+     getline(treeNames,genTreeName,',')==NULL) {
+    
+    cout << "Specification of tree names must take the form:" << endl
+	 << "\t<dataTreeName>,<accTreeName>,<genTreeName>" << endl;
     exit(1);
   }
 
@@ -87,12 +103,13 @@ int main( int argc, char* argv[] ){
     ampManagers[i]->registerAmplitudeFactor( TwoPSAngles() );
     ampManagers[i]->registerAmplitudeFactor( ThreePiAngles() );
     ampManagers[i]->registerAmplitudeFactor( b1piAngAmp() );
+    ampManagers[i]->registerAmplitudeFactor( polCoef() );
     ampManagers[i]->registerAmplitudeFactor( Uniform() );
     ampManagers[i]->setupFromConfigurationInfo( cfgInfo );
     
-    dataReaders.push_back( new ROOTDataReader( dataFiles[0], treeName ) );
-    accMCReaders.push_back( new ROOTDataReader( accMCFiles[0], treeName ) );
-    genMCReaders.push_back( new ROOTDataReader( genMCFiles[0], treeName ) );
+    dataReaders.push_back( new ROOTDataReader( dataFiles[0], dataTreeName ) );
+    accMCReaders.push_back( new ROOTDataReader( accMCFiles[0], accTreeName ) );
+    genMCReaders.push_back( new ROOTDataReader( genMCFiles[0], genTreeName ) );
 
     normInts.push_back( new NormIntInterface( genMCReaders[i],
                                               accMCReaders[i],
@@ -124,7 +141,8 @@ int main( int argc, char* argv[] ){
   cout << "STARTING MINIMIZATION..." << endl;
   
   fitManager->setStrategy( 1 );
-  fitManager->migradMinimization();
+  if( useMinos ) fitManager->minosMinimization();
+  else fitManager->migradMinimization();
   
   if( fitManager->status() != 0 && fitManager->eMatrixStatus() != 3 ){
    
