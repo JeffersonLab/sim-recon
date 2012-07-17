@@ -5,6 +5,7 @@
 #include "AMPTOOLS_AMPS/b1piAngAmp.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 #include "AMPTOOLS_AMPS/Uniform.h"
+#include "AMPTOOLS_AMPS/polCoef.h"
 
 GlueXPlotGenerator::GlueXPlotGenerator( ConfigurationInfo* cfgInfo,
                                        const string& parFile ) :
@@ -35,5 +36,6 @@ GlueXPlotGenerator::registerPhysics( AmplitudeManager* ampManager ){
   ampManager->registerAmplitudeFactor( ThreePiAngles() );
   ampManager->registerAmplitudeFactor( b1piAngAmp() );
   ampManager->registerAmplitudeFactor( Uniform() );
+  ampManager->registerAmplitudeFactor( polCoef() );
 }
 
