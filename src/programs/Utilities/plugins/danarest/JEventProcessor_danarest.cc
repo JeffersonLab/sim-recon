@@ -84,7 +84,18 @@ jerror_t JEventProcessor_danarest::brun(JEventLoop *loop, int runnumber)
       return UNRECOVERABLE_ERROR;
    }
    fout = new hddm_r::ostream(*ofs);
+
+   // enable on-the-fly bzip2 compression on output stream
    fout->setCompression(hddm_r::k_bz2_compression);
+
+   // write a comment record at the head of the file
+   hddm_r::ReconstructedPhysicsEventList res =
+           record.addReconstructedPhysicsEvents(1);
+   hddm_r::CommentList comment = res().addComments();
+   comment().setText("this is a REST event stream, yadda yadda");
+   *fout << record;
+   record.clear();
+
    Nevents_written = 0;
    return NOERROR;
 }
@@ -96,7 +107,6 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
 {
    // Write this event to the rest output stream.
 
-   record.clear();
    hddm_r::ReconstructedPhysicsEventList res =
            record.addReconstructedPhysicsEvents(1);
 
@@ -214,6 +224,7 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
    loop->Get(bcalshowers,bcalClusterTag.c_str());
    for (unsigned int i=0; i < bcalshowers.size(); i++) {
       hddm_r::CalorimeterClusterList cal = res().addCalorimeterClusters(1);
+      cal().setJtag(bcalClusterTag);
       DVector3 pos(bcalshowers[i]->x,bcalshowers[i]->y,bcalshowers[i]->z);
       cal().setX(bcalshowers[i]->x);
       cal().setY(bcalshowers[i]->y);
