@@ -67,6 +67,10 @@
 
 #include "XString.hpp"
 #include "XParsers.hpp"
+#include <xercesc/util/XMLUri.hpp>
+
+#include <particleType.h>
+#include <errno.h>
 
 #include <string>
 #include <vector>
@@ -90,6 +94,9 @@ void usage()
         <<  "    -o <filename>	write to <filename>.h"
         << std::endl;
 }
+
+std::string guessType(const std::string &literal);
+Particle_t lookupParticle(const std::string &name);
 
 class XtString : public XString
 {
@@ -1446,19 +1453,43 @@ void CodeBuilder::writeClassdef(DOMElement* el)
          }
          else if (typeS == "string")
          {
-            hFile << "   const std::string &" << getS << "() const;" << std::endl;
+            hFile << "   std::string " << getS << "() const;" << std::endl;
          }
          else if (typeS == "anyURI")
          {
-            hFile << "   const std::string &" << getS << "() const;" << std::endl;
+            hFile << "   std::string " << getS << "() const;" << std::endl;
          }
          else if (typeS == "Particle_t")
          {
             hFile << "   Particle_t " << getS << "() const;" << std::endl;
          }
-         else
+         else if (guessType(typeS) == "int")
          {
-            /* ignore attributes with unrecognized values */
+            hFile << "   int " << getS << "() const;" << std::endl;
+         }
+         else if (guessType(typeS) == "long")
+         {
+            hFile << "   int64_t " << getS << "() const;" << std::endl;
+         }
+         else if (guessType(typeS) == "float")
+         {
+            hFile << "   float " << getS << "() const;" << std::endl;
+         }
+         else if (guessType(typeS) == "double")
+         {
+            hFile << "   double " << getS << "() const;" << std::endl;
+         }
+         else if (guessType(typeS) == "boolean")
+         {
+            hFile << "   bool " << getS << "() const;" << std::endl;
+         }
+         else if (guessType(typeS) == "Particle_t")
+         {
+            hFile << "   Particle_t " << getS << "() const;" << std::endl;
+         }
+         else /* any values not matching the above are strings */
+         {
+            hFile << "   std::string " << getS << "() const;" << std::endl;
          }
       }
    }
@@ -1497,13 +1528,13 @@ void CodeBuilder::writeClassdef(DOMElement* el)
       }
       else if (typeS == "string")
       {
-         hFile << "   const std::string &" << getS << "() const;" << std::endl
+         hFile << "   std::string " << getS << "() const;" << std::endl
                << "   void " << setS << "(const std::string &" << attrS << ");"
                << std::endl;
       }
       else if (typeS == "anyURI")
       {
-         hFile << "   const std::string &" << getS << "() const;" << std::endl
+         hFile << "   std::string " << getS << "() const;" << std::endl
                << "   void " << setS << "(const std::string &" << attrS << ");"
                << std::endl;
       }
@@ -1512,9 +1543,33 @@ void CodeBuilder::writeClassdef(DOMElement* el)
          hFile << "   Particle_t " << getS << "() const;" << std::endl
                << "   void " << setS << "(Particle_t " << attrS << ");" << std::endl;
       }
-      else
+      else if (guessType(typeS) == "int")
       {
-         /* ignore attributes with unrecognized values */
+         hFile << "   int " << getS << "() const;" << std::endl;
+      }
+      else if (guessType(typeS) == "long")
+      {
+         hFile << "   int64_t " << getS << "() const;" << std::endl;
+      }
+      else if (guessType(typeS) == "float")
+      {
+         hFile << "   float " << getS << "() const;" << std::endl;
+      }
+      else if (guessType(typeS) == "double")
+      {
+         hFile << "   double " << getS << "() const;" << std::endl;
+      }
+      else if (guessType(typeS) == "boolean")
+      {
+         hFile << "   bool " << getS << "() const;" << std::endl;
+      }
+      else if (guessType(typeS) == "Particle_t")
+      {
+         hFile << "   Particle_t " << getS << "() const;" << std::endl;
+      }
+      else /* any attributes not matching the above are strings */
+      {
+         hFile << "   std::string " << getS << "() const;" << std::endl;
       }
    }
 
@@ -1887,7 +1942,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          }
          else if (typeS == "string")
          {
-            hFile << "inline const std::string &" << tagS.simpleType()
+            hFile << "inline std::string " << tagS.simpleType()
                   << "::" << getS << "() const {" << std::endl
                   << "   return *(const std::string*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
@@ -1895,7 +1950,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          }
          else if (typeS == "anyURI")
          {
-            hFile << "inline const std::string &" << tagS.simpleType()
+            hFile << "inline std::string " << tagS.simpleType()
                   << "::" << getS << "() const {" << std::endl
                   << "   return *(const std::string*)m_parent->getAttribute(\""
                   << attrS << "\");" << std::endl
@@ -1909,9 +1964,61 @@ void CodeBuilder::writeClassimp(DOMElement* el)
                   << attrS << "\");" << std::endl
                   << "}" << std::endl << std::endl;
          }
-         else
+         else if (guessType(typeS) == "int")
          {
-            /* ignore attributes with unrecognized values */
+            hFile << "inline int " << tagS.simpleType()
+                  << "::" << getS << "() const {" << std::endl
+                  << "   return *(int*)m_parent->getAttribute(\""
+                  << attrS << "\");" << std::endl
+                  << "}" << std::endl << std::endl;
+         }
+         else if (guessType(typeS) == "long")
+         {
+            hFile << "inline int64_t " << tagS.simpleType()
+                  << "::" << getS << "() const {" << std::endl
+                  << "   return *(long long int*)m_parent->getAttribute(\""
+                  << attrS << "\");" << std::endl
+                  << "}" << std::endl << std::endl;
+         }
+         else if (guessType(typeS) == "float")
+         {
+            hFile << "inline float " << tagS.simpleType()
+                  << "::" << getS << "() const {" << std::endl
+                  << "   return *(float*)m_parent->getAttribute(\""
+                  << attrS << "\");" << std::endl
+                  << "}" << std::endl << std::endl;
+         }
+         else if (guessType(typeS) == "double")
+         {
+            hFile << "inline double " << tagS.simpleType()
+                  << "::" << getS << "() const {" << std::endl
+                  << "   return *(double*)m_parent->getAttribute(\""
+                  << attrS << "\");" << std::endl
+                  << "}" << std::endl << std::endl;
+         }
+         else if (guessType(typeS) == "boolean")
+         {
+            hFile << "inline bool " << tagS.simpleType()
+                  << "::" << getS << "() const {" << std::endl
+                  << "   return *(bool*)m_parent->getAttribute(\""
+                  << attrS << "\");" << std::endl
+                  << "}" << std::endl << std::endl;
+         }
+         else if (guessType(typeS) == "Particle_t")
+         {
+            hFile << "inline Particle_t " << tagS.simpleType()
+                  << "::" << getS << "() const {" << std::endl
+                  << "   return *(Particle_t*)m_parent->getAttribute(\""
+                  << attrS << "\");" << std::endl
+                  << "}" << std::endl << std::endl;
+         }
+         else /* any attributes not of the above types are strings */
+         {
+            hFile << "inline std::string " << tagS.simpleType()
+                  << "::" << getS << "() const {" << std::endl
+                  << "   return *(std::string*)m_parent->getAttribute(\""
+                  << attrS << "\");" << std::endl
+                  << "}" << std::endl << std::endl;
          }
       }
    }
@@ -1979,7 +2086,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       }
       else if (typeS == "string")
       {
-         hFile << "inline const std::string &" << tagS.simpleType() << "::" << getS
+         hFile << "inline std::string " << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
@@ -1990,7 +2097,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       }
       else if (typeS == "anyURI")
       {
-         hFile << "inline const std::string &" << tagS.simpleType() << "::" << getS
+         hFile << "inline std::string " << tagS.simpleType() << "::" << getS
                << "() const {" << std::endl
                << "   return m_" << attrS << ";" << std::endl
                << "}" << std::endl << std::endl
@@ -2010,9 +2117,55 @@ void CodeBuilder::writeClassimp(DOMElement* el)
                << "   m_" << attrS << " = " << attrS << ";" << std::endl
                << "}" << std::endl << std::endl;
       }
-      else
+      else if (guessType(typeS) == "int")
       {
-         /* ignore attributes with unrecognized values */
+         hFile << "inline int " << tagS.simpleType() << "::" << getS
+               << "() const {" << std::endl
+               << "   return " << typeS << ";" << std::endl
+               << "}" << std::endl << std::endl;
+      }
+      else if (guessType(typeS) == "long")
+      {
+         hFile << "inline int64_t " << tagS.simpleType() << "::" << getS
+               << "() const {" << std::endl
+               << "   return " << typeS << "LL;" << std::endl
+               << "}" << std::endl << std::endl;
+      }
+      else if (guessType(typeS) == "float")
+      {
+         hFile << "inline float " << tagS.simpleType() << "::" << getS
+               << "() const {" << std::endl
+               << "   return " << typeS << ";" << std::endl
+               << "}" << std::endl << std::endl;
+      }
+      else if (guessType(typeS) == "double")
+      {
+         hFile << "inline double " << tagS.simpleType() << "::" << getS
+               << "() const {" << std::endl
+               << "   return " << typeS << ";" << std::endl
+               << "}" << std::endl << std::endl;
+      }
+      else if (guessType(typeS) == "boolean")
+      {
+         hFile << "inline bool " << tagS.simpleType() << "::" << getS
+               << "() const {" << std::endl
+               << "   return " << typeS << ";" << std::endl
+               << "}" << std::endl << std::endl;
+      }
+      else if (guessType(typeS) == "Particle_t")
+      {
+         hFile << "inline Particle_t " << tagS.simpleType()
+               << "::" << getS << "() const {" << std::endl
+               << "   return (Particle_t)" << lookupParticle(typeS)
+               << ";" << std::endl
+               << "}" << std::endl << std::endl;
+      }
+      else /* anything not listed above is classed as a string */
+      {
+         hFile << "inline std::string " << tagS.simpleType()
+               << "::" << getS << "() const {" << std::endl
+               << "   return \"" << typeS << "\";" << std::endl
+               << "}" << std::endl << std::endl;
       }
    }
 
@@ -2348,4 +2501,52 @@ void CodeBuilder::constructDocument(DOMElement* el)
    {
       hFile << " />\\n\"" << std::endl;
    }
+}
+
+std::string guessType(const std::string &literal)
+{
+   const char *str = literal.c_str();
+   char *endptr;
+   errno=0;
+   long long int llvalue = strtoll(str,&endptr,0);
+   if (errno == 0 && *endptr == 0) {
+      errno=0;
+      int lvalue = strtol(str,&endptr,0);
+      if (errno == 0 && *endptr == 0 && lvalue == llvalue) {
+         return "int";
+      }
+      else {
+         return "long";
+      }
+   }
+   errno=0;
+   strtof(str,&endptr);
+   if (errno == 0 && *endptr == 0) {
+      return "float";
+   }
+   errno=0;
+   strtod(str,&endptr);
+   if (errno == 0 && *endptr == 0) {
+      return "double";
+   }
+   if (literal == "true" || literal == "false") {
+      return "boolean";
+   }
+   if ((int)lookupParticle(literal) != 0) {
+      return "Particle_t";
+   }
+   if (XMLUri::isValidURI(false,X(literal))) {
+      return "anyURI";
+   }
+   return "string";
+}
+
+Particle_t lookupParticle(const std::string &name)
+{
+   for (int p=0; p<100; ++p) {
+      if (ParticleType((Particle_t)p) == name) {
+         return (Particle_t)p;
+      }
+   }
+   return Unknown;
 }
