@@ -77,15 +77,31 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
 
    hddm_r::HDDM *record = new hddm_r::HDDM();
    *fin >> *record;
-   ++Nevents_read;
+
 
    // Copy the reference info into the JEvent object
-   hddm_r::ReconstructedPhysicsEvent &re
-         = record->getReconstructedPhysicsEvent();
-   event.SetEventNumber(re.getEventNo());
-   event.SetRunNumber(re.getRunNo());
-   event.SetJEventSource(this);
-   event.SetRef(record);
+   while (true) {
+      hddm_r::ReconstructedPhysicsEvent &re
+            = record->getReconstructedPhysicsEvent();
+      int runno = re.getRunNo();
+      int eventno = re.getEventNo();
+      if (runno == 0 && eventno == 0) {
+         // found a comment record, print comment strings and continue
+         const hddm_r::CommentList &comments = re.getComments();
+         hddm_r::CommentList::iterator iter;
+         for (iter = comments.begin(); iter != comments.end(); ++iter) {
+            std::cout << "   | " << iter->getText() << std::endl;
+         }
+         *fin >> *record;
+         continue;
+      }
+      event.SetEventNumber(re.getEventNo());
+      event.SetRunNumber(re.getRunNo());
+      event.SetJEventSource(this);
+      event.SetRef(record);
+      ++Nevents_read;
+      break;
+   }
  
    return NOERROR;
 }
@@ -141,52 +157,47 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
       }
    }
 
-   // HDDM doesn't exactly support tagged factories, but the tag
-   // can be used to direct filling of the correct factory.
-   string tag = (factory->Tag())? factory->Tag() : "";
-
-   // Get name of data class we're trying to extract
    string dataClassName = factory->GetDataClassName();
 	
-   if (dataClassName =="DMCReaction" && tag=="") {
+   if (dataClassName =="DMCReaction") {
       return Extract_DMCReaction(record,
                      dynamic_cast<JFactory<DMCReaction>*>(factory));
    }
-   if (dataClassName =="DBeamPhoton" && tag=="") {
+   if (dataClassName =="DBeamPhoton") {
       return Extract_DBeamPhoton(record,
                      dynamic_cast<JFactory<DBeamPhoton>*>(factory));
    }
-   if (dataClassName =="DMCThrown" && tag=="") {
+   if (dataClassName =="DMCThrown") {
       return Extract_DMCThrown(record,
                      dynamic_cast<JFactory<DMCThrown>*>(factory));
    }
-   if (dataClassName =="DTagger" && tag=="") {
+   if (dataClassName =="DTagger") {
       return Extract_DTagger(record,
                      dynamic_cast<JFactory<DTagger>*>(factory));
    }
-   if (dataClassName =="DTOFPoint" && tag=="") {
+   if (dataClassName =="DTOFPoint") {
       return Extract_DTOFPoint(record,
                      dynamic_cast<JFactory<DTOFPoint>*>(factory));
    }
-   if (dataClassName =="DSCHit" && tag=="") {
+   if (dataClassName =="DSCHit") {
       return Extract_DSCHit(record,
                      dynamic_cast<JFactory<DSCHit>*>(factory));
    }
-   if (dataClassName =="DFCALShower" && tag=="") {
+   if (dataClassName =="DFCALShower") {
       return Extract_DFCALShower(record,
                      dynamic_cast<JFactory<DFCALShower>*>(factory));
    }
-   if (dataClassName =="DBCALShower" && (tag=="" || tag=="KLOE")) {
+   if (dataClassName =="DBCALShower") {
       return Extract_DBCALShower(record,
                      dynamic_cast<JFactory<DBCALShower>*>(factory));
    }
-   if (dataClassName =="DTrackTimeBased" && tag=="") {
+   if (dataClassName =="DTrackTimeBased") {
       return Extract_DTrackTimeBased(record,
                      dynamic_cast<JFactory<DTrackTimeBased>*>(factory));
    }
 #if 0
    // one day we will need a class to hold RF timing information
-   if (dataClassName =="DRFTime" && tag=="") {
+   if (dataClassName =="DRFTime") {
       return Extract_DRFTime(record,
                      dynamic_cast<JFactory<DRFTime>*>(factory));
    }
@@ -208,6 +219,7 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   std::string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DMCReaction*> dmcreactions;
 
@@ -215,6 +227,9 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
    const hddm_r::ReactionList &reactions = record->getReactions();
    hddm_r::ReactionList::iterator iter;
    for (iter = reactions.begin(); iter != reactions.end(); ++iter) {
+      if (iter->getJtag() != tag) {
+         continue;
+      }
       DMCReaction *mcreaction = new DMCReaction;
       dmcreactions.push_back(mcreaction);
       mcreaction->type = iter->getType();
@@ -254,6 +269,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DBeamPhoton*> dbeam_photons;
 
@@ -261,6 +277,9 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
    const hddm_r::ReactionList &reactions = record->getReactions();
    hddm_r::ReactionList::iterator iter;
    for (iter = reactions.begin(); iter != reactions.end(); ++iter) {
+      if (iter->getJtag() != tag) {
+         continue;
+      }
       DBeamPhoton *beamphoton = new DBeamPhoton;
       double Ebeam = iter->getEbeam();
       beamphoton->setPosition(DVector3(0.0, 0.0, 65.0));
@@ -293,6 +312,7 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DMCThrown*> data;
 
@@ -300,6 +320,9 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
    hddm_r::VertexList vertices = record->getVertices();
    hddm_r::VertexList::iterator iter;
    for (iter = vertices.begin(); iter != vertices.end(); ++iter) {
+      if (iter->getJtag() != tag) {
+         continue;
+      }
       const hddm_r::Origin &orig = iter->getOrigin();
       double vx = orig.getVx();
       double vy = orig.getVy();
@@ -352,6 +375,7 @@ jerror_t DEventSourceREST::Extract_DTagger(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DTagger*> data;
 
@@ -359,6 +383,9 @@ jerror_t DEventSourceREST::Extract_DTagger(hddm_r::HDDM *record,
    const hddm_r::TaggerHitList &tags = record->getTaggerHits();
    hddm_r::TaggerHitList::iterator iter;
    for (iter = tags.begin(); iter != tags.end(); ++iter) {
+      if (iter->getJtag() != tag) {
+         continue;
+      }
       DTagger *tagger = new DTagger();
       tagger->E = iter->getE();
       tagger->t = iter->getT();
@@ -386,6 +413,7 @@ jerror_t DEventSourceREST::Extract_DTOFPoint(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DTOFPoint*> data;
 
@@ -393,6 +421,9 @@ jerror_t DEventSourceREST::Extract_DTOFPoint(hddm_r::HDDM *record,
    const hddm_r::TofPointList &tofs = record->getTofPoints();
    hddm_r::TofPointList::iterator iter;
    for (iter = tofs.begin(); iter != tofs.end(); ++iter) {
+      if (iter->getJtag() != tag) {
+         continue;
+      }
       DTOFPoint *tofpoint = new DTOFPoint();
       tofpoint->pos = DVector3(iter->getX(),iter->getY(),iter->getZ());
       tofpoint->t = iter->getT();
@@ -419,6 +450,7 @@ jerror_t DEventSourceREST::Extract_DSCHit(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DSCHit*> data;
 
@@ -426,6 +458,9 @@ jerror_t DEventSourceREST::Extract_DSCHit(hddm_r::HDDM *record,
    const hddm_r::StartHitList &starts = record->getStartHits();
    hddm_r::StartHitList::iterator iter;
    for (iter = starts.begin(); iter != starts.end(); ++iter) {
+      if (iter->getJtag() != tag) {
+         continue;
+      }
       DSCHit *start = new DSCHit();
       start->sector = iter->getSector();
       start->dE = iter->getDE();
@@ -453,6 +488,7 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DFCALShower*> data;
 
@@ -461,7 +497,7 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
                  record->getCalorimeterClusters();
    hddm_r::CalorimeterClusterList::iterator iter;
    for (iter = clusters.begin(); iter != clusters.end(); ++iter) {
-      if (iter->getZ() < 600) {
+      if (iter->getJtag() != tag || iter->getZ() < 600) {
          continue;
       }
       DFCALShower *shower = new DFCALShower();
@@ -491,6 +527,7 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DBCALShower*> data;
 
@@ -499,7 +536,7 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
                  record->getCalorimeterClusters();
    hddm_r::CalorimeterClusterList::iterator iter;
    for (iter = clusters.begin(); iter != clusters.end(); ++iter) {
-      if (iter->getZ() > 600) {
+      if (iter->getJtag() != tag || iter->getZ() > 600) {
          continue;
       }
       DBCALShower *shower = new DBCALShower();
@@ -536,6 +573,7 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
    if (factory==NULL) {
       return OBJECT_NOT_AVAILABLE;
    }
+   string tag = (factory->Tag())? factory->Tag() : "";
 
    vector<DTrackTimeBased*> data;
 
@@ -563,6 +601,9 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
    // loop over chargedTrack records
    hddm_r::ChargedTrackList::iterator iter;
    for (iter = tracks.begin(); iter != tracks.end(); ++iter) {
+      if (iter->getJtag() != tag) {
+         continue;
+      }
       DTrackTimeBased *tra = new DTrackTimeBased();
       tra->candidateid = iter->getCandidateId();
       Particle_t ptype = iter->getPtype();
