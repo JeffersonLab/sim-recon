@@ -124,22 +124,11 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 			     vector<const DFDCPseudo *>&hits,
 			     deque<trajectory_t>&trajectory,
 			     vector<update_t>&updates,
-				      vector<align_t>&align_updates,
 			     double &chi2,unsigned int &ndof);
-		jerror_t KalmanFilterStrips(DMatrix4x1 &S,DMatrix4x4 &C,
-					    vector<const DFDCPseudo *>&hits,
-					    deque<trajectory_t>&trajectory,
-					    vector<update_t>&updates,
-					    vector<align_t>&align_updates,
-					    double &chi2,unsigned int &ndof);
-
 		jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 				deque<trajectory_t>&trajectory,
 				vector<update_t>updates,
 				vector<update_t>&smoothed_updates);
-		jerror_t SmoothAndAlign(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
-				deque<trajectory_t>&trajectory,
-				vector<update_t>updates);
 		jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
 						deque<trajectory_t>&trajectory,
 						vector<const DFDCPseudo *>&wires);

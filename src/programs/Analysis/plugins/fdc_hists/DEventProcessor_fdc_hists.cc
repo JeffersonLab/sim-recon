@@ -77,12 +77,12 @@ jerror_t DEventProcessor_fdc_hists::init(void)
 	mT0=0.;
 
 	alignments.resize(24);
-	/*
+       
 	for (unsigned int i=0;i<24;i++){
 	  alignments[i].E(kDx,kDx)=alignments[i].E(kDy,kDy)=0.01;
-	  alignments[i].E(kDPhi,kDPhi)=0.0003;
+	  alignments[i].E(kDPhi,kDPhi)=0.01;
 	}
-	*/
+	
 
 	return NOERROR;
 }
@@ -336,13 +336,15 @@ jerror_t DEventProcessor_fdc_hists::DoFilter(vector<const DFDCPseudo *>&hits){
   vector<update_t>smoothed_updates(num_hits);
   
   // Fit the points to find an initial guess for the line
-  DMatrix4x1 S=FitLine(hits);
+  DMatrix4x1 S=FitLine(hits);     
+  Hcand_ty_vs_tx->Fill(S(state_tx),S(state_ty));  
 
   // Minimum angle
   double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
   double theta=90-180/M_PI*atan(tanl);
-  //  if (theta<5.) return NOERROR;
+  if (theta<2.) return NOERROR;
 
+  // Best guess for state vector at "vertex"
   DMatrix4x1 Sbest;
       
   // Use the result from the initial line fit to form a reference trajectory for the track.  Start it from the center of the target;
@@ -350,9 +352,7 @@ jerror_t DEventProcessor_fdc_hists::DoFilter(vector<const DFDCPseudo *>&hits){
   S(state_x)+=65.0*S(state_tx);
   S(state_y)+=65.0*S(state_ty);
   SetReferenceTrajectory(65.0,S,trajectory,hits);
-    
-  Hcand_ty_vs_tx->Fill(S(state_tx),S(state_ty));  
-
+ 
   // Intial guess for covariance matrix
   DMatrix4x4 C,Cbest;
   C(state_x,state_x)=C(state_y,state_y)=1.;
@@ -366,7 +366,7 @@ jerror_t DEventProcessor_fdc_hists::DoFilter(vector<const DFDCPseudo *>&hits){
   for(;;){
     iter++;
     chi2_old=chi2; 
-    if (KalmanFilter(S,C,hits,trajectory,updates,align_updates,chi2,ndof)
+    if (KalmanFilter(S,C,hits,trajectory,updates,chi2,ndof)
 	!=NOERROR) break;
     if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1 || iter==ITER_MAX) break;  
     
@@ -385,6 +385,7 @@ jerror_t DEventProcessor_fdc_hists::DoFilter(vector<const DFDCPseudo *>&hits){
     if (prob>0.01){       
       Hwire_ty_vs_tx->Fill(Sbest(state_tx),Sbest(state_ty));
 
+      DMatrix2x2 V(0.0833,0,0,0);
       for (unsigned int i=0;i<num_hits;i++){
 	double x=smoothed_updates[i].S(state_x);
 	double y=smoothed_updates[i].S(state_y);
@@ -403,14 +404,48 @@ jerror_t DEventProcessor_fdc_hists::DoFilter(vector<const DFDCPseudo *>&hits){
 	double dy=A(kDy);
 	double sindphi=sin(A(kDPhi));
 	double cosdphi=cos(A(kDPhi));
- 
+
+	// To transform from (x,y) to (u,v), need to do a rotation:
+	//   u = x*cosa-y*sina
+	//   v = y*cosa+x*sina
+	DMatrix2x4 H;  // Track projection matrix
+	DMatrix4x2 H_T; // Transpose of track projection matrix 
+	H(0,state_x)=H_T(state_x,0)=cosa*cosdphi+sina*sindphi;
+	H(0,state_y)=H_T(state_y,0)=-sina*cosdphi+cosa*sindphi;
+	H(1,state_x)=H_T(state_x,1)=sina*cosdphi-cosa*sindphi;
+	H(1,state_y)=H_T(state_y,1)=cosa*cosdphi+sina*sindphi;
+	
+	DMatrix2x3 G;
+	DMatrix3x2 G_T;
+      
+	G(0,kDx)=G_T(kDx,0)=-cosa;
+	G(0,kDy)=G_T(kDy,0)=+sina;
+	G(1,kDx)=G_T(kDx,1)=-sina;
+	G(1,kDy)=G_T(kDy,1)=-cosa;
+	G(0,kDPhi)=G_T(kDPhi,0)=-sindphi*upred+cosdphi*vpred;	
+	G(1,kDPhi)=G_T(kDPhi,1)=-sindphi*vpred-cosdphi*upred;
+	
+	// Variance for this hit
+	double sigma=0.0395*1e-6/hits[i]->dE*1.25;
+	V(1,1)=10000*sigma*sigma;
+	DMatrix2x2 InvV=(V+H*smoothed_updates[i].C*H_T+G*E*G_T).Invert();
+
 	// Difference between measurement and projection
-	double du=u-(upred*cosdphi+vpred*sindphi-dx*cosa+dy*sina);
-	double dv=v-(vpred*cosdphi-upred*sindphi-dx*sina-dy*cosa);
+	DMatrix2x1 Mdiff;
+	Mdiff(0)=u-(upred*cosdphi+vpred*sindphi-dx*cosa+dy*sina);
+	Mdiff(1)=v-(vpred*cosdphi-upred*sindphi-dx*sina-dy*cosa);
+
+	// update the alignment vector and covariance
+	DMatrix3x2 Ka=(E*G_T)*InvV;
+	DMatrix3x3 Etemp=E-Ka*G*E;
+	if (Etemp(0,0)>0 && Etemp(1,1)>0 && Etemp(2,2)>0){
+	  alignments[layer].E=Etemp;
+	  alignments[layer].A=A+Ka*Mdiff;
+	}
 
 	int wire_id=96*(hits[i]->wire->layer-1)+hits[i]->wire->wire;
-	Hwire_res_vs_wire->Fill(wire_id,du);
-	Hvres_vs_wire->Fill(wire_id,dv);
+	Hwire_res_vs_wire->Fill(wire_id,Mdiff(0));
+	Hvres_vs_wire->Fill(wire_id,Mdiff(1));
 	
       }
     }
@@ -693,7 +728,6 @@ DEventProcessor_fdc_hists::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 			       vector<const DFDCPseudo *>&hits,
 			       deque<trajectory_t>&trajectory,
 			       vector<update_t>&updates,
-					vector<align_t>&align_updates,
 			       double &chi2,unsigned int &ndof){
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
@@ -755,22 +789,22 @@ DEventProcessor_fdc_hists::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       Mdiff(1)=v-(vpred*cosdphi-upred*sindphi-dx*sina-dy*cosa);
 
       // Compute drift distance
-      double drift_time=hits[id]->time-trajectory[k].t;
-      double drift=(Mdiff(0)>0?1.:-1.)*GetDriftDistance(drift_time);
+      //double drift_time=hits[id]->time-trajectory[k].t;
+      //double drift=(Mdiff(0)>0?1.:-1.)*GetDriftDistance(drift_time);
       //      Mdiff(0)+=drift;
 
       // Variance of measurement error
       //V(0,0)=GetDriftVariance(drift_time);
-      double sigma=0.0395*1e-6/hits[id]->dE*1.2;
-      V(1,1)=sigma*sigma;
+      double sigma=0.0395*1e-6/hits[id]->dE*1.25;
+      V(1,1)=10000*sigma*sigma;
 
       // To transform from (x,y) to (u,v), need to do a rotation:
       //   u = x*cosa-y*sina
       //   v = y*cosa+x*sina
-      H(0,state_x)=H_T(state_x,0)=cosa;
-      H(0,state_y)=H_T(state_y,0)=-sina;
-      H(1,state_x)=H_T(state_x,1)=sina;
-      H(1,state_y)=H_T(state_y,1)=cosa;
+      H(0,state_x)=H_T(state_x,0)=cosa*cosdphi+sina*sindphi;
+      H(0,state_y)=H_T(state_y,0)=-sina*cosdphi+cosa*sindphi;
+      H(1,state_x)=H_T(state_x,1)=sina*cosdphi-cosa*sindphi;
+      H(1,state_y)=H_T(state_y,1)=cosa*cosdphi+sina*sindphi;
       
       DMatrix2x3 G;
       DMatrix3x2 G_T;
