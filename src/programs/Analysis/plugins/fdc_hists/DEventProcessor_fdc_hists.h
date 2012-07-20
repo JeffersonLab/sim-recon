@@ -59,10 +59,14 @@ typedef struct{
 typedef struct{
   DMatrix4x1 S;
   DMatrix4x4 C;
-  DMatrix3x1 A;
-  DMatrix3x3 E;
   double drift,drift_time;
 }update_t;
+
+typedef struct{
+  DMatrix3x1 A;
+  DMatrix3x3 E;  
+}align_t;
+
 
 typedef struct{
   bool matched;
@@ -120,8 +124,20 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 			     vector<const DFDCPseudo *>&hits,
 			     deque<trajectory_t>&trajectory,
 			     vector<update_t>&updates,
+				      vector<align_t>&align_updates,
 			     double &chi2,unsigned int &ndof);
+		jerror_t KalmanFilterStrips(DMatrix4x1 &S,DMatrix4x4 &C,
+					    vector<const DFDCPseudo *>&hits,
+					    deque<trajectory_t>&trajectory,
+					    vector<update_t>&updates,
+					    vector<align_t>&align_updates,
+					    double &chi2,unsigned int &ndof);
+
 		jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
+				deque<trajectory_t>&trajectory,
+				vector<update_t>updates,
+				vector<update_t>&smoothed_updates);
+		jerror_t SmoothAndAlign(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 				deque<trajectory_t>&trajectory,
 				vector<update_t>updates);
 		jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
@@ -145,12 +161,15 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		TH2F *Hres_vs_drift_time,*Hvres_vs_wire;
 		TH3F *Htime_y_vs_x;
 		TH2F *Hqratio_vs_wire,*Hdelta_z_vs_wire;
-		
+		TH1F *Hxshift,*Hyshift,*Hphishift;
+
 		double mT0;
 		double target_to_fcal_distance;
 		double fdc_drift_table[140];
 		DMatrix4x1 Zero4x1;
 		DMatrix4x4 Zero4x4;
+
+		vector<align_t>alignments;
 };
 
 #endif // _DEventProcessor_fdc_hists_
