@@ -118,9 +118,11 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
 		DMatrix4x1 FitLine(vector<const DFDCPseudo*> &fdchits);
-		jerror_t DoFilter(vector<const DFDCPseudo*> &fdchits);
+		jerror_t DoFilter(double anneal_factor,
+				  vector<const DFDCPseudo*> &fdchits);
 
-		jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
+		jerror_t KalmanFilter(double anneal_factor,
+				      DMatrix4x1 &S,DMatrix4x4 &C,
 			     vector<const DFDCPseudo *>&hits,
 			     deque<trajectory_t>&trajectory,
 			     vector<update_t>&updates,

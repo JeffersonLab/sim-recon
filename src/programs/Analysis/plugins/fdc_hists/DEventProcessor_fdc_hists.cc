@@ -79,8 +79,8 @@ jerror_t DEventProcessor_fdc_hists::init(void)
 	alignments.resize(24);
        
 	for (unsigned int i=0;i<24;i++){
-	  alignments[i].E(kDx,kDx)=alignments[i].E(kDy,kDy)=0.01;
-	  alignments[i].E(kDPhi,kDPhi)=0.01;
+	  alignments[i].E(kDx,kDx)=alignments[i].E(kDy,kDy)=1.0;
+	  alignments[i].E(kDPhi,kDPhi)=1.0;
 	}
 	
 
@@ -244,6 +244,9 @@ jerror_t DEventProcessor_fdc_hists::fini(void)
 //------------------
 jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
+  double NEVENTS=1e6;
+  double anneal_factor=pow(10000.0,(NEVENTS-double(eventnumber))/(NEVENTS-1.));
+  //anneal_factor=10000.;
 
   vector<const DFCALShower*>fcalshowers;
   loop->Get(fcalshowers);
@@ -322,14 +325,15 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
     // rotations for each wire plane
     for (unsigned int k=0;k<LinkedSegments.size();k++){
       if (LinkedSegments[k].size()>=6)
-	DoFilter(LinkedSegments[k]);
+	DoFilter(anneal_factor,LinkedSegments[k]);
     }
   }
   return NOERROR;
 }
 
 // Steering routine for the kalman filter
-jerror_t DEventProcessor_fdc_hists::DoFilter(vector<const DFDCPseudo *>&hits){
+jerror_t DEventProcessor_fdc_hists::DoFilter(double anneal_factor,
+					     vector<const DFDCPseudo *>&hits){
   unsigned int num_hits=hits.size();
   vector<update_t>updates(num_hits);
   vector<align_t>align_updates(24);
@@ -366,7 +370,7 @@ jerror_t DEventProcessor_fdc_hists::DoFilter(vector<const DFDCPseudo *>&hits){
   for(;;){
     iter++;
     chi2_old=chi2; 
-    if (KalmanFilter(S,C,hits,trajectory,updates,chi2,ndof)
+    if (KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof)
 	!=NOERROR) break;
     if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1 || iter==ITER_MAX) break;  
     
@@ -427,7 +431,8 @@ jerror_t DEventProcessor_fdc_hists::DoFilter(vector<const DFDCPseudo *>&hits){
 	
 	// Variance for this hit
 	double sigma=0.0395*1e-6/hits[i]->dE*1.25;
-	V(1,1)=10000*sigma*sigma;
+	V(1,1)=anneal_factor*sigma*sigma;
+
 	DMatrix2x2 InvV=(V+H*smoothed_updates[i].C*H_T+G*E*G_T).Invert();
 
 	// Difference between measurement and projection
@@ -724,7 +729,8 @@ jerror_t DEventProcessor_fdc_hists::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 
 // Perform Kalman Filter for the current trajectory
 jerror_t 
-DEventProcessor_fdc_hists::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
+DEventProcessor_fdc_hists::KalmanFilter(double anneal_factor,
+					DMatrix4x1 &S,DMatrix4x4 &C,
 			       vector<const DFDCPseudo *>&hits,
 			       deque<trajectory_t>&trajectory,
 			       vector<update_t>&updates,
@@ -794,9 +800,8 @@ DEventProcessor_fdc_hists::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       //      Mdiff(0)+=drift;
 
       // Variance of measurement error
-      //V(0,0)=GetDriftVariance(drift_time);
       double sigma=0.0395*1e-6/hits[id]->dE*1.25;
-      V(1,1)=10000*sigma*sigma;
+      V(1,1)=anneal_factor*sigma*sigma;
 
       // To transform from (x,y) to (u,v), need to do a rotation:
       //   u = x*cosa-y*sina
