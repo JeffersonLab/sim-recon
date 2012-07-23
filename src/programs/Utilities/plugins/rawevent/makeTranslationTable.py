@@ -74,9 +74,9 @@ cdcStrawCount = [42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 135
 
 
 def startCrate(acrate,adaqModule,achannel):
-    acrate=acrate+1
-    adaqModule  = 1
-    achannel    = 0
+    acrate     = acrate+1
+    adaqModule = 1
+    achannel   = 0
     file.write('  <crate number="%i"  type="VXS">\n\n' % acrate)
     file.write('    <slot number="1"  type="CPU"/>\n\n')
     return(acrate,adaqModule,achannel)
@@ -139,7 +139,7 @@ file.write('<!-- E. Wolin, JLab, ' + datetime.datetime.now().strftime("%Y-%m-%d 
 file.write('\n')
 file.write('\n')
 file.write('\n')
-file.write('\n<halld_translation_table version="0.1">')
+file.write('\n<halld_online_translation_table version="0.1">')
 file.write('\n')
 file.write('\n')
 file.write('\n')
@@ -333,6 +333,6 @@ if (detectorOn['TAGGER']>0):
 
 #  done
 file.write('\n')
-file.write('</translation_table>\n')
+file.write('</halld_online_translation_table>\n')
 file.close()
 sys.exit(0)
