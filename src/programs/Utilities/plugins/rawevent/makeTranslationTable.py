@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 #  makeTranslationTable.py
 
 #   makes a fake translation table in XML format
@@ -20,25 +19,31 @@
 
 
 #  still to do:
-#    should include cpu, switch slots and TI
+#    start new crate or half-crate with new detector
+#    eventually need complete detector list including PS, TAC, Polarimeter, etc.
+#    need to add CAEN modules
 
 
-#  E. Wolin, JLab, 8-Jul-2011
+#  E. Wolin, JLab, 20-Jul-2012
 
 
 
 import sys
+import datetime
 
 
 # for testing:  1 is on, 0 is off
 detectorOn = {
     'CDC':     1,
-    'FDC':     0,
-    'BCAL':    0,
-    'FCAL':    0,
-    'SC':      0,
-    'TOF':     0,
-    'TAGGER':  0
+    'FDC':     1,
+    'BCAL':    1,
+    'FCAL':    1,
+    'SC':      1,
+    'TOF':     1,
+    'TAGGER':  1,
+    'PSPEC':   1,
+    'TAC':     1,
+    'POLAR':   1
     }
 
 
@@ -47,18 +52,69 @@ channelCount = {
     'FADC250':  16,
     'FADC125':  72,
     'F1TDC32':  32,
-    'F1TDC48':  48
+    'F1TDC48':  48,
+    'CAENADC':  32
     }    
 
 
-# vme module number by count (-999 is dummy since Python arrays start at zero)
-vmeModuleNumber = [-999,2,3,4,5,6,7,8,9,13,14,15,16,17,18,19,20]
+# max 16 daq boards per crate, 8 per side
+# array holds vme slot number given daq (ADC,TDC) module number
+# missing slots hold CPU, CTP, SD and TI
+max_payload   = 16
+vmeSlotNumber = [-9999,2,3,4,5,6,7,8,9,13,14,15,16,17,18,19,20]
 
 
 
 #  cdc straw counts by ring
 cdcStrawCount = [42, 42, 54, 54, 66, 66, 80, 80, 93, 93, 106, 106, 123, 123, 135, 135, 146, 146, 158,
                  158, 170, 170, 182, 182, 197, 197, 209, 209]
+
+
+#  misc functions
+
+
+def startCrate(acrate,adaqModule,achannel):
+    acrate=acrate+1
+    adaqModule  = 1
+    achannel    = 0
+    file.write('  <crate number="%i"  type="VXS">\n\n' % acrate)
+    file.write('    <slot number="1"  type="CPU"/>\n\n')
+    return(acrate,adaqModule,achannel)
+
+def startSlot(adaqModule,atype):
+    file.write('    <slot number="%i"'  % vmeSlotNumber[adaqModule] + '  type="' + atype + '">\n')
+
+def incrChannel(achannel,adaqModule,acrate,atype):
+    achannel=achannel+1
+    if (achannel>channelCount[atype]):
+        endSlot()
+        adaqModule = adaqModule+1
+        if (adaqModule>max_payload):
+            endCrate()
+            (acrate,adaqModule,achannel) = startCrate(acrate,adaqModule,achannel)
+        elif (vmeSlotNumber[adaqModule]==13):
+            addSwitchSlots()
+        startSlot(adaqModule,atype)
+        achannel = 1
+    return(achannel,adaqModule,acrate)
+
+
+def addSwitchSlots():
+    file.write('    <slot number="11"  type="CTP"/>\n\n')
+    file.write('    <slot number="12"  type="SD"/>\n\n')
+
+def endSlot():
+    file.write('    </slot>\n\n')
+    
+def endCrate():
+    file.write('    <slot number="21"  type="TI"/>\n\n')
+    file.write('  </crate>\n\n\n')
+    
+def closeCrate(adaqModule):
+    endSlot()
+    if(vmeSlotNumber[adaqModule]<13):
+        addSwitchSlots()
+    endCrate()
 
 
 
@@ -75,406 +131,207 @@ else:
 file=open(fileName,'w')
 file.write('<!--   ' + fileName + ' -->\n')
 file.write('\n')
+file.write('<!-- (need XML boilerplate here) -->\n')
+file.write('\n')
 file.write( '<!--  *** This file contains FAKE translation table data *** -->\n' )
 file.write('\n')
-file.write( '<!--            E. Wolin, JLab, 8-Jul-2011 -->' )
+file.write('<!-- E. Wolin, JLab, ' + datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + ' -->')
 file.write('\n')
 file.write('\n')
-file.write('\n<translation_table version="0.1">')
+file.write('\n')
+file.write('\n<halld_translation_table version="0.1">')
+file.write('\n')
+file.write('\n')
 file.write('\n')
 file.write('\n')
 
 
 
 # loop over detectors, some have both ADC and TDC channels
-max_payload = 16
-crate       = 1
-vmeModule   = 0
-file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-
+crate     = 0
+daqModule = 0
+channel   = 0
 
 
 # CDC:  FADC125, 72 channels/slot
-if (detectorOn['CDC']==1):
+if (detectorOn['CDC']>0):
     type = 'FADC125'
-    vmeModule=1
-    channel=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for ring in range(len(cdcStrawCount)):
         for straw in range(1,cdcStrawCount[ring]+1):
-            if (channel>channelCount[type]):
-                file.write('    </slot>\n\n')
-                vmeModule = vmeModule+1
-                channel = 1
-                if (vmeModule>max_payload):
-                    file.write('  </crate>\n\n\n')
-                    crate = crate+1
-                    file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                    vmeModule = 1
-                file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+            (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
             file.write('      <channel number="%i" detector="CDC" ring="%i" straw="%i" />\n' % (channel,ring+1,straw) )
-            channel = channel+1
-    file.write('    </slot>\n\n')
-                
+    closeCrate(daqModule)
 
 
 
 # SC:  FADC250, 16 channels/slot
-if (detectorOn['SC']==1):
+if (detectorOn['SC']>0):
     type = 'FADC250'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for sector in range(1,41):
-        if (channel>channelCount[type]):
-            file.write('    </slot>\n\n')
-            vmeModule = vmeModule+1
-            channel = 1
-            if (vmeModule>max_payload):
-                file.write('  </crate>\n\n\n')
-                crate = crate+1
-                file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                vmeModule = 1
-            file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+        (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
         file.write('      <channel number="%i" detector="SC" sector="%i"  />\n' % (channel,sector) )
-        channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
 
             
 
 # SC: F1TDC, 32 channels/slot
-if (detectorOn['SC']==1):
+if (detectorOn['SC']>0):
     type = 'F1TDC32'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for sector in range(1,41):
-        if (channel>channelCount[type]):
-            file.write('    </slot>\n\n')
-            vmeModule = vmeModule+1
-            channel = 1
-            if (vmeModule>max_payload):
-                file.write('  </crate>\n\n\n')
-                crate = crate+1
-                file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                vmeModule = 1
-            file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+        (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
         file.write('      <channel number="%i" detector="SC" sector="%i"  />\n' % (channel,sector) )
-        channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
             
 
 
 # FCAL: FADC250, 16 channels/slot
-if (detectorOn['FCAL']==1):
+if (detectorOn['FCAL']>0):
     type = 'FADC250'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for row in range(59):
         for column in range(59):
-            if (channel>channelCount[type]):
-                file.write('    </slot>\n\n')
-                vmeModule = vmeModule+1
-                channel = 1
-                if (vmeModule>max_payload):
-                    file.write('  </crate>\n\n\n')
-                    crate = crate+1
-                    file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                    vmeModule = 1
-                file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+            (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
             file.write('      <channel number="%i" detector="FCAL" row="%i" column="%i" />\n' % (channel,row,column) )
-            channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
             
 
 
 # BCAL: FADC250, 16 channels/slot
-if (detectorOn['BCAL']==1):
+if (detectorOn['BCAL']>0):
     type = 'FADC250'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for end in range(2):
         for module in range(1,49):
             for sector in range(1,5):
                 for layer in range(1,11):
-                    if (channel>channelCount[type]):
-                        file.write('    </slot>\n\n')
-                        vmeModule = vmeModule+1
-                        channel = 1
-                        if (vmeModule>max_payload):
-                            file.write('  </crate>\n\n\n')
-                            crate = crate+1
-                            file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                            vmeModule = 1
-                        file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+                    (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                     file.write('      <channel number="%i" detector="BCAL" module="%i" sector="%i" layer="%i" end="%i" />\n'
                                % (channel,module,sector,layer,end) )
-                    channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
 
 
 
 
 # BCAL: F1TDC, 32 channels/slot
-if (detectorOn['BCAL']==1):
+if (detectorOn['BCAL']>0):
     type = 'F1TDC32'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for end in range(2):
         for module in range(1,49):
             for sector in range(1,5):
                 for layer in range(1,11):
-                    if (channel>channelCount[type]):
-                        file.write('    </slot>\n\n')
-                        vmeModule = vmeModule+1
-                        channel = 1
-                        if (vmeModule>max_payload):
-                            file.write('  </crate>\n\n\n')
-                            crate = crate+1
-                            file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                            vmeModule = 1
-                        file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+                    (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                     file.write('      <channel number="%i" detector="BCAL" module="%i" sector="%i" layer="%i" end="%i" />\n'
                                % (channel,module,sector,layer,end) )
-                    channel = channel+1
-    file.write('    </slot>\n\n')
-            
+    closeCrate(daqModule)
 
 
 
 
 
 # FDC: FADC125, 72 channels/slot, 4 packages, 6 triplets(cathode,anode,cathode) per package, 216 cathode strips/layer
-if (detectorOn['FDC']==1):
+if (detectorOn['FDC']>0):
     type = 'FADC125'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for package in range(4):
         for triplet in range(6):
             for plane in [1,3]:
                 for element in range(1,217):
-                    if (channel>channelCount[type]):
-                        file.write('    </slot>\n\n')
-                        vmeModule = vmeModule+1
-                        channel = 1
-                        if (vmeModule>max_payload):
-                            file.write('  </crate>\n\n\n')
-                            crate = crate+1
-                            file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                            vmeModule = 1
-                        file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+                    (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                     gplane = package*18 + triplet*3 + plane
                     file.write('      <channel number="%i" detector="FDCCathode" gPlane ="%i" element="%i" />\n'
                                % (channel,gplane,element) )
-                    channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
 
 
 
 
             
 # FDC: F1TDC48, 48 channels/slot, 4 packages, 6 triplets(cathode,anode,cathode) per package, 96 anodes/layer
-if (detectorOn['FDC']==1):
+if (detectorOn['FDC']>0):
     type = 'F1TDC48'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for package in range(4):
         for triplet in range(6):
             for element in range(1,97):
-                if (channel>channelCount[type]):
-                    file.write('    </slot>\n\n')
-                    vmeModule = vmeModule+1
-                    channel = 1
-                    if (vmeModule>max_payload):
-                        file.write('  </crate>\n\n\n')
-                        crate = crate+1
-                        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                        vmeModule = 1
-                    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+                (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                 gplane = package*18 + triplet*3 + 2
                 file.write('      <channel number="%i" detector="FDCAnode" gPlane="%i" element="%i" />\n'
                            % (channel,gplane,element) )
-                channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
             
 
 
 
 # TOF: FADC250, 16 channels/slot
-if (detectorOn['TOF']==1):
+if (detectorOn['TOF']>0):
     type = 'FADC250'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for end in range(2):
         for plane in range(2):
             for bar in range(45):
-                if (channel>channelCount[type]):
-                    file.write('    </slot>\n\n')
-                    vmeModule = vmeModule+1
-                    channel = 1
-                    if (vmeModule>max_payload):
-                        file.write('  </crate>\n\n\n')
-                        crate = crate+1
-                        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                        vmeModule = 1
-                    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+                (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                 file.write('      <channel number="%i" detector="TOF" plane="%i" bar="%i" end="%i" />\n'
                            % (channel,plane,bar,end) )
-                channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
             
 
 
 # TOF: F1TDC, 32 channels/slot
-if (detectorOn['TOF']==1):
+if (detectorOn['TOF']>0):
     type = 'F1TDC32'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for end in range(2):
         for plane in range(2):
             for bar in range(45):
-                if (channel>channelCount[type]):
-                    file.write('    </slot>\n\n')
-                    vmeModule = vmeModule+1
-                    channel = 1
-                    if (vmeModule>max_payload):
-                        file.write('  </crate>\n\n\n')
-                        crate = crate+1
-                        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                        vmeModule = 1
-                    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+                (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                 file.write('      <channel number="%i" detector="TOF" plane="%i" bar="%i" end="%i" />\n'
                            % (channel,plane,bar,end) )
-                channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
             
 
 
 # TAGGER: FADC250, 16 channels/slot
-if (detectorOn['TAGGER']==1):
+if (detectorOn['TAGGER']>0):
     type = 'FADC250'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for row in range(9):
         for column in range(101):
-            if (channel>channelCount[type]):
-                file.write('    </slot>\n\n')
-                vmeModule = vmeModule+1
-                channel = 1
-                if (vmeModule>max_payload):
-                    file.write('  </crate>\n\n\n')
-                    crate = crate+1
-                    file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                    vmeModule = 1
-                file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+            (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
             file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel,row,column) )
-            channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
             
 
 
 # TAGGER:  F1TDC, 32 channels/slot
-if (detectorOn['TAGGER']==1):
+if (detectorOn['TAGGER']>0):
     type = 'F1TDC32'
-    vmeModule = vmeModule+1
-    channel = 1
-    if (vmeModule>max_payload):
-        file.write('  </crate>\n\n\n')
-        crate = crate+1
-        file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-        vmeModule=1
-    file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
-
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
     for row in range(9):
         for column in range(101):
-            if (channel>channelCount[type]):
-                file.write('    </slot>\n\n')
-                vmeModule = vmeModule+1
-                channel = 1
-                if (vmeModule>max_payload):
-                    file.write('  </crate>\n\n\n')
-                    crate = crate+1
-                    file.write('  <crate number="%i"  type="VXS">\n\n' % crate)
-                    vmeModule = 1
-                file.write(('    <slot number="%i"'  % vmeModuleNumber[vmeModule]) + '  type="' + type + '">\n')
+            (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
             file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel,row,column) )
-            channel = channel+1
-    file.write('    </slot>\n\n')
+    closeCrate(daqModule)
             
 
 
 
 #  done
-file.write('  </crate>\n\n\n')
 file.write('\n')
 file.write('</translation_table>\n')
 file.close()
