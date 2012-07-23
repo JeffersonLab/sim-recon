@@ -183,15 +183,17 @@ map<bcal_index, double> E_CellTruth;
 // written with each SiPM spectrum.
 class IncidentParticle_t{
 	public:
-		IncidentParticle_t(const float *v, int ptype, int track):x(v[0]),y(v[1]),z(v[2]),px(v[3]*v[6]),py(v[4]*v[6]),pz(v[5]*v[6]),ptype(ptype),track(track){}
+		IncidentParticle_t(const float *v, const float getot, int ptype, int track):x(v[0]),y(v[1]),z(v[2]),px(v[3]*v[6]),py(v[4]*v[6]),pz(v[5]*v[6]),E(getot),ptype(ptype),track(track){}
 		float x,y,z;
 		float px, py, pz;
+		float E;
 		int ptype, track;
 		float dPhi(const IncidentParticle_t &pos){float a=(pos.x*x + pos.y*y)/sqrt((x*x + y*y)*(pos.x*pos.x+pos.y*pos.y)); return a<1.0 ? fabs(acos(a)):0.0;}
 		float dZ(const IncidentParticle_t &pos){return fabs(pos.z-z);}
 };
 #define MAX_INCIDENT_PARTICLES 10
 vector<IncidentParticle_t> BCAL_INCIDENT_PARTICLES;
+int BCAL_INCIDENT_PARTICLE_COUNT = 0;
 vector<int> INCIDENT_ID; // holds map of tracks to incident particle id
 bool SHOWED_INCIDENT_PARTICLE_LONG_WARNING = false;
 bool SHOWED_INCIDENT_PARTICLE_SHORT_WARNING = false;
@@ -322,20 +324,38 @@ void recordbcalentry_(int *mech, int *itra, int*istak, int *ipart, float *vect, 
 	// recorded and if so, assume it is part of the same shower so
 	// don't record it again. Low energy particles are also igonored.
 
-	IncidentParticle_t mypart(vect, *ipart, *itra);
+	IncidentParticle_t mypart(vect, *getot, *ipart, *itra);
 	
 	bool add_to_list = true;
+	float dPhi, dZ;
 	for(unsigned int i=0; i<BCAL_INCIDENT_PARTICLES.size(); i++){
-		float dPhi = 1000.0*mypart.dPhi(BCAL_INCIDENT_PARTICLES[i]);
-		float dZ = mypart.dZ(BCAL_INCIDENT_PARTICLES[i]);
+		
+		// Only keep photons and betas 
+		if(*ipart>3)add_to_list = false;
+		
+		dPhi = 1000.0*mypart.dPhi(BCAL_INCIDENT_PARTICLES[i]);
+		dZ = mypart.dZ(BCAL_INCIDENT_PARTICLES[i]);
 		// if this is within 200 mrad and 30cm of a previously recorded
 		// particle entering BCAL, assume it is part of the same shower
 		// Also, ignore particles with less than 10MeV total energy.
-		if(dPhi<200.0 && dZ<30.0)add_to_list = false;
-		if(*getot<0.010)add_to_list = false;
+		if(dPhi<200.0 && dZ<30.0 && !add_to_list){
+			add_to_list = false;
+			
+			// If this particle has larger total energy than the one
+			// already recorded, then replace it with this one. This 
+			// would be for the case when a shower sprays from something
+			// like the FDC frame so many particles enter the same area
+			// but are too close together to be considered separate showers.
+			if(mypart.E>BCAL_INCIDENT_PARTICLES[i].E){
+				BCAL_INCIDENT_PARTICLES[i] = mypart;
+			}
+		}
+		if(*getot<0.100)add_to_list = false;
 		if(!add_to_list)break;
 	}
 	if(add_to_list){
+		BCAL_INCIDENT_PARTICLE_COUNT++;
+//_DBG_<<"*itra = "<<*itra<<"  dPhi="<<dPhi<<" dZ="<<dZ<<endl;
 		if(BCAL_INCIDENT_PARTICLES.size()>=MAX_INCIDENT_PARTICLES){
 			if(!SHOWED_INCIDENT_PARTICLE_LONG_WARNING){
 				cerr<<endl;
@@ -792,6 +812,8 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 	
 	// Clear list of incident particles
 	BCAL_INCIDENT_PARTICLES.clear();
+	//_DBG_<<"BCAL_INCIDENT_PARTICLE_COUNT = "<<BCAL_INCIDENT_PARTICLE_COUNT<<endl;
+	BCAL_INCIDENT_PARTICLE_COUNT = 0;
 	INCIDENT_ID.assign(INCIDENT_ID.size(), 0); // don't release memory so we save reallocation in next event
 	
 	// Clear warning message flag so it can be shown on the next event
