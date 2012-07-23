@@ -304,6 +304,7 @@ int main(int argC, char* argV[])
          iss.rdbuf()->pubsetbuf(new_buffer,event_buffer_size);
          memcpy(new_buffer,event_buffer,4);
          delete event_buffer;
+         event_buffer = new_buffer;
       }
       ifs->read(event_buffer+4,tsize);
       --reqcount;
