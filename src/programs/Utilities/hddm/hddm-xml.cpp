@@ -303,6 +303,8 @@ int main(int argC, char* argV[])
          char *new_buffer = new char[event_buffer_size = tsize+1000];
          iss.rdbuf()->pubsetbuf(new_buffer,event_buffer_size);
          memcpy(new_buffer,event_buffer,4);
+         iss.seekg(0);
+         ifx >> tsize;
          delete event_buffer;
          event_buffer = new_buffer;
       }
