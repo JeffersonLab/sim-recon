@@ -53,7 +53,7 @@ channelCount = {
     'FADC125':  72,
     'F1TDC32':  32,
     'F1TDC48':  48,
-    'CAENADC':  32
+    'CAENTDC':  32
     }    
 
 
@@ -289,9 +289,9 @@ if (detectorOn['TOF']>0):
             
 
 
-# TOF: F1TDC, 32 channels/slot
+# TOF: CAENTDC, 32 channels/slot
 if (detectorOn['TOF']>0):
-    type = 'F1TDC32'
+    type = 'CAENTDC'
     (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
     startSlot(daqModule,type)
     for end in range(2):
