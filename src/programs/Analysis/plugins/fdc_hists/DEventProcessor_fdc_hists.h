@@ -57,8 +57,12 @@ typedef struct{
 }trajectory_t;
 
 typedef struct{
+  unsigned int id;
   DMatrix4x1 S;
   DMatrix4x4 C;
+  DMatrix2x2 R;
+  DMatrix2x4 H;
+  DMatrix4x2 H_T;
   double drift,drift_time;
 }update_t;
 
@@ -117,7 +121,8 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
-		DMatrix4x1 FitLine(vector<const DFDCPseudo*> &fdchits);
+		DMatrix4x1 FitLine(vector<const DFDCPseudo*> &fdchits,
+				   double &chi2x,double &chi2y);
 		jerror_t DoFilter(double anneal_factor,
 				  vector<const DFDCPseudo*> &fdchits);
 
@@ -153,12 +158,18 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		TH3F *Htime_y_vs_x;
 		TH2F *Hqratio_vs_wire,*Hdelta_z_vs_wire;
 		TH1F *Hxshift,*Hyshift,*Hphishift;
+		TH1F *Hxcand_prob,*Hycand_prob;
+		TH1F *Hreduced_chi2;
+		TH2F *Hdv_vs_dE;
 
 		double mT0;
 		double target_to_fcal_distance;
 		double fdc_drift_table[140];
 		DMatrix4x1 Zero4x1;
 		DMatrix4x4 Zero4x4;
+
+		double endplate_z;
+		int myevt;
 
 		vector<align_t>alignments;
 };

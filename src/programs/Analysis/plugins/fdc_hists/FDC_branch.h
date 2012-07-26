@@ -16,7 +16,11 @@ class FDC_branch:public TObject{
 
 	public:
 
-		TVector3 pos_truth;
+  float dX;
+  float dY;
+  float dPhi;
+  int layer;
+  int N;
 
 	private:
 		ClassDef(FDC_branch,1);
