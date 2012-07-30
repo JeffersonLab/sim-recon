@@ -149,7 +149,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting
 //-------------------
 DTrackFitter::fit_status_t 
 DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, 
-				  DReferenceTrajectory *rt, JEventLoop *loop, 
+				  const DReferenceTrajectory *rt, JEventLoop *loop, 
 				  double mass,double t0,
 				  DetectorSystem_t t0_det)
 {
@@ -189,10 +189,10 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	  mom = starting_params.momentum();
 	  //}
 	double q=starting_params.charge();
-
+       
 	// Swim a reference trajectory with this candidate's parameters
-	rt->Swim(pos, mom, q);
-	if(rt->Nswim_steps<1)return fit_status = kFitFailed;
+	//rt->Swim(pos, mom, q);
+	//if(rt->Nswim_steps<1)return fit_status = kFitFailed;
 
 	// Get pointer to DTrackHitSelector object
 	vector<const DTrackHitSelector *> hitselectors;
@@ -215,13 +215,17 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	// likely explanation is that the charge of the candidate was wrong,
 	// especially for stiff forward-going tracks.  Try rotating phi by 
 	// 180 degrees, switching the charge, and trying the hit selector again.
+    
 	if (fdchits.size()+cdchits.size()==0){
-	  // Swim a reference trajectory with this candidate's parameters
+	  // Make a temporary copy of the current reference trajectory
+	  DReferenceTrajectory temp_rt = *rt;
+
+	  // Swim a reference trajectory with revised paramters
 	  mom.SetPhi(mom.Phi()+M_PI);
 	  q*=-1.;
-	  rt->Swim(pos, mom,q);
-	  if(rt->Nswim_steps<1)return fit_status = kFitFailed;
-	  hitselector->GetAllHits(input_type, rt, cdctrackhits, fdcpseudos, this);
+	  temp_rt.Swim(pos, mom,q);
+	  if(temp_rt.Nswim_steps<1)return fit_status = kFitFailed;
+	  hitselector->GetAllHits(input_type, &temp_rt, cdctrackhits, fdcpseudos, this);
        	
 	  if (fdchits.size()+cdchits.size()!=0){
 	    if (DEBUG_LEVEL>0)
