@@ -113,7 +113,9 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
   gPARMS->SetDefaultParameter("TRKFIT:USE_HITS_FROM_CANDIDATE",
 			      USE_HITS_FROM_CANDIDATE);
 
-
+  MIN_FIT_P = 0.050; // GeV
+  gPARMS->SetDefaultParameter("TRKFIT:MIN_FIT_P", MIN_FIT_P, "Minimum fit momentum in GeV/c for fit to be considered successful");
+  
   if (SKIP_MASS_HYPOTHESES_WIRE_BASED==false){
 
 	string MASS_HYPOTHESES_POSITIVE = "0.13957,0.493677,0.93827";
@@ -174,7 +176,10 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   // Deallocate some reference trajectories occasionally
   unsigned int rts_to_keep = 10;
   if(Ntracks_to_fit>rts_to_keep)rts_to_keep=Ntracks_to_fit;
-  for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
+  for(unsigned int i=rts_to_keep; i<rtv.size(); i++){
+    //printf("Deleting %d\n",i);
+    delete rtv[i];
+  }
   if(rts_to_keep<rtv.size()){
     rtv.resize(rts_to_keep);
   }
@@ -182,9 +187,17 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   for(unsigned int i=0; i<candidates.size(); i++){
     const DTrackCandidate *candidate = candidates[i];
     
+    // Skip candidates with momentum below some cutoff
+    if (candidate->momentum().Mag()<MIN_FIT_P){
+      continue;
+    }
+
     // Make sure there are enough DReferenceTrajectory objects
     unsigned int locNumInitialReferenceTrajectories = rtv.size();
-    while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+    while(rtv.size()<=_data.size()){
+      //printf("Adding %d %d\n",rtv.size(),_data.size());
+      rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+    }
     DReferenceTrajectory *rt = rtv[_data.size()];
     if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
       rt->Reset();
@@ -343,7 +356,12 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
 			    candidate->charge(),mass,0.);
   }
   else{
-    fitter->SetFitType(DTrackFitter::kWireBased);	
+    fitter->SetFitType(DTrackFitter::kWireBased);
+    // Swim a reference trajectory using the candidate starting momentum
+    // and position
+    rt->SetMass(mass);
+    rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
+	
     status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass);
     if (status==DTrackFitter::kFitNotDone){
       // Get the hits from the candidate
