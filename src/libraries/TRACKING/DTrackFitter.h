@@ -123,7 +123,7 @@ class DTrackFitter:public jana::JObject{
 		// Methods that actually do something
 		fit_status_t 
 		  FindHitsAndFitTrack(const DKinematicData &starting_params, 
-				      DReferenceTrajectory *rt, 
+				      const DReferenceTrajectory *rt, 
 				      JEventLoop *loop, double mass=-1.0,
 				      double t0=NaN,
 				      DetectorSystem_t t0_det=SYS_NULL); ///< mass<0 means get it from starting_params
