@@ -114,7 +114,7 @@ class DReferenceTrajectory{
 		double GetMaxStepSize(void) const {return MAX_STEP_SIZE;}
 		inline double dPdx_from_A_Z_rho(double ptot, double A, double Z, double density) const;
 		inline double dPdx(double ptot, double KrhoZ_overA, double rhoZ_overA,double LogI) const;
-		bool GetHitCDCEndplate(void){return hit_cdc_endplate;}
+		bool GetHitCDCEndplate(void) const {return hit_cdc_endplate;}
 		
 		int GetDebugLevel(void){return debug_level;}
 		void SetDebugLevel(int new_level){debug_level=new_level;}
