@@ -33,7 +33,7 @@ DTrackHitSelectorTHROWN::~DTrackHitSelectorTHROWN()
 //---------------------------------
 // GetCDCHits
 //---------------------------------
-void DTrackHitSelectorTHROWN::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out) const
+void DTrackHitSelectorTHROWN::GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out) const
 {
 	/// Find the hits for the track indicated by the given reference trajectory using truth points.
 	///
@@ -66,7 +66,7 @@ void DTrackHitSelectorTHROWN::GetCDCHits(fit_type_t fit_type, DReferenceTrajecto
 //---------------------------------
 // GetFDCHits
 //---------------------------------
-void DTrackHitSelectorTHROWN::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out) const
+void DTrackHitSelectorTHROWN::GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out) const
 {
 	/// Find the hits for the track indicated by the given reference trajectory using truth points.
 	///
@@ -99,7 +99,7 @@ void DTrackHitSelectorTHROWN::GetFDCHits(fit_type_t fit_type, DReferenceTrajecto
 //---------------------------------
 // FindTrackNumber
 //---------------------------------
-int DTrackHitSelectorTHROWN::FindTrackNumber(DReferenceTrajectory *rt) const
+int DTrackHitSelectorTHROWN::FindTrackNumber(const DReferenceTrajectory *rt) const
 {
 	if(rt->Nswim_steps<1)return 0;
 	DVector3 &mom = rt->swim_steps[0].mom;

@@ -29,7 +29,7 @@ DTrackHitSelector::DTrackHitSelector(JEventLoop *loop)
 //---------------------
 // GetCDCHits
 //---------------------
-void DTrackHitSelector::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, DTrackFitter *fitter) const
+void DTrackHitSelector::GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, DTrackFitter *fitter) const
 {
 	/// Get all hits from the CDC and add them to the specified DTrackFitter object
 
@@ -42,7 +42,7 @@ void DTrackHitSelector::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory *rt
 //---------------------
 // GetFDCHits
 //---------------------
-void DTrackHitSelector::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter) const
+void DTrackHitSelector::GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter) const
 {
 	/// Get all hits from the FDC and add them to the specified DTrackFitter object
 
@@ -55,7 +55,7 @@ void DTrackHitSelector::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory *rt
 //---------------------
 // GetAllHits
 //---------------------
-void DTrackHitSelector::GetAllHits(fit_type_t fit_type, DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter) const
+void DTrackHitSelector::GetAllHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter) const
 {
 	/// Get all hits from both CDC and FDC and add them to the specified DTrackFitter object
 	GetCDCHits(fit_type, rt, cdchits_in, fitter);
