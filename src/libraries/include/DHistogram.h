@@ -19,34 +19,33 @@
 
 class DHistogram{
 	public:
-		inline DHistogram(int Nbins, double lowEdge, double highEdge);
+		inline DHistogram(int Nbins, float lowEdge, float highEdge);
 		inline DHistogram(DHistogram &hsrc);
 		inline virtual ~DHistogram();
 		
 		inline void Add(const DHistogram *h);
 		
-		inline double Fill(double x, double weight=1.0);
-		inline int FindBin(double x) const;
-		inline int FindFirstBinAbove(double val, int start_bin=1) const;
+		inline float Fill(float x, float weight=1.0);
+		inline int FindBin(float x) const;
+		inline int FindFirstBinAbove(float val, int start_bin=1) const;
 		inline int FindFirstNonZeroBin(void) const;
 		inline int FindLastNonZeroBin(void) const;
 		
 		inline int GetNbins(void) const;
-		inline double GetBinLowEdge(int bin) const;
-		inline double GetBinCenter(int bin) const;
-		inline double GetBinContent(int bin) const;
-		inline double GetBinWidth(void) const;
-		inline double GetLowEdge(void) const;
-		inline double GetHighEdge(void) const;
-      inline double* GetContentPointer(void) const; ///< CAUTION!
-      inline double* GetXValsPointer(void) const;   ///< CAUTION!
+		inline float GetBinLowEdge(int bin) const;
+		inline float GetBinCenter(int bin) const;
+		inline float GetBinContent(int bin) const;
+		inline float GetBinWidth(void) const;
+		inline float GetLowEdge(void) const;
+		inline float GetHighEdge(void) const;
+      inline float* GetContentPointer(void) const; ///< CAUTION!
 		
-		inline double Integral(void) const;
+		inline float Integral(void) const;
 		inline TH1D* MakeTH1D(string name, string title) const;
 		
 		inline void Reset(void);
-		inline void Scale(double scale);
-		inline void SetBinContent(int bin, double val);
+		inline void Scale(float scale);
+		inline void SetBinContent(int bin, float val);
 		
 		inline DHistogram& operator=(const DHistogram &hsrc);
 		
@@ -57,46 +56,44 @@ class DHistogram{
 		DHistogram(); // prevent default constructor usage
 	
 		int Nbins;
-		double lowEdge;
-		double highEdge;
-		double binWidth;
-		double half_binWidth;
+		float lowEdge;
+		float highEdge;
+		float binWidth;
+		float half_binWidth;
+		float bin_zero_center;
 
-		double *content;
-		double *xvals; // bin center
+		float *content;
 };
 
 
 //---------------------------------
 // DHistogram    (Constructor)
 //---------------------------------
-inline DHistogram::DHistogram(int Nbins, double lowEdge, double highEdge)
+inline DHistogram::DHistogram(int Nbins, float lowEdge, float highEdge)
 {
 	
 	this->Nbins = Nbins;
 	this->lowEdge = lowEdge;
 	this->highEdge = highEdge;
-	binWidth = (highEdge - lowEdge)/(double)Nbins;
+	binWidth = (highEdge - lowEdge)/(float)Nbins;
 	half_binWidth = binWidth/2.0;
+	bin_zero_center = lowEdge - half_binWidth;
 
 	if(Nbins>0 && Nbins<100000000){
-		content = new double[Nbins+1];
-		xvals = new double[Nbins+1];
+		content = new float[Nbins+1];
 		
 		for(int bin=1; bin<=Nbins; bin++){
 			content[bin] = 0.0;
-			xvals[bin] = lowEdge + (double)(bin-1)*binWidth + half_binWidth;
 		}
 	}else{
 		content = NULL;
-		xvals = NULL;
 	}
 }
 
 //---------------------------------
 // DHistogram    (Constructor)
 //---------------------------------
-inline DHistogram::DHistogram(DHistogram &hsrc):Nbins(0),lowEdge(0.0),highEdge(0.0),binWidth(0.0),half_binWidth(0.0),content(NULL),xvals(NULL)
+inline DHistogram::DHistogram(DHistogram &hsrc):Nbins(0),lowEdge(0.0),highEdge(0.0),binWidth(0.0),half_binWidth(0.0),content(NULL)
 {
 	*this = hsrc;
 }
@@ -107,7 +104,6 @@ inline DHistogram::DHistogram(DHistogram &hsrc):Nbins(0),lowEdge(0.0),highEdge(0
 inline DHistogram::~DHistogram()
 {
 	if(content!=NULL) delete[] content;
-	if(xvals!=NULL) delete[] xvals;
 }
 
 //---------------------------------
@@ -128,7 +124,7 @@ inline void DHistogram::Add(const DHistogram *h)
 //---------------------------------
 // FindBin
 //---------------------------------
-inline int DHistogram::FindBin(double x) const
+inline int DHistogram::FindBin(float x) const
 {
 	int bin = 1 + (int)floor((x-lowEdge)/binWidth);
 	
@@ -138,7 +134,7 @@ inline int DHistogram::FindBin(double x) const
 //---------------------------------
 // FindFirstBinAbove
 //---------------------------------
-inline int DHistogram::FindFirstBinAbove(double val, int start_bin) const
+inline int DHistogram::FindFirstBinAbove(float val, int start_bin) const
 {
 	for(int bin=start_bin; bin<=Nbins; bin++){
 		if(content[bin] >= val)return bin;
@@ -174,7 +170,7 @@ int DHistogram::FindLastNonZeroBin(void) const
 //---------------------------------
 // Fill
 //---------------------------------
-inline double DHistogram::Fill(double x, double weight)
+inline float DHistogram::Fill(float x, float weight)
 {
 	int bin = 1 + (int)floor((x-lowEdge)/binWidth);
 	if(bin<1 || bin>Nbins)return 0.0;
@@ -195,25 +191,25 @@ inline int DHistogram::GetNbins(void) const
 //---------------------------------
 // GetBinLowEdge
 //---------------------------------
-inline double DHistogram::GetBinLowEdge(int bin) const
+inline float DHistogram::GetBinLowEdge(int bin) const
 {
-	return lowEdge + (double)(bin-1)*binWidth;
+	return lowEdge + (float)(bin-1)*binWidth;
 }
 
 //---------------------------------
 // GetBinCenter
 //---------------------------------
-inline double DHistogram::GetBinCenter(int bin) const
+inline float DHistogram::GetBinCenter(int bin) const
 {
 	if(bin<1 || bin>Nbins)return 0.0;
 
-	return xvals[bin];
+	return bin_zero_center + binWidth*(float)bin;
 }
 
 //---------------------------------
 // GetBinContent
 //---------------------------------
-inline double DHistogram::GetBinContent(int bin) const
+inline float DHistogram::GetBinContent(int bin) const
 {
 	if(bin<1 || bin>Nbins)return 0.0;
 
@@ -223,7 +219,7 @@ inline double DHistogram::GetBinContent(int bin) const
 //---------------------------------
 // GetBinWidth
 //---------------------------------
-inline double DHistogram::GetBinWidth(void) const
+inline float DHistogram::GetBinWidth(void) const
 {
 	return binWidth;
 }
@@ -231,7 +227,7 @@ inline double DHistogram::GetBinWidth(void) const
 //---------------------------------
 // GetLowEdge
 //---------------------------------
-inline double DHistogram::GetLowEdge(void) const
+inline float DHistogram::GetLowEdge(void) const
 {
 	return lowEdge;
 }
@@ -239,7 +235,7 @@ inline double DHistogram::GetLowEdge(void) const
 //---------------------------------
 // GetHighEdge
 //---------------------------------
-inline double DHistogram::GetHighEdge(void) const
+inline float DHistogram::GetHighEdge(void) const
 {
 	return highEdge;
 }
@@ -247,25 +243,17 @@ inline double DHistogram::GetHighEdge(void) const
 //---------------------------------
 // GetContentPointer
 //---------------------------------
-inline double* DHistogram::GetContentPointer(void) const
+inline float* DHistogram::GetContentPointer(void) const
 {
    return content;
 }
 
 //---------------------------------
-// GetXValsPointer
-//---------------------------------
-inline double* DHistogram::GetXValsPointer(void) const
-{
-   return xvals;
-}
-
-//---------------------------------
 // Integral
 //---------------------------------
-inline double DHistogram::Integral(void) const
+inline float DHistogram::Integral(void) const
 {
-	double I=0.0;
+	float I=0.0;
 
 	for(int bin=1; bin<=Nbins; bin++) I += content[bin];
 
@@ -295,7 +283,7 @@ inline void DHistogram::Reset(void)
 //---------------------------------
 // Scale
 //---------------------------------
-inline void DHistogram::Scale(double scale)
+inline void DHistogram::Scale(float scale)
 {
 	for(int bin=1; bin<=Nbins; bin++)content[bin] *= scale;
 }
@@ -303,7 +291,7 @@ inline void DHistogram::Scale(double scale)
 //---------------------------------
 // SetBinContent
 //---------------------------------
-inline void DHistogram::SetBinContent(int bin, double val)
+inline void DHistogram::SetBinContent(int bin, float val)
 {
 	if(bin<1 || bin>Nbins)return;
 	
@@ -320,31 +308,25 @@ inline DHistogram& DHistogram::operator=(const DHistogram &hsrc)
 		this->Nbins = hsrc.GetNbins();
 		this->lowEdge = hsrc.GetLowEdge();
 		this->highEdge = hsrc.GetHighEdge();
-		binWidth = (highEdge - lowEdge)/(double)Nbins;
+		binWidth = (highEdge - lowEdge)/(float)Nbins;
 		half_binWidth = binWidth/2.0;
 		
 		if(content!=NULL) delete[] content;
-		if(xvals!=NULL) delete[] xvals;
 
-		if((Nbins>0) && (Nbins<100000000) && (hsrc.content!=NULL) && (hsrc.xvals!=NULL)){
-			content = new double[Nbins+1];
-			xvals = new double[Nbins+1];
+		if((Nbins>0) && (Nbins<100000000) && (hsrc.content!=NULL)){
+			content = new float[Nbins+1];
 		}else{
 			content = NULL;
-			xvals = NULL;
 		}
 	}
 	
-	if(content!=NULL || xvals!=NULL){
+	if(content!=NULL){
 		
-		double *ysrc  = hsrc.content;
-		double *xsrc  = hsrc.xvals;
-		double *ydest = content;
-		double *xdest = xvals;
+		float *ysrc  = hsrc.content;
+		float *ydest = content;
 		
 		for(int bin=0; bin<=Nbins; bin++){
 			*ydest++ = *ysrc++;
-			*xdest++ = *xsrc++;
 		}
 	}
 
