@@ -105,6 +105,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->BOUNDARY_STEP_FRACTION = rt.GetBoundaryStepFraction();
 	this->MIN_STEP_SIZE = rt.GetMinStepSize();
 	this->MAX_STEP_SIZE = rt.GetMaxStepSize();
+	this->debug_level=rt.debug_level;
 
 	this->swim_steps = new swim_step_t[this->max_swim_steps];
 	this->last_swim_step = NULL;
@@ -287,7 +288,7 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
 //---------------------------------
 void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, double smax, const DCoordinateSystem *wire)
 {
-	/// (Re)Swim the trajectory starting from pos with momentum mom.
+        /// (Re)Swim the trajectory starting from pos with momentum mom.
 	/// This will use the charge and step size (if given) passed to
 	/// the constructor when the object was created. It will also
 	/// (re)use the sim_step buffer, replacing it's contents.
