@@ -196,6 +196,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   if(!fitter)return NOERROR;
 
 	if(rtv.size() > MAX_DReferenceTrajectoryPoolSize){
+	  //printf("rtv Deleting\n");
 		for(size_t loc_i = MAX_DReferenceTrajectoryPoolSize; loc_i < rtv.size(); ++loc_i)
 			delete rtv[loc_i];
 		rtv.resize(MAX_DReferenceTrajectoryPoolSize);
@@ -599,7 +600,10 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   
   // Make sure there are enough DReferenceTrajectory objects
   unsigned int locNumInitialReferenceTrajectories = rtv.size();
-  while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+  while(rtv.size()<=_data.size()){
+    //printf("TB adding\n");
+    rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+  }
   DReferenceTrajectory *rt = rtv[_data.size()];
   if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
     rt->Reset();
@@ -629,7 +633,7 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   }   
   else{
     fitter->SetFitType(DTrackFitter::kTimeBased);	
-    status = fitter->FindHitsAndFitTrack(*track, rt,loop, mass, mStartTime,
+    status = fitter->FindHitsAndFitTrack(*track, track->rt,loop, mass, mStartTime,
 					 mStartDetector);
     // If the status is kFitNotDone, then no hits were attached to this track
     // using the hit-gathering algorithm.  In this case get the hits from the 
