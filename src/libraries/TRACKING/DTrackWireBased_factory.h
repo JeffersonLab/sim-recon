@@ -72,6 +72,7 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		bool DEBUG_HISTS;
 		bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
 		bool USE_HITS_FROM_CANDIDATE;
+		double MIN_FIT_P;
 };
 
 #endif // _DTrackWireBased_factory_
