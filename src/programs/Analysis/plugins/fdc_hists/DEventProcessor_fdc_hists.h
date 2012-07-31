@@ -30,7 +30,7 @@ using std::map;
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
 #include <FDC/DFDCGeometry.h>
-
+#include <FCAL/DFCALShower.h>
 #include <FDC/DFDCPseudo.h>
 #include <FDC/DFDCIntersection.h>
 #include <DMatrixSIMD.h>
@@ -120,10 +120,15 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
-
+	
+		DMatrix4x1 FitLine(vector<const DFDCPseudo*> &fdchits);
 		DMatrix4x1 FitLine(vector<const DFDCPseudo*> &fdchits,
-				   double &chi2x,double &chi2y);
+				   double &var_x,double &cov_x_tx,
+				   double &var_tx,double &chi2x,
+				   double &var_y,double &cov_y_ty,
+				   double &var_ty,double &chi2y);
 		jerror_t DoFilter(double anneal_factor,
+				  vector<const DFCALShower*>&fcalshowers,
 				  vector<const DFDCPseudo*> &fdchits);
 
 		jerror_t KalmanFilter(double anneal_factor,
@@ -161,6 +166,7 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		TH1F *Hxcand_prob,*Hycand_prob;
 		TH1F *Hreduced_chi2;
 		TH2F *Hdv_vs_dE;
+		TH1F *Hz_target,*Hfcal_match;
 
 		double mT0;
 		double target_to_fcal_distance;
@@ -170,6 +176,8 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 
 		double endplate_z;
 		int myevt;
+
+		bool DoAlign;
 
 		vector<align_t>alignments;
 };
