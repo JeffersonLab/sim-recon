@@ -1,0 +1,888 @@
+Release Notes for sim-recon-2012-05-18
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2012-07-26
+   Date: July 31, 2012
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 9392 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.7 (i686)
+-----------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.3
+
+CentOS release 5.3 (Final) (x86_64)
+------------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.26-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.3
+
+Red Hat Enterprise Linux 6.2 (x86_64)
+-----------
+  Xerces 2.7.0
+  JANA 0.6.3
+  ROOT 5.30-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 1.3
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r9203 | staylor | 2012-06-04 09:55:13 -0400 (Mon, 04 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.h
+
+(1) Create enum of kalman-filter specific error codes, which are now used throughout the kalman filter code. (2) adjust cdc variance.  (3) remove reference to now unused SetSeed routine. (4) create separate RecoverBrokenTracks routines for the forward and central parametrizations. (5) create separate fit-stearing routines (extracting the code from KalmanLoop) for the 3 fitting regions:  ForwardFit, ForwardCDCFit, CentralFit.
+------------------------------------------------------------------------
+r9205 | staylor | 2012-06-05 11:16:48 -0400 (Tue, 05 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.h
+
+Add routines to find and link segments using a straight-line model.  Add line fitter using linear regression algorithm.  Add alignment parameters to kalman filter
+------------------------------------------------------------------------
+r9209 | staylor | 2012-06-06 15:04:45 -0400 (Wed, 06 Jun 2012) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/include/DMatrix1x3.h
+   A /trunk/sim-recon/src/libraries/include/DMatrix3x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrix3x3.h
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Add classes for 1x3 and 3x1 matrices
+------------------------------------------------------------------------
+r9210 | staylor | 2012-06-08 17:58:03 -0400 (Fri, 08 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+more work on broken track recovery
+------------------------------------------------------------------------
+r9215 | staylor | 2012-06-12 10:52:07 -0400 (Tue, 12 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Tweaks of parameters to improve efficiency for good-chi2 fits.
+------------------------------------------------------------------------
+r9216 | pmatt | 2012-06-13 12:34:56 -0400 (Wed, 13 Jun 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Fixed bugs in the assignment operator and copy constructor. 
+The "last_swim_step" member was previously set to point to a swim step of the source object rather than the new object. 
+
+
+------------------------------------------------------------------------
+r9233 | wilevine | 2012-06-20 13:13:34 -0400 (Wed, 20 Jun 2012) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Temporary fix to mcsmear BCAL dark hit issue: do not include dark hits in energy-weighted average of times, unless there are no real hits.
+
+Full description of problem at https://halldweb1.jlab.org/wiki/index.php/BCAL_reconstruction_01/16/2012
+
+
+
+------------------------------------------------------------------------
+r9234 | wilevine | 2012-06-20 13:28:28 -0400 (Wed, 20 Jun 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc
+
+Update BCAL energy correction coefficients.
+
+
+------------------------------------------------------------------------
+r9238 | nsparks | 2012-06-21 11:20:45 -0400 (Thu, 21 Jun 2012) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/programs/Analysis/plugins/pid_hists
+
+Removed plugin 'pid_hists'.
+------------------------------------------------------------------------
+r9241 | wilevine | 2012-06-21 16:41:50 -0400 (Thu, 21 Jun 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.cc
+
+Don't use BCAL hits with bad timing information.
+
+
+------------------------------------------------------------------------
+r9242 | wilevine | 2012-06-21 16:45:00 -0400 (Thu, 21 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.cc
+
+BCAL reconstruction: change z error calculation
+
+------------------------------------------------------------------------
+r9243 | wilevine | 2012-06-21 17:35:40 -0400 (Thu, 21 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DNeutralShower.h
+
+Update BCAL photon energy uncertainty calculation
+
+------------------------------------------------------------------------
+r9249 | staylor | 2012-06-22 14:41:07 -0400 (Fri, 22 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DKinematicData.cc
+   M /trunk/sim-recon/src/libraries/PID/DKinematicData.h
+
+Store the 5-component state vector returned by the tracking code.
+------------------------------------------------------------------------
+r9250 | staylor | 2012-06-22 14:42:56 -0400 (Fri, 22 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+Open up phi cut for matching tracks to the start counter to acount for the recent change to 30 paddles.
+------------------------------------------------------------------------
+r9252 | staylor | 2012-06-22 16:14:14 -0400 (Fri, 22 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack_factory.cc
+
+When sorting track results from different mass hypotheses, explicitly handle cases when one or both FOMs are NaNs.
+------------------------------------------------------------------------
+r9263 | staylor | 2012-06-25 15:18:27 -0400 (Mon, 25 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Have the fitter return kFitNotDone if the fit was not done because the hit selector did not attach any hits to the track. Previously it returned kFitFailed.  If the fitter returned that the fit was not done, then try fitting using the list of hits from the previous step (ie., hits from the candidate for wire-based fitting, hits from wire-based pass for time-based fitting.) 
+------------------------------------------------------------------------
+r9264 | staylor | 2012-06-25 15:25:18 -0400 (Mon, 25 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+
+Get the start counter hits, match to time-based tracks to determine vertex time to tie to RF.
+------------------------------------------------------------------------
+r9265 | staylor | 2012-06-25 15:27:15 -0400 (Mon, 25 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Minor changes to some parameters related to multiple scattering and hit pruning.
+------------------------------------------------------------------------
+r9266 | staylor | 2012-06-25 15:30:22 -0400 (Mon, 25 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+Initialize the stepper for the magnetic field once.
+------------------------------------------------------------------------
+r9267 | staylor | 2012-06-25 15:37:32 -0400 (Mon, 25 Jun 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Output the 5-parameter state vector using the new m_TrackingStateVector array in the DKinematicData class.  The five parameters for the forward parametrization are {x,y,tx,ty,q/p}.  The five parameters for the central parametrization are {q/pT,phi,tanl,D,z}, where D is the signed distance of closets approach to the origin (0,0) (i.e., the beam line).
+------------------------------------------------------------------------
+r9268 | davidl | 2012-06-25 15:53:32 -0400 (Mon, 25 Jun 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/XParsers.cpp
+
+Make compatible with Xerces 3.1.1. This just makes buildDOMDocument() into
+a wrapper for parseInputDocument() which seems perform the same function. The  former does not compile with xerces 3 while the later still seems to work.
+
+This file appears to have identical copies in the repository. One in src/programs/Utilities/hddm and one in HDDS. This same fix is being checked into both. 
+
+------------------------------------------------------------------------
+r9277 | pmatt | 2012-06-27 19:11:37 -0400 (Wed, 27 Jun 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis.h
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.h
+
+DNeutralParticleHypothesis objects are now constructed with the vertex = the target center rather using the DVertex results.
+Added the projected start time (& its uncertainty) to the DChargedTrackHypothesis class.  
+Also rearranged the ST hit matching in DChargedTrackHypothesis_factory.cc
+
+
+------------------------------------------------------------------------
+r9278 | pmatt | 2012-06-27 21:06:02 -0400 (Wed, 27 Jun 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleSet_factory.cc
+
+Each DNeutralParticle is now added to each DParticleSet since they are no longer associated with any of the DVertex objects. 
+
+
+------------------------------------------------------------------------
+r9306 | davidl | 2012-06-29 10:05:16 -0400 (Fri, 29 Jun 2012) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/control.in
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/controlparams.inc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gukine.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+
+Revert default vertex calculation for particle gun to use
+single point (specified by SCAP).
+
+Added TGTWIDTH card to allow user to specify extended,
+cylindrical volume for vertex generation.
+
+------------------------------------------------------------------------
+r9309 | jonesrt | 2012-06-30 16:16:07 -0400 (Sat, 30 Jun 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate.h
+
+* DTrackCandidate.h [rtj]
+  - Added initialization of const ptr to DReferenceTrajectory object to zero
+    at construction time, in case someone later wants to test if it exists.
+
+------------------------------------------------------------------------
+r9310 | pmatt | 2012-07-01 22:54:06 -0400 (Sun, 01 Jul 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.h
+
+Moved timing chi-squared calculation to a separate function, t0 is now set to newly-matched SC time.  No effective change in PID results. 
+
+
+------------------------------------------------------------------------
+r9311 | pmatt | 2012-07-01 23:04:20 -0400 (Sun, 01 Jul 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+
+Moved new Calc_TimingChiSq() routine to DParticleID.
+
+
+------------------------------------------------------------------------
+r9316 | senderov | 2012-07-04 00:48:57 -0400 (Wed, 04 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/b1piAngAmp.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/b1piAngAmp.h
+
+minor b1pi amplitude update (test)
+------------------------------------------------------------------------
+r9320 | senderov | 2012-07-05 02:29:39 -0400 (Thu, 05 Jul 2012) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/polCoef.h
+
+Adding a pol(arization)Frac(tion)::Amplitude class to supply the coefficient as a separate factor
+------------------------------------------------------------------------
+r9321 | senderov | 2012-07-05 02:29:51 -0400 (Thu, 05 Jul 2012) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/polCoef.cc
+
+Adding a pol(arization)Frac(tion)::Amplitude class to supply the coefficient as a separate factor
+------------------------------------------------------------------------
+r9325 | staylor | 2012-07-06 17:13:30 -0400 (Fri, 06 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+(1) convert fit results for the state vector and the covariance for the forward parametrization into the central parametrization.  By default the forwardParmFlag in DKinematicData is now set to false. Now the meaning of the state vector and 5x5 covariance matrix is the same for all tracks.  (2) Simplify calcuation of estimate for t0 from cdc and fdc hit data. Simplify how the pulls vector is filled.
+------------------------------------------------------------------------
+r9326 | pmatt | 2012-07-07 19:34:16 -0400 (Sat, 07 Jul 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.h
+
+Cap the size of the DReferenceTrajectory resource pools to prevent memory-leak-like behavior. 
+
+
+------------------------------------------------------------------------
+r9327 | davidl | 2012-07-10 09:29:40 -0400 (Tue, 10 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+
+Fixed bug where event with zero particle sets could seg. fault. in phys_tree.
+------------------------------------------------------------------------
+r9328 | davidl | 2012-07-10 09:30:39 -0400 (Tue, 10 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger_factory.cc
+
+Add L1c trigger
+------------------------------------------------------------------------
+r9329 | davidl | 2012-07-10 09:33:05 -0400 (Tue, 10 Jul 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Modified data model to include "incident" particles entering the BCAL.
+Modified hdgeant and mcsmear to fill and use this. However,
+pre-processor directives are still set to not use the new
+BCAL simulation/smearing code so the behavior is unchanged.
+
+------------------------------------------------------------------------
+r9330 | staylor | 2012-07-10 18:25:59 -0400 (Tue, 10 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DKinFit.cc
+   M /trunk/sim-recon/src/libraries/PID/DKinFit.h
+
+Fill 7x7 matrix from 5x5 matrix for each final state track.
+------------------------------------------------------------------------
+r9331 | staylor | 2012-07-10 18:27:23 -0400 (Tue, 10 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+
+Delete RootGeom and stepper pointers after we are done using them.
+------------------------------------------------------------------------
+r9332 | jonesrt | 2012-07-10 22:09:07 -0400 (Tue, 10 Jul 2012) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/xml-hddm.cpp
+
+* xml-hddm.cpp [rtj]
+  - This converter from plain xml to hddm encoding had previously not
+    recognized special float/double values "nan" (not a number) and "inf"
+    (infinity), encoding these as zero in the output file.  It has now been
+    fixed to faithfully encode these special values in the output stream, so
+    whenever the special strings "nan", "-nan", "inf", and "-inf" appear as
+    values of float or double attributes in the xml input, they are formatted
+    as the corresponding binary float/double values in the output hddm file.
+
+------------------------------------------------------------------------
+r9333 | jonesrt | 2012-07-10 22:17:36 -0400 (Tue, 10 Jul 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+
+* hddm-c.cpp [rtj]
+  - The c api interface to hddm i/o streams is implemented in this source
+    file.  This fix resolves an issue related to a collision between global
+    symbols that prevented multiple hddm classes, eg. "s" and "r", from
+    being both linked into the same application, such as an application 
+    that reads data from a file in one hddm format (eg. simulation) and
+    writes and output file in another hddm format (eg. reconstruction).
+
+------------------------------------------------------------------------
+r9334 | jonesrt | 2012-07-10 22:27:16 -0400 (Tue, 10 Jul 2012) | 13 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+
+* hddm-cpp.cpp [rtj]
+   - fix bug where "ptr = new char[n]" was matched with "delete ptr";
+   - move DocumentString from a global symbol to a static class method,
+     to prevent global symbol initializer collisions that take place when
+     multiple instances of the implementation file are linked into a single
+     application, eg. through dynamic linking of a shared library;
+   - make the input file header scanner throw an exception instead of just
+     printing a message to cerr, so that user code that wants to handle this
+     condition (such as a jana JEventSource testing if it can open an input
+     file in method CheckOpenable) and fail over without reporting it as an
+     error condition;
+   - make source code formatting more consistent.
+
+------------------------------------------------------------------------
+r9335 | jonesrt | 2012-07-10 22:40:06 -0400 (Tue, 10 Jul 2012) | 5 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/danarest
+   A /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.cc
+   A /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/danarest/Makefile
+
+* danarest [rtj]
+   - new plugin consumer that pulls high-level analysis objects from their
+     respective factories and stores the output in a REST (reconstructed
+     event summary tree) file.
+
+------------------------------------------------------------------------
+r9336 | jonesrt | 2012-07-10 22:48:37 -0400 (Tue, 10 Jul 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.bin
+
+* Makefile.bin [rtj]
+   - add linker options -lxstream -lbz2 to the list of miscellaneous system
+     libraries, to support the i/o methods of the hddm c++ api.
+
+------------------------------------------------------------------------
+r9337 | jonesrt | 2012-07-10 22:50:53 -0400 (Tue, 10 Jul 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+* particleType.h [rtj]
+   - Add a new global function PDGtype(Particle_t) to take a Particle_t
+     particle type and return the PDG encoding for this particle.
+
+------------------------------------------------------------------------
+r9338 | jonesrt | 2012-07-10 22:53:34 -0400 (Tue, 10 Jul 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+
+* DApplication.cc [rtj]
+   - Add the REST (reconstructed event summary tree) hddm file format as one
+     of the supported input file formats for dana applications.
+
+------------------------------------------------------------------------
+r9339 | jonesrt | 2012-07-10 23:02:48 -0400 (Tue, 10 Jul 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DMCReaction.h
+
+* DMCReaction.h [rtj]
+   - add include "DKinematicData.h" because the DKinematicData class is
+     used in the declarations for class DMCReaction.  It seems that the
+     code author assumed the user would invoke this header prior to
+     including DMCReaction.h, whereas a better policy would be, "If you
+     use an external class at line L, make sure to include its header
+     file in the same file before line L."
+
+------------------------------------------------------------------------
+r9340 | jonesrt | 2012-07-10 23:08:45 -0400 (Tue, 10 Jul 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+* DEventSourceHDDM.h [rtj]
+   - Include the c++ api header file for the hddm input file, together with
+     the c api header file.
+
+------------------------------------------------------------------------
+r9341 | jonesrt | 2012-07-10 23:15:23 -0400 (Tue, 10 Jul 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+
+* DEventSourceHDDM.cc [rtj]
+   - extract the t0 of the vertex origin from the input event record,
+     at the same time that the spatial position of the vertex is extracted.
+
+------------------------------------------------------------------------
+r9342 | jonesrt | 2012-07-10 23:17:03 -0400 (Tue, 10 Jul 2012) | 4 lines
+Changed paths:
+   A /trunk/sim-recon/src/libraries/HDDM/rest.xml
+
+* rest.xml [rtj]
+   - add the hddm template for the REST (reconstructed event summary tree)
+     hddm i/o stream format.
+
+------------------------------------------------------------------------
+r9343 | jonesrt | 2012-07-10 23:21:38 -0400 (Tue, 10 Jul 2012) | 10 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDMGenerator.cc
+
+* DEventSourceHDDMGenerator.cc [rtj]
+   - Make the CheckOpenable method smarter about the kinds of input files
+     for which it generates a JEventSource object.  Prior code simply checked
+     if the filename ended with ".hddm" and if so it assumed it was a 
+     simulation data file.  With the introduction of other hddm formats, like
+     the REST (reconstructed event summary tree) format, this is no longer
+     sufficient.  The new code opens the file and reads the header to make
+     sure it matches the "s" class hddm format before creating a source to
+     suck it in.
+
+------------------------------------------------------------------------
+r9344 | jonesrt | 2012-07-10 23:24:11 -0400 (Tue, 10 Jul 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/Makefile
+
+* Makefile [rtj]
+   - Update the Makefile to make both c and c++ api hddm objects, and 
+     include them in the link library.
+
+------------------------------------------------------------------------
+r9345 | jonesrt | 2012-07-10 23:28:10 -0400 (Tue, 10 Jul 2012) | 8 lines
+Changed paths:
+   A /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   A /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.h
+   A /trunk/sim-recon/src/libraries/HDDM/DEventSourceRESTGenerator.cc
+   A /trunk/sim-recon/src/libraries/HDDM/DEventSourceRESTGenerator.h
+
+* DEventSourceREST.cc, DEventSourceREST.h [rtj]
+   - new JEventSource subclasses for pulling REST (reconstructed event summary
+     tree) data files into the jana application framework, and reconstituting
+     the high-level analysis objects from which the data were extracted.
+* DEventSourceRESTGenerator.cc, DEventSourceRESTGenerator.h [rtj]
+   - new JEventSourceGenerator subclasses to support the DEventSourceREST class.
+
+
+------------------------------------------------------------------------
+r9346 | jonesrt | 2012-07-10 23:36:31 -0400 (Tue, 10 Jul 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/MyProcessor.cc
+
+* MyProcessor.cc [rtj]
+   - I don't know why I do this, but (sigh) grammatical blunders in comments
+     bug me.  Does this mean the bug is in me?
+
+------------------------------------------------------------------------
+r9347 | jonesrt | 2012-07-11 01:01:23 -0400 (Wed, 11 Jul 2012) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/stdhep_translators/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/stdhep_translators/stdhep2hddm.c
+
+* stdhep2hddm.c [rtj]
+   - modified to use the new fully qualified name for the null pointer
+     value in the updated hddm c api.
+* Makefile [rtj]
+   - modified to find the hddm-c utility in the shell path rather than
+     hardwiring a path to it, and also corrected the path to the mc.xml file.
+
+------------------------------------------------------------------------
+r9348 | jonesrt | 2012-07-11 01:02:58 -0400 (Wed, 11 Jul 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.cc
+
+* MyProcessor.cc [rtj]
+   - more compulsive behavior in fixing grammatical errors in comments.
+
+------------------------------------------------------------------------
+r9349 | jonesrt | 2012-07-11 01:12:35 -0400 (Wed, 11 Jul 2012) | 14 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/savenewvertex.c
+
+* savenewvertex.c, gustep.F [rtj]
+   - Coordinated addition of two new arguments to savenewvertex function,
+     in order to support Beni's design of saving the decay vertices of
+     primary particles in the MCreaction record in the hddm output stream.
+     One of the arguments to the <product> tag is "parentid" which is
+     supposed to equal the "id" attribute of the prior <product> tag for
+     the parent particle.  However, Beni's implementation was saving a
+     particle type code (Geant's IPART variable) eg. 14 for a proton, 3
+     for an electron, etc., instead of the id of the parent.  This makes
+     it impossible to tell which final state pi- is the parent particle
+     of a mu- from a delayed MCreaction vertex.  The parentid should be
+     the serial number of the decaying particle, which is ITRA if it is
+     a primary particle (ISTAK=0).
+
+------------------------------------------------------------------------
+r9350 | jonesrt | 2012-07-11 01:17:32 -0400 (Wed, 11 Jul 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/hd_fitOmega/hd_fitOmega.cc
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testChargedKinFit/testKfit_Charged.cc
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testKpiSeparation/testKfit_piKseparation.cc
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testPi0GammaGamma/testKfit_Pi0GammaGamma.cc
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testPid/testPid.cc
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/testSmearing/testSmearing.cc
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_pKsKs/testKfit_pKsKs.cc
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_pKsKs_misspi/testKfit_pKsKs_misspi.cc
+   M /trunk/sim-recon/src/programs/Analysis/Examples/KinematicFitting/test_ppipppimpi0/testKfit_ppippimpi0.cc
+   M /trunk/sim-recon/src/programs/Analysis/hd_dump/hd_dump.cc
+
+* hd_dump.cc, testKfit_Charged.cc, testSmearing.cc, hd_fitOmega.cc
+* testKfit_ppippimpi0.cc, testKfit_piKseparation.cc, testKfit_pKsKs.cc
+* testPid.cc, testKfit_Pi0GammaGamma.cc, testKfit_pKsKs_misspi.cc        [rtj]
+   - All of the above files included header file DEventSourceHDDM.h but did
+     not actually use it.  Simplify dependencies by eliminating useless
+     includes.
+
+
+------------------------------------------------------------------------
+r9351 | davidl | 2012-07-11 06:37:18 -0400 (Wed, 11 Jul 2012) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/MyProcessor.cc
+
+Make the MyProcessor always free the memory for the hddm event
+in hd_event_filter instead of only when it chooses to write the
+event out. Previously, it set the "flush_on_free" flag in the
+DEventSourceHDDM object causing the memory to be freed later
+when DEventSourceHDDM::FreeEvent was called. However, when running
+with multiple threads this state info would likely not be valid
+by that time since other threads would simultaneously be changing 
+this value.
+
+------------------------------------------------------------------------
+r9352 | staylor | 2012-07-11 09:11:26 -0400 (Wed, 11 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+Comment out unused sc_light_guide vector
+------------------------------------------------------------------------
+r9353 | staylor | 2012-07-12 11:26:44 -0400 (Thu, 12 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DKinFit.cc
+
+Regenerate 5x1 state vector from position and momentum 3-vectors just before converting from 5x5 covariance matrix to 7x7 covariance matrix.  Comment out call to DRandom in the Fit method -- I am not sure why this was here...
+------------------------------------------------------------------------
+r9354 | staylor | 2012-07-12 11:28:40 -0400 (Thu, 12 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+
+Clean up dVertexInfoPool in the destructor to avoid valgrind memcheck error.
+------------------------------------------------------------------------
+r9355 | staylor | 2012-07-12 11:29:59 -0400 (Thu, 12 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint_factory.h
+
+Clean up pools to avoid valgrind memcheck errors.
+------------------------------------------------------------------------
+r9356 | staylor | 2012-07-12 13:12:21 -0400 (Thu, 12 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Clean up cdctrkhits to avoid valgrind memcheck error.  Comment out code that makes seeds invalid if the z_vertex is beyond the extent of the target -- weakly decaying particles like lambdas may produce tracks that do not necessarily look like they would originate in the target.
+------------------------------------------------------------------------
+r9357 | staylor | 2012-07-12 13:14:56 -0400 (Thu, 12 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+Delete stepper pointer after we are done with it.
+------------------------------------------------------------------------
+r9358 | staylor | 2012-07-12 14:40:09 -0400 (Thu, 12 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Add K+ and K- to default list of mass hypotheses.
+------------------------------------------------------------------------
+r9359 | staylor | 2012-07-12 14:45:32 -0400 (Thu, 12 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+(1) Delete stepper pointer after we are done with it. (2) If after all other methods of matching cdc and fdc candidates, we manage to match a single stray segment to an existing track candidate, do not try to redo the circle fit with the extra hits.
+------------------------------------------------------------------------
+r9360 | davidl | 2012-07-12 16:55:01 -0400 (Thu, 12 Jul 2012) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+- Added linear interpolation between bins to more accurately extract threshold crossing time
+- Increased number of bins in timing histos from 400 to 4000 reducing the bin width from 1ns to 100ps. This was to address the discretization of the E vs. t spectra that was due to the input energy-weighted timing histo being too course.
+- Keep track of the first and last non-zero bin for each row(column?) of the conversion matrix. This speeds things up a bit during convolution.
+
+The default behavior remains the old scheme and the #if 0 at the top of the 
+file must be changed #if 1 to access this new method. (One also needs to make sure that hdgeant is setup to output timing spectra and not just integrated cell hits.
+
+------------------------------------------------------------------------
+r9363 | jonesrt | 2012-07-14 16:39:16 -0400 (Sat, 14 Jul 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.cc
+
+* JEventProcessor_danarest.cc [rtj]
+   - updated to support the revised REST data format, based on DTrackTimeBased
+     and unmatched calorimeter clusters instead of higher level objects like
+     DChargedTrackHypothesis and DNeutralShower.
+
+------------------------------------------------------------------------
+r9364 | jonesrt | 2012-07-14 17:00:52 -0400 (Sat, 14 Jul 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+
+* hddm-cpp.cpp [rtj]
+   - modify the header scanner to automatically print a collision warning
+     message to cerr if there is an mismatch in the internal tags, but not
+     if the mismatch is in the main HDDM tag.
+
+------------------------------------------------------------------------
+r9365 | jonesrt | 2012-07-14 17:10:19 -0400 (Sat, 14 Jul 2012) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDMGenerator.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceRESTGenerator.cc
+
+* DEventSourceHDDMGenerator.cc, DEventSourceRESTGenerator.cc [rtj]
+   - add a comment showing how to print the exception message returned
+     by the hddm istream constructor if the input file is not compatible
+     with the particular hddm class being invoked.  Normally one wants
+     to let this fail silently, but for the curious...
+
+
+------------------------------------------------------------------------
+r9366 | jonesrt | 2012-07-14 17:13:33 -0400 (Sat, 14 Jul 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+
+* hddm-cpp.cpp [rtj]
+   - make a mismatched tag between the input file and the compiled library
+     non-fatal, but print a warning that the mismatched tag data will be
+     skipped when the input records are read.
+
+------------------------------------------------------------------------
+r9367 | jonesrt | 2012-07-14 17:16:51 -0400 (Sat, 14 Jul 2012) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.h
+   M /trunk/sim-recon/src/libraries/HDDM/rest.xml
+
+* rest.xml, DEventSourceREST.h, DEventSourceREST.cc [rtj]
+   - modified to support the revised REST event format, where high-level
+     matching objects like DChargedTrackHypothesis and DNeutralShower are
+     replaced with their more primitive pre-matching counterparts, such as
+     DTrackTimeBased and DFCALShower/DBCALShower.
+
+
+------------------------------------------------------------------------
+r9369 | jonesrt | 2012-07-16 17:22:29 -0400 (Mon, 16 Jul 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+
+* DEventSourceREST.cc [rtj]
+   - modified to create DBCALShower objects either with or without the
+     "KLOE" tag, depending on which the analysis asks for.
+
+------------------------------------------------------------------------
+r9370 | jonesrt | 2012-07-16 17:23:51 -0400 (Mon, 16 Jul 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.cc
+
+* JEventProcessor_danarest.cc [rtj]
+   - modified to store DBCALShower objects with tag "KLOE" or "", depending
+     on whether the DNeutralShower object is configued with runtime parameter
+     USE_KLOE enabled or not.
+
+------------------------------------------------------------------------
+r9371 | senderov | 2012-07-17 14:11:20 -0400 (Tue, 17 Jul 2012) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/GPUUniform_kernel.cu
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/GPUb1piAngAmp_kernel.cu
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/GPUpolCoef_kernel.cu
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/Uniform.h
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/polCoef.h
+
+Adding GPU kernels for b1pi polCoef and uniform wave amplitudes
+------------------------------------------------------------------------
+r9372 | senderov | 2012-07-17 14:15:04 -0400 (Tue, 17 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/fit.cc
+
+Update to amplitude analysis fit: new amplitudes registered, option to use MINOS minimization and optional selection of input TTree names
+------------------------------------------------------------------------
+r9373 | senderov | 2012-07-17 14:16:18 -0400 (Tue, 17 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/GlueXPlotGenerator.cc
+
+GlueXPlotGenerator updated with registration of polCoef amplitude
+------------------------------------------------------------------------
+r9376 | jonesrt | 2012-07-19 01:15:38 -0400 (Thu, 19 Jul 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+
+* hddm-cpp.cpp [rtj]
+   - string getter methods should return by value rather than const reference,
+     in case the application expects the string to outlive the hddm record
+     that that it came from.  All other getter methods are return-by-value.
+   - add getter methods for static attributes assigned in the header, so that
+     user code has uniform access to record data whether they are fixed values
+     set in the header or variables stored in the event stream.
+
+------------------------------------------------------------------------
+r9377 | jonesrt | 2012-07-19 01:26:42 -0400 (Thu, 19 Jul 2012) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/rest.xml
+
+* rest.xml [rtj]
+   - add a new comment tag to support special records consisting of just
+     a text string, for example a description of the conditions under which
+     the data were produced.
+   - add a new attribute jtag="string" to each of the top-level objects under
+     reconstructedPhysicsEvent.  This holds the tag string of the JANA factory
+     that produced the objects, and serves to distinguish different factories
+     the produce the same type of object.  Objects that were produced with a
+     given jtag string are reconstituted later with the same tag string.
+   - add a third field to the hddm version attribute, and advance the release
+     level to 1.
+
+------------------------------------------------------------------------
+r9378 | jonesrt | 2012-07-19 01:55:35 -0400 (Thu, 19 Jul 2012) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+
+* DEventSourceREST.cc [rtj]
+   - look for comment records at the head of the file and print the comment
+     text to standard output.
+   - change from hard-wired jana tags for objects read from the REST input
+     stream to extracting tag strings from the REST input records themselves.
+
+------------------------------------------------------------------------
+r9379 | jonesrt | 2012-07-19 02:02:53 -0400 (Thu, 19 Jul 2012) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.cc
+
+* JEventProcessor_danarest.cc [rtj]
+   - modified to store the jana object tags in the output record together
+     with the data necessary to reconstitute the object later.
+   - add a comment record at the beginning of the output hddm stream.  Right
+     now the comment is "This is a REST file, yadda yadda" which is not very
+     meaningful.  Someone should decide what needs to be recorded in the
+     comment field and create the code to store it.  The comment record is a
+     vector container of std::string objects, and can be of arbitrary length
+     provided that all of it can fit in memory at once.  Every call to the
+     addComment(std::string) method appends another string to the list of
+     comments attached to the beginning of the stream.
+
+------------------------------------------------------------------------
+r9380 | staylor | 2012-07-20 14:48:41 -0400 (Fri, 20 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.h
+
+improvements to seed for kalman filter and smoothing code.
+------------------------------------------------------------------------
+r9381 | staylor | 2012-07-20 16:59:00 -0400 (Fri, 20 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.h
+
+Remove unused routines and fix track projection matrices.  Scale measurement error while I try to figure out convergence problems.
+------------------------------------------------------------------------
+r9382 | staylor | 2012-07-20 18:24:00 -0400 (Fri, 20 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.h
+
+Implement annealing scheme
+------------------------------------------------------------------------
+r9383 | davidl | 2012-07-23 08:31:08 -0400 (Mon, 23 Jul 2012) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+
+Fixed bug where event_buffer pointer was not being set to
+the new event buffer when reallocation is needed due to large
+event size. This prevents a seg. fault, but the test file
+being used still exhibits a problem. The code at least now
+correctly recognizes it and prints and error message before
+exiting cleanly.
+
+------------------------------------------------------------------------
+r9384 | davidl | 2012-07-23 09:39:02 -0400 (Mon, 23 Jul 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+
+Saving intermediate stage of hitBCAL where *a* working
+version of the full timing spectrum method is implemented
+(altough not activated). This turns out to still
+define far too many incident particles for hadronic shower
+events. This will require significant changes so this
+commit represents a boundary before those changes are
+implemented.
+
+------------------------------------------------------------------------
+r9385 | wolin | 2012-07-23 14:56:23 -0400 (Mon, 23 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Many simplifications and fixes
+------------------------------------------------------------------------
+r9386 | wolin | 2012-07-23 15:15:03 -0400 (Mon, 23 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Minor
+------------------------------------------------------------------------
+r9387 | jonesrt | 2012-07-23 20:23:20 -0400 (Mon, 23 Jul 2012) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-xml.cpp
+
+* hddm-xml.cpp [rtj]
+   - fix a bug discovered by D. Lawrence that happened when the buffer was
+     too small to hold an event.  The old buffer space is deleted, and the
+     event_buffer points to the new larger buffer.  Then the input stringstream
+     must be reset to use the new buffer as its streambuf, and the read pointer
+     reset to the start of the enlarged streambuf.
+
+------------------------------------------------------------------------
+r9391 | wolin | 2012-07-26 13:49:05 -0400 (Thu, 26 Jul 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Added CAEN TDC for TOF readout
+------------------------------------------------------------------------
