@@ -34,6 +34,9 @@ using namespace std;
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
 #endif
 
+TH1D *hNincident_particles = NULL;
+
+
 //..........................
 // bcal_index is a utility class that encapsulates the
 // module, layer, sector, and end in a single object that
@@ -179,9 +182,7 @@ void SaveDebugHistos(map<int, SumSpectra> &bcalfADC, const char *suffix="");
 // The following are set in bcalInit below
 bool BCAL_INITIALIZED = false;
 double BCAL_mevPerPE=0.0;
-double *BCAL_PULSE_SHAPE_MATRIX=NULL;
-int *BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN=NULL;
-int *BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN=NULL;
+DHistogram *BCAL_PULSE_SHAPE_HISTO = NULL;
 
 // Mutexes and histogram pool
 pthread_mutex_t bcal_init_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -370,13 +371,13 @@ void bcalInit(void)
 	
 	cout<<"Pre-evaluating BCAL pulse_shape function ..."<<endl;
 
-	// Get a histogram from the pool just so we can get it's dimensions.
-	DHistogram *h = GetHistoFromPool();
+	// Get a histogram from the pool so it has the right dimensions.
+	BCAL_PULSE_SHAPE_HISTO = GetHistoFromPool();
 
-	int NBINS = h->GetNbins();
-	BCAL_PULSE_SHAPE_MATRIX = new double[NBINS*NBINS];
-	BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN = new int[NBINS];
-	BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN = new int[NBINS];
+	int NBINS = BCAL_PULSE_SHAPE_HISTO->GetNbins();
+	//BCAL_PULSE_SHAPE_MATRIX = new double[NBINS*NBINS];
+	//BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN = new int[NBINS];
+	//BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN = new int[NBINS];
 	
 	// Get electronic pulse shape
 	TSpline *pulse_shape = MakeTSpline();
@@ -418,54 +419,63 @@ void bcalInit(void)
 	// time shift pulse shape just to bring it in frame better for zoomed in picture
 	double toffset = 6.0;
 	
-	// Optionally create ROOT 2-D histo of this
-	TH2D *h_pulse_shape = NULL;
-	if(BCAL_DEBUG_HISTS){
-		double hi = h->GetHighEdge();
-		double lo = h->GetLowEdge();
-		h_pulse_shape = new TH2D("pulse_shape_matrix","BCAL_PULSE_SHAPE_MATRIX", NBINS, lo, hi, NBINS, lo, hi);
-		h_pulse_shape->SetXTitle("Input time (ns)");
-		h_pulse_shape->SetYTitle("Output time (ns)");
-	}
-	
-	// Loop over bins of input histo (attenuated energy)
-	for(int ibin=1; ibin<=NBINS; ibin++){
+	// Fill the BCAL_PULSE_SHAPE_HISTO histogram
+	float *psh = BCAL_PULSE_SHAPE_HISTO->GetContentPointer();
+	int first_nonzero_bin = NBINS;
+	int last_nonzero_bin = 1;
+	for(int jbin=1; jbin<=NBINS; jbin++, psh++){
+		double t1 = BCAL_PULSE_SHAPE_HISTO->GetBinCenter(jbin);
+		double t = t1+toffset;
 
-		double t0 = h->GetBinCenter(ibin);
+		// The spline data starts at -7ns and ends at 180ns. Beyond those 
+		// limits it tends to diverge. Impose a cut here to keep the signal
+		// at zero when evaluating the spline beyond those limits.
+		if(t<-7.0 || t>180.0){
+			*psh = 0.0;
+		}else{
+			*psh = (mV_per_MeV/norm)*pulse_shape->Eval(t);
+		}
 
-		// Loop over bins of output histo (electronic pulse)
-		BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN[ibin] = NBINS;
-		BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN[ibin] = 1;
-		for(int jbin=1; jbin<=NBINS; jbin++){
-			double t1 = h->GetBinCenter(jbin);
-			double t = t1-t0+toffset;
-			int idx = (jbin-1) + (ibin-1)*NBINS;
-
-			// The spline data starts at -7ns and ends at 180ns. Beyond those 
-			// limits it tends to diverge. Impose a cut here to keep the signal
-			// at zero when evaluating the spline beyond those limits.
-			if(t<-7.0 || t>180.0){
-				BCAL_PULSE_SHAPE_MATRIX[idx] = 0.0;
-			}else{
-				BCAL_PULSE_SHAPE_MATRIX[idx] = (mV_per_MeV/norm)*pulse_shape->Eval(t);
+		// Keep track of first and last non-zero bins in the BCAL_PULSE_SHAPE_MATRIX
+		// table. This is used to speed things up when it is finally applied later.
+		if(*psh > 0.0){
+			last_nonzero_bin = jbin;
+			if(jbin<first_nonzero_bin){
+				first_nonzero_bin = jbin;
 			}
-			
-			// Keep track of first and last non-zero bins in the BCAL_PULSE_SHAPE_MATRIX
-			// table. This is used to speed things up when it is finally applied later.
-			if(BCAL_PULSE_SHAPE_MATRIX[idx] > 0.0){
-				BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN[ibin] = jbin;
-				if(jbin<BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN[ibin]){
-					BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN[ibin] = jbin;
-				}
-			}
-
-			if(h_pulse_shape)h_pulse_shape->SetBinContent(ibin, jbin, BCAL_PULSE_SHAPE_MATRIX[idx]);
 		}
 	}
 	
+	// Trim empty bins off outsides of histogram to speed things
+	// up at event time.
+	int Nbins_trimmed = last_nonzero_bin - first_nonzero_bin + 1;
+	float lo = BCAL_PULSE_SHAPE_HISTO->GetBinLowEdge(first_nonzero_bin);
+	float hi = BCAL_PULSE_SHAPE_HISTO->GetBinLowEdge(last_nonzero_bin+1);
+	DHistogram *h = new DHistogram(Nbins_trimmed, lo, hi);
+	psh = BCAL_PULSE_SHAPE_HISTO->GetContentPointer();
+	psh = &psh[first_nonzero_bin]; // point to first non-zero bin
+	float *hptr = h->GetContentPointer();
+	for(int ibin=1; ibin<=Nbins_trimmed; ibin++, psh++, hptr++){
+		*hptr = *psh;
+	}
+	
+	// Return original BCAL_PULSE_SHAPE_HISTO to pool and keep
+	// trimmed histo in its place
+	ReturnHistoToPool(BCAL_PULSE_SHAPE_HISTO);
+	BCAL_PULSE_SHAPE_HISTO = h;
+	
+	// Optionally create ROOT 1-D histo of pulse shape
+	if(BCAL_DEBUG_HISTS){
+		TH1D *h_pulse_shape = BCAL_PULSE_SHAPE_HISTO->MakeTH1D("pulse_shape","SiPM Electronic Pulse Shape");
+		h_pulse_shape->SetXTitle("time (ns)");
+		h_pulse_shape->SetYTitle("Amplitude (mV/MeV(attenuated))");
+	}	
+
 	// Clean up
 	delete pulse_shape; // Get rid of TSpline since we don't need it anymore
-	ReturnHistoToPool(h);
+	
+	// Create histos for debugging
+	hNincident_particles = new TH1D("Nincident_particles","Number of particles marked as 'incident'", 201,-0.5, 200.5);
 	
 	cout<<"Done."<<endl;
 	//======================================================================
@@ -564,6 +574,7 @@ void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra,
 		}
 	}
 	
+	if(hNincident_particles)hNincident_particles->Fill(incident_particles.size());
 	
 }
 
@@ -1094,31 +1105,24 @@ void ApplyElectronicPulseShapeOneHisto(DHistogram *h)
    // first bin. Thus, we need to immediately increment these
    // pointers to get to bin 1 (that first bin may eventually
    // be used for underflow).
-   double* tmp_content = tmp.GetContentPointer();
-   double* h_content = h->GetContentPointer();
+   float* tmp_content = tmp.GetContentPointer();
+   float* h_content = h->GetContentPointer();
    tmp_content++;
    h_content++;
 
 	// Loop over bins of input histo
 	for(int ibin=1; ibin<=Nbins; ibin++, tmp_content++){
-		double A = *tmp_content;
+		float A = *tmp_content;
       if(A==0.0)continue; // no need to continue for empty bins
 		
-		// Get pointer to first element to row in the 
-		// pre-calculated matrix that converts the histo
-		// from its input form to its convoluted form
-		int idx1 = (ibin-1)*Nbins;
-		
-		// Loop over bins of output histo
-		double *h_content_tmp = h_content;
-		double *pulse_shape = &BCAL_PULSE_SHAPE_MATRIX[idx1];
-		int start_bin = BCAL_PULSE_SHAPE_MATRIX_FIRST_NONZERO_BIN[ibin];
-		int end_bin = BCAL_PULSE_SHAPE_MATRIX_LAST_NONZERO_BIN[ibin];
-		for(int jbin=start_bin; jbin<=end_bin; jbin++, h_content_tmp++, pulse_shape++){
-
-			double weight = A*(*pulse_shape);
+		float *h_content_tmp = &h_content[ibin];
+		float *pulse_shape = BCAL_PULSE_SHAPE_HISTO->GetContentPointer();
+		int end_bin = BCAL_PULSE_SHAPE_HISTO->GetNbins();
+		if(end_bin > (Nbins-ibin+1))end_bin = (Nbins-ibin+1);
+		for(int jbin=1; jbin<=end_bin; jbin++, h_content_tmp++, pulse_shape++){
+			float weight = A*(*pulse_shape);
          *h_content_tmp += weight;
-		}
+		}		
 	}
 }
 
