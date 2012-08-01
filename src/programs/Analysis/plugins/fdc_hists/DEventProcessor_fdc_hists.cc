@@ -144,7 +144,7 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int runnumber)
     Hwire_res_vs_wire=(TH2F*)gROOT->FindObject("Hwire_res_vs_wire");
     if (!Hwire_res_vs_wire){
       Hwire_res_vs_wire=new TH2F("Hwire_res_vs_wire","wire-based residuals",
-				  2304,0.5,2304.5,100,-1,1);
+				  2304,0.5,2304.5,200,-0.5,0.5);
     }  
     Hvres_vs_wire=(TH2F*)gROOT->FindObject("Hvres_vs_wire");
     if (!Hvres_vs_wire){
@@ -216,6 +216,11 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int runnumber)
       Hfcal_match=new TH1F("Hfcal_match",
 			   "match dr for FCAL",200,0,10);
     }  
+    Htheta=(TH1F*)gROOT->FindObject("Htheta");
+    if (!Htheta){
+      Htheta=new TH1F("Htheta",
+			   "#theta",90,0,15);
+    }  
 
   
   dapp->Unlock();
@@ -263,13 +268,14 @@ jerror_t DEventProcessor_fdc_hists::fini(void)
 //------------------
 jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
-  int NEVENTS=150000;
+  int NEVENTS=100000;
   double anneal_factor=1.;
   if (DoAlign){
     anneal_factor=pow(50000.0,(double(NEVENTS-eventnumber))/(NEVENTS-1.));
     if (eventnumber>NEVENTS) anneal_factor=1.;
   }
-  // anneal_factor=1.;
+  //anneal_factor=1.;
+  //anneal_factor=50000.;
   myevt=eventnumber;
 
   vector<const DFCALShower*>fcalshowers;
@@ -355,8 +361,8 @@ DEventProcessor_fdc_hists::DoFilter(double anneal_factor,
   double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
   double theta=90-180/M_PI*atan(tanl);
  
-  if (probx>0.01 && proby>0.01 && theta>1){
-    Hcand_ty_vs_tx->Fill(S(state_tx),S(state_ty));  
+  if (probx>0.01 && proby>0.01){
+  
 
     // Match to FCAL hit
     double dz=0.,outer_time=0.;
@@ -379,6 +385,9 @@ DEventProcessor_fdc_hists::DoFilter(double anneal_factor,
     Hfcal_match->Fill(drmin);
 
     if (drmin<2.){
+      Hcand_ty_vs_tx->Fill(S(state_tx),S(state_ty));  
+      Htheta->Fill(theta);
+
       // Estimate for t0 at the beginning of track
       mT0=outer_time-2.218-dz/(29.98*sin(atan(tanl)));
 
@@ -510,8 +519,8 @@ DEventProcessor_fdc_hists::DoFilter(double anneal_factor,
 		  fdc.dPhi=alignments[layer].A(kDPhi);
 		  double cosdphi=cos(fdc.dPhi);
 		  double sindphi=sin(fdc.dPhi);
-		  double dx=dxr*cosdphi+dyr*sindphi;
-		  double dy=-dxr*sindphi+dyr*cosdphi;
+		  double dx=dxr*cosdphi-dyr*sindphi;
+		  double dy=dxr*sindphi+dyr*cosdphi;
 		  fdc.dX=dx;
 		  fdc.dY=dy;
 		  fdc.layer=layer;
@@ -975,7 +984,7 @@ DEventProcessor_fdc_hists::KalmanFilter(double anneal_factor,
 
 	// Variance of measurement error
 	V(0,0)=anneal_factor*GetDriftVariance(drift_time);
-	double sigma=3.2e-8/hits[my_id]->dE+4e-3;
+	double sigma=3.0e-8/hits[my_id]->dE+0.7e-2;
 	//sigma=0.015;
 	V(1,1)=anneal_factor*sigma*sigma;
 	
@@ -1140,12 +1149,13 @@ jerror_t DEventProcessor_fdc_hists
 
 // Crude approximation for the variance in drift distance due to smearing
 double DEventProcessor_fdc_hists::GetDriftVariance(double t){
-  if (t<0) t=0;
-  //  double tpar[5]={0.0251,-0.000837,2.62e-5,-3.37e-7,1.59e-9};
-  //double sigma=tpar[0];
-  //for (int i=1;i<5;i++) sigma+=tpar[i]*pow(t,i);
+  if (t<5) t=5;
+  double tpar[5]={0.02,-0.00077,2.63e-5,-3.767e-7,2.035e-9};
+  double sigma=tpar[0];
+  for (int i=1;i<5;i++) sigma+=tpar[i]*pow(t,i);
 
-  double sigma=0.0241-0.00051*t+7.28e-6*t*t;
+  //double sigma=0.0241-0.00051*t+7.28e-6*t*t;
+  //double sigma=0.019-0.000228*t+3.196e-6*t*t;
 
   return sigma*sigma;
 }
@@ -1157,6 +1167,7 @@ double DEventProcessor_fdc_hists::GetDriftDistance(double t){
   if (id<0) id=0;
   if (id>138) id=138;
   double d=fdc_drift_table[id];
+
   if (id!=138){
     double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
     double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
