@@ -115,11 +115,11 @@ HepVector combinedResidFunc::pseudo2HepVector(const DFDCPseudo &ppoint) {
   bool ispos = getCorrectionSign(ppoint, x, y, delta_x, delta_y);
   HepVector point(3);
   if (ispos) {
-    point(1) = ppoint.x + delta_x;
-    point(2) = ppoint.y + delta_y;
+    point(1) = ppoint.xy.X() + delta_x;
+    point(2) = ppoint.xy.Y() + delta_y;
   } else {
-    point(1) = ppoint.x - delta_x;
-    point(2) = ppoint.y - delta_y;
+    point(1) = ppoint.xy.X() - delta_x;
+    point(2) = ppoint.xy.Y() - delta_y;
   }
   point(3) = z;
   if (debug_level >= 4) {
@@ -131,7 +131,7 @@ HepVector combinedResidFunc::pseudo2HepVector(const DFDCPseudo &ppoint) {
 bool combinedResidFunc::getCorrectionSign(const DFDCPseudo &ppoint, double x, double y, double delta_x, double delta_y) {
   double xWire = ppoint.wire->udir(0);
   double yWire = ppoint.wire->udir(1);
-  double wireCrossTraj = xWire*(y - ppoint.y) - yWire*(x - ppoint.x);
+  double wireCrossTraj = xWire*(y - ppoint.xy.Y()) - yWire*(x - ppoint.xy.X());
   double wireCrossDelta = xWire*delta_y - yWire*delta_x;
   bool isposTraj = wireCrossTraj > 0?true:false;
   bool isposDelta = wireCrossDelta > 0?true:false;
@@ -140,10 +140,10 @@ bool combinedResidFunc::getCorrectionSign(const DFDCPseudo &ppoint, double x, do
 			    << "combinedResidFunc::getCorrectionSign,"
 			    << " x = " << x
 			    << " y = " << y
-			    << " ppx = " << ppoint.x
-			    << " ppy = " << ppoint.y
-			    << " dx = " << x - ppoint.x
-			    << " dy = " << y - ppoint.y
+			    << " ppx = " << ppoint.xy.X()
+			    << " ppy = " << ppoint.xy.Y()
+			    << " dx = " << x - ppoint.xy.X()
+			    << " dy = " << y - ppoint.xy.Y()
 			    << " delta_x = " << delta_x
 			    << " delta_y = " << delta_y
 			    << " xWire = " << xWire
