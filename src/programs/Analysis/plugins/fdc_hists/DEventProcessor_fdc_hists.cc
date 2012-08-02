@@ -49,6 +49,11 @@ void InitPlugin(JApplication *app){
 } // "C"
 
 
+bool dEdxSort(double a,double b){
+  return (a<b);
+}
+
+
 //------------------
 // DEventProcessor_fdc_hists
 //------------------
@@ -76,8 +81,8 @@ jerror_t DEventProcessor_fdc_hists::init(void)
 
 	mT0=0.;
 
-	//DoAlign=false;
-	DoAlign=true;
+	DoAlign=false;
+	//DoAlign=true;
 	alignments.resize(24);
 	if (DoAlign){
 	  for (unsigned int i=0;i<24;i++){
@@ -221,13 +226,16 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int runnumber)
       Htheta=new TH1F("Htheta",
 			   "#theta",90,0,15);
     }  
-
+    HdEdx=(TH1F*)gROOT->FindObject("HdEdx");
+    if (!HdEdx){
+      HdEdx=new TH1F("HdEdx","dEdx",100,0,10e-6);
+    }  
   
   dapp->Unlock();
 
   JCalibration *jcalib = dapp->GetJCalibration(0);  // need run number here
   vector< map<string, float> > tvals;
-  if (jcalib->Get("FDC/fdc_drift_test", tvals)==false){
+  if (jcalib->Get("FDC/fdc_drift_Bzero", tvals)==false){
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, float> &row = tvals[i];
       fdc_drift_table[i]=row["0"];
@@ -268,13 +276,13 @@ jerror_t DEventProcessor_fdc_hists::fini(void)
 //------------------
 jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
-  int NEVENTS=100000;
+  int NEVENTS=150000;
   double anneal_factor=1.;
   if (DoAlign){
-    anneal_factor=pow(50000.0,(double(NEVENTS-eventnumber))/(NEVENTS-1.));
+    anneal_factor=pow(100000.0,(double(NEVENTS-eventnumber))/(NEVENTS-1.));
     if (eventnumber>NEVENTS) anneal_factor=1.;
   }
-  //anneal_factor=1.;
+  // anneal_factor=1.;
   //anneal_factor=50000.;
   myevt=eventnumber;
 
@@ -326,6 +334,7 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
     // Loop over the list of linked segments and perform a kalman filter to find the offsets and 
     // rotations for each wire plane
     jerror_t error=NOERROR;
+    if (LinkedSegments.size()==1)
     for (unsigned int k=0;k<LinkedSegments.size();k++){
       if (LinkedSegments[k].size()>6)
 	error=DoFilter(anneal_factor,fcalshowers,LinkedSegments[k]);
@@ -360,10 +369,9 @@ DEventProcessor_fdc_hists::DoFilter(double anneal_factor,
   // Minimum angle
   double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
   double theta=90-180/M_PI*atan(tanl);
- 
-  if (probx>0.01 && proby>0.01){
   
-
+  if (probx>0.01 && proby>0.01){
+   
     // Match to FCAL hit
     double dz=0.,outer_time=0.;
     double drmin=1000.;
@@ -389,7 +397,22 @@ DEventProcessor_fdc_hists::DoFilter(double anneal_factor,
       Htheta->Fill(theta);
 
       // Estimate for t0 at the beginning of track
-      mT0=outer_time-2.218-dz/(29.98*sin(atan(tanl)));
+      double sinl=sin(atan(tanl));
+      mT0=outer_time-2.218-dz/(29.98*sinl);
+
+      // Compute dEdx
+      double dEdx=0.;
+      vector<double>dElist;
+      for (unsigned int i=0;i<hits.size();i++){
+	dElist.push_back(hits[i]->dE);
+      }
+      sort(dElist.begin(),dElist.end(),dEdxSort);
+      unsigned int N=dElist.size()/2;
+      for (unsigned int i=0;i<N;i++){
+	dEdx+=dElist[i];
+      }
+      dEdx/=N*sinl;
+      HdEdx->Fill(dEdx);
 
       // Estimate z-position of "vertex" in target
       double one_over_tx2=1./(S(state_tx)*S(state_tx));
@@ -536,8 +559,12 @@ DEventProcessor_fdc_hists::DoFilter(double anneal_factor,
 		}
 	      }
 	      int wire_id=96*(hits[i]->wire->layer-1)+hits[i]->wire->wire;
-	      Hwire_res_vs_wire->Fill(wire_id,Mdiff(0));
-	      Hvres_vs_wire->Fill(wire_id,Mdiff(1));
+	      //if (myevt>200000)
+		{
+		//printf("dphi %f \n",alignments[layer].A(kDPhi));
+		Hwire_res_vs_wire->Fill(wire_id,Mdiff(0));
+		Hvres_vs_wire->Fill(wire_id,Mdiff(1));
+	      }
 	      if (hits[i]->wire->layer==1){
 		Hres_vs_drift_time->Fill(smoothed_updates[i].drift_time,Mdiff(0));
 		Hdv_vs_dE->Fill(hits[i]->dE,Mdiff(1));

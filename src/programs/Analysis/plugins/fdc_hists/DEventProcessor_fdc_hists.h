@@ -166,7 +166,7 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		TH1F *Hxcand_prob,*Hycand_prob;
 		TH1F *Hreduced_chi2;
 		TH2F *Hdv_vs_dE;
-		TH1F *Hz_target,*Hfcal_match,*Htheta;
+		TH1F *Hz_target,*Hfcal_match,*Htheta,*HdEdx;
 
 		double mT0;
 		double target_to_fcal_distance;
