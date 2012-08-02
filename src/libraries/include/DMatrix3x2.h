@@ -29,6 +29,25 @@ class DMatrix3x2{
   double operator() (int row,int col) const{
     return mA[row][col];
   }
+
+  // Assignment operator
+  DMatrix3x2 &operator=(const DMatrix3x2 &m2){
+    for (unsigned int i=0;i<3;i++){
+      mA[i][0]=m2(i,0);
+      mA[i][1]=m2(i,1);
+    }
+    return *this;
+  }
+
+  // Matrix multiplication:  (3x2) x (2x1)
+  DMatrix3x1 operator*(const DMatrix2x1 &m2){
+    return DMatrix3x1(mA[0][0]*m2(0)+mA[0][1]*m2(1),
+		      mA[1][0]*m2(0)+mA[1][1]*m2(1),
+		      mA[2][0]*m2(0)+mA[2][1]*m2(1)
+		      );
+
+  }
+
   // Matrix multiplication:  (3x2) x (2x2)
   DMatrix3x2 operator*(const DMatrix2x2 &m2){
     return DMatrix3x2(mA[0][0]*m2(0,0)+mA[0][1]*m2(1,0),

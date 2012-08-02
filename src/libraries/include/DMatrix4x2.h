@@ -32,6 +32,16 @@ class DMatrix4x2{
     return mA[row][col];
   }
   
+  // Assignment operator
+  DMatrix4x2 &operator=(const DMatrix4x2 &m2){
+    for (unsigned int i=0;i<4;i++){
+      mA[i][0]=m2(i,0);
+      mA[i][1]=m2(i,1);
+    }
+    return *this;
+  }
+  
+
   // Matrix multiplication:  (4x2) x (2x1)
   DMatrix4x1 operator*(const DMatrix2x1 &m2){
     return DMatrix4x1(mA[0][0]*m2(0)+mA[0][1]*m2(1),

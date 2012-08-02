@@ -36,6 +36,17 @@ public:
     return mA[row][col];
   }
 
+  // Assignment operator
+  DMatrix5x2 &operator=(const DMatrix5x2 &m2){
+    for (unsigned int i=0;i<5;i++){
+      mA[i][0]=m2(i,0);
+      mA[i][1]=m2(i,1);
+    }
+    return *this;
+  }
+  
+
+
   // multiplication:  (5x2) x (2x1)
   DMatrix5x1 operator*(const DMatrix2x1 &m2){
     return DMatrix5x1(mA[0][0]*m2(0)+mA[0][1]*m2(1),
