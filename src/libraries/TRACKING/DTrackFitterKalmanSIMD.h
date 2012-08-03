@@ -73,9 +73,9 @@
 #define MIN_HITS_FOR_REFIT 8
 
 // Functions of Moliere fraction F
-#define MOLIERE_RATIO1 10.0   // = 0.5/(1-F)
-#define MOLIERE_RATIO2 10.5e-7 // = (scale factor)*1e-6/(1+F*F)
-#define MOLIERE_RATIO3 10.5e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO1 5.0   // = 0.5/(1-F)
+#define MOLIERE_RATIO2 11.0e-7 // = (scale factor)*1e-6/(1+F*F)
+#define MOLIERE_RATIO3 11.0e-7 // = (scale factor)*1e-6/(1+F*F)
 #define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
 #define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001
@@ -424,6 +424,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   bool ENABLE_BOUNDARY_CHECK;
   int DEBUG_LEVEL;
   bool USE_T0_FROM_WIRES;
+  bool ESTIMATE_T0_TB;
   bool USE_MULS_COVARIANCE;
   double FDC_CATHODE_SIGMA;
   bool RECOVER_BROKEN_TRACKS;
