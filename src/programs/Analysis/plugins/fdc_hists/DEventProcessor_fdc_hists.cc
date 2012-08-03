@@ -81,8 +81,8 @@ jerror_t DEventProcessor_fdc_hists::init(void)
 
 	mT0=0.;
 
-	DoAlign=false;
-	//DoAlign=true;
+	//DoAlign=false;
+	DoAlign=true;
 	alignments.resize(24);
 	if (DoAlign){
 	  for (unsigned int i=0;i<24;i++){
@@ -132,9 +132,9 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int runnumber)
     Hdelta_z_vs_wire= new TH2F("Hdelta_z_vs_wire","wire z offset vs wire number",
 			      2304,0.5,2304.5,100,-0.1,0.1);
 
-    Hwire_prob = (TH1F*)gROOT->FindObject("Hwire_prob");
-    if (!Hwire_prob) 
-      Hwire_prob=new TH1F("Hwire_prob","Confidence level for wire-based fit",
+    Hprob = (TH1F*)gROOT->FindObject("Hprob");
+    if (!Hprob) 
+      Hprob=new TH1F("Hprob","Confidence level for wire-based fit",
 			  101,-0.005,1.005); 
 
     Hreduced_chi2 = (TH1F*)gROOT->FindObject("Hreduced_chi2");
@@ -146,29 +146,25 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int runnumber)
       Htime_prob=new TH1F("Htime_prob","Confidence level for time-based fit",
 			  100,0,1);
 
-    Hwire_res_vs_wire=(TH2F*)gROOT->FindObject("Hwire_res_vs_wire");
-    if (!Hwire_res_vs_wire){
-      Hwire_res_vs_wire=new TH2F("Hwire_res_vs_wire","wire-based residuals",
-				  2304,0.5,2304.5,200,-0.5,0.5);
+    Hures_vs_layer=(TH2F*)gROOT->FindObject("Hures_vs_layer");
+    if (!Hures_vs_layer){
+      Hures_vs_layer=new TH2F("Hures_vs_layer","wire-based residuals",
+				  24,0.5,24.5,200,-0.5,0.5);
     }  
-    Hvres_vs_wire=(TH2F*)gROOT->FindObject("Hvres_vs_wire");
-    if (!Hvres_vs_wire){
-      Hvres_vs_wire=new TH2F("Hvres_vs_wire","residual for position along wire",
-				  2304,0.5,2304.5,200,-0.5,0.5);
+    Hvres_vs_layer=(TH2F*)gROOT->FindObject("Hvres_vs_layer");
+    if (!Hvres_vs_layer){
+      Hvres_vs_layer=new TH2F("Hvres_vs_layer","residual for position along wire",
+				  24,0.5,24.5,200,-0.5,0.5);
     } 
-    Htime_res_vs_wire=(TH2F*)gROOT->FindObject("Htime_res_vs_wire");
-    if (!Htime_res_vs_wire){
-      Htime_res_vs_wire=new TH2F("Htime_res_vs_wire","time-based residuals",
-				  2304,0.5,2304.5,50,-0.1,0.1);
-    }
+  
     Hcand_ty_vs_tx=(TH2F*)gROOT->FindObject("Hcand_ty_vs_tx");
     if (!Hcand_ty_vs_tx){
       Hcand_ty_vs_tx=new TH2F("Hcand_ty_vs_tx","candidate ty vs tx",100,-1,1,
 			      100,-1,1);
     }    
-    Hwire_ty_vs_tx=(TH2F*)gROOT->FindObject("Hwire_ty_vs_tx");
-    if (!Hwire_ty_vs_tx){
-      Hwire_ty_vs_tx=new TH2F("Hwire_ty_vs_tx","wire-based ty vs tx",100,-1,1,
+    Hty_vs_tx=(TH2F*)gROOT->FindObject("Hty_vs_tx");
+    if (!Hty_vs_tx){
+      Hty_vs_tx=new TH2F("Hty_vs_tx","wire-based ty vs tx",100,-1,1,
 			      100,-1,1);
     }  
     Htime_ty_vs_tx=(TH2F*)gROOT->FindObject("Htime_ty_vs_tx");
@@ -221,10 +217,18 @@ jerror_t DEventProcessor_fdc_hists::brun(JEventLoop *loop, int runnumber)
       Hfcal_match=new TH1F("Hfcal_match",
 			   "match dr for FCAL",200,0,10);
     }  
+
+    Hbcal_match=(TH1F*)gROOT->FindObject("Hbcal_match");
+    if (!Hbcal_match){
+      Hbcal_match=new TH1F("Hbcal_match",
+			   "match dr for BCAL",200,0,10);
+    }  
+     
+
     Htheta=(TH1F*)gROOT->FindObject("Htheta");
     if (!Htheta){
       Htheta=new TH1F("Htheta",
-			   "#theta",90,0,15);
+			   "#theta",100,0,25);
     }  
     HdEdx=(TH1F*)gROOT->FindObject("HdEdx");
     if (!HdEdx){
@@ -274,51 +278,44 @@ jerror_t DEventProcessor_fdc_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
-{
-  int NEVENTS=150000;
-  double anneal_factor=1.;
-  if (DoAlign){
-    anneal_factor=pow(100000.0,(double(NEVENTS-eventnumber))/(NEVENTS-1.));
-    if (eventnumber>NEVENTS) anneal_factor=1.;
-  }
-  // anneal_factor=1.;
-  //anneal_factor=50000.;
+jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber){
+  // Save the event number locally
   myevt=eventnumber;
-
+  
+  // Get BCAL showers, FCAL showers and FDC space points
   vector<const DFCALShower*>fcalshowers;
   loop->Get(fcalshowers);
- 
-  if (fcalshowers.size()>0){
-    vector<const DFDCPseudo*>pseudos;
-    loop->Get(pseudos);
+  vector<const DBCALShower*>bcalshowers;
+  loop->Get(bcalshowers);
+  vector<const DFDCPseudo*>pseudos;
+  loop->Get(pseudos);
 
-    vector<const DFDCPseudo*>packages[4];
-
-    for (unsigned int i=0;i<pseudos.size();i++){
-      vector<const DFDCCathodeCluster*>cathode_clusters;
-      pseudos[i]->GetT(cathode_clusters);
-
-      unsigned int wire_number
+  for (unsigned int i=0;i<pseudos.size();i++){
+    vector<const DFDCCathodeCluster*>cathode_clusters;
+    pseudos[i]->GetT(cathode_clusters);
+    
+    unsigned int wire_number
 	=96*(pseudos[i]->wire->layer-1)+pseudos[i]->wire->wire;
-      double q1=0,q2=0;
-      for (unsigned int j=0;j<cathode_clusters[0]->members.size();j++){
-	double q=cathode_clusters[0]->members[j]->q;
-	if (q>q1) q1=q;
-      }   
-      for (unsigned int j=0;j<cathode_clusters[1]->members.size();j++){
-	double q=cathode_clusters[1]->members[j]->q;
-	if (q>q2) q2=q;
-      }
+    double q1=0,q2=0;
+    for (unsigned int j=0;j<cathode_clusters[0]->members.size();j++){
+      double q=cathode_clusters[0]->members[j]->q;
+      if (q>q1) q1=q;
+    }   
+    for (unsigned int j=0;j<cathode_clusters[1]->members.size();j++){
+      double q=cathode_clusters[1]->members[j]->q;
+      if (q>q2) q2=q;
+    }
+    
+    double ratio=q2/q1;
+    Hqratio_vs_wire->Fill(wire_number,ratio-1.);
+    Hdelta_z_vs_wire->Fill(wire_number,0.5336*(1.-ratio)/(1.+ratio));
+  }
 
-      double ratio=q2/q1;
-      Hqratio_vs_wire->Fill(wire_number,ratio-1.);
-      Hdelta_z_vs_wire->Fill(wire_number,0.5336*(1.-ratio)/(1.+ratio));
-
-
-
+  if (pseudos.size()>2 && (bcalshowers.size()>0 || fcalshowers.size()>0)){
+    // Group FDC hits by package
+    vector<const DFDCPseudo*>packages[4];
+    for (unsigned int i=0;i<pseudos.size();i++){
       packages[(pseudos[i]->wire->layer-1)/6].push_back(pseudos[i]);
-
     }
     
     // Link hits in each package together into track segments
@@ -326,254 +323,296 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber)
     for (unsigned int i=0;i<4;i++){  
       FindSegments(packages[i],segments[i]);
     }
-
+    
     // Link the segments together to form track candidadates
     vector<vector<const DFDCPseudo *> >LinkedSegments;
     LinkSegments(segments,LinkedSegments);
   
-    // Loop over the list of linked segments and perform a kalman filter to find the offsets and 
-    // rotations for each wire plane
-    jerror_t error=NOERROR;
-    if (LinkedSegments.size()==1)
+    // Loop over linked segments
     for (unsigned int k=0;k<LinkedSegments.size();k++){
-      if (LinkedSegments[k].size()>6)
-	error=DoFilter(anneal_factor,fcalshowers,LinkedSegments[k]);
-      //    printf("error %d\n",error);
-    }
+      vector<const DFDCPseudo *>hits=LinkedSegments[k];
     
-  }
+      // Perform preliminary line fits for current set of linked segments    
+      double var_x,var_tx,cov_x_tx,var_y,var_ty,cov_y_ty,chi2x,chi2y;
+      int myndf=hits.size()-2; 
+      DMatrix4x1 S=FitLine(hits,var_x,cov_x_tx,var_tx,chi2x,var_y,cov_y_ty,
+			 var_ty,chi2y);     
+      double probx=TMath::Prob(chi2x,myndf);
+      double proby=TMath::Prob(chi2y,myndf);
+    
+      Hxcand_prob->Fill(probx);
+      Hycand_prob->Fill(proby);
+      
+      // Match to outer detectors
+      bool got_match=false;
+      // First match to FCAL 
+      double dz=0.,outer_time=0.;
+      double drmin=1000.;
+      for (unsigned int i=0;i<fcalshowers.size();i++){
+	double fcal_z=fcalshowers[i]->getPosition().z();
+	double x=S(state_x)+fcal_z*S(state_tx);
+	double y=S(state_y)+fcal_z*S(state_ty);
+	double dx=fcalshowers[i]->getPosition().x()-x;
+	double dy=fcalshowers[i]->getPosition().y()-y;
+	double dr=sqrt(dx*dx+dy*dy);
+	
+	if (dr<drmin){
+	  drmin=dr;
+	  dz=fcal_z-endplate_z;
+	  outer_time=fcalshowers[i]->getTime();
+	}
+	
+      }
+      Hfcal_match->Fill(drmin);
+      if (drmin<4.){
+	got_match=true;
+	outer_time-=2.218; //empirical correction
+      }
+      else{
+	// Match to BCAL
+	drmin=1000.;
+	for (unsigned int i=0;i<bcalshowers.size();i++){
+	  double bcal_z=bcalshowers[i]->z; 
+	  double R2=bcalshowers[i]->x*bcalshowers[i]->x
+	    +bcalshowers[i]->y*bcalshowers[i]->y;	 
+	  double x0=S(state_x);
+	  double y0=S(state_y);
+	  double tx=S(state_tx);
+	  double ty=S(state_ty);
+	  double myz=(-x0*tx-y0*ty
+		      +sqrt(R2*(tx*tx+ty*ty)-(x0*ty-y0*tx)*(x0*ty-y0*tx)))
+	    /(tx*tx+ty*ty);
+	  double x=x0+myz*tx;
+	  double y=y0+myz*ty;
+	  double dx=bcalshowers[i]->x-x;
+	  double dy=bcalshowers[i]->y-y;
+	  double dr=sqrt(dx*dx+dy*dy);
   
+	  if (dr<drmin){
+	    drmin=dr;
+	    dz=bcal_z-endplate_z;
+	    outer_time=bcalshowers[i]->t;
+	  }	
+	}
+	Hbcal_match->Fill(drmin);
+
+	if (drmin<4.) 
+	  got_match=true;
+      }
+      if (got_match){
+	Hcand_ty_vs_tx->Fill(S(state_tx),S(state_ty));  
+	
+	//compute tangent of dip angle and related angular quantities
+	double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty)); 
+	double theta=90-180/M_PI*atan(tanl); 
+	double sinl=sin(atan(tanl));
+    
+	Htheta->Fill(theta);
+
+	// Compute dEdx
+	double dEdx=0.;
+	vector<double>dElist;
+	for (unsigned int i=0;i<hits.size();i++){
+	  dElist.push_back(hits[i]->dE);
+	}
+	sort(dElist.begin(),dElist.end(),dEdxSort);
+	unsigned int N=dElist.size()/2;
+	for (unsigned int i=0;i<N;i++){
+	  dEdx+=dElist[i];
+	}
+	dEdx/=N*sinl;
+
+	HdEdx->Fill(dEdx);
+
+	// Estimate z-position of "vertex" in target
+	double one_over_tx2=1./(S(state_tx)*S(state_tx));
+	double varz_x
+	  =one_over_tx2*(var_x+S(state_x)*S(state_x)*one_over_tx2*var_tx
+			 -2.*S(state_x)/S(state_tx)*cov_x_tx);
+	double one_over_ty2=1./(S(state_ty)*S(state_ty));
+	double varz_y
+	  =one_over_ty2*(var_y+S(state_y)*S(state_y)*one_over_ty2*var_ty
+			 -2.*S(state_x)/S(state_ty)*cov_y_ty);
+	// Weighted average from x and y line fits, ignoring x-y correlations
+	double z_target
+	  =(-S(state_x)/(S(state_tx)*varz_x)-S(state_y)/(S(state_ty)*varz_y))/
+	  (1./varz_x+1/varz_y);
+
+	Hz_target->Fill(z_target);
+		
+	// Estimate for t0 at the beginning of track assuming particle is 
+	// moving at the speed of light
+	mT0=outer_time-dz/(29.98*sinl);
+
+	// Run the Kalman Filter algorithm
+	DoFilter(S,hits);
+      }
+    }
+  }
+   
   return NOERROR;
 }
 
 // Steering routine for the kalman filter
 jerror_t 
-DEventProcessor_fdc_hists::DoFilter(double anneal_factor,
-				    vector<const DFCALShower*>&fcalshowers,
+DEventProcessor_fdc_hists::DoFilter(DMatrix4x1 &S,
 				    vector<const DFDCPseudo *>&hits){
   unsigned int num_hits=hits.size();
   vector<update_t>updates(num_hits);
   vector<update_t>smoothed_updates(num_hits);
   
-  // Fit the points to find an initial guess for the line
-  double var_x,var_tx,cov_x_tx,var_y,var_ty,cov_y_ty,chi2x,chi2y;
-  int myndf=num_hits-2; 
-  DMatrix4x1 S=FitLine(hits,var_x,cov_x_tx,var_tx,chi2x,var_y,cov_y_ty,var_ty,
-		       chi2y);     
-  double probx=TMath::Prob(chi2x,myndf);
-  double proby=TMath::Prob(chi2y,myndf);
- 
-  Hxcand_prob->Fill(probx);
-  Hycand_prob->Fill(proby);
+  int NEVENTS=150000;
+  double anneal_factor=1.;
+  if (DoAlign){
+    anneal_factor=pow(100000.0,(double(NEVENTS-myevt))/(NEVENTS-1.));
+    if (myevt>NEVENTS) anneal_factor=1.;
+  }
+  anneal_factor=1.;
+  //anneal_factor=100000.;
 
-  // Minimum angle
-  double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
-  double theta=90-180/M_PI*atan(tanl);
+  // Best guess for state vector at "vertex"
+  DMatrix4x1 Sbest;
+      
+  // Use the result from the initial line fit to form a reference trajectory 
+  // for the track. 
+  deque<trajectory_t>trajectory;
+  // double start_z=hits[0]->wire->origin.z()-1.;
+  S(state_x)+=endplate_z*S(state_tx);
+  S(state_y)+=endplate_z*S(state_ty);
+  SetReferenceTrajectory(endplate_z,S,trajectory,hits);
+      
+  // Intial guess for covariance matrix
+  DMatrix4x4 C,C0,Cbest;
+  C0(state_x,state_x)=C0(state_y,state_y)=1.;
+  C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.01;
   
-  if (probx>0.01 && proby>0.01){
-   
-    // Match to FCAL hit
-    double dz=0.,outer_time=0.;
-    double drmin=1000.;
-    for (unsigned int i=0;i<fcalshowers.size();i++){
-      double fcal_z=fcalshowers[i]->getPosition().z();
-      double x=S(state_x)+fcal_z*S(state_tx);
-      double y=S(state_y)+fcal_z*S(state_ty);
-      double dx=fcalshowers[i]->getPosition().x()-x;
-      double dy=fcalshowers[i]->getPosition().y()-y;
-      double dr=sqrt(dx*dx+dy*dy);
-      
-      if (dr<drmin){
-	drmin=dr;
-	dz=fcal_z-endplate_z;
-	outer_time=fcalshowers[i]->getTime();
-      }
-      
-    }
-    Hfcal_match->Fill(drmin);
-
-    if (drmin<2.){
-      Hcand_ty_vs_tx->Fill(S(state_tx),S(state_ty));  
-      Htheta->Fill(theta);
-
-      // Estimate for t0 at the beginning of track
-      double sinl=sin(atan(tanl));
-      mT0=outer_time-2.218-dz/(29.98*sinl);
-
-      // Compute dEdx
-      double dEdx=0.;
-      vector<double>dElist;
-      for (unsigned int i=0;i<hits.size();i++){
-	dElist.push_back(hits[i]->dE);
-      }
-      sort(dElist.begin(),dElist.end(),dEdxSort);
-      unsigned int N=dElist.size()/2;
-      for (unsigned int i=0;i<N;i++){
-	dEdx+=dElist[i];
-      }
-      dEdx/=N*sinl;
-      HdEdx->Fill(dEdx);
-
-      // Estimate z-position of "vertex" in target
-      double one_over_tx2=1./(S(state_tx)*S(state_tx));
-      double varz_x
-	=one_over_tx2*(var_x+S(state_x)*S(state_x)*one_over_tx2*var_tx
-		       -2.*S(state_x)/S(state_tx)*cov_x_tx);
-      double one_over_ty2=1./(S(state_ty)*S(state_ty));
-      double varz_y
-	=one_over_ty2*(var_y+S(state_y)*S(state_y)*one_over_ty2*var_ty
-		       -2.*S(state_x)/S(state_ty)*cov_y_ty);
-      // Weighted average from x and y line fits, ignoring x-y correlations
-      double z_target
-	=(-S(state_x)/(S(state_tx)*varz_x)-S(state_y)/(S(state_ty)*varz_y))/
-	(1./varz_x+1/varz_y);
-      Hz_target->Fill(z_target);
-
-      // Best guess for state vector at "vertex"
-      DMatrix4x1 Sbest;
-      
-      // Use the result from the initial line fit to form a reference trajectory 
-      // for the track. 
-      deque<trajectory_t>trajectory;
-      // double start_z=hits[0]->wire->origin.z()-1.;
-      S(state_x)+=endplate_z*S(state_tx);
-      S(state_y)+=endplate_z*S(state_ty);
-      SetReferenceTrajectory(endplate_z,S,trajectory,hits);
-      
-      // Intial guess for covariance matrix
-      DMatrix4x4 C,C0,Cbest;
-      C0(state_x,state_x)=C0(state_y,state_y)=1.;
-      C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.01;
-      
-      // Chi-squared and degrees of freedom
-      double chi2=1e16,chi2_old=1e16;
-      unsigned int ndof=0,ndof_old=0;
-      unsigned iter=0;
-      for(;;){
-	iter++;
-	chi2_old=chi2; 
-	ndof_old=ndof;
-	C=C0;
-	if (KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof)
-	    !=NOERROR) break;
+  // Chi-squared and degrees of freedom
+  double chi2=1e16,chi2_old=1e16;
+  unsigned int ndof=0,ndof_old=0;
+  unsigned iter=0;
+  for(;;){
+    iter++;
+    chi2_old=chi2; 
+    ndof_old=ndof;
+    C=C0;
+    if (KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof)
+	!=NOERROR) break;
 	
-	//printf("=======chi2 %f\n",chi2);
-	if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1 || iter==ITER_MAX) break;  
-	
-	// Save the current state and covariance matrixes
-	Cbest=C;
-	Sbest=S;
-	
-	// run the smoother (opposite direction to filter)
-	Smooth(S,C,trajectory,updates,smoothed_updates);
-      }
+    //printf("=======chi2 %f\n",chi2);
+    if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1 || iter==ITER_MAX) break;  
+    
+    // Save the current state and covariance matrixes
+    Cbest=C;
+    Sbest=S;
+    
+    // run the smoother (opposite direction to filter)
+    Smooth(S,C,trajectory,updates,smoothed_updates);
+  }
       
-      if (iter>1){
-	double reduced_chi2=chi2_old/double(ndof_old);
-	double prob=TMath::Prob(chi2_old,ndof_old);
-	Hwire_prob->Fill(prob);
-	Hreduced_chi2->Fill(reduced_chi2);
+  if (iter>1){
+    double reduced_chi2=chi2_old/double(ndof_old);
+    double prob=TMath::Prob(chi2_old,ndof_old);
+    Hprob->Fill(prob);
+    Hreduced_chi2->Fill(reduced_chi2);
 	
-	if (reduced_chi2<10){       
-	  Hwire_ty_vs_tx->Fill(Sbest(state_tx),Sbest(state_ty));
+    if (reduced_chi2<1000){       
+      Hty_vs_tx->Fill(Sbest(state_tx),Sbest(state_ty));
 	  
-	  DMatrix2x3 G;//matrix relating alignment vector to measurement coords
-	  DMatrix3x2 G_T; // .. and its transpose
+      DMatrix2x3 G;//matrix relating alignment vector to measurement coords
+      DMatrix3x2 G_T; // .. and its transpose
+      
+      for (unsigned int i=0;i<num_hits;i++){
+	if (smoothed_updates[i].id>0){
+	  double x=smoothed_updates[i].S(state_x);
+	  double y=smoothed_updates[i].S(state_y);
+	  double cosa=hits[i]->wire->udir.y();
+	  double sina=hits[i]->wire->udir.x();
+	  double u=hits[i]->w;
+	  double v=hits[i]->s;
+	  double upred=x*cosa-y*sina;
+	  double vpred=y*cosa+x*sina;
 	  
-	  for (unsigned int i=0;i<num_hits;i++){
-	    if (smoothed_updates[i].id>0){
-	      double x=smoothed_updates[i].S(state_x);
-	      double y=smoothed_updates[i].S(state_y);
-	      double cosa=hits[i]->wire->udir.y();
-	      double sina=hits[i]->wire->udir.x();
-	      double u=hits[i]->w;
-	      double v=hits[i]->s;
-	      double upred=x*cosa-y*sina;
-	      double vpred=y*cosa+x*sina;
+	  double tu=smoothed_updates[i].S(state_tx)*cosa
+	    -smoothed_updates[i].S(state_ty)*sina;
+	  double alpha=atan(tu);
+	  double cosalpha=cos(alpha);
+	  
+	  // Get the aligment vector and error matrix for this layer
+	  unsigned int layer=hits[i]->wire->layer-1;
+	  DMatrix3x3 E;
+	  DMatrix3x1 A;
+	  double dx=0,dy=0;
+	  double cosdphi=1.;
+	  double sindphi=0.;
+	  if (DoAlign){
+	    A=alignments[layer].A;
+	    E=alignments[layer].E;
+	    dx=A(kDx);
+	    dy=A(kDy);
+	    sindphi=sin(A(kDPhi));
+	    cosdphi=cos(A(kDPhi));
+	    
+	    // Transform from alignment vector coords to measurement coords
+	    G(0,kDx)=G_T(kDx,0)=-cosa*cosalpha;
+	    G(0,kDy)=G_T(kDy,0)=+sina*cosalpha;
+	    G(1,kDx)=G_T(kDx,1)=-sina;
+	    G(1,kDy)=G_T(kDy,1)=-cosa;
+	    G(0,kDPhi)=G_T(kDPhi,0)=(-sindphi*upred+cosdphi*vpred)*cosalpha; 
+	    G(1,kDPhi)=G_T(kDPhi,1)=-sindphi*vpred-cosdphi*upred;
+	  }
+	  DMatrix2x2 InvV=(smoothed_updates[i].R+G*E*G_T).Invert();
+	  
+	  // Difference between measurement and projection
+	  DMatrix2x1 Mdiff;
+	  Mdiff(0)=
+	    (u-(upred*cosdphi+vpred*sindphi-dx*cosa+dy*sina))*cosalpha
+	    +smoothed_updates[i].drift;
+	  Mdiff(1)=v-(vpred*cosdphi-upred*sindphi-dx*sina-dy*cosa);
 	      
-	      double tu=smoothed_updates[i].S(state_tx)*cosa
-		-smoothed_updates[i].S(state_ty)*sina;
-	      double alpha=atan(tu);
-	      double cosalpha=cos(alpha);
+	  // update the alignment vector and covariance
+	  if (DoAlign){
+	    DMatrix3x2 Ka=(E*G_T)*InvV;
+	    DMatrix3x1 dA=Ka*Mdiff;
+	    DMatrix3x3 Etemp=E-Ka*G*E;
+	    if (Etemp(0,0)>0 && Etemp(1,1)>0 && Etemp(2,2)>0){
+	      alignments[layer].E=Etemp;
+	      alignments[layer].A=A+Ka*Mdiff;	  
 	      
-	      // Get the aligment vector and error matrix for this layer
-	      unsigned int layer=hits[i]->wire->layer-1;
-	      DMatrix3x3 E;
-	      DMatrix3x1 A;
-	      double dx=0,dy=0;
-	      double cosdphi=1.;
-	      double sindphi=0.;
-	      if (DoAlign){
-		A=alignments[layer].A;
-		E=alignments[layer].E;
-		dx=A(kDx);
-		dy=A(kDy);
-		sindphi=sin(A(kDPhi));
-		cosdphi=cos(A(kDPhi));
+	      // Set up to fill tree
+	      double dxr=alignments[layer].A(kDx);
+	      double dyr=alignments[layer].A(kDy);  
+	      fdc.dPhi=alignments[layer].A(kDPhi);
+	      double cosdphi=cos(fdc.dPhi);
+	      double sindphi=sin(fdc.dPhi);
+	      double dx=dxr*cosdphi-dyr*sindphi;
+	      double dy=dxr*sindphi+dyr*cosdphi;
+	      fdc.dX=dx;
+	      fdc.dY=dy;
+	      fdc.layer=layer;
+	      fdc.N=myevt;
+		  
+	      // Lock mutex
+	      pthread_mutex_lock(&mutex);
+	      
+	      fdctree->Fill();
 		
-		// Transform from alignment vector coords to measurement coords
-		G(0,kDx)=G_T(kDx,0)=-cosa*cosalpha;
-		G(0,kDy)=G_T(kDy,0)=+sina*cosalpha;
-		G(1,kDx)=G_T(kDx,1)=-sina;
-		G(1,kDy)=G_T(kDy,1)=-cosa;
-		G(0,kDPhi)=G_T(kDPhi,0)=(-sindphi*upred+cosdphi*vpred)*cosalpha; 
-		G(1,kDPhi)=G_T(kDPhi,1)=-sindphi*vpred-cosdphi*upred;
-	      }
-	      DMatrix2x2 InvV=(smoothed_updates[i].R+G*E*G_T).Invert();
-	      
-	      // Difference between measurement and projection
-	      DMatrix2x1 Mdiff;
-	      Mdiff(0)=
-		(u-(upred*cosdphi+vpred*sindphi-dx*cosa+dy*sina))*cosalpha
-		+smoothed_updates[i].drift;
-	      Mdiff(1)=v-(vpred*cosdphi-upred*sindphi-dx*sina-dy*cosa);
-	      
-	      // update the alignment vector and covariance
-	      if (DoAlign){
-		DMatrix3x2 Ka=(E*G_T)*InvV;
-		DMatrix3x1 dA=Ka*Mdiff;
-		DMatrix3x3 Etemp=E-Ka*G*E;
-		if (Etemp(0,0)>0 && Etemp(1,1)>0 && Etemp(2,2)>0){
-		  alignments[layer].E=Etemp;
-		  alignments[layer].A=A+Ka*Mdiff;	  
-		  
-		  double dxr=alignments[layer].A(kDx);
-		  double dyr=alignments[layer].A(kDy);  
-		  fdc.dPhi=alignments[layer].A(kDPhi);
-		  double cosdphi=cos(fdc.dPhi);
-		  double sindphi=sin(fdc.dPhi);
-		  double dx=dxr*cosdphi-dyr*sindphi;
-		  double dy=dxr*sindphi+dyr*cosdphi;
-		  fdc.dX=dx;
-		  fdc.dY=dy;
-		  fdc.layer=layer;
-		  fdc.N=myevt;
-		  
-		  // Lock mutex
-		  pthread_mutex_lock(&mutex);
-		  
-		  fdctree->Fill();
-		
-		  // Unlock mutex
-		  pthread_mutex_unlock(&mutex);
-		}
-	      }
-	      int wire_id=96*(hits[i]->wire->layer-1)+hits[i]->wire->wire;
-	      //if (myevt>200000)
-		{
-		//printf("dphi %f \n",alignments[layer].A(kDPhi));
-		Hwire_res_vs_wire->Fill(wire_id,Mdiff(0));
-		Hvres_vs_wire->Fill(wire_id,Mdiff(1));
-	      }
-	      if (hits[i]->wire->layer==1){
-		Hres_vs_drift_time->Fill(smoothed_updates[i].drift_time,Mdiff(0));
-		Hdv_vs_dE->Fill(hits[i]->dE,Mdiff(1));
-	      }
+	      // Unlock mutex
+	      pthread_mutex_unlock(&mutex);
 	    }
 	  }
+	  //int wire_id=96*(hits[i]->wire->layer-1)+hits[i]->wire->wire;
+	  //if (myevt>200000)
+	  {
+	    //printf("dphi %f \n",alignments[layer].A(kDPhi));
+	    Hures_vs_layer->Fill(layer,Mdiff(0));
+	    Hvres_vs_layer->Fill(layer,Mdiff(1));
+	  }
+	  Hres_vs_drift_time->Fill(smoothed_updates[i].drift_time,Mdiff(0));
+	  Hdv_vs_dE->Fill(hits[i]->dE,Mdiff(1));
 	}
       }
     }
+
 
     /*
     printf("-------Event %d\n",myevt);
@@ -748,7 +787,7 @@ jerror_t DEventProcessor_fdc_hists::FindSegments(vector<const DFDCPseudo*>&point
 	  }
 	} // loop looking for hits adjacent to hits on segment
 
-	if (neighbors.size()>5){
+	if (neighbors.size()>2){
 	  segment_t mysegment;
 	  mysegment.matched=false;
 	  mysegment.S=FitLine(neighbors);
@@ -799,7 +838,7 @@ DEventProcessor_fdc_hists::FitLine(vector<const DFDCPseudo*> &fdchits,
   double S2zz=0.;
   double S2zx=0.;
 
-  double sig2v=0.02*0.02; // rough guess;
+  double sig2v=0.01; // rough guess;
 
   for (unsigned int i=0;i<fdchits.size();i++){
     double cosa=fdchits[i]->wire->udir.y();

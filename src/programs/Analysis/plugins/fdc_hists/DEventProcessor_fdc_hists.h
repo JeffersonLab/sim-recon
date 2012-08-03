@@ -127,8 +127,7 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 				   double &var_tx,double &chi2x,
 				   double &var_y,double &cov_y_ty,
 				   double &var_ty,double &chi2y);
-		jerror_t DoFilter(double anneal_factor,
-				  vector<const DFCALShower*>&fcalshowers,
+		jerror_t DoFilter(DMatrix4x1 &S,
 				  vector<const DFDCPseudo*> &fdchits);
 
 		jerror_t KalmanFilter(double anneal_factor,
@@ -154,17 +153,16 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		double GetDriftVariance(double t);
 
 		pthread_mutex_t mutex;
-		TH1F *Hwire_prob,*Htime_prob;
-		TH2F *Hwire_res_vs_wire;	
-		TH2F *Htime_res_vs_wire;
-		TH2F *Hcand_ty_vs_tx,*Htime_ty_vs_tx,*Hwire_ty_vs_tx;
+		TH1F *Hprob,*Htime_prob;
+		TH2F *Hures_vs_layer;	
+		TH2F *Hcand_ty_vs_tx,*Htime_ty_vs_tx,*Hty_vs_tx;
 		TH1F *Hdrift_time,*Hdrift_integral;
-		TH2F *Hres_vs_drift_time,*Hvres_vs_wire;
+		TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
 		TH3F *Htime_y_vs_x;
 		TH2F *Hqratio_vs_wire,*Hdelta_z_vs_wire;
 		TH1F *Hxshift,*Hyshift,*Hphishift;
 		TH1F *Hxcand_prob,*Hycand_prob;
-		TH1F *Hreduced_chi2;
+		TH1F *Hreduced_chi2,*Hbcal_match;
 		TH2F *Hdv_vs_dE;
 		TH1F *Hz_target,*Hfcal_match,*Htheta,*HdEdx;
 
