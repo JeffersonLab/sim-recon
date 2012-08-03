@@ -193,7 +193,7 @@
 *     -----------------------------------------------------------------
 *
 
-#define TOP_CERENKOV_EFFICIENCY 0.25
+#define TOP_CERENKOV_EFFICIENCY 1.0
 
       character*80 title
       character*4 cnames(15)
