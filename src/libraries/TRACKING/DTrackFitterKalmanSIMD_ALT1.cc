@@ -129,7 +129,15 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	if (fit_type==kWireBased && id==mMinDriftID-1){
 	  mT0MinimumDriftTime=mMinDriftTime
 	    -forward_traj[k].t*TIME_UNIT_CONVERSION;
-	} 
+
+	  if (my_cdchits.size()==0){
+	    //   t(d)=c1 d^2 + c2 d^4
+	    //double c1=1279,c2=-1158;
+	    double d_sq=doca*doca;
+	    if (d_sq>0.25) d_sq=0.25;      
+	    mT0MinimumDriftTime-=1279.*d_sq-1158.*d_sq*d_sq;
+	  } 
+	}
 	
 	// Variance in coordinate along wire
 	double tanl=1./sqrt(tx*tx+ty*ty);
@@ -192,10 +200,18 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    doca=du*cosalpha;
 
 	    // t0 estimate
-	    if (fit_type==kWireBased && my_id==mMinDriftID-1){
+	    if (fit_type==kWireBased && my_id==mMinDriftID-1){  	      
 	      mT0MinimumDriftTime=mMinDriftTime
 		-forward_traj[k].t*TIME_UNIT_CONVERSION;
-	    } 
+
+	      if (my_cdchits.size()==0){
+		//   t(d)=c1 d^2 + c2 d^4
+		//double c1=1279,c2=-1158;
+		double d_sq=doca*doca;
+		if (d_sq>0.25) d_sq=0.25;      
+		mT0MinimumDriftTime-=1279.*d_sq-1158.*d_sq*d_sq;
+	      } 
+	    }
 	    
 	    // variance for coordinate along the wire
 	    V=fdc_y_variance(alpha,doca,my_fdchits[my_id]->dE);
@@ -279,9 +295,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // Check if this hit is an outlier
 	  double chi2_hit=Mdiff*Mdiff*InvV;
 	  if (chi2_hit<fdc_chi2cut){
-	    if (DEBUG_HISTS && fit_type==kTimeBased && id==0){
-	      fdc_yres->Fill(doca,Mdiff*my_fdchits[id]->dE/
-			     (2.6795e-4*FDC_CATHODE_SIGMA));
+	    if (DEBUG_HISTS && fit_type==kTimeBased){ 
+	      unsigned int wire_number
+		=96*(my_fdchits[id]->hit->wire->layer-1)
+		+my_fdchits[id]->hit->wire->wire;
+	      fdc_yres->Fill(wire_number,Mdiff);
 	    }     
 
 	    // Compute Kalman gain matrix
@@ -492,7 +510,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    Vc+=mVarT0*temp*temp;
 	  }
 	  // t0 estimate
-	  else if (cdc_index==mMinDriftID-1000){
+	  else if (cdc_index==mMinDriftID-1000){ 
 	    mT0MinimumDriftTime=mMinDriftTime
 	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	  } 
