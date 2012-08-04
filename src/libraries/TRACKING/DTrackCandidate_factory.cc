@@ -70,6 +70,13 @@ inline bool FDCHitSortByLayerincreasing(const DFDCPseudo* const &hit1, const DFD
 	return hit1->wire->layer < hit2->wire->layer;
 }
 
+//------------------
+// init
+//------------------
+jerror_t DTrackCandidate_factory::init(void)
+{
+	MAX_NUM_TRACK_CANDIDATES = 20;
+}
 
 //------------------
 // brun
@@ -109,6 +116,8 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
     dapp->Unlock();
   }
 
+  gPARMS->SetDefaultParameter("TRKFIND:MAX_NUM_TRACK_CANDIDATES", MAX_NUM_TRACK_CANDIDATES);
+
   return NOERROR;
 }
 
@@ -147,6 +156,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   
   loop->Get(cdctrackcandidates, "CDC");
   loop->Get(fdctrackcandidates, "FDCCathodes");
+
+  vector<DTrackCandidate*> locNewlyCreatedCandidates;
 
   // List of cdc hits
   vector<const DCDCTrackHit*>mycdchits;
@@ -949,10 +960,16 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     }
   }
 
+	if((_data.size() > MAX_NUM_TRACK_CANDIDATES) && (MAX_NUM_TRACK_CANDIDATES >= 0))
+	{
+		for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
+			delete _data[loc_i];
+		_data.clear();
+  	}
 
-  
   return NOERROR;
 }
+
 
 // Obtain position and momentum at the exit of a given package using the 
 // helical track model.

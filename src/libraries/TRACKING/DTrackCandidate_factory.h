@@ -59,6 +59,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 				  DVector3 &mom);
   
  protected:
+  virtual jerror_t init(void);
   virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
   virtual jerror_t brun(JEventLoop* eventLoop,int runnumber);
   virtual jerror_t erun(void);
@@ -78,6 +79,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   DVector3 cdc_endplate;
   double endplate_rmax;
   double TARGET_Z;
+  int MAX_NUM_TRACK_CANDIDATES; //used to avoid memory spikes: if this # is exceeded, delete all tracks //to disable, set = -1!!
 };
 
 #endif // _DTrackCandidate_factory_
