@@ -65,7 +65,15 @@ typedef enum {
   EtaPrime       = 61,
   phiMeson       = 62,
   a0_980	 = 63,
-  f0_980	 = 64
+  f0_980	 = 64,
+
+  KStar_892_0 = 65,
+  KStar_892_Plus = 66,
+  KStar_892_Minus = 67,
+  AntiKStar_892_0 = 68,
+
+  K1_1400_Plus = 69,
+  K1_1400_Minus = 70
 
 } Particle_t;
 
@@ -199,8 +207,181 @@ inline static char *ParticleType(Particle_t p)
   case f0_980:
     strcpy(ret,"f0(980)");
     break;
+  case KStar_892_0:
+    strcpy(ret,"K*(892)0");
+    break;
+  case KStar_892_Plus:
+    strcpy(ret,"K*(892)+");
+    break;
+  case KStar_892_Minus:
+    strcpy(ret,"K*(892)-");
+    break;
+  case AntiKStar_892_0:
+    strcpy(ret,"antiK*(892)0");
+    break;
+  case K1_1400_Plus:
+    strcpy(ret,"K1(1400)+");
+    break;
+  case K1_1400_Minus:
+    strcpy(ret,"K1(1400)-");
+    break;
   default:
     sprintf(ret,"type(%d)",(int)p);
+    break;
+  }
+  return(ret);
+}
+
+inline static char* ParticleName_ROOT(Particle_t p)
+{
+  static char ret[40];
+  switch (p) {
+  case Unknown:
+    strcpy(ret, "#it{X}");
+    break;
+  case Gamma:
+    strcpy(ret, "#it{#gamma}");
+    break;
+  case Positron:
+    strcpy(ret, "#it{e^{+}}");
+    break;
+  case Electron:
+    strcpy(ret, "#it{e^{-}}");
+    break;
+  case Neutrino:
+    strcpy(ret, "#it{#nu}");
+    break;
+  case MuonPlus:
+    strcpy(ret, "#it{#mu^{+}}");
+    break;
+  case MuonMinus:
+    strcpy(ret, "#it{#mu^{-}}");
+    break;
+  case Pi0:
+    strcpy(ret, "#it{#pi^{0}}");
+    break;
+  case PiPlus:
+    strcpy(ret, "#it{#pi^{+}}");
+    break;
+  case PiMinus:
+    strcpy(ret, "#it{#pi^{-}}");
+    break;
+  case KLong:
+    strcpy(ret, "#it{K^{0}_{L}}");
+    break;
+  case KPlus:
+    strcpy(ret, "#it{K^{+}}");
+    break;
+  case KMinus:
+    strcpy(ret, "#it{K^{-}}");
+    break;
+  case Neutron:
+    strcpy(ret, "#it{n}");
+    break;
+  case Proton:
+    strcpy(ret, "#it{p}");
+    break;
+  case AntiProton:
+    strcpy(ret, "#it{#bar{p}}");
+    break;
+  case KShort:
+    strcpy(ret, "#it{K^{0}_{S}}");
+    break;
+  case Eta:
+    strcpy(ret, "#it{#eta}");
+    break;
+  case Lambda:
+    strcpy(ret, "#it{#Lambda}");
+    break;
+  case SigmaPlus:
+    strcpy(ret, "#it{#Sigma^{+}}");
+    break;
+  case Sigma0:
+    strcpy(ret, "#it{#Sigma^{0}}");
+    break;
+  case SigmaMinus:
+    strcpy(ret, "#it{#Sigma^{-}}");
+    break;
+  case Xi0:
+    strcpy(ret, "#it{#Xi^{0}}");
+    break;
+  case XiMinus:
+    strcpy(ret, "#it{#Xi^{-}}");
+    break;
+  case OmegaMinus:
+    strcpy(ret, "#it{#Omega^{-}}");
+    break;
+  case AntiNeutron:
+    strcpy(ret, "#it{#bar^{n}}");
+    break;
+  case AntiLambda:
+    strcpy(ret, "#it{#bar^{#Lambda}}");
+    break;
+  case AntiSigmaMinus:
+    strcpy(ret, "#it{#bar{#Sigma}^{-}}");
+    break;
+  case AntiSigma0:
+    strcpy(ret, "#it{#bar{#Sigma}^{0}}");
+    break;
+  case AntiSigmaPlus:
+    strcpy(ret, "#it{#bar{#Sigma}^{+}}");
+    break;
+  case AntiXi0:
+    strcpy(ret, "#it{#bar{#Xi}^{0}}");
+    break;
+  case AntiXiPlus:
+    strcpy(ret, "#it{#bar{#Xi}^{+}}");
+    break;
+  case AntiOmegaPlus:
+    strcpy(ret, "#it{#bar{#Omega}^{+}}");
+    break;
+  case Geantino:
+    strcpy(ret, "geantino");
+    break;
+  case Rho0:
+    strcpy(ret, "#it{#rho^{0}}");
+    break;
+  case RhoPlus:
+    strcpy(ret, "#it{#rho^{+}}");
+    break;
+  case RhoMinus:
+    strcpy(ret, "#it{#rho^{-}}");
+    break;
+  case omega:
+    strcpy(ret, "#it{#Omega}");
+    break;
+  case EtaPrime:
+    strcpy(ret, "#it{#eta'}");
+    break;
+  case phiMeson:
+    strcpy(ret, "#it{#phi}");
+    break;
+  case a0_980:
+    strcpy(ret, "#it{a_{0}(980)}");
+    break;
+  case f0_980:
+    strcpy(ret, "#it{f_{0}(980)}");
+    break;
+  case KStar_892_0:
+    strcpy(ret, "#it{K^{*}(892)^{0}}");
+    break;
+  case KStar_892_Plus:
+    strcpy(ret, "#it{K^{*}(892)^{+}}");
+    break;
+  case KStar_892_Minus:
+    strcpy(ret, "#it{K^{*}(892)^{-}}");
+    break;
+  case AntiKStar_892_0:
+    strcpy(ret, "#it{#bar{K^{*}}(892)^{0}}");
+    break;
+  case K1_1400_Plus:
+    strcpy(ret, "#it{K_{1}(1400)^{+}}");
+    break;
+  case K1_1400_Minus:
+    strcpy(ret, "#it{K_{1}(1400)^{-}}");
+    break;
+  default:
+    strcpy(ret, "X");
     break;
   }
   return(ret);
@@ -255,6 +436,12 @@ inline static double ParticleMass(Particle_t p)
   case phiMeson:	return 1.01942;
   case a0_980:		return 0.980;
   case f0_980:		return 0.980;
+  case KStar_892_0: return 0.89594;
+  case KStar_892_Plus: return 0.89166;
+  case KStar_892_Minus: return 0.89166;
+  case AntiKStar_892_0: return 0.89594;
+  case K1_1400_Plus: return 1.403;
+  case K1_1400_Minus: return 1.403;
   }
 }
 
@@ -307,6 +494,12 @@ inline static int ParticleCharge(Particle_t p)
   case phiMeson:	return  0;
   case a0_980:		return  0;
   case f0_980:		return  0;
+  case KStar_892_0: return  0;
+  case KStar_892_Plus: return  1;
+  case KStar_892_Minus: return -1;
+  case AntiKStar_892_0: return  0;
+  case K1_1400_Plus: return  1;
+  case K1_1400_Minus: return -1;
   }
 }
 
@@ -355,6 +548,12 @@ inline static int PDGtype(Particle_t p)
   case phiMeson:	return  333;
   case a0_980:		return  9000110;
   case f0_980:		return  9010221;
+  case KStar_892_0: return  313;
+  case AntiKStar_892_0: return  -313;
+  case KStar_892_Plus: return  323;
+  case KStar_892_Minus: return -323;
+  case K1_1400_Plus: return  20323;
+  case K1_1400_Minus: return  -20323;
   default:		return  0;
   }
 }
