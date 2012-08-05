@@ -16,6 +16,10 @@ void Usage(void);
 double randm(double, double);
 
 float vertex[4]={0.0, 0.0, 65.0, 65.0};
+Particle_t targetType = Proton;
+Particle_t beamType = Gamma;
+
+#define SQR(X) ((X)*(X))
 
 time_t now;
 
@@ -58,6 +62,8 @@ int main(int narg, char *argv[])
 		// Start a new event
 		s_PhysicsEvents_t* pes;
 		s_Reactions_t* rs;
+		s_Target_t* ta;
+		s_Beam_t* be;
 		s_Vertices_t* vs;
 		s_Origin_t* origin;
 		s_Products_t* ps;
@@ -68,6 +74,26 @@ int main(int narg, char *argv[])
 		pes->in[0].eventNo = eventNumber;
 		pes->in[0].reactions = rs = make_s_Reactions(1);
 		rs->mult = 1;
+		rs->in[0].target = ta = make_s_Target();
+		ta->type = targetType;
+		ta->properties = make_s_Properties();
+		ta->properties->charge = ParticleCharge(targetType);
+		ta->properties->mass = ParticleMass(targetType);
+		ta->momentum = make_s_Momentum();
+		ta->momentum->px = 0;
+		ta->momentum->py = 0;
+		ta->momentum->pz = 0;
+		ta->momentum->E  = ParticleMass(targetType);
+		rs->in[0].beam = be = make_s_Beam();
+		be->type = beamType;
+		be->properties = make_s_Properties();
+		be->properties->charge = ParticleCharge(beamType);
+		be->properties->mass = ParticleMass(beamType);
+		be->momentum = make_s_Momentum();
+		be->momentum->px = -ta->momentum->px;
+		be->momentum->py = -ta->momentum->py;
+		be->momentum->pz = -ta->momentum->pz;
+		be->momentum->E  = -ta->momentum->E;
 		rs->in[0].vertices = vs = make_s_Vertices(1);
 		vs->mult = 1;
 		vs->in[0].origin = origin = make_s_Origin();
@@ -104,8 +130,17 @@ int main(int narg, char *argv[])
 			ps->in[ps->mult].momentum->py = py;
 			ps->in[ps->mult].momentum->pz = pz;
 			ps->in[ps->mult].momentum->E  = E;
+			be->momentum->px += px;
+			be->momentum->py += py;
+			be->momentum->pz += pz;
+			be->momentum->E  += E;
 
 		}
+		be->momentum->E = sqrt(SQR(be->properties->mass)+
+					SQR(be->momentum->px)+
+					SQR(be->momentum->py)+
+					SQR(be->momentum->pz)
+                                      );
 		
 		if(nParticles>0){
 			flush_s_HDDM(thisOutputEvent, thisOutputStream);
@@ -146,10 +181,16 @@ void ParseCommandLineArguments(int narg,char *argv[])
 				    exit(-1);
 				  }
 				  break;
-			        default:
-					cerr<<"Unknown option \""<<argv[i]<<"\""<<endl;
-					Usage();
-					exit(-1);
+				case 'b':
+				  beamType = (Particle_t)Str2GeantParticleID(&ptr[1]);
+				  break;
+				case 't':
+				  targetType = (Particle_t)Str2GeantParticleID(&ptr[1]);
+				  break;
+				default:
+				  cerr<<"Unknown option \""<<argv[i]<<"\""<<endl;
+				  Usage();
+				  exit(-1);
 			}
 		}else{
 			INPUT_FILE = argv[i];
@@ -173,6 +214,8 @@ void Usage(void)
 	cout<<endl;
 	cout<<"  -V\"x  y  z_min  z_max\"    set the vertex for the interaction.";
 	cout<<"(default: x="<<vertex[0]<<" y="<<vertex[1]<<" z_min="<<vertex[2]<<" z_max="<<vertex[3]<<")"<<endl;
+	cout<<"  -b\"beam_particle_name\"    set the beam particle type [gamma]."<<endl;
+	cout<<"  -t\"target_particle_name\"  set the target particle type [proton]."<<endl;
 	cout<<"  -h           print this usage statement."<<endl;
 	cout<<endl;
 }
