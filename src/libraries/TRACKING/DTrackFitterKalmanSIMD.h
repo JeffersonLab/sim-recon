@@ -244,10 +244,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     state_Px,
     state_Py,
     state_Pz,
-    state_E,
     state_X,
     state_Y,
     state_Z,
+    state_T
   };
  
   void locate(const double *xx,int n,double x,int *j);

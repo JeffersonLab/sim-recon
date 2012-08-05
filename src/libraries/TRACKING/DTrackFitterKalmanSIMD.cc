@@ -5417,7 +5417,6 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
   J(state_Pz,state_q_over_p)=-p*sinl/q_over_p_;
   J(state_Px,state_q_over_p)=tx_*J(state_Pz,state_q_over_p);
   J(state_Py,state_q_over_p)=ty_*J(state_Pz,state_q_over_p);
-  J(state_E,state_q_over_p)=-p*p/sqrt(mass2+p*p)/q_over_p_;
   J(state_Z,state_x)=0.5/tx_;
   J(state_Z,state_y)=0.5/ty_;  
   J(state_Z,state_tx)=-0.5*x_/(tx_*tx_);
@@ -5456,9 +5455,6 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
   J(state_Pz,state_q_over_pt)=-q*pt_sq*tanl_;
   J(state_Pz,state_tanl)=pt;
   
-  J(state_E,state_q_over_pt)=-q*pt*p_sq/E;
-  J(state_E,state_tanl)=pt_sq*tanl_/E;
-
   J(state_X,state_phi)=-D_*cosphi;
   J(state_X,state_D)=-sinphi;
   
