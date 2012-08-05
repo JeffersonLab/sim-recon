@@ -302,7 +302,7 @@ private:
     ValueType m_charge ;
     DVector3 m_momentum ;
     DVector3 m_position ;
-    DMatrixDSym* m_errorMatrix ;   // Order is (px, py, pz, E, x, y, z)
+    DMatrixDSym* m_errorMatrix ;   // Order is (px, py, pz, x, y, z, t)
     DMatrixDSym *m_TrackingErrorMatrix;  // order is q/pt,phi,tanl,D,z
     double m_TrackingStateVector[5]; // order is q/pt,phi,tanl,D,z
 
