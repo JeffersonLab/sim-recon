@@ -636,6 +636,22 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       mat(4,4) = fit.getE55();
       tra->setTrackingErrorMatrix(mat);
 
+      // Convert from cartesian coordinates to the 5x1 state vector corresponding to the tracking error matrix.
+      double vect[5];
+      vect[2]=tan(M_PI_2 - track_mom.Theta());
+      vect[1]=track_mom.Phi();
+      double sinphi=sin(vect[1]);
+      double cosphi=cos(vect[1]);
+      vect[0]=tra->charge()/track_mom.Perp();
+      vect[4]=track_pos.Z();
+      vect[3]=track_pos.Perp();
+      if ((track_pos.X() > 0 && sinphi>0) || (track_pos.Y() <0 && cosphi>0) || (track_pos.Y() >0 && cosphi<0) || (track_pos.X() <0 && sinphi<0))
+        vect[3] *= -1.; 
+      tra->setTrackingStateVector(vect[0], vect[1], vect[2], vect[3], vect[4]);
+
+      // Set the 7x7 covariance matrix.
+		tra->setErrorMatrix(Get7x7ErrorMatrix(tra->mass(), vect, mat));
+
       // configure the DReferenceTrajectory object
       DReferenceTrajectory *rt = free_rts.back();
       free_rts.pop_back();
@@ -695,3 +711,50 @@ Particle_t DEventSourceREST::PDGtoPtype(int pdgtype)
    }
    return (Particle_t)0;
 }
+
+// Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
+// coordinates.
+// This was copied and transformed from DKinFit.cc
+DMatrixDSym DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5], DMatrixDSym& C5x5)
+{
+  DMatrixDSym C7x7(7);
+  DMatrix J(7,5);
+
+  // State vector
+  double q_over_pt=vec[0];
+  double phi=vec[1];
+  double tanl=vec[2];
+  double D=vec[3];
+
+  double cosl=cos(atan(tanl));
+  double pt=1./fabs(q_over_pt);
+  double p=pt/cosl;
+  double p_sq=p*p;
+  double pt_sq=pt*pt;
+  double cosphi=cos(phi);
+  double sinphi=sin(phi);
+  double q=(q_over_pt>0)?1.:-1.;
+
+  J(0, 0)=-q*pt_sq*cosphi;
+  J(0, 1)=-pt*sinphi;
+  
+  J(1, 0)=-q*pt_sq*sinphi;
+  J(1, 1)=pt*cosphi;
+  
+  J(2, 0)=-q*pt_sq*tanl;
+  J(2, 2)=pt;
+  
+  J(3, 1)=-D*cosphi;
+  J(3, 3)=-sinphi;
+  
+  J(4, 1)=-D*sinphi;
+  J(4, 3)=cosphi;
+  
+  J(5, 4)=1.;
+
+  // C'= JCJ^T
+  C7x7=C5x5.Similarity(J);
+  
+  return C7x7;
+}
+

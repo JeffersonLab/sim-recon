@@ -29,6 +29,8 @@
 #include <START_COUNTER/DSCHit.h>
 #include <TOF/DTOFPoint.h>
 
+#include <DMatrix.h>
+
 class DEventSourceREST:public JEventSource
 {
  public:
@@ -70,6 +72,7 @@ class DEventSourceREST:public JEventSource
 
    Particle_t PDGtoPtype(int pdgtype);
 
+   DMatrixDSym Get7x7ErrorMatrix(double mass, const double vec[5], DMatrixDSym& C5x5);
  private:
    // Warning: Class JEventSource methods must be re-entrant, so do not
    // store any data here that might change from event to event.
