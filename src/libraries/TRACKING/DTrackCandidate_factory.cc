@@ -76,6 +76,8 @@ inline bool FDCHitSortByLayerincreasing(const DFDCPseudo* const &hit1, const DFD
 jerror_t DTrackCandidate_factory::init(void)
 {
 	MAX_NUM_TRACK_CANDIDATES = 20;
+
+	return NOERROR;
 }
 
 //------------------
@@ -960,7 +962,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     }
   }
 
-	if((_data.size() > MAX_NUM_TRACK_CANDIDATES) && (MAX_NUM_TRACK_CANDIDATES >= 0))
+  if((int(_data.size()) > MAX_NUM_TRACK_CANDIDATES) && (MAX_NUM_TRACK_CANDIDATES >= 0))
 	{
 		for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
 			delete _data[loc_i];
