@@ -3075,7 +3075,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     unsigned int ndof_forward=0;
 
     // Parameters at "vertex"
-    double D=0.,phi=0.,q_over_pt=0.,tanl=0.,z=0.;
+    double D=0.,phi=0.,q_over_pt=0.,tanl=0.,x=0.,y=0.,z=0.;
     
     // Use forward parameters for CDC-only tracks with theta<70 degrees
     if (theta_deg<70){
@@ -3109,6 +3109,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  chisq_forward=chisq_;
 	  ndof_forward=ndf_;
 	  D=D_;
+	  x=x_;
+	  y=y_;
 	  z=z_;
 	  phi=phi_;
 	  tanl=tanl_;
@@ -3181,6 +3183,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	  q_over_pt_=q_over_pt;
 	  tanl_=tanl;
 	  D_=D;
+	  x_=x;
+	  y_=y;
 	  z_=z;
 	  chisq_=chisq_forward;
 	  ndf_= ndof_forward;
@@ -3196,6 +3200,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       q_over_pt_=q_over_pt;
       tanl_=tanl;
       D_=D;
+      x_=x;
+      y_=y;
       z_=z;
       chisq_=chisq_forward;
       ndf_= ndof_forward;
