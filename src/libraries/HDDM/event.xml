@@ -60,6 +60,7 @@
           <bcalfADCUpHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
           <bcalfADCDownHit E="float" maxOccurs="unbounded" minOccurs="0" t="float"/>
         </bcalfADCCell>
+        <bcalTDCHit layer="int" module="int" sector="int" end="int" maxOccurs="unbounded" minOccurs="0" t="float"/>
         <bcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float"/>
       </barrelEMcal>
       <gapEMcal minOccurs="0">

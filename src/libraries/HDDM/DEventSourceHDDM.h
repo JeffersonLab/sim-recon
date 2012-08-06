@@ -26,6 +26,7 @@ using namespace std;
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "BCAL/DBCALSiPMHit.h"
 #include "BCAL/DBCALHit.h"
+#include "BCAL/DBCALTDCHit.h"
 #include "BCAL/DBCALTruthShower.h"
 #include "BCAL/DBCALTruthCell.h"
 #include "CDC/DCDCHit.h"
@@ -70,6 +71,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DBCALTruthCell(s_HDDM_t *hddm_s, JFactory<DBCALTruthCell> *factory);
 		jerror_t Extract_DBCALSiPMHit(s_HDDM_t *hddm_s, JFactory<DBCALSiPMHit> *factory);
 		jerror_t Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory);
+		jerror_t Extract_DBCALTDCHit(s_HDDM_t *hddm_s, JFactory<DBCALTDCHit> *factory);
 		jerror_t Extract_DMCReaction(s_HDDM_t *hddm_s, JFactory<DMCReaction> *factory, JEventLoop *loop);
 		jerror_t Extract_DBeamPhoton(s_HDDM_t *hddm_s, JFactory<DBeamPhoton> *factory, JEventLoop *loop);
 		jerror_t Extract_DMCThrown(s_HDDM_t *hddm_s, JFactory<DMCThrown> *factory);

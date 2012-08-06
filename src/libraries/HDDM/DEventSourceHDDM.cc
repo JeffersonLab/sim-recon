@@ -225,6 +225,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DBCALHit" && tag=="")
 	  return Extract_DBCALHit(my_hddm_s, dynamic_cast<JFactory<DBCALHit>*>(factory));
 	
+	if(dataClassName =="DBCALTDCHit" && tag=="")
+	  return Extract_DBCALTDCHit(my_hddm_s, dynamic_cast<JFactory<DBCALTDCHit>*>(factory));
+	
 	if(dataClassName =="DCDCHit" && (tag=="" || tag=="TRUTH") )
 	  return Extract_DCDCHit(my_hddm_s, dynamic_cast<JFactory<DCDCHit>*>(factory) , tag );
 	
@@ -723,6 +726,82 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 		} // j   (cells)
 	} // i   (physicsEvents)
 	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_DBCALTDCHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(s_HDDM_t *hddm_s, JFactory<DBCALTDCHit> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DBCALTDCHit*> data;
+#if 0
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->barrelEMcal == HDDM_NULL ||
+			hits->barrelEMcal->bcalTDCHits == HDDM_NULL)continue;
+		
+		// Loop over BCAL TDC cells
+		s_BcalfADCCells_t *cells = hits->barrelEMcal->bcalfADCCells;
+		for(unsigned int j=0;j<cells->mult;j++){
+			s_BcalfADCCell_t *cell = &cells->in[j];
+			int cellIdent = DBCALGeometry::cellId( cell->module, cell->layer, 
+				  cell->sector );
+			if(cell->bcalfADCUpHits != HDDM_NULL){
+				for(unsigned int k=0; k<cell->bcalfADCUpHits->mult; k++){
+			     
+					s_BcalfADCUpHit_t *uphit = &cell->bcalfADCUpHits->in[k];
+
+					DBCALHit *response = new DBCALHit;
+					
+					response->module =cell->module;
+					response->layer = cell->layer;
+					response->sector = cell->sector;
+					response->E = uphit->E;
+					response->t = uphit->t;
+					response->end = DBCALGeometry::kUpstream;
+					response->cellId = cellIdent;
+
+					data.push_back(response);
+				}
+			}
+
+			if(cell->bcalfADCDownHits != HDDM_NULL){
+				for(unsigned int k=0; k<cell->bcalfADCDownHits->mult; k++){
+
+					s_BcalfADCDownHit_t *downhit = &cell->bcalfADCDownHits->in[k];
+
+					DBCALHit *response = new DBCALHit;
+	    
+					response->module =cell->module;
+					response->layer = cell->layer;
+					response->sector = cell->sector;
+					response->E = downhit->E;
+					response->t = downhit->t;
+					response->end = DBCALGeometry::kDownstream;
+
+					response->cellId = cellIdent;
+
+					data.push_back(response);
+				}
+			}
+		} // j   (cells)
+	} // i   (physicsEvents)
+#endif	
 	// Copy into factory
 	factory->CopyTo(data);
 

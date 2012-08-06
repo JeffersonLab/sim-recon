@@ -1,22 +1,18 @@
 // $Id$
 //
-//    File: DBCALHit.h
-// Created: Thu Jun  9 10:14:35 EDT 2005
-// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
+//    File: DBCALTDCHit.h
+// Created: Thu Aug  2 11:40:16 EDT 2012
+// Creator: davidl (on Darwin eleanor.jlab.org 10.8.0 i386)
 //
 
-#ifndef _DBCALHit_
-#define _DBCALHit_
+#ifndef _DBCALTDCHit_
+#define _DBCALTDCHit_
 
-#include "BCAL/DBCALGeometry.h"
+#include <JANA/jerror.h>
 
-#include <JANA/JObject.h>
-#include <JANA/JFactory.h>
-using namespace jana;
+class DBCALTDCHit:public JObject{
 
-class DBCALHit:public JObject{
-
-	/// This class holds data originating from the fADC250
+	/// This class holds data originating from the F1TDC
 	/// modules connected to the BCAL
 
 	public:
@@ -26,9 +22,8 @@ class DBCALHit:public JObject{
 		int layer;
 		int sector;
 		DBCALGeometry::End end;
-		float E;
 		float t;
-		
+
 		int cellId;
 
 		void toStrings(vector<pair<string,string> > &items)const{
@@ -36,10 +31,9 @@ class DBCALHit:public JObject{
 			AddString(items, "layer", "%d", layer);
 			AddString(items, "sector", "%d", sector);
 			AddString(items, "end", "%s", end==0 ? "upstream":"downstream" );
-			AddString(items, "E(fADC)", "%2.3f", E);
 			AddString(items, "t(ns)", "%4.2f", t);
 		}
 };
 
-#endif // _DBCALHit_
+#endif // _DBCALTDCHit_
 
