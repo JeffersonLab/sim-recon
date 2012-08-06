@@ -5404,6 +5404,7 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
 
   double p=1./fabs(q_over_p_);
   double tanl=1./sqrt(tx_*tx_+ty_*ty_);
+  double tanl2=tanl*tanl;
   double lambda=atan(tanl);
   double sinl=sin(lambda);
   double sinl3=sinl*sinl*sinl;
@@ -5416,11 +5417,13 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
   J(state_Py,state_ty)=p*(1.+tx_*tx_)*sinl3;
   J(state_Pz,state_q_over_p)=-p*sinl/q_over_p_;
   J(state_Px,state_q_over_p)=tx_*J(state_Pz,state_q_over_p);
-  J(state_Py,state_q_over_p)=ty_*J(state_Pz,state_q_over_p);
-  J(state_Z,state_x)=0.5/tx_;
-  J(state_Z,state_y)=0.5/ty_;  
-  J(state_Z,state_tx)=-0.5*x_/(tx_*tx_);
-  J(state_Z,state_ty)=-0.5*y_/(ty_*ty_);
+  J(state_Py,state_q_over_p)=ty_*J(state_Pz,state_q_over_p); 
+  J(state_Z,state_x)=-tx_*tanl2;
+  J(state_Z,state_y)=-ty_*tanl2;
+  double diff=tx_*tx_-ty_*ty_;
+  double frac=tanl2*tanl2;
+  J(state_Z,state_tx)=(x_*diff+2.*tx_*ty_*y_)*frac;
+  J(state_Z,state_ty)=(2.*tx_*ty_*x_-y_*diff)*frac;
   
   // C'= JCJ^T
   C7x7=C.Similarity(J);
@@ -5436,11 +5439,11 @@ DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrixForward(DMatrixDSym C){
 DMatrixDSym DTrackFitterKalmanSIMD::Get7x7ErrorMatrix(DMatrixDSym C){
   DMatrixDSym C7x7(7);
   DMatrix J(7,5);
-  double cosl=cos(atan(tanl_));
+  //double cosl=cos(atan(tanl_));
   double pt=1./fabs(q_over_pt_);
-  double p=pt/cosl;
-  double p_sq=p*p;
-  double E=sqrt(mass2+p_sq);
+  //double p=pt/cosl;
+  // double p_sq=p*p;
+  //  double E=sqrt(mass2+p_sq);
   double pt_sq=1./(q_over_pt_*q_over_pt_);
   double cosphi=cos(phi_);
   double sinphi=sin(phi_);
