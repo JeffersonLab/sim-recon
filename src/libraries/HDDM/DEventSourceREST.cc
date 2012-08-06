@@ -645,6 +645,7 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       vect[0]=tra->charge()/track_mom.Perp();
       vect[4]=track_pos.Z();
       vect[3]=track_pos.Perp();
+
       if ((track_pos.X() > 0 && sinphi>0) || (track_pos.Y() <0 && cosphi>0) || (track_pos.Y() >0 && cosphi<0) || (track_pos.X() <0 && sinphi<0))
         vect[3] *= -1.; 
       tra->setTrackingStateVector(vect[0], vect[1], vect[2], vect[3], vect[4]);
@@ -715,7 +716,7 @@ Particle_t DEventSourceREST::PDGtoPtype(int pdgtype)
 // Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
 // coordinates.
 // This was copied and transformed from DKinFit.cc
-DMatrixDSym DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5], DMatrixDSym& C5x5)
+DMatrixDSym DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5], const DMatrixDSym& C5x5)
 {
   DMatrixDSym C7x7(7);
   DMatrix J(7,5);
@@ -753,7 +754,8 @@ DMatrixDSym DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5]
   J(5, 4)=1.;
 
   // C'= JCJ^T
-  C7x7=C5x5.Similarity(J);
+  DMatrixDSym locTempMatrix = C5x5;
+  C7x7=locTempMatrix.Similarity(J);
   
   return C7x7;
 }
