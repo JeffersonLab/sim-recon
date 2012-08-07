@@ -678,14 +678,16 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          tra->ddEdx_CDC = diter->getDEdxCDC();
          tra->ddx_FDC = diter->getDxFDC();
          tra->ddx_CDC = diter->getDxCDC();
+         tra->setdEdx((tra->dNumHitsUsedFordEdx_CDC >= tra->dNumHitsUsedFordEdx_FDC) ? tra->ddEdx_CDC : tra->ddEdx_FDC);
       }
       else {
          tra->dNumHitsUsedFordEdx_FDC = 0;
          tra->dNumHitsUsedFordEdx_CDC = 0;
-         tra->ddEdx_FDC = 0;
-         tra->ddEdx_CDC = 0;
-         tra->ddx_FDC = 0;
-         tra->ddx_CDC = 0;
+         tra->ddEdx_FDC = 0.0;
+         tra->ddEdx_CDC = 0.0;
+         tra->ddx_FDC = 0.0;
+         tra->ddx_CDC = 0.0;
+         tra->setdEdx(0.0);
       }
 
       data.push_back(tra);
