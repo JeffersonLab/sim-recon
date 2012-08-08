@@ -732,7 +732,6 @@ DMatrixDSym DEventSourceREST::Get7x7ErrorMatrix(double mass, const double vec[5]
   double cosl=cos(atan(tanl));
   double pt=1./fabs(q_over_pt);
   double p=pt/cosl;
-  double p_sq=p*p;
   double pt_sq=pt*pt;
   double cosphi=cos(phi);
   double sinphi=sin(phi);
