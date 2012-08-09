@@ -20,6 +20,7 @@ class Df250TriggerTime:public jana::JObject{
 		JOBJECT_PUBLIC(Df250TriggerTime);
 
 		Df250TriggerTime():rocid(0),slot(0),trigger_number(0),time(0){}
+		Df250TriggerTime(uint32_t rocid, uint32_t slot, uint32_t trigger_number, uint64_t time):rocid(rocid),slot(slot),trigger_number(trigger_number),time(time){}
 		
 		uint32_t rocid;          // from EVIO header (crate number)
 		uint32_t slot;           // from Block Header

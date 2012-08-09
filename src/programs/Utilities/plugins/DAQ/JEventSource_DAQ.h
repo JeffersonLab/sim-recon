@@ -51,24 +51,33 @@ class JEventSource_DAQ: public jana::JEventSource{
 		// Utility class to hold pointers to containers for
 		// all types of data objects we produce. This gets passed
 		// into bank processor methods so that they can append
-		// to the lists.
+		// to the lists. Note that the naming scheme here needs to
+		// include the exact name of the class with a "v" in front
+		// and an "s" in back. (See #define in JEventSource_DAQ.cc
+		// for more details.)
 		class ObjList{
 		public:
-			vector<Df250PulseIntegral*>    df250PulseIntegrals;
-			vector<Df250PulseRawData*>     df250PulseRawDatas;
-			vector<Df250PulseTime*>        df250PulseTimes;
-			vector<Df250StreamingRawData*> df250StreamingRawDatas;
-			vector<Df250TriggerTime*>      df250TriggerTimes;
-			vector<Df250WindowRawData*>    df250WindowRawDatas;
-			vector<Df250WindowSum*>        df250WindowSums;
+			vector<Df250PulseIntegral*>    vDf250PulseIntegrals;
+			vector<Df250PulseRawData*>     vDf250PulseRawDatas;
+			vector<Df250PulseTime*>        vDf250PulseTimes;
+			vector<Df250StreamingRawData*> vDf250StreamingRawDatas;
+			vector<Df250TriggerTime*>      vDf250TriggerTimes;
+			vector<Df250WindowRawData*>    vDf250WindowRawDatas;
+			vector<Df250WindowSum*>        vDf250WindowSums;
 		};
 	
 		int32_t GetRunNumber(evioDOMTree *evt);
+		MODULE_TYPE GuessModuleType(evioDOMNodeP bankPtr);
 
 		void Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs);
 		void Parsef125Bank(evioDOMNodeP bankPtr, ObjList &objs);
 		void ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs);
-	
+		void ParseTSBank(evioDOMNodeP bankPtr, ObjList &objs);
+		void ParseTIBank(evioDOMNodeP bankPtr, ObjList &objs);
+
+		// f250 methods
+		Df250WindowRawData* MakeDf250WindowRawData(uint32_t rocid, uint32_t slot, const uint32_t* &iptr);
+
 	
 };
 

@@ -19,7 +19,7 @@ class Df250WindowRawData:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250WindowRawData);
 	
-		Df250WindowRawData():rocid(0),slot(0),channel(0),invalid_samples(false),overflow(false){}
+		Df250WindowRawData(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0):rocid(rocid),slot(slot),channel(channel),invalid_samples(false),overflow(false){}
 	
 		uint32_t rocid;          // from EVIO header (crate number)
 		uint32_t slot;           // from Block Header

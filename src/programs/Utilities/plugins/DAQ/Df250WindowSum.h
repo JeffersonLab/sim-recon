@@ -19,7 +19,7 @@ class Df250WindowSum:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250WindowSum);
 	
-		Df250WindowSum():rocid(0),slot(0),channel(0),sum(0),overflow(false){}
+		Df250WindowSum(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t sum=0, bool overflow=false):rocid(rocid),slot(slot),channel(channel),sum(sum),overflow(overflow){}
 
 		uint32_t rocid;          // from EVIO header (crate number)
 		uint32_t slot;           // from Block Header
