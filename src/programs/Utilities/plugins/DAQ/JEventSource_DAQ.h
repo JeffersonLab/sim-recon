@@ -29,6 +29,7 @@ using namespace evio;
 #include "Df250TriggerTime.h"
 #include "Df250PulseTime.h"
 #include "Df250WindowRawData.h"
+#include "DF1TDCHit.h"
 
 
 class JEventSource_DAQ: public jana::JEventSource{
@@ -67,6 +68,7 @@ class JEventSource_DAQ: public jana::JEventSource{
 			vector<Df250TriggerTime*>      vDf250TriggerTimes;
 			vector<Df250WindowRawData*>    vDf250WindowRawDatas;
 			vector<Df250WindowSum*>        vDf250WindowSums;
+			vector<DF1TDCHit*>           vDF1TDCHits;
 		};
 	
 		int32_t GetRunNumber(evioDOMTree *evt);

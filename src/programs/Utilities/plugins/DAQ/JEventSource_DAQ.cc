@@ -181,6 +181,7 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 	CopyToFactory(Df250TriggerTime);
 	CopyToFactory(Df250PulseTime);
 	CopyToFactory(Df250WindowRawData);
+	CopyToFactory(DF1TDCHit);
 	
 	return err;
 }
@@ -259,6 +260,52 @@ MODULE_TYPE JEventSource_DAQ::GuessModuleType(evioDOMNodeP bankPtr)
 		}
 	}
 	
+	//---- Check for F1TDC
+	// This will check for consistency in the slot numbers for all words
+	// in the buffer. The slot number of data words are checked against
+	// the slot number of the most recently encountered header word.
+	// The manual does not appear to distinguish between header and trailer
+	// words so we can't check consistency of trailers
+	if(*istart == 0xf1daffff){ // appears to be in my data file. Don't know if this is universal
+		bool is_F1TDC = true;
+		uint32_t slot_header = 1000;
+		uint32_t chip_header = 1000;
+		uint32_t chan_header = 1000;
+		
+		// skip first word which appears to be ROL marker for F1TDC data
+		const uint32_t *iptr=istart;
+		for(iptr++; iptr<iend; iptr++){
+			
+			// ROL end of data marker (also not sure if this universal)
+			if(*iptr == 0xda0000ff)break;
+			
+			uint32_t slot = (*iptr>>27) & 0x1F;
+			
+			// if slot is 0 or 30, we are supposed to ignore the data.
+			if(slot == 30 || slot ==0)continue;
+			
+			if(((*iptr>>23) & 0x1) == 0){
+				// header/trailer word
+				slot_header = slot;
+				chip_header = (*iptr>>3) & 0x07;
+				chan_header = (*iptr>>0) & 0x07;
+			}else{
+				// data word
+				uint32_t chip = (*iptr>>19) & 0x07;
+				uint32_t chan = (*iptr>>16) & 0x07;
+				
+				if(slot != slot_header)is_F1TDC = false;
+				//if(chip != chip_header)is_F1TDC = false; // these are not always consistent with
+				//if(chan != chan_header)is_F1TDC = false; // the header since many headers are suppressed
+			}
+	
+			// Once we decide this is not a F1TDC, stop looping over buffer
+			if(!is_F1TDC)break;
+		}
+		
+		if(is_F1TDC)return DModuleType::F1TDC;
+	}
+
 	// Couldn't figure it out...
 	return DModuleType::UNKNOWN;
 }
@@ -322,7 +369,7 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs)
 {
 	// Get all data words for this bank
 	const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
-	if(vec==NULL) {cerr << "?unable to get vector for FADC250 data bank" << endl; return;}
+	if(vec==NULL) {jerr << "?unable to get vector for FADC250 data bank" << endl; return;}
 	if(vec->size()<3)return; // not enough data to try parsing
 	
 	int32_t rocid = 0; // needs to come from higher-level bank!!
@@ -522,7 +569,54 @@ void JEventSource_DAQ::Parsef125Bank(evioDOMNodeP bankPtr, ObjList &objs)
 //----------------
 void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs)
 {
+	int32_t rocid = 0; // needs to come from higher-level bank!!
+
+	// Get all data words for this bank
+	const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+	if(vec==NULL) {jerr << "?unable to get vector for F1TDC data bank" << endl; return;}
+	if(vec->size()<3)return; // not enough data to try parsing
+
+	const uint32_t *iptr = &(*vec)[0];
+	const uint32_t *iend = &(*vec)[vec->size()];
+
+	// ROC marker word appears to be in my data file. Don't know if this is universal
+	if(*iptr != 0xf1daffff)return;
+	iptr++;
 	
+	uint32_t slot_header = 1000;
+	uint32_t chip_header = 1000;
+	uint32_t chan_header = 1000;
+	uint32_t trig_time = 0;
+
+	// Loop over words in bank
+	for(; iptr<iend; iptr++){
+		
+		// ROL end of data marker (also not sure if this universal)
+		if(*iptr == 0xda0000ff)break;
+		
+		uint32_t slot = (*iptr>>27) & 0x1F;
+		
+		// if slot is 0 or 30, we are supposed to ignore the data.
+		if(slot == 30 || slot ==0)continue;
+		
+		// Check if this is a header/trailer or a data word
+		if(((*iptr>>23) & 0x1) == 0){
+			// header/trailer word
+			slot_header = slot;
+			chip_header = (*iptr>>3) & 0x07;
+			chan_header = (*iptr>>0) & 0x07;
+			trig_time = (*iptr>>7) & 0x1FF;
+		}else{
+			// data word
+			uint32_t chip = (*iptr>>19) & 0x07;
+			uint32_t chan = (*iptr>>16) & 0x07;
+			uint32_t channel = (chip<<3) + (chan<<0);
+			uint32_t time = (*iptr>>0) & 0xFFFF;
+			
+			DF1TDCHit *hit = new DF1TDCHit(rocid, slot, channel, trig_time, time);
+			objs.vDF1TDCHits.push_back(hit);
+		}
+	}
 }
 
 //----------------
