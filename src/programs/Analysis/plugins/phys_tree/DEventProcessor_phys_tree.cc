@@ -132,7 +132,7 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	const DPhysicsEvent *physicsevent = NULL;
 	int max_parts=0;
 	for(unsigned int i=0; i<physicsevents.size(); i++){
-		if(physicsevents[i]->particle_sets==NULL)continue;
+		if(physicsevents[i]->particle_sets.size()==0)continue;
 		const DParticleSet *ps = physicsevents[i]->particle_sets[0];
 		int Nparts = ps->pip.size() + ps->pim.size()
 		        + ps->photon.size() + ps->proton.size()
