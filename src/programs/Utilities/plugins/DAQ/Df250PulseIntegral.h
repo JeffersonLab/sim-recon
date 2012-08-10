@@ -20,7 +20,7 @@ class Df250PulseIntegral:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250PulseIntegral);
 
-		Df250PulseIntegral():rocid(0),slot(0),channel(0),pulse_number(0),quality_factor(0),integral(0){}
+		Df250PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t integral=0):rocid(rocid),slot(slot),channel(channel),pulse_number(pulse_number),quality_factor(quality_factor),integral(integral){}
 		
 		uint32_t rocid;                // from EVIO header (crate number)
 		uint32_t slot;                 // from Block Header

@@ -20,7 +20,7 @@ class Df250PulseTime:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250PulseTime);
 		
-		Df250PulseTime():rocid(0),slot(0),channel(0),pulse_number(0),quality_factor(0),time(0){}
+		Df250PulseTime(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t time=0):rocid(rocid),slot(slot),channel(channel),pulse_number(pulse_number),quality_factor(quality_factor),time(time){}
 		
 		uint32_t rocid;                // from EVIO header (crate number)
 		uint32_t slot;                 // from Block Header

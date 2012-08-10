@@ -77,6 +77,7 @@ class JEventSource_DAQ: public jana::JEventSource{
 
 		// f250 methods
 		Df250WindowRawData* MakeDf250WindowRawData(uint32_t rocid, uint32_t slot, const uint32_t* &iptr);
+		Df250PulseRawData* MakeDf250PulseRawData(uint32_t rocid, uint32_t slot, const uint32_t* &iptr);
 
 	
 };

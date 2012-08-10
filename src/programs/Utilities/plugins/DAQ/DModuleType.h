@@ -41,7 +41,7 @@ class DModuleType{
 		/// Given the type_id of a module type, return a DModuleType object.
 		/// This is much more efficient than GetModule(string), but is still
 		/// not really intended to be called every event.
-		DModuleType GetModule(type_id_t id){
+		static DModuleType GetModule(type_id_t id){
 			switch(id){
 				case F250ADC: return DModuleType(F250ADC, "F250ADC", "JLab Flash 250 MHz ADC");
 				case F125ADC: return DModuleType(F125ADC, "F125ADC", "JLab Flash 125 MHz ADC");
@@ -60,7 +60,7 @@ class DModuleType{
 		/// This is not a terribly efficient mechanism and is inteded to
 		/// be called only at the beginning of event processing rather than
 		/// every event.
-		DModuleType GetModule(std::string name){
+		static DModuleType GetModule(std::string name){
 			std::vector<DModuleType> modules;
 			GetModuleList(modules);
 			for(unsigned int i=UNKNOWN; i<N_MODULE_TYPES; i++){
@@ -76,13 +76,38 @@ class DModuleType{
 		/// Get a list of all module types currently defined. This
 		/// will append the full list to the given "modules" container.
 		/// (The vector is not cleared on input).
-		void GetModuleList(std::vector<DModuleType> &modules){
+		static void GetModuleList(std::vector<DModuleType> &modules){
 			
 			for(type_id_t id=UNKNOWN; id<N_MODULE_TYPES; id++){
 				modules.push_back(GetModule(id));
 			}
 		}
 		
+		//------------------------------
+		// GetName
+		//
+		/// Get the name of a module type based on its id. This can
+		/// be called without an instance of the class if one already
+		/// has the type.
+		static string GetName(type_id_t id){
+			return GetModule(id).GetName();
+		}
+	
+		//------------------------------
+		// GetDescription
+		//
+		/// Get the name of a module type based on its id. This can
+		/// be called without an instance of the class if one already
+		/// has the type.
+		static string GetDescription(type_id_t id){
+			return GetModule(id).GetDescription();
+		}
+	
+		//------------------------------
+		// non-static methods
+		type_id_t GetType(void) const {return type;}
+		string GetName(void) const {return name;}
+		string GetDescription(void) const {return description;}
 		
 	protected:
 		type_id_t type;

@@ -20,7 +20,7 @@ class Df250PulseRawData:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250PulseRawData);
 		
-		Df250PulseRawData():rocid(0),slot(0),channel(0),pulse_number(0),first_sample_number(0),invalid_samples(false),overflow(false){}
+		Df250PulseRawData(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t pulse_number=0, uint32_t first_sample_number=0):rocid(rocid),slot(slot),channel(channel),pulse_number(pulse_number),first_sample_number(first_sample_number),invalid_samples(false),overflow(false){}
 		
 		uint32_t rocid;                // from EVIO header (crate number)
 		uint32_t slot;                 // from Block Header

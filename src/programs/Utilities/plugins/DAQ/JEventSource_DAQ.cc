@@ -97,6 +97,7 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 		}else{
 			// Optionally try and guess the module type based on the data
 			type = GuessModuleType(bankPtr);
+			if(type != DModuleType::UNKNOWN)jout<<"Found module of type: "<<DModuleType::GetName(type)<<" in bank with tag,num = "<<bankPtr->tag<<","<<(int)bankPtr->num<<endl;
 			module_type[tag_num] = type; // remember for next time
 		}
 		
@@ -208,8 +209,41 @@ MODULE_TYPE JEventSource_DAQ::GuessModuleType(evioDOMNodeP bankPtr)
 	/// Try parseing through the information in the given bank pointer
 	/// to determine which type of module produced the data.
 
-	// ---- TEMPORARY ----
-	if(bankPtr->tag == 5 && bankPtr->num == 0)return DModuleType::F250ADC;
+	// Get all data words for the bank
+	const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+	
+	// Only guess banks of ints
+	if(!vec) return DModuleType::UNKNOWN;
+
+	// Pointers to first and last words in bank
+	const uint32_t *istart = &(*vec)[0];
+	const uint32_t *iend = &(*vec)[vec->size()];
+
+	//---- Check for f250
+	// This will check if the first word appears to be a block header.
+	// If so, it loops over all words looking for a block trailer.
+	// If the slot number in the block trailer matches that in the
+	// block header AND the number of words in the block matches that
+	// specified in the block trailer, then it is assumed to be a f250.
+	if(((*istart>>31) & 0x1) == 1){
+		uint32_t data_type = (*istart>>27) & 0x0F;
+		if(data_type == 0){ // Block Header
+			uint32_t slot_header = (*istart>>22) & 0x1F;
+			uint32_t Nwords = 1;
+			for(const uint32_t *iptr=istart; iptr<iend; iptr++, Nwords++){
+				if(((*iptr>>31) & 0x1) == 1){
+					uint32_t data_type = (*iptr>>27) & 0x0F;
+					if(data_type == 1){ // Block Trailer
+						uint32_t slot_trailer = (*iptr>>22) & 0x1F;
+						uint32_t Nwords_trailer = (*iptr>>0) & 0x3FFFFF;
+						if(slot_header == slot_trailer){
+							if(Nwords == Nwords_trailer)return DModuleType::F250ADC;
+						}
+					}
+				}
+			}
+		}
+	}
 	
 	// Couldn't figure it out...
 	return DModuleType::UNKNOWN;
@@ -254,6 +288,9 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs)
 		uint64_t t = 0L;
 		uint32_t channel = 0;
 		uint32_t sum = 0;
+		uint32_t pulse_number = 0;
+		uint32_t quality_factor = 0;
+		uint32_t pulse_time = 0;
 		bool overflow = false;
 		
 		uint32_t data_type = (*iptr>>27) & 0x0F;
@@ -285,20 +322,34 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs)
 				sum = (*iptr>>0) & 0x3FFFFF;
 				overflow = (*iptr>>22) & 0x1;
 				objs.vDf250WindowSums.push_back(new Df250WindowSum(rocid, slot, channel, sum, overflow));
-				break;
-				
-				// Data types 5-9 do not appear to be present in the
-				// 2011 FCAL beam test data so develop stops here for now.
-				
+				break;				
 			case 6: // Pulse Raw Data
+				// iptr passed by reference and so will be updated automatically
+				objs.vDf250PulseRawDatas.push_back(MakeDf250PulseRawData(rocid, slot, iptr));
+				break;
 			case 7: // Pulse Integral
+				channel = (*iptr>>23) & 0x0F;
+				pulse_number = (*iptr>>21) & 0x03;
+				quality_factor = (*iptr>>19) & 0x03;
+				sum = (*iptr>>0) & 0x7FFFF;
+				objs.vDf250PulseIntegrals.push_back(new Df250PulseIntegral(rocid, slot, channel, pulse_number, quality_factor, sum));
+				break;
 			case 8: // Pulse Time
+				channel = (*iptr>>23) & 0x0F;
+				pulse_number = (*iptr>>21) & 0x03;
+				quality_factor = (*iptr>>19) & 0x03;
+				pulse_time = (*iptr>>0) & 0xFFFF;
+				objs.vDf250PulseTimes.push_back(new Df250PulseTime(rocid, slot, channel, pulse_number, quality_factor, pulse_time));
+				break;
 			case 9: // Streaming Raw Data
-			case 10: // User Defined
-			case 11: // User Defined
-			case 12: // User Defined
+				// This is marked "reserved for future implementation" in the current manual.
+				// As such, we don't try handling it here just yet.
 				break;
 			case 13: // Event Trailer
+				// This is marked "suppressed for normal readout – debug mode only" in the
+				// current manual. It does not contain any data so the most we could do here
+				// is return early. I'm hesitant to do that though since it would mean
+				// different behavior for debug mode data as regular data.
 			case 14: // Data not valid (empty module)
 			case 15: // Filler (non-data) word
 				break;
@@ -345,6 +396,50 @@ Df250WindowRawData* JEventSource_DAQ::MakeDf250WindowRawData(uint32_t rocid, uin
 	}
 	
 	return wrd;
+}
+
+//----------------
+// MakeDf250PulseRawData
+//----------------
+Df250PulseRawData* JEventSource_DAQ::MakeDf250PulseRawData(uint32_t rocid, uint32_t slot, const uint32_t* &iptr)
+{
+	uint32_t channel = (*iptr>>23) & 0x0F;
+	uint32_t pulse_number = (*iptr>>21) & 0x000F;
+	uint32_t first_sample_number = (*iptr>>0) & 0x03FF;
+	
+	Df250PulseRawData *prd = new Df250PulseRawData(rocid, slot, channel, pulse_number, first_sample_number);
+	
+	// This loop needs to break when it hits a non-continuation word
+	for(uint32_t isample=0; isample<1000; isample +=2){
+		
+		// Advance to next word
+		iptr++;
+		
+		// Make sure this is a data continuation word, if not, stop here
+		if(((*iptr>>31) & 0x1) != 0x0)break;
+		
+		bool invalid_1 = (*iptr>>29) & 0x1;
+		bool invalid_2 = (*iptr>>13) & 0x1;
+		uint16_t sample_1 = 0;
+		uint16_t sample_2 = 0;
+		if(!invalid_1)sample_1 = (*iptr>>16) & 0x1FFF;
+		if(!invalid_2)sample_2 = (*iptr>>0) & 0x1FFF;
+		
+		// Sample 1
+		prd->samples.push_back(sample_1);
+		prd->invalid_samples |= invalid_1;
+		prd->overflow |= (sample_1>>12) & 0x1;
+		
+		bool last_word = (iptr[1]>>31) & 0x1;
+		if(last_word && invalid_2)break; // skip last sample if flagged as invalid
+		
+		// Sample 2
+		prd->samples.push_back(sample_2);
+		prd->invalid_samples |= invalid_2;
+		prd->overflow |= (sample_2>>12) & 0x1;
+	}
+	
+	return prd;
 }
 
 
