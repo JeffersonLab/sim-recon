@@ -43,10 +43,13 @@ class JEventSource_DAQ: public jana::JEventSource{
 		jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
 	
 	private:
-	
+		
 		int32_t run_number;
 		evioChannel *chan;
 		map<tagNum, MODULE_TYPE> module_type;
+
+		bool AUTODETECT_MODULE_TYPES;
+		bool DUMP_MODULE_MAP;
 
 		// Utility class to hold pointers to containers for
 		// all types of data objects we produce. This gets passed
@@ -68,6 +71,7 @@ class JEventSource_DAQ: public jana::JEventSource{
 	
 		int32_t GetRunNumber(evioDOMTree *evt);
 		MODULE_TYPE GuessModuleType(evioDOMNodeP bankPtr);
+		void DumpModuleMap(void);
 
 		void Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs);
 		void Parsef125Bank(evioDOMNodeP bankPtr, ObjList &objs);
