@@ -80,6 +80,8 @@ class DLorentzVector{
     double mm = Mag2();
     return mm < 0.0 ? -sqrt(-mm) : sqrt(mm);
   }
+  double M2() const {return Mag2();};
+  double Mag() const {return M();};
   
   // Addition and subtraction
   DLorentzVector &operator+=(const DLorentzVector &v1){
