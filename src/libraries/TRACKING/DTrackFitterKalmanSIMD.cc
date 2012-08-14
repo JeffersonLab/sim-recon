@@ -121,6 +121,8 @@ double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
   if (id<0) id=0;
   if (id>398) id=398;
   double d=cdc_drift_table[id];
+  //_DBG_ << time<<"  "<< id <<"   "<< d <<endl;
+
   if (id!=398){
     double frac=0.5*(time+CDC_T0_OFFSET-2.*double(id));
     double dd=cdc_drift_table[id+1]-cdc_drift_table[id];
@@ -361,11 +363,15 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
   
   JCalibration *jcalib = dapp->GetJCalibration(0);  // need run number here
+  typedef map<string,float>::iterator iter_float;
   vector< map<string, float> > tvals;
   if (jcalib->Get("CDC/cdc_drift", tvals)==false){    
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, float> &row = tvals[i];
-      cdc_drift_table[i]=row["0"];
+      iter_float iter = row.begin();
+      cdc_drift_table[i] = iter->second;
+      _DBG_  << i <<"     "<< iter->second << endl;
+
     }
   }
   else{
@@ -376,7 +382,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   if (jcalib->Get("FDC/fdc_drift2", tvals)==false){
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, float> &row = tvals[i];
-      fdc_drift_table[i]=row["0"];
+      iter_float iter = row.begin();
+      fdc_drift_table[i] = iter->second;
     }
   }
   else{
@@ -3690,6 +3697,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    -central_traj[k].t*TIME_UNIT_CONVERSION;
 	  double B=central_traj[k].B;
 	  measurement=cdc_drift_distance(tdrift,B);
+	  // _DBG_ << "CDChit: t2d >> " << measurement << " tdrift="<<tdrift<<"    with B="<<B<<endl;
 	   
 	  // Measurement error
 	  V=cdc_variance(B,Sc(state_tanl),tdrift);
