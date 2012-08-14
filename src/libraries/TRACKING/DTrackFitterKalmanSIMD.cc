@@ -370,7 +370,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
       map<string, float> &row = tvals[i];
       iter_float iter = row.begin();
       cdc_drift_table[i] = iter->second;
-      _DBG_  << i <<"     "<< iter->second << endl;
+      //_DBG_  << i <<"     "<< iter->second << endl;
 
     }
   }
