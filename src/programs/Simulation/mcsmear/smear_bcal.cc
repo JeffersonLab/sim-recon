@@ -201,9 +201,14 @@ extern bool SMEAR_BCAL;
 extern bool NO_E_SMEAR;
 extern bool NO_T_SMEAR;
 extern bool NO_DARK_PULSES;
+extern bool NO_SAMPLING_FLUCTUATIONS;
+extern bool NO_SAMPLING_FLOOR_TERM;
+extern bool NO_POISSON_STATISTICS;
+extern bool NO_TIME_JITTER;
 extern bool NO_THRESHOLD_CUT;
 extern bool BCAL_DEBUG_HISTS;
 
+extern double BCAL_TDC_THRESHOLD; // mV
 
 // setup response parameters
 extern double BCAL_DARKRATE_GHZ;                // 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
@@ -305,9 +310,8 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	if(BCAL_DEBUG_HISTS)SaveDebugHistos(bcalfADC, "_Electronic");
 	
 	// Apply threshold to find hits in summed spectra
-	double thresh_mV = 44.7;
 	map<int, fADCHitList> fADCHits;
-	FindHits(thresh_mV, bcalfADC, fADCHits);
+	FindHits(BCAL_TDC_THRESHOLD, bcalfADC, fADCHits);
 	
 	// Copy hits into HDDM tree
 	CopyBCALHitsToHDDM(fADCHits, hddm_s);
@@ -596,6 +600,9 @@ void ApplySamplingFluctuations(map<bcal_index, CellSpectra> &SiPMspectra, vector
 	/// The error is applied by finding the ratio of the smeared
 	/// cell energy to unsmeared cell energy and scaling both Eup and Edn
 	/// by it.
+	
+	if(NO_SAMPLING_FLUCTUATIONS)return;
+	if(NO_SAMPLING_FLOOR_TERM)BCAL_SAMPLINGCOEFB=0.0; // (redundant, yes, but located in more obvious place here)
 
 	map<bcal_index, CellSpectra>::iterator iter=SiPMspectra.begin();
 	for(; iter!=SiPMspectra.end(); iter++){
@@ -705,6 +712,8 @@ void ApplyPoissonStatistics(map<bcal_index, CellSpectra> &SiPMspectra)
 	/// mean. The ratio of the quantized, sampled value to the unquantized
 	// integral (in PE) is used to scale the spectrum.
 
+	if(NO_POISSON_STATISTICS)return;
+
 	map<bcal_index, CellSpectra>::iterator iter=SiPMspectra.begin();
 	for(; iter!=SiPMspectra.end(); iter++){
 		CellSpectra &cellspectra = iter->second;
@@ -762,6 +771,8 @@ void ApplySiPMTimeJitter(map<bcal_index, CellSpectra> &SiPMspectra)
 	/// of photo-electrons coming from this bin and shift those pieces.
 	/// Bins with trace amounts of energy are still kept and shifted
 	/// as well to keep the energy integral constant.
+	
+	if(NO_TIME_JITTER)return;
 	
 	double fwhm_jitter = 0.600; // ns
 	double sigma_jitter = fwhm_jitter/2.35; // ns

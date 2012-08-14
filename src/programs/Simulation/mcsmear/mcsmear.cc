@@ -61,11 +61,19 @@ double BCAL_SAMPLINGCOEFB        = 0.0; // 0.013 (from calibDB BCAL/bcal_parms)
 double BCAL_TIMEDIFFCOEFA        = 0.0; // 0.07 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
 double BCAL_TIMEDIFFCOEFB        = 0.0; // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
 
+double BCAL_TDC_THRESHOLD = 44.7; // mV
+
+// BCAL flags
 bool NO_E_SMEAR = false;
 bool NO_T_SMEAR = false;
 bool NO_DARK_PULSES = false;
+bool NO_SAMPLING_FLUCTUATIONS = false;
+bool NO_SAMPLING_FLOOR_TERM = false;
+bool NO_POISSON_STATISTICS = false;
+bool NO_TIME_JITTER = false;
 bool NO_THRESHOLD_CUT = false;
 bool BCAL_DEBUG_HISTS = false;
+
 
 double FCAL_PHOT_STAT_COEF   = 0.0; //0.035;
 double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
@@ -295,29 +303,35 @@ void ParseCommandLineArguments(int narg, char* argv[])
     
     if(ptr[0] == '-'){
       switch(ptr[1]){
-      case 'h': Usage();										break;
+      case 'h': Usage();											break;
+      case 'o': OUTFILENAME = strdup(&ptr[2]);				break;
       case 'n': warn_obsolete=true;								break;
       case 'N': ADD_NOISE=true;									break;
       case 's': SMEAR_HITS=false;								break;
       case 'i': IGNORE_SEEDS=true;								break;
-      case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
-      case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;			break;
-      case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
-      case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
-      case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;			break;
+      case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;	break;
+      case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;		break;
+      case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;	break;
+      case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;	break;
+      case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;		break;
       case 'e': FDC_ELOSS_OFF = true;							break;
-      case 'E': CDC_PEDESTAL_SIGMA = atof(&ptr[2])*k_keV; 		break;
-      case 'd': FDC_HIT_DROP_FRACTION=atof(&ptr[2]);			break;
-      case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);			break;
-      case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;		break;
+      case 'E': CDC_PEDESTAL_SIGMA = atof(&ptr[2])*k_keV; break;
+      case 'd': FDC_HIT_DROP_FRACTION=atof(&ptr[2]);		break;
+      case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);		break;
+      case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;	break;
       case 'B': SMEAR_BCAL = false;								break;
+      case 'R': BCAL_TDC_THRESHOLD = atof(&ptr[2]);		break;
       case 'F': NO_E_SMEAR = true;								break;
       case 'G': NO_T_SMEAR = true;								break;
       case 'H': NO_DARK_PULSES = true;							break;
+      case 'K': NO_SAMPLING_FLUCTUATIONS = true;			break;
+      case 'L': NO_SAMPLING_FLOOR_TERM = true;				break;
+      case 'M': NO_POISSON_STATISTICS = true;				break;
+      case 'Q': NO_TIME_JITTER = true;							break;
       case 'I': NO_THRESHOLD_CUT = true;						break;
-	  case 'J': BCAL_DEBUG_HISTS = true;						break;
-      case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; 				break;
-      case 'S': START_SIGMA= atof(&ptr[2])*k_psec; 				break;
+      case 'J': BCAL_DEBUG_HISTS = true;						break;
+      case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; 			break;
+      case 'S': START_SIGMA= atof(&ptr[2])*k_psec; 		break;
       }
     }else{
       INFILENAME = argv[i];
@@ -338,14 +352,16 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	}
 	
 	// Generate output filename based on input filename
-	char *ptr, *path_stripped;
-	path_stripped = ptr = strdup(INFILENAME);
-	while((ptr = strstr(ptr, "/")))path_stripped = ++ptr;
-	ptr = strstr(path_stripped, ".hddm");
-	if(ptr)*ptr=0;
-	char str[256];
-	sprintf(str, "%s_%ssmeared.hddm", path_stripped, ADD_NOISE ? "n":"");
-	OUTFILENAME = strdup(str);
+	if(OUTFILENAME == NULL){
+		char *ptr, *path_stripped;
+		path_stripped = ptr = strdup(INFILENAME);
+		while((ptr = strstr(ptr, "/")))path_stripped = ++ptr;
+		ptr = strstr(path_stripped, ".hddm");
+		if(ptr)*ptr=0;
+		char str[256];
+		sprintf(str, "%s_%ssmeared.hddm", path_stripped, ADD_NOISE ? "n":"");
+		OUTFILENAME = strdup(str);
+	}
 	
 	cout<<"BCAL values will "<< (SMEAR_BCAL ? "":"not") <<" be smeared"<<endl;
 	cout<<"BCAL values will "<< (SMEAR_BCAL ? "":"not") <<" be added"<<endl;
@@ -368,6 +384,7 @@ void Usage(void)
 	cout<<"sigmas configurable with the options below."<<endl;
 	cout<<endl;
 	cout<<"  options:"<<endl;
+	cout<<"    -ofname  Write output to a file named \"fname\" (default auto-generate name)"<<endl;
 	cout<<"    -N       Add random background hits to CDC and FDC (default is not to add)"<<endl;
 	cout<<"    -s       Don't smear real hits (see -B for BCAL, default is to smear)"<<endl;
 	cout<<"    -i       Ignore random number seeds found in input HDDM file"<<endl;
@@ -388,9 +405,14 @@ void Usage(void)
 	cout<<"    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:"<<FCAL_PHOT_STAT_COEF<<")"<<endl;
 	cout<<"    -b#      FCAL single block threshold in MeV (def:"<<FCAL_BLOCK_THRESHOLD/k_MeV<<")"<<endl;
 	cout<<"    -B       Don't process BCAL hits at all (def. process)"<<endl;
+	cout<<"    -Rthresh BCAL TDC threshold (def. "<<BCAL_TDC_THRESHOLD<<")"<<endl;
 	cout<<"    -F       Don't smear BCAL energy (def. smear)"<<endl;
 	cout<<"    -G       Don't smear BCAL times (def. smear)"<<endl;
 	cout<<"    -H       Don't add BCAL dark hits (def. add)"<<endl;
+	cout<<"    -K       Don't apply BCAL sampling fluctuations (def. apply)"<<endl;
+	cout<<"    -L       Don't apply BCAL sampling floor term (def. apply)"<<endl;
+	cout<<"    -M       Don't apply BCAL Poisson statistics (def. apply)"<<endl;
+	cout<<"    -Q       Don't apply BCAL time jitter (def. apply)"<<endl;
 	cout<<"    -I       Don't apply discrim. thresh. to BCAL hits (def. cut)"<<endl;
 	cout<<"    -J       Create BCAL debug hists (only use with 1 event!)"<<endl;
 	cout<<"    -f#      TOF sigma in psec (def: "<< TOF_SIGMA/k_psec<<")"<<endl;
