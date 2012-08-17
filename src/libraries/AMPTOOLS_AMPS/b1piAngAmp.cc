@@ -54,7 +54,7 @@ b1piAngAmp::b1piAngAmp(int polBeam, const AmpParameter& polFrac,
     }
 
   assert( J_X >= 0 && J_X <=2 );
-  assert( abs( (double)Par_X ) <= 1 );
+//  assert( abs( (double)Par_X ) <= 1 );
   assert( abs( (double)I_X )   <= 1 );
   //assert( L_X <= J_X );
   assert( (L_X+1 >= J_X && abs(L_X-1) <= J_X) || L_X==-1 );
@@ -500,7 +500,7 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
     printf("ORTHOCHECK %3.1f %3.1f  %3.1f %3.1f  %3.1f %3.1f\t%17.10e ",
 	   m_u_rho_1, m_u_rho_3, 
 	   m_u_omega_1, m_u_omega_3, m_u_b1_0, m_u_b1_2, I*I);
-    printf("%d %d %d %d %d %d %d\n",mpolBeam,(double)mpolFrac,
+    printf("%d %e %d %d %d %d %d\n",mpolBeam,(double)mpolFrac,
 	   mJ_X,mPar_X,mL_X,mI_X,mepsilon_R);
 
   }
