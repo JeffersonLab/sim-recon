@@ -3,7 +3,7 @@ DIRS += genr8 genr8_2_hddm HDGeant mcsmear genpi
 ifdef AMPTOOLS
 ifdef CLHEP
 
-DIRS += gen_3pi
+DIRS += gen_3pi gen_5pi
 
 endif
 endif
