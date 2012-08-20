@@ -355,8 +355,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		swim_step->t = t;
 	
 		//magnitude of momentum and beta
-		double p=swim_step->mom.Mag();
-		double beta=1./sqrt(1.+mass*mass/p/p);
+		double p_sq=swim_step->mom.Mag2();
+		double one_over_beta=sqrt(1.+mass*mass/p_sq);
 
 		// Add material if geom or RootGeom is not NULL
 		// If both are non-NULL, then use RootGeom
@@ -396,13 +396,14 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 			if(err == NOERROR){
 				if(X0>0.0){
+				  double p=sqrt(p_sq);
 					double delta_s = s;
 					if(last_step)delta_s -= last_step->s;
 					double radlen = delta_s/X0;
 
 					if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
 					
-						double theta0 = 0.0136/(p*beta)*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
+						double theta0 = 0.0136*one_over_beta/p*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
 						double theta02 = theta0*theta0;
 						itheta02 += theta02;
 						itheta02s += s*theta02;
@@ -477,7 +478,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		}
 		
 		// update flight time
-		t+=ds/(beta*SPEED_OF_LIGHT);
+		t+=ds*one_over_beta/SPEED_OF_LIGHT;
 		s += ds;
 	
 		
@@ -486,7 +487,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		   && swim_step->origin.Z()<407.0){Nswim_steps++; break;} // ran into BCAL
 		if (swim_step->origin.X()>129.  || swim_step->origin.Y()>129.)
 		  {Nswim_steps++; break;} // left extent of TOF 
-		if(swim_step->origin.Z()>1100.0){Nswim_steps++; break;} // ran into FCAL
+		if(swim_step->origin.Z()>670.0){Nswim_steps++; break;} // ran into FCAL
 		if(swim_step->origin.Z()<-100.0){Nswim_steps++; break;} // exit upstream
 		if(wire && Nswim_steps>0){ // optionally check if we passed a wire we're supposed to be swimming to
 			swim_step_t *closest_step = FindClosestSwimStep(wire);
@@ -539,8 +540,10 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
   double B = 2.0*(x1.X()*dx.X() + x1.Y()*dx.Y());
   double C = x1.Mod2() - R*R;
   
-  double alpha1 = (-B + sqrt(B*B-4.0*A*C))/(2.0*A);
-  double alpha2 = (-B - sqrt(B*B-4.0*A*C))/(2.0*A);
+  double sqrt_D=sqrt(B*B-4.0*A*C);
+  double one_over_denom=0.5/A;
+  double alpha1 = (-B + sqrt_D)*one_over_denom;
+  double alpha2 = (-B - sqrt_D)*one_over_denom;
   double alpha = alpha1;
   if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
   if(!finite(alpha))return VALUE_OUT_OF_RANGE;
@@ -555,9 +558,9 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
 
   // flight time
   if (t){	
-    double p=step->mom.Mag();
-    double beta=1./sqrt(1.+mass*mass/p/p);
-    *t = step->t-(1.0-alpha)*delta.Mag()/beta/SPEED_OF_LIGHT;
+    double p_sq=step->mom.Mag2();
+    double one_over_beta=sqrt(1.+mass*mass/p_sq);
+    *t = step->t-(1.0-alpha)*delta.Mag()*one_over_beta/SPEED_OF_LIGHT;
   }
 
   return NOERROR;
@@ -595,10 +598,10 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	// are perpendicular to the beam line 
 	if (step && step->origin.Z()>600.
 	    ){
-	  double p=step->mom.Mag();
+	  double p_sq=step->mom.Mag2();
 	  //double ds=(origin.z()-step->origin.z())*p/step->mom.z();
 	  double dz_over_pz=(origin.z()-step->origin.z())/step->mom.z();
-	  double ds=p*dz_over_pz;
+	  double ds=sqrt(p_sq)*dz_over_pz;
 	  pos.SetXYZ(step->origin.x()+dz_over_pz*step->mom.x(),
 		     step->origin.y()+dz_over_pz*step->mom.y(),
 		     origin.z());
@@ -609,7 +612,7 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	  } 
 	  // flight time
 	  if (t){
-	    double one_over_beta=sqrt(1.+mass*mass/(p*p));
+	    double one_over_beta=sqrt(1.+mass*mass/p_sq);
 	    *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 	  }
 	  
@@ -713,9 +716,9 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 			if (t){
 			  double delta_s = sqrt(my_t*my_t + my_u*my_u);
 			  double ds=(phi>0 ? +delta_s:-delta_s);
-			  double p=step->mom.Mag();
-			  double beta=1./sqrt(1.+mass*mass/p/p);
-			  *t = step->t+ds/beta/SPEED_OF_LIGHT;
+			  double p_sq=step->mom.Mag2();
+			  double one_over_beta=sqrt(1.+mass*mass/p_sq);
+			  *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 			}
 			
 			// Success. Go ahead and return
@@ -734,9 +737,9 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	}
 	// flight time
 	if (t){
-	  double p=step->mom.Mag();
-	  double beta=1./sqrt(1.+mass*mass/p/p);
-	  *t = step->t+alpha*p/beta/SPEED_OF_LIGHT;
+	  double p_sq=step->mom.Mag2();
+	  double one_over_beta=sqrt(1.+mass*mass/p_sq);
+	  *t = step->t+alpha*sqrt(p_sq)*one_over_beta/SPEED_OF_LIGHT;
 	}
 }
 
@@ -841,8 +844,8 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t) const{
   double dist=DistToRT(hit,s);
   if (s!=NULL && t!=NULL && last_swim_step!=NULL){
-    double p=last_swim_step->mom.Mag();
-    double one_over_beta=sqrt(1.+mass*mass/(p*p));
+    double p_sq=last_swim_step->mom.Mag2();
+    double one_over_beta=sqrt(1.+mass*mass/p_sq);
     *t=last_swim_step->t+(*s-last_swim_step->s)*one_over_beta/SPEED_OF_LIGHT;
   }
   return dist;
@@ -1943,3 +1946,203 @@ void DReferenceTrajectory::Dump(double zmin, double zmax)
 	}
 	
 }
+
+// Propagate the covariance matrix for {px,py,pz,x,y,z,t} along the step ds
+jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
+						   double mass,
+						   const DVector3 &mom,
+						   const DVector3 &pos,
+						   DMatrixDSym &C) const{
+  DMatrix J(7,7);
+
+  double one_over_p_sq=1./mom.Mag2();
+  double one_over_p=sqrt(one_over_p_sq);
+  double px=mom.X();
+  double py=mom.Y();
+  double pz=mom.Z();
+  double Bx,By,Bz;
+  this->bfield->GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
+
+  double ds_over_p=ds*one_over_p;
+  double factor=0.003*q*ds_over_p;
+  double temp=(Bz*py-Bx*pz)*one_over_p_sq;
+  J(0,0)=1-factor*px*temp;
+  J(0,1)=factor*(Bz-py*temp);
+  J(0,2)=-factor*(By+pz*temp);
+
+  temp=(Bx*pz-Bz*px)*one_over_p_sq;
+  J(1,0)=-factor*(Bz+px*temp);
+  J(1,1)=1-factor*py*temp;
+  J(1,2)=factor*(Bx-pz*temp);
+
+  temp=(By*px-Bx*py)*one_over_p_sq;
+  J(2,0)=factor*(By-px*temp);
+  J(2,1)=-factor*(Bx+py*temp);
+  J(2,2)=1-factor*pz*temp;
+
+  J(3,3)=1.;
+  double ds_over_p3=one_over_p_sq*ds_over_p;
+  J(3,0)=ds_over_p*(1-px*px*one_over_p_sq);
+  J(3,1)=-px*py*ds_over_p3;
+  J(3,2)=-px*pz*ds_over_p3;
+
+  J(4,4)=1.;
+  J(4,0)=J(3,1);
+  J(4,1)=ds_over_p*(1-py*py*one_over_p_sq);
+  J(4,2)=-py*pz*ds_over_p3;
+
+  J(5,5)=1.;
+  J(5,0)=J(3,2);
+  J(5,1)=J(4,2);
+  J(5,2)=ds_over_p*(1-pz*pz*one_over_p_sq);
+
+  J(6,6)=1.;
+  double m_sq=mass*mass;
+  double fac2=(-ds/SPEED_OF_LIGHT)*m_sq*one_over_p_sq*one_over_p_sq
+    /sqrt(1.+m_sq*one_over_p_sq);
+  J(6,0)=fac2*px;
+  J(6,1)=fac2*py;
+  J(6,2)=fac2*pz;
+ 
+  C=C.Similarity(J);
+
+  return NOERROR;
+}
+
+
+// Find the mid-point of the line connecting the points of closest approach of the
+// trajectories of two tracks.  Return the positions, momenta, and error matrices 
+// at these points for the two tracks.
+jerror_t 
+DReferenceTrajectory::IntersectTracks( const DReferenceTrajectory *rt2,
+				       DKinematicData *track1_kd,
+				       DKinematicData *track2_kd,
+				       DVector3 &pos, double &doca, double &var_doca) const{
+  const swim_step_t *swim_step1=this->swim_steps;
+  const swim_step_t *swim_step2=rt2->swim_steps;
+  
+  DMatrixDSym cov1=track1_kd->errorMatrix();
+  DMatrixDSym cov2=track2_kd->errorMatrix();
+  double q1=this->q;
+  double q2=rt2->q;
+  double mass1=this->mass;
+  double mass2=rt2->mass;
+
+  // Initialize the doca and traverse both particles' trajectories
+  doca=1000.;
+  DVector3 oldpos1,oldpos2,oldmom1,oldmom2;
+  double tflight1=0.,tflight2=0.;
+  for (int i=0;i<this->Nswim_steps-1&&i<rt2->Nswim_steps-1;
+       i++, swim_step1++, swim_step2++){
+    DVector3 pos1=swim_step1->origin;
+    DVector3 pos2=swim_step2->origin;
+    DVector3 diff=pos1-pos2;
+    double new_doca=diff.Mag();
+
+    if (new_doca>doca){
+      if (i==1){  // backtrack to find the true doca
+	tflight1=tflight2=0.;
+
+	swim_step1=this->swim_steps;
+	swim_step2=rt2->swim_steps;
+
+	cov1=track1_kd->errorMatrix();
+	cov2=track2_kd->errorMatrix();
+	
+	pos1=swim_step1->origin;
+	DVector3 mom1=swim_step1->mom;
+	DMagneticFieldStepper stepper1(this->bfield, this->q, &pos1, &mom1);
+
+	pos2=swim_step2->origin;
+	DVector3 mom2=swim_step2->mom;
+	DMagneticFieldStepper stepper2(this->bfield, rt2->q, &pos2, &mom2);
+
+	int inew=0;
+	while (inew<100){
+	  double ds1=stepper1.Step(&pos1,-0.5);
+	  double ds2=stepper2.Step(&pos2,-0.5);
+	  
+	  // Compute the revised estimate for the doca
+	  diff=pos1-pos2;
+	  new_doca=diff.Mag();
+
+	  if (new_doca>doca){
+	    break;
+	  }
+	  
+	  // Propagate the covariance matrices along the trajectories
+	  this->PropagateCovariance(ds1,q1,mass1,mom1,oldpos1,cov1);
+	  rt2->PropagateCovariance(ds2,q2,mass2,mom2,oldpos2,cov2);
+
+	  // Store the current positions, doca and adjust flight times
+	  oldpos1=pos1;
+	  oldpos2=pos2;
+	  doca=new_doca;
+
+	  double one_over_p1_sq=1./mom1.Mag2();
+	  tflight1+=ds1*sqrt(1.+mass1*mass1*one_over_p1_sq)/SPEED_OF_LIGHT;
+
+	  double one_over_p2_sq=1./mom2.Mag2();
+	  tflight2+=ds2*sqrt(1.+mass2*mass2*one_over_p2_sq)/SPEED_OF_LIGHT;
+
+	  // New momenta
+	  stepper1.GetMomentum(mom1);
+	  stepper2.GetMomentum(mom2);
+
+	  oldmom1=/*(-1.)*/mom1;
+	  oldmom2=/*(-1.)*/mom2;
+
+	  inew++;
+	}
+      }
+
+      // "Vertex" is mid-point of line connecting the positions of closest
+      // approach of the two tracks
+      pos=0.5*(oldpos1+oldpos2);
+      
+      track1_kd->setErrorMatrix(cov1);
+      track1_kd->setMomentum(oldmom1);
+      track1_kd->setPosition(oldpos1);
+      double err_t0=track1_kd->t0_err();
+      track1_kd->setT0(track1_kd->t0()+tflight1,sqrt(err_t0*err_t0+cov1(6,6)),track1_kd->t0_detector());
+
+      track2_kd->setErrorMatrix(cov2);
+      track2_kd->setMomentum(oldmom2);
+      track2_kd->setPosition(oldpos2);
+      err_t0=track2_kd->t0_err();
+      track2_kd->setT0(track2_kd->t0()+tflight2,sqrt(err_t0*err_t0+cov2(6,6)),track2_kd->t0_detector());
+
+      // Compute the variance on the doca
+      diff=oldpos1-oldpos2;
+      double dx=diff.x();
+      double dy=diff.y();
+      double dz=diff.z();
+      var_doca=(dx*dx*(cov1(3,3)+cov2(3,3))+dy*dy*(cov1(4,4)+cov2(4,4))
+		    +dz*dz*(cov1(5,5)+cov2(5,5))+2.*dx*dy*(cov1(3,4)+cov2(3,4))
+		    +2.*dx*dz*(cov1(3,5)+cov2(3,5))+2.*dy*dz*(cov1(4,5)+cov2(4,5)))
+	/(doca*doca);
+      
+      break;
+    }
+    
+    // Propagate the covariance matrices along the trajectories
+    this->PropagateCovariance(this->swim_steps[i+1].s-swim_step1->s,q1,mass1,
+			      swim_step1->mom,swim_step1->origin,cov1);
+    rt2->PropagateCovariance(rt2->swim_steps[i+1].s-swim_step2->s,q2,mass2,
+			     swim_step2->mom,swim_step2->origin,cov2);
+   
+    // Store the current positions and doca
+    oldpos1=pos1;
+    oldpos2=pos2;
+    oldmom1=swim_step1->mom;
+    oldmom2=swim_step2->mom;
+    tflight1=swim_step1->t;
+    tflight2=swim_step2->t;
+    doca=new_doca;
+  }
+
+  return NOERROR;
+}
+
+
+

@@ -15,6 +15,9 @@ using std::vector;
 #include <DVector3.h>
 #include <DVector2.h>
 #include <JANA/jerror.h>
+#include <DMatrixDSym.h>
+#include <DMatrix.h>
+#include <PID/DKinematicData.h>
 
 #include <DCoordinateSystem.h>
 
@@ -122,6 +125,19 @@ class DReferenceTrajectory{
 		void Dump(double zmin=-1000.0, double zmax=1000.0);
 
 		const swim_step_t *GetLastSwimStep(void) const {return last_swim_step;}
+
+       
+		jerror_t IntersectTracks(const DReferenceTrajectory *rt2,
+					 DKinematicData *track1_kd,
+					 DKinematicData *track2_kd,
+					 DVector3 &pos, double &doca, double &var_doca) const;
+		jerror_t PropagateCovariance(double ds,double q,
+					     double mass,const DVector3 &mom,
+					     const DVector3 &pos,
+					     DMatrixDSym &C) const;
+		
+
+
 		swim_step_t *swim_steps;
 		int Nswim_steps;
 		float q;
