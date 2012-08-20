@@ -10,8 +10,10 @@
 
 #include <map>
 #include <vector>
+#include <queue>
 using std::map;
 using std::vector;
+using std::queue;
 
 #include <JANA/jerror.h>
 #include <JANA/JEventSource.h>
@@ -45,7 +47,6 @@ class JEventSource_DAQ: public jana::JEventSource{
 	
 	private:
 		
-		int32_t run_number;
 		evioChannel *chan;
 		map<tagNum, MODULE_TYPE> module_type;
 
@@ -61,6 +62,9 @@ class JEventSource_DAQ: public jana::JEventSource{
 		// for more details.)
 		class ObjList{
 		public:
+			
+			int32_t run_number;
+			
 			vector<Df250PulseIntegral*>    vDf250PulseIntegrals;
 			vector<Df250PulseRawData*>     vDf250PulseRawDatas;
 			vector<Df250PulseTime*>        vDf250PulseTimes;
@@ -68,13 +72,21 @@ class JEventSource_DAQ: public jana::JEventSource{
 			vector<Df250TriggerTime*>      vDf250TriggerTimes;
 			vector<Df250WindowRawData*>    vDf250WindowRawDatas;
 			vector<Df250WindowSum*>        vDf250WindowSums;
-			vector<DF1TDCHit*>           vDF1TDCHits;
+			vector<DF1TDCHit*>             vDF1TDCHits;
 		};
+	
+		// EVIO events with more than one DAQ event ("blocked" or
+		// "entangled" events") are parsed and have the events
+		// stored in the following container so they can be dispensed
+		// as needed.
+		queue<ObjList*> stored_events;
 	
 		int32_t GetRunNumber(evioDOMTree *evt);
 		MODULE_TYPE GuessModuleType(evioDOMNodeP bankPtr);
 		void DumpModuleMap(void);
-
+		
+		void ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number);
+	
 		void Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs);
 		void Parsef125Bank(evioDOMNodeP bankPtr, ObjList &objs);
 		void ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs);

@@ -18,11 +18,12 @@ class DF1TDCHit:public jana::JObject{
 	public:
 	JOBJECT_PUBLIC(DF1TDCHit);
 	
-	DF1TDCHit(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t trig_time=0, uint32_t time=0):rocid(rocid),slot(slot),channel(channel),trig_time(trig_time),time(time){}
+	DF1TDCHit(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t ievent=0, uint32_t trig_time=0, uint32_t time=0):rocid(rocid),slot(slot),channel(channel),ievent(ievent),trig_time(trig_time),time(time){}
 	
 	uint32_t rocid;                // from EVIO header (crate number)
 	uint32_t slot;                 // from data word
 	uint32_t channel;              // from data word
+	uint32_t ievent;               // from header word
 	uint32_t trig_time;            // from data word
 	uint32_t time;                 // from data word
 	
@@ -32,6 +33,7 @@ class DF1TDCHit:public jana::JObject{
 		AddString(items, "rocid", "%d", rocid);
 		AddString(items, "slot", "%d", slot);
 		AddString(items, "channel", "%d", channel);
+		AddString(items, "ievent", "%d", ievent);
 		AddString(items, "trig_time", "%d", trig_time);
 		AddString(items, "time", "%d", time);
 	}

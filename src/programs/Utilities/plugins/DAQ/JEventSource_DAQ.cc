@@ -52,16 +52,34 @@ JEventSource_DAQ::~JEventSource_DAQ()
 //----------------
 jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
 {
+	// If we couldn't even open the source, then there's nothing to do
 	if(chan==NULL)return NO_MORE_EVENTS_IN_SOURCE;
-	if(!chan->read())return NO_MORE_EVENTS_IN_SOURCE;
 	
-	evioDOMTree *evt = new evioDOMTree(chan);
-	GetRunNumber(evt);
+	// If no events are currently stored in the buffer, then
+	// read in another event block.
+	if(stored_events.empty()){
 	
+		if(!chan->read())return NO_MORE_EVENTS_IN_SOURCE;
+	
+		evioDOMTree *evt = new evioDOMTree(chan);
+		if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
+		int32_t run_number = GetRunNumber(evt);
+		
+		ParseEVIOEvent(evt, run_number);
+		delete evt;
+	}
+
+	// If we still don't have any events, then bail
+	if(stored_events.empty())return NO_MORE_EVENTS_IN_SOURCE;
+	
+	// Get next event from queue
+	ObjList *objs_ptr = stored_events.front();
+	stored_events.pop();
+
 	event.SetJEventSource(this);
 	event.SetEventNumber(++Nevents_read);
-	event.SetRunNumber(run_number);
-	event.SetRef(evt);
+	event.SetRunNumber(objs_ptr->run_number);
+	event.SetRef(objs_ptr);
 
 	return NOERROR;
 }
@@ -71,8 +89,8 @@ jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
 //----------------
 void JEventSource_DAQ::FreeEvent(JEvent &event)
 {
-	evioDOMTree *evt = (evioDOMTree*)event.GetRef();
-	if(evt)delete evt;
+	ObjList *objs_ptr = (ObjList*)event.GetRef();
+	if(objs_ptr)delete objs_ptr;
 }
 
 //----------------
@@ -87,62 +105,8 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 	// factories. Subsequent requests for objects for this same
 	// event will get them from the factories. Thus, this should
 	// only get called once per event.
-	
-	evioDOMTree *evt = (evioDOMTree*)event.GetRef();
-	if(!evt)throw RESOURCE_UNAVAILABLE;
-	
-	// Loop over list of EVIO banks and parse them, creating data
-	// objects and adding them to the overall list
-	ObjList objs;
-	evioDOMNodeListP bankList = evt->getNodeList();
-	evioDOMNodeList::iterator iter = bankList->begin();
-	for(; iter!=bankList->end(); iter++){
-		
-		evioDOMNodeP bankPtr = *iter;
-		tagNum tag_num = pair<uint16_t, uint8_t>(bankPtr->tag, bankPtr->num);
-
-		// Get module type
-		MODULE_TYPE type = DModuleType::UNKNOWN;
-		map<tagNum, MODULE_TYPE>::iterator itr = module_type.find(tag_num);
-		if(itr != module_type.end()){
-			type = itr->second;
-		}else{
-			// Optionally try and guess the module type based on the data
-			if(AUTODETECT_MODULE_TYPES){
-				type = GuessModuleType(bankPtr);
-				if(type != DModuleType::UNKNOWN)jout<<"Found module of type: "<<DModuleType::GetName(type)<<" in bank with tag,num = "<<bankPtr->tag<<","<<(int)bankPtr->num<<endl;
-				module_type[tag_num] = type; // remember for next time
-			}
-		}
-		
-		// Parse buffer depending on module type
-		switch(type){
-			case DModuleType::F250ADC:
-				Parsef250Bank(bankPtr, objs);
-				break;
-
-			case DModuleType::F125ADC:
-				Parsef125Bank(bankPtr, objs);
-				break;
-
-			case DModuleType::F1TDC:
-				ParseF1TDCBank(bankPtr, objs);
-				break;
-
-			case DModuleType::JLAB_TS:
-				ParseTSBank(bankPtr, objs);
-				break;
-
-			case DModuleType::JLAB_TI:
-				ParseTIBank(bankPtr, objs);
-				break;
-
-			case DModuleType::UNKNOWN:
-			default:
-				break;
-		}
-		
-	}
+	ObjList objs_ptr = (ObjList*)event.GetRef();
+	if(!objs_ptr)return RESOURCE_UNAVAILABLE;
 	
 	// Copy objects into factories
 	// -----------------------------
@@ -169,7 +133,7 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 	string dataClassName = (factory==NULL ? "N/A":factory->GetDataClassName());
 #define CopyToFactory(T) \
 	JFactory<T> *fac_ ## T = (JFactory<T>*)loop->GetFactory(#T); \
-	if(fac_ ## T)fac_ ## T->CopyTo(objs.v ## T ## s); \
+	if(fac_ ## T)fac_ ## T->CopyTo(objs_ptr->v ## T ## s); \
 	if(dataClassName == #T)err = NOERROR;
 	
 	jerror_t err = OBJECT_NOT_AVAILABLE; // one of the following my set this to NOERROR
@@ -360,6 +324,72 @@ void JEventSource_DAQ::DumpModuleMap(void)
 	
 	// Close output file
 	ofs.close();
+}
+
+//----------------
+// ParseEVIOEvent
+//----------------
+void ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
+{
+	if(!evt)throw RESOURCE_UNAVAILABLE;
+	
+	// Loop over list of EVIO banks and parse them, creating data
+	// objects and adding them to the overall list. This will put
+	// all objects for all events in the block in the same ObjList.
+	// They will be broken into separate lists based on event below.
+	ObjList objs;
+	evioDOMNodeListP bankList = evt->getNodeList();
+	evioDOMNodeList::iterator iter = bankList->begin();
+	for(; iter!=bankList->end(); iter++){
+		
+		evioDOMNodeP bankPtr = *iter;
+		tagNum tag_num = pair<uint16_t, uint8_t>(bankPtr->tag, bankPtr->num);
+		
+		// Get module type
+		MODULE_TYPE type = DModuleType::UNKNOWN;
+		map<tagNum, MODULE_TYPE>::iterator itr = module_type.find(tag_num);
+		if(itr != module_type.end()){
+			type = itr->second;
+		}else{
+			// Optionally try and guess the module type based on the data
+			if(AUTODETECT_MODULE_TYPES){
+				type = GuessModuleType(bankPtr);
+				if(type != DModuleType::UNKNOWN)jout<<"Found module of type: "<<DModuleType::GetName(type)<<" in bank with tag,num = "<<bankPtr->tag<<","<<(int)bankPtr->num<<endl;
+				module_type[tag_num] = type; // remember for next time
+			}
+		}
+		
+		// Parse buffer depending on module type
+		switch(type){
+			case DModuleType::F250ADC:
+				Parsef250Bank(bankPtr, objs);
+				break;
+				
+			case DModuleType::F125ADC:
+				Parsef125Bank(bankPtr, objs);
+				break;
+				
+			case DModuleType::F1TDC:
+				ParseF1TDCBank(bankPtr, objs);
+				break;
+				
+			case DModuleType::JLAB_TS:
+				ParseTSBank(bankPtr, objs);
+				break;
+				
+			case DModuleType::JLAB_TI:
+				ParseTIBank(bankPtr, objs);
+				break;
+				
+			case DModuleType::UNKNOWN:
+			default:
+				break;
+		}
+	}
+	
+	// Split the object lists into separate lists, one for each event
+	
+	
 }
 
 //----------------
@@ -586,6 +616,7 @@ void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs)
 	uint32_t slot_header = 1000;
 	uint32_t chip_header = 1000;
 	uint32_t chan_header = 1000;
+	uint32_t ievent = 0;
 	uint32_t trig_time = 0;
 
 	// Loop over words in bank
@@ -605,7 +636,8 @@ void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs)
 			slot_header = slot;
 			chip_header = (*iptr>>3) & 0x07;
 			chan_header = (*iptr>>0) & 0x07;
-			trig_time = (*iptr>>7) & 0x1FF;
+			ievent = (*iptr>>16) & 0x3F;
+			trig_time = (*iptr>>7) & 0x01FF;
 		}else{
 			// data word
 			uint32_t chip = (*iptr>>19) & 0x07;
@@ -613,7 +645,7 @@ void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs)
 			uint32_t channel = (chip<<3) + (chan<<0);
 			uint32_t time = (*iptr>>0) & 0xFFFF;
 			
-			DF1TDCHit *hit = new DF1TDCHit(rocid, slot, channel, trig_time, time);
+			DF1TDCHit *hit = new DF1TDCHit(rocid, slot, channel, ievent, trig_time, time);
 			objs.vDF1TDCHits.push_back(hit);
 		}
 	}
