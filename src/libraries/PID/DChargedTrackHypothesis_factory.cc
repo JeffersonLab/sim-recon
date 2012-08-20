@@ -92,6 +92,9 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
   for (loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++){
 		locChargedTrackHypothesis = new DChargedTrackHypothesis();
 		locTrackTimeBased = locTrackTimeBasedVector[loc_i];
+		
+		locChargedTrackHypothesis->dRT=locTrackTimeBased->rt;
+	     
 		locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
 		locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
 		
@@ -116,7 +119,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		locInitialStartTime = locChargedTrackHypothesis->t0(); // to reject hits that are not in time with the track
 		locChargedTrackHypothesis->dProjectedStartTime = locChargedTrackHypothesis->t0();
 		locChargedTrackHypothesis->dProjectedStartTimeUncertainty = locChargedTrackHypothesis->t0_err();
-		locChargedTrackHypothesis->setT0(NaN, 0.0, SYS_NULL); //initialize
+		locChargedTrackHypothesis->setT0(locInitialStartTime,locChargedTrackHypothesis->dProjectedStartTimeUncertainty, locChargedTrackHypothesis->t0_detector()); //initialize
 		locChargedTrackHypothesis->setT1(NaN, 0.0, SYS_NULL); //initialize
 		locChargedTrackHypothesis->setPathLength(NaN, 0.0); //zero uncertainty (for now)
 
@@ -175,7 +178,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 		//Calculate PID ChiSq, NDF, FOM
 		locNDF_Total = 0;
 		locChiSq_Total = 0.0;
-
+	
 		dPIDAlgorithm->Calc_TimingChiSq(locChargedTrackHypothesis, locRFTime, locRFBunchFrequency);
 		locChiSq_Total += locChargedTrackHypothesis->dChiSq_Timing;
 		locNDF_Total += locChargedTrackHypothesis->dNDF_Timing;
@@ -184,9 +187,10 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, i
 			locChiSq_Total += locChargedTrackHypothesis->dChiSq_DCdEdx;
 			locNDF_Total += locChargedTrackHypothesis->dNDF_DCdEdx;
 		}
+
 		locChargedTrackHypothesis->dChiSq = locChiSq_Total;
 		locChargedTrackHypothesis->dNDF = locNDF_Total;
-		locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : NaN;
+		locChargedTrackHypothesis->dFOM = TMath::Prob(locChiSq_Total, locNDF_Total);
 
 		_data.push_back(locChargedTrackHypothesis);
 	}

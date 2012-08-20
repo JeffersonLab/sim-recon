@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <PID/DKinematicData.h>
+#include <TRACKING/DReferenceTrajectory.h>
 #include <particleType.h>
 
 using namespace std;
@@ -19,6 +20,7 @@ class DChargedTrackHypothesis : public DKinematicData {
 		JOBJECT_PUBLIC(DChargedTrackHypothesis);
 
 		oid_t candidateid;   ///< id of DTrackCandidate corresponding to this track
+		const DReferenceTrajectory *dRT;
 
 		Particle_t dPID;
 
