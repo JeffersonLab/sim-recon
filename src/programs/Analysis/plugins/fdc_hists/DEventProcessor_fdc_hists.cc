@@ -80,14 +80,18 @@ jerror_t DEventProcessor_fdc_hists::init(void)
   cout << "initializing" <<endl;
 
 	mT0=0.;
+	myevt=0;
 
 	//DoAlign=false;
 	DoAlign=true;
 	alignments.resize(24);
 	if (DoAlign){
 	  for (unsigned int i=0;i<24;i++){
-	    alignments[i].A(kDx)=alignments[i].A(kDy)=alignments[i].A(kDPhi)=0.;
-	    alignments[i].E(kDx,kDx)=alignments[i].E(kDy,kDy)=1.0;
+	    alignments[i].A(kDx)=0.;
+	    alignments[i].A(kDy)=0.;
+	    alignments[i].A(kDPhi)=0.;
+	    alignments[i].E(kDx,kDx)=1.0;
+	    alignments[i].E(kDy,kDy)=1.0;
 	    alignments[i].E(kDPhi,kDPhi)=1.0;
 	  }
 	}
@@ -279,8 +283,7 @@ jerror_t DEventProcessor_fdc_hists::fini(void)
 // evnt
 //------------------
 jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber){
-  // Save the event number locally
-  myevt=eventnumber;
+  myevt++;
   
   // Get BCAL showers, FCAL showers and FDC space points
   vector<const DFCALShower*>fcalshowers;
@@ -355,7 +358,7 @@ jerror_t DEventProcessor_fdc_hists::evnt(JEventLoop *loop, int eventnumber){
 	double dx=fcalshowers[i]->getPosition().x()-x;
 	double dy=fcalshowers[i]->getPosition().y()-y;
 	double dr=sqrt(dx*dx+dy*dy);
-	
+
 	if (dr<drmin){
 	  drmin=dr;
 	  dz=fcal_z-endplate_z;
@@ -461,14 +464,14 @@ DEventProcessor_fdc_hists::DoFilter(DMatrix4x1 &S,
   vector<update_t>updates(num_hits);
   vector<update_t>smoothed_updates(num_hits);
   
-  int NEVENTS=150000;
+  int NEVENTS=350000;
   double anneal_factor=1.;
   if (DoAlign){
-    anneal_factor=pow(100000.0,(double(NEVENTS-myevt))/(NEVENTS-1.));
+    anneal_factor=pow(1e6,(double(NEVENTS-myevt))/(NEVENTS-1.));
     if (myevt>NEVENTS) anneal_factor=1.;
   }
-  anneal_factor=1.;
-  //anneal_factor=100000.;
+  //anneal_factor=1.;
+  //anneal_factor=10000.;
 
   // Best guess for state vector at "vertex"
   DMatrix4x1 Sbest;
@@ -787,7 +790,7 @@ jerror_t DEventProcessor_fdc_hists::FindSegments(vector<const DFDCPseudo*>&point
 	  }
 	} // loop looking for hits adjacent to hits on segment
 
-	if (neighbors.size()>2){
+	if (neighbors.size()>4){
 	  segment_t mysegment;
 	  mysegment.matched=false;
 	  mysegment.S=FitLine(neighbors);
@@ -1057,13 +1060,19 @@ DEventProcessor_fdc_hists::KalmanFilter(double anneal_factor,
 	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
 	//   v = y*cosa+x*sina
-	H(0,state_x)=H_T(state_x,0)=(cosa*cosdphi+sina*sindphi)*cosalpha;
-	H(0,state_y)=H_T(state_y,0)=(-sina*cosdphi+cosa*sindphi)*cosalpha;
-	H(1,state_x)=H_T(state_x,1)=sina*cosdphi-cosa*sindphi;
-	H(1,state_y)=H_T(state_y,1)=cosa*cosdphi+sina*sindphi;
+	H_T(state_x,0)=(cosa*cosdphi+sina*sindphi)*cosalpha;
+	H(0,state_x)=H_T(state_x,0);
+	H_T(state_y,0)=(-sina*cosdphi+cosa*sindphi)*cosalpha;
+	H(0,state_y)=H_T(state_y,0);
+	H_T(state_x,1)=sina*cosdphi-cosa*sindphi;	
+	H(1,state_x)=H_T(state_x,1);
+	H_T(state_y,1)=cosa*cosdphi+sina*sindphi;	
+	H(1,state_y)=H_T(state_y,1);
 	double factor=-du*sinalpha/one_plus_tu2;
-	H(0,state_tx)=H_T(state_tx,0)=cosa*factor;
-	H(0,state_ty)=H_T(state_ty,0)=-sina*factor;
+	H_T(state_tx,0)=cosa*factor;
+	H(0,state_tx)=H_T(state_tx,0);
+	H_T(state_ty,0)=-sina*factor;
+	H(0,state_ty)=H_T(state_ty,0);
 	
 	updates[my_id].H=H;
 	updates[my_id].H_T=H_T;
@@ -1071,13 +1080,19 @@ DEventProcessor_fdc_hists::KalmanFilter(double anneal_factor,
 	// Matrices to rotate alignment error matrix into measurement space
 	DMatrix2x3 G;
 	DMatrix3x2 G_T;
-	  
-	G(0,kDx)=G_T(kDx,0)=-cosa*cosalpha;
-	G(0,kDy)=G_T(kDy,0)=+sina*cosalpha;
-	G(1,kDx)=G_T(kDx,1)=-sina;
-	G(1,kDy)=G_T(kDy,1)=-cosa;
-	G(0,kDPhi)=G_T(kDPhi,0)=(-sindphi*upred+cosdphi*vpred)*cosalpha;  
-	G(1,kDPhi)=G_T(kDPhi,1)=-sindphi*vpred-cosdphi*upred;
+
+	G_T(kDx,0)=-cosa*cosalpha;
+	G(0,kDx)=G_T(kDx,0);
+	G_T(kDy,0)=+sina*cosalpha;
+	G(0,kDy)=G_T(kDy,0);
+	G_T(kDx,1)=-sina;	
+	G(1,kDx)=G_T(kDx,1);
+	G_T(kDy,1)=-cosa;
+	G(1,kDy)=G_T(kDy,1);
+	G_T(kDPhi,0)=(-sindphi*upred+cosdphi*vpred)*cosalpha;  
+	G(0,kDPhi)=G_T(kDPhi,0);
+	G_T(kDPhi,1)=-sindphi*vpred-cosdphi*upred;
+	G(1,kDPhi)=G_T(kDPhi,1);
 	
 	// Variance for this hit
 	InvV=(V+H*C*H_T+G*E*G_T).Invert();
