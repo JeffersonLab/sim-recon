@@ -167,9 +167,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
     cov.clear();
     fcov.clear();
 
-    len=ftime=0.0;
-    x_=y_=tx_=ty_=q_over_p_ = 0.0;
-    z_=phi_=tanl_=q_over_pt_ = D_= 0.0;
+    len=0.,ftime=0.0;
+    x_=0.,y_=0.,tx_=0.,ty_=0.,q_over_p_ = 0.0;
+    z_=0.,phi_=0.,tanl_=0.,q_over_pt_ =0, D_= 0.0;
     chisq_ = 0.0;
     ndf_ = 0;
 

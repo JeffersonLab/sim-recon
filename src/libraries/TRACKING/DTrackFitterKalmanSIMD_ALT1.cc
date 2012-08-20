@@ -129,14 +129,15 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	if (fit_type==kWireBased && id==mMinDriftID-1){
 	  mT0MinimumDriftTime=mMinDriftTime
 	    -forward_traj[k].t*TIME_UNIT_CONVERSION;
-
-	  if (my_cdchits.size()==0){
+	  /*
+	    if (my_cdchits.size()==0){
 	    //   t(d)=c1 d^2 + c2 d^4
 	    //double c1=1279,c2=-1158;
 	    double d_sq=doca*doca;
 	    if (d_sq>0.25) d_sq=0.25;      
 	    mT0MinimumDriftTime-=1279.*d_sq-1158.*d_sq*d_sq;
-	  } 
+	    } 
+	  */
 	}
 	
 	// Variance in coordinate along wire
@@ -149,14 +150,16 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
        	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
 	//   v = y*cosa+x*sina
-	H(state_x)=H_T(state_x)
-	  =sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;
-	H(state_y)=H_T(state_y)
-	=cosa-sina*cosalpha*nz_sinalpha_plus_nr_cosalpha;
+	H_T(state_x)=sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;	
+	H(state_x)=H_T(state_x);
+	H_T(state_y)=cosa-sina*cosalpha*nz_sinalpha_plus_nr_cosalpha;	
+	H(state_y)=H_T(state_y);
 	double temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
 				       -2.*nr*cosalpha*sinalpha);
-	H(state_tx)=H_T(state_tx)=cosa*temp;
-	H(state_ty)=H_T(state_ty)=-sina*temp;
+	H_T(state_tx)=cosa*temp;
+	H(state_tx)=H_T(state_tx);
+	H_T(state_ty)=-sina*temp;	
+	H(state_ty)=H_T(state_ty);
     
 	// Check to see if we have multiple hits in the same plane
 	if (forward_traj[k].num_hits>1){ 
@@ -172,7 +175,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  vector<unsigned int>used_ids;
 
 	  // Deal with the first hit:
-	  double Vtemp=V+H*C*H_T;
+	  //double Vtemp=V+H*C*H_T;
+	  double Vtemp=V+C.SandwichMultiply(H_T);
 	  double InvV=1./Vtemp;;
        
 	  //probability
@@ -203,14 +207,15 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    if (fit_type==kWireBased && my_id==mMinDriftID-1){  	      
 	      mT0MinimumDriftTime=mMinDriftTime
 		-forward_traj[k].t*TIME_UNIT_CONVERSION;
-
-	      if (my_cdchits.size()==0){
+	      /*
+		if (my_cdchits.size()==0){
 		//   t(d)=c1 d^2 + c2 d^4
 		//double c1=1279,c2=-1158;
 		double d_sq=doca*doca;
 		if (d_sq>0.25) d_sq=0.25;      
 		mT0MinimumDriftTime-=1279.*d_sq-1158.*d_sq*d_sq;
-	      } 
+		} 
+	      */
 	    }
 	    
 	    // variance for coordinate along the wire
@@ -222,8 +227,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // Update the terms in H/H_T that depend on the particular hit
 	    temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
 				    -2.*nr*cosalpha*sinalpha);
-	    H(state_tx)=H_T(state_tx)=cosa*temp;
-	    H(state_ty)=H_T(state_ty)=-sina*temp;
+	    H_T(state_tx)=cosa*temp; 
+	    H(state_tx)=H_T(state_tx);
+	    H_T(state_ty)=-sina*temp; 
+	    H(state_ty)=H_T(state_ty);
 						
 	    // Calculate the kalman gain for this hit 
 	    //Vtemp=V+H*C*H_T;
@@ -487,8 +494,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  
 	  // Track projection
 	  double cosstereo2_over_d=cosstereo*cosstereo/d;
-	  H(state_x)=H_T(state_x)=dx*cosstereo2_over_d;
-	  H(state_y)=H_T(state_y)=dy*cosstereo2_over_d;
+	  H_T(state_x)=dx*cosstereo2_over_d; 
+	  H(state_x)=H_T(state_x);
+	  H_T(state_y)=dy*cosstereo2_over_d;	  
+	  H(state_y)=H_T(state_y);
       
 	  //H.Print();
 	  
@@ -512,14 +521,23 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // t0 estimate
 	  else if (cdc_index==mMinDriftID-1000){ 
 	    mT0MinimumDriftTime=mMinDriftTime
-	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
+	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION; 
+
+	    // Use approximate functional form for the distance to time relationship:  
+	    //   t(d)=c1 d^2 +c2 d^4
+	    /*
+	      double d_sq=d*d;
+	      if (d_sq>0.64) d_sq=0.64;
+	      mT0MinimumDriftTime-=1131.0*d_sq+140.7*d_sq*d_sq;
+	    */
 	  } 
 
 	  // Residual
 	  double res=dm-d;
 
 	  // inverse variance including prediction
-	  double InvV1=1./(Vc+H*(C*H_T));
+	  //double InvV1=1./(Vc+H*(C*H_T));
+	  double InvV1=1./(Vc+C.SandwichMultiply(H_T));
 	  if (InvV1<0.){
 	    if (DEBUG_LEVEL>0)
 	      _DBG_ << "Negative variance???" << endl;

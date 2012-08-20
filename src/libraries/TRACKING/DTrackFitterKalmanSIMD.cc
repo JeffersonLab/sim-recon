@@ -431,15 +431,15 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 
 	 len = 0.0;
 	 ftime=0.0;
-	 x_=y_=tx_=ty_=q_over_p_ = 0.0;
-	 z_=phi_=tanl_=q_over_pt_ = D_= 0.0;
+	 x_=0.,y_=0.,tx_=0.,ty_=0.,q_over_p_ = 0.0;
+	 z_=0.,phi_=0.,tanl_=0.,q_over_pt_ =0, D_= 0.0;
 	 chisq_ = 0.0;
 	 ndf_ = 0;
 	 MASS=0.13957;
 	 mass2=MASS*MASS;
 	 Bx=By=0.;
 	 Bz=-2.;
-	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
+	 dBxdx=0.,dBxdy=0.,dBxdz=0.,dBydx=0.,dBydy=0.,dBydy=0.,dBzdx=0.,dBzdy=0.,dBzdz=0.;
 	 // Step sizes
 	 mStepSizeS=2.0;
 	 mStepSizeZ=2.0;
@@ -450,7 +450,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 }
 	 */
 	 last_smooth=false;
-	 mT0=mT0MinimumDriftTime=mT0Average=0.;
+	 mT0=0.,mT0MinimumDriftTime=0.,mT0Average=0.;
 	 mInvVarT0=0.;
 	 mVarT0=0.;
 
@@ -530,7 +530,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
     mVarT0=25.;
     break;
   case SYS_FDC:
-    mVarT0=25.;
+    mVarT0=100.;
     break;
   case SYS_BCAL:
     mVarT0=0.25;
@@ -1318,8 +1318,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       temp.s=len;
       temp.t=t;
       temp.h_id=0;
-      temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.Z=temp.LnI=0.; //initialize
-      temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
+      temp.K_rho_Z_over_A=0.,temp.rho_Z_over_A=0.,temp.Z=0.,temp.LnI=0.; //initialize
+      temp.chi2c_factor=0.,temp.chi2a_factor=0.,temp.chi2a_corr=0.;
       
       // update path length and flight time
       len+=step_size;
@@ -4026,23 +4026,31 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
 	//   v = y*cosa+x*sina
-	H(0,state_x)=H_T(state_x,0)=cosa*cosalpha;
-	H(1,state_x)=H_T(state_x,1)=sina;
-	H(0,state_y)=H_T(state_y,0)=-sina*cosalpha;
-	H(1,state_y)=H_T(state_y,1)=cosa;
+	H(0,state_x)=cosa*cosalpha;
+	H_T(state_x,0)=H(0,state_x);
+	H(1,state_x)=sina;
+	H_T(state_x,1)=H(1,state_x);
+	H(0,state_y)=-sina*cosalpha;
+	H_T(state_y,0)=H(0,state_y);
+	H(1,state_y)=cosa;
+	H_T(state_y,1)=H(1,state_y);
 	double factor=du*tu/sqrt(one_plus_tu2)/one_plus_tu2;
-	H(0,state_ty)=H_T(state_ty,0)=sina*factor;
-	H(0,state_tx)=H_T(state_tx,0)=-cosa*factor;
+	H(0,state_ty)=sina*factor;
+	H_T(state_ty,0)=H(0,state_y);
+	H(0,state_tx)=-cosa*factor;
+	H_T(state_tx,0)=H(0,state_tx);
 	
 	// Terms that depend on the correction for the Lorentz effect
-	H(1,state_x)=H_T(state_x,1)
-	  =sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;
-	H(1,state_y)=H_T(state_y,1)
-	=cosa-sina*cosalpha*nz_sinalpha_plus_nr_cosalpha;
+	H(1,state_x)=sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;
+	H_T(state_x,1)=H(1,state_x);
+	H(1,state_y)=cosa-sina*cosalpha*nz_sinalpha_plus_nr_cosalpha;
+	H_T(state_y,1)=H(1,state_y);
 	double temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
 				       -2.*nr*cosalpha*sinalpha);
-	H(1,state_tx)=H_T(state_tx,1)=cosa*temp;
-	H(1,state_ty)=H_T(state_ty,1)=-sina*temp;
+	H(1,state_tx)=cosa*temp;
+	H_T(state_tx,1)=H(1,state_tx);
+	H(1,state_ty)=-sina*temp;
+	H_T(state_y,1)=H(1,state_ty);
     
 	// Check to see if we have multiple hits in the same plane
 	if (forward_traj[k].num_hits>1){ 
@@ -4112,12 +4120,16 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 
 	    // Update the terms in H/H_T that depend on the particular hit
 	    factor=du*tu/sqrt(one_plus_tu2)/one_plus_tu2;
-	    H(0,state_ty)=H_T(state_ty,0)=sina*factor;
-	    H(0,state_tx)=H_T(state_tx,0)=-cosa*factor;
+	    H_T(state_ty,0)=sina*factor;
+	    H(0,state_ty)=H_T(state_ty,0);
+	    H_T(state_tx,0)=-cosa*factor;   
+	    H(0,state_tx)=H_T(state_tx,0);
 	    temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
 				    -2.*nr*cosalpha*sinalpha);
-	    H(1,state_tx)=H_T(state_tx,1)=cosa*temp;
-	    H(1,state_ty)=H_T(state_ty,1)=-sina*temp;
+	    H_T(state_tx,1)=cosa*temp; 
+	    H(1,state_tx)=H_T(state_tx,1);
+	    H_T(state_ty,1)=-sina*temp; 
+	    H(1,state_ty)=H_T(state_ty,1);
 						
 	    // Calculate the kalman gain for this hit 
 	    Vtemp=V+H*C*H_T;
@@ -4382,8 +4394,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  
 	  // Track projection
 	  double cosstereo2_over_d=cosstereo*cosstereo/d;
-	  Hc(state_x)=Hc_T(state_x)=dx*cosstereo2_over_d;
-	  Hc(state_y)=Hc_T(state_y)=dy*cosstereo2_over_d;
+	  Hc_T(state_x)=dx*cosstereo2_over_d;	  
+	  Hc(state_x)=Hc_T(state_x);
+	  Hc_T(state_y)=dy*cosstereo2_over_d;
+	  Hc(state_y)=Hc_T(state_y);
       
 	  //H.Print();
 	  
