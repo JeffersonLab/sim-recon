@@ -8,10 +8,10 @@
 #include "FillHitsProc.h"
 
 #include "FCAL/DFCALHit.h"
-#include "BCAL/DHDDMBCALHit.h"
+#include "BCAL/DBCALHit.h"
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
-#include "TOF/DHDDMTOFHit.h"
+#include "TOF/DTOFHit.h"
 #include "START_COUNTER/DSCHit.h"
 
 //------------------
@@ -38,6 +38,7 @@ jerror_t FillHitsProc::init(void)
   m_bcalHitTree->Branch( "module", m_module, "module[nHits]/F" );
   m_bcalHitTree->Branch( "layer", m_layer, "layer[nHits]/F" );
   m_bcalHitTree->Branch( "sector", m_sector, "sector[nHits]/F" );
+  m_bcalHitTree->Branch( "end", m_end, "end[nHits]/F" );
   m_bcalHitTree->Branch( "E", m_E, "E[nHits]/F" );
   m_bcalHitTree->Branch( "t", m_t, "t[nHits]/F" );
 
@@ -119,7 +120,7 @@ jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
   m_fcalHitTree->Fill();
 
   // BCAL Hits:
-  vector<const DHDDMBCALHit*> bcalHitVect;
+  vector<const DBCALHit*> bcalHitVect;
   loop->Get( bcalHitVect );
 	
   m_nHits = bcalHitVect.size();
@@ -132,6 +133,7 @@ jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
     m_sector[i] = bcalHitVect[i]->sector;
     m_E[i] = bcalHitVect[i]->E;
     m_t[i] = bcalHitVect[i]->t;
+    m_end[i] = bcalHitVect[i]->end;
   }
   
   m_bcalHitTree->Fill();
@@ -173,7 +175,7 @@ jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
   m_fdcHitTree->Fill();
 
   // TOF Hits:
-  vector<const DHDDMTOFHit*> tofHitVect;
+  vector<const DTOFHit*> tofHitVect;
   loop->Get( tofHitVect );
 	
   m_nHits = tofHitVect.size();
@@ -181,11 +183,11 @@ jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
 
   for( int i = 0; i < m_nHits; ++i ){
 	  
-    m_plane[i] = tofHitVect[i]->plane;
+    m_plane[i] = tofHitVect[i]->orientation;
     m_bar[i] = tofHitVect[i]->bar;
-    m_dE_north[i] = tofHitVect[i]->dE_north;
+    m_dE_north[i] = tofHitVect[i]->E_north;
     m_t_north[i] = tofHitVect[i]->t_north;
-    m_dE_south[i] = tofHitVect[i]->dE_south;
+    m_dE_south[i] = tofHitVect[i]->E_south;
     m_t_south[i] = tofHitVect[i]->t_south;
   }
   

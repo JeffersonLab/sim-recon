@@ -69,6 +69,7 @@ class FillHitsProc:public JEventProcessor{
     float m_straw[kMaxHits];
     float m_plane[kMaxHits];
     float m_layer[kMaxHits];
+    float m_end[kMaxHits];
     float m_row[kMaxHits];
     float m_element[kMaxHits];
     float m_bar[kMaxHits];
