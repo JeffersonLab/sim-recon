@@ -387,28 +387,17 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
     break;
   case DTrackFitter::kFitSuccess:
   case DTrackFitter::kFitNoImprovement:
-    {
-      // Allocate a DReferenceTrajectory object if needed.
-      // These each have a large enough memory footprint that
-      // it causes noticable performance problems if we allocated
-      // and deallocated them every event. Therefore, we allocate
-      // when needed, but recycle them on the next event.
-      // They are deleted in the fini method.
-      unsigned int locNumInitialReferenceTrajectories = rtv.size();
-      while(rtv.size()<=_data.size()){
-	rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-      }
-      DReferenceTrajectory *rt = rtv[_data.size()];
-      if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-        rt->Reset();
-      rt->q = candidate->charge();
-
+    {    
       // Make a new wire-based track
       DTrackWireBased *track = new DTrackWireBased;
       
       // Copy over DKinematicData part
       DKinematicData *track_kd = track;
       *track_kd = fitter->GetFitParameters();
+
+      // Fill reference trajectory
+      rt->Reset();
+      rt->q = candidate->charge();
       rt->SetMass(track_kd->mass());
       rt->Swim(track->position(), track->momentum(), track->charge());
       
