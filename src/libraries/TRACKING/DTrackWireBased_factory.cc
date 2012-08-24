@@ -201,10 +201,10 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
     DReferenceTrajectory *rt = rtv[_data.size()];
     if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
       rt->Reset();
+    rt->SetDGeometry(geom);
     rt->q = candidate->charge();
 
     if (SKIP_MASS_HYPOTHESES_WIRE_BASED){
-      rt->SetMass(0.13957);
       DoFit(i,candidate,rt,loop,0.13957);
     }
     else{
@@ -222,7 +222,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       // Loop over potential particle masses
       for(unsigned int j=0; j<mass_hypotheses.size(); j++){
         if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
-        rt->SetMass(mass_hypotheses[j]);
         DoFit(i,candidate,rt,loop,mass_hypotheses[j]);
       }
    
