@@ -321,7 +321,8 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   // we take a stab at scaling up the errors by the number of pion masses since
   // this worked reasonably well for pions before.
   double mass_factor=my_mass/0.13957;
-  
+  if (my_mass<0.13957) mass_factor=1.;  
+
   // Minimum probability of hit belonging to wire and still be accepted
   double MIN_HIT_PROB = 0.01;
   
