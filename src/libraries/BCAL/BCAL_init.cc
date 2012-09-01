@@ -7,6 +7,7 @@
 #include "DBCALCluster_factory.h"
 #include "DBCALPoint_factory.h"
 #include "DBCALHit.h"
+#include "DBCALTDCHit.h"
 #include "DBCALSiPMHit.h"
 #include "DBCALTruthCell.h"
 
@@ -14,6 +15,7 @@
 
 // These come from the event source, not from any algorithm
 typedef JFactory<DBCALHit> DBCALHit_factory;
+typedef JFactory<DBCALTDCHit> DBCALTDCHit_factory;
 typedef JFactory<DBCALSiPMHit> DBCALSiPMHit_factory;
 typedef JFactory<DBCALTruthShower> DBCALTruthShower_factory;
 typedef JFactory<DBCALTruthCell> DBCALTruthCell_factory;
@@ -22,6 +24,7 @@ jerror_t BCAL_init(JEventLoop *loop)
 {
 	/// Create and register BCAL data factories
 	loop->AddFactory(new DBCALHit_factory());
+	loop->AddFactory(new DBCALTDCHit_factory());
 	loop->AddFactory(new DBCALSiPMHit_factory());
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory_KLOE());

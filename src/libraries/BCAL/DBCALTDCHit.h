@@ -16,7 +16,7 @@ class DBCALTDCHit:public JObject{
 	/// modules connected to the BCAL
 
 	public:
-		JOBJECT_PUBLIC(DBCALHit);
+		JOBJECT_PUBLIC(DBCALTDCHit);
 		
 		int module;
 		int layer;
