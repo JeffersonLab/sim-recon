@@ -34,9 +34,9 @@ extern "C"{
 	// Copy the values of BGGATE card to global variables
 	// visible from C++. This is to allow the bcalHit.cc
 	// routines to use them to set the histogram limits
-	void copygatetocplusplus_(float bggate1, float bggate2){
-		BGGATE1 = bggate1;
-		BGGATE2 = bggate2;
+	void copygatetocplusplus_(float *bggate1, float *bggate2){
+		BGGATE1 = *bggate1;
+		BGGATE2 = *bggate2;
 	}
 }
 
