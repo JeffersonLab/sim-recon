@@ -127,14 +127,29 @@ class fADCHitList{
 		fADCHitList(){}
 		
 		int module;
-		int fADClayer;
-		int fADCsector;
+		int sumlayer;
+		int sumsector;
 		
 		vector<fADCHit> uphits;
 		vector<fADCHit> dnhits;
 		
 };
 
+//..........................
+// TDCHitList is a utility class that is used to hold info
+// for a single F1TDC hit
+//..........................
+class TDCHitList{
+	public:
+		TDCHitList(){}
+		
+		int module;
+		int sumlayer;
+		int sumsector;
+		
+		vector<double> uphits;
+		vector<double> dnhits;
+};
 //..........................
 // IncidentParticle_t is a utility class for holding the
 // parameters of particles recorded as incident on the 
@@ -159,6 +174,8 @@ class IncidentParticle_t{
 
 // Defined in this file
 void bcalInit(void);
+int32_t GetEventNumber(s_HDDM_t *hddm_s);
+int32_t GetRunNumber(s_HDDM_t *hddm_s);
 void GetSiPMSpectra(s_HDDM_t *hddm_s, map<bcal_index, CellSpectra> &SiPMspectra, vector<IncidentParticle_t> &incident_particles);
 void ApplySamplingFluctuations(map<bcal_index, CellSpectra> &SiPMspectra, vector<IncidentParticle_t> &incident_particles);
 void MergeSpectra(map<bcal_index, CellSpectra> &SiPMspectra);
@@ -170,14 +187,17 @@ void SortSiPMSpectra(map<bcal_index, CellSpectra> &SiPMspectra, map<int, SumSpec
 void AddDarkHitsForNonHitSiPMs(map<int, SumSpectra> &bcalfADC);
 void ApplyElectronicPulseShape(map<int, SumSpectra> &bcalfADC);
 void ApplyElectronicPulseShapeOneHisto(DHistogram *h);
+void ApplyTimeSmearing(double sigma_ns, map<int, fADCHitList> &fADCHits);
 void FindHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, fADCHitList> &fADCHits);
 void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits);
-void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits, s_HDDM_t *hddm_s);
+void FindTDCHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, TDCHitList> &F1TDCHits);
+void FindTDCHitsOneHisto(double thresh_mV, DHistogram *h, vector<double> &hits);
+void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &F1TDCHits, s_HDDM_t *hddm_s);
 DHistogram* GetHistoFromPool(void);
 void ReturnHistoToPool(DHistogram*);
 TSpline* MakeTSpline(void);
-void SaveDebugHistos(map<bcal_index, CellSpectra> &SiPMspectra, const char *suffix="", const char *yunits="Amplitude");
-void SaveDebugHistos(map<int, SumSpectra> &bcalfADC, const char *suffix="");
+void SaveDebugHistos(int32_t eventNumber, map<bcal_index, CellSpectra> &SiPMspectra, const char *suffix="", const char *yunits="Amplitude");
+void SaveDebugHistos(int32_t eventNumber, map<int, SumSpectra> &bcalfADC, const char *suffix="");
 
 // The following are set in bcalInit below
 bool BCAL_INITIALIZED = false;
@@ -209,6 +229,8 @@ extern bool NO_THRESHOLD_CUT;
 extern bool BCAL_DEBUG_HISTS;
 
 extern double BCAL_TDC_THRESHOLD; // mV
+extern double BCAL_ADC_THRESHOLD; // mV
+extern double BCAL_FADC_TIME_RESOLUTION; // ns
 
 // setup response parameters
 extern double BCAL_DARKRATE_GHZ;                // 0.0176 (from calibDB BCAL/bcal_parms) for 4x4 array
@@ -269,52 +291,61 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 	// Initialize BCAL globals on first call
 	if(!BCAL_INITIALIZED)bcalInit();
 	
+	int32_t eventNumber = GetEventNumber(hddm_s);
+	
 	// First, we extract the time spectra for hit cells
 	map<bcal_index, CellSpectra> SiPMspectra;
 	vector<IncidentParticle_t> incident_particles;
 	GetSiPMSpectra(hddm_s, SiPMspectra, incident_particles);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_Raw", "Amplitude (attenuated-MeV)");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,SiPMspectra, "_Raw", "Amplitude (attenuated-MeV)");
 
 	// Sampling fluctuations
 	ApplySamplingFluctuations(SiPMspectra, incident_particles);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_Sampling", "Amplitude (attenuated-MeV)");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,SiPMspectra, "_Sampling", "Amplitude (attenuated-MeV)");
 
 	// Merge spectra associated with different incident particles
 	MergeSpectra(SiPMspectra);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_Merged", "Amplitude (attenuated-MeV)");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,SiPMspectra, "_Merged", "Amplitude (attenuated-MeV)");
 
 	// Poisson Statistics
 	ApplyPoissonStatistics(SiPMspectra);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_Poisson", "Amplitude (attenuated-MeV)");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,SiPMspectra, "_Poisson", "Amplitude (attenuated-MeV)");
 	
 	// Time Jitter
 	ApplySiPMTimeJitter(SiPMspectra);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_TimeJitter", "Amplitude (attenuated-MeV)");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,SiPMspectra, "_TimeJitter", "Amplitude (attenuated-MeV)");
 	
 	// Add Dark Hits (for hit cells only at this point)
 	AddDarkHits(SiPMspectra);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(SiPMspectra, "_DarkHits", "Amplitude (attenuated-MeV)");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,SiPMspectra, "_DarkHits", "Amplitude (attenuated-MeV)");
 	
 	// Place all hit cell spectra into list indexed by fADC ID
 	map<int, SumSpectra> bcalfADC;
 	SortSiPMSpectra(SiPMspectra, bcalfADC);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(bcalfADC, "_SummedCell");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,bcalfADC, "_SummedCell");
 
 	// Add Dark Hits (for cells without energy deposited)
 	// (n.b. this may add elements to bcalfADC for summed cells with no signal)
 	AddDarkHitsForNonHitSiPMs(bcalfADC);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(bcalfADC, "_DarkHits_SummedCell");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,bcalfADC, "_DarkHits_SummedCell");
 	
 	// Electronic Pulse shape
 	ApplyElectronicPulseShape(bcalfADC);
-	if(BCAL_DEBUG_HISTS)SaveDebugHistos(bcalfADC, "_Electronic");
+	if(BCAL_DEBUG_HISTS)SaveDebugHistos(eventNumber,bcalfADC, "_Electronic");
 	
-	// Apply threshold to find hits in summed spectra
+	// Apply threshold to find ADC hits in summed spectra
 	map<int, fADCHitList> fADCHits;
-	FindHits(BCAL_TDC_THRESHOLD, bcalfADC, fADCHits);
+	FindHits(BCAL_ADC_THRESHOLD, bcalfADC, fADCHits);
+
+	// Apply additional smearing for the time extracted from 4ns samples
+	ApplyTimeSmearing(BCAL_FADC_TIME_RESOLUTION, fADCHits);
+	
+	// Apply threshold to find TDC hits in summed spectra
+	map<int, TDCHitList> F1TDCHits;
+	FindTDCHits(BCAL_TDC_THRESHOLD, bcalfADC, F1TDCHits);
 	
 	// Copy hits into HDDM tree
-	CopyBCALHitsToHDDM(fADCHits, hddm_s);
+	CopyBCALHitsToHDDM(fADCHits, F1TDCHits, hddm_s);
 	
 	// Return histogram objects to the pool for recycling
 	map<bcal_index, CellSpectra>::iterator iter = SiPMspectra.begin();
@@ -394,7 +425,7 @@ void bcalInit(void)
 	double gain_factor_for_test = 20.0;
 	double SiPM_pulse_integral_pC = 1200.0;
 	double SiPM_pulse_peak_mV = 2293.0;
-	double TDC_gain_factor = 10.0;
+	double ADC_gain_factor = 1.0; // (see note below)
 	
 	double mV_per_MeV = 1.0; // just a factor to start with so we can multiply/divide easily below
 	mV_per_MeV *= QCD_counts_per_PE;		// QCD counts/PE
@@ -402,7 +433,20 @@ void bcalInit(void)
 	mV_per_MeV /= BCAL_mevPerPE;			// pC/MeV
 	mV_per_MeV /= gain_factor_for_test;		// convert to actual gain of pre-amp
 	mV_per_MeV *= SiPM_pulse_peak_mV/SiPM_pulse_integral_pC; // mV/MeV
-	mV_per_MeV *= TDC_gain_factor; 			// account for factor of 10 gain in TDC leg of pre-amp
+	mV_per_MeV *= ADC_gain_factor; 			// account for gain in ADC leg of pre-amp
+
+	// Pre-Amp Gains
+	//-----------------
+	// The ADC and TDC legs of the pre-amps will have different gains with
+	// the TDC leg having a factor of 5 more gain than the ADC leg. These
+	// numbers have floated around a bit over time, but this should be the
+	// final design. Some of the above values were taken from test data where
+	// a pre-amp gain of 20 was used. This is why it is divided out in the
+	// calculation of mv_per_MeV above.
+	//
+	// The spectra are calculated for the ADC leg so if debugging histograms
+	// are recorded, that is what you'll be looking at. For the TDC, the applied
+	// threshold is scaled down to accomodate the higher gain.
 
 	// Normalize pulse shape between t=15ns and t=100ns, excluding the
 	// pre and post bumps. We scale by the amplitude to give the pulse
@@ -410,15 +454,6 @@ void bcalInit(void)
 	// amplitude will again be in mV.
 	//double norm = pulse_shape->GetMinimum(15.0, 100.0);
 	double norm = -1020.80; // mV not trivial to find minimum with TSpline3
-
-	// The pulse shape used here represents an amplification factor
-	// of 10 for the TDC leg. Elton claims this is way too high
-	// and will be lowered to probably no more than 5. 
-	double preamp_gain_tdc = 5.0;
-
-	// Scale "norm" by ratio of gain used to make pulse and actual gain we expect.
-	// (The data used to get the TSpline was obtained using a pre-amp with a x10 gain)
-	norm *= 10.0/preamp_gain_tdc;
 
 	// time shift pulse shape just to bring it in frame better for zoomed in picture
 	double toffset = 6.0;
@@ -487,6 +522,30 @@ void bcalInit(void)
 	BCAL_INITIALIZED = true;
 	pthread_mutex_unlock(&bcal_init_mutex);
 
+}
+
+//-----------
+// GetEventNumber
+//-----------
+int32_t GetEventNumber(s_HDDM_t *hddm_s)
+{
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return 0;
+	if(PE->mult == 0) return 0;
+	
+	return PE->in[0].eventNo;
+}
+
+//-----------
+// GetRunNumber
+//-----------
+int32_t GetRunNumber(s_HDDM_t *hddm_s)
+{
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return 0;
+	if(PE->mult == 0) return 0;
+	
+	return PE->in[0].runNo;
 }
 
 //-----------
@@ -1138,6 +1197,35 @@ void ApplyElectronicPulseShapeOneHisto(DHistogram *h)
 }
 
 //-----------
+// ApplyTimeSmearing
+//-----------
+void ApplyTimeSmearing(double sigma_ns, map<int, fADCHitList> &fADCHits)
+{
+	/// The fADC250 will extract a time from the samples by applying an algorithm
+	/// to a few of the samples taken every 4ns. The time resolution of this is
+	/// going to be worse than that obtained from our histograms which effectively
+	/// sample every 0.1ns. This will apply additional smearing to the times in the
+	/// given list of hits to account for this.
+
+	if(NO_T_SMEAR) return;
+
+	map<int, fADCHitList>::iterator it = fADCHits.begin();
+	for(; it!=fADCHits.end(); it++){
+		fADCHitList &hitlist = it->second;
+		
+		// upstream
+		for(unsigned int i=0; i<hitlist.uphits.size(); i++){
+			hitlist.uphits[i].t += gDRandom.Gaus(sigma_ns);
+		}
+
+		// downstream
+		for(unsigned int i=0; i<hitlist.dnhits.size(); i++){
+			hitlist.dnhits[i].t += gDRandom.Gaus(sigma_ns);
+		}
+	}
+}
+
+//-----------
 // FindHits
 //-----------
 void FindHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, fADCHitList> &fADCHits)
@@ -1152,6 +1240,7 @@ void FindHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, fADCHit
 		// Find threshold crossings for both upstream and downstream readout channels
 		vector<fADCHit> uphits;
 		vector<fADCHit> dnhits;
+
 		if(sumspectra.hup)FindHitsOneHisto(thresh_mV, sumspectra.hup, uphits);
 		if(sumspectra.hdn)FindHitsOneHisto(thresh_mV, sumspectra.hdn, dnhits);
 		
@@ -1163,8 +1252,8 @@ void FindHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, fADCHit
 			// (n.b. yes, these are the same methods used for extracting 
 			// similar quantities from the cellId.)
 			hitlist.module = DBCALGeometry::module(fADCId);
-			hitlist.fADClayer = DBCALGeometry::layer(fADCId);
-			hitlist.fADCsector = DBCALGeometry::sector(fADCId);
+			hitlist.sumlayer = DBCALGeometry::layer(fADCId);
+			hitlist.sumsector = DBCALGeometry::sector(fADCId);
 			
 			hitlist.uphits = uphits;
 			hitlist.dnhits = dnhits;
@@ -1177,6 +1266,52 @@ void FindHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, fADCHit
 //-----------
 void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
 {
+#if 0
+	/// This integrates a 200ns window of the histogram starting at t=0
+	/// and if the average amplitude per bin is greater than the given
+	/// threshold, registers a hit. The time of the hit is taken from the
+	/// the center of the bin with the largest amplitude inside the
+	/// integration window.
+	///
+	/// A pulse-finding algorithm is disabled below. This fixed-window
+	/// algorithm arose from a discussion with Beni.
+	int Nbins = h->GetNbins();
+	int start_bin = h->FindBin(0.0);
+	int end_bin = h->FindBin(200.0);
+	if(start_bin<1) start_bin = 1;
+	if(end_bin>Nbins) end_bin = Nbins;
+	
+	// Integrate and find peak
+	double integral = 0.0;
+	double tpeak = -1.0;
+	double apeak = 0.0;
+	for(int ibin=start_bin; ibin<=end_bin; ibin++){
+		double A = h->GetBinContent(ibin);
+		integral += A;
+		if(A>apeak){
+			apeak = A;
+			tpeak = h->GetBinCenter(ibin);
+		}
+	}
+	
+	// Calculate average amplitude in signal region. If the average
+	// is not above the given threshold, return without adding a hit.
+	double Aavg = integral/(double)(end_bin+1 - start_bin);
+_DBG_<<"Aavg="<<Aavg<<" apeak="<<apeak<<" thresh_mV="<<thresh_mV<<endl;
+	if(Aavg < thresh_mV)return;
+
+	// Scale the integral by the ratio of bin widths to get it in
+	// units of mV * fADC bins
+	double bin_width = h->GetBinWidth();
+	integral *= bin_width/4.0; // the fADC250 has 4ns wide samples
+	
+	// Expect 4906 counts/2V
+	double fADC = integral*4096.0/2000.0; // 2V = 2000mV
+
+	// Store hit in container
+	hits.push_back(fADCHit(fADC,tpeak));
+
+#else
 	/// Look through the given histogram and find places where the signal
 	/// size crosses the given threshold. The signal is integrated before
 	/// and after the crossing time by 20ns and 180ns respectively. The 
@@ -1191,6 +1326,8 @@ void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
 	/// it is unclear if the conversions are correct. This can be done
 	/// easily enough at a later stage after any additional scaling factors
 	/// are applied.
+	///
+	/// The time is taken from the center of the bin with the largest amplitude
 	
 	double bin_width = h->GetBinWidth();
 	int Nbins_before = (int)(BCAL_FADC_INTEGRATION_WINDOW_PRE/bin_width);
@@ -1225,7 +1362,7 @@ void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
 		if(iend>Nbins)iend = Nbins;
 
 		// Integrate signal
-		// n.b. we use the start_bin varible so it is left
+		// n.b. we use the start_bin variable so it is left
 		// pointing to the end of the integration window which
 		// is where we start looking for the next hit on the next iteration 
 		double integral = 0.0;
@@ -1236,25 +1373,118 @@ void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
 		// Scale the integral by the ratio of bin widths to get it in
 		// units of mV * fADC bins
 		integral *= bin_width/4.0; // the fADC250 has 4ns wide samples
-		
-		// The histogram should have the signal size for the TDC, but the
-		// fADC leg will actually have a smaller size since the pre-amp gain
-		// will be set differently. Scale the integral down here.
-		double preamp_gain_tdc = 5.0;
-		integral /= preamp_gain_tdc;
-		
+
 		// Expect 4906 counts/2V
 		double fADC = integral*4096.0/2000.0; // 2V = 2000mV
 
 		// Store hit in container
 		hits.push_back(fADCHit(fADC,t));
 	}
+#endif
+}
+
+//-----------
+// FindTDCHits
+//-----------
+void FindTDCHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, TDCHitList> &F1TDCHits)
+{
+	/// Loop over SumSpectra objects and find places where it crosses threshold
+	map<int, SumSpectra>::iterator iter = bcalfADC.begin();
+	for(; iter!=bcalfADC.end(); iter++){
+		
+		int fADCId = iter->first;
+		SumSpectra &sumspectra = iter->second;
+		
+		// Find threshold crossings for both upstream and downstream readout channels
+		vector<double> uphits;
+		vector<double> dnhits;
+
+		if(sumspectra.hup)FindTDCHitsOneHisto(thresh_mV, sumspectra.hup, uphits);
+		if(sumspectra.hdn)FindTDCHitsOneHisto(thresh_mV, sumspectra.hdn, dnhits);
+
+		// If at least one readout channel has a hit, add the readout cell to fADCHits
+		if(uphits.size()>0 || dnhits.size()>0){
+			TDCHitList &hitlist = F1TDCHits[fADCId];
+			
+			// The module, fADC layer, and fADC sector are encoded in fADCId
+			// (n.b. yes, these are the same methods used for extracting 
+			// similar quantities from the cellId.)
+			hitlist.module = DBCALGeometry::module(fADCId);
+			hitlist.sumlayer = DBCALGeometry::layer(fADCId);
+			hitlist.sumsector = DBCALGeometry::sector(fADCId);
+			
+			hitlist.uphits = uphits;
+			hitlist.dnhits = dnhits;
+		}
+	}
+}
+
+//-----------
+// FindTDCHitsOneHisto
+//-----------
+void FindTDCHitsOneHisto(double thresh_mV, DHistogram *h, vector<double> &t_hits)
+{
+	/// This is used for finding accurate leading edge times as would be
+	/// reported by the F1TDCs.
+	///
+	/// Looks through the given histogram and finds places where the signal
+	/// size crosses the given threshold. The time is linearly interpolated
+	/// between bins to more accurately determine it.
+	///
+	/// Multiple hits may be found. Second pulses are a minimum of 20ns apart
+	/// and require a rising edge crossing the threshold.
+
+	double bin_width = h->GetBinWidth();
+	double minimum_pulse_separation = 20.0; // ns
+	int Nbins_to_skip = (int)(minimum_pulse_separation/bin_width);
+
+	// The histogram should have the signal size for the ADC, but the
+	// TADC leg will actually have a larger size since the pre-amp gain
+	// will be set differently. Scale the threshold down here to accomodate
+	// this.
+	double preamp_gain_tdc = 5.0;
+	thresh_mV /= preamp_gain_tdc;
+
+	// Loop 
+	int start_bin = 1;
+	int Nbins = h->GetNbins();
+	while(start_bin<=Nbins){
+		int ibin = h->FindFirstBinAbove(thresh_mV, start_bin);
+		if(ibin<1 || ibin>Nbins)break;
+		
+		// Signal time. Start with the center of the bin as the time then
+		// linearly interpolate (below) to the threshold crossing point.
+		// Notice that we will have 2 times from the BCAL, one from the
+		// fADC and one from the TDC. Here, we only specify one and make it
+		// more closely match the TDC resolution.
+		double t = h->GetBinCenter(ibin);
+		
+		// Linearly interpolate between this and previous bin
+		if(ibin>1){
+			double a1 = h->GetBinContent(ibin-1);
+			double a2 = h->GetBinContent(ibin);
+			double delta_t = bin_width*(a2-thresh_mV)/(a2-a1);
+			t -= delta_t;
+		}
+
+		// Store hit in container
+		t_hits.push_back(t);
+		
+		// Skip the minimum number of bins before we can start looking
+		// for a new edge.
+		start_bin = ibin + Nbins_to_skip;
+		
+		// Advance until we are either below threshold, or hit the end of the histo
+		for(; start_bin<=Nbins; start_bin++){
+			if(h->GetBinContent(start_bin) < thresh_mV) break;
+		}
+	}
 }
 
 //-----------
 // CopyBCALHitsToHDDM
 //-----------
-void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits, s_HDDM_t *hddm_s)
+void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits, map<int, TDCHitList> &F1TDCHits, s_HDDM_t *hddm_s)
 {
 	/// Loop over fADCHitList objects and copy the fADC hits into the HDDM tree.
 	///
@@ -1286,14 +1516,18 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits, s_HDDM_t *hddm_s)
 		}
 		free(hits->barrelEMcal->bcalfADCCells);
 	}
+
+	// Delete any existing bcalTDCHit structures
+	if(hits->barrelEMcal->bcalTDCHits!=HDDM_NULL) free(hits->barrelEMcal->bcalTDCHits);
 	
-	// Make sure bcalfADCCells pointer is empty in case we return early below
+	// Make sure bcalfADCCells and bcalTDCHits pointers are empty in case we return early below
 	hits->barrelEMcal->bcalfADCCells = (s_BcalfADCCells_t*)HDDM_NULL;
+	hits->barrelEMcal->bcalTDCHits = (s_BcalTDCHits_t*)HDDM_NULL;
 
 	// If we have no cells over threshold, then bail now.
-	if(fADCHits.size()==0) return;
+	if(fADCHits.size()==0 && F1TDCHits.size()==0) return;
 	
-	// Create bcalfADCCell structures to hold all of our hits
+	// Create bcalfADCCell structures to hold all of our fADC hits
 	hits->barrelEMcal->bcalfADCCells = make_s_BcalfADCCells(fADCHits.size());
 	unsigned int &mult = hits->barrelEMcal->bcalfADCCells->mult;
 	map<int, fADCHitList>::iterator it = fADCHits.begin();
@@ -1307,8 +1541,8 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits, s_HDDM_t *hddm_s)
 		
 		// Copy cell information to HDDM
 		fADCcell->module = hitlist.module;
-		fADCcell->layer  = hitlist.fADClayer;
-		fADCcell->sector = hitlist.fADCsector;
+		fADCcell->layer  = hitlist.sumlayer;
+		fADCcell->sector = hitlist.sumsector;
 		
 		// If we have any upstream hits, copy them into HDDM
 		if(hitlist.uphits.size()>0){
@@ -1341,6 +1575,46 @@ void CopyBCALHitsToHDDM(map<int, fADCHitList> &fADCHits, s_HDDM_t *hddm_s)
 		}
 
 	} // fADCHits
+
+	// Copy TDC values for all hits (upstream and downstream) into list
+	// so we can allocate memory to hold all of them in a single array.
+	vector<s_BcalTDCHit_t> tdchits;
+	map<int, TDCHitList>::iterator ittdc = F1TDCHits.begin();
+	for(; ittdc!=F1TDCHits.end(); ittdc++){
+		
+		// Get reference to F1TDC cell information
+		TDCHitList &hitlist = ittdc->second;
+
+		// Fill in cell info (but not time)
+		s_BcalTDCHit_t hit;
+		hit.module = hitlist.module;
+		hit.layer  = hitlist.sumlayer;
+		hit.sector = hitlist.sumsector;
+		
+		// Add upstream TDC hits to list
+		hit.end = bcal_index::kUp;
+		for(unsigned int i=0; i<hitlist.uphits.size(); i++){
+			hit.t = hitlist.uphits[i];
+			tdchits.push_back(hit);
+		}
+
+		// Add downstream TDC hits to list
+		hit.end = bcal_index::kDown;
+		for(unsigned int i=0; i<hitlist.dnhits.size(); i++){
+			hit.t = hitlist.dnhits[i];
+			tdchits.push_back(hit);
+		}
+	}	
+	
+	// Create bcalTDCHit structures to hold all of our F1TDC hits
+	hits->barrelEMcal->bcalTDCHits = make_s_BcalTDCHits(tdchits.size());
+	hits->barrelEMcal->bcalTDCHits->mult = tdchits.size();
+	for(unsigned int i=0; i<tdchits.size(); i++){
+	
+		// Copy hit into HDDM tree
+		hits->barrelEMcal->bcalTDCHits->in[i] = tdchits[i];
+
+	} // F1TDCHits
 
 }
 
@@ -1487,15 +1761,11 @@ TSpline* MakeTSpline(void)
 //-----------
 // SaveDebugHistos
 //-----------
-void SaveDebugHistos(map<bcal_index, CellSpectra> &SiPMspectra, const char *suffix, const char *yunits)
+void SaveDebugHistos(int32_t eventNumber, map<bcal_index, CellSpectra> &SiPMspectra, const char *suffix, const char *yunits)
 {
 	/// Create ROOT histograms out of the CellSpectra objects. These would
 	/// correspond to the individual SiPMs. These will be saved in the smear.root 
 	/// file inside of a directory structure to allow debugging.
-	///
-	/// WARNING: This will save several histograms for every event!
-	/// Usually, you will only want to run mcsmear for one or two
-	/// events when this is being called.
 	
 	// This should probably only be called when running single-threaded
 	// (better safe than sorry)!
@@ -1503,6 +1773,15 @@ void SaveDebugHistos(map<bcal_index, CellSpectra> &SiPMspectra, const char *suff
 
 	// Save the current ROOT directory so we can restore it before returning
 	TDirectory *savedir = gDirectory;
+	
+	// See if TDirectory for this event exists. If not, create one.
+	char eventDirName[256];
+	sprintf(eventDirName, "Event%04d", eventNumber);
+	TDirectory *eventdir = (TDirectory*)gDirectory->FindObject(eventDirName);
+	if(eventdir == NULL){
+		eventdir = gDirectory->mkdir(eventDirName);
+	}
+	eventdir->cd();
 	
 	map<bcal_index, CellSpectra>::iterator iter=SiPMspectra.begin();
 	for(; iter!=SiPMspectra.end(); iter++){
@@ -1529,9 +1808,9 @@ void SaveDebugHistos(map<bcal_index, CellSpectra> &SiPMspectra, const char *suff
 		// Directory may already exist since separate entries may be kept
 		// for upstream and downstream. Check if it exists first and only
 		// create it if necessary.
-		savedir->cd();
-		TDirectory *rcdir = (TDirectory*)savedir->FindObject(dirname);
-		if(!rcdir)rcdir = savedir->mkdir(dirname);
+		eventdir->cd();
+		TDirectory *rcdir = (TDirectory*)eventdir->FindObject(dirname);
+		if(!rcdir)rcdir = eventdir->mkdir(dirname);
 		rcdir->cd();
 		
 		// Make ROOT histograms out of upstream and downstream histos
@@ -1561,7 +1840,7 @@ void SaveDebugHistos(map<bcal_index, CellSpectra> &SiPMspectra, const char *suff
 //-----------
 // SaveDebugHistos
 //-----------
-void SaveDebugHistos(map<int, SumSpectra> &bcalfADC, const char *suffix)
+void SaveDebugHistos(int32_t eventNumber, map<int, SumSpectra> &bcalfADC, const char *suffix)
 {
 	/// Create ROOT histograms out of the histograms in the SumSpectra
 	/// objects. These can be either electronics pulse shapes or attenuated
@@ -1579,6 +1858,15 @@ void SaveDebugHistos(map<int, SumSpectra> &bcalfADC, const char *suffix)
 
 	// Save the current ROOT directory so we can restore it before returning
 	TDirectory *savedir = gDirectory;
+
+	// See if TDirectory for this event exists. If not, create one.
+	char eventDirName[256];
+	sprintf(eventDirName, "Event%04d", eventNumber);
+	TDirectory *eventdir = (TDirectory*)gDirectory->FindObject(eventDirName);
+	if(eventdir == NULL){
+		eventdir = gDirectory->mkdir(eventDirName);
+	}
+	eventdir->cd();
 	
 	map<int, SumSpectra>::iterator iter=bcalfADC.begin();
 	for(; iter!=bcalfADC.end(); iter++){
@@ -1600,7 +1888,7 @@ void SaveDebugHistos(map<int, SumSpectra> &bcalfADC, const char *suffix)
 		// Create a directory to hold this readout cell's histos
 		char dirname[256];
 		sprintf(dirname, "Sum_m%02dl%ds%d%s", module, fADC_layer, fADC_sector, suffix);
-		TDirectory *rcdir = savedir->mkdir(dirname);
+		TDirectory *rcdir = eventdir->mkdir(dirname);
 		rcdir->cd();
 		
 		// Make ROOT histograms out of upstream and downstream histos

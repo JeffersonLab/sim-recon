@@ -62,6 +62,8 @@ double BCAL_TIMEDIFFCOEFA        = 0.0; // 0.07 * sqrt( 2 ) (from calibDB BCAL/b
 double BCAL_TIMEDIFFCOEFB        = 0.0; // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
 
 double BCAL_TDC_THRESHOLD = 44.7; // mV
+double BCAL_ADC_THRESHOLD = 4.0;  // mV
+double BCAL_FADC_TIME_RESOLUTION = 4.0/sqrt(12.0); // ns
 
 // BCAL flags
 bool NO_E_SMEAR = false;
@@ -321,6 +323,8 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;	break;
       case 'B': SMEAR_BCAL = false;								break;
       case 'R': BCAL_TDC_THRESHOLD = atof(&ptr[2]);		break;
+      case 'W': BCAL_ADC_THRESHOLD = atof(&ptr[2]);		break;
+      case 'X': BCAL_FADC_TIME_RESOLUTION = atof(&ptr[2]);		break;
       case 'F': NO_E_SMEAR = true;								break;
       case 'G': NO_T_SMEAR = true;								break;
       case 'H': NO_DARK_PULSES = true;							break;
@@ -405,7 +409,9 @@ void Usage(void)
 	cout<<"    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:"<<FCAL_PHOT_STAT_COEF<<")"<<endl;
 	cout<<"    -b#      FCAL single block threshold in MeV (def:"<<FCAL_BLOCK_THRESHOLD/k_MeV<<")"<<endl;
 	cout<<"    -B       Don't process BCAL hits at all (def. process)"<<endl;
-	cout<<"    -Rthresh BCAL TDC threshold (def. "<<BCAL_TDC_THRESHOLD<<")"<<endl;
+	cout<<"    -Rthresh BCAL TDC threshold (def. "<<BCAL_TDC_THRESHOLD<<" mV)"<<endl;
+	cout<<"    -Wthresh BCAL ADC threshold (def. "<<BCAL_ADC_THRESHOLD<<" mV)"<<endl;
+	cout<<"    -Wsigma  BCAL fADC time resolution (def. "<<BCAL_FADC_TIME_RESOLUTION<<" ns)"<<endl;
 	cout<<"    -F       Don't smear BCAL energy (def. smear)"<<endl;
 	cout<<"    -G       Don't smear BCAL times (def. smear)"<<endl;
 	cout<<"    -H       Don't add BCAL dark hits (def. add)"<<endl;
