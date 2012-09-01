@@ -63,6 +63,7 @@
 
 #include <map>
 #include <set>
+#include <sstream>
 using namespace std;
 
 extern "C" {
@@ -149,6 +150,13 @@ class bcal_index{
 			if(incident_id>idx.incident_id)return false;
 			if((end==kUp) && (idx.end==kDown))return true;
 			return false;
+		}
+
+		// For debugging
+		string ToString(void) const {
+			stringstream ss;
+			ss << "module:"<<module<<" layer:"<<layer<<" sector:"<<sector<<" incident_id:"<<incident_id;
+			return ss.str();
 		}
 };
 
@@ -784,7 +792,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 	// Sparsely copy timing spectra from local variables into HDDM structure
 	map<bcal_index, DHistogram*>::iterator iter;
 	for(iter=SiPMspectra.begin(); iter!=SiPMspectra.end(); iter++){
-		
+
 		s_BcalSiPMSpectrum_t *spectrum = &box->bcalSiPMSpectrums->in[box->bcalSiPMSpectrums->mult];
 		const bcal_index &idx = iter->first;
 		
@@ -817,6 +825,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 				}
 				vals += " ";
 			}
+
 			if(E_atten_sum >= THRESH_ATTENUATED_GEV){
 				spectrum->vals = strdup(vals.c_str());
 				box->bcalSiPMSpectrums->mult++;
