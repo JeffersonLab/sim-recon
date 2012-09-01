@@ -8,6 +8,8 @@ using namespace jana;
 
 #include "BCAL/DBCALPoint.h"
 
+class DBCALHit;
+
 class DBCALPoint_factory : public JFactory<DBCALPoint> {
 
  public:
@@ -16,6 +18,13 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
   ~DBCALPoint_factory() {}
 
  private:
+ 
+  class cellHits{
+  	public:
+		vector<const DBCALHit*> uphits;
+		vector<const DBCALHit*> dnhits;
+  };
+ 
 
   jerror_t evnt(JEventLoop *loop, int eventnumber);
 

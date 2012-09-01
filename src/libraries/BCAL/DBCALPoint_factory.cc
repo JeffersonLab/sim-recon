@@ -11,13 +11,12 @@ using namespace std;
 #include "units.h"
 
 jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
-
   vector< const DBCALHit* > hits;
   loop->Get( hits );
   if ( hits.size() <= 0 ) return NOERROR;
 
   // first arrange the list of hits so they are grouped by cell
-  map< int, vector< const DBCALHit* > > cellHitMap;
+  map< int, cellHits > cellHitMap;
   for( vector< const DBCALHit* >::const_iterator hitPtr = hits.begin();
       hitPtr != hits.end();
       ++hitPtr ){
@@ -34,21 +33,43 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
 
     if( cellHitMap.find( id ) == cellHitMap.end() ){
 
-      cellHitMap[id] = vector< const DBCALHit* >();
+      cellHitMap[id] = cellHits();
     }
 
-    cellHitMap[id].push_back( *hitPtr );
+	// Add hit to appropriate list for this cell
+    if(hit.end == DBCALGeometry::kUpstream){
+		cellHitMap[id].uphits.push_back( *hitPtr );
+	}else{
+		cellHitMap[id].dnhits.push_back( *hitPtr );
+	}
   }
 
   // now go through this list and group hits into BCAL points
   // this combines information from both ends
 
-  for( map< int, vector< const DBCALHit* > >::iterator mapItr = cellHitMap.begin();
+  for( map< int, cellHits >::iterator mapItr = cellHitMap.begin();
        mapItr != cellHitMap.end();
        ++mapItr ){
     
-    if( mapItr->second.size() == 2 && 
-        ( mapItr->second[0]->end != mapItr->second[1]->end ) ){
+		// Each SiPM sum can have multiple hits, some caused purely by
+		// dark hits. A more sophisticated algorithm may be needed here
+		// to decipher the multi-hit events. For now, we just take the
+		// most energetic hit from each end. (Single ended hits are
+		// ignored.
+		vector<const DBCALHit *> &uphits = mapItr->second.uphits;
+		vector<const DBCALHit *> &dnhits = mapItr->second.dnhits;
+		if(uphits.size()==0 || dnhits.size()==0) continue;
+
+		const DBCALHit *uphit=uphits[0];
+		const DBCALHit *dnhit=dnhits[0];
+
+		for(unsigned int i=1; i<uphits.size(); i++){
+			if(uphits[i]->E > uphit->E) uphit = uphits[i];
+		}
+
+		for(unsigned int i=1; i<dnhits.size(); i++){
+			if(dnhits[i]->E > dnhit->E) dnhit = dnhits[i];
+		}
       
       // start with the good stuff -- one hit on each end of a cell
 
@@ -57,13 +78,8 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
       float fibLen = DBCALGeometry::BCALFIBERLENGTH;
       float cEff = DBCALGeometry::C_EFFECTIVE;
 
-      const DBCALHit& upHit = 
-        ( mapItr->second[0]->end == DBCALGeometry::kUpstream ? *(mapItr->second[0]) :  *(mapItr->second[1]));
-      const DBCALHit& downHit = 
-        ( mapItr->second[0]->end == DBCALGeometry::kDownstream ? *(mapItr->second[0]) :  *(mapItr->second[1]));  
-
-      double tUp = upHit.t;
-      double tDown = downHit.t;
+      double tUp = uphit->t;
+      double tDown = dnhit->t;
   
       // get the position with respect to the center of the module -- positive
       // z in the downstream direction
@@ -74,14 +90,13 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
       double tol = 50*k_cm;
       if ( zLocal > (0.5*fibLen + tol) || zLocal < (-0.5*fibLen - tol) ) continue;
   
-      DBCALPoint *point = new DBCALPoint( *(mapItr->second[0]),
-                                          *(mapItr->second[1]) );
+      DBCALPoint *point = new DBCALPoint( *uphit,
+                                          *dnhit );
 
-      point->AddAssociatedObject(mapItr->second[0]);
-      point->AddAssociatedObject(mapItr->second[1]);
+      point->AddAssociatedObject(uphit);
+      point->AddAssociatedObject(dnhit);
 
       _data.push_back(point);
-    }
   }
 
   //Possibly we should also construct points from single-ended hits here.
