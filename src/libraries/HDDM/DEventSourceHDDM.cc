@@ -744,7 +744,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(s_HDDM_t *hddm_s, JFactory<DBCALT
 	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
 	
 	vector<DBCALTDCHit*> data;
-#if 0
+
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
@@ -755,53 +755,26 @@ jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(s_HDDM_t *hddm_s, JFactory<DBCALT
 			hits->barrelEMcal == HDDM_NULL ||
 			hits->barrelEMcal->bcalTDCHits == HDDM_NULL)continue;
 		
-		// Loop over BCAL TDC cells
-		s_BcalfADCCells_t *cells = hits->barrelEMcal->bcalfADCCells;
-		for(unsigned int j=0;j<cells->mult;j++){
-			s_BcalfADCCell_t *cell = &cells->in[j];
-			int cellIdent = DBCALGeometry::cellId( cell->module, cell->layer, 
-				  cell->sector );
-			if(cell->bcalfADCUpHits != HDDM_NULL){
-				for(unsigned int k=0; k<cell->bcalfADCUpHits->mult; k++){
-			     
-					s_BcalfADCUpHit_t *uphit = &cell->bcalfADCUpHits->in[k];
+		// Loop over BCAL TDC hits
+		s_BcalTDCHits_t *tdchits = hits->barrelEMcal->bcalTDCHits;
+		for(unsigned int j=0; j<tdchits->mult; j++){
+			
+			s_BcalTDCHit_t *hit = &tdchits->in[j];
+			
+			DBCALTDCHit *bcaltdchit = new DBCALTDCHit;
+			
+			bcaltdchit->module = hit->module;
+			bcaltdchit->layer = hit->layer;
+			bcaltdchit->sector = hit->sector;
+			bcaltdchit->end = hit->end==0 ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
+			bcaltdchit->t = hit->t;
 
-					DBCALHit *response = new DBCALHit;
-					
-					response->module =cell->module;
-					response->layer = cell->layer;
-					response->sector = cell->sector;
-					response->E = uphit->E;
-					response->t = uphit->t;
-					response->end = DBCALGeometry::kUpstream;
-					response->cellId = cellIdent;
+			data.push_back(bcaltdchit);
 
-					data.push_back(response);
-				}
-			}
+		} // tdchits
 
-			if(cell->bcalfADCDownHits != HDDM_NULL){
-				for(unsigned int k=0; k<cell->bcalfADCDownHits->mult; k++){
-
-					s_BcalfADCDownHit_t *downhit = &cell->bcalfADCDownHits->in[k];
-
-					DBCALHit *response = new DBCALHit;
-	    
-					response->module =cell->module;
-					response->layer = cell->layer;
-					response->sector = cell->sector;
-					response->E = downhit->E;
-					response->t = downhit->t;
-					response->end = DBCALGeometry::kDownstream;
-
-					response->cellId = cellIdent;
-
-					data.push_back(response);
-				}
-			}
-		} // j   (cells)
-	} // i   (physicsEvents)
-#endif	
+	} // Physics Events
+			
 	// Copy into factory
 	factory->CopyTo(data);
 
