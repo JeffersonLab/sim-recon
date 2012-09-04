@@ -58,8 +58,8 @@ jerror_t DTrackTimeBased_factory::init(void)
 	fitter = NULL;
 	MAX_DReferenceTrajectoryPoolSize = 20;
 
-	//DEBUG_HISTS = false;
-	DEBUG_HISTS = true;
+	DEBUG_HISTS = false;
+	//DEBUG_HISTS = true;
 	DEBUG_LEVEL = 0;
 	MOMENTUM_CUT_FOR_DEDX=0.5;	
 	MOMENTUM_CUT_FOR_PROTON_ID=2.0;
@@ -222,9 +222,11 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   } else {
     eventLoop->Get(bcal_showers);    
   }
-
+  vector<const DFCALShower*>fcal_showers;
+  eventLoop->Get(fcal_showers);    
+  
   vector<const DMCThrown*> mcthrowns;
-  loop->Get(mcthrowns);
+  if (PID_FORCE_TRUTH) loop->Get(mcthrowns);
    
   // Loop over candidates
   for(unsigned int i=0; i<tracks.size(); i++){
@@ -242,7 +244,13 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
       for (unsigned int j=0;j<mass_hypotheses.size();j++){
 	if (mass_hypotheses[j]>0.9 
 	    && track->momentum().Mag()>MOMENTUM_CUT_FOR_PROTON_ID) continue;
-	DoFit(track,sc_hits,tof_points,bcal_showers,loop,mass_hypotheses[j]);
+	
+	// Create vector of start times from various sources
+	vector<DTrackTimeBased::DStartTime_t>start_times;
+	CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,fcal_showers,start_times);
+	
+	// Fit the track
+	DoFit(track,start_times,loop,mass_hypotheses[j]);
       }
     }
     else{
@@ -282,7 +290,13 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
       }
       else{
 	unsigned int num=_data.size();
-	DoFit(track,sc_hits,tof_points,bcal_showers,loop,track->mass());
+
+	// Create vector of start times from various sources
+	vector<DTrackTimeBased::DStartTime_t>start_times;
+	CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,fcal_showers,start_times);
+	
+	// Fit the track
+	DoFit(track,start_times,loop,track->mass());
   
 	//_DBG_<< "eventnumber:   " << eventnumber << endl;
 	if (PID_FORCE_TRUTH && _data.size()>num) {
@@ -536,7 +550,8 @@ void DTrackTimeBased_factory
   ::CreateStartTimeList(const DTrackWireBased *track,
 			vector<const DSCHit*>&sc_hits,
 			vector<const DTOFPoint*>&tof_points,
-			vector<const DBCALShower*>&bcal_showers,
+			vector<const DBCALShower*>&bcal_showers,	
+			vector<const DFCALShower*>&fcal_showers,
 			vector<DTrackTimeBased::DStartTime_t>&start_times){
   // Add the t0 estimate from the tracking
   DTrackTimeBased::DStartTime_t start_time;
@@ -575,6 +590,15 @@ void DTrackTimeBased_factory
     start_time.system=SYS_BCAL;
     start_times.push_back(start_time);
   }
+  vector<const DFCALShower*> locMatchedFCALShowers;
+  if (pid_algorithm->MatchToFCAL(track->rt, fcal_showers, locMatchedFCALShowers, tproj, locPathLength, locFlightTime) == NOERROR){
+    // Fill in the start time vector
+    start_time.t0=tproj;
+    start_time.t0_sigma=0.5;
+    start_time.system=SYS_FCAL;
+    start_times.push_back(start_time);
+  }
+
   // Sort the list of start times according to uncertainty and set 
   // t0 for the fit to the first entry
   sort(start_times.begin(),start_times.end(),DTrackTimeBased_T0_cmp);
@@ -589,29 +613,9 @@ void DTrackTimeBased_factory
 
 // Create a list of start times and do the fit for a particular mass hypothesis
 void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
-				    vector<const DSCHit*>&sc_hits,
-				    vector<const DTOFPoint*>&tof_points,
-				    vector<const DBCALShower*>&bcal_showers,
+				    vector<DTrackTimeBased::DStartTime_t>&start_times,
 				    JEventLoop *loop,
 				    double mass){  
-  // Create vector of start times from various sources
-  vector<DTrackTimeBased::DStartTime_t>start_times;
-  CreateStartTimeList(track,sc_hits,tof_points,bcal_showers,start_times);
-  
-  // Make sure there are enough DReferenceTrajectory objects
-  unsigned int locNumInitialReferenceTrajectories = rtv.size();
-  while(rtv.size()<=_data.size()){
-    //printf("TB adding\n");
-    rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-  }
-  DReferenceTrajectory *rt = rtv[_data.size()];
-  if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-    rt->Reset();
-  rt->SetMass(mass);
-  rt->q = track->charge();
-
-  rt->SetDGeometry(geom);
-      
   if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<<mass<<endl;}
   
   // Do the fit
@@ -669,7 +673,7 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       // and deallocated them every event. Therefore, we allocate
       // when needed, but recycle them on the next event.
       // They are deleted in the fini method.
-      locNumInitialReferenceTrajectories = rtv.size();
+      unsigned int locNumInitialReferenceTrajectories = rtv.size();
       while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
       DReferenceTrajectory *rt = rtv[_data.size()];
       if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
@@ -700,13 +704,14 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
 					      start_times.end());
 	  
       if (DEBUG_HISTS){
-	if (start_times[0].system==SYS_START){
-	  Hstart_time->Fill(start_times[0].t0,0.);
-	}
-	else{
-	  Hstart_time->Fill(start_times[0].t0,start_times[0].system);
-	}
-	
+	int id=0;
+	if (mStartDetector==SYS_CDC) id=1;
+	else if (mStartDetector==SYS_FDC) id=2;
+	else if (mStartDetector==SYS_BCAL) id=3;
+	else if (mStartDetector==SYS_FCAL) id=4;
+	else if (mStartDetector==SYS_TOF) id=5;
+
+	Hstart_time->Fill(start_times[0].t0,id);
       }
       
       

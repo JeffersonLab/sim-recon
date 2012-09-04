@@ -14,6 +14,7 @@
 #include <TRACKING/DTrackFitter.h>
 #include <PID/DParticleID.h>
 #include <BCAL/DBCALShower.h>
+#include <FCAL/DFCALShower.h>
 #include <TOF/DTOFPoint.h>
 #include <TRACKING/DMCThrown.h>
 #include <START_COUNTER/DSCHit.h>
@@ -74,12 +75,11 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   void CreateStartTimeList(const DTrackWireBased *track,
 			   vector<const DSCHit*>&sc_hits,
 			   vector<const DTOFPoint*>&tof_points,
-			   vector<const DBCALShower*>&bcal_showers,
+			   vector<const DBCALShower*>&bcal_showers,	  
+			   vector<const DFCALShower*>&fcal_showers,
 			   vector<DTrackTimeBased::DStartTime_t>&start_times);
   void DoFit(const DTrackWireBased *track,
-	     vector<const DSCHit*>&sc_hits,
-	     vector<const DTOFPoint*>&tof_points,
-	     vector<const DBCALShower*>&bcal_showers,
+	     vector<DTrackTimeBased::DStartTime_t>&start_times,
 	     JEventLoop *loop,double mass);  
 
   // Geometry
@@ -87,7 +87,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 
   double mPathLength,mEndTime,mStartTime,mFlightTime;
   DetectorSystem_t mDetector, mStartDetector;
-  
+ 
   double SKIP_MASS_HYPOTHESES_WIRE_BASED;
 
   // start counter geometry
