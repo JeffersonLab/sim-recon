@@ -10,6 +10,8 @@
 #include <TMath.h>
 #include <TTree.h>
 #include <JANA/jerror.h>
+#include <DANA/DApplication.h>
+
 
 #include <TRACKING/DTrackHitSelector.h>
 
@@ -22,6 +24,8 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 		void GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out) const;
 
 	private:
+		const DMagneticFieldMap *bfield;
+
 		int HS_DEBUG_LEVEL;
 		bool MAKE_DEBUG_TREES;
 		double MIN_HIT_PROB_CDC;
