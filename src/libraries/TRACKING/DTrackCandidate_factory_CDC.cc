@@ -16,6 +16,9 @@ using namespace std;
 
 #define BeamRMS 1.0
 #define EPS 1e-3
+#ifndef M_TWO_PI
+#define M_TWO_PI 6.28318530717958647692
+#endif
 
 #include "DTrackCandidate_factory_CDC.h"
 
@@ -34,7 +37,6 @@ inline int bitcount (unsigned int n)  {
 }
 
 
-
 class DVector3_with_perp:public DVector3
 {
 	public:
@@ -47,8 +49,8 @@ class DVector3_with_perp:public DVector3
 		double perp;
 };
 
-inline bool SortIntersections(const DVector3_with_perp &a,const DVector3_with_perp &b){
-  if (a.perp<b.perp) return true;
+inline bool SortIntersections(const intersection_t &a,const intersection_t &b){
+  if (a.perp2<b.perp2) return true;
   return false;
 }
 
@@ -641,7 +643,7 @@ void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<
 			// Compare the phi values of the first and last points of the two seeds
 			// to see if they are close enough to link.
 			double dphi = fabs(pos1->Phi() - pos2->Phi());
-			while(dphi>M_PI)dphi-=2.0*M_PI;
+			while(dphi>M_PI)dphi-=M_TWO_PI;
 			if(fabs(dphi*57.3)<MAX_SEED_LINK_ANGLE){
 
 				DCDCSeed seed = in_seeds1[i];
@@ -778,7 +780,7 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	    seed.fit.GuessChargeFromCircleFit(); // for Riemann fit
 		}
 	}else{
-		seed.fit.GuessChargeFromCircleFit(); // for regression fit
+	  seed.fit.GuessChargeFromCircleFit(); // for regression fit
 	}
 
 	// Check if majority of hits are close to circle.
@@ -1021,68 +1023,45 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		
 		// Calculate intersection points between circle and stereo wire
 		const DCDCWire *wire = trkhit->hit->wire;
-		DVector2 r1(wire->origin.X(), wire->origin.Y());
-		DVector2 r2(wire->udir.X(), wire->udir.Y());
-		DVector2 R(seed.fit.x0, seed.fit.y0);
-		double r2_mod2 = r2.Mod2();
-		if(r2_mod2<1.0E-10){
-			_DBG_<<"wire in CDC stereo hit list is not stereo!"<<endl;
-			continue; // this must not be a stereo wire!
-		}
-	      
-		double a = r2_mod2;
-		double b = 2.0*r2*(r1-R);
-		double c = r1.Mod2()-2.0*r1*R;
-		double A = b*b - 4.0*a*c;
+		DVector3 origin = wire->origin;
+		DVector3 dir = wire->udir;
+		double dx=origin.x()-seed.fit.x0;  
+		double dy=origin.y()-seed.fit.y0;
+		double ux=dir.x();
+		double uy=dir.y();
+		double temp1=ux*ux+uy*uy;
+		double temp2=ux*dy-uy*dx;
+		double b=-ux*dx-uy*dy;
+		double A=seed.fit.r0*seed.fit.r0*temp1-temp2*temp2;
 
 		// Check that this wire intersects this circle
 		if(A<0.0)continue; // line along wire does not intersect circle, ever.
 
-		// Calculate intersection points for two roots of alpha
+		// Calculate intersection points for the two roots 
 		double B = sqrt(A);
-		double alpha1 = (-b - B)/(2.0*a);
-		double alpha2 = (-b + B)/(2.0*a);
+		double dz1 = (b-B)/temp1;
+		double dz2 = (b+B)/temp1;
 
-		if(DEBUG_LEVEL>15)_DBG_<<"alpha1="<<alpha1<<" alpha2="<<alpha2<<endl;
-		
-		// At this point we must decide which value of alpha to use. The
-		// proper way would likely involve either trying both possibilities
-		// and taking the one that gave the better chi-sq for a line fit
-		// of phi vs. z or looking at the surrounding axial layers
-		// and using the value which puts the hit closest to those.
+		if(DEBUG_LEVEL>15)_DBG_<<"dz1="<<dz1<<" dz2="<<dz2<<endl;
+
+		// At this point we must decide which value of alpha to use. 
 		// For now, we just use the value closest to zero (i.e. closest to
 		// the center of the wire).
-		//double alpha = sqrt(r2_mod2)*(fabs(alpha1)<fabs(alpha2) ? alpha1:alpha2);
-		
-		// Now we must convert the alpha value into a z-value. To do this,
-		// we use the known theta angle of the wire. The distance along the
-		// wire from the center in 3D is given by:
-		//
-		//   s = alpha/sin(theta_wire)
-		//
-		// The z coordinate of the hit is given by:
-		//
-		//    z = z1 + s*z2
-		//
-		// where z1 is the z coordinate of the center of the wire and z2
-		// is the z component of the direction of the wire. i.e.
-		//
-		//    z2 = cos(theta_wire)
-		//
-		// This means  sin(theta_wire) = sqrt(1 - (z2)^2)
-		//double z2 = wire->udir.Z();
-		//double s = alpha/fabs(sin(wire->stereo));
-		// The above code unnecessarily multiples and divides by sin(theta_wire)
-	        double s=(fabs(alpha1)<fabs(alpha2) ? alpha1:alpha2);
+		double dz=dz1;
+		if (fabs(dz2)<fabs(dz1)){
+		  dz=dz2;
+		}
+		// distance along wire relative to origin
+		double s=dz/cos(wire->stereo);
 
-		//if(DEBUG_LEVEL>3)_DBG_<<"alpha="<<alpha<<" s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
-		if(DEBUG_LEVEL>15)_DBG_<<"s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
-		if(fabs(s) > wire->L/2.0)continue; // if wire doesn't cross circle, skip hit
+		if(DEBUG_LEVEL>15)
+		  _DBG_<<"s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
+		if(fabs(s) > 0.5*wire->L)continue; // if wire doesn't cross circle, skip hit
 		
 	
 		// Determine 3d space point for this hit
-		DCDCTrkHit mytrkhit = *trkhit; // we need to make a copy since x_stereo,... are unique based on the cadidate
-		DVector3 pos = wire->origin + s*wire->udir;
+		DCDCTrkHit mytrkhit = *trkhit; // we need to make a copy since x_stereo,... are unique based on the candidate
+		DVector3 pos = origin + s*dir;
 		mytrkhit.x_stereo = pos.X();
 		mytrkhit.y_stereo = pos.Y();
 		mytrkhit.z_stereo = pos.Z();
@@ -1090,12 +1069,18 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		// Verify that this hit is reasonably close to the axial hits in X and Y
 		// If not, then drop this hit for this seed.
 		double phi_diff = fabs(pos.Phi() - seed.phi_avg);
-		if(phi_diff>M_PI)phi_diff = 2.0*M_PI - phi_diff;
+		if(phi_diff>M_PI)phi_diff = M_TWO_PI - phi_diff;
 		phi_diff*=57.3; // convert to degrees
 		if(fabs(phi_diff)>MAX_SEED_LINK_ANGLE){ // yes, the fabs is needed ...
 			if(DEBUG_LEVEL>4)_DBG_<<"rejecting stereo hit at phi="<<pos.Phi()<<" for being too far away from axial hits(phi_diff="<<phi_diff<<")"<<endl;
 			continue;
-		}
+		} 
+		// Assume error on the radius of the circle is 10% of the radius
+		double var_r=0.01*seed.fit.r0*seed.fit.r0; 
+		mytrkhit.var_z=(seed.fit.r0*seed.fit.r0/A)*var_r;
+		
+		// Compute phi for the stereo wire
+		DVector2 R(seed.fit.x0, seed.fit.y0);
 		mytrkhit.phi_stereo = atan2(mytrkhit.y_stereo-R.Y(), mytrkhit.x_stereo-R.X());
 		R*=-1.0; // make R point from center of circle to beamline instead of other way around
 		if(DEBUG_LEVEL>15){
@@ -1108,13 +1093,13 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		
 		// We want this to go either from 0 to +2pi for positive charge, or
 		// 0 to -2pi for negative.
-		double phi_hi = seed.fit.q>0.0 ? +2.0*M_PI:0.0;
-		double phi_lo = seed.fit.q>0.0 ? 0.0:-2.0*M_PI;
+		double phi_hi = seed.fit.q>0.0 ? +M_TWO_PI:0.0;
+		double phi_lo = seed.fit.q>0.0 ? 0.0:-M_TWO_PI;
 		while(mytrkhit.phi_stereo<phi_lo){
-		  mytrkhit.phi_stereo+=2.0*M_PI;
+		  mytrkhit.phi_stereo+=M_TWO_PI;
 		}
 		while(mytrkhit.phi_stereo>phi_hi){
-		  mytrkhit.phi_stereo-=2.0*M_PI;
+		  mytrkhit.phi_stereo-=M_TWO_PI;
 		}
 		mytrkhit.flags |= VALID_STEREO;
 		seed.stereo_hits.push_back(mytrkhit);
@@ -1262,7 +1247,7 @@ void DTrackCandidate_factory_CDC::FindTheta(DCDCSeed &seed, double target_z_min,
 	unsigned int Nbins = 1000;
 	unsigned int hist[Nbins];
 	for(unsigned int i=0; i<Nbins; i++)hist[i] = 0; // clear histogram
-	double bin_width = 2.0*M_PI/(double)Nbins;
+	double bin_width = M_TWO_PI/(double)Nbins;
 	double hist_low_limit = -M_PI; // lower edge of histogram limits
 	
 	// Loop over CDC hits, filling the histogram
@@ -1453,7 +1438,7 @@ void DTrackCandidate_factory_CDC::DCDCSeed::Merge(DCDCSeed& seed)
 	}
 
 	phi_avg = atan2(y,x);
-	if(phi_avg<0.0)phi_avg += 2.0*M_PI;
+	if(phi_avg<0.0)phi_avg += M_TWO_PI;
 }
 
 //------------------
@@ -1520,10 +1505,8 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
   if (seed.fit.normal.Mag()==0.) return VALUE_OUT_OF_RANGE;
   // Vector of intersections between the circles of the measurements and the plane intersecting the Riemann surface
-  vector<DVector3_with_perp>intersections;
-  DVector3_with_perp beam(0,0,TARGET_Z);
-  intersections.push_back(beam);
-  
+  vector<intersection_t>intersections;
+			       
   // CDC stereo hits
   for (unsigned int m=0;m<seed.stereo_hits.size();m++){
     unsigned int numbits=8*sizeof(unsigned int);
@@ -1533,7 +1516,8 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     DCDCTrkHit *trkhit=&seed.stereo_hits[m];
     double R2=trkhit->x_stereo*trkhit->x_stereo+trkhit->y_stereo*trkhit->y_stereo;
 
-    DVector3_with_perp intersection;
+    //DVector3_with_perp intersection;
+    intersection_t intersection;
     DVector3 N=seed.fit.normal;
     //double c0=seed.fit.c_origin;
     double A=seed.fit.c_origin+R2*N.Z();
@@ -1548,62 +1532,75 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
       double y2=(-N.Y()*A+N.X()*sqrtC)/B;
       
       if (fabs(trkhit->y_stereo-y1)<fabs(trkhit->y_stereo-y2)){
-	intersection.SetX(x1);
-	intersection.SetY(y1);
+	//intersection.SetX(x1);
+	//intersection.SetY(y1);
+	intersection.x=x1;
+	intersection.y=y1;
+	intersection.perp2=x1*x1+y1*y1;
       }
       else{
-	intersection.SetX(x2);
-	intersection.SetY(y2);
+	//intersection.SetX(x2);
+	//intersection.SetY(y2);
+	intersection.x=x2;
+	intersection.y=y2;
+	intersection.perp2=x2*x2+y2*y2;
       }
-      intersection.SetZ(trkhit->z_stereo);
+      //intersection.SetZ(trkhit->z_stereo);
+      intersection.z=trkhit->z_stereo;
+      intersection.var_z=trkhit->var_z;
       
       intersections.push_back(intersection);
-		if(DEBUG_LEVEL>5)_DBG_<<"Adding CDC hit "<<m<<" z="<<intersection.z()<<endl;      
+      if(DEBUG_LEVEL>5)
+	_DBG_<<"Adding CDC hit "<<m<<" z="<<intersection.z<<endl;      
       
     }
 
   }
-  
-  // The SortIntersections method requires the perp field to be valid
-  // for all objects. Go through and fill in those fields now.
-  for(unsigned int i=0; i<intersections.size(); i++)intersections[i].CalcPerp();
-  
+   
   // Now, sort the entries
   sort(intersections.begin(),intersections.end(),SortIntersections);
-
+ 
   // Compute the arc lengths between (0,0) and (xi,yi)
-  vector<double>arclengths(intersections.size());
-  vector<double>var_z(intersections.size());
+  vector<double>arclengths(intersections.size()); 
   arclengths[0]=0.;
-  //double temp=1.6/sin(6.*M_PI/180.);
-  //double varz=temp*temp/12.;
   double two_rc=2.*seed.fit.r0;
-  for (unsigned int m=1;m<arclengths.size();m++){
-    double diffx=intersections[m].x()-intersections[0].x();
-    double diffy=intersections[m].y()-intersections[0].y();
-    double chord=sqrt(diffx*diffx+diffy*diffy);  
-    double ratio=chord/two_rc;
-    double s=(ratio<1.)?two_rc*asin(ratio):M_PI_2*two_rc;
+  // Find POCA to beam line
+  double sinphi=sin(seed.fit.phi);
+  double cosphi=cos(seed.fit.phi);
+  double D=-seed.fit.q*seed.fit.r0-seed.fit.x0/sinphi;
+  double x0=-D*sinphi,y0=D*cosphi;
 
+  // Arc length to first measurement
+  double diffx=intersections[0].x-x0;
+  double diffy=intersections[0].y-y0;
+  double chord=sqrt(diffx*diffx+diffy*diffy);  
+  double ratio=chord/two_rc;
+  double s=(ratio<1.)?two_rc*asin(ratio):M_PI_2*two_rc;
+  arclengths[0]=s;
+  // Find arc lengths for the rest of the stereo hits
+  for (unsigned int m=1;m<arclengths.size();m++){
+    diffx=intersections[m].x-intersections[m-1].x;
+    diffy=intersections[m].y-intersections[m-1].y;
+    chord=sqrt(diffx*diffx+diffy*diffy);  
+    ratio=chord/two_rc;
+    double ds=(ratio<1.)?two_rc*asin(ratio):M_PI_2*two_rc;
+    s+=ds;
     arclengths[m]=s;
-    //var_z[m]=varz;
-    var_z[m]=19.52;
   }
 
   //Linear regression to find z0, tanl
   double tanl=0.,z0=0.;
   if (arclengths.size()>2){ // Do fit only if have more than one measurement
-    //var_z[0]=30.*30./12.;  // Use length of the target
-    var_z[0]=75.;
     double sumv=0.,sumx=0.;
     double sumy=0.,sumxx=0.,sumxy=0.;
     for (unsigned int m=0;m<intersections.size();m++){
-      double temp=1./var_z[m];
+      //double temp=1./var_z[m];
+      double temp=1./intersections[m].var_z;
       sumv+=temp;
       sumx+=arclengths[m]*temp;
-      sumy+=intersections[m].z()*temp;;
+      sumy+=intersections[m].z*temp;;
       sumxx+=arclengths[m]*arclengths[m]*temp;
-      sumxy+=arclengths[m]*intersections[m].z()*temp;
+      sumxy+=arclengths[m]*intersections[m].z*temp;
     }
     double Delta=sumv*sumxx-sumx*sumx;
     if (Delta==0.) return VALUE_OUT_OF_RANGE;
@@ -1613,7 +1610,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
   }
   else if(arclengths.size()==2){
     z0=TARGET_Z;
-    tanl=(intersections[1].z()-z0)/arclengths[1];
+    tanl=(intersections[1].z-z0)/arclengths[1];
   }else{
 	if(DEBUG_LEVEL>5)_DBG_<<"Fit failed for theta-z via regressionz due to too few hits with z-info"<<endl;
 	return VALUE_OUT_OF_RANGE;
@@ -1661,7 +1658,7 @@ jerror_t DTrackCandidate_factory_CDC::GetPositionAndMomentum(DCDCSeed &seed,
   // Check for intersections
   if(!isfinite(temp1) || !isfinite(temp2)){
     // We did not find an intersection between the two circles, so return 
-    // sensible defaults for pos and 
+    // sensible defaults for pos and mom
     double my_phi=seed.fit.phi;
     double sinphi=sin(my_phi);
     double cosphi=cos(my_phi);
@@ -1707,10 +1704,10 @@ jerror_t DTrackCandidate_factory_CDC::GetPositionAndMomentum(DCDCSeed &seed,
     phi_minus*=-1.;
     if (seed.fit.q<0) phi_minus+=M_PI;  
     double dphi=M_PI_2-phi_minus-seed.fit.phi;
-    while (dphi>2.*M_PI) dphi-=2*M_PI;
-    while (dphi<-2.*M_PI) dphi+=2*M_PI;   
-    if (dphi<-M_PI) dphi+=2*M_PI;
-    if (dphi>M_PI) dphi-=2*M_PI;  
+    while (dphi>M_TWO_PI) dphi-=M_TWO_PI;
+    while (dphi<-M_TWO_PI) dphi+=M_TWO_PI;   
+    if (dphi<-M_PI) dphi+=M_TWO_PI;
+    if (dphi>M_PI) dphi-=M_TWO_PI;  
     pos.SetXYZ(x_minus,y_minus,seed.z_vertex+seed.fit.q*rc*dphi*tanl);
     mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
 
@@ -1719,10 +1716,10 @@ jerror_t DTrackCandidate_factory_CDC::GetPositionAndMomentum(DCDCSeed &seed,
     phi_plus*=-1.;   
     if (seed.fit.q<0) phi_plus+=M_PI;
     double dphi=M_PI_2-phi_plus-seed.fit.phi;
-    while (dphi>2.*M_PI) dphi-=2*M_PI;
-    while (dphi<-2.*M_PI) dphi+=2*M_PI;
-    if (dphi<-M_PI) dphi+=2*M_PI;
-    if (dphi>M_PI) dphi-=2*M_PI;  
+    while (dphi>M_TWO_PI) dphi-=M_TWO_PI;
+    while (dphi<-M_TWO_PI) dphi+=M_TWO_PI;
+    if (dphi<-M_PI) dphi+=M_TWO_PI;
+    if (dphi>M_PI) dphi-=M_TWO_PI;  
     pos.SetXYZ(x_plus,y_plus,seed.z_vertex+seed.fit.q*rc*dphi*tanl); 
     mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
 

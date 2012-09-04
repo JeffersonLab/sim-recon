@@ -16,6 +16,11 @@ using namespace jana;
 #include "CDC/DCDCTrackHit.h"
 
 class DFDCPseudo;
+	
+typedef struct{
+  double x,y,perp2;
+  double z,var_z;
+}intersection_t;
 
 
 /// \htmlonly
@@ -52,7 +57,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		DTrackCandidate_factory_CDC(){};
 		~DTrackCandidate_factory_CDC(){};
 		const char* Tag(void){return "CDC";}
-		
+	
 		enum trk_flags_t{
 			NONE					= 0x000,
 			NOISE					= 0x001,
@@ -81,6 +86,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 				double x_stereo;
 				double y_stereo;
 				double z_stereo;
+				double var_z;
 				double phi_stereo;
 				
 				double Dist2(DCDCTrkHit *trkhit){
