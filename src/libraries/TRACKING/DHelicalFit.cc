@@ -32,7 +32,7 @@ inline bool DHFHitLessThanZ_C(DHFHit_t* const &a, DHFHit_t* const &b) {
 	return a->z < b->z;
 }
 inline bool RiemannFit_hit_cmp(DHFHit_t *a,DHFHit_t *b){
-  return (a->z>b->z);
+  return (a->z<b->z);
 }
 
 
@@ -843,17 +843,23 @@ jerror_t DHelicalFit::FitLineRiemann(){
   double z_last=0.,z=0.;
   DVector2 old_proj=projections[start];
   double two_r0=2.*r0;
+  double var_s=0.;
   for (unsigned int k=start;k<n;k++){
     if (!bad[k]){
       sperp_old=sperp;
       z_last=z;
-      ratio=(projections[k]-old_proj).Mod()/(two_r0);
+      double chord=(projections[k]-old_proj).Mod();
+      ratio=chord/two_r0;
       // Make sure the argument for the arcsin does not go out of range...
-      sperp=sperp_old+(ratio>1? two_r0*M_PI_2 : two_r0*asin(ratio));
+      double ds=(ratio>1)? two_r0*M_PI_2 : two_r0*asin(ratio);
+      sperp=sperp_old+ds;
       z=hits[k]->z;
+      
+      // Estimate error in arc length assuming 10% error in r0
+      double ds_from_r0=0.1*sperp;
+      var_s=ds_from_r0*ds_from_r0;
 
-      // Assume errors in s dominated by errors in R 
-      double weight=1./CR(k,k);
+      double weight=1./(CR(k,k)+var_s);
       sumv+=weight;
       sumy+=sperp*weight;
       sumx+=z*weight;
@@ -869,10 +875,12 @@ jerror_t DHelicalFit::FitLineRiemann(){
   if (fabs(Delta)<EPS || fabs(tanl_denom)<EPS) return VALUE_OUT_OF_RANGE;
 
   // Track parameters tan(lambda) and z-vertex
-  tanl=-Delta/tanl_denom; 
-  //z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
-  sperp-=sperp_old;
-  z_vertex=z_last-sperp*tanl;
+  tanl=Delta/tanl_denom; 
+ 
+  double chord=(projections[start]).Mod();
+  ratio=chord/two_r0;
+  sperp=(ratio>1? two_r0*M_PI_2 : two_r0*asin(ratio));
+  z_vertex=hits[start]->z-sperp*tanl;
 
   /*
   if (z_vertex<Z_MIN){
