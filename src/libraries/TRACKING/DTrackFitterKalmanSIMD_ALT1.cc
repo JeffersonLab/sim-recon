@@ -41,6 +41,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
   double fdc_chi2cut
     =anneal_factor*anneal_factor*NUM_FDC_SIGMA_CUT*NUM_FDC_SIGMA_CUT; 
+
   double cdc_chi2cut
     =anneal_factor*anneal_factor*NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
 
@@ -146,6 +147,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		
 	// Difference between measurement and projection
 	double Mdiff=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
+
+	if (DEBUG_HISTS && fit_type==kTimeBased){
+	  fdc_dy_vs_d->Fill(doca,Mdiff);
+	}
 	
        	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
@@ -302,13 +307,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // Check if this hit is an outlier
 	  double chi2_hit=Mdiff*Mdiff*InvV;
 	  if (chi2_hit<fdc_chi2cut){
-	    if (DEBUG_HISTS && fit_type==kTimeBased){ 
-	      unsigned int wire_number
-		=96*(my_fdchits[id]->hit->wire->layer-1)
-		+my_fdchits[id]->hit->wire->wire;
-	      fdc_yres->Fill(wire_number,Mdiff);
-	    }     
-
 	    // Compute Kalman gain matrix
 	    K=InvV*(C*H_T);
 	    
@@ -338,8 +336,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    chisq+=scale*Mdiff*Mdiff/V;
 		    
 	    if (DEBUG_LEVEL>2){
-	      printf("hit %d p %5.2f dm %5.2f chi2 %5.2f z %5.2f\n",
-		     id,1./S(state_q_over_p),Mdiff,(1.-H*K)*Mdiff*Mdiff/V,
+	      printf("hit %d p %5.2f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
+		     id,1./S(state_q_over_p),Mdiff,sqrt(V),(1.-H*K)*Mdiff*Mdiff/V,
 		     forward_traj[k].pos.z());
 	    
 	    }
