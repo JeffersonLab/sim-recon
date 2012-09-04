@@ -66,7 +66,8 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
                                            DFDCSegment *segment,
                                            vector<DFDCSegment*>package,
                                            unsigned int &match_id);
-	bool DEBUG_HISTS,USE_FDC;
+		bool DEBUG_HISTS,USE_FDC,APPLY_MOMENTUM_CORRECTION;
+		double p_factor1,p_factor2;
 	TH2F *match_dist_fdc;
 	vector<double>z_wires;
 	double endplate_z;

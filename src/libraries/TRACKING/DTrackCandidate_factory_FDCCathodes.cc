@@ -48,6 +48,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   DEBUG_HISTS=false;
   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS", DEBUG_HISTS);
 
+  APPLY_MOMENTUM_CORRECTION=false;
+  gPARMS->SetDefaultParameter("TRKFIND:APPLY_MOMENTUM_CORRECTION",APPLY_MOMENTUM_CORRECTION);
+  p_factor1=1.61*M_PI/180.;
+  p_factor2=-0.0766;
+  
+
   if(DEBUG_HISTS) {
     dapp->Lock();
     match_dist_fdc=(TH2F*)gROOT->FindObject("match_dist_fdc");
@@ -478,7 +484,13 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	}
 		
 	GetPositionAndMomentum(Bz_avg,pos,mom);
-
+	
+	// Empirical correction to the momentum
+	if (APPLY_MOMENTUM_CORRECTION){
+	  double p_mag=mom.Mag();
+	  mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
+	}
+	  
 	track->setCharge(q);
 	track->setPosition(pos);
 	track->setMomentum(mom);
@@ -726,6 +738,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       
       GetPositionAndMomentum(Bz_avg,pos,mom);
     
+      // Empirical correction to the momentum 
+      if (APPLY_MOMENTUM_CORRECTION){
+	double p_mag=mom.Mag();
+	mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
+      }
+
       track->setCharge(q);
       track->setPosition(pos);
       track->setMomentum(mom);
@@ -912,6 +930,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       
       GetPositionAndMomentum(Bz_avg,pos,mom);
 
+      // Empirical correction to the momentum
+      if (APPLY_MOMENTUM_CORRECTION){
+	double p_mag=mom.Mag();
+	mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
+      }
+
       track->setPosition(pos);
       track->setMomentum(mom);      
       track->setCharge(q);
@@ -962,6 +986,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 		 segment->hits[0]->wire->origin.z());    
     GetPositionAndMomentum(Bz_avg,pos,mom);
     
+    // Empirical correction to the momentum 
+    if (APPLY_MOMENTUM_CORRECTION){
+      double p_mag=mom.Mag();
+      mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
+    }
+
     // Create new track, starting with the current segment
     DTrackCandidate *track = new DTrackCandidate;
     track->setPosition(pos);
@@ -1001,6 +1031,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	     segment->hits[0]->wire->origin.z());
     GetPositionAndMomentum(Bz_avg,pos,mom);
     
+    // Empirical correction to the momentum 
+    if (APPLY_MOMENTUM_CORRECTION){   
+      double p_mag=mom.Mag();
+      mom.SetMag(p_mag*(1.+p_factor1/mom.Theta()+p_factor2));
+    }
+
     // Create new track, starting with the current segment
     DTrackCandidate *track = new DTrackCandidate;
     track->setPosition(pos);
