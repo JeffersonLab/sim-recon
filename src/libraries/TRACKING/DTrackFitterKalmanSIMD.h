@@ -50,7 +50,7 @@
 #define TAN_MAX 10.
 
 #define ANNEAL_POW_CONST 10.0
-#define ANNEAL_SCALE 6.0
+#define ANNEAL_SCALE 9.0
 
 #define MINIMUM_HIT_FRACTION 0.25
 
@@ -194,7 +194,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   kalman_error_t KalmanCentral(double anneal_factor,DMatrix5x1 &S,DMatrix5x5 &C,
 			 DVector3 &pos,double &chisq,unsigned int &myndf);
   jerror_t ExtrapolateToVertex(DVector3 &pos,DMatrix5x1 &Sc,DMatrix5x5 &Cc);
-  jerror_t ExtrapolateToVertex(DMatrix5x1 &S, DMatrix5x5 &C);
+  jerror_t ExtrapolateToVertex(DVector3 &pos,DMatrix5x1 &Sc);
+  jerror_t ExtrapolateToVertex(DMatrix5x1 &S, DMatrix5x5 &C); 
+  jerror_t ExtrapolateToVertex(DMatrix5x1 &S);
   jerror_t SetReferenceTrajectory(DMatrix5x1 &S);
   jerror_t SetCDCForwardReferenceTrajectory(DMatrix5x1 &S);
   jerror_t SetCDCReferenceTrajectory(DVector3 pos,DMatrix5x1 &Sc);
@@ -343,6 +345,12 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 				     DVector3 &pos,
 				     double &chisq, 
 				     unsigned int &numdof);
+  kalman_error_t RecoverBrokenForwardTracks(double anneal_factor, 
+					    DMatrix5x1 &S, 
+					    DMatrix5x5 &C,
+					    const DMatrix5x5 &C0,
+					    double &chisq, 
+					    unsigned int &numdof);
     
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
@@ -444,24 +452,19 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   DMatrix5x5 Zero5x5;
   DMatrix5x1 Zero5x1;
 
-  TH2F *fdc_yres;
+  TH2F *fdc_dy_vs_d;
 
  private:
-  bool last_smooth;
   unsigned int last_material_map;
   double CDC_DRIFT_B_SCALE,FDC_DRIFT_B_SCALE;
 
-  TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
-  TH2F *thetay_vs_thetax;
   TH2F *Hstepsize,*HstepsizeDenom;
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;
   TH2F *cdc_drift,*fdc_drift,*fdc_yres_vs_dE;
-  TH2F *cdc_res,*fdc_xres,*cdc_drift_vs_B,*fdc_drift_vs_B;
+  TH2F *cdc_res,*cdc_drift_vs_B,*fdc_drift_vs_B;
   TH2F *cdc_drift_forward,*cdc_res_forward,*cdc_res_vs_tanl,*cdc_res_vs_B,*cdc_res_vs_dE;
   TH2F *fdc_time_vs_d,*cdc_time_vs_d;
-  TH2F *fdc_dy_vs_d;
-  TH3F *fdc_yres3d;
-  TH2F *fdc_yres_vs_tanl;
+  TH2F *res_vs_s,*norm_res_vs_s;
 };
 
 
