@@ -57,9 +57,9 @@ void DTrackHitSelector::GetFDCHits(fit_type_t fit_type, const DReferenceTrajecto
 //---------------------
 void DTrackHitSelector::GetAllHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter) const
 {
-	/// Get all hits from both CDC and FDC and add them to the specified DTrackFitter object
-	GetCDCHits(fit_type, rt, cdchits_in, fitter);
-	GetFDCHits(fit_type, rt, fdchits_in, fitter);
+  /// Get all hits from both CDC and FDC and add them to the specified DTrackFitter object
+  if (cdchits_in.size()>0) GetCDCHits(fit_type, rt, cdchits_in, fitter);
+  if (fdchits_in.size()>0) GetFDCHits(fit_type, rt, fdchits_in, fitter);
 }
 
 
