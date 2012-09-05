@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 #include <queue>
+#include <list>
 using std::map;
 using std::vector;
 using std::queue;
@@ -46,6 +47,8 @@ class JEventSource_DAQ: public jana::JEventSource{
 		jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
 	
 	private:
+		
+		int32_t last_run_number;
 		
 		evioChannel *chan;
 		map<tagNum, MODULE_TYPE> module_type;
@@ -85,17 +88,18 @@ class JEventSource_DAQ: public jana::JEventSource{
 		MODULE_TYPE GuessModuleType(evioDOMNodeP bankPtr);
 		void DumpModuleMap(void);
 		
+		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
+
 		void ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number);
-	
-		void Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs);
-		void Parsef125Bank(evioDOMNodeP bankPtr, ObjList &objs);
-		void ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs);
-		void ParseTSBank(evioDOMNodeP bankPtr, ObjList &objs);
-		void ParseTIBank(evioDOMNodeP bankPtr, ObjList &objs);
+		void Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &events);
+		void Parsef125Bank(evioDOMNodeP bankPtr, list<ObjList*> &events);
+		void ParseF1TDCBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
+		void ParseTSBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
+		void ParseTIBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
 
 		// f250 methods
-		Df250WindowRawData* MakeDf250WindowRawData(uint32_t rocid, uint32_t slot, const uint32_t* &iptr);
-		Df250PulseRawData* MakeDf250PulseRawData(uint32_t rocid, uint32_t slot, const uint32_t* &iptr);
+		void MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
+		void MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
 	
 };

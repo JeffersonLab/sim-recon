@@ -19,23 +19,23 @@ class Df250TriggerTime:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250TriggerTime);
 
-		Df250TriggerTime():rocid(0),slot(0),trigger_number(0),time(0){}
-		Df250TriggerTime(uint32_t rocid, uint32_t slot, uint32_t trigger_number, uint64_t time):rocid(rocid),slot(slot),trigger_number(trigger_number),time(time){}
+		Df250TriggerTime():rocid(0),slot(0),itrigger(0),time(0){}
+		Df250TriggerTime(uint32_t rocid, uint32_t slot, uint32_t itrigger, uint64_t time):rocid(rocid),slot(slot),itrigger(itrigger),time(time){}
 		
 		uint32_t rocid;          // from EVIO header (crate number)
 		uint32_t slot;           // from Block Header
-		uint32_t trigger_number; // from Event Header
+		uint32_t itrigger;       // from Event Header
 		uint64_t time;           // from Trigger Time words
 		
 	
-	// This method is used primarily for pretty printing
-	// the second argument to AddString is printf style format
-	void toStrings(vector<pair<string,string> > &items)const{
-		AddString(items, "rocid", "%d", rocid);
-		AddString(items, "slot", "%d", slot);
-		AddString(items, "trigger_number", "%d", trigger_number);
-		AddString(items, "time", "%ld", time);
-	}
+		// This method is used primarily for pretty printing
+		// the second argument to AddString is printf style format
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "rocid", "%d", rocid);
+			AddString(items, "slot", "%d", slot);
+			AddString(items, "itrigger", "%d", itrigger);
+			AddString(items, "time", "%ld", time);
+		}
 
 };
 

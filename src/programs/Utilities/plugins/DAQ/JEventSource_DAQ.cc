@@ -16,8 +16,6 @@ using namespace jana;
 //----------------
 JEventSource_DAQ::JEventSource_DAQ(const char* source_name):JEventSource(source_name)
 {
-	run_number = 0;
-	
 	// open event source (e.g. file) here
 	chan = new evioFileChannel(source_name);
 	if(chan)chan->open();
@@ -30,6 +28,8 @@ JEventSource_DAQ::JEventSource_DAQ(const char* source_name):JEventSource(source_
 		gPARMS->SetDefaultParameter("DAQ:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
 		gPARMS->SetDefaultParameter("DAQ:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
 	}
+	
+	last_run_number = 0;
 }
 
 //----------------
@@ -105,7 +105,7 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 	// factories. Subsequent requests for objects for this same
 	// event will get them from the factories. Thus, this should
 	// only get called once per event.
-	ObjList objs_ptr = (ObjList*)event.GetRef();
+	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(!objs_ptr)return RESOURCE_UNAVAILABLE;
 	
 	// Copy objects into factories
@@ -159,7 +159,7 @@ int32_t JEventSource_DAQ::GetRunNumber(evioDOMTree *evt)
 	// For now, it just looks for tag==0x11 and num=0xCC which
 	// is the CODA 2 style of event header
 
-	if(!evt) return run_number;
+	if(!evt) return last_run_number;
 
 	evioDOMNodeListP bankList = evt->getNodeList();
 	evioDOMNodeList::iterator iter = bankList->begin();
@@ -173,11 +173,11 @@ int32_t JEventSource_DAQ::GetRunNumber(evioDOMTree *evt)
 		if( bankPtr->getSize() != 3) continue;
 		
 		vector<int32_t> *v = bankPtr->getVector<int32_t>();
-		run_number = (*v)[1];
+		last_run_number = (*v)[1];
 		break;
 	}
 	
-	return run_number;
+	return last_run_number;
 }
 
 //----------------
@@ -326,12 +326,93 @@ void JEventSource_DAQ::DumpModuleMap(void)
 	ofs.close();
 }
 
+
+//----------------
+// MergeObjLists
+//----------------
+void JEventSource_DAQ::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2)
+{
+	/// Merge the events referenced in events2 into the events1 list.
+	///
+	/// This will append the object lists for each type of data object
+	/// stored in events2 onto the appropriate list in events1. It does this
+	/// event-by-event. The idea being that each entry in the queue represents a
+	/// partial list of the objects for the event. The two queues are most likely
+	/// filled from different EVIO banks orginiating from different ROCs.
+	///
+	/// Before the merging is done, it is checked that both lists either have the
+	/// same number of events, or one list is empty. One list is allowed to be
+	/// empty since it is possible it was "filled" from a bank that contains no
+	/// data at all which may not neccessarily be an error. If both queues have
+	/// at least one event, but they do not contain an equal number of events,
+	/// then an exception is thrown.
+	///
+	/// The contents of event2 will be erased before returning. Ownership of all
+	/// ObjList objects pointed to by event2 upon entry should be considered
+	/// owned by event1 upon return.
+	
+	// Check number of events and throw exception if appropriate
+	unsigned int Nevents1 = events1.size();
+	unsigned int Nevents2 = events2.size();
+	if(Nevents1>0 && Nevents2>0){
+		if(Nevents1 != Nevents2){
+			throw new JException("Number of events in JEventSource_DAQ::MergeObjLists do not match!");
+		}
+	}
+	
+	// Handle cases when one or both lists are empty
+	if(Nevents1==0 && Nevents2==0)return;
+	if(Nevents1==0){
+		events1 = events2;
+		events2.clear(); // clear queue
+		return;
+	}
+	if(Nevents2==0)return;
+	
+	// If we get here it means both events1 and events2 have events
+	list<ObjList*>::iterator iter = events1.begin();
+	for(; iter!=events1.end(); iter++){
+		ObjList *objs1 = *iter;
+		ObjList *objs2 = events2.front();
+		events2.pop_front();
+		
+		// The following #define just makes the lines below more compact.
+		// It expands to something like this for each line:
+		//
+		//   objs1->vDf250PulseIntegrals.insert(objs1->vDf250PulseIntegrals.end(), objs1->vDf250PulseIntegrals.begin(), objs1->vDf250PulseIntegrals.end());
+		//
+#define AppendObjs(T)\
+		objs1->v ## T ## s.insert(objs1->v ## T ## s.end(), objs2->v ## T ## s.begin(), objs2->v ## T ## s.end());
+		
+		AppendObjs(Df250PulseIntegral);
+		AppendObjs(Df250StreamingRawData);
+		AppendObjs(Df250WindowSum);
+		AppendObjs(Df250PulseRawData);
+		AppendObjs(Df250TriggerTime);
+		AppendObjs(Df250PulseTime);
+		AppendObjs(Df250WindowRawData);
+		AppendObjs(DF1TDCHit);
+	}
+	
+	// Clear out any references to objects in event2
+	events2.clear(); // clear queue
+}
+
 //----------------
 // ParseEVIOEvent
 //----------------
-void ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
+void JEventSource_DAQ::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 {
 	if(!evt)throw RESOURCE_UNAVAILABLE;
+	
+	// Since each bank contains parts of many events, have them fill in
+	// the "tmp_events" list and then merge those into the "full_events".
+	// It is done this way so each bank can grow tmp_events to the appropriate
+	// size to hold the number of events it discovers in the bank. A check
+	// can then be made that this is consistent with the number of event
+	// fragments found in the other banks.
+	list<ObjList*> full_events;
+	list<ObjList*> tmp_events;
 	
 	// Loop over list of EVIO banks and parse them, creating data
 	// objects and adding them to the overall list. This will put
@@ -360,42 +441,51 @@ void ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 		}
 		
 		// Parse buffer depending on module type
+		bool bank_parsed = true; // will be set to false if UNKNOWN or default case is entered
 		switch(type){
 			case DModuleType::F250ADC:
-				Parsef250Bank(bankPtr, objs);
+				Parsef250Bank(bankPtr, tmp_events);
 				break;
 				
 			case DModuleType::F125ADC:
-				Parsef125Bank(bankPtr, objs);
+				Parsef125Bank(bankPtr, tmp_events);
 				break;
 				
 			case DModuleType::F1TDC:
-				ParseF1TDCBank(bankPtr, objs);
+				ParseF1TDCBank(bankPtr, tmp_events);
 				break;
 				
 			case DModuleType::JLAB_TS:
-				ParseTSBank(bankPtr, objs);
+				ParseTSBank(bankPtr, tmp_events);
 				break;
 				
 			case DModuleType::JLAB_TI:
-				ParseTIBank(bankPtr, objs);
+				ParseTIBank(bankPtr, tmp_events);
 				break;
 				
 			case DModuleType::UNKNOWN:
 			default:
+				bank_parsed = false;
 				break;
 		}
+
+		// Merge this bank's partial events into the full events
+		if(bank_parsed) MergeObjLists(full_events, tmp_events);
 	}
 	
-	// Split the object lists into separate lists, one for each event
-	
-	
+	// Set the run number for all events and copy them into the stored_events queue
+	list<ObjList*>::iterator evt_iter = full_events.begin();
+	for(; evt_iter!=full_events.end();  evt_iter++){
+		ObjList *objs = *evt_iter;
+		objs->run_number = run_number;
+		stored_events.push(objs);
+	}
 }
 
 //----------------
 // Parsef250Bank
 //----------------
-void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs)
+void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &events)
 {
 	// Get all data words for this bank
 	const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
@@ -403,6 +493,11 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs)
 	if(vec->size()<3)return; // not enough data to try parsing
 	
 	int32_t rocid = 0; // needs to come from higher-level bank!!
+	
+	// This will get updated to point to a newly allocated object when an
+	// event header is encountered. The existing value (if non-NULL) is
+	// added to the events queue first though so all events are kept.
+	ObjList *objs = NULL;
 	
 	// From the Block Header
 	int32_t slot;
@@ -449,48 +544,50 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs)
 				break;
 			case 2: // Event Header
 				itrigger = (*iptr>>0) & 0x7FFFFFF;
+				if(objs) events.push_back(objs);
+				objs = new ObjList;
 				break;
 			case 3: // Trigger Time
 				t = ((*iptr)&0xFFFFFF)<<24;
 				iptr++;
 				t += (*iptr)&0xFFFFFF;
-				objs.vDf250TriggerTimes.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
+				if(objs) objs->vDf250TriggerTimes.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
 				break;
 			case 4: // Window Raw Data
 				// iptr passed by reference and so will be updated automatically
-				objs.vDf250WindowRawDatas.push_back(MakeDf250WindowRawData(rocid, slot, iptr));
+				MakeDf250WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 5: // Window Sum
 				channel = (*iptr>>23) & 0x0F;
 				sum = (*iptr>>0) & 0x3FFFFF;
 				overflow = (*iptr>>22) & 0x1;
-				objs.vDf250WindowSums.push_back(new Df250WindowSum(rocid, slot, channel, sum, overflow));
+				if(objs) objs->vDf250WindowSums.push_back(new Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow));
 				break;				
 			case 6: // Pulse Raw Data
 				// iptr passed by reference and so will be updated automatically
-				objs.vDf250PulseRawDatas.push_back(MakeDf250PulseRawData(rocid, slot, iptr));
+				MakeDf250PulseRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
 				channel = (*iptr>>23) & 0x0F;
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				sum = (*iptr>>0) & 0x7FFFF;
-				objs.vDf250PulseIntegrals.push_back(new Df250PulseIntegral(rocid, slot, channel, pulse_number, quality_factor, sum));
+				if(objs) objs->vDf250PulseIntegrals.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
 				break;
 			case 8: // Pulse Time
 				channel = (*iptr>>23) & 0x0F;
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0xFFFF;
-				objs.vDf250PulseTimes.push_back(new Df250PulseTime(rocid, slot, channel, pulse_number, quality_factor, pulse_time));
+				if(objs) objs->vDf250PulseTimes.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				break;
 			case 9: // Streaming Raw Data
-				// This is marked "reserved for future implementation" in the current manual.
+				// This is marked "reserved for future implementation" in the current manual (v2).
 				// As such, we don't try handling it here just yet.
 				break;
 			case 13: // Event Trailer
 				// This is marked "suppressed for normal readout – debug mode only" in the
-				// current manual. It does not contain any data so the most we could do here
+				// current manual (v2). It does not contain any data so the most we could do here
 				// is return early. I'm hesitant to do that though since it would mean
 				// different behavior for debug mode data as regular data.
 			case 14: // Data not valid (empty module)
@@ -498,17 +595,20 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, ObjList &objs)
 				break;
 		}
 	}
+	
+	// Add last event in block to list
+	if(objs)events.push_back(objs);
 }
 
 //----------------
 // MakeDf250WindowRawData
 //----------------
-Df250WindowRawData* JEventSource_DAQ::MakeDf250WindowRawData(uint32_t rocid, uint32_t slot, const uint32_t* &iptr)
+void JEventSource_DAQ::MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
 {
 	uint32_t channel = (*iptr>>23) & 0x0F;
 	uint32_t window_width = (*iptr>>0) & 0x0FFF;
 
-	Df250WindowRawData *wrd = new Df250WindowRawData(rocid, slot, channel);
+	Df250WindowRawData *wrd = new Df250WindowRawData(rocid, slot, channel, itrigger);
 	
 	for(uint32_t isample=0; isample<window_width; isample +=2){
 
@@ -538,19 +638,28 @@ Df250WindowRawData* JEventSource_DAQ::MakeDf250WindowRawData(uint32_t rocid, uin
 		wrd->overflow |= (sample_2>>12) & 0x1;
 	}
 	
-	return wrd;
+	// Due to how the calling function works, the value of "objs" passed to us may be NULL.
+	// This will happen if a Window Raw Data block is encountered before an event header.
+	// For these cases, we still want to try parsing the data so that the iptr is updated
+	// but don't have an event to assign it to. If "objs" is non-NULL, add this object to
+	// the list. Otherwise, delete it now.
+	if(objs){
+		objs->vDf250WindowRawDatas.push_back(wrd);
+	}else{
+		delete wrd;
+	}
 }
 
 //----------------
 // MakeDf250PulseRawData
 //----------------
-Df250PulseRawData* JEventSource_DAQ::MakeDf250PulseRawData(uint32_t rocid, uint32_t slot, const uint32_t* &iptr)
+void JEventSource_DAQ::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
 {
 	uint32_t channel = (*iptr>>23) & 0x0F;
 	uint32_t pulse_number = (*iptr>>21) & 0x000F;
 	uint32_t first_sample_number = (*iptr>>0) & 0x03FF;
 	
-	Df250PulseRawData *prd = new Df250PulseRawData(rocid, slot, channel, pulse_number, first_sample_number);
+	Df250PulseRawData *prd = new Df250PulseRawData(rocid, slot, channel, itrigger, pulse_number, first_sample_number);
 	
 	// This loop needs to break when it hits a non-continuation word
 	for(uint32_t isample=0; isample<1000; isample +=2){
@@ -582,14 +691,24 @@ Df250PulseRawData* JEventSource_DAQ::MakeDf250PulseRawData(uint32_t rocid, uint3
 		prd->overflow |= (sample_2>>12) & 0x1;
 	}
 	
-	return prd;
+	
+	// Due to how the calling function works, the value of "objs" passed to us may be NULL.
+	// This will happen if a Window Raw Data block is encountered before an event header.
+	// For these cases, we still want to try parsing the data so that the iptr is updated
+	// but don't have an event to assign it to. If "objs" is non-NULL, add this object to
+	// the list. Otherwise, delete it now.
+	if(objs){
+		objs->vDf250PulseRawDatas.push_back(prd);
+	}else{
+		delete prd;
+	}
 }
 
 
 //----------------
 // Parsef125Bank
 //----------------
-void JEventSource_DAQ::Parsef125Bank(evioDOMNodeP bankPtr, ObjList &objs)
+void JEventSource_DAQ::Parsef125Bank(evioDOMNodeP bankPtr, list<ObjList*> &events)
 {
 	
 }
@@ -597,9 +716,14 @@ void JEventSource_DAQ::Parsef125Bank(evioDOMNodeP bankPtr, ObjList &objs)
 //----------------
 // ParseF1TDCBank
 //----------------
-void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs)
+void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, list<ObjList*> &events)
 {
 	int32_t rocid = 0; // needs to come from higher-level bank!!
+
+	// This will get updated to point to a newly allocated object when an
+	// event header is encountered. The existing value (if non-NULL) is
+	// added to the events queue first though so all events are kept.
+	ObjList *objs = NULL;
 
 	// Get all data words for this bank
 	const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
@@ -633,11 +757,19 @@ void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs)
 		// Check if this is a header/trailer or a data word
 		if(((*iptr>>23) & 0x1) == 0){
 			// header/trailer word
+			uint32_t last_ievent = ievent;
 			slot_header = slot;
 			chip_header = (*iptr>>3) & 0x07;
 			chan_header = (*iptr>>0) & 0x07;
 			ievent = (*iptr>>16) & 0x3F;
 			trig_time = (*iptr>>7) & 0x01FF;
+			
+			// Check if we are at boundary of a new event
+			if(objs==NULL || ievent!=last_ievent){
+				if(objs != NULL) events.push_back(objs);
+				objs = new ObjList;
+			}
+			
 		}else{
 			// data word
 			uint32_t chip = (*iptr>>19) & 0x07;
@@ -646,15 +778,18 @@ void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, ObjList &objs)
 			uint32_t time = (*iptr>>0) & 0xFFFF;
 			
 			DF1TDCHit *hit = new DF1TDCHit(rocid, slot, channel, ievent, trig_time, time);
-			objs.vDF1TDCHits.push_back(hit);
+			objs->vDF1TDCHits.push_back(hit);
 		}
 	}
+	
+	// Add last event in block to list
+	if(objs != NULL)events.push_back(objs);
 }
 
 //----------------
 // ParseTSBank
 //----------------
-void JEventSource_DAQ::ParseTSBank(evioDOMNodeP bankPtr, ObjList &objs)
+void JEventSource_DAQ::ParseTSBank(evioDOMNodeP bankPtr, list<ObjList*> &events)
 {
 	
 }
@@ -662,7 +797,7 @@ void JEventSource_DAQ::ParseTSBank(evioDOMNodeP bankPtr, ObjList &objs)
 //----------------
 // ParseTIBank
 //----------------
-void JEventSource_DAQ::ParseTIBank(evioDOMNodeP bankPtr, ObjList &objs)
+void JEventSource_DAQ::ParseTIBank(evioDOMNodeP bankPtr, list<ObjList*> &events)
 {
 	
 }
