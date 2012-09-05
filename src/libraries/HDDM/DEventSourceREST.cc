@@ -295,8 +295,9 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
       beamphoton->setCharge(0.0);
       beamphoton->clearErrorMatrix();
       beamphoton->setT0(0.0, 0.0, SYS_NULL);
-      double zint = iter->getVertex(0).getOrigin().getVz();
-      beamphoton->setTime((zint-65.0)/SPEED_OF_LIGHT);
+//      double zint = iter->getVertex(0).getOrigin().getVz();
+//      beamphoton->setTime((zint-65.0)/SPEED_OF_LIGHT);
+      beamphoton->setTime(0.0); //0 because position is defined at 0, 0, 65.  Would be non-zero if position wasn't forced...
       dbeam_photons.push_back(beamphoton);
    }
 
@@ -614,6 +615,7 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          continue;
       }
       DTrackTimeBased *tra = new DTrackTimeBased();
+      tra->trackid = NULL;
       tra->candidateid = iter->getCandidateId();
       Particle_t ptype = iter->getPtype();
       tra->setMass(ParticleMass(ptype));
@@ -623,8 +625,9 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       const hddm_r::TrackFit &fit = iter->getTrackFit();
       tra->Ndof = fit.getNdof();
       tra->chisq = fit.getChisq();
+      tra->FOM = TMath::Prob(tra->chisq, tra->Ndof);
       tra->setT0(fit.getT0(),fit.getT0err(),(DetectorSystem_t)fit.getT0det());
-      tra->setTime(0.0);
+      tra->setTime(fit.getT0());
       DVector3 track_pos(fit.getX0(),fit.getY0(),fit.getZ0());
       DVector3 track_mom(fit.getPx(),fit.getPy(),fit.getPz());
       tra->setPosition(track_pos);
