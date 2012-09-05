@@ -123,18 +123,7 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
       rea().setType(reactions[i]->type);
       rea().setWeight(reactions[i]->weight);
       rea().setEbeam(reactions[i]->beam.energy());
-      Particle_t ptype = Unknown;
-      double mi = reactions[i]->target.mass();
-      double qi = reactions[i]->target.charge();
-      for (int p=1; p<99; ++p) {
-         double mp = ParticleMass((Particle_t)p);
-         double qp = ParticleCharge((Particle_t)p);
-         if (fabs(mp-mi) < mi*1e-4 && qi == qp) {
-            ptype = (Particle_t)p;
-            break;
-         }
-      }
-      rea().setTargetType(ptype);
+      rea().setTargetType(reactions[i]->target.PID());
 
       // Right now the DMCThrown object does not tell which of the listed
       // reactions gave rise to it, so associate them all to the first one.
@@ -147,10 +136,10 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
          for (unsigned int it=0; it < throwns.size(); ++it) {
             DVector3 orig(throwns[it]->x(),throwns[it]->y(),throwns[it]->z());
             if (vx != throwns[it]->x() || vy != throwns[it]->y() ||
-                vz != throwns[it]->z() || vt != throwns[it]->t0() ) {
+                vz != throwns[it]->z() || vt != throwns[it]->time() ) {
                ver = rea().addVertices(1);
                hddm_r::OriginList ori = ver().addOrigins(1);
-               ori().setT(vt=throwns[it]->t0());
+               ori().setT(vt=throwns[it]->time());
                ori().setVx(vx=throwns[it]->x());
                ori().setVy(vy=throwns[it]->y());
                ori().setVz(vz=throwns[it]->z());
@@ -271,18 +260,7 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
    for (unsigned int i=0; i < tracks.size(); ++i) {
       hddm_r::ChargedTrackList tra = res().addChargedTracks(1);
       tra().setCandidateId(tracks[i]->candidateid);
-      Particle_t ptype = Unknown;
-      double mi = tracks[i]->mass();
-      double qi = tracks[i]->charge();
-      for (int p=1; p<99; ++p) {
-         double mp = ParticleMass((Particle_t)p);
-         double qp = ParticleCharge((Particle_t)p);
-         if (fabs(mp-mi) < mi*1e-4 && qi == qp) {
-            ptype = (Particle_t)p;
-            break;
-         }
-      }
-      tra().setPtype(ptype);
+      tra().setPtype(tracks[i]->PID());
       hddm_r::TrackFitList fit = tra().addTrackFits(1);
       fit().setNdof(tracks[i]->Ndof);
       fit().setChisq(tracks[i]->chisq);
