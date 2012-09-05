@@ -82,58 +82,58 @@ inline static char *ParticleType(Particle_t p)
   static char ret[20];
   switch (p) {
   case Unknown:
-    strcpy(ret,"unknown");
+    strcpy(ret,"Unknown");
     break;
   case Gamma:
-    strcpy(ret,"gamma");
+    strcpy(ret,"Gamma");
     break;
   case Positron:
-    strcpy(ret,"positron");
+    strcpy(ret,"Positron");
     break;
   case Electron:
-    strcpy(ret,"electron");
+    strcpy(ret,"Electron");
     break;
   case Neutrino:
-    strcpy(ret,"neutrino");
+    strcpy(ret,"Neutrino");
     break;
   case MuonPlus:
-    strcpy(ret,"mu+");
+    strcpy(ret,"Muon+");
     break;
   case MuonMinus:
-    strcpy(ret,"mu-");
+    strcpy(ret,"Muon-");
     break;
   case Pi0:
-    strcpy(ret,"pi0");
+    strcpy(ret,"Pi0");
     break;
   case PiPlus:
-    strcpy(ret,"pi+");
+    strcpy(ret,"Pi+");
     break;
   case PiMinus:
-    strcpy(ret,"pi-");
+    strcpy(ret,"Pi-");
     break;
   case KLong:
-    strcpy(ret,"kL");
+    strcpy(ret,"KLong");
     break;
   case KPlus:
-    strcpy(ret,"k+");
+    strcpy(ret,"K+");
     break;
   case KMinus:
-    strcpy(ret,"k-");
+    strcpy(ret,"K-");
     break;
   case Neutron:
-    strcpy(ret,"neutron");
+    strcpy(ret,"Neutron");
     break;
   case Proton:
-    strcpy(ret,"proton");
+    strcpy(ret,"Proton");
     break;
   case AntiProton:
-    strcpy(ret,"antiProton");
+    strcpy(ret,"AntiProton");
     break;
   case KShort:
-    strcpy(ret,"kS");
+    strcpy(ret,"KShort");
     break;
   case Eta:
-    strcpy(ret,"eta");
+    strcpy(ret,"Eta");
     break;
   case Lambda:
     strcpy(ret,"Lambda");
@@ -157,49 +157,49 @@ inline static char *ParticleType(Particle_t p)
     strcpy(ret,"Omega-");
     break;
   case AntiNeutron:
-    strcpy(ret,"antiNeutron");
+    strcpy(ret,"AntiNeutron");
     break;
   case AntiLambda:
-    strcpy(ret,"antiLambda");
+    strcpy(ret,"AntiLambda");
     break;
   case AntiSigmaMinus:
-    strcpy(ret,"antiSigma-");
+    strcpy(ret,"AntiSigma-");
     break;
   case AntiSigma0:
-    strcpy(ret,"antiSigma0");
+    strcpy(ret,"AntiSigma0");
     break;
   case AntiSigmaPlus:
-    strcpy(ret,"antiSigma+");
+    strcpy(ret,"AntiSigma+");
     break;
   case AntiXi0:
-    strcpy(ret,"antiXi0");
+    strcpy(ret,"AntiXi0");
     break;
   case AntiXiPlus:
-    strcpy(ret,"antiXi+");
+    strcpy(ret,"AntiXi+");
     break;
   case AntiOmegaPlus:
-    strcpy(ret,"antiOmega+");
+    strcpy(ret,"AntiOmega+");
     break;
   case Geantino:
-    strcpy(ret,"geantino");
+    strcpy(ret,"Geantino");
     break;
   case Rho0:
-    strcpy(ret,"rho0");
+    strcpy(ret,"Rho0");
     break;  
   case RhoPlus:
-    strcpy(ret,"rho+");
+    strcpy(ret,"Rho+");
     break;
   case RhoMinus:
-    strcpy(ret,"rho-");
+    strcpy(ret,"Rho-");
     break;
   case omega:
     strcpy(ret,"omega");
     break;
   case EtaPrime:
-    strcpy(ret,"etaPrime");
+    strcpy(ret,"EtaPrime");
     break;
   case phiMeson:
-    strcpy(ret,"phi");
+    strcpy(ret,"phiMeson");
     break;
   case a0_980:
     strcpy(ret,"a0(980)");
