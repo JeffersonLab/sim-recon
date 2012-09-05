@@ -279,7 +279,7 @@ public:
 
     
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "PID", "%+1.0f", PID());
+			AddString(items, "PID", "%i", (int)PID());
 			AddString(items, "q", "%+1.0f", charge());
 			AddString(items, "x(cm)", "%3.1f", x());
 			AddString(items, "y(cm)", "%3.1f", y());
