@@ -154,8 +154,8 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   /// wire-based tracks.
   
   // Calculate beta of particle.
-  double my_mass=rt->GetMass();
-  double one_over_beta =sqrt(1.0+my_mass*my_mass/rt->swim_steps[0].mom.Mag2());
+  //double my_mass=rt->GetMass();
+  //  double one_over_beta =sqrt(1.0+my_mass*my_mass/rt->swim_steps[0].mom.Mag2());
   
   // The variance on the residual due to measurement error.
     double var=0.64*ONE_OVER_12;
@@ -191,7 +191,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     if(!finite(doca)) continue;
     if(!finite(s)) s = -999.0;
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
-    double itheta02s2 = last_step->itheta02s2;
+    //double itheta02s2 = last_step->itheta02s2;
     
     // Get "measured" distance to wire. 
     // For matching purposes this is assumed to be half a cell size
@@ -372,7 +372,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 	    double doca = rt->DistToRT(hit->wire, &s);  
 	    if(!finite(doca)) continue;
 	    const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
-	    double itheta02s2 = last_step->itheta02s2;
+	    // double itheta02s2 = last_step->itheta02s2;
 
 	    // Get "measured" distance to wire.
 	    // For matching purposes this is assumed to be half a cell size
