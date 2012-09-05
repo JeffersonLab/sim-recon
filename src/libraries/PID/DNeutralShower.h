@@ -9,40 +9,59 @@
 #define _DNeutralShower_
 
 #include <vector>
-#include <JANA/JObject.h>
-#include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALShower.h>
-#include <GlueX.h>
-#include <DLorentzVector.h>
+#include <utility>
+#include <string>
+
+#include "JANA/JObject.h"
+
+#include "GlueX.h"
+#include "DLorentzVector.h"
+#include "DMatrixDSym.h"
+
+#include "BCAL/DBCALShower.h"
+#include "FCAL/DFCALShower.h"
 
 using namespace std;
 
-class DNeutralShower : public jana::JObject{
+class DNeutralShower : public jana::JObject
+{
 	public:
 		JOBJECT_PUBLIC(DNeutralShower);
 
 		DLorentzVector dSpacetimeVertex;
-		DLorentzVector dSpacetimeVertexUncertainties;
 		float dEnergy;
-		float dEnergyUncertainty;
 		DetectorSystem_t dDetectorSystem;
+		DMatrixDSym dCovarianceMatrix; //E, x, y, z, t
 
-		DNeutralShower(const DBCALShower *locBCALShower){
+		DNeutralShower(const DBCALShower *locBCALShower)
+		{
 			dDetectorSystem = SYS_BCAL;
 			dEnergy = locBCALShower->E;
-			dEnergyUncertainty = (dEnergy >= 0.0) ? dEnergy*sqrt( 0.0598*0.0598/dEnergy + 0.0094*0.0094 ) : 1e-3; //last updated at svn revision 9242
+			double locEnergyUncertainty = (dEnergy >= 0.0) ? dEnergy*sqrt( 0.0598*0.0598/dEnergy + 0.0094*0.0094 ) : 1e-3; //last updated at svn revision 9242
 			dSpacetimeVertex.SetXYZT(locBCALShower->x, locBCALShower->y, locBCALShower->z, locBCALShower->t);
-			dSpacetimeVertexUncertainties.SetXYZT(locBCALShower->xErr, locBCALShower->yErr, locBCALShower->zErr, locBCALShower->tErr);
+			dCovarianceMatrix.ResizeTo(5, 5);
+			dCovarianceMatrix(0, 0) = locEnergyUncertainty*locEnergyUncertainty;
+			dCovarianceMatrix(1, 1) = locBCALShower->xErr*locBCALShower->xErr;
+			dCovarianceMatrix(2, 2) = locBCALShower->xErr*locBCALShower->yErr;
+			dCovarianceMatrix(3, 3) = locBCALShower->xErr*locBCALShower->zErr;
+			dCovarianceMatrix(4, 4) = locBCALShower->xErr*locBCALShower->tErr;
+			//NEED CORRELATIONS!
 		}
 
-		DNeutralShower(const DFCALShower *locFCALShower){
+		DNeutralShower(const DFCALShower *locFCALShower)
+		{
 			dDetectorSystem = SYS_FCAL;
 			dEnergy = locFCALShower->getEnergy();
-			dEnergyUncertainty = (dEnergy >= 0.0) ? 0.042*sqrt(dEnergy) + 0.0001 : 1e-3; //from old DPhoton_factory::makeFCalPhoton() function
+			double locEnergyUncertainty = (dEnergy >= 0.0) ? 0.042*sqrt(dEnergy) + 0.0001 : 1e-3; //from old DPhoton_factory::makeFCalPhoton() function
 			dSpacetimeVertex.SetVect(locFCALShower->getPosition());
 			dSpacetimeVertex.SetT(locFCALShower->getTime());
-			dSpacetimeVertexUncertainties.SetVect(locFCALShower->getPositionError());
-			dSpacetimeVertexUncertainties.SetT(0.0); //not stored in DFCALShower
+			dCovarianceMatrix.ResizeTo(5, 5);
+			dCovarianceMatrix(0, 0) = locEnergyUncertainty*locEnergyUncertainty;
+			dCovarianceMatrix(1, 1) = locFCALShower->getPositionError().X()*locFCALShower->getPositionError().X();
+			dCovarianceMatrix(2, 2) = locFCALShower->getPositionError().Y()*locFCALShower->getPositionError().Y();
+			dCovarianceMatrix(3, 3) = locFCALShower->getPositionError().Z()*locFCALShower->getPositionError().Z();
+			dCovarianceMatrix(4, 4) = 0.0; //not stored in DFCALShower
+			//NEED CORRELATIONS!
 		}
 
 		void toStrings(vector<pair<string,string> > &items) const{
