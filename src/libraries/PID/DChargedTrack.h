@@ -22,12 +22,8 @@ class DChargedTrack:public jana::JObject{
 		vector<const DChargedTrackHypothesis*> dChargedTrackHypotheses;
 
 		double Get_Charge(void) const;
+		const DChargedTrackHypothesis* Get_Hypothesis(Particle_t locPID) const;
 		const DChargedTrackHypothesis* Get_BestFOM(void) const;
-		const DChargedTrackHypothesis* Get_Proton(void) const;
-		const DChargedTrackHypothesis* Get_PiPlus(void) const;
-		const DChargedTrackHypothesis* Get_PiMinus(void) const;
-		const DChargedTrackHypothesis* Get_KPlus(void) const;
-		const DChargedTrackHypothesis* Get_KMinus(void) const;
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "Nhypotheses", "%d", dChargedTrackHypotheses.size());

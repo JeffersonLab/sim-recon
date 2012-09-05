@@ -648,7 +648,6 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 
 	  double phi=(6.0+12.*(sc_hits[i]->sector-1))*M_PI/180.;
 	  double dphi=phi-proj_phi;
-
 	  if (fabs(dphi)<dphi_min){
 	    dphi_min=fabs(dphi);
 	    myphi=phi;
@@ -721,36 +720,43 @@ void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypot
 	// Use ST hit to select RF beam bucket
 	double locPropagatedRFTime = locRFTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
 	double locSTRFTimeDifference = locChargedTrackHypothesis->t0() - locPropagatedRFTime; 
-	while(fabs(locSTRFTimeDifference) > locRFBunchFrequency/2.0){
+	while(fabs(locSTRFTimeDifference) > locRFBunchFrequency/2.0)
+	{
 		locPropagatedRFTime += (locSTRFTimeDifference > 0.0) ? locRFBunchFrequency : -1.0*locRFBunchFrequency;
 		locSTRFTimeDifference = locChargedTrackHypothesis->t0() - locPropagatedRFTime;
 	}
 
 	// Compare time difference between RF & TOF/BCAL/FCAL times at the vertex
-	double locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->dProjectedStartTime;
+	double locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->time();
 
 	// Calculate ChiSq, FOM
-	double locTUncertainty = locChargedTrackHypothesis->dProjectedStartTimeUncertainty;
-	double locTimingChiSq = locTimeDifference*locTimeDifference/(locTUncertainty*locTUncertainty);
+	double locTVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6);
+	double locTimingChiSq = locTimeDifference*locTimeDifference/locTVariance;
 	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
 	locChargedTrackHypothesis->dNDF_Timing = 1;
 }
 
-Particle_t DParticleID::IDTrack(float locCharge, float locMass){
+Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
+{
 	float locMassTolerance = 0.010;
-	if (locCharge > 0.0){ // Positive particles
+	if (locCharge > 0.1) // Positive particles
+	{
 		if (fabs(locMass - ParticleMass(Proton)) < locMassTolerance) return Proton;
 		if (fabs(locMass - ParticleMass(PiPlus)) < locMassTolerance) return PiPlus;
 		if (fabs(locMass - ParticleMass(KPlus)) < locMassTolerance) return KPlus;
 		if (fabs(locMass - ParticleMass(Positron)) < locMassTolerance) return Positron;
 		if (fabs(locMass - ParticleMass(MuonPlus)) < locMassTolerance) return MuonPlus;
-	} else if (locCharge < 0.0){ // Negative particles
+	}
+	else if(locCharge < -0.1) // Negative particles
+	{
 		if (fabs(locMass - ParticleMass(PiMinus)) < locMassTolerance) return PiMinus;
 		if (fabs(locMass - ParticleMass(KMinus)) < locMassTolerance) return KMinus;
 		if (fabs(locMass - ParticleMass(MuonMinus)) < locMassTolerance) return MuonMinus;
 		if (fabs(locMass - ParticleMass(Electron)) < locMassTolerance) return Electron;
 		if (fabs(locMass - ParticleMass(AntiProton)) < locMassTolerance) return AntiProton;
-	} else { //Neutral Track
+	}
+	else //Neutral Track
+	{
 		if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
 		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
 	}

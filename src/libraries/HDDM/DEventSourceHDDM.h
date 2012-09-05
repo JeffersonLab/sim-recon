@@ -95,6 +95,8 @@ class DEventSourceHDDM:public JEventSource
 
 		jerror_t Extract_DTagger( s_HDDM_t *hddm_s,  JFactory<DTagger>* factory);
 
+		Particle_t IDTrack(float locCharge, float locMass) const;
+
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;
 		bool flush_on_free;

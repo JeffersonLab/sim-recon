@@ -60,7 +60,7 @@ class DParticleID:public jana::JObject{
   jerror_t MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime);
   jerror_t MatchToSC(const DKinematicData &parms, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id);
 
-  virtual Particle_t IDTrack(float locCharge, float locMass);
+  virtual Particle_t IDTrack(float locCharge, float locMass) const;
   void Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency);
 
   protected:

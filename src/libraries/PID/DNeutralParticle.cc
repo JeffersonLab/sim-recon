@@ -17,7 +17,7 @@ const DNeutralParticleHypothesis* DNeutralParticle::Get_BestPhoton(void) const{
 	double locBestFOM = -1.0;
 	const DNeutralParticleHypothesis* locBestPhotonHypothesis = NULL;
 	for(unsigned int loc_i = 0; loc_i < dNeutralParticleHypotheses.size(); ++loc_i){
-		if(dNeutralParticleHypotheses[loc_i]->dPID == Gamma){
+		if(dNeutralParticleHypotheses[loc_i]->PID() == Gamma){
 			if(dNeutralParticleHypotheses[loc_i]->dFOM > locBestFOM){
 				locBestPhotonHypothesis = dNeutralParticleHypotheses[loc_i];
 				locBestFOM = dNeutralParticleHypotheses[loc_i]->dFOM;
@@ -31,7 +31,7 @@ const DNeutralParticleHypothesis* DNeutralParticle::Get_BestNeutron(void) const{
 	double locBestFOM = -1.0;
 	const DNeutralParticleHypothesis* locBestNeutronHypothesis = NULL;
 	for(unsigned int loc_i = 0; loc_i < dNeutralParticleHypotheses.size(); ++loc_i){
-		if(dNeutralParticleHypotheses[loc_i]->dPID == Neutron){
+		if(dNeutralParticleHypotheses[loc_i]->PID() == Neutron){
 			if(dNeutralParticleHypotheses[loc_i]->dFOM > locBestFOM){
 				locBestNeutronHypothesis = dNeutralParticleHypotheses[loc_i];
 				locBestFOM = dNeutralParticleHypotheses[loc_i]->dFOM;

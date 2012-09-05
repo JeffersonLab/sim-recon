@@ -241,13 +241,19 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
       mcreaction->beam.setCharge(0.0);
       mcreaction->beam.clearErrorMatrix();
       mcreaction->beam.setT0(0.0, 0.0, SYS_NULL);
+      mcreaction->beam.setT1(0.0, 0.0, SYS_NULL);
+      mcreaction->beam.setTime(0.0);
+      mcreaction->beam.setPID(Gamma);
       mcreaction->target.setPosition(DVector3(0.0, 0.0, 65.0));
       mcreaction->target.setMomentum(DVector3(0.0, 0.0, 0.0));
       Particle_t ttype = iter->getTargetType();
+      mcreaction->target.setPID((Particle_t)ttype);
       mcreaction->target.setMass(ParticleMass(ttype));
       mcreaction->target.setCharge(ParticleCharge(ttype));
       mcreaction->target.clearErrorMatrix();
       mcreaction->target.setT0(0.0, 0.0, SYS_NULL);
+      mcreaction->target.setT1(0.0, 0.0, SYS_NULL);
+      mcreaction->target.setTime(0.0);
    }
 	
    // Copy into factories
@@ -282,6 +288,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
       }
       DBeamPhoton *beamphoton = new DBeamPhoton;
       double Ebeam = iter->getEbeam();
+      beamphoton->setPID(Gamma);
       beamphoton->setPosition(DVector3(0.0, 0.0, 65.0));
       beamphoton->setMomentum(DVector3(0.0, 0.0, Ebeam));
       beamphoton->setMass(0.0);
@@ -289,7 +296,7 @@ jerror_t DEventSourceREST::Extract_DBeamPhoton(hddm_r::HDDM *record,
       beamphoton->clearErrorMatrix();
       beamphoton->setT0(0.0, 0.0, SYS_NULL);
       double zint = iter->getVertex(0).getOrigin().getVz();
-      beamphoton->t = (zint-65.0)/SPEED_OF_LIGHT;
+      beamphoton->setTime((zint-65.0)/SPEED_OF_LIGHT);
       dbeam_photons.push_back(beamphoton);
    }
 
@@ -343,15 +350,17 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
          int pdgtype = piter->getPdgtype();
          Particle_t ptype = PDGtoPtype(pdgtype);
          mcthrown->type = ptype;
-	 mcthrown->pdgtype = pdgtype;
+         mcthrown->pdgtype = pdgtype;
          mcthrown->myid = piter->getId();
          mcthrown->parentid = piter->getParentId();
          mcthrown->mech = 0;
+         mcthrown->setPID(ptype);
          mcthrown->setMass(mass);
          mcthrown->setMomentum(DVector3(px, py, pz));
          mcthrown->setPosition(DVector3(vx, vy, vz));
          mcthrown->setCharge(ParticleCharge(ptype));
          mcthrown->setT0(vt,0,SYS_NULL);
+         mcthrown->setTime(vt);
          data.push_back(mcthrown);
       }
    }
@@ -609,11 +618,13 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       Particle_t ptype = iter->getPtype();
       tra->setMass(ParticleMass(ptype));
       tra->setCharge(ParticleCharge(ptype));
+      tra->setPID(ptype);
 
       const hddm_r::TrackFit &fit = iter->getTrackFit();
       tra->Ndof = fit.getNdof();
       tra->chisq = fit.getChisq();
       tra->setT0(fit.getT0(),fit.getT0err(),(DetectorSystem_t)fit.getT0det());
+      tra->setTime(0.0);
       DVector3 track_pos(fit.getX0(),fit.getY0(),fit.getZ0());
       DVector3 track_mom(fit.getPx(),fit.getPy(),fit.getPz());
       tra->setPosition(track_pos);

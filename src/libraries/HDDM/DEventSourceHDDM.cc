@@ -826,14 +826,15 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(s_HDDM_t *hddm_s,  JFactory<DMCRe
 				DVector3 mom(mom_beam->px, mom_beam->py, mom_beam->pz);
 				mcreaction->beam.setPosition(pos);
 				mcreaction->beam.setMomentum(mom);
+				mcreaction->beam.setPID(Gamma);
 				mcreaction->beam.setMass(prop_beam->mass);
 				mcreaction->beam.setCharge(prop_beam->charge);
 				mcreaction->beam.clearErrorMatrix();
 				mcreaction->beam.setT0(0.0, 0.0, SYS_NULL);
-				
+				mcreaction->beam.setTime(0.0);
+
 				DBeamPhoton *beamphoton = new DBeamPhoton;
 				*(DKinematicData*)beamphoton = mcreaction->beam;
-				beamphoton->t = 0.0;
 				dbeam_photons.push_back(beamphoton);
 				
 			}else{
@@ -842,6 +843,7 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(s_HDDM_t *hddm_s,  JFactory<DMCRe
 				DVector3 mom(0.0, 0.0, 0.0);
 				mcreaction->beam.setPosition(pos);
 				mcreaction->beam.setMomentum(mom);
+				mcreaction->beam.setPID(Gamma);
 				mcreaction->beam.setMass(0.0);
 				mcreaction->beam.setCharge(0.0);
 				mcreaction->beam.clearErrorMatrix();
@@ -862,18 +864,22 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(s_HDDM_t *hddm_s,  JFactory<DMCRe
 				mcreaction->target.setMomentum(mom);
 				mcreaction->target.setMass(prop_target->mass);
 				mcreaction->target.setCharge(prop_target->charge);
+				mcreaction->target.setPID(IDTrack(mcreaction->target.charge(), mcreaction->target.mass()));
 				mcreaction->target.clearErrorMatrix();
 				mcreaction->target.setT0(0.0, 0.0, SYS_NULL);
+				mcreaction->target.setTime(0.0);
 			}else{
 				// fake values for DMCReaction
 				DVector3 pos(0.0, 0.0, 65.0);
 				DVector3 mom(0.0, 0.0, 0.0);
 				mcreaction->target.setPosition(pos);
 				mcreaction->target.setMomentum(mom);
+				mcreaction->target.setPID(Unknown);
 				mcreaction->target.setMass(0.0);
 				mcreaction->target.setCharge(0.0);
 				mcreaction->target.clearErrorMatrix();
 				mcreaction->target.setT0(0.0, 0.0, SYS_NULL);
+				mcreaction->target.setTime(0.0);
 			}
 		}
 	}
@@ -945,10 +951,12 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 							mcthrown->parentid = product->parentid;
 							mcthrown->mech = product->mech;
 							mcthrown->pdgtype = product->pdgtype;
+							mcthrown->setPID((Particle_t)mcthrown->type);
 							mcthrown->setMass(mass);
 							mcthrown->setMomentum(DVector3(px, py, pz));
 							mcthrown->setPosition(DVector3(origin->vx, origin->vy, origin->vz));
 							mcthrown->setT0(origin->t, 0, SYS_NULL);
+							mcthrown->setTime(origin->t);
 							mcthrown->setCharge(ParticleCharge(product->type));
 							
 							data.push_back(mcthrown);
@@ -2100,6 +2108,7 @@ jerror_t DEventSourceHDDM::Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<D
 			track->setPosition(pos);
 			track->setCharge(tbt->properties->charge);
 			track->setMass(tbt->properties->mass);
+			track->setPID(IDTrack(track->charge(), track->mass()));
 			track->chisq = tbt->chisq;
 			track->Ndof = tbt->Ndof;
 			track->FOM = tbt->FOM;
@@ -2230,4 +2239,31 @@ jerror_t DEventSourceHDDM::Extract_DTagger( s_HDDM_t *hddm_s,  JFactory<DTagger>
 
   return NOERROR;
 
+}
+
+Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
+{
+	float locMassTolerance = 0.010;
+	if (locCharge > 0.1) // Positive particles
+	{
+		if (fabs(locMass - ParticleMass(Proton)) < locMassTolerance) return Proton;
+		if (fabs(locMass - ParticleMass(PiPlus)) < locMassTolerance) return PiPlus;
+		if (fabs(locMass - ParticleMass(KPlus)) < locMassTolerance) return KPlus;
+		if (fabs(locMass - ParticleMass(Positron)) < locMassTolerance) return Positron;
+		if (fabs(locMass - ParticleMass(MuonPlus)) < locMassTolerance) return MuonPlus;
+	}
+	else if(locCharge < -0.1) // Negative particles
+	{
+		if (fabs(locMass - ParticleMass(PiMinus)) < locMassTolerance) return PiMinus;
+		if (fabs(locMass - ParticleMass(KMinus)) < locMassTolerance) return KMinus;
+		if (fabs(locMass - ParticleMass(MuonMinus)) < locMassTolerance) return MuonMinus;
+		if (fabs(locMass - ParticleMass(Electron)) < locMassTolerance) return Electron;
+		if (fabs(locMass - ParticleMass(AntiProton)) < locMassTolerance) return AntiProton;
+	}
+	else //Neutral Track
+	{
+		if (fabs(locMass - ParticleMass(Gamma)) < locMassTolerance) return Gamma;
+		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
+	}
+	return Unknown;
 }

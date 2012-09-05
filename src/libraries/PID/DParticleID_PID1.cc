@@ -324,7 +324,7 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(const DChargedTrackHypothesis *locCha
 	locNDF = 0;
 	locChiSq = NaN;
 	unsigned int locMinimumNumberUsedHitsForConfidence = 3; //dE/dx is landau-distributed, so to approximate Gaussian must remove hits with largest dE/dx //3 means 6 or more hits originally
-	Particle_t locPID = locChargedTrackHypothesis->dPID;
+	Particle_t locPID = locChargedTrackHypothesis->PID();
 
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locChargedTrackHypothesis->GetT(locTrackTimeBasedVector);

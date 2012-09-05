@@ -37,13 +37,15 @@ DMatrixDSym* DKinematicData::null5x5Matrix(){
 // constructors and destructor
 //
 DKinematicData::DKinematicData() :
+  m_pid(Unknown), 
   m_hasFixedMass( !false ) ,
   m_mass( kDefaultMass ) ,
   m_charge( kDefaultCharge ) ,
   m_momentum( DVector3( 0.0 , 0.0 , 0.0 ) ) ,
   m_position( DVector3(  0.0 , 0.0 , 0.0 ) ) ,
   m_errorMatrix( nullMatrix() ),
-  m_TrackingErrorMatrix( null5x5Matrix() )
+  m_TrackingErrorMatrix( null5x5Matrix() ),
+  m_time(0.0)
 {
   m_t0 = -999.0;
   m_t0_err = -999.0;
@@ -64,13 +66,15 @@ DKinematicData::DKinematicData() :
 // constructor with Jana id
 DKinematicData::DKinematicData(const oid_t id) :
   JObject ( id ) ,
+  m_pid(Unknown), 
   m_hasFixedMass( !false ) ,
   m_mass( kDefaultMass ) ,
   m_charge( kDefaultCharge ) ,
   m_momentum( DVector3( 0.0 , 0.0 , 0.0 ) ) ,
   m_position( DVector3(  0.0 , 0.0 , 0.0 ) ) ,
   m_errorMatrix( nullMatrix() ),
-  m_TrackingErrorMatrix( null5x5Matrix() )
+  m_TrackingErrorMatrix( null5x5Matrix() ),
+  m_time(0.0)
 {
   return ;
 }
@@ -78,13 +82,15 @@ DKinematicData::DKinematicData(const oid_t id) :
 
 // Copy constructor with optional argument for copying over error matrix
 DKinematicData::DKinematicData( const DKinematicData& aKinematicData) :
+  m_pid(aKinematicData.m_pid), 
   m_hasFixedMass( aKinematicData.m_hasFixedMass ) ,
   m_mass( aKinematicData.m_mass ) ,
   m_charge( aKinematicData.m_charge ) ,
   m_momentum( aKinematicData.m_momentum ) ,
   m_position( aKinematicData.m_position ) ,
   m_errorMatrix( nullMatrix() ),
-  m_TrackingErrorMatrix( null5x5Matrix() )
+  m_TrackingErrorMatrix( null5x5Matrix() ),
+  m_time(0.0)
 {
   // Copy error matrix if it exists
   if(! aKinematicData.hasNullErrorMatrix() ){
@@ -116,13 +122,15 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData) :
 // over error matrix
 DKinematicData::DKinematicData( const DKinematicData& aKinematicData,
     const bool aCopyErrorMatrix) :
+  m_pid(aKinematicData.m_pid), 
   m_hasFixedMass( aKinematicData.m_hasFixedMass ) ,
   m_mass( aKinematicData.m_mass ) ,
   m_charge( aKinematicData.m_charge ) ,
   m_momentum( aKinematicData.m_momentum ) ,
   m_position( aKinematicData.m_position ) ,
   m_errorMatrix( nullMatrix() ),
-  m_TrackingErrorMatrix(null5x5Matrix() )
+  m_TrackingErrorMatrix(null5x5Matrix() ),
+  m_time(aKinematicData.m_time)
 {
   // Copy error matrix if is requested and if it exists
   if(aCopyErrorMatrix && ! aKinematicData.hasNullErrorMatrix() ){
@@ -154,6 +162,7 @@ DKinematicData::DKinematicData(const DVector3& aMomentum ,
     const DVector3&  aPosition ,
     const ValueType aMass ,
     const ValueType aCharge):
+  m_pid(Unknown), 
   m_hasFixedMass( !false ) ,
   m_mass( aMass ) ,
   m_charge( aCharge ) ,
@@ -171,6 +180,7 @@ DKinematicData::DKinematicData(const DVector3& aMomentum ,
     const ValueType aMass ,
     const ValueType aCharge,
     const DMatrixDSym& aErrorMatrix):
+  m_pid(Unknown), 
   m_hasFixedMass( !false ) ,
   m_mass( aMass ) ,
   m_charge( aCharge ) ,
@@ -197,11 +207,13 @@ DKinematicData::~DKinematicData()
 DKinematicData::operator=( const DKinematicData& aOtherKinematicData )
 {
   if(this != &aOtherKinematicData) {
+    m_pid = aOtherKinematicData.m_pid;
     m_hasFixedMass = aOtherKinematicData.m_hasFixedMass ;
     m_mass = aOtherKinematicData.m_mass ;
     m_charge = aOtherKinematicData.m_charge ;
     m_momentum = aOtherKinematicData.m_momentum ;
     m_position = aOtherKinematicData.m_position ;
+    m_time = aOtherKinematicData.m_time;
     if ( ! aOtherKinematicData.hasNullErrorMatrix() ) {
       setErrorMatrix( *aOtherKinematicData.m_errorMatrix ) ;
     }
@@ -237,9 +249,11 @@ DKinematicData::operator==( const DKinematicData& rhs ) const
 {
   if( !( m_hasFixedMass == rhs.m_hasFixedMass &&
 	 m_mass == rhs.m_mass &&
+    m_pid == rhs.m_pid &&
 	 m_charge == rhs.m_charge &&
 	 m_momentum == rhs.m_momentum &&
 	 m_position == rhs.m_position &&
+    m_time == rhs.m_time &&
 	 hasNullErrorMatrix() == rhs.hasNullErrorMatrix() &&
 	 hasNull5x5Matrix()==rhs.hasNull5x5Matrix()
 	 ) )

@@ -14,13 +14,11 @@ class DBeamPhoton: public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DBeamPhoton);
 		
-		double t; ///< Time at which photon arrives at interaction vertex location
-		
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "E(GeV)", "%3.3f", momentum().Mag());
 			AddString(items, "theta(deg)", "%3.3f", momentum().Theta()*180.0/M_PI);
 			AddString(items, "phi(deg)", "%3.1f", momentum().Phi()*180.0/M_PI);
-			AddString(items, "t(ns)", "%3.1f", t);
+			AddString(items, "t(ns)", "%3.1f", time());
 		}
 };
 

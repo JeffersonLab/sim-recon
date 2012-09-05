@@ -47,7 +47,7 @@ jerror_t DPiPlus_factory::evnt(JEventLoop *loop, int eventnumber)
 		if(chargedtrack->dChargedTrackHypotheses.size()<1)continue;
 		
 		const DChargedTrackHypothesis* hypothesis = chargedtrack->dChargedTrackHypotheses[0];
-		if(hypothesis->dPID == PiPlus){
+		if(hypothesis->PID() == PiPlus){
 			// Most probable hypothesis is a pi+. Make copy and store it in factory
 			DPiPlus *pip = new DPiPlus(hypothesis);
 			_data.push_back(pip);

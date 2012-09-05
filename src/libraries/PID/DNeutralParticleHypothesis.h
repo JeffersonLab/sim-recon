@@ -19,13 +19,11 @@ class DNeutralParticleHypothesis : public DKinematicData {
 	public:
 		JOBJECT_PUBLIC(DNeutralParticleHypothesis);
 
-		Particle_t dPID;
 		float dChiSq;
 		unsigned int dNDF;
 		float dFOM;
 
 		void toStrings(vector<pair<string,string> > &items) const{
-			AddString(items, "PID", "%d", int(dPID));
 			DKinematicData::toStrings(items);
 			AddString(items, "PID_ChiSq", "%f", dChiSq);
 			AddString(items, "PID_FOM", "%f", dFOM);

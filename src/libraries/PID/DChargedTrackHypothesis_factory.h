@@ -17,10 +17,13 @@
 #include <FCAL/DFCALShower.h>
 #include <TMath.h>
 
-class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothesis>{
+class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothesis>
+{
 	public:
 		DChargedTrackHypothesis_factory(){};
 		~DChargedTrackHypothesis_factory(){};
+
+		jerror_t Get_ChargedTrackHypotheses(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<DChargedTrackHypothesis*>& locChargedTrackHypotheses);
 
 	private:
 		DParticleID *dPIDAlgorithm;

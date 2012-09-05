@@ -124,6 +124,7 @@ using namespace jana;
 
 #include "DVector3.h"    
 #include "DLorentzVector.h" 
+#include "particleType.h" 
 #include "DMatrixDSym.h" 
 
 #define SPEED_OF_LIGHT 29.9792
@@ -148,10 +149,11 @@ public:
     enum ParameterOrder {kPx = 1,
         kPy,
         kPz,
-        kEnergy,
         kX,
         kY,
-        kZ};
+        kZ,
+        kT
+	};
     
     // constructors and destructor
 
@@ -187,9 +189,12 @@ public:
     bool operator!=( const DKinematicData& rhs ) const ;
     
     // member functions
+    void setPID(Particle_t locPID){m_pid = locPID;}
     void setMass( const ValueType aMass ) ;
     void setMomentum( const DVector3& aMomentum ) ;
     void setPosition( const DVector3& aPosition ) ;
+    void setTime(double locTime){m_time = locTime;}
+
     void setCharge( const ValueType aCharge);
     void setMassFixed( void ) ;
     void setMassFloat( void ) ;
@@ -245,6 +250,9 @@ public:
 
     bool forwardParmFlag(void)const;
 
+    Particle_t PID(void) const{return m_pid;}
+    ValueType time(void) const{return m_time;}
+
     ValueType t0( void ) const;
     ValueType t0_err( void ) const;
     DetectorSystem_t t0_detector( void ) const;
@@ -271,12 +279,13 @@ public:
 
     
 		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "PID", "%+1.0f", PID());
 			AddString(items, "q", "%+1.0f", charge());
 			AddString(items, "x(cm)", "%3.1f", x());
 			AddString(items, "y(cm)", "%3.1f", y());
 			AddString(items, "z(cm)", "%3.1f", z());
 			AddString(items, "E(GeV)", "%2.3f", energy());
-			AddString(items, "t(ns)", "%2.3f", t0());
+			AddString(items, "t(ns)", "%2.3f", time());
 			AddString(items, "p(GeV/c)", "%2.3f", momentum().Mag());
 			AddString(items, "theta(deg)", "%2.3f", momentum().Theta()*180.0/M_PI);
 			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
@@ -297,6 +306,7 @@ protected:
 private:
         
     // data members
+    Particle_t m_pid;
     bool m_hasFixedMass ;
     ValueType m_mass ;
     ValueType m_charge ;
@@ -307,11 +317,12 @@ private:
     double m_TrackingStateVector[5]; // order is q/pt,phi,tanl,D,z
 
     // Time of flight information
-    double m_t0; /// Start time (ns)
-    double m_t0_err; /// Start time error
+    double m_time; // Time of the track propagated at m_position
+    double m_t0; /// Measured Start time (ns)
+    double m_t0_err; /// Measured Start time error
     DetectorSystem_t m_t0_detector; /// Detector used to measure the start time
-    double m_t1; /// End of flight time (ns)
-    double m_t1_err; /// End of flight time error 
+    double m_t1; /// Measured End of flight time (ns)
+    double m_t1_err; /// Measured End of flight time error 
     DetectorSystem_t m_t1_detector; /// Detector used to measure the end of flight time 
 
     double m_pathLength; /// Flight path length (cm) 

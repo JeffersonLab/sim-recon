@@ -270,6 +270,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  DKinematicData *track_kd = timebased_track;
 	  *track_kd = *track;
 	  
+	  timebased_track->setTime(timebased_track->t0());
 	  timebased_track->rt = track->rt;
 	  timebased_track->chisq = track->chisq;
 	  timebased_track->Ndof = track->Ndof;
@@ -690,6 +691,8 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       rt->q = timebased_track->charge();
       rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
       
+      timebased_track->setPID(pid_algorithm->IDTrack(timebased_track->charge(), timebased_track->mass()));
+      timebased_track->setTime(mStartTime);
       timebased_track->rt = rt;
       timebased_track->chisq = fitter->GetChisq();
       timebased_track->Ndof = fitter->GetNdof();

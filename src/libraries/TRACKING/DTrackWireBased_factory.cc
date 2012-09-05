@@ -141,6 +141,16 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 	  dapp->Unlock();
 	}
 
+	// Get the particle ID algorithms
+	vector<const DParticleID *> locPIDAlgorithms;
+	loop->Get(locPIDAlgorithms);
+	if(locPIDAlgorithms.size() < 1){
+		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
+		return RESOURCE_UNAVAILABLE;
+	}
+	// Drop the const qualifier from the DParticleID pointer (I'm surely going to hell for this!)
+	dPIDAlgorithm = const_cast<DParticleID*>(locPIDAlgorithms[0]);
+
 	return NOERROR;
 }
 
@@ -393,6 +403,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       // Copy over DKinematicData part
       DKinematicData *track_kd = track;
       *track_kd = fitter->GetFitParameters();
+      track_kd->setPID(dPIDAlgorithm->IDTrack(track_kd->charge(), track_kd->mass()));
+      track_kd->setTime(track_kd->t0());
 
       // Fill reference trajectory
       rt->Reset();

@@ -123,8 +123,8 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 			continue; //shower matched to a DChargedTrackHypothesis with the highest FOM, not a neutral
 
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
-		for (loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++){
-
+		for (loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
+		{
 			// Calculate DNeutralParticleHypothesis Quantities (projected time at vertex for given id, etc.)
 			locMass = ParticleMass(locPIDHypotheses[loc_k]);
 			locShowerEnergy = locNeutralShower->dEnergy;
@@ -132,7 +132,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 			if (locParticleEnergy < locMass)
 				continue; //not enough energy for PID hypothesis
 
-			locShowerEnergyUncertainty = locNeutralShower->dEnergyUncertainty;
+			locShowerEnergyUncertainty = sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
 			locParticleEnergyUncertainty = locShowerEnergyUncertainty; //need to correct this for neutrons!
 
 			locPathVector = locNeutralShower->dSpacetimeVertex.Vect() - locSpacetimeVertex.Vect();
@@ -167,10 +167,11 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 			locNeutralParticleHypothesis->setMomentum(locPathVector);
 			locNeutralParticleHypothesis->setPosition(locSpacetimeVertex.Vect());
 			locNeutralParticleHypothesis->setT0(locSpacetimeVertex.T(), locVertexTimeUncertainty, SYS_NULL);
-			locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), locNeutralShower->dSpacetimeVertexUncertainties.T(), locNeutralShower->dDetectorSystem);
+			locNeutralParticleHypothesis->setTime(locSpacetimeVertex.T());
+			locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), sqrt(locNeutralShower->dCovarianceMatrix(4, 4)), locNeutralShower->dDetectorSystem);
 			locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 
-			locNeutralParticleHypothesis->dPID = locPIDHypotheses[loc_k];
+			locNeutralParticleHypothesis->setPID(locPIDHypotheses[loc_k]);
 			locNeutralParticleHypothesis->dChiSq = locChiSq;
 			locNeutralParticleHypothesis->dNDF = locNDF;
 			locNeutralParticleHypothesis->dFOM = locFOM;
@@ -199,9 +200,8 @@ jerror_t DNeutralParticleHypothesis_factory::fini(void)
 }
 
 #define DELTA(i,j) ((i==j) ? 1 : 0)
-void DNeutralParticleHypothesis_factory::Calc_Variances(const DNeutralShower *locNeutralShower, double locParticleEnergyUncertainty, DMatrixDSym &locVariances){
-	DLorentzVector locShowerPositionUncertainties = locNeutralShower->dSpacetimeVertexUncertainties;
-
+void DNeutralParticleHypothesis_factory::Calc_Variances(const DNeutralShower *locNeutralShower, double locParticleEnergyUncertainty, DMatrixDSym &locVariances)
+{
 	// create the simplest error matrix:
 	// At this point, it is assumed that error matrix of measured quantities is diagonal,
 	// with elements like: sigma_Z_t = L/sqrt(12) sigma_X_t = sigma_Y_t = r0/2 
@@ -212,9 +212,9 @@ void DNeutralParticleHypothesis_factory::Calc_Variances(const DNeutralShower *lo
 	locVariances.Clear();
 	locVariances.ResizeTo(7, 7);
 
-	locVariances(0,0) = pow(locShowerPositionUncertainties.X(), 2.0);
-	locVariances(1,1) = pow(locShowerPositionUncertainties.Y(), 2.0);
-	locVariances(2,2) = pow(locShowerPositionUncertainties.Z(), 2.0);
+	locVariances(0,0) = locNeutralShower->dCovarianceMatrix(1, 1);
+	locVariances(1,1) = locNeutralShower->dCovarianceMatrix(2, 2);
+	locVariances(2,2) = locNeutralShower->dCovarianceMatrix(3, 3);
 
 	locVariances[3][3] = pow(locParticleEnergyUncertainty, 2.0);
 

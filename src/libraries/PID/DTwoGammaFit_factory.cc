@@ -65,7 +65,7 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
     for (unsigned int i=0; i<neutrals.size(); i++) {
 
       //only consider photon hypotheses
-      if ( neutrals[i]->dPID != Gamma ) continue;
+      if ( neutrals[i]->PID() != Gamma ) continue;
 
       //each hypothesis has a vertex associated with it
       vector<const DVertex*> hypothesisVertex;
@@ -80,7 +80,7 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
       for (unsigned int j = i+1; j < neutrals.size() ; j++) {
 	//same checks as above
-	if ( neutrals[j]->dPID != Gamma ) continue;
+	if ( neutrals[j]->PID() != Gamma ) continue;
 	neutrals[j]->Get(hypothesisVertex);
 	if (hypothesisVertex.size() != 1) continue;
 	if (hypothesisVertex[0] != vertices[h]) continue;

@@ -54,7 +54,7 @@ jerror_t DParticleSet_factory::evnt(jana::JEventLoop *locEventLoop, int eventnum
 		for (loc_j = 0; loc_j < locVertices[loc_i]->dChargedTracks.size(); loc_j++){
 			locChargedTrack = locVertices[loc_i]->dChargedTracks[loc_j];
 			locParticleSet->dChargedTracks.push_back(locChargedTrack);
-			switch (locChargedTrack->Get_BestFOM()->dPID) {
+			switch (locChargedTrack->Get_BestFOM()->PID()) {
 				case PiPlus :
 					locParticleSet->pip.push_back(locChargedTrack);
 					break;
@@ -80,7 +80,7 @@ jerror_t DParticleSet_factory::evnt(jana::JEventLoop *locEventLoop, int eventnum
 		for (loc_j = 0; loc_j < locNeutralParticles.size(); loc_j++){
 			locNeutralParticle = locNeutralParticles[loc_j];
 			locParticleSet->dNeutralParticles.push_back(locNeutralParticle);
-			switch (locNeutralParticle->Get_BestFOM()->dPID) {
+			switch (locNeutralParticle->Get_BestFOM()->PID()) {
 				case Gamma :
 					locParticleSet->photon.push_back(locNeutralParticle);
 					break;

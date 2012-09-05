@@ -20,9 +20,7 @@ class DChargedTrackHypothesis : public DKinematicData {
 		JOBJECT_PUBLIC(DChargedTrackHypothesis);
 
 		oid_t candidateid;   ///< id of DTrackCandidate corresponding to this track
-		const DReferenceTrajectory *dRT;
-
-		Particle_t dPID;
+		const DReferenceTrajectory* dRT;
 
 		unsigned int dNDF_Track;
 		float dChiSq_Track;
@@ -37,18 +35,8 @@ class DChargedTrackHypothesis : public DKinematicData {
 		float dChiSq; //total chi-squared used for PID determination
 		float dFOM; //overall FOM for PID determination
 
-		double dProjectedStartTime; //the time of the track projected from the hit detector element back to the beamline (at the POCA to the beamline) (same point as the "position" member)
-		//this time is calculated by the MatchTo... routines in the DParticleID.cc file (e.g. MatchToBCAL, etc.)
-		//this time is calculated using the swum track trajectory information: constant beta is not assumed, as energy loss is taken into account along the track
-
-		double dProjectedStartTimeUncertainty; //should probably be incorporated into the covariance matrix...
-
-		//note that flight time = t1() - dProjectedStartTime
-
 		void toStrings(vector<pair<string,string> > &items) const{
-			AddString(items, "PID", "%d", int(dPID));
 			DKinematicData::toStrings(items);
-			AddString(items, "TProj", "%f", dProjectedStartTime);
 			AddString(items, "Track_ChiSq", "%f", dChiSq_Track);
 			AddString(items, "dEdx_ChiSq", "%f", dChiSq_DCdEdx);
 			AddString(items, "TOF_ChiSq", "%f", dChiSq_Timing);
