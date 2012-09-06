@@ -615,7 +615,7 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
          continue;
       }
       DTrackTimeBased *tra = new DTrackTimeBased();
-      tra->trackid = NULL;
+      tra->trackid = 0;
       tra->candidateid = iter->getCandidateId();
       Particle_t ptype = iter->getPtype();
       tra->setMass(ParticleMass(ptype));
