@@ -311,8 +311,6 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double itheta02s = 0.0;
 	double itheta02s2 = 0.0;
 	swim_step_t *last_step=NULL;
-	// Magnetic field
-	double Bz_old=0;
 	
 	// Reset flag indicating whether we hit the CDC endplate
 	// and get the parameters of the endplate so we can check
@@ -335,11 +333,13 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double cdc_endplate_zmax = 168.2;
 #endif	
 	
+#if 0
 	// Get Bfield from stepper to initialize Bz_old
 	DVector3 B;
 	stepper.GetBField(B);
-	Bz_old = B.z();
-	
+	double Bz_old = B.z();
+#endif	
+
 	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
 
 
@@ -406,8 +406,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 						double theta0 = 0.0136*one_over_beta/p*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
 						double theta02 = theta0*theta0;
 						itheta02 += theta02;
-						itheta02s += s*theta02;
-						itheta02s2 += s*s*theta02;
+						itheta02s += delta_s*theta02;
+						itheta02s2 += delta_s*delta_s*theta02;
 					}
 
 					// Calculate momentum loss due to ionization
@@ -457,7 +457,6 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 		// Calculate momentum loss due to the step we're about to take
 		dP = ds*dP_dx;
-		swim_step->dP = dP; // n.b. stepper has been updated for next round but we're still on present step
 
 		// Adjust momentum due to ionization losses
 		if(dP!=0.0){

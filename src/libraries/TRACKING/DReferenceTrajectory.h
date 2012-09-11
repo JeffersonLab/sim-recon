@@ -50,7 +50,6 @@ class DReferenceTrajectory{
 				double Ro;
 				double s; // distance along RT
 				double t; // flight time
-				double dP;
 				
 				// The following are used to calculate the covariance matrix for MULS
 				double itheta02;		// running sum of MULS angle theta_0 squared
