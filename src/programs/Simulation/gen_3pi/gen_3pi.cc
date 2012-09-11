@@ -40,8 +40,8 @@ int main( int argc, char* argv[] ){
   double lowMass = 0.7;
   double highMass = 2.0;
   
-  int nEvents = 1E5;
-  int batchSize = 1E5;
+  int nEvents = 100000;
+  int batchSize = 100000;
     
 	//parse command line:
   for (int i = 1; i < argc; i++){
