@@ -34,6 +34,7 @@
 #define Z_MIN 0.
 #define Z_MAX 175.0
 #define R_MAX 65.0
+#define R2_MAX 4225.0
 #define R_MAX_FORWARD 65.0
 #ifndef SPEED_OF_LIGHT
 #define SPEED_OF_LIGHT 29.98
@@ -49,8 +50,8 @@
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
-#define ANNEAL_POW_CONST 10.0
-#define ANNEAL_SCALE 9.0
+#define ANNEAL_POW_CONST 5.0
+#define ANNEAL_SCALE 5.0
 
 #define MINIMUM_HIT_FRACTION 0.25
 
@@ -70,7 +71,7 @@
 #define MIN_CDC_ITER 0
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
-#define MIN_HITS_FOR_REFIT 8
+#define MIN_HITS_FOR_REFIT 10
 
 // Functions of Moliere fraction F
 #define MOLIERE_RATIO1 5.0   // = 0.5/(1-F)
@@ -111,6 +112,7 @@ enum kalman_error_t{
 typedef struct{
   int status;
   double residual,sigma;
+  DVector3 dir,origin;
   const DCDCTrackHit *hit;
 }DKalmanSIMDCDCHit_t;
 
@@ -308,12 +310,13 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double BrentsAlgorithm(double ds1,double ds2,
 			 double dedx,DVector3 &pos,const DVector3 &origin,
 			 const DVector3 &dir,  
-			 DMatrix5x1 &Sc);
+			 DMatrix5x1 &Sc, bool is_stereo=false);
   double BrentsAlgorithm(double z,double dz,
 			 double dedx,const DVector3 &origin,
-			 const DVector3 &dir,const DMatrix5x1 &S);
+			 const DVector3 &dir,DMatrix5x1 &S,
+			 bool is_stereo=false);
   
-  jerror_t PropagateForwardCDC(int length,int &index,double &z,double &r,
+  jerror_t PropagateForwardCDC(int length,int &index,double &z,double &r2,
 			       DMatrix5x1 &S, bool &stepped_to_boundary); 
   jerror_t PropagateForward(int length,int &index,double &z,double zhit,
 			    DMatrix5x1 &S,bool &done,
@@ -401,7 +404,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   bool get_field;
 
   // endplate dimensions and location
-  double endplate_z, endplate_dz, endplate_rmin, endplate_rmax;
+  double endplate_z, endplate_dz, endplate_r2min, endplate_r2max;
   // upstream cdc start position
   vector<double>cdc_origin;
 

@@ -21,9 +21,16 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   DMatrix5x1 K;  // Kalman gain matrix for cdc hits
   DMatrix5x1 S0,S0_; //State vector
   DMatrix5x5 Ctest; // Covariance matrix
+  double Vc=4.*0.2028; // covariance for cdc wires =1.56*1.56/12.;
+
+  // Step size variables
+  double step1=mStepSizeZ;
+  double step2=mStepSizeZ;
 
   // Vectors for cdc wires
   DVector3 origin,dir,wirepos;
+  double z0w=0.; // origin in z for wire
+  bool is_stereo=false;
 
   // Set used_in_fit flags to false for fdc and cdc hits
   for (unsigned int i=0;i<cdc_updates.size();i++) cdc_updates[i].used_in_fit=false;
@@ -53,7 +60,15 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   unsigned int cdc_index=0;
   if (num_cdc_hits>0) cdc_index=num_cdc_hits-1;
   bool more_cdc_measurements=(num_cdc_hits>0);
-  double old_doca=1000.;
+  double old_doca2=1e6;
+
+  if (more_cdc_measurements){
+    origin=my_cdchits[cdc_index]->hit->wire->origin;
+    z0w=origin.z();
+    wirepos=origin+(forward_traj[0].pos.z()-z0w)*dir;
+    dir=my_cdchits[cdc_index]->dir;   
+    is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
+  }
 
   S0_=(forward_traj[0].S);
   for (unsigned int k=1;k<forward_traj.size();k++){
@@ -353,26 +368,36 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  num_fdc_hits-=forward_traj[k].num_hits;
       }
     }
-    else if (more_cdc_measurements && z<endplate_z){
-      origin=my_cdchits[cdc_index]->hit->wire->origin;
-      double z0w=origin.z();
-      dir=my_cdchits[cdc_index]->hit->wire->udir;
-      double uz=dir.z();   
-      wirepos=origin+((z-z0w)/uz)*dir;
+    else if (more_cdc_measurements && z<endplate_z){   
+      if (is_stereo) wirepos=origin+(z-z0w)*dir;
     
       // doca variables
       double dx=S(state_x)-wirepos.x();
       double dy=S(state_y)-wirepos.y();
-      double doca=sqrt(dx*dx+dy*dy);
+      double doca2=dx*dx+dy*dy;
      
       // Check if the doca is no longer decreasing
-      if (doca>old_doca+EPS3){
-	if(my_cdchits[cdc_index]->status==0){	
+      if (doca2>old_doca2 && z<endplate_z){
+	if(my_cdchits[cdc_index]->status==0){
+	  double newz=z;
+	
 	  // Get energy loss 
-	  double dedx=GetdEdx(S(state_q_over_p), 
-			      forward_traj[k].K_rho_Z_over_A,
-			      forward_traj[k].rho_Z_over_A,
-			      forward_traj[k].LnI);
+	  double dedx=0.;
+	  if (CORRECT_FOR_ELOSS){
+	    dedx=GetdEdx(S(state_q_over_p), 
+			 forward_traj[k].K_rho_Z_over_A,
+			 forward_traj[k].rho_Z_over_A,
+			 forward_traj[k].LnI);
+	  }
+	    
+	  // Last 2 step sizes
+	  if (k>=2){
+	    double z1=forward_traj[k_minus_1].pos.z();
+	    step1=-forward_traj[k].pos.z()+z1;
+	    step2=-z1+forward_traj[k-2].pos.z();
+	  }
+	  
+	  // track direction variables
 	  double tx=S(state_tx);
 	  double ty=S(state_ty);	
 	  double tanl=1./sqrt(tx*tx+ty*ty);
@@ -382,8 +407,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  double ux=dir.x();
 	  double uy=dir.y();
 	  // Variables relating wire direction and track direction
-	  double my_ux=tx-ux/uz;
-	  double my_uy=ty-uy/uz;
+	  double my_ux=tx-ux;
+	  double my_uy=ty-uy;
 	  double denom=my_ux*my_ux+my_uy*my_uy;
 	  double dz=0.;
 	  
@@ -401,31 +426,50 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  if (fabs(qBr2p*S(state_q_over_p)
 		   *bfield->GetBz(S(state_x),S(state_y),z)
 		   *two_step/sinl)<0.01 
-	      && denom>EPS){
-	    double dzw=(z-z0w)/uz;
+	      && denom>EPS)
+	    {
+	    double dzw=z-z0w;
 	    dz=-((S(state_x)-origin.x()-ux*dzw)*my_ux
 	       +(S(state_y)-origin.y()-uy*dzw)*my_uy)
 	      /(my_ux*my_ux+my_uy*my_uy);
 
 	    if (fabs(dz)>two_step || dz<0) do_brent=true;
+	    else{
+	      newz=z+dz;
+	      // Check for exiting the straw
+	      if (newz>endplate_z){
+		newz=endplate_z;
+		dz=endplate_z-z;
+	      }
+	      // Step the state and covariance through the field
+	      if (dz>mStepSizeZ){
+		double my_z=z;
+		int my_steps=int(dz/mStepSizeZ);
+		double dz2=dz-my_steps*mStepSizeZ;		     
+		for (int m=0;m<my_steps;m++){
+		  newz=my_z+mStepSizeZ;
+	      
+		  // Step current state by step size 
+		  Step(my_z,newz,dedx,S);
+					       
+		  my_z=newz;
+		}
+		newz=my_z+dz2;
+		Step(my_z,newz,dedx,S);
+	      }
+	      else{
+		Step(z,newz,dedx,S);
+	      }
+	    }
 	  }
 	  else do_brent=true;
 	  if (do_brent){
 	    // We have bracketed the minimum doca:  use Brent's agorithm
-	    /*
-	      double step_size
-	      =forward_traj_cdc[k].pos.z()-forward_traj_cdc[k_minus_1].pos.z();
-	      dz=BrentsAlgorithm(z,step_size,dedx,origin,dir,S);
-	    */
 	    //dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
-	    dz=BrentsAlgorithm(z,-mStepSizeZ,dedx,origin,dir,S);
+	    dz=BrentsAlgorithm(z,-mStepSizeZ,dedx,origin,dir,S,is_stereo);
+	    newz=z+dz;
 	  }
-	  double newz=z+dz;
-	  // Check for exiting the straw
-	  if (newz>endplate_z){
-	    newz=endplate_z;
-	    dz=endplate_z-z;
-	  }
+
 	  // Step the state and covariance through the field
 	  int num_steps=0;
 	  double dz3=0.;
@@ -440,8 +484,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      newz=my_z+my_dz;
 	      
 	      // Step current state by my_dz
-	      Step(z,newz,dedx,S);
-	      	      
+	      //Step(z,newz,dedx,S);
+	      
 	      // propagate error matrix to z-position of hit
 	      StepJacobian(z,newz,S0,dedx,J);
 	      //C=J*C*J.Transpose();
@@ -456,7 +500,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    newz=my_z+dz3;
 	    
 	    // Step current state by dz3
-	    Step(my_z,newz,dedx,S);	  
+	    //Step(my_z,newz,dedx,S);	  
 	    
 	    // propagate error matrix to z-position of hit
 	    StepJacobian(my_z,newz,S0,dedx,J);
@@ -468,7 +512,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  }
 	  else{
 	    // Step current state by dz
-	    Step(z,newz,dedx,S);
+	    //Step(z,newz,dedx,S);
 	    
 	    // propagate error matrix to z-position of hit
 	    StepJacobian(z,newz,S0,dedx,J);
@@ -480,7 +524,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  }
 	  
 	  // Wire position at current z
-	  wirepos=origin+((newz-z0w)/uz)*dir;
+	  if (is_stereo) wirepos=origin+(newz-z0w)*dir;
 	  double xw=wirepos.x();
 	  double yw=wirepos.y();
 	  
@@ -501,8 +545,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  
 	  // The next measurement
 	  double dm=0.,tdrift=0.;
-	  double Vc=0.2133; //1.6*1.6/12.;
-	  
 	  if (fit_type==kTimeBased){
 	    tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
 		-forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
@@ -585,10 +627,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      chisq+=scale*res*res/Vc;
 
 	      if (DEBUG_LEVEL>2)
-		printf("Ring %d straw %d pred %f meas %f chi2 %f\n",
-		       my_cdchits[cdc_index]->hit->wire->ring,
-		       my_cdchits[cdc_index]->hit->wire->straw,
-		       d,dm,(1.-H*K)*res*res/Vc);
+		cout << "Ring " <<  my_cdchits[cdc_index]->hit->wire->ring
+		     << " Straw " <<  my_cdchits[cdc_index]->hit->wire->straw
+		     << " is stereo? " << is_stereo
+		     << " Pred " << d << " Meas " << dm
+		     << " Chi2 " << (1.-H*K)*res*res/Vc << endl;
 	      
 	      // update number of degrees of freedom
 	      numdof++;
@@ -642,21 +685,21 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	if (cdc_index>0){
 	  cdc_index--;
 	  origin=my_cdchits[cdc_index]->hit->wire->origin;
-	  dir=my_cdchits[cdc_index]->hit->wire->udir;
+	  dir=my_cdchits[cdc_index]->dir;
+	  is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
 	}
 	else more_cdc_measurements=false;
       
 	// Update the wire position
-	uz=dir.z();
 	z0w=origin.z();
-	wirepos=origin+((z-z0w)/uz)*dir;
+	wirepos=origin+(z-z0w)*dir;
 	
 	// new doca
 	dx=S(state_x)-wirepos.x();
 	dy=S(state_y)-wirepos.y();
-	doca=sqrt(dx*dx+dy*dy);
+	doca2=dx*dx+dy*dy;
       }
-      old_doca=doca;
+      old_doca2=doca2;
     }
   }
   
