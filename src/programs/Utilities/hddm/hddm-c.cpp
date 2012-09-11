@@ -1636,6 +1636,7 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "malloc(sizeof(" << classPrefix << "_iostream_t));"	<< std::endl
 	 << "   char* p;"					<< std::endl
 	 << "   char* head;"					<< std::endl
+	 << "   char* nullfilename=\"\";"			<< std::endl
          << "   if (filename)"					<< std::endl
          << "   {"						<< std::endl
 	 << "      fp->fd = fopen(filename,\"r\");"		<< std::endl
@@ -1643,6 +1644,7 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
          << "   else"						<< std::endl
          << "   {"						<< std::endl
 	 << "      fp->fd = fdopen(0,\"r\");"			<< std::endl
+	 << "      filename = nullfilename;"			<< std::endl
          << "   }"						<< std::endl
 	 << "   if (fp->fd == 0)"				<< std::endl
 	 << "   {"						<< std::endl
@@ -1658,8 +1660,7 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "   {"						<< std::endl
 	 << "      if (p-head < 999000)"			<< std::endl
 	 << "      {"						<< std::endl
-	 << "         char *pbuf;"				<< std::endl
-	 << "         pbuf = fgets(p,1000,fp->fd);"		<< std::endl
+	 << "         fgets(p,1000,fp->fd);"			<< std::endl
 	 << "      }"						<< std::endl
 	 << "      else"					<< std::endl
 	 << "      {"						<< std::endl
@@ -1669,7 +1670,8 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "   fp->popTop = matches(head,HDDM_" << classPrefix
 	 << "_DocumentString);"					<< std::endl
 	 << "   free(head);" 					<< std::endl
-         << "   if (fp->popTop->popListLength == 0)"		<< std::endl
+         << "   if (fp->popTop == 0"
+         << " || fp->popTop->popListLength == 0)"		<< std::endl
 	 << "   {"						<< std::endl
 	 << "      fprintf(stderr,\"HDDM Error: \");"		<< std::endl
 	 << "      fprintf(stderr,\"input template model \");"	<< std::endl
@@ -1703,6 +1705,7 @@ void CodeBuilder::constructInitFunc(DOMElement* el)
 	 << "{"							<< std::endl
 	 << "   int len;"					<< std::endl	
 	 << "   char* head;"					<< std::endl
+	 << "   char* nullfilename=\"\";"			<< std::endl
 	 << "   " << classPrefix << "_iostream_t* fp = "
 	 << "(" << classPrefix << "_iostream_t*)"
 	 << "malloc(sizeof(" << classPrefix << "_iostream_t));"	<< std::endl
@@ -1713,6 +1716,7 @@ void CodeBuilder::constructInitFunc(DOMElement* el)
          << "   else"						<< std::endl
          << "   {"						<< std::endl
 	 << "      fp->fd = fdopen(1,\"w\");"			<< std::endl
+	 << "      filename = nullfilename;"			<< std::endl
          << "   }"						<< std::endl
 	 << "   if (fp->fd == 0)"				<< std::endl
 	 << "   {"						<< std::endl
