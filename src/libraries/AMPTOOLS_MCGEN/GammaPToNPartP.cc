@@ -95,7 +95,7 @@ GammaPToNPartP::generateMany( int nEvents ){
   a->m_iNTrueEvents = nEvents;
   a->m_iNParticles = m_Npart+2;
   
-  Kinematics* pKinEvent;
+  Kinematics* pKinEvent=0;
   
 #ifndef GPU_ACCELERATION
   
