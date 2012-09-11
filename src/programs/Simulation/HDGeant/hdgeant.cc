@@ -23,23 +23,32 @@ int main(int narg, char *argv[])
 	int res = hdgeant_();
 
 	// Optionally smear the resulting output file
-	if(POSTSMEAR){
+	if(POSTSMEAR && res == 0){
 		string cmd = "mcsmear "+MCSMEAROPTS+" "+OUTFILE;
 		cout<<endl;
 		cout<<"Smearing data with:"<<endl;
 		cout<<endl;
 		cout<<cmd<<endl;
 		cout<<endl;
-                int retcode;
-		retcode = system(cmd.c_str());
+		res = system(cmd.c_str());
 		
-		if(DELETEUNSMEARED){
+		if(DELETEUNSMEARED && res == 0){
 			cmd = "rm -f "+OUTFILE;
 			cout<<endl;
 			cout<<"Deleting unsmeared file:"<<endl;
 			cout<<"   "<<cmd<<endl;
-			retcode = system(cmd.c_str());
+			res = system(cmd.c_str());
+                }else if(DELETEUNSMEARED){
+			cout<<endl;
+			cout<<"Not deleting unsmeared file ";
+			cout<<"because of problems with the smearing.";
+			cout<<endl;
 		}
+	}else if(POSTSMEAR){
+		cout<<endl;
+		cout<<"Skipping smearing step because of problems ";
+                cout<<"with the hdgeant simulation"<<endl;
+		cout<<endl;
 	}else{
 		if(DELETEUNSMEARED){
 			cerr<<endl;
@@ -53,4 +62,3 @@ int main(int narg, char *argv[])
 
 	return res;
 }
-

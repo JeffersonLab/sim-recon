@@ -140,7 +140,11 @@ void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
       ho=xa[i-1]-x;
       hp=xa[i+m-1]-x;
       w=c[i+1-1]-d[i-1];
-      if ((den=ho-hp)==0.0) return;
+      if ((den=ho-hp)==0.0) {
+        free(c);
+        free(d);
+        return;
+      }
       
       den=w/den;
       d[i-1]=hp*den;
