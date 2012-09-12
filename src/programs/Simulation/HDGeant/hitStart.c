@@ -57,7 +57,6 @@ void hitStartCntr (float xin[4], float xout[4],
    float dx[3], dr;
    float dEdx;
    float xlocal[3];
-   float xvrtx[3];
 
    if (!initialized) {
 
@@ -198,10 +197,7 @@ void hitStartCntr (float xin[4], float xout[4],
       int nhit;
       s_StcTruthHits_t* hits;
       int sector = getsector_();
-      float phim = atan2(xvrtx[1],xvrtx[0]);
-
-
-      
+       
       //      printf("x_gl, z_gl, x_l, z_l %f %f %f %f %f %f\n",
       //  x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2]);
 
