@@ -1,4 +1,4 @@
       integer writenohits, showersincol, driftclusters
-		real tgtwidth
+      real tgtwidth
       common /controlparams/ writenohits, showersincol, driftclusters
      +                       ,tgtwidth(2)
