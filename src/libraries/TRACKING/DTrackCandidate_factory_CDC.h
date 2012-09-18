@@ -170,6 +170,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		double TARGET_Z;
 		double TARGET_Z_MIN;
 		double TARGET_Z_MAX;
+		double VERTEX_Z_MIN,VERTEX_Z_MAX;
 		int DEBUG_LEVEL;
 		bool FILTER_SEEDS;
 };

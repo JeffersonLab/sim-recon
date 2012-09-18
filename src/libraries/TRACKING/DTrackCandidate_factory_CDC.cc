@@ -94,6 +94,9 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	TARGET_Z=65.0;
 	DEBUG_LEVEL = 0;
 
+	VERTEX_Z_MIN=-100.0;
+	VERTEX_Z_MAX=+200.0;
+
 	FILTER_SEEDS=false;
 	
 	// Initialize cdchits_by_superlayer with empty vectors for each superlayer
@@ -1119,7 +1122,7 @@ if(DEBUG_LEVEL>2)_DBG_<<"p_trans:"<<seed.fit.p_trans<<endl;
 //if(seed.fit.p_trans<3.0)
  if (true)
 	  {
-		FindTheta(seed, TARGET_Z_MIN, TARGET_Z_MAX);
+		FindTheta(seed, VERTEX_Z_MIN, VERTEX_Z_MAX);
 		FindZ(seed, seed.theta_min, seed.theta_max);
 	}else{
 		FindThetaZStraightTrack(seed);
@@ -1616,7 +1619,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 	return VALUE_OUT_OF_RANGE;
   }
   
-  if (z0>TARGET_Z_MAX || z0<TARGET_Z_MIN){
+  if (z0>VERTEX_Z_MAX || z0<VERTEX_Z_MIN){
 	if(DEBUG_LEVEL>5)_DBG_<<"Fit failed for theta-z via regressionz value out of target range (z="<<z0<<")"<<endl;
 	return VALUE_OUT_OF_RANGE;
   }
