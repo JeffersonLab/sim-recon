@@ -707,7 +707,7 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 	return VALUE_OUT_OF_RANGE;
 }
 
-void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency)
+void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency) const
 {
 	if((locChargedTrackHypothesis->t0_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_START))
 	{
@@ -761,5 +761,18 @@ Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
 		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
 	}
 	return Unknown;
+}
+
+void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency) const
+{
+	CalcDCdEdxChiSq(locChargedTrackHypothesis);
+	Calc_TimingChiSq(locChargedTrackHypothesis, locRFTime, locRFBunchFrequency);
+
+	unsigned int locNDF_Total = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
+	double locChiSq_Total = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
+
+	locChargedTrackHypothesis->dChiSq = locChiSq_Total;
+	locChargedTrackHypothesis->dNDF = locNDF_Total;
+	locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : NaN;
 }
 

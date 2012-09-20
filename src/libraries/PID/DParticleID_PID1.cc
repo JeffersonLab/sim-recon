@@ -7,7 +7,7 @@
 
 #include "DParticleID_PID1.h"
 
-void DParticleID_PID1::Set_dEdxParams(vector<float>& locParamVector, float locParam1, float locParam2, float locParam3, float locParam4)
+void DParticleID_PID1::Set_dEdxParams(vector<float>& locParamVector, float locParam1, float locParam2, float locParam3, float locParam4) const
 {
 	locParamVector.resize(4);
 	locParamVector[0] = locParam1;
@@ -134,9 +134,11 @@ DParticleID_PID1::~DParticleID_PID1()
 
 }
 
-jerror_t DParticleID_PID1::GetdEdxMean_CDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis){
+jerror_t DParticleID_PID1::GetdEdxMean_CDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis) const
+{
 	double locBetaGammaValue = locBeta/sqrt(1.0 - locBeta*locBeta);
-	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton)){
+	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton))
+	{
 		if(locBetaGammaValue < 0.3)
 			return RESOURCE_UNAVAILABLE;
 		if(locBetaGammaValue > 2.15)
@@ -145,7 +147,8 @@ jerror_t DParticleID_PID1::GetdEdxMean_CDC(double locBeta, unsigned int locNumHi
 		locMeandEdx = Function_dEdx(locBetaGammaValue, ddEdxMeanParams_CDC_Proton)/1000000.0;
 		return NOERROR;
 	}
-	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus)){
+	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus))
+	{
 		if(locBetaGammaValue < 0.65)
 			return RESOURCE_UNAVAILABLE; //K+ very likely to decay, don't compute chisq!!
 		if(locBetaGammaValue > 4.1)
@@ -155,15 +158,16 @@ jerror_t DParticleID_PID1::GetdEdxMean_CDC(double locBeta, unsigned int locNumHi
 		return NOERROR;
 	}
 
-	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus)){
-
+	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus))
+	{
 		if(locBetaGammaValue < 0.81)
 			return RESOURCE_UNAVAILABLE;
 		if(locBetaGammaValue > 14.2)
 			return RESOURCE_UNAVAILABLE;
 
 		double locSlope, locIntercept;
-		for(unsigned int loc_i = 0; loc_i < 43; loc_i++){
+		for(unsigned int loc_i = 0; loc_i < 43; loc_i++)
+		{
 			if(locBetaGammaValue > dBetaGamma_PiMinus_CDC[loc_i + 1])
 				continue;
 			locSlope = (ddEdxMean_PiMinus_CDC[loc_i + 1] - ddEdxMean_PiMinus_CDC[loc_i])/(dBetaGamma_PiMinus_CDC[loc_i + 1] - dBetaGamma_PiMinus_CDC[loc_i]);
@@ -176,33 +180,40 @@ jerror_t DParticleID_PID1::GetdEdxMean_CDC(double locBeta, unsigned int locNumHi
 	return RESOURCE_UNAVAILABLE;
 }
 
-jerror_t DParticleID_PID1::GetdEdxSigma_CDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis){
+jerror_t DParticleID_PID1::GetdEdxSigma_CDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis) const
+{
 	double locBetaGamma = locBeta/sqrt(1.0 - locBeta*locBeta);
 	double locSigmadEdx_LowSide, locSigmadEdx_HighSide; //for linear interpolation/extrapolation
 
 	vector<unsigned int> locNumHitsVector;
 	vector<vector<float> > locdEdxSigmaParamVector;
-	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton)){
+	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton))
+	{
 		locNumHitsVector = ddEdxSigmaNumHitsVector_CDC_Proton;
 		locdEdxSigmaParamVector = ddEdxSigmaParamVector_CDC_Proton;
 	}
-	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus)){
+	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus))
+	{
 		locNumHitsVector = ddEdxSigmaNumHitsVector_CDC_KPlus;
 		locdEdxSigmaParamVector = ddEdxSigmaParamVector_CDC_KPlus;
 	}
-	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus)){
+	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus))
+	{
 		locNumHitsVector = ddEdxSigmaNumHitsVector_CDC_PiPlus;
 		locdEdxSigmaParamVector = ddEdxSigmaParamVector_CDC_PiPlus;
 	}
 
 	double locSlope, locIntercept;
 
-	for(unsigned int loc_i = 0; loc_i < locNumHitsVector.size(); loc_i++){
-		if(locNumHitsUsedFordEdx == locNumHitsVector[loc_i]){
+	for(unsigned int loc_i = 0; loc_i < locNumHitsVector.size(); loc_i++)
+	{
+		if(locNumHitsUsedFordEdx == locNumHitsVector[loc_i])
+		{
 			locSigmadEdx = (Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]))/1000000.0;
 			return NOERROR;
 		}
-		if(loc_i == (locNumHitsVector.size() - 1)){
+		if(loc_i == (locNumHitsVector.size() - 1))
+		{
 			locSigmadEdx_LowSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i - 1]);
 			locSigmadEdx_HighSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]);
 
@@ -212,7 +223,8 @@ jerror_t DParticleID_PID1::GetdEdxSigma_CDC(double locBeta, unsigned int locNumH
 
 			return NOERROR;
 		}
-		if((locNumHitsUsedFordEdx > locNumHitsVector[loc_i]) && (locNumHitsUsedFordEdx < locNumHitsVector[loc_i + 1])){
+		if((locNumHitsUsedFordEdx > locNumHitsVector[loc_i]) && (locNumHitsUsedFordEdx < locNumHitsVector[loc_i + 1]))
+		{
 			locSigmadEdx_LowSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]);
 			locSigmadEdx_HighSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i + 1]);
 
@@ -227,10 +239,12 @@ jerror_t DParticleID_PID1::GetdEdxSigma_CDC(double locBeta, unsigned int locNumH
 	return NOERROR;
 }
 
-jerror_t DParticleID_PID1::GetdEdxMean_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis){
+jerror_t DParticleID_PID1::GetdEdxMean_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis) const
+{
 	double locBetaGammaValue = locBeta/sqrt(1.0 - locBeta*locBeta);
 
-	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton)){
+	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton))
+	{
 		if(locBetaGammaValue < 0.3)
 			return RESOURCE_UNAVAILABLE;
 		if(locBetaGammaValue > 2.15)
@@ -239,7 +253,8 @@ jerror_t DParticleID_PID1::GetdEdxMean_FDC(double locBeta, unsigned int locNumHi
 		locMeandEdx = Function_dEdx(locBetaGammaValue, ddEdxMeanParams_FDC_Proton)/1000000.0;
 		return NOERROR;
 	}
-	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus)){
+	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus))
+	{
 		if(locBetaGammaValue < 1.1)
 			return RESOURCE_UNAVAILABLE; //K+ very likely to decay, don't compute chisq!!
 		if(locBetaGammaValue > 4.1)
@@ -249,15 +264,16 @@ jerror_t DParticleID_PID1::GetdEdxMean_FDC(double locBeta, unsigned int locNumHi
 		return NOERROR;
 	}
 
-	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus)){
-
+	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus))
+	{
 		if(locBetaGammaValue < 1.77)
 			return RESOURCE_UNAVAILABLE;
 		if(locBetaGammaValue > 14.2)
 			return RESOURCE_UNAVAILABLE;
 
 		double locSlope, locIntercept;
-		for(unsigned int loc_i = 0; loc_i < 43; loc_i++){
+		for(unsigned int loc_i = 0; loc_i < 43; loc_i++)
+		{
 			if(locBetaGammaValue > dBetaGamma_PiMinus_FDC[loc_i + 1])
 				continue;
 			locSlope = (ddEdxMean_PiMinus_FDC[loc_i + 1] - ddEdxMean_PiMinus_FDC[loc_i])/(dBetaGamma_PiMinus_FDC[loc_i + 1] - dBetaGamma_PiMinus_FDC[loc_i]);
@@ -270,33 +286,40 @@ jerror_t DParticleID_PID1::GetdEdxMean_FDC(double locBeta, unsigned int locNumHi
 	return RESOURCE_UNAVAILABLE;;
 }
 
-jerror_t DParticleID_PID1::GetdEdxSigma_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis){
+jerror_t DParticleID_PID1::GetdEdxSigma_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis) const
+{
 	double locBetaGamma = locBeta/sqrt(1.0 - locBeta*locBeta);
 	double locSigmadEdx_LowSide, locSigmadEdx_HighSide; //for linear interpolation/extrapolation
 
 	vector<unsigned int> locNumHitsVector;
 	vector<vector<float> > locdEdxSigmaParamVector;
-	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton)){
+	if((locPIDHypothesis == Proton) || (locPIDHypothesis == AntiProton))
+	{
 		locNumHitsVector = ddEdxSigmaNumHitsVector_FDC_Proton;
 		locdEdxSigmaParamVector = ddEdxSigmaParamVector_FDC_Proton;
 	}
-	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus)){
+	if((locPIDHypothesis == KPlus) || (locPIDHypothesis == KMinus))
+	{
 		locNumHitsVector = ddEdxSigmaNumHitsVector_FDC_KPlus;
 		locdEdxSigmaParamVector = ddEdxSigmaParamVector_FDC_KPlus;
 	}
-	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus)){
+	if((locPIDHypothesis == PiPlus) || (locPIDHypothesis == PiMinus))
+	{
 		locNumHitsVector = ddEdxSigmaNumHitsVector_FDC_PiPlus;
 		locdEdxSigmaParamVector = ddEdxSigmaParamVector_FDC_PiPlus;
 	}
 
 	double locSlope, locIntercept;
 
-	for(unsigned int loc_i = 0; loc_i < locNumHitsVector.size(); loc_i++){
-		if(locNumHitsUsedFordEdx == locNumHitsVector[loc_i]){
+	for(unsigned int loc_i = 0; loc_i < locNumHitsVector.size(); loc_i++)
+	{
+		if(locNumHitsUsedFordEdx == locNumHitsVector[loc_i])
+		{
 			locSigmadEdx = (Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]))/1000000.0;
 			return NOERROR;
 		}
-		if(loc_i == (locNumHitsVector.size() - 1)){
+		if(loc_i == (locNumHitsVector.size() - 1))
+		{
 			locSigmadEdx_LowSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i - 1]);
 			locSigmadEdx_HighSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]);
 
@@ -306,7 +329,8 @@ jerror_t DParticleID_PID1::GetdEdxSigma_FDC(double locBeta, unsigned int locNumH
 
 			return NOERROR;
 		}
-		if((locNumHitsUsedFordEdx > locNumHitsVector[loc_i]) && (locNumHitsUsedFordEdx < locNumHitsVector[loc_i + 1])){
+		if((locNumHitsUsedFordEdx > locNumHitsVector[loc_i]) && (locNumHitsUsedFordEdx < locNumHitsVector[loc_i + 1]))
+		{
 			locSigmadEdx_LowSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i]);
 			locSigmadEdx_HighSide = Function_dEdx(locBetaGamma, locdEdxSigmaParamVector[loc_i + 1]);
 
@@ -320,11 +344,13 @@ jerror_t DParticleID_PID1::GetdEdxSigma_FDC(double locBeta, unsigned int locNumH
 	return NOERROR;
 }
 
-jerror_t DParticleID_PID1::CalcDCdEdxChiSq(const DChargedTrackHypothesis *locChargedTrackHypothesis, double &locChiSq, unsigned int& locNDF){
-	locNDF = 0;
-	locChiSq = NaN;
+jerror_t DParticleID_PID1::CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTrackHypothesis) const
+{
+	locChargedTrackHypothesis->dNDF_DCdEdx = 0;
+	locChargedTrackHypothesis->dChiSq_DCdEdx = 0.0;
 	unsigned int locMinimumNumberUsedHitsForConfidence = 3; //dE/dx is landau-distributed, so to approximate Gaussian must remove hits with largest dE/dx //3 means 6 or more hits originally
 	Particle_t locPID = locChargedTrackHypothesis->PID();
+	double locChiSq;
 
 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locChargedTrackHypothesis->GetT(locTrackTimeBasedVector);
@@ -343,7 +369,8 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(const DChargedTrackHypothesis *locCha
 	double locDeltadEdx_CDC = 0.0, locDeltadEdx_FDC = 0.0;
 
 	double locBeta = locChargedTrackHypothesis->momentum().Mag()/locChargedTrackHypothesis->energy();
-	if(locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC){
+	if(locNumHitsUsedFordEdx_CDC >= locNumHitsUsedFordEdx_FDC)
+	{
 		if(GetdEdxMean_CDC(locBeta, locNumHitsUsedFordEdx_CDC, locMeandEdx_CDC, locPID) != NOERROR)
 			return RESOURCE_UNAVAILABLE;
 		if(GetdEdxSigma_CDC(locBeta, locNumHitsUsedFordEdx_CDC, locSigmadEdx_CDC, locPID) != NOERROR)
@@ -351,11 +378,13 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(const DChargedTrackHypothesis *locCha
 		locDeltadEdx_CDC = locDCdEdx - locMeandEdx_CDC;
 		locChiSq = locDeltadEdx_CDC/locSigmadEdx_CDC;
 		locChiSq *= locChiSq;
-		locNDF = 1;
+		locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq;
+		locChargedTrackHypothesis->dNDF_DCdEdx = 1;
 		return NOERROR;
 	}
 
-	if(locNumHitsUsedFordEdx_FDC > locNumHitsUsedFordEdx_CDC){
+	if(locNumHitsUsedFordEdx_FDC > locNumHitsUsedFordEdx_CDC)
+	{
 		if(GetdEdxMean_FDC(locBeta, locNumHitsUsedFordEdx_FDC, locMeandEdx_FDC, locPID) != NOERROR)
 			return RESOURCE_UNAVAILABLE;
 		if(GetdEdxSigma_FDC(locBeta, locNumHitsUsedFordEdx_FDC, locSigmadEdx_FDC, locPID) != NOERROR)
@@ -363,7 +392,8 @@ jerror_t DParticleID_PID1::CalcDCdEdxChiSq(const DChargedTrackHypothesis *locCha
 		locDeltadEdx_FDC = locDCdEdx - locMeandEdx_FDC;
 		locChiSq = locDeltadEdx_FDC/locSigmadEdx_FDC;
 		locChiSq *= locChiSq;
-		locNDF = 1;
+		locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq;
+		locChargedTrackHypothesis->dNDF_DCdEdx = 1;
 		return NOERROR;
 	}
 

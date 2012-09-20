@@ -83,9 +83,6 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 
 	double locRFTime = 0.0;
 	double locRFBunchFrequency = 2.004;
-	double locChiSq_Total, locChiSq_DCdEdx;
-	unsigned int locNDF_Total, locNDF_DCdEdx;
-	bool locUseDCdEdxForPIDFlag;
 	double locInitialStartTime;
 
 	vector<const DTOFPoint*> locTOFPoints;
@@ -119,14 +116,6 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		DKinematicData *locKinematicData = locChargedTrackHypothesis;
 		*locKinematicData = *(static_cast<const DKinematicData*>(locTrackTimeBased));
 		locCovarianceMatrix = locTrackTimeBased->errorMatrix();
-
-		// Calculate DC dE/dx ChiSq
-		// Compute the dEdx for the hits on the track
-		locUseDCdEdxForPIDFlag = false; //true when enabled
-		if(dPIDAlgorithm->CalcDCdEdxChiSq(locChargedTrackHypothesis, locChiSq_DCdEdx, locNDF_DCdEdx) == NOERROR)
-			locUseDCdEdxForPIDFlag = true;
-		locChargedTrackHypothesis->dChiSq_DCdEdx = locChiSq_DCdEdx;
-		locChargedTrackHypothesis->dNDF_DCdEdx = locNDF_DCdEdx;
 
 		// Initialize projected time to estimate from track, and hit time to NaN
 		locInitialStartTime = locChargedTrackHypothesis->t0(); // to reject hits that are not in time with the track
@@ -190,23 +179,7 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
 
 		//Calculate PID ChiSq, NDF, FOM
-		locNDF_Total = 0;
-		locChiSq_Total = 0.0;
-
-		dPIDAlgorithm->Calc_TimingChiSq(locChargedTrackHypothesis, locRFTime, locRFBunchFrequency);
-		locChiSq_Total += locChargedTrackHypothesis->dChiSq_Timing;
-		locNDF_Total += locChargedTrackHypothesis->dNDF_Timing;
-
-		if(locUseDCdEdxForPIDFlag == true)
-		{
-			locChiSq_Total += locChargedTrackHypothesis->dChiSq_DCdEdx;
-			locNDF_Total += locChargedTrackHypothesis->dNDF_DCdEdx;
-		}
-
-		locChargedTrackHypothesis->dChiSq = locChiSq_Total;
-		locChargedTrackHypothesis->dNDF = locNDF_Total;
-		locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : NaN;
-
+		dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locRFTime, locRFBunchFrequency);
 		locChargedTrackHypotheses.push_back(locChargedTrackHypothesis);
 	}
 

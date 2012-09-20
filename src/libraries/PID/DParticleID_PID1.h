@@ -16,14 +16,13 @@ class DParticleID_PID1:public DParticleID{
   DParticleID_PID1(JEventLoop *loop); // require JEventLoop in constructor;
   ~DParticleID_PID1();
 
-	jerror_t GetdEdxMean_CDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis);
-	jerror_t GetdEdxSigma_CDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis);
-	jerror_t GetdEdxMean_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis);
-	jerror_t GetdEdxSigma_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis);
-	jerror_t CalcDCdEdxChiSq(const DChargedTrackHypothesis *locChargedTrackHypothesis, double &locChiSq, unsigned int& locNDF);
-	inline double Function_dEdx(double locBetaGamma, const vector<float> &locParams){return locParams[0]*exp(locParams[1]*locBetaGamma) + locParams[2] + locParams[3]*locBetaGamma;}
-	void Set_dEdxParams(vector<float>& locParamVector, float locParam1, float locParam2, float locParam3, float locParam4);
-
+	jerror_t GetdEdxMean_CDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis) const;
+	jerror_t GetdEdxSigma_CDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis) const;
+	jerror_t GetdEdxMean_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locMeandEdx, Particle_t locPIDHypothesis) const;
+	jerror_t GetdEdxSigma_FDC(double locBeta, unsigned int locNumHitsUsedFordEdx, double& locSigmadEdx, Particle_t locPIDHypothesis) const;
+	jerror_t CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTrackHypothesis) const;
+	inline double Function_dEdx(double locBetaGamma, const vector<float> &locParams) const{return locParams[0]*exp(locParams[1]*locBetaGamma) + locParams[2] + locParams[3]*locBetaGamma;}
+	void Set_dEdxParams(vector<float>& locParamVector, float locParam1, float locParam2, float locParam3, float locParam4) const;
 
  protected:
 	vector<float> ddEdxMeanParams_FDC_Proton;
