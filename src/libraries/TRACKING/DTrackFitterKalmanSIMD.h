@@ -31,8 +31,8 @@
 #define MAX_CHI2 1e16
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
-#define Z_MIN 0.
-#define Z_MAX 175.0
+#define Z_MIN -100.
+#define Z_MAX 200.0
 #define R_MAX 65.0
 #define R2_MAX 4225.0
 #define R_MAX_FORWARD 65.0
@@ -50,8 +50,6 @@
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
-#define ANNEAL_POW_CONST 5.0
-#define ANNEAL_SCALE 5.0
 
 #define MINIMUM_HIT_FRACTION 0.25
 
@@ -71,14 +69,15 @@
 #define MIN_CDC_ITER 0
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
-#define MIN_HITS_FOR_REFIT 10
+#define MIN_HITS_FOR_REFIT 8
 
 // Functions of Moliere fraction F
 #define MOLIERE_RATIO1 5.0   // = 0.5/(1-F)
 #define MOLIERE_RATIO2 11.0e-7 // = (scale factor)*1e-6/(1+F*F)
 #define MOLIERE_RATIO3 11.0e-7 // = (scale factor)*1e-6/(1+F*F)
-#define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
-#define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
+//#define DE_PER_STEP_WIRE_BASED 0.0005 // in GeV
+//#define DE_PER_STEP_TIME_BASED 0.0005 // in GeV
+#define DE_PER_STEP 0.0005 // in GeV
 #define BFIELD_FRAC 0.0001
 #define MIN_STEP_SIZE 0.1 // in cm
 #define CDC_INTERNAL_STEP_SIZE 0.15 // in cm
@@ -118,6 +117,7 @@ typedef struct{
 
 typedef struct{
   int package;
+  int status;
   double t,cosa,sina;
   double uwire,vstrip,z,dE;
   double xres,yres,xsig,ysig;
@@ -223,6 +223,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   enum hit_status{
     good_hit,
     bad_hit,
+    late_hit,
   };
   enum fit_region{
     kForward,
@@ -443,6 +444,10 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
+
+  // Parameters for annealing scheme
+  double ANNEAL_POW_CONST,ANNEAL_SCALE;
+
 
   // Min. momentum needed for fit before returning fitSuccess
   double MIN_FIT_P;

@@ -21,7 +21,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   DMatrix5x1 K;  // Kalman gain matrix for cdc hits
   DMatrix5x1 S0,S0_; //State vector
   DMatrix5x5 Ctest; // Covariance matrix
-  double Vc=4.*0.2028; // covariance for cdc wires =1.56*1.56/12.;
+  //  double Vc=0.2028; // covariance for cdc wires =1.56*1.56/12.;
+  double Vc=0.0507;
 
   // Step size variables
   double step1=mStepSizeZ;
@@ -433,7 +434,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	       +(S(state_y)-origin.y()-uy*dzw)*my_uy)
 	      /(my_ux*my_ux+my_uy*my_uy);
 
-	    if (fabs(dz)>two_step || dz<0) do_brent=true;
+	    if (fabs(dz)>two_step || dz<0){
+	      do_brent=true;
+	    }
 	    else{
 	      newz=z+dz;
 	      // Check for exiting the straw
@@ -465,9 +468,48 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  else do_brent=true;
 	  if (do_brent){
 	    // We have bracketed the minimum doca:  use Brent's agorithm
-	    //dz=BrentsAlgorithm(z,-0.5*two_step,dedx,origin,dir,S);
 	    dz=BrentsAlgorithm(z,-mStepSizeZ,dedx,origin,dir,S,is_stereo);
 	    newz=z+dz;
+
+	    if (fabs(dz)>2.*mStepSizeZ-EPS3){    
+	      // whoops, looks like we didn't actually bracket the minimum 
+	      // after all.  Swim to make sure we pass the minimum doca.
+	      double ztemp=newz;
+	      
+	      // new wire position
+	      if (is_stereo) wirepos=origin+(ztemp-z0w)*dir;
+	      
+	      // doca
+	      old_doca2=doca2;
+
+	      dx=S(state_x)-wirepos.x();
+	      dy=S(state_y)-wirepos.y();
+	      doca2=dx*dx+dy*dy;
+	      
+	      while(doca2<old_doca2){
+		newz=ztemp+mStepSizeZ;
+		old_doca2=doca2;
+		
+		// Step to the new z position
+		Step(ztemp,newz,dedx,S);
+
+		// find the new distance to the wire
+		if (is_stereo) wirepos=origin+(newz-z0w)*dir;
+		dx=S(state_x)-wirepos.x();
+		dy=S(state_y)-wirepos.y();
+		doca2=dx*dx+dy*dy;
+		
+		ztemp=newz;
+	      }
+	      // Find the true doca
+	      double dz2=BrentsAlgorithm(newz,mStepSizeZ,dedx,origin,dir,S,
+					 is_stereo);
+	      newz=ztemp+dz2;
+	   
+	      // Change in z relative to where we started for this wire
+	      dz=newz-z;
+	    }
+	    
 	  }
 
 	  // Step the state and covariance through the field
@@ -544,7 +586,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  //H.Print();
 	  
 	  // The next measurement
-	  double dm=0.,tdrift=0.;
+	  double dm=0.39,tdrift=0.;
 	  if (fit_type==kTimeBased){
 	    tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
 		-forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
@@ -631,6 +673,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		     << " Straw " <<  my_cdchits[cdc_index]->hit->wire->straw
 		     << " is stereo? " << is_stereo
 		     << " Pred " << d << " Meas " << dm
+		     << " Sigma meas " << sqrt(Vc)
 		     << " Chi2 " << (1.-H*K)*res*res/Vc << endl;
 	      
 	      // update number of degrees of freedom
