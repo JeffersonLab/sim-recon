@@ -232,6 +232,78 @@ inline static char *ParticleType(Particle_t p)
   return(ret);
 }
 
+inline static unsigned short int IsFixedMass(Particle_t p)
+{
+  switch (p)
+  {
+  case Gamma:		return 1;
+  case Positron:	return 1;
+  case Electron:	return 1;
+  case Neutrino:	return 1;
+  case MuonPlus:	return 1;
+  case MuonMinus:	return 1;
+  case Pi0:      	return 1;
+  case PiPlus:		return 1;
+  case PiMinus:		return 1;
+  case KShort:		return 1;
+  case KLong:		return 1;
+  case KPlus:		return 1;
+  case KMinus:		return 1;
+  case Neutron:		return 1;
+  case Proton:		return 1;
+  case AntiProton:	return 1;
+  case Eta:			return 1;
+  case Lambda:		return 1;
+  case SigmaPlus:	return 1;
+  case Sigma0:		return 1;
+  case SigmaMinus:	return 1;
+  case Xi0:			return 1;
+  case XiMinus:		return 1;
+  case OmegaMinus:	return 1;
+  case AntiNeutron:	return 1;
+  case AntiLambda:	return 1;
+  case AntiSigmaMinus:	return 1;
+  case AntiSigma0:	return 1;
+  case AntiSigmaPlus:	return 1;
+  case AntiXi0:		return 1;
+  case AntiXiPlus:	return 1;
+  case AntiOmegaPlus:	return 1;
+  case Geantino:	return 1;
+  case EtaPrime:	return 1;
+  default: return 0;
+  }
+}
+
+inline static unsigned short int IsDetachedVertex(Particle_t p)
+{
+  switch (p)
+  {
+  case MuonPlus:	return 1;
+  case MuonMinus:	return 1;
+  case PiPlus:		return 1;
+  case PiMinus:		return 1;
+  case KShort:		return 1;
+  case KLong:		return 1;
+  case KPlus:		return 1;
+  case KMinus:		return 1;
+  case Neutron:		return 1;
+  case Lambda:		return 1;
+  case SigmaPlus:	return 1;
+  case SigmaMinus:	return 1;
+  case Xi0:			return 1;
+  case XiMinus:		return 1;
+  case OmegaMinus:	return 1;
+  case AntiNeutron:	return 1;
+  case AntiLambda:	return 1;
+  case AntiSigmaMinus:	return 1;
+  case AntiSigmaPlus:	return 1;
+  case AntiXi0:		return 1;
+  case AntiXiPlus:	return 1;
+  case AntiOmegaPlus:	return 1;
+  default: return 0;
+  }
+}
+
 inline static char* ParticleName_ROOT(Particle_t p)
 {
   static char ret[40];
@@ -363,16 +435,16 @@ inline static char* ParticleName_ROOT(Particle_t p)
     strcpy(ret, "#it{f_{0}(980)}");
     break;
   case KStar_892_0:
-    strcpy(ret, "#it{K^{*}(892)^{0}}");
+    strcpy(ret, "#it{K*(892)^{0}}");
     break;
   case KStar_892_Plus:
-    strcpy(ret, "#it{K^{*}(892)^{+}}");
+    strcpy(ret, "#it{K*(892)^{+}}");
     break;
   case KStar_892_Minus:
-    strcpy(ret, "#it{K^{*}(892)^{-}}");
+    strcpy(ret, "#it{K*(892)^{-}}");
     break;
   case AntiKStar_892_0:
-    strcpy(ret, "#it{#bar{K^{*}}(892)^{0}}");
+    strcpy(ret, "#it{#bar{K*}(892)^{0}}");
     break;
   case K1_1400_Plus:
     strcpy(ret, "#it{K_{1}(1400)^{+}}");
