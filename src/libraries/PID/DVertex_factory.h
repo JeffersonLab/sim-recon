@@ -25,6 +25,17 @@ class DVertex_factory : public jana::JFactory<DVertex>{
 		  }
 		};
 
+	       class vertex_t{
+	       public:
+		 unsigned int trackbits;
+		 DVector3 pos;
+		 DVector3 weight;
+		 double t0,t0_weight;
+
+		 vertex_t(unsigned int trackbits,DVector3 &pos,DVector3 &weight,double t0,double t0_weight)
+		   :trackbits(trackbits),pos(pos),weight(weight),t0(t0),t0_weight(t0_weight){};
+	       };
+
 		class vertexInfo_t : public DHoughFind {
 			public:
 				bool is_in_group;
@@ -47,6 +58,8 @@ class DVertex_factory : public jana::JFactory<DVertex>{
 		void FillVertexInfoChargedTrack(DVertex_factory::vertexInfo_t *locVertexInfo, const DChargedTrack *locChargedTrack);
 		virtual void AssignParticlesToGroups(vector<vertexInfo_t*> &locVertexInfos, vector< vector<vertexInfo_t *> > &locVertexInfoGroups);
 		bool AllInGroups(vector<vertexInfo_t*> &locVertexInfos);
+		
+
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

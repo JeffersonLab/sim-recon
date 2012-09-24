@@ -13,7 +13,17 @@ using namespace std;
 #include <TROOT.h>
 #include <TMath.h>
 #include "DVertex_factory.h"
+#include <TRACKING/DReferenceTrajectory.h>
 using namespace jana;
+
+
+inline bool DVertexSortTracks(const DChargedTrack *a,const DChargedTrack *b){
+  const DChargedTrackHypothesis *hyp_a=a->dChargedTrackHypotheses[0];
+  const DChargedTrackHypothesis *hyp_b=b->dChargedTrackHypotheses[0];
+  
+  return (hyp_a->momentum().Mag()>hyp_b->momentum().Mag());
+}
+
 
 //------------------
 // init
@@ -79,13 +89,170 @@ jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-	unsigned int loc_i;
 	vector<const DChargedTrack *> locChargedTracks;
 	loop->Get(locChargedTracks);
 
+	// Sort the tracks such that the one with the highest momentum is first
+	sort(locChargedTracks.begin(),locChargedTracks.end(),DVertexSortTracks);
+	
+#if 1
+	vector<vertex_t>groups;  // vector to keep track of combinations of tracks
+	unsigned int numTracks=locChargedTracks.size();
+	if (numTracks>0){
+	  unsigned int last_index=numTracks-1;
+	  for (unsigned int j=0;j<last_index;j++){
+	    const DChargedTrackHypothesis *track1=locChargedTracks[j]->dChargedTrackHypotheses[0];
+	    DKinematicData track1_kd=*track1;
+	    
+	    // Try to match this track with the other tracks
+	    unsigned int trackbits=0x1u<<j;   // store track indices in a bit pattern
+	    DVector3 avg_pos;
+	    // double weight=0;
+	    DVector3 weight;
+	    double t0=0.;
+	    double t0_err=0.,one_over_t0_var=0.;
+	    double t0_weight=0.;
+	    // boolean to make sure we use the current track only once when computing averages
+	    double use_track_in_average=true; 
+	    // loop over the remaining tracks
+	    for (unsigned int i=j+1;i<numTracks;i++){
+	      const DChargedTrackHypothesis *track2=locChargedTracks[i]->dChargedTrackHypotheses[0];
+	      DKinematicData track2_kd=*track2;
+	      
+	      // Find the intersection between the two tracks
+	      DVector3 intersection;
+	      double doca,var_doca;
+	      track1->dRT->IntersectTracks(track2->dRT,&track1_kd,&track2_kd,intersection,doca,var_doca);
+	      
+	      // Add the track to the group if the combination of the current two tracks meets a minimum 
+	      // probability criterion.
+	      double prob=TMath::Prob(doca*doca/var_doca,1);
+	      if (prob>0.01){
+		trackbits|=0x1u<<i;
+		
+		// Accumulate values for computing vertex time and position
+		if (use_track_in_average){
+		  t0_err=track1_kd.t0_err();
+		  one_over_t0_var=1./(t0_err*t0_err);
+		  t0+=one_over_t0_var*track1_kd.t0();
+		  t0_weight+=one_over_t0_var;
+
+		  DVector3 pos1=track1_kd.position();
+		  DMatrixDSym cov1=track1_kd.errorMatrix();
+		  DVector3 dpos(pos1.x()/cov1(3,3),pos1.y()/cov1(4,4),pos1.z()/cov1(5,5));
+		  DVector3 dweight(1./cov1(3,3),1/cov1(4,4),1/cov1(5,5));
+		  
+		  avg_pos+=dpos;
+		  weight+=dweight;
+		  
+		  use_track_in_average=false;
+		}
+		
+		t0_err=track2_kd.t0_err();
+		one_over_t0_var=1./(t0_err*t0_err);
+		t0+=one_over_t0_var*track2_kd.t0();
+		t0_weight+=one_over_t0_var;
+
+		DVector3 pos2=track2_kd.position();
+		DMatrixDSym cov2=track2_kd.errorMatrix();
+		DVector3 dpos(pos2.x()/cov2(3,3),pos2.y()/cov2(4,4),pos2.z()/cov2(5,5));
+		DVector3 dweight(1./cov2(3,3),1/cov2(4,4),1/cov2(5,5));
+
+		avg_pos+=dpos;
+		weight+=dweight;
+	      }
+	    }
+	    if (t0_weight==0.){
+	      DVector3 pos1=track1_kd.position();
+	      DMatrixDSym cov1=track1_kd.errorMatrix();
+	      avg_pos.SetXYZ(pos1.x()/cov1(3,3),pos1.y()/cov1(4,4),pos1.z()/cov1(5,5));
+	      weight.SetXYZ(1./cov1(3,3),1/cov1(4,4),1/cov1(5,5));
+	      t0=track1_kd.t0();
+	      double t0_err=track1_kd.t0_err();
+	      t0_weight=1./(t0_err*t0_err);
+	    }
+	    groups.push_back(vertex_t(trackbits,avg_pos,weight,t0,t0_weight));
+	  }
+	  // Cut out groups that contain tracks that are members of other groups
+	  vector<unsigned int>groups_to_cut;
+	  if (groups.size()>1){
+	    for (unsigned int i=0;i<groups.size()-1;i++){
+	      for (unsigned int j=i+1;j<groups.size();j++){ 
+		if (groups[i].trackbits&groups[j].trackbits){
+		  groups[i].trackbits|=groups[j].trackbits;
+		  groups_to_cut.push_back(j);
+		}
+	      }
+	    }	 
+	  }
+	  vector<vertex_t> groups_to_keep;
+	  for (unsigned int i=0;i<groups.size();i++){
+	    bool use_group=true;
+	    for (unsigned int j=0;j<groups_to_cut.size();j++){
+	      if (i==groups_to_cut[j]) use_group=false;
+	    }
+	    if (use_group) groups_to_keep.push_back(groups[i]);
+	  }
+	  unsigned int all_used_tracks=0; // Keep track of all grouped tracks
+	  for (unsigned int i=0;i<groups_to_keep.size();i++){
+	    all_used_tracks|=groups_to_keep[i].trackbits;
+
+	    DVertex *locVertex = new DVertex;
+
+	    double weight_x=groups_to_keep[i].weight.x();
+	    double weight_y=groups_to_keep[i].weight.y();
+	    double weight_z=groups_to_keep[i].weight.z();
+	    
+	    // Vertex position
+	    locVertex->dSpacetimeVertex.SetX(groups_to_keep[i].pos.x()/weight_x);
+	    locVertex->dSpacetimeVertex.SetY(groups_to_keep[i].pos.y()/weight_y);
+	    locVertex->dSpacetimeVertex.SetZ(groups_to_keep[i].pos.z()/weight_z);
+
+	    // Covariance matrix for vertex position
+	    locVertex->locCovarianceMatrix.ResizeTo(3,3);
+	    locVertex->locCovarianceMatrix(0,0)=1./weight_x;
+	    locVertex->locCovarianceMatrix(1,1)=1./weight_y;
+	    locVertex->locCovarianceMatrix(2,2)=1./weight_z;
+	    
+	    // Vertex time
+	    // T=0 corresponds to the center of the target, so correct the average t0 accordingly
+	    double t0=groups_to_keep[i].t0/groups_to_keep[i].t0_weight
+	      +(dTargetCenter_Z-locVertex->dSpacetimeVertex.Z())/SPEED_OF_LIGHT;
+	    locVertex->dSpacetimeVertex.SetT(t0);
+	    double var_t0=1./groups_to_keep[i].t0_weight+1./(weight_z*SPEED_OF_LIGHT*SPEED_OF_LIGHT);
+	    locVertex->dTimeUncertainty=sqrt(var_t0);
+
+	    for (unsigned int k=0;k<numTracks;k++){
+	      if ((0x1u<<k)&groups_to_keep[i].trackbits){
+		locVertex->dChargedTracks.push_back(locChargedTracks[k]);
+	      }
+	    }
+
+	    _data.push_back(locVertex);
+	  }
+	  // Add single tracks unmatched to other tracks to the vertex list
+	  if ((all_used_tracks & (0x1u<<last_index)) == 0){
+	    const DChargedTrackHypothesis *locTrack=locChargedTracks[last_index]->dChargedTrackHypotheses[0];
+
+	    DVertex *locVertex = new DVertex;
+	    locVertex->locCovarianceMatrix.ResizeTo(3,3);
+	    locVertex->dSpacetimeVertex.SetVect(locTrack->position());
+	    locVertex->dSpacetimeVertex.SetT(locTrack->t0());
+	    locVertex->dTimeUncertainty=locTrack->t0_err();
+	    locVertex->dChargedTracks.push_back(locChargedTracks[0]);
+	    
+	    _data.push_back(locVertex);
+	    
+
+	  }
+
+	}
+	  
+#else
 	// To minimize memory usage and time in allocation, we maintain a
 	// pool of vertexInfo_t objects. Make sure the pool is large enough to hold
 	// all of the particles we have in this event. 
+	unsigned int loc_i;
 	for(loc_i = dVertexInfoPool.size(); loc_i < locChargedTracks.size(); loc_i++){
 		vertexInfo_t *locVertexInfo = new vertexInfo_t();
 		locVertexInfo->SetLimits(tmin, tmax, zmin, zmax, Nbinst, Nbinsz);
@@ -101,6 +268,8 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// Make list of vertices
 	MakeVertices(locChargedTracks);
+#endif
+
 
 	// If no vertices but neutral showers present, create vertex at center of target
 	if(_data.size() == 0){
