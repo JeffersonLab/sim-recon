@@ -73,7 +73,9 @@ typedef enum {
   AntiKStar_892_0 = 68,
 
   K1_1400_Plus = 69,
-  K1_1400_Minus = 70
+  K1_1400_Minus = 70,
+
+  b1_1235_Plus = 71
 
 } Particle_t;
 
@@ -224,6 +226,9 @@ inline static char *ParticleType(Particle_t p)
     break;
   case K1_1400_Minus:
     strcpy(ret,"K1(1400)-");
+    break;
+  case b1_1235_Plus:
+    strcpy(ret,"b1(1235)+");
     break;
   default:
     sprintf(ret,"type(%d)",(int)p);
@@ -452,6 +457,9 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case K1_1400_Minus:
     strcpy(ret, "#it{K}_{1}(1400)^{-}");
     break;
+  case b1_1235_Plus:
+    strcpy(ret, "#it{b}_{1}(1235)^{+}");
+    break;
   default:
     strcpy(ret, "X");
     break;
@@ -514,6 +522,7 @@ inline static double ParticleMass(Particle_t p)
   case AntiKStar_892_0: return 0.89594;
   case K1_1400_Plus: return 1.403;
   case K1_1400_Minus: return 1.403;
+  case b1_1235_Plus: return 1.2295;
   }
 }
 
@@ -572,6 +581,7 @@ inline static int ParticleCharge(Particle_t p)
   case AntiKStar_892_0: return  0;
   case K1_1400_Plus: return  1;
   case K1_1400_Minus: return -1;
+  case b1_1235_Plus: return 1;
   }
 }
 
@@ -626,6 +636,7 @@ inline static int PDGtype(Particle_t p)
   case KStar_892_Minus: return -323;
   case K1_1400_Plus: return  20323;
   case K1_1400_Minus: return  -20323;
+  case b1_1235_Plus: return  10213;
   default:		return  0;
   }
 }
