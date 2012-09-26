@@ -42,9 +42,9 @@ class DNeutralShower : public jana::JObject
 			dCovarianceMatrix.ResizeTo(5, 5);
 			dCovarianceMatrix(0, 0) = locEnergyUncertainty*locEnergyUncertainty;
 			dCovarianceMatrix(1, 1) = locBCALShower->xErr*locBCALShower->xErr;
-			dCovarianceMatrix(2, 2) = locBCALShower->xErr*locBCALShower->yErr;
-			dCovarianceMatrix(3, 3) = locBCALShower->xErr*locBCALShower->zErr;
-			dCovarianceMatrix(4, 4) = locBCALShower->xErr*locBCALShower->tErr;
+			dCovarianceMatrix(2, 2) = locBCALShower->yErr*locBCALShower->yErr;
+			dCovarianceMatrix(3, 3) = locBCALShower->zErr*locBCALShower->zErr;
+			dCovarianceMatrix(4, 4) = locBCALShower->tErr*locBCALShower->tErr;
 			//NEED CORRELATIONS!
 		}
 
