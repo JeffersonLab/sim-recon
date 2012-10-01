@@ -78,8 +78,8 @@ extern "C" {
 
 // Use the following to switch on and off the single hit
 // and full spectra methods of writing out the BCAL info.
-#define WRITE_OUT_BCAL_CELL_HITS 1
-#define WRITE_OUT_BCAL_TIME_SPECTRA 0
+#define WRITE_OUT_BCAL_CELL_HITS 0
+#define WRITE_OUT_BCAL_TIME_SPECTRA 1
 
 
 extern float BGGATE1;
