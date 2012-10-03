@@ -4,6 +4,9 @@
 // DEventSourceHDDM
 //
 /// Implements JEventSource for HDDM files
+//
+// Changes:	Oct 3, 2012 Yi Qiang: add classes for Cerenkov detector
+//
 
 #ifndef _JEVENT_SOURCEHDDM_H_
 #define _JEVENT_SOURCEHDDM_H_
@@ -44,6 +47,9 @@ using namespace std;
 #include <PID/DBeamPhoton.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <TAGGER/DTagger.h>
+// load CERE headers, yqiang Oct 3, 2012
+#include <CERE/DCereTruth.h>
+#include <CERE/DCereRichHit.h>
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -96,6 +102,10 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DTagger( s_HDDM_t *hddm_s,  JFactory<DTagger>* factory);
 
 		Particle_t IDTrack(float locCharge, float locMass) const;
+
+		// add RICH hit and Truth, yqiang Oct 3, 2012
+		jerror_t Extract_DCereTruth(s_HDDM_t *hddm_s, JFactory<DCereTruth> *factory);
+		jerror_t Extract_DCereRichHit(s_HDDM_t *hddm_s, JFactory<DCereRichHit> *factory);
 
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;

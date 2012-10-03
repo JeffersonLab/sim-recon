@@ -10,6 +10,8 @@
 * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
 *          add ipart to the function calls hitxxxxxxx() 
 *
+*          Oct 3, 2012 Yi Qiang: add RICH sensitive area: RAWN RDCD
+*
 
 #include "geant321/gckine.inc"
 #include "geant321/gcvolu.inc"
@@ -195,15 +197,27 @@ C  If no hit is being recorded then nothing to do
           call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
+* modified hitCerenkov to have RICH flat, yqiang Oct 3, 2012
       elseif (cnames(NLEVEL).eq.'CERW') then  ! Cerenkov truth
         if (dEsum.gt.0) then
           call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
-     >          IPART)
+     >          IPART,0)
         endif
       elseif (cnames(NLEVEL).eq.'CPPC') then  ! Cerenkov counter
         if ((dEsum.gt.0).and.(IPART.eq.50)) then
           call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY,
-     >          IPART)
+     >          IPART,0)
+        endif
+* add RICH sensitive volumes, yqiang Oct 3, 2012
+      elseif (cnames(NLEVEL).eq.'RAWN') then ! RICH window: truth
+        if (dEsum.gt.0) then
+          call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART,1)
+        endif
+      elseif (cnames(NLEVEL).eq.'RDCD') then ! RICH Cathode: counter
+        if ((dEsum.gt.0).and.(IPART.eq.50)) then
+          call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART,1)
         endif
       elseif ((cnames(NLEVEL).eq.'FTOC').or.  ! forward TOF counter
      +        (cnames(NLEVEL).eq.'FTOH')) then

@@ -3,7 +3,7 @@
 //    File: DFactoryGenerator.cc
 // Created: Mon Jul  3 21:46:40 EDT 2006
 // Creator: davidl (on Darwin Harriet.local 8.6.0 powerpc)
-//
+// Modified:	Oct 3, 2012, Yi Qiang: add CERE
 
 #include "DFactoryGenerator.h"
 
@@ -18,6 +18,7 @@ extern jerror_t TOF_init(JEventLoop *loop);
 extern jerror_t TRACKING_init(JEventLoop *loop);
 extern jerror_t PID_init(JEventLoop *loop);
 extern jerror_t HDEVIO_init(JEventLoop *loop);
+extern jerror_t CERE_init(JEventLoop *loop);
 
 //---------------------------------
 // DFactoryGenerator    (Constructor)
@@ -51,6 +52,7 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 	TRACKING_init(loop);
 	PID_init(loop);
 	//HDEVIO_init(loop);
+	CERE_init(loop);
 	
 	return NOERROR;
 }

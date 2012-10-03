@@ -6,6 +6,8 @@
 //          modify TOF section to add several new variables incuding the 
 //          GEANT particle type to the Truth hits and the hit and track-hit list.
 //
+//			Oct 3, 2012 Yi Qiang: add/modify functions for Cerenkov detector
+//
 // DEventSourceHDDM methods
 //
 
@@ -271,6 +273,12 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 
 	if(dataClassName =="DTrackTimeBased" && tag=="")
 	  return Extract_DTrackTimeBased(my_hddm_s, dynamic_cast<JFactory<DTrackTimeBased>*>(factory), event.GetRunNumber());
+
+	// extract CereTruth and CereRichHit hits, yqiang Oct 3, 2012
+	if(dataClassName =="DCereTruth" && tag=="")
+		return Extract_DCereTruth(my_hddm_s, dynamic_cast<JFactory<DCereTruth>*>(factory));
+	if(dataClassName =="DCereRichHit" && tag=="")
+		return Extract_DCereRichHit(my_hddm_s, dynamic_cast<JFactory<DCereRichHit>*>(factory));
 
 	return OBJECT_NOT_AVAILABLE;
 }
@@ -2266,4 +2274,100 @@ Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
 		if (fabs(locMass - ParticleMass(Neutron)) < locMassTolerance) return Neutron;
 	}
 	return Unknown;
+}
+
+//------------------
+// Extract_DCereTruth
+// added by yqiang Oct 3, 2012
+//------------------
+jerror_t DEventSourceHDDM::Extract_DCereTruth(s_HDDM_t *hddm_s,  JFactory<DCereTruth>* factory)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+  vector<DCereTruth*> data;
+
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->Cerenkov == HDDM_NULL)continue;
+
+		s_CereTruthPoints_t* ceretruthpoints = hits->Cerenkov->cereTruthPoints;
+		if(ceretruthpoints==HDDM_NULL) continue;
+
+		// Loop over Cerenkov hits
+		s_CereTruthPoint_t *ceretruthpoint = ceretruthpoints->in;
+		for(unsigned int j=0; j<ceretruthpoints->mult; j++, ceretruthpoint++){
+
+			DCereTruth *hit = new DCereTruth;
+			hit->ptype = ceretruthpoint->ptype;
+			hit->track = ceretruthpoint->track;
+			hit->primary = ceretruthpoint->primary;
+			hit->x = ceretruthpoint->x;
+			hit->y = ceretruthpoint->y;
+			hit->z = ceretruthpoint->z;
+			hit->t = ceretruthpoint->t;
+			hit->px = ceretruthpoint->px;
+			hit->py = ceretruthpoint->py;
+			hit->pz = ceretruthpoint->pz;
+
+			data.push_back(hit);
+		}
+	}
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+}
+
+//------------------
+// Extract_DCereRichHit
+// added by yqiang Oct 3, 2012
+//------------------
+jerror_t DEventSourceHDDM::Extract_DCereRichHit(s_HDDM_t *hddm_s,  JFactory<DCereRichHit>* factory)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+  vector<DCereRichHit*> data;
+
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->Cerenkov == HDDM_NULL)continue;
+
+		s_CereRichHits_t* cererichhits = hits->Cerenkov->cereRichHits;
+		if(cererichhits==HDDM_NULL) continue;
+
+		// Loop over Cerenkov RICH hits
+		s_CereRichHit_t *cererichhit = cererichhits->in;
+		for(unsigned int j=0; j<cererichhits->mult; j++, cererichhit++){
+
+			DCereRichHit *hit = new DCereRichHit;
+			hit->x = cererichhit->x;
+			hit->y = cererichhit->y;
+			hit->z = cererichhit->z;
+			hit->t = cererichhit->t;
+
+			data.push_back(hit);
+		}
+	}
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
 }
