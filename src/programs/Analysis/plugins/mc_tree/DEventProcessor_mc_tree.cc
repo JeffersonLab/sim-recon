@@ -232,12 +232,12 @@ jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *loop,
 		default:
 			break;
 		}
-		/*
-		 * add RICH hits to MC particle set (for now), yqiang
-		 */
-		for (unsigned int j = 0; j < cererichhits.size(); j++)
-			thr.richhits.push_back(MakeRichHit((DCereRichHit*) cererichhits[j]));
 	}
+	/*
+	 * add RICH hits to MC particle set (for now), yqiang
+	 */
+	for (unsigned int j = 0; j < cererichhits.size(); j++)
+		thr.richhits.push_back(MakeRichHit((DCereRichHit*) cererichhits[j]));
 
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
