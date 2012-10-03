@@ -1,5 +1,6 @@
 #include <ctime>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <cassert>
 #include <iostream>
