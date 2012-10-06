@@ -94,15 +94,25 @@ double fdc_drift_variance(double t){
 double DTrackFitterKalmanSIMD::cdc_variance(double B,double tanl,double t){ 
   //return CDC_VARIANCE;
   if (t<0.0) t=0.0;
-  double sigma=0.127/(t+1.96)+4.66e-3+4.67e-6*t;
-  sigma*=0.76*(1-0.0513*tanl-0.133*tanl*tanl+0.09*tanl*tanl*tanl);
+  double tanl2=tanl*tanl;
+  double sigma=0.25/(t+10.)
+    +6.7e-3*(1.+0.287*tanl2)+4.0e-6*t*(1.+0.267*tanl2)
+    +9.3e-9*t*t*(1.-0.47*tanl2);
+  sigma*=0.56;
+
   return sigma*sigma;
 }
 
 double DTrackFitterKalmanSIMD::cdc_forward_variance(double B,double tanl,double t){
   if (t<0.0) t=0.0;
-  double sigma=0.127/(t+1.96)+4.66e-3+4.67e-6*t;
-  sigma*=0.75*(1.125-0.05*tanl);
+  double tanl2=tanl*tanl;
+  double sigma=0.25/(t+10.)
+    + 6.43e-3*(1.+0.076*tanl2)
+    +(2.24e-6+8.20e-6*tanl-2.25e-6*tanl2)*t
+    +(1.31e-8-1.85e-8*tanl+4.19e-9*tanl2)*t*t;
+
+  sigma*=0.56;
+
   return sigma*sigma;
 }
 
@@ -154,6 +164,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   endplate_r2min=endplate_rmin*endplate_rmin;
   endplate_r2max=endplate_rmax*endplate_rmax;
 
+  // center of the target
+  geom->GetTargetZ(TARGET_Z);
+
   // Beginning of the cdc
   vector<double>cdc_center;
   vector<double>cdc_upstream_endplate_pos; 
@@ -165,6 +178,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   cdc_origin[2]+=cdc_center[2]+cdc_upstream_endplate_pos[2]
     +0.5*cdc_endplate_dim[2];
 
+  ADD_VERTEX_POINT=false; 
+  gPARMS->SetDefaultParameter("KALMAN:ADD_VERTEX_POINT", ADD_VERTEX_POINT);
+  
   DEBUG_HISTS=false; 
   gPARMS->SetDefaultParameter("KALMAN:DEBUG_HISTS", DEBUG_HISTS);
 
@@ -258,8 +274,8 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
     cdc_res=(TH2F*)gROOT->FindObject("cdc_res");
     if (!cdc_res){
-      cdc_res=new TH2F("cdc_res","cdc #deltad vs time",200,-20,780,
-			 100,-0.1,0.1);
+      cdc_res=new TH2F("cdc_res","cdc #deltad vs time",100,-20,780,
+			 50,-0.1,0.1);
     }     
     cdc_res_vs_tanl=(TH2F*)gROOT->FindObject("cdc_res_vs_tanl");
     if (!cdc_res_vs_tanl){
@@ -401,8 +417,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 Bz=-2.;
 	 dBxdx=0.,dBxdy=0.,dBxdz=0.,dBydx=0.,dBydy=0.,dBydy=0.,dBzdx=0.,dBzdy=0.,dBzdz=0.;
 	 // Step sizes
-	 mStepSizeS=1.0;
-	 mStepSizeZ=1.0;
+	 mStepSizeS=2.0;
+	 mStepSizeZ=2.0;
 	 //mStepSizeZ=0.5;
 	 /*
 	 if (fit_type==kTimeBased){
@@ -802,7 +818,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
 
   // Continue adding to the trajectory until we have reached the endplate
   // or the maximum radius
-  while(z<endplate_z &&
+  while(z<endplate_z && z>cdc_origin[2] &&
 	r2<r2max && fabs(S(state_q_over_p))<Q_OVER_P_MAX){
     if (PropagateForwardCDC(forward_traj_length,i,z,r2,S,stepped_to_boundary)
 	!=NOERROR) return UNRECOVERABLE_ERROR;
@@ -2046,10 +2062,10 @@ jerror_t DTrackFitterKalmanSIMD::ConvertStateVectorAndCovariance(double z,
   // Copy over to the class variables
   x_=S(state_x), y_=S(state_y);
   tx_=S(state_tx),ty_=S(state_ty);
-  q_over_p_=S(state_q_over_p);
   double tsquare=tx_*tx_+ty_*ty_;
   double tanl=1./sqrt(tsquare);
   double cosl=cos(atan(tanl));
+  q_over_p_=S(state_q_over_p);
   Sc(state_q_over_pt)=q_over_p_/cosl;
   Sc(state_phi)=atan2(ty_,tx_);
   Sc(state_tanl)=tanl;
@@ -2996,7 +3012,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   if (my_cdchits.size()>5){
     kalman_error_t error=FIT_NOT_DONE;
     kalman_error_t cdc_error=FIT_NOT_DONE;
-
+  
     // Chi-squared, degrees of freedom, and probability
     double forward_prob=0.;
     double chisq_forward=MAX_CHI2;
@@ -3010,6 +3026,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       if (DEBUG_LEVEL>0){
 	_DBG_ << "Using forward parameterization." <<endl;
       }
+
+      // Step size
+      mStepSizeS=1.0;
+      mStepSizeZ=1.0;
 
       // Initialize the state vector
       S0(state_x)=x_;
@@ -3031,10 +3051,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       if (fit_type==kWireBased) ExtrapolateToVertex(S0);
 
       error=ForwardCDCFit(S0,C0);
+
       if (error==FIT_SUCCEEDED){
 	// Find the CL of the fit
 	forward_prob=TMath::Prob(chisq_,ndf_);
-	if (forward_prob<0.01){
+	if (forward_prob<0.001){
 	  // Save the best values for the parameters and chi2 for now
 	  chisq_forward=chisq_;
 	  ndof_forward=ndf_;
@@ -3059,6 +3080,9 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     if (DEBUG_LEVEL>0){
       _DBG_ << "Using central parameterization." <<endl;
     }
+
+    // Step size
+    mStepSizeS=0.5;
 
     // Initialize the state vector
     S0(state_q_over_pt)=q_over_pt_;
@@ -3256,7 +3280,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
     if (is_stereo) wirepos=origin+(pos.z()-z0wire)*dir;
     double fu=(pos-wirepos).Perp2();
 
-    //printf("Brent: z %f d %f\n",pos.z(),fu);
+    //_DBG_ << "Brent: z="<<pos.z() << " d^2="<<fu << endl;
     
     if (fu<=fx){
       if (u>=x) a=x; else b=x;
@@ -3359,7 +3383,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
     pos.SetXYZ(S(state_x),S(state_y),z+u);
     double fu=(pos-wirepos).Perp2();
 
-    //printf("z %f fu %f\n",z+u,fu);
+    // _DBG_ << "Brent: z="<< z+u << " d^2="<<fu << endl;
 
     if (fu<=fx){
       if (u>=x) a=x; else b=x;
@@ -3424,6 +3448,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   //  unsigned int cdc_index=my_cdchits.size()-1;
   unsigned int cdc_index=break_point_cdc_index;
   
+  if (cdc_index<MIN_HITS_FOR_REFIT) chi2cut=1000.0;
   
   bool is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
 
@@ -3595,7 +3620,30 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  ds2=BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,pos,origin,dir,Sc,
 			      is_stereo);
 
-	  if (fabs(ds2)>2.*mStepSizeS-EPS3){
+	  if (fabs(ds2)<EPS3){
+	    // whoops, looks like we didn't actually bracket the minimum 
+	    // after all.  Swim to make sure we pass the minimum doca.
+	    double my_ds=ds2;
+	    
+	    // doca
+	    old_doca2=doca2;
+
+	    // Step through the field
+	    FixedStep(pos,mStepSizeS,Sc,dedx);
+
+	    if (is_stereo) wirepos=origin+(Sc(state_z)-z0w)*dir;
+	    doca2=(pos-wirepos).Perp2();
+	   
+	    ds2=my_ds+mStepSizeS;
+	    if (doca2>old_doca2){
+	      // Swim to the "true" doca
+	      double ds3=BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,pos,origin,
+					 dir,Sc,is_stereo);
+	      ds2+=ds3;
+	    }
+	   
+	  }
+	  else if (fabs(ds2)>2.*mStepSizeS-EPS3){
 	    // whoops, looks like we didn't actually bracket the minimum 
 	    // after all.  Swim to make sure we pass the minimum doca.
 	    double my_ds=ds2;
@@ -4563,6 +4611,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
   // wire information  
   unsigned int cdc_index=my_cdchits.size()-1;
+    
+  if (cdc_index<MIN_HITS_FOR_REFIT) chi2cut=100.0;
 
   bool is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
 
@@ -4727,7 +4777,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	  // We have bracketed the minimum doca:  use Brent's agorithm
 	  dz=BrentsAlgorithm(z,-mStepSizeZ,dedx,origin,dir,S,is_stereo);
 	  newz=z+dz;
-
+	  
 	  if (fabs(dz)>2.*mStepSizeZ-EPS3){
 	    // whoops, looks like we didn't actually bracket the minimum after
 	    // all.  Swim to make sure we pass the minimum doca.
@@ -6372,6 +6422,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
   unsigned int last_ndf=1;
   // last z position
   double zlast=0.;
+  //  unsigned int last_break_point_index=0,last_break_point_step_index=0;
   
   // Iterate over reference trajectories
   for (int iter2=0;
@@ -6413,7 +6464,9 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       
       // perform the filter 
       C=C0;
-      kalman_error_t error=KalmanForwardCDC(anneal_factor,S,C,chisq,my_ndf);	 
+      kalman_error_t error=KalmanForwardCDC(anneal_factor,S,C,chisq,my_ndf); 
+
+      if (break_point_cdc_index>0 && DEBUG_LEVEL>1)      _DBG_ << "Break point index " << break_point_step_index << endl;
 
       // Try to recover tracks that failed the first attempt at fitting
       if (error!=FIT_SUCCEEDED && num_cdchits>=MIN_HITS_FOR_REFIT){
@@ -6719,8 +6772,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMa
 	  
 	  cdc_drift->Fill(tdrift,doca);
 	  cdc_time_vs_d->Fill(doca,tdrift);
-	  if (my_cdchits[m]->hit->wire->ring==1)
-	    cdc_res->Fill(tdrift,res);
+     
+	  cdc_res->Fill(tdrift,res);
 	  cdc_res_vs_tanl->Fill(last_cdc_updates[m].S(state_tanl),res);
 	  cdc_res_vs_dE->Fill(my_cdchits[m]->hit->dE,res);
 	  cdc_res_vs_B->Fill(B,res);

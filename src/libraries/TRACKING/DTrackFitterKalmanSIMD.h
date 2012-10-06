@@ -441,6 +441,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double FDC_CATHODE_SIGMA;
   bool RECOVER_BROKEN_TRACKS;
   bool FORWARD_PARMS_COV;
+  double TARGET_Z;
+  bool ADD_VERTEX_POINT;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;

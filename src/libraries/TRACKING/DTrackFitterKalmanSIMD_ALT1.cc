@@ -63,6 +63,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   bool more_cdc_measurements=(num_cdc_hits>0);
   double old_doca2=1e6;
 
+  if (num_fdc_hits+num_cdc_hits<MIN_HITS_FOR_REFIT){
+    cdc_chi2cut=1000.0;
+    fdc_chi2cut=1000.0;
+  }
+
   if (more_cdc_measurements){
     origin=my_cdchits[cdc_index]->hit->wire->origin;
     z0w=origin.z();
@@ -596,7 +601,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // variance
 	    double tx=S(state_tx),ty=S(state_ty);
 	    double tanl=1./sqrt(tx*tx+ty*ty);
-	    Vc=cdc_forward_variance(B,tanl,tdrift);	  
+	    Vc=cdc_forward_variance(B,tanl,tdrift);
 	    double temp=1./(1131.+2.*140.7*dm);
 	    Vc+=mVarT0*temp*temp;
 	  }
@@ -665,7 +670,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      cdc_updates[cdc_index].variance=Vc*scale;
 	      cdc_updates[cdc_index].used_in_fit=true;
 	    
-	      // Update chi2 for this segment
+	      // Update chi2 for this hit
 	      chisq+=scale*res*res/Vc;
 
 	      if (DEBUG_LEVEL>2)
@@ -674,6 +679,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		     << " is stereo? " << is_stereo
 		     << " Pred " << d << " Meas " << dm
 		     << " Sigma meas " << sqrt(Vc)
+		     << " t " << tdrift
 		     << " Chi2 " << (1.-H*K)*res*res/Vc << endl;
 	      
 	      // update number of degrees of freedom
@@ -745,6 +751,79 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
       old_doca2=doca2;
     }
   }
+  // Save final z position
+  z_=forward_traj[forward_traj.size()-1].pos.Z();
+
+  // The following code segment addes a fake point at a well-defined z position
+  // that would correspond to a thin foil target.  It should not be turned on
+  // for an extended target.
+  if (ADD_VERTEX_POINT){
+    double dz_to_target=TARGET_Z-z_;
+    double my_dz=mStepSizeZ*(dz_to_target>0?1.:-1.);
+    int num_steps=int(fabs(dz_to_target/my_dz));
+
+    for (int k=0;k<num_steps;k++){
+      double newz=z_+my_dz;
+      // Step C along z
+      StepJacobian(z_,newz,S,0.,J);
+      
+      //C=J*C*J.Transpose();
+      C=C.SandwichMultiply(J);
+      
+      // Step S along z
+      Step(z_,newz,0.,S);
+      
+      z_=newz;
+    }
+
+    // Step C along z
+    StepJacobian(z_,TARGET_Z,S,0.,J);
+    
+    //C=J*C*J.Transpose();
+    C=C.SandwichMultiply(J);
+    
+    // Step S along z
+    Step(z_,TARGET_Z,0.,S);
+    
+    z_=TARGET_Z;
+
+    // predicted doca taking into account the orientation of the wire
+    double dy=S(state_y);
+    double dx=S(state_x);      
+    double d=sqrt(dx*dx+dy*dy);
+    
+    // Track projection
+    double one_over_d=1./d;
+    H_T(state_x)=dx*one_over_d; 
+    H(state_x)=H_T(state_x);
+    H_T(state_y)=dy*one_over_d;	  
+    H(state_y)=H_T(state_y);
+  	  
+    // Variance of target point
+    Vc=0.01;
+
+    // inverse variance including prediction
+    //double InvV1=1./(Vc+H*(C*H_T));
+    double InvV1=1./(Vc+C.SandwichMultiply(H_T));
+    if (InvV1<0.){
+      if (DEBUG_LEVEL>0)
+	_DBG_ << "Negative variance???" << endl;
+      return NEGATIVE_VARIANCE;
+    }
+    // Compute KalmanSIMD gain matrix
+    K=InvV1*(C*H_T);
+    
+    // Update the state vector with the target point
+    double res=-d;
+    S+=res*K;  
+    // Update state vector covariance matrix
+    //C=C-K*(H*C);    
+    C=C.SubSym(K*(H*C));
+    
+    // Update chi2 for this segment
+    chisq+=(1.-H*K)*res*res/Vc;
+    numdof++;
+  }
   
   // Check that there were enough hits to make this a valid fit
   if (numdof<6){
@@ -757,10 +836,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   //  chisq*=anneal_factor;
   numdof-=5;
 
-  // Final position for this leg
+  // Final positions in x and y for this leg
   x_=S(state_x);
   y_=S(state_y);
-  z_=forward_traj[forward_traj.size()-1].pos.Z();
 
   if (DEBUG_LEVEL>0){
     cout << "Position after forward filter: " << x_ << ", " << y_ << ", " << z_ <<endl;
