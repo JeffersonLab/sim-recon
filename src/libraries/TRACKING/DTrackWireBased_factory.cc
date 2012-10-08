@@ -118,8 +118,15 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
   
   if (SKIP_MASS_HYPOTHESES_WIRE_BASED==false){
 
-	string MASS_HYPOTHESES_POSITIVE = "0.13957,0.493677,0.93827";
-	string MASS_HYPOTHESES_NEGATIVE = "0.13957,0.493677";
+	ostringstream locMassStream_Positive, locMassStream_Negative;
+	locMassStream_Positive << ParticleMass(PiPlus) << ", " << ParticleMass(KPlus) << ", " << ParticleMass(Proton);
+	locMassStream_Negative << ParticleMass(PiMinus) << ", " << ParticleMass(KMinus);
+	string MASS_HYPOTHESES_POSITIVE = locMassStream_Positive.str();
+	string MASS_HYPOTHESES_NEGATIVE = locMassStream_Negative.str();
+cout << "pos stream = " << MASS_HYPOTHESES_POSITIVE << endl;
+cout << "neg stream = " << MASS_HYPOTHESES_NEGATIVE << endl;
+//	string MASS_HYPOTHESES_POSITIVE = "0.13957,0.493677,0.93827";
+//	string MASS_HYPOTHESES_NEGATIVE = "0.13957,0.493677";
 	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
 	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_NEGATIVE", MASS_HYPOTHESES_NEGATIVE);
 
