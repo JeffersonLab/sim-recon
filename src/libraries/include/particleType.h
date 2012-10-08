@@ -425,7 +425,7 @@ inline static char* ParticleName_ROOT(Particle_t p)
     strcpy(ret, "#it{#rho}^{-}");
     break;
   case omega:
-    strcpy(ret, "#it{#Omega}");
+    strcpy(ret, "#it{#omega}");
     break;
   case EtaPrime:
     strcpy(ret, "#it{#eta'}");
