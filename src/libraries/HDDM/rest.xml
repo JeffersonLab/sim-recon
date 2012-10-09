@@ -41,9 +41,14 @@
               lunit="cm" dEdx_unit="GeV/cm"/>
     </chargedTrack>
     <startHit maxOccurs="unbounded" minOccurs="0" jtag="string"
-              sector="int" t="float" dE="float"/>
+              sector="int" t="float" dE="float"
+              tunit="ns" Eunit="GeV"/>
     <tofPoint maxOccurs="unbounded" minOccurs="0" jtag="string"
-              x="float" y="float" z="float" t="float" dE="float"/>
+              x="float" y="float" z="float" t="float" dE="float"
+              dEerr="float" xerr="float" yerr="float" zerr="float" terr="float"
+              dExcorr="float" dEycorr="float" dEtcorr="float"
+              xycorr="float" xtcorr="float" ytcorr="float"
+              lunit="cm" tunit="ns" Eunit="GeV"/>
     <RFtime minOccurs="0" jtag="string"
             tsync="float" tsyncerr="float" tunit="ns"/>
   </reconstructedPhysicsEvent>
