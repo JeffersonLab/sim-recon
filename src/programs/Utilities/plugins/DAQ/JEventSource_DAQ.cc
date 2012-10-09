@@ -5,10 +5,11 @@
 // Creator: davidl (on Darwin harriet.jlab.org 11.4.0 i386)
 //
 
+// See comments in JEventSource_DAQ.h for overview description
+
 
 #include "JEventSource_DAQ.h"
 using namespace jana;
-
 
 
 //----------------
@@ -58,7 +59,6 @@ jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
 	// If no events are currently stored in the buffer, then
 	// read in another event block.
 	if(stored_events.empty()){
-	
 		if(!chan->read())return NO_MORE_EVENTS_IN_SOURCE;
 	
 		evioDOMTree *evt = new evioDOMTree(chan);
@@ -66,6 +66,7 @@ jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
 		int32_t run_number = GetRunNumber(evt);
 		
 		ParseEVIOEvent(evt, run_number);
+
 		delete evt;
 	}
 
@@ -101,7 +102,7 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 	// This will get called when the first object of the event is
 	// requested (regardless of the type of object). Instead of
 	// pulling out objects only of the type requested, we instead
-	// parse the data for all objects and copy them into the respective
+	// take the data for all objects and copy them into the respective
 	// factories. Subsequent requests for objects for this same
 	// event will get them from the factories. Thus, this should
 	// only get called once per event.
@@ -136,7 +137,7 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 	if(fac_ ## T)fac_ ## T->CopyTo(objs_ptr->v ## T ## s); \
 	if(dataClassName == #T)err = NOERROR;
 	
-	jerror_t err = OBJECT_NOT_AVAILABLE; // one of the following my set this to NOERROR
+	jerror_t err = OBJECT_NOT_AVAILABLE; // one of the following may set this to NOERROR
 
 	CopyToFactory(Df250PulseIntegral);
 	CopyToFactory(Df250StreamingRawData);
@@ -350,7 +351,7 @@ void JEventSource_DAQ::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &ev
 	/// The contents of event2 will be erased before returning. Ownership of all
 	/// ObjList objects pointed to by event2 upon entry should be considered
 	/// owned by event1 upon return.
-	
+
 	// Check number of events and throw exception if appropriate
 	unsigned int Nevents1 = events1.size();
 	unsigned int Nevents2 = events2.size();
@@ -473,6 +474,13 @@ void JEventSource_DAQ::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 		if(bank_parsed) MergeObjLists(full_events, tmp_events);
 	}
 	
+	// It is possible that we get to this point and full_events is empty. This
+	// can happen for prestart and go events that are ignored. For these cases,
+	// we need to return at least one empty event so the source will continue
+	// to be read. Otherwise, it assumes all events have been read from the source
+	// and it is closed.
+	if(full_events.empty())full_events.push_back(new ObjList);
+	
 	// Set the run number for all events and copy them into the stored_events queue
 	list<ObjList*>::iterator evt_iter = full_events.begin();
 	for(; evt_iter!=full_events.end();  evt_iter++){
@@ -509,7 +517,8 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &event
 	int32_t Nwords_in_block;
 	
 	// From Event header
-	int32_t itrigger;
+	int32_t itrigger = -1;
+	int32_t last_itrigger = -2;
 	
 	// Loop over data words
 	const uint32_t *iptr = &(*vec)[0];
@@ -544,8 +553,11 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &event
 				break;
 			case 2: // Event Header
 				itrigger = (*iptr>>0) & 0x7FFFFFF;
-				if(objs) events.push_back(objs);
-				objs = new ObjList;
+				if( (itrigger!=last_itrigger) || (objs==NULL) ){
+					if(objs) events.push_back(objs);
+					objs = new ObjList;
+					last_itrigger = itrigger;
+				}
 				break;
 			case 3: // Trigger Time
 				t = ((*iptr)&0xFFFFFF)<<24;
