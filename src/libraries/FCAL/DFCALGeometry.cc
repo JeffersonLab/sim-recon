@@ -73,13 +73,13 @@ DFCALGeometry::isBlockActive( int row, int column ) const
 int
 DFCALGeometry::row( float y ) const 
 {	
-	return static_cast<int>( y / blockSize() + kMidBlock );
+	return static_cast<int>( y / blockSize() + kMidBlock + 0.5);
 }
 
 int
 DFCALGeometry::column( float x ) const 
 {	
-	return static_cast<int>( x / blockSize() + kMidBlock );
+	return static_cast<int>( x / blockSize() + kMidBlock + 0.5);
 }
 
 DVector2
