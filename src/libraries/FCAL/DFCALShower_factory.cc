@@ -193,9 +193,8 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 		DFCALShower* fcalShower = makeFcalShower( *clItr );
 
 		//Make a very loose timing cut here to eliminate out-of-time EM bkgd.
-		//Photon travels dist1 (from center of target to shower maximum
-		//position) at the speed of light and the remainder of the distance,
-		//dist2, to the back of the FCAL (where timing is measured) at c_eff.
+		//Photon travels from center of target to shower maximum
+		//position at the speed of light.
 		//This travel time is the expected_time. Since this time is only used
 		//to make a very loose timing cut, we can ignore other factors such as
 		//the fact that not all particles originate exactly at the center of
@@ -204,9 +203,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 		//position and time.
 		DVector3 pos = fcalShower->getPosition();
 		DVector3 vertex(0.0, 0.0, m_zTarget);
-		double dist1 = (pos-vertex).Mag();
-		double dist2 = DFCALGeometry::fcalFaceZ() + DFCALGeometry::blockLength() - pos.Z();
-		double expected_time = dist1/SPEED_OF_LIGHT + dist2/FCAL_C_EFFECTIVE;
+		double expected_time = (pos-vertex).Mag()/SPEED_OF_LIGHT;
 
 		if ( fcalShower->getEnergy() <= 0  ) {
 		  cout << "Deleting fcalShower " << endl;
@@ -249,7 +246,14 @@ DFCALShower* DFCALShower_factory::makeFcalShower( const DFCALCluster* cluster )
 	DVector3 pos_corrected;
 	GetCorrectedEnergyAndPosition( cluster , Ecorrected, pos_corrected, errZ, &target);
 		
-	
+	//up to this point, all times have been times at which light reaches
+	//the back of the detector. Here we correct for the time that it 
+	//takes the Cherenkov light to reach the back of the detector
+	//so that the t reported is roughly the time of the shower at the
+	//position pos_corrected	
+	const double FCALback = DFCALGeometry::fcalFaceZ()+DFCALGeometry::blockLength();
+	cTime -= ( FCALback - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
+
 	// Make the DFCALShower object
 	DFCALShower* shower = new DFCALShower;
 
