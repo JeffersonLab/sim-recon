@@ -89,12 +89,13 @@ jerror_t JEventProcessor_danarest::brun(JEventLoop *loop, int runnumber)
    fout->setCompression(hddm_r::k_bz2_compression);
 
    // write a comment record at the head of the file
+   hddm_r::HDDM record;
    hddm_r::ReconstructedPhysicsEventList res =
            record.addReconstructedPhysicsEvents(1);
    hddm_r::CommentList comment = res().addComments();
    comment().setText("this is a REST event stream, yadda yadda");
    *fout << record;
-   record.clear();
+   record.clear(); // is this needed?
 
    Nevents_written = 0;
    return NOERROR;
@@ -107,6 +108,7 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
 {
    // Write this event to the rest output stream.
 
+   hddm_r::HDDM record;
    hddm_r::ReconstructedPhysicsEventList res =
            record.addReconstructedPhysicsEvents(1);
 
@@ -306,7 +308,7 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
    *fout << record;
    Nevents_written++;
    pthread_mutex_unlock(&hddmMutex);
-   record.clear();
+   record.clear();  // is this needed?
 
    return NOERROR;
 }
