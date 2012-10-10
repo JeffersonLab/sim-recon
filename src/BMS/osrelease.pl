@@ -101,10 +101,6 @@ if ($uname eq 'Linux') {
 }
 
 
-# Set the processor type
-$processor = `uname -p`;
-chomp $processor;
-
 # Set the default compiler version number (may be overridden below)
 $ccversion = `cc -dumpversion`;
 chomp $ccversion;
@@ -127,9 +123,25 @@ if ($compiler_version_str =~ /\sgcc version\s/) {
 	$ccversion = $`;
 }
 
+
+# Set the processor type
+# We fall back to the type reported by uname -p, but only if we
+# can't get the type from the cc -v result. The reason is that on
+# Mac OS X, uname -p will report "i386" even though the system
+# is x86_64 and the compiler builds 64-bit executables.
+$processor = `uname -p`;
+chomp $processor;
+if ( $compiler_version_str =~ /Target: x86_64/ ){
+	$processor = "x86_64";
+}elsif ( $compiler_version_str =~ /Target: i686-apple-darwin/ ){
+	# stubborn Apple still tries to report i686 even for gcc
+	# compiler that produces x86_64 executables!!
+	$processor = "x86_64";
+}
+
 # If the compiler_version variable is not set, use the gcc version
 if ($compiler_version eq '') {
-	$compiler_version = "gcc${ccversion}";
+	$compiler_version = "${compiler_type}${ccversion}";
 }
 
 # If the processor variable is set to "unknown" (Ubuntu systems)
