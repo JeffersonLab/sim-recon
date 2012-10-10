@@ -43,6 +43,7 @@ DBCALShower_factory::DBCALShower_factory(){
     m_nonlinZ_p1 =  9.69207e-05;
     m_nonlinZ_p2 =  0;    
     m_nonlinZ_p3 =  0;
+
   }
 }
 
@@ -72,9 +73,18 @@ DBCALShower_factory::evnt( JEventLoop *loop, int eventnumber ){
     shower->x = rho * sinTh * cosPhi;
     shower->y = rho * sinTh * sinPhi;
     shower->z = rho * cosTh + m_zTarget;
-    shower->t = (**clItr).t();
+
+    //DBCALCluster::t() returns the time at the inner radius
+    //so we need to make an adjustment so that the shower t is the time at
+    //the shower location (x,y,z)
+    double t = (**clItr).t();
+    double inner_rad = DBCALGeometry::BCALINNERRAD;
+    t = t * sqrt( shower->x*shower->x + shower->y*shower->y )/inner_rad;
+    shower->t = t;
+
     shower->N_cell = (**clItr).nCells();
     
+    //create matrices to rotate errors from cylindrical coordinates to Cartesian coordinates
     float dx_drho = sinTh * cosPhi;
     float dy_drho = sinTh * sinPhi;
     float dz_drho = cosTh;
@@ -84,22 +94,41 @@ DBCALShower_factory::evnt( JEventLoop *loop, int eventnumber ){
     float dx_dphi = -rho * sinTh * sinPhi;
     float dy_dphi = rho * sinTh * cosPhi;
     float dz_dphi = 0;
+
+    DMatrix rotation(3,3);
+    DMatrix rotationT(3,3);
+
+    rotation[0][0] = dx_drho;
+    rotation[0][1] = dy_drho;
+    rotation[0][2] = dz_drho;
+    rotation[1][0] = dx_dth;
+    rotation[1][1] = dy_dth;
+    rotation[1][2] = dz_dth;
+    rotation[2][0] = dx_dphi;
+    rotation[2][1] = dy_dphi;
+    rotation[2][2] = dz_dphi;
+
+    rotationT.Transpose(rotation);
     
+    //create covariance matrix in cylindrical coordinates
+    //for now assume that these measurements are independent (uncorrelated)
+    //will need to think harder to add correlations
     float drho = (**clItr).sigRho();
     float dphi = (**clItr).sigPhi();
     float dth = (**clItr).sigTheta();
+    DMatrix errors(3,3);
+    errors[0][0] = drho*drho;
+    errors[1][1] = dth*dth;
+    errors[2][2] = dphi*dphi;
+
+    //do the rotation
+    shower->xyzCovariance.ResizeTo(3,3);
+    shower->xyzCovariance = rotationT*errors*rotation;
     
-    shower->xErr = sqrt( drho * drho * dx_drho * dx_drho + 
-                         dphi * dphi * dx_dphi * dx_dphi +
-                         dth * dth * dx_dth * dx_dth );
-
-    shower->yErr = sqrt( drho * drho * dy_drho * dy_drho + 
-                         dphi * dphi * dy_dphi * dy_dphi +
-                         dth * dth * dy_dth * dy_dth );
-
-    shower->zErr = sqrt( drho * drho * dz_drho * dz_drho + 
-                         dphi * dphi * dz_dphi * dz_dphi +
-                         dth * dth * dz_dth * dz_dth );
+    //fill (redundant) x/y/zErr members
+    shower->xErr = sqrt(shower->xyzCovariance[0][0]);
+    shower->yErr = sqrt(shower->xyzCovariance[1][1]);
+    shower->zErr = sqrt(shower->xyzCovariance[2][2]);
     
     shower->tErr = (**clItr).sigT();
     

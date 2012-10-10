@@ -245,6 +245,12 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
 
         shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
 
+        //copy xyz errors into covariance matrix
+        shower->xyzCovariance.ResizeTo(3,3);
+        shower->xyzCovariance[0][0] = shower->xErr*shower->xErr;
+        shower->xyzCovariance[1][1] = shower->yErr*shower->yErr;
+        shower->xyzCovariance[2][2] = shower->zErr*shower->zErr;
+
 	// Trace back to the DBCALHit objects used in this shower and
 	// add them as associated objects.
 	vector<const DBCALHit*> hitsInShower;
