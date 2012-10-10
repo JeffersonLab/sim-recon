@@ -18,7 +18,7 @@ const DChargedTrackHypothesis* DChargedTrack::Get_BestFOM(void) const
 	if(dChargedTrackHypotheses.empty())
 		return NULL;
 	double locBestFOM = -2.0;
-	const DChargedTrackHypothesis* locBestChargedTrackHypothesis = NULL;
+	const DChargedTrackHypothesis* locBestChargedTrackHypothesis = dChargedTrackHypotheses[0];
 	for(size_t loc_i = 0; loc_i < dChargedTrackHypotheses.size(); ++loc_i)
 	{
 		if(dChargedTrackHypotheses[loc_i]->dFOM > locBestFOM)

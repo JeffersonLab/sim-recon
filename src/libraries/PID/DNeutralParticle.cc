@@ -12,7 +12,7 @@ const DNeutralParticleHypothesis* DNeutralParticle::Get_BestFOM(void) const
 	if(dNeutralParticleHypotheses.empty())
 		return NULL;
 	double locBestFOM = -2.0;
-	const DNeutralParticleHypothesis* locBestNeutralParticleHypotheses = NULL;
+	const DNeutralParticleHypothesis* locBestNeutralParticleHypotheses = dNeutralParticleHypotheses[0];
 	for(size_t loc_i = 0; loc_i < dNeutralParticleHypotheses.size(); ++loc_i)
 	{
 		if(dNeutralParticleHypotheses[loc_i]->dFOM > locBestFOM)
