@@ -22,70 +22,54 @@
 # will never fail.
 #
 
-# This part sets the processor type and GCC version number
-$processor = `uname -m`;
-$gccversion = `gcc -dumpversion`;
-chomp $processor;
-chomp $gccversion;
-
-# If the compiler_version variable is not set, use the gcc version
-if ($compiler_version eq '') {
-	$compiler_version = "gcc${gccversion}";
-}
-
-# This section sets the uname and release variables
+# This first section sets the uname and release variables
 # which hold the "OS" and "_flavor##" parts of the string.
 $uname = `uname`;
 chomp $uname;
 if ($uname eq 'Linux') {
-	if (-e '/etc/fedora-release') {
-		$release_string = `cat /etc/fedora-release`;
-		if ($release_string =~ /^Fedora release 11.*/) {
-			$release = '_Fedora11';
-		} elsif ($release_string =~ /^Fedora release 10.*/) {
-			$release = '_Fedora10';
-		} elsif ($release_string =~ /^Fedora release 9.*/) {
-			$release = '_Fedora9';
-		} elsif ($release_string =~ /^Fedora release 8.*/) {
-			$release = '_Fedora8';
-		} elsif ($release_string =~ /^Fedora release 7.*/) {
-			$release = '_Fedora7';
-		} elsif ($release_string =~ /^Fedora Core release 6.*/) {
-			$release = '_FC6';
-		} else {
-			print STDERR "unrecognized Fedora release\n";
-			$release = '_Fedora';
-		}
-	} elsif (-e '/etc/redhat-release') {
-		$release_string = `cat /etc/redhat-release`;
-		if ($release_string =~ /^Red Hat Enterprise Linux WS release 3.*/) {
-			$release = '_RHEL3';
-		} elsif ($release_string =~ /^Red Hat Enterprise Linux WS release 4.*/) {
-			$release = '_RHEL4';
-		} elsif ($release_string =~ /^Red Hat Enterprise Linux Client release 5.*/) {
-			$release = '_RHEL5';
-		} elsif ($release_string =~ /^CentOS release 4.*/ ){
-			$release = '_CentOS4';
-		} elsif ($release_string =~ /^CentOS release 5.*/ ){
-			$release = '_CentOS5';
-		} else {
-			print STDERR "unrecognized Red Hat release\n";
-			$release = '_RH';
-		}
-	} elsif (-e '/etc/lsb-release') { # Ubuntu
-    	$distrib_id = `cat /etc/lsb-release | grep DISTRIB_ID`;
-		$distrib_id =~ s/DISTRIB_ID=//;
-		$distrib_release = `cat /etc/lsb-release | grep DISTRIB_RELEASE`;
-		$distrib_release =~ s/DISTRIB_RELEASE=//;
-		chomp $distrib_id;
-		chomp $distrib_release;
-		$release = "_${distrib_id}${distrib_release}";	
-		if( $processor eq "unknown" ){
-			$processor=$ENV{"MACHTYPE"};
-		}
+    if (-e '/etc/fedora-release') {
+	$release_string = `cat /etc/fedora-release`;
+	if ($release_string =~ /^Fedora release/) {
+	    @token = split(/\s+/, $release_string);
+	    $release = "_Fedora$token[2]";
+	} elsif ($release_string =~ /^Fedora Core release 6.*/) {
+	    $release = '_FC6';
 	} else {
-	$release = '';
+	    print STDERR "unrecognized Fedora release\n";
+	    $release = '_Fedora';
 	}
+    } elsif (-e '/etc/redhat-release') {
+	$release_string = `cat /etc/redhat-release`;
+	if ($release_string =~ /^Red Hat Enterprise Linux WS release 3.*/) {
+	    $release = '_RHEL3';
+	} elsif ($release_string =~ /^Red Hat Enterprise Linux WS release 4.*/) {
+	    $release = '_RHEL4';
+	} elsif ($release_string =~ /^Red Hat Enterprise Linux Client release 5.*/) {
+	    $release = '_RHEL5';
+	} elsif ($release_string =~ /^Red Hat Enterprise Linux Workstation release 6.*/) {
+	    $release = '_RHEL6';
+	} elsif ($release_string =~ /^CentOS release 5.*/) {
+	    $release = '_CentOS5';
+	} elsif ($release_string =~ /^CentOS release 6.*/) {
+	    $release = '_CentOS6';
+	} elsif ($release_string =~ /^Scientific Linux SL release 5.*/ ) {
+	    $release = '_SL5';
+	  }
+	else {
+	    print STDERR "unrecognized Red Hat release\n";
+	    $release = '_RH';
+	}
+    } elsif (-e '/etc/lsb-release') { # Ubuntu
+    	$distrib_id = `cat /etc/lsb-release | grep DISTRIB_ID`;
+	$distrib_id =~ s/DISTRIB_ID=//;
+    	$distrib_release = `cat /etc/lsb-release | grep DISTRIB_RELEASE`;
+	$distrib_release =~ s/DISTRIB_RELEASE=//;
+	chomp $distrib_id;
+	chomp $distrib_release;
+	$release = "_${distrib_id}${distrib_release}";	
+    } else {
+	$release = '';
+    }
 } elsif ($uname eq 'SunOS') {
 	$release = '_' . `uname -r`;
 	chomp $release;
@@ -93,12 +77,6 @@ if ($uname eq 'Linux') {
 	$CC_version =  $toks[3];
 	$compiler_version = "CC${CC_version}";
 } elsif ($uname eq 'Darwin') {
-	$processor = $ENV{"MACHTYPE"};  # override uname -p with MACHTYPE for Mac OS X (uname -p is wrong for Snow Leopard)
-	unless($processor){ # running as sudo seems to not set MACHTYPE on Snow Leopard (Arrgh!!)
-		$dir=dirname(File::Spec->rel2abs( __FILE__ ));
-		$processor = `$dir/get_macos_arch`;
-		chomp($processor);
-	}
  	$release_string = `uname -r`;
 	if ($release_string =~ /^6.*/) {
 	    $release = '_macosx10.2';
@@ -112,12 +90,53 @@ if ($uname eq 'Linux') {
 	    $release = '_macosx10.6';
  	} elsif ($release_string =~ /^11.*/) {
 	    $release = '_macosx10.7';
+ 	} elsif ($release_string =~ /^12.*/) {
+	    $release = '_macosx10.8';
 	} else {
 	    print STDERR "unrecognized Mac OS X (Darwin) release\n";
 	    $release = '_macosx';
 	}
 } else {
     $release = '';
+}
+
+
+# Set the processor type
+$processor = `uname -p`;
+chomp $processor;
+
+# Set the default compiler version number (may be overridden below)
+$ccversion = `cc -dumpversion`;
+chomp $ccversion;
+
+# Decide if we are using gcc or clang or an "other" compiler type
+$compiler_type = "cc";
+$compiler_version_str = `cc -v 2>&1`;
+if ($compiler_version_str =~ /\sgcc version\s/) {
+	$compiler_type = "gcc";
+} elsif ($compiler_version_str =~ /clang version\s+/) {
+	$compiler_type = "clang";
+	
+	# clang seems to report different numbers for the version
+	# if you use "clang -dumpversion" or "clang -v". The former
+	# seems to correspond to the installed gcc version number
+	# while the later the actual clang version number. Extract
+	# the clang version number here, replacing the one obtained
+	# via "cc -dumpversion" from above.
+	$' =~ /\s/;
+	$ccversion = $`;
+}
+
+# If the compiler_version variable is not set, use the gcc version
+if ($compiler_version eq '') {
+	$compiler_version = "gcc${ccversion}";
+}
+
+# If the processor variable is set to "unknown" (Ubuntu systems)
+# then use the machine name.
+if ($processor eq 'unknown') {
+	$processor = `uname -m`;
+	chomp $processor;
 }
 
 # Finally, form and print the complete string to stdout
