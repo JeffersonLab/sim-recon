@@ -33,9 +33,12 @@
 
 
 #include "rawevent/JEventProcessor_rawevent.h"
+#include "mc2coda.h"
+
 
 #include<sstream>
 #include<iomanip>
+#include<algorithm>
 #include <expat.h>
 
 #include <boost/lexical_cast.hpp>
@@ -46,12 +49,11 @@ using namespace boost;
 static pthread_mutex_t rawMutex = PTHREAD_MUTEX_INITIALIZER;
 
 
-// for evio output
+// for evio output and translation table
 static evioFileChannel *chan       = NULL;
-static int evioBufSize             = 750000;
 static string fileBase             = "rawevent";
-static string translationTableName = "fakeTranslationTable.xml";
 static string outputFileName;
+static string translationTableName = "fakeTranslationTable.xml";
 
 
 // current run number
@@ -70,6 +72,22 @@ static map<string,cscVal> cscMap;
 #define MAX_SLOT    16+1
 #define MAX_CHANNEL 72+1
 static string detectorMap[MAX_CRATE][MAX_SLOT][MAX_CHANNEL];
+
+
+// for Dave's mc2coda package
+#define MAXCRATE 100
+#define MAXSLOT  21
+#define MAXSIZE  50000
+static string expName = "HallD";
+static CODA_EXP_INFO *codaExpInfo = NULL;
+static int expid    = 1;
+
+static int nCrate   = 0;
+static int crateID[MAXCRATE];
+static int nModules[MAXCRATE];
+static int modules[MAXCRATE][MAXSLOT];
+static int detID[MAXCRATE][MAXSLOT];
+
 
 
 
@@ -100,6 +118,19 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
   // read translation table
   readTranslationTable();
 
+  // initialize mc2coda package
+  codaExpInfo=mc2codaInitExp(nCrate,expName.c_str());
+
+  // feed crate-specific info to mc2coda package
+  int stat;
+  for(int i=0; i<nCrate; i++) {
+    stat = mc2codaSetCrate(codaExpInfo,crateID[i],nModules[i],modules[i],detID[i]);
+    if(stat!=0) {
+      cerr << "?JEventProcessor_rawevent...error return from mc2codaSetCrate()" << endl << endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
 }
 
 
@@ -108,6 +139,7 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
 // ~JEventProcessor_rawevent (Destructor) once only
 JEventProcessor_rawevent::~JEventProcessor_rawevent() {
+  mc2codaFree(expID);
 }
 
 
@@ -116,7 +148,7 @@ JEventProcessor_rawevent::~JEventProcessor_rawevent() {
 
 // init called once-only at beginning, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::init(void) {
-	return NOERROR;
+  return NOERROR;
 }
 
 //----------------------------------------------------------------------------
@@ -144,7 +176,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 
 
   // open new output file
-  chan = new evioFileChannel(outputFileName,"w",evioBufSize);
+  chan = new evioFileChannel(outputFileName,"w");
   chan->open();
   jout << endl << "   opening output file:   " << outputFileName << endl << endl << endl;
 
@@ -160,7 +192,26 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //----------------------------------------------------------------------------
 
 
+extern "C" {
+  bool compareDTOFRawHits(const DTOFRawHit* h1, const DTOFRawHit* h2) {
+    if(h1->plane!=h2->plane) {
+      return(h1->plane<h2->plane);
+    } else if(h1->bar!=h2->bar) {
+      return(h1->bar<h2->bar);
+    } else if(h1->lr!=h2->lr) {
+      return(h1->lr<h2->lr);
+    } else {
+      return(h1->t<h2->t);
+    }
+  }
+}
+
+
+//----------------------------------------------------------------------------
+
+
 // Called once per event in many different processing threads, so:
+//
 //
 //    *** MUST be thread-safe ***
 //
@@ -169,28 +220,49 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //        DAQ group task is to take this data, sort and combine the hits, then create an EVIO
 //          buffer in the format planned for disentangled events.
 //        The buffer is written to disk using a mutex-locked EVIO write.
-//
+
 jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) {
 
   unsigned int i;
+  CODA_HIT_INFO hit;
+  int hData[256];
 
 
-  // get all raw hit data, feed to Dave A's collection function
+  // initialize mc2coda event buffer info
+  int nhit                 = 0;
+  uint64_t trigTime        = 0;
+  unsigned short eventType = 0;
+  unsigned int *eventPtr = mc2codaOpenEvent(expID, (uint64_t)eventnumber, trigTime, eventType, MAXSIZE);
 
 
+  // get all types of raw hit data, sort according to id and time order, then feed to mc2coda
 
   // DTOFRawHit - FADC250 and F1TDC32 (60 ps)
   vector<const DTOFRawHit*> dtofrawhits; 
   eventLoop->Get(dtofrawhits);
+  sort(dtofrawhits.begin(),dtofrawhits.end(),compareDTOFRawHits);
+
   for(i=0; i<dtofrawhits.size(); i++) {
+    nhit++;
     float dE  = dtofrawhits[i]->dE;
     float t   = dtofrawhits[i]->t;
 
-    // translate to crate/slot/channel
-    cscRef cscADC  = DTOFRawHitTranslationADC(dtofrawhits[i]);
-    cscRef cscTDC  = DTOFRawHitTranslationTDC(dtofrawhits[i]);
+    // feed hit and crate/slot/channel info to mc2coda package
+    cscRef cscADC   = DTOFRawHitTranslationADC(dtofrawhits[i]);
+    hit.hit_id      = nhit;
+    hit.det_id      = ;
+    hit.crate_id    = cscADC.crate;
+    hit.slot_id     = cscADC.slot;
+    hit.module_id   = ;
+    hit.chan_id     = cscADC.channel;
+    hit.nsamples    = 1;
+    hit.time_offset = ;
 
-      // feed data to DAQ function...
+    hData[0]        = int(dE*1000.);
+    hit.hdata       = hData;
+    mc2codaWrite(eventID,1,&hit);
+
+    cscRef cscTDC  = DTOFRawHitTranslationTDC(dtofrawhits[i]);
   }
 
 
@@ -285,16 +357,12 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 
 
-  // construct evio buffer from hit data collected above
-  uint32_t *buffer;
-
-
-
-  // write out event:  get lock, write to file, unlock
-//   pthread_mutex_lock(&rawMutex);
-//   chan->write(buffer);
-//   pthread_mutex_unlock(&rawMutex);
-
+  // close evio buffer, write it out, then free buffer
+  uint32_t *buffer = mc2codaCloseEvent(eventPtr, (void*)eventPtr);
+  pthread_mutex_lock(&rawMutex);
+  chan->write(buffer);
+  pthread_mutex_unlock(&rawMutex);
+  mc2codaFreeEvent(eventPtr);
 
   return NOERROR;
 }
@@ -350,13 +418,16 @@ jerror_t JEventProcessor_rawevent::fini(void) {
 
 void JEventProcessor_rawevent::readTranslationTable(void) {
 
-  // create parser and specify start element handler
+  // create parser and specify element handlers
   XML_Parser xmlParser = XML_ParserCreate(NULL);
   if(xmlParser==NULL) {
     jerr << endl << endl << "readTranslationTable...unable to create parser" << endl << endl;
     exit(EXIT_FAILURE);
   }
-  XML_SetElementHandler(xmlParser,startElement,NULL);
+  XML_SetElementHandler(xmlParser,startElement,endElement);
+
+
+  // clear crate summary info needed by Dave's library
 
 
   // open and parse the file
@@ -365,7 +436,7 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
     int status,len;
     bool done;
     const int bufSize = 50000;
-    char buf[bufSize];
+    char *buf = new char[bufSize];
     do {
       len  = fread(buf,1,bufSize,f);
       done = len!=bufSize;
@@ -375,11 +446,13 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
              << endl << endl << XML_ErrorString(XML_GetErrorCode(xmlParser))
              << endl << endl << endl;
         fclose(f);
+        delete [] buf;
         XML_ParserFree(xmlParser);
         return;
       }
     } while (!done);
     fclose(f);
+    delete [] buf;
     jout << endl << endl << " Successfully read translation table:  " << translationTableName << endl << endl << endl;
 
   } else {
@@ -387,7 +460,6 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
          << endl << endl << endl;
   }
   XML_ParserFree(xmlParser);
-
 }
 
 
@@ -406,6 +478,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
   string ring,straw,plane,bar,gPlane,element;
 
 
+  // store crate summary info, fill both maps
   if(strcasecmp(xmlname,"translation_table")==0) {
     // do nothing
 
@@ -417,6 +490,9 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         break;
       }
     }
+    nCrate++;
+    crateID[nCrate-1]=crate;
+    nModules[nCrate-1]=0;
 
 
   } else if(strcasecmp(xmlname,"slot")==0) {
@@ -428,6 +504,9 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         std::transform(Type.begin(), Type.end(), type.begin(), (int(*)(int)) tolower);
       }
     }
+    nModules[nCrate-1]++;
+    modules[nCrate-1][nModules[nCrate-1]-1] = slot;
+    detID[nCrate-1][nModules[nCrate-1]-1]   = type2detID(type);
 
 
   } else if(strcasecmp(xmlname,"channel")==0) {
@@ -510,9 +589,9 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       
     } else if(detector=="sc") {
       if(type=="f1tdc32") {
-        s = "scadc::";
-      } else if (type=="fadc250") {
         s = "sctdc::";
+      } else if (type=="fadc250") {
+        s = "scadc::";
       } else {
         s = "unknownSC::";
         jerr << endl << endl << "?startElement...illegal type for SC: " << Type << endl << endl;
@@ -586,6 +665,27 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 }
     
 
+//--------------------------------------------------------------------------
+
+
+void JEventProcessor_rawevent::endElement(void *userData, const char *xmlname) {
+
+  // finished a crate, feed crate summary info to Dave's library
+  if(strcasecmp(xmlname,"crate")==0) {
+  }
+
+  // clear crate summary info
+}
+
+
+//--------------------------------------------------------------------------
+
+
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+//  aux routines encode hit info into string for inverse lookup table
+//--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 
 
@@ -700,5 +800,6 @@ cscRef JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) const
 
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-
+//--------------------------------------------------------------------------

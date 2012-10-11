@@ -19,12 +19,10 @@
 
 
 #  still to do:
-#    start new crate or half-crate with new detector
-#    eventually need complete detector list including PS, TAC, Polarimeter, etc.
-#    need to add CAEN modules
+#    complete detector list:  PS, TAC, POLAR, others?
 
 
-#  E. Wolin, JLab, 20-Jul-2012
+#  E. Wolin, JLab, 26-Jul-2012
 
 
 
@@ -41,9 +39,9 @@ detectorOn = {
     'SC':      1,
     'TOF':     1,
     'TAGGER':  1,
-    'PSPEC':   1,
-    'TAC':     1,
-    'POLAR':   1
+    'PSPEC':   0,
+    'TAC':     0,
+    'POLAR':   0
     }
 
 
@@ -326,6 +324,18 @@ if (detectorOn['TAGGER']>0):
         for column in range(101):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
             file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel,row,column) )
+    closeCrate(daqModule)
+            
+
+
+# PSPEC: ???
+if (detectorOn['PSPEC']>0):
+    type = 'F1TDC48'
+    (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
+    startSlot(daqModule,type)
+    for counter in range(128):
+        (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
+        file.write('      <channel number="%i" detector="PSPEC" counter="%i" />\n' % (channel,counter) )
     closeCrate(daqModule)
             
 
