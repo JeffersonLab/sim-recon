@@ -81,8 +81,11 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   // a calibration constant needs to be applied here to get it
   // (at least approximately) into GeV. For now, apply an empirical
   // factor.
-  float fADC_counts_per_GeV = 14000.0;
-  m_E /= fADC_counts_per_GeV;
+  //
+  // Temporarily disable this until time spectrum method is used as
+  // default again.  2012/10/10  D.L.
+  //float fADC_counts_per_GeV = 14000.0;
+  //m_E /= fADC_counts_per_GeV;
   
   m_r = DBCALGeometry::r( cellId );
   //for a uniform distribution of width a, the RMS is a/sqrt(12)

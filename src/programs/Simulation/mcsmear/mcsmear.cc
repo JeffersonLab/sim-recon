@@ -66,6 +66,7 @@ double BCAL_ADC_THRESHOLD = 4.0;  // mV
 double BCAL_FADC_TIME_RESOLUTION = 4.0/sqrt(12.0); // ns
 
 // BCAL flags
+bool USE_DEPRECATED_BCAL_SCHEME = true;
 bool NO_E_SMEAR = false;
 bool NO_T_SMEAR = false;
 bool NO_DARK_PULSES = false;
@@ -336,6 +337,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'J': BCAL_DEBUG_HISTS = true;						break;
       case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; 			break;
       case 'S': START_SIGMA= atof(&ptr[2])*k_psec; 		break;
+      case 'D': USE_DEPRECATED_BCAL_SCHEME= false; 		break;
       }
     }else{
       INFILENAME = argv[i];
@@ -420,7 +422,8 @@ void Usage(void)
 	cout<<"    -M       Don't apply BCAL Poisson statistics (def. apply)"<<endl;
 	cout<<"    -Q       Don't apply BCAL time jitter (def. apply)"<<endl;
 	cout<<"    -I       Don't apply discrim. thresh. to BCAL hits (def. cut)"<<endl;
-	cout<<"    -J       Create BCAL debug hists (only use with 1 event!)"<<endl;
+	cout<<"    -J       Create BCAL debug hists (only use with a few events!)"<<endl;
+	cout<<"    -D       Don't use the deprecated BCAL smearing scheme (def. use deprecated)"<<endl;
 	cout<<"    -f#      TOF sigma in psec (def: "<< TOF_SIGMA/k_psec<<")"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;

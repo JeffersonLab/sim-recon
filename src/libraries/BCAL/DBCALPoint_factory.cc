@@ -2,14 +2,68 @@
 //DBCALCluster_factory.cc
 
 #include <vector>
-
 using namespace std;
+
+#include <JANA/JApplication.h>
+using namespace jana;
 
 #include "BCAL/DBCALPoint_factory.h"
 #include "BCAL/DBCALHit.h"
 
 #include "units.h"
 
+static pthread_mutex_t deprecated_warning_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool warning_issued = false;
+
+//----------------
+// init
+//----------------
+jerror_t DBCALPoint_factory::init(void)
+{
+	pthread_mutex_lock(&deprecated_warning_mutex);
+	if(!warning_issued){
+		stringstream mess;
+		mess << "=========================================================================="<<endl;
+		mess << endl;
+		mess << "W         W      A      RRRRR     NN    N   IIIIIII   NN    N     GGGGGG  "<<endl;
+		mess << "W         W     A A     R    R    N N   N      I      N N   N    G        "<<endl;
+		mess << "W         W    A   A    R    R    N  N  N      I      N  N  N   G         "<<endl;
+		mess << "W    W    W   AAAAAAA   RRRRR     N   N N      I      N   N N   G    GGGGG"<<endl;
+		mess << " W  W W  W    A     A   R    R    N    NN      I      N    NN    G     G  "<<endl;
+		mess << "  W    W      A     A   R     R   N     N   IIIIIII   N     N     GGGGG   "<<endl;
+		mess << "=========================================================================="<<endl;
+		mess << endl;
+		mess << "Warning! You are using a deprecated version of the BCAL simulation!"<<endl;
+		mess << "The reconstruction code has not yet been updated to handle the newer"<<endl;
+		mess << "scheme so it is not yet the default. "<<endl;
+		mess << endl;
+		mess << "HOWEVER! The results you get for the BCAL may not accurately reflect"<<endl;
+		mess << "what the detector is capable of. INTERPRET YOUR RESULTS WITH CAUTION!!"<<endl;
+		mess << endl;
+		mess << "More importantly, bug the calorimetry group to FIX THIS ISSUE!!!"<<endl;
+		mess << "=========================================================================="<<endl;
+		cerr << mess.str();
+
+		bool save_monitor_heartbeat = japp->monitor_heartbeat;
+		japp->monitor_heartbeat = false;
+		japp->SetShowTicker(0);
+		for(int i=3; i>=0; i--){
+			cout<<".... resumimg in "<<i<<" seconds\r";
+			cout.flush();
+			sleep(1);
+		}
+		japp->SetShowTicker(1); // may not be correct! (have no way to check ticker setting beforehand!)
+		japp->monitor_heartbeat = save_monitor_heartbeat;
+		warning_issued = true;
+	}
+	pthread_mutex_unlock(&deprecated_warning_mutex);
+
+	return NOERROR;
+}
+
+//----------------
+// evnt
+//----------------
 jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
   vector< const DBCALHit* > hits;
   loop->Get( hits );

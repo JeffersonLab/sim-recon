@@ -25,7 +25,7 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
 		vector<const DBCALHit*> dnhits;
   };
  
-
+  jerror_t init(void);
   jerror_t evnt(JEventLoop *loop, int eventnumber);
 
 };
