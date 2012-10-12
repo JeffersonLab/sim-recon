@@ -6,7 +6,9 @@
 //          modify TOF section to add several new variables incuding the 
 //          GEANT particle type to the Truth hits and the hit and track-hit list.
 //
-//			Oct 3, 2012 Yi Qiang: add/modify functions for Cerenkov detector
+//			Oct 3, 2012 Yi Qiang: add functions for Cherenkov RICH detector
+//
+//			Oct 11, 2012 Yi Qiang: complete functions for Cherenkov detector
 //
 // DEventSourceHDDM methods
 //
@@ -275,10 +277,11 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	  return Extract_DTrackTimeBased(my_hddm_s, dynamic_cast<JFactory<DTrackTimeBased>*>(factory), event.GetRunNumber());
 
 	// extract CereTruth and CereRichHit hits, yqiang Oct 3, 2012
-	if(dataClassName =="DCereTruth" && tag=="")
-		return Extract_DCereTruth(my_hddm_s, dynamic_cast<JFactory<DCereTruth>*>(factory));
-	if(dataClassName =="DCereRichHit" && tag=="")
-		return Extract_DCereRichHit(my_hddm_s, dynamic_cast<JFactory<DCereRichHit>*>(factory));
+	// removed CereTruth (merged into MCThrown), added CereHit, yqiang Oct 10 2012
+	if(dataClassName =="DCereHit" && tag=="")
+		return Extract_DCereHit(my_hddm_s, dynamic_cast<JFactory<DCereHit>*>(factory));
+	if(dataClassName =="DRichHit" && tag=="")
+		return Extract_DRichHit(my_hddm_s, dynamic_cast<JFactory<DRichHit>*>(factory));
 
 	return OBJECT_NOT_AVAILABLE;
 }
@@ -305,6 +308,8 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(s_HDDM_t *hddm_s, JFactory<DMCTra
 	GetCherenkovTruthHits(hddm_s, data);
 	GetFCALTruthHits(hddm_s, data);
 	GetSCTruthHits(hddm_s, data);
+	// added RICH truth hits, yqiang, Oct 10 2012
+	GetRichTruthHits(hddm_s, data);
 
 	// It has happened that some CDC hits have "nan" for the drift time
 	// in a peculiar event Alex Somov came across. This ultimately caused
@@ -474,9 +479,76 @@ jerror_t DEventSourceHDDM::GetTOFTruthHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit
 
 //-------------------
 // GetCherenkovTruthHits
+// modified by yqiang, Oct 10 2012
 //-------------------
 jerror_t DEventSourceHDDM::GetCherenkovTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
 {
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+
+		if (hits == HDDM_NULL ||
+			hits->Cerenkov == HDDM_NULL ||
+			hits->Cerenkov->cereTruthPoints == HDDM_NULL)continue;
+
+		s_CereTruthPoints_t *ceretruthpoints = hits->Cerenkov->cereTruthPoints;
+		s_CereTruthPoint_t *ceretruthpoint = ceretruthpoints->in;
+
+		for(unsigned int j=0; j<ceretruthpoints->mult; j++, ceretruthpoint++){
+			float x = ceretruthpoint->x;
+			float y = ceretruthpoint->y;
+			DMCTrackHit *mctrackhit = new DMCTrackHit;
+			mctrackhit->r			= sqrt(x*x + y*y);
+			mctrackhit->phi		    = atan2(y,x);
+			mctrackhit->z			= ceretruthpoint->z;
+			mctrackhit->track		= ceretruthpoint->track;
+			mctrackhit->primary	    = ceretruthpoint->primary;
+			mctrackhit->ptype       = ceretruthpoint->ptype;    // save GEANT particle type
+			mctrackhit->system 	    = SYS_CHERENKOV;
+			data.push_back(mctrackhit);
+		}
+	}
+
+	return NOERROR;
+}
+
+//-------------------
+// GetCherenkovRichTruthHits
+// added by yqiang, Oct 11 2012
+//-------------------
+jerror_t DEventSourceHDDM::GetRichTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
+{
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+
+		if (hits == HDDM_NULL ||
+			hits->RICH == HDDM_NULL ||
+			hits->RICH->richTruthPoints == HDDM_NULL)continue;
+
+		s_RichTruthPoints_t *richtruthpoints = hits->RICH->richTruthPoints;
+		s_RichTruthPoint_t *richtruthpoint = richtruthpoints->in;
+
+		for(unsigned int j=0; j<richtruthpoints->mult; j++, richtruthpoint++){
+			float x = richtruthpoint->x;
+			float y = richtruthpoint->y;
+			DMCTrackHit *mctrackhit = new DMCTrackHit;
+			mctrackhit->r			= sqrt(x*x + y*y);
+			mctrackhit->phi		    = atan2(y,x);
+			mctrackhit->z			= richtruthpoint->z;
+			mctrackhit->track		= richtruthpoint->track;
+			mctrackhit->primary	    = richtruthpoint->primary;
+			mctrackhit->ptype       = richtruthpoint->ptype;    // save GEANT particle type
+			mctrackhit->system 	    = SYS_RICH;
+			data.push_back(mctrackhit);
+		}
+	}
 
 	return NOERROR;
 }
@@ -2277,10 +2349,10 @@ Particle_t DEventSourceHDDM::IDTrack(float locCharge, float locMass) const
 }
 
 //------------------
-// Extract_DCereTruth
+// Extract_DCereRichHit
 // added by yqiang Oct 3, 2012
 //------------------
-jerror_t DEventSourceHDDM::Extract_DCereTruth(s_HDDM_t *hddm_s,  JFactory<DCereTruth>* factory)
+jerror_t DEventSourceHDDM::Extract_DRichHit(s_HDDM_t *hddm_s,  JFactory<DRichHit>* factory)
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -2288,7 +2360,7 @@ jerror_t DEventSourceHDDM::Extract_DCereTruth(s_HDDM_t *hddm_s,  JFactory<DCereT
 
   if(factory==NULL)return OBJECT_NOT_AVAILABLE;
 
-  vector<DCereTruth*> data;
+  vector<DRichHit*> data;
 
   s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
   if(!PE) return NOERROR;
@@ -2296,26 +2368,20 @@ jerror_t DEventSourceHDDM::Extract_DCereTruth(s_HDDM_t *hddm_s,  JFactory<DCereT
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
 		if (hits == HDDM_NULL ||
-			hits->Cerenkov == HDDM_NULL)continue;
+			hits->RICH == HDDM_NULL)continue;
 
-		s_CereTruthPoints_t* ceretruthpoints = hits->Cerenkov->cereTruthPoints;
-		if(ceretruthpoints==HDDM_NULL) continue;
+		s_RichHits_t* richhits = hits->RICH->richHits;
+		if(richhits==HDDM_NULL) continue;
 
-		// Loop over Cerenkov hits
-		s_CereTruthPoint_t *ceretruthpoint = ceretruthpoints->in;
-		for(unsigned int j=0; j<ceretruthpoints->mult; j++, ceretruthpoint++){
+		// Loop over RICH hits
+		s_RichHit_t *richhit = richhits->in;
+		for(unsigned int j=0; j<richhits->mult; j++, richhit++){
 
-			DCereTruth *hit = new DCereTruth;
-			hit->ptype = ceretruthpoint->ptype;
-			hit->track = ceretruthpoint->track;
-			hit->primary = ceretruthpoint->primary;
-			hit->x = ceretruthpoint->x;
-			hit->y = ceretruthpoint->y;
-			hit->z = ceretruthpoint->z;
-			hit->t = ceretruthpoint->t;
-			hit->px = ceretruthpoint->px;
-			hit->py = ceretruthpoint->py;
-			hit->pz = ceretruthpoint->pz;
+			DRichHit *hit = new DRichHit;
+			hit->x = richhit->x;
+			hit->y = richhit->y;
+			hit->z = richhit->z;
+			hit->t = richhit->t;
 
 			data.push_back(hit);
 		}
@@ -2328,46 +2394,45 @@ jerror_t DEventSourceHDDM::Extract_DCereTruth(s_HDDM_t *hddm_s,  JFactory<DCereT
 }
 
 //------------------
-// Extract_DCereRichHit
-// added by yqiang Oct 3, 2012
+// Extract_DCereHit
+// added by yqiang Oct 11, 2012
 //------------------
-jerror_t DEventSourceHDDM::Extract_DCereRichHit(s_HDDM_t *hddm_s,  JFactory<DCereRichHit>* factory)
+jerror_t DEventSourceHDDM::Extract_DCereHit(s_HDDM_t *hddm_s, JFactory<DCereHit>* factory)
 {
-  /// Copies the data from the given hddm_s structure. This is called
-  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
-  /// returns OBJECT_NOT_AVAILABLE immediately.
+	if(factory==NULL) return OBJECT_NOT_AVAILABLE;
 
-  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	vector<DCereHit*> data;
 
-  vector<DCereRichHit*> data;
-
-  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-  if(!PE) return NOERROR;
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
 
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->Cerenkov == HDDM_NULL)continue;
+		if(hits == HDDM_NULL || hits->Cerenkov == HDDM_NULL ||
+				hits->Cerenkov->cereSections == HDDM_NULL) continue;
 
-		s_CereRichHits_t* cererichhits = hits->Cerenkov->cereRichHits;
-		if(cererichhits==HDDM_NULL) continue;
+		// loop over sectors
+		s_CereSections_t *ceresections = hits->Cerenkov->cereSections;
+		s_CereSection_t *ceresection = ceresections->in;
+		for(unsigned int j = 0; j<ceresections->mult; j++, ceresection++){
 
-		// Loop over Cerenkov RICH hits
-		s_CereRichHit_t *cererichhit = cererichhits->in;
-		for(unsigned int j=0; j<cererichhits->mult; j++, cererichhit++){
+			s_CereHits_t *cerehits = ceresection->cereHits;
+			if(cerehits==HDDM_NULL) continue;
 
-			DCereRichHit *hit = new DCereRichHit;
-			hit->x = cererichhit->x;
-			hit->y = cererichhit->y;
-			hit->z = cererichhit->z;
-			hit->t = cererichhit->t;
+			// loop over hit groups
+			s_CereHit_t *cerehit = cerehits->in;
+			for(unsigned int k = 0; k<cerehits->mult; k++, cerehit++){
+				DCereHit *hit = new DCereHit;
+				hit->sector = ceresection->sector;
+				hit->pe = cerehit->pe;
+				hit->t = cerehit->t;
 
-			data.push_back(hit);
+				data.push_back(hit);
+			}
 		}
 	}
+	// copy into factory
+	factory->CopyTo(data);
 
-  // Copy into factory
-  factory->CopyTo(data);
-
-  return NOERROR;
+	return NOERROR;
 }

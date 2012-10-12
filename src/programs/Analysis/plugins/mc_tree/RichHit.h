@@ -16,7 +16,6 @@ class RichHit: public TObject {
 public:
 
 	RichHit() {
-//		x = TVector3(0,0,0);
 		t = 0;
 	}
 	;

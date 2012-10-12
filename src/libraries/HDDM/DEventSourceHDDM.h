@@ -6,6 +6,7 @@
 /// Implements JEventSource for HDDM files
 //
 // Changes:	Oct 3, 2012 Yi Qiang: add classes for Cerenkov detector
+//			OCt 10, 2012 Yi Qiang: modifed Cerenkov classes with general Cere hits
 //
 
 #ifndef _JEVENT_SOURCEHDDM_H_
@@ -48,8 +49,9 @@ using namespace std;
 #include <TRACKING/DTrackTimeBased.h>
 #include <TAGGER/DTagger.h>
 // load CERE headers, yqiang Oct 3, 2012
-#include <CERE/DCereTruth.h>
-#include <CERE/DCereRichHit.h>
+// modified by yqiang, Oct 10 2012
+#include <CERE/DCereHit.h>
+#include <RICH/DRichHit.h>
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -104,8 +106,10 @@ class DEventSourceHDDM:public JEventSource
 		Particle_t IDTrack(float locCharge, float locMass) const;
 
 		// add RICH hit and Truth, yqiang Oct 3, 2012
-		jerror_t Extract_DCereTruth(s_HDDM_t *hddm_s, JFactory<DCereTruth> *factory);
-		jerror_t Extract_DCereRichHit(s_HDDM_t *hddm_s, JFactory<DCereRichHit> *factory);
+		// modifed by yqiang, Oct 10 2012 now include both truth hits in DMCThrown
+		jerror_t GetRichTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
+		jerror_t Extract_DCereHit(s_HDDM_t *hddm_s, JFactory<DCereHit> *factory);
+		jerror_t Extract_DRichHit(s_HDDM_t *hddm_s, JFactory<DRichHit> *factory);
 
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;

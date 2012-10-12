@@ -74,8 +74,11 @@
           <cereHit maxOccurs="unbounded" pe="float" t="float"/>
         </cereSection>
         <cereTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
-        <cereRichHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float"/>		
       </Cerenkov>
+      <RICH minOccor="0">
+        <richHit maxOccurs="unbounded" minOccurs="0" t="float" x="float" y="float" z="float"/>		
+        <richTruthPoint E="float" maxOccurs="unbounded" minOccurs="0" primary="boolean" ptype="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
+      </RICH>
       <forwardTOF minOccurs="0">
         <ftofCounter bar="int" maxOccurs="unbounded" minOccurs="0" plane="int">
           <ftofNorthTruthHit maxOccurs="unbounded" minOccurs="0" dE="float" t="float">

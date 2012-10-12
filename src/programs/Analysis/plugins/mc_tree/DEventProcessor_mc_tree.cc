@@ -3,6 +3,8 @@
  *
  *  Created on: Aug 1, 2012
  *      Author: yqiang
+ *
+ *  Modified on: Oct 10 2012, with full Cherenkov support
  */
 
 #include "DEventProcessor_mc_tree.h"
@@ -21,28 +23,28 @@
 extern "C" {
 void InitPlugin(JApplication *app) {
 	InitJANAPlugin(app);
-	app->AddProcessor(new DEventProcessor_mcthrown_tree());
+	app->AddProcessor(new DEventProcessor_mc_tree());
 }
 } // "C"
 
 //------------------
-// DEventProcessor_mcthrown_tree
+// DEventProcessor_mc_tree
 //------------------
-DEventProcessor_mcthrown_tree::DEventProcessor_mcthrown_tree() {
+DEventProcessor_mc_tree::DEventProcessor_mc_tree() {
 	tree_thrown = NULL;
 	evt_thrown = NULL;
 }
 
 //------------------
-// ~DEventProcessor_mcthrown_tree
+// ~DEventProcessor_mc_tree
 //------------------
-DEventProcessor_mcthrown_tree::~DEventProcessor_mcthrown_tree() {
+DEventProcessor_mc_tree::~DEventProcessor_mc_tree() {
 }
 
 //------------------
 // init
 //------------------
-jerror_t DEventProcessor_mcthrown_tree::init(void) {
+jerror_t DEventProcessor_mc_tree::init(void) {
 	// create directory
 	TDirectory *dir = new TDirectoryFile("DMC", "DMC");
 	dir->cd();
@@ -62,17 +64,18 @@ jerror_t DEventProcessor_mcthrown_tree::init(void) {
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *loop,
-		int eventnumber) {
+jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, int eventnumber) {
 	vector<const DBeamPhoton*> beam_photons;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackHit*> mctrackhits;
-	vector<const DCereRichHit*> cererichhits;
+	vector<const DRichHit*> richhits;
+	vector<const DCereHit*> cerehits;
 
 	loop->Get(beam_photons);
 	loop->Get(mcthrowns);
 	loop->Get(mctrackhits);
-	loop->Get(cererichhits);
+	loop->Get(richhits);
+	loop->Get(cerehits);
 
 	TVector3 VertexGen = TVector3(mcthrowns[0]->position().X(),
 			mcthrowns[0]->position().Y(), mcthrowns[0]->position().Z());
@@ -113,6 +116,9 @@ jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *loop,
 	map<int, int> fcalhits;
 	map<int, int> upvhits;
 	map<int, int> tofhits;
+	// add truth points from RICH and Cere
+	map<int, int> richpoints;
+	map<int, int> cerepoints;
 
 	for (unsigned int i = 0; i < mctrackhits.size(); i++) {
 		const DMCTrackHit *mctrackhit = mctrackhits[i];
@@ -137,6 +143,12 @@ jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *loop,
 			break;
 		case SYS_TOF:
 			tofhits[mctrackhit->track]++;
+			break;
+		case SYS_RICH:
+			richpoints[mctrackhit->track]++;
+			break;
+		case SYS_CHERENKOV:
+			cerepoints[mctrackhit->track]++;
 			break;
 		default:
 			break;
@@ -174,6 +186,14 @@ jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *loop,
 			hits.hits_tof = tofhits.find(j + 1)->second;
 		else
 			hits.hits_tof = 0;
+		if (richpoints.find(j + 1) != richpoints.end())
+			hits.hits_rich = richpoints.find(j + 1)->second;
+		else
+			hits.hits_rich = 0;
+		if (cerepoints.find(j + 1) != cerepoints.end())
+			hits.hits_cere = cerepoints.find(j + 1)->second;
+		else
+			hits.hits_cere = 0;
 
 		switch (mcthrowns[j]->type) {
 		case Gamma:		// photons
@@ -236,8 +256,11 @@ jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *loop,
 	/*
 	 * add RICH hits to MC particle set (for now), yqiang
 	 */
-	for (unsigned int j = 0; j < cererichhits.size(); j++)
-		thr.richhits.push_back(MakeRichHit((DCereRichHit*) cererichhits[j]));
+	for (unsigned int j = 0; j < richhits.size(); j++)
+		thr.richhits.push_back(MakeRichHit((DRichHit*) richhits[j]));
+	// add cere hits, yqiang Oct 11 2012
+	for (unsigned int j = 0; j < cerehits.size(); j++)
+		thr.cerehits.push_back(MakeCereHit((DCereHit*) cerehits[j]));
 
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -267,7 +290,7 @@ jerror_t DEventProcessor_mcthrown_tree::evnt(JEventLoop *loop,
 /*
  * Make RICH hits
  */
-RichHit DEventProcessor_mcthrown_tree::MakeRichHit(const DCereRichHit *rhit) {
+RichHit DEventProcessor_mc_tree::MakeRichHit(const DRichHit *rhit) {
 
 	double x = rhit->x;
 	double y = rhit->y;
@@ -279,10 +302,23 @@ RichHit DEventProcessor_mcthrown_tree::MakeRichHit(const DCereRichHit *rhit) {
 
 	return hit;
 }
+/*
+ * Make Cherenkov hits
+ */
+CereHit DEventProcessor_mc_tree::MakeCereHit(const DCereHit *chit) {
+
+	CereHit hit;
+	hit.sector = chit->sector;
+	hit.pe = chit->pe;
+	hit.t = chit->t;
+
+	return hit;
+}
+
 //------------------
 // MakeParticle
 //------------------
-Particle DEventProcessor_mcthrown_tree::MakeParticle(const DKinematicData *kd,
+Particle DEventProcessor_mc_tree::MakeParticle(const DKinematicData *kd,
 		double mass, hit_set hits) {
 	// Create a ROOT TLorentzVector object out of a Hall-D DKinematic Data object.
 	// Here, we have the mass passed in explicitly rather than use the mass contained in
@@ -314,6 +350,8 @@ Particle DEventProcessor_mcthrown_tree::MakeParticle(const DKinematicData *kd,
 	part.hits_fcal = hits.hits_fcal;
 	part.hits_upv = hits.hits_upv;
 	part.hits_tof = hits.hits_tof;
+	part.hits_rich = hits.hits_rich;
+	part.hits_cere = hits.hits_cere;
 
 	return part;
 }
@@ -321,7 +359,7 @@ Particle DEventProcessor_mcthrown_tree::MakeParticle(const DKinematicData *kd,
 //------------------
 // FillEvent
 //------------------
-void DEventProcessor_mcthrown_tree::FillEvent(Event *evt, particle_set &pset) {
+void DEventProcessor_mc_tree::FillEvent(Event *evt, particle_set &pset) {
 	vector<Particle> &photon = pset.photons;
 	vector<Particle> &neutron = pset.neutrons;
 	vector<Particle> &pip = pset.piplus;
@@ -332,6 +370,7 @@ void DEventProcessor_mcthrown_tree::FillEvent(Event *evt, particle_set &pset) {
 	vector<Particle> &electron = pset.electrons;
 	vector<Particle> &positron = pset.positrons;
 	vector<RichHit> &richhit = pset.richhits;
+	vector<CereHit> &cerehit = pset.cerehits;
 
 	// Sort particle arrays by energy
 	sort(photon.begin(), photon.end(), CompareLorentzEnergy);
@@ -415,7 +454,14 @@ void DEventProcessor_mcthrown_tree::FillEvent(Event *evt, particle_set &pset) {
 		RichHit *hit = new (hits[evt->Nrichhit++]) RichHit();
 		*hit = richhit[i];
 	}
-
+	/*
+	 * Add Cherenkov hit
+	 */
+	for (unsigned int i = 0; i < cerehit.size(); i++) {
+		TClonesArray &hits = *(evt->cerehit);
+		CereHit *hit = new (hits[evt->Ncerehit++]) CereHit();
+		*hit = cerehit[i];
+	}
 	// Calculate W of reconstructed particles
 	for (unsigned int i = 0; i < photon.size(); i++)
 		evt->W += photon[i].p;
@@ -438,7 +484,7 @@ void DEventProcessor_mcthrown_tree::FillEvent(Event *evt, particle_set &pset) {
 //------------------
 // IsFiducial
 //------------------
-bool DEventProcessor_mcthrown_tree::IsFiducial(const DKinematicData *kd) {
+bool DEventProcessor_mc_tree::IsFiducial(const DKinematicData *kd) {
 	double theta_degrees = kd->momentum().Theta() * TMath::RadToDeg();
 	double p = kd->momentum().Mag();
 
@@ -462,13 +508,13 @@ bool DEventProcessor_mcthrown_tree::IsFiducial(const DKinematicData *kd) {
 //------------------
 // erun
 //------------------
-jerror_t DEventProcessor_mcthrown_tree::erun(void) {
+jerror_t DEventProcessor_mc_tree::erun(void) {
 	return NOERROR;
 }
 
 //------------------
 // fini
 //------------------
-jerror_t DEventProcessor_mcthrown_tree::fini(void) {
+jerror_t DEventProcessor_mc_tree::fini(void) {
 	return NOERROR;
 }

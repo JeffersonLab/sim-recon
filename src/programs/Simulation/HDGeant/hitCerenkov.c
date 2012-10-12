@@ -9,7 +9,7 @@
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
  *          add ipart to the function hitCerenkov
  *
- *          Oct 3, 2012 Yi Qiang: add RICH hits and flag
+ *          Oct 12 2012, yqiang, removed changes made in revision 9720
  */
 
 #include <stdlib.h>
@@ -30,14 +30,13 @@ extern s_HDDM_t* thisInputEvent;
 binTree_t* cerenkovTree = 0;
 static int sectionCount = 0;
 static int pointCount = 0;
-// add RICH hit counter, yqiang Oct 3, 2012
-static int richCount = 0;
+
 
 /* register truth points during tracking (from gustep) */
-// added isrich to flag RICH hits, yqiang Oct 3, 2012
+
 void hitCerenkov (float xin[4], float xout[4],
                   float pin[5], float pout[5], float dEsum,
-                  int track, int stack, int history, int ipart, int isrich)
+                  int track, int stack, int history, int ipart)
 {
    float x[3], t;
 
@@ -76,7 +75,7 @@ void hitCerenkov (float xin[4], float xout[4],
 
    /* post the hit to the hits tree, mark sector as hit */
 
-   if (dEsum < 0 && !isrich)  		/* indicates a detector Cerenkov photon */
+   if (dEsum < 0)  		/* indicates a detector Cerenkov photon */
    {
       int nshot;
       s_CereHits_t* hits;
@@ -124,36 +123,15 @@ void hitCerenkov (float xin[4], float xout[4],
          fprintf(stderr,"max shot count %d exceeded, truncating!\n",MAX_HITS);
       }
    }
-
-   // if RICH is hit, yqiang Oct 3, 2012
-   if (dEsum < 0 && isrich)
-   {
-		int mark = (1 << 20) + richCount;
-		void** twig = getTwig(&cerenkovTree, mark);
-		if (*twig == 0) {
-			s_Cerenkov_t* cere = *twig = make_s_Cerenkov();
-			s_CereRichHits_t* richHits = make_s_CereRichHits(1);
-			cere->cereRichHits = richHits;
-			int a =
-					thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
-			richHits->in[0].x = xin[0];
-			richHits->in[0].y = xin[1];
-			richHits->in[0].z = xin[2];
-			richHits->in[0].t = xin[3] * 1e9;
-			richHits->mult = 1;
-			richCount++;
-		}
-   }
-
 }
 
 /* entry points from fortran */
-// added isrich to flag RICH hits, yqiang Oct 3, 2012
+
 void hitcerenkov_(float* xin, float* xout,
                   float* pin, float* pout, float* dEsum,
-                  int* track, int* stack, int* history, int* ipart, int* isrich)
+                  int* track, int* stack, int* history, int* ipart)
 {
-   hitCerenkov(xin,xout,pin,pout,*dEsum,*track,*stack,*history,*ipart,*isrich);
+   hitCerenkov(xin,xout,pin,pout,*dEsum,*track,*stack,*history,*ipart);
 }
 
 
@@ -172,9 +150,6 @@ s_Cerenkov_t* pickCerenkov ()
    box = make_s_Cerenkov();
    box->cereSections = make_s_CereSections(sectionCount);
    box->cereTruthPoints = make_s_CereTruthPoints(pointCount);
-   // create RICH hits
-   box->cereRichHits = make_s_CereRichHits(richCount);
-
    while (item = pickTwig(&cerenkovTree))
    {
       s_CereSections_t* sections = item->cereSections;
@@ -224,29 +199,11 @@ s_Cerenkov_t* pickCerenkov ()
       {
          FREE(points);
       }
-      // pack RICH hits, yqiang Oct 3, 2012
-      s_CereRichHits_t* richhits = item->cereRichHits;
-      int richhit;
-      for(richhit = 0; richhit < richhits->mult; ++richhit)
-      {
-    	  int m = box->cereRichHits->mult++;
-    	  box->cereRichHits->in[m] = richhits->in[richhit];
-      }
-      if(richhits != HDDM_NULL)
-      {
-    	  FREE(richhits);
-      }
       FREE(item);
    }
 
-   // clear RICH hits, yqiang Oct 3, 2012
-   sectionCount = pointCount = richCount = 0;
-   if ((box->cereRichHits != HDDM_NULL) &&
- 		   (box->cereRichHits->mult == 0))
-    {
- 	   FREE(box->cereRichHits);
- 	   box->cereRichHits = HDDM_NULL;
-    }
+   sectionCount = pointCount = 0;
+
    if ((box->cereSections != HDDM_NULL) &&
        (box->cereSections->mult == 0))
    {
@@ -260,8 +217,7 @@ s_Cerenkov_t* pickCerenkov ()
       box->cereTruthPoints = HDDM_NULL;
    }
    if ((box->cereSections->mult == 0) &&
-       (box->cereTruthPoints->mult == 0) &&
-       (box->cereRichHits->mult == 0))
+       (box->cereTruthPoints->mult == 0))
    {
       FREE(box);
       box = HDDM_NULL;

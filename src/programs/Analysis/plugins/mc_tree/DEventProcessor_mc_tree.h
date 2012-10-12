@@ -6,6 +6,7 @@
  *
  *      Modified on:
  *      	Sep 28, 2012, yqiang, added RICH hits to ROOTfile
+ *      	Oct 10 2012, yqiang, add full Cherenkov support
  *
  */
 
@@ -29,7 +30,8 @@ using namespace jana;
 #include <PID/DParticleSet.h>
 #include <PID/DKinematicData.h>
 #include <PID/DBeamPhoton.h>
-#include <CERE/DCereRichHit.h>
+#include <RICH/DRichHit.h>
+#include <CERE/DCereHit.h>
 
 #include <TMath.h>
 #include <TFile.h>
@@ -45,12 +47,13 @@ using namespace ROOT;
 #include "Event.h"
 #include "Particle.h"
 #include "RichHit.h"
+#include "CereHit.h"
 
-class DEventProcessor_mcthrown_tree: public JEventProcessor {
+class DEventProcessor_mc_tree: public JEventProcessor {
 
 public:
-	DEventProcessor_mcthrown_tree();
-	~DEventProcessor_mcthrown_tree();
+	DEventProcessor_mc_tree();
+	~DEventProcessor_mc_tree();
 
 	class particle_set {
 	public:
@@ -64,6 +67,7 @@ public:
 		vector<Particle> electrons;
 		vector<Particle> positrons;
 		vector<RichHit> richhits;
+		vector<CereHit> cerehits;
 	};
 
 	class hit_set {
@@ -74,6 +78,8 @@ public:
 		Int_t hits_fcal;	// Number of hits in FCAL
 		Int_t hits_upv;		// Number of hits in UPV
 		Int_t hits_tof;		// Number of hits in TOF
+		Int_t hits_rich;	// Number of hits in RICH
+		Int_t hits_cere;	// Number of hits in Cherenkov
 	};
 
 	Event *evt_thrown;
@@ -92,7 +98,8 @@ private:
 	}
 
 	Particle MakeParticle(const DKinematicData *kd, double mass, hit_set hits);
-	RichHit MakeRichHit(const DCereRichHit *rhit);
+	RichHit MakeRichHit(const DRichHit *rhit);
+	CereHit MakeCereHit(const DCereHit *chit);
 	void FillEvent(Event *evt, particle_set &pset);
 	bool IsFiducial(const DKinematicData *kd);
 };

@@ -28,6 +28,8 @@ public:
 		hits_fcal = 0;
 		hits_upv = 0;
 		hits_tof = 0;
+		hits_rich = 0;
+		hits_cere = 0;
 	}
 	;
 	~Particle() {
@@ -48,6 +50,8 @@ public:
 	Int_t hits_fcal;	// Number of hits in FCAL
 	Int_t hits_upv;		// Number of hits in UPV
 	Int_t hits_tof;		// Number of hits in TOF
+	Int_t hits_rich;	// Number of hits in RICH
+	Int_t hits_cere;	// Number of hits in Cherenkov
 
 	// Copy constructor
 	Particle& operator=(const Particle &prt) {
@@ -64,11 +68,13 @@ public:
 		this->hits_fcal = prt.hits_fcal;
 		this->hits_upv = prt.hits_upv;
 		this->hits_tof = prt.hits_tof;
+		this->hits_rich = prt.hits_rich;
+		this->hits_cere = prt.hits_cere;
 		return *this;
 	}
 
 private:
-ClassDef(Particle,1)
+	ClassDef(Particle,1)
 	;
 
 };

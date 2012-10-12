@@ -3,24 +3,22 @@
  *
  *  Created on: Oct 3, 2012
  *      Author: yqiang
+ *
+ *  Modified on:
+ *  	Oct 9 2012, Yi Qiang, add general Cerenkov hit
  */
 
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-#include "DCereRichHit.h"
-#include "DCereTruth.h"
+#include "DCereHit.h"
 
-typedef JFactory<DCereRichHit> DCereRichHit_factory;
-typedef JFactory<DCereTruth> DCereTruth_factory;
+typedef JFactory<DCereHit> DCereHit_factory;
 
-jerror_t CERE_init(JEventLoop *loop)
-{
-  /// Create and register TOF data factories
-  loop->AddFactory(new DCereRichHit_factory());
-  loop->AddFactory(new DCereTruth_factory());
+jerror_t CERE_init(JEventLoop *loop) {
+	/// Create and register Cherenkov data factories
+	loop->AddFactory(new DCereHit_factory());
 
-  return NOERROR;
+	return NOERROR;
 }
-
 
