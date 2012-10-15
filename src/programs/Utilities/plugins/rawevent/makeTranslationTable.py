@@ -10,15 +10,16 @@
 #    start new crate with each new detector
 #    start new crate with each new module type
 #    reserved slots:
-#        1 is cpu
+#        1 is vme cpu
 #       10 is empty
 #       11 is switch slot
 #       12 is switch slot
-#       21 is TI
+#       21 is TID
 #    for Hall D max of 16 payload slots per VXS crate, 8 on each side of switch slots, slot 10 unused
 
 
 #  still to do:
+#    get rid of hard-coded channel counts
 #    complete detector list:  PS, TAC, POLAR, others?
 
 
@@ -57,7 +58,7 @@ channelCount = {
 
 # max 16 daq boards per crate, 8 per side
 # array holds vme slot number given daq (ADC,TDC) module number
-# missing slots hold CPU, CTP, SD and TI
+# missing slots hold CPU, CTP, SD and TID
 max_payload   = 16
 vmeSlotNumber = [-9999,2,3,4,5,6,7,8,9,13,14,15,16,17,18,19,20]
 
@@ -76,7 +77,7 @@ def startCrate(acrate,adaqModule,achannel):
     adaqModule = 1
     achannel   = 0
     file.write('  <crate number="%i"  type="VXS">\n\n' % acrate)
-    file.write('    <slot number="1"  type="CPU"/>\n\n')
+    file.write('    <slot number="1"  type="VMECPU"/>\n\n')
     return(acrate,adaqModule,achannel)
 
 def startSlot(adaqModule,atype):
@@ -105,7 +106,7 @@ def endSlot():
     file.write('    </slot>\n\n')
     
 def endCrate():
-    file.write('    <slot number="21"  type="TI"/>\n\n')
+    file.write('    <slot number="21"  type="TID"/>\n\n')
     file.write('  </crate>\n\n\n')
     
 def closeCrate(adaqModule):
@@ -159,7 +160,8 @@ if (detectorOn['CDC']>0):
     for ring in range(len(cdcStrawCount)):
         for straw in range(1,cdcStrawCount[ring]+1):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-            file.write('      <channel number="%i" detector="CDC" ring="%i" straw="%i" />\n' % (channel,ring+1,straw) )
+            file.write('      <channel number="%i" detector="CDMISC_LIBS += -L/home/wolin/mc2coda -lmc2coda
+C" ring="%i" straw="%i" />\n' % (channel,ring+1,straw) )
     closeCrate(daqModule)
 
 
@@ -287,9 +289,10 @@ if (detectorOn['TOF']>0):
             
 
 
-# TOF: CAENTDC, 32 channels/slot
+#### TOF: CAENTDC, 32 channels/slot
+# TOF: F1TDCC, 32 channels/slot
 if (detectorOn['TOF']>0):
-    type = 'CAENTDC'
+    type = 'F1TDC32'
     (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
     startSlot(daqModule,type)
     for end in range(2):
