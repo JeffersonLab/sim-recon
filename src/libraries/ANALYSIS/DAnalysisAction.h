@@ -20,6 +20,7 @@ class DAnalysisAction
 	public:
 
 		DAnalysisAction(const DReaction* locReaction, string locActionBaseName, bool locUseKinFitResultsFlag = false, string locActionUniqueString = ""); //inheriting classes MUST call this constructor!
+		virtual ~DAnalysisAction(void){};
 
 		inline const DReaction* Get_Reaction(void) const{return dReaction;}
 		inline string Get_ActionName(void) const{return dActionName;}
