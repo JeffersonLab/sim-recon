@@ -58,13 +58,28 @@ typedef struct{
 
 typedef struct{
   unsigned int id;
+  double ures,vres;
   DMatrix4x1 S;
   DMatrix4x4 C;
   DMatrix2x2 R;
-  DMatrix2x4 H;
   DMatrix4x2 H_T;
+  DMatrix2x4 H;
+  double doca;
   double drift,drift_time;
 }update_t;
+
+typedef struct{
+  unsigned int id;
+  DMatrix4x1 S;
+  DMatrix4x4 C; 
+  DMatrix4x1 H_T;
+  DMatrix1x4 H;
+  double ures,vres;
+  double R;
+  double drift,drift_time;
+}strip_update_t;
+
+
 
 typedef struct{
   DMatrix3x1 A;
@@ -129,15 +144,26 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 				   double &var_ty,double &chi2y);
 		jerror_t DoFilter(DMatrix4x1 &S,
 				  vector<const DFDCPseudo*> &fdchits);
-
+		jerror_t KalmanFilter(double anneal_factor,
+				      DMatrix4x1 &S,DMatrix4x4 &C,
+				      vector<const DFDCPseudo *>&hits,
+			     deque<trajectory_t>&trajectory,
+				      vector<strip_update_t>&updates,
+				      double &chi2,unsigned int &ndof);
 		jerror_t KalmanFilter(double anneal_factor,
 				      DMatrix4x1 &S,DMatrix4x4 &C,
 			     vector<const DFDCPseudo *>&hits,
 			     deque<trajectory_t>&trajectory,
 			     vector<update_t>&updates,
-			     double &chi2,unsigned int &ndof);
+			     double &chi2,unsigned int &ndof);	
 		jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 				deque<trajectory_t>&trajectory,
+				vector<const DFDCPseudo *>&hits,
+				vector<strip_update_t>updates,
+				vector<strip_update_t>&smoothed_updates);
+		jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
+				deque<trajectory_t>&trajectory,
+				vector<const DFDCPseudo *>&hits,
 				vector<update_t>updates,
 				vector<update_t>&smoothed_updates);
 		jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
@@ -149,6 +175,12 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		jerror_t LinkSegments(vector<segment_t>segments[4], 
 				      vector<vector<const DFDCPseudo *> >&LinkedSegments);
 
+		jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
+				     vector<update_t>smoothed_updates);
+		jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
+				     vector<strip_update_t>smoothed_updates);
+
+
 		double GetDriftDistance(double t);
 		double GetDriftVariance(double t);
 
@@ -156,7 +188,8 @@ class DEventProcessor_fdc_hists:public JEventProcessor{
 		TH1F *Hprob,*Htime_prob;
 		TH2F *Hures_vs_layer;	
 		TH2F *Hcand_ty_vs_tx,*Htime_ty_vs_tx,*Hty_vs_tx;
-		TH1F *Hdrift_time,*Hdrift_integral;
+		TH2F *Hdrift_time;
+		TH1F *Hdrift_integral;
 		TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
 		TH3F *Htime_y_vs_x;
 		TH2F *Hqratio_vs_wire,*Hdelta_z_vs_wire;
