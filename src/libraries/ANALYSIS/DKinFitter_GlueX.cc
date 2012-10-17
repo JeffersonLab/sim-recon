@@ -43,10 +43,11 @@ void DKinFitter_GlueX::Reset_NewFit(void)
 const DKinFitParticle* DKinFitter_GlueX::Make_BeamParticle(const DBeamPhoton* locBeamPhoton)
 {
 	const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locBeamPhoton);
-	TLorentzVector locSpacetimeVertex(locKinematicData->position(), locKinematicData->time());
+	TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
+	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
 	Particle_t locPID = locKinematicData->PID();
 
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_BeamParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locKinematicData->momentum(), &(locKinematicData->errorMatrix()));
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_BeamParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
 	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
 }
@@ -54,10 +55,11 @@ const DKinFitParticle* DKinFitter_GlueX::Make_BeamParticle(const DBeamPhoton* lo
 const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DChargedTrackHypothesis* locChargedTrackHypothesis)
 {
 	const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locChargedTrackHypothesis);
-	TLorentzVector locSpacetimeVertex(locKinematicData->position(), locKinematicData->time());
+	TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
+	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
 	Particle_t locPID = locKinematicData->PID();
 
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locKinematicData->momentum(), &(locKinematicData->errorMatrix()));
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
 	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
 }
@@ -71,8 +73,9 @@ const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DNeutralPar
 	if(locWillOnlyBeUsedInP4FitFlag)
 	{
 		//use DNeutralParticleHypothesis object (assumes vertex is at target center! NOT IDEAL, AVOID IF POSSIBLE!!)
-		TLorentzVector locSpacetimeVertex(locKinematicData->position(), locKinematicData->time());
-		locKinFitParticle = DKinFitter::Make_DetectedParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locKinematicData->momentum(), &(locKinematicData->errorMatrix()));
+	  TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
+	  TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
+	  locKinFitParticle = DKinFitter::Make_DetectedParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
 	}
 	else
 	{
@@ -80,7 +83,7 @@ const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DNeutralPar
 		vector<const DNeutralShower*> locNeutralShowers;
 		locNeutralParticleHypothesis->GetT(locNeutralShowers);
 		const DNeutralShower* locNeutralShower = locNeutralShowers[0];
-		locKinFitParticle = DKinFitter::Make_DetectedShower(ParticleMass(locPID), locNeutralShower->dSpacetimeVertex, locNeutralShower->dEnergy, &(locNeutralShower->dCovarianceMatrix));
+		locKinFitParticle = DKinFitter::Make_DetectedShower(ParticleMass(locPID), TLorentzVector(locNeutralShower->dSpacetimeVertex.X(),locNeutralShower->dSpacetimeVertex.Y(),locNeutralShower->dSpacetimeVertex.Z(),locNeutralShower->dSpacetimeVertex.T()), locNeutralShower->dEnergy, &(locNeutralShower->dCovarianceMatrix));
 	}
 	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
@@ -157,8 +160,8 @@ bool DKinFitter_GlueX::Propagate_TrackInfoToCommonVertex(DKinematicData* locKine
 	TMatrixDSym* locCovarianceMatrix = DKinFitter::Get_MatrixDSymResource();
 	if(!DKinFitter::Propagate_TrackInfoToCommonVertex(locKinFitParticle, locVXi, locMomentum, locSpacetimeVertex, locPathLengthPair, *locCovarianceMatrix))
 		return false;
-	locKinematicData->setMomentum(locMomentum);
-	locKinematicData->setPosition(locSpacetimeVertex.Vect());
+	locKinematicData->setMomentum(DVector3(locMomentum.X(),locMomentum.Y(),locMomentum.Z()));
+	locKinematicData->setPosition(DVector3(locSpacetimeVertex.Vect().X(),locSpacetimeVertex.Vect().Y(),locSpacetimeVertex.Vect().Z()));
 	locKinematicData->setTime(locSpacetimeVertex.T());
 	locKinematicData->setErrorMatrix(*locCovarianceMatrix);
 	locKinematicData->setPathLength(locPathLengthPair.first, locPathLengthPair.second);

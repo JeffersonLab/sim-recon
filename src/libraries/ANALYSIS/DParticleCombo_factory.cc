@@ -270,8 +270,8 @@ DKinematicData* DParticleCombo_factory::Build_KinematicData(Particle_t locPID, c
 	locKinematicData->setPID(locPID);
 	locKinematicData->setCharge(ParticleCharge(locPID));
 	locKinematicData->setMass(ParticleMass(locPID));
-	locKinematicData->setMomentum(locKinFitParticle->Get_Momentum());
-	locKinematicData->setPosition(locKinFitParticle->Get_Position());
+	locKinematicData->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
+	locKinematicData->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
 	locKinematicData->setTime(locKinFitParticle->Get_Time());
 	if(locKinFitParticle->Get_CovarianceMatrix() != NULL)
 		locKinematicData->setErrorMatrix(*(locKinFitParticle->Get_CovarianceMatrix()));

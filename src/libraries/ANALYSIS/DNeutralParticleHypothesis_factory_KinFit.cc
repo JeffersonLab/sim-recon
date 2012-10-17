@@ -123,8 +123,8 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
 		locNewNeutralParticleHypothesis->AddAssociatedObject(locFCALShowers[loc_i]);
 
-	locNewNeutralParticleHypothesis->setMomentum(locKinFitParticle->Get_Momentum());
-	locNewNeutralParticleHypothesis->setPosition(locKinFitParticle->Get_CommonVertex());
+	locNewNeutralParticleHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
+	locNewNeutralParticleHypothesis->setPosition(DVector3(locKinFitParticle->Get_CommonVertex().X(),locKinFitParticle->Get_CommonVertex().Y(),locKinFitParticle->Get_CommonVertex().Z()));
 	locNewNeutralParticleHypothesis->setTime(locKinFitParticle->Get_CommonTime());
 	locNewNeutralParticleHypothesis->setErrorMatrix(*locKinFitParticle->Get_CovarianceMatrix());
 

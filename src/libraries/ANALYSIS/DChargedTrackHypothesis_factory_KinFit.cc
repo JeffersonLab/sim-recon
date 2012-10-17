@@ -135,10 +135,10 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
 	vector<const DSCHit*> locSCHits;
 	locChargedTrackHypothesis->GetT(locSCHits);
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
-		locNewChargedTrackHypothesis->AddAssociatedObject(locSCHits[loc_i]);
+	  locNewChargedTrackHypothesis->AddAssociatedObject(locSCHits[loc_i]);
 
-	locNewChargedTrackHypothesis->setMomentum(locKinFitParticle->Get_Momentum());
-	locNewChargedTrackHypothesis->setPosition(locKinFitParticle->Get_Position());
+	locNewChargedTrackHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
+	locNewChargedTrackHypothesis->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
 	locNewChargedTrackHypothesis->setTime(locKinFitParticle->Get_Time());
 	locNewChargedTrackHypothesis->setErrorMatrix(*locKinFitParticle->Get_CovarianceMatrix());
 

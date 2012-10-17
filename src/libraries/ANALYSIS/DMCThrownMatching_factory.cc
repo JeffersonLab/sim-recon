@@ -6,6 +6,7 @@
 //
 
 #include "DMCThrownMatching_factory.h"
+#include "TMath.h"
 
 DMCThrownMatching_factory::DMCThrownMatching_factory(void)
 {

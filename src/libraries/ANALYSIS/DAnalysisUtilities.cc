@@ -139,8 +139,8 @@ double DAnalysisUtilities::Calc_DOCAToVertex(const DKinFitParticle* locKinFitPar
 
 double DAnalysisUtilities::Calc_DOCAToVertex(const DKinFitParticle* locKinFitParticle, const DVector3& locVertex, DVector3& locPOCA) const
 {
-	DVector3 locUnitDir = locKinFitParticle->Get_Momentum().Unit();
-	DVector3 locPosition = locKinFitParticle->Get_Position();
+	DVector3 locUnitDir(locKinFitParticle->Get_Momentum().Unit().X(),locKinFitParticle->Get_Momentum().Unit().Y(),locKinFitParticle->Get_Momentum().Unit().Z());
+	DVector3 locPosition(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z());
 	return Calc_DOCAToVertex(locUnitDir, locPosition, locVertex, locPOCA);
 }
 
@@ -158,11 +158,11 @@ double DAnalysisUtilities::Calc_DOCAToVertex(const DVector3& locUnitDir, const D
 
 double DAnalysisUtilities::Calc_DOCAVertex(const DKinFitParticle* locKinFitParticle1, const DKinFitParticle* locKinFitParticle2, DVector3& locDOCAVertex) const
 {
-	DVector3 locUnitDir1 = locKinFitParticle1->Get_Momentum().Unit();
-	DVector3 locUnitDir2 = locKinFitParticle2->Get_Momentum().Unit();
-	DVector3 locVertex1 = locKinFitParticle1->Get_Position();
-	DVector3 locVertex2 = locKinFitParticle2->Get_Position();
-	return Calc_DOCAVertex(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locDOCAVertex);
+	DVector3 locUnitDir1(locKinFitParticle1->Get_Momentum().Unit().X(),locKinFitParticle1->Get_Momentum().Unit().Y(),locKinFitParticle1->Get_Momentum().Unit().Z());
+	DVector3 locUnitDir2(locKinFitParticle2->Get_Momentum().Unit().X(),locKinFitParticle2->Get_Momentum().Unit().Y(),locKinFitParticle2->Get_Momentum().Unit().Z());
+	DVector3 locVertex1(locKinFitParticle1->Get_Position().X(),locKinFitParticle1->Get_Position().Y(),locKinFitParticle1->Get_Position().Z());
+	DVector3 locVertex2(locKinFitParticle2->Get_Position().X(),locKinFitParticle2->Get_Position().Y(),locKinFitParticle2->Get_Position().Z());
+       	return Calc_DOCAVertex(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locDOCAVertex);
 }
 
 double DAnalysisUtilities::Calc_DOCAVertex(const DKinematicData* locKinematicData1, const DKinematicData* locKinematicData2, DVector3& locDOCAVertex) const
@@ -202,10 +202,10 @@ double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3
 
 double DAnalysisUtilities::Calc_DOCA(const DKinFitParticle* locKinFitParticle1, const DKinFitParticle* locKinFitParticle2, DVector3 &locPOCA1, DVector3 &locPOCA2) const
 {
-	DVector3 locUnitDir1 = locKinFitParticle1->Get_Momentum().Unit();
-	DVector3 locUnitDir2 = locKinFitParticle2->Get_Momentum().Unit();
-	DVector3 locVertex1 = locKinFitParticle1->Get_Position();
-	DVector3 locVertex2 = locKinFitParticle2->Get_Position();
+	DVector3 locUnitDir1(locKinFitParticle1->Get_Momentum().Unit().X(),locKinFitParticle1->Get_Momentum().Unit().Y(),locKinFitParticle1->Get_Momentum().Unit().Z());
+	DVector3 locUnitDir2(locKinFitParticle2->Get_Momentum().Unit().X(),locKinFitParticle2->Get_Momentum().Unit().Y(),locKinFitParticle2->Get_Momentum().Unit().Z());
+	DVector3 locVertex1(locKinFitParticle1->Get_Position().X(),locKinFitParticle1->Get_Position().Y(),locKinFitParticle1->Get_Position().Z());
+	DVector3 locVertex2(locKinFitParticle2->Get_Position().X(),locKinFitParticle2->Get_Position().Y(),locKinFitParticle2->Get_Position().Z());
 	return Calc_DOCA(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locPOCA1, locPOCA2);
 }
 
@@ -222,15 +222,15 @@ double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3
 {
   //originated from code by Jörn Langheinrich
   //you can use this function to find the DOCA to a fixed point by calling this function with locUnitDir1 and 2 parallel, and the fixed vertex as locVertex2
-  double locUnitDot = locUnitDir1*locUnitDir2;
+  double locUnitDot = locUnitDir1.Dot(locUnitDir2);
   double locDenominator = locUnitDot*locUnitDot - 1.0; /// scalar product of directions
   double locDistVertToInterDOCA1 = 0.0, locDistVertToInterDOCA2 = 0.0; //distance from vertex to DOCA point
 
   if(fabs(locDenominator) < 1.0e-15) //parallel
-    locDistVertToInterDOCA1 = (locVertex2 - locVertex1)*locUnitDir2/locUnitDot; //the opposite
+    locDistVertToInterDOCA1 = (locVertex2 - locVertex1).Dot(locUnitDir2)/locUnitDot; //the opposite
   else{
-    double locA = (locVertex1 - locVertex2)*locUnitDir1;
-    double locB = (locVertex1 - locVertex2)*locUnitDir2;
+    double locA = (locVertex1 - locVertex2).Dot(locUnitDir1);
+    double locB = (locVertex1 - locVertex2).Dot(locUnitDir2);
     locDistVertToInterDOCA1 = (locA - locUnitDot*locB)/locDenominator;
     locDistVertToInterDOCA2 = (locUnitDot*locA - locB)/locDenominator;
   }
@@ -264,13 +264,12 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& l
 	//crudely propagate the track times to the common vertex and return the average track time
 	DVector3 locPOCA;
 	DVector3 locDeltaVertex;
-	DVector3 locMomentum;
 	double locAverageTime = 0.0;
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
 		Calc_DOCAToVertex(locParticles[loc_i], locCommonVertex, locPOCA);
-		locDeltaVertex = locPOCA - locParticles[loc_i]->Get_Position();
-		locMomentum = locParticles[loc_i]->Get_Momentum();
+		locDeltaVertex = locPOCA - DVector3(locParticles[loc_i]->Get_Position().X(),locParticles[loc_i]->Get_Position().Y(),locParticles[loc_i]->Get_Position().Z());
+		DVector3 locMomentum(locParticles[loc_i]->Get_Momentum().X(),locParticles[loc_i]->Get_Momentum().Y(),locParticles[loc_i]->Get_Momentum().Z());
 		double locTime = locParticles[loc_i]->Get_Time() + locDeltaVertex.Dot(locMomentum)*locParticles[loc_i]->Get_Energy()/(29.9792458*locMomentum.Mag2());
 		locAverageTime += locTime;
 	}
@@ -311,8 +310,9 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinFitParticle*
 
 	if(locParticles.size() == 0)
 		return locVertex;
+
 	if(locParticles.size() == 1)
-		return locParticles[0]->Get_Position();
+	  return DVector3(locParticles[0]->Get_Position().X(),locParticles[0]->Get_Position().Y(),locParticles[0]->Get_Position().Z());
 
 	double locDOCA, locSmallestDOCA;
 	DVector3 locTempVertex;

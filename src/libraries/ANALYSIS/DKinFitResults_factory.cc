@@ -244,7 +244,7 @@ void DKinFitResults_factory::Setup_KinFit(const DParticleCombo* locParticleCombo
 			//spacetime
 			locUseRFTimeFlag = ((locStepIndex == 0) && locFirstParticleIsBeamFlag);
 			locUseRFTimeFlags.push_back(locUseRFTimeFlag);
-			double locTimeGuess = Calc_TimeGuess(locFinalKinFitParticles_Vertex, locVertexGuess, locUseRFTimeFlag, locRFTime);
+			double locTimeGuess = Calc_TimeGuess(locFinalKinFitParticles_Vertex, DVector3(locVertexGuess.X(),locVertexGuess.Y(),locVertexGuess.Z()), locUseRFTimeFlag, locRFTime);
 			locTimeGuesses.push_back(locTimeGuess);
 		}
 	}
@@ -539,7 +539,8 @@ TVector3 DKinFitResults_factory::Calc_VertexGuess(const deque<const DKinFitParti
 		if((locKinFitParticleType == d_DetectedParticle) && (locFinalKinFitParticles[loc_i]->Get_Charge() != 0))
 			locVertexFindParticles.push_back(locFinalKinFitParticles[loc_i]);
 	}
-	DVector3 locInitVertex = dAnalysisUtilities->Calc_CrudeVertex(locVertexFindParticles);
+	DVector3 locTempInitVertex = dAnalysisUtilities->Calc_CrudeVertex(locVertexFindParticles);
+	TVector3 locInitVertex(locTempInitVertex.X(),locTempInitVertex.Y(),locTempInitVertex.Z());
 
 	//make sure there's enough detected particles to constrain the vertex for the guess
 	size_t locNumDetectedChargedParticles = 0;
@@ -549,7 +550,7 @@ TVector3 DKinFitResults_factory::Calc_VertexGuess(const deque<const DKinFitParti
 			++locNumDetectedChargedParticles;
 	}
 	if(locNumDetectedChargedParticles < 2)
-		return locInitVertex; //not enough detected tracks to fit
+	  return locInitVertex; //not enough detected tracks to fit
 
 	dKinFitter.Reset_NewFit();
 	const DKinFitConstraint_Vertex* locVertexConstraint = dKinFitter.Add_VertexConstraint(locInitialKinFitParticles, locFinalKinFitParticles, locInitVertex);

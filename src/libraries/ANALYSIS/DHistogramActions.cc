@@ -1558,7 +1558,7 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 			if(locParticleComboStep->Get_InitialParticleID() != dInitialPID)
 				continue;
 
-			TLorentzVector locFinalStateP4 = Get_AnalysisUtilities()->Calc_FinalStateP4(locParticleCombo, loc_i, Get_UseKinFitResultsFlag());
+			DLorentzVector locFinalStateP4 = Get_AnalysisUtilities()->Calc_FinalStateP4(locParticleCombo, loc_i, Get_UseKinFitResultsFlag());
 			if((locFinalStateP4.M2() < dMinMassSq) || (locFinalStateP4.M2() > dMaxMassSq))
 			{
 				locInSignalRegionFlag = false;
