@@ -542,6 +542,17 @@
 	<real name="dedx"	value="1.819"	unit="MeV/g/cm^2"	/>
   </composite>
    
+  <composite name="H2O">
+        <addmaterial material="Hydrogen">  <natoms n="2"        /> </addmaterial>
+        <addmaterial material="Oxygen">  <natoms n="1"  /> </addmaterial>
+        <real name="density"    value="1.0"     unit="g/cm^3"   />
+        <real name="radlen"     value="36.08"   unit="g/cm^2"   />
+        <real name="collen"     value="60.1"    unit="g/cm^2"   />
+        <real name="abslen"     value="83.6"    unit="g/cm^2"   />
+        <real name="dedx"       value="1.991"   unit="MeV/g/cm^2"       />
+  </composite>
+
+
   <composite name="ArCO2">
 	<addmaterial material="Argon">
 		<fractionmass	fraction="0.93"	/>
