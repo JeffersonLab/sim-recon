@@ -160,8 +160,7 @@ if (detectorOn['CDC']>0):
     for ring in range(len(cdcStrawCount)):
         for straw in range(1,cdcStrawCount[ring]+1):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-            file.write('      <channel number="%i" detector="CDMISC_LIBS += -L/home/wolin/mc2coda -lmc2coda
-C" ring="%i" straw="%i" />\n' % (channel,ring+1,straw) )
+            file.write('      <channel number="%i" detector="CDC" ring="%i" straw="%i" />\n' % (channel,ring+1,straw) )
     closeCrate(daqModule)
 
 
@@ -311,7 +310,7 @@ if (detectorOn['TAGGER']>0):
     (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
     startSlot(daqModule,type)
     for row in range(9):
-        for column in range(101):
+        for column in range(128):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
             file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel,row,column) )
     closeCrate(daqModule)
@@ -324,7 +323,7 @@ if (detectorOn['TAGGER']>0):
     (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
     startSlot(daqModule,type)
     for row in range(9):
-        for column in range(101):
+        for column in range(128):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
             file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel,row,column) )
     closeCrate(daqModule)
