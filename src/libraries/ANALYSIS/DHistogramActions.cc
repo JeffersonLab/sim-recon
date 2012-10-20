@@ -1540,15 +1540,8 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 			Get_Application()->RootUnLock();
 		}
 	}
-
-	if(locComboTruePIDStatus == 1)
-	{
-		locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
-		//check whether all of a collection of given measured particles appear anywhere in any step
-		if(Get_AnalysisUtilities()->Find_SimilarCombos(locParticles, locPreviousParticleCombos))
-			locComboTruePIDStatus = 0; //dupe! at least one combo is bad!! (e.g. 2 pi-'s in combo)
-	}
 	dHist_TruePIDStatus->Fill(locComboTruePIDStatus);
+
 	if(dMinMassSq < dMaxMassSq)
 	{
 		bool locInSignalRegionFlag = true; //all possibilities have to be in the signal region
