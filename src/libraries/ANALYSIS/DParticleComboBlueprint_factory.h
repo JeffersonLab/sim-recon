@@ -47,8 +47,9 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		const JObject* Grab_DetectedTrack(DParticleComboBlueprint* locParticleComboBlueprint, Particle_t locAnalysisPID, int& locResumeAtIndex, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative);
 		const JObject* Choose_SourceObject(Particle_t locAnalysisPID, DParticleComboBlueprint* locParticleComboBlueprint, deque<const JObject*>& locSourceObjects, int& locResumeAtIndex) const;
 
-		bool Cut_VertexZ(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_TrackingChiSqPerDF(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 		bool Cut_PIDFOM(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_VertexZ(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		DParticleComboBlueprintStep* Get_ParticleComboBlueprintStepResource(void);
 
@@ -64,8 +65,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		double dMaxVertexZ;
 		int dMaximumNumTracks;
 
-		bool dChargedPIDFOMCutFlag;
 		double dMinChargedPIDFOM;
+		double dMaxTrackingChiSqPerDF;
 };
 
 #endif // _DParticleComboBlueprint_factory_

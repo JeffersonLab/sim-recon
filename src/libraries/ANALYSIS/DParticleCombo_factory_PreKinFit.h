@@ -76,8 +76,8 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		double dMinVertexZ;
 		double dMaxVertexZ;
 
-		bool dChargedPIDFOMCutFlag;
 		double dMinChargedPIDFOM;
+		double dMaxTrackingChiSqPerDF;
 };
 
 #endif // _DParticleCombo_factory_PreKinFit_

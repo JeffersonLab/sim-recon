@@ -12,8 +12,8 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	dMinVertexZ = 45.0;
 	dMaxVertexZ = 85.0;
 	dMaximumNumTracks = -1;
-	dChargedPIDFOMCutFlag = true;
-	dMinChargedPIDFOM = 0.001;
+	dMinChargedPIDFOM = 0.001; //set to < 0.0 to disable
+	dMaxTrackingChiSqPerDF = -1.0; //set to < 0.0 to disable
 	return NOERROR;
 }
 
@@ -28,8 +28,8 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 	gPARMS->SetDefaultParameter("COMBO:VERTEXZCUTFLAG", dVertexZCutFlag);
 	gPARMS->SetDefaultParameter("COMBO:MINVERTEXZ", dMinVertexZ);
 	gPARMS->SetDefaultParameter("COMBO:MAXVERTEXZ", dMaxVertexZ);
-	gPARMS->SetDefaultParameter("COMBO:CHARGEDPIDFOMCUTFLAG", dChargedPIDFOMCutFlag);
 	gPARMS->SetDefaultParameter("COMBO:MINCHARGEDPIDFOM", dMinChargedPIDFOM);
+	gPARMS->SetDefaultParameter("COMBO:MAXTRACKINGCHISQPERDF", dMaxTrackingChiSqPerDF);
 	return NOERROR;
 }
 
@@ -641,16 +641,17 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(Particle_t l
 
 		const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locObject); //NULL if not charged
 
-		//if charged, check to make sure the vertex-z and PID FOM are OK (cut garbage tracks and wildly bad combos)
+
+		//if charged, check to make sure the vertex-z, PID FOM, and tracking chisq are OK (cut garbage tracks and wildly bad combos)
 		if(locChargedTrack != NULL)
 		{
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locAnalysisPID);
 			if(locChargedTrackHypothesis != NULL)
 			{
-				if((!Cut_VertexZ(locChargedTrackHypothesis)) || (!Cut_PIDFOM(locChargedTrackHypothesis)))
+				if((!Cut_VertexZ(locChargedTrackHypothesis)) || (!Cut_PIDFOM(locChargedTrackHypothesis)) || (!Cut_TrackingChiSqPerDF(locChargedTrackHypothesis)))
 				{
 					if(dDebugLevel > 20)
-						cout << "Bad vertex-z or PID FOM: " << locChargedTrackHypothesis->position().Z() << ", " << locChargedTrackHypothesis->dFOM << endl;
+						cout << "Bad vertex-z, PID FOM, or Tracking chisq/df: " << locChargedTrackHypothesis->position().Z() << ", " << locChargedTrackHypothesis->dFOM << endl;
 					continue;
 				}
 			}
@@ -709,9 +710,20 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(Particle_t l
 	return NULL;
 }
 
+
+bool DParticleComboBlueprint_factory::Cut_TrackingChiSqPerDF(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+{
+	if(dMaxTrackingChiSqPerDF < 0.0)
+		return true;
+	if(locChargedTrackHypothesis->dNDF_Track == 0)
+		return true;
+	double locFOM = locChargedTrackHypothesis->dChiSq_Track/((double)(locChargedTrackHypothesis->dNDF_Track));
+	return (locFOM <= dMaxTrackingChiSqPerDF);
+}
+
 bool DParticleComboBlueprint_factory::Cut_PIDFOM(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
-	if(!dChargedPIDFOMCutFlag)
+	if(dMinChargedPIDFOM < 0.0)
 		return true;
 	return ((locChargedTrackHypothesis->dNDF == 0) ? true : (locChargedTrackHypothesis->dFOM >= dMinChargedPIDFOM));
 }
