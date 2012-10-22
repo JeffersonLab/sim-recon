@@ -68,9 +68,8 @@ int loadOutput ()
    {
       static int eventNo = 0;
       thisOutputEvent = make_s_HDDM();
-      thisOutputEvent->physicsEvents = make_s_PhysicsEvents(1);
-      thisOutputEvent->physicsEvents->mult = 1;
-      thisOutputEvent->physicsEvents->in[0].eventNo = ++eventNo;
+      thisOutputEvent->physicsEvent = make_s_PhysicsEvent();
+      thisOutputEvent->physicsEvent->eventNo = ++eventNo;
    }
    return packages_hit;
 }
