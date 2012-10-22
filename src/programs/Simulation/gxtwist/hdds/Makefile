@@ -1,17 +1,19 @@
+OS_RELEASE = $(shell $(HALLD_HOME)/src/BMS/osrelease.pl)
+
+HDDS_GEANT = $(HDDS_HOME)/bin/$(OS_RELEASE)/hdds-geant
+
+HDDS_SCHEMA = HDDS-1_0.xsd
 
 XML_SOURCE = TaggerArea.xml FocalPlane.xml Materials.xml PhotonPipe.xml\
               Regions.xml Spectrometer.xml ElectronDump.xml
 
-hddsGeant3_tagger.F: hdds-geant $(XML_SOURCE)
-	./hdds-geant TaggerArea.xml >$@
+hddsGeant3_tagger.F: $(XML_SOURCE) $(HDDS_SCHEMA) $(HDDS_GEANT)
+	$(HDDS_GEANT) TaggerArea.xml >$@
 
-
-hdds-geant: hdds-geant.cpp XParsers.cpp XParsers.hpp \
-            XString.cpp XString.hpp hddsCommon.cpp hddsCommon.hpp
-	$(CXX) $(COPTS) -I$(XERCESCROOT)/include -o $@ $< \
-	hddsCommon.cpp XParsers.cpp XString.cpp \
-	-L$(XERCESCROOT)/lib -lxerces-c
+$(HDDS_GEANT):
+	@echo "Application hdds-geant has not yet been built."
+	@echo "You must run \"make\" in the primary hdds area first."
 
 clean:
-	rm -f *.o core *.depend hdds-geant
+	rm -f *.o core *.depend
 

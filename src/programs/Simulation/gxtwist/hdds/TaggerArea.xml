@@ -12,8 +12,7 @@
 
 <HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.gluex.org/hdds 
-          file:///group/halld/Software/builds/hdds/hdds-1.1/HDDS-1_0.xsd">
+      xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_0.xsd">
 
 <!-- Include materials -->
      &Material_s;

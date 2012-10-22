@@ -206,7 +206,7 @@
 
   <tubs name="FSST" Rio_Z="3.81  8.4   30.96" material="Aluminum" comment="Front Section Tube"/>
 
-  <tubs name="FSTW" Rio_Z="7.0  7.62  30.96" material="H2O" comment="Front Section Tube Water"/>
+  <tubs name="FSTW" Rio_Z="7.0  7.62  30.96" material="Water" comment="Front Section Tube Water"/>
 
   <tubs name="FSEF" Rio_Z="3.175  3.81  4.1" material="Aluminum" comment="Front Section Tube entrance flange inside"/>
   <tubs name="FSSF" Rio_Z="8.4  12.065  2.2" material="Aluminum" comment="Front Section Flange"/>
@@ -226,7 +226,7 @@
 
   <cons name="ACCT" Rio1_Rio2_Z="2.86 2.86 0.0 2.86 2.86"  material="Aluminum" comment="Cone in the Hole in Al Center Section Tube"/>
 
-  <tubs name="ACTW" Rio_Z="4.45  5.08  105.4" material="H2O" comment="Al Center Section Tube Water"/>
+  <tubs name="ACTW" Rio_Z="4.45  5.08  105.4" material="Water" comment="Al Center Section Tube Water"/>
 
 
   <composition name="CopperSection" envelope="CEST">
@@ -235,7 +235,7 @@
 
   <tubs name="CEST" Rio_Z="0.0  12.7  29.21" material="Copper" comment="Copper End Section Tube"/>
 
-  <tubs name="CETW" Rio_Z="11.43  12.1  29.21" material="H2O" comment="Copper End Section Tube Water"/>
+  <tubs name="CETW" Rio_Z="11.43  12.1  29.21" material="Water" comment="Copper End Section Tube Water"/>
 
 
 

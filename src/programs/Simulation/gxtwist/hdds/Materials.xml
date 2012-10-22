@@ -773,6 +773,16 @@
         <real name="density"	value="1.9"	unit="g/cm^3"/>
   </composite>
 
+  <composite name="Water"> 
+	<addmaterial material="Hydrogen">
+		<natoms n="2"/>
+	</addmaterial>
+	<addmaterial material="Oxygen">
+		<natoms n="1"/>
+	</addmaterial>
+        <real name="density"	value="1.0"	unit="g/cm^3"/>
+  </composite>
+
   <composite name="Concrete">
 	<addmaterial material="Hydrogen">
 		<fractionmass	fraction="0.004"/>
