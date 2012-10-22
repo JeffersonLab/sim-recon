@@ -13,7 +13,7 @@ typedef struct {
 
 
 void initcalibdb_(char *bfield_type, char *bfield_map);
-void gufld2_(float *r, float *B);
+void gufld_DB_(float *r, float *B);
 int GetCalib(const char* namepath, unsigned int *Nvals, float* vals);
 void GetLorentzDeflections(float *lorentz_x, float *lorentz_z, 
 			   float **lorentz_nx, float **lorentz_nz, 
