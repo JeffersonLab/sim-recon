@@ -13,7 +13,7 @@ using namespace std;
 
 #include "DClassDef.h"
 
-string XML_FILENAME = "/Users/davidl/HallD/builds/sim-recon_latest/src/libraries/HDDM/event.xml";
+string XML_FILENAME = "/home/davidl/work/latest/sim-recon/src/libraries/HDDM/event.xml";
 string HDDM_CLASS = "x";
 
 map<string, DClassDef> CLASSES;
@@ -82,7 +82,7 @@ int main(int narg, char *argv[])
 		ofs << "#include<vector>" << endl;
 		ofs << "using namespace std;" << endl;
 		ofs << endl;
-		ofs << "#include<RTypes.h>" << endl;
+		ofs << "#include<Rtypes.h>" << endl;
 		ofs << "#include<TObject.h>" << endl;
 		ofs << endl;
 		
@@ -274,7 +274,7 @@ void CreateCopyRoutines(void)
 	ofs << endl;
 	ofs << endl;
 	
-	ofs << "#include <hddm_"<<HDDM_CLASS<<".hpp>"<<endl;
+	ofs << "#include <HDDM/hddm_"<<HDDM_CLASS<<".hpp>"<<endl;
 	ofs << "using namespace hddm_"<<HDDM_CLASS<<";"<<endl;
 	ofs << endl;
 

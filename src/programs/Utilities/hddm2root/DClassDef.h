@@ -13,7 +13,6 @@
 #include <string>
 using namespace std;
 
-#include <JANA/jerror.h>
 
 class DClassDef{
 	public:
