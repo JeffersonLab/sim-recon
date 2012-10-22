@@ -18,18 +18,26 @@ string HDDM_CLASS = "x";
 
 map<string, DClassDef> CLASSES;
 unsigned int MAX_DEPTH=0;
+unsigned int TARGET_DEPTH=1;
 
 void startElement(void *data, const char *el, const char **attr);
 void endElement(void *data, const char *el);
 void CreateCopyRoutines(void);
+void CreateHDDM2ROOT_tool(void);
 string NameToHDDMname(string name);
 string HDDMPlural(string name_hddm);
+void Usage(void);
+void ParseCommandLineArguments(int narg, char *argv[]);
+
 
 //--------------
 // main
 //--------------
 int main(int narg, char *argv[])
 {
+	// Parse Command line args
+	ParseCommandLineArguments(narg, argv);
+
 	// Parse XML file to get class definitions
 	stack<string> ancestory;
 
@@ -155,8 +163,8 @@ int main(int narg, char *argv[])
 	ofs << "ar -r libhddm_root.a hddm_root_CopyRoutines.o" << endl;
 	ofs << endl;
 
-	ofs << "echo compiling hddm_root_main.cc ..." << endl;
-	cmd = "c++ `root-config --cflags --libs` -I${HALLD_HOME}/include -I. hddm_root_main.cc ./libhddm_root.a -lbz2 -lz -L${HALLD_HOME}/lib/${BMS_OSNAME} -lHDDM";
+	ofs << "echo compiling hddm2root_" << HDDM_CLASS << ".cc ..." << endl;
+	cmd = "c++ `root-config --cflags --libs` -I${HALLD_HOME}/include -I. hddm2root_" + HDDM_CLASS + ".cc -o hddm2root_" + HDDM_CLASS + " ./libhddm_root.a -lbz2 -lz -L${HALLD_HOME}/lib/${BMS_OSNAME} -lHDDM -lxstream";
 	ofs << cmd << endl;
 	ofs << endl;
 
@@ -167,6 +175,9 @@ int main(int narg, char *argv[])
 	
 	// Create Copy Routines
 	CreateCopyRoutines();
+	
+	// Create main tool file
+	CreateHDDM2ROOT_tool();
 	
 	return 0;
 }
@@ -248,7 +259,7 @@ void endElement(void *data, const char *el)
 void CreateCopyRoutines(void)
 {
 	// Open header file to write into
-	cout << "Writing hddm_root_CopyRoutines.h" << endl;
+	cout << "Writing hddm_root_generated/hddm_root_CopyRoutines.h" << endl;
 	ofstream ofs("hddm_root_generated/hddm_root_CopyRoutines.h");
 
 	// Add file header
@@ -293,7 +304,7 @@ void CreateCopyRoutines(void)
 	ofs.close();  // header file
 	
 	// Open implementation file to write into
-	cout << "Writing hddm_root_CopyRoutines.cc" << endl;
+	cout << "Writing hddm_root_generated/hddm_root_CopyRoutines.cc" << endl;
 	ofs.open("hddm_root_generated/hddm_root_CopyRoutines.cc");
 	
 	// Add file header
@@ -371,6 +382,104 @@ void CreateCopyRoutines(void)
 }
 
 //--------------
+// CreateHDDM2ROOT_tool
+//--------------
+void CreateHDDM2ROOT_tool(void)
+{
+	
+	// Open implementation file to write into
+	string fname = string("hddm_root_generated/hddm2root_") + HDDM_CLASS + ".cc";
+	ofstream ofs(fname.c_str());
+	cout << "Writing " << fname << endl;
+	
+	// Add file header
+	time_t t = time(NULL);
+	ofs << "//" << endl;
+	ofs << "// Auto-generated HDDM to ROOT converion tool for class " << HDDM_CLASS << endl;
+	ofs << "//" << endl;
+	ofs << "// "<<ctime(&t);
+	ofs << "// Generated from: "<<XML_FILENAME<<endl;
+	ofs << "//" << endl;
+	ofs << endl;
+	ofs << endl;
+
+	// Add headers
+	ofs << "#include <fstream>" << endl;
+	ofs << "#include <string>" << endl;
+	ofs << "#include <TTree.h>" << endl;
+	ofs << "#include <TFile.h>" << endl;
+	ofs << "using namespace std;" << endl;
+	ofs << endl;
+	ofs << "#include \"hddm_root_CopyRoutines.h\"" << endl;
+	ofs << endl;
+	ofs << endl;
+	
+	// Add main
+	ofs << "int main(int narg, char *argv[])" << endl;
+	ofs << "{" << endl;
+	ofs << "	TFile *f = new TFile(\"hddm2root_"<<HDDM_CLASS<<".root\", \"RECREATE\");" << endl;
+	ofs << "	TTree *t = new TTree(\"T\", \"A Tree\", 99);" << endl;
+	ofs << endl;
+	ofs << "	string fname=\"hdgeant_smeared.hddm\";"<<endl;
+	ofs << "	if(narg>1) fname = argv[1];" << endl;
+	ofs << endl;
+
+	// Create variable for each depth=TARGET_DEPTH class
+	char branchname[2] = "A";
+	map<string, DClassDef>::iterator iter;
+	for(iter=CLASSES.begin(); iter!=CLASSES.end(); iter++){
+		if(iter->second.depth!=TARGET_DEPTH)continue;
+		string name = iter->first;
+		string varname = name.substr(0, name.length()-2);
+
+		ofs << "	" << name << " *"<<varname << " = new " << name << "();" << endl;
+		ofs << "	t->Branch(\""<<branchname<<"\", &"<<varname<<");"<<endl;
+		
+		branchname[0]++; // sketchy trick to name branches A,B,C, ....
+	}
+	ofs << endl;	
+	ofs << "	// Open hddm file for reading" << endl;
+	ofs << "	ifstream ifs(fname.c_str());" << endl;
+	ofs << endl;
+	ofs << "	// Associate input file stream with HDDM record" << endl;
+	ofs << "	HDDM xrec;" << endl;
+	ofs << "	hddm_s::istream istr(ifs);" << endl;
+	ofs << endl;
+	ofs << "	// Loop over events" << endl;
+	ofs << "	unsigned int N = 0;"<<endl;
+	ofs << "	while(true){" << endl;
+	ofs << "		try{" << endl;
+	ofs << "			istr >> xrec;"<<endl;
+
+	// Call copy routine for each depth=TARGET_DEPTH class
+	for(iter=CLASSES.begin(); iter!=CLASSES.end(); iter++){
+		if(iter->second.depth!=TARGET_DEPTH)continue;
+		string name = iter->first;
+		string varname = name.substr(0, name.length()-2);
+		string name_hddm = NameToHDDMname(varname);
+		
+		ofs << "			Copy" << name_hddm << "(*"<<varname<<", xrec.get"<<name_hddm<<"());"<<endl;
+	}
+	ofs << endl;
+	ofs << "			t->Fill();" << endl;
+	ofs << "			if(++N%1 == 0){cout<<\" \"<<N<<\" events processed    \\r\"; cout.flush();}"<<endl;
+	ofs << "		}catch(...){" << endl;
+	ofs << "			break;" << endl;
+	ofs << "		}" << endl;
+	ofs << "	}" << endl;
+	ofs << endl;
+	ofs << "	f->Write();" << endl;
+	ofs << "	f->Close();" << endl;
+	ofs << "	delete f;" << endl;
+	ofs << endl;
+	ofs << "	return 0;" << endl;
+	ofs << "}" << endl;
+	ofs << endl;
+	
+	ofs.close();
+}
+
+//--------------
 // NameToHDDMname
 //--------------
 string NameToHDDMname(string name)
@@ -411,5 +520,92 @@ string HDDMPlural(string name_hddm)
 	
 	return name_hddm;
 }
+
+//--------------
+// Usage
+//--------------
+void Usage(void)
+{
+	cout<<endl;
+	cout<<endl;
+	cout<<"Usage:"<<endl;
+	cout<<"      hddm2root [-depth d] filename"<<endl;
+	cout<<endl;
+	cout<<" Generate a tool for converting an HDDM formatted"<<endl;
+	cout<<"file into a ROOT file. This does not convert the"<<endl;
+	cout<<"file itself, but rather, generates a program than"<<endl;
+	cout<<"can be used to convert a file."<<endl;
+	cout<<endl;
+	cout<<" The file specified by \"filename\" can be either"<<endl;
+	cout<<"the original XML file, or an existing HDDM file."<<endl;
+	cout<<"If the latter is used, the XML is extracted from"<<endl;
+	cout<<"beginning of the file."<<endl;
+	cout<<endl;
+	cout<<" options:"<<endl;
+	cout<<"   -depth d    Set the target depth for objects to"<<endl;
+	cout<<"               be written to the ROOT file"<<endl;
+	cout<<endl;
+	cout<<"   -h          Print this Usage statement"<<endl;
+	cout<<endl;
+	cout<<endl;
+	cout<<"There are several limitations to this system:"<<endl;
+	cout<<endl;
+	cout<<"1. ROOT does not allow nested containers more"<<endl;
+	cout<<"   than 2 levels deep. In other words, you can"<<endl;
+	cout<<"   have a container of containers, but not a"<<endl;
+	cout<<"   container of containers of containers. For"<<endl;
+	cout<<"   practical purposes, this means any tag in "<<endl;
+	cout<<"   XML with more than 2 parents having maxOccurs"<<endl;
+	cout<<"   set to \"unbounded\" will not be accessible in"<<endl;
+	cout<<"   the file. Use the -depth d option to try and"<<endl;
+	cout<<"   get around this."<<endl;
+	cout<<endl;
+	cout<<"2. All tags with a maxOccurs=1 will be treated"<<endl;
+	cout<<"   as though a single object of that type exists."<<endl;
+	cout<<"   This means that the if there are zero objects"<<endl;
+	cout<<"   of that type in the event, values will be written"<<endl;
+	cout<<"   anyway, not saving any disk space. What's more,"<<endl;
+	cout<<"   the values written will be indetermined."<<endl;
+	cout<<endl;   
+	cout<<"3. Top-level objects can only have single objects."<<endl;
+	cout<<"   In other words, if you specify a depth where an"<<endl;
+	cout<<"   object at that depth is \"unbounded\", the tool"<<endl;
+	cout<<"   will not try and loop over all instances of the"<<endl;
+	cout<<"   object type, just the first may be taken."<<endl;
+	cout<<endl;
+	cout<<"e.g."<<endl;
+	cout<<"    > hddm2root $HALLD_HOME/src/libraries/HDDM/rest.xml"<<endl;
+	cout<<"    > hddm2root_r file.hddm"<<endl;
+	cout<<endl;
+	
+	exit(0);
+}
+
+//--------------
+// ParseCommandLineArguments
+//--------------
+void ParseCommandLineArguments(int narg, char *argv[])
+{
+	for(int i=1; i<narg; i++){
+		string arg = argv[i];
+		
+		if(arg.find("-depth") != arg.npos){
+			if(++i >= narg){
+				cerr<<endl<<" -depth requires and argument!"<<endl;
+				exit(-1);
+			}
+			TARGET_DEPTH = atoi(argv[i]);
+			continue;
+		}
+		
+		if(arg.find("-h") != arg.npos){
+			Usage();
+		}
+		
+		XML_FILENAME = arg;
+	}
+}
+
+
 
 
