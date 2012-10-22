@@ -14,6 +14,9 @@ $(HDDS_GEANT):
 	@echo "Application hdds-geant has not yet been built."
 	@echo "You must run \"make\" in the primary hdds area first."
 
+$(HDDS_SCHEMA):
+	cp $(HDDS_HOME)/$(HDDS_SCHEMA) .
+
 clean:
-	rm -f *.o core *.depend
+	rm -f *.F *.o core *.depend
 
