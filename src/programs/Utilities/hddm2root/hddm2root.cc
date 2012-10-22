@@ -217,6 +217,10 @@ void startElement(void *data, const char *el, const char **attr)
 			continue;
 		}
 		
+		if(type.find("GeV")== 0 )continue; // skip Eunit and punit stuff
+		if(type == "ns")continue;
+		if(type == "cm")continue;
+		
 		if(type=="boolean") type = "bool"; // (sigh...)
 		
 		// Add member to list
@@ -443,7 +447,7 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << endl;
 	ofs << "	// Associate input file stream with HDDM record" << endl;
 	ofs << "	HDDM xrec;" << endl;
-	ofs << "	hddm_s::istream istr(ifs);" << endl;
+	ofs << "	hddm_"<<HDDM_CLASS<<"::istream istr(ifs);" << endl;
 	ofs << endl;
 	ofs << "	// Loop over events" << endl;
 	ofs << "	unsigned int N = 0;"<<endl;
