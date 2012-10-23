@@ -15,7 +15,8 @@ using namespace std;
 
 string XML_FILENAME = "/home/davidl/work/latest/sim-recon/src/libraries/HDDM/event.xml";
 string HDDM_CLASS = "x";
-string CXXFLAGS = " -pg -g "; // first and last character should be space
+string CXXFLAGS = ""; // first and last character should be space (or empty string)
+//string CXXFLAGS = " -pg -g ";
 
 map<string, DClassDef> CLASSES;
 unsigned int MAX_DEPTH=0;
@@ -310,6 +311,18 @@ void CreateCopyRoutines(void)
 		ofs << "void Copy"<<name_hddm<<"("<<name<<" &"<<varname<<", class "<<name_hddm<<" &"<<varname<<"_hddm, bool hddm_invalid=false);"<<endl;
 	}
 	ofs << endl;
+	
+	// Clear Routine declarations
+	for(iter=CLASSES.begin(); iter!=CLASSES.end(); iter++){
+		string name = iter->first;
+		string varname = name.substr(0, name.length()-2);
+		string name_hddm = NameToHDDMname(varname);
+
+		if(varname == "HDDM")continue;
+		
+		ofs << "void Clear"<<name_hddm<<"("<<name<<" &"<<varname<<");"<<endl;
+	}
+	ofs << endl;
 	ofs << endl;
 	ofs.close();  // header file
 	
@@ -379,6 +392,51 @@ void CreateCopyRoutines(void)
 				string myname_hddm_plural = HDDMPlural(myname_hddm);
 				if(myname_hddm_plural == "Properties") myname_hddm_plural = "PropertiesList";
 				ofs << "	Copy"<<myname_hddm<<"("<<varname<<"."<<myvarname<<", "<<varname<<"_hddm.get"<<myname_hddm<<"(), "<<varname<<"_hddm.get"<< myname_hddm_plural<< "().empty());" << endl;
+			}
+		}
+		
+		ofs << "}" << endl;
+		ofs << endl;
+	}
+	ofs << endl;
+	ofs << endl;
+
+	// Clear Routines
+	for(iter=CLASSES.begin(); iter!=CLASSES.end(); iter++){
+		string name = iter->first;
+		string varname = name.substr(0, name.length()-2);
+		string name_hddm = NameToHDDMname(varname);
+		string name_hddm_plural = HDDMPlural(name_hddm);
+		map<string, string> &members = iter->second.members;
+		
+		if(varname == "HDDM")continue;
+		
+		ofs << "void Clear"<<name_hddm<<"("<<name<<" &"<<varname<<")"<<endl;
+		ofs << "{"<<endl;
+		ofs << endl;
+		
+		map<string, string>::iterator iter_members;
+		for(iter_members=members.begin(); iter_members!=members.end(); iter_members++){
+			string myname = iter_members->first;
+			string mytype = iter_members->second;
+			string myvarname = myname;
+			string myname_hddm = NameToHDDMname(myvarname);
+			
+			if(mytype == "int" || mytype == "Particle_t"){
+				ofs << "	" << varname<<"."<<myvarname<<" = 0;" << endl;
+			}else if(mytype == "float"){
+				ofs << "	" << varname<<"."<<myvarname<<" = 0.0;" << endl;
+			}else if(mytype == "string"){
+				ofs << "	" << varname<<"."<<myvarname<<" = \"\";" << endl;
+			}else if(mytype == "bool"){
+				ofs << "	" << varname<<"."<<myvarname<<" = false;" << endl;
+			}else if(mytype.find("vector<") == 0){
+				ofs << "	" << varname<<"."<<myname<<".clear();"<< endl;
+			}else{
+				// Non-vector calls copy routine
+				string myname_hddm_plural = HDDMPlural(myname_hddm);
+				if(myname_hddm_plural == "Properties") myname_hddm_plural = "PropertiesList";
+				ofs << "	Clear"<<myname_hddm<<"("<<varname<<"."<<myvarname<<");" << endl;
 			}
 		}
 		
@@ -475,7 +533,7 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << endl;
 	ofs << "	// Loop over events" << endl;
 	ofs << "	unsigned int N = 0;"<<endl;
-	ofs << "	while(true){" << endl;
+	ofs << "	while(!ifs.eof()){" << endl;
 	ofs << "		try{" << endl;
 	ofs << "			HDDM xrec;" << endl;
 	ofs << "			istr >> xrec;"<<endl;
@@ -487,6 +545,7 @@ void CreateHDDM2ROOT_tool(void)
 		string varname = name.substr(0, name.length()-2);
 		string name_hddm = NameToHDDMname(varname);
 		
+		ofs << "			Clear" << name_hddm << "(*"<<varname<<");"<<endl;
 		ofs << "			Copy" << name_hddm << "(*"<<varname<<", xrec.get"<<name_hddm<<"());"<<endl;
 	}
 	ofs << endl;
@@ -502,6 +561,7 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << "	f->Close();" << endl;
 	ofs << "	delete f;" << endl;
 	ofs << endl;
+	ofs << "	cout<<endl<<N<<\" events processed total\"<<endl;" << endl;
 	ofs << "	return 0;" << endl;
 	ofs << "}" << endl;
 	ofs << endl;
