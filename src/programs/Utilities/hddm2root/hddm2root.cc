@@ -199,7 +199,6 @@ void startElement(void *data, const char *el, const char **attr)
 	
 	// Convert element tag to string
 	string name(el);
-	bool is_HDDM_tag = (name == "HDDM");
 	
 	// Loop over attributes, temporarily storing them into map
 	map<string, string> members;
@@ -285,7 +284,7 @@ void CreateCopyRoutines(void)
 	
 	ofs << "#define Particle_t Particle_tt"<<endl;
 	map<string, DClassDef>::iterator iter;
-	for(int depth=0; depth<MAX_DEPTH; depth++){
+	for(unsigned int depth=0; depth<MAX_DEPTH; depth++){
 		for(iter=CLASSES.begin(); iter!=CLASSES.end(); iter++){
 			if(iter->second.depth != depth) continue;
 			if(iter->first == "HDDM_t")continue;
