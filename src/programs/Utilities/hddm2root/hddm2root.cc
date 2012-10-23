@@ -487,8 +487,13 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << "int main(int narg, char *argv[])" << endl;
 	ofs << "{" << endl;
 	ofs << endl;
+	ofs << "	string usage = \"Usage:\\n\\n   hddm2root_"<<HDDM_CLASS<<" [-n nevents] [-o outfile.root] file.{xml|hddm}\";" << endl;
+	ofs << endl;
+	ofs << "	if(narg<2){cout << endl << usage << endl << endl; return -1;}"<<endl;
+	ofs << endl;
 	ofs << "	// Parse command line arguments" << endl;
 	ofs << "	int MAX_EVENTS = 0;"<<endl;
+	ofs << "	string ofname=\"hddm2root_" << HDDM_CLASS << ".root\";"<<endl;
 	ofs << "	string fname=\"hdgeant_smeared.hddm\";"<<endl;
 	ofs << "	for(int i=1; i<narg; i++){" << endl;
 	ofs << "		string arg = argv[i];" << endl;
@@ -496,18 +501,25 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << "			if(++i<narg){" << endl;
 	ofs << "				MAX_EVENTS = atoi(argv[i]);" << endl;
 	ofs << "			}else{" << endl;
-	ofs << "				cerr<<\"-n option requires and argument!\"<<endl;" << endl;
+	ofs << "				cerr<<\"-n option requires an argument!\"<<endl;" << endl;
 	ofs << "				return -1;" << endl;
 	ofs << "			}" << endl;
+	ofs << "		}else if(arg==\"-o\"){" << endl;
+	ofs << "			if(++i<narg){" << endl;
+	ofs << "				ofname = argv[i];" << endl;
+	ofs << "			}else{" << endl;
+	ofs << "				cerr<<\"-o option requires an argument!\"<<endl;" << endl;
+	ofs << "				return -2;" << endl;
+	ofs << "			}" << endl;
 	ofs << "		}else if(arg==\"-h\"){" << endl;
-	ofs << "			cout<<endl<<\"Usage:\"<<endl<<\"  hddm2root_"<<HDDM_CLASS<<" [-n nevents] file.{xml|hddm}\"<<endl<<endl;" << endl;
+	ofs << "			cout << endl << usage << endl << endl;" << endl;
 	ofs << "			return 0;" << endl;
 	ofs << "		}else{" << endl;
 	ofs << "			fname = argv[1];" << endl;
 	ofs << "		}" << endl;
 	ofs << "	}" << endl;
 	ofs << endl;
-	ofs << "	TFile *f = new TFile(\"hddm2root_"<<HDDM_CLASS<<".root\", \"RECREATE\");" << endl;
+	ofs << "	TFile *f = new TFile(ofname.c_str(), \"RECREATE\");" << endl;
 	ofs << "	TTree *t = new TTree(\"T\", \"A Tree\", 99);" << endl;
 	ofs << endl;
 
@@ -550,7 +562,7 @@ void CreateHDDM2ROOT_tool(void)
 	}
 	ofs << endl;
 	ofs << "			t->Fill();" << endl;
-	ofs << "			if(++N%1 == 0){cout<<\" \"<<N<<\" events processed    \\r\"; cout.flush();}"<<endl;
+	ofs << "			if(++N%10 == 0){cout<<\" \"<<N<<\" events processed    \\r\"; cout.flush();}"<<endl;
 	ofs << "			if(MAX_EVENTS>0 && N>=MAX_EVENTS)break;"<<endl;
 	ofs << "		}catch(...){" << endl;
 	ofs << "			break;" << endl;
@@ -641,9 +653,9 @@ void Usage(void)
 	cout<<"There are several limitations to this system:"<<endl;
 	cout<<endl;
 	cout<<"1. ROOT does not allow nested containers more"<<endl;
-	cout<<"   than 2 levels deep. In other words, you can"<<endl;
+	cout<<"   than a few levels deep. In other words, you can"<<endl;
 	cout<<"   have a container of containers, but not a"<<endl;
-	cout<<"   container of containers of containers. For"<<endl;
+	cout<<"   container of containers of containers .... For"<<endl;
 	cout<<"   practical purposes, this means any tag in "<<endl;
 	cout<<"   XML with more than 2 parents having maxOccurs"<<endl;
 	cout<<"   set to \"unbounded\" will not be accessible in"<<endl;
@@ -654,8 +666,9 @@ void Usage(void)
 	cout<<"   as though a single object of that type exists."<<endl;
 	cout<<"   This means that the if there are zero objects"<<endl;
 	cout<<"   of that type in the event, values will be written"<<endl;
-	cout<<"   anyway, not saving any disk space. What's more,"<<endl;
-	cout<<"   the values written will be indetermined."<<endl;
+	cout<<"   anyway, not saving any disk space. The values"<<endl;
+	cout<<"   will be filled with zeros and empty strings"<<endl;
+	cout<<"   (false for bool types)."<<endl;
 	cout<<endl;   
 	cout<<"3. Top-level objects can only have single objects."<<endl;
 	cout<<"   In other words, if you specify a depth where an"<<endl;
@@ -676,6 +689,8 @@ void Usage(void)
 //--------------
 void ParseCommandLineArguments(int narg, char *argv[])
 {
+	if(narg<2)Usage();
+
 	for(int i=1; i<narg; i++){
 		string arg = argv[i];
 		
