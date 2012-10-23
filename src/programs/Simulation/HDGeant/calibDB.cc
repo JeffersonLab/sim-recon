@@ -73,16 +73,16 @@ void initcalibdb_(char *bfield_type, char *bfield_map)
 }
 
 //----------------
-// gufld_DB_
+// gufld_db_
 //----------------
-void gufld_DB_(float *r, float *B)
+void gufld_db_(float *r, float *B)
 {
 	/// Wrapper function to allow the FORTRAN gufld routine to
 	/// use the C++ class DMagneticFieldMap to access the 
 	/// B-field.
 
 	if(!Bmap){
-		_DBG_<<"Call to gufld_DB when Bmap not intialized! Exiting."<<endl;
+		_DBG_<<"Call to gufld_db when Bmap not intialized! Exiting."<<endl;
 		exit(-1);
 	}
 	

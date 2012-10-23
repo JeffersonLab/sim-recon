@@ -106,7 +106,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
   // (dependence derived from Garfield calculations)
   float B[3],Bmag,x[3]; 
   transformCoord(xyzcluster,"local",x,"global");
-  gufld2_(x,B);
+  gufld_db_(x,B);
   Bmag=sqrt(B[0]*B[0]+B[1]*B[1]+B[2]*B[2]);
   float d2=dradius*dradius;
   float d3=d2*dradius;

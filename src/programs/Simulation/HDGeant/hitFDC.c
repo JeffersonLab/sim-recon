@@ -361,7 +361,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
    // Get the magnetic field at this cluster position	    
   float x[3],B[3];
   transformCoord(xyz,"local",x,"global");
-  gufld2_(x,B);
+  gufld_db_(x,B);
   
   // Find the angle between the wire direction and the direction of the
   // magnetic field in the x-y plane
