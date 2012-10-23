@@ -266,9 +266,16 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 	public:
 		DHistogramAction_TrackMultiplicity(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TrackMultiplicity", false, locActionUniqueString),
-		dMaxNumTracks(20){}
+		dMaxNumTracks(20)
+		{
+			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
+			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
+			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+		}
 
 		unsigned int dMaxNumTracks;
+
+		deque<Particle_t> dFinalStatePIDs;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos);

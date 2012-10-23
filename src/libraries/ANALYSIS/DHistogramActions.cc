@@ -1077,18 +1077,24 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		{
 			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTracks[loc_i]);
 			if(locMCThrown == NULL)
+			{
 				locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
+				locPID = locChargedTrackHypothesis->PID();
+			}
 			else
 			{
-				locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_Hypothesis((Particle_t)locMCThrown->type);
+				locPID = (Particle_t)locMCThrown->type;
+				locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_Hypothesis(locPID);
 				if(locChargedTrackHypothesis == NULL)
 					locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
 			}
 		}
 		else
+		{
 			locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
+			locPID = locChargedTrackHypothesis->PID();
+		}
 
-		locPID = locChargedTrackHypothesis->PID();
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
 			continue; //e.g. a decaying particle, or not interested in histogramming
 
@@ -1119,18 +1125,24 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		{
 			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticles[loc_i]);
 			if(locMCThrown == NULL)
+			{
 				locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
+				locPID = locNeutralParticleHypothesis->PID();
+			}
 			else
 			{
-				locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis((Particle_t)locMCThrown->type);
+				locPID = (Particle_t)locMCThrown->type;
+				locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(locPID);
 				if(locNeutralParticleHypothesis == NULL)
 					locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
 			}
 		}
 		else
+		{
 			locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
+			locPID = locNeutralParticleHypothesis->PID();
+		}
 
-		locPID = locNeutralParticleHypothesis->PID();
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
 			continue; //e.g. a decaying particle, or not interested in histogramming
 
@@ -1351,17 +1363,23 @@ void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
 
+	string locLabelName;
 	string locHistName("dHist_NumReconstructedTracks");
 	if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
 		dHist_NumReconstructedTracks = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
 	else
 	{
-		dHist_NumReconstructedTracks = new TH2D("NumReconstructedTracks", ";Track Type;Num Tracks / Event", 5, -0.5, 4.5, dMaxNumTracks + 1, -0.5, (float)dMaxNumTracks + 0.5);
-		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(1, "q = +");
-		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(2, "q = -");
-		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(3, "q = 0");
-		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(4, "q != 0");
-		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(5, "Total");
+		dHist_NumReconstructedTracks = new TH2D("NumReconstructedTracks", ";Track Type;Num Tracks / Event", 5 + dFinalStatePIDs.size(), -0.5, 4.5 + dFinalStatePIDs.size(), dMaxNumTracks + 1, -0.5, (float)dMaxNumTracks + 0.5);
+		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(1, "# Total");
+		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(2, "# q = +");
+		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(3, "# q = -");
+		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(4, "# q = 0");
+		dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(5, "# q != 0");
+		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
+		{
+			locLabelName = string("# ") + string(ParticleName_ROOT(dFinalStatePIDs[loc_i]));
+			dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(6 + loc_i, locLabelName.c_str());
+		}
 	}
 
 	Get_Application()->RootUnLock(); //RELEASE ROOT LOCK!!
@@ -1378,6 +1396,12 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	vector<const DNeutralParticle*> locNeutralParticles;
 	locEventLoop->Get(locNeutralParticles);
 
+	const DMCThrown* locMCThrown;
+	Particle_t locPID;
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
+
 	size_t locNumPositiveTracks = 0;
 	size_t locNumNegativeTracks = 0;
 	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
@@ -1388,12 +1412,55 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 			++locNumNegativeTracks;
 	}
 
+	// get #tracks by pid type //USES MC PID IF EXISTS!!!
+	map<Particle_t, size_t> locNumTracksByPID;
+	for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
+		locNumTracksByPID[dFinalStatePIDs[loc_i]] = 0;
+
+	// charged by pid
+	for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
+	{
+		if(locMCThrownMatching != NULL)
+		{
+			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTracks[loc_i]);
+			if(locMCThrown == NULL)
+				locPID = locChargedTracks[loc_i]->Get_BestFOM()->PID();
+			else
+				locPID = (Particle_t)locMCThrown->type;
+		}
+		else
+			locPID = locChargedTracks[loc_i]->Get_BestFOM()->PID();
+
+		if(locNumTracksByPID.find(locPID) != locNumTracksByPID.end())
+			++locNumTracksByPID[locPID];
+	}
+
+	// neutrals by pid
+	for(size_t loc_i = 0; loc_i < locNeutralParticles.size(); ++loc_i)
+	{
+		if(locMCThrownMatching != NULL)
+		{
+			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticles[loc_i]);
+			if(locMCThrown == NULL)
+				locPID = locNeutralParticles[loc_i]->Get_BestFOM()->PID();
+			else
+				locPID = (Particle_t)locMCThrown->type;
+		}
+		else
+			locPID = locNeutralParticles[loc_i]->Get_BestFOM()->PID();
+
+		if(locNumTracksByPID.find(locPID) != locNumTracksByPID.end())
+			++locNumTracksByPID[locPID];
+	}
+
 	Get_Application()->RootWriteLock();
-	dHist_NumReconstructedTracks->Fill(0.0, (Double_t)locNumPositiveTracks);
-	dHist_NumReconstructedTracks->Fill(1.0, (Double_t)locNumNegativeTracks);
-	dHist_NumReconstructedTracks->Fill(2.0, (Double_t)locNeutralParticles.size());
-	dHist_NumReconstructedTracks->Fill(3.0, (Double_t)locChargedTracks.size());
-	dHist_NumReconstructedTracks->Fill(4.0, (Double_t)(locChargedTracks.size() + locNeutralParticles.size()));
+	dHist_NumReconstructedTracks->Fill(0.0, (Double_t)(locChargedTracks.size() + locNeutralParticles.size()));
+	dHist_NumReconstructedTracks->Fill(1.0, (Double_t)locNumPositiveTracks);
+	dHist_NumReconstructedTracks->Fill(2.0, (Double_t)locNumNegativeTracks);
+	dHist_NumReconstructedTracks->Fill(3.0, (Double_t)locNeutralParticles.size());
+	dHist_NumReconstructedTracks->Fill(4.0, (Double_t)locChargedTracks.size());
+	for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
+		dHist_NumReconstructedTracks->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumTracksByPID[dFinalStatePIDs[loc_i]]);
 	Get_Application()->RootUnLock();
 
 	return true;
