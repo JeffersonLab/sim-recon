@@ -15,6 +15,7 @@ using namespace std;
 
 string XML_FILENAME = "/home/davidl/work/latest/sim-recon/src/libraries/HDDM/event.xml";
 string HDDM_CLASS = "x";
+string CXXFLAGS = " -pg -g "; // first and last character should be space
 
 map<string, DClassDef> CLASSES;
 unsigned int MAX_DEPTH=0;
@@ -129,55 +130,59 @@ int main(int narg, char *argv[])
 	}
 	
 	// Create script that will generate ROOT dictionaries for each header file
-	ofstream ofs("hddm_root_generated/mk_dictionaries.csh");
-	ofs << "#!/bin/tcsh -f "<<endl;
+	ofstream ofs("hddm_root_generated/makefile");
+	ofs << endl << endl;
+	ofs << "all: dictionaries copy_routines tool" << endl;
 	ofs << endl;
+	ofs << "dictionaries: *.h"<<endl;
 	for(iter=CLASSES.begin(); iter!=CLASSES.end(); iter++){
 		string name = iter->first;
 		if(name == "HDDM_t")continue;  // Skip outer HDDM tags
 
-		ofs << "echo making ROOT dictionary for " << name << " ..." << endl;
-		string cmd = "rootcint -f " + name + "_Dict.cc -c " + name + ".h";
+		string cmd = "	rootcint -f " + name + "_Dict.cc -c " + name + ".h";
 		ofs << cmd << endl;
 	}
-	ofs << endl;
 
 	for(iter=CLASSES.begin(); iter!=CLASSES.end(); iter++){
 		string name = iter->first;
 		if(name == "HDDM_t")continue;  // Skip outer HDDM tags
 
-		ofs << "echo compiling ROOT dictionary for " << name << " ..." << endl;
-		string cmd = "c++ `root-config --cflags` -c " + name + "_Dict.cc";
+		string cmd = "	c++ `root-config --cflags` -c " + name + "_Dict.cc" + CXXFLAGS;
 		ofs << cmd << endl;
 	}
+	ofs << "	ar -r libhddm_root.a *_t_Dict.o" << endl;
+	ofs << endl;
 	ofs << endl;
 	
-	ofs << "ar -r libhddm_root.a *_t_Dict.o" << endl;
-	ofs << endl;
-	
-	ofs << "echo compiling hddm_root_CopyRoutines.cc ..." << endl;
-	string cmd = "c++ `root-config --cflags` -c -I${HALLD_HOME}/include -I. hddm_root_CopyRoutines.cc";
+	ofs << "copy_routines: hddm_root_CopyRoutines.cc hddm_root_CopyRoutines.h" << endl;
+	string cmd = "	c++ `root-config --cflags` -c -I${HALLD_HOME}/include -I. hddm_root_CopyRoutines.cc" + CXXFLAGS;
 	ofs << cmd << endl;
+	ofs << "	ar -r libhddm_root.a hddm_root_CopyRoutines.o" << endl;
 	ofs << endl;
 
-	ofs << "ar -r libhddm_root.a hddm_root_CopyRoutines.o" << endl;
-	ofs << endl;
-
-	ofs << "echo compiling hddm2root_" << HDDM_CLASS << ".cc ..." << endl;
-	cmd = "c++ `root-config --cflags --libs` -I${HALLD_HOME}/include -I. hddm2root_" + HDDM_CLASS + ".cc -o hddm2root_" + HDDM_CLASS + " ./libhddm_root.a -lbz2 -lz -L${HALLD_HOME}/lib/${BMS_OSNAME} -lHDDM -lxstream";
+	ofs << "tool: hddm2root_*.cc" << endl;
+	cmd = "	c++ `root-config --cflags --libs` -I${HALLD_HOME}/include -I. hddm2root_" + HDDM_CLASS + ".cc -o hddm2root_" + HDDM_CLASS + CXXFLAGS + " ./libhddm_root.a -lbz2 -lz -L${HALLD_HOME}/lib/${BMS_OSNAME} -lHDDM -lxstream";
 	ofs << cmd << endl;
+	ofs << endl;
 	ofs << endl;
 
 	ofs.close();
-	
-	// Make the dictionary generator script executable
-	chmod("hddm_root_generated/mk_dictionaries.csh", S_IRWXU | S_IRWXG | S_IRWXO);
 	
 	// Create Copy Routines
 	CreateCopyRoutines();
 	
 	// Create main tool file
 	CreateHDDM2ROOT_tool();
+
+	// Notify user of final step
+	cout<<endl;
+	cout<<"Code generation complete. Issue the following"<<endl;
+	cout<<"to build the hddm2root_"<<HDDM_CLASS<<" tool:"<<endl;
+	cout<<endl;
+	cout<<"  make -C hddm_root_generated"<<endl;
+	cout<<endl;
+	cout<<"The tool will be left as hddm_root_generated/hddm2root_"<<HDDM_CLASS<<endl;
+	cout<<endl;
 	
 	return 0;
 }
@@ -408,6 +413,7 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << endl;
 
 	// Add headers
+	ofs << "#include <stdlib.h>" << endl;
 	ofs << "#include <fstream>" << endl;
 	ofs << "#include <string>" << endl;
 	ofs << "#include <TTree.h>" << endl;
@@ -421,11 +427,29 @@ void CreateHDDM2ROOT_tool(void)
 	// Add main
 	ofs << "int main(int narg, char *argv[])" << endl;
 	ofs << "{" << endl;
+	ofs << endl;
+	ofs << "	// Parse command line arguments" << endl;
+	ofs << "	int MAX_EVENTS = 0;"<<endl;
+	ofs << "	string fname=\"hdgeant_smeared.hddm\";"<<endl;
+	ofs << "	for(int i=1; i<narg; i++){" << endl;
+	ofs << "		string arg = argv[i];" << endl;
+	ofs << "		if(arg==\"-n\"){" << endl;
+	ofs << "			if(++i<narg){" << endl;
+	ofs << "				MAX_EVENTS = atoi(argv[i]);" << endl;
+	ofs << "			}else{" << endl;
+	ofs << "				cerr<<\"-n option requires and argument!\"<<endl;" << endl;
+	ofs << "				return -1;" << endl;
+	ofs << "			}" << endl;
+	ofs << "		}else if(arg==\"-h\"){" << endl;
+	ofs << "			cout<<endl<<\"Usage:\"<<endl<<\"  hddm2root_"<<HDDM_CLASS<<" [-n nevents] file.{xml|hddm}\"<<endl<<endl;" << endl;
+	ofs << "			return 0;" << endl;
+	ofs << "		}else{" << endl;
+	ofs << "			fname = argv[1];" << endl;
+	ofs << "		}" << endl;
+	ofs << "	}" << endl;
+	ofs << endl;
 	ofs << "	TFile *f = new TFile(\"hddm2root_"<<HDDM_CLASS<<".root\", \"RECREATE\");" << endl;
 	ofs << "	TTree *t = new TTree(\"T\", \"A Tree\", 99);" << endl;
-	ofs << endl;
-	ofs << "	string fname=\"hdgeant_smeared.hddm\";"<<endl;
-	ofs << "	if(narg>1) fname = argv[1];" << endl;
 	ofs << endl;
 
 	// Create variable for each depth=TARGET_DEPTH class
@@ -446,13 +470,13 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << "	ifstream ifs(fname.c_str());" << endl;
 	ofs << endl;
 	ofs << "	// Associate input file stream with HDDM record" << endl;
-	ofs << "	HDDM xrec;" << endl;
 	ofs << "	hddm_"<<HDDM_CLASS<<"::istream istr(ifs);" << endl;
 	ofs << endl;
 	ofs << "	// Loop over events" << endl;
 	ofs << "	unsigned int N = 0;"<<endl;
 	ofs << "	while(true){" << endl;
 	ofs << "		try{" << endl;
+	ofs << "			HDDM xrec;" << endl;
 	ofs << "			istr >> xrec;"<<endl;
 
 	// Call copy routine for each depth=TARGET_DEPTH class
@@ -467,6 +491,7 @@ void CreateHDDM2ROOT_tool(void)
 	ofs << endl;
 	ofs << "			t->Fill();" << endl;
 	ofs << "			if(++N%1 == 0){cout<<\" \"<<N<<\" events processed    \\r\"; cout.flush();}"<<endl;
+	ofs << "			if(MAX_EVENTS>0 && N>=MAX_EVENTS)break;"<<endl;
 	ofs << "		}catch(...){" << endl;
 	ofs << "			break;" << endl;
 	ofs << "		}" << endl;
