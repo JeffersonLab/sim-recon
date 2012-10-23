@@ -52,6 +52,8 @@ int main(int narg, char *argv[])
 	ifs.seekg (0, ios::end);
 	int length = ifs.tellg();
 	ifs.seekg (0, ios::beg);
+	
+	if(length > 102400)length = 102400; // limit size to 100kB in case this is hddm file
 
 	char *buff = new char[length];
 	ifs.read (buff,length);
