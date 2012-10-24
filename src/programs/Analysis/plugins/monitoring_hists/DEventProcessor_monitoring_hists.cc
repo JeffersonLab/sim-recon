@@ -18,6 +18,7 @@ extern "C"
 	{
 		InitJANAPlugin(app);
 		app->AddProcessor(new DEventProcessor_monitoring_hists());
+		app->AddFactoryGenerator(new DFactoryGenerator_DReaction());
 	}
 } // "C"
 

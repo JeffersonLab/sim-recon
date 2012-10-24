@@ -16,6 +16,8 @@
 #include "DANA/DApplication.h"
 #include "ANALYSIS/DAnalysisResults.h"
 
+#include "DFactoryGenerator_DReaction.h"
+
 using namespace jana;
 
 class DEventProcessor_monitoring_hists : public JEventProcessor
