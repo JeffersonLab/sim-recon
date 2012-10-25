@@ -52,15 +52,20 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 {
  	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
- 	vector<const DMCThrown*> locOriginalMCThrowns;
+ 	vector<const DMCThrown*> locOriginalMCThrowns_Charged;
+ 	vector<const DMCThrown*> locOriginalMCThrowns_Neutral;
 
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
-		if(Check_IsValidMCComparisonPID(locMCThrowns, locMCThrowns[loc_i]))
-			locOriginalMCThrowns.push_back(locMCThrowns[loc_i]);
+		if(!Check_IsValidMCComparisonPID(locMCThrowns, locMCThrowns[loc_i]))
+			continue;
+		if(ParticleCharge((Particle_t)locMCThrowns[loc_i]->type) == 0)
+			locOriginalMCThrowns_Neutral.push_back(locMCThrowns[loc_i]);
+		else
+			locOriginalMCThrowns_Charged.push_back(locMCThrowns[loc_i]);
 	}
 	if(dDebugLevel > 0)
-		cout << "input #thrown, ok # thrown = " << locMCThrowns.size() << ", " << locOriginalMCThrowns.size() << endl;
+		cout << "input #thrown, ok charged # thrown, ok neutral # thrown = " << locMCThrowns.size() << ", " << locOriginalMCThrowns_Charged.size() << ", " << locOriginalMCThrowns_Neutral.size() << endl;
 
 	if(locMCThrowns.empty())
 		return NOERROR;
@@ -83,11 +88,11 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 
 	DMCThrownMatching* locMCThrownMatching = new DMCThrownMatching();
 
-	Find_GenReconMatches_ChargedHypo(locOriginalMCThrowns, locChargedTrackHypotheses, locMCThrownMatching);
-	Find_GenReconMatches_ChargedTrack(locOriginalMCThrowns, locChargedTracks, locMCThrownMatching);
+	Find_GenReconMatches_ChargedHypo(locOriginalMCThrowns_Charged, locChargedTrackHypotheses, locMCThrownMatching);
+	Find_GenReconMatches_ChargedTrack(locOriginalMCThrowns_Charged, locChargedTracks, locMCThrownMatching);
 
-	Find_GenReconMatches_NeutralHypo(locOriginalMCThrowns, locNeutralParticleHypotheses, locMCThrownMatching);
-	Find_GenReconMatches_NeutralParticle(locOriginalMCThrowns, locNeutralParticles, locMCThrownMatching);
+	Find_GenReconMatches_NeutralHypo(locOriginalMCThrowns_Neutral, locNeutralParticleHypotheses, locMCThrownMatching);
+	Find_GenReconMatches_NeutralParticle(locOriginalMCThrowns_Neutral, locNeutralParticles, locMCThrownMatching);
 
 	if(dDebugLevel > 0)
 	{
