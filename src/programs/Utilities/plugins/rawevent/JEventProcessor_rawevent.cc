@@ -88,6 +88,8 @@ static string detectorMap[MAXDCRATE][MAXDSLOT][MAXDCHANNEL];
 // for Dave's mc2coda package
 #define MAXCRATE      128
 #define MAXSLOT       21
+#define MAXEVENTSIZE  30000*4    // in bytes
+
 
 static string expName = "HallD";
 static CODA_EXP_INFO *expID     = NULL;
@@ -329,7 +331,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 
   // open event, default max event size is 1 MB
-  eventID = mc2codaOpenEvent(expID, (uint64_t)eventnumber, trigTime, eventType, 0);
+  eventID = mc2codaOpenEvent(expID, (uint64_t)eventnumber, trigTime, eventType, MAXEVENTSIZE);
   if(eventID==NULL) {
     jerr << "?NULL return from mc2codaOpenEvent()" << endl << endl;
     exit(EXIT_FAILURE);
@@ -551,14 +553,13 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   }
 
 
-
   // DFDCHit - cathode strips FADC125 or anode wires F1TDC48 (115 ps)
   vector<const DFDCHit*> dfdchits; 
   eventLoop->Get(dfdchits);
   sort(dfdchits.begin(),dfdchits.end(),compareDFDCHits);
 
   hc=0;
-  for(unsigned int i=0; i<dfdchits.size(); i++) {
+  for(i=0; i<dfdchits.size(); i++) {
     float q      = dfdchits[i]->q;
     float t      = dfdchits[i]->t + tOffset;
 
@@ -693,7 +694,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   sort(dschits.begin(),dschits.end(),compareDSCHits);
 
   hc=0;
-  for(unsigned int i=0; i<dschits.size(); i++) {
+  for(i=0; i<dschits.size(); i++) {
     float dE     = dschits[i]->dE;
     float t      = dschits[i]->t + tOffset;
 
@@ -841,6 +842,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   if((dumphits>=1)&&(hc>0)) {
     jout << endl << "Tagger hits: " << hc << endl << endl;
   }
+
 
 
   // close event

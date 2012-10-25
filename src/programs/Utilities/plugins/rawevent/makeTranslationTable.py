@@ -20,6 +20,7 @@
 
 #  still to do:
 #    get rid of hard-coded channel counts
+#    finish tagger microscope
 #    complete detector list:  PS, TAC, POLAR, others?
 
 
@@ -322,7 +323,8 @@ if (detectorOn['TAGGER']>0):
     type = 'F1TDC32'
     (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
     startSlot(daqModule,type)
-    for row in range(9):
+    for row in range(1):
+###    for row in range(1):
         for column in range(128):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
             file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel,row,column) )
