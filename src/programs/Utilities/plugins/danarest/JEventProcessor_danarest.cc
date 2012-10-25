@@ -10,6 +10,7 @@
 
 #include "JEventProcessor_danarest.h"
 #include "PID/DNeutralShower.h"
+#include "TRIGGER/DMCTrigger.h"
 
 
 // rest output file name, use rest:FILENAME configuration parameter to override
@@ -301,6 +302,17 @@ jerror_t JEventProcessor_danarest::evnt(JEventLoop *loop, int eventnumber)
          elo().setDEdxFDC(tracks[i]->ddEdx_FDC);
          elo().setDEdxCDC(tracks[i]->ddEdx_CDC);
       }
+
+   }
+
+   // push any DMCTrigger objects to the output record
+   std::vector<const DMCTrigger*> triggers;
+   loop->Get(triggers);
+   for (unsigned int i=0; i < triggers.size(); i++) {
+      hddm_r::TriggerList trigger = res().addTriggers(1);
+      trigger().setL1a(triggers[i]->L1a_fired);
+      trigger().setL1b(triggers[i]->L1b_fired);
+      trigger().setL1c(triggers[i]->L1c_fired);
    }
 
    // write the resulting record to the output stream

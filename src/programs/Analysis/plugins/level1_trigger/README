@@ -1,4 +1,10 @@
 
+10/24/2012 Update  D. Lawrence
+
+This is now deprecated as the code has been moved into
+a standard library in DANA (TRIGGER). The object names
+were changed from DTrigger to DMCTrigger.
+
 
 6/7/2011 David Lawrence
 

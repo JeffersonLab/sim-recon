@@ -1,7 +1,7 @@
 // $Id$
 //
-//    File: DTrigger_factory.cc
-// Created: Tue Jun  7 10:15:05 EDT 2011
+//    File: DMCTrigger_factory.cc
+// Created: Tue Jun  7 10:15:05 EDT 2011  (originally was DTrigger_factory.cc)
 // Creator: davidl (on Darwin eleanor.jlab.org 10.7.0 i386)
 //
 
@@ -12,48 +12,18 @@
 using namespace std;
 
 #include <JANA/JApplication.h>
-#include "JFactoryGenerator_DTrigger.h"
-#include "DTrigger_factory.h"
+#include "DMCTrigger_factory.h"
 using namespace jana;
 
 #include <BCAL/DBCALHit.h>
 #include <FCAL/DFCALHit.h>
 #include <START_COUNTER/DSCHit.h>
 
-// Routine used to create our JEventProcessor
-extern "C"{
-void InitPlugin(JApplication *app){
-	InitJANAPlugin(app);
-	app->AddFactoryGenerator(new JFactoryGenerator_DTrigger);
-
-		stringstream mess;
-		mess << "=========================================================================="<<endl;
-		mess << endl;
-		mess << "W         W      A      RRRRR     NN    N   IIIIIII   NN    N     GGGGGG  "<<endl;
-		mess << "W         W     A A     R    R    N N   N      I      N N   N    G        "<<endl;
-		mess << "W         W    A   A    R    R    N  N  N      I      N  N  N   G         "<<endl;
-		mess << "W    W    W   AAAAAAA   RRRRR     N   N N      I      N   N N   G    GGGGG"<<endl;
-		mess << " W  W W  W    A     A   R    R    N    NN      I      N    NN    G     G  "<<endl;
-		mess << "  W    W      A     A   R     R   N     N   IIIIIII   N     N     GGGGG   "<<endl;
-		mess << "=========================================================================="<<endl;
-		mess << endl;
-		mess << "Warning! You are using a deprecated plugin!"<<endl;
-		mess << "The level1_trigger plugin has been replaced with the TRIGGER library"<<endl;
-		mess << "that is now a part of standard DANA. "<<endl;
-		mess << endl;
-		mess << "ALSO! The DTrigger class has been renamed to DMCTrigger to allow DTrigger"<<endl;
-		mess << "to be used for data related to the real hardware trigger in the future."<<endl;
-		mess << "=========================================================================="<<endl;
-		cerr << mess.str();
-
-}
-} // "C"
-
 
 //------------------
 // init
 //------------------
-jerror_t DTrigger_factory::init(void)
+jerror_t DMCTrigger_factory::init(void)
 {
 	return NOERROR;
 }
@@ -61,7 +31,7 @@ jerror_t DTrigger_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DMCTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	// Get attenuation parameters
 	double L_over_2 = DBCALGeometry::BCALFIBERLENGTH/2.0;
@@ -74,9 +44,9 @@ jerror_t DTrigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTrigger_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DMCTrigger_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-	// See comments in DTrigger_factory.h
+	// See comments in DMCTrigger_factory.h
 
 	vector<const DBCALHit*> bcalhits;
 	vector<const DFCALHit*> fcalhits;
@@ -138,7 +108,7 @@ jerror_t DTrigger_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Number of start counter hits
 	unsigned int Nschits = schits.size();
 
-	DTrigger *trig = new DTrigger;
+	DMCTrigger *trig = new DMCTrigger;
 
 	// BCAL and FCAL
 	bool sum_cut = (Ebcal + 4.0*Efcal)>=2.0;
@@ -158,7 +128,7 @@ jerror_t DTrigger_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // erun
 //------------------
-jerror_t DTrigger_factory::erun(void)
+jerror_t DMCTrigger_factory::erun(void)
 {
 	return NOERROR;
 }
@@ -166,7 +136,7 @@ jerror_t DTrigger_factory::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DTrigger_factory::fini(void)
+jerror_t DMCTrigger_factory::fini(void)
 {
 	return NOERROR;
 }
