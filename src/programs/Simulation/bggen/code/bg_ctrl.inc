@@ -6,6 +6,7 @@ C
       PARAMETER (MXPGEANT=100,MXPKC=1000)
 C
       COMMON/PHCTRL/ NEVENT,EPH_LIM(2),EELEC,EPEAK,ZCOLL,EPYMIN,ELOWMIN
+     +              ,ISIMUL,IPINIT(2)
      +              ,IWROUT(3),LUNWR(3),IRND_SEQ,NPRIEV
      +              ,IDBEAM,NHBEA
      +              ,IFPYTH
@@ -14,6 +15,8 @@ C
      +              ,KCGEAN(-MXPKC:MXPKC)
      +              ,RATESEC
       INTEGER   NEVENT    ! number of events to simulate (F)
+     +         ,ISIMUL    ! =0 - regular BGGEN (background low_en+PYTHIA), =1 - J/psi
+     +         ,IPINIT    ! 1:2 initial particles GEANT numbers (1 - photon, 14 - proton) (F)
      +         ,IWROUT    ! (1)>0 - write out the HDDS file (events) (F)
 C                           (2)>0 - write out a sequential file
 C                           (3)>0 - write out an ntuple file
@@ -24,14 +27,14 @@ C                           (3) LUN for the ntuple file
      +         ,NPRIEV    ! number of events to print
      +         ,IDBEAM    ! histogram ID for the beam (=0 - fixed energy) (F)
      +         ,NHBEA     ! number of bins in IDBEAM
-     +         ,IFPYTH    ! PYTHIA is used
+     +         ,IFPYTH    ! >0 PYTHIA is used
      +         ,IDLOWEN   ! <>0 - starting ID of histograms for the low energy generator
       INTEGER   IPLUND    ! PYTHIA particle codes (KF) 
      +         ,IDECLUND  !  =0 - forbid the decays of this particle in PYTHIA
       INTEGER   KCGEAN    ! GEANT code for the PYTHIA internal code KC (with sign)
       REAL      EPH_LIM ! limits on the photon beam energy GeV (F)
      +         ,EELEC   ! electron beam energy (F)
-     +         ,EPEAK   ! energy of the coherent peak (the right edge) (F) 
+     +         ,EPEAK   ! energy of the coherent peak (the right edge) (<0.01 - incoherent Bremsstrahlung only)(F) 
      +         ,ZCOLL   ! distance to the collimator (cm) (F)
      +         ,EPYMIN  ! minimal energy for PYTHIA, (F)
 C                         below that the low energy generator is used

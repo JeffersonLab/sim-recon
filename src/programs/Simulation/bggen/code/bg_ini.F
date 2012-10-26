@@ -7,13 +7,13 @@ C
 C
       INCLUDE 'bg_ctrl.inc'
       INCLUDE 'bg_partc.inc'
+      INCLUDE 'bg_reac.inc'
 C
       INTEGER mxffr,jffr
       PARAMETER (mxffr=10000)
       COMMON/CFREAD/ jffr(mxffr)
 C
       INTEGER ier
-      REAL xb,nb
 C
       INTEGER i,j,lun,lout,iost,ip,kd(4),kf,lenc,idgea
       REAL am,wg
@@ -24,6 +24,9 @@ C
 C
       CALL HBOOK_INI
 C
+      ISIMUL=0  ! regular BG (=1 - J/psi)
+      IPINIT(1)=1  ! photon
+      IPINIT(2)=14 ! proton
       NEVENT=0
       IWROUT(1)=1
       IWROUT(2)=0
@@ -42,6 +45,18 @@ C
       LUNWR(2)=2   ! sequential file
       LUNWR(3)=3   ! NTUPLE file
 C
+      DO i=1,2
+         IPREAC(i)=-1
+      ENDDO
+      TSLREAC=-1.
+      ELREAC(1)=-1.
+      ELREAC(2)=-1.
+      NPXREAC=0
+      DO i=1,MXPNTR
+         XSREAC(i)=0.
+         ESREAC(i)=0.
+      ENDDO
+C
 C---    Redefine FFREAD settings
 C
       CALL FFINIT(mxffr)
@@ -50,6 +65,8 @@ C
       CALL FFSET('SIZE',16)
       CALL FFSET('LENG',120)
 C
+      CALL FFKEY('SIMUL'     , ISIMUL     , 1,'INTEGER')
+      CALL FFKEY('PARTINIT'  , IPINIT(1)  , 2,'INTEGER')
       CALL FFKEY('TRIG'      , NEVENT     , 1,'INTEGER')
       CALL FFKEY('WROUT'     , IWROUT(1)  , 3,'INTEGER')
       CALL FFKEY('RNDMSEQ'   , IRND_SEQ   , 1,'INTEGER')
@@ -60,13 +77,14 @@ C
       CALL FFKEY('ZCOLLIM'   , ZCOLL      , 1,'REAL')
       CALL FFKEY('EPYTHMIN'  , EPYMIN     , 1,'REAL')
       CALL FFKEY('ELOWMIN'   , ELOWMIN    , 1,'REAL')
+      CALL FFKEY('REACPAR'   , IPREAC(1)  , MXPNTR+6,'MIXED')
 C
       CALL FFGO
-C
 C
 C---   Read the particle masses (GEANT numbering)
 C
       DO ip=1,MXPART
+         IFLPART(ip)=0
          AM_PART(ip)=0.
          WG_PART(ip)=0.
          DO i=1,4
@@ -88,6 +106,7 @@ C
             READ(cline,*) ip,am,wg,kd
 C            write(6,*) ip,am,wg,kd
             IF(ip.GT.0.AND.ip.LE.MXPART) THEN
+               IFLPART(ip)=1
                AM_PART(ip)=am
                WG_PART(ip)=wg
                DO i=1,4
@@ -105,6 +124,20 @@ C
          WRITE(lout,*) ' *** ERROR: Reading file particle.dat'
          GO TO 999
       ENDIF
+C
+      DO i=1,2
+         ier=1
+         IF(IPINIT(i).GT.0.OR.IPINIT(i).LE.MXPART) THEN
+            IF(IFLPART(IPINIT(i)).NE.0) THEN
+               ier=0
+            ENDIF
+         ENDIF
+         IF(ier.NE.0) THEN
+            WRITE(6,1001) i,IPINIT(i)
+ 1001       FORMAT('  *** Init. error: PARTINIT:',I1,I5,' not defined')
+            GO TO 999
+         ENDIF
+      ENDDO
 C
 C---   Read the GEANT<->PYTHIA particle table
 C      
@@ -187,28 +220,59 @@ C
 C
       ENDIF
 C
+      IF(ISIMUL.EQ.1) THEN   ! J/psi and other binary reactions
+        ier=0
+        DO i=1,2
+           IF(IPREAC(i).LT.1.OR.IPREAC(i).GT.MXPART) ier=1
+        ENDDO
+        IF(ELREAC(1).GT.EPH_LIM(2).OR.ELREAC(2).LT.EPH_LIM(1).OR.
+     +     ELREAC(1).LT.0..OR.ELREAC(2).LT.0.) ier=2 
+        IF(NPXREAC.LT.2) ier=3
+        IF(ier.NE.0) THEN
+           WRITE(6,1030) IPREAC,TSLREAC,ELREAC,NPXREAC
+ 1030      FORMAT('  *** Initialization error REAC: :',4I4,3E11.3,I6)
+           GO TO 999
+        ENDIF
+        DO i=1,NPXREAC
+           ESREAC(i)=ELREAC(1)+(ELREAC(2)-ELREAC(1))/(NPXREAC-1)*(i-1)
+C           write(6,*) i,ESREAC(i)
+        ENDDO
+C
+      ENDIF
+C
+C      write(6,*) NPXREAC,ELREAC
+C      write(6,FMT='(4(E10.3,2X,E10.4))') 
+C     +       (ESREAC(i),XSREAC(i),i=1,NPXREAC)
+C
 C---    Beam spectrum
 C
       IDBEAM=9000
       NHBEA=0
       CALL COHBEAM_INI(IDBEAM,EELEC,EPEAK,EPH_LIM,ZCOLL)
 C
+      IFPYTH=0   ! PYTHIA flag
+      IDLOWEN=0  ! low energy BG reactions
+C
+C---   Types of simulation
+C
+      IF(ISIMUL.EQ.0) THEN   ! BG simulation
+C
 C---   Pythia
 C
-      IFPYTH=0
-      IF(EPH_LIM(2).GT.EPYMIN) THEN
-         CALL PYTH_INI(ier)
-         IF(ier.NE.0) GO TO 999
-         IFPYTH=1
-      ENDIF
+        IF(EPH_LIM(2).GT.EPYMIN) THEN
+           CALL PYTH_INI(ier)
+           IF(ier.NE.0) GO TO 999
+           IFPYTH=1
+        ENDIF
 C
 C---   Low energy processes
 C
-      IDLOWEN=0
-      IF(EPH_LIM(1).LT.EPYMIN) THEN
-         IDLOWEN=10000
-         CALL LOWEN_INI(ier)
-         IF(ier.NE.0) GO TO 999
+        IF(EPH_LIM(1).LT.EPYMIN) THEN
+           IDLOWEN=10000
+           CALL LOWEN_INI(ier)
+           IF(ier.NE.0) GO TO 999
+        ENDIF
+
       ENDIF
 C
 C---   Output file for HDDM

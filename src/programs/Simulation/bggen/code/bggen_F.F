@@ -57,10 +57,10 @@ C
 C
       WRITE(6,1980) 
  1980 FORMAT(///1X,100('='))
-      WRITE(6,1990) NEVENT,RATESEC/1000.
+      WRITE(6,1990) NEVENT,RATESEC
  1990 FORMAT(' Events Simulated: ',I9,5X,'Reference interaction rate:'
-     +      ,F12.2,' kHz')
-      IF(NEVENT.GT.0) THEN
+     +      ,E12.3,' Hz')
+      IF(ISIMUL.EQ.0.AND.NEVENT.GT.0) THEN
          cnam(0)='PYTHIA '
          DO i=1,MXPROC
             cnam(i)=CNPROC(i)

@@ -14,7 +14,7 @@ C
       REAL HRNDM1
       LOGICAL HEXIST
 C
-      INTEGER i,j,ip,ierr,lout,idnt
+      INTEGER i,j,ierr,lout,idnt
       REAL ebeam
       CHARACTER cent(2)*6,cproc*16
 C
@@ -38,8 +38,8 @@ C
 C
 C---   Beam/target definitions
 C
-      ITPIN(1,1)=1    ! beam GEANT type
-      ITPIN(1,2)=14   ! beam target type
+      ITPIN(1,1)=IPINIT(1)    ! beam GEANT type
+      ITPIN(1,2)=IPINIT(2)    ! beam target type
       ITPIN(2,1)=IPLUND(ITPIN(1,1)) ! KF types
       ITPIN(2,2)=IPLUND(ITPIN(1,2))
 C
@@ -57,17 +57,22 @@ C
 C---   Choose the package
 C
       ierr=0
-      IF(ebeam.LT.EPYMIN) THEN
+      IF(ISIMUL.EQ.0) THEN
+         IF(ebeam.LT.EPYMIN) THEN
 C
-         CALL LOWEN_EVE(ierr)
-         IF(IEVPROC.GT.0) cproc=CNPROC(IEVPROC)
+            CALL LOWEN_EVE(ierr)
+            IF(IEVPROC.GT.0) cproc=CNPROC(IEVPROC)
 C
-      ELSE
+         ELSE
 C
-         CALL PYTH_EVE(ierr)
-         cproc='PYTHIA'
+            CALL PYTH_EVE(ierr)
+            cproc='PYTHIA'
 C
+         ENDIF
+      ELSEIF(ISIMUL.EQ.1) THEN
+         CALL REAC_EVE(ierr)
       ENDIF
+C      write(6,*) ' event ',ierr
       IF(ierr.NE.0) GO TO 999
 C
 C---  Remove the GEANT type for the decaying particles (KF type is retained)
