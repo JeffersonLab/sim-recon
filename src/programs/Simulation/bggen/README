@@ -1,9 +1,18 @@
-   E.Chudakov       Jan 17, 2008  
+   E.Chudakov        Jan 17, 2008  
+            Revised: Oct 26, 2012
 
-   This directory contains the code and tools to generate the photoproduction
-   of hadronic events in a wide energy range of E>0.15 GeV, matching the total
-   photoproduction cross section. It can be used to calculate the hadronic
-   background for GLUEX etc. 
+   This directory contains the code and tools for simulation of:
+
+   a)
+   Photoproduction of hadronic events in a wide energy range of E>0.15 GeV, 
+   matching the total photoproduction cross section. It can be used to 
+   calculate the hadronic background for GLUEX etc.
+
+   b) J/psi photoproduction, using a model of Brodsky et al, fit to the data
+      at higher energies. It can also be used for other binary reactions,
+      as gamma+p --> A+B 
+
+
      The photon beam spectrum is calculated using the code from R.Jones for 
    the coherent bremsstrahlung. 
 
@@ -39,6 +48,9 @@ LIST
 C
 C ===    INPUT file for BGGEN
 C
+C       =0 - BG, =1 - J/psi
+ISIMUL   0
+C
 TRIG     395000         number of events to simulate
 C                       We expect 395kHz of hadronic rate at high luminosity
 C -- writing out events
@@ -51,11 +63,19 @@ EPHLIM   0.15 12.       energy range in GeV
 RNDMSEQ    0            random number sequence     integer values
 
 EELEC     12.           electron beam energy
-EPEAK      9.           coherent peak energy
+EPEAK      9.           coherent peak energy, if zero the incoherent Bremss. only
 ZCOLLIM   7600.         distance to the collimator in cm
 
 EPYTHMIN     3.         minimal energy for PYTHIA simulation
-
+C
+PARTINIT  1  14         GEANT types of the initial particles
+C
+C -- For J/psi (SIMUL=1)
+C
+C  reac - J/psi: gamma p -> p J/psi  tslope e1 e2 np cross section in nb
+REACPAR  14 83  1.0  8.2300   13.0000   478
+     0.4296E-07 0.3736E-06 0.1191E-05 0.2656E-05 0.4915E-05 0.8112E-05 0.1239E-04 0.1787E-04 0.2472E-04 0.3306E-04
+........
 STOP
 -------------------------------------------------------------------
 
