@@ -47,7 +47,7 @@ jerror_t DFDCIntersection_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DFDCIntersection_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-  if (!USE_FDC) return NOERROR;
+  // if (!USE_FDC) return NOERROR;
 
 	// Clear fdchits_by_package structure
 	for(int package=1; package<=4; package++){
@@ -69,22 +69,28 @@ jerror_t DFDCIntersection_factory::evnt(JEventLoop *loop, int eventnumber)
 	}
 	
 	// Sort wire hits by package and layer
+	int wire=0,layer=0;
 	for(unsigned int i=0; i<fdchits.size(); i++){
 		const DFDCHit *fdchit = fdchits[i];
+
 		if(fdchit->type != 0)continue; // filter out cathode hits
 		if(fdchit->gLayer<1 || fdchit->gLayer>24){
 			_DBG_<<"FDC gLayer out of range! ("<<fdchit->gLayer<<" is not between 1 and 24)"<<endl;
 			continue;
 		}
-
-		int package = (fdchit->gLayer-1)/6 + 1;
-		fdchits_by_package[package-1][(fdchit->gLayer-1)%6].push_back(fdchit);
+		// Only include the first hit on a given wire in a given layer
+		if (fdchit->element!=wire || fdchit->gLayer!=layer){
+		  int package = (fdchit->gLayer-1)/6 + 1;
+		  fdchits_by_package[package-1][(fdchit->gLayer-1)%6].push_back(fdchit);
+		}
+		wire=fdchit->element;
+		layer=fdchit->gLayer;
 	}
 
 	// Loop over packages, creating intersection points
 	for(unsigned int package=1; package<=4; package++){
-		//MakeIntersectionPoints(fdchits_by_package[package-1]);
-		MakeRestrictedIntersectionPoints(fdchits_by_package[package-1]);
+		MakeIntersectionPoints(fdchits_by_package[package-1]);
+		//MakeRestrictedIntersectionPoints(fdchits_by_package[package-1]);
 	}
 
 	return NOERROR;
