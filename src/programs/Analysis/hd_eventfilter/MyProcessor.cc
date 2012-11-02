@@ -14,6 +14,8 @@ using namespace std;
 #include <HDDM/DEventSourceHDDM.h>
 #include <TRACKING/DMCThrown.h>
 
+#include <level1_trigger/DTrigger.h>
+
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
@@ -68,15 +70,27 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 	// Get data
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mcthrowns);
+	
+	vector<const DTrigger*> triggers;
+	loop->Get(triggers);
 
 	// Loop over thrown tracks
 	for(unsigned int i=0;i<mcthrowns.size();i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
 		
 		// keep tracks with at least 1 thrown particle greater than 1GeV/c
-		if(mcthrown->momentum().Mag()>1.0)write_out = true;
+		//if(mcthrown->momentum().Mag()>1.0)write_out = true;
 
 	}
+	
+	// Loop over triggers
+	for(unsigned int i=0;i<triggers.size();i++){
+		const DTrigger *trigger = triggers[i];
+		
+		if(trigger->L1a_fired){ write_out=true; break; }
+		if(trigger->L1b_fired){ write_out=true; break; }
+	}	
+	
 	//----------------------- Filter Code End -----------------------
 	
 	// If write_out flag is set, write this event to our output file
