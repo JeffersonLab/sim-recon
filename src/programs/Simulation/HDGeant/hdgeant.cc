@@ -15,10 +15,31 @@ extern bool DELETEUNSMEARED;
 
 // Declare routines callable from FORTRAN
 extern "C" int hdgeant_(void); // define in hdgeant_f.F
+extern "C" int hddsgeant3_runtime_(void);  // called from uginit.F. defined below
 
+void Usage(void);
 
+// Get access to FORTRAN common block with some control flags
+#include "controlparams.h"
+
+//------------------
+// main
+//------------------
 int main(int narg, char *argv[])
 {
+	// Set some defaults. Note that most defaults related to the
+	// simulation are set in uginit.F
+	controlparams_.runtime_geom = 0;
+
+	// Parse command line parameters
+	for(int i=1; i<narg; i++){
+		string arg = argv[i];
+		string next = i<(narg+1) ? argv[i]:"";
+		
+		if(arg=="-h" || arg=="--help")Usage();
+		if(arg=="-xml")controlparams_.runtime_geom = 1;
+	}
+
 	// Run hdgeant proper
 	int res = hdgeant_();
 
@@ -62,3 +83,27 @@ int main(int narg, char *argv[])
 
 	return res;
 }
+//------------------
+// main
+//------------------
+void Usage(void)
+{
+	cout<<endl;
+	cout<<"Usage:"<<endl;
+	cout<<"   hdgeant [options]"<<endl;
+	cout<<endl;
+	cout<<" Hall-D Monte Carlo simulation based on GEANT3."<<endl;
+	cout<<"Most configurable options are set using a control.in"<<endl;
+	cout<<"file. A well-annotated example control.in can be"<<endl;
+	cout<<"found in the HDGeant source code directory with."<<endl;
+	cout<<endl;
+	cout<<" options:"<<endl;
+	cout<<"    -h or --help    Print this usage statement"<<endl;
+	cout<<"    -xml            Dynamically generate geometry"<<endl;
+	cout<<"                    from XML source"<<endl;
+	cout<<endl;
+
+	exit(0);
+}
+
+

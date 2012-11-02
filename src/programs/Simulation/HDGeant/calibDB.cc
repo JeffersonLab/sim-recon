@@ -1,4 +1,7 @@
 
+#include <stdlib.h>
+#include <dlfcn.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <vector>
@@ -14,6 +17,9 @@ using namespace std;
 extern "C" {
 #include "calibDB.h"
 };
+
+extern "C" int hddsgeant3_runtime_(void);  // called from uginit.F. defined in calibDB.cc
+
 
 DMagneticFieldMap *Bmap=NULL;
 static JCalibration *jcalib=NULL;
@@ -256,5 +262,92 @@ int GetArrayConstants(const char* namepath, int *Nvals, float* vals, mystr_t *st
 	*Nvals=j;
 
 	return 0; // return 0 if OK, 1 if not
+}
+
+
+//------------------
+// hddsgeant3_runtime_
+//------------------
+int hddsgeant3_runtime_(void)
+{
+	// If the runtime_geom field of the controlparams common
+	// block is set to a non-zero value, then this routine
+	// will get called from uginit.F instead of the hddsgeant3_
+	// routine. Both routines are supposed to define the
+	// geometry, but this one will attempt to quickly generate
+	// and compile it using the HDDS tools. It will then link
+	// and execute the hddsgeant3_ routine in the freshly
+	// produced shared object.
+	//
+	// This should only be called if the user specifies the 
+	// "-xml" command line switch. Otherwise, the built-in
+	// geometry is used.
+	
+	cout<<endl;
+	cout<<"=============================================================="<<endl;
+	cout<<"Enabling dynamic geometry rendering"<<endl;
+	cout<<"- - - - - - - - - - - - - - - - - - -"<<endl;
+	cout<<endl;
+	cout<<"Please make sure the following environment variables are set:" <<endl;
+	cout<<"   HDDS_HOME  "<< endl;
+	cout<<"   BMS_OSNAME "<< endl;
+	cout<<"   CERN       "<< endl;
+	cout<<"   CERN_LEVEL "<< endl;
+
+	// Generate FORTRAN code from XML
+	cout<<endl;
+	cout << "Generating FORTRAN from XML source ...." << endl;
+	string cmd = "$HDDS_HOME/bin/$BMS_OSNAME/hdds-geant $HDDS_HOME/main_HDDS.xml > tmp.F";
+	cout << cmd << endl;
+	system(cmd.c_str());
+	
+	// Compile FORTRAN into shared object
+	cout<<endl;
+	cout << "Compiling FORTRAN into shared object ..." << endl;
+	cmd = "gfortran -shared -fPIC -o tmp.so -I$CERN/$CERN_LEVEL/include tmp.F";
+	cout << cmd << endl;
+	system(cmd.c_str());
+
+	// Attach shared object
+	cout<<endl;
+	cout << "Attaching shared object ..." << endl;
+	string fname = "./tmp.so";
+	void *handle = dlopen(fname.c_str(), RTLD_NOW | RTLD_GLOBAL);
+	if(!handle){
+		cerr<<"Unable to open \""<<fname<<"\"!"<<endl;
+		cerr<<dlerror()<<endl;
+		exit(-1);
+	}
+	
+	// Find hddsgeant3_ symbol inside shared object
+	cout<<endl;
+	cout << "Locating geometry ... " << endl;
+	void (*my_hddsgeant3)(void);
+	*(void **) (&my_hddsgeant3) = dlsym(handle, "hddsgeant3_");
+	char *err = dlerror();
+	if(err != NULL){
+		cerr << err << endl;
+		exit(-1);
+	}
+	
+	// Execute my_hddsgeant3
+	cout<<endl;
+	cout << "Loading geometry ... " << endl;
+	(*my_hddsgeant3)();
+
+	// Clean up
+	cout<<endl;
+	cout << "Cleaning up ... " << endl;
+	unlink("./tmp.F");
+	unlink("./tmp.so");
+
+	// do not close shared object since it may contain needed routines
+	dlclose(handle);
+
+	cout<<endl;
+	cout << "Geometry loaded successfully" << endl;
+	cout<<"=============================================================="<<endl;
+
+	return 0;
 }
 
