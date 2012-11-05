@@ -14,7 +14,7 @@ using namespace std;
 #include <HDDM/DEventSourceHDDM.h>
 #include <TRACKING/DMCThrown.h>
 
-#include <level1_trigger/DTrigger.h>
+#include <TRIGGER/DMCTrigger.h>
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
@@ -71,7 +71,7 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mcthrowns);
 	
-	vector<const DTrigger*> triggers;
+	vector<const DMCTrigger*> triggers;
 	loop->Get(triggers);
 
 	// Loop over thrown tracks
@@ -85,7 +85,7 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Loop over triggers
 	for(unsigned int i=0;i<triggers.size();i++){
-		const DTrigger *trigger = triggers[i];
+		const DMCTrigger *trigger = triggers[i];
 		
 		if(trigger->L1a_fired){ write_out=true; break; }
 		if(trigger->L1b_fired){ write_out=true; break; }
