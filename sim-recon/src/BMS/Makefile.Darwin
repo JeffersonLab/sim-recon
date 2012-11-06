@@ -1,0 +1,17 @@
+# This defines flags which can implement (or not) features
+# in a way compatible with this OS
+
+OSXFLAGS = -DBASENAME_IN_LIBGEN -DXDR_LONGLONG_MISSING
+
+
+# NOTE: As of Mac OS X 10.6, the -multiply_defined is obsolete
+CFLAGS += $(OSXFLAGS)
+CXXFLAGS += $(OSXFLAGS)
+LD_FLAGS += -multiply_defined suppress -bind_at_load
+
+# For OS X 10.4, the -r flag was used (and I assume needed). For OS X 10.5, it causes errors
+#LD_SO_FLAGS += -dynamiclib -r -multiply_defined suppress -flat_namespace -undefined suppress
+LD_SO_FLAGS += -dynamiclib -multiply_defined suppress -flat_namespace -undefined suppress
+
+# gfortran tends to be installed in /usr/local
+MISC_LIBS += -L/usr/local/lib

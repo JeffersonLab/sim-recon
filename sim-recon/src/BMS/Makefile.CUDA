@@ -1,0 +1,18 @@
+
+# Any package that needs to build cuda object files
+# should invoke this Makefile header
+
+ifdef GPU
+
+CSRC += $(wildcard *.cu)
+NVCC = $(CUDA_INSTALL_PATH)/bin/nvcc
+CUFLAGS += -I$(CUDA_INSTALL_PATH)/include -arch=compute_13 -code=compute_13
+MISC_LIBS += -L$(CUDA_INSTALL_PATH)/lib -L$(CUDA_INSTALL_PATH)/lib64 -lcublas -lcudart
+CXXFLAGS += -DGPU_ACCELERATION -I$(CUDA_INSTALL_PATH)/include
+
+%.o : %.cu
+	$(NVCC) -c $(CUFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.cu
+	$(NVCC) -c $(CUFLAGS) $< $(OUTPUT_OPTION)
+
+endif

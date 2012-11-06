@@ -1,0 +1,231 @@
+OStype = $(shell uname)
+ARCHtype = $(shell uname -m)
+BINDIR = ../bin.$(OStype)
+
+#--------------------------------------------------------------------
+# The symbol SWITCHES is used to active any of the following switches
+# to enable custom versions of the simulation program.
+#NTUPLE_OPTIONS = -DBACKGROUND_STUDIES
+NTUPLE_OPTIONS = -DBACKGROUND_PROFILING -DTRACK_SHOWERS_IN_COLLIMATOR
+#NTUPLE_OPTIONS = -DHISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
+#NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
+#NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
+#NTUPLE_OPTIONS = -DFCAL_SPLASH_NTUPLE
+#NTUPLE_OPTIONS = -DTESTING_CAL_CONTAINMENT
+#SIM_OPTIONS = -DTRACK_SHOWERS_IN_COLLIMATOR -DACTIVE_COLLIMATOR_SIMS
+#--------------------------------------------------------------------
+
+SWITCHES = -DCERNLIB_TYPE -D_FILE_OFFSET_BITS=64 $(SIM_OPTIONS) $(NTUPLE_OPTIONS)
+
+ifeq ($(OStype),Linux)
+	ifeq ($(ARCHtype),alpha)
+		CC	:= gcc
+		CPP	:= g++
+		F77	:= g77
+		NETLIB := -lnsl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
+		COPTS = -g $(SWITCHES)
+		FOPTS = -g -Wno-globals $(SWITCHES)
+		GLIBS 	:= -L/usr/lib/gcc-lib/alpha-redhat-linux/egcs-2.91.66/ -lg2c
+	else
+		CC	:= gcc
+		CPP	:= g++
+		F77	:= gfortran
+		NETLIB := -lnsl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
+		COPTS = -g $(SWITCHES)
+#		FOPTS = -g -Wno-globals $(SWITCHES)
+		FOPTS = -g $(SWITCHES) -fno-automatic
+		GLIBS	:= -lXmu -lSM -lICE -lpthread -lgfortran
+		EXPORTDYNAMIC = -Wl,-export-dynamic
+#		STATIC = -Wl,-Bstatic
+ 		STATIC =
+	endif
+endif
+ifeq ($(OStype),OSF1)
+	CC	:= cc
+	CPP	:= g++
+	F77	:= f77
+	NETLIB := 
+        EXPORTDYNAMIC :=
+	STATIC	:=
+	XLIBS  := -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm -lPW -ldnet_stub
+	COPTS = -g -D_Tru64 $(SWITCHES)
+	FOPTS = -g -fpe4 $(SWITCHES)
+	LOPTS = -g -non_shared -fpe4
+	GLIBS 	:= -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/ -lg2c -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/3.3/ -lgcc
+endif
+ifeq ($(OStype),SunOS)
+	CC	:= cc
+	CPP	:= CC
+	F77	:= f77
+	NETLIB	:= 
+	EXPORTDYNAMIC :=
+	STATIC	:=
+	XLIBS	:= -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm 
+	COPTS	:= -g $(SWITCHES)
+	FOPTS	:= -g $(SWITCHES)
+	LOPTS	:= -g
+	GLIBS	:=
+endif
+ifeq ($(OStype),Darwin)
+	CC	:= gcc
+	CPP	:= g++
+	F77	:= g77
+	NETLIB 	:=
+	XLIBS  	:= -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
+	COPTS = -g $(SWITCHES)
+	FOPTS = -g -Wno-globals $(SWITCHES)
+	GLIBS	:= -L$(CERN_ROOT)/lib -lcompat /usr/lib/libgcc.a
+endif
+
+HDDM = $(HALLD_HOME)/src/libraries/HDDM
+
+ifeq ($(OStype),OSF1)
+ 	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o gtnext.o gdrawp.o
+else
+	MISC_FIXES := gthion.o gtnext.o gdrawp.o
+endif
+
+AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
+       gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o savehits.o \
+       goptimize.o cobrems.o beamgen.o settofg.o seteventid.o \
+       gelhad/bimsel.o glisur.o \
+       $(HDDS_HOME)/obj_d/$(BMS_OSNAME)/hddsGeant3.o
+AUXC = hddmInput.o hddmOutput.o hddm_s.o \
+       hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
+       hitFCal.o hitCCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
+       calibDB.o hitTag.o storeTrajectory.o hitGCal.o copytocplusplus.o
+
+GXFIXED = gxcs.o gxphys.o
+GELHAD = gelhad/libgelhad.a
+
+CERNLIB = $(CERN_ROOT)/bin/cernlib
+
+hdgeant++: hdgeant++.o gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES)
+	$(CPP) -mtune=generic -o $@ hdgeant++.o gxint.o uginit.o uglast.o \
+	   $(FOPTS) $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
+	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
+	   -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lHDGEOMETRY \
+	   -L$(JANA_HOME)/lib -lJANA \
+	   -L$(XERCESCROOT)/lib -lxerces-c \
+	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lMathCore -lCore -lRIO -lCint \
+	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
+	   $(EXPORTDYNAMIC) $(GLIBS)
+
+suppressed:
+
+hdgeant: hdgeant.o hdgeant_f.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
+	$(CPP) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
+	   hdgeant.o hdgeant_f.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES) \
+	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
+	   -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lHDGEOMETRY \
+	   -L$(JANA_HOME)/lib -lJANA \
+	   -L$(XERCESCROOT)/lib -lxerces-c \
+	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lMathCore -lCore -lRIO -lCint \
+	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
+	   $(NETLIB) $(XLIBS) $(GLIBS)
+
+install: hdgeant hdgeant++
+	cp $^ $(HALLD_HOME)/bin/$(OStype)
+
+.F.o:
+	$(F77) $(FOPTS) -I. -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $<
+
+.f.o:
+	$(F77) $(FOPTS) -I. -I$(CERN_ROOT)/include -c -o $@ $<
+
+.c.o:
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(CERN_ROOT)/include \
+	-c -o $@ $<
+
+.cpp.o:
+	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
+
+.cc.o:
+	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries \
+	-I$(ROOTSYS)/include -c -o $@ $<
+
+hddm_s.o: $(HDDM)/hddm_s.c
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
+
+hddm_s.c: hddm_s.h
+
+hddm_s.h: $(HDDM)/event.xml
+	hddm-c $^
+
+hddm_s.cpp: hddm_h.hpp
+
+hddm_h.hpp: $(HDDM)/event.xml
+	hddm-cpp $^
+
+hddmtools: hddmcp_c cdcdump_c cdccount_c bcal2nt hddmcp cdcdump cdccount bcal2nt
+
+hddmcp_c: hddmcp_c.c hddm_s.c memcheck.o bintree.o
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -o $@ $^
+
+cdcdump_c: cdcdump_c.c hddm_s.c memcheck.o bintree.o
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -o $@ $^
+
+%count_c: %count_c.c hddm_s.c memcheck.o bintree.o
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -o $@ $^
+
+%2nt_c: %2nt_c.c hddm_s.c memcheck.o bintree.o
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -o $@ $^ \
+	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lgfortran
+
+hddmcp: hddmcp.cpp hddm_s.cpp
+	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	-I$(HALLD_HOME)/include -o $@ $^ \
+        -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-lxstream -lbz2 -lz
+
+cdcdump: cdcdump.cpp hddm_s.cpp
+	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/include -o $@ $^ \
+        -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-lxstream -lbz2 -lz
+
+%count: %count.cpp hddm_s.cpp
+	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/include -o $@ $^ \
+        -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-lxstream -lbz2 -lz
+
+%2nt: %2nt.cpp hddm_s.cpp
+	g++ $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/include -o $@ $^ \
+        -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-lxstream -lbz2 -lz \
+	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lgfortran 
+
+$(GELHAD):
+	$(MAKE) -C gelhad
+
+$(AUXC): $(HDDM)/hddm_s.h bintree.h geant3.h hddmOutput.h 
+
+clean:
+	rm -f *.o core last.kumac* paw.metafile

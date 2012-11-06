@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS>
+
+  GlueX Electron Beam Dump
+  *************************
+
+     version 1.0: Initial version	-rtj
+
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
+-->
+
+<section name        = "ElectronBeamDump"
+         version     = "1.0"
+         date        = "2006-03-24"
+         author      = "R.T. Jones"
+         top_volume  = "electronDump"
+         specification = "v1.0">
+
+<!-- The electron beam dump consists of a long narrow passageway
+     connected to the tagger area that contains the actual electron
+     dump and associated shielding.  Everything is contained inside
+     a container called electronDump whose origin is the intersection
+     of the photon beam axis with the unscattered electron beam axis
+     after it exits the tagger.                                  -->
+
+
+
+  <composition name="electronDump">
+        <posXYZ volume="Labyrinth1" X_Y_Z=" -49.53   0.0  -250.19" />
+        <posXYZ volume="Labyrinth2" X_Y_Z="  49.53   0.0  -29.21"  />
+        <posXYZ volume="Labyrinth3" X_Y_Z=" -49.53   0.0   186.69" /> 
+
+        <posXYZ volume="DumpDoor" X_Y_Z=" 197.5  0.0  -186.5 " rot="0  -54.904  0" unit_angle="deg"/>
+
+<!-- 5 + 1 =  6 inches  pipe; shift by 2 inches -->
+        <posXYZ volume="Pipe12" X_Y_Z=" -5.08  -45.0  -156.21 " />
+        <posXYZ volume="Pipe23" X_Y_Z=" -5.08  -45.0   95.25" />
+
+
+        <posXYZ volume="SEG1" X_Y_Z=" -247.65   0.0   -264.16" /> 
+        <posXYZ volume="SEG2" X_Y_Z="  231.14   0.0    119.38" /> 
+
+        <posXYZ volume="BDSW" X_Y_Z="  -410.07635   0.0   17.3810888" rot="0  90.  0" unit_angle="deg"/> 
+        <posXYZ volume="BDNW" X_Y_Z="   364.16      0.0   593.41803"  rot="0  90.  0" unit_angle="deg"/> 
+
+         <posXYZ volume="IronDump" X_Y_Z="0.0 0.0 598.17" /> 
+
+  </composition>
+
+
+<!-- ====== Labyrinth 1 ====== -->
+  <composition name="Labyrinth1" envelope="LBO1">
+        <posXYZ volume="LBI1" X_Y_Z=" 44.45  -45.0  0.0" /> 
+  </composition>
+
+  <box name="LBI1" X_Y_Z=" 15.24  5.08  66.04  " material="TaggerVacuum"  
+       comment="1st Labyrinth hole">
+  </box> 
+
+
+  <box name="LBO1" X_Y_Z=" 363.22  450.0  66.04" material="Iron"  
+       comment="1st Labyrinth wall">
+  </box> 
+
+
+<!-- ====== Labyrinth 2 ====== -->
+  <composition name="Labyrinth2" envelope="LBO2">
+        <posXYZ volume="LBI2" X_Y_Z="-54.61  -45.0  0.0" /> 
+  </composition>
+
+
+ <box name="LBI2" X_Y_Z="15.24  5.08  132.08  " material="TaggerVacuum"  
+       comment="2nd Labyrinth hole">
+  </box> 
+
+
+  <box name="LBO2" X_Y_Z="297.18  450.0  132.08" material="Iron"  
+       comment="2nd Labyrinth wall">
+  </box> 
+
+
+<!-- ====== Labyrinth 3 ====== -->
+  <composition name="Labyrinth3" envelope="LBO3">
+        <posXYZ volume="LBI3" X_Y_Z="44.45  -45.0  0.0" /> 
+  </composition>
+
+
+  <box name="LBI3" X_Y_Z="15.24  5.08  66.04  " material="TaggerVacuum"  
+       comment="3rd Labyrinth hole">
+  </box> 
+
+  <box name="LBO3" X_Y_Z="363.22  450.0  66.04" material="Iron"  
+       comment="3rd  Labyrinth wall">
+  </box> 
+
+
+<!-- ====== Dump Door ====== -->
+  <composition name="DumpDoor" envelope="DOOR">
+     <posXYZ volume="OUTD" X_Y_Z="0.0  0.0  -2.5" />
+  </composition>
+
+
+  <box name="DOOR" X_Y_Z="216.971  450.  6.0  " material="Polyethylene"  
+       comment="Labyrinth Door">
+  </box> 
+
+  <box name="OUTD" X_Y_Z="216.971  450.  1.0  " material="Boron"  
+       comment="Labyrinth Door">
+  </box> 
+
+
+<!-- ====== Pipe between Lab 1 and  2.  5 + 1 = 6 inches, 1.5 mm thick ======  -->
+  <composition name="Pipe12" envelope="LPO1">
+        <posXYZ volume="LPI1" X_Y_Z="0.0  0.0  0.0" /> 
+  </composition>
+
+  <box name="LPO1" X_Y_Z="15.54  5.38  121.92" material="Iron"  
+       comment="Pipe between Lab 1 and 2">
+  </box> 
+
+  <box name="LPI1" X_Y_Z="15.24 5.08 121.92" material="TaggerVacuum"  
+       comment="Pipe between Lab 1 and 2">
+  </box> 
+
+
+
+<!-- ======  Pipe between Lab 2 and 3. 5 + 1 = 6 inches, 1.5 mm thick ======   -->
+ <composition name="Pipe23" envelope="LPO2">
+        <posXYZ volume="LPI2" X_Y_Z="0.0  0.0  0.0" /> 
+  </composition>
+
+  <box name="LPO2" X_Y_Z="15.54 5.38 116.84" material="Iron"  
+       comment="Pipe between Lab 2 and 3">
+  </box> 
+
+  <box name="LPI2" X_Y_Z="15.24  5.08 116.84" material="TaggerVacuum"  
+       comment="Pipe between Lab 3 and 4">
+  </box> 
+
+
+<!-- ====== Iron slabs along the wall inside the beam dump ====== -->
+  <box name="SEG1" X_Y_Z="33.02  450. 1196.34 " material="Iron"  
+       comment="SEG block slab in the Hall">
+  </box> 
+
+  <box name="SEG2" X_Y_Z="66.04  450. 429.26 " material="Iron"  
+       comment="SEG block slab in the Hall">
+  </box> 
+
+  <trd name="BDSW" Xmp_Ymp_Z="1655.1356  1724.66  450.  450. 291.8327" 
+     material="Concrete" inclination="6.79288  0" unit_angle="deg"/>
+
+  <trd name="BDNW" Xmp_Ymp_Z="957.58  118.06787  450.  450. 200." 
+     material="Concrete" inclination="-64.5237  0" unit_angle="deg"/>
+
+
+
+<!-- ====== Iron Dump ====== -->
+
+  <composition name="IronDump" envelope="DIRN">
+            <posXYZ volume="BDhole" X_Y_Z=" 0.0  -45.0  -165.1 " />
+  </composition>
+
+
+  <box name="DIRN" X_Y_Z="528.32  450.0  528.32" material="Iron"
+         				comment="Dump Iron House" />
+
+
+  <composition name="BDhole" envelope="BSYV">
+            <posXYZ volume="WINT" X_Y_Z=" 0.0  0.0  -91.69  " /> 
+            <posXYZ volume="WINF" X_Y_Z=" 0.0  0.0  -86.135 " />
+
+            <posXYZ volume="WIN1" X_Y_Z=" 0.0  0.0  -96.135 " />
+            <posXYZ volume="WIN1" X_Y_Z=" 0.0  0.0  -89.785 " />
+
+            <posXYZ volume="WIN2" X_Y_Z=" 0.0  0.0  -96.135 " />
+            <posXYZ volume="WIN2" X_Y_Z=" 0.0  0.0  -89.785 " />
+
+            <posXYZ volume="FrontSection" X_Y_Z=" 0.0  0.0  -69.86 "  />
+
+            <posXYZ volume="FSEF" X_Y_Z=" 0.0  0.0  -83.29 "  />
+
+            <posXYZ volume="FSSF" X_Y_Z=" 0.0  0.0  -55.48 "  />
+
+            <posXYZ volume="CenterSection" X_Y_Z=" 0.0  0.0  -1.68 "  />
+
+            <posXYZ volume="CopperSection" X_Y_Z=" 0.0  0.0  66.265 "  />
+  </composition>
+
+
+  <box name="BSYV" X_Y_Z="66.04   66.04  198.12" material="Air"
+         				comment="Air volume for the iron dump" />
+
+  <tubs name="WINT" Rio_Z="2.48  3.66   12.7" material="Aluminum" comment="Win Section Tube"/> 
+
+  <tubs name="WINF" Rio_Z="3.66  5.84   1.59" material="Aluminum" comment="Win Section Flange"/> 
+
+  <tubs name="WIN1" Rio_Z="0.0  1.5   0.3" material="Copper" comment="Inner Copper Windows"/> 
+
+  <tubs name="WIN2" Rio_Z="1.5  2.48   0.9" material="Copper" comment="Outer Copper Windows"/> 
+
+ 
+  <composition name="FrontSection" envelope="FSST">
+      <posXYZ volume="FSTW" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <tubs name="FSST" Rio_Z="3.81  8.4   30.96" material="Aluminum" comment="Front Section Tube"/>
+
+  <tubs name="FSTW" Rio_Z="7.0  7.62  30.96" material="H2O" comment="Front Section Tube Water"/>
+
+  <tubs name="FSEF" Rio_Z="3.175  3.81  4.1" material="Aluminum" comment="Front Section Tube entrance flange inside"/>
+  <tubs name="FSSF" Rio_Z="8.4  12.065  2.2" material="Aluminum" comment="Front Section Flange"/>
+
+  <composition name="CenterSection" envelope="ACST">
+     <posXYZ volume="CenterSectHole" X_Y_Z="0.0  0.0  -27.8" />
+     <posXYZ volume="ACTW" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <tubs name="ACST" Rio_Z="0.0  12.7  105.4" material="Aluminum" comment="Al Center Section Tube"/>
+
+ <composition name="CenterSectHole" envelope="ACHT">
+     <posXYZ volume="ACCT" X_Y_Z="0.0  0.0  23.47" />
+  </composition>
+
+  <tubs name="ACHT" Rio_Z="0.0  2.86  49.8" material="Air" comment="Hole in Al Center Section Tube"/>
+
+  <cons name="ACCT" Rio1_Rio2_Z="2.86 2.86 0.0 2.86 2.86"  material="Aluminum" comment="Cone in the Hole in Al Center Section Tube"/>
+
+  <tubs name="ACTW" Rio_Z="4.45  5.08  105.4" material="H2O" comment="Al Center Section Tube Water"/>
+
+
+  <composition name="CopperSection" envelope="CEST">
+     <posXYZ volume="CETW" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <tubs name="CEST" Rio_Z="0.0  12.7  29.21" material="Copper" comment="Copper End Section Tube"/>
+
+  <tubs name="CETW" Rio_Z="11.43  12.1  29.21" material="H2O" comment="Copper End Section Tube Water"/>
+
+
+
+</section>
+
+<!-- </HDDS> -->
+

@@ -1,0 +1,19 @@
+
+
+README for Kinematic Fitting examples
+
+Nov. 24, 2009  David Lawrence
+
+This directory contains example code for using the CMU kinematic
+fitter contained in the Hall-D repository. These examples were
+written by Matt Bellis over a year ago. They were tarred up and
+posted to the wiki (http://www.jlab.org/Hall-D/software/wiki/index.php/Image:Testkfit.tgz)
+by Curtis Meyer on Nov. 24, 2009.
+
+I am placing this code in the repository to make it more easily
+accessible by the collaboration at large and allow modifications
+to be made to it that can easily be published through subversion.
+
+At this time I have not tested these myself no do I know of anyone
+else running them other than Matt back when he originally authored
+them.

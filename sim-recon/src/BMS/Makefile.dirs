@@ -1,0 +1,96 @@
+.PHONY: $(DIRS)
+
+LDLPNAME = LD_LIBRARY_PATH
+ifeq ($(OSTYPE),darwin)
+	LDLPNAME = DYLD_LIBRARY_PATH
+endif
+
+WHICH_ROOT_CONFIG = $(shell which root-config)
+WHICH_CERNLIB = $(shell which cernlib)
+LD_HAS_XERCES = $(findstring $(XERCESCROOT)/lib,$($(LDLPNAME)))
+LD_HAS_ROOT = $(findstring $(ROOTSYS)/lib,$($(LDLPNAME)))
+
+all install depclean clean pristine relink: $(DIRS)
+
+$(DIRS): env_check
+	$(MAKE) -C $@ $(MAKECMDGOALS)
+
+env_check:
+ifndef XERCESCROOT
+	@echo error: XERCESCROOT not defined ; exit 1
+else
+	@echo XERCESCROOT = $(XERCESCROOT)
+endif
+ifeq ($(strip $(LD_HAS_XERCES)),)
+	@echo error: $(XERCESCROOT)/lib not in $(LDLPNAME) ; exit 1
+else
+	@echo XERCES in $(LDLPNAME) = $(LD_HAS_XERCES)
+endif
+ifndef ROOTSYS
+	@echo error: ROOTSYS not defined ; exit 1
+else
+	@echo ROOTSYS = $(ROOTSYS)
+endif
+ifeq ($(strip $(WHICH_ROOT_CONFIG)),)
+	@echo error: root-config not in path ; exit 1
+else
+	@echo WHICH_ROOT_CONFIG = $(WHICH_ROOT_CONFIG)
+endif
+ifeq ($(strip $(LD_HAS_ROOT)),)
+	@echo error: $(ROOTSYS)/lib not in $(LDLPNAME) ; exit 1
+else
+	@echo ROOT in $(LDLPNAME) = $(LD_HAS_XERCES)
+endif
+ifndef JANA_HOME
+	@echo error: JANA_HOME not defined ; exit 1
+else
+	@echo JANA_HOME = $(JANA_HOME)
+endif
+ifndef HDDS_HOME
+	@echo error: HDDS_HOME not defined ; exit 1
+else
+	@echo HDDS_HOME = $(HDDS_HOME)
+endif
+ifndef CERN
+	@echo ==============================================
+	@echo WARNING: CERN not defined!
+	@echo Build proceeding, but hdgeant will not be made
+	@echo ==============================================
+else  # CERN
+
+	@echo CERN = $(CERN)
+
+ifndef CERN_LEVEL
+	@echo error: CERN_LEVEL not defined ; exit 1
+else
+	@echo CERN_LEVEL = $(CERN_LEVEL)
+endif
+ifeq ($(strip $(WHICH_CERNLIB)),)
+	@echo error: cernlib not in path ; exit 1
+else
+	@echo WHICH_CERNLIB = $(WHICH_CERNLIB)
+endif
+endif  # CERN
+
+
+# right now these two dependencies are linked...
+# AmpTools is the only package that depends on CLHEP
+
+	@echo AMPTOOLS = $(AMPTOOLS)
+	@echo CLHEP = $(CLHEP)
+
+ifdef AMPTOOLS
+ifdef CLHEP
+AMPTOOLS_CLHEP = 1
+endif
+endif
+
+ifndef AMPTOOLS_CLHEP
+	@echo ==============================================
+	@echo WARNING: AMPTOOLS or CLHEP is not defined
+	@echo Build proceeding, but various amplitude
+	@echo analysis libraries and generators will not
+	@echo be built.
+	@echo ==============================================
+endif
+
