@@ -1,7 +1,0 @@
-
-PACKAGES = AmpTools:CLHEP:ROOT
-
-ADDITIONAL_MODULES = AMPTOOLS_DATAIO HDDM
-
-include $(HALLD_HOME)/src/BMS/Makefile.bin
-

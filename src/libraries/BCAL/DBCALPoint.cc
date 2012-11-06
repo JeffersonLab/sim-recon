@@ -75,14 +75,7 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   float attDown = exp( -dDown / DBCALGeometry::ATTEN_LENGTH );
  
   // use these to correct the energy
-  m_E =  ( upHit.E / attUp + downHit.E / attDown ) / 2;
-  
-  // The "E"s from the DBCALHit objects are in units of fADC counts.
-  // a calibration constant needs to be applied here to get it
-  // (at least approximately) into GeV. For now, apply an empirical
-  // factor.
-  float fADC_counts_per_GeV = 14000.0;
-  m_E /= fADC_counts_per_GeV;
+  m_E =  ( upHit.E / attUp + downHit.E / attDown ) / 2; 
   
   m_r = DBCALGeometry::r( cellId );
   //for a uniform distribution of width a, the RMS is a/sqrt(12)

@@ -6,7 +6,7 @@
 
 // Set the following to 1 to use the new timing spectrum scheme and 0 to use old scheme
 
-#if 1
+#if 0
 
 #include <iostream>
 #include <iomanip>

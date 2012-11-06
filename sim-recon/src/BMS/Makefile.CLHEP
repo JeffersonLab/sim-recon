@@ -1,6 +1,0 @@
-
-#CLHEP is required by AmpTools package and the code that uses this package  
-
-CXXFLAGS += -I$(CLHEP)/include
-MISC_LIBS += -L$(CLHEP)/lib -lCLHEP
-

@@ -1,4 +1,0 @@
-**** Sequence /kginit from PAM geanh321 ****
-C --- INITIALIZATION FLAGS FOR VARIOUS GHEISHA ROUTINES ---
-      COMMON /KGINIT/ KGINIT(50)
-C

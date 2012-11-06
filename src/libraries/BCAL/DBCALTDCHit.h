@@ -9,7 +9,6 @@
 #define _DBCALTDCHit_
 
 #include <JANA/jerror.h>
-#include <BCAL/DBCALGeometry.h>
 
 class DBCALTDCHit:public JObject{
 
