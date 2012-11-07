@@ -25,6 +25,27 @@ extern "C"{
 void InitPlugin(JApplication *app){
 	InitJANAPlugin(app);
 	app->AddFactoryGenerator(new JFactoryGenerator_DTrigger);
+
+		stringstream mess;
+		mess << "=========================================================================="<<endl;
+		mess << endl;
+		mess << "W         W      A      RRRRR     NN    N   IIIIIII   NN    N     GGGGGG  "<<endl;
+		mess << "W         W     A A     R    R    N N   N      I      N N   N    G        "<<endl;
+		mess << "W         W    A   A    R    R    N  N  N      I      N  N  N   G         "<<endl;
+		mess << "W    W    W   AAAAAAA   RRRRR     N   N N      I      N   N N   G    GGGGG"<<endl;
+		mess << " W  W W  W    A     A   R    R    N    NN      I      N    NN    G     G  "<<endl;
+		mess << "  W    W      A     A   R     R   N     N   IIIIIII   N     N     GGGGG   "<<endl;
+		mess << "=========================================================================="<<endl;
+		mess << endl;
+		mess << "Warning! You are using a deprecated plugin!"<<endl;
+		mess << "The level1_trigger plugin has been replaced with the TRIGGER library"<<endl;
+		mess << "that is now a part of standard DANA. "<<endl;
+		mess << endl;
+		mess << "ALSO! The DTrigger class has been renamed to DMCTrigger to allow DTrigger"<<endl;
+		mess << "to be used for data related to the real hardware trigger in the future."<<endl;
+		mess << "=========================================================================="<<endl;
+		cerr << mess.str();
+
 }
 } // "C"
 
