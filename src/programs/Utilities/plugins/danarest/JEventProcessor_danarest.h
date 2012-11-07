@@ -31,7 +31,6 @@ class JEventProcessor_danarest : public jana::JEventProcessor
  private:
    ofstream *ofs;
    hddm_r::ostream *fout;
-   hddm_r::HDDM record;
    unsigned long int Nevents_written;
 };
 
