@@ -51,5 +51,7 @@
               lunit="cm" tunit="ns" Eunit="GeV"/>
     <RFtime minOccurs="0" jtag="string"
             tsync="float" tsyncerr="float" tunit="ns"/>
+	<trigger minOccurs="0" jtag="string"
+			L1a="boolean" L1b="boolean" L1c="boolean"/>
   </reconstructedPhysicsEvent>
 </HDDM>

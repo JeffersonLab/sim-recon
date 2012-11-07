@@ -28,6 +28,7 @@
 #include <BCAL/DBCALShower.h>
 #include <START_COUNTER/DSCHit.h>
 #include <TOF/DTOFPoint.h>
+#include <TRIGGER/DMCTrigger.h>
 
 #include <DMatrix.h>
 
@@ -65,6 +66,8 @@ class DEventSourceREST:public JEventSource
                     JFactory<DBCALShower>* factory);
    jerror_t Extract_DTrackTimeBased(hddm_r::HDDM *record,
                     JFactory<DTrackTimeBased>* factory);
+   jerror_t Extract_DMCTrigger(hddm_r::HDDM *record,
+                    JFactory<DMCTrigger>* factory);
 #if 0
    jerror_t Extract_DRFTime(hddm_r::HDDM *record,
                     JFactory<DRFTime>* factory);

@@ -195,6 +195,10 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
       return Extract_DTrackTimeBased(record,
                      dynamic_cast<JFactory<DTrackTimeBased>*>(factory));
    }
+   if (dataClassName =="DMCTrigger") {
+      return Extract_DMCTrigger(record,
+                     dynamic_cast<JFactory<DMCTrigger>*>(factory));
+   }
 #if 0
    // one day we will need a class to hold RF timing information
    if (dataClassName =="DRFTime") {
@@ -717,6 +721,43 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
    pthread_mutex_unlock(&rt_mutex);
    
    return NOERROR;
+}
+
+//--------------------------------
+// Extract_DMCTrigger
+//--------------------------------
+jerror_t DEventSourceREST::Extract_DMCTrigger(hddm_r::HDDM *record,
+                                   JFactory<DMCTrigger>* factory)
+{
+	/// Copies the data from the trigger hddm record. This is
+	/// called from JEventSourceREST::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+
+	if (factory==NULL) {
+	  return OBJECT_NOT_AVAILABLE;
+	}
+	string tag = (factory->Tag())? factory->Tag() : "";
+
+	vector<DMCTrigger*> data;
+
+	const hddm_r::TriggerList &triggers = record->getTriggers();
+
+	// loop over chargedTrack records
+	hddm_r::TriggerList::iterator iter;
+	for (iter = triggers.begin(); iter != triggers.end(); ++iter) {
+		if (iter->getJtag() != tag) {
+			continue;
+		}
+      DMCTrigger *trigger = new DMCTrigger();
+      trigger->L1a_fired = iter->getL1a();
+      trigger->L1b_fired = iter->getL1b();
+      trigger->L1c_fired = iter->getL1c();
+	}
+
+	// Copy data to factory
+	factory->CopyTo(data);
+
+	return NOERROR;
 }
 
 Particle_t DEventSourceREST::PDGtoPtype(int pdgtype)
