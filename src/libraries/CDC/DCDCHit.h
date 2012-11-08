@@ -17,7 +17,7 @@ class DCDCHit:public JObject{
 		
 		int ring;
 		int straw;
-		float dE;
+		float q;
 		float t;
 		float d;
 		int itrack;
@@ -26,7 +26,7 @@ class DCDCHit:public JObject{
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "ring", "%d", ring);
 			AddString(items, "straw", "%d", straw);
-			AddString(items, "dE", "%10.4e", dE);
+			AddString(items, "q", "%10.4e", q);
 			AddString(items, "t", "%6.1f", t);
 			AddString(items, "d", "%10.4e", d);
 			AddString(items, "itrack", "%d", itrack);

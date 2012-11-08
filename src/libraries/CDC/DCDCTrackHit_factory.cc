@@ -298,7 +298,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double w_eff=29.5e-9;
 		double gas_gain=1e5;
 		double electron_charge=1.6022e-4; /* fC */
-		hit->dE=cdchit->dE*w_eff/(gas_gain*electron_charge);
+		hit->dE=cdchit->q*w_eff/(gas_gain*electron_charge);
 		hit->dist = hit->tdrift*55.0E-4; // Use number hardwired in simulation for now
 		
 		// Try matching truth hit with this "real" hit.
