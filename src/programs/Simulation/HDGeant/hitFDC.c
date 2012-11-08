@@ -41,7 +41,7 @@ const float strip_dead_zone_radius[4]={1.3,1.3,1.3,1.3};
 static float DRIFT_SPEED           =.0055;
 static float ACTIVE_AREA_OUTER_RADIUS =48.5;
 static float ANODE_CATHODE_SPACING =0.5;
-static float TWO_HIT_RESOL         =1.;
+static float TWO_HIT_RESOL         =25.;
 static int   WIRES_PER_PLANE       =96;
 static float WIRE_SPACING          =1.0;
 static float U_OF_WIRE_ZERO        =0;//(-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2)
@@ -1020,7 +1020,7 @@ s_ForwardDC_t* pickForwardDC ()
 	  if (controlparams_.driftclusters==0){
 	    for (iok=i=0; i < chits->mult; i++)
 	      {
-		if (chits->in[i].q >= THRESH_STRIPS)
+		if (chits->in[i].q > 0.)
 		  {
 		    if (iok < i)
 		      {
