@@ -33,7 +33,7 @@ void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
 
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
 static float DRIFT_SPEED     =   0.0055;
-static float TWO_HIT_RESOL   = 1.;
+static float TWO_HIT_RESOL   = 25.;
 static int   MAX_HITS 	     = 1000;
 static float THRESH_KEV	     =   1.;
 static float THRESH_MV = 1.;
@@ -87,7 +87,7 @@ double cdc_wire_signal(double t,s_CdcStrawTruthHits_t* chits){
   for (m=0;m<chits->mult;m++){
     if (t>chits->in[m].t){
       double my_time=t-chits->in[m].t;
-      func+=asic_gain*chits->in[m].dE*asic_response(my_time);
+      func+=asic_gain*chits->in[m].q*asic_response(my_time);
     }
   }
   return func;
@@ -96,8 +96,8 @@ double cdc_wire_signal(double t,s_CdcStrawTruthHits_t* chits){
 void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
 		   float t,
 		   float xyzcluster[3]){
-  // measured energy deposition 
-  float dE=0.;
+  // measured charge 
+  float q=0.;
   
   // drift radius 
   float dradius=sqrt(xyzcluster[0]*xyzcluster[0]+xyzcluster[1]*xyzcluster[1]);
@@ -144,7 +144,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
     float n_s_mean = ((float)n_p)*n_s_per_p;
     gpoiss_(&n_s_mean,&n_s,&one);
     int n_t = n_s+n_p;
-    dE=((float)n_t)*GAS_GAIN*ELECTRON_CHARGE;
+    q=((float)n_t)*GAS_GAIN*ELECTRON_CHARGE;
   }
   else{
     // Distribute the number of secondary ionizations for this primary
@@ -154,7 +154,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
     int n_s, one=1;
     gpoiss_(&n_s_per_p,&n_s,&one);
     // Energy deposition, equivalent to anode charge, in units of fC
-    dE=GAS_GAIN*ELECTRON_CHARGE*(float)(1+n_s);
+    q=GAS_GAIN*ELECTRON_CHARGE*(float)(1+n_s);
   }
   
   // Add the hit info
@@ -169,7 +169,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
   if (nhit < hits->mult)		/* merge with former hit */
     {
       /* Use the time from the earlier hit but add the charge*/
-      hits->in[nhit].dE += dE;
+      hits->in[nhit].q += q;
       if(hits->in[nhit].t>tdrift){
 	hits->in[nhit].t = tdrift;
 	hits->in[nhit].d = dradius;
@@ -178,14 +178,14 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
       }
       
       /* hits->in[nhit].t =
-	 (hits->in[nhit].t * hits->in[nhit].dE + tdrift * dEsum)
-	 / (hits->in[nhit].dE += dEsum);
+	 (hits->in[nhit].t * hits->in[nhit].q + tdrift * dEsum)
+	 / (hits->in[nhit].q += dEsum);
       */
     }
   else if (nhit < MAX_HITS)		/* create new hit */
     {
       hits->in[nhit].t = tdrift;
-      hits->in[nhit].dE = dE;
+      hits->in[nhit].q = q;
       hits->in[nhit].d = dradius;
       hits->in[nhit].itrack = track;
       hits->in[nhit].ptype = ipart;
@@ -395,10 +395,7 @@ void hitCentralDC (float xin[4], float xout[4],
    if (dEsum > 0)
    {  
      s_CdcStrawTruthHits_t* hits;
-#if CATHODE_STRIPS_IN_CDC
-      s_CdcCathodeStrips_t* chits;
-      int cell = getcell_();
-#endif
+
       int layer = getlayer_();
       int ring = getring_();
       int sector = getsector_();
@@ -462,57 +459,6 @@ void hitCentralDC (float xin[4], float xout[4],
 	  }
 	}
       }
-#if CATHODE_STRIPS_IN_CDC
-      else			/* in one of the z-readout (strip) layers */
-      {
-         int nchit;
-         int mark = (layer << 28) + (sector << 20) + (cell << 8);
-         void** twig = getTwig(&centralDCTree, mark);
-         if (*twig == 0)
-         {
-            s_CentralDC_t* cdc = *twig = make_s_CentralDC();
-            s_CdcCathodeStrips strips = make_s_CdcCathodeStrips(1);
-            strips->mult = 1;
-            strips->in[0].layer = layer;
-            strips->in[0].sector = sector;
-            strips->in[0].strip = cell;
-            strips->in[0].cdcCathodeHits = chits
-                                       = make_s_CdcCathodeHits(MAX_HITS);
-            cdc->cdcCathodeStrips = strips;
-            stripCount++;
-         }
-         else
-         {
-            s_CentralDC_t* cdc = (s_CentralDC_t*) *twig;
-            chits = cdc->cdcCathodeStrips->in[0].cdcCathodeHits;
-         }
-
-         for (nchit = 0; nchit < chits->mult; nchit++)
-         {
-            if (fabs(chits->in[nchit].t - tdrift) < TWO_HIT_RESOL)
-            {
-               break;
-            }
-         }
-         if (nchit < chits->mult)		/* merge with former hit */
-         {
-            chits->in[nchit].t =
-                    (chits->in[nchit].t * chits->in[nchit].dE + t * dEsum)
-                  / (chits->in[nchit].dE += dEsum);
-         }
-         else if (nchit < MAX_HITS)		/* create new hit */
-         {
-            chits->in[nchit].t = t;
-            chits->in[nchit].dE = dEsum;
-            chits->mult++;
-         }
-         else
-         {
-            fprintf(stderr,"HDGeant error in hitCentralDC: ");
-            fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
-         }
-      }
-#endif
    }
 }
 
@@ -541,17 +487,12 @@ s_CentralDC_t* pickCentralDC ()
    box = make_s_CentralDC();
    box->cdcStraws = make_s_CdcStraws(strawCount);
    box->cdcTruthPoints = make_s_CdcTruthPoints(pointCount);
-#if CATHODE_STRIPS_IN_CDC
-   box->cdcCathodeStrips = make_s_CdcCathodeStrips(stripCount);
-#endif
+
    while (item = (s_CentralDC_t*) pickTwig(&centralDCTree))
    {
      s_CdcStraws_t* straws = item->cdcStraws;
      int straw;
-#if CATHODE_STRIPS_IN_CDC
-     s_CdcCathodetrips_t* strips = item->cdcCathodeStrips;
-      int strip;
-#endif
+
       s_CdcTruthPoints_t* points = item->cdcTruthPoints;
       int point;
       for (straw=0; straw < straws->mult; ++straw)
@@ -569,7 +510,7 @@ s_CentralDC_t* pickCentralDC ()
 	  if (controlparams_.driftclusters==0){
 	    for (iok=i=0; i < hits->mult; i++)
 	      {
-	       if (hits->in[i].dE >= THRESH_KEV/1e6)
+	       if (hits->in[i].q >0.)
 		 {
 		   if (iok < i)
 		     {
@@ -591,7 +532,6 @@ s_CentralDC_t* pickCentralDC ()
 	   
 	    int returned_to_baseline=0;
 	    float q=0.; 
-	    float w_eff=0.0295; //keV	
 	    int FADC_BIN_SIZE=1;
 	    for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
 	      if (samples[i]>=THRESH_MV){
@@ -608,14 +548,14 @@ s_CentralDC_t* pickCentralDC ()
 		  && (samples[i]<THRESH_MV)){
 		returned_to_baseline=0;   
 		if (iok>0 && q>0.){
-		  hits->in[iok-1].dE=q*w_eff/(GAS_GAIN*ELECTRON_CHARGE);;
+		  hits->in[iok-1].q=q;
 		  q=0.;
 		}
 	     //break;
 	      }
 	    }
 	   if (q>0){
-	     hits->in[iok-1].dE=q*w_eff/(GAS_GAIN*ELECTRON_CHARGE);
+	     hits->in[iok-1].q=q;
 	   }
 	   free(samples);
 	  }
@@ -635,43 +575,7 @@ s_CentralDC_t* pickCentralDC ()
       {
          FREE(straws);
       }
-#if CATHODE_STRIPS_IN_CDC
-      for (strip=0; strip < strips->mult; ++strip)
-      {
-         int m = box->cdcCathodeStrips->mult;
 
-         s_CdcCathodeHits* hits = strips->in[strip].cdcCathodeHits;
-
-         /* compress out the hits below threshold */
-         int i,iok;
-         for (iok=i=0; i < hits->mult; i++)
-         {
-            if (hits->in[i].dE >= THRESH_KEV/1e6)
-            {
-               if (iok < i)
-               {
-                  hits->in[iok] = hits->in[i];
-               }
-               ++iok;
-            }
-         }
-
-         if (iok)
-         {
-            hits->mult = iok;
-            box->cdcCathodeStrips->in[m] = strips->in[strip];
-            box->cdcCathodeStrips->mult++;
-         }
-         else if (hits != HDDM_NULL)
-         {
-            FREE(hits);
-         }
-      }
-      if (strips != HDDM_NULL)
-      {
-         FREE(strips);
-      }
-#endif
       for (point=0; point < points->mult; ++point)
       {
          int m = box->cdcTruthPoints->mult++;
@@ -686,14 +590,6 @@ s_CentralDC_t* pickCentralDC ()
 
    strawCount = stripCount = pointCount = 0;
 
-#if CATHODE_STRIPS_IN_CDC
-   if ((box->cdcCathodeStrips != HDDM_NULL) &&
-       (box->cdcCathodeStrips->mult == 0))
-   {
-      FREE(box->cdcCathodeStrips);
-      box->cdcCathodeStrips = HDDM_NULL;
-   }
-#endif
    if ((box->cdcStraws != HDDM_NULL) &&
        (box->cdcStraws->mult == 0))
    {
@@ -709,14 +605,9 @@ s_CentralDC_t* pickCentralDC ()
    if ((box->cdcStraws->mult == 0) &&
        (box->cdcTruthPoints->mult == 0))
    {
-#if CATHODE_STRIPS_IN_CDC
-    if (box->cdcCathodeStrips->mult == 0) {
-#endif
       FREE(box);
       box = HDDM_NULL;
-#if CATHODE_STRIPS_IN_CDC
-    }
-#endif
+
    }
    return box;
 }
