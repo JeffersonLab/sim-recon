@@ -77,7 +77,7 @@ int loadOutput ()
       thisOutputEvent->physicsEvents->mult = 1;
       thisOutputEvent->physicsEvents->in[0].eventNo = ++eventNo;
    }
-   if (thisOutputEvent->physicsEvents->in[0].hitView == HDDM_NULL);
+   if (thisOutputEvent->physicsEvents->in[0].hitView == HDDM_NULL)
    {
       thisOutputEvent->physicsEvents->in[0].hitView = make_s_HitView();
    }
