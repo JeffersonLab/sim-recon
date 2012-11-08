@@ -83,13 +83,16 @@ double FCAL_BLOCK_THRESHOLD  = 0.0; //20.0*k_MeV;
 
 double CDC_TDRIFT_SIGMA      = 0.0; // 150.0/55.0*1E-9 seconds
 double CDC_TIME_WINDOW       = 0.0; // 1000.0E-9 seconds
-double CDC_PEDESTAL_SIGMA    = 0.0; // 0.06*k_keV 
+double CDC_PEDESTAL_SIGMA    = 0.0; // in fC
+double CDC_THRESHOLD_FACTOR  = 0.0; // number of pedestal sigmas for determining sparcification threshold
 
 double FDC_TDRIFT_SIGMA      = 0.0; // 200.0/55.0*1.0E-9 seconds
 double FDC_CATHODE_SIGMA     = 0.0; // 150.0 microns
 double FDC_PED_NOISE         = 0.0; // in pC calculated in SmearFDC
+double FDC_THRESHOLD_FACTOR  = 0.0; // number of pedestal sigmas for determining sparcification threshold
 double FDC_HIT_DROP_FRACTION = 0.0; // 1000.0E-9
 double FDC_TIME_WINDOW       = 0.0; // 1000.0E-9 in seconds
+double FDC_THRESH_KEV        = 0.0; // fdc anode discriminator threshold
 
 double START_SIGMA           = 0.0; // 300ps
 double START_PHOTONS_PERMEV  = 0.0; // used to be 8000 should be more like 200
@@ -97,6 +100,11 @@ double START_PHOTONS_PERMEV  = 0.0; // used to be 8000 should be more like 200
 // TOF parameters will be read from data base later
 double TOF_SIGMA = 100.*k_psec;
 double TOF_PHOTONS_PERMEV = 400.;
+
+double TRIGGER_LOOKBACK_TIME = -100; // ns
+
+bool DROP_TRUTH_HITS=false;
+
 
 #include <JANA/JCalibrationFile.h>
 using namespace jana;
@@ -107,7 +115,9 @@ pthread_mutex_t root_mutex = PTHREAD_MUTEX_INITIALIZER;
 TH2F *fdc_drift_time_smear_hist;
 TH2F *fdc_drift_dist_smear_hist;
 TH2F *fdc_drift_time;
+TH1F *fdc_cathode_charge;
 TH2F *cdc_drift_time;
+TH1F *cdc_charge;
 TH1F *fdc_anode_mult;
 TH2F *cdc_drift_smear;
 
@@ -128,16 +138,18 @@ int main(int narg,char* argv[])
 					   300,0.0,0.6,400,-200,200);
 	fdc_drift_dist_smear_hist=new TH2F("fdc_drift_dist_smear_hist","Drift distance smearing for FDC",
 					   100,0.0,0.6,400,-0.5,0.5);
-	fdc_drift_time=new TH2F("fdc_drift_time","FDC drift distance vs. time",100,-20,380,100,0,1.);
+	fdc_drift_time=new TH2F("fdc_drift_time","FDC drift distance vs. time",550,-100,1000,100,0,1.);
 	
 	fdc_anode_mult = new TH1F("fdc_anode_mult","wire hit multiplicity",20,-0.5,19.5);
+	fdc_cathode_charge = new TH1F("fdc_cathode_charge","charge on strips",1000,0,1000);
 
 	
-	cdc_drift_time = new TH2F("cdc_drift_time","CDC drift distance vs time",100,-20,800,100,0.,0.8);
+	cdc_drift_time = new TH2F("cdc_drift_time","CDC drift distance vs time",550,-100,1000,80,0.,0.8);
 
 	cdc_drift_smear = new TH2F("cdc_drift_smear","CDC drift smearing",
-				   100,0.0,0.8,100,-0.8,0.8);
-
+				   100,0.0,800.0,100,-0.1,0.1);
+	
+	cdc_charge  = new TH1F("cdc_charge","Measured charge in straw",1000,-10e3,40e3);
 	// Create a JCalibration object using the JANA_CALIB_URL environment variable
 	// Right now, we hardwire this to use JCalibrationFile.
 	const char *url = getenv("JANA_CALIB_URL");
@@ -201,7 +213,9 @@ int main(int narg,char* argv[])
 	  if (CDC_TIME_WINDOW == 0.0)
 	    CDC_TIME_WINDOW    = cdcparms["CDC_TIME_WINDOW"];
 	  if (CDC_PEDESTAL_SIGMA == 0.0)
-	    CDC_PEDESTAL_SIGMA = cdcparms["CDC_PEDESTAL_SIGMA"];
+	    CDC_PEDESTAL_SIGMA = cdcparms["CDC_PEDESTAL_SIGMA"]; 
+	  if (CDC_THRESHOLD_FACTOR == 0.0)
+	    CDC_THRESHOLD_FACTOR = cdcparms["CDC_THRESHOLD_FACTOR"];
 	}
 
 	{
@@ -213,14 +227,17 @@ int main(int narg,char* argv[])
 	    FDC_TDRIFT_SIGMA      = fdcparms["FDC_TDRIFT_SIGMA"];
 	  if (FDC_CATHODE_SIGMA ==0.0)
 	    FDC_CATHODE_SIGMA     = fdcparms["FDC_CATHODE_SIGMA"];
-
+	  if (FDC_THRESHOLD_FACTOR == 0.0)
+	    FDC_THRESHOLD_FACTOR = fdcparms["FDC_THRESHOLD_FACTOR"];
 	  FDC_PED_NOISE         = fdcparms["FDC_PED_NOISE"];
 
 	  if (FDC_TIME_WINDOW == 0.0)
 	    FDC_TIME_WINDOW       = fdcparms["FDC_TIME_WINDOW"];
 
 	  if (FDC_HIT_DROP_FRACTION == 0.0)
-	    FDC_HIT_DROP_FRACTION = fdcparms["FDC_HIT_DROP_FRACTION"]; 
+	    FDC_HIT_DROP_FRACTION = fdcparms["FDC_HIT_DROP_FRACTION"];  
+	  if (FDC_THRESH_KEV == 0.0)
+	    FDC_THRESH_KEV = fdcparms["FDC_THRESH_KEV"]; 
 	}
 
 	{
@@ -319,7 +336,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;		break;
       case 'e': FDC_ELOSS_OFF = true;							break;
       case 'E': CDC_PEDESTAL_SIGMA = atof(&ptr[2])*k_keV; break;
-      case 'd': FDC_HIT_DROP_FRACTION=atof(&ptr[2]);		break;
+      case 'd': DROP_TRUTH_HITS=true;		break;
       case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);		break;
       case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;	break;
       case 'B': SMEAR_BCAL = false;								break;
@@ -406,8 +423,7 @@ void Usage(void)
 	cout<<"    -t#      FDC time window for background hits in ns (def:"<<FDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
 	cout<<"    -e       hdgeant was run with LOSS=0 so scale the FDC cathode"<<endl;
 	cout<<"             pedestal noise (def:false)"<<endl;
-	cout<<"    -d#      Randomly drop this fraction of FDC hits (0=drop none  1=drop all)"<<endl;
-	cout<<"             default is to drop none."<<endl;
+	cout<<"    -d       Drop truth hits (default: keep truth hits)"<<endl;
 	cout<<"    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:"<<FCAL_PHOT_STAT_COEF<<")"<<endl;
 	cout<<"    -b#      FCAL single block threshold in MeV (def:"<<FCAL_BLOCK_THRESHOLD/k_MeV<<")"<<endl;
 	cout<<"    -B       Don't process BCAL hits at all (def. process)"<<endl;
