@@ -1089,7 +1089,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> 
 		      DCDCHit *hit = new DCDCHit;
 		      hit->ring    = cdcstraw->ring;
 		      hit->straw   = cdcstraw->straw;
-		      hit->dE      = strawhit->dE;
+		      hit->q      = strawhit->q;
 		      hit->t       = strawhit->t;
 		      hit->d       = 0.; // initialize to zero to avoid any NaN
 		      hit->itrack  = strawhit->itrack;
@@ -1106,7 +1106,7 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> 
 		      DCDCHit *hit = new DCDCHit;
 		      hit->ring    = cdcstraw->ring;
 		      hit->straw   = cdcstraw->straw;
-		      hit->dE      = strawhit->dE;
+		      hit->q      = strawhit->q;
 		      hit->t       = strawhit->t;
 		      hit->d       = strawhit->d;
 		      hit->itrack  = strawhit->itrack;
@@ -1902,24 +1902,26 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	  tofhit->t     	 = ftofNorthHit->t;
 	  data.push_back(tofhit);
 
-	  s_FtofMCHits_t *MCHits = ftofCounter->ftofNorthTruthHits->in[k].ftofMCHits;
-	  for (unsigned int j=0; j<MCHits->mult; j++){
-	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
-	    tofmchit->bar      = tofhit->bar;
-	    tofmchit->plane    = tofhit->plane;
-	    tofmchit->lr       = tofhit->lr;
-	    tofmchit->itrack   = MCHits->in[j].itrack;
-	    tofmchit->ptype    = MCHits->in[j].ptype;
-	    tofmchit->dist     = MCHits->in[j].dist;
-	    tofmchit->x        = MCHits->in[j].x;
-	    tofmchit->y        = MCHits->in[j].y;
-	    tofmchit->z        = MCHits->in[j].z;
-	    tofmchit->px       = MCHits->in[j].px;
-	    tofmchit->py       = MCHits->in[j].py;
-	    tofmchit->pz       = MCHits->in[j].pz;
-	    tofmchit->E        = MCHits->in[j].E;
-	    dataMC.push_back(tofmchit);
-	    tofhit->AddAssociatedObject(tofmchit);
+	  if (ftofCounter->ftofNorthTruthHits!=(s_FtofNorthTruthHits_t *)HDDM_NULL){
+	    s_FtofMCHits_t *MCHits = ftofCounter->ftofNorthTruthHits->in[k].ftofMCHits;
+	    for (unsigned int j=0; j<MCHits->mult; j++){
+	      DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	      tofmchit->bar      = tofhit->bar;
+	      tofmchit->plane    = tofhit->plane;
+	      tofmchit->lr       = tofhit->lr;
+	      tofmchit->itrack   = MCHits->in[j].itrack;
+	      tofmchit->ptype    = MCHits->in[j].ptype;
+	      tofmchit->dist     = MCHits->in[j].dist;
+	      tofmchit->x        = MCHits->in[j].x;
+	      tofmchit->y        = MCHits->in[j].y;
+	      tofmchit->z        = MCHits->in[j].z;
+	      tofmchit->px       = MCHits->in[j].px;
+	      tofmchit->py       = MCHits->in[j].py;
+	      tofmchit->pz       = MCHits->in[j].pz;
+	      tofmchit->E        = MCHits->in[j].E;
+	      dataMC.push_back(tofmchit);
+	      tofhit->AddAssociatedObject(tofmchit);
+	    }
 	  }
 	}
 	
@@ -1935,24 +1937,26 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	  tofhit->t     	 = ftofSouthHit->t;
 	  data.push_back(tofhit);
 
-	  s_FtofMCHits_t *MCHits = ftofCounter->ftofSouthTruthHits->in[k].ftofMCHits;
-	  for (unsigned int j=0; j<MCHits->mult; j++){
-	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
-	    tofmchit->bar      = tofhit->bar;
-	    tofmchit->plane    = tofhit->plane;
-	    tofmchit->lr       = tofhit->lr;
-	    tofmchit->itrack   = MCHits->in[j].itrack;
-	    tofmchit->ptype    = MCHits->in[j].ptype;
-	    tofmchit->dist     = MCHits->in[j].dist;
-	    tofmchit->x        = MCHits->in[j].x;
-	    tofmchit->y        = MCHits->in[j].y;
-	    tofmchit->z        = MCHits->in[j].z;
-	    tofmchit->px       = MCHits->in[j].px;
-	    tofmchit->py       = MCHits->in[j].py;
-	    tofmchit->pz       = MCHits->in[j].pz;
-	    tofmchit->E        = MCHits->in[j].E;
-	    dataMC.push_back(tofmchit);
-	    tofhit->AddAssociatedObject(tofmchit);
+	  if (ftofCounter->ftofSouthTruthHits!=(s_FtofSouthTruthHits_t *)HDDM_NULL){
+	    s_FtofMCHits_t *MCHits = ftofCounter->ftofSouthTruthHits->in[k].ftofMCHits;
+	    for (unsigned int j=0; j<MCHits->mult; j++){
+	      DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	      tofmchit->bar      = tofhit->bar;
+	      tofmchit->plane    = tofhit->plane;
+	      tofmchit->lr       = tofhit->lr;
+	      tofmchit->itrack   = MCHits->in[j].itrack;
+	      tofmchit->ptype    = MCHits->in[j].ptype;
+	      tofmchit->dist     = MCHits->in[j].dist;
+	      tofmchit->x        = MCHits->in[j].x;
+	      tofmchit->y        = MCHits->in[j].y;
+	      tofmchit->z        = MCHits->in[j].z;
+	      tofmchit->px       = MCHits->in[j].px;
+	      tofmchit->py       = MCHits->in[j].py;
+	      tofmchit->pz       = MCHits->in[j].pz;
+	      tofmchit->E        = MCHits->in[j].E;
+	      dataMC.push_back(tofmchit);
+	      tofhit->AddAssociatedObject(tofmchit);
+	    }
 	  }
 	}
       } else if (tag=="TRUTH"){
@@ -1969,7 +1973,7 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	  tofhit->dE    	 = ftofNorthTruthHit->dE;
 	  tofhit->t     	 = ftofNorthTruthHit->t;
 	  data.push_back(tofhit);
-
+	  
 	  s_FtofMCHits_t *MCHits = ftofNorthTruthHit->ftofMCHits;
 	  for (unsigned int j=0; j<MCHits->mult; j++){
 	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
