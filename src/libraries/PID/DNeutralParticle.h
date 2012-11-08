@@ -22,8 +22,7 @@ class DNeutralParticle:public jana::JObject{
 		vector<const DNeutralParticleHypothesis *> dNeutralParticleHypotheses;
 
 		const DNeutralParticleHypothesis* Get_BestFOM(void) const;
-		const DNeutralParticleHypothesis* Get_BestPhoton(void) const;
-		const DNeutralParticleHypothesis* Get_BestNeutron(void) const;
+		const DNeutralParticleHypothesis* Get_Hypothesis(Particle_t locPID) const;
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "Nhypotheses", "%d", dNeutralParticleHypotheses.size());

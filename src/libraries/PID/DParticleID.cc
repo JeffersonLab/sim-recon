@@ -470,7 +470,6 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, const vector<c
 	// Check for a match 
 	if(locMatchedFCALShowers.size() > 0){
 		locProjectedTime = locMatchedFCALShowers[0]->getTime() - locFlightTime;
-		locProjectedTime -= 2.218; // correction determined from fit to simulated data 
 		return NOERROR;
 	}
 

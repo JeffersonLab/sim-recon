@@ -7,18 +7,27 @@
 
 #include "PID/DChargedTrack.h"
 
-double DChargedTrack::Get_Charge(void) const
+int DChargedTrack::Get_Charge(void) const
 {
-	if(dChargedTrackHypotheses.size() == 0)
-		return 0.0;
-	return dChargedTrackHypotheses[0]->charge();
+	const DChargedTrackHypothesis* locChargedTrackHypothesis = Get_BestFOM();
+	return ((locChargedTrackHypothesis == NULL) ? 0 : ParticleCharge(locChargedTrackHypothesis->PID()));
 }
 
 const DChargedTrackHypothesis* DChargedTrack::Get_BestFOM(void) const
 {
-	if(dChargedTrackHypotheses.size() == 0)
+	if(dChargedTrackHypotheses.empty())
 		return NULL;
-	return dChargedTrackHypotheses[0];
+	double locBestFOM = -2.0;
+	const DChargedTrackHypothesis* locBestChargedTrackHypothesis = dChargedTrackHypotheses[0];
+	for(size_t loc_i = 0; loc_i < dChargedTrackHypotheses.size(); ++loc_i)
+	{
+		if(dChargedTrackHypotheses[loc_i]->dFOM > locBestFOM)
+		{
+			locBestChargedTrackHypothesis = dChargedTrackHypotheses[loc_i];
+			locBestFOM = locBestChargedTrackHypothesis->dFOM;
+		}
+	}
+	return locBestChargedTrackHypothesis;
 }
 
 const DChargedTrackHypothesis* DChargedTrack::Get_Hypothesis(Particle_t locPID) const
