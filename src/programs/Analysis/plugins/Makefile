@@ -1,5 +1,6 @@
 
-DIRS += acceptance_hists cdc_hists fcal_hists phys_tree mcthrown_hists trackeff_hists
+DIRS += acceptance_hists cdc_hists fcal_hists phys_tree mcthrown_hists
+DIRS += trackeff_hists monitoring_hists
 
 include $(HALLD_HOME)/src/BMS/Makefile.dirs
 
