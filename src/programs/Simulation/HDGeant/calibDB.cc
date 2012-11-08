@@ -17,10 +17,14 @@ using namespace std;
 extern "C" {
 #include "calibDB.h"
 };
+#include "controlparams.h"
+
 
 extern "C" int hddsgeant3_runtime_(void);  // called from uginit.F. defined in calibDB.cc
+extern "C" void md5geom_(char *md5);
 void init_runtime_xml(void);
 void md5geom_runtime(char *md5);
+extern "C" const char* GetMD5Geom(void);
 
 DMagneticFieldMap *Bmap=NULL;
 static JCalibration *jcalib=NULL;
@@ -370,6 +374,12 @@ void init_runtime_xml(void)
 //------------------
 void md5geom_runtime(char *md5)
 {
+	// This will extract the MD5 checksum of the 
+	// geometry from the dynamically linked shared
+	// object. It is called from the GetMD5Geom()
+	// routine below. Use that routine to get the
+	// checksum, not this one.
+
 	// Create, compile and link shared object if needed.
 	if(!dlgeom_handle) init_runtime_xml();
 
@@ -384,5 +394,32 @@ void md5geom_runtime(char *md5)
 	
 	// Execute my_md5geom_
 	(*my_md5geom_)(md5);
+}
+
+//------------------
+// GetMD5Geom
+//------------------
+const char* GetMD5Geom(void)
+{
+	// Get the MD5 checksum of the geometry that will be
+	// used for the simulation. This will retrieve the
+	// geometry checksum from either what has been statically
+	// linked in, or dynamically, whichever is being used.
+
+	// This is a little odd since the string originates
+	// in a FORTRAN routine.
+	static char md5[256];
+	memset(md5, 0, 256);
+	if(controlparams_.runtime_geom){
+		// Grab version from shared object
+		md5geom_runtime(md5);
+	}else{
+		// Use compiled in version
+		md5geom_(md5);
+	}
+	
+	md5[32] = 0; // truncate string at 32 characters (FORTRAN adds a space)
+	
+	return md5;
 }
 

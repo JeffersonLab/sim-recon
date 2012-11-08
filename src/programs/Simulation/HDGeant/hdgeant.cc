@@ -16,10 +16,7 @@ extern bool DELETEUNSMEARED;
 
 // Declare routines callable from FORTRAN
 extern "C" int hdgeant_(void); // define in hdgeant_f.F
-extern "C" int hddsgeant3_runtime_(void);  // called from uginit.F. defined below
-extern "C" void md5geom_(char *md5sum);
-extern     void md5geom_runtime(char *md5);
-extern "C" void hdgeant_init_(void);
+extern "C" const char* GetMD5Geom(void);
 
 void Usage(void);
 
@@ -50,19 +47,7 @@ int main(int narg, char *argv[])
 	// do that and quit
 	if(print_xml_md5_checksum){
 	
-		// This is a little odd since the string originates
-		// in a FORTRAN routine.
-		char md5[256];
-		memset(md5, 0, 256);
-		if(controlparams_.runtime_geom){
-			// Grab version from shared object
-			md5geom_runtime(md5);
-		}else{
-			// Use compiled in version
-			md5geom_(md5);
-		}
-
-		cout << "HDDS Geometry MD5 Checksum: " << md5 << endl;
+		cout << "HDDS Geometry MD5 Checksum: " << GetMD5Geom() << endl;
 
 		return 0;
 	}
@@ -128,7 +113,7 @@ void Usage(void)
 	cout<<"    -h or --help    Print this usage statement"<<endl;
 	cout<<"    -xml            Dynamically generate geometry"<<endl;
 	cout<<"    -checksum       Print the MD5 checksum of the geometry"<<endl;
-	cout<<"                    from XML source"<<endl;
+	cout<<"                    from XML source and exit"<<endl;
 	cout<<endl;
 
 	exit(0);

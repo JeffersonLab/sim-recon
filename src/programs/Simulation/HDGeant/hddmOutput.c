@@ -22,9 +22,13 @@
 
 #include "memcheck.h"
 
+extern const char* GetMD5Geom(void);
+
 s_iostream_t* thisOutputStream = 0;
 s_HDDM_t* thisOutputEvent = 0;
 extern s_HDDM_t* thisInputEvent;
+
+static unsigned int Nevents = 0;
 
 int openOutput (char* filename)
 {
@@ -61,6 +65,8 @@ int loadOutput ()
 {
    int packages_hit=0;
    s_HitView_t *hitView;
+	
+	Nevents++;
 
    if (thisOutputEvent)
    {
@@ -77,6 +83,16 @@ int loadOutput ()
       thisOutputEvent->physicsEvents->mult = 1;
       thisOutputEvent->physicsEvents->in[0].eventNo = ++eventNo;
    }
+	
+	if (Nevents == 1) {
+		if (thisOutputEvent->geometry == HDDM_NULL) {
+			thisOutputEvent->geometry = make_s_Geometry();
+		}
+		thisOutputEvent->geometry->md5simulation = strdup(GetMD5Geom());
+		thisOutputEvent->geometry->md5smear = strdup("");
+		thisOutputEvent->geometry->md5reconstruction = strdup("");
+	}
+	
    if (thisOutputEvent->physicsEvents->in[0].hitView == HDDM_NULL)
    {
       thisOutputEvent->physicsEvents->in[0].hitView = make_s_HitView();
