@@ -19,10 +19,12 @@ extern "C" {
 };
 
 extern "C" int hddsgeant3_runtime_(void);  // called from uginit.F. defined in calibDB.cc
-
+void init_runtime_xml(void);
+void md5geom_runtime(char *md5);
 
 DMagneticFieldMap *Bmap=NULL;
 static JCalibration *jcalib=NULL;
+static void *dlgeom_handle=NULL;
 
 //----------------
 // initcalibdb_
@@ -283,6 +285,38 @@ int hddsgeant3_runtime_(void)
 	// "-xml" command line switch. Otherwise, the built-in
 	// geometry is used.
 	
+	// Create, compile and link shared object. That part is done
+	// in a separate routine so md5geom_runtime() can use it too.
+	if(!dlgeom_handle) init_runtime_xml();
+	
+	// Find hddsgeant3_ symbol inside shared object
+	cout<<endl;
+	cout << "Locating geometry ... " << endl;
+	void (*my_hddsgeant3)(void);
+	*(void **) (&my_hddsgeant3) = dlsym(dlgeom_handle, "hddsgeant3_");
+	char *err = dlerror();
+	if(err != NULL){
+		cerr << err << endl;
+		exit(-1);
+	}
+	
+	// Execute my_hddsgeant3
+	cout<<endl;
+	cout << "Loading geometry ... " << endl;
+	(*my_hddsgeant3)();
+
+	cout<<endl;
+	cout << "Geometry loaded successfully" << endl;
+	cout<<"=============================================================="<<endl;
+
+	return 0;
+}
+
+//------------------
+// init_runtime_xml
+//------------------
+void init_runtime_xml(void)
+{
 	cout<<endl;
 	cout<<"=============================================================="<<endl;
 	cout<<"Enabling dynamic geometry rendering"<<endl;
@@ -319,35 +353,36 @@ int hddsgeant3_runtime_(void)
 		exit(-1);
 	}
 	
-	// Find hddsgeant3_ symbol inside shared object
-	cout<<endl;
-	cout << "Locating geometry ... " << endl;
-	void (*my_hddsgeant3)(void);
-	*(void **) (&my_hddsgeant3) = dlsym(handle, "hddsgeant3_");
+	// Copy handle to global variable
+	dlgeom_handle = handle;
+	
+	// Clean up (this won't delete the tmp.so file right away since
+	// we still have it open).
+	unlink("./tmp.F");
+	unlink("./tmp.so");
+
+	// do not close shared object since it may contain needed routines
+	//dlclose(dlgeom_handle);
+}
+
+//------------------
+// md5geom_runtime
+//------------------
+void md5geom_runtime(char *md5)
+{
+	// Create, compile and link shared object if needed.
+	if(!dlgeom_handle) init_runtime_xml();
+
+	// Grab md5geom routine from shared object
+	void (*my_md5geom_)(char *md5);
+	*(void **) (&my_md5geom_) = dlsym(dlgeom_handle, "md5geom_");
 	char *err = dlerror();
 	if(err != NULL){
 		cerr << err << endl;
 		exit(-1);
 	}
 	
-	// Execute my_hddsgeant3
-	cout<<endl;
-	cout << "Loading geometry ... " << endl;
-	(*my_hddsgeant3)();
-
-	// Clean up
-	cout<<endl;
-	cout << "Cleaning up ... " << endl;
-	unlink("./tmp.F");
-	unlink("./tmp.so");
-
-	// do not close shared object since it may contain needed routines
-	dlclose(handle);
-
-	cout<<endl;
-	cout << "Geometry loaded successfully" << endl;
-	cout<<"=============================================================="<<endl;
-
-	return 0;
+	// Execute my_md5geom_
+	(*my_md5geom_)(md5);
 }
 
