@@ -18,7 +18,7 @@ class CDChit_branch:public TObject{
 
 		int ring;
 		int straw;
-		float dE;
+		float q;
 		float dx;
 		float t;
 		

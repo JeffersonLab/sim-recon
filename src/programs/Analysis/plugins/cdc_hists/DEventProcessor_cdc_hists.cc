@@ -156,7 +156,7 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 	}
 
 	// Loop over all real hits
-	double dEtot = 0.0;
+	double Q = 0.0;
 	double dxtot = 0.0;
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCDCHit *hit = cdchits[i];
@@ -164,7 +164,7 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 		
 		cdchit.ring		= hit->ring;
 		cdchit.straw	= hit->straw;
-		cdchit.dE		= hit->dE;
+		cdchit.q			= hit->q;
 		cdchit.dx		= 0.0;
 		cdchit.t			= hit->t;
 		cdchit.pthrown = mcthrowns.size()>0 ? mcthrowns[0]->momentum().Mag():-1000.0;
@@ -176,7 +176,7 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 		}
 		
 		if(cdchit.dx!=0.0){
-			dEtot += cdchit.dE;
+			Q += cdchit.q;
 			dxtot += cdchit.dx;
 		}
 		
@@ -199,13 +199,13 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Fill dE/dx histograms
 	if(((Nfdc_wire_hits+cdchits.size()) >= 10) && (cdchits.size()>=5)){
 		if(dxtot>0.0){
-			idEdx->Fill(dEtot/dxtot);
+			idEdx->Fill(Q/dxtot);
 			if(mcthrown){
 				// The CDC gas is 85% Ar, 15% CO2 by mass.
 				// density of  Ar: 1.977E-3 g/cm^3
 				// density of CO2: 1.66E-3 g/cm^3
 				double density = 0.85*1.66E-3 + 0.15*1.977E-3;
-				idEdx_vs_p->Fill(mcthrown->momentum().Mag(), dEtot/dxtot*1000.0/density);
+				idEdx_vs_p->Fill(mcthrown->momentum().Mag(), Q/dxtot*1000.0/density);
 			}
 		}
 	}
