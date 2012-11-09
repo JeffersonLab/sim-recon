@@ -133,6 +133,7 @@
 #include "geant321/gcunit.inc"
 #include "geant321/gcphys.inc"
 #include "geant321/gcscan.inc"
+#include "geant321/gctrak.inc"
 #include "hdtrackparams.inc"
 #include "backgrounds.inc"
 #include "controlparams.inc"
@@ -206,6 +207,7 @@ C..geant..
       IANNI=1
       IPHOT=1
       IHADR=1
+      MAXNST=100000
               ILOSS=1
 *
 *             Make the default origin for the particle gun at 0,0,65cm
