@@ -29,6 +29,7 @@ extern "C" const char* GetMD5Geom(void);
 DMagneticFieldMap *Bmap=NULL;
 static JCalibration *jcalib=NULL;
 static void *dlgeom_handle=NULL;
+string HDDS_XML = "$HDDS_HOME/main_HDDS.xml";
 
 //----------------
 // initcalibdb_
@@ -335,7 +336,7 @@ void init_runtime_xml(void)
 	// Generate FORTRAN code from XML
 	cout<<endl;
 	cout << "Generating FORTRAN from XML source ...." << endl;
-	string cmd = "$HDDS_HOME/bin/$BMS_OSNAME/hdds-geant $HDDS_HOME/main_HDDS.xml > tmp.F";
+	string cmd = "$HDDS_HOME/bin/$BMS_OSNAME/hdds-geant " + HDDS_XML + " > tmp.F";
 	cout << cmd << endl;
 	system(cmd.c_str());
 	

@@ -14,6 +14,9 @@ extern bool POSTSMEAR;
 extern string MCSMEAROPTS;
 extern bool DELETEUNSMEARED;
 
+// Defined in calibDB.cc
+extern string HDDS_XML;
+
 // Declare routines callable from FORTRAN
 extern "C" int hdgeant_(void); // define in hdgeant_f.F
 extern "C" const char* GetMD5Geom(void);
@@ -39,8 +42,13 @@ int main(int narg, char *argv[])
 		string next = i<(narg+1) ? argv[i]:"";
 		
 		if(arg=="-h" || arg=="--help")Usage();
-		if(arg=="-xml")controlparams_.runtime_geom = 1;
 		if(arg=="-checksum" || arg=="--checksum")print_xml_md5_checksum = true;
+		if(arg.find("-xml")==0){
+			controlparams_.runtime_geom = 1;
+			if(arg.find("=")!=string::npos){
+				HDDS_XML = arg.substr(arg.find("=")+1);
+			}
+		}
 	}
 	
 	// If user specified printing the checksum then 
@@ -110,10 +118,14 @@ void Usage(void)
 	cout<<"found in the HDGeant source code directory with."<<endl;
 	cout<<endl;
 	cout<<" options:"<<endl;
-	cout<<"    -h or --help    Print this usage statement"<<endl;
-	cout<<"    -xml            Dynamically generate geometry"<<endl;
-	cout<<"    -checksum       Print the MD5 checksum of the geometry"<<endl;
-	cout<<"                    from XML source and exit"<<endl;
+	cout<<"    -h or --help          Print this usage statement"<<endl;
+	cout<<"    -xml[=main_HDDS.xml]  Dynamically generate geometry"<<endl;
+	cout<<"    -checksum             Print the MD5 checksum of the "<<endl;
+	cout<<"                          geometry and exit"<<endl;
+	cout<<endl;
+	cout<<"If the -xml option is given and no file is specified,"<<endl;
+	cout<<"then a value of: "<<HDDS_XML<<endl;
+	cout<<"is used."<<endl;
 	cout<<endl;
 
 	exit(0);
