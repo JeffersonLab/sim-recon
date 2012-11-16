@@ -181,24 +181,31 @@ int32_t JEventSource_DAQ::GetRunNumber(evioDOMTree *evt)
 	return last_run_number;
 }
 
+#if 0
 //----------------
 // GuessModuleType
 //----------------
-MODULE_TYPE JEventSource_DAQ::GuessModuleType(evioDOMNodeP bankPtr)
+MODULE_TYPE JEventSource_DAQ::GuessModuleType(const uint32_t* istart, const uint32_t* iend, evioDOMNodeP bankPtr)
 {
-	/// Try parseing through the information in the given bank pointer
+	/// Try parsing through the information in the given data buffer
 	/// to determine which type of module produced the data.
 
-	// Get all data words for the bank
-	const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+	if(IsF250ADC(istart, iend)) return DModuleType::F250ADC;
+	if(IsF125ADC(istart, iend)) return DModuleType::F125ADC;
+	if(IsF1TDC(istart, iend)) return DModuleType::F1TDC;
+	if(IsTS(istart, iend)) return DModuleType::JLAB_TS;
+	if(IsTI(istart, iend)) return DModuleType::JLAB_TI;
 	
-	// Only guess banks of ints
-	if(!vec) return DModuleType::UNKNOWN;
 
-	// Pointers to first and last words in bank
-	const uint32_t *istart = &(*vec)[0];
-	const uint32_t *iend = &(*vec)[vec->size()];
+	// Couldn't figure it out...
+	return DModuleType::UNKNOWN;
+}
 
+//----------------
+// IsF250ADC
+//----------------
+bool JEventSource_DAQ::IsF250ADC(const uint32_t *istart, const uint32_t *iend)
+{
 	//---- Check for f250
 	// This will check if the first word appears to be a block header.
 	// If so, it loops over all words looking for a block trailer.
@@ -216,63 +223,112 @@ MODULE_TYPE JEventSource_DAQ::GuessModuleType(evioDOMNodeP bankPtr)
 					if(data_type == 1){ // Block Trailer
 						uint32_t slot_trailer = (*iptr>>22) & 0x1F;
 						uint32_t Nwords_trailer = (*iptr>>0) & 0x3FFFFF;
-						if(slot_header == slot_trailer){
-							if(Nwords == Nwords_trailer)return DModuleType::F250ADC;
+
+						if( slot_header == slot_trailer && Nwords == Nwords_trailer ){
+							return true;
+						}else{
+							return false;
 						}
 					}
 				}
 			}
 		}
 	}
-	
+
+	// either first word was not a block header or no block trailer was found
+	return false;
+}
+
+//----------------
+// IsF125ADC
+//----------------
+bool JEventSource_DAQ::IsF125ADC(const uint32_t *istart, const uint32_t *iend)
+{
+	return false;
+}
+
+//----------------
+// IsF1TDC
+//----------------
+bool JEventSource_DAQ::IsF1TDC(const uint32_t *istart, const uint32_t *iend)
+{
 	//---- Check for F1TDC
 	// This will check for consistency in the slot numbers for all words
 	// in the buffer. The slot number of data words are checked against
 	// the slot number of the most recently encountered header word.
-	// The manual does not appear to distinguish between header and trailer
-	// words so we can't check consistency of trailers
-	if(*istart == 0xf1daffff){ // appears to be in my data file. Don't know if this is universal
-		bool is_F1TDC = true;
-		uint32_t slot_header = 1000;
-		uint32_t chip_header = 1000;
-		uint32_t chan_header = 1000;
-		
-		// skip first word which appears to be ROL marker for F1TDC data
-		const uint32_t *iptr=istart;
-		for(iptr++; iptr<iend; iptr++){
-			
-			// ROL end of data marker (also not sure if this universal)
-			if(*iptr == 0xda0000ff)break;
-			
-			uint32_t slot = (*iptr>>27) & 0x1F;
-			
-			// if slot is 0 or 30, we are supposed to ignore the data.
-			if(slot == 30 || slot ==0)continue;
-			
-			if(((*iptr>>23) & 0x1) == 0){
-				// header/trailer word
-				slot_header = slot;
-				chip_header = (*iptr>>3) & 0x07;
-				chan_header = (*iptr>>0) & 0x07;
-			}else{
-				// data word
-				uint32_t chip = (*iptr>>19) & 0x07;
-				uint32_t chan = (*iptr>>16) & 0x07;
-				
-				if(slot != slot_header)is_F1TDC = false;
-				//if(chip != chip_header)is_F1TDC = false; // these are not always consistent with
-				//if(chan != chan_header)is_F1TDC = false; // the header since many headers are suppressed
-			}
+	uint32_t slot_header = 1000;
+	uint32_t slot_trailer = 1000;
 	
-			// Once we decide this is not a F1TDC, stop looping over buffer
-			if(!is_F1TDC)break;
-		}
+	const uint32_t *iptr=istart;
+
+	// skip first word which appears to be ROL marker for F1TDC data
+	if(*istart == 0xf1daffff)iptr++
+
+	// There is no distinction between header and trailer
+	// words other than the order that they appear. We keep
+	// track by flipping this value
+	bool looking_for_header = true;
+
+	// Keep track of the number of valid blocks of F1TDC data we find
+	// (i.e. ones where the header and trailer words were found
+	int Nvalid = 0;
+
+	for(; iptr<iend; iptr++){
 		
-		if(is_F1TDC)return DModuleType::F1TDC;
+		// ROL end of data marker (only in test setup data)
+		if(*iptr == 0xda0000ff)break;
+		
+		uint32_t slot = (*iptr>>27) & 0x1F;
+		
+		// if slot is 0 or 30, we are supposed to ignore the data.
+		if(slot == 30 || slot ==0)continue;
+		
+		if(((*iptr>>23) & 0x1) == 0){
+			// header/trailer word
+			if(looking_for_header){
+				slot_header = slot;
+				looking_for_header = false;
+			}else{
+				slot_trailer = slot;
+				if(slot_trailer != slot_header)return false;
+				looking_for_header = true;
+				Nvalid++;
+			}
+		}else{
+			// data word
+
+			// if we encounter a data word when we are expecting
+			// a header word, then the current word is not from
+			// an F1TDC. However, if we did find at least one valid
+			// block at the begining, of the buffer, claim the buffer
+			// points to F1TDC data. We check for as many valid F1TDC
+			// blocks as possible to help ensure that is what the data
+			// is.
+			if(looking_for_header)return Nvalid>0;
+
+			// If the slot number does not match, then this is
+			// not valid F1TDC data
+			if(slot != slot_header)return false;
+		}
 	}
 
-	// Couldn't figure it out...
-	return DModuleType::UNKNOWN;
+	return Nvalid>0;
+}
+
+//----------------
+// IsTS
+//----------------
+bool JEventSource_DAQ::IsTS(const uint32_t *istart, const uint32_t *iend)
+{
+	return false;
+}
+
+//----------------
+// IsTI
+//----------------
+bool JEventSource_DAQ::IsTI(const uint32_t *istart, const uint32_t *iend)
+{
+	return false;
 }
 
 //----------------
@@ -326,7 +382,7 @@ void JEventSource_DAQ::DumpModuleMap(void)
 	// Close output file
 	ofs.close();
 }
-
+#endif
 
 //----------------
 // MergeObjLists
@@ -416,58 +472,52 @@ void JEventSource_DAQ::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 	list<ObjList*> tmp_events;
 	
 	// Loop over list of EVIO banks and parse them, creating data
-	// objects and adding them to the overall list. This will put
-	// all objects for all events in the block in the same ObjList.
-	// They will be broken into separate lists based on event below.
+	// objects and adding them to the overall list.
 	ObjList objs;
 	evioDOMNodeListP bankList = evt->getNodeList();
 	evioDOMNodeList::iterator iter = bankList->begin();
 	for(; iter!=bankList->end(); iter++){
-		
+
+		// Get data from bank in the form of a vector of uint32_t
+		// If the bank does not contain data of that type, just
+		// continue to the next bank
 		evioDOMNodeP bankPtr = *iter;
-		tagNum tag_num = pair<uint16_t, uint8_t>(bankPtr->tag, bankPtr->num);
-		
-		// Get module type
-		MODULE_TYPE type = DModuleType::UNKNOWN;
-		map<tagNum, MODULE_TYPE>::iterator itr = module_type.find(tag_num);
-		if(itr != module_type.end()){
-			type = itr->second;
-		}else{
-			// Optionally try and guess the module type based on the data
-			if(AUTODETECT_MODULE_TYPES){
-				type = GuessModuleType(bankPtr);
-				if(type != DModuleType::UNKNOWN)jout<<"Found module of type: "<<DModuleType::GetName(type)<<" in bank with tag,num = "<<bankPtr->tag<<","<<(int)bankPtr->num<<endl;
-				module_type[tag_num] = type; // remember for next time
-			}
+		const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
+		if(vec==NULL)continue;
+		const uint32_t *iptr = &(*vec)[0];
+		const uint32_t *iend = &(*vec)[vec->size()];
+
+		// Extract ROC id (crate number) from bank's parent
+		int32_t rocid = -1;
+		evioDOMNodeP physics_event_data_bank = bankPtr->getParent();
+		if(physics_event_data_bank){
+			rocid = physics_event_data_bank->tag  & 0x0FFF;
 		}
-		
-		// Parse buffer depending on module type
-		bool bank_parsed = true; // will be set to false if UNKNOWN or default case is entered
-		switch(type){
-			case DModuleType::F250ADC:
-				Parsef250Bank(bankPtr, tmp_events);
+
+		// At this point we need to decide what type of data this
+		// bank contains. All JLab modules have a common block
+		// header format and so are handled in a common way. Other
+		// modules (e.g. CAEN) will have to appear in their own
+		// EVIO bank.
+		//
+		// Current, preliminary thinking includes writing the type
+		// of data into the 12-bit detector id contained in the
+		// Data Block Bank of the DAQ group's "Event Building EVIO
+		// Scheme". (This is the lower 12 bits of the "tag"). We
+		// use this to decide if it is JLab module data or somehting
+		// else.
+		uint32_t det_id = bankPtr->tag & 0x0FFF;
+
+		// Call appropriate parsing method
+		bool bank_parsed = true; // will be set to false if default case is entered
+		switch(det_id){
+			case 0:
+				ParseJLabModuleData(rocid, iptr, iend, tmp_events);
 				break;
-				
-			case DModuleType::F125ADC:
-				Parsef125Bank(bankPtr, tmp_events);
-				break;
-				
-			case DModuleType::F1TDC:
-				ParseF1TDCBank(bankPtr, tmp_events);
-				break;
-				
-			case DModuleType::JLAB_TS:
-				ParseTSBank(bankPtr, tmp_events);
-				break;
-				
-			case DModuleType::JLAB_TI:
-				ParseTIBank(bankPtr, tmp_events);
-				break;
-				
-			case DModuleType::UNKNOWN:
+
 			default:
+				jerr<<"Unknown data type ("<<det_id<<") encountered for tag="<<bankPtr->tag<<" num="<< (int)bankPtr->num << endl;
 				bank_parsed = false;
-				break;
 		}
 
 		// Merge this bank's partial events into the full events
@@ -491,17 +541,73 @@ void JEventSource_DAQ::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 }
 
 //----------------
+// ParseJLabModuleData
+//----------------
+void JEventSource_DAQ::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+{
+	/// Parse a bank of data coming from one or more JLab modules.
+	/// The data are assumed to follow the standard JLab format for
+	/// block headers. If multiple modules are read out in a single
+	/// chain block transfer, then the data will all be placed in
+	/// a single EVIO bank and this will loop over the modules.
+	while(iptr < iend){
+
+		// Get module type from next word (bits 18-21)
+		uint32_t mod_id = ((*iptr) >> 18) & 0x000F;
+
+		// Convert to our enum (this may be bypassed in the future...)
+		MODULE_TYPE type = DModuleType::UNKNOWN;
+		switch(mod_id){
+			case 0x0010: type = DModuleType::F250ADC; break;
+
+			default:
+				jerr<<"Unknown module type ("<<mod_id<<") "<<endl;
+				return;
+		}
+		
+		// Parse buffer depending on module type
+		// (Note that each of the ParseXXX routines called below will
+		// update the "iptr" variable to point to the next word
+		// after the block it parsed.)
+		list<ObjList*> tmp_events;
+		bool module_parsed = true;
+		switch(type){
+			case DModuleType::F250ADC:
+				Parsef250Bank(rocid, iptr, iend, tmp_events);
+				break;
+				
+			case DModuleType::F125ADC:
+				Parsef125Bank(rocid, iptr, iend, tmp_events);
+				break;
+				
+			case DModuleType::F1TDC:
+				ParseF1TDCBank(rocid, iptr, iend, tmp_events);
+				break;
+				
+			case DModuleType::JLAB_TS:
+				ParseTSBank(rocid, iptr, iend, tmp_events);
+				break;
+				
+			case DModuleType::JLAB_TI:
+				ParseTIBank(rocid, iptr, iend, tmp_events);
+				break;
+				
+			case DModuleType::UNKNOWN:
+			default:
+				module_parsed = false;
+				break;
+		}
+		if(module_parsed) MergeObjLists(events, tmp_events);
+	}
+}
+
+//----------------
 // Parsef250Bank
 //----------------
-void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &events)
+void JEventSource_DAQ::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
-	// Get all data words for this bank
-	const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
-	if(vec==NULL) {jerr << "?unable to get vector for FADC250 data bank" << endl; return;}
-	if(vec->size()<3)return; // not enough data to try parsing
-	
-	int32_t rocid = 0; // needs to come from higher-level bank!!
-	
+	/// Parse data from a single F250ADC module.
+
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
 	// added to the events queue first though so all events are kept.
@@ -521,8 +627,6 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &event
 	int32_t last_itrigger = -2;
 	
 	// Loop over data words
-	const uint32_t *iptr = &(*vec)[0];
-	const uint32_t *iend = &(*vec)[vec->size()];
 	for(; iptr<iend; iptr++){
 		
 		// Skip all non-data-type-defining words at this
@@ -531,7 +635,7 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &event
 		// the data continuation words and advance the iptr.
 		if(((*iptr>>31) & 0x1) == 0)continue;
 		
-		// Variables used inside of switch, but cannot be declare inside of case
+		// Variables used inside of switch, but cannot be declared inside
 		uint64_t t = 0L;
 		uint32_t channel = 0;
 		uint32_t sum = 0;
@@ -539,7 +643,8 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &event
 		uint32_t quality_factor = 0;
 		uint32_t pulse_time = 0;
 		bool overflow = false;
-		
+
+		bool found_block_trailer = false;
 		uint32_t data_type = (*iptr>>27) & 0x0F;
 		switch(data_type){
 			case 0: // Block Header
@@ -550,6 +655,7 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &event
 			case 1: // Block Trailer
 				slot_trailer = (*iptr>>22) & 0x1F;
 				Nwords_in_block = (*iptr>>0) & 0x1FFFFF;
+				found_block_trailer = true;
 				break;
 			case 2: // Event Header
 				itrigger = (*iptr>>0) & 0x7FFFFFF;
@@ -605,6 +711,12 @@ void JEventSource_DAQ::Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &event
 			case 14: // Data not valid (empty module)
 			case 15: // Filler (non-data) word
 				break;
+		}
+
+		// Once we find a block trailer, assume that is it for this module.
+		if(found_block_trailer){
+			iptr++; // iptr is still pointing to block trailer. Jump to next word.
+			break;
 		}
 	}
 	
@@ -720,7 +832,7 @@ void JEventSource_DAQ::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint
 //----------------
 // Parsef125Bank
 //----------------
-void JEventSource_DAQ::Parsef125Bank(evioDOMNodeP bankPtr, list<ObjList*> &events)
+void JEventSource_DAQ::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	
 }
@@ -728,27 +840,92 @@ void JEventSource_DAQ::Parsef125Bank(evioDOMNodeP bankPtr, list<ObjList*> &event
 //----------------
 // ParseF1TDCBank
 //----------------
-void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, list<ObjList*> &events)
+void JEventSource_DAQ::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
-	int32_t rocid = 0; // needs to come from higher-level bank!!
+	/// Parse data from a single F1TDC module.
 
-	// This will get updated to point to a newly allocated object when an
-	// event header is encountered. The existing value (if non-NULL) is
-	// added to the events queue first though so all events are kept.
-	ObjList *objs = NULL;
+	// The scheme Dave Abbott proposes will add a block header word to F1TDC
+	// output that is the same format as for the F250ADC. (This block header
+	// is not described in the F1TDC manual). Data generated by his mc2coda
+	// library includes this block header, but data from physical test setups
+	// does not. We try and handle both cases here.
+	uint32_t slot_block_header = 1000;
+	uint32_t Nevents_block_header = 0;
 
-	// Get all data words for this bank
-	const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
-	if(vec==NULL) {jerr << "?unable to get vector for F1TDC data bank" << endl; return;}
-	if(vec->size()<3)return; // not enough data to try parsing
+	// Block header word
+	if(*iptr == 0xf1daffff){
+		// ROC marker word appears in test setup data file instead of block header
+		Nevents_block_header = 1; // I think this should always be true
+	}else{
+		// Block header
+		slot_block_header    = (*iptr)>>22 & 0x001F;
+		Nevents_block_header = (*iptr)>>11 & 0x00FF; // Dave. A. scheme uses bits 18-21 for module id. This is not yet reflected in the documentation
 
-	const uint32_t *iptr = &(*vec)[0];
-	const uint32_t *iend = &(*vec)[vec->size()];
-
-	// ROC marker word appears to be in my data file. Don't know if this is universal
-	if(*iptr != 0xf1daffff)return;
+		// Double check that block header has bit 31 set
+		if( ((*iptr>>31) & 0x0001) != 0x0001){
+			throw JException("F1TDC Block header corrupt! (bit 31 is zero!)");
+		}
+	}
 	iptr++;
-	
+
+	// Loop over events
+	uint32_t Nevents=0;
+	while(iptr<iend){
+
+		// Double check that event header has bit 23 clear
+		if( ((*iptr>>23) & 0x0001) != 0x0000){
+			throw JException("F1TDC Event header corrupt! (bit 23 is not zero!)");
+		}
+
+		// slot, chip addr. and chan addr. from F1TDC Event header
+		uint32_t slot_event_header = (*iptr>>27) & 0x1F;
+		uint32_t chip_event_header = (*iptr>>3) & 0x07;
+		uint32_t chan_event_header = (*iptr>>0) & 0x07;
+		uint32_t ievent = (*iptr>>16) & 0x3F;
+		uint32_t trig_time = (*iptr>>7) & 0x01FF;
+
+		ObjList *objs = new ObjList;
+		if(!objs)throw JException("Unable to create ObjList for F1TDC list");
+
+		// Loop over data words
+		while( ((*(++iptr)>>22) & 0x0003) == 2 ){
+
+			uint32_t slot = (*iptr>>27) & 0x1F;
+			uint32_t chip = (*iptr>>19) & 0x07;
+			uint32_t chan = (*iptr>>16) & 0x07;
+			uint32_t channel = (chip<<3) + (chan<<0);
+			uint32_t time = (*iptr>>0) & 0xFFFF;
+
+			DF1TDCHit *hit = new DF1TDCHit(rocid, slot, channel, ievent, trig_time, time);
+			objs->vDF1TDCHits.push_back(hit);
+		}
+
+		// Add hits for this event to list of events
+		events.push_back(objs);
+
+		// Double check that event trailer has bit 23 clear
+		if( ((*iptr>>23) & 0x0001) != 0x0000){
+			throw JException("F1TDC Event trailer corrupt! (bit 23 is not set!)");
+		}
+
+		// Advance iptr to word right after event trailer
+		iptr++;
+
+		// Check if we've read in all of the events in this block
+		if(++Nevents >= Nevents_block_header)break;
+	}
+
+	// ROC marker word appears in test setup data file after last event trailer
+	if(*iptr == 0xda0000ff)iptr++;
+
+	// Double check that we found all of the events we were supposed to
+	if(Nevents != Nevents_block_header){
+		stringstream ss;
+		ss << "F1TDC missing events in block! (found "<<Nevents<<" but should have found "<<Nevents_block_header<<")";
+		throw JException(ss.str());
+	}
+
+#if 0
 	uint32_t slot_header = 1000;
 	uint32_t chip_header = 1000;
 	uint32_t chan_header = 1000;
@@ -756,10 +933,11 @@ void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, list<ObjList*> &even
 	uint32_t trig_time = 0;
 
 	// Loop over words in bank
+	bool looking_for_header = true;
 	for(; iptr<iend; iptr++){
 		
-		// ROL end of data marker (also not sure if this universal)
-		if(*iptr == 0xda0000ff)break;
+		// ROC marker word at end of test setup data file. Skip it.
+		if(*iptr == 0xda0000ff){ iptr++; break;}
 		
 		uint32_t slot = (*iptr>>27) & 0x1F;
 		
@@ -784,6 +962,11 @@ void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, list<ObjList*> &even
 			
 		}else{
 			// data word
+
+			if(looking_for_header){
+				jerr << "F1TDC data word encountered where header excpected!" << endl;
+			}
+
 			uint32_t chip = (*iptr>>19) & 0x07;
 			uint32_t chan = (*iptr>>16) & 0x07;
 			uint32_t channel = (chip<<3) + (chan<<0);
@@ -796,12 +979,13 @@ void JEventSource_DAQ::ParseF1TDCBank(evioDOMNodeP bankPtr, list<ObjList*> &even
 	
 	// Add last event in block to list
 	if(objs != NULL)events.push_back(objs);
+#endif
 }
 
 //----------------
 // ParseTSBank
 //----------------
-void JEventSource_DAQ::ParseTSBank(evioDOMNodeP bankPtr, list<ObjList*> &events)
+void JEventSource_DAQ::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	
 }
@@ -809,7 +993,7 @@ void JEventSource_DAQ::ParseTSBank(evioDOMNodeP bankPtr, list<ObjList*> &events)
 //----------------
 // ParseTIBank
 //----------------
-void JEventSource_DAQ::ParseTIBank(evioDOMNodeP bankPtr, list<ObjList*> &events)
+void JEventSource_DAQ::ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	
 }

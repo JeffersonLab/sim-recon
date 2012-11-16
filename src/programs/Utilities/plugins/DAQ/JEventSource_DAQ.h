@@ -159,17 +159,23 @@ class JEventSource_DAQ: public jana::JEventSource{
 		queue<ObjList*> stored_events;
 	
 		int32_t GetRunNumber(evioDOMTree *evt);
-		MODULE_TYPE GuessModuleType(evioDOMNodeP bankPtr);
+		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
+		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
+		bool IsF125ADC(const uint32_t *istart, const uint32_t *iend);
+		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);
+		bool IsTS(const uint32_t *istart, const uint32_t *iend);
+		bool IsTI(const uint32_t *istart, const uint32_t *iend);
 		void DumpModuleMap(void);
 		
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
 
 		void ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number);
-		void Parsef250Bank(evioDOMNodeP bankPtr, list<ObjList*> &events);
-		void Parsef125Bank(evioDOMNodeP bankPtr, list<ObjList*> &events);
-		void ParseF1TDCBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
-		void ParseTSBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
-		void ParseTIBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
+		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 
 		// f250 methods
 		void MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
