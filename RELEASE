@@ -1,0 +1,968 @@
+Release Notes for sim-recon-2012-09-26
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2012-09-26
+   Date: September 28, 2012
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 9658 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.7 (i686)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.5
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.4
+
+CentOS release 5.3 (Final) (x86_64)
+------------
+  Xerces 3.1.1
+  JANA 0.6.5
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.4
+
+Red Hat Enterprise Linux 6.2 (x86_64)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.5
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 1.4
+
+CentOS release 6.2 (Final)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.5
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 1.4
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r9660 | pmatt | 2012-09-26 16:15:16 -0400 (Wed, 26 Sep 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DNeutralShower.h
+
+Bug when setting covariance matrix terms fixed. 
+
+
+------------------------------------------------------------------------
+r9661 | pmatt | 2012-09-26 16:20:05 -0400 (Wed, 26 Sep 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Added b1(1235)+
+
+
+------------------------------------------------------------------------
+r9696 | pmatt | 2012-09-28 00:58:29 -0400 (Fri, 28 Sep 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.h
+
+Small fixes: correct time now being set, cov matrix in the correct format (still bogus values though). 
+
+
+------------------------------------------------------------------------
+r9706 | davidl | 2012-10-01 15:04:34 -0400 (Mon, 01 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALTDCHit.h
+
+Adding missing header that is usually included by the one including this file. (Not always though.)
+------------------------------------------------------------------------
+r9707 | davidl | 2012-10-01 15:08:37 -0400 (Mon, 01 Oct 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Making the Time Spectrum method for BCAL simulation the default. The code has existed for some time, but the method set by #defines. To switch back to the old cell-based method, adjust the #defines at the top of programs/Simulation/mcsmear/smear_bcal.cc and programs/Simulation/HDGeant/hitBCal.cc accordingly.
+
+Also included is a change to libraries/BCAL/DBCALPoint.cc that changes the scale of the amplitude values to roughly convert them from fADC units to GeV. This is a temporary change so as not to break all of the reconstruction code. If one wishes to go back to the cell method, this change should be reveresed as well.
+
+------------------------------------------------------------------------
+r9718 | yqiang | 2012-10-03 11:14:21 -0400 (Wed, 03 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_AMPS/b1piAngAmp.cc
+
+Fixed compiling issue on some machine by adding stdio header
+------------------------------------------------------------------------
+r9719 | yqiang | 2012-10-03 11:21:41 -0400 (Wed, 03 Oct 2012) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/CERE
+   A /trunk/sim-recon/src/libraries/CERE/CERE_init.cc
+   A /trunk/sim-recon/src/libraries/CERE/DCereRichHit.h
+   A /trunk/sim-recon/src/libraries/CERE/DCereTruth.h
+   A /trunk/sim-recon/src/libraries/CERE/Makefile
+
+add Cerenkov (CERE) library
+------------------------------------------------------------------------
+r9720 | yqiang | 2012-10-03 13:50:39 -0400 (Wed, 03 Oct 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+   M /trunk/sim-recon/src/libraries/DANA/DFactoryGenerator.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/libraries/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCerenkov.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/savehits.F
+
+add Cerenkov RICH hits in HDDM library and HDGeant
+add two factories to process CereTruth and CereRithHit information in DANA
+------------------------------------------------------------------------
+r9721 | yqiang | 2012-10-03 14:19:55 -0400 (Wed, 03 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/Makefile
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/DEventProcessor_mc_tree.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/DEventProcessor_mc_tree.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Event.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Event.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Makefile
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Particle.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/RichHit.h
+
+add mc_tree plug-in: a plug-in to extract DMCThrown particles together with their hits in detectors including the newly created DCereRichHit to a ROOT tree
+------------------------------------------------------------------------
+r9722 | yqiang | 2012-10-03 14:37:49 -0400 (Wed, 03 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/Makefile
+   A /trunk/sim-recon/src/programs/Simulation/gamp2hddm
+   A /trunk/sim-recon/src/programs/Simulation/gamp2hddm/Makefile
+   A /trunk/sim-recon/src/programs/Simulation/gamp2hddm/gamp2hddm.cc
+
+add gamp2hddm: a program to convert data file in gamp format, e.g. generated by CLAS ppgen, into hddm format as HDGeant's input.
+------------------------------------------------------------------------
+r9727 | yqiang | 2012-10-03 18:26:48 -0400 (Wed, 03 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/DEventProcessor_mc_tree.cc
+
+fixed a multi-counting bug in mc_tree
+------------------------------------------------------------------------
+r9731 | staylor | 2012-10-06 12:07:21 -0400 (Sat, 06 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+(1) Tune variance for cdc drift time. (2) apply an additional check that we have bracketed the minimum when finding the doca to a wire.  (3) Add capability to add a point at the target for forward-going trajectories.   To turn this feature on, set -PKALMAN:ADD_VERTEX_POINT=1.  This is off by default and should anyway not be used for extended targets.
+------------------------------------------------------------------------
+r9737 | pmatt | 2012-10-07 23:00:04 -0400 (Sun, 07 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Fixed capitalization in omega ROOT name. 
+
+
+------------------------------------------------------------------------
+r9738 | pmatt | 2012-10-08 00:54:46 -0400 (Mon, 08 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Increased/fixed precision of proton, pion, and kaon masses. 
+
+
+------------------------------------------------------------------------
+r9739 | pmatt | 2012-10-08 01:17:46 -0400 (Mon, 08 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Get default mass hypotheses from particleType.h.  This ensures identical values for mass (and thus energy and time) between original and REST formats. 
+
+
+------------------------------------------------------------------------
+r9740 | pmatt | 2012-10-08 01:50:09 -0400 (Mon, 08 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+
+Removed "#if 0" and associated "#endif" which prevented the program from properly matching tertiary (or higher) particles to their parents. 
+
+
+------------------------------------------------------------------------
+r9757 | pmatt | 2012-10-09 16:57:33 -0400 (Tue, 09 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/rest.xml
+
+Added uncertainties to tofPoint, and added units to tofPoint and startHit.  
+
+
+------------------------------------------------------------------------
+r9759 | davidl | 2012-10-09 18:58:39 -0400 (Tue, 09 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_DAQ.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_DAQ.h
+
+Handles entangled events (in principle). It seems to handle non-entangled events OK, but need an example file to test the disentangling. Also added extensive comment to header describing how to add a new module.
+------------------------------------------------------------------------
+r9760 | wilevine | 2012-10-09 20:47:56 -0400 (Tue, 09 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALShower_factory.cc
+
+Change the time reported by DFCALShower to the time at the shower position
+(x,y,z) rather than the time at the back of the FCAL.
+
+------------------------------------------------------------------------
+r9761 | wilevine | 2012-10-09 20:50:09 -0400 (Tue, 09 Oct 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+In DParticleID: remove timing correction to FCAL time no longer needed.
+
+------------------------------------------------------------------------
+r9762 | davidl | 2012-10-09 21:00:42 -0400 (Tue, 09 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.h
+
+Make the hddm_r::HDDM record object local instead of a class member so danarest can run with more than one thread.
+------------------------------------------------------------------------
+r9763 | wilevine | 2012-10-09 22:03:25 -0400 (Tue, 09 Oct 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc
+
+Change DBCALShower so that it stores an xyzCovariance matrix in addition to
+xErr, yErr, zErr (the latter are redundant and should be eventually removed).
+
+Also change DBCALShower_factory so that the t stored is the time at the shower
+position (x,y,z) rather than the time at the inner radius. This gives us
+consistency in the definition of t across DBCALShower (KLOE and GlueX
+algorithms) and consistency between DBCALShower and DFCALShower.
+
+------------------------------------------------------------------------
+r9764 | wilevine | 2012-10-09 22:14:44 -0400 (Tue, 09 Oct 2012) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FCAL/DFCALGeometry.cc
+
+In DFCALGeometry: fix row() and column() functions
+
+------------------------------------------------------------------------
+r9765 | pmatt | 2012-10-09 22:43:18 -0400 (Tue, 09 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack.h
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticle.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticle.h
+
+DChargedTrack::Get_Charge now returns an int, DNeutralParticle::Get_BestPhoton and ::Get_BestNeutron are replaced with ::Get_Hypothesis, Get_BestFOM in both classes no longer assumes the objects are stored in order of FOM. 
+
+
+------------------------------------------------------------------------
+r9766 | pmatt | 2012-10-09 23:15:40 -0400 (Tue, 09 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrack.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticle.cc
+
+Fixed Get_BestFOM() routines to take into account when all FOM's are NaN. 
+
+
+------------------------------------------------------------------------
+r9767 | davidl | 2012-10-10 08:40:13 -0400 (Wed, 10 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/osrelease.pl
+
+Copied osrelease.pl from scripts area to bring it back in alignment with scripts/osrelease.pl and scripts/build_scripts/osrelease.pl. Eventually will need to consolidate these.
+------------------------------------------------------------------------
+r9771 | davidl | 2012-10-10 09:24:55 -0400 (Wed, 10 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/osrelease.pl
+
+Fixed issue with compiler_type not being used properly. Also, fixed processor type to force it to report x86_64 on Mac OS X despite Apple's best effort at non-conformity to any reasonable reporting standard for compiler targets.
+------------------------------------------------------------------------
+r9772 | davidl | 2012-10-10 20:12:27 -0400 (Wed, 10 Oct 2012) | 22 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal_deprecated.cc
+
+Reverting BCAL simulation back to original version as the default.
+This is in response to Paul's request since the reconstruction is
+not yet ready to handle the new scheme.
+
+The change is not a complete reversal though:
+
+1. Both types of BCAL data are now written out by default from the
+BCAL in hdgeant.
+
+2. Which method is used (new or old) in mcsmear is chosen by
+command line parameter (-D) with the default being the old.
+
+3. The DBCALPoint object no longer scales the signal amplitude
+to convert from ADC counts to rough GeV since that is not
+needed by the old scheme. This must be changed in the code
+and recompiled to get the "new" behavior.
+
+4. Both mcsmear and all DANA programs will print an annoying 
+warning message to remind users that they are using a deprecated
+method.
+
+
+------------------------------------------------------------------------
+r9773 | wolin | 2012-10-11 10:57:47 -0400 (Thu, 11 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Not working yet, basic structure ok
+------------------------------------------------------------------------
+r9775 | yqiang | 2012-10-12 11:16:30 -0400 (Fri, 12 Oct 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+   M /trunk/sim-recon/src/libraries/CERE/CERE_init.cc
+   A /trunk/sim-recon/src/libraries/CERE/DCereHit.h
+   M /trunk/sim-recon/src/libraries/DANA/DFactoryGenerator.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+   M /trunk/sim-recon/src/libraries/Makefile
+   A /trunk/sim-recon/src/libraries/RICH
+   A /trunk/sim-recon/src/libraries/RICH/.depends
+   A /trunk/sim-recon/src/libraries/RICH/.depends/Linux_RH-x86_64-gcc4.4.6
+   A /trunk/sim-recon/src/libraries/RICH/.depends/Linux_RH-x86_64-gcc4.4.6/RICH_init.d
+   A /trunk/sim-recon/src/libraries/RICH/.lib
+   A /trunk/sim-recon/src/libraries/RICH/.lib/Linux_RH-x86_64-gcc4.4.6
+   A /trunk/sim-recon/src/libraries/RICH/.lib/Linux_RH-x86_64-gcc4.4.6/libRICH.a
+   A /trunk/sim-recon/src/libraries/RICH/DRichHit.h
+   A /trunk/sim-recon/src/libraries/RICH/Makefile
+   A /trunk/sim-recon/src/libraries/RICH/RICH_init.cc
+   R /trunk/sim-recon/src/libraries/include/GlueX.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/CereHit.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/DEventProcessor_mc_tree.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/DEventProcessor_mc_tree.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Event.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Event.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/Particle.h
+   R /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/RichHit.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmOutput.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmOutput.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCerenkov.c
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/hitRICH.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/savehits.F
+
+Complete support of Cherenkov and RICH detectors:
+1. Added a new RICH structure in HDDM to store hits and truth points in RICH detector
+2. Added hitRICH in HDgeant to process hits in RICH sensitive volumes: RAWN (entrance) and RDCD (cathode)
+3. Added a new RICH system, SYS_RICH, in GlueX.h
+4. Added a new RICH library, separated from previous CERE library
+5. Added two factories in DANA to process Cherenkov and RICH hits: DCereHit and DRichHit
+6. Added the truth points in Cherenkov and RICH to DMCTrackHit as hits in SYS_CHERENKOV and SYS_RICH
+7. Updated mc_tree plugin to include Cherenkov and RICH hits in ROOTTree
+------------------------------------------------------------------------
+r9776 | yqiang | 2012-10-12 11:31:58 -0400 (Fri, 12 Oct 2012) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/libraries/CERE/DCereRichHit.h
+   D /trunk/sim-recon/src/libraries/CERE/DCereTruth.h
+   D /trunk/sim-recon/src/libraries/RICH/.depends
+   D /trunk/sim-recon/src/libraries/RICH/.lib
+
+Clean up of RICH and CERE libraries: removed unused header and temporary files
+------------------------------------------------------------------------
+r9777 | pmatt | 2012-10-14 15:36:43 -0400 (Sun, 14 Oct 2012) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src/libraries/ANALYSIS
+   A /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities_factory.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DBeamPhoton_factory_KinFit.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DBeamPhoton_factory_KinFit.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_KinFit.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_KinFit.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Reaction.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Reaction.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitConstraints.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitConstraints.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitParticle.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitParticle.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprintStep.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprintStep.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboStep.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboStep.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Reaction.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Reaction.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/Makefile
+
+Added analysis library. 
+
+
+------------------------------------------------------------------------
+r9778 | pmatt | 2012-10-14 15:42:45 -0400 (Sun, 14 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+   M /trunk/sim-recon/src/libraries/DANA/DFactoryGenerator.cc
+   M /trunk/sim-recon/src/libraries/Makefile
+
+Added analysis library. 
+
+
+------------------------------------------------------------------------
+r9779 | pmatt | 2012-10-14 15:46:37 -0400 (Sun, 14 Oct 2012) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DFactoryGenerator_DReaction.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/Makefile
+
+Added b1pi analysis plugin. 
+
+
+------------------------------------------------------------------------
+r9781 | pmatt | 2012-10-14 16:24:09 -0400 (Sun, 14 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/Makefile
+
+Added b1pi_hists.
+
+
+------------------------------------------------------------------------
+r9783 | pmatt | 2012-10-15 10:42:47 -0400 (Mon, 15 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+
+Added virtual destructor. 
+
+
+------------------------------------------------------------------------
+r9784 | wolin | 2012-10-15 13:55:07 -0400 (Mon, 15 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/Makefile
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+All currently implemented detectors call mc2coda package, more to do...
+------------------------------------------------------------------------
+r9786 | staylor | 2012-10-16 19:44:51 -0400 (Tue, 16 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fdc_hists/DEventProcessor_fdc_hists.h
+
+Add routines to do the kalman filter and smoother operations using only the strip data.  Add small correction for nn-normally incident tracks to the position along the wire.
+------------------------------------------------------------------------
+r9787 | nsparks | 2012-10-17 16:45:54 -0400 (Wed, 17 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DBeamPhoton_factory_KinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_KinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+
+made SIMD friendly
+------------------------------------------------------------------------
+r9797 | staylor | 2012-10-19 09:45:39 -0400 (Fri, 19 Oct 2012) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment
+   A /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/FDC_branch.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/Makefile
+
+Make specific plugin for chamber alignment (currently only doing FDC).  This code was previously in the fdc_hists plugin.
+------------------------------------------------------------------------
+r9799 | wolin | 2012-10-19 16:14:40 -0400 (Fri, 19 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Most detectors working
+------------------------------------------------------------------------
+r9800 | pmatt | 2012-10-19 22:48:27 -0400 (Fri, 19 Oct 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+
+Added ability to cut based on tracking chisq/df for charged tracks, prior to forming DParticleCombo objects. 
+Set the COMBO:MAXTRACKINGCHISQPERDF command line value for this.  Disabled (< 0) by default.  
+
+
+------------------------------------------------------------------------
+r9801 | pmatt | 2012-10-20 13:53:34 -0400 (Sat, 20 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+
+Fixed bug in DHistogramAction_TruePID().
+
+
+------------------------------------------------------------------------
+r9808 | davidl | 2012-10-22 05:01:21 -0400 (Mon, 22 Oct 2012) | 9 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root/DClassDef.cc
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root/DClassDef.h
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root/Makefile
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm_root.h
+
+First draft of a utility to convert hddm formatted files to ROOT trees.
+This works by generating code that uses the HDDM c++ API. It
+successfully creates the TObject-inherited classes and fills them
+using data from the HDDM tree. However, there is a limitation in
+ROOT as to the depth that it allows nested containers to go. Several
+objects appear to be inaccessible at the moment. It also needs to
+have a mechanism added to handle objects with minOccurrs 0 and
+maxOccurs 1 better than what is in there now.
+
+------------------------------------------------------------------------
+r9809 | jonesrt | 2012-10-22 06:23:48 -0400 (Mon, 22 Oct 2012) | 18 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/ElectronDump.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Materials.xml
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/TaggerArea.xml
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/XParsers.cpp
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/XParsers.hpp
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/XString.cpp
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/XString.hpp
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/hdds-geant.cpp
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/hddsCommon.cpp
+   D /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/hddsCommon.hpp
+
+* XString.[hc]pp, hddsCommon.[hc]pp, XParsers.[hc]pp, hddsCommon.cpp [rtj]
+   - removed all of the source code for the hdds toolkit from this area.
+     Updated copies of all of these tools are kept in $HDDS_HOME, and
+     these duplicates are already obsolete.
+
+* Makefile [rtj]
+   - redirect the Makefile to use the hdds-geant binary that is built and
+     stored in the bin area of the main hdds area under $HDDS_HOME/bin
+
+* Materials.xml, ElectronDump.xml [rtj]
+   - change the name of liquid water material from H2O to "water".  This
+     allows for other forms of H2O to be distinguised, such as "ice", "steam".
+
+* TaggerArea.xml [rtj]
+   - tell the parser to fetch the definitive copy of the HDDS schema document
+     from the web instead of looking for it on a local disk at Jlab.
+
+
+------------------------------------------------------------------------
+r9810 | jonesrt | 2012-10-22 06:28:20 -0400 (Mon, 22 Oct 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hdds/Makefile
+
+* Makefile [rtj]
+   - force Makefile to fetch a copy of the schema document from the main
+     hdds area rather than keeping a local copy here.
+
+------------------------------------------------------------------------
+r9811 | davidl | 2012-10-22 07:42:05 -0400 (Mon, 22 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+Fixed typo in RICH definition: minOccor -> minOccurs
+------------------------------------------------------------------------
+r9812 | davidl | 2012-10-22 07:43:09 -0400 (Mon, 22 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/DClassDef.h
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+
+Fixed bugs that prevented compiling on Linux.
+------------------------------------------------------------------------
+r9816 | jonesrt | 2012-10-22 13:47:45 -0400 (Mon, 22 Oct 2012) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.h
+
+* calibDB.h, calibDB.cc [rtj]
+   - renamed global function gufld2_ (called from fortran hddsGeant3.F)
+     to gufld_DB_ to avoid collision with adding new mapped magnetic field
+     regions to the simulation.  This change is synchronized with a parallel
+     change to the hdds-geant app.  Please update hdds at the same time.
+
+------------------------------------------------------------------------
+r9819 | jonesrt | 2012-10-22 14:25:49 -0400 (Mon, 22 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hddmInput.c
+   M /trunk/sim-recon/src/programs/Simulation/gxtwist/hddmOutput.c
+
+* hddmInput.c, hddmOutput.c [rtj]
+   - minor change to the event format, where physicsEvent is a singleton.
+
+------------------------------------------------------------------------
+r9820 | davidl | 2012-10-22 15:26:01 -0400 (Mon, 22 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+
+Added Usage statement and parsing of command line arguments. Additional tweaking. Still not a production version.
+------------------------------------------------------------------------
+r9821 | davidl | 2012-10-22 15:56:21 -0400 (Mon, 22 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+
+Updated to work with rest.xml
+------------------------------------------------------------------------
+r9822 | pmatt | 2012-10-22 21:09:24 -0400 (Mon, 22 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+
+Expanded track multiplicity hist. 
+
+
+------------------------------------------------------------------------
+r9823 | pmatt | 2012-10-22 21:10:46 -0400 (Mon, 22 Oct 2012) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/Makefile
+
+Monitoring plugins. 
+
+
+------------------------------------------------------------------------
+r9824 | pmatt | 2012-10-22 21:14:02 -0400 (Mon, 22 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/Makefile
+
+Adding monitoring_hists to makefile. 
+
+
+------------------------------------------------------------------------
+r9825 | davidl | 2012-10-23 08:17:09 -0400 (Tue, 23 Oct 2012) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+
+- Changed mk_dictionaries.csh script into makefile
+  and added message that tells user how to use it
+
+- Add usage statement to generated tool
+
+- Add -n option to generated tool to allow user to
+  limit number of events to process.
+
+------------------------------------------------------------------------
+r9827 | davidl | 2012-10-23 08:31:23 -0400 (Tue, 23 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+
+Limit buffer size to 100kB so if HDDM binary file is given, only header will be read in. This seems to work with REST formatted files.
+------------------------------------------------------------------------
+r9828 | davidl | 2012-10-23 09:03:48 -0400 (Tue, 23 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+
+Minor tweaks to avoid compiler wanings.
+------------------------------------------------------------------------
+r9829 | davidl | 2012-10-23 10:30:40 -0400 (Tue, 23 Oct 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+
+- Properly check for end of file so event processing stops
+- Add printout of total number of events processed by tool
+- Add Clear routines to clear the values from previous events
+- Removed -pg -g options as default
+
+------------------------------------------------------------------------
+r9830 | davidl | 2012-10-23 11:14:07 -0400 (Tue, 23 Oct 2012) | 6 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root/README
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/hddm2root.cc
+
+- Allow user to specify output root filename on command line of tool
+- Exit cleanly with usage statement if no argument is passed to
+  hddm2root
+- Similarly for the generated tool
+- Added README
+
+------------------------------------------------------------------------
+r9831 | jonesrt | 2012-10-23 19:27:38 -0400 (Tue, 23 Oct 2012) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+* calibDB.cc, hitCDC.c, hitFDC.c [rtj]
+   - the global function to compute the magnetic field map from values stored
+     in the conditions database was unfortunately named "gufld2", which was
+     a reserved name by the hdds toolkit.  I have renamed this global function
+     to gufld_db.  Please update hdds at the same time as this update.
+
+------------------------------------------------------------------------
+r9833 | pmatt | 2012-10-24 14:05:38 -0400 (Wed, 24 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DFactoryGenerator_DReaction.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory.h
+
+Added invariant mass plots. 
+
+
+------------------------------------------------------------------------
+r9834 | pmatt | 2012-10-24 14:06:51 -0400 (Wed, 24 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Removed cout statements. 
+
+
+------------------------------------------------------------------------
+r9835 | davidl | 2012-10-25 06:08:47 -0400 (Thu, 25 Oct 2012) | 11 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+   M /trunk/sim-recon/src/libraries/DANA/DFactoryGenerator.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.h
+   M /trunk/sim-recon/src/libraries/HDDM/rest.xml
+   M /trunk/sim-recon/src/libraries/Makefile
+   A /trunk/sim-recon/src/libraries/TRIGGER
+   A /trunk/sim-recon/src/libraries/TRIGGER/DMCTrigger.h
+   A /trunk/sim-recon/src/libraries/TRIGGER/DMCTrigger_factory.cc
+   A /trunk/sim-recon/src/libraries/TRIGGER/DMCTrigger_factory.h
+   A /trunk/sim-recon/src/libraries/TRIGGER/Makefile
+   A /trunk/sim-recon/src/libraries/TRIGGER/TRIGGER_init.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/DTrigger_factory.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/level1_trigger/README
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.cc
+
+Added Level-1 trigger data to REST format. The DTrigger objects
+produced by the level1_trigger plugin have been moved into
+a new TRIGGER library that is now one of the core DANA libraries.
+The DTrigger class was also renamed DMCTrigger so that the name
+DTrigger could be used to hold hardware related data in the future.
+
+The level1_trigger plugin still exists and uses DTrigger as it
+has in the past, but will now print a warning message to indicate
+that it is deprecated and the TRIGGER library and DMCTrigger class
+should now be used.
+
+------------------------------------------------------------------------
+r9836 | wolin | 2012-10-25 09:16:11 -0400 (Thu, 25 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/makeTranslationTable.py
+
+Minor
+------------------------------------------------------------------------
+r9837 | pmatt | 2012-10-25 13:30:10 -0400 (Thu, 25 Oct 2012) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+
+Fixed bug where neutrals were getting matched to charged particles (and vice versa). 
+
+
+------------------------------------------------------------------------
+r9863 | jonesrt | 2012-10-30 14:46:55 -0400 (Tue, 30 Oct 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.h
+
+* calibDB.h [rtj]
+   - guess I forgot to commit this when I committed calibDB.cc ?
+
+
+------------------------------------------------------------------------
+r9874 | staylor | 2012-10-31 16:12:27 -0400 (Wed, 31 Oct 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCIntersection_factory.cc
+
+modifications to get the intersection factory to work with real data from one of the packages.
+------------------------------------------------------------------------
+r9886 | davidl | 2012-11-02 12:43:40 -0400 (Fri, 02 Nov 2012) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/MyProcessor.cc
+
+Modified to use the L1 trigger to decide whether to write events
+out or not. This way, it can be used without madification as
+a L1 event filter while still being simple enough to serve as
+an example of how to write a filter program.
+
+------------------------------------------------------------------------
+r9891 | davidl | 2012-11-02 15:01:28 -0400 (Fri, 02 Nov 2012) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/controlparams.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/controlparams.inc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hdgeant.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+
+Add -xml option to hdgeant to allow geometry to be dynamically
+generated at run time from XML source. default is still to use
+statically linked geometry.
+
+------------------------------------------------------------------------
+r9894 | davidl | 2012-11-05 07:24:06 -0500 (Mon, 05 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/MyProcessor.cc
+
+Use the new DMCTrigger objects from the TRIGGER library instead of from the old level1_trigger plugin.
+------------------------------------------------------------------------
+r9919 | davidl | 2012-11-08 06:31:45 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hdgeant.cc
+
+Added -checksum command line argument to have the geometry checksum printed. This works with either the statically linked geometry or a dynamically linked one.
+------------------------------------------------------------------------
+r9920 | davidl | 2012-11-08 07:13:42 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmOutput.c
+
+Removed stray semi-colon that would have caused a small memory leak.
+------------------------------------------------------------------------
+r9921 | davidl | 2012-11-08 07:53:11 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+Add a structure to hold the geometry md5 checksum in the output HDDM file. There are three md5 checksums for the geometry used for 1.) simulation, 2.) smearing, and 3.) reconstruction.
+------------------------------------------------------------------------
+r9922 | davidl | 2012-11-08 07:59:17 -0500 (Thu, 08 Nov 2012) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/controlparams.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmOutput.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hdgeant.cc
+
+Add the md5 checksum for the geometry used to the output
+HDDM file. This is only done for the first event written
+so it doesn't contribute redundant information for every
+event.
+
+Also added/cleaned up command line option to print the
+geometry checksum to the screen and exit so one may check
+what will be used without actually running the simulation. 
+
+------------------------------------------------------------------------
+r9924 | staylor | 2012-11-08 10:55:29 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+
+Set double-hit resolution to 25 ns
+------------------------------------------------------------------------
+r9925 | staylor | 2012-11-08 10:58:08 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+
+Set double hit resolution to 25 ns.  Remove cathode strip code.  Set dE to q to reflect the fact that the energy deposition is converted into charge in the code.
+------------------------------------------------------------------------
+r9926 | staylor | 2012-11-08 10:59:24 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/event.xml
+
+Change name of variable for cdc straw from dE to q to reflect what is actually being generated in HDGeant.
+------------------------------------------------------------------------
+r9927 | staylor | 2012-11-08 11:00:39 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+
+Check for existence of tof truth hits before adding mc data as associated objects to the tof hits.
+------------------------------------------------------------------------
+r9928 | staylor | 2012-11-08 11:05:40 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCHit.h
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.cc
+
+Change name of variable from dE to q
+------------------------------------------------------------------------
+r9931 | staylor | 2012-11-08 11:47:47 -0500 (Thu, 08 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Add command-line flag -d to implement option to drop the TruthHits.  By default this is set to false so the behavior is the same as the previous version of mcsmear.  Change dE to q for the cdc hits.  Add diagnostic histogram.
+------------------------------------------------------------------------
+r9936 | davidl | 2012-11-09 07:43:54 -0500 (Fri, 09 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/CDChit_branch.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/DEventProcessor_cdc_hists.cc
+
+Fixed cdc_hists plugin to work with new dE -> q update in CDC library
+------------------------------------------------------------------------
+r9937 | davidl | 2012-11-09 10:00:39 -0500 (Fri, 09 Nov 2012) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+
+Change default of MAXNST from 10k to 100k. We were getting numerous
+messages like the following:
+
+*** GTRACK *** More than     10000 steps, tracking abandoned!
+
+It does not appear that the increase leads to a large increase in the
+overall processing time for hdgeant, but it does clean up a lot
+of these distracting warnings.
+
+------------------------------------------------------------------------
+r9938 | davidl | 2012-11-09 13:29:46 -0500 (Fri, 09 Nov 2012) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/beamgen.F
+
+Increased the value of freqMaximum from 2E-4 to 9E-4. This
+value is used to estimate the maximum value of the "freq"
+parameter calculated by the photon beam generator built into
+HDGeant. When running with high luminosity background, it
+was noticed that this warning was printed a lot. The effect
+of having too low a value would be to supress the peaks of
+the sampled distribution. This fixes that for BGRATE=11.0
+(high luminosity) and 1us BGGATE.
+
+------------------------------------------------------------------------
+r9966 | davidl | 2012-11-14 07:17:18 -0500 (Wed, 14 Nov 2012) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hdgeant.cc
+
+Allow XML source to be specified on command line rather than through HDDS_HOME environment variable. The environment variable is also used for the hdds-geant executable location making scripting more cumbersome if the executable needed to be copied in addition to the XML source for any variations of the geometry.
+------------------------------------------------------------------------
