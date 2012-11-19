@@ -457,7 +457,6 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 		// Calculate momentum loss due to the step we're about to take
 		dP = ds*dP_dx;
-		swim_step->dP = dP; // n.b. stepper has been updated for next round but we're still on present step
 
 		// Adjust momentum due to ionization losses
 		if(dP!=0.0){
