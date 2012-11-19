@@ -311,6 +311,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double itheta02s = 0.0;
 	double itheta02s2 = 0.0;
 	swim_step_t *last_step=NULL;
+	// Magnetic field
+	double Bz_old=0;
 	
 	// Reset flag indicating whether we hit the CDC endplate
 	// and get the parameters of the endplate so we can check
@@ -333,13 +335,11 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double cdc_endplate_zmax = 168.2;
 #endif	
 	
-#if 0
 	// Get Bfield from stepper to initialize Bz_old
 	DVector3 B;
 	stepper.GetBField(B);
-	double Bz_old = B.z();
-#endif	
-
+	Bz_old = B.z();
+	
 	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
 
 
@@ -406,8 +406,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 						double theta0 = 0.0136*one_over_beta/p*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
 						double theta02 = theta0*theta0;
 						itheta02 += theta02;
-						itheta02s += delta_s*theta02;
-						itheta02s2 += delta_s*delta_s*theta02;
+						itheta02s += s*theta02;
+						itheta02s2 += s*s*theta02;
 					}
 
 					// Calculate momentum loss due to ionization
@@ -457,6 +457,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 		// Calculate momentum loss due to the step we're about to take
 		dP = ds*dP_dx;
+		swim_step->dP = dP; // n.b. stepper has been updated for next round but we're still on present step
 
 		// Adjust momentum due to ionization losses
 		if(dP!=0.0){
@@ -2008,139 +2009,154 @@ jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
   return NOERROR;
 }
 
-
 // Find the mid-point of the line connecting the points of closest approach of the
 // trajectories of two tracks.  Return the positions, momenta, and error matrices 
 // at these points for the two tracks.
-jerror_t 
-DReferenceTrajectory::IntersectTracks( const DReferenceTrajectory *rt2,
-				       DKinematicData *track1_kd,
-				       DKinematicData *track2_kd,
-				       DVector3 &pos, double &doca, double &var_doca) const{
-  const swim_step_t *swim_step1=this->swim_steps;
-  const swim_step_t *swim_step2=rt2->swim_steps;
+jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, DKinematicData *track1_kd, DKinematicData *track2_kd, DVector3 &pos, double &doca, double &var_doca) const
+{
+	const swim_step_t *swim_step1=this->swim_steps;
+	const swim_step_t *swim_step2=rt2->swim_steps;
   
-  DMatrixDSym cov1=track1_kd->errorMatrix();
-  DMatrixDSym cov2=track2_kd->errorMatrix();
-  double q1=this->q;
-  double q2=rt2->q;
-  double mass1=this->mass;
-  double mass2=rt2->mass;
+	DMatrixDSym cov1(7), cov2(7);
 
-  // Initialize the doca and traverse both particles' trajectories
-  doca=1000.;
-  DVector3 oldpos1,oldpos2,oldmom1,oldmom2;
-  double tflight1=0.,tflight2=0.;
-  for (int i=0;i<this->Nswim_steps-1&&i<rt2->Nswim_steps-1;
-       i++, swim_step1++, swim_step2++){
-    DVector3 pos1=swim_step1->origin;
-    DVector3 pos2=swim_step2->origin;
-    DVector3 diff=pos1-pos2;
-    double new_doca=diff.Mag();
-
-    if (new_doca>doca){
-      if (i==1){  // backtrack to find the true doca
-	tflight1=tflight2=0.;
-
-	swim_step1=this->swim_steps;
-	swim_step2=rt2->swim_steps;
-
-	cov1=track1_kd->errorMatrix();
-	cov2=track2_kd->errorMatrix();
-	
-	pos1=swim_step1->origin;
-	DVector3 mom1=swim_step1->mom;
-	DMagneticFieldStepper stepper1(this->bfield, this->q, &pos1, &mom1);
-
-	pos2=swim_step2->origin;
-	DVector3 mom2=swim_step2->mom;
-	DMagneticFieldStepper stepper2(this->bfield, rt2->q, &pos2, &mom2);
-
-	int inew=0;
-	while (inew<100){
-	  double ds1=stepper1.Step(&pos1,-0.5);
-	  double ds2=stepper2.Step(&pos2,-0.5);
-	  
-	  // Compute the revised estimate for the doca
-	  diff=pos1-pos2;
-	  new_doca=diff.Mag();
-
-	  if (new_doca>doca){
-	    break;
-	  }
-	  
-	  // Propagate the covariance matrices along the trajectories
-	  this->PropagateCovariance(ds1,q1,mass1,mom1,oldpos1,cov1);
-	  rt2->PropagateCovariance(ds2,q2,mass2,mom2,oldpos2,cov2);
-
-	  // Store the current positions, doca and adjust flight times
-	  oldpos1=pos1;
-	  oldpos2=pos2;
-	  doca=new_doca;
-
-	  double one_over_p1_sq=1./mom1.Mag2();
-	  tflight1+=ds1*sqrt(1.+mass1*mass1*one_over_p1_sq)/SPEED_OF_LIGHT;
-
-	  double one_over_p2_sq=1./mom2.Mag2();
-	  tflight2+=ds2*sqrt(1.+mass2*mass2*one_over_p2_sq)/SPEED_OF_LIGHT;
-
-	  // New momenta
-	  stepper1.GetMomentum(mom1);
-	  stepper2.GetMomentum(mom2);
-
-	  oldmom1=/*(-1.)*/mom1;
-	  oldmom2=/*(-1.)*/mom2;
-
-	  inew++;
+	if((track1_kd != NULL) && (track2_kd != NULL))
+	{
+		cov1=track1_kd->errorMatrix();
+		cov2=track2_kd->errorMatrix();
 	}
-      }
 
-      // "Vertex" is mid-point of line connecting the positions of closest
-      // approach of the two tracks
-      pos=0.5*(oldpos1+oldpos2);
-      
-      track1_kd->setErrorMatrix(cov1);
-      track1_kd->setMomentum(oldmom1);
-      track1_kd->setPosition(oldpos1);
-      double err_t0=track1_kd->t0_err();
-      track1_kd->setT0(track1_kd->t0()+tflight1,sqrt(err_t0*err_t0+cov1(6,6)),track1_kd->t0_detector());
+	double q1=this->q;
+	double q2=rt2->q;
+	double mass1=this->mass;
+	double mass2=rt2->mass;
 
-      track2_kd->setErrorMatrix(cov2);
-      track2_kd->setMomentum(oldmom2);
-      track2_kd->setPosition(oldpos2);
-      err_t0=track2_kd->t0_err();
-      track2_kd->setT0(track2_kd->t0()+tflight2,sqrt(err_t0*err_t0+cov2(6,6)),track2_kd->t0_detector());
+	// Initialize the doca and traverse both particles' trajectories
+	doca=1000.;
+	DVector3 oldpos1,oldpos2,oldmom1,oldmom2;
+	double tflight1=0.,tflight2=0.;
+	for (int i=0;i<this->Nswim_steps-1&&i<rt2->Nswim_steps-1; i++, swim_step1++, swim_step2++)
+	{
+		DVector3 pos1=swim_step1->origin;
+		DVector3 pos2=swim_step2->origin;
+		DVector3 diff=pos1-pos2;
+		double new_doca=diff.Mag();
 
-      // Compute the variance on the doca
-      diff=oldpos1-oldpos2;
-      double dx=diff.x();
-      double dy=diff.y();
-      double dz=diff.z();
-      var_doca=(dx*dx*(cov1(3,3)+cov2(3,3))+dy*dy*(cov1(4,4)+cov2(4,4))
-		    +dz*dz*(cov1(5,5)+cov2(5,5))+2.*dx*dy*(cov1(3,4)+cov2(3,4))
-		    +2.*dx*dz*(cov1(3,5)+cov2(3,5))+2.*dy*dz*(cov1(4,5)+cov2(4,5)))
-	/(doca*doca);
-      
-      break;
-    }
-    
-    // Propagate the covariance matrices along the trajectories
-    this->PropagateCovariance(this->swim_steps[i+1].s-swim_step1->s,q1,mass1,
-			      swim_step1->mom,swim_step1->origin,cov1);
-    rt2->PropagateCovariance(rt2->swim_steps[i+1].s-swim_step2->s,q2,mass2,
-			     swim_step2->mom,swim_step2->origin,cov2);
+		if (new_doca>doca)
+		{
+			if (i==1)
+			{  // backtrack to find the true doca
+				tflight1=tflight2=0.;
+
+				swim_step1=this->swim_steps;
+				swim_step2=rt2->swim_steps;
+
+				if((track1_kd != NULL) && (track2_kd != NULL))
+				{
+					cov1=track1_kd->errorMatrix();
+					cov2=track2_kd->errorMatrix();
+				}
+	
+				pos1=swim_step1->origin;
+				DVector3 mom1=swim_step1->mom;
+				DMagneticFieldStepper stepper1(this->bfield, this->q, &pos1, &mom1);
+
+				pos2=swim_step2->origin;
+				DVector3 mom2=swim_step2->mom;
+				DMagneticFieldStepper stepper2(this->bfield, rt2->q, &pos2, &mom2);
+
+				int inew=0;
+				while (inew<100)
+				{
+					double ds1=stepper1.Step(&pos1,-0.5);
+					double ds2=stepper2.Step(&pos2,-0.5);
+	  
+					// Compute the revised estimate for the doca
+					diff=pos1-pos2;
+					new_doca=diff.Mag();
+
+					if(new_doca > doca)
+						break;
+	  
+					// Propagate the covariance matrices along the trajectories
+					if((track1_kd != NULL) && (track2_kd != NULL))
+					{
+						this->PropagateCovariance(ds1,q1,mass1,mom1,oldpos1,cov1);
+						rt2->PropagateCovariance(ds2,q2,mass2,mom2,oldpos2,cov2);
+					}
+
+					// Store the current positions, doca and adjust flight times
+					oldpos1=pos1;
+					oldpos2=pos2;
+					doca=new_doca;
+
+					double one_over_p1_sq=1./mom1.Mag2();
+					tflight1+=ds1*sqrt(1.+mass1*mass1*one_over_p1_sq)/SPEED_OF_LIGHT;
+
+					double one_over_p2_sq=1./mom2.Mag2();
+					tflight2+=ds2*sqrt(1.+mass2*mass2*one_over_p2_sq)/SPEED_OF_LIGHT;
+
+					// New momenta
+					stepper1.GetMomentum(mom1);
+					stepper2.GetMomentum(mom2);
+
+					oldmom1=/*(-1.)*/mom1;
+					oldmom2=/*(-1.)*/mom2;
+
+					inew++;
+				}
+			}
+
+			// "Vertex" is mid-point of line connecting the positions of closest
+			// approach of the two tracks
+			pos=0.5*(oldpos1+oldpos2);
+
+			if((track1_kd != NULL) && (track2_kd != NULL))
+			{
+				track1_kd->setErrorMatrix(cov1);
+				track1_kd->setMomentum(oldmom1);
+				track1_kd->setPosition(oldpos1);
+				track1_kd->setTime(track1_kd->time() + tflight1);
+
+				track2_kd->setErrorMatrix(cov2);
+				track2_kd->setMomentum(oldmom2);
+				track2_kd->setPosition(oldpos2);
+				track2_kd->setTime(track2_kd->time() + tflight2);
+			}
+
+			// Compute the variance on the doca
+			diff=oldpos1-oldpos2;
+			double dx=diff.x();
+			double dy=diff.y();
+			double dz=diff.z();
+
+			if((track1_kd != NULL) && (track2_kd != NULL))
+			{
+				var_doca=(dx*dx*(cov1(3,3)+cov2(3,3))+dy*dy*(cov1(4,4)+cov2(4,4))
+					+dz*dz*(cov1(5,5)+cov2(5,5))+2.*dx*dy*(cov1(3,4)+cov2(3,4))
+					+2.*dx*dz*(cov1(3,5)+cov2(3,5))+2.*dy*dz*(cov1(4,5)+cov2(4,5)))
+					/(doca*doca);
+			}      
+			break;
+		}
+
+		// Propagate the covariance matrices along the trajectories
+		if((track1_kd != NULL) && (track2_kd != NULL))
+		{
+			this->PropagateCovariance(this->swim_steps[i+1].s-swim_step1->s,q1,mass1,swim_step1->mom,swim_step1->origin,cov1);
+			rt2->PropagateCovariance(rt2->swim_steps[i+1].s-swim_step2->s,q2,mass2,swim_step2->mom,swim_step2->origin,cov2);
+		}
    
-    // Store the current positions and doca
-    oldpos1=pos1;
-    oldpos2=pos2;
-    oldmom1=swim_step1->mom;
-    oldmom2=swim_step2->mom;
-    tflight1=swim_step1->t;
-    tflight2=swim_step2->t;
-    doca=new_doca;
-  }
+		// Store the current positions and doca
+		oldpos1=pos1;
+		oldpos2=pos2;
+		oldmom1=swim_step1->mom;
+		oldmom2=swim_step2->mom;
+		tflight1=swim_step1->t;
+		tflight2=swim_step2->t;
+		doca=new_doca;
+	}
 
-  return NOERROR;
+	return NOERROR;
 }
 
 
