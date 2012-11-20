@@ -2,6 +2,8 @@
 //
 // Created June 22, 2005  David Lawrence
 
+#define JANA_ENABLED 1
+
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -53,15 +55,15 @@ pthread_mutex_t mutex_fdc_smear_function = PTHREAD_MUTEX_INITIALIZER;
 
 bool CDC_GEOMETRY_INITIALIZED = false;
 int CDC_MAX_RINGS=0;
-vector<unsigned int> NCDC_STRAWS;
-vector<double> CDC_RING_RADIUS;
+extern vector<unsigned int> NCDC_STRAWS;
+extern vector<double> CDC_RING_RADIUS;
 
 DFCALGeometry *fcalGeom = NULL;
 DCCALGeometry *ccalGeom = NULL;
 bool FDC_GEOMETRY_INITIALIZED = false;
 unsigned int NFDC_WIRES_PER_PLANE;
-vector<double> FDC_LAYER_Z;
-double FDC_RATE_COEFFICIENT;
+extern vector<double> FDC_LAYER_Z;
+extern double FDC_RATE_COEFFICIENT;
 
 double SampleGaussian(double sigma);
 double SamplePoisson(double lambda);
@@ -381,8 +383,9 @@ void SmearCDC(s_HDDM_t *hddm_s)
 //-----------
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 {
+#if ! JANA_ENABLED
 	if(!CDC_GEOMETRY_INITIALIZED)InitCDCGeometry();
-	
+#endif	
 	// Calculate the number of noise hits for each straw and store
 	// them in a sparse map. We must do it this way since we have to know
 	// the total number of CdcStraw_t structures to allocate in our
@@ -479,7 +482,6 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 			    s_CdcStrawHit_t *strawhit = &strawhits->in[strawhits->mult++];
 			    strawhit->q=q;
 			    strawhit->t = SampleRange(TRIGGER_LOOKBACK_TIME,t_max);
-			    printf("t %f\n",strawhit->t);
 			    strawhit->d = 0.; // be consistent to initialize d=DOCA to zero 
 			    cdc_charge->Fill(strawhit->q);   
 			    cdc_drift_time->Fill(strawhit->t,strawhit->d);
@@ -661,8 +663,9 @@ void SmearFDC(s_HDDM_t *hddm_s)
 //-----------
 void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 {
+#if ! JANA_ENABLED
 	if(!FDC_GEOMETRY_INITIALIZED)InitFDCGeometry();
-	
+#endif	
 	// Calculate the number of noise hits for each FDC wire and store
 	// them in a sparse map. We must do it this way since we have to know
 	// the total number of s_FdcAnodeWire_t structures to allocate in our
@@ -712,7 +715,7 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 	if(!PE) return;
 	
 	double t_max=TRIGGER_LOOKBACK_TIME+FDC_TIME_WINDOW;
-	double threshold=FDC_THRESHOLD_FACTOR*FDC_PED_NOISE; // for sparcification
+	//	double threshold=FDC_THRESHOLD_FACTOR*FDC_PED_NOISE; // for sparcification
 
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
@@ -776,7 +779,6 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 			  // Simulated random hit as pedestal noise 
 			  double dE= SampleGaussian(dEsigma);
 			  if (dE>FDC_THRESH_KEV){
-			    printf("Got here de %f\n",dE);
 			    // Get pointer to anode wire structure
 			    s_FdcAnodeWire_t *fdcAnodeWire = &fdcAnodeWires->in[fdcAnodeWires->mult++];
 			    

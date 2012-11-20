@@ -5,6 +5,8 @@
 
 // The following flag can be used to switch from the classic mode where
 // the event loop is implemented in main() to a JANA based event-loop.
+// NOTE:  for consistency, one should set the value of #define JANA_ENABLED
+// in smear.cc to the same value!
 #define USE_JANA 1
 
 #include <iostream>
@@ -22,6 +24,11 @@ using namespace std;
 #if USE_JANA
 #include <DANA/DApplication.h>
 #include "MyProcessor.h"
+
+#include <CDC/DCDCWire.h>
+//#include <FDC/DFDCWire.h>
+#include <HDGEOMETRY/DGeometry.h>
+
 #endif
 
 #include "units.h"
@@ -105,6 +112,13 @@ double TRIGGER_LOOKBACK_TIME = -100; // ns
 
 bool DROP_TRUTH_HITS=false;
 
+// CDC geometry parameters (for noise)
+vector<unsigned int> NCDC_STRAWS;
+vector<double> CDC_RING_RADIUS;
+
+// FDC geometry and rate parameters (for noise)
+vector<double> FDC_LAYER_Z;
+double FDC_RATE_COEFFICIENT;
 
 #include <JANA/JCalibrationFile.h>
 using namespace jana;
@@ -132,24 +146,6 @@ int main(int narg,char* argv[])
 #endif
 	ParseCommandLineArguments(narg, argv);
 	
-	// hist file
-	TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");
-	fdc_drift_time_smear_hist=new TH2F("fdc_drift_time_smear_hist","Drift time smearing for FDC",
-					   300,0.0,0.6,400,-200,200);
-	fdc_drift_dist_smear_hist=new TH2F("fdc_drift_dist_smear_hist","Drift distance smearing for FDC",
-					   100,0.0,0.6,400,-0.5,0.5);
-	fdc_drift_time=new TH2F("fdc_drift_time","FDC drift distance vs. time",550,-100,1000,100,0,1.);
-	
-	fdc_anode_mult = new TH1F("fdc_anode_mult","wire hit multiplicity",20,-0.5,19.5);
-	fdc_cathode_charge = new TH1F("fdc_cathode_charge","charge on strips",1000,0,1000);
-
-	
-	cdc_drift_time = new TH2F("cdc_drift_time","CDC drift distance vs time",550,-100,1000,80,0.,0.8);
-
-	cdc_drift_smear = new TH2F("cdc_drift_smear","CDC drift smearing",
-				   100,0.0,800.0,100,-0.1,0.1);
-	
-	cdc_charge  = new TH1F("cdc_charge","Measured charge in straw",1000,-10e3,40e3);
 	// Create a JCalibration object using the JANA_CALIB_URL environment variable
 	// Right now, we hardwire this to use JCalibrationFile.
 	const char *url = getenv("JANA_CALIB_URL");
@@ -250,6 +246,29 @@ int main(int narg,char* argv[])
 
 	}
 
+	// hist file
+	TFile *hfile = new TFile("smear.root","RECREATE","smearing histograms");
+	fdc_drift_time_smear_hist=new TH2F("fdc_drift_time_smear_hist","Drift time smearing for FDC",
+					   300,0.0,0.6,400,-200,200);
+	fdc_drift_dist_smear_hist=new TH2F("fdc_drift_dist_smear_hist","Drift distance smearing for FDC",
+					   100,0.0,0.6,400,-0.5,0.5);
+	double tmax=TRIGGER_LOOKBACK_TIME+FDC_TIME_WINDOW;
+	int num_time_bins=int(FDC_TIME_WINDOW);
+	fdc_drift_time=new TH2F("fdc_drift_time","FDC drift distance vs. time",num_time_bins,TRIGGER_LOOKBACK_TIME,tmax,100,0,1.);
+	
+	fdc_anode_mult = new TH1F("fdc_anode_mult","wire hit multiplicity",20,-0.5,19.5);
+	fdc_cathode_charge = new TH1F("fdc_cathode_charge","charge on strips",1000,0,1000);
+
+	tmax=TRIGGER_LOOKBACK_TIME+CDC_TIME_WINDOW;
+	num_time_bins=int(CDC_TIME_WINDOW);
+	cdc_drift_time = new TH2F("cdc_drift_time","CDC drift distance vs time",num_time_bins,TRIGGER_LOOKBACK_TIME,tmax,80,0.,0.8);
+
+	cdc_drift_smear = new TH2F("cdc_drift_smear","CDC drift smearing",
+				   100,0.0,800.0,100,-0.1,0.1);
+	
+	cdc_charge  = new TH1F("cdc_charge","Measured charge in straw",1000,-10e3,40e3);
+
+
 
 #if ! USE_JANA
 	cout<<" input file: "<<INFILENAME<<endl;
@@ -298,7 +317,27 @@ int main(int narg,char* argv[])
 	cout<<" "<<NEvents<<" events read"<<endl;
 #else
 	DApplication dapp(narg, argv);
+
+	DGeometry *dgeom=dapp.GetDGeometry(1);
 	
+	// Get number of cdc wires per ring and the radii of each ring
+	vector<vector<DCDCWire *> >cdcwires;
+        dgeom->GetCDCWires(cdcwires);
+	for (unsigned int i=0;i<cdcwires.size();i++){
+	  NCDC_STRAWS.push_back(cdcwires[i].size());
+	  CDC_RING_RADIUS.push_back(cdcwires[i][0]->origin.Perp());
+	}  
+	// Get the FDC z positions for the wire planes
+        dgeom->GetFDCZ(FDC_LAYER_Z);
+
+	// Coefficient used to calculate FDCsingle wire rate. We calculate
+	// it once here just to save calculating it for every wire in every event
+	FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
+	
+	// Something is a little off in my calculation above so I scale it down via
+	// an emprical factor:
+	FDC_RATE_COEFFICIENT *= 0.353;
+
 	MyProcessor myproc;
 	
 	dapp.Run(&myproc);
