@@ -10,6 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include "DCDCTrackHit.h"
+#include "DCDCWire.h"
 #include "HDGEOMETRY/DGeometry.h"
 
 #define CDC_MAX_STRAWS 222
@@ -26,8 +27,6 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 		DCDCTrackHit_factory(){};
 		~DCDCTrackHit_factory(){};
 		
-		static const DCDCWire* GetCDCWire(int ring, int straw);
-
 	private:
 		jerror_t init(void);
 		jerror_t brun(JEventLoop *loop, int runnumber);
@@ -35,7 +34,9 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 
 
 		DGeometry *dgeom;
-		float Z_MIN, Z_MAX;
+		vector<vector<DCDCWire *> >cdcwires;
+		int Nstraws[CDC_MAX_RINGS];
+		double Z_MIN, Z_MAX;
 };
 
 #endif // _DCDCTrackHit_factory_
