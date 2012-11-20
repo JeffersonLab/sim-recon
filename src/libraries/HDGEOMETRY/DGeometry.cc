@@ -483,6 +483,257 @@ _DBG_<<"Components for compsite "<<name<<endl;
 	
 //}
 
+/// Extract the stereo wire data from the XML
+bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<DCDCWire*> &stereowires) const{
+  stringstream ncopy_s,r_z_s,phi0_s,rot_s;
+  
+  // Create search strings for the number of straws and the straw geometrical properties 
+  ncopy_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@ncopy/ring[@value='" << ring << "']";
+  r_z_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@R_Z/ring[@value='" << ring << "']";
+  phi0_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@Phi0/ring[@value='" << ring << "']";
+  rot_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@rot/ring[@value='" << ring << "']";
+
+  unsigned int ncopy;
+  vector<double>r_z;
+  double phi0;
+  vector<double>rot;
+ 
+  // Extract data from the XML
+  if(!Get(ncopy_s.str(), ncopy)) return false; 
+  if(!Get(r_z_s.str(), r_z)) return false; 
+  if(!Get(phi0_s.str(), phi0)) return false; 
+  if(!Get(rot_s.str(), rot)) return false; 
+
+  // Angular quantities
+  const double deg2rad=M_PI/180.;
+  double dphi=2*M_PI/double(ncopy);
+  phi0*=deg2rad;
+
+  // Extract data from close-packed straws
+  const double EPS=1e-4;
+  bool close_packed=false;
+  double rotX=0.,rotY=0.,stereo=0.;
+  vector<double>delta_xyz;
+  if (r_z[0]<EPS){
+    close_packed=true;
+    stringstream delta_xyz_s,longstraw_rot_s;
+
+    // Create search strings for the number of straws and the straw geometrical properties 
+    delta_xyz_s << "//composition[@name='CDCstrawLong" << longwireflag <<"']/posXYZ[@volume='CDCstrawLong']/@X_Y_Z";
+    longstraw_rot_s << "//composition[@name='CDCstrawLong" << longwireflag <<"']/posXYZ[@volume='CDCstrawLong']/@rot";
+  
+    // Extract the data from the XML
+    if (!Get(delta_xyz_s.str(),delta_xyz)) return false;
+    if (!Get(longstraw_rot_s.str(),rot)) return false;
+
+    rotX=deg2rad*rot[0];
+    rotY=deg2rad*rot[1];
+  }
+  else{
+    stereo=deg2rad*rot[0];
+  }
+
+  // Loop over the number of straws
+  for (unsigned int i=0;i<ncopy;i++){
+    DCDCWire *w=new DCDCWire;
+    double phi=phi0+double(i)*dphi;
+    w->ring=ring;
+    w->straw=i+1;
+    w->phi=phi;
+
+    if (close_packed){
+      w->origin.SetX(delta_xyz[0]);
+      w->origin.SetY(delta_xyz[1]);
+      w->origin.RotateZ(phi);
+    }
+    else{
+      w->origin.SetX(r_z[0]*cos(phi));
+      w->origin.SetY(r_z[0]*sin(phi));    
+    }
+   
+    // Here, we need to define a coordinate system for the wire
+    // in which the wire runs along one axis. We call the directions
+    // of the axes in this coordinate system s,t, and u with
+    // the wire running in the "u" direction. The "s" direction
+    // will be defined by the direction pointing from the beamline
+    // to the midpoint of the wire.
+    w->udir.SetXYZ(0.0, 0.0,1.0);	
+    if (close_packed){
+      w->udir.RotateX(rotX);
+      w->udir.RotateY(rotY);   
+      w->udir.RotateZ(phi);
+      w->stereo = (rotX<0?-1.:1.)*w->udir.Angle(DVector3(0,0,1));
+    }
+    else{
+      w->stereo=stereo;
+      w->udir.RotateX(stereo);	
+      w->udir.RotateZ(phi);     
+    }
+
+    stereowires.push_back(w);
+  }
+
+  return true;
+}
+
+/// Extract the axial wire data from the XML
+bool DGeometry::GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires) const{
+  stringstream ncopy_s,phi0_s,r_z_s;
+
+  // Create search strings for the number of straws and the straw geometrical properties 
+  ncopy_s << "//mposPhi[@volume='CDCstrawShort']/@ncopy/ring[@value='" << ring << "']";
+  phi0_s << "//mposPhi[@volume='CDCstrawShort']/@Phi0/ring[@value='" << ring << "']";
+  r_z_s << "//mposPhi[@volume='CDCstrawShort']/@R_Z/ring[@value='" << ring << "']";
+
+  unsigned int ncopy;
+  double phi0;
+  vector<double>r_z;
+
+  // Extract the data from the XML
+  if(!Get(ncopy_s.str(), ncopy)) return false; 
+  if(!Get(phi0_s.str(), phi0)) return false; 
+  if(!Get(r_z_s.str(), r_z)) return false;
+
+  // Angular quantities
+  double dphi=2*M_PI/double(ncopy);
+  phi0*=M_PI/180.;
+ 
+  // Loop over the number of straws
+  for (unsigned int i=0;i<ncopy;i++){
+    DCDCWire *w=new DCDCWire;
+    double phi=phi0+double(i)*dphi;
+    w->ring=ring;
+    w->straw=i+1;
+    w->origin.SetX(r_z[0]*cos(phi));
+    w->origin.SetY(r_z[0]*sin(phi));
+    w->phi=phi;
+    w->stereo=0.;
+
+    // Here, we need to define a coordinate system for the wire
+    // in which the wire runs along one axis. We call the directions
+    // of the axes in this coordinate system s,t, and u with
+    // the wire running in the "u" direction. The "s" direction
+    // will be defined by the direction pointing from the beamline
+    // to the midpoint of the wire.
+    w->udir.SetXYZ(0.0, 0.0,1.0);	
+    w->udir.RotateZ(phi);
+
+    axialwires.push_back(w);
+  }
+
+  return true;
+}
+
+//---------------------------------
+// GetCDCWires
+//---------------------------------
+bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
+  vector<double>cdc_origin;
+  vector<double>cdc_length;
+  Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
+  Get("//tubs[@name='STRA']/@Rio_Z",cdc_length);
+
+  double zmin=cdc_origin[2];
+  double zmax=zmin+cdc_length[2];
+  double zcenter=0.5*(zmin+zmax);
+  double L=zmax-zmin;
+
+  // First axial layer
+  for (unsigned int ring=1;ring<5;ring++){ 
+    vector<DCDCWire*>straws;
+    if (!GetCDCAxialWires(ring,straws)) return false;    
+    cdcwires.push_back(straws);
+  }
+  
+  string longwireflags[16]={"","B12","","B14","","B16","","B18","","B22","","B24","","B26","","B28"};
+  // First set of stereo layers
+  for (unsigned int i=0;i<8;i++){
+    vector<DCDCWire*>straws;
+    if (!GetCDCStereoWires(i+5,longwireflags[i],straws)) return false;
+    cdcwires.push_back(straws);
+  }
+
+  // Second axial layer
+  for (unsigned int ring=13;ring<17;ring++){ 
+    vector<DCDCWire*>straws;
+    if (!GetCDCAxialWires(ring,straws)) return false;    
+    cdcwires.push_back(straws);
+  }
+  
+  // Second set of stereo layers
+  for (unsigned int i=8;i<16;i++){
+    vector<DCDCWire*>straws;
+    if (!GetCDCStereoWires(i+9,longwireflags[i],straws)) return false;
+    cdcwires.push_back(straws);
+  }
+
+  // Third axial layer
+  for (unsigned int ring=25;ring<29;ring++){ 
+    vector<DCDCWire*>straws;
+    if (!GetCDCAxialWires(ring,straws)) return false;    
+    cdcwires.push_back(straws);
+  }
+
+  // Calculate wire lengths and compute "s" and "t" direction vectors (orthogonal to "u")
+  for (unsigned int i=0;i<cdcwires.size();i++){ 
+    for (unsigned int j=0;j<cdcwires[i].size();j++){
+      DCDCWire *w=cdcwires[i][j];
+      w->L=L/cos(w->stereo);
+      w->origin.SetZ(zcenter);
+  
+      // With the addition of close-packed stereo wires, the vector connecting
+      // the center of the wire to the beamline ("s" direction) is not necessarily
+      // perpendicular to the beamline. By definition, we want the "s" direction
+      // to be perpendicular to the wire direction "u" and pointing at the beamline.
+      // 
+      // NOTE: This extensive comment is here because the result, when implmented
+      // below caused a WORSE residual distribution in the close-packed stereo
+      // layers. Owing to lack of time currently to track the issue down (most
+      // likely in DReferenceTrajectory) I'm commenting out the "correct" calculation
+      // of s, but leaving this comment so the issue can be revisited later. This
+      // error leads to around 100 micron errors in the C.P.S. wires, but they
+      // are completely washed out when the position smearing of 150 microns is applied
+      // making the error unnoticable except when position smearing is not applied.
+      //
+      // April 2, 2009  D.L.
+      //
+      // Here is how this is calculated -- We define a vector equation with 2 unknowns
+      // Z and S:
+      //
+      //    Zz + Ss = W
+      //
+      // where:  z = unit vector in z direction
+      //         s = unit vector in "s" direction
+      //         W = vector pointing to center of wire in lab coordinates
+      //
+      //  Rearranging, we get:
+      //
+      //     s = (W - Zz)/S
+      //
+      //  Since s must be perpendicular to u, we take a dot product of s and u
+      // and set it equal to zero to determine Z:
+      //
+      //    u.s = 0 = u.(W - Zz)/S  =>  u.W = Zu.z
+      //
+      //   or
+      //
+      //     Z = u.W/u.z
+      //
+      //  Thus, the s direction is just given by (W - (u.W/u.z)z)
+      //
+      
+      //w->sdir=w->origin-DVector3(0,0,w->origin.Z());
+      w->sdir = w->origin - DVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
+      w->sdir.SetMag(1.0);
+      
+      w->tdir = w->udir.Cross(w->sdir);
+      w->tdir.SetMag(1.0); // This isn't really needed
+    }
+  }  
+  
+  return true;
+}
+
 
 //---------------------------------
 // GetFDCWires
@@ -670,6 +921,7 @@ bool DGeometry::GetFDCStereo(vector<double> &stereo_angles) const
 		
 		// Loop over chambers
 		for(int chamber=1; chamber<=6; chamber++){
+		  // if (chamber==4) forwardDC_chamber[package-1][chamber-1][2]+=15.0;
 			stereo_angles.push_back(forwardDC_chamber[package-1][chamber-1][2]);
 		}
 	}

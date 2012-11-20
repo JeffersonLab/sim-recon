@@ -15,6 +15,7 @@ using namespace jana;
 #include <DANA/DApplication.h>
 #include "FDC/DFDCGeometry.h"
 #include "FDC/DFDCWire.h"
+#include "CDC/DCDCWire.h"
 
 #include <particleType.h>
 #include <DVector3.h>
@@ -100,6 +101,7 @@ class DGeometry{
 		bool GetFDCRmin(vector<double> &rmin_packages) const; ///< beam hole size for each FDC package in cm
 		bool GetFDCRmax(double &rmax_active_fdc) const; ///< outer radius of FDC active area in cm
 		
+		bool GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const;
 		bool GetCDCOption(string &cdc_option) const; ///< get the centralDC_option-X string
 		bool GetCDCCenterZ(double &cdc_center_z) const; ///< z-location of center of CDC wires in cm
 		bool GetCDCAxialLength(double &cdc_axial_length) const; ///< length of CDC axial wires in cm
@@ -107,6 +109,8 @@ class DGeometry{
 		bool GetCDCRmid(vector<double> &cdc_rmid) const; ///< Distance of the center of CDC wire from beamline for each layer in cm
 		bool GetCDCNwires(vector<int> &cdc_nwires) const; ///< Number of wires for each CDC layer
 		bool GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax) const; 
+		bool GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires) const;
+		bool GetCDCStereoWires(unsigned int ring,string longwireflag,vector<DCDCWire*> &stereowires) const;
 
 		bool GetBCALRmin(double &bcal_rmin) const; ///< minimum distance of BCAL module from beam line
 		bool GetBCALNmodules(unsigned int &bcal_nmodules) const; ///< Number of BCAL modules
