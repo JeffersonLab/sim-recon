@@ -13,18 +13,30 @@
 class DModuleType{
 	public:
 
+		// NOTE: The following enum MUST be kept in alignment with the DAQ
+		// group's definitions! The real data will include this module
+		// type in the Block Header for JLab modules.
+		//
+		// These were taken from mc2coda.h v2
+		// (see /site/coda/3.0/extensions/mc2coda/v2.0/mc2coda.h)
+		//
 		// Add new module types to end of list *before*  N_MODULE_TYPES
 		// To add a new module, one also needs to add a new case to the
 		// the switch in the GetModule(type_id_t) method below.
 		enum type_id_t{
 			
-			UNKNOWN,
-			
-			F250ADC,
-			F125ADC,
-			F1TDC,
-			JLAB_TS,
-			JLAB_TI,
+			UNKNOWN,   // 0
+			VMECPU,    // 1
+			JLAB_TID,  // 2
+			FADC250,   // 3
+			FADC125,   // 4
+			F1TDC32,   // 5
+			F1TDC48,   // 6
+			CAEN1190,  // 7
+			CAEN1290,  // 8
+			UNDEFINED_MODULE_TYPE, // 9
+			JLAB_DISC, // 10
+			JLAB_TS,   // 11
 			
 			N_MODULE_TYPES
 		};
@@ -43,11 +55,16 @@ class DModuleType{
 		/// not really intended to be called every event.
 		static DModuleType GetModule(type_id_t id){
 			switch(id){
-				case F250ADC: return DModuleType(F250ADC, "F250ADC", "JLab Flash 250 MHz ADC");
-				case F125ADC: return DModuleType(F125ADC, "F125ADC", "JLab Flash 125 MHz ADC");
-				case F1TDC:   return DModuleType(F1TDC  , "F1TDC"  , "JLab F1 TDC");
-				case JLAB_TS: return DModuleType(JLAB_TS, "JLAB_TS", "JLab Trigger Supervisor");
-				case JLAB_TI: return DModuleType(JLAB_TI, "JLAB_TI", "JLab Trigger Interface");
+				case VMECPU:    return DModuleType(VMECPU,    "VMECPU",    "VME CPU");
+				case JLAB_TID:  return DModuleType(JLAB_TID,  "JLAB_TID",  "JLab Trigger Interface");
+				case FADC250:   return DModuleType(FADC250,   "FADC250",   "JLab Flash 250 MHz ADC");
+				case FADC125:   return DModuleType(FADC125,   "FADC125",   "JLab Flash 125 MHz ADC");
+				case F1TDC32:   return DModuleType(F1TDC32,   "F1TDC32",   "JLab F1 TDC (32 chan)");
+				case F1TDC48:   return DModuleType(F1TDC48,   "F1TDC48",   "JLab F1 TDC (48 chan)");
+				case CAEN1190:  return DModuleType(CAEN1190,  "CAEN1190",  "CAEN 1190 TDC");
+				case CAEN1290:  return DModuleType(CAEN1290,  "CAEN1290",  "CAEN 1290 TDC");
+				case JLAB_DISC: return DModuleType(JLAB_DISC, "JLAB_DISC", "JLab Discriminator??");
+				case JLAB_TS:   return DModuleType(JLAB_TS,   "JLAB_TS",   "JLab Trigger Supervisor");
 					
 				default: return DModuleType(UNKNOWN, "UNKNOWN", "Unknown module type");
 			}

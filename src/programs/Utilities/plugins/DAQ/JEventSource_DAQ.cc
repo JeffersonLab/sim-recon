@@ -65,7 +65,11 @@ jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
 		if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
 		int32_t run_number = GetRunNumber(evt);
 		
-		ParseEVIOEvent(evt, run_number);
+		try{
+			ParseEVIOEvent(evt, run_number);
+		}catch(JException &jexception){
+			jerr << jexception.what() << endl;
+		}
 
 		delete evt;
 	}
@@ -147,6 +151,7 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 	CopyToFactory(Df250PulseTime);
 	CopyToFactory(Df250WindowRawData);
 	CopyToFactory(DF1TDCHit);
+	CopyToFactory(DF1TDCTriggerTime);
 	
 	return err;
 }
@@ -190,11 +195,11 @@ MODULE_TYPE JEventSource_DAQ::GuessModuleType(const uint32_t* istart, const uint
 	/// Try parsing through the information in the given data buffer
 	/// to determine which type of module produced the data.
 
-	if(IsF250ADC(istart, iend)) return DModuleType::F250ADC;
+	if(IsFADC250(istart, iend)) return DModuleType::FADC250;
 	if(IsF125ADC(istart, iend)) return DModuleType::F125ADC;
 	if(IsF1TDC(istart, iend)) return DModuleType::F1TDC;
 	if(IsTS(istart, iend)) return DModuleType::JLAB_TS;
-	if(IsTI(istart, iend)) return DModuleType::JLAB_TI;
+	if(IsTI(istart, iend)) return DModuleType::JLAB_TID;
 	
 
 	// Couldn't figure it out...
@@ -202,9 +207,9 @@ MODULE_TYPE JEventSource_DAQ::GuessModuleType(const uint32_t* istart, const uint
 }
 
 //----------------
-// IsF250ADC
+// IsFADC250
 //----------------
-bool JEventSource_DAQ::IsF250ADC(const uint32_t *istart, const uint32_t *iend)
+bool JEventSource_DAQ::IsFADC250(const uint32_t *istart, const uint32_t *iend)
 {
 	//---- Check for f250
 	// This will check if the first word appears to be a block header.
@@ -413,7 +418,7 @@ void JEventSource_DAQ::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &ev
 	unsigned int Nevents2 = events2.size();
 	if(Nevents1>0 && Nevents2>0){
 		if(Nevents1 != Nevents2){
-			throw new JException("Number of events in JEventSource_DAQ::MergeObjLists do not match!");
+			throw JException("Number of events in JEventSource_DAQ::MergeObjLists do not match!");
 		}
 	}
 	
@@ -449,6 +454,7 @@ void JEventSource_DAQ::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &ev
 		AppendObjs(Df250PulseTime);
 		AppendObjs(Df250WindowRawData);
 		AppendObjs(DF1TDCHit);
+		AppendObjs(DF1TDCTriggerTime);
 	}
 	
 	// Clear out any references to objects in event2
@@ -461,7 +467,6 @@ void JEventSource_DAQ::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &ev
 void JEventSource_DAQ::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 {
 	if(!evt)throw RESOURCE_UNAVAILABLE;
-	
 	// Since each bank contains parts of many events, have them fill in
 	// the "tmp_events" list and then merge those into the "full_events".
 	// It is done this way so each bank can grow tmp_events to the appropriate
@@ -555,32 +560,31 @@ void JEventSource_DAQ::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr,
 		// Get module type from next word (bits 18-21)
 		uint32_t mod_id = ((*iptr) >> 18) & 0x000F;
 
-		// Convert to our enum (this may be bypassed in the future...)
-		MODULE_TYPE type = DModuleType::UNKNOWN;
-		switch(mod_id){
-			case 0x0010: type = DModuleType::F250ADC; break;
-
-			default:
-				jerr<<"Unknown module type ("<<mod_id<<") "<<endl;
-				return;
-		}
+		// The enum defined in DModuleType.h MUST be kept in alignment
+		// with the DAQ group's definitions for modules types!
+		MODULE_TYPE type = (MODULE_TYPE)mod_id;
 		
 		// Parse buffer depending on module type
 		// (Note that each of the ParseXXX routines called below will
 		// update the "iptr" variable to point to the next word
 		// after the block it parsed.)
 		list<ObjList*> tmp_events;
+		const uint32_t *istart=iptr; // just for UNKNOWN case below
 		bool module_parsed = true;
 		switch(type){
-			case DModuleType::F250ADC:
+			case DModuleType::FADC250:
 				Parsef250Bank(rocid, iptr, iend, tmp_events);
 				break;
 				
-			case DModuleType::F125ADC:
+			case DModuleType::FADC125:
 				Parsef125Bank(rocid, iptr, iend, tmp_events);
 				break;
 				
-			case DModuleType::F1TDC:
+			case DModuleType::F1TDC32:
+				ParseF1TDCBank(rocid, iptr, iend, tmp_events);
+				break;
+				
+			case DModuleType::F1TDC48:
 				ParseF1TDCBank(rocid, iptr, iend, tmp_events);
 				break;
 				
@@ -588,13 +592,19 @@ void JEventSource_DAQ::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr,
 				ParseTSBank(rocid, iptr, iend, tmp_events);
 				break;
 				
-			case DModuleType::JLAB_TI:
+			case DModuleType::JLAB_TID:
 				ParseTIBank(rocid, iptr, iend, tmp_events);
 				break;
 				
 			case DModuleType::UNKNOWN:
 			default:
+				jerr<<"Unknown module type ("<<mod_id<<") iptr=0x" << hex << iptr << dec << endl;
+				
+				while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
+				iptr++; // advance past JLab block trailer
+				while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
 				module_parsed = false;
+				jerr<<"...skipping to 0x" << hex << iptr << dec << "  (discarding " << (((uint64_t)iptr-(uint64_t)istart)/4) << " words)" << endl;
 				break;
 		}
 		if(module_parsed) MergeObjLists(events, tmp_events);
@@ -606,7 +616,7 @@ void JEventSource_DAQ::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr,
 //----------------
 void JEventSource_DAQ::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
-	/// Parse data from a single F250ADC module.
+	/// Parse data from a single FADC250 module.
 
 	// This will get updated to point to a newly allocated object when an
 	// event header is encountered. The existing value (if non-NULL) is
@@ -649,7 +659,7 @@ void JEventSource_DAQ::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const
 		switch(data_type){
 			case 0: // Block Header
 				slot = (*iptr>>22) & 0x1F;
-				Nblock_events = (*iptr>>11) & 0x7FF;
+				Nblock_events = (*iptr>>11) & 0x00FF;
 				iblock = (*iptr>>0) & 0x7FF;
 				break;
 			case 1: // Block Trailer
@@ -668,7 +678,11 @@ void JEventSource_DAQ::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const
 			case 3: // Trigger Time
 				t = ((*iptr)&0xFFFFFF)<<24;
 				iptr++;
-				t += (*iptr)&0xFFFFFF;
+				if(((*iptr>>31) & 0x1) == 0){
+					t += (*iptr)&0xFFFFFF; // from word on the street: second trigger time word is optional!!??
+				}else{
+					iptr--;
+				}
 				if(objs) objs->vDf250TriggerTimes.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
 				break;
 			case 4: // Window Raw Data
@@ -718,6 +732,11 @@ void JEventSource_DAQ::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const
 			iptr++; // iptr is still pointing to block trailer. Jump to next word.
 			break;
 		}
+	}
+	
+	// Chop off filler words
+	for(; iptr<iend; iptr++){
+		if(*iptr != 0xf8000000) break;
 	}
 	
 	// Add last event in block to list
@@ -834,7 +853,8 @@ void JEventSource_DAQ::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint
 //----------------
 void JEventSource_DAQ::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
-	
+	// TEMPORARY!!!
+	Parsef250Bank(rocid, iptr, iend, events);
 }
 
 //----------------
@@ -845,83 +865,196 @@ void JEventSource_DAQ::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, cons
 	/// Parse data from a single F1TDC module.
 
 	// The scheme Dave Abbott proposes will add a block header word to F1TDC
-	// output that is the same format as for the F250ADC. (This block header
+	// output that is the same format as for the FADC250. (This block header
 	// is not described in the F1TDC manual). Data generated by his mc2coda
 	// library includes this block header, but data from physical test setups
 	// does not. We try and handle both cases here.
 	uint32_t slot_block_header = 1000;
+	uint32_t module_type = 0;
 	uint32_t Nevents_block_header = 0;
-
+	uint32_t itrigger = 0;
+	uint32_t trig_time = 0;
+	
+	// The new (as yet unadopted in firmware) format for the F1TDC
+	// data replaces the highest byte of the header/trailer, and data words
+	// with one using the common JLab module scheme (as documented in the F250).
+	// In order be compatible with both the orginal format (used for test setups
+	// and any data taken with a F1TDC that has not had its firmware updated to
+	// this new standard) we set a flag depending on whether we find a marker word
+	// or a new style block header so we can properly interpret this byte below.
+	// Note that at the time of this writing, NO hardware
+	// has been updated as the new scheme is still under discussion within the
+	// DAQ group. We do, however have data from mc2coda that follows the new scheme.
+	bool old_style_data = false;
+	
 	// Block header word
 	if(*iptr == 0xf1daffff){
 		// ROC marker word appears in test setup data file instead of block header
 		Nevents_block_header = 1; // I think this should always be true
+		old_style_data = true;
 	}else{
 		// Block header
-		slot_block_header    = (*iptr)>>22 & 0x001F;
-		Nevents_block_header = (*iptr)>>11 & 0x00FF; // Dave. A. scheme uses bits 18-21 for module id. This is not yet reflected in the documentation
-
 		// Double check that block header has bit 31 set
 		if( ((*iptr>>31) & 0x0001) != 0x0001){
 			throw JException("F1TDC Block header corrupt! (bit 31 is zero!)");
 		}
+
+		slot_block_header    = (*iptr)>>22 & 0x001F;
+		module_type          = (*iptr)>>18 & 0x000F;
+		Nevents_block_header = (*iptr)>>11 & 0x003F; // Dave. A. scheme uses bits 18-21 for module id. This is not yet reflected in the documentation
 	}
+
+	// Advance to next word
 	iptr++;
 
 	// Loop over events
-	uint32_t Nevents=0;
+	ObjList *objs = NULL;
 	while(iptr<iend){
+	
+		if(old_style_data){
+			// Parsing old style F1TDC data
 
-		// Double check that event header has bit 23 clear
-		if( ((*iptr>>23) & 0x0001) != 0x0000){
-			throw JException("F1TDC Event header corrupt! (bit 23 is not zero!)");
+			// Double check that event header has bit 23 clear
+			if( ((*iptr>>23) & 0x0001) != 0x0000){
+				throw JException("F1TDC Event header corrupt! (bit 23 is not zero!)");
+			}
+
+			// slot, chip addr. and chan addr. from F1TDC Event header
+			uint32_t slot_event_header = (*iptr>>27) & 0x1F;
+			uint32_t chip_event_header = (*iptr>>3) & 0x07;
+			uint32_t chan_event_header = (*iptr>>0) & 0x07;
+			uint32_t ievent = (*iptr>>16) & 0x3F;
+			uint32_t trig_time = (*iptr>>7) & 0x01FF;
+
+		}else{
+			// Parsing new style F1TDC data
+
+			// Check that event header is correct
+			uint32_t expected_hdr = 0x90000000 | (slot_block_header<<22);
+			if( ((*iptr) & 0xFFC00000) != expected_hdr){
+				throw JException("F1TDC Event header corrupt! (high 10 bits not correct!)");
+			}
+			itrigger = (*iptr) & 0x3FFFF;
+			
+			// Advance to timestamp word
+			iptr++;
+
+			// This contradicts the original documentation which says the first time stamp
+			// word holds the high 24 bits and the second the low 24 bits. According to Dave A.
+			// the first word holds the low 24 bits and the second word is optional.
+			trig_time = ((*iptr)&0xFFFFFF);
+			iptr++;
+			if(((*iptr>>31) & 0x1) == 0){
+				trig_time += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
+			}else{
+				iptr--;
+			}
+			
+			// Create a new object list (i.e. new event)
+			if(objs)events.push_back(objs);
+			objs = new ObjList();
+			
+			if(objs) objs->vDF1TDCTriggerTimes.push_back(new DF1TDCTriggerTime(rocid, slot_block_header, itrigger, trig_time));
+			
+			// Advance past last timestamp word to first data word (or rather, F1 chip header)
+			iptr++;
 		}
-
-		// slot, chip addr. and chan addr. from F1TDC Event header
-		uint32_t slot_event_header = (*iptr>>27) & 0x1F;
-		uint32_t chip_event_header = (*iptr>>3) & 0x07;
-		uint32_t chan_event_header = (*iptr>>0) & 0x07;
-		uint32_t ievent = (*iptr>>16) & 0x3F;
-		uint32_t trig_time = (*iptr>>7) & 0x01FF;
-
-		ObjList *objs = new ObjList;
-		if(!objs)throw JException("Unable to create ObjList for F1TDC list");
 
 		// Loop over data words
-		while( ((*(++iptr)>>22) & 0x0003) == 2 ){
+		while( iptr<iend && ((*iptr)>>31)==0x1 ){
+		
+			// The following are derived from a combination of documentation
+			// for the JLab F1TDC board and looking at the code for mc2coda
+			//
+			// JLab header bits
+			// bit 31: 0=continuation  1=data defining (n.b. all words here should have bit 31 set!)
+			// bits 27-30: data type 0100b=F1 header  0101b=F1 Trailer 0110b=F1 data
+			// bit 26: res locked (should be 1)
+			// bit 25: output fifo OK
+			// bit 24: hit fifo OK
+			// 
+			// F1 header/trailer word
+			// bit 23: 0
+			// bits 16-22: itrigger
+			// bits 7-15: trig time
+			// bit 6: xor setup register (??)
+			// bits 3-5: chip
+			// bits 0-2: channel
+			// 
+			// F1 data word
+			// bit 23: 1 
+			// bit 22: 0
+			// bits 19-21: chip
+			// bits 16-18: channel
+			// bits 0-15: time
+			
+			// Skip filler words no matter what
+			if(*iptr == 0xF8000000) {iptr++; continue;}
 
-			uint32_t slot = (*iptr>>27) & 0x1F;
-			uint32_t chip = (*iptr>>19) & 0x07;
-			uint32_t chan = (*iptr>>16) & 0x07;
-			uint32_t channel = (chip<<3) + (chan<<0);
-			uint32_t time = (*iptr>>0) & 0xFFFF;
+			bool done = false;
+			if(old_style_data){
+			
+			}else{
+				
+				uint32_t chip, chan, channel, time;
+				uint32_t my_itrigger=0;
+				DF1TDCHit *hit=NULL;
+				switch( (*iptr) & 0xF8000000 ){
+					case 0xA0000000: // F1 Header
+						my_itrigger = ((*iptr)>>16) & 0x3F;
+						if( my_itrigger != (itrigger & 0x3F)){
+							throw JException("Trigger number in data word does not match F1 TDC header!");
+						}
+						break;
+					case 0xB0000000: // F1 Data (we don't check that bit 23 is set!)
+						chip = (*iptr>>19) & 0x07;
+						chan = (*iptr>>16) & 0x07;
+						channel = (chip<<3) + (chan<<0);
+						time = (*iptr>>0) & 0xFFFF;
+						hit = new DF1TDCHit(rocid, slot_block_header, channel, itrigger, trig_time, time);
+						if(objs)objs->vDF1TDCHits.push_back(hit);
+						break;
+					case 0xA8000000: // F1 Trailer
+						my_itrigger = ((*iptr)>>16) & 0x3F;
+						if( my_itrigger != (itrigger & 0x3F)){
+							throw JException("Trigger number in trailer word does not match F1 TDC header!");
+						}
+						break;
+					case 0x90000000: // JLab event header (handled in outer loop)
+					case 0x88000000: // JLab block trailer
+						done = true;
+						break;
+				}
+			}
+			
+			if(done)break;
 
-			DF1TDCHit *hit = new DF1TDCHit(rocid, slot, channel, ievent, trig_time, time);
-			objs->vDF1TDCHits.push_back(hit);
-		}
+			// Advance to next data word
+			iptr++;
 
-		// Add hits for this event to list of events
-		events.push_back(objs);
+		} // end loop over data words in this event
 
-		// Double check that event trailer has bit 23 clear
-		if( ((*iptr>>23) & 0x0001) != 0x0000){
-			throw JException("F1TDC Event trailer corrupt! (bit 23 is not set!)");
-		}
+		// Add hits for this event to list of events.
+		if(objs)events.push_back(objs);
+		
+		// If the current word is a JLab block trailer, then we are done
+		if( ((*iptr) & 0xF8000000) == 0x88000000) break;
 
-		// Advance iptr to word right after event trailer
-		iptr++;
+	} // end loop over events
 
-		// Check if we've read in all of the events in this block
-		if(++Nevents >= Nevents_block_header)break;
-	}
+	// Advance past JLab block trailer
+	iptr++;
 
 	// ROC marker word appears in test setup data file after last event trailer
-	if(*iptr == 0xda0000ff)iptr++;
+	if(iptr<iend && *iptr==0xda0000ff)iptr++;
+	
+	// Skip filler words
+	while(iptr<iend && *iptr==0xF8000000)iptr++;
 
 	// Double check that we found all of the events we were supposed to
-	if(Nevents != Nevents_block_header){
+	if(events.size() != Nevents_block_header){
 		stringstream ss;
-		ss << "F1TDC missing events in block! (found "<<Nevents<<" but should have found "<<Nevents_block_header<<")";
+		ss << "F1TDC missing events in block! (found "<< events.size() <<" but should have found "<<Nevents_block_header<<")";
 		throw JException(ss.str());
 	}
 

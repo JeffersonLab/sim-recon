@@ -20,6 +20,7 @@ using namespace jana;
 #include "Df250PulseTime.h"
 #include "Df250WindowRawData.h"
 #include "DF1TDCHit.h"
+#include "DF1TDCTriggerTime.h"
 
 
 class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
@@ -38,6 +39,7 @@ class JFactoryGenerator_DAQ: public jana::JFactoryGenerator{
 			loop->AddFactory(new JFactory<Df250PulseTime>());
 			loop->AddFactory(new JFactory<Df250WindowRawData>());
 			loop->AddFactory(new JFactory<DF1TDCHit>());
+			loop->AddFactory(new JFactory<DF1TDCTriggerTime>());
 			return NOERROR;
 		}
 

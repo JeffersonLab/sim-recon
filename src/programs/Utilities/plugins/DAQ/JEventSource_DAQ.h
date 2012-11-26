@@ -33,6 +33,7 @@ using namespace evio;
 #include "Df250PulseTime.h"
 #include "Df250WindowRawData.h"
 #include "DF1TDCHit.h"
+#include "DF1TDCTriggerTime.h"
 
 //-----------------------------------------------------------------------
 /// The JEventSource_DAQ class implements a JEventSource capable of reading in
@@ -150,6 +151,7 @@ class JEventSource_DAQ: public jana::JEventSource{
 			vector<Df250WindowRawData*>    vDf250WindowRawDatas;
 			vector<Df250WindowSum*>        vDf250WindowSums;
 			vector<DF1TDCHit*>             vDF1TDCHits;
+			vector<DF1TDCTriggerTime*>     vDF1TDCTriggerTimes;
 		};
 	
 		// EVIO events with more than one DAQ event ("blocked" or
