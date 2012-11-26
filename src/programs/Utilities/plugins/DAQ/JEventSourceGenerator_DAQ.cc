@@ -9,6 +9,7 @@
 using std::string;
 
 #include "JEventSourceGenerator_DAQ.h"
+#include "JEventSourceGenerator_ETEVIO.h"
 #include "JFactoryGenerator_DAQ.h"
 using namespace jana;
 
@@ -22,6 +23,7 @@ extern "C"{
 	void InitPlugin(JApplication *app){
 		InitJANAPlugin(app);
 		app->AddEventSourceGenerator(new JEventSourceGenerator_DAQ());
+		app->AddEventSourceGenerator(new JEventSourceGenerator_ETEVIO());
 		app->AddFactoryGenerator(new JFactoryGenerator_DAQ());
 	}
 } // "C"

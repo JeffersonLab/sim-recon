@@ -80,6 +80,7 @@ jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
 	// Get next event from queue
 	ObjList *objs_ptr = stored_events.front();
 	stored_events.pop();
+	objs_ptr->own_objects = true; // will be set to false in GetObjects()
 
 	event.SetJEventSource(this);
 	event.SetEventNumber(++Nevents_read);
@@ -95,7 +96,27 @@ jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
 void JEventSource_DAQ::FreeEvent(JEvent &event)
 {
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
-	if(objs_ptr)delete objs_ptr;
+	if(objs_ptr){
+		if(objs_ptr->own_objects){
+			// The own_objects flag will be true if GetObjects() is never
+			// called for the event. In this case, delete the objects here
+			// to prevent a memory leak.
+#define DeleteObjects(T) \
+			for(unsigned int i=0; i<objs_ptr->v ## T ## s.size(); i++) delete objs_ptr->v ## T ## s[i];
+			
+			DeleteObjects(Df250PulseIntegral);
+			DeleteObjects(Df250StreamingRawData);
+			DeleteObjects(Df250WindowSum);
+			DeleteObjects(Df250PulseRawData);
+			DeleteObjects(Df250TriggerTime);
+			DeleteObjects(Df250PulseTime);
+			DeleteObjects(Df250WindowRawData);
+			DeleteObjects(DF1TDCHit);
+			DeleteObjects(DF1TDCTriggerTime);
+		}
+	
+		delete objs_ptr;
+	}
 }
 
 //----------------
@@ -152,6 +173,8 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 	CopyToFactory(Df250WindowRawData);
 	CopyToFactory(DF1TDCHit);
 	CopyToFactory(DF1TDCTriggerTime);
+	
+	objs_ptr->own_objects = false;
 	
 	return err;
 }

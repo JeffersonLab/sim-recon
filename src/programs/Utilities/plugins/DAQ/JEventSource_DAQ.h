@@ -121,7 +121,7 @@ class JEventSource_DAQ: public jana::JEventSource{
 		void FreeEvent(jana::JEvent &event);
 		jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
 	
-	private:
+	protected:
 		
 		int32_t last_run_number;
 		
@@ -142,6 +142,7 @@ class JEventSource_DAQ: public jana::JEventSource{
 		public:
 			
 			int32_t run_number;
+			bool own_objects; // keeps track of whether these objects were copied to factories or not
 			
 			vector<Df250PulseIntegral*>    vDf250PulseIntegrals;
 			vector<Df250PulseRawData*>     vDf250PulseRawDatas;
