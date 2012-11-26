@@ -14,12 +14,6 @@
 #include <ANALYSIS/DKinFitParticle.h>
 #include <ANALYSIS/DParticleCombo.h>
 
-#include <TRACKING/DTrackTimeBased.h>
-#include <TOF/DTOFPoint.h>
-#include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALShower.h>
-#include <START_COUNTER/DSCHit.h>
-
 using namespace jana;
 using namespace std;
 

@@ -113,15 +113,10 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 	locNewNeutralParticleHypothesis->AddAssociatedObject(locNeutralParticleHypothesis);
 	locNewNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
-	vector<const DBCALShower*> locBCALShowers;
-	locNeutralParticleHypothesis->GetT(locBCALShowers);
-	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
-		locNewNeutralParticleHypothesis->AddAssociatedObject(locBCALShowers[loc_i]);
-
-	vector<const DFCALShower*> locFCALShowers;
-	locNeutralParticleHypothesis->GetT(locFCALShowers);
-	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
-		locNewNeutralParticleHypothesis->AddAssociatedObject(locFCALShowers[loc_i]);
+ 	vector<const JObject*> locObjects;
+	locNeutralParticleHypothesis->GetT(locObjects);
+	for(size_t loc_i = 0; loc_i < locObjects.size(); ++loc_i)
+		locNewNeutralParticleHypothesis->AddAssociatedObject(locObjects[loc_i]);
 
 	locNewNeutralParticleHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
 	locNewNeutralParticleHypothesis->setPosition(DVector3(locKinFitParticle->Get_CommonVertex().X(),locKinFitParticle->Get_CommonVertex().Y(),locKinFitParticle->Get_CommonVertex().Z()));

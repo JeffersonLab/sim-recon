@@ -112,30 +112,10 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory_KinFit::Build_ChargedTr
 	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrackHypothesis);
 	locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 
- 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
-	locChargedTrackHypothesis->GetT(locTrackTimeBasedVector);
-	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
-		locNewChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBasedVector[loc_i]);
-
-	vector<const DTOFPoint*> locTOFPoints;
-	locChargedTrackHypothesis->GetT(locTOFPoints);
-	for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
-		locNewChargedTrackHypothesis->AddAssociatedObject(locTOFPoints[loc_i]);
-
-	vector<const DBCALShower*> locBCALShowers;
-	locChargedTrackHypothesis->GetT(locBCALShowers);
-	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
-		locNewChargedTrackHypothesis->AddAssociatedObject(locBCALShowers[loc_i]);
-
-	vector<const DFCALShower*> locFCALShowers;
-	locChargedTrackHypothesis->GetT(locFCALShowers);
-	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
-		locNewChargedTrackHypothesis->AddAssociatedObject(locFCALShowers[loc_i]);
-
-	vector<const DSCHit*> locSCHits;
-	locChargedTrackHypothesis->GetT(locSCHits);
-	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
-	  locNewChargedTrackHypothesis->AddAssociatedObject(locSCHits[loc_i]);
+ 	vector<const JObject*> locObjects;
+	locChargedTrackHypothesis->GetT(locObjects);
+	for(size_t loc_i = 0; loc_i < locObjects.size(); ++loc_i)
+		locNewChargedTrackHypothesis->AddAssociatedObject(locObjects[loc_i]);
 
 	locNewChargedTrackHypothesis->setMomentum(DVector3(locKinFitParticle->Get_Momentum().X(),locKinFitParticle->Get_Momentum().Y(),locKinFitParticle->Get_Momentum().Z()));
 	locNewChargedTrackHypothesis->setPosition(DVector3(locKinFitParticle->Get_Position().X(),locKinFitParticle->Get_Position().Y(),locKinFitParticle->Get_Position().Z()));
