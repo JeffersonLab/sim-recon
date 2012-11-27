@@ -1,0 +1,23 @@
+
+README  DAQ plugin
+
+Nov. 27, 2012  David Lawrence
+
+This directory contains files for the DAQ plugin which is used
+to read in EVIO formatted data obtained from the Hall-D data
+acquisition system. The plugin will read in from either an ET
+system or an EVIO formatted file, parsing the input and creating
+low-level hit objects.
+
+At this time, the Hall-D DAQ system does not yet exist, but a 
+library, mc2coda, does that can convert Simulated data into
+the EVIO format we expect the DAQ system to deliver.
+
+The structure of the code has the bulk of the difficult work
+being done in the JEventSource_EVIO class. The JEventSource_FileEVIO
+and JEventSource_ETEVIO classes derive from this, but only
+to instantiate different subclasses of evioChannel. The ET system
+may require creation of a station. In addition there is talk
+of packaging multiple EVIO events into a single ET buffer which
+might require additional handling.
+

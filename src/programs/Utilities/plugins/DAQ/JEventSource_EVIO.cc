@@ -1,33 +1,48 @@
 // $Id$
 //
-//    File: JEventSource_DAQ.cc
+//    File: JEventSource_EVIO.cc
 // Created: Tue Aug  7 15:22:29 EDT 2012
 // Creator: davidl (on Darwin harriet.jlab.org 11.4.0 i386)
 //
 
-// See comments in JEventSource_DAQ.h for overview description
+// See comments in JEventSource_EVIO.h for overview description
 
+#include <string>
+using namespace std;
 
-#include "JEventSource_DAQ.h"
+#include "JEventSourceGenerator_FileEVIO.h"
+#include "JEventSourceGenerator_ETEVIO.h"
+#include "JFactoryGenerator_DAQ.h"
+#include "JEventSource_EVIO.h"
 using namespace jana;
+
+// Make us a plugin
+#include <JANA/JApplication.h>
+extern "C"{
+	void InitPlugin(JApplication *app){
+		InitJANAPlugin(app);
+		app->AddEventSourceGenerator(new JEventSourceGenerator_FileEVIO());
+		app->AddEventSourceGenerator(new JEventSourceGenerator_ETEVIO());
+		app->AddFactoryGenerator(new JFactoryGenerator_DAQ());
+	}
+} // "C"
 
 
 //----------------
 // Constructor
 //----------------
-JEventSource_DAQ::JEventSource_DAQ(const char* source_name):JEventSource(source_name)
+JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(source_name)
 {
-	// open event source (e.g. file) here
-	chan = new evioFileChannel(source_name);
-	if(chan)chan->open();
+	// Initialize EVIO channel pointer to NULL (subclass will instantiate and open)
+	chan = NULL;
 	
 	// Get configuration parameters
 	AUTODETECT_MODULE_TYPES = true;
 	DUMP_MODULE_MAP = false;
 	
 	if(gPARMS){
-		gPARMS->SetDefaultParameter("DAQ:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
-		gPARMS->SetDefaultParameter("DAQ:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
+		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
+		gPARMS->SetDefaultParameter("EVIO:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
 	}
 	
 	last_run_number = 0;
@@ -36,7 +51,7 @@ JEventSource_DAQ::JEventSource_DAQ(const char* source_name):JEventSource(source_
 //----------------
 // Destructor
 //----------------
-JEventSource_DAQ::~JEventSource_DAQ()
+JEventSource_EVIO::~JEventSource_EVIO()
 {
 	// close event source here
 	if(chan){
@@ -51,15 +66,15 @@ JEventSource_DAQ::~JEventSource_DAQ()
 //----------------
 // GetEvent
 //----------------
-jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
+jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 {
 	// If we couldn't even open the source, then there's nothing to do
-	if(chan==NULL)return NO_MORE_EVENTS_IN_SOURCE;
+	if(chan==NULL)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
 	
 	// If no events are currently stored in the buffer, then
 	// read in another event block.
 	if(stored_events.empty()){
-		if(!chan->read())return NO_MORE_EVENTS_IN_SOURCE;
+		jerror_t err = ReadEVIOEvent();
 	
 		evioDOMTree *evt = new evioDOMTree(chan);
 		if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
@@ -93,7 +108,7 @@ jerror_t JEventSource_DAQ::GetEvent(JEvent &event)
 //----------------
 // FreeEvent
 //----------------
-void JEventSource_DAQ::FreeEvent(JEvent &event)
+void JEventSource_EVIO::FreeEvent(JEvent &event)
 {
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(objs_ptr){
@@ -122,7 +137,7 @@ void JEventSource_DAQ::FreeEvent(JEvent &event)
 //----------------
 // GetObjects
 //----------------
-jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
+jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 {
 	// This will get called when the first object of the event is
 	// requested (regardless of the type of object). Instead of
@@ -182,7 +197,7 @@ jerror_t JEventSource_DAQ::GetObjects(JEvent &event, JFactory_base *factory)
 //----------------
 // GetRunNumber
 //----------------
-int32_t JEventSource_DAQ::GetRunNumber(evioDOMTree *evt)
+int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 {
 	// Look through event to try and extract the run number.
 	// For now, it just looks for tag==0x11 and num=0xCC which
@@ -213,7 +228,7 @@ int32_t JEventSource_DAQ::GetRunNumber(evioDOMTree *evt)
 //----------------
 // GuessModuleType
 //----------------
-MODULE_TYPE JEventSource_DAQ::GuessModuleType(const uint32_t* istart, const uint32_t* iend, evioDOMNodeP bankPtr)
+MODULE_TYPE JEventSource_EVIO::GuessModuleType(const uint32_t* istart, const uint32_t* iend, evioDOMNodeP bankPtr)
 {
 	/// Try parsing through the information in the given data buffer
 	/// to determine which type of module produced the data.
@@ -232,7 +247,7 @@ MODULE_TYPE JEventSource_DAQ::GuessModuleType(const uint32_t* istart, const uint
 //----------------
 // IsFADC250
 //----------------
-bool JEventSource_DAQ::IsFADC250(const uint32_t *istart, const uint32_t *iend)
+bool JEventSource_EVIO::IsFADC250(const uint32_t *istart, const uint32_t *iend)
 {
 	//---- Check for f250
 	// This will check if the first word appears to be a block header.
@@ -270,7 +285,7 @@ bool JEventSource_DAQ::IsFADC250(const uint32_t *istart, const uint32_t *iend)
 //----------------
 // IsF125ADC
 //----------------
-bool JEventSource_DAQ::IsF125ADC(const uint32_t *istart, const uint32_t *iend)
+bool JEventSource_EVIO::IsF125ADC(const uint32_t *istart, const uint32_t *iend)
 {
 	return false;
 }
@@ -278,7 +293,7 @@ bool JEventSource_DAQ::IsF125ADC(const uint32_t *istart, const uint32_t *iend)
 //----------------
 // IsF1TDC
 //----------------
-bool JEventSource_DAQ::IsF1TDC(const uint32_t *istart, const uint32_t *iend)
+bool JEventSource_EVIO::IsF1TDC(const uint32_t *istart, const uint32_t *iend)
 {
 	//---- Check for F1TDC
 	// This will check for consistency in the slot numbers for all words
@@ -346,7 +361,7 @@ bool JEventSource_DAQ::IsF1TDC(const uint32_t *istart, const uint32_t *iend)
 //----------------
 // IsTS
 //----------------
-bool JEventSource_DAQ::IsTS(const uint32_t *istart, const uint32_t *iend)
+bool JEventSource_EVIO::IsTS(const uint32_t *istart, const uint32_t *iend)
 {
 	return false;
 }
@@ -354,7 +369,7 @@ bool JEventSource_DAQ::IsTS(const uint32_t *istart, const uint32_t *iend)
 //----------------
 // IsTI
 //----------------
-bool JEventSource_DAQ::IsTI(const uint32_t *istart, const uint32_t *iend)
+bool JEventSource_EVIO::IsTI(const uint32_t *istart, const uint32_t *iend)
 {
 	return false;
 }
@@ -362,7 +377,7 @@ bool JEventSource_DAQ::IsTI(const uint32_t *istart, const uint32_t *iend)
 //----------------
 // DumpModuleMap
 //----------------
-void JEventSource_DAQ::DumpModuleMap(void)
+void JEventSource_EVIO::DumpModuleMap(void)
 {
 	// Open output file
 	string fname = "module_map.txt";
@@ -415,7 +430,7 @@ void JEventSource_DAQ::DumpModuleMap(void)
 //----------------
 // MergeObjLists
 //----------------
-void JEventSource_DAQ::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2)
+void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2)
 {
 	/// Merge the events referenced in events2 into the events1 list.
 	///
@@ -441,7 +456,7 @@ void JEventSource_DAQ::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &ev
 	unsigned int Nevents2 = events2.size();
 	if(Nevents1>0 && Nevents2>0){
 		if(Nevents1 != Nevents2){
-			throw JException("Number of events in JEventSource_DAQ::MergeObjLists do not match!");
+			throw JException("Number of events in JEventSource_EVIO::MergeObjLists do not match!");
 		}
 	}
 	
@@ -487,7 +502,7 @@ void JEventSource_DAQ::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &ev
 //----------------
 // ParseEVIOEvent
 //----------------
-void JEventSource_DAQ::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
+void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 {
 	if(!evt)throw RESOURCE_UNAVAILABLE;
 	// Since each bank contains parts of many events, have them fill in
@@ -571,7 +586,7 @@ void JEventSource_DAQ::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 //----------------
 // ParseJLabModuleData
 //----------------
-void JEventSource_DAQ::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
 	/// Parse a bank of data coming from one or more JLab modules.
 	/// The data are assumed to follow the standard JLab format for
@@ -637,7 +652,7 @@ void JEventSource_DAQ::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr,
 //----------------
 // Parsef250Bank
 //----------------
-void JEventSource_DAQ::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
 	/// Parse data from a single FADC250 module.
 
@@ -769,7 +784,7 @@ void JEventSource_DAQ::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const
 //----------------
 // MakeDf250WindowRawData
 //----------------
-void JEventSource_DAQ::MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
+void JEventSource_EVIO::MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
 {
 	uint32_t channel = (*iptr>>23) & 0x0F;
 	uint32_t window_width = (*iptr>>0) & 0x0FFF;
@@ -819,7 +834,7 @@ void JEventSource_DAQ::MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uin
 //----------------
 // MakeDf250PulseRawData
 //----------------
-void JEventSource_DAQ::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
+void JEventSource_EVIO::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
 {
 	uint32_t channel = (*iptr>>23) & 0x0F;
 	uint32_t pulse_number = (*iptr>>21) & 0x000F;
@@ -874,7 +889,7 @@ void JEventSource_DAQ::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint
 //----------------
 // Parsef125Bank
 //----------------
-void JEventSource_DAQ::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
+void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	// TEMPORARY!!!
 	Parsef250Bank(rocid, iptr, iend, events);
@@ -883,7 +898,7 @@ void JEventSource_DAQ::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const
 //----------------
 // ParseF1TDCBank
 //----------------
-void JEventSource_DAQ::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
+void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	/// Parse data from a single F1TDC module.
 
@@ -1141,7 +1156,7 @@ void JEventSource_DAQ::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, cons
 //----------------
 // ParseTSBank
 //----------------
-void JEventSource_DAQ::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
+void JEventSource_EVIO::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	
 }
@@ -1149,7 +1164,7 @@ void JEventSource_DAQ::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const u
 //----------------
 // ParseTIBank
 //----------------
-void JEventSource_DAQ::ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
+void JEventSource_EVIO::ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	
 }

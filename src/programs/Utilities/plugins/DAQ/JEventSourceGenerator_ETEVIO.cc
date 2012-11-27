@@ -1,46 +1,33 @@
 // $Id$
 //
-//    File: JEventSourceGenerator_DAQ.cc
-// Created: Tue Aug  7 15:22:29 EDT 2012
+//    File: JEventSourceGenerator_ETEVIO.cc
+// Created: Mon Nov 26 11:01:01 EST 2012
 // Creator: davidl (on Darwin harriet.jlab.org 11.4.0 i386)
 //
 
 #include <string>
 using std::string;
 
-#include "JEventSourceGenerator_DAQ.h"
 #include "JEventSourceGenerator_ETEVIO.h"
-#include "JFactoryGenerator_DAQ.h"
 using namespace jana;
 
 #include <evioFileChannel.hxx>
 #include <evioUtil.hxx>
 using namespace evio;
 
-// Routine used to create our JEventProcessor
-#include <JANA/JApplication.h>
-extern "C"{
-	void InitPlugin(JApplication *app){
-		InitJANAPlugin(app);
-		app->AddEventSourceGenerator(new JEventSourceGenerator_DAQ());
-		app->AddEventSourceGenerator(new JEventSourceGenerator_ETEVIO());
-		app->AddFactoryGenerator(new JFactoryGenerator_DAQ());
-	}
-} // "C"
-
 
 //---------------------------------
 // Description
 //---------------------------------
-const char* JEventSourceGenerator_DAQ::Description(void)
+const char* JEventSourceGenerator_ETEVIO::Description(void)
 {
-	return "DAQ";
+	return "ETEVIO - Reads EVIO from ET systems";
 }
 
 //---------------------------------
 // CheckOpenable
 //---------------------------------
-double JEventSourceGenerator_DAQ::CheckOpenable(string source)
+double JEventSourceGenerator_ETEVIO::CheckOpenable(string source)
 {
 	// This should return a value between 0 and 1 inclusive
 	// with 1 indicating it definitely can read events from
@@ -59,7 +46,7 @@ double JEventSourceGenerator_DAQ::CheckOpenable(string source)
 		// close file
 		chan.close();
 		
-		return 0.5;
+		return 0.1;
 		
 	} catch (evioException *e) {
 		
@@ -71,8 +58,8 @@ double JEventSourceGenerator_DAQ::CheckOpenable(string source)
 //---------------------------------
 // MakeJEventSource
 //---------------------------------
-JEventSource* JEventSourceGenerator_DAQ::MakeJEventSource(string source)
+JEventSource* JEventSourceGenerator_ETEVIO::MakeJEventSource(string source)
 {
-	return new JEventSource_DAQ(source.c_str());
+	return new JEventSource_ETEVIO(source.c_str());
 }
 
