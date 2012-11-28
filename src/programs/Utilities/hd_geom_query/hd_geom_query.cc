@@ -396,7 +396,7 @@ void Usage(void)
 	cout<<"Print the material properties for the specified point in lab"<<endl;
 	cout<<" coordinates. Units of X,Y, and Z are cm."<<endl;
 	cout<<endl;
-	cout<<"By default, this uses the geometry built into the file libHDGEOMETRY.a"<<endl;
+	cout<<"By default, this uses the geometry in $HDDS/src/hddsroot.h"<<endl;
 	cout<<"that was used to link this executable. The -xml switch may be used"<<endl;
 	cout<<"to dynamically compile and link code generated from the XML at run"<<endl;
 	cout<<"time. If an equals sign \"=\" follows the -xml switch then the"<<endl;
