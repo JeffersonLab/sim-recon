@@ -66,6 +66,10 @@ int main(int narg, char *argv[])
 	}else{
 		DRGeom = hddsroot();
 	}
+	if(!DRGeom){
+		cerr<<"Can't get TGeoManager object!"<<endl;
+		return -2;
+	}
 
 	TGeoNode *cnode = DRGeom->FindNode(X_LAB, Y_LAB, Z_LAB);
 	if(!cnode){
@@ -222,7 +226,7 @@ void MakeSharedObjectFromXML(void)
 	// Compile C++ into shared object
 	cout<<endl;
 	cout << "Compiling C++ into shared object ..." << endl;
-	cmd = "c++ -shared -fPIC -o tmp_hddsroot.so -I$ROOTSYS/include tmp_hddsroot.cc";
+	cmd = "c++ -shared -fPIC -o tmp_hddsroot.so `root-config --cflags --libs` -lGeom tmp_hddsroot.cc";
 	cout << cmd << endl;
 	system(cmd.c_str());
 	
@@ -392,11 +396,20 @@ void Usage(void)
 	cout<<"Print the material properties for the specified point in lab"<<endl;
 	cout<<" coordinates. Units of X,Y, and Z are cm."<<endl;
 	cout<<endl;
-	cout<<"This uses the geometry built into the file libHDGEOMETRY.a that"<<endl;
-	cout<<"was used to link this executable. (It does NOT dynamically read"<<endl;
-	cout<<"the XML when you run this!). To use this to check a modified "<<endl;
-	cout<<"geometry, run \"make\" in the HDDS home directory, then run \"make\""<<endl;
-	cout<<"in the src/program/Utilities/hd_geom_query directory."<<endl;
+	cout<<"By default, this uses the geometry built into the file libHDGEOMETRY.a"<<endl;
+	cout<<"that was used to link this executable. The -xml switch may be used"<<endl;
+	cout<<"to dynamically compile and link code generated from the XML at run"<<endl;
+	cout<<"time. If an equals sign \"=\" follows the -xml switch then the"<<endl;
+	cout<<"main_HDDS.xml file is taken from the remainder of that argument."<<endl;
+	cout<<endl;
+	cout<<"If the -xml switch is specified, then a file named \"tmp_hddsroot.so\""<<endl;
+	cout<<"is searched for in the current directory. If found, it is opened and"<<endl;
+	cout<<"the geometry checksum is read from it and compared to that of the XML"<<endl;
+	cout<<"specified (which may be the default of $HDDS_HOME/main_HDDS.xml)."<<endl;
+	cout<<"If the two match, then that shared object is used, bypassing the"<<endl;
+	cout<<"(expensive) compilation phase. If the file is not present, is unreadable,"<<endl;
+	cout<<"or the checksums don't match, then the shared object is automatically"<<endl;
+	cout<<"(re)generated."<<endl;
 	cout<<endl;
 	cout<<" options:"<<endl;
 	cout<<"    -h or --help          Print this usage statement"<<endl;
