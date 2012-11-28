@@ -148,11 +148,9 @@ bool DMCThrownMatching_factory::Check_IsValidMCComparisonPID(const vector<const 
 		{
 			if(locAllMCThrowns[loc_i]->myid != locParentID)
 				continue;
-			locParentPID = (Particle_t)locAllMCThrowns[loc_i]->type;
+			locParentPID = (Particle_t)locAllMCThrowns[loc_i]->type; //ok if this is unknown (e.g. some weird bggen intermediate state)
 			break;
 		}
-		if(locParentPID == Unknown)
-			return false; //parent not listed or totally unknown
 	}
 
 	bool locValidCompareTypeFlag = false;
