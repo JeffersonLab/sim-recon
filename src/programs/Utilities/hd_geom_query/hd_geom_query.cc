@@ -191,10 +191,10 @@ void init_runtime_xml(void)
 //------------------
 void MakeSharedObjectFromXML(void)
 {
-	cout<<"Please make sure the following environment variables are set:" <<endl;
+	cout<<"Please make sure root-config is in your PATH and that"<<endl;
+	cout<<"the following environment variables are set:" <<endl;
 	cout<<"   HDDS_HOME  "<< endl;
 	cout<<"   BMS_OSNAME "<< endl;
-	cout<<"   ROOTSYS    "<< endl;
 	
 	// Open temporary file and add some includes so it will compile
 	ofstream ofs("tmp_hddsroot.cc");
