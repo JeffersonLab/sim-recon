@@ -55,7 +55,7 @@ void close_hddm_output_(void)
 /*-----------------
 // write_hddm_event_
 //-----------------*/
-void write_hddm_event_(int *iev, int *iproc,
+void write_hddm_event_(int *runno, int *iev, int *iproc,
                        keve_t *kin,  peve_t *pin,   
             int *ntra, keve_t *keve, peve_t *peve)
 {
@@ -63,7 +63,7 @@ void write_hddm_event_(int *iev, int *iproc,
 	int i;
 	static int Nevents = 0;
 	static int Nevents_written = 0;
-	int runNumber=2;
+	int runNumber = *runno;
 	float vertex[3]={0.0, 0.0, 0.0}; 
 
 	Nevents++;
