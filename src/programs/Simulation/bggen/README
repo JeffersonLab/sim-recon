@@ -41,6 +41,9 @@ C ===    INPUT file for BGGEN
 C
 TRIG     395000         number of events to simulate
 C                       We expect 395kHz of hadronic rate at high luminosity
+C
+RUNNO    9000           run number of generated events, default is 2
+C
 C -- writing out events
 C        HDDM  simple  ntuple
 WROUT      1      1     1   

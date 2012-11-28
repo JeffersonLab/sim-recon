@@ -25,6 +25,7 @@ C
       CALL HBOOK_INI
 C
       NEVENT=0
+      RUNNO=2
       IWROUT(1)=1
       IWROUT(2)=0
       IWROUT(3)=0
@@ -51,6 +52,7 @@ C
       CALL FFSET('LENG',120)
 C
       CALL FFKEY('TRIG'      , NEVENT     , 1,'INTEGER')
+      CALL FFKEY('RUNNO'     , RUNNO      , 1,'INTEGER')
       CALL FFKEY('WROUT'     , IWROUT(1)  , 3,'INTEGER')
       CALL FFKEY('RNDMSEQ'   , IRND_SEQ   , 1,'INTEGER')
       CALL FFKEY('NPRIEV'    , NPRIEV     , 1,'INTEGER')

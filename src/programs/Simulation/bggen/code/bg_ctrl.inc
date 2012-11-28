@@ -5,7 +5,7 @@ C
       INTEGER    MXPGEANT,MXPKC
       PARAMETER (MXPGEANT=100,MXPKC=1000)
 C
-      COMMON/PHCTRL/ NEVENT,EPH_LIM(2),EELEC,EPEAK,ZCOLL,EPYMIN,ELOWMIN
+      COMMON/PHCTRL/ NEVENT,RUNNO,EPH_LIM(2),EELEC,EPEAK,ZCOLL,EPYMIN,ELOWMIN
      +              ,IWROUT(3),LUNWR(3),IRND_SEQ,NPRIEV
      +              ,IDBEAM,NHBEA
      +              ,IFPYTH
@@ -14,6 +14,7 @@ C
      +              ,KCGEAN(-MXPKC:MXPKC)
      +              ,RATESEC
       INTEGER   NEVENT    ! number of events to simulate (F)
+     +         ,RUNNO     ! run number to use
      +         ,IWROUT    ! (1)>0 - write out the HDDS file (events) (F)
 C                           (2)>0 - write out a sequential file
 C                           (3)>0 - write out an ntuple file
