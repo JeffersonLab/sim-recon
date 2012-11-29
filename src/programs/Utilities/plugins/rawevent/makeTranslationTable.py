@@ -16,6 +16,7 @@
 #       12 is switch slot
 #       21 is TID
 #    for Hall D max of 16 payload slots per VXS crate, 8 on each side of switch slots, slot 10 unused
+#    channel number starts with 0 in table
 
 
 #  still to do:
@@ -38,7 +39,7 @@ detectorOn = {
     'FDC':     1,
     'BCAL':    1,
     'FCAL':    1,
-    'SC':      1,
+    'ST':      1,
     'TOF':     1,
     'TAGGER':  1,
     'PSPEC':   0,
@@ -161,31 +162,31 @@ if (detectorOn['CDC']>0):
     for ring in range(len(cdcStrawCount)):
         for straw in range(1,cdcStrawCount[ring]+1):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-            file.write('      <channel number="%i" detector="CDC" ring="%i" straw="%i" />\n' % (channel,ring+1,straw) )
+            file.write('      <channel number="%i" detector="CDC" ring="%i" straw="%i" />\n' % (channel-1,ring+1,straw) )
     closeCrate(daqModule)
 
 
 
-# SC:  FADC250, 16 channels/slot
-if (detectorOn['SC']>0):
+# ST:  FADC250, 16 channels/slot
+if (detectorOn['ST']>0):
     type = 'FADC250'
     (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
     startSlot(daqModule,type)
     for sector in range(1,41):
         (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-        file.write('      <channel number="%i" detector="SC" sector="%i"  />\n' % (channel,sector) )
+        file.write('      <channel number="%i" detector="ST" sector="%i"  />\n' % (channel-1,sector) )
     closeCrate(daqModule)
 
             
 
-# SC: F1TDC, 32 channels/slot
-if (detectorOn['SC']>0):
+# ST: F1TDC, 32 channels/slot
+if (detectorOn['ST']>0):
     type = 'F1TDC32'
     (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
     startSlot(daqModule,type)
     for sector in range(1,41):
         (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-        file.write('      <channel number="%i" detector="SC" sector="%i"  />\n' % (channel,sector) )
+        file.write('      <channel number="%i" detector="ST" sector="%i"  />\n' % (channel-1,sector) )
     closeCrate(daqModule)
             
 
@@ -198,7 +199,7 @@ if (detectorOn['FCAL']>0):
     for row in range(59):
         for column in range(59):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-            file.write('      <channel number="%i" detector="FCAL" row="%i" column="%i" />\n' % (channel,row,column) )
+            file.write('      <channel number="%i" detector="FCAL" row="%i" column="%i" />\n' % (channel-1,row,column) )
     closeCrate(daqModule)
             
 
@@ -214,7 +215,7 @@ if (detectorOn['BCAL']>0):
                 for layer in range(1,11):
                     (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                     file.write('      <channel number="%i" detector="BCAL" module="%i" sector="%i" layer="%i" end="%i" />\n'
-                               % (channel,module,sector,layer,end) )
+                               % (channel-1,module,sector,layer,end) )
     closeCrate(daqModule)
 
 
@@ -231,7 +232,7 @@ if (detectorOn['BCAL']>0):
                 for layer in range(1,11):
                     (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                     file.write('      <channel number="%i" detector="BCAL" module="%i" sector="%i" layer="%i" end="%i" />\n'
-                               % (channel,module,sector,layer,end) )
+                               % (channel-1,module,sector,layer,end) )
     closeCrate(daqModule)
 
 
@@ -250,7 +251,7 @@ if (detectorOn['FDC']>0):
                     (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                     gplane = package*18 + triplet*3 + plane
                     file.write('      <channel number="%i" detector="FDCCathode" gPlane ="%i" element="%i" />\n'
-                               % (channel,gplane,element) )
+                               % (channel-1,gplane,element) )
     closeCrate(daqModule)
 
 
@@ -268,7 +269,7 @@ if (detectorOn['FDC']>0):
                 (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                 gplane = package*18 + triplet*3 + 2
                 file.write('      <channel number="%i" detector="FDCAnode" gPlane="%i" element="%i" />\n'
-                           % (channel,gplane,element) )
+                           % (channel-1,gplane,element) )
     closeCrate(daqModule)
             
 
@@ -284,7 +285,7 @@ if (detectorOn['TOF']>0):
             for bar in range(45):
                 (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                 file.write('      <channel number="%i" detector="TOF" plane="%i" bar="%i" end="%i" />\n'
-                           % (channel,plane,bar,end) )
+                           % (channel-1,plane,bar,end) )
     closeCrate(daqModule)
             
 
@@ -300,7 +301,7 @@ if (detectorOn['TOF']>0):
             for bar in range(45):
                 (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
                 file.write('      <channel number="%i" detector="TOF" plane="%i" bar="%i" end="%i" />\n'
-                           % (channel,plane,bar,end) )
+                           % (channel-1,plane,bar,end) )
     closeCrate(daqModule)
             
 
@@ -310,10 +311,11 @@ if (detectorOn['TAGGER']>0):
     type = 'FADC250'
     (crate,daqModule,channel) = startCrate(crate,daqModule,channel)
     startSlot(daqModule,type)
-    for row in range(9):
+###    for row in range(9):
+    for row in range(1):
         for column in range(128):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-            file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel,row,column) )
+            file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel-1,row,column) )
     closeCrate(daqModule)
             
 
@@ -327,7 +329,7 @@ if (detectorOn['TAGGER']>0):
 ###    for row in range(1):
         for column in range(128):
             (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-            file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel,row,column) )
+            file.write('      <channel number="%i" detector="TAGGER" row="%i" column="%i" />\n' % (channel-1,row,column) )
     closeCrate(daqModule)
             
 
@@ -339,7 +341,7 @@ if (detectorOn['PSPEC']>0):
     startSlot(daqModule,type)
     for counter in range(128):
         (channel,daqModule,crate) = incrChannel(channel,daqModule,crate,type)
-        file.write('      <channel number="%i" detector="PSPEC" counter="%i" />\n' % (channel,counter) )
+        file.write('      <channel number="%i" detector="PSPEC" counter="%i" />\n' % (channel-1,counter) )
     closeCrate(daqModule)
             
 

@@ -18,6 +18,16 @@
 //  Reads translation table in via -PRAWEVENT:TRANSLATION=fileName.xml
 //    default is fakeTranslationTable.xml
 //
+//  mc2coda expects time in natural units of the readout module: 
+//       25 ps/count for CAENTDC
+//       60 ps/count for F1TDC32
+//      120 ps/count for F1TDC48
+//        4 ns/count for FADC250
+//        8 ns/count for FADC125
+//
+//  trig time minimum is 8 us or 2000 counts using 4 ns/count
+//
+//
 //
 //  to compile/link:
 //    source some-halld-build
@@ -27,23 +37,48 @@
 //
 // To run:
 //
-//     $ hd_ana -PPLUGINS=rawevent -PEVENTS_TO_KEEP=1 -EVENTS_TO_SKIP=0 /local/scratch/culled.hddm
+//     $ hd_ana -PPLUGINS=rawevent -PEVENTS_TO_KEEP=1 -EVENTS_TO_SKIP=0 /local/scratch/filtered.hddm
 //
 //
 // still to do:
-//    too many hits in one channel
+//    remove ROOT
+//    negative times ok
+//    energy, charge units?  bombproof values for mc2coda
+//    bombproofing should be done in mcsmear
+//    too many hits in one channel?  hit merging?
 //    pair spectrometer, others
 //
 //
-//  ejw, 15-Oct-2012
+//  ejw, 5-Nov-2012
 
 
 
 #include "rawevent/JEventProcessor_rawevent.h"
 
+
+// root histograms...probably not thread-safe
+static TH1F *tofEnergies;
+static TH1F *fcalEnergies;
+static TH1F *bcalEnergies;
+static TH1F *stEnergies;
+static TH1F *tagEnergies;
+
+static TH1F *fdcCharges;
+static TH1F *cdcCharges;
+
+static TH1F *tofTimes;
+static TH1F *fdcTimes;
+static TH1F *cdcTimes;
+static TH1F *fcalTimes;
+static TH1F *bcalTimes;
+static TH1F *stTimes;
+static TH1F *tagTimes;
+
+
+//  is this thread-safe?
 extern "C" {
 #include "mc2coda.h"
-#include "hitList.h"
+  //#include "hitList.h"
 }
 
 
@@ -51,6 +86,7 @@ extern "C" {
 #include<iomanip>
 #include<algorithm>
 #include <expat.h>
+
 
 #include <boost/lexical_cast.hpp>
 using namespace boost;
@@ -103,8 +139,21 @@ static int detID[MAXCRATE][MAXSLOT];
 
 
 // misc
-static int tOffset   = 100;  // in nanoseconds
+static uint64_t trigTime     = 32000000;  // in picoseconds
+static float tMin            = -100000.;  // minimum hit time in picoseconds
+
+static int trigtick          = 4000;    // in picoseconds
+static int CAENTDCtick       = 25;      // in picoseconds
+static int F1TDC32tick       = 60;      // in picoseconds
+static int F1TDC48tick       = 120;     // in picoseconds
+static int FADC250tick       = 4000;    // in picoseconds
+static int FADC125tick       = 8000;    // in picoseconds
+
+
+// debug
 static int dumphits  = 0;
+static int nomc2coda = 0;
+static int noroot    = 0;
 
 
 
@@ -132,35 +181,45 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
   // get translation table file name from command line 
   gPARMS->SetDefaultParameter("RAWEVENT:TRANSLATION",translationTableName);
 
-  // set time offset in nanoseconds
-  gPARMS->SetDefaultParameter("RAWEVENT:TOFFSET",tOffset);
+  // trigger time picoseconds
+  gPARMS->SetDefaultParameter("RAWEVENT:TRIGTIME",trigTime);
+
+  // minimum time in picoseconds
+  gPARMS->SetDefaultParameter("RAWEVENT:TMIN",tMin);
+
+  // option to turn off mc2coda output
+  gPARMS->SetDefaultParameter("RAWEVENT:NOMC2CODA",nomc2coda);
+
+  // option to turn off root
+  gPARMS->SetDefaultParameter("RAWEVENT:NOROOT",noroot);
 
   // option to dump hits
   gPARMS->SetDefaultParameter("RAWEVENT:DUMPHITS",dumphits);
 
+
   // read translation table, fill crate id arrays
   readTranslationTable();
 
+
   // initialize mc2coda package
-  expID=mc2codaInitExp(nCrate,expName.c_str());
-  if(expID==NULL) {
-    jerr << "?NULL return from mc2codaInitExp()" << endl;
-    exit(EXIT_FAILURE);
+  if(nomc2coda==0) {
+    expID=mc2codaInitExp(nCrate,expName.c_str());
+    if(expID==NULL) {
+      jerr << "?NULL return from mc2codaInitExp()" << endl;
+      exit(EXIT_FAILURE);
+    }
   }
+
 
   // feed crate-specific info to mc2coda package, note that VMECPU and TID not included in module count
   int stat;
-  for(int i=0; i<nCrate; i++) {
-    // jout << " doing crate " << crateID[i] << endl;
-    // jout << " readout modules " << nModules[i]-2 << endl;
-    // for(int j=0; j<21; j++) {
-    //   jout << "  slot " << j+1 << " module,detID: " << modules[i][j] << ", " << detID[i][j] << endl;
-    // }
-
-    stat = mc2codaSetCrate(expID,crateID[i],nModules[i]-2,modules[i],detID[i]);
-    if(stat==-1) {
-      jerr << "?JEventProcessor_rawevent...error return from mc2codaSetCrate()" << endl << endl;
-      exit(EXIT_FAILURE);
+  if(nomc2coda==0) {
+    for(int i=0; i<nCrate; i++) {
+      stat = mc2codaSetCrate(expID,crateID[i],nModules[i]-2,modules[i],detID[i]);
+      if(stat==-1) {
+        jerr << "?JEventProcessor_rawevent...error return from mc2codaSetCrate()" << endl << endl;
+        exit(EXIT_FAILURE);
+      }
     }
   }
 
@@ -172,7 +231,9 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
 // ~JEventProcessor_rawevent (Destructor) once only
 JEventProcessor_rawevent::~JEventProcessor_rawevent() {
-  mc2codaFree(expID);
+  if(nomc2coda==0) {
+    mc2codaFree(expID);
+  }
 }
 
 
@@ -181,6 +242,27 @@ JEventProcessor_rawevent::~JEventProcessor_rawevent() {
 
 // init called once-only at beginning, independent of the number of processing threads
 jerror_t JEventProcessor_rawevent::init(void) {
+
+  // root histograms
+  if(noroot==0) {
+    tofEnergies  = new TH1F("tofe",  "TOF energies in keV",1000,0.,5000.);
+    stEnergies   = new TH1F("ste",   "ST energies in keV",1000,0.,5000.);
+    fcalEnergies = new TH1F("fcale", "FCAL energies in keV",1000,0.,500000.);
+    bcalEnergies = new TH1F("bcale", "BCAL energies in keV",1000,0.,1000000.);
+    tagEnergies  = new TH1F("tage",  "Tagger energies in keV",1000,0.,40000.);
+
+    fdcCharges   = new TH1F("fdcq",  "FDC charges in fC",1000,0.,1500.);
+    cdcCharges   = new TH1F("cdcq",  "CDC charges in fC",1000,0.,25000.);
+
+    tofTimes     = new TH1F("toft","  TOF times in nsec",1000,0.,500.-tMin/1000);
+    stTimes      = new TH1F("stt",   "ST times in nsec",1000,0.,250.-tMin/1000);
+    fdcTimes     = new TH1F("fdct",  "FDC times in nsec",1000,0.,2000.-tMin/1000);
+    cdcTimes     = new TH1F("cdct",  "CDC times in nsec",1000,0.,1000.-tMin/1000);
+    bcalTimes    = new TH1F("bcalt", "BCAL times in nsec",1000,0.,200.-tMin/1000);
+    fcalTimes    = new TH1F("fcalt", "FCAL times in nsec",1000,0.,200.-tMin/1000);
+    tagTimes     = new TH1F("tagt",  "Tagger times in nsec",1000,0.,250.-tMin/1000);
+  }
+
   return NOERROR;
 }
 
@@ -225,7 +307,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //----------------------------------------------------------------------------
 
 
-  bool compareDTOFRawHits(const DTOFRawHit* h1, const DTOFRawHit* h2) {
+  static bool compareDTOFRawHits(const DTOFRawHit* h1, const DTOFRawHit* h2) {
     if(h1->plane!=h2->plane) {
       return(h1->plane<h2->plane);
     } else if(h1->bar!=h2->bar) {
@@ -237,7 +319,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
-  bool compareDFCALHits(const DFCALHit* h1, const DFCALHit* h2) {
+  static bool compareDFCALHits(const DFCALHit* h1, const DFCALHit* h2) {
     if(h1->row!=h2->row) {
       return(h1->row<h2->row);
     } else if(h1->column!=h2->column) {
@@ -247,7 +329,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
-  bool compareDBCALHits(const DBCALHit* h1, const DBCALHit* h2) {
+  static bool compareDBCALHits(const DBCALHit* h1, const DBCALHit* h2) {
     if(h1->module!=h2->module) {
       return(h1->module<h2->module);
     } else if(h1->sector!=h2->sector) {
@@ -261,7 +343,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
-  bool compareDFDCHits(const DFDCHit* h1, const DFDCHit* h2) {
+  static bool compareDFDCHits(const DFDCHit* h1, const DFDCHit* h2) {
     if(h1->gPlane!=h2->gPlane) {
       return(h1->gPlane<h2->gPlane);
     } else if(h1->element!=h2->element) {
@@ -271,7 +353,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
-  bool compareDCDCHits(const DCDCHit* h1, const DCDCHit* h2) {
+  static bool compareDCDCHits(const DCDCHit* h1, const DCDCHit* h2) {
     if(h1->ring!=h2->ring) {
       return(h1->ring<h2->ring);
     } else if(h1->straw!=h2->straw) {
@@ -281,7 +363,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
-  bool compareDSCHits(const DSCHit* h1, const DSCHit* h2) {
+  static bool compareDSTHits(const DSCHit* h1, const DSCHit* h2) {
     if(h1->sector!=h2->sector) {
       return(h1->sector<h2->sector);
     } else {
@@ -289,7 +371,7 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
-  bool compareDTaggerHits(const DTagger* h1, const DTagger* h2) {
+  static bool compareDTaggerHits(const DTagger* h1, const DTagger* h2) {
     if(h1->row!=h2->row) {
       return(h1->row<h2->row);
     } else if(h1->column!=h2->column) {
@@ -318,27 +400,93 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   unsigned int i;
   CODA_HIT_INFO hit[10];
-  uint32_t hData[10];
-  int stat,nhits;
-  int hc;
+  uint32_t mcData[10];
+  int stat,nhits,hc;
+  static bool first_time = true;
 
 
-  // initialize mc2coda event buffer info
+  // initialize event buffer info
   int hitCount             = 0;
   int detID                = 1;
-  uint64_t trigTime        = 100;
   unsigned short eventType = 0;
 
 
   // open event, default max event size is 1 MB
-  eventID = mc2codaOpenEvent(expID, (uint64_t)eventnumber, trigTime, eventType, MAXEVENTSIZE);
-  if(eventID==NULL) {
-    jerr << "?NULL return from mc2codaOpenEvent()" << endl << endl;
-    exit(EXIT_FAILURE);
+  if(nomc2coda==0) {
+    if(first_time) {
+      first_time=false;
+      eventID = mc2codaOpenEvent(expID, (uint64_t)eventnumber, trigTime/trigtick, eventType, MAXEVENTSIZE);
+      if(eventID==NULL) {
+        jerr << "?NULL return from mc2codaOpenEvent()" << endl << endl;
+        exit(EXIT_FAILURE);
+      }
+    } else {
+      int stat = mc2codaResetEvent(eventID, (uint64_t)eventnumber, trigTime/trigtick, eventType);
+      if(stat!=0) {
+        jerr << "?error return from mc2codaResetEvent()" << endl << endl;
+        exit(EXIT_FAILURE);
+      }
+    }
   }
 
 
-  // get all types of raw hit data, sort according to id and time order, then feed to mc2coda
+  // get all raw hit data, sort according to id and time order before feeding to mc2coda package
+  // scale data appropriately to minimize loss of precision by using full available bit range
+
+
+  // DCDCHit - FADC125
+  vector<const DCDCHit*> dcdchits; 
+  eventLoop->Get(dcdchits);
+  sort(dcdchits.begin(),dcdchits.end(),compareDCDCHits);
+
+  hc=0;
+  for(i=0; i<dcdchits.size(); i++) {
+    if((dcdchits[i]->dE>0)&&((dcdchits[i]->t*1000.)>tMin)&&(dcdchits[i]->t*1000.<trigTime)) {
+
+      uint32_t q     = dcdchits[i]->dE;            // in femtoCoulombs
+      uint32_t t     = dcdchits[i]->t*1000.-tMin;  // in picoseconds
+      
+      if(noroot==0)cdcCharges->Fill(dcdchits[i]->dE);
+      if(noroot==0)cdcTimes->Fill(dcdchits[i]->t-tMin/1000);
+
+      hc++;
+      hitCount++;
+      nhits=1;
+      cscRef cscADC      = DCDCHitTranslationADC(dcdchits[i]);
+      hit[0].hit_id      = hitCount;
+      hit[0].det_id      = detID;
+      hit[0].crate_id    = cscADC.crate;
+      hit[0].slot_id     = cscADC.slot;
+      hit[0].chan_id     = cscADC.channel;
+      hit[0].module_id   = FADC125;
+      hit[0].module_mode = FADC125_MODE_IP;
+      hit[0].nwords      = 2;
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = q;  // in fC
+      hit[0].hdata[1]    = t/FADC125tick;
+      if(q>0x7ffff)cerr << "q too large for CDC: " << q << endl;
+      
+      if(dumphits>1) {
+        jout << endl;
+        jout << " CDC ADC ring,straw are " << dcdchits[i]->ring << ", " << dcdchits[i]->straw << endl;
+        jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
+        jout << " q,t are " << q << ", " << t << endl;
+        jout << endl;
+      }
+      
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for CDC ADC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
+      }
+    }
+  }      
+  if((dumphits>=1)&&(hc>0)) {
+    jout << endl << "CDC hits: " << hc << endl << endl;
+  }
 
 
   // DTOFRawHit - FADC250 and F1TDC32 (60 ps)
@@ -348,11 +496,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   hc=0;
   for(i=0; i<dtofrawhits.size(); i++) {
-    float dE  = dtofrawhits[i]->dE;
-    float t   = dtofrawhits[i]->t + tOffset;
+    if((dtofrawhits[i]->dE>0)&&((dtofrawhits[i]->t*1000.)>tMin)&&(dtofrawhits[i]->t*1000.<trigTime)) {
+
+      uint32_t E  = dtofrawhits[i]->dE*1000000.;   // in keV (from GeV)
+      uint32_t t  = dtofrawhits[i]->t*1000.-tMin;  // in picoseconds
     
-    // feed hit and crate/slot/channel info to mc2coda package
-    if((dE>0.0)&&(t>0.0)) {
+      if(noroot==0)tofEnergies->Fill(dtofrawhits[i]->dE*1000000.);
+      if(noroot==0)tofTimes->Fill(dtofrawhits[i]->t-tMin/1000);
+
       hc++;
       hitCount++;
       nhits=1;
@@ -365,28 +516,29 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = FADC250;
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(dE*1000000.);
-      hData[1]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = E;  // in keV
+      hit[0].hdata[1]    = t/FADC250tick;
+      if(E>0x7ffff)cerr << "E too large for TOF: " << E << endl;
       
       if(dumphits>1) {
         jout << endl;
         jout << " TOF ADC plane,bar,lr are " << dtofrawhits[i]->plane << ", " << dtofrawhits[i]->bar 
              << ", " << dtofrawhits[i]->lr << endl;
         jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
-        jout << " hdata is: " << hData[0] << ", " << hData[1] << endl;
-        jout << " dE,t are " << dE << ", " << t << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
+        jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
       
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for TOF ADC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for TOF ADC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
 
-      
-      // feed hit and crate/slot/channel info to mc2coda package
       hitCount++;
       nhits=1;
       cscRef cscTDC      = DTOFRawHitTranslationTDC(dtofrawhits[i]);
@@ -398,23 +550,25 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = F1TDC32;
       hit[0].module_mode = 0;
       hit[0].nwords      = 1;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = t/F1TDC32tick;
       
       if(dumphits>1) {
         jout << endl;
         jout << " TOF TDC plane,bar,lr are " << dtofrawhits[i]->plane << ", " << dtofrawhits[i]->bar 
              << ", " << dtofrawhits[i]->lr << endl;
         jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
-        jout << " hdata is: " << hData[0] << endl;
-        jout << " dE,t are " << dE << ", " << t << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << endl;
+        jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
 
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for TOF TDC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for TOF TDC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
     }
   }
@@ -430,10 +584,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   hc=0;
   for(i=0; i<dbcalhits.size(); i++) {
-    float E      = dbcalhits[i]->E;
-    float t      = dbcalhits[i]->t + tOffset;
+    if((dbcalhits[i]->E>0)&&((dbcalhits[i]->t*1000.)>tMin)&&(dbcalhits[i]->t*1000.<trigTime)) {
 
-    if((E>0.0)&&(t>0.0)) {
+      uint32_t E     = dbcalhits[i]->E*1000.;       // in keV (original apparently in MeV ???)
+      uint32_t t     = dbcalhits[i]->t*1000.-tMin;  // in picoseconds
+
+      if(noroot==0)bcalEnergies->Fill(dbcalhits[i]->E*1000.);
+      if(noroot==0)bcalTimes->Fill(dbcalhits[i]->t-tMin/1000);
+
       hc++;
       hitCount++;
       nhits=1;
@@ -446,24 +604,28 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = FADC250;
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(E*1000000.);
-      hData[1]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = E/10;  // in 10 keV units
+      hit[0].hdata[1]    = t/FADC250tick;
+      if(E/10>0x7ffff)cerr << "E too large for BCAL: " << E << endl;
       
       if(dumphits>1) {
         jout << endl;
         jout << " BCAL ADC module,sector,layer,end are " << dbcalhits[i]->module<< ", " << dbcalhits[i]->sector
              << ", " << dbcalhits[i]->layer << ", " << dbcalhits[i]->end << endl;
         jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
-        jout << " hdata is: " << hData[0] << ", " << hData[1] << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
         jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
+
       
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for BCAL ADC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for BCAL ADC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
 
       hitCount++;
@@ -477,23 +639,25 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = F1TDC32;
       hit[0].module_mode = 0;
       hit[0].nwords      = 1;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = t/F1TDC32tick;
       
       if(dumphits>1) {
         jout << endl;
         jout << " BCAL TDC module,sector,layer,end are " << dbcalhits[i]->module<< ", " << dbcalhits[i]->sector
              << ", " << dbcalhits[i]->layer << ", " << dbcalhits[i]->end << endl;
         jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
-        jout << " hdata is: " << hData[0] << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << endl;
         jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
       
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for BCAL TDC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for BCAL TDC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
     }
   }
@@ -511,11 +675,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   hc=0;
   for(i=0; i<dfcalhits.size(); i++) {
-    float E      = dfcalhits[i]->E;
-    float t      = dfcalhits[i]->t + tOffset;
+    if((dfcalhits[i]->E>0)&&((dfcalhits[i]->t*1000.)>tMin)&&(dfcalhits[i]->t*1000.<trigTime)) {
+
+      uint32_t E     = dfcalhits[i]->E*1000.;       // in MeV (from GeV)
+      uint32_t t     = dfcalhits[i]->t*1000.-tMin;  // in picoseconds
     
-    // feed hit and crate/slot/channel info to mc2coda package
-    if((E>0.0)&&(t>0.0)) {
+      if(noroot==0)fcalEnergies->Fill(dfcalhits[i]->E*1000000.);
+      if(noroot==0)fcalTimes->Fill(dfcalhits[i]->t-tMin/1000);
+
       hc++;
       hitCount++;
       nhits=1;
@@ -528,23 +695,26 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = FADC250;
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(E*1000000.);
-      hData[1]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = E/10;  // in 10 MeV units
+      hit[0].hdata[1]    = t/FADC250tick;
+      if(E/10>0x7ffff)cerr << "E too large for FCAL: " << E << endl;
       
       if(dumphits>1) {
         jout << endl;
         jout << " FCAL ADC row,column are " << dfcalhits[i]->row << ", " << dfcalhits[i]->column << endl;
         jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
-        jout << " hdata is: " << hData[0] << ", " << hData[1] << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
         jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
       
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for FCAL ADC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for FCAL ADC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
     }
   }
@@ -560,11 +730,15 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   hc=0;
   for(i=0; i<dfdchits.size(); i++) {
-    float q      = dfdchits[i]->q;
-    float t      = dfdchits[i]->t + tOffset;
+    if((dfdchits[i]->q>0)&&((dfdchits[i]->t*1000.)>tMin)&&(dfdchits[i]->t*1000.<trigTime)) {
 
-    int type = dfdchits[i]->type;
-    if((q>0.0)&&(t>0.0)) {
+      uint32_t q      = dfdchits[i]->q;            // in femtoCoulombs
+      uint32_t t      = dfdchits[i]->t*1000.-tMin; // in picoseconds
+      
+      if(noroot==0)fdcCharges->Fill(dfdchits[i]->q);
+      if(noroot==0)fdcTimes->Fill(dfdchits[i]->t-tMin/1000);
+
+      int type = dfdchits[i]->type;
 
       // FADC125
       if(type==1) {
@@ -580,25 +754,28 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
         hit[0].module_id   = FADC125;
         hit[0].module_mode = FADC125_MODE_IP;
         hit[0].nwords      = 2;
-        hit[0].hdata       = hData;
-        hData[0]           = uint32_t(q*1000000.);
-        hData[1]           = uint32_t(t*100.);
+        hit[0].hdata       = mcData;
+        hit[0].hdata[0]    = q;  // in fC
+        hit[0].hdata[1]    = t/FADC125tick;
+        if(q>0x7ffff)cerr << "q too large for FDC: " << q << endl;
         
-        if(dumphits>1) {
+        if(dumphits>2) {
           jout << endl;
           jout << " FDC ADC gPlane,element are " << dfdchits[i]->gPlane << ", " << dfdchits[i]->element << endl;
           jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
-          jout << " hdata is: " << hData[0] << ", " << hData[1] << endl;
+          jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
           jout << " q,t are " << q << ", " << t << endl;
           jout << endl;
         }
         
-        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-        if(stat!=nhits) {
-          jerr << "?error return from mc2codaWrite() for FDC ADC: " << stat << endl << endl;
-          exit(EXIT_FAILURE);
+        if(nomc2coda==0) {
+          stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+          if(stat!=nhits) {
+            jerr << "?error return from mc2codaWrite() for FDC ADC: " << stat << endl << endl;
+            exit(EXIT_FAILURE);
+          }
         }
-        
+
 
       // F1TDC48
       } else if(type==0) {
@@ -613,22 +790,24 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
         hit[0].module_id   = F1TDC48;
         hit[0].module_mode = 0;
         hit[0].nwords      = 1;
-        hit[0].hdata       = hData;
-        hData[0]           = uint32_t(t*100.);
+        hit[0].hdata       = mcData;
+        hit[0].hdata[0]    = t/F1TDC48tick;
         
-        if(dumphits>1) {
+        if(dumphits>2) {
           jout << endl;
           jout << " FDC TDC gPlane,element are " << dfdchits[i]->gPlane << ", " << dfdchits[i]->element << endl;
           jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
-          jout << " hdata is: " << hData[0] << endl;
+          jout << " hdata is: " << hit[0].hdata[0] << endl;
           jout << " q,t are " << q << ", " << t << endl;
           jout << endl;
         }
       
-        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-        if(stat!=nhits) {
-          jerr << "?error return from mc2codaWrite() for Fdc TDC: " << stat << endl << endl;
-          exit(EXIT_FAILURE);
+        if(nomc2coda==0) {
+          stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+          if(stat!=nhits) {
+            jerr << "?error return from mc2codaWrite() for Fdc TDC: " << stat << endl << endl;
+            exit(EXIT_FAILURE);
+          }
         }
       }
     }
@@ -639,70 +818,25 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 
 
-  // DCDCHit - FADC125
-  vector<const DCDCHit*> dcdchits; 
-  eventLoop->Get(dcdchits);
-  sort(dcdchits.begin(),dcdchits.end(),compareDCDCHits);
-
-  hc=0;
-  for(i=0; i<dcdchits.size(); i++) {
-    float dE     = dcdchits[i]->dE;
-    float t      = dcdchits[i]->t + tOffset;
-
-    // feed hit and crate/slot/channel info to mc2coda package
-    if((dE>0.0)&&(t>0.0)) {
-      hc++;
-      hitCount++;
-      nhits=1;
-      cscRef cscADC      = DCDCHitTranslationADC(dcdchits[i]);
-      hit[0].hit_id      = hitCount;
-      hit[0].det_id      = detID;
-      hit[0].crate_id    = cscADC.crate;
-      hit[0].slot_id     = cscADC.slot;
-      hit[0].chan_id     = cscADC.channel;
-      hit[0].module_id   = FADC125;
-      hit[0].module_mode = FADC125_MODE_IP;
-      hit[0].nwords      = 2;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(dE*1000000.);
-      hData[1]           = uint32_t(t*100.);
-      
-      if(dumphits>1) {
-        jout << endl;
-        jout << " CDC ADC ring,straw are " << dcdchits[i]->ring << ", " << dcdchits[i]->straw << endl;
-        jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
-        jout << " hdata is: " << hData[0] << ", " << hData[1] << endl;
-        jout << " dE,t are " << dE << ", " << t << endl;
-        jout << endl;
-      }
-      
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for CDC ADC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
-      }
-    }
-  }      
-  if((dumphits>=1)&&(hc>0)) {
-    jout << endl << "CDC hits: " << hc << endl << endl;
-  }
-
-
   // DSCHit - FADC250 and F1TDC32 (60 ps)
-  vector<const DSCHit*> dschits;
-  eventLoop->Get(dschits);
-  sort(dschits.begin(),dschits.end(),compareDSCHits);
+  vector<const DSCHit*> dsthits;
+  eventLoop->Get(dsthits);
+  sort(dsthits.begin(),dsthits.end(),compareDSTHits);
 
   hc=0;
-  for(i=0; i<dschits.size(); i++) {
-    float dE     = dschits[i]->dE;
-    float t      = dschits[i]->t + tOffset;
+  for(i=0; i<dsthits.size(); i++) {
+    if((dsthits[i]->dE>0)&&((dsthits[i]->t*1000.)>tMin)&&(dsthits[i]->t*1000.<trigTime)) {
 
-    if((dE>0.0)&&(t>0.0)) {
+      uint32_t E     = dsthits[i]->dE*1000000.;   // in keV (from GeV)
+      uint32_t t     = dsthits[i]->t*1000.-tMin;  // in picoseconds
+
+      if(noroot==0)stEnergies->Fill(dsthits[i]->dE*1000000.);
+      if(noroot==0)stTimes->Fill(dsthits[i]->t-tMin/1000);
+
       hc++;
       hitCount++;
       nhits=1;
-      cscRef cscADC      = DSCHitTranslationADC(dschits[i]);
+      cscRef cscADC      = DSTHitTranslationADC(dsthits[i]);
       hit[0].hit_id      = hitCount;
       hit[0].det_id      = detID;
       hit[0].crate_id    = cscADC.crate;
@@ -711,29 +845,32 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = FADC250;
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(dE*1000000.);
-      hData[1]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = E;  // in keV
+      hit[0].hdata[1]    = t/FADC250tick;
+      if(E>0x7ffff)cerr << "E too large for ST: " << E << endl;
       
       if(dumphits>1) {
         jout << endl;
-        jout << " SC ADC sector is " << dschits[i]->sector << endl;
+        jout << " ST ADC sector is " << dsthits[i]->sector << endl;
         jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
-        jout << " hdata is: " << hData[0] << ", " << hData[1] << endl;
-        jout << " dE,t are " << dE << ", " << t << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
+        jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
       
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for SC ADC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for ST ADC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
 
 
       hitCount++;
       nhits=1;
-      cscRef cscTDC      = DSCHitTranslationTDC(dschits[i]);
+      cscRef cscTDC      = DSTHitTranslationTDC(dsthits[i]);
       hit[0].hit_id      = hitCount;
       hit[0].det_id      = detID;
       hit[0].crate_id    = cscTDC.crate;
@@ -742,27 +879,29 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = F1TDC32;
       hit[0].module_mode = 0;
       hit[0].nwords      = 1;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = t/F1TDC32tick;
       
       if(dumphits>1) {
         jout << endl;
-        jout << " SC TDC sector is " << dschits[i]->sector << endl;
+        jout << " ST TDC sector is " << dsthits[i]->sector << endl;
         jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
-        jout << " hdata is: " << hData[0] << endl;
-        jout << " dE,t are " << dE << ", " << t << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << endl;
+        jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
       
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for SC TDC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for ST TDC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
     }
   }
   if((dumphits>=1)&&(hc>0)) {
-    jout << endl << "SC hits: " << hc << endl << endl;
+    jout << endl << "ST hits: " << hc << endl << endl;
   }
 
 
@@ -773,10 +912,14 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   hc=0;
   for(i=0; i<dtaggerhits.size(); i++) {
-    float E      = dtaggerhits[i]->E;
-    float t      = dtaggerhits[i]->t + tOffset;
+    if((dtaggerhits[i]->E>0)&&((dtaggerhits[i]->t*1000.)>tMin)&&(dtaggerhits[i]->t*1000.<trigTime)) {
 
-    if((E>0.0)&&(t>0.0)) {
+      uint32_t E     = dtaggerhits[i]->E*1000000.;    // in keV
+      uint32_t t     = dtaggerhits[i]->t*1000.-tMin;  // in picoseconds
+
+      if(noroot==0)tagEnergies->Fill(dtaggerhits[i]->E*1000000.);
+      if(noroot==0)tagTimes->Fill(dtaggerhits[i]->t-tMin/1000);
+
       hc++;
       hitCount++;
       nhits=1;
@@ -789,23 +932,26 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = FADC250;
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(E*1000000.);
-      hData[1]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = E/1000;  // in MeV
+      hit[0].hdata[1]    = t/FADC250tick;
+      if(E/1000>0x7ffff)cerr << "E too large for Tagger: " << E << endl;
       
       if(dumphits>1) {
         jout << endl;
-        jout << " TAGGER ADC row,column are " << dtaggerhits[i]->row << ", " << dtaggerhits[i]->column<< endl;
+        jout << " Tagger ADC row,column are " << dtaggerhits[i]->row << ", " << dtaggerhits[i]->column<< endl;
         jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
-        jout << " hdata is: " << hData[0] << ", " << hData[1] << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
         jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
       
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for TAGGER ADC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for TAGGER ADC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
 
 
@@ -820,22 +966,24 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_id   = F1TDC32;
       hit[0].module_mode = 0;
       hit[0].nwords      = 1;
-      hit[0].hdata       = hData;
-      hData[0]           = uint32_t(t*100.);
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = t/F1TDC32tick;
       
       if(dumphits>1) {
         jout << endl;
         jout << " Tagger TDC row,column are " << dtaggerhits[i]->row << ", " << dtaggerhits[i]->column << endl;
         jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
-        jout << " hdata is: " << hData[0] << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << endl;
         jout << " E,t are " << E << ", " << t << endl;
         jout << endl;
       }
       
-      stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-      if(stat!=nhits) {
-        jerr << "?error return from mc2codaWrite() for Tagger TDC: " << stat << endl << endl;
-        exit(EXIT_FAILURE);
+      if(nomc2coda==0) {
+        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+        if(stat!=nhits) {
+          jerr << "?error return from mc2codaWrite() for Tagger TDC: " << stat << endl << endl;
+          exit(EXIT_FAILURE);
+        }
       }
     }
   }
@@ -846,10 +994,12 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
 
   // close event
-  int nwords = mc2codaCloseEvent(eventID);
-  if(nwords<0) {
-    jerr << "?error return from mc2codaCloseEVent(): " << nwords << endl << endl;
-    exit(EXIT_FAILURE);
+  if(nomc2coda==0) {
+    int nwords = mc2codaCloseEvent(eventID);
+    if(nwords<0) {
+      jerr << "?error return from mc2codaCloseEVent(): " << nwords << endl << endl;
+      exit(EXIT_FAILURE);
+    }
   }
 
 
@@ -859,8 +1009,11 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   pthread_mutex_unlock(&rawMutex);
 
 
+  // not needed, using reset instead
   // free event
-  mc2codaFreeEvent(eventID);
+  // if(nomc2coda==0) {
+  //   mc2codaFreeEvent(eventID);
+  // }
 
 
   // done
@@ -1123,14 +1276,14 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       cscMap[s] = csc;
         
       
-    } else if(detector=="sc") {
+    } else if(detector=="st") {
       if(type=="f1tdc32") {
-        s = "sctdc::";
+        s = "sttdc::";
       } else if (type=="fadc250") {
-        s = "scadc::";
+        s = "stadc::";
       } else {
-        s = "unknownSC::";
-        jerr << endl << endl << "?startElement...illegal type for SC: " << Type << endl << endl;
+        s = "unknownST::";
+        jerr << endl << endl << "?startElement...illegal type for ST: " << Type << endl << endl;
       }
       s += sector;
       cscMap[s] = csc;
@@ -1311,8 +1464,8 @@ cscRef JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) const
 //----------------------------------------------------------------------------
 
 
-cscRef JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) const {
-  string s = "scadc::" + lexical_cast<string>(hit->sector);
+cscRef JEventProcessor_rawevent::DSTHitTranslationADC(const DSCHit* hit) const {
+  string s = "stadc::" + lexical_cast<string>(hit->sector);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1321,8 +1474,8 @@ cscRef JEventProcessor_rawevent::DSCHitTranslationADC(const DSCHit* hit) const {
 //----------------------------------------------------------------------------
 
 
-cscRef JEventProcessor_rawevent::DSCHitTranslationTDC(const DSCHit* hit) const {
-  string s = "sctdc::" + lexical_cast<string>(hit->sector);
+cscRef JEventProcessor_rawevent::DSTHitTranslationTDC(const DSCHit* hit) const {
+  string s = "sttdc::" + lexical_cast<string>(hit->sector);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }

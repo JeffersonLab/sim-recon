@@ -9,6 +9,10 @@
 #define _JEventProcessor_rawevent_
 
 
+// temporary root stuff
+#include <TH1.h>
+
+
 #include <vector>
 #include <map>
 
@@ -56,6 +60,7 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 		~JEventProcessor_rawevent();
 		const char* className(void){return "JEventProcessor_rawevent";}
 
+
 	private:
 		jerror_t init(void);
 		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);
@@ -84,8 +89,8 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
                 cscRef DCDCHitTranslationADC(const DCDCHit* hit) const;
 
-                cscRef DSCHitTranslationADC(const DSCHit* hit) const;
-                cscRef DSCHitTranslationTDC(const DSCHit* hit) const;
+                cscRef DSTHitTranslationADC(const DSCHit* hit) const;
+                cscRef DSTHitTranslationTDC(const DSCHit* hit) const;
 
                 cscRef DTaggerTranslationADC(const DTagger* hit) const;
                 cscRef DTaggerTranslationTDC(const DTagger* hit) const;
