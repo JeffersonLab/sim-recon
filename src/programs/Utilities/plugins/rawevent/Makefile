@@ -1,5 +1,5 @@
 
-PACKAGES = DANA:EVIO
+PACKAGES = ROOT:JANA:EVIO
 
 CXXFLAGS  += -I/home/wolin/mc2coda
 MISC_LIBS += -L/home/wolin/mc2coda -lmc2coda

@@ -78,7 +78,6 @@ static TH1F *tagTimes;
 //  is this thread-safe?
 extern "C" {
 #include "mc2coda.h"
-  //#include "hitList.h"
 }
 
 
@@ -1082,9 +1081,6 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
   XML_SetElementHandler(xmlParser,startElement,endElement);
 
 
-  // clear crate summary info needed by Dave's library
-
-
   // open and parse the file
   FILE *f = fopen(translationTableName.c_str(),"r");
   if(f!=NULL) {
@@ -1233,8 +1229,8 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
     }
 
 
-    // fill maps
 
+    // fill maps
 
     cscVal csc = {crate,slot,channel};
     string detector = Detector;
@@ -1360,12 +1356,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
 
 void JEventProcessor_rawevent::endElement(void *userData, const char *xmlname) {
-
-  // finished a crate, feed crate summary info to Dave's library
-  if(strcasecmp(xmlname,"crate")==0) {
-  }
-
-  // clear crate summary info
+  // nothing to do yet...
 }
 
 
