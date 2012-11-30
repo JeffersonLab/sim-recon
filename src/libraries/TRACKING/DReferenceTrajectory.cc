@@ -2007,6 +2007,107 @@ jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
 
   return NOERROR;
 }
+// Find the position along a reference trajectory closest to a given point.
+// The error matrix for the point can also be input via a pointer.  Outputs
+// the kinematic data object (including the covariance) at this position,
+// and the doca and the variance on the doca.
+jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,const DMatrixDSym *covpoint, DKinematicData *track_kd,
+					       double &doca, double &var_doca) const{ 
+  if (track_kd==NULL) return RESOURCE_UNAVAILABLE;
+
+  const swim_step_t *swim_step=this->swim_steps;
+  DMatrixDSym cov(7);
+  cov=track_kd->errorMatrix();	
+  doca=1000.;
+  double tflight=0.;
+  double mass=this->mass;
+  double mass_sq=mass*mass;
+  double q=this->q;
+  DVector3 oldpos,oldmom;
+  for (int i=0;i<this->Nswim_steps-1; i++, swim_step++){
+    DVector3 pos=swim_step->origin;     
+    DVector3 diff=pos-point;
+    double new_doca=diff.Mag();
+    if (new_doca>doca){
+      if (i==1){  // backtrack to find the true doca
+	tflight=0.;
+	
+	swim_step=this->swim_steps;
+	cov=track_kd->errorMatrix();
+	
+	pos=swim_step->origin;
+	DVector3 mom=swim_step->mom;
+	DMagneticFieldStepper stepper(this->bfield, this->q, &pos, &mom);
+
+	int inew=0;
+	while (inew<100){
+	  double ds=stepper.Step(&pos,-0.5);
+	  // Compute the revised estimate for the doca
+	  diff=pos-point;
+	  new_doca=diff.Mag();
+	  
+	  if(new_doca > doca) break;	
+
+	  // Propagate the covariance matrix of the track along the trajectory
+	  this->PropagateCovariance(ds,q,mass,mom,oldpos,cov);
+	  
+	  // Store the current positions, doca and adjust flight times
+	  oldpos=pos;
+	  doca=new_doca;
+	  
+	  double one_over_p_sq=1./mom.Mag2();
+	  tflight+=ds*sqrt(1.+mass_sq*one_over_p_sq)/SPEED_OF_LIGHT;
+	  
+	  // New momentum
+	  stepper.GetMomentum(mom);
+
+	  oldmom=/*(-1.)*/mom;
+	  inew++;
+	}
+      }
+      track_kd->setErrorMatrix(cov);
+      track_kd->setMomentum(oldmom);
+      track_kd->setPosition(oldpos);
+      track_kd->setTime(track_kd->time() + tflight);
+      
+      // Compute the variance on the doca
+      diff=oldpos-point;
+      double dx=diff.x();
+      double dy=diff.y();
+      double dz=diff.z();
+      
+      if (covpoint==NULL){
+	var_doca=(dx*dx*(cov(3,3))+dy*dy*(cov(4,4))
+		  +dz*dz*(cov(5,5))+2.*dx*dy*(cov(3,4))
+		  +2.*dx*dz*(cov(3,5))+2.*dy*dz*(cov(4,5)))
+	  /(doca*doca);
+      }
+      else{
+	DMatrixDSym cov2(*covpoint);
+	var_doca=(dx*dx*(cov(3,3)+cov2(0,0))+dy*dy*(cov(4,4)+cov2(1,1))
+		  +dz*dz*(cov(5,5+cov2(2,2)))+2.*dx*dy*(cov(3,4)+cov2(0,1))
+		  +2.*dx*dz*(cov(3,5)+cov2(0,2))+2.*dy*dz*(cov(4,5)+cov2(1,2)))
+	  /(doca*doca);
+	
+      }
+      printf("--------\n");
+      point.Print();
+      oldpos.Print();
+      cov.Print();
+
+      break;
+    }	
+    // Propagate the covariance matrix of the track along the trajectory
+    this->PropagateCovariance(this->swim_steps[i+1].s-swim_step->s,q,mass,swim_step->mom,swim_step->origin,cov);
+
+    // Store the current position and doca
+    oldpos=pos;
+    oldmom=swim_step->mom;
+    tflight=swim_step->t;
+    doca=new_doca;
+  }
+  return NOERROR;
+}
 
 // Find the mid-point of the line connecting the points of closest approach of the
 // trajectories of two tracks.  Return the positions, momenta, and error matrices 
