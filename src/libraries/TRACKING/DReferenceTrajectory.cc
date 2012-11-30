@@ -2090,11 +2090,6 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,const DMatr
 	  /(doca*doca);
 	
       }
-      printf("--------\n");
-      point.Print();
-      oldpos.Print();
-      cov.Print();
-
       break;
     }	
     // Propagate the covariance matrix of the track along the trajectory
