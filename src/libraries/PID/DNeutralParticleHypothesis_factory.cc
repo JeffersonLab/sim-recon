@@ -41,23 +41,6 @@ jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop
 	}
 	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
 
-
-  // Get the particle ID algorithms
-	vector<const DParticleID *> locPIDAlgorithms;
-	locEventLoop->Get(locPIDAlgorithms);
-	if(locPIDAlgorithms.size() < 1){
-		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
-	// Drop the const qualifier from the DParticleID pointer (I'm surely going to hell for this!)
-	dPIDAlgorithm = const_cast<DParticleID*>(locPIDAlgorithms[0]);
-  
-	// Warn user if something happened that caused us NOT to get a dPIDAlgorithm object pointer
-	if(!dPIDAlgorithm){
-		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
-
 	return NOERROR;
 }
 
@@ -66,24 +49,16 @@ jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop
 //------------------
 jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
-	unsigned int loc_i, loc_j, loc_k, locNDF = 1;
-	bool locShowerMatchFlag;
+	unsigned int locNDF = 1;
 	float locMass, locMomentum, locShowerEnergy, locParticleEnergy, locPathLength, locHitTime, locFlightTime, locProjectedTime, locTimeDifference;
 	float locParticleEnergyUncertainty, locShowerEnergyUncertainty, locTimeDifferenceVariance, locChiSq, locFOM;
 	DVector3 locPathVector, locHitPoint;
 
 	const DNeutralShower *locNeutralShower;
-	const DChargedTrackHypothesis *locChargedTrackHypothesis;
 	DNeutralParticleHypothesis *locNeutralParticleHypothesis;
 	DMatrixDSym locVariances, locErrorMatrix;
-	vector<const DBCALShower*> locAssociatedBCALShowers_NeutralShower;
-	vector<const DFCALShower*> locAssociatedFCALShowers_NeutralShower;
-	vector<const DBCALShower*> locAssociatedBCALShowers_ChargedTrack;
-	vector<const DFCALShower*> locAssociatedFCALShowers_ChargedTrack;
 
-	vector<const DChargedTrack*> locChargedTracks;
 	vector<const DNeutralShower*> locNeutralShowers;
-	locEventLoop->Get(locChargedTracks);
 	locEventLoop->Get(locNeutralShowers);
 
 	vector<Particle_t> locPIDHypotheses;
@@ -95,32 +70,8 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	double locVertexTimeUncertainty = 0.0;
 
 	// Loop over DNeutralShowers
-	for (loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++){
+	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++){
 		locNeutralShower = locNeutralShowers[loc_i];
-		locNeutralShower->GetT(locAssociatedBCALShowers_NeutralShower);
-		locNeutralShower->GetT(locAssociatedFCALShowers_NeutralShower);
-
-		// If the DNeutralShower is matched to the DChargedTrackHypothesis with the highest FOM of ANY DChargedTrack, skip it
-		locShowerMatchFlag = false;
-		for (loc_j = 0; loc_j < locChargedTracks.size(); loc_j++){
-			locChargedTrackHypothesis = locChargedTracks[loc_j]->dChargedTrackHypotheses[0];
-			locChargedTrackHypothesis->GetT(locAssociatedBCALShowers_ChargedTrack);
-			locChargedTrackHypothesis->GetT(locAssociatedFCALShowers_ChargedTrack);
-			if ((locAssociatedBCALShowers_ChargedTrack.size() > 0) && (locAssociatedBCALShowers_NeutralShower.size() > 0)){
-				if (locAssociatedBCALShowers_ChargedTrack[0]->id == locAssociatedBCALShowers_NeutralShower[0]->id){
-					locShowerMatchFlag = true;
-					break;
-				}
-			}
-			if ((locShowerMatchFlag == false) && (locAssociatedFCALShowers_ChargedTrack.size() > 0) && (locAssociatedFCALShowers_NeutralShower.size() > 0)){
-				if (locAssociatedFCALShowers_ChargedTrack[0]->id == locAssociatedFCALShowers_NeutralShower[0]->id){
-					locShowerMatchFlag = true;
-					break;
-				}
-			}
-		}
-		if (locShowerMatchFlag == true)
-			continue; //shower matched to a DChargedTrackHypothesis with the highest FOM, not a neutral
 
 		locHitTime = locNeutralShower->dSpacetimeVertex.T();
 		locShowerEnergy = locNeutralShower->dEnergy;
@@ -128,7 +79,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 		locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
 
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
-		for (loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
+		for (unsigned int loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
 		{
 			// Calculate DNeutralParticleHypothesis Quantities (projected time at vertex for given id, etc.)
 			locMass = ParticleMass(locPIDHypotheses[loc_k]);

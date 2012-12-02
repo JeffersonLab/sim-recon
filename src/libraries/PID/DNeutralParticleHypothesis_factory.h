@@ -9,13 +9,10 @@
 #define _DNeutralParticleHypothesis_factory_
 
 #include <JANA/JFactory.h>
+#include <DANA/DApplication.h>
+#include <HDGEOMETRY/DGeometry.h>
 #include <PID/DNeutralParticleHypothesis.h>
-#include <PID/DParticleID.h>
 #include <PID/DNeutralShower.h>
-#include <PID/DChargedTrackHypothesis.h>
-#include <PID/DChargedTrack.h>
-#include <BCAL/DBCALShower.h>
-#include <FCAL/DFCALShower.h>
 #include <DVector3.h>
 #include <DMatrixDSym.h>
 #include <DMatrix.h>
@@ -30,7 +27,6 @@ class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleH
 		void Calc_Variances(const DNeutralShower *locNeutralShower, double locTimeDifferenceVariance, DMatrixDSym &locVariances);
 
 	private:
-		DParticleID *dPIDAlgorithm;
 		double dTargetLength;
 		double dTargetRadius;
 		DVector3 dTargetCenter;
