@@ -195,7 +195,6 @@
 
 #define TOP_CERENKOV_EFFICIENCY 1.0
 
-      character*80 title
       character*4 cnames(15)
       equivalence (NAMES(1),cnames(1))
       real rnd(100)
