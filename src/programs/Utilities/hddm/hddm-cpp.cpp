@@ -1691,9 +1691,10 @@ void CodeBuilder::writeClassdef(DOMElement* el)
       }
    }
 
-   for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
+   parentList_t::reverse_iterator rciter;
+   for (rciter = children[tagS].rbegin(); rciter != children[tagS].rend(); ++rciter)
    {
-      DOMElement *childEl = (DOMElement*)(*citer);
+      DOMElement *childEl = (DOMElement*)(*rciter);
       XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
@@ -1826,12 +1827,12 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          /* ignore attributes with unrecognized values */
       }
    }
-   parentList_t::reverse_iterator rciter;
-   for (rciter = children[tagS].rbegin();
-        rciter != children[tagS].rend();
-        ++rciter)
+   parentList_t::iterator citer;
+   for (citer = children[tagS].begin();
+        citer != children[tagS].end();
+        ++citer)
    {
-      DOMElement *childEl = (DOMElement*)(*rciter);
+      DOMElement *childEl = (DOMElement*)(*citer);
       XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
@@ -1866,7 +1867,6 @@ void CodeBuilder::writeClassimp(DOMElement* el)
    hFile << "inline " << tagS.simpleType() << "::~"
          << tagS.simpleType() << "() {"
          << ((children[tagS].size())? "\n" : "");
-   parentList_t::iterator citer;
    for (citer = children[tagS].begin();
         citer != children[tagS].end();
         ++citer)
