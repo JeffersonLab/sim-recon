@@ -17,21 +17,21 @@ ifndef HALLD_MY
 HALLD_MY = $(HALLD_HOME)
 endif
 
-CPP = g++
+CPP = c++
 LIBXDR = 
 
 ifeq ($(OStype),Linux)
 	ifeq ($(ARCHtype),alpha)
-		CPP     := g++ -g
+		CPP     := c++ -g
 	else
-		CPP	:= g++ -g -D_REENTRANT
+		CPP	:= c++ -g -D_REENTRANT
 	endif
 endif
 ifeq ($(OStype),OSF1)
-	CPP	:= g++ -g -DBASENAME_USE_BUILTIN
+	CPP	:= c++ -g -DBASENAME_USE_BUILTIN
 endif
 ifeq ($(OStype),Darwin)
-	CPP	:= g++ -g -DBASENAME_IN_LIBGEN -DXDR_LONGLONG_MISSING
+	CPP	:= c++ -g -DBASENAME_IN_LIBGEN -DXDR_LONGLONG_MISSING
 endif
 ifeq ($(OStype),SunOS)
 	CPP	:= CC -g -DBASENAME_IN_LIBGEN
