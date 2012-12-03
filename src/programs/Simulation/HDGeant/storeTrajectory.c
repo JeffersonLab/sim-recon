@@ -46,18 +46,18 @@ void addtrajectorypoint_(float *VECT, float *TOFG, float *DESTEP
 	}
 	
 	/* We want to record a unique id for every particle in the event.
-	/* The value in ITRA is the primary track's number from which this
-	/* particle originated. The value in ISTAK is the stack poisition
-	/* of the current particle (ISTAK==0 means it's the primary).
-	/* Because the stack is reused during showers, there is no
-	/* combination of ITRA and ISTAK that is guaranteed to be unique
-	/* for a given particle in the event. Therefore, we need to keep
-	/* track of this ourselves. Use the track_id global to do this by
-	/* watching for changes to ITRA or increases in ISTAK.
-	*/
-	/* The variable "point_on_this_track" is used to decide whether or
-	/* not to add this as a new track point, or to overwrite the previous
-	/* track point if we're only keeping birth/death info.
+	   The value in ITRA is the primary track's number from which this
+	   particle originated. The value in ISTAK is the stack poisition
+	   of the current particle (ISTAK==0 means it's the primary).
+	   Because the stack is reused during showers, there is no
+	   combination of ITRA and ISTAK that is guaranteed to be unique
+	   for a given particle in the event. Therefore, we need to keep
+	   track of this ourselves. Use the track_id global to do this by
+	   watching for changes to ITRA or increases in ISTAK.
+	  
+	   The variable "point_on_this_track" is used to decide whether or
+	   not to add this as a new track point, or to overwrite the previous
+	   track point if we're only keeping birth/death info.
 	*/
 	static int point_on_this_track = 0;
 	if(last_stack_num<*ISTAK || last_track_num!=*ITRA){
@@ -70,11 +70,11 @@ void addtrajectorypoint_(float *VECT, float *TOFG, float *DESTEP
 	last_stack_num = *ISTAK;
 
 	/* storetraj = 0  don't store trajectory info
-	/* storetraj = 1  store birth and death points of primary tracks
-	/* storetraj = 2  store birth and death points of all particles
-	/* storetraj = 3  store full trajectory of primary tracks
-	/* storetraj = 4  store full trajectory of primary tracks and birth/death points of secondaries
-	/* storetraj = 5  store full trajectory for all particles
+	   storetraj = 1  store birth and death points of primary tracks
+	   storetraj = 2  store birth and death points of all particles
+	   storetraj = 3  store full trajectory of primary tracks
+	   storetraj = 4  store full trajectory of primary tracks and birth/death points of secondaries
+	   storetraj = 5  store full trajectory for all particles
 	*/
 	
 	int is_primary = (*ISTAK==0);
@@ -111,8 +111,8 @@ void addtrajectorypoint_(float *VECT, float *TOFG, float *DESTEP
 	}
 
 	/* If we're only storing birth and death points, then backup and
-	/* overwrite the last trajectory point on this track. If it is a
-	/* different track, then don't overwrite the previous one.
+	   overwrite the last trajectory point on this track. If it is a
+	   different track, then don't overwrite the previous one.
 	*/
 	if(store_full_traj==0 && point_on_this_track>1 && Npoints>0)Npoints--;
 	
