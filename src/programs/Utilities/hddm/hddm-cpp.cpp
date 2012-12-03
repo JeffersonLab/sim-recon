@@ -1317,7 +1317,7 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
       {
          int maxold = (oldS == "unbounded")? INT_MAX : atoi(S(oldS));
          int maxnew = (newS == "unbounded")? INT_MAX : atoi(S(newS));
-	 if (maxold < 2 && maxnew > 1 || maxold > 1 && maxnew < 2)
+	 if ((maxold < 2 && maxnew > 1) || (maxold > 1 && maxnew < 2))
          {
             std::cerr
                  << "hddm-cpp error: inconsistent maxOccurs usage by tag "
@@ -1348,7 +1348,7 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
       {
          int maxold = (oldS == "unbounded")? INT_MAX : atoi(S(oldS));
          int maxnew = (newS == "unbounded")? INT_MAX : atoi(S(newS));
-	 if (maxold < 2 && maxnew > 1 || maxold > 1 && maxnew < 2)
+	 if ((maxold < 2 && maxnew > 1) || (maxold > 1 && maxnew < 2))
          {
             std::cerr
                  << "hddm-cpp error: inconsistent maxOccurs usage by tag "
@@ -1826,12 +1826,12 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          /* ignore attributes with unrecognized values */
       }
    }
-   parentList_t::iterator citer;
-   for (citer = children[tagS].begin();
-        citer != children[tagS].end();
-        ++citer)
+   parentList_t::reverse_iterator rciter;
+   for (rciter = children[tagS].rbegin();
+        rciter != children[tagS].rend();
+        ++rciter)
    {
-      DOMElement *childEl = (DOMElement*)(*citer);
+      DOMElement *childEl = (DOMElement*)(*rciter);
       XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
@@ -1866,6 +1866,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
    hFile << "inline " << tagS.simpleType() << "::~"
          << tagS.simpleType() << "() {"
          << ((children[tagS].size())? "\n" : "");
+   parentList_t::iterator citer;
    for (citer = children[tagS].begin();
         citer != children[tagS].end();
         ++citer)
