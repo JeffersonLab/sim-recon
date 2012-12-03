@@ -1691,10 +1691,9 @@ void CodeBuilder::writeClassdef(DOMElement* el)
       }
    }
 
-   parentList_t::reverse_iterator rciter;
-   for (rciter = children[tagS].rbegin(); rciter != children[tagS].rend(); ++rciter)
+   for (citer = children[tagS].begin(); citer != children[tagS].end(); ++citer)
    {
-      DOMElement *childEl = (DOMElement*)(*rciter);
+      DOMElement *childEl = (DOMElement*)(*citer);
       XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
@@ -1827,6 +1826,11 @@ void CodeBuilder::writeClassimp(DOMElement* el)
          /* ignore attributes with unrecognized values */
       }
    }
+	
+	// Write XXX_plist initializers first and then the XXX_list or
+	// XXX_link initializers. This is because the plist members
+	// appear first in the class definition.
+	// Dec. 3, 2012  David L.
    parentList_t::iterator citer;
    for (citer = children[tagS].begin();
         citer != children[tagS].end();
@@ -1843,6 +1847,16 @@ void CodeBuilder::writeClassimp(DOMElement* el)
                << "_plist()";
          hostS = "";
       }
+   }
+   for (citer = children[tagS].begin();
+        citer != children[tagS].end();
+        ++citer)
+   {
+      DOMElement *childEl = (DOMElement*)(*citer);
+      XtString cnameS(childEl->getTagName());
+      XtString repS(childEl->getAttribute(X("maxOccurs")));
+      int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
+      XtString hostS("m_host->");
       hFile << "," << std::endl << "   m_" << cnameS
             << ((rep > 1)? "_list" : "_link")
             << "(&" << hostS << "m_" << cnameS << "_plist," << std::endl
