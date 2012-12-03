@@ -43,6 +43,15 @@ class DReferenceTrajectory{
 			kForward,
 			kBackward
 		};
+		enum state_t{
+		  kPx,
+		  kPy,
+		  kPz,
+		  kX,
+		  kY,
+		  kZ,
+		  kT
+		};
 
 		class swim_step_t:public DCoordinateSystem{
 			public:
@@ -97,8 +106,16 @@ class DReferenceTrajectory{
 						   double *t=NULL) const;
 		DVector3 GetLastDOCAPoint(void) const;
 		void GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const;
-		jerror_t FindPOCAtoPoint(const DVector3 &point,const DMatrixDSym *covpoint, DKinematicData *track_kd,
+		jerror_t FindPOCAtoPoint(const DVector3 &point,
+					 const DMatrixDSym *covpoint, 
+					 DKinematicData *track_kd,
 					 double &doca, double &var_doca) const;
+		jerror_t FindPOCAtoLine(const DVector3 &origin,
+					const DVector3 &dir,
+					const DMatrixDSym *covpoint, 
+					DKinematicData *track_kd,
+					double &doca, double &var_doca) const; 
+
 		double GetLastDistAlongWire(void) const {return last_dist_along_wire;}
 		void SetStepSize(double step_size){this->step_size=step_size;}
 		void SetDRootGeom(const DRootGeom *RootGeom){this->RootGeom = RootGeom;}

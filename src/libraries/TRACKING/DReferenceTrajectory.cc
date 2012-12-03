@@ -2007,12 +2007,17 @@ jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
 
   return NOERROR;
 }
-// Find the position along a reference trajectory closest to a given point.
-// The error matrix for the point can also be input via a pointer.  Outputs
-// the kinematic data object (including the covariance) at this position,
-// and the doca and the variance on the doca.
-jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,const DMatrixDSym *covpoint, DKinematicData *track_kd,
-					       double &doca, double &var_doca) const{ 
+
+// Find the position along a reference trajectory closest to a line.
+// The error matrix for the line can also be input via a pointer.  The error
+// matrix is expected to be 7x7 with the order {Px,Py,Pz,X,Y,Z,T}.
+// Outputs the kinematic data object (including the covariance) at this 
+// position, and the doca and the variance on the doca.
+jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
+					      const DVector3 &dir,
+					      const DMatrixDSym *covline, 
+					      DKinematicData *track_kd,
+					      double &doca, double &var_doca) const{ 
   if (track_kd==NULL) return RESOURCE_UNAVAILABLE;
 
   const swim_step_t *swim_step=this->swim_steps;
@@ -2023,7 +2028,18 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,const DMatr
   double mass=this->mass;
   double mass_sq=mass*mass;
   double q=this->q;
+  double step_size=1.0,s=-step_size;
   DVector3 oldpos,oldmom;
+  DVector3 point=origin;
+
+  // Find the magnitude of the direction vector
+  double pscale=dir.Mag();
+  // If the magnitude of the direction vector is zero, don't bother to propagate
+  // along a line from the input origin...
+  bool move_along_line=(pscale>0)?true:false;
+
+  // Propagate along the reference trajectory, comparing to the line at each
+  // step
   for (int i=0;i<this->Nswim_steps-1; i++, swim_step++){
     DVector3 pos=swim_step->origin;     
     DVector3 diff=pos-point;
@@ -2063,6 +2079,12 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,const DMatr
 
 	  oldmom=/*(-1.)*/mom;
 	  inew++;
+
+	  // New point on line
+	  if (move_along_line){
+	    point-=(step_size/pscale)*dir;
+	    s-=step_size;
+	  }
 	}
       }
       track_kd->setErrorMatrix(cov);
@@ -2076,22 +2098,38 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,const DMatr
       double dy=diff.y();
       double dz=diff.z();
       
-      if (covpoint==NULL){
-	var_doca=(dx*dx*(cov(3,3))+dy*dy*(cov(4,4))
-		  +dz*dz*(cov(5,5))+2.*dx*dy*(cov(3,4))
-		  +2.*dx*dz*(cov(3,5))+2.*dy*dz*(cov(4,5)))
+      if (covline==NULL){
+	var_doca=(dx*dx*(cov(kX,kX))+dy*dy*(cov(kY,kY))
+		  +dz*dz*(cov(kZ,kZ))+2.*dx*dy*(cov(kX,kY))
+		  +2.*dx*dz*(cov(kX,kZ))+2.*dy*dz*(cov(kY,kZ)))
 	  /(doca*doca);
       }
       else{
-	DMatrixDSym cov2(*covpoint);
-	var_doca=(dx*dx*(cov(3,3)+cov2(0,0))+dy*dy*(cov(4,4)+cov2(1,1))
-		  +dz*dz*(cov(5,5+cov2(2,2)))+2.*dx*dy*(cov(3,4)+cov2(0,1))
-		  +2.*dx*dz*(cov(3,5)+cov2(0,2))+2.*dy*dz*(cov(4,5)+cov2(1,2)))
+	DMatrixDSym cov2(*covline);
+	if (move_along_line){
+	  double two_s=2.*s;
+	  double s_sq=s*s;
+	  cov2(kX,kX)+=two_s*cov2(kPx,kX)+s_sq*cov2(kPx,kPx); 
+	  cov2(kY,kY)+=two_s*cov2(kPy,kY)+s_sq*cov2(kPy,kPy);
+	  cov2(kZ,kZ)+=two_s*cov2(kPz,kZ)+s_sq*cov2(kPz,kPz);
+	}
+	var_doca=(dx*dx*(cov(kX,kX)+cov2(kX,kX))
+		  +dy*dy*(cov(kY,kY)+cov2(kY,kY))
+		  +dz*dz*(cov(kZ,kZ+cov2(kZ,kZ)))
+		  +2.*dx*dy*(cov(kX,kY)+cov2(kX,kY))
+		  +2.*dx*dz*(cov(kX,kZ)+cov2(kX,kZ))
+		  +2.*dy*dz*(cov(kY,kZ)+cov2(kY,kZ)))
 	  /(doca*doca);
 	
       }
       break;
-    }	
+    }
+    // New point on line
+    if (move_along_line){
+      point+=(step_size/pscale)*dir;
+      s+=step_size;
+    }
+
     // Propagate the covariance matrix of the track along the trajectory
     this->PropagateCovariance(this->swim_steps[i+1].s-swim_step->s,q,mass,swim_step->mom,swim_step->origin,cov);
 
@@ -2102,6 +2140,21 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,const DMatr
     doca=new_doca;
   }
   return NOERROR;
+}
+
+// Find the position along a reference trajectory closest to a given point.
+// The error matrix for the point can also be input via a pointer. The error
+// matrix is expected to be 7x7, with the order {Px,Py,Pz,X,Y,Z,T}.
+//  Outputs the kinematic data object (including the covariance) at this 
+// position,and the doca and the variance on the doca.
+jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,
+					       const DMatrixDSym *covpoint, 
+					       DKinematicData *track_kd,
+					       double &doca, double &var_doca) const{ 
+  if (track_kd==NULL) return RESOURCE_UNAVAILABLE;
+  
+  DVector3 dir;
+  return FindPOCAtoLine(point,dir,covpoint,track_kd,doca,var_doca);
 }
 
 // Find the mid-point of the line connecting the points of closest approach of the
@@ -2226,10 +2279,13 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 
 			if((track1_kd != NULL) && (track2_kd != NULL))
 			{
-				var_doca=(dx*dx*(cov1(3,3)+cov2(3,3))+dy*dy*(cov1(4,4)+cov2(4,4))
-					+dz*dz*(cov1(5,5)+cov2(5,5))+2.*dx*dy*(cov1(3,4)+cov2(3,4))
-					+2.*dx*dz*(cov1(3,5)+cov2(3,5))+2.*dy*dz*(cov1(4,5)+cov2(4,5)))
-					/(doca*doca);
+			  var_doca=(dx*dx*(cov1(kX,kX)+cov2(kX,kX))
+				    +dy*dy*(cov1(kY,kY)+cov2(kY,kY))
+				    +dz*dz*(cov1(kZ,kZ)+cov2(kZ,kZ))
+				    +2.*dx*dy*(cov1(kX,kY)+cov2(kX,kY))
+				    +2.*dx*dz*(cov1(kX,kZ)+cov2(kX,kZ))
+				    +2.*dy*dz*(cov1(kY,kZ)+cov2(kY,kZ)))
+			    /(doca*doca);
 			}      
 			break;
 		}
