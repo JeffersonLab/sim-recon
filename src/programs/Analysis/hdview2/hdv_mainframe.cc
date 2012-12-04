@@ -91,6 +91,14 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   
   dgeom->GetFDCWires(fdcwires);
   
+  // Get Target parameters from XML
+  double my_TARGET_Zmid = TARGET_Zmid;
+  double my_TARGET_Zlen = TARGET_Zlen;
+  dgeom->GetTargetZ(my_TARGET_Zmid);
+  dgeom->GetTargetLength(my_TARGET_Zlen);
+  TARGET_Zmid = my_TARGET_Zmid;
+  TARGET_Zlen = my_TARGET_Zlen;
+  
   UInt_t MainWidth = w;
   
   // First, define all of the of the graphics objects. Below that, make all
