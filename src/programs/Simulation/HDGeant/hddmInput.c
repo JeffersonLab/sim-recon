@@ -184,7 +184,7 @@ int loadInput ()
             kind = prod->type;
 				
 				/* Don't tell geant to track particles that are intermediary types */
-				if(kind<=0)continue;
+				if (kind<=0) kind = 48;
 				
             p[0] = prod->momentum->px;
             p[1] = prod->momentum->py;

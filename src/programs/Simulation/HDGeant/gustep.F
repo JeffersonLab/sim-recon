@@ -404,6 +404,15 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 ********************************************************************************
 #endif
  
+* Particle type 48 (Geantino) represents unphysical particles
+* that are reported by pythia, ignore them altogether,
+* do not pass go, do not collect 200
+
+      if (ipart.eq.48) then
+         istop = 9
+         return
+      endif
+
 
 * Stop beam photons which are initially generated outside the 12.4 cm 
 * radius beam pipe at the entrance to the collimator cave
