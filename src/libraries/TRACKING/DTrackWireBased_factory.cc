@@ -175,6 +175,9 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   loop->Get(candidates);
   if (candidates.size()==0) return NOERROR;
 
+  // Reset the number of used reference trajectories from the pool
+  num_used_rts=0;
+
   // Count the number of tracks we'll be fitting
   unsigned int Ntracks_to_fit = 0;
   if (SKIP_MASS_HYPOTHESES_WIRE_BASED){
@@ -205,19 +208,22 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       continue;
     }
 
-    // Make sure there are enough DReferenceTrajectory objects
-    unsigned int locNumInitialReferenceTrajectories = rtv.size();
-    while(rtv.size()<=_data.size()){
-      //printf("Adding %d %d\n",rtv.size(),_data.size());
-      rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-    }
-    DReferenceTrajectory *rt = rtv[_data.size()];
-    if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-      rt->Reset();
-    rt->SetDGeometry(geom);
-    rt->q = candidate->charge();
-
     if (SKIP_MASS_HYPOTHESES_WIRE_BASED){
+      // Make sure there are enough DReferenceTrajectory objects
+      unsigned int locNumInitialReferenceTrajectories = rtv.size();
+      while(rtv.size()<=num_used_rts){
+      //printf("Adding %d %d\n",rtv.size(),_data.size());
+	rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+      }
+      DReferenceTrajectory *rt = rtv[num_used_rts];
+      if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+	rt->Reset();
+      rt->SetDGeometry(geom);
+      rt->q = candidate->charge();
+      
+      // Increment the number of used reference trajectories
+      num_used_rts++;
+
       DoFit(i,candidate,rt,loop,0.13957);
     }
     else{
@@ -235,6 +241,21 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       // Loop over potential particle masses
       for(unsigned int j=0; j<mass_hypotheses.size(); j++){
         if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
+	// Make sure there are enough DReferenceTrajectory objects
+	unsigned int locNumInitialReferenceTrajectories = rtv.size();
+	while(rtv.size()<=num_used_rts){
+	  //printf("Adding %d\n",rtv.size());
+	  rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+	}
+	DReferenceTrajectory *rt = rtv[num_used_rts];
+	if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
+	  rt->Reset();
+	rt->SetDGeometry(geom);
+	rt->q = candidate->charge();
+	
+	// Increment the number of used reference trajectories
+	num_used_rts++;
+
         DoFit(i,candidate,rt,loop,mass_hypotheses[j]);
       }
    
@@ -410,7 +431,6 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       track_kd->setTime(track_kd->t0());
 
       // Fill reference trajectory
-      rt->Reset();
       rt->q = candidate->charge();
       rt->SetMass(track_kd->mass());
       rt->Swim(track->position(), track->momentum(), track->charge());
