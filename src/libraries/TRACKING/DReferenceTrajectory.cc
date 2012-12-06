@@ -2115,7 +2115,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 	}
 	var_doca=(dx*dx*(cov(kX,kX)+cov2(kX,kX))
 		  +dy*dy*(cov(kY,kY)+cov2(kY,kY))
-		  +dz*dz*(cov(kZ,kZ+cov2(kZ,kZ)))
+		  +dz*dz*(cov(kZ,kZ)+cov2(kZ,kZ))
 		  +2.*dx*dy*(cov(kX,kY)+cov2(kX,kY))
 		  +2.*dx*dz*(cov(kX,kZ)+cov2(kX,kZ))
 		  +2.*dy*dz*(cov(kY,kZ)+cov2(kY,kZ)))
