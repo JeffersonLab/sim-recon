@@ -65,6 +65,8 @@ DParticleID::DParticleID(JEventLoop *loop)
   geom->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
   
   for (unsigned int k=0;k<sc_rioz.size()-1;k++){
+    if(sc_origin.size() < 3)continue; // in case start counter is comment out in XML
+    if(sc_rioz[k].size() < 3)continue; // in case start counter is comment out in XML
     DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
     DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,
 		 -sc_rioz[k+1][0]+sc_rioz[k][0]);
@@ -73,10 +75,13 @@ DParticleID::DParticleID(JEventLoop *loop)
     sc_pos.push_back(pos);
     sc_norm.push_back(dir);    
   }
-  // sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
-  sc_leg_tcor=-sc_pos[0].z()/C_EFFECTIVE;
-  double theta=sc_norm[sc_norm.size()-1].Theta();
-  sc_angle_cor=1./cos(M_PI-theta); 
+  
+  if(sc_pos.size() >= 1){// in case start counter is comment out in XML
+  	 // sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
+  	 sc_leg_tcor=-sc_pos[0].z()/C_EFFECTIVE;
+  	 double theta=sc_norm[sc_norm.size()-1].Theta();
+  	 sc_angle_cor=1./cos(M_PI-theta);
+  }
 
   //Get calibration constants
   map<string, double> locPIDParams;
