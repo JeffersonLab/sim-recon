@@ -631,7 +631,7 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
   vector<double>cdc_origin;
   vector<double>cdc_length;
   Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
-  Get("//tubs[@name='STRA']/@Rio_Z",cdc_length);
+  Get("//tubs[@name='STRW']/@Rio_Z",cdc_length);
 
   double zmin=cdc_origin[2];
   double zmax=zmin+cdc_length[2];
