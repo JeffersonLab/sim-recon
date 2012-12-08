@@ -6,6 +6,10 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 	string locParticleName, locParticleName2, locParticleROOTName, locParticleROOTName2;
 	Particle_t locPID, locPID2;
 
+	vector<const DParticleID*> locParticleIDs;
+	locEventLoop->Get(locParticleIDs);
+	dParticleID = locParticleIDs[0];
+
 	//setup pid deques: searched for and generated
 	deque<Particle_t> locDesiredPIDs, locThrownPIDs;
 	Get_Reaction()->Get_DetectedFinalPIDs(locDesiredPIDs);
@@ -161,6 +165,10 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 	locEventLoop->Get(locMCThrownMatchingVector);
 	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
 
+	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches);
+	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
+
 	deque<const DKinematicData*> locParticles;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
@@ -171,7 +179,7 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
 			if(!Get_AnalysisUtilities()->Find_SimilarCombos(locParticles[loc_j], locPreviousParticleCombos)) //else duplicate
-				Fill_ChargedHists(static_cast<const DChargedTrackHypothesis*>(locParticles[loc_j]), locMCThrownMatching);
+				Fill_ChargedHists(static_cast<const DChargedTrackHypothesis*>(locParticles[loc_j]), locMCThrownMatching, locEventRFBunch);
 		}
 
 		//neutral particles
@@ -179,19 +187,20 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
 			if(!Get_AnalysisUtilities()->Find_SimilarCombos(locParticles[loc_j], locPreviousParticleCombos)) //else duplicate
-				Fill_NeutralHists(static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_j]), locMCThrownMatching);
+				Fill_NeutralHists(static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_j]), locMCThrownMatching, locEventRFBunch);
 		}
 	}
 
 	return true;
 }
 
-void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching)
+void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch)
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
-	double locDeltaBeta, locBeta_Timing, locStartTime = 0.0; //should be from RF!!
+	double locDeltaBeta, locBeta_Timing;
 
-	locBeta_Timing = locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locStartTime));
+	double locPropagatedRFTime = (locEventRFBunch != NULL) ? dParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch) : 0.0;
+	locBeta_Timing = locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locPropagatedRFTime));
 	locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 	double locFOM_Timing = (locChargedTrackHypothesis->dNDF_Timing > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_Timing, locChargedTrackHypothesis->dNDF_Timing) : NaN;
 	double locFOM_DCdEdx = (locChargedTrackHypothesis->dNDF_DCdEdx > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_DCdEdx, locChargedTrackHypothesis->dNDF_DCdEdx) : NaN;
@@ -231,10 +240,11 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	Get_Application()->RootUnLock();
 }
 
-void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching)
+void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch)
 {
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
-	double locDeltaBeta, locBeta_Timing, locStartTime = 0.0; //should be from RF!!
+	double locDeltaBeta, locBeta_Timing;
+	double locStartTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
 
 	locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(SPEED_OF_LIGHT*(locNeutralParticleHypothesis->t1() - locStartTime));
 	locDeltaBeta = locNeutralParticleHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
@@ -1448,7 +1458,6 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 		}
 		else
 			locPID = locNeutralParticles[loc_i]->Get_BestFOM()->PID();
-
 		if(locNumTracksByPID.find(locPID) != locNumTracksByPID.end())
 			++locNumTracksByPID[locPID];
 	}

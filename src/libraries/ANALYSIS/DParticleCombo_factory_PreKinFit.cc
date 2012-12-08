@@ -19,7 +19,7 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 	MAX_DKinematicDataPoolSize = 1;
 	MAX_DBeamPhotonPoolSize = 1;
 
-	dMaxPhotonRFTimeDifference = 1.002;
+	dMaxPhotonRFTimeDifference = 2.004*5.0; // +/- 5 RF buckets //may have a bad RF time if no start counter hits, but probably still won't be worse than this
 	dVertexZCutFlag = true;
 	dMinVertexZ = 45.0;
 	dMaxVertexZ = 85.0;
@@ -63,6 +63,10 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 
+	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches);
+	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
+
 	DParticleCombo* locParticleCombo;
 	DParticleComboStep* locParticleComboStep;
 	DKinematicData* locTarget;
@@ -105,11 +109,11 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				//beam photon: will later create additional combo for each one that's within the time window, just set the first one for now
 				if(locCandidatePhotons.empty())
 				{
-					//compare photon time to RF time (at center of target)
-					double locRFTime = 0.0; //should get from JEventLoop!!
+					//compare photon time to RF time (at center of target) //if no RF time: don't cut on photon time
+					double locRFTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
 					for(size_t loc_j = 0; loc_j < locBeamPhotons.size(); ++loc_j)
 					{
-						if(fabs(locBeamPhotons[loc_j]->time() - locRFTime) < dMaxPhotonRFTimeDifference)
+						if((fabs(locBeamPhotons[loc_j]->time() - locRFTime) < dMaxPhotonRFTimeDifference) || (locEventRFBunch == NULL))
 							locCandidatePhotons.push_back(locBeamPhotons[loc_j]);
 					}
 					if(locBeamPhotons.empty()) //e.g. genr8

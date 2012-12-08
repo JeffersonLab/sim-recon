@@ -22,6 +22,7 @@
 #include "PID/DChargedTrack.h"
 #include "PID/DBeamPhoton.h"
 #include "PID/DNeutralShower.h"
+#include "PID/DEventRFBunch.h"
 
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DParticleComboStep.h"

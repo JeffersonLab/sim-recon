@@ -18,6 +18,7 @@
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DNeutralParticle.h"
 #include "PID/DNeutralParticleHypothesis.h"
+#include "PID/DEventRFBunch.h"
 #include "TRACKING/DMCThrown.h"
 
 #include "ANALYSIS/DReaction.h"
@@ -69,8 +70,10 @@ class DHistogramAction_PID : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos);
 		void Initialize(JEventLoop* locEventLoop);
 
-		void Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching);
-		void Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching);
+		void Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch);
+		void Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch);
+
+		const DParticleID* dParticleID;
 
 		map<Particle_t, TH1D*> dHistMap_PIDFOM;
 		map<Particle_t, TH1D*> dHistMap_TOFFOM;
