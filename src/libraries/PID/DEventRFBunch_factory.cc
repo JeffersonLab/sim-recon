@@ -88,16 +88,18 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	//project the track time to the beamline, then propagate that time to the center of the target (so that can compare with the RF time)
 	//then figure out which RF bunch matches the most # tracks
 		//need to try different sources of times: start with best quality
-	int locBestRFBunchShift = 0; //default is no shift
+	int locBestRFBunchShift = 0;
 	vector<pair<double, double> > locTimeFOMPairs;
 	if(Find_TimeFOMPairs_ST(locSCHits, locTrackTimeBasedVector_OnePerTrack_GoodFOM, locTimeFOMPairs)) //good tracks, use ST info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
-	else if(Find_TimeFOMPairs_ST(locSCHits, locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use ST info
-		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
 	else if(Find_TimeFOMPairs_T0(locTrackTimeBasedVector_OnePerTrack_GoodFOM, locTimeFOMPairs)) //good tracks, use tracking time info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
-	else if(Find_TimeFOMPairs_T0(locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use tracking time info
+	else if(Find_TimeFOMPairs_ST(locSCHits, locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use ST info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
+//	else if(Find_TimeFOMPairs_T0(locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use tracking time info
+//		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
+	else
+		return NOERROR; //no confidence in selecting the RF bunch for the event
 
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = locRFHitTime + dRFBunchFrequency*double(locBestRFBunchShift);

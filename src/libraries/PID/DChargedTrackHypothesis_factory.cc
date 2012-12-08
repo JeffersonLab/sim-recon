@@ -118,12 +118,13 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		*locKinematicData = *(static_cast<const DKinematicData*>(locTrackTimeBased));
 		locCovarianceMatrix = locTrackTimeBased->errorMatrix();
 
-		// Initialize projected time to estimate from track, and hit time to NaN
-		locInitialStartTime = locChargedTrackHypothesis->t0(); // to reject hits that are not in time with the track
+		// Use time-based tracking time as initial guess
+		locInitialStartTime = locChargedTrackHypothesis->t0(); // used to reject hits that are not in time with the track
+		double locInitialStartTimeUncertainty = locChargedTrackHypothesis->t0_err();
 		locChargedTrackHypothesis->setTime(locChargedTrackHypothesis->t0());
-		locCovarianceMatrix(6, 6) = locChargedTrackHypothesis->t0_err()*locChargedTrackHypothesis->t0_err();
-		locChargedTrackHypothesis->setT0(NaN, 0.0, SYS_NULL); //initialize
-		locChargedTrackHypothesis->setT1(NaN, 0.0, SYS_NULL); //initialize
+		locCovarianceMatrix(6, 6) = locInitialStartTimeUncertainty*locInitialStartTimeUncertainty;
+		locChargedTrackHypothesis->setT0(locInitialStartTime, locInitialStartTimeUncertainty, SYS_CDC);
+		locChargedTrackHypothesis->setT1(locInitialStartTime, locInitialStartTimeUncertainty, SYS_CDC);
 		locChargedTrackHypothesis->setPathLength(NaN, 0.0); //zero uncertainty (for now)
 
 		// Match to the start counter using the result of the time-based fit
@@ -131,9 +132,7 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		if (dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locTempProjectedTime, locSCIndex, locPathLength, locFlightTime) == NOERROR)
 		{
 			locChargedTrackHypothesis->setT0(locTempProjectedTime, 0.3, SYS_START); //uncertainty guess for now
-			locChargedTrackHypothesis->setTime(locTempProjectedTime); //will be overriden by other detector systems if hit match
 			locCovarianceMatrix(6, 6) = 0.3*0.3; // guess for now //will be overriden by other detector systems if hit match
-			locChargedTrackHypothesis->setT1(locSCHits[locSCIndex]->t, 0.3, SYS_START); //uncertainty guess for now //will be overriden by other detector systems if hit match
 			locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now) //will be overriden by other detector systems if hit match
 			locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
 		}
@@ -156,11 +155,11 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		if (dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locTempProjectedTime, locTOFIndex, locPathLength, locFlightTime) == NOERROR)
 		{
 			locChargedTrackHypothesis->AddAssociatedObject(locTOFPoints[locTOFIndex]);
-			if((locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_START))
+			if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
 			{
 				locChargedTrackHypothesis->setTime(locTempProjectedTime);
 				locCovarianceMatrix(6, 6) = 0.08*0.08;
-				locChargedTrackHypothesis->setT1(locTOFPoints[locTOFIndex]->t, NaN, SYS_TOF);
+				locChargedTrackHypothesis->setT1(locTOFPoints[locTOFIndex]->t, 0.08, SYS_TOF);
 				locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 			}
 		}
@@ -169,11 +168,11 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		{
 			for(unsigned int loc_j = 0; loc_j < locMatchedFCALShowers.size(); ++loc_j)
 				locChargedTrackHypothesis->AddAssociatedObject(locMatchedFCALShowers[loc_j]);
-			if((locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_START))
+			if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
 			{
 				locChargedTrackHypothesis->setTime(locTempProjectedTime);
 				locCovarianceMatrix(6, 6) = 0.6*0.6; // straight-line fit to high momentum data
-				locChargedTrackHypothesis->setT1(locMatchedFCALShowers[0]->getTime(), NaN, SYS_FCAL);
+				locChargedTrackHypothesis->setT1(locMatchedFCALShowers[0]->getTime(), 0.6, SYS_FCAL);
 				locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 			}
 		}

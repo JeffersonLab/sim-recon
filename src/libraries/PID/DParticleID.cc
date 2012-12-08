@@ -733,14 +733,6 @@ double DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChar
 
 void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
 {
-	if((locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_START))
-	{
-		//uncertainty so huge on SYS_START that for t1() it won't help distinguish PID anyway
-		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
-		locChargedTrackHypothesis->dNDF_Timing = 0;
-		return;
-	}
-
 	double locTimeDifference = 0.0;
 	double locTimeDifferenceVariance = 0.0;
 	if(locEventRFBunch != NULL)
@@ -751,17 +743,17 @@ void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypot
 		locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->time();
 		locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locEventRFBunch->dTimeVariance;
 	}
-	else //no RF information (somehow...)
+	else //no confidence in selecting the RF bunch (e.g. no start counter hits & no tracks with non-nearly-zero tracking FOM)
 	{
-		//try to use the start counter time instead of the RF time //should probably never be here anyway
-		if(locChargedTrackHypothesis->t0_detector() != SYS_START)
+		//try to use the start counter or CDC time instead of the RF time
+		if(locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector()) //e.g. both CDC
 		{
 			locChargedTrackHypothesis->dChiSq_Timing = 0.0;
 			locChargedTrackHypothesis->dNDF_Timing = 0;
 			return;
 		}
-		double locSTTimeProjectedToBeamline = locChargedTrackHypothesis->t0(); //BEWARE, THIS MAY CHANGE AS SC SYSTEM IS UPDATED!! (may need to propagate time to beamline here)
-		locTimeDifference = locSTTimeProjectedToBeamline - locChargedTrackHypothesis->time();
+		double locTimeProjectedToBeamline = locChargedTrackHypothesis->t0(); //BEWARE, THIS MAY CHANGE AS SC SYSTEM IS UPDATED!! (may need to propagate time to beamline here)
+		locTimeDifference = locTimeProjectedToBeamline - locChargedTrackHypothesis->time();
 		locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locChargedTrackHypothesis->t0_err()*locChargedTrackHypothesis->t0_err();
 	}
 
