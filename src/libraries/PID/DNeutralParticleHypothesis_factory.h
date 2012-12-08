@@ -13,6 +13,7 @@
 #include <HDGEOMETRY/DGeometry.h>
 #include <PID/DNeutralParticleHypothesis.h>
 #include <PID/DNeutralShower.h>
+#include <PID/DEventRFBunch.h>
 #include <DVector3.h>
 #include <DMatrixDSym.h>
 #include <DMatrix.h>

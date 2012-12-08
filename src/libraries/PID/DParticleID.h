@@ -14,7 +14,6 @@
 #include "HDGEOMETRY/DRootGeom.h"
 #include <TRACKING/DTrackTimeBased_factory.h>
 #include <BCAL/DBCALShower.h>
-//#include <FCAL/DFCALCluster.h>
 #include <FCAL/DFCALShower.h>
 #include <TOF/DTOFPoint.h>
 #include <START_COUNTER/DSCHit.h>
@@ -22,6 +21,7 @@
 #include <TRACKING/DReferenceTrajectory.h>
 #include <particleType.h>
 #include <PID/DChargedTrackHypothesis.h>
+#include <PID/DEventRFBunch.h>
 #include <TRACKING/DMagneticFieldStepper.h>
 
 class DTrackTimeBased;
@@ -61,8 +61,9 @@ class DParticleID:public jana::JObject{
   jerror_t MatchToSC(const DKinematicData &parms, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id) const;
 
   virtual Particle_t IDTrack(float locCharge, float locMass) const;
-  void Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency) const;
-  void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency) const;
+  double Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
+  void Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
+  void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
 
   protected:
 		// gas material properties
@@ -83,6 +84,7 @@ class DParticleID:public jana::JObject{
   const DMagneticFieldMap *bfield;
   DMagneticFieldStepper *stepper;
   double dTargetZCenter;
+  double dRFBunchFrequency;
 
 
   // start counter geometry parameters

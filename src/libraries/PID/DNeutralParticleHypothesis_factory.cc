@@ -65,9 +65,13 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	locPIDHypotheses.push_back(Gamma);
 	locPIDHypotheses.push_back(Neutron);
 
-	double locStartTime = 0.0; //fix when rf info available!!
+	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches);
+	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
+
+	double locStartTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
 	DLorentzVector locSpacetimeVertex(dTargetCenter, locStartTime);
-	double locVertexTimeUncertainty = 0.0;
+	double locStartTimeVariance = (locEventRFBunch != NULL) ? locEventRFBunch->dTimeVariance : 0.0;
 
 	// Loop over DNeutralShowers
 	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++){
@@ -120,7 +124,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 			locPathVector.SetMag(locMomentum);
 			locNeutralParticleHypothesis->setMomentum(locPathVector);
 			locNeutralParticleHypothesis->setPosition(locSpacetimeVertex.Vect());
-			locNeutralParticleHypothesis->setT0(locSpacetimeVertex.T(), locVertexTimeUncertainty, SYS_NULL);
+			locNeutralParticleHypothesis->setT0(locSpacetimeVertex.T(), sqrt(locStartTimeVariance), SYS_NULL);
 			locNeutralParticleHypothesis->setTime(locProjectedTime);
 			locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), sqrt(locNeutralShower->dCovarianceMatrix(4, 4)), locNeutralShower->dDetectorSystem);
 			locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)

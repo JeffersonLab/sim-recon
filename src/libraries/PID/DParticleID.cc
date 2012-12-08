@@ -30,7 +30,8 @@ bool static DParticleID_hypothesis_cmp(const DTrackTimeBased *a,
 //---------------------------------
 DParticleID::DParticleID(JEventLoop *loop)
 {
-  
+  dRFBunchFrequency = 2.004;
+
   DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
   if(!dapp){
     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
@@ -711,9 +712,28 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 	return VALUE_OUT_OF_RANGE;
 }
 
-void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency) const
+double DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
 {
-	if((locChargedTrackHypothesis->t0_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_START))
+	//Propagates RF time to the track vertex-z, and then selects the closest RF bunch
+	//Method: match each track to different RF buckets.  If cannot reliably match (e.g. no start counter hit) then use the best guess for this event (from locEventRFBunch)
+	double locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
+	if(locChargedTrackHypothesis->t0_detector() != SYS_START)
+		return locPropagatedRFTime; // just use the propagated RF time from locEventRFBunch
+
+	//have a matching hit in the start counter: match this track to the closest RF bunch
+	//This assumes that the start counter resolution will be good enough to unambiguously determine the RF bunch for each track individually.
+		//Otherwise just delete this section and use the "best" one for the event (from DEventRFBunch)
+	double locSTTimeProjectedToBeamline = locChargedTrackHypothesis->t0(); //BEWARE, THIS MAY CHANGE AS SC SYSTEM IS UPDATED!! (may need to propagate time to beamline here)
+	while((locPropagatedRFTime - locSTTimeProjectedToBeamline) > (0.5*dRFBunchFrequency))
+		locPropagatedRFTime -= dRFBunchFrequency;
+	while((locPropagatedRFTime - locSTTimeProjectedToBeamline) < (-0.5*dRFBunchFrequency))
+		locPropagatedRFTime += dRFBunchFrequency;
+	return locPropagatedRFTime;
+}
+
+void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
+{
+	if((locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_START))
 	{
 		//uncertainty so huge on SYS_START that for t1() it won't help distinguish PID anyway
 		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
@@ -721,21 +741,32 @@ void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypot
 		return;
 	}
 
-	// Use ST hit to select RF beam bucket
-	double locPropagatedRFTime = locRFTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-	double locSTRFTimeDifference = locChargedTrackHypothesis->t0() - locPropagatedRFTime; 
-	while(fabs(locSTRFTimeDifference) > locRFBunchFrequency/2.0)
+	double locTimeDifference = 0.0;
+	double locTimeDifferenceVariance = 0.0;
+	if(locEventRFBunch != NULL)
 	{
-		locPropagatedRFTime += (locSTRFTimeDifference > 0.0) ? locRFBunchFrequency : -1.0*locRFBunchFrequency;
-		locSTRFTimeDifference = locChargedTrackHypothesis->t0() - locPropagatedRFTime;
+		double locPropagatedRFTime = Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
+
+		// Compare time difference between RF & TOF/BCAL/FCAL times at the vertex
+		locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->time();
+		locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locEventRFBunch->dTimeVariance;
+	}
+	else //no RF information (somehow...)
+	{
+		//try to use the start counter time instead of the RF time //should probably never be here anyway
+		if(locChargedTrackHypothesis->t0_detector() != SYS_START)
+		{
+			locChargedTrackHypothesis->dChiSq_Timing = 0.0;
+			locChargedTrackHypothesis->dNDF_Timing = 0;
+			return;
+		}
+		double locSTTimeProjectedToBeamline = locChargedTrackHypothesis->t0(); //BEWARE, THIS MAY CHANGE AS SC SYSTEM IS UPDATED!! (may need to propagate time to beamline here)
+		locTimeDifference = locSTTimeProjectedToBeamline - locChargedTrackHypothesis->time();
+		locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locChargedTrackHypothesis->t0_err()*locChargedTrackHypothesis->t0_err();
 	}
 
-	// Compare time difference between RF & TOF/BCAL/FCAL times at the vertex
-	double locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->time();
-
 	// Calculate ChiSq, FOM
-	double locTVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6);
-	double locTimingChiSq = locTimeDifference*locTimeDifference/locTVariance;
+	double locTimingChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
 	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
 	locChargedTrackHypothesis->dNDF_Timing = 1;
 }
@@ -767,10 +798,10 @@ Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
 	return Unknown;
 }
 
-void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, double locRFTime, double locRFBunchFrequency) const
+void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
 {
 	CalcDCdEdxChiSq(locChargedTrackHypothesis);
-	Calc_TimingChiSq(locChargedTrackHypothesis, locRFTime, locRFBunchFrequency);
+	Calc_TimingChiSq(locChargedTrackHypothesis, locEventRFBunch);
 
 	unsigned int locNDF_Total = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
 	double locChiSq_Total = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;

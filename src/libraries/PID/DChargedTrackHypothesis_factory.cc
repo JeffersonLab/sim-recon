@@ -81,10 +81,9 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 	unsigned int locTOFIndex, locSCIndex;
 	double locTempProjectedTime = 0.0, locPathLength = 0.0, locFlightTime = 0.0;
 
-	double locRFTime = 0.0;
-	double locRFBunchFrequency = 2.004;
 	double locInitialStartTime;
 
+	vector<const DEventRFBunch*> locEventRFBunches;
 	vector<const DTOFPoint*> locTOFPoints;
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DFCALShower*> locFCALShowers;
@@ -99,6 +98,8 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		locEventLoop->Get(locBCALShowers);
 	}
 	locEventLoop->Get(locFCALShowers);
+	locEventLoop->Get(locEventRFBunches);
+	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
 
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
 	{
@@ -179,7 +180,7 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
 
 		//Calculate PID ChiSq, NDF, FOM
-		dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locRFTime, locRFBunchFrequency);
+		dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch);
 		locChargedTrackHypotheses.push_back(locChargedTrackHypothesis);
 	}
 
