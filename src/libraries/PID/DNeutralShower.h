@@ -18,9 +18,6 @@
 #include "DLorentzVector.h"
 #include "DMatrixDSym.h"
 
-#include "BCAL/DBCALShower.h"
-#include "FCAL/DFCALShower.h"
-
 using namespace std;
 
 class DNeutralShower : public jana::JObject
@@ -29,40 +26,9 @@ class DNeutralShower : public jana::JObject
 		JOBJECT_PUBLIC(DNeutralShower);
 
 		DLorentzVector dSpacetimeVertex;
-		float dEnergy;
+		double dEnergy;
 		DetectorSystem_t dDetectorSystem;
 		DMatrixDSym dCovarianceMatrix; //E, x, y, z, t
-
-		DNeutralShower(const DBCALShower *locBCALShower)
-		{
-			dDetectorSystem = SYS_BCAL;
-			dEnergy = locBCALShower->E;
-			double locEnergyUncertainty = (dEnergy >= 0.0) ? dEnergy*sqrt( 0.0598*0.0598/dEnergy + 0.0094*0.0094 ) : 1e-3; //last updated at svn revision 9242
-			dSpacetimeVertex.SetXYZT(locBCALShower->x, locBCALShower->y, locBCALShower->z, locBCALShower->t);
-			dCovarianceMatrix.ResizeTo(5, 5);
-			dCovarianceMatrix(0, 0) = locEnergyUncertainty*locEnergyUncertainty;
-			dCovarianceMatrix(1, 1) = locBCALShower->xErr*locBCALShower->xErr;
-			dCovarianceMatrix(2, 2) = locBCALShower->yErr*locBCALShower->yErr;
-			dCovarianceMatrix(3, 3) = locBCALShower->zErr*locBCALShower->zErr;
-			dCovarianceMatrix(4, 4) = locBCALShower->tErr*locBCALShower->tErr;
-			//NEED CORRELATIONS!
-		}
-
-		DNeutralShower(const DFCALShower *locFCALShower)
-		{
-			dDetectorSystem = SYS_FCAL;
-			dEnergy = locFCALShower->getEnergy();
-			double locEnergyUncertainty = (dEnergy >= 0.0) ? 0.042*sqrt(dEnergy) + 0.0001 : 1e-3; //from old DPhoton_factory::makeFCalPhoton() function
-			dSpacetimeVertex.SetVect(locFCALShower->getPosition());
-			dSpacetimeVertex.SetT(locFCALShower->getTime());
-			dCovarianceMatrix.ResizeTo(5, 5);
-			dCovarianceMatrix(0, 0) = locEnergyUncertainty*locEnergyUncertainty;
-			dCovarianceMatrix(1, 1) = locFCALShower->getPositionError().X()*locFCALShower->getPositionError().X();
-			dCovarianceMatrix(2, 2) = locFCALShower->getPositionError().Y()*locFCALShower->getPositionError().Y();
-			dCovarianceMatrix(3, 3) = locFCALShower->getPositionError().Z()*locFCALShower->getPositionError().Z();
-			dCovarianceMatrix(4, 4) = 0.0; //not stored in DFCALShower
-			//NEED CORRELATIONS!
-		}
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "E", "%3.5f", dEnergy);
