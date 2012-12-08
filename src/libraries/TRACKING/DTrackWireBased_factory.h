@@ -76,7 +76,7 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		bool USE_HITS_FROM_CANDIDATE;
 		double MIN_FIT_P;
 
-		DParticleID* dPIDAlgorithm;
+		const DParticleID* dPIDAlgorithm;
 };
 
 #endif // _DTrackWireBased_factory_

@@ -54,7 +54,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   int USE_KLOE;
 
   DTrackFitter *fitter;
-  DParticleID *pid_algorithm;
+  const DParticleID* pid_algorithm;
   vector<DReferenceTrajectory*> rtv;	
   vector<double> mass_hypotheses_positive;
   vector<double> mass_hypotheses_negative;

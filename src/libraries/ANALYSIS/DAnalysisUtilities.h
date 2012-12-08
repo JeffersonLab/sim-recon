@@ -72,6 +72,8 @@ class DAnalysisUtilities : public JObject
 		double Calc_CrudeTime(const deque<const DKinFitParticle*>& locParticles, const DVector3& locCommonVertex) const;
 		DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
+		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles, const deque<DKinematicData*>& locPropagatedData) const;
 
 		bool Compare_Particles(const deque<const DKinematicData*>& locMeasuredParticles_Source, const deque<const DKinematicData*> locMeasuredParticles_ToCheck) const;
 
@@ -149,8 +151,7 @@ class DAnalysisUtilities : public JObject
 		unsigned int DEBUG_LEVEL;
 
 		double dTargetZCenter;
-		DParticleID *dPIDAlgorithm;
-
+		const DParticleID* dPIDAlgorithm;
 };
 
 #endif // _DAnalysisUtilities_

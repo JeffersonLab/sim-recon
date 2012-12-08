@@ -149,8 +149,8 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
     _DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
     return RESOURCE_UNAVAILABLE;
   }
-  // Drop the const qualifier from the DParticleID pointer (I'm surely going to hell for this!)
-  pid_algorithm = const_cast<DParticleID*>(pid_algorithms[0]);
+
+  pid_algorithm = pid_algorithms[0];
   
   // Warn user if something happened that caused us NOT to get a pid_algorithm object pointer
   if(!pid_algorithm){

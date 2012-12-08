@@ -26,7 +26,7 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		jerror_t Get_ChargedTrackHypotheses(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<DChargedTrackHypothesis*>& locChargedTrackHypotheses);
 
 	private:
-		DParticleID *dPIDAlgorithm;
+		const DParticleID* dPIDAlgorithm;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.

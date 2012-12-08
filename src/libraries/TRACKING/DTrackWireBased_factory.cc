@@ -151,8 +151,8 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		_DBG_<<"Unable to get a DParticleID object! NO PID will be done!"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
-	// Drop the const qualifier from the DParticleID pointer (I'm surely going to hell for this!)
-	dPIDAlgorithm = const_cast<DParticleID*>(locPIDAlgorithms[0]);
+
+	dPIDAlgorithm = locPIDAlgorithms[0];
 
 	return NOERROR;
 }

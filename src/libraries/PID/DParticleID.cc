@@ -109,7 +109,7 @@ DParticleID::~DParticleID()
 
 // Group fitted tracks according to candidate id
 jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
-			      vector<vector<const DTrackTimeBased*> >&grouped_tracks){ 
+			      vector<vector<const DTrackTimeBased*> >&grouped_tracks) const{ 
   if (tracks.size()==0) return RESOURCE_UNAVAILABLE;
  
   JObject::oid_t old_id=tracks[0]->candidateid;
@@ -140,7 +140,7 @@ jerror_t DParticleID::GroupTracks(vector<const DTrackTimeBased *> &tracks,
 // Compute the energy losses and the path lengths in the chambers for each hit 
 // on the track. Returns a list of dE and dx pairs with the momentum at the 
 // hit.
-jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>& dEdxHits_CDC, vector<dedx_t>& dEdxHits_FDC){
+jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>& dEdxHits_CDC, vector<dedx_t>& dEdxHits_FDC) const{
   // Position and momentum
   DVector3 pos,mom;
   
@@ -190,7 +190,7 @@ jerror_t DParticleID::GetDCdEdxHits(const DTrackTimeBased *track, vector<dedx_t>
   return NOERROR;
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC){
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const{
 	vector<dedx_t> locdEdxHits_CDC, locdEdxHits_FDC;
 	jerror_t locReturnStatus = GetDCdEdxHits(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC);
 	if(locReturnStatus != NOERROR){
@@ -205,7 +205,7 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, doubl
 	return CalcDCdEdx(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC, locdEdx_FDC, locdx_FDC, locdEdx_CDC, locdx_CDC, locNumHitsUsedFordEdx_FDC, locNumHitsUsedFordEdx_CDC);
 }
 
-jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC){
+jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const vector<dedx_t>& locdEdxHits_CDC, const vector<dedx_t>& locdEdxHits_FDC, double& locdEdx_FDC, double& locdx_FDC, double& locdEdx_CDC, double& locdx_CDC, unsigned int& locNumHitsUsedFordEdx_FDC, unsigned int& locNumHitsUsedFordEdx_CDC) const{
 	locdx_CDC = 0.0;
 	locdEdx_CDC = 0.0;
 	locNumHitsUsedFordEdx_CDC = locdEdxHits_CDC.size()/2;
@@ -236,7 +236,7 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, const
 jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
 				  const DVector3 &pos,
 				  const DCDCTrackHit *hit,
-				  pair <double,double> &dedx){
+				  pair <double,double> &dedx) const{
   if (hit==NULL || hit->wire==NULL) return RESOURCE_UNAVAILABLE;
   
   // Track direction parameters
@@ -298,7 +298,7 @@ jerror_t DParticleID::CalcdEdxHit(const DVector3 &mom,
 //
 // NOTE:  an initial guess for tproj is expected as input so that out-of-time 
 // hits can be skipped
-jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime){
+jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime) const{
   //tproj=NaN;
   tof_match_id=0;
   if (tof_points.size()==0){
@@ -358,7 +358,7 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::f
 //
 // NOTE:  an initial guess for tproj is expected as input so that out-of-time 
 // hits can be skipped
-jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, const vector<const DBCALShower*>& locInputBCALShowers, vector<const DBCALShower*>& locMatchedBCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime){
+jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, const vector<const DBCALShower*>& locInputBCALShowers, vector<const DBCALShower*>& locMatchedBCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime) const{
 	if (locInputBCALShowers.size() == 0){
 		locProjectedTime = NaN;
 		return RESOURCE_UNAVAILABLE;
@@ -428,7 +428,7 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt, const vector<c
 //
 // NOTE:  an initial guess for locProjectedTime is expected as input so that out-of-time 
 // hits can be skipped
-jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, const vector<const DFCALShower*>& locInputFCALShowers, vector<const DFCALShower*>& locMatchedFCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime){
+jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, const vector<const DFCALShower*>& locInputFCALShowers, vector<const DFCALShower*>& locMatchedFCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime) const{
 	if (locInputFCALShowers.size() == 0){
 		locProjectedTime = NaN;
 		return RESOURCE_UNAVAILABLE;
@@ -496,7 +496,7 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, const vector<c
 // hits can be skipped
 jerror_t DParticleID::MatchToSC(const DKinematicData &parms, 
 				vector<const DSCHit*>&sc_hits, 
-				double &tproj,unsigned int &sc_match_id){ 
+				double &tproj,unsigned int &sc_match_id) const{ 
   sc_match_id=0;
   if (sc_hits.size()==0){
     tproj=NaN;
@@ -626,7 +626,7 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
 //
 // NOTE:  an initial guess for tproj is expected as input so that out-of-time 
 // hits can be skipped
-jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime){
+jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime) const{
 
   //tproj=NaN;
 	sc_match_id=0;
