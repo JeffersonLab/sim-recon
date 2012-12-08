@@ -5,15 +5,7 @@
 //------------------
 jerror_t DParticleComboBlueprint_factory::init(void)
 {
-	dDebugLevel = 0;
 	MAX_DParticleComboBlueprintStepPoolSize = 40;
-	dMinimumProtonMomentum = 0.3; //from MIN_PROTON_P defined in DTrackFitterKalmanSIMD (as of August 12, 2012)
-	dVertexZCutFlag = true;
-	dMinVertexZ = 45.0;
-	dMaxVertexZ = 85.0;
-	dMaximumNumTracks = -1;
-	dMinChargedPIDFOM = 0.001; //set to < 0.0 to disable
-	dMaxTrackingChiSqPerDF = -1.0; //set to < 0.0 to disable
 	return NOERROR;
 }
 
@@ -22,6 +14,22 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 //------------------
 jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
+
+	double locTargetCenterZ, locTargetLength;
+	locGeometry->GetTargetZ(locTargetCenterZ);
+	locGeometry->GetTargetLength(locTargetLength);
+	dMinVertexZ = locTargetCenterZ - 0.5*locTargetLength - 5.0;
+	dMaxVertexZ = locTargetCenterZ + 0.5*locTargetLength + 5.0;
+	dVertexZCutFlag = true;
+
+	dDebugLevel = 0;
+	dMinimumProtonMomentum = 0.3; //from MIN_PROTON_P defined in DTrackFitterKalmanSIMD (as of August 12, 2012)
+	dMaximumNumTracks = -1;
+	dMinChargedPIDFOM = 0.001; //set to < 0.0 to disable
+	dMaxTrackingChiSqPerDF = -1.0; //set to < 0.0 to disable
+
 	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:DEBUGLEVEL", dDebugLevel);
 	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:MINPROTONMOMENTUM", dMinimumProtonMomentum);
 	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:MAXNUMTRACKS", dMaximumNumTracks);

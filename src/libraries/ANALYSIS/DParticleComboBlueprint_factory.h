@@ -10,6 +10,8 @@
 #include <particleType.h>
 #include <PID/DChargedTrack.h>
 #include <PID/DNeutralShower.h>
+#include <HDGEOMETRY/DGeometry.h>
+#include <DANA/DApplication.h>
 
 #include <deque>
 #include <vector>

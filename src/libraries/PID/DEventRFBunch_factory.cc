@@ -22,11 +22,20 @@ jerror_t DEventRFBunch_factory::init(void)
 //------------------
 jerror_t DEventRFBunch_factory::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
-	dTargetCenter.SetXYZ(0.0, 0.0, 65.0);
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
+
 	dMinTrackingFOM = 0.001;
 	dRFBunchFrequency = 2.004;
-	dMinVertexZ = 45.0;
-	dMaxVertexZ = 85.0;
+
+	double locTargetCenterZ;
+	locGeometry->GetTargetZ(locTargetCenterZ);
+	dTargetCenter.SetXYZ(0.0, 0.0, locTargetCenterZ);
+
+	double locTargetLength;
+	locGeometry->GetTargetLength(locTargetLength);
+	dMinVertexZ = locTargetCenterZ - 0.5*locTargetLength - 5.0;
+	dMaxVertexZ = locTargetCenterZ + 0.5*locTargetLength + 5.0;
 
 	vector<const DParticleID*> locParticleIDVector;
 	locEventLoop->Get(locParticleIDVector);

@@ -18,13 +18,6 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 	MAX_DParticleComboStepPoolSize = 40;
 	MAX_DKinematicDataPoolSize = 1;
 	MAX_DBeamPhotonPoolSize = 1;
-
-	dMaxPhotonRFTimeDifference = 2.004*5.0; // +/- 5 RF buckets //may have a bad RF time if no start counter hits, but probably still won't be worse than this
-	dVertexZCutFlag = true;
-	dMinVertexZ = 45.0;
-	dMaxVertexZ = 85.0;
-	dMinChargedPIDFOM = 0.001; //set to < 0.0 to disable
-	dMaxTrackingChiSqPerDF = -1.0; //set to < 0.0 to disable
 	return NOERROR;
 }
 
@@ -33,6 +26,20 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 //------------------
 jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
+
+	double locTargetCenterZ, locTargetLength;
+	locGeometry->GetTargetZ(locTargetCenterZ);
+	locGeometry->GetTargetLength(locTargetLength);
+	dMinVertexZ = locTargetCenterZ - 0.5*locTargetLength - 5.0;
+	dMaxVertexZ = locTargetCenterZ + 0.5*locTargetLength + 5.0;
+	dVertexZCutFlag = true;
+
+	dMaxPhotonRFTimeDifference = 2.004*5.0; // +/- 5 RF buckets //may have a bad RF time if no start counter hits, but probably still won't be worse than this
+	dMinChargedPIDFOM = 0.001; //set to < 0.0 to disable
+	dMaxTrackingChiSqPerDF = -1.0; //set to < 0.0 to disable
+
 	gPARMS->SetDefaultParameter("COMBO:VERTEXZCUTFLAG", dVertexZCutFlag);
 	gPARMS->SetDefaultParameter("COMBO:MINVERTEXZ", dMinVertexZ);
 	gPARMS->SetDefaultParameter("COMBO:MAXVERTEXZ", dMaxVertexZ);

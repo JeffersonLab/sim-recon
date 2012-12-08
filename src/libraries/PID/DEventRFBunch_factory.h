@@ -25,6 +25,8 @@
 #include <PID/DEventRFBunch.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <START_COUNTER/DSCHit.h>
+#include <HDGEOMETRY/DGeometry.h>
+#include <DANA/DApplication.h>
 
 using namespace std;
 using namespace jana;

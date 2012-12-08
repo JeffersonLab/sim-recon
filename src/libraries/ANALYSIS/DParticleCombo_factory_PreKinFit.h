@@ -23,6 +23,8 @@
 #include "PID/DBeamPhoton.h"
 #include "PID/DNeutralShower.h"
 #include "PID/DEventRFBunch.h"
+#include <HDGEOMETRY/DGeometry.h>
+#include <DANA/DApplication.h>
 
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DParticleComboStep.h"
