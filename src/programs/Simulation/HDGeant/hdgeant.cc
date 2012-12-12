@@ -19,7 +19,8 @@ extern string HDDS_XML;
 
 // Declare routines callable from FORTRAN
 extern "C" int hdgeant_(void); // define in hdgeant_f.F
-extern "C" const char* GetMD5Geom(void);
+extern "C" void init_runtime_xml_(void); // defined in dl_routines.cc
+extern "C" const char* GetMD5Geom(void); // defined in calibDB.cc
 
 void Usage(void);
 
@@ -49,6 +50,12 @@ int main(int narg, char *argv[])
 				HDDS_XML = arg.substr(arg.find("=")+1);
 			}
 		}
+	}
+	
+	// If specified to read in XML geometry, do necessary
+	// initializations now.
+	if(controlparams_.runtime_geom != 0){
+		init_runtime_xml_();
 	}
 	
 	// If user specified printing the checksum then 

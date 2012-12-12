@@ -593,15 +593,15 @@ void hitForwardDC (float xin[4], float xout[4],
   }
 
   /* Get chamber information */ 
-  int layer = getlayer_(); 
+  int layer = getlayer_wrapper_(); 
   if (layer==0){
     printf("hitFDC: FDC layer number evaluates to zero! THIS SHOULD NEVER HAPPEN! drop this particle.\n");
     return;
   }
-  //int module = getmodule_();
+  //int module = getmodule_wrapper_();
   //int chamber = (module*10)+layer;
   //int PackNo = (chamber-11)/20;
-  int PackNo = getpackage_()-1;
+  int PackNo = getpackage_wrapper_()-1;
   if (PackNo==-1){
      printf("hitFDC: FDC package number evaluates to zero! THIS SHOULD NEVER HAPPEN! drop this particle.\n");
     return;

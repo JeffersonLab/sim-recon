@@ -68,9 +68,9 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
   transformCoord(x,"global",xlocal,"UPV");
   transformCoord(zeroHat,"local",xupv,"UPV");
   
-  int layer = getlayer_();
-  int row = getrow_();
-  int column = getcolumn_();
+  int layer = getlayer_wrapper_();
+  int row = getrow_wrapper_();
+  int column = getcolumn_wrapper_();
   /*
     'column' is not used in the current code. It distinguishes long 
     paddles (column=0) from short paddles to the left(column=1) or 

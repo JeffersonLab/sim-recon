@@ -84,8 +84,8 @@ void hitComptonEMcal (float xin[4], float xout[4],
    {
       int nhit;
       s_CcalTruthHits_t* hits;
-      int row = getrow_();
-      int column = getcolumn_();
+      int row = getrow_wrapper_();
+      int column = getcolumn_wrapper_();
       
       float dist = 0.5*LENGTH_OF_BLOCK-xccal[2];
       float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);

@@ -266,8 +266,8 @@
      + //'nfcal[0,999]:I,xfcal(nfcal):R,yfcal(nfcal):R,Efcal(nfcal):R')
       integer ntfspl
       parameter (ntfspl=10)
-      integer getrow,getcolumn
-      external getrow,getcolumn
+      integer getrow_wrapper,getcolumn_wrapper
+      external getrow_wrapper,getcolumn_wrapper
 #elif defined FCAL_SHOWER_PROFILE_NTUPLE
 c
 c   NTUPLE CONTENTS:
@@ -690,8 +690,8 @@ c           print *, '*-* entering ACWO'
         xconv(6) = vect(6)
         pconv = vect(7)
       elseif (cnames(NLEVEL).eq.'LGBL'.and.DESTEP.gt.1e-3) then
-        row = getrow()
-        col = getcolumn()
+        row = getrow_wrapper()
+        col = getcolumn_wrapper()
         do i=1,nfcal
           if (col.eq.xfcal(i).and.row.eq.yfcal(i)) then
             goto 810

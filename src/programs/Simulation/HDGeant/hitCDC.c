@@ -296,7 +296,7 @@ void hitCentralDC (float xin[4], float xout[4],
   
   // Deal with tracks exiting the ends of the straws
   if (fabs(xlocal[2])>=75.0){
-    int ring = getring_();
+    int ring = getring_wrapper_();
     float sign=(xoutlocal[2]>0)?1.:-1.;
     if (ring<=4 || (ring>=13 && ring<=16) || ring>=25){
       alpha=(sign*75.0-xinlocal[2])/trackdir[2];
@@ -396,9 +396,9 @@ void hitCentralDC (float xin[4], float xout[4],
    {  
      s_CdcStrawTruthHits_t* hits;
 
-      int layer = getlayer_();
-      int ring = getring_();
-      int sector = getsector_();
+      int layer = getlayer_wrapper_();
+      int ring = getring_wrapper_();
+      int sector = getsector_wrapper_();
 
       if (layer == 0)		/* in a straw */
       {	

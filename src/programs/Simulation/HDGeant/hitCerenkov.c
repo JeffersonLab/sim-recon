@@ -79,7 +79,7 @@ void hitCerenkov (float xin[4], float xout[4],
    {
       int nshot;
       s_CereHits_t* hits;
-      int sector = getsector_();
+      int sector = getsector_wrapper_();
       float pe = 1;
       int mark = sector;
       void** twig = getTwig(&cerenkovTree, mark);

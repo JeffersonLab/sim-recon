@@ -162,7 +162,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
       int nhit;
       s_FcalTruthHits_t* hits;
       int row = getrow_();
-      int column = getcolumn_();
+      int column = getcolumn_wrapper_();
       
       float dist = 0.5*LENGTH_OF_BLOCK-xfcal[2];
       float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);

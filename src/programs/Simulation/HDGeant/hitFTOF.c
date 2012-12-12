@@ -148,7 +148,7 @@ void hitForwardTOF (float xin[4], float xout[4],
   //       3) src/programs/Simulation/hdds/hddsGeant3.F
   //
   //          while 2) and 3) are identical 1) is a part of 2) and 3)
-  int plane = getplane_();
+  int plane = getplane_wrapper_();
   
   // calculate mean location of track and mean time in [ns] units
   // the units of xin xout and x are in [cm]
@@ -231,8 +231,8 @@ void hitForwardTOF (float xin[4], float xout[4],
     // getrow and getcolumn are both coded in hddsGeant3.F
     // see above for function getplane()
     
-    int row = getrow_();
-    int column = getcolumn_();
+    int row = getrow_wrapper_();
+    int column = getcolumn_wrapper_();
     
     // distance of hit from PMT north w.r.t. center and similar for PMT south
     // this means positive x points north. to get a right handed system y must

@@ -537,9 +537,9 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    {
       int nshot;
       s_BcalHits_t* hits;
-      int sector = getsector_();
-      int layer  = getlayer_();
-      int module = getmodule_();
+      int sector = getsector_wrapper_();
+      int layer  = getlayer_wrapper_();
+      int module = getmodule_wrapper_();
       float zLocal = xlocal[2];
       int mark = (module<<16)+ (layer<<9) + sector;
       
@@ -628,9 +628,9 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 		if(incident_id==0)incident_id = INCIDENT_ID[track] = find_incident_id(x);
 	
 		// Get map index based on layer and sector
-      unsigned int sector = getsector_();
-      unsigned int layer  = getlayer_();
-      unsigned int module = getmodule_();
+      unsigned int sector = getsector_wrapper_();
+      unsigned int layer  = getlayer_wrapper_();
+      unsigned int module = getmodule_wrapper_();
 		bcal_index idxUp(module, layer, sector, incident_id, bcal_index::kUp);
 		bcal_index idxDn(module, layer, sector, incident_id, bcal_index::kDown);
 		

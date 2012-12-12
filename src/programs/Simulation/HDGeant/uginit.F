@@ -358,11 +358,12 @@ C..geant..
 *
 *             Initialize the Hall D geometry
 *
-      if (runtime_geom .eq. 0) then
-        call HDDSgeant3
-		else
-		  call HDDSgeant3_runtime
-		endif
+      call HDDSgeant3_wrapper
+*      if (runtime_geom .eq. 0) then
+*        call HDDSgeant3
+*		else
+*		  call HDDSgeant3_runtime
+*		endif
       call Goptimize
       call initcalibdb(bfield_type, bfield_map)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts

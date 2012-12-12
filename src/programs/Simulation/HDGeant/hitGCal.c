@@ -89,7 +89,7 @@ void hitGapEMcal (float xin[4], float xout[4],
    {
       int nhit;
       s_GcalHits_t* hits;
-      int module = getmodule_();
+      int module = getmodule_wrapper_();
       float dist = LENGTH_OF_BLOCK-xgcal[2];
       float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
       float tcorr = t + dist/C_EFFECTIVE;

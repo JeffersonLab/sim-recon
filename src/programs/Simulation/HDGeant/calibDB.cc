@@ -28,8 +28,13 @@ extern "C" const char* GetMD5Geom(void);
 
 DMagneticFieldMap *Bmap=NULL;
 static JCalibration *jcalib=NULL;
-static void *dlgeom_handle=NULL;
-string HDDS_XML = "$HDDS_HOME/main_HDDS.xml";
+//static void *dlgeom_handle=NULL;
+//string HDDS_XML = "$HDDS_HOME/main_HDDS.xml";
+
+extern "C" {
+	void md5geom_wrapper_(char *md5);
+}
+
 
 //----------------
 // initcalibdb_
@@ -271,132 +276,6 @@ int GetArrayConstants(const char* namepath, int *Nvals, float* vals, mystr_t *st
 	return 0; // return 0 if OK, 1 if not
 }
 
-
-//------------------
-// hddsgeant3_runtime_
-//------------------
-int hddsgeant3_runtime_(void)
-{
-	// If the runtime_geom field of the controlparams common
-	// block is set to a non-zero value, then this routine
-	// will get called from uginit.F instead of the hddsgeant3_
-	// routine. Both routines are supposed to define the
-	// geometry, but this one will attempt to quickly generate
-	// and compile it using the HDDS tools. It will then link
-	// and execute the hddsgeant3_ routine in the freshly
-	// produced shared object.
-	//
-	// This should only be called if the user specifies the 
-	// "-xml" command line switch. Otherwise, the built-in
-	// geometry is used.
-	
-	// Create, compile and link shared object. That part is done
-	// in a separate routine so md5geom_runtime() can use it too.
-	if(!dlgeom_handle) init_runtime_xml();
-	
-	// Find hddsgeant3_ symbol inside shared object
-	cout<<endl;
-	cout << "Locating geometry ... " << endl;
-	void (*my_hddsgeant3)(void);
-	*(void **) (&my_hddsgeant3) = dlsym(dlgeom_handle, "hddsgeant3_");
-	char *err = dlerror();
-	if(err != NULL){
-		cerr << err << endl;
-		exit(-1);
-	}
-	
-	// Execute my_hddsgeant3
-	cout<<endl;
-	cout << "Loading geometry ... " << endl;
-	(*my_hddsgeant3)();
-
-	cout<<endl;
-	cout << "Geometry loaded successfully" << endl;
-	cout<<"=============================================================="<<endl;
-
-	return 0;
-}
-
-//------------------
-// init_runtime_xml
-//------------------
-void init_runtime_xml(void)
-{
-	cout<<endl;
-	cout<<"=============================================================="<<endl;
-	cout<<"Enabling dynamic geometry rendering"<<endl;
-	cout<<"- - - - - - - - - - - - - - - - - - -"<<endl;
-	cout<<endl;
-	cout<<"Please make sure the following environment variables are set:" <<endl;
-	cout<<"   HDDS_HOME  "<< endl;
-	cout<<"   BMS_OSNAME "<< endl;
-	cout<<"   CERN       "<< endl;
-	cout<<"   CERN_LEVEL "<< endl;
-
-	// Generate FORTRAN code from XML
-	cout<<endl;
-	cout << "Generating FORTRAN from XML source ...." << endl;
-	string cmd = "$HDDS_HOME/bin/$BMS_OSNAME/hdds-geant " + HDDS_XML + " > tmp.F";
-	cout << cmd << endl;
-	system(cmd.c_str());
-	
-	// Compile FORTRAN into shared object
-	cout<<endl;
-	cout << "Compiling FORTRAN into shared object ..." << endl;
-	cmd = "gfortran -shared -fPIC -o tmp.so -I$CERN/$CERN_LEVEL/include tmp.F";
-	cout << cmd << endl;
-	system(cmd.c_str());
-
-	// Attach shared object
-	cout<<endl;
-	cout << "Attaching shared object ..." << endl;
-	string fname = "./tmp.so";
-	void *handle = dlopen(fname.c_str(), RTLD_NOW | RTLD_GLOBAL);
-	if(!handle){
-		cerr<<"Unable to open \""<<fname<<"\"!"<<endl;
-		cerr<<dlerror()<<endl;
-		exit(-1);
-	}
-	
-	// Copy handle to global variable
-	dlgeom_handle = handle;
-	
-	// Clean up (this won't delete the tmp.so file right away since
-	// we still have it open).
-	unlink("./tmp.F");
-	unlink("./tmp.so");
-
-	// do not close shared object since it may contain needed routines
-	//dlclose(dlgeom_handle);
-}
-
-//------------------
-// md5geom_runtime
-//------------------
-void md5geom_runtime(char *md5)
-{
-	// This will extract the MD5 checksum of the 
-	// geometry from the dynamically linked shared
-	// object. It is called from the GetMD5Geom()
-	// routine below. Use that routine to get the
-	// checksum, not this one.
-
-	// Create, compile and link shared object if needed.
-	if(!dlgeom_handle) init_runtime_xml();
-
-	// Grab md5geom routine from shared object
-	void (*my_md5geom_)(char *md5);
-	*(void **) (&my_md5geom_) = dlsym(dlgeom_handle, "md5geom_");
-	char *err = dlerror();
-	if(err != NULL){
-		cerr << err << endl;
-		exit(-1);
-	}
-	
-	// Execute my_md5geom_
-	(*my_md5geom_)(md5);
-}
-
 //------------------
 // GetMD5Geom
 //------------------
@@ -411,13 +290,7 @@ const char* GetMD5Geom(void)
 	// in a FORTRAN routine.
 	static char md5[256];
 	memset(md5, 0, 256);
-	if(controlparams_.runtime_geom){
-		// Grab version from shared object
-		md5geom_runtime(md5);
-	}else{
-		// Use compiled in version
-		md5geom_(md5);
-	}
+	md5geom_wrapper_(md5);
 	
 	md5[32] = 0; // truncate string at 32 characters (FORTRAN adds a space)
 	
