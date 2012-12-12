@@ -10,6 +10,10 @@
 #include <TMath.h>
 #include "FCAL/DFCALGeometry.h"
 
+#ifndef M_TWO_PI
+#define M_TWO_PI 6.28318530717958647692
+#endif
+
 #define C_EFFECTIVE 15. // start counter light propagation speed
 #define OUT_OF_TIME_CUT 200.
 
@@ -56,32 +60,37 @@ DParticleID::DParticleID(JEventLoop *loop)
   geom = dapp->GetDGeometry(loop->GetJEvent().GetRunNumber());
 
   vector<double>sc_origin;
-  geom->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z",sc_origin);
-  
-  //vector<double>sc_light_guide(3);
-  //geom->Get("//tubs[@name='STLG']/@Rio_Z",sc_light_guide); 
-  //sc_light_guide_length=sc_light_guide[2];
- 
-  vector<vector<double> > sc_rioz;
-  geom->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
-  
-  for (unsigned int k=0;k<sc_rioz.size()-1;k++){
-    if(sc_origin.size() < 3)continue; // in case start counter is comment out in XML
-    if(sc_rioz[k].size() < 3)continue; // in case start counter is comment out in XML
-    DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
-    DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,
-		 -sc_rioz[k+1][0]+sc_rioz[k][0]);
-    dir.SetMag(1.);
+  bool got_sc=geom->Get("//posXYZ[@volume='StartCntr']/@X_Y_Z",sc_origin);
+  if (got_sc){  // Check if Start Counter geometry is present
+    double num_paddles;
+    geom->Get("//mposPhi[@volume='STRC']/@ncopy",num_paddles); 
+    dSCdphi=M_TWO_PI/num_paddles;
     
-    sc_pos.push_back(pos);
-    sc_norm.push_back(dir);    
-  }
+    double Phi0;
+    geom->Get("///mposPhi[@volume='STRC']/@Phi0",Phi0);
+    dSCphi0=Phi0*M_PI/180.;
+
+    vector<vector<double> > sc_rioz;
+    geom->GetMultiple("//pgon[@name='STRC']/polyplane/@Rio_Z", sc_rioz);
+
+    for (unsigned int k=0;k<sc_rioz.size()-1;k++){
+      if(sc_origin.size() < 3)continue; // in case start counter is comment out in XML
+      if(sc_rioz[k].size() < 3)continue; // in case start counter is comment out in XML
+      DVector3 pos((sc_rioz[k][0]+sc_rioz[k][1])/2.,0.,sc_rioz[k][2]+sc_origin[2]);
+      DVector3 dir(sc_rioz[k+1][2]-sc_rioz[k][2],0,
+		   -sc_rioz[k+1][0]+sc_rioz[k][0]);
+      dir.SetMag(1.);
+      
+      sc_pos.push_back(pos);
+      sc_norm.push_back(dir);    
+    }
   
-  if(sc_pos.size() >= 1){// in case start counter is comment out in XML
-  	 // sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
-  	 sc_leg_tcor=-sc_pos[0].z()/C_EFFECTIVE;
-  	 double theta=sc_norm[sc_norm.size()-1].Theta();
-  	 sc_angle_cor=1./cos(M_PI-theta);
+    if(sc_pos.size() >= 1){// in case start counter is comment out in XML
+      // sc_leg_tcor=(sc_light_guide[2]-sc_pos[0].z())/C_EFFECTIVE;
+      sc_leg_tcor=-sc_pos[0].z()/C_EFFECTIVE;
+      double theta=sc_norm[sc_norm.size()-1].Theta();
+      sc_angle_cor=1./cos(M_PI-theta);
+    }
   }
 
   //Get calibration constants
@@ -524,7 +533,7 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
   // Position along z and phi at intersection
   double proj_z=pos.z();
   double proj_phi=pos.Phi();
-  if (proj_phi<0) proj_phi+=2.*M_PI;
+  if (proj_phi<0) proj_phi+=M_TWO_PI;
 
   // Position of transition between start counter nose and leg
   double sc_pos1=sc_pos[1].z();
@@ -537,7 +546,7 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
     // Check that the hit is not out of time with respect to the track
     if (fabs(tproj-sc_hits[i]->t)>OUT_OF_TIME_CUT) continue;
 
-    double phi=(6.0+12.*(sc_hits[i]->sector-1))*M_PI/180.;
+    double phi=dSCphi0+dSCdphi*(sc_hits[i]->sector-1);
     double dphi=phi-proj_phi;
  
     // If the z position is in the nose region, match to the appropriate start
@@ -561,7 +570,7 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
 	proj_z=mypos.z();
 	if (proj_z<sc_pos[i+1].z()){
 	  proj_phi=mypos.Phi();
-	  if (proj_phi<0) proj_phi+=2.*M_PI;
+	  if (proj_phi<0) proj_phi+=M_TWO_PI;
 	  dphi=proj_phi-phi;
 	  ds+=ds2;
 
@@ -643,7 +652,7 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 	// Find intersection with a "barrel" approximation for the start counter
 	rt->GetIntersectionWithRadius(sc_pos[1].x(),proj_pos,&locTempPathLength,&locTempFlightTime);
 	double proj_phi=proj_pos.Phi();
-	if (proj_phi<0) proj_phi+=2.*M_PI;
+	if (proj_phi<0) proj_phi+=M_TWO_PI;
 
 	// loop over sc hits, looking for the one with closest phi value to the 
 	// projected phi value
@@ -651,7 +660,7 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 	  // Check that the hit is not out of time with respect to the track
 	  if (fabs(tproj-sc_hits[i]->t)>OUT_OF_TIME_CUT) continue;
 
-	  double phi=(6.0+12.*(sc_hits[i]->sector-1))*M_PI/180.;
+	  double phi=dSCphi0+dSCdphi*(sc_hits[i]->sector-1);
 	  double dphi=phi-proj_phi;
 	  if (fabs(dphi)<dphi_min){
 	    dphi_min=fabs(dphi);

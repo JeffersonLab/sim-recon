@@ -91,7 +91,8 @@ class DParticleID:public jana::JObject{
   double sc_leg_tcor;
   double sc_angle_cor;
   vector<DVector3>sc_pos;
-  vector<DVector3>sc_norm;  
+  vector<DVector3>sc_norm;
+  double dSCdphi,dSCphi0;
 
   double DELTA_R_BCAL;
   double DELTA_R_FCAL;
