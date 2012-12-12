@@ -1,6 +1,8 @@
 //most of the code was orginally written by Matt Shepherd in
 //DBCALCluster_factory.cc
 
+#include <unistd.h>
+
 #include <vector>
 using namespace std;
 
