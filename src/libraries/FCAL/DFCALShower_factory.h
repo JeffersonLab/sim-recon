@@ -25,10 +25,9 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t brun(JEventLoop *loop, int runnumber);
 
-		DFCALShower* makeFcalShower( const DFCALCluster* cluster );
 		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *aVertex);
 
-                double m_zTarget;
+                double m_zTarget,m_FCALback,m_FCALfront;
 		double SHOWER_ENERGY_THRESHOLD;
 
 		double NON_LIN_COEF_A;

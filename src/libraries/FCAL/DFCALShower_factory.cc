@@ -44,6 +44,12 @@ DFCALShower_factory::DFCALShower_factory()
 	gPARMS->SetDefaultParameter("FCAL:SHOWER_ENERGY_THRESHOLD", SHOWER_ENERGY_THRESHOLD);
 
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_A", NON_LIN_COEF_A);
+	if (NON_LIN_COEF_A<=0.) {
+	  cout  << "Warning: DFCALShower : parameter A=" <<  NON_LIN_COEF_A 
+		<< " is not valid!" << endl; 
+	}
+
+
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B", NON_LIN_COEF_B);
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_C", NON_LIN_COEF_C);
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_alfa", NON_LIN_COEF_alfa);
@@ -85,10 +91,17 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
   }
   
   m_zTarget=65.0*k_cm;
+  m_FCALfront= DFCALGeometry::fcalFaceZ();
+  m_FCALback= m_FCALfront+DFCALGeometry::blockLength();
   DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
   if (dapp) {
     const DGeometry *geom = dapp->GetDGeometry(runnumber);
     geom->GetTargetZ(m_zTarget);
+    geom->GetFCALZ(m_FCALfront);
+
+    vector<double>block;
+    geom->Get("//box[@name='LGBL']/@X_Y_Z",block);
+    m_FCALback=m_FCALfront+block[2];
   }
 
   return NOERROR;
@@ -100,171 +113,54 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
-	vector<const DFCALCluster*> fcalClusters;
-	eventLoop->Get(fcalClusters);
+  vector<const DFCALCluster*> fcalClusters;
+  eventLoop->Get(fcalClusters);
+  if(fcalClusters.size()<1)return NOERROR;
+ 
+  // Use the center of the target as an approximation for the vertex position
+  DVector3 target(0.0, 0.0, m_zTarget);
 
-	//------------- the following is a temporary kludge...
-//	const DVertex *vertex=NULL;
+  // Loop over list of DFCALCluster objects and calculate the "Non-linear" corrected
+  // energy and position for each. We'll use a logarithmic energy-weighting to 
+  // find the final position and error. 
+  for( vector< const DFCALCluster* >::const_iterator clItr = fcalClusters.begin();
+       clItr != fcalClusters.end();  ++clItr ){
+    const DFCALCluster* cluster=*clItr;
 
-	//loop->GetSingle(vertex);
-//	vector<const DVertex *>vertices;
-//	eventLoop->Get(vertices);
-//	if (vertices.size())   vertex=vertices[0];
-
-	// Return immediately if there isn't even one cluster
-	if(fcalClusters.size()<1)return NOERROR;
-
-// ------------------------------------------------
-/*	
-	// Here we try and merge FCAL clusters simply by looking to see if they are
-	// within a certain distance of one another. We do this by first looping
-	// through the list of clusters as many times as is needed until we get
-	// a set of lists for which all clusters are at least MIN_CLUSTER_SEPARATION
-	// from all clusters in all other lists.
-	
-	// Start by filling out out lists with one cluster each
-	vector<vector<const DFCALCluster*> > merge_lists;
-	for ( unsigned int i = 0; i < fcalClusters.size(); i++ ) {
-		vector<const DFCALCluster*> merge_list;
-		merge_list.push_back(fcalClusters[i]);
-		merge_lists.push_back(merge_list);
-	}
-	
-	// Loop until we find no more lists to merge
-	bool clusters_were_merged;
-	do{
-		clusters_were_merged = false;
-		
-		// Loop over all pairs of cluster lists
-		for(unsigned int i=0; i<merge_lists.size(); i++){
-			vector<const DFCALCluster*> &merge_list1 = merge_lists[i];
-			for(unsigned int j=i+1; j<merge_lists.size(); j++){
-				vector<const DFCALCluster*> &merge_list2 = merge_lists[j];
-				
-				// Loop over all elements of both lists to see if any are
-				// within MIN_CLUSTER_SEPARATION.
-				for(unsigned int k=0; k<merge_list1.size(); k++){
-					DVector3 pos1 = merge_list1[k]->getCentroid();
-					for(unsigned int m=0; m<merge_list2.size(); m++){
-						DVector3 pos2 = merge_list2[m]->getCentroid();
-						
-						double separation_xy = (pos1-pos2).Perp();
-						if(separation_xy<MIN_CLUSTER_SEPARATION){
-							// Phew! if we got here then we need to merge the 2 clusters
-							// The easiest way to do this is to just add all clusters
-							// from merge_list2 to merge_list1 and clear merge_list2.
-							// Then, we ignore empty lists below.
-							merge_list1.insert(merge_list1.end(), merge_list2.begin(), merge_list2.end());
-							merge_list2.clear();
-							clusters_were_merged = true;
-						}
-					}
-					if(clusters_were_merged)break; // we'll need to do the outer "do" loop again anyway so bail now
-				}
-				if(clusters_were_merged)break; // we'll need to do the outer "do" loop again anyway so bail now
-			}
-			if(clusters_were_merged)break; // we'll need to do the outer "do" loop again anyway so bail now
-		}
-	
-	}while(clusters_were_merged);
-
-	// Now we loop over the lists of clusters to merge and make a
-	// DFCALShower from the list. Note that it may well be that each
-	// list is still only 1 element long!
-	for ( unsigned int i = 0; i < merge_lists.size(); i++ ) {
-		vector<const DFCALCluster*> &merge_list = merge_lists[i];
-		if(merge_list.size()<1)continue; // ignore empty lists (see comment above)
-	
-		DFCALShower* fcalPhoton = makePhoton( merge_list, vertex );
-
-		if ( fcalPhoton->getEnergy() <= 0  ) {
-		  cout << "Deleting fcalPhoton " << endl;
-		  delete fcalPhoton; 
-		  continue;
-		}else {
-			_data.push_back(fcalPhoton);
-		}
-	} 
-*/
-// --------------------------
-       for( vector< const DFCALCluster* >::const_iterator clItr = fcalClusters.begin();
-	       clItr != fcalClusters.end();  ++clItr ){
-
-		DFCALShower* fcalShower = makeFcalShower( *clItr );
-
-		//Make a very loose timing cut here to eliminate out-of-time EM bkgd.
-		//Photon travels from center of target to shower maximum
-		//position at the speed of light.
-		//This travel time is the expected_time. Since this time is only used
-		//to make a very loose timing cut, we can ignore other factors such as
-		//the fact that not all particles originate exactly at the center of
-		//the target.
-		//Later analysis should use a tighter timing cut incoporating vertex
-		//position and time.
-		DVector3 pos = fcalShower->getPosition();
-		DVector3 vertex(0.0, 0.0, m_zTarget);
-		double expected_time = (pos-vertex).Mag()/SPEED_OF_LIGHT;
-
-		if ( fcalShower->getEnergy() <= 0  ) {
-		  cout << "Deleting fcalShower " << endl;
-		  delete fcalShower; 
-		  continue;
-		} else if ( fabs(fcalShower->getTime() - expected_time) > SHOWER_TIMING_WINDOW ){
-		  delete fcalShower; 
-		  continue;          
-		} else {
-			_data.push_back(fcalShower);
-		}
-
-        }
-
-	return NOERROR;
-}
-
-
-//--------------------------------
-// makePhoton
-//--------------------------------
-DFCALShower* DFCALShower_factory::makeFcalShower( const DFCALCluster* cluster ) 
-{
-
-	// Loop over list of DFCALCluster objects and calculate the "Non-linear" corrected
-	// energy and position for each. We'll use a logarithmic energy-weighting to 
-	// find the final position and error.
-
-// Use target center if vertex does not exist 
-        DVector3 target(0.0, 0.0, m_zTarget);
-
-        double cTime = cluster->getTime();
+    double cTime = cluster->getTime();
  		
-	double errX = cluster->getRMS_x();
-	double errY = cluster->getRMS_y();
-	double errZ;  // will be filled by call to GetCorrectedEnergyAndPosition()
+    double errX = cluster->getRMS_x();
+    double errY = cluster->getRMS_y();
+    double errZ;  // will be filled by call to GetCorrectedEnergyAndPosition()
 		
-		// Get corrected energy, position, and errZ
-	double Ecorrected;
-	DVector3 pos_corrected;
-	GetCorrectedEnergyAndPosition( cluster , Ecorrected, pos_corrected, errZ, &target);
-		
-	//up to this point, all times have been times at which light reaches
-	//the back of the detector. Here we correct for the time that it 
-	//takes the Cherenkov light to reach the back of the detector
-	//so that the t reported is roughly the time of the shower at the
-	//position pos_corrected	
-	const double FCALback = DFCALGeometry::fcalFaceZ()+DFCALGeometry::blockLength();
-	cTime -= ( FCALback - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
+    // Get corrected energy, position, and errZ
+    double Ecorrected;
+    DVector3 pos_corrected;
+    GetCorrectedEnergyAndPosition( cluster , Ecorrected, pos_corrected, errZ, &target);
 
-	// Make the DFCALShower object
-	DFCALShower* shower = new DFCALShower;
+    if (Ecorrected>0.){		
+      //up to this point, all times have been times at which light reaches
+      //the back of the detector. Here we correct for the time that it 
+      //takes the Cherenkov light to reach the back of the detector
+      //so that the t reported is roughly the time of the shower at the
+      //position pos_corrected	
+      cTime -= ( m_FCALback - pos_corrected.Z() )/FCAL_C_EFFECTIVE;
 
-	shower->setEnergy( Ecorrected );
-	shower->setPosition( pos_corrected );   
-	shower->setPosError( errX, errY, errZ );
-	shower->setTime ( cTime );
+      // Make the DFCALShower object
+      DFCALShower* shower = new DFCALShower;
+      
+      shower->setEnergy( Ecorrected );
+      shower->setPosition( pos_corrected );   
+      shower->setPosError( errX, errY, errZ );
+      shower->setTime ( cTime );
+      
+      shower->AddAssociatedObject(cluster);
 
-	shower->AddAssociatedObject(cluster);
+      _data.push_back(shower);
+    }
+  }
 
-	return shower;
+  return NOERROR;
 }
 
 //--------------------------------
@@ -274,88 +170,82 @@ DFCALShower* DFCALShower_factory::makeFcalShower( const DFCALCluster* cluster )
 //--------------------------------
 void DFCALShower_factory::GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *vertex)
 {
-// Non-linar energy correction are done here
-    int MAXITER = 1000;
+  // Non-linear energy correction are done here
+  int MAXITER = 1000;
 
-    DVector3  posInCal = cluster->getCentroid();
-    float x0 = posInCal.Px();
-    float y0 = posInCal.Py();
+  DVector3  posInCal = cluster->getCentroid();
+  float x0 = posInCal.Px();
+  float y0 = posInCal.Py();
 
-    double Eclust = cluster->getEnergy();
-   
-	double A  = NON_LIN_COEF_A;
-	double B  = NON_LIN_COEF_B;
-	double C  = NON_LIN_COEF_C;
-	double alfa  = NON_LIN_COEF_alfa;
+  double Eclust = cluster->getEnergy();
+  
+  double A  = NON_LIN_COEF_A;
+  double B  = NON_LIN_COEF_B;
+  double C  = NON_LIN_COEF_C;
+  double alfa  = NON_LIN_COEF_alfa;
 	 
-
-    double Egamma = 0.;
-
-       if ( A > 0 ) { 
- 
-  	  Egamma = Eclust/A;
-
-          for ( int niter=0; 1; niter++) {
-
-              double energy = Egamma;
-              double non_lin_part = pow(Egamma,1+alfa)/(B+C*Egamma);
-              Egamma = Eclust/A - non_lin_part;
-              if ( fabs( (Egamma-energy)/energy ) < 0.001 ) {
-
-                 break;
-
-              }
-              else if ( niter > MAXITER ) {
-
-                 cout << " Iteration failed for cluster energy " << Eclust << endl;
-                 Egamma  = 0;
-               
-                 break;
-
-              }
-          
-          }
-
-       } 
-       else {
-
-          cout << "Warning: DFCALShower : parameter A" << A << " is not valid" << endl; 
-       }
-
-
-// then depth corrections 
-
-       if ( Egamma > 0 ) { 
-               float xV = vertex->X();
-               float yV = vertex->Y();
-               float zV = vertex->Z();
-            
-
-           double z0 = DFCALGeometry::fcalFaceZ() - zV;
-           double zMax = (FCAL_RADIATION_LENGTH*(
-                       FCAL_SHOWER_OFFSET + log(Egamma/FCAL_CRITICAL_ENERGY)));
-           double zed = z0;
-           double zed1 = z0 + zMax;
-
-           double r0 = sqrt( (x0-xV)*(x0-xV) + (y0-yV)*(y0-yV) );
-
-           int niter;
-           for ( niter=0; niter<100; niter++) {
-
-               double tt = r0/zed1;
-               zed = z0 + zMax/sqrt( 1 + tt*tt );
-               if ( fabs( (zed-zed1) ) < 0.001) {
-                  break;
-               }
-               zed1 = zed;
-           }
+  double Egamma = 0.;
+  
+  if ( A > 0 ) { 
     
-           posInCal.SetZ( zed + zV );
-			  errZ = zed - zed1;
-		}
+    Egamma = Eclust/A;
 
-		Ecorrected = Egamma;
-		pos_corrected = posInCal;
+    for ( int niter=0; 1; niter++) {
+
+      double energy = Egamma;
+      double non_lin_part = pow(Egamma,1+alfa)/(B+C*Egamma);
+      Egamma = Eclust/A - non_lin_part;
+      if ( fabs( (Egamma-energy)/energy ) < 0.001 ) {
+	break;
+	
+      }
+      else if ( niter > MAXITER ) {
+	
+	cout << " Iteration failed for cluster energy " << Eclust << endl;
+	Egamma  = 0;
+        
+	break;
+	
+      }
+      
+    }
+    
+  }
+  else {
+    cout  << "Warning: DFCALShower : parameter A=" <<  NON_LIN_COEF_A 
+	  << " is not valid!" << endl; 
+  }
+
+  // then depth corrections 
+  if ( Egamma > 0 ) { 
+    float dxV = x0-vertex->X();
+    float dyV = y0-vertex->Y();
+    float zV = vertex->Z();
+   
+    double z0 = m_FCALfront - zV;
+    double zMax = FCAL_RADIATION_LENGTH*(FCAL_SHOWER_OFFSET 
+					 + log(Egamma/FCAL_CRITICAL_ENERGY));
+    double zed = z0;
+    double zed1 = z0 + zMax;
+
+    double r0 = sqrt(dxV*dxV + dyV*dyV );
+
+    int niter;
+    for ( niter=0; niter<100; niter++) {
+      double tt = r0/zed1;
+      zed = z0 + zMax/sqrt( 1 + tt*tt );
+      if ( fabs( (zed-zed1) ) < 0.001) {
+	break;
+      }
+      zed1 = zed;
+    }
+    
+    posInCal.SetZ( zed + zV );
+    errZ = zed - zed1;
+  }
+  
+  Ecorrected = Egamma;
+  pos_corrected = posInCal;
 }
 
 
