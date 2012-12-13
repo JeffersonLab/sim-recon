@@ -37,7 +37,7 @@ static float TWO_HIT_RESOL   = 25.;
 static int   MAX_HITS 	     = 1000;
 static float THRESH_KEV	     =   1.;
 static float THRESH_MV = 1.;
-static float STRAW_RADIUS    =   0.8;
+static float STRAW_RADIUS    =   0.776;
 static float CDC_TIME_WINDOW = 1000.0; //time window for accepting CDC hits, ns
 static float ELECTRON_CHARGE =1.6022e-4; /* fC */
 static float GAS_GAIN = 1e5;
@@ -215,7 +215,7 @@ void hitCentralDC (float xin[4], float xout[4],
   float doca[3]; 
   float trackdir[3];
   float alpha;
-  
+
   if (!initialized) {
     mystr_t strings[50];
     float values[50];
@@ -243,12 +243,8 @@ void hitCentralDC (float xin[4], float xout[4],
 	  THRESH_KEV  = values[i];
 	  ncounter++;
 	}
-	if (!strcmp(strings[i].str,"CDC_STRAW_RADIUS")) {
-	  THRESH_KEV  = values[i];
-	  ncounter++;
-	}
       }
-      if (ncounter==5){
+      if (ncounter==4){
 	printf("CDC: ALL parameters loaded from Data Base\n");
       } else if (ncounter<5){
 	printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 5\n",ncounter);
@@ -268,6 +264,7 @@ void hitCentralDC (float xin[4], float xout[4],
   dx[2] = xin[2] - xout[2];
   transformCoord(xin,"global",xinlocal,"local");
   transformCoord(xout,"global",xoutlocal,"local");
+
   /*
   xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
   xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
@@ -292,23 +289,23 @@ void hitCentralDC (float xin[4], float xout[4],
     /(trackdir[0]*trackdir[0]+trackdir[1]*trackdir[1]);
   xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
   xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
-  xlocal[2]=xinlocal[2]+trackdir[2]*alpha;
+  xlocal[2]=xinlocal[2]+trackdir[2]*alpha;  
   
   // Deal with tracks exiting the ends of the straws
-  if (fabs(xlocal[2])>=75.0){
-    int ring = getring_wrapper_();
+  if (fabs(xlocal[2])>=75.45){
     float sign=(xoutlocal[2]>0)?1.:-1.;
+    int ring = getring_wrapper_();
     if (ring<=4 || (ring>=13 && ring<=16) || ring>=25){
-      alpha=(sign*75.0-xinlocal[2])/trackdir[2];
+      alpha=(sign*75.45-xinlocal[2])/trackdir[2];
       xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
       xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
-      xlocal[2]=sign*75.0;
+      xlocal[2]=sign*75.45;
     }
-    else if (fabs(xlocal[2])>=75.415){
-      alpha=(sign*75.415-xinlocal[2])/trackdir[2]; 
+    else if (fabs(xlocal[2])>=75.575){
+      alpha=(sign*75.575-xinlocal[2])/trackdir[2]; 
       xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
       xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
-      xlocal[2]=sign*75.415;
+      xlocal[2]=sign*75.575;
     }
   } 
 
@@ -324,19 +321,23 @@ void hitCentralDC (float xin[4], float xout[4],
    * automatically ignore those hits by returning immediately.
    */
   if(drin < 0.0050)return; /* entering straw within 50 microns of wire. ignore */
-  if(drin>(STRAW_RADIUS-0.0200) && drout<0.0050){
-    /* We entered within 200 microns of the straw tube and left
-     * within 50 microns of the wire. Assume the track passed through
-     * the wire volume.
+ 
+  if((drin>(STRAW_RADIUS-0.0200) && drout<0.0050)
+     ||(drin<0.274 && drin>0.234 && drout<0.0050)){
+    /* Either we entered within 200 microns of the straw tube and left
+     * within 50 microns of the wire or we entered the stub region near the 
+     * donuts at either end of the straw (the inner radius of the feedthrough 
+     * region is 0.254 cm) and passed near the wire. Assume the track passed 
+     * through the wire volume.
      */
-    
-    x[0] = xin[0];
-    x[1] = xin[1];
-    x[2] = xin[2];
-    t = xin[3] * 1e9;
-    xlocal[0] = xinlocal[0];
-    xlocal[1] = xinlocal[1];
-    xlocal[2] = xinlocal[2];
+   
+    x[0] = xout[0];
+    x[1] = xout[1];
+    x[2] = xout[2];
+    t = xout[3] * 1e9;
+    xlocal[0] = xoutlocal[0];
+    xlocal[1] = xoutlocal[1];
+    xlocal[2] = xoutlocal[2];
     
     /* For dx, we will just assume it is twice the distance from
      * the straw to wire.
@@ -344,6 +345,10 @@ void hitCentralDC (float xin[4], float xout[4],
     dx[0] *= 2.0;
     dx[1] *= 2.0;
     dx[2] *= 2.0;
+
+    /* We will approximate the energy loss in the straw to be twice the 
+       energy loss in the first half of the straw */
+    dEsum *= 2.0;
   }
   
   /* Distance of hit from center of wire */
