@@ -379,6 +379,20 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   FDC_DRIFT_B_SCALE=FDC_DRIFT_B_SCALE_PAR1+FDC_DRIFT_B_SCALE_PAR2*Bref;
 
   for (unsigned int i=0;i<5;i++)I5x5(i,i)=1.;
+  
+  // Inform user of some configuration settings
+  static bool config_printed = false;
+  if(!config_printed){
+     config_printed = true;
+	  stringstream ss;
+	  ss << "vertex constraint: " ;
+	  if(ADD_VERTEX_POINT){
+   	 ss << "z = " << TARGET_Z << "cm" << endl;
+	  }else{
+   	 ss << "<none>" << endl;
+	  }
+	  jout << ss.str();
+  } // config_printed
 }
 
 //-----------------
