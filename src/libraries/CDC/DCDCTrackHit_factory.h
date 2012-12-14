@@ -13,7 +13,6 @@
 #include "DCDCWire.h"
 #include "HDGEOMETRY/DGeometry.h"
 
-#define CDC_MAX_STRAWS 222
 #define CDC_MAX_RINGS 28
 
 /// Provide CDC track hit objects. Currently, these objects are
@@ -36,7 +35,6 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 		DGeometry *dgeom;
 		vector<vector<DCDCWire *> >cdcwires;
 		int Nstraws[CDC_MAX_RINGS];
-		double Z_MIN, Z_MAX;
 };
 
 #endif // _DCDCTrackHit_factory_

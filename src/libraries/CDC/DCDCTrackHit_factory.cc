@@ -31,19 +31,6 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
   // Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   dgeom  = dapp->GetDGeometry(runnumber);
-
-  vector<double>cdc_origin;
-  //vector<double>cdc_half_length;
-  vector<double>cdc_length;
-  vector<double>cdc_center;
-  dgeom->Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
-  dgeom->Get("//tubs[@name='STRA']/@Rio_Z",cdc_length);
-
-  Z_MIN = cdc_origin[2];
-  Z_MAX = Z_MIN + cdc_length[2];
-  
-  gPARMS->SetDefaultParameter("CDC:Z_MIN",Z_MIN);
-  gPARMS->SetDefaultParameter("CDC:Z_MAX",Z_MAX);
   
   // Get the CDC wire table from the XML
   jout<< "Getting map of cdc wires from the XML" <<endl;
@@ -97,13 +84,15 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double electron_charge=1.6022e-4; /* fC */
 		hit->dE=cdchit->q*w_eff/(gas_gain*electron_charge);
 		hit->dist = hit->tdrift*55.0E-4; // Use number hardwired in simulation for now
-		
-		// Try matching truth hit with this "real" hit.
-		const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hit->wire, hit->dist, mctrackhits);
-		
 		hit->AddAssociatedObject(cdchit);
-		if(mctrackhit)hit->AddAssociatedObject(mctrackhit);
+
+		if (mctrackhits.size()>0){
+		  // Try matching truth hit with this "real" hit.
+		  const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hit->wire, hit->dist, mctrackhits);
 		
+		  if(mctrackhit)hit->AddAssociatedObject(mctrackhit);
+		}
+
 		_data.push_back(hit);
 	}
 	
