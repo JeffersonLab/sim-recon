@@ -36,7 +36,7 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 	dMaxVertexZ = locTargetCenterZ + 0.5*locTargetLength + 5.0;
 	dVertexZCutFlag = true;
 
-	dMaxPhotonRFTimeDifference = 2.004*5.0; // +/- 5 RF buckets //may have a bad RF time if no start counter hits, but probably still won't be worse than this
+	dMaxPhotonRFTimeDifference = 2.004*10.0; // +/- 10 RF buckets //may have a bad RF time if no start counter hits, but probably still won't be worse than this
 	dMinChargedPIDFOM = 0.001; //set to < 0.0 to disable
 	dMaxTrackingChiSqPerDF = -1.0; //set to < 0.0 to disable
 
@@ -85,15 +85,13 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	vector<const DBeamPhoton*> locCandidatePhotons;
 	map<const DParticleComboStep*, deque<const DParticleComboStep*> > locStepCloneForBeamMap;
 	map<const DParticleComboStep*, deque<const DParticleComboStep*> >::iterator locIterator;
-
-	for(int loc_i = 0; loc_i < int(locParticleComboBlueprints.size()); ++loc_i)
+	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	{
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
 		locParticleCombo = new DParticleCombo();
 		locParticleCombo->Set_Reaction(locParticleComboBlueprint->Get_Reaction());
 		locParticleCombo->AddAssociatedObject(locParticleComboBlueprint);
 		locParticleCombo->Set_KinFitResults(NULL);
-
 		bool locBadComboFlag = false;
 		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
 		{
@@ -118,15 +116,20 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				{
 					//compare photon time to RF time (at center of target) //if no RF time: don't cut on photon time
 					double locRFTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
-					for(size_t loc_j = 0; loc_j < locBeamPhotons.size(); ++loc_j)
+					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
 					{
-						if((fabs(locBeamPhotons[loc_j]->time() - locRFTime) < dMaxPhotonRFTimeDifference) || (locEventRFBunch == NULL))
-							locCandidatePhotons.push_back(locBeamPhotons[loc_j]);
+						if((fabs(locBeamPhotons[loc_k]->time() - locRFTime) < dMaxPhotonRFTimeDifference) || (locEventRFBunch == NULL))
+							locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
 					}
 					if(locBeamPhotons.empty()) //e.g. genr8
 						locCandidatePhotons.push_back(Create_BeamPhoton());
 				}
 
+				if(locCandidatePhotons.empty())
+				{
+					locBadComboFlag = true; //no photons match the RF time
+					break;
+				}
 				locParticleComboStep->Set_InitialParticle(locCandidatePhotons[0]);
 				locParticleComboStep->Set_InitialParticle_Measured(locCandidatePhotons[0]);
 			}
