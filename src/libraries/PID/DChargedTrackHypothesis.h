@@ -36,6 +36,7 @@ class DChargedTrackHypothesis : public DKinematicData {
 		float dFOM; //overall FOM for PID determination
 
 		void toStrings(vector<pair<string,string> > &items) const{
+			AddString(items, "candidate","%d",candidateid);
 			DKinematicData::toStrings(items);
 			AddString(items, "Track_ChiSq", "%f", dChiSq_Track);
 			AddString(items, "dEdx_ChiSq", "%f", dChiSq_DCdEdx);
