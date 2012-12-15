@@ -52,13 +52,13 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	// https://halldweb1.jlab.org/wiki/index.php/How_HDGeant_defines_time-zero_for_physics_events
 
 /*
-	//COMMENTED UNTIL DRawRFBunch CREATED
-	vector<const DRawRFBunch*> locRawRFBunches;
-	locEventLoop->Get(locRawRFBunches);
-	if(locRawRFBunches.empty())
+	//COMMENTED UNTIL DRFTime CREATED
+	vector<const DRFTime*> locRFTimes;
+	locEventLoop->Get(locRFTimes);
+	if(locRFTimes.empty())
 		return RESOURCE_NOT_AVAILABLE;
-	double locRFHitTime = locRawRFBunches[0]->dTime; //get from raw hit when ready
-	double locTimeVariance = locRawRFBunches[0]->dTimeVariance;
+	double locRFHitTime = locRFTimes[0]->dTime; //get from raw hit when ready
+	double locTimeVariance = locRFTimes[0]->dTimeVariance;
 */
 
 	double locRFHitTime = 0.0;
@@ -69,6 +69,12 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 
 	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locSCHits);
+
+	vector<const DTOFPoint*> locTOFPoints;
+	locEventLoop->Get(locTOFPoints);
+
+	vector<const DBCALShower*> locBCALShowers;
+	locEventLoop->Get(locBCALShowers);
 
 	//select the best DTrackTimeBased for each track: use best tracking FOM
 	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking chisq/ndf for each candidate id
@@ -99,14 +105,14 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 		//need to try different sources of times: start with best quality
 	int locBestRFBunchShift = 0;
 	vector<pair<double, double> > locTimeFOMPairs;
-	if(Find_TimeFOMPairs_ST(locSCHits, locTrackTimeBasedVector_OnePerTrack_GoodFOM, locTimeFOMPairs)) //good tracks, use ST info
+	if(Find_TimeFOMPairs_Hits(locTOFPoints, locBCALShowers, locSCHits, locTrackTimeBasedVector_OnePerTrack_GoodFOM, locTimeFOMPairs)) //good tracks, use TOF/BCAL/ST info
+		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
+	else if(Find_TimeFOMPairs_Hits(locTOFPoints, locBCALShowers, locSCHits, locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use TOF/BCAL/ST info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
 	else if(Find_TimeFOMPairs_T0(locTrackTimeBasedVector_OnePerTrack_GoodFOM, locTimeFOMPairs)) //good tracks, use tracking time info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
-	else if(Find_TimeFOMPairs_ST(locSCHits, locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use ST info
+	else if(Find_TimeFOMPairs_T0(locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use tracking time info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
-//	else if(Find_TimeFOMPairs_T0(locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use tracking time info
-//		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
 	else
 		return NOERROR; //no confidence in selecting the RF bunch for the event
 
@@ -118,23 +124,68 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	return NOERROR;
 }
 
-bool DEventRFBunch_factory::Find_TimeFOMPairs_ST(vector<const DSCHit*>& locSCHitVector, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs)
+bool DEventRFBunch_factory::Find_TimeFOMPairs_Hits(vector<const DTOFPoint*>& locTOFPoints, vector<const DBCALShower*>& locBCALShowers, vector<const DSCHit*>& locSCHits, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs)
 {
 	locTimeFOMPairs.clear();
-	for(unsigned int loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+
+	unsigned int locTOFIndex, locSCIndex;
+	double locPathLength, locFlightTime;
+	double locPropagatedTime, locTrackingTime, locProjectedTime;
+	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
 
-		// Match to the start counter using the result of the time-based fit
-		double locProjectedSTTime = locTrackTimeBased->t0(); // to reject hits that are not in time with the track
-		unsigned int locSCIndex;
-		double locPathLength, locFlightTime;
-		if(dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHitVector, locProjectedSTTime, locSCIndex, locPathLength, locFlightTime) != NOERROR)
-			continue;
+		//Use TOF/BCAL time to match to RF bunches:
+			//max can be off = 1.002 ns (if off by more, will pick wrong beam bunch (RF frequency = 2.004 ns))
 
-		double locPropagatedTime = locProjectedSTTime + (dTargetCenter.Z() - locTrackTimeBased->z())/SPEED_OF_LIGHT;
-		locTimeFOMPairs.push_back(pair<double, double>(locPropagatedTime, locTrackTimeBased->FOM));
+		// Match to TOF
+		locTrackingTime = locTrackTimeBased->t0();
+		locProjectedTime = locTrackingTime; // to reject hits that are not in time with the track
+		if(dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locProjectedTime, locTOFIndex, locPathLength, locFlightTime) == NOERROR)
+		{
+
+			//TOF resolution = 80ps, 3sigma = 240ps
+			//max PID delta-t = 762ps (assuming no buffer)
+				//for pion-proton: delta-t is ~750ps at ~170 MeV/c or lower: cannot have proton this slow anyway
+				//for pion-kaon delta-t is ~750ps at ~80 MeV/c or lower: won't reconstruct these anyway, and not likely to be foreward-going anyway
+
+			locPropagatedTime = locProjectedTime + (dTargetCenter.Z() - locTrackTimeBased->z())/SPEED_OF_LIGHT;
+			locTimeFOMPairs.push_back(pair<double, double>(locPropagatedTime, locTrackTimeBased->FOM));
+			continue;
+		}
+		// Else match to BCAL if fast enough (low time resolution for slow particles)
+		locProjectedTime = locTrackingTime; // to reject hits that are not in time with the track
+		vector<const DBCALShower*> locMatchedBCALShowers;
+		double locP = locTrackTimeBased->momentum().Mag();
+		//at 225 MeV/c, BCAL t-resolution is ~333ps (3sigma = 999ps), BCAL delta-t error is ~40ps: ~1040ps: bad
+		//at 250 MeV/c, BCAL t-resolution is ~310ps (3sigma = 920ps), BCAL delta-t error is ~40ps: ~960 ps < 1 ns: OK!!
+		if(locP < 0.25)
+			continue; //too slow for the BCAL to distinguish RF bunch
+		if(dPIDAlgorithm->MatchToBCAL(locTrackTimeBased->rt, locBCALShowers, locMatchedBCALShowers, locProjectedTime, locPathLength, locFlightTime) == NOERROR)
+		{
+			locPropagatedTime = locProjectedTime + (dTargetCenter.Z() - locTrackTimeBased->z())/SPEED_OF_LIGHT;
+			locTimeFOMPairs.push_back(pair<double, double>(locPropagatedTime, locTrackTimeBased->FOM));
+			continue;
+		}
 	}
+
+	if(!locTimeFOMPairs.empty())
+		return true;
+
+	//no good matches from TOF/BCAL (or too slow for BCAL), try using ST
+	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+	{
+		const DTrackTimeBased* locTrackTimeBased = locTrackTimeBasedVector[loc_i];
+		locTrackingTime = locTrackTimeBased->t0();
+		locProjectedTime = locTrackingTime; // to reject hits that are not in time with the track
+		if(dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locProjectedTime, locSCIndex, locPathLength, locFlightTime) == NOERROR)
+		{
+			locPropagatedTime = locProjectedTime + (dTargetCenter.Z() - locTrackTimeBased->z())/SPEED_OF_LIGHT;
+			locTimeFOMPairs.push_back(pair<double, double>(locPropagatedTime, locTrackTimeBased->FOM));
+		}
+		// Else no match, don't use track
+	}
+
 	return (!locTimeFOMPairs.empty());
 }
 

@@ -25,6 +25,9 @@
 #include <PID/DEventRFBunch.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <START_COUNTER/DSCHit.h>
+#include <BCAL/DBCALShower.h>
+#include <TOF/DTOFPoint.h>
+
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>
 
@@ -37,7 +40,7 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 		DEventRFBunch_factory(){};
 		~DEventRFBunch_factory(){};
 
-		bool Find_TimeFOMPairs_ST(vector<const DSCHit*>& locSCHitVector, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs);
+		bool Find_TimeFOMPairs_Hits(vector<const DTOFPoint*>& locTOFPoints, vector<const DBCALShower*>& locBCALShowers, vector<const DSCHit*>& locSCHits, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs);
 		bool Find_TimeFOMPairs_T0(const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs);
 		int Find_BestRFBunchShift(double locRFHitTime, const vector<pair<double, double> >& locTimeFOMPairs);
 
