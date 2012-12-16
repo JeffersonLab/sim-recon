@@ -2017,12 +2017,11 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 					      const DVector3 &dir,
 					      const DMatrixDSym *covline, 
 					      DKinematicData *track_kd,
-					      double &doca, double &var_doca) const{ 
-  if (track_kd==NULL) return RESOURCE_UNAVAILABLE;
-
+					      DVector3 &commonpos, double &doca, double &var_doca) const{ 
   const swim_step_t *swim_step=this->swim_steps;
   DMatrixDSym cov(7);
-  cov=track_kd->errorMatrix();	
+  if(track_kd!=NULL)
+    cov=track_kd->errorMatrix();	
   doca=1000.;
   double tflight=0.;
   double mass=this->mass;
@@ -2049,7 +2048,8 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 	tflight=0.;
 	
 	swim_step=this->swim_steps;
-	cov=track_kd->errorMatrix();
+   if(track_kd!=NULL)
+	  cov=track_kd->errorMatrix();
 	
 	pos=swim_step->origin;
 	DVector3 mom=swim_step->mom;
@@ -2065,7 +2065,8 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 	  if(new_doca > doca) break;	
 
 	  // Propagate the covariance matrix of the track along the trajectory
-	  this->PropagateCovariance(ds,q,mass,mom,oldpos,cov);
+     if(track_kd!=NULL)
+	    this->PropagateCovariance(ds,q,mass,mom,oldpos,cov);
 	  
 	  // Store the current positions, doca and adjust flight times
 	  oldpos=pos;
@@ -2087,10 +2088,13 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 	  }
 	}
       }
-      track_kd->setErrorMatrix(cov);
-      track_kd->setMomentum(oldmom);
-      track_kd->setPosition(oldpos);
-      track_kd->setTime(track_kd->time() + tflight);
+      if(track_kd!=NULL)
+      {
+        track_kd->setErrorMatrix(cov);
+        track_kd->setMomentum(oldmom);
+        track_kd->setPosition(oldpos);
+        track_kd->setTime(track_kd->time() + tflight);
+      }
       
       // Compute the variance on the doca
       diff=oldpos-point;
@@ -2098,6 +2102,9 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
       double dy=diff.y();
       double dz=diff.z();
       
+      if(track_kd==NULL)
+        break;
+      //calculate var_doca
       if (covline==NULL){
 	var_doca=(dx*dx*(cov(kX,kX))+dy*dy*(cov(kY,kY))
 		  +dz*dz*(cov(kZ,kZ))+2.*dx*dy*(cov(kX,kY))
@@ -2120,7 +2127,6 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 		  +2.*dx*dz*(cov(kX,kZ)+cov2(kX,kZ))
 		  +2.*dy*dz*(cov(kY,kZ)+cov2(kY,kZ)))
 	  /(doca*doca);
-	
       }
       break;
     }
@@ -2139,6 +2145,11 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
     tflight=swim_step->t;
     doca=new_doca;
   }
+
+	// "Vertex" is mid-point of line connecting the positions of closest
+	// approach of the two tracks
+	commonpos = 0.5*(oldpos + point);
+
   return NOERROR;
 }
 
@@ -2153,8 +2164,8 @@ jerror_t DReferenceTrajectory::FindPOCAtoPoint(const DVector3 &point,
 					       double &doca, double &var_doca) const{ 
   if (track_kd==NULL) return RESOURCE_UNAVAILABLE;
   
-  DVector3 dir;
-  return FindPOCAtoLine(point,dir,covpoint,track_kd,doca,var_doca);
+  DVector3 dir, commonpos;
+  return FindPOCAtoLine(point,dir,covpoint,track_kd,commonpos,doca,var_doca);
 }
 
 // Find the mid-point of the line connecting the points of closest approach of the

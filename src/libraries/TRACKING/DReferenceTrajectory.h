@@ -114,7 +114,7 @@ class DReferenceTrajectory{
 					const DVector3 &dir,
 					const DMatrixDSym *covpoint, 
 					DKinematicData *track_kd,
-					double &doca, double &var_doca) const; 
+					DVector3 &commonpos, double &doca, double &var_doca) const; 
 
 		double GetLastDistAlongWire(void) const {return last_dist_along_wire;}
 		void SetStepSize(double step_size){this->step_size=step_size;}
