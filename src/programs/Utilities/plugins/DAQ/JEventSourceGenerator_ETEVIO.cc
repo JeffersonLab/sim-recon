@@ -34,25 +34,11 @@ double JEventSourceGenerator_ETEVIO::CheckOpenable(string source)
 	// the specified source and 0 meaning it definitely can't.
 	// Typically, this will just check the file suffix.
 	
-	// Try to open the file
-	try {
-		
-		// create evio file channel object using first arg as file name
-		evioFileChannel chan(source);
-		
-		// open the file. Throws exception if not successful
-		chan.open();
-		
-		// close file
-		chan.close();
-		
+	if(source.substr(0,3) == "ET:"){
 		return 0.1;
-		
-	} catch (evioException *e) {
-		
-		// Could not open file
+	}else{
 		return 0.0;
-	}	
+	}
 }
 
 //---------------------------------

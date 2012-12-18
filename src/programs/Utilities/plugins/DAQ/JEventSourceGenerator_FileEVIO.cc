@@ -49,9 +49,8 @@ double JEventSourceGenerator_FileEVIO::CheckOpenable(string source)
 		
 		return 0.5;
 		
-	} catch (evioException *e) {
+	} catch (evioException &e) {
 		
-		// Could not open file
 		return 0.0;
 	}	
 }
