@@ -38,6 +38,8 @@ void Smear(s_HDDM_t *hddm_s);
 void ParseCommandLineArguments(int narg, char* argv[]);
 void Usage(void);
 
+extern void SetSeeds(const char *vals);
+
 #if ! USE_JANA
 void ctrlCHandleMCSmear(int x);
 #endif
@@ -368,6 +370,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'N': ADD_NOISE=true;									break;
       case 's': SMEAR_HITS=false;								break;
       case 'i': IGNORE_SEEDS=true;								break;
+		case 'r': SetSeeds(&ptr[2]);								break;
       case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;	break;
       case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;		break;
       case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;	break;
@@ -450,6 +453,7 @@ void Usage(void)
 	cout<<"    -N       Add random background hits to CDC and FDC (default is not to add)"<<endl;
 	cout<<"    -s       Don't smear real hits (see -B for BCAL, default is to smear)"<<endl;
 	cout<<"    -i       Ignore random number seeds found in input HDDM file"<<endl;
+	cout<<"    -r\"s1 s2 s3\" Set initial random number seeds"<<endl;
 	cout<<"    -u#      Sigma CDC anode drift time in ns (def:"<<CDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
 	cout<<"             (NOTE: this is only used if -y is also specified!)"<<endl;
 	cout<<"    -y       Do NOT apply drift distance dependence error to"<<endl;

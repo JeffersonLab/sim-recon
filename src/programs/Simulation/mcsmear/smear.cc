@@ -230,6 +230,29 @@ void Smear(s_HDDM_t *hddm_s)
 }
 
 //-----------
+// SetSeeds
+//-----------
+void SetSeeds(const char *vals)
+{
+	/// This is called from the command line parser to
+	/// set the initial seeds based on user input from
+	/// the command line.
+	//
+	//
+	stringstream ss(vals);
+	Int_t seed1, seed2, seed3;
+	ss >> seed1 >> seed2 >> seed3;
+	UInt_t *useed1 = reinterpret_cast<UInt_t*>(&seed1);
+	UInt_t *useed2 = reinterpret_cast<UInt_t*>(&seed2);
+	UInt_t *useed3 = reinterpret_cast<UInt_t*>(&seed3);
+	gDRandom.SetSeeds(*useed1, *useed2, *useed3);
+
+	cout << "Seeds set from command line. Any random number" << endl;
+	cout << "seeds found in the input file will be ignored!" << endl;
+	IGNORE_SEEDS = true;
+}
+
+//-----------
 // GetAndSetSeeds
 //-----------
 void GetAndSetSeeds(s_HDDM_t *hddm_s)
