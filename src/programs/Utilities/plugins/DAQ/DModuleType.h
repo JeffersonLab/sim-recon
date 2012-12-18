@@ -95,8 +95,8 @@ class DModuleType{
 		/// (The vector is not cleared on input).
 		static void GetModuleList(std::vector<DModuleType> &modules){
 			
-			for(type_id_t id=UNKNOWN; id<N_MODULE_TYPES; id++){
-				modules.push_back(GetModule(id));
+			for(int id=UNKNOWN; id<N_MODULE_TYPES; id++){
+				modules.push_back(GetModule((type_id_t)id));
 			}
 		}
 		
