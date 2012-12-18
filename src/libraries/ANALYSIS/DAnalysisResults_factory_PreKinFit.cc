@@ -131,11 +131,6 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 
 	dApplication->RootUnLock(); //unlock
 
-	dParticleComboBlueprintFactory = static_cast<DParticleComboBlueprint_factory*>(locEventLoop->GetFactory("DParticleComboBlueprint"));
-	dParticleComboFactory = static_cast<DParticleCombo_factory*>(locEventLoop->GetFactory("DParticleCombo"));
-	dParticleComboFactory_PreKinFit = static_cast<DParticleCombo_factory_PreKinFit*>(locEventLoop->GetFactory("DParticleCombo", "PreKinFit"));
-	dKinFitResultsFactory = static_cast<DKinFitResults_factory*>(locEventLoop->GetFactory("DKinFitResults"));
-
 	return NOERROR;
 }
 
@@ -168,12 +163,6 @@ void DAnalysisResults_factory_PreKinFit::Get_Reactions(jana::JEventLoop* locEven
 //------------------
 jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
 {
-	//RESET POOLS FIRST!!!
-	dParticleComboBlueprintFactory->Reset_Pools();
-	dParticleComboFactory->Reset_Pools();
-	dParticleComboFactory_PreKinFit->Reset_Pools();
-	dKinFitResultsFactory->Reset_NewEvent();
-
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
 

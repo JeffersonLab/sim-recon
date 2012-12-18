@@ -25,11 +25,6 @@
 #include "ANALYSIS/DAnalysisResults.h"
 #include "ANALYSIS/DHistogramActions.h"
 
-#include "ANALYSIS/DParticleComboBlueprint_factory.h"
-#include "ANALYSIS/DParticleCombo_factory.h"
-#include "ANALYSIS/DParticleCombo_factory_PreKinFit.h"
-#include "ANALYSIS/DKinFitResults_factory.h"
-
 using namespace jana;
 using namespace std;
 
@@ -53,11 +48,6 @@ class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResult
 		unsigned int dDebugLevel;
 		DApplication* dApplication;
 		deque<DAnalysisAction*> dReactionIndependentAnalysisActions;
-
-		DParticleComboBlueprint_factory* dParticleComboBlueprintFactory;
-		DParticleCombo_factory* dParticleComboFactory;
-		DParticleCombo_factory_PreKinFit* dParticleComboFactory_PreKinFit;
-		DKinFitResults_factory* dKinFitResultsFactory;
 
 		map<const DReaction*, TH1D*> dHistMap_NumParticleCombos;
 		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction;
