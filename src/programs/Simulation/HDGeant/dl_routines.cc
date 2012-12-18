@@ -227,8 +227,7 @@ void GetRoutine(void **ptr, const char *rname)
 	void *my_ptr = dlsym(dlgeom_handle, rname);
 	char *err = dlerror();
 	if(err != NULL){
-		cerr << err << endl;
-		exit(-1);
+		cout << "  ... " << rname << " not found. static version will be used" << endl;
 	}else{
 		*ptr = my_ptr;
 		cout << "  ... linked " << rname << endl;
