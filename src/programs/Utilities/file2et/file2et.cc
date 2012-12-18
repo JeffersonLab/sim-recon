@@ -95,7 +95,7 @@ int main(int narg,char **argv)
 		
 			// Loop over events in file
 			char buff[max_event_size];
-			while(evRead(handle, (unsigned long*)buff, max_event_size)==S_SUCCESS){
+			while(evRead(handle, (uint32_t*)buff, max_event_size)==S_SUCCESS){
 				// Event size in words should be first word in buffer
 				int event_size = *(int*)buff + 1;
 				if(event_size>max_event_size)event_size = max_event_size;
