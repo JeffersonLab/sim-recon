@@ -14,6 +14,15 @@ using namespace jana;
 //------------------
 jerror_t DEventRFBunch_factory::init(void)
 {
+ 	USE_KLOE = 1;
+	gPARMS->SetDefaultParameter("BCALRECON:USE_KLOE", USE_KLOE);
+
+	if(USE_KLOE){    
+		cout << "Using KLOE BCAL clustering." << endl;
+	}
+	else{   
+		cout << "Using alternative (experimental) BCAL clustering." << endl;
+	}
 	return NOERROR;
 }
 
@@ -74,7 +83,11 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	locEventLoop->Get(locTOFPoints);
 
 	vector<const DBCALShower*> locBCALShowers;
-	locEventLoop->Get(locBCALShowers);
+	if (USE_KLOE) {
+		locEventLoop->Get(locBCALShowers, "KLOE");
+	} else {	  
+		locEventLoop->Get(locBCALShowers);
+	}
 
 	//select the best DTrackTimeBased for each track: use best tracking FOM
 	map<JObject::oid_t, const DTrackTimeBased*> locBestTrackTimeBasedMap; //lowest tracking chisq/ndf for each candidate id
