@@ -1,0 +1,4 @@
+
+CFLAGS		+= -I$(ETROOT)/include
+CXXFLAGS		+= -I$(ETROOT)/include
+MISC_LIBS 	+= -L$(ETROOT)/lib -let -let_remote
