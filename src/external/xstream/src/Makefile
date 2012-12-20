@@ -37,11 +37,11 @@ $(LIBDIR)/libxstream.a: $(libxstream_a_OBJECTS) $(libxstream_a_DEPENDENCIES)
 
 install: all
 	mkdir -p $(INSTALL_DIR)/lib/$(BMS_OSNAME)
-	cp $(LIBDIR)/$(lib_LIBRARIES) $(INSTALL_DIR)/lib/$(BMS_OSNAME)
-	cp -r ../include ./tmpinc
+	cp -p $(LIBDIR)/$(lib_LIBRARIES) $(INSTALL_DIR)/lib/$(BMS_OSNAME)
+	cp -pr ../include ./tmpinc
 	rm -rf `find ./tmpinc -name ".svn"`
 	mkdir -p $(INSTALL_DIR)/include
-	cp -r tmpinc/* $(INSTALL_DIR)/include
+	cp -pr tmpinc/* $(INSTALL_DIR)/include
 	rm -rf tmpinc
 
 mostlyclean-compile:
