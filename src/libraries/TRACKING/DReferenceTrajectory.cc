@@ -10,6 +10,7 @@
 #include <DVector3.h>
 using namespace std;
 #include <math.h>
+#include <algorithm>
 
 #include "DReferenceTrajectory.h"
 #include "DTrackCandidate.h"
@@ -311,6 +312,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double itheta02s = 0.0;
 	double itheta02s2 = 0.0;
 	swim_step_t *last_step=NULL;
+	double old_radius=10000.;
 	// Magnetic field
 	double Bz_old=0;
 	
@@ -479,19 +481,28 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		// update flight time
 		t+=ds*one_over_beta/SPEED_OF_LIGHT;
 		s += ds;
+
+		// Exit the loop if we are already inside the volume of the BCAL
+		// and the radius is decreasing
+		double R=swim_step->origin.Perp();
+		double z=swim_step->origin.Z();
+		if (R<old_radius && R>65.0 && z<407.0 && z>-100.0){
+		  Nswim_steps++; break;
+		}
 	
 		
 		// Exit loop if we leave the tracking volume
-		if(swim_step->origin.Perp()>88.0 
-		   && swim_step->origin.Z()<407.0){Nswim_steps++; break;} // ran into BCAL
+		if(R>88.0 && z<407.0){Nswim_steps++; break;} // ran into BCAL
 		if (swim_step->origin.X()>129.  || swim_step->origin.Y()>129.)
 		  {Nswim_steps++; break;} // left extent of TOF 
-		if(swim_step->origin.Z()>670.0){Nswim_steps++; break;} // ran into FCAL
-		if(swim_step->origin.Z()<-100.0){Nswim_steps++; break;} // exit upstream
+		if(z>670.0){Nswim_steps++; break;} // ran into FCAL
+		if(z<-100.0){Nswim_steps++; break;} // exit upstream
 		if(wire && Nswim_steps>0){ // optionally check if we passed a wire we're supposed to be swimming to
 			swim_step_t *closest_step = FindClosestSwimStep(wire);
 			if(++closest_step!=swim_step){Nswim_steps++; break;}
 		}
+
+		old_radius=swim_step->origin.Perp();
 	}
 
 	// OK. At this point the positions of the trajectory in the lab
@@ -500,20 +511,30 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	// coordinate system at each point.
 }
 
-
 // Routine to find position on the trajectory where the track crosses a radial
 // position R.  Also returns the path length to this position.
 jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
 							 DVector3 &mypos,
 							 double *s,
-							 double *t) const{
+							 double *t,
+							 DVector3 *p_at_intersection) const{
   if(Nswim_steps<1){
     _DBG_<<"No swim steps! You must \"Swim\" the track before calling GetIntersectionWithRadius(...)"<<endl;
   }
+  // Return early if the radius at the end of the reference trajectory is still less than R
+  double outer_radius=swim_steps[Nswim_steps-1].origin.Perp();
+  if (outer_radius<R){
+    if (s) *s=0.;
+    if (t) *t=0.;
+    return VALUE_OUT_OF_RANGE;
+  }
+
   // Loop over swim steps and find the one that crosses the radius
   swim_step_t *swim_step = swim_steps;
   swim_step_t *step=NULL;
   swim_step_t *last_step=NULL;
+
+  //  double inner_radius=swim_step->origin.Perp();
   for(int i=0; i<Nswim_steps; i++, swim_step++){
     if (swim_step->origin.Perp()>R){
       step=swim_step;
@@ -523,6 +544,9 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
     last_step=swim_step;
   }
   if (step==NULL||last_step==NULL) return VALUE_OUT_OF_RANGE;
+  if (p_at_intersection!=NULL){
+    *p_at_intersection=last_step->mom;
+  }
 
   // At this point, the location where the track intersects the cyclinder 
   // is somewhere between last_step and step. For simplicity, we're going
@@ -568,11 +592,11 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
 //---------------------------------
 // GetIntersectionWithPlane
 //---------------------------------
-void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s,double *t) const{
-  DVector3 dir;
-  GetIntersectionWithPlane(origin,norm,pos,dir,s,t);
+jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s,double *t) const{
+  DVector3 dummy;
+  return GetIntersectionWithPlane(origin,norm,pos,dummy,s,t);
 }
-void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &dir, double *s,double *t) const
+jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &p_at_intersection, double *s,double *t) const
 {
 	/// Get the intersection point of this trajectory with a plane.
 	/// The plane is specified by <i>origin</i> and <i>norm</i>. The
@@ -589,7 +613,13 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	// Set reasonable defaults
 	pos.SetXYZ(0,0,0);
 	if(s)*s=0.0;
+	if(t)*t=0.0;
 	
+	// Return early if the z-position of the plane with which we are 
+	// intersecting is beyong the reference trajectory.
+	if (origin.z()>swim_steps[Nswim_steps-1].origin.z()){
+	  return VALUE_OUT_OF_RANGE;
+	}
 	// Find the closest swim step to the position where the track crosses
 	// the plane
 	swim_step_t *step = FindPlaneCrossing(origin,norm);
@@ -604,8 +634,7 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	  pos.SetXYZ(step->origin.x()+dz_over_pz*step->mom.x(),
 		     step->origin.y()+dz_over_pz*step->mom.y(),
 		     origin.z());
-	  dir=step->mom;
-	  dir.SetMag(1.0);
+	  p_at_intersection=step->mom;
 	  if (s){
 	    *s=step->s+ds;
 	  } 
@@ -615,12 +644,12 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	    *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 	  }
 	  
-	  return;
+	  return NOERROR;
 	}
 
 	if(!step){
 		_DBG_<<"Could not find closest swim step!"<<endl;
-		return;
+		return RESOURCE_UNAVAILABLE;
 	}
 
 	// Here we follow a scheme described in more detail in the 
@@ -705,8 +734,7 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 			double my_u = dz_dphi * phi;
 			
 			pos = step->origin + my_s*step->sdir + my_t*step->tdir + my_u*step->udir;
-			dir = step->mom;
-			dir.SetMag(1.0);
+			p_at_intersection = step->mom;
 			if(s){
 				double delta_s = sqrt(my_t*my_t + my_u*my_u);
 				*s = step->s + (phi>0 ? +delta_s:-delta_s);
@@ -721,15 +749,14 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 			}
 			
 			// Success. Go ahead and return
-			return;
+			return NOERROR;
 		}
 	}
 	
 	// If we got here then we need to try a straight line calculation
 	double alpha = norm.Dot(origin)/norm.Dot(step->mom);
 	pos = alpha*step->mom;
-	dir = step->mom;
-	dir.SetMag(1.0);
+	p_at_intersection = step->mom;
 	if(s){
 		double delta_s = alpha*step->mom.Mag();
 		*s = step->s + delta_s;
@@ -740,6 +767,8 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	  double one_over_beta=sqrt(1.+mass*mass/p_sq);
 	  *t = step->t+alpha*sqrt(p_sq)*one_over_beta/SPEED_OF_LIGHT;
 	}
+
+	return NOERROR;
 }
 
 //---------------------------------
@@ -861,20 +890,45 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 	// First, find closest step to point
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;
+	
 	//double min_delta2 = 1.0E6;
 	double old_delta2=10.e6,delta2=1.0e6;
-	for(int i=0; i<Nswim_steps; i++, swim_step++){
+	
+	// Check if we should start at the end of the reference trajectory 
+	// or the beginning...
+	int last_index=Nswim_steps-1;
+	double forward_delta2=(swim_step->origin - hit).Mag2();
+	double backward_delta2=(swim_steps[last_index].origin-hit).Mag2();
+	if (forward_delta2<backward_delta2){ // start at the beginning
+	  for(int i=0; i<Nswim_steps; i++, swim_step++){
+	    
+	    DVector3 pos_diff = swim_step->origin - hit;
+	    delta2 = pos_diff.Mag2();
+	    if (delta2>old_delta2) break;
+	    
+	    //if(delta2 < min_delta2){
+	    //min_delta2 = delta2;
+	    
+	    step = swim_step;
+	    old_delta2=delta2;
+	    //}
+	  }
+	}
+	else{// start at the end
+	  for(int i=last_index; i>=0; i--){
+	    swim_step=&swim_steps[i];
+	    DVector3 pos_diff = swim_step->origin - hit;
+	    delta2 = pos_diff.Mag2();
+	    if (delta2>old_delta2) break;
+	    
+	    //if(delta2 < min_delta2){
+	    //min_delta2 = delta2;
+	    
+	    step = swim_step;
+	    old_delta2=delta2;
+	    //}
+	  }
 
-	  DVector3 pos_diff = swim_step->origin - hit;
-	  delta2 = pos_diff.Mag2();
-	  if (delta2>old_delta2) break;
-
-	  //if(delta2 < min_delta2){
-	  //min_delta2 = delta2;
-
-	  step = swim_step;
-	  old_delta2=delta2;
-	  //}
 	}
 	if(step==NULL){
 		// It seems to occasionally occur that we have 1 swim step
@@ -1205,26 +1259,52 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	int istep=-1;
 	double old_dist=1.0e6;
 
-	for(int i=0; i<Nswim_steps; i++, swim_step++){
-	
-	  // Distance to plane is dot product of normal vector with any
-	  // vector pointing from the current step to a point in the plane
-	  //double dist = fabs(norm.Dot(swim_step->origin-origin));
-	  double dist = norm.Dot(swim_step->origin-origin);
-
-	  // We've crossed the plane when the sign of dist changes
-	  if (dist*old_dist<0 && i>0) {
-	    if (fabs(dist)<fabs(old_dist)){
-	      step=swim_step;
-	      istep=i;
+	// Check if we should start from the beginning of the reference 
+	// trajectory or the end
+	int last_index=Nswim_steps-1;
+	double forward_dist= norm.Dot(swim_step->origin-origin);
+	double backward_dist= norm.Dot(swim_steps[last_index].origin-origin);
+	if (fabs(forward_dist)<fabs(backward_dist)){ // start at beginning
+	  for(int i=0; i<Nswim_steps; i++, swim_step++){
+	      
+	    // Distance to plane is dot product of normal vector with any
+	    // vector pointing from the current step to a point in the plane
+	    //double dist = fabs(norm.Dot(swim_step->origin-origin));
+	    double dist = norm.Dot(swim_step->origin-origin);
+	      
+	    // We've crossed the plane when the sign of dist changes
+	    if (dist*old_dist<0 && i>0) {
+	      if (fabs(dist)<fabs(old_dist)){
+		step=swim_step;
+		istep=i;
+	      }
+	      break;
 	    }
-	    break;
+	    step = swim_step;
+	    istep=i;
+	    old_dist=dist;
 	  }
-	  step = swim_step;
-	  istep=i;
-	  old_dist=dist;
 	}
+	else{ // start at end
+	  for(int i=last_index; i>=0; i--){
+	    swim_step=&swim_steps[i];
+	    double dist = norm.Dot(swim_step->origin-origin);
+	    
+	    // We've crossed the plane when the sign of dist changes
+	    if (dist*old_dist<0 && i<last_index) {
+	      if (fabs(dist)<fabs(old_dist)){
+		step=swim_step;
+		istep=i;
+	      }
+	      break;
+	    }
+	    step = swim_step;
+	    istep=i;
+	    old_dist=dist;
+	  }
 
+	}
+	    
 	if(istep_ptr)*istep_ptr=istep;
 
 	return step;	

@@ -99,11 +99,12 @@ class DReferenceTrajectory{
 			      const DCoordinateSystem *wire=NULL);
 
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
-		void GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL,double *t=NULL) const;	
-		void GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &dir,double *s=NULL,double *t=NULL) const;
+		jerror_t GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL,double *t=NULL) const;	
+		jerror_t GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &p_at_intersection,double *s=NULL,double *t=NULL) const;
 		jerror_t GetIntersectionWithRadius(double R,DVector3 &mypos,
 						   double *s=NULL,
-						   double *t=NULL) const;
+						   double *t=NULL,
+						   DVector3 *dir=NULL) const;
 		DVector3 GetLastDOCAPoint(void) const;
 		void GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const;
 		jerror_t FindPOCAtoPoint(const DVector3 &point,
