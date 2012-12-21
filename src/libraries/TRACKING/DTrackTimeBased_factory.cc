@@ -23,6 +23,7 @@ using namespace std;
 #include <TRACKING/DTrackHitSelector.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <SplitString.h>
+#include <deque>
 
 using namespace jana;
 
@@ -576,14 +577,14 @@ void DTrackTimeBased_factory
   }
 
   if (pid_algorithm->MatchToTOF(track->rt,DTrackFitter::kWireBased,tof_points,
-				tproj,tof_id, locPathLength, locFlightTime)==NOERROR){
+				tproj,tof_id, locPathLength, locFlightTime,NULL)==NOERROR){
     // Fill in the start time vector
     start_time.t0=tproj;
     start_time.t0_sigma=0.1;
     start_time.system=SYS_TOF;
     start_times.push_back(start_time); 
   }
-  vector<const DBCALShower*> locMatchedBCALShowers;
+  deque<const DBCALShower*> locMatchedBCALShowers;
   if (pid_algorithm->MatchToBCAL(track->rt, bcal_showers, locMatchedBCALShowers, tproj, locPathLength, locFlightTime) == NOERROR){
     // Fill in the start time vector
     start_time.t0=tproj;
@@ -591,8 +592,8 @@ void DTrackTimeBased_factory
     start_time.system=SYS_BCAL;
     start_times.push_back(start_time);
   }
-  vector<const DFCALShower*> locMatchedFCALShowers;
-  if (pid_algorithm->MatchToFCAL(track->rt, fcal_showers, locMatchedFCALShowers, tproj, locPathLength, locFlightTime) == NOERROR){
+  deque<const DFCALShower*> locMatchedFCALShowers;
+  if (pid_algorithm->MatchToFCAL(track->rt, fcal_showers, locMatchedFCALShowers, tproj, locPathLength, locFlightTime,NULL) == NOERROR){
     // Fill in the start time vector
     start_time.t0=tproj;
     start_time.t0_sigma=0.5;
