@@ -6,6 +6,7 @@
 //
 
 #include "DEventRFBunch_factory.h"
+#include <deque>
 
 using namespace jana;
 
@@ -168,7 +169,7 @@ bool DEventRFBunch_factory::Find_TimeFOMPairs_Hits(vector<const DTOFPoint*>& loc
 		}
 		// Else match to BCAL if fast enough (low time resolution for slow particles)
 		locProjectedTime = locTrackingTime; // to reject hits that are not in time with the track
-		vector<const DBCALShower*> locMatchedBCALShowers;
+		deque<const DBCALShower*> locMatchedBCALShowers;
 		double locP = locTrackTimeBased->momentum().Mag();
 		//at 225 MeV/c, BCAL t-resolution is ~333ps (3sigma = 999ps), BCAL delta-t error is ~40ps: ~1040ps: bad
 		//at 250 MeV/c, BCAL t-resolution is ~310ps (3sigma = 920ps), BCAL delta-t error is ~40ps: ~960 ps < 1 ns: OK!!

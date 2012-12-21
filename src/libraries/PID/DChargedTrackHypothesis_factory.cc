@@ -87,8 +87,8 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 	vector<const DTOFPoint*> locTOFPoints;
 	vector<const DBCALShower*> locBCALShowers;
 	vector<const DFCALShower*> locFCALShowers;
-	vector<const DBCALShower*> locMatchedBCALShowers;
-	vector<const DFCALShower*> locMatchedFCALShowers;
+	deque<const DBCALShower*> locMatchedBCALShowers;
+	deque<const DFCALShower*> locMatchedFCALShowers;
 	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locTOFPoints);
 	locEventLoop->Get(locSCHits);
@@ -118,6 +118,9 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 		*locKinematicData = *(static_cast<const DKinematicData*>(locTrackTimeBased));
 		locCovarianceMatrix = locTrackTimeBased->errorMatrix();
 
+		//useful kinematic variable
+		double betagamma=locTrackTimeBased->momentum().Mag()/locTrackTimeBased->mass();
+
 		// Use time-based tracking time as initial guess
 		locInitialStartTime = locChargedTrackHypothesis->t0(); // used to reject hits that are not in time with the track
 		double locInitialStartTimeUncertainty = locChargedTrackHypothesis->t0_err();
@@ -129,17 +132,20 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 
 		// Match to the start counter using the result of the time-based fit
 		locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
-		if (dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locTempProjectedTime, locSCIndex, locPathLength, locFlightTime) == NOERROR)
+		pair<double,double>locTempSCdEdx;
+		locChargedTrackHypothesis->dStartCounterdEdx=0.; 
+		if (dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locTempProjectedTime, locSCIndex, locPathLength, locFlightTime,&locTempSCdEdx) == NOERROR)
 		{
 			locChargedTrackHypothesis->setT0(locTempProjectedTime, 0.3, SYS_START); //uncertainty guess for now
 			locCovarianceMatrix(6, 6) = 0.3*0.3; // guess for now //will be overriden by other detector systems if hit match
 			locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now) //will be overriden by other detector systems if hit match
+			locChargedTrackHypothesis->dStartCounterdEdx=locTempSCdEdx.first;
+			locChargedTrackHypothesis->dStartCounterdEdx_norm_residual=(locTempSCdEdx.second-2.204+1.893/betagamma)/1.858;
+	
 			locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
 		}
 
 		// Try matching the track with hits in the outer detectors
-		locMatchedBCALShowers.resize(0);
-		locMatchedFCALShowers.resize(0);
 		locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
 		if (dPIDAlgorithm->MatchToBCAL(locTrackTimeBased->rt, locBCALShowers, locMatchedBCALShowers, locTempProjectedTime, locPathLength, locFlightTime) == NOERROR)
 		{
@@ -152,9 +158,13 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 			locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 		}
 		locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
-		if (dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locTempProjectedTime, locTOFIndex, locPathLength, locFlightTime) == NOERROR)
+		pair<double,double>locTOFdEdx;
+		if (dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locTempProjectedTime, locTOFIndex, locPathLength, locFlightTime,&locTOFdEdx) == NOERROR)
 		{
-			locChargedTrackHypothesis->AddAssociatedObject(locTOFPoints[locTOFIndex]);
+		  locChargedTrackHypothesis->AddAssociatedObject(locTOFPoints[locTOFIndex]);
+		  locChargedTrackHypothesis->dTOFdEdx=locTOFdEdx.first;
+		  locChargedTrackHypothesis->dTOFdEdx_norm_residual
+		    =(locTOFdEdx.second-2.462+1.488/betagamma)/1.273;
 			if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
 			{
 				locChargedTrackHypothesis->setTime(locTempProjectedTime);
@@ -164,10 +174,12 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 			}
 		}
 		locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
-		if (dPIDAlgorithm->MatchToFCAL(locTrackTimeBased->rt, locFCALShowers, locMatchedFCALShowers, locTempProjectedTime, locPathLength, locFlightTime) == NOERROR)
+		double locFCALdEdx=0.;
+		if (dPIDAlgorithm->MatchToFCAL(locTrackTimeBased->rt, locFCALShowers, locMatchedFCALShowers, locTempProjectedTime, locPathLength, locFlightTime,&locFCALdEdx) == NOERROR)
 		{
 			for(unsigned int loc_j = 0; loc_j < locMatchedFCALShowers.size(); ++loc_j)
 				locChargedTrackHypothesis->AddAssociatedObject(locMatchedFCALShowers[loc_j]);
+			locChargedTrackHypothesis->dFCALdEdx=locFCALdEdx;
 			if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
 			{
 				locChargedTrackHypothesis->setTime(locTempProjectedTime);

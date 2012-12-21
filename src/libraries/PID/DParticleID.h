@@ -23,6 +23,7 @@
 #include <PID/DChargedTrackHypothesis.h>
 #include <PID/DEventRFBunch.h>
 #include <TRACKING/DMagneticFieldStepper.h>
+#include <deque>
 
 class DTrackTimeBased;
 class DCDCTrackHit;
@@ -37,12 +38,11 @@ class DParticleID:public jana::JObject{
 
   class dedx_t{
   public:
-    dedx_t(double dE,double dx, double p):dE(dE),dx(dx),p(p){dEdx = dE/dx;}
+  dedx_t(double dE,double dx, double p):dE(dE),dx(dx),p(p){dEdx = dE/dx;}
       double dE; // energy loss in layer
       double dx; // path length in layer
-	  double dEdx; // ratio dE/dx
+      double dEdx; // ratio dE/dx
       double p;  // momentum at this dE/dx measurement
-      
   };
 
   virtual jerror_t CalcDCdEdxChiSq(DChargedTrackHypothesis *locChargedTrackHypothesis) const = 0;
@@ -54,11 +54,14 @@ class DParticleID:public jana::JObject{
   jerror_t CalcdEdxHit(const DVector3 &mom, const DVector3 &pos, const DCDCTrackHit *hit, pair <double,double> &dedx) const;
   jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks, vector<vector<const DTrackTimeBased*> >&grouped_tracks) const;
 
-  jerror_t MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime) const;
-  jerror_t MatchToBCAL(const DReferenceTrajectory *rt, const vector<const DBCALShower*>& locInputBCALShowers, vector<const DBCALShower*>& locMatchedBCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime) const;
-  jerror_t MatchToFCAL(const DReferenceTrajectory *rt, const vector<const DFCALShower*>& locInputFCALShowers, vector<const DFCALShower*>& locMatchedFCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime) const;
-  jerror_t MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime) const;
+  jerror_t MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime,pair<double,double>*dEdx=NULL) const;
+  jerror_t MatchToBCAL(const DReferenceTrajectory *rt, const vector<const DBCALShower*>& locInputBCALShowers, deque<const DBCALShower*>& locMatchedBCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime) const;
+  jerror_t MatchToFCAL(const DReferenceTrajectory *rt, const vector<const DFCALShower*>& locInputFCALShowers, deque<const DFCALShower*>& locMatchedFCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime,double *dEdx=NULL) const;
+  jerror_t MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime,pair<double,double>*dEdx=NULL) const;
   jerror_t MatchToSC(const DKinematicData &parms, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id) const;
+
+  void GetScintMPdEandSigma(double p,double M,double x,double &most_prob_dE,
+			    double &sigma_dE) const;
 
   virtual Particle_t IDTrack(float locCharge, float locMass) const;
   double Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
@@ -67,7 +70,8 @@ class DParticleID:public jana::JObject{
 
   protected:
 		// gas material properties
-		double dKRhoZoverA_FDC, dRhoZoverA_FDC, dLnI_FDC;
+		double dKRhoZoverA_FDC, dRhoZoverA_FDC, dLnI_FDC;	
+		double dKRhoZoverA_Scint, dRhoZoverA_Scint, dLnI_Scint;
 		double dKRhoZoverA_CDC, dRhoZoverA_CDC, dLnI_CDC;
 		double dDensity_FDC;
 		double dDensity_CDC;

@@ -31,6 +31,9 @@ class DChargedTrackHypothesis : public DKinematicData {
 		unsigned int dNDF_DCdEdx;
 		float dChiSq_DCdEdx;
 
+		float dStartCounterdEdx,dTOFdEdx,dFCALdEdx;
+		float dStartCounterdEdx_norm_residual,dTOFdEdx_norm_residual;
+		
 		unsigned int dNDF; //total NDF used for PID determination
 		float dChiSq; //total chi-squared used for PID determination
 		float dFOM; //overall FOM for PID determination
