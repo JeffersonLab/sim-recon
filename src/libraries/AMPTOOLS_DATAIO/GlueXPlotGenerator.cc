@@ -1,41 +1,23 @@
 
 #include "AMPTOOLS_DATAIO/GlueXPlotGenerator.h"
-#include "AMPTOOLS_AMPS/TwoPSAngles.h"
-#include "AMPTOOLS_AMPS/ThreePiAngles.h"
-#include "AMPTOOLS_AMPS/b1piAngAmp.h"
-#include "AMPTOOLS_AMPS/BreitWigner.h"
-#include "AMPTOOLS_AMPS/Uniform.h"
-#include "AMPTOOLS_AMPS/polCoef.h"
+#include "IUAmpTools/Histogram.h"
+#include "IUAmpTools/Kinematics.h"
 
-GlueXPlotGenerator::GlueXPlotGenerator( ConfigurationInfo* cfgInfo,
-                                       const string& parFile ) :
-PlotGenerator( cfgInfo, parFile ){
-    
-    initialize();
+GlueXPlotGenerator::GlueXPlotGenerator( AmpToolsInterface& ati ) :
+PlotGenerator( ati )
+{
+  // calls to bookHistogram go here
+
+  bookHistogram( kHist1, "Variable 1", Histogram( 100, 0, 10 ) );
+  
 }
 
-
-const vector< string >& 
-GlueXPlotGenerator::availablePlots() const { 
-    
-    return m_histTitles; 
+void
+GlueXPlotGenerator::projectEvent( Kinematics* kin ){
+  
+  HepLorentzVector P1 = kin->particle( 0 );
+  
+  // calls to fillHistogram go here
+  
+  fillHistogram( kHist1, P1.e() );
 }
-
-vector< Histogram > 
-GlueXPlotGenerator::fillProjections( const string& fsName,
-                                     PlotType type ){
-    
-    return vector< Histogram >();
-}
-
-void 
-GlueXPlotGenerator::registerPhysics( AmplitudeManager* ampManager ){
-    
-  ampManager->registerAmplitudeFactor( BreitWigner() );
-  ampManager->registerAmplitudeFactor( TwoPSAngles() );
-  ampManager->registerAmplitudeFactor( ThreePiAngles() );
-  ampManager->registerAmplitudeFactor( b1piAngAmp() );
-  ampManager->registerAmplitudeFactor( Uniform() );
-  ampManager->registerAmplitudeFactor( polCoef() );
-}
-

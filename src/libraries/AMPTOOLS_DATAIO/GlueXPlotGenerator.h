@@ -4,33 +4,27 @@
 #include <vector>
 #include <string>
 
-#include "IUAmpTools/ConfigurationInfo.h"
 #include "IUAmpTools/PlotGenerator.h"
-#include "IUAmpTools/Histogram.h"
-#include "IUAmpTools/AmplitudeManager.h"
 
 using namespace std;
+
+class AmpToolsInterface;
+class Kinematics;
 
 class GlueXPlotGenerator : public PlotGenerator
 {
     
 public:
-    
-    GlueXPlotGenerator( ConfigurationInfo* cfgInfo,
-                       const string& parFile );
-    
-    virtual ~GlueXPlotGenerator(){}
-    
-    const vector< string >& availablePlots() const;
+  
+  // create an index for different histograms
+  enum { kHist1 = 0, kNumHists };
+  
+  GlueXPlotGenerator( AmpToolsInterface& ati );
     
 private:
         
-    vector< Histogram > fillProjections( const string& fsName,
-                                         PlotType type );
-    void registerPhysics( AmplitudeManager* ampManager );
-    
-    vector< string > m_histTitles;
-
+  void projectEvent( Kinematics* kin );
+  
 };
 
 #endif
