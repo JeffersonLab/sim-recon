@@ -8,7 +8,11 @@
 #include <cstdlib>
 
 #include "AMPTOOLS_DATAIO/GlueXPlotGenerator.h"
+#include "AMPTOOLS_DATAIO/ROOTDataReader.h"
+#include "AMPTOOLS_AMPS/ThreePiAngles.h"
+#include "AMPTOOLS_AMPS/BreitWigner.h"
 #include "IUAmpTools/ConfigFileParser.h"
+#include "IUAmpTools/AmpToolsInterface.h"
 #include "CLHEP/Vector/LorentzVector.h"
 
 #include "TH1F.h"
@@ -55,6 +59,17 @@ int main( int argc, char* argv[] ){
   // descend into the directory that contains the bins
   chdir( fitDir.c_str() );
   
+  // To create an AmpToolsInterface all of the relevant amplitudes need
+  // to be registered.  Look for this to go away in future version of
+  // AmpTools where it will be possible to create a PlotGenerator or
+  // get information about the fit directly from the FitResults object.
+  
+  AmpToolsInterface::registerAmplitude( ThreePiAngles() );
+  AmpToolsInterface::registerAmplitude( BreitWigner() );
+  AmpToolsInterface::registerDataReader( ROOTDataReader() );
+  
+  AmpToolsInterface ati;
+
 	for( int i = 0; i < kNumBins; ++i ){
 		
     ostringstream dir;
@@ -62,7 +77,7 @@ int main( int argc, char* argv[] ){
     chdir( dir.str().c_str() );
 
     ostringstream parFile;
-		parFile << "fit.bin_" << i << ".txt";
+		parFile << "bin_" << i << ".fit";
     
     // check to be sure the parameter file exists
     // in cases where the fit fails, there won't be a parameter file
@@ -83,11 +98,13 @@ int main( int argc, char* argv[] ){
     
     ConfigFileParser parser(configFile.str());
     ConfigurationInfo* cfgInfo = parser.getConfigurationInfo();
-        
+    
+    ati.resetConfigurationInfo( cfgInfo );
+    
   	// print out the bin center
 		outfile << lowMass + step * i + step / 2. << "\t";
 		
-    GlueXPlotGenerator plotGen( cfgInfo, parFile.str() );
+    GlueXPlotGenerator plotGen( ati );
     
     bool yPol = false;
     
