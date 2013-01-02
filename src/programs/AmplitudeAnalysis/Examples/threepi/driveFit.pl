@@ -78,7 +78,7 @@ for( $i = 0; $i < $nBins; ++$i ){
   print  "fit -c bin_$i.cfg\n";
   system( "fit -c bin_$i.cfg" );
 
-  $lastParams = "$fitDir/bin_$i/fit.bin_$i.txt";
+  $lastParams = "$fitDir/bin_$i/bin_$i.fit";
 
   chdir $fitDir;
 }
