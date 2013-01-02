@@ -86,9 +86,13 @@ int main( int argc, char* argv[] ){
     }
   }
 
-  // open reader, use weights if available
-  ROOTDataReader in( argv[1], treeNames.first.c_str(), true);
-
+  
+  vector< string > dataReaderArgs;
+  dataReaderArgs.push_back( argv[1] );
+  dataReaderArgs.push_back( treeNames.first );
+  
+  // open reader
+  ROOTDataReader in( dataReaderArgs );
   
   enum { kMaxBins = 1000 };
   assert( numBins < kMaxBins );

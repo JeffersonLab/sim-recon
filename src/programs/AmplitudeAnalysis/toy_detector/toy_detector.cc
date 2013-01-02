@@ -29,7 +29,11 @@ int main( int argc, char* argv[] ){
 		return 1;
 	}
 	
-	ROOTDataReader in(  argv[1], treeName );
+  vector< string > dataReaderArgs;
+  dataReaderArgs.push_back( argv[1] );
+  dataReaderArgs.push_back( treeName );
+  
+	ROOTDataReader in(  dataReaderArgs );
   ROOTDataWriter out( argv[2] );
 	
   Kinematics* event;
