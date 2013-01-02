@@ -1,8 +1,7 @@
 #if !defined(UNIFORM)
 #define UNIFORM
 
-#include "IUAmpTools/Amplitude.h"
-#include "IUAmpTools/AmpParameter.h"
+#include "IUAmpTools/UserAmplitude.h"
 #include "GPUManager/GPUCustomTypes.h"
 
 #include <utility>
@@ -22,24 +21,20 @@ void GPUUniform_exec(dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO);
 #endif
 
 
-class Uniform : public Amplitude
+class Uniform : public UserAmplitude< Uniform >
 {  
 public:
   
-  Uniform() : Amplitude() { setDefaultStatus( true ); }
-  Uniform(int arg);	
+  Uniform() : UserAmplitude< Uniform >() { }
+
+  Uniform( const vector< string >& args ) : UserAmplitude< Uniform >( args ) {}
+  
   ~Uniform(){}
   
   string name() const { return "Uniform"; }
   
   complex< GDouble > calcAmplitude( GDouble** pKin ) const;
-  
-  void updatePar( const AmpParameter& par );
-  
-  Uniform* newAmplitude( const vector< string >& args) const;
-  
-  Uniform* clone() const;
-  
+      
 #ifdef GPU_ACCELERATION
   void launchGPUKernel( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO ) const{
     GPUUniform_exec(dimGrid, dimBlock, GPU_AMP_ARGS);

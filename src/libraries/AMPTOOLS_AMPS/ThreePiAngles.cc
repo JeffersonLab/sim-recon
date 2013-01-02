@@ -15,46 +15,45 @@
 #include "CLHEP/Vector/LorentzRotation.h"
 #include "CLHEP/Vector/ThreeVector.h"
 
-ThreePiAngles::ThreePiAngles( int polBeam, const AmpParameter& polFrac, 
-                              int jX, int parX, int iX, int lX, 
-                              int jI, int iI, 
-                              int iZ0, int iZ1, int iZ2 ) :
-Amplitude(),
-m_polBeam( polBeam ), // beam polarization component (X=0, Y=1)
-m_polFrac( polFrac ), // fraction of polarization 0=0% 1=100%
-m_jX( jX ),     // total J of produced resonance
-m_parX( parX ), // parity of produced resonance
-m_iX( iX ),     // total isospin of resonance
-m_lX( lX ),     // l between bachelor and isobar
-m_jI( jI ),     // total J of isobar
-m_iI( iI ),     // total isospin of isobar
-m_iZ0( iZ0 ),   // z component of isospin of final state particle 0
-m_iZ1( iZ1 ),   // z component of isospin of final state particle 1
-m_iZ2( iZ2 )    // z component of isospin of final state particle 2
+ThreePiAngles::ThreePiAngles( const vector< string >& args ) :
+UserAmplitude< ThreePiAngles >( args )
 {
 
-  assert( ( polBeam == 0 ) || ( polBeam == 1 ) );
-  assert( ( polFrac >= 0 ) && ( polFrac <= 1 ) );
-  assert( jX >= 0  );
-  assert( abs( (double)parX ) == 1 );
-  assert( abs( (double)iX )   <= 1 );
-  assert( lX <= jX );
-  assert( jI >= 0  );
-  assert( abs( (double)iI )  <= 1 );
-  assert( abs( (double)iZ0 ) <= 1 );
-  assert( abs( (double)iZ1 ) <= 1 );
-  assert( abs( (double)iZ2 ) <= 1 );
+  assert( args.size() == 11 );
+	
+	m_polBeam = atoi( args[0].c_str() ); // beam polarization component (X=0, Y=1)
+  m_polFrac = AmpParameter( args[1] ); // fraction of polarization 0=0% 1=100%
+	m_jX      = atoi( args[2].c_str() ); // total J of produced resonance
+  m_parX    = atoi( args[3].c_str() ); // parity of produced resonance
+	m_iX      = atoi( args[4].c_str() ); // total isospin of resonance
+	m_lX      = atoi( args[5].c_str() ); // l between bachelor and isobar
+	m_jI      = atoi( args[6].c_str() ); // total J of isobar
+	m_iI      = atoi( args[7].c_str() ); // total isospin of isobar
+  m_iZ0     = atoi( args[8].c_str() ); // z component of isospin of final state particle 0
+  m_iZ1     = atoi( args[9].c_str() ); // z component of isospin of final state particle 1
+  m_iZ2     = atoi( args[10].c_str() );// z component of isospin of final state particle 2
+
+  assert( ( m_polBeam == 0 ) || ( m_polBeam == 1 ) );
+  assert( ( m_polFrac >= 0 ) && ( m_polFrac <= 1 ) );
+  assert( m_jX >= 0  );
+  assert( abs( (double)m_parX ) == 1 );
+  assert( abs( (double)m_iX )   <= 1 );
+  assert( m_lX <= m_jX );
+  assert( m_jI >= 0  );
+  assert( abs( (double)m_iI )  <= 1 );
+  assert( abs( (double)m_iZ0 ) <= 1 );
+  assert( abs( (double)m_iZ1 ) <= 1 );
+  assert( abs( (double)m_iZ2 ) <= 1 );
     
   registerParameter( m_polFrac );
   
   // the first two elements are the beam and recoil
   m_iZ.push_back( 0 );
   m_iZ.push_back( 0 );
-  m_iZ.push_back( iZ0 );
-  m_iZ.push_back( iZ1 );
-  m_iZ.push_back( iZ2 );
+  m_iZ.push_back( m_iZ0 );
+  m_iZ.push_back( m_iZ1 );
+  m_iZ.push_back( m_iZ2 );
   
-	setDefaultStatus( false );
 }
 
 complex< GDouble >
@@ -146,34 +145,6 @@ ThreePiAngles::calcAmplitude( GDouble** pKin ) const
          pow( k, m_lX ) * pow( q, m_jI );
     
   return ans;
-}
-
-ThreePiAngles*
-ThreePiAngles::newAmplitude( const vector< string >& args ) const {
-
-	assert( args.size() == 11 );
-	
-	int polBeam = atoi( args[0].c_str() );
-  AmpParameter polFrac( args[1] );
-	int jX      = atoi( args[2].c_str() );
-  int parX    = atoi( args[3].c_str() );
-	int iX      = atoi( args[4].c_str() );
-	int lX      = atoi( args[5].c_str() );
-	int jI      = atoi( args[6].c_str() );
-	int iI      = atoi( args[7].c_str() );
-  int iZ0     = atoi( args[8].c_str() );
-  int iZ1     = atoi( args[9].c_str() );
-  int iZ2     = atoi( args[10].c_str() );
-	
-	return new ThreePiAngles( polBeam, polFrac, jX, parX, iX, lX, jI, iI, iZ0, iZ1, iZ2 );
-}
-
-ThreePiAngles*
-ThreePiAngles::clone() const {
-
-	return ( isDefault() ? new ThreePiAngles() : 
-			 new ThreePiAngles( m_polBeam, m_polFrac, m_jX, m_parX, m_iX, m_lX, m_jI, 
-                          m_iI, m_iZ0, m_iZ1, m_iZ2 ) );
 }
 
 #ifdef GPU_ACCELERATION

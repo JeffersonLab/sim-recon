@@ -13,15 +13,18 @@
 #include "CLHEP/Vector/LorentzRotation.h"
 #include "CLHEP/Vector/ThreeVector.h"
 
-TwoPSAngles::TwoPSAngles( int j, int m, int e ) :
-Amplitude(),
-m_j( j ),
-m_m( m ),
-m_e( e )
+TwoPSAngles::TwoPSAngles( const vector< string >& args ) :
+UserAmplitude< TwoPSAngles >( args )
 {
+  assert( args.size() == 3 );
+	
+	m_j = atoi( args[0].c_str() );
+	m_m = atoi( args[1].c_str() );
+	m_e = atoi( args[2].c_str() );
+
   // make sure values are reasonable
-  assert( abs( e ) == 1 );
-	assert( m <= j );
+  assert( abs( m_e ) == 1 );
+	assert( m_m <= m_j );
   
   if( m_m == 0 ) m_bigTheta = 0.5;
 	if( m_m  > 0 ) m_bigTheta = sqrt( 0.5 );
@@ -65,25 +68,6 @@ TwoPSAngles::calcAmplitude( GDouble** pKin ) const {
                             ( wignerD( m_j, m_m, 0, cosTheta, phi ) - 
                              static_cast< GDouble>( m_reflectivityFactor ) * 
                              wignerD( m_j, -m_m, 0, cosTheta, phi ) ) );  
-}
-
-TwoPSAngles*
-TwoPSAngles::newAmplitude( const vector< string >& args ) const {
-  
-	assert( args.size() == 3 );
-	
-	int j = atoi( args[0].c_str() );
-	int m = atoi( args[1].c_str() );
-	int e = atoi( args[2].c_str() );
-	
-	return new TwoPSAngles( j, m, e );
-}
-
-TwoPSAngles*
-TwoPSAngles::clone() const {
-  
-	return ( isDefault() ? new TwoPSAngles() : 
-          new TwoPSAngles( m_j, m_m, m_e ) );
 }
 
 #ifdef GPU_ACCELERATION

@@ -3,6 +3,7 @@
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/AmpParameter.h"
+#include "IUAmpTools/UserAmplitude.h"
 
 #include <string>
 #include <complex>
@@ -20,23 +21,20 @@ GPUThreePiAngles_exec( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO,
 
 class Kinematics;
 
-class ThreePiAngles : public Amplitude
+class ThreePiAngles : public UserAmplitude< ThreePiAngles >
 {
 
 public:
 	
-	ThreePiAngles() : Amplitude() { setDefaultStatus( true ); }
+	ThreePiAngles() : UserAmplitude< ThreePiAngles >() { }
+  ThreePiAngles( const vector< string >& args );
   ThreePiAngles( int polX, const AmpParameter& polFrac, int jX, int parX, 
                  int iX, int lX, int jI, int iI, int iZ0, int iZ1, int iZ2 );
   
 	string name() const { return "ThreePiAngles"; }
-	bool containsFreeParameters() const { return false; }
 
 	complex< GDouble > calcAmplitude( GDouble** pKin ) const;
-	
-	ThreePiAngles* newAmplitude( const vector< string >& args ) const;
-	ThreePiAngles* clone() const;
-	
+		
 #ifdef GPU_ACCELERATION
   
   void launchGPUKernel( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO ) const;

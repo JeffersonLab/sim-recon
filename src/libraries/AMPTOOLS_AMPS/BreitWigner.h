@@ -3,6 +3,7 @@
 
 #include "IUAmpTools/Amplitude.h"
 #include "IUAmpTools/AmpParameter.h"
+#include "IUAmpTools/UserAmplitude.h"
 #include "GPUManager/GPUCustomTypes.h"
 
 #include <utility>
@@ -22,15 +23,13 @@ using namespace std;
 
 class Kinematics;
 
-class BreitWigner : public Amplitude
+class BreitWigner : public UserAmplitude< BreitWigner >
 {
   
 public:
 	
-	BreitWigner() : Amplitude() { setDefaultStatus( true ); }
-	BreitWigner( const AmpParameter& mass0, 
-               const AmpParameter& width0, int orbitL, 
-               pair<string,string> daughters ); 
+	BreitWigner() : UserAmplitude< BreitWigner >() {}
+	BreitWigner( const vector< string >& args );
 	
   ~BreitWigner(){}
   
@@ -39,10 +38,7 @@ public:
   complex< GDouble > calcAmplitude( GDouble** pKin ) const;
 	  
   void updatePar( const AmpParameter& par );
-  
-	BreitWigner* newAmplitude( const vector< string >& args ) const;
-	BreitWigner* clone() const;
-  
+    
 #ifdef GPU_ACCELERATION
 
   void launchGPUKernel( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO ) const;

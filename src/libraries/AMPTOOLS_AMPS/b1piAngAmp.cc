@@ -17,67 +17,86 @@
 #include "CLHEP/Vector/LorentzRotation.h"
 #include "CLHEP/Vector/ThreeVector.h"
 
-b1piAngAmp::b1piAngAmp(int polBeam, const AmpParameter& polFrac,
-		       int J_X, int Par_X, int L_X, int I_X, int epsilon_R,
-		       int Iz1, int Iz2,
-		       float u_rho_1, float u_rho_3,
-		       float u_omega_1, float u_omega_3, 
-		       float u_b1_0, float u_b1_2, float G0_omega,float G0_b1,
-		       bool orthocheck, bool fastCalc):
-  
-  Amplitude(),
-  mpolBeam( polBeam ),  // beam polarization component (X=0, Y=1)
-  mpolFrac( polFrac ),  // fraction of polarization 0=0% 1=100%. 
-  mJ_X( J_X ),     // total J of produced resonance
-  // parity of produced resonance
-  mPar_X( Par_X==1 ? 1 : -1 ), // for convenience let Par_X=0 --> -1 
-  // L between bachelor (pi) and isobar (b1)
-  mL_X( L_X >= 0 ? L_X : (J_X==0 ? 1 : 0) ),
-  mI_X( I_X ),   // isospin of the resonance
-  mepsilon_R(epsilon_R==1? 1 : -1), 
-
-  m_u_rho_1(u_rho_1),
-  m_u_rho_3(u_rho_3),
-  m_u_omega_1(u_omega_1),
-  m_u_omega_3(u_omega_3),
-  m_u_b1_0(u_b1_0),
-  m_u_b1_2(u_b1_2),
-  mG0_omega(fabs(G0_omega)),
-  mG0_b1(fabs(G0_b1)),
-  m_ORTHOCHECK(orthocheck),
-  m_fastCalc(fastCalc)
+b1piAngAmp::b1piAngAmp( const vector< string >& args ):
+  UserAmplitude< b1piAngAmp >( args ),
+  m_fastCalc( false )
 {
 
-  assert( ( polBeam == 0 ) || ( polBeam == 1 ) );
-  if(!(( polFrac >= 0 ) && ( polFrac <= 1 ))){
-    cout << "ERROR: polFrac set to " << polFrac << endl << "Should be 0.0-1.0" << endl;
-    assert(false);
-    }
+  const unsigned int base_arg_num=8;
 
-  assert( J_X >= 0 && J_X <=2 );
-//  assert( abs( (double)Par_X ) <= 1 );
-  assert( abs( (double)I_X )   <= 1 );
-  //assert( L_X <= J_X );
-  assert( (L_X+1 >= J_X && abs(L_X-1) <= J_X) || L_X==-1 );
-  assert( abs(epsilon_R)<=1 );
-  assert( abs(Iz1) <= 1 );
-  assert( abs(Iz2) <= 1 );
+  bool tweakBW_omega = args.size() == base_arg_num+1;
+  bool tweakBW_omega_b1 = args.size() == base_arg_num+2;
+  //accept either base number of arguments, extended set (14)
+  // for orthogonality check diagnostics
+  // or base number plus omega width or base number plus omega and b1 widths
+  assert(args.size() == base_arg_num || args.size() == 14 ||
+         tweakBW_omega || tweakBW_omega_b1);
+  
+  mpolBeam = atoi( args[0].c_str() );  // beam polarization component (X=0, Y=1)
+  mpolFrac = AmpParameter( args[1] );  // fraction of polarization 0=0% 1=100%.
+  mJ_X      = atoi( args[1].c_str() ); // total J of produced resonance
+  // parity of produced resonance
+  mPar_X    = ( atoi( args[2].c_str() ) == 1 ? 1 : -1 ); // for convenience let Par_X=0 --> -1 
+  int L_X = atoi( args[3].c_str() ); // L between bachelor (pi) and isobar (b1)
+  mL_X      = ( L_X >= 0 ? L_X : ( mJ_X == 0 ? 1 : 0) );
+  mI_X      = atoi( args[4].c_str() );  // isospin of the resonance
+  mepsilon_R= ( atoi( args[5].c_str() ) == 1 ? 1 : -1 );
+
+  int Iz_b1    = atoi( args[6].c_str() );
+  int Iz_pi    = atoi( args[7].c_str() );
+  
+  bool m_ORTHOCHECK = (args.size() == base_arg_num || tweakBW_omega || tweakBW_omega_b1);
+  
+  // Note, the following have no effect since L_\omega & J_\rho
+  // have been restricted to value 1
+  m_u_rho_1  = m_ORTHOCHECK ? sqrt(.9) : atoi( args[8].c_str());
+  m_u_rho_3  = m_ORTHOCHECK ? sqrt(.1) : atoi( args[9].c_str());
+  m_u_omega_1= m_ORTHOCHECK ? sqrt(.9) : atoi( args[10].c_str());
+  m_u_omega_3= m_ORTHOCHECK ? sqrt(.1) : atoi( args[11].c_str());
+  
+  mG0_omega = 0.0085;
+  mG0_b1 = 0.143;
+  
+  if(tweakBW_omega && args[8][0]=='F') m_fastCalc=true;
+  else{
+    if(tweakBW_omega || tweakBW_omega_b1) mG0_omega = atof( args[8].c_str());
+    if(tweakBW_omega_b1) mG0_b1 = atof( args[9].c_str());
+  }
+  
+  const GDouble b1DSratio2 = 0.277*0.277; //from PDG: D/S amp ratio=0.277+/-0.027
+  m_u_b1_0   = m_ORTHOCHECK ? sqrt(1/(1 + b1DSratio2))
+  : atoi( args[12].c_str());
+  m_u_b1_2   = m_ORTHOCHECK ? sqrt(b1DSratio2/(1 + b1DSratio2))
+  : atoi( args[13].c_str());
+
+               
+  assert( ( mpolBeam == 0 ) || ( mpolBeam == 1 ) );
+  if(!(( mpolFrac >= 0 ) && ( mpolFrac <= 1 ))){
+    cout << "ERROR: polFrac set to " << mpolFrac << endl << "Should be 0.0-1.0" << endl;
+    assert(false);
+  }
+
+  assert( mJ_X >= 0 && mJ_X <=2 );
+//  assert( abs( (double)mPar_X ) <= 1 );
+  assert( abs( (double)mI_X )   <= 1 );
+  //assert( mL_X <= mJ_X );
+  assert( (mL_X+1 >= mJ_X && abs(mL_X-1) <= mJ_X) || mL_X==-1 );
+  assert( abs(mepsilon_R)<=1 );
+  assert( abs(Iz_b1) <= 1 );
+  assert( abs(Iz_pi) <= 1 );
 
   registerParameter( mpolFrac );
 
-  m_disableBW_omega = G0_omega <= 0;
-  m_disableBW_b1 = G0_b1 <= 0;
+  m_disableBW_omega = mG0_omega <= 0;
+  m_disableBW_b1 = mG0_b1 <= 0;
 
   // create nominal Iz list: 0,0,-1,+1,0,-1,+1
   // (proton isospin irrelevant at the moment)
   mIz.assign(7, 0);
-  mIz[2]=Iz2;
-  mIz[3]=Iz1;
+  mIz[2]=Iz_pi;
+  mIz[3]=Iz_b1;
   mIz[5]=-1;
   mIz[6]=+1;
-
-  
-  setDefaultStatus( false );
 }
 
 void PrintHEPvector(HepLorentzVector &v){
@@ -144,7 +163,7 @@ BreitWigner(GDouble m0, GDouble Gamma0, int L,
 }
 
 
-inline float b1piAngAmp::CB(int j1, int j2, int m1, int m2, int J, int M) const
+inline GDouble b1piAngAmp::CB(int j1, int j2, int m1, int m2, int J, int M) const
 {
   if( j1*j2 == 0 ) return 1.0;
   
@@ -192,19 +211,19 @@ inline float b1piAngAmp::CB(int j1, int j2, int m1, int m2, int J, int M) const
 
 
 
-float b1piAngAmp::u_rho(int J_rho) const 
+GDouble b1piAngAmp::u_rho(int J_rho) const 
 {
   return J_rho==1 ? m_u_rho_1 : (J_rho==3 ? m_u_rho_3 : 0);
 }
-float b1piAngAmp::u_omega(int L_omega) const 
+GDouble b1piAngAmp::u_omega(int L_omega) const 
 {
   return L_omega==1 ? m_u_omega_1 : (L_omega==3 ? m_u_omega_3 : 0);
 }
-float b1piAngAmp::u_b1(int L_b1) const 
+GDouble b1piAngAmp::u_b1(int L_b1) const 
 {
   return L_b1==0 ? m_u_b1_0 : (L_b1==2 ? m_u_b1_2 : 0);
 }
-/*float b1piAngAmp::v(int epsilon_R) const 
+/*GDouble b1piAngAmp::v(int epsilon_R) const 
 {
 assert( abs(epsilon_R)==1 );
 return epsilon_R==-1 ? m_v_m : (epsilon_R==+1 ? m_v_p);
@@ -509,74 +528,6 @@ b1piAngAmp::calcAmplitude( GDouble** pKin ) const
   return ThelSum;
 
 }
-    
-    
-b1piAngAmp*
-b1piAngAmp::newAmplitude( const vector< string >& args ) const {
-  const unsigned int base_arg_num=8;
-  bool fastCalc=false;
-  bool tweakBW_omega = args.size() == base_arg_num+1;
-  bool tweakBW_omega_b1 = args.size() == base_arg_num+2;
-  //accept either base number of arguments, extended set (14)
-  // for orthogonality check diagnostics
-  // or base number plus omega width or base number plus omega and b1 widths
-  assert(args.size() == base_arg_num || args.size() == 14 || 
-	 tweakBW_omega || tweakBW_omega_b1);
-  
-  int polBeam = atoi( args[0].c_str() );
-  // float  polFrac = atof(args[1].c_str());
-  AmpParameter polFrac( args[1] );
-  int J_X      = atoi( args[1].c_str() );
-  int Par_X    = atoi( args[2].c_str() );
-  int L_X      = atoi( args[3].c_str() );
-  int I_X      = atoi( args[4].c_str() );
-  int epsilon_R= atoi( args[5].c_str() );
-  int Iz_b1    = atoi( args[6].c_str() );
-  int Iz_pi    = atoi( args[7].c_str() );
-  
-  bool use_emp = (args.size() == base_arg_num || tweakBW_omega || tweakBW_omega_b1);
-
-  // Note, the following have no effect since L_\omega & J_\rho
-  // have been restricted to value 1
-  float u_rho_1  = use_emp ? sqrt(.9) : atoi( args[8].c_str());
-  float u_rho_3  = use_emp ? sqrt(.1) : atoi( args[9].c_str());
-  float u_omega_1= use_emp ? sqrt(.9) : atoi( args[10].c_str());
-  float u_omega_3= use_emp ? sqrt(.1) : atoi( args[11].c_str());
-
-  float G0_omega=0.0085, G0_b1=0.143;
-  if(tweakBW_omega && args[8][0]=='F') fastCalc=true;
-  else{
-    if(tweakBW_omega || tweakBW_omega_b1) G0_omega = atof( args[8].c_str());
-    if(tweakBW_omega_b1) G0_b1 = atof( args[9].c_str());
-  }
-
-  const float b1DSratio2 = 0.277*0.277; //from PDG: D/S amp ratio=0.277+/-0.027
-  float u_b1_0   = use_emp ? sqrt(1/(1 + b1DSratio2)) 
-    : atoi( args[12].c_str());
-  float u_b1_2   = use_emp ? sqrt(b1DSratio2/(1 + b1DSratio2)) 
-    : atoi( args[13].c_str());
-
-  
-  return new b1piAngAmp( polBeam, polFrac, J_X, Par_X, L_X, I_X, epsilon_R,
-			 Iz_b1, Iz_pi,
-			 u_rho_1, u_rho_3, u_omega_1, u_omega_3, 
-			 u_b1_0, u_b1_2, G0_omega, G0_b1, !use_emp,fastCalc);    
-  
-  
-}
-
-b1piAngAmp*
-b1piAngAmp::clone() const {
-  
-  return ( isDefault() ? new b1piAngAmp() : 
-	   new b1piAngAmp(mpolBeam,mpolFrac, mJ_X,mPar_X, 
-			  mL_X, mI_X, mepsilon_R, mIz[2], mIz[3],
-			  m_u_rho_1, m_u_rho_3, 
-			  m_u_omega_1, m_u_omega_3, 
-			  m_u_b1_0, m_u_b1_2, mG0_omega, mG0_b1, m_ORTHOCHECK));
-}
-
-
 
 #ifdef GPU_ACCELERATION
 

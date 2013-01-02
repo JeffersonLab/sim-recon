@@ -13,25 +13,23 @@
 #include "AMPTOOLS_AMPS/BreitWigner.h"
 #include "CLHEP/Vector/LorentzVector.h"
 
-BreitWigner::BreitWigner( const AmpParameter& mass0, 
-                          const AmpParameter& width0, int orbitL,
-                          pair<string,string> daughters) :
-Amplitude(),
-m_mass0( mass0 ),
-m_width0( width0 ),
-m_orbitL( orbitL ),
-m_daughters( daughters )
+BreitWigner::BreitWigner( const vector< string >& args ) :
+UserAmplitude< BreitWigner >( args )
 {
   
-  // this is not the default constructor
-  setDefaultStatus( false );
+  assert( args.size() == 5 );
+	
+	m_mass0 = AmpParameter( args[0] );
+	m_width0 = AmpParameter( args[1] );
+	m_orbitL = atoi( args[2].c_str() );
+	m_daughters = pair< string, string >( args[3], args[4] );
   
   // need to register any free parameters so the framework knows about them
   registerParameter( m_mass0 );
   registerParameter( m_width0 );
   
   // make sure the input variables look reasonable
-  assert((orbitL >= 0) && (orbitL <= 4));
+  assert( ( m_orbitL >= 0 ) && ( m_orbitL <= 4 ) );
 }
 
 complex< GDouble >
@@ -88,26 +86,6 @@ BreitWigner::updatePar( const AmpParameter& par ){
  
   // could do expensive calculations here on parameter updates
   
-}
-
-BreitWigner*
-BreitWigner::newAmplitude( const vector< string >& args ) const {
-	
-	assert( args.size() == 5 );
-	
-	AmpParameter mass( args[0] );
-	AmpParameter width( args[1] );
-	int orbitL = atoi( args[2].c_str() );
-	pair< string, string > daughters( args[3], args[4] );
-	
-	return new BreitWigner( mass, width, orbitL, daughters );
-}
-
-BreitWigner*
-BreitWigner::clone() const {
-	
-	return ( isDefault() ? new BreitWigner() : 
-          new BreitWigner( m_mass0, m_width0, m_orbitL, m_daughters ) );
 }
 
 #ifdef GPU_ACCELERATION

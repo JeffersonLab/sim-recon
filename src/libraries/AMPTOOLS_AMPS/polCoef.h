@@ -1,7 +1,7 @@
 #if !defined(POLCOEF)
 #define POLCOEF
 
-#include "IUAmpTools/Amplitude.h"
+#include "IUAmpTools/UserAmplitude.h"
 #include "IUAmpTools/AmpParameter.h"
 #include "GPUManager/GPUCustomTypes.h"
 
@@ -24,25 +24,19 @@ void GPUpolCoef_exec(dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO,
 #endif
 
 
-class polCoef : public Amplitude
+class polCoef : public UserAmplitude< polCoef >
 {
   
 public:
   
-  polCoef() : Amplitude() { setDefaultStatus( true ); }
-  polCoef( int polBeam, const AmpParameter& polFrac );	
+  polCoef() : UserAmplitude< polCoef >() { }
+  polCoef( const vector< string >& args );
   ~polCoef(){}
   
   string name() const { return "polCoef"; }
   
   complex< GDouble > calcAmplitude( GDouble** pKin=NULL) const;
-  
-  //void updatePar( const AmpParameter& par );
-  
-  polCoef* newAmplitude( const vector< string >& args) const;
-  
-  polCoef* clone() const;
-  
+    
 private: 
   int m_polBeam;
   AmpParameter m_polFrac;

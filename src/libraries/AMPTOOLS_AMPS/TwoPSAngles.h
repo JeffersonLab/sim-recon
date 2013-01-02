@@ -2,6 +2,7 @@
 #define TWOPSANGLES
 
 #include "IUAmpTools/Amplitude.h"
+#include "IUAmpTools/UserAmplitude.h"
 #include "GPUManager/GPUCustomTypes.h"
 
 #include <string>
@@ -28,21 +29,18 @@ using namespace std;
 
 class Kinematics;
 
-class TwoPSAngles : public Amplitude
+class TwoPSAngles : public UserAmplitude< TwoPSAngles >
 {
     
 public:
 	
-	TwoPSAngles() : Amplitude() { setDefaultStatus( true ); }
-	TwoPSAngles( int j, int m, int e ); 
+	TwoPSAngles() : UserAmplitude< TwoPSAngles >() { };
+	TwoPSAngles( const vector< string >& args );
 	
 	string name() const { return "TwoPSAngles"; }
     
 	complex< GDouble > calcAmplitude( GDouble** pKin ) const;
 	
-	TwoPSAngles* newAmplitude( const vector< string >& args ) const;
-	TwoPSAngles* clone() const;
-
 #ifdef GPU_ACCELERATION
   
   void launchGPUKernel( dim3 dimGrid, dim3 dimBlock, GPU_AMP_PROTO ) const;
