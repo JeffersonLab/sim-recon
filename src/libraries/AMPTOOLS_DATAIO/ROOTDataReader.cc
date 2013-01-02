@@ -10,20 +10,29 @@
 #include "TFile.h"
 #include "TTree.h"
 
-ROOTDataReader::ROOTDataReader( const string& inFileName,
-				const string& inTreeName, bool useWeight) :
-  m_eventCounter( 0 ),
-  m_useWeight(useWeight)
+ROOTDataReader::ROOTDataReader( const vector< string >& args ):
+ UserDataReader< ROOTDataReader >( args ),
+ m_useWeight( false ),
+ m_eventCounter( 0 )
 {
+  assert( args.size() == 2 || args.size() == 1 );
   
 	TH1::AddDirectory( kFALSE );
-
+  
 	//this way of opening files works with URLs of the form
 	// root://xrootdserver/path/to/myfile.root
-	m_inFile = TFile::Open( inFileName.c_str() ); 
-	//m_inFile = new TFile( inFileName.c_str() );
+	m_inFile = TFile::Open( args[0].c_str() );
 
-	m_inTree = static_cast<TTree*>( m_inFile->Get( inTreeName.c_str() ) );
+  
+  // default to tree name of "kin" if none is provided
+  if( args.size() == 1 ){
+    
+    m_inTree = static_cast<TTree*>( m_inFile->Get( "kin" ) );
+  }
+  else{
+    
+    m_inTree = static_cast<TTree*>( m_inFile->Get( args[1].c_str() ) );
+  }
   
 	m_inTree->SetBranchAddress( "nPart", &m_nPart );
 	m_inTree->SetBranchAddress( "e", m_e );
@@ -42,6 +51,11 @@ ROOTDataReader::ROOTDataReader( const string& inFileName,
 	  m_inTree->SetBranchAddress( "weight", &m_weight );
 	else
 	  m_useWeight=false;
+}
+
+ROOTDataReader::~ROOTDataReader()
+{
+  if( m_inFile != NULL ) m_inFile->Close();
 }
 
 void

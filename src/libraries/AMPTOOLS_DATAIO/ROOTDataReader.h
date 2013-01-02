@@ -1,8 +1,8 @@
 #if !defined(ROOTDATAREADER)
 #define ROOTDATAREADER
 
-#include "IUAmpTools/DataReader.h"
 #include "IUAmpTools/Kinematics.h"
+#include "IUAmpTools/UserDataReader.h"
 
 #include "TString.h"
 #include "TFile.h"
@@ -12,19 +12,25 @@
 
 using namespace std;
 
-class ROOTDataReader : public DataReader
+class ROOTDataReader : public UserDataReader< ROOTDataReader >
 {
 	
 public:
   
   /**
-   * Constructor for ROOTDataReader
-   * \param[in] inFileName ROOT file name to be read.
-   * \param[in] inTreeName name of tree from which to read events.
-   * \param[in] useWeight (optional) enables reading in event weights
+   * Default constructor for ROOTDataReader
    */
-  ROOTDataReader( const string& inFileName, 
-		  const string& inTreeName, bool useWeight=false);
+  ROOTDataReader() : UserDataReader< ROOTDataReader >(), m_inFile( NULL ) { }
+  
+  ~ROOTDataReader();
+  
+  /**
+   * Constructor for ROOTDataReader
+   * \param[in] args vector of string arguments
+   */
+  ROOTDataReader( const vector< string >& args );
+  
+  string name() const { return "ROOTDataReader"; }
   
   virtual Kinematics* getEvent();
   virtual void resetSource();
