@@ -14,7 +14,7 @@ toy_detector threepi_gen.root threepi_acc.root
 ./divideData.pl
 cd threepi_fit/bin_10
 fit -c bin_10.cfg
-cp fit.bin_10.txt ../par_seed.txt
+cp bin_10.fit ../par_seed.txt
 cd ../..
 ./driveFit.pl
 plot_3pi -o threepi_fit.txt
@@ -108,7 +108,7 @@ B. Perform fit
 
     cd threepi_fit/bin_10
     fit -c bin_10.cfg
-    cp fit.bin_10.txt ../par_seed.txt
+    cp bin_10.fit ../par_seed.txt
     cd ../..
 
     Now it is time to sequentially fit all bins.  Check the variables
