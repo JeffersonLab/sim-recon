@@ -170,9 +170,13 @@ int main( int argc, char* argv[] ){
   ASCIIDataWriter asciiOut( asciifname ); 
   //----------------------------------------------------
 
+  vector< string > readerArgs;
+  readerArgs.push_back( inMCFName );
+  readerArgs.push_back( "kin" );
+  
   if(readInEvents){
     cout << "Performing accept/reject on pre-generated sample from: " << inMCFName << endl;
-    ROOTDataReader rootIn(inMCFName, "kin", true);
+    ROOTDataReader rootIn( readerArgs );
     Kinematics *evt;
 
     if(CustMaxInten>0){
