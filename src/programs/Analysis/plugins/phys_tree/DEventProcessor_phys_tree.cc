@@ -216,7 +216,8 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	}
 	
 	// Lock mutex
-	pthread_mutex_lock(&mutex);
+	japp->RootWriteLock();
+	//pthread_mutex_lock(&mutex);
 	
 	// Fill in Event objects for both thrown and reconstructed
 	evt_recon->Clear();
@@ -247,7 +248,8 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	tree_recon->Fill();
 
 	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+	japp->RootUnLock();
+	//pthread_mutex_unlock(&mutex);
 
 	return NOERROR;
 }
