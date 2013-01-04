@@ -810,22 +810,54 @@ void DParticleID::GetScintMPdEandSigma(double p,double M,double x,
   sigma_dE=4.*Xi/2.354;
 }
 
-
 double DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
 {
 	//Propagates RF time to the track vertex-z, and then selects the closest RF bunch
-	//Method: match each track to different RF buckets.  If cannot reliably match (e.g. no start counter hit) then use the best guess for this event (from locEventRFBunch)
+	//Method: match each track to different RF buckets.  If cannot reliably match (e.g. no TOF or start counter hit) then use the best guess for this event (from locEventRFBunch)
+		//First use TOF hit if any, then use a BCAL hit if track is fast enough (resolution low enough), else use start counter hit
+	double locProjectedHitTime;
+
+	//Use TOF hit if any
+	bool locMatchFlag = false;
+	double locP = locChargedTrackHypothesis->momentum().Mag();
+	if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
+	{
+		locProjectedHitTime = locChargedTrackHypothesis->time();
+		locMatchFlag = true;
+	}
+	else if((locChargedTrackHypothesis->t1_detector() == SYS_BCAL) && (locP > 0.25))
+	{
+		//if p < 250 MeV/c: too slow for the BCAL to distinguish RF bunch
+			//at 225 MeV/c, BCAL t-resolution is ~333ps (3sigma = 999ps), BCAL delta-t error is ~40ps: ~1040ps: bad
+			//at 250 MeV/c, BCAL t-resolution is ~310ps (3sigma = 920ps), BCAL delta-t error is ~40ps: ~960 ps < 1 ns: OK!!
+		locProjectedHitTime = locChargedTrackHypothesis->time();
+		locMatchFlag = true;
+	}
+	else
+	{
+		//no good matches from TOF/BCAL (or too slow for BCAL), try using ST
+		vector<const DSCHit*> locSCHits;
+		locChargedTrackHypothesis->GetT(locSCHits);
+		if(!locSCHits.empty())
+		{
+			locProjectedHitTime = locChargedTrackHypothesis->t0();
+			unsigned int locSCIndex;
+			double locPathLength, locFlightTime;
+			MatchToSC(locChargedTrackHypothesis->dRT, DTrackFitter::kTimeBased, locSCHits, locProjectedHitTime, locSCIndex, locPathLength, locFlightTime);
+			locMatchFlag = true;
+		}
+	}
+
 	double locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-	if(locChargedTrackHypothesis->t0_detector() != SYS_START)
+	if(!locMatchFlag)
 		return locPropagatedRFTime; // just use the propagated RF time from locEventRFBunch
 
-	//have a matching hit in the start counter: match this track to the closest RF bunch
-	//This assumes that the start counter resolution will be good enough to unambiguously determine the RF bunch for each track individually.
-		//Otherwise just delete this section and use the "best" one for the event (from DEventRFBunch)
-	double locSTTimeProjectedToBeamline = locChargedTrackHypothesis->t0(); //BEWARE, THIS MAY CHANGE AS SC SYSTEM IS UPDATED!! (may need to propagate time to beamline here)
-	while((locPropagatedRFTime - locSTTimeProjectedToBeamline) > (0.5*dRFBunchFrequency))
+	//have a matching hit in either TOF/BCAL/ST: match this track to the closest RF bunch
+	//If using an ST hit, this assumes that the start counter resolution will be good enough to unambiguously determine the RF bunch for each track individually.
+		//Otherwise just delete the ST matching section above
+	while((locPropagatedRFTime - locProjectedHitTime) > (0.5*dRFBunchFrequency))
 		locPropagatedRFTime -= dRFBunchFrequency;
-	while((locPropagatedRFTime - locSTTimeProjectedToBeamline) < (-0.5*dRFBunchFrequency))
+	while((locPropagatedRFTime - locProjectedHitTime) < (-0.5*dRFBunchFrequency))
 		locPropagatedRFTime += dRFBunchFrequency;
 	return locPropagatedRFTime;
 }
