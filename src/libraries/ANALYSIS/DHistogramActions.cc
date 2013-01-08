@@ -167,7 +167,7 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
+	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
 
 	deque<const DKinematicData*> locParticles;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
@@ -199,11 +199,13 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	Particle_t locPID = locChargedTrackHypothesis->PID();
 	double locDeltaBeta, locBeta_Timing;
 
-	double locPropagatedRFTime = (locEventRFBunch != NULL) ? dParticleID->Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch) : 0.0;
-	locBeta_Timing = locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locPropagatedRFTime));
+	double locStartTime, locStartTimeVariance;
+	bool locUsedRFTimeFlag;
+	bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag);
+	locBeta_Timing = locFoundStartTimeFlag ? locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locStartTime)) : numeric_limits<double>::quiet_NaN();
 	locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
-	double locFOM_Timing = (locChargedTrackHypothesis->dNDF_Timing > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_Timing, locChargedTrackHypothesis->dNDF_Timing) : NaN;
-	double locFOM_DCdEdx = (locChargedTrackHypothesis->dNDF_DCdEdx > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_DCdEdx, locChargedTrackHypothesis->dNDF_DCdEdx) : NaN;
+	double locFOM_Timing = (locChargedTrackHypothesis->dNDF_Timing > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_Timing, locChargedTrackHypothesis->dNDF_Timing) : numeric_limits<double>::quiet_NaN();
+	double locFOM_DCdEdx = (locChargedTrackHypothesis->dNDF_DCdEdx > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_DCdEdx, locChargedTrackHypothesis->dNDF_DCdEdx) : numeric_limits<double>::quiet_NaN();
 
 	double locP = locChargedTrackHypothesis->momentum().Mag();
 	double locTheta = locChargedTrackHypothesis->momentum().Theta()*180.0/TMath::Pi();
@@ -243,11 +245,10 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch)
 {
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
-	double locDeltaBeta, locBeta_Timing;
-	double locStartTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
 
-	locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(SPEED_OF_LIGHT*(locNeutralParticleHypothesis->t1() - locStartTime));
-	locDeltaBeta = locNeutralParticleHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
+	double locStartTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+	double locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(SPEED_OF_LIGHT*(locNeutralParticleHypothesis->t1() - locStartTime));
+	double locDeltaBeta = locNeutralParticleHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 
 	double locP = locNeutralParticleHypothesis->momentum().Mag();
 	double locTheta = locNeutralParticleHypothesis->momentum().Theta()*180.0/TMath::Pi();

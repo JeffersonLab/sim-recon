@@ -72,7 +72,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
+	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
 
 	DParticleCombo* locParticleCombo;
 	DParticleComboStep* locParticleComboStep;
@@ -114,11 +114,10 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				//beam photon: will later create additional combo for each one that's within the time window, just set the first one for now
 				if(locCandidatePhotons.empty())
 				{
-					//compare photon time to RF time (at center of target) //if no RF time: don't cut on photon time
-					double locRFTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
+					//compare photon time to RF time (at center of target) //if RF time not matched to tracks: don't cut on photon time
 					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
 					{
-						if((fabs(locBeamPhotons[loc_k]->time() - locRFTime) < dMaxPhotonRFTimeDifference) || (locEventRFBunch == NULL))
+						if((fabs(locBeamPhotons[loc_k]->time() - locEventRFBunch->dTime) < dMaxPhotonRFTimeDifference) || (!locEventRFBunch->dMatchedToTracksFlag))
 							locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
 					}
 					if(locBeamPhotons.empty()) //e.g. genr8

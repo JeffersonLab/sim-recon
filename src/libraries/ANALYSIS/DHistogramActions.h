@@ -5,6 +5,7 @@
 #include <deque>
 #include <string>
 #include <iostream>
+#include <limits>
 
 #include "TROOT.h"
 #include "TDirectoryFile.h"
