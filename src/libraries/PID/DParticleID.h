@@ -8,8 +8,12 @@
 #ifndef _DParticleID_
 #define _DParticleID_
 
+#include <deque>
+#include <limits>
+
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
+
 #include <DVector3.h>
 #include "HDGEOMETRY/DRootGeom.h"
 #include <TRACKING/DTrackTimeBased_factory.h>
@@ -23,7 +27,7 @@
 #include <PID/DChargedTrackHypothesis.h>
 #include <PID/DEventRFBunch.h>
 #include <TRACKING/DMagneticFieldStepper.h>
-#include <deque>
+
 
 class DTrackTimeBased;
 class DCDCTrackHit;
@@ -64,7 +68,9 @@ class DParticleID:public jana::JObject{
 			    double &sigma_dE) const;
 
   virtual Particle_t IDTrack(float locCharge, float locMass) const;
-  double Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
+
+  bool Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime) const;
+  bool Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool& locUsedRFTimeFlag) const;
   void Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
   void Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const;
 

@@ -210,11 +210,11 @@ jerror_t DParticleID::CalcDCdEdx(const DTrackTimeBased *locTrackTimeBased, doubl
 	vector<dedx_t> locdEdxHits_CDC, locdEdxHits_FDC;
 	jerror_t locReturnStatus = GetDCdEdxHits(locTrackTimeBased, locdEdxHits_CDC, locdEdxHits_FDC);
 	if(locReturnStatus != NOERROR){
-		locdEdx_FDC = NaN;
-		locdx_FDC = NaN;
+		locdEdx_FDC = numeric_limits<double>::quiet_NaN();
+		locdx_FDC = numeric_limits<double>::quiet_NaN();
 		locNumHitsUsedFordEdx_FDC = 0;
-		locdEdx_CDC = NaN;
-		locdx_CDC = NaN;
+		locdEdx_CDC = numeric_limits<double>::quiet_NaN();
+		locdx_CDC = numeric_limits<double>::quiet_NaN();
 		locNumHitsUsedFordEdx_CDC = 0;
 		return locReturnStatus;
 	}
@@ -318,7 +318,7 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::f
   //tproj=NaN;
   tof_match_id=0;
   if (tof_points.size()==0){
-    tproj=NaN;
+    tproj=numeric_limits<double>::quiet_NaN();
     return RESOURCE_UNAVAILABLE;
   }
 
@@ -373,7 +373,7 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::f
       
     return NOERROR;
   }
-  tproj=NaN;
+  tproj=numeric_limits<double>::quiet_NaN();
   return VALUE_OUT_OF_RANGE;
 }
 
@@ -387,7 +387,7 @@ jerror_t DParticleID::MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::f
 // hits can be skipped
 jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,const vector<const DBCALShower*>& locInputBCALShowers, deque<const DBCALShower*>& locMatchedBCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime) const{
   if (locInputBCALShowers.size() == 0){
-    locProjectedTime = NaN;
+    locProjectedTime = numeric_limits<double>::quiet_NaN();
     return RESOURCE_UNAVAILABLE;
   }
   // Clear the list of matched showers
@@ -446,7 +446,7 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,const vector<co
     return NOERROR;
   }
   
-  locProjectedTime = NaN;
+  locProjectedTime = numeric_limits<double>::quiet_NaN();
   return VALUE_OUT_OF_RANGE;
 }
 
@@ -460,7 +460,7 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,const vector<co
 // hits can be skipped
 jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, const vector<const DFCALShower*>& locInputFCALShowers, deque<const DFCALShower*>& locMatchedFCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime,double *dEdx) const{
   if (locInputFCALShowers.size() == 0){
-    locProjectedTime = NaN;
+    locProjectedTime = numeric_limits<double>::quiet_NaN();
     return RESOURCE_UNAVAILABLE;
   }
   // Clear the list of matched showers
@@ -516,7 +516,7 @@ jerror_t DParticleID::MatchToFCAL(const DReferenceTrajectory *rt, const vector<c
     return NOERROR;
   }
   
-  locProjectedTime = NaN;
+  locProjectedTime = numeric_limits<double>::quiet_NaN();
   return VALUE_OUT_OF_RANGE;
 }
 
@@ -538,7 +538,7 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
 				double &tproj,unsigned int &sc_match_id) const{ 
   sc_match_id=0;
   if (sc_hits.size()==0){
-    tproj=NaN;
+    tproj=numeric_limits<double>::quiet_NaN();
     return RESOURCE_UNAVAILABLE;
   }
   double myz=0.;
@@ -552,7 +552,7 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
   // Swim to barrel representing the start counter straight portion
   double ds=0.,myds=0;
   if (stepper->SwimToRadius(pos,mom,sc_pos[1].x(),&ds)){
-    tproj=NaN;
+    tproj=numeric_limits<double>::quiet_NaN();
     return VALUE_OUT_OF_RANGE;
   }
   // Change the sign of ds -- most of the time we will need to add a small 
@@ -649,7 +649,7 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
     return NOERROR;
   }
 
-  tproj=NaN;
+  tproj=numeric_limits<double>::quiet_NaN();
   return VALUE_OUT_OF_RANGE;
 
 }
@@ -667,10 +667,10 @@ jerror_t DParticleID::MatchToSC(const DKinematicData &parms,
 // hits can be skipped
 jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime,pair<double,double>*dEdx) const{
 
-  //tproj=NaN;
+  //tproj=numeric_limits<double>::quiet_NaN();
   sc_match_id=0;
   if (sc_hits.size()==0){
-    tproj=NaN;
+    tproj=numeric_limits<double>::quiet_NaN();
     return RESOURCE_UNAVAILABLE;
   }
   double myz=0.;
@@ -773,7 +773,7 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
     return NOERROR;
   }
   
-  tproj=NaN;
+  tproj=numeric_limits<double>::quiet_NaN();
   return VALUE_OUT_OF_RANGE;
 }
 
@@ -810,10 +810,10 @@ void DParticleID::GetScintMPdEandSigma(double p,double M,double x,
   sigma_dE=4.*Xi/2.354;
 }
 
-double DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
+bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime) const
 {
 	//Propagates RF time to the track vertex-z, and then selects the closest RF bunch
-	//Method: match each track to different RF buckets.  If cannot reliably match (e.g. no TOF or start counter hit) then use the best guess for this event (from locEventRFBunch)
+	//Method: match track to RF bunch.  If cannot reliably match (e.g. no TOF or start counter hit) then use the best guess for this event (from locEventRFBunch) if available
 		//First use TOF hit if any, then use a BCAL hit if track is fast enough (resolution low enough), else use start counter hit
 	double locProjectedHitTime;
 
@@ -848,10 +848,10 @@ double DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChar
 		}
 	}
 
-	double locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-	if(!locMatchFlag)
-		return locPropagatedRFTime; // just use the propagated RF time from locEventRFBunch
-
+	locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
+	if(!locMatchFlag) // this track can't distinguish which RF bunch: use the propagated RF time from locEventRFBunch if it was succesfully matched to other tracks, else abort
+		return locEventRFBunch->dMatchedToTracksFlag;
+			
 	//have a matching hit in either TOF/BCAL/ST: match this track to the closest RF bunch
 	//If using an ST hit, this assumes that the start counter resolution will be good enough to unambiguously determine the RF bunch for each track individually.
 		//Otherwise just delete the ST matching section above
@@ -859,36 +859,51 @@ double DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChar
 		locPropagatedRFTime -= dRFBunchFrequency;
 	while((locPropagatedRFTime - locProjectedHitTime) < (-0.5*dRFBunchFrequency))
 		locPropagatedRFTime += dRFBunchFrequency;
-	return locPropagatedRFTime;
+	return true;
+}
+
+bool DParticleID::Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool& locUsedRFTimeFlag) const
+{
+	//use RF bunch if available, else use t0 detector if available (e.g. start counter, CDC)
+	double locPropagatedRFTime;
+	locUsedRFTimeFlag = Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch, locPropagatedRFTime);
+	if(locUsedRFTimeFlag)
+	{
+		locStartTime = locPropagatedRFTime;
+		locStartTimeVariance = locEventRFBunch->dTimeVariance;
+	}
+	else //no confidence in selecting the RF bunch
+	{
+		locStartTime = locChargedTrackHypothesis->t0(); //BEWARE, THIS MAY CHANGE AS SC SYSTEM IS UPDATED!! (may need to propagate time to beamline here)
+		locStartTimeVariance = locChargedTrackHypothesis->t0_err()*locChargedTrackHypothesis->t0_err();
+		//try to use the start counter or CDC time instead of the RF time
+		if(locChargedTrackHypothesis->t0_detector() == SYS_NULL)
+			return false;
+	}
+	return true;
 }
 
 void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
 {
-	double locTimeDifference = 0.0;
-	double locTimeDifferenceVariance = 0.0;
-	if(locEventRFBunch != NULL)
+	double locStartTime, locStartTimeVariance;
+	bool locUsedRFTimeFlag;
+	if(!Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag))
 	{
-		double locPropagatedRFTime = Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch);
-
-		// Compare time difference between RF & TOF/BCAL/FCAL times at the vertex
-		locTimeDifference = locPropagatedRFTime - locChargedTrackHypothesis->time();
-		locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locEventRFBunch->dTimeVariance;
-	}
-	else //no confidence in selecting the RF bunch (e.g. no start counter hits & no tracks with non-nearly-zero tracking FOM)
-	{
-		//try to use the start counter or CDC time instead of the RF time
-		if(locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector()) //e.g. both CDC
-		{
-			locChargedTrackHypothesis->dChiSq_Timing = 0.0;
-			locChargedTrackHypothesis->dNDF_Timing = 0;
-			return;
-		}
-		double locTimeProjectedToBeamline = locChargedTrackHypothesis->t0(); //BEWARE, THIS MAY CHANGE AS SC SYSTEM IS UPDATED!! (may need to propagate time to beamline here)
-		locTimeDifference = locTimeProjectedToBeamline - locChargedTrackHypothesis->time();
-		locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locChargedTrackHypothesis->t0_err()*locChargedTrackHypothesis->t0_err();
+		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
+		locChargedTrackHypothesis->dNDF_Timing = 0;
+		return;
 	}
 
-	// Calculate ChiSq, FOM
+	if((!locUsedRFTimeFlag) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector())) //e.g. both CDC (not matched to any hits)
+	{
+		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
+		locChargedTrackHypothesis->dNDF_Timing = 0;
+		return;
+	}
+
+	double locTimeDifference = locStartTime - locChargedTrackHypothesis->time();
+	double locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locStartTimeVariance;
+
 	double locTimingChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
 	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
 	locChargedTrackHypothesis->dNDF_Timing = 1;
@@ -941,6 +956,6 @@ void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHyp
 
 	locChargedTrackHypothesis->dChiSq = locChiSq_Total;
 	locChargedTrackHypothesis->dNDF = locNDF_Total;
-	locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : NaN;
+	locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : numeric_limits<double>::quiet_NaN();
 }
 

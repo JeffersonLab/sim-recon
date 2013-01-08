@@ -118,6 +118,7 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	//then figure out which RF bunch matches the most # tracks
 		//need to try different sources of times: start with best quality
 	int locBestRFBunchShift = 0;
+	bool locMatchedToTracksFlag = true; //set to false if not
 	vector<pair<double, double> > locTimeFOMPairs;
 	if(Find_TimeFOMPairs_Hits(locTOFPoints, locBCALShowers, locSCHits, locTrackTimeBasedVector_OnePerTrack_GoodFOM, locTimeFOMPairs)) //good tracks, use TOF/BCAL/ST info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
@@ -128,11 +129,12 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	else if(Find_TimeFOMPairs_T0(locTrackTimeBasedVector_OnePerTrack, locTimeFOMPairs)) //potentially bad tracks, use tracking time info
 		locBestRFBunchShift = Find_BestRFBunchShift(locRFHitTime, locTimeFOMPairs);
 	else
-		return NOERROR; //no confidence in selecting the RF bunch for the event
+		locMatchedToTracksFlag = false; //no confidence in selecting the RF bunch for the event
 
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
-	locEventRFBunch->dTime = locRFHitTime + dRFBunchFrequency*double(locBestRFBunchShift);
+	locEventRFBunch->dTime = (locMatchedToTracksFlag) ? locRFHitTime + dRFBunchFrequency*double(locBestRFBunchShift) : locRFHitTime;
 	locEventRFBunch->dTimeVariance = locTimeVariance;
+	locEventRFBunch->dMatchedToTracksFlag = locMatchedToTracksFlag;
 	_data.push_back(locEventRFBunch);
 
 	return NOERROR;
