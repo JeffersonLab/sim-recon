@@ -67,11 +67,11 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
+	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
 
-	double locStartTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : 0.0;
+	double locStartTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
 	DLorentzVector locSpacetimeVertex(dTargetCenter, locStartTime);
-	double locStartTimeVariance = (locEventRFBunch != NULL) ? locEventRFBunch->dTimeVariance : 0.0;
+	double locStartTimeVariance = locEventRFBunch->dTimeVariance;
 
 	// Loop over DNeutralShowers
 	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++){

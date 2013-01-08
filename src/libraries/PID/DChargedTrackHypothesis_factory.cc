@@ -99,7 +99,7 @@ jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop*
 	}
 	locEventLoop->Get(locFCALShowers);
 	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
+	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
 
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
 	{

@@ -8,6 +8,8 @@
 #ifndef _DNeutralParticleHypothesis_factory_
 #define _DNeutralParticleHypothesis_factory_
 
+#include <limits>
+
 #include <JANA/JFactory.h>
 #include <DANA/DApplication.h>
 #include <HDGEOMETRY/DGeometry.h>
