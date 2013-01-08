@@ -52,7 +52,15 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   gPARMS->SetDefaultParameter("TRKFIND:APPLY_MOMENTUM_CORRECTION",APPLY_MOMENTUM_CORRECTION);
   p_factor1=1.61*M_PI/180.;
   p_factor2=-0.0766;
-  
+
+  string description = "If hit wih largest R is less than this, then a ";
+  description += "fake point will be added when fitting the parameters ";
+  description += "for the track candidate in the 'FDCCathodes' factory. ";
+  description += "The point will be on the beamline (x,y) = (0,0) and ";
+  description += "at a z location determined from the geometry center of ";
+  description += "target (via DGeometry::GetTargetZ()";
+  MAX_R_VERTEX_LIMIT = 10.0;
+  gPARMS->SetDefaultParameter("TRKFIND:MAX_R_VERTEX_LIMIT", MAX_R_VERTEX_LIMIT, description);
 
   if(DEBUG_HISTS) {
     dapp->Lock();
@@ -318,7 +326,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  num_hits+=match4->hits.size();
 	}
 	// Fake point at origin
-	if (max_r<10) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<MAX_R_VERTEX_LIMIT) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){      
 	  // Charge
 	  //if (q==0) 
@@ -621,7 +629,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  num_hits+=match4->hits.size();
 	}
 	// Fake point at origin
-	if (max_r<10) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<MAX_R_VERTEX_LIMIT) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){
 	  // Charge
 	  //if (q==0) 
@@ -815,7 +823,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  num_hits+=mysegments[m]->hits.size();
 	}
 	// Fake point at origin
-	if (max_r<10) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
+	if (max_r<MAX_R_VERTEX_LIMIT) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitCircleAndLineRiemann(mysegments[0]->rc)==NOERROR){     	
 	  // Charge
 	  //if (q==0) 

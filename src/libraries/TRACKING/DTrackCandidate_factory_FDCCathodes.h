@@ -72,6 +72,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 	vector<double>z_wires;
 	double endplate_z;
 	double TARGET_Z;
+	double MAX_R_VERTEX_LIMIT;
 	
 	// Fit parameters
 	double xc,yc,rc,z_vertex,q,phi0,tanl;
