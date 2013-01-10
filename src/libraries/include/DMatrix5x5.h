@@ -219,9 +219,280 @@ public:
     DMatrix3x3 DD=(D-CAinv*B).InvertSym();
     return DMatrix5x5(AA,-AA*BDinv,-DD*CAinv,DD);
   }
+
+  
   // The following code performs the matrix operation ABA^T, where B is a symmetric matrix.   The end 
   // result is also a symmetric matrix.
   DMatrix5x5 SandwichMultiply(const DMatrix5x5 &A){
+    DMatrix5x5 temp;
+    double sums[5];
+    // First row/column of ACA^T
+    sums[0]= mA[0][0]*A(0,0);
+    sums[0]+=mA[0][1]*A(0,1); 
+    sums[0]+=mA[0][2]*A(0,2);
+    sums[0]+=mA[0][3]*A(0,3);
+    sums[0]+=mA[0][4]*A(0,4);
+
+    sums[1]= mA[1][0]*A(0,0);
+    sums[1]+=mA[1][1]*A(0,1); 
+    sums[1]+=mA[1][2]*A(0,2);
+    sums[1]+=mA[1][3]*A(0,3);
+    sums[1]+=mA[1][4]*A(0,4);
+    
+    sums[2]= mA[2][0]*A(0,0);
+    sums[2]+=mA[2][1]*A(0,1); 
+    sums[2]+=mA[2][2]*A(0,2);
+    sums[2]+=mA[2][3]*A(0,3);
+    sums[2]+=mA[2][4]*A(0,4);
+
+    sums[3]= mA[3][0]*A(0,0);
+    sums[3]+=mA[3][1]*A(0,1); 
+    sums[3]+=mA[3][2]*A(0,2);
+    sums[3]+=mA[3][3]*A(0,3);
+    sums[3]+=mA[3][4]*A(0,4);
+
+    sums[4]= mA[4][0]*A(0,0);
+    sums[4]+=mA[4][1]*A(0,1); 
+    sums[4]+=mA[4][2]*A(0,2);
+    sums[4]+=mA[4][3]*A(0,3);
+    sums[4]+=mA[4][4]*A(0,4);
+    
+    temp(0,0)+=A(0,0)*sums[0];
+    temp(0,0)+=A(0,1)*sums[1];
+    temp(0,0)+=A(0,2)*sums[2];
+    temp(0,0)+=A(0,3)*sums[3];
+    temp(0,0)+=A(0,4)*sums[4];
+ 
+    temp(1,0)+=A(1,0)*sums[0];
+    temp(1,0)+=A(1,1)*sums[1];
+    temp(1,0)+=A(1,2)*sums[2];
+    temp(1,0)+=A(1,3)*sums[3];
+    temp(1,0)+=A(1,4)*sums[4];
+        
+    temp(2,0)+=A(2,0)*sums[0];
+    temp(2,0)+=A(2,1)*sums[1];
+    temp(2,0)+=A(2,2)*sums[2];
+    temp(2,0)+=A(2,3)*sums[3];
+    temp(2,0)+=A(2,4)*sums[4];
+   
+    temp(3,0)+=A(3,0)*sums[0];
+    temp(3,0)+=A(3,1)*sums[1];
+    temp(3,0)+=A(3,2)*sums[2];
+    temp(3,0)+=A(3,3)*sums[3];
+    temp(3,0)+=A(3,4)*sums[4];
+    
+    temp(4,0)+=A(4,0)*sums[0];
+    temp(4,0)+=A(4,1)*sums[1];
+    temp(4,0)+=A(4,2)*sums[2];
+    temp(4,0)+=A(4,3)*sums[3];
+    temp(4,0)+=A(4,4)*sums[4];
+
+    temp(0,1)=temp(1,0);
+    temp(0,2)=temp(2,0);
+    temp(0,3)=temp(3,0);
+    temp(0,4)=temp(4,0);
+
+    // Second row/column of ACA^T
+    sums[0] =mA[0][0]*A(1,0);
+    sums[0]+=mA[0][1]*A(1,1);
+    sums[0]+=mA[0][2]*A(1,2);
+    sums[0]+=mA[0][3]*A(1,3);
+    sums[0]+=mA[0][4]*A(1,4);
+    
+    sums[1]=mA[1][0]*A(1,0);
+    sums[1]+=mA[1][1]*A(1,1);
+    sums[1]+=mA[1][2]*A(1,2);
+    sums[1]+=mA[1][3]*A(1,3);
+    sums[1]+=mA[1][4]*A(1,4);
+
+    sums[2]=mA[2][0]*A(1,0);
+    sums[2]+=mA[2][1]*A(1,1);
+    sums[2]+=mA[2][2]*A(1,2);
+    sums[2]+=mA[2][3]*A(1,3);
+    sums[2]+=mA[2][4]*A(1,4);
+    
+    sums[3]=mA[3][0]*A(1,0);
+    sums[3]+=mA[3][1]*A(1,1);
+    sums[3]+=mA[3][2]*A(1,2);
+    sums[3]+=mA[3][3]*A(1,3);
+    sums[3]+=mA[3][4]*A(1,4);
+
+    sums[4]=mA[4][0]*A(1,0);
+    sums[4]+=mA[4][1]*A(1,1);
+    sums[4]+=mA[4][2]*A(1,2);
+    sums[4]+=mA[4][3]*A(1,3);
+    sums[4]+=mA[4][4]*A(1,4);
+
+    temp(1,1)+=A(1,0)*sums[0];
+    temp(1,1)+=A(1,1)*sums[1];
+    temp(1,1)+=A(1,2)*sums[2];
+    temp(1,1)+=A(1,3)*sums[3];
+    temp(1,1)+=A(1,4)*sums[4];
+    
+    temp(2,1)+=A(2,0)*sums[0];
+    temp(2,1)+=A(2,1)*sums[1];
+    temp(2,1)+=A(2,2)*sums[2];
+    temp(2,1)+=A(2,3)*sums[3];
+    temp(2,1)+=A(2,4)*sums[4];
+      
+    temp(3,1)+=A(3,0)*sums[0];
+    temp(3,1)+=A(3,1)*sums[1];
+    temp(3,1)+=A(3,2)*sums[2];
+    temp(3,1)+=A(3,3)*sums[3];
+    temp(3,1)+=A(3,4)*sums[4];
+
+    temp(4,1)+=A(4,0)*sums[0];
+    temp(4,1)+=A(4,1)*sums[1];
+    temp(4,1)+=A(4,2)*sums[2];
+    temp(4,1)+=A(4,3)*sums[3];
+    temp(4,1)+=A(4,4)*sums[4]; 
+
+    temp(1,2)=temp(2,1);
+    temp(1,3)=temp(3,1);
+    temp(1,4)=temp(4,1);
+
+    // Third row/column of ACA^T
+    sums[0] =mA[0][0]*A(2,0);
+    sums[0]+=mA[0][1]*A(2,1);
+    sums[0]+=mA[0][2]*A(2,2);
+    sums[0]+=mA[0][3]*A(2,3);
+    sums[0]+=mA[0][4]*A(2,4);             
+    
+    sums[1] =mA[1][0]*A(2,0);
+    sums[1]+=mA[1][1]*A(2,1);
+    sums[1]+=mA[1][2]*A(2,2);
+    sums[1]+=mA[1][3]*A(2,3);
+    sums[1]+=mA[1][4]*A(2,4);
+
+    sums[2] =mA[2][0]*A(2,0);
+    sums[2]+=mA[2][1]*A(2,1);
+    sums[2]+=mA[2][2]*A(2,2);
+    sums[2]+=mA[2][3]*A(2,3);
+    sums[2]+=mA[2][4]*A(2,4);
+
+    sums[3] =mA[3][0]*A(2,0);
+    sums[3]+=mA[3][1]*A(2,1);
+    sums[3]+=mA[3][2]*A(2,2);
+    sums[3]+=mA[3][3]*A(2,3);
+    sums[3]+=mA[3][4]*A(2,4);
+
+    sums[4] =mA[4][0]*A(2,0);
+    sums[4]+=mA[4][1]*A(2,1);
+    sums[4]+=mA[4][2]*A(2,2);
+    sums[4]+=mA[4][3]*A(2,3);
+    sums[4]+=mA[4][4]*A(2,4);
+
+    temp(2,2)+=A(2,0)*sums[0]; 
+    temp(2,2)+=A(2,1)*sums[1];
+    temp(2,2)+=A(2,2)*sums[2]; 
+    temp(2,2)+=A(2,3)*sums[3]; 
+    temp(2,2)+=A(2,4)*sums[4];
+
+    temp(3,2)+=A(3,0)*sums[0]; 
+    temp(3,2)+=A(3,1)*sums[1];
+    temp(3,2)+=A(3,2)*sums[2]; 
+    temp(3,2)+=A(3,3)*sums[3]; 
+    temp(3,2)+=A(3,4)*sums[4];
+
+    temp(4,2)+=A(4,0)*sums[0]; 
+    temp(4,2)+=A(4,1)*sums[1];
+    temp(4,2)+=A(4,2)*sums[2]; 
+    temp(4,2)+=A(4,3)*sums[3]; 
+    temp(4,2)+=A(4,4)*sums[4];
+    
+    temp(2,3)=temp(3,2);
+    temp(2,4)=temp(4,2);
+
+    // Fourth row/column of ACA^T
+    sums[0] =mA[0][0]*A(3,0);
+    sums[0]+=mA[0][1]*A(3,1);
+    sums[0]+=mA[0][2]*A(3,2);
+    sums[0]+=mA[0][3]*A(3,3);
+    sums[0]+=mA[0][4]*A(3,4);         
+
+    sums[1] =mA[1][0]*A(3,0);
+    sums[1]+=mA[1][1]*A(3,1);
+    sums[1]+=mA[1][2]*A(3,2);
+    sums[1]+=mA[1][3]*A(3,3);
+    sums[1]+=mA[1][4]*A(3,4);
+    
+    sums[2] =mA[2][0]*A(3,0);
+    sums[2]+=mA[2][1]*A(3,1);
+    sums[2]+=mA[2][2]*A(3,2);
+    sums[2]+=mA[2][3]*A(3,3);
+    sums[2]+=mA[2][4]*A(3,4);
+      
+    sums[3] =mA[3][0]*A(3,0);
+    sums[3]+=mA[3][1]*A(3,1);
+    sums[3]+=mA[3][2]*A(3,2);
+    sums[3]+=mA[3][3]*A(3,3);
+    sums[3]+=mA[3][4]*A(3,4);
+
+    sums[4] =mA[4][0]*A(3,0);
+    sums[4]+=mA[4][1]*A(3,1);
+    sums[4]+=mA[4][2]*A(3,2);
+    sums[4]+=mA[4][3]*A(3,3);
+    sums[4]+=mA[4][4]*A(3,4);
+
+    temp(3,3)+=A(3,0)*sums[0];
+    temp(3,3)+=A(3,1)*sums[1];
+    temp(3,3)+=A(3,2)*sums[2];
+    temp(3,3)+=A(3,3)*sums[3];
+    temp(3,3)+=A(3,4)*sums[4];
+
+    temp(4,3)+=A(4,0)*sums[0];
+    temp(4,3)+=A(4,1)*sums[1];
+    temp(4,3)+=A(4,2)*sums[2];
+    temp(4,3)+=A(4,3)*sums[3];
+    temp(4,3)+=A(4,4)*sums[4];
+
+    temp(3,4)=temp(4,3);
+
+    // Last entry ACA^T[4][4]  
+    sums[0] =mA[0][0]*A(4,0);
+    sums[0]+=mA[0][1]*A(4,1);
+    sums[0]+=mA[0][2]*A(4,2);
+    sums[0]+=mA[0][3]*A(4,3);
+    sums[0]+=mA[0][4]*A(4,4);
+       
+    sums[1] =mA[1][0]*A(4,0);
+    sums[1]+=mA[1][1]*A(4,1);
+    sums[1]+=mA[1][2]*A(4,2);
+    sums[1]+=mA[1][3]*A(4,3);
+    sums[1]+=mA[1][4]*A(4,4);
+
+    sums[2] =mA[2][0]*A(4,0);
+    sums[2]+=mA[2][1]*A(4,1);
+    sums[2]+=mA[2][2]*A(4,2);
+    sums[2]+=mA[2][3]*A(4,3);
+    sums[2]+=mA[2][4]*A(4,4);
+
+    sums[3] =mA[3][0]*A(4,0);
+    sums[3]+=mA[3][1]*A(4,1);
+    sums[3]+=mA[3][2]*A(4,2);
+    sums[3]+=mA[3][3]*A(4,3);
+    sums[3]+=mA[3][4]*A(4,4);
+    
+    sums[4] =mA[4][0]*A(4,0);
+    sums[4]+=mA[4][1]*A(4,1);
+    sums[4]+=mA[4][2]*A(4,2);
+    sums[4]+=mA[4][3]*A(4,3);
+    sums[4]+=mA[4][4]*A(4,4);
+    
+    temp(4,4)+=A(4,0)*sums[0];
+    temp(4,4)+=A(4,1)*sums[1];
+    temp(4,4)+=A(4,2)*sums[2];
+    temp(4,4)+=A(4,3)*sums[3];
+    temp(4,4)+=A(4,4)*sums[4];
+
+    return temp;
+  }
+
+
+
+  // The following code performs the matrix operation ABA^T, where B is a symmetric matrix.   The end 
+  // result is also a symmetric matrix.
+  DMatrix5x5 SandwichMultiply2(const DMatrix5x5 &A){
     DMatrix5x5 temp;
     double sums[5]={0};
     // First row/column of ACA^T
