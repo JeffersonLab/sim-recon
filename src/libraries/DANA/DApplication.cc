@@ -25,6 +25,7 @@ using std::string;
 #include "DFactoryGenerator.h"
 
 #include "DANARootErrorHandler.h"
+#include <DCalibrationGeneratorCCDB.h>
 
 
 //---------------------------------
@@ -56,6 +57,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	if(const char *ptr = getenv("HALLD_HOME")){
 		AddPluginPath(string(ptr) + "/lib/" + sbms);
 	}
+	
+	//Register CCDB calibration generator
+	AddCalibrationGenerator(new DCalibrationGeneratorCCDB());
 	
 	// Initialize pointers to NULL. Objects will be instantiated as needed
 	bfield = NULL;
