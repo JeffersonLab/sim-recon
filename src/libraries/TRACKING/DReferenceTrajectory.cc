@@ -313,8 +313,6 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double itheta02s2 = 0.0;
 	swim_step_t *last_step=NULL;
 	double old_radius=10000.;
-	// Magnetic field
-	double Bz_old=0;
 	
 	// Reset flag indicating whether we hit the CDC endplate
 	// and get the parameters of the endplate so we can check
@@ -337,10 +335,13 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double cdc_endplate_zmax = 168.2;
 #endif	
 	
+
+#if 0
 	// Get Bfield from stepper to initialize Bz_old
 	DVector3 B;
 	stepper.GetBField(B);
-	Bz_old = B.z();
+	double Bz_old = B.z();
+#endif
 	
 	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
 
