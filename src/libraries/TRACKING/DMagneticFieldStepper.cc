@@ -107,8 +107,8 @@ void DMagneticFieldStepper::CalcDirs(double *Bvals)
 	B.SetXYZ(Bx, By, Bz);
 
 	// If the B-field is zero, then default to lab system
-	double B2 = B.Mag2();
-	if(B2==0.0){
+	double Bmag = B.Mag();
+	if(Bmag==0.0){
 		xdir.SetXYZ(1.0,0.0,0.0);
 		ydir.SetXYZ(0.0,1.0,0.0);
 		zdir.SetXYZ(0.0,0.0,1.0);
@@ -119,7 +119,7 @@ void DMagneticFieldStepper::CalcDirs(double *Bvals)
 	}
 
   double momMag = mom.Mag();
-  double BMagXmomMag = B.Mag() * momMag;
+  double BMagXmomMag = Bmag * momMag;
   
 	// cross product of p and B (natural x-direction)
 	xdir = mom.Cross(B);
@@ -143,7 +143,7 @@ void DMagneticFieldStepper::CalcDirs(double *Bvals)
   //	sin_theta = sin(theta);
 
 	// Calculate Rp and Ro for this momentum and position
-	Rp = momMag /(q*sqrt(B2)*qBr2p); // qBr2p converts to GeV/c/cm so Rp will be in cm
+	Rp = momMag /(q*Bmag*qBr2p); // qBr2p converts to GeV/c/cm so Rp will be in cm
 	Ro = Rp*sin_theta;
 }
 
