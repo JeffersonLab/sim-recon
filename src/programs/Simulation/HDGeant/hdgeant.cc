@@ -6,6 +6,8 @@
 #include <string>
 using namespace std;
 
+#include <DANA/DApplication.h>
+
 
 // These are defined in copytoplusplus.cc
 extern string INFILE;
@@ -32,6 +34,12 @@ void Usage(void);
 //------------------
 int main(int narg, char *argv[])
 {
+	// This is needed so calibDB.cc can use it to get the
+	// JCalibration object pointer. We want this to be done
+	// in the same way as all other sim-recon software
+	DApplication *dapp = new DApplication(narg, argv);
+	dapp->Init();
+
 	// Set some defaults. Note that most defaults related to the
 	// simulation are set in uginit.F
 	controlparams_.runtime_geom = 0;
@@ -110,8 +118,9 @@ int main(int narg, char *argv[])
 
 	return res;
 }
+
 //------------------
-// main
+// Usage
 //------------------
 void Usage(void)
 {
@@ -122,7 +131,7 @@ void Usage(void)
 	cout<<" Hall-D Monte Carlo simulation based on GEANT3."<<endl;
 	cout<<"Most configurable options are set using a control.in"<<endl;
 	cout<<"file. A well-annotated example control.in can be"<<endl;
-	cout<<"found in the HDGeant source code directory with."<<endl;
+	cout<<"found in the HDGeant source code directory."<<endl;
 	cout<<endl;
 	cout<<" options:"<<endl;
 	cout<<"    -h or --help          Print this usage statement"<<endl;

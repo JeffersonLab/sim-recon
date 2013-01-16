@@ -43,6 +43,13 @@ void initcalibdb_(char *bfield_type, char *bfield_map)
 {
 	ios::sync_with_stdio(true);
 
+	if(japp) jcalib = japp->GetJCalibration(1);
+
+	if(!jcalib){
+		jerr << "----- Couldn't create JCalibration object!!!" << endl;
+	}
+
+#if 0
 	// Create a JCalibration object using the JANA_CALIB_URL environment variable
 	// Right now, we hardwire this to use JCalibrationFile.
 	const char *url = getenv("JANA_CALIB_URL");
@@ -51,6 +58,7 @@ void initcalibdb_(char *bfield_type, char *bfield_map)
 		exit(-1);
 	}
 	jcalib = new JCalibrationFile(url, 1, "");
+#endif
 	
 	// The actual DMagneticFieldMap subclass can be specified in
 	// the control.in file. Since it is read in as integers of
