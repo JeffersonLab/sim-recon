@@ -75,6 +75,9 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	z0 = zmin;
 	dr = (rmax-rmin)/(double)(Nr-1);
 	dz = (zmax-zmin)/(double)(Nz-1);
+
+	one_over_dr=1./dr;
+	one_over_dz=1./dz;
 	//cout<<"Nr="<<Nr;
 	//cout<<" Nz="<<Nz;
 	//cout<<")"<<endl;
@@ -255,7 +258,7 @@ jerror_t DMaterialMap::FindMat(DVector3 &pos, double &density, double &A, double
 
 // The Kalman filter needs a slightly different variant of the material 
 // properties
-jerror_t DMaterialMap::FindMatKalman(DVector3 &pos,double &Z,
+jerror_t DMaterialMap::FindMatKalman(const DVector3 &pos,
 				     double &K_rho_Z_over_A,
 				     double &rho_Z_over_A,
 				     double &LogI, double &chi2c_factor,
@@ -265,7 +268,6 @@ jerror_t DMaterialMap::FindMatKalman(DVector3 &pos,double &Z,
 	const MaterialNode *node = FindNode(pos);
 	if(!node)return RESOURCE_UNAVAILABLE;
 	
-	Z = node->Z;
 	rho_Z_over_A = node->rhoZ_overA;
 	LogI = node->LogI;
 	K_rho_Z_over_A=node->KrhoZ_overA;
@@ -421,8 +423,8 @@ double DMaterialMap::EstimatedDistanceToBoundarySearch(double r, double z, doubl
 	DVector2 delta_rz(scale*p_hatR, scale*p_hatZ);
 
 	// Find radiation length of our starting cell
-	int ir_start = (int)floor((r-rmin)/dr);
-	int iz_start = (int)floor((z-zmin)/dz);
+	int ir_start = (int)floor((r-rmin)*one_over_dr);
+	int iz_start = (int)floor((z-zmin)*one_over_dz);
 	double RadLen_start = nodes[ir_start][iz_start].RadLen;
 	
 	// Loop until we find a change of radiation length within this map or
@@ -433,11 +435,12 @@ double DMaterialMap::EstimatedDistanceToBoundarySearch(double r, double z, doubl
 	int last_iz = iz_start;
 	for(int Nsteps=0; Nsteps<MAX_BOUNDARY_SEARCH_STEPS; Nsteps++){ // limit us to looking only 10 grid points away for speed
 		// Step to next cell
-		DVector2 rzpos = last_rzpos + delta_rz;
+	  DVector2 rzpos = last_rzpos;
+	  rzpos+= delta_rz;
 
 		// Find indexes for this cell
-		int ir = (int)floor((rzpos.X()-rmin)/dr);
-		int iz = (int)floor((rzpos.Y()-zmin)/dz);
+		int ir = (int)floor((rzpos.X()-rmin)*one_over_dr);
+		int iz = (int)floor((rzpos.Y()-zmin)*one_over_dz);
 
 		// Check if we hit the boundary of the map and if so, simply return
 		// the value found above for the distance to the map boundary.

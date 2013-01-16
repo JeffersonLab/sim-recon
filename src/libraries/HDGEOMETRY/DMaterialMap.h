@@ -31,14 +31,14 @@ class DMaterialMap{
 				double chi2a_corr;
 		};
 		
-		inline const MaterialNode* FindNode(DVector3 &pos) const;
+		inline const MaterialNode* FindNode(const DVector3 &pos) const;
 		
 		jerror_t FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const;
 		jerror_t FindMatALT1(DVector3 &pos,double &KrhoZ_overA,
 				 double &rhoZ_overA, double &logI, 
 				 double &RadLen) const;
 		jerror_t FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const;
-		jerror_t FindMatKalman(DVector3 &pos,double &Z,
+		jerror_t FindMatKalman(const DVector3 &pos,
 				       double &K_rho_Z_over_A,
 				       double &rho_Z_over_A,double &LogI,double &chi2c_factor,
 				       double &chi2a_factor,double &chi2a_corr) const;
@@ -66,6 +66,7 @@ class DMaterialMap{
 		vector<vector<MaterialNode> > nodes; // nodes[ir][iz]
 		int Nr, Nz;		// Number of nodes in R and Z
 		double dr, dz; // Distance between nodes in R and Z
+		double one_over_dr,one_over_dz;
 		double r0, z0;	// Location of first nodes in R and Z
 		
 		double rmin, rmax; // Range limits in R of this map
@@ -84,16 +85,17 @@ class DMaterialMap{
 //-----------------
 // FindNode
 //-----------------
-inline const DMaterialMap::MaterialNode* DMaterialMap::FindNode(DVector3 &pos) const
+inline const DMaterialMap::MaterialNode* DMaterialMap::FindNode(const DVector3 &pos) const
 {
-	// For now, this just finds the bin in the material map the given position is in
+  // For now, this just finds the bin in the material map the given position is in
 	// (i.e. no interpolation )
-	double pos_x = pos.X();
-	double pos_y = pos.Y();
-	double r = sqrt(pos_x*pos_x + pos_y*pos_y);
+	//double pos_x = pos.X();
+	//double pos_y = pos.Y();
+  //double r = sqrt(pos_x*pos_x + pos_y*pos_y);
+  double r=pos.Perp();
 	double z = pos.Z();
-	int ir = (int)floor((r-rmin)/dr);
-	int iz = (int)floor((z-zmin)/dz);
+	int ir = (int)floor((r-rmin)*one_over_dr);
+	int iz = (int)floor((z-zmin)*one_over_dz);
 	if(ir<0 || ir>=Nr || iz<0 || iz>=Nz)return NULL;
 	
 	return &nodes[ir][iz];

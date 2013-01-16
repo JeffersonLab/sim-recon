@@ -75,17 +75,19 @@ class DGeometry{
 		jerror_t FindMatALT1(DVector3 &pos, DVector3 &mom, double &KrhoZ_overA, 
 				     double &rhoZ_overA,double &LnI,
 				     double &X0, double *s_to_boundary=NULL) const;
-		jerror_t FindMatKalman(DVector3 &pos, DVector3 &mom,double &Z,
+		jerror_t FindMatKalman(const DVector3 &pos,const DVector3 &mom,
 				       double &KrhoZ_overA,
 				       double &rhoZ_overA,double &LnI,
-				       double &chi2c_factor,double &chi2a_factor,
+				       double &chi2c_factor,
+				       double &chi2a_factor,
 				       double &chi2a_factor2,
 				       unsigned int &last_index,
 				       double *s_to_boundary=NULL) const;
-		jerror_t FindMatKalman(DVector3 &pos, double &Z,
-				      double &KrhoZ_overA,
+		jerror_t FindMatKalman(const DVector3 &pos,
+				       double &KrhoZ_overA,
 				       double &rhoZ_overA,double &LnI,
-				       double &chi2c_factor,double &chi2a_factor,
+				       double &chi2c_factor,
+				       double &chi2a_factor,
 				       double &chi2a_factor2,
 				       unsigned int &last_index) const;
 
