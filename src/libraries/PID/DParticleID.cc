@@ -943,19 +943,25 @@ void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHyp
 
 	unsigned int locNDF_Total = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
 	double locChiSq_Total = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
-	
-	if (locChargedTrackHypothesis->dTOFdEdx>0.){
-	  locNDF_Total++;
-	  locChiSq_Total+=locChargedTrackHypothesis->dTOFdEdx_norm_residual*locChargedTrackHypothesis->dTOFdEdx_norm_residual;
-	}
+
+	/* Disable inclusion of TOF dEdx.  In the region (below 1 GeV/c) where
+	   some proton-pion separation is possible, the flight time is a much
+	   better tool.
+
+	   if (locChargedTrackHypothesis->dTOFdEdx>0.){
+	   locNDF_Total++;
+	   locChiSq_Total+=locChargedTrackHypothesis->dTOFdEdx_norm_residual*locChargedTrackHypothesis->dTOFdEdx_norm_residual;
+	   }
+	*/
+
 	if (locChargedTrackHypothesis->dStartCounterdEdx>0.){
 	  locNDF_Total++;
 	  locChiSq_Total+=locChargedTrackHypothesis->dStartCounterdEdx_norm_residual*locChargedTrackHypothesis->dStartCounterdEdx_norm_residual;
 	}
-	
 
 	locChargedTrackHypothesis->dChiSq = locChiSq_Total;
 	locChargedTrackHypothesis->dNDF = locNDF_Total;
 	locChargedTrackHypothesis->dFOM = (locNDF_Total > 0) ? TMath::Prob(locChiSq_Total, locNDF_Total) : numeric_limits<double>::quiet_NaN();
+
 }
 
