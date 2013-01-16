@@ -38,8 +38,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   for (unsigned int i=0;i<fdc_updates.size();i++) fdc_updates[i].used_in_fit=false;
   
   // Save the starting values for C and S in the deque
-  forward_traj[0].Skk=S;
-  forward_traj[0].Ckk=C;
+  forward_traj[break_point_step_index].Skk=S;
+  forward_traj[break_point_step_index].Ckk=C;
 
   // Initialize chi squared
   chisq=0;
@@ -56,7 +56,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   // Variables for estimating t0 from tracking
   //mInvVarT0=mT0wires=0.;
 
-  unsigned int num_fdc_hits=my_fdchits.size();
+  unsigned int num_fdc_hits=break_point_fdc_index+1;
   unsigned int num_cdc_hits=my_cdchits.size(); 
   unsigned int cdc_index=0;
   if (num_cdc_hits>0) cdc_index=num_cdc_hits-1;
@@ -71,13 +71,13 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   if (more_cdc_measurements){
     origin=my_cdchits[cdc_index]->hit->wire->origin;
     z0w=origin.z();
-    wirepos=origin+(forward_traj[0].pos.z()-z0w)*dir;
+    wirepos=origin+(forward_traj[break_point_step_index].z-z0w)*dir;
     dir=my_cdchits[cdc_index]->dir;   
     is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
   }
 
-  S0_=(forward_traj[0].S);
-  for (unsigned int k=1;k<forward_traj.size();k++){
+  S0_=(forward_traj[break_point_step_index].S);
+  for (unsigned int k=break_point_step_index+1;k<forward_traj.size();k++){
     unsigned int k_minus_1=k-1;
 
     // Check that C matrix is positive definite
@@ -119,7 +119,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     S0_=S0;
 
     // Z position along the trajectory 
-    double z=forward_traj[k].pos.z();
+    double z=forward_traj[k].z;
 
     // Add the hit
     if (num_fdc_hits>0){
@@ -130,18 +130,29 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	double sina=my_fdchits[id]->sina;
 	double u=my_fdchits[id]->uwire;
 	double v=my_fdchits[id]->vstrip;
+
+	// Position and direction from state vector
 	double x=S(state_x);
 	double y=S(state_y);
 	double tx=S(state_tx);
 	double ty=S(state_ty);
-	double du=x*cosa-y*sina-u;
+
+	// Projected position along the wire without doca-dependent corrections
+	double vpred_uncorrected=x*sina+y*cosa;
+
+	// Projected postion in the plane of the wires transverse to the wires
+	double upred=x*cosa-y*sina;
+
+	// Direction tangent in the u-z plane
 	double tu=tx*cosa-ty*sina;
-	double one_plus_tu2=1.+tu*tu;
 	double alpha=atan(tu);
 	double cosalpha=cos(alpha);
+	double cosalpha2=cosalpha*cosalpha;
 	double sinalpha=sin(alpha);
+
 	// (signed) distance of closest approach to wire
-	double doca=du*cosalpha;
+	double doca=(upred-u)*cosalpha;
+
 	// Correction for lorentz effect
 	double nz=my_fdchits[id]->nz;
 	double nr=my_fdchits[id]->nr;
@@ -163,11 +174,13 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	}
 	
 	// Variance in coordinate along wire
-	double tanl=1./sqrt(tx*tx+ty*ty);
-	double V=fdc_y_variance(tanl,doca,my_fdchits[id]->dE);
+	double V=fdc_y_variance(my_fdchits[id]->dE);
 		
 	// Difference between measurement and projection
-	double Mdiff=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
+	double tv=tx*sina+ty*cosa;
+	double Mdiff=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
+						-tv*sinalpha
+						));
 
 	if (DEBUG_HISTS && fit_type==kTimeBased){
 	  fdc_dy_vs_d->Fill(doca,Mdiff);
@@ -176,15 +189,27 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
        	// To transform from (x,y) to (u,v), need to do a rotation:
 	//   u = x*cosa-y*sina
 	//   v = y*cosa+x*sina
-	H_T(state_x)=sina+cosa*cosalpha*nz_sinalpha_plus_nr_cosalpha;	
+	double temp2=nz_sinalpha_plus_nr_cosalpha
+	  -tv*sinalpha
+	  ;
+	H_T(state_x)=sina+cosa*cosalpha*temp2;	
+	H_T(state_y)=cosa-sina*cosalpha*temp2;	
+       
+	double cos2_minus_sin2=cosalpha2-sinalpha*sinalpha;
+	double fac=nz*cos2_minus_sin2-2.*nr*cosalpha*sinalpha;
+	double doca_cosalpha=doca*cosalpha;
+	double temp=doca_cosalpha*fac;	
+	H_T(state_tx)=cosa*temp
+	  -doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2)
+	  ;
+	H_T(state_ty)=-sina*temp
+	  -doca_cosalpha*(tu*cosa-tv*sina*cos2_minus_sin2)
+	  ;
+
+	// Matrix transpose H_T -> H
 	H(state_x)=H_T(state_x);
-	H_T(state_y)=cosa-sina*cosalpha*nz_sinalpha_plus_nr_cosalpha;	
 	H(state_y)=H_T(state_y);
-	double temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
-				       -2.*nr*cosalpha*sinalpha);
-	H_T(state_tx)=cosa*temp;
 	H(state_tx)=H_T(state_tx);
-	H_T(state_ty)=-sina*temp;	
 	H(state_ty)=H_T(state_ty);
     
 	// Check to see if we have multiple hits in the same plane
@@ -226,8 +251,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    unsigned int my_id=id-m;
 	    u=my_fdchits[my_id]->uwire;
 	    v=my_fdchits[my_id]->vstrip;
-	    double du=x*cosa-y*sina-u;
-	    doca=du*cosalpha;
+
+	    // Doca to this wire
+	    doca=(upred-u)*cosalpha;
 
 	    // t0 estimate
 	    if (fit_type==kWireBased && my_id==mMinDriftID-1){  	      
@@ -245,19 +271,27 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    }
 	    
 	    // variance for coordinate along the wire
-	    V=fdc_y_variance(alpha,doca,my_fdchits[my_id]->dE);
+	    V=fdc_y_variance(my_fdchits[my_id]->dE);
 	    
 	    // Difference between measurement and projection
-	    Mdiff=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
+	    Mdiff=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
+					     -tv*sinalpha
+					     ));
 
-	    // Update the terms in H/H_T that depend on the particular hit
-	    temp=(du/one_plus_tu2)*(nz*(cosalpha*cosalpha-sinalpha*sinalpha)
-				    -2.*nr*cosalpha*sinalpha);
-	    H_T(state_tx)=cosa*temp; 
+	    // Update the terms in H/H_T that depend on the particular hit    
+	    doca_cosalpha=doca*cosalpha;
+	    temp=doca_cosalpha*fac;	
+	    H_T(state_tx)=cosa*temp	 
+	      -doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2)
+	      ;
+	    H_T(state_ty)=-sina*temp
+	      -doca_cosalpha*(tu*cosa-tv*sina*cos2_minus_sin2)
+	      ;
+					
+	    // Matrix transpose H_T -> H
 	    H(state_tx)=H_T(state_tx);
-	    H_T(state_ty)=-sina*temp; 
 	    H(state_ty)=H_T(state_ty);
-						
+
 	    // Calculate the kalman gain for this hit 
 	    //Vtemp=V+H*C*H_T;
 	    Vtemp=V+C.SandwichMultiply(H_T);
@@ -359,7 +393,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    if (DEBUG_LEVEL>2){
 	      printf("hit %d p %5.2f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
 		     id,1./S(state_q_over_p),Mdiff,sqrt(V),(1.-H*K)*Mdiff*Mdiff/V,
-		     forward_traj[k].pos.z());
+		     forward_traj[k].z);
 	    
 	    }
 	      // update number of degrees of freedom
@@ -375,8 +409,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
       }
     }
     else if (more_cdc_measurements && z<endplate_z){   
-      if (is_stereo) wirepos=origin+(z-z0w)*dir;
-    
+      if (is_stereo){
+	wirepos=origin;
+	wirepos+=(z-z0w)*dir;
+      }
+
       // doca variables
       double dx=S(state_x)-wirepos.x();
       double dy=S(state_y)-wirepos.y();
@@ -398,9 +435,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    
 	  // Last 2 step sizes
 	  if (k>=2){
-	    double z1=forward_traj[k_minus_1].pos.z();
-	    step1=-forward_traj[k].pos.z()+z1;
-	    step2=-z1+forward_traj[k-2].pos.z();
+	    double z1=forward_traj[k_minus_1].z;
+	    step1=-forward_traj[k].z+z1;
+	    step2=-z1+forward_traj[k-2].z;
 	  }
 	  
 	  // track direction variables
@@ -424,8 +461,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  double step1=mStepSizeZ;
 	  double step2=mStepSizeZ;
 	  if (k>=2){
-	    step1=-forward_traj[k].pos.z()+forward_traj[k_minus_1].pos.z();
-	    step2=-forward_traj[k_minus_1].pos.z()+forward_traj[k-2].pos.z();
+	    step1=-forward_traj[k].z+forward_traj[k_minus_1].z;
+	    step2=-forward_traj[k_minus_1].z+forward_traj[k-2].z;
 	  }
 	  //printf("step1 %f step 2 %f \n",step1,step2);
 	  double two_step=step1+step2;
@@ -482,8 +519,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      double ztemp=newz;
 	      
 	      // new wire position
-	      if (is_stereo) wirepos=origin+(ztemp-z0w)*dir;
-	      
+	      if (is_stereo){
+		wirepos=origin;
+		wirepos+=(ztemp-z0w)*dir;
+	      }
+
 	      // doca
 	      old_doca2=doca2;
 
@@ -499,7 +539,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		Step(ztemp,newz,dedx,S);
 
 		// find the new distance to the wire
-		if (is_stereo) wirepos=origin+(newz-z0w)*dir;
+		if (is_stereo){
+		  wirepos=origin;
+		  wirepos+=(newz-z0w)*dir;
+		}
 		dx=S(state_x)-wirepos.x();
 		dy=S(state_y)-wirepos.y();
 		doca2=dx*dx+dy*dy;
@@ -571,14 +614,17 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  }
 	  
 	  // Wire position at current z
-	  if (is_stereo) wirepos=origin+(newz-z0w)*dir;
+	  if (is_stereo){
+	    wirepos=origin;
+	    wirepos+=(newz-z0w)*dir;
+	  }
 	  double xw=wirepos.x();
 	  double yw=wirepos.y();
 	  
 	  // predicted doca taking into account the orientation of the wire
 	  dy=S(state_y)-yw;
 	  dx=S(state_x)-xw;      
-	  double cosstereo=cos(my_cdchits[cdc_index]->hit->wire->stereo);
+	  double cosstereo=my_cdchits[cdc_index]->cosstereo;
 	  double d=sqrt(dx*dx+dy*dy)*cosstereo;
 	  
 	  // Track projection
@@ -593,7 +639,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // The next measurement
 	  double dm=0.39,tdrift=0.;
 	  if (fit_type==kTimeBased){
-	    tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
+	    tdrift=my_cdchits[cdc_index]->tdrift-mT0
 		-forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
 	    double B=forward_traj[k].B;
 	    dm=cdc_drift_distance(tdrift,B);
@@ -752,7 +798,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     }
   }
   // Save final z position
-  z_=forward_traj[forward_traj.size()-1].pos.Z();
+  z_=forward_traj[forward_traj.size()-1].z;
 
   // The following code segment addes a fake point at a well-defined z position
   // that would correspond to a thin foil target.  It should not be turned on
@@ -800,7 +846,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     H(state_y)=H_T(state_y);
   	  
     // Variance of target point
-    Vc=0.01;
+    // Variance is for average beam spot size assuming triangular distribution
+    // out to 2.2 mm from the beam line.
+    //   sigma_r = 2.2 mm/ sqrt(18)
+    Vc=0.002689;
 
     // inverse variance including prediction
     //double InvV1=1./(Vc+H*(C*H_T));
@@ -814,7 +863,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     K=InvV1*(C*H_T);
     
     // Update the state vector with the target point
-    double res=-d;
+    // "Measurement" is average of expected beam spot size
+    double res=0.1466666667-d;
     S+=res*K;  
     // Update state vector covariance matrix
     //C=C-K*(H*C);    

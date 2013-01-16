@@ -69,7 +69,6 @@
 #define MIN_CDC_ITER 0
 #define MIN_FDC_HITS 2 
 #define MIN_CDC_HITS 2 
-#define MIN_HITS_FOR_REFIT 8
 
 // Functions of Moliere fraction F
 #define MOLIERE_RATIO1 5.0   // = 0.5/(1-F)
@@ -109,40 +108,49 @@ enum kalman_error_t{
 
 
 typedef struct{
-  int status;
-  double residual,sigma;
   DVector3 dir,origin;
+  double residual,sigma,tdrift,cosstereo;
   const DCDCTrackHit *hit;
+  int status;
 }DKalmanSIMDCDCHit_t;
 
-typedef struct{
-  int package;
-  int status;
+typedef struct{ 
   double t,cosa,sina;
   double uwire,vstrip,z,dE;
   double xres,yres,xsig,ysig;
   double nr,nz;
+  int package;
+  int status;
   const DFDCPseudo *hit;
 }DKalmanSIMDFDCHit_t;
 
 typedef struct{
-  unsigned int h_id;
-  unsigned int num_hits;
-  DVector3 pos;
-  DMatrix5x1 S,Skk;
   DMatrix5x5 J,JT,Q,Ckk;
+  DMatrix5x1 S,Skk;
+  DVector3 pos;  
   double s,t,B;
-  double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
-  double chi2c_factor,chi2a_factor,chi2a_corr;
-}DKalmanSIMDState_t;
+  double rho_Z_over_A,K_rho_Z_over_A,LnI;
+  double chi2c_factor,chi2a_factor,chi2a_corr; 
+  unsigned int h_id;
+}DKalmanCentralTrajectory_t;
 
 typedef struct{
-  bool used_in_fit;
-  DMatrix5x1 S;
+ DMatrix5x5 J,JT,Q,Ckk;
+ DMatrix5x1 S,Skk;
+ double z,s,t,B;
+ double rho_Z_over_A,K_rho_Z_over_A,LnI;
+ double chi2c_factor,chi2a_factor,chi2a_corr;
+ unsigned int h_id;
+ unsigned int num_hits;
+}DKalmanForwardTrajectory_t;
+
+typedef struct{
   DMatrix5x5 C;
+  DMatrix5x1 S;
+  DVector3 pos;
   double tdrift,tflight,s,B;
   double residual,variance;
-  DVector3 pos;
+  bool used_in_fit;
 }DKalmanUpdate_t;
 
 
@@ -256,7 +264,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   };
  
   void locate(const double *xx,int n,double x,int *j);
-  double fdc_y_variance(double alpha,double x,double dE);
+  double fdc_y_variance(double dE);
   double cdc_variance(double B,double tanl,double t);   
   double cdc_forward_variance(double B,double tanl,double t);  
   double cdc_drift_distance(double t,double Bz);  
@@ -275,9 +283,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 				DMatrix5x5 &J,DMatrix5x1 &D);
   jerror_t CalcJacobian(double z,double dz,const DMatrix5x1 &S,
 			double dEdx,DMatrix5x5 &J);
-  jerror_t CalcDeriv(double z,double dz,const DMatrix5x1 &S, double dEdx, 
+  jerror_t CalcDeriv(double z,const DMatrix5x1 &S, double dEdx, 
 		     DMatrix5x1 &D);
-  jerror_t CalcDeriv(double ds,const DVector3 &pos,DVector3 &dpos,
+  jerror_t CalcDeriv(const DVector3 &pos,DVector3 &dpos,
 		     const DMatrix5x1 &S,double dEdx,DMatrix5x1 &D1);
 
   jerror_t StepJacobian(const DVector3 &pos,double ds,const DMatrix5x1 &S, 
@@ -289,11 +297,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 				  double dEdx,DMatrix5x1 &S,
 				  DMatrix5x5 &J,DMatrix5x5 &C);
 
-  jerror_t FixedStep(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx);
-  jerror_t FixedStep(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx,
-		     double &B);
+  jerror_t Step(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx);
 
-  jerror_t CalcDerivAndJacobian(double ds,const DVector3 &pos,DVector3 &dpos,
+  jerror_t CalcDerivAndJacobian(const DVector3 &pos,DVector3 &dpos,
 				const DMatrix5x1 &S,double dEdx,
 				DMatrix5x5 &J1,DMatrix5x1 &D1);
   jerror_t ConvertStateVectorAndCovariance(double z,const DMatrix5x1 &S,
@@ -389,8 +395,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   vector< vector <double> > fcov;
   
   // Lists containing state, covariance, and jacobian at each step
-  deque<DKalmanSIMDState_t>central_traj;
-  deque<DKalmanSIMDState_t>forward_traj;
+  deque<DKalmanCentralTrajectory_t>central_traj;
+  deque<DKalmanForwardTrajectory_t>forward_traj;
 
   // lists containing updated state vector and covariance at measurement point
   vector<DKalmanUpdate_t>fdc_updates;
@@ -443,6 +449,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   bool FORWARD_PARMS_COV;
   double TARGET_Z;
   bool ADD_VERTEX_POINT;
+  unsigned int MIN_HITS_FOR_REFIT;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;

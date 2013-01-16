@@ -41,11 +41,13 @@ inline bool static DKalmanSIMDCDCHit_cmp(DKalmanSIMDCDCHit_t *a, DKalmanSIMDCDCH
     cout << "Null pointer in CDC hit list??" << endl;
     return false;
   }
-  if(b->hit->wire->ring == a->hit->wire->ring){
-    return b->hit->wire->straw < a->hit->wire->straw;
+  const DCDCWire *wire_a= a->hit->wire;
+  const DCDCWire *wire_b= b->hit->wire;
+  if(wire_b->ring == wire_a->ring){
+    return wire_b->straw < wire_a->straw;
   }
   
-  return (b->hit->wire->ring>a->hit->wire->ring);
+  return (wire_b->ring>wire_a->ring);
 }
 
 
@@ -72,8 +74,8 @@ void DTrackFitterKalmanSIMD::locate(const double *xx,int n,double x,int *j){
 
 
 // Variance for position along wire
-double DTrackFitterKalmanSIMD::fdc_y_variance(double tanl,double x,double dE){
-  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE+0.002;
+double DTrackFitterKalmanSIMD::fdc_y_variance(double dE){
+  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE+0.003;
 
   return sigma*sigma;
 }
@@ -94,45 +96,54 @@ double fdc_drift_variance(double t){
 double DTrackFitterKalmanSIMD::cdc_variance(double B,double tanl,double t){ 
   //return CDC_VARIANCE;
   if (t<0.0) t=0.0;
+  /*
   double tanl2=tanl*tanl;
   double sigma=0.25/(t+10.)
     +6.7e-3*(1.+0.287*tanl2)+4.0e-6*t*(1.+0.267*tanl2)
     +9.3e-9*t*t*(1.-0.47*tanl2);
-  sigma*=0.56;
+  sigma*=0.55;
+  */
+  double sigma=0.243/(t+16.2)+3.9e-3+3.04e-6*t;
 
   return sigma*sigma;
 }
 
 double DTrackFitterKalmanSIMD::cdc_forward_variance(double B,double tanl,double t){
   if (t<0.0) t=0.0;
+  /*
   double tanl2=tanl*tanl;
   double sigma=0.25/(t+10.)
     + 6.43e-3*(1.+0.076*tanl2)
     +(2.24e-6+8.20e-6*tanl-2.25e-6*tanl2)*t
     +(1.31e-8-1.85e-8*tanl+4.19e-9*tanl2)*t*t;
 
-  sigma*=0.56;
-
+  sigma*=0.5;
+  */
+  double sigma=0.243/(t+16.2)+3.9e-3+3.04e-6*t;
   return sigma*sigma;
 }
 
 #define CDC_T0_OFFSET 16.5 //17.0
-// Interpolate on a table to convert time to distance for the cdc
+// Convert time to distance for the cdc
 double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
   //if (t<0.) return 0.;
-  double time=t*CDC_DRIFT_B_SCALE
+  /*
+    double time=t*CDC_DRIFT_B_SCALE
     /(CDC_DRIFT_B_SCALE_PAR1+CDC_DRIFT_B_SCALE_PAR2*B);
-  int id=int((time+CDC_T0_OFFSET)/2.);
-  if (id<0) id=0;
-  if (id>398) id=398;
-  double d=cdc_drift_table[id];
-  //_DBG_ << time<<"  "<< id <<"   "<< d <<endl;
-
-  if (id!=398){
+    int id=int((time+CDC_T0_OFFSET)/2.);
+    if (id<0) id=0;
+    if (id>398) id=398;
+    double d=cdc_drift_table[id];
+    //_DBG_ << time<<"  "<< id <<"   "<< d <<endl;
+    
+    if (id!=398){
     double frac=0.5*(time+CDC_T0_OFFSET-2.*double(id));
     double dd=cdc_drift_table[id+1]-cdc_drift_table[id];
     d+=frac*dd;
-  }
+    }
+  */
+  double d=0.014;
+  if (t>0) d+=0.028*sqrt(t);
 
   return d;
 }
@@ -180,6 +191,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
   ADD_VERTEX_POINT=false; 
   gPARMS->SetDefaultParameter("KALMAN:ADD_VERTEX_POINT", ADD_VERTEX_POINT);
+  
+  MIN_HITS_FOR_REFIT=7; 
+  gPARMS->SetDefaultParameter("KALMAN:MIN_HITS_FOR_REFIT", MIN_HITS_FOR_REFIT);
   
   DEBUG_HISTS=false; 
   gPARMS->SetDefaultParameter("KALMAN:DEBUG_HISTS", DEBUG_HISTS);
@@ -444,8 +458,9 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 mT0=0.,mT0MinimumDriftTime=0.,mT0Average=0.;
 	 mInvVarT0=0.;
 	 mVarT0=0.;
-
-	 mCDCInternalStepSize=0.5;
+	 
+	 //mCDCInternalStepSize=0.5;
+	 mCDCInternalStepSize=2.0;
 
 	 mMinDriftTime=1000.;
 	 mMinDriftID=0;
@@ -749,6 +764,8 @@ jerror_t DTrackFitterKalmanSIMD::AddCDCHit (const DCDCTrackHit *cdchit){
   hit->origin=cdchit->wire->origin;
   double one_over_uz=1./cdchit->wire->udir.z();
   hit->dir=one_over_uz*cdchit->wire->udir;
+  hit->cosstereo=cos(cdchit->wire->stereo);
+  hit->tdrift=cdchit->tdrift;
   my_cdchits.push_back(hit);
   
   if (hit->hit->tdrift<mMinDriftTime){
@@ -760,7 +777,7 @@ jerror_t DTrackFitterKalmanSIMD::AddCDCHit (const DCDCTrackHit *cdchit){
 }
 
 // Calculate the derivative of the state vector with respect to z
-jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,double dz,
+jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,
 					   const DMatrix5x1 &S, 
 					   double dEdx, 
 					   DMatrix5x1 &D){
@@ -789,7 +806,6 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,double dz,
   double dtx_Bfac=ty*Bz+txty*Bx-one_plus_tx2*By;
   double dty_Bfac=Bx*(1.+ty2)-txty*By-tx*Bz;
   double kq_over_p_dsdz=kq_over_p*dsdz;
-  //  double kq_over_p_ds=0.5*dz*kq_over_p_dsdz;
 
   // Derivative of S with respect to z
   D(state_x)=tx;
@@ -817,7 +833,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
   
   // Coordinates for outermost cdc hit
   unsigned int id=my_cdchits.size()-1;
-  DVector3 origin=my_cdchits[id]->hit->wire->origin;
+  DVector3 origin=my_cdchits[id]->origin;
   DVector3 dir=my_cdchits[id]->dir;
   double rmax=(origin+(endplate_z-origin.z())*dir).Perp()+DELTA_R;
   double r2max=rmax*rmax;
@@ -840,7 +856,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
   
   // Only use hits that would fall within the range of the reference trajectory
   for (unsigned int i=0;i<my_cdchits.size();i++){
-    origin=my_cdchits[i]->hit->wire->origin;
+    origin=my_cdchits[i]->origin;
     double my_r2=(origin+(z-origin.z())*my_cdchits[i]->dir).Perp2();
     if (my_r2>r2) my_cdchits[i]->status=bad_hit;
   }
@@ -873,9 +889,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
       double cosl=cos(atan(tanl));
       cout
 	<< setiosflags(ios::fixed)<< "pos: " << setprecision(4) 
-	<< forward_traj[m].pos.x() << ", "
-	<< forward_traj[m].pos.y() << ", "
-	<< forward_traj[m].pos.z() << "  mom: "
+	<< forward_traj[m].S(state_x) << ", "
+	<< forward_traj[m].S(state_y) << ", "
+	<< forward_traj[m].z << "  mom: "
 	<< p*cosphi*cosl<< ", " << p*sinphi*cosl << ", " 
 	<< p*sinl << " -> " << p
 	<<"  s: " << setprecision(3) 	   
@@ -890,35 +906,37 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
   S=forward_traj[0].S;
 
    // position at the end of the swim
-   z_=forward_traj[0].pos.Z();
-   x_=forward_traj[0].pos.X();
-   y_=forward_traj[0].pos.Y();
+  x_=forward_traj[0].S(state_x);
+  y_=forward_traj[0].S(state_y);
+  z_=forward_traj[0].z;
    
-   return NOERROR;
+  return NOERROR;
 }
 
 // Routine that extracts the state vector propagation part out of the reference
 // trajectory loop
 jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
-						 double &z,double &r2,
+						     double &z,double &r2,
 						     DMatrix5x1 &S,
 						     bool &stepped_to_boundary){
   DMatrix5x5 J,Q;
-  DKalmanSIMDState_t temp;
+  DKalmanForwardTrajectory_t temp;
   int my_i=0;
   temp.h_id=0;
+  temp.num_hits=0;
   double dEdx=0.;
   double s_to_boundary=1e6;
   double dz_ds=1./sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
 
-  // State at current position 
-  temp.pos.SetXYZ(S(state_x),S(state_y),z);
-  // radius of hit
-  r2=temp.pos.Perp2();
+  // current position 
+  DVector3 pos(S(state_x),S(state_y),z);
+  temp.z=z;
+  // squared radius 
+  r2=pos.Perp2();
 
   temp.s=len;  
   temp.t=ftime;
-  temp.Z=temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
+  temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
   temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
 
   if (z<endplate_z && r2<endplate_r2max && z>cdc_origin[2])
@@ -926,7 +944,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     // get material properties from the Root Geometry
     if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
       DVector3 mom(S(state_tx),S(state_ty),1.);
-      if(geom->FindMatKalman(temp.pos,mom,temp.Z,temp.K_rho_Z_over_A,
+      if(geom->FindMatKalman(pos,mom,temp.K_rho_Z_over_A,
 			     temp.rho_Z_over_A,temp.LnI,
 			     temp.chi2c_factor,temp.chi2a_factor,
 			     temp.chi2a_corr,
@@ -937,7 +955,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
      }
      else
     {
-      if(geom->FindMatKalman(temp.pos,temp.Z,temp.K_rho_Z_over_A,
+      if(geom->FindMatKalman(pos,temp.K_rho_Z_over_A,
 			     temp.rho_Z_over_A,temp.LnI,
 			     temp.chi2c_factor,temp.chi2a_factor,
 			     temp.chi2a_corr,
@@ -958,8 +976,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     forward_traj[my_i].s=temp.s;
     forward_traj[my_i].t=temp.t;
     forward_traj[my_i].h_id=temp.h_id;
-    forward_traj[my_i].pos=temp.pos;
-    forward_traj[my_i].Z=temp.Z;
+    forward_traj[my_i].num_hits=0;
+    forward_traj[my_i].z=temp.z;
     forward_traj[my_i].rho_Z_over_A=temp.rho_Z_over_A;
     forward_traj[my_i].K_rho_Z_over_A=temp.K_rho_Z_over_A;
     forward_traj[my_i].LnI=temp.LnI;
@@ -987,9 +1005,11 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 	}
       */
       if(ds>mStepSizeS) ds=mStepSizeS;  
-      if (ds>mCDCInternalStepSize && r2>endplate_r2min
-	  && r2<endplate_r2max && z<endplate_z) 
+      /*
+	if (ds>mCDCInternalStepSize && r2>endplate_r2min
+	&& r2<endplate_r2max && z<endplate_z) 
 	ds=mCDCInternalStepSize;
+      */
       if (s_to_boundary<ds){
 	ds=s_to_boundary;
 	stepped_to_boundary=true;
@@ -1078,7 +1098,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 // the outer hits toward the target.
 jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 						       DMatrix5x1 &Sc){
-  DKalmanSIMDState_t temp;
+  DKalmanCentralTrajectory_t temp;
   DMatrix5x5 J;  // State vector Jacobian matrix 
   DMatrix5x5 Q;  // Process noise covariance matrix
 
@@ -1100,7 +1120,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
    
   // Coordinates for outermost cdc hit
   unsigned int id=my_cdchits.size()-1;
-  DVector3 origin=my_cdchits[id]->hit->wire->origin;
+  DVector3 origin=my_cdchits[id]->origin;
   DVector3 dir=my_cdchits[id]->dir;
   bool stepped_to_boundary=false;;
   double rmax=(origin+(endplate_z-origin.z())*dir).Perp()+DELTA_R;
@@ -1139,7 +1159,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	// get material properties from the Root Geometry
 	if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
 	  DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
-	  if(geom->FindMatKalman(pos,mom,central_traj[m].Z,
+	  if(geom->FindMatKalman(pos,mom,
 				 central_traj[m].K_rho_Z_over_A,
 				 central_traj[m].rho_Z_over_A,
 				 central_traj[m].LnI,
@@ -1153,7 +1173,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	}
 	else
 	  {
-	    if(geom->FindMatKalman(pos,central_traj[m].Z,
+	    if(geom->FindMatKalman(pos,
 				   central_traj[m].K_rho_Z_over_A,
 				   central_traj[m].rho_Z_over_A,
 				   central_traj[m].LnI,
@@ -1183,13 +1203,14 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	    }
 	    }
 	  */
-	  if(step_size>mStepSizeS) step_size=mStepSizeS;     
+	  if(step_size>mStepSizeS) step_size=mStepSizeS;
+	  /*
 	  if (step_size>mCDCInternalStepSize
 	      && r2>endplate_r2min
 	      && r2<endplate_r2max
 	      && z>cdc_origin[2]) 
 	    step_size=mCDCInternalStepSize; 
-       
+	  */
 	  if (s_to_boundary<step_size){
 	    step_size=s_to_boundary;
 	  stepped_to_boundary=true;
@@ -1210,7 +1231,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	}
 
       // Propagate the state through the field
-      FixedStep(pos,step_size,Sc,dedx,central_traj[m].B);
+      central_traj[m].B=sqrt(Bx*Bx+By*By+Bz*Bz);
+      Step(pos,step_size,Sc,dedx);
       
 
       // Break out of the loop if we would swim out of the fiducial volume
@@ -1277,7 +1299,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       temp.s=len;
       temp.t=t;
       temp.h_id=0;
-      temp.K_rho_Z_over_A=0.,temp.rho_Z_over_A=0.,temp.Z=0.,temp.LnI=0.; //initialize
+      temp.K_rho_Z_over_A=0.,temp.rho_Z_over_A=0.,temp.LnI=0.; //initialize
       temp.chi2c_factor=0.,temp.chi2a_factor=0.,temp.chi2a_corr=0.;
       
       // update path length
@@ -1295,7 +1317,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	// get material properties from the Root Geometry
 	if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
 	  DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
-	  if(geom->FindMatKalman(pos,mom,temp.Z,temp.K_rho_Z_over_A,
+	  if(geom->FindMatKalman(pos,mom,temp.K_rho_Z_over_A,
 				 temp.rho_Z_over_A,temp.LnI,
 				 temp.chi2c_factor,temp.chi2a_factor,
 				 temp.chi2a_corr,
@@ -1307,7 +1329,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	}
 	else
 	  {
-	    if(geom->FindMatKalman(pos,temp.Z,temp.K_rho_Z_over_A,
+	    if(geom->FindMatKalman(pos,temp.K_rho_Z_over_A,
 				   temp.rho_Z_over_A,temp.LnI,
 				   temp.chi2c_factor,temp.chi2a_factor,
 				   temp.chi2a_corr,
@@ -1333,11 +1355,13 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 	    }
 	    }
 	  */
-	  if(step_size>mStepSizeS) step_size=mStepSizeS;    	 
-	  if (step_size>mCDCInternalStepSize && r2>endplate_r2min
-	      && r2<endplate_r2max
-	      && z>cdc_origin[2]) 
+	  if(step_size>mStepSizeS) step_size=mStepSizeS;
+	  /*
+	    if (step_size>mCDCInternalStepSize && r2>endplate_r2min
+	    && r2<endplate_r2max
+	    && z>cdc_origin[2]) 
 	    step_size=mCDCInternalStepSize;
+	  */
 	  if (s_to_boundary<step_size){
 	    step_size=s_to_boundary;
 	    stepped_to_boundary=true;
@@ -1357,7 +1381,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
       }
       
       // Propagate the state through the field
-      FixedStep(pos,step_size,Sc,dedx,temp.B);
+      temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
+      Step(pos,step_size,Sc,dedx);
  
       // Update flight time
       q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
@@ -1401,7 +1426,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
   // Only use hits that would fall within the range of the reference trajectory
   z=Sc(state_z);
   for (unsigned int j=0;j<my_cdchits.size();j++){
-    DVector3 origin=my_cdchits[j]->hit->wire->origin;
+    DVector3 origin=my_cdchits[j]->origin;
     double my_r2=(origin+(z-origin.z())*my_cdchits[j]->dir).Perp2();
     if (my_r2>r2) my_cdchits[j]->status=bad_hit;
   }
@@ -1445,28 +1470,31 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(DVector3 pos,
 // Routine that extracts the state vector propagation part out of the reference
 // trajectory loop
 jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
-					      double &z,double zhit,
+						  double &z,double zhit,
 						  DMatrix5x1 &S, bool &done,
 						  bool &stepped_to_boundary){
   DMatrix5x5 J,Q,JT;    
-  DKalmanSIMDState_t temp;
+  DKalmanForwardTrajectory_t temp;
   
   // Initialize some variables
   temp.h_id=0;
   int my_i=0;
   double s_to_boundary=1e6;
   double dz_ds=1./sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+  
+  // current position
+  DVector3 pos(S(state_x),S(state_y),z);
 
   temp.s=len;
   temp.t=ftime;
-  temp.pos.SetXYZ(S(state_x),S(state_y),z);
-  temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.Z=temp.LnI=0.; //initialize
+  temp.z=z;
+  temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
   temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
   
   // get material properties from the Root Geometry
   if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
     DVector3 mom(S(state_tx),S(state_ty),1.);
-    if (geom->FindMatKalman(temp.pos,mom,temp.Z,temp.K_rho_Z_over_A,
+    if (geom->FindMatKalman(pos,mom,temp.K_rho_Z_over_A,
   			    temp.rho_Z_over_A,temp.LnI,
 			    temp.chi2c_factor,temp.chi2a_factor,
 			    temp.chi2a_corr,
@@ -1478,7 +1506,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   }
   else
     {
-    if (geom->FindMatKalman(temp.pos,temp.Z,temp.K_rho_Z_over_A,
+    if (geom->FindMatKalman(pos,temp.K_rho_Z_over_A,
 			    temp.rho_Z_over_A,temp.LnI,
 			    temp.chi2c_factor,temp.chi2a_factor,
 			    temp.chi2a_corr,
@@ -1498,8 +1526,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     forward_traj[my_i].s=temp.s;
     forward_traj[my_i].t=temp.t;
     forward_traj[my_i].h_id=temp.h_id;
-    forward_traj[my_i].pos=temp.pos;
-    forward_traj[my_i].Z=temp.Z;
+    forward_traj[my_i].z=temp.z;
     forward_traj[my_i].rho_Z_over_A=temp.rho_Z_over_A;
     forward_traj[my_i].K_rho_Z_over_A=temp.K_rho_Z_over_A;
     forward_traj[my_i].LnI=temp.LnI;
@@ -1528,13 +1555,14 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
       */
       if(ds>mStepSizeS) ds=mStepSizeS; 
      
-      double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+      //double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
       
       // Reduce the step size inside the CDC
-      if (ds>mCDCInternalStepSize && r2>endplate_r2min
-	  && r2<R2_MAX && z<endplate_z)
+      /*
+	if (ds>mCDCInternalStepSize && r2>endplate_r2min
+	&& r2<R2_MAX && z<endplate_z)
 	ds=mCDCInternalStepSize;
-      
+      */
       if (s_to_boundary<ds){
 	ds=s_to_boundary;
 	stepped_to_boundary=true;
@@ -1685,16 +1713,16 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
     else my_id=m-1;
     zhit=my_fdchits[my_id-1]->z;
     for (;;){
-      z=forward_traj[0].pos.z();
+      z=forward_traj[0].z;
       if (z<zhit+EPS2) break;
       forward_traj.pop_front();
     }
      
     // Temporory structure keeping state and trajectory information
-    DKalmanSIMDState_t temp;
+    DKalmanForwardTrajectory_t temp;
     temp.h_id=0;
     temp.B=0.;
-    temp.Z=temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.;
+    temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.;
     temp.Q=Zero5x5; 
 
     // last S vector
@@ -1704,7 +1732,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
     double newz=z+0.01;
     double ds=Step(z,newz,0.,S); // ignore energy loss for this small step
     temp.s=forward_traj[0].s+ds;
-    temp.pos.SetXYZ(S(state_x),S(state_y),newz);
+    temp.z=newz;
     temp.S=S;
 
     // Flight time
@@ -1727,13 +1755,13 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
   for (unsigned int m=0;m<forward_traj.size();m++){
     if (my_id>0){
       unsigned int hit_id=my_id-1;
-      double z=forward_traj[m].pos.z();
+      double z=forward_traj[m].z;
       if (fabs(z-my_fdchits[hit_id]->z)<EPS2){
 	forward_traj[m].h_id=my_id;
 
 	// Get the magnetic field at this position along the trajectory
-	bfield->GetField(forward_traj[m].pos.x(),forward_traj[m].pos.y(),z,
-			 Bx,By,Bz);
+	bfield->GetField(forward_traj[m].S(state_x),forward_traj[m].S(state_y),
+			 z,Bx,By,Bz);
 	double Br=sqrt(Bx*Bx+By*By);
 
 	// Angle between B and wire
@@ -1783,9 +1811,9 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
       double cosl=cos(atan(tanl));
       cout
 	<< setiosflags(ios::fixed)<< "pos: " << setprecision(4) 
-	<< forward_traj[m].pos.x() << ", "
-	<< forward_traj[m].pos.y() << ", "
-	<< forward_traj[m].pos.z() << "  mom: "
+	<< forward_traj[m].S(state_x) << ", "
+	<< forward_traj[m].S(state_y) << ", "
+	<< forward_traj[m].z << "  mom: "
 	<< p*cosphi*cosl<< ", " << p*sinphi*cosl << ", " 
 	<< p*sinl << " -> " << p
 	<<"  s: " << setprecision(3) 	   
@@ -1822,13 +1850,19 @@ double DTrackFitterKalmanSIMD::Step(double oldz,double newz, double dEdx,
   double midz=oldz+delta_z_over_2;
   DMatrix5x1 D1,D2,D3,D4;
   
-  CalcDeriv(oldz,delta_z,S,dEdx,D1);
-  CalcDeriv(midz,delta_z_over_2,S+delta_z_over_2*D1,dEdx,D2);
-  CalcDeriv(midz,delta_z_over_2,S+delta_z_over_2*D2,dEdx,D3);
-  CalcDeriv(newz,delta_z,S+delta_z*D3,dEdx,D4);
+  CalcDeriv(oldz,S,dEdx,D1);
+  CalcDeriv(midz,S+delta_z_over_2*D1,dEdx,D2);
+  CalcDeriv(midz,S+delta_z_over_2*D2,dEdx,D3);
+  CalcDeriv(newz,S+delta_z*D3,dEdx,D4);
   
-  S+=delta_z*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
-  
+  //  S+=delta_z*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
+  double dz_over_6=delta_z*ONE_SIXTH;
+  double dz_over_3=delta_z*ONE_THIRD;
+  S+=dz_over_6*D1;
+  S+=dz_over_3*D2;
+  S+=dz_over_3*D3;
+  S+=dz_over_6*D4;
+
   // Don't let the magnitude of the momentum drop below some cutoff
   if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) 
     S(state_q_over_p)=Q_OVER_P_MAX*(S(state_q_over_p)>0?1.:-1.);
@@ -1928,9 +1962,9 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(double oldz,double newz,
 
 // Calculate the derivative for the alternate set of parameters {q/pT, phi, 
 // tan(lambda),D,z}
-jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
-				       DVector3 &dpos,const DMatrix5x1 &S,
-				       double dEdx,DMatrix5x1 &D1){
+jerror_t DTrackFitterKalmanSIMD::CalcDeriv(const DVector3 &pos,
+					   DVector3 &dpos,const DMatrix5x1 &S,
+					   double dEdx,DMatrix5x1 &D1){
    //Direction at current point
   double tanl=S(state_tanl);
   // Don't let tanl exceed some maximum
@@ -1965,8 +1999,9 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
     double E=sqrt(p_sq+mass2);
     D1(state_q_over_pt)+=-q_over_pt*E/p_sq*dEdx;
   }
-  D1(state_phi)
-    =kq_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
+  //  D1(state_phi)
+  //  =kq_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
+  D1(state_phi)=kq_over_pt*((Bx*cosphi+By*sinphi)*sinl-Bz*cosl);
   D1(state_tanl)=kq_over_pt*By_cosphi_minus_Bx_sinphi*one_over_cosl;  
   D1(state_z)=sinl;
 
@@ -1978,8 +2013,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double ds,const DVector3 &pos,
 
 // Calculate the derivative and Jacobian matrices for the alternate set of 
 // parameters {q/pT, phi, tan(lambda),D,z}
-jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(double ds,
-						      const DVector3 &pos,
+jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(const DVector3 &pos,
 						      DVector3 &dpos,
 						      const DMatrix5x1 &S,
 						      double dEdx,
@@ -2135,29 +2169,35 @@ jerror_t DTrackFitterKalmanSIMD::StepStateAndCovariance(DVector3 &pos,double ds,
   DVector3 dpos1,dpos2,dpos3,dpos4;
   double ds_2=0.5*ds;
 
-  CalcDeriv(0.,pos,dpos1,S,dEdx,D1);
+  CalcDeriv(pos,dpos1,S,dEdx,D1);
 
   DVector3 mypos=pos+ds_2*dpos1;
   bfield->GetField(mypos.x(),mypos.y(),mypos.z(),Bx,By,Bz);
   S1=S+ds_2*D1; 
 
-  CalcDeriv(ds_2,mypos,dpos2,S1,dEdx,D2);
+  CalcDeriv(mypos,dpos2,S1,dEdx,D2);
 
   mypos=pos+ds_2*dpos2;
   bfield->GetField(mypos.x(),mypos.y(),mypos.z(),Bx,By,Bz);
   S1=S+ds_2*D2; 
 
-  CalcDeriv(ds_2,mypos,dpos3,S1,dEdx,D3);
+  CalcDeriv(mypos,dpos3,S1,dEdx,D3);
 
   mypos=pos+ds*dpos3;
-  bfield->GetField(mypos.x(),mypos.y(),mypos.z(),Bx,By,Bz);
+  //bfield->GetField(mypos.x(),mypos.y(),mypos.z(),Bx,By,Bz);
   S1=S+ds*D3;
 
-  CalcDeriv(ds,mypos,dpos4,S1,dEdx,D4);
+  CalcDeriv(mypos,dpos4,S1,dEdx,D4);
 
   // Position vector increment
-  DVector3 dpos
-    =ds*(ONE_SIXTH*dpos1+ONE_THIRD*dpos2+ONE_THIRD*dpos3+ONE_SIXTH*dpos4);
+  //DVector3 dpos
+  //  =ds*(ONE_SIXTH*dpos1+ONE_THIRD*dpos2+ONE_THIRD*dpos3+ONE_SIXTH*dpos4);
+  double ds_over_6=ds*ONE_SIXTH;
+  double ds_over_3=ds*ONE_THIRD;
+  DVector3 dpos=ds_over_6*dpos1;
+  dpos+=ds_over_3*dpos2;
+  dpos+=ds_over_3*dpos3;
+  dpos+=ds_over_6*dpos4;
 
   // Compute the Jacobian matrix
   StepJacobian(pos,dpos,ds,S,dEdx,J);
@@ -2166,8 +2206,12 @@ jerror_t DTrackFitterKalmanSIMD::StepStateAndCovariance(DVector3 &pos,double ds,
   pos+=dpos;
 
   // New state vector
-  S+=ds*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
-  
+  //S+=ds*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
+  S+=ds_over_6*D1;
+  S+=ds_over_3*D2;
+  S+=ds_over_3*D3;
+  S+=ds_over_6*D4;
+
   // Don't let the pt drop below some minimum
   if (fabs(1./S(state_q_over_pt))<PT_MIN) {
     S(state_q_over_pt)=(1./PT_MIN)*(S(state_q_over_pt)>0?1.:-1.);
@@ -2184,25 +2228,10 @@ jerror_t DTrackFitterKalmanSIMD::StepStateAndCovariance(DVector3 &pos,double ds,
   return NOERROR;
 }
 
-
-
 // Runga-Kutte for alternate parameter set {q/pT,phi,tanl(lambda),D,z}
-jerror_t DTrackFitterKalmanSIMD::FixedStep(DVector3 &pos,double ds,
+jerror_t DTrackFitterKalmanSIMD::Step(DVector3 &pos,double ds,
 					   DMatrix5x1 &S,
-					   double dEdx){
-  double B=0.;
-  FixedStep(pos,ds,S,dEdx,B);
-  return NOERROR;
-}
-
-// Runga-Kutte for alternate parameter set {q/pT,phi,tanl(lambda),D,z}
-jerror_t DTrackFitterKalmanSIMD::FixedStep(DVector3 &pos,double ds,
-					   DMatrix5x1 &S,
-					   double dEdx,double &B){  
-  // Magnetic field
-  bfield->GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
-  B=sqrt(Bx*Bx+By*By+Bz*Bz);
-
+					   double dEdx){  
   if (fabs(ds)<EPS) return NOERROR; // break out if ds is too small
   
   // Matrices for intermediate steps
@@ -2211,31 +2240,43 @@ jerror_t DTrackFitterKalmanSIMD::FixedStep(DVector3 &pos,double ds,
   DVector3 dpos1,dpos2,dpos3,dpos4;
   double ds_2=0.5*ds;
 
-  CalcDeriv(0.,pos,dpos1,S,dEdx,D1);
+  // Magnetic field
+  bfield->GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
+  CalcDeriv(pos,dpos1,S,dEdx,D1);
 
   DVector3 mypos=pos+ds_2*dpos1;
   bfield->GetField(mypos.x(),mypos.y(),mypos.z(),Bx,By,Bz);
   S1=S+ds_2*D1; 
 
-  CalcDeriv(ds_2,mypos,dpos2,S1,dEdx,D2);
+  CalcDeriv(mypos,dpos2,S1,dEdx,D2);
 
   mypos=pos+ds_2*dpos2;
-  bfield->GetField(mypos.x(),mypos.y(),mypos.z(),Bx,By,Bz);
+  //bfield->GetField(mypos.x(),mypos.y(),mypos.z(),Bx,By,Bz);
   S1=S+ds_2*D2; 
 
-  CalcDeriv(ds_2,mypos,dpos3,S1,dEdx,D3);
+  CalcDeriv(mypos,dpos3,S1,dEdx,D3);
 
   mypos=pos+ds*dpos3;
   bfield->GetField(mypos.x(),mypos.y(),mypos.z(),Bx,By,Bz);
   S1=S+ds*D3;
 
-  CalcDeriv(ds,mypos,dpos4,S1,dEdx,D4);
+  CalcDeriv(mypos,dpos4,S1,dEdx,D4);
 
   // New state vector
-  S+=ds*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
+  //  S+=ds*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
+  double ds_over_6=ds*ONE_SIXTH;
+  double ds_over_3=ds*ONE_THIRD;
+  S+=ds_over_6*D1;
+  S+=ds_over_3*D2;
+  S+=ds_over_3*D3;
+  S+=ds_over_6*D4;
 
   // New position
-  pos+=ds*(ONE_SIXTH*dpos1+ONE_THIRD*dpos2+ONE_THIRD*dpos3+ONE_SIXTH*dpos4);
+  //pos+=ds*(ONE_SIXTH*dpos1+ONE_THIRD*dpos2+ONE_THIRD*dpos3+ONE_SIXTH*dpos4);
+  pos+=ds_over_6*dpos1;
+  pos+=ds_over_3*dpos2;
+  pos+=ds_over_3*dpos3;
+  pos+=ds_over_6*dpos4;
 
   // Don't let the pt drop below some minimum
   if (fabs(1./S(state_q_over_pt))<PT_MIN) {
@@ -2377,7 +2418,7 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector3 &pos,
   double cosphi=cos(S(state_phi));
   double D=S(state_D);
 
-  CalcDerivAndJacobian(0.,pos,dpos1,S,dEdx,J1,D1);
+  CalcDerivAndJacobian(pos,dpos1,S,dEdx,J1,D1);
   // double Bz_=fabs(Bz); // needed for computing D
 
   // New Jacobian matrix
@@ -2727,13 +2768,13 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
       }
 	
       // Wire position and direction variables
-      DVector3 origin=my_cdchits[id]->hit->wire->origin;
-      DVector3 dir=my_cdchits[id]->hit->wire->udir;
+      DVector3 origin=my_cdchits[id]->origin;
+      DVector3 dir=my_cdchits[id]->dir;
       double uz=dir.z();
       double ux=dir.x();
       double uy=dir.y();
       double z0=origin.z();
-      double cosstereo=cos(my_cdchits[id]->hit->wire->stereo);
+      double cosstereo=my_cdchits[id]->cosstereo;
       DVector3 wirepos=origin+(pos.z()-z0)/uz*dir;
    
       double doca=(pos-wirepos).Perp();
@@ -2742,7 +2783,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
       // Update covariance matrix
       Cplus=Cplus.SandwichMultiply(J);
       
-      FixedStep(pos,1.0,Splus,dedx);
+      Step(pos,1.0,Splus,dedx);
       
      
       wirepos=origin+(pos.z()-z0)/uz*dir;
@@ -2753,7 +2794,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
       // Update covariance matrix
       Cminus=Cminus.SandwichMultiply(J);
       
-      FixedStep(pos1,-1.0,Sminus,dedx);
+      Step(pos1,-1.0,Sminus,dedx);
 
       wirepos=origin+(pos1.z()-z0)/uz*dir;
       double docaminus=(pos1-wirepos).Perp();  
@@ -2777,7 +2818,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
 	  // Update covariance matrix
 	  Cminus=Cminus.SandwichMultiply(J);
 
-	  FixedStep(pos,-1.0,Sminus,dedx);
+	  Step(pos,-1.0,Sminus,dedx);
 
 	  wirepos=origin+(pos.z()-z0)/uz*dir;
 	  doca=(pos-wirepos).Perp();  
@@ -2801,7 +2842,7 @@ jerror_t DTrackFitterKalmanSIMD::SmoothCentral(DMatrix5x1 &Ss,DMatrix5x5 &Cs){
 	  // Update covariance matrix
 	  Cplus=Cplus.SandwichMultiply(J);
 
-	  FixedStep(pos,1.0,Splus,dedx);
+	  Step(pos,1.0,Splus,dedx);
 
 	  wirepos=origin+(pos.z()-z0)/uz*dir;
 	  doca=(pos-wirepos).Perp();  
@@ -3210,7 +3251,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
   // DMatrix S0(Sc);
   
   // Step to intermediate point
-  FixedStep(pos,x,Sc,dedx);
+  Step(pos,x,Sc,dedx);
   double z0wire=origin.z();
   DVector3 wirepos=origin+(pos.z()-z0wire)*dir;
   double u_old=x;
@@ -3235,7 +3276,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
 	  x=u;
 	  ds_temp+=u_old-u;
 	  // Function evaluation
-	  FixedStep(pos,u_old-u,Sc,dedx);
+	  Step(pos,u_old-u,Sc,dedx);
 	  u_old=u;
 	  iter2++;
 	}
@@ -3250,7 +3291,7 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
 	  x=u;
 	  ds_temp+=u_old-u;
 	  // Function evaluation
-	  FixedStep(pos,u_old-u,Sc,dedx);
+	  Step(pos,u_old-u,Sc,dedx);
 	  u_old=u;
 	  iter2++;
 	}
@@ -3288,10 +3329,13 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
     u=(fabs(d)>=tol1 ? x+d: x+SIGN(tol1,d));
     
     // Function evaluation
-    FixedStep(pos,u_old-u,Sc,dedx);
+    Step(pos,u_old-u,Sc,dedx);
     u_old=u;
     
-    if (is_stereo) wirepos=origin+(pos.z()-z0wire)*dir;
+    if (is_stereo){
+      wirepos=origin;
+      wirepos+=(pos.z()-z0wire)*dir;
+    }
     double fu=(pos-wirepos).Perp2();
 
     //_DBG_ << "Brent: z="<<pos.z() << " d^2="<<fu << endl;
@@ -3393,7 +3437,10 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
     Step(z_old,z+u,dedx,S);
     z_old=z+u;
     
-    if (is_stereo) wirepos=origin+(dz0wire+u)*dir;
+    if (is_stereo){
+      wirepos=origin;
+      wirepos+=(dz0wire+u)*dir;
+    }
     pos.SetXYZ(S(state_x),S(state_y),z+u);
     double fu=(pos-wirepos).Perp2();
 
@@ -3454,8 +3501,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   //printf(">>>>>>>>>>>>>>>>\n");   
 
   // beginning position
-  pos.SetXYZ(central_traj[0].pos.x()-Sc(state_D)*sin(Sc(state_phi)),
-	     central_traj[0].pos.y()+Sc(state_D)*cos(Sc(state_phi)),
+  pos.SetXYZ(central_traj[break_point_step_index].pos.x()-Sc(state_D)*sin(Sc(state_phi)),
+	     central_traj[break_point_step_index].pos.y()+Sc(state_D)*cos(Sc(state_phi)),
 	     Sc(state_z));
 
   // Wire origin and direction
@@ -3467,14 +3514,14 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   bool is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
 
   // Wire origin and direction
-  DVector3 origin=my_cdchits[cdc_index]->hit->wire->origin;
+  DVector3 origin=my_cdchits[cdc_index]->origin;
   double z0w=origin.z();
   DVector3 dir=my_cdchits[cdc_index]->dir;
   DVector3 wirepos=origin+(pos.z()-z0w)*dir;
 
   // Save the starting values for C and S in the deque
-  central_traj[0].Skk=Sc;
-  central_traj[0].Ckk=Cc;
+  central_traj[break_point_step_index].Skk=Sc;
+  central_traj[break_point_step_index].Ckk=Cc;
 
   // doca variables
   double doca2,old_doca2=(pos-wirepos).Perp2();
@@ -3486,9 +3533,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   bool more_measurements=true;
 
   // Initialize S0_ and perform the loop over the trajectory
-  S0_=central_traj[0].S;
+  S0_=central_traj[break_point_step_index].S;
 
-  for (unsigned int k=1;k<central_traj.size();k++){
+  for (unsigned int k=break_point_step_index+1;k<central_traj.size();k++){
     unsigned int k_minus_1=k-1;
 
     // Check that C matrix is positive definite
@@ -3512,7 +3559,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     //dS.Zero();
 
     // Update the actual state vector and covariance matrix
-    Sc=S0+J*(Sc-S0_);  
+    Sc=S0+J*(Sc-S0_);
     // Cc=J*(Cc*JT)+Q;   
     //Cc=Q.AddSym(J*Cc*JT);
     Cc=Q.AddSym(Cc.SandwichMultiply(J));
@@ -3554,7 +3601,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
     central_traj[k].Ckk=Cc;
 
     // new wire position
-    if (is_stereo) wirepos=origin+(pos.z()-z0w)*dir;
+    if (is_stereo){
+      wirepos=origin;
+      wirepos+=(pos.z()-z0w)*dir;
+    }
 
     // new doca
     doca2=(pos-wirepos).Perp2();
@@ -3620,7 +3670,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	      else if (my_z>endplate_z){
 		ds2=(endplate_z-pos.z())/sinl;
 	      }
-	      FixedStep(pos,ds2,Sc,dedx);
+	      Step(pos,ds2,Sc,dedx);
 	    }
 	    else{
 	      do_brent=true;
@@ -3643,9 +3693,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    old_doca2=doca2;
 
 	    // Step through the field
-	    FixedStep(pos,mStepSizeS,Sc,dedx);
+	    Step(pos,mStepSizeS,Sc,dedx);
 
-	    if (is_stereo) wirepos=origin+(Sc(state_z)-z0w)*dir;
+	    if (is_stereo) {
+	      wirepos=origin;
+	      wirepos+=(Sc(state_z)-z0w)*dir;
+	    }
 	    doca2=(pos-wirepos).Perp2();
 	   
 	    ds2=my_ds+mStepSizeS;
@@ -3663,7 +3716,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    double my_ds=ds2;
 
 	    // new wire position
-	    if (is_stereo) wirepos=origin+(Sc(state_z)-z0w)*dir;
+	    if (is_stereo) {
+	      wirepos=origin;
+	      wirepos+=(Sc(state_z)-z0w)*dir;
+	    }
 	    
 	    // doca
 	    old_doca2=doca2;
@@ -3673,10 +3729,13 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	      old_doca2=doca2;
 	      
 	      // Step through the field
-	      FixedStep(pos,mStepSizeS,Sc,dedx);
+	      Step(pos,mStepSizeS,Sc,dedx);
 	
 	      // Find the new distance to the wire
-	      if (is_stereo) wirepos=origin+(Sc(state_z)-z0w)*dir;
+	      if (is_stereo) {
+		wirepos=origin;
+		wirepos+=(Sc(state_z)-z0w)*dir;
+	      }
 	      doca2=(pos-wirepos).Perp2();
 
 	      my_ds+=mStepSizeS;
@@ -3700,18 +3759,21 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	Sc(state_D)=q*rc-qrc_old;
 	
 	// wire position
-	if (is_stereo) wirepos=origin+(pos.z()-z0w)*dir;
-	
+	if (is_stereo){
+	  wirepos=origin;
+	  wirepos+=(pos.z()-z0w)*dir;
+	}
+
 	// prediction for measurement  
 	DVector3 diff=pos-wirepos;
 	double doca=diff.Perp();
-	double cosstereo=cos(my_cdchits[cdc_index]->hit->wire->stereo);
+	double cosstereo=my_cdchits[cdc_index]->cosstereo;
 	double prediction=doca*cosstereo;
 
 	// Measurement
 	double measurement=0.39,tdrift=0.;
 	if (fit_type==kTimeBased){	
-	  tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
+	  tdrift=my_cdchits[cdc_index]->tdrift-mT0
 	    -central_traj[k].t*TIME_UNIT_CONVERSION;
 	  double B=central_traj[k].B;
 	  measurement=cdc_drift_distance(tdrift,B);
@@ -3778,9 +3840,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    central_traj[k_minus_1].h_id=cdc_index+1;
 	    
 	    // Update the state vector 
-	    //dS=dm*K;
-	    //dS.Zero();
-	    //Sc=Sc+dm*K;
 	    Sc+=dm*K;
 	    
 	    // Store the "improved" values for the state vector and covariance
@@ -3849,7 +3908,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
       // new wire origin and direction
       if (cdc_index>0){
 	cdc_index--;
-	origin=my_cdchits[cdc_index]->hit->wire->origin;
+	origin=my_cdchits[cdc_index]->origin;
 	dir=my_cdchits[cdc_index]->dir;
 	is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
       }
@@ -4014,8 +4073,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
 
 	// Variance in coordinate along wire
-	double tanl=1./sqrt(tx*tx+ty*ty);
-	V(1,1)=anneal_factor*fdc_y_variance(tanl,doca,my_fdchits[id]->dE);
+	V(1,1)=anneal_factor*fdc_y_variance(my_fdchits[id]->dE);
 		
 	// Difference between measurement and projection
 	Mdiff(1)=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);	
@@ -4109,7 +4167,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    doca=du*cosalpha;
 	    
 	    // variance for coordinate along the wire
-	    V(1,1)=anneal_factor*fdc_y_variance(tanl,doca,my_fdchits[my_id]->dE);
+	    V(1,1)=anneal_factor*fdc_y_variance(my_fdchits[my_id]->dE);
 	    
 	    // Difference between measurement and projection
 	    Mdiff(1)=v-(y*cosa+x*sina+doca*nz_sinalpha_plus_nr_cosalpha);
@@ -4190,7 +4248,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 		fdc_updates[my_id].C=C; 
 		fdc_updates[my_id].tflight
 		  =forward_traj[k].t*TIME_UNIT_CONVERSION;  
-		fdc_updates[my_id].pos=forward_traj[k].pos;
+		fdc_updates[my_id].pos.SetXYZ(S(state_x),S(state_y),
+					      forward_traj[k].z);
 		fdc_updates[my_id].B=forward_traj[k].B;
 		fdc_updates[my_id].s=forward_traj[k].s;
 	      }
@@ -4222,7 +4281,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    
 	    // Update the state vector 
 	    S+=K*Mdiff;
-	    
+	 	    
 	    // Update state vector covariance matrix
 	    C=C.SubSym(K*(H*C));  
 	    // Joseph form
@@ -4239,7 +4298,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	      fdc_updates[id].C=C;
 	      fdc_updates[id].tflight
 		=forward_traj[k].t*TIME_UNIT_CONVERSION;  
-	      fdc_updates[id].pos=forward_traj[k].pos;
+	      fdc_updates[id].pos.SetXYZ(S(state_x),S(state_y),
+					 forward_traj[k].z);
 	      fdc_updates[id].B=forward_traj[k].B;
 	      fdc_updates[id].s=forward_traj[k].s;
 	    }
@@ -4261,11 +4321,11 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
       }
     }
     else if (num_cdc_hits>0){
-      DVector3 origin=my_cdchits[cdc_index]->hit->wire->origin;
+      DVector3 origin=my_cdchits[cdc_index]->origin;
       double z0w=origin.z();
       DVector3 dir=my_cdchits[cdc_index]->dir;
       double uz=dir.z();
-      double z=forward_traj[k].pos.z();
+      double z=forward_traj[k].z;
       DVector3 wirepos=origin+((z-z0w)/uz)*dir;
 
       // doca variables
@@ -4304,8 +4364,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  double step1=mStepSizeZ;
 	  double step2=mStepSizeZ;
 	  if (k>=2){
-	    step1=-forward_traj[k].pos.z()+forward_traj[k_minus_1].pos.z();
-	    step2=-forward_traj[k_minus_1].pos.z()+forward_traj[k-2].pos.z();
+	    step1=-forward_traj[k].z+forward_traj[k_minus_1].z;
+	    step2=-forward_traj[k_minus_1].z+forward_traj[k-2].z;
 	  }
 	  //printf("step1 %f step 2 %f \n",step1,step2);
 	  double two_step=step1+step2;
@@ -4408,7 +4468,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  // predicted doca taking into account the orientation of the wire
 	  dy=S(state_y)-yw;
 	  dx=S(state_x)-xw;      
-	  double cosstereo=cos(my_cdchits[cdc_index]->hit->wire->stereo);
+	  double cosstereo=my_cdchits[cdc_index]->cosstereo;
 	  double d=sqrt(dx*dx+dy*dy)*cosstereo;
 	  
 	  // Track projection
@@ -4428,7 +4488,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	  //V=4.*0.8*0.8; // Testing ideas...
 	  
 	  if (fit_type==kTimeBased){
-	    double tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0-t;
+	    double tdrift=my_cdchits[cdc_index]->tdrift-mT0-t;
 	    double B=forward_traj[k].B;
 	    dm=cdc_drift_distance(tdrift,B);
 
@@ -4487,7 +4547,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	      cdc_updates[cdc_index].C=C;	 
 	      cdc_updates[cdc_index].tflight
 		=forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
-	      cdc_updates[cdc_index].pos=forward_traj[k_minus_1].pos;
+	      cdc_updates[cdc_index].pos.SetXYZ(S(state_x),S(state_y),
+						forward_traj[k_minus_1].z);
 	      cdc_updates[cdc_index].B=forward_traj[k_minus_1].B;
 	      cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
 	    }
@@ -4546,7 +4607,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	// new wire origin and direction
 	if (cdc_index>0){
 	  cdc_index--;
-	  origin=my_cdchits[cdc_index]->hit->wire->origin;
+	  origin=my_cdchits[cdc_index]->origin;
 	  dir=my_cdchits[cdc_index]->dir;
 	}
       
@@ -4580,7 +4641,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
   // Final position for this leg
   x_=S(state_x);
   y_=S(state_y);
-  z_=forward_traj[forward_traj.size()-1].pos.Z();
+  z_=forward_traj[forward_traj.size()-1].z;
     
   return FIT_SUCCEEDED;
 }
@@ -4613,24 +4674,24 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
   double chi2cut=anneal*anneal*NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
 
   // Save the starting values for C and S in the deque
-  forward_traj[0].Skk=S;
-  forward_traj[0].Ckk=C;
+  forward_traj[break_point_step_index].Skk=S;
+  forward_traj[break_point_step_index].Ckk=C;
 
   // z-position
-  double z=forward_traj[0].pos.z();
+  double z=forward_traj[break_point_step_index].z;
 
   // Step size variables
   double step1=mStepSizeZ;
   double step2=mStepSizeZ;
 
   // wire information  
-  unsigned int cdc_index=my_cdchits.size()-1;
+  unsigned int cdc_index=break_point_cdc_index;
     
   if (cdc_index<MIN_HITS_FOR_REFIT) chi2cut=100.0;
 
   bool is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
 
-  DVector3 origin=my_cdchits[cdc_index]->hit->wire->origin;
+  DVector3 origin=my_cdchits[cdc_index]->origin;
   double z0w=origin.z();
   DVector3 dir=my_cdchits[cdc_index]->dir;
   DVector3 wirepos=origin+(z-z0w)*dir;
@@ -4642,8 +4703,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
   double doca2=0.,old_doca2=dx*dx+dy*dy;
   
   // loop over entries in the trajectory
-  S0_=(forward_traj[0].S);
-  for (unsigned int k=1;k<forward_traj.size()/*-1*/;k++){
+  S0_=(forward_traj[break_point_step_index].S);
+  for (unsigned int k=break_point_step_index+1;k<forward_traj.size()/*-1*/;k++){
     unsigned int k_minus_1=k-1;
 
     // Check that C matrix is positive definite
@@ -4652,7 +4713,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
       return BROKEN_COVARIANCE_MATRIX;
     }
 
-    z=forward_traj[k].pos.z();
+    z=forward_traj[k].z;
 
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
@@ -4698,8 +4759,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     S0_=S0;
 
     // new wire position
-    if (is_stereo) wirepos=origin+(z-z0w)*dir;
-
+    if (is_stereo){
+      wirepos=origin;
+      wirepos+=(z-z0w)*dir;
+    }
     // new doca
     dx=S(state_x)-wirepos.x();
     dy=S(state_y)-wirepos.y();
@@ -4721,9 +4784,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
 	// Last 2 step sizes
 	if (k>=2){
-	  double z1=forward_traj[k_minus_1].pos.z();
-	  step1=-forward_traj[k].pos.z()+z1;
-	  step2=-z1+forward_traj[k-2].pos.z();
+	  double z1=forward_traj[k_minus_1].z;
+	  step1=-forward_traj[k].z+z1;
+	  step2=-z1+forward_traj[k-2].z;
 	}
 	
 	// Track direction variables
@@ -4798,14 +4861,18 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	    double ztemp=newz;
 
 	    // new wire position
-	    if (is_stereo) wirepos=origin+(ztemp-z0w)*dir;
-	    
+	    if (is_stereo){
+	      wirepos=origin;
+	      wirepos+=(ztemp-z0w)*dir;
+	    }
 	    // doca
 	    old_doca2=doca2;
 	    
 	    // new wire position
-	    if (is_stereo) wirepos=origin+(newz-z0w)*dir;
-
+	    if (is_stereo){
+	      wirepos=origin;
+	      wirepos+=(newz-z0w)*dir;
+	    }
 	    // new distance to the wire	    
 	    dx=S(state_x)-wirepos.x();
 	    dy=S(state_y)-wirepos.y();
@@ -4819,8 +4886,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	      Step(ztemp,newz,dedx,S);
 
 	      // new wire position
-	      if (is_stereo) wirepos=origin+(newz-z0w)*dir;
-
+	      if (is_stereo){
+		wirepos=origin;
+		wirepos+=(newz-z0w)*dir;
+	      }
 	      //New distance to the wire
 
 	      dx=S(state_x)-wirepos.x();
@@ -4893,17 +4962,20 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	}
 
 	// Wire position at current z
-	if (is_stereo) wirepos=origin+(newz-z0w)*dir;
+	if (is_stereo){
+	  wirepos=origin;
+	  wirepos+=(newz-z0w)*dir;
+	}
 	double xw=wirepos.x();
 	double yw=wirepos.y();
 	
 	// predicted doca taking into account the orientation of the wire
 	dy=S(state_y)-yw;
 	dx=S(state_x)-xw;      
-	double cosstereo=cos(my_cdchits[cdc_index]->hit->wire->stereo);
+	double cosstereo=my_cdchits[cdc_index]->cosstereo;
 	double d=sqrt(dx*dx+dy*dy)*cosstereo;
 
-	//printf("z %f d %f z-1 %f\n",newz,d,forward_traj[k_minus_1].pos.z());
+	//printf("z %f d %f z-1 %f\n",newz,d,forward_traj[k_minus_1].z);
 
 	// Track projection
 	double cosstereo2_over_d=cosstereo*cosstereo/d;
@@ -5055,7 +5127,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
       // new wire origin and direction
       if (cdc_index>0){
 	cdc_index--;
-	origin=my_cdchits[cdc_index]->hit->wire->origin;
+	origin=my_cdchits[cdc_index]->origin;
 	dir=my_cdchits[cdc_index]->dir;
 	is_stereo=my_cdchits[cdc_index]->hit->is_stereo;
       }
@@ -5065,7 +5137,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
       
       // Update the wire position
       z0w=origin.z();
-      wirepos=origin+(z-z0w)*dir;
+      wirepos=origin;
+      wirepos+=(z-z0w)*dir;
       
       // new doca
       dx=S(state_x)-wirepos.x();
@@ -5092,7 +5165,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
   // Final position for this leg
   x_=S(state_x);
   y_=S(state_y);
-  z_=forward_traj[forward_traj.size()-1].pos.Z();
+  z_=forward_traj[forward_traj.size()-1].z;
 
   // Check if we have a kink in the track or threw away too many cdc hits
   if (cdc_updates.size()>=MIN_HITS_FOR_REFIT){
@@ -5115,6 +5188,10 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   DMatrix5x5 J;  // Jacobian matrix
   DMatrix5x5 Q;  // multiple scattering matrix
   DMatrix5x1 S1(S);  // copy of S
+
+  // Direction and origin of beam line
+  DVector3 dir(0,0,1);
+  DVector3 origin(0,0,65);
   
   // position variables
   double z=z_,newz=z_;
@@ -5125,7 +5202,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   double sign=1.;
 
   // material properties
-  double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
+  double rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
   double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
  
   double xstart=S(state_x),ystart=S(state_y);
@@ -5137,7 +5214,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   DVector3 pos(S(state_x),S(state_y),z);
 
   // get material properties from the Root Geometry
-  if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+  if (geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,
 			  chi2c_factor,chi2a_factor,chi2a_corr,
 			  last_material_map)
       !=NOERROR){
@@ -5230,9 +5307,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     r2_old=r2plus;
     z=z+dz;
   }
-
-  double r=sqrt(r2_old);
-  while (z>Z_MIN && r<R_MAX_FORWARD && z<Z_MAX && r>EPS2){
+  
+  double r2=r2_old;
+  while (z>Z_MIN && r2<R2_MAX && z<Z_MAX && r2>EPS){
     // Relationship between arc length and z
     double dz_ds=1./sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
 
@@ -5241,7 +5318,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     double s_to_boundary=1.e6;
     if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
       DVector3 mom(S(state_tx),S(state_ty),1.);
-      if (geom->FindMatKalman(pos,mom,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+      if (geom->FindMatKalman(pos,mom,K_rho_Z_over_A,rho_Z_over_A,LnI,
 			      chi2c_factor,chi2a_factor,chi2a_corr,
 			      last_material_map,&s_to_boundary)
 	  !=NOERROR){
@@ -5249,7 +5326,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       }  
     }
     else{
-      if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+      if (geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,
 			      chi2c_factor,chi2a_factor,chi2a_corr,
 			      last_material_map)
 	  !=NOERROR){
@@ -5303,14 +5380,12 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     ds=Step(z,newz,dEdx,S);
 
     // Check if we passed the minimum doca to the beam line
-    double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+    r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
     if (r2>r2_old && z<endplate_z){
       double two_step=dz+dz_old;
 
       // Find the increment/decrement in z to get to the minimum doca to the
-      // beam line
-      DVector3 dir(0,0,1);
-      DVector3 origin(0,0,65);
+      // beam line   
       S1=S;
       dz=BrentsAlgorithm(newz,0.5*two_step,dEdx,origin,dir,S);
       
@@ -5345,7 +5420,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       return NOERROR;
     }
     r2_old=r2;
-    r=sqrt(r2_old);
     dz_old=dz;
     S1=S;
     z=newz;
@@ -5372,19 +5446,23 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
   double dz_old=0.;
   double dEdx=0.;
 
+  // Direction and origin for beam line
+  DVector3 dir(0,0,1);
+  DVector3 origin(0,0,65);
+
   // material properties
-  double Z=0.,rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
+  double rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
   double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
   DVector3 pos;  // current position along trajectory
 
-  double r=sqrt(r2_old);
-  while (z>Z_MIN && r<R_MAX_FORWARD && z<Z_MAX && r>EPS2){
+  double r2=r2_old;
+  while (z>Z_MIN && r2<R2_MAX && z<Z_MAX && r2>EPS){
     // Relationship between arc length and z
     double dz_ds=1./sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
 
     // get material properties from the Root Geometry
     pos.SetXYZ(S(state_x),S(state_y),z);
-    if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+    if (geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,
 			      chi2c_factor,chi2a_factor,chi2a_corr,
 			    last_material_map)
 	!=NOERROR){
@@ -5412,14 +5490,12 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
     Step(z,newz,dEdx,S);
 
     // Check if we passed the minimum doca to the beam line
-    double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+    r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
     if (r2>r2_old){
       double two_step=dz+dz_old;
 
       // Find the increment/decrement in z to get to the minimum doca to the
-      // beam line
-      DVector3 dir(0,0,1);
-      DVector3 origin(0,0,65);
+      // beam line   
       dz=BrentsAlgorithm(newz,0.5*two_step,dEdx,origin,dir,S);
       
       // Step to the "z vertex" 
@@ -5433,7 +5509,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
       return NOERROR;
     }
     r2_old=r2;
-    r=sqrt(r2_old);
     dz_old=dz;
     S1=S;
     z=newz;
@@ -5461,9 +5536,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   DVector3 dir(0,0,1.);
 
   // Position and step variables
-  double r=pos.Perp();
+  double r2=pos.Perp2();
   double ds=-mStepSizeS; // step along path in cm
-  double r_old=r;
+  double r2_old=r2;
   
   // Energy loss
   double dedx=0.;
@@ -5473,9 +5548,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   S0=Sc; 
   DVector3 pos0=pos;
   DVector3 pos1=pos;
-  FixedStep(pos0,ds,S0,dedx);
-  r=pos0.Perp();
-  if (r>r_old) ds*=-1.;
+  Step(pos0,ds,S0,dedx);
+  r2=pos0.Perp2();
+  if (r2>r2_old) ds*=-1.;
   double ds_old=ds;
   
   //  if (fit_type==kTimeBased)printf("------Extrapolating\n");
@@ -5508,12 +5583,12 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
 
   // Track propagation loop
   while (Sc(state_z)>Z_MIN && Sc(state_z)<Z_MAX  
-	 && r<R_MAX){  
+	 && r2<R2_MAX){  
     
     // get material properties from the Root Geometry
-    double rho_Z_over_A=0.,Z=0,LnI=0.,K_rho_Z_over_A=0.;
+    double rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
     double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
-    if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+    if (geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,
 			    chi2c_factor,chi2a_factor,chi2a_corr,
 			    last_material_map)
 	!=NOERROR){
@@ -5552,16 +5627,16 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     // Add contribution due to multiple scattering
     Cc=Q.AddSym(Cc);
 
-    r=pos.Perp();
+    r2=pos.Perp2();
     //printf("r %f r_old %f \n",r,r_old);
-    if (r>r_old) {
+    if (r2>r2_old) {
       // We've passed the true minimum; backtrack to find the "vertex" 
       // position
       double cosl=cos(atan(Sc(state_tanl)));
       if (fabs((ds+ds_old)*cosl*Sc(state_q_over_pt)*Bz*qBr2p)<0.01){
 	ds=-(pos.X()*cos(Sc(state_phi))+pos.Y()*sin(Sc(state_phi)))
 	  /cosl;
-	FixedStep(pos,ds,Sc,dedx);
+	Step(pos,ds,Sc,dedx);
 	//printf ("min r %f\n",pos.Perp());
       }
       else{  
@@ -5590,7 +5665,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
       
       break;
     }
-    r_old=r;
+    r2_old=r2;
     ds_old=ds;
   }   
   
@@ -5606,9 +5681,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   DVector3 dir(0,0,1.);
 
   // Position and step variables
-  double r=pos.Perp();
+  double r2=pos.Perp2();
   double ds=-mStepSizeS; // step along path in cm
-  double r_old=r;
+  double r2_old=r2;
   
   // Energy loss
   double dedx=0.;
@@ -5618,19 +5693,19 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
   S0=Sc; 
   DVector3 pos0=pos;
   DVector3 pos1=pos;
-  FixedStep(pos0,ds,S0,dedx);
-  r=pos0.Perp();
-  if (r>r_old) ds*=-1.;
+  Step(pos0,ds,S0,dedx);
+  r2=pos0.Perp2();
+  if (r2>r2_old) ds*=-1.;
   double ds_old=ds;
   
   // Track propagation loop
   while (Sc(state_z)>Z_MIN && Sc(state_z)<Z_MAX  
-	 && r<R_MAX){  
+	 && r2<R2_MAX){  
     
     // get material properties from the Root Geometry
-    double rho_Z_over_A=0.,Z=0,LnI=0.,K_rho_Z_over_A=0.;
+    double rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
     double chi2c_factor=0.,chi2a_factor=0.,chi2a_corr=0.;
-    if (geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,
+    if (geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,
 			    chi2c_factor,chi2a_factor,chi2a_corr,
 			    last_material_map)
 	!=NOERROR){
@@ -5652,18 +5727,18 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
     if(fabs(ds)<MIN_STEP_SIZE)ds=sign*MIN_STEP_SIZE;
   
     // Propagate the state through the field
-    FixedStep(pos,ds,Sc,dedx);
+    Step(pos,ds,Sc,dedx);
 
-    r=pos.Perp();
+    r2=pos.Perp2();
     //printf("r %f r_old %f \n",r,r_old);
-    if (r>r_old) {
+    if (r2>r2_old) {
       // We've passed the true minimum; backtrack to find the "vertex" 
       // position
       double cosl=cos(atan(Sc(state_tanl)));
       if (fabs((ds+ds_old)*cosl*Sc(state_q_over_pt)*Bz*qBr2p)<0.01){
 	ds=-(pos.X()*cos(Sc(state_phi))+pos.Y()*sin(Sc(state_phi)))
 	  /cosl;
-	FixedStep(pos,ds,Sc,dedx);
+	Step(pos,ds,Sc,dedx);
 	//printf ("min r %f\n",pos.Perp());
       }
       else{  
@@ -5672,7 +5747,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector3 &pos,
 	}
       break;
     }
-    r_old=r;
+    r2_old=r2;
     ds_old=ds;
   }   
 
@@ -5924,16 +5999,13 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
     return FIT_FAILED;
   }
 
-  // Here's were the truncation occurs
-  for (unsigned int j=0;j<break_point_step_index;j++){
-    central_traj.pop_front();
-  }
-
   kalman_error_t refit_error=FIT_NOT_DONE;
-  unsigned old_cdc_index=break_point_cdc_index;
+  unsigned int old_cdc_index=break_point_cdc_index;
+  unsigned int old_step_index=break_point_step_index;
   unsigned int refit_iter=0;
   unsigned int num_cdchits=my_cdchits.size();
-  while (break_point_cdc_index>4 && break_point_step_index>0 && central_traj.size()>0){
+  while (break_point_cdc_index>4 && break_point_step_index>0 
+	 && break_point_step_index<central_traj.size()){
     refit_iter++;
 	      
     // Flag the cdc hits within the radius of the break point cdc index
@@ -5947,7 +6019,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 	      
     // Now refit with the truncated trajectory and list of hits
     C1=4.0*C0;
-    S1=central_traj[0].S;
+    S1=central_traj[break_point_step_index].S;
     refit_chisq=MAX_CHI2;
     refit_ndf=0; 
     refit_error=KalmanCentral(anneal_factor,S1,C1,refit_pos,
@@ -5964,7 +6036,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
     }
 
     break_point_cdc_index=old_cdc_index-refit_iter;
-    central_traj.pop_front();
+    break_point_step_index=old_step_index-refit_iter;
   }
 
   // If the refit did not work, restore the old list hits used in the fit 
@@ -6023,22 +6095,27 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
       min_cdc_index=5;
     }
   }
-  // Truncate the trajectory
+  // Find the index at which to truncate the reference trajectory
   if (break_point_cdc_index<min_cdc_index){
     break_point_cdc_index=min_cdc_index;
 
-    // Truncate the reference trajectory
-    DVector3 origin=my_cdchits[break_point_cdc_index]->hit->wire->origin;
+    DVector3 origin=my_cdchits[break_point_cdc_index]->origin;
     DVector3 dir=my_cdchits[break_point_cdc_index]->dir;
     double uz=dir.z();
     double z0=origin.z();   
     unsigned int k=forward_traj.size()-1;
     for (;k>1;k--){
-      double r=forward_traj[k].pos.Perp();
-      double rnext=forward_traj[k-1].pos.Perp();
-      double r_cdc=(origin+((forward_traj[k].pos.z()-z0)/uz)*dir).Perp();
+      DMatrix5x1 S1=forward_traj[k].S;
+      double x1=S1(state_x);
+      double y1=S1(state_y);
+      double r2=x1*x1+y1*y1;
+      DMatrix5x1 S2=forward_traj[k-1].S;
+      double x2=S2(state_x);
+      double y2=S2(state_y);
+      double r2next=x2*x2+y2*y2;
+      double r2cdc=(origin+((forward_traj[k].z-z0)/uz)*dir).Perp2();
 
-      if (rnext>r && r>r_cdc) break;
+      if (r2next>r2 && r2>r2cdc) break;
     }
     break_point_step_index=k;
   }
@@ -6046,18 +6123,15 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
     if (DEBUG_LEVEL>0) _DBG_ << "Invalid reference trajectory in track recovery..." << endl;
     return FIT_FAILED;
   }
-  for (unsigned int j=0;j<break_point_step_index;j++){
-    forward_traj.pop_front();
-  }
-  //  printf("z %f %f\n",forward_traj[0].pos.z(),forward_traj[forward_traj.size()-1].pos.z());
-
 
   // Attemp to refit the track using the abreviated list of hits and the truncated
   // reference trajectory.  Iterates if the fit fails.
   kalman_error_t refit_error=FIT_NOT_DONE;
-  unsigned old_cdc_index=break_point_cdc_index;
+  unsigned int old_cdc_index=break_point_cdc_index;
+  unsigned int old_step_index=break_point_step_index;
   unsigned int refit_iter=0;
-  while (break_point_cdc_index>4 && break_point_step_index>0 && forward_traj.size()>0){
+  while (break_point_cdc_index>4 && break_point_step_index>0 
+	 && break_point_step_index<forward_traj.size()){
     refit_iter++;
 
     // Flag the cdc hits within the radius of the break point cdc index
@@ -6071,7 +6145,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
     
     // Re-initialize the state vector, covariance, chisq and number of degrees of freedom    
     C1=4.0*C0;
-    S1=forward_traj[0].S;
+    S1=forward_traj[break_point_step_index].S;
     refit_chisq=MAX_CHI2;
     refit_ndf=0;
     // Now refit with the truncated trajectory and list of hits
@@ -6085,7 +6159,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
       return FIT_SUCCEEDED;
     }
     break_point_cdc_index=old_cdc_index-refit_iter;
-    forward_traj.pop_front();
+    break_point_step_index=old_step_index-refit_iter;
   }
   // If the refit did not work, restore the old list hits used in the fit 
   // before the track recovery was attempted.
@@ -6108,7 +6182,8 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
 						   const DMatrix5x5 &C0,
 						   double &chisq, 
 						   unsigned int &numdof){
-  if (DEBUG_LEVEL>0) _DBG_  << "Attempting to recover broken track ... " <<endl;
+  if (DEBUG_LEVEL>0)
+    _DBG_  << "Attempting to recover broken track ... " <<endl;
   unsigned int num_cdchits=my_cdchits.size();
 
   // Initialize degrees of freedom and chi^2
@@ -6129,13 +6204,13 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
   }
 
   // Truncate the trajectory
-  double zhit=my_fdchits[break_point_fdc_index]->hit->wire->origin.z();   
+  double zhit=my_fdchits[break_point_fdc_index]->z;   
   unsigned int k=0;
   for (;k<forward_traj.size();k++){
-    double z=forward_traj[k].pos.z();
+    double z=forward_traj[k].z;
     if (z<zhit) break;
   }
-  for (unsigned int j=0;j<k;j++) forward_traj.pop_front();
+  break_point_step_index=k;
 
   // Attemp to refit the track using the abreviated list of hits and the truncated
   // reference trajectory. 
@@ -6144,6 +6219,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
   unsigned int break_id=break_point_fdc_index;
   double my_anneal=anneal_factor;
   while (break_id+num_cdchits>=MIN_HITS_FOR_REFIT && break_id>0 
+	 && break_point_step_index<forward_traj.size()
 	 && refit_iter<10){
     refit_iter++;
 
@@ -6153,7 +6229,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
     }
     // Re-initialize the state vector, covariance, chisq and number of degrees of freedom    
     C1=4.0*C0;
-    S1=forward_traj[0].S;
+    S1=forward_traj[break_point_step_index].S;
     refit_chisq=MAX_CHI2;
     refit_ndf=0;
     
@@ -6171,13 +6247,13 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
     // Truncate the trajectory
     if (break_id>0) break_id--;
     else break;
-    zhit=my_fdchits[break_id]->hit->wire->origin.z();  
+    zhit=my_fdchits[break_id]->z;  
     k=0;
     for (;k<forward_traj.size();k++){
-      double z=forward_traj[k].pos.z();
+      double z=forward_traj[k].z;
       if (z<zhit) break;
     }
-    for (unsigned int j=0;j<k;j++) forward_traj.pop_front();
+    break_point_step_index=k;
   }
 
   // If the refit did not work, restore the old list hits used in the fit 
@@ -6197,7 +6273,8 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
 // Routine to fit hits in the FDC and the CDC using the forward parametrization
 kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMatrix5x5 &C0){   
   unsigned int num_cdchits=my_cdchits.size();
-
+  unsigned int max_fdc_index=my_fdchits.size()-1;
+  
   // Vectors to keep track of updated state vectors and covariance matrices (after
   // adding the hit information)
   vector<DKalmanUpdate_t>last_cdc_updates;
@@ -6226,7 +6303,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
        iter++) {      
     // These variables provide the approximate location along the trajectory
     // where there is an indication of a kink in the track      
-    break_point_fdc_index=0;
+    break_point_fdc_index=max_fdc_index;
     break_point_cdc_index=0;
     break_point_step_index=0;
       
@@ -6303,7 +6380,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       }
       */
       // Break out of loop if the chisq is increasing or not changing much
-      if (chisq/my_ndf>chisq_forward/last_ndf || fabs(chisq-chisq_forward)<0.1) break;
+      if (/*chisq/my_ndf>chisq_forward/last_ndf || */fabs(chisq-chisq_forward)<0.1) break;
 		  
       chisq_forward=chisq; 
       last_ndf=my_ndf;
@@ -6369,7 +6446,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
   if (mInvVarT0>0)mT0Average/=mInvVarT0;
 
   // Extrapolate to the point of closest approach to the beam line
-  z_=forward_traj[forward_traj.size()-1].pos.z();
+  z_=forward_traj[forward_traj.size()-1].z;
   if (sqrt(Slast(state_x)*Slast(state_x)+Slast(state_y)*Slast(state_y))
       >EPS2)  
     if (ExtrapolateToVertex(Slast,Clast)!=NOERROR) return POSITION_OUT_OF_RANGE;
@@ -6412,7 +6489,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 // Routine to fit hits in the CDC using the forward parametrization
 kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const DMatrix5x5 &C0){   
   unsigned int num_cdchits=my_cdchits.size();
-  
+  unsigned int max_cdc_index=num_cdchits-1;
+
   // Charge
   //  double q=input_params.charge();
 
@@ -6444,10 +6522,11 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
        iter2++){   
     if (DEBUG_LEVEL>0){
       _DBG_ <<"-------- iteration " << iter2+1 << " -----------" <<endl;
-    }  
+    } 
+ 
     // These variables provide the approximate location along the trajectory
     // where there is an indication of a kink in the track      
-    break_point_cdc_index=num_cdchits-1;
+    break_point_cdc_index=max_cdc_index;
     break_point_step_index=0;
 
     // Reset material map index
@@ -6479,9 +6558,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       // perform the filter 
       C=C0;
       kalman_error_t error=KalmanForwardCDC(anneal_factor,S,C,chisq,my_ndf); 
-
-      if (break_point_cdc_index>0 && DEBUG_LEVEL>1)      _DBG_ << "Break point index " << break_point_step_index << endl;
-
+      
       // Try to recover tracks that failed the first attempt at fitting
       if (error!=FIT_SUCCEEDED && num_cdchits>=MIN_HITS_FOR_REFIT){
 	DMatrix5x5 Ctemp=C;
@@ -6512,7 +6589,9 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       }
     
       if (DEBUG_LEVEL>0)  _DBG_ << "--> Chisq " << chisq << " NDF " 
-				<< my_ndf << endl;
+				<< my_ndf 
+				<< " Prob: " << TMath::Prob(chisq,my_ndf)
+				<< endl;
       // Check the charge relative to the hypothesis for protons
       /*
       if (MASS>0.9){	   
@@ -6524,7 +6603,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 	}
       }
       */
-      if (chisq/my_ndf>chisq_forward/last_ndf || fabs(chisq-chisq_forward)<0.1) break;
+      if (/*chisq/my_ndf>chisq_forward/last_ndf || */fabs(chisq-chisq_forward)<0.1) break;
       chisq_forward=chisq;
       Slast=S;
       Clast=C;
@@ -6633,6 +6712,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMa
   DVector3 last_pos=pos;
 
   unsigned int num_cdchits=my_cdchits.size();
+  unsigned int max_cdc_index=num_cdchits-1;
   
   // Vectors to keep track of updated state vectors and covariance matrices (after
   // adding the hit information)
@@ -6655,7 +6735,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMa
     
     // These variables provide the approximate location along the trajectory
     // where there is an indication of a kink in the track
-    break_point_cdc_index=num_cdchits-1;
+    break_point_cdc_index=max_cdc_index;
     break_point_step_index=0;
     
     // Reset material map index
@@ -6714,6 +6794,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMa
       }
 
       if (DEBUG_LEVEL>0) _DBG_ << "--> Chisq " << chisq << " Ndof " << my_ndf 
+			       << " Prob: " << TMath::Prob(chisq,my_ndf)
 			       << endl;
       // Check the charge relative to the hypothesis for protons
       /*
@@ -6727,7 +6808,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMa
       }
       */
       	  	  
-      if (chisq/my_ndf>chisq_iter/last_ndf || fabs(chisq_iter-chisq)<0.1) break;
+      if (/*chisq/my_ndf>chisq_iter/last_ndf || */fabs(chisq_iter-chisq)<0.1) break;
       
       // Save the current state vector and covariance matrix
       Cclast=Cc;
@@ -6771,11 +6852,11 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMa
 	  double B=last_cdc_updates[m].B;
 	  
 	  // Wire position and direction variables
-	  DVector3 origin=my_cdchits[m]->hit->wire->origin;
+	  DVector3 origin=my_cdchits[m]->origin;
 	  DVector3 dir=my_cdchits[m]->dir;
 	  double uz=dir.z();
 	  double z0=origin.z();
-	  double cosstereo=cos(my_cdchits[m]->hit->wire->stereo);
+	  double cosstereo=my_cdchits[m]->cosstereo;
 	  
 	  // Wire position at doca
 	  DVector3 wirepos=origin+(last_cdc_updates[m].pos.z()-z0)/uz*dir;
