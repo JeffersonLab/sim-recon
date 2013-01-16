@@ -781,23 +781,22 @@ jerror_t DTrackFitterRiemann::ComputeCz(){
 // the formalism of Lynch and Dahl
 double DTrackFitterRiemann::GetProcessNoise(const DVector2 &XY,const double z){
   // Get the material properties for this position
-  double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
-  double fdummy;
+  double rho_Z_over_A,K_rho_Z_over_A,LnI;
+  double chi2c_factor,chi2a_factor,chi2a_corr;
   DVector3 pos(XY.X(),XY.Y(),z);
   unsigned int dummy=0;
-  if(geom->FindMatKalman(pos,Z,K_rho_Z_over_A,rho_Z_over_A,LnI,fdummy,fdummy,
-			 fdummy,dummy)!=NOERROR){
-	return 0.;
+  if(geom->FindMatKalman(pos,K_rho_Z_over_A,rho_Z_over_A,LnI,
+			 chi2c_factor,chi2a_factor,chi2a_corr,
+			 dummy)!=NOERROR){
+    return 0.;
   }
   
   double p2=p*p;
   double F=MOLIERE_FRACTION; // Fraction of Moliere distribution to be taken into account
-  double alpha=7.29735e-03; // Fine structure constant
   double one_over_beta2=1.+mass2/p2;
   double my_ds=1.;
-  double chi2c=0.157*(Z+1)*rho_Z_over_A*my_ds*one_over_beta2/p2;
-  double chi2a=2.007e-5*pow(Z,TWO_THIRDS)
-    *(1.+3.34*Z*Z*alpha*alpha*one_over_beta2)/p2;
+  double chi2c=chi2c_factor*my_ds*one_over_beta2/p2;
+  double chi2a=chi2a_factor*(1.+chi2a_corr*one_over_beta2)/p2;
   double nu=0.5*chi2c/(chi2a*(1.-F));
   return (2.*chi2c*1e-6/(1.+F*F)*((1.+nu)/nu*log(1.+nu)-1.));
 }
