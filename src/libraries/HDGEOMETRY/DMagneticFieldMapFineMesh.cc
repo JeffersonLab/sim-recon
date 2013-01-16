@@ -128,6 +128,9 @@ int DMagneticFieldMapFineMesh::ReadMap(string namepath, int runnumber, string co
   dy = (ymax-ymin)/(double)(Ny-1);
   dz = (zmax-zmin)/(double)(Nz-1);
   
+  one_over_dx=1./dx;
+  one_over_dz=1./dz;
+
   // Copy values into Btable
   for(unsigned int i=0; i<Bmap.size(); i++){
     vector<float> &a = Bmap[i];
@@ -243,11 +246,11 @@ void DMagneticFieldMapFineMesh::GetFieldBicubic(double x,double y,double z,
   //if (true){
   if (z<zminFine || z>zmaxFine || r>rmaxFine){
   // Get closest indices for this point
-    int index_x = (int)floor((r-xmin)/dx + 0.5);
+    int index_x = (int)floor((r-xmin)*one_over_dx + 0.5);
     //if(index_x<0 || index_x>=Nx)return;
     if (index_x>=Nx) return;
     else if (index_x<0) index_x=0;
-    int index_z = (int)floor((z-zmin)/dz + 0.5);	
+    int index_z = (int)floor((z-zmin)*one_over_dz + 0.5);	
     if(index_z<0 || index_z>=Nz)return;
     
     int index_y = 0;
@@ -291,8 +294,8 @@ void DMagneticFieldMapFineMesh::GetFieldBicubic(double x,double y,double z,
     for (i=0;i<4;i++)
       for (j=0;j<4;j++) coeff[i][j]=cl[m++];
     
-    double t=(z - B00->z)/dz;
-    double u=(r - B00->x)/dx;   
+    double t=(z - B00->z)*one_over_dz;
+    double u=(r - B00->x)*one_over_dx;   
     for (i=3;i>=0;i--){
       Br_=t*Br_+((coeff[i][3]*u+coeff[i][2])*u+coeff[i][1])*u+coeff[i][0];
     }
@@ -333,8 +336,8 @@ void DMagneticFieldMapFineMesh::GetFieldBicubic(double x,double y,double z,
     }
   }
   else{ // otherwise do a simple lookup in the fine-mesh table
-    unsigned int indr=(unsigned int)floor((r-rminFine)/drFine);
-    unsigned int indz=(unsigned int)floor((z-zminFine)/dzFine);
+    unsigned int indr=(unsigned int)floor((r-rminFine)*rscale);
+    unsigned int indz=(unsigned int)floor((z-zminFine)*zscale);
     
     Bz_=mBfine[indr][indz].Bz;
     Br_=mBfine[indr][indz].Br;
@@ -382,10 +385,10 @@ void DMagneticFieldMapFineMesh::InterpolateField(double r,double z,double &Br,
   double cl[16],coeff[4][4];
 
     // Get closest indices for the point (r,z)
-  int index_x = (int)floor((r-xmin)/dx + 0.5);
+  int index_x = (int)floor((r-xmin)*one_over_dx + 0.5);
   if (index_x>=Nx) return;
   else if (index_x<0) index_x=0;
-  int index_z = (int)floor((z-zmin)/dz + 0.5);	
+  int index_z = (int)floor((z-zmin)*one_over_dz + 0.5);	
   if(index_z<0 || index_z>=Nz)return; 
   int index_y = 0;
     
@@ -428,8 +431,8 @@ void DMagneticFieldMapFineMesh::InterpolateField(double r,double z,double &Br,
   for (i=0;i<4;i++)
     for (j=0;j<4;j++) coeff[i][j]=cl[m++];
   
-  double t=(z - B00->z)/dz;
-  double u=(r - B00->x)/dx;
+  double t=(z - B00->z)*one_over_dz;
+  double u=(r - B00->x)*one_over_dx;
   Br=dBrdr=dBrdz=0.;
   for (i=3;i>=0;i--){
     double c3u=coeff[i][3]*u;
@@ -484,38 +487,61 @@ void DMagneticFieldMapFineMesh::InterpolateField(double r,double z,double &Br,
 // Use bicubic interpolation to find the field and field gradient at the point 
 // (x,y).  See Numerical Recipes in C (2nd ed.), pp.125-127.
 void DMagneticFieldMapFineMesh::GetFieldAndGradient(double x,double y,double z,
-						   double &Bx_,double &By_,
-						   double &Bz_,
-						   double &dBxdx_, 
-						   double &dBxdy_,
-						   double &dBxdz_,
-						   double &dBydx_, 
+						    double &Bx_,double &By_,
+						    double &Bz_,
+						    double &dBxdx_, 
+						    double &dBxdy_,
+						    double &dBxdz_,
+						    double &dBydx_, 
 						   double &dBydy_,
-						   double &dBydz_,
-						   double &dBzdx_, 
-						   double &dBzdy_,
-						   double &dBzdz_) const{
+						    double &dBydz_,
+						    double &dBzdx_, 
+						    double &dBzdy_,
+						    double &dBzdz_) const{
   // radial distance
   double r = sqrt(x*x + y*y);
   // radial component of B and gradient
   double Br_=0.,dBrdx_=0.,dBrdz_=0.;
+  // Initialize z-component
+  Bz_=0.;
   
   // If the point (x,y,z) is outside the fine-mesh grid, interpolate 
   // on the coarse grid
   //if (true){
   if (z<zminFine || z>zmaxFine || r>rmaxFine){
-    InterpolateField(r,z,Br_,Bz_,dBrdx_,dBrdz_,dBzdx_,dBzdz_);
+    //InterpolateField(r,z,Br_,Bz_,dBrdx_,dBrdz_,dBzdx_,dBzdz_);
+    // Get closest indices for this point
+    int index_x = static_cast<int>(r*one_over_dx);
+    int index_z = static_cast<int>((z-zmin)*one_over_dz);	
+  int index_y = 0;
+  
+  if(index_x<Nx && index_z>=0 && index_z<Nz){
+    const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
+    
+    // Fractional distance between map points.
+    double ur = (r - B->x)*one_over_dx;
+    double uz = (z - B->z)*one_over_dz;
+    
+    // Use gradient to project grid point to requested position
+    Br_ = B->Bx+B->dBxdx*ur+B->dBxdz*uz;
+    Bz_ = B->Bz+B->dBzdx*ur+B->dBzdz*uz;
+    dBrdx_=B->dBxdx;
+    dBrdz_=B->dBxdz;
+    dBzdx_=B->dBzdx;
+    dBzdz_=B->dBzdz;
+  }
   }
   else{ // otherwise do a simple lookup in the fine-mesh table
-    unsigned int indr=(unsigned int)floor((r-rminFine)/drFine);
-    unsigned int indz=(unsigned int)floor((z-zminFine)/dzFine);
-    
-    Bz_=mBfine[indr][indz].Bz;
-    Br_=mBfine[indr][indz].Br;
-    dBrdx_=mBfine[indr][indz].dBrdr;
-    dBrdz_=mBfine[indr][indz].dBrdz;
-    dBzdz_=mBfine[indr][indz].dBzdz;
-    dBzdx_=mBfine[indr][indz].dBzdr;
+    unsigned int indr=static_cast<unsigned int>(r*rscale);
+    unsigned int indz=static_cast<unsigned int>((z-zminFine)*zscale);
+    const DBfieldCylindrical_t *field=&mBfine[indr][indz];
+
+    Bz_=field->Bz;
+    Br_=field->Br;
+    dBrdx_=field->dBrdr;
+    dBrdz_=field->dBrdz;
+    dBzdz_=field->dBzdz;
+    dBzdx_=field->dBzdr;
     
     //	  printf("Bz Br %f %f\n",Bz,Br);
   }
@@ -559,11 +585,11 @@ void DMagneticFieldMapFineMesh::GetFieldGradient(double x, double y, double z,
   
   	// Get closest indices for this point
 	double r = sqrt(x*x + y*y);
-	int index_x = (int)floor((r-xmin)/dx + 0.5);
+	int index_x = (int)floor((r-xmin)*one_over_dx + 0.5);
 	//if(index_x<0 || index_x>=Nx)return;	
 	if (index_x>=Nx) return;
 	else if (index_x<0) index_x=0;
-	int index_z = (int)floor((z-zmin)/dz + 0.5);	
+	int index_z = (int)floor((z-zmin)*one_over_dz + 0.5);	
 	if(index_z<0 || index_z>=Nz)return;
 	
 	int index_y = 0;
@@ -579,15 +605,15 @@ void DMagneticFieldMapFineMesh::GetFieldGradient(double x, double y, double z,
 	}
 
 	// Rotate back into phi direction
-	dBxdx = B->dBxdx*cos_theta*cos_theta/dx;
-	dBxdy = B->dBxdx*cos_theta*sin_theta/dx;
-	dBxdz = B->dBxdz*cos_theta/dz;
-	dBydx = B->dBxdx*sin_theta*cos_theta/dx;
-	dBydy = B->dBxdx*sin_theta*sin_theta/dx;
-	dBydz = B->dBxdz*sin_theta/dz;
-	dBzdx = B->dBzdx*cos_theta/dx;
-	dBzdy = B->dBzdx*sin_theta/dx;
-	dBzdz = B->dBzdz/dz;
+	dBxdx = B->dBxdx*cos_theta*cos_theta*one_over_dx;
+	dBxdy = B->dBxdx*cos_theta*sin_theta*one_over_dx;
+	dBxdz = B->dBxdz*cos_theta*one_over_dz;
+	dBydx = B->dBxdx*sin_theta*cos_theta*one_over_dx;
+	dBydy = B->dBxdx*sin_theta*sin_theta*one_over_dx;
+	dBydz = B->dBxdz*sin_theta*one_over_dz;
+	dBzdx = B->dBzdx*cos_theta*one_over_dx;
+	dBzdy = B->dBzdx*sin_theta*one_over_dx;
+	dBzdz = B->dBzdz*one_over_dz;
 	/*
 	printf("old Grad %f %f %f %f %f %f %f %f %f\n",dBxdx,dBxdy,dBxdz,
 	 dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz);
@@ -606,8 +632,8 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 	/// database. It interpolates between grid points using the
 	/// gradient values calculated in ReadMap (called from the
 	/// constructor).
-
-	Bx = By = Bz = 0.0;
+  
+  Bx = By = Bz = 0.0;
 	double Br=0.0;
 
 	if(Ny>1){
@@ -628,11 +654,11 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 	// on the coarse grid
 	if (z<zminFine || z>zmaxFine || r>rmaxFine){
 	  // Get closest indices for this point
-	  int index_x = (int)floor((r-xmin)/dx + 0.5);
+	  int index_x = static_cast<int>(r*one_over_dx);
 	  //if(index_x<0 || index_x>=Nx)return;
 	  if (index_x>=Nx) return;
-	  else if (index_x<0) index_x=0;
-	  int index_z = (int)floor((z-zmin)/dz + 0.5);	
+       
+	  int index_z = static_cast<int>((z-zmin)*one_over_dz);	
 	  if(index_z<0 || index_z>=Nz)return;
 	  
 	  int index_y = 0;
@@ -640,19 +666,20 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 	  const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
 	  
 	  // Fractional distance between map points.
-	  double ur = (r - B->x)/dx;
-	  double uz = (z - B->z)/dz;
+	  double ur = (r - B->x)*one_over_dx;
+	  double uz = (z - B->z)*one_over_dz;
 	  
 	  // Use gradient to project grid point to requested position
-	  Br = B->Bx + B->dBxdx*ur + B->dBxdz*uz;
-	  Bz = B->Bz + B->dBzdx*ur + B->dBzdz*uz;
+	  Br = B->Bx+B->dBxdx*ur+B->dBxdz*uz;
+	  Bz = B->Bz+B->dBzdx*ur+B->dBzdz*uz;
 	}
         else{ // otherwise do a simple lookup in the fine-mesh table
-	  unsigned int indr=(unsigned int)floor((r-rminFine)/drFine);
-	  unsigned int indz=(unsigned int)floor((z-zminFine)/dzFine);
-	  
-	  Bz=mBfine[indr][indz].Bz;
-	  Br=mBfine[indr][indz].Br;
+	  unsigned int indr=static_cast<unsigned int>(r*rscale);
+	  unsigned int indz=static_cast<unsigned int>((z-zminFine)*zscale);
+	  const DBfieldCylindrical_t *field=&mBfine[indr][indz];
+
+	  Bz=field->Bz;
+	  Br=field->Br;
 	  //	  printf("Bz Br %f %f\n",Bz,Br);
 	}
 
@@ -671,11 +698,11 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
   // on the coarse grid
   if (z<zminFine || z>zmaxFine || r>rmaxFine){
     // Get closest indices for this point
-    int index_x = (int)floor((r-xmin)/dx + 0.5);
+    int index_x = static_cast<int>(r*one_over_dx);
     //if(index_x<0 || index_x>=Nx)return 0.;
     if (index_x>=Nx) return 0.;
-    else if (index_x<0) index_x=0;
-    int index_z = (int)floor((z-zmin)/dz + 0.5);	
+  
+    int index_z = static_cast<int>((z-zmin)*one_over_dz);	
     if(index_z<0 || index_z>=Nz)return 0.;
     
     int index_y = 0;
@@ -683,16 +710,16 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
     const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
     
     // Fractional distance between map points.
-    double ur = (r - B->x)/dx;
-    double uz = (z - B->z)/dz;
+    double ur = (r - B->x)*one_over_dx;
+    double uz = (z - B->z)*one_over_dz;
 	  
     // Use gradient to project grid point to requested position
     return (B->Bz + B->dBzdx*ur + B->dBzdz*uz);
   }
  
   // otherwise do a simple lookup in the fine-mesh table
-  unsigned int indr=(unsigned int)floor((r-rminFine)/drFine);
-  unsigned int indz=(unsigned int)floor((z-zminFine)/dzFine);
+  unsigned int indr=static_cast<unsigned int>(r*rscale);
+  unsigned int indz=static_cast<unsigned int>((z-zminFine)*zscale);
   
   return mBfine[indr][indz].Bz;
 }
@@ -818,6 +845,9 @@ void DMagneticFieldMapFineMesh::ReadEvioFile(string evioFileName){
 	  zmaxFine=(*vec)[4];	
 	  dzFine=(*vec)[5];
 	  
+	  zscale=1./dzFine;
+	  rscale=1./drFine;
+
 	  NrFine=(unsigned int)floor((rmaxFine-rminFine)/drFine+0.5);
 	  NzFine=(unsigned int)floor((zmaxFine-zminFine)/dzFine+0.5);
 	  
