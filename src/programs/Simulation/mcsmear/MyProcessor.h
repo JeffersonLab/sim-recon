@@ -27,5 +27,4 @@ class MyProcessor:public JEventProcessor
 
 		s_iostream_t *file;
 		unsigned long Nevents_written;
-		pthread_mutex_t output_file_mutex;
 };

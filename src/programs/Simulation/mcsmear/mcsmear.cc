@@ -24,6 +24,7 @@ using namespace std;
 #if USE_JANA
 #include <DANA/DApplication.h>
 #include "MyProcessor.h"
+#include "JFactoryGenerator_ThreadCancelHandler.h"
 
 #include <CDC/DCDCWire.h>
 //#include <FDC/DFDCWire.h>
@@ -150,6 +151,7 @@ int main(int narg,char* argv[])
 
 	// Create DApplication object and use it to create JCalibration object
 	DApplication dapp(narg, argv);
+	dapp.AddFactoryGenerator(new JFactoryGenerator_ThreadCancelHandler());
 	jcalib = dapp.GetJCalibration(1);
 
 	// Make sure jcalib is set
