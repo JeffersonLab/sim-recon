@@ -147,15 +147,11 @@ int main(int narg,char* argv[])
 	signal(SIGINT,ctrlCHandleMCSmear);
 #endif
 	ParseCommandLineArguments(narg, argv);
-	
-	// Create a JCalibration object using the JANA_CALIB_URL environment variable
-	// Right now, we hardwire this to use JCalibrationFile.
-	const char *url = getenv("JANA_CALIB_URL");
-	if(!url){
-		_DBG_<<"JANA_CALIB_URL environment not set."<<endl;
-		exit(-1);
-	}
-	jcalib = new JCalibrationFile(url, 1, "");
+
+	// Create DApplication object and use it to create JCalibration object
+	DApplication dapp(narg, argv);
+	jcalib = dapp.GetJCalibration(1);
+
 	// Make sure jcalib is set
 	if(!jcalib){
 	  _DBG_<<"ERROR - jcalib not set!"<<endl;
@@ -318,7 +314,6 @@ int main(int narg,char* argv[])
 
 	cout<<" "<<NEvents<<" events read"<<endl;
 #else
-	DApplication dapp(narg, argv);
 
 	DGeometry *dgeom=dapp.GetDGeometry(1);
 	
