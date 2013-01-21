@@ -812,6 +812,10 @@ void DParticleID::GetScintMPdEandSigma(double p,double M,double x,
 
 bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime) const
 {
+	//disable until timing/etc. issues sorted out.
+	locPropagatedRFTime = 0.0 + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
+	return true;
+
 	//Propagates RF time to the track vertex-z, and then selects the closest RF bunch
 	//Method: match track to RF bunch.  If cannot reliably match (e.g. no TOF or start counter hit) then use the best guess for this event (from locEventRFBunch) if available
 		//First use TOF hit if any, then use a BCAL hit if track is fast enough (resolution low enough), else use start counter hit

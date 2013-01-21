@@ -71,6 +71,14 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	double locTimeVariance = locRFTimes[0]->dTimeVariance;
 */
 
+	//disable RF bunch selection until timing/etc. issues fixed
+	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+	locEventRFBunch->dTime = 0.0;
+	locEventRFBunch->dTimeVariance = 0.0;
+	locEventRFBunch->dMatchedToTracksFlag = true;
+	_data.push_back(locEventRFBunch);
+	return NOERROR;
+
 	double locRFHitTime = 0.0;
 	double locTimeVariance = 0.0;
 
@@ -131,7 +139,7 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	else
 		locMatchedToTracksFlag = false; //no confidence in selecting the RF bunch for the event
 
-	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+	locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = (locMatchedToTracksFlag) ? locRFHitTime + dRFBunchFrequency*double(locBestRFBunchShift) : locRFHitTime;
 	locEventRFBunch->dTimeVariance = locTimeVariance;
 	locEventRFBunch->dMatchedToTracksFlag = locMatchedToTracksFlag;
