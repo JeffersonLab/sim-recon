@@ -837,20 +837,6 @@ bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locCharge
 		locProjectedHitTime = locChargedTrackHypothesis->time();
 		locMatchFlag = true;
 	}
-	else
-	{
-		//no good matches from TOF/BCAL (or too slow for BCAL), try using ST
-		vector<const DSCHit*> locSCHits;
-		locChargedTrackHypothesis->GetT(locSCHits);
-		if(!locSCHits.empty())
-		{
-			locProjectedHitTime = locChargedTrackHypothesis->t0();
-			unsigned int locSCIndex;
-			double locPathLength, locFlightTime;
-			MatchToSC(locChargedTrackHypothesis->dRT, DTrackFitter::kTimeBased, locSCHits, locProjectedHitTime, locSCIndex, locPathLength, locFlightTime);
-			locMatchFlag = true;
-		}
-	}
 
 	locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
 	if(!locMatchFlag) // this track can't distinguish which RF bunch: use the propagated RF time from locEventRFBunch if it was succesfully matched to other tracks, else abort
