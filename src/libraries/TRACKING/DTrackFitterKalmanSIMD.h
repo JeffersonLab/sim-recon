@@ -108,7 +108,8 @@ enum kalman_error_t{
 
 
 typedef struct{
-  DVector3 dir,origin;
+  DVector2 dir,origin;
+  double z0wire;
   double residual,sigma,tdrift,cosstereo;
   const DCDCTrackHit *hit;
   int status;
@@ -127,7 +128,7 @@ typedef struct{
 typedef struct{
   DMatrix5x5 J,JT,Q,Ckk;
   DMatrix5x1 S,Skk;
-  DVector3 pos;  
+  DVector2 xy;  
   double s,t,B;
   double rho_Z_over_A,K_rho_Z_over_A,LnI;
   double chi2c_factor,chi2a_factor,chi2a_corr; 
@@ -147,7 +148,8 @@ typedef struct{
 typedef struct{
   DMatrix5x5 C;
   DMatrix5x1 S;
-  DVector3 pos;
+  DVector2 xy;
+  double z;
   double tdrift,tflight,s,B;
   double residual,variance;
   bool used_in_fit;
@@ -201,15 +203,16 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   kalman_error_t KalmanForwardCDC(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 			    double &chisq,unsigned int &numdof);
-  kalman_error_t KalmanCentral(double anneal_factor,DMatrix5x1 &S,DMatrix5x5 &C,
-			 DVector3 &pos,double &chisq,unsigned int &myndf);
-  jerror_t ExtrapolateToVertex(DVector3 &pos,DMatrix5x1 &Sc,DMatrix5x5 &Cc);
-  jerror_t ExtrapolateToVertex(DVector3 &pos,DMatrix5x1 &Sc);
+  kalman_error_t KalmanCentral(double anneal_factor,DMatrix5x1 &S,
+			       DMatrix5x5 &C,DVector2 &xy,double &chisq,
+			       unsigned int &myndf);
+  jerror_t ExtrapolateToVertex(DVector2 &xy,DMatrix5x1 &Sc,DMatrix5x5 &Cc);
+  jerror_t ExtrapolateToVertex(DVector2 &xy,DMatrix5x1 &Sc);
   jerror_t ExtrapolateToVertex(DMatrix5x1 &S, DMatrix5x5 &C); 
   jerror_t ExtrapolateToVertex(DMatrix5x1 &S);
   jerror_t SetReferenceTrajectory(DMatrix5x1 &S);
   jerror_t SetCDCForwardReferenceTrajectory(DMatrix5x1 &S);
-  jerror_t SetCDCReferenceTrajectory(DVector3 pos,DMatrix5x1 &Sc);
+  jerror_t SetCDCReferenceTrajectory(const DVector2 &xy,DMatrix5x1 &Sc);
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);		
   void GetCovarianceMatrix(vector< vector<double> >&mycov){
@@ -276,6 +279,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			   const DMatrix5x1 &S,DMatrix5x5 &Q);
 
   double Step(double oldz,double newz, double dEdx,DMatrix5x1 &S);
+  double FasterStep(double oldz,double newz, double dEdx,DMatrix5x1 &S);
   jerror_t StepJacobian(double oldz,double newz,const DMatrix5x1 &S,
 			double dEdx,DMatrix5x5 &J);
   jerror_t CalcDerivAndJacobian(double z,double dz,const DMatrix5x1 &S,
@@ -285,21 +289,22 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 			double dEdx,DMatrix5x5 &J);
   jerror_t CalcDeriv(double z,const DMatrix5x1 &S, double dEdx, 
 		     DMatrix5x1 &D);
-  jerror_t CalcDeriv(const DVector3 &pos,DVector3 &dpos,
+  jerror_t CalcDeriv(DVector2 &dxy,
 		     const DMatrix5x1 &S,double dEdx,DMatrix5x1 &D1);
 
-  jerror_t StepJacobian(const DVector3 &pos,double ds,const DMatrix5x1 &S, 
+  jerror_t StepJacobian(const DVector2 &xy,double ds,const DMatrix5x1 &S, 
 			double dEdx,DMatrix5x5 &J);
-  jerror_t StepJacobian(const DVector3 &pos,const DVector3 &dpos,double ds,
+  jerror_t StepJacobian(const DVector2 &xy,const DVector2 &dxy,double ds,
 			const DMatrix5x1 &S,double dEdx,DMatrix5x5 &J);
   
-  jerror_t StepStateAndCovariance(DVector3 &pos,double ds,
+  jerror_t StepStateAndCovariance(DVector2 &xy,double ds,
 				  double dEdx,DMatrix5x1 &S,
 				  DMatrix5x5 &J,DMatrix5x5 &C);
 
-  jerror_t Step(DVector3 &pos,double ds,DMatrix5x1 &S, double dEdx);
+  jerror_t Step(DVector2 &xy,double ds,DMatrix5x1 &S, double dEdx);
+  jerror_t FasterStep(DVector2 &xy,double ds,DMatrix5x1 &S, double dEdx);
 
-  jerror_t CalcDerivAndJacobian(const DVector3 &pos,DVector3 &dpos,
+  jerror_t CalcDerivAndJacobian(const DVector2 &xy,DVector2 &dxy,
 				const DMatrix5x1 &S,double dEdx,
 				DMatrix5x5 &J1,DMatrix5x1 &D1);
   jerror_t ConvertStateVectorAndCovariance(double z,const DMatrix5x1 &S,
@@ -315,12 +320,15 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t FindCentralResiduals(vector<DKalmanUpdate_t>updates);
   jerror_t SwimCentral(DVector3 &pos,DMatrix5x1 &Sc);
   double BrentsAlgorithm(double ds1,double ds2,
-			 double dedx,DVector3 &pos,const DVector3 &origin,
-			 const DVector3 &dir,  
+			 double dedx,DVector2 &pos,
+			 const double z0wire,
+			 const DVector2 &origin,
+			 const DVector2 &dir,  
 			 DMatrix5x1 &Sc, bool is_stereo=false);
   double BrentsAlgorithm(double z,double dz,
-			 double dedx,const DVector3 &origin,
-			 const DVector3 &dir,DMatrix5x1 &S,
+			 double dedx,const double z0wire,
+			 const DVector2 &origin,
+			 const DVector2 &dir,DMatrix5x1 &S,
 			 bool is_stereo=false);
   
   jerror_t PropagateForwardCDC(int length,int &index,double &z,double &r2,
@@ -334,9 +342,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   jerror_t EstimateT0(const DKalmanUpdate_t &fdc_update,
 		      const DKalmanSIMDFDCHit_t *hit);
-  jerror_t EstimateT0Central(const DCDCTrackHit *hit,
+  jerror_t EstimateT0Central(const DKalmanSIMDCDCHit_t *hit,
 			     const DKalmanUpdate_t &cdc_update); 
-  jerror_t EstimateT0Forward(const DCDCTrackHit *hit,
+  jerror_t EstimateT0Forward(const DKalmanSIMDCDCHit_t *hit,
 			     const DKalmanUpdate_t &cdc_update);
 
   kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
@@ -352,7 +360,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 				     DMatrix5x1 &S, 
 				     DMatrix5x5 &C,
 				     const DMatrix5x5 &C0,
-				     DVector3 &pos,
+				     DVector2 &pos,
 				     double &chisq, 
 				     unsigned int &numdof);
   kalman_error_t RecoverBrokenForwardTracks(double anneal_factor, 
