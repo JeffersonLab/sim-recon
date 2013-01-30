@@ -13,6 +13,7 @@ C
      +              ,IPLUND(MXPGEANT),IDECLUND(MXPGEANT)
      +              ,KCGEAN(-MXPKC:MXPKC)
      +              ,RATESEC
+     +              ,VERTEX(3)
       INTEGER   NEVENT    ! number of events to simulate (F)
      +         ,RUNNO     ! run number to use
      +         ,IWROUT    ! (1)>0 - write out the HDDS file (events) (F)
@@ -39,6 +40,7 @@ C                         below that the low energy generator is used
 C                         the value may be adjusted to the bin boundary of IDBEA
      +         ,ELOWMIN ! minimal energy for the low energy generator (F) 
      +         ,RATESEC ! reference interation rate (Hz), calculated
+     +         ,VERTEX  ! Vertex set in HDDM output file (cm)  n.b. 0,0,0 is the default which means hdgeant will use its default, 0,0,65
 C
 
 

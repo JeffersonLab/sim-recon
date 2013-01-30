@@ -13,7 +13,6 @@ C
       COMMON/CFREAD/ jffr(mxffr)
 C
       INTEGER ier
-      REAL xb,nb
 C
       INTEGER i,j,lun,lout,iost,ip,kd(4),kf,lenc,idgea
       REAL am,wg
@@ -62,6 +61,7 @@ C
       CALL FFKEY('ZCOLLIM'   , ZCOLL      , 1,'REAL')
       CALL FFKEY('EPYTHMIN'  , EPYMIN     , 1,'REAL')
       CALL FFKEY('ELOWMIN'   , ELOWMIN    , 1,'REAL')
+      CALL FFKEY('VERTEX'    , VERTEX(1) , 3,'REAL')
 C
       CALL FFGO
 C

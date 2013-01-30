@@ -5,6 +5,8 @@
 
 s_iostream_t* hddmOutputStream=NULL;
 
+void bg_getvertex_(float myvertex[3]);
+
 typedef struct{
         int geantid;
         int mech; /* what do the values of this correspond to */
@@ -115,6 +117,9 @@ void write_hddm_event_(int *runno, int *iev, int *iproc,
 	vs->in[0].origin = origin = make_s_Origin();
 	vs->in[0].products = ps = make_s_Products(*ntra);
 	ps->mult = 0;
+
+	// Copy vertex values from FORTRAN common block
+	bg_getvertex_(vertex);
 	
 	origin->t = 0.0;
 	origin->vx = vertex[0];
