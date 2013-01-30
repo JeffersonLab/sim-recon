@@ -5,8 +5,8 @@
 // Creator: davidl
 //
 
-#ifndef _FDC_branch_
-#define _FDC_branch_
+#ifndef _CDC_branch_
+#define _CDC_branch_
 
 #include <TObject.h>
 #include <TVector3.h>
@@ -23,5 +23,5 @@ class CDC_branch:public TObject{
 
 };
 
-#endif // _FDC_branch_
+#endif // _CDC_branch_
 
