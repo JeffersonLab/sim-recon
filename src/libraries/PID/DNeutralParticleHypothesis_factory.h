@@ -26,8 +26,7 @@ class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleH
 		DNeutralParticleHypothesis_factory(){};
 		~DNeutralParticleHypothesis_factory(){};
 
-		void Build_ErrorMatrix(const DVector3 &locPathVector, double locEnergy, const DMatrixDSym& locVariances, DMatrixDSym& locErrorMatrix);
-		void Calc_Variances(const DNeutralShower *locNeutralShower, double locTimeDifferenceVariance, DMatrixDSym &locVariances);
+		void Calc_ParticleCovariance(const DNeutralShower* locNeutralShower, double locMass, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance);
 
 	private:
 		double dTargetLength;
