@@ -786,9 +786,8 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(double z,
   double tx=S(state_tx),ty=S(state_ty);
   double q_over_p=S(state_q_over_p);
 
-  // Don't let the magnitude of the momentum drop below some cutoff
+  // Turn off dEdx if the magnitude of the momentum drops below some cutoff
   if (fabs(q_over_p)>Q_OVER_P_MAX){
-    q_over_p=Q_OVER_P_MAX*(q_over_p>0.0?1.:-1.);
     dEdx=0.;
   }
   // Try to keep the direction tangents from heading towards 90 degrees
@@ -847,7 +846,10 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
   // Continue adding to the trajectory until we have reached the endplate
   // or the maximum radius
   while(z<endplate_z && z>cdc_origin[2] &&
-	r2<r2max && fabs(S(state_q_over_p))<Q_OVER_P_MAX){
+	r2<r2max && fabs(S(state_q_over_p))<Q_OVER_P_MAX
+	&& fabs(S(state_tx))<TAN_MAX
+	&& fabs(S(state_ty))<TAN_MAX
+	){
     if (PropagateForwardCDC(forward_traj_length,i,z,r2,S,stepped_to_boundary)
 	!=NOERROR) return UNRECOVERABLE_ERROR;
   }
@@ -1654,7 +1656,10 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
   bool stepped_to_boundary=false;
   unsigned int m=0;
   for (m=0;m<my_fdchits.size();m++){
-    if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+    if (fabs(S(state_q_over_p))>Q_OVER_P_MAX
+	|| fabs(S(state_tx))>TAN_MAX
+	|| fabs(S(state_ty))>TAN_MAX
+	){
       break;
     }
 
@@ -1662,7 +1667,10 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
     if (fabs(old_zhit-zhit)>EPS){
       bool done=false;
       while (!done){
-	if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+	if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX
+	    || fabs(S(state_tx))>TAN_MAX
+	    || fabs(S(state_ty))>TAN_MAX
+	    ){
 	  break;
 	}
 
@@ -1928,13 +1936,13 @@ double DTrackFitterKalmanSIMD::FasterStep(double oldz,double newz, double dEdx,
   S+=dz_over_6*D4;
 
   // Don't let the magnitude of the momentum drop below some cutoff
-  if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) 
-    S(state_q_over_p)=Q_OVER_P_MAX*(S(state_q_over_p)>0.0?1.:-1.);
+  //if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) 
+  //  S(state_q_over_p)=Q_OVER_P_MAX*(S(state_q_over_p)>0.0?1.:-1.);
   // Try to keep the direction tangents from heading towards 90 degrees
-  if (fabs(S(state_tx))>TAN_MAX) 
-    S(state_tx)=TAN_MAX*(S(state_tx)>0.0?1.:-1.); 
-  if (fabs(S(state_ty))>TAN_MAX) 
-    S(state_ty)=TAN_MAX*(S(state_ty)>0.0?1.:-1.);
+  //if (fabs(S(state_tx))>TAN_MAX) 
+  //  S(state_tx)=TAN_MAX*(S(state_tx)>0.0?1.:-1.); 
+  //if (fabs(S(state_ty))>TAN_MAX) 
+  //  S(state_ty)=TAN_MAX*(S(state_ty)>0.0?1.:-1.);
 
   return ds;
 }
@@ -2045,10 +2053,8 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(DVector2 &dpos,const DMatrix5x1 &S,
   double q_over_pt=S(state_q_over_pt);
   double pt=fabs(1./q_over_pt);
    
-  // Don't let the pt drop below some minimum
+  // Turn off dEdx if the pt drops below some minimum
   if (pt<PT_MIN) {
-    pt=PT_MIN;
-    q_over_pt=(1./PT_MIN)*(q_over_pt>0.0?1.:-1.);
     dEdx=0.;
   }
   double kq_over_pt=qBr2p*q_over_pt;

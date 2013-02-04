@@ -46,6 +46,7 @@
 #define CDC_DRIFT_SPEED 55e-4
 #define VAR_S 0.09
 #define Q_OVER_P_MAX 100. // 10 MeV/c
+#define Q_OVER_PT_MAX 100. // 10 MeV/c
 #define PT_MIN 0.01 // 10 MeV/c
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
