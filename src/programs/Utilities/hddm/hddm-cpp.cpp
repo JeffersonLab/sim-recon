@@ -1856,7 +1856,8 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       XtString cnameS(childEl->getTagName());
       XtString repS(childEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
-      XtString hostS("m_host->");
+      const char *myHost = (tagS=="HDDM" ? "this->":"m_host->");
+      XtString hostS(myHost);
       hFile << "," << std::endl << "   m_" << cnameS
             << ((rep > 1)? "_list" : "_link")
             << "(&" << hostS << "m_" << cnameS << "_plist," << std::endl
