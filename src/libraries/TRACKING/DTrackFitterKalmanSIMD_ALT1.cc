@@ -494,15 +494,42 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		for (int m=0;m<my_steps;m++){
 		  newz=my_z+mStepSizeZ;
 	      
+		  // Bail if the momentum has dropped below some minimum
+		  if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+		    if (DEBUG_LEVEL>2)
+		      {
+			_DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
+		      }
+		    return MOMENTUM_OUT_OF_RANGE;
+		  }
+
 		  // Step current state by step size 
 		  Step(my_z,newz,dedx,S);
 					       
 		  my_z=newz;
 		}
 		newz=my_z+dz2;
+		// Bail if the momentum has dropped below some minimum
+		if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+		  if (DEBUG_LEVEL>2)
+		    {
+		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
+		    }
+		  return MOMENTUM_OUT_OF_RANGE;
+		}
+
 		Step(my_z,newz,dedx,S);
 	      }
 	      else{
+		// Bail if the momentum has dropped below some minimum
+		if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+		  if (DEBUG_LEVEL>2)
+		    {
+		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
+		    }
+		  return MOMENTUM_OUT_OF_RANGE;
+		}
+		
 		Step(z,newz,dedx,S);
 	      }
 	    }
@@ -510,7 +537,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  else do_brent=true;
 	  if (do_brent){
 	    // We have bracketed the minimum doca:  use Brent's agorithm
-	    dz=BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,is_stereo);
+	    if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz,
+				is_stereo)!=NOERROR){
+	      return MOMENTUM_OUT_OF_RANGE;
+	    }
 	    newz=z+dz;
 
 	    if (fabs(dz)>2.*mStepSizeZ-EPS3){    
@@ -550,8 +580,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		ztemp=newz;
 	      }
 	      // Find the true doca
-	      double dz2=BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,
-					 is_stereo);
+	      double dz2=0.;
+	      if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2,
+				  is_stereo)!=NOERROR){
+		return MOMENTUM_OUT_OF_RANGE;
+	      }
 	      newz=ztemp+dz2;
 	   
 	      // Change in z relative to where we started for this wire

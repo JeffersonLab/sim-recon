@@ -320,17 +320,19 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   jerror_t SwimToPlane(DMatrix5x1 &S);
   jerror_t FindCentralResiduals(vector<DKalmanUpdate_t>updates);
   jerror_t SwimCentral(DVector3 &pos,DMatrix5x1 &Sc);
-  double BrentsAlgorithm(double ds1,double ds2,
-			 double dedx,DVector2 &pos,
-			 const double z0wire,
-			 const DVector2 &origin,
-			 const DVector2 &dir,  
-			 DMatrix5x1 &Sc, bool is_stereo=false);
-  double BrentsAlgorithm(double z,double dz,
-			 double dedx,const double z0wire,
-			 const DVector2 &origin,
-			 const DVector2 &dir,DMatrix5x1 &S,
-			 bool is_stereo=false);
+  jerror_t BrentsAlgorithm(double ds1,double ds2,
+			   double dedx,DVector2 &pos,
+			   const double z0wire,
+			   const DVector2 &origin,
+			   const DVector2 &dir,  
+			   DMatrix5x1 &Sc, double &ds_out,
+			   bool is_stereo=false);
+  jerror_t BrentsAlgorithm(double z,double dz,
+			   double dedx,const double z0wire,
+			   const DVector2 &origin,
+			   const DVector2 &dir,DMatrix5x1 &S,
+			   double &dz_out,
+			   bool is_stereo=false);
   
   jerror_t PropagateForwardCDC(int length,int &index,double &z,double &r2,
 			       DMatrix5x1 &S, bool &stepped_to_boundary); 
@@ -350,7 +352,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   kalman_error_t ForwardFit(const DMatrix5x1 &S,const DMatrix5x5 &C0); 
   kalman_error_t ForwardCDCFit(const DMatrix5x1 &S,const DMatrix5x5 &C0);  
-  kalman_error_t CentralFit(const DMatrix5x1 &Sc,const DMatrix5x5 &C0);
+  kalman_error_t CentralFit(const DVector2 &startpos,
+			    const DMatrix5x1 &Sc,const DMatrix5x5 &C0);
   kalman_error_t RecoverBrokenTracks(double anneal_factor, 
 				     DMatrix5x1 &S, 
 				     DMatrix5x5 &C,

@@ -1240,7 +1240,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
       z=Sc(state_z);
       r2=my_xy.Mod2();
       if (r2>r2max || z<my_zmin || z>endplate_z 
-	  || fabs(1./Sc(state_q_over_pt))<PT_MIN)
+	  || fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX
+	  || fabs(Sc(state_tanl))>=TAN_MAX
+	  )
 	break;
   
       // update flight time
@@ -1289,7 +1291,9 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
     r2=my_xy.Mod2();
     z=Sc(state_z);
     while(r2<r2max && z<endplate_z && z>my_zmin && len<MAX_PATH_LENGTH
-	  &&  fabs(1./Sc(state_q_over_pt))>PT_MIN){
+	  && fabs(Sc(state_q_over_pt))<Q_OVER_PT_MAX
+	  && fabs(Sc(state_tanl))<TAN_MAX
+	  ){
       // Reset D to zero
       Sc(state_D)=0.;
             
@@ -1880,13 +1884,13 @@ double DTrackFitterKalmanSIMD::Step(double oldz,double newz, double dEdx,
   S+=dz_over_6*D4;
 
   // Don't let the magnitude of the momentum drop below some cutoff
-  if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) 
-    S(state_q_over_p)=Q_OVER_P_MAX*(S(state_q_over_p)>0.0?1.:-1.);
+  //if (fabs(S(state_q_over_p))>Q_OVER_P_MAX) 
+  //  S(state_q_over_p)=Q_OVER_P_MAX*(S(state_q_over_p)>0.0?1.:-1.);
   // Try to keep the direction tangents from heading towards 90 degrees
-  if (fabs(S(state_tx))>TAN_MAX) 
-    S(state_tx)=TAN_MAX*(S(state_tx)>0.0?1.:-1.); 
-  if (fabs(S(state_ty))>TAN_MAX) 
-    S(state_ty)=TAN_MAX*(S(state_ty)>0.0?1.:-1.);
+  //if (fabs(S(state_tx))>TAN_MAX) 
+  //  S(state_tx)=TAN_MAX*(S(state_tx)>0.0?1.:-1.); 
+  //if (fabs(S(state_ty))>TAN_MAX) 
+  //  S(state_ty)=TAN_MAX*(S(state_ty)>0.0?1.:-1.);
 
   return ds;
 }
@@ -2109,10 +2113,8 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(const DVector2 &xy,
   double pt=fabs(1./q_over_pt);
   double q=pt*q_over_pt;
 
-  // Don't let the pt drop below some minimum
+  // Turn off dEdx if pt drops below some minimum
   if (pt<PT_MIN) {
-    pt=PT_MIN;
-    q_over_pt=q/PT_MIN;
     dEdx=0.;
   }
   double kq_over_pt=qBr2p*q_over_pt;
@@ -2286,9 +2288,9 @@ jerror_t DTrackFitterKalmanSIMD::StepStateAndCovariance(DVector2 &xy,
   S+=ds_over_6*D4;
 
   // Don't let the pt drop below some minimum
-  if (fabs(1./S(state_q_over_pt))<PT_MIN) {
-    S(state_q_over_pt)=(1./PT_MIN)*(S(state_q_over_pt)>0.0?1.:-1.);
-  }
+  //if (fabs(1./S(state_q_over_pt))<PT_MIN) {
+  //  S(state_q_over_pt)=(1./PT_MIN)*(S(state_q_over_pt)>0.0?1.:-1.);
+  // }
   // Don't let tanl exceed some maximum
   if (fabs(S(state_tanl))>TAN_MAX){
     S(state_tanl)=TAN_MAX*(S(state_tanl)>0.0?1.:-1.);
@@ -2356,9 +2358,9 @@ jerror_t DTrackFitterKalmanSIMD::FasterStep(DVector2 &xy,double ds,
   xy+=ds_over_6*dxy4;
 
   // Don't let the pt drop below some minimum
-  if (fabs(1./S(state_q_over_pt))<PT_MIN) {
-    S(state_q_over_pt)=(1./PT_MIN)*(S(state_q_over_pt)>0.0?1.:-1.);
-  }
+  //if (fabs(1./S(state_q_over_pt))<PT_MIN) {
+  //  S(state_q_over_pt)=(1./PT_MIN)*(S(state_q_over_pt)>0.0?1.:-1.);
+  //}
   // Don't let tanl exceed some maximum
   if (fabs(S(state_tanl))>TAN_MAX){
     S(state_tanl)=TAN_MAX*(S(state_tanl)>0.0?1.:-1.);
@@ -2421,9 +2423,9 @@ jerror_t DTrackFitterKalmanSIMD::Step(DVector2 &xy,double ds,
   xy+=ds_over_6*dxy4;
 
   // Don't let the pt drop below some minimum
-  if (fabs(1./S(state_q_over_pt))<PT_MIN) {
-    S(state_q_over_pt)=(1./PT_MIN)*(S(state_q_over_pt)>0.0?1.:-1.);
-  }
+  //if (fabs(1./S(state_q_over_pt))<PT_MIN) {
+  //  S(state_q_over_pt)=(1./PT_MIN)*(S(state_q_over_pt)>0.0?1.:-1.);
+  //}
   // Don't let tanl exceed some maximum
   if (fabs(S(state_tanl))>TAN_MAX){
     S(state_tanl)=TAN_MAX*(S(state_tanl)>0.0?1.:-1.);
@@ -2464,10 +2466,8 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector2 &xy,
   double q_over_pt=S(state_q_over_pt);
   double pt=fabs(1./q_over_pt);
 
-  // Don't let the pt drop below some minimum
+  // Turn off dEdx if pt drops below some minimum
   if (pt<PT_MIN) {
-    pt=PT_MIN;
-    q_over_pt=q/PT_MIN;
     dEdx=0.;
   }
   double kds=qBr2p*ds;
@@ -2995,13 +2995,13 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     // The position from the track candidate is reported just outside the 
     // start counter for tracks containing cdc hits. Propagate to the 
-    // distance of closest approach to the beam line       
-    if (fit_type==kWireBased){
-      DVector2 xy(x_,y_);
+    // distance of closest approach to the beam line     
+    DVector2 xy(x_,y_);  
+    if (fit_type==kWireBased){  
       ExtrapolateToVertex(xy,S0);
     }
 
-    cdc_error=CentralFit(S0,C0);
+    cdc_error=CentralFit(xy,S0,C0);
     if (cdc_error==FIT_SUCCEEDED){
       // if the result of the fit using the forward parameterization succeeded
       // but the chi2 was too high, it still may provide the best estimate for 
@@ -3059,13 +3059,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 #define SIGN(a,b) ((b)>=0.0?fabs(a):-fabs(a))
 // Routine for finding the minimum of a function bracketed between two values
 // (see Numerical Recipes in C, pp. 404-405).
-double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
-					   double dedx,DVector2 &pos,
-					       const double z0wire,
-					   const DVector2 &origin,
-					   const DVector2 &dir,  
-					       DMatrix5x1 &Sc,
-					       bool is_stereo){
+jerror_t DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
+						double dedx,DVector2 &pos,
+						const double z0wire,
+						const DVector2 &origin,
+						const DVector2 &dir,  
+						DMatrix5x1 &Sc,
+						double &ds_out,
+						bool is_stereo){
   double d=0.;
   double e=0.0; // will be distance moved on step before last 
   double ax=0.;
@@ -3077,6 +3078,8 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
   double x=bx,w=bx,v=bx;
 
   //  printf("ds1 %f ds2 %f\n",ds1,ds2);
+  // Initialize return step size
+  ds_out=0.;
 
   // Save the starting position 
   // DVector3 pos0=pos;
@@ -3084,6 +3087,16 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
   
   // Step to intermediate point
   Step(pos,x,Sc,dedx);
+  // Bail if the transverse momentum has dropped below some minimum
+  if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+    if (DEBUG_LEVEL>2)
+      {
+	_DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+	      << endl;
+      }
+    return VALUE_OUT_OF_RANGE;
+  }
+
   DVector2 wirepos=origin+(Sc(state_z)-z0wire)*dir;
   double u_old=x;
   double u=0.;
@@ -3106,13 +3119,24 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
 	  u=x-(cdc_origin[2]-Sc(state_z))*sin(atan(Sc(state_tanl)));
 	  x=u;
 	  ds_temp+=u_old-u;
+	  // Bail if the transverse momentum has dropped below some minimum
+	  if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+	    if (DEBUG_LEVEL>2)
+	      {
+		_DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+		      << endl;
+	      }
+	    return VALUE_OUT_OF_RANGE;
+	  }
+	  
 	  // Function evaluation
 	  Step(pos,u_old-u,Sc,dedx);
 	  u_old=u;
 	  iter2++;
 	}
 	//printf("new z %f ds %f \n",pos.z(),x);	
-	return ds_temp;
+	ds_out=ds_temp;
+	return NOERROR;
       }
       else if (Sc(state_z)>=endplate_z){
 	unsigned int iter2=0;
@@ -3121,16 +3145,28 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
 	  u=x-(endplate_z-Sc(state_z))*sin(atan(Sc(state_tanl)));
 	  x=u;
 	  ds_temp+=u_old-u;
+
+	  // Bail if the transverse momentum has dropped below some minimum
+	  if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+	    if (DEBUG_LEVEL>2)
+	      {
+		_DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+		      << endl;
+	      }
+	    return VALUE_OUT_OF_RANGE;
+	  }
+	  
 	  // Function evaluation
 	  Step(pos,u_old-u,Sc,dedx);
 	  u_old=u;
 	  iter2++;
 	}
-	//printf("new z %f ds %f \n",pos.z(),x);	
-	return ds_temp;	
+	//printf("new z %f ds %f \n",pos.z(),x);
+	ds_out=ds_temp;
+	return NOERROR;	
       }
-     
-      return cx-x;
+      ds_out=cx-x;
+      return NOERROR;
     }
     // trial parabolic fit
     if (fabs(e)>tol1){
@@ -3158,6 +3194,16 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
       d=CGOLD*(e=(x>=xm?a-x:b-x));
     }
     u=(fabs(d)>=tol1 ? x+d: x+SIGN(tol1,d));
+    
+    // Bail if the transverse momentum has dropped below some minimum
+    if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+      if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+		<< endl;
+	}
+      return VALUE_OUT_OF_RANGE;
+    }
     
     // Function evaluation
     Step(pos,u_old-u,Sc,dedx);
@@ -3189,19 +3235,21 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
 	fv=fu;
       }
     }
-  }
+  }  
+  ds_out=cx-x;
   
-  return cx-x;
+  return NOERROR;
 }
 
 // Routine for finding the minimum of a function bracketed between two values
 // (see Numerical Recipes in C, pp. 404-405).
-double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
+jerror_t DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
 					       double dedx,
 					       const double z0wire,
 					       const DVector2 &origin,
 					       const DVector2 &dir,
 					       DMatrix5x1 &S,
+					       double &dz_out,
 					       bool is_stereo){
   double d=0.,u=0.;
   double e=0.0; // will be distance moved on step before last 
@@ -3213,9 +3261,21 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
   double b=(ax>cx?ax:cx);
   double x=bx,w=bx,v=bx;
 
+  // Initialize dz_out
+  dz_out=0.;
+
   // Step to intermediate point
   double z_new=z+x;
   Step(z,z_new,dedx,S); 
+  // Bail if the momentum has dropped below some minimum
+  if (fabs(S(state_q_over_p))>Q_OVER_P_MAX){
+    if (DEBUG_LEVEL>2)
+      {
+	_DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p))
+	      << endl;
+      }
+    return VALUE_OUT_OF_RANGE;
+  }
 
   double dz0wire=z-z0wire;
   DVector2 wirepos=origin+(dz0wire+x)*dir;
@@ -3235,9 +3295,20 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
       if (z_new>=endplate_z){
 	x=endplate_z-z_new;
+	
+	// Bail if the momentum has dropped below some minimum
+	if (fabs(S(state_q_over_p))>Q_OVER_P_MAX){
+	  if (DEBUG_LEVEL>2)
+	    {
+	      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p))
+		    << endl;
+	    }
+	  return VALUE_OUT_OF_RANGE;
+	}
 	Step(z_new,endplate_z,dedx,S);
       }
-      return x;
+      dz_out=x;
+      return NOERROR;
     }
     // trial parabolic fit
     if (fabs(e)>tol1){
@@ -3269,6 +3340,15 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
     // Function evaluation
     //S=S0;
     z_new=z+u;
+    // Bail if the momentum has dropped below some minimum
+    if (fabs(S(state_q_over_p))>Q_OVER_P_MAX){
+      if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p))
+		<< endl;
+	}
+      return VALUE_OUT_OF_RANGE;
+    }
     Step(z_old,z_new,dedx,S);
     z_old=z_new;
     
@@ -3300,7 +3380,8 @@ double DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
       }
     }
   }
-  return x;
+  dz_out=x;
+  return NOERROR;
 }
 
 // Kalman engine for Central tracks; updates the position on the trajectory
@@ -3417,7 +3498,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
       return POSITION_OUT_OF_RANGE;
     }
     // Bail if the transverse momentum has dropped below some minimum
-    if (1./fabs(Sc(state_q_over_pt))<=PT_MIN){
+    if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
       if (DEBUG_LEVEL>2)
 	 {
 	   _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
@@ -3506,6 +3587,16 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	      else if (my_z>endplate_z){
 		ds2=(endplate_z-z)/sinl;
 	      }
+	      // Bail if the transverse momentum has dropped below some minimum
+	      if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+		if (DEBUG_LEVEL>2)
+		  {
+		    _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+			  << " at step " << k 
+			  << endl;
+		  }
+		return MOMENTUM_OUT_OF_RANGE;
+	      }
 	      Step(xy,ds2,Sc,dedx);
 	    }
 	    else{
@@ -3517,9 +3608,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	if (do_brent){ 
 	  // ... otherwise, use Brent's algorithm.
 	  // See Numerical Recipes in C, pp 404-405
-	  ds2=BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,xy,z0w,origin,
-			      dir,Sc,is_stereo);
-
+	  //  ds2=BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,xy,z0w,origin,
+	  //		      dir,Sc,is_stereo);
+	  if (BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,xy,z0w,origin,
+			      dir,Sc,ds2,is_stereo)!=NOERROR){
+	    return MOMENTUM_OUT_OF_RANGE;
+	  } 
 	  if (fabs(ds2)<EPS3){
 	    // whoops, looks like we didn't actually bracket the minimum 
 	    // after all.  Swim to make sure we pass the minimum doca.
@@ -3527,6 +3621,17 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    
 	    // doca
 	    old_doca2=doca2;
+
+	    // Bail if the transverse momentum has dropped below some minimum
+	    if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+	      if (DEBUG_LEVEL>2)
+		{
+		  _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+			<< " at step " << k 
+			<< endl;
+		}
+	      return MOMENTUM_OUT_OF_RANGE;
+	    }
 
 	    // Step through the field
 	    Step(xy,mStepSizeS,Sc,dedx);
@@ -3540,8 +3645,11 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    ds2=my_ds+mStepSizeS;
 	    if (doca2>old_doca2){
 	      // Swim to the "true" doca
-	      double ds3=BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,xy,z0w,
-					 origin,dir,Sc,is_stereo);
+	      double ds3=0.;
+	      if (BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,xy,z0w,
+				  origin,dir,Sc,ds3,is_stereo)!=NOERROR){
+		return MOMENTUM_OUT_OF_RANGE;
+	      }
 	      ds2+=ds3;
 	    }
 	   
@@ -3563,7 +3671,18 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    
 	    while(doca2<old_doca2){
 	      old_doca2=doca2;
-	      
+
+	      // Bail if the transverse momentum has dropped below some minimum
+	      if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+		if (DEBUG_LEVEL>2)
+		  {
+		    _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+			  << " at step " << k 
+			  << endl;
+		  }
+		return MOMENTUM_OUT_OF_RANGE;
+	      }
+	      	      
 	      // Step through the field
 	      Step(xy,mStepSizeS,Sc,dedx);
 	
@@ -3577,8 +3696,11 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	      my_ds+=mStepSizeS;
 	    }
 	    // Swim to the "true" doca
-	    double ds3=BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,xy,z0w,
-				       origin,dir,Sc,is_stereo);
+	    double ds3=0.;
+	    if (BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,xy,z0w,
+				origin,dir,Sc,ds3,is_stereo)!=NOERROR){
+	      return MOMENTUM_OUT_OF_RANGE;
+	    }
 	    ds2=my_ds+ds3;
 	  }
 	}
@@ -3718,7 +3840,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
 	// propagate the covariance matrix to the next point on the trajectory
 	// Compute the Jacobian matrix
-	StepJacobian(xy0,-ds2,S0,dedx,J);
+	StepJacobian(xy0,(-1.)*dxy1,-ds2,S0,dedx,J);
 	
 	// Update covariance matrix
 	//Cc=J*Cc*J.Transpose();
@@ -4222,7 +4344,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	      =forward_traj[k].pos.z()-forward_traj[k_minus_1].pos.z();
 	      dz=BrentsAlgorithm(z,step_size,dedx,origin,dir,S);
 	    */
-	    dz=BrentsAlgorithm(z,-0.5*two_step,dedx,z0w,origin,dir,S);
+	    BrentsAlgorithm(z,-0.5*two_step,dedx,z0w,origin,dir,S,dz);
 	  }
 	  double newz=z+dz;
 	  // Check for exiting the straw
@@ -4664,15 +4786,41 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	      for (int m=0;m<my_steps;m++){
 		newz=my_z+mStepSizeZ;
 		
+		// Bail if the momentum has dropped below some minimum
+		if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+		  if (DEBUG_LEVEL>2)
+		    {
+		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
+		    }
+		  return MOMENTUM_OUT_OF_RANGE;
+		}
+
 		// Step current state by step size 
 		Step(my_z,newz,dedx,S);
 		
 		my_z=newz;
 	      }
 	      newz=my_z+dz2;
+	      // Bail if the momentum has dropped below some minimum
+	      if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+		if (DEBUG_LEVEL>2)
+		  {
+		    _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
+		  }
+		return MOMENTUM_OUT_OF_RANGE;
+	      }
+	      
 	      Step(my_z,newz,dedx,S);
 	    }
 	    else{
+	      // Bail if the momentum has dropped below some minimum
+	      if (fabs(S(state_q_over_p))>=Q_OVER_P_MAX){
+		if (DEBUG_LEVEL>2)
+		  {
+		    _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
+		  }
+		return MOMENTUM_OUT_OF_RANGE;
+	      }
 	      Step(z,newz,dedx,S);
 	    }
 	  }
@@ -4680,7 +4828,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	else do_brent=true;
 	if (do_brent){
 	  // We have bracketed the minimum doca:  use Brent's agorithm
-	  dz=BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,is_stereo);
+	  if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz,is_stereo)
+	      !=NOERROR) return MOMENTUM_OUT_OF_RANGE;
 	  newz=z+dz;
 	  
 	  if (fabs(dz)>2.*mStepSizeZ-EPS3){
@@ -4727,8 +4876,11 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	      ztemp=newz;
 	    }
 	    // Find the true doca
-	    double dz2=BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,
-				       is_stereo);
+	    double dz2=0.;
+	    if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2,
+				is_stereo)!=NOERROR){
+	      return MOMENTUM_OUT_OF_RANGE;
+	    }
 	    newz=ztemp+dz2;
 	   
 	    // Change in z relative to where we started for this wire
@@ -5072,15 +5224,36 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     
   // Step test states through the field and compute squared radii
   Step(z,z-dz,dEdx,S1);	
+  // Bail if the momentum has dropped below some minimum
+  if (fabs(S1(state_q_over_p))>Q_OVER_P_MAX){
+    if (DEBUG_LEVEL>2)
+      {
+	_DBG_ << "Bailing: P = " << 1./fabs(S1(state_q_over_p))
+	      << endl;
+      }
+    return UNRECOVERABLE_ERROR;
+  }
   double r2minus=S1(state_x)*S1(state_x)+S1(state_y)*S1(state_y);    
   Step(z,z+dz,dEdx,S2);	
+  // Bail if the momentum has dropped below some minimum
+  if (fabs(S2(state_q_over_p))>Q_OVER_P_MAX){
+    if (DEBUG_LEVEL>2)
+      {
+	_DBG_ << "Bailing: P = " << 1./fabs(S2(state_q_over_p))
+	      << endl;
+      }
+    return UNRECOVERABLE_ERROR;
+  }
   double r2plus=S2(state_x)*S2(state_x)+S2(state_y)*S2(state_y);
   // Check to see if we have already bracketed the minimum
   if (r2plus>r2_old && r2minus>r2_old){
     newz=z+dz;  
     DVector2 dir;
     DVector2 origin;
-    double dz2=BrentsAlgorithm(newz,dz,dEdx,0.,origin,dir,S2);
+    double dz2=0.;
+    if (BrentsAlgorithm(newz,dz,dEdx,0.,origin,dir,S2,dz2)!=NOERROR){
+      return UNRECOVERABLE_ERROR;
+    }
     z_=newz+dz2;
     
     // Compute the Jacobian matrix
@@ -5138,7 +5311,17 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   }
   
   double r2=r2_old;
-  while (z>Z_MIN && r2<R2_MAX && z<Z_MAX && r2>EPS){
+  while (z>Z_MIN && r2<R2_MAX && z<Z_MAX && r2>EPS){   
+    // Bail if the momentum has dropped below some minimum
+    if (fabs(S(state_q_over_p))>Q_OVER_P_MAX){
+      if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p))
+		<< endl;
+	}
+      return UNRECOVERABLE_ERROR;
+    }
+
     // Relationship between arc length and z
     double dz_ds=1./sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
 
@@ -5216,7 +5399,9 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       // Find the increment/decrement in z to get to the minimum doca to the
       // beam line   
       S1=S;
-      dz=BrentsAlgorithm(newz,0.5*two_step,dEdx,0.,origin,dir,S);
+      if (BrentsAlgorithm(newz,0.5*two_step,dEdx,0.,origin,dir,S,dz)!=NOERROR){
+	return UNRECOVERABLE_ERROR;
+      }
       
       // Compute the Jacobian matrix
       z_=newz+dz;
@@ -5286,6 +5471,16 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
 
   double r2=r2_old;
   while (z>Z_MIN && r2<R2_MAX && z<Z_MAX && r2>EPS){
+    // Bail if the momentum has dropped below some minimum
+    if (fabs(S(state_q_over_p))>Q_OVER_P_MAX){
+      if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p))
+		<< endl;
+	}
+      return UNRECOVERABLE_ERROR;
+    }
+
     // Relationship between arc length and z
     double dz_ds=1./sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
 
@@ -5325,15 +5520,13 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
 
       // Find the increment/decrement in z to get to the minimum doca to the
       // beam line   
-      dz=BrentsAlgorithm(newz,0.5*two_step,dEdx,0.,origin,dir,S);
-      
-      // Step to the "z vertex" 
-      z_=newz+dz;
-      Step(newz,z_,dEdx,S);
-
+      if (BrentsAlgorithm(newz,0.5*two_step,dEdx,0.,origin,dir,S,dz)!=NOERROR){
+	return UNRECOVERABLE_ERROR;
+      }
       // update internal variables
       x_=S(state_x);
-      y_=S(state_y);
+      y_=S(state_y); 
+      z_=newz+dz;
   
       return NOERROR;
     }
@@ -5378,6 +5571,15 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
   DVector2 xy0=xy;
   DVector2 xy1=xy;
   Step(xy0,ds,S0,dedx);
+  // Bail if the transverse momentum has dropped below some minimum
+  if (fabs(S0(state_q_over_pt))>Q_OVER_PT_MAX){
+    if (DEBUG_LEVEL>2)
+      {
+	_DBG_ << "Bailing: PT = " << 1./fabs(S0(state_q_over_pt))
+	      << endl;
+      }
+    return UNRECOVERABLE_ERROR;
+  }
   r2=xy0.Mod2();
   if (r2>r2_old) ds*=-1.;
   double ds_old=ds;
@@ -5413,6 +5615,15 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
   // Track propagation loop
   while (Sc(state_z)>Z_MIN && Sc(state_z)<Z_MAX  
 	 && r2<R2_MAX){  
+    // Bail if the transverse momentum has dropped below some minimum
+    if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+      if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+		<< endl;
+	}
+      return UNRECOVERABLE_ERROR;
+    }
     
     // get material properties from the Root Geometry
     double rho_Z_over_A=0.,LnI=0.,K_rho_Z_over_A=0.;
@@ -5451,7 +5662,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
     
     // Propagate the state and covariance through the field
     S0=Sc;
-    DVector2 old_xy=xy;
+    DVector2 old_xy=xy;  
     StepStateAndCovariance(xy,ds,dedx,Sc,Jc,Cc);
    
     // Add contribution due to multiple scattering
@@ -5463,19 +5674,31 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
       // We've passed the true minimum; backtrack to find the "vertex" 
       // position
       double cosl=cos(atan(Sc(state_tanl)));
+      double my_ds=0.;
       if (fabs((ds+ds_old)*cosl*Sc(state_q_over_pt)*Bz*qBr2p)<0.01){
-	ds=-(xy.X()*cos(Sc(state_phi))+xy.Y()*sin(Sc(state_phi)))
+	my_ds=-(xy.X()*cos(Sc(state_phi))+xy.Y()*sin(Sc(state_phi)))
 	  /cosl;
-	Step(xy,ds,Sc,dedx);
+	Step(xy,my_ds,Sc,dedx);
+	// Bail if the transverse momentum has dropped below some minimum
+	if (fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX){
+	  if (DEBUG_LEVEL>2)
+	    {
+	      _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
+		    << endl;
+	    }
+	  return UNRECOVERABLE_ERROR;
+	}
 	//printf ("min r %f\n",pos.Perp());
       }
       else{  
-	ds=BrentsAlgorithm(ds,ds_old,dedx,xy,0.,origin,dir,Sc);
-	//printf ("Brent min r %f\n",pos.Perp());
+	if (BrentsAlgorithm(ds,ds_old,dedx,xy,0.,origin,dir,Sc,my_ds)!=NOERROR){
+	  return UNRECOVERABLE_ERROR;
 	}
+	//printf ("Brent min r %f\n",xy.Mod());
+      }
       // Compute the Jacobian matrix
-      double my_ds=ds-ds_old;
-      StepJacobian(old_xy,my_ds,S0,dedx,Jc);
+      my_ds-=ds_old;
+      StepJacobian(old_xy,xy-old_xy,my_ds,S0,dedx,Jc);
 
       // Propagate the covariance matrix
       //Cc=Jc*Cc*Jc.Transpose()+(my_ds/ds_old)*Q;
@@ -5566,16 +5789,17 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
       // We've passed the true minimum; backtrack to find the "vertex" 
       // position
       double cosl=cos(atan(Sc(state_tanl)));
+      double my_ds=0.;
       if (fabs((ds+ds_old)*cosl*Sc(state_q_over_pt)*Bz*qBr2p)<0.01){
-	ds=-(xy.X()*cos(Sc(state_phi))+xy.Y()*sin(Sc(state_phi)))
+	my_ds=-(xy.X()*cos(Sc(state_phi))+xy.Y()*sin(Sc(state_phi)))
 	  /cosl;
-	Step(xy,ds,Sc,dedx);
+	Step(xy,my_ds,Sc,dedx);
 	//printf ("min r %f\n",pos.Perp());
       }
       else{  
-	ds=BrentsAlgorithm(ds,ds_old,dedx,xy,0.,origin,dir,Sc);
+	BrentsAlgorithm(ds,ds_old,dedx,xy,0.,origin,dir,Sc,my_ds);
 	//printf ("Brent min r %f\n",pos.Perp());
-	}
+      }
       break;
     }
     r2_old=r2;
@@ -6520,9 +6744,11 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 }
 
 // Routine to fit hits in the CDC using the central parametrization
-kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DMatrix5x1 &S0,const DMatrix5x5 &C0){   
+kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
+						  const DMatrix5x1 &S0,
+						  const DMatrix5x5 &C0){   
   // Initial position in x and y
-  DVector2 pos(input_params.position().x(),input_params.position().y());
+  DVector2 pos(startpos);
 
   // Charge
   //  double q=input_params.charge();
