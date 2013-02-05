@@ -123,11 +123,16 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 	locNewNeutralParticleHypothesis->setTime(locKinFitParticle->Get_CommonTime());
 	locNewNeutralParticleHypothesis->setErrorMatrix(*locKinFitParticle->Get_CovarianceMatrix());
 
-	double locPathLength = locNewNeutralParticleHypothesis->pathLength() - locKinFitParticle->Get_PathLength();
-	double locPathLengthUncertainty_Orig = locNewNeutralParticleHypothesis->pathLength_err();
-	double locPathLengthUncertainty_KinFit = locKinFitParticle->Get_PathLengthUncertainty();
-	double locPathLengthUncertainty = sqrt(locPathLengthUncertainty_Orig*locPathLengthUncertainty_Orig + locPathLengthUncertainty_KinFit*locPathLengthUncertainty_KinFit);
-	locNewNeutralParticleHypothesis->setPathLength(locPathLength, locPathLengthUncertainty);
+	if(locKinFitParticle->Get_ShowerEnergy() > 0.0) //particle was used in the fit as a neutral shower
+		locNewNeutralParticleHypothesis->setPathLength(locKinFitParticle->Get_PathLength(), locKinFitParticle->Get_PathLengthUncertainty());
+	else
+	{
+		double locPathLength =  locNewNeutralParticleHypothesis->pathLength() - locKinFitParticle->Get_PathLength();
+		double locPathLengthUncertainty_Orig = locNewNeutralParticleHypothesis->pathLength_err();
+		double locPathLengthUncertainty_KinFit = locKinFitParticle->Get_PathLengthUncertainty();
+		double locPathLengthUncertainty = sqrt(locPathLengthUncertainty_Orig*locPathLengthUncertainty_Orig + locPathLengthUncertainty_KinFit*locPathLengthUncertainty_KinFit);
+		locNewNeutralParticleHypothesis->setPathLength(locPathLength, locPathLengthUncertainty);
+	}
 
 	//don't recompute EITHER dedx chisq OR timing chisq: after kinfit timing auto lined up! (even to RF) only orig info and kinfit FOM matters
 	return locNewNeutralParticleHypothesis;
