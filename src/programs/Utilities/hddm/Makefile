@@ -53,26 +53,26 @@ install: xml-xml hddm-schema schema-hddm mkdirs $(BINARIES)
 	mkdir -p $(HALLD_MY)/bin/$(BMS_OSNAME)
 	cp -v $(BINARIES) $(HALLD_MY)/bin/$(BMS_OSNAME)
 
-$(BINDIR)/xml-hddm: xml-hddm.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
+$(BINDIR)/xml-hddm: xml-hddm.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o $(OBJDIR)/md5.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(HALLD_MY)/lib/$(BMS_OSNAME) \
 	-L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
-$(BINDIR)/hddm-xml: hddm-xml.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
+$(BINDIR)/hddm-xml: hddm-xml.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o $(OBJDIR)/md5.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(HALLD_MY)/lib/$(BMS_OSNAME) \
 	-L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lxstream -lbz2 -lz \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
-$(BINDIR)/hddm-c: hddm-c.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
+$(BINDIR)/hddm-c: hddm-c.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o $(OBJDIR)/md5.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
-$(BINDIR)/hddm-cpp: hddm-cpp.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o
+$(BINDIR)/hddm-cpp: hddm-cpp.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o $(OBJDIR)/md5.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
@@ -93,6 +93,10 @@ test: $(BINDIR)/hddm-c $(BINDIR)/hddm-cpp $(BINDIR)/hddm-xml test.xml
 	./hddm-schema $< >$@
 
 $(OBJDIR)/%.o: %.cpp
+	$(CPP) $(CXXFLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
+	-I$(HALLD_HOME)/include -c -o $@ $^ 
+
+$(OBJDIR)/%.o: %.c
 	$(CPP) $(CXXFLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -c -o $@ $^ 
 
