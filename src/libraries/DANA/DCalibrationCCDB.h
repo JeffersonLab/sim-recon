@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <pthread.h>
 
 #include <JANA/jerror.h>
 #include <JANA/JCalibration.h>
@@ -37,6 +38,7 @@ namespace jana
 	    {
 
 		    mCalibration = calib;
+		    pthread_mutex_init(&mutex, NULL);
 
 			#ifdef CCDB_DEBUG_OUTPUT
 			jout<<"CCDB::janaccdb created DCalibrationCCDB with connection string:" << calib->GetConnectionString()<< " run:"<<run<< " context:"<<context<<endl;
@@ -48,7 +50,11 @@ namespace jana
          */
         virtual ~DCalibrationCCDB()
         {
-            if(mCalibration!=NULL) delete mCalibration;
+            if(mCalibration!=NULL){
+               pthread_mutex_lock(&mutex);
+               delete mCalibration;
+               pthread_mutex_unlock(&mutex);
+			}
         }
         
 
@@ -77,6 +83,9 @@ namespace jana
          */
         bool GetCalib(string namepath, map<string, string> &svals, int event_number=0)
         {
+            // Lock mutex for exclusive use of underlying Calibration object
+            pthread_mutex_lock(&mutex);
+		
             //
             try
             {   
@@ -99,6 +108,7 @@ namespace jana
                 }
                 #endif  //>end of  CCDB debug output
 
+				pthread_mutex_unlock(&mutex);
                 return !result; //JANA has false - if success and true if error
             }
             catch (std::exception ex)
@@ -109,6 +119,7 @@ namespace jana
                 cout <<"CCDB::janaccdb what = "<<ex.what()<<endl;
                 #endif //end of CCDB debug output
 
+                pthread_mutex_unlock(&mutex);
                 return true; //JANA has false - if success and true if error
             }
         }
@@ -123,7 +134,9 @@ namespace jana
          */
         bool GetCalib(string namepath, vector< map<string, string> > &vsvals, int event_number=0)
         {
-            //
+            // Lock mutex for exclusive use of underlying Calibration object
+            pthread_mutex_lock(&mutex);
+
             try
             {
                  bool result = mCalibration->GetCalib(vsvals, namepath);
@@ -148,6 +161,7 @@ namespace jana
                  #endif  //end of CCDB debug output
 
 
+                pthread_mutex_unlock(&mutex);
                 return !result; //JANA has false - if success and true if error, CCDB otherwise
             }
             catch (std::exception ex)
@@ -158,6 +172,7 @@ namespace jana
                 cout <<"CCDB::janaccdb what = "<<ex.what()<<endl;
                 #endif
 
+                pthread_mutex_unlock(&mutex);
                 return true; //JANA has false - if success and true if error, CCDB otherwise
             }
         }
@@ -170,6 +185,9 @@ namespace jana
          */
         void GetListOfNamepaths(vector<string> &namepaths)
         {
+            // Lock mutex for exclusive use of underlying Calibration object
+            pthread_mutex_lock(&mutex);
+
             try
             {  
                 mCalibration->GetListOfNamepaths(namepaths);
@@ -182,11 +200,13 @@ namespace jana
                 cout<<"CCDB::janaccdb Exception cought at GetListOfNamepaths(vector<string> &namepaths). What = "<< ex.what()<<endl;
                 #endif
             }
+            pthread_mutex_unlock(&mutex);
         }
         
     private:
         DCalibrationCCDB();					// prevent use of default constructor
         ccdb::Calibration * mCalibration;	///Underlaying CCDB user api class 
+        pthread_mutex_t mutex;
         
     };
 
