@@ -344,3 +344,36 @@ DRootGeom* DApplication::GetRootGeom()
 	return RootGeom;
 }
 
+//---------------------------------
+// Get_RESTOutputFilePointers
+//---------------------------------
+pair<ofstream*, hddm_r::ostream*> DApplication::Get_RESTOutputFilePointers(string locOutputFileName) const
+{
+	map<string, pair<ofstream*, hddm_r::ostream*> >::const_iterator locIterator = dRESTOutputFilePointers.find(locOutputFileName);
+	return ((locIterator == dRESTOutputFilePointers.end()) ? pair<ofstream*, hddm_r::ostream*>(NULL, NULL) : locIterator->second);
+}
+
+//---------------------------------
+// Erase_RESTOutputFilePointers
+//---------------------------------
+void DApplication::Erase_RESTOutputFilePointers(string locOutputFileName)
+{
+	if(dRESTOutputFilePointers.find(locOutputFileName) == dRESTOutputFilePointers.end())
+		return;
+	if(dRESTOutputFilePointers[locOutputFileName].second != NULL)
+		delete dRESTOutputFilePointers[locOutputFileName].second;
+	if(dRESTOutputFilePointers[locOutputFileName].first != NULL)
+		delete dRESTOutputFilePointers[locOutputFileName].first;
+	dRESTOutputFilePointers.erase(locOutputFileName);
+}
+
+//---------------------------------
+// Get_OpenRESTOutputFileNames
+//---------------------------------
+void DApplication::Get_OpenRESTOutputFileNames(deque<string>& locFileNames) const
+{
+	map<string, pair<ofstream*, hddm_r::ostream*> >::const_iterator locIterator;
+	for(locIterator = dRESTOutputFilePointers.begin(); locIterator != dRESTOutputFilePointers.end(); ++locIterator)
+		locFileNames.push_back(locIterator->first);
+}
+

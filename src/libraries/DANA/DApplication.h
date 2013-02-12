@@ -8,11 +8,16 @@
 #ifndef _DApplication_
 #define _DApplication_
 
+#include <deque>
+#include <map>
+
 #include <JANA/jerror.h>
 #include <JANA/JApplication.h>
 using namespace jana;
+using namespace std;
 
 #include "HDGEOMETRY/DGeometry.h"
+#include <HDDM/hddm_r.hpp>
 
 class DMagneticFieldMap;
 class DLorentzDeflections;
@@ -40,6 +45,14 @@ class DApplication:public JApplication{
 		DGeometry* GetDGeometry(unsigned int run_number);
 		DRootGeom *GetRootGeom();
 
+		//ONLY CALL THESE FUNCTIONS FROM WITHIN A "RESTWriter" WRITE LOCK!
+		inline bool Find_RESTOutputFilePointers(string locOutputFileName) const{return (dRESTOutputFilePointers.find(locOutputFileName) != dRESTOutputFilePointers.end());}
+		inline void Set_RESTOutputFilePointers(string locOutputFileName, pair<ofstream*, hddm_r::ostream*> locOutputFilePointers){dRESTOutputFilePointers[locOutputFileName] = locOutputFilePointers;}
+		inline pair<ofstream*, hddm_r::ostream*> Get_RESTOutputFilePointers(string locOutputFileName){return dRESTOutputFilePointers[locOutputFileName];}
+		pair<ofstream*, hddm_r::ostream*> Get_RESTOutputFilePointers(string locOutputFileName) const;
+		void Erase_RESTOutputFilePointers(string locOutputFileName);
+		void Get_OpenRESTOutputFileNames(deque<string>& locFileNames) const;
+
 	protected:
 	
 		DMagneticFieldMap *bfield;
@@ -49,7 +62,10 @@ class DApplication:public JApplication{
   		//DMaterialMap *material;
 	 	DRootGeom *RootGeom;	
 		vector<DGeometry*> geometries;
-		
+
+		//REST Output Globals
+		map<string, pair<ofstream*, hddm_r::ostream*> > dRESTOutputFilePointers;
+
 		pthread_mutex_t mutex;
 		
 	private:
