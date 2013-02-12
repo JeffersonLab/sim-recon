@@ -440,12 +440,12 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
   hc=0;
   for(i=0; i<dcdchits.size(); i++) {
-    if((dcdchits[i]->dE>0)&&((dcdchits[i]->t*1000.)>tMin)&&(dcdchits[i]->t*1000.<trigTime)) {
+    if((dcdchits[i]->q>0)&&((dcdchits[i]->t*1000.)>tMin)&&(dcdchits[i]->t*1000.<trigTime)) {
 
-      uint32_t q     = dcdchits[i]->dE;            // in femtoCoulombs
+      uint32_t q     = dcdchits[i]->q;            // in femtoCoulombs
       uint32_t t     = dcdchits[i]->t*1000.-tMin;  // in picoseconds
       
-      if(noroot==0)cdcCharges->Fill(dcdchits[i]->dE);
+      if(noroot==0)cdcCharges->Fill(dcdchits[i]->q);
       if(noroot==0)cdcTimes->Fill(dcdchits[i]->t-tMin/1000);
 
       hc++;
