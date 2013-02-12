@@ -24,7 +24,7 @@ static pthread_t output_file_mutex_last_owner;
 
 void mcsmear_thread_HUP_sighandler(int sig)
 {
-	jerr<<"Caught HUP signal for thread 0x"<<hex<<pthread_self()<<dec<<" thread exiting..."<<endl;
+	jerr<<" Caught HUP signal for thread 0x"<<hex<<pthread_self()<<dec<<" thread exiting..."<<endl;
 
 	// We use output_file_mutex_owner to keep track (sort of)
 	// of which thread has the mutex locked. This mutex is only
@@ -33,10 +33,12 @@ void mcsmear_thread_HUP_sighandler(int sig)
 	// that locked it. It may help in debugging to know the last
 	// known thread to have locked the mutex when the signal
 	// handler was called
-	jerr<<"Last thread to lock output file mutex: 0x"<<hex<<pthread_self()<<dec<<endl;
-	jerr<<"Attempting to unlock mutex to avoid deadlock." <<endl;
-	jerr<<"However, the output file is likely corrupt at" <<endl;
-	jerr<<"this point and the process should be restarted ..." <<endl;
+	jerr<<endl;
+	jerr<<" Last thread to lock output file mutex: 0x"<<hex<<pthread_self()<<dec<<endl;
+	jerr<<" Attempting to unlock mutex to avoid deadlock." <<endl;
+	jerr<<" However, the output file is likely corrupt at" <<endl;
+	jerr<<" this point and the process should be restarted ..." <<endl;
+	jerr<<endl;
 	pthread_mutex_unlock(&output_file_mutex);
 	pthread_exit(NULL);
 }
