@@ -69,6 +69,7 @@ using namespace std;
 #include <DVector3.h>
 #include <DVector2.h>
 #include "FDC/DFDCPseudo.h"
+#include "CDC/DCDCWire.h"
 
 #include "JANA/jerror.h"
 
@@ -84,7 +85,14 @@ typedef struct{
   double covx,covy,covxy;  ///< error info for x and y coordinates
   float phi_circle;	///< phi angle relative to axis of helix
   float chisq;		///< chi-sq contribution of this hit
+  bool is_axial;        /// True if the wire is a CDC axial wire
 }DHFHit_t;
+
+ typedef struct{
+   DVector2 xy;
+   float z;
+ }DHFProjection_t;
+
 
 class DHelicalFit{
  public:
@@ -94,10 +102,13 @@ class DHelicalFit{
   void Copy(const DHelicalFit &fit);
   ~DHelicalFit();
 
+ 
+
+  jerror_t AddStereoHit(const DCDCWire *wire);
   jerror_t AddHit(float r, float phi, float z);
   jerror_t AddHitXYZ(float x, float y, float z);
   jerror_t AddHitXYZ(float x,float y, float z,float covx,float covy, 
-		     float covxy);
+		     float covxy,bool is_axial=false);
   jerror_t AddHit(const DFDCPseudo *fdchit);
   jerror_t PruneHit(int idx);
   jerror_t Clear(void);

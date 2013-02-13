@@ -35,6 +35,11 @@ inline bool RiemannFit_hit_cmp(DHFHit_t *a,DHFHit_t *b){
   return (a->z<b->z);
 }
 
+bool DHFProjection_cmp(const DHFProjection_t &a,
+		       const DHFProjection_t &b){
+  //  if (a.xy.Mod2()>b.xy.Mod2()) return true;
+  return (a.z<b.z);
+}
 
 
 //-----------------
@@ -138,8 +143,9 @@ jerror_t DHelicalFit::AddHit(const DFDCPseudo *fdchit){
   hit->covy=fdchit->covyy;
   hit->covxy=fdchit->covxy;
   hit->chisq = 0.0;
+  hit->is_axial=false;
   hits.push_back(hit);
-  
+
   return NOERROR;
 
 }
@@ -169,6 +175,7 @@ jerror_t DHelicalFit::AddHitXYZ(float x, float y, float z)
 	hit->covy=1.;
 	hit->covxy=0.;
 	hit->chisq = 0.0;
+	hit->is_axial=false;
 	hits.push_back(hit);
 
 	return NOERROR;
@@ -176,7 +183,7 @@ jerror_t DHelicalFit::AddHitXYZ(float x, float y, float z)
 
 // Add a hit to the list of hits using Cartesian coordinates
 jerror_t DHelicalFit::AddHitXYZ(float x,float y, float z,float covx,
-				float covy, float covxy){
+				float covy, float covxy, bool is_axial){
   DHFHit_t *hit = new DHFHit_t;
   hit->x = x;
   hit->y = y;
@@ -184,10 +191,69 @@ jerror_t DHelicalFit::AddHitXYZ(float x,float y, float z,float covx,
   hit->covx=covx;
   hit->covy=covy;
   hit->covxy=covxy;
+  hit->is_axial=is_axial;
   hits.push_back(hit);
 
   return NOERROR;
 }
+
+// Routine to add stereo hits once an initial circle fit has been done
+jerror_t DHelicalFit::AddStereoHit(const DCDCWire *wire){
+  DVector3 origin = wire->origin;
+  DVector3 dir = wire->udir;
+  double dx=origin.x()-x0;  
+  double dy=origin.y()-y0;
+  double ux=dir.x();
+  double uy=dir.y();
+  double temp1=ux*ux+uy*uy;
+  double temp2=ux*dy-uy*dx;
+  double b=-ux*dx-uy*dy;
+  double r0_sq=r0*r0;
+  double A=r0_sq*temp1-temp2*temp2;
+
+  // Check that this wire intersects this circle
+  if(A<0.0) return VALUE_OUT_OF_RANGE; // line along wire does not intersect circle, ever.
+
+  // Calculate intersection points for the two roots 
+  double B = sqrt(A);
+  double dz1 = (b-B)/temp1;
+  double dz2 = (b+B)/temp1;
+  
+  // At this point we must decide which value of alpha to use. 
+  // For now, we just use the value closest to zero (i.e. closest to
+  // the center of the wire).
+  double dz=dz1;
+  if (fabs(dz2)<fabs(dz1)){
+    dz=dz2;
+  }
+  // distance along wire relative to origin
+  double s=dz/cos(wire->stereo);
+  
+  //  if(DEBUG_LEVEL>15)
+    _DBG_<<"s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
+  if(fabs(s) > 0.5*wire->L) return VALUE_OUT_OF_RANGE; // if wire doesn't cross circle, skip hit
+		
+  // Compute the position for this hit
+  DVector3 pos = origin + s*dir;
+ 
+  // Assume error on the radius of the circle is 10% of the radius
+  double var_r=0.01*r0_sq; 
+
+  DHFHit_t *hit = new DHFHit_t;
+  hit->x=pos.x();
+  hit->y=pos.y();
+  hit->z=pos.z();
+  hit->covx=var_r;
+  hit->covy=var_r;
+  hit->covxy=0.;
+  hit->chisq=0.;
+  hit->is_axial=false;
+  hits.push_back(hit);
+
+  return NOERROR;
+}
+
+
 
 
 //-----------------
@@ -748,7 +814,9 @@ jerror_t DHelicalFit::FitLineRiemann(){
 /// Riemann Line fit: linear regression of s on z to determine the tangent of 
 /// the dip angle and the z position of the closest approach to the beam line.
 /// Computes intersection points along the helical path.
-///
+///   Note: this implementation assumes that the error in the z-position is 
+/// negligible; practically speaking, this means it should only be used for FDC
+/// hits...
   // Get covariance matrix 
   DMatrix CR(hits.size(),hits.size());
   if (CovR_==NULL){ 
@@ -768,98 +836,80 @@ jerror_t DHelicalFit::FitLineRiemann(){
  
   // Fill vector of intersection points 
   double denom= N[0]*N[0]+N[1]*N[1];
-  vector<int>bad(hits.size());
-  int numbad=0;
   // projection vector
-  vector<DVector2>projections;
+  vector<DHFProjection_t>projections;
   for (unsigned int m=0;m<hits.size();m++){
+    if (hits[m]->is_axial) continue;
+  
     double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
     double numer=c_origin+r2*N[2];
-
-    if (r2==0){
-      projections.push_back(DVector2(0.,0.));
+    double ratio=numer/denom;
+    double x_int0=-N[0]*ratio;
+    double y_int0=-N[1]*ratio;
+    double temp=denom*r2-numer*numer;
+    if (temp<0){  // Skip point if the intersection gives nonsense
+      //_DBG_ << "Bad?" <<endl;
+      continue;
+    }
+    temp=sqrt(temp)/denom;
+  
+    // Store projection data in a temporary structure
+    DHFProjection_t temp_proj;
+    temp_proj.z=hits[m]->z;
+    
+    // Choose sign of square root based on proximity to actual measurements
+    double deltax=N[1]*temp;
+    double deltay=-N[0]*temp;
+    double x1=x_int0+deltax;
+    double y1=y_int0+deltay;
+    double x2=x_int0-deltax;
+    double y2=y_int0-deltay;
+    double diffx1=x1-hits[m]->x;
+    double diffy1=y1-hits[m]->y;
+    double diffx2=x2-hits[m]->x;
+    double diffy2=y2-hits[m]->y;
+    if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
+      temp_proj.xy=DVector2(x2,y2);
     }
     else{
-      double ratio=numer/denom;
-      double x_int0=-N[0]*ratio;
-      double y_int0=-N[1]*ratio;
-      double temp=denom*r2-numer*numer;
-      if (temp<0){  // Skip point if the intersection gives nonsense
-	bad[m]=1;
-	numbad++;
-	projections.push_back(DVector2(x_int0,y_int0));
-	continue;
-      }
-      temp=sqrt(temp)/denom;
-      
-      // Choose sign of square root based on proximity to actual measurements
-      double deltax=N[1]*temp;
-      double deltay=-N[0]*temp;
-      double x1=x_int0+deltax;
-      double y1=y_int0+deltay;
-      double x2=x_int0-deltax;
-      double y2=y_int0-deltay;
-      double diffx1=x1-hits[m]->x;
-      double diffy1=y1-hits[m]->y;
-      double diffx2=x2-hits[m]->x;
-      double diffy2=y2-hits[m]->y;
-      if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
-	//temphit->x=x2;
-	//temphit->y=y2;
-	projections.push_back(DVector2(x2,y2));
-      }
-      else{
-	//temphit->x=x1;
-	//temphit->y=y1;
-	projections.push_back(DVector2(x1,y1));
-      }
+      temp_proj.xy=DVector2(x1,y1);
     }
-    //projections.push_back(temphit);
+    projections.push_back(temp_proj);
   }  
-  
-  // All arc lengths are measured relative to some reference plane with a hit.
-  // Don't use a "bad" hit for the reference...
-  unsigned int start=0;
-  for (unsigned int i=0;i<bad.size();i++){
-    if (!bad[i]){
-      start=i;
-      break;
-    }
-  }
+  if (projections.size()==0) return RESOURCE_UNAVAILABLE;
+  sort(projections.begin(),projections.end(),DHFProjection_cmp);
 
   // Linear regression to find z0, tanl   
   unsigned int n=projections.size();
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,sperp_old=0., ratio=0, Delta;
   double z_last=0.,z=0.;
-  DVector2 old_proj=projections[start];
+  DVector2 old_proj=projections[0].xy;
   double two_r0=2.*r0;
   double var_s=0.;
-  for (unsigned int k=start;k<n;k++){
-    if (!bad[k]){
-      sperp_old=sperp;
-      z_last=z;
-      double chord=(projections[k]-old_proj).Mod();
-      ratio=chord/two_r0;
-      // Make sure the argument for the arcsin does not go out of range...
-      double ds=(ratio>1)? two_r0*M_PI_2 : two_r0*asin(ratio);
-      sperp=sperp_old+ds;
-      z=hits[k]->z;
+  for (unsigned int k=0;k<n;k++){
+    sperp_old=sperp;
+    z_last=z;
+    double chord=(projections[k].xy-old_proj).Mod();
+    ratio=chord/two_r0;
+    // Make sure the argument for the arcsin does not go out of range...
+    double ds=(ratio>1)? two_r0*M_PI_2 : two_r0*asin(ratio);
+    sperp=sperp_old+ds;
+    z=projections[k].z;
       
-      // Estimate error in arc length assuming 10% error in r0
-      double ds_from_r0=0.1*sperp;
-      var_s=ds_from_r0*ds_from_r0;
-
-      double weight=1./(CR(k,k)+var_s);
-      sumv+=weight;
-      sumy+=sperp*weight;
-      sumx+=z*weight;
-      sumxx+=z*z*weight;
-      sumxy+=sperp*z*weight;
-
-      // Store the current x and y projection values
-      old_proj=projections[k];
-    }
+    // Estimate error in arc length assuming 10% error in r0
+    double ds_from_r0=0.1*sperp;
+    var_s=ds_from_r0*ds_from_r0;
+    
+    double weight=1./(CR(k,k)+var_s);
+    sumv+=weight;
+    sumy+=sperp*weight;
+    sumx+=z*weight;
+    sumxx+=z*z*weight;
+    sumxy+=sperp*z*weight;
+    
+    // Store the current x and y projection values
+    old_proj=projections[k].xy;
   }
   Delta=sumv*sumxx-sumx*sumx;
   double tanl_denom=sumv*sumxy-sumy*sumx;
@@ -868,10 +918,10 @@ jerror_t DHelicalFit::FitLineRiemann(){
   // Track parameters tan(lambda) and z-vertex
   tanl=Delta/tanl_denom; 
  
-  double chord=(projections[start]).Mod();
+  double chord=projections[0].xy.Mod();
   ratio=chord/two_r0;
   sperp=(ratio>1? two_r0*M_PI_2 : two_r0*asin(ratio));
-  z_vertex=hits[start]->z-sperp*tanl;
+  z_vertex=projections[0].z-sperp*tanl;
 
   /*
   if (z_vertex<Z_MIN){
@@ -1420,3 +1470,4 @@ jerror_t DHelicalFit::Dump(void) const
 	
 	return NOERROR;
 }
+
