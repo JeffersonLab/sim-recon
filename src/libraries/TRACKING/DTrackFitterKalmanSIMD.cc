@@ -3493,8 +3493,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	{
 	  _DBG_<< "Went outside of tracking volume at z="<<Sc(state_z)
 	       << " r="<<xy.Mod()<<endl;
+	  _DBG_ << " Break indexes:  " << break_point_cdc_index <<","
+		<< break_point_step_index << endl;
 	}
-	//break;
       return POSITION_OUT_OF_RANGE;
     }
     // Bail if the transverse momentum has dropped below some minimum
@@ -3821,7 +3822,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    chisq+=scale*dm*dm/V;      
 	    my_ndf++;
 	    
-	    if (DEBUG_LEVEL>2) 
+	    if (DEBUG_LEVEL>10) 
 	      cout 
 		<< "ring " << my_cdchits[cdc_index]->hit->wire->ring
 		<< " is stereo? " << is_stereo
@@ -4467,7 +4468,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    return NEGATIVE_VARIANCE;
 	  }
 	 	  
-	  if (DEBUG_LEVEL>2)
+	  if (DEBUG_LEVEL>10)
 	    printf("Ring %d straw %d pred %f meas %f V %f %f sig %f t %f %f t0 %f\n",
 		   my_cdchits[cdc_index]->hit->wire->ring,
 		   my_cdchits[cdc_index]->hit->wire->straw,
@@ -6428,7 +6429,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       */
       // Break out of loop if the chisq is increasing or not changing much
       if (my_ndf==last_ndf && chisq>chisq_forward) break;
-      if (/*chisq/my_ndf>chisq_forward/last_ndf || */fabs(chisq-chisq_forward)<0.1) break;
+      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf) 
+	  || fabs(chisq-chisq_forward)<0.1) break;
 		  
       chisq_forward=chisq; 
       last_ndf=my_ndf;
@@ -6538,6 +6540,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const DMatrix5x5 &C0){   
   unsigned int num_cdchits=my_cdchits.size();
   unsigned int max_cdc_index=num_cdchits-1;
+  unsigned int min_cdc_index_for_refit=MIN_HITS_FOR_REFIT-1;
 
   // Charge
   //  double q=input_params.charge();
@@ -6614,6 +6617,28 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 	unsigned int temp_ndf=my_ndf;
 	double temp_chi2=chisq;
 	double x=x_,y=y_,z=z_;
+	
+	if (error==MOMENTUM_OUT_OF_RANGE){
+	  //_DBG_ <<endl;
+	  break_point_cdc_index=min_cdc_index_for_refit;
+	}
+
+	if (error==BROKEN_COVARIANCE_MATRIX){
+	  break_point_cdc_index=min_cdc_index_for_refit;
+	  //_DBG_ << "Bad Cov" <<endl;
+	}
+	if (error==POSITION_OUT_OF_RANGE){
+	  if (break_point_cdc_index<=min_cdc_index_for_refit) {
+	    break_point_cdc_index=min_cdc_index_for_refit;
+	  }
+	  //_DBG_ << "Bad position" << endl;
+	}
+	if (error==PRUNED_TOO_MANY_HITS){
+	  //_DBG_ << "Prune" << endl;
+	  unsigned int half_index=max_cdc_index/2;
+	  break_point_cdc_index=(half_index>min_cdc_index_for_refit)?half_index:min_cdc_index_for_refit;
+	  anneal_factor*=10.;
+	}
 
 	kalman_error_t refit_error=RecoverBrokenTracks(anneal_factor,S,C,C0,chisq,my_ndf);    
 
@@ -6652,7 +6677,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       }
       */  
       if (my_ndf==last_ndf && chisq>chisq_forward) break;    
-      if (/*chisq/my_ndf>chisq_forward/last_ndf || */fabs(chisq-chisq_forward)<0.1) break;
+      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf)
+	  || fabs(chisq-chisq_forward)<0.1) break;
       chisq_forward=chisq;
       Slast=S;
       Clast=C;
@@ -6764,6 +6790,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 
   unsigned int num_cdchits=my_cdchits.size();
   unsigned int max_cdc_index=num_cdchits-1;
+  unsigned int min_cdc_index_for_refit=MIN_HITS_FOR_REFIT-1;
   
   // Vectors to keep track of updated state vectors and covariance matrices (after
   // adding the hit information)
@@ -6824,6 +6851,27 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 	unsigned int temp_ndf=my_ndf;
 	double temp_chi2=chisq;
 
+	if (error==MOMENTUM_OUT_OF_RANGE){
+	  break_point_cdc_index=min_cdc_index_for_refit;
+	}
+	
+	if (error==BROKEN_COVARIANCE_MATRIX){ 
+	  break_point_cdc_index=min_cdc_index_for_refit;
+	}
+	if (error==POSITION_OUT_OF_RANGE){
+	  if (break_point_cdc_index<=min_cdc_index_for_refit) {
+	    break_point_cdc_index=min_cdc_index_for_refit;
+	  }
+	  //_DBG_ << "Bad position" << endl;
+	}
+	if (error==PRUNED_TOO_MANY_HITS){	 
+	  unsigned int half_index=max_cdc_index/2;
+	  break_point_cdc_index=(half_index>min_cdc_index_for_refit)?half_index:min_cdc_index_for_refit;
+	  anneal_factor*=10.;
+	  //_DBG_ << "Prune" << endl;	  
+	}
+	
+
 	kalman_error_t refit_error=RecoverBrokenTracks(anneal_factor,Sc,Cc,C0,pos,chisq,my_ndf);  
 	if (refit_error!=FIT_SUCCEEDED){
 	  if (error==PRUNED_TOO_MANY_HITS || error==BREAK_POINT_FOUND){
@@ -6859,7 +6907,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       }
       */
       if (my_ndf==last_ndf && chisq>chisq_iter) break;
-      if (/*chisq/my_ndf>chisq_iter/last_ndf || */fabs(chisq_iter-chisq)<0.1) break;
+      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_iter,last_ndf)
+	  || fabs(chisq_iter-chisq)<0.1) break;
       
       // Save the current state vector and covariance matrix
       Cclast=Cc;
