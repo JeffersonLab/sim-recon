@@ -390,7 +390,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // Update chi2 for this segment
 	    chisq+=scale*Mdiff*Mdiff/V;
 		    
-	    if (DEBUG_LEVEL>2){
+	    if (DEBUG_LEVEL>10){
 	      printf("hit %d p %5.2f dm %5.2f sig %f chi2 %5.2f z %5.2f\n",
 		     id,1./S(state_q_over_p),Mdiff,sqrt(V),(1.-H*K)*Mdiff*Mdiff/V,
 		     forward_traj[k].z);
@@ -752,7 +752,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      // Update chi2 for this hit
 	      chisq+=scale*res*res/Vc;
 
-	      if (DEBUG_LEVEL>2)
+	      if (DEBUG_LEVEL>10)
 		cout << "Ring " <<  my_cdchits[cdc_index]->hit->wire->ring
 		     << " Straw " <<  my_cdchits[cdc_index]->hit->wire->straw
 		     << " is stereo? " << is_stereo
