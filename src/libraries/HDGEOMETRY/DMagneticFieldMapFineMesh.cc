@@ -244,7 +244,7 @@ void DMagneticFieldMapFineMesh::GetFieldBicubic(double x,double y,double z,
   // If the point (x,y,z) is outside the fine-mesh grid, interpolate 
   // on the coarse grid
   //if (true){
-  if (z<zminFine || z>zmaxFine || r>rmaxFine){
+  if (z<zminFine || z>=zmaxFine || r>=rmaxFine){
   // Get closest indices for this point
     int index_x = (int)floor((r-xmin)*one_over_dx + 0.5);
     //if(index_x<0 || index_x>=Nx)return;
@@ -484,8 +484,7 @@ void DMagneticFieldMapFineMesh::InterpolateField(double r,double z,double &Br,
   dBzdz/=dz;
 }
 
-// Use bicubic interpolation to find the field and field gradient at the point 
-// (x,y).  See Numerical Recipes in C (2nd ed.), pp.125-127.
+// Find the field and field gradient at the point (x,y,z).  
 void DMagneticFieldMapFineMesh::GetFieldAndGradient(double x,double y,double z,
 						    double &Bx_,double &By_,
 						    double &Bz_,
@@ -493,13 +492,21 @@ void DMagneticFieldMapFineMesh::GetFieldAndGradient(double x,double y,double z,
 						    double &dBxdy_,
 						    double &dBxdz_,
 						    double &dBydx_, 
-						   double &dBydy_,
+						    double &dBydy_,
 						    double &dBydz_,
 						    double &dBzdx_, 
 						    double &dBzdy_,
 						    double &dBzdz_) const{
   // radial distance
   double r = sqrt(x*x + y*y);
+  if (r>xmax || z>zmax || z<zmin){
+    Bx_=0.0,By_=0.0,Bz_=0.0;
+    dBxdx_=0.0,dBxdy_=0.0,dBxdz_=0.0;
+    dBydx_=0.0,dBydy_=0.0,dBydz_=0.0;
+    dBzdx_=0.0,dBzdy_=0.0,dBzdz_=0.0;
+    return;
+  }
+
   // radial component of B and gradient
   double Br_=0.,dBrdx_=0.,dBrdz_=0.;
   // Initialize z-component
@@ -508,7 +515,7 @@ void DMagneticFieldMapFineMesh::GetFieldAndGradient(double x,double y,double z,
   // If the point (x,y,z) is outside the fine-mesh grid, interpolate 
   // on the coarse grid
   //if (true){
-  if (z<zminFine || z>zmaxFine || r>rmaxFine){
+  if (z<zminFine || z>=zmaxFine || r>=rmaxFine){
     //InterpolateField(r,z,Br_,Bz_,dBrdx_,dBrdz_,dBzdx_,dBzdz_);
     // Get closest indices for this point
     int index_x = static_cast<int>(r*one_over_dx);
@@ -652,7 +659,7 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 
 	// If the point (x,y,z) is outside the fine-mesh grid, interpolate 
 	// on the coarse grid
-	if (z<zminFine || z>zmaxFine || r>rmaxFine){
+	if (z<zminFine || z>=zmaxFine || r>=rmaxFine){
 	  // Get closest indices for this point
 	  int index_x = static_cast<int>(r*one_over_dx);
 	  //if(index_x<0 || index_x>=Nx)return;
@@ -696,7 +703,7 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
 
   // If the point (x,y,z) is outside the fine-mesh grid, interpolate 
   // on the coarse grid
-  if (z<zminFine || z>zmaxFine || r>rmaxFine){
+  if (z<zminFine || z>=zmaxFine || r>=rmaxFine){
     // Get closest indices for this point
     int index_x = static_cast<int>(r*one_over_dx);
     //if(index_x<0 || index_x>=Nx)return 0.;
