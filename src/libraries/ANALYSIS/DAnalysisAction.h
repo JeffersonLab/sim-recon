@@ -5,6 +5,8 @@
 #include <string>
 
 #include "TDirectoryFile.h"
+#include "TFile.h"
+#include "TROOT.h"
 
 #include "JANA/JEventLoop.h"
 #include "DANA/DApplication.h"
@@ -29,6 +31,7 @@ class DAnalysisAction
 		inline const DAnalysisUtilities* Get_AnalysisUtilities(void) const{return dAnalysisUtilities;}
 		inline bool Get_UseKinFitResultsFlag(void) const{return dUseKinFitResultsFlag;}
 
+		void operator()(JEventLoop* locEventLoop); //ONLY CALL THIS FOR REACTION-INDEPENDENT ACTIONS (dReaction == NULL)!!!
 		void operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos);
 
 	protected:
@@ -41,29 +44,41 @@ class DAnalysisAction
 		virtual void Initialize(JEventLoop* locEventLoop) = 0;
 
 		//INHERITING CLASSES MUST(!) DEFINE THIS METHOD
-		virtual bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos) = 0;
+			//FOR REACTION-INDEPENDENT ACTIONS: EXPECT THE INPUT DParticleCombo TO BE NULL.
+			//Be careful to check against dPreviousParticleCombos to make sure you don't double-count when histogramming, etc. (true even for reaction-independent actions)
+		virtual bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL) = 0;
 
 		//FOR BOTH OF THE ABSTRACT METHODS:
-			//NEVER: Grab DParticleCombo objects (of any tag!) from the JEventLoop unless you know EXACTLY what you're doing (and if you're doing this, you probably don't)
+			//NEVER: Grab DParticleCombo objects (of any tag!) from the JEventLoop within these methods unless you know EXACTLY what you're doing (and if you're doing this, you probably don't)
 			//NEVER EVER: Grab objects that are created post-kinfit (e.g. DParticleCombo, DKinFitResults, etc.) from the JEventLoop if Get_UseKinFitResultsFlag() == false: CAN CAUSE DEPENDENCY LOOP
-			//MAKE THESE METHODS PRIVATE IN THE DERIVED CLASSES!!
+			//ALWAYS: Make these methods private in the derived classes!!
 
 		TDirectoryFile* CreateAndChangeTo_ActionDirectory(void); //get the directory this action should write ROOT objects to. //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
 		TDirectoryFile* CreateAndChangeTo_Directory(TDirectoryFile* locBaseDirectory, string locDirName, string locDirTitle); //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
 		TDirectoryFile* CreateAndChangeTo_Directory(string locDirName, string locDirTitle); //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
 		TDirectoryFile* CreateAndChangeTo_Directory(string locBaseDirectoryPath, string locDirName, string locDirTitle); //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
 
-	private:
-		//if the class deriving from DAnalysisAction creates ROOT objects, AND more than one instance of it is added to the DReaction, then this should be unique
-			//see the constructor for more details.
-		const DReaction* dReaction; //set by the constructor
-		string dActionName; //set by the constructor
-		bool dUseKinFitResultsFlag; //set by the constructor
-		string dActionUniqueString; //set by the constructor
+		//Valid only during function-call operators (and the functions it calls):
+		void Get_PreviousParticleCombos(deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos) const{locPreviousParticleCombos = dPreviousParticleCombos;}
+		unsigned int Get_NumParticleCombos(void) const{return dNumParticleCombos;}
 
-		bool dActionInitializedFlag; //initialized upon first call
-		DApplication* dApplication; //initialized upon first call
-		const DAnalysisUtilities* dAnalysisUtilities; //initialized upon first call
+	private:
+		
+		//Set by constructor:
+		const DReaction* dReaction;
+		string dActionName; //if the class deriving from DAnalysisAction creates ROOT objects, AND more than one instance of it is added to the DReaction, then this should be unique
+		bool dUseKinFitResultsFlag;
+		string dActionUniqueString;
+
+		//Initialized upon first call:
+		string dOutputFileName;
+		bool dActionInitializedFlag;
+		DApplication* dApplication;
+		const DAnalysisUtilities* dAnalysisUtilities;
+
+		//Valid only during function-call operators (and the functions it calls):
+		deque<pair<const DParticleCombo*, bool> > dPreviousParticleCombos; //in the action, check against this to make sure you don't double-count when histogramming, etc.
+		unsigned int dNumParticleCombos;
 
 		DAnalysisAction(void); //to force inheriting classes to call the public constructor
 };

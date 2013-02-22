@@ -1,17 +1,5 @@
 #include "DKinFitConstraints.h"
 
-/******************************* DKinFitConstraint *******************************/
-
-DKinFitConstraint::DKinFitConstraint(void)
-{
-	Reset();
-}
-
-void DKinFitConstraint::Reset(void)
-{
-	dFIndex = 0;
-}
-
 /******************************* DKinFitConstraint_VertexBase *******************************/
 
 DKinFitConstraint_VertexBase::DKinFitConstraint_VertexBase(void)
@@ -21,8 +9,15 @@ DKinFitConstraint_VertexBase::DKinFitConstraint_VertexBase(void)
 
 void DKinFitConstraint_VertexBase::Reset(void)
 {
-	DKinFitConstraint::Reset();
 	dVxParamIndex = -1;
+}
+
+int DKinFitConstraint_VertexBase::Get_FIndex(const DKinFitParticle* locKinFitParticle) const
+{
+	map<const DKinFitParticle*, unsigned int>::const_iterator locIterator = dConstraintEquationParticleMap.find(locKinFitParticle);
+	if(locIterator == dConstraintEquationParticleMap.end())
+		return -1;
+	return locIterator->second;
 }
 
 /******************************* DKinFitConstraint_Vertex *******************************/
@@ -94,8 +89,7 @@ DKinFitConstraint_P4::DKinFitConstraint_P4(void)
 
 void DKinFitConstraint_P4::Reset(void)
 {
-	DKinFitConstraint::Reset();
-
+	dFIndex = 0;
 	dConstrainedP4Particle = NULL;
 	dInitialParticles.clear();
 	dFinalParticles.clear();

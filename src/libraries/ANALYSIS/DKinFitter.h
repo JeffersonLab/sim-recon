@@ -121,35 +121,44 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		DKinFitParticle* Clone_KinFitParticle(const DKinFitParticle* locKinFitParticle);
 		TMatrixDSym* Clone_MatrixDSym(const TMatrixDSym* locMatrix);
 
-		void Set_Particle(DKinFitParticle* locKinFitParticle);
-
 		DKinFitParticle* Get_KinFitParticleResource(void);
 		DKinFitConstraint_Vertex* Get_KinFitConstraintVertexResource(void);
 		DKinFitConstraint_Spacetime* Get_KinFitConstraintSpacetimeResource(void);
 		DKinFitConstraint_P4* Get_KinFitConstraintP4Resource(void);
 
 		bool Calc_dS(void);
-		bool Calc_dVXi(void);
+		bool Calc_dU(void);
 
 		void Set_MatrixSizes(void);
-		void Setup_Matrices(void);
+		void Resize_Matrices(void);
 		void Zero_Matrices(void);
 
 		bool Resolve_Constraints(void);
+		bool Resolve_P4Constraints(void);
 		bool Resolve_DecayingParticleSpacetimeLinks(void);
 		bool Find_ConstrainableParticles(deque<pair<DKinFitParticle*, DKinFitConstraint_P4*> >& locConstrainableParticles, const deque<const DKinFitParticle*>& locConstrainedParticles);
 		void Constrain_Particle(pair<DKinFitParticle*, DKinFitConstraint_P4*>& locConstrainableParticle);
 
 		void Fill_InputMatrices(void);
 		void Update_ParticleParams(void);
+		TLorentzVector Calc_DecayingP4_FromDecayProducts(DKinFitConstraint_P4* locP4Constraint, bool locDecayMomentumFlag) const;
 
 		void Print_Matrix(const TMatrixD& locMatrix) const;
 		void Print_ParticleParams(const DKinFitParticle* locKinFitParticle) const;
 
 		void Calc_dF(void);
-		void Calc_dF_P4(size_t locFIndex, const DKinFitParticle* locKinFitParticle, bool locInitialStateFlag, const DKinFitParticle* locConstrainedParticle);
-		void Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinFitParticle);
-		void Calc_dF_Time(size_t& locFIndex, const DKinFitParticle* locKinFitParticle, bool locUseRFTimeFlag);
+		void Calc_dF_P4(DKinFitConstraint_P4* locKinFitConstraint_P4, const DKinFitParticle* locKinFitParticle, bool locInitialStateFlag, bool locDerivsOnlyFlag, bool locOriginalInitialStateFlag, DKinFitConstraint_P4* locKinFitSubConstraint_P4);
+		void Calc_dF_Mass(DKinFitConstraint_P4* locKinFitConstraint_P4);
+		void Calc_dF_Mass_Derivs(DKinFitConstraint_P4* locKinFitConstraint_P4, const TLorentzVector& locDecayingP4_FromDecayProducts, const DKinFitParticle* locKinFitParticle);
+
+		void Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinFitParticle, const DKinFitParticle* locKinFitParticle_DecayingSource, bool locInitialStateFlag, bool locOriginalInitialStateFlag);
+		void Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParticle* locKinFitParticle);
+		void Calc_dF_Vertex_Decaying_Accel(size_t locFIndex, const DKinFitParticle* locKinFitParticle, const DKinFitParticle* locKinFitParticle_DecayingSource, bool locInitialStateFlag, bool locOriginalInitialStateFlag);
+		void Calc_dF_Vertex_Decaying_NonAccel(size_t locFIndex, const DKinFitParticle* locKinFitParticle, const DKinFitParticle* locKinFitParticle_DecayingSource, bool locInitialStateFlag, bool locOriginalInitialStateFlag);
+		void Calc_Vertex_Params(const DKinFitParticle* locKinFitParticle, double& locJ, TVector3& locQ, TVector3& locM, TVector3& locD);
+
+		void Calc_dF_Time(size_t locFIndex, const DKinFitParticle* locKinFitParticle, bool locUseRFTimeFlag);
+
 		void Calc_Pulls(void);
 		void Set_FinalTrackInfo(void);
 
@@ -172,20 +181,20 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		TMatrixDSym dS; // the covariance matrix of the uncertainties of whether the constraint equations are satisfied
 		TMatrixDSym dS_Inverse;
-		TMatrixD dR;
+		TMatrixDSym dU;
+		TMatrixDSym dU_Inverse;
 
-		TMatrixD dF; //constraint equations
+		TMatrixD dF; //constraint equations with eta dependence
 		TMatrixD dEpsilon; //dY - dEta
-		TMatrixD dLambda; //lagrange multipliers
+		TMatrixD dLambda; //lagrange multipliers of constraint equations
 		TMatrixD dLambda_T;
 
-		TMatrixD dFdEta; //partial derivative of constraint equations wrst the observables
-		TMatrixD dFdEta_T;
-		TMatrixD dFdXi; //partial derivative of constraint equations wrst the unmeasurable unknowns
-		TMatrixD dFdXi_T;
+		TMatrixD dF_dEta; //partial derivative of constraint equations wrst the observables
+		TMatrixD dF_dEta_T;
+		TMatrixD dF_dXi; //partial derivative of constraint equations wrst the unmeasurable unknowns
+		TMatrixD dF_dXi_T;
 
-		TMatrixDSym* dVXi; //covariance matrix of dXi
-		TMatrixDSym dVXi_Inverse;
+		TMatrixDSym* dVXi;
 		TMatrixDSym* dVEta; //covariance matrix of dEta
 
 		unsigned int dNumXi; //num unknowns

@@ -74,6 +74,8 @@ class DAnalysisUtilities : public JObject
 		DVector3 Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles, const deque<DKinematicData*>& locPropagatedData) const;
+		DVector3 Calc_CrudeVertex(const DChargedTrackHypothesis* locChargedTrackHypothesis, const deque<DKinematicData*>& locDecayingParticles) const;
+		DVector3 Calc_CrudeVertex(const DChargedTrackHypothesis* locChargedTrackHypothesis, const deque<DKinematicData*>& locDecayingParticles, DKinematicData*& locPropagatedData) const;
 
 		bool Compare_Particles(const deque<const DKinematicData*>& locMeasuredParticles_Source, const deque<const DKinematicData*> locMeasuredParticles_ToCheck) const;
 
@@ -93,6 +95,13 @@ class DAnalysisUtilities : public JObject
 		bool Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const;
 		bool Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const;
 		bool Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const DParticleCombo* locParticleCombo_ToCheck) const;
+
+		//check whether the kinematic fit results are identical
+		bool Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const;
+		bool Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const;
+		bool Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const;
+		bool Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const;
+		bool Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const DParticleCombo* locParticleCombo_ToCheck) const;
 
 		//check whether a given measured particle appears anywhere in any step
 		bool Find_SimilarCombos(const DKinematicData* locParticle, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const;

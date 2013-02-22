@@ -1,5 +1,19 @@
 #include "DReactionStep.h"
 
+void DReactionStep::Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag)
+{
+	dInitialParticleID = locPID;
+//	if(locIsMissingFlag) //TRUE IS NOT SUPPORTED YET!
+//		dMissingParticleIndex = -2;
+}
+
+void DReactionStep::Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag)
+{
+	dFinalParticleIDs.push_back(locPID);
+	if(locIsMissingFlag)
+		dMissingParticleIndex = dFinalParticleIDs.size() - 1;
+}
+
 Particle_t DReactionStep::Get_FinalParticleID(size_t locFinalParticleIndex) const
 {
 	if(locFinalParticleIndex >= dFinalParticleIDs.size())

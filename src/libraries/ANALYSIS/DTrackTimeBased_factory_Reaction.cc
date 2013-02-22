@@ -87,7 +87,7 @@ jerror_t DTrackTimeBased_factory_Reaction::evnt(jana::JEventLoop *locEventLoop, 
 
 DTrackTimeBased* DTrackTimeBased_factory_Reaction::Create_TrackTimeBased(const DChargedTrack* locChargedTrack, Particle_t locDesiredPID)
 {
-	//this assumes that the track reconstruction cannot get the incorrect charge
+	//remember, charge sign could have flipped during track reconstruction
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = NULL;
 	switch (locDesiredPID)
 	{
@@ -95,81 +95,186 @@ DTrackTimeBased* DTrackTimeBased_factory_Reaction::Create_TrackTimeBased(const D
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, PiPlus);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, PiPlus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, PiPlus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, PiPlus);
+
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), PiPlus);
 		case PiMinus:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, PiMinus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, PiMinus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, PiMinus);
+
+			//don't try proton unless necessary: wrong charge AND way off in mass
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), PiMinus);
 		case KPlus:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiPlus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, KPlus);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, KPlus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, KPlus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, KPlus);
+
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), KPlus);
 		case KMinus:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiMinus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, KMinus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, KMinus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, KMinus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, KMinus);
+
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), KMinus);
 		case Proton:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, Proton);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiPlus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, Proton);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, Proton);
+
+			//don't try pi- unless necessary: wrong charge AND way off in mass
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), Proton);
 		case AntiProton:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, AntiProton);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiMinus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, AntiProton);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, AntiProton);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, AntiProton);
+
+			//don't try pi+ unless necessary: wrong charge AND way off in mass
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), AntiProton);
 		case Positron:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiPlus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, Positron);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, Positron);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, Positron);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, Positron);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, Positron);
+
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), Positron);
 		case Electron:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiMinus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, Electron);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, Electron);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, Electron);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, Electron);
+
+			//don't try proton unless necessary: wrong charge AND way off in mass
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), Electron);
 		case MuonPlus:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiPlus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonPlus);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonPlus);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(Proton);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonPlus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonPlus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonPlus);
+
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), MuonPlus);
 		case MuonMinus:
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiMinus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonMinus);
+
 			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KMinus);
 			if(locChargedTrackHypothesis != NULL)
 				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonMinus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(PiPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonMinus);
+
+			locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(KPlus);
+			if(locChargedTrackHypothesis != NULL)
+				return Convert_ChargedTrack(locChargedTrackHypothesis, MuonMinus);
+
+			//don't try proton unless necessary: wrong charge AND way off in mass
 			return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), MuonMinus);
 		default:
 			return NULL;
@@ -204,6 +309,7 @@ DTrackTimeBased* DTrackTimeBased_factory_Reaction::Convert_ChargedTrack(const DC
 
 	locTrackTimeBased->setMass(ParticleMass(locNewPID));
 	locTrackTimeBased->setPID(locNewPID);
+	locTrackTimeBased->setCharge(ParticleCharge(locNewPID));
 
 	// configure the DReferenceTrajectory object
 	DReferenceTrajectory *locReferenceTrajectory = Get_ReferenceTrajectoryResource();

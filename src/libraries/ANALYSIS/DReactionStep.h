@@ -16,10 +16,9 @@ class DReactionStep
 		DReactionStep(void) : dInitialParticleID(Unknown), dTargetParticleID(Unknown), dMissingParticleIndex(-1) { };
 
 		// SET OBJECT DATA:
-		inline void Set_InitialParticleID(Particle_t locPID){dInitialParticleID = locPID;}
+		void Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag = false); //TRUE IS NOT SUPPORTED YET!
 		inline void Set_TargetParticleID(Particle_t locPID){dTargetParticleID = locPID;}
-		inline void Set_MissingParticleIndex(int locMissingParticleIndex){dMissingParticleIndex = locMissingParticleIndex;}
-		inline void Add_FinalParticleID(Particle_t locPID){dFinalParticleIDs.push_back(locPID);}
+		void Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag = false);
 
 		// GET INITIAL, TARGET, AND MISSING DATA:
 		inline Particle_t Get_InitialParticleID(void) const{return dInitialParticleID;}
@@ -52,7 +51,7 @@ class DReactionStep
 		deque<Particle_t> dFinalParticleIDs;
 
 		// CONTROL MEMBERS:
-		int dMissingParticleIndex; //-1 for no missing particles, else final state particle at this index is missing (0 -> x)
+		int dMissingParticleIndex; //-1 for no missing particles, -2 for missing init (beam) particle (not yet supported!), else final state particle at this index is missing (0 -> x)
 };
 
 #endif // _DReactionStep_

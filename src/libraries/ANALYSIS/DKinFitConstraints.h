@@ -2,6 +2,7 @@
 #define _DKinFitConstraints_
 
 #include <deque>
+#include <map>
 #include <utility>
 
 #include "TVector3.h"
@@ -16,19 +17,8 @@ class DKinFitConstraint //purely virtual: cannot directly instantiate class, can
 {
 	friend class DKinFitter;
 
-	public:
-		inline size_t Get_FIndex(void) const{return dFIndex;}
-
 	protected:
-		DKinFitConstraint(void);
-
 		virtual ~DKinFitConstraint(void) = 0; //forces abstractness
-
-		virtual void Reset(void);
-
-		inline void Set_FIndex(size_t locFIndex){dFIndex = locFIndex;}
-
-		size_t dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
 };
 
 class DKinFitConstraint_VertexBase : public DKinFitConstraint //purely virtual: cannot directly instantiate class, can only inherit from it
@@ -38,6 +28,7 @@ class DKinFitConstraint_VertexBase : public DKinFitConstraint //purely virtual: 
 	public:
 		virtual TVector3 Get_CommonVertex(void) const = 0; //inheriting classes MUST define this method
 		inline int Get_VxParamIndex(void) const{return dVxParamIndex;}
+		int Get_FIndex(const DKinFitParticle* locKinFitParticle) const;
 
 	protected:
 
@@ -46,9 +37,12 @@ class DKinFitConstraint_VertexBase : public DKinFitConstraint //purely virtual: 
 
 		virtual void Reset(void);
 
+		inline void Set_FIndex(const DKinFitParticle* locKinFitParticle, unsigned int locFIndex){dConstraintEquationParticleMap[locKinFitParticle] = locFIndex;}
 		inline void Set_VxParamIndex(int locVxParamIndex){dVxParamIndex = locVxParamIndex;}
 
 		int dVxParamIndex; //location of the Vx uncertainty in the dVXi covariance matrix term (Vy & Vz are the subsequent terms)
+
+		map<const DKinFitParticle*, unsigned int> dConstraintEquationParticleMap; //key is particle (NULL for RF time), value is the constraint equation index (must check whether decaying or not to see what f-matrix it's in!)
 };
 
 class DKinFitConstraint_Vertex : public DKinFitConstraint_VertexBase
@@ -58,9 +52,9 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint_VertexBase
 	public:
 		inline TVector3 Get_CommonVertex(void) const{return dCommonVertex;}
 
-		inline deque<DKinFitParticle*> Get_ConstrainVertexParticles(void) const{return dConstrainVertexParticles;}
-		inline deque<DKinFitParticle*> Get_NoConstrainParticles(void) const{return dNoConstrainParticles;}
-		inline deque<pair<DKinFitParticle*, bool> > Get_DecayingParticles(void) const{return dDecayingParticles;}
+		inline deque<const DKinFitParticle*> Get_ConstrainVertexParticles(void) const{return deque<const DKinFitParticle*>(dConstrainVertexParticles.begin(), dConstrainVertexParticles.end());}
+		inline deque<const DKinFitParticle*> Get_NoConstrainParticles(void) const{return deque<const DKinFitParticle*>(dNoConstrainParticles.begin(), dNoConstrainParticles.end());}
+		inline deque<pair<const DKinFitParticle*, bool> > Get_DecayingParticles(void) const{return deque<pair<const DKinFitParticle*, bool> >(dDecayingParticles.begin(), dDecayingParticles.end());}
 
 		bool Get_DecayingParticleInInitialStateFlag(const DKinFitParticle* locKinFitParticle) const;
 
@@ -99,10 +93,10 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_VertexBase
 
 		inline int Get_TParamIndex(void) const{return dTParamIndex;}
 
-		inline deque<DKinFitParticle*> Get_ConstrainSpacetimeParticles(void) const{return dConstrainSpacetimeParticles;}
-		inline deque<DKinFitParticle*> Get_OnlyConstrainTimeParticles(void) const{return dOnlyConstrainTimeParticles;} //neutral showers
-		inline deque<DKinFitParticle*> Get_NoConstrainParticles(void) const{return dNoConstrainParticles;}
-		inline deque<pair<DKinFitParticle*, bool> > Get_DecayingParticles(void) const{return dDecayingParticles;}
+		inline deque<const DKinFitParticle*> Get_ConstrainSpacetimeParticles(void) const{return deque<const DKinFitParticle*>(dConstrainSpacetimeParticles.begin(), dConstrainSpacetimeParticles.end());}
+		inline deque<const DKinFitParticle*> Get_OnlyConstrainTimeParticles(void) const{return deque<const DKinFitParticle*>(dOnlyConstrainTimeParticles.begin(), dOnlyConstrainTimeParticles.end());} //neutral showers
+		inline deque<const DKinFitParticle*> Get_NoConstrainParticles(void) const{return deque<const DKinFitParticle*>(dNoConstrainParticles.begin(), dNoConstrainParticles.end());}
+		inline deque<pair<const DKinFitParticle*, bool> > Get_DecayingParticles(void) const{return deque<pair<const DKinFitParticle*, bool> >(dDecayingParticles.begin(), dDecayingParticles.end());}
 
 		bool Get_DecayingParticleInInitialStateFlag(const DKinFitParticle* locKinFitParticle) const;
 
@@ -137,26 +131,30 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_VertexBase
 		int dTParamIndex;
 };
 
-class DKinFitConstraint_P4 : public DKinFitConstraint
+class DKinFitConstraint_P4 : public DKinFitConstraint //one will be implemented as a p4 constraint, the rest as invariant mass constraints
 {
 	friend class DKinFitter;
 
 	public:
-		inline DKinFitParticle* Get_ConstrainedP4Particle(void) const{return dConstrainedP4Particle;}
+		inline size_t Get_FIndex(void) const{return dFIndex;}
 
-		inline deque<DKinFitParticle*> Get_InitialParticles(void) const{return dInitialParticles;}
-		inline deque<DKinFitParticle*> Get_FinalParticles(void) const{return dFinalParticles;}
+		inline const DKinFitParticle* Get_ConstrainedP4Particle(void) const{return dConstrainedP4Particle;}
+
+		inline deque<const DKinFitParticle*> Get_InitialParticles(void) const{return deque<const DKinFitParticle*>(dInitialParticles.begin(), dInitialParticles.end());}
+		inline deque<const DKinFitParticle*> Get_FinalParticles(void) const{return deque<const DKinFitParticle*>(dFinalParticles.begin(), dFinalParticles.end());}
 
 	private:
-
 		DKinFitConstraint_P4(void);
 		~DKinFitConstraint_P4(void){}
 
 		void Reset(void);
 
+		inline void Set_FIndex(size_t locFIndex){dFIndex = locFIndex;}
 		inline void Set_ConstrainedP4Particle(DKinFitParticle* locConstrainedP4Particle){dConstrainedP4Particle = locConstrainedP4Particle;}
 		inline void Set_InitialParticles(const deque<DKinFitParticle*>& locInitialParticles){dInitialParticles = locInitialParticles;}
 		inline void Set_FinalParticles(const deque<DKinFitParticle*>& locFinalParticles){dFinalParticles = locFinalParticles;}
+
+		size_t dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
 
 		DKinFitParticle* dConstrainedP4Particle;
 		deque<DKinFitParticle*> dInitialParticles;

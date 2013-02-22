@@ -16,11 +16,11 @@ class DParticleCombo;
 enum DKinFitType
 {
 	d_NoFit = 0, 
-	d_P4Fit, 
+	d_P4Fit, //also includes invariant mass constraints
 	d_VertexFit,
 	d_SpacetimeFit,
-	d_P4AndVertexFit, 
-	d_P4AndSpacetimeFit
+	d_P4AndVertexFit, //also includes invariant mass constraints
+	d_P4AndSpacetimeFit //also includes invariant mass constraints
 };
 
 class DKinFitResults : public JObject

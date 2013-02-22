@@ -46,7 +46,6 @@ class DAnalysisResults_factory : public jana::JFactory<DAnalysisResults>
 		bool dROOTObjectsCreatedFlag;
 		unsigned int dDebugLevel;
 		DApplication* dApplication;
-		deque<DAnalysisAction*> dReactionIndependentAnalysisActions;
 
 		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction;
 		map<const DReaction*, TH2D*> dHistMap_NumCombosSurvivedAction;

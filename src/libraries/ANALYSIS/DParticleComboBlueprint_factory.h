@@ -26,7 +26,6 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		~DParticleComboBlueprint_factory(){};
 
 		void Reset_Pools(void);
-		inline double Get_MinimumProtonMomentum(void) const{return dMinimumProtonMomentum;}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -36,39 +35,36 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		jerror_t Build_ParticleComboBlueprints(JEventLoop* locEventLoop, const DReaction* locReaction);
-		void Find_Combos(const DReaction* locReaction, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque, vector<DParticleComboBlueprint*>& locParticleComboBlueprints);
+		bool Setup_ComboLoop(const DReaction* locReaction, int locNumDetectedNeutralParticles, int locNumDetectedChargedParticles, int locNumDetectedPositiveParticles, int locNumDetectedNegativeParticles, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque);
+		void Find_Combos(const DReaction* locReaction, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, vector<DParticleComboBlueprint*>& locParticleComboBlueprints);
 
-		DParticleComboBlueprint* Clone_ParticleComboBlueprint(const DParticleComboBlueprint* locParticleComboBlueprint);
-		inline void Recycle_ParticleComboBlueprintStep(DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintStepPool_Available.push_back(locParticleComboBlueprintStep);}
-
-		bool Handle_EndOfReactionStep(const DReaction* locReaction, DParticleComboBlueprint*& locParticleComboBlueprint, DParticleComboBlueprintStep*& locParticleComboBlueprintStep, int& locStepIndex, int& locParticleIndex, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque, vector<DParticleComboBlueprint*>& locParticleComboBlueprints);
+		bool Handle_EndOfReactionStep(const DReaction* locReaction, DParticleComboBlueprint*& locParticleComboBlueprint, DParticleComboBlueprintStep*& locParticleComboBlueprintStep, int& locStepIndex, int& locParticleIndex, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, vector<DParticleComboBlueprint*>& locParticleComboBlueprints);
 		bool Handle_Decursion(DParticleComboBlueprint* locParticleComboBlueprint, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque, int& locParticleIndex, int& locStepIndex, DParticleComboBlueprintStep*& locParticleComboBlueprintStep);
-		void Setup_ComboLoop(const DReaction* locReaction, int locNumDetectedNeutralParticles, int locNumDetectedPositiveParticles, int locNumDetectedNegativeParticles, deque<deque<int> >& locResumeAtIndexDeque, deque<deque<int> >& locNumPossibilitiesDeque);
 
+		bool Check_IfDuplicateStepCombo(const DReaction* locReaction, int locStepIndex, deque<deque<int> >& locResumeAtIndexDeque, const deque<deque<int> >& locNumPossibilitiesDeque) const;
 		int Grab_DecayingParticle(DParticleComboBlueprint* locParticleComboBlueprint, Particle_t locAnalysisPID, int& locResumeAtIndex, const DReaction* locReaction, int locStepIndex, int locParticleIndex, DParticleComboBlueprintStep* locParticleComboBlueprintStep);
 		const JObject* Grab_DetectedTrack(DParticleComboBlueprint* locParticleComboBlueprint, Particle_t locAnalysisPID, int& locResumeAtIndex, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative);
-		const JObject* Choose_SourceObject(Particle_t locAnalysisPID, DParticleComboBlueprint* locParticleComboBlueprint, deque<const JObject*>& locSourceObjects, int& locResumeAtIndex) const;
+		const JObject* Choose_SourceObject(const DReaction* locReaction, Particle_t locAnalysisPID, DParticleComboBlueprint* locParticleComboBlueprint, deque<const JObject*>& locSourceObjects, int& locResumeAtIndex) const;
 
-		bool Cut_TrackingChiSqPerDF(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
-		bool Cut_PIDFOM(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
-		bool Cut_VertexZ(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		DParticleComboBlueprintStep* Get_ParticleComboBlueprintStepResource(void);
+		DParticleComboBlueprint* Clone_ParticleComboBlueprint(const DParticleComboBlueprint* locParticleComboBlueprint);
+		inline void Recycle_ParticleComboBlueprintStep(DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintStepPool_Available.push_back(locParticleComboBlueprintStep);}
 
 		deque<DParticleComboBlueprintStep*> dParticleComboBlueprintStepPool_All;
 		deque<DParticleComboBlueprintStep*> dParticleComboBlueprintStepPool_Available;
 
 		unsigned int dDebugLevel;
 		size_t MAX_DParticleComboBlueprintStepPoolSize;
-		double dMinimumProtonMomentum; //if detected track has momentum less than this, don't attempt to assign a Proton (or any heaveier) PID to it
 
-		bool dVertexZCutFlag;
-		double dMinVertexZ;
-		double dMaxVertexZ;
-		int dMaximumNumTracks;
-
-		double dMinChargedPIDFOM;
-		double dMaxTrackingChiSqPerDF;
+		// PRE-DPARTICLECOMBO CUT VALUES
+			//bool = true/false for cut enabled/disabled, double = cut value
+			//Command-line values will override these values
+		pair<bool, double> dMinIndividualChargedPIDFOM; //the minimum PID FOM for a charged track used for this DReaction
+		pair<bool, double> dMinIndividualTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
+		pair<bool, double> dMinProtonMomentum; //when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
 };
 
 #endif // _DParticleComboBlueprint_factory_

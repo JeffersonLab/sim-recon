@@ -5,7 +5,7 @@ DAnalysisAction::DAnalysisAction(void)
 }
 
 DAnalysisAction::DAnalysisAction(const DReaction* locReaction, string locActionBaseName, bool locUseKinFitResultsFlag, string locActionUniqueString) : 
-dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(locUseKinFitResultsFlag), dActionUniqueString(locActionUniqueString), dActionInitializedFlag(false)
+dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(locUseKinFitResultsFlag), dActionUniqueString(locActionUniqueString)
 {
 	//locActionBaseName should be defined within the derived class (internally to it)
 	//locActionUniqueString:
@@ -16,14 +16,30 @@ dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(lo
 		//else locActionUniqueString can be = ""
 	if(locActionUniqueString != "")
 		dActionName += string("_") + locActionUniqueString;
+
+	dOutputFileName = "hd_root.root";
+	dActionInitializedFlag = false;
+	dApplication = NULL;
+	dAnalysisUtilities = NULL;
+	dPreviousParticleCombos.clear();
+	dNumParticleCombos = 0;
 }
 
-void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos)
+void DAnalysisAction::operator()(JEventLoop* locEventLoop)
 {
+	if(Get_Reaction() != NULL)
+	{
+		jout << "Called incorrect function call operator in DAnalysisAction::operator()(JEventLoop*). Aborting action." << endl;
+		return;
+	}
+
+	dNumParticleCombos = 0;
+
 	if(!dActionInitializedFlag)
 	{
 		//since this object is nominally created in the init() method of DReaction_factory, this is the only way to initialize the object with the JEventLoop
 			//this is critical because DApplication is required to obtain locks prior to creating ROOT objects
+		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
 		vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
@@ -34,12 +50,40 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DPar
 		dActionInitializedFlag = true;
 	}
 
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
+	Perform_Action(locEventLoop, NULL);
+}
+
+void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos)
+{
+	dNumParticleCombos = locSurvivingParticleCombos.size();
+
+	if(!dActionInitializedFlag)
+	{
+		//since this object is nominally created in the init() method of DReaction_factory, this is the only way to initialize the object with the JEventLoop
+			//this is critical because DApplication is required to obtain locks prior to creating ROOT objects
+		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
+		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+
+		vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
+		locEventLoop->Get(locAnalysisUtilitiesVector);
+		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+
+		Initialize(locEventLoop);
+		dActionInitializedFlag = true;
+	}
+
+	if(Get_Reaction() == NULL)
+	{
+		Perform_Action(locEventLoop, NULL);
+		return;
+	}
+
 	for(size_t loc_i = 0; loc_i < locSurvivingParticleCombos.size(); ++loc_i)
 	{
-		locSurvivingParticleCombos[loc_i].second = Perform_Action(locEventLoop, locSurvivingParticleCombos[loc_i].first, locPreviousParticleCombos);
-		locPreviousParticleCombos.push_back(locSurvivingParticleCombos[loc_i]);
+		locSurvivingParticleCombos[loc_i].second = Perform_Action(locEventLoop, locSurvivingParticleCombos[loc_i].first);
+		dPreviousParticleCombos.push_back(locSurvivingParticleCombos[loc_i]);
 	}
+	dPreviousParticleCombos.clear();
 }
 
 TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void) //get the directory this action should write ROOT objects to. //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
@@ -49,6 +93,12 @@ TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void) //get t
 
 	locReactionName = (Get_Reaction() != NULL) ? Get_Reaction()->Get_ReactionName() : "Independent";
 	locActionName = Get_ActionName();
+
+	//Goto the correct file (in case in a different file!)
+	TFile* locFile = (TFile*)gROOT->FindObject(dOutputFileName.c_str());
+	if(locFile == NULL)
+		return NULL;
+	locFile->cd("");
 
 	//Create/goto reaction directory
 	locDirName = locReactionName;

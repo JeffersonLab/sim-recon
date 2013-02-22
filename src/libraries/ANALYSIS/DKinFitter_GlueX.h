@@ -41,6 +41,8 @@ class DKinFitter_GlueX : public DKinFitter
 
 		void Get_ParticleMapping_InputToSource(map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping) const{locParticleMapping = dParticleMapping_InputToSource;}
 		void Get_ParticleMapping_OutputToSource(map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping) const{locParticleMapping = dParticleMapping_OutputToSource;}
+		const DKinematicData* Get_Source_FromInput(const DKinFitParticle* locKinFitParticle) const;
+		const DKinematicData* Get_Source_FromOutput(const DKinFitParticle* locKinFitParticle) const;
 		inline void Get_Pulls(map<const DKinematicData*, map<DKinFitPullType, double> >& locPulls) const{locPulls = dPulls;} //key is source data (NULL for rf-bunch), 2nd key is param type
 
 	private:

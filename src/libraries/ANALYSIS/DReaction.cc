@@ -1,5 +1,26 @@
 #include "ANALYSIS/DReaction.h"
 
+DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
+{
+	dMinCombinedChargedPIDFOM.first = false;
+	dMinCombinedChargedPIDFOM.second = 0.001;
+
+	dMinCombinedTrackingFOM.first = false;
+	dMinCombinedTrackingFOM.second = 0.001;
+
+	dMinIndividualChargedPIDFOM.first = false;
+	dMinIndividualChargedPIDFOM.second = 0.001;
+
+	dMinIndividualTrackingFOM.first = false;
+	dMinIndividualTrackingFOM.second = 0.001;
+
+	dMaxPhotonRFDeltaT.first = false;
+	dMaxPhotonRFDeltaT.second = 10.0*2.004; //10 RF buckets
+
+	dMinProtonMomentum.first = true;
+	dMinProtonMomentum.second = 0.3; //from MIN_PROTON_P defined in DTrackFitterKalmanSIMD (as of August 12, 2012)
+}
+
 const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
 {
 	if(locStepIndex >= dReactionSteps.size())
@@ -349,5 +370,4 @@ DAnalysisAction* DReaction::Get_AnalysisAction(size_t locActionIndex) const
 		return NULL;
 	return dAnalysisActions[locActionIndex];
 }
-
 

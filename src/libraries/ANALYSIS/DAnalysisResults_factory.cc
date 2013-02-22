@@ -107,9 +107,6 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 		locDirectoryFile->cd("..");
 	}
 
-	//Make Reaction-Independent POST-KINFIT Analysis Actions
-	dReactionIndependentAnalysisActions.clear();
-
 	dROOTObjectsCreatedFlag = true;
 
 	dApplication->RootUnLock(); //unlock
@@ -162,11 +159,6 @@ jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int even
 
 	if(dDebugLevel > 0)
 		cout << "Total # PostKinFit DParticleCombos: " << locParticleCombos.size() << endl;
-
-	//Execute reaction-independent POST-KINFIT analysis actions
-	deque<pair<const DParticleCombo*, bool> > locSurvivingParticleCombos_Dummy(1, pair<const DParticleCombo*, bool>(NULL, true));
-	for(size_t loc_i = 0; loc_i < dReactionIndependentAnalysisActions.size(); ++loc_i)
-		(*dReactionIndependentAnalysisActions[loc_i])(locEventLoop, locSurvivingParticleCombos_Dummy); //EXECUTE!
 
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{

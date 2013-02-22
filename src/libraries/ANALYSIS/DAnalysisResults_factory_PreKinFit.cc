@@ -116,17 +116,6 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 		locDirectoryFile->cd("..");
 	}
 
-	//Make Reaction-Independent Analysis Actions
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
-	dReactionIndependentAnalysisActions.push_back(new DHistogramAction_TrackMultiplicity(NULL));
-	dReactionIndependentAnalysisActions.push_back(new DHistogramAction_DetectedParticleKinematics(NULL));
-	if(!locMCThrowns.empty())
-	{
-		dReactionIndependentAnalysisActions.push_back(new DHistogramAction_ThrownParticleKinematics(NULL));
-		dReactionIndependentAnalysisActions.push_back(new DHistogramAction_GenReconTrackComparison(NULL));
-	}
-
 	dROOTObjectsCreatedFlag = true;
 
 	dApplication->RootUnLock(); //unlock
@@ -177,11 +166,6 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 		cout << "# DReactions: " << locReactions.size() << endl;
 	if(dDebugLevel > 0)
 		cout << "Total # PreKinFit DParticleCombos: " << locParticleCombos.size() << endl;
-
-	//Execute reaction-independent analysis actions
-	deque<pair<const DParticleCombo*, bool> > locSurvivingParticleCombos_Dummy(1, pair<const DParticleCombo*, bool>(NULL, true));
-	for(size_t loc_i = 0; loc_i < dReactionIndependentAnalysisActions.size(); ++loc_i)
-		(*dReactionIndependentAnalysisActions[loc_i])(locEventLoop, locSurvivingParticleCombos_Dummy); //EXECUTE!
 
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{

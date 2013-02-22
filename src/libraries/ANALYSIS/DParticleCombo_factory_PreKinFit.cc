@@ -18,6 +18,13 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 	MAX_DParticleComboStepPoolSize = 40;
 	MAX_DKinematicDataPoolSize = 1;
 	MAX_DBeamPhotonPoolSize = 1;
+
+	dMaxPhotonRFDeltaT = pair<bool, double>(false, -1.0);
+	dMinIndividualChargedPIDFOM = pair<bool, double>(false, -1.0);
+	dMinIndividualTrackingFOM = pair<bool, double>(false, -1.0);
+	dMinCombinedChargedPIDFOM = pair<bool, double>(false, -1.0);
+	dMinCombinedTrackingFOM = pair<bool, double>(false, -1.0);
+
 	return NOERROR;
 }
 
@@ -28,24 +35,54 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 {
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
+	locGeometry->GetTargetZ(dTargetCenterZ);
 
-	double locTargetCenterZ, locTargetLength;
-	locGeometry->GetTargetZ(locTargetCenterZ);
-	locGeometry->GetTargetLength(locTargetLength);
-	dMinVertexZ = locTargetCenterZ - 0.5*locTargetLength - 5.0;
-	dMaxVertexZ = locTargetCenterZ + 0.5*locTargetLength + 5.0;
-	dVertexZCutFlag = true;
+	double locParamValue;
 
-	dMaxPhotonRFTimeDifference = 2.004*10.0; // +/- 10 RF buckets //may have a bad RF time if no start counter hits, but probably still won't be worse than this
-	dMinChargedPIDFOM = 0.001; //set to < 0.0 to disable
-	dMaxTrackingChiSqPerDF = -1.0; //set to < 0.0 to disable
+	locParamValue = numeric_limits<double>::quiet_NaN();
+	gPARMS->SetDefaultParameter("COMBO:MAXPHOTONRFDELTAT", locParamValue);
+	if((locParamValue > -1.0) || (locParamValue < 1.0))
+	{
+		//not NaN: user set the value on the command line
+		dMaxPhotonRFDeltaT.first = true;
+		dMaxPhotonRFDeltaT.second = locParamValue;
+	}
 
-	gPARMS->SetDefaultParameter("COMBO:VERTEXZCUTFLAG", dVertexZCutFlag);
-	gPARMS->SetDefaultParameter("COMBO:MINVERTEXZ", dMinVertexZ);
-	gPARMS->SetDefaultParameter("COMBO:MAXVERTEXZ", dMaxVertexZ);
-	gPARMS->SetDefaultParameter("COMBO:PHOTONRFTDIFF", dMaxPhotonRFTimeDifference);
-	gPARMS->SetDefaultParameter("COMBO:MINCHARGEDPIDFOM", dMinChargedPIDFOM);
-	gPARMS->SetDefaultParameter("COMBO:MAXTRACKINGCHISQPERDF", dMaxTrackingChiSqPerDF);
+	locParamValue = numeric_limits<double>::quiet_NaN();
+	gPARMS->SetDefaultParameter("COMBO:MININDIVIDUALCHARGEDPIDFOM", locParamValue);
+	if((locParamValue > -1.0) || (locParamValue < 1.0))
+	{
+		//not NaN: user set the value on the command line
+		dMinIndividualChargedPIDFOM.first = true;
+		dMinIndividualChargedPIDFOM.second = locParamValue;
+	}
+
+	locParamValue = numeric_limits<double>::quiet_NaN();
+	gPARMS->SetDefaultParameter("COMBO:MININDIVIDUALTRACKINGFOM", locParamValue);
+	if((locParamValue > -1.0) || (locParamValue < 1.0))
+	{
+		//not NaN: user set the value on the command line
+		dMinIndividualTrackingFOM.first = true;
+		dMinIndividualTrackingFOM.second = locParamValue;
+	}
+
+	locParamValue = numeric_limits<double>::quiet_NaN();
+	gPARMS->SetDefaultParameter("COMBO:MINCOMBINEDCHARGEDPIDFOM", locParamValue);
+	if((locParamValue > -1.0) || (locParamValue < 1.0))
+	{
+		//not NaN: user set the value on the command line
+		dMinCombinedChargedPIDFOM.first = true;
+		dMinCombinedChargedPIDFOM.second = locParamValue;
+	}
+
+	locParamValue = numeric_limits<double>::quiet_NaN();
+	gPARMS->SetDefaultParameter("COMBO:MINCOMBINEDTRACKINGFOM", locParamValue);
+	if((locParamValue > -1.0) || (locParamValue < 1.0))
+	{
+		//not NaN: user set the value on the command line
+		dMinCombinedTrackingFOM.first = true;
+		dMinCombinedTrackingFOM.second = locParamValue;
+	}
 
 	return NOERROR;
 }
@@ -89,10 +126,12 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	{
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
 		locParticleCombo = new DParticleCombo();
-		locParticleCombo->Set_Reaction(locParticleComboBlueprint->Get_Reaction());
+		const DReaction* locReaction = locParticleComboBlueprint->Get_Reaction();
+		locParticleCombo->Set_Reaction(locReaction);
 		locParticleCombo->AddAssociatedObject(locParticleComboBlueprint);
 		locParticleCombo->Set_KinFitResults(NULL);
 		bool locBadComboFlag = false;
+
 		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
 		{
 			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
@@ -115,9 +154,10 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				if(locCandidatePhotons.empty())
 				{
 					//compare photon time to RF time (at center of target) //if RF time not matched to tracks: don't cut on photon time
+					pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : locReaction->Get_MaxPhotonRFDeltaT();
 					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
 					{
-						if((fabs(locBeamPhotons[loc_k]->time() - locEventRFBunch->dTime) < dMaxPhotonRFTimeDifference) || (!locEventRFBunch->dMatchedToTracksFlag))
+						if((fabs(locBeamPhotons[loc_k]->time() - locEventRFBunch->dTime) < locMaxPhotonRFDeltaT.second) || (!locEventRFBunch->dMatchedToTracksFlag) || (!locMaxPhotonRFDeltaT.first))
 							locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
 					}
 					if(locBeamPhotons.empty()) //e.g. genr8
@@ -153,27 +193,33 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				const DKinematicData* locParticleData = NULL;
 				if(locParticleComboBlueprintStep->Is_FinalParticleDetected(loc_k))
 				{
-					locParticleData = Get_DetectedParticle(locParticleComboBlueprintStep, loc_k, locChargedTrackHypotheses_Reaction, locNeutralParticleHypotheses, locSourceObject);
+					locParticleData = Get_DetectedParticle(locReaction, locParticleComboBlueprintStep, loc_k, locChargedTrackHypotheses_Reaction, locNeutralParticleHypotheses, locSourceObject);
 					if(locParticleData == NULL) //e.g. bad vertex-z
 					{
 						locBadComboFlag = true;
 						break;
 					}
 				}
-//cout << "i, j, k, pid, data, source, decaystepindex = " << loc_i << ", " << loc_j << ", " << loc_k << ", " << ParticleType(locParticleComboBlueprintStep->Get_FinalParticleID(loc_k)) << ", " << locParticleData << ", " << locSourceObject << ", " << locParticleComboBlueprintStep->Get_DecayStepIndex(loc_k) << endl;
 				locParticleComboStep->Add_FinalParticle(locParticleData);
 				locParticleComboStep->Add_FinalParticle_Measured(locParticleData);
 			}
-			if(locBadComboFlag) //e.g. bad vertex-z
+			if(locBadComboFlag) //e.g. bad PID FOM
 				break;
 			locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleComboStep;
 		}
-		if(locBadComboFlag) //e.g. bad vertex-z
+
+		if(!locBadComboFlag)
+		{
+			if((!Cut_CombinedTrackingFOM(locParticleCombo)) || (!Cut_CombinedPIDFOM(locParticleCombo)))
+				locBadComboFlag = true;
+		}
+		if(locBadComboFlag) //e.g. bad PID FOM
 		{
 			delete locParticleCombo;
 			continue;
 		}
+
 		_data.push_back(locParticleCombo);
 
 		//clone combos for additional beam photons (if needed)
@@ -227,18 +273,16 @@ DBeamPhoton* DParticleCombo_factory_PreKinFit::Create_BeamPhoton(void) //for MC 
 {
 	DBeamPhoton* locBeamPhoton = Get_BeamPhotonResource();
 	double locPhotonEnergy = 9.0;
-//	double locElectronBeamEnergy = 12.0;
 	Particle_t locPID = Gamma;
 	locBeamPhoton->setPID(locPID);
 	locBeamPhoton->setCharge(ParticleCharge(locPID));
 	locBeamPhoton->setMomentum(DVector3(0.0, 0.0, locPhotonEnergy));
-	locBeamPhoton->setPosition(DVector3(0.0, 0.0, 65.0)); //fix me...
+	locBeamPhoton->setPosition(DVector3(0.0, 0.0, dTargetCenterZ));
 	locBeamPhoton->setMass(ParticleMass(locPID));
-//	dAnalysisUtilities->BuildAndSet_PhotonErrorMatrices(locBeamPhoton, locElectronBeamEnergy, locPhotonEnergy); //do i want this?
 	return locBeamPhoton;
 }
 
-const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses_Reaction, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const JObject*& locSourceObject)
+const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(const DReaction* locReaction, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses_Reaction, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const JObject*& locSourceObject)
 {
 	locSourceObject = NULL;
 	Particle_t locPID = locParticleComboBlueprintStep->Get_FinalParticleID(locParticleIndex);
@@ -267,67 +311,24 @@ const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(con
 	//check if pid already stored for this track
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPID);
 	if(locChargedTrackHypothesis != NULL)
-	{
-		//check to make sure the vertex-z isn't bad (cut garbage tracks)
-		if(dVertexZCutFlag)
-		{
-			double locVertexZ = locChargedTrackHypothesis->position().Z();
-			if((locVertexZ < dMinVertexZ) || (locVertexZ > dMaxVertexZ))
-				return NULL; //bad vertex Z!
-		}
-		//check to make sure the PID isn't way off (save time/mem)
-		if(dMinChargedPIDFOM > 0.0)
-		{
-			if((locChargedTrackHypothesis->dNDF > 0) && (locChargedTrackHypothesis->dFOM < dMinChargedPIDFOM))
-				return NULL; //PID way off
-		}
-		//check to make sure the tracking chisq/df isn't huge (save time/mem)
-		if(dMaxTrackingChiSqPerDF > 0.0)
-		{
-			if(locChargedTrackHypothesis->dNDF_Track > 0)
-			{
-				double locFOM = locChargedTrackHypothesis->dChiSq_Track/((double)(locChargedTrackHypothesis->dNDF_Track));
-				if(locFOM > dMaxTrackingChiSqPerDF)
-					return NULL; //tracking chisq/df too high
-			}
-		}
 		return static_cast<const DKinematicData*>(locChargedTrackHypothesis);
-	}
-
 
 	//check to see if the charged track was generated by the tag="Reaction" hypo factory
  	vector<const DChargedTrack*> locChargedTracks;
 	for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses_Reaction.size(); ++loc_i)
 	{
-		if(locChargedTrackHypotheses_Reaction[loc_i]->PID() != locPID)
+		locChargedTrackHypothesis = locChargedTrackHypotheses_Reaction[loc_i];
+		if(locChargedTrackHypothesis->PID() != locPID)
 			continue;
-		locChargedTrackHypotheses_Reaction[loc_i]->GetT(locChargedTracks);
+		locChargedTrackHypothesis->GetT(locChargedTracks);
 		if(locChargedTracks[0] != locChargedTrack)
 			continue;
-		//check to make sure the vertex-z isn't bad (cut garbage tracks)
-		if(dVertexZCutFlag)
-		{
-			double locVertexZ = locChargedTrackHypotheses_Reaction[loc_i]->position().Z();
-			if((locVertexZ < dMinVertexZ) || (locVertexZ > dMaxVertexZ))
-				return NULL; //bad vertex Z!
-		}
-		//check to make sure the charged PID isn't way off (save time/mem)
-		if(dMinChargedPIDFOM > 0.0)
-		{
-			if((locChargedTrackHypotheses_Reaction[loc_i]->dNDF > 0) && (locChargedTrackHypotheses_Reaction[loc_i]->dFOM < dMinChargedPIDFOM))
-				return NULL; //PID way off
-		}
-		//check to make sure the tracking chisq/df isn't huge (save time/mem)
-		if(dMaxTrackingChiSqPerDF > 0.0)
-		{
-			if(locChargedTrackHypotheses_Reaction[loc_i]->dNDF_Track > 0)
-			{
-				double locFOM = locChargedTrackHypotheses_Reaction[loc_i]->dChiSq_Track/((double)(locChargedTrackHypotheses_Reaction[loc_i]->dNDF_Track));
-				if(locFOM > dMaxTrackingChiSqPerDF)
-					return NULL; //tracking chisq/df too high
-			}
-		}
-		return static_cast<const DKinematicData*>(locChargedTrackHypotheses_Reaction[loc_i]);
+
+		//check to make sure the PID and/or tracking FOM isn't way off (save time/mem)
+		if((!Cut_PIDFOM(locReaction, locChargedTrackHypothesis)) || (!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis)))
+			return NULL;
+
+		return static_cast<const DKinematicData*>(locChargedTrackHypothesis);
 	}
 	return NULL; //uh oh!
 }
@@ -430,6 +431,68 @@ DKinematicData* DParticleCombo_factory_PreKinFit::Get_KinematicDataResource(void
 		dKinematicDataPool_Available.pop_back();
 	}
 	return locKinematicData;
+}
+
+bool DParticleCombo_factory_PreKinFit::Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+{
+	pair<bool, double> locMinIndividualTrackingFOM = dMinIndividualTrackingFOM.first ? dMinIndividualTrackingFOM : locReaction->Get_MinIndividualTrackingFOM();
+	if(!locMinIndividualTrackingFOM.first)
+		return true;
+	double locFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
+	return ((locChargedTrackHypothesis->dNDF_Track == 0) ? true : (locFOM >= locMinIndividualTrackingFOM.second));
+}
+
+bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+{
+	pair<bool, double> locMinIndividualChargedPIDFOM = dMinIndividualChargedPIDFOM.first ? dMinIndividualChargedPIDFOM : locReaction->Get_MinIndividualChargedPIDFOM();
+	if(!locMinIndividualChargedPIDFOM.first)
+		return true;
+	return ((locChargedTrackHypothesis->dNDF == 0) ? true : (locChargedTrackHypothesis->dFOM >= locMinIndividualChargedPIDFOM.second));
+}
+
+bool DParticleCombo_factory_PreKinFit::Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const
+{
+	const DReaction* locReaction = locParticleCombo->Get_Reaction();
+	pair<bool, double> locMinCombinedChargedPIDFOM = dMinCombinedChargedPIDFOM.first ? dMinCombinedChargedPIDFOM : locReaction->Get_MinCombinedChargedPIDFOM();
+	if(!locMinCombinedChargedPIDFOM.first)
+		return true;
+
+	unsigned int locTotalPIDNDF = 0.0;
+	double locTotalPIDChiSq = 0.0;
+
+	deque<const DKinematicData*> locDetectedChargedParticles;
+	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedChargedParticles);
+	for(size_t loc_i = 0; loc_i < locDetectedChargedParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locDetectedChargedParticles[loc_i]);
+		locTotalPIDNDF += locChargedTrackHypothesis->dNDF;
+		locTotalPIDChiSq += locChargedTrackHypothesis->dChiSq;
+	}
+	double locFOM = TMath::Prob(locTotalPIDChiSq, locTotalPIDNDF);
+	return (locFOM >= locMinCombinedChargedPIDFOM.second);
+}
+
+bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const
+{
+	const DReaction* locReaction = locParticleCombo->Get_Reaction();
+	pair<bool, double> locMinCombinedTrackingFOM = dMinCombinedTrackingFOM.first ? dMinCombinedTrackingFOM : locReaction->Get_MinCombinedTrackingFOM();
+	if(!locMinCombinedTrackingFOM.first)
+		return true;
+
+	unsigned int locTotalTrackingNDF = 0.0;
+	double locTotalTrackingChiSq = 0.0;
+
+	deque<const DKinematicData*> locDetectedChargedParticles;
+	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedChargedParticles);
+	for(size_t loc_i = 0; loc_i < locDetectedChargedParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locDetectedChargedParticles[loc_i]);
+		locTotalTrackingNDF += locChargedTrackHypothesis->dNDF_Track;
+		locTotalTrackingChiSq += locChargedTrackHypothesis->dChiSq_Track;
+	}
+
+	double locFOM = TMath::Prob(locTotalTrackingChiSq, locTotalTrackingNDF);
+	return (locFOM >= locMinCombinedTrackingFOM.second);
 }
 
 //------------------

@@ -47,7 +47,6 @@ class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResult
 		bool dROOTObjectsCreatedFlag;
 		unsigned int dDebugLevel;
 		DApplication* dApplication;
-		deque<DAnalysisAction*> dReactionIndependentAnalysisActions;
 
 		map<const DReaction*, TH1D*> dHistMap_NumParticleCombos;
 		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction;

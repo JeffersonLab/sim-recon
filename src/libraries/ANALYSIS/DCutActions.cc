@@ -1,6 +1,11 @@
 #include "ANALYSIS/DCutActions.h"
 
-bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_MaxNumParticleCombos::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	return (Get_NumParticleCombos() <= dMaxNumParticleCombos);
+}
+
+bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	deque<const DKinematicData*> locParticles;
 	locParticleCombo->Get_FinalParticles_Measured(dStepPID, dParticleID, locParticles);
@@ -23,7 +28,7 @@ bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticle
 	return true;
 }
 
-bool DCutAction_AllPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_AllPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	deque<const DKinematicData*> locParticles;
 	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
@@ -49,19 +54,19 @@ bool DCutAction_AllPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParti
 	return ((locTotalNDF == 0) ? true : (TMath::Prob(locTotalChiSq, locTotalNDF) >= dMinimumConfidenceLevel));
 }
 
-bool DCutAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	double locMissingMass = Get_AnalysisUtilities()->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M();
 	return ((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass));
 }
 
-bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	double locMissingMassSq = Get_AnalysisUtilities()->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M2();
 	return ((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq));
 }
 
-bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	double locInvariantMass;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
@@ -77,7 +82,7 @@ bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DP
 	return true;
 }
 
-bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	deque<const DKinematicData*> locParticles;
 	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
@@ -91,8 +96,9 @@ bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DPart
 	return true;
 }
 
-bool DCutAction_MaxTrackDOCA::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_MaxTrackDOCA::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
+	//should be improved...: the particles at a given vertex may span several steps
 	deque<const DParticleComboStep*> locParticleComboStepDeque;
 	locParticleCombo->Get_ParticleComboSteps(dInitialPID, locParticleComboStepDeque);
 	deque<const DKinematicData*> locParticles;
@@ -115,7 +121,7 @@ bool DCutAction_MaxTrackDOCA::Perform_Action(JEventLoop* locEventLoop, const DPa
 	return true;
 }
 
-bool DCutAction_KinFitFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_KinFitFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	const DKinFitResults* locKinFitResults = locParticleCombo->Get_KinFitResults();
 	if(locKinFitResults == NULL)
@@ -123,7 +129,7 @@ bool DCutAction_KinFitFOM::Perform_Action(JEventLoop* locEventLoop, const DParti
 	return (locKinFitResults->Get_ConfidenceLevel() > dMinimumConfidenceLevel);
 }
 
-bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
@@ -157,7 +163,7 @@ bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticl
 	return true;
 }
 
-bool DCutAction_AllTruePID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, const deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos)
+bool DCutAction_AllTruePID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);

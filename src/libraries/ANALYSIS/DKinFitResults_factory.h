@@ -40,11 +40,14 @@ class DKinFitResults_factory : public jana::JFactory<DKinFitResults>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		void Setup_KinFit(const DParticleCombo* locParticleCombo, deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles, deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles);
+		bool Setup_KinFit(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles, deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles);
 		void Setup_P4Constraint(const DParticleCombo* locParticleCombo, size_t locStepIndex, const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles, const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles, deque<const DKinFitParticle*>& locInitialKinFitParticles_P4, deque<const DKinFitParticle*>& locFinalKinFitParticles_P4, deque<size_t>& locIncludedStepIndices);
 		void Setup_VertexConstraint(const DParticleCombo* locParticleCombo, size_t locStepIndex, const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles, const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles, deque<const DKinFitParticle*>& locInitialKinFitParticles_Vertex, deque<const DKinFitParticle*>& locFinalKinFitParticles_Vertex, deque<size_t>& locIncludedStepIndices);
 
-		TVector3 Calc_VertexGuess(const deque<const DKinFitParticle*>& locInitialKinFitParticles, const deque<const DKinFitParticle*>& locFinalKinFitParticles);
+		bool Find_ConstrainableParticles(deque<pair<const DKinFitParticle*, size_t> >& locConstrainableParticles, const deque<const DKinFitParticle*>& locConstrainedParticles, const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles_P4s, const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles_P4s, const deque<size_t>& locConstraintsSetIndices);
+		void Calc_P4Guess(pair<const DKinFitParticle*, size_t>& locConstrainableParticle, const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles_P4s, const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles_P4s, TVector3& locMomentum);
+
+		bool Calc_VertexGuess(JEventLoop* locEventLoop, const deque<const DKinFitParticle*>& locInitialKinFitParticles, const deque<const DKinFitParticle*>& locFinalKinFitParticles, TVector3& locVertexGuess, deque<const DKinFitParticle*>& locFinalKinFitParticles_Vertex_Updated, int locVertexFindFlag, const map<const DKinFitParticle*, TVector3>& locP4GuessMap, map<const DKinFitParticle*, TVector3>& locDecayingParticleTrackPointGuesses);
 		double Calc_TimeGuess(const deque<const DKinFitParticle*>& locFinalKinFitParticles, DVector3 locVertexGuess, bool locUseRFTimeFlag, double locRFTime);
 		void Remove_BadVertexConstraints(deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles_Vertices, deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles_Vertices) const;
 

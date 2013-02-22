@@ -46,16 +46,17 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		const DKinematicData* Get_DetectedParticle(const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses_Reaction, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const JObject*& locSourceObject);
+		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses_Reaction, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const JObject*& locSourceObject);
 		DKinematicData* Create_Target(Particle_t locPID);
 		DBeamPhoton* Create_BeamPhoton(void); //for MC only!
 
-		double dMaxPhotonRFTimeDifference;
+		bool Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const;
+		bool Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const;
+		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		DParticleComboStep* Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep);
-
 		void Reset_KinematicData(DKinematicData* locKinematicData);
-
 		DParticleComboStep* Get_ParticleComboStepResource(void);
 		DKinematicData* Get_KinematicDataResource(void);
 		DBeamPhoton* Get_BeamPhotonResource(void);
@@ -75,12 +76,16 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		size_t MAX_DKinematicDataPoolSize;
 		size_t MAX_DBeamPhotonPoolSize;
 
-		bool dVertexZCutFlag;
-		double dMinVertexZ;
-		double dMaxVertexZ;
+		// PRE-DPARTICLECOMBO CUT VALUES
+			//bool = true/false for cut enabled/disabled, double = cut value
+			//Command-line values will override these values
+		pair<bool, double> dMinIndividualChargedPIDFOM; //the minimum PID FOM for a charged track used for this DReaction
+		pair<bool, double> dMinCombinedChargedPIDFOM; //the minimum combined PID FOM for all charged tracks used for this DReaction
+		pair<bool, double> dMinIndividualTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
+		pair<bool, double> dMinCombinedTrackingFOM; //the minimum combined Tracking FOM for all charged tracks used for this DReaction
+		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
 
-		double dMinChargedPIDFOM;
-		double dMaxTrackingChiSqPerDF;
+		double dTargetCenterZ;
 };
 
 #endif // _DParticleCombo_factory_PreKinFit_

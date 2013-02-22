@@ -64,3 +64,51 @@ const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticle*
 	return NULL;
 }
 
+const DTOFPoint* DMCThrownMatching::Get_MatchingTOFPoint(const DTOFTruth* locTOFTruth) const
+{
+	map<const DTOFTruth*, const DTOFPoint*>::const_iterator locIterator = dTOFTruthToPointMap.find(locTOFTruth);
+	if(locIterator != dTOFTruthToPointMap.end())
+		return locIterator->second;
+	return NULL;
+}
+
+const DTOFTruth* DMCThrownMatching::Get_MatchingTOFTruth(const DTOFPoint* locTOFPoint) const
+{
+	map<const DTOFPoint*, const DTOFTruth*>::const_iterator locIterator = dTOFPointToTruthMap.find(locTOFPoint);
+	if(locIterator != dTOFPointToTruthMap.end())
+		return locIterator->second;
+	return NULL;
+}
+
+const DBCALShower* DMCThrownMatching::Get_MatchingBCALShower(const DBCALTruthShower* locBCALTruthShower) const
+{
+	map<const DBCALTruthShower*, const DBCALShower*>::const_iterator locIterator = dBCALTruthToShowerMap.find(locBCALTruthShower);
+	if(locIterator != dBCALTruthToShowerMap.end())
+		return locIterator->second;
+	return NULL;
+}
+
+const DBCALTruthShower* DMCThrownMatching::Get_MatchingBCALTruthShower(const DBCALShower* locBCALShower) const
+{
+	map<const DBCALShower*, const DBCALTruthShower*>::const_iterator locIterator = dBCALShowerToTruthMap.find(locBCALShower);
+	if(locIterator != dBCALShowerToTruthMap.end())
+		return locIterator->second;
+	return NULL;
+}
+
+const DFCALShower* DMCThrownMatching::Get_MatchingFCALShower(const DFCALTruthShower* locFCALTruthShower) const
+{
+	map<const DFCALTruthShower*, const DFCALShower*>::const_iterator locIterator = dFCALTruthToShowerMap.find(locFCALTruthShower);
+	if(locIterator != dFCALTruthToShowerMap.end())
+		return locIterator->second;
+	return NULL;
+}
+
+const DFCALTruthShower* DMCThrownMatching::Get_MatchingFCALTruthShower(const DFCALShower* locFCALShower) const
+{
+	map<const DFCALShower*, const DFCALTruthShower*>::const_iterator locIterator = dFCALShowerToTruthMap.find(locFCALShower);
+	if(locIterator != dFCALShowerToTruthMap.end())
+		return locIterator->second;
+	return NULL;
+}
+

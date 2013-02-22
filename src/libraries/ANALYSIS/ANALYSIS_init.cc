@@ -45,13 +45,15 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	loop->AddFactory(new DAnalysisResults_factory_PreKinFit);
 	loop->AddFactory(new DAnalysisResults_factory);
 
+	DHistogramAction_ThrownParticleKinematics();
+	DHistogramAction_DetectedParticleKinematics();
+	DHistogramAction_GenReconTrackComparison();
+	DHistogramAction_TrackMultiplicity();
+	DHistogramAction_TOFHitStudy();
+
 	DHistogramAction_PID(NULL);
 	DHistogramAction_TrackVertexComparison(NULL);
 	DHistogramAction_ParticleComboKinematics(NULL, false);
-	DHistogramAction_ThrownParticleKinematics(NULL);
-	DHistogramAction_DetectedParticleKinematics(NULL);
-	DHistogramAction_GenReconTrackComparison(NULL);
-	DHistogramAction_TrackMultiplicity(NULL);
 	DHistogramAction_TruePID(NULL);
 	DHistogramAction_InvariantMass(NULL, Unknown, false, 0, 0.0, 0.0);
 	DHistogramAction_MissingMass(NULL, false, 0, 0.0, 0.0);

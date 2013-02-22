@@ -14,7 +14,7 @@ using namespace std;
 
 enum DKinFitParticleType
 {
-	d_DetectedParticle, 
+	d_DetectedParticle = 0, 
 	d_BeamParticle,
 	d_TargetParticle,
 	d_DecayingParticle, 
@@ -61,9 +61,14 @@ class DKinFitParticle
 		inline unsigned short int Get_VertexConstraintFlag(void) const{return dVertexConstraintFlag;}
 		inline DKinFitParticleType Get_KinFitParticleType(void) const{return dKinFitParticleType;}
 		inline bool Get_DecayingParticleAtProductionVertexFlag(void) const{return dDecayingParticleAtProductionVertexFlag;}
+
 		inline deque<DKinFitConstraint_VertexBase*> Get_CommonVertexAndOrTimeConstraints(void) const{return dCommonVertexAndOrTimeConstraints;}
-		inline DKinFitConstraint_VertexBase* Get_CommonVertexAndOrTimeConstraint(void) const{return (dCommonVertexAndOrTimeConstraints.empty()) ? NULL : dCommonVertexAndOrTimeConstraints[0];}
+		inline DKinFitConstraint_VertexBase* Get_CommonVertexAndOrTimeConstraint(void) const{return (dCommonVertexAndOrTimeConstraints.empty()) ? NULL : dCommonVertexAndOrTimeConstraints[0];} //WARNING: IF DECAYING CAN BE MORE THAN ONE!
 		inline size_t Get_NumVertexFits(void) const{return dCommonVertexAndOrTimeConstraints.size();};
+
+		inline deque<DKinFitConstraint_P4*> Get_P4Constraints(void) const{return dP4Constraints;}
+		inline DKinFitConstraint_P4* Get_P4Constraint(void) const{return (dP4Constraints.empty()) ? NULL : dP4Constraints[0];} //WARNING: IF DECAYING CAN BE MORE THAN ONE!
+		inline size_t Get_NumP4Constraints(void) const{return dP4Constraints.size();}
 
 		inline int Get_PxParamIndex(void) const{return dPxParamIndex;}
 		inline int Get_VxParamIndex(void) const{return dVxParamIndex;}
@@ -85,7 +90,7 @@ class DKinFitParticle
 		bool Get_IsInSpacetimeFitFlag(void) const;
 		bool Get_IsDefinedByVertexOrSpacetimeFitFlag(void) const; //as opposed to helping constrain it OR not being in it
 		bool Get_IsConstrainedByVertexOrSpacetimeFitFlag(void) const; //as opposed to being defined by it OR not being in it //INCLUDES neutral showers (constrained by time)
-		inline bool Get_IsInP4FitFlag(void) const{return dIsInP4FitFlag;}
+		inline bool Get_IsInP4FitFlag(void) const{return (!dP4Constraints.empty());}
 		inline bool Get_IsNeutralShowerFlag(void) const{return dIsNeutralShowerFlag;}
 
 	private:
@@ -110,10 +115,10 @@ class DKinFitParticle
 		inline void Set_LParamIndex(int locLParamIndex){dLParamIndex = locLParamIndex;}
 
 		inline void Set_IsNeutralShowerFlag(bool locIsNeutralShowerFlag){dIsNeutralShowerFlag = locIsNeutralShowerFlag;}
-		inline void Set_IsInP4FitFlag(bool locIsInP4FitFlag){dIsInP4FitFlag = locIsInP4FitFlag;}
 		inline void Set_VertexConstraintFlag(unsigned short int locVertexConstraintFlag){dVertexConstraintFlag = locVertexConstraintFlag;}
 		inline void Add_CommonVertexAndOrTimeConstraint(DKinFitConstraint_VertexBase* locCommonVertexAndOrTimeConstraint){dCommonVertexAndOrTimeConstraints.push_back(locCommonVertexAndOrTimeConstraint);}
 		inline void Set_CommonVertexAndOrTimeConstraints(deque<DKinFitConstraint_VertexBase*> locCommonVertexAndOrTimeConstraints){dCommonVertexAndOrTimeConstraints = locCommonVertexAndOrTimeConstraints;}
+		inline void Add_P4Constraint(DKinFitConstraint_P4* locP4Constraint){dP4Constraints.push_back(locP4Constraint);}
 
 		inline void Set_KinFitParticleType(DKinFitParticleType locKinFitParticleType){dKinFitParticleType = locKinFitParticleType;}
 		inline void Set_DecayingParticleAtProductionVertexFlag(bool locDecayingParticleAtProductionVertexFlag){dDecayingParticleAtProductionVertexFlag = locDecayingParticleAtProductionVertexFlag;}
@@ -132,7 +137,7 @@ class DKinFitParticle
 		//7x7 format: px, py, pz, x, y, z, t
 		//5x5 format: E, x, y, z, t
 
-		double dPathLength; //kinfit if v & t constraint of charged particles in b-field, else calculated if a vertex is fit
+		double dPathLength; //kinfit if v & t constraint of charged particles in b-field, else calculated if a vertex is fit // = distance between input point and common point
 		double dPathLengthUncertainty;
 
 		unsigned short int dVertexConstraintFlag; //unused unless in vertex fit //can choose between equations //only for non-accelerating particles not constrained in time
@@ -147,11 +152,11 @@ class DKinFitParticle
 
 		bool dDecayingParticleAtProductionVertexFlag; //true if the object's p3, v3, & t are defined at it's production vertex (& common v & t are at decay vertex). else at it's decay vertex (& common v & t are at production vertex)
 
-		bool dIsInP4FitFlag;
 		bool dIsNeutralShowerFlag;
 
 		//used in time constraint to point to simultaneously constrained vertex so that can update vertex position
 		deque<DKinFitConstraint_VertexBase*> dCommonVertexAndOrTimeConstraints; //can initially have more than one if a decaying particle (if so, the first one should be used)
+		deque<DKinFitConstraint_P4*> dP4Constraints;
 };
 
 #endif // _DKinFitParticle_

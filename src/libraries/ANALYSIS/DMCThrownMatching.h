@@ -11,6 +11,13 @@
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DNeutralParticle.h"
 
+#include "TOF/DTOFPoint.h"
+#include "TOF/DTOFTruth.h"
+#include "BCAL/DBCALShower.h"
+#include "BCAL/DBCALTruthShower.h"
+#include "FCAL/DFCALShower.h"
+#include "FCAL/DFCALTruthShower.h"
+
 using namespace std;
 using namespace jana;
 
@@ -34,6 +41,15 @@ class DMCThrownMatching : public JObject
 		inline void Set_NeutralToThrownMap(const map<const DNeutralParticle*, const DMCThrown*>& locNeutralToThrownMap){dNeutralToThrownMap = locNeutralToThrownMap;}
 		inline void Set_ThrownToNeutralMap(const map<const DMCThrown*, const DNeutralParticle*>& locThrownToNeutralMap){dThrownToNeutralMap = locThrownToNeutralMap;}
 
+		inline void Set_TOFPointToTruthMap(const map<const DTOFPoint*, const DTOFTruth*>& locTOFPointToTruthMap){dTOFPointToTruthMap = locTOFPointToTruthMap;}
+		inline void Set_TOFTruthToPointMap(const map<const DTOFTruth*, const DTOFPoint*>& locTOFTruthToPointMap){dTOFTruthToPointMap = locTOFTruthToPointMap;}
+
+		inline void Set_BCALShowerToTruthMap(map<const DBCALShower*, const DBCALTruthShower*>& locBCALShowerToTruthMap){dBCALShowerToTruthMap = locBCALShowerToTruthMap;}
+		inline void Set_BCALTruthToShowerMap(map<const DBCALTruthShower*, const DBCALShower*>& locBCALTruthToShowerMap){dBCALTruthToShowerMap = locBCALTruthToShowerMap;}
+
+		inline void Set_FCALShowerToTruthMap(map<const DFCALShower*, const DFCALTruthShower*>& locFCALShowerToTruthMap){dFCALShowerToTruthMap = locFCALShowerToTruthMap;}
+		inline void Set_FCALTruthToShowerMap(map<const DFCALTruthShower*, const DFCALShower*>& locFCALTruthToShowerMap){dFCALTruthToShowerMap = locFCALTruthToShowerMap;}
+
 		//GETTERS: INDIVIDUAL PARTICLES
 		void Get_MatchingChargedHypotheses(const DMCThrown* locInputMCThrown, deque<const DChargedTrackHypothesis*>& locMatchingChargedHypotheses) const;
 		const DChargedTrack* Get_MatchingChargedTrack(const DMCThrown* locInputMCThrown) const;
@@ -46,6 +62,16 @@ class DMCThrownMatching : public JObject
 
 		const DMCThrown* Get_MatchingMCThrown(const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
 		const DMCThrown* Get_MatchingMCThrown(const DNeutralParticle* locNeutralParticle) const;
+
+		//GETTERS: INDIVIDUAL HITS
+		const DTOFPoint* Get_MatchingTOFPoint(const DTOFTruth* locTOFTruth) const;
+		const DTOFTruth* Get_MatchingTOFTruth(const DTOFPoint* locTOFPoint) const;
+
+		const DBCALShower* Get_MatchingBCALShower(const DBCALTruthShower* locBCALTruthShower) const;
+		const DBCALTruthShower* Get_MatchingBCALTruthShower(const DBCALShower* locBCALShower) const;
+
+		const DFCALShower* Get_MatchingFCALShower(const DFCALTruthShower* locFCALTruthShower) const;
+		const DFCALTruthShower* Get_MatchingFCALTruthShower(const DFCALShower* locFCALShower) const;
 
 		//GETTERS: WHOLE MAPS
 		inline void Get_ChargedHypoToThrownMap(map<const DChargedTrackHypothesis*, const DMCThrown*>& locChargedHypoToThrownMap) const{locChargedHypoToThrownMap = dChargedHypoToThrownMap;}
@@ -60,6 +86,15 @@ class DMCThrownMatching : public JObject
 		inline void Get_NeutralToThrownMap(map<const DNeutralParticle*, const DMCThrown*>& locNeutralToThrownMap) const{locNeutralToThrownMap = dNeutralToThrownMap;}
 		inline void Get_ThrownToNeutralMap(map<const DMCThrown*, const DNeutralParticle*>& locThrownToNeutralMap) const{locThrownToNeutralMap = dThrownToNeutralMap;}
 
+		inline void Get_TOFPointToTruthMap(map<const DTOFPoint*, const DTOFTruth*>& locTOFPointToTruthMap) const{locTOFPointToTruthMap = dTOFPointToTruthMap;}
+		inline void Get_TOFTruthToPointMap(map<const DTOFTruth*, const DTOFPoint*>& locTOFTruthToPointMap) const{locTOFTruthToPointMap = dTOFTruthToPointMap;}
+
+		inline void Get_BCALShowerToTruthMap(map<const DBCALShower*, const DBCALTruthShower*>& locBCALShowerToTruthMap) const{locBCALShowerToTruthMap = dBCALShowerToTruthMap;}
+		inline void Get_BCALTruthToShowerMap(map<const DBCALTruthShower*, const DBCALShower*>& locBCALTruthToShowerMap) const{locBCALTruthToShowerMap = dBCALTruthToShowerMap;}
+
+		inline void Get_FCALShowerToTruthMap(map<const DFCALShower*, const DFCALTruthShower*>& locFCALShowerToTruthMap) const{locFCALShowerToTruthMap = dFCALShowerToTruthMap;}
+		inline void Get_FCALTruthToShowerMap(map<const DFCALTruthShower*, const DFCALShower*>& locFCALTruthToShowerMap) const{locFCALTruthToShowerMap = dFCALTruthToShowerMap;}
+
 	private:
 
 		map<const DChargedTrackHypothesis*, const DMCThrown*> dChargedHypoToThrownMap;
@@ -73,6 +108,15 @@ class DMCThrownMatching : public JObject
 
 		map<const DNeutralParticle*, const DMCThrown*> dNeutralToThrownMap;
 		map<const DMCThrown*, const DNeutralParticle*> dThrownToNeutralMap;
+
+		map<const DTOFPoint*, const DTOFTruth*> dTOFPointToTruthMap;
+		map<const DTOFTruth*, const DTOFPoint*> dTOFTruthToPointMap;
+
+		map<const DBCALShower*, const DBCALTruthShower*> dBCALShowerToTruthMap;
+		map<const DBCALTruthShower*, const DBCALShower*> dBCALTruthToShowerMap;
+
+		map<const DFCALShower*, const DFCALTruthShower*> dFCALShowerToTruthMap;
+		map<const DFCALTruthShower*, const DFCALShower*> dFCALTruthToShowerMap;
 };
 
 

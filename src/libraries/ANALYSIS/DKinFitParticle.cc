@@ -14,6 +14,7 @@ void DKinFitParticle::Reset(void)
 	dMomentum.SetXYZ(0.0, 0.0, 0.0);
 	dCovarianceMatrix = NULL;
 	dPathLength = 0.0;
+	dPathLengthUncertainty = 0.0;
 
 	dVertexConstraintFlag = 0;
 
@@ -28,8 +29,8 @@ void DKinFitParticle::Reset(void)
 	dDecayingParticleAtProductionVertexFlag = true;
 
 	dIsNeutralShowerFlag = false;
-	dIsInP4FitFlag = false;
 	dCommonVertexAndOrTimeConstraints.clear();
+	dP4Constraints.clear();
 }
 
 TVector3 DKinFitParticle::Get_CommonVertex(void) const
@@ -91,7 +92,7 @@ bool DKinFitParticle::Get_IsDefinedByVertexOrSpacetimeFitFlag(void) const //as o
 		DKinFitConstraint_Spacetime* locKinFitConstraint_Spacetime = dynamic_cast<DKinFitConstraint_Spacetime*>(dCommonVertexAndOrTimeConstraints[loc_i]);
 		if(locKinFitConstraint_Spacetime != NULL)
 		{
-			deque<DKinFitParticle*> locNoConstrainparticles = locKinFitConstraint_Spacetime->Get_NoConstrainParticles();
+			deque<const DKinFitParticle*> locNoConstrainparticles = locKinFitConstraint_Spacetime->Get_NoConstrainParticles();
 			for(size_t loc_j = 0; loc_j < locNoConstrainparticles.size(); ++loc_j)
 			{
 				if(locNoConstrainparticles[loc_j] == this)
@@ -102,7 +103,7 @@ bool DKinFitParticle::Get_IsDefinedByVertexOrSpacetimeFitFlag(void) const //as o
 		DKinFitConstraint_Vertex* locKinFitConstraint_Vertex = dynamic_cast<DKinFitConstraint_Vertex*>(dCommonVertexAndOrTimeConstraints[loc_i]);
 		if(locKinFitConstraint_Vertex != NULL)
 		{
-			deque<DKinFitParticle*> locNoConstrainparticles = locKinFitConstraint_Vertex->Get_NoConstrainParticles();
+			deque<const DKinFitParticle*> locNoConstrainparticles = locKinFitConstraint_Vertex->Get_NoConstrainParticles();
 			for(size_t loc_j = 0; loc_j < locNoConstrainparticles.size(); ++loc_j)
 			{
 				if(locNoConstrainparticles[loc_j] == this)
@@ -121,7 +122,7 @@ bool DKinFitParticle::Get_IsConstrainedByVertexOrSpacetimeFitFlag(void) const //
 		DKinFitConstraint_Spacetime* locKinFitConstraint_Spacetime = dynamic_cast<DKinFitConstraint_Spacetime*>(dCommonVertexAndOrTimeConstraints[loc_i]);
 		if(locKinFitConstraint_Spacetime != NULL)
 		{
-			deque<DKinFitParticle*> locNoConstrainparticles = locKinFitConstraint_Spacetime->Get_NoConstrainParticles();
+			deque<const DKinFitParticle*> locNoConstrainparticles = locKinFitConstraint_Spacetime->Get_NoConstrainParticles();
 			for(size_t loc_j = 0; loc_j < locNoConstrainparticles.size(); ++loc_j)
 			{
 				if(locNoConstrainparticles[loc_j] == this)
@@ -132,7 +133,7 @@ bool DKinFitParticle::Get_IsConstrainedByVertexOrSpacetimeFitFlag(void) const //
 		DKinFitConstraint_Vertex* locKinFitConstraint_Vertex = dynamic_cast<DKinFitConstraint_Vertex*>(dCommonVertexAndOrTimeConstraints[loc_i]);
 		if(locKinFitConstraint_Vertex != NULL)
 		{
-			deque<DKinFitParticle*> locNoConstrainparticles = locKinFitConstraint_Vertex->Get_NoConstrainParticles();
+			deque<const DKinFitParticle*> locNoConstrainparticles = locKinFitConstraint_Vertex->Get_NoConstrainParticles();
 			for(size_t loc_j = 0; loc_j < locNoConstrainparticles.size(); ++loc_j)
 			{
 				if(locNoConstrainparticles[loc_j] == this)

@@ -238,7 +238,6 @@ double DAnalysisUtilities::Calc_DOCA(const DVector3 &locUnitDir1, const DVector3
   return (locPOCA1 - locPOCA2).Mag();
 }
 
-
 double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinematicData*>& locParticles, const DVector3& locCommonVertex) const
 {
 	//crudely propagate the track times to the common vertex and return the average track time
@@ -272,6 +271,56 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& l
 		locAverageTime += locTime;
 	}
 	return locAverageTime/(double(locParticles.size()));
+}
+
+DVector3 DAnalysisUtilities::Calc_CrudeVertex(const DChargedTrackHypothesis* locChargedTrackHypothesis, const deque<DKinematicData*>& locDecayingParticles) const
+{
+	DKinematicData* locPropagatedData = NULL;
+	return Calc_CrudeVertex(locChargedTrackHypothesis, locDecayingParticles, locPropagatedData);
+}
+
+DVector3 DAnalysisUtilities::Calc_CrudeVertex(const DChargedTrackHypothesis* locChargedTrackHypothesis, const deque<DKinematicData*>& locDecayingParticles, DKinematicData*& locPropagatedData) const
+{
+	//propagates the charged track through the b-field
+	//uses the midpoint of the smallest DOCA line
+	//if locPropagatedData is supplied, the charged track data is propagated to the vertex
+	DVector3 locVertex(0.0, 0.0, dTargetZCenter);
+
+	if(locChargedTrackHypothesis == NULL)
+	{
+		if(locDecayingParticles.empty())
+			return locVertex;
+		return ((locDecayingParticles[0] == NULL) ? locVertex : locDecayingParticles[0]->position());
+	}
+	if(locDecayingParticles.empty())
+		return locChargedTrackHypothesis->position();
+
+	double locDOCA, locSmallestDOCA, locDOCAVariance;
+	DVector3 locTempVertex;
+
+	bool locUpdateTrackDataFlag = (locPropagatedData == NULL);
+
+	locSmallestDOCA = 9.9E9;
+	//first find the closest pair of tracks whilst calcing the vertex
+	size_t locClosestParticle = 0;
+	for(size_t loc_i = 0; loc_i < locDecayingParticles.size(); ++loc_i)
+	{
+		locChargedTrackHypothesis->dRT->FindPOCAtoLine(locDecayingParticles[loc_i]->position(), locDecayingParticles[loc_i]->momentum(), NULL, NULL, locTempVertex, locDOCA, locDOCAVariance);
+		if(locDOCA < locSmallestDOCA)
+		{
+			locClosestParticle = loc_i;
+			locSmallestDOCA = locDOCA;
+			locVertex = locTempVertex;
+		}
+	}
+	//now propagate the track data to the vertex (if desired)
+/*
+	if(locUpdateTrackDataFlag)
+	{
+		locParticles[loc_j]->dRT->IntersectTracks(locParticles[loc_k]->dRT, locPropagatedData[loc_j], locPropagatedData[loc_k], locTempVertex, locDOCA, locDOCAVariance);
+*/
+
+	return locVertex;
 }
 
 DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const
@@ -327,7 +376,6 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DChargedTrackHyp
 			}
 		}
 	}
-
 	//now propagate the track data to the vertex (if desired)
 /*
 	if(locUpdateTrackDataFlag)
@@ -573,6 +621,9 @@ bool DAnalysisUtilities::Compare_Particles(const deque<const DKinematicData*>& l
 }
 
 
+
+
+
 //check whether a given decay chain appears anywhere in any step, but allow the measured particles to be in any step within that chain: if a decaying particle, will then compare the steps with the decay products
 bool DAnalysisUtilities::Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
 {
@@ -627,6 +678,44 @@ bool DAnalysisUtilities::Find_SimilarCombos_AnyStep(const DParticleCombo* locPar
 			return true;
 	}
 	return false;
+}
+
+//check whether the kinematic fit results are identical
+bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
+{
+	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
+	return Find_SimilarCombos_KinFit(locParticleCombo_Source, locParticleCombos_ToCheck, locParticleCombos_Similar);
+}
+bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
+{
+	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
+	locParticleCombos_Similar.clear();
+	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
+	{
+		if(Find_SimilarCombos_KinFit(locParticleCombo_Source, locParticleCombos_ToCheck[loc_i].first))
+			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
+	}
+	return (!locParticleCombos_Similar.empty());
+}
+bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
+{
+	deque<const DParticleCombo*> locParticleCombos_Similar;
+	return Find_SimilarCombos_KinFit(locParticleCombo_Source, locParticleCombos_ToCheck, locParticleCombos_Similar);
+}
+bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
+{
+	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
+	locParticleCombos_Similar.clear();
+	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
+	{
+		if(Find_SimilarCombos_KinFit(locParticleCombo_Source, locParticleCombos_ToCheck[loc_i]))
+			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
+	}
+	return (!locParticleCombos_Similar.empty());
+}
+bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const DParticleCombo* locParticleCombo_ToCheck) const
+{
+	return (locParticleCombo_Source->Will_KinFitBeIdentical(locParticleCombo_ToCheck));
 }
 
 //check whether a given measured particle appears anywhere in any step

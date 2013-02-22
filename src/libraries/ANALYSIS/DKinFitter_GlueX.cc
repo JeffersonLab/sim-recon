@@ -110,6 +110,22 @@ const DKinFitParticle* DKinFitter_GlueX::Make_TargetParticle(Particle_t locPID)
 	return locKinFitParticle;
 }
 
+const DKinematicData* DKinFitter_GlueX::Get_Source_FromInput(const DKinFitParticle* locKinFitParticle) const
+{
+	map<const DKinFitParticle*, const DKinematicData*>::const_iterator locIterator = dParticleMapping_InputToSource.find(locKinFitParticle);
+	if(locIterator == dParticleMapping_InputToSource.end())
+		return NULL;
+	return locIterator->second;
+}
+
+const DKinematicData* DKinFitter_GlueX::Get_Source_FromOutput(const DKinFitParticle* locKinFitParticle) const
+{
+	map<const DKinFitParticle*, const DKinematicData*>::const_iterator locIterator = dParticleMapping_OutputToSource.find(locKinFitParticle);
+	if(locIterator == dParticleMapping_OutputToSource.end())
+		return NULL;
+	return locIterator->second;
+}
+
 bool DKinFitter_GlueX::Fit_Reaction(void)
 {
 	bool locFitStatus = DKinFitter::Fit_Reaction();
@@ -131,6 +147,8 @@ bool DKinFitter_GlueX::Fit_Reaction(void)
 	{
 		locInputParticle = locParticleMappingIterator->first;
 		locKinematicData = locParticleMappingIterator->second;
+		if(locKinFitParticleIOMap.find(locInputParticle) == locKinFitParticleIOMap.end())
+			continue; //particle added to kinfitter but not included in this fit
 		locOutputParticle = locKinFitParticleIOMap[locInputParticle];
 		dParticleMapping_OutputToSource[locOutputParticle] = locKinematicData;
 	}

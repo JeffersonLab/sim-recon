@@ -22,6 +22,7 @@ class DAnalysisResults : public JObject
 		inline void Add_FailedParticleCombo(const DParticleCombo* locParticleCombo, size_t locAnalysisActionIndex){dFailedParticleComboMap[locParticleCombo] = locAnalysisActionIndex;}
 		inline void Get_FailedParticleComboMap(map<const DParticleCombo*, size_t>& locFailedParticleComboMap) const{locFailedParticleComboMap = dFailedParticleComboMap;}
 
+		inline size_t Get_NumPassedParticleCombos(void) const{return dPassedParticleCombos.size();}
 		inline void Get_PassedParticleCombos(deque<const DParticleCombo*>& locPassedParticleCombos) const{locPassedParticleCombos = dPassedParticleCombos;}
 		inline void Add_PassedParticleCombo(const DParticleCombo* locPassedParticleCombo){dPassedParticleCombos.push_back(locPassedParticleCombo);}
 

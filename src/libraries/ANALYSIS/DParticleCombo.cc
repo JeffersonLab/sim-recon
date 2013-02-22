@@ -2,16 +2,109 @@
 
 bool DParticleCombo::Will_KinFitBeIdentical(const DParticleCombo* locParticleCombo) const
 {
-	//the pointers for the steps must be identical for this to be true!!
-	if(dParticleComboSteps.size() != locParticleCombo->Get_NumParticleComboSteps())
-		return false;
+//missing particles, decaying particles
+
 	if(dReaction->Get_KinFitType() != locParticleCombo->Get_Reaction()->Get_KinFitType())
 		return false;
-	for(size_t loc_k = 0; loc_k < locParticleCombo->Get_NumParticleComboSteps(); ++loc_k)
+
+	deque<const DKinematicData*> locMeasuredFinalStateParticles;
+
+	deque<deque<const DKinematicData*> > locMeasuredFinalStateParticles_ByMassConstraint_Input;
+	deque<Particle_t> locInitialPIDs_ByMassConstraint_Input;
+	Particle_t locTargetPID_Input = Unknown;
+	const DKinematicData* locMeasuredBeamParticle_Input = NULL;
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
-		if(dParticleComboSteps[loc_k] != locParticleCombo->Get_ParticleComboStep(loc_k))
+		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+		if((loc_i == 0) && (locParticleComboStep->Get_InitialParticleID() == Gamma))
+		{
+			locTargetPID_Input = locParticleComboStep->Get_TargetParticleID();
+			locMeasuredBeamParticle_Input = locParticleComboStep->Get_InitialParticle_Measured();
+			locInitialPIDs_ByMassConstraint_Input.push_back(locParticleComboStep->Get_InitialParticleID());
+		}
+		else
+		{
+			if(IsFixedMass(locParticleComboStep->Get_InitialParticleID()))
+			{
+				locInitialPIDs_ByMassConstraint_Input.push_back(locParticleComboStep->Get_InitialParticleID());
+				locMeasuredFinalStateParticles_ByMassConstraint_Input.push_back(locMeasuredFinalStateParticles);
+				locMeasuredFinalStateParticles.clear();
+			}
+		}
+
+		deque<const DKinematicData*> locStepParticles;
+		locParticleComboStep->Get_DetectedFinalParticles_Measured(locStepParticles);
+		locMeasuredFinalStateParticles.insert(locMeasuredFinalStateParticles.end(), locStepParticles.begin(), locStepParticles.end());
+	}
+	locMeasuredFinalStateParticles_ByMassConstraint_Input.push_back(locMeasuredFinalStateParticles); //save the last one
+	locMeasuredFinalStateParticles.clear();
+
+	deque<deque<const DKinematicData*> > locMeasuredFinalStateParticles_ByMassConstraint_This;
+	deque<Particle_t> locInitialPIDs_ByMassConstraint_This;
+	Particle_t locTargetPID_This = Unknown;
+	const DKinematicData* locMeasuredBeamParticle_This = NULL;
+	for(size_t loc_i = 0; loc_i < Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboStep* locParticleComboStep = Get_ParticleComboStep(loc_i);
+		if((loc_i == 0) && (locParticleComboStep->Get_InitialParticleID() == Gamma))
+		{
+			locTargetPID_This = locParticleComboStep->Get_TargetParticleID();
+			locMeasuredBeamParticle_This = locParticleComboStep->Get_InitialParticle_Measured();
+			locInitialPIDs_ByMassConstraint_This.push_back(locParticleComboStep->Get_InitialParticleID());
+		}
+		else
+		{
+			if(IsFixedMass(locParticleComboStep->Get_InitialParticleID()))
+			{
+				locInitialPIDs_ByMassConstraint_This.push_back(locParticleComboStep->Get_InitialParticleID());
+				locMeasuredFinalStateParticles_ByMassConstraint_This.push_back(locMeasuredFinalStateParticles);
+				locMeasuredFinalStateParticles.clear();
+			}
+		}
+
+		deque<const DKinematicData*> locStepParticles;
+		locParticleComboStep->Get_DetectedFinalParticles_Measured(locStepParticles);
+		locMeasuredFinalStateParticles.insert(locMeasuredFinalStateParticles.end(), locStepParticles.begin(), locStepParticles.end());
+	}
+	locMeasuredFinalStateParticles_ByMassConstraint_This.push_back(locMeasuredFinalStateParticles); //save the last one
+	locMeasuredFinalStateParticles.clear();
+
+	if(locTargetPID_Input != locTargetPID_This)
+		return false;
+	if(locMeasuredBeamParticle_Input != locMeasuredBeamParticle_This)
+		return false;
+	if(locMeasuredFinalStateParticles_ByMassConstraint_Input.size() != locMeasuredFinalStateParticles_ByMassConstraint_This.size())
+		return false;
+	if(locInitialPIDs_ByMassConstraint_Input.size() != locInitialPIDs_ByMassConstraint_This.size())
+		return false;
+
+	for(size_t loc_i = 0; loc_i < locInitialPIDs_ByMassConstraint_Input.size(); ++loc_i)
+	{
+		if(locInitialPIDs_ByMassConstraint_Input[loc_i] != locInitialPIDs_ByMassConstraint_This[loc_i])
 			return false;
 	}
+
+	const DKinematicData* locKinematicData;
+	for(size_t loc_i = 0; loc_i < locMeasuredFinalStateParticles_ByMassConstraint_Input.size(); ++loc_i)
+	{
+		if(locMeasuredFinalStateParticles_ByMassConstraint_Input[loc_i].size() != locMeasuredFinalStateParticles_ByMassConstraint_This[loc_i].size())
+			return false;
+		for(size_t loc_j = 0; loc_j < locMeasuredFinalStateParticles_ByMassConstraint_Input[loc_i].size(); ++loc_j)
+		{
+			locKinematicData = locMeasuredFinalStateParticles_ByMassConstraint_Input[loc_i][loc_j];
+			bool locParticleFoundFlag = false;
+			for(size_t loc_k = 0; loc_k < locMeasuredFinalStateParticles_ByMassConstraint_This[loc_i].size(); ++loc_k)
+			{
+				if(locKinematicData != locMeasuredFinalStateParticles_ByMassConstraint_This[loc_i][loc_k])
+					continue;
+				locParticleFoundFlag = true;
+				break;
+			}
+			if(!locParticleFoundFlag)
+				return false;
+		}
+	}
+
 	return true;
 }
 

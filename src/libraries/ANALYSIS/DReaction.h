@@ -21,7 +21,7 @@ class DReaction : public JObject
 		JOBJECT_PUBLIC(DReaction);
 
 		// CONSTRUCTOR:
-		DReaction(string locReactionName) : dReactionName(locReactionName){} //User must specify a unique reaction name upon construction
+		DReaction(string locReactionName); //User must specify a unique reaction name upon construction
 
 		// SET OBJECT DATA:
 		inline void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
@@ -60,6 +60,22 @@ class DReaction : public JObject
 		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
 		bool Check_IfDecayingParticleExcludedFromP4KinFit(size_t locStepIndex) const;
 
+		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
+		inline void Set_MinIndividualChargedPIDFOM(double locMinIndividualChargedPIDFOM){dMinIndividualChargedPIDFOM = pair<bool, double>(true, locMinIndividualChargedPIDFOM);}
+		inline void Set_MinCombinedChargedPIDFOM(double locMinCombinedChargedPIDFOM){dMinCombinedChargedPIDFOM = pair<bool, double>(true, locMinCombinedChargedPIDFOM);}
+		inline void Set_MinIndividualTrackingFOM(double locMinIndividualTrackingFOM){dMinIndividualTrackingFOM = pair<bool, double>(true, locMinIndividualTrackingFOM);}
+		inline void Set_MinCombinedTrackingFOM(double locMinCombinedTrackingFOM){dMinCombinedTrackingFOM = pair<bool, double>(true, locMinCombinedTrackingFOM);}
+		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
+		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
+
+		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
+		inline pair<bool, double> Get_MinIndividualChargedPIDFOM(void) const{return dMinIndividualChargedPIDFOM;}
+		inline pair<bool, double> Get_MinCombinedChargedPIDFOM(void) const{return dMinCombinedChargedPIDFOM;}
+		inline pair<bool, double> Get_MinIndividualTrackingFOM(void) const{return dMinIndividualTrackingFOM;}
+		inline pair<bool, double> Get_MinCombinedTrackingFOM(void) const{return dMinCombinedTrackingFOM;}
+		inline pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
+		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
+
 	private:
 		// PRIVATE METHODS:
 		DReaction(void); //make default constructor private. MUST set a name upon construction (and must be unique!)
@@ -73,6 +89,18 @@ class DReaction : public JObject
 		string dReactionName; //must be unique
 		DKinFitType dKinFitType; //defined in ANALYSIS/DKinFitResults.h
 		deque<size_t> dDecayingParticlesExcludedFromP4Kinfit; //to exclude decaying particles from the kinematic fit (resonances are automatically excluded) //size_t is step index where it is a parent
+
+		// PRE-DPARTICLECOMBO CUT VALUES
+			//bool = true/false for cut enabled/disabled, double = cut value
+			//Command-line values (variable names are below in all-caps) will override these values
+			//all cuts are disabled by default except dMinProtonMomentum: 300 MeV/c (value used during track reconstruction)
+			//note: tracks with no PID information are not cut-by/included-in the PID cuts
+		pair<bool, double> dMinIndividualChargedPIDFOM; //COMBO:MININDIVIDUALCHARGEDPIDFOM - the minimum PID FOM for a charged track used for this DReaction
+		pair<bool, double> dMinCombinedChargedPIDFOM; //COMBO:MINCOMBINEDCHARGEDPIDFOM - the minimum combined PID FOM for all charged tracks used for this DReaction
+		pair<bool, double> dMinIndividualTrackingFOM; //COMBO:MININDIVIDUALTRACKINGFOM - the minimum Tracking FOM for a charged track used for this DReaction
+		pair<bool, double> dMinCombinedTrackingFOM; //COMBO:MINCOMBINEDTRACKINGFOM - the minimum combined Tracking FOM for all charged tracks used for this DReaction
+		pair<bool, double> dMaxPhotonRFDeltaT; //COMBO:PHOTONRFDELTAT - the maximum photon-rf time difference: used for photon selection
+		pair<bool, double> dMinProtonMomentum; //COMBO:MINPROTONMOMENTUM - when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
 };
 
 #endif // _DReaction_

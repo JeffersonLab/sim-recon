@@ -19,6 +19,13 @@
 #include "PID/DNeutralShower.h"
 #include "ANALYSIS/DMCThrownMatching.h"
 
+#include "TOF/DTOFPoint.h"
+#include "TOF/DTOFTruth.h"
+#include "BCAL/DBCALShower.h"
+#include "BCAL/DBCALTruthShower.h"
+#include "FCAL/DFCALShower.h"
+#include "FCAL/DFCALTruthShower.h"
+
 using namespace jana;
 using namespace std;
 
@@ -46,9 +53,19 @@ class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 		void Find_GenReconMatches_NeutralParticle(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DNeutralParticle*>& locNeutralParticles, DMCThrownMatching* locMCThrownMatching) const;
 		void Find_GenReconMatches_NeutralHypo(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DNeutralParticleHypothesis*>& locInputNeutralParticleHypothesisVector, DMCThrownMatching* locMCThrownMatching) const;
 
+		void Find_GenReconMatches_TOFPoints(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const;
+		void Find_GenReconMatches_BCALShowers(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const;
+		void Find_GenReconMatches_FCALShowers(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const;
+
 		deque<Particle_t> dMCThrownComparisonPIDs;
 		double dMinimumMatchFOM;
+		double dMaximumTOFMatchDistance;
+		double dMaximumFCALMatchDistance;
+		double dMaximumBCALMatchAngleDegrees;
 		unsigned int dDebugLevel;
+		double dTargetCenter;
+
+		bool dUseKLOEFlag;
 };
 
 #endif // _DMCThrownMatching_factory_

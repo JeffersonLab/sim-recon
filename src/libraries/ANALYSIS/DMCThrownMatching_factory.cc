@@ -32,6 +32,11 @@ jerror_t DMCThrownMatching_factory::init(void)
 {
 	dMinimumMatchFOM = -1.0;
 	dDebugLevel = 0;
+	dMaximumTOFMatchDistance = 10.0; //cm
+	dMaximumFCALMatchDistance = 10.0; //cm
+	dMaximumBCALMatchAngleDegrees = 5.0;
+	dUseKLOEFlag = true;
+	dTargetCenter = 65.0; //set me from geometry!
 	return NOERROR;
 }
 
@@ -42,6 +47,10 @@ jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int run
 {
 	gPARMS->SetDefaultParameter("MCMATCH:MINMATCHFOM", dMinimumMatchFOM);
 	gPARMS->SetDefaultParameter("MCMATCH:DEBUGLEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHTOFDISTANCE", dMaximumTOFMatchDistance);
+	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHFCALDISTANCE", dMaximumFCALMatchDistance);
+	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHBCALANGLE", dMaximumBCALMatchAngleDegrees);
+	gPARMS->SetDefaultParameter("BCALRECON:USE_KLOE", dUseKLOEFlag);
 	return NOERROR;
 }
 
@@ -94,6 +103,10 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 	Find_GenReconMatches_NeutralHypo(locOriginalMCThrowns_Neutral, locNeutralParticleHypotheses, locMCThrownMatching);
 	Find_GenReconMatches_NeutralParticle(locOriginalMCThrowns_Neutral, locNeutralParticles, locMCThrownMatching);
 
+	Find_GenReconMatches_TOFPoints(locEventLoop, locMCThrownMatching);
+	Find_GenReconMatches_BCALShowers(locEventLoop, locMCThrownMatching);
+	Find_GenReconMatches_FCALShowers(locEventLoop, locMCThrownMatching);
+
 	if(dDebugLevel > 0)
 	{
 		cout << "Charged Track Matching Summary:" << endl;
@@ -135,6 +148,241 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 	_data.push_back(locMCThrownMatching);
 
 	return NOERROR;
+}
+
+void DMCThrownMatching_factory::Find_GenReconMatches_FCALShowers(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const
+{
+	vector<const DFCALTruthShower*> locFCALTruthShowers;
+	const DFCALTruthShower* locFCALTruthShower;
+	locEventLoop->Get(locFCALTruthShowers);
+
+	vector<const DFCALShower*> locFCALShowers;
+	const DFCALShower* locFCALShower;
+	locEventLoop->Get(locFCALShowers);
+
+	map<const DFCALShower*, const DFCALTruthShower*> locFCALShowerToTruthMap;
+	map<const DFCALTruthShower*, const DFCALShower*> locFCALTruthToShowerMap;
+
+	size_t locBestFCALShowerIndex = 0, locBestFCALTruthShowerIndex = 0;
+	double locMatchDistance;
+	while((!locFCALShowers.empty()) && (!locFCALTruthShowers.empty()))
+	{
+		bool locMatchFoundFlag = false;
+		double locLargestEnergy = 0.0;
+		for(size_t loc_i = 0; loc_i < locFCALTruthShowers.size(); ++loc_i)
+		{
+			locFCALTruthShower = locFCALTruthShowers[loc_i];
+			for(size_t loc_j = 0; loc_j < locFCALShowers.size(); ++loc_j)
+			{
+				locFCALShower = locFCALShowers[loc_j];
+
+				DVector3 locFCALShowerPosition = locFCALShower->getPosition();
+
+				//propagate truth shower from the FCAL face to the depth of the measured shower
+				double locDeltaZ = locFCALShowerPosition.Z() - locFCALTruthShower->z();
+				DVector3 locTrueMomentum(locFCALTruthShower->px(), locFCALTruthShower->py(), locFCALTruthShower->pz());
+				double locDeltaPathLength = locDeltaZ/cos(locTrueMomentum.Theta());
+				double locTrueX = locFCALTruthShower->x() + locDeltaPathLength*sin(locTrueMomentum.Theta())*cos(locTrueMomentum.Phi());
+				double locTrueY = locFCALTruthShower->y() + locDeltaPathLength*sin(locTrueMomentum.Theta())*sin(locTrueMomentum.Phi());
+				DVector3 locFCALTruthShowerPosition(locTrueX, locTrueY, locFCALShowerPosition.Z());
+
+				locMatchDistance = (locFCALShowerPosition - locFCALTruthShowerPosition).Mag();
+				if(locMatchDistance > dMaximumFCALMatchDistance)
+					continue;
+
+				//keep the shower with the largest energy
+				if(locFCALShower->getEnergy() > locLargestEnergy)
+				{
+					locMatchFoundFlag = true;
+					locLargestEnergy = locFCALShower->getEnergy();
+					locBestFCALTruthShowerIndex = loc_i;
+					locBestFCALShowerIndex = loc_j;
+				}
+			}
+		}
+
+		if(!locMatchFoundFlag) //no more good matches!1
+			break;
+
+		locFCALTruthShower = locFCALTruthShowers[locBestFCALTruthShowerIndex];
+		locFCALShower = locFCALShowers[locBestFCALShowerIndex];
+
+		locFCALShowerToTruthMap[locFCALShower] = locFCALTruthShower;
+		locFCALTruthToShowerMap[locFCALTruthShower] = locFCALShower;
+
+		locFCALShowers.erase(locFCALShowers.begin() + locBestFCALShowerIndex);
+		locFCALTruthShowers.erase(locFCALTruthShowers.begin() + locBestFCALTruthShowerIndex);
+	}
+
+	locMCThrownMatching->Set_FCALShowerToTruthMap(locFCALShowerToTruthMap);
+	locMCThrownMatching->Set_FCALTruthToShowerMap(locFCALTruthToShowerMap);
+}
+
+void DMCThrownMatching_factory::Find_GenReconMatches_BCALShowers(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const
+{
+	vector<const DBCALTruthShower*> locBCALTruthShowers;
+	const DBCALTruthShower* locBCALTruthShower;
+	locEventLoop->Get(locBCALTruthShowers);
+
+	vector<const DBCALShower*> locBCALShowers;
+	const DBCALShower* locBCALShower;
+	dUseKLOEFlag ? locEventLoop->Get(locBCALShowers, "KLOE") : locEventLoop->Get(locBCALShowers);
+
+	map<const DBCALShower*, const DBCALTruthShower*> locBCALShowerToTruthMap;
+	map<const DBCALTruthShower*, const DBCALShower*> locBCALTruthToShowerMap;
+
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
+	//map of truth shower to dmcthrown
+	map<const DBCALTruthShower*, const DMCThrown*> locBCALTruthToMCThrownMap;
+	for(size_t loc_i = 0; loc_i < locBCALTruthShowers.size(); ++loc_i)
+	{
+		for(size_t loc_j = 0; loc_j < locMCThrowns.size(); ++loc_j)
+		{
+			if(locBCALTruthShowers[loc_i]->track != locMCThrowns[loc_j]->myid)
+				continue;
+			locBCALTruthToMCThrownMap[locBCALTruthShowers[loc_i]] = locMCThrowns[loc_j];
+			break;
+		}
+	}
+
+	size_t locBestBCALShowerIndex = 0, locBestBCALTruthShowerIndex = 0;
+	while((!locBCALShowers.empty()) && (!locBCALTruthShowers.empty()))
+	{
+		bool locMatchFoundFlag = false;
+		double locLargestEnergy = 0.0;
+		for(size_t loc_i = 0; loc_i < locBCALTruthShowers.size(); ++loc_i)
+		{
+			locBCALTruthShower = locBCALTruthShowers[loc_i];
+			for(size_t loc_j = 0; loc_j < locBCALShowers.size(); ++loc_j)
+			{
+				locBCALShower = locBCALShowers[loc_j];
+
+				DVector3 locBCALShowerPosition(locBCALShower->x, locBCALShower->y, locBCALShower->z);
+				DVector3 locBCALTruthShowerPosition(locBCALTruthShower->r*cos(locBCALTruthShower->phi), locBCALTruthShower->r*sin(locBCALTruthShower->phi), locBCALTruthShower->z);
+
+				//compare theta & phi
+				map<const DBCALTruthShower*, const DMCThrown*>::const_iterator locIterator = locBCALTruthToMCThrownMap.find(locBCALTruthShower);
+				DVector3 locProductionVertex(0.0, 0.0, dTargetCenter); //target center
+				if(locIterator != locBCALTruthToMCThrownMap.end())
+					locProductionVertex = locIterator->second->position();
+				double locTrueTheta = (locBCALTruthShowerPosition - locProductionVertex).Theta();
+				double locReconstructedTheta = (locBCALShowerPosition - locProductionVertex).Theta();
+
+				double locDeltaPhi = locBCALShowerPosition.Phi() - locBCALTruthShower->phi;
+				while(locDeltaPhi > TMath::Pi())
+					locDeltaPhi -= 2.0*TMath::Pi();
+				while(locDeltaPhi < -1.0*TMath::Pi())
+					locDeltaPhi += 2.0*TMath::Pi();
+
+				double locUnitCircleArcLength = acos(sin(locTrueTheta)*sin(locReconstructedTheta)*cos(locDeltaPhi) + cos(locTrueTheta)*cos(locReconstructedTheta));
+//x = r*cos(phi)*sin(theta)
+//y = r*sin(phi)*sin(theta)
+//z = r*cos(theta)
+
+//unit arclength = acos(unit dot product)
+//unit dot product
+	//cos(phi1)*sin(theta1)*cos(phi2)*sin(theta2) + sin(phi1)*sin(theta1)*sin(phi2)*sin(theta2) + cos(theta1)*cos(theta2)
+	//sin(theta1)*sin(theta2)*(cos(phi1)*cos(phi2) + sin(phi1)*sin(phi2)) + cos(theta1)*cos(theta2)
+//unit arclength = acos(sin(theta1)*sin(theta2)*cos(phi1 - phi2) + cos(theta1)*cos(theta2));
+
+				if((locUnitCircleArcLength*180.0/TMath::Pi()) > dMaximumBCALMatchAngleDegrees)
+					continue;
+
+				//keep the shower with the largest energy
+				if(locBCALShower->E > locLargestEnergy)
+				{
+					locMatchFoundFlag = true;
+					locLargestEnergy = locBCALShower->E;
+					locBestBCALTruthShowerIndex = loc_i;
+					locBestBCALShowerIndex = loc_j;
+				}
+			}
+		}
+
+		if(!locMatchFoundFlag) //no more good matches!1
+			break;
+
+		locBCALTruthShower = locBCALTruthShowers[locBestBCALTruthShowerIndex];
+		locBCALShower = locBCALShowers[locBestBCALShowerIndex];
+
+		locBCALShowerToTruthMap[locBCALShower] = locBCALTruthShower;
+		locBCALTruthToShowerMap[locBCALTruthShower] = locBCALShower;
+
+		locBCALShowers.erase(locBCALShowers.begin() + locBestBCALShowerIndex);
+		locBCALTruthShowers.erase(locBCALTruthShowers.begin() + locBestBCALTruthShowerIndex);
+	}
+
+	locMCThrownMatching->Set_BCALShowerToTruthMap(locBCALShowerToTruthMap);
+	locMCThrownMatching->Set_BCALTruthToShowerMap(locBCALTruthToShowerMap);
+}
+
+void DMCThrownMatching_factory::Find_GenReconMatches_TOFPoints(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const
+{
+	vector<const DTOFTruth*> locTOFTruths;
+	const DTOFTruth* locTOFTruth;
+	locEventLoop->Get(locTOFTruths);
+
+	vector<const DTOFPoint*> locTOFPoints;
+	const DTOFPoint* locTOFPoint;
+	locEventLoop->Get(locTOFPoints);
+
+	map<const DTOFPoint*, const DTOFTruth*> locTOFPointToTruthMap;
+	map<const DTOFTruth*, const DTOFPoint*> locTOFTruthToPointMap;
+
+	size_t locBestTOFPointIndex = 0, locBestTOFTruthIndex = 0;
+	double locMatchDistance;
+	while((!locTOFPoints.empty()) && (!locTOFTruths.empty()))
+	{
+		bool locMatchFoundFlag = false;
+		double locLargestEnergy = 0.0;
+		for(size_t loc_i = 0; loc_i < locTOFTruths.size(); ++loc_i)
+		{
+			locTOFTruth = locTOFTruths[loc_i];
+			for(size_t loc_j = 0; loc_j < locTOFPoints.size(); ++loc_j)
+			{
+				locTOFPoint = locTOFPoints[loc_j];
+				DVector3 locTOFPointPosition = locTOFPoint->pos;
+
+				//DTOFPoint and DTOFTruth reported at different z's (I think center vs. detector face): propagate truth information to the reconstructed z
+				double locDeltaZ = locTOFPointPosition.Z() - locTOFTruth->z;
+				DVector3 locTrueMomentum(locTOFTruth->px, locTOFTruth->py, locTOFTruth->pz);
+				double locDeltaPathLength = locDeltaZ/cos(locTrueMomentum.Theta());
+				double locTrueX = locTOFTruth->x + locDeltaPathLength*sin(locTrueMomentum.Theta())*cos(locTrueMomentum.Phi());
+				double locTrueY = locTOFTruth->y + locDeltaPathLength*sin(locTrueMomentum.Theta())*sin(locTrueMomentum.Phi());
+				DVector3 locTOFTruthPosition(locTrueX, locTrueY, locTOFPointPosition.Z());
+
+				locMatchDistance = (locTOFTruthPosition - locTOFPointPosition).Mag();
+				if(locMatchDistance > dMaximumTOFMatchDistance)
+					continue;
+
+				//keep the shower with the largest energy
+				if(locTOFTruth->E > locLargestEnergy)
+				{
+					locMatchFoundFlag = true;
+					locLargestEnergy = locTOFTruth->E;
+					locBestTOFTruthIndex = loc_i;
+					locBestTOFPointIndex = loc_j;
+				}
+			}
+		}
+
+		if(!locMatchFoundFlag) //no more good matches!
+			break;
+
+		locTOFTruth = locTOFTruths[locBestTOFTruthIndex];
+		locTOFPoint = locTOFPoints[locBestTOFPointIndex];
+
+		locTOFPointToTruthMap[locTOFPoint] = locTOFTruth;
+		locTOFTruthToPointMap[locTOFTruth] = locTOFPoint;
+
+		locTOFPoints.erase(locTOFPoints.begin() + locBestTOFPointIndex);
+		locTOFTruths.erase(locTOFTruths.begin() + locBestTOFTruthIndex);
+	}
+
+	locMCThrownMatching->Set_TOFPointToTruthMap(locTOFPointToTruthMap);
+	locMCThrownMatching->Set_TOFTruthToPointMap(locTOFTruthToPointMap);
 }
 
 bool DMCThrownMatching_factory::Check_IsValidMCComparisonPID(const vector<const DMCThrown*>& locAllMCThrowns, const DMCThrown* locMCThrown) const
