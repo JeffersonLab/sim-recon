@@ -19,12 +19,17 @@ jerror_t DReaction_factory::init(void)
 	locReaction = new DReaction("pi+_pi-");
 	locReaction->Set_KinFitType(d_NoFit); //defined in DKinFitResults.h
 
+	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
+		// e.g. contains garbage tracks, PIDs way off
+	// These cut values are overriden if specified on the command line
+	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
+	locReaction->Set_MinCombinedTrackingFOM(0.001);
+
 	//X -> pi+, pi-
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Unknown);
 	locReactionStep->Add_FinalParticleID(PiPlus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Set_MissingParticleIndex(-1); //none missing
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
@@ -38,12 +43,17 @@ jerror_t DReaction_factory::init(void)
 	locReaction = new DReaction("p_pi-");
 	locReaction->Set_KinFitType(d_NoFit); //defined in DKinFitResults.h
 
+	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
+		// e.g. contains garbage tracks, PIDs way off
+	// These cut values are overriden if specified on the command line
+	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
+	locReaction->Set_MinCombinedTrackingFOM(0.001);
+
 	//X -> p, pi-
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Unknown);
 	locReactionStep->Add_FinalParticleID(Proton);
 	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Set_MissingParticleIndex(-1); //none missing
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
@@ -57,13 +67,18 @@ jerror_t DReaction_factory::init(void)
 	locReaction = new DReaction("pi+_pi-_pi0");
 	locReaction->Set_KinFitType(d_NoFit); //defined in DKinFitResults.h
 
+	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
+		// e.g. contains garbage tracks, PIDs way off
+	// These cut values are overriden if specified on the command line
+	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
+	locReaction->Set_MinCombinedTrackingFOM(0.001);
+
 	//X -> pi+, pi-, pi0
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Unknown);
 	locReactionStep->Add_FinalParticleID(PiPlus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
 	locReactionStep->Add_FinalParticleID(Pi0);
-	locReactionStep->Set_MissingParticleIndex(-1); //none missing
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
@@ -72,7 +87,6 @@ jerror_t DReaction_factory::init(void)
 	locReactionStep->Set_InitialParticleID(Pi0);
 	locReactionStep->Add_FinalParticleID(Gamma);
 	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Set_MissingParticleIndex(-1); //none missing
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 

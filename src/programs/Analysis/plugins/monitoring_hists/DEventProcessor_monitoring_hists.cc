@@ -46,6 +46,12 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int ev
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);
 
+	//Fill reaction-independent histograms.
+	dHistogramAction_TrackMultiplicity(locEventLoop);
+	dHistogramAction_ThrownParticleKinematics(locEventLoop);
+	dHistogramAction_DetectedParticleKinematics(locEventLoop);
+	dHistogramAction_GenReconTrackComparison(locEventLoop);
+
 	return NOERROR;
 }
 
