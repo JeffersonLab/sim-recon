@@ -43,8 +43,33 @@ jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumbe
 //------------------
 jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
+	//Fill reaction-independent histograms.
+	dHistogramAction_TrackMultiplicity(locEventLoop);
+	dHistogramAction_ThrownParticleKinematics(locEventLoop);
+	dHistogramAction_DetectedParticleKinematics(locEventLoop);
+	dHistogramAction_GenReconTrackComparison(locEventLoop);
+
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);
+
+	bool locSaveEventFlag = false;
+	for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
+	{
+		const DAnalysisResults* locAnalysisResults = locAnalysisResultsVector[loc_i];
+		if(locAnalysisResults->Get_Reaction()->Get_ReactionName() != "b1pi")
+			continue;
+		if(locAnalysisResults->Get_NumPassedParticleCombos() == 0)
+			continue;
+		locSaveEventFlag = true;
+		break;
+	}
+
+	if(locSaveEventFlag)
+	{
+		vector<const DEventWriterREST*> locEventWriterRESTVector;
+		locEventLoop->Get(locEventWriterRESTVector);
+		locEventWriterRESTVector[0]->Write_RESTEvent(locEventLoop, "b1pi");
+	}
 
 	return NOERROR;
 }

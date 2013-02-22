@@ -17,7 +17,7 @@ using namespace jana;
 class DReaction_factory : public jana::JFactory<DReaction>
 {
 	public:
-		DReaction_factory(){};
+		DReaction_factory(){SetFactoryFlag(PERSISTANT);}; // Setting the PERSISTANT prevents JANA from deleting the objects every event so we only create them once.
 		~DReaction_factory(){};
 
 	private:

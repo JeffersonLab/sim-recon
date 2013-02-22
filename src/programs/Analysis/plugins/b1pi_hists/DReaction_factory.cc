@@ -5,16 +5,10 @@
 //------------------
 jerror_t DReaction_factory::init(void)
 {
-	// Setting the PERSISTANT prevents JANA from deleting
-	// the objects every event so we only create them once.
-	SetFactoryFlag(PERSISTANT);
-
-	DReaction* locReaction;
+	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep;
 
-	// Make as many DReaction objects as desired
-
-	deque<DReactionStep*> locReactionSteps;
+	DReaction* locReaction = new DReaction("b1pi"); //unique name
 
 /**************************************************** b1pi Steps ****************************************************/
 
@@ -23,58 +17,55 @@ jerror_t DReaction_factory::init(void)
 	locReactionStep->Set_InitialParticleID(Gamma);
 	locReactionStep->Set_TargetParticleID(Proton);
 	locReactionStep->Add_FinalParticleID(Unknown); //x(2000)
-	locReactionStep->Add_FinalParticleID(Proton);
-	locReactionStep->Set_MissingParticleIndex(1); //proton missing
-	locReactionSteps.push_back(locReactionStep);
+	locReactionStep->Add_FinalParticleID(Proton, true); //proton missing
+	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
 	//x(2000) -> b1(1235)+, pi-
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Unknown); //x(2000)
-	locReactionStep->Set_TargetParticleID(Unknown); //no target for this step
 	locReactionStep->Add_FinalParticleID(b1_1235_Plus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
-	locReactionStep->Set_MissingParticleIndex(-1); //none missing
-	locReactionSteps.push_back(locReactionStep);
+	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
-	//b1(1235)+ -> omega, pi-
+	//b1(1235)+ -> omega, pi+
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(b1_1235_Plus);
-	locReactionStep->Set_TargetParticleID(Unknown); //no target for this step
 	locReactionStep->Add_FinalParticleID(omega);
 	locReactionStep->Add_FinalParticleID(PiPlus);
-	locReactionStep->Set_MissingParticleIndex(-1); //none missing
-	locReactionSteps.push_back(locReactionStep);
+	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
 	//omega -> pi+, pi-, pi0
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(omega);
-	locReactionStep->Set_TargetParticleID(Unknown); //no target for this step
 	locReactionStep->Add_FinalParticleID(PiPlus);
 	locReactionStep->Add_FinalParticleID(PiMinus);
 	locReactionStep->Add_FinalParticleID(Pi0);
-	locReactionStep->Set_MissingParticleIndex(-1); //none missing
-	locReactionSteps.push_back(locReactionStep);
+	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
 	//pi0 -> gamma, gamma
 	locReactionStep = new DReactionStep();
 	locReactionStep->Set_InitialParticleID(Pi0);
-	locReactionStep->Set_TargetParticleID(Unknown); //no target for this step
 	locReactionStep->Add_FinalParticleID(Gamma);
 	locReactionStep->Add_FinalParticleID(Gamma);
-	locReactionStep->Set_MissingParticleIndex(-1); //none missing
-	locReactionSteps.push_back(locReactionStep);
+	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
-/**************************************************** b1pi ****************************************************/
+/**************************************************** b1pi Control Variables ****************************************************/
 
-	locReaction = new DReaction("b1pi");
+	// Type of kinematic fit to perform:
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //defined in DKinFitResults.h
-	for(size_t loc_i = 0; loc_i < locReactionSteps.size(); ++loc_i)
-		locReaction->Add_ReactionStep(locReactionSteps[loc_i]);
+
+	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
+		// e.g. contains garbage tracks, PIDs way off
+	// These cut values are overriden if specified on the command line
+	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
+	locReaction->Set_MinCombinedTrackingFOM(0.001);
+
+/**************************************************** b1pi Actions ****************************************************/
 
 	//Extremely Loose Mass Cuts
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMass(locReaction, false, 0.1, 1.6, "Proton_Loose")); //false: measured data
@@ -84,6 +75,7 @@ jerror_t DReaction_factory::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Unknown, false, 1.0, 3.0, "X(2000)_Loose")); //false: measured data
 
 	//PID
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 	locReaction->Add_AnalysisAction(new DCutAction_AllPIDFOM(locReaction, 0.01)); //1%
 	locReaction->Add_AnalysisAction(new DHistogramAction_TruePID(locReaction, "PostPID"));
@@ -122,7 +114,7 @@ jerror_t DReaction_factory::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "Final")); //true: kinfit data
 	locReaction->Add_AnalysisAction(new DHistogramAction_TruePID(locReaction, "Final"));
 
-	_data.push_back(locReaction);
+	_data.push_back(locReaction); //Register the DReaction
 
 	return NOERROR;
 }
