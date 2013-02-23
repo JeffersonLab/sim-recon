@@ -650,6 +650,10 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 
 	// radial position and angles
 	double r = sqrt(x*x + y*y);
+	if (r>xmax || z>zmax || z<zmin){
+	  return;
+	}
+
 	double cos_theta = x/r;
 	double sin_theta = y/r;
 	if(r==0.0){
@@ -700,6 +704,9 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
   // radial position 
   double r = sqrt(x*x + y*y);
+  if (r>xmax || z>zmax || z<zmin){
+    return 0.;
+  }
 
   // If the point (x,y,z) is outside the fine-mesh grid, interpolate 
   // on the coarse grid
