@@ -298,7 +298,7 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const DChargedTrackHypothesis* loc
 	double locDOCA, locSmallestDOCA, locDOCAVariance;
 	DVector3 locTempVertex;
 
-	bool locUpdateTrackDataFlag = (locPropagatedData == NULL);
+//	bool locUpdateTrackDataFlag = (locPropagatedData == NULL);
 
 	locSmallestDOCA = 9.9E9;
 	//first find the closest pair of tracks whilst calcing the vertex

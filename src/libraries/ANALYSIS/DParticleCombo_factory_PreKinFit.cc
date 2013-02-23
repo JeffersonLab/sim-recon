@@ -457,7 +457,7 @@ bool DParticleCombo_factory_PreKinFit::Cut_CombinedPIDFOM(const DParticleCombo* 
 	if(!locMinCombinedChargedPIDFOM.first)
 		return true;
 
-	unsigned int locTotalPIDNDF = 0.0;
+	unsigned int locTotalPIDNDF = 0;
 	double locTotalPIDChiSq = 0.0;
 
 	deque<const DKinematicData*> locDetectedChargedParticles;
@@ -479,7 +479,7 @@ bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCo
 	if(!locMinCombinedTrackingFOM.first)
 		return true;
 
-	unsigned int locTotalTrackingNDF = 0.0;
+	unsigned int locTotalTrackingNDF = 0;
 	double locTotalTrackingChiSq = 0.0;
 
 	deque<const DKinematicData*> locDetectedChargedParticles;
