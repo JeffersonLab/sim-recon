@@ -513,7 +513,9 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 	public:
 		DHistogramAction_MissingMass(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass){}
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass){}
+
+		bool dEnableDoubleCounting;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -529,7 +531,9 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 	public:
 		DHistogramAction_MissingMassSquared(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString),
-		dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq){}
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq){}
+
+		bool dEnableDoubleCounting;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);

@@ -2,11 +2,14 @@
 
 bool DParticleCombo::Will_KinFitBeIdentical(const DParticleCombo* locParticleCombo) const
 {
+	//note that the two particle combinations may have different configurations for their steps yet have the same kinematic fit results
+		//e.g. g, p -> rho, pi+, n; rho -> pi+, pi-   vs.   g, p -> pi-, pi+, pi+, n
 	if(dReaction->Get_KinFitType() != locParticleCombo->Get_Reaction()->Get_KinFitType())
 		return false;
 
 	size_t locConstraint_CurrentIndex = 0;
 
+	//gather data on input combo
 	deque<deque<const DKinematicData*> > locMeasuredFinalStateParticles_ByMassConstraint_Input;
 	deque<deque<pair<int, Particle_t> > > locDecayingFinalStateParticles_ByMassConstraint_Input;
 	deque<Particle_t> locInitialPIDs_ByMassConstraint_Input;
@@ -98,6 +101,7 @@ for(size_t loc_i = 0; loc_i < locStepBelongsToConstraintIndices_Input.size(); ++
 	cout << locStepBelongsToConstraintIndices_Input[loc_i] << ", ";
 cout << endl;
 */
+	//gather data on this combo
 	deque<deque<const DKinematicData*> > locMeasuredFinalStateParticles_ByMassConstraint_This;
 	deque<deque<pair<int, Particle_t> > > locDecayingFinalStateParticles_ByMassConstraint_This;
 	deque<Particle_t> locInitialPIDs_ByMassConstraint_This;
@@ -527,6 +531,12 @@ void DParticleCombo::Get_FinalParticles_Measured(Particle_t locStepInitialPID, P
 
 void DParticleCombo::Get_DecayChainParticles_Measured(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const
 {
+	locMeasuredParticles.clear();
+	Get_DecayChainParticles_Measured_Recursive(locStepIndex, locMeasuredParticles);
+}
+
+void DParticleCombo::Get_DecayChainParticles_Measured_Recursive(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const
+{
 	if((locStepIndex < 0) || (locStepIndex >= int(dParticleComboSteps.size())))
 		return;
 	const DParticleComboStep* locParticleComboStep = dParticleComboSteps[locStepIndex];
@@ -536,7 +546,7 @@ void DParticleCombo::Get_DecayChainParticles_Measured(int locStepIndex, deque<co
 	for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
 	{
 		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
-			Get_DecayChainParticles_Measured(locParticleComboStep->Get_DecayStepIndex(loc_i), locMeasuredParticles);
+			Get_DecayChainParticles_Measured_Recursive(locParticleComboStep->Get_DecayStepIndex(loc_i), locMeasuredParticles);
 		else if(locParticleComboStep->Is_FinalParticleDetected(loc_i))
 			locMeasuredParticles.push_back(locParticleComboStep->Get_FinalParticle_Measured(loc_i));
 	}

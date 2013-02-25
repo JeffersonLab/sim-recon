@@ -2129,9 +2129,14 @@ bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, cons
 	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
 	Get_PreviousParticleCombos(locPreviousParticleCombos);
 
-	if(Get_UseKinFitResultsFlag()) //kinfit
+	if(!Get_UseKinFitResultsFlag()) //measured
 	{
-		if(Get_AnalysisUtilities()->Find_SimilarCombos_KinFit(locParticleCombo, locPreviousParticleCombos))
+		if((!dEnableDoubleCounting) && Get_AnalysisUtilities()->Find_SimilarCombos_AnyStep(locParticleCombo, 0, locPreviousParticleCombos))
+			return true; //dupe: already histed!
+	}
+	else //kinfit
+	{
+		if((!dEnableDoubleCounting) && Get_AnalysisUtilities()->Find_SimilarCombos_KinFit(locParticleCombo, locPreviousParticleCombos))
 			return true; //dupe: already histed!
 	}
 
@@ -2168,9 +2173,14 @@ bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoo
 	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
 	Get_PreviousParticleCombos(locPreviousParticleCombos);
 
-	if(Get_UseKinFitResultsFlag()) //kinfit
+	if(!Get_UseKinFitResultsFlag()) //measured
 	{
-		if(Get_AnalysisUtilities()->Find_SimilarCombos_KinFit(locParticleCombo, locPreviousParticleCombos))
+		if((!dEnableDoubleCounting) && Get_AnalysisUtilities()->Find_SimilarCombos_AnyStep(locParticleCombo, 0, locPreviousParticleCombos))
+			return true; //dupe: already histed!
+	}
+	else //kinfit
+	{
+		if((!dEnableDoubleCounting) && Get_AnalysisUtilities()->Find_SimilarCombos_KinFit(locParticleCombo, locPreviousParticleCombos))
 			return true; //dupe: already histed!
 	}
 

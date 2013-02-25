@@ -662,7 +662,7 @@ bool DAnalysisUtilities::Find_SimilarCombos_AnyStep(const DParticleCombo* locPar
 	if(locStepIndex >= locParticleCombo_Source->Get_NumParticleComboSteps())
 		return false;
 
-	const DParticleComboStep* locParticleComboStep_Source = locParticleCombo_ToCheck->Get_ParticleComboStep(locStepIndex);
+	const DParticleComboStep* locParticleComboStep_Source = locParticleCombo_Source->Get_ParticleComboStep(locStepIndex);
 	deque<const DKinematicData*> locAllMeasuredParticles_Source, locAllMeasuredParticles_ToCheck;
 	locParticleCombo_Source->Get_DecayChainParticles_Measured(locStepIndex, locAllMeasuredParticles_Source);
 	Particle_t locPID = locParticleComboStep_Source->Get_InitialParticleID();

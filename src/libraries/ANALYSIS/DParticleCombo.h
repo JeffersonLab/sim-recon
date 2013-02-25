@@ -63,6 +63,7 @@ class DParticleCombo : public JObject
 	private:
 		// PRIVATE METHODS:
 		string Get_DecayChainFinalParticlesROOTName_Recursive(size_t locStepIndex, deque<string>& locParticleNames, bool locKinFitResultsFlag = false) const;
+		void Get_DecayChainParticles_Measured_Recursive(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const;
 
 		const DReaction* dReaction;
 		const DKinFitResults* dKinFitResults;
