@@ -771,6 +771,8 @@ void DMagneticFieldMapFineMesh::GenerateFineMesh(void){
   zminFine=0.;
   zmaxFine=600.;
   dzFine=0.1;
+  zscale=1./dzFine;
+  rscale=1./drFine;
   NrFine=(unsigned int)floor((rmaxFine-rminFine)/drFine+0.5);
   NzFine=(unsigned int)floor((zmaxFine-zminFine)/dzFine+0.5);
 
