@@ -37,7 +37,7 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop)
 
 	if(!dActionInitializedFlag)
 	{
-		if(gPARMS->Exists("OUTPUT_FILENAME"))
+//		if(gPARMS->Exists("OUTPUT_FILENAME"))
 			gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
@@ -58,7 +58,7 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DPar
 
 	if(!dActionInitializedFlag)
 	{
-		if(gPARMS->Exists("OUTPUT_FILENAME"))
+//		if(gPARMS->Exists("OUTPUT_FILENAME"))
 			gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
