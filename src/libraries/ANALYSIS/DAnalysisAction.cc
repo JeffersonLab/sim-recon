@@ -37,9 +37,8 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop)
 
 	if(!dActionInitializedFlag)
 	{
-		//since this object is nominally created in the init() method of DReaction_factory, this is the only way to initialize the object with the JEventLoop
-			//this is critical because DApplication is required to obtain locks prior to creating ROOT objects
-		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
+		if(gPARMS->Exists("OUTPUT_FILENAME"))
+			gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
 		vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
@@ -59,9 +58,8 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DPar
 
 	if(!dActionInitializedFlag)
 	{
-		//since this object is nominally created in the init() method of DReaction_factory, this is the only way to initialize the object with the JEventLoop
-			//this is critical because DApplication is required to obtain locks prior to creating ROOT objects
-		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
+		if(gPARMS->Exists("OUTPUT_FILENAME"))
+			gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
 		vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
