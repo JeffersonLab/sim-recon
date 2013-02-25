@@ -779,7 +779,6 @@ bool DKinFitResults_factory::Calc_VertexGuess(JEventLoop* locEventLoop, const de
 	{
 		DKinematicData* locDecayingParticleData = new DKinematicData();
 		const DKinFitParticle* locDecayingParticle_KinFit = locVertexFindParticles_Decaying[loc_i];
-		locDecayingParticleData->setPosition(locDecayingParticleTrackPointGuesses[locDecayingParticle_KinFit]);
 		TVector3 locTempVertex = locDecayingParticleTrackPointGuesses[locDecayingParticle_KinFit];
 		locDecayingParticleData->setPosition(DVector3(locTempVertex.X(), locTempVertex.Y(), locTempVertex.Z()));
 		TVector3 locTempP3 = locP4GuessMap.find(locDecayingParticle_KinFit)->second;
