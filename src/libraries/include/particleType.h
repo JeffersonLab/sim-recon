@@ -56,6 +56,12 @@ typedef enum {
 
   /* the constants defined by GEANT end here */
 
+  /* These are CLAS(?)-defined constants */
+
+  Deuteron       = 45,
+  Helium         = 47,
+  Triton         = 49,
+
   /* These are E852-defined constants */
 
   Rho0           = 57,
@@ -67,6 +73,8 @@ typedef enum {
   a0_980	 = 63,
   f0_980	 = 64,
 
+  /* These are GlueX-defined constants */
+
   KStar_892_0 = 65,
   KStar_892_Plus = 66,
   KStar_892_Minus = 67,
@@ -75,7 +83,10 @@ typedef enum {
   K1_1400_Plus = 69,
   K1_1400_Minus = 70,
 
-  b1_1235_Plus = 71
+  b1_1235_Plus = 71,
+  Sigma_1385_Minus = 72,
+  Sigma_1385_0 = 73,
+  Sigma_1385_Plus = 74
 
 } Particle_t;
 
@@ -230,6 +241,25 @@ inline static char *ParticleType(Particle_t p)
   case b1_1235_Plus:
     strcpy(ret,"b1(1235)+");
     break;
+  case Sigma_1385_Minus:
+    strcpy(ret,"Sigma(1385)-");
+    break;
+  case Sigma_1385_0:
+    strcpy(ret,"Sigma(1385)0");
+    break;
+  case Sigma_1385_Plus:
+    strcpy(ret,"Sigma(1385)+");
+    break;
+
+  case Deuteron:
+    strcpy(ret,"Deuteron");
+    break;
+  case Helium:
+    strcpy(ret,"Helium");
+    break;
+  case Triton:
+    strcpy(ret,"Triton");
+    break;
   default:
     sprintf(ret,"type(%d)",(int)p);
     break;
@@ -275,6 +305,9 @@ inline static unsigned short int IsFixedMass(Particle_t p)
   case AntiOmegaPlus:	return 1;
   case Geantino:	return 1;
   case EtaPrime:	return 1;
+  case Deuteron:	return 1;
+  case Helium:		return 1;
+  case Triton:	return 1;
   default: return 0;
   }
 }
@@ -305,6 +338,9 @@ inline static unsigned short int IsDetachedVertex(Particle_t p)
   case AntiXi0:		return 1;
   case AntiXiPlus:	return 1;
   case AntiOmegaPlus:	return 1;
+  case Deuteron:	return 1;
+  case Helium:		return 1;
+  case Triton:	return 1;
   default: return 0;
   }
 }
@@ -460,6 +496,24 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case b1_1235_Plus:
     strcpy(ret, "#it{b}_{1}(1235)^{+}");
     break;
+  case Deuteron:
+    strcpy(ret, "#it{D}");
+    break;
+  case Helium:
+    strcpy(ret, "#it{He}");
+    break;
+  case Triton:
+    strcpy(ret, "#it{T}");
+    break;
+  case Sigma_1385_Minus:
+    strcpy(ret, "#it{#Sigma}(1385)^{-}");
+    break;
+  case Sigma_1385_0:
+    strcpy(ret, "#it{#Sigma}(1385)^{0}");
+    break;
+  case Sigma_1385_Plus:
+    strcpy(ret, "#it{#Sigma}(1385)^{+}");
+    break;
   default:
     strcpy(ret, "X");
     break;
@@ -523,6 +577,12 @@ inline static double ParticleMass(Particle_t p)
   case K1_1400_Plus: return 1.403;
   case K1_1400_Minus: return 1.403;
   case b1_1235_Plus: return 1.2295;
+  case Deuteron:	return 1.875613;
+  case Helium:		return 3.276372;
+  case Triton:	return 2.807904;
+  case Sigma_1385_Minus:	return 1.3872;
+  case Sigma_1385_0:		return 1.38370;
+  case Sigma_1385_Plus:	return 1.38280;
   }
 }
 
@@ -582,6 +642,12 @@ inline static int ParticleCharge(Particle_t p)
   case K1_1400_Plus: return  1;
   case K1_1400_Minus: return -1;
   case b1_1235_Plus: return 1;
+  case Deuteron:	return 1;
+  case Helium:		return 1;
+  case Triton:	return 1;
+  case Sigma_1385_Minus:	return -1;
+  case Sigma_1385_0:		return 0;
+  case Sigma_1385_Plus:	return 1;
   }
 }
 
@@ -637,6 +703,12 @@ inline static int PDGtype(Particle_t p)
   case K1_1400_Plus: return  20323;
   case K1_1400_Minus: return  -20323;
   case b1_1235_Plus: return  10213;
+  case Deuteron:		return  45;
+  case Helium:		return  47;
+  case Triton:	return  49;
+  case Sigma_1385_Minus:	return 3114;
+  case Sigma_1385_0:		return 3214;
+  case Sigma_1385_Plus:	return 3224;
   default:		return  0;
   }
 }
