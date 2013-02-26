@@ -190,7 +190,7 @@ void DReaction::Get_ReactionSteps(Particle_t locInitialPID, deque<const DReactio
 	}
 }
 
-void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs) const //independent of step
+void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, bool locIncludeDuplicatesFlag) const //independent of step
 {
 	Particle_t locPID;
 	locDetectedPIDs.clear();
@@ -206,25 +206,28 @@ void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs) const 
 			if(Check_IsDecayingParticle(locPID, loc_i + 1))
 				continue;
 
-			//see if this PID is already stored
-			bool locAlreadyHavePIDFlag = false;
-			for(size_t loc_k = 0; loc_k < locDetectedPIDs.size(); ++loc_k)
+			if(!locIncludeDuplicatesFlag)
 			{
-				if(locDetectedPIDs[loc_k] == locPID)
+				//see if this PID is already stored
+				bool locAlreadyHavePIDFlag = false;
+				for(size_t loc_k = 0; loc_k < locDetectedPIDs.size(); ++loc_k)
 				{
-					locAlreadyHavePIDFlag = true;
-					break;
+					if(locDetectedPIDs[loc_k] == locPID)
+					{
+						locAlreadyHavePIDFlag = true;
+						break;
+					}
 				}
-			}
-			if(locAlreadyHavePIDFlag)
-				continue;
+				if(locAlreadyHavePIDFlag)
+					continue;
+			}			
 
 			locDetectedPIDs.push_back(locPID);
 		}
 	}
 }
 
-void DReaction::Get_DetectedFinalChargedPIDs(deque<Particle_t>& locDetectedChargedPIDs) const //independent of step
+void DReaction::Get_DetectedFinalChargedPIDs(deque<Particle_t>& locDetectedChargedPIDs, bool locIncludeDuplicatesFlag) const //independent of step
 {
 	Particle_t locPID;
 	locDetectedChargedPIDs.clear();
@@ -242,25 +245,28 @@ void DReaction::Get_DetectedFinalChargedPIDs(deque<Particle_t>& locDetectedCharg
 			if(Check_IsDecayingParticle(locPID, loc_i + 1))
 				continue;
 
-			//see if this PID is already stored
-			bool locAlreadyHavePIDFlag = false;
-			for(size_t loc_k = 0; loc_k < locDetectedChargedPIDs.size(); ++loc_k)
+			if(!locIncludeDuplicatesFlag)
 			{
-				if(locDetectedChargedPIDs[loc_k] == locPID)
+				//see if this PID is already stored
+				bool locAlreadyHavePIDFlag = false;
+				for(size_t loc_k = 0; loc_k < locDetectedChargedPIDs.size(); ++loc_k)
 				{
-					locAlreadyHavePIDFlag = true;
-					break;
+					if(locDetectedChargedPIDs[loc_k] == locPID)
+					{
+						locAlreadyHavePIDFlag = true;
+						break;
+					}
 				}
+				if(locAlreadyHavePIDFlag)
+					continue;
 			}
-			if(locAlreadyHavePIDFlag)
-				continue;
 
 			locDetectedChargedPIDs.push_back(locPID);
 		}
 	}
 }
 
-void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs) const
+void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool locIncludeDuplicatesFlag) const
 {
 	Particle_t locPID;
 	locFinalStatePIDs.resize(0);
@@ -275,24 +281,27 @@ void DReaction::Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs) const
 				continue;
 
 			//see if this PID is already stored
-			bool locAlreadyHavePIDFlag = false;
-			for(size_t loc_k = 0; loc_k < locFinalStatePIDs.size(); ++loc_k)
+			if(!locIncludeDuplicatesFlag)
 			{
-				if(locFinalStatePIDs[loc_k] == locPID)
+				bool locAlreadyHavePIDFlag = false;
+				for(size_t loc_k = 0; loc_k < locFinalStatePIDs.size(); ++loc_k)
 				{
-					locAlreadyHavePIDFlag = true;
-					break;
+					if(locFinalStatePIDs[loc_k] == locPID)
+					{
+						locAlreadyHavePIDFlag = true;
+						break;
+					}
 				}
+				if(locAlreadyHavePIDFlag)
+					continue;
 			}
-			if(locAlreadyHavePIDFlag)
-				continue;
 
 			locFinalStatePIDs.push_back(locPID);
 		}
 	}
 }
 
-void DReaction::Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs) const
+void DReaction::Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs, bool locIncludeDuplicatesFlag) const
 {
 	Particle_t locPID;
 	locDetectedPIDs.clear();
@@ -309,25 +318,28 @@ void DReaction::Get_DetectedFinalPIDs(deque<deque<Particle_t> >& locDetectedPIDs
 			if(Check_IsDecayingParticle(locPID, loc_i + 1))
 				continue;
 
-			//see if this PID is already stored
-			bool locAlreadyHavePIDFlag = false;
-			for(size_t loc_k = 0; loc_k < locDetectedPIDs[loc_i].size(); ++loc_k)
+			if(!locIncludeDuplicatesFlag)
 			{
-				if(locDetectedPIDs[loc_i][loc_k] == locPID)
+				//see if this PID is already stored
+				bool locAlreadyHavePIDFlag = false;
+				for(size_t loc_k = 0; loc_k < locDetectedPIDs[loc_i].size(); ++loc_k)
 				{
-					locAlreadyHavePIDFlag = true;
-					break;
+					if(locDetectedPIDs[loc_i][loc_k] == locPID)
+					{
+						locAlreadyHavePIDFlag = true;
+						break;
+					}
 				}
+				if(locAlreadyHavePIDFlag)
+					continue;
 			}
-			if(locAlreadyHavePIDFlag)
-				continue;
 
 			locDetectedPIDs[loc_i].push_back(locPID);
 		}
 	}
 }
 
-void DReaction::Get_DetectedFinalChargedPIDs(deque<deque<Particle_t> >& locDetectedChargedPIDs) const
+void DReaction::Get_DetectedFinalChargedPIDs(deque<deque<Particle_t> >& locDetectedChargedPIDs, bool locIncludeDuplicatesFlag) const
 {
 	Particle_t locPID;
 	locDetectedChargedPIDs.clear();
@@ -346,18 +358,21 @@ void DReaction::Get_DetectedFinalChargedPIDs(deque<deque<Particle_t> >& locDetec
 			if(Check_IsDecayingParticle(locPID, loc_i + 1))
 				continue;
 
-			//see if this PID is already stored
-			bool locAlreadyHavePIDFlag = false;
-			for(size_t loc_k = 0; loc_k < locDetectedChargedPIDs[loc_i].size(); ++loc_k)
+			if(!locIncludeDuplicatesFlag)
 			{
-				if(locDetectedChargedPIDs[loc_i][loc_k] == locPID)
+				//see if this PID is already stored
+				bool locAlreadyHavePIDFlag = false;
+				for(size_t loc_k = 0; loc_k < locDetectedChargedPIDs[loc_i].size(); ++loc_k)
 				{
-					locAlreadyHavePIDFlag = true;
-					break;
+					if(locDetectedChargedPIDs[loc_i][loc_k] == locPID)
+					{
+						locAlreadyHavePIDFlag = true;
+						break;
+					}
 				}
+				if(locAlreadyHavePIDFlag)
+					continue;
 			}
-			if(locAlreadyHavePIDFlag)
-				continue;
 
 			locDetectedChargedPIDs[loc_i].push_back(locPID);
 		}

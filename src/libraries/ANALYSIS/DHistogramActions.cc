@@ -292,6 +292,9 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 	deque<deque<Particle_t> > locDetectedChargedPIDs;
 	Get_Reaction()->Get_DetectedFinalChargedPIDs(locDetectedChargedPIDs);
 
+	deque<deque<Particle_t> > locDetectedChargedPIDs_HasDupes;
+	Get_Reaction()->Get_DetectedFinalChargedPIDs(locDetectedChargedPIDs_HasDupes, true);
+
 	string locHistName, locHistTitle, locStepName, locStepROOTName, locParticleName, locParticleROOTName;
 	Particle_t locPID, locHigherMassPID, locLowerMassPID;
 	string locHigherMassParticleName, locLowerMassParticleName, locHigherMassParticleROOTName, locLowerMassParticleROOTName;
@@ -376,20 +379,20 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 		}
 
 		//delta-t vs p
-		for(int loc_j = 0; loc_j < int(locDetectedChargedPIDs[loc_i].size()) - 1; ++loc_j)
+		for(int loc_j = 0; loc_j < int(locDetectedChargedPIDs_HasDupes[loc_i].size()) - 1; ++loc_j)
 		{
-			locPID = locDetectedChargedPIDs[loc_i][loc_j];
-			for(size_t loc_k = loc_j + 1; loc_k < locDetectedChargedPIDs[loc_i].size(); ++loc_k)
+			locPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_j];
+			for(size_t loc_k = loc_j + 1; loc_k < locDetectedChargedPIDs_HasDupes[loc_i].size(); ++loc_k)
 			{
-				if(ParticleMass(locDetectedChargedPIDs[loc_i][loc_k]) > ParticleMass(locPID))
+				if(ParticleMass(locDetectedChargedPIDs_HasDupes[loc_i][loc_k]) > ParticleMass(locPID))
 				{
-					locHigherMassPID = locDetectedChargedPIDs[loc_i][loc_k];
+					locHigherMassPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_k];
 					locLowerMassPID = locPID;
 				}
 				else
 				{
 					locHigherMassPID = locPID;
-					locLowerMassPID = locDetectedChargedPIDs[loc_i][loc_k];
+					locLowerMassPID = locDetectedChargedPIDs_HasDupes[loc_i][loc_k];
 				}
 				pair<Particle_t, Particle_t> locParticlePair(locHigherMassPID, locLowerMassPID);
 				if(dHistDeque_TrackDeltaTVsP[loc_i].find(locParticlePair) != dHistDeque_TrackDeltaTVsP[loc_i].end())
@@ -409,8 +412,11 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 					dHistDeque_TrackDeltaTVsP[loc_i][locParticlePair] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
 			}
 		}
+
 		gDirectory->cd("..");
 	}
+
+
 
 	Get_Application()->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -505,6 +511,7 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 					locHigherMassParticleIndex = loc_j;
 					locLowerMassParticleIndex = loc_k;
 				}
+
 				locDeltaTs.push_back(locParticles[locHigherMassParticleIndex]->time() - locParticles[locLowerMassParticleIndex]->time());
 				locPs.push_back(locParticles[locHigherMassParticleIndex]->momentum().Mag());
 				locPIDPairs.push_back(pair<Particle_t, Particle_t>(locParticles[locHigherMassParticleIndex]->PID(), locParticles[locLowerMassParticleIndex]->PID()));
@@ -514,27 +521,29 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 
 			//HISTOGRAM //do all at once to reduce #locks & amount of time within the lock
 			Get_Application()->RootWriteLock();
-			//comparison to common vertex/time
-			dHistDeque_TrackZToCommon[loc_i][locPID]->Fill(locParticles[loc_j]->position().Z() - locVertex.Z());
-			dHistDeque_TrackTToCommon[loc_i][locPID]->Fill(locParticles[loc_j]->time() - locVertexTime);
-			dHistDeque_TrackDOCAToCommon[loc_i][locPID]->Fill(locDOCA);
-			//hist max's
-			if(locMaxDeltaZ > 0.0) //else none found (e.g. only 1 detected charged track)
 			{
-				dHistDeque_MaxTrackDeltaZ[loc_i]->Fill(locMaxDeltaZ);
-				dHistDeque_MaxTrackDeltaT[loc_i]->Fill(locMaxDeltaT);
-				dHistDeque_MaxTrackDOCA[loc_i]->Fill(locMaxDOCA);
-			}
-			for(size_t loc_k = 0; loc_k < locPIDPairs.size(); ++loc_k)
-			{
-				if(dHistDeque_TrackDeltaTVsP[loc_i].find(locPIDPairs[loc_k]) == dHistDeque_TrackDeltaTVsP[loc_i].end())
+				//comparison to common vertex/time
+				dHistDeque_TrackZToCommon[loc_i][locPID]->Fill(locParticles[loc_j]->position().Z() - locVertex.Z());
+				dHistDeque_TrackTToCommon[loc_i][locPID]->Fill(locParticles[loc_j]->time() - locVertexTime);
+				dHistDeque_TrackDOCAToCommon[loc_i][locPID]->Fill(locDOCA);
+				//hist max's
+				if(locMaxDeltaZ > 0.0) //else none found (e.g. only 1 detected charged track)
 				{
-					//pair not found: equal masses and order switched somehow //e.g. mass set differently between REST and reconstruction
-					pair<Particle_t, Particle_t> locTempPIDPair(locPIDPairs[loc_k]);
-					locPIDPairs[loc_k].first = locTempPIDPair.second;
-					locPIDPairs[loc_k].second = locTempPIDPair.first;
+					dHistDeque_MaxTrackDeltaZ[loc_i]->Fill(locMaxDeltaZ);
+					dHistDeque_MaxTrackDeltaT[loc_i]->Fill(locMaxDeltaT);
+					dHistDeque_MaxTrackDOCA[loc_i]->Fill(locMaxDOCA);
 				}
-				dHistDeque_TrackDeltaTVsP[loc_i][locPIDPairs[loc_k]]->Fill(locPs[loc_k], locDeltaTs[loc_k]);
+				for(size_t loc_k = 0; loc_k < locPIDPairs.size(); ++loc_k)
+				{
+					if(dHistDeque_TrackDeltaTVsP[loc_i].find(locPIDPairs[loc_k]) == dHistDeque_TrackDeltaTVsP[loc_i].end())
+					{
+						//pair not found: equal masses and order switched somehow //e.g. mass set differently between REST and reconstruction
+						pair<Particle_t, Particle_t> locTempPIDPair(locPIDPairs[loc_k]);
+						locPIDPairs[loc_k].first = locTempPIDPair.second;
+						locPIDPairs[loc_k].second = locTempPIDPair.first;
+					}
+					dHistDeque_TrackDeltaTVsP[loc_i][locPIDPairs[loc_k]]->Fill(locPs[loc_k], locDeltaTs[loc_k]);
+				}
 			}
 			Get_Application()->RootUnLock();
 		} //end of particle loop
@@ -1822,13 +1831,15 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	}
 
 	Get_Application()->RootWriteLock();
-	dHist_NumReconstructedTracks->Fill(0.0, (Double_t)(locChargedTracks.size() + locNeutralParticles.size()));
-	dHist_NumReconstructedTracks->Fill(1.0, (Double_t)locNumPositiveTracks);
-	dHist_NumReconstructedTracks->Fill(2.0, (Double_t)locNumNegativeTracks);
-	dHist_NumReconstructedTracks->Fill(3.0, (Double_t)locNeutralParticles.size());
-	dHist_NumReconstructedTracks->Fill(4.0, (Double_t)locChargedTracks.size());
-	for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
-		dHist_NumReconstructedTracks->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumTracksByPID[dFinalStatePIDs[loc_i]]);
+	{
+		dHist_NumReconstructedTracks->Fill(0.0, (Double_t)(locChargedTracks.size() + locNeutralParticles.size()));
+		dHist_NumReconstructedTracks->Fill(1.0, (Double_t)locNumPositiveTracks);
+		dHist_NumReconstructedTracks->Fill(2.0, (Double_t)locNumNegativeTracks);
+		dHist_NumReconstructedTracks->Fill(3.0, (Double_t)locNeutralParticles.size());
+		dHist_NumReconstructedTracks->Fill(4.0, (Double_t)locChargedTracks.size());
+		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
+			dHist_NumReconstructedTracks->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumTracksByPID[dFinalStatePIDs[loc_i]]);
+	}
 	Get_Application()->RootUnLock();
 
 	return true;
