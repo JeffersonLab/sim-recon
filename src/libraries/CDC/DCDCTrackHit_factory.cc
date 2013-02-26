@@ -20,6 +20,10 @@ using namespace std;
 //------------------
 jerror_t DCDCTrackHit_factory::init(void)
 {
+   MATCH_TRUTH_HITS=false;
+  
+   gPARMS->SetDefaultParameter("CDC:MATCH_TRUTH_HITS",MATCH_TRUTH_HITS,"Match truth hits to CDC hits (DEF=false)");
+
 	return NOERROR;
 }
 
@@ -60,7 +64,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	// makes that difficult. Here we have the full wire definition so
 	// we make the connection here.
 	vector<const DMCTrackHit*> mctrackhits;
-	loop->Get(mctrackhits);
+	if (MATCH_TRUTH_HITS)loop->Get(mctrackhits);
 	
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCDCHit* cdchit = cdchits[i];

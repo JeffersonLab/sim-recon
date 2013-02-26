@@ -35,6 +35,7 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 		DGeometry *dgeom;
 		vector<vector<DCDCWire *> >cdcwires;
 		int Nstraws[CDC_MAX_RINGS];
+		bool MATCH_TRUTH_HITS;
 };
 
 #endif // _DCDCTrackHit_factory_
