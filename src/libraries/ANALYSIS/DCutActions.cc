@@ -1,8 +1,22 @@
 #include "ANALYSIS/DCutActions.h"
 
+string DCutAction_MaxNumParticleCombos::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMaxNumParticleCombos;
+	return locStream.str();
+}
+
 bool DCutAction_MaxNumParticleCombos::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	return (Get_NumParticleCombos() <= dMaxNumParticleCombos);
+}
+
+string DCutAction_PIDFOM::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumConfidenceLevel;
+	return locStream.str();
 }
 
 bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
@@ -26,6 +40,13 @@ bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticle
 		}
 	}
 	return true;
+}
+
+string DCutAction_AllPIDFOM::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumConfidenceLevel;
+	return locStream.str();
 }
 
 bool DCutAction_AllPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
@@ -54,16 +75,37 @@ bool DCutAction_AllPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParti
 	return ((locTotalNDF == 0) ? true : (TMath::Prob(locTotalChiSq, locTotalNDF) >= dMinimumConfidenceLevel));
 }
 
+string DCutAction_MissingMass::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumMissingMass << "_" << dMaximumMissingMass;
+	return locStream.str();
+}
+
 bool DCutAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	double locMissingMass = Get_AnalysisUtilities()->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M();
 	return ((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass));
 }
 
+string DCutAction_MissingMassSquared::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumMissingMassSq << "_" << dMaximumMissingMassSq;
+	return locStream.str();
+}
+
 bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	double locMissingMassSq = Get_AnalysisUtilities()->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M2();
 	return ((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq));
+}
+
+string DCutAction_InvariantMass::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumInvariantMass << "_" << dMaximumInvariantMass;
+	return locStream.str();
 }
 
 bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
@@ -82,6 +124,13 @@ bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DP
 	return true;
 }
 
+string DCutAction_AllVertexZ::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinVertexZ << "_" << dMaxVertexZ;
+	return locStream.str();
+}
+
 bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	deque<const DKinematicData*> locParticles;
@@ -94,6 +143,13 @@ bool DCutAction_AllVertexZ::Perform_Action(JEventLoop* locEventLoop, const DPart
 			return false;
 	}
 	return true;
+}
+
+string DCutAction_MaxTrackDOCA::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMaxTrackDOCA;
+	return locStream.str();
 }
 
 bool DCutAction_MaxTrackDOCA::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
@@ -119,6 +175,13 @@ bool DCutAction_MaxTrackDOCA::Perform_Action(JEventLoop* locEventLoop, const DPa
 		}
 	}
 	return true;
+}
+
+string DCutAction_KinFitFOM::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumConfidenceLevel;
+	return locStream.str();
 }
 
 bool DCutAction_KinFitFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)

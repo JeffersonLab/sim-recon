@@ -25,7 +25,7 @@ class DAnalysisAction
 		virtual ~DAnalysisAction(void){};
 
 		inline const DReaction* Get_Reaction(void) const{return dReaction;}
-		inline string Get_ActionName(void) const{return dActionName;}
+		virtual string Get_ActionName(void) const{return dActionName;}
 		inline string Get_ActionUniqueString(void) const{return dActionUniqueString;}
 		inline DApplication* Get_Application(void) const{return dApplication;}
 		inline const DAnalysisUtilities* Get_AnalysisUtilities(void) const{return dAnalysisUtilities;}
