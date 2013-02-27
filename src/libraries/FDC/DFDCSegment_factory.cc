@@ -659,11 +659,8 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	}
       }
     }
-    // Look for a new plane to start looking for a segment
-    while (start<x_list.size()-1){
-      if (used[x_list[start]]==false) break;
-      start++;
-    }
+    // Move on to the next plane to start looking for segments
+    start++;
   } //while loop over x_list planes
 
   return NOERROR;
