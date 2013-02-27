@@ -1,0 +1,491 @@
+Release Notes for sim-recon-2013-02-25
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2013-02-25
+   Date: February 27, 2013
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 10436 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.9 (i686)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.5
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.5
+
+CentOS release 5.3 (Final) (x86_64)
+------------
+  Xerces 3.1.1
+  JANA 0.6.5
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.5
+
+Red Hat Enterprise Linux 6.3 (x86_64)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.5
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20120305 (Red Hat 4.4.6-4)
+  HDDS 1.5
+
+CentOS release 6.2 (Final)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.5
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 1.5
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r10240 | marki | 2013-01-11 22:30:19 -0500 (Fri, 11 Jan 2013) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS
+   A /trunk/sim-recon/src/BMS/Makefile.CCDB (from /tags/sim-recon-2013-01-11/src/BMS/Makefile.CCDB:10239)
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+
+merge from tag 2013-01-11 to allow linking with ccdb
+  --  
+_M   .
+A  + Makefile.CCDB
+M    Makefile.DANA
+
+------------------------------------------------------------------------
+r10244 | staylor | 2013-01-14 14:19:12 -0500 (Mon, 14 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DMagneticFieldStepper.cc
+
+Minimize the number of times the sqrt function is called (either directly or indirectly through B.Mag()) in CalcDirs
+------------------------------------------------------------------------
+r10245 | staylor | 2013-01-14 14:22:27 -0500 (Mon, 14 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Surround code storing the old value of Bz with #if/#endif in the stepping routine.  This code was left over from the version that used the field gradient to determine a guess for the step size -- this has been disabled for some time.
+------------------------------------------------------------------------
+r10257 | davidl | 2013-01-16 11:05:59 -0500 (Wed, 16 Jan 2013) | 10 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/Makefile.bms
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hdgeant++.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hdgeant.cc
+
+Updated hdgeant and hdgeant++ to use DApplication to create
+the JCalibration object. This is so the object will be created
+in the same way as is done for other sim-recon programs.
+
+This was needed with the addition of the CCDB making there
+2 options for getting calibration constants.
+
+hdgeant++ was also brought into alignment with hdgeant so the
+same -xml, -checksum options are available.
+
+------------------------------------------------------------------------
+r10259 | staylor | 2013-01-16 15:50:34 -0500 (Wed, 16 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
+
+when finding the ir and iz indexes into the fine mesh map, do not use floor but a straight static_cast to unsigned int. Create z and r-scale variables to replace a division by dzFine or drFine with multiplications, which seems to be faster.  Use pointer operations to get Bz and Br.
+------------------------------------------------------------------------
+r10260 | staylor | 2013-01-16 15:53:34 -0500 (Wed, 16 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.h
+
+Remove unused argument Z from call to FindMatKalman.
+------------------------------------------------------------------------
+r10261 | staylor | 2013-01-16 15:54:55 -0500 (Wed, 16 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+
+Change to make consistent with new argument list for FindMatKalman
+------------------------------------------------------------------------
+r10262 | staylor | 2013-01-16 16:10:23 -0500 (Wed, 16 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Change to make consistent with new argument list for FindMatKalman (do not need to store Z).  Made numerous changes for speed:  simplify calculation of cdc time-to-distance, remove lower maximum step size in the CDC (turns out to be unnecessary now), use += operations on vectors and 5x1 matrices where possible, compute the cosines of the stereo angles for cdc wires at the earliest possible stage, removed redundant information from the forward trajectory structure.  I also tweaked the broken-track recovery code.
+------------------------------------------------------------------------
+r10263 | staylor | 2013-01-16 16:12:17 -0500 (Wed, 16 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+Comment out inclusion of TOF dEdx in overall PID.  Turns out to be not so helpful...
+------------------------------------------------------------------------
+r10264 | davidl | 2013-01-17 10:05:49 -0500 (Thu, 17 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+Use DApplication to generat JCalibration object. This now allows mcsmear to use CCDB.
+------------------------------------------------------------------------
+r10269 | davidl | 2013-01-17 16:58:43 -0500 (Thu, 17 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.h
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+Partial fix to deadlock problem in mcsmear that was observed during Data Challenge 1. Problem is not entirely fixed.
+------------------------------------------------------------------------
+r10270 | davidl | 2013-01-17 17:01:05 -0500 (Thu, 17 Jan 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/JFactoryGenerator_ThreadCancelHandler.h
+
+Forgot to add this with last commit.
+------------------------------------------------------------------------
+r10281 | pmatt | 2013-01-21 14:49:38 -0500 (Mon, 21 Jan 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+RF bunch selection disabled (t now always = 0.0) until timing/etc. issues understood/resolved.
+
+
+------------------------------------------------------------------------
+r10283 | pmatt | 2013-01-23 12:05:45 -0500 (Wed, 23 Jan 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+ST information no longer used to select RF bunch for PID (RF bunch selection still disabled). 
+
+
+------------------------------------------------------------------------
+r10287 | staylor | 2013-01-24 10:24:53 -0500 (Thu, 24 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Use DVector2 instead of DVector3 for CDC wire position at a particular z.  Make faster versions of Step with fewer calls to GetField.  Remove redundant position information from reference trajectories (for the forward trajectory, x and y are stored in S, so only need z in addition; for central trajectory, z is in S, so only need x and y in addition). 
+------------------------------------------------------------------------
+r10312 | zihlmann | 2013-01-30 10:33:01 -0500 (Wed, 30 Jan 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/CDC_branch.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/CDChit_branch.h
+
+fix typo in ifdef statments _FDCxxxx to _CDCxxxx
+
+------------------------------------------------------------------------
+r10315 | davidl | 2013-01-30 13:52:56 -0500 (Wed, 30 Jan 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen
+   A /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_CFglue.F (from /trunk/home/davidl/Studies/2013.01.28.cpp_acceptance/sim-recon/src/programs/Simulation/bggen/code/bg_CFglue.F:10313)
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_ctrl.inc
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_hddm.c
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_ini.F
+
+Merged in changes from private branch to implement setting vertex for bggen-generated events via the configuration file.
+------------------------------------------------------------------------
+r10327 | pmatt | 2013-02-04 11:23:11 -0500 (Mon, 04 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.h
+
+Fixed neutral particle covariance matrix calculation. 
+
+
+------------------------------------------------------------------------
+r10330 | davidl | 2013-02-04 11:51:00 -0500 (Mon, 04 Feb 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-cpp.cpp
+
+Copying fix from private repository for hddm C++ code generator. Original log message:
+
+In the HDDM class constructor, use "this->" instead of "m_host->" since m_host is not initialized before it is being used to provide arguments to the m_reconstructedPhysicsEvent_link initializer.
+
+------------------------------------------------------------------------
+r10337 | staylor | 2013-02-04 17:51:17 -0500 (Mon, 04 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+
+Changes to address crashes in GetField due to particles seeming to stop in the chambers, sometimes before the last (outermost) hit if the parameters are sufficiently far off from the correct ones.  To do this I guard against the direction tangents in the forward direction from getting too large and by turning of dEdx if the momentum drops below some minimum.
+------------------------------------------------------------------------
+r10346 | staylor | 2013-02-05 13:22:27 -0500 (Tue, 05 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Add some error checking in the two Brent's Algorithm routines to trap for stopping particles (momentum dropping below some minimum). Add similar checks in other parts of the code.  Hopefully this addresses the rare occassions when a garbage position causes GetField to crash.
+------------------------------------------------------------------------
+r10347 | pmatt | 2013-02-05 16:18:30 -0500 (Tue, 05 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.cc
+
+Fixed path length calculation for neutrals that were used as showers in the kinematic fit. 
+
+
+------------------------------------------------------------------------
+r10377 | pmatt | 2013-02-11 21:14:51 -0500 (Mon, 11 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.h
+   M /trunk/sim-recon/src/libraries/DANA/DFactoryGenerator.cc
+   A /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.cc
+   A /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.h
+   A /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST_factory.h
+   A /trunk/sim-recon/src/libraries/HDDM/HDDM_init.cc
+
+Moved REST file creation code into a new factory, global map of REST file pointers is stored in DApplication (so that if one thread opens a file, the other threads can see it). 
+
+
+------------------------------------------------------------------------
+r10378 | pmatt | 2013-02-11 21:17:42 -0500 (Mon, 11 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/JEventProcessor_danarest.h
+
+Modified to use the new REST writer factory. 
+
+
+------------------------------------------------------------------------
+r10379 | pmatt | 2013-02-12 00:52:42 -0500 (Tue, 12 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/Makefile
+
+Move HDDM library so that it is built first: hddm_r.hpp must be compiled before any libraries that need DApplication.h are compiled (since it needs hddm_r.hpp).
+
+
+------------------------------------------------------------------------
+r10382 | davidl | 2013-02-12 07:41:14 -0500 (Tue, 12 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DCalibrationCCDB.h
+
+Place mutex locks around access to underlying ccdb::Calibration object.
+------------------------------------------------------------------------
+r10383 | davidl | 2013-02-12 08:12:30 -0500 (Tue, 12 Feb 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm/Makefile
+   M /trunk/sim-recon/src/programs/Utilities/hddm/XParsers.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/XParsers.hpp
+   A /trunk/sim-recon/src/programs/Utilities/hddm/md5.c
+   A /trunk/sim-recon/src/programs/Utilities/hddm/md5.h
+
+Re-aligning with HDDS versions of these files. This should have been done some time ago, but the files were only copied in my private directory and never committed. These add in the md5 checksum ability.
+
+------------------------------------------------------------------------
+r10384 | davidl | 2013-02-12 08:14:22 -0500 (Tue, 12 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.cc
+
+Cosmetic changes to output warning message.
+------------------------------------------------------------------------
+r10385 | davidl | 2013-02-12 08:16:38 -0500 (Tue, 12 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/Makefile
+
+Some month-old changes to make it link with existing code. Committing now just so as not to lose the changes since I'm not working on it at the moment.
+------------------------------------------------------------------------
+r10390 | staylor | 2013-02-13 10:51:31 -0500 (Wed, 13 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Change chi^2 convergence test to take into account changing numbers of degrees of freedom if track recovery was done.  Trap for more error conditions that trigger track recovery and try to tune parameters for the recovery based on the initial failure mode.
+------------------------------------------------------------------------
+r10391 | staylor | 2013-02-13 11:53:22 -0500 (Wed, 13 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.h
+
+Add is_axial flag to DHFHit_t to distinguish hits that can be used for the line fit to find z0 and tanl and those that cannot.  Create DHFProjection_t that keeps the z coordinate with the xy coordinates (as DVector2).  Add routine to add a Stereo hit to the list of hits after a circle fit has been performed; currently this is not being used.  Clean up the line fitter to use the DHFProjection_t structure, get rid of the 'bad' vector, and other small changes.
+------------------------------------------------------------------------
+r10393 | staylor | 2013-02-15 09:20:55 -0500 (Fri, 15 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Change steppers to look up the field and gradient at the beginning of the step and compute the field at the intermediate and final points in the Runge-Kutta algorithm instead of looking up the field in the fine mesh table at each point.   Benchmarking suggests that the table lookup is more expensive than I would have expected and the difference in the magnetic field between doing the lookup and doing the calculation using the gradient is at most at the 10 gauss level, and generally closer to the 1 gauss level; considering that our momentum resolution is at the 1% level, I think this is a safe compromise for speed.
+------------------------------------------------------------------------
+r10408 | staylor | 2013-02-18 16:19:04 -0500 (Mon, 18 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Minor change to debug printout code
+------------------------------------------------------------------------
+r10411 | staylor | 2013-02-19 13:29:18 -0500 (Tue, 19 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+
+More bounds checking in GetFieldAndGradient
+------------------------------------------------------------------------
+r10424 | pmatt | 2013-02-22 14:32:55 -0500 (Fri, 22 Feb 2013) | 22 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitConstraints.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitConstraints.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitParticle.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitParticle.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitter_GlueX.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Reaction.cc
+
+DMCThrownMatching*: added TOF/BCAL/FCAL truth/reconstructed matching
+DTrackTimeBased_factory_Reaction.cc: handle cases when DChargedTrack contains both + & - charged hypotheses
+DParticleComboBlueprint_factory.*: fixed bug in creating combos when two reaction steps are identical, exit comboing early if not enough particles of the desired charges, handle cases when DChargedTrack contains both +& - charged hypotheses, removed built-in cuts on vertex-z and max # tracks and tracking FOM, disabled cut on pid fom, get pre-combo cut values from dreaction
+DParticleCombo_factory_PreKinFit.*: removed built-in cuts on vertex-z, disabled cut on pid fom, tracking FOM cut now on entire system, get pre-combo cut values from dreaction
+
+DHistogramActions.*: updated interface, added betaVsp and delta-beta vs p to detected & combo kinematics hists, fixed bug for neutral particle pulls, new TOF study action, no longer crashes if no mcthrown matching, added checking if kinfit results are identical
+DAnalysisAction.*: updated interface for reaction-independent actions, when creating the action directory, cd to the correct file
+DCutAction.*: updated interface, add cut on max # particle combos
+ANALYSIS_Init.cc: updates to action constructors
+
+DKinFitter*: improved handling of decaying particles
+DKinFitResults_factory.*: improved vertex guesses, upgraded for vertex linking, propagate track info to POCA to vertex before fitting
+DAnalysisUtilities.*: routines for finding initial vertex guesses, added checking if kinfit results are identical
+
+DReaction.h: can now change global parameters for analysis of this DReaction only
+DReactionStep.*: missing particle index interface changed
+DAnalysisResults.h: added method to get # passed combos
+DAnalysisResults_factory*: removed reaction-independent actions
+
+DParticleCombo.cc: fixed Will_KinFitBeIdentical() function
+
+
+------------------------------------------------------------------------
+r10425 | pmatt | 2013-02-22 14:35:13 -0500 (Fri, 22 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory.h
+
+Updated for new ANALYSIS library, now creates skim of b1pi data.
+
+
+------------------------------------------------------------------------
+r10426 | pmatt | 2013-02-22 15:03:31 -0500 (Fri, 22 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory.cc
+
+Updated for the analysis library changes. 
+
+
+------------------------------------------------------------------------
+r10427 | staylor | 2013-02-23 08:10:52 -0500 (Sat, 23 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+
+Added more bounds checking for GetField and GetBz
+------------------------------------------------------------------------
+r10428 | pmatt | 2013-02-23 10:07:25 -0500 (Sat, 23 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+Remove compiler warnings. 
+
+
+------------------------------------------------------------------------
+r10429 | pmatt | 2013-02-24 22:32:33 -0500 (Sun, 24 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+
+Make sure rscale and zscale are initialized if USE_EVIO is false. 
+
+
+------------------------------------------------------------------------
+r10431 | pmatt | 2013-02-25 13:32:35 -0500 (Mon, 25 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+
+Made SIMD compatible.  
+
+
+------------------------------------------------------------------------
+r10432 | pmatt | 2013-02-25 13:59:50 -0500 (Mon, 25 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+
+Check to see whether the parameter OUTPUT_FILENAME exists prior to getting its value. 
+
+
+------------------------------------------------------------------------
+r10433 | pmatt | 2013-02-25 14:11:30 -0500 (Mon, 25 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+
+Rolled back change so that people aren't forced to upgrade JANA to a potentially unsafe version. 
+
+
+------------------------------------------------------------------------
+r10434 | pmatt | 2013-02-25 17:12:20 -0500 (Mon, 25 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.cc
+
+Will_KinFitBeIdentical() now works if steps are rearranged differently between the combos.
+
+
+------------------------------------------------------------------------
+r10435 | pmatt | 2013-02-25 17:31:27 -0500 (Mon, 25 Feb 2013) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.h
+
+DHistogramActions.*: added duplicate-counts checking for measured missing mass plots
+DParticleCombo.*: separated recursion from function call for Get_DecayChainParticles_Measured
+DAnalysisUtilities.cc: bug fix in checking if invariant mass histograms will have duplicate counts
+
+
+------------------------------------------------------------------------
+r10436 | pmatt | 2013-02-25 19:03:58 -0500 (Mon, 25 Feb 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+
+DAnalysisAction.h: Made Get_ActionName() method virtual so that inherited classes can override it. 
+DCutActions.*: Override Get_ActionName() so that it adds the cut values to the name. 
+
+
+------------------------------------------------------------------------
