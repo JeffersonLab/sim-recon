@@ -59,8 +59,15 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 			int found = 0;
 			int dfound = 0;
 			for(unsigned int j=0;j<factory_names.size();j++){
-				if(factory_names[j] == toprint[i])found = 1;
-				if(factory_names[j] == "D" + toprint[i])dfound = 1;
+				string name = factory_names[j];
+				string tag = "";
+				unsigned int pos = name.rfind(":",name.size()-1);
+				if(pos != (unsigned int)string::npos){
+					tag = name.substr(pos+1,name.size());
+					name.erase(pos);
+				}
+				if(name == toprint[i])found = 1;
+				if(name == "D" + toprint[i])dfound = 1;
 			}
 			if(found)
 				really_toprint.push_back(toprint[i]);
