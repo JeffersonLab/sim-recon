@@ -467,16 +467,22 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 
         // Compute Jacobian matrix: J_ij = dF_i/dx_j.
         for (i=0;i<3;i++){
-          double argp=par(K2,0)*(par(X0,0)-X(i,0)+A_OVER_H);
-          double argm=par(K2,0)*(par(X0,0)-X(i,0)-A_OVER_H);
+	  double dx=par(X0,0)-X(i,0);
+          double argp=par(K2,0)*(dx+A_OVER_H);
+          double argm=par(K2,0)*(dx-A_OVER_H);
+	  double tanh_p=tanh(argp);
+	  double tanh_m=tanh(argm);
+	  double tanh2_p=tanh_p*tanh_p;
+	  double tanh2_m=tanh_m*tanh_m;
+	  double q_over_4=0.25*par(QA,0);
            
-          J(i,QA)=-(tanh(argp)-tanh(argm))/4.;
-          J(i,K2)=-par(QA,0)/4.*(argp/par(K2,0)*(1.-tanh(argp)*tanh(argp))
-                                 -argm/par(K2,0)*(1.-tanh(argm)*tanh(argm)));
-          J(i,X0)=-par(QA,0)*par(K2,0)/4.
-            *(tanh(argm)*tanh(argm)-tanh(argp)*tanh(argp)); 
-	  F(i,0)=N(i,0)-par(QA,0)/4.*(tanh(argp)-tanh(argm));
-	  if (fabs(F(i,0))>errf) errf=fabs(F(i,0));
+          J(i,QA)=-0.25*(tanh_p-tanh_m);
+          J(i,K2)=-q_over_4*(argp/par(K2,0)*(1.-tanh2_p)
+			     -argm/par(K2,0)*(1.-tanh2_m));
+          J(i,X0)=-q_over_4*par(K2,0)*(tanh2_m-tanh2_p); 
+	  F(i,0)=N(i,0)-q_over_4*(tanh_p-tanh_m);
+	  double new_errf=fabs(F(i,0));
+	  if (new_errf>errf) errf=new_errf;
         }
 	// Check for convergence
 	if (errf<TOLF){	
@@ -508,7 +514,8 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 
         //Check for convergence
         for (i=0;i<3;i++){
-          if (fabs(par(i,0)-newpar(i,0))>errx) errx=fabs(par(i,0)-newpar(i,0));
+	  double new_err=fabs(par(i,0)-newpar(i,0));
+          if (new_err>errx) errx=new_err;
 	}
         if (errx<TOLX){
           temp.pos=par(X0,0);
@@ -573,9 +580,10 @@ jerror_t DFDCPseudo_factory::FindNewParmVec(DMatrix N,DMatrix X,DMatrix F,
 
     // Compute the value of the vector F and f=1/2 F.F with the current step
     for (int i=0;i<3;i++){
-      double argp=newpar(K2,0)*(newpar(X0,0)-X(i,0)+A_OVER_H);
-      double argm=newpar(K2,0)*(newpar(X0,0)-X(i,0)-A_OVER_H);
-      newF(i,0)=N(i,0)-newpar(QA,0)/4.*(tanh(argp)-tanh(argm));
+      double dx=newpar(X0,0)-X(i,0);
+      double argp=newpar(K2,0)*(dx+A_OVER_H);
+      double argm=newpar(K2,0)*(dx-A_OVER_H);
+      newF(i,0)=N(i,0)-0.25*newpar(QA,0)*(tanh(argp)-tanh(argm));
     }
     newf=0.5*(DMatrix(DMatrix::kTransposed,newF)*newF); // dot product
  
@@ -589,19 +597,22 @@ jerror_t DFDCPseudo_factory::FindNewParmVec(DMatrix N,DMatrix X,DMatrix F,
     else{
       // g(lambda)=f(par+lambda*fullstep)
       if (lambda==1.0){//first attempt: quadratic approximation for g(lambda)
-        lambda_temp=-slope(0,0)/2./(newf(0,0)-f(0,0)-slope(0,0));
+        lambda_temp=-0.5*slope(0,0)/(newf(0,0)-f(0,0)-slope(0,0));
       }
       else{ // cubic approximation for g(lambda)
         double temp1=newf(0,0)-f(0,0)-lambda*slope(0,0);
         double temp2=f2(0,0)-f(0,0)-lambda2*slope(0,0);
-        double a=(temp1/lambda/lambda-temp2/lambda2/lambda2)/(lambda-lambda2);
-        double b=(-lambda2*temp1/lambda/lambda+lambda*temp2/lambda2/lambda2)
-          /(lambda-lambda2);
-        if (a==0.0) lambda_temp=-slope(0,0)/2./b;
+	double one_over_lambda2_sq=1./(lambda2*lambda2);
+	double one_over_lambda_sq=1./(lambda*lambda);
+	double one_over_lambda_diff=1./(lambda-lambda2);
+        double a=(temp1*one_over_lambda_sq-temp2*one_over_lambda2_sq)*one_over_lambda_diff;
+        double b=(-lambda2*temp1*one_over_lambda_sq+lambda*temp2*one_over_lambda2_sq)
+          *one_over_lambda_diff;
+        if (a==0.0) lambda_temp=-0.5*slope(0,0)/b;
         else{
           double disc=b*b-3.0*a*slope(0,0);
           if (disc<0.0) lambda_temp=0.5*lambda;
-          else if (b<=0.0) lambda_temp=(-b+sqrt(disc))/3./a;
+          else if (b<=0.0) lambda_temp=(-b+sqrt(disc))/(3.*a);
           else lambda_temp=-slope(0,0)/(b+sqrt(disc));
         }
         // ensure that we are headed in the right direction...
