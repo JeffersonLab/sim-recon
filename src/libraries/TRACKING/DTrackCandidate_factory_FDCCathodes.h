@@ -53,7 +53,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
-
+		jerror_t GetPositionAndMomentum(const DFDCSegment *segment);
 		jerror_t GetPositionAndMomentum(DFDCSegment *segment,
 						DVector3 &pos, DVector3 &mom);
 		jerror_t GetPositionAndMomentum(const double Bz_avg,
@@ -61,7 +61,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 		
 		double GetCharge(const DVector3 &pos,
 				 const DFDCSegment *segment);
-
+		double DocaToHelix(const DFDCPseudo *hit);
                 DFDCSegment *GetTrackMatch(double z,
                                            DFDCSegment *segment,
                                            vector<DFDCSegment*>package,
@@ -76,6 +76,10 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 	
 	// Fit parameters
 	double xc,yc,rc,z_vertex,q,phi0,tanl;
+
+	// Parameters at the end of the segment
+	double xs,ys,zs;
+	double p,cosphi,sinphi,twokappa,one_over_twokappa,cotl;
 };
 
 #endif // _DTrackCandidate_factory_FDCCathodes_

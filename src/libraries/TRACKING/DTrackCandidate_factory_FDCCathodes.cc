@@ -73,8 +73,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   }
     
   // Initialize the stepper
-  stepper=new DMagneticFieldStepper(bfield);
-  stepper->SetStepSize(1.0);
+  //  stepper=new DMagneticFieldStepper(bfield);
+  //stepper->SetStepSize(1.0);
 
   return NOERROR;
 }
@@ -85,7 +85,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
 //------------------
 jerror_t DTrackCandidate_factory_FDCCathodes::erun(void)
 {
-  if (stepper) delete stepper;
+  //if (stepper) delete stepper;
         return NOERROR;
 }
 //------------------
@@ -94,7 +94,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::erun(void)
 jerror_t DTrackCandidate_factory_FDCCathodes::fini(void)
 {
   
-  if (stepper) delete stepper;
+  //if (stepper) delete stepper;
         return NOERROR;
 }
 
@@ -166,7 +166,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       rc=segment->rc;
       // Sign of the charge
       q=segment->q;
-      stepper->SetCharge(q);
+      //stepper->SetCharge(q);
 
       //double qsum=q;
       //unsigned int num_q=1;
@@ -534,7 +534,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       rc=segment->rc;
       // Sign of the charge
       q=segment->q;
-      stepper->SetCharge(q);
+      //stepper->SetCharge(q);
 
       //double qsum=q;
       
@@ -780,7 +780,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       rc=segment->rc;
       // Sign of the charge
       q=segment->q;
-      stepper->SetCharge(q);
+      //stepper->SetCharge(q);
 
       // Start filling vector of segments belonging to current track    
       vector<DFDCSegment*>mysegments; 
@@ -1061,8 +1061,26 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
   return NOERROR;
 }
 
-// Swim track from one package to the next and look for a match to a segment
-// in the new package
+
+// Routine to do a crude match between fdc points and a helical approximation to
+// the trajectory
+double DTrackCandidate_factory_FDCCathodes::DocaToHelix(const DFDCPseudo *hit){
+  double sperp=(hit->wire->origin.z()-zs)*cotl;
+  double twoks=twokappa*sperp;
+  double sin2ks=sin(twoks);
+  double cos2ks=cos(twoks);
+  double one_minus_cos2ks=1.-cos2ks;
+  double x=xs+(cosphi*sin2ks-sinphi*one_minus_cos2ks)*one_over_twokappa;
+  double y=ys+(sinphi*sin2ks+cosphi*one_minus_cos2ks)*one_over_twokappa;
+  double dx=x-hit->xy.X();
+  double dy=y-hit->xy.Y();
+  return sqrt(dx*dx+dy*dy);
+}
+
+
+
+// Propagate track from one package to the next and look for a match to a 
+// segment in the new package
 DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z, 
 						 DFDCSegment *segment,
 						 vector<DFDCSegment*>package,
@@ -1072,114 +1090,34 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
 
   // Get the position and momentum at the exit of the package for the 
   // current segment
-  DVector3 pos,mom,origin(0.,0.,z);
-  if (GetPositionAndMomentum(segment,pos,mom)!=NOERROR) return NULL;
-  if (z<pos.z()) mom=-1.0*mom;
+  GetPositionAndMomentum(segment);
 
-  // magnitude of momentum
-  double p=mom.Mag();
-
-  // Match to the next package by swimming the track through the field
-  double diff_min=1000.,diff;
-  if (stepper->SwimToPlane(pos,mom,origin,norm,NULL)==false){
-    for (unsigned int j=0;j<package.size();j++){
-      DFDCSegment *segment2=package[j];
-      unsigned int index=segment2->hits.size()-1;
- 
-      double dx=pos.x()-segment2->hits[index]->xy.X();
-      double dy=pos.y()-segment2->hits[index]->xy.Y();
-      diff=sqrt(dx*dx+dy*dy);
-      if (diff<diff_min&&diff<MATCH_RADIUS(p)){
-	diff_min=diff;
-	match=segment2;
-	match_id=j;
-      }
+  // Match to the next package
+  double diff_min=1e6,diff;
+  for (unsigned int j=0;j<package.size();j++){
+    DFDCSegment *segment2=package[j];
+    unsigned int index=segment2->hits.size()-1;
+    diff=DocaToHelix(segment2->hits[index]);
+    if (diff<diff_min&&diff<MATCH_RADIUS(p)){
+      diff_min=diff;
+      match=segment2;
+      match_id=j;
     }
   }
   
   // If matching in the forward direction did not work, try swimming and
   // matching backwards...
   if (match==NULL){
-    diff_min=1000.;
+    diff_min=1e6;
     for (unsigned int i=0;i<package.size();i++){
       DFDCSegment *segment2=package[i];
-      if (GetPositionAndMomentum(segment2,pos,mom)==NOERROR){
-        mom=-1.0*mom;
-        origin.SetZ(segment->hits[0]->wire->origin.z());
-        if (stepper->SwimToPlane(pos,mom,origin,norm,NULL)==false){
-          double dx=pos.x()-segment->hits[0]->xy.X();
-          double dy=pos.y()-segment->hits[0]->xy.Y();
-          diff=sqrt(dx*dx+dy*dy);
-          if (diff<diff_min&&diff<MATCH_RADIUS(p)){
-	    diff_min=diff;
-	    match=segment2;
-            match_id=i;
-          }
-        }	
-      }       
-    }
-  }
-
-  // Since we are assuming that the particle is coming from the target,
-  // it is possible that the particle could have undergone more than a full
-  // revolution and still end up producing the current segment, in which 
-  // case if the vertex position is more or less correct, the dip angle is 
-  // too large.  Try matching again with an adjusted tanl.
-  if (match==NULL){
-    diff_min=1000.;
-    double my_tanl=segment->tanl;
-    double sperp=(z-segment->z_vertex)/my_tanl;
-    segment->tanl=my_tanl*sperp/(sperp+2.*segment->rc*M_PI);
-    if (GetPositionAndMomentum(segment,pos,mom)!=NOERROR){
-      // Restore old value
-      segment->tanl=my_tanl;
-      return NULL;
-    }
-    if (z<pos.z()) mom=-1.0*mom;
-    
-    for (unsigned int j=0;j<package.size();j++){
-      DFDCSegment *segment2=package[j];
-      unsigned int index=segment2->hits.size()-1;
- 
-      double dx=pos.x()-segment2->hits[index]->xy.X();
-      double dy=pos.y()-segment2->hits[index]->xy.Y();
-      diff=sqrt(dx*dx+dy*dy);
+      GetPositionAndMomentum(segment2);
+      diff=DocaToHelix(segment->hits[0]);
       if (diff<diff_min&&diff<MATCH_RADIUS(p)){
 	diff_min=diff;
 	match=segment2;
-	match_id=j;
-      }
-    }
-    // Restore old value
-    segment->tanl=my_tanl;
-  }
-
-  // If matching in the forward direction did not work, try swimming and
-  // matching backwards... with modified tanl values
-  if (match==NULL){
-    diff_min=1000.;
-    for (unsigned int i=0;i<package.size();i++){
-      DFDCSegment *segment2=package[i];
-      double my_tanl=segment2->tanl;
-      double sperp=(z-segment2->z_vertex)/my_tanl;
-      segment2->tanl=my_tanl*sperp/(sperp+2.*segment2->rc*M_PI);
-   
-      if (GetPositionAndMomentum(segment2,pos,mom)==NOERROR){
-        mom=-1.0*mom;
-        origin.SetZ(segment->hits[0]->wire->origin.z());
-        if (stepper->SwimToPlane(pos,mom,origin,norm,NULL)==false){
-          double dx=pos.x()-segment->hits[0]->xy.X();
-          double dy=pos.y()-segment->hits[0]->xy.Y();
-          diff=sqrt(dx*dx+dy*dy);
-          if (diff<diff_min&&diff<MATCH_RADIUS(p)){
-	    diff_min=diff;
-	    match=segment2;
-            match_id=i;
-          }
-        }	
-      } 
-      // Restore old value
-      segment2->tanl=my_tanl;
+	match_id=i;
+      }       
     }
   }
 
@@ -1188,6 +1126,43 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double z,
   }
   return match;
 }
+
+// Obtain position and momentum at the exit of a given package using the 
+// helical track model.
+//
+jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(const DFDCSegment *segment){
+  // Position of track segment at last hit plane of package
+  xs=segment->xc+segment->rc*cos(segment->Phi1);
+  ys=segment->yc+segment->rc*sin(segment->Phi1);
+  zs=segment->hits[0]->wire->origin.z();
+
+  // Track parameters
+  //double kappa=segment->q/(2.*segment->rc);
+  double my_phi0=segment->phi0;
+  double my_tanl=segment->tanl;
+  double z0=segment->z_vertex;
+
+  // Useful intermediate variables
+  double cosp=cos(my_phi0);
+  double sinp=sin(my_phi0);
+  double twoks=segment->q*(zs-z0)/(my_tanl*segment->rc);
+  double sin2ks=sin(twoks);
+  double cos2ks=cos(twoks); 
+
+  // Get Bfield
+  double Bz=fabs(bfield->GetBz(xs,ys,zs));
+
+  // Momentum
+  p=0.003*Bz*segment->rc/cos(atan(my_tanl));
+  cosphi=cosp*cos2ks-sinp*sin2ks;
+  sinphi=sinp*cos2ks+cosp*sin2ks;
+  twokappa=segment->q/segment->rc;
+  one_over_twokappa=1./twokappa;
+  cotl=1./my_tanl;
+
+  return NOERROR;
+}
+
 
 
 // Obtain position and momentum at the exit of a given package using the 
@@ -1200,6 +1175,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   double y=segment->yc+segment->rc*sin(segment->Phi1);
   double z=segment->hits[0]->wire->origin.z();
   pos.SetXYZ(x,y,z);
+
+  zs=z;
+  ys=y;
+  xs=x;
 
   // Make sure that the position makes sense!
   //  if (sqrt(x*x+y*y)>FDC_OUTER_RADIUS) return VALUE_OUT_OF_RANGE;
@@ -1223,6 +1202,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
 
   // Momentum
   double pt=0.003*Bz*segment->rc;
+  cosphi=cosp*cos2ks-sinp*sin2ks;
+  sinphi=sinp*cos2ks+cosp*sin2ks;
+  twokappa=segment->q/segment->rc;
+  one_over_twokappa=1./twokappa;
+  cotl=1./my_tanl;
   mom.SetXYZ(pt*(cosp*cos2ks-sinp*sin2ks),pt*(sinp*cos2ks+cosp*sin2ks),
 	     pt*my_tanl);
 
