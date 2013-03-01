@@ -136,7 +136,9 @@ void DAnalysisResults_factory_PreKinFit::Get_Reactions(jana::JEventLoop* locEven
 		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
 		if(locFactory == NULL)
 			continue;
-		
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+
 		// Found a factory producing DReactions. The reaction objects are
 		// produced at the init stage and are persistent through all event
 		// processing so we can grab the list here and append it to our

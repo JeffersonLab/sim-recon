@@ -54,6 +54,37 @@ jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int run
 	return NOERROR;
 }
 
+bool DMCThrownMatching_factory::Check_IsValidMCComparisonPID(const vector<const DMCThrown*>& locAllMCThrowns, const DMCThrown* locMCThrown) const
+{
+	Particle_t locPID = (Particle_t)locMCThrown->type;
+	Particle_t locParentPID = Unknown;
+	int locParentID = locMCThrown->parentid;
+	if(locParentID != 0)
+	{
+		bool locParentFoundFlag = false;
+		for(size_t loc_i = 0; loc_i < locAllMCThrowns.size(); ++loc_i)
+		{
+			if(locAllMCThrowns[loc_i]->myid != locParentID)
+				continue;
+			locParentPID = (Particle_t)locAllMCThrowns[loc_i]->type; //ok if this is unknown (e.g. some weird bggen intermediate state)
+			locParentFoundFlag = true;
+			break;
+		}
+		if(!locParentFoundFlag)
+			return false; //came from a non-initial decay, but the parent particle was not saved to the output: "bogus" track
+	}
+
+	bool locValidCompareTypeFlag = false;
+	for(size_t loc_j = 0; loc_j < dMCThrownComparisonPIDs.size(); ++loc_j)
+	{
+		if(dMCThrownComparisonPIDs[loc_j] == locParentPID) //e.g. on mu+, and pi+ is parent
+			return false;
+		if(dMCThrownComparisonPIDs[loc_j] == locPID)
+			locValidCompareTypeFlag = true;
+	}
+	return locValidCompareTypeFlag;
+}
+
 //------------------
 // evnt
 //------------------
@@ -383,33 +414,6 @@ void DMCThrownMatching_factory::Find_GenReconMatches_TOFPoints(JEventLoop* locEv
 
 	locMCThrownMatching->Set_TOFPointToTruthMap(locTOFPointToTruthMap);
 	locMCThrownMatching->Set_TOFTruthToPointMap(locTOFTruthToPointMap);
-}
-
-bool DMCThrownMatching_factory::Check_IsValidMCComparisonPID(const vector<const DMCThrown*>& locAllMCThrowns, const DMCThrown* locMCThrown) const
-{
-	Particle_t locPID = (Particle_t)locMCThrown->type;
-	Particle_t locParentPID = Unknown;
-	int locParentID = locMCThrown->parentid;
-	if(locParentID != 0)
-	{
-		for(size_t loc_i = 0; loc_i < locAllMCThrowns.size(); ++loc_i)
-		{
-			if(locAllMCThrowns[loc_i]->myid != locParentID)
-				continue;
-			locParentPID = (Particle_t)locAllMCThrowns[loc_i]->type; //ok if this is unknown (e.g. some weird bggen intermediate state)
-			break;
-		}
-	}
-
-	bool locValidCompareTypeFlag = false;
-	for(size_t loc_j = 0; loc_j < dMCThrownComparisonPIDs.size(); ++loc_j)
-	{
-		if(dMCThrownComparisonPIDs[loc_j] == locParentPID) //e.g. on mu+, and pi+ is parent
-			return false;
-		if(dMCThrownComparisonPIDs[loc_j] == locPID)
-			locValidCompareTypeFlag = true;
-	}
-	return locValidCompareTypeFlag;
 }
 
 void DMCThrownMatching_factory::Find_GenReconMatches_ChargedTrack(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DChargedTrack*>& locChargedTracks, DMCThrownMatching* locMCThrownMatching) const

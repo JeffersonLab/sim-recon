@@ -5,12 +5,14 @@
 #include <deque>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <limits>
 
 #include "TROOT.h"
 #include "TDirectoryFile.h"
 #include "TH1D.h"
 #include "TH2D.h"
+#include "TTree.h"
 
 #include "JANA/JEventLoop.h"
 #include "particleType.h"
@@ -423,6 +425,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+			dThrownTopology = NULL;  dDetectedTopology = NULL;
 		}
 
 		DHistogramAction_TrackMultiplicity(string locActionUniqueString) : 
@@ -432,6 +435,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+			dThrownTopology = NULL;  dDetectedTopology = NULL;
 		}
 
 		DHistogramAction_TrackMultiplicity(void) : 
@@ -441,7 +445,10 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+			dThrownTopology = NULL;  dDetectedTopology = NULL;
 		}
+
+		~DHistogramAction_TrackMultiplicity(void);
 
 		unsigned int dMaxNumTracks;
 
@@ -452,6 +459,12 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 		void Initialize(JEventLoop* locEventLoop);
 
 		TH2D* dHist_NumReconstructedTracks;
+		TTree* dTree_TrackTopologies;
+
+		string* dThrownTopology;
+		string* dDetectedTopology;
+		vector<unsigned int> dThrownTopologyVector;
+		vector<unsigned int> dDetectedTopologyVector;
 };
 
 class DHistogramAction_TruePID : public DAnalysisAction

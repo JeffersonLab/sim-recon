@@ -18,6 +18,8 @@
 
 #include "DLorentzVector.h"
 
+#include "TRACKING/DMCThrown.h"
+
 #include "PID/DChargedTrack.h"
 #include "PID/DNeutralShower.h"
 #include "PID/DNeutralParticleHypothesis.h"
@@ -42,6 +44,7 @@ class DAnalysisUtilities : public JObject
 		// Constructor and destructor
 		DAnalysisUtilities(JEventLoop *loop); // require JEventLoop in constructor
 
+		void Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps) const;
 		bool Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, const deque<Particle_t>& locDesiredPIDs, Particle_t locMissingPID = Unknown) const;
 
 		double Calc_DOCAVertex(const DVector3 &locUnitDir1, const DVector3 &locUnitDir2, const DVector3 &locVertex1, const DVector3 &locVertex2, DVector3& locDOCAPoint) const;

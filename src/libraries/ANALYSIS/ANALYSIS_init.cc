@@ -3,6 +3,9 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
+#include "DReaction_factory_Thrown.h"
+#include "DParticleCombo_factory_Thrown.h"
+
 #include "DAnalysisUtilities_factory.h"
 #include "DParticleComboBlueprint_factory.h"
 
@@ -27,6 +30,9 @@ using namespace jana;
 jerror_t ANALYSIS_init(JEventLoop *loop)
 {
 	/// Create and register ANALYSIS data factories
+	loop->AddFactory(new DReaction_factory_Thrown);
+	loop->AddFactory(new DParticleCombo_factory_Thrown);
+
 	loop->AddFactory(new DAnalysisUtilities_factory);
 	loop->AddFactory(new DParticleComboBlueprint_factory);
 

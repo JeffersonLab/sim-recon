@@ -1,5 +1,13 @@
 #include "DReactionStep.h"
 
+void DReactionStep::Reset(void)
+{
+	dInitialParticleID = Unknown;
+	dTargetParticleID = Unknown;
+	dMissingParticleIndex = -1;
+	dFinalParticleIDs.clear();
+}
+
 void DReactionStep::Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag)
 {
 	dInitialParticleID = locPID;

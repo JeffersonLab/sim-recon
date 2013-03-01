@@ -71,7 +71,8 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eve
 		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
 		if(locFactory == NULL)
 			continue;
-		
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
 		// Found a factory producing DReactions. The reaction objects are
 		// produced at the init stage and are persistent through all event
 		// processing so we can grab the list here and append it to our

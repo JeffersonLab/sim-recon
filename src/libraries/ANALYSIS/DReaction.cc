@@ -2,6 +2,8 @@
 
 DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 {
+	dKinFitType = d_NoFit;
+
 	dMinCombinedChargedPIDFOM.first = false;
 	dMinCombinedChargedPIDFOM.second = 0.001;
 

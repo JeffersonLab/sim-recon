@@ -17,6 +17,93 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 		locGeometry->GetTargetZ(dTargetZCenter);
 }
 
+void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps) const
+{
+ 	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
+	map<size_t, const DMCThrown*> locIDMap; //size_t is the myid
+	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
+		locIDMap[locMCThrowns[loc_i]->myid] = locMCThrowns[loc_i];
+
+	locThrownSteps.clear();
+	if(locMCThrowns.empty())
+		return;
+	locThrownSteps.push_back(pair<const DMCThrown*, deque<const DMCThrown*> >(NULL, deque<const DMCThrown*>() ) );
+
+	vector<Particle_t> locIgnoreDecaysVector;
+	locIgnoreDecaysVector.push_back(Gamma);
+	locIgnoreDecaysVector.push_back(Positron);
+	locIgnoreDecaysVector.push_back(Electron);
+	locIgnoreDecaysVector.push_back(MuonPlus);
+	locIgnoreDecaysVector.push_back(MuonMinus);
+	locIgnoreDecaysVector.push_back(Neutrino);
+	locIgnoreDecaysVector.push_back(PiPlus);
+	locIgnoreDecaysVector.push_back(PiMinus);
+	locIgnoreDecaysVector.push_back(KPlus);
+	locIgnoreDecaysVector.push_back(KMinus);
+	locIgnoreDecaysVector.push_back(Neutron);
+	locIgnoreDecaysVector.push_back(Proton);
+	locIgnoreDecaysVector.push_back(AntiProton);
+
+	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
+	{
+		if(locMCThrowns[loc_i]->PID() == Unknown)
+			continue; //could be some weird pythia "resonance" like a diquark: just ignore them all
+
+		int locParentID = locMCThrowns[loc_i]->parentid;
+		if(locParentID == 0) //photoproduced
+		{
+			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
+			continue;
+		}
+		if(locIDMap.find(locParentID) == locIDMap.end()) //produced from a particle that was not saved: spurious, don't save
+			continue;
+		Particle_t locParentPID = locIDMap[locParentID]->PID();
+		if(locParentPID == Unknown) //parent is an unknown intermediate state: treat as photoproduced
+		{
+			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
+			continue;
+		}
+		bool locIgnoreParticleFlag = false;
+		for(size_t loc_j = 0; loc_j < locIgnoreDecaysVector.size(); ++loc_j)
+		{
+			if(locParentPID != locIgnoreDecaysVector[loc_j])
+				continue;
+			locIgnoreParticleFlag = true;
+			break;
+		}
+		if(locIgnoreParticleFlag)
+			continue; //e.g. a neutrino from a pion decay
+
+		//check to see if the parent is already listed as a decaying particle //if so, add it to that step
+		bool locListedAsDecayingFlag = false;
+		for(size_t loc_j = 1; loc_j < locThrownSteps.size(); ++loc_j)
+		{
+			if(locThrownSteps[loc_j].first->myid != locMCThrowns[loc_i]->parentid)
+				continue;
+			locThrownSteps[loc_j].second.push_back(locMCThrowns[loc_i]);
+			locListedAsDecayingFlag = true;
+			break;
+		}
+		if(locListedAsDecayingFlag)
+			continue;
+
+		//else add a new decay step and add this particle to it
+		locThrownSteps.push_back(pair<const DMCThrown*, deque<const DMCThrown*> >(locIDMap[locMCThrowns[loc_i]->parentid], deque<const DMCThrown*>(1, locMCThrowns[loc_i]) ));
+	}
+/*
+cout << "THROWN STEPS: " << endl;
+for(size_t loc_i = 0; loc_i < locThrownSteps.size(); ++loc_i)
+{
+	cout << ((loc_i == 0) ? -1 : locThrownSteps[loc_i].first->myid) << ": ";
+	for(size_t loc_j = 0; loc_j < locThrownSteps[loc_i].second.size(); ++loc_j)
+		cout << locThrownSteps[loc_i].second[loc_j]->myid << ", ";
+	cout << endl;
+}
+*/
+}
+
 bool DAnalysisUtilities::Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, const deque<Particle_t>& locDesiredPIDs, Particle_t locMissingPID) const
 {
 	vector<const DMCThrown*> locMCThrowns;

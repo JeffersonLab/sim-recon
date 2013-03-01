@@ -19,6 +19,7 @@ class DReactionStep
 		void Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag = false); //TRUE IS NOT SUPPORTED YET!
 		inline void Set_TargetParticleID(Particle_t locPID){dTargetParticleID = locPID;}
 		void Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag = false);
+		void Reset(void);
 
 		// GET INITIAL, TARGET, AND MISSING DATA:
 		inline Particle_t Get_InitialParticleID(void) const{return dInitialParticleID;}
