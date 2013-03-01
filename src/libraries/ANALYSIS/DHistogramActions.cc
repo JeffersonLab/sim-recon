@@ -1735,6 +1735,9 @@ bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, cons
 
 void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 {
+	dThrownTopology = new string;
+	dDetectedTopology = new string;
+
 	//CREATE THE HISTOGRAMS
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
@@ -1758,11 +1761,15 @@ void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 		}
 	}
 
-	dTree_TrackTopologies = new TTree("TrackTopologies", "TrackTopologies");
-	dThrownTopology = new string;
-	dDetectedTopology = new string;
-	dTree_TrackTopologies->Branch("Thrown_String", dThrownTopology);
-	dTree_TrackTopologies->Branch("Detected_String", dDetectedTopology);
+	string locTreeName("dTree_TrackTopologies");
+	if(gDirectory->Get(locTreeName.c_str()) != NULL) //already created by another thread
+		dTree_TrackTopologies = static_cast<TTree*>(gDirectory->Get(locTreeName.c_str()));
+	else
+	{
+		dTree_TrackTopologies = new TTree(locTreeName.c_str(), "TrackTopologies");
+		dTree_TrackTopologies->Branch("Thrown_String", dThrownTopology);
+		dTree_TrackTopologies->Branch("Detected_String", dDetectedTopology);
+	}
 
 	Get_Application()->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -1958,6 +1965,9 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc
 		dHist_NumReconstructedTracks->Fill(4.0, (Double_t)locChargedTracks.size());
 		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 			dHist_NumReconstructedTracks->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumTracksByPID[dFinalStatePIDs[loc_i]]);
+
+		dTree_TrackTopologies->SetBranchAddress("Thrown_String", &dThrownTopology);
+		dTree_TrackTopologies->SetBranchAddress("Detected_String", &dDetectedTopology);
 		dTree_TrackTopologies->Fill();
 	}
 	Get_Application()->RootUnLock();
