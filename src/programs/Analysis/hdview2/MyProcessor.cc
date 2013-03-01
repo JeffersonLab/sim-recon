@@ -138,7 +138,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 	const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
 	dgeom->GetFDCWires(fdcwires);
 
-	RootGeom = dapp->GetRootGeom();
+	RootGeom = dapp->GetRootGeom(runnumber);
 	geom = dapp->GetDGeometry(runnumber);
 	
 	MATERIAL_MAP_MODEL="DGeometry";
