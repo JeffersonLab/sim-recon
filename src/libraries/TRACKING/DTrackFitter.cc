@@ -27,6 +27,7 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	this->loop = loop;
 	bfield=NULL;
 	fit_status = kFitNotDone;
+	unsigned int run_number = (loop->GetJEvent()).GetRunNumber();
 	DEBUG_LEVEL=0;
 
 	CORRECT_FOR_ELOSS=true;
@@ -38,9 +39,9 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 		return;
 	}
 	bfield = dapp->GetBfield(); // this should be run number based!
-	lorentz_def=dapp->GetLorentzDeflections();
-	geom = dapp->GetDGeometry((loop->GetJEvent()).GetRunNumber());
-	RootGeom = dapp->GetRootGeom();
+	lorentz_def=dapp->GetLorentzDeflections(run_number);
+	geom = dapp->GetDGeometry(run_number);
+	RootGeom = dapp->GetRootGeom(run_number);
 
 	// Use a special entry to hold how many tracks we fit
 	prof_time::time_diffs tdiff_zero;

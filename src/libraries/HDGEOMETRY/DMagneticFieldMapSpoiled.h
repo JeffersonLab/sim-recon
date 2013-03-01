@@ -20,7 +20,7 @@ class DMagneticFieldMapCalibDB;
 
 class DMagneticFieldMapSpoiled:public DMagneticFieldMap{
 	public:
-		DMagneticFieldMapSpoiled(JApplication *japp, string namepath = "Magnets/Solenoid/solenoid_1500");
+		DMagneticFieldMapSpoiled(JApplication *japp, unsigned int run_number=1, string namepath = "Magnets/Solenoid/solenoid_1500");
 		DMagneticFieldMapSpoiled(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1500");
 		virtual ~DMagneticFieldMapSpoiled();
 

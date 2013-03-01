@@ -13,9 +13,8 @@ using namespace std;
 //---------------------------------
 // DMagneticFieldMapCalibDB    (Constructor)
 //---------------------------------
-DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JApplication *japp, string namepath)
+DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JApplication *japp, unsigned int runnumber, string namepath)
 {
-	int runnumber = 1;
 	jcalib = japp->GetJCalibration(runnumber);
 
 	JParameterManager *jparms = japp->GetJParameterManager();

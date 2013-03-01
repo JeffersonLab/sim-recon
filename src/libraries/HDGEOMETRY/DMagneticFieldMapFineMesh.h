@@ -20,7 +20,7 @@ using namespace jana;
 
 class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
  public:
-  DMagneticFieldMapFineMesh(JApplication *japp, string namepath = "Magnets/Solenoid/solenoid_1500_poisson_20090814_01");
+  DMagneticFieldMapFineMesh(JApplication *japp, unsigned int runnumber=1, string namepath = "Magnets/Solenoid/solenoid_1500_poisson_20090814_01");
   DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1500_poisson_20090814_01");
   virtual ~DMagneticFieldMapFineMesh();
   

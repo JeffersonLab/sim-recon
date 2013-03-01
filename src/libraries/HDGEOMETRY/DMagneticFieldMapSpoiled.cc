@@ -21,9 +21,9 @@ using namespace jana;
 //---------------------------------
 // DMagneticFieldMapSpoiled    (Constructor)
 //---------------------------------
-DMagneticFieldMapSpoiled::DMagneticFieldMapSpoiled(JApplication *japp, string namepath)
+DMagneticFieldMapSpoiled::DMagneticFieldMapSpoiled(JApplication *japp, unsigned int run_number, string namepath)
 {
-	bfield = new DMagneticFieldMapCalibDB(japp, namepath);
+	bfield = new DMagneticFieldMapCalibDB(japp, run_number, namepath);
 	
 	initialized = false;
 }

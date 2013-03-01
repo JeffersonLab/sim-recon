@@ -259,7 +259,7 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 //---------------------------------
 // GetBfield
 //---------------------------------
-DMagneticFieldMap* DApplication::GetBfield(void)
+DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 {
 	pthread_mutex_lock(&mutex);
 
@@ -275,11 +275,11 @@ DMagneticFieldMap* DApplication::GetBfield(void)
 	string bfield_type = "FineMesh";
 	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
 	if(bfield_type=="CalibDB"){
-		bfield = new DMagneticFieldMapCalibDB(this);
+		bfield = new DMagneticFieldMapCalibDB(this, run_number);
 		jout<<"Created Magnetic field map of type DMagneticFieldMapCalibDB."<<endl;
 	}
 	else if(bfield_type=="FineMesh"){
-		bfield = new DMagneticFieldMapFineMesh(this);
+		bfield = new DMagneticFieldMapFineMesh(this,run_number);
 		jout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
 	}
 	else if(bfield_type=="Const"){
@@ -304,7 +304,7 @@ DMagneticFieldMap* DApplication::GetBfield(void)
 //---------------------------------
 // GetLorentzDeflections
 //---------------------------------
-DLorentzDeflections* DApplication::GetLorentzDeflections(void)
+DLorentzDeflections* DApplication::GetLorentzDeflections(unsigned int run_number)
 {
 	pthread_mutex_lock(&mutex);
 
@@ -315,7 +315,7 @@ DLorentzDeflections* DApplication::GetLorentzDeflections(void)
 	}
 
 	// Create Lorentz deflection object
-	lorentz_def= new DLorentzMapCalibDB(this);
+	lorentz_def= new DLorentzMapCalibDB(this, run_number);
 	
 	pthread_mutex_unlock(&mutex);
 	
@@ -325,7 +325,7 @@ DLorentzDeflections* DApplication::GetLorentzDeflections(void)
 //---------------------------------
 // GetRootGeom
 //---------------------------------
-DRootGeom* DApplication::GetRootGeom()
+DRootGeom* DApplication::GetRootGeom(unsigned int run_number)
 {
 	pthread_mutex_lock(&mutex);
 
@@ -337,7 +337,7 @@ DRootGeom* DApplication::GetRootGeom()
 	
 	// Create map of material properties
 	//material = new DMaterialMapCalibDB(this);
-	RootGeom = new DRootGeom(this);
+	RootGeom = new DRootGeom(this, run_number);
 
 	pthread_mutex_unlock(&mutex);
 	

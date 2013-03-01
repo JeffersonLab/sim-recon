@@ -16,9 +16,8 @@ using namespace evio;
 //---------------------------------
 // DMagneticFieldMapFineMesh    (Constructor)
 //---------------------------------
-DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JApplication *japp, string namepath)
+DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JApplication *japp, unsigned int runnumber, string namepath)
 {
-	int runnumber = 1;
 	jcalib = japp->GetJCalibration(runnumber);
 
 	JParameterManager *jparms = japp->GetJParameterManager();

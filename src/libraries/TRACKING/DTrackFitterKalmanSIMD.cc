@@ -352,7 +352,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   }
 
   
-  JCalibration *jcalib = dapp->GetJCalibration(0);  // need run number here
+  JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
   typedef map<string,float>::iterator iter_float;
   vector< map<string, float> > tvals;
   if (jcalib->Get("CDC/cdc_drift", tvals)==false){    

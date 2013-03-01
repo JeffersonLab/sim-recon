@@ -42,7 +42,7 @@ DParticleID::DParticleID(JEventLoop *loop)
     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
 		return;
   }
-  const DRootGeom *RootGeom = dapp->GetRootGeom();
+  const DRootGeom *RootGeom = dapp->GetRootGeom(loop->GetJEvent().GetRunNumber());
   bfield = dapp->GetBfield(); 
   stepper= new DMagneticFieldStepper(bfield);
 

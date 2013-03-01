@@ -39,11 +39,11 @@ class DApplication:public JApplication{
 		
 		jerror_t Init(void);
 		
-		DMagneticFieldMap* GetBfield(void);
-		DLorentzDeflections *GetLorentzDeflections(void);
+		DMagneticFieldMap* GetBfield(unsigned int run_number=1);
+		DLorentzDeflections *GetLorentzDeflections(unsigned int run_number=1);
 		//DMaterialMap *GetMaterialMap(void){return material;}
 		DGeometry* GetDGeometry(unsigned int run_number);
-		DRootGeom *GetRootGeom();
+		DRootGeom *GetRootGeom(unsigned int run_number);
 
 		//ONLY CALL THESE FUNCTIONS FROM WITHIN A "RESTWriter" WRITE LOCK!
 		inline bool Find_RESTOutputFilePointers(string locOutputFileName) const{return (dRESTOutputFilePointers.find(locOutputFileName) != dRESTOutputFilePointers.end());}

@@ -24,7 +24,8 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumbe
 {
 	this->jgeom = jgeom;
 	this->dapp = dapp;
-	this->bfield = dapp->GetBfield();
+	this->bfield = dapp->GetBfield(runnumber);
+	this->runnumber = runnumber;
 
 	JCalibration *jcalib = dapp->GetJCalibration(runnumber);
 	if(!jcalib){
@@ -98,7 +99,7 @@ DMagneticFieldMap* DGeometry::GetBfield(void) const
 //---------------------------------
 DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
 {
-	return dapp->GetLorentzDeflections();
+	return dapp->GetLorentzDeflections(runnumber);
 }
 
 //---------------------------------

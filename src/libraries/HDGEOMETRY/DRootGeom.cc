@@ -14,7 +14,7 @@ using namespace std;
 //---------------------------------
 // DRootGeom    (Constructor)
 //---------------------------------
-DRootGeom::DRootGeom(JApplication *japp)
+DRootGeom::DRootGeom(JApplication *japp, unsigned int run_number)
 {
 	pthread_mutexattr_init(&mutex_attr);
 	pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
@@ -23,8 +23,7 @@ DRootGeom::DRootGeom(JApplication *japp)
 	table_initialized = false;
 	DRGeom = NULL;
 
-	int runnumber = 1;
-	jcalib = japp->GetJCalibration(runnumber);
+	jcalib = japp->GetJCalibration(run_number);
 	if(!jcalib){
 		_DBG_<<"Unable to get JCalibration object!"<<endl;
 		exit(-1);

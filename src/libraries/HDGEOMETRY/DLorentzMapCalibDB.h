@@ -9,11 +9,11 @@ using namespace jana;
 
 class DLorentzMapCalibDB:public DLorentzDeflections{
  public:
-  DLorentzMapCalibDB(JApplication *japp);
+  DLorentzMapCalibDB(JApplication *japp, unsigned int run_number=1);
   DLorentzMapCalibDB(JCalibration *jcalib);
   ~DLorentzMapCalibDB(){};
   
-  unsigned int GetLorentzDeflections(unsigned int runnumber=1);
+  unsigned int GetLorentzDeflections(void);
 
  protected:
   JCalibration *jcalib;

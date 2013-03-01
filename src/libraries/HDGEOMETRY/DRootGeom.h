@@ -37,7 +37,7 @@ class DRootGeom{
 
  public:
 
-  DRootGeom(JApplication *japp);
+  DRootGeom(JApplication *japp, unsigned int run_number=1);
   virtual ~DRootGeom();
   
   virtual const char* className(void){return static_className();}

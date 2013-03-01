@@ -8,12 +8,11 @@ using namespace std;
 //---------------------------------
 // DLorentzMapCalibDB    (Constructor)
 //---------------------------------
-DLorentzMapCalibDB::DLorentzMapCalibDB(JApplication *japp)
+DLorentzMapCalibDB::DLorentzMapCalibDB(JApplication *japp, unsigned int run_number)
 {
-  int runnumber = 1;
-  jcalib = japp->GetJCalibration(runnumber);
+  jcalib = japp->GetJCalibration(run_number);
 
-  int Npoints = GetLorentzDeflections(runnumber); 
+  int Npoints = GetLorentzDeflections(); 
   if(Npoints==0){
     _DBG_<<"Error getting JCalibration object for Lorentz corrections!"<<
       endl;
@@ -36,7 +35,7 @@ DLorentzMapCalibDB::DLorentzMapCalibDB(JCalibration *jcalib)
 
 
 
-unsigned int DLorentzMapCalibDB::GetLorentzDeflections(unsigned int runno){  
+unsigned int DLorentzMapCalibDB::GetLorentzDeflections(void){
   /// Routine for accessing calibration constants adapted from code written by 
   /// David Lawrence.  
   /// The values specified by "namepath" will be read into the array

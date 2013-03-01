@@ -134,6 +134,7 @@ class DGeometry{
 		JGeometry *jgeom;
 		DApplication *dapp;
 		DMagneticFieldMap *bfield;
+		unsigned int runnumber;
 		vector<DMaterial*> materials;			/// Older implementation to keep track of material specs without ranges
 		vector<DMaterialMap*> materialmaps;	/// Material maps generated automatically(indirectly) from XML with ranges and specs
 };
