@@ -64,7 +64,14 @@ DFDCPseudo_factory::DFDCPseudo_factory() {
 /// default destructor -- closes log file
 ///
 DFDCPseudo_factory::~DFDCPseudo_factory() {
-	delete _log;
+  if (fdcwires.size()){
+    for (unsigned int i=0;i<fdcwires.size();i++){
+      for (unsigned int j=0;j<fdcwires[i].size();j++){
+	delete fdcwires[i][j];
+      }
+    }    
+  }
+  delete _log;
 }
 
 //------------------
@@ -144,7 +151,18 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
   return NOERROR;
 }
 
+jerror_t DFDCPseudo_factory::erun(void){
+  if (fdcwires.size()){
+    for (unsigned int i=0;i<fdcwires.size();i++){
+      for (unsigned int j=0;j<fdcwires[i].size();j++){
+	delete fdcwires[i][j];
+      }
+    }    
+  }
+  fdcwires.clear();
 
+  return NOERROR;
+}
 ///
 /// DFDCPseudo_factory::evnt():
 /// this is the place that anode hits and DFDCCathodeClusters are organized into pseudopoints.
@@ -152,18 +170,10 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
 jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   if (!USE_FDC) return NOERROR;
 
-
+	// Get all FDC hits (anode and cathode)	
 	vector<const DFDCHit*> fdcHits;
-	vector<const DFDCHit*> xHits;
-	vector<const DFDCCathodeCluster*> cathClus;
-	vector<const DFDCCathodeCluster*> uClus;
-	vector<const DFDCCathodeCluster*> oneLayerU;
-	vector<const DFDCCathodeCluster*> vClus;
-	vector<const DFDCCathodeCluster*> oneLayerV;
-	vector<const DFDCHit*> oneLayerX;
-
-	// Get all FDC hits (anode and cathode)
 	eventLoop->Get(fdcHits);
+	if (fdcHits.size()==0) return NOERROR;
 
 	// For events with a very large number of hits, assume
 	// we can't reconstruct them so bail early
@@ -174,9 +184,12 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	}
 
 	// Get cathode clusters
+	vector<const DFDCCathodeCluster*> cathClus;
 	eventLoop->Get(cathClus);
+	if (cathClus.size()==0) return NOERROR;
 
 	// Sift through hits and select out anode hits.
+	vector<const DFDCHit*> xHits;
 	for (unsigned int i=0; i < fdcHits.size(); i++)
 		if (fdcHits[i]->type == 0)
 			xHits.push_back(fdcHits[i]);
@@ -184,6 +197,8 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	std::sort(xHits.begin(), xHits.end(), DFDCAnode_gLayer_cmp);
 			
 	// Sift through clusters and put U and V clusters into respective vectors.
+	vector<const DFDCCathodeCluster*> uClus;	
+	vector<const DFDCCathodeCluster*> vClus;
 	for (unsigned int i=0; i < cathClus.size(); i++) {
 		if (cathClus[i]->plane == 1)
 			vClus.push_back(cathClus[i]);
@@ -205,6 +220,9 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	
 	// For each layer, get its sets of V, X, and U hits, and then pass them to the geometrical
 	// organization routine, DFDCPseudo_factory::makePseudo()
+	vector<const DFDCCathodeCluster*> oneLayerU;
+	vector<const DFDCCathodeCluster*> oneLayerV;
+	vector<const DFDCHit*> oneLayerX;
 	for (int iLayer=1; iLayer <= 24; iLayer++) {
 	  for (; ((uIt != uClus.end() && (*uIt)->gLayer == iLayer)); uIt++)
 	    oneLayerU.push_back(*uIt);
