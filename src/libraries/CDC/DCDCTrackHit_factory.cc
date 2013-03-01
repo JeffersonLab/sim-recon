@@ -14,6 +14,16 @@ using namespace std;
 #include <HDGEOMETRY/DGeometry.h>
 #include <TRACKING/DTrackHitSelectorTHROWN.h>
 #include <TRACKING/DMCTrackHit.h>
+ 
+DCDCTrackHit_factory::~DCDCTrackHit_factory(){
+  if (cdcwires.size()){
+    for (unsigned int i=0;i<cdcwires.size();i++){
+      for (unsigned int j=0;j<cdcwires[i].size();j++){
+	delete cdcwires[i][j];
+      }
+    }    
+  }
+}
 
 //------------------
 // init
@@ -48,6 +58,18 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
   return NOERROR;
 }
 
+jerror_t DCDCTrackHit_factory::erun(void){
+  if (cdcwires.size()){
+    for (unsigned int i=0;i<cdcwires.size();i++){
+      for (unsigned int j=0;j<cdcwires[i].size();j++){
+	delete cdcwires[i][j];
+      }
+    }    
+  }
+  cdcwires.clear();
+  return NOERROR;
+}
+
 //------------------
 // evnt
 //------------------
@@ -57,6 +79,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	/// of wire center and stereo angle.
 	vector<const DCDCHit*> cdchits;
 	loop->Get(cdchits);
+	if (cdchits.size()==0) return NOERROR;
 	
 	// If this is simulated data then we want to match up the truth hit
 	// with this "real" hit. Ideally, this would be done at the
@@ -90,7 +113,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->dist = hit->tdrift*55.0E-4; // Use number hardwired in simulation for now
 		hit->AddAssociatedObject(cdchit);
 
-		if (mctrackhits.size()>0){
+		if (MATCH_TRUTH_HITS==true&&mctrackhits.size()>0){
 		  // Try matching truth hit with this "real" hit.
 		  const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hit->wire, hit->dist, mctrackhits);
 		

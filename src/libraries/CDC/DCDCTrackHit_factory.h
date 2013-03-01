@@ -24,12 +24,13 @@
 class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 	public:
 		DCDCTrackHit_factory(){};
-		~DCDCTrackHit_factory(){};
+		~DCDCTrackHit_factory();
 		
 	private:
 		jerror_t init(void);
 		jerror_t brun(JEventLoop *loop, int runnumber);
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+		jerror_t erun(void);
 
 
 		DGeometry *dgeom;
