@@ -68,7 +68,12 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   double DocaToHelix(const DCDCTrackHit *hit,double q,const DVector3 &pos,
 		     const DVector3 &mom);
   double GetCharge(DHelicalFit &fit,const DFDCPseudo *fdchit,const DVector3 &pos);
-  
+  jerror_t DoRefit(DHelicalFit &fit,
+		   vector<const DFDCSegment *>segments,
+		   vector<const DCDCTrackHit *>cdchits,
+		   double &Bz);
+  void ProjectHelixToZ(const double z,const double q,const DVector3 &mom,
+		       DVector3 &pos);
  private:
   const DMagneticFieldMap *bfield;
   DMagneticFieldStepper *stepper;
