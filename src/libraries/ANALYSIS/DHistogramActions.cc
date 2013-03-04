@@ -1850,7 +1850,7 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 	locEventLoop->Get(locThrownReactions, "Thrown");
 
 	//sort thrown pids
-	dThrownTopology->clear();
+	string locThrownTopology;
 	if(!locThrownReactions.empty())
 	{
 		deque<Particle_t> locThrownPIDs;
@@ -1901,17 +1901,17 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Thrown.size(); ++loc_i
 			{
 				ostringstream locStream;
 				locStream << locNumParticles;
-				(*dThrownTopology) += locStream.str();
+				locThrownTopology += locStream.str();
 			}
-			(*dThrownTopology) += ParticleName_ROOT(locSortedNumParticlesByType_Thrown[loc_i].first);
+			locThrownTopology += ParticleName_ROOT(locSortedNumParticlesByType_Thrown[loc_i].first);
 			if(loc_i != (locSortedNumParticlesByType_Thrown.size() - 1))
-				(*dThrownTopology) += ", ";
+				locThrownTopology += ", ";
 		}
 	}
 
 	//sort detected pids
 	//locNumTracksByPID: detected pids
-	dDetectedTopology->clear();
+	string locDetectedTopology;
 	deque<pair<Particle_t, unsigned int> > locSortedNumParticlesByType_Detected; //sorted by charge (+/0/-), then mass (high/low)
 	deque<pair<Particle_t, unsigned int> >::iterator locIterator, locInsertLocation;
 	map<Particle_t, size_t>::iterator locMapIterator;
@@ -1949,11 +1949,11 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc
 		{
 			ostringstream locStream;
 			locStream << locNumParticles;
-			(*dDetectedTopology) += locStream.str();
+			locDetectedTopology += locStream.str();
 		}
-		(*dDetectedTopology) += ParticleName_ROOT(locSortedNumParticlesByType_Detected[loc_i].first);
+		locDetectedTopology += ParticleName_ROOT(locSortedNumParticlesByType_Detected[loc_i].first);
 		if(loc_i != (locSortedNumParticlesByType_Detected.size() - 1))
-			(*dDetectedTopology) += ", ";
+			locDetectedTopology += ", ";
 	}
 
 	Get_Application()->RootWriteLock();
@@ -1966,8 +1966,13 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc
 		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 			dHist_NumReconstructedTracks->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumTracksByPID[dFinalStatePIDs[loc_i]]);
 
+		*dThrownTopology = locThrownTopology;
+		*dDetectedTopology = locDetectedTopology;
 		dTree_TrackTopologies->SetBranchAddress("Thrown_String", &dThrownTopology);
 		dTree_TrackTopologies->SetBranchAddress("Detected_String", &dDetectedTopology);
+
+//		(*(string*)((TBranchElement*)dTree_TrackTopologies->GetBranch("Thrown_String"))->GetObject()) = locThrownTopology;
+//		(*(string*)((TBranchElement*)dTree_TrackTopologies->GetBranch("Detected_String"))->GetObject()) = locDetectedTopology;
 		dTree_TrackTopologies->Fill();
 	}
 	Get_Application()->RootUnLock();
