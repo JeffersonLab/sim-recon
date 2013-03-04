@@ -151,8 +151,8 @@ jerror_t MyProcessor::fini(void)
 {
 	if(ROOTfile!=NULL){
 		ROOTfile->Write();
-		//ROOTfile->Close();
-		//delete ROOTfile;
+		ROOTfile->Close();
+		delete ROOTfile;
 		ROOTfile=NULL;
 		cout<<endl<<"Closed ROOT file"<<endl;
 	}
