@@ -47,7 +47,7 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
   dgeom  = dapp->GetDGeometry(runnumber);
   
   // Get the CDC wire table from the XML
-  jout<< "Getting map of cdc wires from the XML" <<endl;
+  //jout<< "Getting map of cdc wires from the XML" <<endl;
   dgeom->GetCDCWires(cdcwires);
   
   // Fill array with the number of straws for each layer
