@@ -95,6 +95,27 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 				}
 		};
 		
+		class DCDCLineFit{
+		public:
+		  unsigned int n;
+		  vector<double>s;
+		  vector<double>var_s;
+		  vector<double>z;
+		  vector<double>var_z;
+		  vector<double>w;
+		  double z0;
+		  double tanl;
+		  double ChiXY(double lambda);
+		  void BracketMinimumChisq(double &a,double &b, double &c,
+					   double &chi2a,double &chi2b,
+					   double &chi2c);
+		  double FindMinimumChisq(double a,double b,double c, 
+					  double &lambda);
+		  
+
+
+		};
+
 		class DCDCSeed{
 			public:
 				vector<DCDCTrkHit*> hits;
@@ -114,7 +135,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 				void Merge(DCDCSeed& seed);
 				double MinDist2(DCDCSeed& seed);
 				double FindAverageBz(const DMagneticFieldMap *bfield);
-				
+				void CheckCharge();
 				DCDCSeed();
 		};
 
@@ -146,7 +167,11 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		void FindTheta(DCDCSeed &seed, double target_z_min, double target_z_max);
 		void FindZ(DCDCSeed &seed, double theta_min, double theta_max);
 		int NumEligibleSeedHits(vector<DCDCTrkHit*> &hits);
-
+		
+		jerror_t GetStereoPosition(const DCDCWire *wire,
+					   const DHelicalFit &fit,
+					   DVector3 &pos, 
+					   double &var_z);
 
 		jerror_t GetPositionAndMomentum(DCDCSeed &seed,
 						DVector3 &pos,
