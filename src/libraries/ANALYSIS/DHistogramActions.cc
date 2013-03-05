@@ -376,6 +376,17 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 				dHistDeque_TrackDOCAToCommon[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
 			else
 				dHistDeque_TrackDOCAToCommon[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDOCABins, dMinDOCA, dMaxDOCA);
+
+			// DeltaT Vs P against beam photon
+			if((locReactionStep->Get_InitialParticleID() == Gamma) && (dHistMap_BeamTrackDeltaTVsP.find(locPID) == dHistMap_BeamTrackDeltaTVsP.end()))
+			{
+				locHistName = string("TrackDeltaTVsP_") + ParticleType(locPID) + string("_Beam") + ParticleType(Gamma);
+				locHistTitle = locStepROOTName + string(";") + ParticleName_ROOT(locPID) + string(" Momentum (GeV/c);t_{") + ParticleName_ROOT(locPID) + string("} - t_{Beam ") + ParticleName_ROOT(Gamma) + string("} (ns)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_BeamTrackDeltaTVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_BeamTrackDeltaTVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
+			}
 		}
 
 		//delta-t vs p
@@ -412,11 +423,8 @@ void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop
 					dHistDeque_TrackDeltaTVsP[loc_i][locParticlePair] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaVertexTBins, dMinDeltaVertexT, dMaxDeltaVertexT);
 			}
 		}
-
 		gDirectory->cd("..");
 	}
-
-
 
 	Get_Application()->RootUnLock(); //RELEASE ROOT LOCK!!
 }
@@ -445,6 +453,7 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 			continue;
 
 		//Grab/Find common vertex & time
+		const DKinematicData* locBeamParticle = (locParticleComboStep->Get_InitialParticleID() == Gamma) ? locParticleComboStep->Get_InitialParticle() : NULL;
 		if((locKinFitResults != NULL) && ((locKinFitType == d_VertexFit) || (locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 		{
 			//locKinFitResults NULL if failed kinfit
@@ -517,6 +526,8 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 				locPIDPairs.push_back(pair<Particle_t, Particle_t>(locParticles[locHigherMassParticleIndex]->PID(), locParticles[locLowerMassParticleIndex]->PID()));
 			}
 
+			double locBeamDeltaT = (locBeamParticle != NULL) ? locParticles[loc_j]->time() - locBeamParticle->time() : numeric_limits<double>::quiet_NaN();
+			double locBeamMomentum = (locBeamParticle != NULL) ? locBeamParticle->momentum().Mag() : numeric_limits<double>::quiet_NaN();
 			locDOCA = Get_AnalysisUtilities()->Calc_DOCAToVertex(locParticles[loc_j], locVertex);
 
 			//HISTOGRAM //do all at once to reduce #locks & amount of time within the lock
@@ -533,6 +544,9 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 					dHistDeque_MaxTrackDeltaT[loc_i]->Fill(locMaxDeltaT);
 					dHistDeque_MaxTrackDOCA[loc_i]->Fill(locMaxDOCA);
 				}
+				//delta-t's
+				if(locBeamParticle != NULL)
+					dHistMap_BeamTrackDeltaTVsP[locPID]->Fill(locBeamMomentum, locBeamDeltaT);
 				for(size_t loc_k = 0; loc_k < locPIDPairs.size(); ++loc_k)
 				{
 					if(dHistDeque_TrackDeltaTVsP[loc_i].find(locPIDPairs[loc_k]) == dHistDeque_TrackDeltaTVsP[loc_i].end())
@@ -1003,16 +1017,18 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 	if(!locPreviousParticleCombos.empty())
 		return true; //else double-counting!
 
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+	if(locMCThrowns.empty())
+		return true; //e.g. non-simulated event
+
 	Particle_t locPID;
+	const DMCThrown* locMCThrown;
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 		dBeamParticle_P->Fill(locBeamPhotons[loc_i]->energy());
-
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
-	const DMCThrown* locMCThrown;
 
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
@@ -1910,7 +1926,6 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Thrown.size(); ++loc_i
 	}
 
 	//sort detected pids
-	//locNumTracksByPID: detected pids
 	string locDetectedTopology;
 	deque<pair<Particle_t, unsigned int> > locSortedNumParticlesByType_Detected; //sorted by charge (+/0/-), then mass (high/low)
 	deque<pair<Particle_t, unsigned int> >::iterator locIterator, locInsertLocation;
@@ -1970,9 +1985,6 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc
 		*dDetectedTopology = locDetectedTopology;
 		dTree_TrackTopologies->SetBranchAddress("Thrown_String", &dThrownTopology);
 		dTree_TrackTopologies->SetBranchAddress("Detected_String", &dDetectedTopology);
-
-//		(*(string*)((TBranchElement*)dTree_TrackTopologies->GetBranch("Thrown_String"))->GetObject()) = locThrownTopology;
-//		(*(string*)((TBranchElement*)dTree_TrackTopologies->GetBranch("Detected_String"))->GetObject()) = locDetectedTopology;
 		dTree_TrackTopologies->Fill();
 	}
 	Get_Application()->RootUnLock();

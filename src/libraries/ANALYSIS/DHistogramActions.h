@@ -125,6 +125,8 @@ class DHistogramAction_TrackVertexComparison : public DAnalysisAction
 		deque<TH1D*> dHistDeque_MaxTrackDOCA;
 
 		deque<map<pair<Particle_t, Particle_t>, TH2D*> > dHistDeque_TrackDeltaTVsP; //one hist per track pair, more massive particle is listed first, p is that of the more massive particle (generally slower: worse projected resolution)
+
+		map<Particle_t, TH2D*> dHistMap_BeamTrackDeltaTVsP;
 };
 
 class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
@@ -463,8 +465,6 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 
 		string* dThrownTopology;
 		string* dDetectedTopology;
-		vector<unsigned int> dThrownTopologyVector;
-		vector<unsigned int> dDetectedTopologyVector;
 };
 
 class DHistogramAction_TruePID : public DAnalysisAction
