@@ -911,6 +911,11 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 
 void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventLoop)
 {
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+	if(locMCThrowns.empty())
+		return; //e.g. non-simulated event
+
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
@@ -1011,15 +1016,15 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventL
 
 bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(!locPreviousParticleCombos.empty())
-		return true; //else double-counting!
-
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
+
+	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
+	Get_PreviousParticleCombos(locPreviousParticleCombos);
+	if(!locPreviousParticleCombos.empty())
+		return true; //else double-counting!
 
 	Particle_t locPID;
 	const DMCThrown* locMCThrown;
@@ -1335,6 +1340,11 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 
 void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLoop)
 {
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+	if(locMCThrowns.empty())
+		return; //e.g. non-simulated event
+
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
@@ -1482,6 +1492,11 @@ void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLo
 
 bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+	if(locMCThrowns.empty())
+		return true; //e.g. non-simulated event
+
 	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
 	Get_PreviousParticleCombos(locPreviousParticleCombos);
 	if(!locPreviousParticleCombos.empty())
