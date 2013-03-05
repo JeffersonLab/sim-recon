@@ -527,7 +527,6 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 			}
 
 			double locBeamDeltaT = (locBeamParticle != NULL) ? locParticles[loc_j]->time() - locBeamParticle->time() : numeric_limits<double>::quiet_NaN();
-			double locBeamMomentum = (locBeamParticle != NULL) ? locBeamParticle->momentum().Mag() : numeric_limits<double>::quiet_NaN();
 			locDOCA = Get_AnalysisUtilities()->Calc_DOCAToVertex(locParticles[loc_j], locVertex);
 
 			//HISTOGRAM //do all at once to reduce #locks & amount of time within the lock
@@ -546,7 +545,7 @@ bool DHistogramAction_TrackVertexComparison::Perform_Action(JEventLoop* locEvent
 				}
 				//delta-t's
 				if(locBeamParticle != NULL)
-					dHistMap_BeamTrackDeltaTVsP[locPID]->Fill(locBeamMomentum, locBeamDeltaT);
+					dHistMap_BeamTrackDeltaTVsP[locPID]->Fill(locParticles[loc_j]->momentum().Mag(), locBeamDeltaT);
 				for(size_t loc_k = 0; loc_k < locPIDPairs.size(); ++loc_k)
 				{
 					if(dHistDeque_TrackDeltaTVsP[loc_i].find(locPIDPairs[loc_k]) == dHistDeque_TrackDeltaTVsP[loc_i].end())
