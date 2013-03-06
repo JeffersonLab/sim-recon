@@ -23,20 +23,20 @@ class DChargedTrackHypothesis : public DKinematicData {
 		const DReferenceTrajectory* dRT;
 
 		unsigned int dNDF_Track;
-		float dChiSq_Track;
+		double dChiSq_Track;
 		
 		unsigned int dNDF_Timing;
-		float dChiSq_Timing;
+		double dChiSq_Timing;
 
 		unsigned int dNDF_DCdEdx;
-		float dChiSq_DCdEdx;
+		double dChiSq_DCdEdx;
 
-		float dStartCounterdEdx,dTOFdEdx,dFCALdEdx;
-		float dStartCounterdEdx_norm_residual,dTOFdEdx_norm_residual;
+		double dStartCounterdEdx,dTOFdEdx,dFCALdEdx;
+		double dStartCounterdEdx_norm_residual,dTOFdEdx_norm_residual;
 		
 		unsigned int dNDF; //total NDF used for PID determination
-		float dChiSq; //total chi-squared used for PID determination
-		float dFOM; //overall FOM for PID determination
+		double dChiSq; //total chi-squared used for PID determination
+		double dFOM; //overall FOM for PID determination
 
 		void toStrings(vector<pair<string,string> > &items) const{
 			AddString(items, "candidate","%d",candidateid);
