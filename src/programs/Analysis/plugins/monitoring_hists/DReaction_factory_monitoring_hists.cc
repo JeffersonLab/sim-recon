@@ -1,9 +1,9 @@
-#include "DReaction_factory.h"
+#include "DReaction_factory_monitoring_hists.h"
 
 //------------------
 // init
 //------------------
-jerror_t DReaction_factory::init(void)
+jerror_t DReaction_factory_monitoring_hists::init(void)
 {
 	// Setting the PERSISTANT prevents JANA from deleting
 	// the objects every event so we only create them once.
@@ -103,7 +103,7 @@ jerror_t DReaction_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DReaction_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DReaction_factory_monitoring_hists::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	return NOERROR;
 }
@@ -111,7 +111,7 @@ jerror_t DReaction_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DReaction_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DReaction_factory_monitoring_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	return NOERROR;
 }
@@ -119,7 +119,7 @@ jerror_t DReaction_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // erun
 //------------------
-jerror_t DReaction_factory::erun(void)
+jerror_t DReaction_factory_monitoring_hists::erun(void)
 {
 	return NOERROR;
 }
@@ -127,7 +127,7 @@ jerror_t DReaction_factory::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DReaction_factory::fini(void)
+jerror_t DReaction_factory_monitoring_hists::fini(void)
 {
 	for(size_t loc_i = 0; loc_i < dReactionStepPool.size(); ++loc_i)
 		delete dReactionStepPool[loc_i];

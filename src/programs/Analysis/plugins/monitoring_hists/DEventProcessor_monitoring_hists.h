@@ -16,7 +16,7 @@
 #include "DANA/DApplication.h"
 #include "ANALYSIS/DAnalysisResults.h"
 
-#include "DFactoryGenerator_DReaction.h"
+#include "DFactoryGenerator_monitoring_hists.h"
 
 using namespace jana;
 
