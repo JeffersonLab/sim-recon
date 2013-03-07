@@ -10,7 +10,6 @@
 #include "particleType.h"
 #include "TMatrixDSym.h"
 
-#include "PID/DKinFit.h"
 #include "PID/DChargedTrack.h"
 #include "PID/DNeutralShower.h"
 #include "PID/DChargedTrackHypothesis.h"
