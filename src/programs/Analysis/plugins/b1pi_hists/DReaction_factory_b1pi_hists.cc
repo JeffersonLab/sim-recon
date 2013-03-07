@@ -1,9 +1,9 @@
-#include "DReaction_factory.h"
+#include "DReaction_factory_b1pi_hists.h"
 
 //------------------
 // init
 //------------------
-jerror_t DReaction_factory::init(void)
+jerror_t DReaction_factory_b1pi_hists::init(void)
 {
 	// Make as many DReaction objects as desired
 	DReactionStep* locReactionStep;
@@ -122,7 +122,7 @@ jerror_t DReaction_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DReaction_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
+jerror_t DReaction_factory_b1pi_hists::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	return NOERROR;
 }
@@ -130,7 +130,7 @@ jerror_t DReaction_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DReaction_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DReaction_factory_b1pi_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	return NOERROR;
 }
@@ -138,7 +138,7 @@ jerror_t DReaction_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // erun
 //------------------
-jerror_t DReaction_factory::erun(void)
+jerror_t DReaction_factory_b1pi_hists::erun(void)
 {
 	return NOERROR;
 }
@@ -146,7 +146,7 @@ jerror_t DReaction_factory::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DReaction_factory::fini(void)
+jerror_t DReaction_factory_b1pi_hists::fini(void)
 {
 	for(size_t loc_i = 0; loc_i < dReactionStepPool.size(); ++loc_i)
 		delete dReactionStepPool[loc_i];

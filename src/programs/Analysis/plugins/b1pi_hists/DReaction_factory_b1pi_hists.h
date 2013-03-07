@@ -1,5 +1,5 @@
-#ifndef _DReaction_factory_
-#define _DReaction_factory_
+#ifndef _DReaction_factory_b1pi_hists_
+#define _DReaction_factory_b1pi_hists_
 
 #include "JANA/JFactory.h"
 #include "JANA/JEventLoop.h"
@@ -14,11 +14,12 @@
 using namespace std;
 using namespace jana;
 
-class DReaction_factory : public jana::JFactory<DReaction>
+class DReaction_factory_b1pi_hists : public jana::JFactory<DReaction>
 {
 	public:
-		DReaction_factory(){SetFactoryFlag(PERSISTANT);}; // Setting the PERSISTANT prevents JANA from deleting the objects every event so we only create them once.
-		~DReaction_factory(){};
+		DReaction_factory_b1pi_hists(){SetFactoryFlag(PERSISTANT);}; // Setting the PERSISTANT prevents JANA from deleting the objects every event so we only create them once.
+		~DReaction_factory_b1pi_hists(){};
+		const char* Tag(void){return "b1pi_hists";}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -30,5 +31,5 @@ class DReaction_factory : public jana::JFactory<DReaction>
 		deque<DReactionStep*> dReactionStepPool; //to prevent memory leaks!
 };
 
-#endif // _DReaction_factory_
+#endif // _DReaction_factory_b1pi_hists_
 

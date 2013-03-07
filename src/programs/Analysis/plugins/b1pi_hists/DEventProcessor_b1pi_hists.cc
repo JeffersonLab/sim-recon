@@ -18,7 +18,7 @@ extern "C"
 	{
 		InitJANAPlugin(app);
 		app->AddProcessor(new DEventProcessor_b1pi_hists());
-		app->AddFactoryGenerator(new DFactoryGenerator_DReaction());
+		app->AddFactoryGenerator(new DFactoryGenerator_b1pi_hists());
 	}
 } // "C"
 

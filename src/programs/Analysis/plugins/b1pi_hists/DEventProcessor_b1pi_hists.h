@@ -17,7 +17,7 @@
 #include "ANALYSIS/DAnalysisResults.h"
 #include "HDDM/DEventWriterREST.h"
 
-#include "DFactoryGenerator_DReaction.h"
+#include "DFactoryGenerator_b1pi_hists.h"
 
 using namespace jana;
 
