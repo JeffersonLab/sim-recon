@@ -37,52 +37,36 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
-	double locParamValue;
+	// In the following try-catch blocks, gPARMS->GetParameter will throw an
+	// exception if the parameter doesn't exist leaving both the X.second and
+	// X.first elements of the relevant variable untouched. If the parameter
+	// does exist, the value is copied into X.second and the X.first value
+	// gets set to true on the subsequent line.
 
-	locParamValue = numeric_limits<double>::quiet_NaN();
-	gPARMS->SetDefaultParameter("COMBO:MAXPHOTONRFDELTAT", locParamValue);
-	if((locParamValue > -1.0) || (locParamValue < 1.0))
-	{
-		//not NaN: user set the value on the command line
+	try{
+		gPARMS->GetParameter("COMBO:MAXPHOTONRFDELTAT", dMaxPhotonRFDeltaT.second);
 		dMaxPhotonRFDeltaT.first = true;
-		dMaxPhotonRFDeltaT.second = locParamValue;
-	}
+	}catch(...){}
 
-	locParamValue = numeric_limits<double>::quiet_NaN();
-	gPARMS->SetDefaultParameter("COMBO:MININDIVIDUALCHARGEDPIDFOM", locParamValue);
-	if((locParamValue > -1.0) || (locParamValue < 1.0))
-	{
-		//not NaN: user set the value on the command line
+	try{
+		gPARMS->GetParameter("COMBO:MININDIVIDUALCHARGEDPIDFOM", dMinIndividualChargedPIDFOM.second);
 		dMinIndividualChargedPIDFOM.first = true;
-		dMinIndividualChargedPIDFOM.second = locParamValue;
-	}
+	}catch(...){}
 
-	locParamValue = numeric_limits<double>::quiet_NaN();
-	gPARMS->SetDefaultParameter("COMBO:MININDIVIDUALTRACKINGFOM", locParamValue);
-	if((locParamValue > -1.0) || (locParamValue < 1.0))
-	{
-		//not NaN: user set the value on the command line
+	try{
+		gPARMS->GetParameter("COMBO:MININDIVIDUALTRACKINGFOM", dMinIndividualTrackingFOM.second);
 		dMinIndividualTrackingFOM.first = true;
-		dMinIndividualTrackingFOM.second = locParamValue;
-	}
+	}catch(...){}
 
-	locParamValue = numeric_limits<double>::quiet_NaN();
-	gPARMS->SetDefaultParameter("COMBO:MINCOMBINEDCHARGEDPIDFOM", locParamValue);
-	if((locParamValue > -1.0) || (locParamValue < 1.0))
-	{
-		//not NaN: user set the value on the command line
+	try{
+		gPARMS->GetParameter("COMBO:MINCOMBINEDCHARGEDPIDFOM", dMinCombinedChargedPIDFOM.second);
 		dMinCombinedChargedPIDFOM.first = true;
-		dMinCombinedChargedPIDFOM.second = locParamValue;
-	}
+	}catch(...){}
 
-	locParamValue = numeric_limits<double>::quiet_NaN();
-	gPARMS->SetDefaultParameter("COMBO:MINCOMBINEDTRACKINGFOM", locParamValue);
-	if((locParamValue > -1.0) || (locParamValue < 1.0))
-	{
-		//not NaN: user set the value on the command line
+	try{
+		gPARMS->GetParameter("COMBO:MINCOMBINEDTRACKINGFOM", dMinCombinedTrackingFOM.second);
 		dMinCombinedTrackingFOM.first = true;
-		dMinCombinedTrackingFOM.second = locParamValue;
-	}
+	}catch(...){}
 
 	return NOERROR;
 }

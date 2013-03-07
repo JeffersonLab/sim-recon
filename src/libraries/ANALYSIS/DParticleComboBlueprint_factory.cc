@@ -21,34 +21,26 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 {
 	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:DEBUGLEVEL", dDebugLevel);
 
-	double locParamValue;
+	// In the following try-catch blocks, gPARMS->GetParameter will throw an
+	// exception if the parameter doesn't exist leaving both the X.second and
+	// X.first elements of the relevant variable untouched. If the parameter
+	// does exist, the value is copied into X.second and the X.first value
+	// gets set to true on the subsequent line.
 
-	locParamValue = numeric_limits<double>::quiet_NaN();
-	gPARMS->SetDefaultParameter("COMBO:MINPROTONMOMENTUM", locParamValue);
-	if((locParamValue > -1.0) || (locParamValue < 1.0))
-	{
-		//not NaN: user set the value on the command line
+	try{
+		gPARMS->GetParameter("COMBO:MINPROTONMOMENTUM", dMinProtonMomentum.second);
 		dMinProtonMomentum.first = true;
-		dMinProtonMomentum.second = locParamValue;
-	}
+	}catch(...){}
 
-	locParamValue = numeric_limits<double>::quiet_NaN();
-	gPARMS->SetDefaultParameter("COMBO:MININDIVIDUALCHARGEDPIDFOM", locParamValue);
-	if((locParamValue > -1.0) || (locParamValue < 1.0))
-	{
-		//not NaN: user set the value on the command line
+	try{
+		gPARMS->GetParameter("COMBO:MININDIVIDUALCHARGEDPIDFOM", dMinIndividualChargedPIDFOM.second);
 		dMinIndividualChargedPIDFOM.first = true;
-		dMinIndividualChargedPIDFOM.second = locParamValue;
-	}
+	}catch(...){}
 
-	locParamValue = numeric_limits<double>::quiet_NaN();
-	gPARMS->SetDefaultParameter("COMBO:MININDIVIDUALTRACKINGFOM", locParamValue);
-	if((locParamValue > -1.0) || (locParamValue < 1.0))
-	{
-		//not NaN: user set the value on the command line
+	try{
+		gPARMS->GetParameter("COMBO:MININDIVIDUALTRACKINGFOM", dMinIndividualTrackingFOM.second);
 		dMinIndividualTrackingFOM.first = true;
-		dMinIndividualTrackingFOM.second = locParamValue;
-	}
+	}catch(...){}
 
 	return NOERROR;
 }
