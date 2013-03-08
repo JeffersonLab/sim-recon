@@ -6,12 +6,13 @@
 jerror_t DParticleComboBlueprint_factory::init(void)
 {
 	MAX_DParticleComboBlueprintStepPoolSize = 40;
-	return NOERROR;
 
 	dDebugLevel = 0;
 	dMinProtonMomentum = pair<bool, double>(false, -1.0);
 	dMinIndividualChargedPIDFOM = pair<bool, double>(false, -1.0);
 	dMinIndividualTrackingFOM = pair<bool, double>(false, -1.0);
+
+	return NOERROR;
 }
 
 //------------------
