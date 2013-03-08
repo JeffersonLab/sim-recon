@@ -25,12 +25,12 @@ dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(lo
 	dNumParticleCombos = 0;
 }
 
-void DAnalysisAction::operator()(JEventLoop* locEventLoop)
+bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 {
 	if(Get_Reaction() != NULL)
 	{
 		jout << "Called incorrect function call operator in DAnalysisAction::operator()(JEventLoop*). Aborting action." << endl;
-		return;
+		return false;
 	}
 
 	dNumParticleCombos = 0;
@@ -49,7 +49,7 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop)
 		dActionInitializedFlag = true;
 	}
 
-	Perform_Action(locEventLoop, NULL);
+	return Perform_Action(locEventLoop, NULL);
 }
 
 void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos)
