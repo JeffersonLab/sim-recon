@@ -1356,6 +1356,11 @@ void FindTDCHits(double thresh_mV, map<int, SumSpectra> &bcalfADC, map<int, TDCH
 	for(; iter!=bcalfADC.end(); iter++){
 		
 		int fADCId = iter->first;
+
+		//the outermost layer of the detector is not equipped with TDCs, so don't generate any TDC hits
+		int layer = DBCALGeometry::layer(fADCId);
+		if (layer == 4) continue;
+
 		SumSpectra &sumspectra = iter->second;
 		
 		// Find threshold crossings for both upstream and downstream readout channels
