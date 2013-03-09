@@ -1234,7 +1234,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 			if(locMCThrown == NULL)
 			{
 				locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
-				locPID = locChargedTrackHypothesis->PID();
+				locPID = (locChargedTrackHypothesis->dFOM < dMinimumPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
 			}
 			else
 			{
@@ -1247,7 +1247,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		else
 		{
 			locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
-			locPID = locChargedTrackHypothesis->PID();
+			locPID = (locChargedTrackHypothesis->dFOM < dMinimumPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
 		}
 
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
@@ -1293,7 +1293,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 			if(locMCThrown == NULL)
 			{
 				locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
-				locPID = locNeutralParticleHypothesis->PID();
+				locPID = (locNeutralParticleHypothesis->dFOM < dMinimumPIDFOM) ? Unknown : locNeutralParticleHypothesis->PID();
 			}
 			else
 			{
@@ -1306,7 +1306,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		else
 		{
 			locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
-			locPID = locNeutralParticleHypothesis->PID();
+			locPID = (locNeutralParticleHypothesis->dFOM < dMinimumPIDFOM) ? Unknown : locNeutralParticleHypothesis->PID();
 		}
 
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
