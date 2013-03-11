@@ -44,7 +44,14 @@ MyProcessor::MyProcessor()
 //------------------------------------------------------------------
 MyProcessor::~MyProcessor()
 {
-
+	//Close the ROOT file
+	if(ROOTfile!=NULL){
+		ROOTfile->Write();
+		ROOTfile->Close();
+		delete ROOTfile;
+		ROOTfile=NULL;
+		cout<<endl<<"Closed ROOT file"<<endl;
+	}
 }
 
 //------------------------------------------------------------------
@@ -145,18 +152,10 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 }
 
 //------------------------------------------------------------------
-// fini   -Close output file here
+// fini
 //------------------------------------------------------------------
 jerror_t MyProcessor::fini(void)
-{
-	if(ROOTfile!=NULL){
-		ROOTfile->Write();
-		ROOTfile->Close();
-		delete ROOTfile;
-		ROOTfile=NULL;
-		cout<<endl<<"Closed ROOT file"<<endl;
-	}
-	
+{	
 	return NOERROR;
 }
 
