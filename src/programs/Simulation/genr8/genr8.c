@@ -629,8 +629,10 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
 	if (Debug) fprintf(stderr,"lorentz factor information: %f ... %f ... \n",lf,lfmax);
     if(lfevents-->0){
       lfmax = lf >lfmax ? lf : lfmax; /* find the largest value */
-      if( (lfevents % 10) == 0 )
+      if( (lfevents % 10) == 0 ) {
+	if ( lfevents <= 100 || (lfevents % 1000) == 0 )
 	fprintf(stderr,"Calculating Lorentz Factor: %d \r",lfevents);
+      }
     }
     else{
      
@@ -703,9 +705,11 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
 	
 
       }
-      if(!(ngenerated % 100))
+      if(!(ngenerated % 100)) {
+	if( ngenerated <= 1000 || !(ngenerated % 10000))
 	  fprintf(stderr,"Events generated: %d Events accepted: %d \r",
 		  ngenerated,naccepted);
+      }
       if(Debug) fprintf(stderr,"End of event\n");
     } /* end of else{ */
   }/* end of while */
