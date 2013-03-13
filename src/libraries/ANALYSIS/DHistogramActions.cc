@@ -8,7 +8,6 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 
 	vector<const DParticleID*> locParticleIDs;
 	locEventLoop->Get(locParticleIDs);
-	dParticleID = locParticleIDs[0];
 
 	//setup pid deques: searched for and generated
 	deque<Particle_t> locDesiredPIDs, locThrownPIDs;
@@ -25,6 +24,7 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 	//CREATE THE HISTOGRAMS
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
+	dParticleID = locParticleIDs[0];
 	for(size_t loc_i = 0; loc_i < locDesiredPIDs.size(); ++loc_i)
 	{
 		locPID = locDesiredPIDs[loc_i];
@@ -574,7 +574,6 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 
 	vector<const DParticleID*> locParticleIDs;
 	locEventLoop->Get(locParticleIDs);
-	dParticleID = locParticleIDs[0];
 
 	string locHistName, locHistTitle, locStepName, locStepROOTName, locParticleName, locParticleROOTName;
 	Particle_t locPID;
@@ -597,6 +596,8 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 	//CREATE THE HISTOGRAMS
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
+
+	dParticleID = locParticleIDs[0];
 
 	//beam particle
 	locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
@@ -919,11 +920,11 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventL
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
-	dMCThrownMatchingFactory = static_cast<DMCThrownMatching_factory*>(locEventLoop->GetFactory("DMCThrownMatching"));
-
 	//CREATE THE HISTOGRAMS
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
+
+	dMCThrownMatchingFactory = static_cast<DMCThrownMatching_factory*>(locEventLoop->GetFactory("DMCThrownMatching"));
 
 	// Beam Particle
 	locPID = Gamma;
@@ -1068,11 +1069,12 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 
 	vector<const DParticleID*> locParticleIDs;
 	locEventLoop->Get(locParticleIDs);
-	dParticleID = locParticleIDs[0];
 
 	//CREATE THE HISTOGRAMS
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
+
+	dParticleID = locParticleIDs[0];
 
 	// Beam Particle
 	locPID = Gamma;
@@ -1765,12 +1767,14 @@ bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, cons
 
 void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 {
-	dThrownTopology = new string;
-	dDetectedTopology = new string;
-
 	//CREATE THE HISTOGRAMS
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
+
+	if(dThrownTopology == NULL)
+		dThrownTopology = new string;
+	if(dDetectedTopology == NULL)
+		dDetectedTopology = new string;
 
 	string locLabelName;
 	string locHistName("dHist_NumReconstructedTracks");
@@ -2008,10 +2012,12 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc
 
 DHistogramAction_TrackMultiplicity::~DHistogramAction_TrackMultiplicity(void)
 {
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	if(dThrownTopology != NULL)
 		delete dThrownTopology;
 	if(dDetectedTopology != NULL)
 		delete dDetectedTopology;
+	japp->RootUnLock();
 }
 
 void DHistogramAction_TruePID::Initialize(JEventLoop* locEventLoop)

@@ -30,6 +30,7 @@ class DAnalysisAction
 		inline DApplication* Get_Application(void) const{return dApplication;}
 		inline const DAnalysisUtilities* Get_AnalysisUtilities(void) const{return dAnalysisUtilities;}
 		inline bool Get_UseKinFitResultsFlag(void) const{return dUseKinFitResultsFlag;}
+		inline bool Get_ActionInitializedFlag(void) const{return dActionInitializedFlag;}
 
 		bool operator()(JEventLoop* locEventLoop); //ONLY CALL THIS FOR REACTION-INDEPENDENT ACTIONS (dReaction == NULL)!!!
 		void operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos);
