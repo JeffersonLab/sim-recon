@@ -33,20 +33,27 @@ bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 		return false;
 	}
 
-	dNumParticleCombos = 0;
-
 	if(!dActionInitializedFlag)
 	{
-//		if(gPARMS->Exists("OUTPUT_FILENAME"))
-			gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
-		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-
 		vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 		locEventLoop->Get(locAnalysisUtilitiesVector);
-		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+
+		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+		{
+//			if(gPARMS->Exists("OUTPUT_FILENAME"))
+				gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
+			dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+			dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+		}
+		japp->RootUnLock(); //RELEASE ROOT LOCK!!
 
 		Initialize(locEventLoop);
-		dActionInitializedFlag = true;
+
+		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+		{
+			dActionInitializedFlag = true;
+		}
+		japp->RootUnLock(); //RELEASE ROOT LOCK!!
 	}
 
 	return Perform_Action(locEventLoop, NULL);
@@ -54,17 +61,19 @@ bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 
 void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos)
 {
+	//THIS METHOD ASSUMES THAT ONLY THIS THREAD HAS ACCESS TO THIS OBJECT
+
 	dNumParticleCombos = locSurvivingParticleCombos.size();
 
 	if(!dActionInitializedFlag)
 	{
-//		if(gPARMS->Exists("OUTPUT_FILENAME"))
-			gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
-		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-
 		vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
 		locEventLoop->Get(locAnalysisUtilitiesVector);
 		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+
+//		if(gPARMS->Exists("OUTPUT_FILENAME"))
+			gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
+		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
 		Initialize(locEventLoop);
 		dActionInitializedFlag = true;
