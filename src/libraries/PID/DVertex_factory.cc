@@ -121,7 +121,7 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	      
 	      // Find the intersection between the two tracks
 	      DVector3 intersection;
-	      double doca,var_doca;
+	      double doca=1000.,var_doca=1000.;
 	      track1->dRT->IntersectTracks(track2->dRT,&track1_kd,&track2_kd,intersection,doca,var_doca);
 	      
 	      // Add the track to the group if the combination of the current two tracks meets a minimum 
