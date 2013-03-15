@@ -269,8 +269,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
  
   void locate(const double *xx,int n,double x,int *j);
   double fdc_y_variance(double dE);
-  double cdc_variance(double B,double tanl,double t);   
-  double cdc_forward_variance(double B,double tanl,double t);  
+  double cdc_variance(double B,double t);   
   double cdc_drift_distance(double t,double Bz);  
   double fdc_drift_distance(double t,double Bz);
 
@@ -495,6 +494,22 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   TH2F *fdc_time_vs_d,*cdc_time_vs_d;
   TH2F *res_vs_s,*norm_res_vs_s;
 };
+
+// Smearing function derived from fitting residuals
+inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){ 
+  //return CDC_VARIANCE;
+  if (t<0.0) t=0.0;
+  
+  double sigma=0.11/(t+3.6)+4.65e-3;
+  return sigma*sigma;
+}
+// Variance for position along wire
+inline double DTrackFitterKalmanSIMD::fdc_y_variance(double dE){
+  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE+0.003;
+
+  return sigma*sigma;
+}
+
 
 
 #endif //  _DTrackFitterKalmanSIMD_H_

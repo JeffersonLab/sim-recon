@@ -678,9 +678,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    dm=cdc_drift_distance(tdrift,B);
 	    
 	    // variance
-	    double tx=S(state_tx),ty=S(state_ty);
-	    double tanl=1./sqrt(tx*tx+ty*ty);
-	    Vc=cdc_forward_variance(B,tanl,tdrift);
+	    Vc=cdc_variance(B,tdrift);
 	    double temp=1./(1131.+2.*140.7*dm);
 	    Vc+=mVarT0*temp*temp;
 	  }

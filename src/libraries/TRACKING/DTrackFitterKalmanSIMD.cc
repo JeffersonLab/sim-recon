@@ -71,15 +71,6 @@ void DTrackFitterKalmanSIMD::locate(const double *xx,int n,double x,int *j){
   else *j=jl; 
 }
 
-
-
-// Variance for position along wire
-double DTrackFitterKalmanSIMD::fdc_y_variance(double dE){
-  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE+0.003;
-
-  return sigma*sigma;
-}
-
 // Crude approximation for the variance in drift distance due to smearing
 double fdc_drift_variance(double t){
   //return FDC_ANODE_VARIANCE;
@@ -92,36 +83,6 @@ double fdc_drift_variance(double t){
   return sigma*sigma;
 }
 
-// Smearing function derived from fitting residuals
-double DTrackFitterKalmanSIMD::cdc_variance(double B,double tanl,double t){ 
-  //return CDC_VARIANCE;
-  if (t<0.0) t=0.0;
-  /*
-  double tanl2=tanl*tanl;
-  double sigma=0.25/(t+10.)
-    +6.7e-3*(1.+0.287*tanl2)+4.0e-6*t*(1.+0.267*tanl2)
-    +9.3e-9*t*t*(1.-0.47*tanl2);
-  sigma*=0.55;
-  */
-  double sigma=0.243/(t+16.2)+3.9e-3+3.04e-6*t;
-
-  return sigma*sigma;
-}
-
-double DTrackFitterKalmanSIMD::cdc_forward_variance(double B,double tanl,double t){
-  if (t<0.0) t=0.0;
-  /*
-  double tanl2=tanl*tanl;
-  double sigma=0.25/(t+10.)
-    + 6.43e-3*(1.+0.076*tanl2)
-    +(2.24e-6+8.20e-6*tanl-2.25e-6*tanl2)*t
-    +(1.31e-8-1.85e-8*tanl+4.19e-9*tanl2)*t*t;
-
-  sigma*=0.5;
-  */
-  double sigma=0.243/(t+16.2)+3.9e-3+3.04e-6*t;
-  return sigma*sigma;
-}
 
 #define CDC_T0_OFFSET 16.5 //17.0
 // Convert time to distance for the cdc
@@ -142,8 +103,8 @@ double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
     d+=frac*dd;
     }
   */
-  double d=0.014;
-  if (t>0.0) d+=0.028*sqrt(t);
+  double d=0.019;
+  if (t>0.0) d+=0.0279*sqrt(t);
 
   return d;
 }
@@ -2137,7 +2098,7 @@ jerror_t DTrackFitterKalmanSIMD::CalcDeriv(DVector2 &dpos,const DMatrix5x1 &S,
     double p=pt*one_over_cosl;
     double p_sq=p*p;
     double E=sqrt(p_sq+mass2);
-    D1(state_q_over_pt)+=-q_over_pt*E/p_sq*dEdx;
+    D1(state_q_over_pt)-=q_over_pt*E/p_sq*dEdx;
   }
   //  D1(state_phi)
   //  =kq_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
@@ -2225,8 +2186,8 @@ jerror_t DTrackFitterKalmanSIMD::CalcDerivAndJacobian(const DVector2 &xy,
     double m2_over_p2=mass2/p_sq;
     double E=sqrt(p_sq+mass2);
 
-    D1(state_q_over_pt)+=-q_over_pt*E/p_sq*dEdx;
-    J1(state_q_over_pt,state_q_over_pt)+=-dEdx*(2.+3.*m2_over_p2)/E;
+    D1(state_q_over_pt)-=q_over_pt*E/p_sq*dEdx;
+    J1(state_q_over_pt,state_q_over_pt)-=dEdx*(2.+3.*m2_over_p2)/E;
     J1(state_q_over_pt,state_tanl)+=q*dEdx*sinl*(1.+2.*m2_over_p2)/(p*E);
   }
   J1(state_q_over_pt,state_z)
@@ -2657,7 +2618,7 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector2 &xy,
     double E=sqrt(p_sq+mass2);
     double dE_over_E=dEdx*ds/E;
     
-    J(state_q_over_pt,state_q_over_pt)+=-dE_over_E*(2.+3.*m2_over_p2);
+    J(state_q_over_pt,state_q_over_pt)-=dE_over_E*(2.+3.*m2_over_p2);
     J(state_q_over_pt,state_tanl)+=q*dE_over_E*sinl*(1.+2.*m2_over_p2)/p;
   }
   J(state_q_over_pt,state_z)
@@ -3060,8 +3021,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // Parameters at "vertex"
     double D=0.,phi=0.,q_over_pt=0.,tanl=0.,x=0.,y=0.,z=0.;
     
-    // Use forward parameters for CDC-only tracks with theta<65 degrees
-    if (theta_deg<65.0){
+    // Use forward parameters for CDC-only tracks with theta<70 degrees
+    if (theta_deg<70.0){
       if (DEBUG_LEVEL>0){
 	_DBG_ << "Using forward parameterization." <<endl;
       }
@@ -3458,6 +3419,10 @@ jerror_t DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
 	    }
 	  return VALUE_OUT_OF_RANGE;
 	}
+	if (!finite(S(state_x)) || !finite(S(state_y))){
+	  _DBG_ <<endl;
+	  return VALUE_OUT_OF_RANGE;    
+	}
 	Step(z_new,endplate_z,dedx,S);
       }
       dz_out=x;
@@ -3502,6 +3467,7 @@ jerror_t DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
 	}
       return VALUE_OUT_OF_RANGE;
     }
+
     Step(z_old,z_new,dedx,S);
     z_old=z_new;
     
@@ -3892,7 +3858,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  // _DBG_ << "CDChit: t2d >> " << measurement << " tdrift="<<tdrift<<"    with B="<<B<<endl;
 	   
 	  // Measurement error
-	  V=cdc_variance(B,Sc(state_tanl),tdrift);
+	  V=cdc_variance(B,tdrift);
 	  double temp=1./(1131.+2.*140.7*measurement);
 	  V+=mVarT0*temp*temp;
 
@@ -4604,9 +4570,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
 	    dm=cdc_drift_distance(tdrift,B);
 
 	    // variance 
-	    double tx=S(state_tx),ty=S(state_ty);
-	    double tanl=1./sqrt(tx*tx+ty*ty);
-	    Vc=cdc_variance(B,tanl,tdrift);
+	    Vc=cdc_variance(B,tdrift);
 	
 	  }
 	  //compute t0 estimate
@@ -5130,9 +5094,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	  double B=forward_traj[k].B;
 	  dm=cdc_drift_distance(tdrift,B);
  
-	  double tx=S(state_tx),ty=S(state_ty);
-	  double tanl=1./sqrt(tx*tx+ty*ty);
-	  V=cdc_forward_variance(B,tanl,tdrift);
+	  V=cdc_variance(B,tdrift);
 	  double temp=1./(1131.+2.*140.7*dm);
 	  V+=mVarT0*temp*temp;
 
@@ -6591,7 +6553,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       */
       // Break out of loop if the chisq is increasing or not changing much
       if (my_ndf==last_ndf && chisq>chisq_forward) break;
-      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf) 
+      if ((TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf) 
+	  && my_ndf<=last_ndf)
 	  || fabs(chisq-chisq_forward)<0.1) break;
 		  
       chisq_forward=chisq; 
@@ -6839,7 +6802,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       }
       */  
       if (my_ndf==last_ndf && chisq>chisq_forward) break;    
-      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf)
+      if ((TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf)
+	  && my_ndf<=last_ndf)
 	  || fabs(chisq-chisq_forward)<0.1) break;
       chisq_forward=chisq;
       Slast=S;
@@ -7069,7 +7033,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       }
       */
       if (my_ndf==last_ndf && chisq>chisq_iter) break;
-      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_iter,last_ndf)
+      if ((TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_iter,last_ndf)
+	   && my_ndf<=last_ndf)
 	  || fabs(chisq_iter-chisq)<0.1) break;
       
       // Save the current state vector and covariance matrix
@@ -7104,11 +7069,11 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 			     sqrt(last_cdc_updates[m].variance),
 			     last_cdc_updates[m].s));
 
-      if (fit_type==kTimeBased){
+      if (m==0 && fit_type==kTimeBased){
 	if (ESTIMATE_T0_TB){
 	  EstimateT0Central(my_cdchits[m],last_cdc_updates[m]);
 	}
-	if (DEBUG_HISTS){
+	if (DEBUG_HISTS && TMath::Prob(chisq_iter,last_ndf)>0.1){
 	  double tdrift=last_cdc_updates[m].tdrift;
 	  double res=last_cdc_updates[m].residual;
 	  double B=last_cdc_updates[m].B;
