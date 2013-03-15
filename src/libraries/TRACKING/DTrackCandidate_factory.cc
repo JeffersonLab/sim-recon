@@ -699,7 +699,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    // Fake point at origin
 	    fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
 	    // Fit the points to a circle
-	    if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
+	    if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR)
+	    {
 	      // Compute new transverse momentum
 	      Bz_avg/=double(num_hits);
 
@@ -969,7 +970,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
 	    
 	    // Redo the fit
-	    fit.FitCircleRiemannCorrected(fit.r0);
+	    fit.FitCircleRiemann(fit.r0);
 	  }
 	  fit.tanl=tan(M_PI_2-mom.Theta());
 	  fit.z_vertex=0; // this will be changed later
@@ -1289,6 +1290,6 @@ jerror_t DTrackCandidate_factory::DoRefit(DHelicalFit &fit,
   fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
   
   // Fit the points to a circle
-  return (fit.FitCircleRiemannCorrected(segments[0]->rc));
+  return (fit.FitCircleRiemann(segments[0]->rc));
 }
 
