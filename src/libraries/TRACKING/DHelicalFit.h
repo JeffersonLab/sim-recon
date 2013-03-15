@@ -83,6 +83,8 @@ class DMagneticFieldMap;
 typedef struct{
   float x,y,z;		///< point in lab coordinates
   double covx,covy,covxy;  ///< error info for x and y coordinates
+  double covrphi;  /// < error info in RPhi coordinates
+  double covr; /// < error info in radial coordinates
   float phi_circle;	///< phi angle relative to axis of helix
   float chisq;		///< chi-sq contribution of this hit
   bool is_axial;        /// True if the wire is a CDC axial wire
@@ -114,12 +116,9 @@ class DHelicalFit{
   jerror_t Clear(void);
   jerror_t FitCircle(void);
   double   ChisqCircle(void);
-  jerror_t FitCircleRiemann(void);
+  jerror_t FitCircleRiemann(float rc=0.);
   jerror_t FitCircleRiemann(float z_vertex,float BeamRMS);
-  jerror_t FitCircleRiemannCorrected(float rc);
   jerror_t FitLineRiemann(void);
-  jerror_t GetChargeRiemann(void);
-  jerror_t GetChargeRiemann(float rc);
   jerror_t FitCircleStraightTrack();
   void     SearchPtrans(double ptrans_max=9.0, double ptrans_step=0.5);
   void     QuickPtrans(void);
@@ -174,9 +173,6 @@ class DHelicalFit{
   jerror_t FillTrackParams(void);
   
  private:
-  // Covariance matrices
-  DMatrix *CovR_;
-  DMatrix *CovRPhi_;
 
   // Riemann circle fit parameters
   double N[3]; 

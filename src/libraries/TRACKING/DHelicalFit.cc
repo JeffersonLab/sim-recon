@@ -54,8 +54,6 @@ DHelicalFit::DHelicalFit(void)
   bfield = NULL;
   
   // For Riemann Fit
-  CovR_=NULL;
-  CovRPhi_=NULL;
   c_origin=0.;
   normal.SetXYZ(0.,0.,0.);
 }
@@ -97,20 +95,6 @@ void DHelicalFit::Copy(const DHelicalFit &fit)
 		*a = *myhits[i];
 		hits.push_back(a);
 	}
-	if (fit.CovR_!=NULL){
-	  CovR_ = new DMatrix(hits.size(),hits.size());
-	  for (unsigned int i=0;i<hits.size();i++)
-	    for (unsigned int j=0;j<hits.size();j++)
-	      CovR_->operator()(i,j)=fit.CovR_->operator()(i,j);
-	}
-	else CovR_=NULL; 
-	if (fit.CovRPhi_!=NULL){
-	  CovRPhi_ = new DMatrix(hits.size(),hits.size());
-	  for (unsigned int i=0;i<hits.size();i++)
-	    for (unsigned int j=0;j<hits.size();j++)
-	      CovRPhi_->operator()(i,j)=fit.CovRPhi_->operator()(i,j);
-	}
-	else CovRPhi_=NULL; 
 }
 
 //-----------------
@@ -144,6 +128,18 @@ jerror_t DHelicalFit::AddHit(const DFDCPseudo *fdchit){
   hit->covxy=fdchit->covxy;
   hit->chisq = 0.0;
   hit->is_axial=false;
+
+  double Phi=atan2(hit->y,hit->x);
+  double cosPhi=cos(Phi);
+  double sinPhi=sin(Phi);
+  double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
+  double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
+  hit->covrphi=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hit->covx
+    +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hit->covy
+    +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hit->covxy;
+  hit->covr=cosPhi*cosPhi*hit->covx+sinPhi*sinPhi*hit->covy
+    +2.*sinPhi*cosPhi*hit->covxy;
+
   hits.push_back(hit);
 
   return NOERROR;
@@ -176,6 +172,18 @@ jerror_t DHelicalFit::AddHitXYZ(float x, float y, float z)
 	hit->covxy=0.;
 	hit->chisq = 0.0;
 	hit->is_axial=false;
+	
+  double Phi=atan2(hit->y,hit->x);
+  double cosPhi=cos(Phi);
+  double sinPhi=sin(Phi);
+  double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
+  double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
+  hit->covrphi=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hit->covx
+    +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hit->covy
+    +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hit->covxy;
+  hit->covr=cosPhi*cosPhi*hit->covx+sinPhi*sinPhi*hit->covy
+    +2.*sinPhi*cosPhi*hit->covxy;
+
 	hits.push_back(hit);
 
 	return NOERROR;
@@ -192,6 +200,18 @@ jerror_t DHelicalFit::AddHitXYZ(float x,float y, float z,float covx,
   hit->covy=covy;
   hit->covxy=covxy;
   hit->is_axial=is_axial;
+
+  double Phi=atan2(hit->y,hit->x);
+  double cosPhi=cos(Phi);
+  double sinPhi=sin(Phi);
+  double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
+  double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
+  hit->covrphi=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hit->covx
+    +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hit->covy
+    +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hit->covxy;
+  hit->covr=cosPhi*cosPhi*hit->covx+sinPhi*sinPhi*hit->covy
+    +2.*sinPhi*cosPhi*hit->covxy;
+
   hits.push_back(hit);
 
   return NOERROR;
@@ -248,6 +268,17 @@ jerror_t DHelicalFit::AddStereoHit(const DCDCWire *wire){
   hit->covxy=0.;
   hit->chisq=0.;
   hit->is_axial=false;
+
+  double Phi=atan2(hit->y,hit->x);
+  double cosPhi=cos(Phi);
+  double sinPhi=sin(Phi);
+  double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
+  double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
+  hit->covrphi=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hit->covx
+    +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hit->covy
+    +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hit->covxy;
+  hit->covr=var_r;
+
   hits.push_back(hit);
 
   return NOERROR;
@@ -277,11 +308,7 @@ jerror_t DHelicalFit::PruneHit(int idx)
 //-----------------
 jerror_t DHelicalFit::Clear(void)
 {
-  /// Remove covariance matrices
-  if (CovR_!=NULL) delete CovR_;
-  if (CovRPhi_!=NULL) delete CovRPhi_; 
- 
-  /// Remove all hits
+  // Remove all hits
   for(unsigned int i=0; i<hits.size(); i++)delete hits[i];
   hits.clear();
  
@@ -345,12 +372,13 @@ jerror_t DHelicalFit::FitCircle(void)
 
 	float alpha=0.0, beta=0.0, gamma=0.0, deltax=0.0, deltay=0.0;
 	chisq_source = NOFIT; // in case we return early
-	ndof=hits.size()-2;
+	size_t num_hits=hits.size();
+	ndof=num_hits-2;
 	
 	// Loop over hits to calculate alpha, beta, gamma, and delta
 	// if a magnetic field map was given, use it to find average Z B-field
 	DHFHit_t *a = NULL;
-	for(unsigned int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<num_hits;i++){
 		a = hits[i];
 		float x=a->x;
 		float y=a->y;
@@ -418,6 +446,7 @@ double DHelicalFit::ChisqCircle(void)
 //-----------------
 // FitCircleRiemann
 //-----------------
+// Arguments are for inserting a "vertex" point
 jerror_t DHelicalFit::FitCircleRiemann(float z_vertex,float BeamRMS)
 {
 	chisq_source = NOFIT; // in case we return early
@@ -456,43 +485,53 @@ jerror_t DHelicalFit::FitCircleRiemann(float z_vertex,float BeamRMS)
 //-----------------
 // FitCircleRiemann
 //-----------------
-jerror_t DHelicalFit::FitCircleRiemann(void){  
+jerror_t DHelicalFit::FitCircleRiemann(float rc){  
 /// Riemann Circle fit:  points on a circle in x,y project onto a plane cutting
 /// the circular paraboloid surface described by (x,y,x^2+y^2).  Therefore the
 /// task of fitting points in (x,y) to a circle is transormed to the task of
 /// fitting planes in (x,y, w=x^2+y^2) space
 ///
-  DMatrix X(hits.size(),3);
+  size_t num_hits=hits.size();
+  DMatrix X(num_hits,3);
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
   // vector of ones
-  DMatrix OnesT(1,hits.size());
+  DMatrix OnesT(1,num_hits);
   double W_sum=0.;
-  DMatrix W(hits.size(),hits.size());
+  DMatrix W(num_hits,num_hits);
 
   // Make sure hit list is ordered in z
   std::sort(hits.begin(),hits.end(),RiemannFit_hit_cmp);
  
   // Covariance matrix
-  DMatrix CRPhi(hits.size(),hits.size());
-  if (CovRPhi_==NULL){
-    CovRPhi_ = new DMatrix(hits.size(),hits.size());
-    for (unsigned int i=0;i<hits.size();i++){
-      double Phi=atan2(hits[i]->y,hits[i]->x);
-      double cosPhi=cos(Phi);
-      double sinPhi=sin(Phi);
-      double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
-      double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
-      CovRPhi_->operator()(i,i)
-	=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covx
-	+Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hits[i]->covy
-	+2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covxy;
-    }
+  DMatrix CRPhi(num_hits,num_hits);
+  for (unsigned int i=0;i<num_hits;i++){
+    CRPhi(i,i)=hits[i]->covrphi;
   }
-  for (unsigned int i=0;i<hits.size();i++)
-    for (unsigned int j=0;j<hits.size();j++)
-      CRPhi(i,j)=CovRPhi_->operator()(i, j);
- 
+  
+  // Apply a correction for non-normal track incidence if we already have a 
+  // guess for rc.
+  if (rc>0.){
+    DMatrix C(num_hits,num_hits);
+    DMatrix S(num_hits,num_hits);
+    DMatrix CR(num_hits,num_hits);
+    for (unsigned int i=0;i<num_hits;i++){
+      S(i,i)=0.;
+      C(i,i)=1.;
+      CR(i,i)=hits[i]->covr;
+
+      double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
+      double stemp=rtemp/(4.*rc);
+      double ctemp=1.-stemp*stemp;
+      if (ctemp>0){
+	S(i,i)=stemp;
+	C(i,i)=sqrt(ctemp);
+      }
+    }
+    // Correction for non-normal incidence of track on FDC 
+    CRPhi=C*CRPhi*C+S*CR*S;
+  }
+
   // The goal is to find the eigenvector corresponding to the smallest 
   // eigenvalue of the equation
   //            lambda=n^T (X^T W X - W_sum Xavg^T Xavg)n
@@ -502,7 +541,7 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   // In the absence of multiple scattering, W_sum is the sum of all the 
   // diagonal elements in W.
 
-  for (unsigned int i=0;i<hits.size();i++){
+  for (unsigned int i=0;i<num_hits;i++){
     X(i,0)=hits[i]->x;
     X(i,1)=hits[i]->y;
     X(i,2)=hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y;
@@ -596,217 +635,6 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   return NOERROR;
 }
 
-
-//-----------------
-// FitCircleRiemannCorrected
-//-----------------
-// Riemann Circle fit with correction for non-normal track incidence
-//
-jerror_t DHelicalFit::FitCircleRiemannCorrected(float rc){
-  // Covariance matrices
-  DMatrix CRPhi(hits.size(),hits.size());
-  DMatrix CR(hits.size(),hits.size());
-  // Auxiliary matrices for correcting for non-normal track incidence to FDC
-  // The correction is 
-  //    CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
-  //                                and C(i,i)=sqrt(1-S(i,i)^2)  
-  DMatrix C(hits.size(),hits.size());
-  DMatrix S(hits.size(),hits.size());
-  for (unsigned int i=0;i<hits.size();i++){
-    S(i,i)=0.;
-    C(i,i)=1.;
-    if (rc>0){
-      double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
-      double stemp=rtemp/4./rc;
-      double ctemp=1.-stemp*stemp;
-      if (ctemp>0){
-	S(i,i)=stemp;
-	C(i,i)=sqrt(ctemp);
-      }
-    }
-  }
-
-  // Covariance matrices
-  if (CovRPhi_==NULL){
-    CovRPhi_ = new DMatrix(hits.size(),hits.size());
-    for (unsigned int i=0;i<hits.size();i++){
-      double Phi=atan2(hits[i]->y,hits[i]->x);
-      double cosPhi=cos(Phi);
-      double sinPhi=sin(Phi);
-      double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
-      double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
-      CovRPhi_->operator()(i,i)
-	=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covx
-	+Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hits[i]->covy
-	+2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covxy;
-    }
-  }
-  if (CovR_==NULL){
-    CovR_= new DMatrix(hits.size(),hits.size());
-    for (unsigned int m=0;m<hits.size();m++){
-      double Phi=atan2(hits[m]->y,hits[m]->x);
-      double cosPhi=cos(Phi);
-      double sinPhi=sin(Phi);
-      CovR_->operator()(m,m)=cosPhi*cosPhi*hits[m]->covx
-	+sinPhi*sinPhi*hits[m]->covy
-	+2.*sinPhi*cosPhi*hits[m]->covxy;
-    } 
-  }
-  for (unsigned int i=0;i<hits.size();i++){
-    for (unsigned int j=0;j<hits.size();j++){
-      CR(i,j)=CovR_->operator()(i, j);
-      CRPhi(i,j)=CovRPhi_->operator()(i, j);
-    }
-  }
-
-  // Correction for non-normal incidence of track on FDC 
-  CRPhi=C*CRPhi*C+S*CR*S;
-  for (unsigned int i=0;i<hits.size();i++)
-    for (unsigned int j=0;j<hits.size();j++)
-      CovRPhi_->operator()(i,j)=CRPhi(i,j);
-  return FitCircleRiemann();
-}
-
-
-//-----------------
-// GetChargeRiemann
-//-----------------
-// Charge-finding routine with corrected CRPhi (see above)
-//
-jerror_t DHelicalFit::GetChargeRiemann(float rc_input){
- // Covariance matrices
-  DMatrix CRPhi(hits.size(),hits.size());
-  DMatrix CR(hits.size(),hits.size());
-  // Auxiliary matrices for correcting for non-normal track incidence to FDC
-  // The correction is 
-  //    CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
-  //                                and C(i,i)=sqrt(1-S(i,i)^2)  
-  DMatrix C(hits.size(),hits.size());
-  DMatrix S(hits.size(),hits.size());
-  for (unsigned int i=0;i<hits.size();i++){
-    double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
-    double stemp=rtemp/(4.*rc_input);
-    double ctemp=1.-stemp*stemp;
-    if (ctemp>0){
-      S(i,i)=stemp;
-      C(i,i)=sqrt(ctemp);
-    }
-    else{
-      S(i,i)=0.;
-      C(i,i)=1;      
-    }
-  }
-  
-  // Covariance matrices
-  if (CovRPhi_==NULL){
-    CovRPhi_ = new DMatrix(hits.size(),hits.size());
-    for (unsigned int i=0;i<hits.size();i++){
-      double Phi=atan2(hits[i]->y,hits[i]->x);
-      double cosPhi=cos(Phi);
-      double sinPhi=sin(Phi);
-      double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
-      double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
-      CovRPhi_->operator()(i,i)
-	=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covx
-	+Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hits[i]->covy
-	+2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covxy;
-    }
-  }
-  if (CovR_==NULL){
-    CovR_= new DMatrix(hits.size(),hits.size());
-    for (unsigned int m=0;m<hits.size();m++){
-      double Phi=atan2(hits[m]->y,hits[m]->x);
-      double cosPhi=cos(Phi);
-      double sinPhi=sin(Phi);
-      CovR_->operator()(m,m)=cosPhi*cosPhi*hits[m]->covx
-	+sinPhi*sinPhi*hits[m]->covy
-	+2.*sinPhi*cosPhi*hits[m]->covxy;
-    } 
-  }
-  for (unsigned int i=0;i<hits.size();i++){
-    for (unsigned int j=0;j<hits.size();j++){
-      CR(i,j)=CovR_->operator()(i, j);
-      CRPhi(i,j)=CovRPhi_->operator()(i, j);
-    }
-  }
-  // Correction for non-normal incidence of track on FDC 
-  CRPhi=C*CRPhi*C+S*CR*S; 
-  for (unsigned int i=0;i<hits.size();i++)
-    for (unsigned int j=0;j<hits.size();j++)
-      CovRPhi_->operator()(i,j)=CRPhi(i,j);
-  return GetChargeRiemann();
-}
-
-//-----------------
-// GetChargeRiemann
-//-----------------
-// Linear regression to find charge
-//
-jerror_t DHelicalFit::GetChargeRiemann(){
-  // Covariance matrices
-  DMatrix CRPhi(hits.size(),hits.size());
-  DMatrix CR(hits.size(),hits.size());
-  if (CovRPhi_==NULL){
-    CovRPhi_ = new DMatrix(hits.size(),hits.size());
-    for (unsigned int i=0;i<hits.size();i++){
-      double Phi=atan2(hits[i]->y,hits[i]->x);
-      double cosPhi=cos(Phi);
-      double sinPhi=sin(Phi);
-      double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
-      double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
-      CovRPhi_->operator()(i,i)
-	=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covx
-	+Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hits[i]->covy
-      +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hits[i]->covxy;
-    }
-  }
-  if (CovR_==NULL){
-    CovR_= new DMatrix(hits.size(),hits.size());
-    for (unsigned int m=0;m<hits.size();m++){
-      double Phi=atan2(hits[m]->y,hits[m]->x);
-      double cosPhi=cos(Phi);
-      double sinPhi=sin(Phi);
-      CovR_->operator()(m,m)=cosPhi*cosPhi*hits[m]->covx
-	+sinPhi*sinPhi*hits[m]->covy
-	+2.*sinPhi*cosPhi*hits[m]->covxy;
-    } 
-  }
-  for (unsigned int i=0;i<hits.size();i++){
-    for (unsigned int j=0;j<hits.size();j++){
-      CR(i,j)=CovR_->operator()(i, j);
-      CRPhi(i,j)=CovRPhi_->operator()(i, j);
-    }
-  }
-
-  double phi_old=atan2(hits[0]->y,hits[0]->x);
-  double sumv=0,sumy=0,sumx=0,sumxx=0,sumxy=0;
-  for (unsigned int k=0;k<hits.size();k++){
-    DHFHit_t *hit=hits[k];   
-    double phi_z=atan2(hit->y,hit->x);
-
-    // Check for problem regions near +pi and -pi
-    if (fabs(phi_z-phi_old)>M_PI){  
-      if (phi_old<0) phi_z-=2.*M_PI;
-      else phi_z+=2.*M_PI;
-    }
-    double inv_var=(hit->x*hit->x+hit->y*hit->y)
-      /(CRPhi(k,k)+phi_z*phi_z*CR(k,k));
-    sumv+=inv_var;
-    sumy+=phi_z*inv_var;
-    sumx+=hit->z*inv_var;
-    sumxx+=hit->z*hit->z*inv_var;
-    sumxy+=phi_z*hit->z*inv_var;
-    phi_old=phi_z;
-  }
-  double slope=(sumv*sumxy-sumy*sumx)/(sumv*sumxx-sumx*sumx); 
- 
-  // Guess particle charge (+/-1);
-  q=+1.;
-  if (slope<0.) q= -1.;
-
-  return NOERROR;
-}
-
 //-----------------
 // FitLineRiemann
 //-----------------
@@ -817,28 +645,18 @@ jerror_t DHelicalFit::FitLineRiemann(){
 ///   Note: this implementation assumes that the error in the z-position is 
 /// negligible; practically speaking, this means it should only be used for FDC
 /// hits...
-  // Get covariance matrix 
-  DMatrix CR(hits.size(),hits.size());
-  if (CovR_==NULL){ 
-    CovR_= new DMatrix(hits.size(),hits.size());
-    for (unsigned int m=0;m<hits.size();m++){
-      double Phi=atan2(hits[m]->y,hits[m]->x);
-      double cosPhi=cos(Phi);
-      double sinPhi=sin(Phi);
-      CovR_->operator()(m,m)=cosPhi*cosPhi*hits[m]->covx
-      +sinPhi*sinPhi*hits[m]->covy
-      +2.*sinPhi*cosPhi*hits[m]->covxy;
-    } 
+  // Get covariance matrix
+  size_t num_hits=hits.size();
+  DMatrix CR(num_hits,num_hits);
+  for (unsigned int i=0;i<num_hits;i++){
+    CR(i,i)=hits[i]->covr;
   }
-  for (unsigned int i=0;i<hits.size();i++)
-    for (unsigned int j=0;j<hits.size();j++)
-      CR(i,j)=CovR_->operator()(i, j);
  
   // Fill vector of intersection points 
   double denom= N[0]*N[0]+N[1]*N[1];
   // projection vector
   vector<DHFProjection_t>projections;
-  for (unsigned int m=0;m<hits.size();m++){
+  for (unsigned int m=0;m<num_hits;m++){
     if (hits[m]->is_axial) continue;
   
     double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
@@ -961,7 +779,8 @@ jerror_t DHelicalFit::FitCircleStraightTrack(void)
 	// that will cause problems at the 0/2pi boundary.
 	double X=0.0, Y=0.0;
 	DHFHit_t *a = NULL;
-	for(unsigned int i=0;i<hits.size();i++){
+	size_t num_hits=hits.size();
+	for(unsigned int i=0;i<num_hits;i++){
 		a = hits[i];
 		double r = sqrt(pow((double)a->x,2.0) + pow((double)a->y, 2.0));
 		// weight by r to give outer points more influence. Note that
@@ -986,7 +805,7 @@ jerror_t DHelicalFit::FitCircleStraightTrack(void)
 	
 	// Loop over hits to calculate Sxx, Syy, and Sxy
 	DHFHit_t *a = NULL;
-	for(unsigned int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<num_hits;i++){
 		a = hits[i];
 		float x=a->x;
 		float y=a->y;
@@ -1223,17 +1042,10 @@ jerror_t DHelicalFit::FitTrack(void)
 // FitTrackRiemann
 //-----------------
 jerror_t DHelicalFit::FitTrackRiemann(float rc_input){
-  jerror_t error=NOERROR;
-
-  if (CovR_!=NULL) delete CovR_;
-  if (CovRPhi_!=NULL) delete CovRPhi_; 
-  CovR_=NULL;
-  CovRPhi_=NULL;
-
-  error=FitCircleRiemannCorrected(rc_input); 
+  jerror_t error=FitCircleRiemann(rc_input); 
   if (error!=NOERROR) return error;
   error=FitLineRiemann();
-  GetChargeRiemann();
+  GuessChargeFromCircleFit();
   
   // Shift phi by pi if the charge is negative
   if (q<0) phi+=M_PI; 
@@ -1243,14 +1055,7 @@ jerror_t DHelicalFit::FitTrackRiemann(float rc_input){
 
 
 jerror_t DHelicalFit::FitCircleAndLineRiemann(float rc_input){
-  jerror_t error=NOERROR;
-
-  if (CovR_!=NULL) delete CovR_;
-  if (CovRPhi_!=NULL) delete CovRPhi_; 
-  CovR_=NULL;
-  CovRPhi_=NULL;
-
-  error=FitCircleRiemannCorrected(rc_input);
+  jerror_t error=FitCircleRiemann(rc_input);
   if (error!=NOERROR) return error;
   error=FitLineRiemann();
 
