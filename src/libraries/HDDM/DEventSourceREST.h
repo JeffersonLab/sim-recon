@@ -90,7 +90,8 @@ class DEventSourceREST:public JEventSource
    DApplication *dapp;
    const DMagneticFieldMap *saved_bfield;
    const DGeometry *saved_geom;
-   int saved_runnumber;
+   int saved_runnumber;	
+   unsigned int max_rt_pool_size;
 };
 
 #endif //_JEVENT_SOURCEREST_H_

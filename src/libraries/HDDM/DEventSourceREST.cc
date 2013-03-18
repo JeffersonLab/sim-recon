@@ -46,12 +46,22 @@ DEventSourceREST::DEventSourceREST(const char* source_name)
 //----------------
 DEventSourceREST::~DEventSourceREST()
 {
-   if (fin) {
-      delete fin;
-   }
-   if (ifs) {
-      delete ifs;
-   }
+  // Check for DReferenceTrajectory objects we need to delete
+  pthread_mutex_lock(&rt_mutex);
+  while (rt_pool.size()>0){
+    std::list<DReferenceTrajectory*>::iterator it=rt_pool.begin();
+    delete *it;
+    rt_pool.pop_front();
+  }
+  rt_pool.clear();
+  pthread_mutex_unlock(&rt_mutex);
+  
+  if (fin) {
+    delete fin;
+  }
+  if (ifs) {
+    delete ifs;
+  }
 }
 
 //----------------
@@ -72,6 +82,17 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       fin = NULL;
       delete ifs;
       ifs = NULL;
+
+      // Check for DReferenceTrajectory objects we need to delete
+      pthread_mutex_lock(&rt_mutex);
+      while (rt_pool.size()>0){
+	std::list<DReferenceTrajectory*>::iterator it=rt_pool.begin();
+	delete *it;
+	rt_pool.pop_front();
+      }
+      rt_pool.clear();
+      pthread_mutex_unlock(&rt_mutex);
+
       return NO_MORE_EVENTS_IN_SOURCE;
    }
 
@@ -119,11 +140,22 @@ void DEventSourceREST::FreeEvent(JEvent &event)
    std::map<hddm_r::HDDM*, std::vector<DReferenceTrajectory*> >::iterator
                            iter = rt_by_event.find(record);
    if (iter != rt_by_event.end()) {
-      std::vector<DReferenceTrajectory*> &rtvector = iter->second;
+     std::vector<DReferenceTrajectory*> &rtvector = iter->second;
+     unsigned int i=0;
+     while (i<rtvector.size()&&rt_pool.size()<max_rt_pool_size){
+       rt_pool.push_back(rtvector[i]);
+       i++;
+     }
+     /*
       for (unsigned int i=0; i < rtvector.size(); ++i) {
-         rt_pool.push_back(rtvector[i]);
+      rt_pool.push_back(rtvector[i]);
       }
-      rt_by_event.erase(iter);
+     */
+     for(; i < rtvector.size(); ++i) {
+       delete rtvector[i];
+     }
+     
+     rt_by_event.erase(iter);
    }
    pthread_mutex_unlock(&rt_mutex);
 }
@@ -151,10 +183,13 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
 
    if (dapp == 0) {
       JEventLoop *loop = event.GetJEventLoop();
-      dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+      dapp = dynamic_cast<DApplication*>(loop->GetJApplication());    
       if (!dapp) {
          throw RESOURCE_UNAVAILABLE;
       }
+      map<pthread_t,double> rates_by_thread;
+      dapp->GetInstantaneousThreadRates(rates_by_thread);
+      max_rt_pool_size=13*rates_by_thread.size();
    }
 
    string dataClassName = factory->GetDataClassName();
