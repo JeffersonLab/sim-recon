@@ -47,6 +47,10 @@ class DLorentzVector{
   }
   // Set the time or energy component
   void SetT(const double t){ mE=t;};
+  // Set position components
+  void SetX(const double x){mP.SetX(x);};
+  void SetY(const double y){mP.SetY(y);};
+  void SetZ(const double z){mP.SetZ(z);};
   
   // Routines to get position and time
   double X() const {return mP.x();};
