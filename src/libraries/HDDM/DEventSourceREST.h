@@ -31,6 +31,7 @@
 #include <TRIGGER/DMCTrigger.h>
 
 #include <DMatrix.h>
+#include <TMath.h>
 
 class DEventSourceREST:public JEventSource
 {
