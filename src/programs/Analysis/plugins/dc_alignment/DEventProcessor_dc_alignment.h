@@ -48,8 +48,7 @@ typedef struct{
 }trajectory_t;
 
 typedef struct{
-  unsigned int id;
-  double ures,vres;
+  DMatrix2x1 res;
   DMatrix4x1 S;
   DMatrix4x4 C;
   DMatrix2x2 R;
@@ -164,6 +163,17 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		       vector<update_t>smoothed_updates);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
 		       vector<strip_update_t>smoothed_updates);
+  
+  bool MatchOuterDetectors(vector<const DFCALShower *>&fcalshowers,
+			   vector<const DBCALShower *>&bcalshowers,
+			   const DMatrix4x1 &S);
+
+  jerror_t GetProcessNoise(double dz,
+			   double chi2c_factor,
+			   double chi2a_factor,
+			   double chi2a_corr,
+			   const DMatrix4x1 &S,
+			   DMatrix4x4 &Q);
 
   double GetDriftDistance(double t);
   double GetDriftVariance(double t);
@@ -184,6 +194,9 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 
   double endplate_z;
   int myevt;
+
+  // Geometry
+  const DGeometry *dgeom;
 
   vector<align_t>alignments;
   vector<vector<DFDCWire*> >fdcwires;
