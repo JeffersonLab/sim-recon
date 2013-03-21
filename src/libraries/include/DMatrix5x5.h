@@ -134,6 +134,16 @@ public:
     }
     return *this;
   }
+  // Scale a matrix by a double
+  DMatrix5x5 &operator*=(const double c){
+     for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<5;j++){
+	mA[i][j]*=c;
+      }
+    }
+    return *this;
+  }
+
   // Matrix multiplication:  (5x5) x (5x1)
   DMatrix5x1 operator*(const DMatrix5x1 &m2){
     return DMatrix5x1(mA[0][0]*m2(0)+mA[0][1]*m2(1)+mA[0][2]*m2(2)
@@ -1500,6 +1510,19 @@ class DMatrix5x5{
     return *this;
   }
 
+  // Scale 5x5 matrix by a floating point number
+  DMatrix5x5 operator*=(const double c){
+    ALIGNED_16_BLOCK_WITH_PTR(__m128d, 1, p)
+      __m128d &scale=p[0];
+    scale=_mm_set1_pd(c);
+    
+    for (unsigned int i=0;i<5;i++){
+      for (unsigned int j=0;j<3;j++){
+	mA[i].v[j]=_mm_mul_pd(scale,mA[i].v[j]);
+      }
+    }
+    return *this;
+  }
 
   void Print(){
     cout << "DMatrix5x5:" <<endl;
