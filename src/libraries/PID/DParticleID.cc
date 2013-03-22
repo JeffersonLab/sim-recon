@@ -669,7 +669,7 @@ jerror_t DParticleID::MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fi
 
   //tproj=numeric_limits<double>::quiet_NaN();
   sc_match_id=0;
-  if (sc_hits.size()==0){
+  if (sc_hits.size()==0 || sc_pos.size()==0 || sc_norm.size()==0){
     tproj=numeric_limits<double>::quiet_NaN();
     return RESOURCE_UNAVAILABLE;
   }
