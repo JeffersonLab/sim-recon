@@ -176,7 +176,7 @@ void hitStartCntr (float xin[4], float xout[4],
          points->in[0].E = pin[3];
          points->in[0].dEdx = dEcorr;
          points->in[0].ptype = ipart;
-         points->in[0].sector = getsector_();
+         points->in[0].sector = getsector_wrapper_();
          points->mult = 1;
          pointCount++;
 
@@ -196,7 +196,7 @@ void hitStartCntr (float xin[4], float xout[4],
    {
       int nhit;
       s_StcTruthHits_t* hits;
-      int sector = getsector_();
+      int sector = getsector_wrapper_();
        
       //      printf("x_gl, z_gl, x_l, z_l %f %f %f %f %f %f\n",
       //  x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2]);
