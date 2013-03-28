@@ -10,6 +10,7 @@
 #include "PID/DChargedTrack.h"
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DNeutralParticle.h"
+#include "PID/DNeutralShower.h"
 
 #include "TOF/DTOFPoint.h"
 #include "TOF/DTOFTruth.h"

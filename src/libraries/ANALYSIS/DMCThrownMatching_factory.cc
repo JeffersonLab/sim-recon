@@ -119,10 +119,6 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
  	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses;
 	locEventLoop->Get(locChargedTrackHypotheses);
 
- 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses_Reaction;
-	locEventLoop->Get(locChargedTrackHypotheses_Reaction, "Reaction");
-	locChargedTrackHypotheses.insert(locChargedTrackHypotheses.end(), locChargedTrackHypotheses_Reaction.begin(), locChargedTrackHypotheses_Reaction.end());
-
  	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses);
 

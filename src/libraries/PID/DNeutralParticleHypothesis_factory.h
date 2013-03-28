@@ -26,7 +26,8 @@ class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleH
 		DNeutralParticleHypothesis_factory(){};
 		~DNeutralParticleHypothesis_factory(){};
 
-		void Calc_ParticleCovariance(const DNeutralShower* locNeutralShower, double locMass, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance);
+		void Calc_ParticleCovariance(const DNeutralShower* locNeutralShower, double locMass, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
+		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch) const;
 
 	private:
 		double dTargetLength;

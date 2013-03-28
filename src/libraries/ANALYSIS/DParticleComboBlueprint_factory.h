@@ -5,6 +5,7 @@
 #include <JANA/JEventLoop.h>
 #include <ANALYSIS/DParticleComboBlueprint.h>
 #include <ANALYSIS/DReaction.h>
+#include "ANALYSIS/DTrackTimeBased_factory_Combo.h"
 
 #include <JANA/JObject.h>
 #include <particleType.h>
@@ -46,7 +47,6 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		const JObject* Grab_DetectedTrack(DParticleComboBlueprint* locParticleComboBlueprint, Particle_t locAnalysisPID, int& locResumeAtIndex, deque<const JObject*>& locNeutralShowerDeque, deque<const JObject*>& locChargedTrackDeque_Positive, deque<const JObject*>& locChargedTrackDeque_Negative);
 		const JObject* Choose_SourceObject(const DReaction* locReaction, Particle_t locAnalysisPID, DParticleComboBlueprint* locParticleComboBlueprint, deque<const JObject*>& locSourceObjects, int& locResumeAtIndex) const;
 
-		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		DParticleComboBlueprintStep* Get_ParticleComboBlueprintStepResource(void);
@@ -62,9 +62,10 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values will override these values
-		pair<bool, double> dMinIndividualChargedPIDFOM; //the minimum PID FOM for a charged track used for this DReaction
 		pair<bool, double> dMinIndividualTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinProtonMomentum; //when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
+
+		DTrackTimeBased_factory_Combo* dTrackTimeBasedFactory_Combo;
 };
 
 #endif // _DParticleComboBlueprint_factory_

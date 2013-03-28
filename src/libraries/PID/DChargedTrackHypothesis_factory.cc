@@ -10,8 +10,6 @@
 #include <iomanip>
 using namespace std;
 
-#include <TMath.h>
-
 #include "DChargedTrackHypothesis_factory.h"
 using namespace jana;
 
@@ -57,145 +55,133 @@ jerror_t DChargedTrackHypothesis_factory::brun(jana::JEventLoop *locEventLoop, i
 //------------------
 jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, int eventnumber)
 {
-
  	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
 	locEventLoop->Get(locTrackTimeBasedVector);
 
-	vector<DChargedTrackHypothesis*> locChargedTrackHypotheses;
-	jerror_t locJError = Get_ChargedTrackHypotheses(locEventLoop, locTrackTimeBasedVector, locChargedTrackHypotheses);
-	if(locJError != NOERROR)
-		return locJError;
+	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches);
 
-	for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses.size(); ++loc_i)
-		_data.push_back(locChargedTrackHypotheses[loc_i]);
+	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
+	{
+		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBasedVector[loc_i], locEventRFBunches[0], false);
+		if(locChargedTrackHypothesis != NULL)
+			_data.push_back(locChargedTrackHypothesis);
+	}
 
 	return NOERROR;
 }
 
-jerror_t DChargedTrackHypothesis_factory::Get_ChargedTrackHypotheses(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<DChargedTrackHypothesis*>& locChargedTrackHypotheses)
+DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag)
 {
-	const DTrackTimeBased *locTrackTimeBased;
-	DChargedTrackHypothesis *locChargedTrackHypothesis;
 	DMatrixDSym locCovarianceMatrix(7);
 
 	unsigned int locTOFIndex, locSCIndex;
 	double locTempProjectedTime = 0.0, locPathLength = 0.0, locFlightTime = 0.0;
 
-	double locInitialStartTime;
-
-	vector<const DEventRFBunch*> locEventRFBunches;
 	vector<const DTOFPoint*> locTOFPoints;
-	vector<const DBCALShower*> locBCALShowers;
-	vector<const DFCALShower*> locFCALShowers;
-	deque<const DBCALShower*> locMatchedBCALShowers;
-	deque<const DFCALShower*> locMatchedFCALShowers;
-	vector<const DSCHit*> locSCHits;
 	locEventLoop->Get(locTOFPoints);
-	locEventLoop->Get(locSCHits);
-	if (USE_KLOE) {
-		locEventLoop->Get(locBCALShowers, "KLOE");
-	} else { 
-		locEventLoop->Get(locBCALShowers);
-	}
+
+	vector<const DFCALShower*> locFCALShowers;
 	locEventLoop->Get(locFCALShowers);
-	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
 
-	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
-	{
-		locChargedTrackHypothesis = new DChargedTrackHypothesis();
-		locTrackTimeBased = locTrackTimeBasedVector[loc_i];
-		locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
-		locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
-		locChargedTrackHypothesis->dRT = locTrackTimeBased->rt;
+	vector<const DSCHit*> locSCHits;
+	locEventLoop->Get(locSCHits);
 
-		// Chi square and degree-of-freedom data from the track fit
-		locChargedTrackHypothesis->dChiSq_Track=locTrackTimeBased->chisq;
-		locChargedTrackHypothesis->dNDF_Track=locTrackTimeBased->Ndof;
-		
-		//Set DKinematicData Members
-		DKinematicData *locKinematicData = locChargedTrackHypothesis;
-		*locKinematicData = *(static_cast<const DKinematicData*>(locTrackTimeBased));
-		locCovarianceMatrix = locTrackTimeBased->errorMatrix();
+	vector<const DBCALShower*> locBCALShowers;
+	(USE_KLOE) ? locEventLoop->Get(locBCALShowers, "KLOE") : locEventLoop->Get(locBCALShowers);
 
-		//useful kinematic variable
-		double betagamma=locTrackTimeBased->momentum().Mag()/locTrackTimeBased->mass();
+	DChargedTrackHypothesis* locChargedTrackHypothesis = new DChargedTrackHypothesis();
+	locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
+	locChargedTrackHypothesis->candidateid = locTrackTimeBased->candidateid;
+	locChargedTrackHypothesis->dRT = locTrackTimeBased->rt;
 
-		// Use time-based tracking time as initial guess
-		locInitialStartTime = locChargedTrackHypothesis->t0(); // used to reject hits that are not in time with the track
-		double locInitialStartTimeUncertainty = locChargedTrackHypothesis->t0_err();
-		locChargedTrackHypothesis->setTime(locChargedTrackHypothesis->t0());
-		locCovarianceMatrix(6, 6) = locInitialStartTimeUncertainty*locInitialStartTimeUncertainty;
-		locChargedTrackHypothesis->setT0(locInitialStartTime, locInitialStartTimeUncertainty, SYS_CDC);
-		locChargedTrackHypothesis->setT1(locInitialStartTime, locInitialStartTimeUncertainty, SYS_CDC);
-		locChargedTrackHypothesis->setPathLength(NaN, 0.0); //zero uncertainty (for now)
-
-		// Match to the start counter using the result of the time-based fit
-		locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
-		pair<double,double>locTempSCdEdx;
-		locChargedTrackHypothesis->dStartCounterdEdx=0.; 
-		if (dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locTempProjectedTime, locSCIndex, locPathLength, locFlightTime,&locTempSCdEdx) == NOERROR)
-		{
-			locChargedTrackHypothesis->setT0(locTempProjectedTime, 0.3, SYS_START); //uncertainty guess for now
-			locCovarianceMatrix(6, 6) = 0.3*0.3; // guess for now //will be overriden by other detector systems if hit match
-			locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now) //will be overriden by other detector systems if hit match
-			locChargedTrackHypothesis->dStartCounterdEdx=locTempSCdEdx.first;
-			locChargedTrackHypothesis->dStartCounterdEdx_norm_residual=(locTempSCdEdx.second-2.204+1.893/betagamma)/1.858;
+	// Chi square and degree-of-freedom data from the track fit
+	locChargedTrackHypothesis->dChiSq_Track=locTrackTimeBased->chisq;
+	locChargedTrackHypothesis->dNDF_Track=locTrackTimeBased->Ndof;
 	
-			locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
-		}
+	//Set DKinematicData Members
+	DKinematicData *locKinematicData = locChargedTrackHypothesis;
+	*locKinematicData = *(static_cast<const DKinematicData*>(locTrackTimeBased));
+	locCovarianceMatrix = locTrackTimeBased->errorMatrix();
 
-		// Try matching the track with hits in the outer detectors
-		locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
-		if (dPIDAlgorithm->MatchToBCAL(locTrackTimeBased->rt, locBCALShowers, locMatchedBCALShowers, locTempProjectedTime, locPathLength, locFlightTime) == NOERROR)
+	//useful kinematic variable
+	double betagamma=locTrackTimeBased->momentum().Mag()/locTrackTimeBased->mass();
+
+	// Use time-based tracking time as initial guess
+	double locInitialStartTime = locChargedTrackHypothesis->t0(); // used to reject hits that are not in time with the track
+	double locInitialStartTimeUncertainty = locChargedTrackHypothesis->t0_err();
+	locChargedTrackHypothesis->setTime(locChargedTrackHypothesis->t0());
+	locCovarianceMatrix(6, 6) = locInitialStartTimeUncertainty*locInitialStartTimeUncertainty;
+	locChargedTrackHypothesis->setT0(locInitialStartTime, locInitialStartTimeUncertainty, SYS_CDC);
+	locChargedTrackHypothesis->setT1(locInitialStartTime, locInitialStartTimeUncertainty, SYS_CDC);
+	locChargedTrackHypothesis->setPathLength(NaN, 0.0); //zero uncertainty (for now)
+
+	// Match to the start counter using the result of the time-based fit
+	locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
+	pair<double,double>locTempSCdEdx;
+	locChargedTrackHypothesis->dStartCounterdEdx=0.; 
+	if (dPIDAlgorithm->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locTempProjectedTime, locSCIndex, locPathLength, locFlightTime,&locTempSCdEdx) == NOERROR)
+	{
+		locChargedTrackHypothesis->setT0(locTempProjectedTime, 0.3, SYS_START); //uncertainty guess for now
+		locCovarianceMatrix(6, 6) = 0.3*0.3; // guess for now //will be overriden by other detector systems if hit match
+		locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now) //will be overriden by other detector systems if hit match
+		locChargedTrackHypothesis->dStartCounterdEdx=locTempSCdEdx.first;
+		locChargedTrackHypothesis->dStartCounterdEdx_norm_residual=(locTempSCdEdx.second-2.204+1.893/betagamma)/1.858;
+
+		locChargedTrackHypothesis->AddAssociatedObject(locSCHits[locSCIndex]);
+	}
+
+	// Try matching the track with hits in the outer detectors
+	locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
+	deque<const DBCALShower*> locMatchedBCALShowers;
+	if (dPIDAlgorithm->MatchToBCAL(locTrackTimeBased->rt, locBCALShowers, locMatchedBCALShowers, locTempProjectedTime, locPathLength, locFlightTime) == NOERROR)
+	{
+		for(unsigned int loc_j = 0; loc_j < locMatchedBCALShowers.size(); ++loc_j)
+			locChargedTrackHypothesis->AddAssociatedObject(locMatchedBCALShowers[loc_j]);
+		locChargedTrackHypothesis->setTime(locTempProjectedTime);
+		locCovarianceMatrix(6, 6) = 0.00255*pow(locChargedTrackHypothesis->momentum().Mag(), -2.52) + 0.220;
+		locCovarianceMatrix(6, 6) = locCovarianceMatrix(6, 6)*locCovarianceMatrix(6, 6);
+		locChargedTrackHypothesis->setT1(locMatchedBCALShowers[0]->t, locMatchedBCALShowers[0]->tErr, SYS_BCAL);
+		locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
+	}
+	locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
+	pair<double,double>locTOFdEdx;
+	if (dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locTempProjectedTime, locTOFIndex, locPathLength, locFlightTime,&locTOFdEdx) == NOERROR)
+	{
+	  locChargedTrackHypothesis->AddAssociatedObject(locTOFPoints[locTOFIndex]);
+	  locChargedTrackHypothesis->dTOFdEdx=locTOFdEdx.first;
+	  locChargedTrackHypothesis->dTOFdEdx_norm_residual
+	    =(locTOFdEdx.second-2.462+1.488/betagamma)/1.273;
+		if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
 		{
-			for(unsigned int loc_j = 0; loc_j < locMatchedBCALShowers.size(); ++loc_j)
-				locChargedTrackHypothesis->AddAssociatedObject(locMatchedBCALShowers[loc_j]);
 			locChargedTrackHypothesis->setTime(locTempProjectedTime);
-			locCovarianceMatrix(6, 6) = 0.00255*pow(locChargedTrackHypothesis->momentum().Mag(), -2.52) + 0.220;
-			locCovarianceMatrix(6, 6) = locCovarianceMatrix(6, 6)*locCovarianceMatrix(6, 6);
-			locChargedTrackHypothesis->setT1(locMatchedBCALShowers[0]->t, locMatchedBCALShowers[0]->tErr, SYS_BCAL);
+			locCovarianceMatrix(6, 6) = 0.08*0.08;
+			locChargedTrackHypothesis->setT1(locTOFPoints[locTOFIndex]->t, 0.08, SYS_TOF);
 			locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 		}
-		locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
-		pair<double,double>locTOFdEdx;
-		if (dPIDAlgorithm->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locTempProjectedTime, locTOFIndex, locPathLength, locFlightTime,&locTOFdEdx) == NOERROR)
-		{
-		  locChargedTrackHypothesis->AddAssociatedObject(locTOFPoints[locTOFIndex]);
-		  locChargedTrackHypothesis->dTOFdEdx=locTOFdEdx.first;
-		  locChargedTrackHypothesis->dTOFdEdx_norm_residual
-		    =(locTOFdEdx.second-2.462+1.488/betagamma)/1.273;
-			if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
-			{
-				locChargedTrackHypothesis->setTime(locTempProjectedTime);
-				locCovarianceMatrix(6, 6) = 0.08*0.08;
-				locChargedTrackHypothesis->setT1(locTOFPoints[locTOFIndex]->t, 0.08, SYS_TOF);
-				locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
-			}
-		}
-		locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
-		double locFCALdEdx=0.;
-		if (dPIDAlgorithm->MatchToFCAL(locTrackTimeBased->rt, locFCALShowers, locMatchedFCALShowers, locTempProjectedTime, locPathLength, locFlightTime,&locFCALdEdx) == NOERROR)
-		{
-			for(unsigned int loc_j = 0; loc_j < locMatchedFCALShowers.size(); ++loc_j)
-				locChargedTrackHypothesis->AddAssociatedObject(locMatchedFCALShowers[loc_j]);
-			locChargedTrackHypothesis->dFCALdEdx=locFCALdEdx;
-			if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
-			{
-				locChargedTrackHypothesis->setTime(locTempProjectedTime);
-				locCovarianceMatrix(6, 6) = 0.6*0.6; // straight-line fit to high momentum data
-				locChargedTrackHypothesis->setT1(locMatchedFCALShowers[0]->getTime(), 0.6, SYS_FCAL);
-				locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
-			}
-		}
-		locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
-
-		//Calculate PID ChiSq, NDF, FOM
-		dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch);
-		locChargedTrackHypotheses.push_back(locChargedTrackHypothesis);
 	}
+	locTempProjectedTime = locInitialStartTime; // to reject hits that are not in time with the track
+	double locFCALdEdx=0.;
+	deque<const DFCALShower*> locMatchedFCALShowers;
+	if (dPIDAlgorithm->MatchToFCAL(locTrackTimeBased->rt, locFCALShowers, locMatchedFCALShowers, locTempProjectedTime, locPathLength, locFlightTime,&locFCALdEdx) == NOERROR)
+	{
+		for(unsigned int loc_j = 0; loc_j < locMatchedFCALShowers.size(); ++loc_j)
+			locChargedTrackHypothesis->AddAssociatedObject(locMatchedFCALShowers[loc_j]);
+		locChargedTrackHypothesis->dFCALdEdx=locFCALdEdx;
+		if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
+		{
+			locChargedTrackHypothesis->setTime(locTempProjectedTime);
+			locCovarianceMatrix(6, 6) = 0.6*0.6; // straight-line fit to high momentum data
+			locChargedTrackHypothesis->setT1(locMatchedFCALShowers[0]->getTime(), 0.6, SYS_FCAL);
+			locChargedTrackHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
+		}
+	}
+	locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
 
-	return NOERROR;
+	//Calculate PID ChiSq, NDF, FOM
+	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch, locRFTimeFixedFlag);
+
+	return locChargedTrackHypothesis;
 }
 
 //------------------

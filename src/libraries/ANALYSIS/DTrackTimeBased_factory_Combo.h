@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DTrackTimeBased_factory_Reaction.h
+//    File: DTrackTimeBased_factory_Combo.h
 // Created: Tue Aug  9 14:29:24 EST 2011
 // Creator: pmatt
 //
 
-#ifndef _DTrackTimeBased_factory_Reaction_
-#define _DTrackTimeBased_factory_Reaction_
+#ifndef _DTrackTimeBased_factory_Combo_
+#define _DTrackTimeBased_factory_Combo_
 
 #include <iostream>
 #include <deque>
@@ -28,12 +28,20 @@
 using namespace jana;
 using namespace std;
 
-class DTrackTimeBased_factory_Reaction:public jana::JFactory<DTrackTimeBased>
+class DTrackTimeBased_factory_Combo:public jana::JFactory<DTrackTimeBased>
 {
 	public:
-		DTrackTimeBased_factory_Reaction(){use_factory = 1;}; //prevents JANA from searching the input file for these objects
-		~DTrackTimeBased_factory_Reaction(){};
-		const char* Tag(void){return "Reaction";}
+		DTrackTimeBased_factory_Combo(){use_factory = 1;}; //prevents JANA from searching the input file for these objects
+		~DTrackTimeBased_factory_Combo(){};
+		const char* Tag(void){return "Combo";}
+
+		deque<Particle_t> Get_ParticleIDsToTry(Particle_t locPID) const
+		{
+			map<Particle_t, deque<Particle_t> >::const_iterator locIterator = dParticleIDsToTry.find(locPID);
+			if(locIterator == dParticleIDsToTry.end())
+				return deque<Particle_t>();
+			return locIterator->second;
+		}
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -53,7 +61,8 @@ class DTrackTimeBased_factory_Reaction:public jana::JFactory<DTrackTimeBased>
 		const DGeometry* dGeometry;
 		const DMagneticFieldMap* dMagneticFieldMap;
 		size_t MAX_dReferenceTrajectoryPoolSize;
+		map<Particle_t, deque<Particle_t> > dParticleIDsToTry;
 };
 
-#endif // _DTrackTimeBased_factory_Reaction_
+#endif // _DTrackTimeBased_factory_Combo_
 

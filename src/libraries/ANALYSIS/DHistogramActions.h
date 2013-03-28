@@ -144,7 +144,7 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 		void Initialize(JEventLoop* locEventLoop);
 
-		void Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, size_t locStepIndex);
+		void Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch, size_t locStepIndex);
 		void Fill_BeamHists(const DKinematicData* locKinematicData);
 
 		const DParticleID* dParticleID;

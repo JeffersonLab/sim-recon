@@ -810,11 +810,13 @@ void DParticleID::GetScintMPdEandSigma(double p,double M,double x,
   sigma_dE=4.*Xi/2.354;
 }
 
-bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime) const
+bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime, bool locRFTimeFixedFlag) const
 {
-	//disable until timing/etc. issues sorted out.
-	locPropagatedRFTime = 0.0 + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-	return true;
+	locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
+	return true; //disabled until timing/etc. issues sorted out. (locEventRFBunch->dTime always = 0)
+
+	if(locRFTimeFixedFlag)
+		return locEventRFBunch->dMatchedToTracksFlag;
 
 	//Propagates RF time to the track vertex-z, and then selects the closest RF bunch
 	//Method: match track to RF bunch.  If cannot reliably match (e.g. no TOF or start counter hit) then use the best guess for this event (from locEventRFBunch) if available
@@ -838,7 +840,6 @@ bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locCharge
 		locMatchFlag = true;
 	}
 
-	locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
 	if(!locMatchFlag) // this track can't distinguish which RF bunch: use the propagated RF time from locEventRFBunch if it was succesfully matched to other tracks, else abort
 		return locEventRFBunch->dMatchedToTracksFlag;
 			
@@ -852,11 +853,11 @@ bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locCharge
 	return true;
 }
 
-bool DParticleID::Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool& locUsedRFTimeFlag) const
+bool DParticleID::Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool& locUsedRFTimeFlag, bool locRFTimeFixedFlag) const
 {
 	//use RF bunch if available, else use t0 detector if available (e.g. start counter, CDC)
 	double locPropagatedRFTime;
-	locUsedRFTimeFlag = Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch, locPropagatedRFTime);
+	locUsedRFTimeFlag = Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch, locPropagatedRFTime, locRFTimeFixedFlag);
 	if(locUsedRFTimeFlag)
 	{
 		locStartTime = locPropagatedRFTime;
@@ -873,11 +874,11 @@ bool DParticleID::Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedT
 	return true;
 }
 
-void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
+void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
 {
 	double locStartTime, locStartTimeVariance;
 	bool locUsedRFTimeFlag;
-	if(!Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag))
+	if(!Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, locRFTimeFixedFlag))
 	{
 		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
 		locChargedTrackHypothesis->dNDF_Timing = 0;
@@ -926,28 +927,27 @@ Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
 	return Unknown;
 }
 
-void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch) const
+void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
 {
 	CalcDCdEdxChiSq(locChargedTrackHypothesis);
-	Calc_TimingChiSq(locChargedTrackHypothesis, locEventRFBunch);
+	Calc_TimingChiSq(locChargedTrackHypothesis, locEventRFBunch, locRFTimeFixedFlag);
 
 	unsigned int locNDF_Total = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
 	double locChiSq_Total = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;
 
-	/* Disable inclusion of TOF dEdx.  In the region (below 1 GeV/c) where
-	   some proton-pion separation is possible, the flight time is a much
-	   better tool.
+	/* Disable inclusion of TOF and SC dEdx.  dE/dx is Landau-distributed, not-Gaussian.
+		Also, In the region (below 1 GeV/c) where some proton-pion separation is possible, the flight time is a much better tool.
 
 	   if (locChargedTrackHypothesis->dTOFdEdx>0.){
 	   locNDF_Total++;
 	   locChiSq_Total+=locChargedTrackHypothesis->dTOFdEdx_norm_residual*locChargedTrackHypothesis->dTOFdEdx_norm_residual;
 	   }
-	*/
 
 	if (locChargedTrackHypothesis->dStartCounterdEdx>0.){
 	  locNDF_Total++;
 	  locChiSq_Total+=locChargedTrackHypothesis->dStartCounterdEdx_norm_residual*locChargedTrackHypothesis->dStartCounterdEdx_norm_residual;
 	}
+	*/
 
 	locChargedTrackHypothesis->dChiSq = locChiSq_Total;
 	locChargedTrackHypothesis->dNDF = locNDF_Total;

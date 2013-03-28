@@ -49,15 +49,6 @@ jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop
 //------------------
 jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
-	unsigned int locNDF = 1;
-	float locMass, locPMag, locShowerEnergy, locParticleEnergy, locPathLength, locHitTime, locFlightTime, locProjectedTime, locTimeDifference;
-	float locParticleEnergyUncertainty, locShowerEnergyUncertainty, locTimeDifferenceVariance, locChiSq, locFOM;
-	DVector3 locPath, locHitPoint, locMomentum;
-
-	const DNeutralShower *locNeutralShower;
-	DNeutralParticleHypothesis *locNeutralParticleHypothesis;
-	DMatrixDSym locParticleCovariance;
-
 	vector<const DNeutralShower*> locNeutralShowers;
 	locEventLoop->Get(locNeutralShowers);
 
@@ -69,75 +60,80 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 	locEventLoop->Get(locEventRFBunches);
 	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
 
+	// Loop over DNeutralShowers
+	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++)
+	{
+		const DNeutralShower *locNeutralShower = locNeutralShowers[loc_i];
+		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
+		for (unsigned int loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
+		{
+			DNeutralParticleHypothesis* locNeutralParticleHypothesis = Create_DNeutralParticleHypothesis(locNeutralShower, locPIDHypotheses[loc_k], locEventRFBunch);
+			if(locNeutralParticleHypothesis != NULL)
+				_data.push_back(locNeutralParticleHypothesis);	
+		}
+	}
+
+	return NOERROR;
+}
+
+DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch) const
+{
 	double locStartTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
 	DLorentzVector locSpacetimeVertex(dTargetCenter, locStartTime);
 	double locStartTimeVariance = locEventRFBunch->dTimeVariance;
 
-	// Loop over DNeutralShowers
-	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++){
-		locNeutralShower = locNeutralShowers[loc_i];
+	double locHitTime = locNeutralShower->dSpacetimeVertex.T();
+	double locShowerEnergy = locNeutralShower->dEnergy;
+	DVector3 locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
 
-		locHitTime = locNeutralShower->dSpacetimeVertex.T();
-		locShowerEnergy = locNeutralShower->dEnergy;
-		locShowerEnergyUncertainty = sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
-		locHitPoint = locNeutralShower->dSpacetimeVertex.Vect();
+	// Calculate DNeutralParticleHypothesis Quantities (projected time at vertex for given id, etc.)
+	double locMass = ParticleMass(locPID);
+	double locParticleEnergy = locShowerEnergy; //need to correct this for neutrons!
+	if (locParticleEnergy < locMass)
+		return NULL; //not enough energy for PID hypothesis
 
-		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
-		for (unsigned int loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
-		{
-			// Calculate DNeutralParticleHypothesis Quantities (projected time at vertex for given id, etc.)
-			locMass = ParticleMass(locPIDHypotheses[loc_k]);
-			locParticleEnergy = locShowerEnergy; //need to correct this for neutrons!
-			if (locParticleEnergy < locMass)
-				continue; //not enough energy for PID hypothesis
+	DVector3 locPath = locHitPoint - locSpacetimeVertex.Vect();
+	double locPathLength = locPath.Mag();
+	if(!(locPathLength > 0.0))
+		return NULL; //invalid, will divide by zero when creating error matrix, so skip!
 
-			locParticleEnergyUncertainty = locShowerEnergyUncertainty; //need to correct this for neutrons!
+	double locPMag = sqrt(locParticleEnergy*locParticleEnergy - locMass*locMass);
+	double locFlightTime = locPathLength*locParticleEnergy/(locPMag*SPEED_OF_LIGHT);
+	double locProjectedTime = locHitTime - locFlightTime;
+	DVector3 locMomentum(locPath);
+	locMomentum.SetMag(locPMag);
 
-			locPath = locHitPoint - locSpacetimeVertex.Vect();
-			locPathLength = locPath.Mag();
-			if(!(locPathLength > 0.0))
-				continue; //invalid, will divide by zero when creating error matrix, so skip!
+	DMatrixDSym locParticleCovariance;
+	Calc_ParticleCovariance(locNeutralShower, locMass, locMomentum, locPath, locParticleCovariance);
 
-			locPMag = sqrt(locParticleEnergy*locParticleEnergy - locMass*locMass);
-			locFlightTime = locPathLength*locParticleEnergy/(locPMag*SPEED_OF_LIGHT);
-			locProjectedTime = locHitTime - locFlightTime;
-			locMomentum = locPath;
-			locMomentum.SetMag(locPMag);
+	// Calculate DNeutralParticleHypothesis FOM
+	double locTimeDifference = locSpacetimeVertex.T() - locProjectedTime;
+	double locTimeDifferenceVariance = locParticleCovariance(6, 6) + locStartTimeVariance;
+	double locChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
+	unsigned int locNDF = 1;
+	double locFOM = TMath::Prob(locChiSq, locNDF);
+	if(locPID == Neutron)
+		locFOM = -1.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
 
-			Calc_ParticleCovariance(locNeutralShower, locMass, locMomentum, locPath, locParticleCovariance);
+	// Build DNeutralParticleHypothesis // dEdx not set
+	DNeutralParticleHypothesis* locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
+	locNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
-			// Calculate DNeutralParticleHypothesis FOM
-			locTimeDifference = locSpacetimeVertex.T() - locProjectedTime;
-			locTimeDifferenceVariance = locParticleCovariance(6, 6) + locStartTimeVariance;
-			locChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
-			locFOM = TMath::Prob(locChiSq, locNDF);
-			if(locPIDHypotheses[loc_k] == Neutron)
-				locFOM = -1.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
+	locNeutralParticleHypothesis->setMass(locMass);
+	locNeutralParticleHypothesis->setCharge(0.0);
+	locNeutralParticleHypothesis->setMomentum(locMomentum);
+	locNeutralParticleHypothesis->setPosition(locSpacetimeVertex.Vect());
+	locNeutralParticleHypothesis->setT0(locSpacetimeVertex.T(), sqrt(locStartTimeVariance), SYS_NULL);
+	locNeutralParticleHypothesis->setTime(locProjectedTime);
+	locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), sqrt(locNeutralShower->dCovarianceMatrix(4, 4)), locNeutralShower->dDetectorSystem);
+	locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
+	locNeutralParticleHypothesis->setErrorMatrix(locParticleCovariance);
 
-			// Build DNeutralParticleHypothesis // dEdx not set
-			locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
-			locNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
-
-			locNeutralParticleHypothesis->setMass(locMass);
-			locNeutralParticleHypothesis->setCharge(0.0);
-			locNeutralParticleHypothesis->setMomentum(locMomentum);
-			locNeutralParticleHypothesis->setPosition(locSpacetimeVertex.Vect());
-			locNeutralParticleHypothesis->setT0(locSpacetimeVertex.T(), sqrt(locStartTimeVariance), SYS_NULL);
-			locNeutralParticleHypothesis->setTime(locProjectedTime);
-			locNeutralParticleHypothesis->setT1(locNeutralShower->dSpacetimeVertex.T(), sqrt(locNeutralShower->dCovarianceMatrix(4, 4)), locNeutralShower->dDetectorSystem);
-			locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
-			locNeutralParticleHypothesis->setErrorMatrix(locParticleCovariance);
-
-			locNeutralParticleHypothesis->setPID(locPIDHypotheses[loc_k]);
-			locNeutralParticleHypothesis->dChiSq = locChiSq;
-			locNeutralParticleHypothesis->dNDF = locNDF;
-			locNeutralParticleHypothesis->dFOM = locFOM;
-
-			_data.push_back(locNeutralParticleHypothesis);	
-		} //end PID loop
-	} //end DNeutralShower loop
-
-	return NOERROR;
+	locNeutralParticleHypothesis->setPID(locPID);
+	locNeutralParticleHypothesis->dChiSq = locChiSq;
+	locNeutralParticleHypothesis->dNDF = locNDF;
+	locNeutralParticleHypothesis->dFOM = locFOM;
+	return locNeutralParticleHypothesis;
 }
 
 //------------------
@@ -156,7 +152,7 @@ jerror_t DNeutralParticleHypothesis_factory::fini(void)
 	return NOERROR;
 }
 
-void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance(const DNeutralShower* locNeutralShower, double locMass, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance)
+void DNeutralParticleHypothesis_factory::Calc_ParticleCovariance(const DNeutralShower* locNeutralShower, double locMass, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const
 {
 	//build 8x8 matrix: 5x5 shower, 3x3 vertex position
 	DMatrixDSym locShowerPlusVertCovariance(8);

@@ -9,7 +9,6 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 
 	dDebugLevel = 0;
 	dMinProtonMomentum = pair<bool, double>(false, -1.0);
-	dMinIndividualChargedPIDFOM = pair<bool, double>(false, -1.0);
 	dMinIndividualTrackingFOM = pair<bool, double>(false, -1.0);
 
 	return NOERROR;
@@ -20,6 +19,8 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 //------------------
 jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
+	dTrackTimeBasedFactory_Combo = dynamic_cast<DTrackTimeBased_factory_Combo*>(locEventLoop->GetFactory("DTrackTimeBased", "Combo"));
+
 	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:DEBUGLEVEL", dDebugLevel);
 
 	// In the following try-catch blocks, gPARMS->GetParameter will throw an
@@ -31,11 +32,6 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 	try{
 		gPARMS->GetParameter("COMBO:MINPROTONMOMENTUM", dMinProtonMomentum.second);
 		dMinProtonMomentum.first = true;
-	}catch(...){}
-
-	try{
-		gPARMS->GetParameter("COMBO:MININDIVIDUALCHARGEDPIDFOM", dMinIndividualChargedPIDFOM.second);
-		dMinIndividualChargedPIDFOM.first = true;
 	}catch(...){}
 
 	try{
@@ -738,19 +734,51 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 
 		const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locObject); //NULL if not charged
 
-
-		//if charged, check to make sure the PID FOM is OK (cut garbage tracks and wildly bad combos)
+		//if charged, check to make sure the tracking FOM is OK (cut garbage tracks and wildly bad combos)
 		if(locChargedTrack != NULL)
 		{
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locAnalysisPID);
 			if(locChargedTrackHypothesis != NULL)
 			{
-				if((!Cut_PIDFOM(locReaction, locChargedTrackHypothesis)) || (!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis)))
+				if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
 				{
 					if(dDebugLevel > 20)
-						cout << "Bad PID or Tracking FOM; PID FOM = " << locChargedTrackHypothesis->dFOM << endl;
+						cout << "Bad Tracking FOM" << endl;
 					continue;
 				}
+			}
+			else //pid not found for this track: loop over other possible pids
+			{
+				bool locTrackingFOMOKFlag = true;
+				deque<Particle_t> locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
+				bool locFoundFlag = false;
+				for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
+				{
+					locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i]);
+					if(locChargedTrackHypothesis == NULL)
+						continue;
+					locFoundFlag = true;
+					if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
+					{
+						if(dDebugLevel > 20)
+						cout << "Bad Tracking FOM" << endl;
+						locTrackingFOMOKFlag = false;
+						break;
+					}
+					break;
+				}
+				if(!locFoundFlag) //still none found, take the one with the best FOM
+				{
+					locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
+					if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
+					{
+						if(dDebugLevel > 20)
+						cout << "Bad Tracking FOM" << endl;
+						locTrackingFOMOKFlag = false;
+					}
+				}
+				if(!locTrackingFOMOKFlag)
+					continue; //skip this track
 			}
 		}
 
@@ -761,40 +789,20 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 		{
 			if(locChargedTrack->Get_Hypothesis(Proton) == NULL)
 			{
-				if(locChargedTrack->Get_Hypothesis(KPlus) != NULL)
+				deque<Particle_t> locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
+				bool locFoundFlag = false;
+				for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
 				{
+					const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i]);
+					if(locChargedTrackHypothesis == NULL)
+						continue;
+					locFoundFlag = true;
+
 					if(dDebugLevel > 20)
-						cout << "Proton candidate: K+ momentum = " << locChargedTrack->Get_Hypothesis(KPlus)->momentum().Mag() << endl;
-					if(locChargedTrack->Get_Hypothesis(KPlus)->momentum().Mag() < locMinProtonMomentum.second)
+						cout << "Proton candidate, momentum = " << locChargedTrackHypothesis->momentum().Mag() << endl;
+					if(locChargedTrackHypothesis->momentum().Mag() < locMinProtonMomentum.second)
 						locTrackMomentumTooLowFlag = true;
-				}
-				else if(locChargedTrack->Get_Hypothesis(PiPlus) != NULL)
-				{
-					if(dDebugLevel > 20)
-						cout << "Proton candidate: pi+ momentum = " << locChargedTrack->Get_Hypothesis(PiPlus)->momentum().Mag() << endl;
-					if(locChargedTrack->Get_Hypothesis(PiPlus)->momentum().Mag() < locMinProtonMomentum.second)
-						locTrackMomentumTooLowFlag = true;
-				}
-				else if(locChargedTrack->Get_Hypothesis(KMinus) != NULL)
-				{
-					if(dDebugLevel > 20)
-						cout << "Proton candidate: K- momentum = " << locChargedTrack->Get_Hypothesis(KMinus)->momentum().Mag() << endl;
-					if(locChargedTrack->Get_Hypothesis(KMinus)->momentum().Mag() < locMinProtonMomentum.second)
-						locTrackMomentumTooLowFlag = true;
-				}
-				else if(locChargedTrack->Get_Hypothesis(PiMinus) != NULL)
-				{
-					if(dDebugLevel > 20)
-						cout << "Proton candidate: Pi- momentum = " << locChargedTrack->Get_Hypothesis(PiMinus)->momentum().Mag() << endl;
-					if(locChargedTrack->Get_Hypothesis(PiMinus)->momentum().Mag() < locMinProtonMomentum.second)
-						locTrackMomentumTooLowFlag = true;
-				}
-				else
-				{
-					if(dDebugLevel > 20)
-						cout << "Proton candidate: Best FOM momentum = " << locChargedTrack->Get_BestFOM()->momentum().Mag() << endl;
-					if(locChargedTrack->Get_BestFOM()->momentum().Mag() < locMinProtonMomentum.second)
-						locTrackMomentumTooLowFlag = true;
+					break;
 				}
 			}
 		}
@@ -818,14 +826,6 @@ bool DParticleComboBlueprint_factory::Cut_TrackingFOM(const DReaction* locReacti
 		return true;
 	double locFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
 	return ((locChargedTrackHypothesis->dNDF_Track == 0) ? true : (locFOM >= locMinIndividualTrackingFOM.second));
-}
-
-bool DParticleComboBlueprint_factory::Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
-{
-	pair<bool, double> locMinIndividualChargedPIDFOM = dMinIndividualChargedPIDFOM.first ? dMinIndividualChargedPIDFOM : locReaction->Get_MinIndividualChargedPIDFOM();
-	if(!locMinIndividualChargedPIDFOM.first)
-		return true;
-	return ((locChargedTrackHypothesis->dNDF == 0) ? true : (locChargedTrackHypothesis->dFOM >= locMinIndividualChargedPIDFOM.second));
 }
 
 DParticleComboBlueprintStep* DParticleComboBlueprint_factory::Get_ParticleComboBlueprintStepResource(void)

@@ -6,6 +6,7 @@
 #include "JANA/JObject.h"
 #include "particleType.h"
 #include "PID/DKinematicData.h"
+#include "PID/DEventRFBunch.h"
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleComboStep.h"
 #include "ANALYSIS/DKinFitResults.h"
@@ -18,15 +19,19 @@ class DParticleCombo : public JObject
 	public:
 		JOBJECT_PUBLIC(DParticleCombo);
 
-		// SET OBJECT DATA:
-		inline void Set_Reaction(const DReaction* locReaction){dReaction = locReaction;}
-		inline void Set_KinFitResults(const DKinFitResults* locKinFitResults){dKinFitResults = locKinFitResults;}
+		// SET STEPS
 		inline void Add_ParticleComboStep(const DParticleComboStep* locParticleComboStep){dParticleComboSteps.push_back(locParticleComboStep);}
 		void Set_ParticleComboStep(const DParticleComboStep* locParticleComboStep, size_t locStepIndex);
 
-		// GET REACTION AND KINFITRESULTS:
+		// SET OBJECT DATA:
+		inline void Set_Reaction(const DReaction* locReaction){dReaction = locReaction;}
+		inline void Set_KinFitResults(const DKinFitResults* locKinFitResults){dKinFitResults = locKinFitResults;}
+		inline void Set_EventRFBunch(const DEventRFBunch* locEventRFBunch){dEventRFBunch = locEventRFBunch;}
+
+		// GET OBJECT DATA:
 		inline const DReaction* Get_Reaction(void) const{return dReaction;}
 		inline const DKinFitResults* Get_KinFitResults(void) const{return dKinFitResults;}
+		inline const DEventRFBunch* Get_EventRFBunch(void) const{return dEventRFBunch;}
 
 		// GET PARTCILE COMBO STEPS:
 		inline size_t Get_NumParticleComboSteps(void) const{return dParticleComboSteps.size();}
@@ -67,6 +72,7 @@ class DParticleCombo : public JObject
 
 		const DReaction* dReaction;
 		const DKinFitResults* dKinFitResults;
+		const DEventRFBunch* dEventRFBunch;
 		deque<const DParticleComboStep*> dParticleComboSteps;
 };
 

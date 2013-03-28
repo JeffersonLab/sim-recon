@@ -84,6 +84,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 		locNewParticleCombo = new DParticleCombo();
 		locNewParticleCombo->Set_Reaction(locParticleCombo->Get_Reaction());
 		locNewParticleCombo->Set_KinFitResults(locKinFitResultsVector[loc_i]);
+		locNewParticleCombo->Set_EventRFBunch(locParticleCombo->Get_EventRFBunch());
 
 		locParticleCombo->GetT(locParticleComboBlueprints_Associated);
 		locNewParticleCombo->AddAssociatedObject(locParticleComboBlueprints_Associated[0]);

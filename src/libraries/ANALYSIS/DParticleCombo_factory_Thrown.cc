@@ -33,15 +33,19 @@ jerror_t DParticleCombo_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int
 //------------------
 jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
+cout << "DParticleCombo_factory_Thrown evnt" << endl;
+
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
-	if(dParticleComboStepPool_All.size() > MAX_dParticleComboStepPoolSize){
+	if(dParticleComboStepPool_All.size() > MAX_dParticleComboStepPoolSize)
+	{
 		for(size_t loc_i = MAX_dParticleComboStepPoolSize; loc_i < dParticleComboStepPool_All.size(); ++loc_i)
 			delete dParticleComboStepPool_All[loc_i];
 		dParticleComboStepPool_All.resize(MAX_dParticleComboStepPoolSize);
 	}
 	dParticleComboStepPool_Available = dParticleComboStepPool_All;
 
-	if(dParticleComboBlueprintStepPool_All.size() > MAX_dParticleComboStepPoolSize){
+	if(dParticleComboBlueprintStepPool_All.size() > MAX_dParticleComboStepPoolSize)
+	{
 		for(size_t loc_i = MAX_dParticleComboStepPoolSize; loc_i < dParticleComboBlueprintStepPool_All.size(); ++loc_i)
 			delete dParticleComboBlueprintStepPool_All[loc_i];
 		dParticleComboBlueprintStepPool_All.resize(MAX_dParticleComboStepPoolSize);
@@ -60,11 +64,15 @@ jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int
  	vector<const DReaction*> locReactions;
 	locEventLoop->Get(locReactions, "Thrown");
 
+ 	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches, "Thrown");
+
 	const DMCThrown* locMCThrown;
 	DParticleCombo* locParticleCombo = new DParticleCombo();
 	DParticleComboStep* locParticleComboStep = Get_ParticleComboStepResource();
 	DParticleComboBlueprintStep* locParticleComboBlueprintStep = Get_ParticleComboBlueprintStepResource();
 	locParticleCombo->Set_Reaction(locReactions[0]);
+	locParticleCombo->Set_EventRFBunch(locEventRFBunches[0]);
 
 	locParticleComboBlueprintStep->Set_ReactionStep(locReactions[0]->Get_ReactionStep(0));
 	locParticleComboBlueprintStep->Set_InitialParticleDecayFromStepIndex(-1);
@@ -121,6 +129,8 @@ jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int
 	}
 
 	_data.push_back(locParticleCombo);
+
+cout << "end DParticleCombo_factory_Thrown evnt" << endl;
 
 	return NOERROR;
 }

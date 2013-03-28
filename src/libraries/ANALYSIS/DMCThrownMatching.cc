@@ -37,7 +37,12 @@ const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrackHypo
 	map<const DChargedTrackHypothesis*, const DMCThrown*>::const_iterator locIterator = dChargedHypoToThrownMap.find(locChargedTrackHypothesis);
 	if(locIterator != dChargedHypoToThrownMap.end())
 		return locIterator->second;
-	return NULL;
+	//perhaps this is an object produced from the factories with the "KinFit" or "Combo" flags: try the source object
+	const DChargedTrack* locAssociatedChargedTrack = NULL;
+	locChargedTrackHypothesis->GetSingleT(locAssociatedChargedTrack);
+	if(locAssociatedChargedTrack == NULL)
+		return NULL;
+	return Get_MatchingMCThrown(locAssociatedChargedTrack);
 }
 
 const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrack* locChargedTrack) const
@@ -53,6 +58,22 @@ const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticleH
 	map<const DNeutralParticleHypothesis*, const DMCThrown*>::const_iterator locIterator = dNeutralHypoToThrownMap.find(locNeutralParticleHypothesis);
 	if(locIterator != dNeutralHypoToThrownMap.end())
 		return locIterator->second;
+
+	//perhaps this is an object produced from the factories with the "KinFit" or "Combo" flags: try the source object
+	const DNeutralShower* locAssociatedNeutralShower_Input = NULL;
+	locNeutralParticleHypothesis->GetSingleT(locAssociatedNeutralShower_Input);
+	if(locAssociatedNeutralShower_Input == NULL)
+		return NULL;
+
+	//look for a particle with the same source object
+	map<const DNeutralParticle*, const DMCThrown*>::const_iterator locParticleIterator;
+	const DNeutralShower* locAssociatedNeutralShower_Check = NULL;
+	for(locParticleIterator = dNeutralToThrownMap.begin(); locParticleIterator != dNeutralToThrownMap.end(); ++locParticleIterator)
+	{
+		locParticleIterator->first->GetSingleT(locAssociatedNeutralShower_Check);
+		if(locAssociatedNeutralShower_Check == locAssociatedNeutralShower_Input)
+			return locParticleIterator->second;
+	}
 	return NULL;
 }
 

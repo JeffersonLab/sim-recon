@@ -23,7 +23,7 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		DChargedTrackHypothesis_factory(){};
 		~DChargedTrackHypothesis_factory(){};
 
-		jerror_t Get_ChargedTrackHypotheses(JEventLoop* locEventLoop, vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<DChargedTrackHypothesis*>& locChargedTrackHypotheses);
+		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag);
 
 	private:
 		const DParticleID* dPIDAlgorithm;

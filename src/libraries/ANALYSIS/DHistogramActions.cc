@@ -173,9 +173,7 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 	locEventLoop->Get(locMCThrownMatchingVector);
 	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector.empty() ? NULL : locMCThrownMatchingVector[0];
 
-	vector<const DEventRFBunch*> locEventRFBunches;
-	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
+	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
 	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
 	Get_PreviousParticleCombos(locPreviousParticleCombos);
@@ -212,7 +210,7 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 
 	double locStartTime, locStartTimeVariance;
 	bool locUsedRFTimeFlag;
-	bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag);
+	bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, true);
 	locBeta_Timing = locFoundStartTimeFlag ? locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locStartTime)) : numeric_limits<double>::quiet_NaN();
 	locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 	double locFOM_Timing = (locChargedTrackHypothesis->dNDF_Timing > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_Timing, locChargedTrackHypothesis->dNDF_Timing) : numeric_limits<double>::quiet_NaN();
@@ -806,6 +804,8 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
 	Get_PreviousParticleCombos(locPreviousParticleCombos);
 
+	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
+
 	const DKinematicData* locKinematicData;
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
 	{
@@ -823,7 +823,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 					Fill_BeamHists(locKinematicData); //else duplicate
 			}
 			else if(Get_UseKinFitResultsFlag()) //decaying particle, but kinfit so can hist
-				Fill_Hists(locEventLoop, locKinematicData, loc_i);
+				Fill_Hists(locEventLoop, locKinematicData, locEventRFBunch, loc_i);
 		}
 
 		//final particles
@@ -841,23 +841,19 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 			}
 			if(locKinematicData == NULL)
 				continue;
-			Fill_Hists(locEventLoop, locKinematicData, loc_i);
+			Fill_Hists(locEventLoop, locKinematicData, locEventRFBunch, loc_i);
 		} //end of particle loop
 	} //end of step loop
 	return true;
 }
 
-void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, size_t locStepIndex)
+void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch, size_t locStepIndex)
 {
 	Particle_t locPID = locKinematicData->PID();
 	DVector3 locMomentum = locKinematicData->momentum();
 	double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 	double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 	double locP = locMomentum.Mag();
-
-	vector<const DEventRFBunch*> locEventRFBunches;
-	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
 
 	double locBeta_Timing, locDeltaBeta;
 	if(ParticleCharge(locPID) == 0)
@@ -872,7 +868,7 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locKinematicData);
 		double locStartTime, locStartTimeVariance;
 		bool locUsedRFTimeFlag;
-		bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag);
+		bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, true);
 		locBeta_Timing = locFoundStartTimeFlag ? locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locStartTime)) : numeric_limits<double>::quiet_NaN();
 		locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 	}
@@ -1262,7 +1258,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 
 		double locStartTime, locStartTimeVariance;
 		bool locUsedRFTimeFlag;
-		bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag);
+		bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, false);
 		locBeta_Timing = locFoundStartTimeFlag ? locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locStartTime)) : numeric_limits<double>::quiet_NaN();
 		locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 		double locTrackingFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
@@ -2012,12 +2008,10 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc
 
 DHistogramAction_TrackMultiplicity::~DHistogramAction_TrackMultiplicity(void)
 {
-	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	if(dThrownTopology != NULL)
 		delete dThrownTopology;
 	if(dDetectedTopology != NULL)
 		delete dDetectedTopology;
-	japp->RootUnLock();
 }
 
 void DHistogramAction_TruePID::Initialize(JEventLoop* locEventLoop)

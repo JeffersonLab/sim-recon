@@ -46,14 +46,13 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses_Reaction, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const JObject*& locSourceObject);
+		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses);
 		DKinematicData* Create_Target(Particle_t locPID);
 		DBeamPhoton* Create_BeamPhoton(void); //for MC only!
 
 		bool Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const;
 		bool Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
-		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		DParticleComboStep* Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep);
 		void Reset_KinematicData(DKinematicData* locKinematicData);
@@ -81,7 +80,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 			//Command-line values will override these values
 		pair<bool, double> dMinIndividualChargedPIDFOM; //the minimum PID FOM for a charged track used for this DReaction
 		pair<bool, double> dMinCombinedChargedPIDFOM; //the minimum combined PID FOM for all charged tracks used for this DReaction
-		pair<bool, double> dMinIndividualTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinCombinedTrackingFOM; //the minimum combined Tracking FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
 

@@ -22,6 +22,7 @@ using namespace jana;
 #include "DPiPlus_factory.h"
 #include "DPiMinus_factory.h"
 #include "DEventRFBunch_factory.h"
+#include "DEventRFBunch_factory_Thrown.h"
 
 #include "DBeamPhoton.h"
 #include "DMCReaction.h"
@@ -53,6 +54,7 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DPiPlus_factory);
 	loop->AddFactory(new DPiMinus_factory);
 	loop->AddFactory(new DEventRFBunch_factory);
+	loop->AddFactory(new DEventRFBunch_factory_Thrown);
 
 	return NOERROR;
 }
