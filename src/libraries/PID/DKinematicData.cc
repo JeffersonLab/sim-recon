@@ -90,7 +90,7 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData) :
   m_position( aKinematicData.m_position ) ,
   m_errorMatrix( nullMatrix() ),
   m_TrackingErrorMatrix( null5x5Matrix() ),
-  m_time(0.0)
+  m_time(aKinematicData.m_time)
 {
   // Copy error matrix if it exists
   if(! aKinematicData.hasNullErrorMatrix() ){
