@@ -124,6 +124,8 @@ class DGeometry{
 		bool GetTOFZ(vector<double> &z_tof) const; ///< z-location of front face of each of TOF in cm
 		bool GetTargetZ(double &z_target) const; ///< z-location og center of target
 		bool GetTargetLength(double &target_length) const; ///< z-location of center of target
+
+		vector<DMaterialMap*> GetMaterialMapVector(void){return materialmaps;};
 		
 	protected:
 		DGeometry(){}
