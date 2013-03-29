@@ -25,7 +25,7 @@ using std::string;
 #include "DFactoryGenerator.h"
 
 #include "DANARootErrorHandler.h"
-#include <DCalibrationGeneratorCCDB.h>
+//#include <DCalibrationGeneratorCCDB.h>
 
 
 //---------------------------------
@@ -59,7 +59,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	}
 	
 	//Register CCDB calibration generator
-	AddCalibrationGenerator(new DCalibrationGeneratorCCDB());
+//	AddCalibrationGenerator(new DCalibrationGeneratorCCDB());
 	
 	// Initialize pointers to NULL. Objects will be instantiated as needed
 	bfield = NULL;
@@ -168,6 +168,13 @@ DApplication::~DApplication()
 	//if(factory_generator) delete factory_generator;
 	//if(RootGeom) delete RootGeom;
 	//for(unsigned int i=0; i<geometries.size(); i++) delete geometries[i];
+
+	for (unsigned int i=0;i<geometries.size();i++){
+	  vector<DMaterialMap*>materialmaps=geometries[i]->GetMaterialMapVector();
+	  for (unsigned int k=0;k<materialmaps.size();k++){
+	    delete materialmaps[k];
+	  }
+	}
 }
 
 //---------------------------------
@@ -248,7 +255,6 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 	// Create one and add it to the list.
 	DGeometry *dgeom = new DGeometry(jgeom, this, run_number);
 	geometries.push_back(dgeom);
-	
 	
 	Unlock();
 	
