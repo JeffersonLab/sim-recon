@@ -188,7 +188,7 @@ return NOERROR;
 		{
 			DEventRFBunch* locEventRFBunch = new DEventRFBunch();
 			locEventRFBunch->dMatchedToTracksFlag = true;
-			locEventRFBunch->dTime = locPropagatedRFTime;
+			locEventRFBunch->dTime = locEventRFBunches[0]->dTime + (double)(locNumBunchShifts)*dRFBunchFrequency;
 			locEventRFBunch->dTimeVariance = locEventRFBunches[0]->dTimeVariance;
 			locEventRFBunch->AddAssociatedObject(locParticleComboBlueprint);
 			_data.push_back(locEventRFBunch);
