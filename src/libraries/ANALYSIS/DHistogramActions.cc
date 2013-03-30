@@ -591,11 +591,14 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 	deque<deque<Particle_t> > locDetectedFinalPIDs;
 	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedFinalPIDs);
 
+	DGeometry *locGeometry = Get_Application()->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+
 	//CREATE THE HISTOGRAMS
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
 
 	dParticleID = locParticleIDs[0];
+	locGeometry->GetTargetZ(dTargetZCenter);
 
 	//beam particle
 	locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
@@ -604,6 +607,7 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 	{
 		locParticleName = string("Beam_") + ParticleType(locPID);
 		CreateAndChangeTo_Directory(locParticleName, locParticleName);
+		locParticleROOTName = ParticleName_ROOT(locPID);
 
 		// Momentum
 		locHistName = "Momentum";
@@ -668,6 +672,22 @@ void DHistogramAction_ParticleComboKinematics::Initialize(JEventLoop* locEventLo
 			dBeamParticleHist_VertexT = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
 		else
 			dBeamParticleHist_VertexT = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumTBins, dMinT, dMaxT);
+
+		// Delta-T (Beam, RF)
+		locHistName = "DeltaTRF";
+		locHistTitle = string("Beam ") + locParticleROOTName + string(";#Deltat_{Beam - RF} (ns)");
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dBeamParticleHist_DeltaTRF = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dBeamParticleHist_DeltaTRF = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTRFBins, dMinDeltaTRF, dMaxDeltaTRF);
+
+		// Delta-T (Beam, RF) Vs Beam E
+		locHistName = "DeltaTRFVsBeamE";
+		locHistTitle = string("Beam ") + locParticleROOTName + string(";E (GeV);#Deltat_{Beam - RF} (ns)");
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dBeamParticleHist_DeltaTRFVsBeamE = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dBeamParticleHist_DeltaTRFVsBeamE = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaTRFBins, dMinDeltaTRF, dMaxDeltaTRF);
 
 		gDirectory->cd("..");
 	}
@@ -818,9 +838,9 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 			if(locParticleComboStep->Get_InitialParticleID() == Gamma)
 			{
 				if(Get_UseKinFitResultsFlag()) //kinfit, can be no duplicate
-					Fill_BeamHists(locKinematicData);
+					Fill_BeamHists(locKinematicData, locEventRFBunch);
 				else if(!Get_AnalysisUtilities()->Find_SimilarCombos(pair<const DKinematicData*, size_t>(locKinematicData, loc_i), locPreviousParticleCombos)) //measured, check for dupe
-					Fill_BeamHists(locKinematicData); //else duplicate
+					Fill_BeamHists(locKinematicData, locEventRFBunch); //else duplicate
 			}
 			else if(Get_UseKinFitResultsFlag()) //decaying particle, but kinfit so can hist
 				Fill_Hists(locEventLoop, locKinematicData, locEventRFBunch, loc_i);
@@ -874,35 +894,42 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 	}
 
 	Get_Application()->RootWriteLock();
-	dHistDeque_P[locStepIndex][locPID]->Fill(locP);
-	dHistDeque_Phi[locStepIndex][locPID]->Fill(locPhi);
-	dHistDeque_Theta[locStepIndex][locPID]->Fill(locTheta);
-	dHistDeque_PVsTheta[locStepIndex][locPID]->Fill(locTheta, locP);
-	dHistDeque_PhiVsTheta[locStepIndex][locPID]->Fill(locTheta, locPhi);
-	dHistDeque_BetaVsP[locStepIndex][locPID]->Fill(locP, locBeta_Timing);
-	dHistDeque_DeltaBetaVsP[locStepIndex][locPID]->Fill(locP, locDeltaBeta);
-	dHistDeque_VertexZ[locStepIndex][locPID]->Fill(locKinematicData->position().Z());
-	dHistDeque_VertexYVsX[locStepIndex][locPID]->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
-	dHistDeque_VertexT[locStepIndex][locPID]->Fill(locKinematicData->time());
+	{
+		dHistDeque_P[locStepIndex][locPID]->Fill(locP);
+		dHistDeque_Phi[locStepIndex][locPID]->Fill(locPhi);
+		dHistDeque_Theta[locStepIndex][locPID]->Fill(locTheta);
+		dHistDeque_PVsTheta[locStepIndex][locPID]->Fill(locTheta, locP);
+		dHistDeque_PhiVsTheta[locStepIndex][locPID]->Fill(locTheta, locPhi);
+		dHistDeque_BetaVsP[locStepIndex][locPID]->Fill(locP, locBeta_Timing);
+		dHistDeque_DeltaBetaVsP[locStepIndex][locPID]->Fill(locP, locDeltaBeta);
+		dHistDeque_VertexZ[locStepIndex][locPID]->Fill(locKinematicData->position().Z());
+		dHistDeque_VertexYVsX[locStepIndex][locPID]->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
+		dHistDeque_VertexT[locStepIndex][locPID]->Fill(locKinematicData->time());
+	}
 	Get_Application()->RootUnLock();
 }
 
-void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicData* locKinematicData)
+void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch)
 {
 	DVector3 locMomentum = locKinematicData->momentum();
 	double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 	double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 	double locP = locMomentum.Mag();
+	double locDeltaTRF = locKinematicData->time() - (locEventRFBunch->dTime + (locKinematicData->z() - dTargetZCenter)/SPEED_OF_LIGHT);
 
 	Get_Application()->RootWriteLock();
-	dBeamParticleHist_P->Fill(locP);
-	dBeamParticleHist_Phi->Fill(locPhi);
-	dBeamParticleHist_Theta->Fill(locTheta);
-	dBeamParticleHist_PVsTheta->Fill(locTheta, locP);
-	dBeamParticleHist_PhiVsTheta->Fill(locTheta, locPhi);
-	dBeamParticleHist_VertexZ->Fill(locKinematicData->position().Z());
-	dBeamParticleHist_VertexYVsX->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
-	dBeamParticleHist_VertexT->Fill(locKinematicData->time());
+	{
+		dBeamParticleHist_P->Fill(locP);
+		dBeamParticleHist_Phi->Fill(locPhi);
+		dBeamParticleHist_Theta->Fill(locTheta);
+		dBeamParticleHist_PVsTheta->Fill(locTheta, locP);
+		dBeamParticleHist_PhiVsTheta->Fill(locTheta, locPhi);
+		dBeamParticleHist_VertexZ->Fill(locKinematicData->position().Z());
+		dBeamParticleHist_VertexYVsX->Fill(locKinematicData->position().X(), locKinematicData->position().Y());
+		dBeamParticleHist_VertexT->Fill(locKinematicData->time());
+		dBeamParticleHist_DeltaTRF->Fill(locDeltaTRF);
+		dBeamParticleHist_DeltaTRFVsBeamE->Fill(locKinematicData->energy(), locDeltaTRF);
+	}
 	Get_Application()->RootUnLock();
 }
 
