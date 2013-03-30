@@ -141,7 +141,7 @@ bool DAnalysisUtilities::Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, c
 	return (locDesiredPIDs_Copy.empty());
 }
 
-DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, unsigned int locKinematicDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const
 {
 	DLorentzVector locMissingP4;
 	const DKinematicData* locKinematicData;
@@ -151,7 +151,7 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 	locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
 	if(locKinematicData == NULL)
 		return (DLorentzVector()); //bad!!
-	if(locKinematicDataFlag == 1) //kinfit
+	if(locUseKinFitDataFlag) //kinfit
 		locKinematicData = locParticleComboStep->Get_InitialParticle();
 	locMissingP4 += locKinematicData->lorentzMomentum();
 
@@ -162,7 +162,7 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 
 	//final state particles
 	deque<const DKinematicData*> locParticles;
-	if(locKinematicDataFlag == 0) //measured
+	if(!locUseKinFitDataFlag) //measured
 		locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
 	else //kinfit
 		locParticleCombo->Get_DetectedFinalParticles(locParticles);
@@ -172,7 +172,7 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 	return locMissingP4;
 }
 
-DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, unsigned int locKinematicDataFlag) const
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const
 {
 	DLorentzVector locFinalStateP4;
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
@@ -180,7 +180,7 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 		return (DLorentzVector());
 
 	deque<const DKinematicData*> locParticles;
-	if(locKinematicDataFlag == 0) //measured
+	if(!locUseKinFitDataFlag) //measured
 		locParticleComboStep->Get_FinalParticles_Measured(locParticles);
 	else //kinfit
 		locParticleComboStep->Get_FinalParticles(locParticles);
@@ -190,12 +190,12 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
 		{
 			//measured results, or not constrained by kinfit (either non-fixed mass or excluded from kinfit)
-			if((locKinematicDataFlag == 0) || (!IsFixedMass(locParticleComboStep->Get_FinalParticleID(loc_i))) || locParticleCombo->Check_IfDecayingParticleExcludedFromP4KinFit(locStepIndex))
-				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locKinematicDataFlag);
+			if((!locUseKinFitDataFlag) || (!IsFixedMass(locParticleComboStep->Get_FinalParticleID(loc_i))) || locParticleCombo->Check_IfDecayingParticleExcludedFromP4KinFit(locStepIndex))
+				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locUseKinFitDataFlag);
 			else //want kinfit results, and decaying particle p4 is constrained by kinfit
 				locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
 		}
-		else if((locKinematicDataFlag == 0) && (locParticleComboStep->Is_FinalParticleMissing(loc_i)))
+		else if((!locUseKinFitDataFlag) && (locParticleComboStep->Is_FinalParticleMissing(loc_i)))
 			return (DLorentzVector());
 		else
 			locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();

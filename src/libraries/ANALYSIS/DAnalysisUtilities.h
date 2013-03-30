@@ -65,8 +65,8 @@ class DAnalysisUtilities : public JObject
 		double Calc_DOCAToVertex(const DKinematicData* locKinematicData, const DVector3& locVertex) const;
 		double Calc_DOCAToVertex(const DKinematicData* locKinematicData, const DVector3& locVertex, DVector3& locPOCA) const;
 
-		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, unsigned int locKinematicDataFlag) const;
-		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, unsigned int locKinematicDataFlag) const;
+		DLorentzVector Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const;
+		DLorentzVector Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const;
 
 //fix this		void BuildAndSet_PhotonErrorMatrices(DBeamPhoton* locPhoton, double locElectronBeamEnergy, double locPhotonEnergy) const;
 //fix this		double Calculate_BeamPhotonVariance(double locElectronBeamEnergy, double locCounterEnergyRangeAsFractionOfBeamEnergy) const;
