@@ -95,7 +95,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	map<Particle_t, DKinematicData*> locTargetParticleMap;
 	Particle_t locPID;
 
-	vector<const DBeamPhoton*> locCandidatePhotons;
 	map<const DParticleComboStep*, deque<const DParticleComboStep*> > locStepCloneForBeamMap;
 	map<const DParticleComboStep*, deque<const DParticleComboStep*> >::iterator locIterator;
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
@@ -131,6 +130,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 */
 		locParticleCombo->Set_EventRFBunch(locEventRFBunch);
 
+		vector<const DBeamPhoton*> locCandidatePhotons;
 		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
 		{
 			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
@@ -150,18 +150,15 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			if(locParticleComboBlueprintStep->Get_InitialParticleID() == Gamma) //else decaying particle: nothing to set
 			{
 				//beam photon: will later create additional combo for each one that's within the time window, just set the first one for now
-				if(locCandidatePhotons.empty())
+				//compare photon time to RF time (at center of target) //if RF time not matched to tracks: don't cut on photon time
+				pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : locReaction->Get_MaxPhotonRFDeltaT();
+				for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
 				{
-					//compare photon time to RF time (at center of target) //if RF time not matched to tracks: don't cut on photon time
-					pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : locReaction->Get_MaxPhotonRFDeltaT();
-					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
-					{
-						if((fabs(locBeamPhotons[loc_k]->time() - locEventRFBunch->dTime) < locMaxPhotonRFDeltaT.second) || (!locEventRFBunch->dMatchedToTracksFlag) || (!locMaxPhotonRFDeltaT.first))
-							locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
-					}
-					if(locBeamPhotons.empty()) //e.g. genr8
-						locCandidatePhotons.push_back(Create_BeamPhoton());
+					if((fabs(locBeamPhotons[loc_k]->time() - locEventRFBunch->dTime) < locMaxPhotonRFDeltaT.second) || (!locEventRFBunch->dMatchedToTracksFlag) || (!locMaxPhotonRFDeltaT.first))
+						locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
 				}
+				if(locBeamPhotons.empty()) //e.g. genr8
+					locCandidatePhotons.push_back(Create_BeamPhoton());
 
 				if(locCandidatePhotons.empty())
 				{
