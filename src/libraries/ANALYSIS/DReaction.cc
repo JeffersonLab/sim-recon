@@ -20,7 +20,7 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dMaxPhotonRFDeltaT.second = 10.0*2.004; //10 RF buckets
 
 	dMinProtonMomentum.first = true;
-	dMinProtonMomentum.second = 0.3; //from MIN_PROTON_P defined in DTrackFitterKalmanSIMD (as of August 12, 2012)
+	dMinProtonMomentum.second = 0.25;
 }
 
 const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
@@ -386,5 +386,15 @@ DAnalysisAction* DReaction::Get_AnalysisAction(size_t locActionIndex) const
 	if(locActionIndex >= dAnalysisActions.size())
 		return NULL;
 	return dAnalysisActions[locActionIndex];
+}
+
+bool DReaction::Get_MissingPID(Particle_t& locPID) const
+{
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		if(Get_ReactionStep(loc_i)->Get_MissingPID(locPID))
+			return true;
+	}
+	return false;
 }
 

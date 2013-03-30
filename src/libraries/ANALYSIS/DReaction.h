@@ -49,6 +49,7 @@ class DReaction : public JObject
 		void Get_DetectedFinalChargedPIDs(deque<Particle_t>& locDetectedChargedPIDs, bool locIncludeDuplicatesFlag = false) const;
 		void Get_DetectedFinalChargedPIDs(deque<deque<Particle_t> >& locDetectedChargedPIDs, bool locIncludeDuplicatesFlag = false) const;
 		void Get_FinalStatePIDs(deque<Particle_t>& locFinalStatePIDs, bool locIncludeDuplicatesFlag = false) const;
+		bool Get_MissingPID(Particle_t& locPID) const; //false if none missing
 
 		// GET PARTICLE NAME STRINGS:
 		string Get_DetectedParticlesROOTName(void) const;
