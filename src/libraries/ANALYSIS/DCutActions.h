@@ -218,5 +218,21 @@ class DCutAction_InvariantMass : public DAnalysisAction
 		double dMaximumInvariantMass;
 };
 
+class DCutAction_GoodEventRFBunch : public DAnalysisAction
+{
+	public:
+		DCutAction_GoodEventRFBunch(const DReaction* locReaction, bool locCutIfBadRFBunchFlag, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_GoodEventRFBunch", false, locActionUniqueString), 
+		dCutIfBadRFBunchFlag(locCutIfBadRFBunchFlag){}
+
+		string Get_ActionName(void) const;
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+		inline void Initialize(JEventLoop* locEventLoop){}
+
+		bool dCutIfBadRFBunchFlag; //if false, will cut if good rf bunch
+};
+
 #endif // _DCutActions_
 

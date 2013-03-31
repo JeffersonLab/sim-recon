@@ -260,3 +260,16 @@ bool DCutAction_AllTruePID::Perform_Action(JEventLoop* locEventLoop, const DPart
 	return true;
 }
 
+string DCutAction_GoodEventRFBunch::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dCutIfBadRFBunchFlag;
+	return locStream.str();
+}
+
+bool DCutAction_GoodEventRFBunch::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
+	return (dCutIfBadRFBunchFlag == locEventRFBunch->dMatchedToTracksFlag);
+}
+
