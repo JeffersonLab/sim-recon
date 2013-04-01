@@ -3,10 +3,12 @@
 #include <JANA/JEventLoop.h>
 #include "DBCALGeometry_factory.h"
 #include "DBCALShower_factory_KLOE.h"
+#include "DBCALShower_factory_KLOE_NEWSMEAR.h"
 #include "DBCALShower_factory.h"
 #include "DBCALCluster_factory.h"
 #include "DBCALCluster_factory_SINGLE.h"
 #include "DBCALPoint_factory.h"
+#include "DBCALPoint_factory_NEWSMEAR.h"
 #include "DBCALHit.h"
 #include "DBCALTDCHit.h"
 #include "DBCALSiPMHit.h"
@@ -29,12 +31,14 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALSiPMHit_factory());
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory_KLOE());
+	loop->AddFactory(new DBCALShower_factory_KLOE_NEWSMEAR());
 	loop->AddFactory(new DBCALShower_factory());
 	loop->AddFactory(new DBCALCluster_factory());
 	loop->AddFactory(new DBCALCluster_factory_SINGLE());
 	loop->AddFactory(new DBCALTruthShower_factory());
 	loop->AddFactory(new DBCALTruthCell_factory());
 	loop->AddFactory(new DBCALPoint_factory());
+	loop->AddFactory(new DBCALPoint_factory_NEWSMEAR());
     
 	return NOERROR;
 }

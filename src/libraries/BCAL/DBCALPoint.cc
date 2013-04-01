@@ -15,6 +15,71 @@ using namespace std;
 
 #include "units.h"
 
+DBCALPoint::DBCALPoint(int module, int layer, int sector, float EUp, float EDown, float tUp, float tDown, float tUp_ADC, float tDown_ADC) : m_module(module), m_layer(layer), m_sector(sector), m_EUp(EUp), m_EDown(EDown), m_tUp(tUp), m_tDown(tDown), m_tUp_ADC(tUp_ADC), m_tDown_ADC(tDown_ADC) {
+
+  int cellId = DBCALGeometry::cellId(module,layer,sector);
+
+  float fibLen = DBCALGeometry::BCALFIBERLENGTH;
+  float cEff = DBCALGeometry::C_EFFECTIVE;
+
+  // get the position with respect to the center of the module -- positive
+  // z in the downstream direction
+  m_zLocal = 0.5 * cEff * ( m_tUp - m_tDown ); 
+
+  // if it is outside the module then set it to the end of the module
+  m_zLocal = ( m_zLocal > 0.5 * fibLen ? 0.5 * fibLen : m_zLocal );
+  m_zLocal = ( m_zLocal < -0.5 * fibLen ? -0.5 * fibLen : m_zLocal );
+  
+  // set the z position relative to the center of the target -- this needs a database
+  // lookup to get the target position (set for now at 65 cm)
+  
+  m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - 65.0;
+  
+  // compute the arrival time of the energy at the cell
+  m_t = 0.5 * ( m_tUp + m_tDown - fibLen / cEff );
+  
+  // now compute attentuation factors for each end based on distance
+  // the light must travel
+  
+  float dUp = 0.5 * fibLen + m_zLocal;
+  float dDown = 0.5 * fibLen - m_zLocal;
+
+  float attUp = exp( -dUp / DBCALGeometry::ATTEN_LENGTH );
+  float attDown = exp( -dDown / DBCALGeometry::ATTEN_LENGTH );
+ 
+  // use these to correct the energy
+  // should we give the higher energy hit a bigger weight in this average?
+  m_E =  ( m_EUp / attUp + m_EDown / attDown ) / 2;
+
+  m_r = DBCALGeometry::r( cellId );
+  //for a uniform distribution of width a, the RMS is a/sqrt(12)
+  m_sig_r = DBCALGeometry::rSize( cellId )/sqrt(12.0);
+  
+  m_phi = DBCALGeometry::phi( cellId );
+  m_sig_phi = DBCALGeometry::phiSize( cellId )/sqrt(12.0);
+
+  //make a rough guess of sigma_z for now
+
+  //if we don't have TDC info then tUp_ADC is equal tUp
+  if (fabs(tUp_ADC-tUp)<1e-4 || fabs(tDown_ADC-tDown)<1e-4) {
+    //If we don't have TDC info at both ends then timing is less precise.
+    //A reasonable value might be 4 ns/sqrt(12)/sqrt(2)*c_eff=14 cm
+    //Although the ADC timing resolution will actually be better than
+    //4 ns/sqrt(12) due to FPGA algorithm.
+    //For now just set the value as large as needed.
+
+    m_sig_z = 30.0;
+  } else {
+    //We haveTDC hits at both ends, timing is more precise
+    //Set z resolution to 1.1 cm/sqrt(E) as in NIM paper
+
+    m_sig_z = 1.1 / sqrt(m_E);
+  }
+
+  // recast in terms of spherical coordinates
+  convertCylindricalToSpherical();
+}
+
 DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
 {
   
@@ -45,13 +110,13 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   // in relality, here we would need to calibrate the time on a channel
   // by channel bases (calib. DB lookup)
   
-  float tUp = upHit.t;
-  float tDown = downHit.t;
+  m_tUp_ADC = m_tUp = upHit.t;
+  m_tDown_ADC = m_tDown = downHit.t;
   
   // get the position with respect to the center of the module -- positive
   // z in the downstream direction
   
-  m_zLocal = 0.5 * cEff * ( tUp - tDown ); 
+  m_zLocal = 0.5 * cEff * ( m_tUp - m_tDown ); 
 
   // if it is outside the module then set it to the end of the module
   m_zLocal = ( m_zLocal > 0.5 * fibLen ? 0.5 * fibLen : m_zLocal );
@@ -63,7 +128,7 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - 65.0;
   
   // compute the arrival time of the energy at the cell
-  m_t = 0.5 * ( tUp + tDown - fibLen / cEff );
+  m_t = 0.5 * ( m_tUp + m_tDown - fibLen / cEff );
   
   // now compute attentuation factors for each end based on distance
   // the light must travel
@@ -74,18 +139,11 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   float attUp = exp( -dUp / DBCALGeometry::ATTEN_LENGTH );
   float attDown = exp( -dDown / DBCALGeometry::ATTEN_LENGTH );
  
+  m_EUp = upHit.E;
+  m_EDown = downHit.E;
+
   // use these to correct the energy
   m_E =  ( upHit.E / attUp + downHit.E / attDown ) / 2;
-  
-  // The "E"s from the DBCALHit objects are in units of fADC counts.
-  // a calibration constant needs to be applied here to get it
-  // (at least approximately) into GeV. For now, apply an empirical
-  // factor.
-  //
-  // Temporarily disable this until time spectrum method is used as
-  // default again.  2012/10/10  D.L.
-  //float fADC_counts_per_GeV = 14000.0;
-  //m_E /= fADC_counts_per_GeV;
   
   m_r = DBCALGeometry::r( cellId );
   //for a uniform distribution of width a, the RMS is a/sqrt(12)
