@@ -57,6 +57,10 @@ class DParticleCombo : public JObject
 		//get all of the measured particles included in the decaychain starting at locStepIndex
 		void Get_DecayChainParticles_Measured(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const;
 
+		// GET FINAL PARTICLE SOURCE OBJECTS - BY TRAIT:
+		void Get_DetectedFinalChargedParticles_SourceObjects(deque<const DChargedTrack*>& locSourceChargedTracks) const;
+		void Get_DetectedFinalNeutralParticles_SourceObjects(deque<const DNeutralShower*>& locSourceNeutralShowers) const;
+
 		// GET DECAY CHAIN PARTICLE NAMES:
 		string Get_DecayChainFinalParticlesROOTName(size_t locStepIndex, bool locKinFitResultsFlag = false) const;
 		string Get_DecayChainFinalParticlesROOTName(size_t locStepIndex, deque<string>& locParticleNames, bool locKinFitResultsFlag = false) const;

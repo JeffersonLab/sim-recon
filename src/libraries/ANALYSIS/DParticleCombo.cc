@@ -552,4 +552,42 @@ void DParticleCombo::Get_DecayChainParticles_Measured_Recursive(int locStepIndex
 	}
 }
 
+void DParticleCombo::Get_DetectedFinalChargedParticles_SourceObjects(deque<const DChargedTrack*>& locSourceChargedTracks) const
+{
+	locSourceChargedTracks.clear();
+	for(size_t loc_i = 0; loc_i < Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboBlueprintStep* locParticleComboBlueprintStep = Get_ParticleComboStep(loc_i)->Get_ParticleComboBlueprintStep();
+		for(size_t loc_j = 0; loc_j < locParticleComboBlueprintStep->Get_NumFinalParticleSourceObjects(); ++loc_j)
+		{
+			const JObject* locJObject = locParticleComboBlueprintStep->Get_FinalParticle_SourceObject(loc_j);
+			if(locJObject == NULL)
+				continue;
+			const DChargedTrack* locChargedTrack = dynamic_cast<const DChargedTrack*>(locJObject);
+			if(locChargedTrack == NULL)
+				continue;
+			locSourceChargedTracks.push_back(locChargedTrack);
+		}
+	}
+}
+
+void DParticleCombo::Get_DetectedFinalNeutralParticles_SourceObjects(deque<const DNeutralShower*>& locSourceNeutralShowers) const
+{
+	locSourceNeutralShowers.clear();
+	for(size_t loc_i = 0; loc_i < Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboBlueprintStep* locParticleComboBlueprintStep = Get_ParticleComboStep(loc_i)->Get_ParticleComboBlueprintStep();
+		for(size_t loc_j = 0; loc_j < locParticleComboBlueprintStep->Get_NumFinalParticleSourceObjects(); ++loc_j)
+		{
+			const JObject* locJObject = locParticleComboBlueprintStep->Get_FinalParticle_SourceObject(loc_j);
+			if(locJObject == NULL)
+				continue;
+			const DNeutralShower* locNeutralShower = dynamic_cast<const DNeutralShower*>(locJObject);
+			if(locNeutralShower == NULL)
+				continue;
+			locSourceNeutralShowers.push_back(locNeutralShower);
+		}
+	}
+}
+
 

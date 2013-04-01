@@ -17,6 +17,59 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 		locGeometry->GetTargetZ(dTargetZCenter);
 }
 
+void DAnalysisUtilities::Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const
+{
+	locUnusedChargedTracks.clear();
+	locEventLoop->Get(locUnusedChargedTracks);
+
+	deque<const DChargedTrack*> locSourceChargedTracks;
+	locParticleCombo->Get_DetectedFinalChargedParticles_SourceObjects(locSourceChargedTracks);
+	vector<const DChargedTrack*>::iterator locIterator;
+	for(locIterator = locUnusedChargedTracks.begin(); locIterator != locUnusedChargedTracks.end();)
+	{
+		bool locMatchFlag = false;
+		for(size_t loc_i = 0; loc_i < locSourceChargedTracks.size(); ++loc_i)
+		{
+			if(locSourceChargedTracks[loc_i] == *locIterator)
+			{
+				//used (not-unused)
+				locIterator = locUnusedChargedTracks.erase(locIterator);
+				locMatchFlag = true;
+				break;
+			}
+		}
+		if(!locMatchFlag)
+			++locIterator;
+	}
+}
+
+void DAnalysisUtilities::Get_UnusedNeutralShowers(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DNeutralShower*>& locUnusedNeutralShowers) const
+{
+	locUnusedNeutralShowers.clear();
+	locEventLoop->Get(locUnusedNeutralShowers);
+
+	deque<const DNeutralShower*> locSourceNeutralShowers;
+	locParticleCombo->Get_DetectedFinalNeutralParticles_SourceObjects(locSourceNeutralShowers);
+
+	vector<const DNeutralShower*>::iterator locIterator;
+	for(locIterator = locUnusedNeutralShowers.begin(); locIterator != locUnusedNeutralShowers.end();)
+	{
+		bool locMatchFlag = false;
+		for(size_t loc_i = 0; loc_i < locSourceNeutralShowers.size(); ++loc_i)
+		{
+			if(locSourceNeutralShowers[loc_i] == *locIterator)
+			{
+				//used (not-unused)
+				locIterator = locUnusedNeutralShowers.erase(locIterator);
+				locMatchFlag = true;
+				break;
+			}
+		}
+		if(!locMatchFlag)
+			++locIterator;
+	}
+}
+
 void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque<pair<const DMCThrown*, deque<const DMCThrown*> > >& locThrownSteps) const
 {
  	vector<const DMCThrown*> locMCThrowns;
