@@ -25,7 +25,7 @@ using std::string;
 #include "DFactoryGenerator.h"
 
 #include "DANARootErrorHandler.h"
-//#include <DCalibrationGeneratorCCDB.h>
+#include <DCalibrationGeneratorCCDB.h>
 
 
 //---------------------------------
@@ -59,7 +59,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	}
 	
 	//Register CCDB calibration generator
-//	AddCalibrationGenerator(new DCalibrationGeneratorCCDB());
+	AddCalibrationGenerator(new DCalibrationGeneratorCCDB());
 	
 	// Initialize pointers to NULL. Objects will be instantiated as needed
 	bfield = NULL;
