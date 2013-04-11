@@ -372,7 +372,7 @@ void recordbcalentry_(int *mech, int *itra, int*istak, int *ipart, float *vect, 
 	for(unsigned int i=0; i<BCAL_INCIDENT_PARTICLES.size(); i++){
 		
 		// Only keep photons and betas 
-		if(*ipart>3)add_to_list = false;
+		//if(*ipart>3)add_to_list = false;
 		
 		dPhi = 1000.0*mypart.dPhi(BCAL_INCIDENT_PARTICLES[i]);
 		dZ = mypart.dZ(BCAL_INCIDENT_PARTICLES[i]);
@@ -387,7 +387,7 @@ void recordbcalentry_(int *mech, int *itra, int*istak, int *ipart, float *vect, 
 			// would be for the case when a shower sprays from something
 			// like the FDC frame so many particles enter the same area
 			// but are too close together to be considered separate showers.
-			if(*ipart>3 && mypart.E>BCAL_INCIDENT_PARTICLES[i].E){
+			if(mypart.E>BCAL_INCIDENT_PARTICLES[i].E){
 				BCAL_INCIDENT_PARTICLES[i] = mypart;
 			}
 		}

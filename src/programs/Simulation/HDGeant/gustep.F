@@ -328,6 +328,9 @@ c
       integer mechanism
       equivalence(chcase,mechanism)
 
+      integer enterbcal
+      save enterbcal
+
 #ifdef BACKGROUND_PROFILING
 ********************************************************************************
 *   The following defines an ntuple containing information on particle type  
@@ -475,8 +478,17 @@ c               print *," KCASE: ",chcase,"  ",NGKINE,"  ",IPART
 *  of the outer layers will not have the proper parameters recorded.
 *  What's more, if the names of the volumes change, then this will
 *  break!      7/5/2012  DL
-      if ((cnames(NLEVEL)(1:3).eq.'BM0') .and. INWVOL.eq.1 ) then
+*  change this to enterting BM00 from 
+
+      if ((cnames(NLEVEL)(1:4).eq.'BCL0') .and. (INWVOL.eq.2) )  then
+         enterbcal = 1
+      endif
+
+*      if ((cnames(NLEVEL)(1:3).eq.'BM0') .and. INWVOL.eq.1 ) then
+      if ((cnames(NLEVEL)(1:4).eq.'BM01') .and. (enterbcal .eq. 1)
+     >     .and. INWVOL.eq.1 ) then
          call recordbcalentry(LMEC(NMEC),ITRA,ISTAK,IPART,VECT,GETOT)
+         enterbcal = 0
       endif
 
       
