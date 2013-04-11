@@ -42,11 +42,6 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 	size_t locNumActions;
 
 	dApplication->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
-	if(dROOTObjectsCreatedFlag) // hists created in the meantime
-	{
-		dApplication->RootUnLock(); //unlock
-		return NOERROR;
-	}
 
 	TDirectoryFile* locBaseDirectory = static_cast<TDirectoryFile*>(gDirectory->GetDirectory("/"));
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
@@ -116,9 +111,26 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 		locDirectoryFile->cd("..");
 	}
 
-	dROOTObjectsCreatedFlag = true;
-
 	dApplication->RootUnLock(); //unlock
+
+	//Initialize actions: creates any histograms/trees associated with the action
+		//if the action is never initialized (all events cut executing) then the root objects will not be created, causing problems when merging root files (especially trees)
+	deque<pair<const DParticleCombo*, bool> > locDummyCombos;
+	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+	{
+		locReaction = locReactions[loc_i];
+		locNumActions = locReaction->Get_NumAnalysisActions();
+
+		for(size_t loc_j = 0; loc_j < locNumActions; ++loc_j)
+		{
+			DAnalysisAction* locAnalysisAction = locReaction->Get_AnalysisAction(loc_j);
+			if(dDebugLevel > 0)
+				cout << "Initialize Action # " << loc_j + 1 << ": " << locAnalysisAction->Get_ActionName() << " of reaction: " << locReaction->Get_ReactionName() << endl;
+			(*locAnalysisAction)(locEventLoop, locDummyCombos); //EXECUTE!
+		}
+	}
+
+	dROOTObjectsCreatedFlag = true;
 
 	return NOERROR;
 }

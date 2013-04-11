@@ -42,11 +42,6 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 	size_t locNumActions;
 
 	dApplication->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
-	if(dROOTObjectsCreatedFlag) // hists created in the meantime
-	{
-		dApplication->RootUnLock(); //unlock
-		return NOERROR;
-	}
 
 	TDirectoryFile* locBaseDirectory = static_cast<TDirectoryFile*>(gDirectory->GetDirectory("/"));
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
@@ -103,7 +98,6 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 				loc1DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
 		}
 		dHistMap_NumCombosSurvivedAction1D[locReaction] = loc1DHist;
-
 		locDirectoryFile->cd("..");
 	}
 
@@ -247,15 +241,17 @@ jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int even
 		for(size_t loc_j = 0; loc_j < locSurvivingParticleCombos.size(); ++loc_j)
 			locAnalysisResults->Add_PassedParticleCombo(locSurvivingParticleCombos[loc_j].first);
 
-		//fill histograms
+		//fill histograms & trees
 		dApplication->RootWriteLock();
-		for(size_t loc_j = 0; loc_j < locNumParticleCombosSurvivedActions.size(); ++loc_j)
 		{
-			if(locNumParticleCombosSurvivedActions[loc_j] > 0)
-				dHistMap_NumEventsSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 2); //+2 because 0 is initial (no cuts at all), and 1 is min #tracks
-			dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1, locNumParticleCombosSurvivedActions[loc_j]); //+1 because 0 is min #tracks
-			for(size_t loc_k = 0; loc_k < locNumParticleCombosSurvivedActions[loc_j]; ++loc_k)
-				dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1); //+1 because 0 is min #tracks
+			for(size_t loc_j = 0; loc_j < locNumParticleCombosSurvivedActions.size(); ++loc_j)
+			{
+				if(locNumParticleCombosSurvivedActions[loc_j] > 0)
+					dHistMap_NumEventsSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 2); //+2 because 0 is initial (no cuts at all), and 1 is min #tracks
+				dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1, locNumParticleCombosSurvivedActions[loc_j]); //+1 because 0 is min #tracks
+				for(size_t loc_k = 0; loc_k < locNumParticleCombosSurvivedActions[loc_j]; ++loc_k)
+					dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1); //+1 because 0 is min #tracks
+			}
 		}
 		dApplication->RootUnLock();
 
