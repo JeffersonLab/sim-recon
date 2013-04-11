@@ -19,7 +19,7 @@
 
 // These come from the event source, not from any algorithm
 typedef JFactory<DBCALHit> DBCALHit_factory;
-typedef JFactory<DBCALHit> DBCALIncidentParticle_factory;
+typedef JFactory<DBCALIncidentParticle> DBCALIncidentParticle_factory;
 typedef JFactory<DBCALTDCHit> DBCALTDCHit_factory;
 typedef JFactory<DBCALSiPMHit> DBCALSiPMHit_factory;
 typedef JFactory<DBCALTruthShower> DBCALTruthShower_factory;
