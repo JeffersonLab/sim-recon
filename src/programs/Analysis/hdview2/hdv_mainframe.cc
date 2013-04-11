@@ -371,9 +371,11 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   TGGroupFrame *bcalColorCodes = new TGGroupFrame(caloColorCodes, "BCAL colors", kVerticalFrame);
   TGGroupFrame *fcalColorCodes = new TGGroupFrame(caloColorCodes, "FCAL colors", kVerticalFrame);
   TGTextButton *debuger       = new TGTextButton(caloColorCodes,"Debuger");
+  TGTextButton *bcaldisp       = new TGTextButton(caloColorCodes,"BcalDisp");
 
   caloColorCodes->AddFrame(bcalColorCodes, thints);
   caloColorCodes->AddFrame(debuger,lhints);
+  caloColorCodes->AddFrame(bcaldisp,lhints);
   caloColorCodes->AddFrame(fcalColorCodes, bhints);
   bcalColorCodes->SetWidth(30);
   fcalColorCodes->SetWidth(30);
@@ -510,6 +512,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   moreOptions->Connect("Clicked()","hdv_mainframe", this, "DoOpenOptionsWindow()");
   listall->Connect("Clicked()","hdv_mainframe", this, "DoOpenFullListWindow()");
   debuger->Connect("Clicked()","hdv_mainframe", this, "DoOpenDebugerWindow()");
+  bcaldisp->Connect("Clicked()","hdv_mainframe", this, "DoBcalDispFrame()");
   //tofinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenTOFInspector()");
   //fcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenFCALInspector()");
   //bcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenBCALInspector()");
@@ -873,8 +876,27 @@ void hdv_mainframe::DoOpenDebugerWindow(void)
 		DoUpdateTrackLabels();
 	}
 }
-
 //-------------------
+// DoOpenDebugerWindow
+//-------------------
+void hdv_mainframe::DoBcalDispFrame(void)
+{
+	if(bcaldispmf==NULL){
+		bcaldispmf = new TCanvas("BCALHitCanvas", "BCAL Hit Distribution", 1000, 600);
+		bcaldispmf->Divide(1,2);
+	}
+
+	DoUpdateBcalDisp();
+}
+//-------------------
+// DoOpenDebugerWindow
+//-------------------
+void hdv_mainframe::DoUpdateBcalDisp(void)
+{
+  gMYPROC->UpdateBcalDisp();
+
+}
+///-------------------
 // DoOpenFullListWindow
 //-------------------
 void hdv_mainframe::DoOpenFullListWindow(void)
@@ -2016,7 +2038,6 @@ bool hdv_mainframe::GetCheckButton(string who)
 	if(iter==checkbuttons.end())return false;
 	return iter->second->GetState()==kButtonDown;
 }
-
 //-------------------
 // AddCheckButtons
 //-------------------

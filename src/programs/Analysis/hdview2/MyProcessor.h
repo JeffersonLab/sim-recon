@@ -36,9 +36,11 @@ class hdv_debugerframe;
 #include <TEllipse.h>
 #include <TVector3.h>
 #include <TMarker.h>
+#include <TText.h>
 #include <TFile.h>
 #include <TH1.h>
-
+#include <TH2F.h>
+#include <TCanvas.h>
 #define MAX_HIT_MARKERS 2000
 #define MAX_LINES 100
 #define MAX_CIRCLES 100
@@ -84,7 +86,8 @@ class MyProcessor:public JEventProcessor
   vector<DGraphicSet> graphics;
   void FillGraphics(void);
   void UpdateTrackLabels(void);
-  
+  void UpdateBcalDisp(void);
+ 
   // Additional graphics that may be appropriate for only certain views
   vector<TObject*> graphics_xyA;
   vector<TObject*> graphics_xyB;
@@ -108,6 +111,13 @@ class MyProcessor:public JEventProcessor
   DRootGeom *RootGeom;
   DGeometry *geom;
   string MATERIAL_MAP_MODEL;
+
+  TCanvas *BCALHitCanvas;  
+  TH2F *BCALHitMatrixU;
+  TH2F *BCALHitMatrixD;
+  TH2F *BCALParticles;
+  vector <TText*> BCALPLables;
+  
   
   map<string, double> photon_track_matching;
   double DELTA_R_FCAL;

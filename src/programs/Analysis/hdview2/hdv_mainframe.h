@@ -72,6 +72,8 @@ class hdv_mainframe:public TGMainFrame {
 		void DoOpenFCALInspector(void);
 		void DoOpenBCALInspector(void);
 		void DoOpenDebugerWindow(void);
+		void DoBcalDispFrame(void);
+		void DoUpdateBcalDisp(void);
 
 		void DoClearTrackInspectorPointer(void);
 		void DoClearOptionsWindowPointer(void);
@@ -110,6 +112,7 @@ class hdv_mainframe:public TGMainFrame {
 		bool GetDrawTrajectories(void){return draw_trajectories;}
 		hdv_fulllistframe* GetFullListFrame(void){return fulllistmf;}
 		hdv_debugerframe* GetDebugerFrame(void){return debugermf;}
+		TCanvas* GetBcalDispFrame(void){return bcaldispmf;}
 		map<string, vector<TGLabel*> >& GetThrownLabels(void){return thrownlabs;}
 		map<string, vector<TGLabel*> >& GetReconstructedLabels(void){return reconlabs;}
 		
@@ -119,6 +122,7 @@ class hdv_mainframe:public TGMainFrame {
 		void SetReconstructedFactories(vector<string> &facnames);
 		void SetChargedTrackFactories(vector<string> &facnames);
 		void SetDebugerFrame(hdv_debugerframe* d){debugermf = d;}
+		void SetBcalDispFrame(TCanvas* d){bcaldispmf = d;}
 		void SetFullListFrame(hdv_fulllistframe* d){fulllistmf = d;}
 
 		bool GetCheckButton(string who);
@@ -140,6 +144,7 @@ class hdv_mainframe:public TGMainFrame {
 		trk_mainframe *trkmf;
 		hdv_optionsframe *optionsmf;
 		hdv_debugerframe *debugermf;
+		TCanvas *bcaldispmf;
 		hdv_fulllistframe *fulllistmf;
 		hdv_endviewBframe *endviewBmf;
 	

@@ -49,6 +49,7 @@ using namespace std;
 #include "PID/DNeutralShower.h"
 #include "PID/DTwoGammaFit.h"
 #include "BCAL/DBCALHit.h"
+#include "BCAL/DBCALIncidentParticle.h"
 #include "DVector2.h"
 
 extern hdv_mainframe *hdvmf;
@@ -121,6 +122,19 @@ jerror_t MyProcessor::init(void)
 		hdvmf->SetChargedTrackFactories(facnames);
 		fulllistmf = hdvmf->GetFullListFrame();
 		debugermf = hdvmf->GetDebugerFrame();
+		BCALHitCanvas = hdvmf->GetBcalDispFrame();
+
+		if (BCALHitCanvas){
+		  BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream",  48*4+2, -1.5, 192.5, 10, 0., 10.);
+		  BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream",48*4+2, -1.5, 192.5, 10, 0., 10.);
+		  BCALParticles = new TH2F("BCALParticles","BCAL Hits Downstream",(48*4+2)*4, -1.87, 361.87, 1, 0., 1.);
+		  BCALHitMatrixU->SetStats(0);
+		  BCALHitMatrixD->SetStats(0);
+		  BCALParticles->SetStats(0);
+		  BCALHitMatrixU->GetXaxis()->SetTitle("Sector number");
+		  BCALHitMatrixD->GetXaxis()->SetTitle("Sector number");
+		  BCALParticles->GetXaxis()->SetTitle("Phi angle [deg]");
+		}
 	}
 	
 	return NOERROR;
@@ -204,6 +218,103 @@ void MyProcessor::FillGraphics(void)
 	p->SetNTrCand(trCand.size());
 	p->SetNTrWireBased(trWB.size());
 	p->SetNTrTimeBased(trTB.size());
+
+	if (BCALHitCanvas) {
+	  vector<const DBCALHit*> locBcalHits;
+	  loop->Get(locBcalHits);
+	  BCALHitMatrixU->Reset();
+	  BCALHitMatrixD->Reset();
+	  for (unsigned int k=0;k<locBcalHits.size();k++){
+	    
+	    const DBCALHit* hit = locBcalHits[k];
+	    float idxY = (float)hit->layer-1;
+	    float idxX = (float) (hit->sector-1 + (hit->module-1)*4);
+	    if (hit->end == DBCALGeometry::kUpstream){
+	      if (hit->layer==1){
+		BCALHitMatrixU->Fill(idxX,idxY,hit->E);
+	      } else if (hit->layer==2){
+		BCALHitMatrixU->Fill(idxX,idxY,hit->E);	      
+		BCALHitMatrixU->Fill(idxX,idxY+1.,hit->E);	      
+	      } else if (hit->layer==3){
+		BCALHitMatrixU->Fill(idxX,idxY+1,hit->E);	      
+		BCALHitMatrixU->Fill(idxX,idxY+2.,hit->E);	      
+		BCALHitMatrixU->Fill(idxX,idxY+3.,hit->E);	      
+	      } else if (hit->layer==4){
+		BCALHitMatrixU->Fill(idxX,idxY+3,hit->E);	      
+		BCALHitMatrixU->Fill(idxX,idxY+4.,hit->E);	      
+		BCALHitMatrixU->Fill(idxX,idxY+5.,hit->E);	      
+		BCALHitMatrixU->Fill(idxX,idxY+6.,hit->E);	      
+	      }
+	    } else {
+	      if (hit->layer==1){
+		BCALHitMatrixD->Fill(idxX,idxY,hit->E);
+	      } else if (hit->layer==2){
+		BCALHitMatrixD->Fill(idxX,idxY,hit->E);	      
+		BCALHitMatrixD->Fill(idxX,idxY+1.,hit->E);	      
+	      } else if (hit->layer==3){
+		BCALHitMatrixD->Fill(idxX,idxY+1,hit->E);	      
+		BCALHitMatrixD->Fill(idxX,idxY+2.,hit->E);	      
+		BCALHitMatrixD->Fill(idxX,idxY+3.,hit->E);	      
+	      } else if (hit->layer==4){
+		BCALHitMatrixD->Fill(idxX,idxY+3,hit->E);	      
+		BCALHitMatrixD->Fill(idxX,idxY+4.,hit->E);	      
+		BCALHitMatrixD->Fill(idxX,idxY+5.,hit->E);	      
+		BCALHitMatrixD->Fill(idxX,idxY+6.,hit->E);	      
+	      }
+	    }
+	  }
+
+	  vector<const DBCALIncidentParticle*> locBcalParticles;
+	  loop->Get(locBcalParticles);
+	  BCALParticles->Reset();
+	  BCALPLables.clear();
+	  for (unsigned int k=0;k<locBcalParticles.size();k++){	    
+	    const DBCALIncidentParticle* part = locBcalParticles[k];
+	    
+	    float p = TMath::Sqrt(part->px*part->px +  part->py*part->py +  part->pz*part->pz);
+	    float phi=999;
+	    if (part->x!=0){
+	      phi = TMath::ATan(TMath::Abs(part->y/part->x));
+	      //cout<<phi<<"   "<<part->y<<" / "<< part->x<<endl;
+	      if (part->y>0){
+		if (part->x<0.){
+		  phi = 3.1415926 - phi;
+		}
+	      } else {
+		if (part->x<0){
+		  phi += 3.1415926;
+		} else {
+		  phi = 3.1415926*2. - phi;
+		}
+	      }
+	      
+	      phi = phi*180./3.1415926;
+	    }
+	    //cout<<phi<<"  "<<p<<endl;
+	    BCALParticles->Fill(phi,0.5,p);
+	    char l[20];
+	    sprintf(l,"%d",part->ptype);
+	    TText *t = new TText(phi,1.01,l);
+	    t->SetTextSize(0.08);
+	    t->SetTextFont(72);
+	    t->SetTextAlign(21);
+	    BCALPLables.push_back(t);
+	  }
+ 	   
+	  BCALHitCanvas->Clear();
+	  BCALHitCanvas->Divide(1,3);
+	  BCALHitCanvas->cd(1);
+	  BCALHitMatrixU->Draw("colz");
+	  BCALHitCanvas->cd(2);
+	  BCALHitMatrixD->Draw("colz");
+	  BCALHitCanvas->cd(3);
+	  BCALParticles->Draw("colz");
+	  for (unsigned int n=0;n<BCALPLables.size();n++){
+	    BCALPLables[n]->Draw("same");
+	  }
+	  BCALHitCanvas->Update();
+	}
+	
 	
 	// BCAL hits
 	if(hdvmf->GetCheckButton("bcal")){
@@ -1042,7 +1153,119 @@ void MyProcessor::FillGraphics(void)
 		}
 	}
 }
+void MyProcessor::UpdateBcalDisp(void)
+{
+  BCALHitCanvas = hdvmf->GetBcalDispFrame();
+  BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream",  48*4+2, -1.5, 192.5, 10, 0., 10.);
+  BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream",48*4+2, -1.5, 192.5, 10, 0., 10.);
+  BCALParticles = new TH2F("BCALParticles","BCAL Hits Downstream",(48*4+2)*4, -1.87, 361.87, 1, 0., 1.);
+  BCALHitMatrixU->SetStats(0);
+  BCALHitMatrixD->SetStats(0);
+  BCALParticles->SetStats(0);
+  BCALHitMatrixU->GetXaxis()->SetTitle("Sector number");
+  BCALHitMatrixD->GetXaxis()->SetTitle("Sector number");
+  BCALParticles->GetXaxis()->SetTitle("Phi angle [deg]");
 
+
+  if (BCALHitCanvas) {
+    vector<const DBCALHit*> locBcalHits;
+    loop->Get(locBcalHits);
+    BCALHitMatrixU->Reset();
+    BCALHitMatrixD->Reset();
+    for (unsigned int k=0;k<locBcalHits.size();k++){
+      
+      const DBCALHit* hit = locBcalHits[k];
+      float idxY = (float)hit->layer-1;
+      float idxX = (float) (hit->sector-1 + (hit->module-1)*4);
+      if (hit->end == DBCALGeometry::kUpstream){
+	if (hit->layer==1){
+	  BCALHitMatrixU->Fill(idxX,idxY,hit->E);
+	} else if (hit->layer==2){
+	  BCALHitMatrixU->Fill(idxX,idxY,hit->E);	      
+	  BCALHitMatrixU->Fill(idxX,idxY+1.,hit->E);	      
+	} else if (hit->layer==3){
+	  BCALHitMatrixU->Fill(idxX,idxY+1,hit->E);	      
+	  BCALHitMatrixU->Fill(idxX,idxY+2.,hit->E);	      
+	  BCALHitMatrixU->Fill(idxX,idxY+3.,hit->E);	      
+	} else if (hit->layer==4){
+	  BCALHitMatrixU->Fill(idxX,idxY+3,hit->E);	      
+	  BCALHitMatrixU->Fill(idxX,idxY+4.,hit->E);	      
+	  BCALHitMatrixU->Fill(idxX,idxY+5.,hit->E);	      
+	  BCALHitMatrixU->Fill(idxX,idxY+6.,hit->E);	      
+	}
+      } else {
+	if (hit->layer==1){
+	  BCALHitMatrixD->Fill(idxX,idxY,hit->E);
+	} else if (hit->layer==2){
+	  BCALHitMatrixD->Fill(idxX,idxY,hit->E);	      
+	  BCALHitMatrixD->Fill(idxX,idxY+1.,hit->E);	      
+	} else if (hit->layer==3){
+	  BCALHitMatrixD->Fill(idxX,idxY+1,hit->E);	      
+	  BCALHitMatrixD->Fill(idxX,idxY+2.,hit->E);	      
+	  BCALHitMatrixD->Fill(idxX,idxY+3.,hit->E);	      
+	} else if (hit->layer==4){
+	  BCALHitMatrixD->Fill(idxX,idxY+3,hit->E);	      
+	  BCALHitMatrixD->Fill(idxX,idxY+4.,hit->E);	      
+	  BCALHitMatrixD->Fill(idxX,idxY+5.,hit->E);	      
+	  BCALHitMatrixD->Fill(idxX,idxY+6.,hit->E);	      
+	}
+      }
+    }
+
+    vector<const DBCALIncidentParticle*> locBcalParticles;
+    loop->Get(locBcalParticles);
+    BCALParticles->Reset();
+    BCALPLables.clear();
+    for (unsigned int k=0;k<locBcalParticles.size();k++){
+      
+      const DBCALIncidentParticle* part = locBcalParticles[k];
+
+      float p = TMath::Sqrt(part->px*part->px +  part->py*part->py +  part->pz*part->pz);
+
+	    float phi=999;
+	    if (part->x!=0){
+	      phi = TMath::ATan(TMath::Abs(part->y/part->x));
+	      //cout<<phi<<"   "<<part->y<<" / "<< part->x<<endl;
+	      if (part->y>0){
+		if (part->x<0.){
+		  phi = 3.1415926 - phi;
+		}
+	      } else {
+		if (part->x<0){
+		  phi += 3.1415926;
+		} else {
+		  phi = 3.1415926*2. - phi;
+		}
+	      }
+	      
+	      phi = phi*180./3.1415926;
+	    }
+      BCALParticles->Fill(phi,0.5,p);
+      char l[20];
+      sprintf(l,"%d",part->ptype);
+      TText *t = new TText(phi,1.01,l);
+      t->SetTextSize(0.08);
+      t->SetTextFont(72);
+      t->SetTextAlign(21);
+      BCALPLables.push_back(t);
+    }
+    
+    
+    BCALHitCanvas->Clear();
+    BCALHitCanvas->Divide(1,3);
+    BCALHitCanvas->cd(1);
+    BCALHitMatrixU->Draw("colz");
+    BCALHitCanvas->cd(2);
+    BCALHitMatrixD->Draw("colz");
+    BCALHitCanvas->cd(3);
+    BCALParticles->Draw("colz");
+    for (unsigned int n=0;n<BCALPLables.size();n++){
+      BCALPLables[n]->Draw("same");
+    }
+    BCALHitCanvas->Update();
+  }
+  
+}
 //------------------------------------------------------------------
 // UpdateTrackLabels 
 //------------------------------------------------------------------
