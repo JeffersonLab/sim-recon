@@ -228,6 +228,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	
 	if(dataClassName =="DBCALHit" && tag=="")
 	  return Extract_DBCALHit(my_hddm_s, dynamic_cast<JFactory<DBCALHit>*>(factory));
+
+	if(dataClassName =="DBCALIncidentParticle" && tag=="")
+	  return Extract_DBCALIncidentParticle(my_hddm_s, dynamic_cast<JFactory<DBCALIncidentParticle>*>(factory));
 	
 	if(dataClassName =="DBCALTDCHit" && tag=="")
 	  return Extract_DBCALTDCHit(my_hddm_s, dynamic_cast<JFactory<DBCALTDCHit>*>(factory));
@@ -810,6 +813,54 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 	factory->CopyTo(data);
 
 	return NOERROR;
+}
+//------------------
+// Extract_DBCALIncidentParticle
+//------------------
+jerror_t DEventSourceHDDM::Extract_DBCALIncidentParticle(s_HDDM_t *hddm_s, JFactory<DBCALIncidentParticle> *factory)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+  
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+  
+  vector<DBCALIncidentParticle*> data;
+  
+  // Loop over Physics Events
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+  
+  for(unsigned int i=0; i<PE->mult; i++){
+    s_HitView_t *hits = PE->in[i].hitView;
+    if (hits == HDDM_NULL ||
+	hits->barrelEMcal == HDDM_NULL ||
+	hits->barrelEMcal->bcalIncidentParticles == HDDM_NULL)continue;
+    
+    // Loop over BCAL cells
+    s_BcalIncidentParticles_t* particles = hits->barrelEMcal->bcalIncidentParticles;
+    for(unsigned int j=0;j<particles->mult;j++){
+      s_BcalIncidentParticle_t *particle = &particles->in[j];
+      if(particle != HDDM_NULL){
+	
+	DBCALIncidentParticle *part = new DBCALIncidentParticle;
+	part->ptype = particle->ptype;
+	part->px = particle->px;
+	part->py = particle->py;
+	part->pz = particle->pz;
+	part->x = particle->x;
+	part->y = particle->y;
+	part->z = particle->z;
+	
+	data.push_back(part);
+      }
+    }
+    
+  }
+  
+  factory->CopyTo(data);
+  
+  return NOERROR;
 }
 
 //------------------
