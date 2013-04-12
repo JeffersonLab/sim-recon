@@ -13,10 +13,9 @@ static const char sccsid_particleTypeH[] = "@(#)particleType.h\t5.3\tCreated 8/2
 
 typedef enum {
 
-  /*
-   * These constants are defined to be
-   * same as GEANT. see http://wwwcn.cern.ch/asdoc/geant/H2GEANTCONS300.html
-   * for more details.
+  /* An extensive list of the GEANT3 particle
+   * codes can be found here:
+   * http://wwwasdoc.web.cern.ch/wwwasdoc/geant/node72.html
   */
 
   Unknown        =  0,
@@ -52,41 +51,50 @@ typedef enum {
   AntiXi0        = 30,
   AntiXiPlus     = 31,
   AntiOmegaPlus  = 32,
-  Geantino       = 48,
-
-  /* the constants defined by GEANT end here */
-
-  /* These are CLAS(?)-defined constants */
-
   Deuteron       = 45,
   Helium         = 47,
+  Geantino       = 48,
   Triton         = 49,
+  
+  Pb208          = 111,
+
+  /* the constants defined by GEANT end here */
+  
+  /*
+   * Several particle codes are added below which did
+   * not overlap with the original GEANT particle list.
+   * However, the link above has several other particle
+   * codes added which do actually overlap. Because of 
+   * this, each of the values below was increased by
+   * 100 so that they don't overlap with any of the new
+   * codes and they can be used.
+  */
+  
 
   /* These are E852-defined constants */
-
-  Rho0           = 57,
-  RhoPlus        = 58,
-  RhoMinus       = 59,
-  omega          = 60,
-  EtaPrime       = 61,
-  phiMeson       = 62,
-  a0_980	 = 63,
-  f0_980	 = 64,
+  Rho0           = 157,
+  RhoPlus        = 158,
+  RhoMinus       = 159,
+  omega          = 160,
+  EtaPrime       = 161,
+  phiMeson       = 162,
+  a0_980	 = 163,
+  f0_980	 = 164,
 
   /* These are GlueX-defined constants */
 
-  KStar_892_0 = 65,
-  KStar_892_Plus = 66,
-  KStar_892_Minus = 67,
-  AntiKStar_892_0 = 68,
+  KStar_892_0 = 165,
+  KStar_892_Plus = 166,
+  KStar_892_Minus = 167,
+  AntiKStar_892_0 = 168,
 
-  K1_1400_Plus = 69,
-  K1_1400_Minus = 70,
+  K1_1400_Plus = 169,
+  K1_1400_Minus = 170,
 
-  b1_1235_Plus = 71,
-  Sigma_1385_Minus = 72,
-  Sigma_1385_0 = 73,
-  Sigma_1385_Plus = 74
+  b1_1235_Plus = 171,
+  Sigma_1385_Minus = 172,
+  Sigma_1385_0 = 173,
+  Sigma_1385_Plus = 174
 
 } Particle_t;
 
@@ -203,6 +211,8 @@ inline static char* ParticleType(Particle_t p)
     return (char*)"Helium";
   case Triton:
     return (char*)"Triton";
+  case Pb208:
+    return (char*)"Pb208";
   default:
     return (char*)"Unknown";
   }
@@ -249,6 +259,7 @@ inline static unsigned short int IsFixedMass(Particle_t p)
   case Deuteron:	return 1;
   case Helium:		return 1;
   case Triton:	return 1;
+  case Pb208:	return 1;
   default: return 0;
   }
 }
@@ -393,6 +404,8 @@ inline static char* ParticleName_ROOT(Particle_t p)
     return (char*)"#it{He}";
   case Triton:
     return (char*)"#it{T}";
+  case Pb208:
+    return (char*)"#it{Pb^{208}}";
   case Sigma_1385_Minus:
     return (char*)"#it{#Sigma}(1385)^{-}";
   case Sigma_1385_0:
@@ -463,6 +476,7 @@ inline static double ParticleMass(Particle_t p)
   case Deuteron:	return 1.875613;
   case Helium:		return 3.276372;
   case Triton:	return 2.807904;
+  case Pb208:	return 193.72817;
   case Sigma_1385_Minus:	return 1.3872;
   case Sigma_1385_0:		return 1.38370;
   case Sigma_1385_Plus:	return 1.38280;
@@ -526,8 +540,9 @@ inline static int ParticleCharge(Particle_t p)
   case K1_1400_Minus: return -1;
   case b1_1235_Plus: return 1;
   case Deuteron:	return 1;
-  case Helium:		return 1;
+  case Helium:		return 2;
   case Triton:	return 1;
+  case Pb208:	return 82;
   case Sigma_1385_Minus:	return -1;
   case Sigma_1385_0:		return 0;
   case Sigma_1385_Plus:	return 1;
@@ -592,6 +607,7 @@ inline static int PDGtype(Particle_t p)
   case Sigma_1385_Minus:	return 3114;
   case Sigma_1385_0:		return 3214;
   case Sigma_1385_Plus:	return 3224;
+  case Pb208: return 1000822080; // see note 14 in PDG (pg. 416 of 2012 full listing)
   default:		return  0;
   }
 }
