@@ -54,7 +54,7 @@ typedef struct{
   DMatrix2x2 R;
   DMatrix4x2 H_T;
   DMatrix2x4 H;
-  double doca;
+  double doca,t;
   double drift,drift_time;
 }update_t;
 
@@ -66,7 +66,7 @@ typedef struct{
   DMatrix1x4 H;
   double ures,vres;
   double R;
-  double drift,drift_time;
+  double drift,drift_time,t;
 }strip_update_t;
 
 
@@ -131,7 +131,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		     double &var_y,double &cov_y_ty,
 		     double &var_ty,double &chi2y);
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
-  jerror_t KalmanFilter(double anneal_factor,DMatrix4x1 &S,DMatrix4x4 &C,
+  jerror_t KalmanFilterCathodesOnly(double anneal_factor,DMatrix4x1 &S,
+				    DMatrix4x4 &C,
 			vector<const DFDCPseudo *>&hits,
 			deque<trajectory_t>&trajectory,
 			vector<strip_update_t>&updates,
@@ -167,6 +168,9 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   bool MatchOuterDetectors(vector<const DFCALShower *>&fcalshowers,
 			   vector<const DBCALShower *>&bcalshowers,
 			   const DMatrix4x1 &S);
+  jerror_t EstimateT0(vector<update_t>&updates,
+		      vector<const DFDCPseudo*>&hits);
+  
 
   jerror_t GetProcessNoise(double dz,
 			   double chi2c_factor,
@@ -180,8 +184,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   
   pthread_mutex_t mutex;
 
-  TH1F *Hprob;
-  TH2F *Hures_vs_layer;	
+  TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch;
+  TH2F *Hures_vs_layer,*HdEdx_vs_beta;	
   TH2F *Hdrift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
   TH2F *Hdv_vs_dE;
@@ -194,6 +198,10 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 
   double endplate_z;
   int myevt;
+
+  double mMinTime,mOuterTime,mOuterZ,mBeta;
+  unsigned int mMinTimeID;
+  
 
   // Geometry
   const DGeometry *dgeom;
