@@ -1,0 +1,766 @@
+Release Notes for sim-recon-2013-04-22
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2013-04-22
+   Date: April 22, 2013
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 10709 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.9 (i686)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.5
+  CCDB 0.07
+
+CentOS release 5.3 (Final) (x86_64)
+------------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.5
+
+Red Hat Enterprise Linux 6.3 (x86_64)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.7 20120305 (Red Hat 4.4.7-3)
+  HDDS 1.5
+
+CentOS release 6.2 (Final)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 1.5
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r10439 | pmatt | 2013-02-26 14:28:36 -0500 (Tue, 26 Feb 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+
+DReaction.*: Added locIncludeDuplicatesFlag flag.
+DHistogramActions.cc: Fixed crash in DHistogramAction_TrackVertexComparison when two particles in the same step have the same PID.
+
+
+------------------------------------------------------------------------
+r10440 | pmatt | 2013-02-26 14:41:39 -0500 (Tue, 26 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Added Deuteron, Helium, Triton, Sigma(1385)'s
+
+
+------------------------------------------------------------------------
+r10441 | staylor | 2013-02-26 17:52:23 -0500 (Tue, 26 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.h
+
+Added parameter to turn on/off matching of cdc 'hits' with truth hits, with the default set to false.
+------------------------------------------------------------------------
+r10445 | staylor | 2013-02-27 09:13:05 -0500 (Wed, 27 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.h
+
+Add config parameter to turn on/off matching of reconstructed hits with truth hits.  Off by default.
+------------------------------------------------------------------------
+r10446 | staylor | 2013-02-27 09:17:08 -0500 (Wed, 27 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+
+Fix flaw that sometimes caused segments in some packages to be dropped for events with many tracks in the forward direction.
+------------------------------------------------------------------------
+r10451 | pmatt | 2013-02-27 12:02:45 -0500 (Wed, 27 Feb 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_dump/MyProcessor.cc
+
+When checking if factory exists, check only the name and ignore the tag. 
+
+
+------------------------------------------------------------------------
+r10460 | staylor | 2013-02-28 16:31:57 -0500 (Thu, 28 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+
+In FindCentroid and FindNewParmVec, precompute some combinations of terms that get used multiple times before using them.
+------------------------------------------------------------------------
+r10461 | staylor | 2013-02-28 16:42:20 -0500 (Thu, 28 Feb 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+Replace expensive swimming from package to package when matching segments with helical calculations.
+------------------------------------------------------------------------
+r10462 | pmatt | 2013-03-01 00:27:54 -0500 (Fri, 01 Mar 2013) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_Thrown.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_Thrown.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DReaction_factory_Thrown.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DReaction_factory_Thrown.h
+
+DParticleComboBlueprint_factory.cc: when grabbing DReactions, check against tag
+DAnalysisResults_factory*.cc: when grabbing DReactions, check against tag
+DHistogramActions.*: Added tree holding thrown & detected track topologies to Track Multiplicity action.
+DReactionStep.*: Added Reset Method
+DReaction_factory_Thrown.*: New
+DParticleCombo_factory_Thrown.*: New
+DAnalysisUtilities: Added thrown steps method
+ANALYSIS_init.cc Added new factories
+DReaction.cc: Initialized kinfit type in constructor.
+DMCThrownMatching_factory.cc: Check to make sure parent particle was written out before treating it as a valid particle to compare against.
+
+
+------------------------------------------------------------------------
+r10465 | davidl | 2013-03-01 15:02:55 -0500 (Fri, 01 Mar 2013) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DLorentzMapCalibDB.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DLorentzMapCalibDB.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DRootGeom.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DRootGeom.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+Modified to pass run number through various methods in order to remove
+hardwired run numbers from being used when accessing calibration
+constants. All run numbers used for calibrations should now come from
+the event source.
+
+This change includes numerous files that needed to be tweaked.
+
+------------------------------------------------------------------------
+r10466 | pmatt | 2013-03-01 16:57:18 -0500 (Fri, 01 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+
+TTree in track multiplicity action is now handled correctly for multiple threads. 
+
+
+------------------------------------------------------------------------
+r10467 | staylor | 2013-03-01 18:03:04 -0500 (Fri, 01 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.cc
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.h
+
+Plug memory leak arising due to creation of table of cdc wire data that only manifests itself when the run number changes.
+------------------------------------------------------------------------
+r10468 | staylor | 2013-03-01 18:03:37 -0500 (Fri, 01 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.h
+
+Plug memory leak arising due to creation of table of fdc wire data that only manifests itself when the run number changes.
+------------------------------------------------------------------------
+r10469 | staylor | 2013-03-01 18:05:46 -0500 (Fri, 01 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+
+GetRootGeom needs runnumber argument now
+------------------------------------------------------------------------
+r10470 | pmatt | 2013-03-03 19:36:56 -0500 (Sun, 03 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Return char arrays directly in "name" functions instead of using non-multithreading-safe static arrays. 
+
+
+------------------------------------------------------------------------
+r10471 | pmatt | 2013-03-03 19:38:12 -0500 (Sun, 03 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+
+Change how TTree branch string is set to be thread-safe in track multiplicity action. 
+
+
+------------------------------------------------------------------------
+r10472 | pmatt | 2013-03-03 20:18:41 -0500 (Sun, 03 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_root/MyProcessor.cc
+
+Close and delete ROOT file so that the objects are saved successfully and the keys aren't corrupt. 
+
+
+------------------------------------------------------------------------
+r10475 | staylor | 2013-03-04 17:12:40 -0500 (Mon, 04 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CDC/DCDCTrackHit_factory.cc
+
+Comment out annoying printout
+------------------------------------------------------------------------
+r10476 | staylor | 2013-03-04 17:21:13 -0500 (Mon, 04 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+
+For candidates with hits in only the first axial layer that have hits in the first two stereo layers where there is a transition from positive to negative stereo angles, use the place where the transition occurs to try to improve the circle fit.  In the theta-z regression fit, take into account uncertainties in both z and s.  Add routine to check for charge consistency.  Add routine for getting the stereo position.
+------------------------------------------------------------------------
+r10477 | staylor | 2013-03-04 18:27:41 -0500 (Mon, 04 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+Replace slow swimming through the field to match cdc and fdc tracks with much faster ProjectHelixToZ routine, which uses a helical approximation to the trajectory.  Add routine to encapsulate helical refitting.  Try to redo line fits for matched candidates and update the z position near the target (actually just outside the start counter) if the fit line fit succeeds.  Loosen momentum-dependent matching criteria.
+------------------------------------------------------------------------
+r10482 | pmatt | 2013-03-05 14:02:44 -0500 (Tue, 05 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+
+Added delta-t vs p plots for particles against the beam photon in the track vertex comparison action. 
+
+
+------------------------------------------------------------------------
+r10483 | pmatt | 2013-03-05 15:20:13 -0500 (Tue, 05 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+
+Was plotting wrong momentum in beam delta-t hists. 
+
+
+------------------------------------------------------------------------
+r10484 | pmatt | 2013-03-05 16:24:52 -0500 (Tue, 05 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+
+Don't initialize (create histograms) for ThrownParticleKinematics or GenReconTrackComparison unless there's at least one DMCThrown in the event. 
+
+
+------------------------------------------------------------------------
+r10485 | pmatt | 2013-03-05 23:03:44 -0500 (Tue, 05 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis.h
+
+Increase precision of chi^2's and FOM's from float to double. 
+
+
+------------------------------------------------------------------------
+r10488 | pmatt | 2013-03-06 19:47:42 -0500 (Wed, 06 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.h
+
+Remove DKinFit.h
+
+
+------------------------------------------------------------------------
+r10489 | pmatt | 2013-03-06 19:53:20 -0500 (Wed, 06 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.h
+   D /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DFactoryGenerator_DReaction.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DFactoryGenerator_b1pi_hists.h
+   D /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory.cc
+   D /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.h
+
+Changed names of classes and file names so that they are unique to this plugin.  This allows this plugin to be used simultaneously with other analysis plugins. 
+
+
+------------------------------------------------------------------------
+r10490 | pmatt | 2013-03-06 19:55:18 -0500 (Wed, 06 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.h
+   D /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DFactoryGenerator_DReaction.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DFactoryGenerator_monitoring_hists.h
+   D /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory.cc
+   D /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory_monitoring_hists.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory_monitoring_hists.h
+
+Changed names of classes and file names so that they are unique to this plugin.  This allows this plugin to be used simultaneously with other analysis plugins.
+
+
+------------------------------------------------------------------------
+r10499 | davidl | 2013-03-07 08:34:40 -0500 (Thu, 07 Mar 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+Fixed issue with using NaN values for configuration parameters
+that led to different values being used by the 1st thread
+and all subsequent threads.
+
+------------------------------------------------------------------------
+r10502 | pmatt | 2013-03-07 19:26:24 -0500 (Thu, 07 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+
+Fixed bug where variables weren't initialized properly in init() method. 
+
+
+------------------------------------------------------------------------
+r10503 | pmatt | 2013-03-07 22:13:38 -0500 (Thu, 07 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+
+Reaction-independent function-call operator now returns bool: whether the action passed or failed. 
+
+
+------------------------------------------------------------------------
+r10506 | wilevine | 2013-03-08 18:02:11 -0500 (Fri, 08 Mar 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+In mcsmear, do not write out TDC hits for the outermost BCAL layer, which is not equipped with TDCs.
+
+This only affects the new (not-yet-default) BCAL smearing scheme.
+
+------------------------------------------------------------------------
+r10507 | pmatt | 2013-03-09 14:52:06 -0500 (Sat, 09 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+
+Place minimum PID FOM cut for determining PID for histograms in DHistogramAction_DetectedParticleKinematics (default 0.00001) for use when there is no matching DMCThrown. 
+
+
+------------------------------------------------------------------------
+r10510 | pmatt | 2013-03-11 14:54:40 -0400 (Mon, 11 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_root/MyProcessor.cc
+
+Moved closure of ROOT file to the destructor, as the fini methods of the plugins were called after that of the processor.  
+
+
+------------------------------------------------------------------------
+r10517 | marki | 2013-03-12 15:22:41 -0400 (Tue, 12 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genr8/genr8.c
+
+reduce output of informational messages
+------------------------------------------------------------------------
+r10521 | pmatt | 2013-03-12 20:19:23 -0400 (Tue, 12 Mar 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+
+DAnalysisAction.h: Added method to get initialization status. 
+DHistogramActions.cc: Moved modification of action class members to within japp ROOT-write-locks. 
+
+
+------------------------------------------------------------------------
+r10522 | pmatt | 2013-03-12 20:50:00 -0400 (Tue, 12 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+
+Placed locks around modification of the class members within the reaction-independent function-call operator method.  
+
+
+------------------------------------------------------------------------
+r10526 | staylor | 2013-03-14 16:52:40 -0400 (Thu, 14 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+
+Initialize doca and var_doca before call to IntersectTracks to avoid valgrind errors.
+------------------------------------------------------------------------
+r10527 | staylor | 2013-03-15 16:52:41 -0400 (Fri, 15 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.h
+
+Move calculation of the diagonal elements of the covariance matrices CRphi and CR into the AddHit routines.  Remove the CovRPhi_ and CovR_ pointers from the class.  Consolidate code from FitCircleRiemannCorrected into FitCircleRiemann and remove FitCircleRiemannCorrected.  Remove unused routine to get charge using linear regression;  the faster GuessChargeFromCircle fit works well enough.
+------------------------------------------------------------------------
+r10528 | staylor | 2013-03-15 16:53:15 -0400 (Fri, 15 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Update to use new version of DHelicalFit.
+------------------------------------------------------------------------
+r10529 | staylor | 2013-03-15 17:03:34 -0400 (Fri, 15 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Implemented small changes to convergence tests for iterations.  Remove tanl argument from cdc_variance.  Make cdc_variance and fdc_y_variance inline functions.
+------------------------------------------------------------------------
+r10531 | staylor | 2013-03-18 11:17:57 -0400 (Mon, 18 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.h
+
+Implement limit on the reference trajectory pool size based on the number of analysis threads and clean up when there are no more events in the source to avoid memory-leak errors reported by valgrind.
+------------------------------------------------------------------------
+r10533 | davidl | 2013-03-19 07:40:20 -0400 (Tue, 19 Mar 2013) | 13 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DANARootErrorHandler.cc
+
+Set the default ROOT error message supression level to
+-1 (was 10000). This turns off any supression by default
+*except* for specific messages. In particular, the
+LU decomposition error messages that the ROOT error
+handler routine was originally created to supress. It also
+supresses anything from any TGeo* class.
+
+This was motivated by a chance exposure of a different
+ROOT error condition that we *wanted* to see that was
+being supressed by the high default error supression level.
+That issue was recently fixed by Simon, but future such
+errors should now appear on their own.
+
+------------------------------------------------------------------------
+r10534 | staylor | 2013-03-19 18:03:24 -0400 (Tue, 19 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DLorentzVector.h
+
+Add SetX,SetY, and SetZ routines.
+------------------------------------------------------------------------
+r10535 | staylor | 2013-03-19 18:04:58 -0400 (Tue, 19 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.h
+
+Explicitly include TMath header.
+------------------------------------------------------------------------
+r10536 | staylor | 2013-03-20 08:41:19 -0400 (Wed, 20 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Move track matching to BCAL and FCAL to separate routine.  Change how residuals are handled.
+------------------------------------------------------------------------
+r10539 | staylor | 2013-03-21 17:00:51 -0400 (Thu, 21 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix5x5.h
+
+Added methods to scale 5x5 matrices.
+------------------------------------------------------------------------
+r10543 | davidl | 2013-03-22 13:22:04 -0400 (Fri, 22 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+
+Fixed bug where program would seg. fault if SC not defined in XML.
+------------------------------------------------------------------------
+r10544 | davidl | 2013-03-22 14:21:18 -0400 (Fri, 22 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitStart.c
+
+Replace calls to getrow_ and getsector_ with calls to corresponding wrapper routined. This should have been done with the commit done back in December. See comment at top of dl_routines.cc for details.
+------------------------------------------------------------------------
+r10555 | davidl | 2013-03-27 16:38:46 -0400 (Wed, 27 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.DANA
+
+Temporary fix to get sim-recon to compile out of the box again with CURL support.
+------------------------------------------------------------------------
+r10566 | pmatt | 2013-03-28 15:15:36 -0400 (Thu, 28 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DKinematicData.cc
+
+Set m_time in copy constructor. 
+
+
+------------------------------------------------------------------------
+r10569 | pmatt | 2013-03-28 18:05:15 -0400 (Thu, 28 Mar 2013) | 16 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Combo.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Combo.h
+   D /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Reaction.cc
+   D /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Reaction.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_Combo.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_Combo.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_Thrown.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Combo.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Combo.h
+   D /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Reaction.cc
+   D /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Reaction.h
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.h
+   A /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory_Thrown.cc
+   A /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory_Thrown.h
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+
+Added DEventRFBunch "Combo" and "Thrown" tags.  The "Combo" DEventRFBunch can be different than the primary (non-tag) (reaction-independent) DEventRFBunch due to ghost or accidental tracks. 
+This necessitate the creation of "Combo" tagged factories for the DNeutralParticleHypothesis and DChargedTrackHypothesis objects, because choosing a different RF bunch requires a re-computation of the PID FOM.
+
+DParticleComboBlueprint_factory: removed PID FOM cut (now only at prekinfit combo stage): because may select a different RF bunch for the combo
+DTrackTimeBased_factory_Combo: Renamed from DTrackTimeBased_factory_Reaction, added map of PIDs to try. 
+DParticleCombo_factory_PreKinFit: removed tracking FOM cut (now only at blueprint stage), use "Combo"-tagged particles and rf-bunches when creating the combos.
+DParticleCombo.h: added combo-tagged DEventRFBunch as class member. 
+DParticleCombo_factory, DParticleCombo_factory_Thrown: Set DEventRFBunch in DParticleCombo
+DMCThrownMatching*: No longer directly matches with the old "Reaction"-tagged DChargedTrackHypothesis objects.  Instead, now uses associated objects to figure out which DMCThrown track matches a charged or neutral particle (of any tag! - not previously possible)
+DHistogramActions.*: Now gets the "Combo"-tagged DEventRFBunch from the DParticleCombo object, removed lock in track multiplicity action destructor. 
+ANALYSIS_init.cc, PID_init.cc: New factories added.
+DNeutralParticleHypothesis_factory: Moved creation of objects into a subfunction so that the "Combo" factory can call it and not need to duplicate code.
+DChargedTrackHypothesis_factory: Changed interface to object-creation function so that it's easier for the "Combo" factory to call it. 
+DParticleID.*: Added flag to enable/disable shifting the RF bunch by +/- 2.004 ns for getting the best RF time (shifting should be enabled for reaction-independent calls (e.g. DChargedTrackHypothesis_factory), and disabled otherwise). Disabled inclusion of ST dE/dx in overall PID FOM: dE/dx is Landau-distributed, not Gaussian. 
+
+
+------------------------------------------------------------------------
+r10570 | staylor | 2013-03-29 16:43:03 -0400 (Fri, 29 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.h
+
+Add method to get the material map vector
+------------------------------------------------------------------------
+r10571 | staylor | 2013-03-29 16:48:15 -0400 (Fri, 29 Mar 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+
+Delete the material maps (in the geometry class) in the destructor for DApplication.
+------------------------------------------------------------------------
+r10574 | pmatt | 2013-03-30 14:56:59 -0400 (Sat, 30 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+
+Added photon-rf delta-t histograms to the ParticleComboKinematics action. 
+
+
+------------------------------------------------------------------------
+r10575 | pmatt | 2013-03-30 16:18:25 -0400 (Sat, 30 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+Fixed selection of beam photons: need to select separately for each combo since each one may have a different rf time. 
+
+
+------------------------------------------------------------------------
+r10576 | pmatt | 2013-03-30 16:37:57 -0400 (Sat, 30 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.cc
+
+Fixed bug in setting the RF time at the end. 
+
+
+------------------------------------------------------------------------
+r10577 | pmatt | 2013-03-30 18:23:35 -0400 (Sat, 30 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+
+Added Get_MissingPID() method. 
+
+
+------------------------------------------------------------------------
+r10578 | pmatt | 2013-03-30 19:19:36 -0400 (Sat, 30 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+
+Changed kinematic fit flag from int to bool.
+
+
+------------------------------------------------------------------------
+r10581 | pmatt | 2013-03-30 23:23:50 -0400 (Sat, 30 Mar 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+
+Added DCutAction_GoodEventRFBunch
+
+
+------------------------------------------------------------------------
+r10582 | pmatt | 2013-03-31 21:28:58 -0400 (Sun, 31 Mar 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.h
+
+DParticleCombo.*: Added methods to get all of the charged and neutral source objects.
+DAnalysisUtilities.*: Added methods to get all of the DChargedTrack and DNeutralShower objects that were not used for a given DParticleCombo.
+
+
+------------------------------------------------------------------------
+r10590 | wilevine | 2013-04-01 14:31:37 -0400 (Mon, 01 Apr 2013) | 29 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.cc:10430)
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.h:10430)
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_NEWSMEAR.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc:10430)
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_NEWSMEAR.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h:10430)
+
+Changes to the BCAL reconstruction code. If you use the default simulation
+and reconstruction options this should not change anything. The purpose
+of these changes is to make the reconstruction work with the new BCAL
+simulation scheme.
+
+To use the new simulation, run 'mcsmear -D' and run the reconstruction
+either with the options
+'-PBCALRECON:USE_KLOE=0 -PDEFTAG:DBCALShower=KLOE_NEWSMEAR' (for KLOE
+algorithm) or
+'-PBCALRECON:USE_KLOE=0 -PDEFTAG:DBCALPoint=NEWSMEAR' (IU algorithm).
+
+Right now there is a lot of duplicated code, but this should be removed
+soon.
+
+New factories:
+
+DBCALPoint_factory_NEWSMEAR: This does preliminary timewalk
+corrections which are necessary with the new simulation scheme.
+
+DBCALShower_factory_KLOE_NEWSMEAR: Modify the KLOE algorithm so that it
+uses DBCALPoint objects rather than DBCALHit's (this allows it take to
+advantage of the timewalk corrections).
+
+Modified class:
+
+DBCALPoint: New constructor to make this work with
+DBCALPoint_factory_NEWSMEAR factory. Also save corrected values of
+individual hit energies and times.
+
+------------------------------------------------------------------------
+r10614 | staylor | 2013-04-05 17:22:58 -0400 (Fri, 05 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+
+Re-enable CCDB calibration generator.
+------------------------------------------------------------------------
+r10635 | pmatt | 2013-04-11 13:19:23 -0400 (Thu, 11 Apr 2013) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+
+Better handling of locks in ::brun().  
+
+Also, all DAnalysisAction objects are initialized (in brun()).  This is so that hadd merges work properly (don't if one file contains a TTree that another does not because it was never initialized (all events failed prior cuts)).
+
+
+------------------------------------------------------------------------
+r10636 | zihlmann | 2013-04-11 15:11:16 -0400 (Thu, 11 Apr 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALIncidentParticle.h
+
+add container class and factory to hold bcalIncidnetParticle information
+
+
+------------------------------------------------------------------------
+r10637 | zihlmann | 2013-04-11 15:16:09 -0400 (Thu, 11 Apr 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+add hddm to DANA translation from bcalIncidentParticle to DBCALIncdentParticle
+
+------------------------------------------------------------------------
+r10638 | zihlmann | 2013-04-11 15:20:03 -0400 (Thu, 11 Apr 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.h
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.h
+
+add additional BCAL viewer to the event display
+
+------------------------------------------------------------------------
+r10639 | zihlmann | 2013-04-11 15:33:11 -0400 (Thu, 11 Apr 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+
+modification to store particles that enter the bcal in bcalIncidentParticles
+
+------------------------------------------------------------------------
+r10640 | zihlmann | 2013-04-11 16:41:39 -0400 (Thu, 11 Apr 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+
+fix typo
+
+------------------------------------------------------------------------
+r10650 | davidl | 2013-04-12 13:57:01 -0400 (Fri, 12 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Updated geant particle numbers to be consistent with web documentation and added Pb208 particle type.
+------------------------------------------------------------------------
+r10659 | pmatt | 2013-04-13 17:16:46 -0400 (Sat, 13 Apr 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Removed "date" line near the top that required the compiler: so that this file can be included in interpreted ROOT scripts.
+
+
+------------------------------------------------------------------------
+r10677 | davidl | 2013-04-17 10:20:51 -0400 (Wed, 17 Apr 2013) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm
+   M /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm/Makefile
+   M /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm/genr8_2_hddm.cc
+
+Merging changes to genr8_2_hddm from branch. Changes are:
+
+- Added option to set beam particle momentum explicitly
+  Momentum is smeared by 5MeV by default to correspond
+  to tagger resolution, but smearing sigma can be set
+  to zero to disable that.
+
+- Base output file name on input file name
+- Adjust what's printed to screen and how to make it cleaner.
+
+- Add Pb208 to list of known particle types for genr8_2_hddm
+
+------------------------------------------------------------------------
+r10691 | staylor | 2013-04-19 11:32:08 -0400 (Fri, 19 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Added some more histograms.  Handle errors returning from DoFilter.  Slightly change logic related to computing offsets.
+------------------------------------------------------------------------
