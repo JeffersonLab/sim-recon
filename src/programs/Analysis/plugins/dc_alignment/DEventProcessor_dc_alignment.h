@@ -83,10 +83,21 @@ typedef struct{
   vector<const DFDCPseudo *>hits;
 }segment_t;
 
+
+typedef struct{
+  bool matched;
+  DVector3 dir;
+  vector<DVector3>positions;
+  vector<const DCDCTrackHit *>hits;
+}cdc_segment_t;
+
+
+
 #define EPS 1e-3
 #define ITER_MAX 20
 #define ADJACENT_MATCH_RADIUS 1.0
-#define MATCH_RADIUS 2.0
+#define MATCH_RADIUS 20.0
+#define CDC_MATCH_RADIUS 5.0
 
 class DEventProcessor_dc_alignment:public jana::JEventProcessor{
  public:
@@ -130,6 +141,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		     double &var_tx,double &chi2x,
 		     double &var_y,double &cov_y_ty,
 		     double &var_ty,double &chi2y);
+  DMatrix4x1 FitLineXY(vector<const DCDCTrackHit*>&cdchits);
+
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
   jerror_t KalmanFilterCathodesOnly(double anneal_factor,DMatrix4x1 &S,
 				    DMatrix4x4 &C,
@@ -158,6 +171,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 				  vector<const DFDCPseudo *>&wires);
   jerror_t FindSegments(vector<const DFDCPseudo*>&pseudos,
 			vector<segment_t>&segments);
+  jerror_t FindSegments(vector<const DCDCTrackHit*>&hits,
+			vector<cdc_segment_t>&segments);
+  jerror_t LinkSegments(vector<cdc_segment_t>&axial_segments,
+			vector<cdc_segment_t>&stereo_segments,
+			vector<cdc_segment_t>&LinkedSegments);
   jerror_t LinkSegments(vector<segment_t>segments[4], 
 			vector<vector<const DFDCPseudo *> >&LinkedSegments);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
@@ -184,7 +202,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   
   pthread_mutex_t mutex;
 
-  TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch;
+  TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdc_match;
   TH2F *Hures_vs_layer,*HdEdx_vs_beta;	
   TH2F *Hdrift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;

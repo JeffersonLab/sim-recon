@@ -20,6 +20,13 @@ void InitPlugin(JApplication *app){
 } // "C"
 
 
+bool cdc_hit_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
+  
+  return(a->wire->origin.Y()>b->wire->origin.Y());
+}
+
+
+
 //------------------
 // DEventProcessor_dc_alignment (Constructor)
 //------------------
@@ -99,7 +106,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
 
   Hmatch = (TH1F*)gROOT->FindObject("Hmatch");
   if (!Hmatch){
-    Hmatch=new TH1F("Hmatch","Segment matching distance",100,0.0,5.); 
+    Hmatch=new TH1F("Hmatch","Segment matching distance",100,0.0,25.); 
   }
   Hbeta = (TH1F*)gROOT->FindObject("Hbeta");
   if (!Hbeta){
@@ -191,8 +198,35 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   loop->Get(bcalshowers);
   vector<const DFDCPseudo*>pseudos;
   loop->Get(pseudos);
+  vector<const DCDCTrackHit*>cdcs;
+  loop->Get(cdcs);
+  
+  if (cdcs.size()>4 && bcalshowers.size()>0){
+    vector<const DCDCTrackHit*>superlayers[5];
+    for (unsigned int i=0;i<cdcs.size();i++){
+      int ring=cdcs[i]->wire->ring;
+      if (ring<=4) superlayers[0].push_back(cdcs[i]);
+      else if (ring<=12) superlayers[1].push_back(cdcs[i]);
+      else if (ring<=16) superlayers[2].push_back(cdcs[i]);
+      else if (ring<=24) superlayers[3].push_back(cdcs[i]);
+      else superlayers[4].push_back(cdcs[i]);
+    }
+    
+    vector<cdc_segment_t>axial_segments;
+    vector<cdc_segment_t>stereo_segments;
+    FindSegments(superlayers[0],axial_segments);
+    FindSegments(superlayers[1],stereo_segments);
+    FindSegments(superlayers[2],axial_segments);
+    FindSegments(superlayers[3],stereo_segments);
+    FindSegments(superlayers[4],axial_segments);
 
-  if (pseudos.size()>2 && (fcalshowers.size()>0 || bcalshowers.size()>0)){
+    if (axial_segments.size()>0 && stereo_segments.size()>0){
+      vector<cdc_segment_t>linked_segments;
+      LinkSegments(axial_segments,stereo_segments,linked_segments);
+    }
+  }
+
+  if (pseudos.size()>4 && (fcalshowers.size()>0 || bcalshowers.size()>0)){
     // Group FDC hits by package
     vector<const DFDCPseudo*>packages[4];
     for (unsigned int i=0;i<pseudos.size();i++){
@@ -208,7 +242,7 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
     // Link the segments together to form track candidadates
     vector<vector<const DFDCPseudo *> >LinkedSegments;
     LinkSegments(segments,LinkedSegments);
-  
+
     // Loop over linked segments
     for (unsigned int k=0;k<LinkedSegments.size();k++){
       vector<const DFDCPseudo *>hits=LinkedSegments[k];
@@ -449,6 +483,80 @@ DEventProcessor_dc_alignment::LinkSegments(vector<segment_t>segments[4],
   return NOERROR;
 }
 
+// Find segments in cdc axial layers
+jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DCDCTrackHit*>&hits,
+						    vector<cdc_segment_t>&segments){
+
+  vector<unsigned int>ring_boundaries;
+  vector<bool>used_in_segment(hits.size());
+  int last_ring=-1;
+  for (unsigned int i=0;i<hits.size();i++){
+    int ring=hits[i]->wire->ring;
+    if (ring!=last_ring){
+      ring_boundaries.push_back(i);
+    }
+    last_ring=ring;
+  }
+  ring_boundaries.push_back(hits.size());
+
+  unsigned int start=0;
+  while (start<ring_boundaries.size()-1){
+    for (unsigned int i=ring_boundaries[start];i<ring_boundaries[start+1];i++){
+      if (used_in_segment[i]==false){
+	used_in_segment[i]=true;
+	
+	// Current wire position 
+	DVector3 pos=hits[i]->wire->origin;
+
+	// Create list of nearest neighbors
+	vector<const DCDCTrackHit *>neighbors;
+	neighbors.push_back(hits[i]);	  
+	unsigned int match=0;
+	double delta,delta_min=1000.;
+	for (unsigned int k=0;k<ring_boundaries.size()-1;k++){
+	  delta_min=1000.;
+	  match=0;
+	  for (unsigned int m=ring_boundaries[k];m<ring_boundaries[k+1];m++){
+	    delta=(pos-hits[m]->wire->origin).Perp();
+	    if (delta<delta_min && delta<CDC_MATCH_RADIUS){
+	      delta_min=delta;
+	      match=m;
+	    }
+	  }
+	  // Hcdc_match->Fill(delta_min);
+	  if (//match!=0 
+		//&& 
+	      used_in_segment[match]==false
+	      ){
+	    pos=hits[match]->wire->origin;
+	    used_in_segment[match]=true;
+	    neighbors.push_back(hits[match]);
+	  }
+	}
+	
+	if (neighbors.size()>1){
+	  cdc_segment_t mysegment;
+	  mysegment.matched=false;
+	  mysegment.dir=neighbors[neighbors.size()-1]->wire->origin
+	    -neighbors[0]->wire->origin;
+	  mysegment.dir.SetMag(1.);
+	  mysegment.hits=neighbors;
+	  segments.push_back(mysegment);
+	}
+      }
+    } // loop over start points in a ring
+    
+    // Look for a new ring to start looking for a segment
+    while (start<ring_boundaries.size()-1){
+      if (used_in_segment[ring_boundaries[start]]==false) break;
+	start++;
+    }
+  }
+  
+  return NOERROR;
+}
+
+
 // Find segments by associating adjacent hits within a package together.
 jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCPseudo*>&points,
 					vector<segment_t>&segments){
@@ -496,8 +604,9 @@ jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCPseudo*>&po
 	    }
 	  }
 	  Hmatch->Fill(delta_min);
-	  if (match!=0 
-	      && used[match]==false
+	  if (//match!=0 
+	      //&& 
+	      used[match]==false
 	      ){
 	    XY=points[match]->xy;
 	    used[match]=true;
@@ -1579,24 +1688,20 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
   else{
     // Match to BCAL
     drmin=1000.;
+    mOuterTime=1000.;
     for (unsigned int i=0;i<bcalshowers.size();i++){
       double bcal_z=bcalshowers[i]->z; 
-      double R2=bcalshowers[i]->x*bcalshowers[i]->x
-	+bcalshowers[i]->y*bcalshowers[i]->y;	 
       double x0=S(state_x);
       double y0=S(state_y);
       double tx=S(state_tx);
       double ty=S(state_ty);
-      double myz=(-x0*tx-y0*ty
-		  +sqrt(R2*(tx*tx+ty*ty)-(x0*ty-y0*tx)*(x0*ty-y0*tx)))
-	/(tx*tx+ty*ty);
-      double x=x0+myz*tx;
-      double y=y0+myz*ty;
+      double x=x0+bcal_z*tx;
+      double y=y0+bcal_z*ty;
       double dx=bcalshowers[i]->x-x;
       double dy=bcalshowers[i]->y-y;
       double dr=sqrt(dx*dx+dy*dy);
-      
-      if (dr<drmin){
+
+      if (dr<drmin && bcalshowers[i]->t<mOuterTime){
 	drmin=dr;
 	dz=bcal_z-endplate_z;
 	mOuterTime=bcalshowers[i]->t;
@@ -1607,6 +1712,8 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
     if (drmin<4.) got_match=true;
   }
   if (got_match){
+    printf("match\n");
+
     //compute tangent of dip angle and related angular quantities
     double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));  
     double sinl=sin(atan(tanl));
@@ -1615,8 +1722,90 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
     // moving at the speed of light
     mT0=mOuterTime-dz/(29.98*sinl);
 
+    printf("t %f T0 %f\n",mOuterTime,mT0);
+
     return true;
   }
   return false;
 }
 
+jerror_t DEventProcessor_dc_alignment::LinkSegments(vector<cdc_segment_t>&axial_segments,
+						    vector<cdc_segment_t>&stereo_segments,
+						    vector<cdc_segment_t>&LinkedSegments){
+  unsigned int num_axial=axial_segments.size();
+  for (unsigned int i=0;i<num_axial-1;i++){  
+    if (axial_segments[i].matched==false){
+      DVector3 pos0=axial_segments[i].hits[0]->wire->origin;
+      DVector3 dir=axial_segments[i].dir;
+
+      cdc_segment_t mysegment;
+      mysegment.dir=axial_segments[i].dir;
+      mysegment.hits=axial_segments[i].hits;
+   
+      for (unsigned int j=i+1;j<num_axial;j++){
+	if (axial_segments[j].matched==false){
+	  DVector3 pos1=axial_segments[j].hits[0]->wire->origin;
+	  DVector3 dir1=axial_segments[j].hits[0]->wire->udir;
+	  DVector3 diff=pos1-pos0;
+	  double s=diff.Dot(mysegment.dir);
+	  double d=(diff-s*mysegment.dir).Mag();
+	  if (d<CDC_MATCH_RADIUS){
+	    axial_segments[j].matched=true;	   
+	    mysegment.hits.insert(mysegment.hits.end(),
+				  axial_segments[j].hits.begin(),
+				  axial_segments[j].hits.end());
+	    sort(mysegment.hits.begin(),mysegment.hits.end(),cdc_hit_cmp);
+	    
+	    mysegment.dir=mysegment.hits[mysegment.hits.size()-1]->wire->origin
+	      -mysegment.hits[0]->wire->origin;
+	    mysegment.dir.SetMag(1.);
+	  }
+	}
+      }
+      LinkedSegments.push_back(mysegment);
+    }
+  }
+  for (unsigned int i=0;i<LinkedSegments.size();i++){
+    DVector3 pos0=LinkedSegments[i].hits[0]->wire->origin;
+    DVector3 vhat=LinkedSegments[i].dir;
+    double vx=vhat.x();
+    double vy=vhat.y();
+    for (unsigned int j=0;j<stereo_segments.size();j++){
+      if (stereo_segments[j].matched==false){
+	DVector3 pos1=stereo_segments[j].hits[0]->wire->origin;
+	DVector3 uhat=stereo_segments[j].hits[0]->wire->udir;
+	DVector3 diff=pos1-pos0;
+	double vhat_dot_uhat=vhat.Dot(uhat);
+	double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
+	double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(uhat));
+	double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
+	double d=(diff+s*uhat-t*vhat).Mag();
+	if (d<CDC_MATCH_RADIUS){
+	  stereo_segments[j].matched=true;	 
+	  for (unsigned int k=0;k<stereo_segments[j].hits.size();k++){
+	    DVector3 origin_s=stereo_segments[j].hits[k]->wire->origin;
+	    DVector3 dir_s=stereo_segments[j].hits[k]->wire->udir;
+	    double ux_s=dir_s.x();
+	    double uy_s=dir_s.y();
+	    double dx=pos0.x()-origin_s.x();
+	    double dy=pos0.y()-origin_s.y();
+	    double s=(dx*vy-dy*vx)/(ux_s*vy-uy_s*vx);
+	    DVector3 pos_s=origin_s+s*dir_s;
+	    
+	    LinkedSegments[i].positions.push_back(pos_s);
+	    LinkedSegments[i].hits.push_back(stereo_segments[j].hits[k]);
+	  }
+	}
+      }
+    }
+  }
+
+  return NOERROR;
+}
+
+/*
+DMatrix4x1 DEventProcessor_dc_alignment::FitLineXY(vector<const DCDCTrackHit*>&hits){
+
+  
+}
+*/
