@@ -212,6 +212,8 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
       else superlayers[4].push_back(cdcs[i]);
     }
     
+    mMinTime=10000.;
+
     vector<cdc_segment_t>axial_segments;
     vector<cdc_segment_t>stereo_segments;
     FindSegments(superlayers[0],axial_segments);
@@ -221,8 +223,18 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
     FindSegments(superlayers[4],axial_segments);
 
     if (axial_segments.size()>0 && stereo_segments.size()>0){
-      vector<cdc_segment_t>linked_segments;
-      LinkSegments(axial_segments,stereo_segments,linked_segments);
+      vector<cdc_track_t>tracks;
+      LinkSegments(axial_segments,stereo_segments,tracks);
+
+      for (unsigned int i=0;i<tracks.size();i++){
+	double chi2x=0.,chi2y=0.;
+	DMatrix4x1 S=GuessForStateVector(tracks[i],chi2x,chi2y);
+	
+	// Match to outer detectors 
+	if (MatchOuterDetectors(fcalshowers,bcalshowers,S)){
+
+	}
+      }
     }
   }
 
@@ -495,7 +507,7 @@ jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DCDCTrackHit*>&
     if (ring!=last_ring){
       ring_boundaries.push_back(i);
     }
-    last_ring=ring;
+    last_ring=ring;  
   }
   ring_boundaries.push_back(hits.size());
 
@@ -1701,6 +1713,10 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
       double dy=bcalshowers[i]->y-y;
       double dr=sqrt(dx*dx+dy*dy);
 
+      //      printf("x %f y %f\n",x,y);
+      //printf("bcal x %f y %f\n",bcalshowers[i]->x,bcalshowers[i]->y);
+
+      //printf("dr %f t %f \n",dr,bcalshowers[i]->t);
       if (dr<drmin && bcalshowers[i]->t<mOuterTime){
 	drmin=dr;
 	dz=bcal_z-endplate_z;
@@ -1709,10 +1725,10 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
       }	
     }
     
-    if (drmin<4.) got_match=true;
+    if (drmin<10.) got_match=true;
   }
   if (got_match){
-    printf("match\n");
+    //printf("match\n");
 
     //compute tangent of dip angle and related angular quantities
     double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));  
@@ -1722,80 +1738,76 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
     // moving at the speed of light
     mT0=mOuterTime-dz/(29.98*sinl);
 
-    printf("t %f T0 %f\n",mOuterTime,mT0);
+    //printf("t %f T0 %f\n",mOuterTime,mT0);
 
     return true;
   }
   return false;
 }
 
-jerror_t DEventProcessor_dc_alignment::LinkSegments(vector<cdc_segment_t>&axial_segments,
-						    vector<cdc_segment_t>&stereo_segments,
-						    vector<cdc_segment_t>&LinkedSegments){
+jerror_t 
+DEventProcessor_dc_alignment::LinkSegments(vector<cdc_segment_t>&axial_segments,
+					   vector<cdc_segment_t>&stereo_segments,
+					   vector<cdc_track_t>&LinkedSegments){
+
   unsigned int num_axial=axial_segments.size();
   for (unsigned int i=0;i<num_axial-1;i++){  
     if (axial_segments[i].matched==false){
-      DVector3 pos0=axial_segments[i].hits[0]->wire->origin;
-      DVector3 dir=axial_segments[i].dir;
+      cdc_track_t mytrack;
+      mytrack.axial_hits=axial_segments[i].hits;
 
-      cdc_segment_t mysegment;
-      mysegment.dir=axial_segments[i].dir;
-      mysegment.hits=axial_segments[i].hits;
-   
+      DVector3 pos0=axial_segments[i].hits[0]->wire->origin;
+      DVector3 vhat=axial_segments[i].dir;
+
       for (unsigned int j=i+1;j<num_axial;j++){
 	if (axial_segments[j].matched==false){
 	  DVector3 pos1=axial_segments[j].hits[0]->wire->origin;
 	  DVector3 dir1=axial_segments[j].hits[0]->wire->udir;
 	  DVector3 diff=pos1-pos0;
-	  double s=diff.Dot(mysegment.dir);
-	  double d=(diff-s*mysegment.dir).Mag();
+	  double s=diff.Dot(vhat);
+	  double d=(diff-s*vhat).Mag();
 	  if (d<CDC_MATCH_RADIUS){
 	    axial_segments[j].matched=true;	   
-	    mysegment.hits.insert(mysegment.hits.end(),
+	    mytrack.axial_hits.insert(mytrack.axial_hits.end(),
 				  axial_segments[j].hits.begin(),
 				  axial_segments[j].hits.end());
-	    sort(mysegment.hits.begin(),mysegment.hits.end(),cdc_hit_cmp);
+	    sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),
+		 cdc_hit_cmp);
 	    
-	    mysegment.dir=mysegment.hits[mysegment.hits.size()-1]->wire->origin
-	      -mysegment.hits[0]->wire->origin;
-	    mysegment.dir.SetMag(1.);
+	    vhat=mytrack.axial_hits[mytrack.axial_hits.size()-1]->wire->origin
+	      -mytrack.axial_hits[0]->wire->origin;
+	    vhat.SetMag(1.);
 	  }
 	}
       }
-      LinkedSegments.push_back(mysegment);
-    }
-  }
-  for (unsigned int i=0;i<LinkedSegments.size();i++){
-    DVector3 pos0=LinkedSegments[i].hits[0]->wire->origin;
-    DVector3 vhat=LinkedSegments[i].dir;
-    double vx=vhat.x();
-    double vy=vhat.y();
-    for (unsigned int j=0;j<stereo_segments.size();j++){
-      if (stereo_segments[j].matched==false){
-	DVector3 pos1=stereo_segments[j].hits[0]->wire->origin;
-	DVector3 uhat=stereo_segments[j].hits[0]->wire->udir;
-	DVector3 diff=pos1-pos0;
-	double vhat_dot_uhat=vhat.Dot(uhat);
-	double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
-	double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(uhat));
-	double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
-	double d=(diff+s*uhat-t*vhat).Mag();
-	if (d<CDC_MATCH_RADIUS){
-	  stereo_segments[j].matched=true;	 
-	  for (unsigned int k=0;k<stereo_segments[j].hits.size();k++){
-	    DVector3 origin_s=stereo_segments[j].hits[k]->wire->origin;
-	    DVector3 dir_s=stereo_segments[j].hits[k]->wire->udir;
-	    double ux_s=dir_s.x();
-	    double uy_s=dir_s.y();
-	    double dx=pos0.x()-origin_s.x();
-	    double dy=pos0.y()-origin_s.y();
-	    double s=(dx*vy-dy*vx)/(ux_s*vy-uy_s*vx);
-	    DVector3 pos_s=origin_s+s*dir_s;
-	    
-	    LinkedSegments[i].positions.push_back(pos_s);
-	    LinkedSegments[i].hits.push_back(stereo_segments[j].hits[k]);
+    
+      // Now try to associate stereo hits with this track
+      unsigned int num_stereo=0;
+      pos0=mytrack.axial_hits[0]->wire->origin;
+      for (unsigned int j=0;j<stereo_segments.size();j++){
+	if (stereo_segments[j].matched==false){
+	  DVector3 pos1=stereo_segments[j].hits[0]->wire->origin;
+	  DVector3 uhat=stereo_segments[j].hits[0]->wire->udir;
+	  DVector3 diff=pos1-pos0;
+	  double vhat_dot_uhat=vhat.Dot(uhat);
+	  double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
+	  double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(uhat));
+	  double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
+	  double d=(diff+s*uhat-t*vhat).Mag();
+	  if (d<CDC_MATCH_RADIUS){
+	    num_stereo++;
+	    stereo_segments[j].matched=true;
+	    mytrack.stereo_hits.insert(mytrack.stereo_hits.end(),
+				       stereo_segments[j].hits.begin(),
+				       stereo_segments[j].hits.end());
+	    sort(mytrack.stereo_hits.begin(),mytrack.stereo_hits.end(),
+		 cdc_hit_cmp);
 	  }
 	}
+      }
+      if (num_stereo>1){
+	mytrack.dir=vhat;
+	LinkedSegments.push_back(mytrack);
       }
     }
   }
@@ -1803,9 +1815,63 @@ jerror_t DEventProcessor_dc_alignment::LinkSegments(vector<cdc_segment_t>&axial_
   return NOERROR;
 }
 
-/*
-DMatrix4x1 DEventProcessor_dc_alignment::FitLineXY(vector<const DCDCTrackHit*>&hits){
 
+// Compute initial guess for state vector (x,y,tx,ty) for a track in the CDC
+// using two stereo wires
+DMatrix4x1 
+DEventProcessor_dc_alignment::GuessForStateVector(cdc_track_t &track,
+						  double &chi2x,double &chi2y){
+
+  // Parameters for line in x-y plane
+  double vx=track.dir.x();
+  double vy=track.dir.y();
+  DVector3 pos0=track.axial_hits[0]->wire->origin;
+
+  // Intersection of line in xy-plane with first stereo straw
+  DVector3 origin_s=track.stereo_hits[0]->wire->origin;
+  DVector3 dir_s=track.stereo_hits[0]->wire->udir;
+  double ux_s=dir_s.x();
+  double uy_s=dir_s.y();
+  double dx=pos0.x()-origin_s.x();
+  double dy=pos0.y()-origin_s.y();
+  double s=(dx*vy-dy*vx)/(ux_s*vy-uy_s*vx);
+  DVector3 pos1=origin_s+s*dir_s;
+
+  // Intersection of line in xy-plane with last stereo straw
+  unsigned int last_index=track.stereo_hits.size()-1;
+  origin_s=track.stereo_hits[last_index]->wire->origin;
+  dir_s=track.stereo_hits[last_index]->wire->udir;
+  ux_s=dir_s.x();
+  uy_s=dir_s.y();
+  dx=pos0.x()-origin_s.x();
+  dy=pos0.y()-origin_s.y();
+  s=(dx*vy-dy*vx)/(ux_s*vy-uy_s*vx);
+  DVector3 pos2=origin_s+s*dir_s;
+
+  // Some code related to the drift time that may or may not be useful later
+  //  double dt=hits[k]->tdrift-min_time;
+  //  double d=0.019+0.0279*sqrt(dt);
+  //  double scale=sqrt(vx*vx+vy*vy)/(ux_s*vy-uy_s*vx);
+  //  double splus=s+d*scale;
+  //  double sminus=s-d*scale;
+  //  DVector3 pos_plus=origin_s+splus*dir_s;
+  //  DVector3 pos_minus=origin_s+sminus*dir_s;
+
+  // Estimate slopes and intercepts in xz and yz planes
+  double z1=pos1.Z();
+  double z2=pos2.Z();
+  double delta_z=z1-z2;
+  double x1=pos1.x();
+  double x2=pos2.x();
+  double x_slope=(x1-x2)/delta_z;
+  double x_intercept=(x2*z1-x1*z2)/delta_z;  
+  double y1=pos1.y();
+  double y2=pos2.y();
+  double y_slope=(y1-y2)/delta_z;
+  double y_intercept=(y2*z1-y1*z2)/delta_z;
+
+  //double norm_scale=1./sqrt(1.+x_slope*x_slope+y_slope*y_slope);
   
+  return DMatrix4x1(x_intercept,y_intercept,x_slope,y_slope);
 }
-*/
+

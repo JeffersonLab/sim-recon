@@ -87,10 +87,14 @@ typedef struct{
 typedef struct{
   bool matched;
   DVector3 dir;
-  vector<DVector3>positions;
   vector<const DCDCTrackHit *>hits;
 }cdc_segment_t;
 
+typedef struct{
+  DVector3 dir;
+  vector<const DCDCTrackHit *>axial_hits;
+  vector<const DCDCTrackHit *>stereo_hits;
+}cdc_track_t;
 
 
 #define EPS 1e-3
@@ -141,7 +145,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		     double &var_tx,double &chi2x,
 		     double &var_y,double &cov_y_ty,
 		     double &var_ty,double &chi2y);
-  DMatrix4x1 FitLineXY(vector<const DCDCTrackHit*>&cdchits);
+  DMatrix4x1 GuessForStateVector(cdc_track_t &track,double &chi2x,
+				 double &chi2y);
 
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
   jerror_t KalmanFilterCathodesOnly(double anneal_factor,DMatrix4x1 &S,
@@ -175,7 +180,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			vector<cdc_segment_t>&segments);
   jerror_t LinkSegments(vector<cdc_segment_t>&axial_segments,
 			vector<cdc_segment_t>&stereo_segments,
-			vector<cdc_segment_t>&LinkedSegments);
+			vector<cdc_track_t>&LinkedSegments);
   jerror_t LinkSegments(vector<segment_t>segments[4], 
 			vector<vector<const DFDCPseudo *> >&LinkedSegments);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
