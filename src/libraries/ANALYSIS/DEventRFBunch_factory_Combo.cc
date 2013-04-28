@@ -12,9 +12,7 @@
 //------------------
 jerror_t DEventRFBunch_factory_Combo::init(void)
 {
-	USE_KLOE = 1;
 	dRFBunchFrequency = 2.004;
-	gPARMS->SetDefaultParameter("BCALRECON:USE_KLOE", USE_KLOE);
 	return NOERROR;
 }
 
@@ -205,7 +203,7 @@ void DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	locEventLoop->Get(locTOFPoints);
 
 	vector<const DBCALShower*> locBCALShowers(0);
-	(USE_KLOE) ? locEventLoop->Get(locBCALShowers, "KLOE") : locEventLoop->Get(locBCALShowers);
+	locEventLoop->Get(locBCALShowers);
 
 	vector<const DFCALShower*> locFCALShowers(0);
 	locEventLoop->Get(locFCALShowers);

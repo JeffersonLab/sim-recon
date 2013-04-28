@@ -35,7 +35,6 @@ jerror_t DMCThrownMatching_factory::init(void)
 	dMaximumTOFMatchDistance = 10.0; //cm
 	dMaximumFCALMatchDistance = 10.0; //cm
 	dMaximumBCALMatchAngleDegrees = 5.0;
-	dUseKLOEFlag = true;
 	dTargetCenter = 65.0; //set me from geometry!
 	return NOERROR;
 }
@@ -50,7 +49,6 @@ jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int run
 	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHTOFDISTANCE", dMaximumTOFMatchDistance);
 	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHFCALDISTANCE", dMaximumFCALMatchDistance);
 	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHBCALANGLE", dMaximumBCALMatchAngleDegrees);
-	gPARMS->SetDefaultParameter("BCALRECON:USE_KLOE", dUseKLOEFlag);
 	return NOERROR;
 }
 
@@ -253,7 +251,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BCALShowers(JEventLoop* loc
 
 	vector<const DBCALShower*> locBCALShowers;
 	const DBCALShower* locBCALShower;
-	dUseKLOEFlag ? locEventLoop->Get(locBCALShowers, "KLOE") : locEventLoop->Get(locBCALShowers);
+	locEventLoop->Get(locBCALShowers);
 
 	map<const DBCALShower*, const DBCALTruthShower*> locBCALShowerToTruthMap;
 	map<const DBCALTruthShower*, const DBCALShower*> locBCALTruthToShowerMap;

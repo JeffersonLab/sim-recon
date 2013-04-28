@@ -65,7 +65,6 @@ class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 		unsigned int dDebugLevel;
 		double dTargetCenter;
 
-		bool dUseKLOEFlag;
 };
 
 #endif // _DMCThrownMatching_factory_
