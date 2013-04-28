@@ -107,27 +107,12 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		cal().setTzcorr(0);
 	}
 
-	// determine which subclass tag to use for DBCALShowers
-	static std::string bcalClusterTag;
-	static int bcalClusterTagInit=0;
-	if (!bcalClusterTagInit)
-	{
-		std::vector<const DNeutralShower*> neutralshowers;
-		locEventLoop->Get(neutralshowers);
-		bcalClusterTagInit = 1;
-		int useKloeClusters;
-		gPARMS->GetParameter("BCALRECON:USE_KLOE", useKloeClusters);
-		if (useKloeClusters)
-			bcalClusterTag = "KLOE";
-	}
-
 	// push any DBCALShower objects to the output record
 	std::vector<const DBCALShower*> bcalshowers;
-	locEventLoop->Get(bcalshowers,bcalClusterTag.c_str());
+	locEventLoop->Get(bcalshowers);
 	for (size_t i=0; i < bcalshowers.size(); i++)
 	{
 		hddm_r::CalorimeterClusterList cal = res().addCalorimeterClusters(1);
-		cal().setJtag(bcalClusterTag);
 		DVector3 pos(bcalshowers[i]->x,bcalshowers[i]->y,bcalshowers[i]->z);
 		cal().setX(bcalshowers[i]->x);
 		cal().setY(bcalshowers[i]->y);
