@@ -1,45 +1,32 @@
+// $Id$
+
 #ifndef _DBCALShower_factory_
 #define _DBCALShower_factory_
 
-/*
- *  DBCALShower_factory.h
- *
- *  Created by Matthew Shepherd on 3/24/11.
- *
- */
-
 #include <JANA/JFactory.h>
-#include <JANA/JEventLoop.h>
+#include <BCAL/DBCALShower.h>
 
-using namespace jana;
+class DBCALShower_factory:public jana::JFactory<DBCALShower>{
+	public:
+		DBCALShower_factory(){};
+		~DBCALShower_factory(){};
 
-#include "BCAL/DBCALShower.h"
+	private:
+		jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
 
-class DBCALShower_factory : public JFactory< DBCALShower > {
-  
-public:
-  
-  DBCALShower_factory();
-  ~DBCALShower_factory(){}
-  
-private:
-  
-  jerror_t evnt(JEventLoop *loop, int eventnumber);	
+			// This is a trivial factory that simply implements the
+			// KLOE tagged factory as the default. It is here so 
+			// that the default can be changed easily by simply
+			// changing the tag here or on the command line.
+			vector<const DBCALShower*> showers;
+			loop->Get(showers, "KLOE");
+			for(unsigned int i=0; i<showers.size(); i++){
+				_data.push_back(const_cast<DBCALShower*>(showers[i]));
+			}
+			SetFactoryFlag(NOT_OBJECT_OWNER);
 
-  float m_zTarget;
-
-// energy calibration parameters
-  
-  float m_scaleZ_p0;
-  float m_scaleZ_p1;
-  float m_scaleZ_p2;
-  float m_scaleZ_p3;
-  
-  float m_nonlinZ_p0;
-  float m_nonlinZ_p1;
-  float m_nonlinZ_p2;
-  float m_nonlinZ_p3;
-  
+			return NOERROR;
+		}
 };
 
-#endif
+#endif // _DBCALShower_factory_

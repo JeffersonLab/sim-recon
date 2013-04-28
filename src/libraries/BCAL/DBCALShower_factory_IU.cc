@@ -1,16 +1,17 @@
 /*
- *  DBCALShower_factory.cc
+ *  DBCALShower_factory_IU.cc
+ *  (formerly DBCALShower_factory.cc)
  *
  *  Created by Matthew Shepherd on 3/24/11.
  *
  */
 
-#include "DBCALShower_factory.h"
+#include "DBCALShower_factory_IU.h"
 #include "DBCALCluster.h"
 
 #include "units.h"
 
-DBCALShower_factory::DBCALShower_factory(){
+DBCALShower_factory_IU::DBCALShower_factory_IU(){
   
   m_zTarget = 65*k_cm;
 
@@ -48,7 +49,7 @@ DBCALShower_factory::DBCALShower_factory(){
 }
 
 jerror_t
-DBCALShower_factory::evnt( JEventLoop *loop, int eventnumber ){
+DBCALShower_factory_IU::evnt( JEventLoop *loop, int eventnumber ){
  
   vector< const DBCALCluster* > clusters;
   loop->Get( clusters );

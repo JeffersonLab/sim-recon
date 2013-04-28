@@ -2,6 +2,7 @@
 
 #include <JANA/JEventLoop.h>
 #include "DBCALGeometry_factory.h"
+#include "DBCALShower_factory_IU.h"
 #include "DBCALShower_factory_KLOE.h"
 #include "DBCALShower_factory_KLOE_NEWSMEAR.h"
 #include "DBCALShower_factory.h"
@@ -33,6 +34,7 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALTDCHit_factory());
 	loop->AddFactory(new DBCALSiPMHit_factory());
 	loop->AddFactory(new DBCALGeometry_factory());
+	loop->AddFactory(new DBCALShower_factory_IU());
 	loop->AddFactory(new DBCALShower_factory_KLOE());
 	loop->AddFactory(new DBCALShower_factory_KLOE_NEWSMEAR());
 	loop->AddFactory(new DBCALShower_factory());
