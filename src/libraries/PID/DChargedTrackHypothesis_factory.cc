@@ -18,11 +18,6 @@ using namespace jana;
 //------------------
 jerror_t DChargedTrackHypothesis_factory::init(void)
 {
-	//this parameter controls what BCAL reconstruction algorithm to use
-	//the same parameter is used in DNeutralShowerCandidate_factory
-	USE_KLOE = 1;
-	gPARMS->SetDefaultParameter("BCALRECON:USE_KLOE", USE_KLOE);
-
 	return NOERROR;
 }
 
@@ -88,7 +83,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	locEventLoop->Get(locSCHits);
 
 	vector<const DBCALShower*> locBCALShowers;
-	(USE_KLOE) ? locEventLoop->Get(locBCALShowers, "KLOE") : locEventLoop->Get(locBCALShowers);
+	locEventLoop->Get(locBCALShowers);
 
 	DChargedTrackHypothesis* locChargedTrackHypothesis = new DChargedTrackHypothesis();
 	locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);

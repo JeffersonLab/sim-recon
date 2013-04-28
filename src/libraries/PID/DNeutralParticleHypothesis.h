@@ -11,6 +11,7 @@
 #include <vector>
 #include <JANA/JObject.h>
 #include <PID/DKinematicData.h>
+#include <PID/DNeutralShower.h>
 #include <particleType.h>
 
 using namespace std;
@@ -27,6 +28,12 @@ class DNeutralParticleHypothesis : public DKinematicData {
 			DKinematicData::toStrings(items);
 			AddString(items, "PID_ChiSq", "%f", dChiSq);
 			AddString(items, "PID_FOM", "%f", dFOM);
+
+			vector<const DNeutralShower*> candidates;
+			Get(candidates);
+			if (candidates.size()==1) {
+				AddString(items, "Detector", "%d", int(candidates[0]->dDetectorSystem));
+			}
 		}
 
 };
