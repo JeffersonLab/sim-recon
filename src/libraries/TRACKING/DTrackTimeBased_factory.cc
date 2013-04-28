@@ -68,9 +68,6 @@ jerror_t DTrackTimeBased_factory::init(void)
 	MIN_CDC_HITS_FOR_TB_FORWARD_TRACKING=3;
 	BYPASS_TB_FOR_FORWARD_TRACKS=false;
 
-    //which BCAL reconstruction algorithm to use
-	USE_KLOE=1;
-
 	USE_HITS_FROM_WIREBASED_FIT=false;
 	gPARMS->SetDefaultParameter("TRKFIT:USE_HITS_FROM_WIREBASED_FIT",
 			      USE_HITS_FROM_WIREBASED_FIT);
@@ -111,8 +108,6 @@ jerror_t DTrackTimeBased_factory::init(void)
 	// Forces correct particle id (when available)
 	PID_FORCE_TRUTH = false;
 	gPARMS->SetDefaultParameter("TRKFIT:PID_FORCE_TRUTH", PID_FORCE_TRUTH);
-
-	gPARMS->SetDefaultParameter("BCALRECON:USE_KLOE", USE_KLOE);
 
 	return NOERROR;
 }
@@ -218,11 +213,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
   
   // Get BCAL and FCAL showers
   vector<const DBCALShower*>bcal_showers;
-  if (USE_KLOE) {
-    eventLoop->Get(bcal_showers, "KLOE");
-  } else {
-    eventLoop->Get(bcal_showers);    
-  }
+  eventLoop->Get(bcal_showers);    
   vector<const DFCALShower*>fcal_showers;
   eventLoop->Get(fcal_showers);    
   

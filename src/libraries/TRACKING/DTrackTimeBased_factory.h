@@ -51,7 +51,6 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   bool BYPASS_TB_FOR_FORWARD_TRACKS;
   bool SKIP_MASS_HYPOTHESES_TIMEBASED;
   bool USE_HITS_FROM_WIREBASED_FIT;
-  int USE_KLOE;
 
   DTrackFitter *fitter;
   const DParticleID* pid_algorithm;
