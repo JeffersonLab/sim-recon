@@ -69,6 +69,10 @@ typedef struct{
   double drift,drift_time,t;
 }strip_update_t;
 
+typedef struct{
+  double ztrack;
+  const DBCALShower *match;
+}bcal_match_t;
 
 
 typedef struct{
@@ -174,6 +178,10 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
 				  deque<trajectory_t>&trajectory,
 				  vector<const DFDCPseudo *>&wires);
+  jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
+				  deque<trajectory_t>&trajectory,
+				  const DCDCTrackHit *last_cdc); 
+
   jerror_t FindSegments(vector<const DFDCPseudo*>&pseudos,
 			vector<segment_t>&segments);
   jerror_t FindSegments(vector<const DCDCTrackHit*>&hits,
@@ -208,6 +216,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   pthread_mutex_t mutex;
 
   TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdc_match;
+  TH2F *Hbcalmatch;
   TH2F *Hures_vs_layer,*HdEdx_vs_beta;	
   TH2F *Hdrift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;

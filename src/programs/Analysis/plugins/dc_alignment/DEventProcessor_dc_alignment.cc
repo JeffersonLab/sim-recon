@@ -26,6 +26,10 @@ bool cdc_hit_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
 }
 
 
+bool bcal_cmp(const bcal_match_t &a,const bcal_match_t &b){
+  return (a.match->y>b.match->y);
+}
+
 
 //------------------
 // DEventProcessor_dc_alignment (Constructor)
@@ -144,6 +148,12 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   if (!Hdv_vs_dE){
     Hdv_vs_dE=new TH2F("Hdv_vs_dE","dv vs energy dep",100,0,20e-6,200,-1,1);
   }
+
+  Hbcalmatch=(TH2F*)gROOT->FindObject("Hbcalmatch");
+  if (!Hbcalmatch){
+    Hbcalmatch=new TH2F("Hbcalmatch","BCAL #deltar vs #deltaz",100,-25.,25.,
+			100,0.,10.);
+  }
   
   dapp->Unlock();
 
@@ -232,7 +242,16 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
 	
 	// Match to outer detectors 
 	if (MatchOuterDetectors(fcalshowers,bcalshowers,S)){
+	  // move S to the z-position where we found the match
+	  S(state_x)+=mOuterZ*S(state_tx);
+	  S(state_y)+=mOuterZ*S(state_ty);
+	  
+	  vector<const DCDCTrackHit *>hits=tracks[i].axial_hits;
+	  hits.insert(hits.end(),tracks[i].stereo_hits.begin(),tracks[i].stereo_hits.end());
+	  sort(hits.begin(),hits.end(),cdc_hit_cmp);
 
+	  deque<trajectory_t>trajectory;
+	  SetReferenceTrajectory(mOuterZ,S,trajectory,hits[hits.size()-1]);
 	}
       }
     }
@@ -1356,6 +1375,56 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   return NOERROR;
 }
 
+//Reference trajectory for the track for cdc tracks
+jerror_t DEventProcessor_dc_alignment
+::SetReferenceTrajectory(double z,DMatrix4x1 &S,deque<trajectory_t>&trajectory,
+			 const DCDCTrackHit *last_cdc){ 
+  DMatrix4x4 J(1.,0.,1.,0., 0.,1.,0.,1., 0.,0.,1.,0., 0.,0.,0.,1.);
+
+  double ds=1.0;
+  double dz=(S(state_ty)>0.?-1.:1.)*ds/sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+  double t=0.;
+  trajectory_t temp;
+
+  //y-position after which we cut off the loop
+  double min_y=last_cdc->wire->origin.y()-5.;
+  do{
+    double newz=z+dz;
+    temp.Skk=Zero4x1;
+    temp.Ckk=Zero4x4;
+    temp.h_id=0;	  
+    temp.z=newz;
+    temp.J=J;
+    temp.J(state_x,state_tx)=-dz;
+    temp.J(state_y,state_ty)=-dz;
+    // Flight time: assume particle is moving at the speed of light
+    temp.t=(t+=ds/29.98);
+    //propagate the state to the next z position
+    temp.S(state_x)=S(state_x)+S(state_tx)*dz;
+    temp.S(state_y)=S(state_y)+S(state_ty)*dz;
+    temp.S(state_tx)=S(state_tx);
+    temp.S(state_ty)=S(state_ty);
+    S=temp.S;
+    trajectory.push_front(temp);
+    
+    z=newz;
+  }while (S(state_y)>min_y);
+
+  if (false){
+    printf("Trajectory:\n");
+    for (unsigned int i=0;i<trajectory.size();i++){
+      printf(" x %f y %f z %f\n",trajectory[i].S(state_x),
+	     trajectory[i].S(state_y),trajectory[i].z); 
+    }
+  }
+
+
+
+
+  return NOERROR;
+}
+
+
 // Reference trajectory for the track
 jerror_t DEventProcessor_dc_alignment
 ::SetReferenceTrajectory(double z,DMatrix4x1 &S,deque<trajectory_t>&trajectory,
@@ -1672,9 +1741,7 @@ DEventProcessor_dc_alignment::FindOffsets(vector<const DFDCPseudo *>&hits,
 bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower *>&fcalshowers,
 		      vector<const DBCALShower *>&bcalshowers,
 		      const DMatrix4x1 &S){
-  
-  bool got_match=false;
-  // First match to FCAL 
+    // First match to FCAL 
   double dz=0.;
   double drmin=1000.;
   for (unsigned int i=0;i<fcalshowers.size();i++){
@@ -1694,42 +1761,7 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
     
   }
   
-  if (drmin<4.){
-    got_match=true;
-  }
-  else{
-    // Match to BCAL
-    drmin=1000.;
-    mOuterTime=1000.;
-    for (unsigned int i=0;i<bcalshowers.size();i++){
-      double bcal_z=bcalshowers[i]->z; 
-      double x0=S(state_x);
-      double y0=S(state_y);
-      double tx=S(state_tx);
-      double ty=S(state_ty);
-      double x=x0+bcal_z*tx;
-      double y=y0+bcal_z*ty;
-      double dx=bcalshowers[i]->x-x;
-      double dy=bcalshowers[i]->y-y;
-      double dr=sqrt(dx*dx+dy*dy);
-
-      //      printf("x %f y %f\n",x,y);
-      //printf("bcal x %f y %f\n",bcalshowers[i]->x,bcalshowers[i]->y);
-
-      //printf("dr %f t %f \n",dr,bcalshowers[i]->t);
-      if (dr<drmin && bcalshowers[i]->t<mOuterTime){
-	drmin=dr;
-	dz=bcal_z-endplate_z;
-	mOuterTime=bcalshowers[i]->t;
-	mOuterZ=bcal_z;
-      }	
-    }
-    
-    if (drmin<10.) got_match=true;
-  }
-  if (got_match){
-    //printf("match\n");
-
+  if (drmin<4.){ 
     //compute tangent of dip angle and related angular quantities
     double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));  
     double sinl=sin(atan(tanl));
@@ -1742,6 +1774,47 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
 
     return true;
   }
+  else{
+    // Match to BCAL
+ 
+    // zero-position and direction of line describing particle trajectory
+    DVector3 pos0(S(state_x),S(state_y),0.);
+    DVector3 vhat(S(state_tx),S(state_ty),1.);
+    vhat.SetMag(1.);
+    
+    // Keep list of matches
+    vector<bcal_match_t>matching_bcals;
+
+    // loop over the showers
+    for (unsigned int i=0;i<bcalshowers.size();i++){
+      // Match in x and y
+      DVector3 pos1(bcalshowers[i]->x,bcalshowers[i]->y,bcalshowers[i]->z);
+      DVector3 uhat(0.,0.,1.);
+      DVector3 diff=pos1-pos0;
+      double vhat_dot_uhat=vhat.Dot(uhat);
+      double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
+      double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(uhat));
+      double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
+      double dr=(diff+s*uhat-t*vhat).Mag();
+
+      Hbcalmatch->Fill(s,dr);
+      if (dr<3.0){
+	bcal_match_t temp;
+	temp.ztrack=bcalshowers[i]->z+s;
+	temp.match=bcalshowers[i];
+	matching_bcals.push_back(temp);
+      }	
+    }
+    if (matching_bcals.size()>0){
+      sort(matching_bcals.begin(),matching_bcals.end(),bcal_cmp);
+ 
+      mT0=matching_bcals[0].match->t;
+      mOuterZ=matching_bcals[0].ztrack;
+
+      return true;
+    }
+  }
+ 
   return false;
 }
 
