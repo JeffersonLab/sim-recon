@@ -431,15 +431,30 @@ void DBCALShower_factory_KLOE_NEWSMEAR::CellRecon(JEventLoop *loop)
         ecel[module-1][layer-1][sector-1] = point.E();
 
         //we require knowledge of the times and energies of the individual upstream and downstream hits
+        //to get these we need the associated objects
+        double EUp=0,EDown=0,tUp=0,tDown=0;
+        vector<const DBCALUnifiedHit*> assoc_hits;
+        point.Get(assoc_hits);
+        for (unsigned int i=0; i<assoc_hits.size(); i++) {
+            if (assoc_hits[i]->end == DBCALGeometry::kUpstream) {
+                EUp = assoc_hits[i]->E;
+                tUp = assoc_hits[i]->t;
+            }
+            if (assoc_hits[i]->end == DBCALGeometry::kDownstream) {
+                EDown = assoc_hits[i]->E;
+                tDown = assoc_hits[i]->t;
+            }
 
-        ecel_a[module-1][layer-1][sector-1] = point.EUp();
+        }
+
+        ecel_a[module-1][layer-1][sector-1] = EUp;
         //for some reason we need to record the hit time in two different arrays
-        tcel_a[module-1][layer-1][sector-1] = point.tUp();
-        tcell_anor[module-1][layer-1][sector-1] = point.tUp();
+        tcel_a[module-1][layer-1][sector-1] = tUp;
+        tcell_anor[module-1][layer-1][sector-1] = tUp;
 
-        ecel_b[module-1][layer-1][sector-1] = point.EDown();
-        tcel_b[module-1][layer-1][sector-1] = point.tDown();
-        tcell_bnor[module-1][layer-1][sector-1] = point.tDown();
+        ecel_b[module-1][layer-1][sector-1] = EDown;
+        tcel_b[module-1][layer-1][sector-1] = tDown;
+        tcell_bnor[module-1][layer-1][sector-1] = tDown;
     }
 }
 
