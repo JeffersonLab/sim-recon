@@ -10,8 +10,6 @@
 #include <JANA/JEventLoop.h>
 #include <JANA/JApplication.h>
 
-#include <DANA/DApplication.h>
-
 #include <DVector3.h>
 #include <DMatrixDSym.h>
 #include <DMatrix.h>
