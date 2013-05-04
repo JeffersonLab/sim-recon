@@ -49,9 +49,16 @@ jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnum
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
 	dHistogramAction_GenReconTrackComparison(locEventLoop);
 
+	//Triggers the analysis (is also automatically called by DEventWriterROOT::Fill_Trees())
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);
 
+	//Output TTree
+	vector<const DEventWriterROOT*> locEventWriterROOTVector;
+	locEventLoop->Get(locEventWriterROOTVector);
+	locEventWriterROOTVector[0]->Fill_Trees(locEventLoop);
+
+	//Do Miscellaneous Cuts
 	bool locSaveEventFlag = false;
 	for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
 	{
@@ -64,6 +71,7 @@ jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnum
 		break;
 	}
 
+	//Output REST File
 	if(locSaveEventFlag)
 	{
 		vector<const DEventWriterREST*> locEventWriterRESTVector;

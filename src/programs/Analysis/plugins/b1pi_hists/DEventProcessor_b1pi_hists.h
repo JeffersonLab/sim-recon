@@ -15,6 +15,7 @@
 
 #include "DANA/DApplication.h"
 #include "ANALYSIS/DAnalysisResults.h"
+#include "ANALYSIS/DEventWriterROOT.h"
 #include "HDDM/DEventWriterREST.h"
 
 #include "DFactoryGenerator_b1pi_hists.h"

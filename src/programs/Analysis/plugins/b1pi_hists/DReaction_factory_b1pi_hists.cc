@@ -65,6 +65,9 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
 	locReaction->Set_MinCombinedTrackingFOM(0.001);
 
+	// Enable ROOT TTree Output
+	locReaction->Enable_TTreeOutput("tree_b1pi.root"); //string is file name (must end in ".root"!!)
+
 /**************************************************** b1pi Actions ****************************************************/
 
 	//Extremely Loose Mass Cuts
