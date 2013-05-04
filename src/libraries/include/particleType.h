@@ -610,4 +610,72 @@ inline static int PDGtype(Particle_t p)
   }
 }
 
+inline static int ParticleMultiplexPower(Particle_t locPID, int* locIsFinalStateFlag)
+{
+	//FINAL-STATE PARTICLES (+ pi0) (base 10):
+	*locIsFinalStateFlag = 1;
+	switch(locPID)
+	{
+		case Gamma:       return 0;
+		case Positron:    return 1;
+		case Electron:    return 2;
+		case Neutrino:    return 3;
+		case MuonPlus:    return 4;
+		case MuonMinus:   return 5;
+		case Pi0:         return 6;
+		case PiPlus:      return 7;
+		case PiMinus:     return 8;
+		case KLong:       return 9;
+		case KPlus:       return 10;
+		case KMinus:      return 11;
+		case Neutron:     return 12;
+		case Proton:      return 13;
+		case AntiProton:  return 14;
+		case AntiNeutron: return 15;
+		default: *locIsFinalStateFlag = 0; //decaying
+	}
+
+	//DECAYING PARTICLES:
+	switch(locPID)
+	{
+		case KShort:           return 0;
+		case Eta:              return 1;
+		case Lambda:           return 2;
+		case SigmaPlus:        return 3;
+		case Sigma0:           return 4;
+		case SigmaMinus:       return 5;
+		case Xi0:              return 6;
+		case XiMinus:          return 7;
+		case OmegaMinus:       return 8;
+		case AntiLambda:       return 9;
+		case AntiSigmaMinus:   return 10;
+		case AntiSigma0:       return 11;
+		case AntiSigmaPlus:    return 12;
+		case AntiXi0:          return 13;
+		case AntiXiPlus:       return 14;
+		case AntiOmegaPlus:    return 15;
+		case Deuteron:         return 16;
+		case Rho0:             return 17;
+		case RhoPlus:          return 18;
+		case RhoMinus:         return 19;
+		case omega:            return 20;
+		case EtaPrime:         return 21;
+		case phiMeson:         return 22;
+		case a0_980:           return 23;
+		case f0_980:           return 24;
+		case KStar_892_0:      return 25;
+		case KStar_892_Plus:   return 26;
+		case KStar_892_Minus:  return 27;
+		case AntiKStar_892_0:  return 28;
+		case K1_1400_Plus:     return 29;
+		case K1_1400_Minus:    return 30;
+		case b1_1235_Plus:     return 31;
+		case Sigma_1385_Minus: return 32;
+		case Sigma_1385_0:     return 33;
+		case Sigma_1385_Plus:  return 34;
+
+		default: return -1;
+	}
+}
+
 #endif
