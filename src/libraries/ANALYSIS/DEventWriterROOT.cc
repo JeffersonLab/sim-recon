@@ -475,7 +475,10 @@ void DEventWriterROOT::Fill_Trees(JEventLoop* locEventLoop) const
 		locAnalysisResultsVector[loc_i]->Get_PassedParticleCombos(locPassedParticleCombos);
 		if(locPassedParticleCombos.empty())
 			continue;
-		Fill_Tree(locEventLoop, locAnalysisResultsVector[loc_i]->Get_Reaction(), locPassedParticleCombos);
+		const DReaction* locReaction = locAnalysisResultsVector[loc_i]->Get_Reaction();
+		if(!locReaction->Get_EnableTTreeOutputFlag())
+			continue;
+		Fill_Tree(locEventLoop, locReaction, locPassedParticleCombos);
 	}
 }
 
