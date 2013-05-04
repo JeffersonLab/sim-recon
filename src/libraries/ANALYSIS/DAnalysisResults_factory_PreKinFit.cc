@@ -43,7 +43,14 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 
 	dApplication->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
 
-	TDirectoryFile* locBaseDirectory = static_cast<TDirectoryFile*>(gDirectory->GetDirectory("/"));
+	string locOutputFileName = "hd_root.root";
+	if(gPARMS->Exists("OUTPUT_FILENAME"))
+		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+	TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+	if(locFile == NULL)
+		return NOERROR;
+	locFile->cd("");
+
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		locReaction = locReactions[loc_i];
@@ -56,8 +63,8 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 
 		locDirName = locReactionName;
 		locDirTitle = locReactionName;
-		locBaseDirectory->cd();
-		locDirectoryFile = static_cast<TDirectoryFile*>(locBaseDirectory->GetDirectory(locDirName.c_str()));
+		locFile->cd();
+		locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
 		if(locDirectoryFile == NULL)
 			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
 		locDirectoryFile->cd();
