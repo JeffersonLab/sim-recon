@@ -187,7 +187,7 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 		locParticleComboStep->Get_DetectedFinalChargedParticles_Measured(locParticles);
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
-			if(!Get_AnalysisUtilities()->Find_SimilarCombos(locParticles[loc_j], locPreviousParticleCombos)) //else duplicate
+			if(!Get_AnalysisUtilities()->Find_SimilarCombos(locParticles[loc_j], locEventRFBunch, locPreviousParticleCombos)) //else duplicate
 				Fill_ChargedHists(static_cast<const DChargedTrackHypothesis*>(locParticles[loc_j]), locMCThrownMatching, locEventRFBunch);
 		}
 
@@ -195,7 +195,7 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 		locParticleComboStep->Get_DetectedFinalNeutralParticles_Measured(locParticles);
 		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
 		{
-			if(!Get_AnalysisUtilities()->Find_SimilarCombos(locParticles[loc_j], locPreviousParticleCombos)) //else duplicate
+			if(!Get_AnalysisUtilities()->Find_SimilarCombos(locParticles[loc_j], locEventRFBunch, locPreviousParticleCombos)) //else duplicate
 				Fill_NeutralHists(static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_j]), locMCThrownMatching, locEventRFBunch);
 		}
 	}

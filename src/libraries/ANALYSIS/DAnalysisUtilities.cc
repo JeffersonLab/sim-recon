@@ -910,6 +910,61 @@ bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, c
 	return false;
 }
 
+//check whether a given measured particle appears anywhere in any step, while simultaneously having the same RF bunch
+bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
+{
+	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
+	return Find_SimilarCombos(locParticle, locEventRFBunch, locParticleCombos_ToCheck, locParticleCombos_Similar);
+}
+bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
+{
+	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
+	locParticleCombos_Similar.clear();
+	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
+	{
+		if(Find_SimilarCombos(locParticle, locEventRFBunch, locParticleCombos_ToCheck[loc_i].first))
+			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
+	}
+	return (!locParticleCombos_Similar.empty());
+}
+bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
+{
+	deque<const DParticleCombo*> locParticleCombos_Similar;
+	return Find_SimilarCombos(locParticle, locEventRFBunch, locParticleCombos_ToCheck, locParticleCombos_Similar);
+}
+bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
+{
+	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
+	locParticleCombos_Similar.clear();
+	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
+	{
+		if(Find_SimilarCombos(locParticle, locEventRFBunch, locParticleCombos_ToCheck[loc_i]))
+			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
+	}
+	return (!locParticleCombos_Similar.empty());
+}
+bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const DParticleCombo* locParticleCombo) const
+{
+	if(locParticleCombo->Get_EventRFBunch() != locEventRFBunch)
+		return false;
+
+	const DParticleComboStep* locParticleComboStep;
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+		if(locParticleComboStep->Get_InitialParticle_Measured() == locParticle)
+			return true;
+		if(locParticleComboStep->Get_TargetParticle() == locParticle)
+			return true;
+		for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
+		{
+			if(locParticleComboStep->Get_FinalParticle_Measured(loc_j) == locParticle)
+				return true;
+		}
+	}
+	return false;
+}
+
 //check whether a given measured particle appears anywhere in a specific step (size_t = step index)
 bool DAnalysisUtilities::Find_SimilarCombos(pair<const DKinematicData*, size_t> locParticlePair, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
 {

@@ -28,6 +28,7 @@
 #include "PID/DKinematicData.h"
 #include "PID/DBeamPhoton.h"
 #include "PID/DParticleID.h"
+#include "PID/DEventRFBunch.h"
 
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DKinFitParticle.h"
@@ -85,7 +86,7 @@ class DAnalysisUtilities : public JObject
 
 		bool Compare_Particles(const deque<const DKinematicData*>& locMeasuredParticles_Source, const deque<const DKinematicData*> locMeasuredParticles_ToCheck) const;
 
-		//BELOW METHODS RETURN TRUE IF THERE ARE SIMILAR COMBOS, RETURNS FALSE IF UNIQUE.  ALL OPERATE ON MEASURED DATA (ALL KINFIT RESULTS BETWEEN COMBOS ARE UNIQUE BY CONSTRUCTION)
+		//BELOW METHODS RETURN TRUE IF THERE ARE SIMILAR COMBOS, RETURNS FALSE IF UNIQUE.  ALL OPERATE ON MEASURED DATA.
 			//ALSO: A PARTICLE IS A DUPLICATE IF IT'S DKINEMATICDATA POINTER IS THE SAME: IN OTHER WORDS, IT MUST BE SAME SOURCE PARTICLE AND THE SAME PID
 
 		//check whether a given decay chain appears anywhere in any step: if a decaying particle, will then compare the steps with the decay products
@@ -115,6 +116,13 @@ class DAnalysisUtilities : public JObject
 		bool Find_SimilarCombos(const DKinematicData* locParticle, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const;
 		bool Find_SimilarCombos(const DKinematicData* locParticle, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const;
 		bool Find_SimilarCombos(const DKinematicData* locParticle, const DParticleCombo* locParticleCombo) const;
+
+		//check whether a given measured particle appears anywhere in any step, while simultaneously having the same RF bunch
+		bool Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const;
+		bool Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const;
+		bool Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const;
+		bool Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const;
+		bool Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const DParticleCombo* locParticleCombo) const;
 
 		//check whether a given measured particle appears anywhere in a specific step (size_t = step index)
 		bool Find_SimilarCombos(pair<const DKinematicData*, size_t> locParticlePair, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const;
