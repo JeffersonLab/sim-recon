@@ -13,6 +13,7 @@
 
 #include <JANA/JFactory.h>
 #include <PID/DEventRFBunch.h>
+#include <TRACKING/DMCThrown.h>
 
 using namespace std;
 using namespace jana;
