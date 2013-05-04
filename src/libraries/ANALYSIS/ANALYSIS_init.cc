@@ -25,6 +25,7 @@ using namespace jana;
 #include "DMCThrownMatching_factory.h"
 #include "DAnalysisResults_factory_PreKinFit.h"
 #include "DAnalysisResults_factory.h"
+#include "DEventWriterROOT_factory.h"
 
 #include "DHistogramActions.h"
 #include "DCutActions.h"
@@ -54,6 +55,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	loop->AddFactory(new DMCThrownMatching_factory);
 	loop->AddFactory(new DAnalysisResults_factory_PreKinFit);
 	loop->AddFactory(new DAnalysisResults_factory);
+	loop->AddFactory(new DEventWriterROOT_factory);
 
 	DHistogramAction_ThrownParticleKinematics();
 	DHistogramAction_DetectedParticleKinematics();
@@ -80,6 +82,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_KinFitFOM(NULL, 0.0);
 	DCutAction_TruePID(NULL, Unknown, Unknown);
 	DCutAction_AllTruePID(NULL);
+	DCutAction_GoodEventRFBunch(NULL, false);
 
 	return NOERROR;
 }

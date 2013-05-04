@@ -77,19 +77,32 @@ class DReaction : public JObject
 		inline pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
 		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
 
+		// ROOT OUTPUT
+		inline void Enable_TTreeOutput(string locTTreeOutputFileName)
+		{
+			dEnableTTreeOutputFlag = true;
+			dTTreeOutputFileName = locTTreeOutputFileName;
+		}
+		inline string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
+		inline bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
+
 	private:
 		// PRIVATE METHODS:
 		DReaction(void); //make default constructor private. MUST set a name upon construction (and must be unique!)
 		void Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, deque<deque<string> >& locNames, bool locKinFitResultsFlag = false) const;
 
-		// REACTION AND ANALYSIS MEMBERS:
-		deque<const DReactionStep*> dReactionSteps;
-		deque<DAnalysisAction*> dAnalysisActions;
-
 		// CONTROL MEMBERS:
 		string dReactionName; //must be unique
 		DKinFitType dKinFitType; //defined in ANALYSIS/DKinFitResults.h
 		deque<size_t> dDecayingParticlesExcludedFromP4Kinfit; //to exclude decaying particles from the kinematic fit (resonances are automatically excluded) //size_t is step index where it is a parent
+
+		// ROOT TTREE OUTPUT
+		bool dEnableTTreeOutputFlag; //default is false
+		string dTTreeOutputFileName;
+
+		// REACTION AND ANALYSIS MEMBERS:
+		deque<const DReactionStep*> dReactionSteps;
+		deque<DAnalysisAction*> dAnalysisActions;
 
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value

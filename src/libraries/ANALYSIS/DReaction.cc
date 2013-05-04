@@ -21,6 +21,9 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 
 	dMinProtonMomentum.first = true;
 	dMinProtonMomentum.second = 0.25;
+
+	dTTreeOutputFileName = "";
+	dEnableTTreeOutputFlag = false;
 }
 
 const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
