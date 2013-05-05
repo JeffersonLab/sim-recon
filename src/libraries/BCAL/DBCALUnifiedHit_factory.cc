@@ -194,18 +194,10 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
     
     const DBCALHit& hit = (**hitPtr);
     
-    // mcsmear will produce hits with energy zero if the hits do not
-    // exceed the threshold -- we want to suppress these hits so we know
-    // exactly how many "real" hits we have in a cell
-    if( hit.E < 0.1*k_MeV ) continue;
-    
     int id = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
     readout_channel chan(id, hit.end);
 
-    if( cellHitMap.find(chan) == cellHitMap.end() ){
-      cellHitMap[chan] = cellHits();
-    }
-
+    //this will create cellHitMap[chan] if it doesn't already exist
     cellHitMap[chan].hits.push_back(*hitPtr);
   }
 
@@ -282,11 +274,23 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
       E = hit->E;
       timewalk_coefficients coeff = adc_timewalk_map[chan];
       t_ADC = hit->t;
-      t_ADC -= coeff.c0 + coeff.c1/pow(E-coeff.c3,coeff.c2);
+
+      //if E < coeff.c3, the correction will be bogus, just skip it
+      if (E > coeff.c3) {
+        t_ADC -= coeff.c0 + coeff.c1/pow(E-coeff.c3,coeff.c2);
+      }
       if (useTDChit) {
         timewalk_coefficients tdc_coeff = tdc_timewalk_map[chan];
         t = tdc_hit->t;
-        t -= tdc_coeff.c0 + tdc_coeff.c1/pow(E-tdc_coeff.c3,tdc_coeff.c2);
+        //If E < tdc_coeff.c3, this means the energy is low enough we would not
+        //expect a TDC hit, so just ignore the TDC hit. Otherwise, use the
+        //timewalk-corrected time as the hit time.
+        if (E > tdc_coeff.c3) {
+          t -= tdc_coeff.c0 + tdc_coeff.c1/pow(E-tdc_coeff.c3,tdc_coeff.c2);
+        } else {
+          t = t_ADC;
+          useTDChit = false;
+        }
       } else {
         t = t_ADC;
       }

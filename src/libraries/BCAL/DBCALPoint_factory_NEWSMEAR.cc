@@ -16,6 +16,7 @@ using namespace jana;
 // evnt
 //----------------
 jerror_t DBCALPoint_factory_NEWSMEAR::evnt(JEventLoop *loop, int eventnumber) {
+
   vector<const DBCALUnifiedHit*> hits;
   loop->Get(hits);
   if (hits.size() <= 0) return NOERROR;
@@ -28,16 +29,7 @@ jerror_t DBCALPoint_factory_NEWSMEAR::evnt(JEventLoop *loop, int eventnumber) {
     
     const DBCALUnifiedHit& hit = (**hitPtr);
     
-    // mcsmear will produce hits with energy zero if the hits do not
-    // exceed the threshold -- we want to suppress these hits so we know
-    // exactly how many "real" hits we have in a cell
-    
-    if( hit.E < 0.1*k_MeV ) continue;
-    
     int id = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
-    if( cellHitMap.find( id ) == cellHitMap.end() ){
-      cellHitMap[id] = cellHits();
-    }
 
     // Add hit to appropriate list for this cell
     if(hit.end == DBCALGeometry::kUpstream){
