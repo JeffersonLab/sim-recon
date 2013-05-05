@@ -14,15 +14,18 @@ using namespace jana;
 jerror_t DBCALUnifiedHit_factory::init(void)
 {
 
-	bcal_points_tree = new TTree("bcal_points_tree","");
+  if (enable_debug_output) {
+    bcal_points_tree = new TTree("bcal_points_tree","");
+    bcal_points_tree->Branch("E",&E_tree,"E/F");
+    bcal_points_tree->Branch("t_tdc",&t_tdc_tree,"t_tdc/F");
+    bcal_points_tree->Branch("t_adc",&t_adc_tree,"t_adc/F");
+    bcal_points_tree->Branch("t_tdc_corrected",&t_tdc_corrected_tree,"t_tdc_corrected/F");
+    bcal_points_tree->Branch("t_adc_corrected",&t_adc_corrected_tree,"t_adc_corrected/F");
+    bcal_points_tree->Branch("layer",&layer_tree,"layer/I");
+    bcal_points_tree->Branch("end",&end_tree,"end/O");
+  }
 
-	bcal_points_tree->Branch("E",&E_tree,"E/F");
-	bcal_points_tree->Branch("t_tdc",&t_tdc_tree,"t_tdc/F");
-	bcal_points_tree->Branch("t_adc",&t_adc_tree,"t_adc/F");
-	bcal_points_tree->Branch("layer",&layer_tree,"layer/I");
-	bcal_points_tree->Branch("end",&end_tree,"end/O");
-
-	return NOERROR;
+  return NOERROR;
 }
 
 jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber) {
@@ -261,13 +264,14 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
 
       bool useTDChit = (i==highEIndex) && (hasOneTDCHit);
 
-      E_tree = hit->E;
-      t_adc_tree = hit->t;
-      t_tdc_tree = 0;
-      layer_tree = hit->layer;
-      end_tree = hit->end;
-      if (useTDChit) t_tdc_tree = tdc_hit->t;
-      bcal_points_tree->Fill();
+      if (enable_debug_output) {
+        E_tree = hit->E;
+        t_adc_tree = hit->t;
+        t_tdc_tree = 0;
+        layer_tree = hit->layer;
+        end_tree = hit->end;
+        if (useTDChit) t_tdc_tree = tdc_hit->t;
+      }
 
       float E, t, t_ADC; //these are values that will be assigned to the DBCALUnifiedHit
 
@@ -275,7 +279,10 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
       timewalk_coefficients coeff = adc_timewalk_map[chan];
       t_ADC = hit->t;
 
-      //if E < coeff.c3, the correction will be bogus, just skip it
+      //In reality, we shouldn't have to do a timewalk correction to the ADC times.
+      //But currently the ADC time simulated by mcsmear is a threshold crossing
+      //time, so this is necessary.
+      //if E < coeff.c3, the correction will be bogus, just skip it (this shouldn't happen)
       if (E > coeff.c3) {
         t_ADC -= coeff.c0 + coeff.c1/pow(E-coeff.c3,coeff.c2);
       }
@@ -293,6 +300,12 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
         }
       } else {
         t = t_ADC;
+      }
+
+      if (enable_debug_output) {
+        t_adc_corrected_tree = t_ADC;
+        t_tdc_corrected_tree = useTDChit ? t : 0;
+        bcal_points_tree->Fill();
       }
 
       const float fADC_counts_per_GeV = 15800.0;

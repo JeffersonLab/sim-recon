@@ -36,6 +36,8 @@ class DBCALUnifiedHit_factory : public JFactory<DBCALUnifiedHit> {
   float E_tree;
   float t_tdc_tree;
   float t_adc_tree;
+  float t_tdc_corrected_tree;
+  float t_adc_corrected_tree;
   int layer_tree;
   bool end_tree;
 
@@ -69,6 +71,9 @@ class DBCALUnifiedHit_factory : public JFactory<DBCALUnifiedHit> {
 
   map<readout_channel,timewalk_coefficients> adc_timewalk_map;
   map<readout_channel,timewalk_coefficients> tdc_timewalk_map;
+
+  //write out tree with hit info?
+  static const int enable_debug_output = 0;
 };
 
 #endif //_DBCALUnifiedHit_factory_
