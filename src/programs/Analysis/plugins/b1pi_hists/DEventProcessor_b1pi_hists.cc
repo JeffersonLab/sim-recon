@@ -56,7 +56,7 @@ jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnum
 	//Output TTree
 	vector<const DEventWriterROOT*> locEventWriterROOTVector;
 	locEventLoop->Get(locEventWriterROOTVector);
-	locEventWriterROOTVector[0]->Fill_Trees(locEventLoop);
+	locEventWriterROOTVector[0]->Fill_Trees(locEventLoop, "b1pi_hists"); //the factory tag of the DReactions created by this plugin
 
 	//Do Miscellaneous Cuts
 	bool locSaveEventFlag = false;

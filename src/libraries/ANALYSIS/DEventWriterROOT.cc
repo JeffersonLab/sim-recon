@@ -464,10 +464,13 @@ void DEventWriterROOT::Get_Reactions(jana::JEventLoop* locEventLoop, vector<cons
 	}
 }
 
-void DEventWriterROOT::Fill_Trees(JEventLoop* locEventLoop) const
+void DEventWriterROOT::Fill_Trees(JEventLoop* locEventLoop, string locDReactionTag) const
 {
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);
+
+	vector<const DReaction*> locReactionsWithTag;
+	locEventLoop->Get(locReactionsWithTag, locDReactionTag.c_str());
 
 	for(size_t loc_i = 0; loc_i < locAnalysisResultsVector.size(); ++loc_i)
 	{
@@ -478,6 +481,16 @@ void DEventWriterROOT::Fill_Trees(JEventLoop* locEventLoop) const
 		const DReaction* locReaction = locAnalysisResultsVector[loc_i]->Get_Reaction();
 		if(!locReaction->Get_EnableTTreeOutputFlag())
 			continue;
+		bool locReactionFoundFlag = false;
+		for(size_t loc_j = 0; loc_j < locReactionsWithTag.size(); ++loc_j)
+		{
+			if(locReactionsWithTag[loc_j] != locReaction)
+				continue;
+			locReactionFoundFlag = true;
+			break;
+		}
+		if(!locReactionFoundFlag)
+			continue; //reaction not from this factory, continue
 		Fill_Tree(locEventLoop, locReaction, locPassedParticleCombos);
 	}
 }

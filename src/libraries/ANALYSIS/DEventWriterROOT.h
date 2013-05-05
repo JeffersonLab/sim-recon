@@ -42,7 +42,7 @@ class DEventWriterROOT : public JObject
 		DEventWriterROOT(JEventLoop* locEventLoop);
 		~DEventWriterROOT(void);
 
-		void Fill_Trees(JEventLoop* locEventLoop) const; //fills all from DAnalysisResults
+		void Fill_Trees(JEventLoop* locEventLoop, string locDReactionTag) const;
 		void Fill_Tree(JEventLoop* locEventLoop, const DReaction* locReaction, deque<const DParticleCombo*>& locParticleCombos) const;
 
 	private:
