@@ -342,7 +342,7 @@ void DBCALShower_factory_KLOE_NEWSMEAR::FindPointsInShower(int indx, JEventLoop 
 
 
 	vector<const DBCALPoint*> points;
-	loop->Get(points,"NEWSMEAR");
+	loop->Get(points);
 	
 	int start_indx = indx;
 	do{
@@ -406,7 +406,7 @@ void DBCALShower_factory_KLOE_NEWSMEAR::CellRecon(JEventLoop *loop)
     //then the other arrays will also have been set properly and not full of garbage
     
     vector<const DBCALPoint*> points;
-    loop->Get(points,"NEWSMEAR");
+    loop->Get(points);
     if(points.size() <=0) return;
 
     for (vector<const DBCALPoint*>::const_iterator point_iter = points.begin();

@@ -7,27 +7,26 @@
 using namespace jana;
 
 #include "BCAL/DBCALPoint.h"
+#include "BCAL/DBCALUnifiedHit.h"
+
+#include <TTree.h>
 
 class DBCALHit;
 
 class DBCALPoint_factory : public JFactory<DBCALPoint> {
 
  public:
-
   DBCALPoint_factory() {}
   ~DBCALPoint_factory() {}
 
  private:
- 
   class cellHits{
-  	public:
-		vector<const DBCALHit*> uphits;
-		vector<const DBCALHit*> dnhits;
+   public:
+    vector<const DBCALUnifiedHit*> uphits;
+    vector<const DBCALUnifiedHit*> dnhits;
   };
  
-  jerror_t init(void);
   jerror_t evnt(JEventLoop *loop, int eventnumber);
-
 };
 
 #endif //_DBCALPoint_factory_

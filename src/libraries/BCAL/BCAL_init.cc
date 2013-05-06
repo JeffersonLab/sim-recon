@@ -9,7 +9,7 @@
 #include "DBCALCluster_factory.h"
 #include "DBCALCluster_factory_SINGLE.h"
 #include "DBCALPoint_factory.h"
-#include "DBCALPoint_factory_NEWSMEAR.h"
+#include "DBCALPoint_factory_OLDSMEAR.h"
 #include "DBCALUnifiedHit_factory.h"
 #include "DBCALHit.h"
 #include "DBCALIncidentParticle.h"
@@ -44,7 +44,7 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALTruthShower_factory());
 	loop->AddFactory(new DBCALTruthCell_factory());
 	loop->AddFactory(new DBCALPoint_factory());
-	loop->AddFactory(new DBCALPoint_factory_NEWSMEAR());
+	loop->AddFactory(new DBCALPoint_factory_OLDSMEAR());
 	loop->AddFactory(new DBCALUnifiedHit_factory());
     
 	return NOERROR;
