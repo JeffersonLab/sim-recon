@@ -15,11 +15,11 @@ class DBCALShower_factory:public jana::JFactory<DBCALShower>{
 		jerror_t evnt(jana::JEventLoop *loop, int eventnumber){
 
 			// This is a trivial factory that simply implements the
-			// KLOE tagged factory as the default. It is here so 
+			// IU tagged factory as the default. It is here so 
 			// that the default can be changed easily by simply
 			// changing the tag here or on the command line.
 			vector<const DBCALShower*> showers;
-			loop->Get(showers, "KLOE");
+			loop->Get(showers, "IU");
 			for(unsigned int i=0; i<showers.size(); i++){
 				_data.push_back(const_cast<DBCALShower*>(showers[i]));
 			}
