@@ -1,20 +1,20 @@
 // $Id$
 //
-//    File: DBCALShower_factory_KLOE.h
+//    File: DBCALShower_factory_KLOE_OLDSMEAR.h (formerly DBCALShower_factory_KLOE.h)
 // Created: Tue Jul  3 18:25:12 EDT 2007
 // Creator: Matthew Shepherd
 //
 
 
-#ifndef _DBCALShower_factory_KLOE_NEWSMEAR_
-#define _DBCALShower_factory_KLOE_NEWSMEAR_
+#ifndef _DBCALShower_factory_KLOE_OLDSMEAR_
+#define _DBCALShower_factory_KLOE_OLDSMEAR_
 
 #include <JANA/JFactory.h>
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
 #include <BCAL/DBCALShower.h>
-#include <BCAL/DBCALPoint.h>
+#include <BCAL/DBCALHit.h>
 
 /// Form fully reconstructed showers from BCAL data based on the KLOE algorithm.
 /// The showers produced by this do have calibration applied to correct the
@@ -29,20 +29,20 @@ using namespace jana;
 ///  DBCALShower_factory_KLOE
 ///
 
-class DBCALShower_factory_KLOE_NEWSMEAR:public JFactory<DBCALShower>{
+class DBCALShower_factory_KLOE_OLDSMEAR:public JFactory<DBCALShower>{
     
 public:
     
-  DBCALShower_factory_KLOE_NEWSMEAR();
-  ~DBCALShower_factory_KLOE_NEWSMEAR(){};
+  DBCALShower_factory_KLOE_OLDSMEAR();
+  ~DBCALShower_factory_KLOE_OLDSMEAR(){};
   
-  const char* Tag(void){return "KLOE_NEWSMEAR";}
+  const char* Tag(void){return "KLOE_OLDSMEAR";}
     
 private:
         jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
-    void FindPointsInShower(int indx, JEventLoop *loop, vector<const DBCALPoint*> &pointsInShower);
+    void FindHitsInShower(int indx, vector<const DBCALHit*> &bcalhits, vector<const DBCALHit*> &hitsInShower);
     void CellRecon(JEventLoop *loop);
     void CeleToArray(void);            
     void PreCluster(JEventLoop *loop);
@@ -98,6 +98,10 @@ private:
     float  ecel[modulemax_bcal][layermax_bcal][colmax_bcal];
     float  tcell_anor[modulemax_bcal][layermax_bcal][colmax_bcal];   
     float  tcell_bnor[modulemax_bcal][layermax_bcal][colmax_bcal]; 
+    float  ta_offset[modulemax_bcal][layermax_bcal][colmax_bcal];
+    float  tb_offset[modulemax_bcal][layermax_bcal][colmax_bcal];   
+    float  ta0;
+    float  tb0;   
     // The above data members are used by function CellRecon()
     
     
@@ -215,5 +219,5 @@ private:
     float m_nonlinZ_p3;
 };
 
-#endif // _DBCALShower_factory_KLOE_NEWSMEAR_
+#endif // _DBCALShower_factory_KLOE_OLDSMEAR_
 

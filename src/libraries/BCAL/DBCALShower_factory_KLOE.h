@@ -14,7 +14,7 @@
 using namespace jana;
 
 #include <BCAL/DBCALShower.h>
-#include <BCAL/DBCALHit.h>
+#include <BCAL/DBCALPoint.h>
 
 /// Form fully reconstructed showers from BCAL data based on the KLOE algorithm.
 /// The showers produced by this do have calibration applied to correct the
@@ -42,7 +42,7 @@ private:
         jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
-    void FindHitsInShower(int indx, vector<const DBCALHit*> &bcalhits, vector<const DBCALHit*> &hitsInShower);
+    void FindPointsInShower(int indx, JEventLoop *loop, vector<const DBCALPoint*> &pointsInShower);
     void CellRecon(JEventLoop *loop);
     void CeleToArray(void);            
     void PreCluster(JEventLoop *loop);
@@ -98,10 +98,6 @@ private:
     float  ecel[modulemax_bcal][layermax_bcal][colmax_bcal];
     float  tcell_anor[modulemax_bcal][layermax_bcal][colmax_bcal];   
     float  tcell_bnor[modulemax_bcal][layermax_bcal][colmax_bcal]; 
-    float  ta_offset[modulemax_bcal][layermax_bcal][colmax_bcal];
-    float  tb_offset[modulemax_bcal][layermax_bcal][colmax_bcal];   
-    float  ta0;
-    float  tb0;   
     // The above data members are used by function CellRecon()
     
     

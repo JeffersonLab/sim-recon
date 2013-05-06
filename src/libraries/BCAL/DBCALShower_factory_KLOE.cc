@@ -10,6 +10,8 @@
 #include <map>
 
 #include "BCAL/DBCALHit.h"
+#include "BCAL/DBCALTDCHit.h"
+#include "BCAL/DBCALPoint.h"
 #include "BCAL/DBCALGeometry.h"
 #include "BCAL/DBCALShower_factory_KLOE.h"
 
@@ -164,20 +166,6 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
     // xx and yy arrays are private members of this class
     ////////////////////////////////////////////////////////////////////////////
     
-    // these are timing offsets -- a global side offset and individual cell offsets
-    ta0=0.0;
-    tb0=0.0;    
-    
-    for (int i = 0; i < modulemax_bcal; i++){
-        for (int j = 0; j < layermax_bcal; j++){
-            for (int k = 0; k < colmax_bcal; k++){                       
-                
-                ta_offset[i][j][k]=0.0;
-                tb_offset[i][j][k]=0.0;
-            }
-        }
-    }
-	 
 	 return NOERROR;
 }
 
@@ -186,10 +174,6 @@ jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
 {
-    // Needed for associated objects later
-    vector<const DBCALHit*> bcalhits;
-    loop->Get(bcalhits);
-
     // Call core KLOE reconstruction routines
     CellRecon(loop);
     CeleToArray();   
@@ -198,9 +182,8 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
     ClusAnalysis();
     Trakfit();
     
-    // Loop over reconstructed clusters and make DBCALShower objects out of them
-    vector<DBCALShower*> clusters;
-    
+    //Loop over reconstructed clusters and make DBCALShower objects out of them
+    vector<DBCALShower*> clusters;    
     int id = 0;
     for (int i = 1; i < (clstot+1); i++){
         
@@ -211,6 +194,16 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
         // Time to cook a final shower
         DBCALShower *shower = new DBCALShower;
   
+        //The algorithm has so far both clustered together hits and determined
+        //the position (x,y,z,t,E) of these clusters.
+        //For now, we will use only the clustering and recompute the position
+        //here. The reason we do this is because the clustering process is
+        //unaware of the errors on measurements of z (hits with TDC information
+        //will have much better z resolution). By taking into account this
+        //information we can greatly improve the z-resolution of clusters.
+
+        /*
+        //this is the old way of setting shower properties
         shower->id                  = id++;
         shower->E_raw               = e_cls[j];
         shower->x                   = x_cls[j];
@@ -225,6 +218,75 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
 
         shower->tErr                = 0.5 * sqrt( trms_a[j] * trms_a[j] +
                                                   trms_b[j] * trms_b[j] );
+        */
+
+        // Trace back to the DBCALPoint objects used in this shower and
+        // add them as associated objects.
+        vector<const DBCALPoint*> pointsInShower;
+        FindPointsInShower(j, loop, pointsInShower);
+
+        //Determine cluster (x,y,z,t) by averaging (x,y,z,t) of constituent
+        //DBCALPoints.
+
+        //For now just do the most naive averaging (weighting by E) to get
+        //the cluster properties (x,y,t). For z, average with weight of
+        //1/sig_z^2.
+        //Should consider a different weighting scheme (weighting by E^2) or average different quantities (cylindrical or spherical coordinates instead of rectangular)
+        double E=0,x=0,y=0,z=0,t=0,N_cell=0;
+        double sig_x=0,sig_y=0,sig_z=0,sig_t=0;
+        double sum_z_wt=0;
+        for(unsigned int j=0; j<pointsInShower.size(); j++){
+            double cell_E = pointsInShower[j]->E();
+            double cell_r = pointsInShower[j]->r();
+            double cell_phi = pointsInShower[j]->phi();
+            E += cell_E;
+            x += cell_E*cell_r*cos(cell_phi);
+            sig_x += cell_E*cell_r*cos(cell_phi)*cell_r*cos(cell_phi);
+            y += cell_E*cell_r*sin(cell_phi);
+            sig_y += cell_E*cell_r*sin(cell_phi)*cell_r*sin(cell_phi);
+
+
+            double z_wt = 1/(pointsInShower[j]->sigZ()*pointsInShower[j]->sigZ());
+            double cell_z = pointsInShower[j]->z();
+            double cell_t = pointsInShower[j]->t();
+
+            sum_z_wt += z_wt;
+            z += z_wt*cell_z;
+            sig_z += z_wt*cell_z*cell_z;
+
+            t += cell_E*cell_t;
+            sig_t += cell_E*cell_t*cell_t;
+            N_cell++;
+
+            shower->AddAssociatedObject(pointsInShower[j]);
+        }
+
+        x /= E;
+        sig_x /= E;
+        sig_x = sqrt(sig_x - x*x)/sqrt(N_cell); //really this should be n_effective rather than n, change this later
+        y /= E;
+        sig_y /= E;
+        sig_y = sqrt(sig_y - y*y)/sqrt(N_cell);
+        z /= sum_z_wt;
+        sig_z /= sum_z_wt;
+        sig_z = sqrt(sig_z - z*z)/sqrt(N_cell);
+        t /= E;
+        sig_t /= E;
+        sig_t = sqrt(sig_t - t*t)/sqrt(N_cell);
+
+        shower->id                  = id++;
+        shower->E_raw               = E;
+        shower->x                   = x;
+        shower->y                   = y;
+        shower->z                   = z + 65.0; //don't hardcoded this
+        shower->t                   = t;
+        shower->N_cell              = N_cell;
+      
+        shower->xErr                = sig_x;
+        shower->yErr                = sig_y;
+        shower->zErr                = sig_z;
+
+        shower->tErr                = sig_t;
       
         // calibrate energy:
         // Energy calibration has a z dependence -- the
@@ -239,9 +301,9 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
         float zEntry = ( shower->z - zTarget ) * ( DBCALGeometry::BCALINNERRAD / r );
       
         float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
-                      m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
+            m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
         float nonlin = m_nonlinZ_p0  + m_nonlinZ_p1*zEntry + 
-                       m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
+            m_nonlinZ_p2*(zEntry*zEntry) + m_nonlinZ_p3*(zEntry*zEntry*zEntry);
 
         shower->E = pow( (shower->E_raw ) / scale, 1 / ( 1 + nonlin ) );
 
@@ -251,29 +313,21 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
         shower->xyzCovariance[1][1] = shower->yErr*shower->yErr;
         shower->xyzCovariance[2][2] = shower->zErr*shower->zErr;
 
-	// Trace back to the DBCALHit objects used in this shower and
-	// add them as associated objects.
-	vector<const DBCALHit*> hitsInShower;
-	FindHitsInShower(j, bcalhits, hitsInShower);
-	for(unsigned int j=0; j<hitsInShower.size(); j++){
-		shower->AddAssociatedObject(hitsInShower[j]);
-	}
-
-      _data.push_back(shower);  
+        _data.push_back(shower);  
     }
     
-	return NOERROR;
+    return NOERROR;
 }
 
 
 //------------------
-// FindHitsInShower()
+// FindPointsInShower()
 //------------------
-void DBCALShower_factory_KLOE::FindHitsInShower(int indx, vector<const DBCALHit*> &bcalhits, vector<const DBCALHit*> &hitsInShower)
+void DBCALShower_factory_KLOE::FindPointsInShower(int indx, JEventLoop *loop, vector<const DBCALPoint*> &pointsInShower)
 {
 	/// This is called after the clusters have been completely formed. Our
-	/// job is simply to find the DBCALHit objects used to form a given cluster.
-	/// This is so the DBCALHit objects can be added to the DBCALShower object
+	/// job is simply to find the DBCALPoint objects used to form a given cluster.
+	/// This is so the DBCALPoint objects can be added to the DBCALShower object
 	/// as AssociatedObjects.
 
 	// The variable indx indexes the next[] array as the starting cell for the
@@ -285,6 +339,10 @@ void DBCALShower_factory_KLOE::FindHitsInShower(int indx, vector<const DBCALHit*
 	// cells in the cluster.) For each of these, we must find the LAST 
 	// member in bcalhits to have the same module, layer, number indicating 
 	// that is a DBCALHit to be added.
+
+
+	vector<const DBCALPoint*> points;
+	loop->Get(points);
 	
 	int start_indx = indx;
 	do{
@@ -293,19 +351,13 @@ void DBCALShower_factory_KLOE::FindHitsInShower(int indx, vector<const DBCALHit*
 		int sector = narr[3][indx];
 		
 		// Loop over BCAL hits, trying to find this one
-		const DBCALHit *uphit=NULL;
-		const DBCALHit *downhit=NULL;
-		for(unsigned int i=0; i<bcalhits.size(); i++){
-			if(bcalhits[i]->module !=module)continue;
-			if(bcalhits[i]->layer  !=layer)continue;
-			if(bcalhits[i]->sector !=sector)continue;
-			
-			if(bcalhits[i]->end == DBCALGeometry::kUpstream) uphit = bcalhits[i];
-			if(bcalhits[i]->end == DBCALGeometry::kDownstream) downhit = bcalhits[i];
+		for(unsigned int i=0; i<points.size(); i++){
+			if(points[i]->module() !=module)continue;
+			if(points[i]->layer()  !=layer)continue;
+			if(points[i]->sector() !=sector)continue;
+			pointsInShower.push_back(points[i]);
 		}
 		
-		if(uphit)hitsInShower.push_back(uphit);
-		if(downhit)hitsInShower.push_back(downhit);
 
 		indx = next[indx];
 	}while(indx != start_indx);
@@ -318,27 +370,26 @@ void DBCALShower_factory_KLOE::FindHitsInShower(int indx, vector<const DBCALHit*
 //------------------
 void DBCALShower_factory_KLOE::CellRecon(JEventLoop *loop)
 {
-    //======================================================================
-    // This code is used to reconstruct cell information cell by cell.
-    // This code is adapted from kloe code by Chuncheng Xu. June 29,2005
-    
     //**********************************************************************
     // The main purpose of this function is extracting information
-    // from DBCALHit
-    // objects to form the arrays: ecel_a,tcel_a,ecel_b,tcel_b 
-    // and xcel,ycel,zcel,tcel,ecel,tcell_anor,tcell_bnor;
-    // Among these arrays,
-    // ecel_a,tcel_a,ecel_b,tcel_b, xcel,ycel,zcel,tcel,ecel,tcell_anor and
-    // tcell_bnor are the input of function CeleToArray()
-    // These arrys are 3-D arrays and are rather logically are indexed by
+    // from DBCALPoint
+    // objects to form several arrays, which will be used later in the function
+    // CeleToArray()
+    // The four arrays ecel_a,tcel_a,ecel_b,tcel_b hold the energies and times
+    // of individual hits (this it the "attenuated" energy as measured at the
+    // end of the module, in GeV-equivalent units)  (however times
+    // here should be *after* timewalk correction) (a=upstream, b=downstream).
+    // The five arrays xcel,ycel,zcel,tcel,ecel hold information about the
+    // position, time, and energy of an event in the calorimeter corresponding
+    // to a DBCALPoint (one hit at each end of the detector).
+    // The final two arrays tcell_anor and tcell_bnor contain the same
+    // information as tcel_a and tcell_b.
+    // These arrays are 3-D arrays and are rather logically are indexed by
     // [module][layer][column]
     //********************************************************************** 
     
-    /////////////////////////////////////////////////////////////////////
-    // Now start to take take out DBCALHit to form our private 
-    // data member ecel_a,tcel_a,ecel_b,tcel_b
-    /////////////////////////////////////////////////////////////////////
-    
+    //First reset the arrays ecel_a,tcel_a,ecel_b,tcel_b to clear out garbage
+    //information from the previous events
     memset( ecel_a, 0, modulemax_bcal * layermax_bcal *
             colmax_bcal * sizeof( float ) );
     memset( tcel_a, 0, modulemax_bcal * layermax_bcal *
@@ -347,134 +398,64 @@ void DBCALShower_factory_KLOE::CellRecon(JEventLoop *loop)
             colmax_bcal * sizeof( float ) );
     memset( tcel_b, 0, modulemax_bcal * layermax_bcal *
             colmax_bcal * sizeof( float ) );
+    //the other seven arrays will also be filled with garbage values from
+    //previous events, HOWEVER
+    //we don't need to zero out these arrays, as long as the ecel_a,tcel_a,ecel_b,tcel_b arrays are zeroed out
+    //this is because in CeleToArray(), all cells with ecel_a=0 are skipped
+    //and if ecel_a has been to set to a nonzero value for a particular cell
+    //then the other arrays will also have been set properly and not full of garbage
     
-    // extract the BCAL hits
-    
-    vector<const DBCALHit*> hits;
-    loop->Get(hits);
-    if(hits.size() <= 0) return;
-    
-        
-    for (unsigned int i = 0; i < hits.size(); i++) {
-        
-        const  DBCALHit *hit = hits[i];     
-        int module = hit->module;
-        int layer = hit->layer;
-        int sector = hit->sector;
-        int end = hit->end;
-        float E = hit->E;
-        float t = hit->t;
-        
-        // cache hits indexed by module/layer/sector
-        // this allows end to end matching in next step
-        
-        if(end==0) {                         // upstream
-            ecel_a[module-1][layer-1][sector-1] =  E;
-            tcel_a[module-1][layer-1][sector-1] =  t;
-        }  
-        else if(end==1) {                //   downstream
-            ecel_b[module-1][layer-1][sector-1] =  E;
-            tcel_b[module-1][layer-1][sector-1] =  t;	      
-        }
-        else
-        {
-            cout<<"no such end, it is neither side A Nor B \n"; 
-        }
-    }
+    vector<const DBCALPoint*> points;
+    loop->Get(points);
+    if(points.size() <=0) return;
 
-    //////////////////////////////////////////////////////////////////////// 
-    // Now data member ecel_a,tcel_a,ecel_b,tcel_b are readily filled.
-    ////////////////////////////////////////////////////////////////////////
-    
-    //////////////////////////////////////////////////////////////////////// 
-    // Now start to reconstruct cell information from data member ecel_a,tcel_a
-    // ecel_b,tcel_b. The reconstructed cell information are stored in 
-    // data member arrays xcel,ycel,zcel,tcel,ecel,tcell_anor,tcell_bnor.
-    ////////////////////////////////////////////////////////////////////////
-    
-    //
-    // ************ Loop over all CELE elements ********************
-    //
-    // K module,I layer, J sector
-    
-    for (int k = 0; k < modulemax_bcal; k++){
-        for (int i = 0; i < layermax_bcal; i++){
-            for (int j = 0; j <  colmax_bcal; j++){    
-                
-                // get times
-                float  ta = tcel_a[k][i][j];
-                float  tb = tcel_b[k][i][j];  
-                
-                if( ( ta == 0 ) || ( tb == 0 ) || 
-                    ( fabs( ta - tb ) > 80. ) ) {  
-                    
-                    xcel[k][i][j] = 0.0;
-                    ycel[k][i][j] = 0.0;
-                    zcel[k][i][j] = 0.0;
-                    tcel[k][i][j] = 0.0;
-                    ecel[k][i][j] = 0.0;
+    for (vector<const DBCALPoint*>::const_iterator point_iter = points.begin();
+         point_iter != points.end();
+         ++point_iter) {
+        const DBCALPoint &point = **point_iter;
+        int module = point.module();
+        int layer = point.layer();
+        int sector = point.sector();
+        double r = point.r();
+        double phi = point.phi();
+        double x = r*cos(phi);
+        double y = r*sin(phi);
 
-                    continue;
-                }
-                
-                float ea = ecel_a[k][i][j];
-                float eb = ecel_b[k][i][j];
-                
-                // algorithm requires both ends be hit
-                // improve energy resolution with single hits?
-                if( ( ea < ethr_cell ) ||
-                    ( eb < ethr_cell ) ){
+        xcel[module-1][layer-1][sector-1] = x;
+        ycel[module-1][layer-1][sector-1] = y;
+        //This factory expects z values relative to the center of the BCAL (z=212 cm)
+        //DBCALPoint_factory gives us z values relative to the center of the target (z=65 cm)
+        //The 65 should not be hard-coded here, but it must match the center of target as listed in DBCALPoint_factory (currently hardcoded as 65)
+        zcel[module-1][layer-1][sector-1] = point.z()+65.0-zOffset;
+        tcel[module-1][layer-1][sector-1] = point.t();
+        ecel[module-1][layer-1][sector-1] = point.E();
 
-                    xcel[k][i][j] = 0.0;
-                    ycel[k][i][j] = 0.0;
-                    zcel[k][i][j] = 0.0;
-                    tcel[k][i][j] = 0.0;
-                    ecel[k][i][j] = 0.0;
-                    continue;
-                }
-                
-                
-                float  ta_cal = ta - ta0 - ta_offset[k][i][j];
-                float  tb_cal = tb - tb0 - tb_offset[k][i][j];
-                
-                float x    = xx[k][i][j];
-                float y    = yy[k][i][j];
-                    
-                float  z1 = -0.5 * fiberLength;    // cm
-                float  z2 =  0.5 * fiberLength;    // cm      
-                float  z0 =  0.5 * ( z1 + z2 );
-                    
-                float z = 0.5 * C_EFFECTIVE * ( ta_cal - tb_cal ) + z0;
-                    
-                if( z > ( 0.5 * fiberLength ) ){
-                        
-                    z = 0.5*fiberLength;
-                }
-                else if( z < ( -0.5 * fiberLength ) ){
-                        
-                    z = -0.5*fiberLength;
-                }
-                    
-                float t = 0.5 * ( ta_cal + tb_cal - fiberLength / C_EFFECTIVE );
-                
-                float dpma = min( ( ta_cal - t ) * C_EFFECTIVE, fiberLength );
-                float dpmb = min( ( tb_cal - t ) * C_EFFECTIVE, fiberLength );
-                float atta = exp( -dpma / ATTEN_LENGTH );
-                float attb = exp( -dpmb / ATTEN_LENGTH );
-
-                // could compute energy weighted average instead of straight average
-                float e = ( ( ea / atta ) + ( eb / attb ) ) / 2;
-                
-                xcel[k][i][j] = x;
-                ycel[k][i][j] = y;
-                zcel[k][i][j] = z;
-                tcel[k][i][j] = t;
-                ecel[k][i][j] = e;
-                tcell_anor[k][i][j] = ta_cal;
-                tcell_bnor[k][i][j] = tb_cal;
+        //we require knowledge of the times and energies of the individual upstream and downstream hits
+        //to get these we need the associated objects
+        double EUp=0,EDown=0,tUp=0,tDown=0;
+        vector<const DBCALUnifiedHit*> assoc_hits;
+        point.Get(assoc_hits);
+        for (unsigned int i=0; i<assoc_hits.size(); i++) {
+            if (assoc_hits[i]->end == DBCALGeometry::kUpstream) {
+                EUp = assoc_hits[i]->E;
+                tUp = assoc_hits[i]->t;
             }
+            if (assoc_hits[i]->end == DBCALGeometry::kDownstream) {
+                EDown = assoc_hits[i]->E;
+                tDown = assoc_hits[i]->t;
+            }
+
         }
-    }    
+
+        ecel_a[module-1][layer-1][sector-1] = EUp;
+        //for some reason we need to record the hit time in two different arrays
+        tcel_a[module-1][layer-1][sector-1] = tUp;
+        tcell_anor[module-1][layer-1][sector-1] = tUp;
+
+        ecel_b[module-1][layer-1][sector-1] = EDown;
+        tcel_b[module-1][layer-1][sector-1] = tDown;
+        tcell_bnor[module-1][layer-1][sector-1] = tDown;
+    }
 }
 
 
