@@ -135,6 +135,15 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
     Hvres_vs_layer=new TH2F("Hvres_vs_layer","residual for position along wire",
 			    24,0.5,24.5,200,-0.5,0.5);
   } 
+  Hcdcdrift_time=(TH2F*)gROOT->FindObject("Hcdcdrift_time");
+  if (!Hcdcdrift_time){
+    Hcdcdrift_time=new TH2F("Hcdcdrift_time",
+			 "cdc doca vs drift time",801,-21,781,100,0,1);
+  }  
+  Hcdcres_vs_drift_time=(TH2F*)gROOT->FindObject("Hcdcres_vs_drift_time");
+  if (!Hcdcres_vs_drift_time){
+    Hcdcres_vs_drift_time=new TH2F("Hcdcres_vs_drift_time","cdc Residual vs drift time",800,-20,780,200,-0.1,0.1);
+  } 
   Hdrift_time=(TH2F*)gROOT->FindObject("Hdrift_time");
   if (!Hdrift_time){
     Hdrift_time=new TH2F("Hdrift_time",
@@ -210,7 +219,7 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   loop->Get(pseudos);
   vector<const DCDCTrackHit*>cdcs;
   loop->Get(cdcs);
-  
+
   if (cdcs.size()>4 && bcalshowers.size()>0){
     vector<const DCDCTrackHit*>superlayers[5];
     for (unsigned int i=0;i<cdcs.size();i++){
@@ -239,20 +248,24 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
       for (unsigned int i=0;i<tracks.size();i++){
 	double chi2x=0.,chi2y=0.;
 	DMatrix4x1 S=GuessForStateVector(tracks[i],chi2x,chi2y);
+	DMatrix4x1 Sbest=S;
 	
 	// Match to outer detectors 
 	if (MatchOuterDetectors(fcalshowers,bcalshowers,S)){
 	  // move S to the z-position where we found the match
 	  S(state_x)+=mOuterZ*S(state_tx);
 	  S(state_y)+=mOuterZ*S(state_ty);
-	  
+
+	  // Add lists of stereo and axial hits associated with this track 
+	  // and sort
 	  vector<const DCDCTrackHit *>hits=tracks[i].axial_hits;
 	  hits.insert(hits.end(),tracks[i].stereo_hits.begin(),tracks[i].stereo_hits.end());
 	  sort(hits.begin(),hits.end(),cdc_hit_cmp);
 
-	  deque<trajectory_t>trajectory;
-	  SetReferenceTrajectory(mOuterZ,S,trajectory,hits[hits.size()-1]);
-	}
+	  // Run the Kalman Filter algorithm
+	  DoFilter(S,hits);
+	
+	} // match outer detectors
       }
     }
   }
@@ -320,6 +333,123 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
    
   return NOERROR;
 }
+
+// Steering routine for the kalman filter
+jerror_t 
+DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
+				       vector<const DCDCTrackHit *>&hits){
+  unsigned int numhits=hits.size();
+  unsigned int maxindex=numhits-1;
+
+  // Create an initial reference trajectory
+  deque<trajectory_t>trajectory;
+  // if (SetReferenceTrajectory(mOuterZ,S,trajectory,hits[maxindex])==NOERROR)
+    {
+    // State vector to store "best" values
+    DMatrix4x1 Sbest;
+
+    // Covariance matrix
+    DMatrix4x4 C0,C,Cbest;
+    C0(state_x,state_x)=C0(state_y,state_y)=1.;
+    C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.01;
+    
+    vector<cdc_update_t>updates(hits.size());
+    double chi2=1e16,chi2_old=1e16;
+    unsigned int ndof=0,ndof_old=0;
+    unsigned int iter=0;
+    
+    //printf("wirebased-----------\n");
+
+    // Perform a wire-based pass
+    for(iter=0;iter<20;iter++){
+      chi2_old=chi2; 
+      ndof_old=ndof;
+
+      trajectory.clear();
+      if (SetReferenceTrajectory(mOuterZ,S,trajectory,
+				 hits[maxindex])!=NOERROR) break;
+
+      C=C0;
+      if (KalmanFilter(1.,S,C,hits,trajectory,updates,chi2,ndof)!=NOERROR)
+	break;
+	      
+      //printf(">>>>>>chi2 %f ndof %d\n",chi2,ndof);
+
+      if (fabs(chi2_old-chi2)<0.1 || chi2>chi2_old+1.0) break;  
+      
+      // Save the current state and covariance matrixes
+      Cbest=C;
+      Sbest=S;
+      
+      // run the smoother (opposite direction to filter)
+      //Smooth(S,C,trajectory,updates);	      
+    }
+    if (iter>0){
+      double prelimprob=TMath::Prob(chi2_old,ndof_old);
+      Hprelimprob->Fill(prelimprob);
+
+      if (prelimprob>0.01){ 
+	// Perform a time-based pass
+	S=Sbest;
+	chi2=1e16;
+
+	//printf("Timebased-----------\n");
+	for (iter=0;iter<20;iter++){
+	  chi2_old=chi2; 
+	  ndof_old=ndof;
+	  
+	  trajectory.clear();
+	  if (SetReferenceTrajectory(mOuterZ,S,trajectory,hits[maxindex])
+	      ==NOERROR){
+	    C=C0;
+	    KalmanFilter(1.,S,C,hits,trajectory,updates,chi2,ndof,true);
+  
+	    //printf(">>>>>>chi2 %f ndof %d\n",chi2,ndof);
+	    if (fabs(chi2-chi2_old)<0.1 || chi2>chi2_old+1.0 || ndof!=ndof_old) break;
+	    
+	    Sbest=S;
+	    Cbest=C;
+	  }
+	  else break;
+	}
+	if (iter>0){
+	  double prob=TMath::Prob(chi2_old,ndof_old);
+	  Hprob->Fill(prob);
+
+	  if (prob>0.01){
+	    // zero-position and direction of line describing particle trajectory
+	    DVector3 pos0(Sbest(state_x),Sbest(state_y),trajectory[trajectory.size()-1].z);
+	    DVector3 vhat(Sbest(state_tx),Sbest(state_ty),1.);
+	    vhat.SetMag(1.);
+	    for (unsigned int k=0;k<numhits;k++){
+	      DVector3 wirepos=hits[k]->wire->origin;
+	      DVector3 dir=hits[k]->wire->udir;
+	      // Find the doca to the wire
+	      DVector3 diff=wirepos-pos0;
+	      double vhat_dot_uhat=vhat.Dot(dir);
+	      double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
+	      double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(dir));
+	      double s2=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(dir));
+	      diff+=s*dir-s2*vhat;
+	      double d=diff.Mag();
+	      double tdrift=hits[k]->tdrift-mT0-s2/29.98;
+	      double dmeas=cdc_drift_distance(tdrift);
+
+	      Hcdcres_vs_drift_time->Fill(tdrift,dmeas-d);
+	      Hcdcdrift_time->Fill(tdrift,d);
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+
+
+
+  return NOERROR;
+}
+
 
 // Steering routine for the kalman filter
 jerror_t 
@@ -973,6 +1103,52 @@ jerror_t DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
   return NOERROR;
 }
 
+// Kalman smoother 
+jerror_t DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
+					      deque<trajectory_t>&trajectory,
+					      vector<cdc_update_t>&updates
+					      ){
+  DMatrix4x1 S; 
+  DMatrix4x4 C,dC;
+  DMatrix4x4 JT,A;
+
+  unsigned int max=trajectory.size()-1;
+  S=(trajectory[max].Skk);
+  C=(trajectory[max].Ckk);
+  JT=(trajectory[max].J.Transpose());
+  //Ss=S;
+  //Cs=C;
+  for (unsigned int m=max-1;m>0;m--){
+    if (trajectory[m].h_id==0){
+      A=trajectory[m].Ckk*JT*C.Invert();
+      Ss=trajectory[m].Skk+A*(Ss-S);
+      Cs=trajectory[m].Ckk+A*(Cs-C)*A.Transpose();
+    }
+    else{
+      unsigned int id=trajectory[m].h_id-1;
+      A=updates[id].C*JT*C.Invert();
+      dC=A*(Cs-C)*A.Transpose();
+      Ss=updates[id].S+A*(Ss-S);
+      Cs=updates[id].C+dC;
+
+      // Reset h_id for this position along the reference trajectory
+      trajectory[m].h_id=0;
+    }
+
+    S=trajectory[m].Skk;
+    C=trajectory[m].Ckk;
+    JT=trajectory[m].J.Transpose();
+  }
+  
+  A=trajectory[0].Ckk*JT*C.Invert();
+  Ss=trajectory[0].Skk+A*(Ss-S);
+  Cs=trajectory[0].Ckk+A*(Cs-C)*A.Transpose();
+
+  return NOERROR;
+}
+
+
+
 // Perform Kalman Filter for the current trajectory
 jerror_t 
 DEventProcessor_dc_alignment::KalmanFilterCathodesOnly(double anneal_factor,
@@ -1149,6 +1325,176 @@ DEventProcessor_dc_alignment::KalmanFilterCathodesOnly(double anneal_factor,
 
   }
   //chi2*=anneal_factor;
+
+  ndof-=4;
+
+  return NOERROR;
+}
+
+// Perform the Kalman Filter for the current set of cdc hits
+jerror_t 
+DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
+					   DMatrix4x1 &S,DMatrix4x4 &C,
+					   vector<const DCDCTrackHit *>&hits,
+					   deque<trajectory_t>&trajectory,
+					   vector<cdc_update_t>&updates,
+					   double &chi2,unsigned int &ndof,
+					   bool timebased){
+  DMatrix1x4 H;  // Track projection matrix
+  DMatrix4x1 H_T; // Transpose of track projection matrix 
+  DMatrix4x1 K;  // Kalman gain matrix
+  DMatrix4x4 I; // identity matrix
+  DMatrix4x4 J; // Jacobian matrix
+  DMatrix4x1 S0; // State vector from reference trajectory
+
+  //Initialize chi2 and ndof
+  chi2=0.;
+  ndof=0;
+
+  double doca2=0.;
+ 
+  // CDC index and wire position variables
+  unsigned int cdc_index=hits.size()-1;
+  bool more_hits=true;
+  DVector3 origin=hits[cdc_index]->wire->origin;
+  DVector3 dir=hits[cdc_index]->wire->udir;
+  double z0=origin.z();
+  double uz=dir.z();
+  DVector3 wirepos=origin+((trajectory[0].z-z0)/uz)*dir;
+
+  /// compute initial doca^2 to first wire
+  double dx=S(state_x)-wirepos.x();
+  double dy=S(state_y)-wirepos.y();
+  double old_doca2=dx*dx+dy*dy;
+  
+  // Loop over all steps in the trajectory
+  S0=trajectory[0].S;
+  J=trajectory[0].J;
+  trajectory[0].Skk=S;
+  trajectory[0].Ckk=C;
+  for (unsigned int k=1;k<trajectory.size();k++){
+    if (C(0,0)<=0. || C(1,1)<=0. || C(2,2)<=0. || C(3,3)<=0.)
+      return UNRECOVERABLE_ERROR;
+    
+    // Propagate the state and covariance matrix forward in z
+    S=trajectory[k].S+J*(S-S0);
+    C=J*C*J.Transpose();
+    
+    // Save the current state and covariance matrix 
+    trajectory[k].Skk=S;
+    trajectory[k].Ckk=C;
+    
+    // Save S and J for the next step
+    S0=trajectory[k].S;
+    J=trajectory[k].J;
+    
+    // Position along wire
+    wirepos=origin+((trajectory[k].z-z0)/uz)*dir;
+
+    // New doca^2
+    dx=S(state_x)-wirepos.x();
+    dy=S(state_y)-wirepos.y();
+    doca2=dx*dx+dy*dy;
+
+    if (doca2>old_doca2 && more_hits){
+      // zero-position and direction of line describing particle trajectory
+      DVector3 pos0(S(state_x),S(state_y),trajectory[k].z);
+      DVector3 vhat(S(state_tx),S(state_ty),1.);
+      vhat.SetMag(1.);
+
+      // Find the true doca to the wire
+      DVector3 diff=wirepos-pos0;
+      double vhat_dot_uhat=vhat.Dot(dir);
+      double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
+      double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(dir));
+      double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(dir));
+      diff+=s*dir-t*vhat;
+      double d=diff.Mag();
+
+      // x and y positions of state vector at doca
+      pos0+=t*vhat;
+      S(state_x)=pos0.x();
+      S(state_y)=pos0.y();
+
+      // The next measurement and its variance
+      double tdrift=hits[cdc_index]->tdrift-mT0-trajectory[k].t;
+      double dmeas=0.39;
+      double V=1.1*(0.78*0.78/12.); // sigma=cell_size/sqrt(12.)*scale_factor
+      if (timebased){
+	dmeas=cdc_drift_distance(tdrift);
+	V=anneal_factor*cdc_variance(tdrift);
+      }
+
+      // residual
+      double res=dmeas-d;
+      
+      // Track projection
+      double one_over_d=1./d;
+      H(state_x)=H_T(state_x)=-diff.x()*one_over_d;
+      H(state_y)=H_T(state_y)=-diff.y()*one_over_d;
+	
+      // inverse of variance including prediction
+      double InvV=1./(V+H*C*H_T);
+      
+      // Compute KalmanSIMD gain matrix
+      K=InvV*(C*H_T);
+
+      // Update state vector covariance matrix
+      DMatrix4x4 Ctest=C-K*(H*C);
+
+      // Check that Ctest is positive definite
+      if (Ctest(0,0)>0.0 && Ctest(1,1)>0.0 && Ctest(2,2)>0.0 && Ctest(3,3)>0.0){
+	C=Ctest;
+
+	// Update the state vector 
+	//S=S+res*K;
+	S+=res*K;
+
+	double scale=1.-H*K;
+	
+	// Update chi2 for this segment
+	chi2+=scale*res*res/V;
+	ndof++;	
+
+      }
+      else return VALUE_OUT_OF_RANGE;
+
+      // Propagate the state and the covariance matrix back to current position
+      // in z along the reference trajectory
+      double dz=trajectory[k].z-pos0.z();
+      S(state_x)+=S(state_tx)*dz;
+      S(state_y)+=S(state_ty)*dz;
+
+      J(state_x,state_tx)=dz;
+      J(state_y,state_ty)=dz;
+      C=J*C*J.Transpose();
+
+      updates[cdc_index].S=S;
+      updates[cdc_index].C=C;
+      trajectory[k].h_id=cdc_index+1;
+
+      // move to next cdc hit
+      if (cdc_index>0){
+	cdc_index--;
+
+	//New wire position
+	origin=hits[cdc_index]->wire->origin;
+	dir=hits[cdc_index]->wire->udir;
+	z0=origin.z();
+	uz=dir.z();	
+	wirepos=origin+((trajectory[k].z-z0)/uz)*dir;
+	
+	// New doca^2
+	dx=S(state_x)-wirepos.x();
+	dy=S(state_y)-wirepos.y();
+	doca2=dx*dx+dy*dy;	
+	
+      }
+      else more_hits=false;
+    }
+  
+    old_doca2=doca2;
+  }
 
   ndof-=4;
 
@@ -1410,7 +1756,9 @@ jerror_t DEventProcessor_dc_alignment
     z=newz;
   }while (S(state_y)>min_y);
 
-  if (false){
+  if (trajectory.size()<2) return UNRECOVERABLE_ERROR;
+  if (false)
+    {
     printf("Trajectory:\n");
     for (unsigned int i=0;i<trajectory.size();i++){
       printf(" x %f y %f z %f\n",trajectory[i].S(state_x),
@@ -1796,7 +2144,7 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
       double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(uhat));
       double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
       double dr=(diff+s*uhat-t*vhat).Mag();
-
+      
       Hbcalmatch->Fill(s,dr);
       if (dr<3.0){
 	bcal_match_t temp;

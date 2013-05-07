@@ -59,6 +59,16 @@ typedef struct{
 }update_t;
 
 typedef struct{
+  double res,V;
+  DMatrix4x1 S;
+  DMatrix4x4 C;
+  DMatrix4x1 H_T;
+  DMatrix1x4 H;
+  double doca,t;
+  double drift,drift_time;
+}cdc_update_t;
+
+typedef struct{
   unsigned int id;
   DMatrix4x1 S;
   DMatrix4x4 C; 
@@ -153,6 +163,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 				 double &chi2y);
 
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
+  jerror_t DoFilter(DMatrix4x1 &S,vector<const DCDCTrackHit *>&hits);
+
   jerror_t KalmanFilterCathodesOnly(double anneal_factor,DMatrix4x1 &S,
 				    DMatrix4x4 &C,
 			vector<const DFDCPseudo *>&hits,
@@ -165,6 +177,13 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			deque<trajectory_t>&trajectory,
 			vector<update_t>&updates,
 			double &chi2,unsigned int &ndof);	
+  jerror_t KalmanFilter(double anneal_factor,
+			DMatrix4x1 &S,DMatrix4x4 &C,
+			vector<const DCDCTrackHit *>&hits,
+			deque<trajectory_t>&trajectory,
+			vector<cdc_update_t>&updates,
+			double &chi2,unsigned int &ndof,
+			bool timebased=false);
   jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 		  deque<trajectory_t>&trajectory,
 		  vector<const DFDCPseudo *>&hits,
@@ -175,6 +194,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		  vector<const DFDCPseudo *>&hits,
 		  vector<update_t>updates,
 		  vector<update_t>&smoothed_updates);
+  jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,deque<trajectory_t>&trajectory,
+		  vector<cdc_update_t>&updates);
   jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
 				  deque<trajectory_t>&trajectory,
 				  vector<const DFDCPseudo *>&wires);
@@ -202,6 +223,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   jerror_t EstimateT0(vector<update_t>&updates,
 		      vector<const DFDCPseudo*>&hits);
   
+  double cdc_variance(double t);
+  double cdc_drift_distance(double t);
 
   jerror_t GetProcessNoise(double dz,
 			   double chi2c_factor,
@@ -216,9 +239,9 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   pthread_mutex_t mutex;
 
   TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdc_match;
-  TH2F *Hbcalmatch;
+  TH2F *Hbcalmatch,*Hcdcdrift_time;
   TH2F *Hures_vs_layer,*HdEdx_vs_beta;	
-  TH2F *Hdrift_time;
+  TH2F *Hdrift_time,*Hcdcres_vs_drift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
   TH2F *Hdv_vs_dE;
 
@@ -241,6 +264,23 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   vector<align_t>alignments;
   vector<vector<DFDCWire*> >fdcwires;
 };
+
+
+// Smearing function derived from fitting residuals
+inline double DEventProcessor_dc_alignment::cdc_variance(double t){ 
+  //return CDC_VARIANCE;
+  if (t<0.0) t=0.0;
+  
+  double sigma=0.1/(t+2.5)+0.0060+1.e-5*t;
+  return sigma*sigma;
+}
+
+// Convert time to distance for the cdc
+inline double DEventProcessor_dc_alignment::cdc_drift_distance(double t){
+  double d=0.017;
+  if (t>0.0) d+=0.030*sqrt(t);
+  return d;
+}
 
 #endif // _DEventProcessor_dc_alignment_
 
