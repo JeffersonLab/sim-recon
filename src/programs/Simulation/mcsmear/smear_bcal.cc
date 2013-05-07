@@ -468,10 +468,15 @@ void bcalInit(void)
 	double toffset = 6.0;
 	
 	// Fill the BCAL_PULSE_SHAPE_HISTO histogram
+	// n.b. DHistogram content arrays allocate an extra
+	// element at the beginning so it can use bin=1 as the
+	// first bin. Thus, our loops run from 1 to Nbins rather than from
+	// 0 to Nbins-1 (that first bin may eventually
+	// be used for underflow).
 	float *psh = BCAL_PULSE_SHAPE_HISTO->GetContentPointer();
 	int first_nonzero_bin = NBINS;
 	int last_nonzero_bin = 1;
-	for(int jbin=1; jbin<=NBINS; jbin++, psh++){
+	for(int jbin=1; jbin<=NBINS; jbin++){
 		double t1 = BCAL_PULSE_SHAPE_HISTO->GetBinCenter(jbin);
 		double t = t1+toffset;
 
@@ -479,14 +484,14 @@ void bcalInit(void)
 		// limits it tends to diverge. Impose a cut here to keep the signal
 		// at zero when evaluating the spline beyond those limits.
 		if(t<-7.0 || t>180.0){
-			*psh = 0.0;
+			psh[jbin] = 0.0;
 		}else{
-			*psh = (mV_per_MeV/norm)*pulse_shape->Eval(t);
+			psh[jbin] = (mV_per_MeV/norm)*pulse_shape->Eval(t);
 		}
 
 		// Keep track of first and last non-zero bins in the BCAL_PULSE_SHAPE_MATRIX
 		// table. This is used to speed things up when it is finally applied later.
-		if(*psh > 0.0){
+		if(psh[jbin] > 0.0){
 			last_nonzero_bin = jbin;
 			if(jbin<first_nonzero_bin){
 				first_nonzero_bin = jbin;
@@ -500,11 +505,9 @@ void bcalInit(void)
 	float lo = BCAL_PULSE_SHAPE_HISTO->GetBinLowEdge(first_nonzero_bin);
 	float hi = BCAL_PULSE_SHAPE_HISTO->GetBinLowEdge(last_nonzero_bin+1);
 	DHistogram *h = new DHistogram(Nbins_trimmed, lo, hi);
-	psh = BCAL_PULSE_SHAPE_HISTO->GetContentPointer();
-	psh = &psh[first_nonzero_bin]; // point to first non-zero bin
 	float *hptr = h->GetContentPointer();
-	for(int ibin=1; ibin<=Nbins_trimmed; ibin++, psh++, hptr++){
-		*hptr = *psh;
+	for(int ibin=1; ibin<=Nbins_trimmed; ibin++){
+		hptr[ibin] = psh[first_nonzero_bin+ibin-1];
 	}
 	
 	// Return original BCAL_PULSE_SHAPE_HISTO to pool and keep
@@ -1175,32 +1178,31 @@ void ApplyElectronicPulseShapeOneHisto(DHistogram *h)
 	h->Reset();
 	
 	int Nbins = h->GetNbins();
-   
-   // Get pointers to the bin content arrays directly.
-   // This will allow the two nested loops below to
-   // work much more efficiently.
-   // n.b. DHistogram content arrays allocate an extra
-   // element at the beginning so it can use bin=1 as the
-   // first bin. Thus, we need to immediately increment these
-   // pointers to get to bin 1 (that first bin may eventually
-   // be used for underflow).
-   float* tmp_content = tmp.GetContentPointer();
-   float* h_content = h->GetContentPointer();
-   tmp_content++;
-   h_content++;
+
+	// Get pointers to the bin content arrays directly.
+	// This will allow the two nested loops below to
+	// work much more efficiently.
+	// n.b. DHistogram content arrays allocate an extra
+	// element at the beginning so it can use bin=1 as the
+	// first bin. Thus, our loops run from 1 to Nbins rather than from
+	// 0 to Nbins-1 (that first bin may eventually
+	// be used for underflow).
+	float* tmp_content = tmp.GetContentPointer();
+	float* h_content = h->GetContentPointer();
+	float* pulse_shape = BCAL_PULSE_SHAPE_HISTO->GetContentPointer();
+	//BCAL_PULSE_SHAPE_HISTO will generally have fewer bins than Nbins
+	int pulse_Nbins = BCAL_PULSE_SHAPE_HISTO->GetNbins();
 
 	// Loop over bins of input histo
-	for(int ibin=1; ibin<=Nbins; ibin++, tmp_content++){
-		float A = *tmp_content;
-      if(A==0.0)continue; // no need to continue for empty bins
+	for(int ibin=1; ibin<=Nbins; ibin++){
+		float A = tmp_content[ibin];
+		if(A==0.0)continue; // no need to continue for empty bins
 		
-		float *h_content_tmp = &h_content[ibin];
-		float *pulse_shape = BCAL_PULSE_SHAPE_HISTO->GetContentPointer();
-		int end_bin = BCAL_PULSE_SHAPE_HISTO->GetNbins();
+		int end_bin = pulse_Nbins;
 		if(end_bin > (Nbins-ibin+1))end_bin = (Nbins-ibin+1);
-		for(int jbin=1; jbin<=end_bin; jbin++, h_content_tmp++, pulse_shape++){
-			float weight = A*(*pulse_shape);
-         *h_content_tmp += weight;
+		for(int jbin=1; jbin<=end_bin; jbin++){
+			float weight = A*(pulse_shape[jbin]);
+			h_content[ibin+jbin-1] += weight;
 		}		
 	}
 }
