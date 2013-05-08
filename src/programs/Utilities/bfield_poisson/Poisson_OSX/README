@@ -50,9 +50,47 @@ was because it needs LD_LIBRARY_PATH (not DYLD_LIBRARY_PATH)
 and DYLD_FALLBACK_LIBRARY_PATH both of which seem foreign
 to Darwin systems.
 
+NOTE: It seems startwine no longer comes with the Wine.app.
+I've copied it to the bottom of this file in case it is
+needed.
+
+
 Running the programs
 -----------------------
 An example script can be found in the "example" directory.
 It is called "run_all.csh". It is probably easiest to
 just look there for an example of how to run each of the 
 programs.
+
+
+
+
+APPENDIX: startwine script
+-----------------------------
+Below is a copy of the startwine script from an older version
+of WineBottler from when they used to distribute it.
+
+#!/usr/bin/env bash
+#hack to add some paths
+
+# get current path
+if test $(echo $0 | grep "Wine.app/Contents/MacOS/startwine"); then
+    WINE_DIRNAME="$(dirname "$0")/../Resources"
+else
+    WINE_DIRNAME="$(pwd)/../Resources"
+fi
+
+# exports to ensure wine finds all libs in the bundle
+export PATH="$WINE_DIRNAME/bin":$PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"$WINE_DIRNAME/lib":"/usr/X11R6/lib"
+export DYLD_FALLBACK_LIBRARY_PATH="/usr/lib:$WINE_DIRNAME/lib:/usr/X11R6/lib"
+export FONTCONFIG_FILE="$WINE_DIRNAME/etc/fonts/fonts.conf"
+
+# set Display properties for Tiger
+if test $(echo $OSTYPE | grep darwin8); then
+    export DISPLAY=:0.0
+    open /Applications/Utilities/X11.app
+fi
+
+# start wine
+exec "$WINE_DIRNAME/bin/wine" "$@"
