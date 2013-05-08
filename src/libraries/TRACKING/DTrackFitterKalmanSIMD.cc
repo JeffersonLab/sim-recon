@@ -2735,16 +2735,17 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoiseCentral(double ds,
 
     double one_over_p_sq=one_over_pt*one_over_pt/one_plus_tanl2;
     double one_over_beta2=1.+mass2*one_over_p_sq;
-    double chi2c=chi2c_factor*my_ds*one_over_beta2*one_over_p_sq;
-    double chi2a=chi2a_factor*(1.+chi2a_corr*one_over_beta2)*one_over_p_sq;
+    double chi2c_p_sq=chi2c_factor*my_ds*one_over_beta2;
+    double chi2a_p_sq=chi2a_factor*(1.+chi2a_corr*one_over_beta2);
     // F=Fraction of Moliere distribution to be taken into account
     // nu=0.5*chi2c/(chi2a*(1.-F));
-    double nu=MOLIERE_RATIO1*chi2c/chi2a;
+    double nu=MOLIERE_RATIO1*chi2c_p_sq/chi2a_p_sq;
     double one_plus_nu=1.+nu;
     // sig2_ms=chi2c*1e-6/(1.+F*F)*((one_plus_nu)/nu*log(one_plus_nu)-1.);
-    double sig2_ms=chi2c*MOLIERE_RATIO3*(one_plus_nu/nu*log(one_plus_nu)-1.);
+    double sig2_ms=chi2c_p_sq*one_over_p_sq*MOLIERE_RATIO3
+      *(one_plus_nu/nu*log(one_plus_nu)-1.);
 
-    Q=sig2_ms*Q;
+    Q*=sig2_ms;
   }
   
   return NOERROR;
@@ -2785,20 +2786,21 @@ jerror_t DTrackFitterKalmanSIMD::GetProcessNoise(double ds,
      = my_ds_2*sqrt(one_plus_tsquare*one_plus_tx2);
 
    double one_over_beta2=1.+one_over_p_sq*mass2;
-   double chi2c=chi2c_factor*my_ds*one_over_beta2*one_over_p_sq;   
-   double chi2a=chi2a_factor*(1.+chi2a_corr*one_over_beta2)*one_over_p_sq;
+   double chi2c_p_sq=chi2c_factor*my_ds*one_over_beta2;   
+   double chi2a_p_sq=chi2a_factor*(1.+chi2a_corr*one_over_beta2);
    // F=MOLIERE_FRACTION =Fraction of Moliere distribution to be taken into account
    // nu=0.5*chi2c/(chi2a*(1.-F));
-   double nu=MOLIERE_RATIO1*chi2c/chi2a;
+   double nu=MOLIERE_RATIO1*chi2c_p_sq/chi2a_p_sq;
    double one_plus_nu=1.+nu;
-   double sig2_ms=chi2c*MOLIERE_RATIO2*(one_plus_nu/nu*log(one_plus_nu)-1.);
+   double sig2_ms=chi2c_p_sq*one_over_p_sq*MOLIERE_RATIO2
+     *(one_plus_nu/nu*log(one_plus_nu)-1.);
 
    
    //   printf("fac %f %f %f\n",chi2c_factor,chi2a_factor,chi2a_corr);
    //printf("omega %f\n",chi2c/chi2a);
 
    
-   Q=sig2_ms*Q;
+   Q*=sig2_ms;
  }
 
  return NOERROR;
@@ -4887,8 +4889,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	    && denom>EPS){
 	  double dzw=z-z0w;
 	  dz=-((S(state_x)-origin.X()-ux*dzw)*my_ux
-	       +(S(state_y)-origin.Y()-uy*dzw)*my_uy)
-	    /(my_ux*my_ux+my_uy*my_uy);
+	       +(S(state_y)-origin.Y()-uy*dzw)*my_uy)/denom;
 	  
 	  if (fabs(dz)>two_step || dz<0.0){
 	    do_brent=true;

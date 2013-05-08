@@ -473,8 +473,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    {
 	    double dzw=z-z0w;
 	    dz=-((S(state_x)-origin.X()-ux*dzw)*my_ux
-	       +(S(state_y)-origin.Y()-uy*dzw)*my_uy)
-	      /(my_ux*my_ux+my_uy*my_uy);
+		 +(S(state_y)-origin.Y()-uy*dzw)*my_uy)/denom;
 
 	    if (fabs(dz)>two_step || dz<0){
 	      do_brent=true;
