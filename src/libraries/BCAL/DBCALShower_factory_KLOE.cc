@@ -232,7 +232,8 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
         //the cluster properties (x,y,t). For z, average with weight of
         //1/sig_z^2.
         //Should consider a different weighting scheme (weighting by E^2) or average different quantities (cylindrical or spherical coordinates instead of rectangular)
-        double E=0,x=0,y=0,z=0,t=0,N_cell=0;
+        double E=0,x=0,y=0,z=0,t=0;
+        int N_cell=0;
         double sig_x=0,sig_y=0,sig_z=0,sig_t=0;
         double sum_z_wt=0;
         for(unsigned int j=0; j<pointsInShower.size(); j++){
