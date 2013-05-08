@@ -3,6 +3,7 @@
 README  Poisson/Superfish on OSX 10.6
 
 July 1, 2010  David Lawrence
+May 8, 2013  (updated DL)
 
 This directory contains files related to running the
 poisson/superfish suite on OSX Snow Leopard. The
@@ -11,6 +12,12 @@ are compatible with WINE and so may be run using it.
 Because WINE is available on other platforms (namely,
 Linux) much of these instructions are applicable for
 those as well.
+
+n.b. I have placed most of the configuration files
+generated over the years into a directory in svn:
+
+  https://halldsvn.jlab.org/repos/trunk/home/davidl/PoissonConfigFiles
+
 
 Obtaining WINE for OSX
 -----------------------
