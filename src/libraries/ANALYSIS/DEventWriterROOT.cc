@@ -151,6 +151,8 @@ void DEventWriterROOT::Create_Tree(const DReaction* locReaction, bool locIsMCDat
 		locReactionStep->Get_FinalParticleIDs(locFinalParticleIDs);
 		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 		{
+			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j)) //missing particle
+				continue;
 			Particle_t locPID = locFinalParticleIDs[loc_j];
 			if(locParticleNumberMap.find(locPID) == locParticleNumberMap.end())
 				locParticleNumberMap[locPID] = 1;
@@ -201,11 +203,6 @@ void DEventWriterROOT::Create_Tree(const DReaction* locReaction, bool locIsMCDat
 		for(size_t loc_j = 0; loc_j < locFinalParticleIDs.size(); ++loc_j)
 		{
 			locPID = locFinalParticleIDs[loc_j];
-			if(locParticleNumberMap_Current.find(locPID) == locParticleNumberMap_Current.end())
-				locParticleNumberMap_Current[locPID] = 1;
-			else
-				++locParticleNumberMap_Current[locPID];
-
 			locPIDStream.str("");
 			locPIDStream << (unsigned int)locPID;
 			locObjString_PID = new TObjString(locPIDStream.str().c_str());
@@ -213,6 +210,20 @@ void DEventWriterROOT::Create_Tree(const DReaction* locReaction, bool locIsMCDat
 			locPositionStream.str("");
 			locPositionStream << loc_i << "_" << loc_j;
 			locObjString_Position = new TObjString(locPositionStream.str().c_str());
+
+			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j)) //missing particle
+			{
+				locObjString_ParticleName = new TObjString("Missing");
+				locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
+				locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
+				locMiscInfoMap->Add(locObjString_ParticleName, locObjString_PID);
+				continue;
+			}
+
+			if(locParticleNumberMap_Current.find(locPID) == locParticleNumberMap_Current.end())
+				locParticleNumberMap_Current[locPID] = 1;
+			else
+				++locParticleNumberMap_Current[locPID];
 
 			locParticleNameStream.str("");
 			locParticleNameStream << Convert_ToBranchName(ParticleType(locPID));
@@ -224,14 +235,6 @@ void DEventWriterROOT::Create_Tree(const DReaction* locReaction, bool locIsMCDat
 			locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
 			locPositionToNameMap->Add(locObjString_Position, locObjString_ParticleName);
 			locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
-
-			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j)) //missing particle
-			{
-				locObjString_ParticleName = new TObjString("Missing");
-				locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
-				locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
-				locMiscInfoMap->Add(locObjString_ParticleName, locObjString_PID);
-			}
 		}
 	}
 
