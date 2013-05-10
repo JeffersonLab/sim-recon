@@ -20,6 +20,13 @@ double PHI_MAX = 2.0*M_PI;
 double THETA_MIN = 0.0;
 double THETA_MAX = M_PI;
 bool IS_POSITIVE = true;
+bool FILL_BCAL = false;
+
+//BCAL Geometry constants
+const double BCAL_LENGTH = 390.;
+const double BCAL_CENTER = 212.;
+const double TARGET_CENTER = 65.;
+const double BCAL_INNER_RAD = 64.3;
 
 int RUN_NUMBER=100;
 string OUTPUT_FILENAME="genphoton.ascii";
@@ -69,7 +76,15 @@ int main(int narg, char* argv[])
 		// Randomly sample the energy and angles of the pion
 		double mom = (double)random()/(double)RAND_MAX*(P_MAX-P_MIN) + P_MIN;
 		double phi = (double)random()/(double)RAND_MAX*(PHI_MAX-PHI_MIN) + PHI_MIN;
-		double theta = (double)random()/(double)RAND_MAX*(THETA_MAX-THETA_MIN) + THETA_MIN;
+		double theta;
+		if (!FILL_BCAL) {
+			theta = (double)random()/(double)RAND_MAX*(THETA_MAX-THETA_MIN) + THETA_MIN;
+		} else {
+			double z_min = BCAL_CENTER - BCAL_LENGTH/2.0;
+			double z_max = BCAL_CENTER + BCAL_LENGTH/2.0;
+			double z = (double)random()/(double)RAND_MAX*(z_max-z_min)+z_min;
+			theta = atan2(BCAL_INNER_RAD,(z-65.));
+		}
 
 		p.E = mom;	
 		p.px = mom*sin(theta)*cos(phi);
@@ -140,6 +155,8 @@ void ParseCommandLineArguments(int narg, char* argv[])
 			OUTPUT_FILENAME = argv[++i];
 		}else if(arg=="-n"){
 			IS_POSITIVE = false;
+		}else if(arg=="-B"){
+			FILL_BCAL = true;
 		}
 	}
 	
@@ -152,6 +169,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	cout<<"THETA_MIN      = "<<THETA_MIN<<endl;
 	cout<<"THETA_MAX      = "<<THETA_MAX<<endl;
 	cout<<"OUTPUT_FILENAME = \""<<OUTPUT_FILENAME<<"\""<<endl;
+	cout<<"FILL_BCAL      = "<<FILL_BCAL<<endl;
 	cout<<"-------------------------------------------------"<<endl;
 	
 }
@@ -174,6 +192,8 @@ void Usage(void)
 	cout<<"    -Phimax phi       set the upper photon phi angle in degrees"<<endl;
 	cout<<"    -Thetamin theta   set the lower photon theta angle in degrees"<<endl;
 	cout<<"    -Thetamax theta   set the upper photon theta angle in degrees"<<endl;
+	cout<<"    -B                fill the BCAL uniformly in z (Thetamin and Thetamax"<<endl
+	    <<"                        options will be ignored)"<<endl;
 	cout<<"    -o filename       set the output filename"<<endl;
 	cout<<endl;
 	cout<<"This program is essentially a single photon particle gun."<<endl;
