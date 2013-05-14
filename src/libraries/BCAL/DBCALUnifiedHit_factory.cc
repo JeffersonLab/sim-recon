@@ -128,9 +128,9 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int runnumbe
 
   //first index labels the layer, the second labels the coefficient (c0,c1,...)
   //only three layers of TDCs!
-  const double tdc_timewalk_array[3][4] = { {15.8251, 28.31, 0.394769, 177.54},
-                                            {15.3826, 30.9571, 0.374335, 172.578},
-                                            {16.1668, 103.024, 0.599359, 138.334} };
+  const double tdc_timewalk_array[3][4] = {{16.0081, 71.4196, 0.54665, 99.3657},
+                                           {15.2826, 30.9571, 0.374335, 172.578},
+                                           {15.6251, 52.4074, 0.475919, 159.027}};
 
   //In reality, we shouldn't have to do a timewalk correction to the ADC times.
   //But currently the ADC time simulated by mcsmear is a threshold crossing
