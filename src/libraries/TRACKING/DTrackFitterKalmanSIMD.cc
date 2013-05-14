@@ -3530,7 +3530,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
   // Initialize the chi2 for this part of the track
   chisq=0.;
   my_ndf=0;
-  double chi2cut=anneal_factor*anneal_factor*NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
+  double var_cut=NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
+  double my_anneal=anneal_factor*anneal_factor;
+  double chi2cut=my_anneal*var_cut;
 
   // path length increment
   double ds2=0.;
@@ -3617,6 +3619,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  _DBG_ << " Break indexes:  " << break_point_cdc_index <<","
 		<< break_point_step_index << endl;
 	}
+      break_point_cdc_index=cdc_updates.size()/2;
       return POSITION_OUT_OF_RANGE;
     }
     // Bail if the transverse momentum has dropped below some minimum
@@ -3627,7 +3630,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 		 << " at step " << k 
 		 << endl;
 	 }
-       return MOMENTUM_OUT_OF_RANGE;
+      break_point_cdc_index=cdc_updates.size()/2;
+      return MOMENTUM_OUT_OF_RANGE;
     }
 
     
@@ -3717,6 +3721,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 			  << " at step " << k 
 			  << endl;
 		  }
+		break_point_cdc_index=cdc_updates.size()/2;
 		return MOMENTUM_OUT_OF_RANGE;
 	      }
 	      Step(xy,ds2,Sc,dedx);
@@ -3752,6 +3757,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 			<< " at step " << k 
 			<< endl;
 		}
+	      break_point_cdc_index=cdc_updates.size()/2;
 	      return MOMENTUM_OUT_OF_RANGE;
 	    }
 
@@ -3801,7 +3807,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 		    _DBG_ << "Bailing: PT = " << 1./fabs(Sc(state_q_over_pt))
 			  << " at step " << k 
 			  << endl;
-		  }
+		  } 
+		break_point_cdc_index=cdc_updates.size()/2;		
 		return MOMENTUM_OUT_OF_RANGE;
 	      }
 	      	      
@@ -3821,6 +3828,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    double ds3=0.;
 	    if (BrentsAlgorithm(mStepSizeS,mStepSizeS,dedx,xy,z0w,
 				origin,dir,Sc,ds3,is_stereo)!=NOERROR){
+	      break_point_cdc_index=cdc_updates.size()/2;
 	      return MOMENTUM_OUT_OF_RANGE;
 	    }
 	    ds2=my_ds+ds3;
@@ -3884,7 +3892,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	
 	// Difference and inverse of variance
 	//InvV=1./(V+H*(Cc*H_T));
-	InvV=1./(V+Cc.SandwichMultiply(H_T));
+	double Vproj=Cc.SandwichMultiply(H_T);
+	InvV=1./(V+Vproj);
 	double dm=measurement-prediction;
 	
 	if (InvV<0.){
@@ -3898,10 +3907,20 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	  printf("t %f delta %f sigma %f V %f chi2 %f\n",my_cdchits[cdc_index]->hit->tdrift-mT0,dm,sqrt(V),1./InvV,dm*dm*InvV);
 	}
 	*/
-		
+	
 	// Check how far this hit is from the expected position
 	double chi2check=dm*dm*InvV;
-	if (chi2check<chi2cut){	  
+	if (chi2check<chi2cut){
+	  /*
+	  if (chi2check>var_cut){
+	    // Give hits that satisfy the wide cut but are still pretty far
+	    // from the projected position less weight
+
+	    // ad hoc correction 
+	    double diff = chi2check-var_cut;    
+	    InvV=1./((1.+my_anneal*diff)*V+Vproj);
+	  }
+	  */
 	  // Compute Kalman gain matrix
 	  K=InvV*(Cc*H_T);
 	  
@@ -4023,12 +4042,17 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
   // Check if we have a kink in the track or threw away too many cdc hits
   if (cdc_updates.size()>=MIN_HITS_FOR_REFIT){
+    if (break_point_cdc_index>0) return BREAK_POINT_FOUND;
+
     unsigned int num_good=0; 
-    for (unsigned int j=0;j<cdc_updates.size();j++){
+    unsigned int num_hits=cdc_updates.size();
+    for (unsigned int j=0;j<num_hits;j++){
       if (cdc_updates[j].used_in_fit) num_good++;
     }
-    if (break_point_cdc_index>0) return BREAK_POINT_FOUND;
-    if (double(num_good)/double(my_cdchits.size())<MINIMUM_HIT_FRACTION) return PRUNED_TOO_MANY_HITS;
+    if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION){
+      break_point_cdc_index=num_hits/2;
+      return PRUNED_TOO_MANY_HITS;
+    }
   }
     
   return FIT_SUCCEEDED;
@@ -4737,7 +4761,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
   //DMatrix5x1 dS;  // perturbation in state vector
   double V=0.25*0.2028; // 1.56*1.56/12.;
   double InvV;  // inverse of variance
-  double rmax=R_MAX;
 
   // set used_in_fit flags to false for cdc hits
   for (unsigned int i=0;i<cdc_updates.size();i++) cdc_updates[i].used_in_fit=false;
@@ -4745,7 +4768,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
   // initialize chi2 info
   chisq=0.;
   numdof=0;
-  double chi2cut=anneal*anneal*NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
+  double var_cut=NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
+  double my_anneal=anneal*anneal;
+  double chi2cut=my_anneal*var_cut;
 
   // Save the starting values for C and S in the deque
   forward_traj[break_point_step_index].Skk=S;
@@ -4807,11 +4832,13 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     S=S0+J*(S-S0_);
 
     // Bail if the position is grossly outside of the tracking volume
-    if (sqrt(S(state_x)*S(state_x)+S(state_y)*S(state_y))>rmax){
+    if (S(state_x)*S(state_x)+S(state_y)*S(state_y)>R2_MAX){
       if (DEBUG_LEVEL>2)
 	{
-	_DBG_<< "Went outside of tracking volume at z="<<z<<endl;
+	  _DBG_<< "Went outside of tracking volume at x=" << S(state_x)
+	       << " y=" << S(state_y) <<" z="<<z<<endl;
       }
+      break_point_cdc_index=cdc_updates.size()/2;
       return POSITION_OUT_OF_RANGE;
     }
     // Bail if the momentum has dropped below some minimum
@@ -4820,7 +4847,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	 {
 	   _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 	 }
-       return MOMENTUM_OUT_OF_RANGE;
+      break_point_cdc_index=cdc_updates.size()/2;
+      return MOMENTUM_OUT_OF_RANGE;
     }
 
 
@@ -4930,6 +4958,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 		  {
 		    _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		  }
+		break_point_cdc_index=cdc_updates.size()/2;
 		return MOMENTUM_OUT_OF_RANGE;
 	      }
 	      
@@ -4942,6 +4971,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 		  {
 		    _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		  }
+		break_point_cdc_index=cdc_updates.size()/2;
 		return MOMENTUM_OUT_OF_RANGE;
 	      }
 	      Step(z,newz,dedx,S);
@@ -4952,7 +4982,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	if (do_brent){
 	  // We have bracketed the minimum doca:  use Brent's agorithm
 	  if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz,is_stereo)
-	      !=NOERROR) return MOMENTUM_OUT_OF_RANGE;
+	      !=NOERROR){
+	    break_point_cdc_index=cdc_updates.size()/2;
+	    return MOMENTUM_OUT_OF_RANGE;
+	  }
 	  newz=z+dz;
 	  
 	  if (fabs(dz)>2.*mStepSizeZ-EPS3){
@@ -5002,6 +5035,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	    double dz2=0.;
 	    if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2,
 				is_stereo)!=NOERROR){
+	      break_point_cdc_index=cdc_updates.size()/2;
 	      return MOMENTUM_OUT_OF_RANGE;
 	    }
 	    newz=ztemp+dz2;
@@ -5117,7 +5151,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
 	// inverse of variance including prediction
 	//InvV=1./(V+H*(C*H_T));
-	InvV=1./(V+C.SandwichMultiply(H_T));
+	double Vproj=C.SandwichMultiply(H_T);
+	InvV=1./(V+Vproj);
 	if (InvV<0.){
 	  if (DEBUG_LEVEL>0)
 	    _DBG_ << "Negative variance???" << endl;
@@ -5127,8 +5162,18 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	// Check how far this hit is from the expected position
 	double chi2check=res*res*InvV;
 	//if (sqrt(chi2check)>NUM_CDC_SIGMA_CUT) InvV*=0.8;
-	if (chi2check<chi2cut)
-	  {
+	if (chi2check<chi2cut){
+	  /*
+	  if (chi2check>var_cut){
+	    // Give hits that satisfy the wide cut but are still pretty far
+	    // from the projected position less weight
+	    //_DBG_ << my_anneal << endl;
+	    
+	    // ad hoc correction 
+	    double diff = chi2check-var_cut;    
+	    InvV=1./((1.+my_anneal*diff)*V+Vproj);
+	  }
+	  */
 	  // Compute KalmanSIMD gain matrix
 	  K=InvV*(C*H_T);
 
@@ -5172,7 +5217,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	    break_point_step_index=k_minus_1;
 
 
-	    if (DEBUG_LEVEL>10)
+	    if (DEBUG_LEVEL>9)
 	      printf("Ring %d straw %d pred %f meas %f chi2 %f\n",
 		     my_cdchits[cdc_index]->hit->wire->ring,
 		     my_cdchits[cdc_index]->hit->wire->straw,
@@ -5271,12 +5316,17 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 
   // Check if we have a kink in the track or threw away too many cdc hits
   if (cdc_updates.size()>=MIN_HITS_FOR_REFIT){
+    if (break_point_cdc_index>0) return BREAK_POINT_FOUND;
+
     unsigned int num_good=0; 
-    for (unsigned int j=0;j<cdc_updates.size();j++){
+    unsigned int num_hits=cdc_updates.size();
+    for (unsigned int j=0;j<num_hits;j++){
       if (cdc_updates[j].used_in_fit) num_good++;
     }
-    if (break_point_cdc_index>0) return BREAK_POINT_FOUND;
-    if (double(num_good)/double(my_cdchits.size())<MINIMUM_HIT_FRACTION) return PRUNED_TOO_MANY_HITS;
+    if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION){
+      break_point_cdc_index=num_hits/2;
+      return PRUNED_TOO_MANY_HITS;
+    }
   }
 
   return FIT_SUCCEEDED;
@@ -6145,16 +6195,19 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
   DVector2 refit_xy;
 
   // save the status of the hits used in the fit
-  vector<int>old_cdc_used_status(cdc_updates.size());  
-  for (unsigned int j=0;j<cdc_updates.size();j++){
+  unsigned int num_hits=cdc_updates.size();
+  vector<int>old_cdc_used_status(num_hits);  
+  for (unsigned int j=0;j<num_hits;j++){
     old_cdc_used_status[j]=cdc_updates[j].used_in_fit;
   }
   
   // Truncate the reference trajectory to just beyond the break point (or the minimum number of hits)
   unsigned int min_cdc_index_for_refit=MIN_HITS_FOR_REFIT-1;
+  if (break_point_cdc_index<num_hits/2)
+    break_point_cdc_index=num_hits/2;
   if (break_point_cdc_index<min_cdc_index_for_refit){
     break_point_cdc_index=min_cdc_index_for_refit;
-   
+
     // Next determine where we need to truncate the trajectory  
     DVector2 origin=my_cdchits[break_point_cdc_index]->origin;
     DVector2 dir=my_cdchits[break_point_cdc_index]->dir;
@@ -6199,7 +6252,12 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
     refit_error=KalmanCentral(anneal_factor,S1,C1,refit_xy,
 			      refit_chisq,refit_ndf);
 
-    if (refit_error==FIT_SUCCEEDED){
+    if (refit_error==FIT_SUCCEEDED
+	|| (refit_error==BREAK_POINT_FOUND 
+	    && break_point_cdc_index==1
+	    )
+	|| refit_error==PRUNED_TOO_MANY_HITS
+	){
       C=C1;
       S=S1;
       xy=refit_xy;
@@ -6215,7 +6273,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 
   // If the refit did not work, restore the old list hits used in the fit 
   // before the track recovery was attempted.
-  for (unsigned int k=0;k<cdc_updates.size();k++){
+  for (unsigned int k=0;k<num_hits;k++){
     cdc_updates[k].used_in_fit=old_cdc_used_status[k];
   }
 
@@ -6253,12 +6311,12 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
   DMatrix5x1 S1;
 
   // save the status of the hits used in the fit
-  vector<int>old_cdc_used_status(cdc_updates.size());
+  vector<int>old_cdc_used_status(num_cdchits);
   vector<int>old_fdc_used_status(fdc_updates.size());
   for (unsigned int j=0;j<fdc_updates.size();j++){
     old_fdc_used_status[j]=fdc_updates[j].used_in_fit;
   }
-  for (unsigned int j=0;j<cdc_updates.size();j++){
+  for (unsigned int j=0;j<num_cdchits;j++){
     old_cdc_used_status[j]=cdc_updates[j].used_in_fit;
   }
  
@@ -6269,6 +6327,13 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
       min_cdc_index=5;
     }
   }
+  else{
+    unsigned int half_num_cdchits=num_cdchits/2;
+    if (break_point_cdc_index<half_num_cdchits
+	&& half_num_cdchits>min_cdc_index)
+      break_point_cdc_index=half_num_cdchits;
+  }
+
   // Find the index at which to truncate the reference trajectory
   if (break_point_cdc_index<min_cdc_index){
     break_point_cdc_index=min_cdc_index;
@@ -6324,7 +6389,12 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
     // Now refit with the truncated trajectory and list of hits
     refit_error=KalmanForwardCDC(anneal_factor,S1,C1,
 				 refit_chisq,refit_ndf);   
-    if (refit_error==FIT_SUCCEEDED){
+    if (refit_error==FIT_SUCCEEDED 
+	|| (refit_error==BREAK_POINT_FOUND
+	    && break_point_cdc_index==1
+	    )
+	|| refit_error==PRUNED_TOO_MANY_HITS
+	){
       C=C1;
       S=S1;
       chisq=refit_chisq;
@@ -6336,7 +6406,7 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
   }
   // If the refit did not work, restore the old list hits used in the fit 
   // before the track recovery was attempted.
-  for (unsigned int k=0;k<cdc_updates.size();k++){
+  for (unsigned int k=0;k<num_cdchits;k++){
     cdc_updates[k].used_in_fit=old_cdc_used_status[k];
     }
   for (unsigned int k=0;k<fdc_updates.size();k++){
@@ -6408,7 +6478,9 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
     
     // Now refit with the truncated trajectory and list of hits
     refit_error=KalmanForward(my_anneal,S1,C1,refit_chisq,refit_ndf);   
-    if (refit_error==FIT_SUCCEEDED){
+    if (refit_error==FIT_SUCCEEDED
+	|| (refit_error==PRUNED_TOO_MANY_HITS)
+	){
       C=C1;
       S=S1;
       chisq=refit_chisq;
@@ -6431,7 +6503,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
 
   // If the refit did not work, restore the old list hits used in the fit 
   // before the track recovery was attempted.
-  for (unsigned int k=0;k<cdc_updates.size();k++){
+  for (unsigned int k=0;k<num_cdchits;k++){
     cdc_updates[k].used_in_fit=old_cdc_used_status[k];
     }
   for (unsigned int k=0;k<fdc_updates.size();k++){
@@ -6539,7 +6611,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 	if (iter==0) return FIT_FAILED; // first iteration failed
 	break;
       }
-
+      if (my_ndf==0) break;
      
       // Check the charge relative to the hypothesis for protons
       /*
@@ -6553,11 +6625,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       }
       */
       // Break out of loop if the chisq is increasing or not changing much
-      if (my_ndf==last_ndf && chisq>chisq_forward) break;
-      if ((TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf) 
-	  && my_ndf<=last_ndf)
-	  || fabs(chisq-chisq_forward)<0.1) break;
-		  
+      if (my_ndf==last_ndf 
+	  && (chisq>chisq_forward ||fabs(chisq-chisq_forward)<0.1) ) break;
+      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf)) break; 
+
       chisq_forward=chisq; 
       last_ndf=my_ndf;
       Slast=S;
@@ -6786,6 +6857,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 	if (iter2==0) return error;
 	break;
       }
+      if (my_ndf==0) break;
     
       if (DEBUG_LEVEL>0)  _DBG_ << "--> Chisq " << chisq << " NDF " 
 				<< my_ndf 
@@ -6802,10 +6874,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 	}
       }
       */  
-      if (my_ndf==last_ndf && chisq>chisq_forward) break;    
-      if ((TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf)
-	  && my_ndf<=last_ndf)
-	  || fabs(chisq-chisq_forward)<0.1) break;
+      if (my_ndf==last_ndf
+	  && (chisq>chisq_forward || fabs(chisq-chisq_forward)<0.1) ) break;    
+      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_forward,last_ndf)) break;
+
       chisq_forward=chisq;
       Slast=S;
       Clast=C;
@@ -7017,7 +7089,9 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       if (error==FIT_FAILED){
 	if (iter2==0) return error;
 	break;
-      }
+      } 
+      if (my_ndf==0) break;
+      
 
       if (DEBUG_LEVEL>0) _DBG_ << "--> Chisq " << chisq << " Ndof " << my_ndf 
 			       << " Prob: " << TMath::Prob(chisq,my_ndf)
@@ -7033,11 +7107,10 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 	}
       }
       */
-      if (my_ndf==last_ndf && chisq>chisq_iter) break;
-      if ((TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_iter,last_ndf)
-	   && my_ndf<=last_ndf)
-	  || fabs(chisq_iter-chisq)<0.1) break;
-      
+      if (my_ndf==last_ndf 
+	  && (chisq>chisq_iter || fabs(chisq_iter-chisq)<0.1)) break;
+      if (TMath::Prob(chisq,my_ndf)<TMath::Prob(chisq_iter,last_ndf)) break;
+
       // Save the current state vector and covariance matrix
       Cclast=Cc;
       Sclast=Sc;

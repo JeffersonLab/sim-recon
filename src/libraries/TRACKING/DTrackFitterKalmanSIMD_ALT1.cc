@@ -46,12 +46,13 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
   // Initialize number of degrees of freedom
   numdof=0;
+  
+  double my_anneal=anneal_factor*anneal_factor;
+  double var_fdc_cut=NUM_FDC_SIGMA_CUT*NUM_FDC_SIGMA_CUT;
+  double fdc_chi2cut=my_anneal*var_fdc_cut;
 
-  double fdc_chi2cut
-    =anneal_factor*anneal_factor*NUM_FDC_SIGMA_CUT*NUM_FDC_SIGMA_CUT; 
-
-  double cdc_chi2cut
-    =anneal_factor*anneal_factor*NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
+  double var_cdc_cut=NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
+  double cdc_chi2cut=my_anneal*var_cdc_cut;
 
   // Variables for estimating t0 from tracking
   //mInvVarT0=mT0wires=0.;
@@ -104,6 +105,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	{
 	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 	}
+      break_point_fdc_index=num_fdc_hits/2;
       return MOMENTUM_OUT_OF_RANGE;
     }
 
@@ -356,7 +358,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	else{
 	   // Variance for this hit
 	  //double Vtemp=V+H*C*H_T;
-	  double Vtemp=V+C.SandwichMultiply(H_T);
+	  double Vproj=C.SandwichMultiply(H_T);
+	  double Vtemp=V+Vproj;
 	  double InvV=1./Vtemp;
 	
 	  // Check if this hit is an outlier
@@ -498,7 +501,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		    if (DEBUG_LEVEL>2)
 		      {
 			_DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
-		      }
+		      }	  
+		    break_point_fdc_index=num_fdc_hits/2;		    
 		    return MOMENTUM_OUT_OF_RANGE;
 		  }
 
@@ -514,6 +518,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		    {
 		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		    }
+		  break_point_fdc_index=num_fdc_hits/2;
 		  return MOMENTUM_OUT_OF_RANGE;
 		}
 
@@ -526,6 +531,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		    {
 		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		    }
+		    break_point_fdc_index=num_fdc_hits/2;
 		  return MOMENTUM_OUT_OF_RANGE;
 		}
 		
@@ -538,6 +544,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // We have bracketed the minimum doca:  use Brent's agorithm
 	    if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz,
 				is_stereo)!=NOERROR){
+	      break_point_fdc_index=num_fdc_hits/2;
 	      return MOMENTUM_OUT_OF_RANGE;
 	    }
 	    newz=z+dz;
@@ -582,6 +589,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      double dz2=0.;
 	      if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2,
 				  is_stereo)!=NOERROR){
+		break_point_fdc_index=num_fdc_hits/2;
 		return MOMENTUM_OUT_OF_RANGE;
 	      }
 	      newz=ztemp+dz2;
@@ -700,7 +708,8 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	  // inverse variance including prediction
 	  //double InvV1=1./(Vc+H*(C*H_T));
-	  double InvV1=1./(Vc+C.SandwichMultiply(H_T));
+	  double Vproj=C.SandwichMultiply(H_T);
+	  double InvV1=1./(Vc+Vproj);
 	  if (InvV1<0.){
 	    if (DEBUG_LEVEL>0)
 	      _DBG_ << "Negative variance???" << endl;
@@ -710,6 +719,17 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // Check if this hit is an outlier
 	  double chi2_hit=res*res*InvV1;
 	  if (chi2_hit<cdc_chi2cut){
+	    /*
+	    if (chi2_hit>var_cdc_cut){
+	      // Give hits that satisfy the wide cut but are still pretty far
+	      // from the projected position less weight
+	      
+	      // ad hoc correction 
+	      double diff = chi2_hit-var_cdc_cut;    
+	      InvV1=1./((1.+my_anneal*diff)*Vc+Vproj);
+	    }
+	    */
+
 	    // Compute KalmanSIMD gain matrix
 	    K=InvV1*(C*H_T);
 	    
@@ -927,12 +947,14 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
   // Check if we have a kink in the track or threw away too many cdc hits
   if (cdc_updates.size()>=6){
+    if (break_point_cdc_index>4) return BREAK_POINT_FOUND;
+
     unsigned int num_good=0; 
-    for (unsigned int j=0;j<cdc_updates.size();j++){
+    unsigned int num_hits=cdc_updates.size();
+    for (unsigned int j=0;j<num_hits;j++){
       if (cdc_updates[j].used_in_fit) num_good++;
     }
-    if (break_point_cdc_index>4) return BREAK_POINT_FOUND;
-    if (double(num_good)/double(my_cdchits.size())<MINIMUM_HIT_FRACTION) return PRUNED_TOO_MANY_HITS;
+    if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION) return PRUNED_TOO_MANY_HITS;
   }
     
   return FIT_SUCCEEDED;
