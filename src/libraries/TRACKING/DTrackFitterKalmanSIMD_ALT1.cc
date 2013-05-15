@@ -34,8 +34,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   bool is_stereo=false;
 
   // Set used_in_fit flags to false for fdc and cdc hits
-  for (unsigned int i=0;i<cdc_updates.size();i++) cdc_updates[i].used_in_fit=false;
-  for (unsigned int i=0;i<fdc_updates.size();i++) fdc_updates[i].used_in_fit=false;
+  unsigned int num_cdc=cdc_updates.size();
+  unsigned int num_fdc=fdc_updates.size();
+  for (unsigned int i=0;i<num_cdc;i++) cdc_updates[i].used_in_fit=false;
+  for (unsigned int i=0;i<num_fdc;i++) fdc_updates[i].used_in_fit=false;
   
   // Save the starting values for C and S in the deque
   forward_traj[break_point_step_index].Skk=S;
@@ -719,7 +721,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // Check if this hit is an outlier
 	  double chi2_hit=res*res*InvV1;
 	  if (chi2_hit<cdc_chi2cut){
-	    /*
+	    
 	    if (chi2_hit>var_cdc_cut){
 	      // Give hits that satisfy the wide cut but are still pretty far
 	      // from the projected position less weight
@@ -728,7 +730,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      double diff = chi2_hit-var_cdc_cut;    
 	      InvV1=1./((1.+my_anneal*diff)*Vc+Vproj);
 	    }
-	    */
 
 	    // Compute KalmanSIMD gain matrix
 	    K=InvV1*(C*H_T);
@@ -940,21 +941,25 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   x_=S(state_x);
   y_=S(state_y);
 
-  if (DEBUG_LEVEL>0){
+  if (DEBUG_LEVEL>1){
     cout << "Position after forward filter: " << x_ << ", " << y_ << ", " << z_ <<endl;
     cout << "Momentum " << 1./S(state_q_over_p) <<endl;
   }
 
-  // Check if we have a kink in the track or threw away too many cdc hits
-  if (cdc_updates.size()>=6){
-    if (break_point_cdc_index>4) return BREAK_POINT_FOUND;
-
-    unsigned int num_good=0; 
-    unsigned int num_hits=cdc_updates.size();
-    for (unsigned int j=0;j<num_hits;j++){
-      if (cdc_updates[j].used_in_fit) num_good++;
-    }
-    if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION) return PRUNED_TOO_MANY_HITS;
+  // Check if we have a kink in the track or threw away too many hits
+  if (num_cdc>0 && break_point_fdc_index>0) return BREAK_POINT_FOUND;
+  if (num_cdc==0 && break_point_fdc_index>5) return BREAK_POINT_FOUND;
+  if (num_cdc>5 && break_point_cdc_index>4) return BREAK_POINT_FOUND;
+  unsigned int num_good=0; 
+  unsigned int num_hits=num_cdc+num_fdc;
+  for (unsigned int j=0;j<num_cdc;j++){
+    if (cdc_updates[j].used_in_fit) num_good++;
+  }
+  for (unsigned int j=0;j<num_fdc;j++){
+    if (fdc_updates[j].used_in_fit) num_good++;
+  }
+  if (double(num_good)/double(num_hits)<MINIMUM_HIT_FRACTION){ 
+    return PRUNED_TOO_MANY_HITS;
   }
     
   return FIT_SUCCEEDED;
