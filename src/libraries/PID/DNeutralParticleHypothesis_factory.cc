@@ -88,9 +88,7 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 
 	// Calculate DNeutralParticleHypothesis Quantities (projected time at vertex for given id, etc.)
 	double locMass = ParticleMass(locPID);
-	double locParticleEnergy = locShowerEnergy; //need to correct this for neutrons!
-	if (locParticleEnergy < locMass)
-		return NULL; //not enough energy for PID hypothesis
+	double locParticleEnergy = locShowerEnergy + locMass; //need to correct this for neutrons! (and k0_long...)
 
 	DVector3 locPath = locHitPoint - locSpacetimeVertex.Vect();
 	double locPathLength = locPath.Mag();
