@@ -171,7 +171,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		jerror_t GetStereoPosition(const DCDCWire *wire,
 					   const DHelicalFit &fit,
 					   DVector3 &pos, 
-					   double &var_z);
+					   double &var_z,double d=0.);
 
 		jerror_t GetPositionAndMomentum(DCDCSeed &seed,
 						DVector3 &pos,

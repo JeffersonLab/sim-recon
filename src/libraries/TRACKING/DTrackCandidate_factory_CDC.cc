@@ -260,80 +260,86 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 	seed.valid=false;
 	continue;
       }
-         
-      if (max_axial_ring_in_first_superlayer && 
-	  seed.stereo_hits[0].hit->wire->ring>8){
-	for (unsigned int is=0;is<seed.stereo_hits.size()-1;is++){
-	  unsigned int inext=is+1;
-	  if (seed.stereo_hits[is].hit->wire->ring>8 
-	      && seed.stereo_hits[inext].hit->wire->ring<=8){
-	    DVector3 u0=seed.stereo_hits[is].hit->wire->origin;
-	    DVector3 udir=seed.stereo_hits[is].hit->wire->udir;  
-	    DVector3 v0=seed.stereo_hits[inext].hit->wire->origin;
-	    DVector3 vdir=seed.stereo_hits[inext].hit->wire->udir;
-	    DVector3 diff=u0-v0;
-	    double u_dot_v=udir.Dot(vdir);
-	    double u_dot_diff=udir.Dot(diff);
-	    double v_dot_diff=vdir.Dot(diff);
-	    double scale=1./(1.-u_dot_v*u_dot_v);
-	    double ul=scale*(u_dot_v*v_dot_diff-u_dot_diff);
-	    double vl=scale*(v_dot_diff-u_dot_v*u_dot_diff);
-	    DVector3 pos=0.5*(u0+ul*udir+v0+vl*vdir);
 
-	    DHelicalFit myfit(seed.fit);
-	    myfit.AddHitXYZ(pos.X(), pos.Y(),pos.Z());
-	    if (myfit.FitCircleRiemann(TARGET_Z,BeamRMS)==NOERROR){
-	      seed.fit.x0=myfit.x0;
-	      seed.fit.y0=myfit.y0;
-	      seed.fit.r0=myfit.r0;
-	      seed.fit.p_trans=myfit.p_trans;
+      if (max_axial_ring_in_first_superlayer){
+	// If we only have axial hits in the first layer, use the point of
+	// closest approach between two adjacent stereo straws that have 
+	// opposite-sign stereo angles as another approximate point on the 
+	// circle.
+	if (seed.stereo_hits[0].hit->wire->ring>8){
+	  for (unsigned int is=0;is<seed.stereo_hits.size()-1;is++){
+	    unsigned int inext=is+1;
+	    if (seed.stereo_hits[is].hit->wire->ring>8 
+		&& seed.stereo_hits[inext].hit->wire->ring<=8){
+	      DVector3 u0=seed.stereo_hits[is].hit->wire->origin;
+	      DVector3 udir=seed.stereo_hits[is].hit->wire->udir;  
+	      DVector3 v0=seed.stereo_hits[inext].hit->wire->origin;
+	      DVector3 vdir=seed.stereo_hits[inext].hit->wire->udir;
+	      DVector3 diff=u0-v0;
+	      double u_dot_v=udir.Dot(vdir);
+	      double u_dot_diff=udir.Dot(diff);
+	      double v_dot_diff=vdir.Dot(diff);
+	      double scale=1./(1.-u_dot_v*u_dot_v);
+	      double ul=scale*(u_dot_v*v_dot_diff-u_dot_diff);
+	      double vl=scale*(v_dot_diff-u_dot_v*u_dot_diff);
+	      DVector3 pos=0.5*(u0+ul*udir+v0+vl*vdir);
 
-	      for (unsigned int js=0;js<seed.stereo_hits.size();js++){
-		DCDCTrkHit *stereo=&seed.stereo_hits[js];
-		const DCDCWire *wire=stereo->hit->wire;
-		double var_z=0.;
-		if (GetStereoPosition(wire,seed.fit,pos,var_z)==NOERROR){
-		  stereo->x_stereo=pos.X();
-		  stereo->y_stereo=pos.Y();
-		  stereo->z_stereo=pos.Z();
-		  stereo->var_z=var_z;	
-		  // Compute phi for the stereo wire
-		  DVector2 R(seed.fit.x0, seed.fit.y0);
-		  stereo->phi_stereo = atan2(stereo->y_stereo-R.Y(),
-					      stereo->x_stereo-R.X());
-		  R*=-1.0; // make R point from center of circle to beamline instead of other way around
-		  if(DEBUG_LEVEL>15){
-		    _DBG_<<" -- ring="<<wire->ring
-			 <<" trkhit->z_stereo="<<stereo->z_stereo
-			 <<" trkhit->y_stereo="<<stereo->y_stereo
-			 <<" trkhit->x_stereo="<<stereo->x_stereo<<endl;
-		    _DBG_<<" -- phi_stereo="<<stereo->phi_stereo<<"  R.Phi()="<<R.Phi()<<"  (X,Y)=("<<R.X()<<", "<<R.Y()<<")"<<endl;
-		    _DBG__;
-		  }
-		  stereo->phi_stereo -= R.Phi(); // make angle relative to beamline
+	      DHelicalFit myfit(seed.fit);
+	      myfit.AddHitXYZ(pos.X(), pos.Y(),pos.Z());
+	      if (myfit.FitCircleRiemann()==NOERROR){
+		seed.fit.x0=myfit.x0;
+		seed.fit.y0=myfit.y0;
+		seed.fit.r0=myfit.r0;
+		//seed.fit.p_trans=myfit.p_trans;
+		seed.fit.p_trans=2.0*0.003*myfit.r0; // with |Bz|=2.0, will be fixed later
 		
-		  // We want this to go either from 0 to +2pi for positive charge, or
-		  // 0 to -2pi for negative.
-		  double phi_hi = seed.fit.q>0.0 ? +M_TWO_PI:0.0;
-		  double phi_lo = seed.fit.q>0.0 ? 0.0:-M_TWO_PI;
-		  while(stereo->phi_stereo<phi_lo){
-		    stereo->phi_stereo+=M_TWO_PI;
-		  }
-		  while(stereo->phi_stereo>phi_hi){
-		    stereo->phi_stereo-=M_TWO_PI;
-		  }
-		}
+		double myphi=atan2(myfit.y0,myfit.x0)-M_PI_2;
+		if(myphi<0)myphi+=M_TWO_PI;
+		if(myphi>=M_TWO_PI)myphi-=M_TWO_PI;
+		seed.fit.phi=myphi;
 
+		for (unsigned int js=0;js<seed.stereo_hits.size();js++){
+		  DCDCTrkHit *stereo=&seed.stereo_hits[js];
+		  const DCDCWire *wire=stereo->hit->wire;
+		  double var_z=0.;
+		  if (GetStereoPosition(wire,seed.fit,pos,var_z)==NOERROR){
+		    stereo->x_stereo=pos.X();
+		    stereo->y_stereo=pos.Y();
+		    stereo->z_stereo=pos.Z();
+		    stereo->var_z=var_z;	
+		    // Compute phi for the stereo wire
+		    DVector2 R(seed.fit.x0, seed.fit.y0);
+		    stereo->phi_stereo = atan2(stereo->y_stereo-R.Y(),
+					       stereo->x_stereo-R.X());
+		    R*=-1.0; // make R point from center of circle to beamline instead of other way around
+		    if(DEBUG_LEVEL>15){
+		      _DBG_<<" -- ring="<<wire->ring
+			   <<" trkhit->z_stereo="<<stereo->z_stereo
+			   <<" trkhit->y_stereo="<<stereo->y_stereo
+			   <<" trkhit->x_stereo="<<stereo->x_stereo<<endl;
+		      _DBG_<<" -- phi_stereo="<<stereo->phi_stereo<<"  R.Phi()="<<R.Phi()<<"  (X,Y)=("<<R.X()<<", "<<R.Y()<<")"<<endl;
+		      _DBG__;
+		    }
+		    stereo->phi_stereo -= R.Phi(); // make angle relative to beamline
+		
+		    // We want this to go either from 0 to +2pi for positive charge, or
+		    // 0 to -2pi for negative.
+		    double phi_hi = seed.fit.q>0.0 ? +M_TWO_PI:0.0;
+		    double phi_lo = seed.fit.q>0.0 ? 0.0:-M_TWO_PI;
+		    while(stereo->phi_stereo<phi_lo){
+		      stereo->phi_stereo+=M_TWO_PI;
+		    }
+		    while(stereo->phi_stereo>phi_hi){
+		      stereo->phi_stereo-=M_TWO_PI;
+		    }
+		  }
+		}  
 	      }
-	      
+	      break;
 	    }
-
-	    break;
 	  }
 	}
-	
       }
-
 
       if (FindThetaZRegression(seed)!=NOERROR){
 	// If the linear regression doesn't work try the histogramming method
@@ -1091,9 +1097,10 @@ void DTrackCandidate_factory_CDC::FilterCloneSeeds(vector<DCDCSeed> &seeds)
 jerror_t DTrackCandidate_factory_CDC::GetStereoPosition(const DCDCWire *wire,
 							const DHelicalFit &fit,
 							DVector3 &pos, 
-							double &var_z){
+							double &var_z,
+							double d){
   DVector3 origin = wire->origin;
-  DVector3 dir = wire->udir;
+  DVector3 dir = (1./wire->udir.z())*wire->udir;
   double dx=origin.x()-fit.x0;  
   double dy=origin.y()-fit.y0;
   double ux=dir.x();
@@ -1101,13 +1108,14 @@ jerror_t DTrackCandidate_factory_CDC::GetStereoPosition(const DCDCWire *wire,
   double temp1=ux*ux+uy*uy;
   double temp2=ux*dy-uy*dx;
   double b=-ux*dx-uy*dy;
-  double r0_sq=fit.r0*fit.r0;
+  double dr=fit.r0-d;
+  double r0_sq=dr*dr;
   double A=r0_sq*temp1-temp2*temp2;
 
   // Check that this wire intersects this circle
   if(A<0.0) return VALUE_OUT_OF_RANGE; // line along wire does not intersect circle, ever.
 
-  // Guess for variance for z:  assume straw cell size??
+  // Guess for variance for z: assume straw cell size??
   double temp=1.6/sin(wire->stereo);
   var_z=temp*temp/12.;
   
@@ -1116,7 +1124,7 @@ jerror_t DTrackCandidate_factory_CDC::GetStereoPosition(const DCDCWire *wire,
   double dz1 = (b-B)/temp1;
   double dz2 = (b+B)/temp1;
 
-  if(DEBUG_LEVEL>15)_DBG_<<"dz1="<<dz1<<" dz2="<<dz2<<endl;
+  if(DEBUG_LEVEL>15) _DBG_<<"dz1="<<dz1<<" dz2="<<dz2<<endl;
   
   // At this point we must decide which value of alpha to use. 
   // For now, we just use the value closest to zero (i.e. closest to
@@ -1188,12 +1196,7 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		DVector2 R(seed.fit.x0, seed.fit.y0);
 		mytrkhit.phi_stereo = atan2(mytrkhit.y_stereo-R.Y(), mytrkhit.x_stereo-R.X());
 		R*=-1.0; // make R point from center of circle to beamline instead of other way around
-		if(DEBUG_LEVEL>15){
-			_DBG_<<" --- wire->udir X, Y, Z = "<<wire->udir.X()<<", "<<wire->udir.Y()<<", "<<wire->udir.Z()<<endl;
-			_DBG_<<" -- ring="<<wire->ring<<" trkhit->z_stereo="<<trkhit->z_stereo<<" trkhit->y_stereo="<<trkhit->y_stereo<<" trkhit->x_stereo="<<trkhit->x_stereo<<endl;
-			_DBG_<<" -- phi_stereo="<<trkhit->phi_stereo<<"  R.Phi()="<<R.Phi()<<"  (X,Y)=("<<R.X()<<", "<<R.Y()<<")"<<endl;
-			_DBG__;
-		}
+	
 		mytrkhit.phi_stereo -= R.Phi(); // make angle relative to beamline
 		
 		// We want this to go either from 0 to +2pi for positive charge, or
@@ -1209,6 +1212,20 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		mytrkhit.flags |= VALID_STEREO;
 		seed.stereo_hits.push_back(mytrkhit);
 		if(DEBUG_LEVEL>10)_DBG_<<"Adding CDC stereo hit: ring="<<mytrkhit.hit->wire->ring<<" straw="<<mytrkhit.hit->wire->straw<<endl;
+
+		if(DEBUG_LEVEL>15){
+		  _DBG_<<" --- wire->udir X, Y, Z = "<<wire->udir.X()<<", "<<wire->udir.Y()<<", "<<wire->udir.Z()<<endl;
+		  _DBG_<<" -- ring="<<wire->ring<<" trkhit->z_stereo="
+		       <<mytrkhit.z_stereo<<" trkhit->y_stereo="
+		       <<mytrkhit.y_stereo<<" trkhit->x_stereo="
+		       <<mytrkhit.x_stereo<<endl;
+		  _DBG_<<" -- phi_stereo="<<mytrkhit.phi_stereo
+		       <<"  R.Phi()="<<R.Phi()<<"  (X,Y)=("<<R.X()<<", "
+		       <<R.Y()<<")"<<endl;
+		  _DBG__;
+		}
+
+
 	}
 	if(DEBUG_LEVEL>5)_DBG_<<"Num stereo hits: "<<seed.stereo_hits.size()<<endl;
 }
@@ -1648,9 +1665,10 @@ double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz( const DMagneticFiel
 // Algorithm from Numerical Recipes in C (2nd. ed.), pp. 668-669.
 jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
-	if(DEBUG_LEVEL>3)_DBG_<<"Finding theta and z via linear regression method."<<endl;
-
-  if (seed.fit.normal.Mag()==0.) return VALUE_OUT_OF_RANGE;
+  if(DEBUG_LEVEL>3)_DBG_<<"Finding theta and z via linear regression method."<<endl;
+  
+  DHelicalFit *myfit=&seed.fit;
+  if (myfit->normal.Mag()==0.) return VALUE_OUT_OF_RANGE;
   // Vector of intersections between the circles of the measurements and the plane intersecting the Riemann surface
   vector<intersection_t>intersections;
 			       
@@ -1661,44 +1679,16 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
       |=1<<seed.stereo_hits[m].index%numbits;
 
     DCDCTrkHit *trkhit=&seed.stereo_hits[m];
-    double R2=trkhit->x_stereo*trkhit->x_stereo+trkhit->y_stereo*trkhit->y_stereo;
 
     //DVector3_with_perp intersection;
     intersection_t intersection;
-    DVector3 N=seed.fit.normal;
-    //double c0=seed.fit.c_origin;
-    double A=seed.fit.c_origin+R2*N.Z();
-    double B=N.Perp();
-    double C=B*R2-A*A;
-    
-    if (C>=0) {
-      double sqrtC=sqrt(C);
-      double x1=(-N.X()*A+N.Y()*sqrtC)/B;
-      double y1=(-N.Y()*A-N.X()*sqrtC)/B;   
-      double x2=(-N.X()*A-N.Y()*sqrtC)/B;
-      double y2=(-N.Y()*A+N.X()*sqrtC)/B;
+    intersection.x=trkhit->x_stereo;
+    intersection.y=trkhit->y_stereo;
+    intersection.perp2=intersection.x*intersection.x+intersection.y*intersection.y;
+    intersection.z=trkhit->z_stereo;
+    intersection.var_z=trkhit->var_z;
       
-      if (fabs(trkhit->y_stereo-y1)<fabs(trkhit->y_stereo-y2)){
-	//intersection.SetX(x1);
-	//intersection.SetY(y1);
-	intersection.x=x1;
-	intersection.y=y1;
-	intersection.perp2=x1*x1+y1*y1;
-      }
-      else{
-	//intersection.SetX(x2);
-	//intersection.SetY(y2);
-	intersection.x=x2;
-	intersection.y=y2;
-	intersection.perp2=x2*x2+y2*y2;
-      }
-      //intersection.SetZ(trkhit->z_stereo);
-      intersection.z=trkhit->z_stereo;
-      intersection.var_z=trkhit->var_z;
-      
-      intersections.push_back(intersection);  
-    }
-
+    intersections.push_back(intersection);  
   }
    
   // Now, sort the entries
@@ -1706,12 +1696,15 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
  
   // Compute the arc lengths between the origin in x and y and (xi,yi)
   vector<double>arclengths(intersections.size()); 
-  arclengths[0]=0.;
-  double two_rc=2.*seed.fit.r0;
+  vector<double>ratios(intersections.size());
+  double xc=myfit->x0;
+  double yc=myfit->y0;
+  double rc=myfit->r0;
+  double two_rc=2.*rc;
   // Find POCA to beam line
-  double myphi=atan2(seed.fit.y0,seed.fit.x0);
-  double y0=seed.fit.y0-seed.fit.r0*sin(myphi);
-  double x0=seed.fit.x0-seed.fit.r0*cos(myphi);
+  double myphi=atan2(yc,xc);
+  double y0=yc-rc*sin(myphi);
+  double x0=xc-rc*cos(myphi);
 
   // Arc length to first measurement
   double diffx=intersections[0].x-x0;
@@ -1720,16 +1713,20 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
   double ratio=chord/two_rc;
   double s=(ratio<1.)?two_rc*asin(ratio):M_PI_2*two_rc;
   arclengths[0]=s;
+  ratios[0]=ratio;
 
   // Find arc lengths for the rest of the stereo hits
   for (unsigned int m=1;m<arclengths.size();m++){
-    diffx=intersections[m].x-intersections[m-1].x;
-    diffy=intersections[m].y-intersections[m-1].y;
+    unsigned int m_minus_1=m-1;
+    diffx=intersections[m].x-intersections[m_minus_1].x;
+    diffy=intersections[m].y-intersections[m_minus_1].y;
     chord=sqrt(diffx*diffx+diffy*diffy);  
     ratio=chord/two_rc;
-    double ds=(ratio<1.)?two_rc*asin(ratio):M_PI_2*two_rc;
+    if (ratio>0.999) return VALUE_OUT_OF_RANGE;
+    double ds=two_rc*asin(ratio);
     s+=ds;
     arclengths[m]=s;
+    ratios[m]=ratio;
   }
 
   //Linear regression to find z0, tanl
@@ -1745,10 +1742,10 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
     // Find average variances for z and s
     double avg_var_s=0.,avg_var_z=0.;
+    double var_r=1.6*1.6/12.;  // assume cell size
     for (unsigned int m=0;m<n;m++){
-      double ds_from_r0=0.1*arclengths[m];
-      fit.var_s[m]=ds_from_r0*ds_from_r0;
-      fit.s[m]=arclengths[m];
+      fit.s[m]=arclengths[m];     
+      fit.var_s[m]=var_r/(1.-ratios[m]*ratios[m]);
 
       avg_var_s+=fit.var_s[m];
       avg_var_z+=intersections[m].var_z;
@@ -1762,7 +1759,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     double scale2=avg_var_s/avg_var_z;
     double scale=sqrt(scale2);
     vector<double>weight(n);
-    for (unsigned int m=0;m<intersections.size();m++){
+    for (unsigned int m=0;m<n;m++){
       fit.z[m]=scale*intersections[m].z;
       fit.var_z[m]=scale2*intersections[m].var_z;
       weight[m]=fit.var_s[m]+fit.var_z[m];
@@ -1770,7 +1767,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     // Perform preliminary fit to find the (scaled) slope tanl
     double sumv=0.,sumx=0.;
     double sumy=0.,sumxx=0.,sumxy=0.;
-    for (unsigned int m=0;m<intersections.size();m++){
+    for (unsigned int m=0;m<n;m++){
       //double temp=1./var_z[m];
       double temp=1./weight[m];
       sumv+=temp;
