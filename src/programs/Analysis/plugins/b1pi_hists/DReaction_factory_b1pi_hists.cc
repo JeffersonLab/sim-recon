@@ -98,15 +98,13 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 650, 0.3, 1.6, "PostKinFitConLev")); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 500, 0.0, 0.5, "Pi0_PostKinFitConLev")); //false: measured data
 
-	//omega cut
+	//omega mass
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, false, 600, 0.2, 1.4, "omega_PostKinFitConLev_Measured")); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, omega, true, 600, 0.2, 1.4, "omega_PostKinFitConLev_KinFit")); //true: kinfit data
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, true, 0.6, 1.0, "omega_PostKinFit")); //true: kinfit data
 
-	//b1(1235)+ cut
+	//b1(1235)+ mass
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, b1_1235_Plus, false, 600, 0.6, 1.8, "b1(1235)+_PostKinFitConLev_Measured")); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, b1_1235_Plus, true, 600, 0.6, 1.8, "b1(1235)+_PostKinFitConLev_KinFit")); //true: kinfit data
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, b1_1235_Plus, true, 1.1, 1.5, "b1(1235)+_PostKinFit")); //true: kinfit data
 
 	//Signal Mass Hist
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Unknown, false, 1000, 1.0, 3.0, "X(2000)_PostKinFitConLev_Measured")); //false: measured data
