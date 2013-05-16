@@ -586,15 +586,17 @@ void DEventWriterROOT::Fill_Tree(JEventLoop* locEventLoop, const DReaction* locR
 						//find parent id, make sure not also a final state particle
 						int locParentID = locMCThrowns[loc_j]->parentid;
 						bool locIsParentFinalStateFlag = false;
+						bool locIsParentFoundFlag = false;
 						for(size_t loc_k = 0; loc_k < locMCThrowns.size(); ++loc_k)
 						{
 							if(locMCThrowns[loc_k]->myid != locParentID)
 								continue;
 							Calc_ParticleMultiplexID(locMCThrowns[loc_k]->PID(), locIsParentFinalStateFlag);
+							locIsParentFoundFlag = true;
 							break;
 						}
-						if(locIsParentFinalStateFlag)
-							continue; //don't save: a decay product of a final state particle (e.g. mu+ from pi+ decay)
+						if(locIsParentFinalStateFlag || ((!locIsParentFoundFlag) && (locParentID != 0)))
+							continue; //don't save: a decay product of a final state particle (e.g. mu+ from pi+ decay) //OR the parent is lost
 						unsigned int locCurrentNumParticles = (locNumPIDThrown_FinalState / locPIDMultiplexID) % 10;
 						if(locCurrentNumParticles != 9)
 							locNumPIDThrown_FinalState += locPIDMultiplexID;
