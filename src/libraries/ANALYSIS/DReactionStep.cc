@@ -11,7 +11,8 @@ void DReactionStep::Reset(void)
 void DReactionStep::Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag)
 {
 	dInitialParticleID = locPID;
-//	if(locIsMissingFlag) //TRUE IS NOT SUPPORTED YET!
+	if(locIsMissingFlag)
+		cout << "WARNING: MISSING BEAM PARTICLE IS NOT YET SUPPORTED!  TREATING AS NON-MISSING." << endl;
 //		dMissingParticleIndex = -2;
 }
 
@@ -19,7 +20,11 @@ void DReactionStep::Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag
 {
 	dFinalParticleIDs.push_back(locPID);
 	if(locIsMissingFlag)
+	{
+		if(dMissingParticleIndex != -1)
+			cout << "WARNING: MORE THAN ONE MISSING PARTICLE.  UNEXPECTED BEHAVIOR WILL RESULT." << endl;
 		dMissingParticleIndex = dFinalParticleIDs.size() - 1;
+	}
 }
 
 Particle_t DReactionStep::Get_FinalParticleID(size_t locFinalParticleIndex) const
