@@ -25,6 +25,7 @@ void Usage(void);
 double randm(double, double);
 
 float vertex[4] = { 0.0, 0.0, 65.0, 65.0 };
+int maxevent = -1;
 
 time_t now;
 
@@ -123,7 +124,7 @@ int main(int narg, char *argv[]) {
 		ts->properties->charge = +1;
 		ts->properties->mass = 0.93827;
 
-		origin->t = 999;
+		origin->t = 0;
 		origin->vx = vertex[0];
 		origin->vy = vertex[1];
 
@@ -156,6 +157,8 @@ int main(int narg, char *argv[]) {
 		if (eventNumber % 1000 == 0)
 			cout << "Wrote event " << eventNumber << endl;
 		Nevents++;
+		if (maxevent > 0 && Nevents >= maxevent)
+			break;
 	}
 
 	// Close input file
@@ -182,6 +185,7 @@ void ParseCommandLineArguments(int narg, char *argv[]) {
 		if (argv[i][0] == '-') {
 			char *ptr = &argv[i][1];
 			switch (*ptr) {
+			case 'v':
 			case 'V':
 				sscanf(&ptr[1], "%f %f %f %f", &vertex[0], &vertex[1],
 						&vertex[2], &vertex[3]);
@@ -190,7 +194,18 @@ void ParseCommandLineArguments(int narg, char *argv[]) {
 					exit(-1);
 				}
 				break;
+			case 'm':
+			case 'M':
+				sscanf(&ptr[1], "%d", &maxevent);
+				if (maxevent <= 0) {
+					cerr << "Invalid number of events" << endl;
+					exit(-1);
+				} else {
+					cout << maxevent << " event(s) will be processed." << endl;
+				}
+				break;
 			case 'h':
+			case 'H':
 				Usage();
 				exit(-1);
 			default:
@@ -218,9 +233,12 @@ void Usage(void) {
 	cout << endl;
 	cout << " options:" << endl;
 	cout << endl;
-	cout << "  -V\"x  y  z_min  z_max\"    set the vertex for the interaction.";
+	cout << "  -v\"x  y  z_min  z_max\"    set the vertex for the interaction.";
 	cout << "(default: x=" << vertex[0] << " y=" << vertex[1] << " z_min="
 			<< vertex[2] << " z_max=" << vertex[3] << ")" << endl;
+	cout
+			<< "  -mEvent      set number of events processed. (default: all events)"
+			<< endl;
 	cout << "  -h           print this usage statement." << endl;
 	cout << endl;
 }
