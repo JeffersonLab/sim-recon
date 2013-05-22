@@ -348,6 +348,10 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 		vector<const DFDCPseudo*> fdchits1;
 		dtrack1->Get(cdchits1);
 		dtrack1->Get(fdchits1);
+		// Total number of hits in this candidate
+		unsigned int num_cdc1=cdchits1.size();
+		unsigned int num_fdc1=fdchits1.size();
+		unsigned int total1 = num_cdc1+num_fdc1;
 
 		JObject::oid_t cand1=dtrack1->candidateid;
 		for(unsigned int j=i+1; j<_data.size(); j++){
@@ -366,22 +370,68 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 			dtrack2->Get(cdchits2);
 			dtrack2->Get(fdchits2);
 			
+			// Total number of hits in this candidate
+			unsigned int num_cdc2=cdchits2.size();
+			unsigned int num_fdc2=fdchits2.size();
+			unsigned int total2 = num_cdc2+num_fdc2;
+			
 			// Count number of cdc and fdc hits in common
 			unsigned int Ncdc = count_common_members(cdchits1, cdchits2);
 			unsigned int Nfdc = count_common_members(fdchits1, fdchits2);
 			
 			if(DEBUG_LEVEL>3){
 				_DBG_<<"cand1:"<<cand1<<" cand2:"<<dtrack2->candidateid<<endl;
-				_DBG_<<"   Ncdc="<<Ncdc<<" cdchits1.size()="<<cdchits1.size()<<" cdchits2.size()="<<cdchits2.size()<<endl;
-				_DBG_<<"   Nfdc="<<Nfdc<<" fdchits1.size()="<<fdchits1.size()<<" fdchits2.size()="<<fdchits2.size()<<endl;
+				_DBG_<<"   Ncdc="<<Ncdc<<" num_cdc1="<<num_cdc1<<" num_cdc2="<<num_cdc2<<endl;
+				_DBG_<<"   Nfdc="<<Nfdc<<" num_fdc1="<<num_fdc1<<" num_fdc2="<<num_fdc2<<endl;
+			}
+			// Deal with the case where (within +-1 cdc hit), 
+			// all the cdc hits were common between the two 
+			// tracks but there were no fdc hits used in one or 
+			// both of the tracks.
+			if (Ncdc>0 && (num_fdc1*num_fdc2)==0){
+			  if (num_cdc1>num_cdc2){
+			    if (Ncdc<num_cdc2-1) continue;
+			  }
+			  else if (Ncdc<num_cdc1-1) continue;
+
+			  if(total1<total2){
+			    indexes_to_delete.insert(i);
+			  }else if(total2<total1){
+			    indexes_to_delete.insert(j);
+			  }else if(dtrack1->FOM > dtrack2->FOM){
+			    indexes_to_delete.insert(j);
+			  }else{
+			    indexes_to_delete.insert(i);
+			  }
+			  continue;
+			}	
+			// Deal with the case where (within +-1 fdc hit), 
+			// all the fdc hits were common between the two 
+			// tracks but there were no cdc hits used in one  
+			// or both of the tracks.			
+			if (Nfdc>0 && (num_cdc1*num_cdc2)==0){
+			  if (num_fdc1>num_fdc2){
+			    if (Nfdc<num_fdc2-1) continue;
+			  }
+			  else if (Nfdc<num_fdc1-1) continue;
+
+			  if(total1<total2){
+			    indexes_to_delete.insert(i);
+			  }else if(total2<total1){
+			    indexes_to_delete.insert(j);
+			  }else if(dtrack1->FOM > dtrack2->FOM){
+			    indexes_to_delete.insert(j);
+			  }else{
+			    indexes_to_delete.insert(i);
+			  }
+			  continue;
 			}
 
-			if(Ncdc!=cdchits1.size() && Ncdc!=cdchits2.size())continue;
-			if(Nfdc!=fdchits1.size() && Nfdc!=fdchits2.size())continue;
-			
+			if(Ncdc!=num_cdc1 && Ncdc!=num_cdc2)continue;
+		       
+			if(Nfdc!=num_fdc1 && Nfdc!=num_fdc2)continue;
+		      
 			unsigned int total = Ncdc + Nfdc;
-			unsigned int total1 = cdchits1.size()+fdchits1.size();
-			unsigned int total2 = cdchits2.size()+fdchits2.size();
 			if(total!=total1 && total!=total2)continue;
 
 			if(total1<total2){
