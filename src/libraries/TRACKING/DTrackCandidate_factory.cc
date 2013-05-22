@@ -308,7 +308,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  if (ratio<1.){
 	    fit.z_vertex=srccan->position().z()-fit.tanl*two_rc*asin(ratio);
 	  }
-	  
+
 	  GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
 	  can->setMomentum(mom);
 	  can->setPosition(pos);
@@ -522,7 +522,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	    // average Bz
 	    double Bz_avg=0.;
-	    
+
 	    // Redo helical fit with all available hits
 	    DHelicalFit fit; 
 	    if (DoRefit(fit,segments,cdchits,Bz_avg)==NOERROR){
@@ -846,6 +846,14 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      fit.q=GetCharge(fit,segments[0]->hits[0],can->position());
 	      can->setCharge(fit.q);
 	      GetPositionAndMomentum(fit,Bz_avg,cdchits[0]->wire->origin,pos,mom);
+	      // Find the z-position at the new position in x and y
+	      DVector2 xy0(pos.X(),pos.Y());
+	      double tworc=2.*fit.r0;
+	      double ratio=(segments[0]->hits[0]->xy-xy0).Mod()/tworc;
+	      double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
+	      
+	      pos.SetZ(segments[0]->hits[0]->wire->origin.z()-sperp*fit.tanl);
+	      
 	      can->setMomentum(mom);
 	      can->setPosition(pos);
 	    }
@@ -934,16 +942,18 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    }
 	  }	 
 	} 
-	// If we matched to more than three cdc hits, try to improve the candidate
-	// parameters
-	if (num_match_cdc>3){
-
+	// We matched at least one cdc hit.
+	if (num_match_cdc>0){
+	  // Store the current track parameters in the DHelicalFit class
 	  DHelicalFit fit;
-	  fit.r0=segments[0]->rc;
-	  fit.x0=segments[0]->xc;
-	  fit.y0=segments[0]->yc;
-	  fit.phi=segments[0]->phi0;
-	
+	  fit.r0=mom.Perp()/(0.003*Bz_avg);
+	  fit.phi=mom.Phi();
+	  fit.x0=pos.x()-q*fit.r0*sin(fit.phi);
+	  fit.y0=pos.y()+q*fit.r0*cos(fit.phi);
+	  fit.tanl=tan(M_PI_2-mom.Theta());
+	  fit.z_vertex=0; // this will be changed later
+	  fit.q=q;
+	  
 	  // If we have more than one axial hit, redo the circle fit with the 
 	  // additional data
 	  if (num_axial>1){	  
@@ -971,10 +981,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    
 	    // Redo the fit
 	    fit.FitCircleRiemann(fit.r0);
-	  }
-	  fit.tanl=tan(M_PI_2-mom.Theta());
-	  fit.z_vertex=0; // this will be changed later
-	  fit.q=q;
+	  }	 
 	  GetPositionAndMomentum(fit,Bz_avg,
 				 mycdchits[id_for_smallest_r]->wire->origin,
 				 pos,mom);
