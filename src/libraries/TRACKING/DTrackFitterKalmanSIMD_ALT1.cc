@@ -50,8 +50,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   numdof=0;
   
   double my_anneal=anneal_factor*anneal_factor;
+  double my_fdc_anneal=my_anneal;
   double var_fdc_cut=NUM_FDC_SIGMA_CUT*NUM_FDC_SIGMA_CUT;
-  double fdc_chi2cut=my_anneal*var_fdc_cut;
+  double fdc_chi2cut=my_fdc_anneal*var_fdc_cut;
 
   double var_cdc_cut=NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
   double cdc_chi2cut=my_anneal*var_cdc_cut;
@@ -107,7 +108,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	{
 	  _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 	}
-      break_point_fdc_index=num_fdc_hits/2;
+      break_point_fdc_index=(3*num_fdc_hits)/4;
       return MOMENTUM_OUT_OF_RANGE;
     }
 
@@ -367,6 +368,18 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // Check if this hit is an outlier
 	  double chi2_hit=Mdiff*Mdiff*InvV;
 	  if (chi2_hit<fdc_chi2cut){
+	    
+	    if (chi2_hit>var_fdc_cut){
+	      // Give hits that satisfy the wide cut but are still pretty far
+	      // from the projected position less weight
+	      
+	      // ad hoc correction 
+	      double diff = chi2_hit-var_fdc_cut;
+	      V*=1.+my_fdc_anneal*diff;
+	      InvV=1./(V+Vproj);
+	    }
+
+
 	    // Compute Kalman gain matrix
 	    K=InvV*(C*H_T);
 	    
@@ -504,7 +517,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		      {
 			_DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		      }	  
-		    break_point_fdc_index=num_fdc_hits/2;		    
+		    break_point_fdc_index=(3*num_fdc_hits)/4;		    
 		    return MOMENTUM_OUT_OF_RANGE;
 		  }
 
@@ -520,7 +533,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		    {
 		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		    }
-		  break_point_fdc_index=num_fdc_hits/2;
+		  break_point_fdc_index=(3*num_fdc_hits)/4;
 		  return MOMENTUM_OUT_OF_RANGE;
 		}
 
@@ -533,7 +546,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 		    {
 		      _DBG_ << "Bailing: P = " << 1./fabs(S(state_q_over_p)) << endl;
 		    }
-		    break_point_fdc_index=num_fdc_hits/2;
+		  break_point_fdc_index=(3*num_fdc_hits)/4;
 		  return MOMENTUM_OUT_OF_RANGE;
 		}
 		
@@ -546,7 +559,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    // We have bracketed the minimum doca:  use Brent's agorithm
 	    if (BrentsAlgorithm(z,-mStepSizeZ,dedx,z0w,origin,dir,S,dz,
 				is_stereo)!=NOERROR){
-	      break_point_fdc_index=num_fdc_hits/2;
+	      break_point_fdc_index=(3*num_fdc_hits)/4;
 	      return MOMENTUM_OUT_OF_RANGE;
 	    }
 	    newz=z+dz;
@@ -591,7 +604,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      double dz2=0.;
 	      if (BrentsAlgorithm(newz,mStepSizeZ,dedx,z0w,origin,dir,S,dz2,
 				  is_stereo)!=NOERROR){
-		break_point_fdc_index=num_fdc_hits/2;
+		break_point_fdc_index=(3*num_fdc_hits)/4;
 		return MOMENTUM_OUT_OF_RANGE;
 	      }
 	      newz=ztemp+dz2;
@@ -727,8 +740,9 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      // from the projected position less weight
 	      
 	      // ad hoc correction 
-	      double diff = chi2_hit-var_cdc_cut;    
-	      InvV1=1./((1.+my_anneal*diff)*Vc+Vproj);
+	      double diff = chi2_hit-var_cdc_cut;
+	      Vc*=1.+my_anneal*diff;
+	      InvV1=1./(Vc+Vproj);
 	    }
 
 	    // Compute KalmanSIMD gain matrix

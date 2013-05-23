@@ -52,7 +52,7 @@
 #define TAN_MAX 10.
 
 
-#define MINIMUM_HIT_FRACTION 0.25
+#define MINIMUM_HIT_FRACTION 0.5
 
 #define DELTA_R 1.0 // distance in r to extend the trajectory beyond the last point
 
@@ -430,6 +430,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double MASS,mass2;
   double m_ratio; // electron mass/MASS
   double m_ratio_sq; // .. and its square
+  double two_m_e; // twice the electron mass
 
   // minimum drift time 
   double mMinDriftTime;
@@ -461,6 +462,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double TARGET_Z;
   bool ADD_VERTEX_POINT;
   unsigned int MIN_HITS_FOR_REFIT;
+  double THETA_CUT;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
@@ -500,7 +502,8 @@ inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){
   //return CDC_VARIANCE;
   if (t<0.0) t=0.0;
   
-  double sigma=0.11/(t+3.6)+4.65e-3;
+  //double sigma=0.11/(t+3.6)+4.65e-3;
+  double sigma=0.11/(t+3.6)+4.25e-3;
   return sigma*sigma;
 }
 // Variance for position along wire
