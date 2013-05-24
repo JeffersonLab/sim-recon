@@ -25,7 +25,7 @@ public:
   
   JOBJECT_PUBLIC( DBCALCluster );
   
-  DBCALCluster(){}
+  DBCALCluster();
   DBCALCluster( const DBCALPoint* point );
 
   vector< const DBCALPoint* > points() const { return m_points; }

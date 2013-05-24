@@ -18,6 +18,10 @@ DBCALCluster::DBCALCluster( const DBCALPoint* point ) : m_points ( 0 ) {
   makeFromPoints();
 }
 
+DBCALCluster::DBCALCluster() {
+  clear(); //initialize all values to zero
+}
+
 float
 DBCALCluster::t0() const {
   
