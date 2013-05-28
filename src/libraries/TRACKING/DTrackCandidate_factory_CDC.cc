@@ -1141,7 +1141,7 @@ jerror_t DTrackCandidate_factory_CDC::GetStereoPosition(const DCDCWire *wire,
   if(fabs(s) > 0.5*wire->L) return VALUE_OUT_OF_RANGE; // if wire doesn't cross circle, skip hit
 		
   // Compute the position for this hit
-  pos = origin + s*dir;
+  pos = origin + dz*dir;
 
   return NOERROR;
 }
@@ -1606,7 +1606,7 @@ void DTrackCandidate_factory_CDC::DCDCSeed::CheckCharge(){
   double yc=fit.y0;
   // Stereo hit position
   DVector2 xy2(stereo_hits[0].x_stereo,stereo_hits[0].y_stereo);
-  // Compute phi rotation from "vertex" to fdc hit
+  // Compute phi rotation from "vertex" to cdc hit
   double Phi1=atan2(-yc,-xc);
   double chord=xy2.Mod();
   double ratio=chord/(2.*rc);
