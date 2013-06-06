@@ -16,6 +16,9 @@
 #include "DBCALTDCHit.h"
 #include "DBCALSiPMHit.h"
 #include "DBCALTruthCell.h"
+#include "DBCALClump.h"
+#include "DBCALClump_factory.h"
+#include "DBCALShower_factory_JLAB.h"
 
 #include "DBCALTruthShower.h"
 
@@ -46,6 +49,8 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALPoint_factory());
 	loop->AddFactory(new DBCALPoint_factory_OLDSMEAR());
 	loop->AddFactory(new DBCALUnifiedHit_factory());
-    
+        loop->AddFactory(new DBCALClump_factory());
+        loop->AddFactory(new DBCALShower_factory_JLAB());
+   
 	return NOERROR;
 }
