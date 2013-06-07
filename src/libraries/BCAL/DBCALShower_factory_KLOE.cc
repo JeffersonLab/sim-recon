@@ -20,9 +20,9 @@
 using namespace std;
 
 //------------------
-// DBCALShower_factory_KLOE
+// init
 //------------------
-DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
+jerror_t DBCALShower_factory_KLOE::init()
 {
     // this should be lower than cut in mcsmear
 	ethr_cell=0.0001;     // MIN ENERGY THRESD OF cell in GeV
@@ -82,6 +82,7 @@ DBCALShower_factory_KLOE::DBCALShower_factory_KLOE()
     m_nonlinZ_p3 = 0;
   }
   
+  return NOERROR;
 }
 
 //------------------

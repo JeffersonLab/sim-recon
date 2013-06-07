@@ -33,13 +33,14 @@ class DBCALShower_factory_KLOE:public JFactory<DBCALShower>{
     
 public:
     
-  DBCALShower_factory_KLOE();
-  ~DBCALShower_factory_KLOE(){};
+  DBCALShower_factory_KLOE(){}
+  ~DBCALShower_factory_KLOE(){}
   
   const char* Tag(void){return "KLOE";}
     
 private:
-        jerror_t brun(JEventLoop *loop, int runnumber);
+    jerror_t init();
+    jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
     void FindPointsInShower(int indx, JEventLoop *loop, vector<const DBCALPoint*> &pointsInShower);

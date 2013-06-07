@@ -33,13 +33,14 @@ class DBCALShower_factory_KLOE_OLDSMEAR:public JFactory<DBCALShower>{
     
 public:
     
-  DBCALShower_factory_KLOE_OLDSMEAR();
-  ~DBCALShower_factory_KLOE_OLDSMEAR(){};
+  DBCALShower_factory_KLOE_OLDSMEAR(){}
+  ~DBCALShower_factory_KLOE_OLDSMEAR(){}
   
   const char* Tag(void){return "KLOE_OLDSMEAR";}
     
 private:
-        jerror_t brun(JEventLoop *loop, int runnumber);
+    jerror_t init();
+    jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
     void FindHitsInShower(int indx, vector<const DBCALHit*> &bcalhits, vector<const DBCALHit*> &hitsInShower);
