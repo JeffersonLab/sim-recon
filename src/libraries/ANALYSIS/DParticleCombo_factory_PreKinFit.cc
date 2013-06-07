@@ -36,31 +36,30 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
 	locGeometry->GetTargetZ(dTargetCenterZ);
 
-	// In the following try-catch blocks, gPARMS->GetParameter will throw an
-	// exception if the parameter doesn't exist leaving both the X.second and
-	// X.first elements of the relevant variable untouched. If the parameter
-	// does exist, the value is copied into X.second and the X.first value
-	// gets set to true on the subsequent line.
-
-	try{
-		gPARMS->GetParameter("COMBO:MAXPHOTONRFDELTAT", dMaxPhotonRFDeltaT.second);
+	//Only set the below values if they were set on the command line.
+	if(gPARMS->Exists("COMBO:MAX_PHOTON_RF_DELTAT"))
+	{
 		dMaxPhotonRFDeltaT.first = true;
-	}catch(...){}
+		gPARMS->GetParameter("COMBO:MAX_PHOTON_RF_DELTAT", dMaxPhotonRFDeltaT.second);
+	}
 
-	try{
-		gPARMS->GetParameter("COMBO:MININDIVIDUALCHARGEDPIDFOM", dMinIndividualChargedPIDFOM.second);
-		dMinIndividualChargedPIDFOM.first = true;
-	}catch(...){}
-
-	try{
-		gPARMS->GetParameter("COMBO:MINCOMBINEDCHARGEDPIDFOM", dMinCombinedChargedPIDFOM.second);
-		dMinCombinedChargedPIDFOM.first = true;
-	}catch(...){}
-
-	try{
-		gPARMS->GetParameter("COMBO:MINCOMBINEDTRACKINGFOM", dMinCombinedTrackingFOM.second);
+	if(gPARMS->Exists("COMBO:MIN_COMBINED_TRACKING_FOM"))
+	{
 		dMinCombinedTrackingFOM.first = true;
-	}catch(...){}
+		gPARMS->GetParameter("COMBO:MIN_COMBINED_TRACKING_FOM", dMinCombinedTrackingFOM.second);
+	}
+
+	if(gPARMS->Exists("COMBO:MIN_INDIVIDUAL_CHARGED_PID_FOM"))
+	{
+		dMinIndividualChargedPIDFOM.first = true;
+		gPARMS->GetParameter("COMBO:MIN_INDIVIDUAL_CHARGED_PID_FOM", dMinIndividualChargedPIDFOM.second);
+	}
+
+	if(gPARMS->Exists("COMBO:MIN_COMBINED_CHARGED_PID_FOM"))
+	{
+		dMinCombinedChargedPIDFOM.first = true;
+		gPARMS->GetParameter("COMBO:MIN_COMBINED_CHARGED_PID_FOM", dMinCombinedChargedPIDFOM.second);
+	}
 
 	return NOERROR;
 }

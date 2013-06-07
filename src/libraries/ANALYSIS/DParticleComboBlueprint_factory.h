@@ -59,9 +59,15 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		unsigned int dDebugLevel;
 		size_t MAX_DParticleComboBlueprintStepPoolSize;
 
+		// PRE-DPARTICLECOMBO TRACK SELECTION FACTORY TAGS
+			//bool = true to get tracks from specified factory, false otherwise
+			//Command-line values will override those set in the DReaction
+		pair<bool, string> dReactionTrackSelectionTag;
+		pair<bool, string> dReactionShowerSelectionTag;
+
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
-			//Command-line values will override these values
+			//Command-line values will override those set in the DReaction
 		pair<bool, double> dMinIndividualTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinProtonMomentum; //when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
 

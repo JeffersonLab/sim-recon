@@ -10,6 +10,8 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	dDebugLevel = 0;
 	dMinProtonMomentum = pair<bool, double>(false, -1.0);
 	dMinIndividualTrackingFOM = pair<bool, double>(false, -1.0);
+	dReactionShowerSelectionTag = pair<bool, string>(false, "");
+	dReactionTrackSelectionTag = pair<bool, string>(false, "");
 
 	return NOERROR;
 }
@@ -21,7 +23,7 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 {
 	dTrackTimeBasedFactory_Combo = dynamic_cast<DTrackTimeBased_factory_Combo*>(locEventLoop->GetFactory("DTrackTimeBased", "Combo"));
 
-	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:DEBUGLEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:DEBUG_LEVEL", dDebugLevel);
 
 	// In the following try-catch blocks, gPARMS->GetParameter will throw an
 	// exception if the parameter doesn't exist leaving both the X.second and
@@ -29,15 +31,29 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 	// does exist, the value is copied into X.second and the X.first value
 	// gets set to true on the subsequent line.
 
-	try{
-		gPARMS->GetParameter("COMBO:MINPROTONMOMENTUM", dMinProtonMomentum.second);
+	if(gPARMS->Exists("COMBO:MIN_PROTON_MOMENTUM"))
+	{
 		dMinProtonMomentum.first = true;
-	}catch(...){}
+		gPARMS->GetParameter("COMBO:MIN_PROTON_MOMENTUM", dMinProtonMomentum.second);
+	}
 
-	try{
-		gPARMS->GetParameter("COMBO:MININDIVIDUALTRACKINGFOM", dMinIndividualTrackingFOM.second);
+	if(gPARMS->Exists("COMBO:MIN_INDIVIDUAL_TRACKING_FOM"))
+	{
 		dMinIndividualTrackingFOM.first = true;
-	}catch(...){}
+		gPARMS->GetParameter("COMBO:MIN_INDIVIDUAL_TRACKING_FOM", dMinIndividualTrackingFOM.second);
+	}
+
+	if(gPARMS->Exists("COMBO:REACTION_TRACK_SELECT_TAG"))
+	{
+		dReactionTrackSelectionTag.first = true;
+		gPARMS->GetParameter("COMBO:REACTION_TRACK_SELECT_TAG", dReactionTrackSelectionTag.second);
+	}
+
+	if(gPARMS->Exists("COMBO:REACTION_SHOWER_SELECT_TAG"))
+	{
+		dReactionShowerSelectionTag.first = true;
+		gPARMS->GetParameter("COMBO:REACTION_SHOWER_SELECT_TAG", dReactionShowerSelectionTag.second);
+	}
 
 	return NOERROR;
 }
@@ -79,10 +95,13 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eve
 
 jerror_t DParticleComboBlueprint_factory::Build_ParticleComboBlueprints(JEventLoop* locEventLoop, const DReaction* locReaction)
 {
+	string locReactionTrackSelectionTag = dReactionTrackSelectionTag.first ? dReactionTrackSelectionTag.second : locReaction->Get_ChargedTrackFactoryTag();
+	string locReactionShowerSelectionTag = dReactionShowerSelectionTag.first ? dReactionShowerSelectionTag.second : locReaction->Get_NeutralShowerFactoryTag();
+
 	vector<const DChargedTrack*> locChargedTrackVector;
-	locEventLoop->Get(locChargedTrackVector);
+	locEventLoop->Get(locChargedTrackVector, locReactionTrackSelectionTag.c_str());
 	vector<const DNeutralShower*> locNeutralShowerVector;
-	locEventLoop->Get(locNeutralShowerVector);
+	locEventLoop->Get(locNeutralShowerVector, locReactionShowerSelectionTag.c_str());
 
 	deque<const JObject*> locNeutralShowerDeque;
 	for(size_t loc_i = 0; loc_i < locNeutralShowerVector.size(); ++loc_i)

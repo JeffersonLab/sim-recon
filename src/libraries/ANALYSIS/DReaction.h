@@ -29,6 +29,19 @@ class DReaction : public JObject
 		inline void Exclude_DecayingParticleFromP4KinFit(size_t locStepIndex){dDecayingParticlesExcludedFromP4Kinfit.push_back(locStepIndex);}
 		inline void Add_AnalysisAction(DAnalysisAction* locAnalysisAction){dAnalysisActions.push_back(locAnalysisAction);}
 
+		// SET TRACK SELECTION FACTORIES //Command-line values will override these values
+		inline void Set_ChargedTrackFactoryTag(string locChargedTrackFactoryTag){dChargedTrackFactoryTag = locChargedTrackFactoryTag;}
+		inline void Set_NeutralShowerFactoryTag(string locNeutralShowerFactoryTag){dNeutralShowerFactoryTag = locNeutralShowerFactoryTag;}
+
+		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
+		inline void Set_MinIndividualChargedPIDFOM(double locMinIndividualChargedPIDFOM){dMinIndividualChargedPIDFOM = pair<bool, double>(true, locMinIndividualChargedPIDFOM);}
+		inline void Set_MinCombinedChargedPIDFOM(double locMinCombinedChargedPIDFOM){dMinCombinedChargedPIDFOM = pair<bool, double>(true, locMinCombinedChargedPIDFOM);}
+		inline void Set_MinIndividualTrackingFOM(double locMinIndividualTrackingFOM){dMinIndividualTrackingFOM = pair<bool, double>(true, locMinIndividualTrackingFOM);}
+		inline void Set_MinCombinedTrackingFOM(double locMinCombinedTrackingFOM){dMinCombinedTrackingFOM = pair<bool, double>(true, locMinCombinedTrackingFOM);}
+		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
+		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
+
+
 		// GET CONTROL MEMBERS:
 		inline string Get_ReactionName(void) const{return dReactionName;}
 		inline DKinFitType Get_KinFitType(void) const{return dKinFitType;}
@@ -57,17 +70,9 @@ class DReaction : public JObject
 		void Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, deque<string>& locNames, bool locKinFitResultsFlag = false) const;
 		void Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, deque<deque<string> >& locParticleNames, deque<string>& locNames, bool locKinFitResultsFlag = false) const;
 
-		// OTHER:
-		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
-		bool Check_IfDecayingParticleExcludedFromP4KinFit(size_t locStepIndex) const;
-
-		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
-		inline void Set_MinIndividualChargedPIDFOM(double locMinIndividualChargedPIDFOM){dMinIndividualChargedPIDFOM = pair<bool, double>(true, locMinIndividualChargedPIDFOM);}
-		inline void Set_MinCombinedChargedPIDFOM(double locMinCombinedChargedPIDFOM){dMinCombinedChargedPIDFOM = pair<bool, double>(true, locMinCombinedChargedPIDFOM);}
-		inline void Set_MinIndividualTrackingFOM(double locMinIndividualTrackingFOM){dMinIndividualTrackingFOM = pair<bool, double>(true, locMinIndividualTrackingFOM);}
-		inline void Set_MinCombinedTrackingFOM(double locMinCombinedTrackingFOM){dMinCombinedTrackingFOM = pair<bool, double>(true, locMinCombinedTrackingFOM);}
-		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
-		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
+		// GET TRACK SELECTION FACTORIES //Command-line values will override these values
+		inline string Get_ChargedTrackFactoryTag(void) const{return dChargedTrackFactoryTag;}
+		inline string Get_NeutralShowerFactoryTag(void) const{return dNeutralShowerFactoryTag;}
 
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		inline pair<bool, double> Get_MinIndividualChargedPIDFOM(void) const{return dMinIndividualChargedPIDFOM;}
@@ -77,7 +82,7 @@ class DReaction : public JObject
 		inline pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
 		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
 
-		// ROOT OUTPUT
+		// ROOT OUTPUT:
 		inline void Enable_TTreeOutput(string locTTreeOutputFileName)
 		{
 			dEnableTTreeOutputFlag = true;
@@ -85,6 +90,10 @@ class DReaction : public JObject
 		}
 		inline string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
 		inline bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
+
+		// OTHER:
+		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
+		bool Check_IfDecayingParticleExcludedFromP4KinFit(size_t locStepIndex) const;
 
 	private:
 		// PRIVATE METHODS:
@@ -96,13 +105,18 @@ class DReaction : public JObject
 		DKinFitType dKinFitType; //defined in ANALYSIS/DKinFitResults.h
 		deque<size_t> dDecayingParticlesExcludedFromP4Kinfit; //to exclude decaying particles from the kinematic fit (resonances are automatically excluded) //size_t is step index where it is a parent
 
-		// ROOT TTREE OUTPUT
+		// ROOT TTREE OUTPUT:
 		bool dEnableTTreeOutputFlag; //default is false
 		string dTTreeOutputFileName;
 
 		// REACTION AND ANALYSIS MEMBERS:
 		deque<const DReactionStep*> dReactionSteps;
 		deque<DAnalysisAction*> dAnalysisActions;
+
+		// TRACK SELECTION FACTORIES
+			//Command-line values will override these values
+		string dChargedTrackFactoryTag; //default is ""
+		string dNeutralShowerFactoryTag; //default is ""
 
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
