@@ -1415,7 +1415,7 @@ void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLo
 		else
 			dHistMap_DeltaT[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 
-		// DeltaT
+		// DeltaT - BCAL
 		locHistName = string("DeltaT_BCAL");
 		locHistTitle = locParticleROOTName + string(" in BCAL;#Deltat (ns) (Reconstructed - Thrown)");
 		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
@@ -1423,13 +1423,27 @@ void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLo
 		else
 			dHistMap_DeltaT_BCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 
-		// DeltaT
-		locHistName = string("DeltaT_TOF");
-		locHistTitle = locParticleROOTName + string(" in TOF;#Deltat (ns) (Reconstructed - Thrown)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_DeltaT_TOF[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_DeltaT_TOF[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+		// DeltaT - TOF (charged only)
+		if(ParticleCharge(locPID) != 0)
+		{
+			locHistName = string("DeltaT_TOF");
+			locHistTitle = locParticleROOTName + string(" in TOF;#Deltat (ns) (Reconstructed - Thrown)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_DeltaT_TOF[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_DeltaT_TOF[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+		}
+
+		// DeltaT - FCAL (neutral only)
+		if(ParticleCharge(locPID) == 0)
+		{
+			locHistName = string("DeltaT_FCAL");
+			locHistTitle = locParticleROOTName + string(" in FCAL;#Deltat (ns) (Reconstructed - Thrown)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_DeltaT_FCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_DeltaT_FCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+		}
 
 		// DeltaVertexZ
 		locHistName = string("DeltaVertexZ");
@@ -1629,8 +1643,8 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		dHistMap_DeltaTheta[locPID]->Fill(locDeltaTheta);
 		dHistMap_DeltaPhi[locPID]->Fill(locDeltaPhi);
 		dHistMap_DeltaT[locPID]->Fill(locDeltaT);
-		if(locNeutralParticleHypothesis->t1_detector() == SYS_TOF)
-			dHistMap_DeltaT_TOF[locPID]->Fill(locDeltaT);
+		if(locNeutralParticleHypothesis->t1_detector() == SYS_FCAL)
+			dHistMap_DeltaT_FCAL[locPID]->Fill(locDeltaT);
 		else if(locNeutralParticleHypothesis->t1_detector() == SYS_BCAL)
 			dHistMap_DeltaT_BCAL[locPID]->Fill(locDeltaT);
 		dHistMap_DeltaVertexZ[locPID]->Fill(locDeltaVertexZ);
