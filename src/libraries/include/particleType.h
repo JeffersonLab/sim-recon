@@ -610,12 +610,34 @@ inline static int PDGtype(Particle_t p)
   }
 }
 
-inline static int ParticleMultiplexPower(Particle_t locPID, int* locIsFinalStateFlag)
+inline static int Is_FinalStateParticle(Particle_t locPID)
 {
-	//FINAL-STATE PARTICLES (+ pi0) (base 10):
-	*locIsFinalStateFlag = 1;
 	switch(locPID)
 	{
+		case Gamma:       return 1;
+		case Positron:    return 1;
+		case Electron:    return 1;
+		case Neutrino:    return 1;
+		case MuonPlus:    return 1;
+		case MuonMinus:   return 1;
+		case PiPlus:      return 1;
+		case PiMinus:     return 1;
+		case KLong:       return 1;
+		case KPlus:       return 1;
+		case KMinus:      return 1;
+		case Neutron:     return 1;
+		case Proton:      return 1;
+		case AntiProton:  return 1;
+		case AntiNeutron: return 1;
+		default: return 0; //decaying
+	}
+}
+
+inline static int ParticleMultiplexPower(Particle_t locPID)
+{
+	switch(locPID)
+	{
+		//FINAL-STATE PARTICLES (+ pi0) (decimal: 10^power):
 		case Gamma:       return 0;
 		case Positron:    return 1;
 		case Electron:    return 2;
@@ -632,12 +654,8 @@ inline static int ParticleMultiplexPower(Particle_t locPID, int* locIsFinalState
 		case Proton:      return 13;
 		case AntiProton:  return 14;
 		case AntiNeutron: return 15;
-		default: *locIsFinalStateFlag = 0; //decaying
-	}
 
-	//DECAYING PARTICLES:
-	switch(locPID)
-	{
+		//DECAYING PARTICLES (- pi0): (binary: 2^power)
 		case KShort:           return 0;
 		case Eta:              return 1;
 		case Lambda:           return 2;
@@ -673,7 +691,6 @@ inline static int ParticleMultiplexPower(Particle_t locPID, int* locIsFinalState
 		case Sigma_1385_Minus: return 32;
 		case Sigma_1385_0:     return 33;
 		case Sigma_1385_Plus:  return 34;
-
 		default: return -1;
 	}
 }

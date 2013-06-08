@@ -51,7 +51,7 @@ class DEventWriterROOT : public JObject
 		//UTILITY FUNCTIONS
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 		string Convert_ToBranchName(string locInputName) const;
-		ULong64_t Calc_ParticleMultiplexID(Particle_t locPID, bool& locIsFinalStateFlag) const;
+		ULong64_t Calc_ParticleMultiplexID(Particle_t locPID) const;
 
 		//TREE CREATION:
 		void Create_Tree(const DReaction* locReaction, bool locIsMCDataFlag);

@@ -84,21 +84,6 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 		return;
 	locThrownSteps.push_back(pair<const DMCThrown*, deque<const DMCThrown*> >(NULL, deque<const DMCThrown*>() ) );
 
-	vector<Particle_t> locIgnoreDecaysVector;
-	locIgnoreDecaysVector.push_back(Gamma);
-	locIgnoreDecaysVector.push_back(Positron);
-	locIgnoreDecaysVector.push_back(Electron);
-	locIgnoreDecaysVector.push_back(MuonPlus);
-	locIgnoreDecaysVector.push_back(MuonMinus);
-	locIgnoreDecaysVector.push_back(Neutrino);
-	locIgnoreDecaysVector.push_back(PiPlus);
-	locIgnoreDecaysVector.push_back(PiMinus);
-	locIgnoreDecaysVector.push_back(KPlus);
-	locIgnoreDecaysVector.push_back(KMinus);
-	locIgnoreDecaysVector.push_back(Neutron);
-	locIgnoreDecaysVector.push_back(Proton);
-	locIgnoreDecaysVector.push_back(AntiProton);
-
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
 		if(locMCThrowns[loc_i]->PID() == Unknown)
@@ -118,16 +103,8 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
 			continue;
 		}
-		bool locIgnoreParticleFlag = false;
-		for(size_t loc_j = 0; loc_j < locIgnoreDecaysVector.size(); ++loc_j)
-		{
-			if(locParentPID != locIgnoreDecaysVector[loc_j])
-				continue;
-			locIgnoreParticleFlag = true;
-			break;
-		}
-		if(locIgnoreParticleFlag)
-			continue; //e.g. a neutrino from a pion decay
+		if(Is_FinalStateParticle(locParentPID) == 1)
+			continue; //e.g. parent is a final state particle (e.g. this is a neutrino from a pion decay)
 
 		//check to see if the parent is already listed as a decaying particle //if so, add it to that step
 		bool locListedAsDecayingFlag = false;
@@ -160,15 +137,12 @@ for(size_t loc_i = 0; loc_i < locThrownSteps.size(); ++loc_i)
 bool DAnalysisUtilities::Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, const deque<Particle_t>& locDesiredPIDs, Particle_t locMissingPID) const
 {
 	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
-	DMCThrownMatching_factory* locMCThrownMatchingFactory = static_cast<DMCThrownMatching_factory*>(locEventLoop->GetFactory("DMCThrownMatching"));
+	locEventLoop->Get(locMCThrowns, "FinalState");
 	deque<Particle_t> locDesiredPIDs_Copy = locDesiredPIDs;
 
 	bool locMissingPIDMatchedFlag = false;
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
-		if(!locMCThrownMatchingFactory->Check_IsValidMCComparisonPID(locMCThrowns, locMCThrowns[loc_i]))
-			continue;
 		Particle_t locPID = (Particle_t)(locMCThrowns[loc_i]->type);
 
 		if((!locMissingPIDMatchedFlag) && (locMissingPID == locPID))

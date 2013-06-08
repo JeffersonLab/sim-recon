@@ -68,10 +68,18 @@ class DHistogramAction_PID : public DAnalysisAction
 		DHistogramAction_PID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_PID", false, locActionUniqueString), 
 		dNumFOMBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), 
-		dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0) {}
+		dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0)
+		{
+			dThrownPIDs.clear();
+			dThrownPIDs.push_back(Gamma);  dThrownPIDs.push_back(Neutron);
+			dThrownPIDs.push_back(PiPlus);  dThrownPIDs.push_back(KPlus);  dThrownPIDs.push_back(Proton);
+			dThrownPIDs.push_back(PiMinus);  dThrownPIDs.push_back(KMinus);
+			dThrownPIDs.push_back(Electron);  dThrownPIDs.push_back(MuonMinus);
+		}
 
 		unsigned int dNumFOMBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins, dNum2DThetaBins;
 		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinP, dMaxP, dMinTheta, dMaxTheta;
+		deque<Particle_t> dThrownPIDs;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
@@ -228,7 +236,6 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 		void Initialize(JEventLoop* locEventLoop);
 
 		TH1D* 	dBeamParticle_P;
-		DMCThrownMatching_factory* dMCThrownMatchingFactory;
 
 		map<Particle_t, TH2D*> dHistMap_PVsTheta;
 		map<Particle_t, TH2D*> dHistMap_PhiVsTheta;
@@ -357,6 +364,8 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		map<Particle_t, TH1D*> dHistMap_DeltaTheta;
 		map<Particle_t, TH1D*> dHistMap_DeltaPhi;
 		map<Particle_t, TH1D*> dHistMap_DeltaT;
+map<Particle_t, TH1D*> dHistMap_DeltaT_TOF;
+map<Particle_t, TH1D*> dHistMap_DeltaT_BCAL;
 		map<Particle_t, TH1D*> dHistMap_DeltaVertexZ;
 		map<Particle_t, TH2D*> dHistMap_DeltaPOverPVsP;
 		map<Particle_t, TH2D*> dHistMap_DeltaPOverPVsTheta;

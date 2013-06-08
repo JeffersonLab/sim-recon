@@ -504,6 +504,12 @@ void DEventWriterROOT::Fill_Tree(JEventLoop* locEventLoop, const DReaction* locR
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 
+	vector<const DMCThrown*> locMCThrowns_FinalState;
+	locEventLoop->Get(locMCThrowns_FinalState, "FinalState");
+
+	vector<const DMCThrown*> locMCThrowns_Decaying;
+	locEventLoop->Get(locMCThrowns_Decaying, "Decaying");
+
 	vector<const DEventRFBunch*> locThrownEventRFBunches;
 	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
 
@@ -574,36 +580,28 @@ void DEventWriterROOT::Fill_Tree(JEventLoop* locEventLoop, const DReaction* locR
 
 				//THROWN PARTICLES BY PID
 				ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
-				bool locIsFinalStateFlag = false;
-				for(size_t loc_j = 0; loc_j < locMCThrowns.size(); ++loc_j)
+				for(size_t loc_j = 0; loc_j < locMCThrowns_FinalState.size(); ++loc_j) //final state
 				{
-					Particle_t locPID = locMCThrowns[loc_j]->PID();
-					if(locPID == Unknown)
-						continue;
-					ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID, locIsFinalStateFlag);
-					if(locIsFinalStateFlag == 1)
+					Particle_t locPID = locMCThrowns_FinalState[loc_j]->PID();
+					ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID);
+					unsigned int locCurrentNumParticles = (locNumPIDThrown_FinalState / locPIDMultiplexID) % 10;
+					if(locCurrentNumParticles != 9)
+						locNumPIDThrown_FinalState += locPIDMultiplexID;
+				}
+				for(size_t loc_j = 0; loc_j < locMCThrowns_Decaying.size(); ++loc_j) //decaying
+				{
+					Particle_t locPID = locMCThrowns_Decaying[loc_j]->PID();
+					ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID);
+					if(locPID != Pi0)
+						locPIDThrown_Decaying |= locPIDMultiplexID; //bit-wise or
+					else //save pi0's as final state instead of decaying
 					{
-						//find parent id, make sure not also a final state particle
-						int locParentID = locMCThrowns[loc_j]->parentid;
-						bool locIsParentFinalStateFlag = false;
-						bool locIsParentFoundFlag = false;
-						for(size_t loc_k = 0; loc_k < locMCThrowns.size(); ++loc_k)
-						{
-							if(locMCThrowns[loc_k]->myid != locParentID)
-								continue;
-							Calc_ParticleMultiplexID(locMCThrowns[loc_k]->PID(), locIsParentFinalStateFlag);
-							locIsParentFoundFlag = true;
-							break;
-						}
-						if(locIsParentFinalStateFlag || ((!locIsParentFoundFlag) && (locParentID != 0)))
-							continue; //don't save: a decay product of a final state particle (e.g. mu+ from pi+ decay) //OR the parent is lost
 						unsigned int locCurrentNumParticles = (locNumPIDThrown_FinalState / locPIDMultiplexID) % 10;
 						if(locCurrentNumParticles != 9)
 							locNumPIDThrown_FinalState += locPIDMultiplexID;
 					}
-					else
-						locPIDThrown_Decaying |= locPIDMultiplexID; //bit-wise or
 				}
+
 				Fill_FundamentalData<ULong64_t>(locTree, "NumPIDThrown_FinalState", locNumPIDThrown_FinalState); //19 digits
 				Fill_FundamentalData<ULong64_t>(locTree, "PIDThrown_Decaying", locPIDThrown_Decaying);
 			}
@@ -706,19 +704,21 @@ void DEventWriterROOT::Fill_Tree(JEventLoop* locEventLoop, const DReaction* locR
 	japp->RootUnLock();
 }
 
-ULong64_t DEventWriterROOT::Calc_ParticleMultiplexID(Particle_t locPID, bool& locIsFinalStateFlag) const
+ULong64_t DEventWriterROOT::Calc_ParticleMultiplexID(Particle_t locPID) const
 {
-	int locIsFinalStateInt = 0;
-	int locPower = ParticleMultiplexPower(locPID, &locIsFinalStateInt);
-	locIsFinalStateFlag = (locIsFinalStateInt == 1);
+	int locPower = ParticleMultiplexPower(locPID);
 	if(locPower == -1)
 		return 0;
 
-	if(locIsFinalStateFlag) //decimal
+	int locIsFinalStateInt = Is_FinalStateParticle(locPID);
+	if(locPID == Pi0)
+		locIsFinalStateInt = 1;
+
+	if(locIsFinalStateInt == 1) //decimal
 	{
 		ULong64_t locParticleMultiplexID = 1;
 		for(int loc_i = 0; loc_i < locPower; ++loc_i)
-			locParticleMultiplexID *= 10;
+			locParticleMultiplexID *= ULong64_t(10);
 		return locParticleMultiplexID;
 	}
 	//decaying: binary

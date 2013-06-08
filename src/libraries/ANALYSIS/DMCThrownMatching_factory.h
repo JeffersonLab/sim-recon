@@ -32,12 +32,6 @@ using namespace std;
 class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 {
 	public:
-		DMCThrownMatching_factory(void);
-		~DMCThrownMatching_factory(void){};
-
-		void Get_MCThrownComparisonPIDs(deque<Particle_t>& locMCThrownComparisonPIDs) const{locMCThrownComparisonPIDs = dMCThrownComparisonPIDs;}
-		bool Check_IsValidMCComparisonPID(const vector<const DMCThrown*>& locAllMCThrowns, const DMCThrown* locMCThrown) const;
-
 		double Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected) const;
 
 	private:
@@ -57,14 +51,12 @@ class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 		void Find_GenReconMatches_BCALShowers(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const;
 		void Find_GenReconMatches_FCALShowers(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const;
 
-		deque<Particle_t> dMCThrownComparisonPIDs;
 		double dMinimumMatchFOM;
 		double dMaximumTOFMatchDistance;
 		double dMaximumFCALMatchDistance;
 		double dMaximumBCALMatchAngleDegrees;
 		unsigned int dDebugLevel;
 		double dTargetCenter;
-
 };
 
 #endif // _DMCThrownMatching_factory_

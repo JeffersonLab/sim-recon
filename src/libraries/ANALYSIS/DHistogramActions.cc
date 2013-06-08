@@ -9,17 +9,11 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 	vector<const DParticleID*> locParticleIDs;
 	locEventLoop->Get(locParticleIDs);
 
-	//setup pid deques: searched for and generated
-	deque<Particle_t> locDesiredPIDs, locThrownPIDs;
+	deque<Particle_t> locDesiredPIDs;
 	Get_Reaction()->Get_DetectedFinalPIDs(locDesiredPIDs);
+
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
-	if(!locMCThrowns.empty()) //else real data, not MC!!
-	{
-		DMCThrownMatching_factory* locMCThrownMatchingFactory = static_cast<DMCThrownMatching_factory*>(locEventLoop->GetFactory("DMCThrownMatching"));
-		locMCThrownMatchingFactory->Get_MCThrownComparisonPIDs(locThrownPIDs);
-		locThrownPIDs.push_back(Unknown); //unmatched tracks
-	}
 
 	//CREATE THE HISTOGRAMS
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
@@ -60,22 +54,25 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 		}
 
 		//one per thrown pid:
-		for(size_t loc_j = 0; loc_j < locThrownPIDs.size(); ++loc_j)
+		if(!locMCThrowns.empty())
 		{
-			locPID2 = locThrownPIDs[loc_j];
-			if((ParticleCharge(locPID2) != ParticleCharge(locPID)) && (locPID2 != Unknown))
-				continue;
-			locParticleName2 = ParticleType(locPID2);
-			locParticleROOTName2 = ParticleName_ROOT(locPID2);
+			for(size_t loc_j = 0; loc_j < dThrownPIDs.size(); ++loc_j)
+			{
+				locPID2 = dThrownPIDs[loc_j];
+				if((ParticleCharge(locPID2) != ParticleCharge(locPID)) && (locPID2 != Unknown))
+					continue;
+				locParticleName2 = ParticleType(locPID2);
+				locParticleROOTName2 = ParticleName_ROOT(locPID2);
 
-			//Confidence Level for Thrown PID
-			pair<Particle_t, Particle_t> locPIDPair(locPID, locPID2);
-			locHistName = string("PIDConfidenceLevel_ForThrownPID_") + locParticleName2;
-			locHistTitle = locParticleROOTName + string(" PID, Thrown PID = ") + locParticleROOTName2 + string(";PID Confidence Level");
-			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_PIDFOMForTruePID[locPIDPair] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			else
-				dHistMap_PIDFOMForTruePID[locPIDPair] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+				//Confidence Level for Thrown PID
+				pair<Particle_t, Particle_t> locPIDPair(locPID, locPID2);
+				locHistName = string("PIDConfidenceLevel_ForThrownPID_") + locParticleName2;
+				locHistTitle = locParticleROOTName + string(" PID, Thrown PID = ") + locParticleROOTName2 + string(";PID Confidence Level");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PIDFOMForTruePID[locPIDPair] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PIDFOMForTruePID[locPIDPair] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+			}
 		}
 
 		//beta vs p
@@ -947,8 +944,6 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventL
 	Get_Application()->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
 
-	dMCThrownMatchingFactory = static_cast<DMCThrownMatching_factory*>(locEventLoop->GetFactory("DMCThrownMatching"));
-
 	// Beam Particle
 	locPID = Gamma;
 	locParticleName = string("Beam_") + ParticleType(locPID);
@@ -1041,7 +1036,7 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventL
 bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
+	locEventLoop->Get(locMCThrowns, "FinalState");
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
@@ -1061,8 +1056,6 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
 		locMCThrown = locMCThrowns[loc_i];
-		if(!dMCThrownMatchingFactory->Check_IsValidMCComparisonPID(locMCThrowns, locMCThrown))
-			continue; //e.g. a muon from pion decay
 		locPID = (Particle_t)locMCThrown->type;
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
 			continue; //not interested in histogramming
@@ -1422,6 +1415,22 @@ void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLo
 		else
 			dHistMap_DeltaT[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
 
+		// DeltaT
+		locHistName = string("DeltaT_BCAL");
+		locHistTitle = locParticleROOTName + string(" in BCAL;#Deltat (ns) (Reconstructed - Thrown)");
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHistMap_DeltaT_BCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHistMap_DeltaT_BCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+		// DeltaT
+		locHistName = string("DeltaT_TOF");
+		locHistTitle = locParticleROOTName + string(" in TOF;#Deltat (ns) (Reconstructed - Thrown)");
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHistMap_DeltaT_TOF[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHistMap_DeltaT_TOF[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
 		// DeltaVertexZ
 		locHistName = string("DeltaVertexZ");
 		locHistTitle = locParticleROOTName + string(";#DeltaVertex-Z (cm) (Reconstructed - Thrown)");
@@ -1576,6 +1585,10 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		dHistMap_DeltaTheta[locPID]->Fill(locDeltaTheta);
 		dHistMap_DeltaPhi[locPID]->Fill(locDeltaPhi);
 		dHistMap_DeltaT[locPID]->Fill(locDeltaT);
+		if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
+			dHistMap_DeltaT_TOF[locPID]->Fill(locDeltaT);
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_BCAL)
+			dHistMap_DeltaT_BCAL[locPID]->Fill(locDeltaT);
 		dHistMap_DeltaVertexZ[locPID]->Fill(locDeltaVertexZ);
 		dHistMap_DeltaPOverPVsP[locPID]->Fill(locThrownP, locDeltaPOverP);
 		dHistMap_DeltaPOverPVsTheta[locPID]->Fill(locThrownTheta, locDeltaPOverP);
@@ -1616,6 +1629,10 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 		dHistMap_DeltaTheta[locPID]->Fill(locDeltaTheta);
 		dHistMap_DeltaPhi[locPID]->Fill(locDeltaPhi);
 		dHistMap_DeltaT[locPID]->Fill(locDeltaT);
+		if(locNeutralParticleHypothesis->t1_detector() == SYS_TOF)
+			dHistMap_DeltaT_TOF[locPID]->Fill(locDeltaT);
+		else if(locNeutralParticleHypothesis->t1_detector() == SYS_BCAL)
+			dHistMap_DeltaT_BCAL[locPID]->Fill(locDeltaT);
 		dHistMap_DeltaVertexZ[locPID]->Fill(locDeltaVertexZ);
 		dHistMap_DeltaPOverPVsP[locPID]->Fill(locThrownP, locDeltaPOverP);
 		dHistMap_DeltaPOverPVsTheta[locPID]->Fill(locThrownTheta, locDeltaPOverP);
