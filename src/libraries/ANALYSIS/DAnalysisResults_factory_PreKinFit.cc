@@ -121,8 +121,6 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 	dApplication->RootUnLock(); //unlock
 
 	//Initialize actions: creates any histograms/trees associated with the action
-		//if the action is never initialized (all events cut executing) then the root objects will not be created, causing problems when merging root files (especially trees)
-	deque<pair<const DParticleCombo*, bool> > locDummyCombos;
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		locReaction = locReactions[loc_i];
@@ -133,7 +131,7 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 			DAnalysisAction* locAnalysisAction = locReaction->Get_AnalysisAction(loc_j);
 			if(dDebugLevel > 0)
 				cout << "Initialize Action # " << loc_j + 1 << ": " << locAnalysisAction->Get_ActionName() << " of reaction: " << locReaction->Get_ReactionName() << endl;
-			(*locAnalysisAction)(locEventLoop, locDummyCombos); //EXECUTE!
+			locAnalysisAction->Initialize(locEventLoop);
 		}
 	}
 
