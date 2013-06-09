@@ -77,18 +77,20 @@ class DHistogramAction_PID : public DAnalysisAction
 			dThrownPIDs.push_back(Electron);  dThrownPIDs.push_back(MuonMinus);
 		}
 
+		void Initialize(JEventLoop* locEventLoop);
+
 		unsigned int dNumFOMBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins, dNum2DThetaBins;
 		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinP, dMaxP, dMinTheta, dMaxTheta;
 		deque<Particle_t> dThrownPIDs;
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
 
 		void Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch);
 		void Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch);
 
 		const DParticleID* dParticleID;
+		const DAnalysisUtilities* dAnalysisUtilities;
 
 		map<Particle_t, TH1D*> dHistMap_PIDFOM;
 		map<Particle_t, TH1D*> dHistMap_TOFFOM;
@@ -119,9 +121,12 @@ class DHistogramAction_TrackVertexComparison : public DAnalysisAction
 		unsigned int dNumDeltaVertexZBins, dNumDeltaVertexTBins, dNumDOCABins, dNum2DPBins, dNumThetaBins;
 		double dMinDeltaVertexZ, dMaxDeltaVertexZ, dMinDeltaVertexT, dMaxDeltaVertexT, dMinDOCA, dMaxDOCA, dMinP, dMaxP, dMinTheta, dMaxTheta;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
+
+		const DAnalysisUtilities* dAnalysisUtilities;
 
 		//should be improved...: the particles at a given vertex may span several steps
 		deque<map<Particle_t, TH1D*> > dHistDeque_TrackZToCommon; //dim is step
@@ -150,15 +155,17 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumDeltaTRFBins;
 		double dMinT, dMaxT, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY, dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinDeltaTRF, dMaxDeltaTRF;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
 
 		void Fill_Hists(JEventLoop* locEventLoop, const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch, size_t locStepIndex);
 		void Fill_BeamHists(const DKinematicData* locKinematicData, const DEventRFBunch* locEventRFBunch);
 
 		const DParticleID* dParticleID;
 		double dTargetZCenter;
+		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH2D* dBeamParticleHist_PVsTheta;
 		TH2D* dBeamParticleHist_PhiVsTheta;
@@ -231,9 +238,10 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 
 		deque<Particle_t> dFinalStatePIDs;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
-		void Initialize(JEventLoop* locEventLoop);
 
 		TH1D* 	dBeamParticle_P;
 
@@ -289,9 +297,10 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		deque<Particle_t> dFinalStatePIDs;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
 
 		const DParticleID* dParticleID;
 
@@ -354,9 +363,10 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 
 		deque<Particle_t> dFinalStatePIDs;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
-		void Initialize(JEventLoop* locEventLoop);
 
 		TH1D* dRFBeamBunchDeltaT_Hist;
 
@@ -418,9 +428,10 @@ class DHistogramAction_TOFHitStudy : public DAnalysisAction
 
 		deque<Particle_t> dFinalStatePIDs;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
-		void Initialize(JEventLoop* locEventLoop);
 
 		map<Particle_t, TH1D*> dHistMap_DeltaT;
 		map<Particle_t, TH1D*> dHistMap_DeltaX;
@@ -472,9 +483,10 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 
 		deque<Particle_t> dFinalStatePIDs;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
-		void Initialize(JEventLoop* locEventLoop);
 
 		TH2D* dHist_NumReconstructedTracks;
 		TTree* dTree_TrackTopologies;
@@ -505,6 +517,7 @@ class DHistogramAction_TruePID : public DAnalysisAction
 
 		Particle_t dInitialPID;
 		double dMinMassSq, dMaxMassSq;
+		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1D* dHist_TruePIDStatus;
 		TH1D* dHist_TruePIDStatus_SignalRegion;
@@ -523,15 +536,17 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 
 		bool dEnableDoubleCounting;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
 
 		bool Compare_ParticleNames(const deque<string>& locParticleNames1, const deque<string>& locParticleNames2) const;
 
 		Particle_t dInitialPID;
 		unsigned int dNumMassBins;
 		double dMinMass, dMaxMass;
+		const DAnalysisUtilities* dAnalysisUtilities;
 		deque<TH1D*> dHistDeque_InvaraintMass; //in case more than one particle type combination in DReaction to reach the same mass
 
 		deque<deque<string> > dFinalParticleNames; //in case more than one particle type combination in DReaction to reach the same mass
@@ -546,12 +561,14 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 
 		bool dEnableDoubleCounting;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
 
 		unsigned int dNumMassBins;
 		double dMinMass, dMaxMass;
+		const DAnalysisUtilities* dAnalysisUtilities;
 		TH1D* dHist_MissingMass;
 };
 
@@ -564,12 +581,14 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 
 		bool dEnableDoubleCounting;
 
+		void Initialize(JEventLoop* locEventLoop);
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
 
 		unsigned int dNumMassBins;
 		double dMinMassSq, dMaxMassSq;
+		const DAnalysisUtilities* dAnalysisUtilities;
 		TH1D* dHist_MissingMassSquared;
 };
 
@@ -583,17 +602,20 @@ class DHistogramAction_KinFitResults : public DAnalysisAction
 		unsigned int dNumConfidenceLevelBins, dNumPullBins;
 		double dMinPull, dMaxPull;
 
-	private:
-		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 		void Initialize(JEventLoop* locEventLoop);
 
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
 		void Create_ParticlePulls(bool locIsBeamFlag, string locStepROOTName, Particle_t locPID, map<DKinFitPullType, TH1D*>& locParticlePulls, const string& locKinFitTypeString);
+
+		double dPullHistConfidenceLevelCut;
+		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1D* dHist_ConfidenceLevel;
 		map<pair<size_t, Particle_t>, map<DKinFitPullType, TH1D*> > dHistMap_Pulls; //size_t is step index, 2nd is particle
 		TH1D* dHist_RFTimePull;
 		map<DKinFitPullType, TH1D*> dHistMap_BeamPulls;
-		double dPullHistConfidenceLevelCut;
 };
 
 #endif // _DHistogramActions_

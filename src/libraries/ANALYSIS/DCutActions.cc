@@ -82,9 +82,16 @@ string DCutAction_MissingMass::Get_ActionName(void) const
 	return locStream.str();
 }
 
+void DCutAction_MissingMass::Initialize(JEventLoop* locEventLoop)
+{
+	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
+	locEventLoop->Get(locAnalysisUtilitiesVector);
+	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+}
+
 bool DCutAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	double locMissingMass = Get_AnalysisUtilities()->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M();
+	double locMissingMass = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M();
 	return ((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass));
 }
 
@@ -95,9 +102,16 @@ string DCutAction_MissingMassSquared::Get_ActionName(void) const
 	return locStream.str();
 }
 
+void DCutAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
+{
+	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
+	locEventLoop->Get(locAnalysisUtilitiesVector);
+	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+}
+
 bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	double locMissingMassSq = Get_AnalysisUtilities()->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M2();
+	double locMissingMassSq = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M2();
 	return ((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq));
 }
 
@@ -108,6 +122,13 @@ string DCutAction_InvariantMass::Get_ActionName(void) const
 	return locStream.str();
 }
 
+void DCutAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
+{
+	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
+	locEventLoop->Get(locAnalysisUtilitiesVector);
+	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+}
+
 bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	double locInvariantMass;
@@ -116,7 +137,7 @@ bool DCutAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DP
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 		if(locParticleComboStep->Get_InitialParticleID() != dInitialPID)
 			continue;
-		locInvariantMass = Get_AnalysisUtilities()->Calc_FinalStateP4(locParticleCombo, loc_i, Get_UseKinFitResultsFlag()).M();
+		locInvariantMass = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, Get_UseKinFitResultsFlag()).M();
 //cout << "flag, init pid, inv mass = " << Get_UseKinFitResultsFlag() << ", " << ParticleType(dInitialPID) << ", " << locInvariantMass << endl;
 		if((locInvariantMass > dMaximumInvariantMass) || (locInvariantMass < dMinimumInvariantMass))
 			return false;
@@ -152,6 +173,13 @@ string DCutAction_MaxTrackDOCA::Get_ActionName(void) const
 	return locStream.str();
 }
 
+void DCutAction_MaxTrackDOCA::Initialize(JEventLoop* locEventLoop)
+{
+	vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
+	locEventLoop->Get(locAnalysisUtilitiesVector);
+	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+}
+
 bool DCutAction_MaxTrackDOCA::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	//should be improved...: the particles at a given vertex may span several steps
@@ -168,7 +196,7 @@ bool DCutAction_MaxTrackDOCA::Perform_Action(JEventLoop* locEventLoop, const DPa
 		{
 			for(size_t loc_k = loc_j + 1; loc_k < locParticles.size(); ++loc_k)
 			{
-				locDOCA = Get_AnalysisUtilities()->Calc_DOCA(locParticles[loc_j], locParticles[loc_k]);
+				locDOCA = dAnalysisUtilities->Calc_DOCA(locParticles[loc_j], locParticles[loc_k]);
 				if(locDOCA > dMaxTrackDOCA)
 					return false;
 			}

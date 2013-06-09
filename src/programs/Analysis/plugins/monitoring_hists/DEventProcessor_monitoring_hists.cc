@@ -36,6 +36,12 @@ jerror_t DEventProcessor_monitoring_hists::init(void)
 jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int runnumber)
 {
 	return NOERROR;
+
+	//Initialize Actions
+	dHistogramAction_TrackMultiplicity.Initialize(locEventLoop);
+	dHistogramAction_ThrownParticleKinematics.Initialize(locEventLoop);
+	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
+	dHistogramAction_GenReconTrackComparison.Initialize(locEventLoop);
 }
 
 //------------------

@@ -18,9 +18,8 @@ dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(lo
 		dActionName += string("_") + locActionUniqueString;
 
 	dOutputFileName = "hd_root.root";
-	dActionInitializedFlag = false;
-	dApplication = NULL;
-	dAnalysisUtilities = NULL;
+	if(gPARMS->Exists("OUTPUT_FILENAME"))
+		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
 	dPreviousParticleCombos.clear();
 	dNumParticleCombos = 0;
 }
@@ -29,31 +28,8 @@ bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 {
 	if(Get_Reaction() != NULL)
 	{
-		jout << "Called incorrect function call operator in DAnalysisAction::operator()(JEventLoop*). Aborting action." << endl;
+		jout << "WARNING: Called incorrect function call operator in DAnalysisAction::operator()(JEventLoop*). Aborting action." << endl;
 		return false;
-	}
-
-	if(!dActionInitializedFlag)
-	{
-		vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
-		locEventLoop->Get(locAnalysisUtilitiesVector);
-
-		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-		{
-//			if(gPARMS->Exists("OUTPUT_FILENAME"))
-				gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
-			dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-			dAnalysisUtilities = locAnalysisUtilitiesVector[0];
-		}
-		japp->RootUnLock(); //RELEASE ROOT LOCK!!
-
-		Initialize(locEventLoop);
-
-		japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-		{
-			dActionInitializedFlag = true;
-		}
-		japp->RootUnLock(); //RELEASE ROOT LOCK!!
 	}
 
 	return Perform_Action(locEventLoop, NULL);
@@ -61,23 +37,8 @@ bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 
 void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos)
 {
-	//THIS METHOD ASSUMES THAT ONLY THIS THREAD HAS ACCESS TO THIS OBJECT
-
+	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
 	dNumParticleCombos = locSurvivingParticleCombos.size();
-
-	if(!dActionInitializedFlag)
-	{
-		vector<const DAnalysisUtilities*> locAnalysisUtilitiesVector;
-		locEventLoop->Get(locAnalysisUtilitiesVector);
-		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
-
-//		if(gPARMS->Exists("OUTPUT_FILENAME"))
-			gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
-		dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-
-		Initialize(locEventLoop);
-		dActionInitializedFlag = true;
-	}
 
 	if(Get_Reaction() == NULL)
 	{

@@ -27,32 +27,28 @@ class DAnalysisAction
 		inline const DReaction* Get_Reaction(void) const{return dReaction;}
 		virtual string Get_ActionName(void) const{return dActionName;}
 		inline string Get_ActionUniqueString(void) const{return dActionUniqueString;}
-		inline DApplication* Get_Application(void) const{return dApplication;}
-		inline const DAnalysisUtilities* Get_AnalysisUtilities(void) const{return dAnalysisUtilities;}
 		inline bool Get_UseKinFitResultsFlag(void) const{return dUseKinFitResultsFlag;}
-		inline bool Get_ActionInitializedFlag(void) const{return dActionInitializedFlag;}
-
-		bool operator()(JEventLoop* locEventLoop); //ONLY CALL THIS FOR REACTION-INDEPENDENT ACTIONS (dReaction == NULL)!!!
-		void operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos);
-
-	protected:
 
 		//INHERITING CLASSES MUST(!) DEFINE THIS METHOD
-			//any ROOT objects to be created by this object (e.g. histograms, trees) should be created in THIS function
+			//any ROOT objects to be created by this object (e.g. histograms, trees) should be created in a version of THIS function in the derived class (make it public!)
 				//when creating ROOT objects, call CreateAndChangeTo_ActionDirectory() to navigate to the proper directory
 			//if not creating any objects, just define the function but leave it empty
-			//ALSO: DO NOT DIRECTLY CALL THIS METHOD.  ONLY DAnalysisAction::operator() SHOULD CALL THIS!!!
 		virtual void Initialize(JEventLoop* locEventLoop) = 0;
+
+		//Function-call operators: Execute the action.
+		bool operator()(JEventLoop* locEventLoop); //DON'T CALL THIS FOR REACTION-DEPENDENT ACTIONS
+		void operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
+
+	protected:
 
 		//INHERITING CLASSES MUST(!) DEFINE THIS METHOD
 			//FOR REACTION-INDEPENDENT ACTIONS: EXPECT THE INPUT DParticleCombo TO BE NULL.
 			//Be careful to check against dPreviousParticleCombos to make sure you don't double-count when histogramming, etc. (true even for reaction-independent actions)
 		virtual bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL) = 0;
 
-		//FOR BOTH OF THE ABSTRACT METHODS:
+		//FOR ALL OF THE VIRTUAL METHODS:
 			//NEVER: Grab DParticleCombo objects (of any tag!) from the JEventLoop within these methods unless you know EXACTLY what you're doing (and if you're doing this, you probably don't)
 			//NEVER EVER: Grab objects that are created post-kinfit (e.g. DParticleCombo, DKinFitResults, etc.) from the JEventLoop if Get_UseKinFitResultsFlag() == false: CAN CAUSE DEPENDENCY LOOP
-			//ALWAYS: Make these methods private in the derived classes!!
 
 		TDirectoryFile* CreateAndChangeTo_ActionDirectory(void); //get the directory this action should write ROOT objects to. //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
 		TDirectoryFile* CreateAndChangeTo_Directory(TDirectoryFile* locBaseDirectory, string locDirName, string locDirTitle); //MUST(!) LOCK PRIOR TO ENTRY! (not performed in here!)
@@ -70,12 +66,7 @@ class DAnalysisAction
 		string dActionName; //if the class deriving from DAnalysisAction creates ROOT objects, AND more than one instance of it is added to the DReaction, then this should be unique
 		bool dUseKinFitResultsFlag;
 		string dActionUniqueString;
-
-		//Initialized upon first call:
 		string dOutputFileName;
-		bool dActionInitializedFlag;
-		DApplication* dApplication;
-		const DAnalysisUtilities* dAnalysisUtilities;
 
 		//Valid only during function-call operators (and the functions it calls):
 		deque<pair<const DParticleCombo*, bool> > dPreviousParticleCombos; //in the action, check against this to make sure you don't double-count when histogramming, etc.

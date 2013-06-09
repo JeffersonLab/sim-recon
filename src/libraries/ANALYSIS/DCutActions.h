@@ -67,10 +67,10 @@ class DCutAction_PIDFOM : public DAnalysisAction
 		dStepPID(locStepPID), dParticleID(locParticleID), dMinimumConfidenceLevel(locMinimumConfidenceLevel){}
 
 		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		Particle_t dStepPID;
 		Particle_t dParticleID;
@@ -84,10 +84,10 @@ class DCutAction_AllPIDFOM : public DAnalysisAction
 		DAnalysisAction(locReaction, "Cut_AllPIDFOM", false, locActionUniqueString), dMinimumConfidenceLevel(locMinimumConfidenceLevel){}
 
 		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		double dMinimumConfidenceLevel;
 };
@@ -98,9 +98,10 @@ class DCutAction_TruePID : public DAnalysisAction
 		DCutAction_TruePID(const DReaction* locReaction, Particle_t locTruePID, Particle_t locInitialPID, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_TruePID", false, locActionUniqueString), dTruePID(locTruePID), dInitialPID(locInitialPID){}
 
+		inline void Initialize(JEventLoop* locEventLoop){}
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		Particle_t dTruePID;
 		Particle_t dInitialPID;
@@ -112,9 +113,10 @@ class DCutAction_AllTruePID : public DAnalysisAction
 		DCutAction_AllTruePID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_AllTruePID", false, locActionUniqueString){}
 
+		inline void Initialize(JEventLoop* locEventLoop){}
+
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 };
 
 class DCutAction_AllVertexZ : public DAnalysisAction
@@ -124,10 +126,10 @@ class DCutAction_AllVertexZ : public DAnalysisAction
 		DAnalysisAction(locReaction, "Cut_AllVertexZ", false, locActionUniqueString), dMinVertexZ(locMinVertexZ), dMaxVertexZ(locMaxVertexZ){}
 
 		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		double dMinVertexZ;
 		double dMaxVertexZ;
@@ -140,13 +142,14 @@ class DCutAction_MaxTrackDOCA : public DAnalysisAction
 		DAnalysisAction(locReaction, "Cut_MaxTrackDOCA", false, locActionUniqueString), dInitialPID(locInitialPID), dMaxTrackDOCA(locMaxTrackDOCA){}
 
 		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		Particle_t dInitialPID;
 		double dMaxTrackDOCA;
+		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
 class DCutAction_KinFitFOM : public DAnalysisAction
@@ -156,10 +159,10 @@ class DCutAction_KinFitFOM : public DAnalysisAction
 		DAnalysisAction(locReaction, "Cut_KinFitFOM", true, locActionUniqueString), dMinimumConfidenceLevel(locMinimumConfidenceLevel){}
 
 		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		const string dKinFitName;
 		double dMinimumConfidenceLevel;
@@ -173,13 +176,14 @@ class DCutAction_MissingMass : public DAnalysisAction
 		dMinimumMissingMass(locMinimumMissingMass), dMaximumMissingMass(locMaximumMissingMass){}
 
 		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		double dMinimumMissingMass;
 		double dMaximumMissingMass;
+		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
 
@@ -191,13 +195,14 @@ class DCutAction_MissingMassSquared : public DAnalysisAction
 		dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq){}
 
 		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		double dMinimumMissingMassSq;
 		double dMaximumMissingMassSq;
+		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
 class DCutAction_InvariantMass : public DAnalysisAction
@@ -208,14 +213,15 @@ class DCutAction_InvariantMass : public DAnalysisAction
 		dInitialPID(locInitialPID), dMinimumInvariantMass(locMinimumInvariantMass), dMaximumInvariantMass(locMaximumInvariantMass){}
 
 		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		Particle_t dInitialPID;
 		double dMinimumInvariantMass;
 		double dMaximumInvariantMass;
+		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
 class DCutAction_GoodEventRFBunch : public DAnalysisAction
@@ -226,10 +232,10 @@ class DCutAction_GoodEventRFBunch : public DAnalysisAction
 		dCutIfBadRFBunchFlag(locCutIfBadRFBunchFlag){}
 
 		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		bool dCutIfBadRFBunchFlag; //if false, will cut if good rf bunch
 };

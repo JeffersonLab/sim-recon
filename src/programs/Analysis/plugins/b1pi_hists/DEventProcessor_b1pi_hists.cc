@@ -41,6 +41,12 @@ jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumbe
 	locEventWriterROOT->Create_DataTrees(locEventLoop);
 	locEventWriterROOT->Create_ThrownTree("tree_b1pi_thrownmc.root");
 
+	//Initialize Actions
+	dHistogramAction_TrackMultiplicity.Initialize(locEventLoop);
+	dHistogramAction_ThrownParticleKinematics.Initialize(locEventLoop);
+	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
+	dHistogramAction_GenReconTrackComparison.Initialize(locEventLoop);
+
 	return NOERROR;
 }
 
