@@ -1,11 +1,9 @@
 #include "DEventWriterROOT.h"
 
-//VARIABLES TO ADD:
-	//best-guess (kinfit, else doca) step vertex positions & times
-
 unsigned int dInitNumThrownArraySize = 100;
 unsigned int dInitNumUnusedArraySize = 100;
 unsigned int gNumEventWriterThreads = 0;
+string dThrownTreeFileName = "";
 
 map<TTree*, unsigned int>* dNumThrownArraySizeMap = NULL;
 map<TTree*, unsigned int>* dNumUnusedArraySizeMap = NULL;
@@ -15,19 +13,12 @@ deque<TFile*>* dOutputROOTFiles = NULL;
 
 DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 {
-	//ONLY CALL FROM brun() OR LATER: The DReaction objects MUST be created PRIOR (init()) to calling this!!!
-	vector<const DReaction*> locReactions;
-	Get_Reactions(locEventLoop, locReactions);
-
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
-
 	japp->RootWriteLock();
 	{
 		++gNumEventWriterThreads;
 		if(dNumThrownArraySizeMap != NULL)
 		{
-			//trees already created
+			//objects already created
 			japp->RootUnLock();
 			return;
 		}
@@ -36,11 +27,6 @@ DEventWriterROOT::DEventWriterROOT(JEventLoop* locEventLoop)
 		dOutputROOTFiles = new deque<TFile*>();
 		dClonesArrayMap = new map<string, map<string, TClonesArray*> >();
 		dTObjectMap = new map<string, map<string, TObject*> >();
-		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
-		{
-			if(locReactions[loc_i]->Get_EnableTTreeOutputFlag())
-				Create_Tree(locReactions[loc_i], !locMCThrowns.empty());
-		}
 	}
 	japp->RootUnLock();
 }
@@ -88,7 +74,75 @@ DEventWriterROOT::~DEventWriterROOT(void)
 	japp->RootUnLock();
 }
 
-void DEventWriterROOT::Create_Tree(const DReaction* locReaction, bool locIsMCDataFlag)
+void DEventWriterROOT::Create_ThrownTree(string locOutputFileName) const
+{
+	japp->RootWriteLock();
+	{
+		if(dThrownTreeFileName != "") //tree already created
+		{
+			japp->RootUnLock();
+			return; //already created by another thread
+		}
+		dThrownTreeFileName = locOutputFileName;
+
+		//create ROOT file if it doesn't exist already
+		TFile* locFile = (TFile*)gROOT->FindObject(dThrownTreeFileName.c_str());
+		if(locFile == NULL)
+		{
+			locFile = new TFile(dThrownTreeFileName.c_str(), "RECREATE");
+			dOutputROOTFiles->push_back(locFile);
+		}
+
+		//create tree if it doesn't exist already
+		string locTreeName = "Thrown_Tree";
+		locFile->cd();
+		if(gDirectory->Get(locTreeName.c_str()) != NULL)
+		{
+			japp->RootUnLock();
+			return; //already created by another thread
+		}
+		TTree* locTree = new TTree(locTreeName.c_str(), locTreeName.c_str());
+
+		dNumUnusedArraySizeMap->insert(pair<TTree*, unsigned int>(locTree, 0));
+		dNumThrownArraySizeMap->insert(pair<TTree*, unsigned int>(locTree, dInitNumThrownArraySize));
+
+	/******************************************************************** Create Branches ********************************************************************/
+
+		//create basic/misc. tree branches (run#, event#, etc.)
+		Create_Branch_Fundamental<UInt_t>(locTree, "", "RunNumber", "i");
+		Create_Branch_Fundamental<UInt_t>(locTree, "", "EventNumber", "i");
+		Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_Thrown", "D");
+
+		//create thrown particle branches
+		string locNumThrownString = "NumThrown";
+		Create_Branch_Fundamental<ULong64_t>(locTree, "", "NumPIDThrown_FinalState", "l"); //19 digits
+		Create_Branch_Fundamental<ULong64_t>(locTree, "", "PIDThrown_Decaying", "l");
+		Create_Branch_Fundamental<UInt_t>(locTree, "", locNumThrownString, "i");
+		Create_Branches_ThrownParticle(locTree, "Thrown", locNumThrownString);
+	}
+	japp->RootUnLock();
+}
+
+void DEventWriterROOT::Create_DataTrees(JEventLoop* locEventLoop) const
+{
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
+	vector<const DReaction*> locReactions;
+	Get_Reactions(locEventLoop, locReactions);
+
+	japp->RootWriteLock();
+	{
+		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+		{
+			if(locReactions[loc_i]->Get_EnableTTreeOutputFlag())
+				Create_DataTree(locReactions[loc_i], !locMCThrowns.empty());
+		}
+	}
+	japp->RootUnLock();
+}
+
+void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag) const
 {
 	string locReactionName = locReaction->Get_ReactionName();
 
@@ -301,7 +355,7 @@ void DEventWriterROOT::Create_Tree(const DReaction* locReaction, bool locIsMCDat
 	Create_Branches_UnusedParticle(locTree, "Unused", locNumUnusedString);
 }
 
-void DEventWriterROOT::Create_Branches_FinalStateParticle(TTree* locTree, string locParticleBranchName, bool locIsChargedFlag, bool locKinFitFlag)
+void DEventWriterROOT::Create_Branches_FinalStateParticle(TTree* locTree, string locParticleBranchName, bool locIsChargedFlag, bool locKinFitFlag) const
 {
 	//IDENTIFIER
 	Create_Branch_Fundamental<ULong64_t>(locTree, locParticleBranchName, "ObjectID", "l");
@@ -349,7 +403,7 @@ void DEventWriterROOT::Create_Branches_FinalStateParticle(TTree* locTree, string
 	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", "D");
 }
 
-void DEventWriterROOT::Create_Branches_Beam(TTree* locTree, bool locKinFitFlag)
+void DEventWriterROOT::Create_Branches_Beam(TTree* locTree, bool locKinFitFlag) const
 {
 	//IDENTIFIER
 	Create_Branch_Fundamental<ULong64_t>(locTree, "Beam", "ObjectID", "l");
@@ -366,7 +420,7 @@ void DEventWriterROOT::Create_Branches_Beam(TTree* locTree, bool locKinFitFlag)
 	}
 }
 
-void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString)
+void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString) const
 {
 	//IDENTIFIERS
 	Create_Branch_FundamentalArray<ULong64_t>(locTree, locParticleBranchName, "ObjectID", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "l");
@@ -400,7 +454,7 @@ void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string loc
 	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
 }
 
-void DEventWriterROOT::Create_Branches_ThrownParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString)
+void DEventWriterROOT::Create_Branches_ThrownParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString) const
 {
 	//IDENTIFIERS
 	Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "ObjectID", locArraySizeString, (*dNumThrownArraySizeMap)[locTree], "i");
@@ -416,7 +470,7 @@ void DEventWriterROOT::Create_Branches_ThrownParticle(TTree* locTree, string loc
 	Create_Branch_ClonesArray(locTree, locParticleBranchName, "P4_Thrown", "TLorentzVector", (*dNumThrownArraySizeMap)[locTree]);
 }
 
-string DEventWriterROOT::Create_Branch_ClonesArray(TTree* locTree, string locParticleBranchName, string locVariableName, string locClassName, unsigned int locSize)
+string DEventWriterROOT::Create_Branch_ClonesArray(TTree* locTree, string locParticleBranchName, string locVariableName, string locClassName, unsigned int locSize) const
 {
 	string locBranchName = (locParticleBranchName != "") ? locParticleBranchName + string("__") + locVariableName : locVariableName;
 	(*dClonesArrayMap)[locTree->GetName()].insert(pair<string, TClonesArray*>(locBranchName, new TClonesArray(locClassName.c_str(), locSize)));
@@ -462,8 +516,92 @@ void DEventWriterROOT::Get_Reactions(jana::JEventLoop* locEventLoop, vector<cons
 	}
 }
 
-void DEventWriterROOT::Fill_Trees(JEventLoop* locEventLoop, string locDReactionTag) const
+void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 {
+	vector<const DMCThrown*> locMCThrowns_FinalState;
+	locEventLoop->Get(locMCThrowns_FinalState, "FinalState");
+
+	vector<const DMCThrown*> locMCThrowns_Decaying;
+	locEventLoop->Get(locMCThrowns_Decaying, "Decaying");
+
+	vector<const DEventRFBunch*> locThrownEventRFBunches;
+	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
+
+	string locTreeName = "Thrown_Tree";
+	japp->RootWriteLock();
+	{
+		//get the tree
+		TFile* locFile = (TFile*)gROOT->FindObject(dThrownTreeFileName.c_str());
+		locFile->cd("/");
+		TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
+
+		//clear the tclonesarry's
+		map<string, TClonesArray*>& locTreeMap_ClonesArray = (*dClonesArrayMap)[locTreeName];
+		map<string, TClonesArray*>::iterator locClonesArrayMapIterator;
+		for(locClonesArrayMapIterator = locTreeMap_ClonesArray.begin(); locClonesArrayMapIterator != locTreeMap_ClonesArray.end(); ++locClonesArrayMapIterator)
+			locClonesArrayMapIterator->second->Clear();
+
+		//primary event info
+		Fill_FundamentalData<UInt_t>(locTree, "RunNumber", locEventLoop->GetJEvent().GetRunNumber());
+		Fill_FundamentalData<UInt_t>(locTree, "EventNumber", locEventLoop->GetJEvent().GetEventNumber());
+		if(!locThrownEventRFBunches.empty())
+			Fill_FundamentalData<Double_t>(locTree, "RFTime_Thrown", locThrownEventRFBunches[0]->dTime);
+
+		//throwns
+		size_t locNumThrown = locMCThrowns_FinalState.size() + locMCThrowns_Decaying.size();
+		if(locNumThrown > 0)
+		{
+			Fill_FundamentalData<UInt_t>(locTree, "NumThrown", locNumThrown);
+			for(size_t loc_j = 0; loc_j < locMCThrowns_FinalState.size(); ++loc_j)
+				Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_FinalState[loc_j]);
+			for(size_t loc_j = 0; loc_j < locMCThrowns_Decaying.size(); ++loc_j)
+				Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_Decaying[loc_j]);
+
+			//THROWN PARTICLES BY PID
+			ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
+			for(size_t loc_j = 0; loc_j < locMCThrowns_FinalState.size(); ++loc_j) //final state
+			{
+				Particle_t locPID = locMCThrowns_FinalState[loc_j]->PID();
+				ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID);
+				unsigned int locCurrentNumParticles = (locNumPIDThrown_FinalState / locPIDMultiplexID) % 10;
+				if(locCurrentNumParticles != 9)
+					locNumPIDThrown_FinalState += locPIDMultiplexID;
+			}
+			for(size_t loc_j = 0; loc_j < locMCThrowns_Decaying.size(); ++loc_j) //decaying
+			{
+				Particle_t locPID = locMCThrowns_Decaying[loc_j]->PID();
+				ULong64_t locPIDMultiplexID = Calc_ParticleMultiplexID(locPID);
+				if(locPID != Pi0)
+					locPIDThrown_Decaying |= locPIDMultiplexID; //bit-wise or
+				else //save pi0's as final state instead of decaying
+				{
+					unsigned int locCurrentNumParticles = (locNumPIDThrown_FinalState / locPIDMultiplexID) % 10;
+					if(locCurrentNumParticles != 9)
+						locNumPIDThrown_FinalState += locPIDMultiplexID;
+				}
+			}
+
+			Fill_FundamentalData<ULong64_t>(locTree, "NumPIDThrown_FinalState", locNumPIDThrown_FinalState); //19 digits
+			Fill_FundamentalData<ULong64_t>(locTree, "PIDThrown_Decaying", locPIDThrown_Decaying);
+
+			//update array sizes
+			if(locNumThrown > (*dNumThrownArraySizeMap)[locTree])
+				(*dNumThrownArraySizeMap)[locTree] = locNumThrown;
+		}
+
+		locTree->Fill();
+	}
+	japp->RootUnLock();
+}
+
+void DEventWriterROOT::Fill_DataTrees(JEventLoop* locEventLoop, string locDReactionTag) const
+{
+	if(locDReactionTag == "Thrown")
+	{
+		cout << "WARNING: CANNOT FILL THROWN TREE WITH THIS FUNCTION." << endl;
+		return;
+	}
+
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);
 
@@ -489,20 +627,23 @@ void DEventWriterROOT::Fill_Trees(JEventLoop* locEventLoop, string locDReactionT
 		}
 		if(!locReactionFoundFlag)
 			continue; //reaction not from this factory, continue
-		Fill_Tree(locEventLoop, locReaction, locPassedParticleCombos);
+		Fill_DataTree(locEventLoop, locReaction, locPassedParticleCombos);
 	}
 }
 
-void DEventWriterROOT::Fill_Tree(JEventLoop* locEventLoop, const DReaction* locReaction, deque<const DParticleCombo*>& locParticleCombos) const
+void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* locReaction, deque<const DParticleCombo*>& locParticleCombos) const
 {
+	if(locReaction->Get_ReactionName() == "Thrown")
+	{
+		cout << "WARNING: CANNOT FILL THROWN TREE WITH THIS FUNCTION." << endl;
+		return;
+	}
+	
 	if(!locReaction->Get_EnableTTreeOutputFlag())
 	{
 		cout << "WARNING: ROOT TTREE OUTPUT NOT ENABLED FOR THIS DREACTION (" << locReaction->Get_ReactionName() << ")" << endl;
 		return;
 	}
-
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
 
 	vector<const DMCThrown*> locMCThrowns_FinalState;
 	locEventLoop->Get(locMCThrowns_FinalState, "FinalState");
@@ -572,11 +713,14 @@ void DEventWriterROOT::Fill_Tree(JEventLoop* locEventLoop, const DReaction* locR
 				Fill_FundamentalData<Double_t>(locTree, "RFTime_Thrown", locThrownEventRFBunches[0]->dTime);
 
 			//throwns
-			if(!locMCThrowns.empty())
+			size_t locNumThrown = locMCThrowns_FinalState.size() + locMCThrowns_Decaying.size();
+			if(locNumThrown > 0)
 			{
-				Fill_FundamentalData<UInt_t>(locTree, "NumThrown", locMCThrowns.size());
-				for(size_t loc_j = 0; loc_j < locMCThrowns.size(); ++loc_j)
-					Fill_ThrownParticleData(locTree, loc_j, locMCThrowns.size(), locMCThrowns[loc_j]);
+				Fill_FundamentalData<UInt_t>(locTree, "NumThrown", locNumThrown);
+				for(size_t loc_j = 0; loc_j < locMCThrowns_FinalState.size(); ++loc_j)
+					Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_FinalState[loc_j]);
+				for(size_t loc_j = 0; loc_j < locMCThrowns_Decaying.size(); ++loc_j)
+					Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_Decaying[loc_j]);
 
 				//THROWN PARTICLES BY PID
 				ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
@@ -604,6 +748,10 @@ void DEventWriterROOT::Fill_Tree(JEventLoop* locEventLoop, const DReaction* locR
 
 				Fill_FundamentalData<ULong64_t>(locTree, "NumPIDThrown_FinalState", locNumPIDThrown_FinalState); //19 digits
 				Fill_FundamentalData<ULong64_t>(locTree, "PIDThrown_Decaying", locPIDThrown_Decaying);
+
+				//update array sizes
+				if(locNumThrown > (*dNumThrownArraySizeMap)[locTree])
+					(*dNumThrownArraySizeMap)[locTree] = locNumThrown;
 			}
 
 			//combo data
@@ -691,12 +839,9 @@ void DEventWriterROOT::Fill_Tree(JEventLoop* locEventLoop, const DReaction* locR
 				Fill_UnusedParticleData(locTree, loc_j, locNumUnused, locUnusedChargedTrackHypotheses[loc_j], locShowerToIDMap);
 			for(size_t loc_j = 0; loc_j < locUnusedNeutralParticleHypotheses.size(); ++loc_j)
 				Fill_UnusedParticleData(locTree, loc_j + locUnusedChargedTrackHypotheses.size(), locNumUnused, locUnusedNeutralParticleHypotheses[loc_j], locShowerToIDMap);
-
-			//end of tree: update array sizes
+			//update array sizes
 			if(locNumUnused > (*dNumUnusedArraySizeMap)[locTree])
 				(*dNumUnusedArraySizeMap)[locTree] = locNumUnused;
-			if(locMCThrowns.size() > (*dNumThrownArraySizeMap)[locTree])
-				(*dNumThrownArraySizeMap)[locTree] = locMCThrowns.size();
 
 			locTree->Fill();
 		}

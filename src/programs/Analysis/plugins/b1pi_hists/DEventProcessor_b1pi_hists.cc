@@ -35,6 +35,12 @@ jerror_t DEventProcessor_b1pi_hists::init(void)
 //------------------
 jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumber)
 {
+	//Create Trees
+	const DEventWriterROOT* locEventWriterROOT = NULL;
+	locEventLoop->GetSingle(locEventWriterROOT);
+	locEventWriterROOT->Create_DataTrees(locEventLoop);
+	locEventWriterROOT->Create_ThrownTree("tree_b1pi_thrownmc.root");
+
 	return NOERROR;
 }
 
@@ -54,9 +60,10 @@ jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnum
 	locEventLoop->Get(locAnalysisResultsVector);
 
 	//Output TTree
-	vector<const DEventWriterROOT*> locEventWriterROOTVector;
-	locEventLoop->Get(locEventWriterROOTVector);
-	locEventWriterROOTVector[0]->Fill_Trees(locEventLoop, "b1pi_hists"); //the factory tag of the DReactions created by this plugin
+	const DEventWriterROOT* locEventWriterROOT = NULL;
+	locEventLoop->GetSingle(locEventWriterROOT);
+	locEventWriterROOT->Fill_DataTrees(locEventLoop, "b1pi_hists");
+	locEventWriterROOT->Fill_ThrownTree(locEventLoop);
 
 	//Do Miscellaneous Cuts
 	bool locSaveEventFlag = false;
