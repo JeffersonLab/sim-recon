@@ -125,20 +125,22 @@ jerror_t DHelicalFit::AddHit(const DFDCPseudo *fdchit){
   hit->z = fdchit->wire->origin.z();
   hit->covx=fdchit->covxx;
   hit->covy=fdchit->covyy;
-  hit->covxy=fdchit->covxy;
+  hit->covxy=0.;
   hit->chisq = 0.0;
   hit->is_axial=false;
 
   double Phi=atan2(hit->y,hit->x);
-  double cosPhi=cos(Phi);
-  double sinPhi=sin(Phi);
-  double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
-  double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
-  hit->covrphi=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hit->covx
-    +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hit->covy
-    +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hit->covxy;
-  hit->covr=cosPhi*cosPhi*hit->covx+sinPhi*sinPhi*hit->covy
-    +2.*sinPhi*cosPhi*hit->covxy;
+
+  // Covariance matrix elements
+  double u=fdchit->w;
+  double v=fdchit->s;
+  double temp1=u*Phi-v;
+  double temp2=v*Phi+u;
+  double var_u=0.0833;
+  double var_v=0.0075;
+  double one_over_R2=1./fdchit->xy.Mod2();
+  hit->covrphi=one_over_R2*(var_v*temp1*temp1+var_u*temp2*temp2);
+  hit->covr=one_over_R2*(var_u*u*u+var_v*v*v);
 
   hits.push_back(hit);
 
@@ -256,15 +258,16 @@ jerror_t DHelicalFit::AddStereoHit(const DCDCWire *wire){
   // Compute the position for this hit
   DVector3 pos = origin + s*dir;
  
-  // Assume error on the radius of the circle is 10% of the radius
-  double var_r=0.01*r0_sq; 
+  // Assume error on the radius of the circle is 10% of the radius and include
+  // the cell size contribution 1.6*1.6/12
+  double var_r=0.01*r0_sq+0.213; 
 
   DHFHit_t *hit = new DHFHit_t;
   hit->x=pos.x();
   hit->y=pos.y();
   hit->z=pos.z();
-  hit->covx=var_r;
-  hit->covy=var_r;
+  hit->covx=0.213; // place holder
+  hit->covy=0.213;
   hit->covxy=0.;
   hit->chisq=0.;
   hit->is_axial=false;
@@ -275,8 +278,7 @@ jerror_t DHelicalFit::AddStereoHit(const DCDCWire *wire){
   double Phi_cosPhi_minus_sinPhi=Phi*cosPhi-sinPhi;
   double Phi_sinPhi_plus_cosPhi=Phi*sinPhi+cosPhi;
   hit->covrphi=Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*hit->covx
-    +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hit->covy
-    +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*hit->covxy;
+    +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*hit->covy;
   hit->covr=var_r;
 
   hits.push_back(hit);
