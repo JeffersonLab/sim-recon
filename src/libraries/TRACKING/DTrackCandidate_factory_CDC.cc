@@ -1673,6 +1673,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
   vector<intersection_t>intersections;
 			       
   // CDC stereo hits
+  int old_ring=-1;
   for (unsigned int m=0;m<seed.stereo_hits.size();m++){
     unsigned int numbits=8*sizeof(unsigned int);
     seed.HitBitPattern[seed.stereo_hits[m].index/numbits]
@@ -1680,15 +1681,18 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
 
     DCDCTrkHit *trkhit=&seed.stereo_hits[m];
 
-    //DVector3_with_perp intersection;
-    intersection_t intersection;
-    intersection.x=trkhit->x_stereo;
-    intersection.y=trkhit->y_stereo;
-    intersection.perp2=intersection.x*intersection.x+intersection.y*intersection.y;
-    intersection.z=trkhit->z_stereo;
-    intersection.var_z=trkhit->var_z;
+    if (trkhit->hit->wire->ring!=old_ring){
+      //DVector3_with_perp intersection;
+      intersection_t intersection;
+      intersection.x=trkhit->x_stereo;
+      intersection.y=trkhit->y_stereo;
+      intersection.perp2=intersection.x*intersection.x+intersection.y*intersection.y;
+      intersection.z=trkhit->z_stereo;
+      intersection.var_z=trkhit->var_z;
       
-    intersections.push_back(intersection);  
+      intersections.push_back(intersection);  
+    }
+    old_ring=trkhit->hit->wire->ring;
   }
    
   // Now, sort the entries
