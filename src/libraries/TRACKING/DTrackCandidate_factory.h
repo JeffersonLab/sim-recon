@@ -57,6 +57,8 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 				  const DVector3 &origin,
 				  DVector3 &pos,
 				  DVector3 &mom);
+  jerror_t GetPositionAndMomentum(DHelicalFit &fit,double Bz,DVector3 &pos,
+				  DVector3 &mom);
   
  protected:
   virtual jerror_t init(void);
@@ -74,10 +76,41 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		   double &Bz);
   void ProjectHelixToZ(const double z,const double q,const DVector3 &mom,
 		       DVector3 &pos);
+  // Various methods for matching CDC and FDC candidates
+  bool MatchMethod1(const DTrackCandidate *fdccan,
+		    vector<unsigned int> &cdc_forward_ids,
+		    vector<DVector3>&cdc_endplate_projections,
+		    vector<const DTrackCandidate*>&cdctrackcandidates,
+		    vector<unsigned int>&used_cdc_hits
+		    );
+  bool MatchMethod2(const DTrackCandidate *fdccan,
+		    vector<unsigned int> &cdc_forward_ids,
+		    vector<const DTrackCandidate*>&cdctrackcandidates,
+		    vector<unsigned int>&used_cdc_hits
+		    );
+  bool MatchMethod3(const DTrackCandidate *cdccan,
+		    vector<int> &forward_matches,
+		    vector<const DTrackCandidate*> &fdctrackcandidates, 
+		    vector<unsigned int>&used_cdc_hits
+		    );  
+  void MatchMethod4(DTrackCandidate *srccan, 
+		    vector<int> &forward_matches,
+		    vector<const DTrackCandidate*> &fdctrackcandidates);
+  bool MatchMethod5(DTrackCandidate *can,  
+		    vector<const DCDCTrackHit *>&cdchits,
+		    vector<int> &forward_matches,
+		    vector<const DTrackCandidate*> &fdctrackcandidates);
+  void MatchMethod6(DTrackCandidate *can, vector<const DFDCSegment *>&segments,
+		    vector<unsigned int>&used_cdc_hits,  
+		    vector<const DCDCTrackHit*>&mycdchits,
+		    unsigned int &num_unmatched_cdcs
+		    );
+
  private:
   const DMagneticFieldMap *bfield;
   DMagneticFieldStepper *stepper;
 
+  int DEBUG_LEVEL;
   bool DEBUG_HISTS;
   TH2F *match_dist,*match_dist_vs_p;
 
