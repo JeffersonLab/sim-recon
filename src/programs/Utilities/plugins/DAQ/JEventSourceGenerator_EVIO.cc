@@ -1,40 +1,37 @@
 // $Id$
 //
-//    File: JEventSourceGenerator_FileEVIO.cc
-// Created: Tue Aug  7 15:22:29 EDT 2012
-// Creator: davidl (on Darwin harriet.jlab.org 11.4.0 i386)
+//    File: JEventSourceGenerator_EVIO.cc
+// Created: Tue May 21 14:05:48 EDT 2013
+// Creator: davidl (on Darwin harriet.jlab.org 11.4.2 i386)
 //
 
 #include <string>
 using std::string;
 
-#include "JEventSourceGenerator_FileEVIO.h"
+#include "JEventSourceGenerator_EVIO.h"
 using namespace jana;
 
 #include <evioFileChannel.hxx>
-#include <evioUtil.hxx>
-using namespace evio;
-
 
 
 //---------------------------------
 // Description
 //---------------------------------
-const char* JEventSourceGenerator_FileEVIO::Description(void)
+const char* JEventSourceGenerator_EVIO::Description(void)
 {
-	return "FileEVIO - Reads EVIO formatted files";
+	return "EVIO  - Reads EVIO formatted data from file or ET system";
 }
 
 //---------------------------------
 // CheckOpenable
 //---------------------------------
-double JEventSourceGenerator_FileEVIO::CheckOpenable(string source)
+double JEventSourceGenerator_EVIO::CheckOpenable(string source)
 {
 	// This should return a value between 0 and 1 inclusive
 	// with 1 indicating it definitely can read events from
 	// the specified source and 0 meaning it definitely can't.
 	// Typically, this will just check the file suffix.
-	
+
 	// Try to open the file
 	try {
 		
@@ -50,16 +47,20 @@ double JEventSourceGenerator_FileEVIO::CheckOpenable(string source)
 		return 0.5;
 		
 	} catch (evioException &e) {
-		
-		return 0.0;
+
+		// Could not open file. Check if name starts with "ET:"
+		if(source.substr(0,3) == "ET:")return 0.1;
 	}	
+
+	// Doesn't seem to be a source we can open
+	return 0.0;
 }
 
 //---------------------------------
 // MakeJEventSource
 //---------------------------------
-JEventSource* JEventSourceGenerator_FileEVIO::MakeJEventSource(string source)
+JEventSource* JEventSourceGenerator_EVIO::MakeJEventSource(string source)
 {
-	return new JEventSource_FileEVIO(source.c_str());
+	return new JEventSource_EVIO(source.c_str());
 }
 

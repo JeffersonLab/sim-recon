@@ -8,6 +8,7 @@
 #ifndef _JEventSource_EVIO_
 #define _JEventSource_EVIO_
 
+
 #include <map>
 #include <vector>
 #include <queue>
@@ -117,13 +118,15 @@ class JEventSource_EVIO: public jana::JEventSource{
 		virtual const char* className(void){return static_className();}
 		 static const char* static_className(void){return "JEventSource_EVIO";}
 		
-		  virtual jerror_t ReadEVIOEvent(void)=0;
+		  virtual jerror_t ReadEVIOEvent(void);
 		
 		          jerror_t GetEvent(jana::JEvent &event);
 		              void FreeEvent(jana::JEvent &event);
 				  jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
 	
 	protected:
+	
+		void ConnectToET(const char* source_name);
 		
 		int32_t last_run_number;
 		

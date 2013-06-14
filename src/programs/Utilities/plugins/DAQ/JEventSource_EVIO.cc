@@ -10,8 +10,12 @@
 #include <string>
 using namespace std;
 
-#include "JEventSourceGenerator_FileEVIO.h"
-#include "JEventSourceGenerator_ETEVIO.h"
+#define HAVE_ET 0 // temporary
+
+
+#include <evioFileChannel.hxx>
+
+#include "JEventSourceGenerator_EVIO.h"
 #include "JFactoryGenerator_DAQ.h"
 #include "JEventSource_EVIO.h"
 using namespace jana;
@@ -23,8 +27,7 @@ using namespace jana;
 extern "C"{
 	void InitPlugin(JApplication *app){
 		InitJANAPlugin(app);
-		app->AddEventSourceGenerator(new JEventSourceGenerator_FileEVIO());
-		app->AddEventSourceGenerator(new JEventSourceGenerator_ETEVIO());
+		app->AddEventSourceGenerator(new JEventSourceGenerator_EVIO());
 		app->AddFactoryGenerator(new JFactoryGenerator_DAQ());
 	}
 } // "C"
@@ -37,6 +40,30 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 {
 	// Initialize EVIO channel pointer to NULL (subclass will instantiate and open)
 	chan = NULL;
+	
+	// Try to open the file.
+	try {
+		
+		// create evio file channel object using first arg as file name
+		chan = new evioFileChannel(this->source_name);
+		
+		// open the file. Throws exception if not successful
+		chan->open();
+
+	} catch (evioException &e) {
+
+#if HAVE_ET
+		// Could not open file. Check if name starts with "ET:"
+		if(this->source_name.substr(0,3) == "ET:") ConnectToET(source_name);
+
+		// open the file. Throws exception if not successful
+		if(chan)chan->open();
+#else
+		// No ET and the file didn't work so re-throw the exception
+		throw e;
+
+#endif
+	}
 	
 	// Get configuration parameters
 	AUTODETECT_MODULE_TYPES = true;
@@ -63,6 +90,84 @@ JEventSource_EVIO::~JEventSource_EVIO()
 	
 	// Optionally dump the module map
 	if(DUMP_MODULE_MAP)DumpModuleMap();
+}
+
+//----------------
+// ConnectToET
+//----------------
+void JEventSource_EVIO::ConnectToET(const char* source_name)
+{
+#if HAVE_ET
+	// open event source here
+	et_sys_id sys_id;
+	et_att_id att_id;
+	et_stat_id sta_id;
+	
+	// Split source name into session, station, etc...
+	vector<string> fields;
+	size_t cutAt;
+	string str = source_name;
+	while( (cutAt = str.find(":")) != str.npos ){
+		if(cutAt > 0)fields.push_back(str.substr(0,cutAt));
+		str = str.substr(cutAt+1);
+	}
+	if(str.length() > 0)fields.push_back(str);
+	string session = fields.size()>1 ? fields[1]:"none";
+	string station = fields.size()>2 ? fields[2]:"DANA";
+	int Nevents    = fields.size()>3 ? atoi(fields[3].c_str()):1;
+	
+	cout<<"Opening ET session:"<<session<<"  station:"<<station<<endl;
+
+	et_openconfig openconfig;
+	et_open_config_init(&openconfig);
+
+	// create station config in case no station exists
+	et_statconfig et_station_config;
+	et_station_config_init(&et_station_config);
+	et_station_config_setblock(et_station_config,ET_STATION_BLOCKING);
+	et_station_config_setselect(et_station_config,ET_STATION_SELECT_ALL);
+	et_station_config_setuser(et_station_config,ET_STATION_USER_MULTI);
+	et_station_config_setrestore(et_station_config,ET_STATION_RESTORE_OUT);
+	et_station_config_setcue(et_station_config,Nevents);
+	et_station_config_setprescale(et_station_config,0);
+	cout<<"ET station configured\n";
+
+	// connect to the ET system
+	string fname = string("/tmp/et_sys_") + session;
+	et_open_config_init(&openconfig);
+	if(et_open(&sys_id,fname.c_str(),openconfig)!=ET_OK){
+		cout<<__FILE__<<":"<<__LINE__<<" Problem opening ET system"<<endl;
+		return;
+	}
+	
+	// create station if not already created
+	int status=et_station_create(sys_id,&sta_id,station.c_str(),et_station_config);
+	if((status!=ET_OK)&&(status!=ET_ERROR_EXISTS)) { 
+		et_close(sys_id);
+		cerr << "Unable to create station " << station << endl;
+		return;
+	}
+	cout<<"ET station created\n";
+
+	status=et_station_attach(sys_id,sta_id,&att_id);
+	if(status!=ET_OK) {
+		et_close(sys_id);
+		cerr << "Unable to attach to station " << station << endl;
+		return;
+	}
+
+	cout << "...now connected to ET system: " << fname 
+		<< ",   station: " << station << " (station id=" << sta_id << ", attach id=" << att_id <<")" << endl;
+		
+	chan = new evioETChannel(sys_id, att_id);
+#else
+	jerr << endl;
+	jerr << "You are attempting to connect to an ET system using a binary that" <<endl;
+	jerr << "was compiled without ET support. Please reconfigure and recompile" <<endl;
+	jerr << "To get ET support." << endl;
+	jerr << endl;
+	throw exception();
+#endif
 }
 
 //----------------
@@ -135,6 +240,20 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 		delete objs_ptr;
 	}
 }
+
+//----------------
+// ReadEVIOEvent
+//----------------
+jerror_t JEventSource_EVIO::ReadEVIOEvent(void)
+{
+	// We may need to loop here for ET system if no
+	// events are currently available.
+
+	if(!chan->read())return NO_MORE_EVENTS_IN_SOURCE;
+
+	return NOERROR;
+}
+
 
 //----------------
 // GetObjects
