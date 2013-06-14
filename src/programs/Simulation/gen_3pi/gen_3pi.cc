@@ -17,7 +17,7 @@
 #include "AMPTOOLS_MCGEN/ProductionMechanism.h"
 #include "AMPTOOLS_MCGEN/GammaPToXYZP.h"
 
-#include "IUAmpTools/AmplitudeManager.h"
+#include "IUAmpTools/AmpToolsInterface.h"
 #include "IUAmpTools/ConfigFileParser.h"
 #include "CLHEP/Vector/LorentzVector.h"
 
@@ -85,20 +85,16 @@ int main( int argc, char* argv[] ){
     exit(1);
   }
   
-  // open config file
+  // open config file and be sure only one reaction is specified
   ConfigFileParser parser( configfile );
   ConfigurationInfo* cfgInfo = parser.getConfigurationInfo();
-  vector< ReactionInfo* > reactions = cfgInfo->reactionList();
-  assert( reactions.size() == 1 );
+  assert( cfgInfo->reactionList().size() == 1 );
+  ReactionInfo* reaction = cfgInfo->reactionList()[0];
   
-  ReactionInfo* info = reactions[0];
-  
-  // setup amplitude manager
-  AmplitudeManager ampManager( info->particleList(), info->reactionName() );	
-  ampManager.registerAmplitudeFactor( ThreePiAngles() );
-  ampManager.registerAmplitudeFactor( BreitWigner() );
-  ampManager.setupFromConfigurationInfo( cfgInfo );  
-  
+  // setup AmpToolsInterface
+  AmpToolsInterface::registerAmplitude( ThreePiAngles() );
+  AmpToolsInterface::registerAmplitude( BreitWigner() );
+  AmpToolsInterface ati( cfgInfo );
   
   ProductionMechanism::Type type =
     ( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
@@ -143,26 +139,32 @@ int main( int argc, char* argv[] ){
     }
     
     cout << "Generating four-vectors..." << endl;
-    AmpVecs* aVecs = resProd.generateMany( batchSize );
-    cout << "Calculating amplitudes..." << endl;
-    aVecs->allocateAmps( ampManager, true );
     
+    ati.clearEvents();
+    for( int i = 0; i < batchSize; ++i ){
+      
+      Kinematics* kin = resProd.generate();
+      ati.loadEvent( kin, i, batchSize );
+      delete kin;
+    }
+    
+    cout << "Processing events..." << endl;
+
     // include factor of 1.5 to be safe in case we miss peak -- avoid
     // intensity calculation of we are generating flat data
-    double maxInten = ( genFlat ? 1 : 1.5 * ampManager.calcIntensities( *aVecs ) );
+    double maxInten = ( genFlat ? 1 : 1.5 * ati.processEvents( reaction->reactionName() ) );
     
-    cout << "Processing events.." << endl;
     
     for( int i = 0; i < batchSize; ++i ){
   		
-      Kinematics* evt = aVecs->getEvent( i );
+      Kinematics* evt = ati.kinematics( i );
       HepLorentzVector resonance( evt->particle( 2 ) + 
                                   evt->particle( 3 ) + 
                                   evt->particle( 4 ) );
 
       double genWeight = evt->weight();
       
-      double weightedInten = aVecs->m_pdIntensity[i];
+      double weightedInten = ati.intensity( i );
       
       if( !diag ){
         
@@ -205,7 +207,6 @@ int main( int argc, char* argv[] ){
     }
     
     cout << eventCounter << " events were processed." << endl;
-    delete aVecs;
   }
   
   mass->Write();
