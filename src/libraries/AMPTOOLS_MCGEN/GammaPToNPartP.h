@@ -24,15 +24,13 @@ public:
 		  ProductionMechanism::Type type,
 		  float tcoef=4.0, float Ebeam=9.0/*GeV*/);
   
-  Kinematics* generateOne();
-  AmpVecs* generateMany( int nEvents );
+  Kinematics* generate();
   
   void addResonance( float mass, float width, float bf );
   
 private:
   
   ProductionMechanism m_prodMech;
-  
   
   HepLorentzVector m_beam;
   HepLorentzVector m_target;
