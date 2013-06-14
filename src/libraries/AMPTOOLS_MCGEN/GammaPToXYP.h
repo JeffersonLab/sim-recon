@@ -23,8 +23,7 @@ public:
   GammaPToXYP( float lowMassXY, float highMassXY, float massX, float massY,
                ProductionMechanism::Type type );
   
-  Kinematics* generateOne();
-  AmpVecs* generateMany( int nEvents );
+  Kinematics* generate();
   
   void addResonance( float mass, float width, float bf );
   

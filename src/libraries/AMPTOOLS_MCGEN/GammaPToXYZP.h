@@ -25,8 +25,8 @@ public:
                 float massX, float massY, float massZ,
                 ProductionMechanism::Type type );
   
-  Kinematics* generateOne();
-  AmpVecs* generateMany( int nEvents );
+  Kinematics* generate();
+//  AmpVecs* generateMany( int nEvents );
   
   void addResonance( float mass, float width, float bf );
   
