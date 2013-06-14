@@ -25,7 +25,7 @@ using namespace std;
 #include "AMPTOOLS_MCGEN/GammaPToNPartP.h"
 //#include "GammaPTob1piP.h"
 
-#include "IUAmpTools/AmplitudeManager.h"
+#include "IUAmpTools/AmpToolsInterface.h"
 #include "IUAmpTools/ConfigFileParser.h"
 #include "CLHEP/Vector/LorentzVector.h"
 #include "CLHEP/Vector/LorentzRotation.h"
@@ -243,19 +243,15 @@ int main( int argc, char* argv[] ){
   //FILE *Ifid;
 
   
-  // open config file
+  // open config file and be sure only one reaction is specified
   ConfigFileParser parser( configfile );
   ConfigurationInfo* cfgInfo = parser.getConfigurationInfo();
-  vector< ReactionInfo* > reactions = cfgInfo->reactionList();
-  assert( reactions.size() == 1 );
+  assert( cfgInfo->reactionList().size() == 1 );
+  ReactionInfo* reaction = cfgInfo->reactionList()[0];
   
-  ReactionInfo* info = reactions[0];
-  
-  // setup amplitude manager
-  AmplitudeManager ampManager( info->particleList(), info->reactionName() );	
-  ampManager.registerAmplitudeFactor( b1piAngAmp() );
-  ampManager.registerAmplitudeFactor( BreitWigner() );
-  ampManager.setupFromConfigurationInfo( cfgInfo );  
+  AmpToolsInterface::registerAmplitude( b1piAngAmp() );
+  AmpToolsInterface::registerAmplitude( BreitWigner() );
+  AmpToolsInterface ati( cfgInfo );
   
   ProductionMechanism::Type type =
     ( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
@@ -288,20 +284,28 @@ int main( int argc, char* argv[] ){
     
     cout << "Number to generate: " << batchSize << endl;
     cout << "Generating four-vectors..." << endl;
-    AmpVecs* aVecs = resProd.generateMany( batchSize );
-    cout << "Calculating amplitudes..." << endl;
-    aVecs->allocateAmps( ampManager, true );
-    cout << "Calculating intensities..." << endl;
     
+    ati.clearEvents();
+    for( int i = 0; i < batchSize; ++i ){
+      
+      Kinematics* kin = resProd.generate();
+      ati.loadEvent( kin, i, batchSize );
+      delete kin;
+    }
+
+    cout << "Calculating intensities..." << endl;
     
     maxInten=0;
     if(!genFlat) // Signal intensity calculation
-      maxInten = ampManager.calcIntensities(*aVecs, true);
+      maxInten = ati.processEvents( reaction->reactionName() );
     else
-      for(int i = 0; i < batchSize; ++i ) // Get the max. inten. for PS gen
-	if(aVecs->getEvent(i)->weight() > maxInten) 
-	  maxInten = aVecs->getEvent(i)->weight();
-
+      for(int i = 0; i < batchSize; ++i ){ // Get the max. inten. for PS gen
+        Kinematics* kin = ati.kinematics(i);
+        if(kin->weight() > maxInten)
+          maxInten = kin->weight();
+        delete kin;
+      }
+    
     cout << "Beginning accept/reject..." << endl;
     
     printf("MAXINTEN: %25.20f\n",maxInten);
@@ -322,22 +326,12 @@ int main( int argc, char* argv[] ){
     //double IbatchSum=0;
     for( int i = 0; i < batchSize ; ++i ){
       
-      Kinematics* evt = aVecs->getEvent( i );
+      Kinematics* evt = ati.kinematics( i );
       
 
       double genWeight = evt->weight();
-      double weightedInten = aVecs->m_pdIntensity[i];
+      double weightedInten = ati.intensity( i );
       
-      /*double realA=aVecs->m_pdAmps[2*aVecs->m_iNAmps*i];
-	double imagA=aVecs->m_pdAmps[2*aVecs->m_iNAmps*i+1];
-	double calcI=(realA*realA+imagA*imagA)*1.5*PI;
-	printf("A=(%6.3f,%6.3f)->%7.4f\tI=%f\tI/calcI=%f\tmaxInten = %f \n", 
-	realA, imagA, calcI,
-	weightedInten, weightedInten/calcI, maxInten);
-	IbatchSum+=weightedInten;
-      */
-      //fprintf(Ifid,"%25.20f\n",weightedInten);
-      //printf("I = %e\n",weightedInten);
 
 
       // obtain this by looking at the maximum value of intensity * genWeight
@@ -387,7 +381,6 @@ int main( int argc, char* argv[] ){
     //printf("BATCH AVERAGE:  %f\n",IbatchSum/batchSize);
     
     cout << eventCounter << " events were processed." << endl;
-    delete aVecs;
   }
 
   if(!genFlat) printf("RUN_MAX_INTEN: %25.20f\n",runs_maxInten);
