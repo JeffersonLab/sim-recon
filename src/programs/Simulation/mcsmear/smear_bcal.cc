@@ -1079,10 +1079,12 @@ void AddDarkHitsForNonHitSiPMs(map<int, SumSpectra> &bcalfADC)
 	// Loop over all fADC readout cells
 	for(int imodule=1; imodule<=DBCALGeometry::NBCALMODS; imodule++){
 
-		// inner
-		for(int fADC_lay=1; fADC_lay<=DBCALGeometry::NBCALLAYSIN; fADC_lay++){
-			for(int fADC_sec=1; fADC_sec<=DBCALGeometry::NSUMSECSIN; fADC_sec++){
-			
+		int n_layers = DBCALGeometry::NBCALLAYSIN + DBCALGeometry::NBCALLAYSOUT;
+		for(int fADC_lay=1; fADC_lay<=n_layers; fADC_lay++){
+
+			int n_sectors = (fADC_lay <= DBCALGeometry::NBCALLAYSIN)? DBCALGeometry::NBCALSECSIN : DBCALGeometry::NBCALSECSOUT;
+			for(int fADC_sec=1; fADC_sec<=n_sectors; fADC_sec++){
+
 				// Use cellId(...) to convert fADC layer and sector into fADCId
 				// (see DBCALGeometry::fADCId)
 				int fADCId = DBCALGeometry::cellId(imodule, fADC_lay, fADC_sec);
