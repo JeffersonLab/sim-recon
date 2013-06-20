@@ -213,7 +213,7 @@ DBCALGeometry::NSiPMs(int fADCId)
 		return NSUMLAYSIN[fadc_lay-1]*NSUMSECSIN;
 	}else{
 		// outer
-		return NSUMLAYSOUT[fadc_lay-1]*NSUMSECSOUT;
+		return NSUMLAYSOUT[fadc_lay-NBCALLAYSIN-1]*NSUMSECSOUT;
 	}
 }
 
