@@ -60,9 +60,9 @@ class DEventWriterROOT : public JObject
 
 		//TREE CREATION:
 		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag) const;
-		void Create_Branches_FinalStateParticle(TTree* locTree, string locParticleBranchName, bool locIsChargedFlag, bool locKinFitFlag) const;
+		void Create_Branches_FinalStateParticle(TTree* locTree, string locParticleBranchName, bool locIsChargedFlag, bool locKinFitFlag, bool locIsMCDataFlag) const;
 		void Create_Branches_Beam(TTree* locTree, bool locKinFitFlag) const;
-		void Create_Branches_UnusedParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString) const;
+		void Create_Branches_UnusedParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString, bool locIsMCDataFlag) const;
 		void Create_Branches_ThrownParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString, bool locIsOnlyThrownFlag) const;
 		template <typename DType> string Create_Branch_Fundamental(TTree* locTree, string locParticleBranchName, string locVariableName, string locTypeString) const;
 		template <typename DType> string Create_Branch_NoSplitTObject(TTree* locTree, string locParticleBranchName, string locVariableName, map<string, TObject*>& locTObjectMap) const;

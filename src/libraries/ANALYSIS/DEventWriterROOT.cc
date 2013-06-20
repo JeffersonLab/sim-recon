@@ -359,21 +359,22 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 				continue; //decaying particle
 			if(locReactionStep->Get_MissingParticleIndex() == int(loc_j))
 				continue; //missing particle
-			Create_Branches_FinalStateParticle(locTree, locParticleNameStream.str(), (ParticleCharge(locPID) != 0), locKinFitFlag);
+			Create_Branches_FinalStateParticle(locTree, locParticleNameStream.str(), (ParticleCharge(locPID) != 0), locKinFitFlag, locIsMCDataFlag);
 		}
 	}
 
 	//create unused particle branches
 	string locNumUnusedString = "NumUnused";
 	Create_Branch_Fundamental<UInt_t>(locTree, "", locNumUnusedString, "i");
-	Create_Branches_UnusedParticle(locTree, "Unused", locNumUnusedString);
+	Create_Branches_UnusedParticle(locTree, "Unused", locNumUnusedString, locIsMCDataFlag);
 }
 
-void DEventWriterROOT::Create_Branches_FinalStateParticle(TTree* locTree, string locParticleBranchName, bool locIsChargedFlag, bool locKinFitFlag) const
+void DEventWriterROOT::Create_Branches_FinalStateParticle(TTree* locTree, string locParticleBranchName, bool locIsChargedFlag, bool locKinFitFlag, bool locIsMCDataFlag) const
 {
 	//IDENTIFIER / MATCHING
 	Create_Branch_Fundamental<Int_t>(locTree, locParticleBranchName, "ObjectID", "I");
-	Create_Branch_Fundamental<Int_t>(locTree, locParticleBranchName, "MatchID", "I");
+	if(locIsMCDataFlag)
+		Create_Branch_Fundamental<Int_t>(locTree, locParticleBranchName, "MatchID", "I");
 
 	//KINEMATICS: MEASURED //at the production vertex
 	Create_Branch_NoSplitTObject<TLorentzVector>(locTree, locParticleBranchName, "X4_Measured", (*dTObjectMap)[locTree->GetName()]);
@@ -435,12 +436,13 @@ void DEventWriterROOT::Create_Branches_Beam(TTree* locTree, bool locKinFitFlag) 
 	}
 }
 
-void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString) const
+void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString, bool locIsMCDataFlag) const
 {
 	//IDENTIFIERS / MATCHING
 	Create_Branch_FundamentalArray<Int_t>(locTree, locParticleBranchName, "ObjectID", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "I");
 	Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "PID", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "i");
-	Create_Branch_FundamentalArray<Int_t>(locTree, locParticleBranchName, "MatchID", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "I");
+	if(locIsMCDataFlag)
+		Create_Branch_FundamentalArray<Int_t>(locTree, locParticleBranchName, "MatchID", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "I");
 
 	//KINEMATICS: MEASURED //at the production vertex
 	Create_Branch_ClonesArray(locTree, locParticleBranchName, "X4_Measured", "TLorentzVector", (*dNumUnusedArraySizeMap)[locTree]);
