@@ -200,6 +200,10 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			}
 			if(locBadComboFlag) //e.g. bad PID FOM
 				break;
+
+			//initial guess for spacetime vertex
+			locParticleComboStep->Set_SpacetimeVertex(DLorentzVector(0.0, 0.0, dTargetCenterZ, 0.0));
+
 			locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleComboStep;
 		}

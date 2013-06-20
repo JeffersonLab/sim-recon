@@ -349,6 +349,20 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 		}
 	}
 
+	//create branches for spacetime vertices
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
+		locPID = locReactionStep->Get_InitialParticleID();
+		if((locPID == Gamma) || (locPID == Electron) || (locPID == Positron)) //beam
+			Create_Branch_NoSplitTObject<TLorentzVector>(locTree, "", "X4_Production", (*dTObjectMap)[locTree->GetName()]);
+		else if(IsDetachedVertex(locPID))
+		{
+			string locVariableName = string("X4_") + Convert_ToBranchName(ParticleType(locPID)) + string("Decay");
+			Create_Branch_NoSplitTObject<TLorentzVector>(locTree, "", locVariableName, (*dTObjectMap)[locTree->GetName()]);
+		}
+	}
+
 	//create unused particle branches
 	string locNumUnusedString = "NumUnused";
 	Create_Branch_Fundamental<UInt_t>(locTree, "", locNumUnusedString, "i");
@@ -775,7 +789,9 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			for(size_t loc_k = 0; loc_k < locParticleCombo->Get_NumParticleComboSteps(); ++loc_k)
 			{
 				const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_k);
+				DLorentzVector locStepX4 = locParticleComboStep->Get_SpacetimeVertex();
 
+				//beam & production vertex
 				Particle_t locPID = locParticleComboStep->Get_InitialParticleID();
 				if((locPID == Gamma) || (locPID == Electron) || (locPID == Positron))
 				{
@@ -783,6 +799,15 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 					const DKinematicData* locKinematicData_Measured = locParticleComboStep->Get_InitialParticle_Measured();
 					if(locKinematicData_Measured != NULL) //missing beam particle
 						Fill_BeamParticleData(locTree, locKinematicData, locKinematicData_Measured, locBeamToIDMap);
+					TLorentzVector locX4_Production(locStepX4.X(), locStepX4.Y(), locStepX4.Z(), locStepX4.T());
+					Fill_TObjectData<TLorentzVector>(locTree, "", "X4_Production", &locX4_Production, (*dTObjectMap)[locTree->GetName()]);
+				}
+				else if(IsDetachedVertex(locPID))
+				{
+					//decay vertices
+					string locVariableName = string("X4_") + Convert_ToBranchName(ParticleType(locPID)) + string("Decay");
+					TLorentzVector locX4_Decay(locStepX4.X(), locStepX4.Y(), locStepX4.Z(), locStepX4.T());
+					Fill_TObjectData<TLorentzVector>(locTree, "", locVariableName, &locX4_Decay, (*dTObjectMap)[locTree->GetName()]);
 				}
 
 				//final state particles

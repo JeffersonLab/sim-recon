@@ -6,6 +6,7 @@
 
 #include "JANA/JObject.h"
 #include "particleType.h"
+#include "DLorentzVector.h"
 #include "PID/DKinematicData.h"
 #include "DParticleComboBlueprint.h"
 
@@ -33,6 +34,11 @@ class DParticleComboStep
 
 		// SET BLUEPRINT:
 		inline void Set_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintStep = locParticleComboBlueprintStep;}
+
+		// SET PRODUCTION/DECAY SPACETIME VERTEX
+		inline void Set_Position(const DVector3& locPosition){dSpacetimeVertex.SetVect(locPosition);}
+		inline void Set_Time(double locTime){dSpacetimeVertex.SetT(locTime);}
+		inline void Set_SpacetimeVertex(const DLorentzVector& locSpacetimeVertex){dSpacetimeVertex = locSpacetimeVertex;}
 
 		// GET PARTICLE PIDs:
 		inline Particle_t Get_InitialParticleID(void) const{return ((dParticleComboBlueprintStep != NULL) ? dParticleComboBlueprintStep->Get_InitialParticleID() : Unknown);}
@@ -93,6 +99,11 @@ class DParticleComboStep
 		string Get_FinalDetectedParticlesROOTName(void) const;
 		string Get_StepROOTName(void) const;
 
+		// GET PRODUCTION/DECAY SPACETIME VERTEX
+		inline DVector3 Get_Position(void) const{return dSpacetimeVertex.Vect();}
+		inline double Get_Time(void) const{return dSpacetimeVertex.T();}
+		inline DLorentzVector Get_SpacetimeVertex(void) const{return dSpacetimeVertex;}
+
 		// GET BLUEPRINT
 		inline const DParticleComboBlueprintStep* Get_ParticleComboBlueprintStep(void) const{return dParticleComboBlueprintStep;}
 
@@ -111,6 +122,9 @@ class DParticleComboStep
 	private:
 		// BLUEPRINT:
 		const DParticleComboBlueprintStep* dParticleComboBlueprintStep; //contains PIDs, source objects
+
+		// PRODUCTION/DECAY SPACETIME VERTEX:
+		DLorentzVector dSpacetimeVertex;
 
 		// INITIAL PARTICLES:
 		const DKinematicData* dInitialParticle; //if is null: decaying or beam particle not yet set!

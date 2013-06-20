@@ -77,6 +77,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
+		DKinFitType locKinFitType = locKinFitResultsVector[loc_i]->Get_KinFitType();
 		locKinFitResultsVector[loc_i]->Get_InitialKinFitParticles(locInitialKinFitParticles);
 		locKinFitResultsVector[loc_i]->Get_FinalKinFitParticles(locFinalKinFitParticles);
 		locParticleCombo = locKinFitResultsVector[loc_i]->Get_ParticleCombo();
@@ -114,8 +115,11 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 			locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
 			locNewParticleComboStep = Get_ParticleComboStepResource();
 			locNewParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboStep->Get_ParticleComboBlueprintStep());
+			locNewParticleComboStep->Set_SpacetimeVertex(locParticleComboStep->Get_SpacetimeVertex()); //overridden if kinematic fit
+			bool locWasVertexKinFitFlag = ((locKinFitType != d_NoFit) && (locKinFitType != d_P4Fit));
+			bool locWasTimeKinFitFlag = ((locKinFitType == d_SpacetimeFit) || (locKinFitType == d_P4AndSpacetimeFit));
 
-			//INITIAL PARTICLE
+			//INITIAL PARTICLE & SPACETIME VERTEX
 			locPID = locParticleComboStep->Get_InitialParticleID();
 			locNewParticleComboStep->Set_InitialParticle_Measured(locParticleComboStep->Get_InitialParticle_Measured());
 			if(locParticleComboStep->Is_InitialParticleDetected()) //set beam photon
@@ -134,6 +138,10 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 					if(!locMatchFlag)
 						continue; // beam photon created for a different particle combo
 					locNewParticleComboStep->Set_InitialParticle(locBeamPhotons[loc_k]);
+					if(locWasVertexKinFitFlag)
+						locNewParticleComboStep->Set_Position(locBeamPhotons[loc_k]->position());
+					if(locWasTimeKinFitFlag)
+						locNewParticleComboStep->Set_Time(locBeamPhotons[loc_k]->time());
 					break;
 				}
 			}
@@ -146,9 +154,20 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 					//if true: propagate the track info from the production vertex to the decay vertex
 					if(locKinFitParticle->Get_DecayingParticleAtProductionVertexFlag() && (locKinFitParticle->Get_NumVertexFits() == 2))
 						dKinFitter.Propagate_TrackInfoToCommonVertex(locKinematicData, locKinFitParticle, locKinFitResultsVector[loc_i]->Get_VXi());
+					if(locWasVertexKinFitFlag)
+						locNewParticleComboStep->Set_Position(locKinematicData->position());
+					if(locWasTimeKinFitFlag)
+						locNewParticleComboStep->Set_Time(locKinematicData->time());
 				}
 				else
+				{
 					locKinematicData = NULL;
+					//if initial step, or vertex not fit, get from pre-kinfit
+					//resonance: get spacetime vertex from step where this particle was produced
+					int locInitialParticleDecayFromStepIndex = locParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+					const DParticleComboStep* locPreviousParticleComboStep = locParticleCombo->Get_ParticleComboStep(locInitialParticleDecayFromStepIndex);
+					locNewParticleComboStep->Set_SpacetimeVertex(locPreviousParticleComboStep->Get_SpacetimeVertex());
+				}
 				locNewParticleComboStep->Set_InitialParticle(locKinematicData);
 			}
 
