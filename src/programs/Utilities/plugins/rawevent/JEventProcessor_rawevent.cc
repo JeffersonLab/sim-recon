@@ -114,8 +114,8 @@ static map<string,cscVal> cscMap;
 
 // detector map (inverse of csc map) is 3-dimensional array of strings with indices (crate,slot,channel)
 //  content is detector-dependent encoded string
-#define MAXDCRATE   70+1
-#define MAXDSLOT    16+1
+#define MAXDCRATE   72+1
+#define MAXDSLOT    21+1
 #define MAXDCHANNEL 72+1
 static string detectorMap[MAXDCRATE][MAXDSLOT][MAXDCHANNEL];
 
@@ -214,6 +214,8 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
   int stat;
   if(nomc2coda==0) {
     for(int i=0; i<nCrate; i++) {
+	  int nMod = nModules[i]-2;
+	  if(nMod<1) continue; // ignore crates with no digitization modules
       stat = mc2codaSetCrate(expID,crateID[i],nModules[i]-2,modules[i],detID[i]);
       if(stat==-1) {
         jerr << "?JEventProcessor_rawevent...error return from mc2codaSetCrate()" << endl << endl;
@@ -297,8 +299,13 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 
   // add header event if required
   // ...
-
-
+//  map<string,cscVal>::iterator iter = cscMap.begin();
+//  for(; iter!=cscMap.end(); iter++){
+//  	string key = iter->first;
+//	if(key.find("toftdc") == 0) _DBG_<<key<<endl;
+//  }
+  
+  
   return NOERROR;
 }
 
@@ -563,7 +570,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       }
 
       if(nomc2coda==0) {
-        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+       stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
         if(stat!=nhits) {
           jerr << "?error return from mc2codaWrite() for TOF TDC: " << stat << endl << endl;
           exit(EXIT_FAILURE);
@@ -1092,6 +1099,7 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
       len  = fread(buf,1,bufSize,f);
       done = len!=bufSize;
       status=XML_Parse(xmlParser,buf,len,done);
+
       if((!done)&&(status==0)) {
         jerr << endl << endl << endl << "  ?readTranslationTable...parseXMLFile parse error for " << translationTableName
              << endl << endl << XML_ErrorString(XML_GetErrorCode(xmlParser))
@@ -1126,12 +1134,14 @@ int type2detID(string &type) {
     return(FADC250);
   } else if (type=="fadc125") {
     return(FADC125);
-  } else if (type=="f1tdc32") {
+  } else if (type=="f1tdcv2") {
     return(F1TDC32);
-  } else if (type=="f1tdc48") {
+  } else if (type=="f1tdcv3") {
     return(F1TDC48);
   } else if (type=="jldisc") {
     return(JLDISC);
+  } else if (type=="vx1290a") {
+    return(CAEN1290); // (should this be CAEN1290_MODE_TM ??)
   } else {
     return(USERMOD);
   }
@@ -1228,6 +1238,11 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       }
     }
 
+	// ignore certain module types
+	if(type == "disc") return;
+	if(type == "ctp") return;
+	if(type == "sd") return;
+	if(type == "a1535sn") return;
 
 
     // fill maps
@@ -1235,8 +1250,9 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
     cscVal csc = {crate,slot,channel};
     string detector = Detector;
     std::transform(detector.begin(), detector.end(), detector.begin(), (int(*)(int)) tolower);
-
+	
     string s="unknown::";
+
     if(detector=="fcal") {
       if(type=="fadc250") {
         s = "fcaladc::";
@@ -1249,13 +1265,13 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       
 
     } else if(detector=="bcal") {
-      if(type=="f1tdc32") {
+      if(type=="f1tdcv2") {
         s = "bcaltdc::";
       } else if (type=="fadc250") {
         s = "bcaladc::";
       } else {
         s = "unknownBCAL::";
-        jerr << endl << endl << "?startElement...illegal type for BCAL: " << Type << endl << endl;
+        jerr << endl << endl << "?startElement...illegal type for BCAL: " << Type << " ("<<type<<")" << endl << endl;
       }
       s += module + ":" + sector + ":" + layer + ":" + end;
       cscMap[s] = csc;
@@ -1273,7 +1289,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         
       
     } else if(detector=="st") {
-      if(type=="f1tdc32") {
+      if(type=="f1tdcv2") {
         s = "sttdc::";
       } else if (type=="fadc250") {
         s = "stadc::";
@@ -1285,7 +1301,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       cscMap[s] = csc;
     
 
-    } else if(detector=="fdccathode") {
+    } else if(detector=="fdc_cathodes") {
       if(type=="fadc125") {
         s = "fdccathode::";
       } else {
@@ -1296,8 +1312,8 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       cscMap[s] = csc;
 
       
-    } else if(detector=="fdcanode") {
-      if(type=="f1tdc48") {
+    } else if(detector=="fdc_wires") {
+      if(type=="f1tdcv3") {
         s = "fdcanode::";
       } else {
         s = "unknownFDCAnode::";
@@ -1308,12 +1324,10 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 
       
     } else if(detector=="tof") {
-      if(type=="f1tdc32") {
+      if(type=="vx1290a") {
         s = "toftdc::";
       } else if (type=="fadc250") {
         s = "tofadc::";
-      } else if (type=="caentdc") {
-        s = "tofcaentc::";
       } else {
         s = "unknownTOF::";
         jerr << endl << endl << "?startElement...illegal type for TOF: " << Type << endl << endl;
@@ -1322,14 +1336,49 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       cscMap[s] = csc;
 
      
-    } else if(detector=="tagger") {
-      if(type=="f1tdc32") {
-        s = "taggertdc::";
-      } else if (type=="fadc250") {
-        s = "taggeradc::";
+    } else if(detector=="tagh") {
+	  if(type=="f1tdcv2") {
+        s = "taghtdc::";
+	  }else if (type=="fadc250") {
+        s = "taghadc::";
       } else {
         s = "unknownTagger::";
-        jerr << endl << endl << "?startElement...illegal type for TAGGER: " << Type << endl << endl;
+        jerr << endl << endl << "?startElement...illegal type for TAGH: " << Type << endl << endl;
+      }
+      s += row + ":" + column;
+      cscMap[s] = csc;
+
+    } else if(detector=="tagm") {
+      if(type=="f1tdcv2") {
+        s = "tagmtdc::";
+      } else if (type=="fadc250") {
+        s = "tagmadc::";
+      } else {
+        s = "unknownTagger::";
+        jerr << endl << endl << "?startElement...illegal type for TAGM: " << Type << endl << endl;
+      }
+      s += row + ":" + column;
+      cscMap[s] = csc;
+
+      
+    } else if(detector=="psc") {
+      if(type=="f1tdcv2") {
+        s = "psctdc::";
+      } else if (type=="fadc250") {
+        s = "pscadc::";
+      } else {
+        s = "unknownPSC::";
+        jerr << endl << endl << "?startElement...illegal type for PSC: " << Type << endl << endl;
+      }
+      s += row + ":" + column;
+      cscMap[s] = csc;
+
+   } else if(detector=="ps") {
+      if (type=="fadc250") {
+        s = "psadc::";
+      } else {
+        s = "unknownPS::";
+        jerr << endl << endl << "?startElement...illegal type for PS: " << Type << endl << endl;
       }
       s += row + ":" + column;
       cscMap[s] = csc;
@@ -1338,6 +1387,21 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
     } else {
       jerr << endl << endl << "?startElement...unknown detector " << Detector << endl << endl;
     }
+
+	if(crate<0 || crate>=MAXDCRATE){
+		jerr << " Crate value of "<<crate<<" is not in range 0 <= crate < " << MAXDCRATE << endl;
+		exit(-1);
+	}
+
+	if(slot<0 || slot>=MAXDSLOT){
+		jerr << " Slot value of "<<slot<<" is not in range 0 <= slot < " << MAXDSLOT << endl;
+		exit(-1);
+	}
+
+	if(channel<0 || channel>=MAXDCHANNEL){
+		jerr << " Crate value of "<<channel<<" is not in range 0 <= channel < " << MAXDCHANNEL << endl;
+		exit(-1);
+	}
 
 
     // fill detector map, index is crate,slot,channel
@@ -1372,8 +1436,14 @@ void JEventProcessor_rawevent::endElement(void *userData, const char *xmlname) {
 
 
 cscRef JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit) const {
+  string end;
+  if(hit->plane == 0){
+    end = (hit->lr==0 ? "UP":"DW");
+  }else{
+    end = (hit->lr==0 ? "N":"S");
+  }
   string s = "tofadc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
-    + ":" + lexical_cast<string>(hit->lr);
+    + ":" + end;
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1383,8 +1453,14 @@ cscRef JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit)
 
 
 cscRef JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit) const {
+  string end;
+  if(hit->plane == 0){
+    end = (hit->lr==0 ? "UP":"DW");
+  }else{
+    end = (hit->lr==0 ? "N":"S");
+  }
   string s = "toftdc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
-    + ":" + lexical_cast<string>(hit->lr);
+    + ":" + end;
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1394,8 +1470,9 @@ cscRef JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit)
 
 
 cscRef JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) const {
+  string end = hit->end==0 ? "U":"D";
   string s = "bcaladc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
-    + ":" + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->end);
+    + ":" + lexical_cast<string>(hit->layer) + ":" + end;
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1405,8 +1482,9 @@ cscRef JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) con
 
 
 cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) const {
+  string end = hit->end==0 ? "U":"D";
   string s = "bcaltdc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
-    + ":" + lexical_cast<string>(hit->layer) + ":" + lexical_cast<string>(hit->end);
+    + ":" + lexical_cast<string>(hit->layer) + ":" + end;
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
