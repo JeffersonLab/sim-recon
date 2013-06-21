@@ -7,7 +7,6 @@
 
 using namespace std;
 
-#include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 #include "CLHEP/Vector/LorentzVector.h"
 #include "IUAmpTools/Kinematics.h"
 #include "HDDM/hddm_s.h"
@@ -22,11 +21,11 @@ public:
   HDDMDataWriter( const string& outFile, int runNumber=9000);
   ~HDDMDataWriter();
   
-  void writeEvent( const Kinematics& kin, vector<int> ptype, 
+  void writeEvent( const Kinematics& kin, const vector<int>& ptype,
 		   bool centeredVertex=false);
-  void writeEvent( const Kinematics& kin, vector<int> ptype,
+  void writeEvent( const Kinematics& kin, const vector<int>& ptype,
 		   float vx, float vy, float vz_min, float vz_max);
-  void writeEvent( const Kinematics& kin, vector<int> ptype,
+  void writeEvent( const Kinematics& kin, const vector<int>& ptype,
 		   float vx, float vy, float vz);
     
   int eventCounter() const { return m_eventCounter; }

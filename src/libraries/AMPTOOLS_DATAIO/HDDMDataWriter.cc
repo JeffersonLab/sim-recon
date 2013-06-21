@@ -1,7 +1,6 @@
-#include "HDDMDataWriter.h"
+
+#include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 #include "HDDM/hddm_s.h"
-
-
 
 HDDMDataWriter::HDDMDataWriter( const string& outFile, int runNumber)
 {
@@ -18,14 +17,14 @@ HDDMDataWriter::~HDDMDataWriter()
 
 
 void HDDMDataWriter::
-writeEvent( const Kinematics& kin, vector<int> ptype, bool centeredVertex)
+writeEvent( const Kinematics& kin, const vector<int>& ptype, bool centeredVertex)
 {
   if(centeredVertex) writeEvent(kin,ptype,0,0,65 /*cm*/);
   else writeEvent(kin,ptype,0,0,50 /*cm*/,80/*cm*/);
 }
 
 void HDDMDataWriter::
-writeEvent( const Kinematics& kin, vector<int> ptype, 
+writeEvent( const Kinematics& kin, const vector<int>& ptype,
 	    float vx, float vy, float vz_min, float vz_max)
 {
   if(vz_min>vz_max){
@@ -38,7 +37,7 @@ writeEvent( const Kinematics& kin, vector<int> ptype,
 
 
 void HDDMDataWriter::
-writeEvent( const Kinematics& kin, vector<int> ptype, 
+writeEvent( const Kinematics& kin, const vector<int>& ptype,
 	    float vx, float vy, float vz)
 {
   vector< HepLorentzVector > particleList = kin.particleList();
