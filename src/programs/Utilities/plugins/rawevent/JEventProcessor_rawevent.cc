@@ -84,6 +84,7 @@ extern "C" {
 #include<sstream>
 #include<iomanip>
 #include<algorithm>
+#include<fstream>
 #include <expat.h>
 
 
@@ -111,6 +112,9 @@ static int runNumber;
 //  value is struct containing (crate,slot,channel)
 static map<string,cscVal> cscMap;
 
+// Useful "non-value" for a cscRef
+static cscVal CDCBAL_NULL = {-1, -1, -1};
+static cscRef CSCREF_NULL = CDCBAL_NULL;
 
 // detector map (inverse of csc map) is 3-dimensional array of strings with indices (crate,slot,channel)
 //  content is detector-dependent encoded string
@@ -153,6 +157,7 @@ static int FADC125tick       = 8000;    // in picoseconds
 static int dumphits  = 0;
 static int nomc2coda = 0;
 static int noroot    = 0;
+static int dumpmap   = 0;
 
 
 
@@ -169,6 +174,13 @@ void InitPlugin(JApplication *app){
 
 
 //----------------------------------------------------------------------------
+
+// Comparison operator for testing if two cscRefs are equal
+bool operator==(cscRef &a, cscRef &b){
+	if(a.channel != b.channel) return false;
+	if(a.slot != b.slot) return false;
+	return a.crate == b.crate;
+}
 
 
 // JEventProcessor_rawevent (Constructor) invoked once only
@@ -194,6 +206,9 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
   // option to dump hits
   gPARMS->SetDefaultParameter("RAWEVENT:DUMPHITS",dumphits);
+
+  // option to dump map to file
+  gPARMS->SetDefaultParameter("RAWEVENT:DUMPMAP",dumpmap,"Dump map of translation table map to file (for debugging)");
 
 
   // read translation table, fill crate id arrays
@@ -222,6 +237,21 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
         exit(EXIT_FAILURE);
       }
     }
+  }
+  
+  // Optionally dump translation table map into file for debugging
+  if(dumpmap){
+  	ofstream *ofs = new ofstream("cscMap.out");
+	if(ofs){
+		jout << "Dumping translation table map to cscMap.out ..." << endl;
+		map<string,cscVal>::iterator iter = cscMap.begin();
+		for(; iter!=cscMap.end(); iter++){
+			cscVal &csc = iter->second;
+			*ofs << iter->first << " " << csc.crate << " " << csc.slot << " " << csc.channel << endl;
+		}
+		ofs->close();
+		delete ofs;
+	}
   }
 
 }
@@ -455,10 +485,11 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       if(noroot==0)cdcCharges->Fill(dcdchits[i]->q);
       if(noroot==0)cdcTimes->Fill(dcdchits[i]->t-tMin/1000);
 
+      cscRef cscADC      = DCDCHitTranslationADC(dcdchits[i]);
+	  if(cscADC == CSCREF_NULL) continue;
       hc++;
       hitCount++;
       nhits=1;
-      cscRef cscADC      = DCDCHitTranslationADC(dcdchits[i]);
       hit[0].hit_id      = hitCount;
       hit[0].det_id      = detID;
       hit[0].crate_id    = cscADC.crate;
@@ -598,10 +629,11 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       if(noroot==0)bcalEnergies->Fill(dbcalhits[i]->E*1000.);
       if(noroot==0)bcalTimes->Fill(dbcalhits[i]->t-tMin/1000);
 
+      cscRef cscADC      = DBCALHitTranslationADC(dbcalhits[i]);
+	  if(cscADC == CSCREF_NULL) continue;
       hc++;
       hitCount++;
       nhits=1;
-      cscRef cscADC      = DBCALHitTranslationADC(dbcalhits[i]);
       hit[0].hit_id      = hitCount;
       hit[0].det_id      = detID;
       hit[0].crate_id    = cscADC.crate;
@@ -926,71 +958,74 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       if(noroot==0)tagEnergies->Fill(dtaggerhits[i]->E*1000000.);
       if(noroot==0)tagTimes->Fill(dtaggerhits[i]->t-tMin/1000);
 
-      hc++;
-      hitCount++;
-      nhits=1;
       cscRef cscADC      = DTaggerTranslationADC(dtaggerhits[i]);
-      hit[0].hit_id      = hitCount;
-      hit[0].det_id      = detID;
-      hit[0].crate_id    = cscADC.crate;
-      hit[0].slot_id     = cscADC.slot;
-      hit[0].chan_id     = cscADC.channel;
-      hit[0].module_id   = FADC250;
-      hit[0].module_mode = FADC250_MODE_IP;
-      hit[0].nwords      = 2;
-      hit[0].hdata       = mcData;
-      hit[0].hdata[0]    = E/1000;  // in MeV
-      hit[0].hdata[1]    = t/FADC250tick;
-      if(E/1000>0x7ffff)cerr << "E too large for Tagger: " << E << endl;
-      
-      if(dumphits>1) {
-        jout << endl;
-        jout << " Tagger ADC row,column are " << dtaggerhits[i]->row << ", " << dtaggerhits[i]->column<< endl;
-        jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
-        jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
-        jout << " E,t are " << E << ", " << t << endl;
-        jout << endl;
-      }
-      
-      if(nomc2coda==0) {
-        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-        if(stat!=nhits) {
-          jerr << "?error return from mc2codaWrite() for TAGGER ADC: " << stat << endl << endl;
-          exit(EXIT_FAILURE);
-        }
-      }
+	  if(!(cscADC == CSCREF_NULL)){
+		  hc++;
+		  hitCount++;
+		  nhits=1;
+		  hit[0].hit_id      = hitCount;
+		  hit[0].det_id      = detID;
+		  hit[0].crate_id    = cscADC.crate;
+		  hit[0].slot_id     = cscADC.slot;
+		  hit[0].chan_id     = cscADC.channel;
+		  hit[0].module_id   = FADC250;
+		  hit[0].module_mode = FADC250_MODE_IP;
+		  hit[0].nwords      = 2;
+		  hit[0].hdata       = mcData;
+		  hit[0].hdata[0]    = E/1000;  // in MeV
+		  hit[0].hdata[1]    = t/FADC250tick;
+		  if(E/1000>0x7ffff)cerr << "E too large for Tagger: " << E << endl;
+		  
+		  if(dumphits>1) {
+			jout << endl;
+			jout << " Tagger ADC row,column are " << dtaggerhits[i]->row << ", " << dtaggerhits[i]->column<< endl;
+			jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
+			jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
+			jout << " E,t are " << E << ", " << t << endl;
+			jout << endl;
+		  }
+		  
+		  if(nomc2coda==0) {
+			stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+			if(stat!=nhits) {
+			  jerr << "?error return from mc2codaWrite() for TAGGER ADC: " << stat << endl << endl;
+			  exit(EXIT_FAILURE);
+			}
+		  }
+	  }
 
-
-      hitCount++;
-      nhits=1;
       cscRef cscTDC      = DTaggerTranslationTDC(dtaggerhits[i]);
-      hit[0].hit_id      = hitCount;
-      hit[0].det_id      = detID;
-      hit[0].crate_id    = cscTDC.crate;
-      hit[0].slot_id     = cscTDC.slot;
-      hit[0].chan_id     = cscTDC.channel;
-      hit[0].module_id   = F1TDC32;
-      hit[0].module_mode = 0;
-      hit[0].nwords      = 1;
-      hit[0].hdata       = mcData;
-      hit[0].hdata[0]    = t/F1TDC32tick;
-      
-      if(dumphits>1) {
-        jout << endl;
-        jout << " Tagger TDC row,column are " << dtaggerhits[i]->row << ", " << dtaggerhits[i]->column << endl;
-        jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
-        jout << " hdata is: " << hit[0].hdata[0] << endl;
-        jout << " E,t are " << E << ", " << t << endl;
-        jout << endl;
-      }
-      
-      if(nomc2coda==0) {
-        stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
-        if(stat!=nhits) {
-          jerr << "?error return from mc2codaWrite() for Tagger TDC: " << stat << endl << endl;
-          exit(EXIT_FAILURE);
-        }
-      }
+	  if(!(cscADC == CSCREF_NULL)){
+		  hitCount++;
+		  nhits=1;
+		  hit[0].hit_id      = hitCount;
+		  hit[0].det_id      = detID;
+		  hit[0].crate_id    = cscTDC.crate;
+		  hit[0].slot_id     = cscTDC.slot;
+		  hit[0].chan_id     = cscTDC.channel;
+		  hit[0].module_id   = F1TDC32;
+		  hit[0].module_mode = 0;
+		  hit[0].nwords      = 1;
+		  hit[0].hdata       = mcData;
+		  hit[0].hdata[0]    = t/F1TDC32tick;
+		  
+		  if(dumphits>1) {
+			jout << endl;
+			jout << " Tagger TDC row,column are " << dtaggerhits[i]->row << ", " << dtaggerhits[i]->column << endl;
+			jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
+			jout << " hdata is: " << hit[0].hdata[0] << endl;
+			jout << " E,t are " << E << ", " << t << endl;
+			jout << endl;
+		  }
+		  
+		  if(nomc2coda==0) {
+			stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+			if(stat!=nhits) {
+			  jerr << "?error return from mc2codaWrite() for Tagger TDC: " << stat << endl << endl;
+			  exit(EXIT_FAILURE);
+			}
+		  }
+		}
     }
   }
   if((dumphits>=1)&&(hc>0)) {
@@ -1160,6 +1195,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
   string end;
   string row,column,module,sector,layer,chan;
   string ring,straw,plane,bar,gPlane,element;
+  string package,chamber,view,strip,wire;
 
 
   // store crate summary info, fill both maps
@@ -1213,6 +1249,8 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         row = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"column")==0) {
         column = string(atts[i+1]);
+       } else if(strcasecmp(atts[i],"col")==0) {
+        column = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"module")==0) {
         module = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"sector")==0) {
@@ -1235,6 +1273,16 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         plane = string(atts[i+1]);
       } else if(strcasecmp(atts[i],"bar")==0) {
         bar = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"package")==0) {
+        package = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"chamber")==0) {
+        chamber = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"view")==0) {
+        view = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"strip")==0) {
+        strip = string(atts[i+1]);
+      } else if(strcasecmp(atts[i],"wire")==0) {
+        wire = string(atts[i+1]);
       }
     }
 
@@ -1302,24 +1350,36 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
     
 
     } else if(detector=="fdc_cathodes") {
+	  int ipackage = atoi(package.c_str());
+	  int ichamber = atoi(chamber.c_str());
+	  int igPlane = 1 + (ipackage-1)*6*3 + (ichamber-1)*3 + (view=="U" ? 0:2);
+	  stringstream ss;
+	  ss<<igPlane;
+	  gPlane = ss.str();
       if(type=="fadc125") {
         s = "fdccathode::";
       } else {
         s = "unknownFDCCathode::";
         jerr << endl << endl << "?startElement...illegal type for FDC Cathode: " << Type << endl << endl;
       }
-      s += gPlane + ":" + element;
+      s += gPlane + ":" + strip;
       cscMap[s] = csc;
 
       
     } else if(detector=="fdc_wires") {
+	  int ipackage = atoi(package.c_str());
+	  int ichamber = atoi(chamber.c_str());
+	  int igPlane = 2 + (ipackage-1)*6*3 + (ichamber-1)*3;
+	  stringstream ss;
+	  ss<<igPlane;
+	  gPlane = ss.str();
       if(type=="f1tdcv3") {
         s = "fdcanode::";
       } else {
         s = "unknownFDCAnode::";
         jerr << endl << endl << "?startElement...illegal type for FDC Anode: " << Type << endl << endl;
       }
-      s += gPlane + ":" + element;
+      s += gPlane + ":" + wire;
       cscMap[s] = csc;
 
       
@@ -1482,6 +1542,9 @@ cscRef JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) con
 
 
 cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) const {
+  // BCAL does not have TDC channels for layer 4, but some older simulation files
+  // have this. Ignore those hits here.
+  if(hit->layer > 3) return CSCREF_NULL;
   string end = hit->end==0 ? "U":"D";
   string s = "bcaltdc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
     + ":" + lexical_cast<string>(hit->layer) + ":" + end;
@@ -1494,7 +1557,9 @@ cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) con
 
 
 cscRef JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) const {
-  string s = "fcaladc::" + lexical_cast<string>(hit->row) + ":" + lexical_cast<string>(hit->column);
+  // HDGeant numbers row and column 0 to 58 while translation table has -29 to 29.
+  // Shift value here to be consistent with translation table.
+  string s = "fcaladc::" + lexical_cast<string>(hit->row-29) + ":" + lexical_cast<string>(hit->column-29);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1554,7 +1619,12 @@ cscRef JEventProcessor_rawevent::DSTHitTranslationTDC(const DSCHit* hit) const {
 
 
 cscRef JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) const {
-  string s = "taggertdc::" + lexical_cast<string>(hit->row) +":" + lexical_cast<string>(hit->column);
+  // HDGeant always puts 0 for "row". Translation table has values 1-5 with summed columns being 1.
+  // Add 1 to row for now to make it 1 corresponding to the one value the simulation produces.
+  // Also, the HDGeant simulation of tagger hits uses an old design with 128 columns.
+  // We force those in range here by placing them all in column 100.
+  if( hit->column > 100) return CSCREF_NULL;
+  string s = "tagmtdc::" + lexical_cast<string>(hit->row+1) +":" + lexical_cast<string>(hit->column);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1564,7 +1634,10 @@ cscRef JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) const
 
 
 cscRef JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) const {
-  string s = "taggeradc::" + lexical_cast<string>(hit->row) +":" + lexical_cast<string>(hit->column);
+  // HDGeant always puts 0 for "row". Translation table has values 1-5 with summed columns being 1.
+  // Add 1 to row for now to make it 1 corresponding to the one value the simulation produces.
+  if( hit->column > 100) return CSCREF_NULL;
+  string s = "tagmadc::" + lexical_cast<string>(hit->row+1) +":" + lexical_cast<string>(hit->column);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
