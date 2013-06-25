@@ -74,6 +74,18 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
 	}
 	
+	// Create list of data types this event source can provide
+	// (must match what is returned by JObject::className() )
+	event_source_data_types.insert("Df250PulseIntegral");
+	event_source_data_types.insert("Df250PulseRawData");
+	event_source_data_types.insert("Df250PulseTime");
+	event_source_data_types.insert("Df250StreamingRawData");
+	event_source_data_types.insert("Df250TriggerTime");
+	event_source_data_types.insert("Df250WindowRawData");
+	event_source_data_types.insert("Df250WindowSum");
+	event_source_data_types.insert("DF1TDCHit");
+	event_source_data_types.insert("DF1TDCTriggerTime");
+	
 	last_run_number = 0;
 }
 
@@ -220,21 +232,10 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(objs_ptr){
 		if(objs_ptr->own_objects){
-			// The own_objects flag will be true if GetObjects() is never
-			// called for the event. In this case, delete the objects here
-			// to prevent a memory leak.
-#define DeleteObjects(T) \
-			for(unsigned int i=0; i<objs_ptr->v ## T ## s.size(); i++) delete objs_ptr->v ## T ## s[i];
-			
-			DeleteObjects(Df250PulseIntegral);
-			DeleteObjects(Df250StreamingRawData);
-			DeleteObjects(Df250WindowSum);
-			DeleteObjects(Df250PulseRawData);
-			DeleteObjects(Df250TriggerTime);
-			DeleteObjects(Df250PulseTime);
-			DeleteObjects(Df250WindowRawData);
-			DeleteObjects(DF1TDCHit);
-			DeleteObjects(DF1TDCTriggerTime);
+		
+			for(unsigned int i=0; i<objs_ptr->hit_objs.size(); i++){
+				delete objs_ptr->hit_objs[i];
+			}
 		}
 	
 		delete objs_ptr;
@@ -293,25 +294,32 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	//
 	JEventLoop *loop = event.GetJEventLoop();
 	string dataClassName = (factory==NULL ? "N/A":factory->GetDataClassName());
-#define CopyToFactory(T) \
-	JFactory<T> *fac_ ## T = (JFactory<T>*)loop->GetFactory(#T); \
-	if(fac_ ## T)fac_ ## T->CopyTo(objs_ptr->v ## T ## s); \
-	if(dataClassName == #T)err = NOERROR;
 	
-	jerror_t err = OBJECT_NOT_AVAILABLE; // one of the following may set this to NOERROR
+	// Make list of data types we have. Keep list of
+	// pointers to hit objects of each type
+	map<string, vector<JObject*> > hit_objs_by_type;
+	vector<DDAQAddress*> &hit_objs = objs_ptr->hit_objs;
+	for(unsigned int i=0; i<hit_objs.size(); i++){
+		JObject *hit_obj = hit_objs[i];
+		hit_objs_by_type[hit_obj->className()].push_back(hit_obj);
+	}
 
-	CopyToFactory(Df250PulseIntegral);
-	CopyToFactory(Df250StreamingRawData);
-	CopyToFactory(Df250WindowSum);
-	CopyToFactory(Df250PulseRawData);
-	CopyToFactory(Df250TriggerTime);
-	CopyToFactory(Df250PulseTime);
-	CopyToFactory(Df250WindowRawData);
-	CopyToFactory(DF1TDCHit);
-	CopyToFactory(DF1TDCTriggerTime);
-	
+	// Loop over types of data objects, copying to appropriate factory
+	map<string, vector<JObject*> >::iterator iter = hit_objs_by_type.begin();
+	for(; iter!=hit_objs_by_type.end(); iter++){
+		JFactory_base *fac = loop->GetFactory(iter->first);
+		JFactory_base_CopyTo(fac, iter->second);
+	}
 	objs_ptr->own_objects = false;
-	
+
+	// Returning OBJECT_NOT_AVAILABLE tells JANA that this source cannot
+	// provide the type of object requested and it should try and generate
+	// it via a factory algorithm. Returning NOERROR on the other hand
+	// tells JANA that we can provide this type of object and any that
+	// are present have already been copied into the appropriate factory.
+	jerror_t err = OBJECT_NOT_AVAILABLE;
+	if(event_source_data_types.find(dataClassName) != event_source_data_types.end()) err = NOERROR;
+
 	return err;
 }
 
@@ -345,208 +353,6 @@ int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 	return last_run_number;
 }
 
-#if 0
-//----------------
-// GuessModuleType
-//----------------
-MODULE_TYPE JEventSource_EVIO::GuessModuleType(const uint32_t* istart, const uint32_t* iend, evioDOMNodeP bankPtr)
-{
-	/// Try parsing through the information in the given data buffer
-	/// to determine which type of module produced the data.
-
-	if(IsFADC250(istart, iend)) return DModuleType::FADC250;
-	if(IsF125ADC(istart, iend)) return DModuleType::F125ADC;
-	if(IsF1TDC(istart, iend)) return DModuleType::F1TDC;
-	if(IsTS(istart, iend)) return DModuleType::JLAB_TS;
-	if(IsTI(istart, iend)) return DModuleType::JLAB_TID;
-	
-
-	// Couldn't figure it out...
-	return DModuleType::UNKNOWN;
-}
-
-//----------------
-// IsFADC250
-//----------------
-bool JEventSource_EVIO::IsFADC250(const uint32_t *istart, const uint32_t *iend)
-{
-	//---- Check for f250
-	// This will check if the first word appears to be a block header.
-	// If so, it loops over all words looking for a block trailer.
-	// If the slot number in the block trailer matches that in the
-	// block header AND the number of words in the block matches that
-	// specified in the block trailer, then it is assumed to be a f250.
-	if(((*istart>>31) & 0x1) == 1){
-		uint32_t data_type = (*istart>>27) & 0x0F;
-		if(data_type == 0){ // Block Header
-			uint32_t slot_header = (*istart>>22) & 0x1F;
-			uint32_t Nwords = 1;
-			for(const uint32_t *iptr=istart; iptr<iend; iptr++, Nwords++){
-				if(((*iptr>>31) & 0x1) == 1){
-					uint32_t data_type = (*iptr>>27) & 0x0F;
-					if(data_type == 1){ // Block Trailer
-						uint32_t slot_trailer = (*iptr>>22) & 0x1F;
-						uint32_t Nwords_trailer = (*iptr>>0) & 0x3FFFFF;
-
-						if( slot_header == slot_trailer && Nwords == Nwords_trailer ){
-							return true;
-						}else{
-							return false;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// either first word was not a block header or no block trailer was found
-	return false;
-}
-
-//----------------
-// IsF125ADC
-//----------------
-bool JEventSource_EVIO::IsF125ADC(const uint32_t *istart, const uint32_t *iend)
-{
-	return false;
-}
-
-//----------------
-// IsF1TDC
-//----------------
-bool JEventSource_EVIO::IsF1TDC(const uint32_t *istart, const uint32_t *iend)
-{
-	//---- Check for F1TDC
-	// This will check for consistency in the slot numbers for all words
-	// in the buffer. The slot number of data words are checked against
-	// the slot number of the most recently encountered header word.
-	uint32_t slot_header = 1000;
-	uint32_t slot_trailer = 1000;
-	
-	const uint32_t *iptr=istart;
-
-	// skip first word which appears to be ROL marker for F1TDC data
-	if(*istart == 0xf1daffff)iptr++
-
-	// There is no distinction between header and trailer
-	// words other than the order that they appear. We keep
-	// track by flipping this value
-	bool looking_for_header = true;
-
-	// Keep track of the number of valid blocks of F1TDC data we find
-	// (i.e. ones where the header and trailer words were found
-	int Nvalid = 0;
-
-	for(; iptr<iend; iptr++){
-		
-		// ROL end of data marker (only in test setup data)
-		if(*iptr == 0xda0000ff)break;
-		
-		uint32_t slot = (*iptr>>27) & 0x1F;
-		
-		// if slot is 0 or 30, we are supposed to ignore the data.
-		if(slot == 30 || slot ==0)continue;
-		
-		if(((*iptr>>23) & 0x1) == 0){
-			// header/trailer word
-			if(looking_for_header){
-				slot_header = slot;
-				looking_for_header = false;
-			}else{
-				slot_trailer = slot;
-				if(slot_trailer != slot_header)return false;
-				looking_for_header = true;
-				Nvalid++;
-			}
-		}else{
-			// data word
-
-			// if we encounter a data word when we are expecting
-			// a header word, then the current word is not from
-			// an F1TDC. However, if we did find at least one valid
-			// block at the begining, of the buffer, claim the buffer
-			// points to F1TDC data. We check for as many valid F1TDC
-			// blocks as possible to help ensure that is what the data
-			// is.
-			if(looking_for_header)return Nvalid>0;
-
-			// If the slot number does not match, then this is
-			// not valid F1TDC data
-			if(slot != slot_header)return false;
-		}
-	}
-
-	return Nvalid>0;
-}
-
-//----------------
-// IsTS
-//----------------
-bool JEventSource_EVIO::IsTS(const uint32_t *istart, const uint32_t *iend)
-{
-	return false;
-}
-
-//----------------
-// IsTI
-//----------------
-bool JEventSource_EVIO::IsTI(const uint32_t *istart, const uint32_t *iend)
-{
-	return false;
-}
-
-//----------------
-// DumpModuleMap
-//----------------
-void JEventSource_EVIO::DumpModuleMap(void)
-{
-	// Open output file
-	string fname = "module_map.txt";
-	ofstream ofs(fname.c_str());
-	if(!ofs.is_open()){
-		jerr<<"Unable to open file \""<<fname<<"\" for writing!"<<endl;
-		return;
-	}
-	
-	jout<<"Writing module map to file \""<<fname<<"\""<<endl;
-	
-	// Write header
-	time_t now = time(NULL);
-	ofs<<"# Autogenerated module map"<<endl;
-	ofs<<"# Created: "<<ctime(&now);
-	ofs<<"#"<<endl;
-	
-	// Write known module types in header
-	vector<DModuleType> modules;
-	DModuleType::GetModuleList(modules);
-	ofs<<"# Known module types:"<<endl;
-	ofs<<"# ----------------------"<<endl;
-	for(unsigned int i=0; i<modules.size(); i++){
-		string name = modules[i].GetName();
-		string space(12-name.size(), ' ');
-		ofs << "# " << name << space << " -  " << modules[i].GetDescription() <<endl;
-	}
-	ofs<<"#"<<endl;
-	ofs<<"#"<<endl;
-	
-	// Write module map
-	ofs<<"# Format is:"<<endl;
-	ofs<<"# tag num type"<<endl;
-	ofs<<"#"<<endl;
-	
-	map<tagNum, MODULE_TYPE>::iterator iter = module_type.begin();
-	for(; iter!=module_type.end(); iter++){
-		
-		tagNum tag_num = iter->first;
-		MODULE_TYPE type = iter->second;
-		ofs<<tag_num.first<<" "<<(int)tag_num.second<<" "<<DModuleType::GetName(type)<<endl;
-	}
-	ofs<<endl;
-	
-	// Close output file
-	ofs.close();
-}
-#endif
 
 //----------------
 // MergeObjLists
@@ -597,23 +403,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 		ObjList *objs2 = events2.front();
 		events2.pop_front();
 		
-		// The following #define just makes the lines below more compact.
-		// It expands to something like this for each line:
-		//
-		//   objs1->vDf250PulseIntegrals.insert(objs1->vDf250PulseIntegrals.end(), objs1->vDf250PulseIntegrals.begin(), objs1->vDf250PulseIntegrals.end());
-		//
-#define AppendObjs(T)\
-		objs1->v ## T ## s.insert(objs1->v ## T ## s.end(), objs2->v ## T ## s.begin(), objs2->v ## T ## s.end());
-		
-		AppendObjs(Df250PulseIntegral);
-		AppendObjs(Df250StreamingRawData);
-		AppendObjs(Df250WindowSum);
-		AppendObjs(Df250PulseRawData);
-		AppendObjs(Df250TriggerTime);
-		AppendObjs(Df250PulseTime);
-		AppendObjs(Df250WindowRawData);
-		AppendObjs(DF1TDCHit);
-		AppendObjs(DF1TDCTriggerTime);
+		objs1->hit_objs.insert(objs1->hit_objs.end(), objs2->hit_objs.begin(), objs2->hit_objs.end());
 	}
 	
 	// Clear out any references to objects in event2
@@ -751,7 +541,7 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 				ParseTSBank(rocid, iptr, iend, tmp_events);
 				break;
 				
-			case DModuleType::JLAB_TID:
+			case DModuleType::TID:
 				ParseTIBank(rocid, iptr, iend, tmp_events);
 				break;
 				
@@ -842,7 +632,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				}else{
 					iptr--;
 				}
-				if(objs) objs->vDf250TriggerTimes.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
+				if(objs) objs->hit_objs.push_back(new Df250TriggerTime(rocid, slot, itrigger, t));
 				break;
 			case 4: // Window Raw Data
 				// iptr passed by reference and so will be updated automatically
@@ -852,7 +642,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				channel = (*iptr>>23) & 0x0F;
 				sum = (*iptr>>0) & 0x3FFFFF;
 				overflow = (*iptr>>22) & 0x1;
-				if(objs) objs->vDf250WindowSums.push_back(new Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow));
+				if(objs) objs->hit_objs.push_back(new Df250WindowSum(rocid, slot, channel, itrigger, sum, overflow));
 				break;				
 			case 6: // Pulse Raw Data
 				// iptr passed by reference and so will be updated automatically
@@ -863,14 +653,14 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				sum = (*iptr>>0) & 0x7FFFF;
-				if(objs) objs->vDf250PulseIntegrals.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
+				if(objs) objs->hit_objs.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
 				break;
 			case 8: // Pulse Time
 				channel = (*iptr>>23) & 0x0F;
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0xFFFF;
-				if(objs) objs->vDf250PulseTimes.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+				if(objs) objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				break;
 			case 9: // Streaming Raw Data
 				// This is marked "reserved for future implementation" in the current manual (v2).
@@ -946,7 +736,7 @@ void JEventSource_EVIO::MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, ui
 	// but don't have an event to assign it to. If "objs" is non-NULL, add this object to
 	// the list. Otherwise, delete it now.
 	if(objs){
-		objs->vDf250WindowRawDatas.push_back(wrd);
+		objs->hit_objs.push_back(wrd);
 	}else{
 		delete wrd;
 	}
@@ -1000,7 +790,7 @@ void JEventSource_EVIO::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uin
 	// but don't have an event to assign it to. If "objs" is non-NULL, add this object to
 	// the list. Otherwise, delete it now.
 	if(objs){
-		objs->vDf250PulseRawDatas.push_back(prd);
+		objs->hit_objs.push_back(prd);
 	}else{
 		delete prd;
 	}
@@ -1110,7 +900,7 @@ void JEventSource_EVIO::ParseF1TDCBank_style1(int32_t rocid, const uint32_t* &ip
 			uint32_t time = (*iptr>>0) & 0xFFFF;
 			
 			DF1TDCHit *hit = new DF1TDCHit(rocid, slot, channel, ievent, trig_time, time);
-			if(objs)objs->vDF1TDCHits.push_back(hit);
+			if(objs)objs->hit_objs.push_back(hit);
 		}
 	}
 	
@@ -1192,7 +982,7 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 		if(objs)events.push_back(objs);
 		objs = new ObjList();
 		
-		if(objs) objs->vDF1TDCTriggerTimes.push_back(new DF1TDCTriggerTime(rocid, slot_block_header, itrigger, trig_time));
+		if(objs) objs->hit_objs.push_back(new DF1TDCTriggerTime(rocid, slot_block_header, itrigger, trig_time));
 			
 		// Advance past last timestamp word to first data word (or rather, F1 chip header)
 		iptr++;
@@ -1246,7 +1036,7 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 					channel = (chip<<3) + (chan<<0);
 					time = (*iptr>>0) & 0xFFFF;
 					hit = new DF1TDCHit(rocid, slot_block_header, channel, itrigger, trig_time, time);
-					if(objs)objs->vDF1TDCHits.push_back(hit);
+					if(objs)objs->hit_objs.push_back(hit);
 					break;
 				case 0xA8000000: // F1 Trailer
 					my_itrigger = ((*iptr)>>16) & 0x3F;
@@ -1320,3 +1110,182 @@ void JEventSource_EVIO::ParseTIBank(int32_t rocid, const uint32_t* &iptr, const 
 	
 }
 
+
+#if 0
+//----------------
+// GuessModuleType
+//----------------
+MODULE_TYPE JEventSource_EVIO::GuessModuleType(const uint32_t* istart, const uint32_t* iend, evioDOMNodeP bankPtr)
+{
+	/// Try parsing through the information in the given data buffer
+	/// to determine which type of module produced the data.
+
+	if(IsFADC250(istart, iend)) return DModuleType::FADC250;
+	if(IsF125ADC(istart, iend)) return DModuleType::F125ADC;
+	if(IsF1TDC(istart, iend)) return DModuleType::F1TDC;
+	if(IsTS(istart, iend)) return DModuleType::JLAB_TS;
+	if(IsTI(istart, iend)) return DModuleType::JLAB_TID;
+	
+
+	// Couldn't figure it out...
+	return DModuleType::UNKNOWN;
+}
+
+//----------------
+// IsFADC250
+//----------------
+bool JEventSource_EVIO::IsFADC250(const uint32_t *istart, const uint32_t *iend)
+{
+	//---- Check for f250
+	// This will check if the first word appears to be a block header.
+	// If so, it loops over all words looking for a block trailer.
+	// If the slot number in the block trailer matches that in the
+	// block header AND the number of words in the block matches that
+	// specified in the block trailer, then it is assumed to be a f250.
+	if(((*istart>>31) & 0x1) == 1){
+		uint32_t data_type = (*istart>>27) & 0x0F;
+		if(data_type == 0){ // Block Header
+			uint32_t slot_header = (*istart>>22) & 0x1F;
+			uint32_t Nwords = 1;
+			for(const uint32_t *iptr=istart; iptr<iend; iptr++, Nwords++){
+				if(((*iptr>>31) & 0x1) == 1){
+					uint32_t data_type = (*iptr>>27) & 0x0F;
+					if(data_type == 1){ // Block Trailer
+						uint32_t slot_trailer = (*iptr>>22) & 0x1F;
+						uint32_t Nwords_trailer = (*iptr>>0) & 0x3FFFFF;
+
+						if( slot_header == slot_trailer && Nwords == Nwords_trailer ){
+							return true;
+						}else{
+							return false;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// either first word was not a block header or no block trailer was found
+	return false;
+}
+
+//----------------
+// IsF1TDC
+//----------------
+bool JEventSource_EVIO::IsF1TDC(const uint32_t *istart, const uint32_t *iend)
+{
+	//---- Check for F1TDC
+	// This will check for consistency in the slot numbers for all words
+	// in the buffer. The slot number of data words are checked against
+	// the slot number of the most recently encountered header word.
+	uint32_t slot_header = 1000;
+	uint32_t slot_trailer = 1000;
+	
+	const uint32_t *iptr=istart;
+
+	// skip first word which appears to be ROL marker for F1TDC data
+	if(*istart == 0xf1daffff)iptr++
+
+	// There is no distinction between header and trailer
+	// words other than the order that they appear. We keep
+	// track by flipping this value
+	bool looking_for_header = true;
+
+	// Keep track of the number of valid blocks of F1TDC data we find
+	// (i.e. ones where the header and trailer words were found
+	int Nvalid = 0;
+
+	for(; iptr<iend; iptr++){
+		
+		// ROL end of data marker (only in test setup data)
+		if(*iptr == 0xda0000ff)break;
+		
+		uint32_t slot = (*iptr>>27) & 0x1F;
+		
+		// if slot is 0 or 30, we are supposed to ignore the data.
+		if(slot == 30 || slot ==0)continue;
+		
+		if(((*iptr>>23) & 0x1) == 0){
+			// header/trailer word
+			if(looking_for_header){
+				slot_header = slot;
+				looking_for_header = false;
+			}else{
+				slot_trailer = slot;
+				if(slot_trailer != slot_header)return false;
+				looking_for_header = true;
+				Nvalid++;
+			}
+		}else{
+			// data word
+
+			// if we encounter a data word when we are expecting
+			// a header word, then the current word is not from
+			// an F1TDC. However, if we did find at least one valid
+			// block at the begining, of the buffer, claim the buffer
+			// points to F1TDC data. We check for as many valid F1TDC
+			// blocks as possible to help ensure that is what the data
+			// is.
+			if(looking_for_header)return Nvalid>0;
+
+			// If the slot number does not match, then this is
+			// not valid F1TDC data
+			if(slot != slot_header)return false;
+		}
+	}
+
+	return Nvalid>0;
+}
+
+//----------------
+// DumpModuleMap
+//----------------
+void JEventSource_EVIO::DumpModuleMap(void)
+{
+	// Open output file
+	string fname = "module_map.txt";
+	ofstream ofs(fname.c_str());
+	if(!ofs.is_open()){
+		jerr<<"Unable to open file \""<<fname<<"\" for writing!"<<endl;
+		return;
+	}
+	
+	jout<<"Writing module map to file \""<<fname<<"\""<<endl;
+	
+	// Write header
+	time_t now = time(NULL);
+	ofs<<"# Autogenerated module map"<<endl;
+	ofs<<"# Created: "<<ctime(&now);
+	ofs<<"#"<<endl;
+	
+	// Write known module types in header
+	vector<DModuleType> modules;
+	DModuleType::GetModuleList(modules);
+	ofs<<"# Known module types:"<<endl;
+	ofs<<"# ----------------------"<<endl;
+	for(unsigned int i=0; i<modules.size(); i++){
+		string name = modules[i].GetName();
+		string space(12-name.size(), ' ');
+		ofs << "# " << name << space << " -  " << modules[i].GetDescription() <<endl;
+	}
+	ofs<<"#"<<endl;
+	ofs<<"#"<<endl;
+	
+	// Write module map
+	ofs<<"# Format is:"<<endl;
+	ofs<<"# tag num type"<<endl;
+	ofs<<"#"<<endl;
+	
+	map<tagNum, MODULE_TYPE>::iterator iter = module_type.begin();
+	for(; iter!=module_type.end(); iter++){
+		
+		tagNum tag_num = iter->first;
+		MODULE_TYPE type = iter->second;
+		ofs<<tag_num.first<<" "<<(int)tag_num.second<<" "<<DModuleType::GetName(type)<<endl;
+	}
+	ofs<<endl;
+	
+	// Close output file
+	ofs.close();
+}
+#endif

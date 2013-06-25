@@ -13,13 +13,16 @@
 #include <vector>
 #include <queue>
 #include <list>
+#include <set>
 using std::map;
 using std::vector;
 using std::queue;
+using std::set;
 
 #include <JANA/jerror.h>
 #include <JANA/JEventSource.h>
 #include <JANA/JEvent.h>
+#include <JANA/JFactory.h>
 
 #include <evioChannel.hxx>
 #include <evioUtil.hxx>
@@ -45,6 +48,15 @@ using namespace evio;
 /// The type of boards it can understand can be expanded to include additional
 /// boards. To do this, files must be edited in a few places:
 ///
+/// In DModuleType.h
+/// ------------------
+/// 1.) The new module type must be added to the type_id_t enum.
+///     Make sure "N_MODULE_TYPES" is the last item in the enum.
+///
+/// 2.) Add a case for the module type to the switch in the
+///     GetModule method.
+///
+///
 /// Create Data Object files
 /// -------------------------
 ///
@@ -57,55 +69,32 @@ using namespace evio;
 ///     Df250PulseIntegral.h for examples.
 ///
 ///
-/// In DModuleType.h
-/// ------------------
-/// 1.) The new module type must be added to the type_id_t enum.
-///     Make sure "N_MODULE_TYPES" is the last item in the enum.
-///
-/// 2.) Add a case for the module type to the switch in the
-///     GetModule method.
-///
-///
 /// JEventSource_EVIO.h
 /// -------------------
 /// 1.) Add an appropriate #include near the top of the file for
-///     each type of data object created in the first step.
+///     each type of data object created in the previous step.
 ///
-/// 2.) Add an appropriate container for each new type of data
-///     to the member class "ObjList". Stick to the existing
-///     naming scheme which has a "v" as the first letter
-///     followed by the data class name. This is needed since
-///     some macros are used in another file that assume the
-///     variable name is based on the data class name in this
-///     way.
-///     example:
-///             vector<DF1TDCHit*>             vDF1TDCHits;
-///
-/// 3.) Add an appropriate declaration for a "ParseXXXBank"
+/// 2.) Add an appropriate declaration for a "ParseXXXBank"
 ///     where the "XXX" is the new module type.
 ///     example:
 ///        void ParseF1TDCBank(evioDOMNodeP bankPtr, list<ObjList*> &events);
 ///
+/// 3.) If the routine JFactory_base_CopyTo() still exists at the
+///     bottom of this file, then add a line for each data type to it.
+///
 ///
 /// JEventSource_EVIO.cc
 /// --------------------
-/// 1.) In the GetObjects() method, add a "CopyToFactory(...)"
-///     call near the end for each data type the module produces.
+/// 1.) In the JEventSource_EVIO::JEventSource_EVIO() constructor,
+///     add a line to insert the data type into event_source_data_types
+///     for each data type the module produces.
 ///
-/// 2.) Add appropriate code to the "GuessModuleType()" method.
-///     This should look into the bank and try and determine if
-///     if contains data from the new module type. See the
-///     existing code for examples.
-///
-/// 3.) In the "MergeObjLists()" method near the end, add an
-///     "AppendObjs(...)" line for each data type the module
-///     produces.
-///
-/// 4.) In the "ParseEVIOEvent()" method, add a case for the
+/// 2.) In the "ParseEVIOEvent()" method, add a case for the
 ///     new module type that calls the new "ParseXXXBank()"
-///     method.
+///     method. (Note if this is JLab module, then you'll
+///     need to add a case to ParseJLabModuleData() ).
 ///
-/// 5.) Add the new ParseXXXBank() method. Preferrably to the
+/// 3.) Add the new ParseXXXBank() method. Preferrably to the
 ///     end of the file or more importantly, in the order the
 ///     method appears in the class definition.
 ///
@@ -143,21 +132,14 @@ class JEventSource_EVIO: public jana::JEventSource{
 		// include the exact name of the class with a "v" in front
 		// and an "s" in back. (See #define in JEventSource_EVIO.cc
 		// for more details.)
+		vector< vector<DDAQAddress*> > hit_objs;
 		class ObjList{
 		public:
 			
 			int32_t run_number;
 			bool own_objects; // keeps track of whether these objects were copied to factories or not
 			
-			vector<Df250PulseIntegral*>    vDf250PulseIntegrals;
-			vector<Df250PulseRawData*>     vDf250PulseRawDatas;
-			vector<Df250PulseTime*>        vDf250PulseTimes;
-			vector<Df250StreamingRawData*> vDf250StreamingRawDatas;
-			vector<Df250TriggerTime*>      vDf250TriggerTimes;
-			vector<Df250WindowRawData*>    vDf250WindowRawDatas;
-			vector<Df250WindowSum*>        vDf250WindowSums;
-			vector<DF1TDCHit*>             vDF1TDCHits;
-			vector<DF1TDCTriggerTime*>     vDF1TDCTriggerTimes;
+			vector<DDAQAddress*> hit_objs;
 		};
 	
 		// EVIO events with more than one DAQ event ("blocked" or
@@ -165,14 +147,15 @@ class JEventSource_EVIO: public jana::JEventSource{
 		// stored in the following container so they can be dispensed
 		// as needed.
 		queue<ObjList*> stored_events;
+		
+		// List of the data types this event source can provide
+		// (filled in the constructor)
+		set<string> event_source_data_types;
 	
 		int32_t GetRunNumber(evioDOMTree *evt);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
-		bool IsF125ADC(const uint32_t *istart, const uint32_t *iend);
 		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);
-		bool IsTS(const uint32_t *istart, const uint32_t *iend);
-		bool IsTI(const uint32_t *istart, const uint32_t *iend);
 		void DumpModuleMap(void);
 		
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
@@ -193,6 +176,64 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 	
 };
+
+
+//----------------------------------------------------------------------
+/// JFactory_base_CopyToT and JFactory_base_CopyTo
+///
+/// A Mantis request has been submitted to add a virtual method to
+/// JFactory_base that takes a vector<JObject*>& with an overload
+/// of that method in the JFactory<T> subclass. The JFactory<T> method
+/// will then try to dynamically cast each JObject* into the appropriate
+/// type and store it in the factory. When that is working, these two
+/// routines will not be required here.
+/// 
+/// In the  meantime, this serves as a placeholder that can be easily
+/// converted once JANA has been updated.
+//----------------------------------------------------------------------
+template<class T>
+bool JFactory_base_CopyToT(jana::JFactory_base *fac, vector<jana::JObject *>& objs)
+{
+	// Try casting this factory to the desired type of JFactory<>
+	jana::JFactory<T> *tfac = dynamic_cast<jana::JFactory<T>* >(fac);
+	if(!tfac) return false;
+	
+	// Factory cast worked. Cast all pointers
+	vector<T*> tobjs;
+	for(unsigned int i=0; i<objs.size(); i++){
+		T *tobj = dynamic_cast<T*>(objs[i]);
+		if(tobj) tobjs.push_back(tobj);
+	}
+	
+	// If all input objects weren't converted, then just return false
+	if(tobjs.size() != objs.size()) return false;
+	
+	// Copy pointers into factory
+	if(tobjs.size()>0) tfac->CopyTo(tobjs);
+	return true;
+}
+
+//----------------------------
+// JFactory_base_CopyTo
+//----------------------------
+static bool JFactory_base_CopyTo(jana::JFactory_base *fac, vector<jana::JObject *>& objs)
+{
+	// Eventually, this will be a virtual method of JFactory_base
+	// that gets implemented in JFactory<T> which will know how
+	// to cast the objects. For now though, we have to try all known
+	// data types.
+	if( JFactory_base_CopyToT<Df250PulseIntegral>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df250StreamingRawData>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df250WindowSum>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df250PulseRawData>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df250TriggerTime>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df250PulseTime>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df250WindowRawData>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<DF1TDCHit>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<DF1TDCTriggerTime>(fac, objs) ) return true;
+
+	return false;
+}
 
 #endif // _JEventSourceGenerator_DAQ_
 

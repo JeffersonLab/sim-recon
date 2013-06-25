@@ -8,10 +8,9 @@
 #ifndef _Df250StreamingRawData_
 #define _Df250StreamingRawData_
 
-#include <JANA/jerror.h>
-#include <JANA/JFactory.h>
+#include <DAQ/DDAQAddress.h>
 
-class Df250StreamingRawData:public jana::JObject{
+class Df250StreamingRawData:public DDAQAddress{
 	
 	/// Holds streaming raw data for one event in one
 	/// channel of a single f250 Flash ADC module.
@@ -22,9 +21,6 @@ class Df250StreamingRawData:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250StreamingRawData);
 		
-		uint32_t rocid;             // from EVIO header (crate number)
-		uint32_t slot;              // from Block Header
-		uint32_t channel;           // from Streaming Raw Data word
 		vector<uint16_t> samples;   // from Streaming Raw Data words 2-N (each word contains 2 samples)
 		bool invalid_samples;       // true if any sample's "not valid" bit set
 		bool overflow;              // true if any sample's "overflow" bit set
@@ -32,9 +28,7 @@ class Df250StreamingRawData:public jana::JObject{
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "rocid", "%d", rocid);
-			AddString(items, "slot", "%d", slot);
-			AddString(items, "channel", "%d", channel);
+			DDAQAddress::toStrings(items);
 			AddString(items, "Nsamples", "%d", samples.size());
 			AddString(items, "invalid_samples", "%d", invalid_samples);
 			AddString(items, "overflow", "%d", overflow);

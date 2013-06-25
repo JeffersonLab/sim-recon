@@ -8,10 +8,9 @@
 #ifndef _Df250WindowRawData_
 #define _Df250WindowRawData_
 
-#include <JANA/jerror.h>
-#include <JANA/JFactory.h>
+#include <DAQ/DDAQAddress.h>
 
-class Df250WindowRawData:public jana::JObject{
+class Df250WindowRawData:public DDAQAddress{
 
 	/// Holds window raw data samples for one event in
 	/// one channel of a single f250 Flash ADC module.
@@ -19,12 +18,8 @@ class Df250WindowRawData:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250WindowRawData);
 	
-		Df250WindowRawData(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0):rocid(rocid),slot(slot),channel(channel),itrigger(itrigger),invalid_samples(false),overflow(false){}
+		Df250WindowRawData(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0):DDAQAddress(rocid, slot, channel, itrigger),invalid_samples(false),overflow(false){}
 	
-		uint32_t rocid;          // from EVIO header (crate number)
-		uint32_t slot;           // from Block Header
-		uint32_t channel;        // from Window Raw Data 1st word
-		uint32_t itrigger;       // from Event Header
 		vector<uint16_t> samples;// from Window Raw Data words 2-N (each word contains 2 samples)
 		bool invalid_samples;    // true if any sample's "not valid" bit set
 		bool overflow;           // true if any sample's "overflow" bit set
@@ -32,10 +27,7 @@ class Df250WindowRawData:public jana::JObject{
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "rocid", "%d", rocid);
-			AddString(items, "slot", "%d", slot);
-			AddString(items, "channel", "%d", channel);
-			AddString(items, "itrigger", "%d", itrigger);
+			DDAQAddress::toStrings(items);
 			AddString(items, "Nsamples", "%d", samples.size());
 			AddString(items, "invalid_samples", "%d", invalid_samples);
 			AddString(items, "overflow", "%d", overflow);

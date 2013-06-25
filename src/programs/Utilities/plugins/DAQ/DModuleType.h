@@ -15,7 +15,7 @@ class DModuleType{
 
 		// NOTE: The following enum MUST be kept in alignment with the DAQ
 		// group's definitions! The real data will include this module
-		// type in the Block Header for JLab modules.
+		// type in the Block Header for JLab modules (bits 18-21).
 		//
 		// These were taken from mc2coda.h v2
 		// (see /site/coda/3.0/extensions/mc2coda/v2.0/mc2coda.h)
@@ -23,22 +23,33 @@ class DModuleType{
 		// Add new module types to end of list *before*  N_MODULE_TYPES
 		// To add a new module, one also needs to add a new case to the
 		// the switch in the GetModule(type_id_t) method below.
-		enum type_id_t{
-			
-			UNKNOWN,   // 0
-			VMECPU,    // 1
-			JLAB_TID,  // 2
-			FADC250,   // 3
-			FADC125,   // 4
-			F1TDC32,   // 5
-			F1TDC48,   // 6
-			CAEN1190,  // 7
-			CAEN1290,  // 8
-			UNDEFINED_MODULE_TYPE, // 9
-			JLAB_DISC, // 10
-			JLAB_TS,   // 11
-			
-			N_MODULE_TYPES
+		enum type_id_t {
+			TID,               // =0
+			FADC250,           // =1
+			FADC125,           // =2
+			F1TDC32,           // =3
+			F1TDC48,           // =4
+			JLAB_TS,           // =5
+			TD,                // =6
+			SSP,               // =7
+			JLAB_DISC,         // =8
+			MODULE_TYPE_RES1,  // =9
+			MODULE_TYPE_RES2,  // =10
+			MODULE_TYPE_RES3,  // =11
+			MODULE_TYPE_RES4,  // =12
+			MODULE_TYPE_RES5,  // =13
+			MODULE_TYPE_RES6,  // =14
+			MODULE_TYPE_RES7,  // =15
+
+			// The following are not defined by the DAQ group (i.e.
+			// they don't control the data format so can't encode
+			// the module type in it)
+			UNKNOWN,           // =16
+			VMECPU,            // =17
+			CAEN1190,          // =18
+			CAEN1290,          // =19
+
+			N_MODULE_TYPES     // Make sure this is the last thing in the enum!
 		};
 
 		//------------------------------
@@ -55,17 +66,20 @@ class DModuleType{
 		/// not really intended to be called every event.
 		static DModuleType GetModule(type_id_t id){
 			switch(id){
-				case VMECPU:    return DModuleType(VMECPU,    "VMECPU",    "VME CPU");
-				case JLAB_TID:  return DModuleType(JLAB_TID,  "JLAB_TID",  "JLab Trigger Interface");
-				case FADC250:   return DModuleType(FADC250,   "FADC250",   "JLab Flash 250 MHz ADC");
-				case FADC125:   return DModuleType(FADC125,   "FADC125",   "JLab Flash 125 MHz ADC");
-				case F1TDC32:   return DModuleType(F1TDC32,   "F1TDC32",   "JLab F1 TDC (32 chan)");
-				case F1TDC48:   return DModuleType(F1TDC48,   "F1TDC48",   "JLab F1 TDC (48 chan)");
-				case CAEN1190:  return DModuleType(CAEN1190,  "CAEN1190",  "CAEN 1190 TDC");
-				case CAEN1290:  return DModuleType(CAEN1290,  "CAEN1290",  "CAEN 1290 TDC");
-				case JLAB_DISC: return DModuleType(JLAB_DISC, "JLAB_DISC", "JLab Discriminator??");
-				case JLAB_TS:   return DModuleType(JLAB_TS,   "JLAB_TS",   "JLab Trigger Supervisor");
-					
+				case TID      : return DModuleType(TID,       "TID"      , "JLab Trigger Interface");
+				case FADC250  : return DModuleType(FADC250,   "FADC250"  , "JLab Flash 250 MHz ADC");
+				case FADC125  : return DModuleType(FADC125,   "FADC125"  , "JLab Flash 125 MHz ADC");
+				case F1TDC32  : return DModuleType(F1TDC32,   "F1TDC32"  , "JLab F1 TDC (32 chan)");
+				case F1TDC48  : return DModuleType(F1TDC48,   "F1TDC48"  , "JLab F1 TDC (48 chan)");
+				case JLAB_TS  : return DModuleType(JLAB_TS,   "JLAB_TS"  , "JLab Trigger Supervisor");
+				case TD       : return DModuleType(TD,        "TD"       , "JLab Trigger Distribution");
+				case SSP      : return DModuleType(SSP,       "SSP"      , "JLab Sub-System Processor");
+				case JLAB_DISC: return DModuleType(JLAB_DISC, "JLAB_DISC", "JLab Discriminator");
+
+				case VMECPU   : return DModuleType(VMECPU,    "VMECPU"   , "VME CPU");
+				case CAEN1190 : return DModuleType(CAEN1190,  "CAEN1190" , "CAEN 1190 TDC");
+				case CAEN1290 : return DModuleType(CAEN1290,  "CAEN1290" , "CAEN 1290 TDC");
+				
 				default: return DModuleType(UNKNOWN, "UNKNOWN", "Unknown module type");
 			}
 		}

@@ -8,10 +8,9 @@
 #ifndef _Df250PulseIntegral_
 #define _Df250PulseIntegral_
 
-#include <JANA/jerror.h>
-#include <JANA/JFactory.h>
+#include <DAQ/DDAQAddress.h>
 
-class Df250PulseIntegral:public jana::JObject{
+class Df250PulseIntegral:public DDAQAddress{
 	
 	/// Holds pulse integral data for one identified
 	/// pulse in one event in one channel of a single
@@ -20,12 +19,8 @@ class Df250PulseIntegral:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(Df250PulseIntegral);
 
-		Df250PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t integral=0):rocid(rocid),slot(slot),channel(channel),itrigger(itrigger),pulse_number(pulse_number),quality_factor(quality_factor),integral(integral){}
+		Df250PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t integral=0):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),integral(integral){}
 		
-		uint32_t rocid;                // from EVIO header (crate number)
-		uint32_t slot;                 // from Block Header
-		uint32_t channel;              // from Pulse Integral Data word
-		uint32_t itrigger;             // from Event Header
 		uint32_t pulse_number;         // from Pulse Integral Data word
 		uint32_t quality_factor;       // from Pulse Integral Data word
 		uint32_t integral;             // from Pulse Integral Data word
@@ -33,10 +28,7 @@ class Df250PulseIntegral:public jana::JObject{
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "rocid", "%d", rocid);
-			AddString(items, "slot", "%d", slot);
-			AddString(items, "channel", "%d", channel);
-			AddString(items, "itrigger", "%d", itrigger);
+			DDAQAddress::toStrings(items);
 			AddString(items, "pulse_number", "%d", pulse_number);
 			AddString(items, "quality_factor", "%d", quality_factor);
 			AddString(items, "integral", "%d", integral);

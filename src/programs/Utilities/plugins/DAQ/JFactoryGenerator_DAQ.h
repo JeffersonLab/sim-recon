@@ -9,7 +9,9 @@
 #define _JFactoryGenerator_DAQ_
 
 #include <JANA/jerror.h>
+#include <JANA/JFactory.h>
 #include <JANA/JFactoryGenerator.h>
+#include <JANA/JEventLoop.h>
 using namespace jana;
 
 #include "Df250PulseIntegral.h"
