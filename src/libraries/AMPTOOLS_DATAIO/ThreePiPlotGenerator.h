@@ -1,5 +1,5 @@
-#if !(defined GLUEXPLOTGENERATOR)
-#define GLUEXPLOTGENERATOR
+#if !(defined THREEPIPLOTGENERATOR)
+#define THREEPIPLOTGENERATOR
 
 #include <vector>
 #include <string>
@@ -11,7 +11,7 @@ using namespace std;
 class AmpToolsInterface;
 class Kinematics;
 
-class GlueXPlotGenerator : public PlotGenerator
+class ThreePiPlotGenerator : public PlotGenerator
 {
     
 public:
@@ -19,7 +19,7 @@ public:
   // create an index for different histograms
   enum { kHist1 = 0, kNumHists };
   
-  GlueXPlotGenerator( AmpToolsInterface& ati );
+  ThreePiPlotGenerator( AmpToolsInterface& ati );
     
 private:
         

@@ -1,9 +1,9 @@
 
-#include "AMPTOOLS_DATAIO/GlueXPlotGenerator.h"
+#include "AMPTOOLS_DATAIO/ThreePiPlotGenerator.h"
 #include "IUAmpTools/Histogram.h"
 #include "IUAmpTools/Kinematics.h"
 
-GlueXPlotGenerator::GlueXPlotGenerator( AmpToolsInterface& ati ) :
+ThreePiPlotGenerator::ThreePiPlotGenerator( AmpToolsInterface& ati ) :
 PlotGenerator( ati )
 {
   // calls to bookHistogram go here
@@ -13,7 +13,7 @@ PlotGenerator( ati )
 }
 
 void
-GlueXPlotGenerator::projectEvent( Kinematics* kin ){
+ThreePiPlotGenerator::projectEvent( Kinematics* kin ){
   
   HepLorentzVector P1 = kin->particle( 0 );
   
