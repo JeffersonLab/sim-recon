@@ -6,6 +6,8 @@
 
   enum { kMaxPoints = 100 };
 
+  double eventCounter = 0;
+
   double mass[kMaxPoints];
   double masse[kMaxPoints];
   double rhoPiSWave[kMaxPoints];
@@ -20,6 +22,8 @@
   double rhoPiPWavee[kMaxPoints];
   double all[kMaxPoints];
   double alle[kMaxPoints];
+  double phase[kMaxPoints];
+  double phasee[kMaxPoints];
 
   int line = 0;
   while( ! in.eof() ){
@@ -30,8 +34,11 @@
        >> rhoPiPXWave[line] >> rhoPiPXWavee[line]
        >> f2PiSWave[line] >> f2PiSWavee[line]
        >> rhoPiPWave[line] >> rhoPiPWavee[line]
-       >> all[line] >> alle[line];
+       >> all[line] >> alle[line]
+       >> phase[line] >> phasee[line];
 
+    eventCounter += all[line];
+    
     line++;
   }
 
@@ -53,7 +60,10 @@
   TGraphErrors allGraph( line, mass, all, masse, alle );
   allGraph.SetMarkerStyle( 20 );
   allGraph.SetMarkerSize( 0.5 );
-
+  TGraphErrors phaseGraph( line, mass, phase, masse, phasee );
+  phaseGraph.SetMarkerStyle( 20 );
+  phaseGraph.SetMarkerSize( 0.5 );
+  
   TCanvas* can = new TCanvas( "can", "Amplitude Analysis Plots", 800, 800 );
   can->Divide( 2, 3 );
 
@@ -104,5 +114,7 @@
   h6.SetStats( 0 );
   h6.Draw();
   allGraph.Draw( "P" );
+
+  cout << "Total number of events:  " << eventCounter << endl;
 }
 

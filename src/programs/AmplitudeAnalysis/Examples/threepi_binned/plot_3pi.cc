@@ -7,17 +7,9 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "AMPTOOLS_DATAIO/GlueXPlotGenerator.h"
-#include "AMPTOOLS_DATAIO/ROOTDataReader.h"
-#include "AMPTOOLS_AMPS/ThreePiAngles.h"
-#include "AMPTOOLS_AMPS/BreitWigner.h"
-#include "IUAmpTools/ConfigFileParser.h"
-#include "IUAmpTools/AmpToolsInterface.h"
-#include "CLHEP/Vector/LorentzVector.h"
+#include "IUAmpTools/FitResults.h"
 
-#include "TH1F.h"
 using namespace std;
-using namespace CLHEP;
 
 int main( int argc, char* argv[] ){
   
@@ -47,7 +39,7 @@ int main( int argc, char* argv[] ){
   }
   
   if (outfileName.size() == 0){
-    cout << "No config file specified" << endl;
+    cout << "No output file specified" << endl;
     exit(1);
   }
   
@@ -59,83 +51,51 @@ int main( int argc, char* argv[] ){
   // descend into the directory that contains the bins
   chdir( fitDir.c_str() );
   
-  // To create an AmpToolsInterface all of the relevant amplitudes need
-  // to be registered.  Look for this to go away in future version of
-  // AmpTools where it will be possible to create a PlotGenerator or
-  // get information about the fit directly from the FitResults object.
-  
-  AmpToolsInterface::registerAmplitude( ThreePiAngles() );
-  AmpToolsInterface::registerAmplitude( BreitWigner() );
-  AmpToolsInterface::registerDataReader( ROOTDataReader() );
-  
-  AmpToolsInterface ati;
-
 	for( int i = 0; i < kNumBins; ++i ){
 		
     ostringstream dir;
     dir << "bin_" << i;
     chdir( dir.str().c_str() );
 
-    ostringstream parFile;
-		parFile << "bin_" << i << ".fit";
+    ostringstream resultsFile;
+    resultsFile << "bin_" << i << ".fit";
     
-    // check to be sure the parameter file exists
-    // in cases where the fit fails, there won't be a parameter file
-    ifstream parFileTest;
-    parFileTest.open( parFile.str().c_str() );
-    if( parFileTest.fail() ){
-      
-      chdir( ".." );
-      continue; 
-    }
-    else{
-      
-      parFileTest.close();
-    }
-    
-    ostringstream configFile;
-		configFile << "bin_" << i << ".cfg";
-    
-    ConfigFileParser parser(configFile.str());
-    ConfigurationInfo* cfgInfo = parser.getConfigurationInfo();
-    
-    ati.resetConfigurationInfo( cfgInfo );
+    FitResults results( resultsFile.str() );
+    if( !results.valid() ) continue;
     
   	// print out the bin center
 		outfile << lowMass + step * i + step / 2. << "\t";
-		
-    GlueXPlotGenerator plotGen( ati );
-    
+		  
     bool yPol = false;
     
     vector< string > rhoPiS;
 		rhoPiS.push_back( "Pi+Pi-Pi+::xpol::a1_rhopi_S" );
     if( yPol ) rhoPiS.push_back( "Pi+Pi-Pi+::ypol::a1_rhopi_S" );
-		pair< double, double > rhoPiSInt = plotGen.intensity( rhoPiS );
+		pair< double, double > rhoPiSInt = results.intensity( rhoPiS );
 		outfile << rhoPiSInt.first << "\t" << rhoPiSInt.second << "\t";
     
     vector< string > rhoPiD;
     rhoPiD.push_back( "Pi+Pi-Pi+::xpol::a2_rhopi_D" );
     if( yPol ) rhoPiD.push_back( "Pi+Pi-Pi+::ypol::a2_rhopi_D" );
-    pair< double, double > rhoPiDInt = plotGen.intensity( rhoPiD );
+    pair< double, double > rhoPiDInt = results.intensity( rhoPiD );
     outfile << rhoPiDInt.first << "\t" << rhoPiDInt.second << "\t";
     
 		vector< string > rhoPiPX;
 		rhoPiPX.push_back( "Pi+Pi-Pi+::xpol::pi1_rhopi_P" );
     if( yPol ) rhoPiPX.push_back( "Pi+Pi-Pi+::ypol::pi1_rhopi_P" );
-		pair< double, double > rhoPiPXInt = plotGen.intensity( rhoPiPX );
+		pair< double, double > rhoPiPXInt = results.intensity( rhoPiPX );
 		outfile << rhoPiPXInt.first << "\t" << rhoPiPXInt.second << "\t";
     
     vector< string > f2PiS;
 		f2PiS.push_back( "Pi+Pi-Pi+::xpol::pi2_f2pi_S" );
     if( yPol ) f2PiS.push_back( "Pi+Pi-Pi+::ypol::pi2_f2pi_S" );
-		pair< double, double > f2PiSInt = plotGen.intensity( f2PiS );
+		pair< double, double > f2PiSInt = results.intensity( f2PiS );
 		outfile << f2PiSInt.first << "\t" << f2PiSInt.second << "\t";
     
     vector< string > rhoPiP;
 		rhoPiP.push_back( "Pi+Pi-Pi+::xpol::pi2_rhopi_P" );
     if( yPol ) rhoPiP.push_back( "Pi+Pi-Pi+::ypol::pi2_rhopi_P" );
-		pair< double, double > rhoPiPInt = plotGen.intensity( rhoPiP );
+		pair< double, double > rhoPiPInt = results.intensity( rhoPiP );
 		outfile << rhoPiPInt.first << "\t" << rhoPiPInt.second << "\t";
     
 		vector< string > all;
@@ -149,11 +109,15 @@ int main( int argc, char* argv[] ){
     if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::pi1_rhopi_P" );
     if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::pi2_f2pi_S" );
     if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::pi2_rhopi_P" );
-    pair< double, double > allInt = plotGen.intensity( all );
+    pair< double, double > allInt = results.intensity( all );
 		outfile << allInt.first << "\t" << allInt.second << "\t";
-		
-    //		outfile << plotGen.phaseDiff( dWave, sWave ) << endl;
+    
+    pair< double, double > phase =
+    results.phaseDiff( "Pi+Pi-Pi+::xpol::a2_rhopi_D",
+                       "Pi+Pi-Pi+::xpol::pi1_rhopi_P" );
   
+    outfile << phase.first << "\t" << phase.second << "\t";
+    
     outfile << endl;
     
     chdir( ".." );
