@@ -480,7 +480,6 @@ void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string loc
 void DEventWriterROOT::Create_Branches_ThrownParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString, bool locIsOnlyThrownFlag) const
 {
 	//IDENTIFIERS
-	Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "ObjectID", locArraySizeString, (*dNumThrownArraySizeMap)[locTree], "i");
 	Create_Branch_FundamentalArray<UInt_t>(locTree, locParticleBranchName, "ParentID", locArraySizeString, (*dNumThrownArraySizeMap)[locTree], "i");
 	Create_Branch_FundamentalArray<Int_t>(locTree, locParticleBranchName, "PID_PDG", locArraySizeString, (*dNumThrownArraySizeMap)[locTree], "I");
 	if(!locIsOnlyThrownFlag)
@@ -932,8 +931,6 @@ void DEventWriterROOT::Fill_ThrownParticleData(TTree* locTree, unsigned int locA
 void DEventWriterROOT::Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DMCThrown* locMCThrown, map<int, unsigned int> locThrownObjectIDMap, const DMCThrownMatching* locMCThrownMatching, const map<const DNeutralShower*, int>& locShowerToIDMap) const
 {
 	//IDENTIFIERS
-	unsigned int locObjectID = locThrownObjectIDMap.find(locMCThrown->myid)->second;
-	Fill_FundamentalData<UInt_t>(locTree, "Thrown", "ObjectID", locObjectID, locArrayIndex, locMinArraySize, (*dNumThrownArraySizeMap)[locTree]);
 	unsigned int locParentID = -1;
 	if(locThrownObjectIDMap.find(locMCThrown->parentid) != locThrownObjectIDMap.end())
 		locParentID = locThrownObjectIDMap.find(locMCThrown->parentid)->second;
