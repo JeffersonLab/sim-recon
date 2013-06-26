@@ -230,6 +230,11 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 		locPositionStream << loc_i << "_" << -1;
 		locObjString_Position = new TObjString(locPositionStream.str().c_str());
 		locPositionToPIDMap->Add(locObjString_Position, locObjString_PID);
+		if((locPID == Gamma) || (locPID == Electron) || (locPID == Positron))
+		{
+			locObjString_ParticleName = new TObjString("Beam"); //assumes there is only one!!
+			locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
+		}
 
 		//target particle
 		locPID = locReactionStep->Get_TargetParticleID();
@@ -547,6 +552,13 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 	vector<const DEventRFBunch*> locThrownEventRFBunches;
 	locEventLoop->Get(locThrownEventRFBunches, "Thrown");
 
+	//create map of mcthrown myid to object id (array index)
+	map<int, unsigned int> locThrownObjectIDMap; //myid -> objectid
+	for(size_t loc_i = 0; loc_i < locMCThrowns_FinalState.size(); ++loc_i)
+		locThrownObjectIDMap[locMCThrowns_FinalState[loc_i]->myid] = loc_i;
+	for(size_t loc_i = 0; loc_i < locMCThrowns_Decaying.size(); ++loc_i)
+		locThrownObjectIDMap[locMCThrowns_Decaying[loc_i]->myid] = loc_i + locMCThrowns_FinalState.size();
+
 	string locTreeName = "Thrown_Tree";
 	japp->RootWriteLock();
 	{
@@ -573,9 +585,9 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 		{
 			Fill_FundamentalData<UInt_t>(locTree, "NumThrown", locNumThrown);
 			for(size_t loc_j = 0; loc_j < locMCThrowns_FinalState.size(); ++loc_j)
-				Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_FinalState[loc_j]);
+				Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_FinalState[loc_j], locThrownObjectIDMap);
 			for(size_t loc_j = 0; loc_j < locMCThrowns_Decaying.size(); ++loc_j)
-				Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_Decaying[loc_j]);
+				Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_Decaying[loc_j], locThrownObjectIDMap);
 
 			//THROWN PARTICLES BY PID
 			ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
@@ -708,6 +720,13 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
 		locBeamToIDMap[locBeamPhotons[loc_i]] = loc_i;
 
+	//create map of mcthrown myid to object id (array index)
+	map<int, unsigned int> locThrownObjectIDMap; //myid -> objectid
+	for(size_t loc_i = 0; loc_i < locMCThrowns_FinalState.size(); ++loc_i)
+		locThrownObjectIDMap[locMCThrowns_FinalState[loc_i]->myid] = loc_i;
+	for(size_t loc_i = 0; loc_i < locMCThrowns_Decaying.size(); ++loc_i)
+		locThrownObjectIDMap[locMCThrowns_Decaying[loc_i]->myid] = loc_i + locMCThrowns_FinalState.size();
+
 	string locTreeName = locReaction->Get_ReactionName() + string("_Tree");
 	japp->RootWriteLock();
 	{
@@ -741,9 +760,9 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			{
 				Fill_FundamentalData<UInt_t>(locTree, "NumThrown", locNumThrown);
 				for(size_t loc_j = 0; loc_j < locMCThrowns_FinalState.size(); ++loc_j)
-					Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_FinalState[loc_j], locMCThrownMatching, locShowerToIDMap);
+					Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_FinalState[loc_j], locThrownObjectIDMap, locMCThrownMatching, locShowerToIDMap);
 				for(size_t loc_j = 0; loc_j < locMCThrowns_Decaying.size(); ++loc_j)
-					Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_Decaying[loc_j], locMCThrownMatching, locShowerToIDMap);
+					Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_Decaying[loc_j], locThrownObjectIDMap, locMCThrownMatching, locShowerToIDMap);
 
 				//THROWN PARTICLES BY PID
 				ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
@@ -862,7 +881,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 
 					//fill the data
 					const DKinematicData* locKinematicData = locParticleComboStep->Get_FinalParticle(loc_l);
-					Fill_ParticleData(locTree, locParticleBranchName, locKinematicData, locKinematicData_Measured, locShowerToIDMap, locMCThrownMatching);
+					Fill_ParticleData(locTree, locParticleBranchName, locKinematicData, locKinematicData_Measured, locShowerToIDMap, locMCThrownMatching, locThrownObjectIDMap);
 				}
 			}
 
@@ -870,9 +889,9 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			unsigned int locNumUnused = locUnusedChargedTrackHypotheses.size() + locUnusedNeutralParticleHypotheses.size();
 			Fill_FundamentalData<UInt_t>(locTree, "NumUnused", locNumUnused);
 			for(size_t loc_j = 0; loc_j < locUnusedChargedTrackHypotheses.size(); ++loc_j)
-				Fill_UnusedParticleData(locTree, loc_j, locNumUnused, locUnusedChargedTrackHypotheses[loc_j], locShowerToIDMap, locMCThrownMatching);
+				Fill_UnusedParticleData(locTree, loc_j, locNumUnused, locUnusedChargedTrackHypotheses[loc_j], locShowerToIDMap, locMCThrownMatching, locThrownObjectIDMap);
 			for(size_t loc_j = 0; loc_j < locUnusedNeutralParticleHypotheses.size(); ++loc_j)
-				Fill_UnusedParticleData(locTree, loc_j + locUnusedChargedTrackHypotheses.size(), locNumUnused, locUnusedNeutralParticleHypotheses[loc_j], locShowerToIDMap, locMCThrownMatching);
+				Fill_UnusedParticleData(locTree, loc_j + locUnusedChargedTrackHypotheses.size(), locNumUnused, locUnusedNeutralParticleHypotheses[loc_j], locShowerToIDMap, locMCThrownMatching, locThrownObjectIDMap);
 			//update array sizes
 			if(locNumUnused > (*dNumUnusedArraySizeMap)[locTree])
 				(*dNumUnusedArraySizeMap)[locTree] = locNumUnused;
@@ -904,17 +923,21 @@ ULong64_t DEventWriterROOT::Calc_ParticleMultiplexID(Particle_t locPID) const
 	return (ULong64_t(1) << ULong64_t(locPower)); //bit-shift
 }
 
-void DEventWriterROOT::Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DMCThrown* locMCThrown) const
+void DEventWriterROOT::Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DMCThrown* locMCThrown, map<int, unsigned int> locThrownObjectIDMap) const
 {
 	map<const DNeutralShower*, int> locShowerToIDMap;
-	Fill_ThrownParticleData(locTree, locArrayIndex, locMinArraySize, locMCThrown, NULL, locShowerToIDMap);
+	Fill_ThrownParticleData(locTree, locArrayIndex, locMinArraySize, locMCThrown, locThrownObjectIDMap, NULL, locShowerToIDMap);
 }
 
-void DEventWriterROOT::Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DMCThrown* locMCThrown, const DMCThrownMatching* locMCThrownMatching, const map<const DNeutralShower*, int>& locShowerToIDMap) const
+void DEventWriterROOT::Fill_ThrownParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DMCThrown* locMCThrown, map<int, unsigned int> locThrownObjectIDMap, const DMCThrownMatching* locMCThrownMatching, const map<const DNeutralShower*, int>& locShowerToIDMap) const
 {
 	//IDENTIFIERS
-	Fill_FundamentalData<UInt_t>(locTree, "Thrown", "ObjectID", locMCThrown->myid, locArrayIndex, locMinArraySize, (*dNumThrownArraySizeMap)[locTree]);
-	Fill_FundamentalData<UInt_t>(locTree, "Thrown", "ParentID", locMCThrown->parentid, locArrayIndex, locMinArraySize, (*dNumThrownArraySizeMap)[locTree]);
+	unsigned int locObjectID = locThrownObjectIDMap.find(locMCThrown->myid)->second;
+	Fill_FundamentalData<UInt_t>(locTree, "Thrown", "ObjectID", locObjectID, locArrayIndex, locMinArraySize, (*dNumThrownArraySizeMap)[locTree]);
+	unsigned int locParentID = -1;
+	if(locThrownObjectIDMap.find(locMCThrown->parentid) != locThrownObjectIDMap.end())
+		locParentID = locThrownObjectIDMap.find(locMCThrown->parentid)->second;
+	Fill_FundamentalData<UInt_t>(locTree, "Thrown", "ParentID", locParentID, locArrayIndex, locMinArraySize, (*dNumThrownArraySizeMap)[locTree]);
 	Fill_FundamentalData<Int_t>(locTree, "Thrown", "PID_PDG", locMCThrown->pdgtype, locArrayIndex, locMinArraySize, (*dNumThrownArraySizeMap)[locTree]);
 	Int_t locMatchID = -1;
 	if(locMCThrownMatching != NULL)
@@ -967,7 +990,7 @@ void DEventWriterROOT::Fill_BeamParticleData(TTree* locTree, const DKinematicDat
 	}
 }
 
-void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching) const
+void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, map<int, unsigned int> locThrownObjectIDMap) const
 {
 	bool locKinFitPerformedFlag = 	(locKinematicData != locKinematicData_Measured);
 	//KINEMATICS: MEASURED
@@ -1014,7 +1037,7 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 		{
 			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis_Measured);
 			if(locMCThrown != NULL)
-				locMatchID = locMCThrown->myid;
+				locMatchID = locThrownObjectIDMap.find(locMCThrown->myid)->second;
 		}
 		Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "MatchID", locMatchID);
 
@@ -1027,7 +1050,6 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 			Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", locChargedTrackHypothesis->dChiSq_Timing);
 		Fill_FundamentalData<UInt_t>(locTree, locParticleBranchName, "NDF_DCdEdx", locChargedTrackHypothesis->dNDF_DCdEdx);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_DCdEdx", locChargedTrackHypothesis->dChiSq_DCdEdx);
-
 
 		//DEPOSITED ENERGY
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_CDC", locTrackTimeBased->ddEdx_CDC);
@@ -1060,7 +1082,7 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 		{
 			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis_Measured);
 			if(locMCThrown != NULL)
-				locMatchID = locMCThrown->myid;
+				locMatchID = locThrownObjectIDMap.find(locMCThrown->myid)->second;
 		}
 		Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "MatchID", locMatchID);
 
@@ -1078,7 +1100,7 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 	}
 }
 
-void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DKinematicData* locKinematicData, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching) const
+void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DKinematicData* locKinematicData, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, map<int, unsigned int> locThrownObjectIDMap) const
 {
 	//KINEMATICS: MEASURED
 	TLorentzVector locX4_Measured(locKinematicData->position().X(), locKinematicData->position().Y(), locKinematicData->position().Z(), locKinematicData->time());
@@ -1113,7 +1135,7 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		{
 			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis);
 			if(locMCThrown != NULL)
-				locMatchID = locMCThrown->myid;
+				locMatchID = locThrownObjectIDMap.find(locMCThrown->myid)->second;
 		}
 		Fill_FundamentalData<Int_t>(locTree, "Unused", "MatchID", locMatchID, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<UInt_t>(locTree, "Unused", "PID", (unsigned int)locKinematicData->PID(), locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
@@ -1155,7 +1177,7 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		{
 			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis);
 			if(locMCThrown != NULL)
-				locMatchID = locMCThrown->myid;
+				locMatchID = locThrownObjectIDMap.find(locMCThrown->myid)->second;
 		}
 		Fill_FundamentalData<Int_t>(locTree, "Unused", "MatchID", locMatchID, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<UInt_t>(locTree, "Unused", "PID", (unsigned int)locKinematicData->PID(), locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
