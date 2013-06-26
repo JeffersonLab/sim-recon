@@ -222,10 +222,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       }
     }
   }
-
-  // Do one final pass to find any further potential matches and prune tracks
-  // that have been matched to other tracks
-  MatchTracks();
    
   // Sort the tracks by momentum
   sort(_data.begin(),_data.end(),DTrackCandidate_cmp);
@@ -618,14 +614,14 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
 
-      if (match4){
-	q=GetCharge(pos,match4);
+      if (match2){
+	q=GetCharge(pos,match2);
       }
       else if (match3){
 	q=GetCharge(pos,match3);
       }
-      else if (match2){
-	q=GetCharge(pos,match2);
+      else if (match4){
+	q=GetCharge(pos,match4);
       }
 
       DVector3 mom;
@@ -660,35 +656,27 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
 
 }
 
-// Routine for matching to a segment using the stepper
-bool DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,
-							DVector3 &pos,
-							DVector3 &mom,
-							const DFDCSegment *segment){
-  const DVector3 norm(0,0,1.);
-  stepper->SetCharge(q);
-  
-  const DFDCPseudo *hit=segment->hits[0];
-  if (stepper->SwimToPlane(pos,mom,hit->wire->origin,norm,NULL)==false){
-    double dx=hit->xy.X()-pos.x();
-    double dy=hit->xy.Y()-pos.y();
-    double d=sqrt(dx*dx+dy*dy);
-    if (d<Match(mom.Mag())) return true;
-  }
-  return false;
-}
-
 // Routine that tries to link a stray segment with an already existing track
 // candidate
 bool DTrackCandidate_factory_FDCCathodes::LinkSegment(const DFDCSegment *segment){
+  int new_packno=(segment->hits[0]->wire->layer-1)/6;
   for (unsigned int i=0;i<_data.size();i++){
+    vector<const DFDCSegment *>segments;
+    _data[i]->GetT(segments);
+
+    // if a track already has a matched segment in this package, skip...
+    for (unsigned int j=0;j<segments.size();j++){
+      int packno=(segments[j]->hits[0]->wire->layer-1)/6;
+      if (packno==new_packno) return false;
+    }
+
     DVector3 pos=_data[i]->position();
     DVector3 mom=_data[i]->momentum();
     if (GetTrackMatch(_data[i]->charge(),pos,mom,segment)){
       const DFDCPseudo *first_hit=segment->hits[0];
-
+      
       // Add the segment to the track as an associated object
-      	_data[i]->AddAssociatedObject(segment);
+      _data[i]->AddAssociatedObject(segment);
       
       // Add hits to fit_results for this track and compute the average Bz
       double Bz_avg=-bfield->GetBz(first_hit->xy.X(),first_hit->xy.Y(),
@@ -732,87 +720,21 @@ bool DTrackCandidate_factory_FDCCathodes::LinkSegment(const DFDCSegment *segment
   return false;
 }
 
-// Method to match track stubs after all other methods have been exhausted.
-// For example, the method will try to match two track candidates that were
-// formed from two segments each.
-void DTrackCandidate_factory_FDCCathodes::MatchTracks(void){
-  vector<int>matched(_data.size());
-  for (unsigned int i=0;i<_data.size()-1;i++){
-    DVector3 pos=_data[i]->position();
-    DVector3 mom=_data[i]->momentum();
-    for (unsigned int j=i+1;j<_data.size();j++){   
-      if (matched[j]==0){
-	bool got_match=false;
-	vector<const DFDCSegment *>segments;
-	_data[j]->GetT(segments);
-
-	for (unsigned int k=0;k<segments.size();k++){
-	  if (GetTrackMatch(_data[i]->charge(),pos,mom,segments[k])){
-	    matched[j]=1;
-	    got_match=true;
-	    break;
-	  }
-	}
-	if (got_match){
-	  // Start computing the average Bz
-	  double Bz_avg=0.;
-	  double num_hits=0.;
-	  double max_r=0.,min_r=1000;
-	  vector<DHFHit_t*>hits=fit_results[i].GetHits();
-	  for (unsigned k=0;k<hits.size();k++){
-	    const DHFHit_t *hit=hits[k];
-	    Bz_avg-=bfield->GetBz(hit->x,hit->x,hit->z);
-	    num_hits+=1.;
-	    double r=sqrt(hit->x*hit->x+hit->y*hit->y);
-	    if (r>max_r) max_r=r;
-	    if (r<min_r) min_r=r;
-	  }
-	  // Add the segments in track 2 to track 1 and add the hits to the 
-	  // helical fit class.  Also update Bz.
-	  for (unsigned int k=0;k<segments.size();k++){
-	    _data[i]->AddAssociatedObject(segments[k]);
-	    for (unsigned int m=0;m<segments[k]->hits.size();m++){
-	      const DFDCPseudo *hit=segments[k]->hits[m];
-	      fit_results[i].AddHit(hit);
-	      Bz_avg-=bfield->GetBz(hit->xy.X(),hit->xy.Y(),
-				    hit->wire->origin.z());
-	      num_hits+=1.;
-	      double r=hit->xy.Mod();
-	      if (r>max_r) max_r=r;
-	      if (r<min_r) min_r=r;
-	    }
-	  }
-	  Bz_avg/=num_hits;
-	  double old_rc=fit_results[i].r0;
-	  if (fit_results[i].FitCircleAndLineRiemann(old_rc)==NOERROR){      	
-	    if (fit_results[i].r0>0.5*(max_r-min_r)){
-	      // New track parameters
-	      tanl=fit_results[i].tanl;
-	      xc=fit_results[i].x0;
-	      yc=fit_results[i].y0;
-	      rc=fit_results[i].r0;
-	      q=_data[i]->charge();
-	      
-	      pos.SetXYZ(hits[0]->x,hits[0]->y,hits[0]->z);
-	      GetPositionAndMomentum(Bz_avg,pos,mom);
-	      
-	      _data[i]->setPosition(pos);
-	      _data[i]->setMomentum(mom);
-	    
-	    }
-	  } // helical fit
-	} // got a match?
-      } // already matched?
-    } // inner loop over tracks
-  } // outer loop over tracks
-
-  // Prune the tracks that have been matched to other tracks
-  vector<DTrackCandidate*>tracks;
-  for (unsigned int k=0;k<_data.size();k++){
-    if (!matched[k]){
-      tracks.push_back(_data[k]);
-    }
-    else delete _data[k];
+// Routine for matching to a segment using the stepper
+bool DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,
+							DVector3 &pos,
+							DVector3 &mom,
+							const DFDCSegment *segment){
+  const DVector3 norm(0,0,1.);
+  stepper->SetCharge(q);
+  
+  const DFDCPseudo *hit=segment->hits[0];
+  if (stepper->SwimToPlane(pos,mom,hit->wire->origin,norm,NULL)==false){
+    double dx=hit->xy.X()-pos.x();
+    double dy=hit->xy.Y()-pos.y();
+    double d=sqrt(dx*dx+dy*dy);
+    if (d<Match(mom.Mag())) return true;
   }
-  _data.assign(tracks.begin(),tracks.end());
+  return false;
 }
+

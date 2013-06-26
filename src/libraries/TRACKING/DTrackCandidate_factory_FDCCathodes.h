@@ -65,7 +65,6 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   DFDCSegment *GetTrackMatch(DFDCSegment *segment,vector<DFDCSegment*>package,
 			     unsigned int &match_id);
   void LinkSegments(unsigned int pack1,vector<DFDCSegment *>packages[4]); 
-  void MatchTracks(void);
   double Match(double p);
 
   bool GetTrackMatch(double q,DVector3 &pos,DVector3 &mom,
