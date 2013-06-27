@@ -12,7 +12,6 @@ using namespace std;
 #include "particleType.h"
 
 char *INPUT_FILE=NULL;
-//char OUTPUT_FILE[] = "output.hddm";
 char *OUTPUT_FILE=NULL;
 char *MAX_EVENTS=NULL;
 string TREENAME;
@@ -51,7 +50,11 @@ int main(int narg, char *argv[])
     exit(-4);
   }
 
-  ROOTDataReader reader(INPUT_FILE, TREENAME, true);
+  vector< string > readerArgs;
+  readerArgs.push_back( INPUT_FILE );
+  readerArgs.push_back( TREENAME );
+  
+  ROOTDataReader reader( readerArgs );
   NmaxEvents = NmaxEvents < reader.numEvents() ? NmaxEvents : reader.numEvents(); 
 	
   // Open output file
