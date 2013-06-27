@@ -1,15 +1,12 @@
 
+# Some versions of EVIO required ET also. Uncomment second
+# line if you have errors regarding "et_..." functions missing.
 PACKAGES = ROOT:JANA:EVIO
-
-ifndef MC2CODAROOT
-  MC2CODAROOT=/home/wolin/mc2coda
-endif
+#PACKAGES = ROOT:JANA:EVIO:ET
 
 ifdef BOOST_ROOT
   CXXFLAGS  += -I$(BOOST_ROOT)/include
 endif
 
-CXXFLAGS  += -I$(MC2CODAROOT)
-MISC_LIBS += -L$(MC2CODAROOT) -lmc2coda
 
 include $(HALLD_HOME)/src/BMS/Makefile.shlib
