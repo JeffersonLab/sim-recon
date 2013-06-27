@@ -194,6 +194,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// read in another event block.
 	if(stored_events.empty()){
 		jerror_t err = ReadEVIOEvent();
+		if(err != NOERROR) return err;
 	
 		evioDOMTree *evt = new evioDOMTree(chan);
 		if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
@@ -220,7 +221,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	event.SetEventNumber(++Nevents_read);
 	event.SetRunNumber(objs_ptr->run_number);
 	event.SetRef(objs_ptr);
-_DBG_<<"Event: "<<Nevents_read<<endl;
+
 	return NOERROR;
 }
 
@@ -425,34 +426,60 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 	list<ObjList*> full_events;
 	list<ObjList*> tmp_events;
 	
-	// Loop over list of EVIO banks and parse them, creating data
-	// objects and adding them to the overall list.
+	// The Physics Event bank is the outermost bank of the event and
+	// it is a bank of banks. One of those is the  "Built Trigger Bank"
+	// which is a bank of segments (i.e. 16bit ints). The others
+	// are the "Data Bank" banks which in turn contain the
+	// "Data Block Bank" banks which hold the actual data. For the
+	// mc2coda generated data files (and presumably the real data)
+	// these Data Block Banks are banks of ints. More specifically,
+	// uint32_t.
+	// 
+	// For now, we skip parseing the Built Trigger Bank and just
+	// look for Data Block Banks. We do this by getting a list of
+	// all uint32_t banks in the enitries DOM Tree (at all levels
+	// of the heirachy) and checking the parent banks for depth
+	// and additional info.
+	
+	// Loop over list of all EVIO banks at all levels of the tree and parse
+	// them, creating data objects and adding them to the overall list.
 	ObjList objs;
-	evioDOMNodeListP bankList = evt->getNodeList();
+	evioDOMNodeListP bankList = evt->getNodeList(typeIs<uint32_t>());
 	evioDOMNodeList::iterator iter = bankList->begin();
 	for(; iter!=bankList->end(); iter++){
-
-		// Get data from bank in the form of a vector of uint32_t
-		// If the bank does not contain data of that type, just
-		// continue to the next bank
+	
+		// The data banks we want should have exactly two parents:
+		// - Data Bank bank       <--  parent
+		// - Physics Event bank   <--  grandparent
 		evioDOMNodeP bankPtr = *iter;
+		evioDOMNodeP data_bank = bankPtr->getParent();
+		if( data_bank==NULL ) continue;
+		evioDOMNodeP physics_event_bank = data_bank->getParent();
+		if( physics_event_bank==NULL ) continue;
+		if( physics_event_bank->getParent() != NULL ) continue; // physics event bank should have no parent!
+		
+		// Get data from bank in the form of a vector of uint32_t
 		const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
-		if(vec==NULL)continue;
 		const uint32_t *iptr = &(*vec)[0];
 		const uint32_t *iend = &(*vec)[vec->size()];
 
 		// Extract ROC id (crate number) from bank's parent
-		int32_t rocid = -1;
-		evioDOMNodeP physics_event_data_bank = bankPtr->getParent();
-		if(physics_event_data_bank){
-			rocid = physics_event_data_bank->tag  & 0x0FFF;
-		}
+		uint32_t rocid = data_bank->tag  & 0x0FFF;
+		
+		// The number of events in block is stored in lower 8 bits
+		// of header word (aka the "num") of Data Bank. This should
+		// be at least 1.
+		uint32_t NumEvents = data_bank->num & 0xFF;
+		if( NumEvents<1 ) continue;
 
-		// At this point we need to decide what type of data this
+		// At this point iptr and iend indicate the data that came
+		// from the ROC itself (all CODA headers have been stripped
+		// away). Here, we need to decide what type of data this
 		// bank contains. All JLab modules have a common block
 		// header format and so are handled in a common way. Other
 		// modules (e.g. CAEN) will have to appear in their own
-		// EVIO bank.
+		// EVIO bank and should be identified by their own det_id
+		// value in the Data Block Bank.
 		//
 		// Current, preliminary thinking includes writing the type
 		// of data into the 12-bit detector id contained in the
@@ -461,12 +488,15 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 		// use this to decide if it is JLab module data or somehting
 		// else.
 		uint32_t det_id = bankPtr->tag & 0x0FFF;
-
 		// Call appropriate parsing method
 		bool bank_parsed = true; // will be set to false if default case is entered
 		switch(det_id){
-			case 0:
+			case 1:
 				ParseJLabModuleData(rocid, iptr, iend, tmp_events);
+				break;
+
+			case 2:
+				ParseCAEN1190(rocid, iptr, iend, tmp_events);
 				break;
 
 			default:
@@ -925,7 +955,8 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 	
 	// The new (as yet unadopted in firmware) format for the F1TDC
 	// data replaces the highest byte of the header/trailer, and data words
-	// with one using the common JLab module scheme (as documented in the F250).
+	// with one using the common JLab module scheme (as documented in:
+	// "VME Data Format Standards for JLAB Modules").
 
 	const uint32_t *istart = iptr;
 
@@ -937,7 +968,8 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 
 	uint32_t slot_block_header    = (*iptr)>>22 & 0x001F;
 	uint32_t module_type          = (*iptr)>>18 & 0x000F;
-	uint32_t Nevents_block_header = (*iptr)>>11 & 0x003F; // Dave. A. scheme uses bits 18-21 for module id. This is not yet reflected in the documentation
+	uint32_t block_number         = (*iptr)>> 8 & 0x03FF;
+	uint32_t Nevents_block_header = (*iptr)>> 0 & 0x000F;
 
 	// Advance to next word
 	iptr++;
@@ -966,9 +998,9 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 		iptr++;
 		if(iptr>=iend) throw JException("F1TDC data corrupt! Block truncated before timestamp word!");
 
-		// This contradicts the original documentation which says the first time stamp
-		// word holds the high 24 bits and the second the low 24 bits. According to Dave A.
-		// the first word holds the low 24 bits and the second word is optional.
+		// The most recent documentation says that the first time stamp
+		// word holds the low 24 bits and the second the high 24 bits. According to Dave A.,
+		// the second word is optional.
 		uint32_t trig_time = ((*iptr)&0xFFFFFF);
 		iptr++;
 		if(iptr>=iend) throw JException("F1TDC data corrupt! Block truncated before trailer word!");
@@ -1089,6 +1121,7 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 	if(events.size() != Nevents_block_header){
 		stringstream ss;
 		ss << "F1TDC missing events in block! (found "<< events.size() <<" but should have found "<<Nevents_block_header<<")";
+		DumpBinary(istart, iend, 0);
 		throw JException(ss.str());
 	}
 
@@ -1108,6 +1141,62 @@ void JEventSource_EVIO::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const 
 void JEventSource_EVIO::ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
 	
+}
+
+//----------------
+// ParseCAEN1190
+//----------------
+void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+{
+
+}
+
+//----------------
+// DumpBinary
+//----------------
+void JEventSource_EVIO::DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords)
+{
+	/// This is used for debugging. It will print to the screen the words
+	/// starting at the address given by iptr and ending just before iend
+	/// or for MaxWords words, whichever comes first. If iend is NULL,
+	/// then MaxWords will be printed. If MaxWords is zero then it is ignored
+	/// and only iend is checked. If both iend==NULL and MaxWords==0, then
+	/// only the word at iptr is printed.
+	
+	cout << "Dumping binary: istart=" << hex << iptr << " iend=" << iend << " MaxWords=" << dec << MaxWords << endl;
+	
+	if(iend==NULL && MaxWords==0) MaxWords=1;
+	if(MaxWords==0) MaxWords = (uint32_t)0xffffffff;
+	
+	uint32_t Nwords=0;
+	while(iptr!=iend && Nwords<MaxWords){
+	
+		// line1 is hex and line2 is decimal
+		stringstream line1, line2;
+	
+		// print words in columns 8 words wide. First part is
+		// reserved for word number
+		uint32_t Ncols = 8;
+		line1 << setw(5) << Nwords;
+		line2 << string(5, ' ');
+		
+		// Loop over columns
+		for(uint32_t i=0; i<Ncols; i++, iptr++, Nwords++){
+
+			if(iptr == iend) break;
+			if(Nwords>=MaxWords) break;
+			
+			stringstream iptr_hex;
+			iptr_hex << hex << "0x" << *iptr;
+
+			line1 << setw(12) << iptr_hex.str();
+			line2 << setw(12) << *iptr;
+		}
+		
+		cout << line1.str() << endl;
+		cout << line2.str() << endl;
+		cout << endl;
+	}
 }
 
 

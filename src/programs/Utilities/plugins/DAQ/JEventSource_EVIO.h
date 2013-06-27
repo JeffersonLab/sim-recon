@@ -157,6 +157,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
 		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);
 		void DumpModuleMap(void);
+		void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords);
+
 		
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
 
@@ -169,6 +171,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		void ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 
 		// f250 methods
 		void MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);

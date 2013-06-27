@@ -25,7 +25,7 @@ class DDAQAddress:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DDAQAddress);
 		DDAQAddress(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0):rocid(rocid),slot(slot),channel(channel),itrigger(itrigger){};
-		virtual ~DDAQAddress();
+		virtual ~DDAQAddress(){}
 		
 		uint32_t rocid;    // crate
 		uint32_t slot;     // slot
