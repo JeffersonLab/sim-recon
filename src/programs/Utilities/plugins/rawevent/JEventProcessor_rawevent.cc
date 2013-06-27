@@ -100,7 +100,7 @@ static pthread_mutex_t rawMutex = PTHREAD_MUTEX_INITIALIZER;
 static evioFileChannel *chan       = NULL;
 static string fileBase             = "rawevent";
 static string outputFileName;
-static string translationTableName = "fakeTranslationTable.xml";
+static string translationTableName = "tt.xml";
 
 
 // current run number
@@ -231,6 +231,7 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
     for(int i=0; i<nCrate; i++) {
 	  int nMod = nModules[i]-2;
 	  if(nMod<1) continue; // ignore crates with no digitization modules
+
       stat = mc2codaSetCrate(expID,crateID[i],nModules[i]-2,modules[i],detID[i]);
       if(stat==-1) {
         jerr << "?JEventProcessor_rawevent...error return from mc2codaSetCrate()" << endl << endl;
@@ -1174,11 +1175,11 @@ int type2detID(string &type) {
   } else if (type=="f1tdcv3") {
     return(F1TDC48);
   } else if (type=="jldisc") {
-    return(JLDISC);
+    return(JLAB_DISC);
   } else if (type=="vx1290a") {
-    return(CAEN1290); // (should this be CAEN1290_MODE_TM ??)
+    return(CAEN1290);
   } else {
-    return(USERMOD);
+    return(UNKNOWN);
   }
 }
 
@@ -1226,15 +1227,32 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       }
     }
 
+	// The detID value set here shows up in the header of the Data Block Bank
+	// of the output file. It should be set to one if this crate has JLab
+	// made modules that output in the standard format (see document:
+	// "VME Data Format Standards for JLAB Modules"). These would include
+	// f250ADC, f125ADC, F1TDC, .... Slots containing other types of modules
+	// (e.g. CAEN1290) should have their own unique detID. We use detID of
+	// zero for non-digitizing modules like CPUs nd TIDs even though potentially,
+	// one could read data from these.
     mc2codaType = type2detID(type);
-    if(mc2codaType!=USERMOD) {
+    if(mc2codaType!=UNKNOWN) {
       nModules[nCrate-1]++;
       modules[nCrate-1][slot-1] = mc2codaType;
-      if((mc2codaType==VMECPU) || (mc2codaType==TID)) {
-        detID[nCrate-1][slot-1]   = 0;
-      } else {
-        detID[nCrate-1][slot-1]   = 1;
-      }
+	  switch(mc2codaType){
+		case FADC250:
+		case FADC125:
+		case F1TDC32:
+		case F1TDC48:
+			detID[nCrate-1][slot-1]   = 1;
+			break;
+		case CAEN1190:
+		case CAEN1290:
+			detID[nCrate-1][slot-1]   = 2;
+			break;
+		default:
+			detID[nCrate-1][slot-1]   = 0;
+	  }
     }
 
 
