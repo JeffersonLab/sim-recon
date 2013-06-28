@@ -31,6 +31,8 @@ class DFDCHit : public JObject{
 	    float r;				// perpendicular distance from 
 	    					// center of chamber to wire/strip center
 	    float d;                            // DOCA distance of closest approach (only for MC data on wires)
+	    // Enum to take into account split cathode strips near center in 
+	    // addition to wires-versus-cathodes
 	    enum fdc_hit_type{
 	      AnodeWire,
 	      FullCathodeStrip,
