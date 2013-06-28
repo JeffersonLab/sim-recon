@@ -9,7 +9,10 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "particleType.h"
+
 #include "AMPTOOLS_DATAIO/ROOTDataWriter.h"
+#include "AMPTOOLS_DATAIO/HDDMDataWriter.h"
 
 #include "AMPTOOLS_AMPS/ThreePiAngles.h"
 #include "AMPTOOLS_AMPS/BreitWigner.h"
@@ -23,6 +26,7 @@
 
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TFile.h"
 
 using std::complex;
 using namespace std;
@@ -32,6 +36,7 @@ int main( int argc, char* argv[] ){
   
   string  configfile("");
   string  outname("");
+  string  hddmname("");
   
   bool diag = false;
   bool genFlat = false;
@@ -54,26 +59,30 @@ int main( int argc, char* argv[] ){
     if (arg == "-o"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  outname = argv[++i]; }
-    if (arg == "-l"){  
+    if (arg == "-hd"){
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  hddmname = argv[++i]; }
+    if (arg == "-l"){
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  lowMass = atof( argv[++i] ); }
-    if (arg == "-u"){  
+    if (arg == "-u"){
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  highMass = atof( argv[++i] ); }
     if (arg == "-n"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  nEvents = atoi( argv[++i] ); }
-    if (arg == "-d"){  
+    if (arg == "-d"){
       diag = true; }
-    if (arg == "-f"){  
+    if (arg == "-f"){
       genFlat = true; }
     if (arg == "-h"){
       cout << endl << " Usage for: " << argv[0] << endl << endl;
-      cout << "\t -c <file>\t Config file" << endl;
-      cout << "\t -o <name>\t Output name" << endl;
-      cout << "\t -l <value>\t Low edge of mass range (GeV) [optional]" << endl;
-      cout << "\t -u <value>\t Upper edge of mass range (GeV) [optional]" << endl;
-      cout << "\t -n <value>\t Minimum number of events to generate [optional]" << endl;
+      cout << "\t -c  <file>\t Config file" << endl;
+      cout << "\t -o  <name>\t ROOT file output name" << endl;
+      cout << "\t -hd <name>\t HDDM file output name [optional]" << endl;
+      cout << "\t -l  <value>\t Low edge of mass range (GeV) [optional]" << endl;
+      cout << "\t -u  <value>\t Upper edge of mass range (GeV) [optional]" << endl;
+      cout << "\t -n  <value>\t Minimum number of events to generate [optional]" << endl;
       cout << "\t -f \t\t Generate flat in M(X) (no physics) [optional]" << endl;
       cout << "\t -d \t\t Plot only diagnostic histograms [optional]" << endl << endl;
       exit(1);
@@ -94,7 +103,7 @@ int main( int argc, char* argv[] ){
   // setup AmpToolsInterface
   AmpToolsInterface::registerAmplitude( ThreePiAngles() );
   AmpToolsInterface::registerAmplitude( BreitWigner() );
-  AmpToolsInterface ati( cfgInfo );
+  AmpToolsInterface ati( cfgInfo, AmpToolsInterface::kMCGeneration );
   
   ProductionMechanism::Type type =
     ( genFlat ? ProductionMechanism::kFlat : ProductionMechanism::kResonant );
@@ -117,9 +126,19 @@ int main( int argc, char* argv[] ){
     resProd.addResonance( 1.600, 0.200,  0.2 );
     resProd.addResonance( 1.670, 0.260,  0.4 );
   }
+
+  vector< int > pTypes;
+  pTypes.push_back( Gamma );
+  pTypes.push_back( Neutron );
+  pTypes.push_back( PiPlus );
+  pTypes.push_back( PiMinus );
+  pTypes.push_back( PiPlus );
   
-  // open output file
-	ROOTDataWriter rootOut( outname );
+  HDDMDataWriter* hddmOut = NULL;
+  if( hddmname.size() != 0 ) hddmOut = new HDDMDataWriter( hddmname );
+  ROOTDataWriter rootOut( outname );
+  
+  TFile* diagOut = new TFile( "gen_3pi_diagnostic.root", "recreate" );
   
   TH1F* mass = new TH1F( "M", "Resonance Mass", 180, lowMass, highMass );
   TH1F* massW = new TH1F( "M_W", "Weighted Resonance Mass", 180, lowMass, highMass );
@@ -164,7 +183,8 @@ int main( int argc, char* argv[] ){
 
       double genWeight = evt->weight();
       
-      double weightedInten = ati.intensity( i );
+      // cannot ask for the intensity if we haven't called process events above
+      double weightedInten = ( genFlat ? 1 : ati.intensity( i ) );
       
       if( !diag ){
         
@@ -185,7 +205,8 @@ int main( int argc, char* argv[] ){
           // we want to save events with weight 1
           evt->setWeight( 1.0 );
           
-          rootOut.writeEvent( *evt ); 
+          if( hddmOut ) hddmOut->writeEvent( *evt, pTypes, true );
+          rootOut.writeEvent( *evt );
           ++eventCounter;
         }
       }
@@ -214,6 +235,9 @@ int main( int argc, char* argv[] ){
   dalitz->Write();
   intenW->Write();
   intenWVsM->Write();
+  diagOut->Close();
+  
+  if( hddmOut ) delete hddmOut;
   
 	return 0;
 }
