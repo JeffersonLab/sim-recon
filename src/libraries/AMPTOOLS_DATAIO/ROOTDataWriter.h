@@ -13,6 +13,7 @@ public:
 	
   /**
    * Constructor for ROOTDataWriter.
+   *
    * \param[in] outFile name of output file
    * \param[in] outTreeName (optional) name of tree name in which to store events. Default: "kin"
    * \param[in] overwrite (optional) boolean parameter specifying whether to
@@ -20,24 +21,12 @@ public:
    * \param[in] writeWeight (optional) enables writing of the event weight in the ROOT file
    */
   ROOTDataWriter( const string& outFile,
-		  const string& outTreeName,
-		  bool overwrite=true, bool writeWeight=false)
+                  const string& outTreeName="kin",
+                  bool overwrite=true, bool writeWeight=false )
   {
     IOinit(outFile, outTreeName, overwrite, writeWeight);
   };
-
-
-  /**
-   * Constructor for ROOTDataWriter.
-   * \param[in] outFile name of output file
-   * \param[in] writeWeight (optional) enables writing of the event weight in the ROOT file
-   */
-  ROOTDataWriter( const string& outFile, bool writeWeight=false)
-  {
-    IOinit(outFile,"kin", true, writeWeight);
-  };
-  
-  
+ 
   ~ROOTDataWriter();
   
   void writeEvent( const Kinematics& kin );
@@ -49,8 +38,7 @@ private:
   
   void IOinit( const string& outFile,
 	       const string& outTreeName,
-	       bool overwrite, bool writeWeight);
-  
+	       bool overwrite, bool writeWeight);  
   
   TFile* m_outFile;
   TTree* m_outTree;
@@ -67,11 +55,6 @@ private:
   float m_pxBeam;
   float m_pyBeam;
   float m_pzBeam;
-  
-  float m_eRecoil;
-  float m_pxRecoil;
-  float m_pyRecoil;
-  float m_pzRecoil;
 };
 
 #endif

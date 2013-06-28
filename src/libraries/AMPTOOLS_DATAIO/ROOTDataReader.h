@@ -59,10 +59,6 @@ private:
   float m_pxBeam;
   float m_pyBeam;
   float m_pzBeam;
-  float m_eRecoil;
-  float m_pxRecoil;
-  float m_pyRecoil;
-  float m_pzRecoil;
   float m_weight;
 };
 

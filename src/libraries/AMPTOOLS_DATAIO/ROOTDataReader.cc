@@ -34,21 +34,17 @@ ROOTDataReader::ROOTDataReader( const vector< string >& args ):
     m_inTree = static_cast<TTree*>( m_inFile->Get( args[1].c_str() ) );
   }
   
-	m_inTree->SetBranchAddress( "nPart", &m_nPart );
-	m_inTree->SetBranchAddress( "e", m_e );
-	m_inTree->SetBranchAddress( "px", m_px );
-	m_inTree->SetBranchAddress( "py", m_py );
-	m_inTree->SetBranchAddress( "pz", m_pz );
-	m_inTree->SetBranchAddress( "eBeam", &m_eBeam );
-	m_inTree->SetBranchAddress( "pxBeam", &m_pxBeam );
-	m_inTree->SetBranchAddress( "pyBeam", &m_pyBeam );
-	m_inTree->SetBranchAddress( "pzBeam", &m_pzBeam );
-	m_inTree->SetBranchAddress( "eRecoil", &m_eRecoil );
-	m_inTree->SetBranchAddress( "pxRecoil", &m_pxRecoil );
-	m_inTree->SetBranchAddress( "pyRecoil", &m_pyRecoil );
-	m_inTree->SetBranchAddress( "pzRecoil", &m_pzRecoil );
-	if(m_inTree->GetBranch("weight") != NULL)
-	  m_inTree->SetBranchAddress( "weight", &m_weight );
+	m_inTree->SetBranchAddress( "NumFinalState", &m_nPart );
+	m_inTree->SetBranchAddress( "E_FinalState", m_e );
+	m_inTree->SetBranchAddress( "Px_FinalState", m_px );
+	m_inTree->SetBranchAddress( "Py_FinalState", m_py );
+	m_inTree->SetBranchAddress( "Pz_FinalState", m_pz );
+	m_inTree->SetBranchAddress( "E_Beam", &m_eBeam );
+	m_inTree->SetBranchAddress( "Px_Beam", &m_pxBeam );
+	m_inTree->SetBranchAddress( "Py_Beam", &m_pyBeam );
+	m_inTree->SetBranchAddress( "Pz_Beam", &m_pzBeam );
+	if(m_inTree->GetBranch("Weight") != NULL)
+	  m_inTree->SetBranchAddress( "Weight", &m_weight );
 	else
 	  m_useWeight=false;
 }
@@ -82,8 +78,6 @@ ROOTDataReader::getEvent()
     
     particleList.
       push_back( HepLorentzVector( m_pxBeam, m_pyBeam, m_pzBeam, m_eBeam ) );
-    particleList.
-      push_back( HepLorentzVector( m_pxRecoil, m_pyRecoil, m_pzRecoil, m_eRecoil ) );
     
     for( int i = 0; i < m_nPart; ++i ){
       
