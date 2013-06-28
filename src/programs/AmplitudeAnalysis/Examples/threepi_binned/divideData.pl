@@ -11,7 +11,8 @@ $fitName = "threepi_fit";
 $maxEvts = 1E9;
 
 # this directory can be adjusted if you want to do the fit elsewhere
-$workingDir = $ENV{ 'HALLD_HOME' }."/src/programs/AmplitudeAnalysis/Examples/threepi";
+$workingDir = $ENV{ 'HALLD_HOME' }.
+    "/src/programs/AmplitudeAnalysis/Examples/threepi_binned";
 
 # these files must exist in the working directory.  If you don't know how
 # to generate them or don't have them, see the documentation in gen_3pi
@@ -31,18 +32,12 @@ $cfgTempl = "$workingDir/threepi_pol_TEMPLATE.cfg";
 
 # this is where the goodies for the fit will end eup
 $fitDir = "$workingDir/$fitName/";
-
-if( ! -d $fitDir ){
-
-  mkdir $fitDir;
-}
+mkdir $fitDir unless -d $fitDir;
 
 chdir $fitDir;
 
-for( $i = 0; $i < $nBins; ++$i ){
-
-  mkdir "bin_$i" unless -d "bin_$i";
-}
+# use the split_mass command line tool to divide up the
+# data into bins of resonance mass
 
 @dataParts = split /\//, $dataFile;
 $dataTag = pop @dataParts;
@@ -59,7 +54,10 @@ $genMCTag = pop @genMCParts;
 $genMCTag =~ s/\.root//;
 system( "split_mass $genMCFile $genMCTag $lowMass $highMass $nBins" );
 
+# make directories to perform the fits in
 for( $i = 0; $i < $nBins; ++$i ){
+
+  mkdir "bin_$i" unless -d "bin_$i";
 
   system( "mv *\_$i.root bin_$i" );
 
@@ -81,8 +79,6 @@ for( $i = 0; $i < $nBins; ++$i ){
 
   close CFGOUT;
   close CFGIN;
-
-  system( "touch param_init.cfg" );
 
   chdir $fitDir;
 }

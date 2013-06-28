@@ -69,55 +69,61 @@ int main( int argc, char* argv[] ){
     bool yPol = false;
     
     vector< string > rhoPiS;
-		rhoPiS.push_back( "Pi+Pi-Pi+::xpol::a1_rhopi_S" );
-    if( yPol ) rhoPiS.push_back( "Pi+Pi-Pi+::ypol::a1_rhopi_S" );
+		rhoPiS.push_back( "Pi+Pi-Pi+::xpol::J1_rhopi_S" );
+    if( yPol ) rhoPiS.push_back( "Pi+Pi-Pi+::ypol::J1_rhopi_S" );
 		pair< double, double > rhoPiSInt = results.intensity( rhoPiS );
 		outfile << rhoPiSInt.first << "\t" << rhoPiSInt.second << "\t";
     
     vector< string > rhoPiD;
-    rhoPiD.push_back( "Pi+Pi-Pi+::xpol::a2_rhopi_D" );
-    if( yPol ) rhoPiD.push_back( "Pi+Pi-Pi+::ypol::a2_rhopi_D" );
+    rhoPiD.push_back( "Pi+Pi-Pi+::xpol::J2_rhopi_D" );
+    if( yPol ) rhoPiD.push_back( "Pi+Pi-Pi+::ypol::J2_rhopi_D" );
     pair< double, double > rhoPiDInt = results.intensity( rhoPiD );
     outfile << rhoPiDInt.first << "\t" << rhoPiDInt.second << "\t";
     
-		vector< string > rhoPiPX;
-		rhoPiPX.push_back( "Pi+Pi-Pi+::xpol::pi1_rhopi_P" );
-    if( yPol ) rhoPiPX.push_back( "Pi+Pi-Pi+::ypol::pi1_rhopi_P" );
-		pair< double, double > rhoPiPXInt = results.intensity( rhoPiPX );
+    vector< string > rhoPiPX;
+		rhoPiPX.push_back( "Pi+Pi-Pi+::xpol::J1_rhopi_P" );
+    if( yPol ) rhoPiPX.push_back( "Pi+Pi-Pi+::ypol::J1_rhopi_P" );
+    pair< double, double > rhoPiPXInt = results.intensity( rhoPiPX );
 		outfile << rhoPiPXInt.first << "\t" << rhoPiPXInt.second << "\t";
-    
+
     vector< string > f2PiS;
-		f2PiS.push_back( "Pi+Pi-Pi+::xpol::pi2_f2pi_S" );
-    if( yPol ) f2PiS.push_back( "Pi+Pi-Pi+::ypol::pi2_f2pi_S" );
+		f2PiS.push_back( "Pi+Pi-Pi+::xpol::J2_f2pi_S" );
+    if( yPol ) f2PiS.push_back( "Pi+Pi-Pi+::ypol::J2_f2pi_S" );
 		pair< double, double > f2PiSInt = results.intensity( f2PiS );
 		outfile << f2PiSInt.first << "\t" << f2PiSInt.second << "\t";
-    
+
     vector< string > rhoPiP;
-		rhoPiP.push_back( "Pi+Pi-Pi+::xpol::pi2_rhopi_P" );
-    if( yPol ) rhoPiP.push_back( "Pi+Pi-Pi+::ypol::pi2_rhopi_P" );
+		rhoPiP.push_back( "Pi+Pi-Pi+::xpol::J2_rhopi_P" );
+    if( yPol ) rhoPiP.push_back( "Pi+Pi-Pi+::ypol::J2_rhopi_P" );
 		pair< double, double > rhoPiPInt = results.intensity( rhoPiP );
 		outfile << rhoPiPInt.first << "\t" << rhoPiPInt.second << "\t";
     
 		vector< string > all;
-		all.push_back( "Pi+Pi-Pi+::xpol::a1_rhopi_S" );
-    all.push_back( "Pi+Pi-Pi+::xpol::a2_rhopi_D" );
-    all.push_back( "Pi+Pi-Pi+::xpol::pi1_rhopi_P" );
-    all.push_back( "Pi+Pi-Pi+::xpol::pi2_f2pi_S" );
-    all.push_back( "Pi+Pi-Pi+::xpol::pi2_rhopi_P" );
-    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::a1_rhopi_S" );
-    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::a2_rhopi_D" );
-    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::pi1_rhopi_P" );
-    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::pi2_f2pi_S" );
-    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::pi2_rhopi_P" );
+		all.push_back( "Pi+Pi-Pi+::xpol::J1_rhopi_S" );
+    all.push_back( "Pi+Pi-Pi+::xpol::J2_rhopi_D" );
+    all.push_back( "Pi+Pi-Pi+::xpol::J1_rhopi_P" );
+    all.push_back( "Pi+Pi-Pi+::xpol::J2_f2pi_S" );
+    all.push_back( "Pi+Pi-Pi+::xpol::J2_rhopi_P" );
+    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::J1_rhopi_S" );
+    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::J2_rhopi_D" );
+    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::J1_rhopi_P" );
+    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::J2_f2pi_S" );
+    if( yPol ) all.push_back( "Pi+Pi-Pi+::ypol::J2_rhopi_P" );
     pair< double, double > allInt = results.intensity( all );
 		outfile << allInt.first << "\t" << allInt.second << "\t";
     
-    pair< double, double > phase =
-    results.phaseDiff( "Pi+Pi-Pi+::xpol::a2_rhopi_D",
-                       "Pi+Pi-Pi+::xpol::pi1_rhopi_P" );
+    pair< double, double > phaseDP =
+    results.phaseDiff( "Pi+Pi-Pi+::xpol::J2_rhopi_D",
+                       "Pi+Pi-Pi+::xpol::J1_rhopi_P" );
   
-    outfile << phase.first << "\t" << phase.second << "\t";
+    outfile << phaseDP.first << "\t" << phaseDP.second << "\t";
+
+    pair< double, double > phaseDS =
+    results.phaseDiff( "Pi+Pi-Pi+::xpol::J2_rhopi_D",
+                      "Pi+Pi-Pi+::xpol::J2_f2pi_S" );
     
+    outfile << phaseDS.first << "\t" << phaseDS.second << "\t";
+
     outfile << endl;
     
     chdir( ".." );
