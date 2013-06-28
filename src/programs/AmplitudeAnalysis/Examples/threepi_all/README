@@ -153,8 +153,7 @@ C. View fit results using AmpPlotter GUI package
 -------------------------------------------------
 
 1.  To view the results of the fit we will use the threepi_plotter
-    application that is compiled in the programs/AmplitudeAnalysis
-    directory.  The application generates plots of data and
+    application.  The application generates plots of data and
     the Monte Carlo that has been weighted by the intensity
     determined by the fit.  First examine the source code of
     threepi_plotter.  The only relevant items are the definition
