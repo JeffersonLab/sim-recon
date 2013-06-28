@@ -164,7 +164,7 @@ int main( int argc, char* argv[] ){
   
   // open output file
   ROOTDataWriter *rootAllOut=NULL;
-  if(saveAll) rootAllOut= new ROOTDataWriter( allGenFName, true );
+  if(saveAll) rootAllOut= new ROOTDataWriter( allGenFName, "kin", true );
   HDDMDataWriter hddmOut( hddmfname );
   ROOTDataWriter rootOut( rootfname);
   ASCIIDataWriter asciiOut( asciifname ); 
