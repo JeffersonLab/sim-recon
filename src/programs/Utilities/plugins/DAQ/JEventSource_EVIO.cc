@@ -20,6 +20,9 @@ using namespace std;
 #include "JEventSource_EVIO.h"
 using namespace jana;
 
+#include <TTab/DTranslationTable.h>
+#include <TTab/DTranslationTable_factory.h>
+
 #define _DBG_DAQ(A) cerr<<__FILE__<<":"<<__LINE__<<" 0x"<<hex<<A<<"  cntrl:0x"<<(A&0xF0000000)<<dec<<" slot:"<<((A>>22)&0x1F)<<endl
 
 // Make us a plugin
@@ -320,6 +323,21 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// are present have already been copied into the appropriate factory.
 	jerror_t err = OBJECT_NOT_AVAILABLE;
 	if(event_source_data_types.find(dataClassName) != event_source_data_types.end()) err = NOERROR;
+	
+	// If a translation table object is available, use it to create
+	// detector hits from the low-level DAQ objects we just created.
+	// Note that we have to use the GetFromFactory() method here since
+	// if we just use Get() or GetSingle(), it will call us (the event
+	// source) again in an infinite loop!
+	DTranslationTable_factory *ttfac = dynamic_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
+	if(ttfac){
+		vector<const DTranslationTable*> translationTables;
+		ttfac->Get(translationTables);
+		for(unsigned int i=0; i<translationTables.size(); i++){
+			translationTables[i]->ApplyTranslationTable(loop);
+			if(translationTables[i]->isSuppliedType(dataClassName)) err = NOERROR;
+		}
+	}
 
 	return err;
 }
