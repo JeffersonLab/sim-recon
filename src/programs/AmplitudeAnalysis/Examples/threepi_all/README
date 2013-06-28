@@ -20,7 +20,7 @@ B. Perform a fit to extract the production amplitudes for several resonances
 C. Use the AmpPlotter library to view projections of the fit
 
 <><><><><><><> Quick recipe for doing example <><><><><><><><>
-cd $HALLD_HOME/src/programs/AmplitudeAnalysis/Examples/threepi_binned
+cd $HALLD_HOME/src/programs/AmplitudeAnalysis/Examples/threepi_all
 cp ../../../Simulation/gen_3pi/gen_3pi.cfg .
 gen_3pi -c gen_3pi.cfg -o threepi_data_gen.root -l 0.7 -u 2.0 -n 50000
 toy_detector threepi_data_gen.root threepi_data.root
