@@ -8,7 +8,7 @@
 
 using namespace std;
 
-class AmpToolsInterface;
+class FitResults;
 class Kinematics;
 
 class ThreePiPlotGenerator : public PlotGenerator
@@ -17,9 +17,10 @@ class ThreePiPlotGenerator : public PlotGenerator
 public:
   
   // create an index for different histograms
-  enum { kHist1 = 0, kNumHists };
+  enum { k3PiMass = 0, kPiMPiP1Mass, kPiMPiP2Mass, kPiP1PiP2Mass,
+         kAlpha, kCosThetaRes, kPhiRes, kNumHists };
   
-  ThreePiPlotGenerator( AmpToolsInterface& ati );
+  ThreePiPlotGenerator( const FitResults& results );
     
 private:
         
