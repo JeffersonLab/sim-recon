@@ -31,7 +31,14 @@ class DFDCHit : public JObject{
 	    float r;				// perpendicular distance from 
 	    					// center of chamber to wire/strip center
 	    float d;                            // DOCA distance of closest approach (only for MC data on wires)
-	    int type;				// cathode=1, anode=0
+	    enum fdc_hit_type{
+	      AnodeWire,
+	      FullCathodeStrip,
+	      HalfCathodeStripA,
+	      HalfCathodeStripB,
+	    };
+	    int type;		// value according to above enum
+	    
 
 	    int itrack;                         // track number causing the hit
 	    int ptype;                          // particle type causing the hit

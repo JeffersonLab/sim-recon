@@ -11,10 +11,10 @@
 #define MAX_DEFLECTION 0.15
 #define EPS 1e-8
 #define KILL_RADIUS 5.0 
-#define MATCH_RADIUS 5.0
-#define ADJACENT_MATCH_RADIUS 2.0
+#define MATCH_RADIUS 3.0
+#define ADJACENT_MATCH_DISTANCE 0.3
 #define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 0.01 // cm^2
+#define BEAM_VARIANCE 100.0 // cm^2
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
 #define MAX_ITER 10
@@ -431,34 +431,32 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
 jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
 						DMatrix &CR,vector<xyz_t>&XYZ){
   double Phi;
-  unsigned int num_points=points.size()+1;
+  unsigned int num_measured=points.size();
+  unsigned int last_index=num_measured;
+  unsigned int num_points=num_measured+1;
   DMatrix CRPhi(num_points,num_points); 
  
   // Fill initial matrices for R and RPhi measurements
-  XYZ[num_points-1].z=TARGET_Z;
-  for (unsigned int m=0;m<points.size();m++){
+  for (unsigned int m=0;m<num_measured;m++){
     XYZ[m].z=points[m]->wire->origin.z();
 
     //Phi=atan2(points[m]->y,points[m]->x);
     Phi=points[m]->xy.Phi();
-    double cosPhi=cos(Phi);
-    double sinPhi=sin(Phi);
-    double Phi_cosPhi=Phi*cosPhi;
-    double Phi_sinPhi=Phi*sinPhi;
-    double Phi_cosPhi_minus_sinPhi=Phi_cosPhi-sinPhi;
-    double Phi_sinPhi_plus_cosPhi=Phi_sinPhi+cosPhi;
-    CRPhi(m,m)
-      =Phi_cosPhi_minus_sinPhi*Phi_cosPhi_minus_sinPhi*points[m]->covxx
-      +Phi_sinPhi_plus_cosPhi*Phi_sinPhi_plus_cosPhi*points[m]->covyy
-      +2.*Phi_sinPhi_plus_cosPhi*Phi_cosPhi_minus_sinPhi*points[m]->covxy;
-
-    CR(m,m)=cosPhi*cosPhi*points[m]->covxx
-      +sinPhi*sinPhi*points[m]->covyy
-      +2.*sinPhi*cosPhi*points[m]->covxy;
+    
+    double u=points[m]->w;
+    double v=points[m]->s;
+    double temp1=u*Phi-v;
+    double temp2=v*Phi+u;
+    double var_u=0.08333;
+    double var_v=0.0075;
+    double one_over_R2=1./points[m]->xy.Mod2();
+    CRPhi(m,m)=one_over_R2*(var_v*temp1*temp1+var_u*temp2*temp2);
+    CR(m,m)=one_over_R2*(var_u*u*u+var_v*v*v);
   }
-  CR(points.size(),points.size())=BEAM_VARIANCE;
-  CRPhi(points.size(),points.size())=BEAM_VARIANCE;
-
+  XYZ[last_index].z=TARGET_Z;
+  CR(last_index,last_index)=BEAM_VARIANCE;
+  CRPhi(last_index,last_index)=BEAM_VARIANCE;
+  
   // Reference track:
   jerror_t error=NOERROR;  
   // First find the center and radius of the projected circle
@@ -572,23 +570,25 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	for (unsigned int k=0;k<x_list.size()-1;k++){
 	  delta_min=1000.;
 	  match=0;
-	  for (unsigned int m=x_list[k];m<x_list[k+1];m++){
-	    delta=(XY-points[m]->xy).Mod();
-	    if (delta<delta_min && delta<MATCH_RADIUS){
-	      delta_min=delta;
-	      match=m;
+	  if (x_list[k]>0){
+	    for (unsigned int m=x_list[k];m<x_list[k+1];m++){
+	      delta=(XY-points[m]->xy).Mod();
+	      if (delta<delta_min && delta<MATCH_RADIUS){
+		delta_min=delta;
+		match=m;
+	      }
 	    }
-	  }	
+	  }
 	  if (match!=0 
 	      && used[match]==false
 	      ){
 	    XY=points[match]->xy;
 	    used[match]=true;
-	    neighbors.push_back(points[match]);	  
+	    neighbors.push_back(points[match]);	
 	  }
 	}
 	unsigned int num_neighbors=neighbors.size();
-	
+
 	// Skip to next segment seed if we don't have enough points to fit a 
 	// circle
 	if (num_neighbors<3) continue;    
@@ -598,9 +598,9 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	for (unsigned int k=0;k<points.size();k++){
 	  if (!used[k]){
 	    for (unsigned int j=0;j<num_neighbors;j++){
-	      delta=(points[k]->xy-neighbors[j]->xy).Mod();
+	      delta=fabs(points[k]->xy.Y()-neighbors[j]->xy.Y());
 
-	      if (delta<ADJACENT_MATCH_RADIUS && 
+	      if (delta<ADJACENT_MATCH_DISTANCE && 
 		  abs(neighbors[j]->wire->wire-points[k]->wire->wire)<=1
 		  && neighbors[j]->wire->origin.z()==points[k]->wire->origin.z()){
 		used[k]=true;
