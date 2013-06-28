@@ -384,6 +384,9 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 				_DBG_<<"   Ncdc="<<Ncdc<<" num_cdc1="<<num_cdc1<<" num_cdc2="<<num_cdc2<<endl;
 				_DBG_<<"   Nfdc="<<Nfdc<<" num_fdc1="<<num_fdc1<<" num_fdc2="<<num_fdc2<<endl;
 			}
+			unsigned int total = Ncdc + Nfdc;
+			if (total==0) continue;
+
 			// Deal with the case where (within +-1 cdc hit), 
 			// all the cdc hits were common between the two 
 			// tracks but there were no fdc hits used in one or 
@@ -430,8 +433,7 @@ void DTrackTimeBased_factory::FilterDuplicates(void)
 			if(Ncdc!=num_cdc1 && Ncdc!=num_cdc2)continue;
 		       
 			if(Nfdc!=num_fdc1 && Nfdc!=num_fdc2)continue;
-		      
-			unsigned int total = Ncdc + Nfdc;
+		      	
 			if(total!=total1 && total!=total2)continue;
 
 			if(total1<total2){
@@ -682,9 +684,9 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
     fitter->SetFitType(DTrackFitter::kTimeBased);	
     status = fitter->FindHitsAndFitTrack(*track, track->rt,loop, mass, mStartTime,
 					 mStartDetector);
-    // If the status is kFitNotDone, then no hits were attached to this track
-    // using the hit-gathering algorithm.  In this case get the hits from the 
-    // wire-based track
+    // If the status is kFitNotDone, then not enough hits were attached to this
+    // track using the hit-gathering algorithm.  In this case get the hits 
+    // from the wire-based track
     if (status==DTrackFitter::kFitNotDone){
       //_DBG_ << " Using wire-based hits " << endl;
 
@@ -704,7 +706,7 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
   // Check the status value from the fit
   switch(status){
   case DTrackFitter::kFitNotDone:
-    _DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
+    //_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
   case DTrackFitter::kFitFailed:
     break;
   case DTrackFitter::kFitSuccess:

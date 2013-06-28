@@ -323,11 +323,12 @@ void DTrackWireBased_factory::FilterDuplicates(void)
 			// Count number of cdc and fdc hits in common
 			unsigned int Ncdc = count_common_members(cdchits1, cdchits2);
 			unsigned int Nfdc = count_common_members(fdchits1, fdchits2);
-
+			unsigned int total = Ncdc + Nfdc;
+			
+			if (total==0) continue;
 			if(Ncdc!=cdchits1.size() && Ncdc!=cdchits2.size())continue;
 			if(Nfdc!=fdchits1.size() && Nfdc!=fdchits2.size())continue;
 			
-			unsigned int total = Ncdc + Nfdc;
 			unsigned int total1 = cdchits1.size()+fdchits1.size();
 			unsigned int total2 = cdchits2.size()+fdchits2.size();
 			if(total!=total1 && total!=total2)continue;
@@ -415,7 +416,7 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
   // Check the status of the fit
   switch(status){
   case DTrackFitter::kFitNotDone:
-    _DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
+    //_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
   case DTrackFitter::kFitFailed:
     break;
   case DTrackFitter::kFitSuccess:
