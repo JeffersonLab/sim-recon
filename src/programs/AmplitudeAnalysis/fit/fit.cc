@@ -18,6 +18,7 @@
 
 #include "MinuitInterface/MinuitMinimizationManager.h"
 #include "IUAmpTools/AmpToolsInterface.h"
+#include "IUAmpTools/FitResults.h"
 #include "IUAmpTools/ConfigFileParser.h"
 #include "IUAmpTools/ConfigurationInfo.h"
 
@@ -32,6 +33,7 @@ int main( int argc, char* argv[] ){
   bool useMinos = false;
 
   string configfile;
+  string seedfile;
   
   // parse command line
   
@@ -42,11 +44,15 @@ int main( int argc, char* argv[] ){
     if (arg == "-c"){  
       if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
       else  configfile = argv[++i]; }
+    if (arg == "-s"){
+      if ((i+1 == argc) || (argv[i+1][0] == '-')) arg = "-h";
+      else  seedfile = argv[++i]; }
     if (arg == "-n") useMinos = true;
     if (arg == "-h"){
       cout << endl << " Usage for: " << argv[0] << endl << endl;
       cout << "   -n \t\t\t\t\t use MINOS instead of MIGRAD" << endl;
-      cout << "   -c <file>\t\t\t\t Config file" << endl;
+      cout << "   -c <file>\t\t\t\t config file" << endl;
+      cout << "   -s <output file>\t\t\t for seeding next fit based on this fit (optional)" << endl;
       exit(1);}
   }
   
@@ -83,13 +89,21 @@ int main( int argc, char* argv[] ){
     fitManager->migradMinimization();
   }
   
-  if( fitManager->status() != 0 && fitManager->eMatrixStatus() != 3 ){
-    cout << "ERROR: fit failed..." << endl;
+  bool fitFailed =
+    ( fitManager->status() != 0 && fitManager->eMatrixStatus() != 3 );
+  
+  if( fitFailed ){
+    cout << "ERROR: fit failed use results with caution..." << endl;
   }
   
   cout << "LIKELIHOOD AFTER MINIMIZATION:  " << ati.likelihood() << endl;
   
   ati.finalizeFit();
+  
+  if( seedfile.size() != 0 && !fitFailed ){
+    
+    ati.fitResults()->writeSeed( seedfile );
+  }
   
   return 0;
 }
