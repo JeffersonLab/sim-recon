@@ -53,7 +53,6 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 
 //the below disables this routine until everything is working
 DEventRFBunch* locEventRFBunch = new DEventRFBunch(*locEventRFBunches[0]);
-locEventRFBunch->dMatchedToTracksFlag = false;
 for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	locEventRFBunch->AddAssociatedObject(locParticleComboBlueprints[loc_i]);
 _data.push_back(locEventRFBunch);
