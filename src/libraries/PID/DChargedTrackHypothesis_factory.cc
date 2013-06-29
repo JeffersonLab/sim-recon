@@ -13,6 +13,12 @@ using namespace std;
 #include "DChargedTrackHypothesis_factory.h"
 using namespace jana;
 
+inline bool DChargedTrackHypothesis_SortByEnergy(const DChargedTrackHypothesis* locChargedTrackHypothesis1, const DChargedTrackHypothesis* locChargedTrackHypothesis2)
+{
+	// sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
+	return int(locChargedTrackHypothesis1->energy()*10000.0)%100 < int(locChargedTrackHypothesis2->energy()*10000.0)%100;
+}
+
 //------------------
 // init
 //------------------
@@ -62,6 +68,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, i
 		if(locChargedTrackHypothesis != NULL)
 			_data.push_back(locChargedTrackHypothesis);
 	}
+	sort(_data.begin(), _data.end(), DChargedTrackHypothesis_SortByEnergy);
 
 	return NOERROR;
 }

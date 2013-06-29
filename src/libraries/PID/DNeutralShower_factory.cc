@@ -12,6 +12,12 @@ using namespace std;
 #include "DNeutralShower_factory.h"
 using namespace jana;
 
+inline bool DNeutralShower_SortByEnergy(const DNeutralShower* locNeutralShower1, const DNeutralShower* locNeutralShower2)
+{
+	// sort by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random
+	return int(locNeutralShower1->dEnergy*10000.0)%100 < int(locNeutralShower2->dEnergy*10000.0)%100;
+}
+
 //------------------
 // init
 //------------------
@@ -127,6 +133,8 @@ jerror_t DNeutralShower_factory::evnt(jana::JEventLoop *locEventLoop, int eventn
 
 		_data.push_back(locNeutralShower);
 	}
+
+	sort(_data.begin(), _data.end(), DNeutralShower_SortByEnergy);
 
 	return NOERROR;
 }
