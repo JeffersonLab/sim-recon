@@ -761,7 +761,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 				for(size_t loc_j = 0; loc_j < locMCThrowns_FinalState.size(); ++loc_j)
 					Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_FinalState[loc_j], locThrownObjectIDMap, locMCThrownMatching, locShowerToIDMap);
 				for(size_t loc_j = 0; loc_j < locMCThrowns_Decaying.size(); ++loc_j)
-					Fill_ThrownParticleData(locTree, loc_j, locNumThrown, locMCThrowns_Decaying[loc_j], locThrownObjectIDMap, locMCThrownMatching, locShowerToIDMap);
+					Fill_ThrownParticleData(locTree, loc_j + locMCThrowns_FinalState.size(), locNumThrown, locMCThrowns_Decaying[loc_j], locThrownObjectIDMap, locMCThrownMatching, locShowerToIDMap);
 
 				//THROWN PARTICLES BY PID
 				ULong64_t locNumPIDThrown_FinalState = 0, locPIDThrown_Decaying = 0;
