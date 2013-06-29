@@ -94,6 +94,7 @@ class DReaction : public JObject
 		// OTHER:
 		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
 		bool Check_IfDecayingParticleExcludedFromP4KinFit(size_t locStepIndex) const;
+		bool Check_AreStepsIdentical(const DReaction* locReaction) const;
 
 	private:
 		// PRIVATE METHODS:
@@ -113,7 +114,7 @@ class DReaction : public JObject
 		deque<const DReactionStep*> dReactionSteps;
 		deque<DAnalysisAction*> dAnalysisActions;
 
-		// TRACK SELECTION FACTORIES
+		// TRACK SELECTION FACTORIES:
 			//Command-line values will override these values
 		string dChargedTrackFactoryTag; //default is ""
 		string dNeutralShowerFactoryTag; //default is ""

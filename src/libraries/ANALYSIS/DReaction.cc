@@ -403,3 +403,15 @@ bool DReaction::Get_MissingPID(Particle_t& locPID) const
 	return false;
 }
 
+bool DReaction::Check_AreStepsIdentical(const DReaction* locReaction) const
+{
+	if(locReaction->Get_NumReactionSteps() != dReactionSteps.size())
+		return false;
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		if(locReaction->Get_ReactionStep(loc_i) != dReactionSteps[loc_i])
+			return false;
+	}
+	return true;
+}
+
