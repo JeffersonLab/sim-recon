@@ -32,7 +32,7 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, int ev
 	locEventLoop->Get(locKinFitResultsVector);
 
 	const DParticleCombo* locParticleCombo;
-	deque<deque<const DKinFitParticle*> > locInitialKinFitParticles;
+	map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
 	const DKinFitParticle* locKinFitParticle;
 	const DBeamPhoton* locBeamPhoton;
 	DBeamPhoton* locNewBeamPhoton;
@@ -45,8 +45,8 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, int ev
 		locParticleCombo = locKinFitResultsVector[loc_i]->Get_ParticleCombo();
 		if(!locParticleCombo->Get_ParticleComboStep(0)->Is_InitialParticleDetected())
 			continue;
-		locKinFitResultsVector[loc_i]->Get_InitialKinFitParticles(locInitialKinFitParticles);
-		locKinFitParticle = locInitialKinFitParticles[0][0];
+		locKinFitResultsVector[loc_i]->Get_ReverseParticleMapping(locReverseParticleMapping);
+		locKinFitParticle = locReverseParticleMapping[locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured()];
 
 		//loop over previous kinfitresults objects, see if the kinfit results are identical: if so, don't need to correct new tracks for the results
 		bool locMatchFlag = false;

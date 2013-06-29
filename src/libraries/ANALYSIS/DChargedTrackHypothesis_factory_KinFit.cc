@@ -40,25 +40,26 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 
 	map<const DKinFitParticle*, DChargedTrackHypothesis*> locKinFitParticleMap;
 	map<DChargedTrackHypothesis*, deque<const DParticleCombo*> > locChargedParticleComboMap;
+	map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
 
-	deque<deque<const DKinFitParticle*> > locFinalKinFitParticles;
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
 		locParticleCombo = locKinFitResultsVector[loc_i]->Get_ParticleCombo();
-		locKinFitResultsVector[loc_i]->Get_FinalKinFitParticles(locFinalKinFitParticles);
+		locKinFitResultsVector[loc_i]->Get_ReverseParticleMapping(locReverseParticleMapping);
 
-		//loop over previous kinfitresults objects, see if the kinfit results are identical: if so, don't need to correct new tracks for the results
+		//loop over previous kinfitresults objects, see if the kinfit results are identical: if so, don't need to create new tracks for the results
 		bool locMatchFlag = false;
 		for(size_t loc_j = 0; loc_j < loc_i; ++loc_j)
 		{
 			if(!locParticleCombo->Will_KinFitBeIdentical(locKinFitResultsVector[loc_j]->Get_ParticleCombo()))
 				continue;
 			//kinfit results are identical: setup the maps so that the charged tracks are copied instead of created anew
-			for(size_t loc_k = 0; loc_k < locFinalKinFitParticles.size(); ++loc_k)
+			for(size_t loc_k = 0; loc_k < locParticleCombo->Get_NumParticleComboSteps(); ++loc_k)
 			{
-				for(size_t loc_l = 0; loc_l < locFinalKinFitParticles[loc_k].size(); ++loc_l)
+				for(size_t loc_l = 0; loc_l < locParticleCombo->Get_ParticleComboStep(loc_k)->Get_NumFinalParticles(); ++loc_l)
 				{
-					locKinFitParticle = locFinalKinFitParticles[loc_k][loc_l];
+					const DKinematicData* locSourceData = locParticleCombo->Get_ParticleComboStep(loc_k)->Get_FinalParticle_Measured(loc_l);
+					locKinFitParticle = locReverseParticleMapping[locSourceData];
 					if(locKinFitParticle == NULL)
 						continue; //e.g. a decaying resonance particle not involved in the kinfit
 					if((locKinFitParticle->Get_KinFitParticleType() != d_DetectedParticle) || (locKinFitParticle->Get_Charge() == 0))
@@ -82,7 +83,7 @@ jerror_t DChargedTrackHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEvent
 					continue;
 				if(!locParticleComboStep->Is_FinalParticleCharged(loc_k))
 					continue;
-				locKinFitParticle = locFinalKinFitParticles[loc_j][loc_k];
+				locKinFitParticle = locReverseParticleMapping[locParticleComboStep->Get_FinalParticle_Measured(loc_k)];
 				locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_k));
 				locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticleComboStep->Get_FinalParticle(loc_k));
 				locNewChargedTrackHypothesis = Build_ChargedTrackHypothesis(locChargedTrackHypothesis, locKinFitParticle, locChargedTrack, locParticleCombo);

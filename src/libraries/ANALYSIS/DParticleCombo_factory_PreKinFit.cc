@@ -514,4 +514,3 @@ jerror_t DParticleCombo_factory_PreKinFit::fini(void)
 	return NOERROR;
 }
 
-

@@ -26,10 +26,8 @@ enum DKinFitType
 class DKinFitResults : public JObject
 {
 	public:
+		DKinFitResults(void) : dMissingParticle(NULL) {}
 		JOBJECT_PUBLIC(DKinFitResults);
-
-		inline void Set_KinFitName(string locKinFitName){dKinFitName = locKinFitName;}
-		inline string Get_KinFitName(void) const{return dKinFitName;}
 
 		inline void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
 		inline DKinFitType Get_KinFitType(void) const{return dKinFitType;}
@@ -55,11 +53,15 @@ class DKinFitResults : public JObject
 		inline void Set_ParticleMapping(const map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping){dParticleMapping = locParticleMapping;}
 		inline void Get_ParticleMapping(map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping) const{locParticleMapping = dParticleMapping;}
 
-		inline void Get_InitialKinFitParticles(deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles) const{locInitialKinFitParticles = dInitialKinFitParticles;}
-		void Set_InitialKinFitParticles(const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles){dInitialKinFitParticles = locInitialKinFitParticles;}
+		inline void Set_ReverseParticleMapping(const map<const DKinematicData*, const DKinFitParticle*>& locReverseParticleMapping){dReverseParticleMapping = locReverseParticleMapping;}
+		inline void Get_ReverseParticleMapping(map<const DKinematicData*, const DKinFitParticle*>& locReverseParticleMapping) const{locReverseParticleMapping = dReverseParticleMapping;}
 
-		inline void Get_FinalKinFitParticles(deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles) const{locFinalKinFitParticles = dFinalKinFitParticles;}
-		void Set_FinalKinFitParticles(const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles){dFinalKinFitParticles = locFinalKinFitParticles;}
+		inline void Set_MissingParticle(const DKinFitParticle* locMissingParticle){dMissingParticle = locMissingParticle;}
+		inline const DKinFitParticle* Get_MissingParticle(void) const{return dMissingParticle;}
+
+		inline void Add_DecayingParticle(pair<Particle_t, deque<const DKinematicData*> > locDecayPair, const DKinFitParticle* locKinFitParticle){dDecayingParticles[locDecayPair] = locKinFitParticle;}
+		inline void Set_DecayingParticles(const map<pair<Particle_t, deque<const DKinematicData*> >, const DKinFitParticle*>& locDecayingParticles){dDecayingParticles = locDecayingParticles;}
+		inline void Get_DecayingParticles(map<pair<Particle_t, deque<const DKinematicData*> >, const DKinFitParticle*>& locDecayingParticles) const{locDecayingParticles = dDecayingParticles;}
 
 		inline void Set_VEta(const TMatrixDSym* locVEta){dVEta = locVEta;}
 		inline const TMatrixDSym* Get_VEta(void) const{return dVEta;}
@@ -68,24 +70,24 @@ class DKinFitResults : public JObject
 		inline const TMatrixDSym* Get_VXi(void) const{return dVXi;}
 
 	private:
-		string dKinFitName; //is DReaction name
 		double dConfidenceLevel;
 		double dChiSq;
 		unsigned int dNDF;
+		map<const DKinematicData*, map<DKinFitPullType, double> > dPulls; //DKinematicData is the MEASURED particle
+
 		const TMatrixDSym* dVXi; //covariance matrix of dXi, the unmeasured parameters in the fit
 		const TMatrixDSym* dVEta; //covariance matrix of dEta, the measured parameters in the fit
 
-		map<const DKinematicData*, map<DKinFitPullType, double> > dPulls; //DKinematicData is the MEASURED particle
+		//PARTICLES: DETECTED (including beam)
 		map<const DKinFitParticle*, const DKinematicData*> dParticleMapping; //from output -> source (MEASURED) //is NULL for missing/decaying/target particles
+		map<const DKinematicData*, const DKinFitParticle*> dReverseParticleMapping; //from source (MEASURED) -> output //decaying/missing/target particles aren't present
+
+		//PARTICLES: NON-DETECTED
+		map<pair<Particle_t, deque<const DKinematicData*> >, const DKinFitParticle*> dDecayingParticles; //key is PID of decaying particle + all final-state decay products
+		const DKinFitParticle* dMissingParticle; //NULL if none
 
 		const DParticleCombo* dParticleCombo;
 		DKinFitType dKinFitType;
-
-		//these particles correspond to the dParticleCombo particles (1st dim is step index, 2nd is particle index
-			//for initial: if 2nd dimension is size 2, then 2nd object is the target
-			//note that these particles can be NULL: if not involved in kinfit (e.g. p4 kinfit, excluded or resonance particle)
-		deque<deque<const DKinFitParticle*> > dInitialKinFitParticles;
-		deque<deque<const DKinFitParticle*> > dFinalKinFitParticles;
 
 		deque<const DKinFitConstraint*> dKinFitConstraints;
 };

@@ -69,7 +69,7 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 			continue; //don't do any kinematic fits!
 
 		//check previous particle combos for duplicates: if all of the steps are the same AND the fit type is the same, then the kinfitresults will be the same: just copy!
-			//this would be used if you want to perform the exact same kinematic fit, but want to perform different DAnalyssisActions on them
+			//this would be used if you want to perform the exact same kinematic fit, but want to perform different DAnalysisActions on them
 		bool locComboMatchFlag = false;
 		for(size_t loc_j = 0; loc_j < _data.size(); ++loc_j)
 		{
@@ -88,8 +88,8 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 		if(locComboMatchFlag)
 			continue; //kinfit results already saved, continue;
 
-		deque<deque<const DKinFitParticle*> > locInitialKinFitParticles, locFinalKinFitParticles;
-		if(!Setup_KinFit(locEventLoop, locParticleCombo, locInitialKinFitParticles, locFinalKinFitParticles))
+		map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > > locDecayingKinFitParticles;
+		if(!Setup_KinFit(locEventLoop, locParticleCombo, locDecayingKinFitParticles))
 		{
 			if(dDebugLevel > 0)
 				cout << "Kinematic Fit Setup Failed." << endl;
@@ -98,16 +98,18 @@ jerror_t DKinFitResults_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 		if(dDebugLevel > 0)
 			cout << "Perform Primary Kinematic Fit" << endl;
 		if(dKinFitter.Fit_Reaction()) //if fit fails: no kinfit results, BUT will still generate new DParticleCombo (using old info though!)
-			Build_KinFitResults(locParticleCombo, locInitialKinFitParticles, locFinalKinFitParticles);
+			Build_KinFitResults(locParticleCombo, locDecayingKinFitParticles);
 	}
 
 	return NOERROR;
 }
 
-bool DKinFitResults_factory::Setup_KinFit(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles, deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles)
+bool DKinFitResults_factory::Setup_KinFit(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >& locDecayingKinFitParticles)
 {
 	if(dDebugLevel > 0)
 		cout << "Setup Primary Kinematic Fit" << endl;
+
+	deque<deque<const DKinFitParticle*> > locInitialKinFitParticles, locFinalKinFitParticles;
 
 	const DParticleComboStep* locParticleComboStep;
 	int locDecayStepIndex;
@@ -140,6 +142,10 @@ bool DKinFitResults_factory::Setup_KinFit(JEventLoop* locEventLoop, const DParti
 		else if((!locFirstParticleIsBeamFlag) && (loc_i == 0)) //add decaying particle (production not specified, only decay)
 		{
 			locKinFitParticle = dKinFitter.Make_DecayingParticle(locPID);
+			deque<const DKinematicData*> locFinalDecayProducts;
+			locParticleCombo->Get_DecayChainParticles_Measured(loc_i, locFinalDecayProducts);
+			pair<Particle_t, deque<const DKinematicData*> > locDecayInfo(locPID, locFinalDecayProducts);
+			locDecayingKinFitParticles[locKinFitParticle] = locDecayInfo;
 			locInitialKinFitParticles_Step.push_back(locKinFitParticle);
 			locDecayingParticleStepMap[loc_i] = locKinFitParticle;
 			if(IsFixedMass(locPID))
@@ -172,6 +178,10 @@ bool DKinFitResults_factory::Setup_KinFit(JEventLoop* locEventLoop, const DParti
 			else if(locDecayStepIndex >= 0) //add decaying particle
 			{
 				locKinFitParticle = dKinFitter.Make_DecayingParticle(locPID);
+				deque<const DKinematicData*> locFinalDecayProducts;
+				locParticleCombo->Get_DecayChainParticles_Measured(locDecayStepIndex, locFinalDecayProducts);
+				pair<Particle_t, deque<const DKinematicData*> > locDecayInfo(locPID, locFinalDecayProducts);
+				locDecayingKinFitParticles[locKinFitParticle] = locDecayInfo;
 				locFinalKinFitParticles_Step.push_back(locKinFitParticle);
 				locDecayingParticleStepMap[locDecayStepIndex] = locKinFitParticle;
 				if(IsFixedMass(locPID))
@@ -833,15 +843,13 @@ double DKinFitResults_factory::Calc_TimeGuess(const deque<const DKinFitParticle*
 	return dAnalysisUtilities->Calc_CrudeTime(locTimeFindParticles, locVertexGuess);
 }
 
-void DKinFitResults_factory::Build_KinFitResults(const DParticleCombo* locParticleCombo, const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles_Input, const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles_Input)
+void DKinFitResults_factory::Build_KinFitResults(const DParticleCombo* locParticleCombo, const map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >& locInitDecayingKinFitParticles)
 {
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
 	DKinFitResults* locKinFitResults = new DKinFitResults();
 	locKinFitResults->Set_ParticleCombo(locParticleCombo);
 
-	locKinFitResults->Set_KinFitName(locReaction->Get_ReactionName());
 	locKinFitResults->Set_KinFitType(locReaction->Get_KinFitType());
-
 	locKinFitResults->Set_ConfidenceLevel(dKinFitter.Get_ConfidenceLevel());
 	locKinFitResults->Set_ChiSq(dKinFitter.Get_ChiSq());
 	locKinFitResults->Set_NDF(dKinFitter.Get_NDF());
@@ -853,35 +861,35 @@ void DKinFitResults_factory::Build_KinFitResults(const DParticleCombo* locPartic
 	dKinFitter.Get_KinFitConstraints(locKinFitConstraints);
 	locKinFitResults->Set_KinFitConstraints(locKinFitConstraints);
 
-	//create output deques from input deques & mapping
-	deque<deque<const DKinFitParticle*> > locInitialKinFitParticles_Output, locFinalKinFitParticles_Output;
-	locInitialKinFitParticles_Output.resize(locInitialKinFitParticles_Input.size());
-	const DKinFitParticle* locOutputKinFitParticle;
-	for(size_t loc_i = 0; loc_i < locInitialKinFitParticles_Input.size(); ++loc_i)
-	{
-		for(size_t loc_j = 0; loc_j < locInitialKinFitParticles_Input[loc_i].size(); ++loc_j)
-		{
-			locOutputKinFitParticle = dKinFitter.Get_OutputKinFitParticle(locInitialKinFitParticles_Input[loc_i][loc_j]);
-			locInitialKinFitParticles_Output[loc_i].push_back(locOutputKinFitParticle);
-		}
-	}
-	locFinalKinFitParticles_Output.resize(locFinalKinFitParticles_Input.size());
-	for(size_t loc_i = 0; loc_i < locFinalKinFitParticles_Input.size(); ++loc_i)
-	{
-		for(size_t loc_j = 0; loc_j < locFinalKinFitParticles_Input[loc_i].size(); ++loc_j)
-		{
-			locOutputKinFitParticle = dKinFitter.Get_OutputKinFitParticle(locFinalKinFitParticles_Input[loc_i][loc_j]);
-			locFinalKinFitParticles_Output[loc_i].push_back(locOutputKinFitParticle);
-		}
-	}
-	locKinFitResults->Set_InitialKinFitParticles(locInitialKinFitParticles_Output);
-	locKinFitResults->Set_FinalKinFitParticles(locFinalKinFitParticles_Output);
-
-	//convert the map of the data: convert from (input particle -> data) to (output particle -> data)
+	//map of particle data
 	map<const DKinFitParticle*, const DKinematicData*> locParticleMapping_Output;
 	dKinFitter.Get_ParticleMapping_OutputToSource(locParticleMapping_Output);
 	locKinFitResults->Set_ParticleMapping(locParticleMapping_Output);
 
+	//reverse map of particle data (& missing)
+	map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
+	for(map<const DKinFitParticle*, const DKinematicData*>::iterator locIterator = locParticleMapping_Output.begin(); locIterator != locParticleMapping_Output.end(); ++locIterator)
+	{
+		if(locIterator->first->Get_KinFitParticleType() == d_MissingParticle)
+			locKinFitResults->Set_MissingParticle(locIterator->first); //missing
+		if(locIterator->second == NULL)
+			continue; //not detected (e.g. missing, decaying, target)
+		locReverseParticleMapping[locIterator->second] = locIterator->first;
+	}
+	locKinFitResults->Set_ReverseParticleMapping(locReverseParticleMapping);
+
+	//decaying particles //input to function is the constructed decaying particles; must save the final decaying particles
+	map<const DKinFitParticle*, const DKinFitParticle*> locKinFitParticleIOMap; //map from constructed-kinfit-particle to final-kinfit-particle
+	dKinFitter.Get_KinFitParticleIOMap(locKinFitParticleIOMap);
+	for(map<const DKinFitParticle*, const DKinFitParticle*>::iterator locIterator = locKinFitParticleIOMap.begin(); locIterator != locKinFitParticleIOMap.end(); ++locIterator)
+	{
+		map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >::const_iterator locDecayingIterator = locInitDecayingKinFitParticles.find(locIterator->first);
+		if(locDecayingIterator == locInitDecayingKinFitParticles.end())
+			continue; //not a decaying particle
+		locKinFitResults->Add_DecayingParticle(locDecayingIterator->second, locKinFitParticleIOMap[locDecayingIterator->first]);
+	}
+
+	//pulls
 	map<const DKinematicData*, map<DKinFitPullType, double> > locPulls;
 	dKinFitter.Get_Pulls(locPulls);
 	locKinFitResults->Set_Pulls(locPulls);

@@ -62,8 +62,6 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 	DParticleComboStep* locNewParticleComboStep;
 	DKinematicData* locKinematicData;
 	const DKinematicData* locConstKinematicData;
-	deque<deque<const DKinFitParticle*> > locInitialKinFitParticles;
-	deque<deque<const DKinFitParticle*> > locFinalKinFitParticles;
 	const DKinFitParticle* locKinFitParticle;
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses_Associated;
 	vector<const DChargedTrackHypothesis*> locChargedTrackHypotheses_Associated;
@@ -71,16 +69,16 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 	vector<const DParticleCombo*> locParticleCombos_Associated;
 	DParticleCombo* locNewParticleCombo;
 	DParticleCombo* locPreviousParticleCombo;
+	const DReaction* locReaction;
 	Particle_t locPID;
+	map<pair<Particle_t, deque<const DKinematicData*> >, const DKinFitParticle*> locDecayingParticles;
 
 	map<const DParticleCombo*, DParticleCombo*> locKinFitParticleComboMap;
-
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
 		DKinFitType locKinFitType = locKinFitResultsVector[loc_i]->Get_KinFitType();
-		locKinFitResultsVector[loc_i]->Get_InitialKinFitParticles(locInitialKinFitParticles);
-		locKinFitResultsVector[loc_i]->Get_FinalKinFitParticles(locFinalKinFitParticles);
 		locParticleCombo = locKinFitResultsVector[loc_i]->Get_ParticleCombo();
+		locReaction = locParticleCombo->Get_Reaction();
 
 		locNewParticleCombo = new DParticleCombo();
 		locNewParticleCombo->Set_Reaction(locParticleCombo->Get_Reaction());
@@ -91,11 +89,19 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 		locNewParticleCombo->AddAssociatedObject(locParticleComboBlueprints_Associated[0]);
 		locNewParticleCombo->AddAssociatedObject(locParticleCombo);
 
-		//search to see if the actual kinfit results (and not the object!) were the same as a previous combo. if so, the steps (and particles) will be identical:
+		locKinFitResultsVector[loc_i]->Get_DecayingParticles(locDecayingParticles);
+
+		//search to see if the results were the same as a previous combo. if so, copy them:
+			//e.g. two different dreactions for the exact same channel (different analysis actions)
+			//e.g. two different dreactions for the same channel, except they differ in resonances (don't affect kinfit)
 		bool locMatchFlag = false;
 		for(size_t loc_j = 0; loc_j < loc_i; ++loc_j)
 		{
-			if(!locParticleCombo->Will_KinFitBeIdentical(locKinFitResultsVector[loc_j]->Get_ParticleCombo()))
+			const DParticleCombo* locCheckParticleCombo = locKinFitResultsVector[loc_j]->Get_ParticleCombo();
+			if(!locParticleCombo->Will_KinFitBeIdentical(locCheckParticleCombo))
+				continue;
+			//see if steps and particles are identical //may have different resonances
+			if(!locReaction->Check_AreStepsIdentical(locCheckParticleCombo->Get_Reaction()))
 				continue;
 			//steps & particles are identical
 			locPreviousParticleCombo = locKinFitParticleComboMap[locKinFitResultsVector[loc_j]->Get_ParticleCombo()];
@@ -147,7 +153,10 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 			}
 			else //decaying particle!
 			{
-				locKinFitParticle = locInitialKinFitParticles[loc_j][0];
+				deque<const DKinematicData*> locDecayProducts;
+				locParticleCombo->Get_DecayChainParticles_Measured(loc_j, locDecayProducts);
+				pair<Particle_t, deque<const DKinematicData*> > locDecayInfoPair(locPID, locDecayProducts);
+				locKinFitParticle = locDecayingParticles[locDecayInfoPair];
 				if(locKinFitParticle != NULL)
 				{
 					locKinematicData = Build_KinematicData(locPID, locKinFitParticle);
@@ -184,13 +193,16 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 				locPID = locParticleComboStep->Get_FinalParticleID(loc_k);
 				if(locParticleComboStep->Is_FinalParticleMissing(loc_k)) //missing!
 				{
-					locKinFitParticle = locFinalKinFitParticles[loc_j][loc_k];
+					locKinFitParticle = locKinFitResultsVector[loc_i]->Get_MissingParticle();;
 					locKinematicData = (locKinFitParticle != NULL) ? Build_KinematicData(locPID, locKinFitParticle) : NULL;
 					locNewParticleComboStep->Add_FinalParticle(locKinematicData);
 				}
 				else if(locParticleComboStep->Is_FinalParticleDecaying(loc_k)) //decaying!
 				{
-					locKinFitParticle = locFinalKinFitParticles[loc_j][loc_k];
+					deque<const DKinematicData*> locDecayProducts;
+					locParticleCombo->Get_DecayChainParticles_Measured(locParticleComboStep->Get_DecayStepIndex(loc_k), locDecayProducts);
+					pair<Particle_t, deque<const DKinematicData*> > locDecayInfoPair(locPID, locDecayProducts);
+					locKinFitParticle = locDecayingParticles[locDecayInfoPair];
 					if(locKinFitParticle != NULL)
 					{
 						locKinematicData = Build_KinematicData(locPID, locKinFitParticle);
@@ -249,6 +261,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 			}
 			locNewParticleCombo->Add_ParticleComboStep(locNewParticleComboStep);
 		}
+
 		locKinFitParticleComboMap[locParticleCombo] = locNewParticleCombo;
 		_data.push_back(locNewParticleCombo);
 	}

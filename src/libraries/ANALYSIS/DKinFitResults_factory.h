@@ -40,7 +40,7 @@ class DKinFitResults_factory : public jana::JFactory<DKinFitResults>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		bool Setup_KinFit(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles, deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles);
+		bool Setup_KinFit(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >& locDecayingKinFitParticles);
 		void Setup_P4Constraint(const DParticleCombo* locParticleCombo, size_t locStepIndex, const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles, const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles, deque<const DKinFitParticle*>& locInitialKinFitParticles_P4, deque<const DKinFitParticle*>& locFinalKinFitParticles_P4, deque<size_t>& locIncludedStepIndices);
 		void Setup_VertexConstraint(const DParticleCombo* locParticleCombo, size_t locStepIndex, const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles, const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles, deque<const DKinFitParticle*>& locInitialKinFitParticles_Vertex, deque<const DKinFitParticle*>& locFinalKinFitParticles_Vertex, deque<size_t>& locIncludedStepIndices);
 
@@ -51,7 +51,7 @@ class DKinFitResults_factory : public jana::JFactory<DKinFitResults>
 		double Calc_TimeGuess(const deque<const DKinFitParticle*>& locFinalKinFitParticles, DVector3 locVertexGuess, bool locUseRFTimeFlag, double locRFTime);
 		void Remove_BadVertexConstraints(deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles_Vertices, deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles_Vertices) const;
 
-		void Build_KinFitResults(const DParticleCombo* locParticleCombo, const deque<deque<const DKinFitParticle*> >& locInitialKinFitParticles_Input, const deque<deque<const DKinFitParticle*> >& locFinalKinFitParticles_Input);
+		void Build_KinFitResults(const DParticleCombo* locParticleCombo, const map<const DKinFitParticle*, pair<Particle_t, deque<const DKinematicData*> > >& locInitDecayingKinFitParticles);
 
 		const DAnalysisUtilities* dAnalysisUtilities;
 		DKinFitter_GlueX dKinFitter;
