@@ -27,7 +27,6 @@ bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticle
 	{
 		if(ParticleCharge(dParticleID) == 0)
 		{
-			continue; //DISABLE UNTIL PROPER TIMES/UNCERTAINTIES SET!
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
 			if((locNeutralParticleHypothesis->dFOM < dMinimumConfidenceLevel) && (locNeutralParticleHypothesis->dNDF > 0))
 				return false;
@@ -60,7 +59,6 @@ bool DCutAction_AllPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParti
 	{
 		if(ParticleCharge(locParticles[loc_i]->PID()) == 0)
 		{
-			continue; //DISABLE UNTIL PROPER TIMES/UNCERTAINTIES SET!
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
 			locTotalNDF += locNeutralParticleHypothesis->dNDF;
 			locTotalChiSq += locNeutralParticleHypothesis->dChiSq;

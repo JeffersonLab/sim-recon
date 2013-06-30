@@ -38,15 +38,41 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 		else
 			dHistMap_PIDFOM[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
 
-		if(ParticleCharge(locPID) != 0) //no other sources of PID for neutrals
+		// Confidence Level in BCAL
+		locHistName = "TOFConfidenceLevel_BCAL";
+		locHistTitle = locParticleROOTName + string(" PID in BCAL;TOF Confidence Level");
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHistMap_TOFFOM_BCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHistMap_TOFFOM_BCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+
+		if(ParticleCharge(locPID) == 0)
 		{
-			// TOF Confidence Level
-			locHistName = "TOFConfidenceLevel";
-			locHistTitle = locParticleROOTName + string(" PID;TOF Confidence Level");
+			// Confidence Level in FCAL
+			locHistName = "TOFConfidenceLevel_FCAL";
+			locHistTitle = locParticleROOTName + string(" PID in FCAL;TOF Confidence Level");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_TOFFOM[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFFOM_FCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistMap_TOFFOM[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+				dHistMap_TOFFOM_FCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+		}
+		else //charged particles
+		{
+			// Confidence Level in TOF
+			locHistName = "TOFConfidenceLevel_TOF";
+			locHistTitle = locParticleROOTName + string(" PID in TOF;TOF Confidence Level");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_TOFFOM_TOF[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_TOFFOM_TOF[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+
+			// Confidence Level in CDC
+			locHistName = "TOFConfidenceLevel_CDC";
+			locHistTitle = locParticleROOTName + string(" PID in CDC;TOF Confidence Level");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_TOFFOM_CDC[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_TOFFOM_CDC[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
 
 			// DC dE/dx Confidence Level
 			locHistName = "DCdEdxConfidenceLevel";
@@ -222,36 +248,44 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	const DMCThrown* locMCThrown = (locMCThrownMatching != NULL) ? locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis) : NULL;
 
 	japp->RootWriteLock();
-	dHistMap_PIDFOM[locPID]->Fill(locChargedTrackHypothesis->dFOM);
-	dHistMap_TOFFOM[locPID]->Fill(locFOM_Timing);
-	dHistMap_DCdEdxFOM[locPID]->Fill(locFOM_DCdEdx);
-	dHistMap_BetaVsP[locPID]->Fill(locP, locBeta_Timing);
-	dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
-	dHistMap_TOFFOMVsDeltaBeta[locPID]->Fill(locDeltaBeta, locFOM_Timing);
-	pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
-	if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
-		locPIDPair.second = (Particle_t)(locMCThrown->type); //matched
-	if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
-		dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locChargedTrackHypothesis->dFOM);
+	{
+		dHistMap_PIDFOM[locPID]->Fill(locChargedTrackHypothesis->dFOM);
 
-	if((locChargedTrackHypothesis->dFOM < 0.01) && (locChargedTrackHypothesis->dNDF > 0))
-		dHistMap_PVsTheta_LowPIDFOM[locPID]->Fill(locTheta, locP);
-	else if(locChargedTrackHypothesis->dNDF == 0) //NaN
-		dHistMap_PVsTheta_NaNPIDFOM[locPID]->Fill(locTheta, locP);
+		if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
+			dHistMap_TOFFOM_TOF[locPID]->Fill(locFOM_Timing);
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_BCAL)
+			dHistMap_TOFFOM_BCAL[locPID]->Fill(locFOM_Timing);
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
+			dHistMap_TOFFOM_CDC[locPID]->Fill(locFOM_Timing);
 
-	if(locFOM_Timing < 0.01)
-		dHistMap_PVsTheta_LowTOFFOM[locPID]->Fill(locTheta, locP);
-	else if(locChargedTrackHypothesis->dNDF_Timing == 0) //NaN
-		dHistMap_PVsTheta_NaNTOFFOM[locPID]->Fill(locTheta, locP);
+		dHistMap_DCdEdxFOM[locPID]->Fill(locFOM_DCdEdx);
+		dHistMap_BetaVsP[locPID]->Fill(locP, locBeta_Timing);
+		dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
+		dHistMap_TOFFOMVsDeltaBeta[locPID]->Fill(locDeltaBeta, locFOM_Timing);
+		pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
+		if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
+			locPIDPair.second = (Particle_t)(locMCThrown->type); //matched
+		if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
+			dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locChargedTrackHypothesis->dFOM);
 
-	if(locFOM_DCdEdx < 0.01)
-		dHistMap_PVsTheta_LowDCdEdxFOM[locPID]->Fill(locTheta, locP);
-	else if(locChargedTrackHypothesis->dNDF_DCdEdx == 0) //NaN
-		dHistMap_PVsTheta_NaNDCdEdxFOM[locPID]->Fill(locTheta, locP);
+		if((locChargedTrackHypothesis->dFOM < 0.01) && (locChargedTrackHypothesis->dNDF > 0))
+			dHistMap_PVsTheta_LowPIDFOM[locPID]->Fill(locTheta, locP);
+		else if(locChargedTrackHypothesis->dNDF == 0) //NaN
+			dHistMap_PVsTheta_NaNPIDFOM[locPID]->Fill(locTheta, locP);
 
-	if(locBeta_Timing < 0.0)
-		dHistMap_PVsTheta_NegativeBeta[locPID]->Fill(locTheta, locP);
+		if(locFOM_Timing < 0.01)
+			dHistMap_PVsTheta_LowTOFFOM[locPID]->Fill(locTheta, locP);
+		else if(locChargedTrackHypothesis->dNDF_Timing == 0) //NaN
+			dHistMap_PVsTheta_NaNTOFFOM[locPID]->Fill(locTheta, locP);
 
+		if(locFOM_DCdEdx < 0.01)
+			dHistMap_PVsTheta_LowDCdEdxFOM[locPID]->Fill(locTheta, locP);
+		else if(locChargedTrackHypothesis->dNDF_DCdEdx == 0) //NaN
+			dHistMap_PVsTheta_NaNDCdEdxFOM[locPID]->Fill(locTheta, locP);
+
+		if(locBeta_Timing < 0.0)
+			dHistMap_PVsTheta_NegativeBeta[locPID]->Fill(locTheta, locP);
+	}
 	japp->RootUnLock();
 }
 
@@ -268,21 +302,28 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 	const DMCThrown* locMCThrown = (locMCThrownMatching != NULL) ? locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis) : NULL;
 
 	japp->RootWriteLock();
-	dHistMap_PIDFOM[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
-	dHistMap_BetaVsP[locPID]->Fill(locP, locBeta_Timing);
-	dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
-	dHistMap_TOFFOMVsDeltaBeta[locPID]->Fill(locDeltaBeta, locNeutralParticleHypothesis->dFOM);
-	pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
-	if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
-		locPIDPair.second = (Particle_t)(locMCThrown->type); //matched
-	if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
-		dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locNeutralParticleHypothesis->dFOM);
+	{
+		dHistMap_PIDFOM[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
 
-	if((locNeutralParticleHypothesis->dFOM < 0.01) && (locNeutralParticleHypothesis->dNDF > 0))
-		dHistMap_PVsTheta_LowPIDFOM[locPID]->Fill(locTheta, locP);
-	else if(locNeutralParticleHypothesis->dNDF == 0) //NaN
-		dHistMap_PVsTheta_NaNPIDFOM[locPID]->Fill(locTheta, locP);
+		if(locNeutralParticleHypothesis->t1_detector() == SYS_BCAL)
+			dHistMap_TOFFOM_BCAL[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
+		else if(locNeutralParticleHypothesis->t1_detector() == SYS_FCAL)
+			dHistMap_TOFFOM_FCAL[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
 
+		dHistMap_BetaVsP[locPID]->Fill(locP, locBeta_Timing);
+		dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
+		dHistMap_TOFFOMVsDeltaBeta[locPID]->Fill(locDeltaBeta, locNeutralParticleHypothesis->dFOM);
+		pair<Particle_t, Particle_t> locPIDPair(locPID, Unknown); //default unless matched
+		if(locMCThrown != NULL) //else bogus track (not matched to any thrown tracks)
+			locPIDPair.second = (Particle_t)(locMCThrown->type); //matched
+		if(dHistMap_PIDFOMForTruePID.find(locPIDPair) != dHistMap_PIDFOMForTruePID.end()) //else hist not created or PID is weird
+			dHistMap_PIDFOMForTruePID[locPIDPair]->Fill(locNeutralParticleHypothesis->dFOM);
+
+		if((locNeutralParticleHypothesis->dFOM < 0.01) && (locNeutralParticleHypothesis->dNDF > 0))
+			dHistMap_PVsTheta_LowPIDFOM[locPID]->Fill(locTheta, locP);
+		else if(locNeutralParticleHypothesis->dNDF == 0) //NaN
+			dHistMap_PVsTheta_NaNPIDFOM[locPID]->Fill(locTheta, locP);
+	}
 	japp->RootUnLock();
 }
 
@@ -880,9 +921,11 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 {
 	Particle_t locPID = locKinematicData->PID();
 	DVector3 locMomentum = locKinematicData->momentum();
+	DVector3 locPosition = locKinematicData->position();
 	double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 	double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 	double locP = locMomentum.Mag();
+	const DMatrixDSym& locCovarianceMatrix = locKinematicData->errorMatrix();
 
 	double locBeta_Timing, locDeltaBeta;
 	if(ParticleCharge(locPID) == 0)
@@ -2664,7 +2707,6 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 		dHist_ConfidenceLevel->Fill(locConfidenceLevel);
 	}
 	japp->RootUnLock();
-
 	if(locConfidenceLevel < dPullHistConfidenceLevelCut)
 		return true; //don't histogram pulls
 

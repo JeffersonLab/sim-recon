@@ -93,7 +93,10 @@ class DHistogramAction_PID : public DAnalysisAction
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		map<Particle_t, TH1D*> dHistMap_PIDFOM;
-		map<Particle_t, TH1D*> dHistMap_TOFFOM;
+		map<Particle_t, TH1D*> dHistMap_TOFFOM_BCAL;
+		map<Particle_t, TH1D*> dHistMap_TOFFOM_FCAL;
+		map<Particle_t, TH1D*> dHistMap_TOFFOM_TOF;
+		map<Particle_t, TH1D*> dHistMap_TOFFOM_CDC;
 		map<Particle_t, TH1D*> dHistMap_DCdEdxFOM;
 		map<Particle_t, TH2D*> dHistMap_BetaVsP;
 		map<Particle_t, TH2D*> dHistMap_DeltaBetaVsP;
