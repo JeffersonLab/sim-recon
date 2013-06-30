@@ -53,6 +53,7 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		bool Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const;
 		bool Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
 
 		DParticleComboStep* Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep);
 		void Reset_KinematicData(DKinematicData* locKinematicData);
@@ -78,8 +79,8 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values will override these values
-		pair<bool, double> dMinIndividualChargedPIDFOM; //the minimum PID FOM for a charged track used for this DReaction
-		pair<bool, double> dMinCombinedChargedPIDFOM; //the minimum combined PID FOM for all charged tracks used for this DReaction
+		pair<bool, double> dMinIndividualPIDFOM; //the minimum PID FOM for a charged track used for this DReaction
+		pair<bool, double> dMinCombinedPIDFOM; //the minimum combined PID FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMinCombinedTrackingFOM; //the minimum combined Tracking FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
 

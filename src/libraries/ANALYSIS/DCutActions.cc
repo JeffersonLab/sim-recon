@@ -41,14 +41,14 @@ bool DCutAction_PIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticle
 	return true;
 }
 
-string DCutAction_AllPIDFOM::Get_ActionName(void) const
+string DCutAction_CombinedPIDFOM::Get_ActionName(void) const
 {
 	ostringstream locStream;
 	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumConfidenceLevel;
 	return locStream.str();
 }
 
-bool DCutAction_AllPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+bool DCutAction_CombinedPIDFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	deque<const DKinematicData*> locParticles;
 	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);

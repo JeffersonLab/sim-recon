@@ -73,7 +73,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_KinFitResults(NULL, 0.0);
 
 	DCutAction_PIDFOM(NULL, Unknown, Unknown, 0.0);
-	DCutAction_AllPIDFOM(NULL, 0.0);
+	DCutAction_CombinedPIDFOM(NULL, 0.0);
 	DCutAction_MissingMass(NULL, false, 0.0, 0.0);
 	DCutAction_MissingMassSquared(NULL, false, 0.0, 0.0);
 	DCutAction_InvariantMass(NULL, Unknown, false, 0.0, 0.0);

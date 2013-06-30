@@ -20,8 +20,8 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 	MAX_DBeamPhotonPoolSize = 1;
 
 	dMaxPhotonRFDeltaT = pair<bool, double>(false, -1.0);
-	dMinIndividualChargedPIDFOM = pair<bool, double>(false, -1.0);
-	dMinCombinedChargedPIDFOM = pair<bool, double>(false, -1.0);
+	dMinIndividualPIDFOM = pair<bool, double>(false, -1.0);
+	dMinCombinedPIDFOM = pair<bool, double>(false, -1.0);
 	dMinCombinedTrackingFOM = pair<bool, double>(false, -1.0);
 
 	return NOERROR;
@@ -49,16 +49,16 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 		gPARMS->GetParameter("COMBO:MIN_COMBINED_TRACKING_FOM", dMinCombinedTrackingFOM.second);
 	}
 
-	if(gPARMS->Exists("COMBO:MIN_INDIVIDUAL_CHARGED_PID_FOM"))
+	if(gPARMS->Exists("COMBO:MIN_INDIVIDUAL_PID_FOM"))
 	{
-		dMinIndividualChargedPIDFOM.first = true;
-		gPARMS->GetParameter("COMBO:MIN_INDIVIDUAL_CHARGED_PID_FOM", dMinIndividualChargedPIDFOM.second);
+		dMinIndividualPIDFOM.first = true;
+		gPARMS->GetParameter("COMBO:MIN_INDIVIDUAL_PID_FOM", dMinIndividualPIDFOM.second);
 	}
 
-	if(gPARMS->Exists("COMBO:MIN_COMBINED_CHARGED_PID_FOM"))
+	if(gPARMS->Exists("COMBO:MIN_COMBINED_PID_FOM"))
 	{
-		dMinCombinedChargedPIDFOM.first = true;
-		gPARMS->GetParameter("COMBO:MIN_COMBINED_CHARGED_PID_FOM", dMinCombinedChargedPIDFOM.second);
+		dMinCombinedPIDFOM.first = true;
+		gPARMS->GetParameter("COMBO:MIN_COMBINED_PID_FOM", dMinCombinedPIDFOM.second);
 	}
 
 	return NOERROR;
@@ -305,6 +305,11 @@ const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(con
 			locNeutralParticleHypotheses[loc_i]->GetSingleT(locEventRFBunch_Hypothesis);
 			if(locEventRFBunch_Hypothesis != locEventRFBunch)
 				continue;
+
+			//check to make sure the PID isn't way off (save time/mem)
+			if(!Cut_PIDFOM(locReaction, locNeutralParticleHypotheses[loc_i]))
+				return NULL;
+
 			return static_cast<const DKinematicData*>(locNeutralParticleHypotheses[loc_i]);
 		}
 		return NULL; //uh oh!
@@ -438,32 +443,49 @@ DKinematicData* DParticleCombo_factory_PreKinFit::Get_KinematicDataResource(void
 
 bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
-	pair<bool, double> locMinIndividualChargedPIDFOM = dMinIndividualChargedPIDFOM.first ? dMinIndividualChargedPIDFOM : locReaction->Get_MinIndividualChargedPIDFOM();
-	if(!locMinIndividualChargedPIDFOM.first)
+	pair<bool, double> locMinIndividualPIDFOM = dMinIndividualPIDFOM.first ? dMinIndividualPIDFOM : locReaction->Get_MinIndividualPIDFOM();
+	if(!locMinIndividualPIDFOM.first)
 		return true;
-	return ((locChargedTrackHypothesis->dNDF == 0) ? true : (locChargedTrackHypothesis->dFOM >= locMinIndividualChargedPIDFOM.second));
+	return ((locChargedTrackHypothesis->dNDF == 0) ? true : (locChargedTrackHypothesis->dFOM >= locMinIndividualPIDFOM.second));
+}
+
+bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const
+{
+	pair<bool, double> locMinIndividualPIDFOM = dMinIndividualPIDFOM.first ? dMinIndividualPIDFOM : locReaction->Get_MinIndividualPIDFOM();
+	if(!locMinIndividualPIDFOM.first)
+		return true;
+	return ((locNeutralParticleHypothesis->dNDF == 0) ? true : (locNeutralParticleHypothesis->dFOM >= locMinIndividualPIDFOM.second));
 }
 
 bool DParticleCombo_factory_PreKinFit::Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const
 {
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
-	pair<bool, double> locMinCombinedChargedPIDFOM = dMinCombinedChargedPIDFOM.first ? dMinCombinedChargedPIDFOM : locReaction->Get_MinCombinedChargedPIDFOM();
-	if(!locMinCombinedChargedPIDFOM.first)
+	pair<bool, double> locMinCombinedPIDFOM = dMinCombinedPIDFOM.first ? dMinCombinedPIDFOM : locReaction->Get_MinCombinedPIDFOM();
+	if(!locMinCombinedPIDFOM.first)
 		return true;
 
 	unsigned int locTotalPIDNDF = 0;
 	double locTotalPIDChiSq = 0.0;
 
-	deque<const DKinematicData*> locDetectedChargedParticles;
-	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedChargedParticles);
-	for(size_t loc_i = 0; loc_i < locDetectedChargedParticles.size(); ++loc_i)
+	deque<const DKinematicData*> locDetectedParticles;
+	locParticleCombo->Get_DetectedFinalParticles_Measured(locDetectedParticles);
+	for(size_t loc_i = 0; loc_i < locDetectedParticles.size(); ++loc_i)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locDetectedChargedParticles[loc_i]);
-		locTotalPIDNDF += locChargedTrackHypothesis->dNDF;
-		locTotalPIDChiSq += locChargedTrackHypothesis->dChiSq;
+		if(ParticleCharge(locDetectedParticles[loc_i]->PID()) == 0)
+		{
+			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = dynamic_cast<const DNeutralParticleHypothesis*>(locDetectedParticles[loc_i]);
+			locTotalPIDNDF += locNeutralParticleHypothesis->dNDF;
+			locTotalPIDChiSq += locNeutralParticleHypothesis->dChiSq;
+		}
+		else
+		{
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locDetectedParticles[loc_i]);
+			locTotalPIDNDF += locChargedTrackHypothesis->dNDF;
+			locTotalPIDChiSq += locChargedTrackHypothesis->dChiSq;
+		}
 	}
 	double locFOM = TMath::Prob(locTotalPIDChiSq, locTotalPIDNDF);
-	return (locFOM >= locMinCombinedChargedPIDFOM.second);
+	return (locFOM >= locMinCombinedPIDFOM.second);
 }
 
 bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const

@@ -30,7 +30,7 @@ using namespace std;
 DCutAction_MaxNumParticleCombos
 
 DCutAction_PIDFOM
-DCutAction_AllPIDFOM
+DCutAction_CombinedPIDFOM
 DCutAction_TruePID
 DCutAction_AllTruePID
 
@@ -77,11 +77,11 @@ class DCutAction_PIDFOM : public DAnalysisAction
 		double dMinimumConfidenceLevel;
 };
 
-class DCutAction_AllPIDFOM : public DAnalysisAction
+class DCutAction_CombinedPIDFOM : public DAnalysisAction
 {
 	public:
-		DCutAction_AllPIDFOM(const DReaction* locReaction, double locMinimumConfidenceLevel, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Cut_AllPIDFOM", false, locActionUniqueString), dMinimumConfidenceLevel(locMinimumConfidenceLevel){}
+		DCutAction_CombinedPIDFOM(const DReaction* locReaction, double locMinimumConfidenceLevel, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_CombinedPIDFOM", false, locActionUniqueString), dMinimumConfidenceLevel(locMinimumConfidenceLevel){}
 
 		string Get_ActionName(void) const;
 		inline void Initialize(JEventLoop* locEventLoop){}
