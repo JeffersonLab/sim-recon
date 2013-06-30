@@ -102,7 +102,7 @@ inline static char* ParticleType(Particle_t p)
   case Unknown:
     return (char*)"Unknown";
   case Gamma:
-    return (char*)"Gamma";
+    return (char*)"Photon";
   case Positron:
     return (char*)"Positron";
   case Electron:
