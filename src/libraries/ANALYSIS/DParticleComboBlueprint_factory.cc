@@ -449,7 +449,7 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 		bool locMatchFoundFlag = false;
 		for(int loc_i = 0; loc_i < locStepIndex; ++loc_i)
 		{
-			for(int loc_j = 0; loc_j < int(locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_i)->Get_NumFinalParticleSourceObjects()); ++loc_j)
+			for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_i)->Get_NumFinalParticleSourceObjects(); ++loc_j)
 			{
 				if(dDebugLevel > 10)
 					cout << "previous step index, previous step final particle index, dDecayStepIndex, locStepIndex = " << loc_i << ", " << loc_j << ", " << locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_i)->Get_DecayStepIndex(loc_j) << ", " << locStepIndex << endl;
@@ -471,9 +471,51 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 		return true;
 	}
 
-	//constructed, handle decursion
-	locParticleComboBlueprints.push_back(locParticleComboBlueprint);
-	locParticleComboBlueprint = Clone_ParticleComboBlueprint(locParticleComboBlueprint);
+	//make sure the same source object was not used for two different particles
+		//the ONLY way this could still be the case at this point in the code is if there was a particle of ambiguous (non-zero) charge
+	bool locParticleUsedTwiceFlag = false;
+	for(size_t loc_i = 0; loc_i < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_i)
+	{
+		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_i)->Get_NumFinalParticleSourceObjects(); ++loc_j)
+		{
+			if(!locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_i)->Is_FinalParticleCharged(loc_j))
+				continue; //neutral
+			const JObject* locSourceObject = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_i)->Get_FinalParticle_SourceObject(loc_j);
+			if(locSourceObject == NULL)
+				continue;
+			//loop over other particles
+			for(size_t loc_k = 0; loc_k < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_k)
+			{
+				for(size_t loc_l = 0; loc_l < locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_k)->Get_NumFinalParticleSourceObjects(); ++loc_l)
+				{
+					if((loc_i == loc_k) && (loc_j == loc_l))
+						continue; //the same one
+					if(!locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_k)->Is_FinalParticleCharged(loc_l))
+						continue; //neutral
+					const JObject* locCheckSourceObject = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_k)->Get_FinalParticle_SourceObject(loc_l);
+					if(locSourceObject != locCheckSourceObject)
+						continue;
+					locParticleUsedTwiceFlag = true;
+					break;
+				}
+				if(locParticleUsedTwiceFlag)
+					break;
+			}
+			if(locParticleUsedTwiceFlag)
+				break;
+		}
+		if(locParticleUsedTwiceFlag)
+			break;
+	}
+
+	//save the combo if it's ok
+	if(!locParticleUsedTwiceFlag)
+	{
+		locParticleComboBlueprints.push_back(locParticleComboBlueprint);
+		locParticleComboBlueprint = new DParticleComboBlueprint(*locParticleComboBlueprint); //clone so don't alter saved object
+	}
+
+	//handle decursion
 	locParticleComboBlueprintStep = NULL;
 	if(!Handle_Decursion(locParticleComboBlueprint, locResumeAtIndexDeque, locNumPossibilitiesDeque, locParticleIndex, locStepIndex, locParticleComboBlueprintStep))
 		return false;
@@ -862,13 +904,6 @@ DParticleComboBlueprintStep* DParticleComboBlueprint_factory::Get_ParticleComboB
 		dParticleComboBlueprintStepPool_Available.pop_back();
 	}
 	return locParticleComboBlueprintStep;
-}
-
-DParticleComboBlueprint* DParticleComboBlueprint_factory::Clone_ParticleComboBlueprint(const DParticleComboBlueprint* locParticleComboBlueprint)
-{
-	DParticleComboBlueprint* locNewParticleComboBlueprint = new DParticleComboBlueprint();
-	*locNewParticleComboBlueprint = *locParticleComboBlueprint;
-	return locNewParticleComboBlueprint;
 }
 
 void DParticleComboBlueprint_factory::Reset_Pools(void)

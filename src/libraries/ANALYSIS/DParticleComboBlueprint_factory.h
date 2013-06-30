@@ -50,7 +50,6 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		DParticleComboBlueprintStep* Get_ParticleComboBlueprintStepResource(void);
-		DParticleComboBlueprint* Clone_ParticleComboBlueprint(const DParticleComboBlueprint* locParticleComboBlueprint);
 		inline void Recycle_ParticleComboBlueprintStep(DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintStepPool_Available.push_back(locParticleComboBlueprintStep);}
 
 		deque<DParticleComboBlueprintStep*> dParticleComboBlueprintStepPool_All;
