@@ -62,7 +62,7 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
 		// e.g. contains garbage tracks, PIDs way off
 	// These cut values are overriden if specified on the command line
-	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
+	locReaction->Set_MinCombinedPIDFOM(0.001);
 	locReaction->Set_MinCombinedTrackingFOM(0.001);
 
 	// Enable ROOT TTree Output
@@ -73,14 +73,11 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	//Extremely Loose Mass Cuts
 	locReaction->Add_AnalysisAction(new DCutAction_MissingMass(locReaction, false, 0.1, 1.6, "Proton_Loose")); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0, 0.5, "Pi0_Loose")); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, omega, false, 0.2, 1.4, "omega_Loose")); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, b1_1235_Plus, false, 0.6, 1.8, "b1(1235)+_Loose")); //false: measured data
-	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Unknown, false, 1.0, 3.0, "X(2000)_Loose")); //false: measured data
 
 	//PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
-	locReaction->Add_AnalysisAction(new DCutAction_AllPIDFOM(locReaction, 0.01)); //1%
+	locReaction->Add_AnalysisAction(new DCutAction_CombinedPIDFOM(locReaction, 0.01)); //1%
 	locReaction->Add_AnalysisAction(new DHistogramAction_TruePID(locReaction, "PostPID"));
 
 	//Initial Mass Distributions

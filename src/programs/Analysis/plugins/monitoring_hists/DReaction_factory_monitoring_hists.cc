@@ -22,7 +22,7 @@ jerror_t DReaction_factory_monitoring_hists::init(void)
 	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
 		// e.g. contains garbage tracks, PIDs way off
 	// These cut values are overriden if specified on the command line
-	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
+	locReaction->Set_MinCombinedPIDFOM(0.001);
 	locReaction->Set_MinCombinedTrackingFOM(0.001);
 
 	//X -> pi+, pi-
@@ -33,7 +33,7 @@ jerror_t DReaction_factory_monitoring_hists::init(void)
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
-	locReaction->Add_AnalysisAction(new DCutAction_AllPIDFOM(locReaction, 0.01)); //1%
+	locReaction->Add_AnalysisAction(new DCutAction_CombinedPIDFOM(locReaction, 0.01)); //1%
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Unknown, false, 1500, 0.2, 1.7, "pi+_pi-")); //false: measured data
 
 	_data.push_back(locReaction);
@@ -46,7 +46,7 @@ jerror_t DReaction_factory_monitoring_hists::init(void)
 	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
 		// e.g. contains garbage tracks, PIDs way off
 	// These cut values are overriden if specified on the command line
-	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
+	locReaction->Set_MinCombinedPIDFOM(0.001);
 	locReaction->Set_MinCombinedTrackingFOM(0.001);
 
 	//X -> p, pi-
@@ -57,7 +57,7 @@ jerror_t DReaction_factory_monitoring_hists::init(void)
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
-	locReaction->Add_AnalysisAction(new DCutAction_AllPIDFOM(locReaction, 0.01)); //1%
+	locReaction->Add_AnalysisAction(new DCutAction_CombinedPIDFOM(locReaction, 0.01)); //1%
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Unknown, false, 2000, 1.0, 2.0, "p_pi-")); //false: measured data
 
 	_data.push_back(locReaction);
@@ -70,7 +70,7 @@ jerror_t DReaction_factory_monitoring_hists::init(void)
 	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
 		// e.g. contains garbage tracks, PIDs way off
 	// These cut values are overriden if specified on the command line
-	locReaction->Set_MinCombinedChargedPIDFOM(0.001);
+	locReaction->Set_MinCombinedPIDFOM(0.001);
 	locReaction->Set_MinCombinedTrackingFOM(0.001);
 
 	//X -> pi+, pi-, pi0
@@ -90,7 +90,7 @@ jerror_t DReaction_factory_monitoring_hists::init(void)
 	locReaction->Add_ReactionStep(locReactionStep);
 	dReactionStepPool.push_back(locReactionStep); //prevent memory leak
 
-	locReaction->Add_AnalysisAction(new DCutAction_AllPIDFOM(locReaction, 0.01)); //1%
+	locReaction->Add_AnalysisAction(new DCutAction_CombinedPIDFOM(locReaction, 0.01)); //1%
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Pi0, false, 2000, 0.0, 0.5, "pi0")); //false: measured data
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.11, 0.16, "Pi0_Loose")); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_InvariantMass(locReaction, Unknown, false, 2000, 0.4, 1.4, "pi+_pi-_pi0")); //false: measured data
