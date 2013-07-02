@@ -170,6 +170,9 @@ bool DAnalysisUtilities::Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, c
 
 DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const
 {
+	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
+		return Calc_MissingP4(locParticleCombo, false); //kinematic fit failed
+
 	DLorentzVector locMissingP4;
 	const DKinematicData* locKinematicData;
 
@@ -201,6 +204,9 @@ DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParti
 
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const
 {
+	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
+		return Calc_FinalStateP4(locParticleCombo, locStepIndex, false); //kinematic fit failed
+
 	DLorentzVector locFinalStateP4;
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
 	if(locParticleComboStep == NULL)

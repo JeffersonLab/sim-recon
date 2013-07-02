@@ -31,6 +31,7 @@
 #include <ANALYSIS/DParticleCombo.h>
 #include <ANALYSIS/DReaction.h>
 #include <ANALYSIS/DAnalysisResults.h>
+#include <ANALYSIS/DAnalysisUtilities.h>
 #include <ANALYSIS/DMCThrownMatching.h>
 
 using namespace std;

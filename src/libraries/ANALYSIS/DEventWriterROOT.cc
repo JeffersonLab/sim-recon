@@ -876,6 +876,9 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	const DMCThrownMatching* locMCThrownMatching = NULL;
 	locEventLoop->GetSingle(locMCThrownMatching);
 
+	const DAnalysisUtilities* locAnalysisUtilities = NULL;
+	locEventLoop->GetSingle(locAnalysisUtilities);
+
 	const DMCReaction* locMCReaction = NULL;
 	locEventLoop->GetSingle(locMCReaction);
 
@@ -1028,7 +1031,16 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 						Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "X4", &locStepTX4, (*dTObjectMap)[locTree->GetName()]);
 					if(IsFixedMass(locPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 					{
-						TLorentzVector locDecayP4(locKinematicData->momentum().X(), locKinematicData->momentum().Y(), locKinematicData->momentum().Z(), locKinematicData->energy());
+						TLorentzVector locDecayP4;
+						if(locKinFitResults == NULL)
+						{
+							//fit failed to converge, calc from other particles
+							DLorentzVector locDecayDP4 = locAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_k, false);
+							locDecayDP4.SetE(sqrt(locDecayDP4.Vect().Mag2() + ParticleMass(locPID)*ParticleMass(locPID)));
+							locDecayP4.SetPxPyPzE(locDecayDP4.Px(), locDecayDP4.Py(), locDecayDP4.Pz(), locDecayDP4.E());
+						}
+						else
+							locDecayP4.SetPxPyPzE(locKinematicData->momentum().X(), locKinematicData->momentum().Y(), locKinematicData->momentum().Z(), locKinematicData->energy());
 						Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "P4", &locDecayP4, (*dTObjectMap)[locTree->GetName()]);
 					}
 				}
@@ -1047,6 +1059,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 					locPID = locParticleComboStep->Get_FinalParticleID(loc_l);
 					const DKinematicData* locKinematicData = locParticleComboStep->Get_FinalParticle(loc_l);
 					const DKinematicData* locKinematicData_Measured = locParticleComboStep->Get_FinalParticle_Measured(loc_l);
+
 					//decaying particle
 					if(locParticleComboStep->Is_FinalParticleDecaying(loc_l))
 						continue;
@@ -1059,7 +1072,16 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 						Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "X4", &locStepTX4, (*dTObjectMap)[locTree->GetName()]);
 						if(IsFixedMass(locPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 						{
-							TLorentzVector locMissingP4(locKinematicData->momentum().X(), locKinematicData->momentum().Y(), locKinematicData->momentum().Z(), locKinematicData->energy());
+							TLorentzVector locMissingP4;
+							if(locKinFitResults == NULL)
+							{
+								//fit failed to converge, calc from other particles
+								DLorentzVector locMissingDP4 = locAnalysisUtilities->Calc_MissingP4(locParticleCombo, false);
+								locMissingDP4.SetE(sqrt(locMissingDP4.Vect().Mag2() + ParticleMass(locPID)*ParticleMass(locPID)));
+								locMissingP4.SetPxPyPzE(locMissingDP4.Px(), locMissingDP4.Py(), locMissingDP4.Pz(), locMissingDP4.E());
+							}
+							else
+								locMissingP4.SetPxPyPzE(locKinematicData->momentum().X(), locKinematicData->momentum().Y(), locKinematicData->momentum().Z(), locKinematicData->energy());
 							Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "P4", &locMissingP4, (*dTObjectMap)[locTree->GetName()]);
 						}
 						continue;
@@ -1215,6 +1237,7 @@ void DEventWriterROOT::Fill_BeamParticleData(TTree* locTree, string locParticleB
 void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, map<const DMCThrown*, unsigned int> locThrownObjectIDMap) const
 {
 	bool locKinFitPerformedFlag = 	(locKinematicData != locKinematicData_Measured);
+
 	//KINEMATICS: MEASURED
 	TLorentzVector locX4_Measured(locKinematicData_Measured->position().X(), locKinematicData_Measured->position().Y(), locKinematicData_Measured->position().Z(), locKinematicData_Measured->time());
 	Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "X4_Measured", &locX4_Measured, (*dTObjectMap)[locTree->GetName()]);
@@ -1232,7 +1255,6 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 
 	//KINEMATICS: OTHER
 	Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "PathLength", locKinematicData->pathLength());
-
 	const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locKinematicData);
 	if(locChargedTrackHypothesis != NULL)
 	{
@@ -1272,7 +1294,6 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_FDC", locTrackTimeBased->ddEdx_FDC);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_TOF", locChargedTrackHypothesis->dTOFdEdx);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_ST", locChargedTrackHypothesis->dStartCounterdEdx);
-
 		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : numeric_limits<double>::quiet_NaN();
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locBCALEnergy);
 		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : numeric_limits<double>::quiet_NaN();
