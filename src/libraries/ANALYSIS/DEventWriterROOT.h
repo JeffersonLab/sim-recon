@@ -26,6 +26,7 @@
 #include <PID/DNeutralParticleHypothesis.h>
 #include <PID/DNeutralShower.h>
 #include <PID/DEventRFBunch.h>
+#include <PID/DMCReaction.h>
 
 #include <ANALYSIS/DParticleCombo.h>
 #include <ANALYSIS/DReaction.h>
@@ -57,6 +58,7 @@ class DEventWriterROOT : public JObject
 		void Get_Reactions(jana::JEventLoop* locEventLoop, vector<const DReaction*>& locReactions) const;
 		string Convert_ToBranchName(string locInputName) const;
 		ULong64_t Calc_ParticleMultiplexID(Particle_t locPID) const;
+		void Get_DecayProductNames(const DReaction* locReaction, size_t locReactionStepIndex, TMap* locPositionToNameMap, TList*& locDecayProductNames, deque<size_t>& locSavedSteps) const;
 
 		//TREE CREATION:
 		void Create_DataTree(const DReaction* locReaction, bool locIsMCDataFlag) const;
