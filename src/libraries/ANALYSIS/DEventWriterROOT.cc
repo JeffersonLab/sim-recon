@@ -390,20 +390,6 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 		Create_Branch_Fundamental<Double_t>(locTree, "", "RFTime_KinFit", "D");
 	}
 
-	//create branches for miss
-	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
-	{
-		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
-		locPID = locReactionStep->Get_InitialParticleID();
-		if((locPID == Gamma) || (locPID == Electron) || (locPID == Positron)) //beam
-			Create_Branch_NoSplitTObject<TLorentzVector>(locTree, "", "X4_Production", (*dTObjectMap)[locTree->GetName()]);
-		else if(IsDetachedVertex(locPID))
-		{
-			string locVariableName = string("X4_") + Convert_ToBranchName(ParticleType(locPID)) + string("Decay");
-			Create_Branch_NoSplitTObject<TLorentzVector>(locTree, "", locVariableName, (*dTObjectMap)[locTree->GetName()]);
-		}
-	}
-
 	//create thrown particle branches
 	if(locIsMCDataFlag)
 	{
