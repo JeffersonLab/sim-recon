@@ -117,7 +117,7 @@ void DBCALClump::AnalyzeClump(){
     int idx = n+CenterOffsetU;
     //cout<<"U< "<<n<<" "<<EU[n]<<"  "<<idx<<endl;
     if (idx>20){
-      idx -= (48.*4);
+      idx -= (48*4);
     }
     if (idx<0){
       break;
@@ -175,7 +175,7 @@ void DBCALClump::AnalyzeClump(){
     int idx = n+CenterOffsetD;
     //cout<<"D< "<<n<<" "<<ED[n]<<"   "<<idx<<endl;
     if (idx>20){
-      idx -= (48.*4);
+      idx -= (48*4);
     }
     if (idx<0){
       break;
@@ -223,20 +223,21 @@ void DBCALClump::AnalyzeClump(){
   low--;
   high++;
   
-  double chi2U,posU;
+  //double chi2U = 999.;
+  double posU = 20.;
   if (UCounter>1){
     TGraph* grU = new TGraph(60,x,ProfileU);
     //grU->Fit("gaus","Q","r",(Double_t)low,(Double_t)high);
     
     grU->Fit("gaus","Q","r",15.,25.);
     TF1 *f1U = grU->GetFunction("gaus");
-    double chi2U,posU;
+
     if (f1U) {
-      chi2U = f1U->GetChisquare();  
+      //chi2U = f1U->GetChisquare();  
       posU = f1U->GetParameter(1);
     } else {
       posU = 20.;
-      chi2U = 999.;
+      //chi2U = 999.;
     }
     if (TMath::Abs(posU-20.)>2.){ // this shower has a complicated shape
       f1U->SetParameter(1,20.);
@@ -251,11 +252,11 @@ void DBCALClump::AnalyzeClump(){
     }
   } else if (UCounter){
     posU = 20.;
-    chi2U = 999;
+    //chi2U = 999;
   } else {
     cout<<"Error no data to fit U: this should never happen!!!"<<endl;
     posU = 0;
-    chi2U=999999;
+    //chi2U=999999;
   }
 
   low = 0;
@@ -269,7 +270,8 @@ void DBCALClump::AnalyzeClump(){
   low--;
   high++;
   
-  double chi2D,posD;
+  //double chi2D = 999.;
+  double posD = 20.;
   if (DCounter>1){
     TGraph* grD = new TGraph(60,x,ProfileD);
     //grD->Fit("gaus","Q","r",(Double_t)low,(Double_t)high);
@@ -277,11 +279,11 @@ void DBCALClump::AnalyzeClump(){
     
     TF1 *f1D = grD->GetFunction("gaus");
     if (f1D){
-      chi2D = f1D->GetChisquare();  
+      //chi2D = f1D->GetChisquare();  
       posD = f1D->GetParameter(1);
     } else {
       posD = 20.;
-      chi2D = 999.;
+      //chi2D = 999.;
     }
     if (TMath::Abs(posD-20.)>2.){ // this shower has a complicated shape
       f1D->SetParameter(1,20.);
@@ -296,11 +298,11 @@ void DBCALClump::AnalyzeClump(){
     }
   } else if (DCounter){
       posD = 20.;
-      chi2D = 999.;    
+      //chi2D = 999.;    
   } else {
     cout<<"Error no data to fit D: this should never happen!!!"<<endl;
     posU = 0;
-    chi2U=999999;
+    //chi2U=999999;
   }
 
 
@@ -349,8 +351,8 @@ void DBCALClump::AnalyzeClump(){
   }
   ClumpMT.push_back(MTaverage);
 
-  low=4.;
-  high=0.;
+  low=4;
+  high=0;
   for (int k=0;k<4;k++){
     if (Pcnt[k]>0.){
       Position[k] /= Pcnt[k];
