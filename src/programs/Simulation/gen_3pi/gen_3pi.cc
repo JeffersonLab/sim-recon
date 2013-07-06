@@ -34,6 +34,11 @@ using namespace CLHEP;
 
 int main( int argc, char* argv[] ){
   
+  // random number initialization - this is not GlueX standard and
+  // should be standardized in the future
+  
+  srand48( time( NULL ) );
+  
   string  configfile("");
   string  outname("");
   string  hddmname("");
