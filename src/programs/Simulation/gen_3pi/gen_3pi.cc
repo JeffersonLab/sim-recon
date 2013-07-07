@@ -210,7 +210,7 @@ int main( int argc, char* argv[] ){
           // we want to save events with weight 1
           evt->setWeight( 1.0 );
           
-          if( hddmOut ) hddmOut->writeEvent( *evt, pTypes, true );
+          if( hddmOut ) hddmOut->writeEvent( *evt, pTypes );
           rootOut.writeEvent( *evt );
           ++eventCounter;
         }
