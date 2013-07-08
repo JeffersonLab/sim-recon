@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+use Cwd;
+
 $lowMass = 0.7;
 $highMass = 2.0;
 $nBins = 65;
@@ -11,8 +13,8 @@ $fitName = "threepi_fit";
 $maxEvts = 1E9;
 
 # this directory can be adjusted if you want to do the fit elsewhere
-$workingDir = $ENV{ 'HALLD_HOME' }.
-    "/src/programs/AmplitudeAnalysis/Examples/threepi_binned";
+# but it needs to be an explicit path
+$workingDir = getcwd();
 
 # these files must exist in the working directory.  If you don't know how
 # to generate them or don't have them, see the documentation in gen_3pi
@@ -30,7 +32,7 @@ $cfgTempl = "$workingDir/threepi_pol_TEMPLATE.cfg";
 
 ### things below here probably don't need to be modified
 
-# this is where the goodies for the fit will end eup
+# this is where the goodies for the fit will end up
 $fitDir = "$workingDir/$fitName/";
 mkdir $fitDir unless -d $fitDir;
 
