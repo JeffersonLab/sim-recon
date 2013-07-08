@@ -79,6 +79,8 @@ for( $i = 0; $i < $nBins; ++$i ){
 
   close CFGOUT;
   close CFGIN;
+  
+  system( "touch param_init.cfg" );
 
   chdir $fitDir;
 }
