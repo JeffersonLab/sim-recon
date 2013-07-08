@@ -195,7 +195,7 @@ cout << endl;
 TTree* Create_AmpToolsTree(string locOutputFileName, TFile*& locOutputFile, unsigned int locNumFinalStateParticles)
 {
 	locOutputFile = new TFile(locOutputFileName.c_str(), "RECREATE");
-	TTree* locOutputTree = new TTree("AmpToolsTree", "AmpToolsTree");
+	TTree* locOutputTree = new TTree("kin", "kin");
 
 	locOutputTree->Branch("Weight", new float, "Weight/F");
 
