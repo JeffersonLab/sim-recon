@@ -61,7 +61,11 @@ int main( int argc, char* argv[] ){
     resultsFile << "bin_" << i << ".fit";
     
     FitResults results( resultsFile.str() );
-    if( !results.valid() ) continue;
+    if( !results.valid() ){
+      
+      chdir( ".." );
+      continue;
+    }
     
   	// print out the bin center
 		outfile << lowMass + step * i + step / 2. << "\t";
