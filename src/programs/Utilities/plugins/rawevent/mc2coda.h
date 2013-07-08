@@ -28,7 +28,7 @@ enum type_id_t {
 	MODULE_TYPE_RES5,  // =13
 	MODULE_TYPE_RES6,  // =14
 	MODULE_TYPE_RES7,  // =15
-
+	
 	// The following are not defined by the DAQ group (i.e.
 	// they don't control the data format so can't encode
 	// the module type in it)
@@ -36,7 +36,7 @@ enum type_id_t {
 	VMECPU,            // =17
 	CAEN1190,          // =18
 	CAEN1290,          // =19
-
+	
 	N_MODULE_TYPES     // Make sure this is the last thing in the enum!
 };
 //#define NOMOD    0
@@ -84,47 +84,47 @@ enum type_id_t {
 
 
 typedef struct coda_crate_map {
-  int crate_id;
-  int nModules;
-  unsigned int moduleMask;
-  int module_map[MAX_SLOTS];
-  int det_map[MAX_SLOTS];
+	int crate_id;
+	int nModules;
+	unsigned int moduleMask;
+	int module_map[MAX_SLOTS];
+	int det_map[MAX_SLOTS];
 } CODA_CRATE_MAP;
 
 typedef struct coda_exp_info {
-  char expname[64];
-  int ncrates;
-  int inited;
-  int openevents;
-  unsigned short rocid[MAX_CRATES];
-  CODA_CRATE_MAP *crate[MAX_CRATES];
+	char expname[64];
+	int ncrates;
+	int inited;
+	int openevents;
+	unsigned short rocid[MAX_CRATES];
+	CODA_CRATE_MAP *crate[MAX_CRATES];
 } CODA_EXP_INFO;
 
 
 typedef struct coda_event_info {
-  uint64_t eventid;
-  uint64_t trigtime;
-  uint32_t evtype;
-  struct coda_exp_info *expid;
-  int nhits;
-  int hcount[MAX_CRATES][MAX_SLOTS];
-  struct coda_hit_info *hits[MAX_CRATES][MAX_SLOTS];
-  int maxBytes;
-  unsigned int *evbuf;
+	uint64_t eventid;
+	uint64_t trigtime;
+	uint32_t evtype;
+	struct coda_exp_info *expid;
+	int nhits;
+	int hcount[MAX_CRATES][MAX_SLOTS];
+	struct coda_hit_info *hits[MAX_CRATES][MAX_SLOTS];
+	int maxBytes;
+	unsigned int *evbuf;
 } CODA_EVENT_INFO;
 
 
 typedef struct coda_hit_info {
-  int hit_id;                  /* Unique identifier for each "hit" */
-  int det_id;                  /* Detector ID   0<=val<=4095       */
-  int crate_id;                /* Crate ID      0<=val<=127        */
-  int slot_id;                 /* Slot ID       2<=val<=21         */
-  int chan_id;                 /* Channel number - dependent on module type */
-  int module_id;               /* User defined module type         */
-  int module_mode;             /* Module Operational Mode          */
-  int module_param[MAX_PARAM]; /* Module specific program parameters - times - windows latencies etc...*/
-  uint32_t nwords;             /* Number of words in the hdata array */
-  uint32_t *hdata;             /* Hit data - dependent on module type and mode */
+	int hit_id;                  /* Unique identifier for each "hit" */
+	int det_id;                  /* Detector ID   0<=val<=4095       */
+	int crate_id;                /* Crate ID      0<=val<=127        */
+	int slot_id;                 /* Slot ID       2<=val<=21         */
+	int chan_id;                 /* Channel number - dependent on module type */
+	int module_id;               /* User defined module type         */
+	int module_mode;             /* Module Operational Mode          */
+	int module_param[MAX_PARAM]; /* Module specific program parameters - times - windows latencies etc...*/
+	uint32_t nwords;             /* Number of words in the hdata array */
+	uint32_t *hdata;             /* Hit data - dependent on module type and mode */
 } CODA_HIT_INFO;
 
 
@@ -132,24 +132,24 @@ typedef struct coda_hit_info {
 /* Macros */
 
 #define ROC_BANK_OPEN(status, id, nevents) {			    \
-                                     StartOfRocBank = dabufp; \
-                                       *(++dabufp) = (((status) << 28) | (id) << 16) | 0x1000 | (nevents);\
-                                         (dabufp)++;
+StartOfRocBank = dabufp; \
+*(++dabufp) = (((status) << 28) | (id) << 16) | 0x1000 | (nevents);\
+(dabufp)++;
 
 #define ROC_BANK_CLOSE \
-  *StartOfRocBank = (uint32_t) (dabufp - StartOfRocBank -1);	\
-  } \
+*StartOfRocBank = (uint32_t) (dabufp - StartOfRocBank -1);	\
+} \
 
 
 #define DATA_BANK_OPEN(status, detid, nevents) {			    \
-                                     uint32_t *StartOfBank; \
-                                     StartOfBank = dabufp; \
-                                       *(++dabufp) = (((status) << 28) | (detid) << 16) | 0x0100 | (nevents);\
-                                         (dabufp)++;
+uint32_t *StartOfBank; \
+StartOfBank = dabufp; \
+*(++dabufp) = (((status) << 28) | (detid) << 16) | 0x0100 | (nevents);\
+(dabufp)++;
 
 #define DATA_BANK_CLOSE \
-  *StartOfBank = (uint32_t) (dabufp - StartOfBank - 1);	\
-  } \
+*StartOfBank = (uint32_t) (dabufp - StartOfBank - 1);	\
+} \
 
 
 
