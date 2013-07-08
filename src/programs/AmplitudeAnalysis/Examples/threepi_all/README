@@ -33,13 +33,13 @@ threepi_plotter threepi.fit
 <><><><>Alternate recipe that uses the GlueX Detector <><><><><><>
 cd $HALLD_HOME/src/programs/AmplitudeAnalysis/Examples/threepi_binned
 cp ../../../Simulation/gen_3pi/gen_3pi.cfg .
-gen_3pi -c gen_3pi.cfg -o threepi_data_gen.root -hddm threepi_data_gen.hddm -l 0.7 -u 2.0 -n 50000
+gen_3pi -c gen_3pi.cfg -o threepi_data_gen.root -hd threepi_data_gen.hddm -l 0.7 -u 2.0 -n 50000
 
 -> run HDGeant on threepi_data_gen.hddm and anlayze the output and
 -> write it to a file called threepi_data.root using the format 
 -> encoded in the ROOTDataReader and put it in this directory
 
-gen_3pi -c gen_3pi.cfg -o threepi_gen.root -hddm threepi_gen.hddm -f -l 0.7 -u 2.0 -n 200000
+gen_3pi -c gen_3pi.cfg -o threepi_gen.root -hd threepi_gen.hddm -f -l 0.7 -u 2.0 -n 200000
 
 -> run HDGeant on threepi_gen.hddm and anlayze the output and
 -> write it to a file called threepi_acc.root using the format
@@ -83,10 +83,10 @@ A. Generate MC events
    has no analog in a real analysis as it would correspond to
    list of the actual four-vectors produced in the pure signal events.
    
-1. (Alternate) You can use the -hddm flag to write out an HDDM
+1. (Alternate) You can use the -hd flag to write out an HDDM
    version of the generated file.
    
-    gen_3pi -c gen_3pi.cfg -o threepi_data_gen.root -hddm threepi_data_gen.hddm -l 0.7 -u 2.0 -n 50000
+    gen_3pi -c gen_3pi.cfg -o threepi_data_gen.root -hd threepi_data_gen.hddm -l 0.7 -u 2.0 -n 50000
 
    Instead of using the toy_detector application then take this
    HDDM file and pass it through HDGeant and the analysis framework.
@@ -118,7 +118,7 @@ A. Generate MC events
    
 2. (Alternate) Write a copy of the phase space MC to an HDDM file also
 
-   gen_3pi -c ../../../Simulation/gen_3pi/gen_3pi.cfg -o threepi_gen.root -hddm threepi_gen.hddm -f -l 0.7 -u 2.0 -n 200000
+   gen_3pi -c ../../../Simulation/gen_3pi/gen_3pi.cfg -o threepi_gen.root -hd threepi_gen.hddm -f -l 0.7 -u 2.0 -n 200000
 
    As in step 1 above, perform the detector simulation and analysis and
    write the output to a ROOT file in this directory called
