@@ -335,7 +335,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		ttfac->Get(translationTables);
 		for(unsigned int i=0; i<translationTables.size(); i++){
 			translationTables[i]->ApplyTranslationTable(loop);
-			if(translationTables[i]->isSuppliedType(dataClassName)) err = NOERROR;
+			if(translationTables[i]->IsSuppliedType(dataClassName)) err = NOERROR;
 		}
 	}
 
@@ -621,17 +621,18 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 	ObjList *objs = NULL;
 	
 	// From the Block Header
-	int32_t slot;
-	int32_t Nblock_events;
-	int32_t iblock;
+	uint32_t slot;
+	uint32_t Nblock_events;
+	uint32_t iblock;
 
 	// From the Block Trailer
-	int32_t slot_trailer;
-	int32_t Nwords_in_block;
+	uint32_t slot_trailer;
+	uint32_t Nwords_in_block;
 	
 	// From Event header
-	int32_t itrigger = -1;
-	int32_t last_itrigger = -2;
+	uint32_t slot_event_header;
+	uint32_t itrigger = -1;
+	uint32_t last_itrigger = -2;
 	
 	// Loop over data words
 	for(; iptr<iend; iptr++){
@@ -656,16 +657,17 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 		switch(data_type){
 			case 0: // Block Header
 				slot = (*iptr>>22) & 0x1F;
-				Nblock_events = (*iptr>>11) & 0x00FF;
-				iblock = (*iptr>>0) & 0x7FF;
+				iblock= (*iptr>>8) & 0x03FF;
+				Nblock_events= (*iptr>>0) & 0xFF;
 				break;
 			case 1: // Block Trailer
 				slot_trailer = (*iptr>>22) & 0x1F;
-				Nwords_in_block = (*iptr>>0) & 0x1FFFFF;
+				Nwords_in_block = (*iptr>>0) & 0x3FFFFF;
 				found_block_trailer = true;
 				break;
 			case 2: // Event Header
-				itrigger = (*iptr>>0) & 0x7FFFFFF;
+				slot_event_header = (*iptr>>22) & 0x1F;
+				itrigger = (*iptr>>0) & 0x3FFFFF;
 				if( (itrigger!=last_itrigger) || (objs==NULL) ){
 					if(objs) events.push_back(objs);
 					objs = new ObjList;
@@ -707,7 +709,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				channel = (*iptr>>23) & 0x0F;
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
-				pulse_time = (*iptr>>0) & 0xFFFF;
+				pulse_time = (*iptr>>0) & 0x7FFFF;
 				if(objs) objs->hit_objs.push_back(new Df250PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				break;
 			case 9: // Streaming Raw Data
@@ -738,6 +740,47 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 	
 	// Add last event in block to list
 	if(objs)events.push_back(objs);
+	
+	// Here, we make object associations to link PulseIntegral, PulseTime, PulseRawData, etc
+	// objects to each other so it is easier to get to these downstream without having to
+	// make nested loops. This is the most efficient place to do it since the ObjList objects
+	// in "event" contain only the objects from this EVIO block (i.e. at most one crate's
+	// worth.)
+	list<ObjList*>::iterator iter = events.begin();
+	for(; iter!=events.end(); iter++){
+	
+		// Sort list of objects into type-specific lists
+		vector<DDAQAddress*> &hit_objs = (*iter)->hit_objs;
+		vector<Df250TriggerTime*> vtrigt;
+		vector<Df250WindowRawData*> vwrd;
+		vector<Df250WindowSum*> vws;
+		vector<Df250PulseRawData*> vprd;
+		vector<Df250PulseIntegral*> vpi;
+		vector<Df250PulseTime*> vpt;
+		for(unsigned int i=0; i<hit_objs.size(); i++){
+			AddIfAppropriate(hit_objs[i], vtrigt);
+			AddIfAppropriate(hit_objs[i], vwrd);
+			AddIfAppropriate(hit_objs[i], vws);
+			AddIfAppropriate(hit_objs[i], vprd);
+			AddIfAppropriate(hit_objs[i], vpi);
+			AddIfAppropriate(hit_objs[i], vpt);
+		}
+		
+		// Connect Df250PulseIntegral with Df250PulseTime, and Df250PulseRawData
+		LinkAssociationsWithPulseNumber(vprd, vpi);
+		LinkAssociationsWithPulseNumber(vprd, vpt);
+		LinkAssociationsWithPulseNumber(vpt, vpi);
+		
+		// Connect Df250WindowSum and Df250WindowRawData
+		LinkAssociations(vwrd, vws);
+		
+		// Connect Df250TriggerTime to everything
+		LinkAssociationsModuleOnly(vtrigt, vwrd);
+		LinkAssociationsModuleOnly(vtrigt, vws);
+		LinkAssociationsModuleOnly(vtrigt, vprd);
+		LinkAssociationsModuleOnly(vtrigt, vpi);
+		LinkAssociationsModuleOnly(vtrigt, vpt);
+	}
 }
 
 //----------------
@@ -850,8 +893,139 @@ void JEventSource_EVIO::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uin
 //----------------
 void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
-	// TEMPORARY!!!
-	Parsef250Bank(rocid, iptr, iend, events);
+	/// Parse data from a single FADC125 module.
+
+	// This will get updated to point to a newly allocated object when an
+	// event header is encountered. The existing value (if non-NULL) is
+	// added to the events queue first though so all events are kept.
+	ObjList *objs = NULL;
+	
+	// From the Block Header
+	uint32_t slot;
+	uint32_t Nblock_events;
+	uint32_t iblock;
+
+	// From the Block Trailer
+	uint32_t slot_trailer;
+	uint32_t Nwords_in_block;
+	
+	// From Event header
+	uint32_t slot_event_header;
+	uint32_t itrigger = -1;
+	uint32_t last_itrigger = -2;
+	
+	// Loop over data words
+	for(; iptr<iend; iptr++){
+		
+		// Skip all non-data-type-defining words at this
+		// level. When we do encounter one, the appropriate
+		// case block below should handle parsing all of
+		// the data continuation words and advance the iptr.
+		if(((*iptr>>31) & 0x1) == 0)continue;
+		
+		// Variables used inside of switch, but cannot be declared inside
+		uint64_t t = 0L;
+		uint32_t channel = 0;
+		uint32_t sum = 0;
+		uint32_t pulse_number = 0;
+		uint32_t pulse_time = 0;
+		bool overflow = false;
+
+		bool found_block_trailer = false;
+		uint32_t data_type = (*iptr>>27) & 0x0F;
+		switch(data_type){
+			case 0: // Block Header
+				slot = (*iptr>>22) & 0x1F;
+				iblock= (*iptr>>8) & 0x03FF;
+				Nblock_events= (*iptr>>0) & 0xFF;
+				break;
+			case 1: // Block Trailer
+				slot_trailer = (*iptr>>22) & 0x1F;
+				Nwords_in_block = (*iptr>>0) & 0x3FFFFF;
+				found_block_trailer = true;
+				break;
+			case 2: // Event Header
+				slot_event_header = (*iptr>>22) & 0x1F;
+				itrigger = (*iptr>>0) & 0x3FFFFF;
+				if( (itrigger!=last_itrigger) || (objs==NULL) ){
+					if(objs) events.push_back(objs);
+					objs = new ObjList;
+					last_itrigger = itrigger;
+				}
+				break;
+			case 3: // Trigger Time
+				t = ((*iptr)&0xFFFFFF)<<24;
+				iptr++;
+				if(((*iptr>>31) & 0x1) == 0){
+					t += (*iptr)&0xFFFFFF; // from word on the street: second trigger time word is optional!!??
+				}else{
+					iptr--;
+				}
+				if(objs) objs->hit_objs.push_back(new Df125TriggerTime(rocid, slot, itrigger, t));
+				break;
+			case 7: // Pulse Integral
+				channel = (*iptr>>20) & 0x3F;
+				pulse_number = (*iptr>>18) & 0x03;
+				sum = (*iptr>>0) & 0x3FFFF;
+				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, sum));
+				break;
+			case 8: // Pulse Time
+				channel = (*iptr>>20) & 0x3F;
+				pulse_number = (*iptr>>18) & 0x03;
+				pulse_time = (*iptr>>0) & 0x3FFFF;
+				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, pulse_time));
+				break;
+			case 4: // Window Raw Data
+			case 5: // Window Sum
+			case 6: // Pulse Raw Data
+			case 9: // Streaming Raw Data
+			case 13: // Event Trailer
+			case 14: // Data not valid (empty module)
+			case 15: // Filler (non-data) word
+				break;
+		}
+
+		// Once we find a block trailer, assume that is it for this module.
+		if(found_block_trailer){
+			iptr++; // iptr is still pointing to block trailer. Jump to next word.
+			break;
+		}
+	}
+	
+	// Chop off filler words
+	for(; iptr<iend; iptr++){
+		if(*iptr != 0xf8000000) break;
+	}
+	
+	// Add last event in block to list
+	if(objs)events.push_back(objs);
+	
+	// Here, we make object associations to link PulseIntegral, PulseTime, PulseRawData, etc
+	// objects to each other so it is easier to get to these downstream without having to
+	// make nested loops. This is the most efficient place to do it since the ObjList objects
+	// in "event" contain only the objects from this EVIO block (i.e. at most one crate's
+	// worth.)
+	list<ObjList*>::iterator iter = events.begin();
+	for(; iter!=events.end(); iter++){
+	
+		// Sort list of objects into type-specific lists
+		vector<DDAQAddress*> &hit_objs = (*iter)->hit_objs;
+		vector<Df125TriggerTime*> vtrigt;
+		vector<Df125PulseIntegral*> vpi;
+		vector<Df125PulseTime*> vpt;
+		for(unsigned int i=0; i<hit_objs.size(); i++){
+			AddIfAppropriate(hit_objs[i], vtrigt);
+			AddIfAppropriate(hit_objs[i], vpi);
+			AddIfAppropriate(hit_objs[i], vpt);
+		}
+		
+		// Connect Df125PulseIntegral with Df125PulseTime
+		LinkAssociationsWithPulseNumber(vpt, vpi);
+				
+		// Connect Df250TriggerTime to everything
+		LinkAssociationsModuleOnly(vtrigt, vpi);
+		LinkAssociationsModuleOnly(vtrigt, vpt);
+	}
 }
 
 //----------------

@@ -30,6 +30,7 @@ using namespace jana;
 #include <DAQ/DF1TDCTriggerTime.h>
 
 #include <BCAL/DBCALHit.h>
+#include <BCAL/DBCALTDCHit.h>
 #include <CDC/DCDCHit.h>
 #include <FCAL/DFCALHit.h>
 #include <FDC/DFDCHit.h>
@@ -47,7 +48,7 @@ class DTranslationTable:public jana::JObject{
 		// Each detector system has its own native indexing scheme.
 		// Here, we define a class for each of them that has those
 		// indexes. These are then used below in the DChannelInfo
-		// class to related them to the DAQ indexing scheme of
+		// class to relate them to the DAQ indexing scheme of
 		// crate, slot, channel.
 		typedef struct{
 			uint32_t rocid;
@@ -56,6 +57,7 @@ class DTranslationTable:public jana::JObject{
 		}csc_t;
 		
 		enum Detector_t{
+			UNKNOWN_DETECTOR,
 			BCAL,
 			CDC,
 			FCAL,
@@ -63,7 +65,7 @@ class DTranslationTable:public jana::JObject{
 			FDC_WIRES,
 			PS,
 			PSC,
-			ST,
+			SC,
 			TAGH,
 			TAGM,
 			TOF
@@ -116,7 +118,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t id;
 		};
 
-		class STIndex_t{
+		class SCIndex_t{
 			public:
 			uint32_t sector;
 		};
@@ -154,7 +156,7 @@ class DTranslationTable:public jana::JObject{
 					FDC_WiresIndex_t fdc_wires;
 					PSIndex_t ps;
 					PSCIndex_t psc;
-					STIndex_t st;
+					SCIndex_t sc;
 					TAGHIndex_t tagh;
 					TAGMIndex_t tagm;
 					TOFIndex_t tof;
@@ -168,14 +170,18 @@ class DTranslationTable:public jana::JObject{
 		bool IsSuppliedType(string dataClassName) const;
 		void ApplyTranslationTable(jana::JEventLoop *loop) const;
 		
-		DBCALHit* MakeBCALHit(const Df250PulseIntegral *hit, const BCALIndex_t &idx) const;
-		DCDCHit* MakeCDCHit(const Df250PulseIntegral *hit, const CDCIndex_t &idx) const;
-		DBCALHit* MakeBCALHit(const Df250PulseIntegral *hit, const BCALIndex_t &idx) const;
-		DBCALHit* MakeBCALHit(const Df250PulseIntegral *hit, const BCALIndex_t &idx) const;
-		DBCALHit* MakeBCALHit(const Df250PulseIntegral *hit, const BCALIndex_t &idx) const;
-		DBCALHit* MakeBCALHit(const Df250PulseIntegral *hit, const BCALIndex_t &idx) const;
+		DBCALHit* MakeBCALHit(const BCALIndex_t &idx, const Df250PulseIntegral *hit, uint32_t t) const;
+//		DCDCHit* MakeCDCHit(const Df250PulseIntegral *hit, const CDCIndex_t &idx) const;
+//		DFCALHit* MakeFCALHit(const Df250PulseIntegral *hit, const FCALIndex_t &idx) const;
+//		DFDCHit* MakeFDCCathodeHit(const Df250PulseIntegral *hit, const FDC_CathodesIndex_t &idx) const;
+//		DFDCHit* MakeFDCWireHit(const Df250PulseIntegral *hit, const FDC_WiresIndex_t &idx) const;
+//		DSCHit* MakeSCHit(const Df250PulseIntegral *hit, const SCIndex_t &idx) const;
+//		DTOFRawHit* MakeTOFRawHit(const Df250PulseIntegral *hit, const TOFIndex_t &idx) const;
+//
+//		DBCALTDCHit* MakeBCALTDCHit(const DF1TDCHit *hit, const BCALIndex_t &idx) const;
 
-	
+		void ReadTranslationTable(void);
+
 	protected:
 		set<string> supplied_data_types;
 };

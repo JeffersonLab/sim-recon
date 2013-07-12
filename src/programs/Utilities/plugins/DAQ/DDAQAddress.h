@@ -31,6 +31,14 @@ class DDAQAddress:public jana::JObject{
 		uint32_t slot;     // slot
 		uint32_t channel;  // channel
 		uint32_t itrigger; // trigger number within block (starting from 0)
+		
+		bool operator==(const DDAQAddress &d){
+			if(d.rocid    != rocid   ) return false;
+			if(d.slot     != slot    ) return false;
+			if(d.channel  != channel ) return false;
+			if(d.itrigger != itrigger) return false;
+			return true;
+		}
 				
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format

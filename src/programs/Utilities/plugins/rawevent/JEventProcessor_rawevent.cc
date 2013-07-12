@@ -502,7 +502,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].hdata       = mcData;
       hit[0].hdata[0]    = q;  // in fC
       hit[0].hdata[1]    = t/FADC125tick;
-      if(q>0x7ffff)cerr << "q too large for CDC: " << q << endl;
+      //if(q>0x7ffff)cerr << "q too large for CDC: " << q << endl;
       
       if(dumphits>1) {
         jout << endl;

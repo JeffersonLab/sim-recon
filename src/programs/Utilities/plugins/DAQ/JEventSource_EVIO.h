@@ -36,6 +36,9 @@ using namespace evio;
 #include "Df250TriggerTime.h"
 #include "Df250PulseTime.h"
 #include "Df250WindowRawData.h"
+#include "Df125TriggerTime.h"
+#include "Df125PulseIntegral.h"
+#include "Df125PulseTime.h"
 #include "DF1TDCHit.h"
 #include "DF1TDCTriggerTime.h"
 
@@ -232,10 +235,94 @@ static bool JFactory_base_CopyTo(jana::JFactory_base *fac, vector<jana::JObject 
 	if( JFactory_base_CopyToT<Df250TriggerTime>(fac, objs) ) return true;
 	if( JFactory_base_CopyToT<Df250PulseTime>(fac, objs) ) return true;
 	if( JFactory_base_CopyToT<Df250WindowRawData>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df125PulseIntegral>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df125TriggerTime>(fac, objs) ) return true;
+	if( JFactory_base_CopyToT<Df125PulseTime>(fac, objs) ) return true;
 	if( JFactory_base_CopyToT<DF1TDCHit>(fac, objs) ) return true;
 	if( JFactory_base_CopyToT<DF1TDCTriggerTime>(fac, objs) ) return true;
 
 	return false;
+}
+
+//----------------------------
+// AddIfAppropriate
+//----------------------------
+template<class T>
+void AddIfAppropriate(DDAQAddress *obj, vector<T*> &v)
+{
+	T *t = dynamic_cast<T*>(obj);
+	if(t!= NULL) v.push_back(t);
+}
+
+//----------------------------
+// LinkAssociationsWithPulseNumber
+//----------------------------
+template<class T, class U>
+void LinkAssociationsWithPulseNumber(vector<T*> &a, vector<U*> &b)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ channel and add each to the other's
+	/// AssociatedObjects list. This will also check if the member
+	/// "pulse_number" is the same (use LinkAssociations to not check
+	/// the pulse_number such as when either "T" or "U" does not have
+	/// a member named "pulse_number".)
+	for(unsigned int j=0; j<a.size(); j++){
+		for(unsigned int k=0; k<b.size(); k++){
+			if(a[j]->pulse_number != b[k]->pulse_number) continue;
+			if(*a[j] == *b[k]){ // compare only the DDAQAddress parts
+				a[j]->AddAssociatedObject(b[k]);
+				b[k]->AddAssociatedObject(a[j]);
+			}
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociations
+//----------------------------
+template<class T, class U>
+void LinkAssociations(vector<T*> &a, vector<U*> &b)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ channel and add each to the other's
+	/// AssociatedObjects list. This will NOT check if the member
+	/// "pulse_number" is the same (use LinkAssociationsWithPulseNumber
+	/// for that.)
+	for(unsigned int j=0; j<a.size(); j++){
+		for(unsigned int k=0; k<b.size(); k++){
+			if(*a[j] == *b[k]){ // compare only the DDAQAddress parts
+				a[j]->AddAssociatedObject(b[k]);
+				b[k]->AddAssociatedObject(a[j]);
+			}
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsModuleOnly
+//----------------------------
+template<class T, class U>
+void LinkAssociationsModuleOnly(vector<T*> &a, vector<U*> &b)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ module (channel number is not checked)
+	/// When a match is found, the pointer from "a" will be added
+	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
+	/// of adding "b" to "a"'s list. It is intended for adding a module
+	/// level trigger time object to all hits from that module. Adding
+	/// all of the hits to the trigger time object seems like it would
+	/// be a little expensive with no real use case.
+	for(unsigned int j=0; j<a.size(); j++){
+		for(unsigned int k=0; k<b.size(); k++){
+			if(a[j]->rocid != b[k]->rocid) continue;
+			if(a[j]->slot != b[k]->slot) continue;
+
+			b[k]->AddAssociatedObject(a[j]);
+		}
+	}
 }
 
 #endif // _JEventSourceGenerator_DAQ_
