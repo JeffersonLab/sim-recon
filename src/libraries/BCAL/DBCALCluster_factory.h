@@ -53,6 +53,7 @@ private:
   
   float m_mergeSig;
   float m_moliereRadius;
+  float m_timeCut;
   
   // we may consider a separate factory to provide the BCAL points at
   // a future stage; for now have this factory own and maintain them

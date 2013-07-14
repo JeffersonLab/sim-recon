@@ -28,7 +28,8 @@ bool ClusterSort( const DBCALCluster& c1, const DBCALCluster& c2 ){
 
 DBCALCluster_factory::DBCALCluster_factory() : 
 m_mergeSig( 5 ), 
-m_moliereRadius( 3.7*k_cm ) {
+m_moliereRadius( 3.7*k_cm ),
+m_timeCut( 15.0*k_nsec ){
   
 }
 
@@ -387,15 +388,45 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
                        lowEClust.phi() - highEClust.phi() - 2*PI );
 
   deltaPhi = min( fabs( deltaPhi ), fabs( deltaPhiAlt ) );
-  
+
   float sigPhi = deltaPhi / 
   sqrt( highEClust.sigPhi() * highEClust.sigPhi() +
         lowEClust.sigPhi()  * lowEClust.sigPhi() );
-  
-  // right now this is a rectangular cut, but it could be circular
-  // or elliptical
 
-  return( ( sigTheta < m_mergeSig ) && ( sigPhi < m_mergeSig ) );  
+  //We can't rely entirely on sigTheta and sigPhi as defined above.
+  //For high-energy clusters, the position uncertainties will be very small,
+  //so sigTheta/sigPhi will be large, and clusters may not merge properly.
+  //To fix this, force clusters to merge if delta_z and delta_phi are both
+  //very small. This is hopefully only a temporary fix.
+
+  //deltaPhi_force_merge and delta_z_force_merge were determined by looking
+  //at the separation of decay photons from pi0's from a pythia sample.
+  //There are no events where the decay photons have separation
+  //(delta_phi < 0.2 && delta_z < 25 cm), so in most cases it should be safe
+  //to merge clusters together if they are so close.
+  const double deltaPhi_force_merge = 0.2; //radians
+  const double delta_z_force_merge = 25.0*k_cm;
+
+  //A major cause of extra clusters are lower energy hits, which have poor
+  //z-resolution and so are not properly merged. Treat low energy
+  //clusters (< 60 MeV) as a special case. Again, hopefully this is only
+  //a temporary fix until we have a more comprehensive solution.
+  const double delta_z_force_merge_low_E = 50.0*k_cm;
+  const double low_E = .06*k_GeV;
+  
+  double z1 = DBCALGeometry::BCALINNERRAD/tan(highEClust.theta());
+  double z2 = DBCALGeometry::BCALINNERRAD/tan(lowEClust.theta());
+  double delta_z = fabs(z1-z2);
+
+  bool theta_match = (sigTheta < m_mergeSig) || (delta_z < delta_z_force_merge) || (delta_z < delta_z_force_merge_low_E && lowEClust.E() < low_E);
+
+  bool phi_match = (sigPhi < m_mergeSig) || (deltaPhi < deltaPhi_force_merge);
+
+  //very loose cut to check that the two clusters are in time
+  bool time_match = (highEClust.t() - lowEClust.t()) < m_timeCut;
+
+  return theta_match && phi_match && time_match;
+
 }
 
 bool
@@ -447,20 +478,17 @@ DBCALCluster_factory::overlap( const DBCALCluster& clust,
   m_ovrlpTr->Fill();
   
 #endif // BCAL_CLUSTER_DIAGNOSTIC
-  
-  if( point->E() / clust.E() < 0.1 ){
 
-    return ( sep < 5 * m_moliereRadius );
+  //very loose cuts to make sure the two hits are in time
+  bool time_match = fabs(clust.t() - point->t()) < m_timeCut;
+
+  if( point->E() / clust.E() < 0.1 ){
+    return (sep < 5*m_moliereRadius) && time_match;
   }
   else{
-
-    return ( sep < 2 * m_moliereRadius );
+    return (sep < 2*m_moliereRadius) && time_match;
   }
 
-  // right now this is a rectangular cut, but it could be circular
-  // or elliptical
-
-//  return( ( sigTheta < m_mergeSig ) && ( sigPhi < m_mergeSig ) );
 }
 
 bool
