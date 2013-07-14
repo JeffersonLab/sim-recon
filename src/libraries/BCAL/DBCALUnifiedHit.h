@@ -27,7 +27,7 @@ class DBCALUnifiedHit : public JObject{
 		float E;
 
 		//If there is a associated TDC hit, t is the timewalk-corrected TDC
-          //time, otherwise t is the same as t_ADC.
+		//time, otherwise t is the same as t_ADC.
 		float t;
 		float t_ADC;
 		bool has_TDC_hit;
