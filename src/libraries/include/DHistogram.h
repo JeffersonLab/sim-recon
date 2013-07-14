@@ -20,7 +20,7 @@
 class DHistogram{
 	public:
 		inline DHistogram(int Nbins, float lowEdge, float highEdge);
-		inline DHistogram(DHistogram &hsrc);
+		inline DHistogram(const DHistogram &hsrc);
 		inline virtual ~DHistogram();
 		
 		inline void Add(const DHistogram *h);
@@ -93,7 +93,7 @@ inline DHistogram::DHistogram(int Nbins, float lowEdge, float highEdge)
 //---------------------------------
 // DHistogram    (Constructor)
 //---------------------------------
-inline DHistogram::DHistogram(DHistogram &hsrc):Nbins(0),lowEdge(0.0),highEdge(0.0),binWidth(0.0),half_binWidth(0.0),content(NULL)
+inline DHistogram::DHistogram(const DHistogram &hsrc):Nbins(0),lowEdge(0.0),highEdge(0.0),binWidth(0.0),half_binWidth(0.0),content(NULL)
 {
 	*this = hsrc;
 }
@@ -310,6 +310,7 @@ inline DHistogram& DHistogram::operator=(const DHistogram &hsrc)
 		this->highEdge = hsrc.GetHighEdge();
 		binWidth = (highEdge - lowEdge)/(float)Nbins;
 		half_binWidth = binWidth/2.0;
+		bin_zero_center = lowEdge - half_binWidth;
 		
 		if(content!=NULL) delete[] content;
 
