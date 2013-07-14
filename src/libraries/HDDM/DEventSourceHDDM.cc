@@ -220,6 +220,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName == "DBCALTruthShower" && tag=="")
 	  return Extract_DBCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DBCALTruthShower>*>(factory));
 	
+	if(dataClassName == "DBCALSiPMSpectrum" && tag=="")
+	  return Extract_DBCALSiPMSpectrum(my_hddm_s, dynamic_cast<JFactory<DBCALSiPMSpectrum>*>(factory));
+	
 	if(dataClassName == "DBCALTruthCell" && tag=="")
 	  return Extract_DBCALTruthCell(my_hddm_s, dynamic_cast<JFactory<DBCALTruthCell>*>(factory));
 	
@@ -864,6 +867,65 @@ jerror_t DEventSourceHDDM::Extract_DBCALIncidentParticle(s_HDDM_t *hddm_s, JFact
 }
 
 //------------------
+// Extract_DBCALSiPMSpectrum
+//------------------
+jerror_t DEventSourceHDDM::Extract_DBCALSiPMSpectrum(s_HDDM_t *hddm_s, JFactory<DBCALSiPMSpectrum> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DBCALSiPMSpectrum*> data;
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->barrelEMcal == HDDM_NULL ||
+			hits->barrelEMcal->bcalSiPMSpectrums == HDDM_NULL)continue;
+		
+		// Loop over BCAL SiPM Spectrum
+		s_BcalSiPMSpectrums_t *spectrums = hits->barrelEMcal->bcalSiPMSpectrums;
+		for(unsigned int j=0; j<spectrums->mult; j++){
+			
+			s_BcalSiPMSpectrum_t *hddm_spectrum = &spectrums->in[j];
+			
+			DBCALSiPMSpectrum *dana_spectrum = new DBCALSiPMSpectrum;
+			
+			dana_spectrum->module = hddm_spectrum->module;
+			dana_spectrum->layer = hddm_spectrum->layer;
+			dana_spectrum->sector = hddm_spectrum->sector;
+			dana_spectrum->end = hddm_spectrum->end==0 ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
+			dana_spectrum->incident_id = hddm_spectrum->incident_id;
+			
+			double t = hddm_spectrum->tstart;
+			double bin_width = hddm_spectrum->bin_width;
+			stringstream ss(hddm_spectrum->vals);
+
+			// Extract values and use them to fill histo
+			double dE;
+			while(ss>>dE) {
+				dana_spectrum->spectrum.Fill(t, dE);
+				t += bin_width;
+			}
+			data.push_back(dana_spectrum);
+
+		} // sipmspectrums
+
+	} // Physics Events
+			
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+//------------------
 // Extract_DBCALTDCHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(s_HDDM_t *hddm_s, JFactory<DBCALTDCHit> *factory)
@@ -898,6 +960,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALTDCHit(s_HDDM_t *hddm_s, JFactory<DBCALT
 			bcaltdchit->layer = hit->layer;
 			bcaltdchit->sector = hit->sector;
 			bcaltdchit->end = hit->end==0 ? DBCALGeometry::kUpstream : DBCALGeometry::kDownstream;
+			bcaltdchit->cellId = DBCALGeometry::cellId(hit->module,hit->layer,hit->sector);
 			bcaltdchit->t = hit->t;
 
 			data.push_back(bcaltdchit);

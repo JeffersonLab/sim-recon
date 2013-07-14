@@ -29,6 +29,7 @@ using namespace std;
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "BCAL/DBCALSiPMHit.h"
+#include "BCAL/DBCALSiPMSpectrum.h"
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALIncidentParticle.h"
 #include "BCAL/DBCALTDCHit.h"
@@ -79,6 +80,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DBCALTruthShower(s_HDDM_t *hddm_s, JFactory<DBCALTruthShower> *factory);
 		jerror_t Extract_DBCALTruthCell(s_HDDM_t *hddm_s, JFactory<DBCALTruthCell> *factory);
 		jerror_t Extract_DBCALSiPMHit(s_HDDM_t *hddm_s, JFactory<DBCALSiPMHit> *factory);
+		jerror_t Extract_DBCALSiPMSpectrum(s_HDDM_t *hddm_s, JFactory<DBCALSiPMSpectrum>* factory);
 		jerror_t Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory);
 		jerror_t Extract_DBCALIncidentParticle(s_HDDM_t *hddm_s, JFactory<DBCALIncidentParticle> *factory);
 		jerror_t Extract_DBCALTDCHit(s_HDDM_t *hddm_s, JFactory<DBCALTDCHit> *factory);
