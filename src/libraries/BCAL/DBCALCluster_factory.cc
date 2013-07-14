@@ -247,9 +247,22 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
       ++clust ){
    
     // put in an energy threshold for clusters
-    if( clust->E() > 30*k_MeV ) {
-      _data.push_back( new DBCALCluster( *clust ) );
-    }
+    if( clust->E() < 30*k_MeV ) continue;
+
+    //We have a big problem with noise in the outer layer of the detector
+    //(the noise is the greatest in the outer layer, since the number of SiPMs
+    //being summed is also the greatest here).
+    //The typical signature of fake "clusters" caused by this noise is that
+    //they only consist of one hit, since it is unlikely that two noise hits
+    //will be right next to each other.
+    //Filter out these clusters here.
+    //Possibly we should come up with a more sophisticated way to deal
+    //with this.
+    double clust_r = clust->rho()*sin(clust->theta());
+    double outer_layer_r = DBCALGeometry::r(DBCALGeometry::cellId(1,4,1));
+    if (clust->nCells() == 1 && fabs(clust_r-outer_layer_r) < 1e-4 && clust->E() < 50*k_MeV) continue;
+
+    _data.push_back( new DBCALCluster( *clust ) );
   }
 
   return NOERROR;
