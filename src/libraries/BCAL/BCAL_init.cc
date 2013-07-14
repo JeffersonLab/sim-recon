@@ -15,6 +15,7 @@
 #include "DBCALIncidentParticle.h"
 #include "DBCALTDCHit.h"
 #include "DBCALSiPMHit.h"
+#include "DBCALSiPMSpectrum.h"
 #include "DBCALTruthCell.h"
 #include "DBCALClump.h"
 #include "DBCALClump_factory.h"
@@ -27,6 +28,7 @@ typedef JFactory<DBCALHit> DBCALHit_factory;
 typedef JFactory<DBCALIncidentParticle> DBCALIncidentParticle_factory;
 typedef JFactory<DBCALTDCHit> DBCALTDCHit_factory;
 typedef JFactory<DBCALSiPMHit> DBCALSiPMHit_factory;
+typedef JFactory<DBCALSiPMSpectrum> DBCALSiPMSpectrum_factory;
 typedef JFactory<DBCALTruthShower> DBCALTruthShower_factory;
 typedef JFactory<DBCALTruthCell> DBCALTruthCell_factory;
 
@@ -37,6 +39,7 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALIncidentParticle_factory());
 	loop->AddFactory(new DBCALTDCHit_factory());
 	loop->AddFactory(new DBCALSiPMHit_factory());
+	loop->AddFactory(new DBCALSiPMSpectrum_factory());
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory_IU());
 	loop->AddFactory(new DBCALShower_factory_KLOE());
