@@ -253,7 +253,7 @@ extern double BCAL_SAMPLINGCOEFB;               // 0.013 (from calibDB BCAL/bcal
 //extern double BCAL_TIMEDIFFCOEFB;               // 0.00 * sqrt( 2 ) (from calibDB BCAL/bcal_parms)
 
 
-double BCAL_MIN_ENERGY_MEV = 30.0;
+double BCAL_MIN_ENERGY_MEV = 10.0;
 double BCAL_FADC_INTEGRATION_WINDOW_PRE  =  20.0; // time to integrate signal before threshold crossing in ns
 double BCAL_FADC_INTEGRATION_WINDOW_POST = 180.0; // time to integrate signal after threshold crossing in ns
 
@@ -1126,6 +1126,10 @@ void AddDarkHitsForNonHitSiPMs(map<int, SumSpectra> &bcalfADC)
 					// these. Otherwise, recycle the histos for the next iteration
 					// to avoid the expensive convolution and checking for thresholds
 					// stages later.
+					// BCAL_MIN_ENERGY_MEV (= 10 MeV) is set appropriately so that
+					// it corresponds roughly with the later threshold
+					// (BCAL_ADC_THRESHOLD = 4 mV), so that nothing eliminated here
+					// would cross the later threshold.
 					if(NSiPMs_no_signal == NSiPMs){
 						if(dEup < BCAL_MIN_ENERGY_MEV){
 							hup_tmp = sumspectra.hup;
