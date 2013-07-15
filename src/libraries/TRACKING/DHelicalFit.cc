@@ -136,8 +136,8 @@ jerror_t DHelicalFit::AddHit(const DFDCPseudo *fdchit){
   double v=fdchit->s;
   double temp1=u*Phi-v;
   double temp2=v*Phi+u;
-  double var_u=0.0833;
-  double var_v=0.0075;
+  double var_u=0.08333; // 1.0 cm^2/12  
+  double var_v=0.0075;// 0.3*0.3 cm^2/12 
   double one_over_R2=1./fdchit->xy.Mod2();
   hit->covrphi=one_over_R2*(var_v*temp1*temp1+var_u*temp2*temp2);
   hit->covr=one_over_R2*(var_u*u*u+var_v*v*v);
@@ -417,6 +417,7 @@ jerror_t DHelicalFit::FitCircle(void)
 	// Calculate the chisq
 	ChisqCircle();
 	chisq_source = CIRCLE;
+	ndof=hits.size()-3;
 
 	return NOERROR;
 }
@@ -429,7 +430,7 @@ double DHelicalFit::ChisqCircle(void)
 	/// Calculate the chisq for the hits and current circle
 	/// parameters.
 	/// NOTE: This does not return the chi2/dof, just the
-	/// raw chi2 with errs set to 1.0
+	/// raw chi2 
 	chisq = 0.0;
 	for(unsigned int i=0;i<hits.size();i++){
 		DHFHit_t *a = hits[i];
@@ -437,6 +438,7 @@ double DHelicalFit::ChisqCircle(void)
 		float y = a->y - y0;
 		float c = sqrt(x*x + y*y) - r0;
 		c *= c;
+		c/=a->covrphi;
 		a->chisq = c;
 		chisq+=c;
 	}
@@ -599,7 +601,7 @@ jerror_t DHelicalFit::FitCircleRiemann(float rc){
   long double diff_over_2=-temp*sin(theta1);
   // Third root
   long double lambda_min=-ONE_THIRD*B2-sum_over_2+SQRT3*diff_over_2;
- 
+  
   // Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
   N[0]=1.;
   N[1]=(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
@@ -633,6 +635,7 @@ jerror_t DHelicalFit::FitCircleRiemann(float rc){
   // Calculate the chisq
   ChisqCircle();
   chisq_source = CIRCLE;
+  ndof=hits.size()-3;
 
   return NOERROR;
 }
@@ -1223,6 +1226,7 @@ jerror_t DHelicalFit::FillTrackParams(void)
 		if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 		q = -q;
 	}
+	tanl=tan(M_PI_2-theta);
 
 	// There is a problem with theta for data generated with a uniform
 	// field. The following factor is emprical until I can figure out
