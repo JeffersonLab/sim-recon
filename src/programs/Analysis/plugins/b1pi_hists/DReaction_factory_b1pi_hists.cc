@@ -75,7 +75,6 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	locReaction->Add_AnalysisAction(new DCutAction_InvariantMass(locReaction, Pi0, false, 0.0, 0.5, "Pi0_Loose")); //false: measured data
 
 	//PID
-	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false)); //false: measured data
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
 	locReaction->Add_AnalysisAction(new DCutAction_CombinedPIDFOM(locReaction, 0.01)); //1%
 	locReaction->Add_AnalysisAction(new DHistogramAction_TruePID(locReaction, "PostPID"));
