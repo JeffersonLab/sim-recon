@@ -200,7 +200,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	locUserInfo->Add(locParticleNameList);
 
 	ostringstream locKinFitTypeStream;
-	locKinFitTypeStream << (unsigned int)locReaction->Get_KinFitType();
+	locKinFitTypeStream << locKinFitType;
 	locMiscInfoMap->Add(new TObjString("KinFitType"), new TObjString(locKinFitTypeStream.str().c_str()));
 
 	//find the # particles of each pid
@@ -869,6 +869,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 	locEventLoop->GetSingle(locMCReaction);
 
 	DKinFitType locKinFitType = locReaction->Get_KinFitType();
+	bool locKinFitFlag = (locKinFitType != d_NoFit);
 
 	//find max charged identifier #:
 	vector<const DChargedTrack*> locChargedTracks;
@@ -979,12 +980,21 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			const DKinFitResults* locKinFitResults = locParticleCombo->Get_KinFitResults();
 			const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
 
+			//rf & kinfit data
 			double locRFTime = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
 			Fill_FundamentalData<Double_t>(locTree, "RFTime_Measured", locRFTime);
-			if(locKinFitResults != NULL)
+			if(locKinFitFlag)
 			{
-				Fill_FundamentalData<Double_t>(locTree, "ChiSq_KinFit", locKinFitResults->Get_ChiSq());
-				Fill_FundamentalData<UInt_t>(locTree, "NDF_KinFit", locKinFitResults->Get_NDF());
+				if(locKinFitResults != NULL)
+				{
+					Fill_FundamentalData<Double_t>(locTree, "ChiSq_KinFit", locKinFitResults->Get_ChiSq());
+					Fill_FundamentalData<UInt_t>(locTree, "NDF_KinFit", locKinFitResults->Get_NDF());
+				}
+				else
+				{
+					Fill_FundamentalData<Double_t>(locTree, "ChiSq_KinFit", 0.0);
+					Fill_FundamentalData<UInt_t>(locTree, "NDF_KinFit", 0);
+				}
 				double locRFTime_KinFit = (locEventRFBunch != NULL) ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
 				Fill_FundamentalData<Double_t>(locTree, "RFTime_KinFit", locRFTime_KinFit);
 			}
@@ -1107,7 +1117,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 					TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
 					string locParticleBranchName = (const char*)(locObjString->GetString());
 					//fill the data
-					Fill_ParticleData(locTree, locParticleBranchName, locKinematicData, locKinematicData_Measured, locShowerToIDMap, locMCThrownMatching, locThrownObjectIDMap);
+					Fill_ParticleData(locKinFitFlag, locTree, locParticleBranchName, locKinematicData, locKinematicData_Measured, locShowerToIDMap, locMCThrownMatching, locThrownObjectIDMap);
 				}
 			}
 
@@ -1220,10 +1230,8 @@ void DEventWriterROOT::Fill_BeamParticleData(TTree* locTree, string locParticleB
 	}
 }
 
-void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, map<const DMCThrown*, unsigned int> locThrownObjectIDMap) const
+void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, map<const DMCThrown*, unsigned int> locThrownObjectIDMap) const
 {
-	bool locKinFitPerformedFlag = 	(locKinematicData != locKinematicData_Measured);
-
 	//KINEMATICS: MEASURED
 	TLorentzVector locX4_Measured(locKinematicData_Measured->position().X(), locKinematicData_Measured->position().Y(), locKinematicData_Measured->position().Z(), locKinematicData_Measured->time());
 	Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "X4_Measured", &locX4_Measured, (*dTObjectMap)[locTree->GetName()]);
@@ -1231,7 +1239,7 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 	Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "P4_Measured", &locP4_Measured, (*dTObjectMap)[locTree->GetName()]);
 
 	//KINEMATICS: KINFIT
-	if(locKinFitPerformedFlag)
+	if(locKinFitFlag)
 	{
 		TLorentzVector locX4_KinFit(locKinematicData->position().X(), locKinematicData->position().Y(), locKinematicData->position().Z(), locKinematicData->time());
 		Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "X4_KinFit", &locX4_KinFit, (*dTObjectMap)[locTree->GetName()]);
@@ -1270,7 +1278,7 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Tracking", locChargedTrackHypothesis->dChiSq_Track);
 		Fill_FundamentalData<UInt_t>(locTree, locParticleBranchName, "NDF_Timing", locChargedTrackHypothesis->dNDF_Timing);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", locChargedTrackHypothesis_Measured->dChiSq_Timing);
-		if(locKinFitPerformedFlag)
+		if(locKinFitFlag)
 			Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", locChargedTrackHypothesis->dChiSq_Timing);
 		Fill_FundamentalData<UInt_t>(locTree, locParticleBranchName, "NDF_DCdEdx", locChargedTrackHypothesis->dNDF_DCdEdx);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_DCdEdx", locChargedTrackHypothesis->dChiSq_DCdEdx);
@@ -1280,9 +1288,9 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_FDC", locTrackTimeBased->ddEdx_FDC);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_TOF", locChargedTrackHypothesis->dTOFdEdx);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_ST", locChargedTrackHypothesis->dStartCounterdEdx);
-		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : numeric_limits<double>::quiet_NaN();
+		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locBCALEnergy);
-		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : numeric_limits<double>::quiet_NaN();
+		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locFCALEnergy);
 	}
 	else
@@ -1312,13 +1320,13 @@ void DEventWriterROOT::Fill_ParticleData(TTree* locTree, string locParticleBranc
 		//PID QUALITY
 		Fill_FundamentalData<UInt_t>(locTree, locParticleBranchName, "NDF_Timing", locNeutralParticleHypothesis->dNDF);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_Measured", locNeutralParticleHypothesis_Measured->dChiSq);
-		if(locKinFitPerformedFlag)
+		if(locKinFitFlag)
 			Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "ChiSq_Timing_KinFit", locNeutralParticleHypothesis->dChiSq);
 
 		//DEPOSITED ENERGY
-		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : numeric_limits<double>::quiet_NaN();
+		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locBCALEnergy);
-		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : numeric_limits<double>::quiet_NaN();
+		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locFCALEnergy);
 	}
 }
@@ -1370,9 +1378,9 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_FDC", locTrackTimeBased->ddEdx_FDC, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_TOF", locChargedTrackHypothesis->dTOFdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_ST", locChargedTrackHypothesis->dStartCounterdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : numeric_limits<double>::quiet_NaN();
+		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_BCAL", locBCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : numeric_limits<double>::quiet_NaN();
+		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_FCAL", locFCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 	}
 	else
@@ -1397,17 +1405,24 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 				locMatchID = locThrownObjectIDMap.find(locMCThrown)->second;
 		}
 		Fill_FundamentalData<Int_t>(locTree, "Unused", "MatchID", locMatchID, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		
 		Fill_FundamentalData<Int_t>(locTree, "Unused", "PID", PDGtype(locKinematicData->PID()), locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//PID QUALITY
+		Fill_FundamentalData<UInt_t>(locTree, "Unused", "NDF_Tracking", 0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "ChiSq_Tracking", 0.0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<UInt_t>(locTree, "Unused", "NDF_Timing", locNeutralParticleHypothesis->dNDF, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "ChiSq_Timing", locNeutralParticleHypothesis->dChiSq, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<UInt_t>(locTree, "Unused", "NDF_DCdEdx", 0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "ChiSq_DCdEdx", 0.0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//DEPOSITED ENERGY
-		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : numeric_limits<double>::quiet_NaN();
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_CDC", 0.0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_FDC", 0.0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_TOF", 0.0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_ST", 0.0, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_BCAL", locBCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : numeric_limits<double>::quiet_NaN();
+		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_FCAL", locFCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 	}
 }
