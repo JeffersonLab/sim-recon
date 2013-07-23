@@ -49,7 +49,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 
   typedef struct{
     DVector2 xy;
-    double z;
+    double z,covr,covrphi;
   }xyz_t;
 	
   

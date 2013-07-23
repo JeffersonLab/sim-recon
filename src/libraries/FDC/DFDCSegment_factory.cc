@@ -14,7 +14,7 @@
 #define MATCH_RADIUS 3.0
 #define ADJACENT_MATCH_DISTANCE 0.3
 #define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 100.0 // cm^2
+#define BEAM_VARIANCE 1.0 // cm^2
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
 #define MAX_ITER 10
@@ -104,6 +104,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
 					     DMatrix &CR,vector<xyz_t>&XYZ){
   unsigned int n=points.size()+1;
   vector<int>bad(n);  // Keep track of "bad" intersection points
+  bool got_bad_intersection=false;
   // Fill matrix of intersection points
   for (unsigned int m=0;m<n-1;m++){
     double r2=points[m]->xy.Mod2();
@@ -113,9 +114,10 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
 
     DVector2 xy_int0(-N[0]*ratio,-N[1]*ratio);
     double temp=denom*r2-numer*numer;
-    if (temp<0){    
+    if (temp<0){   
+      got_bad_intersection=true;
       bad[m]=1;
-      XYZ[m].xy=xy_int0;
+      XYZ[m].xy=points[m]->xy;
       continue; 
     }
     temp=sqrt(temp)/denom;
@@ -136,48 +138,37 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   // Fake target point
   XYZ[n-1].xy.Set(0.,0.);
 
-  // All arc lengths are measured relative to some reference plane with a hit.
-  // Don't use a "bad" hit for the reference...
-  unsigned int start=0;
-  for (unsigned int i=0;i<bad.size();i++){
-    if (!bad[i]){
-      start=i;
-      break;
-    }
-  }
-  if ((start!=0 && ref_plane==0) || (start!=2&&ref_plane==2)) ref_plane=start;
-
   // Linear regression to find z0, tanl   
   double sumv=0.,sumx=0.;
   double sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,sperp_old=0.,ratio,Delta;
   double z=0,zlast=0;
   double two_rc=2.*rc;
-  DVector2 oldxy=XYZ[start].xy;
-  for (unsigned int k=start;k<n;k++){
+  DVector2 oldxy=XYZ[0].xy;
+  for (unsigned int k=0;k<n;k++){
+    DVector2 diffxy=XYZ[k].xy-oldxy;
+    double var=CR(k,k);
+    if (bad[k]) var=XYZ[k].covr;
     zlast=z;
     sperp_old=sperp;
-    if (!bad[k]){
-      DVector2 diffxy=XYZ[k].xy-oldxy;
-      ratio=diffxy.Mod()/(two_rc);
-      // Make sure the argument for the arcsin does not go out of range...
-      sperp=sperp_old+(ratio>1?two_rc*(M_PI_2):two_rc*asin(ratio));
-      //z=XYZ(k,2);
-      z=XYZ[k].z;
+    ratio=diffxy.Mod()/(two_rc);
+    // Make sure the argument for the arcsin does not go out of range...
+    sperp=sperp_old+(ratio>1?two_rc*(M_PI_2):two_rc*asin(ratio));
+    //z=XYZ(k,2);
+    z=XYZ[k].z;
 
-      // Assume errors in s dominated by errors in R 
-      double inv_var=1./CR(k,k);
-      sumv+=inv_var;
-      sumy+=sperp*inv_var;
-      sumx+=z*inv_var;
-      sumxx+=z*z*inv_var;
-      sumxy+=sperp*z*inv_var;
-      
-      // Save the current x and y coordinates
-      //oldx=XYZ(k,0);
-      //oldy=XYZ(k,1);
-      oldxy=XYZ[k].xy;
-    }
+    // Assume errors in s dominated by errors in R 
+    double inv_var=1./var;
+    sumv+=inv_var;
+    sumy+=sperp*inv_var;
+    sumx+=z*inv_var;
+    sumxx+=z*z*inv_var;
+    sumxy+=sperp*z*inv_var;
+    
+    // Save the current x and y coordinates
+    //oldx=XYZ(k,0);
+    //oldy=XYZ(k,1);
+    oldxy=XYZ[k].xy;
   }
 
   Delta=sumv*sumxx-sumx*sumx;
@@ -204,10 +195,8 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
     }
     else tanl=(zlast-zvertex)/sperp;
     var_tanl=100.; // guess for now 
-
-  
   }
-
+  if (got_bad_intersection) return VALUE_OUT_OF_RANGE;
   return NOERROR;
 }
 
@@ -288,7 +277,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
       +dRPhi_dtanl*dRPhi_dtanl*var_tanl;
     CR(k,k)=dR_dx1*dR_dx1*var_x1+dR_dy1*dR_dy1*var_y1
       +dR_dtanl*dR_dtanl*var_tanl;
-    
+
     // double stemp=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1))/(4.*rc);
     double stemp=XYZ[k].xy.Mod()/(4.*rc);
     double ctemp=1.-stemp*stemp;
@@ -452,6 +441,9 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
     double one_over_R2=1./points[m]->xy.Mod2();
     CRPhi(m,m)=one_over_R2*(var_v*temp1*temp1+var_u*temp2*temp2);
     CR(m,m)=one_over_R2*(var_u*u*u+var_v*v*v);
+
+    XYZ[m].covr=CR(m,m);
+    XYZ[m].covrphi=CRPhi(m,m);
   }
   XYZ[last_index].z=TARGET_Z;
   CR(last_index,last_index)=BEAM_VARIANCE;
@@ -461,26 +453,63 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   jerror_t error=NOERROR;  
   // First find the center and radius of the projected circle
   error=RiemannCircleFit(points,CRPhi); 
-  if (error!=NOERROR) return error;
+  if (error!=NOERROR){
+    _DBG_ << error << endl;
+    return error;
+  }
   
   // Get reference track estimates for z0 and tanl and intersection points
   // (stored in XYZ)
   error=RiemannLineFit(points,CR,XYZ);
-  if (error!=NOERROR) return error;
+  if (error!=NOERROR){
+    // The circle fit is inconsistent with at least one of the measured points
+    // (i.e., the calcuation of the intersection point failed).  Relax the 
+    // emphasis on the "target" point and refit.
+    for (unsigned int i=0;i<last_index;i++){
+      CR(i,i)=XYZ[i].covr;
+      CRPhi(i,i)=XYZ[i].covrphi;
+    }
+    CRPhi(last_index,last_index)=100.;
+    CR(last_index,last_index)=100.;
+
+    // First find the center and radius of the projected circle
+    error=RiemannCircleFit(points,CRPhi); 
+    if (error!=NOERROR){
+      _DBG_ << error << endl;
+      return error;
+    }
+    
+    // Get reference track estimates for z0 and tanl and intersection points
+    // (stored in XYZ)
+    error=RiemannLineFit(points,CR,XYZ);
+  }
 
   // Guess particle charge (+/-1);
   charge=GetCharge(points.size(),XYZ,CR,CRPhi);
 
   double r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
-  
+
+  // Compute the chi-square value for this iteration
+  double chisq0=0.;
+  double rc0=rc,xc0=xc,yc0=yc,tanl0=tanl,zvertex0=zvertex,Phi1_0=Phi1;
+  double charge0=charge;
+  for (unsigned int m=0;m<points.size();m++){
+    double sperp=charge*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
+    double phi_s=Phi1+sperp/rc;
+    DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
+    chisq0+=(XY-points[m]->xy).Mod2()/CR(m,m);
+  }
+
   // Preliminary circle fit 
   error=RiemannCircleFit(points,CRPhi); 
-  if (error!=NOERROR) return error;
+  if (error!=NOERROR){
+    _DBG_ << error << endl;
+    return error;
+  }
 
   // Preliminary line fit
   error=RiemannLineFit(points,CR,XYZ);
-  if (error!=NOERROR) return error;
 
   // Guess particle charge (+/-1);
   charge=GetCharge(points.size(),XYZ,CR,CRPhi);
@@ -488,19 +517,39 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
   
+  // Compute the chi-square value for this iteration
+  double chisq_=0.;
+  double charge_=charge;
+  double rc_=rc,xc_=xc,yc_=yc,tanl_=tanl,zvertex_=zvertex,Phi1_=Phi1;
+  for (unsigned int m=0;m<points.size();m++){
+    double sperp=charge*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
+    double phi_s=Phi1+sperp/rc;
+    DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
+    chisq_+=(XY-points[m]->xy).Mod2()/CR(m,m);
+  }
+  // If we did not improve the fit, bail from this routine...
+  if (chisq_>chisq0){
+    chisq=chisq0;
+    charge=charge0;
+    rc=rc0,xc=xc0,yc=yc0,tanl=tanl0,zvertex=zvertex0,Phi1=Phi1_0;
+    
+    return NOERROR;
+  }
+
   // Final circle fit 
   error=RiemannCircleFit(points,CRPhi); 
-  if (error!=NOERROR) return error;
+  if (error!=NOERROR){
+    _DBG_ << error << endl;
+    return error;
+  }
 
   // Final line fit
   error=RiemannLineFit(points,CR,XYZ);
-  if (error!=NOERROR) return error;
 
   // Guess particle charge (+/-1)
   charge=GetCharge(points.size(),XYZ,CR,CRPhi);
   
   // Final update to covariance matrices
-  ref_plane=0;
   r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
@@ -512,6 +561,15 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
     DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
     chisq+=(XY-points[m]->xy).Mod2()/CR(m,m);
   }
+
+  // If the last iteration did not improve the results, restore the previously
+  // saved values for the parameters and chi-square.
+  if (chisq>chisq_){
+    chisq=chisq_;
+    charge=charge_;
+    rc=rc_,xc=xc_,yc=yc_,tanl=tanl_,zvertex=zvertex_,Phi1=Phi1_;
+  }
+
   return NOERROR;
 }
 
@@ -622,7 +680,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	// Arc lengths in helical model are referenced relative to the plane
 	// ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
 	// roughly in the center of the segment.
-	ref_plane=2; 
+	ref_plane=0; 
 	
 	// Perform the Riemann Helical Fit on the track segment
 	jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
