@@ -103,6 +103,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 //		double ref_time;
 //		bool use_tof,use_sc;
 		double TARGET_Z;
+		int DEBUG_LEVEL;
 
 		//vector of flags indicating whether or not a hit has been used
 		vector<bool>used;

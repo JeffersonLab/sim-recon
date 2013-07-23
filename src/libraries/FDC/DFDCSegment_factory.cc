@@ -61,6 +61,9 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) {
 
   *_log << "Table of Lorentz deflections initialized." << endMsg;
   */
+  DEBUG_LEVEL=0;
+  gPARMS->SetDefaultParameter("FDC:DEBUG_LEVEL", DEBUG_LEVEL);
+
   return NOERROR;
 }
 
@@ -454,7 +457,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // First find the center and radius of the projected circle
   error=RiemannCircleFit(points,CRPhi); 
   if (error!=NOERROR){
-    _DBG_ << error << endl;
+    if (DEBUG_LEVEL>0) _DBG_ << "Circle fit failed..." << endl;
     return error;
   }
   
@@ -475,7 +478,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
     // First find the center and radius of the projected circle
     error=RiemannCircleFit(points,CRPhi); 
     if (error!=NOERROR){
-      _DBG_ << error << endl;
+      if (DEBUG_LEVEL>0) _DBG_ << "Circle fit failed..." << endl;
       return error;
     }
     
@@ -504,7 +507,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // Preliminary circle fit 
   error=RiemannCircleFit(points,CRPhi); 
   if (error!=NOERROR){
-    _DBG_ << error << endl;
+    if (DEBUG_LEVEL>0) _DBG_ << "Circle fit failed..." << endl;
     return error;
   }
 
@@ -538,8 +541,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
 
   // Final circle fit 
   error=RiemannCircleFit(points,CRPhi); 
-  if (error!=NOERROR){
-    _DBG_ << error << endl;
+  if (error!=NOERROR){   
+    if (DEBUG_LEVEL>0) _DBG_ << "Circle fit failed..." << endl;
     return error;
   }
 
