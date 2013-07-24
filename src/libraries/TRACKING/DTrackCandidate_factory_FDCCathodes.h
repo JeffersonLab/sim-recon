@@ -57,8 +57,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   jerror_t GetPositionAndMomentum(const DFDCSegment *segment);
   jerror_t GetPositionAndMomentum(DFDCSegment *segment,
 						DVector3 &pos, DVector3 &mom);
-  jerror_t GetPositionAndMomentum(const double Bz_avg,
-				  DVector3 &pos,DVector3 &mom);
+  jerror_t GetPositionAndMomentum(double z,DVector3 &pos,DVector3 &mom);
   
   double GetCharge(const DVector3 &pos,const DFDCSegment *segment);
   double DocaToHelix(const DFDCPseudo *hit);
@@ -69,7 +68,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 
   bool GetTrackMatch(double q,DVector3 &pos,DVector3 &mom,
 		     const DFDCSegment *segment);
-  bool LinkSegment(const DFDCSegment *segment);
+  bool LinkStraySegment(const DFDCSegment *segment);
 
   bool DEBUG_HISTS,USE_FDC,APPLY_MOMENTUM_CORRECTION;
   double p_factor1,p_factor2;
@@ -79,6 +78,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   double endplate_z;
   double TARGET_Z;
   double MAX_R_VERTEX_LIMIT;
+  double zpack[4];
   
   // Fit parameters
   double xc,yc,rc,z_vertex,q,phi0,tanl;
@@ -92,10 +92,15 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 };
 
 inline double DTrackCandidate_factory_FDCCathodes::Match(double p){
-  if(p>4.) p=4;
-  double r=(p<4.)?(2.0+2.0/p-0.25*p):2.5;
-  if (r<10.) return r;
-  return 10.;
+  // return 100.;
+  if (p>0.1){
+    double r=0.6-0.2*p+5.0/p;
+    if (r<5.0){
+      if (r<2.0) return 2.0;
+      return r;
+    }
+  }
+  return 5.0;
 }
 
 
