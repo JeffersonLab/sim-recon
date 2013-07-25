@@ -14,6 +14,8 @@ using namespace jana;
 #include "DTrackCandidate.h"
 #include "DHelicalFit.h"
 #include "CDC/DCDCTrackHit.h"
+#include <TROOT.h>
+#include <TH2F.h>
 
 class DFDCPseudo;
 	
@@ -149,6 +151,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		vector<DCDCTrkHit*> cdctrkhits;
 		vector<vector<DCDCTrkHit*> > cdchits_by_superlayer;
 		vector<DCDCTrkHit*> seedhits;
+		vector<unsigned int>used_stereos;
 		
 		typedef vector<vector<DCDCSeed > >::iterator ringiter;
 		
@@ -176,6 +179,12 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		jerror_t GetPositionAndMomentum(DCDCSeed &seed,
 						DVector3 &pos,
 						DVector3 &mom);
+		
+		bool RefitCircleWithStereoIntersections(DCDCSeed &seed);
+		void AddStrayStereoHits(vector<DCDCTrkHit*> &stereo_hits,
+					DCDCSeed &seed,bool &got_hits);
+		void DoLineFit(DCDCSeed &seed);
+		
 
 		vector<int> superlayer_boundaries;
 
@@ -198,6 +207,9 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		double VERTEX_Z_MIN,VERTEX_Z_MAX;
 		int DEBUG_LEVEL;
 		bool FILTER_SEEDS;
+
+		bool DEBUG_HISTS;
+		TH2F *Hdphi_s,*Hdphi;
 };
 
 #endif // _DTrackCandidate_factory_CDC_
