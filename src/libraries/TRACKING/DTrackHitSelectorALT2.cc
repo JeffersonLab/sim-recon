@@ -161,8 +161,9 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     double var=0.64*ONE_OVER_12;
    
      // To estimate the impact of errors in the track momentum on the variance of the residual,
-      // use a helical approximation. 
-   DVector3 origin=cdchits_in[0]->wire->origin;
+      // use a helical approximation.
+    //DVector3 origin=cdchits_in[0]->wire->origin;
+    DVector3 origin=rt->swim_steps[0].origin;
       double Bz=bfield->GetBz(origin.X(),origin.Y(),origin.z());
       double a=-0.003*Bz*rt->q;
       double p=rt->swim_steps[0].mom.Mag();
@@ -176,8 +177,13 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
       double cosphi=cos(phi);
       double sinphi=sin(phi);
 
-      double sigma_p_over_p=0.1;
-     double var_x0=0.0025,var_y0=0.0025;
+      double var_x0=0.0,var_y0=0.0;
+      double mass=rt->GetMass();
+      double one_over_beta=sqrt(1.+mass*mass/(p*p));
+      double sigma_p_over_p=0.0025*one_over_beta/cosl;
+      double sigma_lambda=0.0015*one_over_beta/p;
+      double var_lambda=sigma_lambda*sigma_lambda;
+      double var_phi=var_lambda;
 
   // Loop over hits
   double MIN_HIT_PROB = 0.05;
@@ -188,6 +194,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     // Find the DOCA to this wire
     double s;
     double doca = rt->DistToRT(hit->wire, &s);
+
     if(!finite(doca)) continue;
     if(!finite(s)) s = -999.0;
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
@@ -211,13 +218,13 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     double dx_dcosl=p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
     double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
     double var_x=var_x0+pdx_dp*pdx_dp*sigma_p_over_p*sigma_p_over_p
-      +dx_dcosl*dx_dcosl*sinl*sinl*0.01*0.01+dx_dphi*dx_dphi*0.01*0.01;
+      +dx_dcosl*dx_dcosl*sinl*sinl*var_lambda+dx_dphi*dx_dphi*var_phi;
     
     double pdy_dp=pt_over_a*(sinphi*diff1+cosphi*diff2);
     double dy_dcosl=p_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
     double dy_dphi=pt_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
     double var_y=var_y0+pdy_dp*pdy_dp*sigma_p_over_p*sigma_p_over_p 
-      +dy_dcosl*dy_dcosl*sinl*sinl*0.01*0.01+dy_dphi*dy_dphi*0.01*0.01;
+      +dy_dcosl*dy_dcosl*sinl*sinl*var_lambda+dy_dphi*dy_dphi*var_phi;
     
     
     DVector3 origin=hit->wire->origin;
@@ -345,8 +352,8 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       
       // To estimate the impact of errors in the track momentum on the variance of the residual,
       // use a helical approximation. 
-      double Bz=bfield->GetBz(fdchits_in[0]->xy.X(),fdchits_in[0]->xy.Y(),
-			      fdchits_in[0]->wire->origin.z());
+    DVector3 origin=rt->swim_steps[0].origin;
+      double Bz=bfield->GetBz(origin.X(),origin.Y(),origin.z());
       double a=-0.003*Bz*rt->q;
       double p=rt->swim_steps[0].mom.Mag();
       double p_over_a=p/a;
@@ -359,9 +366,14 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       double cosphi=cos(phi);
       double sinphi=sin(phi);
 
-      double sigma_p_over_p=0.1;
-      double var_x0=0.0025,var_y0=0.0025;
-
+      double var_x0=0.0,var_y0=0.0;
+      double mass=rt->GetMass();
+      double one_over_beta=sqrt(1.+mass*mass/(p*p));
+      double sigma_p_over_p=0.0023*one_over_beta/cosl;
+      double sigma_lambda=0.0015*one_over_beta/p;
+      double var_lambda=sigma_lambda*sigma_lambda;
+      double var_phi=var_lambda;
+      
       // Loop over hits
       vector<const DFDCPseudo*>::const_iterator iter;
       for(iter=fdchits_in.begin(); iter!=fdchits_in.end(); iter++){
@@ -369,7 +381,8 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 	  
 	  // Find the DOCA to this wire
 	  double s;
-	    double doca = rt->DistToRT(hit->wire, &s);  
+	    double doca = rt->DistToRT(hit->wire, &s); 
+ 
 	    if(!finite(doca)) continue;
 	    const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
 	    // double itheta02s2 = last_step->itheta02s2;
@@ -397,13 +410,13 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 	    double dx_dcosl=p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
 	    double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
 	    double var_x=var_x0+pdx_dp*pdx_dp*sigma_p_over_p*sigma_p_over_p
-	      +dx_dcosl*dx_dcosl*sinl*sinl*0.01*0.01+dx_dphi*dx_dphi*0.01*0.01;
+	      +dx_dcosl*dx_dcosl*sinl*sinl*var_lambda+dx_dphi*dx_dphi*var_phi;
 
 	    double pdy_dp=pt_over_a*(sinphi*diff1+cosphi*diff2);
 	    double dy_dcosl=p_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
 	    double dy_dphi=pt_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
 	    double var_y=var_y0+pdy_dp*pdy_dp*sigma_p_over_p*sigma_p_over_p
-	      +dy_dcosl*dy_dcosl*sinl*sinl*0.01*0.01+dy_dphi*dy_dphi*0.01*0.01;
+	      +dy_dcosl*dy_dcosl*sinl*sinl*var_lambda+dy_dphi*dy_dphi*var_phi;
 	    
 	    // Rotate from global coordinate system into FDC local system
 	    double cosa=hit->wire->udir.y();
@@ -415,9 +428,10 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 
 	    // Calculate chisq
 	    double chisq = resi*resi/(var_d+var_anode)+resic*resic/(var_u+var_cathode);
-	    
+
 	    // Probability of this hit being on the track
 	    double probability = TMath::Prob(chisq, 2);
+
 	    if(probability>=MIN_HIT_PROB_FDC){
 	      pair<double,const DFDCPseudo*>myhit;
 		myhit.first=probability;
@@ -431,7 +445,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 		
 		fdchitdbg.fit_type = fit_type;
 		//fdchitdbg.hit_cdc_endplate = hit_cdc_endplate;
-		//fdchitdbg.p = p;
+		fdchitdbg.p = p;
 		fdchitdbg.theta = rt->swim_steps[0].mom.Theta();
 		//fdchitdbg.mass = my_mass;
 		fdchitdbg.sigma_anode = sqrt(var_anode);
