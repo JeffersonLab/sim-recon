@@ -137,6 +137,7 @@ class DHelicalFit{
   inline float GetPhiMean() const {return phi_mean;}
   jerror_t PrintChiSqVector(void) const;
   jerror_t Print(void) const;
+  void FindCharge(void);
   jerror_t Dump(void) const;
   inline void SetMagneticFieldMap(const DMagneticFieldMap *map){bfield=map;}
   // for Riemann plane

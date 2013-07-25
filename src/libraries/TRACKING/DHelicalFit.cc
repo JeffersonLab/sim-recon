@@ -125,7 +125,7 @@ jerror_t DHelicalFit::AddHit(const DFDCPseudo *fdchit){
   hit->z = fdchit->wire->origin.z();
   hit->covx=fdchit->covxx;
   hit->covy=fdchit->covyy;
-  hit->covxy=0.;
+  hit->covxy=fdchit->covxy;
   hit->chisq = 0.0;
   hit->is_axial=false;
 
@@ -417,7 +417,6 @@ jerror_t DHelicalFit::FitCircle(void)
 	// Calculate the chisq
 	ChisqCircle();
 	chisq_source = CIRCLE;
-	ndof=hits.size()-3;
 
 	return NOERROR;
 }
@@ -436,9 +435,12 @@ double DHelicalFit::ChisqCircle(void)
 		DHFHit_t *a = hits[i];
 		float x = a->x - x0;
 		float y = a->y - y0;
-		float c = sqrt(x*x + y*y) - r0;
+		float x2=x*x,y2=y*y;
+		float r2=x2+y2;
+		float c = sqrt(r2) - r0;
 		c *= c;
-		c/=a->covrphi;
+		double cov=(x2*a->covx+y2*a->covy+2.*x*y*a->covxy)/r2;
+		c/=cov;
 		a->chisq = c;
 		chisq+=c;
 	}
@@ -582,10 +584,10 @@ jerror_t DHelicalFit::FitCircleRiemann(float rc){
   // We divide Q and R by a safety factor to prevent multiplying together 
   // enormous numbers that cause unreliable results.
 
-  long double Q=(3.*B1-B2*B2)/9.e4; 
-  long double R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
+  long double Q=(3.*B1-B2*B2)/9.e6;//4; 
+  long double R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e9;//6;
   long double Q1=Q*Q*Q+R*R;
-  if (Q1<0) Q1=sqrt(-Q1);
+  if (Q1<0) Q1=sqrtl(-Q1);
   else{
     return VALUE_OUT_OF_RANGE;
   }
@@ -595,13 +597,15 @@ jerror_t DHelicalFit::FitCircleRiemann(float rc){
   //                  = r^(p/q)*(cos(p*theta/q)+i sin(p*theta/q))
   //
   //double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
-  long double temp=100.*sqrt(cbrt(R*R+Q1*Q1));
-  long double theta1=ONE_THIRD*atan2(Q1,R);
-  long double sum_over_2=temp*cos(theta1);
-  long double diff_over_2=-temp*sin(theta1);
+  long double temp=1000.*sqrtl(cbrtl(R*R+Q1*Q1));
+  long double theta1=ONE_THIRD*atan2l(Q1,R);
+  long double sum_over_2=temp*cosl(theta1);
+  long double diff_over_2=-temp*sinl(theta1);
   // Third root
   long double lambda_min=-ONE_THIRD*B2-sum_over_2+SQRT3*diff_over_2;
   
+  if (diff_over_2>0) _DBG_ << "????????????????"<< endl;
+
   // Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
   N[0]=1.;
   N[1]=(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
@@ -1050,8 +1054,10 @@ jerror_t DHelicalFit::FitTrackRiemann(float rc_input){
   jerror_t error=FitCircleRiemann(rc_input); 
   if (error!=NOERROR) return error;
   error=FitLineRiemann();
-  GuessChargeFromCircleFit();
+  FindCharge();
   
+  
+
   // Shift phi by pi if the charge is negative
   if (q<0) phi+=M_PI; 
 
@@ -1282,3 +1288,49 @@ jerror_t DHelicalFit::Dump(void) const
 	return NOERROR;
 }
 
+// Find the charge based on the proximity of the hits to the helical trajectory
+// for the two hypotheses for the charge
+void DHelicalFit::FindCharge(void){
+  // Try to use a plane with a single hit for the reference position
+  unsigned int i=1;
+  for (;i<hits.size()-1;i++){
+    if (fabs(hits[i-1]->z-hits[i]->z)>0.01
+	&& fabs(hits[i]->z-hits[i+1]->z)>0.01) break;
+  }
+
+  double Phi1=atan2(hits[i]->y-y0,hits[i]->x-x0);
+  double z0=hits[i]->z;
+  double plus_sum=0.,minus_sum=0.;
+  for (unsigned int j=0;j<hits.size();j++){
+    DHFHit_t *hit = hits[j];
+    double dphi=(hit->z-z0)/(r0*tanl);
+
+    double phiplus=Phi1+dphi;
+    double dxplus=x0+r0*cos(phiplus)-hit->x;
+    double dyplus=y0+r0*sin(phiplus)-hit->y;
+    double dxplus2=dxplus*dxplus;
+    double dyplus2=dyplus*dyplus;
+    double d2plus=dxplus2+dyplus2;
+    double varplus=(dxplus2*hit->covx+dyplus2*hit->covy
+		    +2.*dyplus*dxplus*hit->covxy)/d2plus;
+    plus_sum+=d2plus/varplus;
+    
+    double phiminus=Phi1-dphi;
+    double dxminus=x0+r0*cos(phiminus)-hit->x;
+    double dyminus=y0+r0*sin(phiminus)-hit->y;
+    double dxminus2=dxminus*dxminus;
+    double dyminus2=dyminus*dyminus;
+    double d2minus=dxminus2+dyminus2;
+    double varminus=(dxminus2*hit->covx+dyminus2*hit->covy
+		     +2.*dyminus*dxminus*hit->covxy)/d2minus;
+    minus_sum+=d2minus/varminus;
+
+    
+    //printf("z %f d+ %f %f d- %f %f\n",hit->z,d2plus,plus_sum,d2minus,minus_sum);
+
+  }
+  
+  q=1.0;
+  // Look for smallest sum to determine q
+  if (minus_sum<plus_sum) q=-1.;
+}
