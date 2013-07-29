@@ -329,7 +329,13 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// Note that we have to use the GetFromFactory() method here since
 	// if we just use Get() or GetSingle(), it will call us (the event
 	// source) again in an infinite loop!
-	DTranslationTable_factory *ttfac = dynamic_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
+	// Also note that we use static_cast here instead of dynamic_cast
+	// since the latter requires that the type_info structure for
+	// the DTranslationTable_factory be present. It is not in this
+	// plugin (it is in the TTab plugin). Thus, with dynamic_cast there
+	// is an unresolved symbol error if the TTab plugin is not also
+	// present. (Make sense?)
+	DTranslationTable_factory *ttfac = static_cast<DTranslationTable_factory*>(loop->GetFactory("DTranslationTable"));
 	if(ttfac){
 		vector<const DTranslationTable*> translationTables;
 		ttfac->Get(translationTables);
