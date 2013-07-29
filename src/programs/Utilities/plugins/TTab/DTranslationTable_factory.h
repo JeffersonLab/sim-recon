@@ -14,7 +14,7 @@
 class DTranslationTable_factory:public jana::JFactory<DTranslationTable>{
 	public:
 		DTranslationTable_factory(){};
-		~DTranslationTable_factory(){};
+		virtual ~DTranslationTable_factory(){};
 
 		DTranslationTable *tt;
 
