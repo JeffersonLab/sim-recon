@@ -320,15 +320,15 @@ void hdv_debugerframe::SetUpMid1Frame(){
   TGLayoutHints *chints = new TGLayoutHints(kLHintsCenterY|kLHintsCenterX, 2,2,2,2);
 
   
-  for (int k=0;k<10;k++){
+  for (int k=0;k<MaxWireTracks;k++){
     char str1[128];
     sprintf(str1,"WireBased%d",k+1);
     char str2[128];
     if (k<NTrWireBased){
       if (k<10){ 
 	sprintf(str2,"Hits Wire Based Track  %d",k+1);
-	if (k>9)
-	  sprintf(str2,"Hits Wire Based Track %d",k+1);
+      } else {
+	sprintf(str2,"Hits Wire Based Track %d",k+1);
       }
     } else{ 
       sprintf(str2,".......................");
@@ -363,7 +363,7 @@ void hdv_debugerframe::SetUpMid1Frame(){
       
       vector<TGLabel*> tv;
       //tv.push_back(tl);
-      for (int k=0;k<10;k++){
+      for (int k=0;k<MaxWireTracks;k++){
 	TGLabel *lab = new TGLabel(tfWB[colnamesw[i]],"-----"); 
 	tfWB[colnamesw[i]]->AddFrame(lab, chints);
 	tv.push_back(lab);
@@ -374,7 +374,7 @@ void hdv_debugerframe::SetUpMid1Frame(){
     InitMid1Frame = 1;
   }
   
-  for (int k=0;k<10;k++){
+  for (int k=0;k<MaxWireTracks;k++){
     
     if (k<NTrWireBased) {
 
@@ -448,15 +448,15 @@ void hdv_debugerframe::SetUpMid2Frame(){
   TGLayoutHints *chints = new TGLayoutHints(kLHintsCenterY|kLHintsCenterX, 2,2,2,2);
 
   
-  for (int k=0;k<10;k++){
+  for (int k=0;k<MaxTimeTracks;k++){
     char str1[128];
     sprintf(str1,"TimeBased%d",k+1);
     char str2[128];
     if (k<NTrTimeBased){
       if (k<10){ 
 	sprintf(str2,"Hits Time Based Track  %d",k+1);
-	if (k>9)
-	  sprintf(str2,"Hits Time Based Track %d",k+1);
+      } else {
+	sprintf(str2,"Hits Time Based Track %d",k+1);
       }
     } else{ 
       sprintf(str2,".......................");
@@ -491,7 +491,7 @@ void hdv_debugerframe::SetUpMid2Frame(){
       
       vector<TGLabel*> tv;
       //tv.push_back(tl);
-      for (int k=0;k<10;k++){
+      for (int k=0;k<MaxTimeTracks;k++){
 	TGLabel *lab = new TGLabel(tfTB[colnamesw[i]],"-----"); 
 	tfTB[colnamesw[i]]->AddFrame(lab, chints);
 	tv.push_back(lab);
@@ -502,7 +502,7 @@ void hdv_debugerframe::SetUpMid2Frame(){
     InitMid2Frame = 1;
   }
   
-  for (int k=0;k<10;k++){
+  for (int k=0;k<MaxTimeTracks;k++){
     
     if (k<NTrTimeBased) {
 

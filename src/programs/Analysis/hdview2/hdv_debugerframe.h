@@ -42,6 +42,9 @@ class DTrackTimeBased;
 #include <TRACKING/DTrackTimeBased.h>
 #endif
 
+#define MaxWireTracks 21
+#define MaxTimeTracks 21
+
 class hdv_debugerframe:public TGMainFrame {
   
  public:

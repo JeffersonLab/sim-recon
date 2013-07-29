@@ -22,6 +22,7 @@ using namespace std;
 #include <particleType.h>
 #include "hdview2.h"
 #include "hdv_mainframe.h"
+#include "hdv_debugerframe.h"
 #include "MyProcessor.h"
 #include "TRACKING/DTrackHit.h"
 #include "TRACKING/DQuickFit.h"
@@ -597,7 +598,7 @@ void MyProcessor::FillGraphics(void)
 
 	// Wire Based Track Hits and trajectory for Debuger Window
 	for(unsigned int n=0; n<trWB.size(); n++){
-	  if (n>9)
+	  if (n>=MaxWireTracks)
 	    break;
 	  char str1[128];
 	  sprintf(str1,"WireBased%d",n+1);
@@ -645,7 +646,7 @@ void MyProcessor::FillGraphics(void)
 
 	// Time Based Track Hits and trajectory for Debuger Window
 	for(unsigned int n=0; n<trTB.size(); n++){
-	  if (n>9)
+	  if (n>=MaxTimeTracks)
 	    break;
 	  char str1[128];
 	  sprintf(str1,"TimeBased%d",n+1);
