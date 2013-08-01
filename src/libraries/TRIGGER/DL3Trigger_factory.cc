@@ -34,17 +34,11 @@ jerror_t DL3Trigger_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 jerror_t DL3Trigger_factory::evnt(JEventLoop *loop, int eventnumber)
 {
+	// Simple pass-through L3 trigger
+	// algorithm = 0x1
 
-	// Code to generate factory data goes here. Add it like:
-	//
-	// DL3Trigger *myDL3Trigger = new DL3Trigger;
-	// myDL3Trigger->x = x;
-	// myDL3Trigger->y = y;
-	// ...
-	// _data.push_back(myDL3Trigger);
-	//
-	// Note that the objects you create here will be deleted later
-	// by the system and the _data vector will be cleared automatically.
+	DL3Trigger *l3trig = new DL3Trigger(DL3Trigger::kKEEP_EVENT, 0x0L, 0x1);
+	_data.push_back(l3trig);
 
 	return NOERROR;
 }
