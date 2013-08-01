@@ -64,6 +64,7 @@ class DReferenceTrajectory{
 				double itheta02;		// running sum of MULS angle theta_0 squared
 				double itheta02s;		// ditto but times s
 				double itheta02s2;	// ditto but times s^2
+				double invX0;
 		};
 
 		DReferenceTrajectory(const DMagneticFieldMap *

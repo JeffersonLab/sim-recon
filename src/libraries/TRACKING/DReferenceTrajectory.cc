@@ -311,6 +311,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double itheta02 = 0.0;
 	double itheta02s = 0.0;
 	double itheta02s2 = 0.0;
+	double X0sum=0.0;
 	swim_step_t *last_step=NULL;
 	double old_radius=10000.;
 	
@@ -411,6 +412,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 						itheta02 += theta02;
 						itheta02s += s*theta02;
 						itheta02s2 += s*s*theta02;
+						X0sum+=X0;
+						
 					}
 
 					// Calculate momentum loss due to ionization
@@ -422,6 +425,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		swim_step->itheta02 = itheta02;
 		swim_step->itheta02s = itheta02s;
 		swim_step->itheta02s2 = itheta02s2;
+		swim_step->invX0=Nswim_steps/X0sum;
 
 		// Adjust step size to take smaller steps in regions of high momentum loss or field gradient
 		if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
