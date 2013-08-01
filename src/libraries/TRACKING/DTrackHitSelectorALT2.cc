@@ -172,6 +172,9 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
       double lambda=M_PI_2-rt->swim_steps[0].mom.Theta();
       double cosl=cos(lambda);
       double sinl=sin(lambda);
+      double tanl=tan(lambda);
+      double tanl2=tanl*tanl;
+      double tanl3=tanl2*tanl;
       double pt_over_a=cosl*p_over_a;
       double phi=rt->swim_steps[0].mom.Phi();
       double cosphi=cos(phi);
@@ -180,17 +183,27 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
       double var_x0=0.0,var_y0=0.0;
       double mass=rt->GetMass();
       double one_over_beta=sqrt(1.+mass*mass/(p*p));
-      double sigma_p_over_p=0.0025*one_over_beta/cosl;
-      double sigma_lambda=0.0015*one_over_beta/p;
-      double var_lambda=sigma_lambda*sigma_lambda;
-      double var_phi=var_lambda;
+      double var_pt_factor=0.016*one_over_beta/(cosl*a);
+      double var_pt_over_pt_sq=0.;
+
+      // Keep track of straws and rings
+      int old_straw=1000,old_ring=1000;
+
 
   // Loop over hits
-  double MIN_HIT_PROB = 0.05;
-  vector<const DCDCTrackHit*>::const_iterator iter;
-  for(iter=cdchits_in.begin(); iter!=cdchits_in.end(); iter++){
+      bool outermost_hit=true;
+  vector<const DCDCTrackHit*>::const_reverse_iterator iter;
+  for(iter=cdchits_in.rbegin(); iter!=cdchits_in.rend(); iter++){
     const DCDCTrackHit *hit = *iter;
     
+    // Skip hit if it is on the same wire as the previous hit
+    if (hit->wire->ring == old_ring && hit->wire->straw==old_straw){
+      //_DBG_ << "ring " << hit->wire->ring << " straw " << hit->wire->straw << endl;
+      continue;
+    }
+    old_ring=hit->wire->ring;
+    old_straw=hit->wire->straw;
+
     // Find the DOCA to this wire
     double s;
     double doca = rt->DistToRT(hit->wire, &s);
@@ -198,8 +211,17 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     if(!finite(doca)) continue;
     if(!finite(s)) s = -999.0;
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
+    if (outermost_hit){
+      var_pt_over_pt_sq=var_pt_factor*var_pt_factor*last_step->invX0/s;
+      outermost_hit=false;
+    }
+
     //double itheta02s2 = last_step->itheta02s2;
     
+    // Variances in angles due to multiple scattering
+    double var_lambda = last_step->itheta02;
+    double var_phi=var_lambda*(1.+tanl2);
+
     // Get "measured" distance to wire. 
     // For matching purposes this is assumed to be half a cell size
     double dist=0.4;
@@ -217,13 +239,13 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     double pdx_dp=pt_over_a*(cosphi*diff1-sinphi*diff2);
     double dx_dcosl=p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
     double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
-    double var_x=var_x0+pdx_dp*pdx_dp*sigma_p_over_p*sigma_p_over_p
+    double var_x=var_x0+pdx_dp*pdx_dp*var_pt_over_pt_sq
       +dx_dcosl*dx_dcosl*sinl*sinl*var_lambda+dx_dphi*dx_dphi*var_phi;
     
     double pdy_dp=pt_over_a*(sinphi*diff1+cosphi*diff2);
     double dy_dcosl=p_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
     double dy_dphi=pt_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
-    double var_y=var_y0+pdy_dp*pdy_dp*sigma_p_over_p*sigma_p_over_p 
+    double var_y=var_y0+pdy_dp*pdy_dp*var_pt_over_pt_sq
       +dy_dcosl*dy_dcosl*sinl*sinl*var_lambda+dy_dphi*dy_dphi*var_phi;
     
     
@@ -304,8 +326,9 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
 
     if(HS_DEBUG_LEVEL>10){
       _DBG_;
-      if(probability>=MIN_HIT_PROB)jerr<<ansi_bold<<ansi_green;
-	jerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" sigma="/*<<sigma_total*/<<" prob="<<probability<<endl;
+      //if(probability>=MIN_HIT_PROB)jerr<<ansi_bold<<ansi_green;
+      if (probability>=MIN_HIT_PROB_CDC) jerr<<"------> ";
+      jerr<<"s="<<s<<" t=" <<hit->tdrift   << " doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" sigma="/*<<sigma_total*/<<" prob="<<probability<<endl;
       jerr<<ansi_normal;
     }
   }
@@ -317,7 +340,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   // that are within +/-1 of the straw # of the most probable hit are added 
   // to the list.
   sort(cdchits_tmp.begin(),cdchits_tmp.end(),DTrackHitSelector_cdchit_cmp);
-  int old_straw=1000,old_ring=1000;
+  old_straw=1000,old_ring=1000;
   for (unsigned int i=0;i<cdchits_tmp.size();i++){
     if (cdchits_tmp[i].second->wire->ring!=old_ring || 
 	abs(cdchits_tmp[i].second->wire->straw-old_straw)==1){
@@ -361,6 +384,9 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       double lambda=M_PI_2-rt->swim_steps[0].mom.Theta();
       double cosl=cos(lambda);
       double sinl=sin(lambda);
+      double tanl=tan(lambda);
+      double tanl2=tanl*tanl;
+      double tanl3=tanl2*tanl;
       double pt_over_a=cosl*p_over_a;
       double phi=rt->swim_steps[0].mom.Phi();
       double cosphi=cos(phi);
@@ -369,30 +395,29 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       double var_x0=0.0,var_y0=0.0;
       double mass=rt->GetMass();
       double one_over_beta=sqrt(1.+mass*mass/(p*p));
-      double sigma_p_over_p=0.0023*one_over_beta/cosl;
-      double sigma_lambda=0.0015*one_over_beta/p;
-      double var_lambda=sigma_lambda*sigma_lambda;
-      double var_phi=var_lambda;
-      
+      double var_pt_factor=0.016*one_over_beta/(cosl*a);
+      double var_pt_over_pt_sq=0.;
+
       // Loop over hits
-      vector<const DFDCPseudo*>::const_iterator iter;
-      for(iter=fdchits_in.begin(); iter!=fdchits_in.end(); iter++){
+      bool most_downstream_hit=true;
+      vector<const DFDCPseudo*>::const_reverse_iterator iter;
+      for(iter=fdchits_in.rbegin(); iter!=fdchits_in.rend(); iter++){
 	const DFDCPseudo *hit = *iter;
 	  
 	  // Find the DOCA to this wire
 	  double s;
 	    double doca = rt->DistToRT(hit->wire, &s); 
- 
+
 	    if(!finite(doca)) continue;
 	    const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
-	    // double itheta02s2 = last_step->itheta02s2;
+	    if (most_downstream_hit){
+	      var_pt_over_pt_sq=var_pt_factor*var_pt_factor*last_step->invX0/s;
+	      most_downstream_hit=false;
+	    }
 
-	    // Get "measured" distance to wire.
-	    // For matching purposes this is assumed to be half a cell size
-	    double dist=0.25;
-
-	    // Anode Residual
-	    double resi = dist - doca;		
+	    // Variances in angles due to multiple scattering
+	    double var_lambda = last_step->itheta02;
+	    double var_phi=var_lambda*(1.+tanl2);
 	    
 	    // Cathode Residual
 	    double u=rt->GetLastDistAlongWire();
@@ -409,13 +434,13 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 	    double pdx_dp=pt_over_a*(cosphi*diff1-sinphi*diff2);
 	    double dx_dcosl=p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
 	    double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
-	    double var_x=var_x0+pdx_dp*pdx_dp*sigma_p_over_p*sigma_p_over_p
+	    double var_x=var_x0+pdx_dp*pdx_dp*var_pt_over_pt_sq
 	      +dx_dcosl*dx_dcosl*sinl*sinl*var_lambda+dx_dphi*dx_dphi*var_phi;
 
 	    double pdy_dp=pt_over_a*(sinphi*diff1+cosphi*diff2);
 	    double dy_dcosl=p_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
 	    double dy_dphi=pt_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
-	    double var_y=var_y0+pdy_dp*pdy_dp*sigma_p_over_p*sigma_p_over_p
+	    double var_y=var_y0+pdy_dp*pdy_dp*var_pt_over_pt_sq
 	      +dy_dcosl*dy_dcosl*sinl*sinl*var_lambda+dy_dphi*dy_dphi*var_phi;
 	    
 	    // Rotate from global coordinate system into FDC local system
@@ -426,11 +451,25 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 	    double var_d=cos2a*var_x+sin2a*var_y;
 	    double var_u=cos2a*var_y+sin2a*var_x;
 
+	    // Take into account non-normal incidence to FDC plane
+	    double pz=last_step->mom.z();
+	    double tx=last_step->mom.x()/pz;
+	    double ty=last_step->mom.y()/pz;
+	    double tu=tx*cosa-ty*sina;
+	    double cosalpha=cos(atan(tu));
+
+	    // Get "measured" distance to wire.
+	    // For matching purposes this is assumed to be half a cell size
+	    double dist=0.25;
+
+	    // Anode Residual
+	    double resi = dist - doca/cosalpha;
+
 	    // Calculate chisq
 	    double chisq = resi*resi/(var_d+var_anode)+resic*resic/(var_u+var_cathode);
 
 	    // Probability of this hit being on the track
-	    double probability = TMath::Prob(chisq, 2);
+	    double probability = TMath::Prob(chisq,2 /* 2*/);
 
 	    if(probability>=MIN_HIT_PROB_FDC){
 	      pair<double,const DFDCPseudo*>myhit;
