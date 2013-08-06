@@ -58,8 +58,13 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   jerror_t GetPositionAndMomentum(DFDCSegment *segment,
 						DVector3 &pos, DVector3 &mom);
   jerror_t GetPositionAndMomentum(double z,DVector3 &pos,DVector3 &mom);
+  jerror_t GetPositionAndMomentum(double zmin,
+				  vector<const DFDCSegment *>segments,
+				  DVector3 &pos,DVector3 &mom);
   
   double GetCharge(const DVector3 &pos,const DFDCSegment *segment);
+  double GetCharge(const DVector3 &pos,vector<const DFDCSegment *>segments);
+
   double DocaToHelix(const DFDCPseudo *hit);
   DFDCSegment *GetTrackMatch(DFDCSegment *segment,vector<DFDCSegment*>package,
 			     unsigned int &match_id);
