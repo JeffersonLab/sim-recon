@@ -34,6 +34,8 @@ double Zmin = -126.0*2.54;
 double Zmax = 274.0*2.54;
 double Z0 = 0.0;
 
+bool INCLUDE_GRADIENTS = false;
+
 void Usage(void);
 void ParseCommandLineArgs(int narg, char* argv[]);
 
@@ -49,7 +51,7 @@ int main(int narg, char *argv[])
 	dapp->Init();
 
 	// open ROOT file
-	float val[10];
+	float val[100];
 	TFile* ROOTfile = new TFile("bfield.root","RECREATE","Produced by bfield2root");
 	ROOTfile->SetCompressionLevel(6);
 	cout<<"Opened ROOT file \"bfield.root\""<<endl;
@@ -59,7 +61,15 @@ int main(int narg, char *argv[])
 
 	// Create Tree
 	TTree *tree = new TTree("Bfield","Magnetic Field");
-	tree->Branch("B",val,"x/F:y:z:r:phi:Bx:By:Bz:Br:Bphi");
+	tree->SetMarkerStyle(8);
+	tree->SetMarkerColor(kBlue);
+	string leaves = "x/F:y:z:r:phi:Bx:By:Bz:Br:Bphi";
+	if(INCLUDE_GRADIENTS){
+		leaves += ":dBxdx:dBxdy:dBxdz";
+		leaves += ":dBydx:dBydy:dBydz";
+		leaves += ":dBzdx:dBzdy:dBzdz";
+	}
+	tree->Branch("B",val,leaves.c_str());
 	
 	// Loop over cylindrical grid and fill tree
 	double r = Rmin;
@@ -99,6 +109,18 @@ int main(int narg, char *argv[])
 				val[7] = Bz;
 				val[8] = Br;
 				val[9] = Bphi;
+				
+				val[10] = dBxdx;
+				val[11] = dBxdy;
+				val[12] = dBxdz;
+
+				val[13] = dBydx;
+				val[14] = dBydy;
+				val[15] = dBydz;
+
+				val[16] = dBzdx;
+				val[17] = dBzdy;
+				val[18] = dBzdz;
 
 				tree->Fill();
 			}
@@ -241,6 +263,7 @@ void Usage(void)
 	cout<<"    -Zmin   #    Set the minimum value for Z (cm)"<<endl;
 	cout<<"    -Zmax   #    Set the maximum value for Z (cm)"<<endl;
 	cout<<"    -Z0     #    Shift the map's z-coordinate"<<endl;
+	cout<<"    -G           Include gradient values in tree"<<endl;
 	cout<<endl;
 	cout<<" The bfield to root program can be used to generate a ROOT TTree of the"<<endl;
 	cout<<"magnetic field of the Hall-D solenoid. The field is read from the same source"<<endl;
@@ -280,6 +303,7 @@ void ParseCommandLineArgs(int narg, char* argv[])
 		if(arg=="-Zmin"){used_next=true; Zmin = argf;}
 		if(arg=="-Zmax"){used_next=true; Zmax = argf;}
 		if(arg=="-Z0"){used_next=true; Z0 = argf;}
+		if(arg=="-G"){INCLUDE_GRADIENTS=true;}
 		
 		if(arg=="-h" || arg=="--help"){Usage(); exit(0);}
 		
