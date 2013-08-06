@@ -174,7 +174,6 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
       double sinl=sin(lambda);
       double tanl=tan(lambda);
       double tanl2=tanl*tanl;
-      double tanl3=tanl2*tanl;
       double pt_over_a=cosl*p_over_a;
       double phi=rt->swim_steps[0].mom.Phi();
       double cosphi=cos(phi);
@@ -210,9 +209,14 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
 
     if(!finite(doca)) continue;
     if(!finite(s)) s = -999.0;
+    if (fit_type==kHelical) s+=9.5/cosl; // candidates are reported just outside the start counter
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
-    if (outermost_hit){
-      var_pt_over_pt_sq=var_pt_factor*var_pt_factor*last_step->invX0/s;
+    if (outermost_hit){   
+      // Fractional variance in the curvature k due to resolution and multiple scattering
+      double var_k_over_k_sq_res=var*p_over_a*p_over_a*0.0720/(20+4)/(s*s*s*s)/(cosl*cosl);
+      double var_k_over_k_sq_ms=var_pt_factor*var_pt_factor*last_step->invX0/s;
+      // Fractional variance in pt
+      var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
       outermost_hit=false;
     }
 
@@ -386,7 +390,6 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       double sinl=sin(lambda);
       double tanl=tan(lambda);
       double tanl2=tanl*tanl;
-      double tanl3=tanl2*tanl;
       double pt_over_a=cosl*p_over_a;
       double phi=rt->swim_steps[0].mom.Phi();
       double cosphi=cos(phi);
@@ -411,7 +414,11 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 	    if(!finite(doca)) continue;
 	    const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
 	    if (most_downstream_hit){
-	      var_pt_over_pt_sq=var_pt_factor*var_pt_factor*last_step->invX0/s;
+	      // Fractional variance in the curvature k due to resolution and multiple scattering
+	      double var_k_over_k_sq_res=var_anode*p_over_a*p_over_a*0.0720/(20+4)/(s*s*s*s)/(cosl*cosl);
+	      double var_k_over_k_sq_ms=var_pt_factor*var_pt_factor*last_step->invX0/s;
+	      // Fractional variance in pt
+	      var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
 	      most_downstream_hit=false;
 	    }
 
