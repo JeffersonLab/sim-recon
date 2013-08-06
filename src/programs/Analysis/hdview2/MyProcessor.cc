@@ -1415,6 +1415,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		const DTrackWireBased *track=dynamic_cast<const DTrackWireBased*>(trk);	
 		const DTwoGammaFit *twogammafit=dynamic_cast<const DTwoGammaFit*>(trk);	
 	
+		const DTrackCandidate *candidate=dynamic_cast<const DTrackCandidate*>(trk);
 		if(timetrack){
 			chisq_per_dof<<setprecision(4)<<timetrack->chisq/timetrack->Ndof;
 			Ndof<<timetrack->Ndof;
@@ -1428,8 +1429,8 @@ void MyProcessor::UpdateTrackLabels(void)
 			Ndof<<twogammafit->getNdf();
 			fom << twogammafit->getProb();
 		}else{
-			chisq_per_dof<<"N/A";
-			Ndof<<"N/A";
+			chisq_per_dof<<setprecision(4)<<candidate->chisq/candidate->Ndof;
+			Ndof<<candidate->Ndof;
 			fom << "N/A";
 		}
 		reconlabs["chisq/Ndof"][row]->SetText(chisq_per_dof.str().c_str());
