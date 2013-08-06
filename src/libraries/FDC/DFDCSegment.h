@@ -47,9 +47,13 @@ class DFDCSegment : public JObject {
 		  this->z_vertex=segment.z_vertex;
 		  this->phi0=segment.phi0;
 		  this->Phi1=segment.Phi1;
+		  this->package=segment.package;
+		  this->chisq=segment.chisq;
+		  this->Ndof=segment.Ndof;
 		}
 
 		double chisq;
+		int Ndof;
 
 		// circle parameters
 		double xc,yc,rc;  
@@ -65,7 +69,9 @@ class DFDCSegment : public JObject {
 		double q;
 		// Distance of closest approach to the beam line
 		double D;
-
+		// Package number
+		unsigned int package;
+		
 		// List of pseudopoints belonging to this track segment
 		vector<const DFDCPseudo *>hits;	
 

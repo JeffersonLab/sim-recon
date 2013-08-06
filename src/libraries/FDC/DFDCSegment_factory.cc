@@ -451,7 +451,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   XYZ[last_index].z=TARGET_Z;
   CR(last_index,last_index)=BEAM_VARIANCE;
   CRPhi(last_index,last_index)=BEAM_VARIANCE;
-  
+
   // Reference track:
   jerror_t error=NOERROR;  
   // First find the center and radius of the projected circle
@@ -550,7 +550,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   error=RiemannLineFit(points,CR,XYZ);
 
   // Guess particle charge (+/-1)
-  charge=GetCharge(points.size(),XYZ,CR,CRPhi);
+  charge=GetCharge(num_measured,XYZ,CR,CRPhi);
   
   // Final update to covariance matrices
   r1sq=XYZ[ref_plane].xy.Mod2();
@@ -558,11 +558,16 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
 
   // Store residuals and path length for each measurement
   chisq=0.;
-  for (unsigned int m=0;m<points.size();m++){
+  for (unsigned int m=0;m<num_points;m++){
     double sperp=charge*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
     double phi_s=Phi1+sperp/rc;
     DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
-    chisq+=(XY-points[m]->xy).Mod2()/CR(m,m);
+    if (m<num_measured){
+      chisq+=(XY-points[m]->xy).Mod2()/CR(m,m);
+    }
+    else{
+      chisq+=XY.Mod2()/CR(m,m);
+    }
   }
 
   // If the last iteration did not improve the results, restore the previously
@@ -572,6 +577,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
     charge=charge_;
     rc=rc_,xc=xc_,yc=yc_,tanl=tanl_,zvertex=zvertex_,Phi1=Phi1_;
   }
+  Ndof=num_points-3;
 
   return NOERROR;
 }
@@ -712,7 +718,8 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	  segment->rc=rc;
 	  segment->Phi1=Phi1;
 	  segment->chisq=chisq;
-	  
+	  segment->Ndof=Ndof;
+	  segment->package=(neighbors[0]->wire->layer-1)/6;
 	  //printf("tanl %f \n",tanl);
 	  //printf("xc %f yc %f rc %f\n",xc,yc,rc);
 

@@ -97,6 +97,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		unsigned int ref_plane;
 	
 		double chisq;
+		int Ndof;
 
                 const DMagneticFieldMap *bfield;
 		const DLorentzDeflections *lorentz_def;
