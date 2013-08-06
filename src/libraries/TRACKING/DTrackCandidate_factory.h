@@ -76,39 +76,47 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		   double &Bz);
   void ProjectHelixToZ(const double z,const double q,const DVector3 &mom,
 		       DVector3 &pos);
+
+  void UpdatePositionAndMomentum(DTrackCandidate *can,const DFDCPseudo *fdchit,
+				 DHelicalFit &fit,double Bz_avg,int axial_id);
+
   // Various methods for matching CDC and FDC candidates
   bool MatchMethod1(const DTrackCandidate *fdccan,
 		    vector<unsigned int> &cdc_forward_ids,
 		    vector<DVector3>&cdc_endplate_projections,
-		    vector<const DTrackCandidate*>&cdctrackcandidates,
 		    vector<unsigned int>&used_cdc_hits
 		    );
   bool MatchMethod2(const DTrackCandidate *fdccan,
 		    vector<unsigned int> &cdc_forward_ids,
-		    vector<const DTrackCandidate*>&cdctrackcandidates,
 		    vector<unsigned int>&used_cdc_hits
 		    );
-  bool MatchMethod3(const DTrackCandidate *cdccan,
-		    vector<int> &forward_matches,
-		    vector<const DTrackCandidate*> &fdctrackcandidates, 
+  bool MatchMethod3(const DTrackCandidate *cdccan,vector<int> &forward_matches,
 		    vector<unsigned int>&used_cdc_hits
 		    );  
-  void MatchMethod4(DTrackCandidate *srccan, 
-		    vector<int> &forward_matches,
-		    vector<const DTrackCandidate*> &fdctrackcandidates);
+  void MatchMethod4(DTrackCandidate *srccan,vector<int> &forward_matches);
   bool MatchMethod5(DTrackCandidate *can,  
 		    vector<const DCDCTrackHit *>&cdchits,
-		    vector<int> &forward_matches,
-		    vector<const DTrackCandidate*> &fdctrackcandidates);
-  void MatchMethod6(DTrackCandidate *can, vector<const DFDCSegment *>&segments,
+		    vector<int> &forward_matches);
+  void MatchMethod6(unsigned int fdc_id,
+		    DTrackCandidate *can, 
+		    vector<const DFDCSegment *>&segments,
 		    vector<unsigned int>&used_cdc_hits,  
-		    vector<const DCDCTrackHit*>&mycdchits,
-		    unsigned int &num_unmatched_cdcs
+		    unsigned int &num_unmatched_cdcs,
+		    vector<int>&forward_matches,
+		    int &num_fdc_cands_remaining
 		    );
+  bool MatchMethod7(unsigned int current_id,unsigned int pack1,
+		    DHelicalFit &fit,DTrackCandidate *can,
+		    vector<int>&forward_matches,
+		    int &num_fdc_cands_remaining);
 
  private:
   const DMagneticFieldMap *bfield;
   DMagneticFieldStepper *stepper;
+
+  vector<const DTrackCandidate*>cdctrackcandidates;
+  vector<const DTrackCandidate*>fdctrackcandidates; 
+  vector<const DCDCTrackHit*>mycdchits;
 
   int DEBUG_LEVEL;
   bool DEBUG_HISTS;
