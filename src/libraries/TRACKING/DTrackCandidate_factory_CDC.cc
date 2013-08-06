@@ -357,7 +357,9 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 	
 	//Make a track candidate from results
 	DTrackCandidate *can = new DTrackCandidate;
-	
+
+	can->chisq=seed.fit.chisq;
+	can->Ndof=seed.fit.ndof;
 	can->setPosition(pos);
 	can->setMomentum(mom);
 	//can->setCharge(seed.q);
@@ -652,7 +654,8 @@ void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<
 		DHelicalFit fit;
 		for (unsigned int k=0;k<hits1.size();k++){
 		  DVector3 pos=hits1[k]->hit->wire->origin;
-		  fit.AddHitXYZ(pos.x(),pos.y(),pos.z());
+		  double cov=0.213;  //guess
+		  fit.AddHitXYZ(pos.x(),pos.y(),pos.z(),cov,cov,0.);
 		}
 		fit.FitCircleRiemann(TARGET_Z,BeamRMS);
 		
@@ -816,7 +819,8 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	  if(seed.hits[j]->flags&OUT_OF_TIME)continue;
 	  
 		const DVector3 &pos = seed.hits[j]->hit->wire->origin;
-		seed.fit.AddHitXYZ(pos.X(), pos.Y(),pos.Z());
+		double cov=0.213;  //guess
+		seed.fit.AddHitXYZ(pos.X(), pos.Y(),pos.Z(),cov,cov,0.);
 	}
 
 	// Try and fit the circle using a Riemann fit. If 
@@ -2143,8 +2147,8 @@ bool DTrackCandidate_factory_CDC::RefitCircleWithStereoIntersections(DCDCSeed &s
     unsigned int inext=is+1;
     const DCDCWire *first_wire=seed.stereo_hits[is].hit->wire;
     const DCDCWire *second_wire=seed.stereo_hits[inext].hit->wire;
-    if ((first_wire->ring>8 && second_wire->ring<=8)
-	|| (first_wire->ring>20 && second_wire->ring<=20)){
+    if ((first_wire->ring==9 && second_wire->ring==8)
+	|| (first_wire->ring==21 && second_wire->ring==20)){
       DVector3 u0=first_wire->origin;
       DVector3 udir=first_wire->udir;  
       DVector3 v0=second_wire->origin;
