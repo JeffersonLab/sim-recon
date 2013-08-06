@@ -1035,7 +1035,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	 can->setPosition(pos);
        }
        else{
-	 _DBG_ << endl;
+	 //_DBG_ << endl;
 	 can->Ndof=fdccan->Ndof;
 	 can->chisq=fdccan->chisq;
 	 can->setMomentum(fdccan->momentum());
@@ -1172,7 +1172,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	     can->setPosition(pos);
 	   }
 	   else{
-	     _DBG_ << endl;
+	     //_DBG_ << endl;
 	     can->Ndof=cdccan->Ndof;
 	     can->chisq=cdccan->chisq;
 	     can->setMomentum(cdccan->momentum());
