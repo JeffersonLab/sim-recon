@@ -1,22 +1,22 @@
-// $Id: DTOFRawHit.h Tue Jan 18 16:15:26 EST 2011
+// $Id: DTOFHit.h Tue Jan 18 16:15:26 EST 2011
 //
-/// File:    DTOFRawHit.h
+/// File:    DTOFHit.h
 /// Created: Tue Jan 18 16:15:26 EST 2011
 /// Creator: B. Zihlmann
 /// Purpose: Container class to hold Monte Carlo data, unsmeared and 
 ///          smeared with the MC tag.
 //
 
-#ifndef _DTOFRawHit_
-#define _DTOFRawHit_
+#ifndef _DTOFHit_
+#define _DTOFHit_
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
-class DTOFRawHit:public JObject{
+class DTOFHit:public JObject{
   
  public:
-  JOBJECT_PUBLIC(DTOFRawHit);
+  JOBJECT_PUBLIC(DTOFHit);
   
   int plane;		// plane (0: vertical, 1: horizontal)
   int bar;		// bar number
@@ -33,5 +33,5 @@ class DTOFRawHit:public JObject{
   }
 };
 
-#endif // _DTOFRawHit_
+#endif // _DTOFHit_
 

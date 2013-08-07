@@ -26,7 +26,7 @@ using namespace jana;
 ///	</A>
 /// \endhtmlonly
 
-/// 2-ended TOF coincidences. The individual hits come from DTOFRawHit objects and
+/// 2-ended TOF coincidences. The individual hits come from DTOFHit objects and
 /// the 2 planes are combined into single hits in the DTOFPoint objects. This is the
 /// intermediate set of objects between the two.
 

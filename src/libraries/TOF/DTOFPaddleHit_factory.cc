@@ -8,8 +8,8 @@
 using namespace std;
 
 #include "DTOFPaddleHit_factory.h"
-#include "DTOFRawHit.h"
-#include "DTOFRawHitMC.h"
+#include "DTOFHit.h"
+#include "DTOFHitMC.h"
 #include "DTOFPaddleHit.h"
 #include <math.h>
 
@@ -50,13 +50,13 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
 jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 
-  vector<const DTOFRawHit*> hits;
+  vector<const DTOFHit*> hits;
   loop->Get(hits,TOF_POINT_TAG.c_str());
 
-  vector<const DTOFRawHit*> P1hitsL;
-  vector<const DTOFRawHit*> P1hitsR;
-  vector<const DTOFRawHit*> P2hitsL;
-  vector<const DTOFRawHit*> P2hitsR;
+  vector<const DTOFHit*> P1hitsL;
+  vector<const DTOFHit*> P1hitsR;
+  vector<const DTOFHit*> P2hitsL;
+  vector<const DTOFHit*> P2hitsR;
 
   int P1L[100];
   int P1R[100];
@@ -71,7 +71,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
   // sort the tof hits into left and right PMTs for both planes
 
   for (unsigned int i = 0; i < hits.size(); i++){
-    const DTOFRawHit *hit = hits[i];
+    const DTOFHit *hit = hits[i];
     if (hit->plane){
       if (hit->lr){
 	P2hitsR.push_back(hit);

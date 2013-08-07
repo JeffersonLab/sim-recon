@@ -7,11 +7,11 @@ using namespace jana;
 #include "DTOFPoint_factory.h"
 #include "DTOFGeometry_factory.h"
 
-#include "DTOFRawHit.h"
-#include "DTOFRawHitMC.h"
+#include "DTOFHit.h"
+#include "DTOFHitMC.h"
 #include "DTOFTruth.h"
-typedef JFactory<DTOFRawHit> DTOFRawHit_factory;
-typedef JFactory<DTOFRawHitMC> DTOFRawHitMC_factory;
+typedef JFactory<DTOFHit> DTOFHit_factory;
+typedef JFactory<DTOFHitMC> DTOFHitMC_factory;
 typedef JFactory<DTOFTruth> DTOFTruth_factory;
 
 jerror_t TOF_init(JEventLoop *loop)
@@ -20,10 +20,10 @@ jerror_t TOF_init(JEventLoop *loop)
   loop->AddFactory(new DTOFPaddleHit_factory());
   loop->AddFactory(new DTOFGeometry_factory());
   loop->AddFactory(new DTOFTruth_factory());
-  loop->AddFactory(new DTOFRawHit_factory());          // smeared MC data
-  loop->AddFactory(new DTOFRawHit_factory("TRUTH"));   // unsmeared MC data
-  loop->AddFactory(new DTOFRawHitMC_factory());        // associated MC data objects
-  loop->AddFactory(new DTOFRawHitMC_factory("TRUTH")); // associated MC data objects
+  loop->AddFactory(new DTOFHit_factory());          // smeared MC data
+  loop->AddFactory(new DTOFHit_factory("TRUTH"));   // unsmeared MC data
+  loop->AddFactory(new DTOFHitMC_factory());        // associated MC data objects
+  loop->AddFactory(new DTOFHitMC_factory("TRUTH")); // associated MC data objects
   loop->AddFactory(new DTOFPoint_factory());
   
   return NOERROR;
