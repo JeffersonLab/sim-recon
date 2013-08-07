@@ -1,16 +1,16 @@
 // $Id$
 //
-//    File: DTOFHit_factory.cc
+//    File: DTOFPaddleHit_factory.cc
 // Created: Thu Jun  9 10:05:21 EDT 2005
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 #include <iostream>
 using namespace std;
 
-#include "DTOFHit_factory.h"
+#include "DTOFPaddleHit_factory.h"
 #include "DTOFRawHit.h"
 #include "DTOFRawHitMC.h"
-#include "DTOFHit.h"
+#include "DTOFPaddleHit.h"
 #include <math.h>
 
 //#define NaN std::numeric_limits<double>::quiet_NaN()
@@ -19,15 +19,15 @@ using namespace std;
 //------------------
 // brun
 //------------------
-jerror_t DTOFHit_factory::brun(JEventLoop *loop, int runnumber)
+jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
 {
 
   map<string, double> tofparms;
  
   if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
-    cout<<"DTOFHit_factory: loading values from TOF data base"<<endl;
+    cout<<"DTOFPaddleHit_factory: loading values from TOF data base"<<endl;
   } else {
-    cout << "DTOFHit_factory: Error loading values from TOF data base" <<endl;
+    cout << "DTOFPaddleHit_factory: Error loading values from TOF data base" <<endl;
 
     C_EFFECTIVE = 15.;    // set to some reasonable value
     HALFPADDLE = 126;     // set to some reasonable value
@@ -47,7 +47,7 @@ jerror_t DTOFHit_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 
   vector<const DTOFRawHit*> hits;
@@ -94,7 +94,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int i=0; i<P1hitsL.size(); i++){
     int bar = P1hitsL[i]->bar;
     if (bar>40){ // this is a half paddle
- 	DTOFHit *hit = new DTOFHit;
+ 	DTOFPaddleHit *hit = new DTOFPaddleHit;
 	hit->bar = bar;
 	hit->orientation   = P1hitsL[i]->plane;
 	hit->E_north = P1hitsL[i]->dE;
@@ -107,7 +107,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
     } else {
       for (unsigned int j=0; j<P1hitsR.size(); j++){      
 	if (bar==P1hitsR[j]->bar){
-	  DTOFHit *hit = new DTOFHit;
+	  DTOFPaddleHit *hit = new DTOFPaddleHit;
 	  hit->bar = bar;
 	  hit->orientation   = P1hitsL[i]->plane;
 	  hit->E_north = P1hitsL[i]->dE;
@@ -124,7 +124,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int j=0; j<P1hitsR.size(); j++){   
     int bar = P1hitsR[j]->bar;
     if (bar>40){ // this is a half paddle
-      DTOFHit *hit = new DTOFHit;
+      DTOFPaddleHit *hit = new DTOFPaddleHit;
       hit->bar = bar;
       hit->orientation = P1hitsR[j]->plane;
       hit->E_north = 0.0;
@@ -140,7 +140,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int i=0; i<P2hitsL.size(); i++){
     int bar = P2hitsL[i]->bar;
     if (bar>40){
- 	DTOFHit *hit = new DTOFHit;
+ 	DTOFPaddleHit *hit = new DTOFPaddleHit;
 	hit->bar = bar;
 	hit->orientation   = P2hitsL[i]->plane;
 	hit->E_north = P2hitsL[i]->dE;
@@ -152,7 +152,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
     } else {
       for (unsigned int j=0; j<P2hitsR.size(); j++){      
 	if (bar==P2hitsR[j]->bar){
-	  DTOFHit *hit = new DTOFHit;
+	  DTOFPaddleHit *hit = new DTOFPaddleHit;
 	  hit->bar = bar;
 	  hit->orientation = P2hitsL[i]->plane;
 	  hit->E_north = P2hitsL[i]->dE;
@@ -169,7 +169,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int j=0; j<P2hitsR.size(); j++){   
     int bar = P2hitsR[j]->bar;
     if (bar>40){ // this is a half paddle
-      DTOFHit *hit = new DTOFHit;
+      DTOFPaddleHit *hit = new DTOFPaddleHit;
       hit->bar = bar;
       hit->orientation = P2hitsR[j]->plane;
       hit->E_north = 0.0;
@@ -183,7 +183,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
   for (int i=0;i<(int)_data.size(); i++) {
 
-    DTOFHit *hit = _data[i];
+    DTOFPaddleHit *hit = _data[i];
 
     int check = -1;
     if (hit->E_north > E_THRESHOLD) {

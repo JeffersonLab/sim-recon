@@ -1,6 +1,6 @@
 // $Id$
 //
-///    File: DTOFHit_factory.h
+///    File: DTOFPaddleHit_factory.h
 /// Created: Thu Jun  9 10:05:21 EDT 2005
 /// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 ///
@@ -9,14 +9,14 @@
 ///           (e.q. use of unsmeared data)
 
 
-#ifndef _DTOFHit_factory_
-#define _DTOFHit_factory_
+#ifndef _DTOFPaddleHit_factory_
+#define _DTOFPaddleHit_factory_
 
 #include "JANA/JFactory.h"
 #include "JANA/JApplication.h"
 #include "JANA/JParameterManager.h"
 #include "JANA/JEventLoop.h"
-#include "DTOFHit.h"
+#include "DTOFPaddleHit.h"
 
 using namespace jana;
 
@@ -30,10 +30,10 @@ using namespace jana;
 /// the 2 planes are combined into single hits in the DTOFPoint objects. This is the
 /// intermediate set of objects between the two.
 
-class DTOFHit_factory:public JFactory<DTOFHit>{
+class DTOFPaddleHit_factory:public JFactory<DTOFPaddleHit>{
  public:
-  DTOFHit_factory(){TOF_POINT_TAG="";gPARMS->SetDefaultParameter("TOF:TOF_POINT_TAG", TOF_POINT_TAG,"");};
-  ~DTOFHit_factory(){};
+  DTOFPaddleHit_factory(){TOF_POINT_TAG="";gPARMS->SetDefaultParameter("TOF:TOF_POINT_TAG", TOF_POINT_TAG,"");};
+  ~DTOFPaddleHit_factory(){};
   
   string TOF_POINT_TAG;
   double C_EFFECTIVE;
@@ -49,5 +49,5 @@ class DTOFHit_factory:public JFactory<DTOFHit>{
   //jerror_t fini(void);					///< Called after last event of last event source has been processed.
 };
 
-#endif // _DTOFHit_factory_
+#endif // _DTOFPaddleHit_factory_
 

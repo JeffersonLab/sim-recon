@@ -58,12 +58,12 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 	tof_spacetimehit_t *locTOFSpacetimeHit;
 	tof_spacetimehit_t *locTOFSpacetimeHit_Horizontal;
 	tof_spacetimehit_t *locTOFSpacetimeHit_Vertical;
-	const DTOFHit *locTOFHit, *locTOFHit_Horizontal, *locTOFHit_Vertical;
+	const DTOFPaddleHit *locTOFHit, *locTOFHit_Horizontal, *locTOFHit_Vertical;
 	float locTimeCut, locDeltaX, locDeltaY, locDeltaT;
 	DTOFPoint *locTOFPoint;
 	float locMatchX, locMatchY, locMatchZ, locMatchdE, locMatchT;
 
-	vector<const DTOFHit*> locTOFHitVector;
+	vector<const DTOFPaddleHit*> locTOFHitVector;
 	loop->Get(locTOFHitVector);
 	deque<tof_spacetimehit_t*> locTOFSpacetimeHits_Horizontal;
 	deque<tof_spacetimehit_t*> locTOFSpacetimeHits_Vertical;
@@ -182,7 +182,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 			locTOFSpacetimeHit->TOFHit = locTOFHit;
 			locTOFSpacetimeHits_Vertical.push_back(locTOFSpacetimeHit);
 		} //end vertical hit
-	} //end DTOFHit loop
+	} //end DTOFPaddleHit loop
 
 	//find matches and sort them
 	list<tof_spacetimehitmatch_t*> locTOFSpacetimeHitMatchList; //use list for sorting, vector for resource pool

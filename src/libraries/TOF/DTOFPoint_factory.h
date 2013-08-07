@@ -10,7 +10,7 @@
 
 #include "JANA/JFactory.h"
 #include "DTOFPoint.h"
-#include "DTOFHit.h"
+#include "DTOFPaddleHit.h"
 #include <list>
 #include <deque>
 
@@ -20,7 +20,7 @@
 ///	</A>
 /// \endhtmlonly
 
-/// 2-plane (4-fold) TOF coincidences. The 2-hit coincidences come from DTOFHit objects
+/// 2-plane (4-fold) TOF coincidences. The 2-hit coincidences come from DTOFPaddleHit objects
 /// which are combined into coincidnces between the two planes to form 4-D space points
 /// which are represented by DTOFPoint objects.
 
@@ -49,7 +49,7 @@ class DTOFPoint_factory:public JFactory<DTOFPoint>{
 				double t;
 				double pos_cut; //x_cut for horizontal bars, y_cut for vertical bars
 				double t_cut;
-				const DTOFHit *TOFHit;
+				const DTOFPaddleHit *TOFHit;
 	  };
 
 		class tof_spacetimehitmatch_t {

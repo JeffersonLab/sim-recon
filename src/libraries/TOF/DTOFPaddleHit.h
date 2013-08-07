@@ -1,20 +1,20 @@
 // $Id$
 //
-//    File: DTOFHit.h
+//    File: DTOFPaddleHit.h
 // Created: Thu Jun  9 10:05:21 EDT 2005
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
-#ifndef _DTOFHit_
-#define _DTOFHit_
+#ifndef _DTOFPaddleHit_
+#define _DTOFPaddleHit_
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 using namespace jana;
 
-class DTOFHit:public JObject{
+class DTOFPaddleHit:public JObject{
  public:
-  JOBJECT_PUBLIC(DTOFHit);
+  JOBJECT_PUBLIC(DTOFPaddleHit);
   
   int orientation;  // 0: vertical,  1: horizontal
   int bar;          // bar number
@@ -44,5 +44,5 @@ class DTOFHit:public JObject{
   }
 };
 
-#endif // _DTOFHit_
+#endif // _DTOFPaddleHit_
 

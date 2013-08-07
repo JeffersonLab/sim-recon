@@ -3,7 +3,7 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-#include "DTOFHit_factory.h"
+#include "DTOFPaddleHit_factory.h"
 #include "DTOFPoint_factory.h"
 #include "DTOFGeometry_factory.h"
 
@@ -17,7 +17,7 @@ typedef JFactory<DTOFTruth> DTOFTruth_factory;
 jerror_t TOF_init(JEventLoop *loop)
 {
   /// Create and register TOF data factories
-  loop->AddFactory(new DTOFHit_factory());
+  loop->AddFactory(new DTOFPaddleHit_factory());
   loop->AddFactory(new DTOFGeometry_factory());
   loop->AddFactory(new DTOFTruth_factory());
   loop->AddFactory(new DTOFRawHit_factory());          // smeared MC data
