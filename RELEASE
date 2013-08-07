@@ -1,0 +1,1595 @@
+Release Notes for sim-recon-2013-08-07
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2013-08-07
+   Date: August 7, 2013
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 11322 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.9 (i686)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.5
+  CCDB 0.08
+
+CentOS release 5.3 (Final) (x86_64)
+------------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.5
+  CCDB 0.08
+
+Red Hat Enterprise Linux 6.3 (x86_64)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.7 20120305 (Red Hat 4.4.7-3)
+  HDDS 1.5
+  CCDB 0.08
+
+CentOS release 6.2 (Final)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 1.5
+  CCDB 0.08
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r10729 | marki | 2013-04-23 17:46:17 -0400 (Tue, 23 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS
+
+ignore stuff
+------------------------------------------------------------------------
+r10730 | marki | 2013-04-23 17:47:29 -0400 (Tue, 23 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM
+
+ignore stuff
+------------------------------------------------------------------------
+r10731 | marki | 2013-04-23 17:48:13 -0400 (Tue, 23 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/CERE
+
+ignore stuff
+------------------------------------------------------------------------
+r10732 | marki | 2013-04-23 17:48:52 -0400 (Tue, 23 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/RICH
+
+ignore stuff
+------------------------------------------------------------------------
+r10733 | marki | 2013-04-23 17:49:25 -0400 (Tue, 23 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRIGGER
+
+ignore stuff
+------------------------------------------------------------------------
+r10737 | staylor | 2013-04-24 17:39:53 -0400 (Wed, 24 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+progress toward adding the CDC to the alignment.  First step is finding segments in axial and stereo layers and linking them together.
+------------------------------------------------------------------------
+r10778 | staylor | 2013-04-26 18:35:45 -0400 (Fri, 26 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Link segments in axial and stereo layers and match CDC tracks to BCAL
+------------------------------------------------------------------------
+r10784 | wilevine | 2013-04-28 13:46:27 -0400 (Sun, 28 Apr 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc
+   R /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_IU.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.cc:10592)
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_IU.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h:10592)
+
+Rename old DBCALShower_factory to DBCALShower_factory_IU. Add new
+DBCALShower_factory that just redirects to the KLOE factory.
+
+------------------------------------------------------------------------
+r10785 | wilevine | 2013-04-28 13:52:11 -0400 (Sun, 28 Apr 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis.h
+   M /trunk/sim-recon/src/libraries/PID/DNeutralShower_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralShower_factory.h
+
+Remove BCALRECON:USE_KLOE flag. To use a non-default BCAL
+reconstruction algoritm, use the -PDEFTAG:DBCALShower=... option.
+
+------------------------------------------------------------------------
+r10786 | wilevine | 2013-04-28 14:06:35 -0400 (Sun, 28 Apr 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis.h
+
+Undo unintentional changes from last commit.
+
+------------------------------------------------------------------------
+r10787 | wilevine | 2013-04-28 14:10:37 -0400 (Sun, 28 Apr 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Remove BCALRECON:USE_KLOE flag. To use a non-default BCAL
+reconstruction algorithm, use the -PDEFTAG:DBCALShower=... option.
+
+------------------------------------------------------------------------
+r10788 | wilevine | 2013-04-28 14:13:24 -0400 (Sun, 28 Apr 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.h
+
+Remove BCALRECON:USE_KLOE flag. To use a non-default BCAL
+reconstruction algorithm, use the -PDEFTAG:DBCALShower=... option.
+
+------------------------------------------------------------------------
+r10789 | wilevine | 2013-04-28 14:36:05 -0400 (Sun, 28 Apr 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.cc
+
+Remove BCALRECON:USE_KLOE flag. To use a non-default BCAL
+reconstruction algorithm, use the -PDEFTAG:DBCALShower=... option. 
+
+------------------------------------------------------------------------
+r10796 | staylor | 2013-04-29 15:42:15 -0400 (Mon, 29 Apr 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Create reference trajectory for cdc tracks.
+------------------------------------------------------------------------
+r10806 | wilevine | 2013-04-30 21:37:22 -0400 (Tue, 30 Apr 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_NEWSMEAR.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit_factory.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit_factory.h
+
+BCAL Reconstruction:
+Do timewalk corrections in a separate step (DBCALUnifiedHit), before
+matching upstream and downstream hits in DBCALPoint.
+
+------------------------------------------------------------------------
+r10826 | pmatt | 2013-05-03 18:28:55 -0400 (Fri, 03 May 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.h
+   M /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.h
+
+Moved maps needed for REST output from DApplication to the event writer.  
+This wasn't done before because for some reason JANA crashes if STL containers are declared as global, but global pointers to STL containers are fine.  
+
+
+------------------------------------------------------------------------
+r10828 | pmatt | 2013-05-04 13:26:18 -0400 (Sat, 04 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+
+Added standard TTree writer. 
+
+
+------------------------------------------------------------------------
+r10829 | pmatt | 2013-05-04 13:27:11 -0400 (Sat, 04 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+Added TTree output. 
+
+
+------------------------------------------------------------------------
+r10830 | pmatt | 2013-05-04 13:29:06 -0400 (Sat, 04 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Added function to return the power that should be used to represent each PID in multiplexed TTree variables. 
+
+
+------------------------------------------------------------------------
+r10831 | pmatt | 2013-05-04 15:15:23 -0400 (Sat, 04 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+Bug fix: prevent error message when calling Fill_Trees() if one of the DReactions doesn't save the output. 
+
+
+------------------------------------------------------------------------
+r10832 | pmatt | 2013-05-04 15:22:25 -0400 (Sat, 04 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory_Thrown.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory_Thrown.h
+
+Don't create object if no thrown tracks. 
+
+
+------------------------------------------------------------------------
+r10834 | pmatt | 2013-05-04 15:48:00 -0400 (Sat, 04 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+
+Make sure in the proper ROOT file before creating control histograms. 
+
+
+------------------------------------------------------------------------
+r10838 | pmatt | 2013-05-04 17:34:21 -0400 (Sat, 04 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+
+Added method for checking for duplicate entries with the event rf bunch & particles.  Implemented in the PID histogram action. 
+
+
+------------------------------------------------------------------------
+r10858 | pmatt | 2013-05-05 11:48:31 -0400 (Sun, 05 May 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.cc
+
+Changed interface to tree writer; previous interface was unsafe if running with multiple plugins (duplicate entries in the trees). 
+Now have to provide a string specifying the DReaction factory tag that the DReactions were created in: only saves those results to the trees.
+
+
+------------------------------------------------------------------------
+r10859 | wilevine | 2013-05-05 17:25:00 -0400 (Sun, 05 May 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit_factory.cc
+
+BCAL Reconstruction minor changes
+
+------------------------------------------------------------------------
+r10860 | wilevine | 2013-05-05 19:44:33 -0400 (Sun, 05 May 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit_factory.h
+
+BCALUnifiedHit_factory: only write out tree if debug variable set.
+
+------------------------------------------------------------------------
+r10861 | wilevine | 2013-05-05 20:19:24 -0400 (Sun, 05 May 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory.h
+
+Change default DBCALShower factory from KLOE to IU
+
+------------------------------------------------------------------------
+r10862 | wilevine | 2013-05-05 20:48:14 -0400 (Sun, 05 May 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+
+mcsmear: Enable the newer (more correct) BCAL smearing scheme by default
+
+------------------------------------------------------------------------
+r10863 | wilevine | 2013-05-05 20:56:55 -0400 (Sun, 05 May 2013) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   R /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.cc:10859)
+   R /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.h:10806)
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.cc
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_NEWSMEAR.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_OLDSMEAR.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.cc:10806)
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory_OLDSMEAR.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALPoint_factory.h:10806)
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_NEWSMEAR.cc
+
+BCAL reconstruction: rename the old DBCALPoint_factory to DBCALPoint_factory_OLDSMEAR
+and rename DBCALPoint_factory_NEWSMEAR to DBCALPoint_factory.
+Effectively this enables the new reconstruction scheme (using TDC
+hits, timewalk corrections) by default to match the new default in
+mcsmear.
+
+------------------------------------------------------------------------
+r10864 | wilevine | 2013-05-05 21:12:51 -0400 (Sun, 05 May 2013) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   R /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_NEWSMEAR.cc:10863)
+   R /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_NEWSMEAR.h:10806)
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_NEWSMEAR.cc
+   D /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_NEWSMEAR.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_OLDSMEAR.cc (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc:10806)
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_OLDSMEAR.h (from /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h:10806)
+
+Rename old DBCALShower_factory_KLOE to
+DBCALShower_factory_KLOE_OLDSMEAR and rename
+DBCALShower_factory_KLOE_NEWSMEAR to DBCALShower_factory_KLOE to
+reflect new defaults.
+
+------------------------------------------------------------------------
+r10867 | davidl | 2013-05-07 09:36:04 -0400 (Tue, 07 May 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/LANL.tgz
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/PoissonSuperfish_7.18.exe
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/README
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/example
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/example/gluex_sol_example1.am
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/example/gluex_sol_example1.in7
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/example/poisson2calibDB.pl
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/example/run_all.csh
+
+Files related to running Poisson on OSX to calculate B-field.
+------------------------------------------------------------------------
+r10874 | wilevine | 2013-05-07 15:23:51 -0400 (Tue, 07 May 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+mcsmear: Fix off-by-one error detected by valgrind and also change
+things so that DHistogram's are consistently written starting from bin
+1 and skipping bin 0
+
+------------------------------------------------------------------------
+r10875 | staylor | 2013-05-07 15:57:01 -0400 (Tue, 07 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+kalman filter for cdc hits with nominal geometry is now working
+------------------------------------------------------------------------
+r10882 | davidl | 2013-05-08 08:00:33 -0400 (Wed, 08 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/README
+
+Added note on startwine script.
+------------------------------------------------------------------------
+r10885 | davidl | 2013-05-08 08:54:05 -0400 (Wed, 08 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/bfield_poisson/Poisson_OSX/README
+
+Add note on location of Poisson config. files in svn.
+------------------------------------------------------------------------
+r10888 | wilevine | 2013-05-08 10:08:51 -0400 (Wed, 08 May 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc
+
+DBCALShower_factory_KLOE: N_cell should be an int
+
+------------------------------------------------------------------------
+r10889 | staylor | 2013-05-08 11:41:17 -0400 (Wed, 08 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+simplify a few calculations.
+------------------------------------------------------------------------
+r10902 | pmatt | 2013-05-09 17:25:05 -0400 (Thu, 09 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+The missing particle no longer effects the naming of the branches of the detected particles. 
+
+
+------------------------------------------------------------------------
+r10908 | wilevine | 2013-05-10 16:15:44 -0400 (Fri, 10 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genphoton/genphoton.cc
+
+genphoton: Add option to populate BCAL with photons evenly distributed
+in z
+
+------------------------------------------------------------------------
+r10910 | pmatt | 2013-05-11 22:40:51 -0400 (Sat, 11 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+
+Converted output TTree so that it's one entry per particle combination instead of one entry per event. 
+
+
+------------------------------------------------------------------------
+r10912 | wilevine | 2013-05-13 20:46:59 -0400 (Mon, 13 May 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit_factory.cc
+
+BCAL Reconstruction: Modify timewalk correction coefficients
+
+------------------------------------------------------------------------
+r10914 | staylor | 2013-05-14 11:53:26 -0400 (Tue, 14 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+Improvements to track recovery code, including revised convergence tests and modified numbers of hits included in refit efforts.
+------------------------------------------------------------------------
+r10934 | staylor | 2013-05-15 10:21:00 -0400 (Wed, 15 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+more improvements to broken track recovery code.
+------------------------------------------------------------------------
+r10940 | staylor | 2013-05-15 14:24:58 -0400 (Wed, 15 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+
+(1) simplify how intersection points are handdled in the linear regression code for determining tan(lambda) and z0. (2) improve code that tries to fix tracks that only have hits in the first axial layer as input to the circle fit.
+------------------------------------------------------------------------
+r10948 | pmatt | 2013-05-15 15:46:14 -0400 (Wed, 15 May 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralParticleHypothesis_factory.cc
+
+PID factory: For neutrons the shower energy is now assigned as the kinetic energy of the particle. 
+ANALYSIS factory: Protect against the PID factory returning NULL. 
+
+
+------------------------------------------------------------------------
+r10952 | pmatt | 2013-05-15 16:28:43 -0400 (Wed, 15 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+Remove cuts on the resonance masses at the end. 
+
+
+------------------------------------------------------------------------
+r10954 | pmatt | 2013-05-16 12:49:29 -0400 (Thu, 16 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.cc
+
+Add warning messages if the missing particle is set incorrectly. 
+
+
+------------------------------------------------------------------------
+r10955 | pmatt | 2013-05-16 14:50:06 -0400 (Thu, 16 May 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+When filling the topology of the thrown particles, guard against missing parents. 
+
+
+------------------------------------------------------------------------
+r10961 | yqiang | 2013-05-21 10:43:10 -0400 (Tue, 21 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gamp2hddm/gamp2hddm.cc
+
+gamp2hddm: added feature to specify the number of events to be exported, changed time offset to be 0
+------------------------------------------------------------------------
+r10970 | staylor | 2013-05-22 09:44:01 -0400 (Wed, 22 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+For a couple of rarely-used algorithms matching cdc and fdc hits, if cdc hits are matched to fdc tracks, place the start position of the track candidate just outside the start counter barrel radius.
+------------------------------------------------------------------------
+r10972 | staylor | 2013-05-22 09:48:48 -0400 (Wed, 22 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Detect track clones for which one track has hits in the fdc and the cdc, but the second only has hits in the cdc or the fdc that match the corresponding hits in the other track.
+------------------------------------------------------------------------
+r10977 | staylor | 2013-05-23 17:32:53 -0400 (Thu, 23 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD_ALT1.cc
+
+(1) Add B-dependence to cdc time-to-distance relationship. (2) Fix bug in how dEdx is handled in the extrapolation-to-vertex routines for the central parametrization. (3) continue to improve track recovery code; in particular, when the track appears to be stopping in the active region, try to recover using 3/4 of the hits instead of 1/2.
+------------------------------------------------------------------------
+r10980 | wilevine | 2013-05-24 10:48:26 -0400 (Fri, 24 May 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster.h
+
+DBCALCluster: Initialize all values in constructor
+
+------------------------------------------------------------------------
+r10981 | wilevine | 2013-05-24 10:52:56 -0400 (Fri, 24 May 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALPoint.h
+
+DBCALPoint: Remove default constructor
+
+------------------------------------------------------------------------
+r10993 | staylor | 2013-05-28 15:31:59 -0400 (Tue, 28 May 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Found and fixed a minor inconsistency in how the stereo positions are calculated.
+------------------------------------------------------------------------
+r11008 | zihlmann | 2013-06-06 14:43:30 -0400 (Thu, 06 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALClump.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALClump.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALClump_factory.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALClump_factory.h
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_JLAB.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_JLAB.h
+
+Yet another BCAL reconstruction code.
+code name: "JLAB"
+
+------------------------------------------------------------------------
+r11010 | wilevine | 2013-06-07 13:24:17 -0400 (Fri, 07 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE.h
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_OLDSMEAR.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALShower_factory_KLOE_OLDSMEAR.h
+
+DBCALShower_factory_KLOE: Change constructor to init() to prevent
+possible crash
+
+------------------------------------------------------------------------
+r11013 | pmatt | 2013-06-07 15:47:35 -0400 (Fri, 07 Jun 2013) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+
+Added support for user-defined factory tags for getting DChargedTrack and DNeutralShower objects prior to creating track combinations. 
+This allows the user to make custom track and shower pre-selection cuts in these factories in their plugin, before any particle combinations are made.
+
+Also, use the new JParameterManager::Exists() method instead of try/catch blocks when checking if a variable has been set on the command line. 
+
+
+------------------------------------------------------------------------
+r11014 | pmatt | 2013-06-08 12:29:50 -0400 (Sat, 08 Jun 2013) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching_factory.h
+   A /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_Decaying.cc
+   A /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_Decaying.h
+   A /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_FinalState.cc
+   A /trunk/sim-recon/src/libraries/PID/DMCThrown_factory_FinalState.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Two new factories for DMCThrown have been added: tag = "FinalState" and "Decaying".  
+The "FinalState" factory will return the thrown particles that are in the final state, filtering out all of the various intermediate decaying particles, decay products of the final-state pions, etc.  
+The "Decaying" factory will return all of the decaying particles with PIDs defined in include/particleType.h (excluding any final-state particles that might decay).  
+Note that pi0's are listed in the "Decaying" factory since they are not detected.  
+Also note that resonances decayed by genr8 are not included in the genr8 output, and thus are not included in DMCThrown to begin with.  
+
+The other files are updated to take advantage of these new factories.
+
+
+------------------------------------------------------------------------
+r11015 | pmatt | 2013-06-08 12:34:21 -0400 (Sat, 08 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/Makefile
+   A /trunk/sim-recon/src/programs/Utilities/plugins/Makefile
+
+Build danarest plugin on top-level make call.
+
+
+------------------------------------------------------------------------
+r11016 | pmatt | 2013-06-08 13:07:47 -0400 (Sat, 08 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+
+Added histograms for comparing thrown and reconstructed track and shower times in the BCAL/FCAL/TOF separately.  Located in the DHistogramAction_GenReconTrackComparison action.
+
+
+------------------------------------------------------------------------
+r11017 | pmatt | 2013-06-09 12:49:02 -0400 (Sun, 09 Jun 2013) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.cc
+
+Added ability to create a "thrown" tree, where only the thrown particle data is output (+ run & event number).
+This is useful for calculating the acceptance (generated data = denominator).
+
+Also, the interface for creating and writing trees was changed. 
+Tree writing was changed to reflect the new "thrown" tree option.
+
+Tree creation was changed to separate tree filling from tree creation. 
+In one program execution you may not want to save any entries to the tree at all. 
+However, you cannot merge this histogram with others with the tree because the ROOT file contents will be different.
+This ensures that every ROOT file will have the trees.
+
+
+------------------------------------------------------------------------
+r11018 | pmatt | 2013-06-09 16:51:04 -0400 (Sun, 09 Jun 2013) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisAction.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DEventProcessor_b1pi_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+
+Decoupled DAnalysisAction initialization from execution. 
+This is so that output histograms/trees are created by the action every time it is requested regardless of whether or not they are filled.
+This is because ROOT files don't merge properly if one file contains a histogram that another does not. 
+
+
+------------------------------------------------------------------------
+r11019 | pmatt | 2013-06-09 16:54:06 -0400 (Sun, 09 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisResults_factory_PreKinFit.cc
+
+Automatically initialize DAnalysisActions added to DReactions. 
+
+
+------------------------------------------------------------------------
+r11021 | staylor | 2013-06-11 08:43:39 -0400 (Tue, 11 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+If there are multiple hits in the same ring associated with a track candidate, only use the first hit in the theta-z linear regression fit.  This reduces the tendency of the fit to produce a wildly wrong value for the either the angle or the z-position.
+------------------------------------------------------------------------
+r11022 | staylor | 2013-06-11 08:45:54 -0400 (Tue, 11 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+
+Simplify the caculation of the covariance matrix elements from FDC hits by using the FDC local coordinate system.
+------------------------------------------------------------------------
+r11027 | pmatt | 2013-06-12 10:53:02 -0400 (Wed, 12 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_dump/MyProcessor.cc
+
+Fixed bug so that data from factories with tags can be printed to screen.
+
+
+------------------------------------------------------------------------
+r11031 | staylor | 2013-06-13 10:27:10 -0400 (Thu, 13 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+Separate the various methods for matching fdc and cdc candidates into methods of the class.  Make the last method, matching FDC candidates to stray cdc hits, more robust against curling tracks.  Fix an instance where hits obtained from associated objects were not sorted.  Add more comments to explain what is going on in this factory.
+------------------------------------------------------------------------
+r11042 | davidl | 2013-06-14 14:10:08 -0400 (Fri, 14 Jun 2013) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSourceGenerator_ETEVIO.cc
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSourceGenerator_ETEVIO.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSourceGenerator_EVIO.cc
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSourceGenerator_EVIO.h
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSourceGenerator_FileEVIO.cc
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSourceGenerator_FileEVIO.h
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_ETEVIO.cc
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_ETEVIO.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_FileEVIO.cc
+   D /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_FileEVIO.h
+
+Merged ET and File EVIO event sources into a single JEventSource.
+------------------------------------------------------------------------
+r11046 | shepherd | 2013-06-14 16:13:56 -0400 (Fri, 14 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToNPartP.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToNPartP.h
+
+remove generateMany method to dramatically simplify code; the new AmpToolsInterface allows one to easily loop, generate, and load many events making this functionality in the generator no longer necessary
+------------------------------------------------------------------------
+r11047 | shepherd | 2013-06-14 16:14:14 -0400 (Fri, 14 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToXYP.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToXYP.h
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToXYZP.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_MCGEN/GammaPToXYZP.h
+
+remove generateMany method to dramatically simplify code; the new AmpToolsInterface allows one to easily loop, generate, and load many events making this functionality in the generator no longer necessary
+------------------------------------------------------------------------
+r11048 | shepherd | 2013-06-14 16:15:01 -0400 (Fri, 14 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cc
+
+modify to use AmpToolsInterface for generation
+------------------------------------------------------------------------
+r11049 | shepherd | 2013-06-14 16:15:36 -0400 (Fri, 14 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_5pi/gen_5pi.cc
+
+modify to use AmpToolsInterface for generation
+------------------------------------------------------------------------
+r11050 | shepherd | 2013-06-14 16:33:19 -0400 (Fri, 14 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cfg
+
+update configuration file header to newest version
+------------------------------------------------------------------------
+r11059 | pmatt | 2013-06-20 16:09:00 -0400 (Thu, 20 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboStep.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+Added spacetime vertex to DParticleComboStep and to ROOT output. 
+
+
+------------------------------------------------------------------------
+r11061 | pmatt | 2013-06-20 17:46:18 -0400 (Thu, 20 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+
+Added "MatchID" variables for particles to TTree: matching between data & MC.
+
+
+------------------------------------------------------------------------
+r11062 | pmatt | 2013-06-20 17:53:08 -0400 (Thu, 20 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+
+Don't create MatchID branches if working with experimental data (no mc). 
+
+
+------------------------------------------------------------------------
+r11063 | wilevine | 2013-06-20 18:22:19 -0400 (Thu, 20 Jun 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALGeometry.cc
+
+Fix DBCALGeometry::NSiPMs() for outer layers
+
+------------------------------------------------------------------------
+r11064 | wilevine | 2013-06-20 18:31:29 -0400 (Thu, 20 Jun 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Fix mcsmear so that dark hits are simulated in all channels
+
+------------------------------------------------------------------------
+r11065 | davidl | 2013-06-21 07:35:32 -0400 (Fri, 21 Jun 2013) | 13 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+- Adjusted module names to be consistent with those from Fernandos spreadsheet
+- Replaced some of the "end" fields which used 0 and 1 to have "N", "S", ...
+  to be consistent with translation table generated from the spreadsheet
+- increased max number of crates, channels to allow for those defined in real
+  translation table
+
+A change was also made to mc2codaWrite to prevent it from seg. faulting if hit
+data for an undefined channel is passed. That change is in the mc2coda library
+(and so, not here).
+
+Program runs, but with lots of "unknown map entry" errors (from this coda) as
+well as lots of "Too many hits" warnings (from mc2coda).
+
+------------------------------------------------------------------------
+r11067 | shepherd | 2013-06-21 15:22:23 -0400 (Fri, 21 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cfg
+
+correct reaction definition to match kinematics
+------------------------------------------------------------------------
+r11068 | shepherd | 2013-06-21 16:03:16 -0400 (Fri, 21 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/HDDMDataWriter.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/HDDMDataWriter.h
+
+remove unnecessary include file and pass in particle types by const reference instead of copying a vector
+------------------------------------------------------------------------
+r11070 | davidl | 2013-06-24 07:37:28 -0400 (Mon, 24 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Updated to work with real translation table (required some massaging of indexes.) Some issues still remain, but it is mostly functional.
+------------------------------------------------------------------------
+r11074 | staylor | 2013-06-24 15:45:54 -0400 (Mon, 24 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+Move code that links segments together from upstream to downstream into a separate method to avoid duplication of code in several places that was essentially doing the same thing, just starting from a different package.  Add method to match track candidates composed of matched segments (for example, match a track that used package 1 and 2 with a track that used package 3 and 4).  Add method to match stray segments to existing track candidates.  Refine code that handles tracks very close to the beam line.  When refitting with extra hits, check that the result for the circle radius is consistent with the range in r of the hits.
+------------------------------------------------------------------------
+r11077 | davidl | 2013-06-25 09:37:04 -0400 (Tue, 25 Jun 2013) | 6 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DDAQAddress.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DF1TDCHit.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DF1TDCTriggerTime.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DModuleType.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250PulseIntegral.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250PulseRawData.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250PulseTime.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250StreamingRawData.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250TriggerTime.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250WindowRawData.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df250WindowSum.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JFactoryGenerator_DAQ.h
+
+Refactored the DAQ plugin that reads in raw data formated EVIO files.
+It now uses a common base class DDAQAddress to hold the Crate,Slot,Channel
+and trigger number information for the hit. Hits are stored in common
+lists of DDAQAddress pointers making it a little simpler to add new
+module types. Plugin compiles cleanly, but no testing as of yet.
+
+------------------------------------------------------------------------
+r11078 | shepherd | 2013-06-25 12:15:07 -0400 (Tue, 25 Jun 2013) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/GlueXPlotGenerator.cc
+   D /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/GlueXPlotGenerator.h
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ThreePiPlotGenerator.cc (from /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/GlueXPlotGenerator.cc:11035)
+   A /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ThreePiPlotGenerator.h (from /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/GlueXPlotGenerator.h:11035)
+
+Rename GlueXPlotGenerator to ThreePiPlotGenerator since, after modification, the class will be specific to the three pi channel.
+------------------------------------------------------------------------
+r11081 | shepherd | 2013-06-25 14:15:15 -0400 (Tue, 25 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/Makefile
+   D /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned (from /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi:11035)
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/drawWaves.C
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/plot_3pi.cc
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/threepi_pol_TEMPLATE.cfg
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/threepi_unpol_TEMPLATE.cfg
+
+rename threepi example directory
+------------------------------------------------------------------------
+r11087 | pmatt | 2013-06-25 23:02:31 -0400 (Tue, 25 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+
+For MC tracks, ObjectID and ParentID now match the array index where those tracks are stored.
+
+
+------------------------------------------------------------------------
+r11088 | pmatt | 2013-06-25 23:15:48 -0400 (Tue, 25 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+Remove ObjectID for thrown particles (was just = to array index).
+
+
+------------------------------------------------------------------------
+r11097 | staylor | 2013-06-26 17:49:02 -0400 (Wed, 26 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+When matching stray segments not matched by the primary matching method, make sure that the segment is not in a package where the track has already used a segment.  Remove the MatchTracks method (it turns out to be unnecessary and lead to erroneous matches).
+------------------------------------------------------------------------
+r11099 | davidl | 2013-06-27 10:48:27 -0400 (Thu, 27 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+
+Changed name of some modules and fixed det ID section to output 2 for CAEN modules.
+------------------------------------------------------------------------
+r11100 | shepherd | 2013-06-27 13:02:02 -0400 (Thu, 27 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/root2hddm/root2hddm.cc
+
+make compatible with new ROOTDataReader that is derived from UserDataReader
+------------------------------------------------------------------------
+r11101 | davidl | 2013-06-27 14:57:14 -0400 (Thu, 27 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/Makefile
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda.c
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+Adding mc2coda source to this directory since some significant changes were made to it in order to get things to work. 
+------------------------------------------------------------------------
+r11102 | wilevine | 2013-06-27 14:57:57 -0400 (Thu, 27 Jun 2013) | 2 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_matching
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_matching/DEventProcessor_bcal_matching.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_matching/DEventProcessor_bcal_matching.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/bcal_matching/Makefile
+
+Add bcal_matching plugin for studying charged-track-to-BCAL-cluster matching
+
+------------------------------------------------------------------------
+r11103 | davidl | 2013-06-27 14:58:28 -0400 (Thu, 27 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DDAQAddress.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Fixed issues with wrong det_id values. Also, fixed problem with not detecting end of file properly.
+------------------------------------------------------------------------
+r11104 | shepherd | 2013-06-28 06:23:01 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/README
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/fit_3pi.cfg
+
+add new directory for fit over full 3pi mass spectrum
+------------------------------------------------------------------------
+r11105 | shepherd | 2013-06-28 06:30:33 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/README
+
+corrected path error in README
+------------------------------------------------------------------------
+r11106 | shepherd | 2013-06-28 06:42:54 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ThreePiPlotGenerator.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ThreePiPlotGenerator.h
+
+Add useful projections to ThreePiPlotGenerator
+------------------------------------------------------------------------
+r11107 | shepherd | 2013-06-28 06:44:26 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataReader.h
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataWriter.cc
+   M /trunk/sim-recon/src/libraries/AMPTOOLS_DATAIO/ROOTDataWriter.h
+
+update ROOTDataReader and ROOTDataWriter to match the format specified by Paul M.; this change will make all previously-written files unreadable
+------------------------------------------------------------------------
+r11108 | shepherd | 2013-06-28 06:51:05 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/Makefile
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/README
+   A /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/threepi_plotter.cc
+
+Add threepi_plotter GUI for plotting results of a fit to the threepi spectrum
+------------------------------------------------------------------------
+r11109 | shepherd | 2013-06-28 06:51:55 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/Makefile
+
+build the threepi_all directory if AMPLOTTER module that contains the GUI library is defined
+------------------------------------------------------------------------
+r11110 | shepherd | 2013-06-28 06:52:43 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/BMS/Makefile.AmpPlotter
+
+Define AmpPlotter module in the BMS system
+------------------------------------------------------------------------
+r11111 | shepherd | 2013-06-28 06:54:15 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/fit/fit.cc
+
+add option that allows the generation of a "seed file" to seed the results of the next fit
+------------------------------------------------------------------------
+r11112 | shepherd | 2013-06-28 06:55:34 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/README
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/divideData.pl
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/drawWaves.C
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/driveFit.pl
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/plot_3pi.cc
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/threepi_pol_TEMPLATE.cfg
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/threepi_unpol_TEMPLATE.cfg
+
+update the examples and scripts in this directory to use the capabilities in the latest version of AmpTools
+------------------------------------------------------------------------
+r11113 | shepherd | 2013-06-28 06:58:01 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cc
+
+add a new command line option that generates a copy of the output formatted in HDDM format to pass into HDGeant
+------------------------------------------------------------------------
+r11114 | shepherd | 2013-06-28 06:58:28 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/Makefile
+
+add HDDM module to Makefile
+------------------------------------------------------------------------
+r11115 | shepherd | 2013-06-28 06:59:16 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_5pi/gen_5pi.cc
+
+modify call to constructor of ROOTDataReader to make consistent with new ROOTDataReader definitinon
+------------------------------------------------------------------------
+r11117 | staylor | 2013-06-28 11:22:41 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+
+Simplify calculation of CR and CRPhi using FDC local coordinate system.  Make cut for determining if adjacent hits (within +-1 wire) in a given z-plane should be added to the segment more restrictive.
+------------------------------------------------------------------------
+r11119 | staylor | 2013-06-28 11:28:30 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit.h
+
+Forgot to add a message indicating that I've added an enum for use with the type variable.
+------------------------------------------------------------------------
+r11120 | staylor | 2013-06-28 11:44:50 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Fix bugs in the FilterDuplicate routines leading the code to think two clearly distinct tracks are clones under certain perverse conditions...
+------------------------------------------------------------------------
+r11124 | davidl | 2013-06-28 16:07:26 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.cc
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable_factory.cc
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable_factory.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab/JFactoryGenerator_DTranslationTable.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab/Makefile
+
+Start of plugin to apply translation table.
+------------------------------------------------------------------------
+r11125 | davidl | 2013-06-28 16:08:09 -0400 (Fri, 28 Jun 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Optionally activate a DTranslationTable object if it is available.
+------------------------------------------------------------------------
+r11126 | pmatt | 2013-06-29 14:46:13 -0400 (Sat, 29 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DBeamPhoton_factory_KinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_KinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DNeutralParticleHypothesis_factory_KinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+Changed how particles were stored in DKinFitResults (now stored in a combo-independent manner).
+
+
+------------------------------------------------------------------------
+r11127 | pmatt | 2013-06-29 14:46:41 -0400 (Sat, 29 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+
+Added method to check if steps are the same between DReactions.
+
+
+------------------------------------------------------------------------
+r11128 | pmatt | 2013-06-29 14:52:14 -0400 (Sat, 29 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralShower_factory.cc
+
+Sort created objects by increasing energy in the 1's and 0.1s digits (MeV): pseudo-random order
+
+
+------------------------------------------------------------------------
+r11129 | pmatt | 2013-06-29 18:51:40 -0400 (Sat, 29 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+Bug fix: thrown particles were overwriting each other in the tree. 
+
+
+------------------------------------------------------------------------
+r11130 | pmatt | 2013-06-29 19:25:37 -0400 (Sat, 29 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.cc
+
+Fixed bug: neutral FOM wasn't being calculated properly because matched-to-tracks flag was erroneously set to false on the rf bunch.
+
+
+------------------------------------------------------------------------
+r11132 | pmatt | 2013-06-29 20:19:43 -0400 (Sat, 29 Jun 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+
+DCutActions.cc: Enable PID cuts on neutral showers (still unsupported for neutrons).
+DHistogramActions: in DHistogramAction_PID, TOF confidence level is now histogrammed separately for different detector systems (BCAL, FCAL, TOF, CDC).
+
+
+------------------------------------------------------------------------
+r11133 | pmatt | 2013-06-29 22:58:26 -0400 (Sat, 29 Jun 2013) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DCutActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReaction.h
+
+Minor interface tweaks: 
+
+DCutAction_AllPIDFOM -> DCutAction_CombinedPIDFOM  //just to make it more clear
+Set_MinCombinedChargedPIDFOM -> Set_MinCombinedPIDFOM  //neutrals are now incorporated into the calculation
+
+
+------------------------------------------------------------------------
+r11134 | pmatt | 2013-06-29 22:59:54 -0400 (Sat, 29 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DReaction_factory_monitoring_hists.cc
+
+Updated to reflect interface tweaks. Also, initial invariant mass cuts on resonance peaks removed. 
+
+
+------------------------------------------------------------------------
+r11135 | pmatt | 2013-06-29 23:38:10 -0400 (Sat, 29 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/DEventProcessor_monitoring_hists.cc
+
+Bug fix: was returning from brun() too soon.
+
+
+------------------------------------------------------------------------
+r11136 | pmatt | 2013-06-30 17:05:50 -0400 (Sun, 30 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+Change ParticleType() return value of Gamma to "Photon"
+
+
+------------------------------------------------------------------------
+r11137 | pmatt | 2013-06-30 17:08:00 -0400 (Sun, 30 Jun 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+
+Fixed nasty bug: if a particle had ambiguous charge (time-based tracking flipped the charge for some hypotheses but not others), then the same physical track was sometimes used for two particles at once. 
+
+
+------------------------------------------------------------------------
+r11138 | pmatt | 2013-06-30 17:13:10 -0400 (Sun, 30 Jun 2013) | 15 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+
+Fixed bug in storing MC matching to the tree (sometimes two DMCThrowns have the same myid).
+
+Changed branch names: Thrown__PID_PDG -> Thrown__PID
+Unused PID is now stored as PDG rather than Particle_t
+Beam branch names changed: Beam__ -> BeamPhoton__
+Added branch for target mass (e.g. TargetProton__Mass)
+
+Removed spacetime vertex branches. Information moved to new decaying particle branches. 
+
+Added branches for decaying and missing particles (e.g. MissingNeutron__P4, DecayingPi0__X4)
+The p4 is only saved to the tree if it is kinematically fit.
+The x4 of a decaying particle is only saved to the tree if it is a detached vertex.
+The x4 of the decaying and missing particles are the kinematic fit values if fit is performed, else are best-guess from track parameters (currently bogus values though). 
+
+
+------------------------------------------------------------------------
+r11139 | pmatt | 2013-07-01 01:24:07 -0400 (Mon, 01 Jul 2013) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.h
+
+Now, if two different steps have the same initial (decaying) particle:
+ - The 1st, 2nd, ..., Nth occurance in the final state of that particle will only be matched the step with the 1st, 2nd, ..., Nth occurance in the initial state
+   - Particle decays MUST still be listed before they are produced: although no warning is given and combo creation may work, future analysis steps may assume the decays are in order. 
+ - This ensures consistency on decay step mapping, and allows/forces the user to choose which decay chain goes with which particle
+
+
+------------------------------------------------------------------------
+r11140 | pmatt | 2013-07-02 00:57:00 -0400 (Tue, 02 Jul 2013) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+
+Added branches for missing and decaying particle masses. 
+Added TMap of particle decays to fUserInfo.
+Converted PIDs stored in TMaps to PDG.
+Added MC weight.
+
+
+------------------------------------------------------------------------
+r11141 | pmatt | 2013-07-02 02:10:30 -0400 (Tue, 02 Jul 2013) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/ConvertToAmpToolsFormat
+   A /trunk/sim-recon/src/programs/Analysis/ConvertToAmpToolsFormat/ConvertToAmpToolsFormat.cc
+   A /trunk/sim-recon/src/programs/Analysis/ConvertToAmpToolsFormat/Makefile
+   M /trunk/sim-recon/src/programs/Analysis/Makefile
+
+Executable for converting data from the standard GlueX ROOT TTree to the AmpTools input TTree format. 
+
+
+------------------------------------------------------------------------
+r11142 | pmatt | 2013-07-02 02:13:30 -0400 (Tue, 02 Jul 2013) | 3 lines
+Changed paths:
+   D /trunk/sim-recon/src/programs/Analysis/ConvertToAmpToolsFormat
+   M /trunk/sim-recon/src/programs/Analysis/Makefile
+
+Moving to Utilities folder.
+
+
+------------------------------------------------------------------------
+r11143 | pmatt | 2013-07-02 02:21:20 -0400 (Tue, 02 Jul 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/Makefile
+   A /trunk/sim-recon/src/programs/Utilities/tree_to_amptools
+   A /trunk/sim-recon/src/programs/Utilities/tree_to_amptools/Makefile
+   A /trunk/sim-recon/src/programs/Utilities/tree_to_amptools/tree_to_amptools.cc
+
+Executable for converting data from the standard GlueX ROOT TTree to the AmpTools input TTree format. 
+
+
+------------------------------------------------------------------------
+r11144 | pmatt | 2013-07-02 16:50:27 -0400 (Tue, 02 Jul 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+
+Handle cases when the kinematic fit fails to converge. 
+
+
+------------------------------------------------------------------------
+r11147 | pmatt | 2013-07-03 12:33:21 -0400 (Wed, 03 Jul 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+Delete extra vertex branches. 
+
+
+------------------------------------------------------------------------
+r11149 | pmatt | 2013-07-04 13:58:01 -0400 (Thu, 04 Jul 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/Makefile
+
+Re-add plugins.
+
+
+------------------------------------------------------------------------
+r11150 | zihlmann | 2013-07-05 09:02:07 -0400 (Fri, 05 Jul 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALClump.cc
+
+fix compiler warnings of unused variables and type conversions
+
+------------------------------------------------------------------------
+r11152 | shepherd | 2013-07-06 09:06:00 -0400 (Sat, 06 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cc
+
+Initialize random number generator based on time.  This is not the GlueX standard way of using random numbers, but a quick fix is needed to allow parallel batch generation for the upcoming workshop.
+------------------------------------------------------------------------
+r11153 | shepherd | 2013-07-07 07:13:21 -0400 (Sun, 07 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gen_3pi/gen_3pi.cc
+
+randomize vertex location in z
+------------------------------------------------------------------------
+r11157 | shepherd | 2013-07-08 12:12:41 -0400 (Mon, 08 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/divideData.pl
+
+create a blank param_init file in each directory
+------------------------------------------------------------------------
+r11158 | shepherd | 2013-07-08 12:13:29 -0400 (Mon, 08 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_all/README
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/README
+
+correct name of flag in gen_3p from hddm to hd
+------------------------------------------------------------------------
+r11160 | shepherd | 2013-07-08 13:00:15 -0400 (Mon, 08 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/plot_3pi.cc
+
+fix to make program tolerate a missing fit results file in a single bin
+------------------------------------------------------------------------
+r11162 | jrsteven | 2013-07-08 13:15:30 -0400 (Mon, 08 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/tree_to_amptools/tree_to_amptools.cc
+
+change tree name to kin to match default expected by amptools
+------------------------------------------------------------------------
+r11165 | shepherd | 2013-07-08 14:20:32 -0400 (Mon, 08 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/divideData.pl
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/driveFit.pl
+
+modify PERL scripts to use current directory instead of an explicit path
+------------------------------------------------------------------------
+r11167 | davidl | 2013-07-08 14:58:22 -0400 (Mon, 08 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda_modules.h
+
+Limit number of hits in FADC250. Changed indentation to tabs.
+------------------------------------------------------------------------
+r11168 | davidl | 2013-07-08 14:59:43 -0400 (Mon, 08 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/mc2coda.h
+
+Chamged indentation to use tabs.
+------------------------------------------------------------------------
+r11170 | shepherd | 2013-07-08 15:11:11 -0400 (Mon, 08 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/driveFit.pl
+
+remove redirection of stderr
+------------------------------------------------------------------------
+r11224 | davidl | 2013-07-12 16:22:46 -0400 (Fri, 12 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/DDAQAddress.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df125PulseIntegral.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df125PulseTime.h
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/Df125TriggerTime.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JFactoryGenerator_DAQ.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable.h
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/JEventProcessor_rawevent.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/Makefile
+
+Working on Translation Table application. Work stoppage for a couple of days so I want to snapshot the current progress.
+------------------------------------------------------------------------
+r11225 | wilevine | 2013-07-14 13:16:18 -0400 (Sun, 14 Jul 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+
+Fix BCAL threshold so that dark hits are properly simulated
+
+------------------------------------------------------------------------
+r11226 | wilevine | 2013-07-14 13:47:03 -0400 (Sun, 14 Jul 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.cc
+
+Add temporary gix to deal with BCAL noise in outer layer.
+
+------------------------------------------------------------------------
+r11227 | wilevine | 2013-07-14 13:58:46 -0400 (Sun, 14 Jul 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DHistogram.h
+
+In DHistogram, copy-constructor should take a const reference and
+bin_zero_center should be initialized.
+
+------------------------------------------------------------------------
+r11228 | wilevine | 2013-07-14 18:10:17 -0400 (Sun, 14 Jul 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.cc
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALCluster_factory.h
+
+Some changes to DBCALCluster_factory
+
+------------------------------------------------------------------------
+r11229 | wilevine | 2013-07-14 18:14:50 -0400 (Sun, 14 Jul 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/DBCALUnifiedHit.h
+
+Minor indentation change
+
+------------------------------------------------------------------------
+r11230 | wilevine | 2013-07-14 19:09:23 -0400 (Sun, 14 Jul 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/BCAL/BCAL_init.cc
+   A /trunk/sim-recon/src/libraries/BCAL/DBCALSiPMSpectrum.h
+
+Add DBCALSiPMSpectrum
+
+------------------------------------------------------------------------
+r11231 | wilevine | 2013-07-14 19:22:28 -0400 (Sun, 14 Jul 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+Read SiPM spectrums from HDDM into DBCALSiPMSpectrum.
+
+------------------------------------------------------------------------
+r11232 | staylor | 2013-07-15 11:30:45 -0400 (Mon, 15 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+
+Adjust number of degrees of freedom for the circle fit to take into account the number of fit parameters.
+------------------------------------------------------------------------
+r11240 | pmatt | 2013-07-16 14:56:26 -0400 (Tue, 16 Jul 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+Remove initial particle combo kinematics histogram action to reduce memory footprint.
+
+
+------------------------------------------------------------------------
+r11241 | pmatt | 2013-07-16 15:01:30 -0400 (Tue, 16 Jul 2013) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.h
+
+Fill energy deposited = 0 instead of NaN if no hit in that detector system.
+Handle cases where kinfit doesn't converge: fill measured tree data into "KinFit" variables.
+For unused: make sure all variables are set for each particle (before, tracking chisq wasn't being set to 0 for neutrals: had previous value).
+
+
+------------------------------------------------------------------------
+r11247 | pmatt | 2013-07-16 22:31:58 -0400 (Tue, 16 Jul 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+Don't use GetSingle with DMCThrownMatching because there won't be any in experimental data. 
+
+
+------------------------------------------------------------------------
+r11248 | pmatt | 2013-07-16 22:49:26 -0400 (Tue, 16 Jul 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+
+Only fill MatchID branches if is MC data. 
+
+
+------------------------------------------------------------------------
+r11277 | staylor | 2013-07-23 14:15:09 -0400 (Tue, 23 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.h
+
+Compute chi^2 after each circle fit/line fit combination and break out earlier if the chi^2 increases.  Try to recover fits with bad circle intersections needed for line fit by relaxing constraint on so-called vertex point.
+------------------------------------------------------------------------
+r11278 | staylor | 2013-07-23 15:09:06 -0400 (Tue, 23 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.h
+
+Add DEBUG_LEVEL flag and suppress error messages
+------------------------------------------------------------------------
+r11280 | staylor | 2013-07-24 10:19:38 -0400 (Wed, 24 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+Move the main routine that linked segments together into its own method and streamline the flow a little.  Add new method to match tracks formed from the main linking method to stray segments using the parameters determined from a helical fit using all the linked hits.  Use more hit information in the GetCharge routine.  At the moment set the track position at the cdc endplate only if the track has a hit in the first package, otherwise set the position just upstream of the most upstream package.
+------------------------------------------------------------------------
+r11285 | staylor | 2013-07-25 17:04:19 -0400 (Thu, 25 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+
+This commit makes substantial changes to the CDC candidate code that are more relevant for multi-track events than for single track events.    Change how seeds in different axial layers are linked together by using the preliminary circle fits to project to the next axial layer.  This allows making the delta-phi cut smaller -- now it is 10 degrees.  Also made the angle cut for associating stereo layers with seeds smaller by looking at the delta-phi at the axial layers closest to the stereo layers in ring number.  Moved code that looks at the number of shared hits between potential clone seeds into the FilterCloneSeeds routine and move the call of this routine to a later stage in the reconstruction chain.  Add new method to collect stray stereo hits.  Add method to refit circle using stereo information from the +/- transition regions.  Add a couple of debug histograms for checking the delta-phi cut.
+------------------------------------------------------------------------
+r11286 | staylor | 2013-07-25 17:07:23 -0400 (Thu, 25 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.h
+
+Add new method to find the charge of the track.
+------------------------------------------------------------------------
+r11287 | staylor | 2013-07-25 17:17:01 -0400 (Thu, 25 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+
+Attempting to resurrect the ALT2 version of the hit selector code, first by making the relative momentum error and the varianes on the angles dependent on beta, which seems to lead to flatter confidence level distributions.  The default hit selector is still the ALT1 version for now.
+------------------------------------------------------------------------
+r11290 | zihlmann | 2013-07-29 09:56:11 -0400 (Mon, 29 Jul 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.h
+
+set maximum number of wire-based and time-based tracks to be displayed
+as predefined variable in hdv_debugerframe.h such that it can easily be
+modified by the user if so desired.
+
+------------------------------------------------------------------------
+r11291 | davidl | 2013-07-29 14:44:02 -0400 (Mon, 29 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Switch dynamic_cast to static_cast to avoid undefined symbol errors from RTTI type_info. (See comments at bottom of GetObjects for details.)
+------------------------------------------------------------------------
+r11292 | davidl | 2013-07-29 14:44:37 -0400 (Mon, 29 Jul 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/DTranslationTable_factory.h
+
+Make DTranslationTable_factory destructor virtual.
+------------------------------------------------------------------------
+r11299 | davidl | 2013-08-01 11:52:44 -0400 (Thu, 01 Aug 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/TRIGGER/DL3Trigger.h
+   A /trunk/sim-recon/src/libraries/TRIGGER/DL3Trigger_factory.cc
+   A /trunk/sim-recon/src/libraries/TRIGGER/DL3Trigger_factory.h
+   M /trunk/sim-recon/src/libraries/TRIGGER/TRIGGER_init.cc
+
+Add DL3Trigger class
+------------------------------------------------------------------------
+r11300 | staylor | 2013-08-01 15:21:20 -0400 (Thu, 01 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+
+Keep track of average radiation length of material as a function of the path length for use later in the ALT2 hit selector.
+------------------------------------------------------------------------
+r11301 | staylor | 2013-08-01 15:23:49 -0400 (Thu, 01 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+
+more work on the ALT2 hit selector:  use average radiation length to estimate effect of multiple scattering on the variance in the curvature using formula from PDG. Also use itheta02 multiple scattering angle parameter from the DReferenceTrajectory.
+------------------------------------------------------------------------
+r11302 | davidl | 2013-08-01 19:19:04 -0400 (Thu, 01 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRIGGER/DL3Trigger_factory.cc
+
+Make the default L3 trigger algorithm be a simple pass-through algorithm.
+------------------------------------------------------------------------
+r11314 | davidl | 2013-08-06 09:49:57 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.JANA
+
+If ETROOT is defined then include Makefile.ET
+------------------------------------------------------------------------
+r11315 | staylor | 2013-08-06 10:32:45 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+
+Remove unused variables and include approximation for pt resolution due to measurement errors.
+------------------------------------------------------------------------
+r11316 | staylor | 2013-08-06 11:32:08 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.h
+
+Add package number and number-of-degrees-of-freedom from circle fit
+------------------------------------------------------------------------
+r11317 | staylor | 2013-08-06 15:48:02 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.h
+
+(1) Add one more matching method. (2) Make list of cdc and fdc track candidates private member variables. (3) fill chi^2 and number of degrees of freedom fields from the circle fit.
+------------------------------------------------------------------------
+r11318 | staylor | 2013-08-06 15:53:20 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+(1) Add alternate method for finding the momentum and position of the track candidate at a particular z position using more segment data.  (2) Use the package variable from the segment data. (3) Added another method to guess the charge. (4) output chi-squared and ndof from circle fit.
+------------------------------------------------------------------------
+r11319 | staylor | 2013-08-06 15:55:02 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Add guess for covariance of measurement when only using the wire position and output chi^2 and ndof from circle fit.
+------------------------------------------------------------------------
+r11320 | davidl | 2013-08-06 15:55:32 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/bfield2root/bfield2root.cc
+
+Add option to write out gradients with Bfield tree.
+------------------------------------------------------------------------
+r11321 | staylor | 2013-08-06 15:56:26 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+
+Add chi2/ndof and ndof for candidates to the main display.
+------------------------------------------------------------------------
+r11322 | staylor | 2013-08-06 16:04:54 -0400 (Tue, 06 Aug 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Comment out some debug lines
+------------------------------------------------------------------------
