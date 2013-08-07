@@ -1,6 +1,6 @@
 // $Id$
 //
-///    File: DTOFPaddleHit_factory.h
+///    File: DTOFHit_factory.h
 /// Created: Thu Jun  9 10:05:21 EDT 2005
 /// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 ///
@@ -9,14 +9,14 @@
 ///           (e.q. use of unsmeared data)
 
 
-#ifndef _DTOFPaddleHit_factory_
-#define _DTOFPaddleHit_factory_
+#ifndef _DTOFHit_factory_
+#define _DTOFHit_factory_
 
 #include "JANA/JFactory.h"
 #include "JANA/JApplication.h"
 #include "JANA/JParameterManager.h"
 #include "JANA/JEventLoop.h"
-#include "DTOFPaddleHit.h"
+#include "DTOFHit.h"
 
 using namespace jana;
 
@@ -26,14 +26,14 @@ using namespace jana;
 ///	</A>
 /// \endhtmlonly
 
-/// 2-ended TOF coincidences. The individual hits come from DTOFHit objects and
+/// 2-ended TOF coincidences. The individual hits come from DTOFRawHit objects and
 /// the 2 planes are combined into single hits in the DTOFPoint objects. This is the
 /// intermediate set of objects between the two.
 
-class DTOFPaddleHit_factory:public JFactory<DTOFPaddleHit>{
+class DTOFHit_factory:public JFactory<DTOFHit>{
  public:
-  DTOFPaddleHit_factory(){TOF_POINT_TAG="";gPARMS->SetDefaultParameter("TOF:TOF_POINT_TAG", TOF_POINT_TAG,"");};
-  ~DTOFPaddleHit_factory(){};
+  DTOFHit_factory(){TOF_POINT_TAG="";gPARMS->SetDefaultParameter("TOF:TOF_POINT_TAG", TOF_POINT_TAG,"");};
+  ~DTOFHit_factory(){};
   
   string TOF_POINT_TAG;
   double C_EFFECTIVE;
@@ -49,5 +49,5 @@ class DTOFPaddleHit_factory:public JFactory<DTOFPaddleHit>{
   //jerror_t fini(void);					///< Called after last event of last event source has been processed.
 };
 
-#endif // _DTOFPaddleHit_factory_
+#endif // _DTOFHit_factory_
 

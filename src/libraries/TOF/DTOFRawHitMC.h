@@ -1,22 +1,22 @@
 // $Id: DTOFHitRawMC.h Wed Jan 19 14:22:41 EST 2011
 //
-/// File:    DTOFHitMC.h
+/// File:    DTOFRawHitMC.h
 /// Created: Wed Jan 19 14:22:41 EST 2011
 /// Creator: B. Zihlmann
 /// Purpose: Container class to hold Monte Carlo track data, 
 ///          like track id number, particle type ect.
 //
 
-#ifndef _DTOFHitMC_
-#define _DTOFHitMC_
+#ifndef _DTOFRawHitMC_
+#define _DTOFRawHitMC_
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
-class DTOFHitMC:public JObject{
+class DTOFRawHitMC:public JObject{
   
  public:
-  JOBJECT_PUBLIC(DTOFHitMC);
+  JOBJECT_PUBLIC(DTOFRawHitMC);
   
   int plane;		// plane (0: vertical, 1: horizontal)
   int bar;		// bar number
@@ -49,5 +49,5 @@ class DTOFHitMC:public JObject{
   }
 };
 
-#endif // _DTOFHitMC_
+#endif // _DTOFRawHitMC_
 
