@@ -52,6 +52,10 @@ jerror_t DTrackTimeBased_factory_Combo::init(void)
 	dParticleIDsToTry[MuonPlus] = dParticleIDsToTry[Positron];
 	dParticleIDsToTry[MuonMinus] = dParticleIDsToTry[Electron];
 
+	locPIDDeque.resize(3);
+	locPIDDeque[0] = Proton;  locPIDDeque[1] = KPlus;  locPIDDeque[2] = PiPlus;
+	dParticleIDsToTry[Deuteron] = locPIDDeque;
+
 	return NOERROR;
 }
 
@@ -130,7 +134,7 @@ jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int
 DTrackTimeBased* DTrackTimeBased_factory_Combo::Create_TrackTimeBased(const DChargedTrack* locChargedTrack, Particle_t locDesiredPID)
 {
 	if(dParticleIDsToTry.find(locDesiredPID) == dParticleIDsToTry.end())
-		return NULL;
+		return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), locDesiredPID);
 
 	for(size_t loc_i = 0; loc_i < dParticleIDsToTry[locDesiredPID].size(); ++loc_i)
 	{
