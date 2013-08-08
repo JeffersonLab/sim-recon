@@ -21,6 +21,7 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 //------------------
 jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
+	//BE CAREFUL: DON'T DO ANYTHING THAT REQUIRES THE brun() METHOD OF THIS FACTORY TO BE CALLED!!!!
 	dTrackTimeBasedFactory_Combo = dynamic_cast<DTrackTimeBased_factory_Combo*>(locEventLoop->GetFactory("DTrackTimeBased", "Combo"));
 
 	gPARMS->SetDefaultParameter("COMBOBLUEPRINTS:DEBUG_LEVEL", dDebugLevel);
