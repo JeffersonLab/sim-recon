@@ -26,6 +26,8 @@ jerror_t DNeutralParticleHypothesis_factory_Combo::init(void)
 //------------------
 jerror_t DNeutralParticleHypothesis_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
+	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
+	locEventLoop->Get(locNeutralParticleHypotheses); //make sure that brun() is called for the default factory!!!
 	dNeutralParticleHypothesisFactory = static_cast<DNeutralParticleHypothesis_factory*>(locEventLoop->GetFactory("DNeutralParticleHypothesis"));
 	return NOERROR;
 }
