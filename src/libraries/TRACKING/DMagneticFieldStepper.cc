@@ -473,6 +473,43 @@ bool DMagneticFieldStepper::DistToPlane(DVector3 &pos, const DVector3 &origin, c
 	return false;
 }
 
+// Routine to find the position-of-closest approach of a trajectory to a line
+bool DMagneticFieldStepper::SwimToPOCAtoBeamLine(double q,DVector3 &mypos,
+						 DVector3 &mymom){ 
+  // Set the starting parameters and start stepping!
+  mymom=-1.0*mymom;
+  SetStartingParams(q, &mypos, &mymom);
+   
+  DVector3 last_pos;
+  double old_doca2=0.,doca2=1000.;
+  do{
+    old_doca2=doca2;
+    last_pos = mypos;
+    
+    Step(&mypos);
+    doca2=mypos.Perp2();		
+	
+    if (doca2>old_doca2 && (mom.x()<0. || mom.y()<0.)){
+      // Use a linear approximation to find the "true" POCA
+      double pz=mom.z();
+      if (fabs(pz)>0.001){
+	double tx=mom.x()/pz;
+	double ty=mom.y()/pz;
+	double dz=-(mypos.x()*tx+mypos.y()*ty)/(tx*tx+ty*ty);
+	mypos+=(dz/pz)*mom;
+      }  
+      mymom=-1.*mom;
+      
+      return false;
+      break;
+    }
+  }while (mypos.z()>0.0 && mypos.z()<625. && mypos.Perp()<65.0); 
+  // constrain to active volume
+    
+  return true;
+}
+
+
 //-----------------------
 // SwimToRadius
 //-----------------------
@@ -550,7 +587,7 @@ bool DMagneticFieldStepper::SwimToRadius(DVector3 &mypos, DVector3 &mymom, doubl
 	  // intersection point (approximately).
 	  s -= (1.0-alpha2)*delta.Mag();
 	}
-	
+
 	// Copy path length into caller's variable if supplied
 	if(pathlen)*pathlen=s;
 
