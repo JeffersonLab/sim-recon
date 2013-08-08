@@ -8,10 +8,10 @@
 #ifndef _DCDCHit_
 #define _DCDCHit_
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
 
-class DCDCHit:public JObject{
+class DCDCHit:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DCDCHit);
 		

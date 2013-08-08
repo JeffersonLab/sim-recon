@@ -73,7 +73,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
   for (unsigned int i = 0; i < hits.size(); i++){
     const DTOFHit *hit = hits[i];
     if (hit->plane){
-      if (hit->lr){
+      if (hit->end){
 	P2hitsR.push_back(hit);
 	P2R[c2r++] = i;
       } else {
@@ -81,7 +81,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	P2L[c2l++] = i;
       }
     } else {
-      if (hit->lr){
+      if (hit->end){
 	P1hitsR.push_back(hit);
 	P1R[c1r++] = i;
       } else {

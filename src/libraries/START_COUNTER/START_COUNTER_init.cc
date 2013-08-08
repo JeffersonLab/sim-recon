@@ -4,15 +4,21 @@
 using namespace jana;
 
 #include "DSCTruthHit.h"
-#include "DSCHit.h"
-typedef JFactory<DSCHit> DSCHit_factory;
+#include "DSCDigiHit.h"
+#include "DSCHit_factory.h"
+#include "DSCTDCDigiHit.h"
+typedef JFactory<DSCDigiHit> DSCDigiHit_factory;
+typedef JFactory<DSCTDCDigiHit> DSCTDCDigiHit_factory;
 typedef JFactory<DSCTruthHit> DSCTruthHit_factory;
 
 jerror_t START_COUNTER_init(JEventLoop *loop)
 {
-	/// Create and register CDC data factories
-	loop->AddFactory(new DSCTruthHit_factory());
+	/// Create and register Start Counter data factories
+	loop->AddFactory(new DSCDigiHit_factory());
+	loop->AddFactory(new DSCTDCDigiHit_factory());
 	loop->AddFactory(new DSCHit_factory());
+
+	loop->AddFactory(new DSCTruthHit_factory());
 
 	return NOERROR;
 }
