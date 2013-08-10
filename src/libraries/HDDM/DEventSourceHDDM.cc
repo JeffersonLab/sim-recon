@@ -263,14 +263,14 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	  return Extract_DTOFTruth(my_hddm_s, dynamic_cast<JFactory<DTOFTruth>*>(factory));
 	
 	// TOF is a special case: TWO factories are needed at the same time
-	// DTOFRawHit and DTOFRawHitMC
-	if(dataClassName == "DTOFRawHit" && (tag=="" || tag=="TRUTH")) {
-	  JFactory_base* factory2 = loop->GetFactory("DTOFRawHitMC", tag.c_str()); 
-	  return Extract_DTOFRawHit(my_hddm_s, dynamic_cast<JFactory<DTOFRawHit>*>(factory),  dynamic_cast<JFactory<DTOFRawHitMC>*>(factory2), tag);
+	// DTOFHit and DTOFHitMC
+	if(dataClassName == "DTOFHit" && (tag=="" || tag=="TRUTH")) {
+	  JFactory_base* factory2 = loop->GetFactory("DTOFHitMC", tag.c_str()); 
+	  return Extract_DTOFHit(my_hddm_s, dynamic_cast<JFactory<DTOFHit>*>(factory),  dynamic_cast<JFactory<DTOFHitMC>*>(factory2), tag);
 	}
-	if(dataClassName == "DTOFRawHitMC" && (tag=="" || tag=="TRUTH")) {
-	  JFactory_base* factory2 = loop->GetFactory("DTOFRawHit", tag.c_str()); 
-	  return Extract_DTOFRawHit(my_hddm_s, dynamic_cast<JFactory<DTOFRawHit>*>(factory2), dynamic_cast<JFactory<DTOFRawHitMC>*>(factory),  tag);
+	if(dataClassName == "DTOFHitMC" && (tag=="" || tag=="TRUTH")) {
+	  JFactory_base* factory2 = loop->GetFactory("DTOFHit", tag.c_str()); 
+	  return Extract_DTOFHit(my_hddm_s, dynamic_cast<JFactory<DTOFHit>*>(factory2), dynamic_cast<JFactory<DTOFHitMC>*>(factory),  tag);
 	}
 
 	if(dataClassName =="DSCHit" && tag=="")
@@ -1972,9 +1972,9 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
 }
 
 //------------------
-// Extract_DTOFRawHit
+// Extract_DTOFHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFRawHit>* factory, JFactory<DTOFRawHitMC> *factoryMC, string tag)
+jerror_t DEventSourceHDDM::Extract_DTOFHit( s_HDDM_t *hddm_s,  JFactory<DTOFHit>* factory, JFactory<DTOFHitMC> *factoryMC, string tag)
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -1982,8 +1982,8 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	
   if(factory==NULL)return OBJECT_NOT_AVAILABLE;
 
-  vector<DTOFRawHit*> data;
-  vector<DTOFRawHitMC*> dataMC;
+  vector<DTOFHit*> data;
+  vector<DTOFHitMC*> dataMC;
 
   s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
   if(!PE) return NOERROR;
@@ -2008,10 +2008,10 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	s_FtofNorthHit_t  *ftofNorthHit =  ftofNorthHits->in;
 	
 	for(unsigned int k=0;k<ftofNorthHits->mult; k++, ftofNorthHit++){
-	  DTOFRawHit *tofhit = new DTOFRawHit;
+	  DTOFHit *tofhit = new DTOFHit;
 	  tofhit->bar	         = ftofCounter->bar;
 	  tofhit->plane	         = ftofCounter->plane;
-	  tofhit->lr             = 0;
+	  tofhit->end            = 0;
 	  tofhit->dE     	 = ftofNorthHit->dE;
 	  tofhit->t     	 = ftofNorthHit->t;
 	  data.push_back(tofhit);
@@ -2019,10 +2019,10 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	  if (ftofCounter->ftofNorthTruthHits!=(s_FtofNorthTruthHits_t *)HDDM_NULL){
 	    s_FtofMCHits_t *MCHits = ftofCounter->ftofNorthTruthHits->in[k].ftofMCHits;
 	    for (unsigned int j=0; j<MCHits->mult; j++){
-	      DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	      DTOFHitMC *tofmchit = new DTOFHitMC;
 	      tofmchit->bar      = tofhit->bar;
 	      tofmchit->plane    = tofhit->plane;
-	      tofmchit->lr       = tofhit->lr;
+	      tofmchit->end      = tofhit->end;
 	      tofmchit->itrack   = MCHits->in[j].itrack;
 	      tofmchit->ptype    = MCHits->in[j].ptype;
 	      tofmchit->dist     = MCHits->in[j].dist;
@@ -2043,10 +2043,10 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	s_FtofSouthHit_t  *ftofSouthHit =  ftofSouthHits->in;
 	
 	for(unsigned int k=0;k<ftofSouthHits->mult; k++, ftofSouthHit++){
-	  DTOFRawHit *tofhit = new DTOFRawHit;
+	  DTOFHit *tofhit = new DTOFHit;
 	  tofhit->bar	         = ftofCounter->bar;
 	  tofhit->plane	         = ftofCounter->plane;
-	  tofhit->lr             = 1;
+	  tofhit->end            = 1;
 	  tofhit->dE     	 = ftofSouthHit->dE;
 	  tofhit->t     	 = ftofSouthHit->t;
 	  data.push_back(tofhit);
@@ -2054,10 +2054,10 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	  if (ftofCounter->ftofSouthTruthHits!=(s_FtofSouthTruthHits_t *)HDDM_NULL){
 	    s_FtofMCHits_t *MCHits = ftofCounter->ftofSouthTruthHits->in[k].ftofMCHits;
 	    for (unsigned int j=0; j<MCHits->mult; j++){
-	      DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	      DTOFHitMC *tofmchit = new DTOFHitMC;
 	      tofmchit->bar      = tofhit->bar;
 	      tofmchit->plane    = tofhit->plane;
-	      tofmchit->lr       = tofhit->lr;
+	      tofmchit->end      = tofhit->end;
 	      tofmchit->itrack   = MCHits->in[j].itrack;
 	      tofmchit->ptype    = MCHits->in[j].ptype;
 	      tofmchit->dist     = MCHits->in[j].dist;
@@ -2080,20 +2080,20 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	s_FtofNorthTruthHit_t *ftofNorthTruthHit = ftofNorthTruthHits->in;
 	
 	for(unsigned int k=0;k<ftofNorthTruthHits->mult; k++, ftofNorthTruthHit++){
-	  DTOFRawHit *tofhit = new DTOFRawHit;
+	  DTOFHit *tofhit = new DTOFHit;
 	  tofhit->bar	         = ftofCounter->bar;
 	  tofhit->plane	         = ftofCounter->plane;
-	  tofhit->lr	         = 0;
+	  tofhit->end	         = 0;
 	  tofhit->dE    	 = ftofNorthTruthHit->dE;
 	  tofhit->t     	 = ftofNorthTruthHit->t;
 	  data.push_back(tofhit);
 	  
 	  s_FtofMCHits_t *MCHits = ftofNorthTruthHit->ftofMCHits;
 	  for (unsigned int j=0; j<MCHits->mult; j++){
-	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	    DTOFHitMC *tofmchit = new DTOFHitMC;
 	    tofmchit->bar      = tofhit->bar;
 	    tofmchit->plane    = tofhit->plane;
-	    tofmchit->lr       = tofhit->lr;
+	    tofmchit->end      = tofhit->end;
 	    tofmchit->itrack   = MCHits->in[j].itrack;
 	    tofmchit->ptype    = MCHits->in[j].ptype;
 	    tofmchit->dist     = MCHits->in[j].dist;
@@ -2114,20 +2114,20 @@ jerror_t DEventSourceHDDM::Extract_DTOFRawHit( s_HDDM_t *hddm_s,  JFactory<DTOFR
 	s_FtofSouthTruthHit_t *ftofSouthTruthHit = ftofSouthTruthHits->in;
 
 	for(unsigned int k=0;k<ftofSouthTruthHits->mult; k++, ftofSouthTruthHit++){
-	  DTOFRawHit *tofhit = new DTOFRawHit;
+	  DTOFHit *tofhit = new DTOFHit;
 	  tofhit->bar	         = ftofCounter->bar;
 	  tofhit->plane	         = ftofCounter->plane;
-	  tofhit->lr	         = 1;
+	  tofhit->end	         = 1;
 	  tofhit->dE    	 = ftofSouthTruthHit->dE;
 	  tofhit->t     	 = ftofSouthTruthHit->t;
 	  data.push_back(tofhit);
 
 	  s_FtofMCHits_t *MCHits = ftofSouthTruthHit->ftofMCHits;
 	  for (unsigned int j=0; j<MCHits->mult; j++){
-	    DTOFRawHitMC *tofmchit = new DTOFRawHitMC;
+	    DTOFHitMC *tofmchit = new DTOFHitMC;
 	    tofmchit->bar      = tofhit->bar;
 	    tofmchit->plane    = tofhit->plane;
-	    tofmchit->lr       = tofhit->lr;
+	    tofmchit->end      = tofhit->end;
 	    tofmchit->itrack   = MCHits->in[j].itrack;
 	    tofmchit->ptype    = MCHits->in[j].ptype;
 	    tofmchit->dist     = MCHits->in[j].dist;

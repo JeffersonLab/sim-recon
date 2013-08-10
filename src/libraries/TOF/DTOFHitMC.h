@@ -20,7 +20,7 @@ class DTOFHitMC:public JObject{
   
   int plane;		// plane (0: vertical, 1: horizontal)
   int bar;		// bar number
-  int lr;               // north/south or left/right
+  int end;               // north/south or left/right
   int ptype;		// GEANT particle type
   int itrack;           // Track number of primary particle causing the hit
   float dist;           // Hit distance from center of paddle (or x=0)
@@ -35,7 +35,7 @@ class DTOFHitMC:public JObject{
   void toStrings(vector<pair<string,string> > &items)const{
     AddString(items, "bar", "%d", bar);
     AddString(items, "plane", "%d", plane);
-    AddString(items, "lr", "%d", lr);
+    AddString(items, "end", "%d", end);
     AddString(items, "dist", "%12.4e", dist);
     AddString(items, "x", "%12.4e", x);
     AddString(items, "y", "%12.4e", y);
