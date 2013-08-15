@@ -396,8 +396,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
     rt->SetMass(mass);
     rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
 	
-    status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass);
-    if (status==DTrackFitter::kFitNotDone){
+    status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass,candidate->Ndof+3);
+    if (false && status==DTrackFitter::kFitNotDone){
       // Get the hits from the candidate
       vector<const DFDCPseudo*>myfdchits;
       candidate->GetT(myfdchits);

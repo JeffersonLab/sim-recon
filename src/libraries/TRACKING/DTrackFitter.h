@@ -125,8 +125,10 @@ class DTrackFitter:public jana::JObject{
 		  FindHitsAndFitTrack(const DKinematicData &starting_params, 
 				      const DReferenceTrajectory *rt, 
 				      JEventLoop *loop, double mass=-1.0,
+				      int N=0,
 				      double t0=NaN,
-				      DetectorSystem_t t0_det=SYS_NULL); ///< mass<0 means get it from starting_params
+				      DetectorSystem_t t0_det=SYS_NULL
+				      ); ///< mass<0 means get it from starting_params
 		jerror_t CorrectForELoss(const DKinematicData &starting_params, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom, double mass);
 		double CalcDensityEffect(double p,double mass,double density,
 					 double Z_over_A,double I);  

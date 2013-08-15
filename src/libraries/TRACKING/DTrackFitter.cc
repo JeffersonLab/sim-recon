@@ -151,7 +151,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting
 DTrackFitter::fit_status_t 
 DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params, 
 				  const DReferenceTrajectory *rt, JEventLoop *loop, 
-				  double mass,double t0,
+				  double mass,int N,double t0,
 				  DetectorSystem_t t0_det)
 {
 	/// Fit a DTrackCandidate using a given mass hypothesis.
@@ -210,7 +210,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	loop->Get(cdctrackhits);
 	loop->Get(fdcpseudos);
 	DTrackHitSelector::fit_type_t input_type = fit_type==kTimeBased ? DTrackHitSelector::kWireBased:DTrackHitSelector::kHelical;
-	hitselector->GetAllHits(input_type, rt, cdctrackhits, fdcpseudos, this);
+	hitselector->GetAllHits(input_type, rt, cdctrackhits, fdcpseudos, this,N);
 
 	// If the hit selector found no hits at all on the track, the most
 	// likely explanation is that the charge of the candidate was wrong,
@@ -226,7 +226,7 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	  q*=-1.;
 	  temp_rt.Swim(pos, mom,q);
 	  if(temp_rt.Nswim_steps<1)return fit_status = kFitFailed;
-	  hitselector->GetAllHits(input_type, &temp_rt, cdctrackhits, fdcpseudos, this);
+	  hitselector->GetAllHits(input_type, &temp_rt, cdctrackhits, fdcpseudos, this,N);
        	
 	  if (fdchits.size()+cdchits.size()!=0){
 	    if (DEBUG_LEVEL>0)

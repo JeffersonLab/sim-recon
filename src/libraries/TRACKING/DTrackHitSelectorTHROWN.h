@@ -19,8 +19,8 @@ class DTrackHitSelectorTHROWN:public DTrackHitSelector{
 		DTrackHitSelectorTHROWN(jana::JEventLoop *loop);
 		virtual ~DTrackHitSelectorTHROWN();
 		
-		void GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out) const;
-		void GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out) const;
+		void GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out,int N=0) const;
+		void GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out, int N=0) const;
 
 		int FindTrackNumber(const DReferenceTrajectory *rt) const;
 		static const DMCTrackHit* GetMCTrackHit(const DCoordinateSystem *wire, double rdrift, vector<const DMCTrackHit*> &mctrackhits, int trackno_filter=-1);

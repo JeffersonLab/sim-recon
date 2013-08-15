@@ -97,7 +97,7 @@ DTrackHitSelectorALT1::~DTrackHitSelectorALT1()
 //---------------------------------
 // GetCDCHits
 //---------------------------------
-void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out) const
+void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out,int N) const
 {
   // Vector of pairs storing the hit with the probability it is on the track
   vector<pair<double,const DCDCTrackHit*> >cdchits_tmp;
@@ -288,7 +288,7 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
 //---------------------------------
 // GetFDCHits
 //---------------------------------
-void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out) const
+void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out,int N) const
 {
   // Vector of pairs storing the hit with the probability it is on the track
   vector<pair<double,const DFDCPseudo*> >fdchits_tmp;

@@ -20,8 +20,8 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 		DTrackHitSelectorALT2(jana::JEventLoop *loop);
 		virtual ~DTrackHitSelectorALT2();
 		
-		void GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out) const;
-		void GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out) const;
+		void GetCDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out,int N=20) const;
+		void GetFDCHits(fit_type_t fit_type, const DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, vector<const DFDCPseudo*> &fdchits_out, int N=20) const;
 
 	private:
 		const DMagneticFieldMap *bfield;
@@ -34,6 +34,7 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 		double MIN_FDC_SIGMA_CATHODE_CANDIDATE;
 		double MIN_FDC_SIGMA_ANODE_WIREBASED;
 		double MIN_FDC_SIGMA_CATHODE_WIREBASED;
+		double MAX_DOCA;
 		
 		TTree *cdchitsel;
 		TTree *fdchitsel;
@@ -106,6 +107,9 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 			float prob_cathode;
 			float pull_anode;
 			float pull_cathode;
+			float sig_phi;
+			float sig_lambda;
+			float sig_pt;
 		}fdchitdbg_t;
 		mutable fdchitdbg_t fdchitdbg;
 };
