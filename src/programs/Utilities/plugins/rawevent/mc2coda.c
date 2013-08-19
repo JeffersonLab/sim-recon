@@ -273,27 +273,30 @@ mc2codaWrite(CODA_EVENT_INFO *event, int nHits, struct coda_hit_info *codaHits)
 	for (ii=0; ii<nHits; ii++) {
 		crate = codaHits[ii].crate_id - 1;
 		slot  = codaHits[ii].slot_id - 1;
-		cnt   = event->hcount[crate][slot];
 		/* printf("DEBUG: Writing hit %d for crate,slot = %d,%d\n",cnt,crate,slot); */
 		if(crate<0 || slot<0){
 			if(!bad_crate_slot_warning_issued){
-				printf("mc2codaWrite: ERROR: Invalid crate(%d) or slot(%d)! This could be due to", crate, slot);
-				printf("                     data for a channel not defined in the crate map.");
-				printf("                     This is only reported once.");
+				printf("mc2codaWrite: ERROR: Invalid crate(%d) or slot(%d)! This could be due to\n", crate, slot);
+				printf("                     data for a channel not defined in the crate map.\n");
+				printf("                     This is only reported once.\n");
 				bad_crate_slot_warning_issued = 1;
 			}
-		}else if(cnt > MAX_HITS_PER_SLOT) {
-			printf("mc2codaWrite: ERROR: No available space to store hit %d for crate/slot = %d/%d\n",
-				   codaHits->hit_id,crate,slot);
-		} else {
-			tmpH = (CODA_HIT_INFO *)&event->hits[crate][slot][cnt];
-			memcpy((char *)&(tmpH->hit_id),(char *)&(codaHits[ii].hit_id),sizeof(CODA_HIT_INFO)) ;
-			/* printf("DEBUG: malloc data array\n"); */
-			tmpH->hdata = (uint32_t *) malloc((codaHits[ii].nwords)<<2);
-			memcpy((char *)(tmpH->hdata), (char *)(codaHits[ii].hdata),(codaHits[ii].nwords)<<2);
-			
-			event->hcount[crate][slot] += 1;
-		}
+		}else{
+		
+			cnt   = event->hcount[crate][slot];
+			if(cnt > MAX_HITS_PER_SLOT) {
+				printf("mc2codaWrite: ERROR: No available space to store hit %d for crate/slot = %d/%d\n",
+					   codaHits->hit_id,crate,slot);
+			} else {
+				tmpH = (CODA_HIT_INFO *)&event->hits[crate][slot][cnt];
+				memcpy((char *)&(tmpH->hit_id),(char *)&(codaHits[ii].hit_id),sizeof(CODA_HIT_INFO)) ;
+				/* printf("DEBUG: malloc data array\n"); */
+				tmpH->hdata = (uint32_t *) malloc((codaHits[ii].nwords)<<2);
+				memcpy((char *)(tmpH->hdata), (char *)(codaHits[ii].hdata),(codaHits[ii].nwords)<<2);
+				
+				event->hcount[crate][slot] += 1;
+			}
+		} // crate<0 || slot<0
 		
 		event->nhits++;
 		lcnt++;
