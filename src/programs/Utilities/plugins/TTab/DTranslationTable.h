@@ -26,16 +26,22 @@ using namespace jana;
 #include <DAQ/Df250TriggerTime.h>
 #include <DAQ/Df250PulseTime.h>
 #include <DAQ/Df250WindowRawData.h>
+#include <DAQ/Df125PulseIntegral.h>
+#include <DAQ/Df125PulseTime.h>
+#include <DAQ/Df125TriggerTime.h>
 #include <DAQ/DF1TDCHit.h>
 #include <DAQ/DF1TDCTriggerTime.h>
 
-#include <BCAL/DBCALHit.h>
-#include <BCAL/DBCALTDCHit.h>
-#include <CDC/DCDCHit.h>
-#include <FCAL/DFCALHit.h>
-#include <FDC/DFDCHit.h>
-#include <START_COUNTER/DSCHit.h>
-#include <TOF/DTOFRawHit.h>
+#include <BCAL/DBCALDigiHit.h>
+#include <BCAL/DBCALTDCDigiHit.h>
+#include <CDC/DCDCDigiHit.h>
+#include <FCAL/DFCALDigiHit.h>
+#include <FDC/DFDCCathodeDigiHit.h>
+#include <FDC/DFDCWireDigiHit.h>
+#include <START_COUNTER/DSCDigiHit.h>
+#include <START_COUNTER/DSCTDCDigiHit.h>
+#include <TOF/DTOFDigiHit.h>
+#include <TOF/DTOFTDCDigiHit.h>
 
 
 class DTranslationTable:public jana::JObject{
@@ -170,21 +176,97 @@ class DTranslationTable:public jana::JObject{
 		bool IsSuppliedType(string dataClassName) const;
 		void ApplyTranslationTable(jana::JEventLoop *loop) const;
 		
-		DBCALHit* MakeBCALHit(const BCALIndex_t &idx, const Df250PulseIntegral *hit, uint32_t t) const;
-//		DCDCHit* MakeCDCHit(const Df250PulseIntegral *hit, const CDCIndex_t &idx) const;
-//		DFCALHit* MakeFCALHit(const Df250PulseIntegral *hit, const FCALIndex_t &idx) const;
-//		DFDCHit* MakeFDCCathodeHit(const Df250PulseIntegral *hit, const FDC_CathodesIndex_t &idx) const;
-//		DFDCHit* MakeFDCWireHit(const Df250PulseIntegral *hit, const FDC_WiresIndex_t &idx) const;
-//		DSCHit* MakeSCHit(const Df250PulseIntegral *hit, const SCIndex_t &idx) const;
-//		DTOFRawHit* MakeTOFRawHit(const Df250PulseIntegral *hit, const TOFIndex_t &idx) const;
-//
-//		DBCALTDCHit* MakeBCALTDCHit(const DF1TDCHit *hit, const BCALIndex_t &idx) const;
+		// fADC250
+		DBCALDigiHit* MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
+		DFCALDigiHit* MakeFCALDigiHit(const FCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
+		DSCDigiHit*   MakeSCDigiHit(  const SCIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
+		DTOFDigiHit*  MakeTOFDigiHit( const TOFIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
+
+		// fADC125
+		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const;
+		DFDCCathodeDigiHit* MakeFDCCathodeDigiHit(const FDC_CathodesIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const;
+
+		// F1TDC
+		DBCALTDCDigiHit* MakeBCALTDCDigiHit(const BCALIndex_t &idx,      const DF1TDCHit *hit) const;
+		DFDCWireDigiHit* MakeFDCWireDigiHit(const FDC_WiresIndex_t &idx, const DF1TDCHit *hit) const;
+		DSCTDCDigiHit*   MakeSCTDCDigiHit(  const SCIndex_t &idx,        const DF1TDCHit *hit) const;
+		DTOFTDCDigiHit*  MakeTOFTDCDigiHit( const TOFIndex_t &idx,       const DF1TDCHit *hit) const;
+		
+
 
 		void ReadTranslationTable(void);
+		
+		template<class T> void CopyToFactory(JEventLoop *loop, vector<T*> &v) const;
+		template<class T> void CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
+		template<class T> void CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const;
+		template<class T> void CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const;
 
 	protected:
 		set<string> supplied_data_types;
 };
+
+//---------------------------------
+// CopyToFactory
+//---------------------------------
+template<class T>
+void DTranslationTable::CopyToFactory(JEventLoop *loop, vector<T*> &v) const
+{
+	/// Template method for copying values from local containers into
+	/// factories. This is done in a template since the type appears
+	/// in at least 3 places below. It makes the code calling this
+	/// more succinct and therefore easier to add new types.
+
+	// It would be a little safer to use a dynamic_cast here, but
+	// all documentation seems to discourage using that as it is
+	// inefficient.
+	JFactory<T> *fac = (JFactory<T> *)loop->GetFactory(T::static_className());
+	if(fac) fac->CopyTo(v);
+}
+
+//---------------------------------
+// CopyDf250Info
+//---------------------------------
+template<class T>
+void DTranslationTable::CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const
+{
+	/// Copy info from the fADC250 into a hit object.
+	h->pulse_integral = pi->integral;
+	h->pulse_time     = pt==NULL ? 0:pt->time;
+	h->pedestal       = 0; // for future development
+	h->QF             = pi->quality_factor;
+	
+	h->AddAssociatedObject(pi);
+	if(pt) h->AddAssociatedObject(pt);
+}
+
+//---------------------------------
+// CopyDf125Info
+//---------------------------------
+template<class T>
+void DTranslationTable::CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const
+{
+	/// Copy info from the fADC125 into a hit object.
+	h->pulse_integral = pi->integral;
+	h->pulse_time     = pt==NULL ? 0:pt->time;
+	h->pedestal       = 0; // for future development
+	h->QF             = pi->quality_factor;
+	
+	h->AddAssociatedObject(pi);
+	if(pt) h->AddAssociatedObject(pt);
+}
+
+//---------------------------------
+// CopyDF1TDCInfo
+//---------------------------------
+template<class T>
+void DTranslationTable::CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const
+{
+	/// Copy info from the fADC125 into a hit object.
+	h->time = hit->time;
+	
+	h->AddAssociatedObject(hit);
+}
+
 
 #endif // _DTranslationTable_
 

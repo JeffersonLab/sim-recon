@@ -14,6 +14,7 @@
 using namespace jana;
 using namespace std;
 
+//...................................
 // Less than operator for csc_t data types. This is used by
 // the map<csc_t, XX> to order the entires by key
 bool operator<(const DTranslationTable::csc_t &a, const DTranslationTable::csc_t &b){
@@ -23,6 +24,20 @@ bool operator<(const DTranslationTable::csc_t &a, const DTranslationTable::csc_t
 	if(a.slot > b.slot) return false;
 	if(a.channel < b.channel) return true;
 	return false;
+}
+
+//...................................
+// sort functions
+bool SortBCALDigiHit(const DBCALDigiHit *a, const DBCALDigiHit *b){
+	if(a->module == b->module){
+		if(a->layer == b->layer){
+			if(a->sector == b->sector){
+				if(a->end == b->end){
+					return a->pulse_time < b->pulse_time;
+				}else{ return a->end < b->end; }
+			}else{ return a->sector < b->sector; }
+		}else{ return a->layer< b->layer; }
+	}else { return a->module < b->module; }
 }
 
 //---------------------------------
@@ -36,17 +51,21 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 
 	// These are used to help the event source report which
 	// types of data it is capable of providing. For practical
-	// purposes, these types are provided by the source
+	// purposes, these types are "provided" by the source
 	// because they are generated and placed into their
 	// respective JANA factories during a call to GetObjects().
 	// The source is responsible for reporting the types it is
 	// directly responsible for (e.g. Df250PulseIntegral)
-	supplied_data_types.insert("DBCALHit");
-	supplied_data_types.insert("DCDCHit");
-	supplied_data_types.insert("DFCALHit");
-	supplied_data_types.insert("DFDCHit");
-	supplied_data_types.insert("DSCHit");
-	supplied_data_types.insert("DTOFRawHit");
+	supplied_data_types.insert("DBCALDigiHit");
+	supplied_data_types.insert("DBCALTDCDigiHit");
+	supplied_data_types.insert("DCDCDigiHit");
+	supplied_data_types.insert("DFCALDigiHit");
+	supplied_data_types.insert("DFDCCathodeDigiHit");
+	supplied_data_types.insert("DFDCWireDigiHit");
+	supplied_data_types.insert("DSCDigiHit");
+	supplied_data_types.insert("DSCTDCDigiHit");
+	supplied_data_types.insert("DTOFDigiHit");
+	supplied_data_types.insert("DTOFTDCDigiHit");
 }
 
 //---------------------------------
@@ -74,25 +93,55 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	/// generate detector hit objects from them, placing
 	/// them in the appropriate DANA factories.
 	
-	// These will need to get filled in stages. In particular, things like
-	// DBCALHit objects contain both the amplitude from Df250PulseIntegral
-	// and time from D250PulseTime objects. DPulseIntegral objects are
-	// looped over first and the DPulseTime next, adding their information
-	// to any existing objects if found or creating new ones if needed.
-	vector<DBCALHit*> vbcal;
-	vector<DCDCHit*> vcdc;
-	vector<DFCALHit*> vfcal;
-	vector<DFDCHit*> vfdc;
-	vector<DSCHit*> vsc;
-	vector<DTOFRawHit*> vtof;
-
-	vector<DBCALTDCHit*> vbcaltdc;
+	// Containers to hold all of the detector-specific "Digi"
+	// objects. Once filled, these will be copied to the
+	// respective factories at the end of this method.
+	vector<DBCALDigiHit*> vbcal;
+	vector<DBCALTDCDigiHit*> vbcaltdc;
+	vector<DCDCDigiHit*> vcdc;
+	vector<DFCALDigiHit*> vfcal;
+	vector<DFDCCathodeDigiHit*> vfdccathode;
+	vector<DFDCWireDigiHit*> vfdcwire;
+	vector<DSCDigiHit*> vsc;
+	vector<DSCTDCDigiHit*> vsctdc;
+	vector<DTOFDigiHit*> vtof;
+	vector<DTOFTDCDigiHit*> vtoftdc;
 	
 	// Df250PulseIntegral (will apply Df250PulseTime via associated objects)
-	vector<const Df250PulseIntegral*> pulseintegrals;
-	loop->Get(pulseintegrals);
-	for(uint32_t i=0; i<pulseintegrals.size(); i++){
-		const Df250PulseIntegral *pi = pulseintegrals[i];
+	vector<const Df250PulseIntegral*> pulseintegrals250;
+	loop->Get(pulseintegrals250);
+	for(uint32_t i=0; i<pulseintegrals250.size(); i++){
+		const Df250PulseIntegral *pi = pulseintegrals250[i];
+		
+		// Create crate,slot,channel index and find entry in Translation table.
+		// If none is found, then just quietly skip this hit.
+		csc_t csc = {pi->rocid, pi->slot, pi->channel};
+		map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
+		if(iter == TT.end()) continue;
+		const DChannelInfo &chaninfo = iter->second;
+		
+		// Check for a pulse time (this should have been added in JEventSource_EVIO.cc)
+		const Df250PulseTime *pt = NULL;
+		try{
+			pi->GetSingle(pt);
+		}catch(...){}
+		
+		// Create the appropriate hit type based on detector type
+		switch(chaninfo.det_sys){
+			case BCAL        : vbcal.push_back( MakeBCALDigiHit(chaninfo.bcal, pi, pt) ); break;
+			case FCAL        : vfcal.push_back( MakeFCALDigiHit(chaninfo.fcal, pi, pt) ); break;
+			case SC          : vsc.push_back  ( MakeSCDigiHit(  chaninfo.sc,   pi, pt) ); break;
+			case TOF         : vtof.push_back ( MakeTOFDigiHit( chaninfo.tof,  pi, pt) ); break;
+
+			default:  break;
+		}
+	}
+
+	// Df125PulseIntegral (will apply Df125PulseTime via associated objects)
+	vector<const Df125PulseIntegral*> pulseintegrals125;
+	loop->Get(pulseintegrals125);
+	for(uint32_t i=0; i<pulseintegrals125.size(); i++){
+		const Df125PulseIntegral *pi = pulseintegrals125[i];
 		
 		// Create crate,slot,channel index and find entry in Translation table.
 		// If none is found, then just quietly skip this hit.
@@ -102,70 +151,210 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 		const DChannelInfo &chaninfo = iter->second;
 		
 		// Check for a pulse time (this should have been added in JEventSource_EVIO.cc
-		// If a trigger time for the module is also associated, subtract that to give
-		// a time relative to the trigger.
-		uint32_t t = 0;
+		const Df125PulseTime *pt = NULL;
 		try{
-			const Df250PulseTime *pt;
 			pi->GetSingle(pt);
-			t = pt->time;
-			
-//			const Df250TriggerTime *trigt;
-//			pi->GetSingle(trigt);
-//			t -= trigt->time;
 		}catch(...){}
-		
+
 		// Create the appropriate hit type based on detector type
 		switch(chaninfo.det_sys){
-			case BCAL        : vbcal.push_back( MakeBCALHit(chaninfo.bcal, pi, t) ); break;
-//			case CDC         : vcdc.push_back ( MakeCDCHit(pi, chaninfo.cdc) ); break;
-//			case FCAL        : vfcal.push_back( MakeFCALHit(pi, chaninfo.fcal) ); break;
-//			case FDC_CATHODES: vfdc.push_back ( MakeFDCCathodeHit(pi, chaninfo.fdc_cathodes) ); break;
-//			case FDC_WIRES   : vfdc.push_back ( MakeFDCWireHit(pi, chaninfo.fdc_wires) ); break;
-//			case SC          : vsc.push_back  ( MakeSCHit(pi, chaninfo.sc) ); break;
-//			case TOF         : vtof.push_back ( MakeTOFHit(pi, chaninfo.tof) ); break;
+			case CDC         : vcdc.push_back( MakeCDCDigiHit(chaninfo.cdc, pi, pt) ); break;
+			case FDC_CATHODES: vfdccathode.push_back( MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, pi, pt) ); break;
 
 			default:  break;
 		}
 	}
-	
-	JFactory<DBCALHit>   *fac_bcal = dynamic_cast<JFactory<DBCALHit>*>(loop->GetFactory("DBCALHit"));
-	JFactory<DCDCHit>    *fac_cdc  = dynamic_cast<JFactory<DCDCHit>*>(loop->GetFactory("DCDCHit"));
-	JFactory<DFCALHit>   *fac_fcal = dynamic_cast<JFactory<DFCALHit>*>(loop->GetFactory("DFCALHit"));
-	JFactory<DFDCHit>    *fac_fdc  = dynamic_cast<JFactory<DFDCHit>*>(loop->GetFactory("DFDCHit"));
-	JFactory<DSCHit>     *fac_sc   = dynamic_cast<JFactory<DSCHit>*>(loop->GetFactory("DSCHit"));
-	JFactory<DTOFRawHit> *fac_tof  = dynamic_cast<JFactory<DTOFRawHit>*>(loop->GetFactory("DTOFRawHit"));
 
-	JFactory<DBCALTDCHit>   *fac_bcaltdc = dynamic_cast<JFactory<DBCALTDCHit>*>(loop->GetFactory("DBCALTDCHit"));
-	
-	if(fac_bcal) fac_bcal->CopyTo(vbcal);
-	if(fac_cdc ) fac_cdc->CopyTo(vcdc);
-	if(fac_fcal) fac_fcal->CopyTo(vfcal);
-	if(fac_fdc ) fac_fdc->CopyTo(vfdc);
-	if(fac_sc  ) fac_sc->CopyTo(vsc);
-	if(fac_tof ) fac_tof->CopyTo(vtof);
+	// DF1TDCHit
+	vector<const DF1TDCHit*> f1tdchits;
+	loop->Get(f1tdchits);
+	for(uint32_t i=0; i<f1tdchits.size(); i++){
+		const DF1TDCHit *hit = f1tdchits[i];
 
-	if(fac_bcaltdc) fac_bcaltdc->CopyTo(vbcaltdc);
+		
+		// Create crate,slot,channel index and find entry in Translation table.
+		// If none is found, then just quietly skip this hit.
+		csc_t csc = {hit->rocid, hit->slot, hit->channel};
+		map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
+		if(iter == TT.end()) continue;
+		const DChannelInfo &chaninfo = iter->second;
+
+		// Create the appropriate hit type based on detector type
+		switch(chaninfo.det_sys){
+			case BCAL     : vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal,      hit) ); break;
+			case FDC_WIRES: vfdcwire.push_back( MakeFDCWireDigiHit(chaninfo.fdc_wires, hit) ); break;
+			case SC       : vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal,      hit) ); break;
+			case TOF      : vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal,      hit) ); break;
+
+			default:  break;
+		}
+	}
+
+	// Sort object order (this makes it easier to browse with hd_dump)
+	sort(vbcal.begin(), vbcal.end(), SortBCALDigiHit);
+	
+	// Find factory for each container and copy the object pointers into it
+	// (n.b. do this even if container is empty since it sets the evnt_called flag)
+	CopyToFactory(loop, vbcal);
+	CopyToFactory(loop, vbcaltdc);
+	CopyToFactory(loop, vcdc);
+	CopyToFactory(loop, vfcal);
+	CopyToFactory(loop, vfdccathode);
+	CopyToFactory(loop, vfdcwire);
+	CopyToFactory(loop, vsc);
+	CopyToFactory(loop, vsctdc);
+	CopyToFactory(loop, vtof);
+	CopyToFactory(loop, vtoftdc);
+
 }
 
 //---------------------------------
-// MakeBCALHit
+// MakeBCALDigiHit
 //---------------------------------
-DBCALHit* DTranslationTable::MakeBCALHit(const BCALIndex_t &idx, const Df250PulseIntegral *hit, uint32_t t) const
+DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const
 {
-	DBCALHit *h = new DBCALHit();
+	DBCALDigiHit *h = new DBCALDigiHit();
+	CopyDf250Info(h, pi, pt);
+
 	h->module = idx.module;
-	h->layer = idx.layer;
+	h->layer  = idx.layer;
 	h->sector = idx.sector;
-	h->end = (DBCALGeometry::End)idx.end;
-	
-	h->E = (float)hit->integral;
-	h->t = (float)t;
-	
-	h->AddAssociatedObject(hit);
+	h->end    = (DBCALGeometry::End)idx.end;
+
 	return h;
 }
 
+//---------------------------------
+// MakeFCALDigiHit
+//---------------------------------
+DFCALDigiHit* DTranslationTable::MakeFCALDigiHit(const FCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const
+{
+	DFCALDigiHit *h = new DFCALDigiHit();
+	CopyDf250Info(h, pi, pt);
+
+	h->row    = idx.row;
+	h->column = idx.col;
+	
+	return h;
+}
+
+//---------------------------------
+// MakeTOFDigiHit
+//---------------------------------
+DTOFDigiHit* DTranslationTable::MakeTOFDigiHit(const TOFIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const
+{
+	DTOFDigiHit *h = new DTOFDigiHit();
+	CopyDf250Info(h, pi, pt);
+
+	h->plane = idx.plane;
+	h->bar   = idx.bar;
+	h->end   = idx.end;
+
+	return h;
+}
+
+//---------------------------------
+// MakeSCDigiHit
+//---------------------------------
+DSCDigiHit* DTranslationTable::MakeSCDigiHit(const SCIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const
+{
+	DSCDigiHit *h = new DSCDigiHit();
+	CopyDf250Info(h, pi, pt);
+
+	h->sector = idx.sector;
+
+	return h;
+}
+
+//---------------------------------
+// MakeCDCDigiHit
+//---------------------------------
+DCDCDigiHit* DTranslationTable::MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const
+{
+	DCDCDigiHit *h = new DCDCDigiHit();
+	CopyDf125Info(h, pi, pt);
+
+	h->ring = idx.ring;
+	h->straw = idx.straw;
+	
+	return h;
+}
+
+//---------------------------------
+// MakeFDCCathodeDigiHit
+//---------------------------------
+DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(const FDC_CathodesIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const
+{
+	DFDCCathodeDigiHit *h = new DFDCCathodeDigiHit();
+	CopyDf125Info(h, pi, pt);
+
+	h->package    = idx.package;
+	h->chamber    = idx.chamber;
+	h->view       = idx.view;
+	h->strip      = idx.strip;
+	h->strip_type = idx.strip_type;
+
+	return h;
+}
+
+//---------------------------------
+// MakeBCALTDCDigiHit
+//---------------------------------
+DBCALTDCDigiHit* DTranslationTable::MakeBCALTDCDigiHit(const BCALIndex_t &idx, const DF1TDCHit *hit) const
+{
+	DBCALTDCDigiHit *h = new DBCALTDCDigiHit();
+	CopyDF1TDCInfo(h, hit);
+
+	h->module = idx.module;
+	h->layer  = idx.layer;
+	h->sector = idx.sector;
+	h->end    = (DBCALGeometry::End)idx.end;
+
+	return h;
+}
+
+//---------------------------------
+// MakeFDCWireDigiHit
+//---------------------------------
+DFDCWireDigiHit* DTranslationTable::MakeFDCWireDigiHit(const FDC_WiresIndex_t &idx, const DF1TDCHit *hit) const
+{
+	DFDCWireDigiHit *h = new DFDCWireDigiHit();
+	CopyDF1TDCInfo(h, hit);
+
+	h->package = idx.package;
+	h->chamber = idx.chamber;
+	h->wire    = idx.wire;
+
+	return h;
+}
+
+//---------------------------------
+// MakeSCTDCDigiHit
+//---------------------------------
+DSCTDCDigiHit*  DTranslationTable::MakeSCTDCDigiHit(const SCIndex_t &idx, const DF1TDCHit *hit) const
+{
+	DSCTDCDigiHit *h = new DSCTDCDigiHit();
+	CopyDF1TDCInfo(h, hit);
+
+	h->sector = idx.sector;
+
+	return h;
+}
+
+//---------------------------------
+// MakeTOFTDCDigiHit
+//---------------------------------
+DTOFTDCDigiHit*  DTranslationTable::MakeTOFTDCDigiHit(const TOFIndex_t &idx, const DF1TDCHit *hit) const
+{
+	DTOFTDCDigiHit *h = new DTOFTDCDigiHit();
+	CopyDF1TDCInfo(h, hit);
+
+	h->plane = idx.plane;
+	h->bar   = idx.bar;
+	h->end   = idx.end;
+
+	return h;
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -389,8 +578,8 @@ void StartElement(void *userData, const char *xmlname, const char **atts) {
 			else if(tag == "wire"     ) wire      = ival;
 			else if(tag == "id"       ) id        = ival;
 			else if(tag == "end"      ){
-				if(     sval == "U"  ) end = DBCALGeometry::kUpstream;
-				else if(sval == "D"  ) end = DBCALGeometry::kDownstream;
+				if(     sval == "U"  ) {end = DBCALGeometry::kUpstream;   view=1;}
+				else if(sval == "D"  ) {end = DBCALGeometry::kDownstream; view=3;}
 				else if(sval == "N"  ) end = 0; // TOF north
 				else if(sval == "S"  ) end = 1; // TOF south
 				else if(sval == "UP" ) end = 0; // TOF up
