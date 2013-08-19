@@ -25,14 +25,14 @@
 #include <evioFileChannel.hxx>
 #include <evioUtil.hxx>
 
-
-#include "FCAL/DFCALHit.h"
-#include "BCAL/DBCALHit.h"
-#include "TOF/DTOFRawHit.h"
-#include "CDC/DCDCHit.h"
-#include "FDC/DFDCHit.h"
-#include "START_COUNTER/DSCHit.h"
-#include "TAGGER/DTagger.h"
+#include <BCAL/DBCALHit.h>
+#include <BCAL/DBCALTDCHit.h>
+#include <CDC/DCDCHit.h>
+#include <FCAL/DFCALHit.h>
+#include <FDC/DFDCHit.h>
+#include <START_COUNTER/DSCHit.h>
+#include <TOF/DTOFHit.h>
+#include <TAGGER/DTagger.h>
 
 
 using namespace std;
@@ -76,8 +76,8 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
 
                 // these routines access the translation tables
-                cscRef DTOFRawHitTranslationADC(const DTOFRawHit* hit) const;
-                cscRef DTOFRawHitTranslationTDC(const DTOFRawHit* hit) const;
+                cscRef DTOFHitTranslationADC(const DTOFHit* hit) const;
+                cscRef DTOFHitTranslationTDC(const DTOFHit* hit) const;
 
                 cscRef DBCALHitTranslationADC(const DBCALHit* hit) const;
                 cscRef DBCALHitTranslationTDC(const DBCALHit* hit) const;

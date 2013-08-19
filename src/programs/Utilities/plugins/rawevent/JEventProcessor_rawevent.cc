@@ -118,7 +118,7 @@ static cscRef CSCREF_NULL = CDCBAL_NULL;
 
 // detector map (inverse of csc map) is 3-dimensional array of strings with indices (crate,slot,channel)
 //  content is detector-dependent encoded string
-#define MAXDCRATE   72+1
+#define MAXDCRATE   78+1
 #define MAXDSLOT    21+1
 #define MAXDCHANNEL 72+1
 static string detectorMap[MAXDCRATE][MAXDSLOT][MAXDCHANNEL];
@@ -344,13 +344,13 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 //----------------------------------------------------------------------------
 
 
-  static bool compareDTOFRawHits(const DTOFRawHit* h1, const DTOFRawHit* h2) {
+  static bool compareDTOFHits(const DTOFHit* h1, const DTOFHit* h2) {
     if(h1->plane!=h2->plane) {
       return(h1->plane<h2->plane);
     } else if(h1->bar!=h2->bar) {
       return(h1->bar<h2->bar);
-    } else if(h1->lr!=h2->lr) {
-      return(h1->lr<h2->lr);
+    } else if(h1->end!=h2->end) {
+      return(h1->end<h2->end);
     } else {
       return(h1->t<h2->t);
     }
@@ -527,10 +527,10 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   }
 
 
-  // DTOFRawHit - FADC250 and F1TDC32 (60 ps)
-  vector<const DTOFRawHit*> dtofrawhits; 
+  // DTOFHit - FADC250 and F1TDC32 (60 ps)
+  vector<const DTOFHit*> dtofrawhits; 
   eventLoop->Get(dtofrawhits);
-  sort(dtofrawhits.begin(),dtofrawhits.end(),compareDTOFRawHits);
+  sort(dtofrawhits.begin(),dtofrawhits.end(),compareDTOFHits);
 
   hc=0;
   for(i=0; i<dtofrawhits.size(); i++) {
@@ -545,7 +545,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hc++;
       hitCount++;
       nhits=1;
-      cscRef cscADC      = DTOFRawHitTranslationADC(dtofrawhits[i]);
+      cscRef cscADC      = DTOFHitTranslationADC(dtofrawhits[i]);
       hit[0].hit_id      = hitCount;
       hit[0].det_id      = detID;
       hit[0].crate_id    = cscADC.crate;
@@ -562,7 +562,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       if(dumphits>1) {
         jout << endl;
         jout << " TOF ADC plane,bar,lr are " << dtofrawhits[i]->plane << ", " << dtofrawhits[i]->bar 
-             << ", " << dtofrawhits[i]->lr << endl;
+             << ", " << dtofrawhits[i]->end << endl;
         jout << " c,s,c are " << cscADC.crate << ", " << cscADC.slot << ", " << cscADC.channel << endl;
         jout << " hdata is: " << hit[0].hdata[0] << ", " << hit[0].hdata[1] << endl;
         jout << " E,t are " << E << ", " << t << endl;
@@ -579,7 +579,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
       hitCount++;
       nhits=1;
-      cscRef cscTDC      = DTOFRawHitTranslationTDC(dtofrawhits[i]);
+      cscRef cscTDC      = DTOFHitTranslationTDC(dtofrawhits[i]);
       hit[0].hit_id      = hitCount;
       hit[0].det_id      = detID;
       hit[0].crate_id    = cscTDC.crate;
@@ -594,7 +594,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       if(dumphits>1) {
         jout << endl;
         jout << " TOF TDC plane,bar,lr are " << dtofrawhits[i]->plane << ", " << dtofrawhits[i]->bar 
-             << ", " << dtofrawhits[i]->lr << endl;
+             << ", " << dtofrawhits[i]->end << endl;
         jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
         jout << " hdata is: " << hit[0].hdata[0] << endl;
         jout << " E,t are " << E << ", " << t << endl;
@@ -1359,6 +1359,8 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
         s = "sttdc::";
       } else if (type=="fadc250") {
         s = "stadc::";
+      } else if (type=="iseg") {
+		s = "stiseg::"; // this just here to prevent warning message below
       } else {
         s = "unknownST::";
         jerr << endl << endl << "?startElement...illegal type for ST: " << Type << endl << endl;
@@ -1513,12 +1515,12 @@ void JEventProcessor_rawevent::endElement(void *userData, const char *xmlname) {
 //--------------------------------------------------------------------------
 
 
-cscRef JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit) const {
+cscRef JEventProcessor_rawevent::DTOFHitTranslationADC(const DTOFHit* hit) const {
   string end;
   if(hit->plane == 0){
-    end = (hit->lr==0 ? "UP":"DW");
+    end = (hit->end==0 ? "UP":"DW");
   }else{
-    end = (hit->lr==0 ? "N":"S");
+    end = (hit->end==0 ? "N":"S");
   }
   string s = "tofadc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
     + ":" + end;
@@ -1530,12 +1532,12 @@ cscRef JEventProcessor_rawevent::DTOFRawHitTranslationADC(const DTOFRawHit* hit)
 //----------------------------------------------------------------------------
 
 
-cscRef JEventProcessor_rawevent::DTOFRawHitTranslationTDC(const DTOFRawHit* hit) const {
+cscRef JEventProcessor_rawevent::DTOFHitTranslationTDC(const DTOFHit* hit) const {
   string end;
   if(hit->plane == 0){
-    end = (hit->lr==0 ? "UP":"DW");
+    end = (hit->end==0 ? "UP":"DW");
   }else{
-    end = (hit->lr==0 ? "N":"S");
+    end = (hit->end==0 ? "N":"S");
   }
   string s = "toftdc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
     + ":" + end;
@@ -1577,7 +1579,7 @@ cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) con
 cscRef JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) const {
   // HDGeant numbers row and column 0 to 58 while translation table has -29 to 29.
   // Shift value here to be consistent with translation table.
-  string s = "fcaladc::" + lexical_cast<string>(hit->row-29) + ":" + lexical_cast<string>(hit->column-29);
+  string s = "fcaladc::" + lexical_cast<string>(hit->row) + ":" + lexical_cast<string>(hit->column);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
