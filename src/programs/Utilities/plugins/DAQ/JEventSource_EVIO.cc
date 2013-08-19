@@ -275,30 +275,19 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// factories. Subsequent requests for objects for this same
 	// event will get them from the factories. Thus, this should
 	// only get called once per event.
+	// O.K. that is not actually true. If objects of a type we don't
+	// supply are requested, then the corresponding factory's evnt_called
+	// flag will not have been set and it will come here first to see
+	// if the source can supply those objects. In those cases, we should
+	// just return OBJECT_NOT_AVAILABLE so it can revert to the factory
+	// algorithm. We use the "own_objects" flag here to test if we have
+	// already copied the low-level objects to the factories and so
+	// should return right away.
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(!objs_ptr)return RESOURCE_UNAVAILABLE;
+	if(!objs_ptr->own_objects) return OBJECT_NOT_AVAILABLE; // if objects were already copied ...
 	
-	// Copy objects into factories
-	// -----------------------------
-	// We do a little trickiness here with a #define to condense what would
-	// otherwise be few lines for each data type containing 8 instances
-	// of the same string. Each CopyToFactory(X) line below will expand to a declaration
-	// of a variable named fac_X that is set to point to a factory and then a
-	// call to that factory's CopyTo method. In addition, it checks if the requested
-	// data type (dataClassName) happens to be the type passed in as the
-	// argument to CopyToFactory. If it is, then the err variable is set to
-	// NOERROR to indicate that the requested type is one that we can supply.
-	//
-	// Each expanded line would look something like the following:
-	//
-	// JFactory<Df250PulseIntegral> *fac_Df250PulseIntegral = (JFactory<Df250PulseIntegral>*)loop->GetFactory("Df250PulseIntegral");
-	// if(fac_Df250PulseIntegral)fac_Df250PulseIntegral->CopyTo(objs.vDf250PulseIntegrals);
-	// if(dataClassName == "Df250PulseIntegral")err = NOERROR;
-	//
-	// This may seem complicated, but it allows the code to be much more compact
-	// and new data classes to be added easily with the relevant string appearing
-	// only once rather than 8 times.
-	//
+	// Get name of class which is actually being requested by caller
 	JEventLoop *loop = event.GetJEventLoop();
 	string dataClassName = (factory==NULL ? "N/A":factory->GetDataClassName());
 	
