@@ -80,12 +80,15 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	// Create list of data types this event source can provide
 	// (must match what is returned by JObject::className() )
 	event_source_data_types.insert("Df250PulseIntegral");
-	event_source_data_types.insert("Df250PulseRawData");
-	event_source_data_types.insert("Df250PulseTime");
 	event_source_data_types.insert("Df250StreamingRawData");
-	event_source_data_types.insert("Df250TriggerTime");
-	event_source_data_types.insert("Df250WindowRawData");
 	event_source_data_types.insert("Df250WindowSum");
+	event_source_data_types.insert("Df250PulseRawData");
+	event_source_data_types.insert("Df250TriggerTime");
+	event_source_data_types.insert("Df250PulseTime");
+	event_source_data_types.insert("Df250WindowRawData");
+	event_source_data_types.insert("Df125PulseIntegral");
+	event_source_data_types.insert("Df125TriggerTime");
+	event_source_data_types.insert("Df125PulseTime");
 	event_source_data_types.insert("DF1TDCHit");
 	event_source_data_types.insert("DF1TDCTriggerTime");
 	
@@ -324,6 +327,19 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	jerror_t err = OBJECT_NOT_AVAILABLE;
 	if(event_source_data_types.find(dataClassName) != event_source_data_types.end()) err = NOERROR;
 	
+	// If it turns out there are no objects of one of the types we supply
+	// then the CopyTo method for that factory never gets called and subsequent
+	// requests for that object type will end up calling this method again.
+	// (For the case when this is done from the ApplyTranslationTable call
+	// below, it results in an infinite loop!). To prevent this, we need to
+	// mark all factories of the data types we supply as having had their
+	// evnt method called.
+	set<string>::iterator dtiter = event_source_data_types.begin();
+	for(; dtiter!=event_source_data_types.end(); dtiter++){
+		JFactory_base *fac = loop->GetFactory(*dtiter);
+		if(fac) fac->Set_evnt_called();
+	}
+	
 	// If a translation table object is available, use it to create
 	// detector hits from the low-level DAQ objects we just created.
 	// Note that we have to use the GetFromFactory() method here since
@@ -429,9 +445,12 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 		events2.pop_front();
 		
 		objs1->hit_objs.insert(objs1->hit_objs.end(), objs2->hit_objs.begin(), objs2->hit_objs.end());
+		
+		// Delete the objs2 container
+		delete objs2;
 	}
 	
-	// Clear out any references to objects in event2
+	// Clear out any references to objects in event2 (this should be redundant)
 	events2.clear(); // clear queue
 }
 
