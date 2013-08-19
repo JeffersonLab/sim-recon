@@ -19,9 +19,10 @@ class Df125PulseIntegral:public DDAQAddress{
 	public:
 		JOBJECT_PUBLIC(Df125PulseIntegral);
 
-		Df125PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t integral=0):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),integral(integral){}
+		Df125PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t integral=0):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),integral(integral){}
 		
 		uint32_t pulse_number;         // from Pulse Integral Data word
+		uint32_t quality_factor;       // from Pulse Integral Data word
 		uint32_t integral;             // from Pulse Integral Data word
 		
 		// This method is used primarily for pretty printing
@@ -29,6 +30,7 @@ class Df125PulseIntegral:public DDAQAddress{
 		void toStrings(vector<pair<string,string> > &items)const{
 			DDAQAddress::toStrings(items);
 			AddString(items, "pulse_number", "%d", pulse_number);
+			AddString(items, "quality_factor", "%d", quality_factor);
 			AddString(items, "integral", "%d", integral);
 		}
 };
