@@ -14,6 +14,11 @@
 using namespace jana;
 using namespace std;
 
+// Use one translation table for all threads
+static pthread_mutex_t tt_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool tt_initialized = false;
+static map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo> TT;
+
 //...................................
 // Less than operator for csc_t data types. This is used by
 // the map<csc_t, XX> to order the entires by key
@@ -373,7 +378,14 @@ static void EndElement(void *userData, const char *xmlname);
 //---------------------------------
 void DTranslationTable::ReadTranslationTable(void)
 {
-	
+	// It seems expat is not thread safe so we lock a mutex here and
+	// read in the translation table just once
+	pthread_mutex_lock(&tt_mutex);
+	if(tt_initialized){
+		pthread_mutex_unlock(&tt_mutex);
+		return;
+	}
+
 	string translationTableName = "tt.xml";
 	jout << "Reading translation table " << translationTableName << endl;
 	
@@ -415,6 +427,10 @@ void DTranslationTable::ReadTranslationTable(void)
 		jerr << "  ?readTranslationTable...unable to open " << translationTableName << endl;
 	}
 	XML_ParserFree(xmlParser);
+
+	pthread_mutex_unlock(&tt_mutex);
+	tt_initialized = true;
+
 }
 
 //---------------------------------
@@ -483,7 +499,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts) {
 	static int crate=0, slot=0;
 	
 	static string type,Type;
-	int mc2codaType;
+	int mc2codaType= 0;
 	int channel = 0;
 	string Detector;
 	int end;
@@ -528,26 +544,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts) {
 		// (e.g. CAEN1290) should have their own unique detID. We use detID of
 		// zero for non-digitizing modules like CPUs nd TIDs even though potentially,
 		// one could read data from these.
-		mc2codaType = ModuleStr2ModID(type);
-//		if(mc2codaType!=DModuleType::UNKNOWN) {
-//			nModules[nCrate-1]++;
-//			modules[nCrate-1][slot-1] = mc2codaType;
-//			switch(mc2codaType){
-//				case FADC250:
-//				case FADC125:
-//				case F1TDC32:
-//				case F1TDC48:
-//					detID[nCrate-1][slot-1]   = 1;
-//					break;
-//				case CAEN1190:
-//				case CAEN1290:
-//					detID[nCrate-1][slot-1]   = 2;
-//					break;
-//				default:
-//					detID[nCrate-1][slot-1]   = 0;
-//			}
-//		}
-		
+		mc2codaType = ModuleStr2ModID(type);		
 		
 	} else if(strcasecmp(xmlname,"channel")==0) {
 		
@@ -592,52 +589,6 @@ void StartElement(void *userData, const char *xmlname, const char **atts) {
 			}
 
 
-//		
-//			if(strcasecmp(atts[i],"number")==0) {
-//				channel = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"detector")==0) {
-//				Detector = string(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"row")==0) {
-//				row = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"column")==0) {
-//				column = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"col")==0) {
-//				column = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"module")==0) {
-//				module = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"sector")==0) {
-//				sector = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"layer")==0) {
-//				layer = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"end")==0) {
-//				end = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"chan")==0) {
-//				chan = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"ring")==0) {
-//				ring = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"straw")==0) {
-//				straw = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"gPlane")==0) {
-//				gPlane = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"element")==0) {
-//				element = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"plane")==0) {
-//				plane = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"bar")==0) {
-//				bar = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"package")==0) {
-//				package = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"chamber")==0) {
-//				chamber = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"view")==0) {
-//				view = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"strip")==0) {
-//				strip = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"wire")==0) {
-//				wire = atoi(atts[i+1]);
-//			} else if(strcasecmp(atts[i],"id")==0) {
-//				id = atoi(atts[i+1]);
-//			}
 		}
 		
 		// ignore certain module types
@@ -724,166 +675,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts) {
 			case DTranslationTable::UNKNOWN_DETECTOR:
 				break;
 		}
-		
-//		if(detector=="fcal") {
-//			if(type!="fadc250") _DBG_ << "?startElement...illegal type for " << detector << ": " << Type << endl;
-//
-//			ci.module_type = mc2codaType;
-//			ci.det_sys = DTranslationTable.FCAL;
-//			ci.fcal.row = row;
-//			ci.fcal.col = column;
-//			
-//		} else if(detector=="bcal") {
-//			if(type=="f1tdcv2") {
-//				s = "bcaltdc::";
-//			} else if (type=="fadc250") {
-//				s = "bcaladc::";
-//			} else {
-//				s = "unknownBCAL::";
-//				jerr << endl << endl << "?startElement...illegal type for BCAL: " << Type << " ("<<type<<")" << endl << endl;
-//			}
-//			s += module + ":" + sector + ":" + layer + ":" + end;
-//			cscMap[s] = csc;
-//			if(type!="fadc250") _DBG_ << "?startElement...illegal type for " << detector << ": " << Type << endl;
-//			
-//			DChannelInfo &ci = TT[csc];
-//			ci.CSC = csc;
-//			ci.module_type = mc2codaType;
-//			ci.det_sys = DTranslationTable.FCAL;
-//			ci.fcal.row = row;
-//			ci.fcal.col = column;
-//			
-//			
-//		} else if(detector=="cdc") {
-//			if(type=="fadc125") {
-//				s = "cdcadc::";
-//			} else {
-//				s = "unknownCDC::";
-//				jerr << endl << endl << "?startElement...illegal type for CDC: " << Type << endl << endl;
-//			}
-//			s += ring + ":" + straw;
-//			cscMap[s] = csc;
-//			
-//			
-//		} else if(detector=="st") {
-//			if(type=="f1tdcv2") {
-//				s = "sttdc::";
-//			} else if (type=="fadc250") {
-//				s = "stadc::";
-//			} else {
-//				s = "unknownST::";
-//				jerr << endl << endl << "?startElement...illegal type for ST: " << Type << endl << endl;
-//			}
-//			s += sector;
-//			cscMap[s] = csc;
-//			
-//			
-//		} else if(detector=="fdc_cathodes") {
-//			int ipackage = atoi(package.c_str());
-//			int ichamber = atoi(chamber.c_str());
-//			int igPlane = 1 + (ipackage-1)*6*3 + (ichamber-1)*3 + (view=="U" ? 0:2);
-//			stringstream ss;
-//			ss<<igPlane;
-//			gPlane = ss.str();
-//			if(type=="fadc125") {
-//				s = "fdccathode::";
-//			} else {
-//				s = "unknownFDCCathode::";
-//				jerr << endl << endl << "?startElement...illegal type for FDC Cathode: " << Type << endl << endl;
-//			}
-//			s += gPlane + ":" + strip;
-//			cscMap[s] = csc;
-//			
-//			
-//		} else if(detector=="fdc_wires") {
-//			int ipackage = atoi(package.c_str());
-//			int ichamber = atoi(chamber.c_str());
-//			int igPlane = 2 + (ipackage-1)*6*3 + (ichamber-1)*3;
-//			stringstream ss;
-//			ss<<igPlane;
-//			gPlane = ss.str();
-//			if(type=="f1tdcv3") {
-//				s = "fdcanode::";
-//			} else {
-//				s = "unknownFDCAnode::";
-//				jerr << endl << endl << "?startElement...illegal type for FDC Anode: " << Type << endl << endl;
-//			}
-//			s += gPlane + ":" + wire;
-//			cscMap[s] = csc;
-//			
-//			
-//		} else if(detector=="tof") {
-//			if(type=="vx1290a") {
-//				s = "toftdc::";
-//			} else if (type=="fadc250") {
-//				s = "tofadc::";
-//			} else {
-//				s = "unknownTOF::";
-//				jerr << endl << endl << "?startElement...illegal type for TOF: " << Type << endl << endl;
-//			}
-//			s += plane + ":" + bar + ":" + end;
-//			cscMap[s] = csc;
-//			
-//			
-//		} else if(detector=="tagh") {
-//			if(type=="f1tdcv2") {
-//				s = "taghtdc::";
-//			}else if (type=="fadc250") {
-//				s = "taghadc::";
-//			} else {
-//				s = "unknownTagger::";
-//				jerr << endl << endl << "?startElement...illegal type for TAGH: " << Type << endl << endl;
-//			}
-//			s += row + ":" + column;
-//			cscMap[s] = csc;
-//			
-//		} else if(detector=="tagm") {
-//			if(type=="f1tdcv2") {
-//				s = "tagmtdc::";
-//			} else if (type=="fadc250") {
-//				s = "tagmadc::";
-//			} else {
-//				s = "unknownTagger::";
-//				jerr << endl << endl << "?startElement...illegal type for TAGM: " << Type << endl << endl;
-//			}
-//			s += row + ":" + column;
-//			cscMap[s] = csc;
-//			
-//			
-//		} else if(detector=="psc") {
-//			if(type=="f1tdcv2") {
-//				s = "psctdc::";
-//			} else if (type=="fadc250") {
-//				s = "pscadc::";
-//			} else {
-//				s = "unknownPSC::";
-//				jerr << endl << endl << "?startElement...illegal type for PSC: " << Type << endl << endl;
-//			}
-//			s += row + ":" + column;
-//			cscMap[s] = csc;
-//			
-//		} else if(detector=="ps") {
-//			if (type=="fadc250") {
-//				s = "psadc::";
-//			} else {
-//				s = "unknownPS::";
-//				jerr << endl << endl << "?startElement...illegal type for PS: " << Type << endl << endl;
-//			}
-//			s += row + ":" + column;
-//			cscMap[s] = csc;
-//			
-//			
-//		} else {
-//			jerr << endl << endl << "?startElement...unknown detector " << Detector << endl << endl;
-//		}
-//		
-//		
-//		
-//		// fill detector map, index is crate,slot,channel
-//		detectorMap[crate][slot][channel] = s;
-//		
-//		
-//		
+
 	} else {
 		jerr << endl << endl << "?startElement...unknown xml tag " << xmlname << endl << endl;
 	}

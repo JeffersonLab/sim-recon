@@ -170,7 +170,7 @@ class DTranslationTable:public jana::JObject{
 		};
 		
 		// Full translation table is collection of DChannelInfo objects
-		map<csc_t, DChannelInfo> TT;
+		//map<csc_t, DChannelInfo> TT;
 		
 		// Methods
 		bool IsSuppliedType(string dataClassName) const;
