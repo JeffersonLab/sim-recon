@@ -176,7 +176,7 @@ void InitPlugin(JApplication *app){
 //----------------------------------------------------------------------------
 
 // Comparison operator for testing if two cscRefs are equal
-bool operator==(cscRef &a, cscRef &b){
+bool operator==(cscRef a, cscRef b){
 	if(a.channel != b.channel) return false;
 	if(a.slot != b.slot) return false;
 	return a.crate == b.crate;
