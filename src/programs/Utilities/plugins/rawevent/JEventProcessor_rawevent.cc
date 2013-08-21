@@ -142,8 +142,8 @@ static int detID[MAXCRATE][MAXSLOT];
 
 
 // misc
-static uint64_t trigTime     = 32000000;  // in picoseconds
-static float tMin            = -100000.;  // minimum hit time in picoseconds
+static uint64_t trigTime     = 32000000;    // in picoseconds
+static float tMin            = -100000.;    // minimum hit time in picoseconds
 
 static int trigtick          = 4000;    // in picoseconds
 static int CAENTDCtick       = 25;      // in picoseconds
@@ -470,6 +470,15 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   // get all raw hit data, sort according to id and time order before feeding to mc2coda package
   // scale data appropriately to minimize loss of precision by using full available bit range
 
+  // FADC125   pulse integral = 17 bits or about 1.3E5
+  //           pulse_time     = 14 bits or about 1.6E4
+  //
+  // FADC250   pulse_integral = 19 bits or about 5.2E5
+  //           pulse_time     = 16 bits or about 6.5E4
+  //
+  // F21TDC    time           = 7.8 us for 120ps resolution
+  //                          = 3.9 us for  60ps resolution
+
 
   // DCDCHit - FADC125
   vector<const DCDCHit*> dcdchits; 
@@ -480,8 +489,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dcdchits.size(); i++) {
     if((dcdchits[i]->q>0)&&((dcdchits[i]->t*1000.)>tMin)&&(dcdchits[i]->t*1000.<trigTime)) {
 
-      uint32_t q     = dcdchits[i]->q;            // in femtoCoulombs
-      uint32_t t     = dcdchits[i]->t*1000.-tMin;  // in picoseconds
+      uint32_t q     = dcdchits[i]->q * (1.3E5/1.0E6); // q is in femtoCoulombs (max is ~1E6) 
+      uint32_t t     = dcdchits[i]->t*1000.0 -tMin;    // t is in nanoseconds (max is ~900ns)
       
       if(noroot==0)cdcCharges->Fill(dcdchits[i]->q);
       if(noroot==0)cdcTimes->Fill(dcdchits[i]->t-tMin/1000);
@@ -500,7 +509,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_mode = FADC125_MODE_IP;
       hit[0].nwords      = 2;
       hit[0].hdata       = mcData;
-      hit[0].hdata[0]    = q;  // in fC
+      hit[0].hdata[0]    = q;  // in fADC counts
       hit[0].hdata[1]    = t/FADC125tick;
       //if(q>0x7ffff)cerr << "q too large for CDC: " << q << endl;
       
@@ -536,7 +545,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dtofrawhits.size(); i++) {
     if((dtofrawhits[i]->dE>0)&&((dtofrawhits[i]->t*1000.)>tMin)&&(dtofrawhits[i]->t*1000.<trigTime)) {
 
-      uint32_t E  = dtofrawhits[i]->dE*1000000.;   // in keV (from GeV)
+      uint32_t E  = dtofrawhits[i]->dE*(5.2E5/0.1);   // E is GeV (max ~0.1)
       uint32_t t  = dtofrawhits[i]->t*1000.-tMin;  // in picoseconds
     
       if(noroot==0)tofEnergies->Fill(dtofrawhits[i]->dE*1000000.);
@@ -555,7 +564,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
       hit[0].hdata       = mcData;
-      hit[0].hdata[0]    = E;  // in keV
+      hit[0].hdata[0]    = E;  // in fADC counts
       hit[0].hdata[1]    = t/FADC250tick;
       if(E>0x7ffff)cerr << "E too large for TOF: " << E << endl;
       
@@ -624,7 +633,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dbcalhits.size(); i++) {
     if((dbcalhits[i]->E>0)&&((dbcalhits[i]->t*1000.)>tMin)&&(dbcalhits[i]->t*1000.<trigTime)) {
 
-      uint32_t E     = dbcalhits[i]->E*1000.;       // in keV (original apparently in MeV ???)
+      uint32_t E     = dbcalhits[i]->E*(1.0);  // (original already in fADC counts) (max ~2.5E4)
       uint32_t t     = dbcalhits[i]->t*1000.-tMin;  // in picoseconds
 
       if(noroot==0)bcalEnergies->Fill(dbcalhits[i]->E*1000.);
@@ -644,7 +653,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
       hit[0].hdata       = mcData;
-      hit[0].hdata[0]    = E/10;  // in 10 keV units
+      hit[0].hdata[0]    = E;
       hit[0].hdata[1]    = t/FADC250tick;
       if(E/10>0x7ffff)cerr << "E too large for BCAL: " << E << endl;
       
@@ -716,7 +725,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dfcalhits.size(); i++) {
     if((dfcalhits[i]->E>0)&&((dfcalhits[i]->t*1000.)>tMin)&&(dfcalhits[i]->t*1000.<trigTime)) {
 
-      uint32_t E     = dfcalhits[i]->E*1000.;       // in MeV (from GeV)
+      uint32_t E     = dfcalhits[i]->E*(2.5E5/4.0E1);  // E in GeV (max ~4)
       uint32_t t     = dfcalhits[i]->t*1000.-tMin;  // in picoseconds
     
       if(noroot==0)fcalEnergies->Fill(dfcalhits[i]->E*1000000.);
@@ -735,7 +744,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
       hit[0].hdata       = mcData;
-      hit[0].hdata[0]    = E/10;  // in 10 MeV units
+      hit[0].hdata[0]    = E; 
       hit[0].hdata[1]    = t/FADC250tick;
       if(E/10>0x7ffff)cerr << "E too large for FCAL: " << E << endl;
       
@@ -771,7 +780,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dfdchits.size(); i++) {
     if((dfdchits[i]->q>0)&&((dfdchits[i]->t*1000.)>tMin)&&(dfdchits[i]->t*1000.<trigTime)) {
 
-      uint32_t q      = dfdchits[i]->q;            // in femtoCoulombs
+      uint32_t q      = dfdchits[i]->q*(1.3E5/1.5E-4); // for wires
+		if(dfdchits[i]->type==1) q = dfdchits[i]->q*(1.3E5/1.2E4); // for cathodes
       uint32_t t      = dfdchits[i]->t*1000.-tMin; // in picoseconds
       
       if(noroot==0)fdcCharges->Fill(dfdchits[i]->q);
@@ -794,7 +804,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
         hit[0].module_mode = FADC125_MODE_IP;
         hit[0].nwords      = 2;
         hit[0].hdata       = mcData;
-        hit[0].hdata[0]    = q;  // in fC
+        hit[0].hdata[0]    = q; 
         hit[0].hdata[1]    = t/FADC125tick;
         if(q>0x7ffff)cerr << "q too large for FDC: " << q << endl;
         
@@ -866,7 +876,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dsthits.size(); i++) {
     if((dsthits[i]->dE>0)&&((dsthits[i]->t*1000.)>tMin)&&(dsthits[i]->t*1000.<trigTime)) {
 
-      uint32_t E     = dsthits[i]->dE*1000000.;   // in keV (from GeV)
+      uint32_t E     = dsthits[i]->dE*(5.2E-5/2.0E-2);   // dE in GeV (max ~2E-2)
       uint32_t t     = dsthits[i]->t*1000.-tMin;  // in picoseconds
 
       if(noroot==0)stEnergies->Fill(dsthits[i]->dE*1000000.);
@@ -885,7 +895,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].module_mode = FADC250_MODE_IP;
       hit[0].nwords      = 2;
       hit[0].hdata       = mcData;
-      hit[0].hdata[0]    = E;  // in keV
+      hit[0].hdata[0]    = E; 
       hit[0].hdata[1]    = t/FADC250tick;
       if(E>0x7ffff)cerr << "E too large for ST: " << E << endl;
       
