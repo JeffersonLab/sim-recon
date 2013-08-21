@@ -359,27 +359,37 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 {
 	// Look through event to try and extract the run number.
-	// For now, it just looks for tag==0x11 and num=0xCC which
-	// is the CODA 2 style of event header
+	// We do this by looking for all uint64_t nodes. Then
+	// check for a parent with one of the magic values for
+	// the tag indicating it has run number information.
 
 	if(!evt) return last_run_number;
 
-	evioDOMNodeListP bankList = evt->getNodeList();
+	evioDOMNodeListP bankList = evt->getNodeList(typeIs<uint64_t>());
 	evioDOMNodeList::iterator iter = bankList->begin();
+	const uint64_t *run_number_and_type = NULL;
 	for(; iter!=bankList->end(); iter++){
-		
 		evioDOMNodeP bankPtr = *iter;
-		
-		// CODA 2 tag/num
-		if( bankPtr->tag != 0x11 ) continue;
-		if( bankPtr->num != 0xCC ) continue;
-		if( bankPtr->getSize() != 3) continue;
-		
-		vector<int32_t> *v = bankPtr->getVector<int32_t>();
-		last_run_number = (*v)[1];
-		break;
+		evioDOMNodeP physics_event_built_trigger_bank = bankPtr->getParent();
+		if(physics_event_built_trigger_bank == NULL) continue;
+		uint32_t tag = physics_event_built_trigger_bank->tag;
+		const vector<uint64_t> *vec;
+		switch(tag){
+			case 0xFF22:
+			case 0xFF23:
+			case 0xFF26:
+			case 0xFF27:
+				vec = bankPtr->getVector<uint64_t>();
+				if(!vec) continue;
+				if(vec->size()<1) continue;
+				run_number_and_type = &((*vec)[vec->size()-1]);
+				break;
+		}
+		if(run_number_and_type != NULL) break;
 	}
-	
+
+	if(run_number_and_type != NULL) last_run_number = (*run_number_and_type)>>32;
+
 	return last_run_number;
 }
 
@@ -635,7 +645,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 	ObjList *objs = NULL;
 	
 	// From the Block Header
-	uint32_t slot;
+	uint32_t slot=0;
 	uint32_t Nblock_events;
 	uint32_t iblock;
 
@@ -915,7 +925,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 	ObjList *objs = NULL;
 	
 	// From the Block Header
-	uint32_t slot;
+	uint32_t slot=0;
 	uint32_t Nblock_events;
 	uint32_t iblock;
 
@@ -943,7 +953,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t sum = 0;
 		uint32_t pulse_number = 0;
 		uint32_t pulse_time = 0;
-		bool overflow = false;
+		//bool overflow = false;
 
 		bool found_block_trailer = false;
 		uint32_t data_type = (*iptr>>27) & 0x0F;
@@ -1173,8 +1183,8 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 	}
 
 	uint32_t slot_block_header    = (*iptr)>>22 & 0x001F;
-	uint32_t module_type          = (*iptr)>>18 & 0x000F;
-	uint32_t block_number         = (*iptr)>> 8 & 0x03FF;
+	//uint32_t module_type          = (*iptr)>>18 & 0x000F;
+	//uint32_t block_number         = (*iptr)>> 8 & 0x03FF;
 	uint32_t Nevents_block_header = (*iptr)>> 0 & 0x000F;
 
 	// Advance to next word
