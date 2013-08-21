@@ -21,13 +21,19 @@ int mc2coda_maxevsize = 0;
 /* Local variables */
 static int mc2coda_ncrates_defined = 0;
 static unsigned int *dabufp, *StartOfRocBank;
-
+static unsigned int RUN_NUMBER = 1;
 
 
 /* Include module specific definitions */
 #include "mc2coda_modules.h"
 
 
+/* Allow user to set the run number (added 8/21/2013 DL)*/
+void
+mc2codaSetRunNumber(unsigned int run_number)
+{
+	RUN_NUMBER = run_number;
+}
 
 /* Initialize the Crate/Module maps for crates in the system
  Must be called prior to calling the mc2coda event packer.
@@ -199,24 +205,30 @@ mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, uns
 	
 	/* Populate the Event header and trigger Bank */
 	if(has_tt) {
-		evbuf[0]  =         10;
+		/* Event header if we have a trigger time */
+		evbuf[0]  =         12;
 		evbuf[1]  = 0xff511001;
-		evbuf[2]  =          8;
-		evbuf[3]  = 0xff212000 | ((expID->ncrates)&0xff);
-		evbuf[4]  = 0x010a0004;
+		evbuf[2]  =         10;
+		evbuf[3]  = 0xff232000 | ((expID->ncrates)&0xff); /* changed from ff21 to include run number 8/21/2013 DL */
+		evbuf[4]  = 0x010a0006;  /* segment of 64 bit uints */
 		memcpy((char *)&evbuf[5],(char *)&eventNum,8);
 		memcpy((char *)&evbuf[7],(char *)&trigTime,8);
-		evbuf[9]  = 0x01050001;
-		evbuf[10] = (eventType);
+		evbuf[ 9] = 0x01;       /* run type */
+		evbuf[10] = RUN_NUMBER; /* This goes into high 32 bits which seems backwards ?? */
+		evbuf[11] = 0x01050001; /* segment of shorts header with 1 value */
+		evbuf[12] = (eventType);
 	}else{
-		evbuf[0]  =          8;
+		/* Event header if we don't have a trigger time */
+		evbuf[0]  =         10;
 		evbuf[1]  = 0xff501001;
-		evbuf[2]  =          6;
-		evbuf[3]  = 0xff202000 | ((expID->ncrates)&0xff);
-		evbuf[4]  = 0x010a0004;
+		evbuf[2]  =          8;
+		evbuf[3]  = 0xff222000 | ((expID->ncrates)&0xff); /* changed from ff20 to include run number 8/21/2013 DL */
+		evbuf[4]  = 0x010a0004; /* segment of 64 bit uints */
 		memcpy((char *)&evbuf[5],(char *)&eventNum,8);
-		evbuf[7]  = 0x01050001;
-		evbuf[8] = (eventType);
+		evbuf[7]  = 0x01;       /* run type */
+		evbuf[8]  = RUN_NUMBER; /* This goes into high 32 bits which seems backwards ?? */
+		evbuf[9]  = 0x01050001; /* segment of shorts header with 1 value */
+		evbuf[10] = (eventType);
 	}
 	
 	
@@ -340,9 +352,6 @@ mc2codaCloseEvent(CODA_EVENT_INFO *event)
 		roc = expID->rocid[ii];
 		crate = expID->crate[ii];
 
-		/* Open a ROC data Bank */
-		ROC_BANK_OPEN(0,roc,1);
-		
 		// This needs to be fixed:
 		// Each ROC may put out one or more DATA BLOCK banks(DBB). If the ROC
 		// contains only JLab modules, it may concatentate the data from
@@ -363,12 +372,19 @@ mc2codaCloseEvent(CODA_EVENT_INFO *event)
 		// opened using that new det_id. This means we need to find the
 		// first non-empty slot, not counting the first slot which is
 		// the CPU.
+		det = 0;
 		for(jj=0; jj<MAX_SLOTS; jj++){
 			if(((1<<jj)&(crate->moduleMask)) == 0) continue;
 			det = crate->det_map[jj];
 			if(det != 0) break;
 		}
-		
+
+		// If no digitization modules exist in this crate then skip it
+		if(det == 0) continue;
+
+		/* Open a ROC data Bank */
+		ROC_BANK_OPEN(0,roc,1);
+				
 		/* Open a Data Bank */
 		// Note that we can't use the DATA_BANK_OPEN and DATA_BANK_CLOSE macros
 		// since they open and close a curly bracket{} and we want to close

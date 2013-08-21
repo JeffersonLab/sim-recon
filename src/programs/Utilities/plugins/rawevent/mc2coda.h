@@ -157,6 +157,7 @@ StartOfBank = dabufp; \
 
 
 /* Prototypes */
+void mc2codaSetRunNumber(unsigned int run_number);
 CODA_EXP_INFO *mc2codaInitExp(int nCrates, const char *name);
 int mc2codaSetCrate(CODA_EXP_INFO *expID, int crateid, int nmod, int *modules, int *detid);
 CODA_EVENT_INFO *mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, unsigned short eventType, int maxSize);

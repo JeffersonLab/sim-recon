@@ -105,6 +105,7 @@ static string translationTableName = "tt.xml";
 
 // current run number
 static int runNumber;
+static unsigned int user_runNumber=0xdeadbeef; // specified via configuration parameter
 
 
 // csc map converts from detector spec to (crate,slot,channel)
@@ -210,6 +211,8 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
   // option to dump map to file
   gPARMS->SetDefaultParameter("RAWEVENT:DUMPMAP",dumpmap,"Dump map of translation table map to file (for debugging)");
 
+  // option to set run number
+  gPARMS->SetDefaultParameter("RAWEVENT:RUNNUMBER",user_runNumber, "Override run number from input file with this one which will be written to every event in output file");
 
   // read translation table, fill crate id arrays
   readTranslationTable();
@@ -305,8 +308,12 @@ jerror_t JEventProcessor_rawevent::init(void) {
 jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
 
   runNumber=runnumber;
-  jout << endl << "   brun called for run " << runNumber << endl << endl;
-
+  jout << endl << "   brun called for run " << runNumber << endl;
+  if(user_runNumber != 0xdeadbeef){
+    jout << "   *** overriding with user-supplied run number: " << user_runNumber << " ***" << endl;
+    runNumber = runnumber = user_runNumber;
+  }
+  mc2codaSetRunNumber(runNumber);
 
   // close old output file
   if(chan!=NULL) {
@@ -545,7 +552,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dtofrawhits.size(); i++) {
     if((dtofrawhits[i]->dE>0)&&((dtofrawhits[i]->t*1000.)>tMin)&&(dtofrawhits[i]->t*1000.<trigTime)) {
 
-      uint32_t E  = dtofrawhits[i]->dE*(5.2E5/0.1);   // E is GeV (max ~0.1)
+      uint32_t E  = dtofrawhits[i]->dE*(5.2E5/0.2);   // E is GeV (max ~0.1)
       uint32_t t  = dtofrawhits[i]->t*1000.-tMin;  // in picoseconds
     
       if(noroot==0)tofEnergies->Fill(dtofrawhits[i]->dE*1000000.);
@@ -780,8 +787,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dfdchits.size(); i++) {
     if((dfdchits[i]->q>0)&&((dfdchits[i]->t*1000.)>tMin)&&(dfdchits[i]->t*1000.<trigTime)) {
 
-      uint32_t q      = dfdchits[i]->q*(1.3E5/1.5E-4); // for wires
-		if(dfdchits[i]->type==1) q = dfdchits[i]->q*(1.3E5/1.2E4); // for cathodes
+      uint32_t q      = dfdchits[i]->q*(1.3E5/3.0E-4); // for wires
+		if(dfdchits[i]->type==1) q = dfdchits[i]->q*(1.3E5/2.4E4); // for cathodes
       uint32_t t      = dfdchits[i]->t*1000.-tMin; // in picoseconds
       
       if(noroot==0)fdcCharges->Fill(dfdchits[i]->q);
