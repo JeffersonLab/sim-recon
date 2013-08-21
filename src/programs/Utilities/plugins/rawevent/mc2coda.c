@@ -289,6 +289,11 @@ mc2codaWrite(CODA_EVENT_INFO *event, int nHits, struct coda_hit_info *codaHits)
 					   codaHits->hit_id,crate,slot);
 			} else {
 				tmpH = (CODA_HIT_INFO *)&event->hits[crate][slot][cnt];
+				if(tmpH == NULL){
+					printf("%s:%d ERROR!! no CODA_HIT_INFO structure allocated for crate=%d, slot=%d\n", __FILE__, __LINE__, crate+1, slot+1);
+					continue;
+				}
+
 				memcpy((char *)&(tmpH->hit_id),(char *)&(codaHits[ii].hit_id),sizeof(CODA_HIT_INFO)) ;
 				/* printf("DEBUG: malloc data array\n"); */
 				tmpH->hdata = (uint32_t *) malloc((codaHits[ii].nwords)<<2);
