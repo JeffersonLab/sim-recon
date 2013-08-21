@@ -390,11 +390,13 @@ mc2codaCloseEvent(CODA_EVENT_INFO *event)
 				// Close existing bank
 				*StartOfBank = (uint32_t) (dabufp - StartOfBank - 1);
 				
-				// Open new bank with the new detid
+				// Open new bank with the new detid (but not for detid==0)
 				det = crate->det_map[jj];
 				StartOfBank = dabufp;
-				*(++dabufp) = (((status) << 28) | (det) << 16) | 0x0100 | (nevents);
-				(dabufp)++;
+				if(det != 0){
+					*(++dabufp) = (((status) << 28) | (det) << 16) | 0x0100 | (nevents);
+					(dabufp)++;
+				}
 			}
 			
 			mod = crate->module_map[jj];
