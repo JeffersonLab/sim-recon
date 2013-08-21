@@ -71,6 +71,9 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 			float sigma_total;
 			float chisq;
 			float prob;
+			float sig_phi;
+			float sig_lambda;
+			float sig_pt;
 		}cdchitdbg_t;
 		mutable cdchitdbg_t cdchitdbg;
 		
