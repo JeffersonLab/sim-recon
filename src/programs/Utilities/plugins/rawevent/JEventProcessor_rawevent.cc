@@ -1162,9 +1162,9 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
 
 
 int type2detID(string &type) {
-  if(type=="vmecpu") {
+  if(type=="vmecpu" || type=="cpu") {
     return(VMECPU);
-  } else if (type=="tid") {
+  } else if (type=="tid" || type=="ti") {
     return(TID);
   } else if (type=="fadc250") {
     return(FADC250);
@@ -1174,7 +1174,7 @@ int type2detID(string &type) {
     return(F1TDC32);
   } else if (type=="f1tdcv3") {
     return(F1TDC48);
-  } else if (type=="jldisc") {
+  } else if (type=="jldisc" || type=="disc") {
     return(JLAB_DISC);
   } else if (type=="vx1290a") {
     return(CAEN1290);
@@ -1360,15 +1360,14 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
       } else if (type=="fadc250") {
         s = "stadc::";
       } else if (type=="iseg") {
-		s = "stiseg::"; // this just here to prevent warning message below
+		  s = "stiseg::"; // this just here to prevent warning message below
       } else {
         s = "unknownST::";
         jerr << endl << endl << "?startElement...illegal type for ST: " << Type << endl << endl;
       }
       s += sector;
       cscMap[s] = csc;
-    
-
+ 
     } else if(detector=="fdc_cathodes") {
 	  int ipackage = atoi(package.c_str());
 	  int ichamber = atoi(chamber.c_str());
@@ -1577,8 +1576,6 @@ cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) con
 
 
 cscRef JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) const {
-  // HDGeant numbers row and column 0 to 58 while translation table has -29 to 29.
-  // Shift value here to be consistent with translation table.
   string s = "fcaladc::" + lexical_cast<string>(hit->row) + ":" + lexical_cast<string>(hit->column);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
