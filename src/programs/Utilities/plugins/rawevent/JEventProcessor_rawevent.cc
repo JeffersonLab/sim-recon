@@ -787,8 +787,8 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dfdchits.size(); i++) {
     if((dfdchits[i]->q>0)&&((dfdchits[i]->t*1000.)>tMin)&&(dfdchits[i]->t*1000.<trigTime)) {
 
-      uint32_t q      = dfdchits[i]->q*(1.3E5/3.0E-4); // for wires
-		if(dfdchits[i]->type==1) q = dfdchits[i]->q*(1.3E5/2.4E4); // for cathodes
+      uint32_t q = dfdchits[i]->q*(1.3E5/2.4E4); // for cathodes
+		if(dfdchits[i]->type==0) q = 0.0; // No amplitude read for wires 
       uint32_t t      = dfdchits[i]->t*1000.-tMin; // in picoseconds
       
       if(noroot==0)fdcCharges->Fill(dfdchits[i]->q);
