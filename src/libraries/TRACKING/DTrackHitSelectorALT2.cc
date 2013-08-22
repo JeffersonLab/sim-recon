@@ -22,6 +22,7 @@
 
 #define ONE_OVER_SQRT12  0.288675
 #define ONE_OVER_12 0.08333333333333
+#define EPS 1e-6
 
 bool static DTrackHitSelector_cdchit_cmp(pair<double,const DCDCTrackHit *>a,
 				      pair<double,const DCDCTrackHit *>b){
@@ -416,6 +417,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   double Bz=bfield->GetBz(origin.X(),origin.Y(),z0);
   double a=-0.003*Bz*rt->q;
   double p=rt->swim_steps[0].mom.Mag();
+  double p_sq=p*p;
   double p_over_a=p/a;
   double a_over_p=1./p_over_a;
   double lambda=M_PI_2-rt->swim_steps[0].mom.Theta();
@@ -522,9 +524,9 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       var_phi=var_lambda*(1.+tanl2);
       
       // Include uncertainty in phi due to uncertainty in the center of the 
-      // circle.  The term containing the dip angle is a guess to deal with the 
-      // closeness of the tracks to the beam line.
-      var_phi+=0.15/(pt_over_a*pt_over_a)*(1.+0.035/cosl2);
+      // circle. 
+      double var_xc=0.15*(1.+0.0005/(cosl2*cosl2+EPS));
+      var_phi+=var_xc/(pt_over_a*pt_over_a);
 
       if (most_downstream_hit){
 	// Fractional variance in the curvature k due to resolution and multiple scattering
@@ -533,7 +535,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 	  *0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
 	
 	double mass=rt->GetMass();
-	double one_over_beta=sqrt(1.+mass*mass/(p*p));
+	double one_over_beta=sqrt(1.+mass*mass/p_sq);
 	double var_pt_factor=0.016*one_over_beta/(cosl*0.003*Bz_hit);
 	double var_k_over_k_sq_ms=var_pt_factor*var_pt_factor*last_step->invX0/s;
 
