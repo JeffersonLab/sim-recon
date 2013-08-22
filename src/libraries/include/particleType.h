@@ -418,10 +418,6 @@ inline static char* ParticleName_ROOT(Particle_t p)
 inline static double ParticleMass(Particle_t p)
 {
   switch (p) {
-  default:
-    fprintf(stderr,"ParticleMass: Error: Unknown particle type %d,",p);
-    fprintf(stderr," returning HUGE_VAL...\n");
-    return HUGE_VAL;
   case Unknown:		return HUGE_VAL;
   case Gamma:		return 0;
   case Positron:	return 0.0005101;
@@ -478,16 +474,16 @@ inline static double ParticleMass(Particle_t p)
   case Sigma_1385_Minus:	return 1.3872;
   case Sigma_1385_0:		return 1.38370;
   case Sigma_1385_Plus:	return 1.38280;
+  default:
+    fprintf(stderr,"ParticleMass: Error: Unknown particle type %d,",p);
+    fprintf(stderr," returning HUGE_VAL...\n");
+    return HUGE_VAL;
   }
 }
 
 inline static int ParticleCharge(Particle_t p)
 {
   switch (p) {
-  default:
-    fprintf(stderr,"ParticleCharge: Error: Unknown particle type %d,",p);
-    fprintf(stderr," returning 0...\n");
-    return 0;
   case Unknown:		return  0;
   case Gamma:		return  0;
   case Positron:	return +1;
@@ -544,6 +540,10 @@ inline static int ParticleCharge(Particle_t p)
   case Sigma_1385_Minus:	return -1;
   case Sigma_1385_0:		return 0;
   case Sigma_1385_Plus:	return 1;
+  default:
+    fprintf(stderr,"ParticleCharge: Error: Unknown particle type %d,",p);
+    fprintf(stderr," returning 0...\n");
+    return 0;
   }
 }
 
