@@ -33,7 +33,7 @@ jerror_t DSCHit_factory::init(void)
 jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	/// Read in calibration constants (Needs to be done!)
-	a_scale    = 1.0E-4; // 100 keV/count (?)
+	a_scale    = 2.0E-2/5.2E-5; 
 	a_pedestal = 0.0;
 	t_scale    = 4.0;    // 4 ns/count
 	t_offset   = 0;

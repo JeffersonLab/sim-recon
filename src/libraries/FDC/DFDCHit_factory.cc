@@ -30,10 +30,10 @@ jerror_t DFDCHit_factory::init(void)
 jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	/// Read in calibration constants (Needs to be done!)
-	a_scale    = 1.0E-4;  // 100 keV/count (?)
-	a_pedestal = 0.0;
-	t_scale    = 8.0;     // 8 ns/count
-	t_offset   = 0;
+	a_scale      = 2.4E4/1.3E5;  // cathodes
+	a_pedestal   = 0.0;
+	t_scale      = 8.0;     // 8 ns/count
+	t_offset     = 0;
 
 	tdc_scale    = 0.115; // 115 ps/count
 	tdc_offset   = 0;

@@ -28,7 +28,7 @@ jerror_t DCDCHit_factory::init(void)
 jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	/// Read in calibration constants (Needs to be done!)
-	a_scale    = 1.0E-4; // 100 keV/count (?)
+	a_scale    = 1.0E6/1.3E5; 
 	a_pedestal = 0.0;
 	t_scale    = 8.0;    // 8 ns/count
 	t_offset   = 0;
