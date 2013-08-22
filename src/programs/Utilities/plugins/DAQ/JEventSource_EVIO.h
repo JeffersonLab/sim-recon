@@ -12,6 +12,7 @@
 #include <map>
 #include <vector>
 #include <queue>
+#include <deque>
 #include <list>
 #include <set>
 using std::map;
@@ -110,7 +111,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 		virtual const char* className(void){return static_className();}
 		 static const char* static_className(void){return "JEventSource_EVIO";}
 		
-		  virtual jerror_t ReadEVIOEvent(void);
+		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
+                    void GetEVIOBuffer(jana::JEvent *jevent, uint32_t* &buff, uint32_t &size) const;
+            evioDOMTree* GetEVIODOMTree(jana::JEvent *jevent) const;
 		
 		          jerror_t GetEvent(jana::JEvent &event);
 		              void FreeEvent(jana::JEvent &event);
@@ -143,6 +146,10 @@ class JEventSource_EVIO: public jana::JEventSource{
 			bool own_objects; // keeps track of whether these objects were copied to factories or not
 			
 			vector<DDAQAddress*> hit_objs;
+
+			uint32_t *eviobuff;
+			uint32_t eviobuff_size;
+			evioDOMTree *DOMTree;
 		};
 	
 		// EVIO events with more than one DAQ event ("blocked" or
@@ -150,6 +157,14 @@ class JEventSource_EVIO: public jana::JEventSource{
 		// stored in the following container so they can be dispensed
 		// as needed.
 		queue<ObjList*> stored_events;
+
+		// We need to keep the EVIO buffers around for events since they
+		// may be needed again before we are done with the event (especially
+		// for L3). It is more efficient to maintain a pool of such events
+		// and recycle them.
+		uint32_t BUFFER_SIZE;
+		pthread_mutex_t evio_buffer_pool_mutex;
+		deque<uint32_t*> evio_buffer_pool;
 		
 		// List of the data types this event source can provide
 		// (filled in the constructor)

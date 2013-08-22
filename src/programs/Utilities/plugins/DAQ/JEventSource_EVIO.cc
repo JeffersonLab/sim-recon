@@ -71,10 +71,12 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	// Get configuration parameters
 	AUTODETECT_MODULE_TYPES = true;
 	DUMP_MODULE_MAP = false;
+	BUFFER_SIZE = 50000; // in bytes
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
 		gPARMS->SetDefaultParameter("EVIO:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
+		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 	}
 	
 	// Create list of data types this event source can provide
@@ -93,6 +95,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("DF1TDCTriggerTime");
 	
 	last_run_number = 0;
+	pthread_mutex_init(&evio_buffer_pool_mutex, NULL);
 }
 
 //----------------
@@ -105,9 +108,15 @@ JEventSource_EVIO::~JEventSource_EVIO()
 		chan->close();
 		delete chan;
 	}
+
+	// Release memory used for the event buffer pool
+	while(!evio_buffer_pool.empty()){
+		free(evio_buffer_pool.front());
+		evio_buffer_pool.pop_front();
+	}
 	
 	// Optionally dump the module map
-	//if(DUMP_MODULE_MAP)DumpModuleMap();
+	if(DUMP_MODULE_MAP)DumpModuleMap();
 }
 
 //----------------
@@ -196,23 +205,41 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// If we couldn't even open the source, then there's nothing to do
 	if(chan==NULL)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
 	
+	// This may not be a long term solution, but here goes:
+	// We need to write single events out in EVIO format, possibly
+	// with new information attached. The easiest way to do this 
+	// is to keep the DOM tree when the event is read in and modify
+	// it if needed before writing it out. The complication comes
+	// in that entangled events will not have a dedicated DOM tree
+	// for every event. This is only an issue if disentangling is
+	// not done upstream. How this is handled now is that the DOM
+	// tree pointer is copied into the ObjList object for the first
+	// physics event found in the DAQ event. The DOM tree is freed
+	// in FreeEvent (if the pointer is non-NULL). Note that for
+	// single event blocks (i.e. already disentangled events) the
+	// stored_events list will always be empty so "evt" is always
+	// set.
+	evioDOMTree *evt = NULL;
+	uint32_t *buff = NULL; // ReadEVIOEvent will allocate memory from pool for this
+	uint32_t buff_size = 0;
+
 	// If no events are currently stored in the buffer, then
 	// read in another event block.
 	if(stored_events.empty()){
-		jerror_t err = ReadEVIOEvent();
+		jerror_t err = ReadEVIOEvent(buff);
 		if(err != NOERROR) return err;
+		if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
+		buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
 	
-		evioDOMTree *evt = new evioDOMTree(chan);
+		evioDOMTree *evt = new evioDOMTree(buff); // deleted in FreeEvent
 		if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
 		int32_t run_number = GetRunNumber(evt);
-		
+
 		try{
 			ParseEVIOEvent(evt, run_number);
 		}catch(JException &jexception){
 			jerr << jexception.what() << endl;
 		}
-
-		delete evt;
 	}
 
 	// If we still don't have any events, then bail
@@ -222,6 +249,9 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	ObjList *objs_ptr = stored_events.front();
 	stored_events.pop();
 	objs_ptr->own_objects = true; // will be set to false in GetObjects()
+	objs_ptr->DOMTree = evt;
+	objs_ptr->eviobuff = buff;
+	objs_ptr->eviobuff_size = buff_size;
 
 	event.SetJEventSource(this);
 	event.SetEventNumber(++Nevents_read);
@@ -244,6 +274,14 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 				delete objs_ptr->hit_objs[i];
 			}
 		}
+
+		if(objs_ptr->DOMTree != NULL) delete objs_ptr->DOMTree;
+		if(objs_ptr->eviobuff){
+			// Return EVIO buffer to pool for recycling
+			pthread_mutex_lock(&evio_buffer_pool_mutex);
+			evio_buffer_pool.push_front(objs_ptr->eviobuff);
+			pthread_mutex_unlock(&evio_buffer_pool_mutex);
+		}
 	
 		delete objs_ptr;
 	}
@@ -252,16 +290,78 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 //----------------
 // ReadEVIOEvent
 //----------------
-jerror_t JEventSource_EVIO::ReadEVIOEvent(void)
+jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 {
 	// We may need to loop here for ET system if no
 	// events are currently available.
 
-	if(!chan->read())return NO_MORE_EVENTS_IN_SOURCE;
+	// Get buffer from pool or allocate new one if needed
+	pthread_mutex_lock(&evio_buffer_pool_mutex);
+	if(evio_buffer_pool.empty()){
+		// Allocate new block of memory
+		buff = (uint32_t*)malloc(BUFFER_SIZE);
+	}else{
+		buff = evio_buffer_pool.front();
+		evio_buffer_pool.pop_front();
+	}
+	pthread_mutex_unlock(&evio_buffer_pool_mutex);
+
+	if(!chan->read(buff, BUFFER_SIZE))return NO_MORE_EVENTS_IN_SOURCE;
 
 	return NOERROR;
 }
 
+//----------------
+// GetEVIOBuffer
+//----------------
+void JEventSource_EVIO::GetEVIOBuffer(JEvent *jevent, uint32_t* &buff, uint32_t &size) const
+{
+	/// Use the reference stored in the supplied JEvent to extract the evio
+	/// buffer and size for the event. If there is no buffer for the event
+	/// then buff will be set to NULL and size to zero. This can happen if
+	/// reading entangled events and this is not the first event in the block.
+
+	// In case we bail early
+	buff = NULL;
+	size = 0;
+
+	// Make sure this JEvent actually came from this source
+	if(jevent->GetJEventSource() != this){
+		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<endl;
+		return;
+	}
+
+	// Get pointer to ObjList object
+	const ObjList *objs_ptr = (ObjList*)jevent->GetRef();
+	if(!objs_ptr) return;
+
+	// Copy buffer pointer and size to user's variables
+	buff = objs_ptr->eviobuff;
+	size = objs_ptr->eviobuff_size;
+}
+
+//----------------
+// GetEVIODOMTree
+//----------------
+evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(JEvent *jevent) const
+{
+	/// Use the reference stored in the supplied JEvent to extract the evio
+	/// DOM tree for the event. If there is no DOM tree for the event
+	/// then NULL will be returned. This can happen if reading entangled events
+	/// and this is not the first event in the block.
+
+	// Make sure this JEvent actually came from this source
+	if(jevent->GetJEventSource() != this){
+		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<endl;
+		return NULL;
+	}
+
+	// Get pointer to ObjList object
+	const ObjList *objs_ptr = (ObjList*)jevent->GetRef();
+	if(!objs_ptr) return NULL;
+
+	return objs_ptr->DOMTree;
+}
 
 //----------------
 // GetObjects
@@ -646,15 +746,15 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 	
 	// From the Block Header
 	uint32_t slot=0;
-	uint32_t Nblock_events;
-	uint32_t iblock;
+	//uint32_t Nblock_events;
+	//uint32_t iblock;
 
 	// From the Block Trailer
-	uint32_t slot_trailer;
-	uint32_t Nwords_in_block;
+	//uint32_t slot_trailer;
+	//uint32_t Nwords_in_block;
 	
 	// From Event header
-	uint32_t slot_event_header;
+	//uint32_t slot_event_header;
 	uint32_t itrigger = -1;
 	uint32_t last_itrigger = -2;
 	
@@ -681,16 +781,16 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 		switch(data_type){
 			case 0: // Block Header
 				slot = (*iptr>>22) & 0x1F;
-				iblock= (*iptr>>8) & 0x03FF;
-				Nblock_events= (*iptr>>0) & 0xFF;
+				//iblock= (*iptr>>8) & 0x03FF;
+				//Nblock_events= (*iptr>>0) & 0xFF;
 				break;
 			case 1: // Block Trailer
-				slot_trailer = (*iptr>>22) & 0x1F;
-				Nwords_in_block = (*iptr>>0) & 0x3FFFFF;
+				//slot_trailer = (*iptr>>22) & 0x1F;
+				//Nwords_in_block = (*iptr>>0) & 0x3FFFFF;
 				found_block_trailer = true;
 				break;
 			case 2: // Event Header
-				slot_event_header = (*iptr>>22) & 0x1F;
+				//slot_event_header = (*iptr>>22) & 0x1F;
 				itrigger = (*iptr>>0) & 0x3FFFFF;
 				if( (itrigger!=last_itrigger) || (objs==NULL) ){
 					if(objs) events.push_back(objs);
@@ -926,15 +1026,15 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 	
 	// From the Block Header
 	uint32_t slot=0;
-	uint32_t Nblock_events;
-	uint32_t iblock;
+	//uint32_t Nblock_events;
+	//uint32_t iblock;
 
 	// From the Block Trailer
-	uint32_t slot_trailer;
-	uint32_t Nwords_in_block;
+	//uint32_t slot_trailer;
+	//uint32_t Nwords_in_block;
 	
 	// From Event header
-	uint32_t slot_event_header;
+	//uint32_t slot_event_header;
 	uint32_t itrigger = -1;
 	uint32_t last_itrigger = -2;
 	
@@ -960,16 +1060,16 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		switch(data_type){
 			case 0: // Block Header
 				slot = (*iptr>>22) & 0x1F;
-				iblock= (*iptr>>8) & 0x03FF;
-				Nblock_events= (*iptr>>0) & 0xFF;
+				//iblock= (*iptr>>8) & 0x03FF;
+				//Nblock_events= (*iptr>>0) & 0xFF;
 				break;
 			case 1: // Block Trailer
-				slot_trailer = (*iptr>>22) & 0x1F;
-				Nwords_in_block = (*iptr>>0) & 0x3FFFFF;
+				//slot_trailer = (*iptr>>22) & 0x1F;
+				//Nwords_in_block = (*iptr>>0) & 0x3FFFFF;
 				found_block_trailer = true;
 				break;
 			case 2: // Event Header
-				slot_event_header = (*iptr>>22) & 0x1F;
+				//slot_event_header = (*iptr>>22) & 0x1F;
 				itrigger = (*iptr>>0) & 0x3FFFFF;
 				if( (itrigger!=last_itrigger) || (objs==NULL) ){
 					if(objs) events.push_back(objs);
@@ -1098,9 +1198,9 @@ void JEventSource_EVIO::ParseF1TDCBank_style1(int32_t rocid, const uint32_t* &ip
 	// on the original beam test data file. THIS MAY NOT WORK!!
 	// 12/30/2012 DL
 	
-	uint32_t slot_header = 1000;
-	uint32_t chip_header = 1000;
-	uint32_t chan_header = 1000;
+	//uint32_t slot_header = 1000;
+	//uint32_t chip_header = 1000;
+	//uint32_t chan_header = 1000;
 	uint32_t ievent = 0;
 	uint32_t trig_time = 0;
 	ObjList *objs = NULL;
@@ -1121,9 +1221,9 @@ void JEventSource_EVIO::ParseF1TDCBank_style1(int32_t rocid, const uint32_t* &ip
 		if(((*iptr>>23) & 0x1) == 0){
 			// header/trailer word
 			uint32_t last_ievent = ievent;
-			slot_header = slot;
-			chip_header = (*iptr>>3) & 0x07;
-			chan_header = (*iptr>>0) & 0x07;
+			//slot_header = slot;
+			//chip_header = (*iptr>>3) & 0x07;
+			//chan_header = (*iptr>>0) & 0x07;
 			ievent = (*iptr>>16) & 0x3F;
 			trig_time = (*iptr>>7) & 0x01FF;
 			
