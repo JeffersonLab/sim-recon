@@ -107,7 +107,7 @@ JEventSource_EVIO::~JEventSource_EVIO()
 	}
 	
 	// Optionally dump the module map
-	if(DUMP_MODULE_MAP)DumpModuleMap();
+	//if(DUMP_MODULE_MAP)DumpModuleMap();
 }
 
 //----------------

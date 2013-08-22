@@ -159,7 +159,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
 		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);
-		void DumpModuleMap(void);
+		void DumpModuleMap(void){}
 		void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords);
 
 		
