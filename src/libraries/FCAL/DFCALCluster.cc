@@ -61,7 +61,9 @@ void DFCALCluster::saveHits( const userhits_t* const hits )
          my_hits.push_back(h);
       }
       else {
-         cout << "Warning: DFCALCluster : corrupted cluster hit " << i << endl;
+			static uint32_t Nwarns=0;
+         if(++Nwarns<100)cout << "Warning: DFCALCluster : corrupted cluster hit " << i << endl;
+			if(Nwarns==100)cout << "Last warning!!! (further warnings supressed)" << endl;
       }
    }
 }
