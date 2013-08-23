@@ -29,6 +29,11 @@ using std::set;
 #include <evioUtil.hxx>
 using namespace evio;
 
+#ifdef HAVE_ET
+#include <evioETChannel.hxx>
+#include <et.h>
+#endif // HAVE_ET
+
 #include "DModuleType.h"
 #include "Df250PulseIntegral.h"
 #include "Df250StreamingRawData.h"
@@ -106,18 +111,27 @@ using namespace evio;
 
 class JEventSource_EVIO: public jana::JEventSource{
 	public:
+
+		enum EVIOSourceType{
+			kNoSource,
+			kFileSource,
+			kETSource
+		};
+
 		                   JEventSource_EVIO(const char* source_name);
 		           virtual ~JEventSource_EVIO();
 		virtual const char* className(void){return static_className();}
 		 static const char* static_className(void){return "JEventSource_EVIO";}
 		
 		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
-                    void GetEVIOBuffer(jana::JEvent *jevent, uint32_t* &buff, uint32_t &size) const;
-            evioDOMTree* GetEVIODOMTree(jana::JEvent *jevent) const;
+                    void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
+            evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
+          EVIOSourceType GetEVIOSourceType(void){ return source_type; }
 		
 		          jerror_t GetEvent(jana::JEvent &event);
 		              void FreeEvent(jana::JEvent &event);
 				  jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
+
 	
 	protected:
 	
@@ -126,10 +140,12 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int32_t last_run_number;
 		
 		evioChannel *chan;
+		EVIOSourceType source_type;
 		map<tagNum, MODULE_TYPE> module_type;
 
 		bool AUTODETECT_MODULE_TYPES;
 		bool DUMP_MODULE_MAP;
+		int ET_STATION_NEVENTS;
 
 		// Utility class to hold pointers to containers for
 		// all types of data objects we produce. This gets passed
@@ -195,7 +211,11 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
-	
+#ifdef HAVE_ET
+		et_sys_id sys_id;
+		et_att_id att_id;
+		et_stat_id sta_id;
+#endif
 };
 
 

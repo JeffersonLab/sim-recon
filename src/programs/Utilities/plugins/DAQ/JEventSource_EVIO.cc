@@ -10,10 +10,15 @@
 #include <string>
 using namespace std;
 
-#define HAVE_ET 0 // temporary
+//#define HAVE_ET 0 // temporary
 
 
 #include <evioFileChannel.hxx>
+
+#ifdef HAVE_ET
+#include <evioETChannel.hxx>
+#include <et.h>
+#endif // HAVE_ET
 
 #include "JEventSourceGenerator_EVIO.h"
 #include "JFactoryGenerator_DAQ.h"
@@ -43,6 +48,20 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 {
 	// Initialize EVIO channel pointer to NULL (subclass will instantiate and open)
 	chan = NULL;
+	source_type = kNoSource;
+
+	// Get configuration parameters
+	AUTODETECT_MODULE_TYPES = true;
+	DUMP_MODULE_MAP = false;
+	BUFFER_SIZE = 50000; // in bytes
+	ET_STATION_NEVENTS = 100;
+	
+	if(gPARMS){
+		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
+		gPARMS->SetDefaultParameter("EVIO:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
+		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
+		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
+	}
 	
 	// Try to open the file.
 	try {
@@ -52,15 +71,18 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		
 		// open the file. Throws exception if not successful
 		chan->open();
+		source_type = kFileSource;
 
 	} catch (evioException &e) {
 
-#if HAVE_ET
+#ifdef HAVE_ET
 		// Could not open file. Check if name starts with "ET:"
+		chan = NULL;
 		if(this->source_name.substr(0,3) == "ET:") ConnectToET(source_name);
 
 		// open the file. Throws exception if not successful
 		if(chan)chan->open();
+		source_type = kETSource;
 #else
 		// No ET and the file didn't work so re-throw the exception
 		throw e;
@@ -68,17 +90,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 #endif
 	}
 	
-	// Get configuration parameters
-	AUTODETECT_MODULE_TYPES = true;
-	DUMP_MODULE_MAP = false;
-	BUFFER_SIZE = 50000; // in bytes
-	
-	if(gPARMS){
-		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
-		gPARMS->SetDefaultParameter("EVIO:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
-		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
-	}
-	
+
 	// Create list of data types this event source can provide
 	// (must match what is returned by JObject::className() )
 	event_source_data_types.insert("Df250PulseIntegral");
@@ -124,29 +136,76 @@ JEventSource_EVIO::~JEventSource_EVIO()
 //----------------
 void JEventSource_EVIO::ConnectToET(const char* source_name)
 {
-#if HAVE_ET
-	// open event source here
-	et_sys_id sys_id;
-	et_att_id att_id;
-	et_stat_id sta_id;
-	
+#ifdef HAVE_ET
+
+	/// Format for ET source strings is:
+	///
+	///  ET:session:station:host:port
+	///
+	/// The session is used to form the filename of the ET
+	/// system. For example, if an session of "eb" is specified,
+	/// then a file named "/tmp/et_sys_eb" is assumed to be
+	/// what should be opened. If no session is specified (or
+	/// an empty session name) then "none" is used as the session.
+	///
+	/// If the station name specified does not exist, it will
+	/// be created. If it does exist, the existing station will
+	/// be used. If no station is specified, then the station
+	/// name "DANA" will be used.
+	///
+	/// If the host is specified, then an attempt will be made
+	/// to open that system. If it is not specified, then
+	/// it will attempt to open an ET system on the local machine.
+	///
+	/// If port is specified, it is used as the TCP port number
+	/// on the remote host to attach to. If the host is not
+	/// specified (i.e. by having two colons and therefore
+	/// an empty string) then the port is ignored. If the
+	/// port is omitted or specified as "0", then the default
+	/// port is used.
+	/// 
+
 	// Split source name into session, station, etc...
 	vector<string> fields;
-	size_t cutAt;
 	string str = source_name;
-	while( (cutAt = str.find(":")) != str.npos ){
-		if(cutAt > 0)fields.push_back(str.substr(0,cutAt));
-		str = str.substr(cutAt+1);
+	size_t startpos=0, endpos=0;
+	while((endpos = str.find(":", startpos)) != str.npos){
+		size_t len = endpos-startpos;
+		fields.push_back(len==0 ? "":str.substr(startpos, len));
+		startpos = endpos+1;
 	}
-	if(str.length() > 0)fields.push_back(str);
-	string session = fields.size()>1 ? fields[1]:"none";
-	string station = fields.size()>2 ? fields[2]:"DANA";
-	int Nevents    = fields.size()>3 ? atoi(fields[3].c_str()):1;
-	
-	cout<<"Opening ET session:"<<session<<"  station:"<<station<<endl;
+	if(startpos<str.length()) fields.push_back(str.substr(startpos, str.npos));
 
+	string session = fields.size()>1 ? fields[1]:"";
+	string station = fields.size()>2 ? fields[2]:"";
+	string host    = fields.size()>3 ? fields[3]:"";
+	int port       = fields.size()>4 ? atoi(fields[4].c_str()):0;
+
+	if(session == "") session = "none";
+	if(station == "") station = "DANA";
+	string fname = string("/tmp/et_sys_") + session;
+	
+	// Report to user what we're doing
+	jout << " Opening ET system:" << endl;
+	jout << "     session: " << session << endl;
+	jout << "     station: " << station << endl;
+	jout << " system file: " << fname << endl;
+	if(host!=""){
+		jout << "     host:\""<<host<<"\"" << endl;
+		if(port !=0) jout << "     port:" << port << endl;
+	}
+
+	// connect to the ET system
 	et_openconfig openconfig;
 	et_open_config_init(&openconfig);
+	if(host != ""){
+		et_open_config_sethost(openconfig, host.c_str());
+		if(port != 0) et_open_config_setport(openconfig, port);
+	}
+	if(et_open(&sys_id,fname.c_str(),openconfig)!=ET_OK){
+		cout<<__FILE__<<":"<<__LINE__<<" Problem opening ET system"<<endl;
+		return;
+	}
 
 	// create station config in case no station exists
 	et_statconfig et_station_config;
@@ -155,17 +214,9 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	et_station_config_setselect(et_station_config,ET_STATION_SELECT_ALL);
 	et_station_config_setuser(et_station_config,ET_STATION_USER_MULTI);
 	et_station_config_setrestore(et_station_config,ET_STATION_RESTORE_OUT);
-	et_station_config_setcue(et_station_config,Nevents);
+	et_station_config_setcue(et_station_config,ET_STATION_NEVENTS);
 	et_station_config_setprescale(et_station_config,0);
 	cout<<"ET station configured\n";
-
-	// connect to the ET system
-	string fname = string("/tmp/et_sys_") + session;
-	et_open_config_init(&openconfig);
-	if(et_open(&sys_id,fname.c_str(),openconfig)!=ET_OK){
-		cout<<__FILE__<<":"<<__LINE__<<" Problem opening ET system"<<endl;
-		return;
-	}
 	
 	// create station if not already created
 	int status=et_station_create(sys_id,&sta_id,station.c_str(),et_station_config);
@@ -174,19 +225,38 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 		cerr << "Unable to create station " << station << endl;
 		return;
 	}
-	cout<<"ET station created\n";
-
+	if(status==ET_ERROR_EXISTS){
+		jout << " Using existing ET station " << station << endl;
+	}else{
+		jout << " ET station " << station << " created\n";
+	}
+	
+	// Attach to the ET station
 	status=et_station_attach(sys_id,sta_id,&att_id);
 	if(status!=ET_OK) {
 		et_close(sys_id);
-		cerr << "Unable to attach to station " << station << endl;
+		jerr << "Unable to attach to station " << station << endl;
 		return;
 	}
 
-	cout << "...now connected to ET system: " << fname 
+	jout << "...now connected to ET system: " << fname 
 		<< ",   station: " << station << " (station id=" << sta_id << ", attach id=" << att_id <<")" << endl;
 		
 	chan = new evioETChannel(sys_id, att_id);
+
+	// Make sure the size of event buffers we will allocate are at least as big
+	// as the event size used in the ET system
+	size_t eventsize;
+	et_system_geteventsize(sys_id, &eventsize);
+	if((uint32_t)eventsize > BUFFER_SIZE){
+		jout<<" Events in ET system are larger than currently set buffer size:"<<endl;
+		jout<<" "<<eventsize<<" > "<<BUFFER_SIZE<<endl;
+		jout<<" Setting BUFFER_SIZE to "<<eventsize<<endl;
+		BUFFER_SIZE = (uint32_t)eventsize;
+	}else{
+		jout<<" ET system event size:"<<eventsize<<"  JEventSource_EVIO.BUFFER_SIZE:"<<BUFFER_SIZE<<endl;
+	}
+
 #else
 	jerr << endl;
 	jerr << "You are attempting to connect to an ET system using a binary that" <<endl;
@@ -205,6 +275,15 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// If we couldn't even open the source, then there's nothing to do
 	if(chan==NULL)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
 	
+	// We want to recursively call ourselves in case we run into an
+	// event that can't be parsed so we can just try the next event.
+	// However, we want to limit how often that can happen since 
+	// tweaking the parsing code could cause a failure for every 
+	// event. Use a counter here to limit how often we recall ourselves
+	// without successfully parsing an event.
+	static uint32_t Nrecursive_calls = 0;
+	if(++Nrecursive_calls >= 4) return NO_MORE_EVENTS_IN_SOURCE;
+
 	// This may not be a long term solution, but here goes:
 	// We need to write single events out in EVIO format, possibly
 	// with new information attached. The easiest way to do this 
@@ -242,8 +321,9 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		}
 	}
 
-	// If we still don't have any events, then bail
-	if(stored_events.empty())return NO_MORE_EVENTS_IN_SOURCE;
+	// If we still don't have any events, then try recalling
+	// ourselves to look at the next event
+	if(stored_events.empty())return GetEvent(event);
 	
 	// Get next event from queue
 	ObjList *objs_ptr = stored_events.front();
@@ -257,6 +337,8 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	event.SetEventNumber(++Nevents_read);
 	event.SetRunNumber(objs_ptr->run_number);
 	event.SetRef(objs_ptr);
+
+	Nrecursive_calls = 0; // reset recursive calls counter
 
 	return NOERROR;
 }
@@ -306,7 +388,44 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 	}
 	pthread_mutex_unlock(&evio_buffer_pool_mutex);
 
-	if(!chan->read(buff, BUFFER_SIZE))return NO_MORE_EVENTS_IN_SOURCE;
+	try{
+		if(source_type==kFileSource){
+			if(!chan->read()){
+				return NO_MORE_EVENTS_IN_SOURCE;
+			}
+		}else if(source_type==kETSource){
+
+			et_event *pe=NULL;
+			int err = et_event_get(sys_id, att_id, &pe, ET_SLEEP , NULL);
+			if(err!=ET_OK || pe==NULL) return NO_MORE_EVENTS_IN_SOURCE;
+
+			// Get pointer to event buffer in the ET-owned memory
+			uint32_t *et_buff=NULL;
+			et_event_getdata(pe, (void**)&et_buff);
+			if(et_buff == NULL){
+				jerr << " Got event from ET, but pointer to data is NULL!" << endl;
+				return NO_MORE_EVENTS_IN_SOURCE;
+			}
+
+			// Size of events in bytes
+			uint32_t bufsize_bytes = (et_buff[0] +1)*sizeof(uint32_t); // +1 is for buffer length word
+			if(bufsize_bytes > BUFFER_SIZE){
+				jerr<<" ET event larger than our BUFFER_SIZE!!!"<<endl;
+				jerr<<" " << bufsize_bytes << " > " << BUFFER_SIZE << endl;
+				jerr<<" Will stop reading from this source now. Try restarting"<<endl;
+				jerr<<" with -PEVIO:BUFFER_SIZE=X where X is greater than "<<bufsize_bytes<<endl;
+				return NO_MORE_EVENTS_IN_SOURCE;
+			}
+
+			// Copy from EVIO internal buffer into our buffer
+			memcpy(buff, et_buff, bufsize_bytes);
+
+			// Put ET event back since we're done with it
+			et_event_put(sys_id, att_id, pe);
+		}
+	} catch (evioException &e) {
+		_DBG_<<e.what()<<endl;
+	}
 
 	return NOERROR;
 }
@@ -314,7 +433,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 //----------------
 // GetEVIOBuffer
 //----------------
-void JEventSource_EVIO::GetEVIOBuffer(JEvent *jevent, uint32_t* &buff, uint32_t &size) const
+void JEventSource_EVIO::GetEVIOBuffer(JEvent &jevent, uint32_t* &buff, uint32_t &size) const
 {
 	/// Use the reference stored in the supplied JEvent to extract the evio
 	/// buffer and size for the event. If there is no buffer for the event
@@ -326,13 +445,13 @@ void JEventSource_EVIO::GetEVIOBuffer(JEvent *jevent, uint32_t* &buff, uint32_t 
 	size = 0;
 
 	// Make sure this JEvent actually came from this source
-	if(jevent->GetJEventSource() != this){
+	if(jevent.GetJEventSource() != this){
 		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<endl;
 		return;
 	}
 
 	// Get pointer to ObjList object
-	const ObjList *objs_ptr = (ObjList*)jevent->GetRef();
+	const ObjList *objs_ptr = (ObjList*)jevent.GetRef();
 	if(!objs_ptr) return;
 
 	// Copy buffer pointer and size to user's variables
@@ -343,7 +462,7 @@ void JEventSource_EVIO::GetEVIOBuffer(JEvent *jevent, uint32_t* &buff, uint32_t 
 //----------------
 // GetEVIODOMTree
 //----------------
-evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(JEvent *jevent) const
+evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(JEvent &jevent) const
 {
 	/// Use the reference stored in the supplied JEvent to extract the evio
 	/// DOM tree for the event. If there is no DOM tree for the event
@@ -351,13 +470,13 @@ evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(JEvent *jevent) const
 	/// and this is not the first event in the block.
 
 	// Make sure this JEvent actually came from this source
-	if(jevent->GetJEventSource() != this){
+	if(jevent.GetJEventSource() != this){
 		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<endl;
 		return NULL;
 	}
 
 	// Get pointer to ObjList object
-	const ObjList *objs_ptr = (ObjList*)jevent->GetRef();
+	const ObjList *objs_ptr = (ObjList*)jevent.GetRef();
 	if(!objs_ptr) return NULL;
 
 	return objs_ptr->DOMTree;
@@ -462,7 +581,6 @@ int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 	// We do this by looking for all uint64_t nodes. Then
 	// check for a parent with one of the magic values for
 	// the tag indicating it has run number information.
-
 	if(!evt) return last_run_number;
 
 	evioDOMNodeListP bankList = evt->getNodeList(typeIs<uint64_t>());
