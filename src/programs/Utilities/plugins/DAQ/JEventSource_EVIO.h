@@ -145,6 +145,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 		bool AUTODETECT_MODULE_TYPES;
 		bool DUMP_MODULE_MAP;
+		bool PARSE_EVIO_EVENTS;
+		bool MAKE_DOM_TREE;
 		int ET_STATION_NEVENTS;
 
 		// Utility class to hold pointers to containers for

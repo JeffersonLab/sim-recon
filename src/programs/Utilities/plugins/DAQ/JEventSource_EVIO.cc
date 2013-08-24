@@ -53,12 +53,16 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	// Get configuration parameters
 	AUTODETECT_MODULE_TYPES = true;
 	DUMP_MODULE_MAP = false;
+	MAKE_DOM_TREE = true;
+	PARSE_EVIO_EVENTS = true;
 	BUFFER_SIZE = 50000; // in bytes
 	ET_STATION_NEVENTS = 100;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
 		gPARMS->SetDefaultParameter("EVIO:DUMP_MODULE_MAP", DUMP_MODULE_MAP, "Write module map used to file when source is destroyed. n.b. If more than one input file is used, the map file will be overwritten!");
+		gPARMS->SetDefaultParameter("EVIO:MAKE_DOM_TREE", MAKE_DOM_TREE, "Set this to 0 to disable generation of EVIO DOM Tree and parsing of event. (for benchmarking/debugging)");
+		gPARMS->SetDefaultParameter("EVIO:PARSE_EVIO_EVENTS", PARSE_EVIO_EVENTS, "Set this to 0 to disable parsing of event but still make the DOM tree, so long as MAKE_DOM_TREE isn't set to 0. (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 	}
@@ -309,15 +313,27 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		if(err != NOERROR) return err;
 		if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
 		buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
-	
-		evioDOMTree *evt = new evioDOMTree(buff); // deleted in FreeEvent
-		if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
-		int32_t run_number = GetRunNumber(evt);
 
-		try{
-			ParseEVIOEvent(evt, run_number);
-		}catch(JException &jexception){
-			jerr << jexception.what() << endl;
+		bool skipped_parsing = true;
+		if(MAKE_DOM_TREE){
+			evioDOMTree *evt = new evioDOMTree(buff); // deleted in FreeEvent
+			if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
+			int32_t run_number = GetRunNumber(evt);
+
+			if(PARSE_EVIO_EVENTS){
+				try{
+					skipped_parsing = false; // flag to let us know if we need to add empty event below
+					ParseEVIOEvent(evt, run_number);
+				}catch(JException &jexception){
+					jerr << jexception.what() << endl;
+				}
+			}
+		}
+
+		if(skipped_parsing){
+			// Parsing was skipped by user request for benchmarking/debugging.
+			// Add an empty event so system doesn't think we ran out of events.
+			stored_events.push(new ObjList());
 		}
 	}
 
