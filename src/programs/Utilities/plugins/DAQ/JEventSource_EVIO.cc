@@ -447,58 +447,6 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 }
 
 //----------------
-// GetEVIOBuffer
-//----------------
-void JEventSource_EVIO::GetEVIOBuffer(JEvent &jevent, uint32_t* &buff, uint32_t &size) const
-{
-	/// Use the reference stored in the supplied JEvent to extract the evio
-	/// buffer and size for the event. If there is no buffer for the event
-	/// then buff will be set to NULL and size to zero. This can happen if
-	/// reading entangled events and this is not the first event in the block.
-
-	// In case we bail early
-	buff = NULL;
-	size = 0;
-
-	// Make sure this JEvent actually came from this source
-	if(jevent.GetJEventSource() != this){
-		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<endl;
-		return;
-	}
-
-	// Get pointer to ObjList object
-	const ObjList *objs_ptr = (ObjList*)jevent.GetRef();
-	if(!objs_ptr) return;
-
-	// Copy buffer pointer and size to user's variables
-	buff = objs_ptr->eviobuff;
-	size = objs_ptr->eviobuff_size;
-}
-
-//----------------
-// GetEVIODOMTree
-//----------------
-evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(JEvent &jevent) const
-{
-	/// Use the reference stored in the supplied JEvent to extract the evio
-	/// DOM tree for the event. If there is no DOM tree for the event
-	/// then NULL will be returned. This can happen if reading entangled events
-	/// and this is not the first event in the block.
-
-	// Make sure this JEvent actually came from this source
-	if(jevent.GetJEventSource() != this){
-		jerr<<" ERROR: Attempting to get EVIO buffer for event not produced by this source!!"<<endl;
-		return NULL;
-	}
-
-	// Get pointer to ObjList object
-	const ObjList *objs_ptr = (ObjList*)jevent.GetRef();
-	if(!objs_ptr) return NULL;
-
-	return objs_ptr->DOMTree;
-}
-
-//----------------
 // GetObjects
 //----------------
 jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
