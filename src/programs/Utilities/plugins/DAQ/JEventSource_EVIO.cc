@@ -195,8 +195,8 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	jout << "     station: " << station << endl;
 	jout << " system file: " << fname << endl;
 	if(host!=""){
-		jout << "     host:\""<<host<<"\"" << endl;
-		if(port !=0) jout << "     port:" << port << endl;
+		jout << "        host:\""<<host<<" \"" << endl;
+		if(port !=0) jout << "        port: " << port << endl;
 	}
 
 	// connect to the ET system
@@ -316,7 +316,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 
 		bool skipped_parsing = true;
 		if(MAKE_DOM_TREE){
-			evioDOMTree *evt = new evioDOMTree(buff); // deleted in FreeEvent
+			evt = new evioDOMTree(buff); // deleted in FreeEvent
 			if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
 			int32_t run_number = GetRunNumber(evt);
 
