@@ -188,7 +188,7 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 
 	if(session == "") session = "none";
 	if(station == "") station = "DANA";
-	string fname = string("/tmp/et_sys_") + session;
+	string fname = session.at(0)=='/' ? session:(string("/tmp/et_sys_") + session);
 	
 	// Report to user what we're doing
 	jout << " Opening ET system:" << endl;
