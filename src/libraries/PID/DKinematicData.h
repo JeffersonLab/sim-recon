@@ -280,11 +280,12 @@ public:
     
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "PID", "%i", (int)PID());
+			AddString(items, "Name", "%s", ParticleType(PID()));
 			AddString(items, "q", "%+1.0f", charge());
 			AddString(items, "x(cm)", "%3.1f", x());
 			AddString(items, "y(cm)", "%3.1f", y());
 			AddString(items, "z(cm)", "%3.1f", z());
-			AddString(items, "E(GeV)", "%2.3f", energy());
+			AddString(items, "E(GeV)", "%2.4f", energy());
 			AddString(items, "t(ns)", "%2.3f", time());
 			AddString(items, "p(GeV/c)", "%2.3f", momentum().Mag());
 			AddString(items, "theta(deg)", "%2.3f", momentum().Theta()*180.0/M_PI);
