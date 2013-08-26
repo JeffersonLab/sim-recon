@@ -112,6 +112,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	
 	last_run_number = 0;
 	pthread_mutex_init(&evio_buffer_pool_mutex, NULL);
+	pthread_mutex_init(&stored_events_mutex, NULL);
 }
 
 //----------------
@@ -302,52 +303,67 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// single event blocks (i.e. already disentangled events) the
 	// stored_events list will always be empty so "evt" is always
 	// set.
-	evioDOMTree *evt = NULL;
-	uint32_t *buff = NULL; // ReadEVIOEvent will allocate memory from pool for this
-	uint32_t buff_size = 0;
+//	evioDOMTree *evt = NULL;
+//	uint32_t *buff = NULL; // ReadEVIOEvent will allocate memory from pool for this
+//	uint32_t buff_size = 0;
+
+	// Check for event stored from parsing a previously read in
+	// DAQ event
+	ObjList *objs_ptr = NULL;
+	pthread_mutex_lock(&stored_events_mutex);
+	if(!stored_events.empty()){
+		objs_ptr = stored_events.front();
+		stored_events.pop();
+	}
+	pthread_mutex_unlock(&stored_events_mutex);
 
 	// If no events are currently stored in the buffer, then
 	// read in another event block.
-	if(stored_events.empty()){
+	if(objs_ptr == NULL){
+		uint32_t *buff = NULL; // ReadEVIOEvent will allocate memory from pool for this
 		jerror_t err = ReadEVIOEvent(buff);
 		if(err != NOERROR) return err;
 		if(buff == NULL) return MEMORY_ALLOCATION_ERROR;
-		buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
+		uint32_t buff_size = ((*buff) + 1)*4; // first word in EVIO buffer is total bank size in words
 
-		bool skipped_parsing = true;
-		if(MAKE_DOM_TREE){
-			evt = new evioDOMTree(buff); // deleted in FreeEvent
-			if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
-			int32_t run_number = GetRunNumber(evt);
+		objs_ptr = new ObjList();
+		objs_ptr->eviobuff = buff;
+		objs_ptr->eviobuff_size = buff_size;
 
-			if(PARSE_EVIO_EVENTS){
-				try{
-					skipped_parsing = false; // flag to let us know if we need to add empty event below
-					ParseEVIOEvent(evt, run_number);
-				}catch(JException &jexception){
-					jerr << jexception.what() << endl;
-				}
-			}
-		}
+//		bool skipped_parsing = true;
+//		if(MAKE_DOM_TREE){
+//			evt = new evioDOMTree(buff); // deleted in FreeEvent
+//			if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
+//			int32_t run_number = GetRunNumber(evt);
 
-		if(skipped_parsing){
+//			if(PARSE_EVIO_EVENTS){
+//				try{
+//					skipped_parsing = false; // flag to let us know if we need to add empty event below
+//					ParseEVIOEvent(evt, run_number);
+//				}catch(JException &jexception){
+//					jerr << jexception.what() << endl;
+//				}
+//			}
+//		}
+
+//		if(skipped_parsing){
 			// Parsing was skipped by user request for benchmarking/debugging.
 			// Add an empty event so system doesn't think we ran out of events.
-			stored_events.push(new ObjList());
-		}
+//			stored_events.push(new ObjList());
+//		}
 	}
 
 	// If we still don't have any events, then try recalling
 	// ourselves to look at the next event
-	if(stored_events.empty())return GetEvent(event);
+//	if(stored_events.empty())return GetEvent(event);
 	
 	// Get next event from queue
-	ObjList *objs_ptr = stored_events.front();
-	stored_events.pop();
-	objs_ptr->own_objects = true; // will be set to false in GetObjects()
-	objs_ptr->DOMTree = evt;
-	objs_ptr->eviobuff = buff;
-	objs_ptr->eviobuff_size = buff_size;
+//	ObjList *objs_ptr = stored_events.front();
+//	stored_events.pop();
+//	objs_ptr->own_objects = true; // will be set to false in GetObjects()
+//	objs_ptr->DOMTree = evt;
+//	objs_ptr->eviobuff = buff;
+//	objs_ptr->eviobuff_size = buff_size;
 
 	event.SetJEventSource(this);
 	event.SetEventNumber(++Nevents_read);
@@ -366,6 +382,16 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 {
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(objs_ptr){
+
+		// If a DAQ event was read in but GetObjects never called
+		// then the buffer will never have been parsed. Since the
+		// DAQ event could hold multiple Physics events, we parse 
+		// it now to ensure all physics events are presented by 
+		// the event source. The ParseEvents call will copy the
+		// first event's parameters into our objs_ptr object, but
+		// any additional ones will be placed in stored_events.
+		if(!objs_ptr->eviobuff_parsed) ParseEvents(objs_ptr);
+
 		if(objs_ptr->own_objects){
 		
 			for(unsigned int i=0; i<objs_ptr->hit_objs.size(); i++){
@@ -383,6 +409,93 @@ void JEventSource_EVIO::FreeEvent(JEvent &event)
 	
 		delete objs_ptr;
 	}
+}
+
+//----------------
+// ParseEvents
+//----------------
+jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
+{
+	/// This is the high-level entry point for parsing the
+	/// DAQ event in order to create one or more Physics
+	/// events. It will be called from either GetObjects
+	/// or FreeEvent, the latter being done only if needed
+	/// to ensure the event does eventually get parsed.
+	/// The grunt work of actually parsing the data starts
+	/// in ParseEVIOEvent().
+	///
+	/// This method is here so that the DOM Tree creation
+	/// and data parsing can be deferred from the EventBuffer
+	/// thread (of which there is only one) to an event
+	/// processor thread (or which there may be many). Since
+	/// the DOM tree creating and data parsing represent the
+	/// larger time cost of getting the event into memory,
+	/// siginificant a performance increase can be gained 
+	/// using this slightly more complicated method.
+
+	// Double check that we're not re-parsing an event
+	if(objs_ptr->eviobuff_parsed){
+		jerr << " DAQ event already parsed!! Bug in code. Contact davidl@jlab.org" << endl;
+		return UNKNOWN_ERROR;
+	}
+
+	// Bomb-proof against getting a NULL buffer
+	uint32_t *buff = objs_ptr->eviobuff;
+	if(buff == NULL){
+		jerr << " Bad buffer pointer passed to JEventSource_EVIO::ParseEvent()!!" << endl;
+		return RESOURCE_UNAVAILABLE;
+	}	
+
+	// Make evioDOMTree for event
+	list<ObjList*> full_events;
+	bool skipped_parsing = true;
+	if(MAKE_DOM_TREE){
+		evioDOMTree* &evt = objs_ptr->DOMTree;
+		if(!evt) evt = new evioDOMTree(buff); // deleted in FreeEvent
+		if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
+
+		// Parse event, making other ObjList objects
+		if(PARSE_EVIO_EVENTS){
+			try{
+				skipped_parsing = false;	
+				ParseEVIOEvent(evt, full_events);
+			}catch(JException &jexception){
+				jerr << jexception.what() << endl;
+			}
+		}
+	}
+
+	// Whether we actually parsed the event or not, we mark it as being
+	// parsed since it is really just used as a flag to tell whether this
+	// method should be called or not.
+	objs_ptr->eviobuff_parsed = true;
+
+	// If parsing was skipped by user request (for benchmarking/debugging)
+	// then just return NOERROR here
+	if(skipped_parsing) return NOERROR;
+
+	// If we did not find any Physics events in this DAQ event,
+	// then notify caller.
+	if(full_events.empty()) return NO_MORE_EVENTS_IN_SOURCE;
+
+	// Copy the first event's objects obtained from parsing into this event's ObjList
+	ObjList *objs = full_events.front();
+	full_events.pop_front();
+	objs_ptr->run_number = objs->run_number;	
+	objs_ptr->hit_objs = objs->hit_objs;
+	delete objs;
+
+	// Copy remaining events into the stored_events container
+	pthread_mutex_lock(&stored_events_mutex);
+	while(!full_events.empty()){
+		objs = full_events.front();
+		full_events.pop_front();
+		objs->eviobuff_parsed = true; // flag this event as having been already parsed
+		stored_events.push(objs);
+	}
+	pthread_mutex_unlock(&stored_events_mutex);
+
+	return NOERROR;
 }
 
 //----------------
@@ -469,6 +582,13 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(!objs_ptr)return RESOURCE_UNAVAILABLE;
 	if(!objs_ptr->own_objects) return OBJECT_NOT_AVAILABLE; // if objects were already copied ...
+
+	// We use a deferred parsing scheme for efficiency. If the event
+	// is not flagged as having already been parsed, then parse it
+	// now, creating objects for one or more events. The first event's
+	// parameters will be copied into our ObjList object and any additional
+	// ones stored in the stored_events queue.
+	if(!objs_ptr->eviobuff_parsed) ParseEvents(objs_ptr);
 	
 	// Get name of class which is actually being requested by caller
 	JEventLoop *loop = event.GetJEventLoop();
@@ -638,16 +758,17 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 //----------------
 // ParseEVIOEvent
 //----------------
-void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
+void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events)
 {
 	if(!evt)throw RESOURCE_UNAVAILABLE;
+
 	// Since each bank contains parts of many events, have them fill in
 	// the "tmp_events" list and then merge those into the "full_events".
 	// It is done this way so each bank can grow tmp_events to the appropriate
 	// size to hold the number of events it discovers in the bank. A check
 	// can then be made that this is consistent with the number of event
 	// fragments found in the other banks.
-	list<ObjList*> full_events;
+	//list<ObjList*> full_events;
 	list<ObjList*> tmp_events;
 	
 	// The Physics Event bank is the outermost bank of the event and
@@ -740,11 +861,12 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number)
 	if(full_events.empty())full_events.push_back(new ObjList);
 	
 	// Set the run number for all events and copy them into the stored_events queue
+	uint32_t run_number = GetRunNumber(evt);
 	list<ObjList*>::iterator evt_iter = full_events.begin();
 	for(; evt_iter!=full_events.end();  evt_iter++){
 		ObjList *objs = *evt_iter;
 		objs->run_number = run_number;
-		stored_events.push(objs);
+		//stored_events.push(objs);
 	}
 }
 

@@ -24,6 +24,7 @@ using std::set;
 #include <JANA/JEventSource.h>
 #include <JANA/JEvent.h>
 #include <JANA/JFactory.h>
+using namespace jana;
 
 #include <evioChannel.hxx>
 #include <evioUtil.hxx>
@@ -149,7 +150,17 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool MAKE_DOM_TREE;
 		int ET_STATION_NEVENTS;
 
-		// Utility class to hold pointers to containers for
+		// Utility class with multiple roles:
+		//
+		// First is to hold pointers to input EVIO buffer and
+		// the evioDOMTree made out of it. When an event is
+		// first read in, the buffer pointer is set, but the
+		// DOM tree is not made until either GetObjects or
+		// FreeEvent are called. In the case of multiple physics
+		// events in a single DAQ event, the buffer pointer
+		// and DOM tree pointers will be NULL.
+		//
+		// Second is to hold pointers to containers for
 		// all types of data objects we produce. This gets passed
 		// into bank processor methods so that they can append
 		// to the lists. Note that the naming scheme here needs to
@@ -159,21 +170,25 @@ class JEventSource_EVIO: public jana::JEventSource{
 		vector< vector<DDAQAddress*> > hit_objs;
 		class ObjList{
 		public:
+
+			ObjList():run_number(0),own_objects(true),eviobuff_parsed(false),eviobuff(NULL),eviobuff_size(0),DOMTree(NULL){}
 			
 			int32_t run_number;
 			bool own_objects; // keeps track of whether these objects were copied to factories or not
 			
 			vector<DDAQAddress*> hit_objs;
 
-			uint32_t *eviobuff;
-			uint32_t eviobuff_size;
-			evioDOMTree *DOMTree;
+			bool eviobuff_parsed;     // flag used to keep track of whether this buffer has been parsed
+			uint32_t *eviobuff;       // Only holds original EVIO event buffer
+			uint32_t eviobuff_size;   // size of eviobuff in bytes
+			evioDOMTree *DOMTree;     // DOM tree which may be modified before generating output buffer from it
 		};
 	
 		// EVIO events with more than one DAQ event ("blocked" or
 		// "entangled" events") are parsed and have the events
 		// stored in the following container so they can be dispensed
 		// as needed.
+		pthread_mutex_t stored_events_mutex;
 		queue<ObjList*> stored_events;
 
 		// We need to keep the EVIO buffers around for events since they
@@ -188,6 +203,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		// (filled in the constructor)
 		set<string> event_source_data_types;
 	
+		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t GetRunNumber(evioDOMTree *evt);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
@@ -198,7 +214,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
 
-		void ParseEVIOEvent(evioDOMTree *evt, uint32_t run_number);
+		void ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events);
 		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
