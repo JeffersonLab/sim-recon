@@ -914,22 +914,26 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   temp.t=ftime;
   temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
   temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
+  temp.S=S;
 
-  if (z<endplate_z && r2<endplate_r2max && z>cdc_origin[2])
-  {
-    // get material properties from the Root Geometry
-    if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
-      DVector3 mom(S(state_tx),S(state_ty),1.);
-      if(geom->FindMatKalman(pos,mom,temp.K_rho_Z_over_A,
-			     temp.rho_Z_over_A,temp.LnI,
-			     temp.chi2c_factor,temp.chi2a_factor,
-			     temp.chi2a_corr,
-			     last_material_map,
-			     &s_to_boundary)!=NOERROR){
-    	return UNRECOVERABLE_ERROR;
-      }
-     }
-     else
+  // Kinematic variables
+  double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+  double one_over_beta2=1.+mass2*q_over_p_sq;
+  if (one_over_beta2>BIG) one_over_beta2=BIG;
+
+  // get material properties from the Root Geometry
+  if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
+    DVector3 mom(S(state_tx),S(state_ty),1.);
+    if(geom->FindMatKalman(pos,mom,temp.K_rho_Z_over_A,
+			   temp.rho_Z_over_A,temp.LnI,
+			   temp.chi2c_factor,temp.chi2a_factor,
+			   temp.chi2a_corr,
+			   last_material_map,
+			   &s_to_boundary)!=NOERROR){
+      return UNRECOVERABLE_ERROR;
+    }
+  }
+  else
     {
       if(geom->FindMatKalman(pos,temp.K_rho_Z_over_A,
 			     temp.rho_Z_over_A,temp.LnI,
@@ -940,12 +944,12 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
       }
     }
 
-    // Get dEdx for the upcoming step
-    if (CORRECT_FOR_ELOSS){
-      dEdx=GetdEdx(S(state_q_over_p),temp.K_rho_Z_over_A,temp.rho_Z_over_A,
+  // Get dEdx for the upcoming step
+  if (CORRECT_FOR_ELOSS){
+    dEdx=GetdEdx(S(state_q_over_p),temp.K_rho_Z_over_A,temp.rho_Z_over_A,
 		 temp.LnI); 
-    }
   }
+
   index++; 
   if (index<=length){
     my_i=length-index;
@@ -959,9 +963,6 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
     forward_traj[my_i].LnI=temp.LnI;
     forward_traj[my_i].S=S;
   } 
-  else{
-    temp.S=S;
-  }
    
   // Determine the step size based on energy loss 
   //double step=mStepSizeS*dz_ds;
@@ -972,20 +973,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
       if (fabs(dEdx)>EPS){
 	ds=DE_PER_STEP/fabs(dEdx);
       }  
-      /*
-	if (fabs(dBzdz)>EPS){
-	double my_step_size_B=BFIELD_FRAC*fabs(Bz/dBzdz)/dz_ds;
-	if (my_step_size_B<ds){ 
-	ds=my_step_size_B;
-	}
-	}
-      */
       if(ds>mStepSizeS) ds=mStepSizeS;  
-      /*
-	if (ds>mCDCInternalStepSize && r2>endplate_r2min
-	&& r2<endplate_r2max && z<endplate_z) 
-	ds=mCDCInternalStepSize;
-      */
       if (s_to_boundary<ds){
 	ds=s_to_boundary;
 	stepped_to_boundary=true;
@@ -1007,36 +995,27 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   }
   double newz=z+ds*dz_ds; // new z position  
 
-  // Deal with the CDC endplate
-  //if (newz>endplate_z){
-  //  step=endplate_z-z+0.01;
-  //  newz=endplate_z+0.01;
-  // }
+  // Store magnetic field
+  temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
   // Step through field
-  ds=FasterStep(z,newz,dEdx,S); 
+  ds=FasterStep(z,newz,dEdx,S);
+
+  // update path length
   len+=fabs(ds);
  
-  double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
-  double one_over_beta2=1.+mass2*q_over_p_sq;
-  if (one_over_beta2>BIG) one_over_beta2=BIG;
+  // Update flight time
   ftime+=ds*sqrt(one_over_beta2);// in units where c=1
   
   // Get the contribution to the covariance matrix due to multiple 
   // scattering
-  GetProcessNoise(ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,S,Q);
+  GetProcessNoise(ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
+		  temp.S,Q);
   
   // Energy loss straggling
   if (CORRECT_FOR_ELOSS){
     double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);
     Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;   
-    /*
-    if (Q(state_q_over_p,state_q_over_p)>1.) {
-      printf("Greater than 1? %f %f %f\n",varE,
-	     Q(state_q_over_p,state_q_over_p),S(state_q_over_p));
-      Q(state_q_over_p,state_q_over_p)=1.;
-    }
-    */
   }
 	  
   // Compute the Jacobian matrix and its transpose
@@ -1044,14 +1023,12 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   
   // update the trajectory
   if (index<=length){
-    // In the bore of the magnet the off-axis components are small
-    forward_traj[my_i].B=sqrt(Bx*Bx+By*By+Bz*Bz);
+    forward_traj[my_i].B=temp.B;
     forward_traj[my_i].Q=Q;
     forward_traj[my_i].J=J;
     forward_traj[my_i].JT=J.Transpose();
   }
   else{	
-    temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
     temp.Q=Q;
     temp.J=J;
     temp.JT=J.Transpose();
@@ -1339,6 +1316,12 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
   temp.z=z;
   temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.; //initialize
   temp.chi2c_factor=temp.chi2a_factor=temp.chi2a_corr=0.;
+  temp.S=S;
+
+  // Kinematic variables  
+  double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
+  double one_over_beta2=1.+mass2*q_over_p_sq;
+  if (one_over_beta2>BIG) one_over_beta2=BIG;
   
   // get material properties from the Root Geometry
   if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
@@ -1394,24 +1377,7 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
       if (fabs(dEdx)>EPS){
 	ds=DE_PER_STEP/fabs(dEdx);
       } 
-      /*
-	if (fabs(dBzdz)>EPS){
-	double my_step_size_B=BFIELD_FRAC*fabs(Bz/dBzdz)/dz_ds;
-	if (my_step_size_B<ds){
-	ds=my_step_size_B;    
-	}
-	}
-      */
       if(ds>mStepSizeS) ds=mStepSizeS; 
-     
-      //double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-      
-      // Reduce the step size inside the CDC
-      /*
-	if (ds>mCDCInternalStepSize && r2>endplate_r2min
-	&& r2<R2_MAX && z<endplate_z)
-	ds=mCDCInternalStepSize;
-      */
       if (s_to_boundary<ds){
 	ds=s_to_boundary;
 	stepped_to_boundary=true;
@@ -1439,27 +1405,28 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     newz=zhit;
     done=true;
   }
+  
+  // Store magnitude of magnetic field
+  temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
   // Step through field
   ds=FasterStep(z,newz,dEdx,S);
+
+  // update path length
   len+=ds;
 
-  double q_over_p_sq=S(state_q_over_p)*S(state_q_over_p);
-  double one_over_beta2=1.+mass2*q_over_p_sq;
-  if (one_over_beta2>BIG) one_over_beta2=BIG;
+  // update flight time
   ftime+=ds*sqrt(one_over_beta2); // in units where c=1
        
   // Get the contribution to the covariance matrix due to multiple 
   // scattering
-  GetProcessNoise(ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,S,Q);
+  GetProcessNoise(ds,temp.chi2c_factor,temp.chi2a_factor,temp.chi2a_corr,
+		  temp.S,Q);
       
   // Energy loss straggling  
   if (CORRECT_FOR_ELOSS){
     double varE=GetEnergyVariance(ds,one_over_beta2,temp.K_rho_Z_over_A);	
     Q(state_q_over_p,state_q_over_p)=varE*q_over_p_sq*q_over_p_sq*one_over_beta2;
-    
-    //if (Q(state_q_over_pt,state_q_over_pt)>1.) 
-    //Q(state_q_over_pt,state_q_over_pt)=1.;
   }
     
   // Compute the Jacobian matrix and its transpose
@@ -1467,14 +1434,12 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
       
   // update the trajectory data
   if (i<=length){
-    // In the bore of magnet the off-axis components of B are small
-    forward_traj[my_i].B=sqrt(Bx*Bx+By*By+Bz*Bz);
+    forward_traj[my_i].B=temp.B;
     forward_traj[my_i].Q=Q;
     forward_traj[my_i].J=J;
     forward_traj[my_i].JT=J.Transpose();
   }
   else{
-    temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
     temp.Q=Q;
     temp.J=J;
     temp.JT=J.Transpose();
@@ -3918,13 +3883,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 		central_traj[k].xy.Y()+Sc(state_D)*cos(Sc(state_phi)));
 
       }
-      else {
-	if (cdc_index>0) cdc_index--;
-	else cdc_index=0;	
-      }
-    
-    
-
 
       // new wire origin and direction
       if (cdc_index>0){
