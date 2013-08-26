@@ -431,7 +431,8 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 mVarT0=0.;
 	 
 	 //mCDCInternalStepSize=0.5;
-	 mCDCInternalStepSize=2.0;
+	 mCDCInternalStepSize=1.0;
+	 mCentralStepSize=0.75;
 
 	 mMinDriftTime=1000.;
 	 mMinDriftID=0;
@@ -2905,8 +2906,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       }
 
       // Step size
-      if (theta_deg<45.0) mStepSizeS=1.5;
-      else mStepSizeS=1.0;
+      mStepSizeS=mCentralStepSize;
 
       // Initialize the state vector
       S0(state_x)=x_=x0;
@@ -2938,8 +2938,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 	forward_prob=TMath::Prob(chisq_,ndf_);
 	if (my_fdchits.size()>0){
 	  if (forward_prob>fdc_prob){
-	    _DBG_ << endl;
-
 	    // We did not end up using the fdc hits after all...
 	    fdchits_used_in_fit.clear();
 	  }
@@ -3007,7 +3005,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     C0(state_tanl,state_tanl)=(one_plus_tanl2)*(one_plus_tanl2)
       *sig_lambda*sig_lambda;
 
-    C0*=1.+5.*tanl2;
+    if (theta_deg>90.) C0*=1.+5.*tanl2;
+    else C0*=1.+5.*tanl2*tanl2;
 
     // The position from the track candidate is reported just outside the 
     // start counter for tracks containing cdc hits. Propagate to the 
