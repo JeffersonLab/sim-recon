@@ -524,7 +524,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   m_ratio_sq=m_ratio*m_ratio;
   two_m_e=2.*ELECTRON_MASS;
 
-  if (DEBUG_LEVEL>1){
+  if (DEBUG_LEVEL>0){
     _DBG_ << "------Starting " 
 	  <<(fit_type==kTimeBased?"Time-based":"Wire-based") 
 	  << " Fit with " << my_fdchits.size() << " FDC hits and " 
@@ -552,7 +552,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   fit_params.setCharge(charge);
   fit_params.setMass(MASS);
 
-  if (DEBUG_LEVEL>1)
+  if (DEBUG_LEVEL>0)
         cout << "----- Pass: " 
 	     << (fit_type==kTimeBased?"Time-based ---":"Wire-based ---") 
 	     << " Mass: " << MASS 
@@ -2845,8 +2845,10 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   double ty0=ty_=pvec.y()/pz;
   
   // deal with hits in FDC
+  double fdc_prob=0.,fdc_chisq=1e16;
+  unsigned int fdc_ndf=0;
   if (my_fdchits.size()>0){
-    if (DEBUG_LEVEL>1){
+    if (DEBUG_LEVEL>0){
       _DBG_ << "Using forward parameterization." <<endl;
     }
 
@@ -2862,20 +2864,23 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     C0(state_y,state_y)=1.0; 
     C0(state_tx,state_tx)=0.001;
     C0(state_ty,state_ty)=0.001;
-    if (theta_deg<1.) C0(state_tx,state_tx)=C0(state_ty,state_ty)=1.0;
     C0(state_q_over_p,state_q_over_p)=dp_over_p_sq*q_over_p_*q_over_p_;
-
+    
     // The position from the track candidate is reported just outside the 
     // start counter for tracks containing cdc hits. Propagate to the distance
     // of closest approach to the beam line
     if (my_cdchits.size()>0 && fit_type==kWireBased) ExtrapolateToVertex(S0);
 
-    kalman_error_t error=ForwardFit(S0,C0);
-    if (error==FIT_SUCCEEDED){
-      if (TMath::Prob(chisq_,ndf_)>0.001 || my_cdchits.size()<6 
-	  //  || my_fdchits.size()>6
-	  )
+    kalman_error_t error=ForwardFit(S0,C0); 
+    if (error!=FIT_FAILED){
+      if (my_cdchits.size()<6){
+	if (ndf_==0) return UNRECOVERABLE_ERROR;
 	return NOERROR;
+      }
+      fdc_prob=TMath::Prob(chisq_,ndf_);
+      if (fdc_prob>0.001 && error==FIT_SUCCEEDED) return NOERROR;
+      fdc_ndf=ndf_;
+      fdc_chisq=chisq_;
     }
     if (my_cdchits.size()<6) return UNRECOVERABLE_ERROR;
   }
@@ -2891,11 +2896,11 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     unsigned int ndof_forward=0;
 
     // Parameters at "vertex"
-    double D=0.,phi=0.,q_over_pt=0.,tanl=0.,x=0.,y=0.,z=0.;
+    double D=D_,phi=phi_,q_over_pt=q_over_pt_,tanl=tanl_,x=x_,y=y_,z=z_;
     
     // Use forward parameters for CDC-only tracks with theta<THETA_CUT degrees
     if (theta_deg<THETA_CUT){
-      if (DEBUG_LEVEL>1){
+      if (DEBUG_LEVEL>0){
 	_DBG_ << "Using forward parameterization." <<endl;
       }
 
@@ -2909,6 +2914,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       S0(state_tx)=tx_=tx0;
       S0(state_ty)=ty_=ty0;
       S0(state_q_over_p)=q_over_p_=q_over_p0; 
+      z_=z0;
 
       // Initial guess for forward representation covariance matrix
       C0(state_x,state_x)=1.0;
@@ -2927,32 +2933,52 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
       error=ForwardCDCFit(S0,C0);
 
-      if (error==FIT_SUCCEEDED){
+      if (error!=FIT_FAILED){
 	// Find the CL of the fit
 	forward_prob=TMath::Prob(chisq_,ndf_);
-	if (forward_prob<0.001 || theta_deg>THETA_CUT-5.0){
-	  // Save the best values for the parameters and chi2 for now
-	  chisq_forward=chisq_;
-	  ndof_forward=ndf_;
-	  D=D_;
-	  x=x_;
-	  y=y_;
-	  z=z_;
-	  phi=phi_;
-	  tanl=tanl_;
-	  q_over_pt=q_over_pt_;
+	if (my_fdchits.size()>0){
+	  if (forward_prob>fdc_prob){
+	    _DBG_ << endl;
 
-	  // Save the list of hits used in the fit
-	  forward_cdc_used_in_fit.assign(cdchits_used_in_fit.begin(),cdchits_used_in_fit.end());
+	    // We did not end up using the fdc hits after all...
+	    fdchits_used_in_fit.clear();
+	  }
+	  else{
+	    chisq_=fdc_chisq;
+            ndf_=fdc_ndf;
+            D_=D;
+            x_=x;
+	    y_=y;
+            z_=z;
+            phi_=phi;
+            tanl_=tanl;
+            q_over_pt_=q_over_pt_;
 
-	  error=LOW_CL_FIT;
-	}	  
-	else return NOERROR;
+	    // _DBG_ << endl;
+	    return NOERROR;
+	  }
+	}
+	if (forward_prob>0.001 && error==FIT_SUCCEEDED) return NOERROR;
+	
+	// Save the best values for the parameters and chi2 for now
+	chisq_forward=chisq_;
+	ndof_forward=ndf_;
+	D=D_;
+	x=x_;
+	y=y_;
+	z=z_;
+	phi=phi_;
+	tanl=tanl_;
+	q_over_pt=q_over_pt_;
+	
+	// Save the list of hits used in the fit
+	forward_cdc_used_in_fit.assign(cdchits_used_in_fit.begin(),cdchits_used_in_fit.end());
+	
       }
     }
    
     // Attempt to fit the track using the central parametrization.
-    if (DEBUG_LEVEL>1){
+    if (DEBUG_LEVEL>0){
       _DBG_ << "Using central parameterization." <<endl;
     }
 
@@ -2967,9 +2993,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     S0(state_D)=D_=0.;
 
     // Initialize the covariance matrix
-    double dz=2.5;
-    //    if (theta_deg<70) dz=3.0;
-    //if (theta_deg<22.) dz=1.5;
+    double dz=5.05-0.048*theta_deg+0.00029*theta_deg_sq;
     
     C0(state_z,state_z)=dz*dz;
     C0(state_q_over_pt,state_q_over_pt)
@@ -2983,8 +3007,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     C0(state_tanl,state_tanl)=(one_plus_tanl2)*(one_plus_tanl2)
       *sig_lambda*sig_lambda;
 
-    if (theta_deg>90) C0*=1.+5.*tanl2;
-    else C0*=1.+5.*tanl2*tanl2;
+    C0*=1.+5.*tanl2;
 
     // The position from the track candidate is reported just outside the 
     // start counter for tracks containing cdc hits. Propagate to the 
@@ -2998,33 +3021,31 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     if (cdc_error==FIT_SUCCEEDED){
       // if the result of the fit using the forward parameterization succeeded
       // but the chi2 was too high, it still may provide the best estimate for 
-      // the track parameters...
-      if (error==LOW_CL_FIT){
-	double central_prob=TMath::Prob(chisq_,ndf_);
+      // the track parameters... 
+      double central_prob=TMath::Prob(chisq_,ndf_);
+
+      if (central_prob<forward_prob){
+	phi_=phi;
+	q_over_pt_=q_over_pt;
+	tanl_=tanl;
+	D_=D;
+	x_=x;
+	y_=y;
+	z_=z;
+	chisq_=chisq_forward;
+	ndf_= ndof_forward;
 	
-	if (DEBUG_LEVEL>1){
-	 printf("chi2/nu f %f c %f\n",chisq_forward/ndof_forward,chisq_/ndf_);
-	 printf("Forward chi2 %f prob %g central chi2 %f prob %g\n",chisq_forward,forward_prob,chisq_,central_prob);
-	}
-
-	if (central_prob<forward_prob){
-	  phi_=phi;
-	  q_over_pt_=q_over_pt;
-	  tanl_=tanl;
-	  D_=D;
-	  x_=x;
-	  y_=y;
-	  z_=z;
-	  chisq_=chisq_forward;
-	  ndf_= ndof_forward;
-
-	  cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());
-	}
-      return NOERROR;
+	cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());
+	
+	// We did not end up using any fdc hits...
+	fdchits_used_in_fit.clear();
+	
       }
+      return NOERROR;
+
     }
-    // otherwise if the fit using the forward parametrization worked, return that
-    else if (error==LOW_CL_FIT){
+    // otherwise if the fit using the forward parametrization worked, return that 
+    else if (error!=FIT_FAILED && error!=FIT_NOT_DONE){
       phi_=phi;
       q_over_pt_=q_over_pt;
       tanl_=tanl;
@@ -3034,13 +3055,17 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
       z_=z;
       chisq_=chisq_forward;
       ndf_= ndof_forward;
+      
+      cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());	
 
-      cdchits_used_in_fit.assign(forward_cdc_used_in_fit.begin(),forward_cdc_used_in_fit.end());
-
+      // We did not end up using any fdc hits...
+      fdchits_used_in_fit.clear();
+      
       return NOERROR;
     }
     else return UNRECOVERABLE_ERROR;
   }
+  if (ndf_==0) return UNRECOVERABLE_ERROR;
 
   return NOERROR;
 }
