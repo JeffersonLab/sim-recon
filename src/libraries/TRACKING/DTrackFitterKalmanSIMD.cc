@@ -448,7 +448,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   ResetKalmanSIMD();
  
   // Check that we have enough FDC and CDC hits to proceed
-  if (cdchits.size()+fdchits.size()<6) return kFitFailed;
+  if (cdchits.size()+fdchits.size()<6) return kFitNotDone;
 
   // Copy hits from base class into structures specific to DTrackFitterKalmanSIMD  
   if (cdchits.size()>=MIN_CDC_HITS) 
@@ -485,7 +485,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
       }
     }
   }
-  if(num_good_cdchits+num_good_fdchits<6) return kFitFailed;
+  if(num_good_cdchits+num_good_fdchits<6) return kFitNotDone;
   
   // Create vectors of updates (from hits) to S and C
   if (my_cdchits.size()>0) cdc_updates=vector<DKalmanUpdate_t>(my_cdchits.size());
@@ -1065,6 +1065,159 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
   return NOERROR;
 }
 
+// Routine that extracts the state vector propagation part out of the reference
+// trajectory loop
+jerror_t DTrackFitterKalmanSIMD::PropagateCentral(int length, int &index,
+						  DVector2 &my_xy,
+						  DMatrix5x1 &Sc,
+						  bool &stepped_to_boundary){
+  DKalmanCentralTrajectory_t temp;
+  DMatrix5x5 J;  // State vector Jacobian matrix 
+  DMatrix5x5 Q;  // Process noise covariance matrix
+  
+  //Initialize some variables needed later
+  double dEdx=0.;
+  double s_to_boundary=1e6; 
+  int my_i=0;
+  // Kinematic variables
+  double q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
+  double q_over_p_sq=q_over_p*q_over_p;
+  double one_over_beta2=1.+mass2*q_over_p_sq;
+  if (one_over_beta2>BIG) one_over_beta2=BIG;
+
+  // Reset D to zero
+  Sc(state_D)=0.;
+            
+  temp.xy=my_xy;	
+  temp.s=len;
+  temp.t=ftime;
+  temp.h_id=0;
+  temp.K_rho_Z_over_A=0.,temp.rho_Z_over_A=0.,temp.LnI=0.; //initialize
+  temp.chi2c_factor=0.,temp.chi2a_factor=0.,temp.chi2a_corr=0.;
+  temp.S=Sc;
+  
+  // get material properties from the Root Geometry
+  DVector3 pos3d(my_xy.X(),my_xy.Y(),Sc(state_z));
+  if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
+    DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
+    if(geom->FindMatKalman(pos3d,mom,temp.K_rho_Z_over_A,
+			   temp.rho_Z_over_A,temp.LnI,
+			   temp.chi2c_factor,temp.chi2a_factor,
+			   temp.chi2a_corr,
+			   last_material_map,
+			   &s_to_boundary)
+       !=NOERROR){
+      return UNRECOVERABLE_ERROR;
+    }
+  }
+  else if(geom->FindMatKalman(pos3d,temp.K_rho_Z_over_A,
+			      temp.rho_Z_over_A,temp.LnI,
+			      temp.chi2c_factor,temp.chi2a_factor,
+			      temp.chi2a_corr,
+			      last_material_map)!=NOERROR){
+    return UNRECOVERABLE_ERROR;
+  }
+  
+  if (CORRECT_FOR_ELOSS){
+    dEdx=GetdEdx(q_over_p,temp.K_rho_Z_over_A,temp.rho_Z_over_A,temp.LnI);
+  }
+
+  // If the deque already exists, update it
+  index++; 
+  if (index<=length){
+    my_i=length-index;
+    central_traj[my_i].s=temp.s;
+    central_traj[my_i].t=temp.t;
+    central_traj[my_i].h_id=0;
+    central_traj[my_i].xy=temp.xy;
+    central_traj[my_i].rho_Z_over_A=temp.rho_Z_over_A;
+    central_traj[my_i].K_rho_Z_over_A=temp.K_rho_Z_over_A;
+    central_traj[my_i].LnI=temp.LnI;
+    central_traj[my_i].S=Sc;
+  } 
+  
+  // Adjust the step size
+  double step_size=mStepSizeS;    
+  if (stepped_to_boundary){
+    step_size=MIN_STEP_SIZE;
+    stepped_to_boundary=false;
+  }
+  else{
+    if (fabs(dEdx)>EPS){
+      step_size=DE_PER_STEP/fabs(dEdx);
+    } 
+    if(step_size>mStepSizeS) step_size=mStepSizeS; 
+    if (s_to_boundary<step_size){
+      step_size=s_to_boundary;
+      stepped_to_boundary=true;
+    }
+    if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
+  } 
+  double r2=my_xy.Mod2();
+  if (r2>endplate_r2min 
+      && step_size>mCDCInternalStepSize) step_size=mCDCInternalStepSize;
+  
+  if (DEBUG_HISTS && fit_type==kTimeBased){
+    if (Hstepsize && HstepsizeDenom){
+      Hstepsize->Fill(Sc(state_z),my_xy.Mod(),step_size);
+      HstepsizeDenom->Fill(Sc(state_z),my_xy.Mod());
+    }
+  }
+  
+  // Store magnitude of magnetic field
+  temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
+
+  // Propagate the state through the field
+  FasterStep(my_xy,step_size,Sc,dEdx);
+
+  // update path length
+  len+=step_size;
+ 
+  // Update flight time
+  ftime+=step_size*sqrt(one_over_beta2); // in units of c=1
+  
+  // Multiple scattering    
+  GetProcessNoiseCentral(step_size,temp.chi2c_factor,temp.chi2a_factor,
+			 temp.chi2a_corr,temp.S,Q);
+      
+  // Energy loss straggling in the approximation of thick absorbers    
+  if (CORRECT_FOR_ELOSS){
+    double varE
+      =GetEnergyVariance(step_size,one_over_beta2,temp.K_rho_Z_over_A);    
+    Q(state_q_over_pt,state_q_over_pt)
+      +=varE*temp.S(state_q_over_pt)*temp.S(state_q_over_pt)*one_over_beta2
+      *q_over_p_sq;
+  }
+
+  // B-field and gradient at current (x,y,z)
+  bfield->GetFieldAndGradient(my_xy.X(),my_xy.Y(),Sc(state_z),Bx,By,Bz,
+			      dBxdx,dBxdy,dBxdz,dBydx,
+			      dBydy,dBydz,dBzdx,dBzdy,dBzdz);
+  
+  // Compute the Jacobian matrix and its transpose
+  StepJacobian(my_xy,temp.xy-my_xy,-step_size,Sc,dEdx,J);
+  
+  // Update the trajectory info
+  if (index<=length){
+    central_traj[my_i].B=temp.B;
+    central_traj[my_i].Q=Q;
+    central_traj[my_i].J=J;
+    central_traj[my_i].JT=J.Transpose();
+  }
+  else{
+    temp.Q=Q;
+    temp.J=J;
+    temp.JT=J.Transpose();
+    temp.Ckk=Zero5x5;
+    temp.Skk=Zero5x1;
+    central_traj.push_front(temp);    
+  }
+  
+  return NOERROR;
+}
+
+
+
 // Reference trajectory for central tracks
 // At each point we store the state vector and the Jacobian needed to get to this state 
 // along s from the previous state.
@@ -1073,12 +1226,8 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForwardCDC(int length,int &index,
 // the outer hits toward the target.
 jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
 							   DMatrix5x1 &Sc){
-  DKalmanCentralTrajectory_t temp;
-  DMatrix5x5 J;  // State vector Jacobian matrix 
-  DMatrix5x5 Q;  // Process noise covariance matrix
-
-  double my_zmin=Z_MIN;
-  if (Sc(state_tanl)<0.) my_zmin=cdc_origin[2]; 
+  bool stepped_to_boundary=false;
+  int i=0,central_traj_length=central_traj.size();
 
   // Magnetic field and gradient at beginning of trajectory
   //bfield->GetField(x_,y_,z_,Bx,By,Bz);
@@ -1086,181 +1235,34 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
 			      dBxdx,dBxdy,dBxdz,dBydx,
 			      dBydy,dBydz,dBzdx,dBzdy,dBzdz);
    
-  // Position, step, radius, etc. variables
+  // Copy of initial position in xy
   DVector2 my_xy=xy;
-  double dedx=0;
-  double one_over_beta2=1.,varE=0.,q_over_p=1.,q_over_p_sq=1.; 
-  len=0.; 
-  int i=0;
-  double t=0.;
-  double step_size=MIN_STEP_SIZE;
-  double s_to_boundary=1000.;
    
   // Coordinates for outermost cdc hit
   unsigned int id=my_cdchits.size()-1;
   DVector2 origin=my_cdchits[id]->origin;
   DVector2 dir=my_cdchits[id]->dir;
-  bool stepped_to_boundary=false;;
   double rmax=(origin+(endplate_z-Sc(state_z))*dir).Mod()+DELTA_R;
   double r2max=rmax*rmax;
-  double r2=0,z=0.;
+  double r2=xy.Mod2(),z=z_;
 
   // Reset cdc status flags
   for (unsigned int j=0;j<my_cdchits.size();j++){
     if (my_cdchits[j]->status!=late_hit)my_cdchits[j]->status=good_hit;
   }
 
-  if (central_traj.size()>0){  // reuse existing deque
-    // Reset D to zero
-    Sc(state_D)=0.;
-
-    for (int m=central_traj.size()-1;m>=0;m--){    
-      i++;
-      central_traj[m].s=len;
-      central_traj[m].t=t;
-      central_traj[m].xy=my_xy;
-      central_traj[m].h_id=0;
-      central_traj[m].S=Sc;
-      central_traj[m].S(state_D)=0.;  // make sure D=0.
-
-      // update path length 
-      len+=step_size;
- 
-      // Initialize dEdx
-      dedx=0.;
-
-      // Adjust the step size
-      r2=my_xy.Mod2();
-      z=Sc(state_z);
-      step_size=mStepSizeS; 
-      if (z<endplate_z && r2<endplate_r2max && z>cdc_origin[2]){
-	DVector3 pos3d(my_xy.X(),my_xy.Y(),z);
-	// get material properties from the Root Geometry
-	if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
-	  DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
-	  if(geom->FindMatKalman(pos3d,mom,
-				 central_traj[m].K_rho_Z_over_A,
-				 central_traj[m].rho_Z_over_A,
-				 central_traj[m].LnI,
-				 central_traj[m].chi2c_factor,
-				 central_traj[m].chi2a_factor,
-				 central_traj[m].chi2a_corr,
-				 last_material_map,
-				 &s_to_boundary)!=NOERROR){
-	    return UNRECOVERABLE_ERROR;
-	  }
-	}
-	else
-	  {
-	    if(geom->FindMatKalman(pos3d,
-				   central_traj[m].K_rho_Z_over_A,
-				   central_traj[m].rho_Z_over_A,
-				   central_traj[m].LnI,
-				   central_traj[m].chi2c_factor,
-				   central_traj[m].chi2a_factor,
-				   central_traj[m].chi2a_corr,
-				   last_material_map)!=NOERROR){
-	      return UNRECOVERABLE_ERROR;
-	    }	
-	  }
-	// Get dEdx for this step
-	if (CORRECT_FOR_ELOSS){
-	  dedx=GetdEdx(q_over_p,central_traj[m].K_rho_Z_over_A,
-		       central_traj[m].rho_Z_over_A,central_traj[m].LnI);
-	}
-
-	if (!stepped_to_boundary){
-	  stepped_to_boundary=false;
-	  if (fabs(dedx)>EPS){
-	    step_size=DE_PER_STEP/fabs(dedx);
-	  }
-	  /*
-	    if (fabs(dBzdz)>EPS){	
-	    double my_step_size_B=BFIELD_FRAC*fabs(Bz/dBzdz/sin(atan(Sc(state_tanl))));
-	    if (my_step_size_B<step_size){ 
-	    step_size=my_step_size_B;	
-	    }
-	    }
-	  */
-	  if(step_size>mStepSizeS) step_size=mStepSizeS;
-	  /*
-	  if (step_size>mCDCInternalStepSize
-	      && r2>endplate_r2min
-	      && r2<endplate_r2max
-	      && z>cdc_origin[2]) 
-	    step_size=mCDCInternalStepSize; 
-	  */
-	  if (s_to_boundary<step_size){
-	    step_size=s_to_boundary;
-	  stepped_to_boundary=true;
-	  }
-	  if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
-	}
-	else{
-	  step_size=MIN_STEP_SIZE;
-	  stepped_to_boundary=false;
-	}
-      }
-
-      if (DEBUG_HISTS && fit_type==kTimeBased){
-	if (Hstepsize && HstepsizeDenom){
-	  double my_r=my_xy.Mod();
-	  Hstepsize->Fill(z,my_r,step_size); 
-	  HstepsizeDenom->Fill(z,my_r);
-	}
-      }
-
-      // Propagate the state through the field
-      central_traj[m].B=sqrt(Bx*Bx+By*By+Bz*Bz);
-      FasterStep(my_xy,step_size,Sc,dedx);
-      
-      // Break out of the loop if we would swim out of the fiducial volume
-      z=Sc(state_z);
-      r2=my_xy.Mod2();
-      if (r2>r2max || z<my_zmin || z>endplate_z 
-	  || fabs(Sc(state_q_over_pt))>Q_OVER_PT_MAX
-	  || fabs(Sc(state_tanl))>=TAN_MAX
-	  )
-	break;
-  
-      // update flight time
-      q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
-      q_over_p_sq=q_over_p*q_over_p;
-      one_over_beta2=1.+mass2*q_over_p_sq;
-      if (one_over_beta2>BIG) one_over_beta2=BIG;
-      t+=step_size*sqrt(one_over_beta2); // in units of c=1 
-
-      // Multiple scattering    
-      GetProcessNoiseCentral(step_size,central_traj[m].chi2c_factor,
-			     central_traj[m].chi2a_factor,
-			     central_traj[m].chi2a_corr,Sc,Q);
-
-      // Energy loss straggling
-      if (CORRECT_FOR_ELOSS){
-	varE=GetEnergyVariance(step_size,one_over_beta2,
-			       central_traj[m].K_rho_Z_over_A);	
-	Q(state_q_over_pt,state_q_over_pt)
-	  +=varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
-	  *q_over_p_sq;
-	
-	//if (Q(state_q_over_pt,state_q_over_pt)>1.) 
-	//  Q(state_q_over_pt,state_q_over_pt)=1.;
-      }
-
-      // B-field and gradient at current (x,y,z)
-      bfield->GetFieldAndGradient(my_xy.X(),my_xy.Y(),Sc(state_z),Bx,By,Bz,
-				  dBxdx,dBxdy,dBxdz,dBydx,
-				  dBydy,dBydz,dBzdx,dBzdy,dBzdz);
-      
-      // Compute the Jacobian matrix for back-tracking towards target
-      StepJacobian(my_xy,central_traj[m].xy-my_xy,-step_size,Sc,dedx,J);
-    
-      // Fill the deque with the Jacobian and Process Noise matrices
-      central_traj[m].J=J;
-      central_traj[m].Q=Q;
-      central_traj[m].JT=J.Transpose();
-    }
+  // Continue adding to the trajectory until we have reached the endplate
+  // or the maximum radius
+  while(z<endplate_z && z>=Z_MIN && r2<r2max
+	&& fabs(Sc(state_q_over_pt))<Q_OVER_PT_MAX
+	&& fabs(Sc(state_tanl))<TAN_MAX
+	){
+    if (PropagateCentral(central_traj_length,i,my_xy,Sc,stepped_to_boundary)
+	!=NOERROR) return UNRECOVERABLE_ERROR;    
+    z=Sc(state_z);
+    r2=my_xy.Mod2();
   }
+
   // If the current length of the trajectory deque is less than the previous 
   // trajectory deque, remove the extra elements and shrink the deque
   if (i<(int)central_traj.size()){
@@ -1269,152 +1271,8 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
       central_traj.pop_front();
     }
   }
-  else{
-    // Swim out
-    r2=my_xy.Mod2();
-    z=Sc(state_z);
-    while(r2<r2max && z<endplate_z && z>my_zmin && len<MAX_PATH_LENGTH
-	  && fabs(Sc(state_q_over_pt))<Q_OVER_PT_MAX
-	  && fabs(Sc(state_tanl))<TAN_MAX
-	  ){
-      // Reset D to zero
-      Sc(state_D)=0.;
-            
-      temp.xy=my_xy;	
-      temp.s=len;
-      temp.t=t;
-      temp.h_id=0;
-      temp.K_rho_Z_over_A=0.,temp.rho_Z_over_A=0.,temp.LnI=0.; //initialize
-      temp.chi2c_factor=0.,temp.chi2a_factor=0.,temp.chi2a_corr=0.;
-      
-      // update path length
-      len+=step_size;
-      
-      // New state vector
-      temp.S=Sc;
-      
-      // Initialize dEdx
-      dedx=0.;
-
-      // Adjust the step size
-      step_size=mStepSizeS;      
-      if (z<endplate_z && r2<endplate_r2max && z>cdc_origin[2]){
-	// get material properties from the Root Geometry
-	DVector3 pos3d(my_xy.X(),my_xy.Y(),Sc(state_z));
-	if (ENABLE_BOUNDARY_CHECK && fit_type==kTimeBased){
-	  DVector3 mom(cos(Sc(state_phi)),sin(Sc(state_phi)),Sc(state_tanl));
-	  if(geom->FindMatKalman(pos3d,mom,temp.K_rho_Z_over_A,
-				 temp.rho_Z_over_A,temp.LnI,
-				 temp.chi2c_factor,temp.chi2a_factor,
-				 temp.chi2a_corr,
-				 last_material_map,
-				 &s_to_boundary)
-	     !=NOERROR){
-	    return UNRECOVERABLE_ERROR;
-	  }
-	}
-	else
-	  {
-	    if(geom->FindMatKalman(pos3d,temp.K_rho_Z_over_A,
-				   temp.rho_Z_over_A,temp.LnI,
-				   temp.chi2c_factor,temp.chi2a_factor,
-				   temp.chi2a_corr,
-				   last_material_map)!=NOERROR){
-	      return UNRECOVERABLE_ERROR;
-	    }
-	  }
-	if (CORRECT_FOR_ELOSS){
-	  dedx=GetdEdx(q_over_p,temp.K_rho_Z_over_A,temp.rho_Z_over_A,temp.LnI);
-	}
-    
-	if (!stepped_to_boundary){
-	  stepped_to_boundary=false;
-	  
-	  if (fabs(dedx)>EPS){
-	    step_size=DE_PER_STEP/fabs(dedx);
-	  }    
-	  /*
-	    if (fabs(dBzdz)>EPS){	
-	    double my_step_size_B=BFIELD_FRAC*fabs(Bz/dBzdz/sin(atan(Sc(state_tanl))));
-	    if (my_step_size_B<step_size){
-	    step_size=my_step_size_B;
-	    }
-	    }
-	  */
-	  if(step_size>mStepSizeS) step_size=mStepSizeS;
-	  /*
-	    if (step_size>mCDCInternalStepSize && r2>endplate_r2min
-	    && r2<endplate_r2max
-	    && z>cdc_origin[2]) 
-	    step_size=mCDCInternalStepSize;
-	  */
-	  if (s_to_boundary<step_size){
-	    step_size=s_to_boundary;
-	    stepped_to_boundary=true;
-	  }
-	  if(step_size<MIN_STEP_SIZE)step_size=MIN_STEP_SIZE;
-	}
-	else{
-	  step_size=MIN_STEP_SIZE;
-	  stepped_to_boundary=false;
-	}
-      }
-      if (DEBUG_HISTS && fit_type==kTimeBased){
-	if (Hstepsize && HstepsizeDenom){
-	  Hstepsize->Fill(z,my_xy.Mod(),step_size);
-	  HstepsizeDenom->Fill(z,my_xy.Mod());
-	}
-      }
-      
-      // Propagate the state through the field
-      temp.B=sqrt(Bx*Bx+By*By+Bz*Bz);
-      FasterStep(my_xy,step_size,Sc,dedx);
- 
-      // Update flight time
-      q_over_p=Sc(state_q_over_pt)*cos(atan(Sc(state_tanl)));
-      q_over_p_sq=q_over_p*q_over_p;
-      one_over_beta2=1.+mass2*q_over_p_sq;
-      if (one_over_beta2>BIG) one_over_beta2=BIG;
-      t+=step_size*sqrt(one_over_beta2); // in units of c=1
-      
-      // Multiple scattering    
-      GetProcessNoiseCentral(step_size,temp.chi2c_factor,temp.chi2a_factor,
-			     temp.chi2a_corr,Sc,Q);
-      
-      // Energy loss straggling in the approximation of thick absorbers    
-      if (CORRECT_FOR_ELOSS){
-	varE=GetEnergyVariance(step_size,one_over_beta2,temp.K_rho_Z_over_A);    
-	Q(state_q_over_pt,state_q_over_pt)
-	  +=varE*Sc(state_q_over_pt)*Sc(state_q_over_pt)*one_over_beta2
-	  *q_over_p_sq;
-	
-	//if (Q(state_q_over_pt,state_q_over_pt)>1.) 
-	//	Q(state_q_over_pt,state_q_over_pt)=1.;
-      }
-      // B-field and gradient at current (x,y,z)
-      bfield->GetFieldAndGradient(my_xy.X(),my_xy.Y(),Sc(state_z),Bx,By,Bz,
-				  dBxdx,dBxdy,dBxdz,dBydx,
-				  dBydy,dBydz,dBzdx,dBzdy,dBzdz);
-            
-      // Compute the Jacobian matrix and its transpose
-      StepJacobian(my_xy,temp.xy-my_xy,-step_size,Sc,dedx,J);
-      
-      // update the radius relative to the beam line and the z position
-      z=Sc(state_z);
-      r2=my_xy.Mod2();
-      
-      // Update the trajectory info
-      temp.Q=Q;
-      temp.J=J;
-      temp.JT=J.Transpose();
-      temp.Ckk=Zero5x5;
-      temp.Skk=Zero5x1;
-      central_traj.push_front(temp);    
-    }
-  } 
 
   // Only use hits that would fall within the range of the reference trajectory
-  z=Sc(state_z);
   for (unsigned int j=0;j<my_cdchits.size();j++){
     DKalmanSIMDCDCHit_t *hit=my_cdchits[j];
     double my_r2=(hit->origin+(z-hit->z0wire)*hit->dir).Mod2();
@@ -5822,7 +5680,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
   //  if (fit_type==kTimeBased)printf("------Extrapolating\n");
 
   if (central_traj.size()==0){
-    _DBG_ << endl;
+    if (DEBUG_LEVEL>1) _DBG_ << "Central trajectory size==0!" << endl;
     return UNRECOVERABLE_ERROR;
   }
 
