@@ -392,7 +392,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
 
   // Step sizes
-  double mStepSizeZ,mStepSizeS;
+  double mStepSizeZ,mStepSizeS,mCentralStepSize;
   double mCDCInternalStepSize;
 
   // Track parameters for forward region
