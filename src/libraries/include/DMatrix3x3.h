@@ -85,6 +85,27 @@ class DMatrix3x3{
 		       mA[2][0]*m2(0,2)+mA[2][1]*m2(1,2)+mA[2][2]*m2(2,2)
 		       );
   }
+
+  // Matrix inversion
+  DMatrix3x3 Invert() const{
+    double b11=mA[1][1]*mA[2][2]-mA[1][2]*mA[2][1];
+    double b12=mA[0][2]*mA[2][1]-mA[0][1]*mA[2][2];
+    double b13=mA[0][1]*mA[1][2]-mA[0][2]*mA[1][1];
+    double b21=mA[1][2]*mA[2][0]-mA[1][0]*mA[2][2];
+    double b22=mA[0][0]*mA[2][2]-mA[0][2]*mA[2][0];
+    double b23=mA[0][2]*mA[1][0]-mA[0][0]*mA[1][2];
+    double b31=mA[1][0]*mA[2][1]-mA[1][1]*mA[2][0];
+    double b32=mA[0][1]*mA[2][0]-mA[0][0]*mA[2][1];
+    double b33=mA[0][0]*mA[1][1]-mA[0][1]*mA[1][0];
+    double one_over_det=1./(mA[0][0]*b11+mA[0][1]*b21+mA[0][2]*b31);
+    return DMatrix3x3(one_over_det*b11,one_over_det*b12,one_over_det*b13,
+		      one_over_det*b21,one_over_det*b22,one_over_det*b23,
+		      one_over_det*b31,one_over_det*b32,one_over_det*b33);
+
+
+  }
+
+
   // Matrix inversion for a symmetric matrix
   DMatrix3x3 InvertSym(){
     double b11=mA[1][1]*mA[2][2]-mA[1][2]*mA[2][1];
@@ -237,7 +258,7 @@ class DMatrix3x3{
 
 
   // Matrix inversion
-  DMatrix3x3 Invert(){
+  DMatrix3x3 Invert() const{
     double b11=mA[1].d[1]*mA[2].d[2]-mA[1].d[2]*mA[2].d[1];
     double b12=mA[2].d[0]*mA[1].d[2]-mA[1].d[0]*mA[2].d[2];
     double b13=mA[1].d[0]*mA[2].d[1]-mA[1].d[1]*mA[2].d[0];
