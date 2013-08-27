@@ -730,6 +730,12 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 		TFile* locFile = (TFile*)gROOT->FindObject(dThrownTreeFileName.c_str());
 		locFile->cd("/");
 		TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
+		if(locTree == NULL)
+		{
+			cout << "ERROR: OUTPUT ROOT TREE NOT CREATED (in DEventWriterROOT::Fill_ThrownTree()). SKIP FILLING. " << endl;
+			japp->RootUnLock();
+			return;
+		}
 
 		//clear the tclonesarry's
 		map<string, TClonesArray*>& locTreeMap_ClonesArray = (*dClonesArrayMap)[locTreeName];
@@ -913,6 +919,12 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 		//get the tree info
 		locFile->cd("/");
 		TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
+		if(locTree == NULL)
+		{
+			cout << "ERROR: OUTPUT ROOT TREE NOT CREATED (in DEventWriterROOT::Fill_DataTree()). SKIP FILLING. " << endl;
+			japp->RootUnLock();
+			return;
+		}
 		TList* locUserInfo = locTree->GetUserInfo();
 		TMap* locPositionToNameMap = (TMap*)locUserInfo->FindObject("PositionToNameMap");
 
