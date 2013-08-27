@@ -156,7 +156,11 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	/// If the station name specified does not exist, it will
 	/// be created. If it does exist, the existing station will
 	/// be used. If no station is specified, then the station
-	/// name "DANA" will be used.
+	/// name "DANA" will be used. Any station created will be
+	/// set to "blocking" *unless* it has the special station
+	/// name "MON" in which case it will be set to non-blocking.
+	/// Use the "MON" station for monitoring processes that should
+	/// not interrupt the data flow of the system.
 	///
 	/// If the host is specified, then an attempt will be made
 	/// to open that system. If it is not specified, then
@@ -215,7 +219,7 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	// create station config in case no station exists
 	et_statconfig et_station_config;
 	et_station_config_init(&et_station_config);
-	et_station_config_setblock(et_station_config,ET_STATION_BLOCKING);
+	et_station_config_setblock(et_station_config, station=="MON" ? ET_STATION_NONBLOCKING:ET_STATION_BLOCKING);
 	et_station_config_setselect(et_station_config,ET_STATION_SELECT_ALL);
 	et_station_config_setuser(et_station_config,ET_STATION_USER_MULTI);
 	et_station_config_setrestore(et_station_config,ET_STATION_RESTORE_OUT);
