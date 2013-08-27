@@ -53,6 +53,12 @@ public:
 
   }
 
+  // Square of the magnitude
+  double Mag2() const{
+    return mA[0]*mA[0]+mA[1]*mA[1]+mA[2]*mA[2];
+  }
+ 
+
   
   void Print(){
       cout << "DMatrix3x1:" <<endl;
@@ -141,7 +147,11 @@ inline DMatrix3x1 operator*(const double c,const DMatrix3x1 &M){
       return DMatrix3x1(_mm_sub_pd(GetV(0),m2.GetV(0)),
 			_mm_sub_pd(GetV(1),m2.GetV(1)));
     }
-      
+
+    double Mag2() const{
+      return mA->d[0]*mA->d[0]+mA->d[1]*mA->d[1]+mA->d[2]*mA->d[2];
+    }
+    
     void Print(){
       cout << "DMatrix3x1:" <<endl;
       cout << "     |      0    |" <<endl;
