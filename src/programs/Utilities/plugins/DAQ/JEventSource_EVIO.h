@@ -149,6 +149,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool PARSE_EVIO_EVENTS;
 		bool MAKE_DOM_TREE;
 		int ET_STATION_NEVENTS;
+		bool ET_STATION_CREATE_BLOCKING;
 
 		// Utility class with multiple roles:
 		//

@@ -57,6 +57,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	PARSE_EVIO_EVENTS = true;
 	BUFFER_SIZE = 50000; // in bytes
 	ET_STATION_NEVENTS = 100;
+	ET_STATION_CREATE_BLOCKING = true;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -65,6 +66,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:PARSE_EVIO_EVENTS", PARSE_EVIO_EVENTS, "Set this to 0 to disable parsing of event but still make the DOM tree, so long as MAKE_DOM_TREE isn't set to 0. (for benchmarking/debugging)");
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
+		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
 	}
 	
 	// Try to open the file.
@@ -157,10 +159,9 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	/// be created. If it does exist, the existing station will
 	/// be used. If no station is specified, then the station
 	/// name "DANA" will be used. Any station created will be
-	/// set to "blocking" *unless* it has the special station
-	/// name "MON" in which case it will be set to non-blocking.
-	/// Use the "MON" station for monitoring processes that should
-	/// not interrupt the data flow of the system.
+	/// set to "blocking" *unless* the configuration paramter
+	/// EVIO:ET_STATION_CREATE_BLOCKING is set to "0"
+	/// in which case it will be set to non-blocking.
 	///
 	/// If the host is specified, then an attempt will be made
 	/// to open that system. If it is not specified, then
@@ -219,7 +220,7 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	// create station config in case no station exists
 	et_statconfig et_station_config;
 	et_station_config_init(&et_station_config);
-	et_station_config_setblock(et_station_config, station=="MON" ? ET_STATION_NONBLOCKING:ET_STATION_BLOCKING);
+	et_station_config_setblock(et_station_config, ET_STATION_CREATE_BLOCKING ? ET_STATION_BLOCKING:ET_STATION_NONBLOCKING);
 	et_station_config_setselect(et_station_config,ET_STATION_SELECT_ALL);
 	et_station_config_setuser(et_station_config,ET_STATION_USER_MULTI);
 	et_station_config_setrestore(et_station_config,ET_STATION_RESTORE_OUT);
