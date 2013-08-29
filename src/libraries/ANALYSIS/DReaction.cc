@@ -87,44 +87,29 @@ void DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, 
 
 	//eliminate duplicate names
 		//particles could be a different order!!!
-	deque<deque<string> >::iterator locIterator, locIterator2;
-	deque<string>::iterator locIterator3, locIterator4;
-	for(locIterator = locParticleNames.begin(); locIterator != locParticleNames.end(); ++locIterator)
-	{
-		deque<string> locName1 = *locIterator; //one group of particle names
-		for(locIterator2 = locIterator + 1; locIterator2 != locParticleNames.end(); ++locIterator2)
-		{
-			deque<string> locName2 = *locIterator2; //another group of particle names
-			if(locName1.size() != locName2.size())
-				break; //not same size, clearly can't be the same
+	for (size_t loc_i=0;loc_i<locParticleNames.size();loc_i++){
+	  for (size_t loc_j=loc_i+1;loc_j<locParticleNames.size();loc_j++){
+	    if (locParticleNames[loc_i].size()!=locParticleNames[loc_j].size()) continue;
 
-			//loop over the lists of particles, see if they're identical
-			for(locIterator3 = locName1.begin(); locIterator3 != locName1.end(); ++locIterator3)
-			{
-				for(locIterator4 = locName2.begin(); locIterator4 != locName2.end(); ++locIterator4)
-				{
-					if((*locIterator3) == (*locIterator4))
-					{
-						locName2.erase(locIterator4); //particle name is identical, remove it from the list of remaining names
-						break;
-					}
-				}
-			}
-			if(locName2.empty()) //all names removed means all names matched: duplicate
-			{
-				locIterator2 = locParticleNames.erase(locIterator2);
-				--locIterator2;
-			}
-		}
+	    for (size_t loc_k=0;loc_k<locParticleNames[loc_i].size();loc_k++){
+	      for (size_t loc_m=0;loc_m<locParticleNames[loc_j].size();loc_m++){
+		if (locParticleNames[loc_j][loc_m]==locParticleNames[loc_i][loc_k]) locParticleNames[loc_j].erase(locParticleNames[loc_j].begin()+loc_m);
+	      }
+	    }
+	  }
 	}
 
 	//finally build the strings
 	for(size_t loc_i = 0; loc_i < locParticleNames.size(); ++loc_i)
 	{
-		string locName;
-		for(size_t loc_j = 0; loc_j < locParticleNames[loc_i].size(); ++loc_j)
-			locName += locParticleNames[loc_i][loc_j];
-		locNames.push_back(locName);
+	  if (locParticleNames[loc_i].size()>0){
+	    string locName;
+	    for(size_t loc_j = 0; loc_j < locParticleNames[loc_i].size(); ++loc_j){
+	      locName += locParticleNames[loc_i][loc_j];
+	      
+	    }
+	    locNames.push_back(locName);
+	  }
 	}
 }
 
