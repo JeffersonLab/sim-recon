@@ -16,6 +16,7 @@ class DL3Trigger_factory:public jana::JFactory<DL3Trigger>{
 		DL3Trigger_factory(){};
 		~DL3Trigger_factory(){};
 
+		double FRACTION_TO_KEEP;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

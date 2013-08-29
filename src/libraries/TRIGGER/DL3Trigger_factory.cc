@@ -18,6 +18,10 @@ using namespace jana;
 //------------------
 jerror_t DL3Trigger_factory::init(void)
 {
+	FRACTION_TO_KEEP = 1.0;
+
+	gPARMS->SetDefaultParameter("L3:FRACTION_TO_KEEP", FRACTION_TO_KEEP ,"Random Fraction of event L3 should keep. (Only used for debugging).");
+
 	return NOERROR;
 }
 
@@ -39,6 +43,11 @@ jerror_t DL3Trigger_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	DL3Trigger *l3trig = new DL3Trigger(DL3Trigger::kKEEP_EVENT, 0x0L, 0x1);
 	_data.push_back(l3trig);
+
+	if(FRACTION_TO_KEEP!=1.0){
+		double r = (double)random()/(double)RAND_MAX;
+		if(r > FRACTION_TO_KEEP) l3trig->L3_decision = DL3Trigger::kDISCARD_EVENT;
+	}
 
 	return NOERROR;
 }
