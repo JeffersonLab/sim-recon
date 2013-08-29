@@ -610,6 +610,68 @@ inline static int PDGtype(Particle_t p)
   }
 }
 
+inline static Particle_t PDGtoPType(int locPDG_PID)
+{
+  switch (locPDG_PID) {
+  case 0:				return Unknown;
+  case 22:			return Gamma;
+  case -11:			return Positron;
+  case 11:			return Electron;
+  case 121416:		return Neutrino;
+  case -13:			return MuonPlus;
+  case 13:			return MuonMinus;
+  case 111:			return Pi0;
+  case 211:			return PiPlus;
+  case -211:			return PiMinus;
+  case 310:			return KShort;
+  case 130:			return KLong;
+  case 321:			return KPlus;
+  case -321:			return KMinus;
+  case 2112:			return Neutron;
+  case 2212:			return Proton;
+  case -2212:		return AntiProton;
+  case 221:			return Eta;
+  case 3122:			return Lambda;
+  case 3222:			return SigmaPlus;
+  case 3212:			return Sigma0;
+  case 3112:			return SigmaMinus;
+  case 3322:			return Xi0;
+  case 3312:			return XiMinus;
+  case 3332:			return OmegaMinus;
+  case -2112:		return AntiNeutron;
+  case -3122:		return AntiLambda;
+  case -3112:		return AntiSigmaMinus;
+  case -3212:		return AntiSigma0;
+  case -3222:		return AntiSigmaPlus;
+  case -3322:		return AntiXi0;
+  case -3312:		return AntiXiPlus;
+  case -3332:		return AntiOmegaPlus;
+  case 113:			return Rho0;
+  case 213:			return RhoPlus;
+  case -213:			return RhoMinus;
+  case 223:			return omega;
+  case 331:			return EtaPrime;
+  case 333:			return phiMeson;
+  case 9000110:		return a0_980;
+  case 9010221:		return f0_980;
+  case 313: 			return KStar_892_0;
+  case -313:			return AntiKStar_892_0;
+  case 323:			return KStar_892_Plus;
+  case -323:			return KStar_892_Minus;
+  case 20323:		return K1_1400_Plus;
+  case -20323:		return K1_1400_Minus;
+  case 10213:		return b1_1235_Plus;
+  case 45:			return Deuteron;
+  case 47:			return Helium;
+  case 49:			return Triton;
+  case 3114:			return Sigma_1385_Minus;
+  case 3214:			return Sigma_1385_0;
+  case 3224:			return Sigma_1385_Plus;
+  case 1000822080:	return Pb208; // see note 14 in PDG (pg. 416 of 2012 full listing)
+  default:			return Unknown;
+  }
+}
+
 inline static int Is_FinalStateParticle(Particle_t locPID)
 {
 	switch(locPID)
