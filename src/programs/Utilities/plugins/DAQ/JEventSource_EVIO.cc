@@ -524,7 +524,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 
 	try{
 		if(source_type==kFileSource){
-			if(!chan->read()){
+			if(!chan->read(buff, BUFFER_SIZE)){
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
 		}else if(source_type==kETSource){
