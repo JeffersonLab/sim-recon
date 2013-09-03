@@ -5291,98 +5291,100 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
     dEdx=GetdEdx(S(state_q_over_p),K_rho_Z_over_A,rho_Z_over_A,LnI); 
   }
   
-  // Check direction of propagation	
-  DMatrix5x1 S2(S); // second copy of S
+  if (z<endplate_z){
+    // Check direction of propagation	
+    DMatrix5x1 S2(S); // second copy of S
     
-  // Step test states through the field and compute squared radii
-  Step(z,z-dz,dEdx,S1);	
-  // Bail if the momentum has dropped below some minimum
-  if (fabs(S1(state_q_over_p))>Q_OVER_P_MAX){
-    if (DEBUG_LEVEL>2)
-      {
-	_DBG_ << "Bailing: P = " << 1./fabs(S1(state_q_over_p))
-	      << endl;
-      }
-    return UNRECOVERABLE_ERROR;
-  }
-  double r2minus=S1(state_x)*S1(state_x)+S1(state_y)*S1(state_y);    
-  Step(z,z+dz,dEdx,S2);	
-  // Bail if the momentum has dropped below some minimum
-  if (fabs(S2(state_q_over_p))>Q_OVER_P_MAX){
-    if (DEBUG_LEVEL>2)
-      {
-	_DBG_ << "Bailing: P = " << 1./fabs(S2(state_q_over_p))
-	      << endl;
-      }
-    return UNRECOVERABLE_ERROR;
-  }
-  double r2plus=S2(state_x)*S2(state_x)+S2(state_y)*S2(state_y);
-  // Check to see if we have already bracketed the minimum
-  if (r2plus>r2_old && r2minus>r2_old){
-    newz=z+dz;  
-    DVector2 dir;
-    DVector2 origin;
-    double dz2=0.;
-    if (BrentsAlgorithm(newz,dz,dEdx,0.,origin,dir,S2,dz2)!=NOERROR){
-      _DBG_ << endl;
+    // Step test states through the field and compute squared radii
+    Step(z,z-dz,dEdx,S1);	
+    // Bail if the momentum has dropped below some minimum
+    if (fabs(S1(state_q_over_p))>Q_OVER_P_MAX){
+      if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: P = " << 1./fabs(S1(state_q_over_p))
+		<< endl;
+	}
       return UNRECOVERABLE_ERROR;
     }
-    z_=newz+dz2;
+    double r2minus=S1(state_x)*S1(state_x)+S1(state_y)*S1(state_y);    
+    Step(z,z+dz,dEdx,S2);	
+    // Bail if the momentum has dropped below some minimum
+    if (fabs(S2(state_q_over_p))>Q_OVER_P_MAX){
+      if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: P = " << 1./fabs(S2(state_q_over_p))
+		<< endl;
+	}
+      return UNRECOVERABLE_ERROR;
+    }
+    double r2plus=S2(state_x)*S2(state_x)+S2(state_y)*S2(state_y);
+    // Check to see if we have already bracketed the minimum
+    if (r2plus>r2_old && r2minus>r2_old){
+      newz=z+dz;  
+      DVector2 dir;
+      DVector2 origin;
+      double dz2=0.;
+      if (BrentsAlgorithm(newz,dz,dEdx,0.,origin,dir,S2,dz2)!=NOERROR){
+	_DBG_ << endl;
+	return UNRECOVERABLE_ERROR;
+      }
+      z_=newz+dz2;
+      
+      // Compute the Jacobian matrix
+      StepJacobian(z,z_,S,dEdx,J);  
+      
+      // Propagate the covariance matrix
+      //C=Q.AddSym(J*C*J.Transpose());
+      C=C.SandwichMultiply(J);
     
-    // Compute the Jacobian matrix
-    StepJacobian(z,z_,S,dEdx,J);  
+      // Step to the position of the doca
+      Step(z,z_,dEdx,S);
     
-    // Propagate the covariance matrix
-    //C=Q.AddSym(J*C*J.Transpose());
-    C=C.SandwichMultiply(J);
+      // update internal variables
+      x_=S(state_x);
+      y_=S(state_y);
+      
+      return NOERROR;
+    }
     
-    // Step to the position of the doca
-    Step(z,z_,dEdx,S);
+    // Find direction to propagate toward minimum doca
+    if (r2minus<r2_old && r2_old<r2plus){ 
+      newz=z-dz;
+      
+      // Compute the Jacobian matrix
+      StepJacobian(z,newz,S,dEdx,J);  
+      
+      // Propagate the covariance matrix
+      //C=Q.AddSym(J*C*J.Transpose());
+      C=C.SandwichMultiply(J);
     
-    // update internal variables
-    x_=S(state_x);
-    y_=S(state_y);
+      S2=S;
+      S=S1;
+      S1=S2;
+      dz*=-1.;
+      sign=-1.;
+      dz_old=dz;
+      r2_old=r2minus;
+      z=z+dz;
+    }
+    if (r2minus>r2_old && r2_old>r2plus){
+      newz=z+dz;
+      
+      // Compute the Jacobian matrix
+      StepJacobian(z,newz,S,dEdx,J);  
+      
+      // Propagate the covariance matrix
+      //C=Q.AddSym(J*C*J.Transpose());
+      C=C.SandwichMultiply(J);
+    
+      S1=S;
+      S=S2;
+      dz_old=dz;
+      r2_old=r2plus;
+      z=z+dz;
+    }
+  }
 
-    return NOERROR;
-  }
-  
-  // Find direction to propagate toward minimum doca
-  if (r2minus<r2_old && r2_old<r2plus){ 
-    newz=z-dz;
-    
-    // Compute the Jacobian matrix
-    StepJacobian(z,newz,S,dEdx,J);  
-    
-    // Propagate the covariance matrix
-    //C=Q.AddSym(J*C*J.Transpose());
-    C=C.SandwichMultiply(J);
-    
-    S2=S;
-    S=S1;
-    S1=S2;
-    dz*=-1.;
-    sign=-1.;
-    dz_old=dz;
-    r2_old=r2minus;
-    z=z+dz;
-  }
-  if (r2minus>r2_old && r2_old>r2plus){
-    newz=z+dz;
-    
-    // Compute the Jacobian matrix
-    StepJacobian(z,newz,S,dEdx,J);  
-    
-    // Propagate the covariance matrix
-    //C=Q.AddSym(J*C*J.Transpose());
-    C=C.SandwichMultiply(J);
-    
-    S1=S;
-    S=S2;
-    dz_old=dz;
-    r2_old=r2plus;
-    z=z+dz;
-  }
-  
   double r2=r2_old;
   while (z>Z_MIN && r2<R2_MAX && z<Z_MAX && r2>EPS){   
     // Bail if the momentum has dropped below some minimum
@@ -5467,7 +5469,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
     // Check if we passed the minimum doca to the beam line
     r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
-    if (r2>r2_old && z<endplate_z){
+    if (r2>r2_old){
       double two_step=dz+dz_old;
 
       // Find the increment/decrement in z to get to the minimum doca to the
@@ -6608,8 +6610,19 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
   // Extrapolate to the point of closest approach to the beam line
   z_=forward_traj[forward_traj.size()-1].z;
   if (sqrt(Slast(state_x)*Slast(state_x)+Slast(state_y)*Slast(state_y))
-      >EPS2)  
-    if (ExtrapolateToVertex(Slast,Clast)!=NOERROR) return POSITION_OUT_OF_RANGE;
+      >EPS2){  
+    DMatrix5x5 Ctemp=Clast;
+    DMatrix5x1 Stemp=Slast; 
+    double ztemp=z_;
+    if (ExtrapolateToVertex(Stemp,Ctemp)==NOERROR){
+      Clast=Ctemp;
+      Slast=Stemp;
+    }
+    else{
+      //_DBG_ << endl;
+      z_=ztemp;
+    }
+  }
   
   // Convert from forward rep. to central rep.
   DMatrix5x1 Sc;
