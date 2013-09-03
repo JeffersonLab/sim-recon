@@ -308,9 +308,6 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// single event blocks (i.e. already disentangled events) the
 	// stored_events list will always be empty so "evt" is always
 	// set.
-//	evioDOMTree *evt = NULL;
-//	uint32_t *buff = NULL; // ReadEVIOEvent will allocate memory from pool for this
-//	uint32_t buff_size = 0;
 
 	// Check for event stored from parsing a previously read in
 	// DAQ event
@@ -334,42 +331,10 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		objs_ptr = new ObjList();
 		objs_ptr->eviobuff = buff;
 		objs_ptr->eviobuff_size = buff_size;
-
-//		bool skipped_parsing = true;
-//		if(MAKE_DOM_TREE){
-//			evt = new evioDOMTree(buff); // deleted in FreeEvent
-//			if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
-//			int32_t run_number = GetRunNumber(evt);
-
-//			if(PARSE_EVIO_EVENTS){
-//				try{
-//					skipped_parsing = false; // flag to let us know if we need to add empty event below
-//					ParseEVIOEvent(evt, run_number);
-//				}catch(JException &jexception){
-//					jerr << jexception.what() << endl;
-//				}
-//			}
-//		}
-
-//		if(skipped_parsing){
-			// Parsing was skipped by user request for benchmarking/debugging.
-			// Add an empty event so system doesn't think we ran out of events.
-//			stored_events.push(new ObjList());
-//		}
 	}
 
 	// If we still don't have any events, then try recalling
 	// ourselves to look at the next event
-//	if(stored_events.empty())return GetEvent(event);
-	
-	// Get next event from queue
-//	ObjList *objs_ptr = stored_events.front();
-//	stored_events.pop();
-//	objs_ptr->own_objects = true; // will be set to false in GetObjects()
-//	objs_ptr->DOMTree = evt;
-//	objs_ptr->eviobuff = buff;
-//	objs_ptr->eviobuff_size = buff_size;
-
 	event.SetJEventSource(this);
 	event.SetEventNumber(++Nevents_read);
 	event.SetRunNumber(objs_ptr->run_number);
