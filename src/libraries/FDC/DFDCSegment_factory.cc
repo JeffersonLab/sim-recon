@@ -149,16 +149,19 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<const DFDCPseudo *>points,
   double two_rc=2.*rc;
   DVector2 oldxy=XYZ[0].xy;
   for (unsigned int k=0;k<n;k++){
+    zlast=z;
+    z=XYZ[k].z;
+    if (fabs(z-zlast)<0.01) continue;
+
     DVector2 diffxy=XYZ[k].xy-oldxy;
     double var=CR(k,k);
     if (bad[k]) var=XYZ[k].covr;
-    zlast=z;
+  
     sperp_old=sperp;
     ratio=diffxy.Mod()/(two_rc);
     // Make sure the argument for the arcsin does not go out of range...
     sperp=sperp_old+(ratio>1?two_rc*(M_PI_2):two_rc*asin(ratio));
-    //z=XYZ(k,2);
-    z=XYZ[k].z;
+    //z=XYZ(k,2); 
 
     // Assume errors in s dominated by errors in R 
     double inv_var=1./var;
@@ -325,7 +328,8 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
   // In the absence of multiple scattering, W_sum is the sum of all the 
   // diagonal elements in W.
   // At this stage we ignore the multiple scattering.
-  for (unsigned int i=0;i<n-1;i++){
+  unsigned int last_index=n-1;
+  for (unsigned int i=0;i<last_index;i++){
     X(i,0)=points[i]->xy.X();
     X(i,1)=points[i]->xy.Y();
     X(i,2)=points[i]->xy.Mod2();
@@ -333,7 +337,6 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
     W(i,i)=1./CRPhi(i,i);
     W_sum+=W(i,i);
   }
-  unsigned int last_index=n-1;
   OnesT(0,last_index)=1.;
   W(last_index,last_index)=1./CRPhi(last_index,last_index);
   W_sum+=W(last_index,last_index);
@@ -393,10 +396,11 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<const DFDCPseudo *>points,
 
   // Normal vector to plane
   N[0]=1.;
+  double A11_minus_lambda_min=A(1,1)-lambda_min;
   N[1]=(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
-    /(A(0,1)*A(2,1)-(A(1,1)-lambda_min)*A(0,2));
-  N[2]=(A(2,0)*(A(1,1)-lambda_min)-A(1,0)*A(2,1))
-    /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min));
+    /(A(0,1)*A(2,1)-(A11_minus_lambda_min)*A(0,2));
+  N[2]=(A(2,0)*A11_minus_lambda_min-A(1,0)*A(2,1))
+    /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*A11_minus_lambda_min);
   
   // Normalize: n1^2+n2^2+n3^2=1
   double denom=sqrt(N[0]*N[0]+N[1]*N[1]+N[2]*N[2]);
