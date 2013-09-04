@@ -55,8 +55,8 @@ bool DFDCPseudo_cmp(const DFDCPseudo* a, const DFDCPseudo *b){
 /// default constructor -- initializes log file
 ///
 DFDCPseudo_factory::DFDCPseudo_factory() {
-	_log = new JStreamLog(std::cout, "FDC PSEUDO >>");
-	*_log << "File initialized." << endMsg;
+  //_log = new JStreamLog(std::cout, "FDC PSEUDO >>");
+  //*_log << "File initialized." << endMsg;
 }
 
 ///
@@ -71,7 +71,7 @@ DFDCPseudo_factory::~DFDCPseudo_factory() {
       }
     }    
   }
-  delete _log;
+  //delete _log;
 }
 
 //------------------
@@ -84,6 +84,9 @@ jerror_t DFDCPseudo_factory::init(void)
   MAX_ALLOWED_FDC_HITS=20000;
   STRIP_ANODE_TIME_CUT=10.;
   MATCH_TRUTH_HITS=false;
+
+  r2_out=ROUT_FIDUCIAL*ROUT_FIDUCIAL;
+  r2_in=RIN_FIDUCIAL*RIN_FIDUCIAL;
   
   gPARMS->SetDefaultParameter("FDC:MATCH_TRUTH_HITS",MATCH_TRUTH_HITS,"Match truth hits to pseudopoints (DEF=false)");
   gPARMS->SetDefaultParameter("FDC:ROUT_FIDUCIAL",ROUT_FIDUCIAL, "Outer fiducial radius of FDC in cm"); 
@@ -301,12 +304,11 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    double x_from_wire=DFDCGeometry::getWireR(*xIt);
 	    // Test radial value for checking whether or not the hit is within
 	    // the fiducial region of the detector
-	    double rtest=sqrt(x_from_wire*x_from_wire
-			     +y_from_strips*y_from_strips);
+	    double r2test=x_from_wire*x_from_wire+y_from_strips*y_from_strips;
 	    double delta_x=x_from_wire-x_from_strips;
 	 
-	    if (fabs(delta_x)<0.5*WIRE_SPACING && rtest<ROUT_FIDUCIAL
-		&& rtest>RIN_FIDUCIAL){
+	    if (fabs(delta_x)<0.5*WIRE_SPACING && r2test<r2_out
+		&& r2test>r2_in){
 	      double dt1 = (*xIt)->t - upeaks[i].t;
 	      double dt2 = (*xIt)->t - vpeaks[j].t;
 
@@ -332,16 +334,15 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      }
 	      
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
-	      double xres=WIRE_SPACING/2./sqrt(12.);
-	      double cosangle,sinangle;	   
+	      //double xres=WIRE_SPACING/2./sqrt(12.);
 
 	      DFDCPseudo* newPseu = new DFDCPseudo;
 	      newPseu->u = upeaks[i].pos;
 	      newPseu->v = vpeaks[j].pos;
 	      newPseu->w      = x_from_wire;
-	      newPseu->dw     = xres;
+	      newPseu->dw     = 0; // place holder
 	      newPseu->s      = y_from_strips;
-	      newPseu->ds     = delta_x;
+	      newPseu->ds     = 0; // place holder
 	      newPseu->wire   = fdcwires[layer-1][(*xIt)->element-1];
 	      newPseu->time   = (*xIt)->t;
 	      newPseu->status = status;
@@ -362,8 +363,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 		delete newPseu;
 		continue;
 	      }
-	      sinangle=newPseu->wire->udir(0);
-	      cosangle=newPseu->wire->udir(1);
+	      double sinangle=newPseu->wire->udir(0);
+	      double cosangle=newPseu->wire->udir(1);
 
 	      newPseu->xy.Set((newPseu->w)*cosangle+(newPseu->s)*sinangle,
 			       -(newPseu->w)*sinangle+(newPseu->s)*cosangle);
@@ -460,21 +461,21 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
     if ((*peak)->q-(*(peak-1))->q > err_diff1
                 && (*peak)->q-(*(peak+1))->q > err_diff2){
       // Define some matrices for use in the Newton-Raphson iteration
-      DMatrix J(3,3);  //Jacobean matrix
-      DMatrix F(3,1),N(3,1),X(3,1),par(3,1);
-      DMatrix newpar(3,1);
+      DMatrix3x3 J;  //Jacobean matrix
+      DMatrix3x1 F,N,X,par,newpar;
       int i=0;
       double sum=0.;
  
       // Initialize the matrices to some suitable starting values
-      par(X0,0)=double((*peak)->element);
-      par(K2,0)=1.;
+      par(X0)=double((*peak)->element);
+      par(K2)=1.;
       for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-        X(i,0)=double((*j)->element);
-        N(i++,0)=double((*j)->q);
-        sum+=double((*j)->q);
+        X(i)=double((*j)->element);
+        N(i)=double((*j)->q);
+        sum+=N(i);
+	i++;
       }
-      par(QA,0)=2.*sum;
+      par(QA)=2.*sum;
       newpar=par;
     
       // Newton-Raphson procedure
@@ -485,27 +486,27 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 
         // Compute Jacobian matrix: J_ij = dF_i/dx_j.
         for (i=0;i<3;i++){
-	  double dx=par(X0,0)-X(i,0);
-          double argp=par(K2,0)*(dx+A_OVER_H);
-          double argm=par(K2,0)*(dx-A_OVER_H);
+	  double dx=par(X0)-X(i);
+          double argp=par(K2)*(dx+A_OVER_H);
+          double argm=par(K2)*(dx-A_OVER_H);
 	  double tanh_p=tanh(argp);
 	  double tanh_m=tanh(argm);
 	  double tanh2_p=tanh_p*tanh_p;
 	  double tanh2_m=tanh_m*tanh_m;
-	  double q_over_4=0.25*par(QA,0);
+	  double q_over_4=0.25*par(QA);
            
           J(i,QA)=-0.25*(tanh_p-tanh_m);
-          J(i,K2)=-q_over_4*(argp/par(K2,0)*(1.-tanh2_p)
-			     -argm/par(K2,0)*(1.-tanh2_m));
-          J(i,X0)=-q_over_4*par(K2,0)*(tanh2_m-tanh2_p); 
-	  F(i,0)=N(i,0)-q_over_4*(tanh_p-tanh_m);
-	  double new_errf=fabs(F(i,0));
+          J(i,K2)=-q_over_4*(argp/par(K2)*(1.-tanh2_p)
+			     -argm/par(K2)*(1.-tanh2_m));
+          J(i,X0)=-q_over_4*par(K2)*(tanh2_m-tanh2_p); 
+	  F(i)=N(i)-q_over_4*(tanh_p-tanh_m);
+	  double new_errf=fabs(F(i));
 	  if (new_errf>errf) errf=new_errf;
         }
 	// Check for convergence
 	if (errf<TOLF){	
-	  temp.pos=par(X0,0);
-	  temp.q=par(QA,0);
+	  temp.pos=par(X0);
+	  temp.q=par(QA);
 	  temp.numstrips=3;  
 	  temp.t=(*peak)->t;
 	  temp.t_rms=0.;
@@ -515,29 +516,17 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	  return NOERROR;
 	}
 
-        // Check that J is invertible
-        TDecompLU lu(J);
-        if (lu.Decompose()==false){
-          *_log << ":FindCentroid: Singular matrix"<< endMsg;
-          return UNRECOVERABLE_ERROR; // error placeholder
-        }
-
 	// Find the new set of parameters
-        jerror_t error;
-	if ((error=FindNewParmVec(N,X,F,J,par,newpar))!=NOERROR){
-	  *_log << ":FindNewParmVec:  error=" << error << endMsg;
-
-	  return error;
-	}
+        FindNewParmVec(N,X,F,J,par,newpar);
 
         //Check for convergence
         for (i=0;i<3;i++){
-	  double new_err=fabs(par(i,0)-newpar(i,0));
+	  double new_err=fabs(par(i)-newpar(i));
           if (new_err>errx) errx=new_err;
 	}
         if (errx<TOLX){
-          temp.pos=par(X0,0);
-          temp.q=par(QA,0);
+          temp.pos=par(X0);
+          temp.q=par(QA);
           temp.numstrips=3;
 	  temp.t=(*peak)->t;
 	  temp.t_rms=0.;
@@ -567,71 +556,73 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 /// Algorithm described in Numerical Recipes in C, pp. 383-389.
 ///
  
-jerror_t DFDCPseudo_factory::FindNewParmVec(DMatrix N,DMatrix X,DMatrix F,
-				       DMatrix J,DMatrix par,
-				       DMatrix &newpar){
+jerror_t DFDCPseudo_factory::FindNewParmVec(const DMatrix3x1 &N,
+					    const DMatrix3x1 &X,
+					    const DMatrix3x1 &F,
+					    const DMatrix3x3 &J,
+					    const DMatrix3x1 &par,
+					    DMatrix3x1 &newpar){
   // Invert the J matrix
-  DMatrix InvJ(DMatrix::kInverted,J);
+  DMatrix3x3 InvJ=J.Invert();
   
   // Find the full Newton step
-  DMatrix fullstep(3,1);
-  fullstep=InvJ*F; fullstep*=-1;
+  DMatrix3x1 fullstep=(-1.)*(InvJ*F);
 
   // find the rate of decrease for the Newton-Raphson step
-  DMatrix slope(1,1);
-  slope=(-1.0)*DMatrix(DMatrix::kTransposed,F)*F; //dot product
+  double slope=(-1.0)*F.Mag2(); //dot product
 
   // This should be a negative number...
-  if (slope(0,0)>=0){
+  if (slope>=0){
     return VALUE_OUT_OF_RANGE;
   }
   
   double lambda=1.0;  // Start out with full Newton step
   double lambda_temp,lambda2=lambda;
-  DMatrix f(1,1),f2(1,1),newF(3,1),newf(1,1);
+  DMatrix3x1 newF;
+  double f2=0.,newf;
 
   // Compute starting values for f=1/2 F.F 
-  f=-0.5*slope;
+  double f=-0.5*slope;
 
   for (;;){
     newpar=par+lambda*fullstep;
 
     // Compute the value of the vector F and f=1/2 F.F with the current step
     for (int i=0;i<3;i++){
-      double dx=newpar(X0,0)-X(i,0);
-      double argp=newpar(K2,0)*(dx+A_OVER_H);
-      double argm=newpar(K2,0)*(dx-A_OVER_H);
-      newF(i,0)=N(i,0)-0.25*newpar(QA,0)*(tanh(argp)-tanh(argm));
+      double dx=newpar(X0)-X(i);
+      double argp=newpar(K2)*(dx+A_OVER_H);
+      double argm=newpar(K2)*(dx-A_OVER_H);
+      newF(i)=N(i)-0.25*newpar(QA)*(tanh(argp)-tanh(argm));
     }
-    newf=0.5*(DMatrix(DMatrix::kTransposed,newF)*newF); // dot product
- 
+    newf=0.5*newF.Mag2(); // dot product
+
     if (lambda<0.1) {  // make sure the step is not too small
       newpar=par;
       return NOERROR;
     } // Check if we have sufficient function decrease
-    else if (newf(0,0)<=f(0,0)+ALPHA*lambda*slope(0,0)){
+    else if (newf<=f+ALPHA*lambda*slope){
       return NOERROR;
     }
     else{
       // g(lambda)=f(par+lambda*fullstep)
       if (lambda==1.0){//first attempt: quadratic approximation for g(lambda)
-        lambda_temp=-0.5*slope(0,0)/(newf(0,0)-f(0,0)-slope(0,0));
+        lambda_temp=-0.5*slope/(newf-f-slope);
       }
       else{ // cubic approximation for g(lambda)
-        double temp1=newf(0,0)-f(0,0)-lambda*slope(0,0);
-        double temp2=f2(0,0)-f(0,0)-lambda2*slope(0,0);
+        double temp1=newf-f-lambda*slope;
+        double temp2=f2-f-lambda2*slope;
 	double one_over_lambda2_sq=1./(lambda2*lambda2);
 	double one_over_lambda_sq=1./(lambda*lambda);
 	double one_over_lambda_diff=1./(lambda-lambda2);
         double a=(temp1*one_over_lambda_sq-temp2*one_over_lambda2_sq)*one_over_lambda_diff;
         double b=(-lambda2*temp1*one_over_lambda_sq+lambda*temp2*one_over_lambda2_sq)
           *one_over_lambda_diff;
-        if (a==0.0) lambda_temp=-0.5*slope(0,0)/b;
+        if (a==0.0) lambda_temp=-0.5*slope/b;
         else{
-          double disc=b*b-3.0*a*slope(0,0);
+          double disc=b*b-3.0*a*slope;
           if (disc<0.0) lambda_temp=0.5*lambda;
           else if (b<=0.0) lambda_temp=(-b+sqrt(disc))/(3.*a);
-          else lambda_temp=-slope(0,0)/(b+sqrt(disc));
+          else lambda_temp=-slope/(b+sqrt(disc));
         }
         // ensure that we are headed in the right direction...
         if (lambda_temp>0.5*lambda) lambda_temp=0.5*lambda;

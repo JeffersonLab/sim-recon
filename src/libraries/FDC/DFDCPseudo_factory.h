@@ -22,6 +22,7 @@ using namespace jana;
 #include <TRACKING/DMCTrackHit.h>
 
 #include <DMatrix.h>
+#include <DMatrixSIMD.h>
 #include <TDecompLU.h>
 #include <TH2.h>
 #include <TH1.h>
@@ -100,16 +101,16 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 				 vector<const DFDCHit *>::const_iterator peak,
 				 vector<centroid_t> &centroids);
 		// Backtracking routine needed by FindCentroid 
-		jerror_t FindNewParmVec(DMatrix N,
-						       DMatrix X,
-						       DMatrix F,
-						       DMatrix J,DMatrix par,
-						       DMatrix &newpar);
+		jerror_t FindNewParmVec(const DMatrix3x1 &N,const DMatrix3x1 &X,
+					const DMatrix3x1 &F,const DMatrix3x3 &J,
+					const DMatrix3x1 &par,
+					DMatrix3x1 &newpar);
  		
 	private:		
 		vector<vector<DFDCWire*> >fdcwires;
 
 		double ROUT_FIDUCIAL,RIN_FIDUCIAL;
+		double r2_out,r2_in;
 		double STRIP_ANODE_TIME_CUT;
 		unsigned int MAX_ALLOWED_FDC_HITS;
 		bool DEBUG_HISTS,USE_FDC,MATCH_TRUTH_HITS;
