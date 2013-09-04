@@ -567,11 +567,12 @@ void DMagneticFieldMapFineMesh::GetFieldAndGradient(double x,double y,double z,
   dBxdx_ =dBrdx_*cos_theta*cos_theta;
   dBxdy_ =dBrdx_*cos_theta*sin_theta;
   dBxdz_ =dBrdz_*cos_theta;
-  dBydx_ = dBrdx_*sin_theta*cos_theta;
+  dBydx_=dBxdy_;
   dBydy_ = dBrdx_*sin_theta*sin_theta;
   dBydz_ = dBrdz_*sin_theta;
   dBzdx_ = dBzdx_*cos_theta;
   dBzdy_ = dBzdx_*sin_theta;
+
   /*
   printf("Grad %f %f %f %f %f %f %f %f %f\n",dBxdx_,dBxdy_,dBxdz_,
 	 dBydx_,dBydy_,dBydz_,dBzdx_,dBzdy_,dBzdz_);
