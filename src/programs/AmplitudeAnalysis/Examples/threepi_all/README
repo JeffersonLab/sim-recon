@@ -31,7 +31,7 @@ threepi_plotter threepi.fit
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 <><><><>Alternate recipe that uses the GlueX Detector <><><><><><>
-cd $HALLD_HOME/src/programs/AmplitudeAnalysis/Examples/threepi_binned
+cd $HALLD_HOME/src/programs/AmplitudeAnalysis/Examples/threepi_all
 cp ../../../Simulation/gen_3pi/gen_3pi.cfg .
 gen_3pi -c gen_3pi.cfg -o threepi_data_gen.root -hd threepi_data_gen.hddm -l 0.7 -u 2.0 -n 50000
 
