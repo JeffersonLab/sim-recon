@@ -8,208 +8,313 @@
 #ifndef _DTrackCandidate_factory_CDC_
 #define _DTrackCandidate_factory_CDC_
 
+#include <map>
+#include <deque>
+using namespace std;
+
 #include <JANA/JFactory.h>
 using namespace jana;
 
 #include "DTrackCandidate.h"
 #include "DHelicalFit.h"
 #include "CDC/DCDCTrackHit.h"
-#include <TROOT.h>
-#include <TH2F.h>
+#include <DVector3.h>
+#include <HDGEOMETRY/DGeometry.h>
+#include <HDGEOMETRY/DMagneticFieldMap.h>
 
-class DFDCPseudo;
-	
-typedef struct{
-  double x,y,perp2;
-  double z,var_z;
-}intersection_t;
-
-
-/// \htmlonly
-/// <A href="index.html#legend">
-///	<IMG src="CORE.png" width="100">
-///	</A>
-/// \endhtmlonly
-
-/// Find track candidates in the Central Drift Chambers (CDC).
-/// This will try to form candidates from hits found in the CDC
-/// but will also look for hits in the first FDC package consistent
-/// with a cluster of CDC hits.
-///
-/// The general algorithm is the following:
-/// clusters of hits in axial layers are found and matched so that a 
-/// circle may be fit to the x/y locations of the hit wires. Stereo
-/// layers that are hit and that cross the circle are used to get
-/// z-information based on the point the circle crosses the stereo
-/// wire. The z-locations and their corresponding &phi; coordinate
-/// (relative to the center of the circle fit) are fit using a
-/// linear regression to determine &theta; and z-vertex.
-/// The momentum and &phi;
-/// of the candidate in lab coordinates comes the center of the 
-/// circle.
-///
-/// This effectively gives a helical fit, but in two stages since
-/// the stereo and axial wires contain different information.
-///
-/// These candidates will be merged with those from the FDC in
-/// the DTrackCandidate_factory class.
-
-class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
+class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
+{
 	public:
 		DTrackCandidate_factory_CDC(){};
 		~DTrackCandidate_factory_CDC(){};
 		const char* Tag(void){return "CDC";}
-	
-		enum trk_flags_t{
+
+		enum trk_flags_t
+		{
 			NONE					= 0x000,
 			NOISE					= 0x001,
-			USED					= 0x002,
-			IS_STEREO			= 0x004,
-			CANT_BE_IN_SEED	= 0x008,
-			IN_SEED				= 0x010,
-			IN_LINE				= 0x020,
-			IN_TRACK				= 0x040,
-			VALID_STEREO		= 0x080,
-			OUT_OF_TIME			= 0x100
+			USED					= 0x002, //set if used in a super layer seed (whether that seed was rejected later or not)
+			OUT_OF_TIME		   = 0x004
 		};
-		
-		enum ret_cond_t{
-			FIT_OK			= 0,
-			NO_SEED,
-			BAD_SEED,
-			FIND_FAILED
+
+		enum wire_direction_t
+		{
+			WIRE_DIRECTION_AXIAL = 0, 
+			WIRE_DIRECTION_STEREOLEFT = 1, //rotated by 6 degrees counter-clockwise
+			WIRE_DIRECTION_STEREORIGHT = 2 //rotated by 6 degrees clockwise
 		};
-		
-		class DCDCTrkHit{
+
+		class DCDCTrkHit
+		{
 			public:
-				const DCDCTrackHit *hit;
+				void Reset(void);
+				inline double Dist2(DCDCTrkHit* trkhit) const{return (trkhit->hit->wire->origin - this->hit->wire->origin).Mag2();}
+
+				const DCDCTrackHit* hit;
 				unsigned int index;
 				unsigned int flags;
-				double x_stereo;
-				double y_stereo;
-				double z_stereo;
 				double var_z;
-				double phi_stereo;
-				
-				double Dist2(DCDCTrkHit *trkhit){
-					DVector3 d = trkhit->hit->wire->origin - this->hit->wire->origin;
-					return d.Mag2();
-				}
-		};
-		
-		class DCDCLineFit{
-		public:
-		  unsigned int n;
-		  vector<double>s;
-		  vector<double>var_s;
-		  vector<double>z;
-		  vector<double>var_z;
-		  vector<double>w;
-		  double z0;
-		  double tanl;
-		  double ChiXY(double lambda);
-		  void BracketMinimumChisq(double &a,double &b, double &c,
-					   double &chi2a,double &chi2b,
-					   double &chi2c);
-		  double FindMinimumChisq(double a,double b,double c, 
-					  double &lambda);
-		  
-
-
+				DVector3 dStereoHitPos;
+				double dPhiStereo;
+				bool dValidStereoHitPosFlag; //false if prior to calc, or if hit doesn't intersect circle
 		};
 
-		class DCDCSeed{
+		// Collection of adjacent DCDCTrkHit's on a ring. 
+		class DCDCRingSeed
+		{
 			public:
-				vector<DCDCTrkHit*> hits;
-				vector<DCDCTrkHit> stereo_hits;
-				vector<const DFDCPseudo*> fdchits;
-				vector<unsigned int>HitBitPattern;
-				double phi_avg;
-				double tdrift_avg;
+				//hits are stored in order from the first straw to the last straw
+					//generally, this in order from lowest straw # to highest straw #
+					//unless it crosses straw = 1 barrier: then first straw is lowest-# straw with phi > pi, and last straw is highest-# straw with phi < pi
+				deque<DCDCTrkHit*> hits;
 				bool linked;
-				bool valid;
-				DHelicalFit fit;
-				double theta;
-				double z_vertex;
-				double q;
-				double theta_min, theta_max;
-				double z_min, z_max;
-				void Merge(DCDCSeed& seed);
-				double MinDist2(DCDCSeed& seed);
-				double FindAverageBz(const DMagneticFieldMap *bfield);
-				void CheckCharge();
-				DCDCSeed();
+				int ring;
 		};
+
+		// Collection of information about a given potential spiral turn
+		typedef struct
+		{
+			int dSpiralTurnRingFlag; //-1 if potential turn looks like the track is turning back outwards, 1 if turning back inwards
+			int dDefiniteSpiralTurnRingFlag; //same as dSpiralTurnRingFlag if DEFINITE turn, 0 otherwise
+			int dSpiralTurnRing; //is ring# of turn
+		} DSpiralParams_t;
+
+		// Collection of adjacent DCDCRingSeed's in a super layer
+		class DCDCSuperLayerSeed
+		{
+			public:
+				void Reset(void);
+				bool Are_AllHitsOnRingShared(const DCDCSuperLayerSeed* locCDCSuperLayerSeed, int locRing) const;
+				inline void Get_Hits(deque<DCDCTrkHit*>& locHits) const
+				{
+					locHits.clear();
+					for(size_t loc_i = 0; loc_i < dCDCRingSeeds.size(); ++loc_i)
+						locHits.insert(locHits.end(), dCDCRingSeeds[loc_i].hits.begin(), dCDCRingSeeds[loc_i].hits.end());
+				}
+
+				deque<DCDCRingSeed> dCDCRingSeeds; //stored in order from innermost (lowest) ring to outermost (highest) ring
+				unsigned int dSuperLayer;
+				unsigned int dSeedIndex;
+				bool linked;
+				wire_direction_t dWireOrientation;
+				map<int, DSpiralParams_t> dSpiralLinkParams; //key is the dSeedIndex of the DCDCSuperLayerSeed in this super layer it is linked to (can point to itself (self-linked)!)
+		};
+
+		// Collection of adjacent DCDCSuperLayerSeed's in the CDC
+			// Each unique combination of axial DCDCSuperLayerSeed's has it's own DCDCTrackCircle object
+			// Every possible combination of stereo DCDCSuperLayerSeed's used to link these axial DCDCSuperLayerSeed's together is stored in the 2D-deques
+				// This is until the best combination is found: then the unused combinations are cleared and only one combination will remain
+		class DCDCTrackCircle
+		{
+			public:
+				void Reset(void);
+				DCDCSuperLayerSeed* Get_LastSuperLayerSeed(void) const;
+				DCDCSuperLayerSeed* Get_SuperLayerSeed(unsigned int locSuperLayer) const;
+				void Strip_StereoSuperLayerSeed(unsigned int locSuperLayer);
+				void Add_LastSuperLayerSeed(DCDCSuperLayerSeed* locSuperLayerSeed);
+				void Truncate_Circle(unsigned int locNewLastSuperLayer);
+				void Absorb_TrackCircle(const DCDCTrackCircle* locTrackCircle);
+				bool Check_IfInputIsSubset(const DCDCTrackCircle* locTrackCircle);
+				void Get_AllStereoSuperLayerSeeds(deque<DCDCSuperLayerSeed*>& locStereoSuperLayerSeeds);
+				unsigned int Get_NumStereoSuperLayerSeeds(void);
+
+				deque<DCDCSuperLayerSeed*> dSuperLayerSeeds_Axial;
+				//for dSuperLayerSeeds_InnerStereo and dSuperLayerSeeds_OuterStereo:
+					//each deque<DCDCSuperLayerSeed*> is a series of adjacent stereo seeds that could potentially belong together
+					//for example: 
+						// dSuperLayerSeeds_InnerStereo[0] is likely (not necessarily) a deque with size = 2: 
+							//the first in this deque is a DCDCSuperLayerSeed from super layer 2 (SL2), the second is from SL3 and is definitely adjacent to the one from SL2.
+						// dSuperLayerSeeds_InnerStereo[1] is also likely a deque with size = 2, but a different combination of adjacent super layer seeds than the previous one. 
+						// once the best seeds have been selected, dSuperLayerSeeds_InnerStereo will have size = 1. 
+					//the reason that InnerStereo and OuterStereo are kept separately is to keep track of all possible combinations of adjacent super layers
+						//that way they are evaluated together when determining which stereo super layer seeds are best
+					//Note: if super layer 4 is missing (e.g. dead high voltage board), but inner (and/or outer) super layers are present, all super layers will be "inner"
+						//this is so that the stereo super layer combinatorics are evaluated correctly in the Find_ThetaZ() function
+					//Note: if super layers 1 through 3 are missing (e.g. a decay product), then dSuperLayerSeeds_InnerStereo will be empty
+				deque<deque<DCDCSuperLayerSeed*> > dSuperLayerSeeds_InnerStereo;
+				deque<deque<DCDCSuperLayerSeed*> > dSuperLayerSeeds_OuterStereo;
+
+				DHelicalFit* fit; //the circle fit
+				double dWeightedChiSqPerDF; //of circle fit //weighted: is (chisq/ndf)/(#axial_super_layers^2): prefer fits with more axial super layers (not necessarily more hits)
+				double dWeightedChiSqPerDF_Stereo; //of theta/z determination //weighted: is (chisq/ndf)/(#axial_super_layers^2): prefer fits with more stereo super layers (not necessarily more hits)
+				double dAverageDriftTime; //of axial hits close to the circle fit
+				deque<unsigned int> HitBitPattern; //bit pattern of hits in the track circle (first is just axial, then is all)
+				double dTheta;
+				double dVertexZ;
+				int dSpiralTurnRing; //is ring# of confirmed match spiral turn, -1 if no turn
+
+				//dTruncationSourceCircles: if this object's (not this member's) circle was truncated, this member points to the track circles that indicated truncation was necessary
+					//more than 1 possible if two circles were merged after truncation:
+						//e.g. two tracks have SL1 & SL4 but different SL7, and their SL7's are rejected by other tracks who have the same SL7s
+				deque<const DCDCTrackCircle*> dTruncationSourceCircles;
+				bool dHasNonTruncatedSeedsFlag_InnerStereo; //true if any inner stereo seeds are present and are unique: not from a truncated source
+				bool dHasNonTruncatedSeedsFlag_OuterStereo; //true if any outer stereo seeds are present and are unique: not from a truncated source
+		};
+
+		class DCDCLineFit
+		{
+			public:
+				void BracketMinimumChisq(double &a,double &b, double &c, double &chi2a, double &chi2b, double &chi2c);
+				double FindMinimumChisq(double a, double b, double c, double &lambda);
+				double ChiXY(double lambda);
+
+				unsigned int n;
+				vector<double> s;
+				vector<double> var_s;
+				vector<double> z;
+				vector<double> var_z;
+				vector<double> w;
+				double z0;
+				double tanl;
+		};
+
+		typedef struct
+		{
+			double x, y, perp2;
+			double z, var_z;
+		} intersection_t;
+
+		typedef deque<deque<DCDCRingSeed> >::iterator ringiter;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+		jerror_t brun(JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.
+		jerror_t evnt(JEventLoop *locEventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		vector<DCDCTrkHit*> cdctrkhits;
-		vector<vector<DCDCTrkHit*> > cdchits_by_superlayer;
-		vector<DCDCTrkHit*> seedhits;
-		vector<unsigned int>used_stereos;
-		
-		typedef vector<vector<DCDCSeed > >::iterator ringiter;
-		
-		jerror_t GetCDCHits(JEventLoop *loop,unsigned int &numhits);
-		void FindSeeds(vector<DCDCTrkHit*> &hits, vector<DCDCSeed> &seeds);
-		void LinkSubSeeds(vector<DCDCSeed*> &parent, ringiter ring, ringiter ringend, vector<DCDCSeed> &seeds);
-		void LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<DCDCSeed> &in_seeds2, vector<DCDCSeed> &seeds, unsigned int max_linked_hits);
-		bool FitCircle(DCDCSeed &seed);
-		void PickupUnmatched(vector<DCDCSeed> &seeds);
-		void DropIncompleteSeeds(vector<DCDCSeed> &seeds);
-		void FilterCloneSeeds(vector<DCDCSeed> &seeds);
-		void AddStereoHits(vector<DCDCTrkHit*> &stereo_hits, DCDCSeed &seed);
-		void FindThetaZ(DCDCSeed &seed);
-		jerror_t FindThetaZRegression(DCDCSeed &seed);
-		void FindThetaZStraightTrack(DCDCSeed &seed);
-		void FindTheta(DCDCSeed &seed, double target_z_min, double target_z_max);
-		void FindZ(DCDCSeed &seed, double theta_min, double theta_max);
-		int NumEligibleSeedHits(vector<DCDCTrkHit*> &hits);
-		
-		jerror_t GetStereoPosition(const DCDCWire *wire,
-					   const DHelicalFit &fit,
-					   DVector3 &pos, 
-					   double &var_z,double d=0.);
+		// Utility Functions
+		void Reset_Pools(void);
+		DCDCTrkHit* Get_Resource_CDCTrkHit(void);
+		DCDCSuperLayerSeed* Get_Resource_CDCSuperLayerSeed(void);
+		DHelicalFit* Get_Resource_HelicalFit(void);
+		DCDCTrackCircle* Get_Resource_CDCTrackCircle(void);
 
-		jerror_t GetPositionAndMomentum(DCDCSeed &seed,
-						DVector3 &pos,
-						DVector3 &mom);
-		
-		bool RefitCircleWithStereoIntersections(DCDCSeed &seed);
-		void AddStrayStereoHits(vector<DCDCTrkHit*> &stereo_hits,
-					DCDCSeed &seed,bool &got_hits);
-		void DoLineFit(DCDCSeed &seed);
-		
+		// Make Super Layer Seeds
+		jerror_t Get_CDCHits(JEventLoop* loop);
+		void Find_SuperLayerSeeds(deque<DCDCTrkHit*>& locSuperLayerHits, unsigned int locSuperLayer);
+		void Link_RingSeeds(deque<DCDCRingSeed*>& parent, ringiter ring, ringiter ringend, unsigned int locSuperLayer, unsigned int locNumPreviousRingsWithoutHit);
+		double MinDist2(const DCDCRingSeed& locInnerRingSeed, const DCDCRingSeed& locOuterRingSeed);
+		double MinDist2(const deque<DCDCTrkHit*>& locInnerSeedHits, const deque<DCDCTrkHit*>& locOuterSeedHits);
+		void Reject_SuperLayerSeeds_HighHitDensity(unsigned int locSuperLayer);
+		void Calc_SuperLayerPhiRange(DCDCSuperLayerSeed* locSuperLayerSeed, double& locSeedFirstPhi, double& locSeedLastPhi);
+		void Mark_SeedsForRejection(unsigned int locSuperLayer, int locFirstBin, int locLastBin, double bin_width, const map<unsigned int, pair<double, double> >& locMapPhiRanges, set<unsigned int>& locSeedsToReject);
+		bool Check_IfPhiRangesOverlap(double locFirstSeedPhi, double locLastSeedPhi, double locTargetFirstPhi, double locTargetLastPhi);
 
-		vector<int> superlayer_boundaries;
+		// Search for spirals
+		void Set_SpiralLinkParams(void);
+		bool SearchFor_SpiralTurn_TwoSeedsSharingManyHits(DCDCSuperLayerSeed* locSuperLayerSeed1, DCDCSuperLayerSeed* locSuperLayerSeed2);
+		bool SearchFor_SpiralTurn_TwoSeedsSharingFewHits(DCDCSuperLayerSeed* locSuperLayerSeed1, DCDCSuperLayerSeed* locSuperLayerSeed2);
+		bool SearchFor_SpiralTurn_ManyHitsAdjacentRing(DCDCSuperLayerSeed* locSuperLayerSeed1, DCDCSuperLayerSeed* locSuperLayerSeed2, int locRingToCheck, int locMinStrawsAdjacentRing, int& locMaxSpiralNumHits);
+		bool SearchFor_SpiralTurn_MissingOrBetweenRings(DCDCSuperLayerSeed* locSuperLayerSeed1, DCDCSuperLayerSeed* locSuperLayerSeed2);
+		bool SearchFor_SpiralTurn_SingleSeed(DCDCSuperLayerSeed* locSuperLayerSeed);
+		void Print_SuperLayerSeeds(void);
 
-		const DMagneticFieldMap *bfield; 
+		//Link Super Layers to Create DCDCTrackCircle Objects
+		void Build_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Link_SuperLayers(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer);
+		void Link_SuperLayers_FromAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
+		void Link_SuperLayers_FromStereo(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
+		void Link_SuperLayers_FromStereo_ToAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
+		void Link_SuperLayers_FromStereo_ToStereo(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
+		bool Check_IfShouldAttemptLink(const DCDCSuperLayerSeed* locSuperLayerSeed, bool locInnerSeedFlag);
+		bool Attempt_SeedLink(DCDCSuperLayerSeed* locSuperLayerSeed1, DCDCSuperLayerSeed* locSuperLayerSeed2);
+		bool Attempt_SeedLink(DCDCRingSeed& locRingSeed1, DCDCRingSeed& locRingSeed2, wire_direction_t locWireDirection1, wire_direction_t locWireDirection2);
 
+		// Continue DCDCTrackCircle Creation
+		void Print_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Print_TrackCircle(DCDCTrackCircle* locCDCTrackCircle);
+		void Reject_DefiniteSpiralArms(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Drop_IncompleteGroups(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Fit_Circles(deque<DCDCTrackCircle*>& locCDCTrackCircles, bool locFitOnlyIfNullFitFlag, bool locAddStereoLayerIntersectionsFlag);
+		DVector3 Find_IntersectionBetweenSuperLayers(const DCDCSuperLayerSeed* locInnerSuperLayerSeed, const DCDCSuperLayerSeed* locOuterSuperLayerSeed);
+
+		// Filter Track Circles and Stereo Wires
+		void Handle_StereoAndFilter(deque<DCDCTrackCircle*>& locCDCTrackCircles, bool locFinalPassFlag);
+		void Truncate_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Set_HitBitPattern_Axial(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Filter_TrackCircles_Axial(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Create_NewCDCSuperLayerSeeds(DCDCTrackCircle* locCDCTrackCircle);
+		DCDCSuperLayerSeed* Create_NewStereoSuperLayerSeed(DCDCSuperLayerSeed* locCDCSuperLayerSeed, const DCDCTrackCircle* locCDCTrackCircle, map<DCDCTrkHit*, DCDCTrkHit*>& locProjectedStereoHitMap);
+		bool Calc_StereoPosition(const DCDCWire *wire, const DHelicalFit* fit, DVector3 &pos, double &var_z, double& locPhiStereo, double d = 0.0);
+
+		// Select Best Stereo Seeds and Calculate Theta & Z
+		bool Select_CDCSuperLayerSeeds(DCDCTrackCircle* locCDCTrackCircle, bool locFinalPassFlag);
+		void Select_ThetaZStereoHits(const DCDCTrackCircle* locCDCTrackCircle, int locInnerSeedSeriesIndex, int locOuterSeedSeriesIndex, bool locFinalPassFlag, deque<DCDCTrkHit*>& locComboHits);
+		void Calc_StereoHitDeltaPhis(unsigned int locSuperLayer, deque<DCDCTrkHit*>& locHits, const DCDCTrackCircle* locCDCTrackCircle, deque<pair<DCDCTrkHit*, double> >& locDeltaPhis);
+		double MinDeltaPhi(const deque<DCDCTrkHit*>& locInnerSeedHits, const deque<DCDCTrkHit*>& locOuterSeedHits);
+		void Recycle_DCDCSuperLayerSeed(DCDCSuperLayerSeed* locCDCSuperLayerSeed);
+		bool Find_ThetaZ(const DHelicalFit* locFit, const deque<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locZ, double& locChiSqPerNDF);
+		bool Find_ThetaZ_Regression(const DHelicalFit* locFit, const deque<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locZ, double& locChiSqPerNDF);
+		bool Find_Theta(const DHelicalFit* locFit, const deque<DCDCTrkHit*>& locStereoHits, double& locTheta, double& locThetaMin, double& locThetaMax, double& locChiSqPerNDF);
+		bool Find_Z(const DHelicalFit* locFit, const deque<DCDCTrkHit*>& locStereoHits, double locThetaMin, double locThetaMax, double& locZ);
+		void Set_HitBitPattern_All(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Filter_TrackCircles_Stereo(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+
+		// Finalize and Create DTrackCandidate Objects
+		void Add_UnusedHits(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		void Create_TrackCandidiate(DCDCTrackCircle* locCDCTrackCircle);
+		bool Calc_PositionAndMomentum(DCDCTrackCircle* locCDCTrackCircle, DVector3 &pos, DVector3 &mom);
+
+		int DEBUG_LEVEL;
 		unsigned int MAX_ALLOWED_CDC_HITS;
-		unsigned int MAX_SUBSEED_STRAW_DIFF;
-		unsigned int MIN_SEED_HITS;
-		unsigned int MAX_SUBSEED_LINKED_HITS;
-		unsigned int MAX_RING_SUBSEED_HITS;
+		unsigned int MAX_NUM_RINGSEED_RINGS_SKIPABLE;
 		double MAX_HIT_DIST; // cm
 		double MAX_HIT_DIST2; // cm
-		double MAX_SEED_TIME_DIFF; // ns
-		double MAX_CDC_MATCH_ANGLE; // degrees
-		double MAX_FDC_MATCH_ANGLE; // degrees
-		double MAX_SEED_LINK_ANGLE;
-		double TARGET_Z;
-		double TARGET_Z_MIN;
-		double TARGET_Z_MAX;
-		double VERTEX_Z_MIN,VERTEX_Z_MAX;
-		int DEBUG_LEVEL;
-		bool FILTER_SEEDS;
+		unsigned int MIN_SEED_HITS;
+		unsigned int MAX_STRAWS_BETWEEN_LINK_SPIRAL_TURN;
+		unsigned int MIN_STRAWS_POTENTIAL_SPIRAL_TURN;
+		unsigned int MIN_STRAWS_DEFINITE_SPIRAL_TURN;
+		unsigned int MIN_STRAWS_ADJACENT_TO_SPIRAL_TURN;
+		unsigned int DENSITY_BIN_STRAW_WIDTH;
+		double MAX_HIT_DENSITY;
+		bool ENABLE_DEAD_HV_BOARD_LINKING;
+		unsigned int MAX_SUPERLAYER_NEW_TRACK; //don't allow new track seeds to start after this super layer //track seeds could start late if track is a decay product, or HV board is dead
+		double MAX_COMMON_HIT_FRACTION;
+		double MIN_CIRCLE_ASYMMETRY;
+		double MAX_DRIFT_TIME;
+		double MAX_SEED_TIME_DIFF;
+		unsigned int MIN_PRUNED_STEREO_HITS;
+		double MAX_UNUSED_HIT_LINK_ANGLE;
 
-		bool DEBUG_HISTS;
-		TH2F *Hdphi_s,*Hdphi;
+		size_t MAX_DCDCTrkHitPoolSize;
+		size_t MAX_DCDCSuperLayerSeedPoolSize;
+		size_t MAX_DCDCTrackCirclePoolSize;
+		size_t MAX_HelicalFitPoolSize;
+
+		double TARGET_Z;
+		double VERTEX_Z_MIN;
+		double VERTEX_Z_MAX;
+
+		map<DCDCTrkHit*, unsigned int> dStereoHitNumUsedMap; //map of circle-projected (hit-z-group) hit to # DCDCSuperLayerSeeds it's in (when drops to 0, can recycle the hit memory)
+
+		// Resource Pools for saving time and re-using memory
+		deque<DCDCTrkHit*> dCDCTrkHitPool_Available;
+		deque<DCDCTrkHit*> dCDCTrkHitPool_All;
+
+		deque<DCDCSuperLayerSeed*> dCDCSuperLayerSeedPool_Available;
+		deque<DCDCSuperLayerSeed*> dCDCSuperLayerSeedPool_All;
+
+		deque<DCDCTrackCircle*> dCDCTrackCirclePool_Available;
+		deque<DCDCTrackCircle*> dCDCTrackCirclePool_All;
+
+		deque<DHelicalFit*> dHelicalFitPool_All;
+		deque<DHelicalFit*> dHelicalFitPool_Available;
+
+		deque<unsigned int> dNumStrawsPerRing; //index is ring index
+		deque<unsigned int> superlayer_boundaries;
+
+		unsigned int dNumCDCHits;
+		deque<DCDCTrkHit*> cdctrkhits;
+		deque<deque<DCDCTrkHit*> > cdchits_by_superlayer;
+		deque<deque<DCDCSuperLayerSeed*> > dSuperLayerSeeds; //index 0 -> 6 is super layer 1 -> 7
+
+		const DMagneticFieldMap* dMagneticField;
+
+		unsigned int dNumHitDensityPhiBins;
+		//dRejectedPhiRegions: due to hit density being too high in that region
+		map<unsigned int, deque<pair<double, double> > > dRejectedPhiRegions; //key is super layer, pair is first/last phi (not necessarily min/max! (could pass thorugh phi = 0 barrier))
+		deque<deque<unsigned int> > dHists_WireDensity; //1st index is (super_layer - 1), 2nd is phi bin
 };
 
 #endif // _DTrackCandidate_factory_CDC_

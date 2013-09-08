@@ -65,6 +65,44 @@ DHelicalFit::DHelicalFit(const DHelicalFit &fit)
 {
 	Copy(fit);
 }
+
+void DHelicalFit::Reset(void)
+{
+	x0 = 0.0;
+	y0 = 0.0;
+	r0 = 0.0;
+	q = 0.0;
+	p = 0.0;
+	p_trans = 0.0;
+	phi = 0.0;
+	theta = 0.0;
+	tanl = 0.0;
+	z_vertex = 0.0;
+	chisq = 0.0;
+	ndof = 0;
+	dzdphi = 0.0;
+	chisq_source = NOFIT;
+ 
+	normal.SetXYZ(0.,0.,0.);
+	c_origin = 0.0;
+
+	hits.clear();
+	bfield = NULL;
+	Bz_avg = 0.0;
+	z_mean = 0.0;
+	phi_mean = 0.0;
+  
+	N[0] = 0.0;
+	N[1] = 0.0;
+	N[2] = 0.0;
+
+	xavg[0] = 0.0;
+	xavg[1] = 0.0;
+	xavg[2] = 0.0;
+
+	var_avg = 0.0;
+}
+
 //-----------------
 // Copy
 //-----------------

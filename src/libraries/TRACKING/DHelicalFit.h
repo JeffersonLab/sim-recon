@@ -103,7 +103,7 @@ class DHelicalFit{
   DHelicalFit& operator=(const DHelicalFit& fit);
   void Copy(const DHelicalFit &fit);
   ~DHelicalFit();
-
+	void Reset(void);
  
 
   jerror_t AddStereoHit(const DCDCWire *wire);
