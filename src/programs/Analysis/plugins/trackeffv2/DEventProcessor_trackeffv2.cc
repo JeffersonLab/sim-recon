@@ -365,19 +365,19 @@ jerror_t DEventProcessor_trackeffv2::evnt(JEventLoop* locEventLoop, int eventnum
 			bool locKinematicsBinsOKFlag = true;
 			if((locThrownP < dKinematicsHistBinRange_MinP) || (locThrownP > dKinematicsHistBinRange_MaxP))
 				locKinematicsBinsOKFlag = false;
-			int locPBin = (locThrownP - dKinematicsHistBinRange_MinP)/locPBinSize_Kinematics;
+			int locPBin = int((locThrownP - dKinematicsHistBinRange_MinP)/locPBinSize_Kinematics);
 			if((locThrownTheta < dKinematicsHistBinRange_MinTheta) || (locThrownTheta > dKinematicsHistBinRange_MaxTheta))
 				locKinematicsBinsOKFlag = false;
-			int locThetaBin = (locThrownTheta - dKinematicsHistBinRange_MinTheta)/locThetaBinSize_Kinematics;
+			int locThetaBin = int((locThrownTheta - dKinematicsHistBinRange_MinTheta)/locThetaBinSize_Kinematics);
 
 			// Determine Efficiency P & Theta Bins
 			bool locEfficiencyBinsOKFlag = true;
 			if((locThrownP < dEfficiencyHists_MinP) || (locThrownP > dEfficiencyHists_MaxP))
 				locEfficiencyBinsOKFlag = false;
-			int locPBin_Efficiencies = (locThrownP - dEfficiencyHists_MinP)/locPBinSize_Efficiencies;
+			int locPBin_Efficiencies = int((locThrownP - dEfficiencyHists_MinP)/locPBinSize_Efficiencies);
 			if((locThrownTheta < dEfficiencyHists_MinTheta) || (locThrownTheta > dEfficiencyHists_MaxTheta))
 				locEfficiencyBinsOKFlag = false;
-			int locThetaBin_Efficiencies = (locThrownTheta - dEfficiencyHists_MinTheta)/locThetaBinSize_Efficiencies;
+			int locThetaBin_Efficiencies = int((locThrownTheta - dEfficiencyHists_MinTheta)/locThetaBinSize_Efficiencies);
 
 			// Add to num thrown
 			if(locEfficiencyBinsOKFlag)

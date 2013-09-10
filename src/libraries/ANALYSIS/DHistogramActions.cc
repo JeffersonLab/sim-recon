@@ -925,7 +925,6 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 	double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 	double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 	double locP = locMomentum.Mag();
-	const DMatrixDSym& locCovarianceMatrix = locKinematicData->errorMatrix();
 
 	double locBeta_Timing, locDeltaBeta;
 	if(ParticleCharge(locPID) == 0)
