@@ -225,7 +225,7 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 	//fill maps
 	map<Particle_t, unsigned int> locParticleNumberMap_Current;
 	Particle_t locPID;
-	ostringstream locPIDStream, locPositionStream, locParticleNameStream;
+	ostringstream locPIDStream, locPositionStream, locParticleNameStream, locMassStream;
 	TObjString *locObjString_PID, *locObjString_Position, *locObjString_ParticleName;
 	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
 	{
@@ -265,7 +265,11 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 			locObjString_ParticleName = new TObjString(locParticleNameStream.str().c_str());
 			locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
 			locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
-			locMiscInfoMap->Add(locObjString_ParticleName, locObjString_PID);
+			string locPIDName = locParticleNameStream.str() + string("__PID");
+			locMiscInfoMap->Add(new TObjString(locPIDName.c_str()), locObjString_PID);
+			locMassStream.str("");
+			locMassStream << ParticleMass(locPID);
+			locMiscInfoMap->Add(new TObjString("Target__Mass"), new TObjString(locMassStream.str().c_str()));
 			locParticleNameList->AddLast(locObjString_ParticleName);
 		}
 
@@ -291,7 +295,12 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 				locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
 				locPositionToNameMap->Add(locObjString_Position, locObjString_ParticleName);
 				locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
-				locMiscInfoMap->Add(locObjString_ParticleName, locObjString_PID);
+				string locPIDName = locParticleNameStream.str() + string("__PID");
+				locMiscInfoMap->Add(new TObjString(locPIDName.c_str()), locObjString_PID);
+				locMassStream.str("");
+				locMassStream << ParticleMass(locPID);
+				string locMassName = locParticleNameStream.str() + string("__Mass");
+				locMiscInfoMap->Add(new TObjString(locMassName.c_str()), new TObjString(locMassStream.str().c_str()));
 				locParticleNameList->AddLast(locObjString_ParticleName);
 				continue;
 			}
@@ -324,6 +333,13 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 			locNameToPositionMap->Add(locObjString_ParticleName, locObjString_Position);
 			locPositionToNameMap->Add(locObjString_Position, locObjString_ParticleName);
 			locNameToPIDMap->Add(locObjString_ParticleName, locObjString_PID);
+			if(locDecaysFlag)
+			{
+				locMassStream.str("");
+				locMassStream << ParticleMass(locPID);
+				string locMassName = locParticleNameStream.str() + string("__Mass");
+				locMiscInfoMap->Add(new TObjString(locMassName.c_str()), new TObjString(locMassStream.str().c_str()));
+			}
 		}
 	}
 
@@ -421,21 +437,10 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 		{
 			locParticleNameStream.str("");
 			locParticleNameStream << "Decaying" << Convert_ToBranchName(ParticleType(locPID));
-			if(IsFixedMass(locPID))
-				Create_Branch_Fundamental<Double_t>(locTree, locParticleNameStream.str(), "Mass", "D");
 			if(IsDetachedVertex(locPID))
 				Create_Branch_NoSplitTObject<TLorentzVector>(locTree, locParticleNameStream.str(), "X4", (*dTObjectMap)[locTree->GetName()]);
 			if(IsFixedMass(locPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 				Create_Branch_NoSplitTObject<TLorentzVector>(locTree, locParticleNameStream.str(), "P4", (*dTObjectMap)[locTree->GetName()]);
-		}
-
-		//target
-		locPID = locReactionStep->Get_TargetParticleID();
-		if((loc_i == 0) && (locPID != Unknown))
-		{
-			locParticleNameStream.str("");
-			locParticleNameStream << "Target" << Convert_ToBranchName(ParticleType(locPID));
-			Create_Branch_Fundamental<Double_t>(locTree, locParticleNameStream.str(), "Mass", "D");
 		}
 
 		//final particles
@@ -462,7 +467,6 @@ void DEventWriterROOT::Create_DataTree(const DReaction* locReaction, bool locIsM
 				// missing particle
 				locParticleNameStream.str("");
 				locParticleNameStream << "Missing" << Convert_ToBranchName(ParticleType(locPID));
-				Create_Branch_Fundamental<Double_t>(locTree, locParticleNameStream.str(), "Mass", "D");
 				Create_Branch_NoSplitTObject<TLorentzVector>(locTree, locParticleNameStream.str(), "X4", (*dTObjectMap)[locTree->GetName()]);
 				if(IsFixedMass(locPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 					Create_Branch_NoSplitTObject<TLorentzVector>(locTree, locParticleNameStream.str(), "P4", (*dTObjectMap)[locTree->GetName()]);
@@ -1034,8 +1038,6 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 				else //decaying
 				{
 					string locParticleBranchName = string("Decaying") + Convert_ToBranchName(ParticleType(locPID));
-					if(IsFixedMass(locPID))
-						Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Mass", ParticleMass(locPID));
 					if(IsDetachedVertex(locPID))
 						Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "X4", &locStepTX4, (*dTObjectMap)[locTree->GetName()]);
 					if(IsFixedMass(locPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
@@ -1054,14 +1056,6 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 					}
 				}
 
-				//target
-				locPID = locParticleComboStep->Get_TargetParticleID();
-				if((loc_k == 0) && (locPID != Unknown))
-				{
-					string locParticleBranchName = string("Target") + Convert_ToBranchName(ParticleType(locPID));
-					Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Mass", ParticleMass(locPID));
-				}
-
 				//final state particles
 				for(size_t loc_l = 0; loc_l < locParticleComboStep->Get_NumFinalParticles(); ++loc_l)
 				{
@@ -1077,7 +1071,6 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 					if(locParticleComboStep->Is_FinalParticleMissing(loc_l))
 					{
 						string locParticleBranchName = string("Missing") + Convert_ToBranchName(ParticleType(locPID));
-						Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Mass", ParticleMass(locPID));
 						Fill_TObjectData<TLorentzVector>(locTree, locParticleBranchName, "X4", &locStepTX4, (*dTObjectMap)[locTree->GetName()]);
 						if(IsFixedMass(locPID) && ((locKinFitType == d_P4Fit) || (locKinFitType == d_P4AndVertexFit) || (locKinFitType == d_P4AndSpacetimeFit)))
 						{

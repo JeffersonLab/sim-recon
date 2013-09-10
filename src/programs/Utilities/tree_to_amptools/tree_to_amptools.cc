@@ -16,7 +16,7 @@ void Print_Usage(void);
 int Get_KinFitType(TTree* locTree);
 int Get_ParticleID(TTree* locTree, string locParticleName);
 bool Check_IfDecayProduct(TMap* locDecayProductMap, string locParticleName);
-bool Get_ParticleBranchNames(TTree* locTree, TList*& locTreeParticleNames, TList*& locParticleNamesWithBranches, TList*& locParticleBranchNames, string& locBeamBranchName, string& locTargetBranchName, string& locMissingMassBranchName);
+bool Get_ParticleBranchNames(TTree* locTree, TList*& locTreeParticleNames, TList*& locParticleNamesWithBranches, TList*& locParticleBranchNames, string& locBeamBranchName, string& locMissingParticleName);
 void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree);
 
 int main(int argc, char* argv[])
@@ -93,11 +93,10 @@ bool Check_IfDecayProduct(TMap* locDecayProductMap, string locParticleName)
 	return false;
 }
 
-bool Get_ParticleBranchNames(TTree* locTree, TList*& locTreeParticleNames, TList*& locParticleNamesWithBranches, TList*& locParticleBranchNames, string& locBeamBranchName, string& locTargetBranchName, string& locMissingMassBranchName)
+bool Get_ParticleBranchNames(TTree* locTree, TList*& locTreeParticleNames, TList*& locParticleNamesWithBranches, TList*& locParticleBranchNames, string& locBeamBranchName, string& locMissingParticleName)
 {
 	locBeamBranchName = ""; //stays "" if no beam particle is present
-	locTargetBranchName = ""; //stays "" if no target particle is present
-	locMissingMassBranchName = ""; //etc.
+	locMissingParticleName = ""; //stays "" if no missing particle is present
 	//get kinfit information
 	int locKinFitType = Get_KinFitType(locTree);
 	bool locWasKinFitPerformedFlag = (locKinFitType != 0);
@@ -128,11 +127,8 @@ cout << endl;
 		string locParticleName = locNameObject->GetName();
 		string locBranchName;
 		if(locParticleName.substr(0, 6) == string("Target"))
-		{
-			locTargetBranchName = locParticleName + string("__Mass");
 			continue;
-		}
-		else if(locParticleName.substr(0, 8) == string("Decaying"))
+		if(locParticleName.substr(0, 8) == string("Decaying"))
 		{
 			if((!locWasP4KinFit) || (locDecayProductMap->FindObject(locNameObject) == NULL))
 				continue; //p4 not kinfit or resonance
@@ -140,7 +136,7 @@ cout << endl;
 		}
 		else if(locParticleName.substr(0, 7) == string("Missing"))
 		{
-			locMissingMassBranchName = locParticleName + string("__Mass");
+			locMissingParticleName = locParticleName;
 			if(!locWasP4KinFit)
 				continue;
 			locBranchName = locParticleName + string("__P4");
@@ -221,11 +217,12 @@ void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree)
 	TList* locTreeParticleNames; // all particles whose p4 we want to include in the tree (regardless of how we grab it) (except the beam photon)
 	TList* locParticleNamesWithBranches; //of all particles whose p4 can be grabbed directly (excluding the beam), whether they're desired or not
 	TList* locParticleBranchNames; //matches locParticleNamesWithBranches
-	string locBeamBranchName, locTargetBranchName, locMissingMassBranchName; //"" if no beam/target/missing particle(s)
+	string locBeamBranchName, locMissingParticleName; //"" if no beam/missing particle(s)
 
-	bool locWasP4KinFitFlag = Get_ParticleBranchNames(locInputTree, locTreeParticleNames, locParticleNamesWithBranches, locParticleBranchNames, locBeamBranchName, locTargetBranchName, locMissingMassBranchName);
+	bool locWasP4KinFitFlag = Get_ParticleBranchNames(locInputTree, locTreeParticleNames, locParticleNamesWithBranches, locParticleBranchNames, locBeamBranchName, locMissingParticleName);
 	TList* locUserInfo = locInputTree->GetUserInfo();
 	TMap* locDecayProductMap = (TMap*)locUserInfo->FindObject("DecayProductMap"); //parent name string -> tlist of decay product name strings		
+	TMap* locMiscInfoMap = (TMap*)locUserInfo->FindObject("MiscInfoMap");
 
 	//open output file and create amptools tree
 	TFile* locOutputFile = NULL;
@@ -242,8 +239,14 @@ void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree)
    locInputTree->SetBranchAddress(locBeamBranchName.c_str(), &locBeamP4);
 
 	//target
-	Double_t locTargetMass;
-   locInputTree->SetBranchAddress(locTargetBranchName.c_str(), &locTargetMass);
+	Double_t locTargetMass = 0.0;
+	if(locMiscInfoMap->FindObject("Target__Mass") != NULL)
+	{
+		TObjString* locMassString = (TObjString*)locMiscInfoMap->GetValue("Target__Mass");
+		istringstream locMassStream;
+		locMassStream.str(locMassString->GetName());
+		locMassStream >> locTargetMass;
+	}
 
 	//final state
 	Int_t locNumDirect = locParticleNamesWithBranches->GetEntries();
@@ -255,9 +258,15 @@ void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree)
 	}
 
 	//missing particle mass
-	Double_t locMissingParticleMass;
-	if(locMissingMassBranchName != "")
-	   locInputTree->SetBranchAddress(locMissingMassBranchName.c_str(), &locMissingParticleMass);
+	Double_t locMissingParticleMass = 0.0;
+	string locMissingMassName = locMissingParticleName + string("__Mass");
+	if(locMiscInfoMap->FindObject(locMissingMassName.c_str()) != NULL)
+	{
+		TObjString* locMassString = (TObjString*)locMiscInfoMap->GetValue(locMissingMassName.c_str());
+		istringstream locMassStream;
+		locMassStream.str(locMassString->GetName());
+		locMassStream >> locMissingParticleMass;
+	}
 
 	//decaying particle masses
 	Double_t* locMassArray = new Double_t[locNumFinalStateParticles]; //larger than needed, but whatever //matches with locDecayingParticleNames
@@ -267,9 +276,17 @@ void Convert_ToAmpToolsFormat(string locOutputFileName, TTree* locInputTree)
 		string locParticleName = locTreeParticleNames->At(loc_i)->GetName();
 		if(locParticleName.substr(0, 8) != string("Decaying"))
 			continue;
-		string locBranchName = locParticleName + string("__Mass");
+		string locDecayingMassName = locParticleName + string("__Mass");
 		unsigned int locArrayIndex = locDecayingParticleNames->GetEntries();
-	   locInputTree->SetBranchAddress(locBranchName.c_str(), &(locMassArray[locArrayIndex]));
+		if(locMiscInfoMap->FindObject(locDecayingMassName.c_str()) != NULL)
+		{
+			TObjString* locMassString = (TObjString*)locMiscInfoMap->GetValue(locDecayingMassName.c_str());
+			istringstream locMassStream;
+			locMassStream.str(locMassString->GetName());
+			locMassStream >> locMassArray[locArrayIndex];
+		}
+		else
+			locMassArray[locArrayIndex] = 0.0; //should be impossible!!
 		locDecayingParticleNames->AddLast(locTreeParticleNames->At(loc_i));
 	}
 
@@ -322,7 +339,7 @@ cout << endl;
 
 		//calc missing p4 if needed
 		TLorentzVector locMissingP4;
-		if((locMissingMassBranchName != "") && (!locWasP4KinFitFlag))
+		if((locMissingParticleName != "") && (!locWasP4KinFitFlag))
 		{
 			//missing particle
 			TLorentzVector locTargetP4(0.0, 0.0, 0.0, locTargetMass);
