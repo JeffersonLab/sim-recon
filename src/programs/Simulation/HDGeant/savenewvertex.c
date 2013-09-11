@@ -15,6 +15,20 @@ savenewvertex: particle stoped because it decayed
 
 extern s_HDDM_t* thisInputEvent;
 
+/*
+  The following are used to communicate the "id" fields from the
+  particles read in from the input file of generated events here
+  so that new particles created via decays can have the proper
+  parent id recorded and get assigned their own id that is not
+  already assigned.
+  
+  9/11/2013
+*/
+extern int MAX_GENERATED_PARTICLES;
+extern int MYID[MAX_GENERATED_PARTICLES];
+extern int NEXT_MYID;
+
+
 void SaveNewVertex(int kcase, int Npart, float *gkin, 
 		   float vertex[3], float tofg, int *iflgk,
                    int ipart, int itra, int istak) {
@@ -51,6 +65,16 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
   verts->in[VertexCount].products = ps;
   ps->mult = Npart;
   for (i = 0;i<Npart;i++){
+  	
+	/* Give this particle a unique id in the output file */
+	int myid = NEXT_MYID++;
+	
+	/* Find parent id based on parent's track number */
+	int parentid = itra < MAX_GENERATED_PARTICLES ? MYID[itra]:0;
+
+	/* Add this particle to the map of track number to id in case it also is decayed */
+	int my_trk_num = iflgk[i];
+	if(my_trk_num < MAX_GENERATED_PARTICLES) MYID[my_trk_num] = myid;
     
     ps->in[i].momentum = make_s_Momentum();
     ps->in[i].momentum->px = gkin[i*5+0];
@@ -58,8 +82,8 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
     ps->in[i].momentum->pz = gkin[i*5+2];
     ps->in[i].momentum->E  = gkin[i*5+3];
     ps->in[i].type = gkin[i*5+4];
-    ps->in[i].parentid = itra;
-    ps->in[i].id = iflgk[i];
+    ps->in[i].parentid = parentid;
+    ps->in[i].id = myid;
     ps->in[i].mech = kcase;
     ps->in[i].decayVertex = VertexCount;
 

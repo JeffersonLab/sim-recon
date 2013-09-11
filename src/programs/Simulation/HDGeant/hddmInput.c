@@ -68,6 +68,11 @@ void settofg_(float origin[3], float *time0);
 s_iostream_t* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
 
+#define MYID_ARRAY_SIZE 100
+int MAX_GENERATED_PARTICLES = MYID_ARRAY_SIZE;
+int MYID[MYID_ARRAY_SIZE];
+int NEXT_MYID = 0; /* see savenewvertex.c */
+
 /*-------------------------
  * openInput
  *-------------------------
@@ -121,12 +126,14 @@ int loadInput ()
 	 * them (gsvert) and defines the GEANT (gskine) for tracking.
 	 */
    s_Reactions_t* reacts;
-   int reactCount, ir;
+   int reactCount, ir, imyid;
    int runNo = thisInputEvent->physicsEvents->in[0].runNo;
    int eventNo = thisInputEvent->physicsEvents->in[0].eventNo;
    seteventid_(&runNo,&eventNo);
    reacts = thisInputEvent ->physicsEvents->in[0].reactions;
    reactCount = reacts->mult;
+   NEXT_MYID = 0;
+   for(imyid=0; imyid<MYID_ARRAY_SIZE; myid++) MYID[imyid] = -1; /* initialize to invalid value */
    for (ir = 0; ir < reactCount; ir++)
    {
       s_Vertices_t* verts;
@@ -182,6 +189,7 @@ int loadInput ()
             Particle_t kind;
             s_Product_t* prod = &prods->in[ip];
             kind = prod->type;
+            if(prod->id >= NEXT_MYID) NEXT_MYID = prod->id+1; /* keep track of next available id */
 				
 				/* Don't tell geant to track particles that are intermediary types */
 				if(kind<=0)continue;
@@ -192,6 +200,9 @@ int loadInput ()
             if (prod->decayVertex == 0)
             {
                gskine_(p, &kind, &nvtx, &ubuf, &nubuf, &ntrk);
+			   
+			   /* Fill map of track number to myid */
+			   if(ntrk < MAX_GENERATED_PARTICLES) MYID[ntrk] = prod->id;
             }
          }
       }
