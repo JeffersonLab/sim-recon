@@ -82,6 +82,7 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
     ps->in[i].momentum->pz = gkin[i*5+2];
     ps->in[i].momentum->E  = gkin[i*5+3];
     ps->in[i].type = gkin[i*5+4];
+    ps->in[i].pdgtype = PDGtype(ps->in[i].type);
     ps->in[i].parentid = parentid;
     ps->in[i].id = myid;
     ps->in[i].mech = kcase;
