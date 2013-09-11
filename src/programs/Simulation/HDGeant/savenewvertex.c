@@ -25,7 +25,7 @@ extern s_HDDM_t* thisInputEvent;
   9/11/2013
 */
 extern int MAX_GENERATED_PARTICLES;
-extern int MYID[MAX_GENERATED_PARTICLES];
+extern int MYID[];
 extern int NEXT_MYID;
 
 

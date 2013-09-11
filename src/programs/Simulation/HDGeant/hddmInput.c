@@ -133,7 +133,7 @@ int loadInput ()
    reacts = thisInputEvent ->physicsEvents->in[0].reactions;
    reactCount = reacts->mult;
    NEXT_MYID = 0;
-   for(imyid=0; imyid<MYID_ARRAY_SIZE; myid++) MYID[imyid] = -1; /* initialize to invalid value */
+   for(imyid=0; imyid<MYID_ARRAY_SIZE; imyid++) MYID[imyid] = -1; /* initialize to invalid value */
    for (ir = 0; ir < reactCount; ir++)
    {
       s_Vertices_t* verts;
