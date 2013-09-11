@@ -28,6 +28,11 @@
  *
  * Revision history:
  *
+ * > Sep 11, 2013 - David Lawrence
+ * Keep track of mapping between track number and id value for generated
+ * particles. This is so the savenewvertex code can assign proper parentid
+ * as well as assign unique id values.
+ *
  * > Aug 17, 2007 - David Lawrence
  * Fill in id, parentid, pdgtype, and mech fields of reactions objects in HDDM.
  * Mostly zeros, but it makes it clear the fields are invalid and allows
