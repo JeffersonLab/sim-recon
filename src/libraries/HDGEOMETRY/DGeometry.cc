@@ -1055,7 +1055,7 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
   vector<double>cdc_endplate_dim;
   
   if(!Get("//posXYZ[@volume='CentralDC'/@X_Y_Z",cdc_origin)) return false;
-  if(!Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_center)) return false;
+  if(!Get("//posXYZ[@volume='centralDC']/@X_Y_Z",cdc_center)) return false;
   if(!Get("//posXYZ[@volume='CDPD']/@X_Y_Z",cdc_endplate_pos)) return false;
   if(!Get("//tubs[@name='CDPD']/@Rio_Z",cdc_endplate_dim)) return false;
   

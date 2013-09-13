@@ -150,7 +150,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   vector<double>cdc_upstream_endplate_pos; 
   vector<double>cdc_endplate_dim;
   geom->Get("//posXYZ[@volume='CentralDC'/@X_Y_Z",cdc_origin);
-  geom->Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_center);
+  geom->Get("//posXYZ[@volume='centralDC']/@X_Y_Z",cdc_center);
   geom->Get("//posXYZ[@volume='CDPU']/@X_Y_Z",cdc_upstream_endplate_pos);
   geom->Get("//tubs[@name='CDPU']/@Rio_Z",cdc_endplate_dim);
   cdc_origin[2]+=cdc_center[2]+cdc_upstream_endplate_pos[2]
