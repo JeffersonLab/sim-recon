@@ -35,7 +35,11 @@
  30      -3322    ! antiXi0
  31      -3312    ! antiXi+
  32      -3334    ! antiOmega+
--80        113    ! rho 0
--81        223    ! omega0
--82       2224    ! Delta++
+ 33       223    ! omega(783)
+ 34       331    ! eta prime
+ 35       333    ! PHI
+ -42      113    ! rho0
+ -43      213    ! rho+
+ -44      -213   ! rho-   
+
 
