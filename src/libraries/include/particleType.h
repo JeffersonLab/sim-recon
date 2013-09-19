@@ -74,8 +74,8 @@ typedef enum {
   RhoPlus        = 43, // was 158
   RhoMinus       = 44, // was 159
   omega          = 33,  // was 160
-  phiMeson       = 35,  // was 162
-  EtaPrime       = 34,  // was 161
+  phiMeson       = 34,  // was 162
+  EtaPrime       = 35,  // was 161
   //Rho0           = 157,
   //RhoPlus        = 158,
   //RhoMinus       = 159,
