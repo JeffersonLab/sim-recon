@@ -47,7 +47,7 @@ C --- phi(1020) ---
          BRATIO(KZ)=0
          MODE(KZ)=0
       ENDDO
-      IPA=34
+      IPA=35
       BRATIO(1)=49.
       BRATIO(2)=34.4
       BRATIO(3)=12.9
@@ -64,7 +64,7 @@ C --- D+ ---
          BRATIO(KZ)=0
          MODE(KZ)=0
       ENDDO
-      IPA=35
+      IPA=34
       BRATIO(1)=44.5
       BRATIO(2)=29.4
       BRATIO(3)=20.8
