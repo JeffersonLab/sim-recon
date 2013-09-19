@@ -70,9 +70,9 @@ typedef enum {
   
 
   /* These are E852-defined constants */
-  Rho0           = 42, // was 157
-  RhoPlus        = 43, // was 158
-  RhoMinus       = 44, // was 159
+  Rho0           = 44, // was 157
+  RhoPlus        = 42, // was 158
+  RhoMinus       = 43, // was 159
   omega          = 33,  // was 160
   phiMeson       = 34,  // was 162
   EtaPrime       = 35,  // was 161
