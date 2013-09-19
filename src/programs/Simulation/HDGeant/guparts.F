@@ -16,9 +16,9 @@ C
 C
 C --- Define additional particles
       CALL GSPART(33,'OMEGA(783)',3,0.782, 0.,7.836E-23,0.,0)
-      CALL GSPART(35,'PHI(1020)' ,3,1.019, 0.,1.486E-22,0.,0)
+      CALL GSPART(34,'PHI(1020)' ,3,1.019, 0.,1.486E-22,0.,0)
 
-      CALL GSPART(34,'ETA PRIME' ,3,0.957, 0.,3.2E-21,0.,0)
+      CALL GSPART(35,'ETA PRIME' ,3,0.957, 0.,3.2E-21,0.,0)
 
 c      CALL GSPART(36,'D -'       ,4,1.870,-1.,1.066E-12,0.,0)
 c      CALL GSPART(37,'D 0'       ,3,1.865, 0.,4.2E-13  ,0.,0)
@@ -47,7 +47,7 @@ C --- phi(1020) ---
          BRATIO(KZ)=0
          MODE(KZ)=0
       ENDDO
-      IPA=35
+      IPA=34
       BRATIO(1)=49.
       BRATIO(2)=34.4
       BRATIO(3)=12.9
@@ -64,7 +64,7 @@ C --- D+ ---
          BRATIO(KZ)=0
          MODE(KZ)=0
       ENDDO
-      IPA=34
+      IPA=35
       BRATIO(1)=44.5
       BRATIO(2)=29.4
       BRATIO(3)=20.8
