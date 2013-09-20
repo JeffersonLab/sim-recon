@@ -142,7 +142,7 @@ C --- rho0 ---
       ENDDO
       IPA=44
       BRATIO(1)=100.
-      MODE(1)=707
+      MODE(1)=809
       CALL GSDK(IPA,BRATIO,MODE)
 C --- jpsi ---
       DO KZ=1,6
