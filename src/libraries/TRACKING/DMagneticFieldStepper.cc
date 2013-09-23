@@ -473,40 +473,103 @@ bool DMagneticFieldStepper::DistToPlane(DVector3 &pos, const DVector3 &origin, c
 	return false;
 }
 
-// Routine to find the position-of-closest approach of a trajectory to a line
-bool DMagneticFieldStepper::SwimToPOCAtoBeamLine(double q,DVector3 &mypos,
-						 DVector3 &mymom){ 
-  // Set the starting parameters and start stepping!
-  mymom=-1.0*mymom;
-  SetStartingParams(q, &mypos, &mymom);
-   
-  DVector3 last_pos;
-  double old_doca2=0.,doca2=1000.;
-  do{
-    old_doca2=doca2;
-    last_pos = mypos;
-    
-    Step(&mypos);
-    doca2=mypos.Perp2();		
+//-----------------------
+// SwimToPOCAtoBeamLine
+//-----------------------
+bool DMagneticFieldStepper::SwimToPOCAtoBeamLine(double q, DVector3 &pos, DVector3 &mom)
+{ 
+	/// Routine to find the position-of-closest approach of a trajectory
+	/// to the beam line. Upon entry, q, pos, and mom contain a point
+	/// on a track pointing away from the beamline. (Beamline is assumed
+	/// to be along z at x=y=0). At return, the pos and mom vectors will
+	/// contain the position and momentum at the POCA. Upon success, a boolean
+	/// "false" is returned. If the routine fails, then a boolean "true"
+	/// is returned and the values of pos and mom are left to what they
+	/// were upon entry.
 	
-    if (doca2>old_doca2 && (mom.x()<0. || mom.y()<0.)){
-      // Use a linear approximation to find the "true" POCA
-      double pz=mom.z();
-      if (fabs(pz)>0.001){
-	double tx=mom.x()/pz;
-	double ty=mom.y()/pz;
-	double dz=-(mypos.x()*tx+mypos.y()*ty)/(tx*tx+ty*ty);
-	mypos+=(dz/pz)*mom;
-      }  
-      mymom=-1.*mom;
-      
-      return false;
-      break;
-    }
-  }while (mypos.z()>0.0 && mypos.z()<625. && mypos.Perp()<65.0); 
-  // constrain to active volume
+
+	// Set the starting parameters and start stepping!
+	DVector3 mymom = -mom;
+	DVector3 mypos = pos;
+	SetStartingParams(q, &mypos, &mymom);
+   
+	// Swim until either we start going further away from the beamline
+	// or exit the active volume. (The latter is just a safety net as
+	// we should always be going further from the beamline if we are
+	// exiting the active volume!)
+	DVector3 last_pos;
+	double old_doca2=1001.0, doca2=1000.0;
+	while(doca2 < old_doca2){
+
+		// if q==0 then the trajectory is a straight line anyway so
+		// exit the loop now so we drop to the linear extrapolation
+		// code below.
+		if( q == 0.0) break;
+	
+		// constrain to active volume
+		if(mypos.z()<0.0 || mypos.z()>625. || mypos.Perp()>65.0) return 1;
+	
+		// remember the current doca2 and position
+		old_doca2=doca2;
+		last_pos = mypos;
     
-  return true;
+		// calculate new doca2 and position
+		Step(&mypos);
+		doca2=mypos.Perp2();		
+	}
+	
+	// Do linear extrapolation in X-Y plane to find POCA.
+	// We need to move in the (minus) momentum direction.
+	// Take a dot product of the position in the X-Y plane
+	// with the normalized momentum direction to get the
+	// step size we need to take.
+	double x = mypos.X();
+	double y = mypos.Y();
+	double p = mymom.Mag();
+	if(p < 0.001) return true; // always fail for < 1MeV momentum
+	DVector3 p_hat = (1.0/p)*mymom;
+	double step_size = x*p_hat.X() + y*p_hat.Y();
+
+	// Add step in the negative momentum direction.normalized
+	mypos -= step_size*p_hat;
+	
+	// Copy results back into user's DVector's and return success
+	pos = mypos;
+	mom = mymom;
+	return false;
+
+//   Original code
+//   // Set the starting parameters and start stepping!
+//   mymom=-1.0*mymom;
+//   SetStartingParams(q, &mypos, &mymom);
+//    
+//   DVector3 last_pos;
+//   double old_doca2=0.,doca2=1000.;
+//   do{
+//     old_doca2=doca2;
+//     last_pos = mypos;
+//     
+//     Step(&mypos);
+//     doca2=mypos.Perp2();		
+// 	
+//     if (doca2>old_doca2 && (mom.x()<0. || mom.y()<0.)){
+//       // Use a linear approximation to find the "true" POCA
+//       double pz=mom.z();
+//       if (fabs(pz)>0.001){
+// 			double tx=mom.x()/pz;
+// 			double ty=mom.y()/pz;
+// 			double dz=-(mypos.x()*tx+mypos.y()*ty)/(tx*tx+ty*ty);
+// 			mypos+=(dz/pz)*mom;
+//       }  
+//       mymom=-1.*mom;
+//       
+//       return false;
+//       break;
+//     }
+//   }while (mypos.z()>0.0 && mypos.z()<625. && mypos.Perp()<65.0); 
+//   // constrain to active volume
+//     
+//   return true;
 }
 
 

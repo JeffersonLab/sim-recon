@@ -47,8 +47,7 @@ class DMagneticFieldStepper
 		inline double Getdz_dphi(void){return Ro*mom.Dot(zdir)/mom.Dot(ydir);}
 		inline double GetStepSize(void) const{return stepsize;}
 	
-		bool SwimToPOCAtoBeamLine(double q,DVector3 &mypos,
-					  DVector3 &mymom); 
+		bool SwimToPOCAtoBeamLine(double q,DVector3 &pos, DVector3 &mom); 
 		  
 	private:
 		const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
