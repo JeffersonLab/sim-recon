@@ -63,8 +63,6 @@ inline bool CDCSort_DeltaPhis(const pair<DTrackCandidate_factory_CDC::DCDCTrkHit
 }
 
 DTrackCandidate_factory_CDC::~DTrackCandidate_factory_CDC(){
-  for(size_t loc_i = MAX_DCDCTrackCirclePoolSize; loc_i < dCDCTrackCirclePool_All.size(); ++loc_i)
-    delete dCDCTrackCirclePool_All[loc_i];
   
 }
 
