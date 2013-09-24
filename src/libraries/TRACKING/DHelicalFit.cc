@@ -85,8 +85,9 @@ void DHelicalFit::Reset(void)
  
 	normal.SetXYZ(0.,0.,0.);
 	c_origin = 0.0;
-
-	hits.clear();
+	
+	Clear();
+	//hits.clear();
 	bfield = NULL;
 	Bz_avg = 0.0;
 	z_mean = 0.0;
