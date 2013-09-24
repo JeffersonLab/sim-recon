@@ -62,6 +62,13 @@ inline bool CDCSort_DeltaPhis(const pair<DTrackCandidate_factory_CDC::DCDCTrkHit
 	return (locDeltaPhiPair1.second < locDeltaPhiPair2.second);
 }
 
+DTrackCandidate_factory_CDC::~DTrackCandidate_factory_CDC(){
+  for(size_t loc_i = MAX_DCDCTrackCirclePoolSize; loc_i < dCDCTrackCirclePool_All.size(); ++loc_i)
+    delete dCDCTrackCirclePool_All[loc_i];
+  
+}
+
+
 //------------------
 // init
 //------------------
@@ -203,6 +210,13 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 				++dHists_WireDensity[loc_i][locPhiBin];
 			}
 		}
+	}
+
+	// Clean up after using wire map
+	for (size_t i=0;i<locCDCWires.size();i++){
+	  for (size_t j=0;j<locCDCWires[i].size();j++){
+	    delete locCDCWires[i][j];
+	  }
 	}
 
 	return NOERROR;

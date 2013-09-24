@@ -26,7 +26,7 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 {
 	public:
 		DTrackCandidate_factory_CDC(){};
-		~DTrackCandidate_factory_CDC(){};
+		~DTrackCandidate_factory_CDC();
 		const char* Tag(void){return "CDC";}
 
 		enum trk_flags_t
