@@ -643,14 +643,13 @@ jerror_t DHelicalFit::FitCircleRiemann(float rc){
   // Third root
   long double lambda_min=-ONE_THIRD*B2-sum_over_2+SQRT3*diff_over_2;
   
-  if (diff_over_2>0) _DBG_ << "????????????????"<< endl;
-
   // Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
+  double A11_minus_lambda_min=A(1,1)-lambda_min;
   N[0]=1.;
   N[1]=(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
-    /(A(0,1)*A(2,1)-(A(1,1)-lambda_min)*A(0,2));
-  N[2]=(A(2,0)*(A(1,1)-lambda_min)-A(1,0)*A(2,1))
-    /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min));
+    /(A(0,1)*A(2,1)-A11_minus_lambda_min*A(0,2));
+  N[2]=(A(2,0)*A11_minus_lambda_min-A(1,0)*A(2,1))
+    /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*A11_minus_lambda_min);
   
   // Normalize: n1^2+n2^2+n3^2=1
   double denom=sqrt(N[0]*N[0]+N[1]*N[1]+N[2]*N[2]);
