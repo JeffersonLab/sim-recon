@@ -119,11 +119,11 @@ void DMagneticFieldStepper::CalcDirs(double *Bvals)
 	}
 
   double momMag = mom.Mag();
-  double BMagXmomMag = Bmag * momMag;
+  double one_over_BMagXmomMag = 1./(Bmag * momMag);
   
 	// cross product of p and B (natural x-direction)
 	xdir = mom.Cross(B);
-  sin_theta = xdir.Mag() / ( BMagXmomMag );
+	sin_theta = xdir.Mag()*one_over_BMagXmomMag;
 	if(xdir.Mag2()<1.0E-6)xdir = mom.Orthogonal();
 	if(xdir.Mag2()!=0.0)xdir.SetMag(1.0);
 	
@@ -139,7 +139,7 @@ void DMagneticFieldStepper::CalcDirs(double *Bvals)
 	// cosine of angle between p and B
   //	double theta = B.Angle(mom);
 	//cos_theta = cos(theta);
-  cos_theta = B.Dot( mom ) / ( BMagXmomMag );
+	cos_theta = B.Dot( mom )*one_over_BMagXmomMag;
   //	sin_theta = sin(theta);
 
 	// Calculate Rp and Ro for this momentum and position
@@ -476,7 +476,7 @@ bool DMagneticFieldStepper::DistToPlane(DVector3 &pos, const DVector3 &origin, c
 //-----------------------
 // SwimToPOCAtoBeamLine
 //-----------------------
-bool DMagneticFieldStepper::SwimToPOCAtoBeamLine(double q, DVector3 &pos, DVector3 &mom)
+bool DMagneticFieldStepper::SwimToPOCAtoBeamLine(double q, DVector3 &mypos, DVector3 &mymom)
 { 
 	/// Routine to find the position-of-closest approach of a trajectory
 	/// to the beam line. Upon entry, q, pos, and mom contain a point
@@ -489,9 +489,9 @@ bool DMagneticFieldStepper::SwimToPOCAtoBeamLine(double q, DVector3 &pos, DVecto
 	
 
 	// Set the starting parameters and start stepping!
-	DVector3 mymom = -mom;
-	DVector3 mypos = pos;
-	SetStartingParams(q, &mypos, &mymom);
+	DVector3 mymom_loc = -mymom;
+	DVector3 mypos_loc = mypos;
+	SetStartingParams(q, &mypos_loc, &mymom_loc);
    
 	// Swim until either we start going further away from the beamline
 	// or exit the active volume. (The latter is just a safety net as
@@ -507,35 +507,35 @@ bool DMagneticFieldStepper::SwimToPOCAtoBeamLine(double q, DVector3 &pos, DVecto
 		if( q == 0.0) break;
 	
 		// constrain to active volume
-		if(mypos.z()<0.0 || mypos.z()>625. || mypos.Perp()>65.0) return 1;
+		if(mypos_loc.z()<0.0 || mypos_loc.z()>625. || mypos_loc.Perp()>65.0) return 1;
 	
 		// remember the current doca2 and position
 		old_doca2=doca2;
-		last_pos = mypos;
+		last_pos = mypos_loc;
     
 		// calculate new doca2 and position
-		Step(&mypos);
-		doca2=mypos.Perp2();		
+		Step(&mypos_loc);
+		doca2=mypos_loc.Perp2();		
 	}
-	
-	// Do linear extrapolation in X-Y plane to find POCA.
-	// We need to move in the (minus) momentum direction.
-	// Take a dot product of the position in the X-Y plane
-	// with the normalized momentum direction to get the
-	// step size we need to take.
-	double x = mypos.X();
-	double y = mypos.Y();
-	double p = mymom.Mag();
-	if(p < 0.001) return true; // always fail for < 1MeV momentum
-	DVector3 p_hat = (1.0/p)*mymom;
-	double step_size = x*p_hat.X() + y*p_hat.Y();
 
-	// Add step in the negative momentum direction.normalized
-	mypos -= step_size*p_hat;
+	// Do linear extrapolation to find POCA.
+	// We need to move in the (minus) momentum direction.
+	// Assume the beam line is in the (0,0,1) direction.
+	double p = mom.Mag();
+	if(p < 0.001) return true; // always fail for < 1MeV momentum
+
+	DVector3 p_hat = (1.0/p)*mom;
+	double p_hat_z=p_hat.Z();
+
+	// Step size along line starting at mypos_loc and pointing in the p_hat 
+	// direction
+	double s=(p_hat_z*mypos_loc.Z()-p_hat.Dot(mypos_loc))/(1.-p_hat_z*p_hat_z);
+	// Add step in the negative momentum direction
+	mypos_loc+=s*p_hat;
 	
 	// Copy results back into user's DVector's and return success
-	pos = mypos;
-	mom = mymom;
+	mypos=mypos_loc;
+	mymom = -mom;
 	return false;
 
 //   Original code
