@@ -26,7 +26,7 @@ C
       ENDIF
 C
       CALL PYEVNT
-      CALL PYEDIT(2)  ! filter out some intermediate entries
+      CALL PYEDIT(15)  ! filter out some intermediate entries
       nlnd=PYK(0,1)
       NTRA=nlnd
 C
