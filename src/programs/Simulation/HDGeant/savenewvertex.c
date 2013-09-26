@@ -68,14 +68,17 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
   	
     /* Give this particle a unique id in the output file */
     int myid = NEXT_MYID++;
-	
+    MYID[myid] = itra;
+
     /* Find parent id based on parent's track number */
-    int parentid = itra < MAX_GENERATED_PARTICLES ? MYID[itra]:0;
+    //int parentid = itra < MAX_GENERATED_PARTICLES ? MYID[itra][1]:0;
+
+    int parentid = itra;
 
     /* Add this particle to the map of track number to id in case it also is decayed */
     int my_trk_num = iflgk[i];
-    if(my_trk_num < MAX_GENERATED_PARTICLES) MYID[my_trk_num] = myid;
-	
+    //    if(my_trk_num < MAX_GENERATED_PARTICLES) MYID[my_trk_num] = myid;
+
     ps->in[i].momentum = make_s_Momentum();
     ps->in[i].momentum->px = gkin[i*5+0];
     ps->in[i].momentum->py = gkin[i*5+1];
@@ -84,7 +87,7 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
     ps->in[i].type = gkin[i*5+4];
     ps->in[i].pdgtype = PDGtype(ps->in[i].type);
     ps->in[i].parentid = parentid;
-    ps->in[i].id = myid;
+    ps->in[i].id = my_trk_num ;//myid;
     ps->in[i].mech = kcase;
     ps->in[i].decayVertex = VertexCount;
 

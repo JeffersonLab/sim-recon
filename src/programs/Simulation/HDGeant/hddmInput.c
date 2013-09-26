@@ -137,8 +137,10 @@ int loadInput ()
    seteventid_(&runNo,&eventNo);
    reacts = thisInputEvent ->physicsEvents->in[0].reactions;
    reactCount = reacts->mult;
-   NEXT_MYID = 0;
-   for(imyid=0; imyid<MYID_ARRAY_SIZE; imyid++) MYID[imyid] = -1; /* initialize to invalid value */
+   NEXT_MYID = 1;
+   for(imyid=0; imyid<MYID_ARRAY_SIZE; imyid++) {
+     MYID[imyid] = -1; /* initialize to invalid value */
+   }
    for (ir = 0; ir < reactCount; ir++)
    {
       s_Vertices_t* verts;
@@ -194,20 +196,27 @@ int loadInput ()
             Particle_t kind;
             s_Product_t* prod = &prods->in[ip];
             kind = prod->type;
-            if(prod->id >= NEXT_MYID) NEXT_MYID = prod->id+1; /* keep track of next available id */
-				
-				/* Don't tell geant to track particles that are intermediary types */
-				if(kind<=0)continue;
-				
+            //if(prod->id >= NEXT_MYID) NEXT_MYID = prod->id+1; /* keep track of next available id */
+	    /* Don't tell geant to track particles that are intermediary types */
+	    if(kind<=0) {
+	      prod->id=0;
+	      prod->parentid = 0;
+	      continue;
+	    }
+	    prod->id = NEXT_MYID++;
             p[0] = prod->momentum->px;
             p[1] = prod->momentum->py;
             p[2] = prod->momentum->pz;
             if (prod->decayVertex == 0)
             {
-               gskine_(p, &kind, &nvtx, &ubuf, &nubuf, &ntrk);
-			   
-			   /* Fill map of track number to myid */
-			   if(ntrk < MAX_GENERATED_PARTICLES) MYID[ntrk] = prod->id;
+	      prod->parentid = 0;
+	      gskine_(p, &kind, &nvtx, &ubuf, &nubuf, &ntrk);
+	      //printf("Tracknumber: %d \n",ntrk);
+	      /* Fill map of track number to myid */
+	      if(ntrk < MAX_GENERATED_PARTICLES) {
+		MYID[ntrk] = prod->id;
+	      }
+	      
             }
          }
       }

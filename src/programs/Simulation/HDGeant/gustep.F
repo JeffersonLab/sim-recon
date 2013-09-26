@@ -442,10 +442,10 @@ c     make primary except if in calorimeter volume and not hadronic interaction
              iflgk(i) = 1
              cint = KCASE
 c             print *, cchar
-             rx = sqrt(VERT(1)**2+VERT(2)**2)
-             if ( (((rx>65.) .and.((VERT(3)>-17.) .and.
-     >            (VERT(3)<390.))).or.(VERT(3)>625.)).and.
-     >            (cchar.ne.'HADR')) then
+             rx = sqrt(VECT(1)**2+VECT(2)**2)
+             if ( ( ((rx>65.) .and.( (VECT(3)>-17.) .and.
+     >            (VECT(3)<390.))).or.(VECT(3)>625.)).and.
+     >            (cchar.ne.'HADR') ) then
                 iflgk(i) = 0
              endif
              call GSKING(i)
@@ -461,10 +461,11 @@ c             print *, cchar
 
             if ((cnames(NLEVEL).ne.'BCAL') .and.
      +           (cnames(NLEVEL).ne.'FCAL').and.
-     +           (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
-     +           (VERT(3)<500.)) then
+     +           (sqrt(VECT(1)**2+VECT(2)**2)<65.).and.
+     +           (VECT(3)<500.)) then
 
-c               print *," KCASE: ",chcase,"  ",NGKINE,"  ",IPART
+c               print *,IDEVT," KCASE: ",ITRA,"  ",chcase,"  ",
+c     >              IPART,"  ",VERT(1)," ",VERT(2)," ",VERT(5)
                call savenewvertex(KCASE,NGKINE,GKIN,VECT,
      +              TOFG,iflgk,IPART,ITRA,ISTAK)
             endif
