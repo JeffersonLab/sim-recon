@@ -39,6 +39,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->Nswim_steps = 0;
 	this->dist_to_rt_depth = 0;
 	this->mass = 0.13957; // assume pion mass until otherwise specified
+	this->mass_sq=this->mass*this->mass;
 	this->hit_cdc_endplate = false;
 	this->RootGeom=NULL;
 	this->geom = NULL;
@@ -101,6 +102,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->geom = rt.geom;
 	this->dist_to_rt_depth = 0;
 	this->mass = rt.GetMass();
+	this->mass_sq=this->mass*this->mass;
 	this->ploss_direction = rt.ploss_direction;
 	this->check_material_boundaries = rt.GetCheckMaterialBoundaries();
 	this->BOUNDARY_STEP_FRACTION = rt.GetBoundaryStepFraction();
@@ -158,6 +160,7 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	this->geom = rt.geom;
 	this->dist_to_rt_depth = rt.dist_to_rt_depth;
 	this->mass = rt.GetMass();
+	this->mass_sq=this->mass*this->mass;
 	this->ploss_direction = rt.ploss_direction;
 	this->check_material_boundaries = rt.GetCheckMaterialBoundaries();
 	this->BOUNDARY_STEP_FRACTION = rt.GetBoundaryStepFraction();
@@ -211,6 +214,7 @@ void DReferenceTrajectory::Reset(void){
 	this->Nswim_steps = 0;
 	this->ploss_direction = kForward;
 	this->mass = 0.13957; // assume pion mass until otherwise specified
+	this->mass_sq=this->mass*this->mass;
 	this->hit_cdc_endplate = false;
 	this->last_phi = 0.0;
 	this->last_swim_step = NULL;
@@ -360,7 +364,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	
 		//magnitude of momentum and beta
 		double p_sq=swim_step->mom.Mag2();
-		double one_over_beta=sqrt(1.+mass*mass/p_sq);
+		double one_over_beta_sq=1.+mass_sq/p_sq;
 
 		// Add material if geom or RootGeom is not NULL
 		// If both are non-NULL, then use RootGeom
@@ -399,26 +403,29 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			}
 
 			if(err == NOERROR){
-				if(X0>0.0){
-				  double p=sqrt(p_sq);
-					double delta_s = s;
-					if(last_step)delta_s -= last_step->s;
-					double radlen = delta_s/X0;
+			  if(X0>0.0){
+			    double p=sqrt(p_sq);
+			    double delta_s = s;
+			    if(last_step)delta_s -= last_step->s;
+			    double radlen = delta_s/X0;
+			    
+			    if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
+			      
+			      //  double theta0 = 0.0136*sqrt(one_over_beta_sq)/p*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
+			      //double theta02 = theta0*theta0;
+			      double factor=1.0+0.038*log(radlen);
+			      double theta02=1.8496e-4*factor*factor*radlen*one_over_beta_sq/p_sq;
+			      
+			      itheta02 += theta02;
+			      itheta02s += s*theta02;
+			      itheta02s2 += s*s*theta02;
+			      X0sum+=X0;
+			      
+			    }
 
-					if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
-					
-						double theta0 = 0.0136*one_over_beta/p*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
-						double theta02 = theta0*theta0;
-						itheta02 += theta02;
-						itheta02s += s*theta02;
-						itheta02s2 += s*s*theta02;
-						X0sum+=X0;
-						
-					}
-
-					// Calculate momentum loss due to ionization
-					dP_dx = dPdx(p, KrhoZ_overA, rhoZ_overA,LogI);
-				}
+			    // Calculate momentum loss due to ionization
+			    dP_dx = dPdx(p, KrhoZ_overA, rhoZ_overA,LogI);
+			  }
 			}
 			last_step = swim_step;
 		}
@@ -484,7 +491,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		}
 		
 		// update flight time
-		t+=ds*one_over_beta/SPEED_OF_LIGHT;
+		t+=ds*sqrt(one_over_beta_sq)/SPEED_OF_LIGHT;
 		s += ds;
 
 		// Exit the loop if we are already inside the volume of the BCAL
@@ -587,7 +594,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
   // flight time
   if (t){	
     double p_sq=step->mom.Mag2();
-    double one_over_beta=sqrt(1.+mass*mass/p_sq);
+    double one_over_beta=sqrt(1.+mass_sq/p_sq);
     *t = step->t-(1.0-alpha)*delta.Mag()*one_over_beta/SPEED_OF_LIGHT;
   }
 
@@ -645,7 +652,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	  } 
 	  // flight time
 	  if (t){
-	    double one_over_beta=sqrt(1.+mass*mass/p_sq);
+	    double one_over_beta=sqrt(1.+mass_sq/p_sq);
 	    *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 	  }
 	  
@@ -749,7 +756,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 			  double delta_s = sqrt(my_t*my_t + my_u*my_u);
 			  double ds=(phi>0 ? +delta_s:-delta_s);
 			  double p_sq=step->mom.Mag2();
-			  double one_over_beta=sqrt(1.+mass*mass/p_sq);
+			  double one_over_beta=sqrt(1.+mass_sq/p_sq);
 			  *t = step->t+ds*one_over_beta/SPEED_OF_LIGHT;
 			}
 			
@@ -769,7 +776,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	// flight time
 	if (t){
 	  double p_sq=step->mom.Mag2();
-	  double one_over_beta=sqrt(1.+mass*mass/p_sq);
+	  double one_over_beta=sqrt(1.+mass_sq/p_sq);
 	  *t = step->t+alpha*sqrt(p_sq)*one_over_beta/SPEED_OF_LIGHT;
 	}
 
@@ -878,7 +885,7 @@ double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t)
   double dist=DistToRT(hit,s);
   if (s!=NULL && t!=NULL && last_swim_step!=NULL){
     double p_sq=last_swim_step->mom.Mag2();
-    double one_over_beta=sqrt(1.+mass*mass/p_sq);
+    double one_over_beta=sqrt(1.+mass_sq/p_sq);
     *t=last_swim_step->t+(*s-last_swim_step->s)*one_over_beta/SPEED_OF_LIGHT;
   }
   return dist;
@@ -1945,7 +1952,7 @@ double DReferenceTrajectory::dPdx(double ptot, double KrhoZ_overA,
 	
 	double gammabeta = ptot/mass;
 	double gammabeta2=gammabeta*gammabeta;
-	double gamma = sqrt(gammabeta2+1);
+	double gamma = sqrt(gammabeta2+1.);
 	double beta = gammabeta/gamma;
 	double beta2=beta*beta;
 	double me = 0.511E-3;
@@ -1997,8 +2004,9 @@ double DReferenceTrajectory::dPdx(double ptot, double KrhoZ_overA,
 
 	double dP_dx = dEdx/beta;
 
-	double g = 0.350/sqrt(-log(0.06));
-	dP_dx *= 1.0 + exp(-pow(ptot/g,2.0)); // empirical for really low momentum particles
+	//double g = 0.350/sqrt(-log(0.06));
+	//dP_dx *= 1.0 + exp(-pow(ptot/g,2.0)); // empirical for really low momentum particles
+
 	
 	if(ploss_direction==kBackward)dP_dx = -dP_dx;
 
@@ -2033,7 +2041,7 @@ void DReferenceTrajectory::Dump(double zmin, double zmax)
 
 // Propagate the covariance matrix for {px,py,pz,x,y,z,t} along the step ds
 jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
-						   double mass,
+						   double mass_sq,
 						   const DVector3 &mom,
 						   const DVector3 &pos,
 						   DMatrixDSym &C) const{
@@ -2081,9 +2089,9 @@ jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
   J(5,2)=ds_over_p*(1-pz*pz*one_over_p_sq);
 
   J(6,6)=1.;
-  double m_sq=mass*mass;
-  double fac2=(-ds/SPEED_OF_LIGHT)*m_sq*one_over_p_sq*one_over_p_sq
-    /sqrt(1.+m_sq*one_over_p_sq);
+  
+  double fac2=(-ds/SPEED_OF_LIGHT)*mass_sq*one_over_p_sq*one_over_p_sq
+    /sqrt(1.+mass_sq*one_over_p_sq);
   J(6,0)=fac2*px;
   J(6,1)=fac2*py;
   J(6,2)=fac2*pz;
@@ -2109,8 +2117,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
     cov=track_kd->errorMatrix();	
   doca=1000.;
   double tflight=0.;
-  double mass=this->mass;
-  double mass_sq=mass*mass;
+  double mass_sq=this->mass_sq;
   double q=this->q;
   double step_size=1.0,s=-step_size;
   DVector3 oldpos,oldmom;
@@ -2151,7 +2158,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 
 	  // Propagate the covariance matrix of the track along the trajectory
      if(track_kd!=NULL)
-	    this->PropagateCovariance(ds,q,mass,mom,oldpos,cov);
+	    this->PropagateCovariance(ds,q,mass_sq,mom,oldpos,cov);
 	  
 	  // Store the current positions, doca and adjust flight times
 	  oldpos=pos;
@@ -2222,7 +2229,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
     }
 
     // Propagate the covariance matrix of the track along the trajectory
-    this->PropagateCovariance(this->swim_steps[i+1].s-swim_step->s,q,mass,swim_step->mom,swim_step->origin,cov);
+    this->PropagateCovariance(this->swim_steps[i+1].s-swim_step->s,q,mass_sq,swim_step->mom,swim_step->origin,cov);
 
     // Store the current position and doca
     oldpos=pos;
@@ -2271,8 +2278,8 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 
 	double q1=this->q;
 	double q2=rt2->q;
-	double mass1=this->mass;
-	double mass2=rt2->mass;
+	double mass_sq1=this->mass_sq;
+	double mass_sq2=rt2->mass_sq;
 
 	// Initialize the doca and traverse both particles' trajectories
 	doca=1000.;
@@ -2324,8 +2331,8 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 					// Propagate the covariance matrices along the trajectories
 					if((track1_kd != NULL) && (track2_kd != NULL))
 					{
-						this->PropagateCovariance(ds1,q1,mass1,mom1,oldpos1,cov1);
-						rt2->PropagateCovariance(ds2,q2,mass2,mom2,oldpos2,cov2);
+						this->PropagateCovariance(ds1,q1,mass_sq1,mom1,oldpos1,cov1);
+						rt2->PropagateCovariance(ds2,q2,mass_sq2,mom2,oldpos2,cov2);
 					}
 
 					// Store the current positions, doca and adjust flight times
@@ -2334,10 +2341,10 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 					doca=new_doca;
 
 					double one_over_p1_sq=1./mom1.Mag2();
-					tflight1+=ds1*sqrt(1.+mass1*mass1*one_over_p1_sq)/SPEED_OF_LIGHT;
+					tflight1+=ds1*sqrt(1.+mass_sq1*one_over_p1_sq)/SPEED_OF_LIGHT;
 
 					double one_over_p2_sq=1./mom2.Mag2();
-					tflight2+=ds2*sqrt(1.+mass2*mass2*one_over_p2_sq)/SPEED_OF_LIGHT;
+					tflight2+=ds2*sqrt(1.+mass_sq2*one_over_p2_sq)/SPEED_OF_LIGHT;
 
 					// New momenta
 					stepper1.GetMomentum(mom1);
@@ -2389,8 +2396,8 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 		// Propagate the covariance matrices along the trajectories
 		if((track1_kd != NULL) && (track2_kd != NULL))
 		{
-			this->PropagateCovariance(this->swim_steps[i+1].s-swim_step1->s,q1,mass1,swim_step1->mom,swim_step1->origin,cov1);
-			rt2->PropagateCovariance(rt2->swim_steps[i+1].s-swim_step2->s,q2,mass2,swim_step2->mom,swim_step2->origin,cov2);
+			this->PropagateCovariance(this->swim_steps[i+1].s-swim_step1->s,q1,mass_sq1,swim_step1->mom,swim_step1->origin,cov1);
+			rt2->PropagateCovariance(rt2->swim_steps[i+1].s-swim_step2->s,q2,mass_sq2,swim_step2->mom,swim_step2->origin,cov2);
 		}
    
 		// Store the current positions and doca

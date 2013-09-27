@@ -127,7 +127,7 @@ class DReferenceTrajectory{
 		const DMagneticFieldMap* GetBfield(void) const {return bfield;}
 		double GetMass(void) const {return mass;}
 		double GetStepSize(void) const {return step_size;}
-		void SetMass(double mass){this->mass = mass;}
+		void SetMass(double mass){this->mass = mass;this->mass_sq=mass*mass;}
 		void SetPLossDirection(direction_t direction){ploss_direction=direction;}
 		void SetCheckMaterialBoundaries(bool check_material_boundaries){this->check_material_boundaries = check_material_boundaries;}
 		bool GetCheckMaterialBoundaries(void) const {return check_material_boundaries;}
@@ -152,7 +152,7 @@ class DReferenceTrajectory{
 					 DKinematicData *track2_kd,
 					 DVector3 &pos, double &doca, double &var_doca) const;
 		jerror_t PropagateCovariance(double ds,double q,
-					     double mass,const DVector3 &mom,
+					     double mass_sq,const DVector3 &mom,
 					     const DVector3 &pos,
 					     DMatrixDSym &C) const;
 		
@@ -181,7 +181,7 @@ class DReferenceTrajectory{
 		mutable double last_dist_along_wire;
 		mutable double last_dz_dphi;
 		
-		double mass;
+		double mass,mass_sq;
 		bool hit_cdc_endplate;
 		
 		double BOUNDARY_STEP_FRACTION;
