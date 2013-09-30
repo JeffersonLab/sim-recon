@@ -2,13 +2,14 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <string>
 using namespace std;
 
 #include "HDDM/hddm_s.h"
 #include "particleType.h"
 
 char *INPUT_FILE=NULL;
-char OUTPUT_FILE[] = "output.hddm";
+string OUTPUT_FILE("output.hddm");
 
 void ParseCommandLineArguments(int narg,char *argv[]);
 int Str2GeantParticleID(char *str);
@@ -16,6 +17,16 @@ void Usage(void);
 double randm(double, double);
 
 float vertex[4]={0.0, 0.0, 65.0, 65.0};
+Particle_t targetType = Proton;
+Particle_t beamType = Gamma;
+bool FIXED_BEAM_MOMENTUM = false;
+float BEAM_MOMENTUM = 8.5;
+float BEAM_MOMENTUM_SIGMA = 0.005;
+
+#include <TRandom.h>
+TRandom *rnd;
+
+#define SQR(X) ((X)*(X))
 
 time_t now;
 
@@ -30,9 +41,8 @@ int main(int narg, char *argv[])
 		cerr<<"No input file!"<<endl;
 	}
 
-	// Seed the random generator
-	now=time(NULL);
-	srand48(now);
+	// Create the random generator
+	rnd = new TRandom();
 
 	// Open input file
 	ifstream *file = new ifstream(INPUT_FILE);
@@ -42,7 +52,7 @@ int main(int narg, char *argv[])
 	}
 	
 	// Open output file
-	s_iostream_t* thisOutputStream = init_s_HDDM(OUTPUT_FILE);
+	s_iostream_t* thisOutputStream = init_s_HDDM((char*)OUTPUT_FILE.c_str());
 	if(!thisOutputStream){
 		cerr<<"Unable to open output file \""<<OUTPUT_FILE<<"\" for writing."<<endl;
 		exit(-3);
@@ -58,6 +68,8 @@ int main(int narg, char *argv[])
 		// Start a new event
 		s_PhysicsEvents_t* pes;
 		s_Reactions_t* rs;
+		s_Target_t* ta;
+		s_Beam_t* be;
 		s_Vertices_t* vs;
 		s_Origin_t* origin;
 		s_Products_t* ps;
@@ -68,6 +80,26 @@ int main(int narg, char *argv[])
 		pes->in[0].eventNo = eventNumber;
 		pes->in[0].reactions = rs = make_s_Reactions(1);
 		rs->mult = 1;
+		rs->in[0].target = ta = make_s_Target();
+		ta->type = targetType;
+		ta->properties = make_s_Properties();
+		ta->properties->charge = ParticleCharge(targetType);
+		ta->properties->mass = ParticleMass(targetType);
+		ta->momentum = make_s_Momentum();
+		ta->momentum->px = 0;
+		ta->momentum->py = 0;
+		ta->momentum->pz = 0;
+		ta->momentum->E  = ParticleMass(targetType);
+		rs->in[0].beam = be = make_s_Beam();
+		be->type = beamType;
+		be->properties = make_s_Properties();
+		be->properties->charge = ParticleCharge(beamType);
+		be->properties->mass = ParticleMass(beamType);
+		be->momentum = make_s_Momentum();
+		be->momentum->px = -ta->momentum->px;
+		be->momentum->py = -ta->momentum->py;
+		be->momentum->pz = -ta->momentum->pz;
+		be->momentum->E  = -ta->momentum->E;
 		rs->in[0].vertices = vs = make_s_Vertices(1);
 		vs->mult = 1;
 		vs->in[0].origin = origin = make_s_Origin();
@@ -104,12 +136,35 @@ int main(int narg, char *argv[])
 			ps->in[ps->mult].momentum->py = py;
 			ps->in[ps->mult].momentum->pz = pz;
 			ps->in[ps->mult].momentum->E  = E;
+			be->momentum->px += px;
+			be->momentum->py += py;
+			be->momentum->pz += pz;
+			be->momentum->E  += E;
 
 		}
 		
+		// If a specific beam momentum was specified, overwrite
+		// the calculated momentum with it.
+		if(FIXED_BEAM_MOMENTUM){
+			float p = BEAM_MOMENTUM;
+			if(BEAM_MOMENTUM_SIGMA!=0.0){
+				float delta_p = BEAM_MOMENTUM_SIGMA*rnd->Gaus();
+				p += delta_p;
+			}
+			be->momentum->px = 0.0;
+			be->momentum->py = 0.0;
+			be->momentum->pz = p;
+		}
+		
+		be->momentum->E = sqrt(SQR(be->properties->mass)+
+					SQR(be->momentum->px)+
+					SQR(be->momentum->py)+
+					SQR(be->momentum->pz)
+                                      );
+		
 		if(nParticles>0){
 			flush_s_HDDM(thisOutputEvent, thisOutputStream);
-			if(eventNumber%1000 == 0)cout<<"Wrote event "<<eventNumber<<endl;
+			if(eventNumber%1000 == 0){cout<<"Wrote event "<<eventNumber<<"\r"; cout.flush();}
 			Nevents++;
 		}
 	}
@@ -120,7 +175,7 @@ int main(int narg, char *argv[])
 	// Close output file
 	close_s_HDDM(thisOutputStream);
 	
-	cout<<"Processed "<<Nevents<<" events"<<endl;
+	cout<<"Wrote "<<Nevents<<" events to "<<OUTPUT_FILE<<endl;
 	
 	return 0;
 }
@@ -146,15 +201,42 @@ void ParseCommandLineArguments(int narg,char *argv[])
 				    exit(-1);
 				  }
 				  break;
-			        default:
-					cerr<<"Unknown option \""<<argv[i]<<"\""<<endl;
-					Usage();
-					exit(-1);
+				case 'b':
+				  beamType = (Particle_t)Str2GeantParticleID(&ptr[1]);
+				  break;
+				case 't':
+				  targetType = (Particle_t)Str2GeantParticleID(&ptr[1]);
+				  break;
+				case 'P':
+					FIXED_BEAM_MOMENTUM = true;
+					BEAM_MOMENTUM = atof(&ptr[1]);
+					break;
+				case 's':
+					BEAM_MOMENTUM_SIGMA = atof(&ptr[1])/1000.0;
+					break;
+				default:
+				  cerr<<"Unknown option \""<<argv[i]<<"\""<<endl;
+				  Usage();
+				  exit(-1);
 			}
 		}else{
 			INPUT_FILE = argv[i];
 		}
 	}
+	
+	// Determine output filename from input filename
+	OUTPUT_FILE = INPUT_FILE;
+	size_t pos = OUTPUT_FILE.find_last_of(".");
+	if(pos != string::npos) OUTPUT_FILE.erase(pos);
+	OUTPUT_FILE += ".hddm";
+	
+	if(FIXED_BEAM_MOMENTUM){
+		cout<<endl;
+		cout<<"Using fixed beam: "<<ParticleType(beamType)<<"  P = "<<BEAM_MOMENTUM<<" +/- "<<BEAM_MOMENTUM_SIGMA<<" GeV"<<endl;
+		cout<<endl;
+	}
+	
+	
 }
 
 //-------------------------------
@@ -171,9 +253,17 @@ void Usage(void)
 	cout<<endl;
 	cout<<" options:"<<endl;
 	cout<<endl;
-	cout<<"  -V\"x  y  z_min  z_max\"    set the vertex for the interaction.";
-	cout<<"(default: x="<<vertex[0]<<" y="<<vertex[1]<<" z_min="<<vertex[2]<<" z_max="<<vertex[3]<<")"<<endl;
-	cout<<"  -h           print this usage statement."<<endl;
+	cout<<"  -V\"x  y  z_min  z_max\"    set the vertex for the interaction."<<endl;
+	cout<<"                            (default: x="<<vertex[0]<<" y="<<vertex[1]<<" z_min="<<vertex[2]<<" z_max="<<vertex[3]<<")"<<endl;
+	cout<<"  -b\"beam_particle_name\"    set the beam particle type [gamma]."<<endl;
+	cout<<"  -t\"target_particle_name\"  set the target particle type [proton]."<<endl;
+	cout<<"  -P#                       Set the incident particle momentum in GeV."<<endl;
+	cout<<"                            (default: calculate from momentum of"<<endl;
+	cout<<"                            final state particles.)"<<endl;
+	cout<<"  -s#                       Set the momentum resolution of the beam"<<endl;
+	cout<<"                            in MeV. [5MeV]. (Only used if -P option"<<endl;
+	cout<<"                            is present.)"<<endl;
+	cout<<"  -h                        print this usage statement."<<endl;
 	cout<<endl;
 }
 
@@ -221,6 +311,7 @@ int Str2GeantParticleID(char *str)
 	if(!strcmp(str, "omega"))return omega;
 	if(!strcmp(str, "etaprime"))return EtaPrime;
 	if(!strcmp(str, "phi"))return phiMeson;
+	if(!strcmp(str, "Pb208"))return Pb208;
 	
 	return -1;
 }
@@ -230,5 +321,5 @@ int Str2GeantParticleID(char *str)
 /*------------------------*/
 double randm(double low, double high)
 {
-  return ((high - low) * drand48() + low);
+  return ((high - low) * rnd->Rndm() + low);
 }
