@@ -107,6 +107,9 @@ jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, int eventnumber) {
 	 Ncdc_anode = cdctrackhits.size();
 	 */
 
+	// Initialize particle set
+	particle_set thr;
+
 	// Loop over track hits
 	// map first: DMCTrack index+1
 	// map second: number of hits
@@ -146,6 +149,8 @@ jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, int eventnumber) {
 			break;
 		case SYS_RICH:
 			richpoints[mctrackhit->track]++;
+			thr.richtruthhits.push_back(
+					MakeRichTruthHit((DMCTrackHit *) mctrackhit));
 			break;
 		case SYS_CHERENKOV:
 			cerepoints[mctrackhit->track]++;
@@ -157,7 +162,7 @@ jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, int eventnumber) {
 
 	// Create Particle objects for thrown particles
 	bool all_fiducial = true;
-	particle_set thr;
+
 	for (unsigned int j = 0; j < mcthrowns.size(); j++) {
 
 		// find hits
@@ -315,6 +320,22 @@ CereHit DEventProcessor_mc_tree::MakeCereHit(const DCereHit *chit) {
 	return hit;
 }
 
+/*
+ * Make RICH Truth hits
+ */
+RichTruthHit DEventProcessor_mc_tree::MakeRichTruthHit(
+		const DMCTrackHit *mchit) {
+
+	double x = mchit->r * cos(mchit->phi);
+	double y = mchit->r * sin(mchit->phi);
+	double z = mchit->z;
+
+	RichTruthHit hit;
+	hit.x.SetXYZ(x, y, z);
+
+	return hit;
+}
+
 //------------------
 // MakeParticle
 //------------------
@@ -371,6 +392,7 @@ void DEventProcessor_mc_tree::FillEvent(Event *evt, particle_set &pset) {
 	vector<Particle> &positron = pset.positrons;
 	vector<RichHit> &richhit = pset.richhits;
 	vector<CereHit> &cerehit = pset.cerehits;
+	vector<RichTruthHit> &richtruthhit = pset.richtruthhits;
 
 	// Sort particle arrays by energy
 	sort(photon.begin(), photon.end(), CompareLorentzEnergy);
@@ -461,6 +483,14 @@ void DEventProcessor_mc_tree::FillEvent(Event *evt, particle_set &pset) {
 		TClonesArray &hits = *(evt->cerehit);
 		CereHit *hit = new (hits[evt->Ncerehit++]) CereHit();
 		*hit = cerehit[i];
+	}
+	/*
+	 * Add RICH Truth hit
+	 */
+	for (unsigned int i = 0; i < richtruthhit.size(); i++) {
+		TClonesArray &hits = *(evt->richtruthhit);
+		RichTruthHit *hit = new (hits[evt->Nrichtruthhit++]) RichTruthHit();
+		*hit = richtruthhit[i];
 	}
 	// Calculate W of reconstructed particles
 	for (unsigned int i = 0; i < photon.size(); i++)

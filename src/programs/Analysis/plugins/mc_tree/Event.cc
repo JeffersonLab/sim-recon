@@ -23,6 +23,7 @@ Event::Event() {
 	Npositron = 0;
 	Nrichhit = 0;
 	Ncerehit = 0;
+	Nrichtruthhit = 0;
 
 	pip = new TClonesArray("Particle", MAX_PART);
 	pim = new TClonesArray("Particle", MAX_PART);
@@ -35,6 +36,7 @@ Event::Event() {
 	positron = new TClonesArray("Particle", MAX_PART);
 	richhit = new TClonesArray("RichHit", MAX_RICH_HIT);
 	cerehit = new TClonesArray("CereHit", MAX_CERE_HIT);
+	richtruthhit = new TClonesArray("RichTruthHit", MAX_RICHTRUTH_HIT);
 
 	target.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	beam.SetXYZT(0.0, 0.0, 0.0, 0.0);
@@ -59,6 +61,7 @@ Event::~Event() {
 	delete positron;
 	delete richhit;
 	delete cerehit;
+	delete richtruthhit;
 }
 
 //------------------
@@ -76,6 +79,7 @@ void Event::Clear() {
 	Npositron = 0;
 	Nrichhit = 0;
 	Ncerehit = 0;
+	Nrichtruthhit = 0;
 
 	pip->Clear();	// delete entries in TClonesArray (without freeing memory)
 	pim->Clear();	// delete entries in TClonesArray (without freeing memory)
@@ -88,6 +92,7 @@ void Event::Clear() {
 	positron->Clear();// delete entries in TClonesArray (without freeing memory)
 	richhit->Clear();
 	cerehit->Clear();
+	richtruthhit->Clear();
 
 	target.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	beam.SetXYZT(0.0, 0.0, 0.0, 0.0);

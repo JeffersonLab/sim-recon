@@ -48,6 +48,7 @@ using namespace ROOT;
 #include "Particle.h"
 #include "RichHit.h"
 #include "CereHit.h"
+#include "RichTruthHit.h"
 
 class DEventProcessor_mc_tree: public JEventProcessor {
 
@@ -68,6 +69,7 @@ public:
 		vector<Particle> positrons;
 		vector<RichHit> richhits;
 		vector<CereHit> cerehits;
+		vector<RichTruthHit> richtruthhits;
 	};
 
 	class hit_set {
@@ -100,6 +102,7 @@ private:
 	Particle MakeParticle(const DKinematicData *kd, double mass, hit_set hits);
 	RichHit MakeRichHit(const DRichHit *rhit);
 	CereHit MakeCereHit(const DCereHit *chit);
+	RichTruthHit MakeRichTruthHit(const DMCTrackHit *mchit);
 	void FillEvent(Event *evt, particle_set &pset);
 	bool IsFiducial(const DKinematicData *kd);
 };

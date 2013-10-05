@@ -16,11 +16,13 @@
 #include "Particle.h"
 #include "RichHit.h"
 #include "CereHit.h"
+#include "RichTruthHit.h"
 
 // Maximum number of particles of a given type
 #define MAX_PART 10
 #define MAX_CERE_HIT  100
-#define MAX_RICH_HIT  1000
+#define MAX_RICH_HIT  5000
+#define MAX_RICHTRUTH_HIT 100
 
 class Event: public TObject {
 
@@ -42,6 +44,7 @@ public:
 	UInt_t Npositron;
 	UInt_t Nrichhit;
 	UInt_t Ncerehit;
+	UInt_t Nrichtruthhit;
 
 	TClonesArray *pip;
 	TClonesArray *pim;
@@ -54,6 +57,7 @@ public:
 	TClonesArray *positron;
 	TClonesArray *richhit;
 	TClonesArray *cerehit;
+	TClonesArray *richtruthhit;
 
 	TLorentzVector target;	    // Initial state target momentum
 	TLorentzVector beam;		// Initial state target beam photon momentum
