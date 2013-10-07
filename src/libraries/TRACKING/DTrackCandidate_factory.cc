@@ -246,7 +246,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       vector<const DFDCSegment *>segments;
       fdccan->GetT(segments);
       sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
-      if ((segments[0]->hits[0]->wire->layer-1)/6!=0) continue;
+      if (segments[0]->package!=0) continue;
 
       // Flag for matching status
       bool got_match=false;
@@ -306,18 +306,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     }
   } // loop over forward-pointing cdc candidates
   
-  // If there are FDC candidates remaining, use the best track candidate 
-  // knowledge we have so far to do one final check for matches
-  if (num_fdc_cands_remaining>0){
-    for (unsigned int j=0;j<_data.size();j++){
-      if (DEBUG_LEVEL>0) _DBG_ << "Attempting FDC/CDC matching method #4..." <<endl; 
-      
-      // Match to a track that is already in the combined list.  This track 
-      // could have either FDC or CDC hits (or both) associated with it already.
-      MatchMethod4(_data[j],forward_matches);   
-    } 
-  }
-
   // Unmatched CDC track candidates
   for (unsigned int j=0;j<cdc_forward_ids.size();j++){
     if (cdc_forward_matches[j]==0){
@@ -384,11 +372,24 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     if (!used_cdc_hits[i]) num_unmatched_cdcs++;
   }
 
+  // If there are FDC candidates remaining, use the best track candidate 
+  // knowledge we have so far to do one final check for matches
+  if (num_fdc_cands_remaining>0){
+    for (unsigned int j=0;j<_data.size();j++){
+      if (DEBUG_LEVEL>0) _DBG_ << "Attempting FDC/CDC matching method #4..." <<endl; 
+      
+      // Match to a track that is already in the combined list.  This track 
+      // could have either FDC or CDC hits (or both) associated with it already.
+      MatchMethod4(_data[j],forward_matches,num_fdc_cands_remaining);   
+    } 
+  }
+
   // Copy remaining FDC candidates to final candidate list
   if (num_fdc_cands_remaining>0){
     for (unsigned int i=0;i<forward_matches.size();i++){
       if (forward_matches[i]==0){
 	num_fdc_cands_remaining--;
+	forward_matches[i]=1;
 
 	DTrackCandidate *can = new DTrackCandidate;
 	const DTrackCandidate *fdccan = fdctrackcandidates[i];
@@ -413,7 +414,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// Try to match cdc hits that were not linked into track candidates
 	// with the fdc candidate
-	if (num_unmatched_cdcs>0 && (segments[0]->hits[0]->wire->layer-1)/6==0){
+	if (num_unmatched_cdcs>0 && segments[0]->package==0){
 	  if (DEBUG_LEVEL>0) _DBG_ "Matching FDC candidates to stray CDC hits" 
 			     <<endl;
 	  MatchMethod6(i,can,segments,used_cdc_hits,num_unmatched_cdcs,
@@ -1195,12 +1196,14 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 // This method tries to match a candidate that is already in the final list 
 // of matched candidates to any additional outstanding fdc candidates
 void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan, 
-					   vector<int> &forward_matches){
+					   vector<int> &forward_matches,
+					   int &num_fdc_cands_remaining){
   // Get hits already linked to this candidate from associated objects
-  vector<const DCDCTrackHit *>cdchits;
-  srccan->GetT(cdchits);
   vector<const DFDCPseudo *>fdchits;
   srccan->GetT(fdchits);
+  if (fdchits.size()==0) return;
+  vector<const DCDCTrackHit *>cdchits;
+  srccan->GetT(cdchits);
 	  
   sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
   sort(fdchits.begin(), fdchits.end(), FDCHitSortByLayerincreasing);
@@ -1208,6 +1211,7 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
   unsigned int pack1=(fdchits[fdchits.size()-1]->wire->layer-1)/6;
 
   for (unsigned int k=0;k<fdctrackcandidates.size();k++){
+    if (num_fdc_cands_remaining==0) break;
     if (forward_matches[k]==0){
       const DTrackCandidate *fdccan = fdctrackcandidates[k];
 
@@ -1217,7 +1221,7 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
       sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 	  
       const DFDCPseudo *firsthit=segments[0]->hits[0];
-      unsigned int pack2=(firsthit->wire->layer-1)/6;
+      unsigned int pack2=segments[0]->package;
       if (pack2>pack1){
 	// Momentum and position vectors for the input candidate
 	DVector3 mom=srccan->momentum();
@@ -1321,7 +1325,7 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	    int cdc_id=(cdchits.size()>0)?0:-1;
 	    UpdatePositionAndMomentum(srccan,fdchits[0],fit,Bz_avg,cdc_id);
 	    
-
+	    num_fdc_cands_remaining--;
 	    if (DEBUG_LEVEL>0) _DBG_ << "Found a match using method #4" <<endl;
 	  } // circle fit
 	} // got a match?
@@ -1486,7 +1490,8 @@ void DTrackCandidate_factory::MatchMethod6(unsigned int fdc_id,
       // stereo wires
       double dr2=DocaToHelix(mycdchits[k],q,pos,mom);
       double prob=finite(dr2) ? TMath::Prob(dr2/variance,1):0.0;  
-      if (prob>0.01){
+
+      if (prob>0.5){
 	// Look for closest match
 	if (dr2<dr2_min){
 	  dr2_min=dr2;
@@ -1513,12 +1518,12 @@ void DTrackCandidate_factory::MatchMethod6(unsigned int fdc_id,
     }
   }
 
-  // We matched enough cdc hits to make it worth revising the candidate
-  // parameters..
+  // We found some matched hits.  Update the start position of the candidate.
   if (num_match_cdc>0){
     const DFDCPseudo *firsthit=segments[0]->hits[0];
     
     int axial_id=-1;
+    if (num_axial>0) axial_id=matched_ids[0];
 
     // Compute the average Bz
     double Bz_avg=0.,denom=0.;
@@ -1543,60 +1548,11 @@ void DTrackCandidate_factory::MatchMethod6(unsigned int fdc_id,
     fit.tanl=tan(M_PI_2-mom.Theta());
     fit.z_vertex=0; // this will be changed later
     fit.q=q;
-
-    // If we have at least one axial hit, redo the circle fit with the 
-    // additional data
-    if (num_axial>0){
-      axial_id=matched_ids[0];
-	  
-      // Add the FDC hits to the fit class
-      for (unsigned int m=0;m<segments.size();m++){
-	for (unsigned int n=0;n<segments[m]->hits.size();n++){	
-	  const DFDCPseudo *fdchit=segments[m]->hits[n];
-	  fit.AddHit(fdchit);
-	}
-      }
-      // Add the matched cdc axial hits
-      for (unsigned int m=0;m<matched_ids.size();m++){
-	double cov=0.213; //guess
-	unsigned int ind=matched_ids[m];
-	const DVector3 origin=mycdchits[ind]->wire->origin;
-	fit.AddHitXYZ(origin.x(),origin.y(),origin.z(),cov,cov,0.);
-      }
-      // Fake point at origin
-      //fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
-
-      // Redo the fit
-      fit.FitCircleRiemann(fit.r0);
-
-      // Determine the charge based on the added information
-      unsigned int another_index=segments.size()-1;
-      const DFDCPseudo *anotherhit
-	=segments[another_index]->hits[segments[another_index]->hits.size()-1];
-      DVector3 mypos(anotherhit->xy.X(),anotherhit->xy.Y(),
-		     anotherhit->wire->origin.z());
-      fit.q=GetCharge(fit,firsthit,mypos);
-      can->setCharge(fit.q);
-      can->chisq=fit.chisq;
-      can->Ndof=fit.ndof;
-    }	 
     
     // Update the position and momentum of the candidate based on the most 
     // recent fit results
     UpdatePositionAndMomentum(can,firsthit,fit,Bz_avg,axial_id);
-
-    // With the refined track parameters, try to match to remaining fdc 
-    // candidates
-    if (num_fdc_cands_remaining){
-      unsigned int pack1=(firsthit->wire->layer-1)/6;
-      if (MatchMethod7(fdc_id,pack1,fit,can,forward_matches,
-		       num_fdc_cands_remaining)){
-	can->chisq=fit.chisq;
-	can->Ndof=fit.ndof;
-	UpdatePositionAndMomentum(can,firsthit,fit,Bz_avg,axial_id);	
-      }
-    }
-    
+  
     if (DEBUG_LEVEL>0) _DBG_ << "... matched stray CDC hits ..." << endl;
   } // match at least one cdc hit
 }
@@ -1625,7 +1581,7 @@ bool DTrackCandidate_factory::MatchMethod7(unsigned int current_id,
       fdccan->GetT(segments2);
       sort(segments2.begin(),segments2.end(),SegmentSortByLayerincreasing);
 	     
-      unsigned int pack2=(segments2[0]->hits[0]->wire->layer-1)/6;
+      unsigned int pack2=segments2[0]->package;
       if (pack2>pack1){
 	DVector3 mom=can->momentum();
 	DVector3 pos=can->position();
@@ -1667,7 +1623,7 @@ bool DTrackCandidate_factory::MatchMethod7(unsigned int current_id,
 
 	  // Now the last package in the candidate we just matched to should
 	  // be compared to the first package in any subsequent track..
-	  pack1=(segments2[segments2.size()-1]->hits[0]->wire->layer-1)/6;
+	  pack1=segments2[segments2.size()-1]->package;
 	  
 	  // Add the FDC hits to the final track candidate and to the
 	  // fit object

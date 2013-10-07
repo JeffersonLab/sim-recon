@@ -93,7 +93,8 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   bool MatchMethod3(const DTrackCandidate *cdccan,vector<int> &forward_matches,
 		    vector<unsigned int>&used_cdc_hits
 		    );  
-  void MatchMethod4(DTrackCandidate *srccan,vector<int> &forward_matches);
+  void MatchMethod4(DTrackCandidate *srccan,vector<int> &forward_matches,
+		    int &num_fdc_cands_remaining);
   bool MatchMethod5(DTrackCandidate *can,  
 		    vector<const DCDCTrackHit *>&cdchits,
 		    vector<int> &forward_matches);
