@@ -986,11 +986,6 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 
 void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventLoop)
 {
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
-	if(locMCThrowns.empty())
-		return; //e.g. non-simulated event
-
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
@@ -1104,8 +1099,12 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
-	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
-		dBeamParticle_P->Fill(locBeamPhotons[loc_i]->energy());
+	japp->RootWriteLock();
+	{
+		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
+			dBeamParticle_P->Fill(locBeamPhotons[loc_i]->energy());
+	}
+	japp->RootUnLock();
 
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
@@ -1119,14 +1118,16 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 		double locP = locMomentum.Mag();
 		japp->RootWriteLock();
-		dHistMap_P[locPID]->Fill(locP);
-		dHistMap_Phi[locPID]->Fill(locPhi);
-		dHistMap_Theta[locPID]->Fill(locTheta);
-		dHistMap_PVsTheta[locPID]->Fill(locTheta, locP);
-		dHistMap_PhiVsTheta[locPID]->Fill(locTheta, locPhi);
-		dHistMap_VertexZ[locPID]->Fill(locMCThrown->position().Z());
-		dHistMap_VertexYVsX[locPID]->Fill(locMCThrown->position().X(), locMCThrown->position().Y());
-		dHistMap_VertexT[locPID]->Fill(locMCThrown->time());
+		{
+			dHistMap_P[locPID]->Fill(locP);
+			dHistMap_Phi[locPID]->Fill(locPhi);
+			dHistMap_Theta[locPID]->Fill(locTheta);
+			dHistMap_PVsTheta[locPID]->Fill(locTheta, locP);
+			dHistMap_PhiVsTheta[locPID]->Fill(locTheta, locPhi);
+			dHistMap_VertexZ[locPID]->Fill(locMCThrown->position().Z());
+			dHistMap_VertexYVsX[locPID]->Fill(locMCThrown->position().X(), locMCThrown->position().Y());
+			dHistMap_VertexT[locPID]->Fill(locMCThrown->time());
+		}
 		japp->RootUnLock();
 	}
 	return true;
@@ -1412,11 +1413,6 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 
 void DHistogramAction_GenReconTrackComparison::Initialize(JEventLoop* locEventLoop)
 {
-	vector<const DMCThrown*> locMCThrowns;
-	locEventLoop->Get(locMCThrowns);
-	if(locMCThrowns.empty())
-		return; //e.g. non-simulated event
-
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
 	Particle_t locPID;
 
