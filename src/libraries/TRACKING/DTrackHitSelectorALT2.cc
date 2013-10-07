@@ -87,7 +87,7 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSe
 		fdchitsel= (TTree*)gROOT->FindObject("fdchitsel");
 		if(!fdchitsel){
 			fdchitsel = new TTree("fdchitsel", "FDC Hit Selector");
-			fdchitsel->Branch("H", &fdchitdbg, "fit_type/I:hit_cdc_endplate:p/F:theta:mass:sigma_anode:sigma_cathode:mom_factor_anode:mom_factor_cathode:x:y:z:s:s_factor_anode:s_factor_cathode:itheta02:itheta02s:itheta02s2:dist:doca:resi:u:u_cathodes:resic:sigma_anode_total:sigma_cathode_total:chisq:prob:prob_anode:prob_cathode:pull_anode:pull_cathode:sig_phi:sig_lambda:sig_pt");
+			fdchitsel->Branch("H", &fdchitdbg, "fit_type/I:p/F:theta:mass:sigma_anode:sigma_cathode:mom_factor_anode:mom_factor_cathode:x:y:z:s:s_factor_anode:s_factor_cathode:itheta02:itheta02s:itheta02s2:dist:doca:resi:u:u_cathodes:resic:sigma_anode_total:sigma_cathode_total:chisq:prob:prob_anode:prob_cathode:pull_anode:pull_cathode:sig_phi:sig_lambda:sig_pt");
 		}else{
 			_DBG__;
 			jerr<<" !!! WARNING !!!"<<endl;
@@ -215,6 +215,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     
     if(!finite(doca)) continue;
     if(!finite(s))continue;
+    if (s<=0.) continue;
     if (doca>MAX_DOCA) continue;
     
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
@@ -310,7 +311,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
       cdchitdbg.fit_type = fit_type;
       cdchitdbg.p = p;
       cdchitdbg.theta = rt->swim_steps[0].mom.Theta();
-      //	cdchitdbg.mass = my_mass;
+      cdchitdbg.mass = mass;
       cdchitdbg.sigma = sqrt(var);
       // cdchitdbg.mom_factor = mom_factor;
       cdchitdbg.x = pos.X();
@@ -432,11 +433,11 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   double cosphi=cos(phi);
   double sinphi=sin(phi);
   double var_lambda=0.,var_phi=0.,var_lambda_res=0.;
+  double mass=rt->GetMass();
       
   double var_z0=2.*tanl2*var_cathode*double(2*N-1)/double(N*(N+1));
-  double var_x0=0.0,var_y0=0.0; 
+  double var_x0=0.01,var_y0=0.01; 
   double var_pt_over_pt_sq=0.;
-  if (fit_type==kHelical) var_x0=var_y0=0.01; // guess
   
   // Loop over hits
   bool most_downstream_hit=true;
@@ -450,9 +451,11 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 
     if(!finite(doca)) continue; 
     if(!finite(s))continue;
+    if (s<=0.) continue;
     if (doca>MAX_DOCA)continue;
 
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
+ 
     // Position along trajectory
     double x=last_step->origin.x();
     double y=last_step->origin.y();
@@ -525,7 +528,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       
       // Include uncertainty in phi due to uncertainty in the center of the 
       // circle. 
-      double var_xc=0.15*(1.+0.0005/(cosl2*cosl2+EPS));
+      double var_xc=0.125*(1.+0.0005/(cosl2*cosl2+EPS));
       var_phi+=var_xc/(pt_over_a*pt_over_a);
 
       if (most_downstream_hit){
@@ -534,11 +537,9 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
 	double var_k_over_k_sq_res=var_cathode*p_over_a*p_over_a
 	  *0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
 	
-	double mass=rt->GetMass();
 	double one_over_beta=sqrt(1.+mass*mass/p_sq);
 	double var_pt_factor=0.016*one_over_beta/(cosl*0.003*Bz_hit);
 	double var_k_over_k_sq_ms=var_pt_factor*var_pt_factor*last_step->invX0/s;
-
 	// Fractional variance in pt
 	var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
 	
@@ -622,10 +623,9 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       DVector3 pos = rt->GetLastDOCAPoint();
 		
       fdchitdbg.fit_type = fit_type;
-      //fdchitdbg.hit_cdc_endplate = hit_cdc_endplate;
       fdchitdbg.p = p;
       fdchitdbg.theta = rt->swim_steps[0].mom.Theta();
-      //fdchitdbg.mass = my_mass;
+      fdchitdbg.mass = mass;
       fdchitdbg.sigma_anode = sqrt(var_anode);
       fdchitdbg.sigma_cathode = sqrt(var_cathode);
       //fdchitdbg.mom_factor_anode = mom_factor_anode;
