@@ -322,7 +322,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	// Reset flag indicating whether we hit the CDC endplate
 	// and get the parameters of the endplate so we can check
 	// if we hit it while swimming.
-	hit_cdc_endplate = false;
+	//hit_cdc_endplate = false;
+	/*
 #if 0 // The GetCDCEndplate call goes all the way back to the XML and slows down
       // overall tracking by a factor of 20. Therefore, we skip finding it
 	  // and just hard-code the values instead.  1/28/2011  DL
@@ -339,7 +340,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double cdc_endplate_zmin = 167.6;
 	double cdc_endplate_zmax = 168.2;
 #endif	
-	
+	*/
 
 #if 0
 	// Get Bfield from stepper to initialize Bz_old
@@ -393,13 +394,13 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 				}
 				
 				// Check if we hit the CDC endplate
-				double z = swim_step->origin.Z();
-				if(z>=cdc_endplate_zmin && z<=cdc_endplate_zmax){
-					double r = swim_step->origin.Perp();
-					if(r>=cdc_endplate_rmin && r<=cdc_endplate_rmax){
-						hit_cdc_endplate = true;
-					}
-				}
+				//double z = swim_step->origin.Z();
+				//if(z>=cdc_endplate_zmin && z<=cdc_endplate_zmax){
+				// double r = swim_step->origin.Perp();
+				// if(r>=cdc_endplate_rmin && r<=cdc_endplate_rmax){
+				// hit_cdc_endplate = true;
+				//}
+				//}
 			}
 
 			if(err == NOERROR){
@@ -478,6 +479,12 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			stepper.GetPosMom(pos, mom);
 			double ptot = mom.Mag() - dP; // correct for energy loss
 			bool ranged_out = false;
+			/*
+			if (ptot<0.05){
+			  swim_step->origin.Print();
+			  cout<<"N: " << Nswim_steps <<" x " << pos.x() <<" y " <<pos.y() <<" z " << pos.z() <<" r " << pos.Perp()<< " s " << s  << " p " << ptot << endl;
+			}
+			*/
 			if(ptot<0.0)ranged_out=true;
 			if(dP<0.0 && ploss_direction==kForward)ranged_out=true;
 			if(dP>0.0 && ploss_direction==kBackward)ranged_out=true;
@@ -505,7 +512,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		
 		// Exit loop if we leave the tracking volume
 		if(R>88.0 && z<407.0){Nswim_steps++; break;} // ran into BCAL
-		if (swim_step->origin.X()>129.  || swim_step->origin.Y()>129.)
+		if (fabs(swim_step->origin.X())>129.  
+		    || fabs(swim_step->origin.Y())>129.)
 		  {Nswim_steps++; break;} // left extent of TOF 
 		if(z>670.0){Nswim_steps++; break;} // ran into FCAL
 		if(z<-100.0){Nswim_steps++; break;} // exit upstream
