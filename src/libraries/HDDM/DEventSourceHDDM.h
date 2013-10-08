@@ -7,6 +7,7 @@
 //
 // Changes:	Oct 3, 2012 Yi Qiang: add classes for Cerenkov detector
 //			OCt 10, 2012 Yi Qiang: modifed Cerenkov classes with general Cere hits
+//			Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
 //
 
 #ifndef _JEVENT_SOURCEHDDM_H_
@@ -52,8 +53,10 @@ using namespace std;
 #include <TAGGER/DTagger.h>
 // load CERE headers, yqiang Oct 3, 2012
 // modified by yqiang, Oct 10 2012
+// added RichTruthHit object, yqiang, Oct 7, 2013
 #include <CERE/DCereHit.h>
 #include <RICH/DRichHit.h>
+#include <RICH/DRichTruthHit.h>
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -111,9 +114,11 @@ class DEventSourceHDDM:public JEventSource
 
 		// add RICH hit and Truth, yqiang Oct 3, 2012
 		// modifed by yqiang, Oct 10 2012 now include both truth hits in DMCThrown
+		// Oct 8, 2013, added dedicated object for RICH truth hit
 		jerror_t GetRichTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
 		jerror_t Extract_DCereHit(s_HDDM_t *hddm_s, JFactory<DCereHit> *factory);
 		jerror_t Extract_DRichHit(s_HDDM_t *hddm_s, JFactory<DRichHit> *factory);
+		jerror_t Extract_DRichTruthHit(s_HDDM_t *hddm_s, JFactory<DRichTruthHit> *factory);
 
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;

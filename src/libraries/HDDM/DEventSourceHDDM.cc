@@ -7,8 +7,9 @@
 //          GEANT particle type to the Truth hits and the hit and track-hit list.
 //
 //			Oct 3, 2012 Yi Qiang: add functions for Cherenkov RICH detector
-//
 //			Oct 11, 2012 Yi Qiang: complete functions for Cherenkov detector
+//			Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
+//
 //
 // DEventSourceHDDM methods
 //
@@ -288,6 +289,10 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 		return Extract_DCereHit(my_hddm_s, dynamic_cast<JFactory<DCereHit>*>(factory));
 	if(dataClassName =="DRichHit" && tag=="")
 		return Extract_DRichHit(my_hddm_s, dynamic_cast<JFactory<DRichHit>*>(factory));
+
+	// added DRichTruthHit
+	if(dataClassName =="DRichTruthHit" && tag=="")
+		return Extract_DRichTruthHit(my_hddm_s, dynamic_cast<JFactory<DRichTruthHit>*>(factory));
 
 	return OBJECT_NOT_AVAILABLE;
 }
@@ -2552,5 +2557,50 @@ jerror_t DEventSourceHDDM::Extract_DCereHit(s_HDDM_t *hddm_s, JFactory<DCereHit>
 	// copy into factory
 	factory->CopyTo(data);
 
+	return NOERROR;
+}
+
+/*
+ * Extract_DRichTruthHit
+ * added by yqiang Oct 7, 2013
+ */
+jerror_t DEventSourceHDDM::Extract_DRichTruthHit(s_HDDM_t *hddm_s, JFactory<DRichTruthHit>* factory)
+{
+	if(factory==NULL) return OBJECT_NOT_AVAILABLE;
+
+	vector<DRichTruthHit*> data;
+
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+
+	for(unsigned int i=0; i<PE->mult; i++){
+
+		s_HitView_t *hits = PE->in[i].hitView;
+		if(hits == HDDM_NULL || hits->RICH == HDDM_NULL ||
+				hits->RICH->richTruthPoints == HDDM_NULL) continue;
+
+		// loop over all hits
+		s_RichTruthPoints_t *richtruthpoints = hits->RICH->richTruthPoints;
+		s_RichTruthPoint_t *richtruthpoint = richtruthpoints->in;
+
+		for(unsigned int j = 0; j<richtruthpoints->mult; j++, richtruthpoint++){
+
+			DRichTruthHit *hit = new DRichTruthHit;
+			hit->x = richtruthpoint->x;
+			hit->y = richtruthpoint->y;
+			hit->z = richtruthpoint->z;
+			hit->px = richtruthpoint->px;
+			hit->py = richtruthpoint->py;
+			hit->pz = richtruthpoint->pz;
+			hit->t = richtruthpoint->t;
+			hit->E = richtruthpoint->E;
+			hit->track = richtruthpoint->track;
+			hit->primary = richtruthpoint->primary;
+			hit->ptype = richtruthpoint->ptype;
+
+			data.push_back(hit);
+		}
+	}
+	factory->CopyTo(data);
 	return NOERROR;
 }
