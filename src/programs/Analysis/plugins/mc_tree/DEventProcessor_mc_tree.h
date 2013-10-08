@@ -7,6 +7,7 @@
  *      Modified on:
  *      	Sep 28, 2012, yqiang, added RICH hits to ROOTfile
  *      	Oct 10 2012, yqiang, add full Cherenkov support
+ *      	Oct 7, 2013, yqiang, add dedicated object for RICH truth hit
  *
  */
 
@@ -32,6 +33,7 @@ using namespace jana;
 #include <PID/DBeamPhoton.h>
 #include <RICH/DRichHit.h>
 #include <CERE/DCereHit.h>
+#include <RICH/DRichTruthHit.h>
 
 #include <TMath.h>
 #include <TFile.h>
@@ -102,7 +104,7 @@ private:
 	Particle MakeParticle(const DKinematicData *kd, double mass, hit_set hits);
 	RichHit MakeRichHit(const DRichHit *rhit);
 	CereHit MakeCereHit(const DCereHit *chit);
-	RichTruthHit MakeRichTruthHit(const DMCTrackHit *mchit);
+	RichTruthHit MakeRichTruthHit(const DRichTruthHit *rthit);
 	void FillEvent(Event *evt, particle_set &pset);
 	bool IsFiducial(const DKinematicData *kd);
 };

@@ -5,6 +5,7 @@
  *      Author: yqiang
  *
  *  Modified on: Oct 10 2012, with full Cherenkov support
+ *  			Oct 7, 2013, yqiang, modified RithTruthHit
  */
 
 #include "DEventProcessor_mc_tree.h"
@@ -70,12 +71,14 @@ jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, int eventnumber) {
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DRichHit*> richhits;
 	vector<const DCereHit*> cerehits;
+	vector<const DRichTruthHit*> richtruthhits;
 
 	loop->Get(beam_photons);
 	loop->Get(mcthrowns);
 	loop->Get(mctrackhits);
 	loop->Get(richhits);
 	loop->Get(cerehits);
+	loop->Get(richtruthhits);
 
 	TVector3 VertexGen = TVector3(mcthrowns[0]->position().X(),
 			mcthrowns[0]->position().Y(), mcthrowns[0]->position().Z());
@@ -149,8 +152,6 @@ jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, int eventnumber) {
 			break;
 		case SYS_RICH:
 			richpoints[mctrackhit->track]++;
-			thr.richtruthhits.push_back(
-					MakeRichTruthHit((DMCTrackHit *) mctrackhit));
 			break;
 		case SYS_CHERENKOV:
 			cerepoints[mctrackhit->track]++;
@@ -266,6 +267,10 @@ jerror_t DEventProcessor_mc_tree::evnt(JEventLoop *loop, int eventnumber) {
 	// add cere hits, yqiang Oct 11 2012
 	for (unsigned int j = 0; j < cerehits.size(); j++)
 		thr.cerehits.push_back(MakeCereHit((DCereHit*) cerehits[j]));
+	// add RICH truth hit, yqiang Oct 8, 2013
+	for (unsigned int j = 0; j < richtruthhits.size(); j++)
+		thr.richtruthhits.push_back(
+				MakeRichTruthHit((DRichTruthHit*) richtruthhits[j]));
 
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -321,17 +326,25 @@ CereHit DEventProcessor_mc_tree::MakeCereHit(const DCereHit *chit) {
 }
 
 /*
- * Make RICH Truth hits
+ * Make RICH Truth hits, added by yqiang Oct 7, 2013
  */
 RichTruthHit DEventProcessor_mc_tree::MakeRichTruthHit(
-		const DMCTrackHit *mchit) {
+		const DRichTruthHit *rthit) {
 
-	double x = mchit->r * cos(mchit->phi);
-	double y = mchit->r * sin(mchit->phi);
-	double z = mchit->z;
-
+	double x = rthit->x;
+	double y = rthit->y;
+	double z = rthit->z;
+	double px = rthit->px;
+	double py = rthit->py;
+	double pz = rthit->pz;
 	RichTruthHit hit;
 	hit.x.SetXYZ(x, y, z);
+	hit.p.SetXYZ(px, py, pz);
+	hit.t = rthit->t;
+	hit.E = rthit->E;
+	hit.track = rthit->track;
+	hit.primary = rthit->primary;
+	hit.ptype = rthit->ptype;
 
 	return hit;
 }
