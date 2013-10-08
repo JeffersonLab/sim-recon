@@ -3,7 +3,7 @@
 unsigned int dInitNumThrownArraySize = 100;
 unsigned int dInitNumUnusedArraySize = 100;
 unsigned int gNumEventWriterThreads = 0;
-string dThrownTreeFileName = "";
+string* dThrownTreeFileName = NULL;
 
 map<TTree*, unsigned int>* dNumThrownArraySizeMap = NULL;
 map<TTree*, unsigned int>* dNumUnusedArraySizeMap = NULL;
@@ -38,12 +38,6 @@ DEventWriterROOT::~DEventWriterROOT(void)
 		--gNumEventWriterThreads;
 		if(gNumEventWriterThreads == 0)
 		{
-			for(size_t loc_i = 0; loc_i < dOutputROOTFiles->size(); ++loc_i)
-			{
-				(*dOutputROOTFiles)[loc_i]->Write();
-				(*dOutputROOTFiles)[loc_i]->Close();
-				delete (*dOutputROOTFiles)[loc_i];
-			}
 			if(dNumUnusedArraySizeMap != NULL)
 			{
 				delete dNumUnusedArraySizeMap;
@@ -56,6 +50,12 @@ DEventWriterROOT::~DEventWriterROOT(void)
 			}
 			if(dOutputROOTFiles != NULL)
 			{
+				for(size_t loc_i = 0; loc_i < dOutputROOTFiles->size(); ++loc_i)
+				{
+					(*dOutputROOTFiles)[loc_i]->Write();
+					(*dOutputROOTFiles)[loc_i]->Close();
+					delete (*dOutputROOTFiles)[loc_i];
+				}
 				delete dOutputROOTFiles;
 				dOutputROOTFiles = NULL;
 			}
@@ -69,6 +69,11 @@ DEventWriterROOT::~DEventWriterROOT(void)
 				delete dTObjectMap;
 				dTObjectMap = NULL;
 			}
+			if(dThrownTreeFileName != NULL)
+			{
+				delete dThrownTreeFileName;
+				dThrownTreeFileName = NULL;
+			}
 		}
 	}
 	japp->RootUnLock();
@@ -78,18 +83,18 @@ void DEventWriterROOT::Create_ThrownTree(string locOutputFileName) const
 {
 	japp->RootWriteLock();
 	{
-		if(dThrownTreeFileName != "") //tree already created
+		if(dThrownTreeFileName != NULL) //tree already created
 		{
 			japp->RootUnLock();
 			return; //already created by another thread
 		}
-		dThrownTreeFileName = locOutputFileName;
+		dThrownTreeFileName = new string(locOutputFileName);
 
 		//create ROOT file if it doesn't exist already
-		TFile* locFile = (TFile*)gROOT->FindObject(dThrownTreeFileName.c_str());
+		TFile* locFile = (TFile*)gROOT->FindObject(dThrownTreeFileName->c_str());
 		if(locFile == NULL)
 		{
-			locFile = new TFile(dThrownTreeFileName.c_str(), "RECREATE");
+			locFile = new TFile(dThrownTreeFileName->c_str(), "RECREATE");
 			dOutputROOTFiles->push_back(locFile);
 		}
 
@@ -714,6 +719,9 @@ void DEventWriterROOT::Get_Reactions(jana::JEventLoop* locEventLoop, vector<cons
 
 void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 {
+	if(dThrownTreeFileName == NULL)
+		return;
+
 	vector<const DMCThrown*> locMCThrowns_FinalState;
 	locEventLoop->Get(locMCThrowns_FinalState, "FinalState");
 
@@ -737,7 +745,7 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 	japp->RootWriteLock();
 	{
 		//get the tree
-		TFile* locFile = (TFile*)gROOT->FindObject(dThrownTreeFileName.c_str());
+		TFile* locFile = (TFile*)gROOT->FindObject(dThrownTreeFileName->c_str());
 		locFile->cd("/");
 		TTree* locTree = (TTree*)gDirectory->Get(locTreeName.c_str());
 		if(locTree == NULL)
@@ -771,10 +779,9 @@ void DEventWriterROOT::Fill_ThrownTree(JEventLoop* locEventLoop) const
 
 			DVector3 locThrownBeamX3 = locMCReaction->beam.position();
 			TLorentzVector locThrownBeamTX4(locThrownBeamX3.X(), locThrownBeamX3.Y(), locThrownBeamX3.Z(), locMCReaction->beam.time());
-
 			Fill_TObjectData<TLorentzVector>(locTree, "ThrownBeam", "X4_Thrown", &locThrownBeamTX4, (*dTObjectMap)[locTree->GetName()]);
-			DLorentzVector locThrownBeamP4 = locMCReaction->beam.lorentzMomentum();
 
+			DLorentzVector locThrownBeamP4 = locMCReaction->beam.lorentzMomentum();
 			TLorentzVector locThrownBeamTP4(locThrownBeamP4.Px(), locThrownBeamP4.Py(), locThrownBeamP4.Pz(), locThrownBeamP4.E());
 			Fill_TObjectData<TLorentzVector>(locTree, "ThrownBeam", "P4_Thrown", &locThrownBeamTP4, (*dTObjectMap)[locTree->GetName()]);
 
