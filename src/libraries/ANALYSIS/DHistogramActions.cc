@@ -1084,8 +1084,10 @@ void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventL
 
 bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	vector<const DMCThrown*> locMCThrowns;
+	vector<const DMCThrown*> locMCThrowns, locMCThrowns_Decaying;
 	locEventLoop->Get(locMCThrowns, "FinalState");
+	locEventLoop->Get(locMCThrowns_Decaying, "Decaying");
+	locMCThrowns.insert(locMCThrowns.begin(), locMCThrowns_Decaying.begin(), locMCThrowns_Decaying.end());
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
