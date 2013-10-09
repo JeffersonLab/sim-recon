@@ -388,7 +388,7 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
          }
          DMCThrown *mcthrown = new DMCThrown;
          int pdgtype = piter->getPdgtype();
-         Particle_t ptype = PDGtoPtype(pdgtype);
+         Particle_t ptype = PDGtoPType(pdgtype);
          mcthrown->type = ptype;
          mcthrown->pdgtype = pdgtype;
          mcthrown->myid = piter->getId();
@@ -793,16 +793,6 @@ jerror_t DEventSourceREST::Extract_DMCTrigger(hddm_r::HDDM *record,
 	factory->CopyTo(data);
 
 	return NOERROR;
-}
-
-Particle_t DEventSourceREST::PDGtoPtype(int pdgtype)
-{
-   for (int ptype=0; ptype < 99; ++ptype) {
-      if (PDGtype((Particle_t)ptype) == pdgtype) {
-         return (Particle_t)ptype;
-      }
-   }
-   return (Particle_t)0;
 }
 
 // Transform the 5x5 tracking error matrix into a 7x7 error matrix in cartesian
