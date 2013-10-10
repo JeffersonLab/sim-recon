@@ -2,21 +2,13 @@
 //
 // Created Dec 22, 2007  David Lawrence
 
-#include <iostream>
-#include <iomanip>
-#include <vector>
-using namespace std;
+#include "hddm_cull_events.h"
 
-#include <signal.h>
-#include <time.h>
-
-#include "HDDM/hddm_s.h"
-
-void Smear(s_HDDM_t *hddm_s);
 void ParseCommandLineArguments(int narg, char* argv[]);
 void Usage(void);
 void ctrlCHandle(int x);
 
+string HDDM_CLASS = "s";
 vector<char*> INFILENAMES;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
@@ -26,8 +18,6 @@ unsigned int SPECIFIC_OFFSET_TO_KEEP = 0;
 unsigned int SPECIFIC_EVENT_TO_KEEP = 0;
 bool EVENT_TO_KEEP_MODE = false;
 
-#define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
-#define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
 
 
 //-----------
@@ -42,77 +32,18 @@ int main(int narg,char* argv[])
 	
 	cout<<"Skipping "<<EVENTS_TO_SKIP<<endl;
 	cout<<"Keeping  "<<EVENTS_TO_KEEP<<endl;
-	
-	// Output file
-	cout<<" output file: "<<OUTFILENAME<<endl;
-	s_iostream_t *fout = init_s_HDDM(OUTFILENAME);
-	if(!fout){
-		cout<<" Error opening output file \""<<OUTFILENAME<<"\"!"<<endl;
-		exit(-1);
-	}
-
-	// Loop over input files
 	unsigned int NEvents = 0;
 	unsigned int NEvents_read = 0;
-	time_t last_time = time(NULL);
-	for(unsigned int i=0; i<INFILENAMES.size(); i++){
-		cout<<" input file: "<<INFILENAMES[i]<<endl;
-		s_iostream_t *fin = open_s_HDDM(INFILENAMES[i]);
-		if(!fin){
-			cout<<" Error opening input file \""<<INFILENAMES[i]<<"\"!"<<endl;
-			exit(-1);
-		}
-			
-		// Loop over all events in input
-		while(true){
-			s_HDDM_t *hddm_s = read_s_HDDM(fin);
-			if(!hddm_s)break;
-			NEvents_read++;
-			
-			bool write_this_event = false;
-			
-			// Loop over physics events within this event and see if one
-			// has the event number of interest
-			if(EVENT_TO_KEEP_MODE && hddm_s->physicsEvents!=HDDM_NULL){
-				for(unsigned int i=0; i<hddm_s->physicsEvents->mult; i++){
-					int eventNo = hddm_s->physicsEvents->in[i].eventNo;
-					if((unsigned int)eventNo == SPECIFIC_EVENT_TO_KEEP){
-						write_this_event = true;
-						QUIT = true;
-					}
-				}
-			}
-			
-			// Check if we're in the range of offsets to write out
-			if(NEvents_read>EVENTS_TO_SKIP)write_this_event = true;
-			
-			// Write this output event to file and free its memory
-			if(write_this_event){
-				flush_s_HDDM(hddm_s, fout);
-				NEvents++;
-			}else{
-				flush_s_HDDM(hddm_s, NULL);
-			}
-		
-			// Update ticker
-			time_t now = time(NULL);
-			if(now != last_time){
-				cout<<"  "<<NEvents_read<<" events read     ("<<NEvents<<" event written) \r";cout.flush();
-				last_time = now;
-			}
-			
-			// Quit as soon as we wrote all of the events we're going to
-			if(NEvents_read>=(EVENTS_TO_SKIP+EVENTS_TO_KEEP))break;
 
-			if(QUIT)break;
-		}
-
-		// Close input file
-		close_s_HDDM(fin);
+	// Each HDDM class must have it's own cull routine
+	if(HDDM_CLASS == "s"){
+		Process_s(NEvents, NEvents_read);
+	}else if(HDDM_CLASS == "r"){
+		Process_r(NEvents, NEvents_read);
+	}else{
+		cout << "Don't know how to process HDDM class \"" << HDDM_CLASS << "\"!" << endl;
+		return -1;
 	}
-		
-	// Close output file
-	close_s_HDDM(fout);
 	
 	cout<<endl;
 	cout<<" "<<NEvents_read<<" events read, "<<NEvents<<" events written"<<endl;
@@ -138,6 +69,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]); break;
       case 'e': SPECIFIC_OFFSET_TO_KEEP=atoi(&ptr[2]); break;
       case 'E': SPECIFIC_EVENT_TO_KEEP=atoi(&ptr[2]); EVENT_TO_KEEP_MODE=true; break;
+	  case 'r': HDDM_CLASS = "r";
       }
     }else{
       INFILENAMES.push_back(argv[i]);
@@ -169,7 +101,6 @@ void ParseCommandLineArguments(int narg, char* argv[])
   }
 }
 
-
 //-----------
 // Usage
 //-----------
@@ -184,6 +115,7 @@ void Usage(void)
 	cout<<"    -kNeventsToKeep  Set number of events to keep (def. 1)"<<endl;
 	cout<<"    -eSingleEvent    Keep only the single, specified event (file pos.)"<<endl;
 	cout<<"    -ESingleEvent    Keep only the single, specified event (event number)"<<endl;
+	cout<<"    -r               Input file is in REST format (def. hdgeant format)"<<endl;
 	cout<<endl;
 	cout<<" This will copy a continguous set of events from the combined event streams"<<endl;
 	cout<<" into a seperate output file. The primary use for this would be to copy"<<endl;
