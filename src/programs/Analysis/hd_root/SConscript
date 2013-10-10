@@ -1,0 +1,12 @@
+
+
+import sbms
+
+# get env object
+Import('*')
+
+sbms.AddDANA(env)
+sbms.AddROOT(env)
+sbms.executable(env, installdir)
+
+

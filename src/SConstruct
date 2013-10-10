@@ -1,0 +1,49 @@
+
+import os
+import sys
+import subprocess
+import glob
+
+# Get command-line options
+SHOWBUILD = ARGUMENTS.get('SHOWBUILD', 0)
+
+# Get platform-specific name
+osname = os.getenv('BMS_OSNAME', 'build')
+
+# Add SBMS directory to PYTHONPATH
+sbmsdir = "%s/SBMS" % (os.getcwd())
+sys.path.append(sbmsdir)
+
+# Setup initial environment
+installdir = "#../%s" %(osname)
+include = "%s/include" % (installdir)
+lib = "%s/lib" % (installdir)
+bin = "%s/bin" % (installdir)
+env = Environment(    BINDIR = bin,
+                      INCDIR = include,
+                      LIBDIR = lib,
+                      CPPPATH = [include],
+                      LIBPATH = [lib])
+
+# Use terse output unless otherwise specified
+if SHOWBUILD==0:
+	env.Replace(  CCCOMSTR     = "Compiling  [$SOURCE]",
+				  CXXCOMSTR    = "Compiling  [$SOURCE]",
+				  LINKCOMSTR   = "Linking    [$TARGET]",
+				  INSTALLSTR   = "Installing [$TARGET]",
+				  ARCOMSTR     = "Archiving  [$TARGET]",
+				  RANLIBCOMSTR = "Ranlib     [$TARGET]")
+
+# Add libraries and libraries/include to include search path
+env.PrependUnique(CPPPATH = ['#libraries', '#libraries/include'])
+
+# "external" packages (aka xstream)
+SConscript('external/SConscript', exports='env osname installdir', duplicate=0)
+
+# build libraries
+SConscript('libraries/SConscript', variant_dir=".%s/libraries" % (osname), exports='env osname installdir', duplicate=0)
+
+# build programs
+program_subdirs = ['programs']
+SConscript(dirs=program_subdirs, variant_dir=".%s/programs" % (osname), exports='env osname installdir', duplicate=0)
+
