@@ -45,7 +45,6 @@ def executable(env, installdir):
 
 	# Install targets 
 	env.Install(bindir, myexe)
-	env.Install(includedir, env.Glob('*.h*'))
 	env.Alias('install', installdir)
 
 
