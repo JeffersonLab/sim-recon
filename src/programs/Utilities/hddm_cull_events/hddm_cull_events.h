@@ -8,6 +8,7 @@ using namespace std;
 
 #include <signal.h>
 #include <time.h>
+#include <stdlib.h>
 
 
 extern vector<char*> INFILENAMES;
