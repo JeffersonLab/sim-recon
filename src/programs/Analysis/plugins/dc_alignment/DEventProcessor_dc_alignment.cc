@@ -107,6 +107,15 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   if (!Hprelimprob){
     Hprelimprob=new TH1F("Hprelimprob","Confidence level for prelimary fit",100,0.0,1.); 
   } 
+  Hcdc_prob = (TH1F*)gROOT->FindObject("Hcdc_prob");
+  if (!Hcdc_prob){
+    Hcdc_prob=new TH1F("Hcdc_prob","Confidence level for time-based fit",100,0.0,1.); 
+  } 
+  Hcdc_prelimprob = (TH1F*)gROOT->FindObject("Hcdc_prelimprob");
+  if (!Hcdc_prelimprob){
+    Hcdc_prelimprob=new TH1F("Hcdc_prelimprob","Confidence level for prelimary fit",100,0.0,1.); 
+  } 
+  
 
   Hmatch = (TH1F*)gROOT->FindObject("Hmatch");
   if (!Hmatch){
@@ -165,22 +174,6 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   }
   
   dapp->Unlock();
-
-  JCalibration *jcalib = dapp->GetJCalibration(0);  // need run number here
-  vector< map<string, float> > tvals;
-  if (jcalib->Get("FDC/fdc_drift_Bzero", tvals)==false){
-    for(unsigned int i=0; i<tvals.size(); i++){
-      map<string, float> &row = tvals[i];   
-      map<string,float>::iterator iter = row.begin();
-      fdc_drift_table[i] = iter->second;
-    }
-  }
-  else{
-    jerr << " FDC time-to-distance table not available... bailing..." << endl;
-    exit(0);
-  }
-
-
 
   return NOERROR;
 }
@@ -386,7 +379,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
     }
     if (iter>0){
       double prelimprob=TMath::Prob(chi2_old,ndof_old);
-      Hprelimprob->Fill(prelimprob);
+      Hcdc_prelimprob->Fill(prelimprob);
 
       if (prelimprob>0.01){ 
 	// Perform a time-based pass
@@ -414,7 +407,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	}
 	if (iter>0){
 	  double prob=TMath::Prob(chi2_old,ndof_old);
-	  Hprob->Fill(prob);
+	  Hcdc_prob->Fill(prob);
 
 	  if (prob>0.01){
 	    // zero-position and direction of line describing particle trajectory
@@ -1357,10 +1350,10 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   unsigned int cdc_index=hits.size()-1;
   bool more_hits=true;
   DVector3 origin=hits[cdc_index]->wire->origin;
-  DVector3 dir=hits[cdc_index]->wire->udir;
+  DVector3 vhat=hits[cdc_index]->wire->udir;
   double z0=origin.z();
-  double uz=dir.z();
-  DVector3 wirepos=origin+((trajectory[0].z-z0)/uz)*dir;
+  double vz=vhat.z();
+  DVector3 wirepos=origin+((trajectory[0].z-z0)/vz)*vhat;
 
   /// compute initial doca^2 to first wire
   double dx=S(state_x)-wirepos.x();
@@ -1389,7 +1382,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
     J=trajectory[k].J;
     
     // Position along wire
-    wirepos=origin+((trajectory[k].z-z0)/uz)*dir;
+    wirepos=origin+((trajectory[k].z-z0)/vz)*vhat;
 
     // New doca^2
     dx=S(state_x)-wirepos.x();
@@ -1398,28 +1391,29 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 
     if (doca2>old_doca2 && more_hits){
       // zero-position and direction of line describing particle trajectory
+      double tx=S(state_tx),ty=S(state_ty);
       DVector3 pos0(S(state_x),S(state_y),trajectory[k].z);
-      DVector3 vhat(S(state_tx),S(state_ty),1.);
-      vhat.SetMag(1.);
+      DVector3 uhat(tx,ty,1.);
+      uhat.SetMag(1.); 
+      double ux=uhat.x(),uy=uhat.y(),uz=uhat.z();
 
       // Find the true doca to the wire
-      DVector3 diff=wirepos-pos0;
-      double vhat_dot_uhat=vhat.Dot(dir);
-      double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
-      double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(dir));
-      double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(dir));
-      diff+=s*dir-t*vhat;
+      DVector3 diff=pos0-origin;
+      double dx0=diff.x(),dy0=diff.y(),dz0=diff.z();
+      double uhat_dot_vhat=uhat.Dot(vhat);
+      double D=1.-uhat_dot_vhat*uhat_dot_vhat;
+      double N=uhat_dot_vhat*diff.Dot(vhat)-diff.Dot(uhat);
+      double N1=diff.Dot(vhat)-uhat_dot_vhat*diff.Dot(uhat);
+      double scale=1./D;
+      double s=scale*N;
+      double t=scale*N1;
+      diff+=s*uhat-t*vhat;
       double d=diff.Mag();
-
-      // x and y positions of state vector at doca
-      pos0+=t*vhat;
-      S(state_x)=pos0.x();
-      S(state_y)=pos0.y();
 
       // The next measurement and its variance
       double tdrift=hits[cdc_index]->tdrift-mT0-trajectory[k].t;
       double dmeas=0.39;
-      double V=1.1*(0.78*0.78/12.); // sigma=cell_size/sqrt(12.)*scale_factor
+      double V=1.0*(0.78*0.78/12.); // sigma=cell_size/sqrt(12.)*scale_factor
       if (timebased){
 	dmeas=cdc_drift_distance(tdrift);
 	V=anneal_factor*cdc_variance(tdrift);
@@ -1430,9 +1424,54 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       
       // Track projection
       double one_over_d=1./d;
-      H(state_x)=H_T(state_x)=-diff.x()*one_over_d;
-      H(state_y)=H_T(state_y)=-diff.y()*one_over_d;
-	
+      H(state_x)=H_T(state_x)=diff.x()*one_over_d;
+      H(state_y)=H_T(state_y)=diff.y()*one_over_d;
+
+      double one_plus_tx2_plus_ty2=1.+tx*tx+ty*ty;
+      double scale2=1./(one_plus_tx2_plus_ty2*sqrt(one_plus_tx2_plus_ty2));
+
+      double duxdtx=scale2*(1.+ty*ty);
+      double duydtx=-scale2*tx*ty;
+      double duzdtx=-scale2*tx;
+      double duxdty=duydtx;
+      double duydty=scale2*(1.+tx*tx);
+      double duzdty=-scale2*ty;
+
+      double vx=vhat.x(),vy=vhat.y();    
+      double dDdux=-2.*uhat_dot_vhat*vx;
+      double dDduy=-2.*uhat_dot_vhat*vy;
+      double dDduz=-2.*uhat_dot_vhat*vz;
+
+      double dNdux=(vx*vx-1.)*dx0+vx*vy*dy0+vx*vz*dz0;
+      double dNduy=vy*vx*dx0+(vy*vy-1.)*dy0+vy*vz*dz0;
+      double dNduz=vz*vx*dx0+vz*vy*dy0+(vz*vz-1.)*dz0;
+ 
+      double ratio=N*scale;
+      double dsdux=scale*(dNdux-ratio*dDdux);
+      double dsduy=scale*(dNduy-ratio*dDduy);
+      double dsduz=scale*(dNduz-ratio*dDduz);
+      double dsdtx=dsdux*duxdtx+dsduy*duydtx+dsduz*duzdtx;
+      double dsdty=dsdux*duxdty+dsduy*duydty+dsduz*duzdty;
+
+      double dN1dux=-(2.*ux*vx+uy*vy+uz*vz)*dx0-vx*uy*dy0-vx*uz*dz0;
+      double dN1duy=-vy*ux*dx0-(ux*vx+2.*uy*vy+uz*vz)*dy0-vy*uz*dz0;
+      double dN1duz=-vz*ux*dx0-uz*uy*dy0-(2.*vz*uz+vy*uy+vx*ux)*dz0;
+
+      double ratio1=N1*scale;
+      double dtdux=scale*(dN1dux-ratio1*dDdux); 
+      double dtduy=scale*(dN1duy-ratio1*dDduy);
+      double dtduz=scale*(dN1duz-ratio1*dDduz);
+      double dtdtx=dtdux*duxdtx+dtduy*duydtx+dtduz*duzdtx;  
+      double dtdty=dtdux*duxdty+dtduy*duydty+dtduz*duzdty;
+  
+      double dx1=diff.x(),dy1=diff.y(),dz1=diff.z();
+      H(state_tx)=H_T(state_tx)=one_over_d*(dx1*(ux*dsdtx+duxdtx*s-vx*dtdtx)
+					    +dy1*(uy*dsdtx+duydtx*s-vy*dtdtx)
+					    +dz1*(uz*dsdtx+duzdtx*s-vz*dtdtx));
+      H(state_ty)=H_T(state_ty)=one_over_d*(dx1*(ux*dsdty+duxdty*s-vx*dtdty)
+					    +dy1*(uy*dsdty+duydty*s-vy*dtdty)
+					    +dz1*(uz*dsdty+duzdty*s-vz*dtdty));
+      	
       // inverse of variance including prediction
       double InvV=1./(V+H*C*H_T);
       
@@ -1459,16 +1498,6 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       }
       else return VALUE_OUT_OF_RANGE;
 
-      // Propagate the state and the covariance matrix back to current position
-      // in z along the reference trajectory
-      double dz=trajectory[k].z-pos0.z();
-      S(state_x)+=S(state_tx)*dz;
-      S(state_y)+=S(state_ty)*dz;
-
-      J(state_x,state_tx)=dz;
-      J(state_y,state_ty)=dz;
-      C=J*C*J.Transpose();
-
       updates[cdc_index].S=S;
       updates[cdc_index].C=C;
       trajectory[k].h_id=cdc_index+1;
@@ -1479,10 +1508,10 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 
 	//New wire position
 	origin=hits[cdc_index]->wire->origin;
-	dir=hits[cdc_index]->wire->udir;
+	vhat=hits[cdc_index]->wire->udir;
 	z0=origin.z();
-	uz=dir.z();	
-	wirepos=origin+((trajectory[k].z-z0)/uz)*dir;
+	uz=vhat.z();	
+	wirepos=origin+((trajectory[k].z-z0)/uz)*vhat;
 	
 	// New doca^2
 	dx=S(state_x)-wirepos.x();
@@ -1887,20 +1916,6 @@ double DEventProcessor_dc_alignment::GetDriftVariance(double t){
 #define FDC_T0_OFFSET 20.
 // convert time to distance for the fdc
 double DEventProcessor_dc_alignment::GetDriftDistance(double t){
-  /*
-  int id=int((t+FDC_T0_OFFSET)/2.);
-  if (id<0) id=0;
-  if (id>138) id=138;
-  double d=fdc_drift_table[id];
-
-  if (id!=138){
-    double frac=0.5*(t+FDC_T0_OFFSET-2.*double(id));
-    double dd=fdc_drift_table[id+1]-fdc_drift_table[id];
-    d+=frac*dd;
-  }
-  
-  printf("d %f %f\n",d,0.0268*sqrt(t)-3.051e-4+7.438e-4*t);
-  */
   if (t<0.) return 0.;
   double d=0.0268*sqrt(t)/*-3.051e-4*/+7.438e-4*t;
   if (d>0.5) d=0.5;

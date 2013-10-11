@@ -90,6 +90,11 @@ typedef struct{
   DMatrix3x3 E;  
 }align_t;
 
+typedef struct{
+  DMatrix5x1 A;
+  DMatrix5x5 E;
+}cdc_align_t;
+
 
 typedef struct{
   bool matched;
@@ -139,6 +144,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
     state_tx,
     state_ty,
   };
+
   enum align_parms{
     kDx,
     kDy,
@@ -239,6 +245,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   pthread_mutex_t mutex;
 
   TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdc_match;
+  TH1F *Hcdc_prob,*Hcdc_prelimprob;
   TH2F *Hbcalmatch,*Hcdcdrift_time;
   TH2F *Hures_vs_layer,*HdEdx_vs_beta;	
   TH2F *Hdrift_time,*Hcdcres_vs_drift_time;
@@ -262,6 +269,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   const DGeometry *dgeom;
 
   vector<align_t>alignments;
+  vector<cdc_align_t>cdc_alignments;
   vector<vector<DFDCWire*> >fdcwires;
 };
 
@@ -272,6 +280,7 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   if (t<0.0) t=0.0;
   
   double sigma=0.1/(t+2.5)+0.0060+1.e-5*t;
+  sigma+=0.02;
   return sigma*sigma;
 }
 
