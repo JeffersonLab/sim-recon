@@ -97,7 +97,7 @@ $(DEP_DIR)/%.d : %.c
 	$(DCC) -MM -MT "$(basename $(notdir $@)).o" $(CFLAGS) $< > $@
 $(DEP_DIR)/%.d : %.F
 	mkdir -p $(DEP_DIR)
-	$(DFC) -MM -MT "$(basename $(notdir $@)).o" $(filter-out -fno-automatic,$(FFLAGS)) $< > $@
+	$(DFC) -MM -MT "$(basename $(notdir $@)).o" $(filter-out -fno-automatic -ffixed-line-length-0 -fno-second-underscore,$(FFLAGS)) $< > $@
 
 # Rules to make DEBUG objects from source. Note for programs, we give the
 # objects funny names while for libraries only the library has a funny name.
