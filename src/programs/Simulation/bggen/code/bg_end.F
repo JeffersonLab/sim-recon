@@ -35,5 +35,5 @@ C
       CLOSE(UNIT=lun)
         WRITE(6,*) ' Histograms written to file bggen.his'
 C
- 999  RETURN
+      RETURN
       END

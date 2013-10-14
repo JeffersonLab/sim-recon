@@ -75,5 +75,5 @@ C
 C
       CALL HCOPY(ID,ID+1,'    ')  ! a copy of the final histogram to be used for HRNDM1
 C
- 999  RETURN
+      RETURN
       END
