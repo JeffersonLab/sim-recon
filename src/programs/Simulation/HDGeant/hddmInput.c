@@ -78,6 +78,15 @@ int MAX_GENERATED_PARTICLES = MYID_ARRAY_SIZE;
 int MYID[MYID_ARRAY_SIZE];
 int NEXT_MYID = 0; /* see savenewvertex.c */
 
+int setupMYID(){
+  int imyid;
+  NEXT_MYID = 1;
+  for(imyid=0; imyid<MYID_ARRAY_SIZE; imyid++) {
+    MYID[imyid] = -1; /* initialize to invalid value */
+  }
+  return 0;
+}
+
 /*-------------------------
  * openInput
  *-------------------------
@@ -417,4 +426,9 @@ int storeinput_ (int* runNo, int* eventNo, int* ntracks)
 int closeinput_ ()
 {
    return closeInput();
+}
+
+int setupmyid_()
+{
+  return setupMYID();
 }
