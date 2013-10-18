@@ -69,7 +69,21 @@ jerror_t DEventProcessor_dc_alignment::init(void)
     alignments[i].E(kDy,kDy)=1.0;
     alignments[i].E(kDPhi,kDPhi)=1.0;
   }
-	
+ 	
+  unsigned int numstraws[28]={42,42,54,54,66,66,80,80,93,93,106,106,123,123,
+			      135,135,146,146,158,158,170,170,182,182,197,197,
+			      209,209};
+  for (unsigned int i=0;i<28;i++){
+    vector<cdc_align_t>tempvec;
+    for (unsigned int j=0;j<numstraws[i];j++){
+      cdc_align_t temp;
+      temp.A=DMatrix4x1();
+      temp.E=DMatrix4x4(1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.);
+      tempvec.push_back(temp);
+    }
+    cdc_alignments.push_back(tempvec);
+  }
+
   TDirectory *dir = new TDirectoryFile("FDC","FDC");
   dir->cd();
   
@@ -334,8 +348,14 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   unsigned int numhits=hits.size();
   unsigned int maxindex=numhits-1;
 
+  int NEVENTS=200000;
+  double anneal_factor=pow(1e6,(double(NEVENTS-myevt))/(NEVENTS-1.));
+  if (myevt>NEVENTS) anneal_factor=1.;  
+  //anneal_factor=1.;
+
   // Create an initial reference trajectory
   deque<trajectory_t>trajectory;
+  deque<trajectory_t>best_traj;
   // if (SetReferenceTrajectory(mOuterZ,S,trajectory,hits[maxindex])==NOERROR)
     {
     // State vector to store "best" values
@@ -347,6 +367,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
     C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.01;
     
     vector<cdc_update_t>updates(hits.size());
+    vector<cdc_update_t>best_updates;
     double chi2=1e16,chi2_old=1e16;
     unsigned int ndof=0,ndof_old=0;
     unsigned int iter=0;
@@ -363,7 +384,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 				 hits[maxindex])!=NOERROR) break;
 
       C=C0;
-      if (KalmanFilter(1.,S,C,hits,trajectory,updates,chi2,ndof)!=NOERROR)
+      if (KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof)!=NOERROR)
 	break;
 	      
       //printf(">>>>>>chi2 %f ndof %d\n",chi2,ndof);
@@ -381,6 +402,8 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
       double prelimprob=TMath::Prob(chi2_old,ndof_old);
       Hcdc_prelimprob->Fill(prelimprob);
 
+      //printf("cdc prob %f\n",prelimprob);
+
       if (prelimprob>0.01){ 
 	// Perform a time-based pass
 	S=Sbest;
@@ -395,13 +418,15 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	  if (SetReferenceTrajectory(mOuterZ,S,trajectory,hits[maxindex])
 	      ==NOERROR){
 	    C=C0;
-	    KalmanFilter(1.,S,C,hits,trajectory,updates,chi2,ndof,true);
+	    KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof,true);
   
 	    //printf(">>>>>>chi2 %f ndof %d\n",chi2,ndof);
 	    if (fabs(chi2-chi2_old)<0.1 || chi2>chi2_old+1.0 || ndof!=ndof_old) break;
 	    
 	    Sbest=S;
 	    Cbest=C;
+	    best_updates.assign(updates.begin(),updates.end());
+	    best_traj.assign(trajectory.begin(),trajectory.end());
 	  }
 	  else break;
 	}
@@ -410,25 +435,15 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	  Hcdc_prob->Fill(prob);
 
 	  if (prob>0.01){
-	    // zero-position and direction of line describing particle trajectory
-	    DVector3 pos0(Sbest(state_x),Sbest(state_y),trajectory[trajectory.size()-1].z);
-	    DVector3 vhat(Sbest(state_tx),Sbest(state_ty),1.);
-	    vhat.SetMag(1.);
-	    for (unsigned int k=0;k<numhits;k++){
-	      DVector3 wirepos=hits[k]->wire->origin;
-	      DVector3 dir=hits[k]->wire->udir;
-	      // Find the doca to the wire
-	      DVector3 diff=wirepos-pos0;
-	      double vhat_dot_uhat=vhat.Dot(dir);
-	      double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
-	      double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(dir));
-	      double s2=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(dir));
-	      diff+=s*dir-s2*vhat;
-	      double d=diff.Mag();
-	      double tdrift=hits[k]->tdrift-mT0-s2/29.98;
-	      double dmeas=cdc_drift_distance(tdrift);
+	    // run the smoother (opposite direction to filter)
+	    vector<cdc_update_t>smoothed_updates(updates.size());
+	    Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
 
-	      Hcdcres_vs_drift_time->Fill(tdrift,dmeas-d);
+	    for (unsigned int k=0;k<smoothed_updates.size();k++){
+	      double tdrift=smoothed_updates[k].drift_time;
+	      double d=smoothed_updates[k].doca;
+	      double res=smoothed_updates[k].res;
+	      Hcdcres_vs_drift_time->Fill(tdrift,res);
 	      Hcdcdrift_time->Fill(tdrift,d);
 	    }
 	  }
@@ -452,10 +467,11 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   //  vector<strip_update_t>strip_updates(num_hits);
   //vector<strip_update_t>smoothed_strip_updates(num_hits);
   vector<update_t>updates(num_hits);
+  vector<update_t>best_updates;
   vector<update_t>smoothed_updates(num_hits);
 
-  int NEVENTS=400000;
-  double anneal_factor=pow(1e8,(double(NEVENTS-myevt))/(NEVENTS-1.));
+  int NEVENTS=200000;
+  double anneal_factor=pow(1e6,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
   //anneal_factor=1.;
   //anneal_factor=1e3;
@@ -466,10 +482,11 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   // Use the result from the initial line fit to form a reference trajectory 
   // for the track. 
   deque<trajectory_t>trajectory;
+  deque<trajectory_t>best_traj;
   // double start_z=hits[0]->wire->origin.z()-1.;
   S(state_x)+=endplate_z*S(state_tx);
   S(state_y)+=endplate_z*S(state_ty);
-  SetReferenceTrajectory(endplate_z,S,trajectory,hits);
+  //  SetReferenceTrajectory(endplate_z,S,trajectory,hits);
       
   // Intial guess for covariance matrix
   DMatrix4x4 C,C0,Cbest;
@@ -484,26 +501,35 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
     iter++;
     chi2_old=chi2; 
     ndof_old=ndof;
+
+    trajectory.clear();
+    if (SetReferenceTrajectory(endplate_z,S,trajectory,hits)!=NOERROR) break;
     C=C0;
     if (KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof)
 	!=NOERROR) break;
 
-    //printf("== event %d == iter %d =====chi2 %f\n",myevt,iter,chi2);
+    //printf("== event %d == iter %d =====chi2 %f ndof %d \n",myevt,iter,chi2,ndof);
     if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1 || iter==ITER_MAX) break;  
     
     // Save the current state and covariance matrixes
     Cbest=C;
     Sbest=S;
-    
+    best_updates.assign(updates.begin(),updates.end());
+    best_traj.assign(trajectory.begin(),trajectory.end());
     // run the smoother (opposite direction to filter)
-    Smooth(S,C,trajectory,hits,updates,smoothed_updates);
+    //Smooth(S,C,trajectory,hits,updates,smoothed_updates);
   }
       
   if (iter>1){
     double prob=TMath::Prob(chi2_old,ndof_old);
     Hprob->Fill(prob);
   
+    //printf("prob %f\n",prob);
+
     if (prob>0.1){
+      // run the smoother (opposite direction to filter)
+      Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
+
       Hbeta->Fill(mBeta);
       for (unsigned int i=0;i<smoothed_updates.size();i++){
 	unsigned int layer=hits[i]->wire->layer;
@@ -1097,10 +1123,13 @@ jerror_t DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 }
 
 // Kalman smoother 
-jerror_t DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
-					      deque<trajectory_t>&trajectory,
-					      vector<cdc_update_t>&updates
-					      ){
+jerror_t 
+DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
+				     deque<trajectory_t>&trajectory,
+				     vector<const DCDCTrackHit *>&hits,
+				     vector<cdc_update_t>&updates,
+				     vector<cdc_update_t>&smoothed_updates
+				     ){
   DMatrix4x1 S; 
   DMatrix4x4 C,dC;
   DMatrix4x4 JT,A;
@@ -1123,6 +1152,32 @@ jerror_t DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
       dC=A*(Cs-C)*A.Transpose();
       Ss=updates[id].S+A*(Ss-S);
       Cs=updates[id].C+dC;
+         
+      // CDC index and wire position variables
+      DVector3 origin=hits[id]->wire->origin;
+      unsigned int ring=hits[id]->wire->ring-1;
+      unsigned int straw=hits[id]->wire->straw-1;
+      DVector3 dOrigin(cdc_alignments[ring][straw].A(dX),
+		       cdc_alignments[ring][straw].A(dY),0.);
+      origin+=dOrigin;
+      DVector3 vhat=hits[id]->wire->udir;
+      DVector3 dV(cdc_alignments[ring][straw].A(dVx),
+		  cdc_alignments[ring][straw].A(dVy),0.);
+      //dV.Print();
+      vhat+=dV;
+      vhat.SetZ((vhat.z()>0?1.:-1.)*sqrt(1.-vhat.Perp2()));
+
+      // doca using smoothed state vector
+      double d=FindDoca(trajectory[m].z,Ss,vhat,origin);
+      smoothed_updates[id].doca=d;
+      smoothed_updates[id].res=updates[id].drift-d;
+ 
+      smoothed_updates[id].drift=updates[id].drift;
+      smoothed_updates[id].drift_time=updates[id].drift_time;
+      smoothed_updates[id].S=Ss;
+      smoothed_updates[id].C=Cs;
+      smoothed_updates[id].V=updates[id].V-updates[id].H*dC*updates[id].H_T;
+            
 
       // Reset h_id for this position along the reference trajectory
       trajectory[m].h_id=0;
@@ -1350,7 +1405,17 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   unsigned int cdc_index=hits.size()-1;
   bool more_hits=true;
   DVector3 origin=hits[cdc_index]->wire->origin;
+  unsigned int ring=hits[cdc_index]->wire->ring-1;
+  unsigned int straw=hits[cdc_index]->wire->straw-1;
+  DVector3 dOrigin(cdc_alignments[ring][straw].A(dX),
+		   cdc_alignments[ring][straw].A(dY),0.);
+  origin+=dOrigin;
   DVector3 vhat=hits[cdc_index]->wire->udir;
+  DVector3 dV(cdc_alignments[ring][straw].A(dVx),
+	      cdc_alignments[ring][straw].A(dVy),0.);
+  //dV.Print();
+  vhat+=dV;
+  vhat.SetZ((vhat.z()>0?1.:-1.)*sqrt(1.-vhat.Perp2()));
   double z0=origin.z();
   double vz=vhat.z();
   DVector3 wirepos=origin+((trajectory[0].z-z0)/vz)*vhat;
@@ -1400,10 +1465,12 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       // Find the true doca to the wire
       DVector3 diff=pos0-origin;
       double dx0=diff.x(),dy0=diff.y(),dz0=diff.z();
+      double vhat_dot_diff=diff.Dot(vhat);
+      double uhat_dot_diff=diff.Dot(uhat);
       double uhat_dot_vhat=uhat.Dot(vhat);
       double D=1.-uhat_dot_vhat*uhat_dot_vhat;
-      double N=uhat_dot_vhat*diff.Dot(vhat)-diff.Dot(uhat);
-      double N1=diff.Dot(vhat)-uhat_dot_vhat*diff.Dot(uhat);
+      double N=uhat_dot_vhat*vhat_dot_diff-uhat_dot_diff;
+      double N1=vhat_dot_diff-uhat_dot_vhat*uhat_dot_diff;
       double scale=1./D;
       double s=scale*N;
       double t=scale*N1;
@@ -1471,11 +1538,63 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       H(state_ty)=H_T(state_ty)=one_over_d*(dx1*(ux*dsdty+duxdty*s-vx*dtdty)
 					    +dy1*(uy*dsdty+duydty*s-vy*dtdty)
 					    +dz1*(uz*dsdty+duzdty*s-vz*dtdty));
+
+      // Matrices to rotate alignment error matrix into measurement space
+      DMatrix1x4 G;
+      DMatrix4x1 G_T;
+
+      double dNdvx=ux*vhat_dot_diff+uhat_dot_vhat*dx0;
+      double dDdvx=-2.*uhat_dot_vhat*ux;
+      double dsdvx=scale*(dNdvx-ratio*dDdvx);
+
+      double dNdvy=uy*vhat_dot_diff+uhat_dot_vhat*dy0;
+      double dDdvy=-2.*uhat_dot_vhat*uy;
+      double dsdvy=scale*(dNdvy-ratio*dDdvy);
+
+      double dNdvz=uz*vhat_dot_diff+uhat_dot_vhat*dz0;
+      double dDdvz=-2.*uhat_dot_vhat*uz;
+      double dsdvz=scale*(dNdvz-ratio*dDdvz);
+
+      double dsddx=scale*(ux-vx*uhat_dot_vhat);
+      double dsddvx=dsdvx-(vx/vz)*dsdvz;
+      double dsddy=scale*(uy-vy*uhat_dot_vhat);
+      double dsddvy=dsdvy-(vy/vz)*dsdvz;
+
+      double dN1dvx=dx0-ux*uhat_dot_diff;
+      double dtdvx=scale*(dN1dvx-ratio1*dDdvx);
+
+      double dN1dvy=dy0-uy*uhat_dot_diff;
+      double dtdvy=scale*(dN1dvy-ratio1*dDdvy);
+
+      double dN1dvz=dz0-uz*uhat_dot_diff;
+      double dtdvz=scale*(dN1dvz-ratio1*dDdvz);
+
+      double dtddx=scale*(uhat_dot_vhat*ux-vx);
+      double dtddvx=dtdvx-(vx/vz)*dtdvz;
+      double dtddy=scale*(uhat_dot_vhat*uy-vy);
+      double dtddvy=dtdvy-(vy/vz)*dtdvz;
+
+      G_T(dX)=one_over_d*(dx1*(-1.+ux*dsddx-vx*dtddx)+dy1*(uy*dsddx-vy*dtddx)
+			  +dz1*(uz*dsddx-vz*dtddx));
+      G_T(dY)=one_over_d*(dx1*(ux*dsddy-vx*dtddy)+dy1*(-1.+uy*dsddy-vy*dtddy)
+			  +dz1*(uz*dsddy-vz*dtddy));
+      G_T(dVx)=one_over_d*(dx1*(ux*dsddvx-t-vx*dtddvx)+dy1*(uy*dsddvx-vy*dtddvx)
+			   +dz1*(uz*dsddvx-(vx/vz)*t-vz*dtddvx));
+      G_T(dVy)=one_over_d*(dx1*(ux*dsddvy-vx*dtddvy)+dy1*(uy*dsddvy-t-vy*dtddvy)
+			   +dz1*(uz*dsddvy-(vy/vz)*t-vz*dtddvy));
+      G(dX)=G_T(dX);
+      G(dY)=G_T(dY);
+      G(dVx)=G_T(dVx);
+      G(dVy)=G_T(dVy);			   
       	
       // inverse of variance including prediction
+      DMatrix4x4 E=cdc_alignments[ring][straw].E;
+      V+=G*E*G_T;
       double InvV=1./(V+H*C*H_T);
+
+      //printf("dV %f\n",(G*E*G_T));
       
-      // Compute KalmanSIMD gain matrix
+      // Compute Kalman gain matrix
       K=InvV*(C*H_T);
 
       // Update state vector covariance matrix
@@ -1489,10 +1608,12 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	//S=S+res*K;
 	S+=res*K;
 
-	double scale=1.-H*K;
+	// Compute new residual 
+	d=FindDoca(trajectory[k].z,S,vhat,origin);
+	res=dmeas-d;
 	
 	// Update chi2 for this segment
-	chi2+=scale*res*res/V;
+	chi2+=res*res/(V-H*C*H_T);
 	ndof++;	
 
       }
@@ -1500,6 +1621,14 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 
       updates[cdc_index].S=S;
       updates[cdc_index].C=C;
+      updates[cdc_index].drift=dmeas;
+      updates[cdc_index].drift_time=tdrift;
+      updates[cdc_index].doca=d;
+      updates[cdc_index].res=res;
+      updates[cdc_index].V=V;
+      updates[cdc_index].H_T=H_T;
+      updates[cdc_index].H=H;
+
       trajectory[k].h_id=cdc_index+1;
 
       // move to next cdc hit
@@ -1509,9 +1638,19 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	//New wire position
 	origin=hits[cdc_index]->wire->origin;
 	vhat=hits[cdc_index]->wire->udir;
+	ring=hits[cdc_index]->wire->ring-1;
+	straw=hits[cdc_index]->wire->straw-1;
+	dOrigin.SetXYZ(cdc_alignments[ring][straw].A(dX),
+		       cdc_alignments[ring][straw].A(dY),0.);
+	origin+=dOrigin;
+	dV.SetXYZ(cdc_alignments[ring][straw].A(dVx),
+		  cdc_alignments[ring][straw].A(dVy),0.);
+	vhat+=dV;
+	vhat.SetZ((vhat.z()>0?1.:-1.)*sqrt(1.-vhat.Perp2()));
+
 	z0=origin.z();
-	uz=vhat.z();	
-	wirepos=origin+((trajectory[k].z-z0)/uz)*vhat;
+	vz=vhat.z();	
+	wirepos=origin+((trajectory[k].z-z0)/vz)*vhat;
 	
 	// New doca^2
 	dx=S(state_x)-wirepos.x();
@@ -1690,8 +1829,6 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	updates[my_id].H=H;
 	updates[my_id].H_T=H_T;
 		
-	DMatrix2x2 Vtemp=V+H*C*H_T;
-
 	// Matrices to rotate alignment error matrix into measurement space
 	DMatrix2x3 G;
 	DMatrix3x2 G_T;
@@ -1715,11 +1852,11 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	G(1,kDy)=G_T(kDy,1);
 	G(0,kDPhi)=G_T(kDPhi,0);
 	G(1,kDPhi)=G_T(kDPhi,1);
-	
-	Vtemp=Vtemp+G*E*G_T;
+
+	DMatrix2x2 Vtemp=V+G*E*G_T;
 
 	// Variance for this hit
-	InvV=Vtemp.Invert();
+	InvV=(Vtemp+H*C*H_T).Invert();
 	
 	// Compute Kalman gain matrix
 	K=(C*H_T)*InvV;
@@ -1734,7 +1871,8 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	
 	// Update chi2 for this trajectory
 	DMatrix2x1 R=Mdiff-H*K*Mdiff;
-	DMatrix2x2 RC=V-H*K*V;
+	DMatrix2x2 RC=Vtemp-H*C*H_T;
+;
 	updates[my_id].R=RC;
 	
 	chi2+=RC.Chi2(R);
@@ -2311,3 +2449,26 @@ DEventProcessor_dc_alignment::GuessForStateVector(cdc_track_t &track,
   return DMatrix4x1(x_intercept,y_intercept,x_slope,y_slope);
 }
 
+// Compute distance of closest approach between two lines
+double DEventProcessor_dc_alignment::FindDoca(double z,const DMatrix4x1 &S,
+					      const DVector3 &vhat,
+					      const DVector3 &origin){
+  DVector3 pos(S(state_x),S(state_y),z);
+  DVector3 diff=pos-origin;
+  
+  DVector3 uhat(S(state_tx),S(state_ty),1.);
+  uhat.SetMag(1.); 
+
+  double vhat_dot_diff=diff.Dot(vhat);
+  double uhat_dot_diff=diff.Dot(uhat);
+  double uhat_dot_vhat=uhat.Dot(vhat);
+  double D=1.-uhat_dot_vhat*uhat_dot_vhat;
+  double N=uhat_dot_vhat*vhat_dot_diff-uhat_dot_diff;
+  double N1=vhat_dot_diff-uhat_dot_vhat*uhat_dot_diff;
+  double scale=1./D;
+  double s=scale*N;
+  double t=scale*N1;
+  
+  diff+=s*uhat-t*vhat;
+  return diff.Mag();
+}

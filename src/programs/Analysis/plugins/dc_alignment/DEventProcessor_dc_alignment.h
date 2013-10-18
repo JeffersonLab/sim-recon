@@ -91,8 +91,8 @@ typedef struct{
 }align_t;
 
 typedef struct{
-  DMatrix5x1 A;
-  DMatrix5x5 E;
+  DMatrix4x1 A;
+  DMatrix4x4 E;
 }cdc_align_t;
 
 
@@ -150,6 +150,12 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
     kDy,
     kDPhi,
   };
+  enum cdc_align_parms{
+    dX,
+    dY,
+    dVx,
+    dVy,
+  };
 
   
  private:
@@ -200,8 +206,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		  vector<const DFDCPseudo *>&hits,
 		  vector<update_t>updates,
 		  vector<update_t>&smoothed_updates);
-  jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,deque<trajectory_t>&trajectory,
-		  vector<cdc_update_t>&updates);
+  jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
+		  deque<trajectory_t>&trajectory,
+		  vector<const DCDCTrackHit *>&hits,
+		  vector<cdc_update_t>&updates,
+		  vector<cdc_update_t>&smoothed_updates);
   jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
 				  deque<trajectory_t>&trajectory,
 				  vector<const DFDCPseudo *>&wires);
@@ -231,6 +240,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   
   double cdc_variance(double t);
   double cdc_drift_distance(double t);
+  double FindDoca(double z,const DMatrix4x1 &S,const DVector3 &vhat,
+		  const DVector3 &origin);
 
   jerror_t GetProcessNoise(double dz,
 			   double chi2c_factor,
@@ -269,7 +280,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   const DGeometry *dgeom;
 
   vector<align_t>alignments;
-  vector<cdc_align_t>cdc_alignments;
+  vector<vector<cdc_align_t> >cdc_alignments;
   vector<vector<DFDCWire*> >fdcwires;
 };
 
