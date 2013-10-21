@@ -24,6 +24,7 @@ using std::set;
 #include <JANA/JEventSource.h>
 #include <JANA/JEvent.h>
 #include <JANA/JFactory.h>
+#include <JANA/JStreamLog.h>
 using namespace jana;
 
 #include <evioChannel.hxx>
@@ -144,12 +145,15 @@ class JEventSource_EVIO: public jana::JEventSource{
 		EVIOSourceType source_type;
 		map<tagNum, MODULE_TYPE> module_type;
 
+		JStreamLog evioout;
+
 		bool AUTODETECT_MODULE_TYPES;
 		bool DUMP_MODULE_MAP;
 		bool PARSE_EVIO_EVENTS;
 		bool MAKE_DOM_TREE;
 		int ET_STATION_NEVENTS;
 		bool ET_STATION_CREATE_BLOCKING;
+		int VERBOSE;
 
 		// Utility class with multiple roles:
 		//

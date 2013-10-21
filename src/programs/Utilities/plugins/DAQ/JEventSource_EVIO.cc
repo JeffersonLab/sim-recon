@@ -50,6 +50,11 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	chan = NULL;
 	source_type = kNoSource;
 
+	// Initialize dedicated JStreamLog used for debugging messages
+	evioout.SetTag("--- EVIO ---: ");
+	evioout.SetTimestampFlag();
+	evioout.SetThreadstampFlag();
+
 	// Get configuration parameters
 	AUTODETECT_MODULE_TYPES = true;
 	DUMP_MODULE_MAP = false;
@@ -58,6 +63,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	BUFFER_SIZE = 50000; // in bytes
 	ET_STATION_NEVENTS = 100;
 	ET_STATION_CREATE_BLOCKING = true;
+	VERBOSE = 0;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -67,12 +73,14 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:BUFFER_SIZE", BUFFER_SIZE, "Size in bytes to allocate for holding a single EVIO event.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
+		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 	}
 	
 	// Try to open the file.
 	try {
 		
 		// create evio file channel object using first arg as file name
+		if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
 		chan = new evioFileChannel(this->source_name);
 		
 		// open the file. Throws exception if not successful
@@ -84,7 +92,10 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 #ifdef HAVE_ET
 		// Could not open file. Check if name starts with "ET:"
 		chan = NULL;
-		if(this->source_name.substr(0,3) == "ET:") ConnectToET(source_name);
+		if(this->source_name.substr(0,3) == "ET:"){
+			if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as ET (network) source..." <<endl;
+			ConnectToET(source_name);
+		}
 
 		// open the file. Throws exception if not successful
 		if(chan)chan->open();
@@ -95,6 +106,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 
 #endif
 	}
+	if(VERBOSE>0) evioout << "Success opening event source \"" << this->source_name << "\"!" <<endl;
 	
 
 	// Create list of data types this event source can provide
@@ -124,6 +136,7 @@ JEventSource_EVIO::~JEventSource_EVIO()
 {
 	// close event source here
 	if(chan){
+		if(VERBOSE>0) evioout << "CLosing event source \"" << this->source_name << "\"" <<endl;
 		chan->close();
 		delete chan;
 	}
@@ -282,6 +295,8 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 //----------------
 jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 {
+	if(VERBOSE>0) evioout << "GetEvent called for &event = " << hex << &event << dec << endl;
+
 	// If we couldn't even open the source, then there's nothing to do
 	if(chan==NULL)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
 	
@@ -350,6 +365,8 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 //----------------
 void JEventSource_EVIO::FreeEvent(JEvent &event)
 {
+	if(VERBOSE>0) evioout << "FreeEvent called for event: " << event.GetEventNumber() << endl;
+
 	ObjList *objs_ptr = (ObjList*)event.GetRef();
 	if(objs_ptr){
 
@@ -473,6 +490,8 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 //----------------
 jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 {
+	if(VERBOSE>1) evioout << " ReadEVIOEvent() called with &buff=" << hex << &buff << dec << endl;
+
 	// We may need to loop here for ET system if no
 	// events are currently available.
 
@@ -480,8 +499,10 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 	pthread_mutex_lock(&evio_buffer_pool_mutex);
 	if(evio_buffer_pool.empty()){
 		// Allocate new block of memory
+		if(VERBOSE>5) evioout << "  evio_buffer_pool empty. Allocating new buffer of size: " << BUFFER_SIZE << " bytes" << endl;
 		buff = (uint32_t*)malloc(BUFFER_SIZE);
 	}else{
+		if(VERBOSE>5) evioout << "  evio_buffer_pool not empty(size=" << evio_buffer_pool.size() << "). using buffer from pool" << endl;
 		buff = evio_buffer_pool.front();
 		evio_buffer_pool.pop_front();
 	}
@@ -489,10 +510,13 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 
 	try{
 		if(source_type==kFileSource){
+			if(VERBOSE>3) evioout << "  attempting read from EVIO file source ..." << endl;
 			if(!chan->read(buff, BUFFER_SIZE)){
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
 		}else if(source_type==kETSource){
+
+			if(VERBOSE>3) evioout << "  attempting read from EVIO ET source ..." << endl;
 
 			et_event *pe=NULL;
 			int err = et_event_get(sys_id, att_id, &pe, ET_SLEEP , NULL);
@@ -526,6 +550,8 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 		_DBG_<<e.what()<<endl;
 	}
 
+	if(VERBOSE>2) evioout << " Leaving ReadEVIOEvent()" << endl;
+
 	return NOERROR;
 }
 
@@ -534,6 +560,8 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 //----------------
 jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 {
+	if(VERBOSE>2) evioout << "  GetObjects() called for &event = " << hex << &event << dec << endl;
+
 	// This will get called when the first object of the event is
 	// requested (regardless of the type of object). Instead of
 	// pulling out objects only of the type requested, we instead
@@ -623,6 +651,8 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		}
 	}
 
+	if(VERBOSE>2) evioout << "  Leaving GetObjects()" << endl;
+
 	return err;
 }
 
@@ -671,6 +701,8 @@ int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 //----------------
 void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2)
 {
+	if(VERBOSE>5) evioout << "      Entering MergeObjLists().  &events1=" << hex << &events1 << "  &events2=" << &events2 << dec << endl;
+
 	/// Merge the events referenced in events2 into the events1 list.
 	///
 	/// This will append the object lists for each type of data object
@@ -723,6 +755,8 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 	
 	// Clear out any references to objects in event2 (this should be redundant)
 	events2.clear(); // clear queue
+
+	if(VERBOSE>5) evioout << "      Leaving MergeObjLists().  &events1=" << hex << &events1 << "  &events2=" << &events2 << dec << endl;
 }
 
 //----------------
@@ -730,6 +764,8 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 //----------------
 void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events)
 {
+	if(VERBOSE>5) evioout << "   Entering ParseEVIOEvent()" << endl;
+
 	if(!evt)throw RESOURCE_UNAVAILABLE;
 
 	// Since each bank contains parts of many events, have them fill in
@@ -742,14 +778,20 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	list<ObjList*> tmp_events;
 	
 	// The Physics Event bank is the outermost bank of the event and
-	// it is a bank of banks. One of those is the  "Built Trigger Bank"
-	// which is a bank of segments (i.e. 16bit ints). The others
+	// it is a bank of banks. One of those banks is the  
+	// "Built Trigger Bank" which is a bank of segments. The others
 	// are the "Data Bank" banks which in turn contain the
 	// "Data Block Bank" banks which hold the actual data. For the
 	// mc2coda generated data files (and presumably the real data)
 	// these Data Block Banks are banks of ints. More specifically,
 	// uint32_t.
-	// 
+	//
+	// The "Physics Event's Built Trigget Bank" is a bank of segments.
+	// This contains 3 segments, one each of type uint64, uint16, and
+	// unit32. The first two are "common data" which contains information
+	// common to all rocs. The last (uint32) has information specific to each
+	// event and for each ROC.
+	//
 	// For now, we skip parseing the Built Trigger Bank and just
 	// look for Data Block Banks. We do this by getting a list of
 	// all uint32_t banks in the enitries DOM Tree (at all levels
@@ -761,22 +803,49 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	ObjList objs;
 	evioDOMNodeListP bankList = evt->getNodeList(typeIs<uint32_t>());
 	evioDOMNodeList::iterator iter = bankList->begin();
-	for(; iter!=bankList->end(); iter++){
+	if(VERBOSE>7) evioout << "    Looping over " << bankList->size() << " banks in EVIO event" << endl;
+	for(int ibank=1; iter!=bankList->end(); iter++, ibank++){ // ibank only used for debugging messages
+
+		if(VERBOSE>7) evioout << "     -------- bank " << ibank << "/" << bankList->size() << " --------" << endl;
 	
 		// The data banks we want should have exactly two parents:
 		// - Data Bank bank       <--  parent
 		// - Physics Event bank   <--  grandparent
 		evioDOMNodeP bankPtr = *iter;
 		evioDOMNodeP data_bank = bankPtr->getParent();
-		if( data_bank==NULL ) continue;
+		if( data_bank==NULL ) {
+			if(VERBOSE>9) evioout << "     bank has no parent. skipping ... " << endl;
+			continue;
+		}
 		evioDOMNodeP physics_event_bank = data_bank->getParent();
-		if( physics_event_bank==NULL ) continue;
-		if( physics_event_bank->getParent() != NULL ) continue; // physics event bank should have no parent!
-		
+		if( physics_event_bank==NULL ){
+			if(VERBOSE>9) evioout << "     bank has no grandparent. skipping ... " << endl;
+			continue;
+		}
+		if( physics_event_bank->getParent() != NULL ){
+			if(VERBOSE>9) evioout << "     bank DOES have great-grandparent. skipping ... " << endl;
+			continue; // physics event bank should have no parent!
+		}
+		if(VERBOSE>9){
+			evioout << "     Physics Event Bank: tag=" << hex << physics_event_bank->tag << " num=" << (int)physics_event_bank->num << dec << endl;
+			evioout << "     Data Bank:          tag=" << hex << data_bank->tag << " num=" << (int)data_bank->num << dec << endl;
+		}
+
+		// Check if this is a CODA Reserved Bank Tag. If it is, then
+		// this probably is part of the built trigger bank and not
+		// the ROC data we're looking to parse here.
+		if((data_bank->tag & 0xFF00) == 0xFF00){
+			if(VERBOSE>9) evioout << "     Data Bank tag is in reserved CODA range. This bank is not ROC data. Skipping ..." << endl;
+			continue;
+		}
+
+		if(VERBOSE>9) evioout << "     bank lineage check OK. Continuing with parsing ... " << endl;
+
 		// Get data from bank in the form of a vector of uint32_t
 		const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
 		const uint32_t *iptr = &(*vec)[0];
 		const uint32_t *iend = &(*vec)[vec->size()];
+		if(VERBOSE>6) evioout << "     uint32_t bank has " << vec->size() << " words" << endl;
 
 		// Extract ROC id (crate number) from bank's parent
 		uint32_t rocid = data_bank->tag  & 0x0FFF;
@@ -785,7 +854,10 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		// of header word (aka the "num") of Data Bank. This should
 		// be at least 1.
 		uint32_t NumEvents = data_bank->num & 0xFF;
-		if( NumEvents<1 ) continue;
+		if( NumEvents<1 ){
+			if(VERBOSE>9) evioout << "     bank has less than 1 event (Data Bank num or \"M\" = 0) skipping ... " << endl;
+			continue;
+		}
 
 		// At this point iptr and iend indicate the data that came
 		// from the ROC itself (all CODA headers have been stripped
@@ -806,7 +878,9 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		// Call appropriate parsing method
 		bool bank_parsed = true; // will be set to false if default case is entered
 		switch(det_id){
+			case 0:
 			case 1:
+			case 3:
 				ParseJLabModuleData(rocid, iptr, iend, tmp_events);
 				break;
 
@@ -838,6 +912,8 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		objs->run_number = run_number;
 		//stored_events.push(objs);
 	}
+
+	if(VERBOSE>5) evioout << "   Leaving ParseEVIOEvent()" << endl;
 }
 
 //----------------
@@ -845,6 +921,8 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 //----------------
 void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
+	if(VERBOSE>5) evioout << "     Entering ParseJLabModuleData()" << endl;
+
 	/// Parse a bank of data coming from one or more JLab modules.
 	/// The data are assumed to follow the standard JLab format for
 	/// block headers. If multiple modules are read out in a single
@@ -858,7 +936,8 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 		// The enum defined in DModuleType.h MUST be kept in alignment
 		// with the DAQ group's definitions for modules types!
 		MODULE_TYPE type = (MODULE_TYPE)mod_id;
-		
+		if(VERBOSE>5) evioout << "      Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")" << endl;
+
 		// Parse buffer depending on module type
 		// (Note that each of the ParseXXX routines called below will
 		// update the "iptr" variable to point to the next word
@@ -904,6 +983,8 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 		}
 		if(module_parsed) MergeObjLists(events, tmp_events);
 	}
+
+	if(VERBOSE>5) evioout << "     Leaving ParseJLabModuleData()" << endl;
 }
 
 //----------------
@@ -1630,7 +1711,10 @@ void JEventSource_EVIO::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const 
 //----------------
 void JEventSource_EVIO::ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
-	
+	while(iptr<iend && ((*iptr) & 0xF8000000) != 0x88000000) iptr++; // Skip to JLab block trailer
+	iptr++; // advance past JLab block trailer
+	while(iptr<iend && *iptr == 0xF8000000) iptr++; // skip filler words after block trailer
+	//iptr = iend;
 }
 
 //----------------
