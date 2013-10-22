@@ -30,12 +30,15 @@ env = Environment(    BINDIR = bin,
 
 # Use terse output unless otherwise specified
 if SHOWBUILD==0:
-	env.Replace(  CCCOMSTR     = "Compiling  [$SOURCE]",
-				  CXXCOMSTR    = "Compiling  [$SOURCE]",
-				  LINKCOMSTR   = "Linking    [$TARGET]",
-				  INSTALLSTR   = "Installing [$TARGET]",
-				  ARCOMSTR     = "Archiving  [$TARGET]",
-				  RANLIBCOMSTR = "Ranlib     [$TARGET]")
+	env.Replace(  CCCOMSTR       = "Compiling  [$SOURCE]",
+				  CXXCOMSTR      = "Compiling  [$SOURCE]",
+				  SHCCCOMSTR     = "Compiling  [$SOURCE]",
+				  SHCXXCOMSTR    = "Compiling  [$SOURCE]",
+				  LINKCOMSTR     = "Linking    [$TARGET]",
+				  SHLINKCOMSTR   = "Linking    [$TARGET]",
+				  INSTALLSTR     = "Installing [$TARGET]",
+				  ARCOMSTR       = "Archiving  [$TARGET]",
+				  RANLIBCOMSTR   = "Ranlib     [$TARGET]")
 
 
 

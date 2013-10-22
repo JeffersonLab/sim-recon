@@ -55,6 +55,29 @@ def executable(env, installdir):
 
 
 ##################################
+# plugin
+##################################
+def plugin(env, installdir):
+
+	# Library name comes from directory name
+	pluginname = os.path.split(os.getcwd())[1]
+
+	env.PrependUnique(CPPPATH = ['.'])
+
+	# Build static library from all source
+	myplugin = env.SharedLibrary(target = pluginname, source = env.Glob('*.c*'), SHLIBPREFIX='', SHLIBSUFFIX='.so')
+
+	# Installation directories for library and headers
+	includedir = "%s/%s" %(env.subst('$INCDIR'), pluginname)
+	libdir = env.subst('$LIBDIR')
+
+	# Install targets 
+	env.Install(libdir, myplugin)
+	env.Install(includedir, env.Glob('*.h*'))
+	env.Alias('install', installdir)
+
+
+##################################
 # JANA
 ##################################
 def AddJANA(env):
