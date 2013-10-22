@@ -14,8 +14,13 @@ def library(env, installdir):
 
 	env.PrependUnique(CPPPATH = ['.'])
 
+	# Add C/C++ targets
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
+
+	sources = env['ALL_SOURCES']
+
 	# Build static library from all source
-	mylib = env.Library(target = libname, source = env.Glob('*.c*'))
+	mylib = env.Library(target = libname, source = sources)
 
 	# Installation directories for library and headers
 	includedir = "%s/%s" %(env.subst('$INCDIR'), libname)
@@ -38,12 +43,12 @@ def executable(env, installdir):
 	env.PrependUnique(CPPPATH = ['.'])
 
 	# Add C/C++ targets
-	env.AppendUnique(MISC_TARGETS = env.Glob('*.c*'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
 
-	targets = env['MISC_TARGETS']
+	sources = env['ALL_SOURCES']
 
 	# Build program from all source
-	myexe = env.Program(target = exename, source = targets)
+	myexe = env.Program(target = exename, source = sources)
 
 	# Installation directories for library and headers
 	includedir = env.subst('$INCDIR')
@@ -174,7 +179,7 @@ def AddROOT(env):
 	os.chdir(srcpath)
 	for f in glob.glob('*.h*'):
 		if 'ClassDef' in open(f).read():
-			env.AppendUnique(MISC_TARGETS = env.ROOTDict(f))
+			env.AppendUnique(ALL_SOURCES = env.ROOTDict(f))
 			if(env['SHOWBUILD']!=0):
 				print "       ROOT dictionary for %s" % f
 	os.chdir(curpath)

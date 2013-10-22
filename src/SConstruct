@@ -24,7 +24,7 @@ env = Environment(    BINDIR = bin,
                       LIBDIR = lib,
                       CPPPATH = [include],
                       LIBPATH = [lib],
-					  MISC_TARGETS = [],
+					  ALL_SOURCES = [],
 					  SHOWBUILD = SHOWBUILD,
 					  variant_dir=".%s" % (osname))
 
