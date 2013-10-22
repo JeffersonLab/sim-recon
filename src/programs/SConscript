@@ -1,9 +1,6 @@
 
-import os
+Import('*')
 
-Import('env osname installdir')
-
-# build programs
 subdirs = ['Analysis']
 SConscript(dirs=subdirs, exports='env osname installdir', duplicate=0)
 

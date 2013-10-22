@@ -2,6 +2,7 @@
 import os
 import subprocess
 import SCons
+import glob
 
 ##################################
 # library
@@ -36,8 +37,13 @@ def executable(env, installdir):
 
 	env.PrependUnique(CPPPATH = ['.'])
 
+	# Add C/C++ targets
+	env.AppendUnique(MISC_TARGETS = env.Glob('*.c*'))
+
+	targets = env['MISC_TARGETS']
+
 	# Build program from all source
-	myexe = env.Program(target = exename, source = env.Glob('*.c*'))
+	myexe = env.Program(target = exename, source = targets)
 
 	# Installation directories for library and headers
 	includedir = env.subst('$INCDIR')
@@ -119,4 +125,35 @@ def AddROOT(env):
 	env.PrependUnique(CCFLAGS = ROOT_CFLAGS.split())
 	env.PrependUnique(LINKFLAGS = ROOT_LINKFLAGS.split())
 	env.PrependUnique(LINKFLAGS = "-lGeom")
+
+	# Create Builder that can convert .h file into _Dict.cc file
+	rootsys = os.getenv('ROOTSYS', '/usr/local/root/PRO')
+	if env['SHOWBUILD']==0:
+		rootcintaction = SCons.Script.Action("%s/bin/rootcint -f $TARGET -c $SOURCE" % (rootsys), 'ROOTCINT   [$SOURCE]')
+	else:
+		rootcintaction = SCons.Script.Action("%s/bin/rootcint -f $TARGET -c $SOURCE" % (rootsys))
+	bld = SCons.Script.Builder(action = rootcintaction, suffix='_Dict.cc', src_suffix='.h')
+	env.Append(BUILDERS = {'ROOTDict' : bld})
+
+	# Generate ROOT dictionary file targets for each header
+	# containing "ClassDef"
+	#
+	# n.b. It seems if scons is run when the build directory doesn't exist,
+	# then the cwd is set to the source directory. Otherwise, it is the
+	# build directory. Since the headers will only exist in the source
+	# directory, we must temporarily cd into that to look for headers that
+	# we wish to generate dictionaries for. (This took a long time to figure
+	# out!)
+	curpath = os.getcwd()
+	srcpath = env.Dir('.').srcnode().abspath
+	if(env['SHOWBUILD']!=0):
+		print "---- Scanning for headers to generate ROOT dictionaries in: %s" % srcpath
+	os.chdir(srcpath)
+	for f in glob.glob('*.h*'):
+		if 'ClassDef' in open(f).read():
+			env.AppendUnique(MISC_TARGETS = env.ROOTDict(f))
+			if(env['SHOWBUILD']!=0):
+				print "       ROOT dictionary for %s" % f
+	os.chdir(curpath)
+
 

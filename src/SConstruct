@@ -23,7 +23,10 @@ env = Environment(    BINDIR = bin,
                       INCDIR = include,
                       LIBDIR = lib,
                       CPPPATH = [include],
-                      LIBPATH = [lib])
+                      LIBPATH = [lib],
+					  MISC_TARGETS = [],
+					  SHOWBUILD = SHOWBUILD,
+					  variant_dir=".%s" % (osname))
 
 # Use terse output unless otherwise specified
 if SHOWBUILD==0:
@@ -34,8 +37,10 @@ if SHOWBUILD==0:
 				  ARCOMSTR     = "Archiving  [$TARGET]",
 				  RANLIBCOMSTR = "Ranlib     [$TARGET]")
 
+
+
 # Add libraries and libraries/include to include search path
-env.PrependUnique(CPPPATH = ['#libraries', '#libraries/include'])
+env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])
 
 # "external" packages (aka xstream)
 SConscript('external/SConscript', exports='env osname installdir', duplicate=0)
