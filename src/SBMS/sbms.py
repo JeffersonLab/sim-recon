@@ -69,8 +69,13 @@ def plugin(env, installdir):
 
 	env.PrependUnique(CPPPATH = ['.'])
 
+	# Add C/C++ targets
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
+
+	sources = env['ALL_SOURCES']
+
 	# Build static library from all source
-	myplugin = env.SharedLibrary(target = pluginname, source = env.Glob('*.c*'), SHLIBPREFIX='', SHLIBSUFFIX='.so')
+	myplugin = env.SharedLibrary(target = pluginname, source = sources, SHLIBPREFIX='', SHLIBSUFFIX='.so')
 
 	# Installation directories for library and headers
 	includedir = "%s/%s" %(env.subst('$INCDIR'), pluginname)
