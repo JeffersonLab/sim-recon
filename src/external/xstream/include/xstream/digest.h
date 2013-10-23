@@ -35,13 +35,14 @@ namespace digest{
  */
 class stream: public xstream::ostreambuf
 {
-	private:
+	protected: // changed to protected to avoif clang compiler error when
+	           // sync() is called from class "common" below. 10/23/2013 DL
 		/*!
 		 * \brief update digest with as much data as possible (overloaded from streambuf)
 		 *
 		 * */
 		int sync();
-
+	private:   // change back to private (see note above) 10/23/2013 DL
 		/*!
 		 * \brief write a character that surpasses buffer end (overloaded from streambuf)
 		 * 
