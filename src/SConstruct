@@ -41,9 +41,16 @@ if SHOWBUILD==0:
 				  RANLIBCOMSTR   = "Ranlib     [$TARGET]")
 
 
+# Get compiler from environment variables (if set)
+env.Replace( CXX = os.getenv('CXX', 'g++'),
+             CC  = os.getenv('CC' , 'gcc'),
+             FC  = os.getenv('FC' , 'gfortran') )
 
 # Add libraries and libraries/include to include search path
 env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])
+
+# Turn on debug symbols
+env.PrependUnique(CFLAGS = ['-g'], CXXFLAGS = ['-g'])
 
 # "external" packages (aka xstream)
 SConscript('external/SConscript', exports='env osname installdir', duplicate=0)
