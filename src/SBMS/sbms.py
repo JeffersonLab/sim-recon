@@ -50,7 +50,7 @@ def executable(env, installdir):
 	# Build program from all source
 	myexe = env.Program(target = exename, source = sources)
 
-	# Installation directories for library and headers
+	# Installation directories for executable and headers
 	includedir = env.subst('$INCDIR')
 	bindir = env.subst('$BINDIR')
 
@@ -77,7 +77,7 @@ def plugin(env, installdir):
 	# Build static library from all source
 	myplugin = env.SharedLibrary(target = pluginname, source = sources, SHLIBPREFIX='', SHLIBSUFFIX='.so')
 
-	# Installation directories for library and headers
+	# Installation directories for plugin and headers
 	includedir = "%s/%s" %(env.subst('$INCDIR'), pluginname)
 	libdir = env.subst('$LIBDIR')
 
@@ -124,7 +124,7 @@ def AddDANA(env):
 ##################################
 def Add_xstream(env):
 	env.PrependUnique(CPPPATH = ['#external/xstream/include'])
-	env.AppendUnique(LIBS=['xstream', 'bz2'])
+	env.AppendUnique(LIBS=['xstream', 'bz2', 'z'])
 
 
 ##################################
