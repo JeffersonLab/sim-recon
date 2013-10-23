@@ -1,0 +1,30 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+sbms.AddXERCES(env)
+sbms.Add_xstream(env)
+
+progs = []
+
+commonsrc = ['XString.cpp', 'XParsers.cpp', 'md5.c']
+
+progs.append( env.Program(target='xml-hddm', source=['xml-hddm.cpp', commonsrc]) )
+progs.append( env.Program(target='hddm-xml', source=['hddm-xml.cpp', commonsrc]) )
+progs.append( env.Program(target='hddm-c',   source=['hddm-c.cpp'  , commonsrc]) )
+progs.append( env.Program(target='hddm-cpp', source=['hddm-cpp.cpp', commonsrc]) )
+progs.append( env.Program(target='hddmcat',  source=['hddmcat.cpp']) )
+
+
+# Installation directories for executable and headers
+includedir = env.subst('$INCDIR')
+bindir = env.subst('$BINDIR')
+
+# Install targets 
+env.Install(bindir, ['hddm-schema', 'schema-hddm', 'xml-xml'])
+env.Install(bindir, progs)
+env.Alias('install', installdir)
