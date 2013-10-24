@@ -50,7 +50,7 @@ env.Replace( CXX = os.getenv('CXX', 'g++'),
 env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])
 
 # Turn on debug symbols
-env.PrependUnique(CFLAGS = ['-g'], CXXFLAGS = ['-g'])
+env.PrependUnique(CFLAGS = ['-g', '-fPIC'], CXXFLAGS = ['-g', '-fPIC'])
 
 # "external" packages (aka xstream)
 SConscript('external/SConscript', exports='env osname installdir', duplicate=0)
