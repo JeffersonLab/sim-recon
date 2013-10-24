@@ -124,6 +124,7 @@ def AddDANA(env):
 ##################################
 def Add_xstream(env):
 	env.PrependUnique(CPPPATH = ['#external/xstream/include'])
+	env.PrependUnique(CCFLAGS = ['-fPIC'])
 	env.AppendUnique(LIBS=['xstream', 'bz2', 'z'])
 
 
@@ -161,6 +162,7 @@ def AddROOT(env):
 
 	# Create Builder that can convert .h file into _Dict.cc file
 	rootsys = os.getenv('ROOTSYS', '/usr/local/root/PRO')
+	env.AppendENVPath('LD_LIBRARY_PATH', '%s/lib' % rootsys )
 	if env['SHOWBUILD']==0:
 		rootcintaction = SCons.Script.Action("%s/bin/rootcint -f $TARGET -c $SOURCE" % (rootsys), 'ROOTCINT   [$SOURCE]')
 	else:
