@@ -2,28 +2,17 @@
 //
 // Created Dec 22, 2007  David Lawrence
 
-#include <iostream>
-#include <iomanip>
-#include <vector>
-using namespace std;
+#include "hddm_merge_files.h"
 
-#include <signal.h>
-#include <time.h>
-
-#include "HDDM/hddm_s.h"
-
-void Smear(s_HDDM_t *hddm_s);
 void ParseCommandLineArguments(int narg, char* argv[]);
 void Usage(void);
 void ctrlCHandle(int x);
 
+string HDDM_CLASS = "s";
 vector<char*> INFILENAMES;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
 
-
-#define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
-#define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
 
 
 //-----------
@@ -36,55 +25,21 @@ int main(int narg,char* argv[])
 
 	ParseCommandLineArguments(narg, argv);
 	
-	
-	// Output file
-	cout<<" output file: "<<OUTFILENAME<<endl;
-	s_iostream_t *fout = init_s_HDDM(OUTFILENAME);
-	if(!fout){
-		cout<<" Error opening output file \""<<OUTFILENAME<<"\"!"<<endl;
-		exit(-1);
+	unsigned int NEvents = 0;
+	unsigned int NEvents_read = 0;
+
+	// Each HDDM class must have it's own cull routine
+	if(HDDM_CLASS == "s"){
+		Process_s(NEvents, NEvents_read);
+	}else if(HDDM_CLASS == "r"){
+		Process_r(NEvents, NEvents_read);
+	}else{
+		cout << "Don't know how to process HDDM class \"" << HDDM_CLASS << "\"!" << endl;
+		return -1;
 	}
 
-	// Loop over input files
-	int NEvents = 0;
-	int NEvents_read = 0;
-	time_t last_time = time(NULL);
-	for(unsigned int i=0; i<INFILENAMES.size(); i++){
-		cout<<" input file: "<<INFILENAMES[i]<<endl;
-		s_iostream_t *fin = open_s_HDDM(INFILENAMES[i]);
-		if(!fin){
-			cout<<" Error opening input file \""<<INFILENAMES[i]<<"\"!"<<endl;
-			exit(-1);
-		}
-			
-		// Loop over all events in input
-		while(true){
-			s_HDDM_t *hddm_s = read_s_HDDM(fin);
-			if(!hddm_s)break;
-			NEvents_read++;
-			
-			// Write this output event to file and free its memory
-			flush_s_HDDM(hddm_s, fout);
-			NEvents++;
-		
-			// Update ticker
-			time_t now = time(NULL);
-			if(now != last_time){
-				cout<<"  "<<NEvents_read<<" events read     ("<<NEvents<<" event written) \r";cout.flush();
-				last_time = now;
-			}
-
-			if(QUIT)break;
-		}
-
-		// Close input file
-		close_s_HDDM(fin);
-	}
-		
-	// Close output file
-	close_s_HDDM(fout);
-	
-	cout<<" "<<NEvents<<" events read"<<endl;
+	cout<<endl;
+	cout<<" "<<NEvents_read<<" events read, "<<NEvents<<" events written"<<endl;
 
 	return 0;
 }
@@ -103,6 +58,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 			switch(ptr[1]){
 				case 'h': Usage();						break;
 				case 'o': OUTFILENAME=&ptr[2];		break;
+			        case 'r': HDDM_CLASS = "r";
 			}
 		}else{
 			INFILENAMES.push_back(argv[i]);
@@ -115,8 +71,8 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	}
 	
 	if(OUTFILENAME==NULL){
-		char *default_outfile = (char*)malloc(20);
-		OUTFILENAME = strcpy(default_outfile,"merged_files.hddm");
+	        OUTFILENAME = new char[256];
+		sprintf(OUTFILENAME,"merged_files.hddm");
 	}
 }
 
