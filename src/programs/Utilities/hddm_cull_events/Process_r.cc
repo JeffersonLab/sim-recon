@@ -39,7 +39,6 @@ void Process_r(unsigned int &NEvents, unsigned int &NEvents_read)
 		hddm_r::istream istr(ifs);
 
 		// Loop over events
-		unsigned int N = 0;
 		while(!ifs.eof() && ifs.good()){
 			try{
 				HDDM xrec;
