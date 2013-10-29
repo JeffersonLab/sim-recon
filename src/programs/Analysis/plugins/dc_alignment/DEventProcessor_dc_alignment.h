@@ -36,6 +36,7 @@ using std::map;
 #include <DVector2.h>
 
 #include "FDC_branch.h"
+#include "CDC_branch.h"
 
 typedef struct{
   DMatrix4x1 S;
@@ -64,7 +65,7 @@ typedef struct{
   DMatrix4x4 C;
   DMatrix4x1 H_T;
   DMatrix1x4 H;
-  double doca,t;
+  double doca,t,z;
   double drift,drift_time;
 }cdc_update_t;
 
@@ -134,6 +135,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   FDC_branch *fdc_ptr;
   TBranch *fdcbranch;
 
+  TTree *cdctree;
+  CDC_branch cdc;
+  CDC_branch *cdc_ptr;
+  TBranch *cdcbranch;
+
   enum track_type{
     kWireBased,
     kTimeBased,
@@ -155,6 +161,12 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
     dY,
     dVx,
     dVy,
+  };
+  enum cdc_align_parms2{
+    k_dXu,
+    k_dYu,
+    k_dXd,
+    k_dYd,
   };
 
   
@@ -228,9 +240,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   jerror_t LinkSegments(vector<segment_t>segments[4], 
 			vector<vector<const DFDCPseudo *> >&LinkedSegments);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
-		       vector<update_t>smoothed_updates);
+		       vector<update_t>&smoothed_updates);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
 		       vector<strip_update_t>smoothed_updates);
+  jerror_t FindOffsets(vector<const DCDCTrackHit*>&hits,
+		       vector<cdc_update_t>&updates);
   
   bool MatchOuterDetectors(vector<const DFCALShower *>&fcalshowers,
 			   vector<const DBCALShower *>&bcalshowers,
@@ -252,7 +266,19 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 
   double GetDriftDistance(double t);
   double GetDriftVariance(double t);
-  
+  void UpdateWireOriginAndDir(unsigned int ring,unsigned int straw,
+			      DVector3 &origin,DVector3 &wdir);
+  void ComputeGMatrices(double s,double t,double scale,
+			double tx,double ty,double tdir2,double one_over_d,
+			double wx,double wy,double wdir2,
+			double tdir_dot_wdir,
+			double tdir_dot_diff,
+			double wdir_dot_diff,
+			double dx0,double dy0,
+			double diffx,double diffy,
+			double diffz,
+			DMatrix1x4 &G,DMatrix4x1 &G_T);
+    
   pthread_mutex_t mutex;
 
   TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdc_match;
@@ -269,12 +295,14 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   DMatrix4x1 Zero4x1;
   DMatrix4x4 Zero4x4;
 
+  double one_over_zrange;
   double endplate_z;
   int myevt;
 
   double mMinTime,mOuterTime,mOuterZ,mBeta;
   unsigned int mMinTimeID;
   
+  bool COSMICS;
 
   // Geometry
   const DGeometry *dgeom;
@@ -291,7 +319,7 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   if (t<0.0) t=0.0;
   
   double sigma=0.1/(t+2.5)+0.0060+1.e-5*t;
-  sigma+=0.02;
+  //sigma+=0.02;
   return sigma*sigma;
 }
 
