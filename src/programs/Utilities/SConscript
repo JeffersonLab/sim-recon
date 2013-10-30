@@ -4,4 +4,4 @@ Import('*')
 
 subdirs = ['bfield2root', 'root_merge']
 subdirs.extend( ['root2email', 'hddm', 'hddm2root', 'hddm_cull_events', 'hddm_merge_events', 'hddm_merge_files', 'tree_to_amptools', 'plugins'] )
-SConscript(dirs=subdirs, exports='env osname installdir', duplicate=0)
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)

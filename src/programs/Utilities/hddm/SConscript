@@ -21,6 +21,7 @@ progs.append( env.Program(target='hddmcat',  source=['hddmcat.cpp']) )
 
 
 # Installation directories for executable and headers
+installdir = env.subst('$INSTALLDIR')
 includedir = env.subst('$INCDIR')
 bindir = env.subst('$BINDIR')
 

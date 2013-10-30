@@ -3,4 +3,4 @@
 Import('*')
 
 subdirs = ['danarest']
-SConscript(dirs=subdirs, exports='env osname installdir', duplicate=0)
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)

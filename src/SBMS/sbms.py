@@ -4,10 +4,18 @@ import subprocess
 import SCons
 import glob
 
+#===========================================================
+# The first 3 sections provide routines for building a
+# library, program, or plugin from all the source in the
+# current directory. The routines that follow add support
+# for various packages
+#===========================================================
+
+
 ##################################
 # library
 ##################################
-def library(env, installdir):
+def library(env):
 
 	# Library name comes from directory name
 	libname = os.path.split(os.getcwd())[1]
@@ -20,22 +28,29 @@ def library(env, installdir):
 	sources = env['ALL_SOURCES']
 
 	# Build static library from all source
-	mylib = env.Library(target = libname, source = sources)
+	myobjs = env.Object(sources)
+	mylib = env.Library(target = libname, source = myobjs)
 
 	# Installation directories for library and headers
+	installdir = env.subst('$INSTALLDIR')
 	includedir = "%s/%s" %(env.subst('$INCDIR'), libname)
 	libdir = env.subst('$LIBDIR')
 
 	# Install targets 
-	env.Install(libdir, mylib)
+	installed = env.Install(libdir, mylib)
 	env.Install(includedir, env.Glob('*.h*'))
-	env.Alias('install', installdir)
+
+	# Only clean these sources when scons -c is invoked in
+	# this directory or in a direct ancestor
+	CurrentDir = env.Dir('.').srcnode().abspath
+	if not CurrentDir.startswith(env.GetLaunchDir()):
+		env.NoClean([myobjs, mylib, installed])
 
 
 ##################################
 # executable
 ##################################
-def executable(env, installdir):
+def executable(env):
 
 	# Executable name comes from directory name
 	exename = os.path.split(os.getcwd())[1]
@@ -48,21 +63,29 @@ def executable(env, installdir):
 	sources = env['ALL_SOURCES']
 
 	# Build program from all source
-	myexe = env.Program(target = exename, source = sources)
+	myobjs = env.Object(sources)
+	myexe = env.Program(target = exename, source = myobjs)
 
 	# Installation directories for executable and headers
+	installdir = env.subst('$INSTALLDIR')
 	includedir = env.subst('$INCDIR')
 	bindir = env.subst('$BINDIR')
 
 	# Install targets 
-	env.Install(bindir, myexe)
-	env.Alias('install', installdir)
+	installed = env.Install(bindir, myexe)
+	#env.Alias('install', installdir)
+
+	# Only clean these sources when scons -c is invoked in
+	# this directory or in a direct ancestor
+	CurrentDir = env.Dir('.').srcnode().abspath
+	if not CurrentDir.startswith(env.GetLaunchDir()):
+		env.NoClean([myobjs, myexe, installed])
 
 
 ##################################
 # plugin
 ##################################
-def plugin(env, installdir):
+def plugin(env):
 
 	# Library name comes from directory name
 	pluginname = os.path.split(os.getcwd())[1]
@@ -75,16 +98,30 @@ def plugin(env, installdir):
 	sources = env['ALL_SOURCES']
 
 	# Build static library from all source
-	myplugin = env.SharedLibrary(target = pluginname, source = sources, SHLIBPREFIX='', SHLIBSUFFIX='.so')
+	myobjs = env.SharedObject(sources)
+	myplugin = env.SharedLibrary(target = pluginname, source = myobjs, SHLIBPREFIX='', SHLIBSUFFIX='.so')
 
 	# Installation directories for plugin and headers
+	installdir = env.subst('$INSTALLDIR')
 	includedir = "%s/%s" %(env.subst('$INCDIR'), pluginname)
-	libdir = env.subst('$LIBDIR')
+	pluginsdir = env.subst('$PLUGINSDIR')
 
 	# Install targets 
-	env.Install(libdir, myplugin)
+	installed = env.Install(pluginsdir, myplugin)
 	env.Install(includedir, env.Glob('*.h*'))
-	env.Alias('install', installdir)
+	#env.Alias('install', installdir)
+
+	# Only clean these sources when scons -c is invoked in
+	# this directory or in a direct ancestor
+	CurrentDir = env.Dir('.').srcnode().abspath
+	if not CurrentDir.startswith(env.GetLaunchDir()):
+		env.NoClean([myobjs, myplugin, installed])
+
+
+
+#===========================================================
+# Package support follows
+#===========================================================
 
 
 ##################################
@@ -169,6 +206,7 @@ def AddROOT(env):
 		rootcintaction = SCons.Script.Action("%s/bin/rootcint -f $TARGET -c $SOURCE" % (rootsys))
 	bld = SCons.Script.Builder(action = rootcintaction, suffix='_Dict.cc', src_suffix='.h')
 	env.Append(BUILDERS = {'ROOTDict' : bld})
+	env.Append(LD_LIBRARY_PATH = os.environ['LD_LIBRARY_PATH'])
 
 	# Generate ROOT dictionary file targets for each header
 	# containing "ClassDef"

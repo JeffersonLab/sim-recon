@@ -7,6 +7,6 @@ Import('*')
 env = env.Clone()
 
 sbms.AddDANA(env)
-sbms.library(env, installdir)
+sbms.library(env)
 
 

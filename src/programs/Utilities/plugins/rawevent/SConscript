@@ -8,6 +8,6 @@ env = env.Clone()
 
 sbms.AddDANA(env)
 sbms.AddROOT(env)
-sbms.plugin(env, installdir)
+sbms.plugin(env)
 
 

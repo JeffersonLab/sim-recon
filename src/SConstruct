@@ -17,16 +17,21 @@ sys.path.append(sbmsdir)
 # Setup initial environment
 installdir = "#../%s" %(osname)
 include = "%s/include" % (installdir)
-lib = "%s/lib" % (installdir)
 bin = "%s/bin" % (installdir)
-env = Environment(    BINDIR = bin,
-                      INCDIR = include,
-                      LIBDIR = lib,
-                      CPPPATH = [include],
+lib = "%s/lib" % (installdir)
+plugins = "%s/plugins" % (installdir)
+env = Environment(    CPPPATH = [include],
                       LIBPATH = [lib],
-					  ALL_SOURCES = [],
-					  SHOWBUILD = SHOWBUILD,
 					  variant_dir=".%s" % (osname))
+
+# These are SBMS-specific variables (i.e. not default scons ones)
+env.Replace(    INSTALLDIR    = installdir,
+				INCDIR        = include,
+				BINDIR        = bin,
+				LIBDIR        = lib,
+				PLUGINSDIR    = plugins,
+				ALL_SOURCES   = [],        # used so we can add generated sources
+				SHOWBUILD     = SHOWBUILD)
 
 # Use terse output unless otherwise specified
 if SHOWBUILD==0:
@@ -61,4 +66,7 @@ SConscript('libraries/SConscript', variant_dir=".%s/libraries" % (osname), expor
 # build programs
 program_subdirs = ['programs']
 SConscript(dirs=program_subdirs, variant_dir=".%s/programs" % (osname), exports='env osname installdir', duplicate=0)
+
+# Make install target
+env.Alias('install', installdir)
 

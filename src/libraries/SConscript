@@ -5,5 +5,5 @@ Import('env osname installdir')
 
 # Loop over libraries, building each
 subdirs = ['BCAL', 'FCAL', 'DANA', 'TAGGER', 'HDGEOMETRY', 'TRACKING', 'CCAL', 'START_COUNTER', 'TRIGGER', 'CDC', 'FDC', 'PID', 'ANALYSIS', 'CERE', 'HDDM', 'RICH', 'TOF']
-SConscript(dirs=subdirs, exports='env osname installdir', duplicate=0)
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
