@@ -1,7 +1,8 @@
 import os
 import glob
 
-Import('env osname installdir')
+Import('*')
+env = env.Clone()
 
 env.PrependUnique(CPPPATH = ['include'])
 
@@ -9,19 +10,21 @@ env.PrependUnique(CPPPATH = ['include'])
 myobjs = env.Object(Glob('src/*.c*'))
 mylib = env.Library(target = "xstream", source = myobjs)
 
-# Installation directories for library and headers
-incdir = env.subst('$INCDIR')
-libdir = env.subst('$LIBDIR')
-
-# Install targets 
-installed = env.Install(libdir, mylib)
-env.Install(incdir, Glob('include/*.h*'))
-env.Install("%s/xstream" %(incdir), Glob('include/xstream/*.h*'))
-env.Alias('install', installdir)
-
-# Only clean these sources when scons -c is invoked in
-# this directory or in a direct ancestor
+# Cleaning and installation are restricted to the directory
+# scons was launched from or its descendents
 CurrentDir = env.Dir('.').srcnode().abspath
 if not CurrentDir.startswith(env.GetLaunchDir()):
-	env.NoClean([myobjs, mylib, installed])
+	# Not in launch directory. Tell scons no to clean these targets
+	env.NoClean([myobjs, mylib])
+else:
+	# We're in launch directory (or descendent) schedule installation
+
+	# Installation directories for library and headers
+	incdir = env.subst('$INCDIR')
+	libdir = env.subst('$LIBDIR')
+
+	# Install targets 
+	env.Install(libdir, mylib)
+	env.Install(incdir, Glob('include/*.h*'))
+	env.Install("%s/xstream" %(incdir), Glob('include/xstream/*.h*'))
 

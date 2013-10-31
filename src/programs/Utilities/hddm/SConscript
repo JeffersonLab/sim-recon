@@ -20,12 +20,19 @@ progs.append( env.Program(target='hddm-cpp', source=['hddm-cpp.cpp', commonsrc])
 progs.append( env.Program(target='hddmcat',  source=['hddmcat.cpp']) )
 
 
-# Installation directories for executable and headers
-installdir = env.subst('$INSTALLDIR')
-includedir = env.subst('$INCDIR')
-bindir = env.subst('$BINDIR')
+# Cleaning and installation are restricted to the directory
+# scons was launched from or its descendents
+CurrentDir = env.Dir('.').srcnode().abspath
+if not CurrentDir.startswith(env.GetLaunchDir()):
+	# Not in launch directory. Tell scons no to clean these targets
+	env.NoClean(progs)
+else:
+	# We're in launch directory (or descendent) schedule installation
 
-# Install targets 
-env.Install(bindir, ['hddm-schema', 'schema-hddm', 'xml-xml'])
-env.Install(bindir, progs)
-env.Alias('install', installdir)
+	# Installation directories for executable and headers
+	includedir = env.subst('$INCDIR')
+	bindir = env.subst('$BINDIR')
+
+	# Install targets 
+	env.Install(bindir, ['hddm-schema', 'schema-hddm', 'xml-xml'])
+	env.Install(bindir, progs)
