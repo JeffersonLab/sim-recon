@@ -35,15 +35,17 @@ env.Replace(    INSTALLDIR    = installdir,
 
 # Use terse output unless otherwise specified
 if SHOWBUILD==0:
-	env.Replace(  CCCOMSTR       = "Compiling  [$SOURCE]",
-				  CXXCOMSTR      = "Compiling  [$SOURCE]",
-				  SHCCCOMSTR     = "Compiling  [$SOURCE]",
-				  SHCXXCOMSTR    = "Compiling  [$SOURCE]",
-				  LINKCOMSTR     = "Linking    [$TARGET]",
-				  SHLINKCOMSTR   = "Linking    [$TARGET]",
-				  INSTALLSTR     = "Installing [$TARGET]",
-				  ARCOMSTR       = "Archiving  [$TARGET]",
-				  RANLIBCOMSTR   = "Ranlib     [$TARGET]")
+	env.Replace(  CCCOMSTR        = "Compiling  [$SOURCE]",
+				  CXXCOMSTR       = "Compiling  [$SOURCE]",
+				  FORTRANPPCOMSTR = "Compiling  [$SOURCE]",
+				  FORTRANCOMSTR   = "Compiling  [$SOURCE]",
+				  SHCCCOMSTR      = "Compiling  [$SOURCE]",
+				  SHCXXCOMSTR     = "Compiling  [$SOURCE]",
+				  LINKCOMSTR      = "Linking    [$TARGET]",
+				  SHLINKCOMSTR    = "Linking    [$TARGET]",
+				  INSTALLSTR      = "Installing [$TARGET]",
+				  ARCOMSTR        = "Archiving  [$TARGET]",
+				  RANLIBCOMSTR    = "Ranlib     [$TARGET]")
 
 
 # Get compiler from environment variables (if set)

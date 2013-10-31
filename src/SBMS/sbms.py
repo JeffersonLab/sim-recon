@@ -207,6 +207,26 @@ def AddXERCES(env):
 
 
 ##################################
+# CERNLIB
+##################################
+def AddCERNLIB(env):
+	env.PrependUnique(FORTRANFLAGS = ['-ffixed-line-length-0', '-fno-second-underscore'])
+	env.PrependUnique(FORTRANFLAGS = ['-fno-automatic'])
+	env.PrependUnique(FORTRANPATH = 'include')
+	cern = os.getenv('CERN', '/usr/local/cern/PRO')
+	cern_level = os.getenv('CERN_LEVEL', '2006')
+	cern_root = '%s/%s' % (cern, cern_level)
+	CERN_CPPPATH = "%s/include" % cern_root
+	CERN_LIBPATH = "%s/lib" % cern_root
+	CERN_LINKFLAGS = subprocess.Popen(["%s/bin/cernlib" % cern_root, 'geant321','pawlib','graflib','grafX11','packlib','mathlib','kernlib'], stdout=subprocess.PIPE).communicate()[0]
+	env.AppendUnique(CPPPATH   = CERN_CPPPATH)
+	env.AppendUnique(LIBPATH   = CERN_LIBPATH)
+	env.AppendUnique(LINKFLAGS = CERN_LINKFLAGS.split())
+	env.AppendUnique(LIBS      = ['packlib', 'mathlib', 'gfortran'])
+	env.SetOption('warn', 'no-fortran-cxx-mix')  # supress warnings about linking fortran with c++
+
+
+##################################
 # ROOT
 ##################################
 def AddROOT(env):
