@@ -15,10 +15,11 @@ import glob
 ##################################
 # library
 ##################################
-def library(env):
+def library(env, libname=''):
 
 	# Library name comes from directory name
-	libname = os.path.split(os.getcwd())[1]
+	if libname=='':
+		libname = os.path.split(os.getcwd())[1]
 
 	env.PrependUnique(CPPPATH = ['.'])
 
@@ -53,15 +54,17 @@ def library(env):
 ##################################
 # executable
 ##################################
-def executable(env):
+def executable(env, exename=''):
 
 	# Executable name comes from directory name
-	exename = os.path.split(os.getcwd())[1]
+	if exename=='':
+		exename = os.path.split(os.getcwd())[1]
 
 	env.PrependUnique(CPPPATH = ['.'])
 
-	# Add C/C++ targets
+	# Add C/C++, and FORTRAN targets
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
 	sources = env['ALL_SOURCES']
 
@@ -90,10 +93,11 @@ def executable(env):
 ##################################
 # plugin
 ##################################
-def plugin(env):
+def plugin(env, pluginname=''):
 
 	# Library name comes from directory name
-	pluginname = os.path.split(os.getcwd())[1]
+	if pluginname=='':
+		pluginname = os.path.split(os.getcwd())[1]
 
 	env.PrependUnique(CPPPATH = ['.'])
 
@@ -148,6 +152,13 @@ def AddJANA(env):
 def AddHDDS(env):
 	hdds_home = os.getenv('HDDS_HOME', 'hdds')
 	env.PrependUnique(CPPPATH = ["%s/src" % hdds_home])
+
+
+##################################
+# HDDM
+##################################
+def AddHDDM(env):
+	env.PrependUnique(LIBS = 'HDDM')
 
 
 ##################################
