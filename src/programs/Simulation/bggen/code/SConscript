@@ -1,0 +1,18 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+env.PrependUnique(FORTRANFLAGS = ['-ffixed-line-length-0', '-fno-second-underscore'])
+env.PrependUnique(FORTRANPATH = 'include')
+#env.AppendUnique(LIBS = 'gfortran')
+#env.AppendUnique(FORTRANFILESUFFIXES = '.F')
+
+#sbms.AddCERNLIB(env)
+env.PrependUnique(LIBS = ['HDDM', 'gfortran'])
+sbms.executable(env, 'bggen')
+
+print "HERE I AM!!!"

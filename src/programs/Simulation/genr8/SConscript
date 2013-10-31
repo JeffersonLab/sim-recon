@@ -1,0 +1,11 @@
+
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+sbms.executable(env)
+
+
