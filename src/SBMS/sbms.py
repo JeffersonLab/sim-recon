@@ -31,20 +31,29 @@ def library(env):
 	myobjs = env.Object(sources)
 	mylib = env.Library(target = libname, source = myobjs)
 
-	# Installation directories for library and headers
-	installdir = env.subst('$INSTALLDIR')
-	includedir = "%s/%s" %(env.subst('$INCDIR'), libname)
-	libdir = env.subst('$LIBDIR')
-
-	# Install targets 
-	installed = env.Install(libdir, mylib)
-	env.Install(includedir, env.Glob('*.h*'))
-
-	# Only clean these sources when scons -c is invoked in
-	# this directory or in a direct ancestor
+	# Cleaning and installation are restricted to the directory
+	# scons was launched from or its descendents
 	CurrentDir = env.Dir('.').srcnode().abspath
 	if not CurrentDir.startswith(env.GetLaunchDir()):
-		env.NoClean([myobjs, mylib, installed])
+		# Not in launch directory. Tell scons no to clean these targets
+		env.NoClean([myobjs, mylib])
+	else:
+		# We're in launch directory (or descendent) schedule installation
+
+		# Installation directories for library and headers
+		installdir = env.subst('$INSTALLDIR')
+		includedir = "%s/%s" %(env.subst('$INCDIR'), libname)
+		libdir = env.subst('$LIBDIR')
+
+		# Install targets 
+		env.Install(libdir, mylib)
+		env.Install(includedir, env.Glob('*.h*'))
+
+#	# Only clean these sources when scons -c is invoked in
+#	# this directory or in a direct ancestor
+#	CurrentDir = env.Dir('.').srcnode().abspath
+#	if not CurrentDir.startswith(env.GetLaunchDir()):
+#		env.NoClean([myobjs, mylib, installed])
 
 
 ##################################
@@ -66,21 +75,29 @@ def executable(env):
 	myobjs = env.Object(sources)
 	myexe = env.Program(target = exename, source = myobjs)
 
-	# Installation directories for executable and headers
-	installdir = env.subst('$INSTALLDIR')
-	includedir = env.subst('$INCDIR')
-	bindir = env.subst('$BINDIR')
-
-	# Install targets 
-	installed = env.Install(bindir, myexe)
-	#env.Alias('install', installdir)
-
-	# Only clean these sources when scons -c is invoked in
-	# this directory or in a direct ancestor
+	# Cleaning and installation are restricted to the directory
+	# scons was launched from or its descendents
 	CurrentDir = env.Dir('.').srcnode().abspath
 	if not CurrentDir.startswith(env.GetLaunchDir()):
-		env.NoClean([myobjs, myexe, installed])
+		# Not in launch directory. Tell scons no to clean these targets
+		env.NoClean([myobjs, myexe])
+	else:
+		# We're in launch directory (or descendent) schedule installation
 
+		# Installation directories for executable and headers
+		installdir = env.subst('$INSTALLDIR')
+		includedir = env.subst('$INCDIR')
+		bindir = env.subst('$BINDIR')
+
+		# Install targets 
+		env.Install(bindir, myexe)
+
+#	# Only clean these sources when scons -c is invoked in
+#	# this directory or in a direct ancestor
+#	CurrentDir = env.Dir('.').srcnode().abspath
+#	if not CurrentDir.startswith(env.GetLaunchDir()):
+#		env.NoClean([myobjs, myexe, installed])
+#
 
 ##################################
 # plugin
@@ -101,21 +118,29 @@ def plugin(env):
 	myobjs = env.SharedObject(sources)
 	myplugin = env.SharedLibrary(target = pluginname, source = myobjs, SHLIBPREFIX='', SHLIBSUFFIX='.so')
 
-	# Installation directories for plugin and headers
-	installdir = env.subst('$INSTALLDIR')
-	includedir = "%s/%s" %(env.subst('$INCDIR'), pluginname)
-	pluginsdir = env.subst('$PLUGINSDIR')
-
-	# Install targets 
-	installed = env.Install(pluginsdir, myplugin)
-	env.Install(includedir, env.Glob('*.h*'))
-	#env.Alias('install', installdir)
-
-	# Only clean these sources when scons -c is invoked in
-	# this directory or in a direct ancestor
+	# Cleaning and installation are restricted to the directory
+	# scons was launched from or its descendents
 	CurrentDir = env.Dir('.').srcnode().abspath
 	if not CurrentDir.startswith(env.GetLaunchDir()):
-		env.NoClean([myobjs, myplugin, installed])
+		# Not in launch directory. Tell scons no to clean these targets
+		env.NoClean([myobjs, myplugin])
+	else:
+		# We're in launch directory (or descendent) schedule installation
+
+		# Installation directories for plugin and headers
+		installdir = env.subst('$INSTALLDIR')
+		includedir = "%s/%s" %(env.subst('$INCDIR'), pluginname)
+		pluginsdir = env.subst('$PLUGINSDIR')
+
+		# Install targets 
+		installed = env.Install(pluginsdir, myplugin)
+		env.Install(includedir, env.Glob('*.h*'))
+
+#	# Only clean these sources when scons -c is invoked in
+#	# this directory or in a direct ancestor
+#	CurrentDir = env.Dir('.').srcnode().abspath
+#	if not CurrentDir.startswith(env.GetLaunchDir()):
+#		env.NoClean([myobjs, myplugin, installed])
 
 
 
