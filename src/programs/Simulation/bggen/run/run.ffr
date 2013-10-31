@@ -19,4 +19,6 @@ ZCOLLIM   7600.         distance to the collimator in cm
 
 EPYTHMIN     3.         minimal energy for PYTHIA simulation
 
+RUNNO     2             specify run number
+
 STOP
