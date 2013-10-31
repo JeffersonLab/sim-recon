@@ -1,6 +1,4 @@
 
-import os
-import subprocess
 import sbms
 
 # get env object and clone it
