@@ -6,6 +6,8 @@ import sbms
 Import('*')
 env = env.Clone()
 
+env.AppendUnique(LIBS='m')
+
 sbms.executable(env)
 
 
