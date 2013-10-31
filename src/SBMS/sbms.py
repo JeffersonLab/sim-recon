@@ -49,12 +49,6 @@ def library(env):
 		env.Install(libdir, mylib)
 		env.Install(includedir, env.Glob('*.h*'))
 
-#	# Only clean these sources when scons -c is invoked in
-#	# this directory or in a direct ancestor
-#	CurrentDir = env.Dir('.').srcnode().abspath
-#	if not CurrentDir.startswith(env.GetLaunchDir()):
-#		env.NoClean([myobjs, mylib, installed])
-
 
 ##################################
 # executable
@@ -92,12 +86,6 @@ def executable(env):
 		# Install targets 
 		env.Install(bindir, myexe)
 
-#	# Only clean these sources when scons -c is invoked in
-#	# this directory or in a direct ancestor
-#	CurrentDir = env.Dir('.').srcnode().abspath
-#	if not CurrentDir.startswith(env.GetLaunchDir()):
-#		env.NoClean([myobjs, myexe, installed])
-#
 
 ##################################
 # plugin
@@ -136,11 +124,6 @@ def plugin(env):
 		installed = env.Install(pluginsdir, myplugin)
 		env.Install(includedir, env.Glob('*.h*'))
 
-#	# Only clean these sources when scons -c is invoked in
-#	# this directory or in a direct ancestor
-#	CurrentDir = env.Dir('.').srcnode().abspath
-#	if not CurrentDir.startswith(env.GetLaunchDir()):
-#		env.NoClean([myobjs, myplugin, installed])
 
 
 
