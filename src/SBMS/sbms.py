@@ -3,6 +3,7 @@ import os
 import subprocess
 import SCons
 import glob
+import re
 
 #===========================================================
 # The first 3 sections provide routines for building a
@@ -23,8 +24,9 @@ def library(env, libname=''):
 
 	env.PrependUnique(CPPPATH = ['.'])
 
-	# Add C/C++ targets
+	# Add C/C++, and FORTRAN targets
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
 	sources = env['ALL_SOURCES']
 
@@ -36,7 +38,7 @@ def library(env, libname=''):
 	# scons was launched from or its descendents
 	CurrentDir = env.Dir('.').srcnode().abspath
 	if not CurrentDir.startswith(env.GetLaunchDir()):
-		# Not in launch directory. Tell scons no to clean these targets
+		# Not in launch directory. Tell scons not to clean these targets
 		env.NoClean([myobjs, mylib])
 	else:
 		# We're in launch directory (or descendent) schedule installation
@@ -76,7 +78,7 @@ def executable(env, exename=''):
 	# scons was launched from or its descendents
 	CurrentDir = env.Dir('.').srcnode().abspath
 	if not CurrentDir.startswith(env.GetLaunchDir()):
-		# Not in launch directory. Tell scons no to clean these targets
+		# Not in launch directory. Tell scons not to clean these targets
 		env.NoClean([myobjs, myexe])
 	else:
 		# We're in launch directory (or descendent) schedule installation
@@ -88,6 +90,60 @@ def executable(env, exename=''):
 
 		# Install targets 
 		env.Install(bindir, myexe)
+
+
+##################################
+# executables
+##################################
+def executables(env):
+
+	# This will generate multiple executables from the
+	# source in the current directory. It does this
+	# by identifying source files that define "main()"
+	# and linking those with all source files that do not
+	# define "main()". Program names are based on the 
+	# filename of the source file defining "main()"
+	main_sources = []
+	common_sources = []
+	curpath = os.getcwd()
+	srcpath = env.Dir('.').srcnode().abspath
+	os.chdir(srcpath)
+	for f in glob.glob('*.c*'):
+		if 'main(' in open(f).read():
+			main_sources.append(f)
+		else:
+			common_sources.append(f)
+
+	for f in glob.glob('*.F'):
+		if '      PROGRAM ' in open(f).read():
+			main_sources.append(f)
+		else:
+			common_sources.append(f)
+	os.chdir(curpath)
+	
+	env.PrependUnique(CPPPATH = ['.'])
+
+	common_sources.extend(env['ALL_SOURCES'])
+
+	# Build program from all source
+	main_objs = env.Object(main_sources)
+	common_objs = env.Object(common_sources)
+
+	progs = []
+	for obj in main_objs:
+		exename = re.sub('\.o$', '', str(obj))  # strip off ".o" from object file name
+		progs.append(env.Program(target = exename, source = [obj, common_objs]))
+
+	# Cleaning and installation are restricted to the directory
+	# scons was launched from or its descendents
+	CurrentDir = env.Dir('.').srcnode().abspath
+	if not CurrentDir.startswith(env.GetLaunchDir()):
+		# Not in launch directory. Tell scons not to clean these targets
+		env.NoClean([common_objs, main_objs, progs])
+	else:
+		# We're in launch directory (or descendent) schedule installation
+		bindir = env.subst('$BINDIR')
+		env.Install(bindir, progs)
 
 
 ##################################
@@ -114,7 +170,7 @@ def plugin(env, pluginname=''):
 	# scons was launched from or its descendents
 	CurrentDir = env.Dir('.').srcnode().abspath
 	if not CurrentDir.startswith(env.GetLaunchDir()):
-		# Not in launch directory. Tell scons no to clean these targets
+		# Not in launch directory. Tell scons not to clean these targets
 		env.NoClean([myobjs, myplugin])
 	else:
 		# We're in launch directory (or descendent) schedule installation
@@ -152,6 +208,7 @@ def AddJANA(env):
 def AddHDDS(env):
 	hdds_home = os.getenv('HDDS_HOME', 'hdds')
 	env.PrependUnique(CPPPATH = ["%s/src" % hdds_home])
+	env.PrependUnique(LIBPATH = ["%s/lib/%s" % (hdds_home, env['OSNAME'])])
 
 
 ##################################
@@ -212,17 +269,17 @@ def AddXERCES(env):
 def AddCERNLIB(env):
 	env.PrependUnique(FORTRANFLAGS = ['-ffixed-line-length-0', '-fno-second-underscore'])
 	env.PrependUnique(FORTRANFLAGS = ['-fno-automatic'])
-	env.PrependUnique(FORTRANPATH = 'include')
+	env.PrependUnique(FORTRANPATH = ['include'])
 	cern = os.getenv('CERN', '/usr/local/cern/PRO')
 	cern_level = os.getenv('CERN_LEVEL', '2006')
 	cern_root = '%s/%s' % (cern, cern_level)
-	CERN_CPPPATH = "%s/include" % cern_root
+	CERN_FORTRANPATH = "%s/include" % cern_root
 	CERN_LIBPATH = "%s/lib" % cern_root
-	CERN_LINKFLAGS = subprocess.Popen(["%s/bin/cernlib" % cern_root, 'geant321','pawlib','graflib','grafX11','packlib','mathlib','kernlib'], stdout=subprocess.PIPE).communicate()[0]
-	env.AppendUnique(CPPPATH   = CERN_CPPPATH)
+	env.AppendUnique(FORTRANPATH   = [CERN_FORTRANPATH])
+	env.AppendUnique(CPPPATH   = CERN_FORTRANPATH)
 	env.AppendUnique(LIBPATH   = CERN_LIBPATH)
-	env.AppendUnique(LINKFLAGS = CERN_LINKFLAGS.split())
-	env.AppendUnique(LIBS      = ['packlib', 'mathlib', 'gfortran'])
+	env.AppendUnique(LINKFLAGS = ['-rdynamic'])
+	env.AppendUnique(LIBS      = ['gfortran', 'geant321', 'pawlib', 'lapack', 'blas', 'graflib', 'grafX11', 'packlib', 'mathlib', 'kernlib', 'X11', 'nsl', 'crypt', 'dl'])
 	env.SetOption('warn', 'no-fortran-cxx-mix')  # supress warnings about linking fortran with c++
 
 
