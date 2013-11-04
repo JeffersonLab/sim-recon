@@ -26,6 +26,7 @@ env = Environment(    CPPPATH = [include],
 
 # These are SBMS-specific variables (i.e. not default scons ones)
 env.Replace(    INSTALLDIR    = installdir,
+				OSNAME        = osname,
 				INCDIR        = include,
 				BINDIR        = bin,
 				LIBDIR        = lib,
