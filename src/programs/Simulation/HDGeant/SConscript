@@ -1,0 +1,20 @@
+
+import sbms
+
+# get env object and clone it
+Import('*')
+env = env.Clone()
+
+SConscript(dirs=['gelhad', 'hitutil'], exports='env osname', duplicate=0)
+
+sbms.Add_xstream(env)
+
+env.AppendUnique(LIBS      = ['hddsGeant3', 'gelhad', 'hitutil'])
+
+sbms.AddCERNLIB(env)
+sbms.AddDANA(env)
+sbms.AddROOT(env)
+
+env.AppendUnique(CPPPATH = '#libraries/HDDM')
+
+sbms.executables(env)
