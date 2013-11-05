@@ -1,10 +1,21 @@
 
+import os
 import sbms
 
 # get env object and clone it
 Import('*')
-env = env.Clone()
 
-sbms.AddCERNLIB(env)
-sbms.AddHDDM(env)
-sbms.executable(env, 'bggen')
+# Verify CERN environment variable is set
+if os.getenv('CERN', 'nada')=='nada':
+	if env.Dir('.').srcnode().abspath.startswith(env.GetLaunchDir()):
+		print '============================================================'
+		print 'CERN environment variable not set. Skipping build of bggen'
+		print '============================================================'
+
+else:
+
+	env = env.Clone()
+
+	sbms.AddCERNLIB(env)
+	sbms.AddHDDM(env)
+	sbms.executable(env, 'bggen')
