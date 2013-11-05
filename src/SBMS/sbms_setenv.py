@@ -71,6 +71,11 @@ def mk_setenv(env):
 			str += '  source %s/setenv.csh\n' % clangroot
 			str += 'endif\n'
 			str += '\n'
+	
+	# HDDS
+	str += '# HDDS\n'
+	str += 'setenv HDDS_HOME %s\n' % os.getenv('HDDS_HOME', '$HOME/hdds')
+	str += '\n'
 
 	# JANA
 	str += '# JANA\n'
@@ -84,7 +89,6 @@ def mk_setenv(env):
 	# HALLD
 	str += '# HALLD\n'
 	str += 'setenv HALLD_HOME %s\n' % os.getenv('HALLD_HOME', '$HOME/halld')
-	str += 'setenv HDDS_HOME %s\n' % os.getenv('HDDS_HOME', '$HOME/hdds')
 	str += 'setenv BMS_OSNAME %s\n' % env['OSNAME']
 	str += 'setenv PATH ${HALLD_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
 	str += 'setenv JANA_PLUGIN_PATH ${HALLD_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
