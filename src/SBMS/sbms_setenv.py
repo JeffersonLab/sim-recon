@@ -15,9 +15,10 @@
 # Nov. 5, 2013  DL
 #####################################################################
 
-import os
+import os, sys
 import subprocess
 import datetime
+from stat import *
 
 
 ##################################
@@ -122,6 +123,7 @@ def mk_setenv(env):
 	if javaroot != None:
 		str += '# Java\n'
 		str += 'setenv JAVAROOT %s\n' % javaroot
+		str += '\n'
 
 	# Xerces
 	str += '# Xerces\n'
@@ -134,6 +136,7 @@ def mk_setenv(env):
 	f = open(ofname, 'w')
 	f.write(str)
 	f.close()
+	os.chmod(ofname, S_IRWXU + S_IRGRP + S_IXGRP + S_IROTH + S_IXOTH)
 
 
 
