@@ -419,8 +419,9 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
     //_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
   case DTrackFitter::kFitFailed:
     break;
+  case DTrackFitter::kFitNoImprovement:	
   case DTrackFitter::kFitSuccess:
-  case DTrackFitter::kFitNoImprovement:
+      if(!finite(fitter->GetFitParameters().position().X())) break;
     {    
       // Make a new wire-based track
       DTrackWireBased *track = new DTrackWireBased;
