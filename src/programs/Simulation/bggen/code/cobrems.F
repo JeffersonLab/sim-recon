@@ -13,7 +13,6 @@ C #define vector real
       Subroutine cobrems(Emax,Epeak,Dist)
       real Emax,Epeak,Dist
       include 'cobrems.inc'
-      REAL inputs(10)
       integer i
       real c
       dpi=acos(-1d0)
@@ -348,9 +347,9 @@ c     write(6,*) dNidxdt2
       integer iter,niter
       real theta
 Comment out the following lines to enable collimation -RTJ
-  	acceptance=1
+      acceptance=1
 C        write(6,*) sqrt(theta2)
-C	return
+C        return
 Comment out the preceding lines to enable collimation -RTJ
       acceptance=0
       niter=50
@@ -588,6 +587,9 @@ c  scattering regime) through the so-called plural scattering region.
       real tt
       include 'cobrems.inc'
 C--Formulation of the rms projected angle attributed to Hanson et.al.
+
+
+
 c  in reference Phys.Rev. vol.3 no.2, (1958), p.647.  This is just Moliere
 c  theory used to give the 1/e angular width of the scattering distribution.
 c  In the paper, though, they compare it with experiment for a variety of
