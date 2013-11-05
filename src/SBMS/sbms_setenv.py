@@ -72,15 +72,6 @@ def mk_setenv(env):
 			str += 'endif\n'
 			str += '\n'
 
-	# HALLD
-	str += '# HALLD\n'
-	str += 'setenv HALLD_HOME %s\n' % os.getenv('HALLD_HOME', '$HOME/halld')
-	str += 'setenv HDDS_HOME %s\n' % os.getenv('HDDS_HOME', '$HOME/hdds')
-	str += 'setenv BMS_OSNAME %s\n' % env['OSNAME']
-	#str += 'setenv PATH %s/bin:${PATH}\n' % env.Dir(env['INSTALLDIR'])
-	str += 'setenv PATH ${HALLD_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
-	str += '\n'
-
 	# JANA
 	str += '# JANA\n'
 	str += 'setenv JANA_HOME %s\n' % os.getenv('JANA_HOME', '$HOME/jana')
@@ -88,6 +79,15 @@ def mk_setenv(env):
 	str += 'setenv JANA_GEOMETRY_URL xmlfile://${HDDS_HOME}/main_HDDS.xml\n'
 	str += 'setenv JANA_PLUGIN_PATH ${JANA_HOME}/lib\n'
 	str += 'setenv PATH ${JANA_HOME}/bin:${PATH}\n'
+	str += '\n'
+
+	# HALLD
+	str += '# HALLD\n'
+	str += 'setenv HALLD_HOME %s\n' % os.getenv('HALLD_HOME', '$HOME/halld')
+	str += 'setenv HDDS_HOME %s\n' % os.getenv('HDDS_HOME', '$HOME/hdds')
+	str += 'setenv BMS_OSNAME %s\n' % env['OSNAME']
+	str += 'setenv PATH ${HALLD_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
+	str += 'setenv JANA_PLUGIN_PATH ${HALLD_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
 	str += '\n'
 
 	# CCDB
