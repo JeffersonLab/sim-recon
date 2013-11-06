@@ -151,7 +151,9 @@ namespace z {
 			//initialize streambuf interface functions
 			setp (in.buf, in.buf + in.size);
 		}else{
-			throw std::domain_error("invalid compression level "+level);
+			char str[256];
+			sprintf(str, "invalid compression level %d", level);
+			throw std::domain_error(str);
 		}
 
 	}
