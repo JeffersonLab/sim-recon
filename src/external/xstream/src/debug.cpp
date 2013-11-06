@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <cstdlib>
 
+int AGlobalVariableToPreventWarningAboutNoSymbols;
+
 #if ENABLE_LOGGING
 
 
@@ -27,5 +29,6 @@ std::ostream* debug = &std::clog;
 #endif
 
 } //namespace xstream
+
 
 #endif
