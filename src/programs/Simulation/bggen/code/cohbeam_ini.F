@@ -18,7 +18,7 @@ C
       REAL DNIDX,DNCDX,GPXSECT
 C
       INTEGER i,nb,ibrem
-      REAL emn,emx,flx,xsec,dx,de,e,xstot,xlum,ecurr,targth,frate,vv
+      REAL emn,emx,flx,dx,de,e,xstot,xlum,ecurr,targth,frate,vv
 C
       ibrem=1
       IF(ELIM(2).LT.ELIM(1)*1.006) ibrem=0
