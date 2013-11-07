@@ -9,6 +9,7 @@
 #include <xstream/except/z.h>
 #include <stdexcept>
 
+#include <stdio.h>
 #include <zlib.h>
 
 #include <cassert>
