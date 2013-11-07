@@ -93,20 +93,23 @@ int UseCurrentTimeForRandomSeed = TRUE;
 
 
 double rawthresh(struct particleMC_t *Isobar);
-int decay(struct particleMC_t *Isobar);
-int boost2lab(struct particleMC_t *Isobar);
-int boostFamily(vector4_t *beta,struct particleMC_t *Isobar);
-int boost(vector4_t *beta,vector4_t *vec);
-int printParticle(struct particleMC_t *Isobar);
-int printParticle(struct particleMC_t *Isobar);
+void decay(struct particleMC_t *Isobar);
+void boost2lab(struct particleMC_t *Isobar);
+void boostFamily(vector4_t *beta,struct particleMC_t *Isobar);
+void boost(vector4_t *beta,vector4_t *vec);
+void printParticle(struct particleMC_t *Isobar);
 vector4_t polarMake4v(double p, double theta, double phi, double mass);
 double randm(double low, double high);
-int printProduction(FILE *fp,struct particleMC_t *Isobar);
-int printFinal(FILE *fp,struct particleMC_t *Isobar);
-int printp2ascii(FILE *fp,struct particleMC_t *Isobar);
-int setMass(struct particleMC_t *Isobar);
-int initMass(struct particleMC_t *Isobar);
+void printProduction(FILE *fp,struct particleMC_t *Isobar);
+void printFinal(FILE *fp,struct particleMC_t *Isobar);
+void printp2ascii(FILE *fp,struct particleMC_t *Isobar);
+void setMass(struct particleMC_t *Isobar);
+void initMass(struct particleMC_t *Isobar);
 char *ParticleType(Particle_t p);
+void checkFamily(struct particleMC_t *Isobar);
+int setChildrenMass(struct particleMC_t *Isobar);
+void printFamily(struct particleMC_t *Isobar);
+void lorentzFactor(double *lf,struct particleMC_t *Isobar);
 
 /*
  ***********************
@@ -116,7 +119,7 @@ char *ParticleType(Particle_t p);
  ***********************
  */
 
-int PrintUsage(char *processName)
+void PrintUsage(char *processName)
 {
  
   fprintf(stderr,"%s usage: [-A<name>]   < infile \n",processName);
@@ -145,7 +148,7 @@ int PrintUsage(char *processName)
  ***********************
  */
 
-main(int argc,char **argv)
+int main(int argc,char **argv)
 {
   char *outputFile = "genr8.out";
   char *argptr,*token,line[2056];
@@ -736,7 +739,7 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
  * my children's
  * parent. 
  *******************/
-int checkFamily(struct particleMC_t *Isobar)
+void checkFamily(struct particleMC_t *Isobar)
 {
   int i;
   
@@ -816,7 +819,7 @@ l3:    imassc=setChildrenMass(Isobar->child[i]);
  * Breit-Wigner distribution.
  *********************/
 
-int setMass(struct particleMC_t *Isobar)
+void setMass(struct particleMC_t *Isobar)
 {
   double n,height,thresH2,lowtail,hightail,hcut,lcut;
 
@@ -869,7 +872,7 @@ int setMass(struct particleMC_t *Isobar)
  * 
  *********************/
 
-int initMass(struct particleMC_t *Isobar)
+void initMass(struct particleMC_t *Isobar)
 {
   int i;
 
@@ -922,7 +925,7 @@ double rawthresh(struct particleMC_t *Isobar)
  * child isobar.
  *************************************/
 
-int decay(struct particleMC_t *Isobar)
+void decay(struct particleMC_t *Isobar)
 {
   int i,j,k;
   double breakup_p,theta,phi;
@@ -955,7 +958,7 @@ int decay(struct particleMC_t *Isobar)
  *
  *********************************/
 
-int lorentzFactor(double *lf,struct particleMC_t *Isobar)
+void lorentzFactor(double *lf,struct particleMC_t *Isobar)
 {
   int i;
 
@@ -980,7 +983,7 @@ int lorentzFactor(double *lf,struct particleMC_t *Isobar)
  *   to the lab frame.
  *
  *********************************/
-int boost2lab(struct particleMC_t *Isobar)
+void boost2lab(struct particleMC_t *Isobar)
 {
   int i;
   vector4_t beta;
@@ -1001,7 +1004,7 @@ int boost2lab(struct particleMC_t *Isobar)
  * children's children, ...
  *
  *********************************/
-int boostFamily(vector4_t *beta,struct particleMC_t *Isobar)
+void boostFamily(vector4_t *beta,struct particleMC_t *Isobar)
 {
   int j;
   boost(beta,&(Isobar->p));
@@ -1016,7 +1019,7 @@ int boostFamily(vector4_t *beta,struct particleMC_t *Isobar)
  * Boost a four vector.
  *
  *********************************/
-int boost(vector4_t *beta,vector4_t *vec)
+void boost(vector4_t *beta,vector4_t *vec)
 {
   vector4_t temp;
   
@@ -1033,7 +1036,7 @@ int boost(vector4_t *beta,vector4_t *vec)
  *
  * Print out production particles.
  *******************************/
-int printProduction(FILE *fp,struct particleMC_t *Isobar)
+void printProduction(FILE *fp,struct particleMC_t *Isobar)
 {
   int i;
   
@@ -1050,7 +1053,7 @@ int printProduction(FILE *fp,struct particleMC_t *Isobar)
  *
  * Print out final state particles
  *******************************/
-int printFinal(FILE *fp,struct particleMC_t *Isobar)
+void printFinal(FILE *fp,struct particleMC_t *Isobar)
 {
   int i;
  
@@ -1066,7 +1069,7 @@ int printFinal(FILE *fp,struct particleMC_t *Isobar)
  * printp2ascii()
  *
  *******************************/
-int printp2ascii(FILE *fp,struct particleMC_t *Isobar)
+void printp2ascii(FILE *fp,struct particleMC_t *Isobar)
 {
   Nprinted++;
   if(UseName)
@@ -1087,7 +1090,7 @@ int printp2ascii(FILE *fp,struct particleMC_t *Isobar)
  * printFamily()
  *
  *******************************/
-int printFamily(struct particleMC_t *Isobar)
+void printFamily(struct particleMC_t *Isobar)
 {
   int j;
   printParticle(Isobar);
@@ -1102,7 +1105,7 @@ int printFamily(struct particleMC_t *Isobar)
  * printParticle()
  *
  *******************************/
-int printParticle(struct particleMC_t *Isobar)
+void printParticle(struct particleMC_t *Isobar)
 {
   fprintf(stderr,"Particle ID %s with %d children\n",
 	  ParticleType(Isobar->particleID),Isobar->nchildren);
