@@ -28,13 +28,11 @@ C
       LOGICAL HEXIST
 C
       INTEGER i,j,ip,np,ibin,nproc,iproc,ityp,ihi,ierr1,ntry,ires
-     +       ,id1,ifla,ityd,ntry1,ihel,np1
+     +       ,id1,ityd,ntry1,ihel
       REAL ebeam,xstot,xssum,xstmp,rnd,ecm,ecm2,bet(4),qq,ct,st,phi,wgt
      +    ,twopi
      +    ,amtot    ! sum of the masses 
-     +    ,pcmm(4)  ! 4-mom of the mesons
-     +    ,betm(4)  ! vel of CM as seen from the rest frame of the mesons
-     +    ,ppf,epf1,epf2,ppi,tt,tmn,tmx,amdec,amd(6),xfac,pcms(4),par(6)
+     +    ,ppf,epf1,ppi,tmn,tmx,amdec,amd(6),xfac,pcms(4)
      +    ,wdm
 C 
       REAL ami(2),pcmi(4,2),plabi(4,2)

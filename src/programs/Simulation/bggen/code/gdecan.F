@@ -142,7 +142,7 @@ C
                PCFOWL(2,J) = PSAVE
   568       CONTINUE
          ELSE
- 1567       DO 1568 J=1,I
+            DO 1568 J=1,I
                AA = PCFOWL(1,J)**2 + PCFOWL(2,J)**2 + PCFOWL(3,J)**2
                PCFOWL(4,J) = SQRT(AA+EMS(J))
                CALL OROTES2(C,S,CB,SB,PCFOWL(1,J))

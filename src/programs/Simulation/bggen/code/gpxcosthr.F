@@ -32,7 +32,7 @@ C
      +       ,ifun  ! function used used, =1 - polynomial, =2 - exp(a+b*x)+c converted to a*exp(bx)+c
       REAL    rnd,xx,tt,qq
      +       ,csign ! +1 or -1 multiplication factor for COSTH, depending on the data used -> baryon
-      DOUBLE PRECISION da(3),de0,dx,dx0,dxlim(2),dd
+      DOUBLE PRECISION da(3),de0,dx0,dxlim(2),dd
      +                ,df,dfe,df1,df2,dmin,dnorm
      +                ,dq(4),dtmp(4),dr(2),dl(2),dv,dres,dintg
 C
