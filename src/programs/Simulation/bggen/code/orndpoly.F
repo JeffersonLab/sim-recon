@@ -9,7 +9,7 @@ C         in an interval XLIM(1):XLIM(2)
 C
       REAL RNDM
 C
-      INTEGER i,j,np1,np2,nsol,nrusf
+      INTEGER i,np1,np2,nsol,nrusf
       REAL p(0:20) ! - integral polynomial 
      +    ,anorm,xx,qq,rnd,xres(20)
 C
