@@ -67,6 +67,7 @@ typedef struct{
   DMatrix1x4 H;
   double doca,t,z;
   double drift,drift_time;
+  bool used_in_fit;
 }cdc_update_t;
 
 typedef struct{
@@ -81,7 +82,7 @@ typedef struct{
 }strip_update_t;
 
 typedef struct{
-  double ztrack;
+  double xtrack,ytrack,ztrack;
   const DBCALShower *match;
 }bcal_match_t;
 
@@ -249,6 +250,10 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   bool MatchOuterDetectors(vector<const DFCALShower *>&fcalshowers,
 			   vector<const DBCALShower *>&bcalshowers,
 			   const DMatrix4x1 &S);
+  bool MatchOuterDetectors(const cdc_track_t &track,
+			   vector<const DFCALShower *>&fcalshowers,
+			   vector<const DBCALShower *>&bcalshowers,
+			   DMatrix4x1 &S);
   jerror_t EstimateT0(vector<update_t>&updates,
 		      vector<const DFDCPseudo*>&hits);
   
@@ -287,7 +292,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   TH2F *Hures_vs_layer,*HdEdx_vs_beta;	
   TH2F *Hdrift_time,*Hcdcres_vs_drift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
-  TH2F *Hdv_vs_dE;
+  TH2F *Hdv_vs_dE,*Hbcalmatchxy;
 
   double mT0;
   double target_to_fcal_distance;
