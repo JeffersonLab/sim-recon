@@ -279,7 +279,7 @@ def AddCERNLIB(env):
 	env.AppendUnique(CPPPATH   = CERN_FORTRANPATH)
 	env.AppendUnique(LIBPATH   = CERN_LIBPATH)
 	env.AppendUnique(LINKFLAGS = ['-rdynamic'])
-	env.AppendUnique(LIBS      = ['gfortran', 'geant321', 'pawlib', 'lapack', 'blas', 'graflib', 'grafX11', 'packlib', 'mathlib', 'kernlib', 'X11', 'nsl', 'crypt', 'dl'])
+	env.AppendUnique(LIBS      = ['gfortran', 'geant321', 'pawlib', 'lapack3', 'blas', 'graflib', 'grafX11', 'packlib', 'mathlib', 'kernlib', 'X11', 'nsl', 'crypt', 'dl'])
 	env.SetOption('warn', 'no-fortran-cxx-mix')  # supress warnings about linking fortran with c++
 
 
