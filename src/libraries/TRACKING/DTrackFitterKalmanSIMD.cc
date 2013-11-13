@@ -1468,6 +1468,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
    // progress in z from hit to hit
   double z=z_;
   int i=0;
+
   int forward_traj_length=forward_traj.size();
   // loop over the fdc hits   
   double zhit=0.,old_zhit=0.;
@@ -2806,14 +2807,23 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   double y0=y_=input_params.position().y();
   double z0=z_=input_params.position().z();
 
+  // Check integrity of input parameters
+  if (!finite(x0) || !finite(y0) || !finite(q_over_p0)){
+    if (DEBUG_LEVEL>0) _DBG_ << "Invalid input parameters!" <<endl;
+    return UNRECOVERABLE_ERROR;
+  }
+
   // Initial direction tangents
   double tx0=tx_=pvec.x()/pz;
   double ty0=ty_=pvec.y()/pz;
-  
+
   // deal with hits in FDC
   double fdc_prob=0.,fdc_chisq=1e16;
   unsigned int fdc_ndf=0;
-  if (my_fdchits.size()>0){
+  if (my_fdchits.size()>0 
+      && // Make sure that these parameters are valid for forward-going tracks
+      (finite(tx0) && finite(ty0))
+      ){
     if (DEBUG_LEVEL>0){
       _DBG_ << "Using forward parameterization." <<endl;
     }
@@ -2835,7 +2845,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     // The position from the track candidate is reported just outside the 
     // start counter for tracks containing cdc hits. Propagate to the distance
     // of closest approach to the beam line
-    if (my_cdchits.size()>0 && fit_type==kWireBased) ExtrapolateToVertex(S0);
+    if (/*my_cdchits.size()>0 && */fit_type==kWireBased) ExtrapolateToVertex(S0);
 
     kalman_error_t error=ForwardFit(S0,C0); 
     if (error!=FIT_FAILED){
@@ -2946,7 +2956,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     }
 
     // Step size
-    mStepSizeS=1.0;
+    mStepSizeS=mCentralStepSize;
 
     // Initialize the state vector
     S0(state_q_over_pt)=q_over_pt_=q_over_pt0;
@@ -5586,6 +5596,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
     dz=-ds*dz_ds;
    
     newz=z+dz;
+
   
     // Step through field
     Step(z,newz,dEdx,S);
