@@ -25,8 +25,9 @@ from stat import *
 # mk_setenv
 ##################################
 def mk_setenv(env):
-	ofname = '%s/setenv.csh' % env.Dir(env['INSTALLDIR'])
-	print 'Making setenv.csh in %s' % env.Dir(env['INSTALLDIR'])
+	ofdir = '%s' % env.Dir(env['INSTALLDIR'])
+	ofname = '%s/setenv.csh' % ofdir
+	print 'Making setenv.csh in %s' % ofdir
 
 	str = ''
 
@@ -135,6 +136,12 @@ def mk_setenv(env):
 	str += 'setenv PATH ${XERCESCROOT}/bin:${PATH}\n'
 	str += 'setenv %s ${XERCESCROOT}/lib:${%s}\n' % (LDLPV, LDLPV)
 	str += '\n'
+
+	# Make sure output directory eists
+	try:
+		os.mkdir(ofdir)
+	except OSError:
+		pass
 
 	# Write to file
 	f = open(ofname, 'w')
