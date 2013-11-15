@@ -224,7 +224,15 @@ void DRootGeom::InitTable(void)
 void DRootGeom::InitDRGeom(void)
 {
 	if(!gGeoManager){
-		
+
+// If ROOT_MAJOR is not defined, then define it as the minimal
+// needed to create a TGeoManager. Most folks should have at least
+// 5.28 by now.
+#ifndef ROOT_MAJOR
+#define ROOT_MAJOR 5
+#define ROOT_MINOR 28
+#endif
+
 #if ROOT_MAJOR>=5 && ROOT_MINOR>=28	
 		new TGeoManager();
 		cout<<"Created TGeoManager :"<<gGeoManager<<endl;
