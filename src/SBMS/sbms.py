@@ -198,8 +198,9 @@ def plugin(env, pluginname=''):
 def AddJANA(env):
 	JANA_CFLAGS = subprocess.Popen(["jana-config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
 	JANA_LINKFLAGS = subprocess.Popen(["jana-config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
-	env.PrependUnique(CCFLAGS = JANA_CFLAGS.split())
-	env.PrependUnique(LINKFLAGS = JANA_LINKFLAGS.split())
+
+	AddCompileFlags(env, JANA_CFLAGS)
+	AddLinkFlags(env, JANA_LINKFLAGS)
 
 
 ##################################
@@ -207,15 +208,15 @@ def AddJANA(env):
 ##################################
 def AddHDDS(env):
 	hdds_home = os.getenv('HDDS_HOME', 'hdds')
-	env.PrependUnique(CPPPATH = ["%s/src" % hdds_home])
-	env.PrependUnique(LIBPATH = ["%s/lib/%s" % (hdds_home, env['OSNAME'])])
+	env.AppendUnique(CPPPATH = ["%s/src" % hdds_home])
+	env.AppendUnique(LIBPATH = ["%s/lib/%s" % (hdds_home, env['OSNAME'])])
 
 
 ##################################
 # HDDM
 ##################################
 def AddHDDM(env):
-	env.PrependUnique(LIBS = 'HDDM')
+	env.AppendUnique(LIBS = 'HDDM')
 
 
 ##################################
@@ -236,8 +237,8 @@ def AddDANA(env):
 # xstream
 ##################################
 def Add_xstream(env):
-	env.PrependUnique(CPPPATH = ['#external/xstream/include'])
-	env.PrependUnique(CCFLAGS = ['-fPIC'])
+	env.AppendUnique(CPPPATH = ['#external/xstream/include'])
+	env.AppendUnique(CCFLAGS = ['-fPIC'])
 	env.AppendUnique(LIBS=['xstream', 'bz2', 'z'])
 
 
@@ -247,9 +248,11 @@ def Add_xstream(env):
 def AddCCDB(env):
 	ccdb_home = os.getenv('CCDB_HOME', 'ccdb')
 	CCDB_CPPPATH = "%s/include" % (ccdb_home)
-	CCDB_LINKFLAGS = "-L%s/lib -lccdb" % (ccdb_home)
-	env.PrependUnique(CPPPATH = CCDB_CPPPATH.split())
-	env.PrependUnique(LINKFLAGS = CCDB_LINKFLAGS.split())
+	CCDB_LIBPATH = "%s/lib" % (ccdb_home)
+	CCDB_LIBS = "ccdb"
+	env.AppendUnique(CPPPATH = CCDB_CPPPATH)
+	env.AppendUnique(LIBPATH = CCDB_LIBPATH)
+	env.AppendUnique(LIBS    = CCDB_LIBS)
 
 
 ##################################
@@ -258,9 +261,11 @@ def AddCCDB(env):
 def AddXERCES(env):
 	xercescroot = os.getenv('XERCESCROOT', 'xerces')
 	XERCES_CPPPATH = "%s/include" % (xercescroot)
-	XERCES_LINKFLAGS = "-L%s/lib -lxerces-c" % (xercescroot)
-	env.PrependUnique(CPPPATH = XERCES_CPPPATH.split())
-	env.PrependUnique(LINKFLAGS = XERCES_LINKFLAGS.split())
+	XERCES_LIBPATH = "%s/lib" % (xercescroot)
+	XERCES_LIBS = "xerces-c"
+	env.AppendUnique(CPPPATH = XERCES_CPPPATH)
+	env.AppendUnique(LIBPATH = XERCES_LIBPATH)
+	env.AppendUnique(LIBS    = XERCES_LIBS)
 
 
 ##################################
@@ -287,11 +292,22 @@ def AddCERNLIB(env):
 # ROOT
 ##################################
 def AddROOT(env):
+	#
+	# Here we use the root-config program to give us the compiler
+	# and linker options needed for ROOT. We use the AddCompileFlags()
+	# and AddLinkFlags() routines (defined below) to split the arguments
+	# into the categories scons wants. E.g. scons wants to know the
+	# search path and basenames for libraries rather than just giving it
+	# the full compiler options like "-L/path/to/lib -lmylib".
+	#
+	# We also create a builder for ROOT dictionaries and add targets to
+	# build dictionaries for any headers with "ClassDef" in them.
+
 	ROOT_CFLAGS = subprocess.Popen(["root-config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
 	ROOT_LINKFLAGS = subprocess.Popen(["root-config", "--glibs"], stdout=subprocess.PIPE).communicate()[0]
-	env.PrependUnique(CCFLAGS = ROOT_CFLAGS.split())
-	env.PrependUnique(LINKFLAGS = ROOT_LINKFLAGS.split())
-	env.PrependUnique(LINKFLAGS = "-lGeom")
+	AddCompileFlags(env, ROOT_CFLAGS)
+	AddLinkFlags(env, ROOT_LINKFLAGS)
+	env.AppendUnique(LIBS = "Geom")
 
 	# Create Builder that can convert .h file into _Dict.cc file
 	rootsys = os.getenv('ROOTSYS', '/usr/local/root/PRO')
@@ -315,14 +331,75 @@ def AddROOT(env):
 	# out!)
 	curpath = os.getcwd()
 	srcpath = env.Dir('.').srcnode().abspath
-	if(env['SHOWBUILD']!=0):
+	if(int(env['SHOWBUILD'])>1):
 		print "---- Scanning for headers to generate ROOT dictionaries in: %s" % srcpath
 	os.chdir(srcpath)
 	for f in glob.glob('*.h*'):
 		if 'ClassDef' in open(f).read():
 			env.AppendUnique(ALL_SOURCES = env.ROOTDict(f))
-			if(env['SHOWBUILD']!=0):
+			if(int(env['SHOWBUILD'])>1):
 				print "       ROOT dictionary for %s" % f
 	os.chdir(curpath)
+
+
+
+#===========================================================
+# Misc utility routines follow
+#===========================================================
+
+##################################
+# AddCompileFlags
+##################################
+def AddCompileFlags(env, allflags):
+
+	# The allflags parameter should be a string containing all
+	# of the link flags (e.g. what is returned by root-config --cflags)
+	# It is split on white space and the parameters sorted into
+	# the 2 lists: ccflags, cpppath
+
+	ccflags = []
+	cpppath = []
+	for f in allflags.split():
+		if f.startswith('-I'):
+			cpppath.append(f[2:])
+		else:
+			ccflags.append(f)
+	
+	if len(ccflags)>0 :
+		env.AppendUnique(CCFLAGS=ccflags)
+
+	if len(cpppath)>0 :
+		env.AppendUnique(CPPPATH=cpppath)
+
+
+##################################
+# AddLinkFlags
+##################################
+def AddLinkFlags(env, allflags):
+
+	# The allflags parameter should be a string containing all
+	# of the link flags (e.g. what is returned by root-config --glibs)
+	# It is split on white space and the parameters sorted into
+	# the 3 lists: linkflags, libpath, and libs
+
+	linkflags = []
+	libpath = []
+	libs = []
+	for f in allflags.split():
+		if f.startswith('-L'):
+			libpath.append(f[2:])
+		elif f.startswith('-l'):
+			libs.append(f[2:])
+		else:
+			linkflags.append(f)
+
+	if len(linkflags)>0 :
+		env.AppendUnique(LINKFLAGS=linkflags)
+
+	if len(libpath)>0 :
+		env.AppendUnique(LIBPATH=libpath)
+		
+	if len(libs)>0 :
+		env.AppendUnique(LIBS=libs)
 
 
