@@ -14,7 +14,7 @@ C
 C
       REAL      beamen
 C
-      INTEGER i,j,nlnd,ilnd,kf,kc
+      INTEGER i,nlnd,ilnd,kf,kc
 C
 C     ------------------------------------------------------------------
 C
