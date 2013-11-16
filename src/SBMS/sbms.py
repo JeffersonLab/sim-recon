@@ -68,6 +68,9 @@ def executable(env, exename=''):
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
+	# Push commonly used libraries to end of list
+	ReorderCommonLibraries(env)
+
 	sources = env['ALL_SOURCES']
 
 	# Build program from all source
@@ -122,6 +125,9 @@ def executables(env):
 	os.chdir(curpath)
 	
 	env.PrependUnique(CPPPATH = ['.'])
+
+	# Push commonly used libraries to end of list
+	ReorderCommonLibraries(env)
 
 	common_sources.extend(env['ALL_SOURCES'])
 
@@ -401,5 +407,30 @@ def AddLinkFlags(env, allflags):
 		
 	if len(libs)>0 :
 		env.AppendUnique(LIBS=libs)
+
+
+##################################
+# ReorderCommonLibraries
+##################################
+def ReorderCommonLibraries(env):
+
+	# Some common libraries are often added by multiple packages 
+	# (e.g. libz is one that many packages use). The gcc4.8.0
+	# compiler that comes with Ubuntu13.10 seems particularly
+	# sensitive to the ordering of the libraries. This means if
+	# one packages "AppendUnique"s the "z" library, it may appear
+	# too early in the link command for another library that needs
+	# it, even though the second library tries appending it at the
+	# end. This routine looks for some commonly used libraries 
+	# in the LIBS variable of the given environment and moves them
+	# to the end of the list.
+
+	if type(env['LIBS']) is not list: return
+
+	libs = ['z', 'bz2', 'pthread', 'm', 'dl']
+	for lib in libs:
+		if lib in env['LIBS']:
+			env['LIBS'].remove(lib)
+			env.Append(LIBS=[lib])
 
 
