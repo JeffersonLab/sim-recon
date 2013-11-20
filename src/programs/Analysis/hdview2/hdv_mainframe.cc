@@ -6,6 +6,7 @@
 #include <fstream>
 using namespace std;
 
+#include <unistd.h>
 #include <pthread.h>
 #include <sys/time.h>
 
