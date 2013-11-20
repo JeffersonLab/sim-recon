@@ -4,6 +4,7 @@ import sbms
 
 # get env object and clone it
 Import('*')
+top_env = env
 env = env.Clone()
 
 sbms.AddXERCES(env)
@@ -13,12 +14,19 @@ progs = []
 
 commonsrc = ['XString.cpp', 'XParsers.cpp', 'md5.c']
 
+# The hddm-c and hddm-cpp utilities are needed to generate code
+# for the HDDM library. See src/libraries/HDDM/SConscript for details.
+hddmc = env.Program(target='hddm-c',   source=['hddm-c.cpp'  , commonsrc])
+hddmcpp = env.Program(target='hddm-cpp', source=['hddm-cpp.cpp', commonsrc])
+progs.append( hddmc )
+progs.append( hddmcpp )
 progs.append( env.Program(target='xml-hddm', source=['xml-hddm.cpp', commonsrc]) )
 progs.append( env.Program(target='hddm-xml', source=['hddm-xml.cpp', commonsrc]) )
-progs.append( env.Program(target='hddm-c',   source=['hddm-c.cpp'  , commonsrc]) )
-progs.append( env.Program(target='hddm-cpp', source=['hddm-cpp.cpp', commonsrc]) )
 progs.append( env.Program(target='hddmcat',  source=['hddmcat.cpp']) )
 
+# (See src/libraries/HDDM/SConscript)
+top_env.Requires(env['HDDMC_SRC']  , hddmc  )
+top_env.Requires(env['HDDMCPP_SRC'], hddmcpp)
 
 # Cleaning and installation are restricted to the directory
 # scons was launched from or its descendents
