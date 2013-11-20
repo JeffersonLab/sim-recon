@@ -17,6 +17,7 @@ using namespace jana;
 
 #include <BCAL/DBCALGeometry.h>
 
+#include <unistd.h>
 #include <math.h>
 #include "units.h"
 #include "HDDM/hddm_s.h"
