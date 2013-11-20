@@ -23,8 +23,8 @@ using namespace std;
 #include <JANA/jerror.h>
 #include <JANA/JCalibration.h>
 
-#include "hddm_s.h"
-#include "hddm_s.hpp"
+#include <HDDM/hddm_s.h>
+#include <HDDM/hddm_s.hpp>
 
 #include "TRACKING/DMCTrackHit.h"
 #include "TRACKING/DMCThrown.h"
