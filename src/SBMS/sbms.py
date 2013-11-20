@@ -229,6 +229,7 @@ def AddHDDM(env):
 # DANA
 ##################################
 def AddDANA(env):
+	AddHDDM(env)
 	AddJANA(env)
 	AddCCDB(env)
 	AddHDDS(env)
@@ -236,7 +237,7 @@ def AddDANA(env):
 	Add_xstream(env)
 	DANA_LIBS  = "DANA ANALYSIS PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE RICH CDC TRIGGER"
-	DANA_LIBS += " FDC TOF BCAL FCAL CCAL HDGEOMETRY HDDM JANA"
+	DANA_LIBS += " FDC TOF BCAL FCAL CCAL HDGEOMETRY JANA"
 	env.PrependUnique(LIBS = DANA_LIBS.split())
 
 ##################################
