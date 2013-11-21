@@ -6,6 +6,8 @@
 //
 namespace{const char* GetMyID(){return "$Id$";}}
 
+#include <cmath>
+using namespace std;
 #include <math.h>
 
 #include <TROOT.h>
@@ -302,7 +304,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 		}
 
 		// If the chisq is too large, then consider it a hopeless cause
-		if(chisq/Ndof>1.0E4 || !finite(chisq/Ndof)){
+		if(chisq/Ndof>1.0E4 || !isfinite(chisq/Ndof)){
 			if(DEBUG_LEVEL>3)_DBG_<<"Fit chisq too large on iteration "<<Niterations<<endl;
 			return fit_status=kFitFailed;
 		}
@@ -594,7 +596,7 @@ double DTrackFitterALT1::ChiSq(vector<resiInfo> &residuals, double *chisq_ptr, i
 		pulls.push_back(pull_t(resiv[i][0], err, residuals[i].step->s));
 	}
 	
-	if(DEBUG_LEVEL>100 || (DEBUG_LEVEL>10 && !finite(chisq)))PrintChisqElements(resiv, cov_meas, cov_muls, weights);
+	if(DEBUG_LEVEL>100 || (DEBUG_LEVEL>10 && !isfinite(chisq)))PrintChisqElements(resiv, cov_meas, cov_muls, weights);
 
 	// If the caller supplied pointers to chisq and dof variables, copy the values into them
 	if(chisq_ptr)*chisq_ptr = chisq;
@@ -852,7 +854,7 @@ vector<bool> DTrackFitterALT1::GetResiInfo(DReferenceTrajectory *rt, hitsInfo &h
 		// a sign that has already been assigned to indicate the side of the wire
 		// the track is believed to be on.
 		double resi = hi.dist - d;
-		if(finite(resi)){
+		if(isfinite(resi)){
 			resiInfo ri;
 			ri.hit = &hi;
 			ri.layer = cdcwire ? cdcwire->ring:(fdcwire ? fdcwire->layer:0);
@@ -881,7 +883,7 @@ vector<bool> DTrackFitterALT1::GetResiInfo(DReferenceTrajectory *rt, hitsInfo &h
 			double u = rt->GetLastDistAlongWire();
 			double u_corrected = hi.u_dist + LRsign*hi.u_lorentz;
 			double resic = u - u_corrected;
-			if(finite(resic)){
+			if(isfinite(resic)){
 				resiInfo ri;
 				ri.hit = &hi;
 				ri.layer = fdcwire ? fdcwire->layer:0;
@@ -1360,7 +1362,7 @@ void DTrackFitterALT1::ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, 
 		if(wire==target)continue; // ignore target
 		
 		// Sometimes dist is NaN
-		if(!finite(hi.dist)){
+		if(!isfinite(hi.dist)){
 			hi.err = 100.0;
 			hi.u_err = 0.0;
 			continue;
@@ -1454,7 +1456,7 @@ void DTrackFitterALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex
 
 		// NOTE: Sometimes this could be nan
 		double resi = dist - doca;
-		if(!finite(resi))continue;
+		if(!isfinite(resi))continue;
 		
 		// Fill histos
 		residuals_cdc->Fill(resi, wire->ring);
@@ -1485,7 +1487,7 @@ void DTrackFitterALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex
 
 		// NOTE: Sometimes this is nan
 		double resi = dist - doca;
-		if(finite(resi)){
+		if(isfinite(resi)){
 			fdcdoca_vs_dist->Fill(dist, doca);
 			residuals_fdc_anode->Fill(resi, wire->layer);
 			residuals_fdc_anode_vs_s->Fill(resi, wire->layer,s);
@@ -1493,7 +1495,7 @@ void DTrackFitterALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex
 		
 		double u = rt->GetLastDistAlongWire();
 		resi = u - hit->s;
-		if(finite(resi)){
+		if(isfinite(resi)){
 			fdcu_vs_s->Fill(u, hit->s);
 			residuals_fdc_cathode->Fill(resi, wire->layer);
 			residuals_fdc_cathode_vs_s->Fill(resi, wire->layer,s);

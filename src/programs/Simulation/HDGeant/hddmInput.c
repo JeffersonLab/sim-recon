@@ -65,7 +65,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <hddm_s.h>
+#include <HDDM/hddm_s.h>
 #include <geant3.h>
 
 void settofg_(float origin[3], float *time0);

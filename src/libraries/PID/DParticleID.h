@@ -10,6 +10,7 @@
 
 #include <deque>
 #include <limits>
+#include <cmath>
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>

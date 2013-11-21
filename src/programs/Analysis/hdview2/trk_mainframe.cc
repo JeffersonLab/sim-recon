@@ -5,6 +5,7 @@
 // Creator: davidl (on Darwin Amelia.local 8.11.1 i386)
 //
 
+#include <cmath>
 using namespace std;
 
 #include "trk_mainframe.h"
@@ -23,6 +24,8 @@ using namespace std;
 #include <TColor.h>
 #include <TROOT.h>
 #include <TF1.h>
+
+
 
 // We declare this as a global since putting it in the class would
 // require defining the DReferenceTrajectory class to ROOT
@@ -679,7 +682,7 @@ void trk_mainframe::DrawHitsForOneTrack(
 		// the vector pointing to the center of the wire.
 		//double sign = (shift.Dot(pos_wire)<0.0) ? -1.0:+1.0;
 		double resi = fabs(doca)-fabs(dist);
-		if(!finite(resi))continue;
+		if(!isfinite(resi))continue;
 		
 		// If the residual is reasonably small, consider this hit to be
 		// on this track and record it (if this is the prime track)

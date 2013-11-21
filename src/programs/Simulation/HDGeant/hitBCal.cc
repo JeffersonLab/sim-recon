@@ -67,7 +67,7 @@
 using namespace std;
 
 extern "C" {
-#include <hddm_s.h>
+#include <HDDM/hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
 

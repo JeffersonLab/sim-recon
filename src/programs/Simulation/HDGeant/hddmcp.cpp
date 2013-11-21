@@ -19,7 +19,7 @@
 
 #include <fstream>
 #include <stdlib.h>
-#include "hddm_s.hpp"
+#include <HDDM/hddm_s.hpp>
 
 int main(int argc, char **argv)
 {

@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 using namespace std;
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
@@ -400,7 +401,7 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &mypos, DVector3 &mymom, const 
 	// is the case, switch to using a linear approximation between
 	// the current and last positions
 	bool use_straight_track_projection = false; // used if our quadratic approx. fails
-	if(finite(dz_dphi) && fabs(dz_dphi)<1.0E8){
+	if(isfinite(dz_dphi) && fabs(dz_dphi)<1.0E8){
 
 		DVector3 pos_diff = mypos - origin;
 		double A = xdir.Dot(norm);
@@ -412,7 +413,7 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &mypos, DVector3 &mymom, const 
 		
 		// If alpha is zero here (which it is if "norm" happens to be perpendicular
 		// to "xdir") then we will need to fall back to a linear projection
-		if(alpha!=0.0 && finite(alpha)){
+		if(alpha!=0.0 && isfinite(alpha)){
 
 			double beta = B*Ro + C*dz_dphi;
 			
@@ -627,7 +628,7 @@ bool DMagneticFieldStepper::SwimToRadius(DVector3 &mypos, DVector3 &mymom, doubl
 	double alpha2 = (-B - sqrt(B*B-4.0*A*C))/(2.0*A);
 	double alpha = alpha1;
 	if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
-	if(!finite(alpha))return true;
+	if(!isfinite(alpha))return true;
 	
 	DVector3 delta = mypos - last_pos;
 	mymom = mom;

@@ -5,7 +5,9 @@
 // Creator: davidl (on Darwin swire-b241.jlab.org 8.7.0 powerpc)
 //
 
+#include <signal.h>
 #include <memory>
+#include <cmath>
 
 #include <DVector3.h>
 using namespace std;
@@ -589,7 +591,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
   double alpha2 = (-B - sqrt_D)*one_over_denom;
   double alpha = alpha1;
   if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
-  if(!finite(alpha))return VALUE_OUT_OF_RANGE;
+  if(!isfinite(alpha))return VALUE_OUT_OF_RANGE;
 	
   DVector3 delta = step->origin - last_step->origin;
   mypos = last_step->origin + alpha*delta;
@@ -745,9 +747,9 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 		double phi_2 = (-B - sqroot)/(twoA);
 		
 		double phi = fabs(phi_1)<fabs(phi_2) ? phi_1:phi_2;
-		if(!finite(phi_1))phi = phi_2;
-		if(!finite(phi_2))phi = phi_1;
-		if(finite(phi)){
+		if(!isfinite(phi_1))phi = phi_2;
+		if(!isfinite(phi_2))phi = phi_1;
+		if(isfinite(phi)){
 		
 			double my_s = -Ro/2.0 * phi*phi;
 			double my_t = Ro * phi;
@@ -1266,7 +1268,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindPlaneCrossing(const
 	
 	if(Nswim_steps<1){
 		_DBG_<<"No swim steps! You must \"Swim\" the track before calling FindPlaneCrossing(...)"<<endl;
-*((int*)NULL) = 1; // force seg. fault
+		raise(SIGSEGV);// force seg. fault
 	}
 
 	// Make sure normal vector is unit lenght
@@ -1631,7 +1633,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	  }
 	}
 	
-	if(fabs(Q)<=1.0E-6 || !finite(phi)){
+	if(fabs(Q)<=1.0E-6 || !isfinite(phi)){
 		double a = 3.0*R;
 		double b = 2.0*S;
 		double c = 1.0*T;
@@ -1648,7 +1650,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	// allows larger initial step sizes with the high density regions getting
 	// filled in as needed leading to overall faster tracking.
 #if 0
-	if(finite(phi) && fabs(phi)>2.0E-4){
+	if(isfinite(phi) && fabs(phi)>2.0E-4){
 		if(dist_to_rt_depth>=3){
 			_DBG_<<"3 or more recursive calls to DistToRT(). Something is wrong! bailing ..."<<endl;
 			//for(int k=0; k<Nswim_steps; k++){
@@ -1807,7 +1809,7 @@ double DReferenceTrajectory::Straw_dx(const DCoordinateSystem *wire, double radi
 	// First, find the DOCA point for this wire
 	double s;
 	double doca = DistToRT(wire, &s);
-	if(!finite(doca))
+	if(!isfinite(doca))
 		return 0.0;
 
 	// If doca is outside of the given radius, then we're done
@@ -1887,7 +1889,7 @@ void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const
 	}
 
 	// If last_phi is not finite, set it to 0 as a last resort
-	if(!finite(last_phi))last_phi = 0.0;
+	if(!isfinite(last_phi))last_phi = 0.0;
 	
 	const DVector3 &xdir = last_swim_step->sdir;
 	const DVector3 &ydir = last_swim_step->tdir;

@@ -557,7 +557,7 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
       {
          int maxold = (oldS == "unbounded")? INT_MAX : atoi(S(oldS));
          int maxnew = (newS == "unbounded")? INT_MAX : atoi(S(newS));
-	 if (maxold < 2 && maxnew > 1 || maxold > 1 && maxnew < 2)
+	 if ((maxold < 2 && maxnew > 1) || (maxold > 1 && maxnew < 2))
          {
             std::cerr
                  << "hddm-c error: inconsistent maxOccurs usage by tag "
@@ -588,7 +588,7 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
       {
          int maxold = (oldS == "unbounded")? INT_MAX : atoi(S(oldS));
          int maxnew = (newS == "unbounded")? INT_MAX : atoi(S(newS));
-	 if (maxold < 2 && maxnew > 1 || maxold > 1 && maxnew < 2)
+	 if ((maxold < 2 && maxnew > 1) || (maxold > 1 && maxnew < 2))
          {
             std::cerr
                  << "hddm-c error: inconsistent maxOccurs usage by tag "

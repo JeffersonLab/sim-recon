@@ -103,13 +103,13 @@ void DTrajectory::CalcDirs(ThreeVector &pos, ThreeVector &p, RTdirs &dirs)
 	// a magnitude of zero or is not finite then set the 
 	// "straight_track" flag and return immediately
 	double xmag = sqrt(xdir_x*xdir_x + xdir_y*xdir_y + xdir_z*xdir_z);
-	if(!finite(xmag) || xmag==0.0){straight_track=true; return;}
+	if(!isfinite(xmag) || xmag==0.0){straight_track=true; return;}
 	
 	double ymag = sqrt(ydir_x*ydir_x + ydir_y*ydir_y + ydir_z*ydir_z);
-	if(!finite(ymag) || ymag==0.0){straight_track=true; return;}
+	if(!isfinite(ymag) || ymag==0.0){straight_track=true; return;}
 	
 	double zmag = sqrt(zdir_x*zdir_x + zdir_y*zdir_y + zdir_z*zdir_z);
-	if(!finite(zmag) || zmag==0.0){straight_track=true; return;}
+	if(!isfinite(zmag) || zmag==0.0){straight_track=true; return;}
 	
 	// It looks like we're not a straight track
 	straight_track = false;

@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include "hddm_s.h"
+#include <HDDM/hddm_s.h>
 
 extern s_HDDM_t* thisOutputEvent;
 

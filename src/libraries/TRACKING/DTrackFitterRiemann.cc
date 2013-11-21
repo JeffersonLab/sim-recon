@@ -9,6 +9,8 @@
 #include "HDGEOMETRY/DMaterialMap.h"
 #include <TDecompLU.h>
 #include <math.h>
+#include <cmath>
+using namespace std;
 
 #define MOLIERE_FRACTION 0.99
 #define ONE_THIRD  0.33333333333333333
@@ -860,7 +862,7 @@ jerror_t DTrackFitterRiemann::FitCircle(){
   B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)+A(1,1)*A(2,2)
     -A(2,1)*A(1,2);
   B0=-A.Determinant();
-  if(B0==0 || !finite(B0)){
+  if(B0==0 || !isfinite(B0)){
     return UNRECOVERABLE_ERROR;
   }
 

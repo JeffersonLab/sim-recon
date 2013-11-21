@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <vector>
 #include <set>
+#include <cmath>
 using namespace std;
 
 #include <JANA/JApplication.h>
@@ -196,11 +197,11 @@ void SmearBCAL_DEPRECATED(s_HDDM_t *hddm_s)
 				double downTime = smearedtDown + downDist / bcalGeom.C_EFFECTIVE;
 	
 				// If energy is smeared to negative or time is nan, set to 0.
-				if(upEnergy <= 0 || !finite(upTime)){
+				if(upEnergy <= 0 || !isfinite(upTime)){
 					upEnergy = 0;
 					upTime = 0;
 				}
-				if(downEnergy <= 0 || !finite(downTime)){
+				if(downEnergy <= 0 || !isfinite(downTime)){
 					downEnergy = 0;
 					downTime = 0;
 				}

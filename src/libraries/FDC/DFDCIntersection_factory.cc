@@ -5,6 +5,8 @@
 // Creator: davidl (on Darwin fwing-dhcp95.jlab.org 8.10.1 i386)
 //
 
+#include <cmath>
+using namespace std;
 
 #include "DFDCIntersection_factory.h"
 #include "FDC/DFDCGeometry.h"
@@ -264,7 +266,7 @@ void DFDCIntersection_factory::FindIntersections(vector<const DFDCHit*> &layer1,
 			DVector2 e = a - c;
 			double gamma = d*b;
 			double beta = (d*e - gamma*(b*e))/(1.0-gamma*gamma);
-			if(!finite(beta))continue; // wires must be parallel
+			if(!isfinite(beta))continue; // wires must be parallel
 			if(fabs(beta) > wire2->L/2.0)continue; // intersection is past end of wire 
 			double alpha = beta*gamma - b*e;
 			if(fabs(alpha) > wire1->L/2.0)continue; // intersection is past end of wire 

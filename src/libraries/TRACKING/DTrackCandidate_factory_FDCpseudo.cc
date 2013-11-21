@@ -441,12 +441,10 @@ void DTrackCandidate_factory_FDCpseudo::FindTheta(DFDCSeed &seed, double target_
 		
 		// If entire range of this hit is outside of the histogram limit
 		// then discard this hit.
-		if(imax<0 || imin>=Nbins)continue;
+		if(imin>=Nbins)continue;
 		
 		// Clip limits of bin range to our histogram limits
-		if(imin<0)imin=0;
 		if(imin>=Nbins)imin=Nbins-1;
-		if(imax<0)imax=0;
 		if(imax>=Nbins)imax=Nbins-1;
 		
 		// Increment all bins between imin and imax
@@ -569,9 +567,7 @@ void DTrackCandidate_factory_FDCpseudo::FindZ(DFDCSeed &seed, double theta_min, 
 		if(imax<=0 || imin>=Nbins)continue;
 		
 		// Clip limits of bin range to our histogram limits
-		if(imin<0)imin=0;
 		if(imin>=Nbins)imin=Nbins-1;
-		if(imax<0)imax=0;
 		if(imax>=Nbins)imax=Nbins-1;
 		
 		// Increment all bins between imin and imax

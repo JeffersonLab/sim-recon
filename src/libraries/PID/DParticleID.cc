@@ -407,7 +407,7 @@ jerror_t DParticleID::MatchToBCAL(const DReferenceTrajectory *rt,const vector<co
     double locTempFlightTime = 0.0;
     double d = rt->DistToRTwithTime(bcal_pos, &locTempPathLength, &locTempFlightTime);
 
-    if(!finite(d))
+    if(!isfinite(d))
       continue;
     // Check that the hit is not out of time with respect to the track
     if (fabs(locInputBCALShowers[k]->t - locTempFlightTime - locProjectedTime) > OUT_OF_TIME_CUT) continue;

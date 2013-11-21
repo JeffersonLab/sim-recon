@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 using namespace std;
 
 #include <JANA/JFactory_base.h>
@@ -328,7 +329,7 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(s_HDDM_t *hddm_s, JFactory<DMCTra
 	// is treating the symptom rather than the cause, but nonetheless,
 	// it patches up the problem for now until there is time to revisit
 	// it later.
-	for(unsigned int i=0;i<data.size(); i++)if(!finite(data[i]->z))data[i]->z=-1000.0;
+	for(unsigned int i=0;i<data.size(); i++)if(!isfinite(data[i]->z))data[i]->z=-1000.0;
 	
 	// sort hits by z
 	sort(data.begin(), data.end(), MCTrackHitSort_C);
@@ -1142,7 +1143,7 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 							double py = product->momentum->py;
 							double pz = product->momentum->pz;
 							double mass = sqrt(E*E - (px*px + py*py + pz*pz));
-							if(!finite(mass))mass = 0.0;
+							if(!isfinite(mass))mass = 0.0;
 							
 							DMCThrown *mcthrown = new DMCThrown;
 							mcthrown->type = product->type;

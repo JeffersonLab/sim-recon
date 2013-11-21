@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <hddm_s.h>
+#include <HDDM/hddm_s.h>
 #include <hddmOutput.h>
 
 #include "memcheck.h"

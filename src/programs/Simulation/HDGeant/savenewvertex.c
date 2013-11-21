@@ -10,7 +10,7 @@ savenewvertex: particle stoped because it decayed
 #include <stdio.h>
 #include <string.h>
 
-#include <hddm_s.h>
+#include <HDDM/hddm_s.h>
 #include <geant3.h>
 
 extern s_HDDM_t* thisInputEvent;

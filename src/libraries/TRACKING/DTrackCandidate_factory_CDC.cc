@@ -3929,16 +3929,12 @@ bool DTrackCandidate_factory_CDC::Find_Theta(const DHelicalFit* locFit, const de
 		
 		// If entire range of this hit is outside of the histogram limit
 		// then discard this hit.
-		if(imax<0 || imin>=Nbins)
+		if(imin>=Nbins)
 			continue;
 		
 		// Clip limits of bin range to our histogram limits
-		if(imin<0)
-			imin=0;
 		if(imin>=Nbins)
 			imin=Nbins-1;
-		if(imax<0)
-			imax=0;
 		if(imax>=Nbins)
 			imax=Nbins-1;
 		
@@ -4035,12 +4031,8 @@ bool DTrackCandidate_factory_CDC::Find_Z(const DHelicalFit* locFit, const deque<
 			continue;
 		
 		// Clip limits of bin range to our histogram limits
-		if(imin<0)
-			imin=0;
 		if(imin>=Nbins)
 			imin=Nbins-1;
-		if(imax<0)
-			imax=0;
 		if(imax>=Nbins)
 			imax=Nbins-1;
 		

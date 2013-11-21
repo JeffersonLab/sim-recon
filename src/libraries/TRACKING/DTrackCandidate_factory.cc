@@ -30,6 +30,9 @@
 /// are added to the track, the code attempts to place the "start" position 
 /// parameters of the track at a radius just outside the start counter.
 
+#include <cmath>
+using namespace std;
+
 #include "DTrackCandidate_factory.h"
 #include "DTrackCandidate_factory_CDC.h"
 #include "DANA/DApplication.h"
@@ -948,7 +951,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
        // Use a helical approximation to the track to match both axial and
        // stereo wires
        double dr2=DocaToHelix(cdchits[m],q,pos,mom);
-       double prob=finite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+       double prob=isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
 
        if (prob>0.01) num_match++;
        if (DEBUG_LEVEL>1) _DBG_ << "CDC s: " << cdchits[m]->wire->straw
@@ -1110,7 +1113,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	   double dr2=dx*dx+dy*dy;
 	   
 	   double variance=1.0;
-	   double prob = finite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	   double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
 	   if (prob>0.01) num_match++;
 	   
 	   num_hits++;
@@ -1254,7 +1257,7 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	  double dr2=dx*dx+dy*dy;
 	  
 	  double variance=1.0;
-	  double prob = finite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	  double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
 	  if (prob>0.01) num_match++;
 	} 
 	if (num_match>=3){
@@ -1358,7 +1361,7 @@ bool DTrackCandidate_factory::MatchMethod5(DTrackCandidate *can,
 	// Use a helical approximation to the track to match both axial and
 	// stereo wires
 	double dr2=DocaToHelix(cdchits[m],q,pos,mom);
-	double prob=finite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	double prob=isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
 	
 	if (prob>0.01) num_match++;
 	if (DEBUG_LEVEL>1) _DBG_ << "CDC s: " << cdchits[m]->wire->straw
@@ -1489,7 +1492,7 @@ void DTrackCandidate_factory::MatchMethod6(unsigned int fdc_id,
       // Use a helical approximation to the track to match both axial and
       // stereo wires
       double dr2=DocaToHelix(mycdchits[k],q,pos,mom);
-      double prob=finite(dr2) ? TMath::Prob(dr2/variance,1):0.0;  
+      double prob=isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
 
       if (prob>0.5){
 	// Look for closest match

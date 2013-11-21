@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <set>
+#include <cmath>
 using namespace std;
 
 #include <DANA/DApplication.h>
@@ -369,7 +370,7 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	// Loop over boundaries stored in z_boundaries
 	for(unsigned int i=0; i<z_boundaries.size(); i++){
 		double dist = (z_boundaries[i]-z)/p_hatZ;
-		if(!finite(dist))continue;
+		if(!isfinite(dist))continue;
 		if(dist<0.0)continue; // boundary is behind us
 		if(dist>s_to_boundary)continue; // boundary intersection is already further than closest boundary
 		
@@ -382,7 +383,7 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	// Loop over boundaries stored in r_boundaries
 	for(unsigned int i=0; i<r_boundaries.size(); i++){
 		double dist = (r_boundaries[i]-r)/p_hatR;
-		if(!finite(dist))continue;
+		if(!isfinite(dist))continue;
 		if(dist<0.0)continue; // boundary is behind us
 		if(dist>s_to_boundary)continue; // boundary intersection is already further than closest boundary
 		
@@ -418,8 +419,8 @@ double DMaterialMap::EstimatedDistanceToBoundarySearch(double r, double z, doubl
 	double scale_r=fabs(dr/p_hatR);
 	double scale_z=fabs(dz/p_hatZ);
 	double scale=1000.0;
-	if(finite(scale_r) && scale_r<scale)scale = scale_r;
-	if(finite(scale_z) && scale_z<scale)scale = scale_z;
+	if(isfinite(scale_r) && scale_r<scale)scale = scale_r;
+	if(isfinite(scale_z) && scale_z<scale)scale = scale_z;
 	DVector2 delta_rz(scale*p_hatR, scale*p_hatZ);
 
 	// Find radiation length of our starting cell
@@ -489,22 +490,22 @@ inline double DMaterialMap::DistanceToBox(double &posx, double &posy, double &xd
 	// Make list of all positive, finite distances that are
 	// on border of box.
 	double shortestDist = 1.0E6;
-	if(finite(dist_x1) && dist_x1>=0.0 && dist_x1 < shortestDist){
+	if(isfinite(dist_x1) && dist_x1>=0.0 && dist_x1 < shortestDist){
 		//double y = (pos + dist_x1*dir).Y();
 		double y = posy + dist_x1*ydir;
 		if(y>=ymin && y<=ymax) shortestDist = dist_x1;
 	}
-	if(finite(dist_x2) && dist_x2>=0.0 && dist_x2 < shortestDist){
+	if(isfinite(dist_x2) && dist_x2>=0.0 && dist_x2 < shortestDist){
 		//double y = (pos + dist_x2*dir).Y();
 		double y = posy + dist_x2*ydir;
 		if(y>=ymin && y<=ymax) shortestDist = dist_x2;
 	}
-	if(finite(dist_y1) && dist_y1>=0.0 && dist_y1 < shortestDist){
+	if(isfinite(dist_y1) && dist_y1>=0.0 && dist_y1 < shortestDist){
 		//double x = (pos + dist_y1*dir).X();
 		double x = posx + dist_y1*xdir;
 		if(x>=xmin && x<=xmax) shortestDist = dist_y1;
 	}
-	if(finite(dist_y2) && dist_y2>=0.0 && dist_y2 < shortestDist){
+	if(isfinite(dist_y2) && dist_y2>=0.0 && dist_y2 < shortestDist){
 		//double x = (pos + dist_y2*dir).X();
 		double x = posx + dist_y2*xdir;
 		if(x>=xmin && x<=xmax) shortestDist = dist_y2;

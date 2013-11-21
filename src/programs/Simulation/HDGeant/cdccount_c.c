@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "hddm_s.h"
+#include <HDDM/hddm_s.h>
 
 int process_event(s_HDDM_t *event);
 

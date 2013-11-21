@@ -10,7 +10,7 @@
 
 #include <fstream>
 #include <stdlib.h>
-#include "hddm_s.hpp"
+#include <HDDM/hddm_s.hpp>
 
 int process_event(hddm_s::HDDM &event);
 

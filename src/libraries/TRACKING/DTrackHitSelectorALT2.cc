@@ -5,6 +5,9 @@
 // Creator: davidl (on Darwin harriet.jlab.org 9.6.0 i386)
 //
 
+#include <cmath>
+using namespace std;
+
 #include <TROOT.h>
 
 #include <TRACKING/DReferenceTrajectory.h>
@@ -213,8 +216,8 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     double s;
     double doca = rt->DistToRT(hit->wire, &s);
     
-    if(!finite(doca)) continue;
-    if(!finite(s))continue;
+    if(!isfinite(doca)) continue;
+    if(!isfinite(s))continue;
     if (s<=0.) continue;
     if (doca>MAX_DOCA) continue;
     
@@ -449,8 +452,8 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     double s;
     double doca = rt->DistToRT(hit->wire, &s); 
 
-    if(!finite(doca)) continue; 
-    if(!finite(s))continue;
+    if(!isfinite(doca)) continue;
+    if(!isfinite(s))continue;
     if (s<=0.) continue;
     if (doca>MAX_DOCA)continue;
 

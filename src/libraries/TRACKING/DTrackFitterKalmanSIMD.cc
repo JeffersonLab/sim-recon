@@ -2808,7 +2808,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   double z0=z_=input_params.position().z();
 
   // Check integrity of input parameters
-  if (!finite(x0) || !finite(y0) || !finite(q_over_p0)){
+  if (!isfinite(x0) || !isfinite(y0) || !isfinite(q_over_p0)){
     if (DEBUG_LEVEL>0) _DBG_ << "Invalid input parameters!" <<endl;
     return UNRECOVERABLE_ERROR;
   }
@@ -2822,7 +2822,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   unsigned int fdc_ndf=0;
   if (my_fdchits.size()>0 
       && // Make sure that these parameters are valid for forward-going tracks
-      (finite(tx0) && finite(ty0))
+      (isfinite(tx0) && isfinite(ty0))
       ){
     if (DEBUG_LEVEL>0){
       _DBG_ << "Using forward parameterization." <<endl;
@@ -2925,7 +2925,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
             z_=z;
             phi_=phi;
             tanl_=tanl;
-            q_over_pt_=q_over_pt_;
+            //q_over_pt_=q_over_pt_; // commented out to avoid compiler warning about self-assignment
 
 	    // _DBG_ << endl;
 	    return NOERROR;
@@ -3306,7 +3306,7 @@ jerror_t DTrackFitterKalmanSIMD::BrentsAlgorithm(double z,double dz,
 	  
 	  return VALUE_OUT_OF_RANGE;
 	}
-	if (!finite(S(state_x)) || !finite(S(state_y))){
+	if (!isfinite(S(state_x)) || !isfinite(S(state_y))){
 	  _DBG_ <<endl;
 	  return VALUE_OUT_OF_RANGE;    
 	}

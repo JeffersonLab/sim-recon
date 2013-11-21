@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 #include "DANA/DApplication.h"
@@ -607,7 +608,7 @@ jerror_t DHelicalFit::FitCircleRiemann(float rc){
   double B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)
     +A(1,1)*A(2,2)-A(2,1)*A(1,2);
   double B0=-A.Determinant();
-  if(B0==0 || !finite(B0))return UNRECOVERABLE_ERROR;
+  if(B0==0 || !isfinite(B0))return UNRECOVERABLE_ERROR;
 
   // The roots of the cubic equation are given by 
   //        lambda1= -B2/3 + S+T

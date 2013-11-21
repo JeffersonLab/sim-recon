@@ -11,12 +11,12 @@
  *
  */
 
-using namespace std;
 
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <list>
+using namespace std;
 
 #include <assert.h>
 #include <stdlib.h>
@@ -115,7 +115,7 @@ int main(int argC, char* argV[])
    const int bufferSize = 65536;
    char buffer[bufferSize];
    int count;
-   while (count = (ifs->read(buffer,bufferSize), ifs->gcount()))
+   while ((count = (ifs->read(buffer,bufferSize), ifs->gcount())))
    {
       cout.write(buffer,count);
    }
@@ -175,7 +175,7 @@ int main(int argC, char* argV[])
 	 }
       }
 
-      while (count = (ifs->read(buffer,bufferSize), ifs->gcount()))
+      while ((count = (ifs->read(buffer,bufferSize), ifs->gcount())))
       {
          cout.write(buffer,count);
       }

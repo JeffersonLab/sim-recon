@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <set>
+#include <cmath>
 using namespace std;
 
 #include "DTrackWireBased_factory.h"
@@ -421,7 +422,7 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
     break;
   case DTrackFitter::kFitNoImprovement:	
   case DTrackFitter::kFitSuccess:
-      if(!finite(fitter->GetFitParameters().position().X())) break;
+      if(!isfinite(fitter->GetFitParameters().position().X())) break;
     {    
       // Make a new wire-based track
       DTrackWireBased *track = new DTrackWireBased;

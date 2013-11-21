@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "hddm_s.h"
+#include <HDDM/hddm_s.h>
 
 int main(int argc, char **argv)
 {

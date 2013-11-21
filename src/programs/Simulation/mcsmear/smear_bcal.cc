@@ -963,7 +963,7 @@ double AddDarkHitsToOne(DHistogram *h, int NSiPMs)
 		do{
 			double s = gDRandom.Rndm();
 			delta_t = tau_ns*log(1.0/(1.0-s)); // derived by setting s equal to integral fraction of exp(t/tau)
-		}while(!finite(delta_t));
+		}while(!isfinite(delta_t));
 		
 		t += delta_t;
 		if(t > high_edge) break;

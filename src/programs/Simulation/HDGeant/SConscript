@@ -18,8 +18,6 @@ else:
 
 	SConscript(dirs=['gelhad', 'hitutil'], exports='env osname', duplicate=0)
 
-	sbms.Add_xstream(env)
-
 	env.AppendUnique(LIBS      = ['hddsGeant3', 'gelhad', 'hitutil'])
 
 	sbms.AddCERNLIB(env)
