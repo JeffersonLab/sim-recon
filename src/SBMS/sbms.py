@@ -4,12 +4,17 @@ import subprocess
 import SCons
 import glob
 import re
+import sys
 
 #===========================================================
-# The first 3 sections provide routines for building a
-# library, program, or plugin from all the source in the
-# current directory. The routines that follow add support
-# for various packages
+# The first 4 functions provide for building a library,
+# program, multiple-programs, or plugin from all the source
+# in the current directory.
+#
+# The next section contains useful utility functions.
+#
+# The functions that follow in the final section add support
+# for various packages (e.g. ROOT, Xerces, ...)
 #===========================================================
 
 
@@ -25,7 +30,9 @@ def library(env, libname=''):
 	env.PrependUnique(CPPPATH = ['.'])
 
 	# Add C/C++, and FORTRAN targets
-	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.c'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.cc'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.cpp'))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
 	sources = env['ALL_SOURCES']
@@ -65,7 +72,9 @@ def executable(env, exename=''):
 	env.PrependUnique(CPPPATH = ['.'])
 
 	# Add C/C++, and FORTRAN targets
-	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.c'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.cc'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.cpp'))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
 	# Push commonly used libraries to end of list
@@ -111,7 +120,8 @@ def executables(env):
 	curpath = os.getcwd()
 	srcpath = env.Dir('.').srcnode().abspath
 	os.chdir(srcpath)
-	for f in glob.glob('*.c*'):
+	files = glob.glob('*.c') + glob.glob('*.cc') + glob.glob('*.cpp')
+	for f in files:
 		if 'main(' in open(f).read():
 			main_sources.append(f)
 		else:
@@ -164,7 +174,10 @@ def plugin(env, pluginname=''):
 	env.PrependUnique(CPPPATH = ['.'])
 
 	# Add C/C++ targets
-	env.AppendUnique(ALL_SOURCES = env.Glob('*.c*'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.c'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.cc'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.cpp'))
+	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
 	sources = env['ALL_SOURCES']
 
@@ -192,6 +205,126 @@ def plugin(env, pluginname=''):
 
 
 
+#===========================================================
+# Misc utility routines for the SBMS system
+#===========================================================
+
+##################################
+# AddCompileFlags
+##################################
+def AddCompileFlags(env, allflags):
+
+	# The allflags parameter should be a string containing all
+	# of the link flags (e.g. what is returned by root-config --cflags)
+	# It is split on white space and the parameters sorted into
+	# the 2 lists: ccflags, cpppath
+
+	ccflags = []
+	cpppath = []
+	for f in allflags.split():
+		if f.startswith('-I'):
+			cpppath.append(f[2:])
+		else:
+			ccflags.append(f)
+	
+	if len(ccflags)>0 :
+		env.AppendUnique(CCFLAGS=ccflags)
+
+	if len(cpppath)>0 :
+		env.AppendUnique(CPPPATH=cpppath)
+
+
+##################################
+# AddLinkFlags
+##################################
+def AddLinkFlags(env, allflags):
+
+	# The allflags parameter should be a string containing all
+	# of the link flags (e.g. what is returned by root-config --glibs)
+	# It is split on white space and the parameters sorted into
+	# the 3 lists: linkflags, libpath, and libs
+
+	linkflags = []
+	libpath = []
+	libs = []
+	for f in allflags.split():
+		if f.startswith('-L'):
+			libpath.append(f[2:])
+		elif f.startswith('-l'):
+			libs.append(f[2:])
+		else:
+			linkflags.append(f)
+
+	if len(linkflags)>0 :
+		env.AppendUnique(LINKFLAGS=linkflags)
+
+	if len(libpath)>0 :
+		env.AppendUnique(LIBPATH=libpath)
+		
+	if len(libs)>0 :
+		env.AppendUnique(LIBS=libs)
+
+
+##################################
+# ReorderCommonLibraries
+##################################
+def ReorderCommonLibraries(env):
+
+	# Some common libraries are often added by multiple packages 
+	# (e.g. libz is one that many packages use). The gcc4.8.0
+	# compiler that comes with Ubuntu13.10 seems particularly
+	# sensitive to the ordering of the libraries. This means if
+	# one package "AppendUnique"s the "z" library, it may appear
+	# too early in the link command for another library that needs
+	# it, even though the second library tries appending it at the
+	# end. This routine looks for some commonly used libraries 
+	# in the LIBS variable of the given environment and moves them
+	# to the end of the list.
+
+	# If LIBS is not set or is a simple string, return now
+	if type(env['LIBS']) is not list: return
+
+	libs = ['z', 'bz2', 'pthread', 'm', 'dl']
+	for lib in libs:
+		if lib in env['LIBS']:
+			env['LIBS'].remove(lib)
+			env.Append(LIBS=[lib])
+
+
+##################################
+# ApplyPlatformSpecificSettings
+##################################
+def ApplyPlatformSpecificSettings(env, platform):
+
+	# Look for SBMS file based on this platform and run the InitENV
+	# function in it to allow for platform-specific settings.
+	#
+	# We need to do this using __import__ which seems to change with
+	# python version number. This unfortunately means we must do a
+	# check on the version number and run version-specific code.
+	version = sys.version_info
+	sversion = "%d.%d" % (version.major, version.minor)
+	fversion = float(sversion)
+	modname = "sbms_%s" % platform
+	try:
+		InitENV = None
+		if(fversion < 2.7):
+			# for python 2.6
+			InitENV = getattr(__import__(modname, fromlist=["InitENV"]))
+		else:
+			# for python 2.7
+			InitENV = getattr(__import__(modname), "InitENV")
+
+		# Run the InitENV function (if found)
+		if(InitENV != None):
+			print "sbms : Applying settings for platform %s" % platform
+			InitENV(env)
+
+	except ImportError:
+		pass
+
+
+
 
 #===========================================================
 # Package support follows
@@ -202,8 +335,9 @@ def plugin(env, pluginname=''):
 # JANA
 ##################################
 def AddJANA(env):
-	JANA_CFLAGS = subprocess.Popen(["jana-config", "--cflags"], stdout=subprocess.PIPE).communicate()[0]
-	JANA_LINKFLAGS = subprocess.Popen(["jana-config", "--libs"], stdout=subprocess.PIPE).communicate()[0]
+	jana_home = os.getenv('JANA_HOME', '/no/default/jana/path')
+	JANA_CFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home, "--cflags"], stdout=subprocess.PIPE).communicate()[0]
+	JANA_LINKFLAGS = subprocess.Popen(["%s/bin/jana-config" % jana_home, "--libs"], stdout=subprocess.PIPE).communicate()[0]
 
 	AddCompileFlags(env, JANA_CFLAGS)
 	AddLinkFlags(env, JANA_LINKFLAGS)
@@ -347,91 +481,5 @@ def AddROOT(env):
 			if(int(env['SHOWBUILD'])>1):
 				print "       ROOT dictionary for %s" % f
 	os.chdir(curpath)
-
-
-
-#===========================================================
-# Misc utility routines follow
-#===========================================================
-
-##################################
-# AddCompileFlags
-##################################
-def AddCompileFlags(env, allflags):
-
-	# The allflags parameter should be a string containing all
-	# of the link flags (e.g. what is returned by root-config --cflags)
-	# It is split on white space and the parameters sorted into
-	# the 2 lists: ccflags, cpppath
-
-	ccflags = []
-	cpppath = []
-	for f in allflags.split():
-		if f.startswith('-I'):
-			cpppath.append(f[2:])
-		else:
-			ccflags.append(f)
-	
-	if len(ccflags)>0 :
-		env.AppendUnique(CCFLAGS=ccflags)
-
-	if len(cpppath)>0 :
-		env.AppendUnique(CPPPATH=cpppath)
-
-
-##################################
-# AddLinkFlags
-##################################
-def AddLinkFlags(env, allflags):
-
-	# The allflags parameter should be a string containing all
-	# of the link flags (e.g. what is returned by root-config --glibs)
-	# It is split on white space and the parameters sorted into
-	# the 3 lists: linkflags, libpath, and libs
-
-	linkflags = []
-	libpath = []
-	libs = []
-	for f in allflags.split():
-		if f.startswith('-L'):
-			libpath.append(f[2:])
-		elif f.startswith('-l'):
-			libs.append(f[2:])
-		else:
-			linkflags.append(f)
-
-	if len(linkflags)>0 :
-		env.AppendUnique(LINKFLAGS=linkflags)
-
-	if len(libpath)>0 :
-		env.AppendUnique(LIBPATH=libpath)
-		
-	if len(libs)>0 :
-		env.AppendUnique(LIBS=libs)
-
-
-##################################
-# ReorderCommonLibraries
-##################################
-def ReorderCommonLibraries(env):
-
-	# Some common libraries are often added by multiple packages 
-	# (e.g. libz is one that many packages use). The gcc4.8.0
-	# compiler that comes with Ubuntu13.10 seems particularly
-	# sensitive to the ordering of the libraries. This means if
-	# one packages "AppendUnique"s the "z" library, it may appear
-	# too early in the link command for another library that needs
-	# it, even though the second library tries appending it at the
-	# end. This routine looks for some commonly used libraries 
-	# in the LIBS variable of the given environment and moves them
-	# to the end of the list.
-
-	if type(env['LIBS']) is not list: return
-
-	libs = ['z', 'bz2', 'pthread', 'm', 'dl']
-	for lib in libs:
-		if lib in env['LIBS']:
-			env['LIBS'].remove(lib)
-			env.Append(LIBS=[lib])
 
 

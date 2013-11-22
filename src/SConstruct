@@ -4,15 +4,21 @@ import sys
 import subprocess
 import glob
 
+# Add SBMS directory to PYTHONPATH
+sbmsdir = "%s/SBMS" % (os.getcwd())
+sys.path.append(sbmsdir)
+
+import sbms
+import sbms_utils
+
 # Get command-line options
 SHOWBUILD = ARGUMENTS.get('SHOWBUILD', 0)
 
 # Get platform-specific name
 osname = os.getenv('BMS_OSNAME', 'build')
 
-# Add SBMS directory to PYTHONPATH
-sbmsdir = "%s/SBMS" % (os.getcwd())
-sys.path.append(sbmsdir)
+# Get architecture name
+arch = ROOT_CFLAGS = subprocess.Popen(["uname"], stdout=subprocess.PIPE).communicate()[0].strip()
 
 # Setup initial environment
 installdir = "#../%s" %(osname)
@@ -59,6 +65,10 @@ env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])
 
 # Turn on debug symbols
 env.PrependUnique(CFLAGS = ['-g', '-fPIC'], CXXFLAGS = ['-g', '-fPIC'])
+
+# Apply any platform/architecture specific settings
+sbms.ApplyPlatformSpecificSettings(env, arch)
+sbms.ApplyPlatformSpecificSettings(env, osname)
 
 # "external" packages (aka xstream)
 SConscript('external/SConscript', variant_dir=".%s/external" % (osname), exports='env osname', duplicate=0)
