@@ -28,6 +28,16 @@ The deployment directory structure has platform first with
 the bin, lib, include directories inside of that. (Note that
 this is different from how the original BMS installed things).
 
+Platform specific settings can be placed in files based on the
+uname or the BMS_OSNAME (though it must be modified. For example,
+both of these would be included on the appropriate machine and in
+this order:
+
+sbms_Darwin.py
+sbms_Darwin_macosx10-9-x86_64-llvm5-0.py
+
+
+
 To build with multiple threads, use the -j option like this:
 
 scons -j 4

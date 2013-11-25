@@ -9,7 +9,6 @@ sbmsdir = "%s/SBMS" % (os.getcwd())
 sys.path.append(sbmsdir)
 
 import sbms
-import sbms_utils
 
 # Get command-line options
 SHOWBUILD = ARGUMENTS.get('SHOWBUILD', 0)

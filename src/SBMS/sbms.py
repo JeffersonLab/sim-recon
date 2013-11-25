@@ -297,30 +297,26 @@ def ReorderCommonLibraries(env):
 def ApplyPlatformSpecificSettings(env, platform):
 
 	# Look for SBMS file based on this platform and run the InitENV
-	# function in it to allow for platform-specific settings.
-	#
-	# We need to do this using __import__ which seems to change with
-	# python version number. This unfortunately means we must do a
-	# check on the version number and run version-specific code.
-	version = sys.version_info
-	sversion = "%d.%d" % (version.major, version.minor)
-	fversion = float(sversion)
+	# function in it to allow for platform-specific settings. Normally,
+	# the BMS_OSNAME will be passed in which almost certainly contains
+	# "."s. The Python module loader doesn't like these and we have to
+	# replace them with "-"s to appease it.
+
+	platform = re.sub('\.', '-', platform)
+
 	modname = "sbms_%s" % platform
+	if (int(env['SHOWBUILD']) > 0):
+		print "looking for %s.py" % modname
 	try:
-		InitENV = None
-		if(fversion < 2.7):
-			# for python 2.6
-			InitENV = getattr(__import__(modname, fromlist=["InitENV"]))
-		else:
-			# for python 2.7
-			InitENV = getattr(__import__(modname), "InitENV")
+		InitENV = getattr(__import__(modname), "InitENV")
 
 		# Run the InitENV function (if found)
 		if(InitENV != None):
 			print "sbms : Applying settings for platform %s" % platform
 			InitENV(env)
 
-	except ImportError:
+	except ImportError,e:
+		if (int(env['SHOWBUILD']) > 0): print "%s" % e
 		pass
 
 
