@@ -17,7 +17,7 @@ C
       DOUBLE PRECISION dbeam
       CHARACTER cpar*100
 C
-      INTEGER lun,lout,i,kf,kc,iost
+      INTEGER lun,lout,i,j,lenc,kf,kc,ks,iost
 C
 C     ------------------------------------------------------------------
 C

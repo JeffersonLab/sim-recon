@@ -5518,7 +5518,7 @@ C...Double precision declaration.
       PART2 = AF(0)*(1.D0 - X) + AF(3)*X
       PART3 = X*(1.D0-X)*(AF(5)+AF(6)*(1.D0-X)+AF(7)*X*(1.D0-X))
       PART4 = UT1VEC(IFL)*LOG(1.D0-X) +
-     &      AF(2)*LOG(1.D0+EXP(UT2VEC(IFL))-X)
+     &	      AF(2)*LOG(1.D0+EXP(UT2VEC(IFL))-X)
  
       PYCT5L = EXP(LOG(X) + PART1 + PART2 + PART3 + PART4)
  
@@ -5773,7 +5773,7 @@ C...Double precision declaration.
       PART2 = AF(0)*(1.D0 - X) + AF(3)*X
       PART3 = X*(1.D0-X)*(AF(5)+AF(6)*(1.D0-X)+AF(7)*X*(1.D0-X))
       PART4 = UT1VEC(IFL)*LOG(1.D0-X) +
-     &        AF(2)*LOG(1.D0+EXP(UT2VEC(IFL))-X)
+     &	      AF(2)*LOG(1.D0+EXP(UT2VEC(IFL))-X)
  
       PYCT5M = EXP(LOG(X) + PART1 + PART2 + PART3 + PART4)
  
@@ -11707,7 +11707,7 @@ C...Generate phase space point and check against cuts.
           IF(MINT(140+I).NE.0) THEN
 C...Pick x and Q2
             MINT(199)=0
-            geny=mcSet_YMin*(mcSet_YMax/mcSet_YMin)**PYR(0)
+	    geny=mcSet_YMin*(mcSet_YMax/mcSet_YMin)**PYR(0)
             genQ2=mcSet_Q2Min*(mcSet_Q2Max/mcSet_Q2Min)**PYR(0)
             gennu=geny*VINT(290)
             genx = genQ2 / (2D0*gennu*PYMASS(2212))
@@ -11726,7 +11726,7 @@ C....Check to have sensible ranges for variables
             if (temp.lt.0.or.temp.gt.1.) then
                GOTO 121
             endif
-            if ((genW2.lt.CKIN(77)**2).or.
+	    if ((genW2.lt.CKIN(77)**2).or.
      &          (CKIN(78).gt.0.and.genW2.gt.CKIN(78)**2)) then
                GOTO 121
             endif
@@ -11738,7 +11738,7 @@ C....Check to have sensible ranges for variables
             ppx=ppt*cos(PHI(I))
             ppy=ppt*sin(PHI(I))
 
-            ntries=0
+	    ntries=0
   122       if (qedrad.eq.1) then
               call radgen_event
             endif
@@ -11754,49 +11754,49 @@ C....Check to have sensible ranges for variables
              write(*,*) mcRadCor_ThetaBrems,mcRadCor_EBrems,mcEvent_iEvent
              GOTO 122
             endif
-            X(I)=((PMC(3)*Y(I))-Q2(I))/PMC(I)
+	    X(I)=((PMC(3)*Y(I))-Q2(I))/PMC(I)
 C P.L. ...An event with W^2_T<4will be generated new by RADGEN at the
 C      ...same kinematic point, the number of tries needed by RADGEN is 
 C      ...counted and saved in the variable rcweight!
              IF (qedrad.ne.0) then
-              IF((mcradcor_cType.eq.'qela').or.(mcradcor_cType.eq.'elas')) then
+	      IF((mcradcor_cType.eq.'qela').or.(mcradcor_cType.eq.'elas')) then
                  GOTO 122
-              ENDIF
+	      ENDIF
               IF(dble(mcRadCor_W2True).LT.
      &               (CKIN(77)**2-1.D-4*abs(CKIN(77)**2))) THEN
-                MINT(199)=MINT(199)+1
-C                write(*,*) "W2true: ",mcRadCor_W2True,MINT(199)
-                GOTO 122
+	        MINT(199)=MINT(199)+1
+C	        write(*,*) "W2true: ",mcRadCor_W2True,MINT(199)
+	        GOTO 122
               ENDIF
              ENDIF
-             ntries=ntries+1
-             IF(ntries.ge.20) GOTO 121
-            
-C ...... New try to implement weights directly into Pythia    
+	     ntries=ntries+1
+	     IF(ntries.ge.20) GOTO 121
+	    
+C ...... New try to implement weights directly into Pythia	    
           sigobs=0.0D0
-          sigtrue=0.0D0
-          rccorr=1.0D0
-        if (qedrad.eq.1) then  
-          call MKF2(dble(genq2),dble(genx),
+	  sigtrue=0.0D0
+	  rccorr=1.0D0
+	if (qedrad.eq.1) then  
+	  call MKF2(dble(genq2),dble(genx),
      +              mcSet_TarA,mcSet_TarZ,py6f2,py6f1)
           sigobs=pyth_xsec(dble(genx), dble(genq2),py6f1, py6f2)
-          IF(mcRadCor_EBrems.eq.0) THEN
-           IF (sig1g.gt.0.D0) then
-            rccorr=(tbor+tine)/sig1g/(DBLE(MINT(199))+1.0D0)
-           ELSE
-            rccorr=0.D0
-           ENDIF
-          ELSEIF(mcRadCor_EBrems.gt.0) THEN
+	  IF(mcRadCor_EBrems.eq.0) THEN
+	   IF (sig1g.gt.0.D0) then
+	    rccorr=(tbor+tine)/sig1g/(DBLE(MINT(199))+1.0D0)
+	   ELSE
+	    rccorr=0.D0
+	   ENDIF
+	  ELSEIF(mcRadCor_EBrems.gt.0) THEN
           call MKF2(Q2(I),dble(mcRadCor_XTrue),
      +           mcSet_TarA,mcSet_TarZ,py6f2,py6f1)
           sigtrue=pyth_xsec(dble(mcRadCor_XTrue),Q2(I),py6f1, py6f2)
-           IF ((sig1g.gt.0.D0).and.(sigtrue.gt.0.D0)) then
-            rccorr=(tbor+tine)/sig1g*sigobs/sigtrue/(DBLE(MINT(199))+1.0D0)
-           ELSE
-            rccorr=0.D0
-           ENDIF
-          ENDIF
-        ENDIF
+	   IF ((sig1g.gt.0.D0).and.(sigtrue.gt.0.D0)) then
+	    rccorr=(tbor+tine)/sig1g*sigobs/sigtrue/(DBLE(MINT(199))+1.0D0)
+	   ELSE
+	    rccorr=0.D0
+	   ENDIF
+	  ENDIF
+	ENDIF
             IF(X(I).GT.(XMAX(I)+1.D-4*abs(XMAX(I)))) THEN
                GOTO 121
             ENDIF
@@ -11826,12 +11826,12 @@ C...Phi angle isotropic. Reconstruct pT.
      &      PMS(I))*SIN(THETA(I))
 C ... try 'new' phi
             IF ((qedrad.ne.0).and.(mcRadCor_EBrems.gt.0)) then
-             emom=sqrt(dble(geneprim)**2-pymass(11)**2)
+	     emom=sqrt(dble(geneprim)**2-pymass(11)**2)
              PHI(I)=atan2((emom*ppy+dplabg(2)),(emom*ppx+dplabg(1)))
              IF (PHI(I).lt.0) THEN
-               PHI(I)=PHI(I)+PARU(2)
-              ENDIF
-            ENDIF
+ 	      PHI(I)=PHI(I)+PARU(2)
+ 	     ENDIF
+	    ENDIF
 C...Store info on variables selected, for documentation purposes.
             VINT(2+I)=-SQRT(Q2(I))
             VINT(304+I)=X(I)
@@ -15585,7 +15585,7 @@ C...Identify incoming beam and target particles.
           CHTEMP=CHIDNT(I+1)(7:12)//' '
           DO 150 J=1,12
             IF(CHTEMP.EQ.CHCDE(J)) MINT(140+I)=KCDE(J)
-  150     CONTINUE
+  150	  CONTINUE
           PM(I)=PYMASS(MINT(140+I))
           VINT(302+I)=PM(I)
         ENDIF
@@ -34260,27 +34260,27 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       DLAMBDAP2 = 0D0
       IF(MGLU.LT.MUR.OR.MGLU.LT.MQ) THEN
        IF(MQ.GT.MUR.AND.MGLU.GT.MUR) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TGLU**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TGLU**2)
        ENDIF
  
        IF(MQ.GT.MUR.AND.MGLU.LT.MUR) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TU**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TU**2)
        ENDIF
  
        IF(MQ.GT.MUR.AND.MGLU.EQ.MUR) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TU**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TU**2)
        ENDIF
  
        IF(MUR.GT.MQ.AND.MGLU.GT.MQ) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TGLU**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TGLU**2)
        ENDIF
  
        IF(MUR.GT.MQ.AND.MGLU.LT.MQ) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TQ**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TQ**2)
        ENDIF
  
        IF(MUR.GT.MQ.AND.MGLU.EQ.MQ) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TQ**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TQ**2)
        ENDIF
       ENDIF
       DLAMBDA3 = 0D0

@@ -4,7 +4,6 @@ C
       INTEGER IX
       REAL a
 C
-      IX=0
       CALL RANLUX(a,1)
       PYR=DBLE(a)
       RETURN
