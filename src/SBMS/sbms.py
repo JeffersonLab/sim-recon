@@ -393,6 +393,45 @@ def AddCCDB(env):
 
 
 ##################################
+# EVIO
+##################################
+def AddEVIO(env):
+	evioroot = os.getenv('EVIOROOT', 'evio')
+	env.AppendUnique(CPPPATH = ['%s/include' % evioroot])
+	env.AppendUnique(LIBPATH = ['%s/lib' % evioroot])
+	env.AppendUnique(LIBS=['evioxx', 'evio'])
+	AddET(env)
+
+
+##################################
+# ET
+##################################
+def AddET(env):
+
+	# Only add ET if ETROOT is set
+	etroot = os.getenv('ETROOT', 'none')
+	if(etroot != 'none') :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_ET'])
+		env.AppendUnique(CPPPATH = ['%s/include' % etroot])
+		env.AppendUnique(LIBPATH = ['%s/lib' % etroot])
+		env.AppendUnique(LIBS=['et_remote', 'et'])
+
+
+##################################
+# CMSG
+##################################
+def AddCMSG(env):
+
+	# Only add cMsg if CMSGROOT is set
+	cmsgroot = os.getenv('CMSGROOT', 'none')
+	if(cmsgroot != 'none') :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_CMSG'])
+		env.AppendUnique(CPPPATH = ['%s/include' % cmsgroot])
+		env.AppendUnique(LIBPATH = ['%s/lib' % cmsgroot])
+		env.AppendUnique(LIBS=['cmsgxx', 'cmsg', 'cmsgRegex'])
+
+
+##################################
 # Xerces
 ##################################
 def AddXERCES(env):
