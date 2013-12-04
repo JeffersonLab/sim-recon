@@ -27,7 +27,7 @@
 # file sources this file (the one you're reading) first (via the
 # libraries/SConscript file) and the one there second (via the
 # programs/SConscript file). Thus, it is the only place where both the
-# source Nodes and utilitiy Nodes are both available.
+# source Nodes and utility Nodes are both available.
 #
 # To actually generate the C/C++ source from the XML we create two builders
 # (one for C and the other for C++) here. The builders run the utilities
@@ -38,60 +38,98 @@
 # which do not depend on the name of the input file ("event.xml"). We specify
 # two products of the input XML, but the value that $TARGET gets set to
 # in the builder is just the first of these. We choose to always use the header
-# files as the first target so the external shell "basename" command can
-# be used and hardwired to strip off the ".h" (or ".hpp") suffix to get the
-# base name of the target. This is what is passed into the "-o" option
-# of hddm-c as it will automatically add ".c" and ".h" to this.
+# files as the first target so we can easily strip off the ".h" (or ".hpp")
+# suffix to get the base name of the target. This is what is passed into
+# the "-o" option of hddm-c as it will automatically add ".c" and ".h" to this.
 #
 # Another complication is that by default, the C++ files produced will
 # have a ".cpp" suffix, but the same base name. This would normally lead
 # to object files for hddm_s.c and hddm_s.cpp both being hddm_s.o.
-# We follow the historical solution to this by renaming the hddm_s.cpp
+# We follow the historical solution used in BMS of renaming the hddm_s.cpp
 # to hddm_s++.cpp.
-#
-# It should be possible to use a python function instead of an
-# SCons.Script.Action possibly making the code here a little easier to
-# understand and almost certainly making the output when running
-# with SHOWBUILD=1 more readable. This seems to be working for the
-# moment and is able to print a simplified command line (i.e. when
-# SHOWBUILD is not set) that is consistent with other commands.
 
 
+import re
+import subprocess
 import SCons
 import sbms
 
 # get env object and clone it
 Import('*')
 
-# Locations of the built (not "installed") utilities for
-# generating hddm C/C++ source from XML input files.
-hddmc   = str(env.File("#.%s/programs/Utilities/hddm/hddm-c" % osname))
-hddmcpp = str(env.File("#.%s/programs/Utilities/hddm/hddm-cpp" % osname))
+#========================================================================
+# Python functions used by the hddm-c and hddm-cpp builders
 
-# These are used multiple times in the builder below. They
-# have to be scripts that are run when the builder issues
-# the command so that the file names can be derived from
-# $TARGET which isn't set until then.
-basenamec   = "`dirname $TARGET`/`basename $TARGET .h`"
-basenamecpp = "`dirname $TARGET`/`basename $TARGET .hpp`"
+#---------------
+# HDDM_C
+#---------------
+def HDDM_C(target, source, env):
 
-# Create builders to generated C/C++ HDDM (de)serializer
-# code using the XML input.
+	# Get full path to tool
+	hddmc   = str(env.File("#.%s/programs/Utilities/hddm/hddm-c" % osname))
+
+	# Get basename with full path for target.
+	# The first target should always be the header
+	# file name to be generated so we just drop the
+	# suffix from that.
+	target_base = re.sub('\.h$', '', str(target[0]))
+
+	# Form command to be executed and execute it
+	cmd = [hddmc, '-o', target_base, str(source[0])]
+	if( int(env['SHOWBUILD']) > 0): print ' '.join(cmd)
+	cmdout = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
+
+#---------------
+# HDDM_CPP
+#---------------
+def HDDM_CPP(target, source, env):
+
+	# Get full path to tool
+	hddmcpp = str(env.File("#.%s/programs/Utilities/hddm/hddm-cpp" % osname))
+
+	# Get basename with full path for target.
+	# The first target should always be the header
+	# file name to be generated so we just drop the
+	# suffix from that.
+	target_base = re.sub('\.hpp$', '', str(target[0]))
+
+	# Form command to be executed and execute it
+	cmd = [hddmcpp, '-o', target_base, str(source[0])]
+	if( int(env['SHOWBUILD']) > 0): print ' '.join(cmd)
+	cmdout = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
+
+	# C++ interface must have source file names modified
+	# so as not to generate same .o filenames as their C counteparts
+	cmd = ['mv', '%s.cpp' % target_base, '%s++.cpp' % target_base]
+	if( int(env['SHOWBUILD']) > 0): print ' '.join(cmd)
+	cmdout = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
+
+
+# end of Python functions. Global-level scons continues below
+#========================================================================
+
+# To get succinct output, define the builder actions based
+# on the value of SHOWBUILD
 if env['SHOWBUILD']==0:
-	hddmcaction   = SCons.Script.Action("%s -o %s $SOURCE" % (hddmc, basenamec), 'HDDM-C     [$SOURCE]')
-	hddmcppaction = SCons.Script.Action("%s -o %s $SOURCE ; mv %s.cpp %s++.cpp" % (hddmcpp, basenamecpp, basenamecpp, basenamecpp), 'HDDM-CPP   [$SOURCE]')
+	hddmcaction   = SCons.Script.Action(HDDM_C  , 'HDDM-C     [$SOURCE]')
+	hddmcppaction = SCons.Script.Action(HDDM_CPP, 'HDDM-CPP   [$SOURCE]')
 else:
-	hddmcaction   = SCons.Script.Action("%s -o %s $SOURCE" % (hddmc, basenamec))
-	hddmcppaction = SCons.Script.Action("%s -o %s $SOURCE ; mv %s.cpp %s++.cpp" % (hddmcpp, basenamecpp, basenamecpp, basenamecpp))
+	hddmcaction   = SCons.Script.Action(HDDM_C)
+	hddmcppaction = SCons.Script.Action(HDDM_CPP)
+
+# Create the actual scons builders from the actions defined above
 bldc   = SCons.Script.Builder(action = hddmcaction)
 bldcpp = SCons.Script.Builder(action = hddmcppaction)
 env.Append(BUILDERS = {'HDDMC'   : bldc})
 env.Append(BUILDERS = {'HDDMCPP' : bldcpp})
 
+
 # Add the C/C++ HDDM (de)serializer source dependcies
 # by hand. The output file names depend on the class
 # tag defined inside the XML file. So, specifying the
 # inputs and outputs explicitly here is just easier.
+# The HDDMC_SRC and HDDMCPP_SRC variables are used by
+# the SConscript in src/programs/Utilities/hddm.
 env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_s.h', 'hddm_s.c'], 'event.xml'))
 env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_r.h', 'hddm_r.c'], 'rest.xml'))
 env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_s.hpp', 'hddm_s++.cpp'], 'event.xml'))
@@ -104,4 +142,7 @@ env = env.Clone()
 
 sbms.AddDANA(env)
 sbms.library(env)
+
+
+	
 
