@@ -190,12 +190,6 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DCDCTrackHit *>&hits);
 
-  jerror_t KalmanFilterCathodesOnly(double anneal_factor,DMatrix4x1 &S,
-				    DMatrix4x4 &C,
-			vector<const DFDCPseudo *>&hits,
-			deque<trajectory_t>&trajectory,
-			vector<strip_update_t>&updates,
-			double &chi2,unsigned int &ndof);
   jerror_t KalmanFilter(double anneal_factor,
 			DMatrix4x1 &S,DMatrix4x4 &C,
 			vector<const DFDCPseudo *>&hits,
@@ -209,11 +203,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			vector<cdc_update_t>&updates,
 			double &chi2,unsigned int &ndof,
 			bool timebased=false);
-  jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
-		  deque<trajectory_t>&trajectory,
-		  vector<const DFDCPseudo *>&hits,
-		  vector<strip_update_t>updates,
-		  vector<strip_update_t>&smoothed_updates);
+
   jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 		  deque<trajectory_t>&trajectory,
 		  vector<const DFDCPseudo *>&hits,
@@ -242,8 +232,6 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			vector<vector<const DFDCPseudo *> >&LinkedSegments);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
 		       vector<update_t>&smoothed_updates);
-  jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
-		       vector<strip_update_t>smoothed_updates);
   jerror_t FindOffsets(vector<const DCDCTrackHit*>&hits,
 		       vector<cdc_update_t>&updates);
   
@@ -293,6 +281,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   TH2F *Hdrift_time,*Hcdcres_vs_drift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
   TH2F *Hdv_vs_dE,*Hbcalmatchxy;
+  TH1F *Hztarg;
 
   double mT0;
   double target_to_fcal_distance;
