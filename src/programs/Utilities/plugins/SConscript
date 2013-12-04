@@ -3,4 +3,5 @@
 Import('*')
 
 subdirs = ['danarest']
+#subdirs = ['danarest', 'DAQ', 'TTab']
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
