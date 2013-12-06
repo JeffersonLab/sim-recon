@@ -60,7 +60,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	DUMP_MODULE_MAP = false;
 	MAKE_DOM_TREE = true;
 	PARSE_EVIO_EVENTS = true;
-	BUFFER_SIZE = 50000; // in bytes
+	BUFFER_SIZE = 1000000; // in bytes
 	ET_STATION_NEVENTS = 100;
 	ET_STATION_CREATE_BLOCKING = true;
 	VERBOSE = 0;
@@ -548,6 +548,15 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 		}
 	} catch (evioException &e) {
 		_DBG_<<e.what()<<endl;
+		if(e.type == S_EVFILE_TRUNC){
+			jerr << "-- Event buffer truncated --" <<endl;
+			jerr << "---- this could be because the events are too large " << endl;
+			jerr << "---- for the buffer provided (" << BUFFER_SIZE << " bytes)" <<endl;
+			jerr << "---- you can try giving a larger buffer size by setting" << endl;
+			jerr << "---- the EVIO:BUFFER_SIZE configuration parameter by " << endl;
+			jerr << "---- adding this argument to your command line:" << endl;
+			jerr << "----   -PEVIO:BUFFER_SIZE=X      (where X is in bytes)" << endl;
+		}
 	}
 
 	if(VERBOSE>2) evioout << " Leaving ReadEVIOEvent()" << endl;
