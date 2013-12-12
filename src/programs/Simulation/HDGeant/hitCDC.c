@@ -173,7 +173,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
       if(hits->in[nhit].t>tdrift){
 	hits->in[nhit].t = tdrift;
 	hits->in[nhit].d = dradius;
-	hits->in[nhit].itrack = track;
+	hits->in[nhit].itrack = gidGetId(track);
 	hits->in[nhit].ptype = ipart;
       }
       
@@ -187,7 +187,7 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
       hits->in[nhit].t = tdrift;
       hits->in[nhit].q = q;
       hits->in[nhit].d = dradius;
-      hits->in[nhit].itrack = track;
+      hits->in[nhit].itrack = gidGetId(track);
       hits->in[nhit].ptype = ipart;
       
       hits->mult++;

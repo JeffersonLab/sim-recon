@@ -335,7 +335,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  noMCHits->in[nMChit].py = pin[1]*pin[4];
 	  noMCHits->in[nMChit].pz = pin[2]*pin[4];
 	  noMCHits->in[nMChit].ptype = ipart;
-	  noMCHits->in[nMChit].itrack = track;
+	  noMCHits->in[nMChit].itrack = gidGetId(track);
 	  noMCHits->in[nMChit].dist = dist;
 	  noMCHits->mult++;
 	}
@@ -356,7 +356,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 	noMCHits->in[0].py = pin[1]*pin[4];
 	noMCHits->in[0].pz = pin[2]*pin[4];
 	noMCHits->in[0].ptype = ipart;
-	noMCHits->in[0].itrack = track;
+	noMCHits->in[0].itrack = gidGetId(track);
 	noMCHits->in[0].dist = dist;
 	noMCHits->mult = 1;
 	
@@ -400,7 +400,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  soMCHits->in[nMChit].py = pin[1]*pin[4];
 	  soMCHits->in[nMChit].pz = pin[2]*pin[4];
 	  soMCHits->in[nMChit].ptype = ipart;
-	  soMCHits->in[nMChit].itrack = track;
+	  soMCHits->in[nMChit].itrack = gidGetId(track);
 	  soMCHits->in[nMChit].dist = dist;
 	  soMCHits->mult++;
 	}
@@ -421,7 +421,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 	soMCHits->in[0].py = pin[1]*pin[4];
 	soMCHits->in[0].pz = pin[2]*pin[4];
 	soMCHits->in[0].ptype = ipart;
-	soMCHits->in[0].itrack = track;
+	soMCHits->in[0].itrack = gidGetId(track);
 	soMCHits->in[0].dist = dist;
 	soMCHits->mult = 1;
 	

@@ -303,14 +303,14 @@ void AddFDCCathodeHits(int PackNo,float xwire,float avalanche_y,float tdrift,
 	    chits->in[nhit].q += q;
 	    if(chits->in[nhit].t>tdrift){
 	      chits->in[nhit].t = tdrift;
-	      chits->in[nhit].itrack = track;
+	      chits->in[nhit].itrack = gidGetId(track);
 	      chits->in[nhit].ptype = ipart;
 	    }
 	  }
 	else if (nhit < MAX_HITS){        /* create new hit */
 	  chits->in[nhit].t = tdrift;
 	  chits->in[nhit].q = q;
-	  chits->in[nhit].itrack = track;
+	  chits->in[nhit].itrack = gidGetId(track);
 	  chits->in[nhit].ptype = ipart;
 	  chits->mult++;
 	}
@@ -440,7 +440,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
 	ahits->in[nhit].t_unsmeared=tdrift_unsmeared;
 	ahits->in[nhit].d = sqrt(dx2+dz2);
 	
-	ahits->in[nhit].itrack = track;
+	ahits->in[nhit].itrack = gidGetId(track);
 	ahits->in[nhit].ptype = ipart;
       }
     
@@ -455,7 +455,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
       ahits->in[nhit].t_unsmeared=tdrift_unsmeared;
       ahits->in[nhit].dE = dE;
       ahits->in[nhit].d = sqrt(dx2+dz2);
-      ahits->in[nhit].itrack = track;
+      ahits->in[nhit].itrack = gidGetId(track);
       ahits->in[nhit].ptype = ipart;
       ahits->mult++;
     }

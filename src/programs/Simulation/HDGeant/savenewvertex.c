@@ -12,22 +12,9 @@ savenewvertex: particle stoped because it decayed
 
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
+#include "gid_map.h"
 
 extern s_HDDM_t* thisInputEvent;
-
-/*
-  The following are used to communicate the "id" fields from the
-  particles read in from the input file of generated events here
-  so that new particles created via decays can have the proper
-  parent id recorded and get assigned their own id that is not
-  already assigned.
-  
-  9/11/2013
-*/
-extern int MAX_GENERATED_PARTICLES;
-extern int MYID[];
-extern int NEXT_MYID;
-
 
 void SaveNewVertex(int kcase, int Npart, float *gkin, 
 		   float vertex[3], float tofg, int *iflgk,
@@ -60,37 +47,27 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
   or->vz = vertex[2];
   or->t = tofg;
 
+  int lastId = getLastId();
+
   // copy in the new particles at this vertex
   s_Products_t* ps = make_s_Products(Npart);
   verts->in[VertexCount].products = ps;
   ps->mult = Npart;
+  int thisId = lastId + 1;
   for (i = 0;i<Npart;i++){
-  	
-    /* Give this particle a unique id in the output file */
-    int myid = NEXT_MYID++;
-    MYID[myid] = itra;
-
-    /* Find parent id based on parent's track number */
-    //int parentid = itra < MAX_GENERATED_PARTICLES ? MYID[itra][1]:0;
-
-    int parentid = itra;
-
-    /* Add this particle to the map of track number to id in case it also is decayed */
-    int my_trk_num = iflgk[i];
-    //    if(my_trk_num < MAX_GENERATED_PARTICLES) MYID[my_trk_num] = myid;
-
     ps->in[i].momentum = make_s_Momentum();
     ps->in[i].momentum->px = gkin[i*5+0];
     ps->in[i].momentum->py = gkin[i*5+1];
     ps->in[i].momentum->pz = gkin[i*5+2];
     ps->in[i].momentum->E  = gkin[i*5+3];
     ps->in[i].type = gkin[i*5+4];
-    ps->in[i].pdgtype = PDGtype(ps->in[i].type);
-    ps->in[i].parentid = parentid;
-    ps->in[i].id = my_trk_num ;//myid;
+    ps->in[i].pdgtype = PDGtype(gkin[i*5+4]);
+    ps->in[i].parentid = gidGetId(itra);
+    ps->in[i].id = thisId;
     ps->in[i].mech = kcase;
     ps->in[i].decayVertex = VertexCount;
-
+    gidSet(iflgk[i], thisId);
+    thisId++;
   }
     
 }
@@ -105,4 +82,33 @@ void savenewvertex_ (int *kcase, int *N, float* gkin,
 
   SaveNewVertex(*kcase, *N, gkin, vertex, *tofg, iflgk, *ipart, *itra, *istak);
 
+}
+
+int getLastId() {
+  int maxId = 0;
+  s_Reactions_t* reacts;
+  int reactCount, ir;
+  reacts = thisInputEvent ->physicsEvents->in[0].reactions;
+  reactCount = reacts->mult;
+  for (ir = 0; ir < reactCount; ir++) {
+    s_Vertices_t* verts;
+    int vertCount, iv;
+    s_Reaction_t* react = &reacts->in[ir];
+    verts = react->vertices;
+    vertCount = verts->mult;
+    for (iv = 0; iv < vertCount; iv++) {
+      s_Products_t* prods;
+      int prodCount, ip;
+      s_Vertex_t* vert = &verts->in[iv];
+      prods = vert->products;
+      prodCount = prods->mult;
+      for (ip = 0; ip < prodCount; ip++) {
+	s_Product_t* prod = &prods->in[ip];
+	if (prod->id > maxId) {
+	  maxId = prod->id;
+	}
+      }
+    }
+  }
+  return maxId;
 }

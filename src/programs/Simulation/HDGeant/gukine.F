@@ -221,14 +221,12 @@ c         print *, ngen,' background photons generated this event'
 *              Try coherent bremsstrahlung beam generation next
 *
       elseif (E.gt.0) then
-         call setupMYID
          call beamgen(0.)
          call storeInput(IDRUN,IDEVT,1);
 *
 *              If all else fails, do automatic single-track generation
 *
       else
-         call setupMYID
          CALL GRNDM(RNDM,3)
          vertex_r=RNDM(1)*tgtwidth(1)
          vertex_phi=RNDM(2)*6.28319

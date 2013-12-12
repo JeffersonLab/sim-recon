@@ -391,6 +391,7 @@ C..geant..
 *
       if (IHADR.ge.3) call FLINIT
       if (IHADR.eq.4) call GMORIN
-      call SXPART
+
+      call gidClear()
 
       END

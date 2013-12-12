@@ -91,4 +91,6 @@ C     endif
 C     FDPREE() should only be called if FLUKA is being used
       if (IHADR.ge.3) call fdpree()
 
+      call gidclear()
+
       END

@@ -28,11 +28,6 @@
  *
  * Revision history:
  *
- * > Sep 11, 2013 - David Lawrence
- * Keep track of mapping between track number and id value for generated
- * particles. This is so the savenewvertex code can assign proper parentid
- * as well as assign unique id values.
- *
  * > Aug 17, 2007 - David Lawrence
  * Fill in id, parentid, pdgtype, and mech fields of reactions objects in HDDM.
  * Mostly zeros, but it makes it clear the fields are invalid and allows
@@ -68,24 +63,12 @@
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
 
+#include "gid_map.h"
+
 void settofg_(float origin[3], float *time0);
 
 s_iostream_t* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
-
-#define MYID_ARRAY_SIZE 100
-int MAX_GENERATED_PARTICLES = MYID_ARRAY_SIZE;
-int MYID[MYID_ARRAY_SIZE];
-int NEXT_MYID = 0; /* see savenewvertex.c */
-
-int setupMYID(){
-  int imyid;
-  NEXT_MYID = 1;
-  for(imyid=0; imyid<MYID_ARRAY_SIZE; imyid++) {
-    MYID[imyid] = -1; /* initialize to invalid value */
-  }
-  return 0;
-}
 
 /*-------------------------
  * openInput
@@ -140,16 +123,12 @@ int loadInput ()
 	 * them (gsvert) and defines the GEANT (gskine) for tracking.
 	 */
    s_Reactions_t* reacts;
-   int reactCount, ir, imyid;
+   int reactCount, ir;
    int runNo = thisInputEvent->physicsEvents->in[0].runNo;
    int eventNo = thisInputEvent->physicsEvents->in[0].eventNo;
    seteventid_(&runNo,&eventNo);
    reacts = thisInputEvent ->physicsEvents->in[0].reactions;
    reactCount = reacts->mult;
-   NEXT_MYID = 1;
-   for(imyid=0; imyid<MYID_ARRAY_SIZE; imyid++) {
-     MYID[imyid] = -1; /* initialize to invalid value */
-   }
    for (ir = 0; ir < reactCount; ir++)
    {
       s_Vertices_t* verts;
@@ -205,27 +184,17 @@ int loadInput ()
             Particle_t kind;
             s_Product_t* prod = &prods->in[ip];
             kind = prod->type;
-            //if(prod->id >= NEXT_MYID) NEXT_MYID = prod->id+1; /* keep track of next available id */
-	    /* Don't tell geant to track particles that are intermediary types */
-	    if(kind<=0) {
-	      prod->id=0;
-	      prod->parentid = 0;
-	      continue;
-	    }
-	    prod->id = NEXT_MYID++;
+				
+				/* Don't tell geant to track particles that are intermediary types */
+				if(kind<=0)continue;
+				
             p[0] = prod->momentum->px;
             p[1] = prod->momentum->py;
             p[2] = prod->momentum->pz;
             if (prod->decayVertex == 0)
             {
-	      prod->parentid = 0;
-	      gskine_(p, &kind, &nvtx, &ubuf, &nubuf, &ntrk);
-	      //printf("Tracknumber: %d \n",ntrk);
-	      /* Fill map of track number to myid */
-	      if(ntrk < MAX_GENERATED_PARTICLES) {
-		MYID[ntrk] = prod->id;
-	      }
-	      
+               gskine_(p, &kind, &nvtx, &ubuf, &nubuf, &ntrk);
+	       gidSet(ntrk, ip + 1);
             }
          }
       }
@@ -303,6 +272,7 @@ int storeInput (int runNo, int eventNo, int ntracks)
       ps->in[ps->mult].type = kind;
       ps->in[ps->mult].pdgtype = 0;	/* don't bother with the PDG type here */
       ps->in[ps->mult].id = itra;	/* unique value for this particle within the event */
+      gidSet(itra, itra);	        /* assume same value for geant id */
       ps->in[ps->mult].parentid = 0;	/* All internally generated particles have no parent */
       ps->in[ps->mult].mech = 0;	/* maybe this should be set to something? */
       ps->in[ps->mult].momentum = make_s_Momentum();
@@ -426,9 +396,4 @@ int storeinput_ (int* runNo, int* eventNo, int* ntracks)
 int closeinput_ ()
 {
    return closeInput();
-}
-
-int setupmyid_()
-{
-  return setupMYID();
 }

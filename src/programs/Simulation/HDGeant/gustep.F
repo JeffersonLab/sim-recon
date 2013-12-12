@@ -435,37 +435,29 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 
       if (nosecondaries.eq.0) then
         do i=1,NGKINE
-          itypa  = GKIN(5,i)
-          if (itypa.ne.4) then
-
-c     make primary except if in calorimeter volume and not hadronic interaction
-             iflgk(i) = 1
-             cint = KCASE
-c             print *, cchar
-             rx = sqrt(VECT(1)**2+VECT(2)**2)
-             if ( ( ((rx>65.) .and.( (VECT(3)>-17.) .and.
-     >            (VECT(3)<390.))).or.(VECT(3)>625.)).and.
-     >            (cchar.ne.'HADR') ) then
-                iflgk(i) = 0
-             endif
-             call GSKING(i)
-          endif
-       enddo
+c          make primary except if in calorimeter volume and not hadronic
+c          interaction
+           iflgk(i) = 1
+           cint = KCASE
+           rx = sqrt(VERT(1)**2+VERT(2)**2)
+           if ((((rx>65.) .and.((VERT(3)>-17.) .and.
+     >          (VERT(3)<390.))).or.(VERT(3)>625.)).and.
+     >          (cchar.ne.'HADR')) then
+              iflgk(i) = 0
+           endif
+           call GSKING(i)
+        enddo
       endif
 
 * check if particle did decay in which case save vertex and particles
 
       if (ISTOP .eq. 1) then
-        mechanism = KCASE
+         mechanism = KCASE
          if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
-
             if ((cnames(NLEVEL).ne.'BCAL') .and.
      +           (cnames(NLEVEL).ne.'FCAL').and.
-     +           (sqrt(VECT(1)**2+VECT(2)**2)<65.).and.
-     +           (VECT(3)<500.)) then
-
-c               print *,IDEVT," KCASE: ",ITRA,"  ",chcase,"  ",
-c     >              IPART,"  ",VERT(1)," ",VERT(2)," ",VERT(5)
+     +           (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
+     +           (VERT(3)<500.)) then
                call savenewvertex(KCASE,NGKINE,GKIN,VECT,
      +              TOFG,iflgk,IPART,ITRA,ISTAK)
             endif
