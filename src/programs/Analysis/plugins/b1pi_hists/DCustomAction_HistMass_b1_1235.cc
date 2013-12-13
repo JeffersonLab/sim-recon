@@ -52,13 +52,14 @@ bool DCustomAction_HistMass_b1_1235::Perform_Action(JEventLoop* locEventLoop, co
 	const DParticleComboStep* locParticleComboStep1 = locParticleCombo->Get_ParticleComboStep(1);
 	const DParticleComboStep* locParticleComboStep2 = locParticleCombo->Get_ParticleComboStep(2);
 
-	const DKinematicData* locPiPlus1 = locUseKinFitResultsFlag ? locParticleComboStep0->Get_FinalParticle(2) : locParticleComboStep0->Get_FinalParticle_Measured(2);
+	//first get measured particle objects, and check to see if combination of particles is unique
+	const DKinematicData* locPiPlus1 = locParticleComboStep0->Get_FinalParticle_Measured(2);
 
-	const DKinematicData* locPiPlus2 = locUseKinFitResultsFlag ? locParticleComboStep1->Get_FinalParticle(0) : locParticleComboStep1->Get_FinalParticle_Measured(0);
-	const DKinematicData* locPiMinus2 = locUseKinFitResultsFlag ? locParticleComboStep1->Get_FinalParticle(1) : locParticleComboStep1->Get_FinalParticle_Measured(1);
+	const DKinematicData* locPiPlus2 = locParticleComboStep1->Get_FinalParticle_Measured(0);
+	const DKinematicData* locPiMinus2 = locParticleComboStep1->Get_FinalParticle_Measured(1);
 
-	const DKinematicData* locPhoton1 = locUseKinFitResultsFlag ? locParticleComboStep2->Get_FinalParticle(0) : locParticleComboStep2->Get_FinalParticle_Measured(0);
-	const DKinematicData* locPhoton2 = locUseKinFitResultsFlag ? locParticleComboStep2->Get_FinalParticle(1) : locParticleComboStep2->Get_FinalParticle_Measured(1);
+	const DKinematicData* locPhoton1 = locParticleComboStep2->Get_FinalParticle_Measured(0);
+	const DKinematicData* locPhoton2 = locParticleComboStep2->Get_FinalParticle_Measured(1);
 
 	set<const DKinematicData*> locCurrentParticles;
 	locCurrentParticles.insert(locPiMinus2);
@@ -81,6 +82,7 @@ bool DCustomAction_HistMass_b1_1235::Perform_Action(JEventLoop* locEventLoop, co
 	}
 	dPastParticles.push_back(locCurrentParticles);
 
+	//calculate invariant mass
 	DLorentzVector locP4;
 	if(!locUseKinFitResultsFlag) //measured
 	{
@@ -88,11 +90,15 @@ bool DCustomAction_HistMass_b1_1235::Perform_Action(JEventLoop* locEventLoop, co
 		locP4 += locPiPlus1->lorentzMomentum() + locPiPlus2->lorentzMomentum();
 		locP4 += locPhoton1->lorentzMomentum() + locPhoton2->lorentzMomentum();
 	}
-	else //kinfit
+	else //kinfit: get kinfit objects first
 	{
+		locPiPlus1 = locParticleComboStep0->Get_FinalParticle(2);
+		locPiPlus2 = locParticleComboStep1->Get_FinalParticle(0);
+		locPiMinus2 = locParticleComboStep1->Get_FinalParticle(1);
+		const DKinematicData* locPiZero = locParticleComboStep1->Get_FinalParticle(2);
+
 		locP4 += locPiMinus2->lorentzMomentum();
 		locP4 += locPiPlus1->lorentzMomentum() + locPiPlus2->lorentzMomentum();
-		const DKinematicData* locPiZero = locParticleComboStep1->Get_FinalParticle(2);
 		locP4 += locPiZero->lorentzMomentum();
 	}
 	double locInvariantMass = locP4.M();
