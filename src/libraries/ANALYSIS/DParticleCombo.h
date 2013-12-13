@@ -67,6 +67,7 @@ class DParticleCombo : public JObject
 
 		// OTHER:
 		bool Check_IfDecayingParticleExcludedFromP4KinFit(size_t locStepIndex) const;
+		bool Check_AreMeasuredParticlesIdentical(const DParticleCombo* locParticleCombo) const;
 		bool Will_KinFitBeIdentical(const DParticleCombo* locParticleCombo) const; //the pointers for the steps must be identical for this to be true!!
 
 	private:

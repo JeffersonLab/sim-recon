@@ -10,21 +10,53 @@ void DReactionStep::Reset(void)
 
 void DReactionStep::Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag)
 {
-	dInitialParticleID = locPID;
+	if(IsResonance(locPID))
+	{
+		cout << "ERROR: CANNOT SET RESONANCE PID. ABORTING." << endl;
+		abort();
+	}
+
+	if(locPID == Unknown)
+	{
+		cout << "ERROR: CANNOT SET UNKNOWN PID AS INITIAL PARTICLE. ABORTING." << endl;
+		abort();
+	}
+
 	if(locIsMissingFlag)
-		cout << "WARNING: MISSING BEAM PARTICLE IS NOT YET SUPPORTED!  TREATING AS NON-MISSING." << endl;
+	{
 //		dMissingParticleIndex = -2;
+		cout << "ERROR: MISSING BEAM PARTICLE IS NOT YET SUPPORTED! ABORTING." << endl;
+		abort();
+	}
+
+	dInitialParticleID = locPID;
 }
 
 void DReactionStep::Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag)
 {
-	dFinalParticleIDs.push_back(locPID);
+	if(IsResonance(locPID))
+	{
+		cout << "ERROR: CANNOT SET RESONANCE PID. ABORTING." << endl;
+		abort();
+	}
+
 	if(locIsMissingFlag)
 	{
 		if(dMissingParticleIndex != -1)
-			cout << "WARNING: MORE THAN ONE MISSING PARTICLE.  UNEXPECTED BEHAVIOR WILL RESULT." << endl;
+		{
+			cout << "ERROR: MORE THAN ONE MISSING PARTICLE. ABORTING." << endl;
+			abort();
+		}
+		dFinalParticleIDs.push_back(locPID);
 		dMissingParticleIndex = dFinalParticleIDs.size() - 1;
 	}
+	else if(locPID == Unknown)
+	{
+		cout << "ERROR: CANNOT SET UNKNOWN PID AS NON-MISSING FINAL PARTICLE. ABORTING." << endl;
+		abort();
+	}
+	else
+		dFinalParticleIDs.push_back(locPID);
 }
 
 Particle_t DReactionStep::Get_FinalParticleID(size_t locFinalParticleIndex) const

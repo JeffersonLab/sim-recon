@@ -457,7 +457,6 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dThrownTopology = NULL;  dDetectedTopology = NULL;
 		}
 
 		DHistogramAction_TrackMultiplicity(string locActionUniqueString) : 
@@ -467,7 +466,6 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dThrownTopology = NULL;  dDetectedTopology = NULL;
 		}
 
 		DHistogramAction_TrackMultiplicity(void) : 
@@ -477,10 +475,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
-			dThrownTopology = NULL;  dDetectedTopology = NULL;
 		}
-
-		~DHistogramAction_TrackMultiplicity(void);
 
 		unsigned int dMaxNumTracks;
 
@@ -492,10 +487,6 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
 		TH2D* dHist_NumReconstructedTracks;
-		TTree* dTree_TrackTopologies;
-
-		string* dThrownTopology;
-		string* dDetectedTopology;
 };
 
 class DHistogramAction_TruePID : public DAnalysisAction

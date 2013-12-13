@@ -268,6 +268,19 @@ inline static unsigned short int IsFixedMass(Particle_t p)
   }
 }
 
+inline static unsigned short int IsResonance(Particle_t p)
+{
+	if(IsFixedMass(p) == 1)
+		return 0;
+	if(p == Unknown)
+		return 0;
+	if(p == phiMeson)
+		return 0;
+	if(p == omega)
+		return 0;
+	return 1;
+}
+
 inline static unsigned short int IsDetachedVertex(Particle_t p)
 {
   switch (p)

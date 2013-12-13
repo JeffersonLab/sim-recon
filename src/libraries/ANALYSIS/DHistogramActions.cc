@@ -1877,11 +1877,6 @@ void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
 	CreateAndChangeTo_ActionDirectory();
 
-	if(dThrownTopology == NULL)
-		dThrownTopology = new string;
-	if(dDetectedTopology == NULL)
-		dDetectedTopology = new string;
-
 	string locLabelName;
 	string locHistName("dHist_NumReconstructedTracks");
 	if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
@@ -1899,16 +1894,6 @@ void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 			locLabelName = string("# ") + string(ParticleName_ROOT(dFinalStatePIDs[loc_i]));
 			dHist_NumReconstructedTracks->GetXaxis()->SetBinLabel(6 + loc_i, locLabelName.c_str());
 		}
-	}
-
-	string locTreeName("dTree_TrackTopologies");
-	if(gDirectory->Get(locTreeName.c_str()) != NULL) //already created by another thread
-		dTree_TrackTopologies = static_cast<TTree*>(gDirectory->Get(locTreeName.c_str()));
-	else
-	{
-		dTree_TrackTopologies = new TTree(locTreeName.c_str(), "TrackTopologies");
-		dTree_TrackTopologies->Branch("Thrown_String", dThrownTopology);
-		dTree_TrackTopologies->Branch("Detected_String", dDetectedTopology);
 	}
 
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
@@ -1986,115 +1971,6 @@ bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop
 			locNumTracksByPID[locPID] = 1;
 	}
 
-	vector<const DReaction*> locThrownReactions;
-	locEventLoop->Get(locThrownReactions, "Thrown");
-
-	//sort thrown pids
-	string locThrownTopology;
-	if(!locThrownReactions.empty())
-	{
-		deque<Particle_t> locThrownPIDs;
-		locThrownReactions[0]->Get_DetectedFinalPIDs(locThrownPIDs, true);
-
-		deque<pair<Particle_t, unsigned int> > locSortedNumParticlesByType_Thrown; //sorted by charge (+/0/-), then mass (high/low)
-		deque<pair<Particle_t, unsigned int> >::iterator locIterator, locInsertLocation;
-		for(size_t loc_i = 0; loc_i < locThrownPIDs.size(); ++loc_i)
-		{
-			bool locMatchFoundFlag = false;
-			locInsertLocation = locSortedNumParticlesByType_Thrown.end();
-			for(locIterator = locSortedNumParticlesByType_Thrown.begin(); locIterator != locSortedNumParticlesByType_Thrown.end(); ++locIterator)
-			{
-				Particle_t locStoredPID = (*locIterator).first;
-				if(locStoredPID == locThrownPIDs[loc_i])
-				{
-					locMatchFoundFlag = true;
-					++((*locIterator).second);
-					break;
-				}
-				if(ParticleCharge(locThrownPIDs[loc_i]) > ParticleCharge(locStoredPID))
-				{
-					locInsertLocation = locIterator;
-					break;
-				}
-				if((ParticleCharge(locThrownPIDs[loc_i]) == ParticleCharge(locStoredPID)) && (ParticleMass(locThrownPIDs[loc_i]) > ParticleMass(locStoredPID)))
-				{
-					locInsertLocation = locIterator;
-					break;
-				}
-			}
-			if(locMatchFoundFlag)
-				continue;
-			locSortedNumParticlesByType_Thrown.insert(locInsertLocation, pair<Particle_t, unsigned int>(locThrownPIDs[loc_i], 1));
-		}
-/*
-cout << "SORTED THROWN:" << endl;
-for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Thrown.size(); ++loc_i)
-{
-	Particle_t locPID = locSortedNumParticlesByType_Thrown[loc_i].first;
-	cout << "q, mass, # = " << ParticleCharge(locPID) << ", " << ParticleMass(locPID) << ", " << locSortedNumParticlesByType_Thrown[loc_i].second << endl;
-}
-*/
-		for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Thrown.size(); ++loc_i)
-		{
-			unsigned int locNumParticles = locSortedNumParticlesByType_Thrown[loc_i].second;
-			if(locNumParticles > 1)
-			{
-				ostringstream locStream;
-				locStream << locNumParticles;
-				locThrownTopology += locStream.str();
-			}
-			locThrownTopology += ParticleName_ROOT(locSortedNumParticlesByType_Thrown[loc_i].first);
-			if(loc_i != (locSortedNumParticlesByType_Thrown.size() - 1))
-				locThrownTopology += ", ";
-		}
-	}
-
-	//sort detected pids
-	string locDetectedTopology;
-	deque<pair<Particle_t, unsigned int> > locSortedNumParticlesByType_Detected; //sorted by charge (+/0/-), then mass (high/low)
-	deque<pair<Particle_t, unsigned int> >::iterator locIterator, locInsertLocation;
-	map<Particle_t, size_t>::iterator locMapIterator;
-	for(locMapIterator = locNumTracksByPID.begin(); locMapIterator != locNumTracksByPID.end(); ++locMapIterator)
-	{
-		locInsertLocation = locSortedNumParticlesByType_Detected.end();
-		for(locIterator = locSortedNumParticlesByType_Detected.begin(); locIterator != locSortedNumParticlesByType_Detected.end(); ++locIterator)
-		{
-			Particle_t locStoredPID = (*locIterator).first;
-			if(ParticleCharge(locMapIterator->first) > ParticleCharge(locStoredPID))
-			{
-				locInsertLocation = locIterator;
-				break;
-			}
-			if((ParticleCharge(locMapIterator->first) == ParticleCharge(locStoredPID)) && (ParticleMass(locMapIterator->first) > ParticleMass(locStoredPID)))
-			{
-				locInsertLocation = locIterator;
-				break;
-			}
-		}
-		locSortedNumParticlesByType_Detected.insert(locInsertLocation, pair<Particle_t, unsigned int>(locMapIterator->first, locMapIterator->second));
-	}
-/*
-cout << "SORTED DETECTED:" << endl;
-for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc_i)
-{
-	Particle_t locPID = locSortedNumParticlesByType_Detected[loc_i].first;
-	cout << "q, mass, # = " << ParticleCharge(locPID) << ", " << ParticleMass(locPID) << ", " << locSortedNumParticlesByType_Detected[loc_i].second << endl;
-}
-*/
-	for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc_i)
-	{
-		unsigned int locNumParticles = locSortedNumParticlesByType_Detected[loc_i].second;
-		if(locNumParticles > 1)
-		{
-			ostringstream locStream;
-			locStream << locNumParticles;
-			locDetectedTopology += locStream.str();
-		}
-		locDetectedTopology += ParticleName_ROOT(locSortedNumParticlesByType_Detected[loc_i].first);
-		if(loc_i != (locSortedNumParticlesByType_Detected.size() - 1))
-			locDetectedTopology += ", ";
-	}
-
 	japp->RootWriteLock();
 	{
 		dHist_NumReconstructedTracks->Fill(0.0, (Double_t)(locChargedTracks.size() + locNeutralParticles.size()));
@@ -2104,24 +1980,10 @@ for(size_t loc_i = 0; loc_i < locSortedNumParticlesByType_Detected.size(); ++loc
 		dHist_NumReconstructedTracks->Fill(4.0, (Double_t)locChargedTracks.size());
 		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 			dHist_NumReconstructedTracks->Fill(5.0 + (Double_t)loc_i, (Double_t)locNumTracksByPID[dFinalStatePIDs[loc_i]]);
-
-		*dThrownTopology = locThrownTopology;
-		*dDetectedTopology = locDetectedTopology;
-		dTree_TrackTopologies->SetBranchAddress("Thrown_String", &dThrownTopology);
-		dTree_TrackTopologies->SetBranchAddress("Detected_String", &dDetectedTopology);
-		dTree_TrackTopologies->Fill();
 	}
 	japp->RootUnLock();
 
 	return true;
-}
-
-DHistogramAction_TrackMultiplicity::~DHistogramAction_TrackMultiplicity(void)
-{
-	if(dThrownTopology != NULL)
-		delete dThrownTopology;
-	if(dDetectedTopology != NULL)
-		delete dDetectedTopology;
 }
 
 void DHistogramAction_TruePID::Initialize(JEventLoop* locEventLoop)
@@ -2369,16 +2231,8 @@ bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, co
 		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
 		if(locParticleComboStep->Get_InitialParticleID() != dInitialPID)
 			continue;
-		if(!Get_UseKinFitResultsFlag()) //measured
-		{
-			if((!dEnableDoubleCounting) && dAnalysisUtilities->Find_SimilarCombos_AnyStep(locParticleCombo, loc_i, locPreviousParticleCombos))
-				continue; //dupe: already histed!
-		}
-		else
-		{
-			if((!dEnableDoubleCounting) && dAnalysisUtilities->Find_SimilarCombos_KinFit(locParticleCombo, locPreviousParticleCombos))
-				continue; //dupe: already histed!
-		}
+		if((!dEnableDoubleCounting) && dAnalysisUtilities->Find_SimilarCombos_AnyStep(locParticleCombo, loc_i, locPreviousParticleCombos))
+			continue; //dupe: already histed!
 
 		locFinalStateP4 = dAnalysisUtilities->Calc_FinalStateP4(locParticleCombo, loc_i, Get_UseKinFitResultsFlag());
 

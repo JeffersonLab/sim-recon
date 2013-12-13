@@ -93,16 +93,20 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 
 		//search to see if the results were the same as a previous combo. if so, copy them:
 			//e.g. two different dreactions for the exact same channel (different analysis actions)
-			//e.g. two different dreactions for the same channel, except they differ in resonances (don't affect kinfit)
 		bool locMatchFlag = false;
 		for(size_t loc_j = 0; loc_j < loc_i; ++loc_j)
 		{
 			const DParticleCombo* locCheckParticleCombo = locKinFitResultsVector[loc_j]->Get_ParticleCombo();
+			if(locParticleCombo->Get_Reaction() == locCheckParticleCombo->Get_Reaction())
+				continue; //dreaction is the same: particle combos were different for a reason, even if the kinfit results are the same: keep both
 			if(!locParticleCombo->Will_KinFitBeIdentical(locCheckParticleCombo))
 				continue;
-			//see if steps and particles are identical //may have different resonances
+			//see if steps are identical //may have an omega or phi resonance
 			if(!locReaction->Check_AreStepsIdentical(locCheckParticleCombo->Get_Reaction()))
-				continue;
+				continue; //steps are not identical
+			//see if particles are identical //may have an omega or phi resonance
+			if(!locParticleCombo->Check_AreMeasuredParticlesIdentical(locCheckParticleCombo))
+				continue; //particles are not identical
 			//steps & particles are identical
 			locPreviousParticleCombo = locKinFitParticleComboMap[locKinFitResultsVector[loc_j]->Get_ParticleCombo()];
 			for(size_t loc_k = 0; loc_k < locPreviousParticleCombo->Get_NumParticleComboSteps(); ++loc_k)
@@ -266,7 +270,7 @@ jerror_t DParticleCombo_factory::evnt(JEventLoop* locEventLoop, int eventnumber)
 		_data.push_back(locNewParticleCombo);
 	}
 
-	//clone all combos for which the kinfits failed
+	//clone all combos for which the kinfits failed or didn't occur
 	for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i) //first remove successfully kinfit combos from the locParticleCombos_PreKinFit list
 	{
 		_data[loc_i]->GetT(locParticleCombos_Associated);

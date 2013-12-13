@@ -590,4 +590,25 @@ void DParticleCombo::Get_DetectedFinalNeutralParticles_SourceObjects(deque<const
 	}
 }
 
+bool DParticleCombo::Check_AreMeasuredParticlesIdentical(const DParticleCombo* locParticleCombo) const
+{
+	if(locParticleCombo->Get_NumParticleComboSteps() != Get_NumParticleComboSteps())
+		return false;
+
+	deque<const DKinematicData*> locParticles, locCheckParticles;
+	for(size_t loc_i = 0; loc_i < Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+		if(locParticleComboStep->Get_InitialParticle_Measured() != dParticleComboSteps[loc_i]->Get_InitialParticle_Measured())
+			return false;
+		if(locParticleComboStep->Get_TargetParticle() != dParticleComboSteps[loc_i]->Get_TargetParticle())
+			return false;
+
+		locParticleComboStep->Get_FinalParticles_Measured(locCheckParticles);
+		dParticleComboSteps[loc_i]->Get_FinalParticles_Measured(locParticles);
+		if(locParticles != locCheckParticles)
+			return false;
+	}
+	return true;
+}
 
