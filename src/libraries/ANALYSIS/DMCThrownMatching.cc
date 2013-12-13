@@ -16,6 +16,48 @@ const DChargedTrack* DMCThrownMatching::Get_MatchingChargedTrack(const DMCThrown
 	return NULL;
 }
 
+const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown) const
+{
+	map<const DMCThrown*, deque<const DChargedTrackHypothesis*> >::const_iterator locIterator = dThrownToChargedHypoMap.find(locInputMCThrown);
+	if(locIterator == dThrownToChargedHypoMap.end())
+		return NULL;
+	deque<const DChargedTrackHypothesis*> locHypotheses = locIterator->second;
+
+	const DChargedTrackHypothesis* locBestHypothesis = NULL;
+	double locBestFOM = -10.0;
+	for(size_t loc_i = 0; loc_i < locHypotheses.size(); ++loc_i)
+	{
+		if(locHypotheses[loc_i]->PID() == locInputMCThrown->PID())
+			return locHypotheses[loc_i];
+		if(locBestHypothesis == NULL)
+			locBestHypothesis = locHypotheses[loc_i];
+		else if(locHypotheses[loc_i]->dFOM > locBestHypothesis->dFOM)
+			locBestHypothesis = locHypotheses[loc_i];
+	}
+	return locBestHypothesis;
+}
+
+const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralHypothesis(const DMCThrown* locInputMCThrown) const
+{
+	map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> >::const_iterator locIterator = dThrownToNeutralHypoMap.find(locInputMCThrown);
+	if(locIterator == dThrownToNeutralHypoMap.end())
+		return NULL;
+	deque<const DNeutralParticleHypothesis*> locHypotheses = locIterator->second;
+
+	const DNeutralParticleHypothesis* locBestHypothesis = NULL;
+	double locBestFOM = -10.0;
+	for(size_t loc_i = 0; loc_i < locHypotheses.size(); ++loc_i)
+	{
+		if(locHypotheses[loc_i]->PID() == locInputMCThrown->PID())
+			return locHypotheses[loc_i];
+		if(locBestHypothesis == NULL)
+			locBestHypothesis = locHypotheses[loc_i];
+		else if(locHypotheses[loc_i]->dFOM > locBestHypothesis->dFOM)
+			locBestHypothesis = locHypotheses[loc_i];
+	}
+	return locBestHypothesis;
+}
+
 void DMCThrownMatching::Get_MatchingNeutralHypotheses(const DMCThrown* locInputMCThrown, deque<const DNeutralParticleHypothesis*>& locMatchingNeutralHypotheses) const
 {
 	locMatchingNeutralHypotheses.clear();

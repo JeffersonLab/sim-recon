@@ -52,6 +52,11 @@ class DMCThrownMatching : public JObject
 		inline void Set_FCALTruthToShowerMap(map<const DFCALTruthShower*, const DFCALShower*>& locFCALTruthToShowerMap){dFCALTruthToShowerMap = locFCALTruthToShowerMap;}
 
 		//GETTERS: INDIVIDUAL PARTICLES
+
+		//the below two functions return the hypothesis with PID = MC PID. if not available, returns one with best PID FOM
+		const DChargedTrackHypothesis* Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown) const;
+		const DNeutralParticleHypothesis* Get_MatchingNeutralHypothesis(const DMCThrown* locInputMCThrown) const;
+
 		void Get_MatchingChargedHypotheses(const DMCThrown* locInputMCThrown, deque<const DChargedTrackHypothesis*>& locMatchingChargedHypotheses) const;
 		const DChargedTrack* Get_MatchingChargedTrack(const DMCThrown* locInputMCThrown) const;
 
@@ -119,7 +124,6 @@ class DMCThrownMatching : public JObject
 		map<const DFCALShower*, const DFCALTruthShower*> dFCALShowerToTruthMap;
 		map<const DFCALTruthShower*, const DFCALShower*> dFCALTruthToShowerMap;
 };
-
 
 #endif // _DMCThrownMatching_
 
