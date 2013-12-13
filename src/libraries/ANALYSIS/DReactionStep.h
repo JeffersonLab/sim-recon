@@ -4,6 +4,7 @@
 #include <deque>
 #include <string>
 #include <iostream>
+#include <stdlib.h>
 
 #include "particleType.h"
 
@@ -48,7 +49,7 @@ class DReactionStep
 	private:
 		// PID MEMBERS:
 		Particle_t dInitialParticleID; //e.g. lambda, gamma
-		Particle_t dTargetParticleID; //Unknown for no target
+		Particle_t dTargetParticleID; //Unknown for no target (default)
 		deque<Particle_t> dFinalParticleIDs;
 
 		// CONTROL MEMBERS:
