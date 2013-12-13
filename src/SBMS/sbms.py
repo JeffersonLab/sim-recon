@@ -360,6 +360,7 @@ def AddHDDM(env):
 ##################################
 def AddDANA(env):
 	AddHDDM(env)
+	AddROOT(env)
 	AddJANA(env)
 	AddCCDB(env)
 	AddHDDS(env)
