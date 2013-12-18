@@ -2,6 +2,14 @@
 
 Import('*')
 
+# Default targets (always built)
 subdirs = ['bfield2root', 'root_merge']
-subdirs.extend( ['root2email', 'hddm', 'hddm2root', 'hddm_cull_events', 'hddm_merge_events', 'hddm_merge_files', 'tree_to_amptools', 'plugins'] )
+subdirs.extend( ['root2email', 'hddm', 'hddm_cull_events', 'hddm_merge_events', 'hddm_merge_files', 'tree_to_amptools', 'plugins'] )
+
+# Optional targets (can only be built from inside
+# source directory or if specified on command line)
+if 'hddm2root' in env.GetLaunchDir(): subdirs.extend(['hddm2root'])
+if 'hddm2root' in COMMAND_LINE_TARGETS: subdirs.extend(['hddm2root'])
+
+
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
