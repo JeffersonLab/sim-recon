@@ -27,10 +27,10 @@ lib = "%s/lib" % (installdir)
 plugins = "%s/plugins" % (installdir)
 env = Environment(    CPPPATH = [include],
                       LIBPATH = [lib],
-					  variant_dir=".%s" % (osname))
+                  variant_dir = ".%s" % (osname))
 
 # These are SBMS-specific variables (i.e. not default scons ones)
-env.Replace(    INSTALLDIR    = installdir,
+env.Replace(INSTALLDIR    = installdir,
 				OSNAME        = osname,
 				INCDIR        = include,
 				BINDIR        = bin,
@@ -41,7 +41,7 @@ env.Replace(    INSTALLDIR    = installdir,
 
 # Use terse output unless otherwise specified
 if SHOWBUILD==0:
-	env.Replace(  CCCOMSTR        = "Compiling  [$SOURCE]",
+	env.Replace(CCCOMSTR       = "Compiling  [$SOURCE]",
 				  CXXCOMSTR       = "Compiling  [$SOURCE]",
 				  FORTRANPPCOMSTR = "Compiling  [$SOURCE]",
 				  FORTRANCOMSTR   = "Compiling  [$SOURCE]",
@@ -62,8 +62,10 @@ env.Replace( CXX = os.getenv('CXX', 'g++'),
 # Add libraries and libraries/include to include search path
 env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])
 
-# Turn on debug symbols
-env.PrependUnique(CFLAGS = ['-g', '-fPIC'], CXXFLAGS = ['-g', '-fPIC'])
+# Turn on debug symbols and warnings
+env.PrependUnique(      CFLAGS = ['-g', '-fPIC', '-Wall'])
+env.PrependUnique(    CXXFLAGS = ['-g', '-fPIC', '-Wall'])
+env.PrependUnique(FORTRANFLAGS = ['-g', '-fPIC', '-Wall'])
 
 # Apply any platform/architecture specific settings
 sbms.ApplyPlatformSpecificSettings(env, arch)
