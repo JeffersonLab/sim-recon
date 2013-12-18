@@ -31,6 +31,11 @@ public:
   // Matrix subtraction
   DMatrix2x1 operator-(const DMatrix2x1 &m2) const{
     return DMatrix2x1(mA[0]-m2(0),mA[1]-m2(1));
+  } 
+
+  // Matrix addition
+  DMatrix2x1 operator+(const DMatrix2x1 &m2) const{
+    return DMatrix2x1(mA[0]+m2(0),mA[1]+m2(1));
   }
 
   void Print(){
@@ -47,6 +52,15 @@ private:
   double mA[2];
 
 };
+
+
+// Scale 2x1 matrix by a floating point number
+inline DMatrix2x1 operator*(const double c,const DMatrix2x1 &M){ 
+  return DMatrix2x1(c*M(0),c*M(1));
+}
+
+
+
 
 #else
 
@@ -104,6 +118,10 @@ class DMatrix2x1{
     return DMatrix2x1(_mm_sub_pd(GetV(),m2.GetV()));
   }
 
+  // Matrix addition
+  DMatrix2x1 operator+(const DMatrix2x1 &m2) const{
+    return DMatrix2x1(_mm_add_pd(GetV(),m2.GetV()));
+  }
   
   void Print(){
     cout << "DMatrix2x1:" <<endl;
