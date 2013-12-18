@@ -52,10 +52,12 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		AddPluginPath(string(ptr));
 	}
 	if(const char *ptr = getenv("HALLD_MY")){
-		AddPluginPath(string(ptr) + "/lib/" + sbms);
+		AddPluginPath(string(ptr) + sbms + "/plugins");  // SBMS
+		AddPluginPath(string(ptr) + "/lib/" + sbms);     // BMS
 	}
 	if(const char *ptr = getenv("HALLD_HOME")){
-		AddPluginPath(string(ptr) + "/lib/" + sbms);
+		AddPluginPath(string(ptr) + sbms + "/plugins");  // SBMS
+		AddPluginPath(string(ptr) + "/lib/" + sbms);     // BMS
 	}
 	
 	//Register CCDB calibration generator
