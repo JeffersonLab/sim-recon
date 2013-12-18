@@ -2066,7 +2066,7 @@ C...Parameter statement to help give large particle numbers.
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
-      SAVE /PYJETS/,/PYDAT1/
+C      SAVE /PYJETS/,/PYDAT1/
 C...Local arrays and data.
       DIMENSION DP(5)
       SAVE 
@@ -20372,7 +20372,7 @@ C...processes.
         DO 100 J=1,N
           IF (ABS(A(I,J)).GT.AAMAX) AAMAX=ABS(A(I,J))
   100   CONTINUE
-        IF (AAMAX.EQ.0D0) PAUSE 'SINGULAR MATRIX IN PYLDCM'
+        IF (AAMAX.EQ.0D0) print*, 'SINGULAR MATRIX IN PYLDCM'
         VV(I)=1D0/AAMAX
   110 CONTINUE
       DO 180 J=1,N

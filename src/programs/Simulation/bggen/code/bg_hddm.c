@@ -127,7 +127,7 @@ void write_hddm_event_(int *runno, int *iev, int *iproc,
 	origin->vz = vertex[2];
 	
 	for(i=0;i<*ntra; i++){
-		double E2;
+		/* double E2;  unused so commented out 12/18/2013 DL */
 		//if(keve[i].geantid==0)continue;
 		
 		ps->in[ps->mult].type = keve[i].geantid;

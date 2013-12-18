@@ -15,6 +15,10 @@ if os.getenv('CERN', 'nada')=='nada':
 else:
 
 	env = env.Clone()
+	
+	# Turn off warnings for bggen since Pythia has too many
+	fflags = env['FORTRANFLAGS'].remove('-Wall')
+	env.Replace(FORTRANFLAGS=fflags)
 
 	sbms.AddCERNLIB(env)
 	sbms.AddHDDM(env)
