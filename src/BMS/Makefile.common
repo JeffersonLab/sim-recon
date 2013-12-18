@@ -176,4 +176,10 @@ ifneq ($(strip $(DEPS)),)
 -include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
 endif
 
+# Filter out any user-specified compile flags to filter
+# (this allows one to turn off -Wall for example)
+FFLAGS := $(filter-out $(FFLAGS_FILTER_OUT), $(FFLAGS))
+CFLAGS := $(filter-out $(CFLAGS_FILTER_OUT), $(CFLAGS))
+CXXFLAGS := $(filter-out $(CXXFLAGS_FILTER_OUT), $(CXXFLAGS))
+
 include $(HALLD_HOME)/src/BMS/Makefile.SIMD

@@ -6,6 +6,11 @@ ADDITIONAL_MODULES = HDDM
 FFLAGS +=  -Iinclude -ffixed-line-length-0 -fno-second-underscore
 LD = $(FC)
 
+
+# Pythia generates too many warnings. Supress these by
+# removing the -Wall compiler flag for FORTRAN
+FFLAGS_FILTER_OUT = -Wall
+
 # Mac OS X 10.5 seems to have a picky linker that spits out
 # tons of warnings about "can't find atom for N_GSYM stabs"
 # for each of the cernlib routines.
