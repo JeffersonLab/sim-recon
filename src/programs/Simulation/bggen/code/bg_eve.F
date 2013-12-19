@@ -14,7 +14,7 @@ C
       REAL HRNDM1
       LOGICAL HEXIST
 C
-      INTEGER i,j,ierr,lout,idnt
+      INTEGER i,j,ip,ierr,lout,idnt
       REAL ebeam
       CHARACTER cent(2)*6,cproc*16
 C

@@ -9,7 +9,7 @@ C...Dummy routine, to be removed when PDFLIB is to be linked.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -41,7 +41,7 @@ C...Stores one parton/particle in commonblock PYJETS.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -96,7 +96,7 @@ C...with the first along the +z axis.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -187,7 +187,7 @@ C...parton showers and hadronization.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -297,7 +297,7 @@ C...plane with x > 0.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -419,7 +419,7 @@ C...and the second having y < 0 and y > 0 with equal probability.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -586,7 +586,7 @@ C...parton showers and hadronization.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -814,7 +814,7 @@ C...parton showers and hadronization.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -1022,7 +1022,7 @@ C...Auxiliary to PY4JET, to set up chosen configuration.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       SAVE /PYJETS/
@@ -1165,7 +1165,7 @@ C...Auxiliary to PY4JET, to evaluate weight of configuration.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       SAVE /PYJETS/
@@ -1234,7 +1234,7 @@ C...parton showers and hadronization.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -1598,7 +1598,7 @@ C...in external processes.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -1785,7 +1785,7 @@ C...Calculates the running alpha_electromagnetic.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -1831,7 +1831,7 @@ C...Gives the value of alpha_strong.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -1898,7 +1898,7 @@ C...Reconstructs an angle from given x and y coordinates.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -1932,7 +1932,7 @@ C...See M. Drees and S.P. Martin, hep-ph/9504124
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -2059,7 +2059,7 @@ C...last position occupied in /PYJETS/.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -2069,7 +2069,7 @@ C...Commonblocks.
 C      SAVE /PYJETS/,/PYDAT1/
 C...Local arrays and data.
       DIMENSION DP(5)
-      SAVE 
+      SAVE HC1
  
       IF(MSTJ(55).EQ.0) THEN
         DQ2=Q2NEW-Q2OLD
@@ -2175,7 +2175,7 @@ C...parametrization.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -3024,7 +3024,7 @@ C...as used for calorimeters at hadron colliders.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -3237,7 +3237,7 @@ C...Gives three times the charge for a particle/parton.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
       SAVE /PYDAT2/
@@ -3270,7 +3270,7 @@ C...when CHIENU .NE. 0
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -3468,7 +3468,7 @@ C...CHARGED LEPTONS
         ENDIF
  
 C...NEUTRINOS
-C  120   CONTINUE
+  120   CONTINUE
         IA=12
         JA=11
         EI=KCHG(IABS(IA),1)/3D0
@@ -3517,7 +3517,7 @@ C  120   CONTINUE
         ENDIF
  
 C...D-TYPE QUARKS
-C  130   CONTINUE
+  130   CONTINUE
         IA=1
         JA=2
         EI=KCHG(IABS(IA),1)/3D0
@@ -3571,7 +3571,7 @@ C  130   CONTINUE
         ENDIF
  
 C...U-TYPE QUARKS
-C  140   CONTINUE
+  140   CONTINUE
         IA=2
         JA=1
         EI=KCHG(IABS(IA),1)/3D0
@@ -3606,7 +3606,7 @@ C  140   CONTINUE
             IDLAM(LKNT,3)=-4
           ENDIF
         ENDIF
-C  150   CONTINUE
+  150   CONTINUE
       ENDIF
  
 C...CHI_2+ -> CHI_1+ + H0_K
@@ -3743,7 +3743,7 @@ C...ONLY DECAY CHI+1 -> E+ NU_E
           ENDIF
  
 C...NOW, DO THE QUARKS
-C  200     CONTINUE
+  200     CONTINUE
           IA=1
           JA=2
           EI=KCHG(IA,1)/3D0
@@ -3968,7 +3968,7 @@ C...Subdivides the particle content of an event into jets/clusters.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -4985,7 +4985,7 @@ C...also checks whether a given code actually is defined.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -5518,7 +5518,7 @@ C...Double precision declaration.
       PART2 = AF(0)*(1.D0 - X) + AF(3)*X
       PART3 = X*(1.D0-X)*(AF(5)+AF(6)*(1.D0-X)+AF(7)*X*(1.D0-X))
       PART4 = UT1VEC(IFL)*LOG(1.D0-X) +
-     &              AF(2)*LOG(1.D0+EXP(UT2VEC(IFL))-X)
+     &	      AF(2)*LOG(1.D0+EXP(UT2VEC(IFL))-X)
  
       PYCT5L = EXP(LOG(X) + PART1 + PART2 + PART3 + PART4)
  
@@ -5773,7 +5773,7 @@ C...Double precision declaration.
       PART2 = AF(0)*(1.D0 - X) + AF(3)*X
       PART3 = X*(1.D0-X)*(AF(5)+AF(6)*(1.D0-X)+AF(7)*X*(1.D0-X))
       PART4 = UT1VEC(IFL)*LOG(1.D0-X) +
-     &              AF(2)*LOG(1.D0+EXP(UT2VEC(IFL))-X)
+     &	      AF(2)*LOG(1.D0+EXP(UT2VEC(IFL))-X)
  
       PYCT5M = EXP(LOG(X) + PART1 + PART2 + PART3 + PART4)
  
@@ -8025,7 +8025,7 @@ C...and small string clusters.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -8163,7 +8163,7 @@ C...Handles the decay of unstable particles.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -8346,7 +8346,7 @@ C...Check existence of decay channels. Particle/antiparticle rules.
       ENDIF
  
 C...Sum branching ratios of allowed decay channels.
-C  220 NOPE=0
+  220 NOPE=0
       BRSU=0D0
       DO 230 IDL=MDCY(KCA,2),MDCY(KCA,2)+MDCY(KCA,3)-1
         IF(MDME(IDL,1).NE.1.AND.KFSP*MDME(IDL,1).NE.2.AND.
@@ -8983,7 +8983,7 @@ C...Handles diffractive and elastic scattering.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -9233,7 +9233,7 @@ C...routine (if at all).
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -9540,7 +9540,7 @@ C...and also computes cross-sections based on accumulated statistics.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -9878,7 +9878,7 @@ C...to exclude unstable or undetectable partons/particles.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -10166,7 +10166,7 @@ C...Handles the generation of an e+e- annihilation jet event.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -10390,7 +10390,7 @@ C...Specific application: mixing in neutralino sector.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Arrays: in call and local.
       DIMENSION A(4,4),W(4),Z(4,4),X(4),D(4,4),E(4)
@@ -10548,7 +10548,7 @@ C...Informs user of errors in program execution.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -10606,7 +10606,7 @@ C...a number of subroutines.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -10903,7 +10903,7 @@ C...physics.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYINT1/MINT(400),VINT(400)
@@ -10959,7 +10959,7 @@ C...Administrates the fragmentation and decay chain.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -11190,7 +11190,7 @@ C...Auxiliary routine to PYPOLE for SUSY Higgs calculations.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblock.
       COMMON/PYINTS/XXM(20)
       SAVE/PYINTS/
@@ -11219,7 +11219,7 @@ C...Auxiliary routine to PYFINT for SUSY Higgs calculations.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblock.
       COMMON/PYINTS/XXM(20)
       SAVE/PYINTS/
@@ -11240,7 +11240,7 @@ C...Calculates the first few Fox-Wolfram moments.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -11326,7 +11326,7 @@ C...Performs transformations between different coordinate frames.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYPARS/MSTP(200),PARP(200),MSTI(200),PARI(200)
@@ -11387,7 +11387,7 @@ C...description of the lepton -> lepton + photon branching.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -11707,7 +11707,7 @@ C...Generate phase space point and check against cuts.
           IF(MINT(140+I).NE.0) THEN
 C...Pick x and Q2
             MINT(199)=0
-            geny=mcSet_YMin*(mcSet_YMax/mcSet_YMin)**PYR(0)
+	    geny=mcSet_YMin*(mcSet_YMax/mcSet_YMin)**PYR(0)
             genQ2=mcSet_Q2Min*(mcSet_Q2Max/mcSet_Q2Min)**PYR(0)
             gennu=geny*VINT(290)
             genx = genQ2 / (2D0*gennu*PYMASS(2212))
@@ -11726,7 +11726,7 @@ C....Check to have sensible ranges for variables
             if (temp.lt.0.or.temp.gt.1.) then
                GOTO 121
             endif
-            if ((genW2.lt.CKIN(77)**2).or.
+	    if ((genW2.lt.CKIN(77)**2).or.
      &          (CKIN(78).gt.0.and.genW2.gt.CKIN(78)**2)) then
                GOTO 121
             endif
@@ -11738,7 +11738,7 @@ C....Check to have sensible ranges for variables
             ppx=ppt*cos(PHI(I))
             ppy=ppt*sin(PHI(I))
 
-            ntries=0
+	    ntries=0
   122       if (qedrad.eq.1) then
               call radgen_event
             endif
@@ -11754,49 +11754,49 @@ C....Check to have sensible ranges for variables
              write(*,*) mcRadCor_ThetaBrems,mcRadCor_EBrems,mcEvent_iEvent
              GOTO 122
             endif
-            X(I)=((PMC(3)*Y(I))-Q2(I))/PMC(I)
+	    X(I)=((PMC(3)*Y(I))-Q2(I))/PMC(I)
 C P.L. ...An event with W^2_T<4will be generated new by RADGEN at the
 C      ...same kinematic point, the number of tries needed by RADGEN is 
 C      ...counted and saved in the variable rcweight!
              IF (qedrad.ne.0) then
-              IF((mcradcor_cType.eq.'qela').or.(mcradcor_cType.eq.'elas')) then
+	      IF((mcradcor_cType.eq.'qela').or.(mcradcor_cType.eq.'elas')) then
                  GOTO 122
-              ENDIF
+	      ENDIF
               IF(dble(mcRadCor_W2True).LT.
      &               (CKIN(77)**2-1.D-4*abs(CKIN(77)**2))) THEN
-                MINT(199)=MINT(199)+1
-C                write(*,*) "W2true: ",mcRadCor_W2True,MINT(199)
-                GOTO 122
+	        MINT(199)=MINT(199)+1
+C	        write(*,*) "W2true: ",mcRadCor_W2True,MINT(199)
+	        GOTO 122
               ENDIF
              ENDIF
-             ntries=ntries+1
-             IF(ntries.ge.20) GOTO 121
-            
-C ...... New try to implement weights directly into Pythia            
+	     ntries=ntries+1
+	     IF(ntries.ge.20) GOTO 121
+	    
+C ...... New try to implement weights directly into Pythia	    
           sigobs=0.0D0
-          sigtrue=0.0D0
-          rccorr=1.0D0
-        if (qedrad.eq.1) then  
-          call MKF2(dble(genq2),dble(genx),
+	  sigtrue=0.0D0
+	  rccorr=1.0D0
+	if (qedrad.eq.1) then  
+	  call MKF2(dble(genq2),dble(genx),
      +              mcSet_TarA,mcSet_TarZ,py6f2,py6f1)
           sigobs=pyth_xsec(dble(genx), dble(genq2),py6f1, py6f2)
-          IF(mcRadCor_EBrems.eq.0) THEN
-           IF (sig1g.gt.0.D0) then
-            rccorr=(tbor+tine)/sig1g/(DBLE(MINT(199))+1.0D0)
-           ELSE
-            rccorr=0.D0
-           ENDIF
-          ELSEIF(mcRadCor_EBrems.gt.0) THEN
+	  IF(mcRadCor_EBrems.eq.0) THEN
+	   IF (sig1g.gt.0.D0) then
+	    rccorr=(tbor+tine)/sig1g/(DBLE(MINT(199))+1.0D0)
+	   ELSE
+	    rccorr=0.D0
+	   ENDIF
+	  ELSEIF(mcRadCor_EBrems.gt.0) THEN
           call MKF2(Q2(I),dble(mcRadCor_XTrue),
      +           mcSet_TarA,mcSet_TarZ,py6f2,py6f1)
           sigtrue=pyth_xsec(dble(mcRadCor_XTrue),Q2(I),py6f1, py6f2)
-           IF ((sig1g.gt.0.D0).and.(sigtrue.gt.0.D0)) then
-            rccorr=(tbor+tine)/sig1g*sigobs/sigtrue/(DBLE(MINT(199))+1.0D0)
-           ELSE
-            rccorr=0.D0
-           ENDIF
-          ENDIF
-        ENDIF
+	   IF ((sig1g.gt.0.D0).and.(sigtrue.gt.0.D0)) then
+	    rccorr=(tbor+tine)/sig1g*sigobs/sigtrue/(DBLE(MINT(199))+1.0D0)
+	   ELSE
+	    rccorr=0.D0
+	   ENDIF
+	  ENDIF
+	ENDIF
             IF(X(I).GT.(XMAX(I)+1.D-4*abs(XMAX(I)))) THEN
                GOTO 121
             ENDIF
@@ -11826,12 +11826,12 @@ C...Phi angle isotropic. Reconstruct pT.
      &      PMS(I))*SIN(THETA(I))
 C ... try 'new' phi
             IF ((qedrad.ne.0).and.(mcRadCor_EBrems.gt.0)) then
-             emom=sqrt(dble(geneprim)**2-pymass(11)**2)
+	     emom=sqrt(dble(geneprim)**2-pymass(11)**2)
              PHI(I)=atan2((emom*ppy+dplabg(2)),(emom*ppx+dplabg(1)))
              IF (PHI(I).lt.0) THEN
-               PHI(I)=PHI(I)+PARU(2)
-              ENDIF
-            ENDIF
+ 	      PHI(I)=PHI(I)+PARU(2)
+ 	     ENDIF
+	    ENDIF
 C...Store info on variables selected, for documentation purposes.
             VINT(2+I)=-SQRT(Q2(I))
             VINT(304+I)=X(I)
@@ -12081,7 +12081,7 @@ C...Add on scattered leptons to final state.
   280   CONTINUE
       ENDIF
  
-C  290 CONTINUE
+  290 CONTINUE
       RETURN
       END
  
@@ -12097,7 +12097,7 @@ C...(Dover, 1965) 6.1.36.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Local array and data.
       DIMENSION B(8)
       DATA B/-0.577191652D0,0.988205891D0,-0.897056937D0,0.918206857D0,
@@ -12140,7 +12140,7 @@ C...Adapted from SaSgam library, authors G.A. Schuler and T. Sjostrand.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Local arrays and data.
       DIMENSION XPGA(-6:6), VXPGA(-6:6), ALAMSQ(3:5)
       DATA PMC/1.3D0/, PMB/4.6D0/, AEM/0.007297D0/, AEM2PI/0.0011614D0/
@@ -12302,7 +12302,7 @@ C...Carbon copy of PYGAUS, but avoids having to use it recursively.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local declarations.
       EXTERNAL F
@@ -12369,7 +12369,7 @@ C...Adapted from the CERNLIB DGAUSS routine by K.S. Kolbig.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local declarations.
       EXTERNAL F
@@ -12437,7 +12437,7 @@ C...Adapted from SaSgam library, authors G.A. Schuler and T. Sjostrand.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local data.
       DATA AEM2PI/0.0011614D0/
@@ -12504,7 +12504,7 @@ C...Adapted from SaSgam library, authors G.A. Schuler and T. Sjostrand.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Local array and data.
       DIMENSION XPGA(-6:6)
       DATA PMC/1.3D0/, PMB/4.6D0/, AEM2PI/0.0011614D0/
@@ -12864,7 +12864,7 @@ C...Adapted from SaSgam library, authors G.A. Schuler and T. Sjostrand.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYINT8/XPVMD(-6:6),XPANL(-6:6),XPANH(-6:6),XPBEH(-6:6),
      &XPDIR(-6:6)
@@ -13057,7 +13057,7 @@ C...Sets values of commonblock variables.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -13535,7 +13535,7 @@ C...Calculates gluino decay modes.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -14314,7 +14314,7 @@ C...Adapted from SaSgam library, authors G.A. Schuler and T. Sjostrand.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Local arrays and data.
       DIMENSION XPGA(-6:6), VXPGA(-6:6)
       DATA PMC/1.3D0/, PMB/4.6D0/, AEM/0.007297D0/, AEM2PI/0.0011614D0/
@@ -14526,13 +14526,13 @@ C...Calculates the decay rate for a Higgs to an ino pair.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
  
 C...Local variables.
-      DOUBLE PRECISION PYH2XX,XM1,XM2,XM3
+      DOUBLE PRECISION PYH2XX,XM1,XM2,XM3,GL,GR
       DOUBLE PRECISION XL,PYLAMF,C1
       DOUBLE PRECISION XMI2,XMJ2,XMK2,XMI3
  
@@ -14564,7 +14564,7 @@ C...the standard event record commonblock.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -14727,7 +14727,7 @@ C......Allow complex values for Z,U, and V
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -14748,14 +14748,14 @@ C...Local variables.
       DOUBLE PRECISION XMI2,XMI3,XMJ2
       DOUBLE PRECISION PYLAMF,XL,CF,EI
       INTEGER IDU,IFL
-      DOUBLE PRECISION TANW,XW,AEM,C1
+      DOUBLE PRECISION TANW,XW,AEM,C1,AS
       DOUBLE PRECISION PYH2XX,GHLL,GHRR,GHLR
       DOUBLE PRECISION XLAM(0:400)
       INTEGER IDLAM(400,3)
       INTEGER LKNT,IH,J,IJ,I,IKNT,IK
       INTEGER ITH(4)
       INTEGER KFNCHI(4),KFCCHI(2)
-      DOUBLE PRECISION ETAH(3),DH(3),EH(3)
+      DOUBLE PRECISION ETAH(3),CH(3),DH(3),EH(3)
       DOUBLE PRECISION SR2
       DOUBLE PRECISION BETA,ALFA
       DOUBLE PRECISION CBETA,SBETA,GR,GL,TANB
@@ -15027,9 +15027,9 @@ C...HIGGS TO SFERMION SFERMION
             XLAM(LKNT)=XLAM(LKNT-1)
           ENDIF
         ENDIF
-C  190   CONTINUE
+  190   CONTINUE
   200 CONTINUE
-C  210 CONTINUE
+  210 CONTINUE
  
       GOTO 270
   220 CONTINUE
@@ -15193,7 +15193,7 @@ C...production.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYPARS/MSTP(200),PARP(200),MSTI(200),PARI(200)
@@ -15233,7 +15233,7 @@ C...Determines the Higgs boson mass spectrum using several inputs.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -15362,7 +15362,7 @@ C...Nucl. Phys. B297 (1988) 221.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -15470,7 +15470,7 @@ C...Identifies the two incoming particles and the choice of frame.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...User process initialization commonblock.
       INTEGER MAXPUP
@@ -15585,7 +15585,7 @@ C...Identify incoming beam and target particles.
           CHTEMP=CHIDNT(I+1)(7:12)//' '
           DO 150 J=1,12
             IF(CHTEMP.EQ.CHCDE(J)) MINT(140+I)=KCDE(J)
-  150          CONTINUE
+  150	  CONTINUE
           PM(I)=PYMASS(MINT(140+I))
           VINT(302+I)=PM(I)
         ENDIF
@@ -15749,7 +15749,7 @@ C...jet) according to independent fragmentation models.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -16222,7 +16222,7 @@ C...differential cross-sections to be used for weighting.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -16517,7 +16517,7 @@ C...Sets up kinematics, including rotations and boosts to/from CM frame.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...User process initialization commonblock.
       INTEGER MAXPUP
@@ -16742,7 +16742,7 @@ C...Local variables.
       DOUBLE PRECISION ARGX0,AR1X0,ARGX1,AR1X1
       DOUBLE PRECISION PYALPS,PYALEM
       DOUBLE PRECISION PYRNM3
-C      COMPLEX*16 
+      COMPLEX*16 CAR(4,4),CAI(4,4),CA1,CA2
       INTEGER IERR,INDEX(4),I,J,K,IOPT,ILR,KFNCHI(4)
       DATA KFNCHI/1000022,1000023,1000025,1000035/
  
@@ -17030,7 +17030,7 @@ C...Selects partonic subprocesses to be included in the simulation.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...User process initialization commonblock.
       INTEGER MAXPUP
@@ -17881,7 +17881,7 @@ C...resonance production generation.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -18147,7 +18147,7 @@ C...the sum m_H^2 + m_L^2, a la Clavelli and Wyler.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -18325,7 +18325,7 @@ C...as required for subsequent shower evolution (or other operations).
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -18598,7 +18598,7 @@ C...that the event has passed the cuts, MCUT=1 that it has failed.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYINT1/MINT(400),VINT(400)
@@ -18810,13 +18810,13 @@ C...Generates a new flavour pair and combines off a hadron
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
       SAVE /PYDAT1/,/PYDAT2/
 C...Local arrays.
-C      DIMENSION 
+      DIMENSION PD(7)
  
       IF(MSTU(123).EQ.0.AND.MSTJ(12).GE.0)  CALL PYKFIN
  
@@ -19241,7 +19241,7 @@ C...Precalculates a set of diquark and popcorn weights.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -19559,7 +19559,7 @@ C...also calculates limits on variables used in generation.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -19972,7 +19972,7 @@ C...assumed that kinematical limits have been set by a PYKLIM call.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -20339,7 +20339,7 @@ C...The standard lambda function.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local variables.
       DOUBLE PRECISION PYLAMF,X,Y,Z
@@ -20428,7 +20428,7 @@ C...data, or current parameter values.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -20762,7 +20762,7 @@ C...Writes a logo for the program.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter for length of information block.
       PARAMETER (IREFER=24)
 C...Commonblocks.
@@ -21633,7 +21633,7 @@ C...Gives the mass of a particle/parton.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -21699,7 +21699,7 @@ C...in the event weighting.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -22595,7 +22595,7 @@ C...             WTGG: maximum weight for gluon -> gluon
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -22642,7 +22642,7 @@ C...Outparameter WTME: actual ME weight
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -22691,7 +22691,7 @@ C...for Higgs couplings. Everything else sent on to PYMASS.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -22731,7 +22731,7 @@ C...Baryon- and lepton-number violating parameters by P. Z. Skands.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -23346,7 +23346,7 @@ C...generates all non-hardest interactions.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -23852,7 +23852,7 @@ C...Gives the particle/parton name as a character string.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -23892,7 +23892,7 @@ C...10 FEB 96:  Calculate this decay for small tan(beta)
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -24151,7 +24151,7 @@ C...CHARGED LEPTONS
               IDLAM(LKNT,3)=-13
             ENDIF
           ENDIF
-C  140     CONTINUE
+  140     CONTINUE
           IF(ABS(SFMIX(15,1)).GT.ABS(SFMIX(15,2))) THEN
             XXC(5)=PMAS(PYCOMP(KSUSY1+15),1)
             XXC(6)=PMAS(PYCOMP(KSUSY2+15),1)
@@ -24178,7 +24178,7 @@ C  140     CONTINUE
           ENDIF
  
 C...NEUTRINOS
-C  150     CONTINUE
+  150     CONTINUE
           FID=12
           XXC(5)=PMAS(PYCOMP(KSUSY1+FID),1)
           XXC(6)=PMAS(PYCOMP(KSUSY2+FID),1)
@@ -24217,7 +24217,7 @@ C  150     CONTINUE
           IDLAM(LKNT,1)=KFNCHI(IJ)
           IDLAM(LKNT,2)=14
           IDLAM(LKNT,3)=-14
-C  160     CONTINUE
+  160     CONTINUE
  
           IF(PMAS(PYCOMP(KSUSY1+16),1).NE.PMAS(PYCOMP(KSUSY1+12),1))
      &    THEN
@@ -24237,7 +24237,7 @@ C  160     CONTINUE
           IDLAM(LKNT,2)=16
           IDLAM(LKNT,3)=-16
 C...D-TYPE QUARKS
-C  170     CONTINUE
+  170     CONTINUE
           FID=1
           XXC(5)=PMAS(PYCOMP(KSUSY1+FID),1)
           XXC(6)=PMAS(PYCOMP(KSUSY2+FID),1)
@@ -24280,7 +24280,7 @@ C  170     CONTINUE
               IDLAM(LKNT,3)=-3
             ENDIF
           ENDIF
-C  180     CONTINUE
+  180     CONTINUE
           IF(ABS(SFMIX(5,1)).GT.ABS(SFMIX(5,2))) THEN
             XXC(5)=PMAS(PYCOMP(KSUSY1+5),1)
             XXC(6)=PMAS(PYCOMP(KSUSY2+5),1)
@@ -24504,7 +24504,7 @@ C...CHI0_I -> CHI+_J + W-
           ENDIF
  
 C...NOW, DO THE QUARKS
-C  240     CONTINUE
+  240     CONTINUE
           IA=1
           JA=2
           EI=KCHG(IA,1)/3D0
@@ -24550,10 +24550,10 @@ C  240     CONTINUE
               IDLAM(LKNT,3)=-IDLAM(LKNT-1,3)
             ENDIF
           ENDIF
-C  250     CONTINUE
+  250     CONTINUE
         ENDIF
   260 CONTINUE
-C  270 CONTINUE
+  270 CONTINUE
  
 C...CHI0_I -> CHI+_I + H-
       DO 280 IJ=1,2
@@ -24781,7 +24781,7 @@ C...parameters.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -24869,7 +24869,7 @@ C...masses in such channels/processes.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -24884,8 +24884,8 @@ C...Commonblocks.
 C...Local arrays.
       DIMENSION KFD(2),MBW(2),PMD(2),PGD(2),PMG(2),PML(2),PMU(2),
      &PMH(2),ATL(2),ATU(2),ATH(2),RMG(2),INX1(100),XPT1(100),
-     &FPT1(100),INX2(100),XPT2(100),FPT2(100)
-C     &
+     &FPT1(100),INX2(100),XPT2(100),FPT2(100),WDTP(0:400),
+     &WDTE(0:400,0:5)
  
 C...Find if particles equal, maximum mass, matrix elements, etc.
       MINT(51)=0
@@ -25277,7 +25277,7 @@ C...or two gluons and a photon.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -25536,7 +25536,7 @@ C...Gives electron (or muon, or tau) parton distribution.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -25720,7 +25720,7 @@ C...correct limiting behaviour.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -25961,7 +25961,7 @@ C...i.e. xq(x,Q2) etc.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -26390,7 +26390,7 @@ C...Gives photon parton distribution.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYPARS/MSTP(200),PARP(200),MSTI(200),PARI(200)
@@ -26506,7 +26506,7 @@ C...parametrizations.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYPARS/MSTP(200),PARP(200),MSTI(200),PARI(200)
@@ -26679,7 +26679,7 @@ C...backwards checks.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -27178,7 +27178,7 @@ C...parametrizations.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -27325,7 +27325,7 @@ C...Provides various real-valued event related data.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -27409,7 +27409,7 @@ C...beam crossing.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYPARS/MSTP(200),PARP(200),MSTI(200),PARI(200)
@@ -27697,7 +27697,7 @@ C...Double precision and integer declarations.
 C...Parameters.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local variables.
       DIMENSION DELTA(2,2),COUPT(2,2),T(2,2),SSTOP2(2),
@@ -27765,7 +27765,7 @@ C      STOP2W = STOP2
  
       IF(XMST12.EQ.0D0) GOTO 110
  
-C  100 XST11 = XMST12/(XMST12**2+(XMST11-STOP12)**2)**0.5D0
+  100 XST11 = XMST12/(XMST12**2+(XMST11-STOP12)**2)**0.5D0
       XST12 = - (XMST11-STOP12)/(XMST12**2+(XMST11-STOP12)**2)**0.5D0
       XST21 = XMST12/(XMST12**2+(XMST11-STOP22)**2)**0.5D0
       XST22 = - (XMST11-STOP22)/(XMST12**2+(XMST11-STOP22)**2)**0.5D0
@@ -27795,7 +27795,7 @@ C  100 XST11 = XMST12/(XMST12**2+(XMST11-STOP12)**2)**0.5D0
  
       IF(XMSB12.EQ.0D0) GOTO 130
  
-C  120 XSB11 = XMSB12/(XMSB12**2+(XMSB11-SBOT12)**2)**0.5D0
+  120 XSB11 = XMSB12/(XMSB12**2+(XMSB11-SBOT12)**2)**0.5D0
       XSB12 = - (XMSB11-SBOT12)/(XMSB12**2+(XMSB11-SBOT12)**2)**0.5D0
       XSB21 = XMSB12/(XMSB12**2+(XMSB11-SBOT22)**2)**0.5D0
       XSB22 = - (XMSB11-SBOT22)/(XMSB12**2+(XMSB11-SBOT22)**2)**0.5D0
@@ -27888,7 +27888,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C...END OF LIGHT HIGGS
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
  
-C  250 IF(IHIGGS.EQ.1) GOTO 490
+  250 IF(IHIGGS.EQ.1) GOTO 490
  
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C... STARTING OF HEAVY HIGGS
@@ -27962,7 +27962,7 @@ C        RXMT2 = RXMT**2
   360 CONTINUE
  
  
-C  370 CONTINUE
+  370 CONTINUE
       HMP = HP2**0.5D0
  
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -28060,7 +28060,7 @@ C...Checks flavours and colour singlet invariant masses.
  
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -28069,7 +28069,7 @@ C...Commonblocks.
       SAVE /PYJETS/,/PYDAT1/,/PYDAT2/,/PYDAT3/
 C...Local arrays.
       DIMENSION DPS(5),DPC(5),UE(3),PG(5),E1(3),E2(3),E3(3),E4(3),
-     &ECL(3),IJUNC(10,0:4),IPIECE(30,0:4),KFQ(4),
+     &ECL(3),IJUNC(10,0:4),IPIECE(30,0:4),KFEND(4),KFQ(4),
      &IJUR(4),PJU(4,6),IRNG(4,2),TJJ(2,5),T(5),PUL(3,5),
      &IJCP(0:6),TJUOLD(5)
  
@@ -29288,7 +29288,7 @@ C...Generates transverse momentum according to a Gaussian.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -29319,7 +29319,7 @@ C...Z. Kunszt, Nucl. Phys. B247 (1984) 339.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -29727,7 +29727,7 @@ C...Generates initial state photon radiation.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -29807,7 +29807,7 @@ C...subprocesses.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -31021,7 +31021,7 @@ C...is as if first resonance is W+ and second W-.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter value; number of points in MC integration.
       PARAMETER (NPT=100)
 C...Commonblocks.
@@ -31557,7 +31557,7 @@ C...includes primordial kT for hadron beams.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -32235,7 +32235,7 @@ C...channels).
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -32255,7 +32255,7 @@ C...Local arrays and complex and character variables.
       DIMENSION IREF(50,8),KDCY(3),KFL1(3),KFL2(3),KFL3(3),KEQL(3),
      &KCQM(3),KCQ1(3),KCQ2(3),KCQ3(3),NSD(3),PMMN(3),ILIN(6),
      &HGZ(3,3),COUP(6,4),CORL(2,2,2),PK(6,4),PKK(6,6),CTHE(3),
-     &PHI(3),WDTP(0:400),WDTE(0:400,0:5),DPMO(5),VDCY(4),
+     &PHI(3),WDTP(0:400),WDTE(0:400,0:5),DPMO(5),XM(5),VDCY(4),
      &ITJUNC(3),CTM2(3)
       COMPLEX FGK,HA(6,6),HC(6,6)
       REAL TIR,UIR
@@ -33891,7 +33891,7 @@ C...Obtain correct angular distribution by rejection techniques.
       IF(WT.LT.PYR(0)*WTMAX) GOTO 410
  
 C...Construct massive four-vectors using angles chosen.
-C  570 DO 670 JT=1,JTMAX
+  570 DO 670 JT=1,JTMAX
         IF(KDCY(JT).EQ.0) GOTO 670
         ID=IREF(IP,JT)
         DO 580 J=1,5
@@ -34067,7 +34067,7 @@ C      FUNCTION PYR(IDUMMY)  ! regular PYR
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDATR/MRPY(6),RRPY(100)
       SAVE /PYDATR/
@@ -34147,7 +34147,7 @@ C...for subsequent startup from this state onwards.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDATR/MRPY(6),RRPY(100)
       SAVE /PYDATR/
@@ -34260,27 +34260,27 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       DLAMBDAP2 = 0D0
       IF(MGLU.LT.MUR.OR.MGLU.LT.MQ) THEN
        IF(MQ.GT.MUR.AND.MGLU.GT.MUR) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TGLU**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TGLU**2)
        ENDIF
  
        IF(MQ.GT.MUR.AND.MGLU.LT.MUR) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TU**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TU**2)
        ENDIF
  
        IF(MQ.GT.MUR.AND.MGLU.EQ.MUR) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TU**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TQ**2-TU**2)
        ENDIF
  
        IF(MUR.GT.MQ.AND.MGLU.GT.MQ) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TGLU**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TGLU**2)
        ENDIF
  
        IF(MUR.GT.MQ.AND.MGLU.LT.MQ) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TQ**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TQ**2)
        ENDIF
  
        IF(MUR.GT.MQ.AND.MGLU.EQ.MQ) THEN
-        DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TQ**2)
+	DLAMBDAP2 = -4D0/(16D0*PI**2)**2*HU**4*(TU**2-TQ**2)
        ENDIF
       ENDIF
       DLAMBDA3 = 0D0
@@ -34406,7 +34406,7 @@ C...Calculates the running of M3, the SU(3) gluino mass parameter.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local variables.
       DOUBLE PRECISION R
@@ -34474,7 +34474,7 @@ C...Determines the running mass of Squarks.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblock.
       COMMON/PYMSSM/IMSS(0:99),RMSS(0:99)
       SAVE /PYMSSM/
@@ -34560,7 +34560,7 @@ C...Performs rotations and boosts.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -34665,7 +34665,7 @@ C...for subsequent generation from this state onwards.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDATR/MRPY(6),RRPY(100)
       SAVE /PYDATR/
@@ -34826,7 +34826,7 @@ C...KINEMATICS CHECK
                 ENDIF
  
 C * CHI+ -> NU_I + NU_J + LEPTON+_K. (NOTE: SYMM. IN I AND J)
-C  120           IF (MOD(ISC/9,3).LT.MOD(ISC/3,3)) THEN
+  120           IF (MOD(ISC/9,3).LT.MOD(ISC/3,3)) THEN
                   LKNT = LKNT+1
                   IDLAM(LKNT,1) = 12 +2*MOD(ISC/9,3)
                   IDLAM(LKNT,2) = 12 +2*MOD(ISC/3,3)
@@ -34851,7 +34851,7 @@ C...KINEMATICS CHECK
                   IF (XLAM(LKNT).EQ.0D0) THEN
                     LKNT=LKNT-1
                   ENDIF
-C  130           ENDIF
+  130           ENDIF
  
 C * CHI+ -> LEPTON+_I + LEPTON+_J + LEPTON-_K
                 LKNT = LKNT+1
@@ -34914,7 +34914,7 @@ C...KINEMATICS CHECK
               ENDIF
  
 C * CHI+ -> LEPTON+_I + UBAR_J + U_K.
-C  150         LKNT = LKNT+1
+  150         LKNT = LKNT+1
               IDLAM(LKNT,1) =-11 -2*MOD(ISC/9,3)
               IDLAM(LKNT,2) = -2 -2*MOD(ISC/3,3)
               IDLAM(LKNT,3) =  2 +2*MOD(ISC,3)
@@ -34939,7 +34939,7 @@ C...KINEMATICS CHECK
               ENDIF
  
 C * CHI+ -> LEPTON+_I + DBAR_J + D_K.
-C  160         LKNT = LKNT+1
+  160         LKNT = LKNT+1
               IDLAM(LKNT,1) =-11 -2*MOD(ISC/9,3)
               IDLAM(LKNT,2) = -1 -2*MOD(ISC/3,3)
               IDLAM(LKNT,3) =  1 +2*MOD(ISC,3)
@@ -34964,7 +34964,7 @@ C...KINEMATICS CHECK
               ENDIF
  
 C * CHI+ -> NU_I + U_J + DBAR_K.
-C  170         LKNT = LKNT+1
+  170         LKNT = LKNT+1
               IDLAM(LKNT,1) = 12 +2*MOD(ISC/9,3)
               IDLAM(LKNT,2) =  2 +2*MOD(ISC/3,3)
               IDLAM(LKNT,3) = -1 -2*MOD(ISC,3)
@@ -35333,7 +35333,7 @@ C...Auxiliary variables needed for BV (RV Gauge STOre)
       COMMON/RVGSTO/XRESI,XRESJ,XRESK,XRESIJ,XRESIK,XRESJK,RVLIJK,RVLKIJ
      &     ,RVLJKI,RVLJIK
 C...Running quark masses
-C      DOUBLE PRECISION 
+      DOUBLE PRECISION RMQ(6)
 C...Decay product masses on/off
       LOGICAL DCMASS
       SAVE /PYDAT1/,/PYDAT2/,/PYMSSM/,/PYSSMT/,/PYMSRV/,/PYRVNV/,
@@ -35382,7 +35382,7 @@ C...Calculate width.
 C...Normalize
             XLAM(LKNT)=XLAM(LKNT)*RVLAMC/((2*PARU(1)*RMS(0))**3*32)
 C...Charge conjugate mode.
-C  110       LKNT          = LKNT+1
+  110       LKNT          = LKNT+1
             IDLAM(LKNT,1) =-IDLAM(LKNT-1,1)
             IDLAM(LKNT,2) =-IDLAM(LKNT-1,2)
             IDLAM(LKNT,3) =-IDLAM(LKNT-1,3)
@@ -35823,7 +35823,7 @@ C...Local variables.
       COMMON/PYRVNV/AB(2,16,2),RMS(0:3),RES(6,2),INTRES(6,3),IDR,IDR2
      &     ,DCMASS,KFR(3)
       DOUBLE PRECISION XLAM(0:400)
-      DOUBLE PRECISION ZPMIX(4,4), RMQ(6)
+      DOUBLE PRECISION ZPMIX(4,4), NMIX(4,4), RMQ(6)
       INTEGER IDLAM(400,3), PYCOMP
       LOGICAL DCMASS
       SAVE /PYDAT1/,/PYDAT2/,/PYMSSM/,/PYSSMT/,/PYMSRV/,/PYRVNV/
@@ -36331,7 +36331,7 @@ C...KINEMATICS CHECK
                   LKNT=LKNT-1
                 ENDIF
 C...~d_K -> lepton_I- + u_J
-C  220           LKNT = LKNT+1
+  220           LKNT = LKNT+1
                 IDLAM(LKNT,1)= 11 +2*(I-1)
                 IDLAM(LKNT,2)=  2 +2*(J-1)
                 IDLAM(LKNT,3)=  0
@@ -36456,7 +36456,7 @@ C...Also makes random choice between alternatives.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYSUBS/MSEL,MSELPD,MSUB(500),KFIN(2,-40:40),CKIN(200)
       COMMON/PYPARS/MSTP(200),PARP(200),MSTI(200),PARI(200)
@@ -36623,7 +36623,7 @@ C...and colour flow of the hard scattering
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -39204,7 +39204,7 @@ C...Calculates decays of sfermions.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -39859,7 +39859,7 @@ C...Auxiliary to PYSIGH.
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -40641,7 +40641,7 @@ C...Auxiliary to PYSIGH.
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -40660,7 +40660,7 @@ C...Commonblocks
       SAVE /PYDAT1/,/PYDAT2/,/PYPARS/,/PYINT1/,/PYINT2/,/PYINT3/,
      &/PYINT4/,/PYSGCM/
 C...Local arrays
-C      DIMENSION 
+      DIMENSION WDTP(0:400),WDTE(0:400,0:5)
  
 C...Differential cross section expressions.
  
@@ -41002,7 +41002,7 @@ C...Auxiliary to PYSIGH.
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -42295,7 +42295,7 @@ C...Auxiliary to PYSIGH.
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -43221,7 +43221,7 @@ C...Auxiliary to PYSIGH.
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -44486,7 +44486,7 @@ C...Auxiliary to PYSIGH.
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -45794,7 +45794,7 @@ C...Auxiliary to PYSIGH.
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -46602,7 +46602,7 @@ C...Generates timelike parton showers from given partons.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -48120,7 +48120,7 @@ C...the conversion factor from GeV^-2 to mb
 C...Double precision and integer declarations
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -48780,7 +48780,7 @@ C...Simpson formula for an integral.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local variables.
       DOUBLE PRECISION Y,X0,X1,H,S
@@ -48807,7 +48807,7 @@ C...G. 't Hooft and M. Veltman, Nucl. Phys. B153 (1979) 365.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -48902,7 +48902,7 @@ C...aplanarity and the related event axes.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -49052,7 +49052,7 @@ C...in case it is more complicated than just a quark or a diquark.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks. PYDAT1 temporary
       COMMON/PYPARS/MSTP(200),PARP(200),MSTI(200),PARI(200)
       COMMON/PYINT1/MINT(400),VINT(400)
@@ -49243,7 +49243,7 @@ C...Generates spacelike parton showers.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -50101,7 +50101,7 @@ C...ratios, kinematical limits, status codes and parameter values.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -50783,7 +50783,7 @@ C...Formats for printouts.
      &     /1X,70('='))
  8200 FORMAT(1X,'I',1X,A9,1X,'-->',1X,A24,11X,
      &     'I',2X,1P,D8.2,0P,1X,'I',2X,I2,1X,'I')
-C 8300 FORMAT(1X,'I',50X,'I',11X,'I',5X,'I')
+ 8300 FORMAT(1X,'I',50X,'I',11X,'I',5X,'I')
  8500 FORMAT(1X/ 1X/
      &     1X,'R-Violating couplings',1X/ 1X /
      &     1X,55('=')/
@@ -50807,7 +50807,7 @@ C.. Evaluates the matrix elements for t + b + H production.
 C...DOUBLE PRECISION AND INTEGER DECLARATIONS
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 
 C...COMMONBLOCKS
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -50898,7 +50898,7 @@ C...jet system according to the Lund string fragmentation model.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -52296,7 +52296,7 @@ C...M_SUSY**2 = (MQ**2 + MUR**2)*0.5 + MTOP**2
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -52475,7 +52475,7 @@ C      COS2BT = (TANBT**2 - 1D0)/(TANBT**2 + 1D0)
       SA = -SINALP
       CA = -COSALP
  
-C  100 CONTINUE
+  100 CONTINUE
  
       RETURN
       END
@@ -52492,7 +52492,7 @@ C...Then converts to Gunion-Haber conventions.
       SUBROUTINE PYSUGI
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
  
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
  
@@ -52774,8 +52774,8 @@ C...output by ISASUGRA.
      &     ,'----------------')
  5400 FORMAT(1x,'*',1x,A)
  5500 FORMAT(1x,'*',1x,A,':')
-C 5600 FORMAT(1x,'*',2x,2x,'M_GUT',2x,2x,'g_GUT',2x,1x,'alpha_GUT'/
-C     &       1x,'*',2x,1P,2(1x,E8.2),2x,E8.2)
+ 5600 FORMAT(1x,'*',2x,2x,'M_GUT',2x,2x,'g_GUT',2x,1x,'alpha_GUT'/
+     &       1x,'*',2x,1P,2(1x,E8.2),2x,E8.2)
  5700 FORMAT(1x,'*',4x,4x,'~u',2x,1x,4x,'~d',2x,1x,4x,'~s',2x,1x,
      &     4x,'~c',2x,1x,4x,'~b',2x,1x,2x,'~b(12)',1x,4x,'~t',2x,1x, 2x,
      &     '~t(12)'/1x,'*',2x,'L',1x,8(F8.2,1x)/1x,'*',2x,'R',1x,8(F8.2
@@ -52825,7 +52825,7 @@ C...printed at the end.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -53590,7 +53590,7 @@ C...P(I,3), P(I,4) and P(I,5). The rest will be stored automatically.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -53621,7 +53621,7 @@ C...charginos and third generation fermions.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -53851,7 +53851,7 @@ C...neutralinos and third generation fermions.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -54072,7 +54072,7 @@ C...Generates 3-body decays of gauginos.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -56025,7 +56025,7 @@ C...phase space generation.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -56037,7 +56037,7 @@ C...Commonblocks.
       SAVE /PYDAT1/,/PYDAT2/,/PYPARS/,/PYTCSM/
  
 C...Local variables.
-      DOUBLE PRECISION AR(4,4),WR(4),ZR(4,4),ZI(4,4),
+      DOUBLE PRECISION AR(4,4),WR(4),ZR(4,4),ZI(4,4),WORK(12,12),
      &AT(4,4),WI(4),FV1(4),FV2(4),FV3(4),sh,aem,tanw,ct2w,qupd,alprht,
      &far,fao,fzr,fzo,shr,R1,R2,S1,S2,WDTP(0:400),WDTE(0:400,0:5)
       INTEGER i,j,ierr
@@ -56120,7 +56120,7 @@ C...as a check that the program works as intended.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -56570,7 +56570,7 @@ C...Created:  5-31-96
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -56830,7 +56830,7 @@ C...and the related event axes.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -57022,8 +57022,8 @@ C...you do not have access to suitable routines.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
-C      CHARACTER*8 
+      INTEGER PYK,PYCHGE,PYCOMP
+      CHARACTER*8 ATIME
 C...Local array.
       INTEGER IDATI(6),IDTEMP(3)
  
@@ -57095,7 +57095,7 @@ C...by allowing it to be done in an external file.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCHGE,PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -57568,7 +57568,7 @@ C...der Bij, Nucl. Phys. B297 (1988) 221.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -57604,7 +57604,7 @@ C...Calculates full and partial widths of resonances.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -60195,7 +60195,7 @@ C....copy of PYWIDT, used for techniparticle widths
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-      INTEGER PYCOMP
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -60247,7 +60247,7 @@ C...Z0:
         ICASE=1
         XWC=1D0/(16D0*XW*XW1)
         FAC=(AEM*XWC/3D0)*SHR
-C  120   CONTINUE
+  120   CONTINUE
         DO 130 I=1,MDCY(KC,3)
           IDC=I+MDCY(KC,2)-1
           IF(MDME(IDC,1).LT.0) GOTO 130
@@ -60374,7 +60374,7 @@ C...Calculates the decay rate for ino -> ino + gauge boson.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local variables.
       DOUBLE PRECISION PYX2XG,XM1,XM2,XM3,GX2,GLR
@@ -60403,7 +60403,7 @@ C...Calculates the decay rate for ino -> ino + H.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local variables.
       DOUBLE PRECISION PYX2XH,XM1,XM2,XM3
@@ -60432,7 +60432,7 @@ C...Selects the kinematical variables of three-jet events.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -60599,7 +60599,7 @@ C...Selects the kinematical variables of four-jet events.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -60823,7 +60823,7 @@ C...Gives the angular orientation of events.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYJETS/N,NPAD,K(4000,5),P(4000,5),V(4000,5)
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
@@ -60962,7 +60962,7 @@ C...Selects number of jets in matrix element approach.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -61142,7 +61142,7 @@ C...Selects flavour for produced qqbar pair.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -61217,7 +61217,7 @@ C...radiation effects.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -61402,7 +61402,7 @@ C...= 26 : gamma + gamma (VDM).
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -61802,7 +61802,7 @@ C...Calculates chi0_i -> chi0_j + gamma.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
  
 C...Local variables.
       DOUBLE PRECISION PYXXGA,C0,XM1,XM2,XMTR,XMTL
@@ -61826,7 +61826,7 @@ C...Used in the calculation of  inoi -> inoj + f + ~f.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Parameter statement to help give large particle numbers.
       PARAMETER (KSUSY1=1000000,KSUSY2=2000000,KTECHN=3000000,
      &KEXCIT=4000000,KDIMEN=5000000)
@@ -61966,7 +61966,7 @@ C...Generates the longitudinal splitting variable z.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       COMMON/PYDAT2/KCHG(500,4),PMAS(500,4),PARF(2000),VCKM(4,4)
@@ -62090,7 +62090,7 @@ C...Dummy routine, to be removed when PDFLIB is to be linked.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -62129,7 +62129,7 @@ C...Dummy routine, to be removed when PDFLIB is to be linked.
 C...Double precision and integer declarations.
       IMPLICIT DOUBLE PRECISION(A-H, O-Z)
       IMPLICIT INTEGER(I-N)
-C      INTEGER 
+      INTEGER PYK,PYCHGE,PYCOMP
 C...Commonblocks.
       COMMON/PYDAT1/MSTU(200),PARU(200),MSTJ(200),PARJ(200)
       SAVE /PYDAT1/
@@ -62283,4 +62283,3 @@ C
       WRITE(6,*) ' %%% PYTH_XSEC called'
       RETURN
       END
-

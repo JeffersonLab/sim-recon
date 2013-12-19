@@ -18,6 +18,6 @@ C
       MYVERTEX(2) = VERTEX(2)
       MYVERTEX(3) = VERTEX(3)
 C
-      RETURN
+ 999  RETURN
       END
 

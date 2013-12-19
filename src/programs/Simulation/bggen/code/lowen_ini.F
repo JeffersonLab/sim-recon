@@ -12,12 +12,12 @@ C
       REAL SAIDE,SAIDXSECA,GPXSECP
       LOGICAL HEXIST
 C
-      INTEGER i,j,nb,ipro,npro,id1,idt,ncth,icth,ihi
-     +       ,lout
-      REAL emn,emx,xsec,de,e,dcth,cth
-     +    ,xsth
+      INTEGER i,j,nb,ipro,npro,id1,idt,ncth,icth,ihi,lun,iost
+     +       ip,lout
+      REAL emn,emx,flx1,flx2,flx,xsec,dx,de,e,dcth,cth
+     +    ,xlum,ecurr,xsth,targth,frate
 C
-      CHARACTER cpro*2,cenr*4
+      CHARACTER tit*132,cpro*2,cenr*4,cline*132
 C
       CHARACTER cnampro(MXPROC)*16
       DATA cnampro/'p pi0           '

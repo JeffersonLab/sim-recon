@@ -52,7 +52,7 @@ C
 C
       IEVPROC=0
       IERR=0
-      CONTINUE
+ 999  CONTINUE
 C
       END
 

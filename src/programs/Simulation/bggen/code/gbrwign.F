@@ -11,7 +11,7 @@ C.
       REAL     DUMMY
       REAL RNDM
       INTEGER itry
-      REAL de
+      REAL gg,gm,xrn,pi,de
 C.
 C.    ------------------------------------------------------------------
 C
@@ -20,7 +20,6 @@ C--  (via integral-transformation of Lorentz-distribution)
 C--                 (M.Guckes)
 C           f(E)=gamma/2pi/(E**2+gamma**2/4) - non relativistic
 C---       Modified by E.Ch. May 2007
-      DUMMY = 0.0
          itry=0
  10      itry=itry+1
 C         CALL GRNDM(rndm,1)

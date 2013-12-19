@@ -18,7 +18,7 @@ C
       REAL DNIDX,DNCDX,GPXSECT
 C
       INTEGER i,nb,ibrem
-      REAL emn,emx,flx,dx,de,e,xstot,xlum,ecurr,targth,frate,vv
+      REAL emn,emx,flx,xsec,dx,de,e,xstot,xlum,ecurr,targth,frate,vv
 C
       ibrem=1
       IF(ELIM(2).LT.ELIM(1)*1.006) ibrem=0
@@ -75,5 +75,5 @@ C
 C
       CALL HCOPY(ID,ID+1,'    ')  ! a copy of the final histogram to be used for HRNDM1
 C
-      RETURN
+ 999  RETURN
       END

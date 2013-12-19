@@ -23,9 +23,9 @@ C      VECTOR IPFIT(10)
 C
       REAL GP_F1,GP_F2,GP_F3,GP_F4
 C
-      INTEGER    i,k,npar,mxp,ipro,ifit
+      INTEGER    ig,i,k,npar,mxp,ipro,ifit
       PARAMETER (mxp=11)
-      REAL ff
+      REAL f1,f2,e0,ered,ff
       REAL parf1(4,mxp)
       DATA parf1/4*0.
      +          ,4*0.
