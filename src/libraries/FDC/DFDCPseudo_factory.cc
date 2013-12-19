@@ -148,6 +148,11 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
     uv_dt_vs_v=(TH2F *) gROOT->FindObject("uv_dt_vs_v");
     if (!uv_dt_vs_v) uv_dt_vs_v=new TH2F("uv_dt_vs_v","uv time difference vs v",
 			   192,0.5,192.5,100,-50,50);
+    Hxy=(TH2F *) gROOT->FindObject("Hxy");
+    if (!Hxy){
+      Hxy=new TH2F("Hxy","xy on FDC plane 1",4000,-50,50,200,-50,50);
+    }
+
     dapp->Unlock();
   }
 
@@ -313,11 +318,14 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      double dt2 = (*xIt)->t - vpeaks[j].t;
 
 	      if (DEBUG_HISTS){
-		dtv_vs_dtu->Fill(dt1,dt2);
-		u_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-upeaks[i].t);
-		v_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-vpeaks[j].t);
-		uv_dt_vs_u->Fill(upeaks[i].pos,upeaks[i].t-vpeaks[j].t);
-		uv_dt_vs_v->Fill(vpeaks[j].pos,upeaks[i].t-vpeaks[j].t);
+		if (layer==1){
+		  dtv_vs_dtu->Fill(dt1,dt2);
+		  u_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-upeaks[i].t);
+		  v_wire_dt_vs_wire->Fill((*xIt)->element,(*xIt)->t-vpeaks[j].t);
+		  uv_dt_vs_u->Fill(upeaks[i].pos,upeaks[i].t-vpeaks[j].t);
+		  uv_dt_vs_v->Fill(vpeaks[j].pos,upeaks[i].t-vpeaks[j].t);
+		  Hxy->Fill(x_from_strips,y_from_strips);
+		}
 	      }
 	      if (sqrt(dt1*dt1+dt2*dt2)>STRIP_ANODE_TIME_CUT) continue;
 
@@ -335,7 +343,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
 	      //double xres=WIRE_SPACING/2./sqrt(12.);
-
+	   
 	      DFDCPseudo* newPseu = new DFDCPseudo;
 	      newPseu->u = upeaks[i].pos;
 	      newPseu->v = vpeaks[j].pos;
