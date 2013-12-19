@@ -24,7 +24,7 @@ const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypothesis(
 	deque<const DChargedTrackHypothesis*> locHypotheses = locIterator->second;
 
 	const DChargedTrackHypothesis* locBestHypothesis = NULL;
-	double locBestFOM = -10.0;
+	//double locBestFOM = -10.0;
 	for(size_t loc_i = 0; loc_i < locHypotheses.size(); ++loc_i)
 	{
 		if(locHypotheses[loc_i]->PID() == locInputMCThrown->PID())
@@ -45,7 +45,7 @@ const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralHypothes
 	deque<const DNeutralParticleHypothesis*> locHypotheses = locIterator->second;
 
 	const DNeutralParticleHypothesis* locBestHypothesis = NULL;
-	double locBestFOM = -10.0;
+	//double locBestFOM = -10.0;
 	for(size_t loc_i = 0; loc_i < locHypotheses.size(); ++loc_i)
 	{
 		if(locHypotheses[loc_i]->PID() == locInputMCThrown->PID())
