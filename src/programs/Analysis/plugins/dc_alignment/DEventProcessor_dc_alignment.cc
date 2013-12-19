@@ -66,6 +66,12 @@ jerror_t DEventProcessor_dc_alignment::init(void)
   gPARMS->SetDefaultParameter("DCALIGN:COSMICS", COSMICS);
 
 
+  fdc_alignments.resize(24);
+  for (unsigned int i=0;i<24;i++){
+    fdc_alignments[i].A=DMatrix2x1();
+    fdc_alignments[i].E=DMatrix2x2(0.001,0.,0.,0.01);
+  }
+
   alignments.resize(24);
   for (unsigned int i=0;i<24;i++){
     alignments[i].A=DMatrix3x1();
@@ -134,7 +140,10 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   if (!Hcdc_prelimprob){
     Hcdc_prelimprob=new TH1F("Hcdc_prelimprob","Confidence level for prelimary fit",100,0.0,1.); 
   } 
-  
+  Hintersection_match = (TH1F*)gROOT->FindObject("Hintersection_match");
+  if (!Hintersection_match){
+    Hintersection_match=new TH1F("Hintersection_match","Segment matching distance",100,0.0,25.); 
+  }
 
   Hmatch = (TH1F*)gROOT->FindObject("Hmatch");
   if (!Hmatch){
@@ -271,6 +280,8 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   loop->Get(pseudos);
   vector<const DCDCTrackHit*>cdcs;
   loop->Get(cdcs);
+ vector<const DFDCIntersection*>intersections;
+  loop->Get(intersections);
 
   if (cdcs.size()>4 && bcalshowers.size()>0){
     vector<const DCDCTrackHit*>superlayers[5];
@@ -314,7 +325,38 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
     }
   }
 
-  if (pseudos.size()>4 && (fcalshowers.size()>0 || bcalshowers.size()>0)){
+  if (intersections.size()>4 && (fcalshowers.size()==0 || bcalshowers.size()==0)){
+    // Group FDC hits by package
+    vector<const DFDCIntersection*>packages[4];
+    for (unsigned int i=0;i<intersections.size();i++){
+      packages[(intersections[i]->wire1->layer-1)/6].push_back(intersections[i]);
+    }
+    
+    // Link hits in each package together into track segments
+    vector<intersection_segment_t>segments[4];
+    for (unsigned int i=0;i<4;i++){  
+      FindSegments(packages[i],segments[i]);
+    }
+      // Link the segments together to form track candidadates
+    vector<vector<const DFDCIntersection *> >LinkedSegments;
+    LinkSegments(segments,LinkedSegments);
+
+    // Loop over linked segments
+    for (unsigned int k=0;k<LinkedSegments.size();k++){
+      vector<const DFDCIntersection *>intersections=LinkedSegments[k];
+    
+      // Perform preliminary line fits for current set of linked segments    
+      DMatrix4x1 S=FitLine(intersections);
+      
+      // Match to outer detectors 
+      if (MatchOuterDetectors(fcalshowers,bcalshowers,S)){
+	DoFilter(S,intersections);
+      }
+    }
+  }
+  
+  if (false)
+  if (pseudos.size()>4 && (fcalshowers.size()==0 || bcalshowers.size()==0)){
     // Group FDC hits by package
     vector<const DFDCPseudo*>packages[4];
     for (unsigned int i=0;i<pseudos.size();i++){
@@ -542,16 +584,16 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 // Steering routine for the kalman filter
 jerror_t 
 DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
-				    vector<const DFDCPseudo *>&hits){
+				       vector<const DFDCPseudo *>&hits){
   unsigned int num_hits=hits.size();
   vector<update_t>updates(num_hits);
   vector<update_t>best_updates;
   vector<update_t>smoothed_updates(num_hits);  
 
-  int NEVENTS=50000;
-  double anneal_factor=pow(1e8,(double(NEVENTS-myevt))/(NEVENTS-1.));
+  int NEVENTS=150000;
+  double anneal_factor=pow(1e6,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
-  //anneal_factor=1.;
+  anneal_factor=1.;
   //anneal_factor=1e3;
 
   // Best guess for state vector at "vertex"
@@ -613,14 +655,11 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	unsigned int layer=hits[i]->wire->layer;
      
 	Hures_vs_layer->Fill(layer,smoothed_updates[i].res(0));
-	Hvres_vs_layer->Fill(layer,smoothed_updates[i].res(1));
 	if (layer==1){
 	  Hres_vs_drift_time->Fill(smoothed_updates[i].drift_time,
 				   smoothed_updates[i].res(0));
 	  Hdrift_time->Fill(smoothed_updates[i].drift_time,
 			    smoothed_updates[i].doca);
- 
-	  Hdv_vs_dE->Fill(hits[i]->dE,smoothed_updates[i].res(1));
 	}
 	
       }
@@ -628,19 +667,10 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
       FindOffsets(hits,smoothed_updates);
       
       for (unsigned int layer=0;layer<24;layer++){
-	// Set up to fill tree
-	double dxr=alignments[layer].A(kDx);
-	double dyr=alignments[layer].A(kDy); 
-	double dphi=alignments[layer].A(kDPhi);
-	fdc.dPhi=180./M_PI*dphi;
-	double cosdphi=cos(dphi);
-	double sindphi=sin(dphi);
-	double dx=dxr*cosdphi-dyr*sindphi;
-	double dy=dxr*sindphi+dyr*cosdphi;
-	fdc.dX=dx;
-	fdc.dY=dy;
-	//fdc.dX=dxr;
-	//fdc.dY=dyr;
+	fdc.dPhi=180./M_PI*alignments[layer].A(kDPhi);
+	fdc.dX=alignments[layer].A(kDx);
+	fdc.dY=alignments[layer].A(kDy);
+
 	fdc.layer=layer+1;
 	fdc.N=myevt;
 	
@@ -659,6 +689,129 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   
   return VALUE_OUT_OF_RANGE;
 }
+
+// Steering routine for the kalman filter
+jerror_t 
+DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
+				       vector<const DFDCIntersection *>&intersections){
+  vector<intersection_hit_t>hits;
+  unsigned int max_i=intersections.size()-1; 
+  intersection_hit_t temp;
+  for (unsigned int i=0;i<=max_i;i++){  
+    temp.wire=intersections[i]->wire1;
+    temp.hit=intersections[i]->hit1;
+    hits.push_back(temp);
+  }
+  temp.wire=intersections[max_i]->wire2;
+  temp.hit=intersections[max_i]->hit2;
+  hits.push_back(temp);
+
+  unsigned int num_hits=hits.size();
+  vector<wire_update_t>updates(num_hits);
+  vector<wire_update_t>best_updates;
+  vector<wire_update_t>smoothed_updates(num_hits);  
+
+  int NEVENTS=100000;
+  double anneal_factor=pow(1e3,(double(NEVENTS-myevt))/(NEVENTS-1.));
+  if (myevt>NEVENTS) anneal_factor=1.;  
+  //anneal_factor=1.;
+  //anneal_factor=1e3;
+
+  // Best guess for state vector at "vertex"
+  DMatrix4x1 Sbest;
+      
+  // Use the result from the initial line fit to form a reference trajectory 
+  // for the track. 
+  deque<trajectory_t>trajectory;
+  deque<trajectory_t>best_traj;
+  // double start_z=hits[0]->wire->origin.z()-1.;
+  S(state_x)+=endplate_z*S(state_tx);
+  S(state_y)+=endplate_z*S(state_ty);
+  //  SetReferenceTrajectory(endplate_z,S,trajectory,hits);
+      
+  // Intial guess for covariance matrix
+  DMatrix4x4 C,C0,Cbest;
+  C0(state_x,state_x)=C0(state_y,state_y)=1.;
+  C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.001;
+  
+  // Chi-squared and degrees of freedom
+  double chi2=1e16,chi2_old=1e16;
+  unsigned int ndof=0,ndof_old=0;
+  unsigned iter=0;
+  for(;;){
+    iter++;
+    chi2_old=chi2; 
+    ndof_old=ndof;
+
+    trajectory.clear();
+    if (SetReferenceTrajectory(endplate_z,S,trajectory,hits)!=NOERROR) break;
+    C=C0;
+    if (KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof)
+	!=NOERROR) break;
+
+    // printf("== event %d == iter %d =====chi2 %f ndof %d \n",myevt,iter,chi2,ndof);
+    if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1 || iter==ITER_MAX) break;  
+    
+    // Save the current state and covariance matrixes
+    Cbest=C;
+    Sbest=S;
+    best_updates.assign(updates.begin(),updates.end());
+    best_traj.assign(trajectory.begin(),trajectory.end());
+    // run the smoother (opposite direction to filter)
+    //Smooth(S,C,trajectory,hits,updates,smoothed_updates);
+  }
+      
+  if (iter>1){
+    double prob=TMath::Prob(chi2_old,ndof_old);
+    Hprob->Fill(prob);
+  
+    //printf("prob %f\n",prob);
+
+    if (prob>0.001){
+      // run the smoother (opposite direction to filter)
+      Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
+
+      //Hbeta->Fill(mBeta);
+      for (unsigned int i=0;i<smoothed_updates.size();i++){
+	unsigned int layer=hits[i].wire->layer;
+     
+	Hures_vs_layer->Fill(layer,smoothed_updates[i].ures);
+	if (layer==13&&prob>0.1){
+	  Hres_vs_drift_time->Fill(smoothed_updates[i].drift_time,
+				   smoothed_updates[i].ures);
+	  Hdrift_time->Fill(smoothed_updates[i].drift_time,
+			    smoothed_updates[i].doca);
+	}
+	
+      }
+
+      FindOffsets(hits,smoothed_updates);
+      
+      for (unsigned int layer=0;layer<24;layer++){
+	fdc.dPhi=180./M_PI*fdc_alignments[layer].A(kPhi);
+	fdc.dX=fdc_alignments[layer].A(kU);
+	fdc.dY=0.;
+
+	fdc.layer=layer+1;
+	fdc.N=myevt;
+	
+	// Lock mutex
+	pthread_mutex_lock(&mutex);
+	
+	fdctree->Fill();
+	
+	// Unlock mutex
+	pthread_mutex_unlock(&mutex);
+      }
+      return NOERROR;
+    }
+  }
+   
+  
+  return VALUE_OUT_OF_RANGE;
+}
+
+
 
 
 // Link segments from package to package by doing straight-line projections
@@ -745,6 +898,97 @@ DEventProcessor_dc_alignment::LinkSegments(vector<segment_t>segments[4],
   
   return NOERROR;
 }
+
+
+
+// Link segments from package to package by doing straight-line projections
+jerror_t
+DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segments[4], 
+					vector<vector<const DFDCIntersection*> >&LinkedSegments){
+  vector<const DFDCIntersection *>myhits;
+  for (unsigned int i=0;i<4;i++){
+    for (unsigned int j=0;j<segments[i].size();j++){
+      if (segments[i][j].matched==false){
+	myhits.assign(segments[i][j].hits.begin(),segments[i][j].hits.end());
+	
+	unsigned i_plus_1=i+1; 
+	if (i_plus_1<4){
+	  double tx=segments[i][j].S(state_tx);
+	  double ty=segments[i][j].S(state_ty);
+	  double x0=segments[i][j].S(state_x);
+	  double y0=segments[i][j].S(state_y);
+	  
+	  for (unsigned int k=0;k<segments[i_plus_1].size();k++){
+	    if (segments[i_plus_1][k].matched==false){
+	      double z=segments[i_plus_1][k].hits[0]->pos.z();
+	      DVector2 proj(x0+tx*z,y0+ty*z);
+	      DVector2 XY(segments[i_plus_1][k].hits[0]->pos.x(),
+			  segments[i_plus_1][k].hits[0]->pos.y());
+	      if ((proj-XY).Mod()<MATCH_RADIUS){
+		segments[i_plus_1][k].matched=true;
+		myhits.insert(myhits.end(),segments[i_plus_1][k].hits.begin(),
+				segments[i_plus_1][k].hits.end());
+		
+		unsigned int i_plus_2=i_plus_1+1;
+		if (i_plus_2<4){
+		  tx=segments[i_plus_1][k].S(state_tx);
+		  ty=segments[i_plus_1][k].S(state_ty);
+		  x0=segments[i_plus_1][k].S(state_x);
+		  y0=segments[i_plus_1][k].S(state_y);
+		  
+		  for (unsigned int m=0;m<segments[i_plus_2].size();m++){
+		    if (segments[i_plus_2][m].matched==false){
+		      z=segments[i_plus_2][m].hits[0]->pos.z();
+		      proj.Set(x0+tx*z,y0+ty*z);
+		      XY.Set(segments[i_plus_2][m].hits[0]->pos.x(),
+			     segments[i_plus_2][m].hits[0]->pos.y());
+		      if ((proj-XY).Mod()<MATCH_RADIUS){
+			segments[i_plus_2][m].matched=true;
+			myhits.insert(myhits.end(),segments[i_plus_2][m].hits.begin(),
+				      segments[i_plus_2][m].hits.end());
+			
+			unsigned int i_plus_3=i_plus_2+1;
+			if (i_plus_3<4){
+			  tx=segments[i_plus_2][m].S(state_tx);
+			  ty=segments[i_plus_2][m].S(state_ty);
+			  x0=segments[i_plus_2][m].S(state_x);
+			  y0=segments[i_plus_2][m].S(state_y);
+			  
+			  for (unsigned int n=0;n<segments[i_plus_3].size();n++){
+			    if (segments[i_plus_3][n].matched==false){
+			      z=segments[i_plus_3][n].hits[0]->pos.z();
+			      proj.Set(x0+tx*z,y0+ty*z);
+			      XY.Set(segments[i_plus_3][n].hits[0]->pos.x(),
+				     segments[i_plus_3][n].hits[0]->pos.y());
+			      if ((proj-XY).Mod()<MATCH_RADIUS){
+				segments[i_plus_3][n].matched=true;
+				myhits.insert(myhits.end(),segments[i_plus_3][n].hits.begin(),
+					      segments[i_plus_3][n].hits.end());
+				
+				break;
+			      } // matched a segment
+			    }
+			  }  // loop over last set of segments
+			} // if we have another package to loop over
+			break;
+		      } // matched a segment
+		    }
+		  } // loop over second-to-last set of segments
+		}
+		break;
+	      } // matched a segment
+	    }
+	  } // loop over third-to-last set of segments
+	}	
+	LinkedSegments.push_back(myhits);
+	myhits.clear();
+      } // check if we have already used this segment
+    } // loop over first set of segments
+  } // loop over packages
+  
+  return NOERROR;
+}
+
 
 // Find segments in cdc axial layers
 jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DCDCTrackHit*>&hits,
@@ -917,6 +1161,105 @@ jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCPseudo*>&po
   return NOERROR;
 }
 
+// Find segments by associating adjacent hits within a package together.
+jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCIntersection*>&points,
+					vector<intersection_segment_t>&segments){
+  if (points.size()==0) return RESOURCE_UNAVAILABLE;
+  vector<int>used(points.size());
+
+  // Put indices for the first point in each plane before the most downstream
+  // plane in the vector x_list.
+  double old_z=points[0]->pos.z();
+  vector<unsigned int>x_list;
+  x_list.push_back(0);
+  for (unsigned int i=0;i<points.size();i++){
+    used.push_back(false);
+    if (points[i]->pos.z()!=old_z){
+      x_list.push_back(i);
+    }
+    old_z=points[i]->pos.z();
+  }
+  x_list.push_back(points.size()); 
+
+  unsigned int start=0;
+  // loop over the start indices, starting with the first plane
+  while (start<x_list.size()-1){
+    // Now loop over the list of track segment start points
+    for (unsigned int i=x_list[start];i<x_list[start+1];i++){
+      if (used[i]==false){
+	used[i]=true;
+	
+	// Point in the current plane in the package 
+	DVector2 XY(points[i]->pos.x(),points[i]->pos.y());
+	
+	// Create list of nearest neighbors
+	vector<const DFDCIntersection*>neighbors;
+	neighbors.push_back(points[i]);
+	unsigned int match=0;
+	double delta,delta_min=1000.;
+	for (unsigned int k=0;k<x_list.size()-1;k++){
+	  delta_min=1000.;
+	  match=0;
+	  for (unsigned int m=x_list[k];m<x_list[k+1];m++){
+	    DVector2 XY2(points[m]->pos.x(),points[m]->pos.y());
+	    delta=(XY-XY2).Mod();
+	    if (delta<delta_min && delta<MATCH_RADIUS){
+	      delta_min=delta;
+	      match=m;
+	    }
+	  }
+	  Hintersection_match->Fill(delta_min);
+	  if (//match!=0 
+	      //&& 
+	      used[match]==false
+	      ){
+	    XY.Set(points[match]->pos.x(),points[match]->pos.y());
+	    used[match]=true;
+	    neighbors.push_back(points[match]);	  
+	  }
+	}
+	unsigned int num_neighbors=neighbors.size();
+
+	bool do_sort=false;
+	// Look for hits adjacent to the ones we have in our segment candidate
+	for (unsigned int k=0;k<points.size();k++){
+	  if (!used[k]){
+	    for (unsigned int j=0;j<num_neighbors;j++){
+	      DVector2 XY(points[k]->pos.x(),points[k]->pos.y());
+	      DVector2 XY2(neighbors[j]->pos.x(),neighbors[j]->pos.y());
+	      delta=(XY-XY2).Mod();
+
+	      if (delta<ADJACENT_MATCH_RADIUS && 
+		  neighbors[j]->pos.z()==points[k]->pos.z()){
+		used[k]=true;
+		neighbors.push_back(points[k]);
+		do_sort=true;
+	      }      
+	    }
+	  }
+	} // loop looking for hits adjacent to hits on segment
+
+	if (neighbors.size()>4){
+	  intersection_segment_t mysegment;
+	  mysegment.matched=false;
+	  mysegment.S=FitLine(neighbors);
+	  mysegment.hits=neighbors;
+	  segments.push_back(mysegment);
+	}
+      }
+    }// loop over start points within a plane
+    
+    // Look for a new plane to start looking for a segment
+    while (start<x_list.size()-1){
+      if (used[x_list[start]]==false) break;
+      start++;
+    }
+
+  }
+
+  return NOERROR;
+}
+
 
 DMatrix4x1 
 DEventProcessor_dc_alignment::FitLine(vector<const DFDCPseudo*> &fdchits){
@@ -1011,6 +1354,51 @@ DEventProcessor_dc_alignment::FitLine(vector<const DFDCPseudo*> &fdchits,
 
 }
 
+// Use linear regression on the hits to obtain a first guess for the state
+// vector.  Method taken from Numerical Recipes in C.
+DMatrix4x1 
+DEventProcessor_dc_alignment::FitLine(vector<const DFDCIntersection*> &fdchits){
+  double S1=0.;
+  double S1z=0.;
+  double S1y=0.;
+  double S1zz=0.;
+  double S1zy=0.;  
+  double S2=0.;
+  double S2z=0.;
+  double S2x=0.;
+  double S2zz=0.;
+  double S2zx=0.;
+
+  for (unsigned int i=0;i<fdchits.size();i++){
+    double x=fdchits[i]->pos.X();
+    double y=fdchits[i]->pos.Y();
+    double z=fdchits[i]->pos.Z();
+
+    S1+=1.0;  // assume all errors are the same
+    S1z+=z;
+    S1y+=y;
+    S1zz+=z*z;
+    S1zy+=z*y;    
+    
+    S2+=1.0;
+    S2z+=z;
+    S2x+=x;
+    S2zz+=z*z;
+    S2zx+=z*x;
+  }
+  double D1=S1*S1zz-S1z*S1z;
+  double y_intercept=(S1zz*S1y-S1z*S1zy)/D1;
+  double y_slope=(S1*S1zy-S1z*S1y)/D1;
+  double D2=S2*S2zz-S2z*S2z;
+  double x_intercept=(S2zz*S2x-S2z*S2zx)/D2;
+  double x_slope=(S2*S2zx-S2z*S2x)/D2;
+
+  return DMatrix4x1(x_intercept,y_intercept,x_slope,y_slope);
+
+}
+
+
+
 // Kalman smoother 
 jerror_t DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 					   deque<trajectory_t>&trajectory,
@@ -1088,6 +1476,99 @@ jerror_t DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 	double d=(upred-uwire)*cosalpha;
 	smoothed_updates[id].res(1)=v-vpred+tv*d*sinalpha;
 	smoothed_updates[id].res(0)=(d>0?1.:-1.)*updates[id].drift-d;
+	smoothed_updates[id].doca=fabs(d);
+	
+	smoothed_updates[id].drift=updates[id].drift;
+	smoothed_updates[id].drift_time=updates[id].drift_time;
+	smoothed_updates[id].S=Ss;
+	smoothed_updates[id].C=Cs;
+	smoothed_updates[id].R=updates[id].R-updates[id].H*dC*updates[id].H_T;
+      }
+    }
+    S=trajectory[m].Skk;
+    C=trajectory[m].Ckk;
+    JT=trajectory[m].J.Transpose();
+  }
+  
+  A=trajectory[0].Ckk*JT*C.Invert();
+  Ss=trajectory[0].Skk+A*(Ss-S);
+  Cs=trajectory[0].Ckk+A*(Cs-C)*A.Transpose();
+
+  return NOERROR;
+}
+
+
+// Kalman smoother 
+jerror_t DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
+					   deque<trajectory_t>&trajectory,
+					   vector<intersection_hit_t>&hits,
+					   vector<wire_update_t>updates,
+					   vector<wire_update_t>&smoothed_updates
+					   ){
+  DMatrix4x1 S; 
+  DMatrix4x4 C,dC;
+  DMatrix4x4 JT,A;
+
+  unsigned int max=trajectory.size()-1;
+  S=(trajectory[max].Skk);
+  C=(trajectory[max].Ckk);
+  JT=(trajectory[max].J.Transpose());
+  //Ss=S;
+  //Cs=C;
+  for (unsigned int m=max-1;m>0;m--){
+    if (trajectory[m].h_id==0){
+      A=trajectory[m].Ckk*JT*C.Invert();
+      Ss=trajectory[m].Skk+A*(Ss-S);
+      Cs=trajectory[m].Ckk+A*(Cs-C)*A.Transpose();
+    }
+    else if (trajectory[m].h_id>0){
+      unsigned int first_id=trajectory[m].h_id-1;
+      for (int k=trajectory[m].num_hits-1;k>=0;k--){
+	unsigned int id=first_id+k;
+	A=updates[id].C*JT*C.Invert();
+	dC=A*(Cs-C)*A.Transpose();
+	Ss=updates[id].S+A*(Ss-S);
+	Cs=updates[id].C+dC;
+      
+	// Nominal rotation of wire planes
+	double cosa=hits[id].wire->udir.y();
+	double sina=hits[id].wire->udir.x();
+	
+	// State vector
+	double x=Ss(state_x);
+	double y=Ss(state_y);
+	double tx=Ss(state_tx);
+	double ty=Ss(state_ty);
+	
+	// Get the aligment vector and error matrix for this layer
+	unsigned int layer=hits[id].wire->layer-1;
+	DMatrix2x2 E=fdc_alignments[layer].E;
+	DMatrix2x1 A=fdc_alignments[layer].A;
+	double delta_u=A(kU);
+	double sindphi=sin(A(kPhi));
+	double cosdphi=cos(A(kPhi));
+	
+	// Components of rotation matrix for converting global to local coords.
+	double cospsi=cosa*cosdphi+sina*sindphi;
+	double sinpsi=sina*cosdphi-cosa*sindphi;
+	
+	// x,y and tx,ty in local coordinate system	
+	// To transform from (x,y) to (u,v), need to do a rotation:
+	//   u = x*cosa-y*sina
+	//   v = y*cosa+x*sina
+	// (without alignment offsets)
+	double upred=x*cospsi-y*sinpsi;
+	double tu=tx*cospsi-ty*sinpsi;
+	
+	// Variables for angle of incidence with respect to the z-direction in
+	// the u-z plane
+	double alpha=atan(tu);
+	double cosalpha=cos(alpha);
+	
+	// Smoothed residuals
+	double uwire=hits[id].wire->u+delta_u;
+	double d=(upred-uwire)*cosalpha;
+	smoothed_updates[id].ures=(d>0?1.:-1.)*updates[id].drift-d;
 	smoothed_updates[id].doca=fabs(d);
 	
 	smoothed_updates[id].drift=updates[id].drift;
@@ -1412,17 +1893,15 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 jerror_t 
 DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 					DMatrix4x1 &S,DMatrix4x4 &C,
-			       vector<const DFDCPseudo *>&hits,
+			       vector<intersection_hit_t>&hits,
 			       deque<trajectory_t>&trajectory,
-			       vector<update_t>&updates,
+			       vector<wire_update_t>&updates,
 			       double &chi2,unsigned int &ndof){
-  DMatrix2x4 H;  // Track projection matrix
-  DMatrix4x2 H_T; // Transpose of track projection matrix 
-  DMatrix4x2 K;  // Kalman gain matrix
-  DMatrix2x2 V(0.020833,0,0,0);  // Measurement covariance 
-  DMatrix2x2 Vtemp;
-  DMatrix2x1 Mdiff;
-  DMatrix2x2 InvV; // Inverse of error matrix
+  DMatrix1x4 H;  // Track projection matrix
+  DMatrix4x1 H_T; // Transpose of track projection matrix 
+  DMatrix4x1 K;  // Kalman gain matrix
+  double V=anneal_factor*0.020833;  // Measurement variance 
+  double Vtemp,Mdiff,InvV;
   DMatrix4x4 I; // identity matrix
   DMatrix4x4 J; // Jacobian matrix
   DMatrix4x1 S0; // State vector from reference trajectory
@@ -1456,8 +1935,8 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
     if (trajectory[k].h_id>0){
       unsigned int id=trajectory[k].h_id-1;
       
-      double cosa=hits[id]->wire->udir.y();
-      double sina=hits[id]->wire->udir.x();
+      double cosa=hits[id].wire->udir.y();
+      double sina=hits[id].wire->udir.x();
       
       // State vector
       double x=S(state_x);
@@ -1467,13 +1946,12 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       if (isnan(x) || isnan(y)) return UNRECOVERABLE_ERROR;
       
       // Get the alignment vector and error matrix for this layer
-      unsigned int layer=hits[id]->wire->layer-1;
-      DMatrix3x3 E=alignments[layer].E;
-      DMatrix3x1 A=alignments[layer].A;
-      double dx=A(kDx);
-      double dy=A(kDy);
-      double sindphi=sin(A(kDPhi));
-      double cosdphi=cos(A(kDPhi));
+      unsigned int layer=hits[id].wire->layer-1;
+      DMatrix2x2 E=fdc_alignments[layer].E;
+      DMatrix2x1 A=fdc_alignments[layer].A;
+      double delta_u=A(kU);
+      double sindphi=sin(A(kPhi));
+      double cosdphi=cos(A(kPhi));
       
       // Components of rotation matrix for converting global to local coords.
       double cospsi=cosa*cosdphi+sina*sindphi;
@@ -1484,8 +1962,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       //   u = x*cosa-y*sina
       //   v = y*cosa+x*sina
       // (without alignment offsets)
-      double upred=x*cospsi-y*sinpsi-dx*cosa+dy*sina;
-      double vpred=x*sinpsi+y*cospsi-dx*sina-dy*cosa;
+      double upred=x*cospsi-y*sinpsi+delta_u;
       double tu=tx*cospsi-ty*sinpsi;
       double tv=tx*sinpsi+ty*cospsi;
 
@@ -1498,15 +1975,10 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       // Difference between measurement and projection
       for (int m=trajectory[k].num_hits-1;m>=0;m--){
 	unsigned int my_id=id+m;
-	double uwire=hits[my_id]->w;
-	double v=hits[my_id]->s;
-	
-	//printf("cospsi %f sinpsi %f\n",cospsi,sinpsi);
-	//printf("u %f %f v %f %f\n",uwire,upred,v,vpred);
-	
+	double uwire=hits[my_id].wire->u+delta_u;
 
 	// Find drift distance
-	double drift_time=hits[my_id]->time-trajectory[k].t-mT0;
+	double drift_time=hits[my_id].hit->t-trajectory[k].t-mT0;
 	double drift=GetDriftDistance(drift_time);
 	updates[my_id].drift=drift;
 	updates[my_id].drift_time=drift_time;
@@ -1514,94 +1986,58 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 
 	double du=upred-uwire;
 	double d=du*cosalpha;
-
-	if (my_id==mMinTimeID){ 
-	  double par[4]={0.23682,6.85469,1141.81,-859.02};
-	  double d_sq=d*d;    
-	  double t_from_d=par[0]+par[1]*fabs(d)+par[2]*d_sq+par[3]*fabs(d)*d_sq;
-	  mBeta=(mOuterZ-trajectory[k].z)/29.98*sqrt(1.+tx*tx+ty*ty)
-	    /(mOuterTime-(hits[my_id]->time-t_from_d));
-	}
-
 	double sign=(du>0)?1.:-1.;
 	
 	// Difference between measured and predicted vectors
-	//drift=0.25;
-	Mdiff(0)=sign*drift-d;
-	Mdiff(1)=v-vpred+tv*(d*sinalpha);
+	drift=0.25;
+	Mdiff=sign*drift-d;
 
 	//printf("tdrift %f d %f %f\n",drift_time,drift,d);
 	//printf("dv %f ddv %f\n",v-vpred,tv*d*sinalpha);
 
 	// Variance of measurement error
-	V(0,0)=anneal_factor*GetDriftVariance(drift_time);
-	
-	double sigma=3.7e-8/hits[my_id]->dE+0.0062;
-	V(1,1)=anneal_factor*sigma*sigma;
+	//V=anneal_factor*GetDriftVariance(drift_time);
 	
 	// Matrix for transforming from state-vector space to measurement space
 	double sinalpha_cosalpha=sinalpha*cosalpha;
-	H_T(state_x,0)=cospsi*cosalpha;
-	H_T(state_y,0)=-sinpsi*cosalpha;
-
-	H_T(state_x,1)=sinpsi-tv*cospsi*sinalpha_cosalpha;
-	H_T(state_y,1)=cospsi+tv*sinpsi*sinalpha_cosalpha;
+	H_T(state_x)=cospsi*cosalpha;
+	H_T(state_y)=-sinpsi*cosalpha;
 	
 	double temp=d*sinalpha_cosalpha;
-	H_T(state_tx,0)=-temp*cospsi;
-	H_T(state_ty,0)=+temp*sinpsi;
-
-	temp=tv*cosalpha*(cosalpha*cosalpha-sinalpha*sinalpha);
-	H_T(state_tx,1)=-d*(sinpsi*sinalpha+cospsi*temp);
-	H_T(state_ty,1)=-d*(cospsi*sinalpha-sinpsi*temp);
+	H_T(state_tx)=-temp*cospsi;
+	H_T(state_ty)=+temp*sinpsi;
 
 	// H-matrix transpose
-	H(0,state_x)=H_T(state_x,0);
-	H(0,state_y)=H_T(state_y,0);
+	H(state_x)=H_T(state_x);
+	H(state_y)=H_T(state_y);
 
-	H(1,state_x)=H_T(state_x,1);
-	H(1,state_y)=H_T(state_y,1);
-
-	H(0,state_tx)=H_T(state_tx,0);
-	H(0,state_ty)=H_T(state_ty,0);
+	H(state_tx)=H_T(state_tx);
+	H(state_ty)=H_T(state_ty);
 	
 	updates[my_id].H=H;
 	updates[my_id].H_T=H_T;
 		
 	// Matrices to rotate alignment error matrix into measurement space
-	DMatrix2x3 G;
-	DMatrix3x2 G_T;
+	DMatrix1x2 G;
+	DMatrix2x1 G_T;
 	
-	G_T(kDx,0)=-cosa*cosalpha;
-	G_T(kDy,0)=+sina*cosalpha;
-
-	G_T(kDx,1)=-sina+tv*cosa*sinalpha_cosalpha;	
-	G_T(kDy,1)=-cosa-tv*sina*sinalpha_cosalpha;
-
-	G_T(kDPhi,0)=cosalpha*(x*sinpsi+y*cospsi-tv*d);
-	G_T(kDPhi,1)=-x*cospsi+y*sinpsi
-	  +tu*d*sinalpha-tv*(x*sinpsi+y*cospsi)*sinalpha_cosalpha
-	  +tv*tv*cosalpha*(d*(sinalpha*sinalpha-cosalpha*cosalpha))
-	  ;
+	G_T(kU)=-cosalpha;
+	G_T(kPhi)=cosalpha*(x*sinpsi+y*cospsi-tv*d);
 	
 	// G-matrix transpose
-	G(0,kDx)=G_T(kDx,0);
-	G(0,kDy)=G_T(kDy,0);
-	G(1,kDx)=G_T(kDx,1);
-	G(1,kDy)=G_T(kDy,1);
-	G(0,kDPhi)=G_T(kDPhi,0);
-	G(1,kDPhi)=G_T(kDPhi,1);
+	G(kU)=G_T(kU);
+	G(kPhi)=G_T(kPhi);
 
-	DMatrix2x2 Vtemp=V+G*E*G_T;
+	Vtemp=V+G*E*G_T;
 
 	// Variance for this hit
-	InvV=(Vtemp+H*C*H_T).Invert();
+	InvV=1./(Vtemp+H*C*H_T);
 	
 	// Compute Kalman gain matrix
-	K=(C*H_T)*InvV;
+	K=InvV*(C*H_T);
 	
 	// Update the state vector 
-	S+=K*Mdiff;
+	S+=Mdiff*K;
 	updates[my_id].S=S;
 
 	// Update state vector covariance matrix
@@ -1613,10 +2049,8 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	y=S(state_y);
 	tx=S(state_tx);
 	ty=S(state_ty);
-	upred=x*cospsi-y*sinpsi-dx*cosa+dy*sina;
-	vpred=x*sinpsi+y*cospsi-dx*sina-dy*cosa;
+	upred=x*cospsi-y*sinpsi+delta_u;
 	tu=tx*cospsi-ty*sinpsi;
-	tv=tx*sinpsi+ty*cospsi;
 	
 	// Variables for angle of incidence with respect to the z-direction in
 	// the u-z plane
@@ -1626,16 +2060,14 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	d=du*cosalpha;
 	sinalpha=sin(alpha);
 
-	Mdiff(0)=sign*drift-d;
-	Mdiff(1)=v-vpred+tv*(d*sinalpha);
+	Mdiff=sign*drift-d;
 
-	DMatrix2x1 R=Mdiff;
-	DMatrix2x2 RC=Vtemp-H*C*H_T;
-
+	double RC=Vtemp-H*C*H_T;
+	updates[my_id].ures=Mdiff;
 	updates[my_id].R=RC;
 	
-	chi2+=RC.Chi2(R);
-	ndof+=2;
+	chi2+=Mdiff*Mdiff/RC;
+	ndof++;
       }
 
     }
@@ -1646,6 +2078,11 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 
   return NOERROR;
 }
+
+
+
+
+
 
 //Reference trajectory for the track for cdc tracks
 jerror_t DEventProcessor_dc_alignment
@@ -1801,6 +2238,100 @@ jerror_t DEventProcessor_dc_alignment
 
   return NOERROR;
 }
+
+// Reference trajectory for the track
+jerror_t DEventProcessor_dc_alignment
+::SetReferenceTrajectory(double z,DMatrix4x1 &S,deque<trajectory_t>&trajectory,
+			 vector<intersection_hit_t>&hits){
+  // Jacobian matrix 
+  DMatrix4x4 J(1.,0.,1.,0., 0.,1.,0.,1., 0.,0.,1.,0., 0.,0.,0.,1.);
+
+  double dz=1.1;
+  double t=0.;
+  trajectory_t temp;
+  temp.S=S;
+  temp.J=J;
+  temp.Skk=Zero4x1;
+  temp.Ckk=Zero4x4;
+  temp.h_id=0;	  
+  temp.num_hits=0;
+  temp.z=z;
+  temp.t=0.;
+  trajectory.push_front(temp);
+  double zhit=z;
+  double old_zhit=z;
+  unsigned int itrajectory=0;
+  for (unsigned int i=0;i<hits.size();i++){  
+    zhit=hits[i].wire->origin.z();
+
+    if (fabs(zhit-old_zhit)<EPS){
+      trajectory[0].num_hits++;
+      continue;
+    }
+    bool done=false;
+    while (!done){	    
+      double new_z=z+dz;	      
+      trajectory_t temp;
+      temp.J=J;
+      temp.J(state_x,state_tx)=-dz;
+      temp.J(state_y,state_ty)=-dz;
+      // Flight time: assume particle is moving at the speed of light
+      temp.t=(t+=dz*sqrt(1+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty))
+	      /29.98);
+      //propagate the state to the next z position
+      temp.S(state_x)=S(state_x)+S(state_tx)*dz;
+      temp.S(state_y)=S(state_y)+S(state_ty)*dz;
+      temp.S(state_tx)=S(state_tx);
+      temp.S(state_ty)=S(state_ty);
+      temp.Skk=Zero4x1;
+      temp.Ckk=Zero4x4;  
+      temp.h_id=0;	  
+      temp.num_hits=0;
+      if (new_z>zhit){
+	new_z=zhit;
+	temp.h_id=i+1;
+	temp.num_hits=1;
+	done=true;
+      }
+      temp.z=new_z;
+      trajectory.push_front(temp); 
+      S=temp.S;
+      itrajectory++;
+      z=new_z;
+    }	   
+    old_zhit=zhit;
+  }
+  temp.Skk=Zero4x1;
+  temp.Ckk=Zero4x4;
+  temp.h_id=0;	  
+  temp.z=z+dz;
+  temp.J=J;
+  temp.J(state_x,state_tx)=-dz;
+  temp.J(state_y,state_ty)=-dz;
+  // Flight time: assume particle is moving at the speed of light
+  temp.t=(t+=dz*sqrt(1+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty))
+	  /29.98);
+  //propagate the state to the next z position
+  temp.S(state_x)=S(state_x)+S(state_tx)*dz;
+  temp.S(state_y)=S(state_y)+S(state_ty)*dz;
+  temp.S(state_tx)=S(state_tx);
+  temp.S(state_ty)=S(state_ty);
+  S=temp.S;
+  trajectory.push_front(temp);
+
+  if (false){
+    printf("Trajectory:\n");
+    for (unsigned int i=0;i<trajectory.size();i++){
+    printf(" x %f y %f z %f first hit %d num in layer %d\n",trajectory[i].S(state_x),
+	   trajectory[i].S(state_y),trajectory[i].z,trajectory[i].h_id,
+	   trajectory[i].num_hits); 
+    }
+  }
+
+  return NOERROR;
+}
+
+
 
 // Crude approximation for the variance in drift distance due to smearing
 double DEventProcessor_dc_alignment::GetDriftVariance(double t){
@@ -2006,6 +2537,86 @@ DEventProcessor_dc_alignment::FindOffsets(vector<const DFDCPseudo *>&hits,
   return NOERROR;
 }
 
+jerror_t 
+DEventProcessor_dc_alignment::FindOffsets(vector<intersection_hit_t>&hits,
+				      vector<wire_update_t>&smoothed_updates){
+  DMatrix1x2 G;//matrix relating alignment vector to measurement coords
+  DMatrix2x1 G_T; // .. and its transpose
+  
+  unsigned int num_hits=hits.size();
+
+
+  for (unsigned int i=0;i<num_hits;i++){ 
+    double x=smoothed_updates[i].S(state_x);
+    double y=smoothed_updates[i].S(state_y);
+    double tx=smoothed_updates[i].S(state_tx);
+    double ty=smoothed_updates[i].S(state_ty);
+    
+    double cosa=hits[i].wire->udir.y();
+    double sina=hits[i].wire->udir.x();
+      
+    // Get the aligment vector and error matrix for this layer
+    unsigned int layer=hits[i].wire->layer-1;
+    DMatrix2x1 A=fdc_alignments[layer].A;
+    DMatrix2x2 E=fdc_alignments[layer].E;
+    double delta_u=A(kU);
+    double sindphi=sin(A(kPhi));
+    double cosdphi=cos(A(kPhi));
+    
+    // Components of rotation matrix for converting global to local coords.
+    double cospsi=cosa*cosdphi+sina*sindphi;
+    double sinpsi=sina*cosdphi-cosa*sindphi;
+    
+    // x,y and tx,ty in local coordinate system	
+    // To transform from (x,y) to (u,v), need to do a rotation:
+    //   u = x*cosa-y*sina
+    //   v = y*cosa+x*sina
+    // (without alignment offsets)
+    double uwire=hits[i].wire->u+delta_u;
+    double upred=x*cospsi-y*sinpsi;
+    double tu=tx*cospsi-ty*sinpsi;
+    double tv=tx*sinpsi+ty*cospsi;
+    double du=upred-uwire;
+    
+    // Variables for angle of incidence with respect to the z-direction in
+    // the u-z plane
+    double alpha=atan(tu);
+    double cosalpha=cos(alpha);
+    
+    // Transform from alignment vector coords to measurement coords
+    G_T(kU)=-cosalpha;
+
+    double d=du*cosalpha;
+    G_T(kPhi)=cosalpha*(x*sinpsi+y*cospsi-tv*d);
+    
+    // G-matrix transpose
+    G(kU)=G_T(kU);
+    G(kPhi)=G_T(kPhi);
+    
+    // Inverse of error "matrix"
+    double InvV=1./(smoothed_updates[i].R+G*E*G_T);
+    
+    // update the alignment vector and covariance
+    DMatrix2x1 Ka=InvV*(E*G_T);
+    DMatrix2x1 dA=smoothed_updates[i].ures*Ka;
+    DMatrix2x2 Etemp=E-Ka*G*E;
+    if (Etemp(0,0)>0 && Etemp(1,1)>0){
+      fdc_alignments[layer].E=Etemp;
+      fdc_alignments[layer].A=A+dA;
+    }
+    else {
+      printf("-------t= %f\n",smoothed_updates[i].drift_time);
+      E.Print();
+      Etemp.Print();
+    }
+  }
+
+  return NOERROR;
+}
+
+
+
+
 bool DEventProcessor_dc_alignment::MatchOuterDetectors(const cdc_track_t &track,
 				        vector<const DFCALShower *>&fcalshowers,
 			        	vector<const DBCALShower *>&bcalshowers,
@@ -2145,8 +2756,8 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
 
     return true;
   }
-  // Disable matching to BCAL for now
-  else if (false){
+  // Disable matching to BCAL by setting "false" below
+  else if (true/*false*/){
     // Match to BCAL
  
     // zero-position and direction of line describing particle trajectory

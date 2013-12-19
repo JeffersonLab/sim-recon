@@ -32,6 +32,7 @@ using std::map;
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
 #include <FDC/DFDCPseudo.h>
+#include <FDC/DFDCIntersection.h>
 #include <DMatrixSIMD.h>
 #include <DVector2.h>
 
@@ -76,10 +77,10 @@ typedef struct{
   DMatrix4x4 C; 
   DMatrix4x1 H_T;
   DMatrix1x4 H;
-  double ures,vres;
+  double ures,doca;
   double R;
   double drift,drift_time,t;
-}strip_update_t;
+}wire_update_t;
 
 typedef struct{
   double xtrack,ytrack,ztrack;
@@ -93,6 +94,11 @@ typedef struct{
 }align_t;
 
 typedef struct{
+  DMatrix2x1 A;
+  DMatrix2x2 E;
+}wire_align_t;
+
+typedef struct{
   DMatrix4x1 A;
   DMatrix4x4 E;
 }cdc_align_t;
@@ -103,6 +109,12 @@ typedef struct{
   DMatrix4x1 S;
   vector<const DFDCPseudo *>hits;
 }segment_t;
+
+typedef struct{
+  bool matched;
+  DMatrix4x1 S;
+  vector<const DFDCIntersection*>hits;
+}intersection_segment_t;
 
 
 typedef struct{
@@ -117,6 +129,10 @@ typedef struct{
   vector<const DCDCTrackHit *>stereo_hits;
 }cdc_track_t;
 
+typedef struct{
+  const DFDCWire *wire;
+  const DFDCHit *hit;
+}intersection_hit_t;
 
 #define EPS 1e-3
 #define ITER_MAX 20
@@ -152,6 +168,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
     state_ty,
   };
 
+  enum fdc_align_parms{
+    kPhi,
+    kU,
+  };
+
   enum align_parms{
     kDx,
     kDy,
@@ -184,11 +205,14 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		     double &var_tx,double &chi2x,
 		     double &var_y,double &cov_y_ty,
 		     double &var_ty,double &chi2y);
+  DMatrix4x1 FitLine(vector<const DFDCIntersection*> &fdchits);
+
   DMatrix4x1 GuessForStateVector(cdc_track_t &track,double &chi2x,
 				 double &chi2y);
 
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DCDCTrackHit *>&hits);
+  jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCIntersection *>&intersections);
 
   jerror_t KalmanFilter(double anneal_factor,
 			DMatrix4x1 &S,DMatrix4x4 &C,
@@ -203,6 +227,12 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			vector<cdc_update_t>&updates,
 			double &chi2,unsigned int &ndof,
 			bool timebased=false);
+  jerror_t KalmanFilter(double anneal_factor,
+			DMatrix4x1 &S,DMatrix4x4 &C,
+			vector<intersection_hit_t>&hits,
+			deque<trajectory_t>&trajectory,
+			vector<wire_update_t>&updates,
+			double &chi2,unsigned int &ndof);
 
   jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 		  deque<trajectory_t>&trajectory,
@@ -214,12 +244,24 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		  vector<const DCDCTrackHit *>&hits,
 		  vector<cdc_update_t>&updates,
 		  vector<cdc_update_t>&smoothed_updates);
+  jerror_t Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
+		  deque<trajectory_t>&trajectory,
+		  vector<intersection_hit_t>&hits,
+		  vector<wire_update_t>updates,
+		  vector<wire_update_t>&smoothed_updates);
+
   jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
 				  deque<trajectory_t>&trajectory,
 				  vector<const DFDCPseudo *>&wires);
   jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
 				  deque<trajectory_t>&trajectory,
 				  const DCDCTrackHit *last_cdc); 
+  jerror_t SetReferenceTrajectory(double z,DMatrix4x1 &S,
+				  deque<trajectory_t>&trajectory,
+				  vector<intersection_hit_t>&hits);
+
+  jerror_t FindSegments(vector<const DFDCIntersection*>&points,
+			vector<intersection_segment_t>&segments);  
 
   jerror_t FindSegments(vector<const DFDCPseudo*>&pseudos,
 			vector<segment_t>&segments);
@@ -230,11 +272,15 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			vector<cdc_track_t>&LinkedSegments);
   jerror_t LinkSegments(vector<segment_t>segments[4], 
 			vector<vector<const DFDCPseudo *> >&LinkedSegments);
+  jerror_t LinkSegments(vector<intersection_segment_t>segments[4], 
+			vector<vector<const DFDCIntersection*> >&LinkedSegments);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
 		       vector<update_t>&smoothed_updates);
   jerror_t FindOffsets(vector<const DCDCTrackHit*>&hits,
-		       vector<cdc_update_t>&updates);
-  
+		       vector<cdc_update_t>&updates);  
+  jerror_t FindOffsets(vector<intersection_hit_t>&hits,
+		       vector<wire_update_t>&smoothed_updates);
+
   bool MatchOuterDetectors(vector<const DFCALShower *>&fcalshowers,
 			   vector<const DBCALShower *>&bcalshowers,
 			   const DMatrix4x1 &S);
@@ -275,6 +321,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   pthread_mutex_t mutex;
 
   TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdc_match;
+  TH1F *Hintersection_match;
   TH1F *Hcdc_prob,*Hcdc_prelimprob;
   TH2F *Hbcalmatch,*Hcdcdrift_time;
   TH2F *Hures_vs_layer,*HdEdx_vs_beta;	
@@ -303,6 +350,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 
   vector<align_t>alignments;
   vector<vector<cdc_align_t> >cdc_alignments;
+  vector<wire_align_t>fdc_alignments;
   vector<vector<DFDCWire*> >fdcwires;
 };
 
