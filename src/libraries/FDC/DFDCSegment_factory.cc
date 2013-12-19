@@ -13,7 +13,7 @@ using namespace std;
 #define MAX_DEFLECTION 0.15
 #define EPS 1e-8
 #define KILL_RADIUS 5.0 
-#define MATCH_RADIUS 3.0
+#define MATCH_RADIUS 2.0
 #define ADJACENT_MATCH_DISTANCE 0.3
 #define SIGN_CHANGE_CHISQ_CUT 10.0
 #define BEAM_VARIANCE 1.0 // cm^2
