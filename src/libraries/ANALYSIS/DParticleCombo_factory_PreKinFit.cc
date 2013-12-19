@@ -507,6 +507,8 @@ bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCo
 		locTotalTrackingChiSq += locChargedTrackHypothesis->dChiSq_Track;
 	}
 
+	if(locTotalTrackingNDF == 0)
+		return true;
 	double locFOM = TMath::Prob(locTotalTrackingChiSq, locTotalTrackingNDF);
 	return (locFOM >= locMinCombinedTrackingFOM.second);
 }
