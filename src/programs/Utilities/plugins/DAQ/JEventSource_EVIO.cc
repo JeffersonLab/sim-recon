@@ -539,6 +539,8 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 					if(quit_on_next_ET_timeout)return NO_MORE_EVENTS_IN_SOURCE;
 				}
 			}
+			
+			if(japp->GetQuittingStatus() && pe==NULL) return NO_MORE_EVENTS_IN_SOURCE;
 
 			// Get pointer to event buffer in the ET-owned memory
 			uint32_t *et_buff=NULL;
