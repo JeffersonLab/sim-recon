@@ -8,6 +8,7 @@
 // See comments in JEventSource_EVIO.h for overview description
 
 #include <string>
+#include <cmath>
 using namespace std;
 
 //#define HAVE_ET 0 // temporary
@@ -49,6 +50,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	// Initialize EVIO channel pointer to NULL (subclass will instantiate and open)
 	chan = NULL;
 	source_type = kNoSource;
+	quit_on_next_ET_timeout = false;
 
 	// Initialize dedicated JStreamLog used for debugging messages
 	evioout.SetTag("--- EVIO ---: ");
@@ -64,6 +66,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	ET_STATION_NEVENTS = 100;
 	ET_STATION_CREATE_BLOCKING = true;
 	VERBOSE = 0;
+	TIMEOUT = 2.0;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -74,6 +77,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
+		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 	}
 	
 	// Try to open the file.
@@ -492,9 +496,6 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 {
 	if(VERBOSE>1) evioout << " ReadEVIOEvent() called with &buff=" << hex << &buff << dec << endl;
 
-	// We may need to loop here for ET system if no
-	// events are currently available.
-
 	// Get buffer from pool or allocate new one if needed
 	pthread_mutex_lock(&evio_buffer_pool_mutex);
 	if(evio_buffer_pool.empty()){
@@ -518,9 +519,26 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 
 			if(VERBOSE>3) evioout << "  attempting read from EVIO ET source ..." << endl;
 
+			
+			// Loop until we get an event or are told to stop
+			struct timespec timeout;
+			timeout.tv_sec = (unsigned int)floor(TIMEOUT); // set ET timeout
+			timeout.tv_nsec = (unsigned int)floor(1.0E9*(TIMEOUT-(float)timeout.tv_sec));
 			et_event *pe=NULL;
-			int err = et_event_get(sys_id, att_id, &pe, ET_SLEEP , NULL);
-			if(err!=ET_OK || pe==NULL) return NO_MORE_EVENTS_IN_SOURCE;
+			while(! japp->GetQuittingStatus() ){
+				int err = et_event_get(sys_id, att_id, &pe, ET_TIMED , &timeout);
+
+				if( err == ET_OK && pe!=NULL) break; // got an event. break out of while loop
+
+				if( err == ET_OK && pe==NULL){
+					evioout << "  !!! ET returned no error, but event pointer is NULL!!!" << endl;
+					return NO_MORE_EVENTS_IN_SOURCE;
+				}
+
+				if( err==ET_ERROR_TIMEOUT ){
+					if(quit_on_next_ET_timeout)return NO_MORE_EVENTS_IN_SOURCE;
+				}
+			}
 
 			// Get pointer to event buffer in the ET-owned memory
 			uint32_t *et_buff=NULL;

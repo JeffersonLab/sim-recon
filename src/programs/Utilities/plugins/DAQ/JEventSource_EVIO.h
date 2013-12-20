@@ -120,7 +120,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 			kETSource
 		};
 
-		                   JEventSource_EVIO(const char* source_name);
+		                    JEventSource_EVIO(const char* source_name);
 		           virtual ~JEventSource_EVIO();
 		virtual const char* className(void){return static_className();}
 		 static const char* static_className(void){return "JEventSource_EVIO";}
@@ -132,7 +132,9 @@ class JEventSource_EVIO: public jana::JEventSource{
 		
 		          jerror_t GetEvent(jana::JEvent &event);
 		              void FreeEvent(jana::JEvent &event);
-				  jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
+				    jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
+
+                    bool quit_on_next_ET_timeout;
 
 	
 	protected:
@@ -154,6 +156,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int ET_STATION_NEVENTS;
 		bool ET_STATION_CREATE_BLOCKING;
 		int VERBOSE;
+		float TIMEOUT;
 
 		// Utility class with multiple roles:
 		//
