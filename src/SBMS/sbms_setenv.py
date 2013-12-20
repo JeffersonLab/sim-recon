@@ -27,7 +27,9 @@ from stat import *
 def mk_setenv(env):
 	ofdir = '%s' % env.Dir(env['INSTALLDIR'])
 	ofname = '%s/setenv.csh' % ofdir
-	print 'sbms :Making setenv.csh in %s' % ofdir
+	print 'sbms : Making setenv.csh in %s' % ofdir
+	
+	halld_home = '%s' % env.Dir("#/..").srcnode().abspath
 
 	str = ''
 
@@ -89,7 +91,7 @@ def mk_setenv(env):
 
 	# HALLD
 	str += '# HALLD\n'
-	str += 'setenv HALLD_HOME %s\n' % os.getenv('HALLD_HOME', '$HOME/halld')
+	str += 'setenv HALLD_HOME %s\n' % halld_home
 	str += 'setenv BMS_OSNAME %s\n' % env['OSNAME']
 	str += 'setenv PATH ${HALLD_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
 	str += 'setenv JANA_PLUGIN_PATH ${HALLD_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
