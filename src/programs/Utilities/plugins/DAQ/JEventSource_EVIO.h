@@ -308,65 +308,65 @@ evioDOMTree* JEventSource_EVIO::GetEVIODOMTree(jana::JEvent &jevent) const
 }
 
 
-//----------------------------------------------------------------------
-/// JFactory_base_CopyToT and JFactory_base_CopyTo
-///
-/// A Mantis request has been submitted to add a virtual method to
-/// JFactory_base that takes a vector<JObject*>& with an overload
-/// of that method in the JFactory<T> subclass. The JFactory<T> method
-/// will then try to dynamically cast each JObject* into the appropriate
-/// type and store it in the factory. When that is working, these two
-/// routines will not be required here.
-/// 
-/// In the  meantime, this serves as a placeholder that can be easily
-/// converted once JANA has been updated.
-//----------------------------------------------------------------------
-template<class T>
-bool JFactory_base_CopyToT(jana::JFactory_base *fac, vector<jana::JObject *>& objs)
-{
-	// Try casting this factory to the desired type of JFactory<>
-	jana::JFactory<T> *tfac = dynamic_cast<jana::JFactory<T>* >(fac);
-	if(!tfac) return false;
-	
-	// Factory cast worked. Cast all pointers
-	vector<T*> tobjs;
-	for(unsigned int i=0; i<objs.size(); i++){
-		T *tobj = dynamic_cast<T*>(objs[i]);
-		if(tobj) tobjs.push_back(tobj);
-	}
-	
-	// If all input objects weren't converted, then just return false
-	if(tobjs.size() != objs.size()) return false;
-	
-	// Copy pointers into factory
-	if(tobjs.size()>0) tfac->CopyTo(tobjs);
-	return true;
-}
-
-//----------------------------
-// JFactory_base_CopyTo
-//----------------------------
-static bool JFactory_base_CopyTo(jana::JFactory_base *fac, vector<jana::JObject *>& objs)
-{
-	// Eventually, this will be a virtual method of JFactory_base
-	// that gets implemented in JFactory<T> which will know how
-	// to cast the objects. For now though, we have to try all known
-	// data types.
-	if( JFactory_base_CopyToT<Df250PulseIntegral>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df250StreamingRawData>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df250WindowSum>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df250PulseRawData>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df250TriggerTime>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df250PulseTime>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df250WindowRawData>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df125PulseIntegral>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df125TriggerTime>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<Df125PulseTime>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<DF1TDCHit>(fac, objs) ) return true;
-	if( JFactory_base_CopyToT<DF1TDCTriggerTime>(fac, objs) ) return true;
-
-	return false;
-}
+////----------------------------------------------------------------------
+///// JFactory_base_CopyToT and JFactory_base_CopyTo
+/////
+///// A Mantis request has been submitted to add a virtual method to
+///// JFactory_base that takes a vector<JObject*>& with an overload
+///// of that method in the JFactory<T> subclass. The JFactory<T> method
+///// will then try to dynamically cast each JObject* into the appropriate
+///// type and store it in the factory. When that is working, these two
+///// routines will not be required here.
+///// 
+///// In the  meantime, this serves as a placeholder that can be easily
+///// converted once JANA has been updated.
+////----------------------------------------------------------------------
+//template<class T>
+//bool JFactory_base_CopyToT(jana::JFactory_base *fac, vector<jana::JObject *>& objs)
+//{
+//	// Try casting this factory to the desired type of JFactory<>
+//	jana::JFactory<T> *tfac = dynamic_cast<jana::JFactory<T>* >(fac);
+//	if(!tfac) return false;
+//	
+//	// Factory cast worked. Cast all pointers
+//	vector<T*> tobjs;
+//	for(unsigned int i=0; i<objs.size(); i++){
+//		T *tobj = dynamic_cast<T*>(objs[i]);
+//		if(tobj) tobjs.push_back(tobj);
+//	}
+//	
+//	// If all input objects weren't converted, then just return false
+//	if(tobjs.size() != objs.size()) return false;
+//	
+//	// Copy pointers into factory
+//	if(tobjs.size()>0) tfac->CopyTo(tobjs);
+//	return true;
+//}
+//
+////----------------------------
+//// JFactory_base_CopyTo
+////----------------------------
+//static bool JFactory_base_CopyTo(jana::JFactory_base *fac, vector<jana::JObject *>& objs)
+//{
+//	// Eventually, this will be a virtual method of JFactory_base
+//	// that gets implemented in JFactory<T> which will know how
+//	// to cast the objects. For now though, we have to try all known
+//	// data types.
+//	if( JFactory_base_CopyToT<Df250PulseIntegral>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df250StreamingRawData>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df250WindowSum>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df250PulseRawData>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df250TriggerTime>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df250PulseTime>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df250WindowRawData>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df125PulseIntegral>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df125TriggerTime>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<Df125PulseTime>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<DF1TDCHit>(fac, objs) ) return true;
+//	if( JFactory_base_CopyToT<DF1TDCTriggerTime>(fac, objs) ) return true;
+//
+//	return false;
+//}
 
 //----------------------------
 // AddIfAppropriate

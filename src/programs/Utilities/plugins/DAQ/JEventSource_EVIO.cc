@@ -634,7 +634,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	map<string, vector<JObject*> >::iterator iter = hit_objs_by_type.begin();
 	for(; iter!=hit_objs_by_type.end(); iter++){
 		JFactory_base *fac = loop->GetFactory(iter->first);
-		JFactory_base_CopyTo(fac, iter->second);
+		fac->CopyTo(iter->second);
 	}
 	objs_ptr->own_objects = false;
 
