@@ -1,4 +1,5 @@
 
+import sbms
 
 Import('*')
 
@@ -7,10 +8,10 @@ subdirs = ['bfield2root', 'root_merge', 'root2email']
 subdirs.extend( ['hddm', 'hddm_cull_events', 'hddm_merge_events', 'hddm_merge_files'])
 subdirs.extend( ['tree_to_amptools', 'plugins'] )
 
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
+
 # Optional targets (can only be built from inside
 # source directory or if specified on command line)
-if 'hddm2root' in env.GetLaunchDir(): subdirs.extend(['hddm2root'])
-if 'hddm2root' in COMMAND_LINE_TARGETS: subdirs.extend(['hddm2root'])
+sbms.OptionallyBuild(env, ['hddm2root', 'dumpwires'])
 
 
-SConscript(dirs=subdirs, exports='env osname', duplicate=0)
