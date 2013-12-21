@@ -10,3 +10,6 @@ def InitENV(env):
 	# executable.
 	env.AppendUnique(LINKFLAGS='-flat_namespace')
 
+	# For plugins that don't have everything when they are linked
+	env.AppendUnique(SHLINKFLAGS=['-undefined', 'suppress'])
+
