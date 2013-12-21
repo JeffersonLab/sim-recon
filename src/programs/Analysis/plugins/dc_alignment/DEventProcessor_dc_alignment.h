@@ -67,7 +67,7 @@ typedef struct{
   DMatrix4x1 H_T;
   DMatrix1x4 H;
   double doca,t,z;
-  double drift,drift_time;
+  double drift_time,drift;
   bool used_in_fit;
 }cdc_update_t;
 

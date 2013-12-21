@@ -325,7 +325,7 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
     }
   }
 
-  if (intersections.size()>4 && (fcalshowers.size()==0 || bcalshowers.size()==0)){
+  if (intersections.size()>4 && (fcalshowers.size()>0 || bcalshowers.size()>0)){
     // Group FDC hits by package
     vector<const DFDCIntersection*>packages[4];
     for (unsigned int i=0;i<intersections.size();i++){
@@ -711,8 +711,8 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   vector<wire_update_t>best_updates;
   vector<wire_update_t>smoothed_updates(num_hits);  
 
-  int NEVENTS=100000;
-  double anneal_factor=pow(1e3,(double(NEVENTS-myevt))/(NEVENTS-1.));
+  int NEVENTS=200000;
+  double anneal_factor=pow(1000.,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
   //anneal_factor=1.;
   //anneal_factor=1e3;
@@ -776,7 +776,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	unsigned int layer=hits[i].wire->layer;
      
 	Hures_vs_layer->Fill(layer,smoothed_updates[i].ures);
-	if (layer==13&&prob>0.1){
+	if (layer==13&&prob>0.1&&myevt>NEVENTS){
 	  Hres_vs_drift_time->Fill(smoothed_updates[i].drift_time,
 				   smoothed_updates[i].ures);
 	  Hdrift_time->Fill(smoothed_updates[i].drift_time,
@@ -1962,7 +1962,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
       //   u = x*cosa-y*sina
       //   v = y*cosa+x*sina
       // (without alignment offsets)
-      double upred=x*cospsi-y*sinpsi+delta_u;
+      double upred=x*cospsi-y*sinpsi;
       double tu=tx*cospsi-ty*sinpsi;
       double tv=tx*sinpsi+ty*cospsi;
 
@@ -1979,8 +1979,6 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 
 	// Find drift distance
 	double drift_time=hits[my_id].hit->t-trajectory[k].t-mT0;
-	double drift=GetDriftDistance(drift_time);
-	updates[my_id].drift=drift;
 	updates[my_id].drift_time=drift_time;
 	updates[my_id].t=trajectory[k].t;
 
@@ -1989,14 +1987,9 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	double sign=(du>0)?1.:-1.;
 	
 	// Difference between measured and predicted vectors
-	drift=0.25;
+	// assume the track passes through the center of the cell
+	double drift=0.25;
 	Mdiff=sign*drift-d;
-
-	//printf("tdrift %f d %f %f\n",drift_time,drift,d);
-	//printf("dv %f ddv %f\n",v-vpred,tv*d*sinalpha);
-
-	// Variance of measurement error
-	//V=anneal_factor*GetDriftVariance(drift_time);
 	
 	// Matrix for transforming from state-vector space to measurement space
 	double sinalpha_cosalpha=sinalpha*cosalpha;
@@ -2049,7 +2042,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	y=S(state_y);
 	tx=S(state_tx);
 	ty=S(state_ty);
-	upred=x*cospsi-y*sinpsi+delta_u;
+	upred=x*cospsi-y*sinpsi;
 	tu=tx*cospsi-ty*sinpsi;
 	
 	// Variables for angle of incidence with respect to the z-direction in
@@ -2060,6 +2053,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	d=du*cosalpha;
 	sinalpha=sin(alpha);
 
+	sign=(du>0)?1.:-1.;
 	Mdiff=sign*drift-d;
 
 	double RC=Vtemp-H*C*H_T;
