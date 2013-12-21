@@ -321,6 +321,31 @@ def ApplyPlatformSpecificSettings(env, platform):
 
 
 
+##################################
+# OptionallyBuild
+##################################
+def OptionallyBuild(env, dirs):
+
+	# This is used to add directories that are not built as
+	# part of the standard build, but can still be added
+	# to the dependency tree so that the user can build them
+	# by either invoking scons from within the specific source
+	# directory or by specifying it on the command line.
+	#
+	# 
+
+	subdirs = []
+	for dir in dirs:
+		add_dir = False
+		if env.GetLaunchDir().endswith(dir): add_dir = True
+		#if dir in env['COMMAND_LINE_TARGETS']: add_dir = True
+		for target in env['COMMAND_LINE_TARGETS']:
+			if target.endswith(dir): add_dir = True
+		
+		if add_dir : subdirs.extend([dir])
+
+	if len(subdirs)>0 : env.SConscript(dirs=subdirs, exports='env', duplicate=0)
+
 
 #===========================================================
 # Package support follows
