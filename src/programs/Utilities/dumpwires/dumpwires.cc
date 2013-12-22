@@ -55,7 +55,7 @@ int main(int narg, char *argv[])
 
 			DCDCWire *w = wires[j];
 
-			int id = (i+1)*1000 + j;
+			int id = 100000 + (i+1)*1000 + j;
 			ofs << id << " " << w->L << " ";
 
 			ofs << w->origin.X() << " ";
@@ -79,7 +79,7 @@ int main(int narg, char *argv[])
 
 			DFDCWire *w = wires[j];
 
-			int id = (i+1)*1000 + j;
+			int id = 200000 + (i+1)*1000 + j;
 			ofs << id << " " << w->L << " ";
 
 			ofs << w->origin.X() << " ";
