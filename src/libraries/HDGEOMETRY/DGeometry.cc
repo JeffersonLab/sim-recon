@@ -24,15 +24,93 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumbe
 {
 	this->jgeom = jgeom;
 	this->dapp = dapp;
-	this->bfield = dapp->GetBfield(runnumber);
+	this->bfield = NULL; // don't ask for B-field object before we're asked for it
 	this->runnumber = runnumber;
+	this->materialmaps_read = false;
+	this->materials_read = false;
+	
+	pthread_mutex_init(&bfield_mutex, NULL);
+	pthread_mutex_init(&materialmap_mutex, NULL);
+	pthread_mutex_init(&materials_mutex, NULL);
 
-	JCalibration *jcalib = dapp->GetJCalibration(runnumber);
+	
+}
+
+//---------------------------------
+// ~DGeometry    (Destructor)
+//---------------------------------
+DGeometry::~DGeometry()
+{
+	pthread_mutex_lock(&materials_mutex);
+	for(unsigned int i=0; i<materials.size(); i++)delete materials[i];
+	materials.clear();
+	pthread_mutex_unlock(&materials_mutex);
+
+	pthread_mutex_lock(&materialmap_mutex);
+	for(unsigned int i=0; i<materialmaps.size(); i++)delete materialmaps[i];
+	materialmaps.clear();
+	pthread_mutex_unlock(&materialmap_mutex);
+}
+
+//---------------------------------
+// GetBfield
+//---------------------------------
+DMagneticFieldMap* DGeometry::GetBfield(void) const
+{
+	pthread_mutex_lock(&bfield_mutex);
+	if(bfield == NULL) bfield = dapp->GetBfield(runnumber);
+	pthread_mutex_unlock(&bfield_mutex);
+
+	return bfield;
+}
+
+//---------------------------------
+// GetLorentzDeflections
+//---------------------------------
+DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
+{
+	return dapp->GetLorentzDeflections(runnumber);
+}
+
+//---------------------------------
+// GetMaterialMapVector
+//---------------------------------
+vector<DMaterialMap*> DGeometry::GetMaterialMapVector(void) const
+{
+	ReadMaterialMaps();
+
+	return materialmaps;
+}
+
+//---------------------------------
+// ReadMaterialMaps
+//---------------------------------
+void DGeometry::ReadMaterialMaps(void) const
+{
+	/// This gets called by several "FindMat" methods below. It
+	/// will return immediately if the material maps have already
+	/// been read in. If they have not been read in, then it reads
+	/// them and sets a flag so that they are only read in once.
+	///
+	/// Orginally, this code resided in the constructor, but was
+	/// moved here so that programs not requiring the material
+	/// maps could start up quicker and skip reading them in altogether.
+
+	// Lock mutex so we can check flag to see if maps have already
+	// been read in
+	pthread_mutex_lock(&materialmap_mutex);
+	if(materialmaps_read){
+		// Maps are already read. Unlock mutex and return now
+		pthread_mutex_unlock(&materialmap_mutex);
+		return;
+	}
+
+	JCalibration * jcalib = dapp->GetJCalibration(runnumber);
 	if(!jcalib){
 		_DBG_<<"ERROR:  Unable to get JCalibration object!"<<endl;
 		return;
 	}
-	
+
 	// Get a list of all namepaths so we can find all of the material maps.
 	// We want to read in all material maps with a standard naming scheme
 	// so the number and coverage of the piece-wise maps can be changed
@@ -75,31 +153,10 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumbe
 	}
 	//cout<<ansi_up(1)<<string(85, ' ')<<"\r";
 	jout<<"Read in "<<materialmaps.size()<<" material maps containing "<<Npoints_total<<" grid points total"<<endl;
-}
 
-//---------------------------------
-// ~DGeometry    (Destructor)
-//---------------------------------
-DGeometry::~DGeometry()
-{
-	for(unsigned int i=0; i<materials.size(); i++)delete materials[i];
-	materials.clear();
-}
-
-//---------------------------------
-// GetBfield
-//---------------------------------
-DMagneticFieldMap* DGeometry::GetBfield(void) const
-{
-	return bfield;
-}
-
-//---------------------------------
-// GetLorentzDeflections
-//---------------------------------
-DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
-{
-	return dapp->GetLorentzDeflections(runnumber);
+	// Set flag that maps have been read and unlock mutex
+	materialmaps_read = true;
+	pthread_mutex_unlock(&materialmap_mutex);
 }
 
 //---------------------------------
@@ -154,6 +211,8 @@ jerror_t DGeometry::FindMatALT1(DVector3 &pos, DVector3 &mom,double &KrhoZ_overA
 				double &rhoZ_overA,double &LnI,
 				double &X0, double *s_to_boundary) const
 {
+	ReadMaterialMaps();
+
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMatALT1(pos,KrhoZ_overA, rhoZ_overA,LnI,X0);
 		if(err==NOERROR){
@@ -190,6 +249,8 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,const DVector3 &mom,
 				  unsigned int &last_index,
 				  double *s_to_boundary) const
 {
+	ReadMaterialMaps();
+
   //last_index=0;
   for(unsigned int i=last_index; i<materialmaps.size(); i++){
     jerror_t err = materialmaps[i]->FindMatKalman(pos,KrhoZ_overA,
@@ -231,6 +292,8 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,
 				  double &chi2a_factor, double &chi2a_corr,
 				  unsigned int &last_index) const
 {
+	ReadMaterialMaps();
+
   //last_index=0;
   for(unsigned int i=last_index; i<materialmaps.size(); i++){
     jerror_t err = materialmaps[i]->FindMatKalman(pos,KrhoZ_overA,
@@ -252,6 +315,8 @@ jerror_t DGeometry::FindMatKalman(const DVector3 &pos,
 //---------------------------------
 jerror_t DGeometry::FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const
 {
+	ReadMaterialMaps();
+
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMat(pos, rhoZ_overA, rhoZ_overA_logI, RadLen);
 		if(err==NOERROR)return NOERROR;
@@ -264,6 +329,8 @@ jerror_t DGeometry::FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_over
 //---------------------------------
 jerror_t DGeometry::FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const
 {
+	ReadMaterialMaps();
+
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMat(pos, density, A, Z, RadLen);
 		if(err==NOERROR)return NOERROR;
@@ -284,6 +351,8 @@ jerror_t DGeometry::FindMat(DVector3 &pos, double &density, double &A, double &Z
 //---------------------------------
 const DMaterialMap* DGeometry::FindDMaterialMap(DVector3 &pos) const
 {
+	ReadMaterialMaps();
+
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		const DMaterialMap* map = materialmaps[i];
 		if(map->IsInMap(pos))return map;
@@ -313,12 +382,17 @@ const DMaterialMap* DGeometry::FindDMaterialMap(DVector3 &pos) const
 //---------------------------------
 // GetDMaterial
 //---------------------------------
-const DMaterial* DGeometry::GetDMaterial(string name)
+const DMaterial* DGeometry::GetDMaterial(string name) const
 {
 	/// Get a pointer to the DMaterial object with the specified name.
 	// Only fill materials member when one is actually requested
 	// and then, only fill it once.
-	if(materials.size()==0)GetMaterials();
+
+	// Lock mutex so we can check flag to see if maps have already
+	// been read in
+	pthread_mutex_lock(&materials_mutex);
+	if(!materials_read) GetMaterials();
+	pthread_mutex_unlock(&materials_mutex);
 
 	for(unsigned int i=0; i<materials.size(); i++){
 		if(materials[i]->GetName() == name)return materials[i];
@@ -332,7 +406,7 @@ const DMaterial* DGeometry::GetDMaterial(string name)
 //---------------------------------
 // GetMaterials
 //---------------------------------
-void DGeometry::GetMaterials(void)
+void DGeometry::GetMaterials(void) const
 {
 	/// Read in all of the materials from the geometry source and create
 	/// a DMaterial object for each one.
@@ -432,12 +506,14 @@ void DGeometry::GetMaterials(void)
 		
 		cout<<mat->toString();
 	}
+	
+	materials_read = true;
 }
 
 //---------------------------------
 // GetCompositeMaterial
 //---------------------------------
-bool DGeometry::GetCompositeMaterial(const string &name, double &density, double &radlen)
+bool DGeometry::GetCompositeMaterial(const string &name, double &density, double &radlen) const
 {
 	// Get list of all xpaths with "addmaterial" and "fractionmass"
 	char filter[512];

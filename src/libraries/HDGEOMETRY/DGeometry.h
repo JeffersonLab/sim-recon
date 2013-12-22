@@ -8,6 +8,8 @@
 #ifndef _DGeometry_
 #define _DGeometry_
 
+#include <pthread.h>
+
 #include <JANA/jerror.h>
 #include <JANA/JGeometry.h>
 using namespace jana;
@@ -95,7 +97,7 @@ class DGeometry{
 		const DMaterialMap* FindDMaterialMap(DVector3 &pos) const;
 		
 		// Convenience methods
-		const DMaterial* GetDMaterial(string name);
+		const DMaterial* GetDMaterial(string name) const;
 
 		bool GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const;
 		bool GetFDCZ(vector<double> &z_wires) const; ///< z-locations for each of the FDC wire planes in cm
@@ -125,20 +127,28 @@ class DGeometry{
 		bool GetTargetZ(double &z_target) const; ///< z-location og center of target
 		bool GetTargetLength(double &target_length) const; ///< z-location of center of target
 
-		vector<DMaterialMap*> GetMaterialMapVector(void){return materialmaps;};
+		vector<DMaterialMap*> GetMaterialMapVector(void) const;
 		
 	protected:
 		DGeometry(){}
-		void GetMaterials(void);
-		bool GetCompositeMaterial(const string &name, double &density, double &radlen);
+		void ReadMaterialMaps(void) const;
+		void GetMaterials(void) const;
+		bool GetCompositeMaterial(const string &name, double &density, double &radlen) const;
 	
 	private:
 		JGeometry *jgeom;
 		DApplication *dapp;
-		DMagneticFieldMap *bfield;
+		mutable DMagneticFieldMap *bfield;
 		unsigned int runnumber;
-		vector<DMaterial*> materials;			/// Older implementation to keep track of material specs without ranges
-		vector<DMaterialMap*> materialmaps;	/// Material maps generated automatically(indirectly) from XML with ranges and specs
+		mutable vector<DMaterial*> materials;			/// Older implementation to keep track of material specs without ranges
+		mutable vector<DMaterialMap*> materialmaps;	/// Material maps generated automatically(indirectly) from XML with ranges and specs
+		mutable bool materialmaps_read;
+		mutable bool materials_read;
+
+		mutable pthread_mutex_t bfield_mutex;
+		mutable pthread_mutex_t materialmap_mutex;
+		mutable pthread_mutex_t materials_mutex;
+		
 };
 
 #endif // _DGeometry_

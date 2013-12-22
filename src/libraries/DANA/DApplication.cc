@@ -171,12 +171,10 @@ DApplication::~DApplication()
 	//if(RootGeom) delete RootGeom;
 	//for(unsigned int i=0; i<geometries.size(); i++) delete geometries[i];
 
-	for (unsigned int i=0;i<geometries.size();i++){
-	  vector<DMaterialMap*>materialmaps=geometries[i]->GetMaterialMapVector();
-	  for (unsigned int k=0;k<materialmaps.size();k++){
-	    delete materialmaps[k];
-	  }
-	}
+	Lock();
+	for (unsigned int i=0;i<geometries.size();i++)delete geometries[i];
+	geometries.clear();
+	Unlock();
 }
 
 //---------------------------------
