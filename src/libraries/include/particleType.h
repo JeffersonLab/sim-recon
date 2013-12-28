@@ -439,59 +439,59 @@ inline static double ParticleMass(Particle_t p)
   switch (p) {
   case Unknown:		return HUGE_VAL;
   case Gamma:		return 0;
-  case Positron:	return 0.0005101;
-  case Electron:	return 0.0005101;
+  case Positron:	return 0.000510998928;
+  case Electron:	return 0.000510998928;
   case Neutrino:	return 0;
-  case MuonPlus:	return 0.105658;
-  case MuonMinus:	return 0.105658;
-  case Pi0:		return 0.13497;
-  case PiPlus:		return 0.139570;
-  case PiMinus:		return 0.139570;
-  case KShort:		return 0.497671;
-  case KLong:		return 0.497671;
+  case MuonPlus:	return 0.1056583715;
+  case MuonMinus:	return 0.1056583715;
+  case Pi0:		return 0.1349766;
+  case PiPlus:		return 0.13957018;
+  case PiMinus:		return 0.13957018;
+  case KShort:		return 0.497614;
+  case KLong:		return 0.497614;
   case KPlus:		return 0.493677;
   case KMinus:		return 0.493677;
-  case Neutron:		return 0.93956;
-  case Proton:		return 0.938272;
-  case AntiProton:	return 0.938272;
-  case Eta:		return 0.54745;
-  case Lambda:		return 1.11568;
+  case Neutron:		return 0.939565379;
+  case Proton:		return 0.938272046;
+  case AntiProton:	return 0.938272046;
+  case Eta:		return 0.547862;
+  case Lambda:		return 1.115683;
   case SigmaPlus:	return 1.18937;
-  case Sigma0:		return 1.19264;
-  case SigmaMinus:	return 1.18937;
-  case Xi0:		return 1.31483;
-  case XiMinus:		return 1.32131;
+  case Sigma0:		return 1.192642;
+  case SigmaMinus:	return 1.197449;
+  case Xi0:		return 1.31486;
+  case XiMinus:		return 1.32171;
   case OmegaMinus:	return 1.67245;
-  case AntiNeutron:	return 0.93956;
-  case AntiLambda:	return 1.11568;
+  case AntiNeutron:	return 0.939565379;
+  case AntiLambda:	return 1.115683;
   case AntiSigmaMinus:	return 1.18937;
-  case AntiSigma0:	return 1.19264;
-  case AntiSigmaPlus:	return 1.18937;
-  case AntiXi0:		return 1.31483;
-  case AntiXiPlus:	return 1.32131;
+  case AntiSigma0:	return 1.192642;
+  case AntiSigmaPlus:	return 1.197449;
+  case AntiXi0:		return 1.31486;
+  case AntiXiPlus:	return 1.32171;
   case AntiOmegaPlus:	return 1.67245;
-  case Geantino:		return 0.0;
-  case Rho0:		return 0.7693;
-  case RhoPlus:		return 0.7693;
-  case RhoMinus:	return 0.7693;
-  case omega:		return 0.78257;
+  case Geantino:	return 0.0;
+  case Rho0:		return 0.7690;  // neutral only, photoproduced and other reactions. e+ e- gives 775.26
+  case RhoPlus:		return 0.7665;  // charged only, hadroproduced. tau decays and e+ e- gives 775.11
+  case RhoMinus:	return 0.7665;
+  case omega:		return 0.78265;
   case EtaPrime:	return 0.95778;
-  case phiMeson:	return 1.01942;
+  case phiMeson:	return 1.019455;
   case a0_980:		return 0.980;
-  case f0_980:		return 0.980;
-  case KStar_892_0: return 0.89594;
-  case KStar_892_Plus: return 0.89166;
-  case KStar_892_Minus: return 0.89166;
-  case AntiKStar_892_0: return 0.89594;
+  case f0_980:		return 0.990;
+  case KStar_892_0: return 0.89581;     // neutral only
+  case KStar_892_Plus: return 0.89166;  // charged only, hadroproduced
+  case KStar_892_Minus: return 0.89166; // charged only, hadroproduced
+  case AntiKStar_892_0: return 0.89581; // neutral only
   case K1_1400_Plus: return 1.403;
   case K1_1400_Minus: return 1.403;
   case b1_1235_Plus: return 1.2295;
-  case Deuteron:	return 1.875613;
-  case Helium:		return 3.276372;
-  case Triton:	return 2.807904;
-  case Pb208:	return 193.72817;
+  case Deuteron:	return 1.875612859;     // from NIST
+  case Helium:		return 3.727379238;     // from NIST 6.64465675 x 10-27 kg
+  case Triton:	        return 2.808921004;     // from NIST 5.00735630 x 10^-27 kg
+  case Pb208:	        return 193.72899;       // NIST gives 207.976627 AMU
   case Sigma_1385_Minus:	return 1.3872;
-  case Sigma_1385_0:		return 1.38370;
+  case Sigma_1385_0:		return 1.3837;
   case Sigma_1385_Plus:	return 1.38280;
   default:
     fprintf(stderr,"ParticleMass: Error: Unknown particle type %d,",p);
