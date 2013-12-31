@@ -856,11 +856,11 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 			else //pid not found for this track: loop over other possible pids
 			{
 				bool locTrackingFOMOKFlag = true;
-				deque<Particle_t> locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
+				deque<pair<Particle_t, bool> > locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
 				bool locFoundFlag = false;
 				for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
 				{
-					locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i]);
+					locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i].first);
 					if(locChargedTrackHypothesis == NULL)
 						continue;
 					locFoundFlag = true;
@@ -895,11 +895,11 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 		{
 			if(locChargedTrack->Get_Hypothesis(Proton) == NULL)
 			{
-				deque<Particle_t> locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
+				deque<pair<Particle_t, bool> > locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
 				bool locFoundFlag = false;
 				for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
 				{
-					const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i]);
+					const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(locPIDsToTry[loc_i].first);
 					if(locChargedTrackHypothesis == NULL)
 						continue;
 					locFoundFlag = true;

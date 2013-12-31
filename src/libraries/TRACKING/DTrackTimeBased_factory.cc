@@ -606,40 +606,44 @@ void DTrackTimeBased_factory
   start_times.push_back(start_time);
 
   // Match to the start counter and the outer detectors
-  double tproj=track->t0();  // initial guess from tracking
-  unsigned int tof_id=0,sc_id=0;
-  double locPathLength, locFlightTime;
-
-  if (pid_algorithm->MatchToSC(track->rt,DTrackFitter::kWireBased,sc_hits,
-				tproj,sc_id, locPathLength, locFlightTime)==NOERROR){
+  double locTimeVariance = 0.0, locStartTime = track->t0();  // initial guess from tracking
+  if(pid_algorithm->MatchToSC(track->rt, sc_hits, locStartTime, locTimeVariance))
+  {
     // Fill in the start time vector
-    start_time.t0=tproj;
+    start_time.t0=locStartTime;
+//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.t0_sigma=0.3;
     start_time.system=SYS_START;
     start_times.push_back(start_time); 
   }
 
-  if (pid_algorithm->MatchToTOF(track->rt,DTrackFitter::kWireBased,tof_points,
-				tproj,tof_id, locPathLength, locFlightTime,NULL)==NOERROR){
+  locStartTime = track->t0();
+  if (pid_algorithm->MatchToTOF(track->rt, tof_points, locStartTime, locTimeVariance))
+  {
     // Fill in the start time vector
-    start_time.t0=tproj;
+    start_time.t0=locStartTime;
     start_time.t0_sigma=0.1;
+//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_TOF;
     start_times.push_back(start_time); 
   }
-  deque<const DBCALShower*> locMatchedBCALShowers;
-  if (pid_algorithm->MatchToBCAL(track->rt, bcal_showers, locMatchedBCALShowers, tproj, locPathLength, locFlightTime) == NOERROR){
+  locStartTime = track->t0();
+  if (pid_algorithm->MatchToBCAL(track->rt, bcal_showers, locStartTime, locTimeVariance))
+  {
     // Fill in the start time vector
-    start_time.t0=tproj;
+    start_time.t0=locStartTime;
     start_time.t0_sigma=0.5;
+//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_BCAL;
     start_times.push_back(start_time);
   }
-  deque<const DFCALShower*> locMatchedFCALShowers;
-  if (pid_algorithm->MatchToFCAL(track->rt, fcal_showers, locMatchedFCALShowers, tproj, locPathLength, locFlightTime,NULL) == NOERROR){
+  locStartTime = track->t0();
+  if (pid_algorithm->MatchToFCAL(track->rt, fcal_showers, locStartTime, locTimeVariance))
+  {
     // Fill in the start time vector
-    start_time.t0=tproj;
+    start_time.t0=locStartTime;
     start_time.t0_sigma=0.5;
+//    start_time.t0_sigma=sqrt(locTimeVariance); //uncomment when ready
     start_time.system=SYS_FCAL;
     start_times.push_back(start_time);
   }

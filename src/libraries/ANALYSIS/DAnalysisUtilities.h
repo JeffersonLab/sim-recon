@@ -80,9 +80,6 @@ class DAnalysisUtilities : public JObject
 		DVector3 Calc_CrudeVertex(const deque<const DKinematicData*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DKinFitParticle*>& locParticles) const;
 		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const;
-		DVector3 Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles, const deque<DKinematicData*>& locPropagatedData) const;
-		DVector3 Calc_CrudeVertex(const DChargedTrackHypothesis* locChargedTrackHypothesis, const deque<DKinematicData*>& locDecayingParticles) const;
-		DVector3 Calc_CrudeVertex(const DChargedTrackHypothesis* locChargedTrackHypothesis, const deque<DKinematicData*>& locDecayingParticles, DKinematicData*& locPropagatedData) const;
 
 		bool Compare_Particles(const deque<const DKinematicData*>& locMeasuredParticles_Source, const deque<const DKinematicData*> locMeasuredParticles_ToCheck) const;
 

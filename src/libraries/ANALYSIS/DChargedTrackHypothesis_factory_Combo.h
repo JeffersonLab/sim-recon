@@ -11,6 +11,7 @@
 #include "JANA/JFactory.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DChargedTrack.h"
+#include "PID/DDetectorMatches.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DChargedTrackHypothesis_factory.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"

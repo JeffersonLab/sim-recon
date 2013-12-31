@@ -35,11 +35,11 @@ class DTrackTimeBased_factory_Combo:public jana::JFactory<DTrackTimeBased>
 		~DTrackTimeBased_factory_Combo(){};
 		const char* Tag(void){return "Combo";}
 
-		deque<Particle_t> Get_ParticleIDsToTry(Particle_t locPID) const
+		deque<pair<Particle_t, bool> > Get_ParticleIDsToTry(Particle_t locPID) const
 		{
-			map<Particle_t, deque<Particle_t> >::const_iterator locIterator = dParticleIDsToTry.find(locPID);
+			map<Particle_t, deque<pair<Particle_t, bool> > >::const_iterator locIterator = dParticleIDsToTry.find(locPID);
 			if(locIterator == dParticleIDsToTry.end())
-				return deque<Particle_t>();
+				return deque<pair<Particle_t, bool> >();
 			return locIterator->second;
 		}
 
@@ -51,7 +51,7 @@ class DTrackTimeBased_factory_Combo:public jana::JFactory<DTrackTimeBased>
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		DTrackTimeBased* Create_TrackTimeBased(const DChargedTrack* locChargedTrack, Particle_t locDesiredPID);
-		DTrackTimeBased* Convert_ChargedTrack(const DChargedTrackHypothesis* locChargedTrackHypothesis, Particle_t locNewPID);
+		DTrackTimeBased* Convert_ChargedTrack(const DChargedTrackHypothesis* locChargedTrackHypothesis, Particle_t locNewPID, bool locSwimFlag);
 
 		DReferenceTrajectory* Get_ReferenceTrajectoryResource(void);
 
@@ -61,7 +61,7 @@ class DTrackTimeBased_factory_Combo:public jana::JFactory<DTrackTimeBased>
 		const DGeometry* dGeometry;
 		const DMagneticFieldMap* dMagneticFieldMap;
 		size_t MAX_dReferenceTrajectoryPoolSize;
-		map<Particle_t, deque<Particle_t> > dParticleIDsToTry;
+		map<Particle_t, deque<pair<Particle_t, bool> > > dParticleIDsToTry; //bool is reswim flag
 };
 
 #endif // _DTrackTimeBased_factory_Combo_

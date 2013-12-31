@@ -21,10 +21,6 @@ jerror_t DEventRFBunch_factory_Combo::init(void)
 //------------------
 jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
-	vector<const DParticleID*> locParticleIDVector;
-	locEventLoop->Get(locParticleIDVector);
-	dParticleID = locParticleIDVector[0];
-
 	// Get Target parameters from XML
 	DApplication *locApplication = dynamic_cast<DApplication*> (locEventLoop->GetJApplication());
 	DGeometry *locGeometry = locApplication ? locApplication->GetDGeometry(runnumber):NULL;
@@ -36,6 +32,8 @@ jerror_t DEventRFBunch_factory_Combo::brun(jana::JEventLoop *locEventLoop, int r
 		locGeometry->GetTargetZ(dTargetCenterZ);
 		locGeometry->GetTargetLength(dTargetLength);
 	}
+
+	locEventLoop->GetSingle(dParticleID);
 
 	return NOERROR;
 }
@@ -210,58 +208,59 @@ void DEventRFBunch_factory_Combo::Get_StartTime(JEventLoop* locEventLoop, const 
 	vector<const DSCHit*> locSCHits(0);
 	locEventLoop->Get(locSCHits);
 
-	deque<const DBCALShower*> locMatchedBCALShowers(0);
-	deque<const DFCALShower*> locMatchedFCALShowers(0);
+	const DDetectorMatches* locDetectorMatches = NULL;
+	locEventLoop->GetSingle(locDetectorMatches);
 
 	// Use time-based tracking time as initial guess
 	locStartTime = 0.0;
 	locStartTimeVariance = 0.0;
-	double locPathLength = 0.0, locTempProjectedTime = 0.0, locFlightTime = 0.0;
 
-	//BCAL
-	locTempProjectedTime = 0.0; // to reject hits that are not in time with the track
-	if (dParticleID->MatchToBCAL(locTrackTimeBased->rt, locBCALShowers, locMatchedBCALShowers, locTempProjectedTime, locPathLength, locFlightTime) == NOERROR)
+	//TOF
+	DTOFHitMatchParams locTOFHitMatchParams;
+	if(dParticleID->Get_BestTOFMatchParams(locTrackTimeBased, locDetectorMatches, locTOFHitMatchParams))
 	{
-		locStartTime = locTempProjectedTime;
-		double locStartTimeUncetainty = 0.00255*pow(locTrackTimeBased->momentum().Mag(), -2.52) + 0.220;
-		locStartTimeVariance = locStartTimeUncetainty*locStartTimeUncetainty;
+		const DTOFPoint* locTOFPoint = locTOFHitMatchParams.dTOFPoint;
+		locStartTime = locTOFPoint->t - locTOFHitMatchParams.dFlightTime;
+//		locStartTimeVariance = sqrt(locTOFHitMatchParams.dFlightTimeVariance) - locTOFPoints[loc_i]->tErr; //uncomment when ready!
+//		locStartTimeVariance *= locStartTimeVariance; //uncomment when ready!
+		locStartTimeVariance = 0.1*0.1;
 		return;
 	}
 
-	//TOF
-	locTempProjectedTime = 0.0; // to reject hits that are not in time with the track
-	pair<double,double> locTOFdEdx(0.0, 0.0);
-	unsigned int locTOFIndex = 0;
-	if (dParticleID->MatchToTOF(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locTOFPoints, locTempProjectedTime, locTOFIndex, locPathLength, locFlightTime,&locTOFdEdx) == NOERROR)
+	//SC
+	DSCHitMatchParams locSCHitMatchParams;
+	if(dParticleID->Get_BestSCMatchParams(locTrackTimeBased, locDetectorMatches, locSCHitMatchParams))
 	{
-		locStartTime = locTempProjectedTime;
-		locStartTimeVariance = 0.08*0.08;
+		locStartTime = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime;
+//		locStartTimeVariance = sqrt(locSCHitMatchParams.dFlightTimeVariance) - sqrt(locSCHitMatchParams.dHitTimeVariance); //uncomment when ready!
+//		locStartTimeVariance *= locStartTimeVariance; //uncomment when ready!
+		locStartTimeVariance = 0.3*0.3;
+		return;
+	}
+
+	//BCAL
+	DShowerMatchParams locBCALShowerMatchParams;
+	if(dParticleID->Get_BestBCALMatchParams(locTrackTimeBased, locDetectorMatches, locBCALShowerMatchParams))
+	{
+		const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
+		locStartTime = locBCALShower->t - locBCALShowerMatchParams.dFlightTime;
+//		locStartTimeVariance = sqrt(locShowerMatchParams.dFlightTimeVariance) - locBCALShower->dCovarianceMatrix(4, 4); //uncomment when ready!!
+//		locStartTimeVariance *= locStartTimeVariance; //uncomment when ready!!
+		locStartTimeVariance = 0.5*0.5;
 		return;
 	}
 
 	//FCAL
-	locTempProjectedTime = 0.0; // to reject hits that are not in time with the track
-	double locFCALdEdx=0.;
-	if (dParticleID->MatchToFCAL(locTrackTimeBased->rt, locFCALShowers, locMatchedFCALShowers, locTempProjectedTime, locPathLength, locFlightTime,&locFCALdEdx) == NOERROR)
+	DShowerMatchParams locFCALShowerMatchParams;
+	if(dParticleID->Get_BestFCALMatchParams(locTrackTimeBased, locDetectorMatches, locFCALShowerMatchParams))
 	{
-		locStartTime = locTempProjectedTime;
-		locStartTimeVariance = 0.6*0.6;
+		const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
+		locStartTime = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime;
+//		locStartTimeVariance = sqrt(locShowerMatchParams.dFlightTimeVariance) - sqrt(locFCALShowers[loc_i]->dCovarianceMatrix(4, 4)); //uncomment when ready!
+//		locStartTimeVariance *= locStartTimeVariance; //uncomment when ready!
+		locStartTimeVariance = 0.5*0.5;
 		return;
 	}
-
-	/*
-	//SC
-	// DON'T ENABLE UNTIL START COUNTER RECONSTRUCTION READY
-	// Match to the start counter using the result of the time-based fit
-	locTempProjectedTime = 0.0; // to reject hits that are not in time with the track
-	unsigned int locSCIndex;
-	double locTempSCdEdx;
-	if (dParticleID->MatchToSC(locTrackTimeBased->rt, DTrackFitter::kTimeBased, locSCHits, locTempProjectedTime, locSCIndex, locPathLength, locFlightTime,&locTempSCdEdx) == NOERROR)
-	{
-		locStartTime = locTempProjectedTime;
-		locStartTimeVariance = 0.3*0.3; //guess for now
-	}
-	*/
 }
 
 void DEventRFBunch_factory_Combo::Calc_StartTime(const DNeutralShower* locNeutralShower, Particle_t locPID, DVector3 locVertex, double& locStartTime, double& locStartTimeVariance)

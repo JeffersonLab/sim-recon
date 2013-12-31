@@ -15,45 +15,73 @@ jerror_t DTrackTimeBased_factory_Combo::init(void)
 	MAX_dReferenceTrajectoryPoolSize = 5;
 
 	//remember, charge sign could have flipped during track reconstruction
-	deque<Particle_t> locPIDDeque;
+	deque<pair<Particle_t, bool> > locPIDDeque; //bool is true/false if should/shouldn't reswim
 
+	//order of preference:
+		//very similar mass & charge (e.g. pi -> mu, e) //no reswim (flight time virtually identical)
+		//slightly similar mass & charge (e.g. pi -> K) //reswim: recalculate flight time
+		//similar mass, different charge (e.g. pi+ -> pi-) //reswim! (different charge)
+		//if to/from proton/deuteron: always reswim (significant mass difference)
+		//don't need to list every PID: if none of the below PIDs are available, will choose the one with the best PID FOM and reswim
+
+	//pi+
 	locPIDDeque.resize(4);
-	locPIDDeque[0] = KPlus;  locPIDDeque[1] = Proton;  locPIDDeque[2] = PiMinus;  locPIDDeque[3] = KMinus;
+	locPIDDeque[0] = pair<Particle_t, bool>(KPlus, true);  locPIDDeque[1] = pair<Particle_t, bool>(PiMinus, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(KMinus, true);  locPIDDeque[3] = pair<Particle_t, bool>(Proton, true);
 	dParticleIDsToTry[PiPlus] = locPIDDeque;
 
+	//pi-
 	locPIDDeque.resize(3);
-	locPIDDeque[0] = KMinus;  locPIDDeque[1] = PiPlus;  locPIDDeque[2] = KPlus;
+	locPIDDeque[0] = pair<Particle_t, bool>(KMinus, true);  locPIDDeque[1] = pair<Particle_t, bool>(PiPlus, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(KPlus, true);
 	dParticleIDsToTry[PiMinus] = locPIDDeque;
 
+	//K+
 	locPIDDeque.resize(4);
-	locPIDDeque[0] = PiPlus;  locPIDDeque[1] = Proton;  locPIDDeque[2] = KMinus;  locPIDDeque[3] = PiMinus;
+	locPIDDeque[0] = pair<Particle_t, bool>(PiPlus, true);  locPIDDeque[1] = pair<Particle_t, bool>(KMinus, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(PiMinus, true);  locPIDDeque[3] = pair<Particle_t, bool>(Proton, true);
 	dParticleIDsToTry[KPlus] = locPIDDeque;
 
+	//K-
 	locPIDDeque.resize(4);
-	locPIDDeque[0] = PiMinus;  locPIDDeque[1] = KPlus;  locPIDDeque[2] = PiPlus;  locPIDDeque[3] = Proton;
+	locPIDDeque[0] = pair<Particle_t, bool>(PiMinus, true);  locPIDDeque[1] = pair<Particle_t, bool>(KPlus, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(PiPlus, true);  locPIDDeque[3] = pair<Particle_t, bool>(Proton, true);
 	dParticleIDsToTry[KMinus] = locPIDDeque;
 
+	//p
 	locPIDDeque.resize(3);
-	locPIDDeque[0] = KPlus;  locPIDDeque[1] = PiPlus;  locPIDDeque[2] = KMinus;
+	locPIDDeque[0] = pair<Particle_t, bool>(KPlus, true);  locPIDDeque[1] = pair<Particle_t, bool>(PiPlus, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(KMinus, true);
 	dParticleIDsToTry[Proton] = locPIDDeque;
 
+	//pbar
 	locPIDDeque.resize(4);
-	locPIDDeque[0] = KMinus;  locPIDDeque[1] = PiMinus;  locPIDDeque[2] = Proton;  locPIDDeque[3] = KPlus;
+	locPIDDeque[0] = pair<Particle_t, bool>(KMinus, true);  locPIDDeque[1] = pair<Particle_t, bool>(Proton, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(PiMinus, true);  locPIDDeque[3] = pair<Particle_t, bool>(KPlus, true);
 	dParticleIDsToTry[AntiProton] = locPIDDeque;
 
-	locPIDDeque.resize(5);
-	locPIDDeque[0] = PiPlus;  locPIDDeque[1] = KPlus;  locPIDDeque[2] = Proton;  locPIDDeque[3] = PiMinus;  locPIDDeque[4] = KMinus;
+	//e+
+	locPIDDeque.resize(4);
+	locPIDDeque[0] = pair<Particle_t, bool>(PiPlus, false);  locPIDDeque[1] = pair<Particle_t, bool>(KPlus, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(PiMinus, true);  locPIDDeque[3] = pair<Particle_t, bool>(KMinus, true);
 	dParticleIDsToTry[Positron] = locPIDDeque;
 
+	//e-
 	locPIDDeque.resize(4);
-	locPIDDeque[0] = PiMinus;  locPIDDeque[1] = KMinus;  locPIDDeque[2] = PiPlus;  locPIDDeque[3] = KPlus;
+	locPIDDeque[0] = pair<Particle_t, bool>(PiMinus, false);  locPIDDeque[1] = pair<Particle_t, bool>(KMinus, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(PiPlus, true);  locPIDDeque[3] = pair<Particle_t, bool>(KPlus, true);
 	dParticleIDsToTry[Electron] = locPIDDeque;
 
+	//mu+
 	dParticleIDsToTry[MuonPlus] = dParticleIDsToTry[Positron];
+
+	//mu-
 	dParticleIDsToTry[MuonMinus] = dParticleIDsToTry[Electron];
 
+	//D
 	locPIDDeque.resize(3);
-	locPIDDeque[0] = Proton;  locPIDDeque[1] = KPlus;  locPIDDeque[2] = PiPlus;
+	locPIDDeque[0] = pair<Particle_t, bool>(Proton, true);  locPIDDeque[1] = pair<Particle_t, bool>(KPlus, true);
+	locPIDDeque[2] = pair<Particle_t, bool>(PiPlus, true);
 	dParticleIDsToTry[Deuteron] = locPIDDeque;
 
 	return NOERROR;
@@ -87,12 +115,8 @@ jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int
 	locEventLoop->Get(locParticleComboBlueprints);
 
 	//Create New DTrackTimeBased Objects (as needed) //for PIDs not available in the original objects
-	//for each charged track, get the dchargedtrackhypothesis corresponding to the Analysis pid
-	//if it doesn't exist, get it for the closest pid, and recalculate the PID FOM
+		//if DTrackTimeBased doesn't exist, get it for the closest pid
 	map<pair<const DChargedTrack*, Particle_t>, const DTrackTimeBased*> locCreatedTrackMap; //if a DChargedTrack was used a given PID, just copy the result
-	pair<const DChargedTrack*, Particle_t> locTrackPIDPair;
-	Particle_t locPID;
-	DTrackTimeBased* locTrackTimeBased;
 	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	{
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
@@ -107,18 +131,17 @@ jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int
 				const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locParticleComboBlueprintStep->Get_FinalParticle_SourceObject(loc_k));
 
 				//check if pid already exists for this track
-				locPID = locParticleComboBlueprintStep->Get_FinalParticleID(loc_k);
+				Particle_t locPID = locParticleComboBlueprintStep->Get_FinalParticleID(loc_k);
 				if(locChargedTrack->Get_Hypothesis(locPID) != NULL)
 					continue; //already exists, don't need to create a new one
 
 				//check to see if new pid already created for this track
-				locTrackPIDPair.first = locChargedTrack;
-				locTrackPIDPair.second = locPID;
+				pair<const DChargedTrack*, Particle_t> locTrackPIDPair(locChargedTrack, locPID);
 				if(locCreatedTrackMap.find(locTrackPIDPair) != locCreatedTrackMap.end())
 					continue; //new one already created for this pair
 
 				//create the DTrackTimeBased for the given PID
-				locTrackTimeBased = Create_TrackTimeBased(locChargedTrack, locPID);
+				DTrackTimeBased* locTrackTimeBased = Create_TrackTimeBased(locChargedTrack, locPID);
 				if(locTrackTimeBased == NULL)
 					continue;
 				locTrackTimeBased->AddAssociatedObject(locChargedTrack);
@@ -134,20 +157,20 @@ jerror_t DTrackTimeBased_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int
 DTrackTimeBased* DTrackTimeBased_factory_Combo::Create_TrackTimeBased(const DChargedTrack* locChargedTrack, Particle_t locDesiredPID)
 {
 	if(dParticleIDsToTry.find(locDesiredPID) == dParticleIDsToTry.end())
-		return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), locDesiredPID);
+		return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), locDesiredPID, true);
 
 	for(size_t loc_i = 0; loc_i < dParticleIDsToTry[locDesiredPID].size(); ++loc_i)
 	{
-		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(dParticleIDsToTry[locDesiredPID][loc_i]);
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_Hypothesis(dParticleIDsToTry[locDesiredPID][loc_i].first);
 		if(locChargedTrackHypothesis != NULL)
-			return Convert_ChargedTrack(locChargedTrackHypothesis, locDesiredPID);
+			return Convert_ChargedTrack(locChargedTrackHypothesis, locDesiredPID, dParticleIDsToTry[locDesiredPID][loc_i].second);
 	}
-	return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), locDesiredPID);
+	return Convert_ChargedTrack(locChargedTrack->Get_BestFOM(), locDesiredPID, true);
 }
 
 DReferenceTrajectory* DTrackTimeBased_factory_Combo::Get_ReferenceTrajectoryResource(void)
 {
-	DReferenceTrajectory* locReferenceTrajectory;
+	DReferenceTrajectory* locReferenceTrajectory = NULL;
 	if(dReferenceTrajectoryPool_Available.empty())
 	{
 		locReferenceTrajectory = new DReferenceTrajectory(dMagneticFieldMap);
@@ -162,25 +185,31 @@ DReferenceTrajectory* DTrackTimeBased_factory_Combo::Get_ReferenceTrajectoryReso
 	return locReferenceTrajectory;
 }
 
-DTrackTimeBased* DTrackTimeBased_factory_Combo::Convert_ChargedTrack(const DChargedTrackHypothesis* locChargedTrackHypothesis, Particle_t locNewPID)
+DTrackTimeBased* DTrackTimeBased_factory_Combo::Convert_ChargedTrack(const DChargedTrackHypothesis* locChargedTrackHypothesis, Particle_t locNewPID, bool locSwimFlag)
 {
 	DTrackTimeBased* locTrackTimeBased = new DTrackTimeBased();
 
- 	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
-	locChargedTrackHypothesis->GetT(locTrackTimeBasedVector);
-	*locTrackTimeBased = *(locTrackTimeBasedVector[0]);
-	locTrackTimeBased->AddAssociatedObject(locTrackTimeBasedVector[0]);
+ 	const DTrackTimeBased* locOriginalTrackTimeBased = NULL;
+	locChargedTrackHypothesis->GetSingleT(locOriginalTrackTimeBased);
+	*locTrackTimeBased = *locOriginalTrackTimeBased;
 
 	locTrackTimeBased->setMass(ParticleMass(locNewPID));
 	locTrackTimeBased->setPID(locNewPID);
 	locTrackTimeBased->setCharge(ParticleCharge(locNewPID));
 
-	// configure the DReferenceTrajectory object
-	DReferenceTrajectory *locReferenceTrajectory = Get_ReferenceTrajectoryResource();
-	locReferenceTrajectory->SetMass(locTrackTimeBased->mass());
-	locReferenceTrajectory->SetDGeometry(dGeometry);
-	locReferenceTrajectory->Swim(locTrackTimeBased->position(), locTrackTimeBased->momentum(), locTrackTimeBased->charge());
-	locTrackTimeBased->rt = locReferenceTrajectory;
+	// swim the DReferenceTrajectory object if necessary
+	if(locSwimFlag)
+	{
+		DReferenceTrajectory *locReferenceTrajectory = Get_ReferenceTrajectoryResource();
+		locReferenceTrajectory->SetMass(locTrackTimeBased->mass());
+		locReferenceTrajectory->SetDGeometry(dGeometry);
+		locReferenceTrajectory->Swim(locTrackTimeBased->position(), locTrackTimeBased->momentum(), locTrackTimeBased->charge());
+		locTrackTimeBased->rt = locReferenceTrajectory;
+	}
+	else
+		locTrackTimeBased->rt = NULL;
+
+	locTrackTimeBased->AddAssociatedObject(locOriginalTrackTimeBased);
 	locTrackTimeBased->AddAssociatedObject(locChargedTrackHypothesis);
 
 	return locTrackTimeBased;

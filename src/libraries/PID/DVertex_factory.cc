@@ -38,6 +38,7 @@ jerror_t DVertex_factory::init(void)
 //------------------
 jerror_t DVertex_factory::brun(jana::JEventLoop *loop, int runnumber)
 {
+  loop->GetSingle(dAnalysisUtilities);
 
   // Get Target parameters from XML
   DApplication *locApplication = dynamic_cast<DApplication*> (loop->GetJApplication());
@@ -122,8 +123,8 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	      // Find the intersection between the two tracks
 	      DVector3 intersection;
 	      double doca=1000.,var_doca=1000.;
-	      track1->dRT->IntersectTracks(track2->dRT,&track1_kd,&track2_kd,intersection,doca,var_doca);
-	      
+			doca = dAnalysisUtilities->Calc_DOCAVertex(&track1_kd, &track2_kd, intersection);
+
 	      // Add the track to the group if the combination of the current two tracks meets a minimum 
 	      // probability criterion.
 	      double prob=TMath::Prob(doca*doca/var_doca,1);

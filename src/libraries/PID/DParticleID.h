@@ -27,8 +27,10 @@
 #include <particleType.h>
 #include <PID/DChargedTrackHypothesis.h>
 #include <PID/DEventRFBunch.h>
+#include <PID/DDetectorMatches.h>
 #include <TRACKING/DMagneticFieldStepper.h>
 
+#include <TMath.h>
 
 class DTrackTimeBased;
 class DCDCTrackHit;
@@ -39,7 +41,7 @@ class DParticleID:public jana::JObject{
  
   // Constructor and destructor
   DParticleID(JEventLoop *loop); // require JEventLoop in constructor
-  virtual ~DParticleID();
+  virtual ~DParticleID(void){}
 
   class dedx_t{
   public:
@@ -59,14 +61,35 @@ class DParticleID:public jana::JObject{
   jerror_t CalcdEdxHit(const DVector3 &mom, const DVector3 &pos, const DCDCTrackHit *hit, pair <double,double> &dedx) const;
   jerror_t GroupTracks(vector<const DTrackTimeBased *> &tracks, vector<vector<const DTrackTimeBased*> >&grouped_tracks) const;
 
-  jerror_t MatchToTOF(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DTOFPoint*>&tof_points, double &tproj, unsigned int &tof_match_id, double &locPathLength, double &locFlightTime,pair<double,double>*dEdx=NULL) const;
-  jerror_t MatchToBCAL(const DReferenceTrajectory *rt, const vector<const DBCALShower*>& locInputBCALShowers, deque<const DBCALShower*>& locMatchedBCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime) const;
-  jerror_t MatchToFCAL(const DReferenceTrajectory *rt, const vector<const DFCALShower*>& locInputFCALShowers, deque<const DFCALShower*>& locMatchedFCALShowers, double& locProjectedTime, double& locPathLength, double& locFlightTime,double *dEdx=NULL) const;
-  jerror_t MatchToSC(const DReferenceTrajectory *rt, DTrackFitter::fit_type_t fit_type, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id, double &locPathLength, double &locFlightTime,pair<double,double>*dEdx=NULL) const;
-  jerror_t MatchToSC(const DKinematicData &parms, vector<const DSCHit*>&sc_hits, double &tproj,unsigned int &sc_match_id) const;
-
   void GetScintMPdEandSigma(double p,double M,double x,double &most_prob_dE,
 			    double &sigma_dE) const;
+
+	//called by track reconstruction
+	bool MatchToTOF(const DReferenceTrajectory* rt, const vector<const DTOFPoint*>& locTOFPoints, double& locStartTime, double& locTimeVariance) const;
+	bool MatchToBCAL(const DReferenceTrajectory* rt, const vector<const DBCALShower*>& locBCALShowers, double& locStartTime, double& locTimeVariance) const;
+	bool MatchToFCAL(const DReferenceTrajectory* rt, const vector<const DFCALShower*>& locFCALShowers, double& locStartTime, double& locTimeVariance) const;
+	bool MatchToSC(const DReferenceTrajectory* rt, const vector<const DSCHit*>& locSCHits, double& locStartTime, double& locTimeVariance) const;
+
+	//matching tracks to hits/showers routines (can be called by DDetectorMatches factory)
+	bool MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const;
+	bool MatchToTOF(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DTOFPoint* locTOFPoint, double locInputStartTime, DTOFHitMatchParams& locTOFHitMatchParams) const;
+	bool MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DFCALShower* locFCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const;
+	bool MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DSCHit* locSCHit, double locInputStartTime, DSCHitMatchParams& locSCHitMatchParams) const;
+
+	//select "best" matches //called by several factories
+	bool Get_BestSCMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DSCHitMatchParams& locBestMatchParams) const;
+	bool Get_BestBCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const;
+	bool Get_BestTOFMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DTOFHitMatchParams& locBestMatchParams) const;
+	bool Get_BestFCALMatchParams(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, DShowerMatchParams& locBestMatchParams) const;
+
+	//matching showers to tracks routines (called by DDetectorMatches factory)
+	bool MatchToTrack(const DBCALShower* locBCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
+	bool MatchToTrack(const DFCALShower* locFCALShower, const DReferenceTrajectory* rt, double locInputStartTime, double& locDistance) const;
+
+	double Calc_BCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
+	double Calc_FCALFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
+	double Calc_TOFFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DDetectorMatches* locDetectorMatches) const;
+	double Calc_SCFlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches) const;
 
   virtual Particle_t IDTrack(float locCharge, float locMass) const;
 
@@ -85,28 +108,27 @@ class DParticleID:public jana::JObject{
 		double dA_CDC;
 		double dA_FDC;
 
+		double DELTA_R_FCAL;
+		double C_EFFECTIVE; // start counter light propagation speed
+		double ATTEN_LENGTH; // Start counter attenuation length
+		double OUT_OF_TIME_CUT; //for all matches
+
  private: 
  
   int DEBUG_LEVEL;
   // Prohibit default constructor
   DParticleID();
   
-  const DGeometry *geom;
-  const DMagneticFieldMap *bfield;
-  DMagneticFieldStepper *stepper;
+	// start counter geometry parameters
+	double sc_leg_tcor;
+	double sc_angle_cor;
+	vector<DVector3> sc_pos;
+	vector<DVector3> sc_norm;
+	double dSCdphi;
+	double dSCphi0;
+
   double dTargetZCenter;
   double dRFBunchFrequency;
-
-
-  // start counter geometry parameters
-  double sc_leg_tcor;
-  double sc_angle_cor;
-  vector<DVector3>sc_pos;
-  vector<DVector3>sc_norm;
-  double dSCdphi,dSCphi0;
-
-  double DELTA_R_BCAL;
-  double DELTA_R_FCAL;
 };
 
 #endif // _DParticleID_

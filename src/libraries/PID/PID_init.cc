@@ -23,6 +23,7 @@ using namespace jana;
 #include "DPiMinus_factory.h"
 #include "DEventRFBunch_factory.h"
 #include "DEventRFBunch_factory_Thrown.h"
+#include "DDetectorMatches_factory.h"
 #include "DMCThrown_factory_FinalState.h"
 #include "DMCThrown_factory_Decaying.h"
 #include "DMCThrown_factory_Primary.h"
@@ -58,6 +59,7 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DPiMinus_factory);
 	loop->AddFactory(new DEventRFBunch_factory);
 	loop->AddFactory(new DEventRFBunch_factory_Thrown);
+	loop->AddFactory(new DDetectorMatches_factory);
 	loop->AddFactory(new DMCThrown_factory_FinalState);
 	loop->AddFactory(new DMCThrown_factory_Decaying);
 	loop->AddFactory(new DMCThrown_factory_Primary);

@@ -1328,8 +1328,10 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		//DEPOSITED ENERGY
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_CDC", locTrackTimeBased->ddEdx_CDC);
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_FDC", locTrackTimeBased->ddEdx_FDC);
-		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_TOF", locChargedTrackHypothesis->dTOFdEdx);
-		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_ST", locChargedTrackHypothesis->dStartCounterdEdx);
+		double locTOFdEdx = (locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL) ? locChargedTrackHypothesis->dTOFHitMatchParams.dEdx : 0.0;
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_TOF", locTOFdEdx);
+		double locSCdEdx = (locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL) ? locChargedTrackHypothesis->dSCHitMatchParams.dEdx : 0.0;
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "dEdx_ST", locSCdEdx);
 		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locBCALEnergy);
 		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
@@ -1415,8 +1417,10 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		//DEPOSITED ENERGY
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_CDC", locTrackTimeBased->ddEdx_CDC, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_FDC", locTrackTimeBased->ddEdx_FDC, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_TOF", locChargedTrackHypothesis->dTOFdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
-		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_ST", locChargedTrackHypothesis->dStartCounterdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		double locTOFdEdx = (locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL) ? locChargedTrackHypothesis->dTOFHitMatchParams.dEdx : 0.0;
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_TOF", locTOFdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+		double locSCdEdx = (locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL) ? locChargedTrackHypothesis->dSCHitMatchParams.dEdx : 0.0;
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "dEdx_ST", locSCdEdx, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		double locBCALEnergy = (locBCALShower != NULL) ? locBCALShower->E : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_BCAL", locBCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;

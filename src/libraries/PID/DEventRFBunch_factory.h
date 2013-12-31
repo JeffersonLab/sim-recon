@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <map>
 #include <utility>
+#include <deque>
 
 #include <TMath.h>
 
@@ -21,6 +22,7 @@
 #include <DMatrixDSym.h>
 #include <DMatrix.h>
 
+#include <PID/DDetectorMatches.h>
 #include <PID/DParticleID.h>
 #include <PID/DEventRFBunch.h>
 #include <TRACKING/DTrackTimeBased.h>
@@ -40,12 +42,12 @@ class DEventRFBunch_factory : public jana::JFactory<DEventRFBunch>
 		DEventRFBunch_factory(){};
 		~DEventRFBunch_factory(){};
 
-		bool Find_TimeFOMPairs_Hits(vector<const DTOFPoint*>& locTOFPoints, vector<const DBCALShower*>& locBCALShowers, vector<const DSCHit*>& locSCHits, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs);
+		bool Find_TimeFOMPairs_Hits(const DDetectorMatches* locDetectorMatches, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs);
 		bool Find_TimeFOMPairs_T0(const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, vector<pair<double, double> >& locTimeFOMPairs);
 		int Find_BestRFBunchShift(double locRFHitTime, const vector<pair<double, double> >& locTimeFOMPairs);
 
 	private:
-		const DParticleID* dPIDAlgorithm;
+		const DParticleID* dParticleID;
 
 		double dRFBunchFrequency;
 		DVector3 dTargetCenter;

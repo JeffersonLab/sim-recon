@@ -10,17 +10,16 @@
 
 #include <vector>
 #include <PID/DKinematicData.h>
-#include <TRACKING/DReferenceTrajectory.h>
-#include <particleType.h>
+#include <PID/DDetectorMatches.h>
 
 using namespace std;
 
-class DChargedTrackHypothesis : public DKinematicData {
+class DChargedTrackHypothesis : public DKinematicData
+{
 	public:
 		JOBJECT_PUBLIC(DChargedTrackHypothesis);
 
 		oid_t candidateid;   ///< id of DTrackCandidate corresponding to this track
-		const DReferenceTrajectory* dRT;
 
 		unsigned int dNDF_Track;
 		double dChiSq_Track;
@@ -30,15 +29,20 @@ class DChargedTrackHypothesis : public DKinematicData {
 
 		unsigned int dNDF_DCdEdx;
 		double dChiSq_DCdEdx;
-
-		double dStartCounterdEdx,dTOFdEdx,dFCALdEdx;
-		double dStartCounterdEdx_norm_residual,dTOFdEdx_norm_residual;
 		
 		unsigned int dNDF; //total NDF used for PID determination
 		double dChiSq; //total chi-squared used for PID determination
 		double dFOM; //overall FOM for PID determination
 
-		void toStrings(vector<pair<string,string> > &items) const{
+		//selected matches to detector systems
+			//IGNORE DATA IF THE dTrackTimeBased MEMBER OF THESE IS NULL: NO MATCH
+		DSCHitMatchParams dSCHitMatchParams;
+		DTOFHitMatchParams dTOFHitMatchParams;
+		DShowerMatchParams dBCALShowerMatchParams;
+		DShowerMatchParams dFCALShowerMatchParams;
+
+		void toStrings(vector<pair<string,string> > &items) const
+		{
 			AddString(items, "candidate","%d",candidateid);
 			DKinematicData::toStrings(items);
 			AddString(items, "Track_ChiSq", "%f", dChiSq_Track);
@@ -47,7 +51,6 @@ class DChargedTrackHypothesis : public DKinematicData {
 			AddString(items, "PID_ChiSq", "%f", dChiSq);
 			AddString(items, "PID_FOM", "%f", dFOM);
 		}
-
 };
 
 #endif // _DChargedTrackHypothesis_

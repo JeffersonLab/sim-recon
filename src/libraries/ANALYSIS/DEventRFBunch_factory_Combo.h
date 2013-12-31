@@ -19,10 +19,12 @@
 #include <FCAL/DFCALShower.h>
 
 #include "PID/DEventRFBunch.h"
+#include "PID/DParticleID.h"
+#include "PID/DDetectorMatches.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DChargedTrack.h"
 #include "PID/DNeutralShower.h"
-#include "PID/DParticleID.h"
+#include "PID/DDetectorMatches.h"
 
 #include "ANALYSIS/DParticleComboBlueprint.h"
 
@@ -44,6 +46,7 @@ class DEventRFBunch_factory_Combo:public jana::JFactory<DEventRFBunch>
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		const DParticleID* dParticleID;
+
 		double dRFBunchFrequency;
 		double dTargetCenterZ;
 		double dTargetRadius;

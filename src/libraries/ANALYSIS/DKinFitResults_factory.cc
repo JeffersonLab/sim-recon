@@ -784,7 +784,7 @@ bool DKinFitResults_factory::Calc_VertexGuess(JEventLoop* locEventLoop, const de
 		return ((locVertexFindFlag == 2) ? true : false);
 
 	//do lazy method: assume no b-field
-	deque<DKinematicData*> locVertexFindParticles_Decaying_KinematicData;
+	deque<const DKinematicData*> locVertexFindParticles_Decaying_KinematicData;
 	for(size_t loc_i = 0; loc_i < locVertexFindParticles_Decaying.size(); ++loc_i)
 	{
 		DKinematicData* locDecayingParticleData = new DKinematicData();
@@ -800,7 +800,9 @@ bool DKinFitResults_factory::Calc_VertexGuess(JEventLoop* locEventLoop, const de
 		if(dDebugLevel > 20)
 			cout << "1 charged track" << endl;
 
-		DVector3 locTempInitVertex = dAnalysisUtilities->Calc_CrudeVertex(locVertexFindParticles_ChargedHypotheses[0], locVertexFindParticles_Decaying_KinematicData);
+		deque<const DKinematicData*> locTempDeque = locVertexFindParticles_Decaying_KinematicData;
+		locTempDeque.push_back(locVertexFindParticles_ChargedHypotheses[0]);
+		DVector3 locTempInitVertex = dAnalysisUtilities->Calc_CrudeVertex(locTempDeque);
 		for(size_t loc_i = 0; loc_i < locVertexFindParticles_Decaying_KinematicData.size(); ++loc_i)
 			delete locVertexFindParticles_Decaying_KinematicData[loc_i]; //delete temp data
 		locVertexGuess.SetXYZ(locTempInitVertex.X(), locTempInitVertex.Y(), locTempInitVertex.Z());

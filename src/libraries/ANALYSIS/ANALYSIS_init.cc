@@ -10,6 +10,7 @@ using namespace jana;
 #include "DParticleComboBlueprint_factory.h"
 
 #include "DTrackTimeBased_factory_Combo.h"
+#include "DDetectorMatches_factory_Combo.h"
 #include "DEventRFBunch_factory_Combo.h"
 #include "DChargedTrackHypothesis_factory_Combo.h"
 #include "DNeutralParticleHypothesis_factory_Combo.h"
@@ -41,6 +42,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 
 	loop->AddFactory(new DEventRFBunch_factory_Combo);
 	loop->AddFactory(new DTrackTimeBased_factory_Combo);
+	loop->AddFactory(new DDetectorMatches_factory_Combo);
 	loop->AddFactory(new DChargedTrackHypothesis_factory_Combo);
 	loop->AddFactory(new DNeutralParticleHypothesis_factory_Combo);
 

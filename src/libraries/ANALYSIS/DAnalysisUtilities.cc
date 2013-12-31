@@ -393,67 +393,10 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& l
 	return locAverageTime/(double(locParticles.size()));
 }
 
-DVector3 DAnalysisUtilities::Calc_CrudeVertex(const DChargedTrackHypothesis* locChargedTrackHypothesis, const deque<DKinematicData*>& locDecayingParticles) const
-{
-	DKinematicData* locPropagatedData = NULL;
-	return Calc_CrudeVertex(locChargedTrackHypothesis, locDecayingParticles, locPropagatedData);
-}
-
-DVector3 DAnalysisUtilities::Calc_CrudeVertex(const DChargedTrackHypothesis* locChargedTrackHypothesis, const deque<DKinematicData*>& locDecayingParticles, DKinematicData*& locPropagatedData) const
-{
-	//propagates the charged track through the b-field
-	//uses the midpoint of the smallest DOCA line
-	//if locPropagatedData is supplied, the charged track data is propagated to the vertex
-	DVector3 locVertex(0.0, 0.0, dTargetZCenter);
-
-	if(locChargedTrackHypothesis == NULL)
-	{
-		if(locDecayingParticles.empty())
-			return locVertex;
-		return ((locDecayingParticles[0] == NULL) ? locVertex : locDecayingParticles[0]->position());
-	}
-	if(locDecayingParticles.empty())
-		return locChargedTrackHypothesis->position();
-
-	double locDOCA, locSmallestDOCA, locDOCAVariance;
-	DVector3 locTempVertex;
-
-//	bool locUpdateTrackDataFlag = (locPropagatedData == NULL);
-
-	locSmallestDOCA = 9.9E9;
-	//first find the closest pair of tracks whilst calcing the vertex
-	size_t locClosestParticle = 0;
-	for(size_t loc_i = 0; loc_i < locDecayingParticles.size(); ++loc_i)
-	{
-		locChargedTrackHypothesis->dRT->FindPOCAtoLine(locDecayingParticles[loc_i]->position(), locDecayingParticles[loc_i]->momentum(), NULL, NULL, locTempVertex, locDOCA, locDOCAVariance);
-		if(locDOCA < locSmallestDOCA)
-		{
-			locClosestParticle = loc_i;
-			locSmallestDOCA = locDOCA;
-			locVertex = locTempVertex;
-		}
-	}
-	//now propagate the track data to the vertex (if desired)
-/*
-	if(locUpdateTrackDataFlag)
-	{
-		locParticles[loc_j]->dRT->IntersectTracks(locParticles[loc_k]->dRT, locPropagatedData[loc_j], locPropagatedData[loc_k], locTempVertex, locDOCA, locDOCAVariance);
-*/
-
-	return locVertex;
-}
-
 DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles) const
 {
-	deque<DKinematicData*> locPropagatedData;
-	return Calc_CrudeVertex(locParticles, locPropagatedData);
-}
-
-DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DChargedTrackHypothesis*>& locParticles, const deque<DKinematicData*>& locPropagatedData) const
-{
-	//propagates the tracks through the b-field
+	//assumes tracks are straight lines
 	//uses the midpoint of the smallest DOCA line
-	//if supplied (locPropagatedData size is same as locParticles and contents are non-null), the track data is propagated to the vertex
 	DVector3 locVertex(0.0, 0.0, dTargetZCenter);
 
 	if(locParticles.size() == 0)
@@ -461,48 +404,22 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DChargedTrackHyp
 	if(locParticles.size() == 1)
 		return locParticles[0]->position();
 
-	double locDOCA, locSmallestDOCA, locDOCAVariance;
+	double locDOCA, locSmallestDOCA;
 	DVector3 locTempVertex;
 
-	bool locUpdateTrackDataFlag = false;
-	if(locPropagatedData.size() == locParticles.size())
-	{
-		bool locOKSoFarFlag = true;
-		for(size_t loc_i = 0; loc_i < locPropagatedData.size(); ++loc_i)
-		{
-			if(locPropagatedData[loc_i] != NULL)
-				continue;
-			locOKSoFarFlag = false;
-			break;
-		}
-		if(locOKSoFarFlag)
-			locUpdateTrackDataFlag = true;
-	}
-
 	locSmallestDOCA = 9.9E9;
-	//first find the closest pair of tracks whilst calcing the vertex
-	pair<int, int> locClosestPair;
 	for(int loc_j = 0; loc_j < (int(locParticles.size()) - 1); ++loc_j)
 	{
 		for(size_t loc_k = loc_j + 1; loc_k < locParticles.size(); ++loc_k)
 		{
-			locParticles[loc_j]->dRT->IntersectTracks(locParticles[loc_k]->dRT, NULL, NULL, locTempVertex, locDOCA, locDOCAVariance);
+			locDOCA = Calc_DOCAVertex(locParticles[loc_j], locParticles[loc_k], locTempVertex);
 			if(locDOCA < locSmallestDOCA)
 			{
-				locClosestPair.first = loc_j;
-				locClosestPair.second = loc_k;
 				locSmallestDOCA = locDOCA;
 				locVertex = locTempVertex;
 			}
 		}
 	}
-	//now propagate the track data to the vertex (if desired)
-/*
-	if(locUpdateTrackDataFlag)
-	{
-		locParticles[loc_j]->dRT->IntersectTracks(locParticles[loc_k]->dRT, locPropagatedData[loc_j], locPropagatedData[loc_k], locTempVertex, locDOCA, locDOCAVariance);
-*/
-
 	return locVertex;
 }
 

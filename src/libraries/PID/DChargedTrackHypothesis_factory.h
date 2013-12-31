@@ -8,14 +8,20 @@
 #ifndef _DChargedTrackHypothesis_factory_
 #define _DChargedTrackHypothesis_factory_
 
+#include <iostream>
+#include <iomanip>
+
 #include <JANA/JFactory.h>
 #include <PID/DChargedTrackHypothesis.h>
+#include <PID/DDetectorMatches.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <PID/DParticleID.h>
 #include <TOF/DTOFPoint.h>
 #include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALShower.h>
-#include <TMath.h>
+
+using namespace std;
+using namespace jana;
 
 class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothesis>
 {
@@ -23,7 +29,8 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		DChargedTrackHypothesis_factory(){};
 		~DChargedTrackHypothesis_factory(){};
 
-		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag);
+		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const;
+		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;
 
 	private:
 		const DParticleID* dPIDAlgorithm;
