@@ -9,7 +9,6 @@
 #include <iomanip>
 #include <fstream>
 #include <climits>
-#include <cmath>
 
 #include <JANA/JFactory_base.h>
 #include <JANA/JEventLoop.h>
@@ -23,9 +22,7 @@
 // Constructor
 //----------------
 DEventSourceREST::DEventSourceREST(const char* source_name)
- : JEventSource(source_name), dapp(0), 
-   saved_bfield(0), saved_geom(0), 
-   saved_runnumber(-1)
+ : JEventSource(source_name)
 {
    /// Constructor for DEventSourceREST object
    ifs = new std::ifstream(source_name);
@@ -39,24 +36,13 @@ DEventSourceREST::DEventSourceREST(const char* source_name)
       // One might want to throw an exception or report an error here.
       fin = NULL;
    }
-   pthread_mutex_init(&rt_mutex, NULL);
 }
 
 //----------------
 // Destructor
 //----------------
 DEventSourceREST::~DEventSourceREST()
-{
-  // Check for DReferenceTrajectory objects we need to delete
-  pthread_mutex_lock(&rt_mutex);
-  while (rt_pool.size()>0){
-    std::list<DReferenceTrajectory*>::iterator it=rt_pool.begin();
-    delete *it;
-    rt_pool.pop_front();
-  }
-  rt_pool.clear();
-  pthread_mutex_unlock(&rt_mutex);
-  
+{  
   if (fin) {
     delete fin;
   }
@@ -83,16 +69,6 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
       fin = NULL;
       delete ifs;
       ifs = NULL;
-
-      // Check for DReferenceTrajectory objects we need to delete
-      pthread_mutex_lock(&rt_mutex);
-      while (rt_pool.size()>0){
-	std::list<DReferenceTrajectory*>::iterator it=rt_pool.begin();
-	delete *it;
-	rt_pool.pop_front();
-      }
-      rt_pool.clear();
-      pthread_mutex_unlock(&rt_mutex);
 
       return NO_MORE_EVENTS_IN_SOURCE;
    }
@@ -135,30 +111,6 @@ void DEventSourceREST::FreeEvent(JEvent &event)
 {
    hddm_r::HDDM *record = (hddm_r::HDDM*)event.GetRef();
    delete record;
-
-   // Check for DReferenceTrajectory objects we need to delete
-   pthread_mutex_lock(&rt_mutex);
-   std::map<hddm_r::HDDM*, std::vector<DReferenceTrajectory*> >::iterator
-                           iter = rt_by_event.find(record);
-   if (iter != rt_by_event.end()) {
-     std::vector<DReferenceTrajectory*> &rtvector = iter->second;
-     unsigned int i=0;
-     while (i<rtvector.size()&&rt_pool.size()<max_rt_pool_size){
-       rt_pool.push_back(rtvector[i]);
-       i++;
-     }
-     /*
-      for (unsigned int i=0; i < rtvector.size(); ++i) {
-      rt_pool.push_back(rtvector[i]);
-      }
-     */
-     for(; i < rtvector.size(); ++i) {
-       delete rtvector[i];
-     }
-     
-     rt_by_event.erase(iter);
-   }
-   pthread_mutex_unlock(&rt_mutex);
 }
 
 //----------------
@@ -182,17 +134,7 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
       throw RESOURCE_UNAVAILABLE;
    }
 
-   if (dapp == 0) {
-      JEventLoop *loop = event.GetJEventLoop();
-      dapp = dynamic_cast<DApplication*>(loop->GetJApplication());    
-      if (!dapp) {
-         throw RESOURCE_UNAVAILABLE;
-      }
-      map<pthread_t,double> rates_by_thread;
-      dapp->GetInstantaneousThreadRates(rates_by_thread);
-      max_rt_pool_size=13*rates_by_thread.size();
-   }
-
+	JEventLoop* locEventLoop = event.GetJEventLoop();
    string dataClassName = factory->GetDataClassName();
 	
    if (dataClassName =="DMCReaction") {
@@ -234,6 +176,10 @@ jerror_t DEventSourceREST::GetObjects(JEvent &event, JFactory_base *factory)
    if (dataClassName =="DMCTrigger") {
       return Extract_DMCTrigger(record,
                      dynamic_cast<JFactory<DMCTrigger>*>(factory));
+   }
+   if (dataClassName =="DDetectorMatches") {
+      return Extract_DDetectorMatches(locEventLoop, record,
+                     dynamic_cast<JFactory<DDetectorMatches>*>(factory));
    }
 #if 0
    // one day we will need a class to hold RF timing information
@@ -384,7 +330,7 @@ jerror_t DEventSourceREST::Extract_DMCThrown(hddm_r::HDDM *record,
          double py = piter->getMomentum().getPy();
          double pz = piter->getMomentum().getPz();
          double mass = sqrt(E*E - (px*px + py*py + pz*pz));
-         if (!isfinite(mass)) {
+         if (!finite(mass)) {
             mass = 0.0;
          }
          DMCThrown *mcthrown = new DMCThrown;
@@ -478,6 +424,7 @@ jerror_t DEventSourceREST::Extract_DTOFPoint(hddm_r::HDDM *record,
       tofpoint->pos = DVector3(iter->getX(),iter->getY(),iter->getZ());
       tofpoint->t = iter->getT();
       tofpoint->dE = iter->getDE();
+      tofpoint->tErr = iter->getTerr();
       data.push_back(tofpoint);
    }
 
@@ -531,7 +478,7 @@ jerror_t DEventSourceREST::Extract_DSCHit(hddm_r::HDDM *record,
 jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
                                    JFactory<DFCALShower>* factory)
 {
-   /// Copies the data from the calorimeterCluster hddm record. This is
+   /// Copies the data from the fcalShower hddm record. This is
    /// call from JEventSourceREST::GetObjects. If factory is NULL, this
    /// returns OBJECT_NOT_AVAILABLE immediately.
 
@@ -542,14 +489,14 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 
    vector<DFCALShower*> data;
 
-   // loop over calorimeterCluster records
-   const hddm_r::CalorimeterClusterList &clusters =
-                 record->getCalorimeterClusters();
-   hddm_r::CalorimeterClusterList::iterator iter;
-   for (iter = clusters.begin(); iter != clusters.end(); ++iter) {
-      if (iter->getJtag() != tag || iter->getZ() < 600) {
+   // loop over fcal shower records
+   const hddm_r::FcalShowerList &showers =
+                 record->getFcalShowers();
+   hddm_r::FcalShowerList::iterator iter;
+   for (iter = showers.begin(); iter != showers.end(); ++iter) {
+      if (iter->getJtag() != tag)
          continue;
-      }
+
       DFCALShower *shower = new DFCALShower();
       shower->setPosition(DVector3(iter->getX(),iter->getY(),iter->getZ()));
       shower->setPosError(iter->getXerr(),iter->getYerr(),iter->getZerr());
@@ -570,7 +517,7 @@ jerror_t DEventSourceREST::Extract_DFCALShower(hddm_r::HDDM *record,
 jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
                                    JFactory<DBCALShower>* factory)
 {
-   /// Copies the data from the calorimeterCluster hddm record. This is
+   /// Copies the data from the bcalShower hddm record. This is
    /// call from JEventSourceREST::GetObjects. If factory is NULL, this
    /// returns OBJECT_NOT_AVAILABLE immediately.
 
@@ -581,14 +528,14 @@ jerror_t DEventSourceREST::Extract_DBCALShower(hddm_r::HDDM *record,
 
    vector<DBCALShower*> data;
 
-   // loop over calorimeterCluster records
-   const hddm_r::CalorimeterClusterList &clusters =
-                 record->getCalorimeterClusters();
-   hddm_r::CalorimeterClusterList::iterator iter;
-   for (iter = clusters.begin(); iter != clusters.end(); ++iter) {
-      if (iter->getJtag() != tag || iter->getZ() > 600) {
+   // loop over bcal shower records
+   const hddm_r::BcalShowerList &showers =
+                 record->getBcalShowers();
+   hddm_r::BcalShowerList::iterator iter;
+   for (iter = showers.begin(); iter != showers.end(); ++iter) {
+      if (iter->getJtag() != tag)
          continue;
-      }
+
       DBCALShower *shower = new DBCALShower();
       shower->E = iter->getE();
       shower->E_raw = -1;
@@ -631,22 +578,6 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
    // for all DTrackTimeBased objects found in this event.
 
    const hddm_r::ChargedTrackList &tracks = record->getChargedTracks();
-   std::vector<DReferenceTrajectory*> free_rts;
-   std::vector<DReferenceTrajectory*> used_rts;
-   pthread_mutex_lock(&rt_mutex);
-   while ((int)free_rts.size() < tracks.size()) {
-      if (rt_pool.size() > 0) {
-         free_rts.push_back(rt_pool.back());
-         rt_pool.pop_back();
-      }
-      else {
-         if (saved_bfield == 0) {
-            saved_bfield = dapp->GetBfield();
-         }
-         free_rts.push_back(new DReferenceTrajectory(saved_bfield));
-      }
-   }
-   pthread_mutex_unlock(&rt_mutex);
 
    // loop over chargedTrack records
    hddm_r::ChargedTrackList::iterator iter;
@@ -707,21 +638,6 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
       // Set the 7x7 covariance matrix.
 		tra->setErrorMatrix(Get7x7ErrorMatrix(tra->mass(), vect, mat));
 
-      // configure the DReferenceTrajectory object
-      DReferenceTrajectory *rt = free_rts.back();
-      free_rts.pop_back();
-      rt->Reset();
-      rt->SetMass(tra->mass());
-      int run = record->getReconstructedPhysicsEvent().getRunNo();
-      if (run != saved_runnumber || saved_geom == 0) {
-         saved_geom = dapp->GetDGeometry(run);
-         saved_runnumber = run;
-      }
-      rt->SetDGeometry(saved_geom);
-      rt->Swim(track_pos,track_mom,tra->charge());
-      used_rts.push_back(rt);
-      tra->rt = rt;
-
       // add the drift chamber dE/dx information
       const hddm_r::DEdxDCList &el = iter->getDEdxDCs();
       hddm_r::DEdxDCList::iterator diter = el.begin();
@@ -750,12 +666,6 @@ jerror_t DEventSourceREST::Extract_DTrackTimeBased(hddm_r::HDDM *record,
    // Copy into factory
    factory->CopyTo(data);
 
-   // Post the DReferenceTrajectory objects that were allocated above
-   // to a global list so that they can be reused when we are done with them.
-   pthread_mutex_lock(&rt_mutex);
-   rt_by_event[record] = used_rts;
-   pthread_mutex_unlock(&rt_mutex);
-   
    return NOERROR;
 }
 
@@ -788,6 +698,167 @@ jerror_t DEventSourceREST::Extract_DMCTrigger(hddm_r::HDDM *record,
       trigger->L1a_fired = iter->getL1a();
       trigger->L1b_fired = iter->getL1b();
       trigger->L1c_fired = iter->getL1c();
+	}
+
+	// Copy data to factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+//--------------------------------
+// Extract_DDetectorMatches
+//--------------------------------
+jerror_t DEventSourceREST::Extract_DDetectorMatches(JEventLoop* locEventLoop, hddm_r::HDDM *record,
+                                   JFactory<DDetectorMatches>* factory)
+{
+	/// Copies the data from the detectorMatches hddm record. This is
+	/// called from JEventSourceREST::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+
+	if (factory==NULL) {
+	  return OBJECT_NOT_AVAILABLE;
+	}
+	string tag = (factory->Tag())? factory->Tag() : "";
+	vector<DDetectorMatches*> data;
+
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+	locEventLoop->Get(locTrackTimeBasedVector);
+
+	vector<const DSCHit*> locSCHits;
+	locEventLoop->Get(locSCHits);
+
+	vector<const DTOFPoint*> locTOFPoints;
+	locEventLoop->Get(locTOFPoints);
+
+	vector<const DBCALShower*> locBCALShowers;
+	locEventLoop->Get(locBCALShowers);
+
+	vector<const DFCALShower*> locFCALShowers;
+	locEventLoop->Get(locFCALShowers);
+
+	const hddm_r::DetectorMatchesList &detectormatches = record->getDetectorMatcheses();
+
+	// loop over chargedTrack records
+	hddm_r::DetectorMatchesList::iterator iter;
+	for (iter = detectormatches.begin(); iter != detectormatches.end(); ++iter) {
+		if (iter->getJtag() != tag)
+			continue;
+
+      DDetectorMatches *locDetectorMatches = new DDetectorMatches();
+
+      const hddm_r::BcalMatchParamsList &bcalList = iter->getBcalMatchParamses();
+      hddm_r::BcalMatchParamsList::iterator bcalIter = bcalList.begin();
+		for(; bcalIter != bcalList.end(); ++bcalIter)
+		{
+			size_t locShowerIndex = bcalIter->getShower();
+			size_t locTrackIndex = bcalIter->getTrack();
+
+			DShowerMatchParams locShowerMatchParams;
+			locShowerMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+			locShowerMatchParams.dShowerObject = locBCALShowers[locShowerIndex];
+
+			locShowerMatchParams.dx = bcalIter->getDx();
+			locShowerMatchParams.dFlightTime = bcalIter->getTflight();
+			locShowerMatchParams.dFlightTimeVariance = bcalIter->getTflightvar();
+			locShowerMatchParams.dPathLength = bcalIter->getPathlength();
+			locShowerMatchParams.dDOCAToShower = bcalIter->getDoca();
+
+			locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locBCALShowers[locShowerIndex], locShowerMatchParams);
+      }
+
+      const hddm_r::FcalMatchParamsList &fcalList = iter->getFcalMatchParamses();
+      hddm_r::FcalMatchParamsList::iterator fcalIter = fcalList.begin();
+		for(; fcalIter != fcalList.end(); ++fcalIter)
+		{
+			size_t locShowerIndex = fcalIter->getShower();
+			size_t locTrackIndex = fcalIter->getTrack();
+
+			DShowerMatchParams locShowerMatchParams;
+			locShowerMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+			locShowerMatchParams.dShowerObject = locFCALShowers[locShowerIndex];
+
+			locShowerMatchParams.dx = fcalIter->getDx();
+			locShowerMatchParams.dFlightTime = fcalIter->getTflight();
+			locShowerMatchParams.dFlightTimeVariance = fcalIter->getTflightvar();
+			locShowerMatchParams.dPathLength = fcalIter->getPathlength();
+			locShowerMatchParams.dDOCAToShower = fcalIter->getDoca();
+
+			locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locFCALShowers[locShowerIndex], locShowerMatchParams);
+      }
+
+      const hddm_r::ScMatchParamsList &scList = iter->getScMatchParamses();
+      hddm_r::ScMatchParamsList::iterator scIter = scList.begin();
+		for(; scIter != scList.end(); ++scIter)
+		{
+			size_t locHitIndex = scIter->getHit();
+			size_t locTrackIndex = scIter->getTrack();
+
+			DSCHitMatchParams locSCHitMatchParams;
+			locSCHitMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+			locSCHitMatchParams.dSCHit = locSCHits[locHitIndex];
+
+			locSCHitMatchParams.dEdx = scIter->getDEdx();
+			locSCHitMatchParams.dHitTime = scIter->getThit();
+			locSCHitMatchParams.dHitTimeVariance = scIter->getThitvar();
+			locSCHitMatchParams.dHitEnergy = scIter->getEhit();
+			locSCHitMatchParams.dFlightTime = scIter->getTflight();
+			locSCHitMatchParams.dFlightTimeVariance = scIter->getTflightvar();
+			locSCHitMatchParams.dPathLength = scIter->getPathlength();
+			locSCHitMatchParams.dDeltaPhiToHit = scIter->getDeltaphi();
+
+			locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locSCHits[locHitIndex], locSCHitMatchParams);
+		}
+
+      const hddm_r::TofMatchParamsList &tofList = iter->getTofMatchParamses();
+      hddm_r::TofMatchParamsList::iterator tofIter = tofList.begin();
+		for(; tofIter != tofList.end(); ++tofIter)
+		{
+			size_t locHitIndex = tofIter->getHit();
+			size_t locTrackIndex = tofIter->getTrack();
+
+			DTOFHitMatchParams locTOFHitMatchParams;
+			locTOFHitMatchParams.dTrackTimeBased = locTrackTimeBasedVector[locTrackIndex];
+			locTOFHitMatchParams.dTOFPoint = locTOFPoints[locHitIndex];
+
+			locTOFHitMatchParams.dEdx = tofIter->getDEdx();
+			locTOFHitMatchParams.dFlightTime = tofIter->getTflight();
+			locTOFHitMatchParams.dFlightTimeVariance = tofIter->getTflightvar();
+			locTOFHitMatchParams.dPathLength = tofIter->getPathlength();
+			locTOFHitMatchParams.dDOCAToHit = tofIter->getDoca();
+
+			locDetectorMatches->Add_Match(locTrackTimeBasedVector[locTrackIndex], locTOFPoints[locHitIndex], locTOFHitMatchParams);
+		}
+
+      const hddm_r::BcalDOCAtoTrackList &bcaldocaList = iter->getBcalDOCAtoTracks();
+      hddm_r::BcalDOCAtoTrackList::iterator bcaldocaIter = bcaldocaList.begin();
+		for(; bcaldocaIter != bcaldocaList.end(); ++bcaldocaIter)
+		{
+			size_t locShowerIndex = bcaldocaIter->getShower();
+			double locDOCA = bcaldocaIter->getDoca();
+			locDetectorMatches->Set_DistanceToNearestTrack(locBCALShowers[locShowerIndex], locDOCA);
+		}
+
+      const hddm_r::FcalDOCAtoTrackList &fcaldocaList = iter->getFcalDOCAtoTracks();
+      hddm_r::FcalDOCAtoTrackList::iterator fcaldocaIter = fcaldocaList.begin();
+		for(; fcaldocaIter != fcaldocaList.end(); ++fcaldocaIter)
+		{
+			size_t locShowerIndex = fcaldocaIter->getShower();
+			double locDOCA = fcaldocaIter->getDoca();
+			locDetectorMatches->Set_DistanceToNearestTrack(locFCALShowers[locShowerIndex], locDOCA);
+		}
+
+      const hddm_r::TflightPCorrelationList &correlationList = iter->getTflightPCorrelations();
+      hddm_r::TflightPCorrelationList::iterator correlationIter = correlationList.begin();
+		for(; correlationIter != correlationList.end(); ++correlationIter)
+		{
+			size_t locTrackIndex = correlationIter->getTrack();
+			DetectorSystem_t locDetectorSystem = (DetectorSystem_t)correlationIter->getSystem();
+			double locCorrelation = correlationIter->getCorrelation();
+			locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBasedVector[locTrackIndex], locDetectorSystem, locCorrelation);
+		}
+
+		data.push_back(locDetectorMatches);
 	}
 
 	// Copy data to factory

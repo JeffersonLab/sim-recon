@@ -90,24 +90,24 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	locEventLoop->Get(fcalshowers);
 	for (size_t i=0; i < fcalshowers.size(); i++)
 	{
-		hddm_r::CalorimeterClusterList cal = res().addCalorimeterClusters(1);
+		hddm_r::FcalShowerList fcal = res().addFcalShowers(1);
 		DVector3 pos = fcalshowers[i]->getPosition();
 		DVector3 poserr = fcalshowers[i]->getPositionError();
-		cal().setX(pos(0));
-		cal().setY(pos(1));
-		cal().setZ(pos(2));
-		cal().setT(fcalshowers[i]->getTime());
-		cal().setE(fcalshowers[i]->getEnergy());
-		cal().setXerr(poserr(0));
-		cal().setYerr(poserr(1));
-		cal().setZerr(poserr(2));
-		cal().setTerr(0);
-		cal().setEerr(0);
-		cal().setXycorr(0);
-		cal().setXzcorr(0);
-		cal().setYzcorr(0);
-		cal().setEzcorr(0);
-		cal().setTzcorr(0);
+		fcal().setX(pos(0));
+		fcal().setY(pos(1));
+		fcal().setZ(pos(2));
+		fcal().setT(fcalshowers[i]->getTime());
+		fcal().setE(fcalshowers[i]->getEnergy());
+		fcal().setXerr(poserr(0));
+		fcal().setYerr(poserr(1));
+		fcal().setZerr(poserr(2));
+		fcal().setTerr(0);
+		fcal().setEerr(0);
+		fcal().setXycorr(0);
+		fcal().setXzcorr(0);
+		fcal().setYzcorr(0);
+		fcal().setEzcorr(0);
+		fcal().setTzcorr(0);
 	}
 
 	// push any DBCALShower objects to the output record
@@ -115,23 +115,23 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 	locEventLoop->Get(bcalshowers);
 	for (size_t i=0; i < bcalshowers.size(); i++)
 	{
-		hddm_r::CalorimeterClusterList cal = res().addCalorimeterClusters(1);
+		hddm_r::BcalShowerList bcal = res().addBcalShowers(1);
 		DVector3 pos(bcalshowers[i]->x,bcalshowers[i]->y,bcalshowers[i]->z);
-		cal().setX(bcalshowers[i]->x);
-		cal().setY(bcalshowers[i]->y);
-		cal().setZ(bcalshowers[i]->z);
-		cal().setT(bcalshowers[i]->t);
-		cal().setE(bcalshowers[i]->E);
-		cal().setXerr(bcalshowers[i]->xErr);
-		cal().setYerr(bcalshowers[i]->yErr);
-		cal().setZerr(bcalshowers[i]->zErr);
-		cal().setTerr(bcalshowers[i]->tErr);
-		cal().setEerr(0);
-		cal().setXycorr(0);
-		cal().setXzcorr(0);
-		cal().setYzcorr(0);
-		cal().setEzcorr(0);
-		cal().setTzcorr(0);
+		bcal().setX(bcalshowers[i]->x);
+		bcal().setY(bcalshowers[i]->y);
+		bcal().setZ(bcalshowers[i]->z);
+		bcal().setT(bcalshowers[i]->t);
+		bcal().setE(bcalshowers[i]->E);
+		bcal().setXerr(bcalshowers[i]->xErr);
+		bcal().setYerr(bcalshowers[i]->yErr);
+		bcal().setZerr(bcalshowers[i]->zErr);
+		bcal().setTerr(bcalshowers[i]->tErr);
+		bcal().setEerr(0);
+		bcal().setXycorr(0);
+		bcal().setXzcorr(0);
+		bcal().setYzcorr(0);
+		bcal().setEzcorr(0);
+		bcal().setTzcorr(0);
 	}
 
 	// push any DTOFPoint objects to the output record
@@ -215,6 +215,159 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutpu
 		trigger().setL1a(triggers[i]->L1a_fired);
 		trigger().setL1b(triggers[i]->L1b_fired);
 		trigger().setL1c(triggers[i]->L1c_fired);
+	}
+
+	// push any DDetectorMatches objects to the output record
+	std::vector<const DDetectorMatches*> locDetectorMatches;
+	locEventLoop->Get(locDetectorMatches);
+	for(size_t loc_i = 0; loc_i < locDetectorMatches.size(); ++loc_i)
+	{
+		hddm_r::DetectorMatchesList matches = res().addDetectorMatcheses(1);
+		for(size_t loc_j = 0; loc_j < tracks.size(); ++loc_j)
+		{
+			vector<DShowerMatchParams> locShowerMatchParamsVector;
+			locDetectorMatches[loc_i]->Get_BCALMatchParams(tracks[loc_j], locShowerMatchParamsVector);
+			for(size_t loc_k = 0; loc_k < locShowerMatchParamsVector.size(); ++loc_k)
+			{
+				hddm_r::BcalMatchParamsList bcalList = matches().addBcalMatchParamses(1);
+				bcalList().setTrack(loc_j);
+
+				const DBCALShower* locBCALShower = static_cast<const DBCALShower*>(locShowerMatchParamsVector[loc_k].dShowerObject);
+				size_t locBCALindex = 0;
+				for(; locBCALindex < bcalshowers.size(); ++locBCALindex)
+				{
+					if(bcalshowers[locBCALindex] == locBCALShower)
+						break;
+				}
+				bcalList().setShower(locBCALindex);
+
+				bcalList().setDoca(locShowerMatchParamsVector[loc_k].dDOCAToShower);
+				bcalList().setDx(locShowerMatchParamsVector[loc_k].dx);
+				bcalList().setPathlength(locShowerMatchParamsVector[loc_k].dPathLength);
+				bcalList().setTflight(locShowerMatchParamsVector[loc_k].dFlightTime);
+				bcalList().setTflightvar(locShowerMatchParamsVector[loc_k].dFlightTimeVariance);
+			}
+
+			locDetectorMatches[loc_i]->Get_FCALMatchParams(tracks[loc_j], locShowerMatchParamsVector);
+			for(size_t loc_k = 0; loc_k < locShowerMatchParamsVector.size(); ++loc_k)
+			{
+				hddm_r::FcalMatchParamsList fcalList = matches().addFcalMatchParamses(1);
+				fcalList().setTrack(loc_j);
+
+				const DFCALShower* locFCALShower = static_cast<const DFCALShower*>(locShowerMatchParamsVector[loc_k].dShowerObject);
+				size_t locFCALindex = 0;
+				for(; locFCALindex < fcalshowers.size(); ++locFCALindex)
+				{
+					if(fcalshowers[locFCALindex] == locFCALShower)
+						break;
+				}
+				fcalList().setShower(locFCALindex);
+
+				fcalList().setDoca(locShowerMatchParamsVector[loc_k].dDOCAToShower);
+				fcalList().setDx(locShowerMatchParamsVector[loc_k].dx);
+				fcalList().setPathlength(locShowerMatchParamsVector[loc_k].dPathLength);
+				fcalList().setTflight(locShowerMatchParamsVector[loc_k].dFlightTime);
+				fcalList().setTflightvar(locShowerMatchParamsVector[loc_k].dFlightTimeVariance);
+			}
+
+			vector<DTOFHitMatchParams> locTOFHitMatchParamsVector;
+			locDetectorMatches[loc_i]->Get_TOFMatchParams(tracks[loc_j], locTOFHitMatchParamsVector);
+			for(size_t loc_k = 0; loc_k < locTOFHitMatchParamsVector.size(); ++loc_k)
+			{
+				hddm_r::TofMatchParamsList tofList = matches().addTofMatchParamses(1);
+				tofList().setTrack(loc_j);
+
+				size_t locTOFindex = 0;
+				for(; locTOFindex < tofpoints.size(); ++locTOFindex)
+				{
+					if(tofpoints[locTOFindex] == locTOFHitMatchParamsVector[loc_k].dTOFPoint)
+						break;
+				}
+				tofList().setHit(locTOFindex);
+
+				tofList().setDEdx(locTOFHitMatchParamsVector[loc_k].dEdx);
+				tofList().setDoca(locTOFHitMatchParamsVector[loc_k].dDOCAToHit);
+				tofList().setPathlength(locTOFHitMatchParamsVector[loc_k].dPathLength);
+				tofList().setTflight(locTOFHitMatchParamsVector[loc_k].dFlightTime);
+				tofList().setTflightvar(locTOFHitMatchParamsVector[loc_k].dFlightTimeVariance);
+			}
+
+			vector<DSCHitMatchParams> locSCHitMatchParamsVector;
+			locDetectorMatches[loc_i]->Get_SCMatchParams(tracks[loc_j], locSCHitMatchParamsVector);
+			for(size_t loc_k = 0; loc_k < locSCHitMatchParamsVector.size(); ++loc_k)
+			{
+				hddm_r::ScMatchParamsList scList = matches().addScMatchParamses(1);
+				scList().setTrack(loc_j);
+
+				size_t locSCindex = 0;
+				for(; locSCindex < starthits.size(); ++locSCindex)
+				{
+					if(starthits[locSCindex] == locSCHitMatchParamsVector[loc_k].dSCHit)
+						break;
+				}
+				scList().setHit(locSCindex);
+
+				scList().setDEdx(locSCHitMatchParamsVector[loc_k].dEdx);
+				scList().setDeltaphi(locSCHitMatchParamsVector[loc_k].dDeltaPhiToHit);
+				scList().setEhit(locSCHitMatchParamsVector[loc_k].dHitEnergy);
+				scList().setPathlength(locSCHitMatchParamsVector[loc_k].dPathLength);
+				scList().setTflight(locSCHitMatchParamsVector[loc_k].dFlightTime);
+				scList().setTflightvar(locSCHitMatchParamsVector[loc_k].dFlightTimeVariance);
+				scList().setThit(locSCHitMatchParamsVector[loc_k].dHitTime);
+				scList().setThitvar(locSCHitMatchParamsVector[loc_k].dHitTimeVariance);
+			}
+
+			double locFlightTimePCorrelation = 0.0;
+			if(locDetectorMatches[loc_i]->Get_FlightTimePCorrelation(tracks[loc_j], SYS_BCAL, locFlightTimePCorrelation))
+			{
+				hddm_r::TflightPCorrelationList correlationList = matches().addTflightPCorrelations(1);
+				correlationList().setTrack(loc_j);
+				correlationList().setSystem(SYS_BCAL);
+				correlationList().setCorrelation(locFlightTimePCorrelation);
+			}
+			if(locDetectorMatches[loc_i]->Get_FlightTimePCorrelation(tracks[loc_j], SYS_FCAL, locFlightTimePCorrelation))
+			{
+				hddm_r::TflightPCorrelationList correlationList = matches().addTflightPCorrelations(1);
+				correlationList().setTrack(loc_j);
+				correlationList().setSystem(SYS_FCAL);
+				correlationList().setCorrelation(locFlightTimePCorrelation);
+			}
+			if(locDetectorMatches[loc_i]->Get_FlightTimePCorrelation(tracks[loc_j], SYS_TOF, locFlightTimePCorrelation))
+			{
+				hddm_r::TflightPCorrelationList correlationList = matches().addTflightPCorrelations(1);
+				correlationList().setTrack(loc_j);
+				correlationList().setSystem(SYS_TOF);
+				correlationList().setCorrelation(locFlightTimePCorrelation);
+			}
+			if(locDetectorMatches[loc_i]->Get_FlightTimePCorrelation(tracks[loc_j], SYS_START, locFlightTimePCorrelation))
+			{
+				hddm_r::TflightPCorrelationList correlationList = matches().addTflightPCorrelations(1);
+				correlationList().setTrack(loc_j);
+				correlationList().setSystem(SYS_START);
+				correlationList().setCorrelation(locFlightTimePCorrelation);
+			}
+		}
+
+		double locDistance = 0.0;
+		for(size_t loc_j = 0; loc_j < bcalshowers.size(); ++loc_j)
+		{
+			if(!locDetectorMatches[loc_i]->Get_DistanceToNearestTrack(bcalshowers[loc_j], locDistance))
+				continue;
+
+			hddm_r::BcalDOCAtoTrackList bcalDocaList = matches().addBcalDOCAtoTracks(1);
+			bcalDocaList().setShower(loc_j);
+			bcalDocaList().setDoca(locDistance);
+		}
+
+		for(size_t loc_j = 0; loc_j < fcalshowers.size(); ++loc_j)
+		{
+			if(!locDetectorMatches[loc_i]->Get_DistanceToNearestTrack(fcalshowers[loc_j], locDistance))
+				continue;
+
+			hddm_r::FcalDOCAtoTrackList fcalDocaList = matches().addFcalDOCAtoTracks(1);
+			fcalDocaList().setShower(loc_j);
+			fcalDocaList().setDoca(locDistance);
+		}
 	}
 
    // write the resulting record to the output stream

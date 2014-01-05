@@ -19,6 +19,7 @@
 #include "TAGGER/DTagger.h"
 #include "FCAL/DFCALShower.h"
 #include "PID/DNeutralShower.h"
+#include <PID/DDetectorMatches.h>
 #include "BCAL/DBCALShower.h"
 #include "TOF/DTOFPoint.h"
 #include "START_COUNTER/DSCHit.h"

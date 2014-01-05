@@ -20,10 +20,7 @@ jerror_t DDetectorMatches_factory_Combo::init(void)
 //------------------
 jerror_t DDetectorMatches_factory_Combo::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
-	vector<const DDetectorMatches*> locDetectorMatches;
-	locEventLoop->Get(locDetectorMatches); //make sure that brun() is called for the default factory!!!
 	dDetectorMatchesFactory = static_cast<DDetectorMatches_factory*>(locEventLoop->GetFactory("DDetectorMatches"));
-
 	return NOERROR;
 }
 
@@ -88,18 +85,15 @@ jerror_t DDetectorMatches_factory_Combo::evnt(jana::JEventLoop* locEventLoop, in
 			locDetectorMatches->Add_Match(locTrackTimeBased, locSCHitMatchParamsVector[loc_j].dSCHit, locSCHitMatchParamsVector[loc_j]);
 
 		//Flight-Time/P Correlations
-		//BCAL
-		double locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locOriginalTrackTimeBased, SYS_BCAL);
-		locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBased, SYS_BCAL, locFlightTimePCorrelation);
-		//FCAL
-		locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locOriginalTrackTimeBased, SYS_FCAL);
-		locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBased, SYS_FCAL, locFlightTimePCorrelation);
-		//TOF
-		locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locOriginalTrackTimeBased, SYS_TOF);
-		locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBased, SYS_TOF, locFlightTimePCorrelation);
-		//SC
-		locFlightTimePCorrelation = locDetectorMatches->Get_FlightTimePCorrelation(locOriginalTrackTimeBased, SYS_START);
-		locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBased, SYS_START, locFlightTimePCorrelation);
+		double locFlightTimePCorrelation = 0.0;
+		if(locDetectorMatches->Get_FlightTimePCorrelation(locOriginalTrackTimeBased, SYS_BCAL, locFlightTimePCorrelation))
+			locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBased, SYS_BCAL, locFlightTimePCorrelation);
+		if(locDetectorMatches->Get_FlightTimePCorrelation(locOriginalTrackTimeBased, SYS_FCAL, locFlightTimePCorrelation))
+			locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBased, SYS_FCAL, locFlightTimePCorrelation);
+		if(locDetectorMatches->Get_FlightTimePCorrelation(locOriginalTrackTimeBased, SYS_TOF, locFlightTimePCorrelation))
+			locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBased, SYS_TOF, locFlightTimePCorrelation);
+		if(locDetectorMatches->Get_FlightTimePCorrelation(locOriginalTrackTimeBased, SYS_START, locFlightTimePCorrelation))
+			locDetectorMatches->Set_FlightTimePCorrelation(locTrackTimeBased, SYS_START, locFlightTimePCorrelation);
 	}
 
 	_data.push_back(locDetectorMatches);

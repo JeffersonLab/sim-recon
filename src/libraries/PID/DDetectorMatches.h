@@ -158,31 +158,34 @@ class DDetectorMatches : public JObject
 			return true;
 		}
 
-		inline double Get_DistanceToNearestTrack(const DBCALShower* locBCALShower) const
+		inline bool Get_DistanceToNearestTrack(const DBCALShower* locBCALShower, double& locDistance) const
 		{
 			map<const DBCALShower*, double >::const_iterator locIterator = dBCALShowerDistanceToNearestTrack.find(locBCALShower);
 			if(locIterator == dBCALShowerDistanceToNearestTrack.end())
-				return numeric_limits<double>::quiet_NaN();
-			return locIterator->second;
+				return false;
+			locDistance = locIterator->second;
+			return true;
 		}
-		inline double Get_DistanceToNearestTrack(const DFCALShower* locFCALShower) const
+		inline bool Get_DistanceToNearestTrack(const DFCALShower* locFCALShower, double& locDistance) const
 		{
 			map<const DFCALShower*, double >::const_iterator locIterator = dFCALShowerDistanceToNearestTrack.find(locFCALShower);
 			if(locIterator == dFCALShowerDistanceToNearestTrack.end())
-				return numeric_limits<double>::quiet_NaN();
-			return locIterator->second;
+				return false;
+			locDistance = locIterator->second;
+			return true;
 		}
 
-		inline double Get_FlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DetectorSystem_t locDetectorSystem) const
+		inline bool Get_FlightTimePCorrelation(const DTrackTimeBased* locTrackTimeBased, DetectorSystem_t locDetectorSystem, double& locCorrelation) const
 		{
 			map<const DTrackTimeBased*, map<DetectorSystem_t, double> >::const_iterator locTrackIterator = dFlightTimePCorrelations.find(locTrackTimeBased);
 			if(locTrackIterator == dFlightTimePCorrelations.end())
-				return 0.0;
+				return false;
 			const map<DetectorSystem_t, double>& locDetectorMap = locTrackIterator->second;
 			map<DetectorSystem_t, double>::const_iterator locDetectorIterator = locDetectorMap.find(locDetectorSystem);
 			if(locDetectorIterator == locDetectorMap.end())
-				return 0.0;
-			return locDetectorIterator->second;
+				return false;
+			locCorrelation = locDetectorIterator->second;
+			return true;
 		}
 
 		//SETTERS:
@@ -248,6 +251,32 @@ class DDetectorMatches : public JObject
 				if(locFCALIterator->second > locImportedDistance)
 					locFCALIterator->second = locImportedDistance;
 			}
+		}
+
+		void toStrings(vector<pair<string,string> > &items) const
+		{
+			map<const DTrackTimeBased*, vector<DShowerMatchParams> >::const_iterator locShowerIterator = dTrackBCALMatchParams.begin();
+			unsigned int locNumTrackMatches = 0;
+			for(; locShowerIterator != dTrackBCALMatchParams.end(); ++locShowerIterator)
+				locNumTrackMatches += locShowerIterator->second.size();
+			AddString(items, "#_Track_BCAL_Matches","%d",locNumTrackMatches);
+
+			locNumTrackMatches = 0;
+			for(locShowerIterator = dTrackFCALMatchParams.begin(); locShowerIterator != dTrackFCALMatchParams.end(); ++locShowerIterator)
+				locNumTrackMatches += locShowerIterator->second.size();
+			AddString(items, "#_Track_FCAL_Matches","%d", locNumTrackMatches);
+
+			map<const DTrackTimeBased*, vector<DTOFHitMatchParams> >::const_iterator locTOFIterator = dTrackTOFMatchParams.begin();
+			locNumTrackMatches = 0;
+			for(; locTOFIterator != dTrackTOFMatchParams.end(); ++locTOFIterator)
+				locNumTrackMatches += locTOFIterator->second.size();
+			AddString(items, "#_Track_TOF_Matches","%d", locNumTrackMatches);
+
+			map<const DTrackTimeBased*, vector<DSCHitMatchParams> >::const_iterator locSCIterator = dTrackSCMatchParams.begin();
+			locNumTrackMatches = 0;
+			for(; locSCIterator != dTrackSCMatchParams.end(); ++locSCIterator)
+				locNumTrackMatches += locSCIterator->second.size();
+			AddString(items, "#_Track_SC_Matches","%d", locNumTrackMatches);
 		}
 
 	private:

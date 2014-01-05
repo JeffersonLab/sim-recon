@@ -21,6 +21,7 @@
 
 #include <PID/DMCReaction.h>
 #include <PID/DBeamPhoton.h>
+#include <PID/DDetectorMatches.h>
 #include <TAGGER/DTagger.h>
 #include "TRACKING/DMCThrown.h"
 #include <TRACKING/DTrackTimeBased.h>
@@ -69,6 +70,8 @@ class DEventSourceREST:public JEventSource
                     JFactory<DTrackTimeBased>* factory);
    jerror_t Extract_DMCTrigger(hddm_r::HDDM *record,
                     JFactory<DMCTrigger>* factory);
+   jerror_t Extract_DDetectorMatches(JEventLoop* locEventLoop, hddm_r::HDDM *record,
+                    JFactory<DDetectorMatches>* factory);
 #if 0
    jerror_t Extract_DRFTime(hddm_r::HDDM *record,
                     JFactory<DRFTime>* factory);
@@ -81,16 +84,6 @@ class DEventSourceREST:public JEventSource
 
    std::ifstream *ifs;		// input hddm file ifstream
    hddm_r::istream *fin;	// provides hddm layer on top of ifstream
-
-   pthread_mutex_t rt_mutex;
-   std::map<hddm_r::HDDM*, std::vector<DReferenceTrajectory*> > rt_by_event;
-   std::list<DReferenceTrajectory*> rt_pool;
-
-   DApplication *dapp;
-   const DMagneticFieldMap *saved_bfield;
-   const DGeometry *saved_geom;
-   int saved_runnumber;	
-   unsigned int max_rt_pool_size;
 };
 
 #endif //_JEVENT_SOURCEREST_H_
