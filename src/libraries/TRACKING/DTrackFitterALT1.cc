@@ -369,13 +369,13 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 #endif
 			// Swim back towards target (note: we may already be past it!)
 			tmprt->SetPLossDirection(DReferenceTrajectory::kBackward);
-			tmprt->Swim(rt->swim_steps->origin, -rt->swim_steps->mom, -rt->q, 100.0, target);
+			tmprt->Swim(rt->swim_steps->origin, -rt->swim_steps->mom, -rt->q,NULL, 100.0, target);
 
 			// Swim swim in farward direction to target (another short swim!)
 			tmprt->SetPLossDirection(DReferenceTrajectory::kForward);
 			vertex_pos = tmprt->swim_steps[tmprt->Nswim_steps-1].origin;
 			vertex_mom = tmprt->swim_steps[tmprt->Nswim_steps-1].mom;
-			tmprt->Swim(vertex_pos, -vertex_mom, rt->q, 100.0, target);
+			tmprt->Swim(vertex_pos, -vertex_mom, rt->q,NULL, 100.0, target);
 			
 	      double locReturnValue = tmprt->DistToRT(target);
     	   if((locReturnValue >= -1.0) || (locReturnValue <= 1.0)){ //else NaN
