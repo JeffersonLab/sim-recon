@@ -396,9 +396,14 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
     // and position
     rt->SetMass(mass);
     rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
+    //rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,
+    //		 0.,370.);
 	
     status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass,candidate->Ndof+3);
-    if (false && status==DTrackFitter::kFitNotDone){
+    if (/*false && */status==DTrackFitter::kFitNotDone){
+      if (DEBUG_LEVEL>1)_DBG_ << "Using hits from candidate..." << endl;
+      fitter->Reset();
+
       // Get the hits from the candidate
       vector<const DFDCPseudo*>myfdchits;
       candidate->GetT(myfdchits);
@@ -437,6 +442,7 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       rt->q = candidate->charge();
       rt->SetMass(track_kd->mass());
       rt->Swim(track->position(), track->momentum(), track->charge());
+      //rt->FastSwim(track->position(), track->momentum(), track->charge());
       
       track->rt = rt;
       track->chisq = fitter->GetChisq();
