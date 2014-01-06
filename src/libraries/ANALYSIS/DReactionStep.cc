@@ -16,12 +16,6 @@ void DReactionStep::Set_InitialParticleID(Particle_t locPID, bool locIsMissingFl
 		abort();
 	}
 
-	if(locPID == Unknown)
-	{
-		cout << "ERROR: CANNOT SET UNKNOWN PID AS INITIAL PARTICLE. ABORTING." << endl;
-		abort();
-	}
-
 	if(locIsMissingFlag)
 	{
 //		dMissingParticleIndex = -2;
