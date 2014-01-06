@@ -26,6 +26,7 @@ class DMagneticFieldMapParameterized:public DMagneticFieldMap{
 		virtual ~DMagneticFieldMapParameterized();
 		void Init(jana::JCalibration *jcalib, string namepath);
 
+		void GetField(const DVector3 &pos,DVector3 &Bout) const;
 		virtual void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const;
 		double GetBz(double x,double y,double z) const;
 		virtual void GetFieldGradient(double x, double y, double z,

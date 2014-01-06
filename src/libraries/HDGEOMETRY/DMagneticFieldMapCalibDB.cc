@@ -596,7 +596,56 @@ void DMagneticFieldMapCalibDB::GetField(double x, double y, double z, double &Bx
 	Bx = Br*cos_theta;
 	By = Br*sin_theta;
 }
+//---------------------------------
+// GetField
+//---------------------------------
+void DMagneticFieldMapCalibDB::GetField(const DVector3 &pos,
+					DVector3 &Bout) const
+{
+	/// This calculates the magnetic field at an arbitrary point
+	/// in space using the field map read from the calibaration
+	/// database. It interpolates between grid points using the
+	/// gradient values calculated in ReadMap (called from the
+	/// constructor).
 
+	if(Ny>1){
+		_DBG_<<"Field map appears to be 3 dimensional. Code is currently"<<endl;
+		_DBG_<<"unable to handle this. Treating as phi symmetric using y=0."<<endl;
+	}
+
+	// Get closest indices for this point
+	double r = pos.Perp();
+	double z = pos.z();
+	int index_x = (int)floor((r-xmin)/dx + 0.5);
+	//if(index_x<0 || index_x>=Nx)return;
+	if (index_x>=Nx) return;
+	else if (index_x<0) index_x=0;
+	int index_z = (int)floor((z-zmin)/dz + 0.5);	
+	if(index_z<0 || index_z>=Nz)return;
+	
+	int index_y = 0;
+
+	const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
+
+	// Fractional distance between map points.
+	double ur = (r - B->x)/dx;
+	double uz = (z - B->z)/dz;
+
+	// Use gradient to project grid point to requested position
+	double Br = B->Bx + B->dBxdx*ur + B->dBxdz*uz;
+	double Bz = B->Bz + B->dBzdx*ur + B->dBzdz*uz;
+
+	// Convert r back to x,y components
+	double cos_theta = pos.x()/r;
+	double sin_theta = pos.y()/r;
+	if(r==0.0){
+		cos_theta=1.0;
+		sin_theta=0.0;
+	}
+
+	// Rotate back into phi direction
+	Bout.SetXYZ(Br*cos_theta,Br*sin_theta,Bz);
+}
 
 // Get the z-component of the magnetic field
 double DMagneticFieldMapCalibDB::GetBz(double x, double y, double z) const{

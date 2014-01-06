@@ -632,7 +632,27 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<D
       w->origin.SetX(r_z[0]*cos(phi));
       w->origin.SetY(r_z[0]*sin(phi));    
     }
+
+    double offset_x_d=0.1*sin(0.1*double(i+ring));
+    double offset_x_u=0.1*sin(0.2*double(i+ring));
+    double offset_y_d=0.1*cos(0.1*double(i+ring));
+    double offset_y_u=0.1*cos(0.2*double(i+ring));
+
+    
+    offset_x_d=((i%2)?(-1.):1.)*0.02;
+    offset_x_u=((i%2)?(-1.):1.)*-0.01;
+    offset_y_d=((i%2)?(-1.):1.)*0.01;
+    offset_y_u=((i%2)?(-1.):1.)*-0.02;
+
+
+
+
+    DVector3 offset(0.5*(offset_x_d+offset_x_u),0.5*(offset_y_d+offset_y_u),0.);
+
+
    
+    //w->origin+=offset;
+
     // Here, we need to define a coordinate system for the wire
     // in which the wire runs along one axis. We call the directions
     // of the axes in this coordinate system s,t, and u with
@@ -651,6 +671,13 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<D
       w->udir.RotateX(stereo);	
       w->udir.RotateZ(phi);     
     }
+
+    double uz=w->udir.z();
+    double ux=w->udir.x()/uz+(offset_x_d-offset_x_u)/150.;
+    double uy=w->udir.y()/uz+(offset_y_d-offset_y_u)/150.;
+    double scale=1./sqrt(ux*ux+uy*uy+1.);
+    //w->udir.SetXYZ(scale*ux,scale*uy,scale);
+    
 
     stereowires.push_back(w);
   }
@@ -691,6 +718,24 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires
     w->phi=phi;
     w->stereo=0.;
 
+    double offset_x_d=0.1*sin(0.1*double(i+ring));
+    double offset_x_u=0.1*sin(0.2*double(i+ring));
+    double offset_y_d=0.1*cos(0.1*double(i+ring));
+    double offset_y_u=0.1*cos(0.2*double(i+ring));
+ 
+    offset_x_d=((i%2)?(-1.):1.)*0.02;
+    offset_x_u=((i%2)?(-1.):1.)*-0.01;
+    offset_y_d=((i%2)?(-1.):1.)*0.01;
+    offset_y_u=((i%2)?(-1.):1.)*-0.02;
+
+
+
+
+    DVector3 offset(0.5*(offset_x_d+offset_x_u),0.5*(offset_y_d+offset_y_u),0.);
+
+    //w->origin+=offset;
+
+
     // Here, we need to define a coordinate system for the wire
     // in which the wire runs along one axis. We call the directions
     // of the axes in this coordinate system s,t, and u with
@@ -700,6 +745,12 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires
     w->udir.SetXYZ(0.0, 0.0,1.0);	
     w->udir.RotateZ(phi);
 
+    double uz=w->udir.z();
+    double ux=w->udir.x()/uz+(offset_x_d-offset_x_u)/150.;
+    double uy=w->udir.y()/uz+(offset_y_d-offset_y_u)/150.;
+    double scale=1./sqrt(ux*ux+uy*uy+1.);
+    //w->udir.SetXYZ(scale*ux,scale*uy,scale);
+    
     axialwires.push_back(w);
   }
 
@@ -829,17 +880,36 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
   if(!GetFDCStereo(stereo_angles)) return false;
 
   for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
-    double angle=-stereo_angles[layer-1]*M_PI/180.;
+    double pl=double(layer);
+    double offset_z_left=0.1*sin(0.1*pl);
+    double offset_z_right=-0.1*sin(0.2*pl);
+    double offset_z_top=0.1*cos(0.1*pl);
+    double offset_z_bottom=-0.1*cos(0.2*pl);
+    double offset_z=0.25*(offset_z_left+offset_z_right+offset_z_top+offset_z_bottom);
+
+    double offset_phi=-0.01*cos(0.6*pl)+0.005*sin(0.3*pl);
+    //offset_phi=0.;
+
+    double delta_u=0.1*sin(0.3*pl)+0.05*sin(0.6*pl);
+
+    double angle=-stereo_angles[layer-1]*M_PI/180.+offset_phi;
     vector<DFDCWire *>temp;
     for(int wire=1; wire<=WIRES_PER_PLANE; wire++){
       
+    
+
+      //offset_x=0.;
+      //offset_y=0.;
+      offset_z=0.;
+      //   offset_phi=0.
+
       DFDCWire *w = new DFDCWire;
       w->layer = layer;
       w->wire = wire;
       w->angle = angle;
 
       // find coordinates of center of wire in rotated system
-      float u = U_OF_WIRE_ZERO + WIRE_SPACING*(float)(wire-1);
+      float u=w->u = U_OF_WIRE_ZERO + WIRE_SPACING*(float)(wire-1)+delta_u;
       
       // Rotate coordinates into lab system and set the wire's origin
       // Note that the FDC measures "angle" such that angle=0
@@ -847,7 +917,7 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
       // (i.e. at phi=90 degrees).
       float x = u*sin(angle + M_PI/2.0);
       float y = u*cos(angle + M_PI/2.0);
-      w->origin.SetXYZ(x,y,z_wires[layer-1]);
+      w->origin.SetXYZ(x,y,z_wires[layer-1]+offset_z);
 
       // Length of wire is set by active radius
       w->L = 2.0*sqrt(pow(FDC_ACTIVE_RADIUS,2.0) - u*u);

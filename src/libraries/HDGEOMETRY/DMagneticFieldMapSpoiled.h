@@ -24,6 +24,7 @@ class DMagneticFieldMapSpoiled:public DMagneticFieldMap{
 		DMagneticFieldMapSpoiled(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1500");
 		virtual ~DMagneticFieldMapSpoiled();
 
+		void GetField(const DVector3 &pos,DVector3 &Bout) const;
 		void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const;
 		
 		double GetBz(double x,double y, double z) const;

@@ -119,6 +119,31 @@ void DMagneticFieldMapConst::GetField(double x, double y, double z, double &Bx, 
 	Bz = this->Bz;
 }
 
+//---------------------------------
+// GetField
+//---------------------------------
+void DMagneticFieldMapConst::GetField(const DVector3 &pos,
+				      DVector3 &Bout) const
+{
+	/// This calculates the magnetic field at an arbitrary point
+	/// in space using the constat field map parameters read from the calibaration
+	/// database.
+
+	if(Br!=0.0){
+	  double r = pos.Perp();
+	  double x= pos.x();
+	  double y= pos.y();
+	  double cos_phi = x/r;
+	  double sin_phi = y/r;
+	  if(r==0.0){
+	    cos_phi=1.0;
+			sin_phi=0.0;
+	  }
+	  Bout.SetXYZ(Br*cos_phi,Br*sin_phi,this->Bz);
+	}else{
+	  Bout.SetXYZ(0.0,0.0,this->Bz);
+	}
+}
 
 
 void DMagneticFieldMapConst::GetFieldBicubic(double x,double y,double z,

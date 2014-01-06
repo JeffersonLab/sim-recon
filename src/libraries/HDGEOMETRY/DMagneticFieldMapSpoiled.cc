@@ -73,6 +73,12 @@ void DMagneticFieldMapSpoiled::Init(void)
 	initialized=true;
 }
 
+void DMagneticFieldMapSpoiled::GetField(const DVector3 &pos,DVector3 &Bout) const{
+  double Bx,By,Bz;
+  GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
+  Bout.SetXYZ(Bx,By,Bz);
+}
+
 //---------------------------------
 // GetField
 //---------------------------------

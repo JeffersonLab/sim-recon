@@ -699,6 +699,77 @@ void DMagneticFieldMapFineMesh::GetField(double x, double y, double z, double &B
 	By = Br*sin_theta;
 }
 
+//---------------------------------
+// GetField
+//---------------------------------
+void DMagneticFieldMapFineMesh::GetField(const DVector3 &pos,DVector3 &Bout) const
+{
+	/// This calculates the magnetic field at an arbitrary point
+	/// in space using the field map read from the calibaration
+	/// database. It interpolates between grid points using the
+	/// gradient values calculated in ReadMap (called from the
+	/// constructor).
+  
+  double Bz=0.,Br=0.0;
+
+	if(Ny>1){
+		_DBG_<<"Field map appears to be 3 dimensional. Code is currently"<<endl;
+		_DBG_<<"unable to handle this. Treating as phi symmetric using y=0."<<endl;
+	}
+
+	// radial position and angles
+	double r = pos.Perp();
+	double z = pos.z();
+	if (r>xmax || z>zmax || z<zmin){
+	  return;
+	}
+
+	double cos_theta = pos.x()/r;
+	double sin_theta = pos.y()/r;
+	if(r==0.0){
+		cos_theta=1.0;
+		sin_theta=0.0;
+	}
+
+	// If the point (x,y,z) is outside the fine-mesh grid, interpolate 
+	// on the coarse grid
+	if (z<zminFine || z>=zmaxFine || r>=rmaxFine){
+	  // Get closest indices for this point
+	  int index_x = static_cast<int>(r*one_over_dx);
+	  //if(index_x<0 || index_x>=Nx)return;
+	  if (index_x>=Nx) return;
+       
+	  int index_z = static_cast<int>((z-zmin)*one_over_dz);	
+	  if(index_z<0 || index_z>=Nz)return;
+	  
+	  int index_y = 0;
+	  
+	  const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
+	  
+	  // Fractional distance between map points.
+	  double ur = (r - B->x)*one_over_dx;
+	  double uz = (z - B->z)*one_over_dz;
+	  
+	  // Use gradient to project grid point to requested position
+	  Br = B->Bx+B->dBxdx*ur+B->dBxdz*uz;
+	  Bz = B->Bz+B->dBzdx*ur+B->dBzdz*uz;
+	}
+        else{ // otherwise do a simple lookup in the fine-mesh table
+	  unsigned int indr=static_cast<unsigned int>(r*rscale);
+	  unsigned int indz=static_cast<unsigned int>((z-zminFine)*zscale);
+	  const DBfieldCylindrical_t *field=&mBfine[indr][indz];
+
+	  Bz=field->Bz;
+	  Br=field->Br;
+	  //	  printf("Bz Br %f %f\n",Bz,Br);
+	}
+
+	// Rotate back into phi direction
+	Bout.SetXYZ(Br*cos_theta,Br*sin_theta,Bz);
+}
+
+
+
 
 // Get the z-component of the magnetic field
 double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
