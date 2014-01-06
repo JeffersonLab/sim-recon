@@ -153,10 +153,45 @@ void DMagneticFieldStepper::CalcDirs(double *Bvals)
 int grkuta_(double *CHARGE, double *STEP, double *VECT, double *VOUT,const DMagneticFieldMap *bfield);
 //}
 
+
+// Alternate stepper that does not use the 4th order Runge-Kutta method but a simpler 
+// calculation that depends on a single itermediate step.  Assumes that the magnetic field
+// is constant over the full step. Only looks up the magnetic field once.
+double DMagneticFieldStepper::FastStep(const DVector3 &B,double stepsize){  
+  if(stepsize==0.0)stepsize = this->stepsize;  
+
+  // Current position and momentum
+  double x=pos.x(),y=pos.y(),z=pos.z();
+  double px=mom.x(),py=mom.y(),pz=mom.z();
+  double p=mom.Mag();
+  
+  // Compute convenience terms involving Bx, By, Bz
+  double k_q=0.003*q;
+  double ds_over_p=stepsize/p;
+  double factor=k_q*(0.25*ds_over_p);
+  double Bx=B.x(),By=B.y(),Bz=B.z();
+  double Ax=factor*Bx,Ay=factor*By,Az=factor*Bz;
+  double Ax2=Ax*Ax,Ay2=Ay*Ay,Az2=Az*Az;
+  double AxAy=Ax*Ay,AxAz=Ax*Az,AyAz=Ay*Az;
+  double one_plus_Ax2=1.+Ax2;
+  double scale=ds_over_p/(one_plus_Ax2+Ay2+Az2);
+  
+  // Compute position increments
+  double dx=scale*(px*one_plus_Ax2+py*(AxAy+Az)+pz*(AxAz-Ay));
+  double dy=scale*(px*(AxAy-Az)+py*(1.+Ay2)+pz*(AyAz+Ax));
+  double dz=scale*(px*(AxAz+Ay)+py*(AyAz-Ax)+pz*(1.+Az2));
+
+  pos.SetXYZ(x+dx,y+dy,z+dz);
+  mom.SetXYZ(px+k_q*(Bz*dy-By*dz),py+k_q*(Bx*dz-Bz*dx),
+	     pz+k_q*(By*dx-Bx*dy));
+
+  return stepsize;
+}
+
 //-----------------------
 // Step
 //-----------------------
-double DMagneticFieldStepper::Step(DVector3 *newpos, double stepsize)
+double DMagneticFieldStepper::Step(DVector3 *newpos, DVector3 *B,double stepsize)
 {
 	double VECT[7], VOUT[7+3]; // modified grkuta so VOUT has B-field returned as additional 3 elements of array
 	VECT[0] = pos.x();
@@ -166,7 +201,7 @@ double DMagneticFieldStepper::Step(DVector3 *newpos, double stepsize)
 	VECT[3] = mom.x()/VECT[6];
 	VECT[4] = mom.y()/VECT[6];
 	VECT[5] = mom.z()/VECT[6];
-	if(stepsize==0.0)stepsize = this->stepsize;
+	if(stepsize==0.0)stepsize = this->stepsize;  
 	double &STEP = stepsize;
 	double &CHARGE = q;
 
@@ -180,6 +215,9 @@ double DMagneticFieldStepper::Step(DVector3 *newpos, double stepsize)
 	CalcDirs(&VOUT[7]); // Argument is pointer to array of doubles holding Bx, By, Bz
 	//CalcDirs();
 
+	if (B){
+	  B->SetXYZ(VOUT[7],VOUT[8],VOUT[9]);
+	}
 	if(newpos)*newpos = pos;
 
 	return STEP;
