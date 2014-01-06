@@ -57,9 +57,12 @@ class DReferenceTrajectory{
 			public:
 				DVector3 mom;
 				double Ro;
+				DVector3 B; // components of magnetic field
 				double s; // distance along RT
 				double t; // flight time
-				
+				double cov_t_t; //flight time variance
+				double cov_px_t,cov_py_t,cov_pz_t; // correlations
+			
 				// The following are used to calculate the covariance matrix for MULS
 				double itheta02;		// running sum of MULS angle theta_0 squared
 				double itheta02s;		// ditto but times s
@@ -92,7 +95,9 @@ class DReferenceTrajectory{
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr=NULL) const;
 		swim_step_t* FindClosestSwimStep(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
 		swim_step_t* FindPlaneCrossing(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
-		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0, const DCoordinateSystem *wire=NULL);
+		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0,const DMatrixDSym *cov=NULL, double smax=2000.0, const DCoordinateSystem *wire=NULL);
+		void FastSwim(const DVector3 &pos, const DVector3 &mom, double q,double smax=2000.0, double zmin=-100.,double zmax=1000.0);
+
 
 		void FastSwim(const DVector3 &pos, const DVector3 &mom, 
 			      DVector3 &last_pos, DVector3 &last_mom,
@@ -153,7 +158,7 @@ class DReferenceTrajectory{
 					 DVector3 &pos, double &doca, double &var_doca) const;
 		jerror_t PropagateCovariance(double ds,double q,
 					     double mass_sq,const DVector3 &mom,
-					     const DVector3 &pos,
+					     const DVector3 &pos,const DVector3 &B,
 					     DMatrixDSym &C) const;
 		
 

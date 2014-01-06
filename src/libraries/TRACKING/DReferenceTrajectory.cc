@@ -57,7 +57,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	
 	// Initialize some values from configuration parameters
 	BOUNDARY_STEP_FRACTION = 0.80;
-	MIN_STEP_SIZE = 0.05;	// cm
+	MIN_STEP_SIZE = 0.1;	// cm
 	MAX_STEP_SIZE = 3.0;		// cm
 	int MAX_SWIM_STEPS = 10000;
 	
@@ -290,10 +290,172 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom,
   }  
 }
 
+// Faster version of the swimmer that uses an alternate stepper and does not
+// check for material boundaries.
+void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, double q,double smax, double zmin,double zmax){
+  
+  /// (Re)Swim the trajectory starting from pos with momentum mom.
+  /// This will use the charge and step size (if given) passed to
+  /// the constructor when the object was created. It will also
+  /// (re)use the swim_step buffer, replacing it's contents.
+  
+  // If the charged passed to us is greater that 10, it means use the charge
+  // already stored in the class. Otherwise, use what was passed to us.
+  if(fabs(q)>10)
+    q = this->q;
+  else
+    this->q = q;
+  
+  DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
+  if(step_size>0.0)stepper.SetStepSize(step_size);
+
+  // Step until we hit a boundary (don't track more than 20 meters)
+  swim_step_t *swim_step = this->swim_steps;
+  double t=0.;
+  Nswim_steps = 0;
+  double itheta02 = 0.0;
+  double itheta02s = 0.0;
+  double itheta02s2 = 0.0;
+  double X0sum=0.0;
+  swim_step_t *last_step=NULL;
+  double old_radius=10000.;
+	
+  for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
+       
+    if(Nswim_steps>=this->max_swim_steps){
+      jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
+      break;
+    }
+    
+    stepper.GetDirs(swim_step->sdir, swim_step->tdir, swim_step->udir);
+    stepper.GetPosMom(swim_step->origin, swim_step->mom);
+    swim_step->Ro = stepper.GetRo();
+    swim_step->s = s;
+    swim_step->t = t;
+    
+    // Magnetic field at current position
+    bfield->GetField(swim_step->origin,swim_step->B);
+
+    //magnitude of momentum and beta
+    double p_sq=swim_step->mom.Mag2();
+    double one_over_beta_sq=1.+mass_sq/p_sq;
+
+    // Add material if geom or RootGeom is not NULL
+    // If both are non-NULL, then use RootGeom
+    double dP = 0.0;
+    double dP_dx=0.0;
+    if(RootGeom || geom){
+      double KrhoZ_overA=0.0;
+      double rhoZ_overA=0.0;
+      double LogI=0.0;
+      double X0=0.0;
+      jerror_t err;
+      if(RootGeom){
+	double rhoZ_overA,rhoZ_overA_logI;
+	err = RootGeom->FindMatLL(swim_step->origin,
+				  rhoZ_overA, 
+				  rhoZ_overA_logI, 
+				  X0);
+	KrhoZ_overA=0.1535e-3*rhoZ_overA;
+	LogI=rhoZ_overA_logI/rhoZ_overA;
+      }else{
+	err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0);
+      }
+      if(err == NOERROR){
+	if(X0>0.0){
+	  double p=sqrt(p_sq);
+	  double delta_s = s;
+	  if(last_step)delta_s -= last_step->s;
+	  double radlen = delta_s/X0;
+	  
+	  if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
+			      
+	    //  double theta0 = 0.0136*sqrt(one_over_beta_sq)/p*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
+	    //double theta02 = theta0*theta0;
+	    double factor=1.0+0.038*log(radlen);
+	    double theta02=1.8496e-4*factor*factor*radlen*one_over_beta_sq/p_sq;
+			      
+	    itheta02 += theta02;
+	    itheta02s += s*theta02;
+	    itheta02s2 += s*s*theta02;
+	    X0sum+=X0;
+	  }
+	  
+	  // Calculate momentum loss due to ionization
+	  dP_dx = dPdx(p, KrhoZ_overA, rhoZ_overA,LogI);
+	}
+      }
+      last_step = swim_step;
+    }
+    swim_step->itheta02 = itheta02;
+    swim_step->itheta02s = itheta02s;
+    swim_step->itheta02s2 = itheta02s2;
+    swim_step->invX0=Nswim_steps/X0sum;
+    
+    if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
+      // Adjust step size to take smaller steps in regions of high momentum loss
+      double my_step_size = 0.0001/fabs(dP_dx);
+      if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
+      if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
+      
+      stepper.SetStepSize(my_step_size);
+    }
+
+    // Swim to next
+    double ds=stepper.FastStep(swim_step->B);
+  
+    // Calculate momentum loss due to the step we're about to take
+    dP = ds*dP_dx;
+  
+    // Adjust momentum due to ionization losses
+    if(dP!=0.0){
+      DVector3 pos, mom;
+      stepper.GetPosMom(pos, mom);
+      double ptot = mom.Mag() - dP; // correct for energy loss
+      if (ptot<0) {Nswim_steps++; break;}
+      mom.SetMag(ptot);
+      stepper.SetStartingParams(q, &pos, &mom);
+    }
+		
+    // update flight time
+    t+=ds*sqrt(one_over_beta_sq)/SPEED_OF_LIGHT;
+    s += ds;
+  
+    // Exit the loop if we are already inside the volume of the BCAL
+    // and the radius is decreasing
+    double R=swim_step->origin.Perp();
+    double z=swim_step->origin.Z();
+    if (R<old_radius && R>65.0 && z<407.0 && z>-100.0){
+      Nswim_steps++; break;
+    }
+			
+    // Exit loop if we leave the tracking volume
+    if (z>zmax){Nswim_steps++; break;} 
+    if(R>88.0 && z<407.0){Nswim_steps++; break;} // ran into BCAL
+    if (fabs(swim_step->origin.X())>129.  
+	|| fabs(swim_step->origin.Y())>129.)
+      {Nswim_steps++; break;} // left extent of TOF 
+    if(z>670.0){Nswim_steps++; break;} // ran into FCAL
+    if(z<zmin){Nswim_steps++; break;} // exit upstream
+    
+    old_radius=swim_step->origin.Perp();
+  }
+  
+  // OK. At this point the positions of the trajectory in the lab
+  // frame have been recorded along with the momentum of the
+  // particle and the directions of reference trajectory
+  // coordinate system at each point.
+}
+
+
+
+
+
+
 //---------------------------------
 // Swim
 //---------------------------------
-void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, double smax, const DCoordinateSystem *wire)
+void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, const DMatrixDSym *cov,double smax, const DCoordinateSystem *wire)
 {
         /// (Re)Swim the trajectory starting from pos with momentum mom.
 	/// This will use the charge and step size (if given) passed to
@@ -321,6 +483,11 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	swim_step_t *last_step=NULL;
 	double old_radius=10000.;
 	
+	DMatrixDSym mycov(7);
+	if (cov!=NULL){
+	  mycov=*cov;
+	}
+
 	// Reset flag indicating whether we hit the CDC endplate
 	// and get the parameters of the endplate so we can check
 	// if we hit it while swimming.
@@ -423,7 +590,10 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			      itheta02s += s*theta02;
 			      itheta02s2 += s*s*theta02;
 			      X0sum+=X0;
-			      
+			     
+			      if (cov){
+				
+			      }
 			    }
 
 			    // Calculate momentum loss due to ionization
@@ -460,9 +630,11 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			// distance since it's only an estimate. Note that even though this would lead
 			// to infinitely small steps, there is a minimum step size imposed below to
 			// ensure the step size is reasonable.
+			/*
 			double step_size_to_boundary = BOUNDARY_STEP_FRACTION*s_to_boundary;
 			if(step_size_to_boundary < my_step_size)my_step_size = step_size_to_boundary;
-			
+			*/
+
 			if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
 			if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
 
@@ -470,7 +642,14 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		}
 
 		// Swim to next
-		double ds=stepper.Step(NULL);
+		double ds=stepper.Step(NULL,&swim_step->B);
+		if (cov){
+		  PropagateCovariance(ds,q,mass_sq,mom,pos,swim_step->B,mycov);
+		  swim_step->cov_t_t=mycov(6,6);
+		  swim_step->cov_px_t=mycov(6,0);
+		  swim_step->cov_py_t=mycov(6,1);
+		  swim_step->cov_pz_t=mycov(6,2);
+		}
 
 		// Calculate momentum loss due to the step we're about to take
 		dP = ds*dP_dx;
@@ -826,7 +1005,7 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 	DReferenceTrajectory::swim_step_t *steps = steps_aptr->steps;
 	DReferenceTrajectory rt(bfield , my_q , steps , 256);
 	rt.SetStepSize(step_size);
-	rt.Swim(pos, mom, my_q, fabs(delta_s));
+	rt.Swim(pos, mom, my_q,NULL,fabs(delta_s));
 	if(rt.Nswim_steps==0)return 1;
 
 	// Check that there is enough space to add these points
@@ -2054,6 +2233,7 @@ jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
 						   double mass_sq,
 						   const DVector3 &mom,
 						   const DVector3 &pos,
+						   const DVector3 &B,
 						   DMatrixDSym &C) const{
   DMatrix J(7,7);
 
@@ -2062,8 +2242,7 @@ jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
   double px=mom.X();
   double py=mom.Y();
   double pz=mom.Z();
-  double Bx,By,Bz;
-  this->bfield->GetField(pos.x(),pos.y(),pos.z(),Bx,By,Bz);
+  double Bx=B.x(),By=B.y(),Bz=B.z();
 
   double ds_over_p=ds*one_over_p;
   double factor=0.003*q*ds_over_p;
@@ -2097,7 +2276,7 @@ jerror_t DReferenceTrajectory::PropagateCovariance(double ds,double q,
   J(5,0)=J(3,2);
   J(5,1)=J(4,2);
   J(5,2)=ds_over_p*(1-pz*pz*one_over_p_sq);
-
+  
   J(6,6)=1.;
   
   double fac2=(-ds/SPEED_OF_LIGHT)*mass_sq*one_over_p_sq*one_over_p_sq
@@ -2159,7 +2338,8 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 
 	int inew=0;
 	while (inew<100){
-	  double ds=stepper.Step(&pos,-0.5);
+	  DVector3 B;
+	  double ds=stepper.Step(&pos,&B,-0.5);
 	  // Compute the revised estimate for the doca
 	  diff=pos-point;
 	  new_doca=diff.Mag();
@@ -2167,8 +2347,9 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
 	  if(new_doca > doca) break;	
 
 	  // Propagate the covariance matrix of the track along the trajectory
-     if(track_kd!=NULL)
-	    this->PropagateCovariance(ds,q,mass_sq,mom,oldpos,cov);
+	  if(track_kd!=NULL){
+	    this->PropagateCovariance(ds,q,mass_sq,mom,oldpos,B,cov);
+	  }
 	  
 	  // Store the current positions, doca and adjust flight times
 	  oldpos=pos;
@@ -2239,7 +2420,7 @@ jerror_t DReferenceTrajectory::FindPOCAtoLine(const DVector3 &origin,
     }
 
     // Propagate the covariance matrix of the track along the trajectory
-    this->PropagateCovariance(this->swim_steps[i+1].s-swim_step->s,q,mass_sq,swim_step->mom,swim_step->origin,cov);
+    this->PropagateCovariance(this->swim_steps[i+1].s-swim_step->s,q,mass_sq,swim_step->mom,swim_step->origin,swim_step->B,cov);
 
     // Store the current position and doca
     oldpos=pos;
@@ -2328,42 +2509,43 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 				int inew=0;
 				while (inew<100)
 				{
-					double ds1=stepper1.Step(&pos1,-0.5);
-					double ds2=stepper2.Step(&pos2,-0.5);
+				  DVector3 B1,B2;
+				  double ds1=stepper1.Step(&pos1,&B1,-0.5);
+				  double ds2=stepper2.Step(&pos2,&B2,-0.5);
 	  
-					// Compute the revised estimate for the doca
-					diff=pos1-pos2;
-					new_doca=diff.Mag();
+				  // Compute the revised estimate for the doca
+				  diff=pos1-pos2;
+				  new_doca=diff.Mag();
+				  
+				  if(new_doca > doca)
+				    break;
+				  
+				  // Propagate the covariance matrices along the trajectories
+				  if((track1_kd != NULL) && (track2_kd != NULL))
+				    {
+				      this->PropagateCovariance(ds1,q1,mass_sq1,mom1,oldpos1,B1,cov1);
+				      rt2->PropagateCovariance(ds2,q2,mass_sq2,mom2,oldpos2,B2,cov2);
+				    }
+				  
+				  // Store the current positions, doca and adjust flight times
+				  oldpos1=pos1;
+				  oldpos2=pos2;
+				  doca=new_doca;
+				  
+				  double one_over_p1_sq=1./mom1.Mag2();
+				  tflight1+=ds1*sqrt(1.+mass_sq1*one_over_p1_sq)/SPEED_OF_LIGHT;
+				  
+				  double one_over_p2_sq=1./mom2.Mag2();
+				  tflight2+=ds2*sqrt(1.+mass_sq2*one_over_p2_sq)/SPEED_OF_LIGHT;
 
-					if(new_doca > doca)
-						break;
-	  
-					// Propagate the covariance matrices along the trajectories
-					if((track1_kd != NULL) && (track2_kd != NULL))
-					{
-						this->PropagateCovariance(ds1,q1,mass_sq1,mom1,oldpos1,cov1);
-						rt2->PropagateCovariance(ds2,q2,mass_sq2,mom2,oldpos2,cov2);
-					}
-
-					// Store the current positions, doca and adjust flight times
-					oldpos1=pos1;
-					oldpos2=pos2;
-					doca=new_doca;
-
-					double one_over_p1_sq=1./mom1.Mag2();
-					tflight1+=ds1*sqrt(1.+mass_sq1*one_over_p1_sq)/SPEED_OF_LIGHT;
-
-					double one_over_p2_sq=1./mom2.Mag2();
-					tflight2+=ds2*sqrt(1.+mass_sq2*one_over_p2_sq)/SPEED_OF_LIGHT;
-
-					// New momenta
-					stepper1.GetMomentum(mom1);
-					stepper2.GetMomentum(mom2);
-
-					oldmom1=/*(-1.)*/mom1;
-					oldmom2=/*(-1.)*/mom2;
-
-					inew++;
+				  // New momenta
+				  stepper1.GetMomentum(mom1);
+				  stepper2.GetMomentum(mom2);
+				  
+				  oldmom1=/*(-1.)*/mom1;
+				  oldmom2=/*(-1.)*/mom2;
+				  
+				  inew++;
 				}
 			}
 
@@ -2406,8 +2588,8 @@ jerror_t DReferenceTrajectory::IntersectTracks(const DReferenceTrajectory *rt2, 
 		// Propagate the covariance matrices along the trajectories
 		if((track1_kd != NULL) && (track2_kd != NULL))
 		{
-			this->PropagateCovariance(this->swim_steps[i+1].s-swim_step1->s,q1,mass_sq1,swim_step1->mom,swim_step1->origin,cov1);
-			rt2->PropagateCovariance(rt2->swim_steps[i+1].s-swim_step2->s,q2,mass_sq2,swim_step2->mom,swim_step2->origin,cov2);
+		  this->PropagateCovariance(this->swim_steps[i+1].s-swim_step1->s,q1,mass_sq1,swim_step1->mom,swim_step1->origin,swim_step1->B,cov1);
+		  rt2->PropagateCovariance(rt2->swim_steps[i+1].s-swim_step2->s,q2,mass_sq2,swim_step2->mom,swim_step2->origin,swim_step2->B,cov2);
 		}
    
 		// Store the current positions and doca
