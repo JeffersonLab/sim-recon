@@ -265,6 +265,7 @@ C..geant..
 *
 *             Open the input stream
 *
+      nevent = 0
       if (infile(1) .gt. 0) then
         ifail = openInput(infile)
         if (ifail .ne. 0) then
