@@ -6,6 +6,7 @@
 #include <vector>
 #include <cassert>
 #include <cstdlib>
+#include <unistd.h>
 
 #include "IUAmpTools/FitResults.h"
 
