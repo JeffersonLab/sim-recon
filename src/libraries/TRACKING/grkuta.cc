@@ -182,12 +182,12 @@ struct Namelist {
 	};
 typedef struct Namelist Namelist;
 
-//#define abs(x) ((x) >= 0 ? (x) : -(x))
-#define dabs(x) (doublereal)abs(x)
+#define loc_abs(x) ((x) >= 0 ? (x) : -(x))
+#define dabs(x) (doublereal)loc_abs(x)
 //#define min(a,b) ((a) <= (b) ? (a) : (b))
 //#define max(a,b) ((a) >= (b) ? (a) : (b))
-#define dmin(a,b) (doublereal)min(a,b)
-#define dmax(a,b) (doublereal)max(a,b)
+//#define dmin(a,b) (doublereal)min(a,b)
+//#define dmax(a,b) (doublereal)max(a,b)
 #define bit_test(a,b)	((a) >> (b) & 1)
 #define bit_clear(a,b)	((a) & ~((uinteger)1 << (b)))
 #define bit_set(a,b)	((a) |  ((uinteger)1 << (b)))
@@ -346,7 +346,7 @@ extern "C" {double sqrt(double), sin(double);}
 
 L20:
     rest = *step - tl;
-    if (abs(h__) > abs(rest)) {
+    if (loc_abs(h__) > loc_abs(rest)) {
 	h__ = rest;
     }
     //gufld_(&vout[1], f);
@@ -388,7 +388,7 @@ L20:
 
 /*              Second intermediate point */
 
-    est = abs(dxt) + abs(dyt) + abs(dzt);
+    est = loc_abs(dxt) + loc_abs(dyt) + loc_abs(dzt);
     if (est > h__) {
 	goto L30;
     }
@@ -417,8 +417,8 @@ L20:
     bt = b + secys[2] * 2.;
     ct = c__ + seczs[2] * 2.;
 
-    est = abs(dxt) + abs(dyt) + abs(dzt);
-    if (est > abs(h__) * 2.f) {
+    est = loc_abs(dxt) + loc_abs(dyt) + loc_abs(dzt);
+    if (est > loc_abs(h__) * 2.f) {
 	goto L30;
     }
     //gufld_(xyzt, f);
@@ -439,11 +439,11 @@ L20:
     c__ += (seczs[0] + seczs[3] + (seczs[1] + seczs[2]) * 2.) * 
 	    .33333333333333331;
 
-    est = (d__1 = secxs[0] + secxs[3] - (secxs[1] + secxs[2]), abs(d__1)) + (
-	    d__2 = secys[0] + secys[3] - (secys[1] + secys[2]), abs(d__2)) + (
-	    d__3 = seczs[0] + seczs[3] - (seczs[1] + seczs[2]), abs(d__3));
+    est = (d__1 = secxs[0] + secxs[3] - (secxs[1] + secxs[2]), loc_abs(d__1)) + (
+	    d__2 = secys[0] + secys[3] - (secys[1] + secys[2]), loc_abs(d__2)) + (
+	    d__3 = seczs[0] + seczs[3] - (seczs[1] + seczs[2]), loc_abs(d__3));
 
-    if (est > 1e-4 && abs(h__) > 1e-4f) {
+    if (est > 1e-4 && loc_abs(h__) > 1e-4f) {
 	goto L30;
     }
     ++iter;
