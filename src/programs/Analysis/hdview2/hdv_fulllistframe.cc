@@ -17,9 +17,6 @@ using namespace std;
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include <PID/DNeutralParticle.h>
-#include <PID/DParticleSet.h>
-#include <PID/DPhysicsEvent.h>
-#include <PID/DTwoGammaFit.h>
 #include <TRACKING/DTrackTimeBased.h>
 #include <TRACKING/DTrackWireBased.h>
 #include <TRACKING/DMCThrown.h>
@@ -266,7 +263,6 @@ _DBG_<<"Adding row:"<<row<<endl;
 		// Get chisq and Ndof for DTrackTimeBased or DTrackWireBased objects
 		const DTrackTimeBased *timetrack=dynamic_cast<const DTrackTimeBased*>(trk);
 		const DTrackWireBased *track=dynamic_cast<const DTrackWireBased*>(trk);	
-		const DTwoGammaFit *twogammafit=dynamic_cast<const DTwoGammaFit*>(trk);	
 	
 		if(timetrack){
 			chisq_per_dof<<setprecision(4)<<timetrack->chisq/timetrack->Ndof;
@@ -276,10 +272,6 @@ _DBG_<<"Adding row:"<<row<<endl;
 			chisq_per_dof<<setprecision(4)<<track->chisq/track->Ndof;
 			Ndof<<track->Ndof;
 			fom << "N/A";
-		}else if(twogammafit){
-			chisq_per_dof<<setprecision(4)<<twogammafit->getChi2();
-			Ndof<<twogammafit->getNdf();
-			fom << twogammafit->getProb();
 		}else{
 			chisq_per_dof<<"N/A";
 			Ndof<<"N/A";

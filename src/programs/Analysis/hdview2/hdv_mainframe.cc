@@ -18,8 +18,6 @@ using namespace std;
 #include "FCAL/DFCALGeometry.h"
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
-#include <PID/DParticleSet.h>
-#include <PID/DPhysicsEvent.h>
 #include <PID/DNeutralParticle.h>
 
 #include <TPolyMarker.h>
@@ -1990,19 +1988,6 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	reconfactory->AddEntry("DNeutralParticle:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
 		string name = "DNeutralParticle:";
-		string::size_type pos = facnames[i].find(name);
-		if(pos==string::npos)continue;
-		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
-		reconfactory->AddEntry(facnames[i].c_str(), id++);
-		if(facnames[i]==default_reconstructed){
-			reconfactory->Select(id-1, kTRUE);
-			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
-		}
-	}
-
-	// Add DTwoGammaFit factories
-	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DTwoGammaFit:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());

@@ -44,11 +44,8 @@ using namespace std;
 #include "HDGEOMETRY/DGeometry.h"
 #include "FCAL/DFCALGeometry.h"
 #include "FCAL/DFCALHit.h"
-#include <PID/DParticleSet.h>
-#include <PID/DPhysicsEvent.h>
 #include "PID/DNeutralParticle.h"
 #include "PID/DNeutralShower.h"
-#include "PID/DTwoGammaFit.h"
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALIncidentParticle.h"
 #include "DVector2.h"
@@ -1323,11 +1320,6 @@ void MyProcessor::UpdateTrackLabels(void)
 		  trks.push_back(photons[i]->Get_BestFOM());
 		}
 	}
-	if(name=="DTwoGammaFit"){
-		vector<const DTwoGammaFit*> twogammafits;
-		if(loop)loop->Get(twogammafits, tag.c_str());
-		for(unsigned int i=0; i<twogammafits.size(); i++)trks.push_back(twogammafits[i]);
-	}
 	
 	// Clear all labels (i.e. draw ---- in them)
 	map<string, vector<TGLabel*> >::iterator iter;
@@ -1413,7 +1405,6 @@ void MyProcessor::UpdateTrackLabels(void)
 		// Get chisq and Ndof for DTrackTimeBased or DTrackWireBased objects
 		const DTrackTimeBased *timetrack=dynamic_cast<const DTrackTimeBased*>(trk);
 		const DTrackWireBased *track=dynamic_cast<const DTrackWireBased*>(trk);	
-		const DTwoGammaFit *twogammafit=dynamic_cast<const DTwoGammaFit*>(trk);	
 	
 		const DTrackCandidate *candidate=dynamic_cast<const DTrackCandidate*>(trk);
 		if(timetrack){
@@ -1424,10 +1415,6 @@ void MyProcessor::UpdateTrackLabels(void)
 			chisq_per_dof<<setprecision(4)<<track->chisq/track->Ndof;
 			Ndof<<track->Ndof;
 			fom << "N/A";
-		}else if(twogammafit){
-			chisq_per_dof<<setprecision(4)<<twogammafit->getChi2();
-			Ndof<<twogammafit->getNdf();
-			fom << twogammafit->getProb();
 		}else{
 			chisq_per_dof<<setprecision(4)<<candidate->chisq/candidate->Ndof;
 			Ndof<<candidate->Ndof;

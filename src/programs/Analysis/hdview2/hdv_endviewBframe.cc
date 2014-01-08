@@ -17,8 +17,6 @@ using namespace std;
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include <PID/DNeutralParticle.h>
-#include <PID/DParticleSet.h>
-#include <PID/DPhysicsEvent.h>
 
 #include <TPolyMarker.h>
 #include <TLine.h>
