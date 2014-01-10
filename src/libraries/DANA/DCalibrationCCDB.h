@@ -40,6 +40,7 @@ namespace jana
 		    mCalibration = calib;
 		    pthread_mutex_init(&mutex, NULL);
 
+			//>oO CCDB debug output
 			#ifdef CCDB_DEBUG_OUTPUT
 			jout<<"CCDB::janaccdb created DCalibrationCCDB with connection string:" << calib->GetConnectionString()<< " run:"<<run<< " context:"<<context<<endl;
 			#endif
@@ -88,14 +89,18 @@ namespace jana
 		
             //
             try
-            {   
+            {  
+				//>oO CCDB debug output
+                #ifdef CCDB_DEBUG_OUTPUT                
+                cout<<"CCDB::janaccdb"<<endl;
+                cout<<"CCDB::janaccdb REQUEST map<string, string> request = '"<<namepath<<"'"<<endl;
+                #endif  //>end of  CCDB debug output
+                 
                 bool result = mCalibration->GetCalib(svals, namepath);
 
                 //>oO CCDB debug output
                 #ifdef CCDB_DEBUG_OUTPUT
-                string result_str((result)?string("loaded"):string("failure"));
-                cout<<"CCDB::janaccdb"<<endl;
-                cout<<"CCDB::janaccdb REQUEST map<string, string> request = '"<<namepath<<"' result = "<<result_str<<endl;
+                cout<<"CCDB::janaccdb result = "<<string((result)?string("loaded"):string("failure"))<<endl;
                 if(result)
                 {
                     string first_value(" --NAN-- ");
@@ -111,7 +116,7 @@ namespace jana
 				pthread_mutex_unlock(&mutex);
                 return !result; //JANA has false - if success and true if error
             }
-            catch (std::exception ex)
+            catch (std::exception& ex)
             {
                 //>oO CCDB debug output
                 #ifdef CCDB_DEBUG_OUTPUT
@@ -139,13 +144,18 @@ namespace jana
 
             try
             {
+				
+				 //>oO CCDB debug output
+                 #ifdef CCDB_DEBUG_OUTPUT
+                 cout<<"CCDB::janaccdb"<<endl;
+                 cout<<"CCDB::janaccdb REQUEST vector<map<string, string>> request = '"<<namepath<<"'"<<endl;
+                 #endif  //end of CCDB debug output
+                 
                  bool result = mCalibration->GetCalib(vsvals, namepath);
 
                  //>oO CCDB debug output
                  #ifdef CCDB_DEBUG_OUTPUT
-                 string result_str((result)?string("loaded"):string("failure"));
-                 cout<<"CCDB::janaccdb"<<endl;
-                 cout<<"CCDB::janaccdb REQUEST vector<map<string, string>> request = '"<<namepath<<"' result = "<<result_str<<endl;
+                 cout<<"CCDB::janaccdb result = "<<string ((result)?string("loaded"):string("failure"))<<endl;
                  if(result)
                  {
                      string first_value(" --NAN-- ");
@@ -164,7 +174,7 @@ namespace jana
                 pthread_mutex_unlock(&mutex);
                 return !result; //JANA has false - if success and true if error, CCDB otherwise
             }
-            catch (std::exception ex)
+            catch (std::exception& ex)
             {
                 //>oO CCDB debug output
                 #ifdef CCDB_DEBUG_OUTPUT
@@ -190,9 +200,14 @@ namespace jana
 
             try
             {  
+				//some ccdb debug output
+                #ifdef CCDB_DEBUG_OUTPUT
+                cout<<"CCDB::janaccdb Getting list of namepaths. "<<endl;
+                #endif
+                
                 mCalibration->GetListOfNamepaths(namepaths);
             }
-            catch (std::exception ex)
+            catch (std::exception& ex)
             {
 
                 //some ccdb debug output

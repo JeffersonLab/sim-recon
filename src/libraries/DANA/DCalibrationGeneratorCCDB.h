@@ -23,7 +23,10 @@ namespace jana
         /** @brief default ctor */
         DCalibrationGeneratorCCDB():
 			mGenerator(new ccdb::CalibrationGenerator())
-		{	
+		{
+			#ifdef CCDB_DEBUG_OUTPUT
+			jout<<"CCDB::janaccdb created DCalibrationGeneratorCCDB" << endl;
+			#endif
 		}
 
         
@@ -48,11 +51,16 @@ namespace jana
         double CheckOpenable(std::string url, int run, std::string context)
         {
 			#ifdef CCDB_DEBUG_OUTPUT
-			jout<<"CCDB::janaccdb CheckOpenable "<<"url: '"<<url<<"' run: "<<run<< " context: "<<context<<std::endl;
+			jout<<"CCDB::janaccdb CheckOpenable "<<"url: '"<<url<<"' run: '"<<run<< "' context: '"<<context<<"'"<<std::endl;
 			#endif
-
-			if(ccdb::CalibrationGenerator::CheckOpenable(url)) return 0.99;
-            return 0.0;
+			
+			double result = ccdb::CalibrationGenerator::CheckOpenable(url)?0.99:0.0;
+			
+			#ifdef CCDB_DEBUG_OUTPUT
+			jout<<"CCDB::janaccdb result '"<<result<<"'"<<std::endl;
+			#endif
+			
+            return result;
         }
 
 
@@ -80,6 +88,10 @@ namespace jana
 
 			//Get ccdb calibration object
 			ccdb::Calibration *calib = mGenerator->MakeCalibration(url,run,varition,time);
+			
+			#ifdef CCDB_DEBUG_OUTPUT
+			jout<<"CCDB::janaccdb Calibration made"<<std::endl;
+			#endif
 
 			//Create jana calibration object from ccdb
             return new DCalibrationCCDB(calib, url, run, context);
