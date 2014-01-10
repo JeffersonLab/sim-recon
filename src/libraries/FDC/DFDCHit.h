@@ -37,7 +37,7 @@ class DFDCHit : public JObject{
 	      AnodeWire,
 	      FullCathodeStrip,
 	      HalfCathodeStripA,
-	      HalfCathodeStripB,
+	      HalfCathodeStripB
 	    };
 	    int type;		// value according to above enum
 	    
