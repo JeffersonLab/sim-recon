@@ -96,6 +96,10 @@ typedef struct{
 typedef struct{
   DMatrix2x1 A;
   DMatrix2x2 E;
+  DMatrix2x1 Au;
+  DMatrix2x2 Eu;
+  DMatrix2x1 Av;
+  DMatrix2x2 Ev;
 }wire_align_t;
 
 typedef struct{
@@ -207,8 +211,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		     double &var_ty,double &chi2y);
   DMatrix4x1 FitLine(vector<const DFDCIntersection*> &fdchits);
 
-  DMatrix4x1 GuessForStateVector(cdc_track_t &track,double &chi2x,
-				 double &chi2y);
+  DMatrix4x1 GuessForStateVector(const cdc_track_t &track,double x,double y);
 
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DCDCTrackHit *>&hits);
@@ -343,7 +346,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   double mMinTime,mOuterTime,mOuterZ,mBeta;
   unsigned int mMinTimeID;
   
-  bool COSMICS;
+  bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE;
 
   // Geometry
   const DGeometry *dgeom;
@@ -352,6 +355,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   vector<vector<cdc_align_t> >cdc_alignments;
   vector<wire_align_t>fdc_alignments;
   vector<vector<DFDCWire*> >fdcwires;
+  DMatrix3x1 fdc_drift_parms;
 };
 
 
@@ -360,7 +364,7 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   //return CDC_VARIANCE;
   if (t<0.0) t=0.0;
   
-  double sigma=0.1/(t+2.5)+0.0060+1.e-5*t;
+  double sigma=0.14/(t+4.9)+0.0068+0.39e-5*t;
   //sigma+=0.02;
   return sigma*sigma;
 }
