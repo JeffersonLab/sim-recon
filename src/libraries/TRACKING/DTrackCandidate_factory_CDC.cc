@@ -2403,7 +2403,10 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		// Fit is good, save results
 		locCDCTrackCircle->fit = locFit;
 		size_t locNumAxialLayers = locCDCTrackCircle->dSuperLayerSeeds_Axial.size();
-		locCDCTrackCircle->dWeightedChiSqPerDF = locFit->chisq/(float(locFit->ndof*locNumAxialLayers*locNumAxialLayers));
+		double locWeightedChiSqPerDF = ((fabs(locFit->chisq) > 0.0) && (locFit->ndof > 0)) ? locFit->chisq/(float(locFit->ndof*locNumAxialLayers*locNumAxialLayers)) : 9.9E50;
+		if(DEBUG_LEVEL > 10)
+			cout << "chisq, ndof, numaxial, weightedchisq = " << locFit->chisq << ", " << locFit->ndof << ", " << locNumAxialLayers << ", " << locWeightedChiSqPerDF << endl;
+		locCDCTrackCircle->dWeightedChiSqPerDF = locWeightedChiSqPerDF;
 		locCDCTrackCircle->dAverageDriftTime = locAverageDriftTime;
 		++locIterator;
 	}
