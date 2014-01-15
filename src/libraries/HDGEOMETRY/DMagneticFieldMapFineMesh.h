@@ -20,8 +20,8 @@ using namespace jana;
 
 class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
  public:
-  DMagneticFieldMapFineMesh(JApplication *japp, unsigned int runnumber=1, string namepath = "Magnets/Solenoid/solenoid_1500_poisson_20090814_01");
-  DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1500_poisson_20090814_01");
+  DMagneticFieldMapFineMesh(JApplication *japp, unsigned int runnumber=1, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925");
+  DMagneticFieldMapFineMesh(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1350_poisson_20130925");
   virtual ~DMagneticFieldMapFineMesh();
   
   int ReadMap(string namepath, int runnumber=1, string context="");
@@ -70,6 +70,8 @@ class DMagneticFieldMapFineMesh:public DMagneticFieldMap{
  protected:
   
   JCalibration *jcalib;
+  JResourceManager *jresman;
+
   vector< vector< vector<DBfieldPoint_t> > > Btable;
   
   float xmin, xmax, ymin, ymax, zmin, zmax;

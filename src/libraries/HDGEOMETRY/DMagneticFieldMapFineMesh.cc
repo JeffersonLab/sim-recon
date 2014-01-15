@@ -19,6 +19,7 @@ using namespace evio;
 DMagneticFieldMapFineMesh::DMagneticFieldMapFineMesh(JApplication *japp, unsigned int runnumber, string namepath)
 {
 	jcalib = japp->GetJCalibration(runnumber);
+	jresman = japp->GetJResourceManager(runnumber);
 
 	JParameterManager *jparms = japp->GetJParameterManager();
 	jparms->SetDefaultParameter("BFIELD_MAP", namepath);
@@ -68,10 +69,41 @@ int DMagneticFieldMapFineMesh::ReadMap(string namepath, int runnumber, string co
   // we do it this way. 
   if(!jcalib)return 0;
   
-  cout<<"Reading Magnetic field map from "<<namepath<<" ..."<<endl;
+  jout<<"Reading Magnetic field map from "<<namepath<<" ..."<<endl;
   vector< vector<float> > Bmap;
-  jcalib->Get(namepath, Bmap);
-  cout<<Bmap.size()<<" entries found (";
+  
+  // Newer maps are stored as resources while older maps were stored
+  // directly in the calib DB. Here, we hardwire in the names of the old
+  // maps that are stored directly in the DB so we know whether to
+  // get them via the resource manager or not.
+  vector<string> old_maps;
+  old_maps.push_back("Magnets/Solenoid/solenoid_1500_poisson_20090814_01");
+  old_maps.push_back("Magnets/Solenoid/solenoid_1050_poisson_20091123_02");
+  old_maps.push_back("Magnets/Solenoid/solenoid_1500_poisson_20090814_01");
+  old_maps.push_back("Magnets/Solenoid/solenoid_1500_20090312-2");
+  old_maps.push_back("Magnets/Solenoid/solenoid_1600_20090312-2");
+  old_maps.push_back("Magnets/Solenoid/solenoid_1500kinked");
+  
+  bool is_old_map = false;
+  for(unsigned int i=0; i<old_maps.size(); i++){
+  	if(old_maps[i] == namepath){
+
+		// This map is stored directly in the calibration DB.
+		jcalib->Get(namepath, Bmap);
+
+		is_old_map = true;
+		break;
+	}
+  }
+
+  if(!is_old_map){
+    // This map is NOT stored directly in the calibration DB.
+	// Try getting it as a JANA resource.
+	jresman->Get(namepath, Bmap);
+  }
+  
+  
+  jout<<Bmap.size()<<" entries found (";
   
   // The map should be on a grid with equal spacing in x,y, and z.
   // Here we want to determine the number of points in each of these
