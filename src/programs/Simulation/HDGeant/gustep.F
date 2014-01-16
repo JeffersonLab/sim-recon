@@ -203,6 +203,8 @@
       character*4 cchar
       equivalence(cint,cchar)
 
+      character*250 title
+
 #ifdef BACKGROUND_STUDIES
       integer type
       real xv(4),Etot
