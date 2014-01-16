@@ -1,3 +1,11 @@
+*----------------------------------------------------------------------
+* fix by rtj: If material is vacuum then it might be defined with
+*             atomic number A=0.  Introduce a fix to prevent divide
+*             by zero, and set atomic number to that of hydrogen in
+*             the case where one finds A=0, because vacuum is defined
+*             by density=0, not by A=0.
+*----------------------------------------------------------------------
+
 #include "geant321/pilot.h"
 *CMZ :  3.21/02 03/07/94  17.58.49  by  S.Giani
 *-- Author :

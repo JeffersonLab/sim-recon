@@ -1,3 +1,12 @@
+*---------------------------------------------------------------
+* fixes by rtj: Sometimes due to floating point rounding error,
+*               a point that is logically supposed to be outside
+*               a volume is found inside by GINME.  Formerly
+*               that situation was not correctly handled, so I
+*               added explicit code to detect when it happens
+*               and set flags indicating that the point lies on
+*               the boundary of the target volume.
+*---------------------------------------------------------------
 *
 * $Id: gtnext.F,v 1.1.1.1 1995/10/24 10:21:44 cernlib Exp $
 *
