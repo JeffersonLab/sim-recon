@@ -280,6 +280,9 @@ def ReorderCommonLibraries(env):
 	# end. This routine looks for some commonly used libraries 
 	# in the LIBS variable of the given environment and moves them
 	# to the end of the list.
+	
+	# If LIBS is not defined in this environment, return now
+	if 'LIBS' not in env.Dictionary(): return
 
 	# If LIBS is not set or is a simple string, return now
 	if type(env['LIBS']) is not list: return
