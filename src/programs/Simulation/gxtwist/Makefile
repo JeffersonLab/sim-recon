@@ -2,7 +2,7 @@
 # this just invokes make in the gelhad directory and
 # then make with Makefile.bms in this directory.
 
-DIRS += gelhad
+DIRS += gelhad hdds
 
 .PHONY: all install clean pristine relink env current_dir
 

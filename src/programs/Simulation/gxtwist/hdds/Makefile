@@ -9,6 +9,7 @@ XML_SOURCE = TaggerArea.xml FocalPlane.xml Materials.xml PhotonPipe.xml\
 
 hddsGeant3_tagger.F: $(XML_SOURCE) $(HDDS_SCHEMA) $(HDDS_GEANT)
 	$(HDDS_GEANT) TaggerArea.xml >$@
+	cp $@ ../
 
 $(HDDS_GEANT):
 	@echo "Application hdds-geant has not yet been built."
