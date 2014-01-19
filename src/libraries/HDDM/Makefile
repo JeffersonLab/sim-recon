@@ -16,7 +16,8 @@ else
 endif
 
 library: hddm_s.h hddm_s.c hddm_s.hpp hddm_s++.cpp \
-         hddm_r.h hddm_r.c hddm_r.hpp hddm_r++.cpp
+         hddm_r.h hddm_r.c hddm_r.hpp hddm_r++.cpp \
+         hddm_mc_s.h hddm_mc_s.c hddm_mc_s.hpp hddm_mc_s++.cpp
 	make -f Makefile.static
 #	make -C shlib
 
@@ -40,6 +41,11 @@ hddm_s.h hddm_s.c: event.xml
 hddm_r.h hddm_r.c: rest.xml
 	hddm-c $<
 
+hddm_mc_s.h hddm_mc_s.c: mc.xml
+	hddm-c $<
+	mv hddm_s.h hddm_mc_s.h
+	mv hddm_s.c hddm_mc_s.c
+
 hddm_s.hpp hddm_s++.cpp: event.xml
 	hddm-cpp $<
 	mv hddm_s.cpp hddm_s++.cpp
@@ -47,3 +53,9 @@ hddm_s.hpp hddm_s++.cpp: event.xml
 hddm_r.hpp hddm_r++.cpp: rest.xml
 	hddm-cpp $<
 	mv hddm_r.cpp hddm_r++.cpp
+
+hddm_mc_s.hpp hddm_mc_s++.cpp: mc.xml
+	hddm-cpp $<
+	mv hddm_s.hpp hddm_mc_s.hpp
+	mv hddm_s.cpp hddm_mc_s++.cpp
+
