@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE HDDM>
 
-<HDDM class="s" version="1.0" xmlns="http://www.gluex.org/hddm">
+<HDDM class="mc_s" version="1.0" xmlns="http://www.gluex.org/hddm">
   <physicsEvent eventNo="int" maxOccurs="unbounded" runNo="int">
     <reaction maxOccurs="unbounded" minOccurs="0" type="int" weight="float">
       <beam minOccurs="0" type="Particle_t">
