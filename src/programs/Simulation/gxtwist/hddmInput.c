@@ -43,15 +43,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <hddm_s.h>
+#include <hddm_mc_s.h>
 #include <geant3.h>
 
-s_iostream_t* thisInputStream = 0;
-s_HDDM_t* thisInputEvent = 0;
+mc_s_iostream_t* thisInputStream = 0;
+mc_s_HDDM_t* thisInputEvent = 0;
 
 int openInput (char* filename)
 {
-   thisInputStream = open_s_HDDM(filename);
+   thisInputStream = open_mc_s_HDDM(filename);
    return (thisInputStream == 0);
 }
 
@@ -84,24 +84,24 @@ int nextInput ()
    }
    else if (thisInputEvent)
    {
-      flush_s_HDDM(thisInputEvent, 0);
+      flush_mc_s_HDDM(thisInputEvent, 0);
    }
-   thisInputEvent = read_s_HDDM(thisInputStream);
+   thisInputEvent = read_mc_s_HDDM(thisInputStream);
    return (thisInputEvent == 0);
 }
 
 int loadInput ()
 {
-   s_Reactions_t* reacts;
+   mc_s_Reactions_t* reacts;
    int reactCount, ir;
 
-   reacts = thisInputEvent->physicsEvent->reactions;
+   reacts = thisInputEvent->physicsEvents->in[0].reactions;
    reactCount = reacts->mult;
    for (ir = 0; ir < reactCount; ir++)
    {
-      s_Vertices_t* verts;
+      mc_s_Vertices_t* verts;
       int vertCount, iv;
-      s_Reaction_t* react = &reacts->in[ir];
+      mc_s_Reaction_t* react = &reacts->in[ir];
       verts = react->vertices;
       vertCount = verts->mult;
       for (iv = 0; iv < vertCount; iv++)
@@ -112,9 +112,9 @@ int loadInput ()
          int nubuf = 0;
          float ubuf;
          int nvtx;
-         s_Products_t* prods;
+         mc_s_Products_t* prods;
          int prodCount, ip;
-         s_Vertex_t* vert = &verts->in[iv];
+         mc_s_Vertex_t* vert = &verts->in[iv];
          v[0] = vert->origin->vx;
          v[1] = vert->origin->vy;
          v[2] = vert->origin->vz;
@@ -147,7 +147,7 @@ int loadInput ()
             int ntrk;
             float p[3];
             Particle_t kind;
-            s_Product_t* prod = &prods->in[ip];
+            mc_s_Product_t* prod = &prods->in[ip];
             kind = prod->type;
             p[0] = prod->momentum->px;
             p[1] = prod->momentum->py;
@@ -164,24 +164,24 @@ int loadInput ()
 
 int storeInput (int runNo, int eventNo, int ntracks)
 {
-   s_PhysicsEvent_t* pe;
-   s_Reactions_t* rs;
-   s_Vertices_t* vs;
-   s_Origin_t* or;
-   s_Products_t* ps;
+   mc_s_PhysicsEvent_t* pe;
+   mc_s_Reactions_t* rs;
+   mc_s_Vertices_t* vs;
+   mc_s_Origin_t* or;
+   mc_s_Products_t* ps;
    int nvtx, ntbeam, nttarg, itra, nubuf;
    float vert[3], plab[3], tofg, ubuf[10];
    Particle_t kind;
 
    if (thisInputEvent)
    {
-      flush_s_HDDM(thisInputEvent, 0);
+      flush_mc_s_HDDM(thisInputEvent, 0);
    }
-   thisInputEvent = make_s_HDDM();
-   thisInputEvent->physicsEvent = pe = make_s_PhysicsEvent();
-   pe->reactions = rs = make_s_Reactions(1);
+   thisInputEvent = make_mc_s_HDDM();
+   thisInputEvent->physicsEvents = pe = make_mc_s_PhysicsEvents(1);
+   pe->reactions = rs = make_mc_s_Reactions(1);
    rs->mult = 1;
-   rs->in[0].vertices = vs = make_s_Vertices(99);
+   rs->in[0].vertices = vs = make_mc_s_Vertices(99);
    vs->mult = 0;
    for (itra = 1; itra <= ntracks; itra++)
    {
@@ -199,7 +199,7 @@ int storeInput (int runNo, int eventNo, int ntracks)
       ps = vs->in[nvtx-1].products;
       if (or == HDDM_NULL)
       {
-         or = make_s_Origin();
+         or = make_mc_s_Origin();
          vs->in[nvtx-1].origin = or;
          or->vx = vert[0];
          or->vy = vert[1];
@@ -208,12 +208,12 @@ int storeInput (int runNo, int eventNo, int ntracks)
       }
       if (ps == HDDM_NULL)
       {
-         ps = make_s_Products(ntracks);
+         ps = make_mc_s_Products(ntracks);
          vs->in[nvtx-1].products = ps;
          ps->mult = 0;
       }
       ps->in[ps->mult].type = kind;
-      ps->in[ps->mult].momentum = make_s_Momentum();
+      ps->in[ps->mult].momentum = make_mc_s_Momentum();
       ps->in[ps->mult].momentum->px = plab[0];
       ps->in[ps->mult].momentum->py = plab[1];
       ps->in[ps->mult].momentum->pz = plab[2];
@@ -229,7 +229,7 @@ int closeInput ()
 {
    if (thisInputStream)
    {
-      close_s_HDDM(thisInputStream);
+      close_mc_s_HDDM(thisInputStream);
       thisInputStream = 0;
    }
    return 0;

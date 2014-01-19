@@ -17,18 +17,18 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <hddm_s.h>
+#include <hddm_mc_s.h>
 #include <hddmOutput.h>
 
 #include "memcheck.h"
 
-s_iostream_t* thisOutputStream = 0;
-s_HDDM_t* thisOutputEvent = 0;
-extern s_HDDM_t* thisInputEvent;
+mc_s_iostream_t* thisOutputStream = 0;
+mc_s_HDDM_t* thisOutputEvent = 0;
+extern mc_s_HDDM_t* thisInputEvent;
 
 int openOutput (char* filename)
 {
-   thisOutputStream = init_s_HDDM(filename);
+   thisOutputStream = init_mc_s_HDDM(filename);
    return (thisOutputStream == 0);
 }
 
@@ -36,7 +36,7 @@ int flushOutput ()
 {
    if (thisOutputEvent != 0)
    {
-      flush_s_HDDM(thisOutputEvent, thisOutputStream);
+      flush_mc_s_HDDM(thisOutputEvent, thisOutputStream);
       thisOutputEvent = 0;
    }
    checkpoint();
@@ -47,7 +47,7 @@ int closeOutput ()
 {
    if (thisOutputStream)
    {
-      close_s_HDDM(thisOutputStream);
+      close_mc_s_HDDM(thisOutputStream);
       thisOutputStream = 0;
    }
    return 0;
@@ -59,7 +59,7 @@ int loadOutput ()
 
    if (thisOutputEvent)
    {
-      flush_s_HDDM(thisOutputEvent, 0);
+      flush_mc_s_HDDM(thisOutputEvent, 0);
    }
 
    thisOutputEvent = thisInputEvent;
@@ -67,9 +67,9 @@ int loadOutput ()
    if (thisOutputEvent == 0)
    {
       static int eventNo = 0;
-      thisOutputEvent = make_s_HDDM();
-      thisOutputEvent->physicsEvent = make_s_PhysicsEvent();
-      thisOutputEvent->physicsEvent->eventNo = ++eventNo;
+      thisOutputEvent = make_mc_s_HDDM();
+      thisOutputEvent->physicsEvents = make_mc_s_PhysicsEvents(1);
+      thisOutputEvent->physicsEvents->in[0].eventNo = ++eventNo;
    }
    return packages_hit;
 }
