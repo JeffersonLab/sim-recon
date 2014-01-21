@@ -1,0 +1,1453 @@
+Release Notes for sim-recon-2013-10-17
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2013-10-17
+   Date: November 13, 2013
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 11735 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 5.9 (i686)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 2.0
+  CCDB 0.08
+
+Red Hat Enterprise Linux 6.3 (x86_64)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.7 20120305 (Red Hat 4.4.7-3)
+  HDDS 2.0
+  CCDB 0.08
+
+CentOS release 6.2 (Final)
+-----------
+  Xerces 3.1.1
+  JANA 0.6.6
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran :  4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 2.0
+  CCDB 0.08
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r11743 | staylor | 2013-10-18 18:06:29 -0400 (Fri, 18 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+More work on CDC fitter; start to include offsets for cdc wires; work on smoothing code for cdc
+------------------------------------------------------------------------
+r11745 | davidl | 2013-10-21 17:07:40 -0400 (Mon, 21 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Added evioout JStreamLog for use with debugging messages. Started adding optional debugging messages based on value of EVIO:VERBOSE config. param.
+------------------------------------------------------------------------
+r11749 | davidl | 2013-10-22 09:33:01 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+   M /trunk/sim-recon/src/SConstruct
+   M /trunk/sim-recon/src/libraries/DANA/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hd_ana/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hd_dump/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hd_root/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/SConscript
+   M /trunk/sim-recon/src/programs/SConscript
+
+Fixed SBMS to work with generation of ROOT dictionary files. One irritation is that dictionary .cc files are compiled needlessly on second invocation of scons, but not for subsequent ones.
+------------------------------------------------------------------------
+r11751 | davidl | 2013-10-22 10:12:31 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+   M /trunk/sim-recon/src/SConstruct
+   M /trunk/sim-recon/src/programs/Analysis/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/acceptance_hists/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/fcal_hists/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/mcthrown_hists/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/SConscript
+   A /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists/SConscript
+
+Add Analysis/plugins to scons build.
+------------------------------------------------------------------------
+r11755 | davidl | 2013-10-22 14:02:40 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/SConscript
+   M /trunk/sim-recon/src/libraries/BCAL/SConscript
+   M /trunk/sim-recon/src/libraries/CCAL/SConscript
+   M /trunk/sim-recon/src/libraries/CDC/SConscript
+   M /trunk/sim-recon/src/libraries/CERE/SConscript
+   M /trunk/sim-recon/src/libraries/DANA/SConscript
+   M /trunk/sim-recon/src/libraries/FCAL/SConscript
+   M /trunk/sim-recon/src/libraries/FDC/SConscript
+   M /trunk/sim-recon/src/libraries/HDDM/SConscript
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/SConscript
+   M /trunk/sim-recon/src/libraries/PID/SConscript
+   M /trunk/sim-recon/src/libraries/RICH/SConscript
+   M /trunk/sim-recon/src/libraries/START_COUNTER/SConscript
+   M /trunk/sim-recon/src/libraries/TAGGER/SConscript
+   M /trunk/sim-recon/src/libraries/TOF/SConscript
+   M /trunk/sim-recon/src/libraries/TRACKING/SConscript
+   M /trunk/sim-recon/src/libraries/TRIGGER/SConscript
+
+Make SConscript files in libraries clone environment. This prevents duplicate/multiple target errors.
+------------------------------------------------------------------------
+r11756 | davidl | 2013-10-22 14:03:31 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/SConscript
+
+Add Utilities to build for scons
+------------------------------------------------------------------------
+r11757 | davidl | 2013-10-22 14:04:43 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+   M /trunk/sim-recon/src/SConstruct
+
+Rename MISC_TARGETS variable to ALL_SOURCES which is more descriptive. Also, use this when building libraries as well in order to allow ROOT dictionaries in libraries.
+------------------------------------------------------------------------
+r11762 | davidl | 2013-10-22 22:20:16 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Use ALL_SOURCES for plugins as well.
+------------------------------------------------------------------------
+r11763 | davidl | 2013-10-22 22:25:04 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/plugins/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/plugins/danarest/SConscript
+
+Add SConscript files for Utilities
+------------------------------------------------------------------------
+r11764 | davidl | 2013-10-22 23:05:51 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/hddm/SConscript
+
+Add SConscript for Utilities/hddm
+------------------------------------------------------------------------
+r11765 | davidl | 2013-10-22 23:38:57 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Add libz to libraries for xstream. (Also fixed some comments).
+------------------------------------------------------------------------
+r11766 | davidl | 2013-10-22 23:39:48 -0400 (Tue, 22 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/bfield2root/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/hddm2root/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/hddm_merge_events/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/root2email/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/tree_to_amptools/SConscript
+
+Add several more programs from Utilities to default build
+------------------------------------------------------------------------
+r11767 | davidl | 2013-10-23 11:14:40 -0400 (Wed, 23 Oct 2013) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/external/xstream/include/xstream/digest.h
+
+Made sync() method of xstream::digest::stream protected instead of private.
+The clang compiler gave an error when compiling the xstream::digest::common
+class method reset() which called sync(). I'm not sure why this has not been
+an issue before since it seems calling a private member of a base class is
+is a textbook violation of the use of "private". Note that this did not give
+a compile time error when using g++. Both are default compilers on Mac OS X
+10.7.5.
+
+------------------------------------------------------------------------
+r11768 | davidl | 2013-10-23 11:17:02 -0400 (Wed, 23 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SConstruct
+
+Allow user to specify C,C++, and fortran compilers via environment variables. Also, turn on includsion of debugging symbols always.
+------------------------------------------------------------------------
+r11769 | davidl | 2013-10-23 11:17:51 -0400 (Wed, 23 Oct 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/root_merge/SConscript
+
+Add a couple of more SConscript files.
+------------------------------------------------------------------------
+r11772 | davidl | 2013-10-23 20:52:12 -0400 (Wed, 23 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/root_merge/root_merge.cc
+
+include stdlib.h to bring in declaration of exit().
+------------------------------------------------------------------------
+r11773 | davidl | 2013-10-23 21:01:35 -0400 (Wed, 23 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SConstruct
+
+Force -fPIC to be in CFLAGS and CXXFLAGS always. Seems to be needed for Linux
+------------------------------------------------------------------------
+r11774 | davidl | 2013-10-23 21:03:11 -0400 (Wed, 23 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Add ROOTSYS/lib to LD_LIBRARY_PATH in scons when running rootcint.
+------------------------------------------------------------------------
+r11777 | kmoriya | 2013-10-25 17:08:51 -0400 (Fri, 25 Oct 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/Process_r.cc
+   A /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/Process_s.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/hddm_merge_files.cc
+   A /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/hddm_merge_files.h
+
+rewrote similarly to hddm_cull_events to work on REST format
+------------------------------------------------------------------------
+r11778 | marki | 2013-10-28 10:29:39 -0400 (Mon, 28 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/Process_r.cc
+
+remove declaration of N to suppress warning
+------------------------------------------------------------------------
+r11782 | marki | 2013-10-29 10:17:21 -0400 (Tue, 29 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_eve.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/cobrems.F
+
+suppress some warnings
+------------------------------------------------------------------------
+r11784 | staylor | 2013-10-29 14:43:17 -0400 (Tue, 29 Oct 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/CDC_branch.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Progress toward including offsets in the cdc wire positions.
+------------------------------------------------------------------------
+r11786 | davidl | 2013-10-30 08:29:07 -0400 (Wed, 30 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+   M /trunk/sim-recon/src/SConstruct
+   M /trunk/sim-recon/src/external/xstream/SConscript
+   M /trunk/sim-recon/src/libraries/ANALYSIS/SConscript
+   M /trunk/sim-recon/src/libraries/BCAL/SConscript
+   M /trunk/sim-recon/src/libraries/CCAL/SConscript
+   M /trunk/sim-recon/src/libraries/CDC/SConscript
+   M /trunk/sim-recon/src/libraries/CERE/SConscript
+   M /trunk/sim-recon/src/libraries/DANA/SConscript
+   M /trunk/sim-recon/src/libraries/FCAL/SConscript
+   M /trunk/sim-recon/src/libraries/FDC/SConscript
+   M /trunk/sim-recon/src/libraries/HDDM/SConscript
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/SConscript
+   M /trunk/sim-recon/src/libraries/PID/SConscript
+   M /trunk/sim-recon/src/libraries/RICH/SConscript
+   M /trunk/sim-recon/src/libraries/SConscript
+   M /trunk/sim-recon/src/libraries/START_COUNTER/SConscript
+   M /trunk/sim-recon/src/libraries/TAGGER/SConscript
+   M /trunk/sim-recon/src/libraries/TOF/SConscript
+   M /trunk/sim-recon/src/libraries/TRACKING/SConscript
+   M /trunk/sim-recon/src/libraries/TRIGGER/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hd_ana/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hd_dump/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hd_eventfilter/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hd_root/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/acceptance_hists/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/cdc_hists/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/fcal_hists/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mcthrown_hists/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/phys_tree/SConscript
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trackeff_hists/SConscript
+   M /trunk/sim-recon/src/programs/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/bfield2root/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/hddm/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/hddm2root/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/hddm_cull_events/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_events/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/hddm_merge_files/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/plugins/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/plugins/rawevent/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/root2email/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/root_merge/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/tree_to_amptools/SConscript
+
+Several changes to SBMS. Most importantly, the 'cleaning' feature will only current the current directory and it's direct descendants. Also, now install plugins to their own directory instead of in lib. And, installdir passed in as variable of env rather than explicitly via import, exports as before.
+------------------------------------------------------------------------
+r11789 | wilevine | 2013-10-30 11:48:44 -0400 (Wed, 30 Oct 2013) | 2 lines
+Changed paths:
+   A /trunk/home/wilevine/plugins/bcal_matching (from /trunk/sim-recon/src/programs/Analysis/plugins/bcal_matching:11788)
+   D /trunk/sim-recon/src/programs/Analysis/plugins/bcal_matching
+
+Move bcal_matching plugin to my personal directory
+
+------------------------------------------------------------------------
+r11790 | kmoriya | 2013-10-31 09:03:02 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/run/run.ffr
+
+added line for run number
+------------------------------------------------------------------------
+r11791 | davidl | 2013-10-31 09:29:08 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/SConscript
+
+Don't import no defunct installdir
+------------------------------------------------------------------------
+r11792 | davidl | 2013-10-31 09:30:29 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/external/SConscript
+
+Import all variables in SConscript file and don't export obsolete installdir
+------------------------------------------------------------------------
+r11793 | davidl | 2013-10-31 09:31:42 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SConstruct
+
+Remove installdir from exports list and add a variant_dir when calling the external/SConscript
+------------------------------------------------------------------------
+r11794 | davidl | 2013-10-31 09:33:54 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Modified SBMS to only add install targets when at or below the launch directory.
+------------------------------------------------------------------------
+r11795 | davidl | 2013-10-31 09:35:17 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/external/xstream/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/hddm/SConscript
+
+Update specialized SConscript files to follow the default behavior of SBMS
+------------------------------------------------------------------------
+r11796 | davidl | 2013-10-31 09:36:18 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Removed some code that had been commented out
+------------------------------------------------------------------------
+r11799 | davidl | 2013-10-31 12:19:41 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/bggen/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/bggen/code/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/gamp2hddm/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/genpi/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/genr8/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/genr8_2_hddm/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/mcsmear/SConscript
+
+Adding Simulation to SBMS
+------------------------------------------------------------------------
+r11800 | davidl | 2013-10-31 12:22:27 -0400 (Thu, 31 Oct 2013) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+- Add ability to optionally specify target name instead of deriving it from directory name
+- Add Fortran
+- Add AddHDDM (for convenience)
+
+
+------------------------------------------------------------------------
+r11801 | davidl | 2013-10-31 15:04:43 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+   M /trunk/sim-recon/src/SConstruct
+   M /trunk/sim-recon/src/programs/Simulation/SConscript
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/SConscript
+
+Added CERNLIB to SBMS so that bggen now compiles and links
+------------------------------------------------------------------------
+r11802 | davidl | 2013-10-31 15:06:02 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genr8/SConscript
+
+genr8 needs to have -lm added to link list on CentOS6
+------------------------------------------------------------------------
+r11803 | davidl | 2013-10-31 15:23:09 -0400 (Thu, 31 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/SConscript
+
+Remove superfluous imports
+------------------------------------------------------------------------
+r11817 | davidl | 2013-11-04 14:45:33 -0500 (Mon, 04 Nov 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/gelhad/SConscript
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/hitutil/SConscript
+
+SConscript files for building HDGeant
+------------------------------------------------------------------------
+r11818 | davidl | 2013-11-04 14:47:17 -0500 (Mon, 04 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SConstruct
+
+Add OSNAME to scons build environment
+------------------------------------------------------------------------
+r11819 | davidl | 2013-11-04 14:48:16 -0500 (Mon, 04 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/SConscript
+
+Include HDGeant in standard build tree.
+------------------------------------------------------------------------
+r11820 | davidl | 2013-11-04 14:49:59 -0500 (Mon, 04 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Added 'executables' for building multiple programs from source in single directory. Added compilation of FORTRAM files and tweaked AddCERNLIB to get hdgeant and friends to properly link on CentOS6.
+------------------------------------------------------------------------
+r11821 | davidl | 2013-11-05 07:21:25 -0500 (Tue, 05 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/SConscript
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/SConscript
+
+Skip building of HDGeant and bggen with scons if the CERN environment variable is not set.
+------------------------------------------------------------------------
+r11822 | davidl | 2013-11-05 08:51:48 -0500 (Tue, 05 Nov 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/SBMS/sbms_setenv.py
+   M /trunk/sim-recon/src/SConstruct
+
+Generate setenv.csh script when installing with SBMS
+------------------------------------------------------------------------
+r11823 | davidl | 2013-11-05 09:09:07 -0500 (Tue, 05 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms_setenv.py
+
+Set proper mode for generated setenv.csh file.
+------------------------------------------------------------------------
+r11824 | davidl | 2013-11-05 09:26:59 -0500 (Tue, 05 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms_setenv.py
+
+Add new HALLD_HOME/BMS_OSNAME/plugins directory to JANA_PLUGINS_PATH in the setenv.csh script
+------------------------------------------------------------------------
+r11825 | davidl | 2013-11-05 09:45:19 -0500 (Tue, 05 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms_setenv.py
+
+Moved setting of HDDS_HOME up so that it is set prior to usinging it.
+------------------------------------------------------------------------
+r11848 | davidl | 2013-11-05 16:02:33 -0500 (Tue, 05 Nov 2013) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Sometimes a wire-based track fit was flagged as either being
+successful or showing no improvement. However, the state vector
+had NaN values. Check if the X position is a finite value before
+creating the wire-based track.
+
+------------------------------------------------------------------------
+r11849 | marki | 2013-11-05 17:24:06 -0500 (Tue, 05 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/cobrems.F
+
+supress warnings
+------------------------------------------------------------------------
+r11850 | davidl | 2013-11-06 07:05:22 -0500 (Wed, 06 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/osrelease.pl
+
+Add OS X 10.9 to osrelease.pl
+------------------------------------------------------------------------
+r11852 | davidl | 2013-11-06 07:07:36 -0500 (Wed, 06 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/external/xstream/include/xstream/posix.h
+
+Add include <ios> to include/xstream/posix.h since it seems to be required by Xcode 5.0.1 on OS X Mavericks
+------------------------------------------------------------------------
+r11853 | davidl | 2013-11-06 07:08:22 -0500 (Wed, 06 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/external/xstream/src/debug.cpp
+
+Add a dummy global variable to prevent 'No symbols' warning when archiving debug.o
+------------------------------------------------------------------------
+r11854 | davidl | 2013-11-06 07:09:19 -0500 (Wed, 06 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/external/xstream/src/z.cpp
+
+Use sprintf to put integer into string since the '+level' syntax is not valid C/C++
+------------------------------------------------------------------------
+r11855 | davidl | 2013-11-06 08:00:54 -0500 (Wed, 06 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/osrelease.pl
+
+Update osrelease to report compiler type and version consistent with Apple's new convention
+------------------------------------------------------------------------
+r11869 | davidl | 2013-11-07 11:22:39 -0500 (Thu, 07 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/genr8/genr8.c
+
+Cosmetic work to prevent compiler warnings. No substantive changes.
+------------------------------------------------------------------------
+r11874 | davidl | 2013-11-07 15:59:31 -0500 (Thu, 07 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/external/xstream/src/z.cpp
+
+Add #include <stdio.h> so sprintf() can be used.
+------------------------------------------------------------------------
+r11876 | marki | 2013-11-07 16:48:10 -0500 (Thu, 07 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/cohbeam_ini.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/gbrwign.F
+
+suppress some warnings
+------------------------------------------------------------------------
+r11877 | marki | 2013-11-08 09:01:51 -0500 (Fri, 08 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/gdecan.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/gpxcosthr.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/gpxsecp.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/lowen_eve.F
+
+suppress warnings
+------------------------------------------------------------------------
+r11878 | marki | 2013-11-08 09:04:09 -0500 (Fri, 08 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code
+
+ignore make hidden directories
+------------------------------------------------------------------------
+r11880 | marki | 2013-11-08 14:25:13 -0500 (Fri, 08 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/lowen_ini.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/orndpoly.F
+
+suppress warnings
+------------------------------------------------------------------------
+r11891 | staylor | 2013-11-12 10:55:30 -0500 (Tue, 12 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+This version makes significant progress towards determining 4 offset parameters for each CDC wire using the kalman filter formalism.
+------------------------------------------------------------------------
+r11902 | davidl | 2013-11-13 11:15:40 -0500 (Wed, 13 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Use lapack3 instead of lapack for CERNLIB since the latter doesn't seem to be in all installations.
+------------------------------------------------------------------------
+r11903 | davidl | 2013-11-13 11:16:42 -0500 (Wed, 13 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms_setenv.py
+
+Make the top-level installation directory if it doesn't exist so the setenv.csh script can be created.
+------------------------------------------------------------------------
+r11918 | staylor | 2013-11-13 18:51:44 -0500 (Wed, 13 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+
+For fits involving fdc hits, bomb proof against infinite values for the input values for the direction tangents.
+------------------------------------------------------------------------
+r11933 | marki | 2013-11-15 09:23:06 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pyr.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pyth_eve.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pyth_ini.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pythia_h.F
+
+supress warnings
+------------------------------------------------------------------------
+r11935 | marki | 2013-11-15 11:28:33 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists
+
+ignore make directories
+------------------------------------------------------------------------
+r11936 | marki | 2013-11-15 11:29:12 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/trackeffv2
+
+ignore make directories
+------------------------------------------------------------------------
+r11937 | marki | 2013-11-15 11:29:43 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/monitoring_hists
+
+ignore hidden made directories
+------------------------------------------------------------------------
+r11938 | marki | 2013-11-15 11:30:06 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/mc_tree
+
+ignore hidden made directories
+------------------------------------------------------------------------
+r11939 | marki | 2013-11-15 11:32:45 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gamp2hddm
+
+ignore hidden made directories
+------------------------------------------------------------------------
+r11940 | marki | 2013-11-15 11:33:14 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/gamp2hddm
+
+ignore hidden made directories
+------------------------------------------------------------------------
+r11941 | marki | 2013-11-15 11:34:12 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/danarest
+
+ignore hidden made directories
+------------------------------------------------------------------------
+r11942 | marki | 2013-11-15 11:35:05 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/tree_to_amptools
+
+ignore hidden made directories
+------------------------------------------------------------------------
+r11945 | davidl | 2013-11-15 12:17:27 -0500 (Fri, 15 Nov 2013) | 12 lines
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Some changes to the SBMS core
+- Parse output of root-config and jana-config to put libraries,
+  paths, link flags, and cflags in their correct variables as
+  defined by scons. This was needed on some platforms because 
+  the linkers are really sensitive to the ordering of libraries
+  in the link command. It also allows scons to do its job better.
+
+- Replaced some PrependUnique calls to AppendUnique. This makes
+  adding arguments from different packages more consistent in the
+  AddXXX routines so a user can better control and predict the
+  ordering of compile and link command arguments.
+
+------------------------------------------------------------------------
+r11946 | davidl | 2013-11-15 12:53:36 -0500 (Fri, 15 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DRootGeom.cc
+
+Assume ROOT version >=5.28 if no ROOT_MAJOR variable is defined. Scons does not set this and I'm reluctant to do so since this is the only place that uses it and it is increasingly uncommon to have a ROOT version earlier than 5.28.
+------------------------------------------------------------------------
+r11955 | davidl | 2013-11-16 18:15:48 -0500 (Sat, 16 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Add ReorderCommonLibraries routine to move some commonly used libraries (like libz.a) to the end of the link list. This is needed on Ubuntu 13.10 running gcc4.8.0 where it seems very sensitive to library ordering now.
+------------------------------------------------------------------------
+r11973 | davidl | 2013-11-19 21:53:57 -0500 (Tue, 19 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hd_root/MyProcessor.cc
+
+Add include of unistd.h
+------------------------------------------------------------------------
+r11974 | davidl | 2013-11-19 21:54:24 -0500 (Tue, 19 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+Add include of unistd.h
+------------------------------------------------------------------------
+r11975 | davidl | 2013-11-19 21:56:50 -0500 (Tue, 19 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal_deprecated.cc
+
+Add include of unistd.h
+------------------------------------------------------------------------
+r11976 | davidl | 2013-11-20 08:45:28 -0500 (Wed, 20 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.h
+
+include generated hddm headers using the HDDM directory explicitly.
+------------------------------------------------------------------------
+r11977 | davidl | 2013-11-20 10:03:51 -0500 (Wed, 20 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Make AddDANA use AddHDDM instead of just adding it through DANA_LIBS.
+------------------------------------------------------------------------
+r11978 | davidl | 2013-11-20 11:46:21 -0500 (Wed, 20 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/hddm/SConscript
+
+Significant hack to HDDM scons to get the dependency on hddm-c and hddm-cpp utilities integrated properly.
+------------------------------------------------------------------------
+r11982 | davidl | 2013-11-20 21:08:25 -0500 (Wed, 20 Nov 2013) | 21 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCIntersection_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DMagneticFieldStepper.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DRiemannFit.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDC.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackCandidate_factory_FDCpseudo.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterKalmanSIMD.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterRiemann.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackHitSelectorALT2.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrajectory.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/trk_mainframe.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/SConscript
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/bcal2nt_c.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cdccount.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cdccount_c.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cdcdump.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/cdcdump_c.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmInput.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmOutput.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp.cpp
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmcp_c.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitBCal.cc
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCerenkov.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFTOF.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitGCal.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitRICH.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitStart.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitTag.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitUPV.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/savenewvertex.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/storeTrajectory.c
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear_bcal_deprecated.cc
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddm-c.cpp
+   M /trunk/sim-recon/src/programs/Utilities/hddm/hddmcat.cpp
+
+This commit makes minor changes to many files. These are to get rid of
+compiler warnings on Mac OS X Mavericks using llvm5.0 and Ubuntu13.10
+using gcc 4.8 and CentOS 6.2 using gcc4.4.6. The main warnings were:
+
+- finite is now deprecated and isfinite should be used. cmath must
+  be included to use this
+
+- using namespace std; should only appear after a header file defining
+  something in that namespace is included
+
+- checks on unsigned int values being less than zero
+
+- boolean operations should be grouped by parentheses
+
+Also, in order for several HDGeant programs to compile with the newly
+added HDDM support in SBMS, the header files needed to be included
+by specifying the HDDM directly like this:
+
+#include <HDDM/hddm_s.h>
+
+
+------------------------------------------------------------------------
+r11994 | davidl | 2013-11-22 09:13:00 -0500 (Fri, 22 Nov 2013) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+   M /trunk/sim-recon/src/SBMS/sbms_setenv.py
+   M /trunk/sim-recon/src/SConstruct
+
+- Add function to apply platform-specific settings. This is needed to
+ get the -flat_namespace link option in for Darwin systems
+- Re-ordered the sbms.py file to put the package support functions at the
+  bottom and the utility functions in the middle.
+
+------------------------------------------------------------------------
+r11995 | davidl | 2013-11-22 09:13:40 -0500 (Fri, 22 Nov 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/SBMS/sbms_Darwin.py
+
+Add Darwin-specific sbms file.
+------------------------------------------------------------------------
+r12005 | davidl | 2013-11-25 11:19:00 -0500 (Mon, 25 Nov 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/README.sbms
+   M /trunk/sim-recon/src/SBMS/sbms.py
+   M /trunk/sim-recon/src/SConstruct
+
+Fix BMS_OSNAME inclusion.
+------------------------------------------------------------------------
+r12029 | marki | 2013-12-02 11:33:39 -0500 (Mon, 02 Dec 2013) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pyr.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pyth_eve.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pyth_ini.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pythia_h.F
+
+Something in the last set of changes caused bggen to crash (seg
+falut). Backing them out. It has been that way since revision
+11933. Reverting to revision 11880.
+
+M    code/pyth_eve.F
+M    code/pyth_ini.F
+M    code/pythia_h.F
+M    code/pyr.F
+
+------------------------------------------------------------------------
+r12042 | davidl | 2013-12-04 10:21:01 -0500 (Wed, 04 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDDM/SConscript
+
+Replace HDDM builders that were using script actions with ones using Python functions. The functions still execute external scripts, but in a different way that seems to inherit the current shell's environment. This is important since the LD_LIBRARY_PATH needs to point to the correct xerces library for hddm-c[pp] to work.
+------------------------------------------------------------------------
+r12046 | davidl | 2013-12-04 13:11:52 -0500 (Wed, 04 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Added EVIO, ET, and cMsg support to SBMS.
+------------------------------------------------------------------------
+r12047 | davidl | 2013-12-04 13:24:05 -0500 (Wed, 04 Dec 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/SConscript
+   M /trunk/sim-recon/src/programs/Utilities/plugins/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/plugins/TTab/SConscript
+
+Add DAQ and TTab plugins to scons build. Comment out addition of these by default since they require EVIO, ET, ... They'll be added in later once proper protections are in place to prevent compilation when these packages aren't present.
+------------------------------------------------------------------------
+r12052 | staylor | 2013-12-04 18:06:34 -0500 (Wed, 04 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Remove some unused routines and output final values for cdc and fdc parameters to files.
+------------------------------------------------------------------------
+r12075 | davidl | 2013-12-06 15:33:37 -0500 (Fri, 06 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+Increase the default buffer size from 50kB to 1MB for the EVIO event source and print a message if this is detected to be too small.
+------------------------------------------------------------------------
+r12078 | staylor | 2013-12-06 17:13:21 -0500 (Fri, 06 Dec 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/plot_cdc_offsets.C
+
+root macro for displaying cdc offsets
+------------------------------------------------------------------------
+r12159 | pmatt | 2013-12-12 11:41:56 -0500 (Thu, 12 Dec 2013) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_X_2000.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_X_2000.h
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_b1_1235.cc
+   A /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_b1_1235.h
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DReaction_factory_b1pi_hists.cc
+
+Removed resonances from DReactionSteps, created custom actions for histograming resonance invariant masses. 
+
+
+------------------------------------------------------------------------
+r12162 | marki | 2013-12-12 13:11:15 -0500 (Thu, 12 Dec 2013) | 20 lines
+Changed paths:
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/gid_map.cc
+   A /trunk/sim-recon/src/programs/Simulation/HDGeant/gid_map.h
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gukine.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/guout.F
+   D /trunk/sim-recon/src/programs/Simulation/HDGeant/guparts.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/gustep.F
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hddmInput.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFDC.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/hitFTOF.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/savenewvertex.c
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+
+Introducing a new particle ID scheme.
+Older schemes are superceded.
+All parent ID's are filled in whenever parent particle received an ID. If not
+    the parent ID set to -1.
+No Geant track numbers are used for particle IDs or parent IDs.
+Truth hits are associated with the new IDs.
+
+A    gid_map.cc
+A    gid_map.h
+M    guout.F
+D    guparts.F
+M    hddmInput.c
+M    hitCDC.c
+M    hitFDC.c
+M    uginit.F
+M    hitFTOF.c
+M    gustep.F
+M    gukine.F
+M    savenewvertex.c
+
+------------------------------------------------------------------------
+r12197 | pmatt | 2013-12-13 15:00:49 -0500 (Fri, 13 Dec 2013) | 7 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DHistogramActions.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.cc
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+ParticleType: Added IsResonance() method.
+DHistogramActions: Deleted track multiplicity string tree. Changed duplicate-combo check for invariant mass action.
+DParticleCombo: Added Check_AreMeasuredParticlesIdentical() method. 
+DParticleCombo_factory: Fixed bug: if a resonance, omega, or phi was in a particle combo the combinations of the particles weren't handled correctly. 
+DReactionStep: Can no longer use resonance PIDs (omega and phi are OK). Can only use Unknown for missing particles. This makes sure that particle comboing is performed correctly. 
+
+
+------------------------------------------------------------------------
+r12198 | pmatt | 2013-12-13 15:01:26 -0500 (Fri, 13 Dec 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_X_2000.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/b1pi_hists/DCustomAction_HistMass_b1_1235.cc
+
+Fixed check for duplicate combinations. 
+
+
+------------------------------------------------------------------------
+r12201 | zihlmann | 2013-12-13 15:23:58 -0500 (Fri, 13 Dec 2013) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+add root to DANA builds
+
+------------------------------------------------------------------------
+r12203 | pmatt | 2013-12-13 15:26:07 -0500 (Fri, 13 Dec 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.h
+
+Added header file for abort function.  
+
+
+------------------------------------------------------------------------
+r12206 | pmatt | 2013-12-13 15:50:46 -0500 (Fri, 13 Dec 2013) | 4 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.h
+
+Added Get_MatchingChargedHypothesis() and Get_MatchingNeutralHypothesis() methods. 
+These return the hypothesis with PID = MC PID. If not available, they return the hypothesis with best PID FOM. 
+
+
+------------------------------------------------------------------------
+r12222 | davidl | 2013-12-17 12:59:22 -0500 (Tue, 17 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Optionally use DYLD_LIBRARY_PATH for ROOT builder.
+------------------------------------------------------------------------
+r12231 | davidl | 2013-12-18 07:41:32 -0500 (Wed, 18 Dec 2013) | 2 lines
+Changed paths:
+   A /trunk/home/davidl/bfield_poisson (from /trunk/sim-recon/src/programs/Utilities/bfield_poisson:12230)
+   D /trunk/sim-recon/src/programs/Utilities/bfield_poisson
+
+This directory contains semi-large binaries and makes a noticible pause when checking out sim-recon. The files are all use for generating B-field maps using Poisson which is something most users of sim-recon don't need. I'm moving this into my private area of the repository and will replace the directory in sim-recon with one containing only a README file so interested folks can still get to this.
+
+------------------------------------------------------------------------
+r12232 | davidl | 2013-12-18 07:45:24 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/SConscript
+
+Make hddm2root an optional build target. Users who want it must explicitly build it by specifying it on the command line or by running scons from withing the hddm2root source directory.
+------------------------------------------------------------------------
+r12233 | davidl | 2013-12-18 07:50:10 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson
+   A /trunk/sim-recon/src/programs/Utilities/bfield_poisson/README
+
+New bfield_poisson directory with README file telling where the new home of this directory is.
+------------------------------------------------------------------------
+r12234 | davidl | 2013-12-18 07:51:04 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/SConscript
+
+Broke subdirs list into 3 lines so it didn't run off the screen so far.
+------------------------------------------------------------------------
+r12238 | davidl | 2013-12-18 10:53:28 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pythia_h.F
+   A /trunk/sim-recon/src/programs/Simulation/bggen/fix_warnings.py
+
+Used a script to try and automatically fix issues leading to many, many warnings when compiling bggen. Not all warnings could be fixed so I'm committing pythia_h.F with the fixes that could be made. I'm also adding the script used to make the changes in case it is useful for continued work on this. Comments are at the top of the script descibing it's use.
+------------------------------------------------------------------------
+r12239 | davidl | 2013-12-18 11:21:26 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/SConscript
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_hddm.c
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pythia_h.F
+
+Removed -Wall from FORTRANFLAGS when building bggen with scons. This is to supress the many warnings generated from the pythia code. Also fixed a couple of lingering warnings to allow it to compile 'clean' using scons.
+------------------------------------------------------------------------
+r12240 | davidl | 2013-12-18 11:22:28 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SConstruct
+
+Add -Wall to CFLAGS, CXXFLAGS, and FORTRANFLAGS when compiling with SBMS.
+------------------------------------------------------------------------
+r12241 | davidl | 2013-12-18 11:24:11 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+
+Have DANA look for plugins in the 'plugins' directory where SBMS places them in additiona to looking in the 'lib' directory where BMS places them.
+------------------------------------------------------------------------
+r12242 | davidl | 2013-12-18 11:48:51 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.common
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/Makefile
+
+Turn off -Wall when compiling the FORTRAN code in bggen since it produces far too many errors. To do this, a general feature was added to BMS that allows any package to prescribe compiler flags to remove before actually compiling.
+------------------------------------------------------------------------
+r12249 | staylor | 2013-12-18 18:29:37 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/libraries/include/DMatrix1x2.h
+
+Add header file for 1x2 matrices.
+------------------------------------------------------------------------
+r12250 | staylor | 2013-12-18 18:30:08 -0500 (Wed, 18 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/DMatrix2x1.h
+   M /trunk/sim-recon/src/libraries/include/DMatrixSIMD.h
+
+Add some more functionality to the 2x1 matrix operations.
+------------------------------------------------------------------------
+r12251 | davidl | 2013-12-19 08:33:55 -0500 (Thu, 19 Dec 2013) | 26 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_CFglue.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_end.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/bg_eve.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/cobrems.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/cohbeam_ini.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/gbrwign.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/gdecan.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/gpxcosthr.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/gpxsecp.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/lowen_eve.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/lowen_ini.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/orndpoly.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pyth_eve.F
+   M /trunk/sim-recon/src/programs/Simulation/bggen/code/pythia_h.F
+
+After some discussion with Mark, backed out changes from the last 
+several weeks aimed at supressing warnings. We agreed that it would
+be too much effort (and too dangerous) to modify pythia to the point
+that it would compile cleanly with -Wall. This was done using a
+reverse merge using the following command:
+
+svn merge -c -XXX https://halldsvn.jlab.org/repos/trunk/sim-recon/src/programs/Simulation/bggen/code
+
+where "XXX" was each of the following revisions in this order:
+
+12238 (pythia_h.F only)
+12029
+11933
+11880
+11877
+11876
+11849
+11782
+11728
+
+Other changes committed in between these revisions should still be
+there. This includes the changes that remove -Wall when compiling
+the Fortran code in bggen so that it does not emit a long list of
+warnings.
+
+
+------------------------------------------------------------------------
+r12252 | davidl | 2013-12-19 08:38:08 -0500 (Thu, 19 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DMCThrownMatching.cc
+
+Comment out declaration of unused variables to avoid compiler warnings.
+------------------------------------------------------------------------
+r12261 | staylor | 2013-12-19 18:07:41 -0500 (Thu, 19 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCSegment_factory.cc
+
+Decrease match radius from 3 cm to 2 cm.
+------------------------------------------------------------------------
+r12262 | staylor | 2013-12-19 18:08:24 -0500 (Thu, 19 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCWire.h
+
+Add coordinate of wire in the direction transverse to the wire direction.
+------------------------------------------------------------------------
+r12263 | staylor | 2013-12-19 18:08:47 -0500 (Thu, 19 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.h
+
+More diagnostic histograms
+------------------------------------------------------------------------
+r12264 | staylor | 2013-12-19 18:12:45 -0500 (Thu, 19 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+Add routines to do fitting starting with intersections of wires (no cathode data).
+------------------------------------------------------------------------
+r12265 | pmatt | 2013-12-19 18:42:34 -0500 (Thu, 19 Dec 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleCombo_factory_PreKinFit.cc
+
+If no charged tracks, do not fail cut on tracking FOM. 
+
+
+------------------------------------------------------------------------
+r12273 | davidl | 2013-12-20 10:15:39 -0500 (Fri, 20 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Modified DAQ plugin to include quit_on_et_timeout flag that can be used to tell it to stopevent processeing the next time the ET system is empty. This has not been tested yet beyond compilation.
+------------------------------------------------------------------------
+r12274 | davidl | 2013-12-20 10:53:23 -0500 (Fri, 20 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+
+If JApplication is quitting and so no event was grabbed from ET, then return no more event sources.
+------------------------------------------------------------------------
+r12275 | davidl | 2013-12-20 11:01:07 -0500 (Fri, 20 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms_setenv.py
+
+When generating setenv script, use local directory to set HALLD_HOME rather than recycle from existing environment.
+------------------------------------------------------------------------
+r12276 | davidl | 2013-12-21 12:02:19 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms.py
+
+Add OptionallyBuild function to SBMS to easily allow certain directories to be kept out of the standard build, but still available to users in the sim-recon tree.
+------------------------------------------------------------------------
+r12277 | davidl | 2013-12-21 12:03:58 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SBMS/sbms_Darwin.py
+
+Added -undefined suppress flag when building shared libraries on Mac OS X so it does not error on undefined symbols that plugins will get once linked to an executable.
+------------------------------------------------------------------------
+r12278 | davidl | 2013-12-21 12:05:28 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/SConstruct
+
+Add the global COMMAND_LINE_TARGETS to the build environment so it can be used by scripts in SBMS where it is not globally defined.
+------------------------------------------------------------------------
+r12279 | davidl | 2013-12-21 12:07:02 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/SConscript
+
+Replace ad hoc method with newley defined OptionallyBuild method in SBMS.
+------------------------------------------------------------------------
+r12280 | davidl | 2013-12-21 12:07:44 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/SConscript
+
+Add DAQ and TTab plugins as optional builds.
+------------------------------------------------------------------------
+r12281 | davidl | 2013-12-21 12:08:32 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/TTab/SConscript
+
+TTab plugin needs expat library.
+------------------------------------------------------------------------
+r12282 | davidl | 2013-12-21 12:10:11 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.cc
+   M /trunk/sim-recon/src/programs/Utilities/plugins/DAQ/JEventSource_EVIO.h
+
+Replace JFactory_base_CopyTo with machanism now in JANA 0.7.0. (old method is still left mostly, but is commented out)
+------------------------------------------------------------------------
+r12283 | davidl | 2013-12-21 12:42:20 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/SConscript
+   A /trunk/sim-recon/src/libraries/include/SConscript
+
+Add SConscript to libraries/include so headers from there are installed.
+------------------------------------------------------------------------
+r12284 | staylor | 2013-12-21 16:29:27 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/dc_alignment/DEventProcessor_dc_alignment.h
+
+more work on the fit using only the wire information.
+------------------------------------------------------------------------
+r12285 | davidl | 2013-12-21 19:24:51 -0500 (Sat, 21 Dec 2013) | 9 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.cc
+   M /trunk/sim-recon/src/libraries/DANA/DApplication.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.h
+
+Changed DGeometry to only request a DMagneticFieldMap from the DApplication
+when it is requested from DGeometry. Thus, avoiding the overhead of reading
+in the B-field map if the application doesn't need it.
+
+Similarly, don't read in material maps unless requested.
+
+Finally, delete DGeometry objects in DApplication destructor rather than
+just grabbing the material maps from them and deleting those.
+
+------------------------------------------------------------------------
+r12286 | davidl | 2013-12-21 19:37:54 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Utilities/dumpwires
+   A /trunk/sim-recon/src/programs/Utilities/dumpwires/SConscript
+   A /trunk/sim-recon/src/programs/Utilities/dumpwires/dumpwires.cc
+
+A simple utility to dump the CDC and FDC wire definitions into an ASCII file.
+------------------------------------------------------------------------
+r12287 | davidl | 2013-12-21 19:42:52 -0500 (Sat, 21 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/dumpwires/dumpwires.cc
+
+Add 100k to CDC id and 200k to FDC id to make sure they are unique
+------------------------------------------------------------------------
+r12290 | marki | 2013-12-27 16:30:27 -0500 (Fri, 27 Dec 2013) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/bggen/run/pythia-geant.map
+
+Revert to revision 3195, the original gen version.
+M    pythia-geant.map
+
+------------------------------------------------------------------------
+r12291 | kmoriya | 2013-12-27 19:35:04 -0500 (Fri, 27 Dec 2013) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/include/particleType.h
+
+updated to PDG or NIST values; corrected mistakes such as Sigma+ and Sigma- having same mass, triton mass being 0.8 GeV
+------------------------------------------------------------------------
+r12295 | pmatt | 2013-12-30 22:07:37 -0500 (Mon, 30 Dec 2013) | 13 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/ANALYSIS_init.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DAnalysisUtilities.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DChargedTrackHypothesis_factory_Combo.h
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DDetectorMatches_factory_Combo.cc
+   A /trunk/sim-recon/src/libraries/ANALYSIS/DDetectorMatches_factory_Combo.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventRFBunch_factory_Combo.h
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DEventWriterROOT.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DKinFitResults_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DParticleComboBlueprint_factory.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DTrackTimeBased_factory_Combo.h
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis.h
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DChargedTrackHypothesis_factory.h
+   A /trunk/sim-recon/src/libraries/PID/DDetectorMatches.h
+   A /trunk/sim-recon/src/libraries/PID/DDetectorMatches_factory.cc
+   A /trunk/sim-recon/src/libraries/PID/DDetectorMatches_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DEventRFBunch_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DNeutralShower_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DNeutralShower_factory.h
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.cc
+   M /trunk/sim-recon/src/libraries/PID/DParticleID.h
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DVertex_factory.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+   M /trunk/sim-recon/src/libraries/TOF/DTOFPoint.h
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Created DDetectorMatches class to store matching information between different detector systems. Note that this is not in REST yet. 
+
+Changed the members of DChargedTrackHypothesis to include the matching information and to remove the reference trajectory. 
+
+Added timing uncertainty variable to DTOFPoint (value not set). 
+
+Fixed bug in setup for time-based tracking, where the input time to the match-to functions was not reset in between calls. 
+
+Only swim new time-based tracks in the "combo" factory when needed (e.g. significantly different particle mass or charge). 
+
+Changed many functions to interface with the new classes and methods. 
+
+
+------------------------------------------------------------------------
+r12298 | pmatt | 2014-01-05 14:46:13 -0500 (Sun, 05 Jan 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DDetectorMatches_factory_Combo.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventSourceREST.h
+   M /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.cc
+   M /trunk/sim-recon/src/libraries/HDDM/DEventWriterREST.h
+   M /trunk/sim-recon/src/libraries/HDDM/rest.xml
+   M /trunk/sim-recon/src/libraries/PID/DDetectorMatches.h
+
+Added DDetectorMatches to REST format. Split up BCAL and FCAL showers into separate REST file objects. Changed interface to some function calls. 
+
+
+------------------------------------------------------------------------
+r12299 | pmatt | 2014-01-05 14:48:27 -0500 (Sun, 05 Jan 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/PID/DDetectorMatches_factory.cc
+   M /trunk/sim-recon/src/libraries/PID/DDetectorMatches_factory.h
+
+Moved DParticleID to a local variable so that "Combo" factory can call the "Create_" method without brun() of the default factory being called first. 
+
+
+------------------------------------------------------------------------
+r12300 | pmatt | 2014-01-05 22:04:11 -0500 (Sun, 05 Jan 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/ANALYSIS/DReactionStep.cc
+
+Allow Unknown to be used as an initial particle. This is useful for studying specific final states when you don't care about photon selection. 
+
+
+------------------------------------------------------------------------
+r12307 | staylor | 2014-01-06 14:03:17 -0500 (Mon, 06 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+If the hit selector does not find enough hits to perform a fit, use the hits from the candidate.
+------------------------------------------------------------------------
+r12309 | staylor | 2014-01-06 14:12:04 -0500 (Mon, 06 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DMagneticFieldStepper.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DMagneticFieldStepper.h
+
+Add faster stepping routine that does not rely on the fourth-order Runge-Kutta but an alternate calculation that assumes that the magnetic field over the step is constant and so only gets the magnetic field once.
+------------------------------------------------------------------------
+r12310 | staylor | 2014-01-06 14:21:38 -0500 (Mon, 06 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DReferenceTrajectory.h
+
+(1) Add faster version of the swimmer that uses the FastStep routine just checked into DMagneticFieldStepper.c.  (2) For the regular reference trajectory, propagate the convariance matrix from the target region to the end of the trajectory.  Store the covariance terms involving time at each step.
+------------------------------------------------------------------------
+r12311 | staylor | 2014-01-06 15:12:46 -0500 (Mon, 06 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMap.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapConst.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapConst.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapFineMesh.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapParameterized.h
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.cc
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.h
+
+Add versions of GetField that uses 3-vector inputs for position and B-field
+------------------------------------------------------------------------
+r12312 | staylor | 2014-01-06 15:20:00 -0500 (Mon, 06 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/HDGEOMETRY/DGeometry.cc
+
+Undo accidental commit
+------------------------------------------------------------------------
+r12313 | staylor | 2014-01-06 15:30:15 -0500 (Mon, 06 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterALT1.cc
+
+Make calls to rt->Swim consistent with recent version of DReferenceTrajectory.
+------------------------------------------------------------------------
+r12318 | marki | 2014-01-07 11:34:26 -0500 (Tue, 07 Jan 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/HDGeant/uginit.F
+
+Initialize nevent.
+M    uginit.F
+
+------------------------------------------------------------------------
+r12319 | marki | 2014-01-07 13:52:33 -0500 (Tue, 07 Jan 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned/plot_3pi.cc
+
+add #include <unistd.h>
+M    plot_3pi.cc
+
+------------------------------------------------------------------------
+r12320 | marki | 2014-01-07 13:54:49 -0500 (Tue, 07 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/AmplitudeAnalysis/Examples/threepi_binned
+
+ignore made directories
+------------------------------------------------------------------------
+r12331 | pmatt | 2014-01-08 12:40:33 -0500 (Wed, 08 Jan 2014) | 3 lines
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/grkuta.cc
+
+Commented out abs, min, and max macros since they are defined in the std namespace (which was recently added via DMagneticFieldMap.h -> DVector3.h)
+
+
+------------------------------------------------------------------------
+r12332 | staylor | 2014-01-08 15:43:09 -0500 (Wed, 08 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/grkuta.cc
+
+Change the name of the abs macro to make it local to this routine to avoid compilation problems depending on the particular version of gcc.
+------------------------------------------------------------------------
+r12333 | pmatt | 2014-01-08 16:12:19 -0500 (Wed, 08 Jan 2014) | 3 lines
+Changed paths:
+   D /trunk/sim-recon/src/libraries/PID/DChargedTruthMatch.h
+   D /trunk/sim-recon/src/libraries/PID/DChargedTruthMatch_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DChargedTruthMatch_factory.h
+   D /trunk/sim-recon/src/libraries/PID/DKinFit.cc
+   D /trunk/sim-recon/src/libraries/PID/DKinFit.h
+   D /trunk/sim-recon/src/libraries/PID/DParticleSet.h
+   D /trunk/sim-recon/src/libraries/PID/DParticleSet_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DParticleSet_factory.h
+   D /trunk/sim-recon/src/libraries/PID/DPhysicsEvent.h
+   D /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DPhysicsEvent_factory.h
+   D /trunk/sim-recon/src/libraries/PID/DPiMinus.h
+   D /trunk/sim-recon/src/libraries/PID/DPiMinus_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DPiMinus_factory.h
+   D /trunk/sim-recon/src/libraries/PID/DPiPlus.h
+   D /trunk/sim-recon/src/libraries/PID/DPiPlus_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DPiPlus_factory.h
+   D /trunk/sim-recon/src/libraries/PID/DTwoGammaFit.cc
+   D /trunk/sim-recon/src/libraries/PID/DTwoGammaFit.h
+   D /trunk/sim-recon/src/libraries/PID/DTwoGammaFit_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DTwoGammaFit_factory.h
+   D /trunk/sim-recon/src/libraries/PID/DTwoGammaFit_factory_ETA.cc
+   D /trunk/sim-recon/src/libraries/PID/DTwoGammaFit_factory_ETA.h
+   D /trunk/sim-recon/src/libraries/PID/DTwoGammaFit_factory_PI0.cc
+   D /trunk/sim-recon/src/libraries/PID/DTwoGammaFit_factory_PI0.h
+   D /trunk/sim-recon/src/libraries/PID/DVertexIndependentResults.h
+   D /trunk/sim-recon/src/libraries/PID/DVertexIndependentResults_factory.cc
+   D /trunk/sim-recon/src/libraries/PID/DVertexIndependentResults_factory.h
+   M /trunk/sim-recon/src/libraries/PID/PID_init.cc
+
+Deleted deprecated classes/factories from PID library: DKinFit, DTwoGammaFit*, DVertexIndpendentResults, DPiPlus, DPiMinus, DParticleSet, DPhysicsEvent
+
+
+------------------------------------------------------------------------
+r12334 | pmatt | 2014-01-08 16:16:32 -0500 (Wed, 08 Jan 2014) | 5 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_debugerframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_endviewBframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_fulllistframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/Makefile
+   M /trunk/sim-recon/src/programs/Analysis/plugins/SConscript
+
+
+Removed mc_tree & phys_tree plugins from default make & scons lists since they depended on these classes. 
+Deleted all references of deleted PID classes from hdview2.
+
+
+------------------------------------------------------------------------
+r12344 | davidl | 2014-01-10 09:49:22 -0500 (Fri, 10 Jan 2014) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCHit.h
+
+Remove comma after last element in enum.
+------------------------------------------------------------------------
