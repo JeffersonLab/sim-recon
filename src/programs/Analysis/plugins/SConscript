@@ -1,3 +1,5 @@
+import sbms
+
 Import('*')
 
 subdirs = ['acceptance_hists', 'b1pi_hists', 'cdc_hists', 'fcal_hists', 'mcthrown_hists', 'trackeff_hists', 'monitoring_hists']
