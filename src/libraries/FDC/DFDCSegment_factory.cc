@@ -53,6 +53,9 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 ///
 jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) { 
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+  const DMagneticFieldMap *bfield = dapp->GetBfield();
+  FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
+
   // get the geometry
   const DGeometry *geom = dapp->GetDGeometry(runnumber);
 
@@ -770,10 +773,10 @@ double DFDCSegment_factory::GetCharge(unsigned int n,vector<xyz_t>&XYZ,
   }
   Delta=sumv*sumxx-sumx*sumx;
   slope=(sumv*sumxy-sumy*sumx)/Delta; 
-  
-  // Guess particle charge (+/-1);
-  if (slope<0.) return -1.;
-  return 1.;
+ 
+  // Guess particle charge (+/-1); 
+  if (slope<0.) return -FactorForSenseOfRotation;
+  return FactorForSenseOfRotation;
 }
 
 //----------------------------------------------------------------------------

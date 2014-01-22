@@ -95,6 +95,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		double var_tanl,Phi1;
 		double charge;
 		unsigned int ref_plane;
+		double FactorForSenseOfRotation;
 	
 		double chisq;
 		int Ndof;

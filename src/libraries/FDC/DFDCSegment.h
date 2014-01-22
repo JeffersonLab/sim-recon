@@ -80,6 +80,8 @@ class DFDCSegment : public JObject {
 			AddString(items, "yc", "%3.2f", yc);
 			AddString(items, "rc", "%3.2f", rc);
 			AddString(items, "Phi1(rad)", "%3.2f", Phi1);
+			AddString(items, "D","%3.2f",D);
+			AddString(items, "q","%3.1f",q);
 			AddString(items, "Nhits", "%d", hits.size());
 		}
 };
