@@ -85,7 +85,7 @@ def mk_setenv(env):
 	str += 'setenv JANA_HOME %s\n' % os.getenv('JANA_HOME', '$HOME/jana')
 	str += 'setenv JANA_CALIB_URL %s\n' % os.getenv('JANA_CALIB_URL', '$HOME/halld/calib')
 	str += 'setenv JANA_GEOMETRY_URL xmlfile://${HDDS_HOME}/main_HDDS.xml\n'
-	str += 'setenv JANA_PLUGIN_PATH ${JANA_HOME}/lib\n'
+	str += 'setenv JANA_PLUGIN_PATH ${JANA_HOME}/plugins:${JANA_HOME}/lib\n'
 	str += 'setenv PATH ${JANA_HOME}/bin:${PATH}\n'
 	str += '\n'
 
