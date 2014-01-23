@@ -517,6 +517,8 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 			}
 		}else if(source_type==kETSource){
 
+#ifdef HAVE_ET
+
 			if(VERBOSE>3) evioout << "  attempting read from EVIO ET source ..." << endl;
 
 			
@@ -565,6 +567,17 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 
 			// Put ET event back since we're done with it
 			et_event_put(sys_id, att_id, pe);
+
+#else    // HAVE_ET
+
+			japp->Quit();
+			evioout << "Attempting to read from ET system using binary that" << endl;
+			evioout << "does not have ET support built in! Try recompiling" << endl;
+			evioout << "programs/Utilities/plugins/DAQ with ETROOT defined" << endl;
+			evioout << "and pointing to an ET installation." << endl;
+	
+#endif   //HAVE_ET
+
 		}
 	} catch (evioException &e) {
 		_DBG_<<e.what()<<endl;
