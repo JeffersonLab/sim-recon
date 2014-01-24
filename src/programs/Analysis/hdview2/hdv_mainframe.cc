@@ -477,6 +477,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   // Pointers to optional daughter windows (these must be done before ReadPreferences in
   // order for the options they implement to be filled into checkbuttons)
   trkmf = NULL;
+  bcaldispmf = NULL;
   optionsmf = new hdv_optionsframe(this, NULL, 100, 100);
   debugermf = new hdv_debugerframe(this, NULL, 800, 800);
   fulllistmf = new hdv_fulllistframe(this, NULL, 100, 100);
