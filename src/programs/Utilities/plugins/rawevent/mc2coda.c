@@ -146,7 +146,7 @@ CODA_EVENT_INFO *
 mc2codaOpenEvent(CODA_EXP_INFO *expID, uint64_t eventNum, uint64_t trigTime, unsigned short eventType, int maxSize)
 {
 	
-	int ii, jj, kk, has_tt = 0;
+	int ii, jj, has_tt = 0;
 	unsigned int *evbuf;
 	CODA_EVENT_INFO *evinfo;
 	
@@ -257,7 +257,7 @@ int
 mc2codaWrite(CODA_EVENT_INFO *event, int nHits, struct coda_hit_info *codaHits)
 {
 	
-	int ii, jj, cnt, lcnt, crate, slot;
+	int ii, cnt, lcnt, crate, slot;
 	CODA_EXP_INFO *exp;
 	CODA_HIT_INFO *tmpH;
 	static int bad_crate_slot_warning_issued = 0;
@@ -330,7 +330,7 @@ mc2codaWrite(CODA_EVENT_INFO *event, int nHits, struct coda_hit_info *codaHits)
 unsigned int
 mc2codaCloseEvent(CODA_EVENT_INFO *event)
 {
-	int ii, jj, kk, hcnt, nwords;
+	int ii, jj;
 	unsigned int roc, det, mod;
 	unsigned int *StartofEvent;
 	CODA_EXP_INFO *expID = event->expid;
@@ -640,8 +640,8 @@ mc2codaStats(CODA_EVENT_INFO *eventID, int sflag)
 {
 	
 	CODA_EXP_INFO  *exp;
-	CODA_HIT_INFO  *tmpH;
-	int ii, jj, kk, ccnt, hcnt, lcnt;
+	//CODA_HIT_INFO  *tmpH;
+	int ii, jj, ccnt, hcnt;
 	int chits [MAX_CRATES];
 	
 	if(eventID == NULL) {

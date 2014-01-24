@@ -145,7 +145,7 @@ int
 fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 {
 	
-	int ii, jj, chan, hcnt, nwords, dflag, pflag;
+	int ii, jj, chan, hcnt, nwords, pflag;
 	uint32_t  eventNum;
 	uint64_t  timestamp;
 	unsigned int *start = dabufp;
@@ -484,8 +484,8 @@ int
 caen1290_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 {
 	
-	int ii, jj, chan, hcnt, nwords, wcnt;
-	uint64_t tsdiv;
+	int ii, jj, chan, hcnt, nwords=0, wcnt;
+	//uint64_t tsdiv;
 	uint32_t chip, stat, edge = 0;
 	uint32_t  eventNum;
 	uint64_t  timestamp;
