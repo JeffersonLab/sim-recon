@@ -88,8 +88,17 @@ extern "C" {
 #include <expat.h>
 
 
-#include <boost/lexical_cast.hpp>
-using namespace boost;
+// Replace use of BOOST lexical_cast with a simple templated function
+// so that BOOST is no longer required.   1/24/2014  DL
+//#include <boost/lexical_cast.hpp>
+//using namespace boost;
+template<typename T>
+string lexical_cast(T t)
+{
+	stringstream ss;
+	ss << t;
+	return ss.str();
+}
 
 
 // to protect writing to output file
@@ -147,7 +156,7 @@ static uint64_t trigTime     = 32000000;    // in picoseconds
 static float tMin            = -100000.;    // minimum hit time in picoseconds
 
 static int trigtick          = 4000;    // in picoseconds
-static int CAENTDCtick       = 25;      // in picoseconds
+//static int CAENTDCtick       = 25;      // in picoseconds
 static int F1TDC32tick       = 60;      // in picoseconds
 static int F1TDC48tick       = 120;     // in picoseconds
 static int FADC250tick       = 4000;    // in picoseconds
@@ -1538,7 +1547,7 @@ cscRef JEventProcessor_rawevent::DTOFHitTranslationADC(const DTOFHit* hit) const
   }else{
     end = (hit->end==0 ? "N":"S");
   }
-  string s = "tofadc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
+  string s = "tofadc::" + lexical_cast(hit->plane) + ":" + lexical_cast(hit->bar)
     + ":" + end;
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
@@ -1555,7 +1564,7 @@ cscRef JEventProcessor_rawevent::DTOFHitTranslationTDC(const DTOFHit* hit) const
   }else{
     end = (hit->end==0 ? "N":"S");
   }
-  string s = "toftdc::" + lexical_cast<string>(hit->plane) + ":" + lexical_cast<string>(hit->bar)
+  string s = "toftdc::" + lexical_cast(hit->plane) + ":" + lexical_cast(hit->bar)
     + ":" + end;
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
@@ -1567,8 +1576,8 @@ cscRef JEventProcessor_rawevent::DTOFHitTranslationTDC(const DTOFHit* hit) const
 
 cscRef JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) const {
   string end = hit->end==0 ? "U":"D";
-  string s = "bcaladc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
-    + ":" + lexical_cast<string>(hit->layer) + ":" + end;
+  string s = "bcaladc::" + lexical_cast(hit->module) + ":" + lexical_cast(hit->sector)
+    + ":" + lexical_cast(hit->layer) + ":" + end;
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1582,8 +1591,8 @@ cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) con
   // have this. Ignore those hits here.
   if(hit->layer > 3) return CSCREF_NULL;
   string end = hit->end==0 ? "U":"D";
-  string s = "bcaltdc::" + lexical_cast<string>(hit->module) + ":" + lexical_cast<string>(hit->sector)
-    + ":" + lexical_cast<string>(hit->layer) + ":" + end;
+  string s = "bcaltdc::" + lexical_cast(hit->module) + ":" + lexical_cast(hit->sector)
+    + ":" + lexical_cast(hit->layer) + ":" + end;
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1593,7 +1602,7 @@ cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) con
 
 
 cscRef JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) const {
-  string s = "fcaladc::" + lexical_cast<string>(hit->row) + ":" + lexical_cast<string>(hit->column);
+  string s = "fcaladc::" + lexical_cast(hit->row) + ":" + lexical_cast(hit->column);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1603,7 +1612,7 @@ cscRef JEventProcessor_rawevent::DFCALHitTranslationADC(const DFCALHit* hit) con
 
 
 cscRef JEventProcessor_rawevent::DFDCAnodeHitTranslation(const DFDCHit* hit) const {
-  string s = "fdcanode::"  + lexical_cast<string>(hit->gPlane) + ":" + lexical_cast<string>(hit->element);
+  string s = "fdcanode::"  + lexical_cast(hit->gPlane) + ":" + lexical_cast(hit->element);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1613,7 +1622,7 @@ cscRef JEventProcessor_rawevent::DFDCAnodeHitTranslation(const DFDCHit* hit) con
 
 
 cscRef JEventProcessor_rawevent::DFDCCathodeHitTranslation(const DFDCHit* hit) const {
-  string s = "fdccathode::"  + lexical_cast<string>(hit->gPlane) + ":" + lexical_cast<string>(hit->element);
+  string s = "fdccathode::"  + lexical_cast(hit->gPlane) + ":" + lexical_cast(hit->element);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1623,7 +1632,7 @@ cscRef JEventProcessor_rawevent::DFDCCathodeHitTranslation(const DFDCHit* hit) c
 
 
 cscRef JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) const {
-  string s = "cdcadc::" + lexical_cast<string>(hit->ring) + ":" + lexical_cast<string>(hit->straw);
+  string s = "cdcadc::" + lexical_cast(hit->ring) + ":" + lexical_cast(hit->straw);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1633,7 +1642,7 @@ cscRef JEventProcessor_rawevent::DCDCHitTranslationADC(const DCDCHit* hit) const
 
 
 cscRef JEventProcessor_rawevent::DSTHitTranslationADC(const DSCHit* hit) const {
-  string s = "stadc::" + lexical_cast<string>(hit->sector);
+  string s = "stadc::" + lexical_cast(hit->sector);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1643,7 +1652,7 @@ cscRef JEventProcessor_rawevent::DSTHitTranslationADC(const DSCHit* hit) const {
 
 
 cscRef JEventProcessor_rawevent::DSTHitTranslationTDC(const DSCHit* hit) const {
-  string s = "sttdc::" + lexical_cast<string>(hit->sector);
+  string s = "sttdc::" + lexical_cast(hit->sector);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1658,7 +1667,7 @@ cscRef JEventProcessor_rawevent::DTaggerTranslationTDC(const DTagger* hit) const
   // Also, the HDGeant simulation of tagger hits uses an old design with 128 columns.
   // We force those in range here by placing them all in column 100.
   if( hit->column > 100) return CSCREF_NULL;
-  string s = "tagmtdc::" + lexical_cast<string>(hit->row+1) +":" + lexical_cast<string>(hit->column);
+  string s = "tagmtdc::" + lexical_cast(hit->row+1) +":" + lexical_cast(hit->column);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
@@ -1671,7 +1680,7 @@ cscRef JEventProcessor_rawevent::DTaggerTranslationADC(const DTagger* hit) const
   // HDGeant always puts 0 for "row". Translation table has values 1-5 with summed columns being 1.
   // Add 1 to row for now to make it 1 corresponding to the one value the simulation produces.
   if( hit->column > 100) return CSCREF_NULL;
-  string s = "tagmadc::" + lexical_cast<string>(hit->row+1) +":" + lexical_cast<string>(hit->column);
+  string s = "tagmadc::" + lexical_cast(hit->row+1) +":" + lexical_cast(hit->column);
   if(cscMap.count(s)<=0)jerr << "?unknown map entry " << s << endl;
   return(cscMap[s]);
 }
