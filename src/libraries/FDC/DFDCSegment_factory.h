@@ -66,7 +66,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
   jerror_t UpdatePositionsAndCovariance(unsigned int n,double r1sq,
 					vector<xyz_t> &XYZ,DMatrix &CRPhi,
 					DMatrix &CR);
-  double GetCharge(unsigned int n,vector<xyz_t>&XYZ,DMatrix &CR, 
+  double GetRotationSense(unsigned int n,vector<xyz_t>&XYZ,DMatrix &CR, 
 		   DMatrix &CRPhi);
 
 	protected:
@@ -93,9 +93,9 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		// Track parameters
 		double tanl,z0,zvertex,D,phi0;
 		double var_tanl,Phi1;
-		double charge;
+		double rotation_sense;
 		unsigned int ref_plane;
-		double FactorForSenseOfRotation;
+		double RotationSenseToCharge;
 	
 		double chisq;
 		int Ndof;

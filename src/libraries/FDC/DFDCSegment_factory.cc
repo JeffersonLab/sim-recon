@@ -54,8 +54,8 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int runnumber) { 
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DMagneticFieldMap *bfield = dapp->GetBfield();
-  FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
-
+  RotationSenseToCharge=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
+ 
   // get the geometry
   const DGeometry *geom = dapp->GetDGeometry(runnumber);
 
@@ -235,7 +235,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   double x1=XYZ[ref_plane].xy.Y();
   double var_R1=CR(ref_plane,ref_plane);
   for (unsigned int k=0;k<n;k++){       
-    double sperp=charge*(XYZ[k].z-z1)/tanl;
+    double sperp=rotation_sense*(XYZ[k].z-z1)/tanl;
     double phi_s=Phi1+sperp/rc;
     double sinp=sin(phi_s);
     double cosp=cos(phi_s);
@@ -496,8 +496,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
     error=RiemannLineFit(points,CR,XYZ);
   }
 
-  // Guess particle charge (+/-1);
-  charge=GetCharge(points.size(),XYZ,CR,CRPhi);
+  // Guess particle sense of rotation (+/-1);
+  rotation_sense=GetRotationSense(points.size(),XYZ,CR,CRPhi);
 
   double r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
@@ -505,9 +505,9 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // Compute the chi-square value for this iteration
   double chisq0=0.;
   double rc0=rc,xc0=xc,yc0=yc,tanl0=tanl,zvertex0=zvertex,Phi1_0=Phi1;
-  double charge0=charge;
+  double rotation_sense0=rotation_sense;
   for (unsigned int m=0;m<points.size();m++){
-    double sperp=charge*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
+    double sperp=rotation_sense*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
     double phi_s=Phi1+sperp/rc;
     DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
     chisq0+=(XY-points[m]->xy).Mod2()/CR(m,m);
@@ -523,18 +523,18 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // Preliminary line fit
   error=RiemannLineFit(points,CR,XYZ);
 
-  // Guess particle charge (+/-1);
-  charge=GetCharge(points.size(),XYZ,CR,CRPhi);
+  // Guess particle sense of rotation (+/-1);
+  rotation_sense=GetRotationSense(points.size(),XYZ,CR,CRPhi);
   
   r1sq=XYZ[ref_plane].xy.Mod2();
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
   
   // Compute the chi-square value for this iteration
   double chisq_=0.;
-  double charge_=charge;
+  double rotation_sense_=rotation_sense;
   double rc_=rc,xc_=xc,yc_=yc,tanl_=tanl,zvertex_=zvertex,Phi1_=Phi1;
   for (unsigned int m=0;m<points.size();m++){
-    double sperp=charge*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
+    double sperp=rotation_sense*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
     double phi_s=Phi1+sperp/rc;
     DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
     chisq_+=(XY-points[m]->xy).Mod2()/CR(m,m);
@@ -542,7 +542,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // If we did not improve the fit, bail from this routine...
   if (chisq_>chisq0){
     chisq=chisq0;
-    charge=charge0;
+    rotation_sense=rotation_sense0;
     rc=rc0,xc=xc0,yc=yc0,tanl=tanl0,zvertex=zvertex0,Phi1=Phi1_0;
     
     return NOERROR;
@@ -558,8 +558,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // Final line fit
   error=RiemannLineFit(points,CR,XYZ);
 
-  // Guess particle charge (+/-1)
-  charge=GetCharge(num_measured,XYZ,CR,CRPhi);
+  // Guess particle sense of rotation (+/-1)
+  rotation_sense=GetRotationSense(num_measured,XYZ,CR,CRPhi);
   
   // Final update to covariance matrices
   r1sq=XYZ[ref_plane].xy.Mod2();
@@ -568,9 +568,10 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // Store residuals and path length for each measurement
   chisq=0.;
   for (unsigned int m=0;m<num_points;m++){
-    double sperp=charge*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
+    double sperp=rotation_sense*(XYZ[m].z-XYZ[ref_plane].z)/tanl;
     double phi_s=Phi1+sperp/rc;
     DVector2 XY(xc+rc*cos(phi_s),yc+rc*sin(phi_s));
+
     if (m<num_measured){
       chisq+=(XY-points[m]->xy).Mod2()/CR(m,m);
     }
@@ -583,7 +584,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<const DFDCPseudo*>points,
   // saved values for the parameters and chi-square.
   if (chisq>chisq_){
     chisq=chisq_;
-    charge=charge_;
+    rotation_sense=rotation_sense_;
     rc=rc_,xc=xc_,yc=yc_,tanl=tanl_,zvertex=zvertex_,Phi1=Phi1_;
   }
   Ndof=num_points-3;
@@ -633,7 +634,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 
 	// Clear track parameters
 	tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
-	charge=1.;
+	rotation_sense=1.;
 	
 	// Point in the current plane in the package 
 	DVector2 XY=points[i]->xy;
@@ -704,12 +705,15 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 	jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
 		
 	if (error==NOERROR){  
+	  double charge=RotationSenseToCharge*rotation_sense;
+
 	  // Estimate for azimuthal angle
 	  phi0=atan2(-xc,yc); 
-	  if (charge<0) phi0+=M_PI;
+	  if (rotation_sense<0) phi0+=M_PI;
+	  //  if (rotation_sense<0) phi0+=M_PI;
 	  
 	  // Look for distance of closest approach nearest to target
-	  D=-charge*rc-xc/sin(phi0);
+	  D=-rotation_sense*rc-xc/sin(phi0);
 	  
 	  // Creat a new segment
 	  DFDCSegment *segment = new DFDCSegment;	
@@ -744,9 +748,9 @@ jerror_t DFDCSegment_factory::FindSegments(vector<const DFDCPseudo*>points){
 }
 
 // Linear regression to find charge
-double DFDCSegment_factory::GetCharge(unsigned int n,vector<xyz_t>&XYZ, 
-				      DMatrix &CR, 
-				      DMatrix &CRPhi){
+double DFDCSegment_factory::GetRotationSense(unsigned int n,vector<xyz_t>&XYZ, 
+					     DMatrix &CR, 
+					     DMatrix &CRPhi){
   double inv_var=0.; 
   double sumv=0.;
   double sumy=0.;
@@ -773,10 +777,9 @@ double DFDCSegment_factory::GetCharge(unsigned int n,vector<xyz_t>&XYZ,
   }
   Delta=sumv*sumxx-sumx*sumx;
   slope=(sumv*sumxy-sumy*sumx)/Delta; 
- 
-  // Guess particle charge (+/-1); 
-  if (slope<0.) return -FactorForSenseOfRotation;
-  return FactorForSenseOfRotation;
+  
+  if (slope<0.) return -1.;
+  return 1.;
 }
 
 //----------------------------------------------------------------------------

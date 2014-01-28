@@ -79,6 +79,7 @@ class DFDCSegment : public JObject {
 			AddString(items, "xc", "%3.2f", xc);
 			AddString(items, "yc", "%3.2f", yc);
 			AddString(items, "rc", "%3.2f", rc);
+			AddString(items, "phi0(deg)","%3.2f",57.296*phi0);
 			AddString(items, "Phi1(rad)", "%3.2f", Phi1);
 			AddString(items, "D","%3.2f",D);
 			AddString(items, "q","%3.1f",q);
