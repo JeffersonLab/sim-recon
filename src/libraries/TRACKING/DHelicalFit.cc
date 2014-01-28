@@ -48,7 +48,9 @@ bool DHFProjection_cmp(const DHFProjection_t &a,
 //-----------------
 DHelicalFit::DHelicalFit(void)
 {
-  x0 = y0 = r0 = tanl = z_vertex = p_trans = phi= theta = q = p = dzdphi =0;
+  x0 = 0., y0 = 0., r0=0., tanl=0., z_vertex = 0., phi=0., theta = 0.,dzdphi=0.;
+  h=1.;
+
   chisq = 0;
   ndof=0;
   chisq_source = NOFIT;
@@ -72,9 +74,7 @@ void DHelicalFit::Reset(void)
 	x0 = 0.0;
 	y0 = 0.0;
 	r0 = 0.0;
-	q = 0.0;
-	p = 0.0;
-	p_trans = 0.0;
+	h = 1.0;
 	phi = 0.0;
 	theta = 0.0;
 	tanl = 0.0;
@@ -89,8 +89,6 @@ void DHelicalFit::Reset(void)
 	
 	Clear();
 	//hits.clear();
-	bfield = NULL;
-	Bz_avg = 0.0;
 	z_mean = 0.0;
 	phi_mean = 0.0;
   
@@ -113,10 +111,8 @@ void DHelicalFit::Copy(const DHelicalFit &fit)
 	x0 = fit.x0;
 	y0 = fit.y0;
 	r0 = fit.r0;
-	q = fit.q;
-	p = fit.p;
+	h = fit.h;
 	tanl=fit.tanl;
-	p_trans = fit.p_trans;
 	phi = fit.phi;
 	theta = fit.theta;
 	z_vertex = fit.z_vertex;
@@ -124,8 +120,6 @@ void DHelicalFit::Copy(const DHelicalFit &fit)
 	ndof=fit.ndof;
 	dzdphi = fit.dzdphi;
 	chisq_source = fit.chisq_source;
-	bfield = fit.GetMagneticFieldMap();
-	Bz_avg = fit.GetBzAvg();
 	z_mean = fit.GetZMean();
 	phi_mean = fit.GetPhiMean();
 	
@@ -407,10 +401,6 @@ jerror_t DHelicalFit::FitCircle(void)
 	/// negatively charged, then phi will be 180 degrees off. To
 	/// correct this, one needs z-coordinate information to determine
 	/// the sign of the charge.
-	///
-	/// ALSO IMPORTANT: This assumes a charge of +1 for the particle. If
-	/// the particle actually has a charge of +2, then the resulting
-	/// value of p_trans will be half of what it should be.
 
 	float alpha=0.0, beta=0.0, gamma=0.0, deltax=0.0, deltay=0.0;
 	chisq_source = NOFIT; // in case we return early
@@ -421,36 +411,27 @@ jerror_t DHelicalFit::FitCircle(void)
 	// if a magnetic field map was given, use it to find average Z B-field
 	DHFHit_t *a = NULL;
 	for(unsigned int i=0;i<num_hits;i++){
-		a = hits[i];
-		float x=a->x;
-		float y=a->y;
-		alpha += x*x;
-		beta += y*y;
-		gamma += x*y;
-		deltax += x*(x*x+y*y)/2.0;
-		deltay += y*(x*x+y*y)/2.0;		
+	  a = hits[i];
+	  float x=a->x;
+	  float y=a->y;
+	  float x_sq=x*x;
+	  float y_sq=y*y;
+	  float x_sq_plus_y_sq=x_sq+y_sq;
+	  alpha += x_sq;
+	  beta += y_sq;
+	  gamma += x*y;
+	  deltax += 0.5*x*x_sq_plus_y_sq;
+	  deltay += 0.5*y*x_sq_plus_y_sq;
 	}
 	
 	// Calculate x0,y0 - the center of the circle
 	double denom = alpha*beta-gamma*gamma;
 	if(fabs(denom)<1.0E-20)return UNRECOVERABLE_ERROR;
 	x0 = (deltax*beta-deltay*gamma)/denom;
-	//y0 = (deltay-gamma*x0)/beta;
 	y0 = (deltay*alpha-deltax*gamma)/denom;
-	
-	// Momentum depends on magnetic field. If bfield has been
-	// set, we should use it to determine an average value of Bz
-	// for this track. Otherwise, assume -2T.
-	// Also assume a singly charged track (i.e. q=+/-1)
-	// The sign of the charge will be determined below.
-	Bz_avg=-2.0; 
-	q = +1.0;
 	r0 = sqrt(x0*x0 + y0*y0);
-	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c
+
 	phi = atan2(y0,x0) - M_PI_2;
-	if(p_trans<0.0){
-		p_trans = -p_trans;
-	}
 	if(phi<0)phi+=M_TWO_PI;
 	if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 	
@@ -506,18 +487,7 @@ jerror_t DHelicalFit::FitCircleRiemann(float z_vertex,float BeamRMS)
 
 	// Number of degrees of freedom 
 	ndof=hits.size()-3;
-	
-	// Momentum depends on magnetic field. If bfield has been
-	// set, we should use it to determine an average value of Bz
-	// for this track. Otherwise, assume -2T.
-	// Also assume a singly charged track (i.e. q=+/-1)
-	// The sign of the charge will be determined below.
-	Bz_avg=-2.0;
-	q = +1.0;
-	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c
-	if(p_trans<0.0){
-		p_trans = -p_trans;
-	}
+
 	phi=atan2(-x0,y0);  
 	if(phi<0)phi+=M_TWO_PI;
         if(phi>=M_TWO_PI)phi-=M_TWO_PI;
@@ -841,7 +811,7 @@ jerror_t DHelicalFit::FitCircleStraightTrack(void)
 	if(phi<0)phi+=M_TWO_PI;
 	if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 
-	// Search the chi2 space for values for p_trans, x0, ...
+	// Search the chi2 space for values for x0, y0, ...
 	SearchPtrans(9.0, 0.5);
 
 #if 0
@@ -896,7 +866,7 @@ void DHelicalFit::SearchPtrans(double ptrans_max, double ptrans_step)
 		r0 = my_p_trans/(0.003*2.0);
 		double alpha, my_chisq;
 
-		// q = +1
+		// h = +1
 		alpha = phi + M_PI_2;
 		x0 = r0*cos(alpha);
 		y0 = r0*sin(alpha);
@@ -906,11 +876,10 @@ void DHelicalFit::SearchPtrans(double ptrans_max, double ptrans_step)
 			min_x0 = x0;
 			min_y0 = y0;
 			min_r0 = r0;
-			q = +1.0;
-			p_trans = my_p_trans;
+			h = +1.0;
 		}
 
-		// q = -1
+		// h = -1
 		alpha = phi - M_PI_2;
 		x0 = r0*cos(alpha);
 		y0 = r0*sin(alpha);
@@ -920,8 +889,7 @@ void DHelicalFit::SearchPtrans(double ptrans_max, double ptrans_step)
 			min_x0 = x0;
 			min_y0 = y0;
 			min_r0 = r0;
-			q = -1.0;
-			p_trans = my_p_trans;
+			h = -1.0;
 		}
 	}
 	
@@ -929,75 +897,6 @@ void DHelicalFit::SearchPtrans(double ptrans_max, double ptrans_step)
 	x0 = min_x0;
 	y0 = min_y0;
 	r0 = min_r0;
-}
-
-//-----------------
-// QuickPtrans
-//-----------------
-void DHelicalFit::QuickPtrans(void)
-{
-	/// Quickly calculate a value of p_trans by looking
-	/// for the hit furthest out and the hit closest
-	/// to half that distance. Those 2 hits along with the
-	/// origin are used to define a circle from which
-	/// p_trans is calculated.
-	
-	// Find hit with largest R
-	double R2max = 0.0;
-	DHFHit_t *hit_max = NULL;
-	for(unsigned int i=0; i<hits.size(); i++){
-		// use cross product to decide if hits is to left or right
-		double x = hits[i]->x;
-		double y = hits[i]->y;
-		double R2 = x*x + y*y;
-		if(R2>R2max){
-			R2max = R2;
-			hit_max = hits[i];
-		}
-	}
-	
-	// Bullet proof
-	if(!hit_max)return;
-	
-	// Find hit closest to half-way out
-	double Rmid = 0.0;
-	double Rmax = sqrt(R2max);
-	DHFHit_t *hit_mid = NULL;
-	for(unsigned int i=0; i<hits.size(); i++){
-		// use cross product to decide if hits is to left or right
-		double x = hits[i]->x;
-		double y = hits[i]->y;
-		double R = sqrt(x*x + y*y);
-		if(fabs(R-Rmax/2.0) < fabs(Rmid-Rmax/2.0)){
-			Rmid = R;
-			hit_mid = hits[i];
-		}
-	}
-	
-	// Bullet proof
-	if(!hit_mid)return;
-	
-	// Calculate p_trans from 3 points
-	double x1 = hit_mid->x;
-	double y1 = hit_mid->y;
-	double x2 = hit_max->x;
-	double y2 = hit_max->y;
-	double r2 = sqrt(x2*x2 + y2*y2);
-	double cos_phi = x2/r2;
-	double sin_phi = y2/r2;
-	double u1 =  x1*cos_phi + y1*sin_phi;
-	double v1 = -x1*sin_phi + y1*cos_phi;
-	double u2 =  x2*cos_phi + y2*sin_phi;
-	double u0 = u2/2.0;
-	double v0 = (u1*u1 + v1*v1 - u1*u2)/(2.0*v1);
-	
-	x0 = u0*cos_phi - v0*sin_phi;
-	y0 = u0*sin_phi + v0*cos_phi;
-	r0 = sqrt(x0*x0 + y0*y0);
-	
-	double B=-2.0;
-	p_trans = fabs(0.003*B*r0);
-	q = v1>0.0 ? -1.0:+1.0;
 }
 
 //-----------------
@@ -1028,8 +927,8 @@ jerror_t DHelicalFit::GuessChargeFromCircleFit(void)
 	}
 	
 	// Check if more hits are negative and make sign negative if so.
-	if(N>hits.size()/2.0){
-		q = -1.0;
+	if(N>hits.size()/2){
+		h = -1.0;
 		phi += M_PI;
 		if(phi>M_TWO_PI)phi-=M_TWO_PI;
 	}
@@ -1093,12 +992,7 @@ jerror_t DHelicalFit::FitTrackRiemann(float rc_input){
   jerror_t error=FitCircleRiemann(rc_input); 
   if (error!=NOERROR) return error;
   error=FitLineRiemann();
-  FindCharge();
-  
-  
-
-  // Shift phi by pi if the charge is negative
-  if (q<0) phi+=M_PI; 
+  FindSenseOfRotation();
 
   return error;
 }
@@ -1245,14 +1139,14 @@ jerror_t DHelicalFit::FillTrackParams(void)
 	float r0 = sqrt(x0*x0 + y0*y0);
 	theta = atan(r0/fabs(dzdphi));
 	
-	// The sign of the electric charge will be opposite that
+	// the sense of rotation about the z axis will be opposite that
 	// of dphi/dz. Also, the value of phi will be PI out of phase
 	if(dzdphi<0.0){
 		phi += M_PI;
 		if(phi<0)phi+=M_TWO_PI;
 		if(phi>=M_TWO_PI)phi-=M_TWO_PI;
 	}else{
-		q = -q;
+		h = -h;
 	}
 	
 	// Re-calculate chi-sq (needs to be done)
@@ -1269,17 +1163,10 @@ jerror_t DHelicalFit::FillTrackParams(void)
 		phi += M_PI;
 		if(phi<0)phi+=M_TWO_PI;
 		if(phi>=M_TWO_PI)phi-=M_TWO_PI;
-		q = -q;
+		h = -h;
 	}
 	tanl=tan(M_PI_2-theta);
 
-	// There is a problem with theta for data generated with a uniform
-	// field. The following factor is emprical until I can figure out
-	// what the source of the descrepancy is.
-	//theta += 0.1*pow((double)sin(theta),2.0);
-	
-	p = fabs(p_trans/sin(theta));
-	
 	return NOERROR;
 }
 
@@ -1291,9 +1178,7 @@ jerror_t DHelicalFit::Print(void) const
 	cout<<"-- DHelicalFit Params ---------------"<<endl;
 	cout<<"          x0 = "<<x0<<endl;
 	cout<<"          y0 = "<<y0<<endl;
-	cout<<"           q = "<<q<<endl;
-	cout<<"           p = "<<p<<endl;
-	cout<<"     p_trans = "<<p_trans<<endl;
+	cout<<"           h = "<<h<<endl;
 	cout<<"         phi = "<<phi<<endl;
 	cout<<"       theta = "<<theta<<endl;
 	cout<<"    z_vertex = "<<z_vertex<<endl;
@@ -1305,7 +1190,6 @@ jerror_t DHelicalFit::Print(void) const
 		case TRACK:		cout<<"TRACK";		break;
 	}
 	cout<<endl;
-	cout<<"     Bz(avg) = "<<Bz_avg<<endl;
 
 	return NOERROR;
 }
@@ -1327,9 +1211,9 @@ jerror_t DHelicalFit::Dump(void) const
 	return NOERROR;
 }
 
-// Find the charge based on the proximity of the hits to the helical trajectory
-// for the two hypotheses for the charge
-void DHelicalFit::FindCharge(void){
+// Find the sense of the rotation about the circle based on the proximity of 
+// the hits to the helical trajectory for the two hypotheses 
+void DHelicalFit::FindSenseOfRotation(void){
   // Try to use a plane with a single hit for the reference position
   unsigned int i=1;
   for (;i<hits.size()-1;i++){
@@ -1369,7 +1253,7 @@ void DHelicalFit::FindCharge(void){
 
   }
   
-  q=1.0;
+  h=1.0;
   // Look for smallest sum to determine q
-  if (minus_sum<plus_sum) q=-1.;
+  if (minus_sum<plus_sum) h=-1.;
 }

@@ -137,7 +137,7 @@ class DHelicalFit{
   inline float GetPhiMean() const {return phi_mean;}
   jerror_t PrintChiSqVector(void) const;
   jerror_t Print(void) const;
-  void FindCharge(void);
+  void FindSenseOfRotation(void);
   jerror_t Dump(void) const;
   inline void SetMagneticFieldMap(const DMagneticFieldMap *map){bfield=map;}
   // for Riemann plane
@@ -153,8 +153,7 @@ class DHelicalFit{
   };
   
   float x0,y0,r0;
-  float q;
-  float p, p_trans;
+  float h; // Sense of rotation in the x-y plane
   float phi, theta, tanl;
   float z_vertex;
   float chisq;
