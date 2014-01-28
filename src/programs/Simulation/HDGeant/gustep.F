@@ -203,7 +203,16 @@
       character*4 cchar
       equivalence(cint,cchar)
 
+c define "title" only under special circumstances, done to supress
+c warnings -- MMI
+
+#ifdef HISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
       character*250 title
+#else
+#ifdef BACKGROUND_PROFILING
+      character*250 title
+#endif
+#endif
 
 #ifdef BACKGROUND_STUDIES
       integer type
