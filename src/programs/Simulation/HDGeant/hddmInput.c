@@ -70,6 +70,13 @@ void settofg_(float origin[3], float *time0);
 s_iostream_t* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
 
+int extractRunNumber(int *runNo){
+  thisInputEvent = read_s_HDDM(thisInputStream);
+  *runNo = thisInputEvent->physicsEvents->in[0].runNo;
+}
+
+
+
 /*-------------------------
  * openInput
  *-------------------------
@@ -396,4 +403,8 @@ int storeinput_ (int* runNo, int* eventNo, int* ntracks)
 int closeinput_ ()
 {
    return closeInput();
+}
+
+int extractrunnumber_(int *runNo){
+  return extractRunNumber(runNo);
 }
