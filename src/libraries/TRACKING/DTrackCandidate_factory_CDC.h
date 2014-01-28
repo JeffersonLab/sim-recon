@@ -310,6 +310,7 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		deque<deque<DCDCSuperLayerSeed*> > dSuperLayerSeeds; //index 0 -> 6 is super layer 1 -> 7
 
 		const DMagneticFieldMap* dMagneticField;
+		double dFactorForSenseOfRotation;
 
 		unsigned int dNumHitDensityPhiBins;
 		//dRejectedPhiRegions: due to hit density being too high in that region

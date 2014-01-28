@@ -65,7 +65,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   double GetCharge(const DVector3 &pos,const DFDCSegment *segment);
   double GetCharge(const DVector3 &pos,vector<const DFDCSegment *>segments);
 
-  double DocaToHelix(const DFDCPseudo *hit);
+  double DocaSqToHelix(const DFDCPseudo *hit);
   DFDCSegment *GetTrackMatch(DFDCSegment *segment,vector<DFDCSegment*>package,
 			     unsigned int &match_id);
   void LinkSegments(unsigned int pack1,vector<DFDCSegment *>packages[4]); 
@@ -84,6 +84,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
   double TARGET_Z;
   double MAX_R_VERTEX_LIMIT;
   double zpack[4];
+  double FactorForSenseOfRotation;
   
   // Fit parameters
   double xc,yc,rc,z_vertex,q,phi0,tanl;
@@ -97,15 +98,11 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 };
 
 inline double DTrackCandidate_factory_FDCCathodes::Match(double p){
-  // return 100.;
-  if (p>0.1){
-    double r=0.6-0.2*p+5.0/p;
-    if (r<5.0){
-      if (r<2.0) return 2.0;
-      return r;
-    }
-  }
-  return 5.0;
+  //  return 1000.;
+  
+  if (p<1.) p=1.;
+  if (p>3.) p=3.;
+  return (12.-3.*p+20./p);
 }
 
 

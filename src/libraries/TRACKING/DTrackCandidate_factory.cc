@@ -118,6 +118,7 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
   bfield = dapp->GetBfield();
+  FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
 
   // Get the position of the exit of the CDC endplate from DGeometry
   double endplate_z,endplate_dz,endplate_rmin;
@@ -130,7 +131,7 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   stepper=new DMagneticFieldStepper(bfield);
   stepper->SetStepSize(1.0);
 
-  //DEBUG_HISTS=true;
+  DEBUG_HISTS=true;
   if(DEBUG_HISTS){
     dapp->Lock();
     match_dist=(TH2F*)gROOT->FindObject("match_dist");
@@ -417,7 +418,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// Try to match cdc hits that were not linked into track candidates
 	// with the fdc candidate
-	if (num_unmatched_cdcs>0 && segments[0]->package==0){
+	if (num_unmatched_cdcs>2 && segments[0]->package==0){
 	  if (DEBUG_LEVEL>0) _DBG_ "Matching FDC candidates to stray CDC hits" 
 			     <<endl;
 	  MatchMethod6(i,can,segments,used_cdc_hits,num_unmatched_cdcs,
@@ -464,7 +465,7 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(
   double sinp=sin(phi0);
   double sperp=(z-z0)/tanl;
   //double twoks=2.*kappa*sperp;
-  double twoks=segment->q*sperp/segment->rc;
+  double twoks=FactorForSenseOfRotation*segment->q*sperp/segment->rc;
   double sin2ks=sin(twoks);
   double cos2ks=cos(twoks); 
 
@@ -535,13 +536,14 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
     y_minus=yc+rc*sin(phi_minus);
   }
 
-  if (fit.q<0.){
+  if (fit.h<0.){
     phi_minus=M_PI-phi_minus;
     pos.SetXYZ(x_minus,y_minus,0.); // z will be filled later
     mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
   }
   else{ 
     phi_plus*=-1.;   
+    //phi_plus=M_PI-phi_plus;
     pos.SetXYZ(x_plus,y_plus,0.); // z will be filled later
     mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
   }
@@ -613,18 +615,15 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(DHelicalFit &fit,
   double d2_plus=dx*dx+dy*dy;
  
   if (d2_plus>d2_minus){
-    fit.q=-1.;
-    //    phi_minus*=-1.;
-    //if (fit.q<0) phi_minus+=M_PI; 
+    fit.h=-1.;
     phi_minus=M_PI-phi_minus;
     pos.SetXYZ(x_minus,y_minus,0.); // z will be filled later
     mom.SetXYZ(pt*sin(phi_minus),pt*cos(phi_minus),pt*tanl);
 
   }
   else{
-    fit.q=1.;
+    fit.h=1.;
     phi_plus*=-1.;   
-    // if (fit.q<0) phi_plus+=M_PI;
     pos.SetXYZ(x_plus,y_plus,0.); // z will be fillted later
     mom.SetXYZ(pt*sin(phi_plus),pt*cos(phi_plus),pt*tanl);
 
@@ -647,8 +646,8 @@ void DTrackCandidate_factory::ProjectHelixToZ(const double z,const double q,
   double x0=pos.X();
   double y0=pos.Y();
   double z0=pos.Z();
-  double B=bfield->GetBz(x0,y0,z0);
-  double twokappa=0.003*B*q/pt;
+  double B=fabs(bfield->GetBz(x0,y0,z0));
+  double twokappa=FactorForSenseOfRotation*0.003*B*q/pt;
   double one_over_twokappa=1./twokappa;
   double sperp=(z-z0)/tanl;
   double twoks=twokappa*sperp;
@@ -675,8 +674,8 @@ double DTrackCandidate_factory::DocaToHelix(const DCDCTrackHit *hit,
   double x0=pos.X();
   double y0=pos.Y();
   double z0=pos.Z();
-  double B=bfield->GetBz(x0,y0,z0);
-  double twokappa=0.003*B*q/pt;
+  double B=fabs(bfield->GetBz(x0,y0,z0));
+  double twokappa=FactorForSenseOfRotation*0.003*B*q/pt;
   double one_over_twokappa=1./twokappa;
   
   double sperp=0;
@@ -715,7 +714,7 @@ double DTrackCandidate_factory::DocaToHelix(const DCDCTrackHit *hit,
 
 // Find the particle charge given the helical fit result and an fdc hit 
 // on the track
-double DTrackCandidate_factory::GetCharge(DHelicalFit &fit,
+double DTrackCandidate_factory::GetSenseOfRotation(DHelicalFit &fit,
 					  const DFDCPseudo *fdchit,
 					  const DVector3 &pos
 					  ){
@@ -762,7 +761,7 @@ jerror_t DTrackCandidate_factory::DoRefit(DHelicalFit &fit,
       const DVector3 origin=cdchits[k]->wire->origin;
       double x=origin.x(),y=origin.y(),z=origin.z();
       fit.AddHitXYZ(x,y,z,cov,cov,0.,true);
-      Bz-=bfield->GetBz(x,y,z);
+      Bz+=bfield->GetBz(x,y,z);
       num_hits++;
     }   
   }
@@ -773,11 +772,11 @@ jerror_t DTrackCandidate_factory::DoRefit(DHelicalFit &fit,
       fit.AddHit(fdchit);
       //bfield->GetField(x,y,z,Bx,By,Bz);
       //Bz_avg-=Bz;
-      Bz-=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),fdchit->wire->origin.z());
+      Bz+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),fdchit->wire->origin.z());
     }
     num_hits+=segments[k]->hits.size();
   }	
-  Bz/=double(num_hits);
+  Bz=fabs(Bz)/double(num_hits);
 	  
   // Fake point at origin
   //fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
@@ -897,7 +896,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 
 	can->chisq=fit.chisq;
 	can->Ndof=fit.ndof;
-	can->setCharge(fit.q);
+	can->setCharge(FactorForSenseOfRotation*fit.h);
 	can->setMomentum(mom);
 	can->setPosition(pos);
     
@@ -1024,7 +1023,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	   double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
 	   
 	   pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
-	   can->setCharge(fit.q);
+	   can->setCharge(FactorForSenseOfRotation*fit.h);
 	 }
 	 else{
 	   //Set the charge for the stepper 
@@ -1104,8 +1103,9 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	 for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	   unsigned int ind=segments[m]->hits.size()-1-n;
 	   const DFDCPseudo *hit=segments[m]->hits[ind];
+
 	   ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
-	   
+
 	   // difference
 	   DVector2 XY=hit->xy;
 	   double dx=XY.X()-pos.x();
@@ -1165,7 +1165,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	       double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
 	       
 	       pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
-	       can->setCharge(fit.q);
+	       can->setCharge(FactorForSenseOfRotation*fit.h);
 	     }
 	     else{
 	       
@@ -1288,7 +1288,7 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	    
 	    //bfield->GetField(x,y,z,Bx,By,Bz);
 	    //Bz_avg-=Bz;
-	    Bz_avg-=bfield->GetBz(fdchits[m]->xy.X(),fdchits[m]->xy.Y(),
+	    Bz_avg+=bfield->GetBz(fdchits[m]->xy.X(),fdchits[m]->xy.Y(),
 				  fdchits[m]->wire->origin.z());
 	    
 	    num_hits++;
@@ -1299,7 +1299,7 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	      fit.AddHit(fdchit);
 	      //bfield->GetField(x,y,z,Bx,By,Bz);
 	      //Bz_avg-=Bz;
-	      Bz_avg-=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),
+	      Bz_avg+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),
 				    fdchit->wire->origin.z());
 	    }
 	    num_hits+=segments[m]->hits.size();
@@ -1310,7 +1310,7 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	  // Fit the points to a circle
 	  if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
 	    // Compute new transverse momentum
-	    Bz_avg/=double(num_hits);
+	    Bz_avg=fabs(Bz_avg)/double(num_hits);
 	  
 	    // Guess for theta and z from input candidates
 	    double theta=fdccan->momentum().Theta();  
@@ -1321,8 +1321,8 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	    fit.FitLineRiemann();
 	 
 	    // Guess charge from fit
-	    fit.q=GetCharge(fit,firsthit,srccan->position());
-	    srccan->setCharge(fit.q);
+	    fit.h=GetSenseOfRotation(fit,firsthit,srccan->position());
+	    srccan->setCharge(FactorForSenseOfRotation*fit.h);
 	    
 	    // Position and momentum just outside of start counter
 	    int cdc_id=(cdchits.size()>0)?0:-1;
@@ -1425,7 +1425,7 @@ bool DTrackCandidate_factory::MatchMethod5(DTrackCandidate *can,
 	    double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
 	    
 	    pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
-	    can->setCharge(fit.q);
+	    can->setCharge(FactorForSenseOfRotation*fit.h);
 	  }    
 	  can->chisq=fit.chisq;
 	  can->Ndof=fit.ndof;
@@ -1536,22 +1536,22 @@ void DTrackCandidate_factory::MatchMethod6(unsigned int fdc_id,
 	double x=fdchit->xy.X();
 	double y=fdchit->xy.Y();
 	double z=fdchit->wire->origin.z();
-	Bz_avg-=bfield->GetBz(x,y,z);
+	Bz_avg+=bfield->GetBz(x,y,z);
 	denom+=1.;
       }
     }
-    Bz_avg/=denom;
+    Bz_avg=fabs(Bz_avg)/denom;
 
     // Store the current track parameters in the DHelicalFit class
     DHelicalFit fit;
     fit.r0=mom.Perp()/(0.003*Bz_avg);
     fit.phi=mom.Phi();
-    fit.x0=pos.x()-q*fit.r0*sin(fit.phi);
-    fit.y0=pos.y()+q*fit.r0*cos(fit.phi);
+    fit.h=q*FactorForSenseOfRotation;
+    fit.x0=pos.x()-fit.h*fit.r0*sin(fit.phi);
+    fit.y0=pos.y()+fit.h*fit.r0*cos(fit.phi);
     fit.tanl=tan(M_PI_2-mom.Theta());
     fit.z_vertex=0; // this will be changed later
-    fit.q=q;
-    
+
     // Update the position and momentum of the candidate based on the most 
     // recent fit results
     UpdatePositionAndMomentum(can,firsthit,fit,Bz_avg,axial_id);
@@ -1679,12 +1679,12 @@ void DTrackCandidate_factory::UpdatePositionAndMomentum(DTrackCandidate *can,
     // and the inner-most axial wire to estimate the position.
     fit.r0=mom.Perp()/(0.003*Bz_avg);
     fit.phi=mom.Phi();
-    fit.x0=pos.x()-q*fit.r0*sin(fit.phi);
-    fit.y0=pos.y()+q*fit.r0*cos(fit.phi);
+    fit.h=q*FactorForSenseOfRotation;
+    fit.x0=pos.x()-fit.h*fit.r0*sin(fit.phi);
+    fit.y0=pos.y()+fit.h*fit.r0*cos(fit.phi);
     fit.tanl=tan(M_PI_2-mom.Theta());
     fit.z_vertex=0; // this will be changed later
-    fit.q=q;
-    
+     
     if (GetPositionAndMomentum(fit,Bz_avg,mycdchits[axial_id]->wire->origin,pos,
 			       mom)==NOERROR){  
       // Find the z-position at the new position in x and y

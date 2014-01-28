@@ -69,7 +69,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 
   double DocaToHelix(const DCDCTrackHit *hit,double q,const DVector3 &pos,
 		     const DVector3 &mom);
-  double GetCharge(DHelicalFit &fit,const DFDCPseudo *fdchit,const DVector3 &pos);
+  double GetSenseOfRotation(DHelicalFit &fit,const DFDCPseudo *fdchit,const DVector3 &pos);
   jerror_t DoRefit(DHelicalFit &fit,
 		   vector<const DFDCSegment *>segments,
 		   vector<const DCDCTrackHit *>cdchits,
@@ -123,6 +123,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   bool DEBUG_HISTS;
   TH2F *match_dist,*match_dist_vs_p;
 
+  double FactorForSenseOfRotation;
   DVector3 cdc_endplate;
   double endplate_rmax;
   double TARGET_Z;

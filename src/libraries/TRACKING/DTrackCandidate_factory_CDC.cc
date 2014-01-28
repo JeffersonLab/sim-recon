@@ -178,6 +178,7 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	dMagneticField = locApplication->GetBfield();
+	dFactorForSenseOfRotation=(dMagneticField->GetBz(0.,0.,65.)>0.)?-1.:1.;
 
 	const DGeometry *locGeometry = locApplication->GetDGeometry(runnumber);
 	locGeometry->GetTargetZ(TARGET_Z);
@@ -2164,7 +2165,7 @@ void DTrackCandidate_factory_CDC::Print_TrackCircle(DCDCTrackCircle* locCDCTrack
 	const DHelicalFit* locFit = locCDCTrackCircle->fit;
 	if(locFit != NULL)
 	{
-		cout << "Fit q, x0, y0, r0, p, ptrans, phi = " << locFit->q << ", " << locFit->x0 << ", " << locFit->y0 << ", " << locFit->r0 << ", " << locFit->p << ", " << locFit->p_trans << ", " << locFit->phi << endl;
+		cout << "Fit h, x0, y0, r0, phi = " << locFit->h << ", " << locFit->x0 << ", " << locFit->y0 << ", " << locFit->r0 << ", " << locFit->phi << endl;
 		cout << "Fit Weighted chisq/ndf = " << locCDCTrackCircle->dWeightedChiSqPerDF << endl;
 		cout << "Stereo Weighted chisq/ndf = " << locCDCTrackCircle->dWeightedChiSqPerDF_Stereo << endl;
 	}
@@ -2348,7 +2349,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 				}
 			}
 			else
-				locFit->GuessChargeFromCircleFit();
+				locFit->FindSenseOfRotation();
 		}
 		else
 			locFit->GuessChargeFromCircleFit(); // for Riemann fit
@@ -2383,7 +2384,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		locAverageDriftTime /= ((double)locNumHitsCloseToCircle);
 
 		if(DEBUG_LEVEL > 3)
-			cout << "Circle fit: Nhits=" << locFit->GetNhits() << "  p_trans=" << locFit->p_trans << " q=" << locFit->q << " N=" << locNumHitsCloseToCircle << " phi=" << locFit->phi << endl;
+			cout << "Circle fit: Nhits=" << locFit->GetNhits() << " h=" << locFit->h << " N=" << locNumHitsCloseToCircle << " phi=" << locFit->phi << endl;
 		if(locNumHitsCloseToCircle < MIN_SEED_HITS)
 		{
 			if(DEBUG_LEVEL > 3)
@@ -2970,7 +2971,7 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Axial(deque<DCDCTrackCircl
 				continue; //not linked to this seed
 
 			//check if the charges are opposite
-			if(fabs(locCDCTrackCircle_Validating->fit->q - locCDCTrackCircle_ToCompareTo->fit->q) < 1.5)
+			if(fabs(locCDCTrackCircle_Validating->fit->h - locCDCTrackCircle_ToCompareTo->fit->h) < 1.5)
 				continue; //same charge
 
 			// check if the circle centers are about the same (else could be two crossing tracks): calculate the 'asymmetry' of the circles
@@ -3157,8 +3158,8 @@ bool DTrackCandidate_factory_CDC::Calc_StereoPosition(const DCDCWire *wire, cons
 	locPhiStereo -= R.Phi(); // make angle relative to beamline
 
 	// We want this to go either from 0 to +2pi for positive charge, or 0 to -2pi for negative.
-	double phi_hi = fit->q > 0.0 ? +M_TWO_PI : 0.0;
-	double phi_lo = fit->q > 0.0 ? 0.0 : -M_TWO_PI;
+	double phi_hi = fit->h > 0.0 ? +M_TWO_PI : 0.0;
+	double phi_lo = fit->h > 0.0 ? 0.0 : -M_TWO_PI;
 	while(locPhiStereo < phi_lo)
 		locPhiStereo += M_TWO_PI;
 	while(locPhiStereo > phi_hi)
@@ -3911,7 +3912,7 @@ bool DTrackCandidate_factory_CDC::Find_Theta(const DHelicalFit* locFit, const de
 
 		// Calculate upper and lower limits in theta
 		double alpha = r0*trkhit->dPhiStereo;
-		if(locFit->q < 0.0)
+		if(locFit->h < 0.0)
 			alpha = -alpha;
 		double tmin = atan2(alpha, trkhit->dStereoHitPos.Z() - VERTEX_Z_MIN);
 		double tmax = atan2(alpha, trkhit->dStereoHitPos.Z() - VERTEX_Z_MAX);
@@ -4010,7 +4011,7 @@ bool DTrackCandidate_factory_CDC::Find_Z(const DHelicalFit* locFit, const deque<
 		DCDCTrkHit* trkhit = locStereoHits[i];
 		
 		// Calculate upper and lower limits in z
-		double q_sign = locFit->q > 0.0 ? +1.0:-1.0;
+		double q_sign = locFit->h > 0.0 ? +1.0:-1.0;
 		double zmin = trkhit->dStereoHitPos.Z() - q_sign*trkhit->dPhiStereo/tan_alpha_min;
 		double zmax = trkhit->dStereoHitPos.Z() - q_sign*trkhit->dPhiStereo/tan_alpha_max;
 		if(zmin>zmax)
@@ -4241,7 +4242,7 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Stereo(deque<DCDCTrackCirc
 				continue; //not linked to this seed
 
 			//check if the charges are opposite
-			if(fabs(locCDCTrackCircle_Validating->fit->q - locCDCTrackCircle_ToCompareTo->fit->q) < 1.5)
+			if(fabs(locCDCTrackCircle_Validating->fit->h - locCDCTrackCircle_ToCompareTo->fit->h) < 1.5)
 				continue; //same charge
 
 			// check if the circle centers are about the same (else could be two crossing tracks): calculate the 'asymmetry' of the circles
@@ -4479,7 +4480,7 @@ void DTrackCandidate_factory_CDC::Create_TrackCandidiate(DCDCTrackCircle* locCDC
 	}
 
 	DTrackCandidate *locTrackCandidate = new DTrackCandidate;
-	locTrackCandidate->setCharge(locCDCTrackCircle->fit->q);
+	locTrackCandidate->setCharge(locCDCTrackCircle->fit->h*dFactorForSenseOfRotation);
 
 	locTrackCandidate->chisq = locCDCTrackCircle->fit->chisq;
 	locTrackCandidate->Ndof = locCDCTrackCircle->fit->ndof;
@@ -4573,7 +4574,7 @@ bool DTrackCandidate_factory_CDC::Calc_PositionAndMomentum(DCDCTrackCircle* locC
 		double yv = yc - rc*sin(my_center_phi);
 		pos.SetXYZ(xv, yv, locCDCTrackCircle->dVertexZ);
 
-		double pt = -0.5*locCDCTrackCircle->fit->p_trans*dMagneticField->GetBz(pos.x(), pos.y(), pos.z());
+		double pt = 0.003*fabs(dMagneticField->GetBz(pos.x(), pos.y(), pos.z()))*rc;
 		mom.SetXYZ(pt*cos(my_seed_phi), pt*sin(my_seed_phi), pt*tanl);
 		return (mom.Mag() > 0.0);
 	}
@@ -4620,7 +4621,7 @@ bool DTrackCandidate_factory_CDC::Calc_PositionAndMomentum(DCDCTrackCircle* locC
 	if(d2_plus > d2_minus)
 	{
 		phi_minus *= -1.;
-		if(locCDCTrackCircle->fit->q < 0)
+		if(locCDCTrackCircle->fit->h < 0)
 			phi_minus += M_PI;
 		double myphi = atan2(yc, xc);
 		double xv = xc - rc*cos(myphi);
@@ -4633,13 +4634,13 @@ bool DTrackCandidate_factory_CDC::Calc_PositionAndMomentum(DCDCTrackCircle* locC
 		double ds = (ratio < 1.) ? (two_rc*asin(ratio)) : (two_rc*M_PI_2);
 		pos.SetXYZ(x_minus, y_minus, locCDCTrackCircle->dVertexZ + ds*tanl);
 
-		double pt = -0.5*locCDCTrackCircle->fit->p_trans*dMagneticField->GetBz(pos.x(), pos.y(), pos.z());
+		double pt = 0.003*fabs(dMagneticField->GetBz(pos.x(), pos.y(), pos.z()))*rc;
 		mom.SetXYZ(pt*sin(phi_minus), pt*cos(phi_minus), pt*tanl);
 	}
 	else
 	{
 		phi_plus *= -1.;
-		if(locCDCTrackCircle->fit->q < 0)
+		if(locCDCTrackCircle->fit->h < 0)
 			phi_plus += M_PI;
 		double myphi = atan2(yc, xc);
 		double xv = xc - rc*cos(myphi);
@@ -4652,7 +4653,7 @@ bool DTrackCandidate_factory_CDC::Calc_PositionAndMomentum(DCDCTrackCircle* locC
 		double ds = (ratio < 1.) ? (two_rc*asin(ratio)) : (two_rc*M_PI_2);
 		pos.SetXYZ(x_plus, y_plus, locCDCTrackCircle->dVertexZ + ds*tanl); 
 
-		double pt = -0.5*locCDCTrackCircle->fit->p_trans*dMagneticField->GetBz(pos.x(), pos.y(), pos.z());
+		double pt =0.003*fabs(dMagneticField->GetBz(pos.x(), pos.y(), pos.z()))*rc;
 		mom.SetXYZ(pt*sin(phi_plus), pt*cos(phi_plus), pt*tanl);
 	}
 	return (mom.Mag() > 0.0);

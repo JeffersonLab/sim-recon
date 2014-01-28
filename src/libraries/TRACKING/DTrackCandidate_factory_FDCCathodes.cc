@@ -30,6 +30,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
 						   int runnumber) {
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
+  FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
+
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
   
   USE_FDC=true;
@@ -72,7 +74,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
     if (!match_dist_fdc) 
       match_dist_fdc=new TH2F("match_dist_fdc",
 		  "Matching distance for connecting FDC segments",
-			      50,0.,7,100,0,25.);
+			      50,0.,7,500,0,100.);
     dapp->Unlock();
   }
     
@@ -216,18 +218,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 // Routine to do a crude match between fdc points and a helical approximation to
 // the trajectory
-double DTrackCandidate_factory_FDCCathodes::DocaToHelix(const DFDCPseudo *hit){
+double DTrackCandidate_factory_FDCCathodes::DocaSqToHelix(const DFDCPseudo *hit){
   double sperp=(hit->wire->origin.z()-zs)*cotl;
   double twoks=twokappa*sperp;
   double sin2ks=sin(twoks);
   double cos2ks=cos(twoks);
   double one_minus_cos2ks=1.-cos2ks;
+ 
   double x=xs+(cosphi*sin2ks-sinphi*one_minus_cos2ks)*one_over_twokappa;
   double y=ys+(sinphi*sin2ks+cosphi*one_minus_cos2ks)*one_over_twokappa;
   double dx=x-hit->xy.X();
   double dy=y-hit->xy.Y();
 
-  return sqrt(dx*dx+dy*dy);
+  return (dx*dx+dy*dy);
 }
 
 // Propagate track from one package to the next and look for a match to a 
@@ -236,18 +239,18 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
 								vector<DFDCSegment*>package,
 								unsigned int &match_id){
   DFDCSegment *match=NULL;
-  
+
   // Get the position and momentum at the exit of the package for the 
   // current segment
   GetPositionAndMomentum(segment);
 
   // Match to the next package
-  double diff_min=1e6,diff;
+  double doca2_min=1e6,doca2;
   for (unsigned int j=0;j<package.size();j++){
     DFDCSegment *segment2=package[j];
-    diff=DocaToHelix(segment2->hits[0]);
-    if (diff<diff_min&&diff<Match(p)){
-      diff_min=diff;
+    doca2=DocaSqToHelix(segment2->hits[0]);
+    if (doca2<doca2_min&&doca2<Match(p)){
+      doca2_min=doca2;
       match=segment2;
       match_id=j;
     }
@@ -256,13 +259,13 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
   // If matching in the forward direction did not work, try 
   // matching backwards...
   if (match==NULL){
-    diff_min=1e6;
+    doca2_min=1e6;
     for (unsigned int i=0;i<package.size();i++){
       DFDCSegment *segment2=package[i];
       GetPositionAndMomentum(segment2);
-      diff=DocaToHelix(segment->hits[segment->hits.size()-1]);
-      if (diff<diff_min&&diff<Match(p)){
-	diff_min=diff;
+      doca2=DocaSqToHelix(segment->hits[segment->hits.size()-1]);
+      if (doca2<doca2_min&&doca2<Match(p)){
+	doca2_min=doca2;
 	match=segment2;
 	match_id=i;
       }       
@@ -271,7 +274,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
   
 
   if(DEBUG_HISTS){
-    match_dist_fdc->Fill(p,diff_min);
+    match_dist_fdc->Fill(p,doca2_min);
   }
   return match;
 }
@@ -289,25 +292,27 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(const DFDCS
   //double kappa=segment->q/(2.*segment->rc);
   double my_phi0=segment->phi0;
   double my_tanl=segment->tanl;
-  double z0=segment->z_vertex;
+  double z0=segment->z_vertex; 
+  twokappa=FactorForSenseOfRotation*segment->q/segment->rc;
+
+  one_over_twokappa=1./twokappa;
+  cotl=1./my_tanl;
 
   // Useful intermediate variables
   double cosp=cos(my_phi0);
   double sinp=sin(my_phi0);
-  double twoks=segment->q*(zs-z0)/(my_tanl*segment->rc);
+  double twoks=twokappa*(zs-z0)*cotl;
   double sin2ks=sin(twoks);
   double cos2ks=cos(twoks); 
-
+  
   // Get Bfield
   double Bz=fabs(bfield->GetBz(xs,ys,zs));
 
   // Momentum
   p=0.003*Bz*segment->rc/cos(atan(my_tanl));
+
   cosphi=cosp*cos2ks-sinp*sin2ks;
   sinphi=sinp*cos2ks+cosp*sin2ks;
-  twokappa=segment->q/segment->rc;
-  one_over_twokappa=1./twokappa;
-  cotl=1./my_tanl;
 
   return NOERROR;
 }
@@ -324,6 +329,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   double y=segment->yc+segment->rc*sin(segment->Phi1);
   double z=segment->hits[0]->wire->origin.z();
   pos.SetXYZ(x,y,z);
+  pos.Print();
 
   zs=z;
   ys=y;
@@ -337,12 +343,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   double my_phi0=segment->phi0;
   double my_tanl=segment->tanl;
   double z0=segment->z_vertex;
+  twokappa=FactorForSenseOfRotation*segment->q/segment->rc; 
+  one_over_twokappa=1./twokappa;
+  cotl=1./my_tanl;
 
   // Useful intermediate variables
   double cosp=cos(my_phi0);
   double sinp=sin(my_phi0);
-  // double twoks=2.*kappa*(z-z0)/my_tanl;
-  double twoks=segment->q*(z-z0)/(my_tanl*segment->rc);
+  double twoks=twokappa*(z-z0)*cotl;
   double sin2ks=sin(twoks);
   double cos2ks=cos(twoks); 
 
@@ -353,11 +361,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   double pt=0.003*Bz*segment->rc;
   cosphi=cosp*cos2ks-sinp*sin2ks;
   sinphi=sinp*cos2ks+cosp*sin2ks;
-  twokappa=segment->q/segment->rc;
-  one_over_twokappa=1./twokappa;
-  cotl=1./my_tanl;
-  mom.SetXYZ(pt*(cosp*cos2ks-sinp*sin2ks),pt*(sinp*cos2ks+cosp*sin2ks),
-	     pt*my_tanl);
+  mom.SetXYZ(pt*cosphi,pt*sinphi,pt*my_tanl);
 
   return NOERROR;
 }
@@ -375,10 +379,9 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double z,
   double dphi1=phi1-dphi_s;// was -
   double x=xc+rc*cos(dphi1);
   double y=yc+rc*sin(dphi1);
-  pos.SetXYZ(x,y,z);
 
   dphi1*=-1.;
-  if (q<0) dphi1+=M_PI;
+  if (FactorForSenseOfRotation*q<0) dphi1+=M_PI;
 
   // Find Bz
   double Bz=fabs(bfield->GetBz(x,y,z));
@@ -417,7 +420,7 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double zmin,
   pos.SetXYZ(x,y,zmin);
 
   dphi1*=-1.;
-  if (q<0) dphi1+=M_PI;
+  if (FactorForSenseOfRotation*q<0) dphi1+=M_PI;
 
   // Find the average Bz
   double Bz=0.;
@@ -431,11 +434,11 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double zmin,
     double my_dphi=phi1+(z-zmin)*q_over_rc_tanl;
     x=xc+rc*cos(my_dphi);
     y=yc+rc*sin(my_dphi);
-    Bz-=bfield->GetBz(x,y,z);
+    Bz+=bfield->GetBz(x,y,z);
 
     z+=dz;
   }
-  Bz*=one_over_denom;
+  Bz=fabs(Bz)*one_over_denom;
   
   
   // Momentum 
@@ -446,99 +449,6 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double zmin,
   mom.SetXYZ(px,py,pz);
 
   return NOERROR;
-}
-
-
-
-double DTrackCandidate_factory_FDCCathodes::GetCharge(const DVector3 &pos,
-						      vector<const DFDCSegment *>segments){
-  // Phi at reference plane
-  double Phi1=atan2(pos.y()-yc,pos.x()-xc);
-
-  // Accumulated sum of differences between helical prediction and actual 
-  // measurements for both + and - charges
-  double z0=pos.z();
-  double plus_sum=0.,minus_sum=0.;
-  for (unsigned int j=0;j<segments.size();j++){
-    for (unsigned int i=0;i<segments[j]->hits.size();i++){
-      const DFDCPseudo *hit=segments[j]->hits[i];
-      double dphi=(hit->wire->origin.z()-z0)/(rc*tanl);
-      double x=hit->xy.X();
-      double y=hit->xy.Y();
-      
-      double phiplus=Phi1+dphi;
-      double dxplus=xc+rc*cos(phiplus)-x;
-      double dyplus=yc+rc*sin(phiplus)-y;
-      double dxplus2=dxplus*dxplus;
-      double dyplus2=dyplus*dyplus;
-      double d2plus=dxplus2+dyplus2;
-      double varplus=(dxplus2*hit->covxx+dyplus2*hit->covyy
-		    +2.*dyplus*dxplus*hit->covxy)/d2plus;
-      plus_sum+=d2plus/varplus;
-      
-      double phiminus=Phi1-dphi;
-      double dxminus=xc+rc*cos(phiminus)-x;
-      double dyminus=yc+rc*sin(phiminus)-y;
-      double dxminus2=dxminus*dxminus;
-      double dyminus2=dyminus*dyminus;
-      double d2minus=dxminus2+dyminus2;
-      double varminus=(dxminus2*hit->covxx+dyminus2*hit->covyy
-		       +2.*dyminus*dxminus*hit->covxy)/d2minus;
-      minus_sum+=d2minus/varminus;
-    }
-  }
-    
-  // Look for smallest sum to determine q
-  if (minus_sum<plus_sum){
-    return -1.;
-  }
-
-  return 1.;
-}
-
-double DTrackCandidate_factory_FDCCathodes::GetCharge(const DVector3 &pos,
-						 const DFDCSegment *segment
-						      ){
-  // Phi at reference plane
-  double Phi1=atan2(pos.y()-yc,pos.x()-xc);
-
-  // Accumulated sum of differences between helical prediction and actual 
-  // measurements for both + and - charges
-  double z0=pos.z();
-  double plus_sum=0.,minus_sum=0.;
-  for (unsigned int i=0;i<segment->hits.size();i++){
-    const DFDCPseudo *hit=segment->hits[i];
-    double dphi=(hit->wire->origin.z()-z0)/(rc*tanl);
-    double x=hit->xy.X();
-    double y=hit->xy.Y();
-
-    double phiplus=Phi1+dphi;
-    double dxplus=xc+rc*cos(phiplus)-x;
-    double dyplus=yc+rc*sin(phiplus)-y;
-    double dxplus2=dxplus*dxplus;
-    double dyplus2=dyplus*dyplus;
-    double d2plus=dxplus2+dyplus2;
-    double varplus=(dxplus2*hit->covxx+dyplus2*hit->covyy
-		    +2.*dyplus*dxplus*hit->covxy)/d2plus;
-    plus_sum+=d2plus/varplus;
-
-    double phiminus=Phi1-dphi;
-    double dxminus=xc+rc*cos(phiminus)-x;
-    double dyminus=yc+rc*sin(phiminus)-y;
-    double dxminus2=dxminus*dxminus;
-    double dyminus2=dyminus*dyminus;
-    double d2minus=dxminus2+dyminus2;
-    double varminus=(dxminus2*hit->covxx+dyminus2*hit->covyy
-		    +2.*dyminus*dxminus*hit->covxy)/d2minus;
-    minus_sum+=d2minus/varminus;
-  }
-
-  // Look for smallest sum to determine q
-  if (minus_sum<plus_sum){
-    return -1.;
-  }
-
-  return 1.;
 }
 
 // Routine to loop over segments in one of the packages, linking them with 
@@ -683,7 +593,7 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
 	xc=fit.x0;
 	yc=fit.y0;
 	rc=fit.r0;
-	q=fit.q;
+	q=FactorForSenseOfRotation*fit.h;
       }
 
       // Try to fix relatively high momentum tracks in the very forward 
@@ -801,7 +711,7 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
 	tanl=fit.tanl;
 	xc=fit.x0;
 	yc=fit.y0;
-	q=fit.q;
+	q=FactorForSenseOfRotation*fit.h;
 
 	// One of the hits in the first package
 	int pack=segments[0]->package;
