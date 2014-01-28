@@ -12,7 +12,7 @@ typedef struct {
 }mystr_t;
 
 
-void initcalibdb_(char *bfield_type, char *bfield_map);
+void initcalibdb_(char *bfield_type, char *bfield_map,int *runno);
 void gufld_db_(float *r, float *B);
 int GetCalib(const char* namepath, unsigned int *Nvals, float* vals);
 void GetLorentzDeflections(float *lorentz_x, float *lorentz_z, 

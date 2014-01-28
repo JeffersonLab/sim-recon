@@ -9,6 +9,7 @@
 using namespace std;
 
 #include <JANA/JCalibrationFile.h>
+#include <HDGEOMETRY/DMagneticFieldMapFineMesh.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
 #include <HDGEOMETRY/DMagneticFieldMapConst.h>
 #include "HDGEOMETRY/DMagneticFieldMapSpoiled.h"
@@ -26,6 +27,9 @@ void init_runtime_xml(void);
 void md5geom_runtime(char *md5);
 extern "C" const char* GetMD5Geom(void);
 
+
+
+bool nofield=false;
 DMagneticFieldMap *Bmap=NULL;
 static JCalibration *jcalib=NULL;
 //static void *dlgeom_handle=NULL;
@@ -39,26 +43,17 @@ extern "C" {
 //----------------
 // initcalibdb_
 //----------------
-void initcalibdb_(char *bfield_type, char *bfield_map)
+void initcalibdb_(char *bfield_type, char *bfield_map, int *runno)
 {
 	ios::sync_with_stdio(true);
 
-	if(japp) jcalib = japp->GetJCalibration(1);
-
-	if(!jcalib){
-		jerr << "----- Couldn't create JCalibration object!!!" << endl;
+	if(!japp){
+	  _DBG_<<" JApplication missing, exiting !!"<<endl;
+	  exit(-1) ;
 	}
 
-#if 0
-	// Create a JCalibration object using the JANA_CALIB_URL environment variable
-	// Right now, we hardwire this to use JCalibrationFile.
-	const char *url = getenv("JANA_CALIB_URL");
-	if(!url){
-		_DBG_<<"JANA_CALIB_URL environment not set."<<endl;
-		exit(-1);
-	}
-	jcalib = new JCalibrationFile(url, 1, "");
-#endif
+	// Get the JCalibration object
+	jcalib = japp->GetJCalibration(*runno);
 	
 	// The actual DMagneticFieldMap subclass can be specified in
 	// the control.in file. Since it is read in as integers of
@@ -72,27 +67,17 @@ void initcalibdb_(char *bfield_type, char *bfield_map)
 	// Read in the field map from the appropriate source
 	if(bfield_type[0] == 0)strcpy(bfield_type, "CalibDB");
 	string bfield_type_str(bfield_type);
+
 	if(bfield_type_str=="CalibDB"){
-		if(strlen(bfield_map))
-			Bmap = new DMagneticFieldMapCalibDB(jcalib, bfield_map);
-		else
-			Bmap = new DMagneticFieldMapCalibDB(jcalib);
-	}else if(bfield_type_str=="Const"){
-		if(strlen(bfield_map))
-			Bmap = new DMagneticFieldMapConst(jcalib, bfield_map);
-		else
-			Bmap = new DMagneticFieldMapConst(jcalib);
-	}else if(bfield_type_str=="Spoiled"){
-		if(strlen(bfield_map))
-			Bmap = new DMagneticFieldMapSpoiled(jcalib, bfield_map);
-		else
-			Bmap = new DMagneticFieldMapSpoiled(jcalib);
-	}else if(bfield_type_str=="Parameterized"){
-		if(strlen(bfield_map))
-			Bmap = new DMagneticFieldMapParameterized(jcalib, bfield_map);
-		else
-			Bmap = new DMagneticFieldMapParameterized(jcalib);
-	}else{
+	  if(strlen(bfield_map))
+	    Bmap = new DMagneticFieldMapFineMesh(japp,*runno,bfield_map);
+	  else
+	    Bmap = new DMagneticFieldMapFineMesh(japp,*runno);
+	}
+	else if(bfield_type_str=="NoField"){
+	  nofield=true;
+	}
+	else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type_str<<"\" !!"<<endl;
 		exit(-1);
 	}	
@@ -106,6 +91,14 @@ void gufld_db_(float *r, float *B)
 	/// Wrapper function to allow the FORTRAN gufld routine to
 	/// use the C++ class DMagneticFieldMap to access the 
 	/// B-field.
+  if (nofield){
+    B[0]=0.;
+    B[1]=0.;
+    B[2]=0.;
+    
+    return;
+  }
+  
 
 	if(!Bmap){
 		_DBG_<<"Call to gufld_db when Bmap not intialized! Exiting."<<endl;

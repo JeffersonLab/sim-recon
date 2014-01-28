@@ -148,6 +148,9 @@
       data infile/20*0/
       data outfile/20*0/
 
+      integer myrunno
+      data myrunno/1/
+
       integer postsmear
       integer mcsmearopts(64)
       integer deleteunsmeared
@@ -273,6 +276,9 @@ C..geant..
  9000      format('GUKINE ERROR - Could not open input stream ',20a4)
            stop
         endif
+        call extractRunNumber(myrunno)
+
+        write(6,*) 'run number ',myrunno
         if (iskip .gt. 0) then
           ifail = skipInput(iskip)
         endif
@@ -366,7 +372,7 @@ C..geant..
 *		  call HDDSgeant3_runtime
 *		endif
       call Goptimize
-      call initcalibdb(bfield_type, bfield_map)
+      call initcalibdb(bfield_type, bfield_map, myrunno)
       call copytocplusplus(infile,outfile,postsmear,mcsmearopts
      +,deleteunsmeared)
           call copygatetocplusplus(bggate(1), bggate(2))
