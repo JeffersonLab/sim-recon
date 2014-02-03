@@ -167,7 +167,7 @@ s_GapEMcal_t* pickGapEMcal ()
    box = make_s_GapEMcal();
    box->gcalCells = make_s_GcalCells(cellCount);
    box->gcalTruthShowers = make_s_GcalTruthShowers(showerCount);
-   while (item = (s_GapEMcal_t*) pickTwig(&gapEMcalTree))
+   while ((item = (s_GapEMcal_t*) pickTwig(&gapEMcalTree)))
    {
       s_GcalCells_t* cells = item->gcalCells;
       int cell;
@@ -176,7 +176,6 @@ s_GapEMcal_t* pickGapEMcal ()
       for (cell=0; cell < cells->mult; ++cell)
       {
 	 int m = box->gcalCells->mult;
-         int mok = 0;
 
          s_GcalHits_t* hits = cells->in[cell].gcalHits;
 

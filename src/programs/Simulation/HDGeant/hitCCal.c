@@ -42,7 +42,6 @@ void hitComptonEMcal (float xin[4], float xout[4],
 {
    float x[3], t;
    float xccal[3];
-   float zeroHat[] = {0,0,0};
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
@@ -162,7 +161,7 @@ s_ComptonEMcal_t* pickComptonEMcal ()
    box = make_s_ComptonEMcal();
    box->ccalBlocks = make_s_CcalBlocks(blockCount);
    box->ccalTruthShowers = make_s_CcalTruthShowers(showerCount);
-   while (item = (s_ComptonEMcal_t*) pickTwig(&ComptonCalTree))
+   while ((item = (s_ComptonEMcal_t*) pickTwig(&ComptonCalTree)))
    {
       s_CcalBlocks_t* blocks = item->ccalBlocks;
       int block;
@@ -170,8 +169,6 @@ s_ComptonEMcal_t* pickComptonEMcal ()
       int shower;
       for (block=0; block < blocks->mult; ++block)
       {
-         int row = blocks->in[block].row;
-         int column = blocks->in[block].column;
          s_CcalTruthHits_t* hits = blocks->in[block].ccalTruthHits;
 
          if (hits)

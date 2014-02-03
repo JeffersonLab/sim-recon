@@ -63,8 +63,6 @@ void hitRich(float xin[4], float xout[4], float pin[5], float pout[5],
 			s_RICH_t* rich = *twig = make_s_RICH();
 			s_RichHits_t* richHits = make_s_RichHits(1);
 			rich->richHits = richHits;
-			int a =
-					thisInputEvent->physicsEvents->in[0].reactions->in[0].vertices->in[0].products->mult;
 			richHits->in[0].x = xin[0];
 			richHits->in[0].y = xin[1];
 			richHits->in[0].z = xin[2];
@@ -97,7 +95,7 @@ s_RICH_t* pickRich() {
 	box->richHits = make_s_RichHits(richCount);
 	box->richTruthPoints = make_s_RichTruthPoints(richpointCount);
 
-	while (item = pickTwig(&richTree)) {
+	while ((item = pickTwig(&richTree))) {
 
 		// pack RICH hits
 		s_RichHits_t* richhits = item->richHits;

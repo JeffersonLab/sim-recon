@@ -133,7 +133,7 @@ s_Tagger_t* pickTagger ()
 
    box = make_s_Tagger();
    box->microChannels = make_s_MicroChannels(channelCount);
-   while (item = (s_Tagger_t*) pickTwig(&taggerTree))
+   while ((item = (s_Tagger_t*) pickTwig(&taggerTree)))
    {
       s_MicroChannels_t* channels = item->microChannels;
       int channel;

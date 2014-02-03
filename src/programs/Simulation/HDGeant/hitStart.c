@@ -277,7 +277,7 @@ s_StartCntr_t* pickStartCntr ()
    box = make_s_StartCntr();
    box->stcPaddles = make_s_StcPaddles(paddleCount);
    box->stcTruthPoints = make_s_StcTruthPoints(pointCount);
-   while (item = (s_StartCntr_t*) pickTwig(&startCntrTree))
+   while ((item = (s_StartCntr_t*) pickTwig(&startCntrTree)))
    {
       s_StcPaddles_t* paddles = item->stcPaddles;
       int paddle;

@@ -37,6 +37,7 @@
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+#include <gid_map.h>
 
 #include "calibDB.h"
 
@@ -461,7 +462,7 @@ s_ForwardTOF_t* pickForwardTOF ()
   box->ftofCounters = make_s_FtofCounters(counterCount);
   box->ftofTruthPoints = make_s_FtofTruthPoints(pointCount);
   
-  while (item = (s_ForwardTOF_t*) pickTwig(&forwardTOFTree)){
+  while ((item = (s_ForwardTOF_t*) pickTwig(&forwardTOFTree))) {
     s_FtofCounters_t* counters = item->ftofCounters;
     int counter;
     s_FtofTruthPoints_t* points = item->ftofTruthPoints;

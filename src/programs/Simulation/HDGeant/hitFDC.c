@@ -17,6 +17,7 @@
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+#include <gid_map.h>
 
 #include "calibDB.h"
 extern s_HDDM_t* thisInputEvent;
@@ -105,7 +106,7 @@ void locate(float *xx,int n,float x,int *j){
   ascnd=(xx[n-1]>=xx[0]);
   while(ju-jl>1){
     jm=(ju+jl)>>1;
-    if (x>=xx[jm]==ascnd)
+    if ((x>=xx[jm])==ascnd)
       jl=jm;
     else
       ju=jm;
@@ -160,7 +161,6 @@ void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
 
 // Simulation of signal on a wire
 double wire_signal(double t,s_FdcAnodeTruthHits_t* ahits){
-  double t0=1.0; // ns; rough order of magnitude
   int m;
   double asic_gain=0.76; // mV/fC
   double func=0;
@@ -175,7 +175,6 @@ double wire_signal(double t,s_FdcAnodeTruthHits_t* ahits){
 
 // Simulation of signal on a cathode strip (ASIC output)
 double cathode_signal(double t,s_FdcCathodeTruthHits_t* chits){
-  double t0=1.0; // ns; rough order of magnitude
   int m;
   double asic_gain=2.3;
   double func=0;
@@ -482,7 +481,6 @@ void hitForwardDC (float xin[4], float xout[4],
   float xoutlocal[3];
   float dradius;
   float alpha,sinalpha,cosalpha;
-  int i,j;
 
   if (!initializedx){
       mystr_t strings[250];
@@ -719,11 +717,8 @@ void hitForwardDC (float xin[4], float xout[4],
 
     for (wire=wire1; wire-dwire != wire2; wire+=dwire)
     {
-      int valid_hit=1;
-      float dE,dt;
-      float u[2];
+      float dE;
       float x0[3],x1[3];
-      float avalanche_y;
       float xwire = U_OF_WIRE_ZERO + (wire-1)*WIRE_SPACING;
       int global_wire_number=96*glayer+wire-1;
 
@@ -794,8 +789,6 @@ void hitForwardDC (float xin[4], float xout[4],
 	    ahits = fdc->fdcChambers->in[0].fdcAnodeWires->in[0].fdcAnodeTruthHits;
 	  }
 	
-
-	float rndno[2];
 	int two=2;
       
 	// Find the number of primary ion pairs:
@@ -907,7 +900,7 @@ s_ForwardDC_t* pickForwardDC ()
    box = make_s_ForwardDC();
    box->fdcChambers = make_s_FdcChambers(32);
    box->fdcChambers->mult = 0;
-   while (item = (s_ForwardDC_t*) pickTwig(&forwardDCTree))
+   while ((item = (s_ForwardDC_t*) pickTwig(&forwardDCTree)))
    {
       s_FdcChambers_t* chambers = item->fdcChambers;
       int module = chambers->in[0].module;
@@ -1044,7 +1037,6 @@ s_ForwardDC_t* pickForwardDC ()
 	    
 	    int threshold_toggle=0;
 	    int istart=0;
-	    float q=0;
 	    int FADC_BIN_SIZE=1;
 	    for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
 	      if (samples[i]>=THRESH_STRIPS){

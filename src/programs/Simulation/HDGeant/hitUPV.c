@@ -89,8 +89,6 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
   float tright = t + dxright/C_EFFECTIVE;
   float dEleft  = dEsum * exp(-dxleft/ATTEN_LENGTH);
   float dEright = dEsum * exp(-dxright/ATTEN_LENGTH);
-  float ycenter = (fabs(xupv[1]) < 1e-4) ? 0 : xupv[1];
-  float zcenter = (fabs(xupv[2]) < 1e-4) ? 0 : xupv[2];
 
   /* post the hit to the truth tree */
 
@@ -241,7 +239,7 @@ s_UpstreamEMveto_t* pickUpstreamEMveto ()
    box = make_s_UpstreamEMveto();
    box->upvPaddles = make_s_UpvPaddles(paddleCount);
    box->upvTruthShowers = make_s_UpvTruthShowers(showerCount);
-   while (item = (s_UpstreamEMveto_t*) pickTwig(&upstreamEMvetoTree))
+   while ((item = (s_UpstreamEMveto_t*) pickTwig(&upstreamEMvetoTree)))
    {
       s_UpvPaddles_t* paddles = item->upvPaddles;
       int paddle;

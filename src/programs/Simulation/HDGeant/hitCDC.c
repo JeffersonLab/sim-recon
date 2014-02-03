@@ -17,6 +17,7 @@
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+#include <gid_map.h>
 
 #include "calibDB.h"
 extern s_HDDM_t* thisInputEvent;
@@ -80,7 +81,6 @@ double asic_response(double t){
 
 // Simulation of signal on a wire
 double cdc_wire_signal(double t,s_CdcStrawTruthHits_t* chits){
-  double t0=1.0; // ns; rough order of magnitude
   int m;
   double asic_gain=0.5; // mV/fC
   double func=0;
@@ -212,7 +212,6 @@ void hitCentralDC (float xin[4], float xout[4],
   float xinlocal[3];
   float xoutlocal[3];
   float dradius,drin,drout;
-  float doca[3]; 
   float trackdir[3];
   float alpha;
 
@@ -493,7 +492,7 @@ s_CentralDC_t* pickCentralDC ()
    box->cdcStraws = make_s_CdcStraws(strawCount);
    box->cdcTruthPoints = make_s_CdcTruthPoints(pointCount);
 
-   while (item = (s_CentralDC_t*) pickTwig(&centralDCTree))
+   while ((item = (s_CentralDC_t*) pickTwig(&centralDCTree)))
    {
      s_CdcStraws_t* straws = item->cdcStraws;
      int straw;
