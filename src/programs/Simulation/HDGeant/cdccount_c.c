@@ -27,7 +27,7 @@ int main(int argc, char **argv)
                  argv[input]);
          exit(1);
       }
-      while (thisInputEvent = read_s_HDDM(thisInputFile)) {
+      while ((thisInputEvent = read_s_HDDM(thisInputFile))) {
          events_with_hits += process_event(thisInputEvent);
          flush_s_HDDM(thisInputEvent,0);
          ++events;
@@ -35,6 +35,7 @@ int main(int argc, char **argv)
       close_s_HDDM(thisInputFile);
    }
    printf("Total events seen %d, with cdc hits %d.\n",events,events_with_hits);
+   return 0;
 }
 
 int process_event(s_HDDM_t *event)

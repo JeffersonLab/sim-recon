@@ -25,12 +25,13 @@ int main(int argc, char **argv)
                  argv[input]);
          exit(1);
       }
-      while (thisInputEvent = read_s_HDDM(thisInputFile)) {
+      while ((thisInputEvent = read_s_HDDM(thisInputFile))) {
          process_event(thisInputEvent);
          flush_s_HDDM(thisInputEvent,0);
       }
       close_s_HDDM(thisInputFile);
    }
+   return 0;
 }
 
 int process_event(s_HDDM_t *event)

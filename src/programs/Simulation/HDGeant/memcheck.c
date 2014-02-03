@@ -134,7 +134,7 @@ void checkpoint ()
 {
    memblock_t* node;
    int abort = 0;
-   while (node = pickTwig(&memcheckTree))
+   while ((node = pickTwig(&memcheckTree)))
    {
       if (node->count > 0)
       {

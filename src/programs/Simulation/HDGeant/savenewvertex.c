@@ -16,6 +16,8 @@ savenewvertex: particle stoped because it decayed
 
 extern s_HDDM_t* thisInputEvent;
 
+int getLastId();
+
 void SaveNewVertex(int kcase, int Npart, float *gkin, 
 		   float vertex[3], float tofg, int *iflgk,
                    int ipart, int itra, int istak) {
