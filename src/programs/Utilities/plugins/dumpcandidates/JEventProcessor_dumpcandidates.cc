@@ -85,8 +85,7 @@ jerror_t JEventProcessor_dumpcandidates::brun(JEventLoop *eventLoop, int runnumb
 		for(unsigned int j=0; j<wires.size(); j++){
 
 			DCDCWire *w = wires[j];
-			unsigned long addr = (unsigned long)w;
-			wireID[addr] = index++;
+			wireID[ GetCDCWireID(w) ] = index++;
 		}
 	}
 
@@ -95,8 +94,7 @@ jerror_t JEventProcessor_dumpcandidates::brun(JEventLoop *eventLoop, int runnumb
 		for(unsigned int j=0; j<wires.size(); j++){
 
 			DFDCWire *w = wires[j];
-			unsigned long addr = (unsigned long)w;
-			wireID[addr] = index++;
+			wireID[ GetFDCWireID(w) ] = index++;
 		}
 	}
 
@@ -136,7 +134,7 @@ jerror_t JEventProcessor_dumpcandidates::evnt(JEventLoop *loop, int eventnumber)
 		// Create DReferenceTrajectory for this candidate
 		DReferenceTrajectory *rt = new DReferenceTrajectory(fitter->GetDMagneticFieldMap());
 		rt->SetDGeometry(dgeom);
-      rt->q = can->charge();
+      	rt->q = can->charge();
 		rt->SetMass(0.1396);
 		rt->Swim(can->position(),can->momentum(),can->charge());
 		
@@ -150,10 +148,13 @@ jerror_t JEventProcessor_dumpcandidates::evnt(JEventLoop *loop, int eventnumber)
 		// Get list of wire ids
 		vector<int> wire_ids;
 		for(unsigned int j=0; j<cdctrackhits.size(); j++){
-			wire_ids.push_back(GetWireIndex(cdctrackhits[j]->wire));
+			unsigned long id = GetCDCWireID( cdctrackhits[j]->wire );
+			wire_ids.push_back(GetWireIndex( id ));
+
 		}
 		for(unsigned int j=0; j<fdcpseudos.size(); j++){
-			wire_ids.push_back(GetWireIndex(fdcpseudos[j]->wire));
+			unsigned long id = GetFDCWireID( fdcpseudos[j]->wire );
+			wire_ids.push_back(GetWireIndex( id ));
 		}
 
 		// Write candidate to string

@@ -33,7 +33,9 @@ class JEventProcessor_dumpcandidates:public jana::JEventProcessor{
 		map<unsigned long, int> wireID;
 		ofstream *ofs;
 		
-		int GetWireIndex(const void *wire){ return wireID[(unsigned long)wire]; }
+		unsigned long GetCDCWireID(const DCDCWire* w){ return w->ring*100 + w->straw;}
+		unsigned long GetFDCWireID(const DFDCWire* w){ return 100000 + w->layer*100 + w->wire;}
+		int GetWireIndex(unsigned long id){ return wireID[id]; }
 };
 
 #endif // _JEventProcessor_dumpcandidates_
