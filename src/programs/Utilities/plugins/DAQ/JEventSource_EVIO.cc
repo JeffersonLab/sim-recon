@@ -920,9 +920,10 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		// Call appropriate parsing method
 		bool bank_parsed = true; // will be set to false if default case is entered
 		switch(det_id){
-			case 0:
-			case 1:
-			case 3:
+		        case 0:
+		        case 1:
+		        case 3:
+		        case 6:  // flash 250 module, MMD 2014/2/4
 				ParseJLabModuleData(rocid, iptr, iend, tmp_events);
 				break;
 
