@@ -17,6 +17,7 @@ using std::string;
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
 #include <HDGEOMETRY/DMagneticFieldMapFineMesh.h>
 #include <HDGEOMETRY/DMagneticFieldMapConst.h>
+#include <HDGEOMETRY/DMagneticFieldMapNoField.h>
 #include <HDGEOMETRY/DMagneticFieldMapSpoiled.h>
 #include <HDGEOMETRY/DMagneticFieldMapParameterized.h>
 #include <HDGEOMETRY/DLorentzMapCalibDB.h>
@@ -280,23 +281,23 @@ DMagneticFieldMap* DApplication::GetBfield(unsigned int run_number)
 	// specified on the command line
 	string bfield_type = "FineMesh";
 	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
-	if(bfield_type=="CalibDB"){
-		bfield = new DMagneticFieldMapCalibDB(this, run_number);
-		jout<<"Created Magnetic field map of type DMagneticFieldMapCalibDB."<<endl;
-	}
-	else if(bfield_type=="FineMesh"){
+	if(bfield_type=="CalibDB"|| bfield_type=="FineMesh"){
 		bfield = new DMagneticFieldMapFineMesh(this,run_number);
 		jout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
 	}
-	else if(bfield_type=="Const"){
-		bfield = new DMagneticFieldMapConst(this);
-		jout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
-	}else if(bfield_type=="Spoiled"){
-		bfield = new DMagneticFieldMapSpoiled(this);
-		jout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
-	}else if(bfield_type=="Parameterized"){
-		bfield = new DMagneticFieldMapParameterized(this);
-		jout<<"Created Magnetic field map of type DMagneticFieldMapParameterized."<<endl;
+	// else if(bfield_type=="Const"){
+	// bfield = new DMagneticFieldMapConst(this);
+	// jout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
+	//}else if(bfield_type=="Spoiled"){
+	// bfield = new DMagneticFieldMapSpoiled(this);
+	// jout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
+	//}else if(bfield_type=="Parameterized"){
+	// bfield = new DMagneticFieldMapParameterized(this);
+	// jout<<"Created Magnetic field map of type DMagneticFieldMapParameterized."<<endl;
+	//}
+	else if (bfield_type=="NoField"){
+	  bfield = new DMagneticFieldMapNoField(this);
+	  jout << "Created Magnetic field map with B=(0,0,0) everywhere." <<endl;
 	}else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type<<"\" !!"<<endl;
 		exit(-1);
