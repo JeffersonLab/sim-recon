@@ -156,7 +156,12 @@
 *
 *              Try input from MonteCarlo generator first
 *
-      itry = nextInput()
+      if (get_next_evt.eq.1) then     
+        itry = nextInput()
+      else 
+        itry = 0
+        get_next_evt=1
+      endif
       if (itry .eq. 0) then
         itry = loadInput()
 *
