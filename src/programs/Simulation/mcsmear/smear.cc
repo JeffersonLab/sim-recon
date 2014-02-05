@@ -372,31 +372,18 @@ void SmearCDC(s_HDDM_t *hddm_s)
 			
 				  mult++;
 				}
-				else if (DROP_TRUTH_HITS==false) mult++;
-				  
 			}
 			cdcstraw->cdcStrawHits->mult = mult;
-
+			if (mult==0){
+			  FREE(cdcstraw->cdcStrawHits);
+			  cdcstraw->cdcStrawHits=(s_CdcStrawHits_t *)HDDM_NULL;
+			}
+			
 			if (DROP_TRUTH_HITS){
 			  FREE(cdcstraw->cdcStrawTruthHits);
 			  cdcstraw->cdcStrawTruthHits=(s_CdcStrawTruthHits_t *)HDDM_NULL;
-
-			  if (mult==0){
-			    FREE(cdcstraw->cdcStrawHits);
-			    cdcstraw->cdcStrawHits=(s_CdcStrawHits_t *)HDDM_NULL;
-			  }
+			 
 			}
-		}
-		if (DROP_TRUTH_HITS){
-		  unsigned int mult=0;
-		  for (unsigned int k=0;k<hits->centralDC->cdcStraws->mult;k++){
-		    s_CdcStraw_t *cdcstraw = &hits->centralDC->cdcStraws->in[k];
-		    if (cdcstraw->cdcStrawHits!=HDDM_NULL){
-		      hits->centralDC->cdcStraws->in[mult]=hits->centralDC->cdcStraws->in[k];
-		      mult++;
-		    }
-		  } 
-		  hits->centralDC->cdcStraws->mult=mult;
 		}
 	}
 }
@@ -577,31 +564,20 @@ void SmearFDC(s_HDDM_t *hddm_s)
 
 				fdc_cathode_charge->Fill(q);
 			      }
-			      else if (DROP_TRUTH_HITS==false) mult++;
 			    }
-			    hits->mult=mult;
+			    hits->mult=mult;			    
+			    if (hits->mult==0){
+			      FREE(strip->fdcCathodeHits);
+			      strip->fdcCathodeHits=(s_FdcCathodeHits_t*)HDDM_NULL;
+			    }
 
 			    if (DROP_TRUTH_HITS){
 			      FREE(strip->fdcCathodeTruthHits);
 			      strip->fdcCathodeTruthHits=(s_FdcCathodeTruthHits_t*)HDDM_NULL;
 
-			      if (hits->mult==0){
-				FREE(strip->fdcCathodeHits);
-				strip->fdcCathodeHits=(s_FdcCathodeHits_t*)HDDM_NULL;
-			      }
+			     
 			      
 			    }
-			  }
-			  if (DROP_TRUTH_HITS){
-			    unsigned int mult=0;
-			    for (unsigned int k=0;k<strips->mult;k++){
-			      s_FdcCathodeStrip_t *strip=&strips->in[k];	
-			      if (strip->fdcCathodeHits!=HDDM_NULL){
-				strips->in[mult]=strips->in[k];
-				mult++;
-			      }
-			    }
-			    strips->mult=mult;
 			  }
 			}
 
@@ -649,32 +625,20 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				  fdc_drift_time->Fill(hit->t-3.7,truthhit->d);
 				}
 			      }
-			      else if (DROP_TRUTH_HITS==false) mult++;
 			    }
 			    wire->fdcAnodeHits->mult=mult;
 			    fdc_anode_mult->Fill(mult);
-			  
+			    if (mult==0){
+			      FREE(wire->fdcAnodeHits);
+			      wire->fdcAnodeHits=(s_FdcAnodeHits_t*)HDDM_NULL;
+			    }
+
 			    if (DROP_TRUTH_HITS){
 			      FREE(wire->fdcAnodeTruthHits);
 			      wire->fdcAnodeTruthHits=(s_FdcAnodeTruthHits_t *)HDDM_NULL;
 
-			      if (mult==0){
-				FREE(wire->fdcAnodeHits);
-				wire->fdcAnodeHits=(s_FdcAnodeHits_t*)HDDM_NULL;
-			      }
-
+			     
 			    }
-			  }
-			  if (DROP_TRUTH_HITS){
-			    unsigned int mult=0;
-			    for (unsigned int k=0;k<wires->mult;k++){
-			      s_FdcAnodeWire_t *wire=&wires->in[k];	
-			      if (wire->fdcAnodeHits!=HDDM_NULL){
-				wires->in[mult]=wires->in[k];
-				mult++;
-			      }
-			    }
-			    wires->mult=mult;
 			  }
 			}
 		}
