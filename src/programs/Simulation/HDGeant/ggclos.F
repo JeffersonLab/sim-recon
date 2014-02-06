@@ -22,7 +22,7 @@
 * Geant
 *
 *
-#define DEBUG_PRINT 1
+#define DEBUG_PRINT 0
 
 #include "geant321/pilot.h"
 #if !defined(CERNLIB_OLD)
