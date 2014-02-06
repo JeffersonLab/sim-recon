@@ -35,15 +35,6 @@ using std::string;
 DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 {
 	pthread_mutex_init(&mutex, NULL);
-
-	/// Add DEventSourceHDDMGenerator and
-	/// DFactoryGenerator, which adds the default
-	/// list of Hall-D factories
-	event_source_generator = new DEventSourceHDDMGenerator();
-	factory_generator = new DFactoryGenerator();
-	AddEventSourceGenerator(event_source_generator);
-	AddEventSourceGenerator(new DEventSourceRESTGenerator());
-	AddFactoryGenerator(factory_generator);
 	
 	// Add plugin paths to Hall-D specific binary directories
 	const char *bms = getenv("BMS_OSNAME");
@@ -80,7 +71,22 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	if (parmap.empty()) {
 		pm->SetParameter("THREAD_TIMEOUT", "30 seconds");
 	}
+
+	/// Add DEventSourceHDDMGenerator and
+	/// DFactoryGenerator, which adds the default
+	/// list of Hall-D factories
+	bool HDDM_ENABLE = true;
+	pm->SetDefaultParameter("HDDM:ENABLE", HDDM_ENABLE, "Enable the HDDM source readers. If set to 0, input files are assumed to never be of an HDDM format.");
+	if(HDDM_ENABLE){
+		event_source_generator = new DEventSourceHDDMGenerator();
+		AddEventSourceGenerator(event_source_generator);
+		AddEventSourceGenerator(new DEventSourceRESTGenerator());
+	}
+	factory_generator = new DFactoryGenerator();
+	AddFactoryGenerator(factory_generator);
+
 	if(JVersion::minor<5)Init();
+
 }
 
 //---------------------------------
