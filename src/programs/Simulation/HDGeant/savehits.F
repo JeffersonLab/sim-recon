@@ -218,6 +218,7 @@ C  If no hit is being recorded then nothing to do
      >          IPART)
         endif
       elseif ((cnames(NLEVEL).eq.'FTOC').or.  ! forward TOF counter
+     +        (cnames(NLEVEL).eq.'FTOX').or.  ! forward TOF counter
      +        (cnames(NLEVEL).eq.'FTOH')) then
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then

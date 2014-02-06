@@ -259,7 +259,12 @@ void hitForwardTOF (float xin[4], float xout[4],
     float dEnorth = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
     float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
     
-    int mark = (plane<<20) + (row<<10) + column;
+    int padl = row;
+    if (row>46){
+      padl = row-24;
+    }
+    //int mark = (plane<<20) + (row<<10) + column;
+    int mark = (plane<<20) + (padl<<10);// + column;
     void** twig = getTwig(&forwardTOFTree, mark);
     
     if (*twig == 0) { // this paddle has not been hit yet by any particle track 
@@ -269,7 +274,8 @@ void hitForwardTOF (float xin[4], float xout[4],
       s_FtofCounters_t* counters = make_s_FtofCounters(1);
       counters->mult = 1;
       counters->in[0].plane = plane;
-      counters->in[0].bar = row;
+      //counters->in[0].bar = row;
+      counters->in[0].bar = padl;
       northHits = HDDM_NULL;
       southHits = HDDM_NULL;
       noMCHits = HDDM_NULL;
