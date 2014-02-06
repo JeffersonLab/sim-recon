@@ -31,7 +31,8 @@ void InitPlugin(JApplication *app){
 //------------------
 JEventProcessor_dumpcandidates::JEventProcessor_dumpcandidates()
 {
-
+	events_written = 0;
+	events_discarded = 0;
 }
 
 //------------------
@@ -47,6 +48,10 @@ JEventProcessor_dumpcandidates::~JEventProcessor_dumpcandidates()
 //------------------
 jerror_t JEventProcessor_dumpcandidates::init(void)
 {
+	// 
+	MAX_CANDIDATE_FILTER = 1000;
+	gPARMS->SetDefaultParameter("MAX_CANDIDATE_FILTER", MAX_CANDIDATE_FILTER, "Maximum number of candidates allowed in event before any are written to file.");
+
 	
 	// Open output file
 	ofs = new ofstream("gluex_candidates.txt");
@@ -109,6 +114,10 @@ jerror_t JEventProcessor_dumpcandidates::evnt(JEventLoop *loop, int eventnumber)
 	// Get track candidates
 	vector<const DTrackCandidate*> candidates;
 	loop->Get(candidates);
+	if(candidates.size()==0 || candidates.size()>MAX_CANDIDATE_FILTER){
+		events_discarded++;
+		return NOERROR;
+	}
 
 	// Get pointer to DTrackHitSelector object
 	vector<const DTrackHitSelector *> hitselectors;
@@ -168,6 +177,7 @@ jerror_t JEventProcessor_dumpcandidates::evnt(JEventLoop *loop, int eventnumber)
 		
 		// Write candidate string to file
 		(*ofs) << ss.str() << endl;
+		events_written++;
 	}
 
 	return NOERROR;
@@ -191,6 +201,10 @@ jerror_t JEventProcessor_dumpcandidates::fini(void)
 		delete ofs;
 		ofs =NULL;
 	}
+	
+	cout << endl;
+	cout << "Wrote " << events_written << " events to output file (discarded " << events_discarded << ")" << endl;
+	cout << endl;
 
 	return NOERROR;
 }

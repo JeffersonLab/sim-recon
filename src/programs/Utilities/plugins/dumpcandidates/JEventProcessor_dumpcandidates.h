@@ -32,6 +32,9 @@ class JEventProcessor_dumpcandidates:public jana::JEventProcessor{
 		DGeometry *dgeom;
 		map<unsigned long, int> wireID;
 		ofstream *ofs;
+		unsigned int MAX_CANDIDATE_FILTER;
+		unsigned long events_written;
+		unsigned long events_discarded;
 		
 		unsigned long GetCDCWireID(const DCDCWire* w){ return w->ring*100 + w->straw;}
 		unsigned long GetFDCWireID(const DFDCWire* w){ return 100000 + w->layer*100 + w->wire;}
