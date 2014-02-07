@@ -4,6 +4,6 @@ import sbms
 Import('*')
 
 subdirs = ['acceptance_hists', 'b1pi_hists', 'cdc_hists', 'fcal_hists', 'mcthrown_hists', 'trackeff_hists', 'monitoring_hists']
-sbms.OptionallyBuild(env, ['phys_tree', 'mc_tree'])
+sbms.OptionallyBuild(env, ['phys_tree', 'mc_tree', 'DAQTree'])
 SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
