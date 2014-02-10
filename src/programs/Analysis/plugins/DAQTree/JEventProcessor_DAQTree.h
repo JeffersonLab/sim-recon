@@ -16,8 +16,29 @@
 
 
 //-----------------------------------------
-/// This plugin is designed to make a tree of low level data from the DAQ.
+/// This plugin is designed to make root trees of low level data from the DAQ.
+/// Each low level data type will have its own tree in the file.
 /// Each event and each channel is a new entry in the tree.
+///
+/// Trees will be named after the low level data type used to fill them.
+/// Currently the trees that are produced are:
+///   Df250WindowRawData
+/// The trees that will be supported is:
+///   Df125PulseIntegral
+///   Df125PulseTime
+///   Df125TriggerTime
+///   DF1TDCHit
+///   DF1TDCTriggerTime
+///   Df250PulseIntegral
+///   Df250PulseRawData
+///   Df250PulseTime
+///   Df250StreamingRawData
+///   Df250TriggerTime
+///   Df250WindowRawData
+///   Df250WindowSum
+///
+/// Wiki documentation can be found here:
+/// https://halldweb1.jlab.org/wiki/index.php/DAQTree_plugin
 //-----------------------------------------
 
 class JEventProcessor_DAQTree:public jana::JEventProcessor{
@@ -25,21 +46,21 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		JEventProcessor_DAQTree();
 		~JEventProcessor_DAQTree();
 		const char* className(void){return "JEventProcessor_DAQTree";}
-		TH1D *histogram;
-		TTree *sampletree;
-		uint32_t channelnum;         /// Arbitrary global channel number
-		uint32_t eventnum;	     /// Event number	
-		uint32_t rocid;              /// Crate number
-		uint32_t slot;               /// Slot number in crate
-		uint32_t channel;            /// Channel number in slot
+		TTree *Df250WindowRawData_tree;
+		uint32_t channelnum;         ///< Arbitrary global channel number (sorted by crate, slot, channel)
+		uint32_t eventnum;	         ///< Event number	
+		uint32_t rocid;              ///< (from DDAQAddress) Crate number
+		uint32_t slot;               ///< (from DDAQAddress) Slot number in crate
+		uint32_t channel;            ///< (from DDAQAddress) Channel number in slot
+/// (from DDAQAddress) Trigger number for cases when this hit was read in a multi-event block (from DDAQAddress)
 		uint32_t itrigger; 
-///trigger number for cases when this hit was read in a multi-event block (DDAQAddress)
-		vector<uint32_t> waveform;   /// STL vector of samples in the waveform for the event
-		uint32_t nsamples;           /// Number of samples in the waveform
-		uint32_t w_integral;         /// Sum of all samples in the waveform
-		uint32_t w_min;              /// Minimum sample in the waveform
-		uint32_t w_max;              /// Maximum sample in the waveform
-		uint32_t w_samp1;            /// First sample in the waveform
+		vector<uint32_t> waveform;   ///< STL vector of samples in the waveform for the event
+		uint32_t nsamples;           ///< Number of samples in the waveform
+		uint32_t w_integral;         ///< Sum of all samples in the waveform
+		uint32_t w_min;              ///< Minimum sample in the waveform
+		uint32_t w_max;              ///< Maximum sample in the waveform
+/// First sample in the waveform  (for simple analysis in case the STL vector is difficult to access)
+		uint32_t w_samp1;            
 
 
 	private:

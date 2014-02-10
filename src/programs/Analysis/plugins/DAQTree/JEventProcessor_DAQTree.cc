@@ -14,6 +14,14 @@ using namespace jana;
 #include <stdint.h>
 #include <DAQ/Df250WindowRawData.h>
 
+
+bool Df250WindowRawData_cmp(const Df250WindowRawData *a,const Df250WindowRawData *b){
+	// sort by crate, then by slot, then by channel
+	if(a->rocid != b->rocid)return a->rocid < b->rocid;
+	if(a->slot  != b->slot )return a->slot < b->slot;
+	return a->channel < b->channel;
+}
+
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
 extern "C"{
@@ -55,22 +63,24 @@ jerror_t JEventProcessor_DAQTree::init(void)
 	//
 
 
-	/// Test of Doxygen
+
 	japp->RootWriteLock();
 
-	sampletree = new TTree("Df250WindowRawData","tree of raw windo data (waveform samples) for each channel and event");
-	sampletree->Branch("channelnum",&channelnum,"channelnum/i");
-	sampletree->Branch("eventnum",&eventnum,"eventnum/i");
-	sampletree->Branch("rocid",&rocid,"rocid/i");
-	sampletree->Branch("slot",&slot,"slot/i");
-	sampletree->Branch("channel",&channel,"channel/i");
-	sampletree->Branch("itrigger",&itrigger,"itrigger/i");
-	sampletree->Branch("waveform",&waveform);
-	sampletree->Branch("nsamples",&nsamples,"nsamples/i");
-	sampletree->Branch("w_integral",&w_integral,"w_integral/i");
-	sampletree->Branch("w_min",&w_min,"w_min/i");
-	sampletree->Branch("w_max",&w_max,"w_max/i");
-	sampletree->Branch("w_samp1",&w_samp1,"w_samp1/i");
+	/// Trees are created
+	Df250WindowRawData_tree = new TTree("Df250WindowRawData",
+										"tree of flash 250 raw window data (waveform samples) for each channel and event");
+	Df250WindowRawData_tree->Branch("channelnum",&channelnum,"channelnum/i");
+	Df250WindowRawData_tree->Branch("eventnum",&eventnum,"eventnum/i");
+	Df250WindowRawData_tree->Branch("rocid",&rocid,"rocid/i");
+	Df250WindowRawData_tree->Branch("slot",&slot,"slot/i");
+	Df250WindowRawData_tree->Branch("channel",&channel,"channel/i");
+	Df250WindowRawData_tree->Branch("itrigger",&itrigger,"itrigger/i");
+	Df250WindowRawData_tree->Branch("waveform",&waveform);
+	Df250WindowRawData_tree->Branch("nsamples",&nsamples,"nsamples/i");
+	Df250WindowRawData_tree->Branch("w_integral",&w_integral,"w_integral/i");
+	Df250WindowRawData_tree->Branch("w_min",&w_min,"w_min/i");
+	Df250WindowRawData_tree->Branch("w_max",&w_max,"w_max/i");
+	Df250WindowRawData_tree->Branch("w_samp1",&w_samp1,"w_samp1/i");
 
 	japp->RootUnLock();
 	return NOERROR;
@@ -98,12 +108,14 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	// Here's an example:
 	//
 
+	/// Trees are filled with data
 	japp->RootWriteLock();
 	eventnum = eventnumber;
 
 	// Get a vector of objects for this event (1 object for each crate/slot/channel)
 	vector<const Df250WindowRawData*> f250WindowRawData_vec;
 	loop->Get(f250WindowRawData_vec);
+	sort(f250WindowRawData_vec.begin(), f250WindowRawData_vec.end(), Df250WindowRawData_cmp);
 	uint32_t Nchannels = f250WindowRawData_vec.size();
 
 	// Loop over all channels in this event
@@ -133,7 +145,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 				if (w_max < samplesvector[c_samp]) w_max = samplesvector[c_samp];
 			}
 		}
-		sampletree->Fill();
+		Df250WindowRawData_tree->Fill();
 	}
 	japp->RootUnLock();
 	
