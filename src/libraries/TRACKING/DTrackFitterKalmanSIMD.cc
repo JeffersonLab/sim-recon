@@ -413,7 +413,7 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 MASS=0.13957;
 	 mass2=MASS*MASS;
 	 Bx=By=0.;
-	 Bz=-2.;
+	 Bz=2.;
 	 dBxdx=0.,dBxdy=0.,dBxdz=0.,dBydx=0.,dBydy=0.,dBydy=0.,dBzdx=0.,dBzdy=0.,dBzdz=0.;
 	 // Step sizes
 	 mStepSizeS=2.0;
@@ -542,7 +542,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
       _DBG_ << "Fit failed with Error = " << error <<endl;
     return kFitFailed;
   }
-
+  
   // Copy fit results into DTrackFitter base-class data members
   DVector3 mom,pos;
   GetPosition(pos);
@@ -554,7 +554,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   fit_params.setMass(MASS);
 
   if (DEBUG_LEVEL>0)
-        cout << "----- Pass: " 
+        _DBG_ << "----- Pass: " 
 	     << (fit_type==kTimeBased?"Time-based ---":"Wire-based ---") 
 	     << " Mass: " << MASS 
 	  << " p=" 	<< mom.Mag()
@@ -587,7 +587,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
       fdc_t0_timebased_vs_theta->Fill(my_theta,my_t0);
     }
   }
-  
+
   DMatrixDSym errMatrix(5);
   // Fill the tracking error matrix and the one needed for kinematic fitting
   if (FORWARD_PARMS_COV && fcov.size()!=0){
@@ -605,7 +605,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
     // Compute and fill the error matrix needed for kinematic fitting
     fit_params.setErrorMatrix(Get7x7ErrorMatrixForward(errMatrix));
   }
-  else{
+  else if (cov.size()!=0){
     fit_params.setForwardParmFlag(false);
     
     // We MUST fill the entire matrix (not just upper right) even though 
@@ -630,7 +630,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   if(fit_params.momentum().Mag() < MIN_FIT_P)fit_status = kFitFailed;
 
 
-  //printf("========= done!\n");
+  //_DBG_  << "========= done!" << endl;
 
   return fit_status;
 }
@@ -3019,7 +3019,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     }
     // otherwise if the fit using the forward parametrization worked, return that 
-    else if (error!=FIT_FAILED && error!=FIT_NOT_DONE){
+    else if (error==FIT_SUCCEEDED || error==LOW_CL_FIT){
       phi_=phi;
       q_over_pt_=q_over_pt;
       tanl_=tanl;
@@ -3039,7 +3039,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     }
     else return UNRECOVERABLE_ERROR;
   }
-  if (ndf_==0) return UNRECOVERABLE_ERROR;
 
   return NOERROR;
 }
@@ -5300,8 +5299,14 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   if (CORRECT_FOR_ELOSS){
     dEdx=GetdEdx(S(state_q_over_p),K_rho_Z_over_A,rho_Z_over_A,LnI); 
   }
-  
-  if (z<endplate_z){
+
+
+  double ztest=endplate_z;
+  if (my_fdchits.size()>0){ 
+    ztest =my_fdchits[0]->z;
+  }  
+  if (z<ztest)
+    {
     // Check direction of propagation	
     DMatrix5x1 S2(S); // second copy of S
     
@@ -5603,6 +5608,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
 
     // Check if we passed the minimum doca to the beam line
     r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+
     if (r2>r2_old){
       double two_step=dz+dz_old;
 
@@ -6942,6 +6948,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
   //Initialization of chisq, ndf, and error status
   double chisq_iter=MAX_CHI2,chisq=MAX_CHI2;
   unsigned int my_ndf=0;
+  ndf_=0.;
   unsigned int last_ndf=1;
   kalman_error_t error=FIT_NOT_DONE;
   
