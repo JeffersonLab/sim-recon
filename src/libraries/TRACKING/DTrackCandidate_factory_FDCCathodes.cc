@@ -150,6 +150,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
   }
 
   // Now collect stray segments
+  // if (false)
   for (unsigned int i=0;i<4;i++){
     for (unsigned int k=0;k<packages[i].size();k++){
       DFDCSegment *segment=packages[i][k];
@@ -675,6 +676,17 @@ bool DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,
 // Routine that tries to link a stray segment with an already existing track
 // candidate
 bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *segment){
+  // Abort early if the segment is in a package that has already been used for
+  // this candidate.
+  for (unsigned int i=0;i<_data.size();i++){
+    // Get the segments already associated with this track 
+    vector<const DFDCSegment*>segments;
+    _data[i]->GetT(segments);
+    for (unsigned int j=0;j<segments.size();j++){
+      if (segments[j]->package==segment->package) return false;
+    }
+  }
+  // Otherwise try to link this segment to an existing candidate
   for (unsigned int i=0;i<_data.size();i++){
     DVector3 pos=_data[i]->position();
     DVector3 mom=_data[i]->momentum();
@@ -684,7 +696,7 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
     if (segment->hits[0]->wire->origin.z()<pos.z()){
       mom=-1.0*mom;
     }
-    
+   
     if (GetTrackMatch(_data[i]->charge(),pos,mom,segment)){
       // Add the segment as an associated object to _data[i]
       _data[i]->AddAssociatedObject(segment);
