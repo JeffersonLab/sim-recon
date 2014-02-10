@@ -468,7 +468,7 @@ c results are unpredictable.
 
 c Special treatment for mothers being subdivided in phi,
 c whose extent is less than the full 360 degrees.  If the
-c low phi limit of the child protrude further than 0.01 deg
+c low phi limit of the child protrudes further than 0.01 deg
 c below the low phi limit of the mother, or the high phi
 c limit of the child extends beyond 0.01 deg past the high
 c phi limit of the mother, this requires special treatment.
@@ -484,7 +484,7 @@ c      mother (tolerance 0.01 deg) still persists, truncate the
 c      phi limits of the child at the corresponding limit of
 c      the mother.
 c   case b) mother chigh > 0 but child chigh < 0
-c      This means that the mother phi range has been set p
+c      This means that the mother phi range has been set 
 c      to wrap around and include phi=0, and often in this
 c      case it happens that child clow < mother clow
 c      without any geometry violation.  The solution is to
@@ -666,8 +666,8 @@ c list for this slice.
 
             do 104 in=1,nin
 
-c Ordinary case of an axis that extends across the mother
-c without any complications wrap-around phi.
+c Ordinary case of a child volume whose limits are simply
+c ordered without any complications from wrap-around phi.
 
              if(iq(jphi2+in).eq.0)then
               if(q(jchig+in).ge.clslic.and.
@@ -679,35 +679,25 @@ c without any complications wrap-around phi.
               endif
 
 c Special case of phi axis subdivisions of the mother where
-c the mother wraps around through phi=0.  The mother limits
-c are immutable in this code, but the child limits that are
-c stored in the JVIRT table have been mangled to ensure that
-c chigh > clow in all cases. What happens if the child itself
-c also spans the phi zone containing phi=0?  In that case,
-c a special flag has been set for this child to indicate that
-c the complement of the [clow,chigh] interval is intended.
+c the child wraps around through phi=0, as indicated by the
+c phi2 flag.
 c
 c NOTE BY RTJ:
 c From what I can see, this logic is faulty. A child with its
 c phi2 flag set can have phi bounds which are ordered thus:
 c
-c child_chigh < division_clow < division_chigh < child_clow
+c child_clow < division_clow < division_chigh < child_chigh
 c
-c and yet still belong to the virtual division because its
-c body extends all the way across it and through past the
-c other side.  I find it difficult to believe that this
-c never happens.  In fact, with slice thicknesses adjusted
-c to match the thinnest daughters, many child volumes should
-c extend past both limits of the slices, and if a child is
-c placed in a zero-spanning sector in phi then it is naturally
-c going to have this phi-wrap-around flag set when its mother
-c is scanned.  See two lines below for my fix to the logic.
+c and yet not belong to the virtual division.  This is because
+c the virtual division [clow,chigh] lies entirely within the
+c child range (clow,chigh), but this excludes the child volume
+c since phi2 is set. See two lines below for my fix to the logic.
 
              else
 c             if(q(jchig+in).ge.clslic.or.
 c    +           q(jclow+in).le.chslic)then
-              if (q(jclow+in).ge.clslic .and.
-     +            q(jchig+in).le.chslic+360.) then
+              if (q(jclow+in).ge.clslic.or.
+     +            q(jchig+in).le.chslic) then
                 j=j+1
                 if(jflag.eq.1)then
                   iq(jbuff+j)=in
