@@ -48,6 +48,7 @@ using namespace std;
 #include "PID/DNeutralShower.h"
 #include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALIncidentParticle.h"
+#include "TOF/DTOFPoint.h"
 #include "DVector2.h"
 
 extern hdv_mainframe *hdvmf;
@@ -109,6 +110,7 @@ jerror_t MyProcessor::init(void)
 
 	vector<JEventLoop*> loops = app->GetJEventLoops();
 	if(loops.size()>0){
+
 		vector<string> facnames;
 		loops[0]->GetFactoryNames(facnames);
 
@@ -688,9 +690,18 @@ void MyProcessor::FillGraphics(void)
 	    
 	  }
 	}
-
-
-
+	
+	// TOF reconstructed points 
+	if (hdvmf->GetCheckButton("tof")){
+	  vector<const DTOFPoint *>tofpoints;
+	  loop->Get(tofpoints);
+	  DGraphicSet gset(kRed, kMarker, 0.5);
+	  for(unsigned int i=0; i<tofpoints.size(); i++){
+	    const DTOFPoint *hit = tofpoints[i];
+	    gset.points.push_back(hit->pos);
+	  }
+	  graphics.push_back(gset);
+	}
 	
 	// TOF Truth points
 	if(hdvmf->GetCheckButton("toftruth")){	
