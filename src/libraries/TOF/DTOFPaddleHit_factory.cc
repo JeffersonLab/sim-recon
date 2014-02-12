@@ -4,15 +4,15 @@
 // Created: Thu Jun  9 10:05:21 EDT 2005
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
-// Modified: Tue Feb 11 08:33:10 EST 2014 by B. Zihlmann
+// Modified: Wed Feb 12 13:19:10 EST 2014 by B. Zihlmann
 //           reflect the changes in the TOF geometry with
-//           18 LWB, 4 LNB, 2 SB, 4LNB, 18 LWB
+//           19 LWB, 2 LNB, 2 SB, 2LNB, 19 LWB
 //                          2 SB
 //           LWB: long wide bars
 //           LNB: long narrow bars
 //           SB:  short bars
 //           the bar numbering goes from 1 all through 46 with
-//           bar 22 and 23 the 4 short bars distinguished by north/south
+//           bar 22 and 23 are the 4 short bars distinguished by north/south
 //
 
 #include <iostream>

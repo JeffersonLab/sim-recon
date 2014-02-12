@@ -15,7 +15,7 @@ jerror_t DTOFGeometry_factory::init(void)
   DTOFGeometry *myDTOFGeometry = new DTOFGeometry;
 
   myDTOFGeometry->NLONGBARS        = 44;
-  myDTOFGeometry->NWIDEBARS        = 36;
+  myDTOFGeometry->NWIDEBARS        = 38;
   myDTOFGeometry->NSHORTBARS       = 4;
   myDTOFGeometry->LONGBARLENGTH    = 252.0;
   myDTOFGeometry->SHORTBARLENGTH   = 120.0;
@@ -26,30 +26,30 @@ jerror_t DTOFGeometry_factory::init(void)
   myDTOFGeometry->CenterHPlane =  620.10;
   myDTOFGeometry->CenterMPlane = (myDTOFGeometry->CenterVPlane +  myDTOFGeometry->CenterHPlane)/2.;
 
-
-  for (int k=0;k<myDTOFGeometry->NBARS;k++){
-
-    for (int k=0;k<18;k++){ // first 18 long wide bars
-      myDTOFGeometry->YPOS[k] = -123.0 + k*myDTOFGeometry->BARWIDTH;
-    }
-    for (int k=18;k<22;k++){ // then 4 long narrow bars
-      myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[17] + (k-17+0.5)*myDTOFGeometry->BARWIDTH/2.;
-    }
-    for (int k=22;k<24;k++){ // then two short bars up/down left/right
-      myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[21] + 0.5*myDTOFGeometry->BARWIDTH/2. +
-	(k-21-0.5)*myDTOFGeometry->BARWIDTH;
-    }
-    for (int k=24;k<28;k++){ // then again 4 long narrow bars
-      myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[23] + 0.5*myDTOFGeometry->BARWIDTH +
-	(k-23-0.5)*myDTOFGeometry->BARWIDTH/2.;
-    }
-    for (int k=28;k<46;k++){ // then the last 18 long wide bars
-      myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[27] + 0.5*myDTOFGeometry->BARWIDTH/2. +
-	(k-27-0.5)*myDTOFGeometry->BARWIDTH;
-    }
-
+  // YPos[barnumber] gives y position centeral location of the bar. barnumber = 1 - 46
+  for (int k=1;k<20;k++){ // first 19 long wide bars
+    myDTOFGeometry->YPOS[k] = -123.0 + k*myDTOFGeometry->BARWIDTH;
   }
-
+  for (int k=20;k<22;k++){ // then 2 long narrow bars
+    myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[19] + (k-19+0.5)*myDTOFGeometry->BARWIDTH/2.;
+  }
+  for (int k=22;k<24;k++){ // then two short bars up/down left/right
+    myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[21] + 0.5*myDTOFGeometry->BARWIDTH/2. +
+      (k-21-0.5)*myDTOFGeometry->BARWIDTH;
+  }
+  for (int k=24;k<26;k++){ // then again 2 long narrow bars
+    myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[23] + 0.5*myDTOFGeometry->BARWIDTH +
+      (k-23-0.5)*myDTOFGeometry->BARWIDTH/2.;
+  }
+  for (int k=26;k<45;k++){ // then the last 19 long wide bars
+    myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[25] + 0.5*myDTOFGeometry->BARWIDTH/2. +
+      (k-25-0.5)*myDTOFGeometry->BARWIDTH;
+  }
+  for (int k=45;k<47;k++){ // then two short bars up/down left/right
+    myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[21] + 0.5*myDTOFGeometry->BARWIDTH/2. +
+      (k-21-0.5)*myDTOFGeometry->BARWIDTH;
+  }
+  
   _data.push_back(myDTOFGeometry);
     
   return NOERROR;

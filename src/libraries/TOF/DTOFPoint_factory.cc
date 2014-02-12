@@ -4,6 +4,10 @@
 // Created: Tue Oct 18 09:50:52 EST 2005
 // Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
 //
+// Modified: Wed Feb 12 13:23:42 EST 2014 B. Zihlamnn
+//           use new TOF geometry with narrow long paddles
+//           and short paddles #22 and #23 for both north and south
+//           
 
 #include <cassert>
 #include <cmath>

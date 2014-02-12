@@ -60,14 +60,14 @@ class DTOFGeometry:public JObject{
       
       bar = N1 + N2 + (int)((y+N3*BARWIDTH)/BARWIDTH) ;
       
-    } else if (fabs(y)<(N3*BARWIDTH + N2*BARWIDTH/2.)){ // 4 long narrow bars on each side of the beam 
+    } else if (fabs(y)<(N3*BARWIDTH + N2*BARWIDTH/2.)){ // 2 long narrow bars on each side of the beam 
       if (y<0){
 	bar = N1+N2 + ((int)((y + N3*BARWIDTH)/(BARWIDTH/2.))-1);
       } else {
 	bar = N1+N2+N3+N3 + (int)((y - N3*BARWIDTH)/(BARWIDTH/2.));
       }
       
-    } else { // 18 long wide bars on the both sides of the beam
+    } else { // 19 long wide bars on the both sides of the beam
       if (y<0){
 	bar = N1 + ((int)((y + N2*BARWIDTH/2 + N3*BARWIDTH)/BARWIDTH)-1);
       } else {
