@@ -260,8 +260,8 @@ void hitForwardTOF (float xin[4], float xout[4],
     float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
     
     int padl = row;
-    if (row>46){
-      padl = row-24;
+    if (row>44){
+      padl = row-23;
     }
     //int mark = (plane<<20) + (row<<10) + column;
     int mark = (plane<<20) + (padl<<10);// + column;
