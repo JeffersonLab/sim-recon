@@ -26,7 +26,12 @@ class DTOFGeometry:public JObject{
   float SHORTBARLENGTH; ///> length of the short scintillators
   float BARWIDTH;       ///> width of the scintillator bars
   float YPOS[50];       ///> y position for bar number
-  
+
+  float CenterVPlane;  /// center z position of Vertical Plane
+  float CenterHPlane;  /// center z position of Horizontal Plane
+  float CenterMPlane;  /// center z position between the two Plane
+
+
   float bar2y(int bar, int orientation)  const ///> convert bar number to the
   ///> position of the center of the
   ///> bar in local coordinations
@@ -47,26 +52,22 @@ class DTOFGeometry:public JObject{
     int N2 = (NLONGBARS - NWIDEBARS )/2;
     int N3 = NSHORTBARS/4;
     int N4 = (NLONGBARS - NWIDEBARS )/2;
-    int N5 = NWIDEBARS/2;
+
     int bar;
     if (orientation == 0) {float temp = y; y = -1.0*x; x = temp;}
 
-    if (fabs(y)<N3*BARWIDTH){
+    if (fabs(y)<N3*BARWIDTH){ // short bars on each side of the beam hole
       
-      if (x>0) {
-	bar = N1+N2+N3+N4+N5 + (int)((y+N3*BARWIDTH)/BARWIDTH) + 1;
-      } else {
-	bar = N1 + N2 + (int)((y+N3*BARWIDTH)/BARWIDTH) ;
-      }
+      bar = N1 + N2 + (int)((y+N3*BARWIDTH)/BARWIDTH) ;
       
-    } else if (fabs(y)<(N3*BARWIDTH + N2*BARWIDTH/2.)){
+    } else if (fabs(y)<(N3*BARWIDTH + N2*BARWIDTH/2.)){ // 4 long narrow bars on each side of the beam 
       if (y<0){
 	bar = N1+N2 + ((int)((y + N3*BARWIDTH)/(BARWIDTH/2.))-1);
       } else {
 	bar = N1+N2+N3+N3 + (int)((y - N3*BARWIDTH)/(BARWIDTH/2.));
       }
       
-    } else { // if (fabs(y)<(N1*BARWIDTH+N2*BARWIDTH/2.+N3*BARWIDTH)){
+    } else { // 18 long wide bars on the both sides of the beam
       if (y<0){
 	bar = N1 + ((int)((y + N2*BARWIDTH/2 + N3*BARWIDTH)/BARWIDTH)-1);
       } else {
