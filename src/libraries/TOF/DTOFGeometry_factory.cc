@@ -32,7 +32,7 @@ jerror_t DTOFGeometry_factory::init(void)
 
   // YPos[barnumber] gives y position centeral location of the bar. barnumber = 1 - 46
   for (int k=1;k<20;k++){ // first 19 long wide bars
-    myDTOFGeometry->YPOS[k] = -123.0 + k*myDTOFGeometry->BARWIDTH;
+    myDTOFGeometry->YPOS[k] = -129.0 + k*myDTOFGeometry->BARWIDTH;
   }
   for (int k=20;k<22;k++){ // then 2 long narrow bars
     myDTOFGeometry->YPOS[k] = myDTOFGeometry->YPOS[19] + (k-19+0.5)*myDTOFGeometry->BARWIDTH/2.;
