@@ -37,6 +37,11 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
  
   if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
     cout<<"DTOFPaddleHit_factory: loading values from TOF data base"<<endl;
+
+    C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
+    HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
+    E_THRESHOLD    =    tofparms["TOF_E_THRESHOLD"];
+    ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"];
   } else {
     cout << "DTOFPaddleHit_factory: Error loading values from TOF data base" <<endl;
 
@@ -44,13 +49,10 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
     HALFPADDLE = 126;     // set to some reasonable value
     E_THRESHOLD = 0.0005; // energy threshold in GeV
     ATTEN_LENGTH = 400.;  // 400cm attenuation length
-    return NOERROR;
   }
 
-  C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
-  HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
-  E_THRESHOLD    =    tofparms["TOF_E_THRESHOLD"];
-  ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"];
+  ENERGY_ATTEN_FACTOR=exp(HALFPADDLE/ATTEN_LENGTH);
+  TIME_COINCIDENCE_CUT=2.*HALFPADDLE/C_EFFECTIVE;
 
   loop->Get(TOFGeom);
 
@@ -107,25 +109,25 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
   for (unsigned int i=0; i<P1hitsL.size(); i++){
     int bar = P1hitsL[i]->bar;
-    DTOFPaddleHit *hit = new DTOFPaddleHit;
-    hit->bar = bar;
-    hit->orientation   = P1hitsL[i]->plane;
-    hit->E_north = P1hitsL[i]->dE;
-    hit->t_north = P1hitsL[i]->t;
-    hit->AddAssociatedObject(P1hitsL[i]);
-    hit->E_south = 0.;
-    hit->t_south = 0.;      
- 
     if ((bar < TOFGeom[0]->FirstShortBar ) || (bar > TOFGeom[0]->LastShortBar)) {
       for (unsigned int j=0; j<P1hitsR.size(); j++){      
-	if (bar==P1hitsR[j]->bar){
+	if (bar==P1hitsR[j]->bar 
+	    && fabs(P1hitsR[j]->t-P1hitsL[i]->t)<TIME_COINCIDENCE_CUT
+	    && (P1hitsL[i]->dE>E_THRESHOLD || P1hitsR[j]->dE>E_THRESHOLD)){
+	  DTOFPaddleHit *hit = new DTOFPaddleHit;
+	  hit->bar = bar;
+	  hit->orientation   = P1hitsL[i]->plane;
+	  hit->E_north = P1hitsL[i]->dE;
+	  hit->t_north = P1hitsL[i]->t;
+	  hit->AddAssociatedObject(P1hitsL[i]);
 	  hit->E_south = P1hitsR[j]->dE;
 	  hit->t_south = P1hitsR[j]->t;      
-	  hit->AddAssociatedObject(P1hitsR[j]);
+	  hit->AddAssociatedObject(P1hitsR[j]);  
+
+	  _data.push_back(hit);
 	}
       }
-    }
-    _data.push_back(hit);
+    } 
   }
 
 
@@ -142,41 +144,44 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     }
 
     if (!found){
-      DTOFPaddleHit *hit = new DTOFPaddleHit;
-      hit->bar = bar;
-      hit->orientation   = P1hitsR[i]->plane;
-      hit->E_south = P1hitsR[i]->dE;
-      hit->t_south = P1hitsR[i]->t;
-      hit->E_north = 0.;
-      hit->t_north = 0.;      
-      hit->AddAssociatedObject(P1hitsR[i]);
-      _data.push_back(hit);
+      if (P1hitsR[i]->dE>E_THRESHOLD){
+	DTOFPaddleHit *hit = new DTOFPaddleHit;
+	hit->bar = bar;
+	hit->orientation   = P1hitsR[i]->plane;
+	hit->E_south = P1hitsR[i]->dE;
+	hit->t_south = P1hitsR[i]->t;
+	hit->E_north = 0.;
+	hit->t_north = 0.;      
+	hit->AddAssociatedObject(P1hitsR[i]);
+
+	_data.push_back(hit);
+      }
     }
   }
 
   for (unsigned int i=0; i<P2hitsL.size(); i++){
-    int bar = P2hitsL[i]->bar;
-    DTOFPaddleHit *hit = new DTOFPaddleHit;
-    hit->bar = bar;
-    hit->orientation   = P2hitsL[i]->plane;
-    hit->E_north = P2hitsL[i]->dE;
-    hit->t_north = P2hitsL[i]->t;
-    hit->AddAssociatedObject(P2hitsL[i]);
-    hit->E_south = 0.;
-    hit->t_south = 0.;      
- 
-    if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
+    int bar = P2hitsL[i]->bar; 
+    if ((bar <  TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar )){
       for (unsigned int j=0; j<P2hitsR.size(); j++){      
-	if (bar==P2hitsR[j]->bar){
+	if (bar==P2hitsR[j]->bar 
+	    && fabs(P2hitsR[j]->t-P2hitsL[i]->t)<TIME_COINCIDENCE_CUT
+	    && (P2hitsL[i]->dE>E_THRESHOLD || P2hitsR[j]->dE>E_THRESHOLD)){
+	  DTOFPaddleHit *hit = new DTOFPaddleHit;
+	  hit->bar = bar;
+	  hit->orientation   = P2hitsL[i]->plane;
+	  hit->E_north = P2hitsL[i]->dE;
+	  hit->t_north = P2hitsL[i]->t;
+	  hit->AddAssociatedObject(P2hitsL[i]);
 	  hit->E_south = P2hitsR[j]->dE;
 	  hit->t_south = P2hitsR[j]->t;      
 	  hit->AddAssociatedObject(P2hitsR[j]);
+	  
+	  _data.push_back(hit);
 	}
       }
     }
-    _data.push_back(hit);
   }
-
+  
 
   for (unsigned int i=0; i<P2hitsR.size(); i++){   
     int bar = P2hitsR[i]->bar;
@@ -191,15 +196,18 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     }
 
     if (!found){
-      DTOFPaddleHit *hit = new DTOFPaddleHit;
-      hit->bar = bar;
-      hit->orientation   = P2hitsR[i]->plane;
-      hit->E_south = P2hitsR[i]->dE;
-      hit->t_south = P2hitsR[i]->t;
-      hit->E_north = 0.;
-      hit->t_north = 0.;      
-      hit->AddAssociatedObject(P2hitsR[i]);
-      _data.push_back(hit);
+      if (P2hitsR[i]->dE>E_THRESHOLD){
+	DTOFPaddleHit *hit = new DTOFPaddleHit;
+	hit->bar = bar;
+	hit->orientation   = P2hitsR[i]->plane;
+	hit->E_south = P2hitsR[i]->dE;
+	hit->t_south = P2hitsR[i]->t;
+	hit->E_north = 0.;
+	hit->t_north = 0.;      
+	hit->AddAssociatedObject(P2hitsR[i]);
+
+	_data.push_back(hit);
+      }
     }
   }
 
@@ -224,12 +232,8 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
       hit->dpos      = 2.;  // manually/artificially set to 2cm. 
       
       // mean energy deposition at the location of the hit position
-      // devide by two to be comparable with single PMT hits
-      float en = hit->E_north  * exp((HALFPADDLE-pos)/ATTEN_LENGTH) ;
-      float es = hit->E_south  * exp((HALFPADDLE+pos)/ATTEN_LENGTH) ;
-      float emean = (en+es)/2.; 
-      hit->dE = emean;
-      
+      // use geometrical mean
+      hit->dE = ENERGY_ATTEN_FACTOR*sqrt(hit->E_north*hit->E_south);
     } else {
       hit->meantime = NaN;
       hit->timediff = NaN;
