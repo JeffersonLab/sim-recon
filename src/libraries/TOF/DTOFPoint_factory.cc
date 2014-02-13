@@ -31,27 +31,29 @@ jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int runnumber)
  
   if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
     cout<<"DTOFPoint_factory: loading values from TOF data base"<<endl;
+
+    VELOCITY     =    tofparms["TOF_C_EFFECTIVE"];
+    HALFPADDLE   =    tofparms["TOF_HALFPADDLE"];
+    BARWIDTH     =    tofparms["TOF_PADDLEWIDTH"];
+    E_THRESHOLD  =    tofparms["TOF_E_THRESHOLD"];
+    ATTEN_LENGTH =    tofparms["TOF_ATTEN_LENGTH"];
+    
   } else {
     cout << "DTOFPoint_factory: Error loading values from TOF data base" <<endl;
 
     VELOCITY = 15.;  // set to some reasonable value
     HALFPADDLE = 126;   // set to some reasonable value
     BARWIDTH = 6.;
-    return NOERROR;
+    E_THRESHOLD=0.0005;
+    ATTEN_LENGTH= 400.;
   }
-
-  VELOCITY     =    tofparms["TOF_C_EFFECTIVE"];
-  HALFPADDLE   =    tofparms["TOF_HALFPADDLE"];
-  BARWIDTH     =    tofparms["TOF_PADDLEWIDTH"];
-  E_THRESHOLD  =    tofparms["TOF_E_THRESHOLD"];
-  ATTEN_LENGTH =    tofparms["TOF_ATTEN_LENGTH"];
 
   MAX_TOFSpacetimeHits = 20;
   MAX_TOFSpacetimeHitMatches = 10;
 
   loop->Get(TOFGeom);
 
-  dPositionMatchCut_DoubleEnded = 0.5*BARWIDTH + 1.05*3.0; //max if perfect precision (1/2 bar width) + ~3 sigma
+  dPositionMatchCut_DoubleEnded = 0.5*BARWIDTH + 1.5*3.0; //max if perfect precision (1/2 bar width) + ~3 sigma
 
   return NOERROR;
 
@@ -235,12 +237,12 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
       //e.g. separate DTOFPoints due to energy deposited in adjacent paddles, PID routine for picking the correct DTOFPoint if adjacent, etc.
       locTOFSpacetimeHitMatchList.erase(locTOFSpacetimeHitMatchList.begin());
       continue;
-    }else if((locOneSideBelowEThresholdFlag_Horizontal == true) && (locTOFHit_Horizontal->bar < 41)){ //a horizontal double-sided bar has only one PMT signal above threshold
+    }else if((locOneSideBelowEThresholdFlag_Horizontal == true) && (locTOFHit_Horizontal->bar < 22 || locTOFHit_Horizontal->bar>23)){ //a horizontal double-sided bar has only one PMT signal above threshold
       //currently, the software isn't optimized for this scenario, so disabled for now
       //e.g. separate DTOFPoints due to energy deposited in adjacent paddles, PID routine for picking the correct DTOFPoint if adjacent, etc.
       locTOFSpacetimeHitMatchList.erase(locTOFSpacetimeHitMatchList.begin());
       continue;
-    }else if((locOneSideBelowEThresholdFlag_Vertical == true) && (locTOFHit_Vertical->bar < 41)){ //a vertical double-sided bar has only one PMT signal above threshold
+    }else if((locOneSideBelowEThresholdFlag_Vertical == true) && (locTOFHit_Vertical->bar < 22 || locTOFHit_Vertical->bar>23)){ //a vertical double-sided bar has only one PMT signal above threshold
       //currently, the software isn't optimized for this scenario, so disabled for now
       //e.g. separate DTOFPoints due to energy deposited in adjacent paddles, PID routine for picking the correct DTOFPoint if adjacent, etc.
       locTOFSpacetimeHitMatchList.erase(locTOFSpacetimeHitMatchList.begin());
