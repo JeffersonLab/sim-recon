@@ -7,15 +7,13 @@
 
 #include <math.h>
 #include <stdio.h>
-
-static const char sccsid_particleTypeH[] = "@(#)particleType.h\t5.3\tCreated 8/20/97 17:13:12, \tcompiled "__DATE__;
+#include <string.h>
 
 typedef enum {
 
-  /*
-   * These constants are defined to be
-   * same as GEANT. see http://wwwcn.cern.ch/asdoc/geant/H2GEANTCONS300.html
-   * for more details.
+  /* An extensive list of the GEANT3 particle
+   * codes can be found here:
+   * http://wwwasdoc.web.cern.ch/wwwasdoc/geant/node72.html
   */
 
   Unknown        =  0,
@@ -51,406 +49,460 @@ typedef enum {
   AntiXi0        = 30,
   AntiXiPlus     = 31,
   AntiOmegaPlus  = 32,
+  Deuteron       = 45,
+  Helium         = 47,
   Geantino       = 48,
+  Triton         = 49,
+  
+  Pb208          = 111,
 
   /* the constants defined by GEANT end here */
+  
+  /*
+   * Several particle codes are added below which did
+   * not overlap with the original GEANT particle list.
+   * However, the link above has several other particle
+   * codes added which do actually overlap. Because of 
+   * this, each of the values below was increased by
+   * 100 so that they don't overlap with any of the new
+   * codes and they can be used.
+  */
+  
 
   /* These are E852-defined constants */
+  Rho0           = 44, // was 157
+  RhoPlus        = 42, // was 158
+  RhoMinus       = 43, // was 159
+  omega          = 33,  // was 160
+  phiMeson       = 34,  // was 162
+  EtaPrime       = 35,  // was 161
+  //Rho0           = 157,
+  //RhoPlus        = 158,
+  //RhoMinus       = 159,
+  //omega          = 160,
+  //EtaPrime       = 161,
+  //phiMeson       = 162,
+  a0_980	 = 163,
+  f0_980	 = 164,
 
-  Rho0           = 57,
-  RhoPlus        = 58,
-  RhoMinus       = 59,
-  omega          = 60,
-  EtaPrime       = 61,
-  phiMeson       = 62,
-  a0_980	 = 63,
-  f0_980	 = 64,
+  /* These are GlueX-defined constants */
 
-  KStar_892_0 = 65,
-  KStar_892_Plus = 66,
-  KStar_892_Minus = 67,
-  AntiKStar_892_0 = 68,
+  KStar_892_0 = 165,
+  KStar_892_Plus = 166,
+  KStar_892_Minus = 167,
+  AntiKStar_892_0 = 168,
 
-  K1_1400_Plus = 69,
-  K1_1400_Minus = 70
+  K1_1400_Plus = 169,
+  K1_1400_Minus = 170,
+
+  b1_1235_Plus = 171,
+  Sigma_1385_Minus = 172,
+  Sigma_1385_0 = 173,
+  Sigma_1385_Plus = 174
 
 } Particle_t;
 
-inline static char *ParticleType(Particle_t p)
+inline static char* ParticleType(Particle_t p)
 {
-  static char ret[20];
   switch (p) {
   case Unknown:
-    strcpy(ret,"unknown");
-    break;
+    return (char*)"Unknown";
   case Gamma:
-    strcpy(ret,"gamma");
-    break;
+    return (char*)"Photon";
   case Positron:
-    strcpy(ret,"positron");
-    break;
+    return (char*)"Positron";
   case Electron:
-    strcpy(ret,"electron");
-    break;
+    return (char*)"Electron";
   case Neutrino:
-    strcpy(ret,"neutrino");
-    break;
+    return (char*)"Neutrino";
   case MuonPlus:
-    strcpy(ret,"mu+");
-    break;
+    return (char*)"Muon+";
   case MuonMinus:
-    strcpy(ret,"mu-");
-    break;
+    return (char*)"Muon-";
   case Pi0:
-    strcpy(ret,"pi0");
-    break;
+    return (char*)"Pi0";
   case PiPlus:
-    strcpy(ret,"pi+");
-    break;
+    return (char*)"Pi+";
   case PiMinus:
-    strcpy(ret,"pi-");
-    break;
+    return (char*)"Pi-";
   case KLong:
-    strcpy(ret,"kL");
-    break;
+    return (char*)"KLong";
   case KPlus:
-    strcpy(ret,"k+");
-    break;
+    return (char*)"K+";
   case KMinus:
-    strcpy(ret,"k-");
-    break;
+    return (char*)"K-";
   case Neutron:
-    strcpy(ret,"neutron");
-    break;
+    return (char*)"Neutron";
   case Proton:
-    strcpy(ret,"proton");
-    break;
+    return (char*)"Proton";
   case AntiProton:
-    strcpy(ret,"antiProton");
-    break;
+    return (char*)"AntiProton";
   case KShort:
-    strcpy(ret,"kS");
-    break;
+    return (char*)"KShort";
   case Eta:
-    strcpy(ret,"eta");
-    break;
+    return (char*)"Eta";
   case Lambda:
-    strcpy(ret,"Lambda");
-    break;
+    return (char*)"Lambda";
   case SigmaPlus:
-    strcpy(ret,"Sigma+");
-    break;
+    return (char*)"Sigma+";
   case Sigma0:
-    strcpy(ret,"Sigma0");
-    break;
+    return (char*)"Sigma0";
   case SigmaMinus:
-    strcpy(ret,"Sigma-");
-    break;
+    return (char*)"Sigma-";
   case Xi0:
-    strcpy(ret,"Xi0");
-    break;
+    return (char*)"Xi0";
   case XiMinus:
-    strcpy(ret,"Xi-");
-    break;
+    return (char*)"Xi-";
   case OmegaMinus:
-    strcpy(ret,"Omega-");
-    break;
+    return (char*)"Omega-";
   case AntiNeutron:
-    strcpy(ret,"antiNeutron");
-    break;
+    return (char*)"AntiNeutron";
   case AntiLambda:
-    strcpy(ret,"antiLambda");
-    break;
+    return (char*)"AntiLambda";
   case AntiSigmaMinus:
-    strcpy(ret,"antiSigma-");
-    break;
+    return (char*)"AntiSigma-";
   case AntiSigma0:
-    strcpy(ret,"antiSigma0");
-    break;
+    return (char*)"AntiSigma0";
   case AntiSigmaPlus:
-    strcpy(ret,"antiSigma+");
-    break;
+    return (char*)"AntiSigma+";
   case AntiXi0:
-    strcpy(ret,"antiXi0");
-    break;
+    return (char*)"AntiXi0";
   case AntiXiPlus:
-    strcpy(ret,"antiXi+");
-    break;
+    return (char*)"AntiXi+";
   case AntiOmegaPlus:
-    strcpy(ret,"antiOmega+");
-    break;
+    return (char*)"AntiOmega+";
   case Geantino:
-    strcpy(ret,"geantino");
-    break;
+    return (char*)"Geantino";
   case Rho0:
-    strcpy(ret,"rho0");
-    break;  
+    return (char*)"Rho0";
   case RhoPlus:
-    strcpy(ret,"rho+");
-    break;
+    return (char*)"Rho+";
   case RhoMinus:
-    strcpy(ret,"rho-");
-    break;
+    return (char*)"Rho-";
   case omega:
-    strcpy(ret,"omega");
-    break;
+    return (char*)"omega";
   case EtaPrime:
-    strcpy(ret,"etaPrime");
-    break;
+    return (char*)"EtaPrime";
   case phiMeson:
-    strcpy(ret,"phi");
-    break;
+    return (char*)"phiMeson";
   case a0_980:
-    strcpy(ret,"a0(980)");
-    break;
+    return (char*)"a0(980)";
   case f0_980:
-    strcpy(ret,"f0(980)");
-    break;
+    return (char*)"f0(980)";
   case KStar_892_0:
-    strcpy(ret,"K*(892)0");
-    break;
+    return (char*)"K*(892)0";
   case KStar_892_Plus:
-    strcpy(ret,"K*(892)+");
-    break;
+    return (char*)"K*(892)+";
   case KStar_892_Minus:
-    strcpy(ret,"K*(892)-");
-    break;
+    return (char*)"K*(892)-";
   case AntiKStar_892_0:
-    strcpy(ret,"antiK*(892)0");
-    break;
+    return (char*)"antiK*(892)0";
   case K1_1400_Plus:
-    strcpy(ret,"K1(1400)+");
-    break;
+    return (char*)"K1(1400)+";
   case K1_1400_Minus:
-    strcpy(ret,"K1(1400)-");
-    break;
+    return (char*)"K1(1400)-";
+  case b1_1235_Plus:
+    return (char*)"b1(1235)+";
+  case Sigma_1385_Minus:
+    return (char*)"Sigma(1385)-";
+  case Sigma_1385_0:
+    return (char*)"Sigma(1385)0";
+  case Sigma_1385_Plus:
+    return (char*)"Sigma(1385)+";
+  case Deuteron:
+    return (char*)"Deuteron";
+  case Helium:
+    return (char*)"Helium";
+  case Triton:
+    return (char*)"Triton";
+  case Pb208:
+    return (char*)"Pb208";
   default:
-    sprintf(ret,"type(%d)",(int)p);
-    break;
+    return (char*)"Unknown";
   }
-  return(ret);
 }
 
-inline static char* ParticleName_ROOTLatex(Particle_t p)
+inline static unsigned short int IsFixedMass(Particle_t p)
 {
-  static char ret[40];
+  switch (p)
+  {
+  case Gamma:		return 1;
+  case Positron:	return 1;
+  case Electron:	return 1;
+  case Neutrino:	return 1;
+  case MuonPlus:	return 1;
+  case MuonMinus:	return 1;
+  case Pi0:      	return 1;
+  case PiPlus:		return 1;
+  case PiMinus:		return 1;
+  case KShort:		return 1;
+  case KLong:		return 1;
+  case KPlus:		return 1;
+  case KMinus:		return 1;
+  case Neutron:		return 1;
+  case Proton:		return 1;
+  case AntiProton:	return 1;
+  case Eta:			return 1;
+  case Lambda:		return 1;
+  case SigmaPlus:	return 1;
+  case Sigma0:		return 1;
+  case SigmaMinus:	return 1;
+  case Xi0:			return 1;
+  case XiMinus:		return 1;
+  case OmegaMinus:	return 1;
+  case AntiNeutron:	return 1;
+  case AntiLambda:	return 1;
+  case AntiSigmaMinus:	return 1;
+  case AntiSigma0:	return 1;
+  case AntiSigmaPlus:	return 1;
+  case AntiXi0:		return 1;
+  case AntiXiPlus:	return 1;
+  case AntiOmegaPlus:	return 1;
+  case Geantino:	return 1;
+  case EtaPrime:	return 1;
+  case Deuteron:	return 1;
+  case Helium:		return 1;
+  case Triton:	return 1;
+  case Pb208:	return 1;
+  default: return 0;
+  }
+}
+
+inline static unsigned short int IsResonance(Particle_t p)
+{
+	if(IsFixedMass(p) == 1)
+		return 0;
+	if(p == Unknown)
+		return 0;
+	if(p == phiMeson)
+		return 0;
+	if(p == omega)
+		return 0;
+	return 1;
+}
+
+inline static unsigned short int IsDetachedVertex(Particle_t p)
+{
+  switch (p)
+  {
+  case MuonPlus:	return 1;
+  case MuonMinus:	return 1;
+  case PiPlus:		return 1;
+  case PiMinus:		return 1;
+  case KShort:		return 1;
+  case KLong:		return 1;
+  case KPlus:		return 1;
+  case KMinus:		return 1;
+  case Neutron:		return 1;
+  case Lambda:		return 1;
+  case SigmaPlus:	return 1;
+  case SigmaMinus:	return 1;
+  case Xi0:			return 1;
+  case XiMinus:		return 1;
+  case OmegaMinus:	return 1;
+  case AntiNeutron:	return 1;
+  case AntiLambda:	return 1;
+  case AntiSigmaMinus:	return 1;
+  case AntiSigmaPlus:	return 1;
+  case AntiXi0:		return 1;
+  case AntiXiPlus:	return 1;
+  case AntiOmegaPlus:	return 1;
+  case Deuteron:	return 1;
+  case Helium:		return 1;
+  case Triton:	return 1;
+  default: return 0;
+  }
+}
+
+inline static char* ParticleName_ROOT(Particle_t p)
+{
   switch (p) {
   case Unknown:
-    strcpy(ret, "#it{X}");
-    break;
+    return (char*)"#it{X}";
   case Gamma:
-    strcpy(ret, "#it{#gamma}");
-    break;
+    return (char*)"#it{#gamma}";
   case Positron:
-    strcpy(ret, "#it{e^{+}}");
-    break;
+    return (char*)"#it{e}^{+}";
   case Electron:
-    strcpy(ret, "#it{e^{-}}");
-    break;
+    return (char*)"#it{e}^{-}";
   case Neutrino:
-    strcpy(ret, "#it{#nu}");
-    break;
+    return (char*)"#it{#nu}";
   case MuonPlus:
-    strcpy(ret, "#it{#mu^{+}}");
-    break;
+    return (char*)"#it{#mu}^{+}";
   case MuonMinus:
-    strcpy(ret, "#it{#mu^{-}}");
-    break;
+    return (char*)"#it{#mu}^{-}";
   case Pi0:
-    strcpy(ret, "#it{#pi^{0}}");
-    break;
+    return (char*)"#it{#pi}^{0}";
   case PiPlus:
-    strcpy(ret, "#it{#pi^{+}}");
-    break;
+    return (char*)"#it{#pi}^{+}";
   case PiMinus:
-    strcpy(ret, "#it{#pi^{-}}");
-    break;
+    return (char*)"#it{#pi}^{-}";
   case KLong:
-    strcpy(ret, "#it{K^{0}_{L}}");
-    break;
+    return (char*)"#it{K}^{0}_{L}";
   case KPlus:
-    strcpy(ret, "#it{K^{+}}");
-    break;
+    return (char*)"#it{K}^{+}";
   case KMinus:
-    strcpy(ret, "#it{K^{-}}");
-    break;
+    return (char*)"#it{K}^{-}";
   case Neutron:
-    strcpy(ret, "#it{n}");
-    break;
+    return (char*)"#it{n}";
   case Proton:
-    strcpy(ret, "#it{p}");
-    break;
+    return (char*)"#it{p}";
   case AntiProton:
-    strcpy(ret, "#it{#bar{p}}");
-    break;
+    return (char*)"#it{#bar{p}}";
   case KShort:
-    strcpy(ret, "#it{K^{0}_{S}}");
-    break;
+    return (char*)"#it{K}^{0}_{S}";
   case Eta:
-    strcpy(ret, "#it{#eta}");
-    break;
+    return (char*)"#it{#eta}";
   case Lambda:
-    strcpy(ret, "#it{#Lambda}");
-    break;
+    return (char*)"#it{#Lambda}";
   case SigmaPlus:
-    strcpy(ret, "#it{#Sigma^{+}}");
-    break;
+    return (char*)"#it{#Sigma}^{+}";
   case Sigma0:
-    strcpy(ret, "#it{#Sigma^{0}}");
-    break;
+    return (char*)"#it{#Sigma}^{0}";
   case SigmaMinus:
-    strcpy(ret, "#it{#Sigma^{-}}");
-    break;
+    return (char*)"#it{#Sigma}^{-}";
   case Xi0:
-    strcpy(ret, "#it{#Xi^{0}}");
-    break;
+    return (char*)"#it{#Xi}^{0}";
   case XiMinus:
-    strcpy(ret, "#it{#Xi^{-}}");
-    break;
+    return (char*)"#it{#Xi}^{-}";
   case OmegaMinus:
-    strcpy(ret, "#it{#Omega^{-}}");
-    break;
+    return (char*)"#it{#Omega}^{-}";
   case AntiNeutron:
-    strcpy(ret, "#it{#bar^{n}}");
-    break;
+    return (char*)"#it{#bar^{n}}";
   case AntiLambda:
-    strcpy(ret, "#it{#bar^{#Lambda}}");
-    break;
+    return (char*)"#it{#bar^{#Lambda}}";
   case AntiSigmaMinus:
-    strcpy(ret, "#it{#bar{#Sigma}^{-}}");
-    break;
+    return (char*)"#it{#bar{#Sigma}}^{-}";
   case AntiSigma0:
-    strcpy(ret, "#it{#bar{#Sigma}^{0}}");
-    break;
+    return (char*)"#it{#bar{#Sigma}}^{0}";
   case AntiSigmaPlus:
-    strcpy(ret, "#it{#bar{#Sigma}^{+}}");
-    break;
+    return (char*)"#it{#bar{#Sigma}}^{+}";
   case AntiXi0:
-    strcpy(ret, "#it{#bar{#Xi}^{0}}");
-    break;
+    return (char*)"#it{#bar{#Xi}}^{0}";
   case AntiXiPlus:
-    strcpy(ret, "#it{#bar{#Xi}^{+}}");
-    break;
+    return (char*)"#it{#bar{#Xi}}^{+}";
   case AntiOmegaPlus:
-    strcpy(ret, "#it{#bar{#Omega}^{+}}");
-    break;
+    return (char*)"#it{#bar{#Omega}}^{+}";
   case Geantino:
-    strcpy(ret, "geantino");
-    break;
+    return (char*)"geantino";
   case Rho0:
-    strcpy(ret, "#it{#rho^{0}}");
-    break;
+    return (char*)"#it{#rho}^{0}";
   case RhoPlus:
-    strcpy(ret, "#it{#rho^{+}}");
-    break;
+    return (char*)"#it{#rho}^{+}";
   case RhoMinus:
-    strcpy(ret, "#it{#rho^{-}}");
-    break;
+    return (char*)"#it{#rho}^{-}";
   case omega:
-    strcpy(ret, "#it{#Omega}");
-    break;
+    return (char*)"#it{#omega}";
   case EtaPrime:
-    strcpy(ret, "#it{#eta'}");
-    break;
+    return (char*)"#it{#eta'}";
   case phiMeson:
-    strcpy(ret, "#it{#phi}");
-    break;
+    return (char*)"#it{#phi}";
   case a0_980:
-    strcpy(ret, "#it{a_{0}(980)}");
-    break;
+    return (char*)"#it{a}_{0}(980)";
   case f0_980:
-    strcpy(ret, "#it{f_{0}(980)}");
-    break;
+    return (char*)"#it{f}_{0}(980)";
   case KStar_892_0:
-    strcpy(ret, "#it{K^{*}(892)^{0}}");
-    break;
+    return (char*)"#it{K}*(892)^{0}";
   case KStar_892_Plus:
-    strcpy(ret, "#it{K^{*}(892)^{+}}");
-    break;
+    return (char*)"#it{K}*(892)^{+}";
   case KStar_892_Minus:
-    strcpy(ret, "#it{K^{*}(892)^{-}}");
-    break;
+    return (char*)"#it{K}*(892)^{-}";
   case AntiKStar_892_0:
-    strcpy(ret, "#it{#bar{K^{*}}(892)^{0}}");
-    break;
+    return (char*)"#it{#bar{K*}}(892)^{0}";
   case K1_1400_Plus:
-    strcpy(ret, "#it{K_{1}(1400)^{+}}");
-    break;
+    return (char*)"#it{K}_{1}(1400)^{+}";
   case K1_1400_Minus:
-    strcpy(ret, "#it{K_{1}(1400)^{-}}");
-    break;
+    return (char*)"#it{K}_{1}(1400)^{-}";
+  case b1_1235_Plus:
+    return (char*)"#it{b}_{1}(1235)^{+}";
+  case Deuteron:
+    return (char*)"#it{D}";
+  case Helium:
+    return (char*)"#it{He}";
+  case Triton:
+    return (char*)"#it{T}";
+  case Pb208:
+    return (char*)"#it{Pb^{208}}";
+  case Sigma_1385_Minus:
+    return (char*)"#it{#Sigma}(1385)^{-}";
+  case Sigma_1385_0:
+    return (char*)"#it{#Sigma}(1385)^{0}";
+  case Sigma_1385_Plus:
+    return (char*)"#it{#Sigma}(1385)^{+}";
   default:
-    strcpy(ret, "X");
-    break;
+    return (char*)"X";
   }
-  return(ret);
 }
 
 inline static double ParticleMass(Particle_t p)
 {
   switch (p) {
+  case Unknown:		return HUGE_VAL;
+  case Gamma:		return 0;
+  case Positron:	return 0.000510998928;
+  case Electron:	return 0.000510998928;
+  case Neutrino:	return 0;
+  case MuonPlus:	return 0.1056583715;
+  case MuonMinus:	return 0.1056583715;
+  case Pi0:		return 0.1349766;
+  case PiPlus:		return 0.13957018;
+  case PiMinus:		return 0.13957018;
+  case KShort:		return 0.497614;
+  case KLong:		return 0.497614;
+  case KPlus:		return 0.493677;
+  case KMinus:		return 0.493677;
+  case Neutron:		return 0.939565379;
+  case Proton:		return 0.938272046;
+  case AntiProton:	return 0.938272046;
+  case Eta:		return 0.547862;
+  case Lambda:		return 1.115683;
+  case SigmaPlus:	return 1.18937;
+  case Sigma0:		return 1.192642;
+  case SigmaMinus:	return 1.197449;
+  case Xi0:		return 1.31486;
+  case XiMinus:		return 1.32171;
+  case OmegaMinus:	return 1.67245;
+  case AntiNeutron:	return 0.939565379;
+  case AntiLambda:	return 1.115683;
+  case AntiSigmaMinus:	return 1.18937;
+  case AntiSigma0:	return 1.192642;
+  case AntiSigmaPlus:	return 1.197449;
+  case AntiXi0:		return 1.31486;
+  case AntiXiPlus:	return 1.32171;
+  case AntiOmegaPlus:	return 1.67245;
+  case Geantino:	return 0.0;
+  case Rho0:		return 0.7690;  // neutral only, photoproduced and other reactions. e+ e- gives 775.26
+  case RhoPlus:		return 0.7665;  // charged only, hadroproduced. tau decays and e+ e- gives 775.11
+  case RhoMinus:	return 0.7665;
+  case omega:		return 0.78265;
+  case EtaPrime:	return 0.95778;
+  case phiMeson:	return 1.019455;
+  case a0_980:		return 0.980;
+  case f0_980:		return 0.990;
+  case KStar_892_0: return 0.89581;     // neutral only
+  case KStar_892_Plus: return 0.89166;  // charged only, hadroproduced
+  case KStar_892_Minus: return 0.89166; // charged only, hadroproduced
+  case AntiKStar_892_0: return 0.89581; // neutral only
+  case K1_1400_Plus: return 1.403;
+  case K1_1400_Minus: return 1.403;
+  case b1_1235_Plus: return 1.2295;
+  case Deuteron:	return 1.875612859;     // from NIST
+  case Helium:		return 3.727379238;     // from NIST 6.64465675 x 10-27 kg
+  case Triton:	        return 2.808921004;     // from NIST 5.00735630 x 10^-27 kg
+  case Pb208:	        return 193.72899;       // NIST gives 207.976627 AMU
+  case Sigma_1385_Minus:	return 1.3872;
+  case Sigma_1385_0:		return 1.3837;
+  case Sigma_1385_Plus:	return 1.38280;
   default:
     fprintf(stderr,"ParticleMass: Error: Unknown particle type %d,",p);
     fprintf(stderr," returning HUGE_VAL...\n");
     return HUGE_VAL;
-  case Unknown:		return HUGE_VAL;
-  case Gamma:		return 0;
-  case Positron:	return 0.0005101;
-  case Electron:	return 0.0005101;
-  case Neutrino:	return 0;
-  case MuonPlus:	return 0.105658;
-  case MuonMinus:	return 0.105658;
-  case Pi0:		return 0.13497;
-  case PiPlus:		return 0.139568;
-  case PiMinus:		return 0.139568;
-  case KShort:		return 0.497671;
-  case KLong:		return 0.497671;
-  case KPlus:		return 0.49364;
-  case KMinus:		return 0.49364;
-  case Neutron:		return 0.93956;
-  case Proton:		return 0.93827;
-  case AntiProton:	return 0.93827;
-  case Eta:		return 0.54745;
-  case Lambda:		return 1.11568;
-  case SigmaPlus:	return 1.18937;
-  case Sigma0:		return 1.19264;
-  case SigmaMinus:	return 1.18937;
-  case Xi0:		return 1.31483;
-  case XiMinus:		return 1.32131;
-  case OmegaMinus:	return 1.67245;
-  case AntiNeutron:	return 0.93956;
-  case AntiLambda:	return 1.11568;
-  case AntiSigmaMinus:	return 1.18937;
-  case AntiSigma0:	return 1.19264;
-  case AntiSigmaPlus:	return 1.18937;
-  case AntiXi0:		return 1.31483;
-  case AntiXiPlus:	return 1.32131;
-  case AntiOmegaPlus:	return 1.67245;
-  case Geantino:		return 0.0;
-  case Rho0:		return 0.7693;
-  case RhoPlus:		return 0.7693;
-  case RhoMinus:	return 0.7693;
-  case omega:		return 0.78257;
-  case EtaPrime:	return 0.95778;
-  case phiMeson:	return 1.01942;
-  case a0_980:		return 0.980;
-  case f0_980:		return 0.980;
-  case KStar_892_0: return 0.89594;
-  case KStar_892_Plus: return 0.89166;
-  case KStar_892_Minus: return 0.89166;
-  case AntiKStar_892_0: return 0.89594;
-  case K1_1400_Plus: return 1.403;
-  case K1_1400_Minus: return 1.403;
   }
 }
 
 inline static int ParticleCharge(Particle_t p)
 {
   switch (p) {
-  default:
-    fprintf(stderr,"ParticleCharge: Error: Unknown particle type %d,",p);
-    fprintf(stderr," returning 0...\n");
-    return 0;
   case Unknown:		return  0;
   case Gamma:		return  0;
   case Positron:	return +1;
@@ -484,7 +536,7 @@ inline static int ParticleCharge(Particle_t p)
   case AntiXi0:		return  0;
   case AntiXiPlus:	return +1;
   case AntiOmegaPlus:	return +1;
-  case Geantino:		return  0;
+  case Geantino:	return  0;
   case Rho0:		return  0;
   case RhoPlus:		return +1;
   case RhoMinus:	return -1;
@@ -499,7 +551,233 @@ inline static int ParticleCharge(Particle_t p)
   case AntiKStar_892_0: return  0;
   case K1_1400_Plus: return  1;
   case K1_1400_Minus: return -1;
+  case b1_1235_Plus: return 1;
+  case Deuteron:	return 1;
+  case Helium:		return 2;
+  case Triton:	return 1;
+  case Pb208:	return 82;
+  case Sigma_1385_Minus:	return -1;
+  case Sigma_1385_0:		return 0;
+  case Sigma_1385_Plus:	return 1;
+  default:
+    fprintf(stderr,"ParticleCharge: Error: Unknown particle type %d,",p);
+    fprintf(stderr," returning 0...\n");
+    return 0;
   }
+}
+
+inline static int PDGtype(Particle_t p)
+{
+  switch (p) {
+  case Unknown:		return  0;
+  case Gamma:		return  22;
+  case Positron:	return -11;
+  case Electron:	return  11;
+  case Neutrino:	return  121416;
+  case MuonPlus:	return -13;
+  case MuonMinus:	return  13;
+  case Pi0:		return  111;
+  case PiPlus:		return  211;
+  case PiMinus:		return -211;
+  case KShort:		return  310;
+  case KLong:		return  130;
+  case KPlus:		return  321;
+  case KMinus:		return -321;
+  case Neutron:		return  2112;
+  case Proton:		return  2212;
+  case AntiProton:	return -2212;
+  case Eta:		return  221;
+  case Lambda:		return  3122;
+  case SigmaPlus:	return  3222;
+  case Sigma0:		return  3212;
+  case SigmaMinus:	return  3112;
+  case Xi0:		return  3322;
+  case XiMinus:		return  3312;
+  case OmegaMinus:	return  3332;
+  case AntiNeutron:	return -2112;
+  case AntiLambda:	return -3122;
+  case AntiSigmaMinus:	return -3112;
+  case AntiSigma0:	return -3212;
+  case AntiSigmaPlus:	return -3222;
+  case AntiXi0:		return -3322;
+  case AntiXiPlus:	return -3312;
+  case AntiOmegaPlus:	return -3332;
+  case Geantino:	return  0;
+  case Rho0:		return  113;
+  case RhoPlus:		return  213;
+  case RhoMinus:	return -213;
+  case omega:		return  223;
+  case EtaPrime:	return  331;
+  case phiMeson:	return  333;
+  case a0_980:		return  9000110;
+  case f0_980:		return  9010221;
+  case KStar_892_0: return  313;
+  case AntiKStar_892_0: return  -313;
+  case KStar_892_Plus: return  323;
+  case KStar_892_Minus: return -323;
+  case K1_1400_Plus: return  20323;
+  case K1_1400_Minus: return  -20323;
+  case b1_1235_Plus: return  10213;
+  case Deuteron:		return  45;
+  case Helium:		return  47;
+  case Triton:	return  49;
+  case Sigma_1385_Minus:	return 3114;
+  case Sigma_1385_0:		return 3214;
+  case Sigma_1385_Plus:	return 3224;
+  case Pb208: return 1000822080; // see note 14 in PDG (pg. 416 of 2012 full listing)
+  default:		return  0;
+  }
+}
+
+inline static Particle_t PDGtoPType(int locPDG_PID)
+{
+  switch (locPDG_PID) {
+  case 0:				return Unknown;
+  case 22:			return Gamma;
+  case -11:			return Positron;
+  case 11:			return Electron;
+  case 121416:		return Neutrino;
+  case -13:			return MuonPlus;
+  case 13:			return MuonMinus;
+  case 111:			return Pi0;
+  case 211:			return PiPlus;
+  case -211:			return PiMinus;
+  case 310:			return KShort;
+  case 130:			return KLong;
+  case 321:			return KPlus;
+  case -321:			return KMinus;
+  case 2112:			return Neutron;
+  case 2212:			return Proton;
+  case -2212:		return AntiProton;
+  case 221:			return Eta;
+  case 3122:			return Lambda;
+  case 3222:			return SigmaPlus;
+  case 3212:			return Sigma0;
+  case 3112:			return SigmaMinus;
+  case 3322:			return Xi0;
+  case 3312:			return XiMinus;
+  case 3332:			return OmegaMinus;
+  case -2112:		return AntiNeutron;
+  case -3122:		return AntiLambda;
+  case -3112:		return AntiSigmaMinus;
+  case -3212:		return AntiSigma0;
+  case -3222:		return AntiSigmaPlus;
+  case -3322:		return AntiXi0;
+  case -3312:		return AntiXiPlus;
+  case -3332:		return AntiOmegaPlus;
+  case 113:			return Rho0;
+  case 213:			return RhoPlus;
+  case -213:			return RhoMinus;
+  case 223:			return omega;
+  case 331:			return EtaPrime;
+  case 333:			return phiMeson;
+  case 9000110:		return a0_980;
+  case 9010221:		return f0_980;
+  case 313: 			return KStar_892_0;
+  case -313:			return AntiKStar_892_0;
+  case 323:			return KStar_892_Plus;
+  case -323:			return KStar_892_Minus;
+  case 20323:		return K1_1400_Plus;
+  case -20323:		return K1_1400_Minus;
+  case 10213:		return b1_1235_Plus;
+  case 45:			return Deuteron;
+  case 47:			return Helium;
+  case 49:			return Triton;
+  case 3114:			return Sigma_1385_Minus;
+  case 3214:			return Sigma_1385_0;
+  case 3224:			return Sigma_1385_Plus;
+  case 1000822080:	return Pb208; // see note 14 in PDG (pg. 416 of 2012 full listing)
+  default:			return Unknown;
+  }
+}
+
+inline static int Is_FinalStateParticle(Particle_t locPID)
+{
+	switch(locPID)
+	{
+		case Gamma:       return 1;
+		case Positron:    return 1;
+		case Electron:    return 1;
+		case Neutrino:    return 1;
+		case MuonPlus:    return 1;
+		case MuonMinus:   return 1;
+		case PiPlus:      return 1;
+		case PiMinus:     return 1;
+		case KLong:       return 1;
+		case KPlus:       return 1;
+		case KMinus:      return 1;
+		case Neutron:     return 1;
+		case Proton:      return 1;
+		case AntiProton:  return 1;
+		case AntiNeutron: return 1;
+		case Deuteron:    return 1;
+		case Helium:      return 1;
+		case Triton:      return 1;
+		case Pb208:       return 1;
+		default: return 0; //decaying
+	}
+}
+
+inline static int ParticleMultiplexPower(Particle_t locPID)
+{
+	switch(locPID)
+	{
+		//FINAL-STATE PARTICLES (+ pi0) (decimal: 10^power):
+		case Gamma:       return 0;
+		case Positron:    return 1;
+		case Electron:    return 2;
+		case Neutrino:    return 3;
+		case MuonPlus:    return 4;
+		case MuonMinus:   return 5;
+		case Pi0:         return 6;
+		case PiPlus:      return 7;
+		case PiMinus:     return 8;
+		case KLong:       return 9;
+		case KPlus:       return 10;
+		case KMinus:      return 11;
+		case Neutron:     return 12;
+		case Proton:      return 13;
+		case AntiProton:  return 14;
+		case AntiNeutron: return 15;
+
+		//DECAYING PARTICLES (- pi0): (binary: 2^power)
+		case KShort:           return 0;
+		case Eta:              return 1;
+		case Lambda:           return 2;
+		case SigmaPlus:        return 3;
+		case Sigma0:           return 4;
+		case SigmaMinus:       return 5;
+		case Xi0:              return 6;
+		case XiMinus:          return 7;
+		case OmegaMinus:       return 8;
+		case AntiLambda:       return 9;
+		case AntiSigmaMinus:   return 10;
+		case AntiSigma0:       return 11;
+		case AntiSigmaPlus:    return 12;
+		case AntiXi0:          return 13;
+		case AntiXiPlus:       return 14;
+		case AntiOmegaPlus:    return 15;
+		case Deuteron:         return 16;
+		case Rho0:             return 17;
+		case RhoPlus:          return 18;
+		case RhoMinus:         return 19;
+		case omega:            return 20;
+		case EtaPrime:         return 21;
+		case phiMeson:         return 22;
+		case a0_980:           return 23;
+		case f0_980:           return 24;
+		case KStar_892_0:      return 25;
+		case KStar_892_Plus:   return 26;
+		case KStar_892_Minus:  return 27;
+		case AntiKStar_892_0:  return 28;
+		case K1_1400_Plus:     return 29;
+		case K1_1400_Minus:    return 30;
+		case b1_1235_Plus:     return 31;
+		case Sigma_1385_Minus: return 32;
+		case Sigma_1385_0:     return 33;
+		case Sigma_1385_Plus:  return 34;
+		default: return -1;
+	}
 }
 
 #endif
