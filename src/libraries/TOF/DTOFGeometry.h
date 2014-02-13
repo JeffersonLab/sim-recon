@@ -41,7 +41,7 @@ class DTOFGeometry:public JObject{
     float y;
     y = YPOS[bar];
 
-    if (orientation == 0) y *= -1.0;
+    //if (orientation == 0) y *= -1.0;
 
     return y;
   }
