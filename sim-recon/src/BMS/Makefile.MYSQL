@@ -1,8 +1,0 @@
-
-MYSQL_CFLAGS = $(shell mysql_config --cflags)
-MYSQL_LIBS = $(shell mysql_config --libs)
-
-CFLAGS += $(MYSQL_CFLAGS)
-CXXFLAGS += $(MYSQL_CFLAGS)
-
-LIBS += $(MYSQL_LIBS)

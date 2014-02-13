@@ -1,4 +1,0 @@
-**** Sequence /event from PAM geanh321 ****
-      PARAMETER (MXEVEN=12*MXGKGH)
-      COMMON/EVENT / NSIZE,NCUR,NEXT,NTOT,EVE(MXEVEN)
-C
