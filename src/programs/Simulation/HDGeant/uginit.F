@@ -178,6 +178,7 @@ c The following parameters are declared in controlparams.inc above.
       data showersincol/0/
       data driftclusters/0/
       data tgtwidth/2*0/
+      data get_next_evt/1/
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
@@ -276,6 +277,7 @@ C..geant..
  9000      format('GUKINE ERROR - Could not open input stream ',20a4)
            stop
         endif
+        get_next_evt=0
         call extractRunNumber(myrunno)
 
         write(6,*) 'run number ',myrunno

@@ -150,7 +150,7 @@ s_Cerenkov_t* pickCerenkov ()
    box = make_s_Cerenkov();
    box->cereSections = make_s_CereSections(sectionCount);
    box->cereTruthPoints = make_s_CereTruthPoints(pointCount);
-   while (item = pickTwig(&cerenkovTree))
+   while ((item = pickTwig(&cerenkovTree)))
    {
       s_CereSections_t* sections = item->cereSections;
       int section;

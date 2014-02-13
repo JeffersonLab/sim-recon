@@ -32,7 +32,7 @@
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
 #define Z_MIN -100.
-#define Z_MAX 200.0
+#define Z_MAX 370.0
 #define R_MAX 65.0
 #define R2_MAX 4225.0
 #define R_MAX_FORWARD 65.0

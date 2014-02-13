@@ -10,6 +10,9 @@ void gskine_(float plab[3], Particle_t* ipart, int* nv,
 void gfkine_(int* itra, float vert[3], float pvert[3], Particle_t* ipart,
              int* nvert, float ubuf[], int* nubuf);
 
+void gfpart_(Particle_t* kind, char chnpar[4], int* itrtyp, float* amass,
+             float* charge, float* tlife, float* ubuf, int* nubuf);
+
 void grndm_(float v[], int* len);
 
 /* convenience interface function for gmtod_ and gdtom_ */

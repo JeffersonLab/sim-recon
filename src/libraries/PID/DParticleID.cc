@@ -595,7 +595,7 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 
 	// Find intersection with a "barrel" approximation for the start counter
 	DVector3 proj_pos,proj_mom;
-	double locPathLength, locFlightTime;
+	double locPathLength=0., locFlightTime=0.;
 	rt->GetIntersectionWithRadius(sc_pos[1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom);
 	double proj_phi = proj_pos.Phi();
 	if(proj_phi < 0.0)

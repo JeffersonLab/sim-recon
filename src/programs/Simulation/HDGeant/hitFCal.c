@@ -52,7 +52,6 @@ void hitForwardEMcal (float xin[4], float xout[4],
 {
    float x[3], t;
    float xfcal[3];
-   float zeroHat[] = {0,0,0};
 
    if (!initialized){
      
@@ -245,7 +244,7 @@ s_ForwardEMcal_t* pickForwardEMcal ()
    box = make_s_ForwardEMcal();
    box->fcalBlocks = make_s_FcalBlocks(blockCount);
    box->fcalTruthShowers = make_s_FcalTruthShowers(showerCount);
-   while (item = (s_ForwardEMcal_t*) pickTwig(&forwardEMcalTree))
+   while ((item = (s_ForwardEMcal_t*) pickTwig(&forwardEMcalTree)))
    {
       s_FcalBlocks_t* blocks = item->fcalBlocks;
       int block;

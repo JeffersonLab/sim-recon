@@ -27,11 +27,11 @@ ROOTDataReader::ROOTDataReader( const vector< string >& args ):
   // default to tree name of "kin" if none is provided
   if( args.size() == 1 ){
     
-    m_inTree = static_cast<TTree*>( m_inFile->Get( "kin" ) );
+    m_inTree = dynamic_cast<TTree*>( m_inFile->Get( "kin" ) );
   }
   else{
     
-    m_inTree = static_cast<TTree*>( m_inFile->Get( args[1].c_str() ) );
+    m_inTree = dynamic_cast<TTree*>( m_inFile->Get( args[1].c_str() ) );
   }
   
 	m_inTree->SetBranchAddress( "NumFinalState", &m_nPart );
