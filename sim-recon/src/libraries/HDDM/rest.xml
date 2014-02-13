@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="no" ?>
+<HDDM xmlns="http://www.gluex.org/hddm" class="r" version="1.0.1">
+
+  <reconstructedPhysicsEvent eventNo="int" runNo="int">
+    <comment minOccurs="0" maxOccurs="unbounded" text="string"/>
+    <reaction maxOccurs="unbounded" minOccurs="0" jtag="string"
+                                    type="int" weight="float"
+                                    targetType="Particle_t"
+                                    Ebeam="float" Eunit="GeV">
+      <vertex maxOccurs="unbounded">
+        <origin t="float" vx="float" vy="float" vz="float" lunit="cm"/>
+        <product id="int" maxOccurs="unbounded" parentId="int" pdgtype="int">
+          <momentum E="float" px="float" py="float" pz="float" Eunit="GeV"
+                    punit="GeV/c"/>
+        </product>
+      </vertex>
+    </reaction>
+    <taggerHit maxOccurs="unbounded" minOccurs="0" jtag="string"
+                t="float" E="float" tunit="ns" Eunit="GeV"/>
+    <fcalShower minOccurs="0" maxOccurs="unbounded" jtag="string"
+                x="float" y="float" z="float" t="float" E="float"
+                xerr="float" yerr="float" zerr="float" terr="float" Eerr="float"
+                xycorr="float" xzcorr="float" yzcorr="float"
+                tzcorr="float" Ezcorr="float"
+                lunit="cm" tunit="ns" Eunit="GeV"/>
+    <bcalShower minOccurs="0" maxOccurs="unbounded" jtag="string"
+                x="float" y="float" z="float" t="float" E="float"
+                xerr="float" yerr="float" zerr="float" terr="float" Eerr="float"
+                xycorr="float" xzcorr="float" yzcorr="float"
+                tzcorr="float" Ezcorr="float"
+                lunit="cm" tunit="ns" Eunit="GeV"/>
+    <chargedTrack minOccurs="0" maxOccurs="unbounded" jtag="string"
+                ptype="Particle_t" candidateId="int">
+      <trackFit Ndof="int" chisq="float"
+                x0="float" y0="float" z0="float"
+                px="float" py="float" pz="float"
+                t0="float" t0err="float" t0det="int"
+                e11="float" e12="float" e13="float" e14="float" e15="float"
+                            e22="float" e23="float" e24="float" e25="float"
+                                        e33="float" e34="float" e35="float"
+                                                    e44="float" e45="float"
+                                                                e55="float"
+                punit="GeV/c" lunit="cm" tunit="ns"/>
+      <dEdxDC minOccurs="0"
+              NsampleFDC="int" dxFDC="float" dEdxFDC="float"
+              NsampleCDC="int" dxCDC="float" dEdxCDC="float"
+              lunit="cm" dEdx_unit="GeV/cm"/>
+    </chargedTrack>
+    <startHit maxOccurs="unbounded" minOccurs="0" jtag="string"
+              sector="int" t="float" dE="float"
+              tunit="ns" Eunit="GeV"/>
+    <tofPoint maxOccurs="unbounded" minOccurs="0" jtag="string"
+              x="float" y="float" z="float" t="float" dE="float" terr="float"
+              lunit="cm" tunit="ns" Eunit="GeV"/>
+    <RFtime minOccurs="0" jtag="string"
+            tsync="float" tsyncerr="float" tunit="ns"/>
+    <trigger minOccurs="0" jtag="string"
+			L1a="boolean" L1b="boolean" L1c="boolean"/>
+
+    <detectorMatches minOccurs="1" maxOccurs="1" jtag="string">
+      <!-- 
+        MATCHING: 
+        * Matching is many-to-many. For example, many DTrackTimeBased objects will likely match to a given shower (different PIDs), 
+          and each DTrackTimeBased can match to many showers (hadronic). The results for all object-to-object matches are stored. 
+
+        * Notation:
+          1) track = "chargedTrack" object index in file (starting at 0). 
+          2) hit = "startHit"/"tofPoint" object index in file (starting at 0). 
+          3) shower = "bcalShower"/"fcalShower" object index in file (starting at 0). 
+          4) tflightPCorrelations::system = DetectorSystem_t
+      -->
+      <bcalMatchParams maxOccurs="unbounded" minOccurs="0"
+                track="int" shower="int"
+                dx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
+                tunit="ns" lunit="cm"/>
+      <fcalMatchParams maxOccurs="unbounded" minOccurs="0"
+                track="int" shower="int"
+                dx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
+                tunit="ns" lunit="cm"/>
+      <tofMatchParams maxOccurs="unbounded" minOccurs="0"
+                track="int" hit="int"
+                dEdx="float" doca="float" pathlength="float" tflight="float" tflightvar="float"
+                tunit="ns" lunit="cm" dEdx_unit="GeV/cm"/>
+      <scMatchParams maxOccurs="unbounded" minOccurs="0"
+                track="int" hit="int"
+                dEdx="float" thit="float" thitvar="float" ehit="float"
+                pathlength="float" tflight="float" tflightvar="float" deltaphi="float"
+                tunit="ns" lunit="cm" aunit="rad" Eunit="GeV" dEdx_unit="GeV/cm"/>
+      <bcalDOCAtoTrack maxOccurs="unbounded" minOccurs="0"
+                shower="int" doca="float"
+                lunit="cm"/>
+      <fcalDOCAtoTrack maxOccurs="unbounded" minOccurs="0"
+                shower="int" doca="float"
+                lunit="cm"/>
+      <tflightPCorrelation maxOccurs="unbounded" minOccurs="0"
+                track="int" system="int"
+                correlation="float"
+                punit="GeV/c" tunit="ns"/>
+    </detectorMatches>
+
+  </reconstructedPhysicsEvent>
+</HDDM>
+

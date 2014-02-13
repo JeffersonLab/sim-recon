@@ -1,0 +1,9 @@
+See CVS package HDMS_mcfast/README for more
+details. This package is used by mcfast.
+
+To make the translators:
+	% make all
+This will make 4 executables: ascii2stdhep itape2stdhep
+stdhep2ascii stdhep2itape
+
+Install these files in your path.

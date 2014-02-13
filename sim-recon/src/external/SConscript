@@ -1,0 +1,7 @@
+import os
+
+Import('*')
+
+subdirs = ['xstream']
+SConscript(dirs=subdirs, exports='env osname', duplicate=0)
+

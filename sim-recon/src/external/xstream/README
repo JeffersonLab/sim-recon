@@ -1,0 +1,175 @@
+XStream C++ flexible stream library 
+
+
+
+0.0.1 
+
+
+Introduction
+
+ This library is supposed to help the developer's work by making easy doing the following things using C++'s standard iostream/streambuf architecture:
+
+ 
+
+Compressing and decompressing data using zlib and bzlib 
+Encode and decode base64 data 
+Serialize and deserialize structures to XDR 
+Calculate digests of data 
+Fork data written to a stream to several others 
+Use file descriptors using a iostream interface (where available)
+ 
+All this by just creating some new streambufs (and iostream like classes for the xdr operations) that can be coupled to any C++ standard iostream, like cin, ifstream, ofstream, stringstream, or any others defined by this library or the user.
+
+ Pre-requisites
+
+ 
+zlib for gzip deflate/inflate compression (gzip compression currently not supported, only decompression), adler32 and crc32 digests 
+bz2lib for bzip2 compression and decompressing 
+modern c++ compiler and a compliant io library (g++ >= 3.3 should be enough) 
+POSIX system for file descriptor classes
+ 
+
+Usage
+
+ 
+Note:
+unless written otherwise, all this section is supposed to be using the std namespace.
+ If you're in a hurry you should check the examples directory. There you will find simple examples of almost all the library's functionalities.
+ The test directory also contains some more examples on how to use the library.
+
+ Philosophy
+
+ C++ standard io facilites are istreams, ostreams and iostreams. cin is an istream (used for input) cout is an ostream (use for output) and an fstream openned for both reading and writting is an iostream (allows for both input and output)
+
+ iostreams by themselfs don't read or write any data to any files, or input/output "channels" (standard input/output/error), instead they delegate all these tasks to streambufs. These are responsible for buffering data that iostreams ask them to read/write and actually manage the "physical" reading/writting as well as seeking, flushing, closing and whatever low-level work necessary.
+
+
+ Every ios object has a streambuf member used for reading/writting, this can be reached via the rdbuf() method, so:
+
+
+ 
+
+        streambuf* buf = cin.rdbuf();
+
+
+retireves the streambuf that cin uses to read data. It's also possible to change the streambuf of an ios object by using the same method with the new streambuf* as an argument. So,
+
+
+ 
+
+        //buf is a streambuf* initialized before
+        cin.rdbuf(buf);
+
+
+now makes cin use buf for reading data, so you can do a kind of standard input redirection from within C++. From now onward, when you write 
+
+ cin>>var;
+
+you read var from data suplied by buf and not standard input.
+
+ Understanding this is crucial to using this library and grasping it's goal.
+
+
+ What does XStream do?
+
+ XStream gives you some new streambuf objects (they inherit from streambuf) that perform some kind of filtering operation or redirect data to another streambuf. In essence this allows to stack several filters and use iostreams to acess data after several transforms. For example, suppose you want to read data from a file whose content is several lines of numbers base64 encoded, you could simply proceed like this:
+
+ 
+
+    #include <iostream>
+    //to open the file for reading
+    #include <fstream>
+    //xstream base64 classes
+    #include <xstream/base64.h>
+
+    using namespace std;
+    using namespace xstream;
+
+    int main(int argc, char* argv[]){
+        ifstream file("base64_encoded_file");
+        
+        //this creates a xstream base64 input streambuf b64sb
+        //this reads data from the streambuf of file
+        base64::istreambuf b64sb(file.rdbuf());
+
+        //now create a usual istream that reads data from the base64 streambuf
+        istream decoded(&b64sb);
+
+        //read decoded data
+        while(decoded.good()){
+            int i;
+            decoded>>i;
+            cout<<i<<endl;
+        }
+        return 0;
+    }
+
+
+This is one of the simplest examples on how to use the library, most other usages are variations of this example, common factors are:
+
+
+ 
+
+xstream streambufs are created by specifying another streambuf to read/write to 
+contruct an ordinary ios object (istream, ostream) with the xstream streambuf as argument 
+do usual input/output operations
+ 
+Using this technique, supposing the file was a bz2 compressed version of the base64 data. All that needed to be done was to create a xstream::bz::istreambuf that read from b64sb and use the bz::streambuf to construct decoded.
+
+ Error handling
+
+ C++ io library was designed long before exceptions were a part of C++ so for this historical reason io operations don't throw exceptions, at least by default. IOstreams however have condition states. The 
+ while(decoded.good()) 
+
+line of code on the previous example means that data is read until stream has some kind of error, usually eof was reached but may be something more serious (corruption, OS error, etc).
+
+ std::iostate is a bitmask of error conditions a stream may have. These are:
+
+
+ 
+
+ios::badbit serious error, like reading beyond eof, low-level io error 
+ios::eofbit reached eof 
+ios::failbit high-level operation failed, like trying to read an int but getting nothing resembling a number 
+ios::goodbit nothing wrong, stream is ready to use
+ 
+The error state mask can retrieved via the ios::rdstate() call and can be reset with the ios::clear().
+
+ XStream library tries it's best to determine when eof has been reached, so as to set the ios::eofbit without in the ios objec without throwing any exceptions. However under serious error conditions exceptions are thrown. This may happen for instance when trying to base64 decode data that has invalid characters, decompressing data with inconsistent crc and other situations.
+
+
+ C++ IO library catches all of these exceptions and by default doesn't rethrow them, setting the ios::badbit instead. This may result in a read/write operation failing without the developer/user knowing the reason. Thankfully this default behaviour can be changed.
+
+
+ ios objects have an exceptions method that given an error condition throws exceptions related to io, this allows XStream's exceptions to be caught by client code.
+
+
+ So to have exceptions beeing thrown in the base64 example you should add: 
+
+        decoded.exceptions(ios::badbit);
+
+
+All XStream exceptions derive from ios::failure which derives from std::exception and thus can the caught by a generic top level catch block. Have a look at the Class Hierarchy to see what kind of exceptions can be thrown.
+
+
+ Limitations
+
+ 
+can't write gzip streams. This support will eventually be added. 
+no seek support on any streambufs. This will probably not change, apart from file descriptors. 
+only support for writting char and not wchar or other types. This would imply making everything as templates and for now I don't see the need. 
+XDR iostreams don't derive from ios and can't be used as such. They don't write headers specified by the RFC so they are only good for you own protocols, no by using say in RPC calls. This may change in the future.
+ 
+
+Licence
+
+ I am releasing this code under LGPL, so that you can use it on any project not only GPL projects. I would appreciate to know of any use this library is given.
+
+ Compiling
+
+ I have compiled this library with gcc 3.3.5 and cross-compiled it to win32 using mingw 3.3.1, on windows I only tested zlib support and no bzlib support and no file descriptor code is included in this case.
+
+ I think code is fairly portable but only testing with other compilers can I be sure. If you manage to compile it with another compiler or have trouble doing so please inform me.
+
+
+ For my email address see the AUTHORS file. 

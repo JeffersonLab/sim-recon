@@ -1,0 +1,7 @@
+
+ifdef ETROOT
+	CFLAGS		+= -I$(ETROOT)/include -DHAVE_ET
+	CXXFLAGS		+= -I$(ETROOT)/include -DHAVE_ET
+	MISC_LIBS 	+= -L$(ETROOT)/lib -let -let_remote
+endif
+

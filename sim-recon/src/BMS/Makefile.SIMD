@@ -1,0 +1,70 @@
+# For gcc 4.1.2 on 32-bit Linux systems there have been claims of
+# building with sse2 causing faults. The same code and compiler
+# version for 64-bit machines seems to run fine. We also have
+# not observed the problems with 32-bit OS X machines. In order to provide 
+# working code for both 32 bit and 64 bit systems regardless of whether or 
+# not SIMD is supported by the hardware, by default the SIMD instructions are
+# turned off and must be explicitly enabled by setting ENABLE_SIMD=1
+ifdef ENABLE_SIMD
+  DISABLE_SIMD=no
+endif
+ifndef $(DISABLE_SSE2)
+  DISABLE_SSE2=no
+endif
+ifndef $(DISABLE_SSE3)
+  DISABLE_SSE3=no
+endif
+
+ifeq ($(OS),Linux)
+  HAS_SSE =  $(shell if grep -q '^flags.* sse' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE2 = $(shell if grep -q '^flags.* sse2' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE3 = $(shell if grep -q '^flags.*.sse3' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSSE3 = $(shell if grep -q '^flags.* ssse3' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE41 = $(shell if grep -q '^flags.* sse4_1' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE42 = $(shell if grep -q '^flags.* sse4_2' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+  HAS_SSE4A = $(shell if grep -q '^flags.* sse4a' /proc/cpuinfo; then echo 1; \
+                   else echo no; fi)
+else
+# Here someone should put some check for the availability of sse extensions
+# on Mac and other non-Linux systems, set some reasonable defaults for now.
+  HAS_SSE =  1
+  HAS_SSE2 = 1
+  HAS_SSE3 = 1
+  HAS_SSSE3 = no
+  HAS_SSE41 = no
+  HAS_SSE42 = no
+  HAS_SSE4A = no
+endif
+
+ifeq ($(DISABLE_SIMD),no)
+  ifneq ($(HAS_SSE),no)
+    SIMD_CFLAGS = -DUSE_SIMD -mfpmath=sse -msse
+    ifeq ($(DISABLE_SSE2),no)
+      ifneq ($(HAS_SSE2),no)
+        SIMD_CFLAGS += -DUSE_SSE2 -msse2
+        ifeq ($(DISABLE_SSE3),no)
+          ifneq ($(HAS_SSE3),no)
+            SIMD_CFLAGS += -DUSE_SSE3 -msse3
+          else
+            SIMD_CFLAGS += -mno-sse3
+          endif
+        else
+          SIMD_CFLAGS += -mno-sse3
+        endif
+      else
+        SIMD_CFLAGS += -mno-sse2
+      endif
+    else
+      SIMD_CFLAGS += -mno-sse2
+    endif
+  endif
+ 
+  CFLAGS += $(SIMD_CFLAGS)
+  CXXFLAGS += $(SIMD_CFLAGS)
+endif

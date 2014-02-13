@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS>
+
+  GlueX Tagger Building Photon Delivery Path
+  *******************************************
+
+     version 1.0: Initial version	-rtj
+
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
+-->
+
+<section name        = "PhotonBeamLine"
+         version     = "1.0"
+         date        = "2006-01-14"
+         author      = "R.T. Jones"
+         top_volume  = "photonExitPipe"
+         specification = "v1.0">
+
+  <composition name="photonInsertPipe" envelope="PITU">
+    <posXYZ volume="PITW" />
+  </composition>
+  <composition name="photonExitPipe" envelope="PXTU">
+    <posXYZ volume="PXTW" />
+  </composition>
+
+  <tubs name="PITU" Rio_Z="0.0 2.0 56.2" material="TaggerVacuum" />
+  <tubs name="PITW" Rio_Z="1.8 2.0 56.2" material="Aluminum" />
+  <tubs name="PXTU" Rio_Z="0.0 2.0 2200.0" material="TaggerVacuum" />
+  <tubs name="PXTW" Rio_Z="1.8 2.0 2200.0" material="Aluminum" />
+
+</section>
+
+<!-- </HDDS> -->

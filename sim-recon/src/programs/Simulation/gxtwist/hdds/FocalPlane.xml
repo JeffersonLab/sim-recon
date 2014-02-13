@@ -1,0 +1,825 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS>
+
+  GlueX Tagger Focal Plane Instrumentation
+  *******************************************
+
+     version 1.0: Initial version	-rtj
+
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
+-->
+
+<section name        = "TaggerFocalPlane"
+         version     = "1.0"
+         date        = "2006-01-14"
+         author      = "R.T. Jones"
+         top_volume  = "taggerFocalPlane"
+         specification = "v1.0">
+
+<!-- Origin of the tagger focal plane is found by the intersection of
+     the following three surfaces.
+      1. the mid-plane of the tagger magnets;
+      2. the vertical plane containing the entrance faces of the the
+         first dipole pole pieces;
+      3. the magnetic focal plane of the spectrometer
+     Actually the focal surface of the two-dipole system is not exactly
+     planar, but a good approximation to a plane has been found.  The
+     electrons that strike the focal plane near the origin correspond
+     to photons very near the end-point.                               -->
+
+  <composition name="taggerFocalPlane">
+    <posXYZ volume="microscopePackage" X_Y_Z="-19.0 0 464.0"/>
+    <posXYZ volume="fixedArray" X_Y_Z="-2.0 0 632.5"/>
+    <posXYZ volume="ENDP" X_Y_Z="-10.0 0 50.0"/>
+  </composition>
+
+  <box name="ENDP" X_Y_Z="0.5 6 100" material="Scintillator" sensitive="true"/>
+
+  <composition name="microscopePackage" envelope="MSCP">
+    <posXYZ volume="microscope" X_Y_Z="0.4 0 0"/>
+  </composition>
+  <composition name="microscope" envelope="MSCI">
+    <mposZ volume="microscopeChannel" Z0="-54.5" dZ="1.097" ncopy="100"
+                            X_Y="12.0 0" rot="0 -10.50 0" unit_angle="deg">
+      <column value="1" step="1"/>
+    </mposZ>
+  </composition>
+  <composition name="microscopeChannel" envelope="MSCL">
+    <mposY volume="MSFI" Y0="-0.40" dY="0.20" ncopy="5">
+      <row value="1" step="1"/>
+    </mposY>
+  </composition>
+  <box name="MSFI" X_Y_Z="0.2 0.2 2.0" material="Scintillator"
+                                           sensitive="true"/>
+  <box name="MSCL" X_Y_Z="0.2 1.0 2.0" material="Air"/>
+  <box name="MSCP" X_Y_Z="30.0 10.0 120.0" material="Carbon"/>
+  <box name="MSCI" X_Y_Z="29.1  8.0 118.0" material="Air"/>
+
+<!-- the array of fixed focal-plane scintillators is described below -->
+
+  <box name="FXf6" X_Y_Z="4.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXf7" X_Y_Z="3.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXf8" X_Y_Z="3.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXf9" X_Y_Z="3.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXfa" X_Y_Z="3.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXfb" X_Y_Z="3.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXfc" X_Y_Z="2.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXfd" X_Y_Z="2.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXfe" X_Y_Z="2.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXff" X_Y_Z="2.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX01" X_Y_Z="2.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX02" X_Y_Z="2.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX03" X_Y_Z="2.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX04" X_Y_Z="2.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX05" X_Y_Z="2.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX06" X_Y_Z="2.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX07" X_Y_Z="2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX08" X_Y_Z="2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX09" X_Y_Z="1.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX0a" X_Y_Z="1.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX0b" X_Y_Z="1.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX0c" X_Y_Z="1.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX0d" X_Y_Z="1.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX0e" X_Y_Z="1.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX0f" X_Y_Z="1.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX10" X_Y_Z="1.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX11" X_Y_Z="1.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX12" X_Y_Z="1.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX13" X_Y_Z="1.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX14" X_Y_Z="1.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX15" X_Y_Z="1.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX16" X_Y_Z="1.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX17" X_Y_Z="1.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX18" X_Y_Z="1.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX19" X_Y_Z="1.3 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX1a" X_Y_Z="1.3 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX1b" X_Y_Z="1.3 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX1c" X_Y_Z="1.3 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX1d" X_Y_Z="1.3 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX1e" X_Y_Z="1.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX1f" X_Y_Z="1.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX20" X_Y_Z="1.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX21" X_Y_Z="1.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX22" X_Y_Z="1.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX23" X_Y_Z="1.2 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX24" X_Y_Z="1.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX25" X_Y_Z="1.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX26" X_Y_Z="1.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX27" X_Y_Z="1.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX28" X_Y_Z="1.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX29" X_Y_Z="1.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX2a" X_Y_Z="1.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX2b" X_Y_Z="1.1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX2c" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX2d" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX2e" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX2f" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX30" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX31" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX32" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX33" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX34" X_Y_Z="1 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX35" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX36" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX37" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX38" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX39" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX3a" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX3b" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX3c" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX3d" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX3e" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX3f" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX40" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX41" X_Y_Z="0.9 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX42" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX43" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX44" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX45" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX46" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX47" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX48" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX49" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX4a" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX4b" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX4c" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX4d" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX4e" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX4f" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX50" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX51" X_Y_Z="0.8 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX52" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX53" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX54" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX55" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX56" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX57" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX58" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX59" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX5a" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX5b" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX5c" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX5d" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX5e" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX5f" X_Y_Z="0.7 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX60" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX61" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX62" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX63" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX64" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX65" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX66" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX67" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX68" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX69" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX6a" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX6b" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX6c" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX6d" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX6e" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX6f" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX70" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX71" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX72" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX73" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX74" X_Y_Z="0.6 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX75" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX76" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX77" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX78" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX79" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX7a" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX7b" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX7c" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX7d" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX7e" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX7f" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX80" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX81" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX82" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX83" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX84" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX85" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX86" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX87" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX88" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX89" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX8a" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX8b" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX8c" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX8d" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX8e" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX8f" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX90" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX91" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX92" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX93" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX94" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX95" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX96" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX97" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX98" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX99" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX9a" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX9b" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX9c" X_Y_Z="0.5 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX9d" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX9e" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FX9f" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa0" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa1" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa2" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa3" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa4" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa5" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa6" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa7" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa8" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXa9" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXaa" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXab" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXac" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXad" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXae" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXaf" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXb0" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXb1" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXb2" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXb3" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FXb4" X_Y_Z="0.4 2 0.4" material="Scintillator" sensitive="true"/>
+  <box name="FASC" X_Y_Z="3.0 2.0 1200" material="Air"/>
+  <composition name="fixedArray" envelope="FASC">
+    <posXYZ volume="FXf6" X_Y_Z="0 0 -593.41" rot="0 -42.9 0" unit_angle="deg">
+      <cell value="246"/>
+    </posXYZ>
+    <posXYZ volume="FXf7" X_Y_Z="0 0 -584.99" rot="0 -40.8 0" unit_angle="deg">
+      <cell value="248"/>
+    </posXYZ>
+    <posXYZ volume="FXf8" X_Y_Z="0 0 -576.88" rot="0 -38.9 0" unit_angle="deg">
+      <cell value="248"/>
+    </posXYZ>
+    <posXYZ volume="FXf9" X_Y_Z="0 0 -569.05" rot="0 -37.3 0" unit_angle="deg">
+      <cell value="249"/>
+    </posXYZ>
+    <posXYZ volume="FXfa" X_Y_Z="0 0 -561.45" rot="0 -35.9 0" unit_angle="deg">
+      <cell value="250"/>
+    </posXYZ>
+    <posXYZ volume="FXfb" X_Y_Z="0 0 -554.05" rot="0 -34.6 0" unit_angle="deg">
+      <cell value="251"/>
+    </posXYZ>
+    <posXYZ volume="FXfc" X_Y_Z="0 0 -546.84" rot="0 -33.4 0" unit_angle="deg">
+      <cell value="252"/>
+    </posXYZ>
+    <posXYZ volume="FXfd" X_Y_Z="0 0 -539.81" rot="0 -32.3 0" unit_angle="deg">
+      <cell value="253"/>
+    </posXYZ>
+    <posXYZ volume="FXfe" X_Y_Z="0 0 -532.93" rot="0 -31.4 0" unit_angle="deg">
+      <cell value="254"/>
+    </posXYZ>
+    <posXYZ volume="FXff" X_Y_Z="0 0 -526.18" rot="0 -30.5 0" unit_angle="deg">
+      <cell value="255"/>
+    </posXYZ>
+    <posXYZ volume="FX01" X_Y_Z="0 0 -519.56" rot="0 -29.6 0" unit_angle="deg">
+      <cell value="1"/>
+    </posXYZ>
+    <posXYZ volume="FX02" X_Y_Z="0 0 -513.06" rot="0 -28.9 0" unit_angle="deg">
+      <cell value="2"/>
+    </posXYZ>
+    <posXYZ volume="FX03" X_Y_Z="0 0 -506.67" rot="0 -28.2 0" unit_angle="deg">
+      <cell value="3"/>
+    </posXYZ>
+    <posXYZ volume="FX04" X_Y_Z="0 0 -500.39" rot="0 -27.5 0" unit_angle="deg">
+      <cell value="4"/>
+    </posXYZ>
+    <posXYZ volume="FX05" X_Y_Z="0 0 -494.21" rot="0 -26.9 0" unit_angle="deg">
+      <cell value="5"/>
+    </posXYZ>
+    <posXYZ volume="FX06" X_Y_Z="0 0 -488.11" rot="0 -26.3 0" unit_angle="deg">
+      <cell value="6"/>
+    </posXYZ>
+    <posXYZ volume="FX07" X_Y_Z="0 0 -482.09" rot="0 -25.8 0" unit_angle="deg">
+      <cell value="7"/>
+    </posXYZ>
+    <posXYZ volume="FX08" X_Y_Z="0 0 -476.14" rot="0 -25.3 0" unit_angle="deg">
+      <cell value="8"/>
+    </posXYZ>
+    <posXYZ volume="FX09" X_Y_Z="0 0 -470.27" rot="0 -24.8 0" unit_angle="deg">
+      <cell value="9"/>
+    </posXYZ>
+    <posXYZ volume="FX0a" X_Y_Z="0 0 -464.48" rot="0 -24.3 0" unit_angle="deg">
+      <cell value="10"/>
+    </posXYZ>
+    <posXYZ volume="FX0b" X_Y_Z="0 0 -458.75" rot="0 -23.9 0" unit_angle="deg">
+      <cell value="11"/>
+    </posXYZ>
+    <posXYZ volume="FX0c" X_Y_Z="0 0 -453.06" rot="0 -23.5 0" unit_angle="deg">
+      <cell value="12"/>
+    </posXYZ>
+    <posXYZ volume="FX0d" X_Y_Z="0 0 -447.44" rot="0 -23.1 0" unit_angle="deg">
+      <cell value="13"/>
+    </posXYZ>
+    <posXYZ volume="FX0e" X_Y_Z="0 0 -441.89" rot="0 -22.7 0" unit_angle="deg">
+      <cell value="14"/>
+    </posXYZ>
+    <posXYZ volume="FX0f" X_Y_Z="0 0 -436.38" rot="0 -22.3 0" unit_angle="deg">
+      <cell value="15"/>
+    </posXYZ>
+    <posXYZ volume="FX10" X_Y_Z="0 0 -430.9" rot="0 -22 0" unit_angle="deg">
+      <cell value="16"/>
+    </posXYZ>
+    <posXYZ volume="FX11" X_Y_Z="0 0 -425.49" rot="0 -21.6 0" unit_angle="deg">
+      <cell value="17"/>
+    </posXYZ>
+    <posXYZ volume="FX12" X_Y_Z="0 0 -420.15" rot="0 -21.3 0" unit_angle="deg">
+      <cell value="18"/>
+    </posXYZ>
+    <posXYZ volume="FX13" X_Y_Z="0 0 -414.83" rot="0 -21 0" unit_angle="deg">
+      <cell value="19"/>
+    </posXYZ>
+    <posXYZ volume="FX14" X_Y_Z="0 0 -409.56" rot="0 -20.7 0" unit_angle="deg">
+      <cell value="20"/>
+    </posXYZ>
+    <posXYZ volume="FX15" X_Y_Z="0 0 -404.34" rot="0 -20.5 0" unit_angle="deg">
+      <cell value="21"/>
+    </posXYZ>
+    <posXYZ volume="FX16" X_Y_Z="0 0 -399.14" rot="0 -20.2 0" unit_angle="deg">
+      <cell value="22"/>
+    </posXYZ>
+    <posXYZ volume="FX17" X_Y_Z="0 0 -393.98" rot="0 -19.9 0" unit_angle="deg">
+      <cell value="23"/>
+    </posXYZ>
+    <posXYZ volume="FX18" X_Y_Z="0 0 -388.87" rot="0 -19.7 0" unit_angle="deg">
+      <cell value="24"/>
+    </posXYZ>
+    <posXYZ volume="FX19" X_Y_Z="0 0 -383.78" rot="0 -19.4 0" unit_angle="deg">
+      <cell value="25"/>
+    </posXYZ>
+    <posXYZ volume="FX1a" X_Y_Z="0 0 -378.75" rot="0 -19.2 0" unit_angle="deg">
+      <cell value="26"/>
+    </posXYZ>
+    <posXYZ volume="FX1b" X_Y_Z="0 0 -373.73" rot="0 -19 0" unit_angle="deg">
+      <cell value="27"/>
+    </posXYZ>
+    <posXYZ volume="FX1c" X_Y_Z="0 0 -368.71" rot="0 -18.8 0" unit_angle="deg">
+      <cell value="28"/>
+    </posXYZ>
+    <posXYZ volume="FX1d" X_Y_Z="0 0 -363.75" rot="0 -18.6 0" unit_angle="deg">
+      <cell value="29"/>
+    </posXYZ>
+    <posXYZ volume="FX1e" X_Y_Z="0 0 -358.85" rot="0 -18.4 0" unit_angle="deg">
+      <cell value="30"/>
+    </posXYZ>
+    <posXYZ volume="FX1f" X_Y_Z="0 0 -353.95" rot="0 -18.2 0" unit_angle="deg">
+      <cell value="31"/>
+    </posXYZ>
+    <posXYZ volume="FX20" X_Y_Z="0 0 -349.06" rot="0 -18 0" unit_angle="deg">
+      <cell value="32"/>
+    </posXYZ>
+    <posXYZ volume="FX21" X_Y_Z="0 0 -344.22" rot="0 -17.8 0" unit_angle="deg">
+      <cell value="33"/>
+    </posXYZ>
+    <posXYZ volume="FX22" X_Y_Z="0 0 -339.39" rot="0 -17.6 0" unit_angle="deg">
+      <cell value="34"/>
+    </posXYZ>
+    <posXYZ volume="FX23" X_Y_Z="0 0 -334.59" rot="0 -17.4 0" unit_angle="deg">
+      <cell value="35"/>
+    </posXYZ>
+    <posXYZ volume="FX24" X_Y_Z="0 0 -329.83" rot="0 -17.3 0" unit_angle="deg">
+      <cell value="36"/>
+    </posXYZ>
+    <posXYZ volume="FX25" X_Y_Z="0 0 -325.08" rot="0 -17.1 0" unit_angle="deg">
+      <cell value="37"/>
+    </posXYZ>
+    <posXYZ volume="FX26" X_Y_Z="0 0 -320.39" rot="0 -16.9 0" unit_angle="deg">
+      <cell value="38"/>
+    </posXYZ>
+    <posXYZ volume="FX27" X_Y_Z="0 0 -315.7" rot="0 -16.8 0" unit_angle="deg">
+      <cell value="39"/>
+    </posXYZ>
+    <posXYZ volume="FX28" X_Y_Z="0 0 -310.99" rot="0 -16.6 0" unit_angle="deg">
+      <cell value="40"/>
+    </posXYZ>
+    <posXYZ volume="FX29" X_Y_Z="0 0 -306.32" rot="0 -16.5 0" unit_angle="deg">
+      <cell value="41"/>
+    </posXYZ>
+    <posXYZ volume="FX2a" X_Y_Z="0 0 -301.68" rot="0 -16.3 0" unit_angle="deg">
+      <cell value="42"/>
+    </posXYZ>
+    <posXYZ volume="FX2b" X_Y_Z="0 0 -297.07" rot="0 -16.2 0" unit_angle="deg">
+      <cell value="43"/>
+    </posXYZ>
+    <posXYZ volume="FX2c" X_Y_Z="0 0 -292.49" rot="0 -16.1 0" unit_angle="deg">
+      <cell value="44"/>
+    </posXYZ>
+    <posXYZ volume="FX2d" X_Y_Z="0 0 -287.91" rot="0 -15.9 0" unit_angle="deg">
+      <cell value="45"/>
+    </posXYZ>
+    <posXYZ volume="FX2e" X_Y_Z="0 0 -283.31" rot="0 -15.8 0" unit_angle="deg">
+      <cell value="46"/>
+    </posXYZ>
+    <posXYZ volume="FX2f" X_Y_Z="0 0 -278.78" rot="0 -15.7 0" unit_angle="deg">
+      <cell value="47"/>
+    </posXYZ>
+    <posXYZ volume="FX30" X_Y_Z="0 0 -274.29" rot="0 -15.5 0" unit_angle="deg">
+      <cell value="48"/>
+    </posXYZ>
+    <posXYZ volume="FX31" X_Y_Z="0 0 -269.79" rot="0 -15.4 0" unit_angle="deg">
+      <cell value="49"/>
+    </posXYZ>
+    <posXYZ volume="FX32" X_Y_Z="0 0 -265.28" rot="0 -15.3 0" unit_angle="deg">
+      <cell value="50"/>
+    </posXYZ>
+    <posXYZ volume="FX33" X_Y_Z="0 0 -260.78" rot="0 -15.2 0" unit_angle="deg">
+      <cell value="51"/>
+    </posXYZ>
+    <posXYZ volume="FX34" X_Y_Z="0 0 -256.33" rot="0 -15.1 0" unit_angle="deg">
+      <cell value="52"/>
+    </posXYZ>
+    <posXYZ volume="FX35" X_Y_Z="0 0 -251.9" rot="0 -14.9 0" unit_angle="deg">
+      <cell value="53"/>
+    </posXYZ>
+    <posXYZ volume="FX36" X_Y_Z="0 0 -247.44" rot="0 -14.8 0" unit_angle="deg">
+      <cell value="54"/>
+    </posXYZ>
+    <posXYZ volume="FX37" X_Y_Z="0 0 -243.04" rot="0 -14.7 0" unit_angle="deg">
+      <cell value="55"/>
+    </posXYZ>
+    <posXYZ volume="FX38" X_Y_Z="0 0 -238.65" rot="0 -14.6 0" unit_angle="deg">
+      <cell value="56"/>
+    </posXYZ>
+    <posXYZ volume="FX39" X_Y_Z="0 0 -234.28" rot="0 -14.5 0" unit_angle="deg">
+      <cell value="57"/>
+    </posXYZ>
+    <posXYZ volume="FX3a" X_Y_Z="0 0 -229.89" rot="0 -14.4 0" unit_angle="deg">
+      <cell value="58"/>
+    </posXYZ>
+    <posXYZ volume="FX3b" X_Y_Z="0 0 -225.5" rot="0 -14.3 0" unit_angle="deg">
+      <cell value="59"/>
+    </posXYZ>
+    <posXYZ volume="FX3c" X_Y_Z="0 0 -221.2" rot="0 -14.2 0" unit_angle="deg">
+      <cell value="60"/>
+    </posXYZ>
+    <posXYZ volume="FX3d" X_Y_Z="0 0 -216.89" rot="0 -14.1 0" unit_angle="deg">
+      <cell value="61"/>
+    </posXYZ>
+    <posXYZ volume="FX3e" X_Y_Z="0 0 -212.51" rot="0 -14 0" unit_angle="deg">
+      <cell value="62"/>
+    </posXYZ>
+    <posXYZ volume="FX3f" X_Y_Z="0 0 -208.22" rot="0 -14 0" unit_angle="deg">
+      <cell value="63"/>
+    </posXYZ>
+    <posXYZ volume="FX40" X_Y_Z="0 0 -203.98" rot="0 -13.9 0" unit_angle="deg">
+      <cell value="64"/>
+    </posXYZ>
+    <posXYZ volume="FX41" X_Y_Z="0 0 -199.68" rot="0 -13.8 0" unit_angle="deg">
+      <cell value="65"/>
+    </posXYZ>
+    <posXYZ volume="FX42" X_Y_Z="0 0 -195.35" rot="0 -13.7 0" unit_angle="deg">
+      <cell value="66"/>
+    </posXYZ>
+    <posXYZ volume="FX43" X_Y_Z="0 0 -191.09" rot="0 -13.6 0" unit_angle="deg">
+      <cell value="67"/>
+    </posXYZ>
+    <posXYZ volume="FX44" X_Y_Z="0 0 -186.89" rot="0 -13.5 0" unit_angle="deg">
+      <cell value="68"/>
+    </posXYZ>
+    <posXYZ volume="FX45" X_Y_Z="0 0 -182.68" rot="0 -13.4 0" unit_angle="deg">
+      <cell value="69"/>
+    </posXYZ>
+    <posXYZ volume="FX46" X_Y_Z="0 0 -178.5" rot="0 -13.4 0" unit_angle="deg">
+      <cell value="70"/>
+    </posXYZ>
+    <posXYZ volume="FX47" X_Y_Z="0 0 -174.29" rot="0 -13.3 0" unit_angle="deg">
+      <cell value="71"/>
+    </posXYZ>
+    <posXYZ volume="FX48" X_Y_Z="0 0 -170.04" rot="0 -13.2 0" unit_angle="deg">
+      <cell value="72"/>
+    </posXYZ>
+    <posXYZ volume="FX49" X_Y_Z="0 0 -165.84" rot="0 -13.1 0" unit_angle="deg">
+      <cell value="73"/>
+    </posXYZ>
+    <posXYZ volume="FX4a" X_Y_Z="0 0 -161.72" rot="0 -13.1 0" unit_angle="deg">
+      <cell value="74"/>
+    </posXYZ>
+    <posXYZ volume="FX4b" X_Y_Z="0 0 -157.57" rot="0 -13 0" unit_angle="deg">
+      <cell value="75"/>
+    </posXYZ>
+    <posXYZ volume="FX4c" X_Y_Z="0 0 -153.38" rot="0 -12.9 0" unit_angle="deg">
+      <cell value="76"/>
+    </posXYZ>
+    <posXYZ volume="FX4d" X_Y_Z="0 0 -149.19" rot="0 -12.8 0" unit_angle="deg">
+      <cell value="77"/>
+    </posXYZ>
+    <posXYZ volume="FX4e" X_Y_Z="0 0 -145.07" rot="0 -12.8 0" unit_angle="deg">
+      <cell value="78"/>
+    </posXYZ>
+    <posXYZ volume="FX4f" X_Y_Z="0 0 -140.95" rot="0 -12.7 0" unit_angle="deg">
+      <cell value="79"/>
+    </posXYZ>
+    <posXYZ volume="FX50" X_Y_Z="0 0 -136.82" rot="0 -12.7 0" unit_angle="deg">
+      <cell value="80"/>
+    </posXYZ>
+    <posXYZ volume="FX51" X_Y_Z="0 0 -128.62" rot="0 -12.5 0" unit_angle="deg">
+      <cell value="81"/>
+    </posXYZ>
+    <posXYZ volume="FX52" X_Y_Z="0 0 -120.39" rot="0 -12.4 0" unit_angle="deg">
+      <cell value="82"/>
+    </posXYZ>
+    <posXYZ volume="FX53" X_Y_Z="0 0 -112.3" rot="0 -12.3 0" unit_angle="deg">
+      <cell value="83"/>
+    </posXYZ>
+    <posXYZ volume="FX54" X_Y_Z="0 0 -104.16" rot="0 -12.1 0" unit_angle="deg">
+      <cell value="84"/>
+    </posXYZ>
+    <posXYZ volume="FX55" X_Y_Z="0 0 -96.08" rot="0 -12 0" unit_angle="deg">
+      <cell value="85"/>
+    </posXYZ>
+    <posXYZ volume="FX56" X_Y_Z="0 0 -88.02" rot="0 -11.9 0" unit_angle="deg">
+      <cell value="86"/>
+    </posXYZ>
+    <posXYZ volume="FX57" X_Y_Z="0 0 -79.97" rot="0 -11.8 0" unit_angle="deg">
+      <cell value="87"/>
+    </posXYZ>
+    <posXYZ volume="FX58" X_Y_Z="0 0 -71.99" rot="0 -11.7 0" unit_angle="deg">
+      <cell value="88"/>
+    </posXYZ>
+    <posXYZ volume="FX59" X_Y_Z="0 0 -64.11" rot="0 -11.6 0" unit_angle="deg">
+      <cell value="89"/>
+    </posXYZ>
+    <posXYZ volume="FX5a" X_Y_Z="0 0 -56.17" rot="0 -11.5 0" unit_angle="deg">
+      <cell value="90"/>
+    </posXYZ>
+    <posXYZ volume="FX5b" X_Y_Z="0 0 -48.23" rot="0 -11.4 0" unit_angle="deg">
+      <cell value="91"/>
+    </posXYZ>
+    <posXYZ volume="FX5c" X_Y_Z="0 0 -40.39" rot="0 -11.3 0" unit_angle="deg">
+      <cell value="92"/>
+    </posXYZ>
+    <posXYZ volume="FX5d" X_Y_Z="0 0 -32.56" rot="0 -11.2 0" unit_angle="deg">
+      <cell value="93"/>
+    </posXYZ>
+    <posXYZ volume="FX5e" X_Y_Z="0 0 -24.66" rot="0 -11.1 0" unit_angle="deg">
+      <cell value="94"/>
+    </posXYZ>
+    <posXYZ volume="FX5f" X_Y_Z="0 0 -16.87" rot="0 -11 0" unit_angle="deg">
+      <cell value="95"/>
+    </posXYZ>
+    <posXYZ volume="FX60" X_Y_Z="0 0 -9.14" rot="0 -10.9 0" unit_angle="deg">
+      <cell value="96"/>
+    </posXYZ>
+    <posXYZ volume="FX61" X_Y_Z="0 0 -1.4" rot="0 -10.9 0" unit_angle="deg">
+      <cell value="97"/>
+    </posXYZ>
+    <posXYZ volume="FX62" X_Y_Z="0 0 6.36" rot="0 -10.8 0" unit_angle="deg">
+      <cell value="98"/>
+    </posXYZ>
+    <posXYZ volume="FX63" X_Y_Z="0 0 14.05" rot="0 -10.7 0" unit_angle="deg">
+      <cell value="99"/>
+    </posXYZ>
+    <posXYZ volume="FX64" X_Y_Z="0 0 21.81" rot="0 -10.6 0" unit_angle="deg">
+      <cell value="100"/>
+    </posXYZ>
+    <posXYZ volume="FX65" X_Y_Z="0 0 29.43" rot="0 -10.5 0" unit_angle="deg">
+      <cell value="101"/>
+    </posXYZ>
+    <posXYZ volume="FX66" X_Y_Z="0 0 37.11" rot="0 -10.5 0" unit_angle="deg">
+      <cell value="102"/>
+    </posXYZ>
+    <posXYZ volume="FX67" X_Y_Z="0 0 44.71" rot="0 -10.4 0" unit_angle="deg">
+      <cell value="103"/>
+    </posXYZ>
+    <posXYZ volume="FX68" X_Y_Z="0 0 52.37" rot="0 -10.3 0" unit_angle="deg">
+      <cell value="104"/>
+    </posXYZ>
+    <posXYZ volume="FX69" X_Y_Z="0 0 59.9" rot="0 -10.2 0" unit_angle="deg">
+      <cell value="105"/>
+    </posXYZ>
+    <posXYZ volume="FX6a" X_Y_Z="0 0 67.47" rot="0 -10.2 0" unit_angle="deg">
+      <cell value="106"/>
+    </posXYZ>
+    <posXYZ volume="FX6b" X_Y_Z="0 0 75.07" rot="0 -10.1 0" unit_angle="deg">
+      <cell value="107"/>
+    </posXYZ>
+    <posXYZ volume="FX6c" X_Y_Z="0 0 82.53" rot="0 -10.1 0" unit_angle="deg">
+      <cell value="108"/>
+    </posXYZ>
+    <posXYZ volume="FX6d" X_Y_Z="0 0 90.08" rot="0 -10 0" unit_angle="deg">
+      <cell value="109"/>
+    </posXYZ>
+    <posXYZ volume="FX6e" X_Y_Z="0 0 97.59" rot="0 -9.9 0" unit_angle="deg">
+      <cell value="110"/>
+    </posXYZ>
+    <posXYZ volume="FX6f" X_Y_Z="0 0 104.97" rot="0 -9.9 0" unit_angle="deg">
+      <cell value="111"/>
+    </posXYZ>
+    <posXYZ volume="FX70" X_Y_Z="0 0 112.39" rot="0 -9.8 0" unit_angle="deg">
+      <cell value="112"/>
+    </posXYZ>
+    <posXYZ volume="FX71" X_Y_Z="0 0 120" rot="0 -9.7 0" unit_angle="deg">
+      <cell value="113"/>
+    </posXYZ>
+    <posXYZ volume="FX72" X_Y_Z="0 0 127.36" rot="0 -9.7 0" unit_angle="deg">
+      <cell value="114"/>
+    </posXYZ>
+    <posXYZ volume="FX73" X_Y_Z="0 0 134.8" rot="0 -9.6 0" unit_angle="deg">
+      <cell value="115"/>
+    </posXYZ>
+    <posXYZ volume="FX74" X_Y_Z="0 0 142.25" rot="0 -9.6 0" unit_angle="deg">
+      <cell value="116"/>
+    </posXYZ>
+    <posXYZ volume="FX75" X_Y_Z="0 0 149.58" rot="0 -9.5 0" unit_angle="deg">
+      <cell value="117"/>
+    </posXYZ>
+    <posXYZ volume="FX76" X_Y_Z="0 0 157.03" rot="0 -9.5 0" unit_angle="deg">
+      <cell value="118"/>
+    </posXYZ>
+    <posXYZ volume="FX77" X_Y_Z="0 0 164.33" rot="0 -9.4 0" unit_angle="deg">
+      <cell value="119"/>
+    </posXYZ>
+    <posXYZ volume="FX78" X_Y_Z="0 0 171.46" rot="0 -9.4 0" unit_angle="deg">
+      <cell value="120"/>
+    </posXYZ>
+    <posXYZ volume="FX79" X_Y_Z="0 0 178.95" rot="0 -9.3 0" unit_angle="deg">
+      <cell value="121"/>
+    </posXYZ>
+    <posXYZ volume="FX7a" X_Y_Z="0 0 186.28" rot="0 -9.3 0" unit_angle="deg">
+      <cell value="122"/>
+    </posXYZ>
+    <posXYZ volume="FX7b" X_Y_Z="0 0 193.57" rot="0 -9.2 0" unit_angle="deg">
+      <cell value="123"/>
+    </posXYZ>
+    <posXYZ volume="FX7c" X_Y_Z="0 0 201.09" rot="0 -9.2 0" unit_angle="deg">
+      <cell value="124"/>
+    </posXYZ>
+    <posXYZ volume="FX7d" X_Y_Z="0 0 208.44" rot="0 -9.1 0" unit_angle="deg">
+      <cell value="125"/>
+    </posXYZ>
+    <posXYZ volume="FX7e" X_Y_Z="0 0 215.4" rot="0 -9.1 0" unit_angle="deg">
+      <cell value="126"/>
+    </posXYZ>
+    <posXYZ volume="FX7f" X_Y_Z="0 0 222.81" rot="0 -9 0" unit_angle="deg">
+      <cell value="127"/>
+    </posXYZ>
+    <posXYZ volume="FX80" X_Y_Z="0 0 229.97" rot="0 -9 0" unit_angle="deg">
+      <cell value="128"/>
+    </posXYZ>
+    <posXYZ volume="FX81" X_Y_Z="0 0 237.3" rot="0 -8.9 0" unit_angle="deg">
+      <cell value="129"/>
+    </posXYZ>
+    <posXYZ volume="FX82" X_Y_Z="0 0 244.31" rot="0 -8.9 0" unit_angle="deg">
+      <cell value="130"/>
+    </posXYZ>
+    <posXYZ volume="FX83" X_Y_Z="0 0 251.63" rot="0 -8.8 0" unit_angle="deg">
+      <cell value="131"/>
+    </posXYZ>
+    <posXYZ volume="FX84" X_Y_Z="0 0 258.84" rot="0 -8.8 0" unit_angle="deg">
+      <cell value="132"/>
+    </posXYZ>
+    <posXYZ volume="FX85" X_Y_Z="0 0 266.08" rot="0 -8.8 0" unit_angle="deg">
+      <cell value="133"/>
+    </posXYZ>
+    <posXYZ volume="FX86" X_Y_Z="0 0 272.93" rot="0 -8.7 0" unit_angle="deg">
+      <cell value="134"/>
+    </posXYZ>
+    <posXYZ volume="FX87" X_Y_Z="0 0 280.38" rot="0 -8.7 0" unit_angle="deg">
+      <cell value="135"/>
+    </posXYZ>
+    <posXYZ volume="FX88" X_Y_Z="0 0 287.43" rot="0 -8.6 0" unit_angle="deg">
+      <cell value="136"/>
+    </posXYZ>
+    <posXYZ volume="FX89" X_Y_Z="0 0 294.63" rot="0 -8.6 0" unit_angle="deg">
+      <cell value="137"/>
+    </posXYZ>
+    <posXYZ volume="FX8a" X_Y_Z="0 0 301.54" rot="0 -8.6 0" unit_angle="deg">
+      <cell value="138"/>
+    </posXYZ>
+    <posXYZ volume="FX8b" X_Y_Z="0 0 308.84" rot="0 -8.5 0" unit_angle="deg">
+      <cell value="139"/>
+    </posXYZ>
+    <posXYZ volume="FX8c" X_Y_Z="0 0 315.99" rot="0 -8.5 0" unit_angle="deg">
+      <cell value="140"/>
+    </posXYZ>
+    <posXYZ volume="FX8d" X_Y_Z="0 0 323.03" rot="0 -8.4 0" unit_angle="deg">
+      <cell value="141"/>
+    </posXYZ>
+    <posXYZ volume="FX8e" X_Y_Z="0 0 330.15" rot="0 -8.4 0" unit_angle="deg">
+      <cell value="142"/>
+    </posXYZ>
+    <posXYZ volume="FX8f" X_Y_Z="0 0 337.24" rot="0 -8.4 0" unit_angle="deg">
+      <cell value="143"/>
+    </posXYZ>
+    <posXYZ volume="FX90" X_Y_Z="0 0 344.48" rot="0 -8.3 0" unit_angle="deg">
+      <cell value="144"/>
+    </posXYZ>
+    <posXYZ volume="FX91" X_Y_Z="0 0 351.26" rot="0 -8.3 0" unit_angle="deg">
+      <cell value="145"/>
+    </posXYZ>
+    <posXYZ volume="FX92" X_Y_Z="0 0 358.43" rot="0 -8.3 0" unit_angle="deg">
+      <cell value="146"/>
+    </posXYZ>
+    <posXYZ volume="FX93" X_Y_Z="0 0 365.6" rot="0 -8.2 0" unit_angle="deg">
+      <cell value="147"/>
+    </posXYZ>
+    <posXYZ volume="FX94" X_Y_Z="0 0 372.3" rot="0 -8.2 0" unit_angle="deg">
+      <cell value="148"/>
+    </posXYZ>
+    <posXYZ volume="FX95" X_Y_Z="0 0 379.63" rot="0 -8.2 0" unit_angle="deg">
+      <cell value="149"/>
+    </posXYZ>
+    <posXYZ volume="FX96" X_Y_Z="0 0 386.45" rot="0 -8.2 0" unit_angle="deg">
+      <cell value="150"/>
+    </posXYZ>
+    <posXYZ volume="FX97" X_Y_Z="0 0 393.83" rot="0 -8.1 0" unit_angle="deg">
+      <cell value="151"/>
+    </posXYZ>
+    <posXYZ volume="FX98" X_Y_Z="0 0 400.42" rot="0 -8.1 0" unit_angle="deg">
+      <cell value="152"/>
+    </posXYZ>
+    <posXYZ volume="FX99" X_Y_Z="0 0 407.84" rot="0 -8 0" unit_angle="deg">
+      <cell value="153"/>
+    </posXYZ>
+    <posXYZ volume="FX9a" X_Y_Z="0 0 414.69" rot="0 -8 0" unit_angle="deg">
+      <cell value="154"/>
+    </posXYZ>
+    <posXYZ volume="FX9b" X_Y_Z="0 0 421.62" rot="0 -8 0" unit_angle="deg">
+      <cell value="155"/>
+    </posXYZ>
+    <posXYZ volume="FX9c" X_Y_Z="0 0 428.55" rot="0 -8 0" unit_angle="deg">
+      <cell value="156"/>
+    </posXYZ>
+    <posXYZ volume="FX9d" X_Y_Z="0 0 435.21" rot="0 -7.9 0" unit_angle="deg">
+      <cell value="157"/>
+    </posXYZ>
+    <posXYZ volume="FX9e" X_Y_Z="0 0 442.24" rot="0 -7.9 0" unit_angle="deg">
+      <cell value="158"/>
+    </posXYZ>
+    <posXYZ volume="FX9f" X_Y_Z="0 0 449.17" rot="0 -7.9 0" unit_angle="deg">
+      <cell value="159"/>
+    </posXYZ>
+    <posXYZ volume="FXa0" X_Y_Z="0 0 456.33" rot="0 -7.8 0" unit_angle="deg">
+      <cell value="160"/>
+    </posXYZ>
+    <posXYZ volume="FXa1" X_Y_Z="0 0 463.21" rot="0 -7.8 0" unit_angle="deg">
+      <cell value="161"/>
+    </posXYZ>
+    <posXYZ volume="FXa2" X_Y_Z="0 0 470.09" rot="0 -7.8 0" unit_angle="deg">
+      <cell value="162"/>
+    </posXYZ>
+    <posXYZ volume="FXa3" X_Y_Z="0 0 477.24" rot="0 -7.8 0" unit_angle="deg">
+      <cell value="163"/>
+    </posXYZ>
+    <posXYZ volume="FXa4" X_Y_Z="0 0 484.26" rot="0 -7.7 0" unit_angle="deg">
+      <cell value="164"/>
+    </posXYZ>
+    <posXYZ volume="FXa5" X_Y_Z="0 0 490.99" rot="0 -7.7 0" unit_angle="deg">
+      <cell value="165"/>
+    </posXYZ>
+    <posXYZ volume="FXa6" X_Y_Z="0 0 497.58" rot="0 -7.7 0" unit_angle="deg">
+      <cell value="166"/>
+    </posXYZ>
+    <posXYZ volume="FXa7" X_Y_Z="0 0 504.59" rot="0 -7.7 0" unit_angle="deg">
+      <cell value="167"/>
+    </posXYZ>
+    <posXYZ volume="FXa8" X_Y_Z="0 0 511.59" rot="0 -7.6 0" unit_angle="deg">
+      <cell value="168"/>
+    </posXYZ>
+    <posXYZ volume="FXa9" X_Y_Z="0 0 518.55" rot="0 -7.6 0" unit_angle="deg">
+      <cell value="169"/>
+    </posXYZ>
+    <posXYZ volume="FXaa" X_Y_Z="0 0 525.28" rot="0 -7.6 0" unit_angle="deg">
+      <cell value="170"/>
+    </posXYZ>
+    <posXYZ volume="FXab" X_Y_Z="0 0 532.15" rot="0 -7.6 0" unit_angle="deg">
+      <cell value="171"/>
+    </posXYZ>
+    <posXYZ volume="FXac" X_Y_Z="0 0 539.01" rot="0 -7.5 0" unit_angle="deg">
+      <cell value="172"/>
+    </posXYZ>
+    <posXYZ volume="FXad" X_Y_Z="0 0 546.42" rot="0 -7.5 0" unit_angle="deg">
+      <cell value="173"/>
+    </posXYZ>
+    <posXYZ volume="FXae" X_Y_Z="0 0 552.75" rot="0 -7.5 0" unit_angle="deg">
+      <cell value="174"/>
+    </posXYZ>
+    <posXYZ volume="FXaf" X_Y_Z="0 0 559.58" rot="0 -7.5 0" unit_angle="deg">
+      <cell value="175"/>
+    </posXYZ>
+    <posXYZ volume="FXb0" X_Y_Z="0 0 566.55" rot="0 -7.4 0" unit_angle="deg">
+      <cell value="176"/>
+    </posXYZ>
+    <posXYZ volume="FXb1" X_Y_Z="0 0 573.35" rot="0 -7.4 0" unit_angle="deg">
+      <cell value="177"/>
+    </posXYZ>
+    <posXYZ volume="FXb2" X_Y_Z="0 0 579.99" rot="0 -7.4 0" unit_angle="deg">
+      <cell value="178"/>
+    </posXYZ>
+    <posXYZ volume="FXb3" X_Y_Z="0 0 586.69" rot="0 -7.4 0" unit_angle="deg">
+      <cell value="179"/>
+    </posXYZ>
+    <posXYZ volume="FXb4" X_Y_Z="0 0 593.41" rot="0 -7.4 0" unit_angle="deg">
+      <cell value="180"/>
+    </posXYZ>
+  </composition>
+</section>
+
+<!-- </HDDS> -->

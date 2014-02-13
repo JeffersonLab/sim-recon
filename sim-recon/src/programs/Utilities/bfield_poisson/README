@@ -1,0 +1,17 @@
+
+Dec. 18, 2013  David Lawrence
+
+
+The files in this directory were semi-large and of
+specialized use (calculating 2-D B-field map for
+GlueX Solenoid). Because of this, they were moved
+out of here into my private area of the repository.
+This is just a place where they are not going to
+be checked out with every sim-recon distribution,
+but still accessible for anyone who wants them.
+To check them out, issue the following:
+
+svn co https://halldsvn.jlab.org/repos/trunk/home/davidl/bfield_poisson
+
+
+
