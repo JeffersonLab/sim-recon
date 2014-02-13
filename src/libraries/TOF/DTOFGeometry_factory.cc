@@ -22,6 +22,10 @@ jerror_t DTOFGeometry_factory::init(void)
   myDTOFGeometry->BARWIDTH         = 6.0;
   myDTOFGeometry->NBARS            = myDTOFGeometry->NLONGBARS + myDTOFGeometry->NSHORTBARS;
 
+  myDTOFGeometry->FirstShortBar = 22;
+  myDTOFGeometry->LastShortBar = myDTOFGeometry->NSHORTBARS/4 + myDTOFGeometry->FirstShortBar;
+
+
   myDTOFGeometry->CenterVPlane =  617.52;
   myDTOFGeometry->CenterHPlane =  620.10;
   myDTOFGeometry->CenterMPlane = (myDTOFGeometry->CenterVPlane +  myDTOFGeometry->CenterHPlane)/2.;

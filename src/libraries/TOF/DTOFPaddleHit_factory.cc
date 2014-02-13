@@ -51,6 +51,9 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
   HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
   E_THRESHOLD    =    tofparms["TOF_E_THRESHOLD"];
   ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"];
+
+  loop->Get(TOFGeom);
+
   return NOERROR;
 
 }
@@ -113,7 +116,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     hit->E_south = 0.;
     hit->t_south = 0.;      
  
-    if ((bar < 22) || (bar > 23)) {
+    if ((bar < TOFGeom[0]->FirstShortBar ) || (bar > TOFGeom[0]->LastShortBar)) {
       for (unsigned int j=0; j<P1hitsR.size(); j++){      
 	if (bar==P1hitsR[j]->bar){
 	  hit->E_south = P1hitsR[j]->dE;
@@ -130,7 +133,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     int bar = P1hitsR[i]->bar;
     int found = 0;
 
-    if ((bar < 22) || (bar > 23)) {
+    if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
       for (unsigned int j=0; j<P1hitsL.size(); j++){      
 	if (bar==P1hitsL[j]->bar){
 	  found = 1;
@@ -162,7 +165,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     hit->E_south = 0.;
     hit->t_south = 0.;      
  
-    if ((bar < 22) || (bar > 23)) {
+    if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
       for (unsigned int j=0; j<P2hitsR.size(); j++){      
 	if (bar==P2hitsR[j]->bar){
 	  hit->E_south = P2hitsR[j]->dE;
@@ -179,7 +182,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     int bar = P2hitsR[i]->bar;
     int found = 0;
 
-    if ((bar < 22) || (bar > 23)) {
+    if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
       for (unsigned int j=0; j<P2hitsL.size(); j++){      
 	if (bar==P2hitsL[j]->bar){
 	  found = 1;

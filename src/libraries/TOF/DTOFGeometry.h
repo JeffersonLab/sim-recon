@@ -26,6 +26,8 @@ class DTOFGeometry:public JObject{
   float SHORTBARLENGTH; ///> length of the short scintillators
   float BARWIDTH;       ///> width of the scintillator bars
   float YPOS[50];       ///> y position for bar number
+  int FirstShortBar;    ///> bar number of first short bar
+  int LastShortBar;     ///> bar number of last short bar of same type north
 
   float CenterVPlane;  /// center z position of Vertical Plane
   float CenterHPlane;  /// center z position of Horizontal Plane

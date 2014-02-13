@@ -97,7 +97,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
     int bar = locTOFHit->bar;
     if (locTOFHit->orientation) { //horizontal
      
-      if ((locTOFHit->bar < 22) || (locTOFHit->bar > 23)){ //double-ended bars
+      if ((locTOFHit->bar < TOFGeom[0]->FirstShortBar) || (locTOFHit->bar > TOFGeom[0]->LastShortBar)){ //double-ended bars
 	
 	locTOFSpacetimeHit->y = TOFGeom[0]->bar2y(bar,locTOFHit->orientation);
 	if(!((locTOFHit->meantime >= 0.0) || (locTOFHit->meantime <= 0.0))){ //NaN: only one energy hit above threshold on the double-ended bar
@@ -136,7 +136,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
       locTOFSpacetimeHits_Horizontal.push_back(locTOFSpacetimeHit);
     } else {  //vertical
 
-      if ((locTOFHit->bar < 22) || (locTOFHit->bar > 23)){ //double-ended bars
+      if ((locTOFHit->bar < TOFGeom[0]->FirstShortBar) || (locTOFHit->bar > TOFGeom[0]->LastShortBar)){ //double-ended bars
 
 	locTOFSpacetimeHit->x = TOFGeom[0]->bar2y(bar,locTOFHit->orientation);
 	if(!((locTOFHit->meantime >= 0.0) || (locTOFHit->meantime <= 0.0))){ //NaN: only one energy hit above threshold on the double-ended bar
