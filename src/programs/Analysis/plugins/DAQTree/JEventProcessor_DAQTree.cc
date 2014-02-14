@@ -63,7 +63,7 @@ jerror_t JEventProcessor_DAQTree::init(void)
 	// japp->RootUnLock();
 	//
 
-	printf("Welcome to JEventProcessor_DAQTree\n");
+	printf("JEventProcessor_DAQTree::init()\n");
 
 	japp->RootWriteLock();
 
@@ -86,8 +86,8 @@ jerror_t JEventProcessor_DAQTree::init(void)
 	/// Trees are created
 	Df250PulseIntegral_tree = new TTree("Df250PulseIntegral",
 										"tree of flash 250 pulse integral for each channel and event");
-	Df250PulseIntegral_tree->Branch("channelnum",&channelnum,"channelnum/i");
-	Df250PulseIntegral_tree->Branch("eventnum",&eventnum,"eventnum/i");
+	Df250PulseIntegral_tree->Branch("channelnum",&f250PI_channelnum,"channelnum/i");
+	Df250PulseIntegral_tree->Branch("eventnum",&f250PI_eventnum,"eventnum/i");
 
 	japp->RootUnLock();
 	return NOERROR;
@@ -117,13 +117,15 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 
 	/// Trees are filled with data
 	japp->RootWriteLock();
-	eventnum = eventnumber;
+	uint32_t Nchannels;
 
 	// Get a vector of Df250WindowRawData objects for this event (1 object for each crate/slot/channel)
 	vector<const Df250WindowRawData*> f250WindowRawData_vec;
 	loop->Get(f250WindowRawData_vec);
 	sort(f250WindowRawData_vec.begin(), f250WindowRawData_vec.end(), Df250WindowRawData_cmp);
-	uint32_t Nchannels = f250WindowRawData_vec.size();
+	Nchannels = f250WindowRawData_vec.size();
+//	printf("channels %i,  ",Nchannels);
+	eventnum = eventnumber;
 
 	// Loop over all channels in this event
 	for(unsigned int c_chan=0; c_chan<Nchannels; c_chan++){
@@ -155,13 +157,14 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		Df250WindowRawData_tree->Fill();
 	}
 
-	// Get a vector of Df250WindowRawData objects for this event (1 object for each crate/slot/channel)
+	// Get a vector of Df250PulseIntegral objects for this event (1 object for each crate/slot/channel)
 	vector<const Df250PulseIntegral*> f250PulseIntegral_vec;
 	loop->Get(f250PulseIntegral_vec);
 	Nchannels = f250PulseIntegral_vec.size();
+	f250PI_eventnum = eventnumber;
 	// Loop over all channels in this event
 	for(unsigned int c_chan=0; c_chan<Nchannels; c_chan++){
-		channelnum = c_chan;
+		f250PI_channelnum = c_chan;
 		Df250PulseIntegral_tree->Fill();
 	}
 
