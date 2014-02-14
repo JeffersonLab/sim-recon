@@ -32,7 +32,7 @@ int main(int narg, char *argv[])
 	ParseCommandLineArguments(narg, argv);
 
 	// Instantiate our event processor
-	MyProcessor myproc;
+	MyProcessor *myproc = new MyProcessor;
 
 	// Instantiate an event loop object
 	DApplication app(narg, argv);
@@ -42,7 +42,9 @@ int main(int narg, char *argv[])
 	
 	// Run though all events, calling our event processor's methods
 	app.monitor_heartbeat = 0;
-	app.Run(&myproc);
+	app.Run(myproc);
+	
+	delete myproc;
 	
 	return 0;
 }
