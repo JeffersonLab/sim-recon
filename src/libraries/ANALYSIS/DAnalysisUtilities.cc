@@ -86,6 +86,9 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 
 	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 	{
+		if(IsResonance(locMCThrowns[loc_i]->PID()))
+			continue; //don't include resonances in DReaction!!
+
 		if(locMCThrowns[loc_i]->PID() == Unknown)
 			continue; //could be some weird pythia "resonance" like a diquark: just ignore them all
 
@@ -95,10 +98,17 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
 			continue;
 		}
-		if(locIDMap.find(locParentID) == locIDMap.end()) //produced from a particle that was not saved: spurious, don't save
+
+		if(locIDMap.find(locParentID) == locIDMap.end()) //produced from a particle that was not saved: spurious, don't save (e.g. product of BCAL shower)
 			continue;
+
 		Particle_t locParentPID = locIDMap[locParentID]->PID();
 		if(locParentPID == Unknown) //parent is an unknown intermediate state: treat as photoproduced
+		{
+			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
+			continue;
+		}
+		if(IsResonance(locParentPID)) //parent is a decaying resonance: treat as photoproduced
 		{
 			locThrownSteps[0].second.push_back(locMCThrowns[loc_i]);
 			continue;
