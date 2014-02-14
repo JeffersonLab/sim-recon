@@ -226,10 +226,6 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 //------------------
 jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
-	// Reset before beginning event evaluation. 
-	dRejectedPhiRegions.clear();
-	Reset_Pools();
-
 	// Get CDC hits
 	if(Get_CDCHits(locEventLoop) != NOERROR)
 		return RESOURCE_UNAVAILABLE;
@@ -282,6 +278,10 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, int eventnu
 	// Create track candidates (as long as p > 0!!)
 	for(size_t loc_i = 0; loc_i < locCDCTrackCircles.size(); ++loc_i)
 		Create_TrackCandidiate(locCDCTrackCircles[loc_i]);
+
+	// Reset before exiting event evaluation. 
+	dRejectedPhiRegions.clear();
+	Reset_Pools();
 
 	return NOERROR;
 }
