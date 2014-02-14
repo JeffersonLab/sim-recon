@@ -115,6 +115,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 
 	// Create list of data types this event source can provide
 	// (must match what is returned by JObject::className() )
+	// n.b. there is an ugly hack down in GetObjects that will
+	// probably also need a line added for each data type added
+	// here.
 	event_source_data_types.insert("Df250PulseIntegral");
 	event_source_data_types.insert("Df250StreamingRawData");
 	event_source_data_types.insert("Df250WindowSum");
@@ -669,7 +672,40 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	set<string>::iterator dtiter = event_source_data_types.begin();
 	for(; dtiter!=event_source_data_types.end(); dtiter++){
 		JFactory_base *fac = loop->GetFactory(*dtiter);
-		if(fac) fac->Set_evnt_called();
+		if(fac) {
+			// The DAQ_WRD2PI plugin wants to generate some objects from
+			// the waveform data, overiding anything found in the file.
+			// It this case, the factory's use_factory flag is set and
+			// we should NOT mark the factory as having it's event method
+			// called. Furthermore, we should delete any objects in the
+			// factory.
+			// Now, another complication is that the only way to check
+			// the use_factory flag is to have a pointer to the JFactory
+			// not the JFactory_base. This means we have to check the data
+			// type of the factory and make the appropriate cast
+			string dataClassName = fac->GetDataClassName();
+			int checkSourceFirst = 1;
+			if(     dataClassName == "Df250PulseIntegral")    checkSourceFirst = ((JFactory<Df250PulseIntegral   >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250StreamingRawData") checkSourceFirst = ((JFactory<Df250StreamingRawData>*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250WindowSum")        checkSourceFirst = ((JFactory<Df250WindowSum       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250PulseRawData")     checkSourceFirst = ((JFactory<Df250PulseRawData    >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250TriggerTime")      checkSourceFirst = ((JFactory<Df250TriggerTime     >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250PulseTime")        checkSourceFirst = ((JFactory<Df250PulseTime       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250WindowRawData")    checkSourceFirst = ((JFactory<Df250WindowRawData   >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df125PulseIntegral")    checkSourceFirst = ((JFactory<Df125PulseIntegral   >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df125TriggerTime")      checkSourceFirst = ((JFactory<Df125TriggerTime     >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df125PulseTime")        checkSourceFirst = ((JFactory<Df125PulseTime       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DF1TDCHit")             checkSourceFirst = ((JFactory<DF1TDCHit            >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "DF1TDCTriggerTime")     checkSourceFirst = ((JFactory<DF1TDCTriggerTime    >*)fac)->GetCheckSourceFirst();
+
+			if(checkSourceFirst) {
+				fac->Set_evnt_called();
+			}else{
+				// Factory wants to generate these so delete any read
+				// from source.
+				fac->Reset();
+			}
+		}
 	}
 	
 	// If a translation table object is available, use it to create
