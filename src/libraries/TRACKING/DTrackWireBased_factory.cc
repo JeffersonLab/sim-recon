@@ -190,16 +190,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
     }
   }
 
-  // Deallocate some reference trajectories occasionally
-  unsigned int rts_to_keep = 10;
-  if(Ntracks_to_fit>rts_to_keep)rts_to_keep=Ntracks_to_fit;
-  for(unsigned int i=rts_to_keep; i<rtv.size(); i++){
-    //printf("Deleting %d\n",i);
-    delete rtv[i];
-  }
-  if(rts_to_keep<rtv.size()){
-    rtv.resize(rts_to_keep);
-  }
   // Loop over candidates
   for(unsigned int i=0; i<candidates.size(); i++){
     const DTrackCandidate *candidate = candidates[i];
@@ -213,7 +203,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       // Make sure there are enough DReferenceTrajectory objects
       unsigned int locNumInitialReferenceTrajectories = rtv.size();
       while(rtv.size()<=num_used_rts){
-      //printf("Adding %d %d\n",rtv.size(),_data.size());
+	//printf("Adding %d %d\n",rtv.size(),_data.size());
 	rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
       }
       DReferenceTrajectory *rt = rtv[num_used_rts];
@@ -395,9 +385,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
     // Swim a reference trajectory using the candidate starting momentum
     // and position
     rt->SetMass(mass);
-    rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
-    //rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,
-    //		 0.,370.);
+    //rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
+    rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,0.,370.);
 	
     status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass,candidate->Ndof+3);
     if (/*false && */status==DTrackFitter::kFitNotDone){
@@ -441,8 +430,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       // Fill reference trajectory
       rt->q = candidate->charge();
       rt->SetMass(track_kd->mass());
-      rt->Swim(track->position(), track->momentum(), track->charge());
-      //rt->FastSwim(track->position(), track->momentum(), track->charge());
+      //rt->Swim(track->position(), track->momentum(), track->charge());
+      rt->FastSwim(track->position(), track->momentum(), track->charge());
       
       track->rt = rt;
       track->chisq = fitter->GetChisq();
