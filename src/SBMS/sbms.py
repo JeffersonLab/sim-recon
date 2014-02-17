@@ -201,7 +201,7 @@ def plugin(env, pluginname=''):
 
 		# Install targets 
 		installed = env.Install(pluginsdir, myplugin)
-		env.Install(includedir, env.Glob('*.h*'))
+		env.Install(includedir, env.Glob('*.[h|hh|hpp]'))
 
 
 
