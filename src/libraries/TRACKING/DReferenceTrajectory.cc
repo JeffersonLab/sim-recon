@@ -59,7 +59,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	BOUNDARY_STEP_FRACTION = 0.80;
 	MIN_STEP_SIZE = 0.1;	// cm
 	MAX_STEP_SIZE = 3.0;		// cm
-	int MAX_SWIM_STEPS = 10000;
+	int MAX_SWIM_STEPS = 2500;
 	
 	gPARMS->SetDefaultParameter("TRK:BOUNDARY_STEP_FRACTION" , BOUNDARY_STEP_FRACTION, "Fraction of estimated distance to boundary to use as step size");
 	gPARMS->SetDefaultParameter("TRK:MIN_STEP_SIZE" , MIN_STEP_SIZE, "Minimum step size in cm to take when swimming a track with adaptive step sizes");
@@ -323,7 +323,9 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
   for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
        
     if(Nswim_steps>=this->max_swim_steps){
-      jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
+      if (debug_level>0){
+	jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
+      }
       break;
     }
     
@@ -522,7 +524,9 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 
 		if(Nswim_steps>=this->max_swim_steps){
+		  if (debug_level>0){
 			jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
+		  }
 			break;
 		}
 
