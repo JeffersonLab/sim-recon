@@ -70,7 +70,7 @@ static unsigned int count_common_members(vector<T> &a, vector<T> &b)
 jerror_t DTrackWireBased_factory::init(void)
 {
 	fitter = NULL;
-	MAX_DReferenceTrajectoryPoolSize = 20;
+	MAX_DReferenceTrajectoryPoolSize = 50;
 
 	DEBUG_HISTS = true;	
 	//DEBUG_HISTS = false;
@@ -155,6 +155,12 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 
 	dPIDAlgorithm = locPIDAlgorithms[0];
 
+	//Pre-allocate memory for DReferenceTrajectory objects early
+		//The swim-step objects of these arrays take up a significant amount of memory, and it can be difficult to find enough free contiguous space for them.
+		//Therefore, allocate them at the beginning before the available memory becomes randomly populated
+	while(rtv.size() < MAX_DReferenceTrajectoryPoolSize)
+		rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+
 	return NOERROR;
 }
 
@@ -208,7 +214,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       }
       DReferenceTrajectory *rt = rtv[num_used_rts];
       if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-	rt->Reset();
+	     rt->Reset();
       rt->SetDGeometry(geom);
       rt->q = candidate->charge();
       

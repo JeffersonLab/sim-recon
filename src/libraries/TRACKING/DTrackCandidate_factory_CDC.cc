@@ -75,10 +75,11 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	DEBUG_LEVEL = 0;
 	MAX_DCDCTrkHitPoolSize = 200;
 	MAX_DCDCSuperLayerSeedPoolSize = 50;
-	MAX_HelicalFitPoolSize = 30;
-	MAX_DCDCTrackCirclePoolSize = 30;
+	MAX_HelicalFitPoolSize = 100;
+	MAX_DCDCTrackCirclePoolSize = 100;
 
 	MAX_ALLOWED_CDC_HITS = 10000;
+	MAX_ALLOWED_TRACK_CIRCLES = 10000; //bail if exceed this many
 	MAX_HIT_DIST = 4.0; // cm //each straw is 5/8in (1.5875 cm) in diameter
 	MAX_HIT_DIST2 = MAX_HIT_DIST*MAX_HIT_DIST;
 
@@ -154,6 +155,7 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 {
 	gPARMS->SetDefaultParameter("TRKFIND:DEBUG_LEVEL", DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_ALLOWED_CDC_HITS", MAX_ALLOWED_CDC_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_ALLOWED_TRACK_CIRCLES", MAX_ALLOWED_TRACK_CIRCLES);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_DIST", MAX_HIT_DIST);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_NUM_RINGSEED_RINGS_SKIPABLE", MAX_NUM_RINGSEED_RINGS_SKIPABLE);
 	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_HITS", MIN_SEED_HITS);
@@ -226,9 +228,18 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 //------------------
 jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
+	// Reset
+	dRejectedPhiRegions.clear();
+
+	// Reset in case didn't clear before exiting event evaluation on last event. 
+	Reset_Pools();
+
 	// Get CDC hits
 	if(Get_CDCHits(locEventLoop) != NOERROR)
+	{
+		Reset_Pools();
 		return RESOURCE_UNAVAILABLE;
+	}
 
 	// Build Super Layer Seeds
 	for(unsigned int loc_i = 0; loc_i < 7; ++loc_i)
@@ -248,9 +259,18 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, int eventnu
 
 	// Build DCDCTrackCircle objects (each corresponds to (at most) one track):
 	deque<DCDCTrackCircle*> locCDCTrackCircles;
-	Build_TrackCircles(locCDCTrackCircles);
+	bool locStatusFlag = Build_TrackCircles(locCDCTrackCircles);
+	if(!locStatusFlag)
+	{
+		//SHOULD SET JEVENT STATUS BIT HERE!!!
+		Reset_Pools();
+		return OBJECT_NOT_AVAILABLE;
+	}
 	if(locCDCTrackCircles.empty())
+	{
+		Reset_Pools();
 		return NOERROR;
+	}
 	Handle_StereoAndFilter(locCDCTrackCircles, false); //false: not final pass: filter seeds, don't reject seeds with no stereo hits (will add unused below), etc.
 
 	// If the last super layer of a track is not 7, search for lone, unused hits on the next super layer and add them to the track
@@ -279,8 +299,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, int eventnu
 	for(size_t loc_i = 0; loc_i < locCDCTrackCircles.size(); ++loc_i)
 		Create_TrackCandidiate(locCDCTrackCircles[loc_i]);
 
-	// Reset before exiting event evaluation. 
-	dRejectedPhiRegions.clear();
+	// Reset memory before exiting event evaluation. 
 	Reset_Pools();
 
 	return NOERROR;
@@ -1504,8 +1523,11 @@ void DTrackCandidate_factory_CDC::Print_SuperLayerSeeds(void)
 //-------------------
 // Build_TrackCircles
 //-------------------
-void DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles)
+bool DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles)
 {
+	//return false if had to bail due to failure (i.e. too many track circles)
+	//return true even if no track circles: it worked, it's just there aren't any
+
 	//link DCDCSuperLayers together to form track circles
 	locCDCTrackCircles.clear();
 	for(unsigned int locOuterSuperLayer = 2; locOuterSuperLayer <= 7; ++locOuterSuperLayer)
@@ -1515,7 +1537,7 @@ void DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& lo
 		{
 			// no track circles yet: create new track circle objects using the super layer seeds in locInnerSuperLayer
 			if(locInnerSuperLayer > MAX_SUPERLAYER_NEW_TRACK)
-				return; // don't create track circles beyond super layer MAX_SUPERLAYER_NEW_TRACK (e.g. knockout electrons from BCAL), return: no track circles!!!
+				return true; // don't create track circles beyond super layer MAX_SUPERLAYER_NEW_TRACK (e.g. knockout electrons from BCAL), return: no track circles!!!
 			if(dSuperLayerSeeds[locInnerSuperLayer - 1].empty())
 				continue; // no inner seeds, try next super layer
 			//build new DCDCTrackCircle's: one for each super layer seed in this (inner) super layer
@@ -1533,7 +1555,8 @@ void DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& lo
 			}
 		}
 		//link existing track circles to DCDCSuperLayerSeed's in the outer super layer.  Any unused DCDCSuperLayerSeed's will be used to make new track circles
-		Link_SuperLayers(locCDCTrackCircles, locOuterSuperLayer);
+		if(!Link_SuperLayers(locCDCTrackCircles, locOuterSuperLayer))
+			return false; //too many track circles
 	}
 	//if still no tracks, make DCDCSuperLayerSeed's in super layer 7 into new tracks (if allowed (probably shouldn't be))
 	if(locCDCTrackCircles.empty() && (MAX_SUPERLAYER_NEW_TRACK >= 7))
@@ -1547,17 +1570,26 @@ void DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& lo
 		}
 	}
 	if(locCDCTrackCircles.empty())
-		return;
+		return true;
+
+	//shouldn't be possible, but check to see if too many (should've failed sooner)
+	if(locCDCTrackCircles.size() >= MAX_ALLOWED_TRACK_CIRCLES)
+	{
+		if(DEBUG_LEVEL > 10)
+			cout << "Too many track circles; bailing" << endl;
+		locCDCTrackCircles.clear();
+		return true;
+	}
 
 	// Reject track circles if they are definitely a spiral arm that turns back outwards in its inner super layer
 	Reject_DefiniteSpiralArms(locCDCTrackCircles);
 	if(locCDCTrackCircles.empty())
-		return;
+		return true;
 
 	// Reject track circles that don't contain at least one axial and one stereo super layer, unless that axial is super layer 1
 	Drop_IncompleteGroups(locCDCTrackCircles);
 	if(locCDCTrackCircles.empty())
-		return;
+		return true;
 
 	if(DEBUG_LEVEL > 5)
 	{
@@ -1569,7 +1601,7 @@ void DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& lo
 		//1st false: fit all circles //2nd false: don't add intersections between stereo layers (wait until specific stereo super layers have been selected)
 	Fit_Circles(locCDCTrackCircles, false, false); 
 	if(locCDCTrackCircles.empty())
-		return;
+		return true;
 	sort(locCDCTrackCircles.begin(), locCDCTrackCircles.end(), CDCSortByChiSqPerNDFDecreasing); //sort by circle-fit weighted chisq/ndf (largest first)
 
 	if(DEBUG_LEVEL > 5)
@@ -1582,7 +1614,7 @@ void DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& lo
 //-----------------
 // Link_SuperLayers
 //-----------------
-void DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer)
+bool DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer)
 {
 	/// Loop over the DCDCTrackCircles and the next super layer seeds and compare the positions of
 		/// their first and last hits to see if we should link them together. 
@@ -1597,7 +1629,10 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locC
 	if((locInnerSuperLayer == 1) || (locInnerSuperLayer == 4)) //else linking from stereo
 		Link_SuperLayers_FromAxial(locCDCTrackCircles, locOuterSuperLayer, locInnerSuperLayer);
 	else if((locOuterSuperLayer == 4) || (locOuterSuperLayer == 7))
-		Link_SuperLayers_FromStereo_ToAxial(locCDCTrackCircles, locOuterSuperLayer, locInnerSuperLayer);
+	{
+		if(!Link_SuperLayers_FromStereo_ToAxial(locCDCTrackCircles, locOuterSuperLayer, locInnerSuperLayer))
+			return false; //linking failed: too many track circles
+	}
 	else
 		Link_SuperLayers_FromStereo_ToStereo(locCDCTrackCircles, locOuterSuperLayer, locInnerSuperLayer);
 	if(DEBUG_LEVEL > 25)
@@ -1615,7 +1650,10 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locC
 		if((locInnerSuperLayer == 1) || (locInnerSuperLayer == 4))
 			Link_SuperLayers_FromAxial(locCDCTrackCircles, locOuterSuperLayer, locInnerSuperLayer);
 		else if((locOuterSuperLayer == 4) || (locOuterSuperLayer == 7))
-			Link_SuperLayers_FromStereo_ToAxial(locCDCTrackCircles, locOuterSuperLayer, locInnerSuperLayer);
+		{
+			if(!Link_SuperLayers_FromStereo_ToAxial(locCDCTrackCircles, locOuterSuperLayer, locInnerSuperLayer))
+				return false; //linking failed: too many track circles
+		}
 		else
 			Link_SuperLayers_FromStereo_ToStereo(locCDCTrackCircles, locOuterSuperLayer, locInnerSuperLayer);
 		if(DEBUG_LEVEL > 25)
@@ -1659,6 +1697,13 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locC
 			//create new track circle
 			if(DEBUG_LEVEL > 10)
 				cout << "Unlinked seed; create new track circle: super layer & seed index = " << locSuperLayerSeed->dSuperLayer << ", " << locSuperLayerSeed->dSeedIndex << endl;
+			if(locCDCTrackCircles.size() >= MAX_ALLOWED_TRACK_CIRCLES)
+			{
+				if(DEBUG_LEVEL > 10)
+					cout << "Too many track circles; bailing" << endl;
+				locCDCTrackCircles.clear();
+				return false;
+			}
 			DCDCTrackCircle* locCDCTrackCircle = Get_Resource_CDCTrackCircle();
 			if((locOuterSuperLayer == 4) || (locOuterSuperLayer == 7))
 				locCDCTrackCircle->dSuperLayerSeeds_Axial.push_back(locSuperLayerSeed);
@@ -1674,6 +1719,8 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers(deque<DCDCTrackCircle*>& locC
 			Print_TrackCircles(locCDCTrackCircles);
 		}
 	}
+
+	return true;
 }
 
 //---------------------------
@@ -1730,7 +1777,7 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromAxial(deque<DCDCTrackCirc
 //------------------------------------
 // Link_SuperLayers_FromStereo_ToAxial
 //------------------------------------
-void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer)
+bool DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer)
 {
 	// Link from a stereo super layer to an axial super layer.  Unfortunately, this is extremely messy.  
 		//If you're editing this, I stronly suggest reading the simpler Link_SuperLayers_FromStereo_ToStereo function to make sure you understand it first.  Good luck! :)
@@ -1834,6 +1881,13 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 					if(locNewCDCTrackCircle == NULL)
 					{
 						//new combination of axial layers, create new object
+						if(locNewCDCTrackCircles.size() >= MAX_ALLOWED_TRACK_CIRCLES)
+						{
+							if(DEBUG_LEVEL > 10)
+								cout << "Too many track circles; bailing" << endl;
+							locCDCTrackCircles.clear();
+							return false;
+						}
 						locNewCDCTrackCircle = Get_Resource_CDCTrackCircle();
 						locNewCDCTrackCircle->dSuperLayerSeeds_Axial = locNewCDCSuperLayerSeeds_Axial;
 						if(!locFromInnerStereoFlag) //if on outer stereo, keep inner stereo results (but not outer stereo!!: will save below)
@@ -1863,6 +1917,13 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 				if(locNewCDCTrackCircle == NULL)
 				{
 					//new combination of axial layers, create new object
+					if(locNewCDCTrackCircles.size() >= MAX_ALLOWED_TRACK_CIRCLES)
+					{
+						if(DEBUG_LEVEL > 10)
+							cout << "Too many track circles; bailing" << endl;
+						locCDCTrackCircles.clear();
+						return false;
+					}
 					locNewCDCTrackCircle = Get_Resource_CDCTrackCircle();
 					locNewCDCTrackCircle->dSuperLayerSeeds_Axial = locCDCTrackCircle->dSuperLayerSeeds_Axial;
 					if(!locFromInnerStereoFlag) //if on outer stereo, keep inner stereo results (but not outer stereo!!: will save below)
@@ -1883,6 +1944,7 @@ void DTrackCandidate_factory_CDC::Link_SuperLayers_FromStereo_ToAxial(deque<DCDC
 	}
 
 	locCDCTrackCircles = locNewCDCTrackCircles; //"return" "new" track circle objects
+	return true;
 }
 
 //-------------------------------------

@@ -57,7 +57,7 @@ static unsigned int count_common_members(vector<T> &a, vector<T> &b)
 jerror_t DTrackTimeBased_factory::init(void)
 {
 	fitter = NULL;
-	MAX_DReferenceTrajectoryPoolSize = 20;
+	MAX_DReferenceTrajectoryPoolSize = 50;
 
 	DEBUG_HISTS = false;
 	//DEBUG_HISTS = true;
@@ -98,12 +98,8 @@ jerror_t DTrackTimeBased_factory::init(void)
 	  SplitString(MASS_HYPOTHESES_NEGATIVE, mass_hypotheses_negative, ",");
 	  if(mass_hypotheses_positive.size()==0)mass_hypotheses_positive.push_back(0.0); // If empty string is specified, assume they want massless particle
 	  if(mass_hypotheses_negative.size()==0)mass_hypotheses_negative.push_back(0.0); // If empty string is specified, assume they want massless particle
-	  
-
-
 	}
 	
-
 
 	// Forces correct particle id (when available)
 	PID_FORCE_TRUTH = false;
@@ -179,6 +175,12 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		dapp->Unlock();
 
 	}
+
+	//Pre-allocate memory for DReferenceTrajectory objects early
+		//The swim-step objects of these arrays take up a significant amount of memory, and it can be difficult to find enough free contiguous space for them.
+		//Therefore, allocate them at the beginning before the available memory becomes randomly populated
+	while(rtv.size() < MAX_DReferenceTrajectoryPoolSize)
+		rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
 
 
 	return NOERROR;
