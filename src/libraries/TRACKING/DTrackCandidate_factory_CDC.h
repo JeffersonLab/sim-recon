@@ -53,9 +53,9 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 				const DCDCTrackHit* hit;
 				unsigned int index;
 				unsigned int flags;
-				double var_z;
+				float var_z;
 				DVector3 dStereoHitPos;
-				double dPhiStereo;
+				float dPhiStereo;
 				bool dValidStereoHitPosFlag; //false if prior to calc, or if hit doesn't intersect circle
 		};
 
@@ -135,12 +135,12 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 				deque<deque<DCDCSuperLayerSeed*> > dSuperLayerSeeds_OuterStereo;
 
 				DHelicalFit* fit; //the circle fit
-				double dWeightedChiSqPerDF; //of circle fit //weighted: is (chisq/ndf)/(#axial_super_layers^2): prefer fits with more axial super layers (not necessarily more hits)
-				double dWeightedChiSqPerDF_Stereo; //of theta/z determination //weighted: is (chisq/ndf)/(#axial_super_layers^2): prefer fits with more stereo super layers (not necessarily more hits)
-				double dAverageDriftTime; //of axial hits close to the circle fit
+				float dWeightedChiSqPerDF; //of circle fit //weighted: is (chisq/ndf)/(#axial_super_layers^2): prefer fits with more axial super layers (not necessarily more hits)
+				float dWeightedChiSqPerDF_Stereo; //of theta/z determination //weighted: is (chisq/ndf)/(#axial_super_layers^2): prefer fits with more stereo super layers (not necessarily more hits)
+				float dAverageDriftTime; //of axial hits close to the circle fit
 				deque<unsigned int> HitBitPattern; //bit pattern of hits in the track circle (first is just axial, then is all)
-				double dTheta;
-				double dVertexZ;
+				float dTheta;
+				float dVertexZ;
 				int dSpiralTurnRing; //is ring# of confirmed match spiral turn, -1 if no turn
 
 				//dTruncationSourceCircles: if this object's (not this member's) circle was truncated, this member points to the track circles that indicated truncation was necessary
@@ -159,19 +159,19 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 				double ChiXY(double lambda);
 
 				unsigned int n;
-				vector<double> s;
-				vector<double> var_s;
-				vector<double> z;
-				vector<double> var_z;
-				vector<double> w;
-				double z0;
-				double tanl;
+				vector<float> s;
+				vector<float> var_s;
+				vector<float> z;
+				vector<float> var_z;
+				vector<float> w;
+				float z0;
+				float tanl;
 		};
 
 		typedef struct
 		{
-			double x, y, perp2;
-			double z, var_z;
+			float x, y, perp2;
+			float z, var_z;
 		} intersection_t;
 
 		typedef deque<deque<DCDCRingSeed> >::iterator ringiter;
@@ -211,11 +211,11 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		void Print_SuperLayerSeeds(void);
 
 		//Link Super Layers to Create DCDCTrackCircle Objects
-		void Build_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles);
-		void Link_SuperLayers(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer);
+		bool Build_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles);
+		bool Link_SuperLayers(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer);
 		void Link_SuperLayers_FromAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
 		void Link_SuperLayers_FromStereo(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
-		void Link_SuperLayers_FromStereo_ToAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
+		bool Link_SuperLayers_FromStereo_ToAxial(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
 		void Link_SuperLayers_FromStereo_ToStereo(deque<DCDCTrackCircle*>& locCDCTrackCircles, unsigned int locOuterSuperLayer, unsigned int locInnerSuperLayer);
 		bool Check_IfShouldAttemptLink(const DCDCSuperLayerSeed* locSuperLayerSeed, bool locInnerSeedFlag);
 		bool Attempt_SeedLink(DCDCSuperLayerSeed* locSuperLayerSeed1, DCDCSuperLayerSeed* locSuperLayerSeed2);
@@ -268,6 +268,7 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		unsigned int MIN_STRAWS_ADJACENT_TO_SPIRAL_TURN;
 		unsigned int DENSITY_BIN_STRAW_WIDTH;
 		double MAX_HIT_DENSITY;
+		unsigned int MAX_ALLOWED_TRACK_CIRCLES; //bail if exceed this many
 		bool ENABLE_DEAD_HV_BOARD_LINKING;
 		unsigned int MAX_SUPERLAYER_NEW_TRACK; //don't allow new track seeds to start after this super layer //track seeds could start late if track is a decay product, or HV board is dead
 		double MAX_COMMON_HIT_FRACTION;

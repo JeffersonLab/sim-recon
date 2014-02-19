@@ -70,7 +70,7 @@ static unsigned int count_common_members(vector<T> &a, vector<T> &b)
 jerror_t DTrackWireBased_factory::init(void)
 {
 	fitter = NULL;
-	MAX_DReferenceTrajectoryPoolSize = 20;
+	MAX_DReferenceTrajectoryPoolSize = 50;
 
 	DEBUG_HISTS = true;	
 	//DEBUG_HISTS = false;
@@ -155,6 +155,12 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 
 	dPIDAlgorithm = locPIDAlgorithms[0];
 
+	//Pre-allocate memory for DReferenceTrajectory objects early
+		//The swim-step objects of these arrays take up a significant amount of memory, and it can be difficult to find enough free contiguous space for them.
+		//Therefore, allocate them at the beginning before the available memory becomes randomly populated
+	while(rtv.size() < MAX_DReferenceTrajectoryPoolSize)
+		rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+
 	return NOERROR;
 }
 
@@ -190,16 +196,6 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
     }
   }
 
-  // Deallocate some reference trajectories occasionally
-  unsigned int rts_to_keep = 10;
-  if(Ntracks_to_fit>rts_to_keep)rts_to_keep=Ntracks_to_fit;
-  for(unsigned int i=rts_to_keep; i<rtv.size(); i++){
-    //printf("Deleting %d\n",i);
-    delete rtv[i];
-  }
-  if(rts_to_keep<rtv.size()){
-    rtv.resize(rts_to_keep);
-  }
   // Loop over candidates
   for(unsigned int i=0; i<candidates.size(); i++){
     const DTrackCandidate *candidate = candidates[i];
@@ -213,12 +209,12 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
       // Make sure there are enough DReferenceTrajectory objects
       unsigned int locNumInitialReferenceTrajectories = rtv.size();
       while(rtv.size()<=num_used_rts){
-      //printf("Adding %d %d\n",rtv.size(),_data.size());
+	//printf("Adding %d %d\n",rtv.size(),_data.size());
 	rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
       }
       DReferenceTrajectory *rt = rtv[num_used_rts];
       if(locNumInitialReferenceTrajectories == rtv.size()) //didn't create a new one
-	rt->Reset();
+	     rt->Reset();
       rt->SetDGeometry(geom);
       rt->q = candidate->charge();
       
@@ -395,9 +391,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
     // Swim a reference trajectory using the candidate starting momentum
     // and position
     rt->SetMass(mass);
-    rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
-    //rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,
-    //		 0.,370.);
+    //rt->Swim(candidate->position(),candidate->momentum(),candidate->charge());
+    rt->FastSwim(candidate->position(),candidate->momentum(),candidate->charge(),2000.0,0.,370.);
 	
     status=fitter->FindHitsAndFitTrack(*candidate,rt,loop,mass,candidate->Ndof+3);
     if (/*false && */status==DTrackFitter::kFitNotDone){
@@ -441,8 +436,8 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       // Fill reference trajectory
       rt->q = candidate->charge();
       rt->SetMass(track_kd->mass());
-      rt->Swim(track->position(), track->momentum(), track->charge());
-      //rt->FastSwim(track->position(), track->momentum(), track->charge());
+      //rt->Swim(track->position(), track->momentum(), track->charge());
+      rt->FastSwim(track->position(), track->momentum(), track->charge());
       
       track->rt = rt;
       track->chisq = fitter->GetChisq();
