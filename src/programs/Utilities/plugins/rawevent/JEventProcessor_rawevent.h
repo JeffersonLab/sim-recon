@@ -71,8 +71,8 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
 
                 // these routines read and fill the translation tables
                 static void readTranslationTable(void);
-                static void startElement(void *userData, const char *xmlname, const char **atts);
-                static void endElement(void *userData, const char *xmlname);
+                static void StartElement(void *userData, const char *xmlname, const char **atts);
+                static void EndElement(void *userData, const char *xmlname);
 
 
                 // these routines access the translation tables
