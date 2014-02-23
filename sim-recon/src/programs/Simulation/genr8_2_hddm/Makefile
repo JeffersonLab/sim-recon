@@ -1,7 +1,0 @@
-
-PACKAGES = ROOT
-
-ADDITIONAL_MODULES = HDDM
-
-include $(HALLD_HOME)/src/BMS/Makefile.bin
-

@@ -14,32 +14,31 @@
 
 #include <stdint.h>
 
+// Doxygen documentation
+/** 
+ This plugin is designed to make root trees of low level data from the DAQ.
+ Each low level data type will have its own tree in the file.
+ Each event and each channel is a new entry in the tree.
 
-//-----------------------------------------
-/// This plugin is designed to make root trees of low level data from the DAQ.
-/// Each low level data type will have its own tree in the file.
-/// Each event and each channel is a new entry in the tree.
-///
-/// Trees will be named after the low level data type used to fill them.
-/// Currently the trees that are produced are:
-///   Df250WindowRawData
-/// The trees that will be supported is:
-///   Df125PulseIntegral
-///   Df125PulseTime
-///   Df125TriggerTime
-///   DF1TDCHit
-///   DF1TDCTriggerTime
-///   Df250PulseIntegral
-///   Df250PulseRawData
-///   Df250PulseTime
-///   Df250StreamingRawData
-///   Df250TriggerTime
-///   Df250WindowRawData
-///   Df250WindowSum
-///
-/// Wiki documentation can be found here:
-/// https://halldweb1.jlab.org/wiki/index.php/DAQTree_plugin
-//-----------------------------------------
+ Trees will be named after the low level data type used to fill them.
+ Currently the data types that are supported are: /n
+   Df250WindowRawData /n
+ The data types that will ultimately be supported are: /n
+   Df125PulseIntegral /n
+   Df125PulseTime /n
+   Df125TriggerTime /n
+   DF1TDCHit /n
+   DF1TDCTriggerTime /n
+   Df250PulseIntegral /n
+   Df250PulseRawData /n
+   Df250PulseTime /n
+   Df250StreamingRawData /n
+   Df250TriggerTime /n
+   Df250WindowRawData /n
+   Df250WindowSum /n
+
+ Wiki documentation can be found here: https://halldweb1.jlab.org/wiki/index.php/DAQTree_plugin
+*/
 
 class JEventProcessor_DAQTree:public jana::JEventProcessor{
 	public:
@@ -52,16 +51,17 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		uint32_t rocid;              ///< (from DDAQAddress) Crate number
 		uint32_t slot;               ///< (from DDAQAddress) Slot number in crate
 		uint32_t channel;            ///< (from DDAQAddress) Channel number in slot
-/// (from DDAQAddress) Trigger number for cases when this hit was read in a multi-event block (from DDAQAddress)
-		uint32_t itrigger; 
+		uint32_t itrigger;           ///< (from DDAQAddress) Trigger number for cases when this hit was read in a multi-event block (from DDAQAddress)
 		vector<uint32_t> waveform;   ///< STL vector of samples in the waveform for the event
 		uint32_t nsamples;           ///< Number of samples in the waveform
 		uint32_t w_integral;         ///< Sum of all samples in the waveform
 		uint32_t w_min;              ///< Minimum sample in the waveform
 		uint32_t w_max;              ///< Maximum sample in the waveform
-/// First sample in the waveform  (for simple analysis in case the STL vector is difficult to access)
-		uint32_t w_samp1;            
+		uint32_t w_samp1;            ///< First sample in the waveform  (for simple analysis in case the STL vector is difficult to access)
 
+		TTree *Df250PulseIntegral_tree;
+		uint32_t f250PI_channelnum;    ///< Arbitrary global channel number (sorted by crate, slot, channel)
+		uint32_t f250PI_eventnum;      ///< Event number	
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

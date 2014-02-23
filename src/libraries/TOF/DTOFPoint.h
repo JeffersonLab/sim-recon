@@ -23,11 +23,11 @@ class DTOFPoint:public JObject{
 		  float tErr; //uncertainty on reconstructed time
 
 		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "x", "%1.9f", pos.x());
-			AddString(items, "y", "%1.9f", pos.y());
-			AddString(items, "z", "%1.9f", pos.z());
-			AddString(items, "t", "%1.9f", t);
-			AddString(items, "dE", "%1.9f", dE);
+			AddString(items, "x", "%1.3f", pos.x());
+			AddString(items, "y", "%1.3f", pos.y());
+			AddString(items, "z", "%1.3f", pos.z());
+			AddString(items, "t", "%1.3f", t);
+			AddString(items, "dE", "%1.6f", dE);
 		}
 };
 

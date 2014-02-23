@@ -1,9 +1,0 @@
-
-
-The pi02hddm utility was written to convert an ascii file containing
-the 3 momentum components of generated pi0 events into an hddm file
-suitable as input to hdgeant.
-
-This was done initially for the simulating pi0 primakoff events as
-a normalization channel for the charged pion polarizability measurement.
-

@@ -710,6 +710,10 @@ inline static int Is_FinalStateParticle(Particle_t locPID)
 		case Proton:      return 1;
 		case AntiProton:  return 1;
 		case AntiNeutron: return 1;
+		case Deuteron:    return 1;
+		case Helium:      return 1;
+		case Triton:      return 1;
+		case Pb208:       return 1;
 		default: return 0; //decaying
 	}
 }

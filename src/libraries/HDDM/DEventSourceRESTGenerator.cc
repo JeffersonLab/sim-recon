@@ -24,6 +24,11 @@ const char* DEventSourceRESTGenerator::Description(void)
 //---------------------------------
 double DEventSourceRESTGenerator::CheckOpenable(std::string source)
 {
+	// Restrict HDDM files to having a ".hddm" suffix
+	string suffix = ".hddm";
+	if(source.length() < suffix.length()) return 0.0;
+	if(source.substr(source.length() - suffix.length()) != suffix) return 0.0;
+	
 	ifstream ifs(source.c_str());
    	if (!ifs.good()) {
 		return 0.0;

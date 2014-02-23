@@ -8,6 +8,7 @@
 #include "DTranslationTable.h"
 
 #include <expat.h>
+#include <sstream>
 
 #include <DAQ/DModuleType.h>
 
@@ -50,9 +51,23 @@ bool SortBCALDigiHit(const DBCALDigiHit *a, const DBCALDigiHit *b){
 //---------------------------------
 DTranslationTable::DTranslationTable(JEventLoop *loop)
 {
+	// Default is to just read translation table from CCDB. If this fails,
+	// then an attempt will be made to read from a file on the local disk.
+	// The filename can be specified to be anything, but if the user specifies
+	// this, then we assume that they want to use it and skip using the CCDB.
+	// They may also specify that they want to skip checking the CCDB via
+	// the "TT:NO_CCDB" parameter. This would only be useful if they want to
+	// force the use of a local file named "tt.xml".
+	NO_CCDB = false;
+	XML_FILENAME = "tt.xml";
+	gPARMS->SetDefaultParameter("TT:NO_CCDB", NO_CCDB, "Don't try getting translation table from CCDB and just look for file. Only useful if you want to force reading tt.xml. This is automatically set if you specify a different filename via the TT:XML_FILENAME parameter.");
+	JParameter *p = gPARMS->SetDefaultParameter("TT:XML_FILENAME", XML_FILENAME, "Fallback filename of translation table XML file. If set to non-default, CCDB will not be checked.");
+	if(p->GetDefault() != p->GetValue()) NO_CCDB = true;
+
+
 	// Read in Translation table. This will create DChannelInfo objects
 	// and store them in the "TT" map, indexed by csc_t objects
-	ReadTranslationTable();
+	ReadTranslationTable(loop->GetJCalibration());
 
 	// These are used to help the event source report which
 	// types of data it is capable of providing. For practical
@@ -376,7 +391,7 @@ static void EndElement(void *userData, const char *xmlname);
 //---------------------------------
 // ReadTranslationTable
 //---------------------------------
-void DTranslationTable::ReadTranslationTable(void)
+void DTranslationTable::ReadTranslationTable(JCalibration *jcalib)
 {
 	// It seems expat is not thread safe so we lock a mutex here and
 	// read in the translation table just once
@@ -386,8 +401,52 @@ void DTranslationTable::ReadTranslationTable(void)
 		return;
 	}
 
-	string translationTableName = "tt.xml";
-	jout << "Reading translation table " << translationTableName << endl;
+	// String to hold entire XML translation table
+	string tt_xml; 
+
+	// Try getting it from CCDB first
+	if(jcalib && !NO_CCDB){
+		map<string,string> tt;
+		string namepath = "Translation/DAQ2detector";
+		jout << "Reading translation table from calib DB: " << namepath << " ..." << endl;
+		jcalib->GetCalib(namepath, tt);
+		if(tt.size() != 1){
+			jerr << " Error: Unexpected translation table format!" <<endl;
+			jerr << "        tt.size()=" << tt.size() << " (expected 1)" <<endl;
+		}else{
+			// Copy table into tt string
+			map<string,string>::iterator iter = tt.begin();
+			tt_xml = iter->second;
+		}
+	}
+	
+	// If getting from CCDB fails, try just reading in local file
+	if(tt_xml.size() == 0){
+		if(!NO_CCDB) jout << "Unable to get translation table from CCDB." << endl;
+		jout << "Will try reading TT from local file: " << XML_FILENAME << endl;
+
+		// Open file
+		ifstream ifs(XML_FILENAME.c_str());
+		if(! ifs.is_open()){
+			jerr << " Error: Cannot open file! Translation table unavailable." << endl;
+			pthread_mutex_unlock(&tt_mutex);
+			return;
+		}
+		
+		// read lines into stringstream object 
+		stringstream ss;
+		while(ifs.good()){
+			char line[4096];
+			ifs.getline(line, 4096);
+			ss << line;
+		}
+
+		// Close file
+		ifs.close();
+		
+		// Copy from stringstream to tt
+		tt_xml = ss.str();
+	}
 	
 	// create parser and specify element handlers
 	XML_Parser xmlParser = XML_ParserCreate(NULL);
@@ -397,40 +456,19 @@ void DTranslationTable::ReadTranslationTable(void)
 	}
 	XML_SetElementHandler(xmlParser,StartElement,EndElement);
 	XML_SetUserData(xmlParser, &TT);
-	
-	// open and parse the file
-	FILE *f = fopen(translationTableName.c_str(),"r");
-	if(f!=NULL) {
-		int status,len;
-		bool done;
-		const int bufSize = 50000;
-		char *buf = new char[bufSize];
-		do {
-			len  = fread(buf,1,bufSize,f);
-			done = len!=bufSize;
-			status=XML_Parse(xmlParser,buf,len,done);
-			
-			if((!done)&&(status==0)) {
-				jerr << "  ?readTranslationTable...parseXMLFile parse error for " << translationTableName << endl;
-				jerr << XML_ErrorString(XML_GetErrorCode(xmlParser)) << endl;
-				fclose(f);
-				delete [] buf;
-				XML_ParserFree(xmlParser);
-				return;
-			}
-		} while (!done);
-		fclose(f);
-		delete [] buf;
-		jout << TT.size() << " channels defined in translation table" << endl;
-		
-	} else {
-		jerr << "  ?readTranslationTable...unable to open " << translationTableName << endl;
+
+	// Parse XML string
+	int status=XML_Parse(xmlParser, tt_xml.c_str(), tt_xml.size(), 1); // "1" indicates this is the final piece of XML
+	if(status==0) {
+		jerr << "  ?readTranslationTable...parseXMLFile parse error for " << XML_FILENAME << endl;
+		jerr << XML_ErrorString(XML_GetErrorCode(xmlParser)) << endl;
 	}
+	
+	jout << TT.size() << " channels defined in translation table" << endl;
 	XML_ParserFree(xmlParser);
 
 	pthread_mutex_unlock(&tt_mutex);
 	tt_initialized = true;
-
 }
 
 //---------------------------------

@@ -56,6 +56,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		deque<DParticleComboBlueprintStep*> dParticleComboBlueprintStepPool_All;
 		deque<DParticleComboBlueprintStep*> dParticleComboBlueprintStepPool_Available;
 
+		set<const JObject*> dCurrentComboSourceObjects;
+
 		unsigned int dDebugLevel;
 		size_t MAX_DParticleComboBlueprintStepPoolSize;
 

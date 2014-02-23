@@ -169,6 +169,9 @@ static int nomc2coda = 0;
 static int noroot    = 0;
 static int dumpmap   = 0;
 
+// Translation table
+bool NO_CCDB = false;  // try and read from CCDB by default
+string XML_FILENAME = "tt.xml"; // default filename for XML file if CCDB fails or is not used
 
 
 //----------------------------------------------------------------------------
@@ -196,6 +199,18 @@ bool operator==(cscRef a, cscRef b){
 // JEventProcessor_rawevent (Constructor) invoked once only
 JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
+	// Default is to just read translation table from CCDB. If this fails,
+	// then an attempt will be made to read from a file on the local disk.
+	// The filename can be specified to be anything, but if the user specifies
+	// this, then we assume that they want to use it and skip using the CCDB.
+	// They may also specify that they want to skip checking the CCDB via
+	// the "TT:NO_CCDB" parameter. This would only be useful if they want to
+	// force the use of a local file named "tt.xml".
+	gPARMS->SetDefaultParameter("TT:NO_CCDB", NO_CCDB, "Don't try getting translation table from CCDB and just look for file. Only useful if you want to force reading tt.xml. This is automatically set if you specify a different filename via the TT:XML_FILENAME parameter.");
+	JParameter *p = gPARMS->SetDefaultParameter("TT:XML_FILENAME", XML_FILENAME, "Fallback filename of translation table XML file. If set to non-default, CCDB will not be checked.");
+	if(p->GetDefault() != p->GetValue()) NO_CCDB = true;
+
+
   // get fileBase from command line params
   gPARMS->SetDefaultParameter("RAWEVENT:FILEBASE",fileBase);
 
@@ -222,6 +237,27 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
 
   // option to set run number
   gPARMS->SetDefaultParameter("RAWEVENT:RUNNUMBER",user_runNumber, "Override run number from input file with this one which will be written to every event in output file");
+
+}
+
+
+//----------------------------------------------------------------------------
+
+
+// ~JEventProcessor_rawevent (Destructor) once only
+JEventProcessor_rawevent::~JEventProcessor_rawevent() {
+  if(nomc2coda==0) {
+    mc2codaFree(expID);
+  }
+}
+
+
+//----------------------------------------------------------------------------
+
+
+// init called once-only at beginning, independent of the number of processing threads
+jerror_t JEventProcessor_rawevent::init(void) {
+
 
   // read translation table, fill crate id arrays
   readTranslationTable();
@@ -266,26 +302,6 @@ JEventProcessor_rawevent::JEventProcessor_rawevent() {
 		delete ofs;
 	}
   }
-
-}
-
-
-//----------------------------------------------------------------------------
-
-
-// ~JEventProcessor_rawevent (Destructor) once only
-JEventProcessor_rawevent::~JEventProcessor_rawevent() {
-  if(nomc2coda==0) {
-    mc2codaFree(expID);
-  }
-}
-
-
-//----------------------------------------------------------------------------
-
-
-// init called once-only at beginning, independent of the number of processing threads
-jerror_t JEventProcessor_rawevent::init(void) {
 
   // root histograms
   if(noroot==0) {
@@ -1141,46 +1157,78 @@ void JEventProcessor_rawevent::readTranslationTable(void) {
 
   jout << "Reading translation table " << translationTableName << endl;
 
-  // create parser and specify element handlers
-  XML_Parser xmlParser = XML_ParserCreate(NULL);
-  if(xmlParser==NULL) {
-    jerr << endl << endl << "readTranslationTable...unable to create parser" << endl << endl;
-    exit(EXIT_FAILURE);
-  }
-  XML_SetElementHandler(xmlParser,startElement,endElement);
+
+	// Get the calibration object
+	JCalibration *jcalib = japp->GetJCalibration(1);
+	
+	//--------------------------------------------------------------
+	// (this block cut and pasted from TTab/DTranslationTable.cc)
+	
+	// String to hold entire XML translation table
+	string tt_xml; 
+
+	// Try getting it from CCDB first
+	if(jcalib && !NO_CCDB){
+		map<string,string> tt;
+		string namepath = "Translation/DAQ2detector";
+		jout << "Reading translation table from calib DB: " << namepath << " ..." << endl;
+		jcalib->GetCalib(namepath, tt);
+		if(tt.size() != 1){
+			jerr << " Error: Unexpected translation table format!" <<endl;
+			jerr << "        tt.size()=" << tt.size() << " (expected 1)" <<endl;
+		}else{
+			// Copy table into tt string
+			map<string,string>::iterator iter = tt.begin();
+			tt_xml = iter->second;
+		}
+	}
+	
+	// If getting from CCDB fails, try just reading in local file
+	if(tt_xml.size() == 0){
+		if(!NO_CCDB) jout << "Unable to get translation table from CCDB." << endl;
+		jout << "Will try reading TT from local file: " << XML_FILENAME << endl;
+
+		// Open file
+		ifstream ifs(XML_FILENAME.c_str());
+		if(! ifs.is_open()){
+			jerr << " Error: Cannot open file! Translation table unavailable." << endl;
+			exit(-1);
+		}
+		
+		// read lines into stringstream object 
+		stringstream ss;
+		while(ifs.good()){
+			char line[4096];
+			ifs.getline(line, 4096);
+			ss << line;
+		}
+
+		// Close file
+		ifs.close();
+		
+		// Copy from stringstream to tt
+		tt_xml = ss.str();
+	}
+
+	// create parser and specify element handlers
+	XML_Parser xmlParser = XML_ParserCreate(NULL);
+	if(xmlParser==NULL) {
+		jerr << "readTranslationTable...unable to create parser" << endl;
+		exit(EXIT_FAILURE);
+	}
+	XML_SetElementHandler(xmlParser,StartElement,EndElement);
+
+	// Parse XML string
+	int status=XML_Parse(xmlParser, tt_xml.c_str(), tt_xml.size(), 1); // "1" indicates this is the final piece of XML
+	if(status==0) {
+		jerr << "  ?readTranslationTable...parseXMLFile parse error for " << XML_FILENAME << endl;
+		jerr << XML_ErrorString(XML_GetErrorCode(xmlParser)) << endl;
+	}
+
+	//--------------------------------------------------------------
 
 
-  // open and parse the file
-  FILE *f = fopen(translationTableName.c_str(),"r");
-  if(f!=NULL) {
-    int status,len;
-    bool done;
-    const int bufSize = 50000;
-    char *buf = new char[bufSize];
-    do {
-      len  = fread(buf,1,bufSize,f);
-      done = len!=bufSize;
-      status=XML_Parse(xmlParser,buf,len,done);
-
-      if((!done)&&(status==0)) {
-        jerr << endl << endl << endl << "  ?readTranslationTable...parseXMLFile parse error for " << translationTableName
-             << endl << endl << XML_ErrorString(XML_GetErrorCode(xmlParser))
-             << endl << endl << endl;
-        fclose(f);
-        delete [] buf;
-        XML_ParserFree(xmlParser);
-        return;
-      }
-    } while (!done);
-    fclose(f);
-    delete [] buf;
-    jout << endl << endl << " Successfully read translation table:  " << translationTableName << endl << endl << endl;
-
-  } else {
-    jerr << endl << endl << endl << "  ?readTranslationTable...unable to open " << translationTableName
-         << endl << endl << endl;
-  }
-  XML_ParserFree(xmlParser);
+   XML_ParserFree(xmlParser);
 }
 
 
@@ -1211,7 +1259,7 @@ int type2detID(string &type) {
 
 
 
-void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname, const char **atts) {
+void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname, const char **atts) {
   
   static int crate=0, slot=0;
 
@@ -1524,7 +1572,7 @@ void JEventProcessor_rawevent::startElement(void *userData, const char *xmlname,
 //--------------------------------------------------------------------------
 
 
-void JEventProcessor_rawevent::endElement(void *userData, const char *xmlname) {
+void JEventProcessor_rawevent::EndElement(void *userData, const char *xmlname) {
   // nothing to do yet...
 }
 

@@ -16,6 +16,7 @@ using namespace std;
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 #include <JANA/JEventLoop.h>
+#include <JANA/JCalibration.h>
 using namespace jana;
 
 #include <DAQ/DModuleType.h>
@@ -194,7 +195,7 @@ class DTranslationTable:public jana::JObject{
 		
 
 
-		void ReadTranslationTable(void);
+		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		
 		template<class T> void CopyToFactory(JEventLoop *loop, vector<T*> &v) const;
 		template<class T> void CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
@@ -202,6 +203,8 @@ class DTranslationTable:public jana::JObject{
 		template<class T> void CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const;
 
 	protected:
+		string XML_FILENAME;
+		bool NO_CCDB;
 		set<string> supplied_data_types;
 };
 

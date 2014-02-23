@@ -75,7 +75,7 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSe
 		cdchitsel= (TTree*)gROOT->FindObject("cdchitsel");
 		if(!cdchitsel){
 			cdchitsel = new TTree("cdchitsel", "CDC Hit Selector");
-			cdchitsel->Branch("H", &cdchitdbg, "fit_type/I:p/F:theta:mass:sigma:mom_factor:x:y:z:s:s_factor:itheta02:itheta02s:itheta02s2:dist:doca:resi:sigma_total:chisq:prob:sig_phi:sig_lambda:sig_pt");
+			cdchitsel->Branch("H", &cdchitdbg, "fit_type/I:p/F:theta:mass:sigma:x:y:z:s:itheta02:itheta02s:itheta02s2:dist:doca:resi:chisq:prob:sig_phi:sig_lambda:sig_pt");
 		}else{
 			_DBG__;
 			jerr<<" !!! WARNING !!!"<<endl;
@@ -90,7 +90,7 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSe
 		fdchitsel= (TTree*)gROOT->FindObject("fdchitsel");
 		if(!fdchitsel){
 			fdchitsel = new TTree("fdchitsel", "FDC Hit Selector");
-			fdchitsel->Branch("H", &fdchitdbg, "fit_type/I:p/F:theta:mass:sigma_anode:sigma_cathode:mom_factor_anode:mom_factor_cathode:x:y:z:s:s_factor_anode:s_factor_cathode:itheta02:itheta02s:itheta02s2:dist:doca:resi:u:u_cathodes:resic:sigma_anode_total:sigma_cathode_total:chisq:prob:prob_anode:prob_cathode:pull_anode:pull_cathode:sig_phi:sig_lambda:sig_pt");
+			fdchitsel->Branch("H", &fdchitdbg, "fit_type/I:p/F:theta:mass:sigma_anode:sigma_cathode:x:y:z:s:itheta02:itheta02s:itheta02s2:dist:doca:resi:u:u_cathodes:resic:chisq:prob:sig_phi:sig_lambda:sig_pt");
 		}else{
 			_DBG__;
 			jerr<<" !!! WARNING !!!"<<endl;
@@ -104,29 +104,6 @@ DTrackHitSelectorALT2::DTrackHitSelectorALT2(jana::JEventLoop *loop):DTrackHitSe
 
 		loop->GetJApplication()->Unlock();
 	}
-	
-	// Calibration constants
-	correction_parms_t &cp0 = correction_parms[0]; // miss endplate, helical
-	correction_parms_t &cp1 = correction_parms[1]; // miss endplate, wire-based
-	correction_parms_t &cp2 = correction_parms[2]; // hit endplate, helical
-	correction_parms_t &cp3 = correction_parms[3]; // hit endplate, wire-based
-	
-	// These values come from macros fitting single track data.
-	// The macros have names like "s_factor_candidates_anodes.C"
-	// This is temporary and these will eventually need to be moved
-	// to the CCDB one the technique is proven.
-	// 1/31/2011 DL
-	cp0.s1_anode=1.61482;    cp0.s2_anode=0.572955;
-	cp0.s1_cathode=1.59351;  cp0.s2_cathode=0.513831;
-	
-	cp1.s1_anode=1.35426;     cp1.s2_anode=0.594413;
-	cp1.s1_cathode=0.188271;  cp1.s2_cathode=0.21525;
-	
-	cp2.s1_anode=0.108834;    cp2.s2_anode=0.373974;
-	cp2.s1_cathode=0.257157;  cp2.s2_cathode=0.357933;
-	
-	cp3.s1_anode=-0.152481;    cp3.s2_anode=0.556112;
-	cp3.s1_cathode=-0.856589;  cp3.s2_cathode=0.0705065;
 
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
         bfield = dapp->GetBfield(); // this should be run number based!
@@ -169,14 +146,13 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
    
   // To estimate the impact of errors in the track momentum on the variance of the residual,
   // use a helical approximation.
-  //DVector3 origin=cdchits_in[0]->wire->origin;
-  DVector3 origin=rt->swim_steps[0].origin;
-  double Bz=bfield->GetBz(origin.X(),origin.Y(),origin.z());
-  double a=-0.003*Bz*rt->q;
-  double p=rt->swim_steps[0].mom.Mag();
+  const DReferenceTrajectory::swim_step_t *my_step=&rt->swim_steps[0];
+  double Bz0=my_step->B.z();
+  double a=-0.003*Bz0*rt->q;
+  double p=my_step->mom.Mag();
   double p_over_a=p/a;
   double a_over_p=1./p_over_a;
-  double lambda=M_PI_2-rt->swim_steps[0].mom.Theta();
+  double lambda=M_PI_2-my_step->mom.Theta();
   double cosl=cos(lambda);
   double sinl=sin(lambda);
   //double sinl2=sinl*sinl;
@@ -184,7 +160,7 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
   double tanl=tan(lambda);
   double tanl2=tanl*tanl;
   double pt_over_a=cosl*p_over_a;
-  double phi=rt->swim_steps[0].mom.Phi();
+  double phi=my_step->mom.Phi();
   double cosphi=cos(phi);
   double sinphi=sin(phi);
   
@@ -223,11 +199,12 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
     
+    // Position along trajectory
+    DVector3 pos=rt->GetLastDOCAPoint();
+    
     // Compensate for the fact that the field at the "origin" of the 
     // track does not correspond to the average Bz used to compute pt
-    double Bz_hit=bfield->GetBz(last_step->origin.x(),last_step->origin.y(),
-				last_step->origin.z());
-    double Bratio=Bz_hit/Bz;
+    double Bratio=last_step->B.z()/Bz0;
     double invBratio=1./Bratio;
     pt_over_a*=invBratio;
     p_over_a*=invBratio;
@@ -291,9 +268,9 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
     DVector3 dir=hit->wire->udir;
     double uz=dir.z();
     double z0=origin.z();
-    DVector3 wirepos=origin+(last_step->origin.z()-z0)/uz*dir;
-    double dd_dx=(last_step->origin.x()-wirepos.x())/doca;
-    double dd_dy=(last_step->origin.y()-wirepos.y())/doca;
+    DVector3 wirepos=origin+(pos.z()-z0)/uz*dir;
+    double dd_dx=(pos.x()-wirepos.x())/doca;
+    double dd_dy=(pos.y()-wirepos.y())/doca;
     double var_d=dd_dx*dd_dx*var_x+dd_dy*dd_dy*var_y;
 
     double chisq=resi*resi/(var+var_d);
@@ -309,26 +286,21 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
 
     // Optionally fill debug tree
     if(cdchitsel){
-      DVector3 pos = rt->GetLastDOCAPoint();
-      
       cdchitdbg.fit_type = fit_type;
       cdchitdbg.p = p;
       cdchitdbg.theta = rt->swim_steps[0].mom.Theta();
       cdchitdbg.mass = mass;
       cdchitdbg.sigma = sqrt(var);
-      // cdchitdbg.mom_factor = mom_factor;
       cdchitdbg.x = pos.X();
       cdchitdbg.y = pos.Y();
       cdchitdbg.z = pos.Z();
       cdchitdbg.s = s;
-      // cdchitdbg.s_factor = s_factor;
-      //cdchitdbg.itheta02 = last_step->itheta02;
-      //cdchitdbg.itheta02s = last_step->itheta02s;
-      //cdchitdbg.itheta02s2 = last_step->itheta02s2;
+      cdchitdbg.itheta02 = last_step->itheta02;
+      cdchitdbg.itheta02s = last_step->itheta02s;
+      cdchitdbg.itheta02s2 = last_step->itheta02s2;
       cdchitdbg.dist = dist;
       cdchitdbg.doca = doca;
       cdchitdbg.resi = resi;
-      // cdchitdbg.sigma_total = sigma_total;
       cdchitdbg.chisq = chisq;
       cdchitdbg.prob = probability;
       cdchitdbg.sig_phi=sqrt(var_phi);
@@ -336,33 +308,6 @@ void DTrackHitSelectorALT2::GetCDCHits(fit_type_t fit_type, const DReferenceTraj
       cdchitdbg.sig_pt=sqrt(var_pt_over_pt_sq);	
 
       cdchitsel->Fill();
-      
-      static bool printed_first = false;
-      if(!printed_first){
-	_DBG_<<"=== Printing first entry for CDC hit selector debug tree ==="<<endl;
-	_DBG_<<"   fit_type = "<<cdchitdbg.fit_type<<endl;
-	_DBG_<<"          p = "<<cdchitdbg.p<<endl;
-	_DBG_<<"      theta = "<<cdchitdbg.theta<<endl;
-	//_DBG_<<"       mass = "<<cdchitdbg.mass<<endl;
-	_DBG_<<"      sigma = "<<cdchitdbg.sigma<<endl;
-	//_DBG_<<" mom_factor = "<<cdchitdbg.mom_factor<<endl;
-	_DBG_<<"          x = "<<cdchitdbg.x<<endl;
-	_DBG_<<"          y = "<<cdchitdbg.y<<endl;
-	_DBG_<<"          z = "<<cdchitdbg.z<<endl;
-	_DBG_<<"          s = "<<cdchitdbg.s<<endl;
-	//  _DBG_<<"   s_factor = "<<cdchitdbg.s_factor<<endl;
-	//_DBG_<<"   itheta02 = "<<cdchitdbg.itheta02<<endl;
-	//_DBG_<<"  itheta02s = "<<cdchitdbg.itheta02s<<endl;
-	//_DBG_<<" itheta02s2 = "<<cdchitdbg.itheta02s2<<endl;
-	_DBG_<<"       dist = "<<cdchitdbg.dist<<endl;
-	_DBG_<<"       doca = "<<cdchitdbg.doca<<endl;
-	_DBG_<<"       resi = "<<cdchitdbg.resi<<endl;
-	//_DBG_<<"sigma_total = "<<cdchitdbg.sigma_total<<endl;
-	_DBG_<<"      chisq = "<<cdchitdbg.chisq<<endl;
-	_DBG_<<"       prob = "<<cdchitdbg.prob<<endl;
-	
-	printed_first = true;
-      }
     }
     
     if(HS_DEBUG_LEVEL>10){
@@ -409,22 +354,20 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   /// and the distance along the wire.
   
   // The variance on the residual due to measurement error.
-  // For the kHelical case the distribution of docas to the wire is roughly
-  // triangular (i.e., docas close to the wire are favored.)
-  double var_anode = (fit_type==kHelical)?0.25/18.:0.25*ONE_OVER_12; // scale factor reflects field-sense wire separation
-  double var_cathode =(fit_type==kHelical)?0.1024*ONE_OVER_12:0.0004; // scale factor reflects maximum lorentz deflection if fit_type=kHelical
-      
+  double var_anode = 0.25*ONE_OVER_12; // scale factor reflects field-sense wire separation
+  double var_cathode = 0.000225; 
+
   // To estimate the impact of errors in the track momentum on the variance of the residual,
   // use a helical approximation. 
-  DVector3 origin=rt->swim_steps[0].origin;
-  double z0=origin.z();
-  double Bz=bfield->GetBz(origin.X(),origin.Y(),z0);
-  double a=-0.003*Bz*rt->q;
-  double p=rt->swim_steps[0].mom.Mag();
+  const DReferenceTrajectory::swim_step_t *my_step=&rt->swim_steps[0];
+  double Bz0=my_step->B.z();
+  double z0=my_step->origin.z();
+  double a=-0.003*Bz0*rt->q;
+  double p=my_step->mom.Mag();
   double p_sq=p*p;
   double p_over_a=p/a;
   double a_over_p=1./p_over_a;
-  double lambda=M_PI_2-rt->swim_steps[0].mom.Theta();
+  double lambda=M_PI_2-my_step->mom.Theta();
   double cosl=cos(lambda);
   double cosl2=cosl*cosl;
   double sinl=sin(lambda);
@@ -432,16 +375,15 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
   double tanl=tan(lambda);
   double tanl2=tanl*tanl;
   double pt_over_a=cosl*p_over_a;
-  double phi=rt->swim_steps[0].mom.Phi();
+  double phi=my_step->mom.Phi();
   double cosphi=cos(phi);
   double sinphi=sin(phi);
   double var_lambda=0.,var_phi=0.,var_lambda_res=0.;
   double mass=rt->GetMass();
-      
-  double var_z0=2.*tanl2*var_cathode*double(2*N-1)/double(N*(N+1));
+
   double var_x0=0.01,var_y0=0.01; 
   double var_pt_over_pt_sq=0.;
-  
+
   // Loop over hits
   bool most_downstream_hit=true;
   vector<const DFDCPseudo*>::const_reverse_iterator iter;
@@ -458,11 +400,10 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     if (doca>MAX_DOCA)continue;
 
     const DReferenceTrajectory::swim_step_t *last_step = rt->GetLastSwimStep();
- 
+     
     // Position along trajectory
-    double x=last_step->origin.x();
-    double y=last_step->origin.y();
-    double z=last_step->origin.z();
+    DVector3 pos=rt->GetLastDOCAPoint();
+    double dz=pos.z()-z0;
 
     // Direction variables for wire
     double cosa=hit->wire->udir.y();
@@ -472,7 +413,7 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     double u=rt->GetLastDistAlongWire();
     double u_cathodes = hit->s;
     double resic = u - u_cathodes;
-    
+
     // Get "measured" distance to wire.
     // For matching purposes this is assumed to be half a cell size
     double dist=0.25;
@@ -485,160 +426,130 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
     double alpha=atan(tu);
     double cosalpha=cos(alpha);
 
+    // Compensate for the fact that the field at the "origin" of the 
+    // track does not correspond to the average Bz used to compute pt
+    double Bz=last_step->B.z();
+    double Bratio=Bz/Bz0;
+    double invBratio=1./Bratio;
+    pt_over_a*=invBratio;
+    p_over_a*=invBratio;
+    a_over_p*=Bratio;
+
     // Anode Residual
     double resi = dist - doca/cosalpha;
 
     // Initialize some probability-related variables needed later
     double probability=0.,chisq=0.;
  
-    if (fit_type==kWireBased){
+    if (fit_type!=kHelical){
       // Correct for deflection of avalanche position due to Lorentz force
-      double Bx,By,Bz;
-      bfield->GetField(x,y,z,Bx,By,Bz);
-      double sign=(x*cosa-y*sina-hit->w)<0?1:-1.;	
-      double ucor=0.153*Bz*(1.-0.048*sqrt(Bx*Bx+By*By))*sign*doca;
+      double sign=(pos.x()*cosa-pos.y()*sina-hit->w)<0?1:-1.;	
+      double ucor=0.1458*Bz*(1.-0.048*last_step->B.Perp())*sign*doca;
       resic-=ucor;
-
-      // Calculate chisq
-      chisq = resi*resi/var_anode+resic*resic/var_cathode;
-      
-      // Probability of this hit being on the track
-      probability = TMath::Prob(chisq,2);
-
     }
-
-    // Deal with the kHelical case
-    if (fit_type==kHelical){     
-      double dz=z-z0;
+    else{   
+      // Cathode variance due to Lorentz deflection
+      double max_deflection=0.1458*Bz*(1.-0.048*last_step->B.Perp())*0.5;
+      var_cathode=max_deflection*max_deflection/3.;
+    }
       
-      // The following is a correction to take into account that for the 
-      // kHelical case, empirically there is a bias of the doca toward the 
-      // wire...
-      resi+=0.25/3.;
+    // Variance in angles due to multiple scattering
+    var_lambda = last_step->itheta02;
+    var_phi=var_lambda*(1.+tanl2);
 
-      // Compensate for the fact that the field at the "origin" of the 
-      // track does not correspond to the average Bz used to compute pt
-      double Bz_hit=bfield->GetBz(x,y,z);
-      double Bratio=Bz_hit/Bz;
-      double invBratio=1./Bratio;
-      pt_over_a*=invBratio;
-      p_over_a*=invBratio;
-      a_over_p*=Bratio;
+    if (most_downstream_hit){
+      // Fractional variance in the curvature k due to resolution and multiple scattering
+      double s_sq=s*s;
+      double var_k_over_k_sq_res=var_cathode*p_over_a*p_over_a
+	*0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
       
-      // Variance in angles due to multiple scattering
-      var_lambda = last_step->itheta02;
-      var_phi=var_lambda*(1.+tanl2);
-      
-      // Include uncertainty in phi due to uncertainty in the center of the 
-      // circle. 
-      double var_xc=0.125*(1.+0.0005/(cosl2*cosl2+EPS));
-      var_phi+=var_xc/(pt_over_a*pt_over_a);
-
-      if (most_downstream_hit){
-	// Fractional variance in the curvature k due to resolution and multiple scattering
-	double s_sq=s*s;
-	double var_k_over_k_sq_res=var_cathode*p_over_a*p_over_a
-	  *0.0720/double(N+4)/(s_sq*s_sq)/cosl2;
 	
-	double one_over_beta=sqrt(1.+mass*mass/p_sq);
-	double var_pt_factor=0.016*one_over_beta/(cosl*0.003*Bz_hit);
-	double var_k_over_k_sq_ms=var_pt_factor*var_pt_factor*last_step->invX0/s;
-	// Fractional variance in pt
-	var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
+       double one_over_beta=sqrt(1.+mass*mass/p_sq);
+       double var_pt_factor=0.016*one_over_beta/(cosl*0.003*last_step->B.z());
+       double var_k_over_k_sq_ms=var_pt_factor*var_pt_factor*last_step->invX0/s;
+       // Fractional variance in pt
+       var_pt_over_pt_sq=var_k_over_k_sq_ms+var_k_over_k_sq_res;
 	
-	// Variance in dip angle due to measurement error	      
-	var_lambda_res=12.0*var_cathode*double(N-1)/double(N*(N+1))
-	  *sinl2*sinl2/s_sq;
-      
-	most_downstream_hit=false;
-      }
-      
-      // Include error in lambda due to measurements
-      var_lambda+=var_lambda_res;
-      
-      // Variance in position due to multiple scattering
-      double var_pos_ms=last_step->itheta02s2/48.;
-	     
-      // Variances in x and y due to uncertainty in track parameters
-      double as_over_p=s*a_over_p;
-      double sin_as_over_p=sin(as_over_p);
-      double cos_as_over_p=cos(as_over_p);
-      double one_minus_cos_as_over_p=1-cos_as_over_p;
-      double diff1=sin_as_over_p-as_over_p*cos_as_over_p;
-      double diff2=one_minus_cos_as_over_p-as_over_p*sin_as_over_p;
-      double pdx_dp=pt_over_a*(cosphi*diff1-sinphi*diff2);
-      double dx_ds=cosl*(cosphi*cos_as_over_p-sinphi*sin_as_over_p);
-      double ds_dcosl=dz*cosl/(sinl*sinl2);
-      double dx_dcosl
-	=p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p)
-	+dx_ds*ds_dcosl;
-      double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);
-      double var_x=var_x0+pdx_dp*pdx_dp*var_pt_over_pt_sq+var_pos_ms
-	+dx_dcosl*dx_dcosl*sinl2*var_lambda+dx_dphi*dx_dphi*var_phi
-	+dx_ds*dx_ds*var_z0/sinl2;
-      
-      double pdy_dp=pt_over_a*(sinphi*diff1+cosphi*diff2);
-      double dy_ds=cosl*(sinphi*cos_as_over_p+cosphi*sin_as_over_p);
-      double dy_dcosl
-	=p_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p)
-	+dy_ds*ds_dcosl;
-      double dy_dphi=pt_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
-      double var_y=var_y0+pdy_dp*pdy_dp*var_pt_over_pt_sq+var_pos_ms
-	+dy_dcosl*dy_dcosl*sinl2*var_lambda+dy_dphi*dy_dphi*var_phi
-	+dy_ds*dy_ds*var_z0/sinl2;
-      
-      // The following code attempts to address issues with dealing with very 
-      // shallow tracks
-      /*
-	if (fit_type==kHelical){
-	double var_empirical=1e-7*s*s/cosl2;
-	var_y+=var_empirical;
-	var_x+=var_empirical;
-	}
-      */
-      
-      // Rotate from global coordinate system into FDC local system
-      double cos2a=cosa*cosa;
-      double sin2a=sina*sina;
-      double var_d=(cos2a*var_x+sin2a*var_y)/(cosalpha*cosalpha);
-      double var_u=cos2a*var_y+sin2a*var_x;
+       // Variance in dip angle due to measurement error
+       var_lambda_res=12.0*var_cathode*double(N-1)/double(N*(N+1))
+	 *sinl2*sinl2/s_sq;
+       
+       most_downstream_hit=false;
+    }
     
-      // Calculate chisq
-      chisq = resi*resi/(var_d+var_anode)+resic*resic/(var_u+var_cathode);
+    // Include error in lambda due to measurements
+    var_lambda+=var_lambda_res;
+    
+    // Variance in position due to multiple scattering
+    double var_pos_ms=last_step->itheta02s2/48.;
 
-      //chisq=resic*resic/(var_u+var_cathode);
-      //chisq = resi*resi/(var_d+var_anode);
-      
-      // Probability of this hit being on the track
-      probability = TMath::Prob(chisq,2);
+    // Variances in x and y due to uncertainty in track parameters
+    double as_over_p=s*a_over_p;
+    double sin_as_over_p=sin(as_over_p);
+    double cos_as_over_p=cos(as_over_p);
+    double one_minus_cos_as_over_p=1-cos_as_over_p;
+    double diff1=sin_as_over_p-as_over_p*cos_as_over_p;
+    double diff2=one_minus_cos_as_over_p-as_over_p*sin_as_over_p;
+    double pdx_dp=pt_over_a*(cosphi*diff1-sinphi*diff2);
+    double dx_ds=cosl*(cosphi*cos_as_over_p-sinphi*sin_as_over_p);
+    double ds_dcosl=dz*cosl/(sinl*sinl2);
+    double dx_dcosl
+      =p_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p)
+      +dx_ds*ds_dcosl;
+    double dx_dphi=-pt_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p);  
+    double var_z0=2.*tanl2*var_cathode*double(2*N-1)/double(N*(N+1));
+   
+    double var_x=var_x0+pdx_dp*pdx_dp*var_pt_over_pt_sq+var_pos_ms
+      +dx_dcosl*dx_dcosl*sinl2*var_lambda+dx_dphi*dx_dphi*var_phi
+      +dx_ds*dx_ds*var_z0/sinl2;
+    
+    double pdy_dp=pt_over_a*(sinphi*diff1+cosphi*diff2);
+    double dy_ds=cosl*(sinphi*cos_as_over_p+cosphi*sin_as_over_p);
+    double dy_dcosl
+      =p_over_a*(sinphi*sin_as_over_p+cosphi*one_minus_cos_as_over_p)
+      +dy_ds*ds_dcosl;
+    double dy_dphi=pt_over_a*(cosphi*sin_as_over_p-sinphi*one_minus_cos_as_over_p);
+    double var_y=var_y0+pdy_dp*pdy_dp*var_pt_over_pt_sq+var_pos_ms
+      +dy_dcosl*dy_dcosl*sinl2*var_lambda+dy_dphi*dy_dphi*var_phi
+      +dy_ds*dy_ds*var_z0/sinl2;
+
+    // Rotate from global coordinate system into FDC local system
+    double cos2a=cosa*cosa;
+    double sin2a=sina*sina;
+    double var_d=(cos2a*var_x+sin2a*var_y)/(cosalpha*cosalpha);
+    double var_u=cos2a*var_y+sin2a*var_x;    
+
+    if (fit_type!=kHelical){ 
+      // Factors take into account improved resolution after wire-based fit
+      var_d*=0.1;
+      var_u*=0.1;
     }
 
-
+    // Calculate chisq
+    chisq = resi*resi/(var_d+var_anode)+resic*resic/(var_u+var_cathode);
+    
+    // Probability of this hit being on the track
+    probability = TMath::Prob(chisq,2);
+  
     if(probability>=MIN_HIT_PROB_FDC){
       pair<double,const DFDCPseudo*>myhit;
       myhit.first=probability;
       myhit.second=hit;
       fdchits_tmp.push_back(myhit);
     }
-    
+      
     // Optionally fill debug tree
     if(fdchitsel){
-      DVector3 pos = rt->GetLastDOCAPoint();
-		
       fdchitdbg.fit_type = fit_type;
       fdchitdbg.p = p;
       fdchitdbg.theta = rt->swim_steps[0].mom.Theta();
       fdchitdbg.mass = mass;
       fdchitdbg.sigma_anode = sqrt(var_anode);
       fdchitdbg.sigma_cathode = sqrt(var_cathode);
-      //fdchitdbg.mom_factor_anode = mom_factor_anode;
-      //fdchitdbg.mom_factor_cathode = mom_factor_cathode;
       fdchitdbg.x = pos.X();
       fdchitdbg.y = pos.Y();
       fdchitdbg.z = pos.Z();
       fdchitdbg.s = s;
-      //fdchitdbg.s_factor_anode = s_factor_anode;
-      //fdchitdbg.s_factor_cathode = s_factor_cathode;
       fdchitdbg.itheta02 = last_step->itheta02;
       fdchitdbg.itheta02s = last_step->itheta02s;
       fdchitdbg.itheta02s2 = last_step->itheta02s2;
@@ -648,16 +559,8 @@ void DTrackHitSelectorALT2::GetFDCHits(fit_type_t fit_type, const DReferenceTraj
       fdchitdbg.u = u;
       fdchitdbg.u_cathodes = u_cathodes;
       fdchitdbg.resic = resic;
-      //fdchitdbg.sigma_anode_total = sigma_anode_total;
-      //fdchitdbg.sigma_cathode_total = sigma_cathode_total;
       fdchitdbg.chisq = chisq;
       fdchitdbg.prob = probability;
-      //double pull_anode = resi/sigma_anode_total;
-      //double pull_cathode = resic/sigma_cathode_total;
-      //fdchitdbg.prob_anode = TMath::Prob(pull_anode*pull_anode, 1);
-      //  fdchitdbg.prob_cathode = TMath::Prob(pull_cathode*pull_cathode, 1);
-      //fdchitdbg.pull_anode = pull_anode;
-      //fdchitdbg.pull_cathode = pull_cathode;
       fdchitdbg.sig_phi=sqrt(var_phi);
       fdchitdbg.sig_lambda=sqrt(var_lambda);
       fdchitdbg.sig_pt=sqrt(var_pt_over_pt_sq);

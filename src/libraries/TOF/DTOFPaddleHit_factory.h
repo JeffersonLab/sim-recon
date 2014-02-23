@@ -17,6 +17,7 @@
 #include "JANA/JParameterManager.h"
 #include "JANA/JEventLoop.h"
 #include "DTOFPaddleHit.h"
+#include "DTOFGeometry.h"
 
 using namespace jana;
 
@@ -40,6 +41,10 @@ class DTOFPaddleHit_factory:public JFactory<DTOFPaddleHit>{
   double HALFPADDLE;
   double E_THRESHOLD;
   double ATTEN_LENGTH;
+  double ENERGY_ATTEN_FACTOR;
+  double TIME_COINCIDENCE_CUT;
+
+  vector <const DTOFGeometry*> TOFGeom;
 
  protected:
   //jerror_t init(void);					///< Called once at program start.
