@@ -1,0 +1,6 @@
+
+
+Import('*')
+
+env.Install(env.subst('$INCDIR'), env.Glob('*.h*'))
+

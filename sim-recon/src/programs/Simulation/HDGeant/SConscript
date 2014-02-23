@@ -1,0 +1,29 @@
+
+import os
+import sbms
+
+Import('*')
+
+# Verify CERN environment variable is set
+if os.getenv('CERN', 'nada')=='nada':
+	if env.Dir('.').srcnode().abspath.startswith(env.GetLaunchDir()):
+		print '============================================================'
+		print 'CERN environment variable not set. Skipping build of HDGeant'
+		print '============================================================'
+
+else:
+
+	# get env object and clone it
+	env = env.Clone()
+
+	SConscript(dirs=['gelhad', 'hitutil'], exports='env osname', duplicate=0)
+
+	env.AppendUnique(LIBS      = ['hddsGeant3', 'gelhad', 'hitutil'])
+
+	sbms.AddCERNLIB(env)
+	sbms.AddDANA(env)
+	sbms.AddROOT(env)
+
+	env.AppendUnique(CPPPATH = '#libraries/HDDM')
+
+	sbms.executables(env)

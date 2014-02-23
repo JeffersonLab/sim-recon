@@ -1,0 +1,8 @@
+
+
+CFLAGS += -I$(XERCESCROOT)/include
+CXXFLAGS +=  -I$(XERCESCROOT)/include
+MISC_LIBS += -L$(XERCESCROOT)/lib -lxerces-c
+
+# If using xerces 3, uncomment the following line
+#CXXFLAGS += -DXERCES3=1

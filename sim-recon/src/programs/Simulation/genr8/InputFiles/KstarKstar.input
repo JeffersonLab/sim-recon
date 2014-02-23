@@ -1,0 +1,91 @@
+%  Input key file for X-> omega + eta
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ***Mass, Energy, and Momentum are in GeV's ***
+% Any number of blank spaces (no tabs or returns) 
+% can be used between input values in an input line.
+%
+%%%%%%%%%%%%%%%%% Start Input Values %%%%%%%%%%%%%%%%%%%%
+% beamp.x beamp.y beamp.z beamMass  
+0 0 8 0
+% targetp.x targetp.y targetp.z targetMass
+0 0 0 0.938
+%  
+%  t-channelSlope
+	5.0
+% number of particles needed to describe the isobar decay of X and Y
+8
+% particle# child1# child2# parent# Id ndau mass   width  charge flag
+% baryon decay
+  0         *       *       *       14  0    0.938    0     +1    11
+% meson decay 
+  1         2       3       *       0  2    2.2    0.150  0      00
+  3         4       7       1       0  2    0.890  0.050  0      01
+  2         5       6       1       0  2    0.890  0.050  0      01
+  4         *       *       3       11 0    0.494  0.000  +1     10
+  5         *       *       2       12 0    0.494  0.000  -1     10
+  6         *       *       2       8  0    0.140  0.000  +1     10
+  7         *       *       3       9  0    0.140  0.000  -1     10
+!EOI 
+%%%%%%%%%%%%%%%%%%%%% End Input Values %%%%%%%%%%%%%%%%%%%%%%%
+% for narrow widths particles(stable to strong interactions) 
+%  set width to zero (i.e. eta, pi's).
+%
+% flag 00 =isobar or resonace
+%flag  01 = production particle that decays i.e. eta, pizero ..
+%flag  11 = production particle that does not decay i.e. piplus,...
+%flag  10 = final state particle not in production i.e. gamma
+%
+%
+%  Particle Id information defined in particleType.h
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% These constants are defined to be same as GEANT.  
+% See http://wwwcn.cern.ch/asdoc/geant/H2GEANTCONS300.html
+% for more details.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Unknown        =  0,
+%  Gamma          =  1,
+%  Positron       =  2,
+%  Electron       =  3,
+%  Neutrino       =  4,
+%  MuonPlus       =  5,
+%  MuonMinus      =  6,
+%  Pi0            =  7,
+%  PiPlus         =  8,
+%  PiMinus        =  9,
+%  KLong          = 10,
+%  KPlus          = 11,
+%  KMinus         = 12,
+%  Neutron        = 13,
+%  Proton         = 14,
+%  AntiProton     = 15,
+%  KShort         = 16,
+%  Eta            = 17,
+%  Lambda         = 18,
+%  SigmaPlus      = 19,
+%  Sigma0         = 20,
+%  SigmaMinus     = 21,
+%  Xi0            = 22,
+%  XiMinus        = 23,
+%  OmegaMinus     = 24,
+%  AntiNeutron    = 25,
+%  AntiLambda     = 26,
+%  AntiSigmaMinus = 27,
+%  AntiSigma0     = 28,
+%  AntiSigmaPlus  = 29,
+%  AntiXi0        = 30,
+%  AntiXiPlus     = 31,
+%  AntiOmegaPlus  = 32,
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+%%%% extra constants not defined by GEANT 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%  Rho0           = 57,
+%  RhoPlus        = 58,
+%  RhoMinus       = 59,
+%  omega          = 60,
+%  EtaPrime       = 61,
+%  phiMeson       = 62
+%
+%
+
