@@ -1609,6 +1609,8 @@ bool DTrackCandidate_factory_CDC::Build_TrackCircles(deque<DCDCTrackCircle*>& lo
 		cout << "post circle fit" << endl;
 		Print_TrackCircles(locCDCTrackCircles);
 	}
+
+	return true;
 }
 
 //-----------------
