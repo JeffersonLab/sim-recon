@@ -152,7 +152,11 @@ CXXFLAGS	+= -O$(OPTIMIZE)
 ifndef MODULE_NAME
  MODULE_NAME = $(shell basename $(shell pwd))
 endif
-LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
+ifeq ($(MODULE_NAME), JANA)
+  LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME).a
+else
+  LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
+endif
 
 # Include platform specific definitions
 # (the "-" at the front means don't error if the file doesn't exist)
