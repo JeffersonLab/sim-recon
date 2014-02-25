@@ -12,6 +12,8 @@
 #include <deque>
 using namespace std;
 
+#include "TDirectory.h"
+
 #include <JANA/JFactory.h>
 using namespace jana;
 
@@ -196,9 +198,8 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		void Link_RingSeeds(deque<DCDCRingSeed*>& parent, ringiter ring, ringiter ringend, unsigned int locSuperLayer, unsigned int locNumPreviousRingsWithoutHit);
 		double MinDist2(const DCDCRingSeed& locInnerRingSeed, const DCDCRingSeed& locOuterRingSeed);
 		double MinDist2(const deque<DCDCTrkHit*>& locInnerSeedHits, const deque<DCDCTrkHit*>& locOuterSeedHits);
-		void Reject_SuperLayerSeeds_HighHitDensity(unsigned int locSuperLayer);
+		void Reject_SuperLayerSeeds_HighSeedDensity(unsigned int locSuperLayer);
 		void Calc_SuperLayerPhiRange(DCDCSuperLayerSeed* locSuperLayerSeed, double& locSeedFirstPhi, double& locSeedLastPhi);
-		void Mark_SeedsForRejection(unsigned int locSuperLayer, int locFirstBin, int locLastBin, double bin_width, const map<unsigned int, pair<double, double> >& locMapPhiRanges, set<unsigned int>& locSeedsToReject);
 		bool Check_IfPhiRangesOverlap(double locFirstSeedPhi, double locLastSeedPhi, double locTargetFirstPhi, double locTargetLastPhi);
 
 		// Search for spirals
@@ -220,13 +221,14 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		bool Check_IfShouldAttemptLink(const DCDCSuperLayerSeed* locSuperLayerSeed, bool locInnerSeedFlag);
 		bool Attempt_SeedLink(DCDCSuperLayerSeed* locSuperLayerSeed1, DCDCSuperLayerSeed* locSuperLayerSeed2);
 		bool Attempt_SeedLink(DCDCRingSeed& locRingSeed1, DCDCRingSeed& locRingSeed2, wire_direction_t locWireDirection1, wire_direction_t locWireDirection2);
+		void Recycle_DCDCTrackCircle(DCDCTrackCircle* locCDCTrackCircle);
 
 		// Continue DCDCTrackCircle Creation
 		void Print_TrackCircles(deque<DCDCTrackCircle*>& locCDCTrackCircles);
 		void Print_TrackCircle(DCDCTrackCircle* locCDCTrackCircle);
 		void Reject_DefiniteSpiralArms(deque<DCDCTrackCircle*>& locCDCTrackCircles);
 		void Drop_IncompleteGroups(deque<DCDCTrackCircle*>& locCDCTrackCircles);
-		void Fit_Circles(deque<DCDCTrackCircle*>& locCDCTrackCircles, bool locFitOnlyIfNullFitFlag, bool locAddStereoLayerIntersectionsFlag);
+		void Fit_Circles(deque<DCDCTrackCircle*>& locCDCTrackCircles, bool locFitOnlyIfNullFitFlag, bool locAddStereoLayerIntersectionsFlag, bool locFitDuringLinkingFlag = false);
 		DVector3 Find_IntersectionBetweenSuperLayers(const DCDCSuperLayerSeed* locInnerSuperLayerSeed, const DCDCSuperLayerSeed* locOuterSuperLayerSeed);
 
 		// Filter Track Circles and Stereo Wires
@@ -266,8 +268,8 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		unsigned int MIN_STRAWS_POTENTIAL_SPIRAL_TURN;
 		unsigned int MIN_STRAWS_DEFINITE_SPIRAL_TURN;
 		unsigned int MIN_STRAWS_ADJACENT_TO_SPIRAL_TURN;
-		unsigned int DENSITY_BIN_STRAW_WIDTH;
-		double MAX_HIT_DENSITY;
+		unsigned int SEED_DENSITY_BIN_STRAW_WIDTH;
+		unsigned int MAX_SEEDS_IN_STRAW_BIN;
 		unsigned int MAX_ALLOWED_TRACK_CIRCLES; //bail if exceed this many
 		bool ENABLE_DEAD_HV_BOARD_LINKING;
 		unsigned int MAX_SUPERLAYER_NEW_TRACK; //don't allow new track seeds to start after this super layer //track seeds could start late if track is a decay product, or HV board is dead
@@ -313,10 +315,9 @@ class DTrackCandidate_factory_CDC : public JFactory<DTrackCandidate>
 		const DMagneticFieldMap* dMagneticField;
 		double dFactorForSenseOfRotation;
 
-		unsigned int dNumHitDensityPhiBins;
+		unsigned int dNumSeedDensityPhiBins;
 		//dRejectedPhiRegions: due to hit density being too high in that region
 		map<unsigned int, deque<pair<double, double> > > dRejectedPhiRegions; //key is super layer, pair is first/last phi (not necessarily min/max! (could pass thorugh phi = 0 barrier))
-		deque<deque<unsigned int> > dHists_WireDensity; //1st index is (super_layer - 1), 2nd is phi bin
 };
 
 #endif // _DTrackCandidate_factory_CDC_

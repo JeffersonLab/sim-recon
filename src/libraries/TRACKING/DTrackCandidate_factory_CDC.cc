@@ -79,7 +79,7 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	MAX_DCDCTrackCirclePoolSize = 100;
 
 	MAX_ALLOWED_CDC_HITS = 10000;
-	MAX_ALLOWED_TRACK_CIRCLES = 10000; //bail if exceed this many
+	MAX_ALLOWED_TRACK_CIRCLES = 5000;
 	MAX_HIT_DIST = 4.0; // cm //each straw is 5/8in (1.5875 cm) in diameter
 	MAX_HIT_DIST2 = MAX_HIT_DIST*MAX_HIT_DIST;
 
@@ -98,11 +98,11 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 		// the two DCDCRingSeed's would be in different super layer seeds
 	MAX_STRAWS_BETWEEN_LINK_SPIRAL_TURN = 6;
 
-	//within a super layer, if the density of hits in a region of width DENSITY_BIN_STRAW_WIDTH is greater than MAX_HIT_DENSITY, reject all seeds passing through this region
+	//within a super layer, if the number of seeds in a region of width SEED_DENSITY_BIN_STRAW_WIDTH is greater than MAX_SEEDS_IN_STRAW_BIN, reject all seeds passing through this region
 		//note that since the # of straws increases with ring #, the region width is technically computed as a phi region: 
 			//from phi of straw 'N' in the first ring of a given super layer, to the phi of straw 'N + DENSITY_BIN_STRAW_WIDTH - 1' 
-	DENSITY_BIN_STRAW_WIDTH = 6;
-	MAX_HIT_DENSITY = 0.60; 
+	SEED_DENSITY_BIN_STRAW_WIDTH = 8;
+	MAX_SEEDS_IN_STRAW_BIN = 15;
 
 	//when true, will allow linking of super layer seeds to skip a super layer (in case there is a dead HV board there)
 		//note that this feature is not fully tested!!
@@ -111,7 +111,7 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	//don't allow new track seeds to start after this super layer 
 		//track seeds could start late if track is a decay product, or HV board is dead
 		//this is to prevent tracks forming that are complete garbage (e.g. a spiral craziness, knockout electrons re-entering the CDC from the BCAL, etc.)
-	MAX_SUPERLAYER_NEW_TRACK = 4; 
+	MAX_SUPERLAYER_NEW_TRACK = 4;
 
 	// the maximum # of hits allowed to be shared between the axial super layer seeds of DCDCTrackCircle's
 		// if > than this amount, the track with the larger circle-fit weighted-chisq/ndf will be rejected
@@ -141,9 +141,7 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 
 	dNumStrawsPerRing.resize(28);
 
-	dNumHitDensityPhiBins = 360;
-	for(unsigned int loc_i = 0; loc_i < 7; ++loc_i)
-		dHists_WireDensity.push_back(deque<unsigned int>(dNumHitDensityPhiBins, 0));
+	dNumSeedDensityPhiBins = 360;
 
 	return NOERROR;
 }
@@ -163,8 +161,8 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 	gPARMS->SetDefaultParameter("TRKFIND:MIN_STRAWS_DEFINITE_SPIRAL_TURN", MIN_STRAWS_DEFINITE_SPIRAL_TURN);
 	gPARMS->SetDefaultParameter("TRKFIND:MIN_STRAWS_ADJACENT_TO_SPIRAL_TURN", MIN_STRAWS_ADJACENT_TO_SPIRAL_TURN);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_STRAWS_BETWEEN_LINK_SPIRAL_TURN", MAX_STRAWS_BETWEEN_LINK_SPIRAL_TURN);
-	gPARMS->SetDefaultParameter("TRKFIND:DENSITY_BIN_STRAW_WIDTH", DENSITY_BIN_STRAW_WIDTH);
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_DENSITY", MAX_HIT_DENSITY);
+	gPARMS->SetDefaultParameter("TRKFIND:SEED_DENSITY_BIN_STRAW_WIDTH", SEED_DENSITY_BIN_STRAW_WIDTH);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEEDS_IN_STRAW_BIN", MAX_SEEDS_IN_STRAW_BIN);
 	gPARMS->SetDefaultParameter("TRKFIND:ENABLE_DEAD_HV_BOARD_LINKING", ENABLE_DEAD_HV_BOARD_LINKING);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SUPERLAYER_NEW_TRACK", MAX_SUPERLAYER_NEW_TRACK);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_COMMON_HIT_FRACTION", MAX_COMMON_HIT_FRACTION);
@@ -190,28 +188,6 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *locEventLoop, int runnumb
 	locGeometry->GetCDCWires(locCDCWires);
 	for(size_t loc_i = 0; loc_i < locCDCWires.size(); ++loc_i)
 		dNumStrawsPerRing[loc_i] = locCDCWires[loc_i].size();
-
-	// fill wire density histograms
-	double bin_width = M_TWO_PI/(double)dNumHitDensityPhiBins;
-	for(unsigned int loc_i = 0; loc_i < 7; ++loc_i)
-	{
-		for(unsigned int loc_j = 0; loc_j < dNumHitDensityPhiBins; ++loc_j)
-			dHists_WireDensity[loc_i][loc_j] = 0; // clear histograms //in case run # changes
-
-		for(unsigned int loc_j = 0; loc_j < 4; ++loc_j) //rings
-		{
-			unsigned int locRing = loc_i*4 + loc_j + 1;
-			for(unsigned int loc_k = 0; loc_k < dNumStrawsPerRing[locRing - 1]; ++loc_k) //straws
-			{
-				const DCDCWire* locWire = locCDCWires[locRing - 1][loc_k];
-				double locPhi = locWire->phi;
-				if(locPhi < 0.0)
-					locPhi += M_TWO_PI;
-				unsigned int locPhiBin = (unsigned int)(locPhi/bin_width);
-				++dHists_WireDensity[loc_i][locPhiBin];
-			}
-		}
-	}
 
 	// Clean up after using wire map
 	for (size_t i=0;i<locCDCWires.size();i++){
@@ -247,7 +223,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *locEventLoop, int eventnu
 		if(DEBUG_LEVEL > 3)
 			cout << "Find Seeds, Super Layer = " << loc_i + 1 << endl;
 		Find_SuperLayerSeeds(cdchits_by_superlayer[loc_i], loc_i + 1);
-		Reject_SuperLayerSeeds_HighHitDensity(loc_i + 1);
+		Reject_SuperLayerSeeds_HighSeedDensity(loc_i + 1);
 	}
 	// Search for Spiral Links in and between super layer seeds
 	Set_SpiralLinkParams();
@@ -898,29 +874,34 @@ double DTrackCandidate_factory_CDC::MinDist2(const deque<DCDCTrkHit*>& locInnerS
 	return d2min;
 }
 
-//--------------------------------------
-// Reject_SuperLayerSeeds_HighHitDensity
-//--------------------------------------
-void DTrackCandidate_factory_CDC::Reject_SuperLayerSeeds_HighHitDensity(unsigned int locSuperLayer)
+//---------------------------------------
+// Reject_SuperLayerSeeds_HighSeedDensity
+//---------------------------------------
+void DTrackCandidate_factory_CDC::Reject_SuperLayerSeeds_HighSeedDensity(unsigned int locSuperLayer)
 {
-	//The track finding algorithm will grind to a halt if there are too many super layer seeds in a given area (i.e. a high density of hits)
+	//The track finding algorithm will grind to a halt if there are too many super layer seeds in a given area
 		//e.g. A slow spiral pion that loses energy very slowly will loop around many, many times before stopping, 
 		//sometimes resulting in 40+ super layer seeds in a given super layer.
-	//Therefore, if the density of not-out-of-time hits in a given region is too high, reject all super layer seeds passing through that region of space
+	//Therefore, if the density of super layer seeds in a given region is too high, reject all super layer seeds passing through that region of space, except for the ones on the edges
 		//It will be impossible to determine track parameters in these regions anyway, so may as well reject them. 
 
-	if(DENSITY_BIN_STRAW_WIDTH == 0)
+	if(SEED_DENSITY_BIN_STRAW_WIDTH == 0)
 		return; //rejection disabled
 
-	//need at LEAST "locMinPossibleHitsToCare" (below) hits in the super layer for there to possibly be a density problem: if not, don't bother
-		//calculation is conservative: assumes straw # doesn't increase with ring #
-	deque<DCDCTrkHit*>& locSuperLayerHits = cdchits_by_superlayer[locSuperLayer - 1];
-	unsigned int locMinPossibleHitsToCare = (unsigned int)(ceil(MAX_HIT_DENSITY*(double(4*DENSITY_BIN_STRAW_WIDTH))));
-	if(locSuperLayerHits.size() < locMinPossibleHitsToCare)
-		return; //not enough hits for there to even possibly be an issue
-
-	//Find phi ranges of super layer seeds
 	deque<DCDCSuperLayerSeed*>& locSuperLayerSeeds = dSuperLayerSeeds[locSuperLayer - 1];
+	if(locSuperLayerSeeds.size() <= MAX_SEEDS_IN_STRAW_BIN)
+		return; //not enough for there to even possibly be an issue
+
+	// histogram phis of all seeds within this super layer
+	// We use a simple array to store our histogram here. We don't want to use ROOT histograms because they are not thread safe.
+	// Setup histogram
+	unsigned int hist[dNumSeedDensityPhiBins];
+	for(unsigned int i = 0; i < dNumSeedDensityPhiBins; ++i)
+		hist[i] = 0; // clear histogram
+	double bin_width = M_TWO_PI/(double)dNumSeedDensityPhiBins;
+	double hist_low_limit = 0.0; // lower edge of histogram limits
+
+	//Find phi ranges of super layer seeds: store in map & histogram them
 	map<unsigned int, pair<double, double> > locMapPhiRanges; //key is seed index, pair is phi range (first/last) //first > last if passes through phi = 0 boundary
 	for(size_t loc_i = 0; loc_i < locSuperLayerSeeds.size(); ++loc_i)
 	{
@@ -929,91 +910,136 @@ void DTrackCandidate_factory_CDC::Reject_SuperLayerSeeds_HighHitDensity(unsigned
 		locMapPhiRanges[locSuperLayerSeeds[loc_i]->dSeedIndex] = pair<double, double>(locSeedFirstPhi, locSeedLastPhi);
 		if(DEBUG_LEVEL > 20)
 			cout << "super layer, seed index, first phi, last phi = " << locSuperLayer << ", " << locSuperLayerSeeds[loc_i]->dSeedIndex << ", " << locSeedFirstPhi << ", " << locSeedLastPhi << endl;
+
+		unsigned int locFirstPhiBin = (unsigned int)((locSeedFirstPhi - hist_low_limit)/bin_width);
+		unsigned int locLastPhiBin = (unsigned int)((locSeedLastPhi - hist_low_limit)/bin_width);
+		for(unsigned int locPhiBin = locFirstPhiBin; locPhiBin <= locLastPhiBin; ++locPhiBin)
+			++hist[locPhiBin];
 	}
 
-	// histogram phis of all not-out-of-time hits within this super layer (whether they were contained in a super layer seed or not
-	// We use a simple array to store our histogram here. We don't want to use ROOT histograms because they are not thread safe.
-	unsigned int hist[dNumHitDensityPhiBins];
-	for(unsigned int i=0; i<dNumHitDensityPhiBins; ++i)
-		hist[i] = 0; // clear histogram
-	double bin_width = M_TWO_PI/(double)dNumHitDensityPhiBins;
-	double hist_low_limit = 0.0; // lower edge of histogram limits
-	for(size_t loc_i = 0; loc_i < locSuperLayerHits.size(); ++loc_i)
+	//determine search window size:
+	unsigned int locOuterRing = superlayer_boundaries[locSuperLayer - 1];
+	unsigned int locAverageNumStrawsInRing = (dNumStrawsPerRing[locOuterRing - 4] + dNumStrawsPerRing[locOuterRing - 1])/2; //I know it floored; it's close enough
+	double locSearchBinPhiSize = double(SEED_DENSITY_BIN_STRAW_WIDTH)*2.0*TMath::Pi()/double(locAverageNumStrawsInRing);
+
+	//find the search start point: try to start somewhere where there are no seeds for a range that is at least as large as the window; else start at 0
+	int locStartPhiBin = -1;
+	for(unsigned int locPhiBin = 0; locPhiBin < dNumSeedDensityPhiBins; ++locPhiBin)
 	{
-		if(locSuperLayerHits[loc_i]->flags & OUT_OF_TIME)
-			continue; //ignore out-of-time hits
-		double locPhi = locSuperLayerHits[loc_i]->hit->wire->phi;
-		if(locPhi < 0.0)
-			locPhi += M_TWO_PI;
-		unsigned int locPhiBin = (unsigned int)((locPhi - hist_low_limit)/bin_width);
-		++hist[locPhiBin];
+		if(hist[locPhiBin] > 0)
+		{
+			locStartPhiBin = -1;
+			continue;
+		}
+		if(locStartPhiBin == -1)
+			locStartPhiBin = locPhiBin;
+		else if((locPhiBin - locStartPhiBin) > locSearchBinPhiSize)
+			break;
 	}
+	if(locStartPhiBin == -1)
+		locStartPhiBin = 0;
 
-	//setup loop over hist bins
-	unsigned int locInnerRing = locSuperLayer*4 - 3;
-	double locRingFraction = double(DENSITY_BIN_STRAW_WIDTH)/(double(dNumStrawsPerRing[locInnerRing - 1]));
-	unsigned int locNumSearchWindowBins = (unsigned int)(ceil(double(dNumHitDensityPhiBins)*locRingFraction));
-
-	//initialize counts from the last "locNumSearchWindowBins" bins (due to looping across phi = 0 barrier)
-	unsigned int locNumHitsInDensityBin = 0;
-	unsigned int locNumStrawsInDensityBin = 0;
-	for(unsigned int loc_i = dNumHitDensityPhiBins - locNumSearchWindowBins; loc_i < dNumHitDensityPhiBins; ++loc_i)
-	{
-		locNumHitsInDensityBin += hist[loc_i];
-		locNumStrawsInDensityBin += dHists_WireDensity[locSuperLayer - 1][loc_i];
-	}
-
-	// loop over hist bins, scanning with a window of size "locNumSearchWindowBins," finding where the density of hits is too high and marking those seeds for rejection
+	// loop over phi range, scanning with a window of size "locSearchBinPhiSize," finding where the density of seeds is too high and marking those seeds for rejection
 	set<unsigned int> locSeedsToReject;
-	int locFirstHitDensityTooLargeBin = -1; //-1 if not too large currently, else is first bin of current range
-	for(unsigned int loc_i = 0; loc_i < dNumHitDensityPhiBins; ++loc_i)
+	for(unsigned int locPhiBin = 0; locPhiBin < dNumSeedDensityPhiBins; ++locPhiBin)
 	{
-		locNumHitsInDensityBin += hist[loc_i];
-		locNumStrawsInDensityBin += dHists_WireDensity[locSuperLayer - 1][loc_i];
+		unsigned int locReadPhiBin = locStartPhiBin + locPhiBin;
+		if(locReadPhiBin >= dNumSeedDensityPhiBins)
+			locReadPhiBin -= dNumSeedDensityPhiBins;
 
-		//subtract counts in bin just below density bins (have moved past it)
-		if(loc_i >= locNumSearchWindowBins)
-		{
-			locNumHitsInDensityBin -= hist[loc_i - locNumSearchWindowBins];
-			locNumStrawsInDensityBin -= dHists_WireDensity[locSuperLayer - 1][loc_i - locNumSearchWindowBins];
-		}
-		else
-		{
-			locNumHitsInDensityBin -= hist[dNumHitDensityPhiBins - locNumSearchWindowBins + loc_i];
-			locNumStrawsInDensityBin -= dHists_WireDensity[locSuperLayer - 1][dNumHitDensityPhiBins - locNumSearchWindowBins + loc_i];
-		}
+		double locWindowPhiRangeMin = hist_low_limit + bin_width*(double(locReadPhiBin));
+		if(locWindowPhiRangeMin >= 2.0*TMath::Pi())
+			locWindowPhiRangeMin -= 2.0*TMath::Pi();
+		double locWindowPhiRangeMax = locWindowPhiRangeMin + locSearchBinPhiSize;
 
-		//calculate hit density for window up to and including this bin
-		double locHitDensity = (locNumStrawsInDensityBin > 0) ? (double(locNumHitsInDensityBin))/(double(locNumStrawsInDensityBin)) : 0;
-		if(DEBUG_LEVEL > 45)
-			cout << "phi bin, # nearby hits, # nearby straws, density = " << loc_i << ", " << locNumHitsInDensityBin << ", " << locNumStrawsInDensityBin << ", " << locHitDensity << endl;
+		map<unsigned int, pair<double, double> >::const_iterator locSeedIterator = locMapPhiRanges.begin();
+		vector<unsigned int> locSeedsInThisRange;
+		for(; locSeedIterator != locMapPhiRanges.end(); ++locSeedIterator)
+		{
+			double locSeedPhiRangeMin = locSeedIterator->second.first;
+			double locSeedPhiRangeMax = locSeedIterator->second.second;
+			if(Check_IfPhiRangesOverlap(locSeedPhiRangeMin, locSeedPhiRangeMax, locWindowPhiRangeMin, locWindowPhiRangeMax))
+				locSeedsInThisRange.push_back(locSeedIterator->first);
+		}
+		if(locSeedsInThisRange.size() <= MAX_SEEDS_IN_STRAW_BIN)
+			continue;
 
-		//see if this is the beginning of a new phi range with hit-density too high
-		if((locFirstHitDensityTooLargeBin == -1) && (locHitDensity > MAX_HIT_DENSITY))
-		{
-			locFirstHitDensityTooLargeBin = loc_i - locNumSearchWindowBins + 1;
-			if(locFirstHitDensityTooLargeBin < 0) //due to phi = 0 boundary
-				locFirstHitDensityTooLargeBin += dNumHitDensityPhiBins;
-			if(DEBUG_LEVEL > 20)
-				cout << "density too high: new range starting at bin = " << locFirstHitDensityTooLargeBin << endl;
-		}
-		else if((locFirstHitDensityTooLargeBin != -1) && (locHitDensity <= MAX_HIT_DENSITY))
-		{
-			//end of the current range of hit density too high
-			Mark_SeedsForRejection(locSuperLayer, locFirstHitDensityTooLargeBin, loc_i - 1, bin_width, locMapPhiRanges, locSeedsToReject);
-			locFirstHitDensityTooLargeBin = -1;
-		}
+		//mark these seeds for deletion
+		for(size_t loc_i = 0; loc_i < locSeedsInThisRange.size(); ++loc_i)
+			locSeedsToReject.insert(locSeedsInThisRange[loc_i]);
 	}
-	if(locFirstHitDensityTooLargeBin != -1) //was too high at edge of histogram
-		Mark_SeedsForRejection(locSuperLayer, locFirstHitDensityTooLargeBin, dNumHitDensityPhiBins - 1, bin_width, locMapPhiRanges, locSeedsToReject);
 
-	// reject (and recycle) the seeds in areas where the hits were too dense
+	//loop over seeds marked for rejection: keep the first and last seeds of each group
+		//ignore phi = 0 barrier for now
+		//also, mark phi regions as bad
+	set<unsigned int>::const_iterator locRejectIterator = locSeedsToReject.begin();
+	int locBeginIndex = -1, locPreviousIndex = 0, locFirstIndex = 0, locEndIndex = 0;
+	set<unsigned int> locSeedsToNotReject;
+	for(; locRejectIterator != locSeedsToReject.end(); ++locRejectIterator)
+	{
+		unsigned int locCurrentIndex = *locRejectIterator;
+		if(DEBUG_LEVEL > 15)
+			cout << "Marked for rejection: super layer, seed index = " << locSuperLayer << ", " << locCurrentIndex << endl;
+		if(locBeginIndex == -1)
+		{
+			locFirstIndex = locCurrentIndex;
+			locBeginIndex = locCurrentIndex;
+			locSeedsToNotReject.insert(locBeginIndex);
+			if(DEBUG_LEVEL > 15)
+				cout << "don't reject: " << locBeginIndex << endl;
+		}
+		if(DEBUG_LEVEL > 30)
+			cout << "window size, current phis, previous phis = " << locSearchBinPhiSize << ", " << locMapPhiRanges[locCurrentIndex].first << ", " << locMapPhiRanges[locCurrentIndex].second << ", " << locMapPhiRanges[locPreviousIndex].first << ", " << locMapPhiRanges[locPreviousIndex].second << endl;
+		if(Check_IfPhiRangesOverlap(locMapPhiRanges[locCurrentIndex].first, locMapPhiRanges[locCurrentIndex].second, locMapPhiRanges[locPreviousIndex].first, locMapPhiRanges[locPreviousIndex].second + locSearchBinPhiSize))
+		{
+			locPreviousIndex = locCurrentIndex;
+			locEndIndex = locCurrentIndex;
+			continue;
+		}
+		if(Check_IfPhiRangesOverlap(locMapPhiRanges[locCurrentIndex].first, locMapPhiRanges[locCurrentIndex].second, locMapPhiRanges[locPreviousIndex].first - locSearchBinPhiSize, locMapPhiRanges[locPreviousIndex].second))
+		{
+			locPreviousIndex = locCurrentIndex;
+			locEndIndex = locCurrentIndex;
+			continue;
+		}
+
+		//seed isn't within locSearchBinPhiSize of previous seed: edge
+		if(DEBUG_LEVEL > 15)
+			cout << "Unmark for rejection: super layer, seed indexes = " << locSuperLayer << ", " << locBeginIndex << ", " << locPreviousIndex << endl;
+
+		//too many seeds in this region: in future super layers, don't assume unmatched seeds in this region are new tracks
+		dRejectedPhiRegions[locSuperLayer - 1].push_back(pair<double, double>(locMapPhiRanges[locBeginIndex].first, locMapPhiRanges[locPreviousIndex].second));
+
+		locSeedsToNotReject.insert(locPreviousIndex);
+		locSeedsToNotReject.insert(locCurrentIndex); //beginning of new section
+		locBeginIndex = locCurrentIndex;
+		locPreviousIndex = locCurrentIndex;
+		locEndIndex = locCurrentIndex;
+	}
+	locSeedsToNotReject.insert(locEndIndex); //don't reject the last one //will check overlap below
+
+	if(DEBUG_LEVEL > 30)
+		cout << "first phis, last phis = " << locMapPhiRanges[locFirstIndex].first << ", " << locMapPhiRanges[locFirstIndex].second << ", " << locMapPhiRanges[locEndIndex].first << ", " << locMapPhiRanges[locEndIndex].second << endl;
+
+	//check to see if last overlaps with first //overlap across phi = 0 barrier
+	if(Check_IfPhiRangesOverlap(locMapPhiRanges[locFirstIndex].first, locMapPhiRanges[locFirstIndex].second, locMapPhiRanges[locEndIndex].first, locMapPhiRanges[locEndIndex].second))
+	{
+		if(DEBUG_LEVEL > 15)
+			cout << "re-reject first/last = " << locFirstIndex << ", " << locEndIndex << endl;
+		//do reject them
+		locSeedsToNotReject.erase(locFirstIndex);
+		locSeedsToNotReject.erase(locEndIndex);
+	}
+
+
+	// reject (and recycle) the seeds in areas where the seeds were too dense
 	for(deque<DCDCSuperLayerSeed*>::iterator locDequeIterator = locSuperLayerSeeds.begin(); locDequeIterator != locSuperLayerSeeds.end();)
 	{
-		if(locSeedsToReject.find((*locDequeIterator)->dSeedIndex) != locSeedsToReject.end())
+		unsigned int locSeedIndex = (*locDequeIterator)->dSeedIndex;
+		if((locSeedsToReject.find(locSeedIndex) != locSeedsToReject.end()) && (locSeedsToNotReject.find(locSeedIndex) == locSeedsToNotReject.end()))
 		{
 			if(DEBUG_LEVEL > 10)
-				cout << "hit density too high, reject seed: " << (*locDequeIterator)->dSeedIndex << endl;
+				cout << "seed density too high, reject seed: " << locSeedIndex << endl;
 			dCDCSuperLayerSeedPool_Available.push_back(*locDequeIterator); //recycle memory
 		   locDequeIterator = locSuperLayerSeeds.erase(locDequeIterator);
 		}
@@ -1084,27 +1110,6 @@ void DTrackCandidate_factory_CDC::Calc_SuperLayerPhiRange(DCDCSuperLayerSeed* lo
 	}
 }
 
-//-----------------------
-// Mark_SeedsForRejection
-//-----------------------
-void DTrackCandidate_factory_CDC::Mark_SeedsForRejection(unsigned int locSuperLayer, int locFirstBin, int locLastBin, double bin_width, const map<unsigned int, pair<double, double> >& locMapPhiRanges, set<unsigned int>& locSeedsToReject)
-{
-	double locRangeFirstPhi = bin_width*(0.5 + (double)locFirstBin) - 0.0001; //0.0001 is for float tolerance window
-	double locRangeLastPhi = bin_width*(0.5 + (double)locLastBin) + 0.0001; //0.0001 is for float tolerance window
-	if(DEBUG_LEVEL > 20)
-		cout << "end of current bin range, first/last bins/phis = " << locFirstBin << ", " << locLastBin << ", " << locRangeFirstPhi << ", " << locRangeLastPhi << endl;
-
-	//reject all seeds whose hits extend into this phi-range
-	map<unsigned int, pair<double, double> >::const_iterator locIterator;
-	for(locIterator = locMapPhiRanges.begin(); locIterator != locMapPhiRanges.end(); ++locIterator)
-	{
-		if(Check_IfPhiRangesOverlap(locIterator->second.first, locIterator->second.second, locRangeFirstPhi, locRangeLastPhi))
-			locSeedsToReject.insert(locIterator->first); //clearly both intersect: both cross phi = 0
-	}
-
-	dRejectedPhiRegions[locSuperLayer - 1].push_back(pair<double, double>(locRangeFirstPhi, locRangeLastPhi));
-}
-
 //-------------------------
 // Check_IfPhiRangesOverlap
 //-------------------------
@@ -1141,6 +1146,8 @@ bool DTrackCandidate_factory_CDC::Check_IfPhiRangesOverlap(double locFirstSeedPh
 			if((locTargetFirstPhi > locFirstSeedPhi) && (locTargetFirstPhi < locLastSeedPhi))
 				return true;
 			else if((locTargetLastPhi > locFirstSeedPhi) && (locTargetLastPhi < locLastSeedPhi))
+				return true;
+			else if((locFirstSeedPhi > locTargetFirstPhi) && (locFirstSeedPhi < locTargetLastPhi))
 				return true;
 		}
 	}
@@ -2281,7 +2288,10 @@ void DTrackCandidate_factory_CDC::Reject_DefiniteSpiralArms(deque<DCDCTrackCircl
 
 		//if definitely a spiral turn in its innermost super layer: then delete the track circle: does not originate from the target
 		if(locIsDefinitelyTurningFlag)
+		{
+			Recycle_DCDCTrackCircle(locCDCTrackCircle); //recycle
 		   locIterator = locCDCTrackCircles.erase(locIterator);
+		}
 		else
 			++locIterator;
 	}
@@ -2301,6 +2311,7 @@ void DTrackCandidate_factory_CDC::Drop_IncompleteGroups(deque<DCDCTrackCircle*>&
 		DCDCTrackCircle* locCDCTrackCircle = *locIterator;
 		if(locCDCTrackCircle->dSuperLayerSeeds_Axial.empty())
 		{
+			Recycle_DCDCTrackCircle(locCDCTrackCircle); //recycle
 		   locIterator = locCDCTrackCircles.erase(locIterator); //no axial super layers
 			continue;
 		}
@@ -2312,7 +2323,10 @@ void DTrackCandidate_factory_CDC::Drop_IncompleteGroups(deque<DCDCTrackCircle*>&
 		}
 
 		if(locCDCTrackCircle->dSuperLayerSeeds_InnerStereo.empty() && locCDCTrackCircle->dSuperLayerSeeds_OuterStereo.empty())
+		{
+			Recycle_DCDCTrackCircle(locCDCTrackCircle); //recycle
 		   locIterator = locCDCTrackCircles.erase(locIterator); //no stereo super layers
+		}
 		else
 			++locIterator; //has at least one axial & one stereo super layer: group is OK
 	}
@@ -2321,7 +2335,7 @@ void DTrackCandidate_factory_CDC::Drop_IncompleteGroups(deque<DCDCTrackCircle*>&
 //------------
 // Fit_Circles
 //------------
-void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTrackCircles, bool locFitOnlyIfNullFitFlag, bool locAddStereoLayerIntersectionsFlag)
+void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTrackCircles, bool locFitOnlyIfNullFitFlag, bool locAddStereoLayerIntersectionsFlag, bool locFitDuringLinkingFlag)
 {
 	/// Do a quick fit of the 2-D projection of the axial hits in the seed to a circle
 		/// Include intersection between stereo layer seeds if locAddStereoLayerIntersectionsFlag = true (assumes only one stereo seed series for each inner/outer)
@@ -2339,10 +2353,19 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 	for(locIterator = locCDCTrackCircles.begin(); locIterator != locCDCTrackCircles.end();)
 	{
 		DCDCTrackCircle* locCDCTrackCircle = *locIterator;
+		size_t locNumAxialSuperLayers = locCDCTrackCircle->dSuperLayerSeeds_Axial.size();
+
+		if(locFitDuringLinkingFlag && (locNumAxialSuperLayers < 2))
+		{
+			//just trying to reduce number of circles during super layer linking; don't try to fit & don't reject yet
+			++locIterator;
+			continue;
+		}
 
 		if(locCDCTrackCircle->dSuperLayerSeeds_Axial.empty())
 		{
 			//no axial hits: cannot fit circle: reject
+			Recycle_DCDCTrackCircle(locCDCTrackCircle); //recycle
 			locIterator = locCDCTrackCircles.erase(locIterator);
 			continue;
 		}
@@ -2356,7 +2379,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		// Setup the fit (add hits)
 		DHelicalFit* locFit = Get_Resource_HelicalFit();
 		unsigned int locNumHitsInFit = 0;
-		for(size_t loc_i = 0; loc_i < locCDCTrackCircle->dSuperLayerSeeds_Axial.size(); ++loc_i)
+		for(size_t loc_i = 0; loc_i < locNumAxialSuperLayers; ++loc_i)
 		{
 			deque<DCDCTrkHit*> hits;
 			locCDCTrackCircle->dSuperLayerSeeds_Axial[loc_i]->Get_Hits(hits);
@@ -2394,9 +2417,11 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 			}
 		}
 
+		//place a tighter constraint on the beam center if fewer hits: tracks with detached vertices may not go through the center
+		double locBeamRMS = BeamRMS*locNumAxialSuperLayers; //1sigma = 0.5, 1.0, 1.5 //3sigma = 1.5, 3.0, 4.5
+
 		// Perform the fit
-			// Do NOT de-weight the target point if a lot of hits: CRITICAL for distinguishing which spiral-track arm passed through the target
-		if(locFit->FitCircleRiemann(TARGET_Z, BeamRMS) != NOERROR)
+		if(locFit->FitCircleRiemann(TARGET_Z, locBeamRMS) != NOERROR)
 		{
 			if(DEBUG_LEVEL > 3)
 				cout << "Riemann fit failed. Attempting regression fit..." << endl;
@@ -2408,6 +2433,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 				{
 					if(DEBUG_LEVEL > 3)
 						cout << "Trying straight line fit failed. Giving up." << endl;
+					Recycle_DCDCTrackCircle(locCDCTrackCircle); //recycle
 				   locIterator = locCDCTrackCircles.erase(locIterator);
 					continue;
 				}
@@ -2425,7 +2451,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		size_t locNumHitsCloseToCircle = 0;
 		double locAverageDriftTime = 0.0;
 		unsigned int locTotalNumHits = 0;
-		for(size_t loc_i = 0; loc_i < locCDCTrackCircle->dSuperLayerSeeds_Axial.size(); ++loc_i)
+		for(size_t loc_i = 0; loc_i < locNumAxialSuperLayers; ++loc_i)
 		{
 			deque<DCDCTrkHit*> hits;
 			locCDCTrackCircle->dSuperLayerSeeds_Axial[loc_i]->Get_Hits(hits);
@@ -2453,6 +2479,7 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		{
 			if(DEBUG_LEVEL > 3)
 				cout << "Rejected circle fit due to too few hits on track (N=" << locNumHitsCloseToCircle << " MIN_SEED_HITS=" << MIN_SEED_HITS << ")" << endl;
+			Recycle_DCDCTrackCircle(locCDCTrackCircle); //recycle
 		   locIterator = locCDCTrackCircles.erase(locIterator);
 			continue;
 		}
@@ -2461,18 +2488,19 @@ void DTrackCandidate_factory_CDC::Fit_Circles(deque<DCDCTrackCircle*>& locCDCTra
 		{
 			if(DEBUG_LEVEL > 3)
 				cout << "Rejected circle fit due to minority of hits on track (N=" << locNumHitsCloseToCircle << " locTotalNumHits/2=" << locTotalNumHits/2 << ")" << endl;
+			Recycle_DCDCTrackCircle(locCDCTrackCircle); //recycle
 		   locIterator = locCDCTrackCircles.erase(locIterator);
 			continue;
 		}
 
-		// Fit is good, save results
+		// Fit is good, save fit results
 		locCDCTrackCircle->fit = locFit;
-		size_t locNumAxialLayers = locCDCTrackCircle->dSuperLayerSeeds_Axial.size();
-		double locWeightedChiSqPerDF = ((fabs(locFit->chisq) > 0.0) && (locFit->ndof > 0)) ? locFit->chisq/(float(locFit->ndof*locNumAxialLayers*locNumAxialLayers)) : 9.9E50;
+		double locWeightedChiSqPerDF = ((fabs(locFit->chisq) > 0.0) && (locFit->ndof > 0)) ? locFit->chisq/(float(locFit->ndof*locNumAxialSuperLayers*locNumAxialSuperLayers)) : 9.9E50;
 		if(DEBUG_LEVEL > 10)
-			cout << "chisq, ndof, numaxial, weightedchisq = " << locFit->chisq << ", " << locFit->ndof << ", " << locNumAxialLayers << ", " << locWeightedChiSqPerDF << endl;
+			cout << "chisq, ndof, numaxial, weightedchisq = " << locFit->chisq << ", " << locFit->ndof << ", " << locNumAxialSuperLayers << ", " << locWeightedChiSqPerDF << endl;
 		locCDCTrackCircle->dWeightedChiSqPerDF = locWeightedChiSqPerDF;
 		locCDCTrackCircle->dAverageDriftTime = locAverageDriftTime;
+
 		++locIterator;
 	}
 }
@@ -2545,7 +2573,10 @@ void DTrackCandidate_factory_CDC::Handle_StereoAndFilter(deque<DCDCTrackCircle*>
 		if(Select_CDCSuperLayerSeeds(*locIterator, locFinalPassFlag))
 			++locIterator;
 		else
+		{
+			Recycle_DCDCTrackCircle(*locIterator); //recycle
 			locIterator = locCDCTrackCircles.erase(locIterator);
+		}
 		++locCircleCounter;
 	}
 	Set_HitBitPattern_All(locCDCTrackCircles);
@@ -2746,7 +2777,13 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(deque<DCDCTrackCircle*>&
 				locMergedTrackCircleFlag = true;
 				break;
 			}
-			(locMergedTrackCircleFlag ? (locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating)) : ++locIterator_Validating);
+			if(locMergedTrackCircleFlag)
+			{
+				Recycle_DCDCTrackCircle(locCDCTrackCircle_Validating); //recycle
+				locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
+			}
+			else
+				++locIterator_Validating;
 		}
 
 		//now check to see if any of the newly-truncated track circles is merely a subset of a different circle (regardless of which chisq/ndf is lower)
@@ -2785,7 +2822,13 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(deque<DCDCTrackCircle*>&
 				locRejectTrackFlag = true; //is a subset
 				break;
 			}
-			(locRejectTrackFlag ? (locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating)) : ++locIterator_Validating);
+			if(locRejectTrackFlag)
+			{
+				Recycle_DCDCTrackCircle(locCDCTrackCircle_Validating); //recycle
+				locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
+			}
+			else
+				++locIterator_Validating;
 		}
 
 		//now fit the newly-truncated track circles
@@ -2888,7 +2931,13 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(deque<DCDCTrackCircle*>&
 			break; //truncation successful
 		}
 
-		(locRejectTrackFlag ? (locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating)) : ++locIterator_Validating);
+		if(locRejectTrackFlag)
+		{
+			Recycle_DCDCTrackCircle(locCDCTrackCircle_Validating); //recycle
+			locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
+		}
+		else
+			++locIterator_Validating;
 	}
 
 	if(locTruncationPerformedFlag)
@@ -2908,7 +2957,13 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(deque<DCDCTrackCircle*>&
 				locMergedTrackCircleFlag = true;
 				break;
 			}
-			(locMergedTrackCircleFlag ? (locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating)) : ++locIterator_Validating);
+			if(locMergedTrackCircleFlag)
+			{
+				Recycle_DCDCTrackCircle(locCDCTrackCircle_Validating); //recycle
+				locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
+			}
+			else
+				++locIterator_Validating;
 		}
 
 		//now check to see if any of the newly-truncated track circles is merely a subset of a different circle (regardless of which chisq/ndf is lower)
@@ -2942,7 +2997,13 @@ void DTrackCandidate_factory_CDC::Truncate_TrackCircles(deque<DCDCTrackCircle*>&
 					cout << "rejecting subset circle" << endl;
 				break;
 			}
-			(locRejectTrackFlag ? (locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating)) : ++locIterator_Validating);
+			if(locRejectTrackFlag)
+			{
+				Recycle_DCDCTrackCircle(locCDCTrackCircle_Validating); //recycle
+				locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
+			}
+			else
+				++locIterator_Validating;
 		}
 
 		//now fit the newly-truncated track circles
@@ -3006,56 +3067,9 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Axial(deque<DCDCTrackCircl
 		if(locRejectTrackCircleFlag)
 		{
 			//free up some memory by clearing the seed deques via reset
-			locCDCTrackCircle_Validating->Reset();
+			Recycle_DCDCTrackCircle(locCDCTrackCircle_Validating); //recycle
 			locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
 		}
-		else
-			++locIterator_Validating; //track circle is valid (for now)
-	}
-
-	//NOW: If two circles are spiral linked in the last axial super layer (and have opposite charge and similar circle centers), reject circle with larger chisq/ndf
-	for(locIterator_Validating = locCDCTrackCircles.begin(); locIterator_Validating != locCDCTrackCircles.end();)
-	{
-		DCDCTrackCircle* locCDCTrackCircle_Validating = *locIterator_Validating;
-		if(locCDCTrackCircle_Validating->dSuperLayerSeeds_Axial.empty())
-			continue; //no axial hits to share (somehow)
-		DCDCSuperLayerSeed* locLastAxialSuperLayerSeed_Validating = locCDCTrackCircle_Validating->dSuperLayerSeeds_Axial.back();
-
-		bool locRejectTrackCircleFlag = false;
-		for(locIterator_ToCompareTo = --(locCDCTrackCircles.end()); locIterator_ToCompareTo != locIterator_Validating; --locIterator_ToCompareTo)
-		{
-			DCDCTrackCircle* locCDCTrackCircle_ToCompareTo = *locIterator_ToCompareTo;
-			if(locCDCTrackCircle_ToCompareTo->dSuperLayerSeeds_Axial.empty())
-				continue; //no axial hits to share (somehow)
-
-			DCDCSuperLayerSeed* locLastAxialSuperLayerSeed_ToCompareTo = locCDCTrackCircle_ToCompareTo->dSuperLayerSeeds_Axial.back();
-
-			map<int, DSpiralParams_t>::iterator locIterator_SpiralParams = locLastAxialSuperLayerSeed_ToCompareTo->dSpiralLinkParams.find(locLastAxialSuperLayerSeed_Validating->dSeedIndex);
-			if(locIterator_SpiralParams == locLastAxialSuperLayerSeed_ToCompareTo->dSpiralLinkParams.end())
-				continue; //not linked to this seed
-
-			//check if the charges are opposite
-			if(fabs(locCDCTrackCircle_Validating->fit->h - locCDCTrackCircle_ToCompareTo->fit->h) < 1.5)
-				continue; //same charge
-
-			// check if the circle centers are about the same (else could be two crossing tracks): calculate the 'asymmetry' of the circles
-			// The circle asymmetry is defined as the distance between the two circle's centers divided by the sum of the magnitudes of the circle's centers relative to the origin. 
-			// If it is below some threshold, they are considered to be the same track. 
-			DVector2 r1(locCDCTrackCircle_Validating->fit->x0, locCDCTrackCircle_Validating->fit->y0);
-			DVector2 r2(locCDCTrackCircle_ToCompareTo->fit->x0, locCDCTrackCircle_ToCompareTo->fit->y0);
-			DVector2 dr = r1 - r2;
-			double locAsymmetry = dr.Mod()/(r1.Mod() + r2.Mod());
-			if(DEBUG_LEVEL > 10)
-				cout << "Circle Asymmetry, dr, r1mag, r2mag = " << locAsymmetry << ", " << dr.Mod() << ", " << r1.Mod() << ", " << r2.Mod() << endl;
-			if(locAsymmetry > MIN_CIRCLE_ASYMMETRY)
-				continue; //track centers are not close together
-			locRejectTrackCircleFlag = true; //don't keep: continuation of a spiral
-			locCDCTrackCircle_ToCompareTo->dSpiralTurnRing = locIterator_SpiralParams->second.dSpiralTurnRing;
-			//too dangerous to reject all stereo seeds after (larger r) the spiral turn: could have crossing tracks, and be on the non-crossing one
-			break;
-      }
-		if(locRejectTrackCircleFlag)
-		   locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
 		else
 			++locIterator_Validating; //track circle is valid (for now)
 	}
@@ -4159,6 +4173,20 @@ void DTrackCandidate_factory_CDC::Recycle_DCDCSuperLayerSeed(DCDCSuperLayerSeed*
 	dCDCSuperLayerSeedPool_Available.push_back(locCDCSuperLayerSeed); //recycle
 }
 
+//---------------------------
+// Recycle_DCDCTrackCircle
+//---------------------------
+void DTrackCandidate_factory_CDC::Recycle_DCDCTrackCircle(DCDCTrackCircle* locCDCTrackCircle)
+{
+	if(locCDCTrackCircle->fit != NULL)
+	{
+		dHelicalFitPool_Available.push_back(locCDCTrackCircle->fit);
+		locCDCTrackCircle->fit = NULL;
+	}
+	locCDCTrackCircle->Reset();
+	dCDCTrackCirclePool_Available.push_back(locCDCTrackCircle); //recycle
+}
+
 //----------------------
 // Set_HitBitPattern_All
 //----------------------
@@ -4268,68 +4296,6 @@ void DTrackCandidate_factory_CDC::Filter_TrackCircles_Stereo(deque<DCDCTrackCirc
 	{
 		cout << "filter stereo, circles sorted by axial chisq/ndf" << endl;
 		Print_TrackCircles(locCDCTrackCircles);
-	}
-
-	//NOW: If two circles are spiral linked in the last stereo super layer (and have opposite charge and similar circle centers), reject circle with larger chisq/ndf
-	deque<DCDCTrackCircle*>::iterator locIterator_Validating, locIterator_ToCompareTo;
-	for(locIterator_Validating = locCDCTrackCircles.begin(); locIterator_Validating != locCDCTrackCircles.end();)
-	{
-		DCDCTrackCircle* locCDCTrackCircle_Validating = *locIterator_Validating;
-		DCDCSuperLayerSeed* locLastStereoSuperLayerSeed_Validating = NULL;
-
-		if(!locCDCTrackCircle_Validating->dSuperLayerSeeds_OuterStereo.empty())
-			locLastStereoSuperLayerSeed_Validating = locCDCTrackCircle_Validating->dSuperLayerSeeds_OuterStereo[0].back();
-		else if(!locCDCTrackCircle_Validating->dSuperLayerSeeds_InnerStereo.empty())
-			locLastStereoSuperLayerSeed_Validating = locCDCTrackCircle_Validating->dSuperLayerSeeds_InnerStereo[0].back();
-		else
-		{
-			++locIterator_Validating; //no stereo hits to eval: track circle is as valid as it was before
-			continue;
-		}
-
-		bool locRejectTrackCircleFlag = false;
-		for(locIterator_ToCompareTo = --(locCDCTrackCircles.end()); locIterator_ToCompareTo != locIterator_Validating; --locIterator_ToCompareTo)
-		{
-			DCDCTrackCircle* locCDCTrackCircle_ToCompareTo = *locIterator_ToCompareTo;
-
-			DCDCSuperLayerSeed* locLastStereoSuperLayerSeed_ToCompareTo = NULL;
-
-			if(!locCDCTrackCircle_ToCompareTo->dSuperLayerSeeds_OuterStereo.empty())
-				locLastStereoSuperLayerSeed_ToCompareTo = locCDCTrackCircle_ToCompareTo->dSuperLayerSeeds_OuterStereo[0].back();
-			else if(!locCDCTrackCircle_ToCompareTo->dSuperLayerSeeds_InnerStereo.empty())
-				locLastStereoSuperLayerSeed_ToCompareTo = locCDCTrackCircle_ToCompareTo->dSuperLayerSeeds_InnerStereo[0].back();
-			else
-				continue; //no stereo hits to eval against
-
-			map<int, DSpiralParams_t>::iterator locIterator_SpiralParams = locLastStereoSuperLayerSeed_ToCompareTo->dSpiralLinkParams.find(locLastStereoSuperLayerSeed_Validating->dSeedIndex);
-			if(locIterator_SpiralParams == locLastStereoSuperLayerSeed_ToCompareTo->dSpiralLinkParams.end())
-				continue; //not linked to this seed
-
-			//check if the charges are opposite
-			if(fabs(locCDCTrackCircle_Validating->fit->h - locCDCTrackCircle_ToCompareTo->fit->h) < 1.5)
-				continue; //same charge
-
-			// check if the circle centers are about the same (else could be two crossing tracks): calculate the 'asymmetry' of the circles
-			// The circle asymmetry is defined as the distance between the two circle's centers divided by the sum of the magnitudes of the circle's centers relative to the origin. 
-			// If it is below some threshold, they are considered to be the same track. 
-			DVector2 r1(locCDCTrackCircle_Validating->fit->x0, locCDCTrackCircle_Validating->fit->y0);
-			DVector2 r2(locCDCTrackCircle_ToCompareTo->fit->x0, locCDCTrackCircle_ToCompareTo->fit->y0);
-			DVector2 dr = r1 - r2;
-			double locAsymmetry = dr.Mod()/(r1.Mod() + r2.Mod());
-			if(DEBUG_LEVEL > 10)
-				cout << "Circle Asymmetry = " << locAsymmetry << endl;
-			if(locAsymmetry > MIN_CIRCLE_ASYMMETRY)
-				continue; //track centers are not close together
-			locRejectTrackCircleFlag = true; //don't keep: continuation of a spiral
-			locCDCTrackCircle_ToCompareTo->dSpiralTurnRing = locIterator_SpiralParams->second.dSpiralTurnRing;
-			//too dangerous to reject all seeds after (larger r) the spiral turn: could have crossing tracks, and be on the non-crossing one
-			break;
-      }
-
-		if(locRejectTrackCircleFlag)
-		   locIterator_Validating = locCDCTrackCircles.erase(locIterator_Validating);
-		else
-			++locIterator_Validating; //track circle is valid
 	}
 }
 
