@@ -135,6 +135,8 @@ double DTrackFitterKalmanSIMD::fdc_drift_distance(double t,double Bz){
 
 
 DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(loop){
+  FactorForSenseOfRotation=(bfield->GetBz(0.,0.,65.)>0.)?-1.:1.;
+
   // Get the position of the CDC downstream endplate from DGeometry
   double endplate_rmin,endplate_rmax;
   geom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
@@ -204,6 +206,14 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   gPARMS->SetDefaultParameter("KALMAN:ANNEAL_SCALE",ANNEAL_SCALE,
 			      "Scale factor for annealing");
   gPARMS->SetDefaultParameter("KALMAN:ANNEAL_POW_CONST",ANNEAL_POW_CONST,
+			      "Annealing parameter"); 
+  FORWARD_ANNEAL_SCALE=20.0;
+  FORWARD_ANNEAL_POW_CONST=1.0;
+  gPARMS->SetDefaultParameter("KALMAN:FORWARD_ANNEAL_SCALE",
+			      FORWARD_ANNEAL_SCALE,
+			      "Scale factor for annealing");
+  gPARMS->SetDefaultParameter("KALMAN:FORWARD_ANNEAL_POW_CONST",
+			      FORWARD_ANNEAL_POW_CONST,
 			      "Annealing parameter");
 
   FORWARD_PARMS_COV=false;
@@ -430,9 +440,10 @@ void DTrackFitterKalmanSIMD::ResetKalmanSIMD(void)
 	 mInvVarT0=0.;
 	 mVarT0=0.;
 	 
-	 //mCDCInternalStepSize=0.5;
-	 mCDCInternalStepSize=1.0;
-	 mCentralStepSize=0.75;
+	 mCDCInternalStepSize=0.75;
+	 //mCDCInternalStepSize=1.0;
+	 //mCentralStepSize=0.75;
+	 mCentralStepSize=0.5;
 
 	 mMinDriftTime=1000.;
 	 mMinDriftID=0;
@@ -873,7 +884,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCForwardReferenceTrajectory(DMatrix5x1 &S)
 	<<"  s: " << setprecision(3) 	   
 	<< forward_traj[m].s 
 	<<"  t: " << setprecision(3) 	   
-	<< forward_traj[m].t 
+	<< forward_traj[m].t/SPEED_OF_LIGHT 
 	<<"  B: " << forward_traj[m].B 
 	<< endl;
     }
@@ -1283,7 +1294,7 @@ jerror_t DTrackFitterKalmanSIMD::SetCDCReferenceTrajectory(const DVector2 &xy,
 	<<"  s: " << setprecision(3) 	   
 	<< central_traj[m].s 
 	<<"  t: " << setprecision(3) 	   
-	<< central_traj[m].t 
+	<< central_traj[m].t/SPEED_OF_LIGHT 
 	<<"  B: " << central_traj[m].B 
 	<< endl;
     }
@@ -1649,7 +1660,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
 	<<"  s: " << setprecision(3) 	   
 	<< forward_traj[m].s 
 	<<"  t: " << setprecision(3) 	   
-	<< forward_traj[m].t 
+	<< forward_traj[m].t/SPEED_OF_LIGHT 
 	<<"  id: " << forward_traj[m].h_id
 	<< endl;
     }
@@ -2408,11 +2419,11 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector2 &xy,
   //dBxdx,dBxdy,dBxdz,dBydx,
   //dBydy,dBydz,dBzdx,dBzdy,dBzdz);
 
-   // charge
+  // Charge
   double q=(S(state_q_over_pt)>0.0)?1.:-1.;
 
   //kinematic quantities
-  double qpt=1./S(state_q_over_pt);
+  double q_over_pt=S(state_q_over_pt);
   double sinphi=sin(S(state_phi));
   double cosphi=cos(S(state_phi));
   double D=S(state_D);
@@ -2422,8 +2433,6 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector2 &xy,
   double cosl2=cosl*cosl;
   double cosl3=cosl*cosl2;
   double one_over_cosl=1./cosl;
-  // Other parameters
-  double q_over_pt=S(state_q_over_pt);
   double pt=fabs(1./q_over_pt);
 
   // Turn off dEdx if pt drops below some minimum
@@ -2470,6 +2479,7 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector2 &xy,
   // Deal with changes in D
   double B=sqrt(Bx*Bx+By*By+Bz*Bz);
   //double qrc_old=qpt/(qBr2p*fabs(Bz));
+  double qpt=FactorForSenseOfRotation/q_over_pt;
   double qrc_old=qpt/(qBr2p*B);
   double qrc_plus_D=D+qrc_old;
   double dx=dxy.X();
@@ -2478,7 +2488,7 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector2 &xy,
   double rc=sqrt(dxy.Mod2()
 		 +2.*qrc_plus_D*(dx_sinphi_minus_dy_cosphi)
 		 +qrc_plus_D*qrc_plus_D);
-  double q_over_rc=q/rc;
+  double q_over_rc=FactorForSenseOfRotation*q/rc;
     
   J(state_D,state_D)=q_over_rc*(dx_sinphi_minus_dy_cosphi+qrc_plus_D);
   J(state_D,state_q_over_pt)=qpt*qrc_old*(J(state_D,state_D)-1.);
@@ -2508,9 +2518,10 @@ jerror_t DTrackFitterKalmanSIMD::StepJacobian(const DVector2 &xy,
 
    // charge
   double q=(S(state_q_over_pt)>0.0)?1.:-1.;
+  q*=FactorForSenseOfRotation;
 
   //kinematic quantities
-  double qpt=1./S(state_q_over_pt);
+  double qpt=1./S(state_q_over_pt) * FactorForSenseOfRotation;
   double sinphi=sin(S(state_phi));
   double cosphi=cos(S(state_phi));
   double D=S(state_D);
@@ -3045,7 +3056,6 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     }
     else return UNRECOVERABLE_ERROR;
   }
-  printf("NDF %d\n",ndf_);
 
   if (ndf_==0) return UNRECOVERABLE_ERROR;
 
@@ -3219,7 +3229,7 @@ jerror_t DTrackFitterKalmanSIMD::BrentsAlgorithm(double ds1,double ds2,
     }
     double fu=(pos-wirepos).Mod2();
 
-    //_DBG_ << "Brent: z="<<pos.z() << " d^2="<<fu << endl;
+    //cout << "Brent: z="<<Sc(state_z) << " d="<<sqrt(fu) << endl;
     
     if (fu<=fx){
       if (u>=x) a=x; else b=x;
@@ -3563,7 +3573,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	// Variables for the computation of D at the doca to the wire
 	double D=Sc(state_D);
 	double q=(Sc(state_q_over_pt)>0.0)?1.:-1.;
-	double qpt=1./Sc(state_q_over_pt);
+	
+	q*=FactorForSenseOfRotation;
+
+	double qpt=1./Sc(state_q_over_pt) * FactorForSenseOfRotation;
 	double sinphi=sin(Sc(state_phi));
 	double cosphi=cos(Sc(state_phi));
 	//double qrc_old=qpt/fabs(qBr2p*bfield->GetBz(pos.x(),pos.y(),pos.z()));
@@ -4777,7 +4790,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
     doca2=dx*dx+dy*dy;
     
     // Check if the doca is no longer decreasing
-    if (more_measurements && doca2>old_doca2 && z<endplate_z){
+    if (more_measurements && doca2>old_doca2 && z<endplate_z){	
       if (my_cdchits[cdc_index]->status==0){
 	double dz=0.,newz=z;
 
@@ -5349,7 +5362,11 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
       DVector2 origin;
       double dz2=0.;
       if (BrentsAlgorithm(newz,dz,dEdx,0.,origin,dir,S2,dz2)!=NOERROR){
-	_DBG_ << endl;
+	if (DEBUG_LEVEL>2)
+	{
+	  _DBG_ << "Bailing: P = " << 1./fabs(S2(state_q_over_p))
+		<< endl;
+	}
 	return UNRECOVERABLE_ERROR;
       }
       z_=newz+dz2;
@@ -5653,7 +5670,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S){
 // Propagate track to point of distance of closest approach to origin
 jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
 					    DMatrix5x1 &Sc,DMatrix5x5 &Cc){
-  DMatrix5x5 Jc=I5x5;  //.Jacobian matrix
+  DMatrix5x5 Jc=I5x5;  //Jacobian matrix
   DMatrix5x5 Q; // multiple scattering matrix
 
   // Initialize the beam position = center of target, and the direction
@@ -5693,27 +5710,6 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
     if (DEBUG_LEVEL>1) _DBG_ << "Central trajectory size==0!" << endl;
     return UNRECOVERABLE_ERROR;
   }
-
-  // Rotate covariance matrix from coordinate system on reference trajectory to coordinate system on track
-  double B=sqrt(Bx*Bx+By*By+Bz*Bz);
-  double qrc_old=1./(qBr2p*B*Sc(state_q_over_pt));
-  double qrc_plus_D=Sc(state_D)+qrc_old;
-  double q=(qrc_old>0.0)?1.:-1.;
-  DVector2 dxy=xy-central_traj[central_traj.size()-1].xy;
-  double dx=dxy.X();
-  double dy=dxy.Y();
-  double sinphi=sin(Sc(state_phi));
-  double cosphi=cos(Sc(state_phi));
-  double dx_sinphi_minus_dy_cosphi=dx*sinphi-dy*cosphi;
-  double rc=sqrt(dxy.Mod2()
-		 +2.*qrc_plus_D*(dx_sinphi_minus_dy_cosphi)
-		 +qrc_plus_D*qrc_plus_D);
-    
-  Jc(state_D,state_D)=q*(dx_sinphi_minus_dy_cosphi+qrc_plus_D)/rc;
-  Jc(state_D,state_q_over_pt)=qrc_old*(Jc(state_D,state_D)-1.)/Sc(state_q_over_pt);
-  Jc(state_D,state_phi)=q*qrc_plus_D*(dx*cosphi+dy*sinphi)/rc;
-  
-  Cc=Cc.SandwichMultiply(Jc);
 
   // D is now on the actual trajectory itself
   Sc(state_D)=0.;
@@ -5775,7 +5771,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
     Cc=Q.AddSym(Cc);
 
     r2=xy.Mod2();
-    //printf("r %f r_old %f \n",r,r_old);
+    //printf("r %f r_old %f \n",sqrt(r2),sqrt(r2_old));
     if (r2>r2_old) {
       // We've passed the true minimum; backtrack to find the "vertex" 
       // position
@@ -5794,7 +5790,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DVector2 &xy,
 	    }
 	  return UNRECOVERABLE_ERROR;
 	}
-	//printf ("min r %f\n",pos.Perp());
+	//printf ("min r %f\n",xy.Mod());
       }
       else{  
 	if (BrentsAlgorithm(ds,ds_old,dedx,xy,0.,origin,dir,Sc,my_ds)!=NOERROR){
@@ -6483,9 +6479,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
   // last z position
   double last_z=z_;
     
-  double anneal_factor=ANNEAL_SCALE+1.;  // variable for scaling cut for hit pruning
-  double my_anneal_const=ANNEAL_POW_CONST;
-  if (fit_type==kTimeBased && fabs(1./S(state_q_over_p))<1.0) my_anneal_const*=0.5;
+  double anneal_factor=FORWARD_ANNEAL_SCALE+1.;  // variable for scaling cut for hit pruning
+  double my_anneal_const=FORWARD_ANNEAL_POW_CONST;
+  if (fit_type==kTimeBased && fabs(1./S(state_q_over_p))<1.0
+      && my_anneal_const>=2.0) my_anneal_const*=0.5;
 
   // Chi-squared and degrees of freedom
   double chisq=MAX_CHI2,chisq_forward=MAX_CHI2;
@@ -6513,9 +6510,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
     ftime=0.;
     
     // Scale cut for pruning hits according to the iteration number
-    if (fit_type==kTimeBased)
-      {
-      anneal_factor=ANNEAL_SCALE/pow(my_anneal_const,iter)+1.;
+    if (fit_type==kTimeBased){
+      anneal_factor=FORWARD_ANNEAL_SCALE/pow(my_anneal_const,iter)+1.;
     }
     
     // Swim once through the field out to the most upstream FDC hit
@@ -6549,7 +6545,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       }
       
       // Try to recover tracks that failed the first attempt at fitting
-      if (error!=FIT_SUCCEEDED 
+      if (error!=FIT_SUCCEEDED && RECOVER_BROKEN_TRACKS
 	  && break_point_fdc_index+num_cdchits>=MIN_HITS_FOR_REFIT){
 	DMatrix5x5 Ctemp=C;
 	DMatrix5x1 Stemp=S;
@@ -6732,9 +6728,21 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
   vector<DKalmanUpdate_t>last_cdc_updates;
   vector<DKalmanUpdate_t>last_fdc_updates;
 
-  double anneal_factor=ANNEAL_SCALE+1.; // variable for scaling cut for hit pruning
+  double anneal_scale=ANNEAL_SCALE; // variable for scaling cut for hit pruning
   double my_anneal_const=ANNEAL_POW_CONST;
-  if (fit_type==kTimeBased && fabs(1./S(state_q_over_p))<1.0) my_anneal_const*=0.5;
+   
+  double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
+  double tanl=1./sqrt(tsquare);
+  if (tanl>2.5){
+    anneal_scale=FORWARD_ANNEAL_SCALE;
+    my_anneal_const=FORWARD_ANNEAL_POW_CONST;
+  }
+  double anneal_factor=anneal_scale+1.;
+
+  if (fit_type==kTimeBased && fabs(1./S(state_q_over_p))<1.0 
+      && my_anneal_const>=2.0){ 
+    my_anneal_const*=0.5;
+  }
 
   // Chi-squared and degrees of freedom
   double chisq=MAX_CHI2,chisq_forward=MAX_CHI2;
@@ -6768,7 +6776,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 
     // Scale cut for pruning hits according to the iteration number
     if (fit_type==kTimeBased){   
-      anneal_factor=ANNEAL_SCALE/pow(my_anneal_const,iter2)+1.;
+      anneal_factor=anneal_scale/pow(my_anneal_const,iter2)+1.;
     }
  
     // Initialize path length variable and flight time
@@ -6788,7 +6796,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
       kalman_error_t error=KalmanForwardCDC(anneal_factor,S,C,chisq,my_ndf); 
       
       // Try to recover tracks that failed the first attempt at fitting
-      if (error!=FIT_SUCCEEDED && num_cdchits>=MIN_HITS_FOR_REFIT){
+      if (error!=FIT_SUCCEEDED && RECOVER_BROKEN_TRACKS 
+	  && num_cdchits>=MIN_HITS_FOR_REFIT){
 	DMatrix5x5 Ctemp=C;
 	DMatrix5x1 Stemp=S;
 	unsigned int temp_ndf=my_ndf;
@@ -7027,7 +7036,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       Cc=C0;
       error=KalmanCentral(anneal_factor,Sc,Cc,pos,chisq,my_ndf);
       // Try to recover tracks that failed the first attempt at fitting
-      if (error!=FIT_SUCCEEDED && num_cdchits>=MIN_HITS_FOR_REFIT){
+      if (error!=FIT_SUCCEEDED && RECOVER_BROKEN_TRACKS
+	  && num_cdchits>=MIN_HITS_FOR_REFIT){
 	DVector2 temp_pos=pos;
 	DMatrix5x1 Stemp=Sc;
 	DMatrix5x5 Ctemp=Cc;

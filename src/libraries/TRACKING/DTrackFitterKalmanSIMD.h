@@ -422,6 +422,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double Bx,By,Bz;
   double dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
   bool get_field;
+  double FactorForSenseOfRotation;
 
   // endplate dimensions and location
   double endplate_z, endplate_dz, endplate_r2min, endplate_r2max;
@@ -471,7 +472,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   // Parameters for annealing scheme
   double ANNEAL_POW_CONST,ANNEAL_SCALE;
-
+  double FORWARD_ANNEAL_POW_CONST,FORWARD_ANNEAL_SCALE;
 
   // Min. momentum needed for fit before returning fitSuccess
   double MIN_FIT_P;
@@ -505,12 +506,12 @@ inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){
   if (t<0.0) t=0.0;
   
   //double sigma=0.11/(t+3.6)+4.65e-3;
-  double sigma=0.11/(t+3.6)+4.25e-3;
+  double sigma=0.11/(t+3.6)+4.5e-3;
   return sigma*sigma;
 }
 // Variance for position along wire
 inline double DTrackFitterKalmanSIMD::fdc_y_variance(double dE){
-  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE+0.003;
+  double sigma=2.6795e-4*FDC_CATHODE_SIGMA/dE+0.005;
 
   return sigma*sigma;
 }
