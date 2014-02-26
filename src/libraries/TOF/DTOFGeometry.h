@@ -34,14 +34,14 @@ class DTOFGeometry:public JObject{
   float CenterMPlane;  /// center z position between the two Plane
 
 
-  float bar2y(int bar, int orientation)  const ///> convert bar number to the
+  float bar2y(int bar, int end=0)  const ///> convert bar number to the
   ///> position of the center of the
   ///> bar in local coordinations
   {
     float y;
     y = YPOS[bar];
 
-    //if (orientation == 0) y *= -1.0;
+    if (bar>=FirstShortBar && bar<=LastShortBar && end != 0) y *= -1.0;
 
     return y;
   }

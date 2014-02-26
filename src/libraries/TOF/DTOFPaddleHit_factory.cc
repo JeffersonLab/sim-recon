@@ -36,7 +36,7 @@ jerror_t DTOFPaddleHit_factory::brun(JEventLoop *loop, int runnumber)
   map<string, double> tofparms;
  
   if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
-    cout<<"DTOFPaddleHit_factory: loading values from TOF data base"<<endl;
+    //cout<<"DTOFPaddleHit_factory: loading values from TOF data base"<<endl;
 
     C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
     HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
@@ -129,16 +129,44 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
       }
     } 
   }
-
-
-  for (unsigned int i=0; i<P1hitsR.size(); i++){   
-    int bar = P1hitsR[i]->bar;
-    int found = 0;
-
-    if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
-      for (unsigned int j=0; j<P1hitsL.size(); j++){      
-	if (bar==P1hitsL[j]->bar){
+  
+  for (unsigned int i=0; i<P1hitsL.size(); i++){ 
+      int bar = P1hitsL[i]->bar;
+      int found = 0;
+      
+      if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
+      for (unsigned int j=0; j<P1hitsR.size(); j++){      
+	if (bar==P1hitsR[j]->bar){
 	  found = 1;
+	}
+      }
+    }
+
+    if (!found){
+      if (P1hitsL[i]->dE>E_THRESHOLD){
+	DTOFPaddleHit *hit = new DTOFPaddleHit;
+	hit->bar = bar;
+	hit->orientation   = P1hitsL[i]->plane;
+	hit->E_north = P1hitsL[i]->dE;
+	hit->t_north = P1hitsL[i]->t;
+	hit->E_south = 0.;
+	hit->t_south = 0.;  
+	hit->AddAssociatedObject(P1hitsL[i]);
+
+	_data.push_back(hit);
+      }
+    }
+  }
+
+
+	 for (unsigned int i=0; i<P1hitsR.size(); i++){   
+	   int bar = P1hitsR[i]->bar;
+	   int found = 0;
+	   
+	   if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
+	     for (unsigned int j=0; j<P1hitsL.size(); j++){      
+	       if (bar==P1hitsL[j]->bar){
+		 found = 1;
 	}
       }
     }
@@ -182,6 +210,34 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     }
   }
   
+	 for (unsigned int i=0; i<P2hitsL.size(); i++){   
+	   int bar = P2hitsL[i]->bar;
+	   int found = 0;
+
+    if ((bar < TOFGeom[0]->FirstShortBar) || (bar > TOFGeom[0]->LastShortBar)) {
+      for (unsigned int j=0; j<P2hitsR.size(); j++){      
+	if (bar==P2hitsR[j]->bar){
+	  found = 1;
+	}
+      }
+    }
+
+    if (!found){
+      if (P2hitsL[i]->dE>E_THRESHOLD){
+	DTOFPaddleHit *hit = new DTOFPaddleHit;
+	hit->bar = bar;
+	hit->orientation   = P2hitsL[i]->plane;
+	hit->E_north = P2hitsL[i]->dE;
+	hit->t_north = P2hitsL[i]->t;
+	hit->E_south = 0.;
+	hit->t_south = 0.;      
+	hit->AddAssociatedObject(P2hitsL[i]);
+
+	_data.push_back(hit);
+      }
+    }
+  }
+
 
   for (unsigned int i=0; i<P2hitsR.size(); i++){   
     int bar = P2hitsR[i]->bar;
@@ -196,7 +252,7 @@ jerror_t DTOFPaddleHit_factory::evnt(JEventLoop *loop, int eventnumber)
     }
 
     if (!found){
-      if (P2hitsR[i]->dE>E_THRESHOLD){
+       if (P2hitsR[i]->dE>E_THRESHOLD){
 	DTOFPaddleHit *hit = new DTOFPaddleHit;
 	hit->bar = bar;
 	hit->orientation   = P2hitsR[i]->plane;

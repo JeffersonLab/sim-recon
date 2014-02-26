@@ -30,7 +30,7 @@ jerror_t DTOFPoint_factory::brun(JEventLoop *loop, int runnumber)
   map<string, double> tofparms;
  
   if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
-    cout<<"DTOFPoint_factory: loading values from TOF data base"<<endl;
+    //cout<<"DTOFPoint_factory: loading values from TOF data base"<<endl;
 
     VELOCITY     =    tofparms["TOF_C_EFFECTIVE"];
     HALFPADDLE   =    tofparms["TOF_HALFPADDLE"];
@@ -101,7 +101,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
      
       if ((locTOFHit->bar < TOFGeom[0]->FirstShortBar) || (locTOFHit->bar > TOFGeom[0]->LastShortBar)){ //double-ended bars
 	
-	locTOFSpacetimeHit->y = TOFGeom[0]->bar2y(bar,locTOFHit->orientation);
+	locTOFSpacetimeHit->y = TOFGeom[0]->bar2y(bar);
 	if(!((locTOFHit->meantime >= 0.0) || (locTOFHit->meantime <= 0.0))){ //NaN: only one energy hit above threshold on the double-ended bar
 	  locTOFSpacetimeHit->x = 0.0;
 	  if (locTOFHit->E_north > E_THRESHOLD)
@@ -123,24 +123,25 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 	locTOFSpacetimeHit->pos_cut = 120.;
 	locTOFSpacetimeHit->t_cut = 10.;
 	
-	locTOFSpacetimeHit->y = TOFGeom[0]->bar2y(bar,locTOFHit->orientation);
-	
 	if (locTOFHit->t_south != 0.){
+	  locTOFSpacetimeHit->y = TOFGeom[0]->bar2y(bar,1);
 	  locTOFSpacetimeHit->x = -66.; //paddle extends from -6 -> -126
-	  locTOFSpacetimeHit->t = locTOFHit->t_south - 60.0/VELOCITY; //60 is HALFPADDLE for signle-ended bars
+	  locTOFSpacetimeHit->t = locTOFHit->t_south - 60.0/VELOCITY; //60 is HALFPADDLE for single-ended bars
 	} else {
+	  locTOFSpacetimeHit->y = TOFGeom[0]->bar2y(bar,0);
 	  locTOFSpacetimeHit->x = 66.; //paddle extends from 6 -> 126
 	  locTOFSpacetimeHit->t = locTOFHit->t_north - 60.0/VELOCITY;
 	}
 	
       }
+
       locTOFSpacetimeHit->TOFHit = locTOFHit;
       locTOFSpacetimeHits_Horizontal.push_back(locTOFSpacetimeHit);
     } else {  //vertical
 
       if ((locTOFHit->bar < TOFGeom[0]->FirstShortBar) || (locTOFHit->bar > TOFGeom[0]->LastShortBar)){ //double-ended bars
 
-	locTOFSpacetimeHit->x = TOFGeom[0]->bar2y(bar,locTOFHit->orientation);
+	locTOFSpacetimeHit->x = TOFGeom[0]->bar2y(bar);
 	if(!((locTOFHit->meantime >= 0.0) || (locTOFHit->meantime <= 0.0))){ //NaN: only one energy hit above threshold on the double-ended bar
 	  locTOFSpacetimeHit->y = 0.0;
 	  if (locTOFHit->E_north > E_THRESHOLD)
@@ -158,18 +159,19 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
       } else { //single-ended bars
 	locTOFSpacetimeHit->pos_cut = 120.;
 	locTOFSpacetimeHit->t_cut = 10.;
-
-	locTOFSpacetimeHit->y = TOFGeom[0]->bar2y(bar,locTOFHit->orientation);
 	
 	if (locTOFHit->t_south != 0.){
-	  locTOFSpacetimeHit->x = -66.; //paddle extends from -6 -> -126
-	  locTOFSpacetimeHit->t = locTOFHit->t_south - 60.0/VELOCITY; //60 is HALFPADDLE for signle-ended bars
+	  locTOFSpacetimeHit->x = TOFGeom[0]->bar2y(bar,0);
+	  locTOFSpacetimeHit->y = 66.; //paddle extends from 6 -> 126
+	  locTOFSpacetimeHit->t = locTOFHit->t_south - 60.0/VELOCITY; //60 is HALFPADDLE for single-ended bars
 	} else {
-	  locTOFSpacetimeHit->x = 66.; //paddle extends from 6 -> 126
+	  locTOFSpacetimeHit->x = TOFGeom[0]->bar2y(bar,1);
+	  locTOFSpacetimeHit->y = -66.; //paddle extends from -6 -> -126
 	  locTOFSpacetimeHit->t = locTOFHit->t_north - 60.0/VELOCITY;
 	}
 
       }
+
       locTOFSpacetimeHit->TOFHit = locTOFHit;
       locTOFSpacetimeHits_Vertical.push_back(locTOFSpacetimeHit);
     } //end vertical hit
