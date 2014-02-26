@@ -43,7 +43,8 @@ ifdef HALLD_MY
 endif
 LD_DIRS += $(addprefix -L,$(LIB_DIRS))
 MODULES += $(ADDITIONAL_MODULES)
-LD_LIBS += $(addsuffix $(DEBUG_SUFFIX),$(addprefix -l,$(MODULES)))
+LD_LIBS_0 += $(addsuffix $(DEBUG_SUFFIX),$(addprefix -l,$(MODULES)))
+LD_LIBS = $(subst -lJANA$(DEBUG_SUFFIX), -lJANA, $(LD_LIBS_0))
 
 first: install
 
