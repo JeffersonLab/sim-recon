@@ -3514,6 +3514,13 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 	}
 	sort(locDeltaPhis.begin(), locDeltaPhis.end(), CDCSort_DeltaPhis);
 
+	if(locDeltaPhis.size() <= MIN_PRUNED_STEREO_HITS)
+	{
+		for(size_t loc_k = 0; loc_k < locDeltaPhis.size(); ++loc_k)
+			locComboHits.push_back(locDeltaPhis[loc_k].first);
+		return;
+	}
+
 	// take at least the "MIN_PRUNED_STEREO_HITS" hits with the smallest delta_phi
 	double locMaxHitDeltaPhi = locDeltaPhis[MIN_PRUNED_STEREO_HITS - 1].second;
 
