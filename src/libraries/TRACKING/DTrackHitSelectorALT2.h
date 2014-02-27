@@ -38,37 +38,23 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 		
 		TTree *cdchitsel;
 		TTree *fdchitsel;
-		
-		typedef struct{
-			// parameters for material correction factor for residual sigma
-			// s_factor = exp(s1 + s2*itheta02s2)
-			double s1_anode;
-			double s2_anode;
-			double s1_cathode;
-			double s2_cathode;
-		}correction_parms_t;
-		
-		correction_parms_t correction_parms[4];
-		
+
 		typedef struct{
 			int fit_type;
 			float p;
 			float theta;
 			float mass;
 			float sigma;
-			float mom_factor;
 			float x;
 			float y;
 			float z;
 			float s;
-			float s_factor;
 			float itheta02;
 			float itheta02s;
 			float itheta02s2;
 			float dist;
 			float doca;
 			float resi;
-			float sigma_total;
 			float chisq;
 			float prob;
 			float sig_phi;
@@ -79,20 +65,15 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 		
 		typedef struct{
 			int fit_type;
-			int hit_cdc_endplate;
 			float p;
 			float theta;
 			float mass;
 			float sigma_anode;
 			float sigma_cathode;
-			float mom_factor_anode;
-			float mom_factor_cathode;
 			float x;
 			float y;
 			float z;
 			float s;
-			float s_factor_anode;
-			float s_factor_cathode;
 			float itheta02;
 			float itheta02s;
 			float itheta02s2;
@@ -102,14 +83,8 @@ class DTrackHitSelectorALT2:public DTrackHitSelector{
 			float u;
 			float u_cathodes;
 			float resic;
-			float sigma_anode_total;
-			float sigma_cathode_total;
 			float chisq;
 			float prob;
-			float prob_anode;
-			float prob_cathode;
-			float pull_anode;
-			float pull_cathode;
 			float sig_phi;
 			float sig_lambda;
 			float sig_pt;

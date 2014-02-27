@@ -374,7 +374,7 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 	// Get the BCAL cluster position and normal
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
-	double locFlightTime, locPathLength;
+	double locFlightTime = 0.0, locPathLength = 0.0;
 	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime);
 	if(!isfinite(d))
 		return false;
