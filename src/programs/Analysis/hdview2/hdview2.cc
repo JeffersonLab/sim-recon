@@ -1,4 +1,5 @@
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <TGApplication.h>
@@ -139,6 +140,18 @@ void ParseCommandLineArguments(int &narg, char *argv[], JApplication *japp)
 				//PrintFactoryList(japp);
 				break;
 		}
+	}
+	
+	// Check if DISPLAY environment variable is set and warn user if not.
+	const char *DISPLAY = getenv("DISPLAY");
+	if(DISPLAY == NULL){
+		jerr << endl;
+		jerr << " WARNING: You do not appear to have your DISPLAY environment" << endl;
+		jerr << "          variable set. This may prevent the graphics window" << endl;
+		jerr << "          from opening or even cause a seg. fault. Consider" << endl;
+		jerr << "          setting this to something like \"localhost:0\" if" << endl;
+		jerr << "          you have trouble opening the display." << endl;
+		jerr << endl;
 	}
 }
 
