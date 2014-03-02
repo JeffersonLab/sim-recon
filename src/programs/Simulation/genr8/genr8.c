@@ -150,7 +150,6 @@ void PrintUsage(char *processName)
 
 int main(int argc,char **argv)
 {
-  char *outputFile = "genr8.out";
   char *argptr,*token,line[2056];
   int i,npart=0,ngenerated=0,naccepted=0, imassc, imassc2;
   int nv4,max=10,part,chld1=-1,chld2=-1,prnt=-1,lfevents=10000;
@@ -168,7 +167,7 @@ int main(int argc,char **argv)
   Y->parent = &CM;
   X= &(particle[1]);
   X->parent = &CM;
-  /* recoil.parent = &CM; */
+  recoil.parent = &CM;
   CM.child[0]= X;
   CM.child[1]= Y;
   /* CM.child[1]= &recoil; */
@@ -264,7 +263,8 @@ int main(int argc,char **argv)
 
   isacomment=TRUE;
   while(isacomment==TRUE){
-    char *pline = fgets(line,sizeof(line),stdin);
+    char *pline;
+    pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -283,7 +283,8 @@ int main(int argc,char **argv)
 
   isacomment=TRUE;
   while(isacomment==TRUE){
-    char *pline = fgets(line,sizeof(line),stdin);
+    char *pline;
+    pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -302,7 +303,8 @@ int main(int argc,char **argv)
 
   isacomment=TRUE;
   while(isacomment==TRUE){
-    char *pline = fgets(line,sizeof(line),stdin);
+    char *pline;
+    pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -314,7 +316,8 @@ int main(int argc,char **argv)
 
   isacomment=TRUE;
   while(isacomment==TRUE){
-    char *pline = fgets(line,sizeof(line),stdin);
+    char *pline;
+    pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -335,7 +338,8 @@ int main(int argc,char **argv)
     haveChildren=TRUE;
     isacomment=TRUE;
     while(isacomment==TRUE){
-      char *pline = fgets(line,sizeof(line),stdin);
+      char *pline;
+      pline = fgets(line,sizeof(line),stdin);
       token=strtok(line," ");
       if(!(*token == '%'))
 	isacomment=FALSE;
@@ -415,7 +419,8 @@ int main(int argc,char **argv)
     }
   isacomment=TRUE;
   while(isacomment==TRUE){
-    char *pline = fgets(line,sizeof(line),stdin);
+    char *pline;
+    pline = fgets(line,sizeof(line),stdin);
     token=strtok(line," ");
     if(!(*token == '%'))
       isacomment=FALSE;
@@ -552,6 +557,7 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
     xmass = X->mass;
     ymass = Y->mass;
 
+    X_threshold = 0;
     X_momentum = CMmomentum( CMenergy, X->mass, Y->mass);
     X_energy =  sqrt( (X->mass)*(X->mass) + X_momentum*X_momentum);
 
@@ -726,6 +732,7 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
   fflush(fout);
   fclose(fout);
   
+  return 0;
 }/* end of main */
 
 
@@ -927,7 +934,7 @@ double rawthresh(struct particleMC_t *Isobar)
 
 void decay(struct particleMC_t *Isobar)
 {
-  int i,j,k;
+  int i;
   double breakup_p,theta,phi;
 
  
