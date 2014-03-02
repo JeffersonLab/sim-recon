@@ -1257,9 +1257,12 @@ void CodeBuilder::constructPackers()
       tagT.erase(tagT.rfind('_'));
       cFile << "int pack_" << tagT << "(XDR* xdrs, "
             << tagType << "* this1)"				<< std::endl
-            << "{"						<< std::endl
-            << "   int m=0;"					<< std::endl
-            << "   unsigned int size=0;"			<< std::endl
+            << "{"						<< std::endl;
+      if (rep > 1)
+      {
+         cFile   << "   int m=0;"				<< std::endl;
+      }
+      cFile << "   unsigned int size=0;"			<< std::endl
             << "   off_t base,start,end;"			<< std::endl
             << "   base = xdr_getpos64(xdrs);"			<< std::endl
             << "   xdr_u_int(xdrs,&size);"			<< std::endl
@@ -1653,8 +1656,16 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "   }"						<< std::endl
 	 << "   fp->iomode = HDDM_STREAM_INPUT;"		<< std::endl
 	 << "   head = (char*)malloc(1000000);"			<< std::endl
-	 << "   *head = 0;"					<< std::endl
-	 << "   for (p = head;"					<< std::endl
+	 << "   fgets(head,7,fp->fd);"				<< std::endl
+	 << "   if (strstr(head,\"<HDDM \") != head)"		<< std::endl
+	 << "   {"						<< std::endl
+	 << "      fprintf(stderr,\"HDDM Error: input file \");"<< std::endl
+	 << "      fprintf(stderr,\"file does not have a \");"	<< std::endl
+	 << "      fprintf(stderr,\"valid HDDM header.\");"	<< std::endl
+	 << "      fprintf(stderr,\"  Please check.\\n\");"	<< std::endl
+	 << "      exit(9);"					<< std::endl
+	 << "   }"						<< std::endl
+	 << "   for (p = head+6;"				<< std::endl
 	 << "        strstr(head,\"</HDDM>\") == 0;"		<< std::endl
 	 << "        p += strlen(p))"				<< std::endl
 	 << "   {"						<< std::endl
