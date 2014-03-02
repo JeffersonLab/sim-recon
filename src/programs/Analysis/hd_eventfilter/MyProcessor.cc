@@ -76,9 +76,9 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 
 	// Loop over thrown tracks
 	for(unsigned int i=0;i<mcthrowns.size();i++){
-		const DMCThrown *mcthrown = mcthrowns[i];
 		
 		// keep tracks with at least 1 thrown particle greater than 1GeV/c
+		//const DMCThrown *mcthrown = mcthrowns[i];
 		//if(mcthrown->momentum().Mag()>1.0)write_out = true;
 
 	}
