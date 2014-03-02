@@ -74,4 +74,18 @@ void free_convert_matrix(float **b, long nrl, long nrh, long ncl, long nch);
 void free_f3tensor(float ***t, long nrl, long nrh, long ncl, long nch,
 	long ndl, long ndh);
 
+inline void initialize_static_define_regs()
+{
+   sqrarg = 0;
+   dsqrarg = 0;
+   dmaxarg1 = dmaxarg2 = 0;
+   dminarg1 = dminarg2 = 0;
+   maxarg1 = maxarg2 = 0;
+   minarg1 = minarg2 = 0;
+   lmaxarg1 = lmaxarg2 = 0;
+   lminarg1 = lminarg2 = 0;
+   imaxarg1 = imaxarg2 = 0;
+   iminarg1 = iminarg2 = 0;
+}
+
 #endif /* _NR_UTILS_H_ */
