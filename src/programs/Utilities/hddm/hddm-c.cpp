@@ -543,8 +543,8 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
 
    DOMNamedNodeMap* oldAttr = elref->getAttributes();
    DOMNamedNodeMap* newAttr = el->getAttributes();
-   int listLength = oldAttr->getLength();
-   for (int n = 0; n < listLength; n++)
+   unsigned int listLength = oldAttr->getLength();
+   for (unsigned int n = 0; n < listLength; n++)
    {
       XtString nameS(oldAttr->item(n)->getNodeName());
       XtString oldS(elref->getAttribute(X(nameS)));
@@ -575,7 +575,7 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
       }
    }
    listLength = newAttr->getLength();
-   for (int n = 0; n < listLength; n++)
+   for (unsigned int n = 0; n < listLength; n++)
    {
       XtString nameS(newAttr->item(n)->getNodeName());
       XtString oldS(elref->getAttribute(X(nameS)));
@@ -615,7 +615,7 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
            << "\"" << tagS << "\" in xml document." << std::endl;
    exit(1);
    }
-   for (int n = 0; n < listLength; n++)
+   for (unsigned int n = 0; n < listLength; n++)
    {
       DOMNode* cont = oldList->item(n);
       XtString nameS(cont->getNodeName());
@@ -834,7 +834,7 @@ void CodeBuilder::constructConstructors()
             }
          }
          DOMNodeList* contList = tagEl->getChildNodes();
-         for (int c = 0; c < contList->getLength(); c++)
+         for (unsigned int c = 0; c < contList->getLength(); c++)
          {
             DOMNode* cont = contList->item(c);
             short ctype = cont->getNodeType();
@@ -906,7 +906,7 @@ void CodeBuilder::constructConstructors()
             }
          }
          DOMNodeList* contList = tagEl->getChildNodes();
-         for (int c = 0; c < contList->getLength(); c++)
+         for (unsigned int c = 0; c < contList->getLength(); c++)
          {
             DOMNode* cont = contList->item(c);
             short ctype = cont->getNodeType();
@@ -1010,7 +1010,7 @@ void CodeBuilder::constructUnpackers()
 
       int hasContents = 0;
       DOMNodeList* contList = tagEl->getChildNodes();
-      for (int c = 0; c < contList->getLength(); c++)
+      for (unsigned int c = 0; c < contList->getLength(); c++)
       {
          DOMNode* cont = contList->item(c);
          short type = cont->getNodeType();
@@ -1030,7 +1030,7 @@ void CodeBuilder::constructUnpackers()
       }
 
       DOMNamedNodeMap* attList = tagEl->getAttributes();
-      for (int a = 0; a < attList->getLength(); a++)
+      for (unsigned int a = 0; a < attList->getLength(); a++)
       {
          DOMNode* att = attList->item(a);
          XtString typeS(att->getNodeValue());
@@ -1257,9 +1257,12 @@ void CodeBuilder::constructPackers()
       tagT.erase(tagT.rfind('_'));
       cFile << "int pack_" << tagT << "(XDR* xdrs, "
             << tagType << "* this1)"				<< std::endl
-            << "{"						<< std::endl
-            << "   int m=0;"					<< std::endl
-            << "   unsigned int size=0;"			<< std::endl
+            << "{"						<< std::endl;
+      if (rep > 1)
+      {
+         cFile   << "   int m=0;"				<< std::endl;
+      }
+      cFile << "   unsigned int size=0;"			<< std::endl
             << "   off_t base,start,end;"			<< std::endl
             << "   base = xdr_getpos64(xdrs);"			<< std::endl
             << "   xdr_u_int(xdrs,&size);"			<< std::endl
@@ -1277,7 +1280,7 @@ void CodeBuilder::constructPackers()
       }
 
       DOMNamedNodeMap* attList = tagEl->getAttributes();
-      for (int a = 0; a < attList->getLength(); a++)
+      for (unsigned int a = 0; a < attList->getLength(); a++)
       {
          DOMNode* att = attList->item(a);
          XtString typeS(att->getNodeValue());
@@ -1354,7 +1357,7 @@ void CodeBuilder::constructPackers()
       }
 
       DOMNodeList* contList = tagEl->getChildNodes();
-      for (int c = 0; c < contList->getLength(); c++)
+      for (unsigned int c = 0; c < contList->getLength(); c++)
       {
          DOMNode* cont = contList->item(c);
          short type = cont->getNodeType();
@@ -1653,8 +1656,16 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "   }"						<< std::endl
 	 << "   fp->iomode = HDDM_STREAM_INPUT;"		<< std::endl
 	 << "   head = (char*)malloc(1000000);"			<< std::endl
-	 << "   *head = 0;"					<< std::endl
-	 << "   for (p = head;"					<< std::endl
+	 << "   fgets(head,7,fp->fd);"				<< std::endl
+	 << "   if (strstr(head,\"<HDDM \") != head)"		<< std::endl
+	 << "   {"						<< std::endl
+	 << "      fprintf(stderr,\"HDDM Error: input file \");"<< std::endl
+	 << "      fprintf(stderr,\"file does not have a \");"	<< std::endl
+	 << "      fprintf(stderr,\"valid HDDM header.\");"	<< std::endl
+	 << "      fprintf(stderr,\"  Please check.\\n\");"	<< std::endl
+	 << "      exit(9);"					<< std::endl
+	 << "   }"						<< std::endl
+	 << "   for (p = head+6;"				<< std::endl
 	 << "        strstr(head,\"</HDDM>\") == 0;"		<< std::endl
 	 << "        p += strlen(p))"				<< std::endl
 	 << "   {"						<< std::endl

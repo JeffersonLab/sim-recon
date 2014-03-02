@@ -855,9 +855,16 @@ int main(int argC, char* argV[])
    "   m_xraw(0),\n"
    "   m_status_bits(0)\n"
    "{\n"
+   "   char hdr[10];\n"
+   "   src.getline(hdr,7);\n"
+   "   m_documentString = hdr;\n"
+   "   if (m_documentString != \"<HDDM \") {\n"
+   "      throw std::runtime_error(\"hddm_" + classPrefix +
+   "::istream::istream error - invalid hddm header\");\n"
+   "   }\n"
+   "   src.clear();\n"
    "   std::string line;\n"
-   "   m_documentString = \"\";\n"
-   "   while(std::getline(src,line).good()) {\n"
+   "   while (std::getline(src,line).good()) {\n"
    "      m_documentString += line + \"\\n\";\n"
    "      if (line == \"</HDDM>\") {\n"
    "         break;\n"
@@ -1303,8 +1310,8 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
 
    DOMNamedNodeMap* oldAttr = elref->getAttributes();
    DOMNamedNodeMap* newAttr = el->getAttributes();
-   int listLength = oldAttr->getLength();
-   for (int n = 0; n < listLength; n++)
+   unsigned int listLength = oldAttr->getLength();
+   for (unsigned int n = 0; n < listLength; n++)
    {
       XtString nameS(oldAttr->item(n)->getNodeName());
       XtString oldS(elref->getAttribute(X(nameS)));
@@ -1335,7 +1342,7 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
       }
    }
    listLength = newAttr->getLength();
-   for (int n = 0; n < listLength; n++)
+   for (unsigned int n = 0; n < listLength; n++)
    {
       XtString nameS(newAttr->item(n)->getNodeName());
       XtString oldS(elref->getAttribute(X(nameS)));
@@ -1375,7 +1382,7 @@ void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
            << "\"" << tagS << "\" in xml document." << std::endl;
    exit(1);
    }
-   for (int n = 0; n < listLength; n++)
+   for (unsigned int n = 0; n < listLength; n++)
    {
       DOMNode* cont = oldList->item(n);
       XtString nameS(cont->getNodeName());
@@ -1409,7 +1416,7 @@ void CodeBuilder::writeClassdef(DOMElement* el)
 
    std::map<XtString,XtString> attrList;
    DOMNamedNodeMap *myAttr = el->getAttributes();
-   for (int n = 0; n < myAttr->getLength(); n++)
+   for (unsigned int n = 0; n < myAttr->getLength(); n++)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
@@ -1421,7 +1428,7 @@ void CodeBuilder::writeClassdef(DOMElement* el)
       DOMElement *hostEl = (DOMElement*)(*iter);
       XtString hostS(hostEl->getTagName());
       DOMNamedNodeMap *hostAttr = hostEl->getAttributes();
-      for (int n = 0; n < hostAttr->getLength(); n++)
+      for (unsigned int n = 0; n < hostAttr->getLength(); n++)
       {
          XtString attrS(hostAttr->item(n)->getNodeName());
          if (attrList.find(attrS) != attrList.end())
@@ -1495,7 +1502,7 @@ void CodeBuilder::writeClassdef(DOMElement* el)
    }
 
    myAttr = el->getAttributes();
-   for (int n = 0; n < myAttr->getLength(); n++)
+   for (unsigned int n = 0; n < myAttr->getLength(); n++)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
@@ -1637,7 +1644,7 @@ void CodeBuilder::writeClassdef(DOMElement* el)
    hFile << "   void streamer(istream &istr);" << std::endl
          << "   void streamer(ostream &ostr);" << std::endl;
 
-   for (int n = 0; n < myAttr->getLength(); n++)
+   for (unsigned int n = 0; n < myAttr->getLength(); n++)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
@@ -1785,7 +1792,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
             << " : HDDM_Element(parent)";
    }
    DOMNamedNodeMap *myAttr = el->getAttributes();
-   for (int n = 0; n < myAttr->getLength(); n++)
+   for (unsigned int n = 0; n < myAttr->getLength(); n++)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
@@ -1838,14 +1845,10 @@ void CodeBuilder::writeClassimp(DOMElement* el)
    {
       DOMElement *childEl = (DOMElement*)(*citer);
       XtString cnameS(childEl->getTagName());
-      XtString repS(childEl->getAttribute(X("maxOccurs")));
-      int rep = (repS == "unbounded")? INT_MAX : atoi(S(repS));
-      XtString hostS("m_host->");
       if (tagS == "HDDM")
       {
          hFile << "," << std::endl << "   m_" << cnameS
                << "_plist()";
-         hostS = "";
       }
    }
    for (citer = children[tagS].begin();
@@ -1895,7 +1898,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
 
    std::map<XtString,XtString> attrList;
    myAttr = el->getAttributes();
-   for (int n = 0; n < myAttr->getLength(); n++)
+   for (unsigned int n = 0; n < myAttr->getLength(); n++)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
@@ -1906,7 +1909,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
    {
       DOMElement *hostEl = (DOMElement*)(*iter);
       DOMNamedNodeMap *hostAttr = hostEl->getAttributes();
-      for (int n = 0; n < hostAttr->getLength(); n++)
+      for (unsigned int n = 0; n < hostAttr->getLength(); n++)
       {
          XtString attrS(hostAttr->item(n)->getNodeName());
          if (attrList.find(attrS) != attrList.end())
@@ -2039,7 +2042,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       }
    }
 
-   for (int n = 0; n < myAttr->getLength(); n++)
+   for (unsigned int n = 0; n < myAttr->getLength(); n++)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
@@ -2204,7 +2207,7 @@ void CodeBuilder::writeClassimp(DOMElement* el)
       hFile << "inline const void *" << tagS.simpleType()
             << "::getAttribute(const std::string &name) const {" << std::endl
             << "   return ";
-      for (int n = 0; n < myAttr->getLength(); n++)
+      for (unsigned int n = 0; n < myAttr->getLength(); n++)
       {
          XtString attrS(myAttr->item(n)->getNodeName());
          XtString typeS(el->getAttribute(X(attrS)));
@@ -2315,7 +2318,7 @@ void CodeBuilder::writeStreamers(DOMElement* el)
 
    std::vector<XtString> attrV;
    DOMNamedNodeMap *myAttr = el->getAttributes();
-   for (int n = 0; n < myAttr->getLength(); n++)
+   for (unsigned int n = 0; n < myAttr->getLength(); n++)
    {
       XtString attrS(myAttr->item(n)->getNodeName());
       XtString typeS(el->getAttribute(X(attrS)));
@@ -2347,7 +2350,7 @@ void CodeBuilder::writeStreamers(DOMElement* el)
          << "(istream &istr) {" << std::endl;
    if (attrV.size()) {
       hFile << "   *istr.m_xstr";
-      for (int n=0; n < attrV.size(); ++n)
+      for (unsigned int n=0; n < attrV.size(); ++n)
       {
          hFile << " >> m_" << attrV[n];
       }
@@ -2355,7 +2358,7 @@ void CodeBuilder::writeStreamers(DOMElement* el)
    }
    if (contV.size()) {
       hFile << "   istr";
-      for (int n=0; n < contV.size(); ++n)
+      for (unsigned int n=0; n < contV.size(); ++n)
       {
          hFile << " >> m_" << contV[n];
       }
@@ -2367,7 +2370,7 @@ void CodeBuilder::writeStreamers(DOMElement* el)
          << "(ostream &ostr) {" << std::endl;
    if (attrV.size()) {
       hFile << "   *ostr.m_xstr";
-      for (int n=0; n < attrV.size(); ++n)
+      for (unsigned int n=0; n < attrV.size(); ++n)
       {
          hFile << " << m_" << attrV[n];
       }
@@ -2375,7 +2378,7 @@ void CodeBuilder::writeStreamers(DOMElement* el)
    }
    if (contV.size()) {
       hFile << "   ostr";
-      for (int n=0; n < contV.size(); ++n)
+      for (unsigned int n=0; n < contV.size(); ++n)
       {
          hFile << " << m_" << contV[n];
       }
