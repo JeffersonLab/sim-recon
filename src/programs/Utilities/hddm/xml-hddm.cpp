@@ -528,13 +528,14 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
       short type = mode->getNodeType();
       if (type == DOMNode::ELEMENT_NODE)
       {
-	 int start=0;
          DOMElement* model = (DOMElement*) mode;
          XString modelS(model->getTagName());
+         /*
          XString reqS(model->getAttribute(X("minOccurs")));
 	 int req = (reqS == "unbounded")? INT_MAX : 
                    (reqS == "")? 1 :
                    atoi(S(reqS));
+         */
          XString repS(model->getAttribute(X("maxOccurs")));
 	 int rep = (repS == "unbounded")? INT_MAX :
                    (repS == "")? 1 :
