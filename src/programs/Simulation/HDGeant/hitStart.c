@@ -35,12 +35,20 @@ extern s_HDDM_t* thisInputEvent;
 static float ATTEN_LENGTH    = 150.;
 static float C_EFFECTIVE     = 15.;
 static float TWO_HIT_RESOL   = 25.;
-static int   MAX_HITS 	     = 100;
+static int   START_MAX_HITS  = 100;
 static float THRESH_MEV      = 0.150;
 static float LIGHT_GUIDE     = 0.;
 static float ANGLE_COR       = 1.038;
 static float BENT_REGION     = 39.465;
 
+// Comment by RTJ:
+// When I introduced the convenience constant MAX_HITS,
+// I never intended it to be a tunable simulation parameter.
+// Do not use it as such.  Do NOT MODIFY it, or the way
+// it functions in the algorithm.  If you want to truncate
+// the hit list, do it in mcsmear.
+#define MAX_HITS 100
+ 
 binTree_t* startCntrTree = 0;
 static int paddleCount = 0;
 static int pointCount = 0;
@@ -83,7 +91,7 @@ void hitStartCntr (float xin[4], float xout[4],
           ncounter++;
         }
         if (!strcmp(strings[i].str,"START_MAX_HITS")) {
-          MAX_HITS  = (int)values[i];
+          START_MAX_HITS  = (int)values[i];
           ncounter++;
         }
         if (!strcmp(strings[i].str,"START_THRESH_MEV")) {
