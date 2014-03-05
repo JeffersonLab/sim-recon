@@ -31,12 +31,17 @@ static float  C_EFFECTIVE     =  15.;   // cm/ns
 static float  WIDTH_OF_BLOCK  =   4.;   //cm
 static float  LENGTH_OF_BLOCK =  45.;   //cm
 static float  TWO_HIT_RESOL   =  75.;   // ns
-static int    MAX_HITS        =  100;   // maximum hits per block
+static int    FCAL_MAX_HITS   =  100;   // maximum hits per block
 static float  THRESH_MEV      =   5.;
 static float  ACTIVE_RADIUS   = 120.;
 static int    CENTRAL_ROW     =  29;
 static int    CENTRAL_COLUMN  =  29;
 
+// Comment by RTJ:
+// This particular constant "MAX_HITS" is a private constant
+// that I use for preallocating arrays needed to hold hits.
+// It is NOT a tunable simulation parameter.  DO NOT MODIFY!
+#define MAX_HITS 100
 
 binTree_t* forwardEMcalTree = 0;
 static int blockCount = 0;
@@ -88,7 +93,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
 	   ncounter++;
 	 }
 	 if (!strcmp(strings[i].str,"FCAL_MAX_HITS")) {
-	   MAX_HITS  = (int)values[i];
+	   FCAL_MAX_HITS  = (int)values[i];
 	   ncounter++;
 	 }
 	 if (!strcmp(strings[i].str,"FCAL_THRESH_MEV")) {

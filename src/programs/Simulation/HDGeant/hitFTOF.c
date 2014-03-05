@@ -52,10 +52,18 @@ static float TWO_HIT_RESOL =  25. ;// separation time between two different hits
 static float THRESH_MEV    =  0. ;  // do not through away any hits, one can do that later
 
 // maximum particle tracks per counter
-static int MAX_HITS    =    25;   // was 100 changed to 25
+static int TOF_MAX_HITS    = 25;  // was 100 changed to 25
 
 // maximum MC hits per paddle
-static int MAX_PAD_HITS   = 25   ;
+static int TOF_MAX_PAD_HITS   = 25;
+
+// Note by RTJ:
+// This constant "MAX_HITS" is a convenience constant
+// that I introduced to help with preallocating arrays
+// to hold hits.  It is NOT a tunable simulation parameter.
+// Do NOT MODIFY, either its name or its role in the code!
+#define MAX_HITS 1000
+
 
 // top level pointer of FTOF hit tree
 binTree_t* forwardTOFTree = 0;
@@ -115,11 +123,11 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  ncounter++;
 	}
 	if (!strcmp(strings[i].str,"TOF_MAX_HITS")){
-	  MAX_HITS      = (int)values[i];
+	  TOF_MAX_HITS      = (int)values[i];
 	  ncounter++;
 	}
 	if (!strcmp(strings[i].str,"TOF_MAX_PAD_HITS")) {
-	  MAX_PAD_HITS  = (int)values[i];
+	  TOF_MAX_PAD_HITS  = (int)values[i];
 	  ncounter++;
 	}
       }
@@ -283,7 +291,6 @@ void hitForwardTOF (float xin[4], float xout[4],
 
       // get space for the left/top or right/down PMT data for a total
       // of MAX_HITS possible hits in a single paddle
-      // and space for up to MAX_PAD_HITS hits in a paddle to store MC track information 
       // Note: column=0 means paddle read out on both ends coumn=1or2 means single ended readout
 
       if (column == 0 || column == 1) {
@@ -333,7 +340,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 
 	noMCHits = northHits->in[nhit].ftofMCHits;
 	unsigned int nMChit = noMCHits->mult;
-	if (nMChit<MAX_PAD_HITS) {
+	if (nMChit<MAX_HITS) {
 	  noMCHits->in[nMChit].x = x[0];
 	  noMCHits->in[nMChit].y = x[1];
 	  noMCHits->in[nMChit].z = x[2];
@@ -353,7 +360,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 	northHits->mult++;
 
 	// create memory for MC track hit information
-	northHits->in[nhit].ftofMCHits = noMCHits = make_s_FtofMCHits(MAX_PAD_HITS);
+	northHits->in[nhit].ftofMCHits = noMCHits = make_s_FtofMCHits(MAX_HITS);
 
 	noMCHits->in[0].x = x[0];
 	noMCHits->in[0].y = x[1];
@@ -397,7 +404,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 
 	// now add MC tracking information 
 	unsigned int nMChit = soMCHits->mult;	
-	if (nMChit<MAX_PAD_HITS) {
+	if (nMChit<MAX_HITS) {
 	  
 	  soMCHits->in[nMChit].x = x[0];
 	  soMCHits->in[nMChit].y = x[1];
@@ -418,7 +425,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 	southHits->mult++;
 
 	// create memory space for MC track hit information
-	southHits->in[nhit].ftofMCHits = soMCHits = make_s_FtofMCHits(MAX_PAD_HITS);
+	southHits->in[nhit].ftofMCHits = soMCHits = make_s_FtofMCHits(MAX_HITS);
 
 	soMCHits->in[0].x = x[0];
 	soMCHits->in[0].y = x[1];

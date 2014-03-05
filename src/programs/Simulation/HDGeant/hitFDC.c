@@ -50,7 +50,7 @@ static float STRIPS_PER_PLANE      =192;
 static float STRIP_SPACING         =0.5;
 static float U_OF_STRIP_ZERO	   =0;//  (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2)
 static float STRIP_GAP             =0.1;
-static int   MAX_HITS             =100;
+static int   FDC_MAX_HITS          =1000;
 static float K2                  =1.15;
 static float STRIP_NODES          = 3;
 static float THRESH_KEV           =1. ;
@@ -61,6 +61,12 @@ static float DIFFUSION_COEFF  =   1.1e-6; // cm^2/s --> 200 microns at 1 cm
 static float FDC_TIME_WINDOW = 1000.0; //time window for accepting FDC hits, ns
 static float GAS_GAIN = 8e4;
 
+// Note by RTJ:
+// This constant "MAX_HITS" is a convenience constant
+// that I introduced to help with preallocating arrays
+// to hold hits. It is NOT a tunable simulation parameter.
+// DO NOT MODIFY IT.
+#define MAX_HITS 1000
 
 #if 0
 static float wire_dx_offset[2304];
@@ -314,12 +320,8 @@ void AddFDCCathodeHits(int PackNo,float xwire,float avalanche_y,float tdrift,
 	  chits->mult++;
 	}
 	else{
-	  // supress warning
-	  /*
-	    fprintf(stderr,"HDGeant error in hitForwardDC: ");
-	    fprintf(stderr,"max hit count %d exceeded, truncating!\n",
-	    MAX_HITS);
-	  */
+	  fprintf(stderr,"HDGeant error in hitForwardDC: ");
+	  fprintf(stderr,"max hit count %d exceeded, truncating!\n", MAX_HITS);
 	}
 	
       }
@@ -443,10 +445,16 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
 	ahits->in[nhit].ptype = ipart;
       }
     
-      /*ahits->in[nhit].t = 
+#ifdef FDC_AVERAGE_TIME_FOR_MERGED_HITS
+      /* This old treatment tried to average the lead-edge
+       * times of merged hits.  It has been disabled, in favor
+       * of just keeping the time of the first hit recorded.
+       */
+        ahits->in[nhit].t = 
 	(ahits->in[nhit].t * ahits->in[nhit].dE + tdrift * dE)
 	/ (ahits->in[nhit].dE += dE);
-      */
+#endif
+
     }
   else if (nhit < MAX_HITS)              /* create new hit */
     {
@@ -531,7 +539,7 @@ void hitForwardDC (float xin[4], float xout[4],
             ncounter++;
           }
           if (!strcmp(strings[i].str,"FDC_MAX_HITS")) {
-            MAX_HITS  = values[i];
+            FDC_MAX_HITS  = values[i];
             ncounter++;
           }
           if (!strcmp(strings[i].str,"FDC_K2")) {
