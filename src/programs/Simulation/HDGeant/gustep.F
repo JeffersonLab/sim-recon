@@ -447,13 +447,14 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
       if (nosecondaries.eq.0) then
         do i=1,NGKINE
 c          make primary except if in calorimeter volume and not hadronic
-c          interaction
+c          interaction, or except if produced in cave upstream of Hall D
            iflgk(i) = 1
            cint = KCASE
            rx = sqrt(VERT(1)**2+VERT(2)**2)
-           if ((((rx>65.) .and.((VERT(3)>-17.) .and.
-     >          (VERT(3)<390.))).or.(VERT(3)>625.)).and.
-     >          (cchar.ne.'HADR')) then
+           if ((((rx>65.).and.((VERT(3)>-17.).and.(VERT(3)<390.))) !BCAL
+     >         .or.(VERT(3)>625.)                                  !FCAL
+     >         .or.(VERT(3)<-500.))                                !CAVE
+     >         .and.(cchar.ne.'HADR')) then
               iflgk(i) = 0
            endif
            call GSKING(i)
@@ -465,10 +466,10 @@ c          interaction
       if (ISTOP .eq. 1) then
          mechanism = KCASE
          if ((NGKINE>0) .and. (chcase.eq.'DCAY')) then
-            if ((cnames(NLEVEL).ne.'BCAL') .and.
-     +           (cnames(NLEVEL).ne.'FCAL').and.
-     +           (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
-     +           (VERT(3)<500.)) then
+            if ((cnames(NLEVEL).ne.'BCAL').and.
+     +          (cnames(NLEVEL).ne.'FCAL').and.
+     +          (sqrt(VERT(1)**2+VERT(2)**2)<65.).and.
+     +          (VERT(3)<500.).and.(VERT(3)>-500.)) then
                call savenewvertex(KCASE,NGKINE,GKIN,VECT,
      +              TOFG,iflgk,IPART,ITRA,ISTAK)
             endif
