@@ -64,6 +64,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_GenReconTrackComparison();
 	DHistogramAction_TrackMultiplicity();
 	DHistogramAction_TOFHitStudy();
+	DHistogramAction_NumReconstructedObjects();
 
 	DHistogramAction_PID(NULL);
 	DHistogramAction_TrackVertexComparison(NULL);

@@ -1871,6 +1871,354 @@ bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, cons
 	return true;
 }
 
+void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLoop)
+{
+	string locHistName;
+
+	//CREATE THE HISTOGRAMS
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		CreateAndChangeTo_ActionDirectory();
+
+		//TBT
+		locHistName = "dHist_NumPosTimeBasedTracks";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumPosTimeBasedTracks = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumPosTimeBasedTracks = new TH1D("NumPosTimeBasedTracks", ";# #it{q}^{+} Time-Based Tracks", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumNegTimeBasedTracks";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumNegTimeBasedTracks = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumNegTimeBasedTracks = new TH1D("NumNegTimeBasedTracks", ";# #it{q}^{-} Time-Based Tracks", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		//WBT
+		locHistName = "dHist_NumPosWireBasedTracks";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumPosWireBasedTracks = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumPosWireBasedTracks = new TH1D("NumPosWireBasedTracks", ";# #it{q}^{-} Wire-Based Tracks", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumNegWireBasedTracks";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumNegWireBasedTracks = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumNegWireBasedTracks = new TH1D("NumNegWireBasedTracks", ";# #it{q}^{-} Wire-Based Tracks", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		//Track Candidates
+		locHistName = "dHist_NumPosTrackCandidates";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumPosTrackCandidates = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumPosTrackCandidates = new TH1D("NumPosTrackCandidates", ";# #it{q}^{+} Track Candidates", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumNegTrackCandidates";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumNegTrackCandidates = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumNegTrackCandidates = new TH1D("NumNegTrackCandidates", ";# #it{q}^{-} Track Candidates", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		//CDC Track Candidates
+		locHistName = "dHist_NumPosTrackCandidates_CDC";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumPosTrackCandidates_CDC = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumPosTrackCandidates_CDC = new TH1D("NumPosTrackCandidates_CDC", ";# #it{q}^{+} CDC Track Candidates", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumNegTrackCandidates_CDC";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumNegTrackCandidates_CDC = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumNegTrackCandidates_CDC = new TH1D("NumNegTrackCandidates_CDC", ";# #it{q}^{-} CDC Track Candidates", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		//FDC Track Candidates
+		locHistName = "dHist_NumPosTrackCandidates_FDC";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumPosTrackCandidates_FDC = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumPosTrackCandidates_FDC = new TH1D("NumPosTrackCandidates_FDC", ";# #it{q}^{+} FDC Track Candidates", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumNegTrackCandidates_FDC";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumNegTrackCandidates_FDC = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumNegTrackCandidates_FDC = new TH1D("NumNegTrackCandidates_FDC", ";# #it{q}^{-} FDC Track Candidates", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		//Beam Photons
+		locHistName = "dHist_NumBeamPhotons";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumBeamPhotons = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumBeamPhotons = new TH1D("NumBeamPhotons", ";# Beam Photons", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		//Showers / Neutrals / TOF / SC
+		locHistName = "dHist_NumFCALShowers";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumFCALShowers = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumFCALShowers = new TH1D("NumFCALShowers", ";# FCAL Showers", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumBCALShowers";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumBCALShowers = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumBCALShowers = new TH1D("NumBCALShowers", ";# BCAL Showers", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumNeutralShowers";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumNeutralShowers = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumNeutralShowers = new TH1D("NumNeutralShowers", ";# Neutral Showers", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumTOFPoints";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumTOFPoints = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumTOFPoints = new TH1D("NumTOFPoints", ";# TOF Points", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumSCHits";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumSCHits = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumSCHits = new TH1D("NumSCHits", ";# SC Hits", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		//Matches
+		locHistName = "dHist_NumTrackBCALMatches";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumTrackBCALMatches = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumTrackBCALMatches = new TH1D("NumTrackBCALMatches", ";# Track-BCAL Matches", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumTrackFCALMatches";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumTrackFCALMatches = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumTrackFCALMatches = new TH1D("NumTrackFCALMatches", ";# Track-FCAL Matches", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumTrackTOFMatches";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumTrackTOFMatches = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumTrackTOFMatches = new TH1D("NumTrackTOFMatches", ";# Track-TOF Matches", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		locHistName = "dHist_NumTrackSCMatches";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumTrackSCMatches = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumTrackSCMatches = new TH1D("NumTrackSCMatches", ";# Track-SC Matches", dMaxNumObjects + 1, -0.5, (float)dMaxNumObjects + 0.5);
+
+		//Hits
+		locHistName = "dHist_NumCDCHits";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumCDCHits = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumCDCHits = new TH1D("NumCDCHits", ";# CDC Hits", dMaxNumCDCHits + 1, -0.5, (float)dMaxNumCDCHits + 0.5);
+
+		locHistName = "dHist_NumFDCHits";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumFDCHits = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumFDCHits = new TH1D("NumFDCHits", ";# FDC Hits", dMaxNumFDCHits + 1, -0.5, (float)dMaxNumFDCHits + 0.5);
+
+		locHistName = "dHist_NumTOFHits";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumTOFHits = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumTOFHits = new TH1D("NumTOFHits", ";# TOF Hits", dMaxNumTOFCalorimeterHits + 1, -0.5, (float)dMaxNumTOFCalorimeterHits + 0.5);
+
+		locHistName = "dHist_NumBCALHits";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumBCALHits = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumBCALHits = new TH1D("NumBCALHits", ";# BCAL Hits", dMaxNumTOFCalorimeterHits + 1, -0.5, (float)dMaxNumTOFCalorimeterHits + 0.5);
+
+		locHistName = "dHist_NumFCALHits";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumFCALHits = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dHist_NumFCALHits = new TH1D("NumFCALHits", ";# FCAL Hits", dMaxNumTOFCalorimeterHits + 1, -0.5, (float)dMaxNumTOFCalorimeterHits + 0.5);
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
+	Get_PreviousParticleCombos(locPreviousParticleCombos);
+	if(!locPreviousParticleCombos.empty())
+		return true; //else double-counting!
+
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		//TBT
+		vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+		locEventLoop->Get(locTrackTimeBasedVector);
+		unsigned int locNumPos = 0, locNumNeg = 0;
+		for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+		{
+			if(ParticleCharge(locTrackTimeBasedVector[loc_i]->PID()) > 0)
+				++locNumPos;
+			else
+				++locNumNeg;
+		}
+		dHist_NumPosTimeBasedTracks->Fill(locNumPos);
+		dHist_NumPosTimeBasedTracks->SetEntries(dHist_NumPosTimeBasedTracks->GetEntries() - 1 + (Double_t)locNumPos);
+		dHist_NumNegTimeBasedTracks->Fill(locNumNeg);
+		dHist_NumNegTimeBasedTracks->SetEntries(dHist_NumNegTimeBasedTracks->GetEntries() - 1 + (Double_t)locNumNeg);
+
+		//WBT
+		vector<const DTrackWireBased*> locTrackWireBasedVector;
+		locEventLoop->Get(locTrackWireBasedVector);
+		locNumPos = 0;  locNumNeg = 0;
+		for(size_t loc_i = 0; loc_i < locTrackWireBasedVector.size(); ++loc_i)
+		{
+			if(ParticleCharge(locTrackWireBasedVector[loc_i]->PID()) > 0)
+				++locNumPos;
+			else
+				++locNumNeg;
+		}
+		dHist_NumPosWireBasedTracks->Fill(locNumPos);
+		dHist_NumPosWireBasedTracks->SetEntries(dHist_NumPosWireBasedTracks->GetEntries() - 1 + (Double_t)locNumPos);
+		dHist_NumNegWireBasedTracks->Fill(locNumNeg);
+		dHist_NumNegWireBasedTracks->SetEntries(dHist_NumNegWireBasedTracks->GetEntries() - 1 + (Double_t)locNumNeg);
+
+		//Candidates
+		vector<const DTrackCandidate*> locTrackCandidates;
+		locEventLoop->Get(locTrackCandidates);
+		locNumPos = 0;  locNumNeg = 0;
+		for(size_t loc_i = 0; loc_i < locTrackCandidates.size(); ++loc_i)
+		{
+			if(locTrackCandidates[loc_i]->charge() > 0.0)
+				++locNumPos;
+			else
+				++locNumNeg;
+		}
+		dHist_NumPosTrackCandidates->Fill(locNumPos);
+		dHist_NumPosTrackCandidates->SetEntries(dHist_NumPosTrackCandidates->GetEntries() - 1 + (Double_t)locNumPos);
+		dHist_NumNegTrackCandidates->Fill(locNumNeg);
+		dHist_NumNegTrackCandidates->SetEntries(dHist_NumNegTrackCandidates->GetEntries() - 1 + (Double_t)locNumNeg);
+
+		//CDC Candidates
+		locEventLoop->Get(locTrackCandidates, "CDC");
+		locNumPos = 0;  locNumNeg = 0;
+		for(size_t loc_i = 0; loc_i < locTrackCandidates.size(); ++loc_i)
+		{
+			if(locTrackCandidates[loc_i]->charge() > 0.0)
+				++locNumPos;
+			else
+				++locNumNeg;
+		}
+		dHist_NumPosTrackCandidates_CDC->Fill(locNumPos);
+		dHist_NumPosTrackCandidates_CDC->SetEntries(dHist_NumPosTrackCandidates_CDC->GetEntries() - 1 + (Double_t)locNumPos);
+		dHist_NumNegTrackCandidates_CDC->Fill(locNumNeg);
+		dHist_NumNegTrackCandidates_CDC->SetEntries(dHist_NumNegTrackCandidates_CDC->GetEntries() - 1 + (Double_t)locNumNeg);
+
+		//FDC Candidates
+		locEventLoop->Get(locTrackCandidates, "FDCCathodes");
+		locNumPos = 0;  locNumNeg = 0;
+		for(size_t loc_i = 0; loc_i < locTrackCandidates.size(); ++loc_i)
+		{
+			if(locTrackCandidates[loc_i]->charge() > 0.0)
+				++locNumPos;
+			else
+				++locNumNeg;
+		}
+		dHist_NumPosTrackCandidates_FDC->Fill(locNumPos);
+		dHist_NumPosTrackCandidates_FDC->SetEntries(dHist_NumPosTrackCandidates_FDC->GetEntries() - 1 + (Double_t)locNumPos);
+		dHist_NumNegTrackCandidates_FDC->Fill(locNumNeg);
+		dHist_NumNegTrackCandidates_FDC->SetEntries(dHist_NumNegTrackCandidates_FDC->GetEntries() - 1 + (Double_t)locNumNeg);
+
+		//Beam Photons
+		vector<const DBeamPhoton*> locBeamPhotons;
+		locEventLoop->Get(locBeamPhotons);
+		dHist_NumBeamPhotons->Fill((Double_t)locBeamPhotons.size());
+		dHist_NumBeamPhotons->SetEntries(dHist_NumBeamPhotons->GetEntries() - 1 + (Double_t)locBeamPhotons.size());
+
+		//Showers
+		vector<const DFCALShower*> locFCALShowers;
+		locEventLoop->Get(locFCALShowers);
+		dHist_NumFCALShowers->Fill((Double_t)locFCALShowers.size());
+		dHist_NumFCALShowers->SetEntries(dHist_NumFCALShowers->GetEntries() - 1 + (Double_t)locFCALShowers.size());
+
+		vector<const DBCALShower*> locBCALShowers;
+		locEventLoop->Get(locBCALShowers);
+		dHist_NumBCALShowers->Fill((Double_t)locBCALShowers.size());
+		dHist_NumBCALShowers->SetEntries(dHist_NumBCALShowers->GetEntries() - 1 + (Double_t)locBCALShowers.size());
+
+		vector<const DNeutralShower*> locNeutralShowers;
+		locEventLoop->Get(locNeutralShowers);
+		dHist_NumNeutralShowers->Fill((Double_t)locNeutralShowers.size());
+		dHist_NumNeutralShowers->SetEntries(dHist_NumNeutralShowers->GetEntries() - 1 + (Double_t)locNeutralShowers.size());
+
+		//TOF & SC
+		vector<const DTOFPoint*> locTOFPoints;
+		locEventLoop->Get(locTOFPoints);
+		dHist_NumTOFPoints->Fill((Double_t)locTOFPoints.size());
+		dHist_NumTOFPoints->SetEntries(dHist_NumTOFPoints->GetEntries() - 1 + (Double_t)locTOFPoints.size());
+
+		vector<const DSCHit*> locSCHits;
+		locEventLoop->Get(locSCHits);
+		dHist_NumSCHits->Fill((Double_t)locSCHits.size());
+		dHist_NumSCHits->SetEntries(dHist_NumSCHits->GetEntries() - 1 + (Double_t)locSCHits.size());
+
+		//Matches
+		const DDetectorMatches* locDetectorMatches = NULL;
+		locEventLoop->GetSingle(locDetectorMatches);
+		if(locDetectorMatches != NULL)
+		{
+			dHist_NumTrackBCALMatches->Fill((Double_t)locDetectorMatches->Get_NumTrackBCALMatches());
+			dHist_NumTrackBCALMatches->SetEntries(dHist_NumTrackBCALMatches->GetEntries() - 1 + (Double_t)locDetectorMatches->Get_NumTrackBCALMatches());
+			dHist_NumTrackFCALMatches->Fill((Double_t)locDetectorMatches->Get_NumTrackFCALMatches());
+			dHist_NumTrackFCALMatches->SetEntries(dHist_NumTrackFCALMatches->GetEntries() - 1 + (Double_t)locDetectorMatches->Get_NumTrackFCALMatches());
+			dHist_NumTrackTOFMatches->Fill((Double_t)locDetectorMatches->Get_NumTrackTOFMatches());
+			dHist_NumTrackTOFMatches->SetEntries(dHist_NumTrackTOFMatches->GetEntries() - 1 + (Double_t)locDetectorMatches->Get_NumTrackTOFMatches());
+			dHist_NumTrackSCMatches->Fill((Double_t)locDetectorMatches->Get_NumTrackSCMatches());
+			dHist_NumTrackSCMatches->SetEntries(dHist_NumTrackSCMatches->GetEntries() - 1 + (Double_t)locDetectorMatches->Get_NumTrackSCMatches());
+		}
+		else
+		{
+			dHist_NumTrackBCALMatches->Fill(0.0);
+			dHist_NumTrackBCALMatches->SetEntries(dHist_NumTrackBCALMatches->GetEntries() - 1);
+			dHist_NumTrackFCALMatches->Fill(0.0);
+			dHist_NumTrackFCALMatches->SetEntries(dHist_NumTrackFCALMatches->GetEntries() - 1);
+			dHist_NumTrackTOFMatches->Fill(0.0);
+			dHist_NumTrackTOFMatches->SetEntries(dHist_NumTrackTOFMatches->GetEntries() - 1);
+			dHist_NumTrackSCMatches->Fill(0.0);
+			dHist_NumTrackSCMatches->SetEntries(dHist_NumTrackSCMatches->GetEntries() - 1);
+		}
+
+		//Hits
+		vector<const DCDCHit*> locCDCHits;
+		locEventLoop->Get(locCDCHits);
+		dHist_NumCDCHits->Fill((Double_t)locCDCHits.size());
+		dHist_NumCDCHits->SetEntries(dHist_NumCDCHits->GetEntries() - 1 + (Double_t)locCDCHits.size());
+
+		vector<const DFDCHit*> locFDCHits;
+		locEventLoop->Get(locFDCHits);
+		dHist_NumFDCHits->Fill((Double_t)locFDCHits.size());
+		dHist_NumFDCHits->SetEntries(dHist_NumFDCHits->GetEntries() - 1 + (Double_t)locFDCHits.size());
+
+		vector<const DTOFHit*> locTOFHits;
+		locEventLoop->Get(locTOFHits);
+		dHist_NumTOFHits->Fill((Double_t)locTOFHits.size());
+		dHist_NumTOFHits->SetEntries(dHist_NumTOFHits->GetEntries() - 1 + (Double_t)locTOFHits.size());
+
+		vector<const DBCALHit*> locBCALHits;
+		locEventLoop->Get(locBCALHits);
+		dHist_NumBCALHits->Fill((Double_t)locBCALHits.size());
+		dHist_NumBCALHits->SetEntries(dHist_NumBCALHits->GetEntries() - 1 + (Double_t)locBCALHits.size());
+
+		vector<const DFCALHit*> locFCALHits;
+		locEventLoop->Get(locFCALHits);
+		dHist_NumFCALHits->Fill((Double_t)locFCALHits.size());
+		dHist_NumFCALHits->SetEntries(dHist_NumFCALHits->GetEntries() - 1 + (Double_t)locFCALHits.size());
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
+	return true;
+}
+
 void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 {
 	//CREATE THE HISTOGRAMS

@@ -20,6 +20,8 @@
 #include "PID/DChargedTrack.h"
 #include "PID/DChargedTrackHypothesis.h"
 #include "PID/DNeutralParticle.h"
+#include "PID/DNeutralShower.h"
+#include "PID/DDetectorMatches.h"
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DEventRFBunch.h"
 #include "TRACKING/DMCThrown.h"
@@ -33,12 +35,22 @@
 #include "ANALYSIS/DAnalysisAction.h"
 #include "ANALYSIS/DCutActions.h"
 
+#include "START_COUNTER/DSCHit.h"
+#include "CDC/DCDCHit.h"
+#include "FDC/DFDCHit.h"
 #include "TOF/DTOFPoint.h"
+#include "TOF/DTOFHit.h"
 #include "TOF/DTOFTruth.h"
 #include "BCAL/DBCALShower.h"
+#include "BCAL/DBCALHit.h"
 #include "BCAL/DBCALTruthShower.h"
 #include "FCAL/DFCALShower.h"
+#include "FCAL/DFCALHit.h"
 #include "FCAL/DFCALTruthShower.h"
+
+#include "TRACKING/DTrackTimeBased.h"
+#include "TRACKING/DTrackWireBased.h"
+#include "TRACKING/DTrackCandidate.h"
 
 using namespace std;
 using namespace jana;
@@ -59,6 +71,7 @@ REACTION-INDEPENDENT ACTIONS:
 	DHistogramAction_DetectedParticleKinematics
 	DHistogramAction_GenReconTrackComparison
 	DHistogramAction_TOFHitStudy
+	DHistogramAction_NumReconstructedObjects
 */
 
 class DHistogramAction_PID : public DAnalysisAction
@@ -447,12 +460,67 @@ class DHistogramAction_TOFHitStudy : public DAnalysisAction
 		map<Particle_t, TH2D*> dHistMap_dEVsP;
 };
 
+class DHistogramAction_NumReconstructedObjects : public DAnalysisAction
+{
+	public:
+		DHistogramAction_NumReconstructedObjects(const DReaction* locReaction, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Hist_NumReconstructedObjects", false, locActionUniqueString),
+		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(2000), dMaxNumTOFCalorimeterHits(400){}
+
+		DHistogramAction_NumReconstructedObjects(string locActionUniqueString) : 
+		DAnalysisAction(NULL, "Hist_NumReconstructedObjects", false, ""),
+		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(2000), dMaxNumTOFCalorimeterHits(400){}
+
+		DHistogramAction_NumReconstructedObjects(void) : 
+		DAnalysisAction(NULL, "Hist_NumReconstructedObjects", false, ""),
+		dMaxNumObjects(40), dMaxNumCDCHits(400), dMaxNumFDCHits(2000), dMaxNumTOFCalorimeterHits(400){}
+
+		unsigned int dMaxNumObjects;
+		unsigned int dMaxNumCDCHits;
+		unsigned int dMaxNumFDCHits;
+		unsigned int dMaxNumTOFCalorimeterHits;
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
+
+		TH1D* dHist_NumPosTimeBasedTracks;
+		TH1D* dHist_NumNegTimeBasedTracks;
+		TH1D* dHist_NumPosWireBasedTracks;
+		TH1D* dHist_NumNegWireBasedTracks;
+		TH1D* dHist_NumPosTrackCandidates;
+		TH1D* dHist_NumNegTrackCandidates;
+		TH1D* dHist_NumPosTrackCandidates_CDC;
+		TH1D* dHist_NumNegTrackCandidates_CDC;
+		TH1D* dHist_NumPosTrackCandidates_FDC;
+		TH1D* dHist_NumNegTrackCandidates_FDC;
+
+		TH1D* dHist_NumBeamPhotons;
+		TH1D* dHist_NumFCALShowers;
+		TH1D* dHist_NumBCALShowers;
+		TH1D* dHist_NumNeutralShowers;
+		TH1D* dHist_NumTOFPoints;
+		TH1D* dHist_NumSCHits;
+
+		TH1D* dHist_NumTrackBCALMatches;
+		TH1D* dHist_NumTrackFCALMatches;
+		TH1D* dHist_NumTrackTOFMatches;
+		TH1D* dHist_NumTrackSCMatches;
+
+		TH1D* dHist_NumCDCHits;
+		TH1D* dHist_NumFDCHits;
+		TH1D* dHist_NumTOFHits;
+		TH1D* dHist_NumBCALHits;
+		TH1D* dHist_NumFCALHits;
+};
+
 class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 {
 	public:
 		DHistogramAction_TrackMultiplicity(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TrackMultiplicity", false, locActionUniqueString),
-		dMaxNumTracks(20)
+		dMaxNumTracks(40)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -461,7 +529,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 
 		DHistogramAction_TrackMultiplicity(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_TrackMultiplicity", false, ""),
-		dMaxNumTracks(20)
+		dMaxNumTracks(40)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -470,7 +538,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 
 		DHistogramAction_TrackMultiplicity(void) : 
 		DAnalysisAction(NULL, "Hist_TrackMultiplicity", false, ""),
-		dMaxNumTracks(20)
+		dMaxNumTracks(40)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
