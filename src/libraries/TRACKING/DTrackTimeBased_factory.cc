@@ -740,7 +740,14 @@ void DTrackTimeBased_factory::DoFit(const DTrackWireBased *track,
       rt->SetDGeometry(geom);
       rt->q = timebased_track->charge();
       rt->Swim(timebased_track->position(), timebased_track->momentum(), timebased_track->charge());
-      
+
+      if(rt->Nswim_steps <= 1)
+      {
+         //Track parameters are bogus (e.g. track position closer to infinity than the beamline)
+         delete timebased_track;
+         return;
+      }
+
       timebased_track->setPID(pid_algorithm->IDTrack(timebased_track->charge(), timebased_track->mass()));
       timebased_track->setTime(mStartTime);
       timebased_track->rt = rt;

@@ -438,7 +438,14 @@ void DTrackWireBased_factory::DoFit(unsigned int c_id,
       rt->SetMass(track_kd->mass());
       //rt->Swim(track->position(), track->momentum(), track->charge());
       rt->FastSwim(track->position(), track->momentum(), track->charge());
-      
+
+      if(rt->Nswim_steps <= 1)
+      {
+         //Track parameters are bogus (e.g. track position closer to infinity than the beamline)
+         delete track;
+         return;
+      }
+
       track->rt = rt;
       track->chisq = fitter->GetChisq();
       track->Ndof = fitter->GetNdof();
