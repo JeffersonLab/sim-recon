@@ -188,6 +188,40 @@ class DDetectorMatches : public JObject
 			return true;
 		}
 
+		//Get # Matches
+		inline size_t Get_NumTrackBCALMatches(void) const
+		{
+			map<const DTrackTimeBased*, vector<DShowerMatchParams> >::const_iterator locIterator = dTrackBCALMatchParams.begin();
+			unsigned int locNumTrackMatches = 0;
+			for(; locIterator != dTrackBCALMatchParams.end(); ++locIterator)
+				locNumTrackMatches += locIterator->second.size();
+			return locNumTrackMatches;
+		}
+		inline size_t Get_NumTrackFCALMatches(void) const
+		{
+			map<const DTrackTimeBased*, vector<DShowerMatchParams> >::const_iterator locIterator = dTrackFCALMatchParams.begin();
+			unsigned int locNumTrackMatches = 0;
+			for(; locIterator != dTrackFCALMatchParams.end(); ++locIterator)
+				locNumTrackMatches += locIterator->second.size();
+			return locNumTrackMatches;
+		}
+		inline size_t Get_NumTrackTOFMatches(void) const
+		{
+			map<const DTrackTimeBased*, vector<DTOFHitMatchParams> >::const_iterator locIterator = dTrackTOFMatchParams.begin();
+			unsigned int locNumTrackMatches = 0;
+			for(; locIterator != dTrackTOFMatchParams.end(); ++locIterator)
+				locNumTrackMatches += locIterator->second.size();
+			return locNumTrackMatches;
+		}
+		inline size_t Get_NumTrackSCMatches(void) const
+		{
+			map<const DTrackTimeBased*, vector<DSCHitMatchParams> >::const_iterator locIterator = dTrackSCMatchParams.begin();
+			unsigned int locNumTrackMatches = 0;
+			for(; locIterator != dTrackSCMatchParams.end(); ++locIterator)
+				locNumTrackMatches += locIterator->second.size();
+			return locNumTrackMatches;
+		}
+
 		//SETTERS:
 		inline void Add_Match(const DTrackTimeBased* locTrackTimeBased, const DBCALShower* locBCALShower, DShowerMatchParams& locShowerMatchParams)
 		{
@@ -253,30 +287,12 @@ class DDetectorMatches : public JObject
 			}
 		}
 
-		void toStrings(vector<pair<string,string> > &items) const
+		void toStrings(vector<pair<string,string> >& items) const
 		{
-			map<const DTrackTimeBased*, vector<DShowerMatchParams> >::const_iterator locShowerIterator = dTrackBCALMatchParams.begin();
-			unsigned int locNumTrackMatches = 0;
-			for(; locShowerIterator != dTrackBCALMatchParams.end(); ++locShowerIterator)
-				locNumTrackMatches += locShowerIterator->second.size();
-			AddString(items, "#_Track_BCAL_Matches","%d",locNumTrackMatches);
-
-			locNumTrackMatches = 0;
-			for(locShowerIterator = dTrackFCALMatchParams.begin(); locShowerIterator != dTrackFCALMatchParams.end(); ++locShowerIterator)
-				locNumTrackMatches += locShowerIterator->second.size();
-			AddString(items, "#_Track_FCAL_Matches","%d", locNumTrackMatches);
-
-			map<const DTrackTimeBased*, vector<DTOFHitMatchParams> >::const_iterator locTOFIterator = dTrackTOFMatchParams.begin();
-			locNumTrackMatches = 0;
-			for(; locTOFIterator != dTrackTOFMatchParams.end(); ++locTOFIterator)
-				locNumTrackMatches += locTOFIterator->second.size();
-			AddString(items, "#_Track_TOF_Matches","%d", locNumTrackMatches);
-
-			map<const DTrackTimeBased*, vector<DSCHitMatchParams> >::const_iterator locSCIterator = dTrackSCMatchParams.begin();
-			locNumTrackMatches = 0;
-			for(; locSCIterator != dTrackSCMatchParams.end(); ++locSCIterator)
-				locNumTrackMatches += locSCIterator->second.size();
-			AddString(items, "#_Track_SC_Matches","%d", locNumTrackMatches);
+			AddString(items, "#_Track_BCAL_Matches", "%d", Get_NumTrackBCALMatches());
+			AddString(items, "#_Track_FCAL_Matches", "%d", Get_NumTrackFCALMatches());
+			AddString(items, "#_Track_TOF_Matches", "%d", Get_NumTrackTOFMatches());
+			AddString(items, "#_Track_SC_Matches", "%d", Get_NumTrackSCMatches());
 		}
 
 	private:

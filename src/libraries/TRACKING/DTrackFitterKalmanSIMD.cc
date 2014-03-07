@@ -6387,6 +6387,8 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
     double z=forward_traj[k].z;
     if (z<zhit) break;
   }
+  if (k==forward_traj.size()) return FIT_NOT_DONE;
+
   break_point_step_index=k;
 
   // Attemp to refit the track using the abreviated list of hits and the truncated
@@ -6397,6 +6399,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
   double my_anneal=anneal_factor;
   while (break_id+num_cdchits>=MIN_HITS_FOR_REFIT && break_id>0 
 	 && break_point_step_index<forward_traj.size()
+	 && break_point_step_index>1
 	 && refit_iter<10){
     refit_iter++;
 
@@ -6434,6 +6437,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
       if (z<zhit) break;
     }
     break_point_step_index=k;
+
   }
 
   // If the refit did not work, restore the old list hits used in the fit 
@@ -6455,11 +6459,6 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
   unsigned int num_cdchits=my_cdchits.size();
   unsigned int num_fdchits=my_fdchits.size();
   unsigned int max_fdc_index=num_fdchits-1;
-  unsigned int min_fdc_index_for_refit=MIN_HITS_FOR_REFIT-1;
-  if (num_cdchits>0 && num_cdchits+num_fdchits>MIN_HITS_FOR_REFIT){
-    min_fdc_index_for_refit=MIN_HITS_FOR_REFIT-num_cdchits-1;
-  }
-
   
   // Vectors to keep track of updated state vectors and covariance matrices (after
   // adding the hit information)
@@ -6527,26 +6526,13 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       kalman_error_t error=KalmanForward(anneal_factor,S,C,chisq,my_ndf);
       
       if (DEBUG_LEVEL>1) _DBG_ << "Iter: " << iter+1 << " Chi2=" << chisq << " Ndf=" << my_ndf << " Error code: " << error << endl; 
-      
-      if (error==MOMENTUM_OUT_OF_RANGE){
-	//	_DBG_ <<"Low momentum" <<endl;
-	break_point_fdc_index=min_fdc_index_for_refit;
-      }
-      
-      if (error==BROKEN_COVARIANCE_MATRIX){
-	break_point_fdc_index=min_fdc_index_for_refit;
-	//_DBG_ << "Bad Cov" <<endl;
-      }
-      if (error==POSITION_OUT_OF_RANGE){
-	if (break_point_fdc_index<min_fdc_index_for_refit) {
-	  break_point_fdc_index=min_fdc_index_for_refit;
-	}
-	//_DBG_ << "Bad position" << endl;
-      }
-      
+
       // Try to recover tracks that failed the first attempt at fitting
       if (error!=FIT_SUCCEEDED && RECOVER_BROKEN_TRACKS
-	  && break_point_fdc_index+num_cdchits>=MIN_HITS_FOR_REFIT){
+	  && num_fdchits>2  // some minimum to make this worthwhile...
+	  && break_point_fdc_index+num_cdchits>=MIN_HITS_FOR_REFIT
+	  && forward_traj.size()>2*MIN_HITS_FOR_REFIT // avoid small track stubs
+	  ){
 	DMatrix5x5 Ctemp=C;
 	DMatrix5x1 Stemp=S;
 	unsigned int temp_ndf=my_ndf;

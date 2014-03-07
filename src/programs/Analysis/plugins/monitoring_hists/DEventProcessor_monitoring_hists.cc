@@ -40,6 +40,7 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int ru
 	dHistogramAction_ThrownParticleKinematics.Initialize(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
 	dHistogramAction_GenReconTrackComparison.Initialize(locEventLoop);
+	dHistogramAction_NumReconstructedObjects.Initialize(locEventLoop);
 
 	return NOERROR;
 }
@@ -57,6 +58,7 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int ev
 	dHistogramAction_ThrownParticleKinematics(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
 	dHistogramAction_GenReconTrackComparison(locEventLoop);
+	dHistogramAction_NumReconstructedObjects(locEventLoop);
 
 	return NOERROR;
 }

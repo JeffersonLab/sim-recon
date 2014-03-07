@@ -355,7 +355,6 @@ bool DParticleID::MatchToBCAL(const DReferenceTrajectory* rt, const vector<const
 			continue;
 		if(locShowerMatchParams.dDOCAToShower >= d_min)
 			continue;
-
 		d_min = locShowerMatchParams.dDOCAToShower;
 		locStartTime = locBCALShowers[loc_i]->t - locShowerMatchParams.dFlightTime;
 //		locTimeVariance = sqrt(locShowerMatchParams.dFlightTimeVariance) - locBCALShowers[loc_i]->dCovarianceMatrix(4, 4); //uncomment when ready!!
@@ -367,14 +366,13 @@ bool DParticleID::MatchToBCAL(const DReferenceTrajectory* rt, const vector<const
 	return locMatchFlag;
 }
 
-//returns NULL if doesn't match
 bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DReferenceTrajectory* rt, const DBCALShower* locBCALShower, double locInputStartTime, DShowerMatchParams& locShowerMatchParams) const
 {
 	// NOTE: locTrackTimeBased is NULL if calling from track reconstruction!!!
 	// Get the BCAL cluster position and normal
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
-	double locFlightTime = 0.0, locPathLength = 0.0;
+	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
 	double d = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime);
 	if(!isfinite(d))
 		return false;
@@ -382,9 +380,9 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 	// Check that the hit is not out of time with respect to the track
 	if(fabs(locBCALShower->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
 		return false;
-		
+
 	DVector3 proj_pos = rt->GetLastDOCAPoint();
-		
+
 	double dz = proj_pos.z() - bcal_pos.z();
 	double dphi = proj_pos.Phi() - bcal_pos.Phi();
 	double p = rt->swim_steps[0].mom.Mag();
@@ -394,7 +392,6 @@ bool DParticleID::MatchToBCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 	while(dphi < -M_PI)
 		dphi += M_TWO_PI;
 	double phi_sigma = 0.025 + 5.8e-4/(p*p*p);
-
 	if((fabs(dz) >= 10.0) || (fabs(dphi) >= 3.0*phi_sigma))
 		return false; //not close enough
 
@@ -454,7 +451,7 @@ bool DParticleID::MatchToTOF(const DTrackTimeBased* locTrackTimeBased, const DRe
 	DVector3 tof_pos = locTOFPoint->pos;
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector to TOF plane
 	DVector3 proj_pos, proj_mom;
-	double locPathLength = 0.0, locFlightTime = 0.0;
+	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
 	if(rt->GetIntersectionWithPlane(tof_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime) != NOERROR)
 		return false;
 
@@ -524,7 +521,7 @@ bool DParticleID::MatchToFCAL(const DTrackTimeBased* locTrackTimeBased, const DR
 	DVector3 fcal_pos = locFCALShower->getPosition();
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
 	DVector3 proj_pos, proj_mom;
-	double locPathLength, locFlightTime;
+	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
 	if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime) != NOERROR)
 		return false;
 
@@ -595,7 +592,7 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 
 	// Find intersection with a "barrel" approximation for the start counter
 	DVector3 proj_pos,proj_mom;
-	double locPathLength=0., locFlightTime=0.;
+	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
 	rt->GetIntersectionWithRadius(sc_pos[1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom);
 	double proj_phi = proj_pos.Phi();
 	if(proj_phi < 0.0)
@@ -638,6 +635,8 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 			norm.SetXYZ(cos(myphi)*xhat, sin(myphi)*xhat, sc_norm[loc_i].z());
 			double r = sc_pos[loc_i].X();
 			DVector3 pos(r*cos(myphi), r*sin(myphi), sc_pos[loc_i].z());
+			locPathLength = 9.9E9;
+			locFlightTime = 9.9E9;
 			rt->GetIntersectionWithPlane(pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime);
 			myz = proj_pos.z();
 			if(myz < sc_pos[loc_i + 1].z())
@@ -704,15 +703,13 @@ bool DParticleID::MatchToTrack(const DBCALShower* locBCALShower, const DReferenc
 	// Get the BCAL cluster position and normal
 	DVector3 bcal_pos(locBCALShower->x, locBCALShower->y, locBCALShower->z); 
 
-	double locFlightTime, locPathLength;
+	double locFlightTime = 9.9E9, locPathLength = 9.9E9;
 	locDistance = rt->DistToRTwithTime(bcal_pos, &locPathLength, &locFlightTime);
 	if(!isfinite(locDistance))
 		return false;
-
 	// Check that the hit is not out of time with respect to the track
 	if(fabs(locBCALShower->t - locFlightTime - locInputStartTime) > OUT_OF_TIME_CUT)
 		return false;
-
 	return true;
 }
 
@@ -721,7 +718,7 @@ bool DParticleID::MatchToTrack(const DFCALShower* locFCALShower, const DReferenc
 	DVector3 fcal_pos = locFCALShower->getPosition();
 	DVector3 norm(0.0, 0.0, 1.0); //normal vector for the FCAL plane
 	DVector3 proj_pos, proj_mom;
-	double locPathLength, locFlightTime;
+	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
 	if(rt->GetIntersectionWithPlane(fcal_pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime) != NOERROR)
 		return false;
 

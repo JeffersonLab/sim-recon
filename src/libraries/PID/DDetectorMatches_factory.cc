@@ -99,7 +99,6 @@ void DDetectorMatches_factory::MatchToBCAL(const DParticleID* locParticleID, con
 {
 	double locInputStartTime = locTrackTimeBased->t0();
 	const DReferenceTrajectory* rt = locTrackTimeBased->rt;
-
 	for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
 	{
 		DShowerMatchParams locShowerMatchParams;
@@ -113,7 +112,6 @@ void DDetectorMatches_factory::MatchToTOF(const DParticleID* locParticleID, cons
 {
 	double locInputStartTime = locTrackTimeBased->t0();
 	const DReferenceTrajectory* rt = locTrackTimeBased->rt;
-
 	for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
 	{
 		DTOFHitMatchParams locTOFHitMatchParams;
@@ -127,7 +125,6 @@ void DDetectorMatches_factory::MatchToFCAL(const DParticleID* locParticleID, con
 {
 	double locInputStartTime = locTrackTimeBased->t0();
 	const DReferenceTrajectory* rt = locTrackTimeBased->rt;
-
 	for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
 	{
 		DShowerMatchParams locShowerMatchParams;
@@ -141,7 +138,6 @@ void DDetectorMatches_factory::MatchToSC(const DParticleID* locParticleID, const
 {
 	double locInputStartTime = locTrackTimeBased->t0();
 	const DReferenceTrajectory* rt = locTrackTimeBased->rt;
-
 	for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
 	{
 		DSCHitMatchParams locSCHitMatchParams;
@@ -153,7 +149,7 @@ void DDetectorMatches_factory::MatchToSC(const DParticleID* locParticleID, const
 
 void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, const DBCALShower* locBCALShower, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, DDetectorMatches* locDetectorMatches) const
 {
-	double locDistance = 0.0, locMinDistance = 9.9E20;
+	double locDistance = 9.9E20, locMinDistance = 9.9E20;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		double locInputStartTime = locTrackTimeBasedVector[loc_i]->t0();
@@ -168,7 +164,7 @@ void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, co
 
 void DDetectorMatches_factory::MatchToTrack(const DParticleID* locParticleID, const DFCALShower* locFCALShower, const vector<const DTrackTimeBased*>& locTrackTimeBasedVector, DDetectorMatches* locDetectorMatches) const
 {
-	double locDistance = 0.0, locMinDistance = 9.9E20;
+	double locDistance = 9.9E20, locMinDistance = 9.9E20;
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
 	{
 		double locInputStartTime = locTrackTimeBasedVector[loc_i]->t0();
