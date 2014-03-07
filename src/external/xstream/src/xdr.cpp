@@ -110,7 +110,7 @@ istream& istream::operator>>(string &s){
 	s=string(line,line+len);
 	
 	//mod 4 via bitmask (only works for powers of 2)
-	size_t pad = 4-(len&3);
+	size_t pad = (4-len)&3;
 	//ignore padding zeros
 	char dummy[pad];
 	_sb->sgetn(dummy,pad);
