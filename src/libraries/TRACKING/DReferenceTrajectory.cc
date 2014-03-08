@@ -723,6 +723,10 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
 							 double *s,
 							 double *t,
 							 DVector3 *p_at_intersection) const{
+  mypos.SetXYZ(NaN,NaN,NaN);
+  if(p_at_intersection)
+    p_at_intersection->SetXYZ(NaN,NaN,NaN);
+
   if(Nswim_steps<1){
     _DBG_<<"No swim steps! You must \"Swim\" the track before calling GetIntersectionWithRadius(...)"<<endl;
   }
@@ -819,6 +823,7 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	pos.SetXYZ(0,0,0);
 	if(s)*s=0.0;
 	if(t)*t=0.0;
+	p_at_intersection.SetXYZ(0,0,0);
 	
 	// Return early if the z-position of the plane with which we are 
 	// intersecting is beyong the reference trajectory.
@@ -1148,6 +1153,8 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 		// It seems to occasionally occur that we have 1 swim step
 		// and it's values are invalid. Supress warning messages
 		// for these as they are "known" (even if not fully understood!)
+      if(s != NULL)
+        *s = 1.0E6;
 		if(Nswim_steps>1){
 			_DBG_<<"\"hit\" passed to DistToRT(DVector3) out of range!"<<endl;
 			_DBG_<<"hit x,y,z = "<<hit.x()<<", "<<hit.y()<<", "<<hit.z()<<"  Nswim_steps="<<Nswim_steps<<"  min_delta2="<<delta2<<endl;
