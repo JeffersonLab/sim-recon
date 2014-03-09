@@ -222,7 +222,8 @@ void DReferenceTrajectory::Reset(void){
 	this->last_swim_step = NULL;
 	this->last_dist_along_wire = 0.0;
 	this->last_dz_dphi = 0.0;
-	//do not reset "swim_steps" array: "ought" be ok as long as "Nswim_steps" is accurate
+	this->dist_to_rt_depth = 0;
+	this->check_material_boundaries = true;
 }
 
 //---------------------------------
