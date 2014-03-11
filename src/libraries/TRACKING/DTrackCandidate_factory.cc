@@ -131,7 +131,9 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   stepper=new DMagneticFieldStepper(bfield);
   stepper->SetStepSize(1.0);
 
-  DEBUG_HISTS=true;
+  DEBUG_HISTS=false;
+  gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS",DEBUG_HISTS);
+
   if(DEBUG_HISTS){
     dapp->Lock();
     match_dist=(TH2F*)gROOT->FindObject("match_dist");
