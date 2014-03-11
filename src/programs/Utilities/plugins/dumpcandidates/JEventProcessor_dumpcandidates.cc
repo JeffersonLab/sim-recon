@@ -33,6 +33,9 @@ JEventProcessor_dumpcandidates::JEventProcessor_dumpcandidates()
 {
 	events_written = 0;
 	events_discarded = 0;
+	
+	beam_origin = DVector3(0.0, 0.0, 65.0);
+	beam_dir    = DVector3(0.0, 0.0, 1.0);
 }
 
 //------------------
@@ -165,12 +168,21 @@ jerror_t JEventProcessor_dumpcandidates::evnt(JEventLoop *loop, int eventnumber)
 			unsigned long id = GetFDCWireID( fdcpseudos[j]->wire );
 			wire_ids.push_back(GetWireIndex( id ));
 		}
+		
+		// To make it easier to compare to thrown values later,
+		// find the parameters of the trajectory point closest
+		// to the beamline
+		rt->Swim(can->position(),-can->momentum(),-can->charge());
+		DKinematicData kd = (*can);
+		DVector3 commonpos;
+		double doca, var_doca;
+		rt->FindPOCAtoLine(beam_origin, beam_dir, NULL, &kd, commonpos, doca, var_doca);
 
 		// Write candidate to string
 		stringstream ss;
 		ss << can->charge();
-		ss << " " << can->x() << " " << can->y() << " " << can->z();
-		ss << " " << can->px() << " " << can->py() << " " << can->pz();
+		ss << " " << kd.x() << " " << kd.y() << " " << kd.z();
+		ss << " " << -kd.px() << " " << -kd.py() << " " << -kd.pz();
 		for(unsigned int j=0; j<wire_ids.size(); j++){
 			ss << " " << wire_ids[j];
 		}
@@ -203,7 +215,7 @@ jerror_t JEventProcessor_dumpcandidates::fini(void)
 	}
 	
 	cout << endl;
-	cout << "Wrote " << events_written << " events to output file (discarded " << events_discarded << ")" << endl;
+	cout << "Wrote " << events_written << " candidate events to output file (discarded " << events_discarded << ")" << endl;
 	cout << endl;
 
 	return NOERROR;

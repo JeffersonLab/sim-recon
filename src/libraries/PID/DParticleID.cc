@@ -591,9 +591,10 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 		return false;
 
 	// Find intersection with a "barrel" approximation for the start counter
-	DVector3 proj_pos,proj_mom;
+	DVector3 proj_pos(NaN,NaN,NaN), proj_mom(NaN,NaN,NaN);
 	double locPathLength = 9.9E9, locFlightTime = 9.9E9;
-	rt->GetIntersectionWithRadius(sc_pos[1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom);
+	if(rt->GetIntersectionWithRadius(sc_pos[1].x(), proj_pos, &locPathLength, &locFlightTime, &proj_mom) != NOERROR)
+		return false;
 	double proj_phi = proj_pos.Phi();
 	if(proj_phi < 0.0)
 		proj_phi += M_TWO_PI;
@@ -637,7 +638,8 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 			DVector3 pos(r*cos(myphi), r*sin(myphi), sc_pos[loc_i].z());
 			locPathLength = 9.9E9;
 			locFlightTime = 9.9E9;
-			rt->GetIntersectionWithPlane(pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime);
+			if(rt->GetIntersectionWithPlane(pos, norm, proj_pos, proj_mom, &locPathLength, &locFlightTime) != NOERROR)
+           continue;
 			myz = proj_pos.z();
 			if(myz < sc_pos[loc_i + 1].z())
 				break;

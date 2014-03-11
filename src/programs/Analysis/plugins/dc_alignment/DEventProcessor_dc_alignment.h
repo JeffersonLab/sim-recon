@@ -346,7 +346,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   double mMinTime,mOuterTime,mOuterZ,mBeta;
   unsigned int mMinTimeID;
   
-  bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE;
+  bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE,USE_BCAL;
 
   // Geometry
   const DGeometry *dgeom;
@@ -361,18 +361,18 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 
 // Smearing function derived from fitting residuals
 inline double DEventProcessor_dc_alignment::cdc_variance(double t){ 
-  //return CDC_VARIANCE;
+  //  return 0.001*0.001;
   if (t<0.0) t=0.0;
   
-  double sigma=0.14/(t+4.9)+0.0068+0.39e-5*t;
+  double sigma=0.069-6e-5*t;
   //sigma+=0.02;
   return sigma*sigma;
 }
 
 // Convert time to distance for the cdc
 inline double DEventProcessor_dc_alignment::cdc_drift_distance(double t){
-  double d=0.017;
-  if (t>0.0) d+=0.030*sqrt(t);
+  double d=0.;
+  if (t>0.0) d=0.03325*sqrt(t)-1.223e-4*t;
   return d;
 }
 
