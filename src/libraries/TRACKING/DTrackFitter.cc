@@ -8,13 +8,18 @@
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DTrackHitSelector.h>
 
+
 #include "DTrackFitter.h"
 #include "HDGEOMETRY/DRootGeom.h"
 using namespace jana;
 
 // hi-res timers for profiling
+// The PROFILE_TRK_TIMES compile time option is intended to enable keeping track
+// of the time needed to do the tracking using three system-level interval timers.  
+#ifdef PROFILE_TRK_TIMES
 #include <prof_time.h>
 static map<string, prof_time::time_diffs> prof_times;
+#endif
 
 extern bool FDCSortByZincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const &hit2);
 extern bool CDCSortByRincreasing(const DCDCTrackHit* const &hit1, const DCDCTrackHit* const &hit2);
@@ -33,6 +38,7 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	CORRECT_FOR_ELOSS=true;
 	gPARMS->SetDefaultParameter("TRKFIT:CORRECT_FOR_ELOSS",CORRECT_FOR_ELOSS);
 
+
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(!dapp){
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
@@ -43,9 +49,11 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	geom = dapp->GetDGeometry(run_number);
 	RootGeom = dapp->GetRootGeom(run_number);
 
+#ifdef PROFILE_TRK_TIMES
 	// Use a special entry to hold how many tracks we fit
 	prof_time::time_diffs tdiff_zero;
 	prof_times["Ntracks"] = tdiff_zero;
+#endif	
 }
 
 //-------------------
@@ -60,8 +68,10 @@ DTrackFitter::~DTrackFitter()
 //-------------------
 void DTrackFitter::Reset(void)
 {
-	prof_time start_time;
-	
+#ifdef PROFILE_TRK_TIMES
+    prof_time start_time;
+#endif
+
 	cdchits.clear();
 	fdchits.clear();
 	fit_type = kWireBased;
@@ -71,7 +81,9 @@ void DTrackFitter::Reset(void)
 	fdchits_used_in_fit.clear();
 	fit_status = kFitNotDone;
 	
+#ifdef PROFILE_TRK_TIMES
 	start_time.TimeDiffNow(prof_times, "Reset");
+#endif	
 }
 
 //-------------------
@@ -115,7 +127,9 @@ void DTrackFitter::AddHits(vector<const DFDCPseudo*> fdchits)
 //-------------------
 DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass,double t0,DetectorSystem_t t0_det)
 {
-	prof_time start_time;
+#ifdef PROFILE_TRK_TIMES
+    prof_time start_time;
+#endif	
 
 	input_params.setPosition(pos);
 	input_params.setMomentum(mom);
@@ -125,7 +139,9 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 
 	DTrackFitter::fit_status_t status = FitTrack();
 
+#ifdef PROFILE_TRK_TIMES
 	start_time.TimeDiffNow(prof_times, "Fit Track 1");
+#endif
 
 	return status;
 }
@@ -135,13 +151,17 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 //-------------------
 DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting_params)
 {
-	prof_time start_time;
+#ifdef PROFILE_TRK_TIMES
+  prof_time start_time;
+#endif
 
 	SetInputParameters(starting_params);
 	DTrackFitter::fit_status_t status = FitTrack();
 
+#ifdef PROFILE_TRK_TIMES
 	start_time.TimeDiffNow(prof_times, "Fit Track 2");
-	
+#endif
+
 	return status;
 }
 
@@ -164,8 +184,11 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	/// The JEventLoop given will be used to get the hits (CDC
 	/// and FDC) and default DTrackHitSelector to use for the
 	/// fit.
-	prof_times["Ntracks"].real += 1.0; // keep count of the number of tracks we fit
-	prof_time start_time;
+#ifdef PROFILE_TRK_TIMES
+  prof_times["Ntracks"].real += 1.0; // keep count of the number of tracks we fit
+
+  prof_time start_time;
+#endif
 
 	// Reset fitter saving the type of fit we're doing
 	fit_type_t save_type = fit_type;
@@ -241,13 +264,17 @@ DTrackFitter::FindHitsAndFitTrack(const DKinematicData &starting_params,
 	//fit_params.setMass(starting_params.mass());
 	fit_params.setMass(mass);
 
+#ifdef PROFILE_TRK_TIMES
 	start_time.TimeDiffNow(prof_times, "Find Hits");
+#endif
 
 	// Do the fit
 	fit_status = FitTrack(pos, mom,q, mass,t0,t0_det);
 
+#ifdef PROFILE_TRK_TIMES
 	start_time.TimeDiffNow(prof_times, "Find Hits and Fit Track");
-	
+#endif
+
 	return fit_status;
 }
 
@@ -366,7 +393,9 @@ double DTrackFitter::CalcDensityEffect(double betagamma,
 //------------------
 // GetProfilingTimes
 //------------------
+#ifdef PROFILE_TRK_TIMES
 void DTrackFitter::GetProfilingTimes(map<string, prof_time::time_diffs> &my_prof_times) const
 {
 	my_prof_times = prof_times;
 }
+#endif

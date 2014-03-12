@@ -87,7 +87,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
   double mPathLength,mEndTime,mStartTime,mFlightTime;
   DetectorSystem_t mDetector, mStartDetector;
  
-  double SKIP_MASS_HYPOTHESES_WIRE_BASED;
+  bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
 
   // start counter geometry
   double sc_light_guide_length_cor;
