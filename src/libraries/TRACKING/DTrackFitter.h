@@ -12,7 +12,9 @@
 #include <JANA/JFactory.h>
 #include <JANA/JEventLoop.h>
 
+#ifdef PROFILE_TRK_TIMES
 #include <prof_time.h>
+#endif
 #include <DANA/DApplication.h>
 #include <PID/DKinematicData.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
@@ -136,9 +138,10 @@ class DTrackFitter:public jana::JObject{
 					 double rho_Z_over_A,double LnI);
 		double CalcDensityEffect(double betagamma,
 					 double rho_Z_over_A,double LnI);
-		
+#ifdef PROFILE_TRK_TIMES
 		void GetProfilingTimes(std::map<std::string, prof_time::time_diffs> &my_prof_times) const;
-		
+#endif		
+
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
 		virtual fit_status_t FitTrack(void)=0;
