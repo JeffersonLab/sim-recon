@@ -162,21 +162,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	double nz=my_fdchits[id]->nz;
 	double nr=my_fdchits[id]->nr;
 	double nz_sinalpha_plus_nr_cosalpha=nz*sinalpha+nr*cosalpha;
-
-	// t0 estimate
-	if (fit_type==kWireBased && id==mMinDriftID-1){
-	  mT0MinimumDriftTime=mMinDriftTime
-	    -forward_traj[k].t*TIME_UNIT_CONVERSION;
-	  /*
-	    if (my_cdchits.size()==0){
-	    //   t(d)=c1 d^2 + c2 d^4
-	    //double c1=1279,c2=-1158;
-	    double d_sq=doca*doca;
-	    if (d_sq>0.25) d_sq=0.25;      
-	    mT0MinimumDriftTime-=1279.*d_sq-1158.*d_sq*d_sq;
-	    } 
-	  */
-	}
 	
 	// Variance in coordinate along wire
 	double V=fdc_y_variance(my_fdchits[id]->dE);
@@ -259,21 +244,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	    // Doca to this wire
 	    doca=(upred-u)*cosalpha;
-
-	    // t0 estimate
-	    if (fit_type==kWireBased && my_id==mMinDriftID-1){  	      
-	      mT0MinimumDriftTime=mMinDriftTime
-		-forward_traj[k].t*TIME_UNIT_CONVERSION;
-	      /*
-		if (my_cdchits.size()==0){
-		//   t(d)=c1 d^2 + c2 d^4
-		//double c1=1279,c2=-1158;
-		double d_sq=doca*doca;
-		if (d_sq>0.25) d_sq=0.25;      
-		mT0MinimumDriftTime-=1279.*d_sq-1158.*d_sq*d_sq;
-		} 
-	      */
-	    }
 	    
 	    // variance for coordinate along the wire
 	    V=fdc_y_variance(my_fdchits[my_id]->dE);
@@ -704,19 +674,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    double temp=1./(1131.+2.*140.7*dm);
 	    Vc+=mVarT0*temp*temp;
 	  }
-	  // t0 estimate
-	  else if (cdc_index==mMinDriftID-1000){ 
-	    mT0MinimumDriftTime=mMinDriftTime
-	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION; 
-
-	    // Use approximate functional form for the distance to time relationship:  
-	    //   t(d)=c1 d^2 +c2 d^4
-	    /*
-	      double d_sq=d*d;
-	      if (d_sq>0.64) d_sq=0.64;
-	      mT0MinimumDriftTime-=1131.0*d_sq+140.7*d_sq*d_sq;
-	    */
-	  } 
 
 	  // Residual
 	  double res=dm-d;

@@ -6,6 +6,7 @@
 //
 
 #include "DTrackCandidate_factory_CDC.h"
+#include <cmath>
 
 #define BeamRMS 0.5
 #define EPS 1e-3
@@ -821,18 +822,18 @@ double DTrackCandidate_factory_CDC::MinDist2(const deque<DCDCTrkHit*>& locInnerS
 	if(DEBUG_LEVEL > 100)
 		cout << "in/out boundary flags = " << locInnerRingCrossesBoundaryFlag << ", " << locOuterRingCrossesBoundaryFlag << endl;
 	if(locOuterRingCrossesBoundaryFlag)
-		locOutermostRingLastStrawPhi += 2.0*TMath::Pi();
+		locOutermostRingLastStrawPhi += M_TWO_PI;
 	if(locInnerRingCrossesBoundaryFlag)
-		locInnermostRingLastStrawPhi += 2.0*TMath::Pi();
-	if(locOuterRingCrossesBoundaryFlag & (!locInnerRingCrossesBoundaryFlag) && ((locOutermostRingLastStrawPhi - locInnermostRingLastStrawPhi) > TMath::Pi()))
+		locInnermostRingLastStrawPhi += M_TWO_PI;
+	if(locOuterRingCrossesBoundaryFlag & (!locInnerRingCrossesBoundaryFlag) && ((locOutermostRingLastStrawPhi - locInnermostRingLastStrawPhi) > M_PI))
 	{
-		locInnermostRingFirstStrawPhi += 2.0*TMath::Pi();
-		locInnermostRingLastStrawPhi += 2.0*TMath::Pi();
+		locInnermostRingFirstStrawPhi += M_TWO_PI;
+		locInnermostRingLastStrawPhi += M_TWO_PI;
 	}
-	if(locInnerRingCrossesBoundaryFlag & (!locOuterRingCrossesBoundaryFlag) && ((locInnermostRingLastStrawPhi - locOutermostRingLastStrawPhi) > TMath::Pi()))
+	if(locInnerRingCrossesBoundaryFlag & (!locOuterRingCrossesBoundaryFlag) && ((locInnermostRingLastStrawPhi - locOutermostRingLastStrawPhi) > M_PI))
 	{
-		locOutermostRingFirstStrawPhi += 2.0*TMath::Pi();
-		locOutermostRingLastStrawPhi += 2.0*TMath::Pi();
+		locOutermostRingFirstStrawPhi += M_TWO_PI;
+		locOutermostRingLastStrawPhi += M_TWO_PI;
 	}
 
 	if(DEBUG_LEVEL > 100)
@@ -920,7 +921,7 @@ void DTrackCandidate_factory_CDC::Reject_SuperLayerSeeds_HighSeedDensity(unsigne
 	//determine search window size:
 	unsigned int locOuterRing = superlayer_boundaries[locSuperLayer - 1];
 	unsigned int locAverageNumStrawsInRing = (dNumStrawsPerRing[locOuterRing - 4] + dNumStrawsPerRing[locOuterRing - 1])/2; //I know it floored; it's close enough
-	double locSearchBinPhiSize = double(SEED_DENSITY_BIN_STRAW_WIDTH)*2.0*TMath::Pi()/double(locAverageNumStrawsInRing);
+	double locSearchBinPhiSize = double(SEED_DENSITY_BIN_STRAW_WIDTH)*M_TWO_PI/double(locAverageNumStrawsInRing);
 
 	//find the search start point: try to start somewhere where there are no seeds for a range that is at least as large as the window; else start at 0
 	int locStartPhiBin = -1;
@@ -948,8 +949,8 @@ void DTrackCandidate_factory_CDC::Reject_SuperLayerSeeds_HighSeedDensity(unsigne
 			locReadPhiBin -= dNumSeedDensityPhiBins;
 
 		double locWindowPhiRangeMin = hist_low_limit + bin_width*(double(locReadPhiBin));
-		if(locWindowPhiRangeMin >= 2.0*TMath::Pi())
-			locWindowPhiRangeMin -= 2.0*TMath::Pi();
+		if(locWindowPhiRangeMin >= M_TWO_PI)
+			locWindowPhiRangeMin -= M_TWO_PI;
 		double locWindowPhiRangeMax = locWindowPhiRangeMin + locSearchBinPhiSize;
 
 		map<unsigned int, pair<double, double> >::const_iterator locSeedIterator = locMapPhiRanges.begin();
@@ -1063,10 +1064,10 @@ void DTrackCandidate_factory_CDC::Calc_SuperLayerPhiRange(DCDCSuperLayerSeed* lo
 
 		double locRingFirstPhi = locFirstStrawHit->hit->wire->phi;
 		if(locRingFirstPhi < 0.0)
-			locRingFirstPhi += 2.0*TMath::Pi();
+			locRingFirstPhi += M_TWO_PI;
 		double locRingLastPhi = locLastStrawHit->hit->wire->phi;
 		if(locRingLastPhi < 0.0)
-			locRingLastPhi += 2.0*TMath::Pi();
+			locRingLastPhi += M_TWO_PI;
 		if(loc_j == 0)
 		{
 			locSeedFirstPhi = locRingFirstPhi;
@@ -1085,9 +1086,9 @@ void DTrackCandidate_factory_CDC::Calc_SuperLayerPhiRange(DCDCSuperLayerSeed* lo
 			}
 			else
 			{
-				if((locRingFirstPhi > TMath::Pi()) && (locRingFirstPhi < locSeedFirstPhi))
+				if((locRingFirstPhi > M_PI) && (locRingFirstPhi < locSeedFirstPhi))
 					locSeedFirstPhi = locRingFirstPhi;
-				else if((locRingLastPhi < TMath::Pi()) && (locRingLastPhi > locSeedLastPhi))
+				else if((locRingLastPhi < M_PI) && (locRingLastPhi > locSeedLastPhi))
 					locSeedLastPhi = locRingLastPhi;
 			}
 		}
@@ -3540,7 +3541,7 @@ void DTrackCandidate_factory_CDC::Select_ThetaZStereoHits(const DCDCTrackCircle*
 
 	unsigned int locLastSuperLayer = locCDCTrackCircle->Get_LastSuperLayerSeed()->dSuperLayer;
 	if(((locLastSuperLayer == 4) || (locLastSuperLayer == 7)) && (locCDCTrackCircle->dSpiralTurnRing != -1))
-		locDeltaPhiRangeExtension = TMath::Pi(); //spiral turn on axial layer: all stereo hits good
+		locDeltaPhiRangeExtension = M_PI; //spiral turn on axial layer: all stereo hits good
 	else if(locCDCTrackCircle->fit->r0 > 65.0/2.0) //BCAL is at r = ~65
 		locDeltaPhiRangeExtension = 10.0; //unlikely to spiral, all stereo hits reasonably close are good
 	else
@@ -3642,7 +3643,7 @@ void DTrackCandidate_factory_CDC::Calc_StereoHitDeltaPhis(unsigned int locSuperL
 	for(size_t loc_i = 0; loc_i < locHits.size(); ++loc_i)
 	{
 		deque<DCDCTrkHit*> locTempDeque(1, locHits[loc_i]);
-		double locMinDeltaPhi = TMath::Pi();
+		double locMinDeltaPhi = M_PI;
 		//compare to prior axial ring
 		if(locPriorAxialRingSeed != NULL)
 		{
@@ -3657,7 +3658,7 @@ void DTrackCandidate_factory_CDC::Calc_StereoHitDeltaPhis(unsigned int locSuperL
 			if(locDeltaPhi < locMinDeltaPhi)
 				locMinDeltaPhi = locDeltaPhi;
 		}
-		locMinDeltaPhi *= 180.0/TMath::Pi();
+		locMinDeltaPhi *= 180.0/M_PI;
 		if(DEBUG_LEVEL > 10)
 			cout << "Ring, Straw, min delta phi = " << locHits[loc_i]->hit->wire->ring << ", " << locHits[loc_i]->hit->wire->straw << ", " << locMinDeltaPhi << endl;
 		//store the minimum
@@ -3677,7 +3678,7 @@ double DTrackCandidate_factory_CDC::MinDeltaPhi(const deque<DCDCTrkHit*>& locInn
 	if(locInnerSeedHits.empty() || locOuterSeedHits.empty())
 	{
 		cout << "Number of seed hits 0! (Ninner = " << locInnerSeedHits.size() << " ,Nouter = " << locOuterSeedHits.size() << ")" << endl;
-		return TMath::Pi();
+		return M_PI;
 	}
 
 	DCDCTrkHit* locInnermostRingFirstStrawHit = locInnerSeedHits.front();
@@ -3701,18 +3702,18 @@ double DTrackCandidate_factory_CDC::MinDeltaPhi(const deque<DCDCTrkHit*>& locInn
 	if(DEBUG_LEVEL > 100)
 		cout << "in/out boundary flags = " << locInnerRingCrossesBoundaryFlag << ", " << locOuterRingCrossesBoundaryFlag << endl;
 	if(locOuterRingCrossesBoundaryFlag)
-		locOutermostRingLastStrawPhi += 2.0*TMath::Pi();
+		locOutermostRingLastStrawPhi += M_TWO_PI;
 	if(locInnerRingCrossesBoundaryFlag)
-		locInnermostRingLastStrawPhi += 2.0*TMath::Pi();
-	if(locOuterRingCrossesBoundaryFlag & (!locInnerRingCrossesBoundaryFlag) && ((locOutermostRingLastStrawPhi - locInnermostRingLastStrawPhi) > TMath::Pi()))
+		locInnermostRingLastStrawPhi += M_TWO_PI;
+	if(locOuterRingCrossesBoundaryFlag & (!locInnerRingCrossesBoundaryFlag) && ((locOutermostRingLastStrawPhi - locInnermostRingLastStrawPhi) > M_PI))
 	{
-		locInnermostRingFirstStrawPhi += 2.0*TMath::Pi();
-		locInnermostRingLastStrawPhi += 2.0*TMath::Pi();
+		locInnermostRingFirstStrawPhi += M_TWO_PI;
+		locInnermostRingLastStrawPhi += M_TWO_PI;
 	}
-	if(locInnerRingCrossesBoundaryFlag & (!locOuterRingCrossesBoundaryFlag) && ((locInnermostRingLastStrawPhi - locOutermostRingLastStrawPhi) > TMath::Pi()))
+	if(locInnerRingCrossesBoundaryFlag & (!locOuterRingCrossesBoundaryFlag) && ((locInnermostRingLastStrawPhi - locOutermostRingLastStrawPhi) > M_PI))
 	{
-		locOutermostRingFirstStrawPhi += 2.0*TMath::Pi();
-		locOutermostRingLastStrawPhi += 2.0*TMath::Pi();
+		locOutermostRingFirstStrawPhi += M_TWO_PI;
+		locOutermostRingLastStrawPhi += M_TWO_PI;
 	}
 
 	if(DEBUG_LEVEL > 100)
@@ -3730,13 +3731,13 @@ double DTrackCandidate_factory_CDC::MinDeltaPhi(const deque<DCDCTrkHit*>& locInn
 	//make all 4 comparisons between hits
 	double locDeltaPhi, locMinDeltaPhi;
 	locMinDeltaPhi = fabs(locInnermostRingFirstStrawPhi - locOutermostRingFirstStrawPhi);
-	if(locMinDeltaPhi > TMath::Pi())
-		locMinDeltaPhi = fabs(locMinDeltaPhi - 2.0*TMath::Pi());
+	if(locMinDeltaPhi > M_PI)
+		locMinDeltaPhi = fabs(locMinDeltaPhi - M_TWO_PI);
 	if(locOutermostRingFirstStrawHit != locOutermostRingLastStrawHit)
 	{
 		locDeltaPhi = fabs(locInnermostRingFirstStrawPhi - locOutermostRingLastStrawPhi);
-		if(locDeltaPhi > TMath::Pi())
-			locDeltaPhi = fabs(locDeltaPhi - 2.0*TMath::Pi());
+		if(locDeltaPhi > M_PI)
+			locDeltaPhi = fabs(locDeltaPhi - M_TWO_PI);
 		if(locDeltaPhi < locMinDeltaPhi)
 			locMinDeltaPhi = locDeltaPhi;
 	}
@@ -3744,15 +3745,15 @@ double DTrackCandidate_factory_CDC::MinDeltaPhi(const deque<DCDCTrkHit*>& locInn
 		return locMinDeltaPhi;
 
 	locDeltaPhi = fabs(locInnermostRingLastStrawPhi - locOutermostRingFirstStrawPhi);
-	if(locDeltaPhi > TMath::Pi())
-		locDeltaPhi = fabs(locDeltaPhi - 2.0*TMath::Pi());
+	if(locDeltaPhi > M_PI)
+		locDeltaPhi = fabs(locDeltaPhi - M_TWO_PI);
 	if(locDeltaPhi < locMinDeltaPhi)
 		locMinDeltaPhi = locDeltaPhi;
 	if(locOutermostRingFirstStrawHit != locOutermostRingLastStrawHit)
 	{
 		locDeltaPhi = fabs(locInnermostRingLastStrawPhi - locOutermostRingLastStrawPhi);
-		if(locDeltaPhi > TMath::Pi())
-			locDeltaPhi = fabs(locDeltaPhi - 2.0*TMath::Pi());
+		if(locDeltaPhi > M_PI)
+			locDeltaPhi = fabs(locDeltaPhi - M_TWO_PI);
 		if(locDeltaPhi < locMinDeltaPhi)
 			locMinDeltaPhi = locDeltaPhi;
 	}
@@ -4417,7 +4418,7 @@ void DTrackCandidate_factory_CDC::Add_UnusedHits(deque<DCDCTrackCircle*>& locCDC
 				locDeltaPhi = fabs(locCirclePosition.Phi() - locOrigin.Phi());
 				while(locDeltaPhi > M_PI)
 					locDeltaPhi -= M_TWO_PI;
-				locDeltaPhi *= 180.0/TMath::Pi();
+				locDeltaPhi *= 180.0/M_PI;
 				if(DEBUG_LEVEL > 5)
 					cout << "hit is axial, check if delta phi is close enough: " << fabs(locDeltaPhi) << ", " << MAX_UNUSED_HIT_LINK_ANGLE << endl;
 				if(fabs(locDeltaPhi) > MAX_UNUSED_HIT_LINK_ANGLE)

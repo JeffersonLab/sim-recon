@@ -448,6 +448,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   double mVarT0;
   // inverse of vertex time variance;
   double mInvVarT0;
+  // Detector giving t0
+  DetectorSystem_t mT0Detector;
 
   // indexes for kink/break-point analysis
   unsigned int break_point_cdc_index,break_point_step_index;
