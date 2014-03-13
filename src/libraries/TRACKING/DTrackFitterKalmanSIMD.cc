@@ -583,7 +583,7 @@ DTrackFitter::fit_status_t DTrackFitterKalmanSIMD::FitTrack(void)
   }
   else{
     my_t0=mT0MinimumDriftTime;
-    fit_params.setT0(mT0MinimumDriftTime,10.,mT0Detector);
+    fit_params.setT0(mT0MinimumDriftTime,4.,mT0Detector);
   }
   if (DEBUG_HISTS){
     double my_p=mom.Mag();
@@ -3845,7 +3845,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    cdc_updates[cdc_index].C=Cc;
 	    cdc_updates[cdc_index].tflight
 	      =central_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
-	    cdc_updates[cdc_index].tdrift=tdrift;
+	    cdc_updates[cdc_index].tdrift=my_cdchits[cdc_index]->tdrift;
 	    cdc_updates[cdc_index].xy.Set(xy0.X()
 					  -Sc(state_D)*sin(Sc(state_phi)),
 					  xy0.Y()
@@ -4655,7 +4655,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
   DMatrix5x5 Ctest; // covariance matrix
   //DMatrix5x1 dS;  // perturbation in state vector
   double V=0.25*0.2028; // 1.56*1.56/12.;
-  double InvV;  // inverse of variance
+  double InvV=1./V;  // inverse of variance
 
   // set used_in_fit flags to false for cdc hits
   unsigned int num_cdc=cdc_updates.size();
@@ -5038,11 +5038,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	  
 	  //printf("V %f vart0 %f\n",V,0.0073*0.0073*0.09);
 	}
-	//compute t0 estimate
-	else if (cdc_index==mMinDriftID-1000){
-	  mT0MinimumDriftTime=mMinDriftTime
-	    -forward_traj[k].t*TIME_UNIT_CONVERSION;
-	} 
 	  
 	// residual
 	double res=dm-d;
@@ -5102,7 +5097,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	      =forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
 	    cdc_updates[cdc_index].xy.Set(S(state_x),S(state_y));
 	    cdc_updates[cdc_index].z=newz;
-	    cdc_updates[cdc_index].tdrift=tdrift;
+	    cdc_updates[cdc_index].tdrift=my_cdchits[cdc_index]->tdrift;
 	    cdc_updates[cdc_index].B=forward_traj[k_minus_1].B;
 	    cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
 	    cdc_updates[cdc_index].residual=res*scale;
