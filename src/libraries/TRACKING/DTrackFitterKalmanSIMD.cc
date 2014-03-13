@@ -4655,7 +4655,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
   DMatrix5x5 Ctest; // covariance matrix
   //DMatrix5x1 dS;  // perturbation in state vector
   double V=0.25*0.2028; // 1.56*1.56/12.;
-  double InvV;  // inverse of variance
+  double InvV=1./V;  // inverse of variance
 
   // set used_in_fit flags to false for cdc hits
   unsigned int num_cdc=cdc_updates.size();
@@ -5038,11 +5038,6 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	  
 	  //printf("V %f vart0 %f\n",V,0.0073*0.0073*0.09);
 	}
-	//compute t0 estimate
-	else if (cdc_index==mMinDriftID-1000){
-	  mT0MinimumDriftTime=mMinDriftTime
-	    -forward_traj[k].t*TIME_UNIT_CONVERSION;
-	} 
 	  
 	// residual
 	double res=dm-d;
