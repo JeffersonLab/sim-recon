@@ -309,14 +309,13 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  for (unsigned int m=0;m<Hlist.size();m++){
 	    unsigned int my_id=used_ids[m];
 	    double scale=1.-Hlist[m]*Klist[m];
-	    if (fit_type==kTimeBased){
-	      fdc_updates[my_id].S=S;
-	      fdc_updates[my_id].C=C; 
-	      fdc_updates[my_id].tflight
-		=forward_traj[k].t*TIME_UNIT_CONVERSION;  
-	      fdc_updates[my_id].z=forward_traj[k].z;
-	      fdc_updates[my_id].B=forward_traj[k].B;
-	    }
+	    fdc_updates[my_id].S=S;
+	    fdc_updates[my_id].C=C; 
+	    fdc_updates[my_id].tflight
+	      =forward_traj[k].t*TIME_UNIT_CONVERSION;   
+	    fdc_updates[my_id].tdrift=my_fdchits[id]->t;
+	    fdc_updates[my_id].z=forward_traj[k].z;
+	    fdc_updates[my_id].B=forward_traj[k].B;
 	    fdc_updates[my_id].s=forward_traj[k].s;
 	    fdc_updates[my_id].residual=scale*Mlist[m];
 	    fdc_updates[my_id].variance=scale*Vlist[m];
@@ -362,14 +361,13 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	    // Store the "improved" values for the state vector and covariance
 	    double scale=1.-H*K;
-	    if (fit_type==kTimeBased){
-	      fdc_updates[id].S=S;
-	      fdc_updates[id].C=C;
-	      fdc_updates[id].tflight
-		=forward_traj[k].t*TIME_UNIT_CONVERSION;  
-	      fdc_updates[id].z=forward_traj[k].z;
-	      fdc_updates[id].B=forward_traj[k].B;
-	    }
+	    fdc_updates[id].S=S;
+	    fdc_updates[id].C=C;
+	    fdc_updates[id].tflight
+	      =forward_traj[k].t*TIME_UNIT_CONVERSION;  
+	    fdc_updates[id].tdrift=my_fdchits[id]->t;
+	    fdc_updates[id].z=forward_traj[k].z;
+	    fdc_updates[id].B=forward_traj[k].B;
 	    fdc_updates[id].residual=scale*Mdiff;
 	    fdc_updates[id].variance=scale*V;
 	    fdc_updates[id].s=forward_traj[k].s;
@@ -724,15 +722,13 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 
 	      // Store the "improved" values of the state and covariance matrix
 	      double scale=1.-H*K;
-	      if (fit_type==kTimeBased){
-		cdc_updates[cdc_index].S=S;
-		cdc_updates[cdc_index].C=C;	  
-		cdc_updates[cdc_index].tflight
-		  =forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
-		cdc_updates[cdc_index].z=newz;
-		cdc_updates[cdc_index].tdrift=tdrift;
-		cdc_updates[cdc_index].B=forward_traj[k_minus_1].B;
-	      } 
+	      cdc_updates[cdc_index].S=S;
+	      cdc_updates[cdc_index].C=C;	  
+	      cdc_updates[cdc_index].tflight
+		=forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;  
+	      cdc_updates[cdc_index].z=newz;
+	      cdc_updates[cdc_index].tdrift=my_cdchits[cdc_index]->tdrift;
+	      cdc_updates[cdc_index].B=forward_traj[k_minus_1].B; 
 	      cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
 	      cdc_updates[cdc_index].residual=res*scale;
 	      cdc_updates[cdc_index].variance=Vc*scale;
