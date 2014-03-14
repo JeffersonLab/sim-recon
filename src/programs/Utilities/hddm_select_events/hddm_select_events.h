@@ -49,5 +49,11 @@ using namespace std;
 #include <HDDM/hddm_s.h>
 #include <HDDM/hddm_r.hpp>
 
+#include "TRandom2.h"
+#include "TLorentzVector.h"
+
 bool selectEvent_s(int select_type, s_HDDM_t* hddm_s, int nevents, bool debug);
 bool selectEvent_r(int select_type, hddm_r::HDDM* record, int nevents, bool debug);
+
+// Lambda decay constant
+const double alpha = 0.642;
