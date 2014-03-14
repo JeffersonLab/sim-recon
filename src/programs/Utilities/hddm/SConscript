@@ -7,6 +7,18 @@ Import('*')
 top_env = env
 env = env.Clone()
 
+# On Ubuntu 13.10, it was confirmed that turning on optimization
+# when building hddm-cpp led to some things being omitted from the
+# generated hddm_r.hpp file resulting in compile time errors. Turn
+# off optimization here to prevent this.
+opts = ['-O', '-O1', '-O2', '-O3', '-O4']
+cflags   = env['CFLAGS']
+cxxflags = env['CXXFLAGS']
+for opt in opts:
+	if opt in cflags  : cflags.remove(opt)
+	if opt in cxxflags: cxxflags.remove(opt)
+env.Replace(CFLAGS=cflags, CXXFLAGS=cxxflags)
+
 sbms.AddXERCES(env)
 sbms.Add_xstream(env)
 
