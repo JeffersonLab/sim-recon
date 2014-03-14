@@ -281,9 +281,18 @@ void GetAndSetSeeds(s_HDDM_t *hddm_s)
 			seed2 = *((UInt_t*)&my_rand->seed_mcsmear2);
 			seed3 = *((UInt_t*)&my_rand->seed_mcsmear3);
 			
-			// Set the seeds in the random generator with those found
-			// in the file, but ONLY if they are not all zeros
-			if((seed1+seed2+seed3) != 0)gDRandom.SetSeeds(seed1, seed2, seed3);
+			// If the mcsmear seeds in the file are all zeros it means they
+			// were not set. In this case, use the hdgeant seeds plus a
+			// constant in order to guarantee the seeds are used if this
+			// input file were smeared again with the same command.
+			if((seed1+seed2+seed3) == 0){
+				seed1 = *((UInt_t*)&my_rand->seed1); // hdgeant seed1
+				seed2 = *((UInt_t*)&my_rand->seed2); // hdgeant seed2
+				seed3 = 137; // use constant for 3rd seed
+			}
+			
+			// Set the seeds in the random generator.
+			gDRandom.SetSeeds(seed1, seed2, seed3);
 		}
 	}
 

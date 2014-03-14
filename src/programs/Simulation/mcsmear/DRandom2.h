@@ -16,6 +16,9 @@
 
 
 #include <TRandom2.h>
+#include <iostream>
+using std::cerr;
+using std::endl;
 
 class DRandom2:public TRandom2{
 	public:
@@ -29,6 +32,26 @@ class DRandom2:public TRandom2{
 		}
 		
 		void SetSeeds(UInt_t &seed, UInt_t &seed1, UInt_t &seed2){
+		
+			// See the comments in TRandom2::SetSeed(int)
+			if( (seed<2) | (seed1<8) | (seed2<16) ){
+				cerr << endl;
+				cerr << "*********************************************************" << endl;
+				cerr << "WARNING: Random seeds passed to DRandom2::SetSeeds have" << endl;
+				cerr << "forbidden values: " << endl;
+				cerr << "  seed = " << seed << "  (must be at least 2)" <<endl;
+				cerr << "  seed1 = " << seed1 << "  (must be at least 8)" <<endl;
+				cerr << "  seed1 = " << seed2 << "  (must be at least 16)" <<endl;
+				cerr << "See comments in source for TRandom2::SetSeed(int)" <<endl;
+				cerr << "The seeds will all be adjusted to be in range." <<endl;
+				cerr << "*********************************************************" << endl;
+				cerr << endl;
+				seed += 2;
+				seed1 += 8;
+				seed2 += 15;
+			}
+		
+		
 			this->fSeed = seed;		
 			this->fSeed1 = seed1;		
 			this->fSeed2 = seed2;		
