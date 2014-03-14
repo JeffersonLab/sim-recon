@@ -17,6 +17,9 @@ unsigned int MAX = 100 * 1000 * 1000;
 bool debug = false;
 string HDDM_CLASS = "s";
 int QUIT = 0;
+int seed = 0;
+
+TRandom2 *rndm;
 
 //-----------
 // main
@@ -28,7 +31,7 @@ int main(int argc,char* argv[]){
   extern char* optarg;
   // Check command line arguments
   int c;
-  while((c = getopt(argc,argv,"ho:i:ars:M:d")) != -1){
+  while((c = getopt(argc,argv,"ho:i:ars:M:dR:")) != -1){
     switch(c){
     case 'h':
       Usage();
@@ -73,15 +76,26 @@ int main(int argc,char* argv[]){
       debug = true;
       cout << "debug mode" << endl;
       break;
+    case 'R':
+      if(selectType!=4){
+	cout << "Random seed is only needed for select type 4" << endl;
+	abort();
+      }
+      seed = atoi(optarg);
+      cout << "random seed: " << seed << endl;
+      break;
     default:
       break;
     }
   }
   //___________________________________________________________________________________________
 
-  if(INFILENAME=="" || OUTFILENAME=="" || (selectType < 1 || 3 < selectType)){
+  if(INFILENAME=="" || OUTFILENAME=="" || (selectType < 1 || 7 < selectType)){
     Usage();
   }
+
+  // if selectType==4, we need the random generator
+  rndm = new TRandom2(seed);
 	
   // Input/Output file
   char filename[200];
