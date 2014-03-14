@@ -44,6 +44,7 @@ class DEventWriterREST : public JObject
 		bool Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& locRecord) const;
 
 		string dOutputFileBaseName;
+		bool HDDM_USE_COMPRESSION;
 };
 
 #endif //_DEventWriterREST_

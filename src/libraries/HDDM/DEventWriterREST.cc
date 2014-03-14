@@ -13,6 +13,9 @@ DEventWriterREST::DEventWriterREST(JEventLoop* locEventLoop, string locOutputFil
 			gRESTOutputFilePointers = new map<string, pair<ofstream*, hddm_r::ostream*> >();
 	}
 	japp->Unlock("RESTWriter");
+	
+	HDDM_USE_COMPRESSION = true;
+	gPARMS->SetDefaultParameter("HDDM:USE_COMPRESSION", HDDM_USE_COMPRESSION, "Turn on/off compression of the output HDDM stream. Set to \"0\" to turn off (it's on by default)");
 }
 
 bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop, string locOutputFileNameSubString) const
@@ -411,7 +414,12 @@ bool DEventWriterREST::Write_RESTEvent(string locOutputFileName, hddm_r::HDDM& l
 		locRESTFilePointers.second = new hddm_r::ostream(*locRESTFilePointers.first);
 
 		// enable on-the-fly bzip2 compression on output stream
-		locRESTFilePointers.second->setCompression(hddm_r::k_bz2_compression);
+		if(HDDM_USE_COMPRESSION) {
+			jout << " Enabling bz2 compression of output HDDM file stream" << endl;
+			locRESTFilePointers.second->setCompression(hddm_r::k_bz2_compression);
+		}else{
+			jout << " HDDM compression disabled" << endl;
+		}
 
 		// write a comment record at the head of the file
 		hddm_r::HDDM locCommentRecord;
