@@ -1656,8 +1656,8 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "   }"						<< std::endl
 	 << "   fp->iomode = HDDM_STREAM_INPUT;"		<< std::endl
 	 << "   head = (char*)malloc(1000000);"			<< std::endl
-	 << "   fgets(head,7,fp->fd);"				<< std::endl
-	 << "   if (strstr(head,\"<HDDM \") != head)"		<< std::endl
+	 << "   if ((fgets(head,7,fp->fd) != 0) &&"		<< std::endl
+	 << "       (strstr(head,\"<HDDM \") != head))"		<< std::endl
 	 << "   {"						<< std::endl
 	 << "      fprintf(stderr,\"HDDM Error: input file \");"<< std::endl
 	 << "      fprintf(stderr,\"file does not have a \");"	<< std::endl
@@ -1669,11 +1669,8 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "        strstr(head,\"</HDDM>\") == 0;"		<< std::endl
 	 << "        p += strlen(p))"				<< std::endl
 	 << "   {"						<< std::endl
-	 << "      if (p-head < 999000)"			<< std::endl
-	 << "      {"						<< std::endl
-	 << "         fgets(p,1000,fp->fd);"			<< std::endl
-	 << "      }"						<< std::endl
-	 << "      else"					<< std::endl
+	 << "      if ((p-head >= 999000) ||"			<< std::endl
+	 << "          (fgets(p,1000,fp->fd) == 0))"		<< std::endl
 	 << "      {"						<< std::endl
 	 << "         break;"					<< std::endl
 	 << "      }"						<< std::endl
