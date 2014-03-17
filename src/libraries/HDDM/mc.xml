@@ -19,7 +19,7 @@
         </product>
         <origin t="float" vx="float" vy="float" vz="float"/>
       </vertex>
-      <random minOccurs="0" maxOccurs="1" seed1="int" seed2="int" seed_mcsmear1="int" seed_mcsmear2="int" seed_mcsmear3="int"/>
+      <random minOccurs="0" maxOccurs="1" seed1="int" seed2="int" seed3="int" seed4="int"/>
     </reaction>
   </physicsEvent>
 </HDDM>
