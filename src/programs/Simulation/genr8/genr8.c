@@ -152,7 +152,7 @@ int main(int argc,char **argv)
 {
   char *argptr,*token,line[2056];
   int i,npart=0,ngenerated=0,naccepted=0, imassc, imassc2;
-  int nv4,max=10,part,chld1=-1,chld2=-1,prnt=-1,lfevents=10000;
+  int nv4,max=10,part=0,chld1=-1,chld2=-1,prnt=-1,lfevents=10000;
   FILE *fout=stdout;
   struct particleMC_t particle[20],beam,target,recoil,CM;
   struct particleMC_t *X,*Y;
@@ -160,7 +160,7 @@ int main(int argc,char **argv)
   double t,expt_max,expt,expt_min,sqrt_s,t_min=0;
   double CMenergy, t_max,slope=5.0;
   double X_momentum, X_threshold, X_energy,xmass,ymass;
-  double costheta,theta,phi,lf,lfmax;
+  double costheta,theta,phi,lf,lfmax=0;
   int isacomment=TRUE,haveChildren=TRUE;
 
   Y= &(particle[0]);
