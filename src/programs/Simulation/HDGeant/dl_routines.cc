@@ -139,6 +139,8 @@ string HDDS_XML = "$HDDS_HOME/main_HDDS.xml";
 //------------------
 void init_runtime_xml_(void)
 {
+	int retcode;
+
 	cout<<endl;
 	cout<<"=============================================================="<<endl;
 	cout<<"Enabling dynamic geometry rendering"<<endl;
@@ -155,14 +157,14 @@ void init_runtime_xml_(void)
 	cout << "Generating FORTRAN from XML source ...." << endl;
 	string cmd = "$HDDS_HOME/bin/$BMS_OSNAME/hdds-geant " + HDDS_XML + " > tmp.F";
 	cout << cmd << endl;
-	system(cmd.c_str());
+	retcode = system(cmd.c_str());
 	
 	// Compile FORTRAN into shared object
 	cout<<endl;
 	cout << "Compiling FORTRAN into shared object ..." << endl;
 	cmd = "gfortran -shared -fPIC -o tmp.so -I$CERN/$CERN_LEVEL/include tmp.F";
 	cout << cmd << endl;
-	system(cmd.c_str());
+	retcode = system(cmd.c_str());
 
 	// Attach shared object
 	cout<<endl;

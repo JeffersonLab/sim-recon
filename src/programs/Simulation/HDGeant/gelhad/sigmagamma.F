@@ -17,6 +17,7 @@ c
        init=.true.
       endif !.not.init
 c
+      sigmagamma=0
       if(mode.eq.0) then !homebrew?
 c
       sigmagamma=sigmatable(1)
