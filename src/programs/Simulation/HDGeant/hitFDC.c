@@ -487,7 +487,7 @@ void hitForwardDC (float xin[4], float xout[4],
   float xlocal[3];
   float xinlocal[3];
   float xoutlocal[3];
-  float dradius;
+  float dradius=0;
   float alpha,sinalpha,cosalpha;
 
   if (!initializedx){
