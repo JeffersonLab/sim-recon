@@ -89,14 +89,38 @@ ostream& ostream::operator<<(const unsigned long int v){
 }
 */
 
+/*
 ostream& ostream::operator<<(const float v){
 	uint32_t n = *(reinterpret_cast<const uint32_t*>(&v));
 	return (*this<<n);
 }
+*/
 
+// assume floats on this platform are IEEE-754 binary32
+ostream& ostream::operator<<(const float v){
+	union jack {
+		float binary32;
+		uint32_t ui32;
+	} _v;
+        _v.binary32 = v;
+	return (*this<<_v.ui32);
+}
+
+/*
 ostream& ostream::operator<<(const double v){
 	uint64_t n = *(reinterpret_cast<const uint64_t*>(&v));
 	return (*this<<n);
+}
+*/
+
+// assume doubles on this platform are IEEE-754 binary32
+ostream& ostream::operator<<(const double v){
+	union jack {
+		float binary64;
+		uint32_t ui64;
+	} _v;
+        _v.binary64 = v;
+	return (*this<<_v.ui64);
 }
 
 // INPUT
