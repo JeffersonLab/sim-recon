@@ -72,10 +72,11 @@ int main(int narg, char *argv[])
 	
 	// Loop over e-mail addresses, sending the message to each one
 	for(unsigned int i=0; i<email_address.size(); i++){
+		int retcode;
 		stringstream my_cmd;
 		my_cmd<<cmd.str()<<email_address[i];
 		cout<<my_cmd.str()<<endl;
-		system(my_cmd.str().c_str());
+		retcode = system(my_cmd.str().c_str());
 	}
 	
 	
@@ -89,6 +90,7 @@ void AddPlot(TFile &f, string histname)
 {
 	plot_t plot;
 	stringstream mess;
+	int retcode;
 
 	TH1F *hist=(TH1F*)gROOT->FindObject(histname.c_str());
 	//f.GetObject(histname.c_str(), hist);
@@ -110,7 +112,7 @@ void AddPlot(TFile &f, string histname)
 		c1.Print("tmp.eps");
 		
 		// Convert EPS to PPM using ghostscript(gs)
-		system("echo quit | gs -sDEVICE=ppm -r72x72 -g565x405 -sOutputFile=tmp.ppm -dNOPAUSE tmp.eps > /dev/null");
+		retcode = system("echo quit | gs -sDEVICE=ppm -r72x72 -g565x405 -sOutputFile=tmp.ppm -dNOPAUSE tmp.eps > /dev/null");
 
 		// Generate unique name of GIF file
 		stringstream outfile;
@@ -120,13 +122,13 @@ void AddPlot(TFile &f, string histname)
 		// Convert PPM to GIF using ppmtogif
 		stringstream cmd;
 		cmd<<"ppmtogif tmp.ppm > "<<outfile.str();
-		system(cmd.str().c_str());
+		retcode = system(cmd.str().c_str());
 		
 		// Add histogram name to message
 		mess<<histname;
 		
 		// Delete temporary files
-		system("rm -f tmp.ppm tmp.eps");
+		retcode = system("rm -f tmp.ppm tmp.eps");
 	}
 	
 	// Add plot to list. We do this even if we failed to generate a plot
