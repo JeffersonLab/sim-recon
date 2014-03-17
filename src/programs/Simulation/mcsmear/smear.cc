@@ -257,10 +257,10 @@ void SetSeeds(const char *vals)
 //-----------
 void GetAndSetSeeds(s_HDDM_t *hddm_s)
 {
-	// Check if a non-zero seed for mcsmear exists in the input
-	// HDDM file. If so, use it to set the seeds for the random number
-	// generator. Then, make sure the seeds that are used are stored
-	// in the output event.
+	// Check if non-zero seed values exist in the input HDDM file.
+	// If so, use them to set the seeds for the random number
+	// generator. Otherwise, make sure the seeds that are used
+	// are stored in the output event.
 	
 	if(hddm_s == NULL)return;
 	if(hddm_s->physicsEvents == NULL || hddm_s->physicsEvents==HDDM_NULL)return;
@@ -273,27 +273,40 @@ void GetAndSetSeeds(s_HDDM_t *hddm_s)
 	if(my_rand == NULL || my_rand==HDDM_NULL){
 		// No seeds stored in event. Add them
 		my_rand = pe->reactions->in[0].random = make_s_Random();
-
-	}else{
-		if(!IGNORE_SEEDS){
-			// Copy seeds from file to local variables
-			seed1 = *((UInt_t*)&my_rand->seed_mcsmear1);
-			seed2 = *((UInt_t*)&my_rand->seed_mcsmear2);
-			seed3 = *((UInt_t*)&my_rand->seed_mcsmear3);
-			
-			// Set the seeds in the random generator with those found
-			// in the file, but ONLY if they are not all zeros
-			if((seed1+seed2+seed3) != 0)gDRandom.SetSeeds(seed1, seed2, seed3);
+		my_rand->seed1 = 0;
+		my_rand->seed2 = 0;
+		my_rand->seed3 = 0;
+		my_rand->seed4 = 0;
+	}
+	if(!IGNORE_SEEDS){
+		// Copy seeds from event record to local variables
+		seed1 = *((UInt_t*)&my_rand->seed1);
+		seed2 = *((UInt_t*)&my_rand->seed2);
+		seed3 = *((UInt_t*)&my_rand->seed3);
+		
+		// If the seeds in the event are all zeros it means they
+		// were not set. In this case, initialize seeds to constants
+		// to guarantee the seeds are used if this input file were
+		// smeared again with the same command a second time. These
+		// are set here to the fractional part of the cube roots of
+		// the first three primes, truncated to 9 digits.
+		if ((seed1 == 0) || (seed2 == 0) || (seed3 == 0)){
+			seed1 = 259921049 + pe->eventNo;
+			seed2 = 442249570 + pe->eventNo;
+			seed3 = 709975946 + pe->eventNo;
 		}
+		
+		// Set the seeds in the random generator.
+		gDRandom.SetSeeds(seed1, seed2, seed3);
 	}
 
 	// Copy seeds from generator to local variables
 	gDRandom.GetSeeds(seed1, seed2, seed3);
 
-	// Copy seeds from local variables to HDDM file
-	my_rand->seed_mcsmear1 = *((Int_t*)&seed1);
-	my_rand->seed_mcsmear2 = *((Int_t*)&seed2);
-	my_rand->seed_mcsmear3 = *((Int_t*)&seed3);
+	// Copy seeds from local variables to event record
+	my_rand->seed1 = *((Int_t*)&seed1);
+	my_rand->seed2 = *((Int_t*)&seed2);
+	my_rand->seed3 = *((Int_t*)&seed3);
 }
 
 //-----------

@@ -12,6 +12,8 @@ import sbms
 
 # Get command-line options
 SHOWBUILD = ARGUMENTS.get('SHOWBUILD', 0)
+OPTIMIZATION = ARGUMENTS.get('OPTIMIZATION', 2)
+DEBUG = ARGUMENTS.get('DEBUG', 1)
 
 # Get platform-specific name
 osname = os.getenv('BMS_OSNAME', 'build')
@@ -36,9 +38,11 @@ env.Replace(INSTALLDIR    = installdir,
 				BINDIR        = bin,
 				LIBDIR        = lib,
 				PLUGINSDIR    = plugins,
-				 ALL_SOURCES   = [],        # used so we can add generated sources
-                 SHOWBUILD     = SHOWBUILD,
-		  COMMAND_LINE_TARGETS = COMMAND_LINE_TARGETS)
+				ALL_SOURCES   = [],        # used so we can add generated sources
+            SHOWBUILD     = SHOWBUILD,
+				OPTIMIZATION  = OPTIMIZATION,
+				DEBUG         = DEBUG,
+		  		COMMAND_LINE_TARGETS = COMMAND_LINE_TARGETS)
 
 # Use terse output unless otherwise specified
 if SHOWBUILD==0:
@@ -63,10 +67,16 @@ env.Replace( CXX = os.getenv('CXX', 'g++'),
 # Add libraries and libraries/include to include search path
 env.PrependUnique(CPPPATH = ['#', '#libraries', '#libraries/include'])
 
-# Turn on debug symbols and warnings
-env.PrependUnique(      CFLAGS = ['-g', '-fPIC', '-Wall'])
-env.PrependUnique(    CXXFLAGS = ['-g', '-fPIC', '-Wall'])
-env.PrependUnique(FORTRANFLAGS = ['-g', '-fPIC', '-Wall'])
+# Standard flags (optimization level and warnings)
+env.PrependUnique(      CFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+env.PrependUnique(    CXXFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+env.PrependUnique(FORTRANFLAGS = ['-O%s' % OPTIMIZATION, '-fPIC', '-Wall'])
+
+# Turn on debug symbols unless user told us not to
+if not DEBUG=='0':
+	env.PrependUnique(      CFLAGS = ['-g'])
+	env.PrependUnique(    CXXFLAGS = ['-g'])
+	env.PrependUnique(FORTRANFLAGS = ['-g'])
 
 # Apply any platform/architecture specific settings
 sbms.ApplyPlatformSpecificSettings(env, arch)
