@@ -169,7 +169,7 @@ namespace bz {
 			return eof;
 		} else {
 			if (0 == available ()) {
-				LOG ("\t have to flush :[" << in.buf << "]");
+				LOG ("\t have to flush :[]");
 				flush (no_sync);
 			}
 			*pptr () = static_cast < char >(c);
@@ -298,7 +298,7 @@ namespace bz {
 				raise_error(BZ_IO_ERROR);
 			}
 
-			if (0 == z_strm->avail_out){ // && 0 != z_strm->avail_in)
+			if ((0 == z_strm->avail_out) && (0 != z_strm->avail_in)) {
 				LOG("\tavail_out=0 => redo");
 				redo = true;
 			}

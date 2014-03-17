@@ -194,7 +194,7 @@ namespace z {
 			return eof;
 		} else {
 			if (0 == available ()) {
-				LOG ("\t have to flush :[" << in.buf << "]");
+				LOG ("\t have to flush :[]");
 				flush (no_sync);
 			}
 			*pptr () = static_cast < char >(c);
