@@ -305,9 +305,9 @@ int getseeds_(int *iseed1, int *iseed2)
 {
 	/* This checks to see if thisInputStream already
 	   contains random number seeds for this event. If
-		it does, then those values are copied into the
-		iseed1 and iseed2 variables. If not, then the
-		contents of iseed1 and iseed2 are left unchanged.
+	   it does, then those values are copied into the
+	   iseed1 and iseed2 variables. If not, then the
+	   contents of iseed1 and iseed2 are left unchanged.
 	*/
 	if(thisInputEvent == NULL)return 0;
 	if(thisInputEvent->physicsEvents == NULL)return 0;
@@ -335,7 +335,7 @@ int storeseeds_(int *iseed1, int *iseed2)
 {
 	/* This copies the given seed values into
 	   thisInputStream, overwriting any values that
-		already exist there.
+	   already exist there.
 	*/
 	if(thisInputEvent == NULL)return 0;
 	if(thisInputEvent->physicsEvents == NULL)return 0;
@@ -347,9 +347,8 @@ int storeseeds_(int *iseed1, int *iseed2)
 	if(rnd == NULL || rnd==HDDM_NULL){
 		/* No seeds stored in event. Add them */
 		rnd = pe->reactions->in[0].random = make_s_Random();
-		rnd->seed_mcsmear1 = 0; /* initialize this here only if creating the "random" structure */
-		rnd->seed_mcsmear2 = 0; /* initialize this here only if creating the "random" structure */
-		rnd->seed_mcsmear3 = 0; /* initialize this here only if creating the "random" structure */
+		rnd->seed3 = 709975946 + pe->eventNo;
+		rnd->seed4 = 912931182 + pe->eventNo;
 	}
 
 	rnd->seed1 = *iseed1;
