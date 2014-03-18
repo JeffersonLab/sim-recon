@@ -16,14 +16,15 @@ class Df250PulseIntegral_factory:public jana::JFactory<Df250PulseIntegral>{
 	public:
                 Df250PulseIntegral_factory(){
 		  use_factory=1;
+		  ped_samples=5;
 		};
 		~Df250PulseIntegral_factory(){};
-		uint32_t mypulse_number;
-		uint32_t myquality_factor;
-		uint32_t myintegral;
-		uint32_t pedestal;
-		uint32_t ped_samples;	
-		uint32_t nsamples;
+		/* uint32_t mypulse_number; */
+		/* uint32_t myquality_factor; */
+		/* uint32_t myintegral; */
+		/* uint32_t pedestalsum; */
+		uint32_t ped_samples;
+		/* uint32_t nsamples; */
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
