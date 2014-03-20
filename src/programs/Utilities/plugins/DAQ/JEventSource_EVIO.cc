@@ -67,6 +67,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	ET_STATION_CREATE_BLOCKING = true;
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
+	EMULATE_PULSE_INTEGRAL_MODE = true;
+	EMULATE_SPARSIFICATION_THRESHOLD = 0; // =0 is equivalent to no threshold
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -78,6 +80,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_PULSE_INTEGRAL_MODE", EMULATE_PULSE_INTEGRAL_MODE, "If non-zero, and Df250WindowRawData objects exist in the event AND no Df250PulseIntegral objects exist, then use the waveform data to generate Df250PulseIntegral objects. Default is for this feature to be on. Set this to zero to disable it.");
+		gPARMS->SetDefaultParameter("EVIO:EMULATE_SPARSIFICATION_THRESHOLD", EMULATE_SPARSIFICATION_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then this is used to apply a cut on the non-pedestal-subtracted integral to determine if a Df250PulseIntegral is produced or not.");
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 	}
 	
@@ -783,7 +786,15 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 		myDf250PulseIntegral->quality_factor = quality_factor;
 		myDf250PulseIntegral->integral = signalsum;
 		myDf250PulseIntegral->pedestal = pedestalsum;
-		pi_objs.push_back(myDf250PulseIntegral);
+		
+		// Apply sparsification threshold
+		if(myDf250PulseIntegral->integral >= EMULATE_SPARSIFICATION_THRESHOLD){
+			// Integral is above threshold so keep it
+			pi_objs.push_back(myDf250PulseIntegral);
+		}else{
+			// Integral is below threshold so discard the hit.
+			delete myDf250PulseIntegral;
+		}
 	}
 }
 

@@ -158,6 +158,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		int   VERBOSE;
 		float TIMEOUT;
 		bool  EMULATE_PULSE_INTEGRAL_MODE;
+		uint32_t  EMULATE_SPARSIFICATION_THRESHOLD;
 
 		// Utility class with multiple roles:
 		//
