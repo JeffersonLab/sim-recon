@@ -220,15 +220,22 @@ def AddCompileFlags(env, allflags):
 	# the 2 lists: ccflags, cpppath
 
 	ccflags = []
+	cxxflags = []
 	cpppath = []
 	for f in allflags.split():
 		if f.startswith('-I'):
 			cpppath.append(f[2:])
 		else:
-			ccflags.append(f)
+			if f.startswith('-std=c++'):
+				cxxflags.append(f)
+			else:
+				ccflags.append(f)
 	
 	if len(ccflags)>0 :
 		env.AppendUnique(CCFLAGS=ccflags)
+
+	if len(cxxflags)>0 :
+		env.AppendUnique(CXXFLAGS=cxxflags)
 
 	if len(cpppath)>0 :
 		env.AppendUnique(CPPPATH=cpppath)
