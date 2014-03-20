@@ -149,14 +149,15 @@ class JEventSource_EVIO: public jana::JEventSource{
 
 		JStreamLog evioout;
 
-		bool AUTODETECT_MODULE_TYPES;
-		bool DUMP_MODULE_MAP;
-		bool PARSE_EVIO_EVENTS;
-		bool MAKE_DOM_TREE;
-		int ET_STATION_NEVENTS;
-		bool ET_STATION_CREATE_BLOCKING;
-		int VERBOSE;
+		bool  AUTODETECT_MODULE_TYPES;
+		bool  DUMP_MODULE_MAP;
+		bool  PARSE_EVIO_EVENTS;
+		bool  MAKE_DOM_TREE;
+		int   ET_STATION_NEVENTS;
+		bool  ET_STATION_CREATE_BLOCKING;
+		int   VERBOSE;
 		float TIMEOUT;
+		bool  EMULATE_PULSE_INTEGRAL_MODE;
 
 		// Utility class with multiple roles:
 		//
@@ -211,6 +212,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		// (filled in the constructor)
 		set<string> event_source_data_types;
 	
+		void EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t GetRunNumber(evioDOMTree *evt);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);

@@ -24,6 +24,7 @@ class Df250PulseIntegral:public DDAQAddress{
 		uint32_t pulse_number;         // from Pulse Integral Data word
 		uint32_t quality_factor;       // from Pulse Integral Data word
 		uint32_t integral;             // from Pulse Integral Data word
+		uint32_t pedestal;             // from Pulse Integral Data word (future)
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format

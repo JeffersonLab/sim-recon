@@ -77,6 +77,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_NEVENTS", ET_STATION_NEVENTS, "Number of events to use if we have to create the ET station. Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:ET_STATION_CREATE_BLOCKING", ET_STATION_CREATE_BLOCKING, "Set this to 0 to create station in non-blocking mode (default is to create it in blocking mode). Ignored if station already exists.");
 		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
+		gPARMS->SetDefaultParameter("EVIO:EMULATE_PULSE_INTEGRAL_MODE", EMULATE_PULSE_INTEGRAL_MODE, "If non-zero, and Df250WindowRawData objects exist in the event AND no Df250PulseIntegral objects exist, then use the waveform data to generate Df250PulseIntegral objects. Default is for this feature to be on. Set this to zero to disable it.");
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 	}
 	
@@ -646,6 +647,13 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		hit_objs_by_type[hit_obj->className()].push_back(hit_obj);
 	}
 
+	// Optionally generate Df250PulseIntegral objects from Df250WindowRawData objects. 
+	if(EMULATE_PULSE_INTEGRAL_MODE && hit_objs_by_type["Df250PulseIntegral"].size()==0){
+		vector<JObject*> pi_objs;
+		EmulateDf250PulseIntergral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
+		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
+	}
+
 	// Loop over types of data objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator iter = hit_objs_by_type.begin();
 	for(; iter!=hit_objs_by_type.end(); iter++){
@@ -732,6 +740,51 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	if(VERBOSE>2) evioout << "  Leaving GetObjects()" << endl;
 
 	return err;
+}
+
+//----------------
+// EmulateDf250PulseIntergral
+//----------------
+void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
+{
+	uint16_t ped_samples=5;
+	uint32_t pulse_number = 0;
+	uint32_t quality_factor = 0;
+
+	// Loop over all window raw data objects
+	for(unsigned int i=0; i<wrd_objs.size(); i++){
+		const Df250WindowRawData *f250WindowRawData = (Df250WindowRawData*)wrd_objs[i];
+		
+		// create new Df250PulseIntegral object
+		Df250PulseIntegral *myDf250PulseIntegral = new Df250PulseIntegral;
+		myDf250PulseIntegral->rocid =f250WindowRawData->rocid;
+		myDf250PulseIntegral->slot = f250WindowRawData->slot;
+		myDf250PulseIntegral->channel = f250WindowRawData->channel;
+		myDf250PulseIntegral->itrigger = f250WindowRawData->itrigger;
+
+		// Get a vector of the samples for this channel
+		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
+		uint32_t nsamples=samplesvector.size();
+		uint32_t pedestalsum = 0;
+		uint32_t signalsum = 0;
+
+		// loop over the first X samples to calculate pedestal
+		for (uint16_t c_samp=0; c_samp<ped_samples; c_samp++) {
+			pedestalsum += samplesvector[c_samp];
+		}
+		// loop over the remaining samples to calculate integral
+		for (uint16_t c_samp=ped_samples; c_samp<nsamples; c_samp++) {
+			signalsum += samplesvector[c_samp];
+		}
+		//uint32_t pedestaleffect = ((pedestalsum * isamples)/ped_samples);
+		// myintegral = signalsum - pedestaleffect;
+		// if (myintegral > 10000) jout << myintegral << "  " <<  signalsum << "  " <<  pedestaleffect << "  " <<  pedestalsum << "  " << nsamples  << "  " << ped_samples  << "  " << isamples << " \n";
+		myDf250PulseIntegral->pulse_number = pulse_number;
+		myDf250PulseIntegral->quality_factor = quality_factor;
+		myDf250PulseIntegral->integral = signalsum;
+		myDf250PulseIntegral->pedestal = pedestalsum;
+		pi_objs.push_back(myDf250PulseIntegral);
+	}
 }
 
 //----------------
