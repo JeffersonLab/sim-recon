@@ -787,6 +787,9 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 		myDf250PulseIntegral->integral = signalsum;
 		myDf250PulseIntegral->pedestal = pedestalsum;
 		
+		// Add the Df250WindowRawData object as an associated object
+		myDf250PulseIntegral->AddAssociatedObject(f250WindowRawData);
+		
 		// Apply sparsification threshold
 		if(myDf250PulseIntegral->integral >= EMULATE_SPARSIFICATION_THRESHOLD){
 			// Integral is above threshold so keep it
