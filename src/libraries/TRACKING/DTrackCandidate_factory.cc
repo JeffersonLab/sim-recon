@@ -81,7 +81,10 @@ inline bool CDCHitSortByLayerincreasing(const DCDCTrackHit* const &hit1, const D
 	// Used to sort CDC hits by layer (ring) with innermost layer hits first
 
 	// if same ring, sort by wire number
-	if(hit1->wire->ring == hit2->wire->ring){
+	if(hit1->wire->ring == hit2->wire->ring)
+	{
+		if(hit1->wire->straw == hit2->wire->straw)
+			return (hit1->dE > hit2->dE);
 		return hit1->wire->straw < hit2->wire->straw;
 	}
 
@@ -95,8 +98,11 @@ inline bool FDCHitSortByLayerincreasing(const DFDCPseudo* const &hit1, const DFD
 	// Used to sort CDC hits by layer (ring) with innermost layer hits first
 
 	// if same ring, sort by wire number
-	if(hit1->wire->layer == hit2->wire->layer){
-		return hit1->wire->wire < hit2->wire->wire;
+	if(hit1->wire->layer == hit2->wire->layer)
+	{
+		if(hit1->wire->wire == hit2->wire->wire)
+			return (hit1->dE > hit2->dE);
+		return (hit1->wire->wire < hit2->wire->wire);
 	}
 
 	return hit1->wire->layer < hit2->wire->layer;
