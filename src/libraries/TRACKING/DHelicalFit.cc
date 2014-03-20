@@ -38,8 +38,9 @@ inline bool RiemannFit_hit_cmp(DHFHit_t *a,DHFHit_t *b){
 
 bool DHFProjection_cmp(const DHFProjection_t &a,
 		       const DHFProjection_t &b){
-  //  if (a.xy.Mod2()>b.xy.Mod2()) return true;
-  return (a.z<b.z);
+  if(fabs(a.z - b.z) > 0.0)
+    return (a.z<b.z);
+  return (a.xy.Mod2() > b.xy.Mod2());
 }
 
 
