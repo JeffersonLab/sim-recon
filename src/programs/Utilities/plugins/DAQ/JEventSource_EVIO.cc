@@ -651,7 +651,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	}
 
 	// Optionally generate Df250PulseIntegral objects from Df250WindowRawData objects. 
-	if(EMULATE_PULSE_INTEGRAL_MODE && hit_objs_by_type["Df250PulseIntegral"].size()==0){
+	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df250PulseIntegral"].size()==0)){
 		vector<JObject*> pi_objs;
 		EmulateDf250PulseIntergral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
