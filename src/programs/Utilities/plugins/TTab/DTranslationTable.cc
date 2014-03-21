@@ -203,8 +203,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 		switch(chaninfo.det_sys){
 			case BCAL     : vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal,      hit) ); break;
 			case FDC_WIRES: vfdcwire.push_back( MakeFDCWireDigiHit(chaninfo.fdc_wires, hit) ); break;
-			case SC       : vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal,      hit) ); break;
-			case TOF      : vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal,      hit) ); break;
+			case SC       : vsctdc.push_back( MakeSCTDCDigiHit(chaninfo.sc,      hit) ); break;
+			case TOF      : vtoftdc.push_back( MakeTOFTDCDigiHit(chaninfo.tof,      hit) ); break;
 
 			default:  break;
 		}
