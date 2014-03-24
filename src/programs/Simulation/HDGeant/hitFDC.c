@@ -1,3 +1,18 @@
+
+//============================================================
+// This was copied from the HDGeant (GEANT 3) source code
+// and modified slightly to work with CPPsim. The code is
+// complicated enough that it is worth keeping as close to
+// the original as possible in case improvements are made
+// there that we want to copy here.
+//
+// The major modifications invloved removing the direct HDDM
+// references (e.g. pickForwardDC)
+//
+//  3/18/2014  David Lawrence
+//============================================================
+
+
 /*
  * hitFDC - registers hits for forward drift chambers
  *
@@ -389,7 +404,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
     +((B[2]<0)?1.:-1.)*(0.1717-0.01227*fabs(B[2]))*(Br*cos(phi))*xyz[2]
     +( -0.000176 )*dx*dx2/(dz2+0.001);
   // Add transverse diffusion
-  xyz[1]+=(( 0.01 )*pow(dx2+dz2,0.125)+( 0.0061 )*dx2)*rndno[1];
+  xyz[1]+=(( 0.01 )*pow(dx2+dz2,0.125)+( 0.0061 )*dx2)*rndno[0];
 
   // Do not use this cluster if the Lorentz force would deflect 
   // the electrons outside the active region of the detector
@@ -420,7 +435,7 @@ int AddFDCAnodeHit(s_FdcAnodeTruthHits_t* ahits,int layer,int ipart,int track,
   *tdrift=t+tdrift_smeared;
 	  
   // Skip cluster if the time would go beyond readout window
-  if (t>FDC_TIME_WINDOW) return 0;
+  if ( *tdrift > FDC_TIME_WINDOW ) return 0;
 
   int nhit;
 
@@ -504,8 +519,7 @@ void hitForwardDC (float xin[4], float xout[4],
           //printf("%d %s %f\n",i,strings[i].str,values[i]);
           if (!strcmp(strings[i].str,"FDC_DRIFT_SPEED")) {
             DRIFT_SPEED  = values[i];
-            ncounter++;
-          }
+            ncounter++;          }
           if (!strcmp(strings[i].str,"FDC_ACTIVE_AREA_OUTER_RADIUS")) {
             ACTIVE_AREA_OUTER_RADIUS  = values[i];
             ncounter++;
@@ -883,6 +897,8 @@ void hitForwardDC (float xin[4], float xout[4],
   } // Check that total energy deposition is not zero
 }
 
+#if 0
+
 /* entry points from fortran */
 
 void hitforwarddc_(float* xin, float* xout,
@@ -1174,3 +1190,4 @@ s_ForwardDC_t* pickForwardDC ()
    }
    return box;
 }
+#endif
