@@ -566,22 +566,23 @@ _DBG_<<"Components for compsite "<<name<<endl;
 //}
 
 /// Extract the stereo wire data from the XML
-bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<DCDCWire*> &stereowires) const{
-  stringstream ncopy_s,r_z_s,phi0_s,rot_s;
+bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
+				  string longwireflag,
+				  double zcenter,double dz,  
+				  vector<vector<cdc_offset_t> >&cdc_offsets,
+				  vector<DCDCWire*> &stereowires) const{
+  stringstream r_z_s,phi0_s,rot_s;
   
-  // Create search strings for the number of straws and the straw geometrical properties 
-  ncopy_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@ncopy/ring[@value='" << ring << "']";
+  // Create search strings for the straw geometrical properties 
   r_z_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@R_Z/ring[@value='" << ring << "']";
   phi0_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@Phi0/ring[@value='" << ring << "']";
   rot_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@rot/ring[@value='" << ring << "']";
 
-  unsigned int ncopy;
   vector<double>r_z;
   double phi0;
   vector<double>rot;
  
   // Extract data from the XML
-  if(!Get(ncopy_s.str(), ncopy)) return false; 
   if(!Get(r_z_s.str(), r_z)) return false; 
   if(!Get(phi0_s.str(), phi0)) return false; 
   if(!Get(rot_s.str(), rot)) return false; 
@@ -594,7 +595,7 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<D
   // Extract data from close-packed straws
   const double EPS=1e-4;
   bool close_packed=false;
-  double rotX=0.,rotY=0.,stereo=0.;
+  double rotX=0.,rotY=0.,stereo=0.,stereo_sign=1.;
   vector<double>delta_xyz;
   if (r_z[0]<EPS){
     close_packed=true;
@@ -610,9 +611,11 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<D
 
     rotX=deg2rad*rot[0];
     rotY=deg2rad*rot[1];
+    if (rotX<0.) stereo_sign=-1.;
   }
   else{
     stereo=deg2rad*rot[0];
+    if (stereo<0.) stereo_sign=-1.;
   }
 
   // Loop over the number of straws
@@ -621,17 +624,19 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<D
     double phi=phi0+double(i)*dphi;
     w->ring=ring;
     w->straw=i+1;
-    w->phi=phi;
 
+    // Find the nominal wire position and direction from the XML
+    DVector3 origin,udir;
     if (close_packed){
-      w->origin.SetX(delta_xyz[0]);
-      w->origin.SetY(delta_xyz[1]);
-      w->origin.RotateZ(phi);
+      origin.SetX(delta_xyz[0]);
+      origin.SetY(delta_xyz[1]);
+      origin.RotateZ(phi);
     }
     else{
-      w->origin.SetX(r_z[0]*cos(phi));
-      w->origin.SetY(r_z[0]*sin(phi));    
+      origin.SetX(r_z[0]*cos(phi));
+      origin.SetY(r_z[0]*sin(phi));    
     }
+    origin.SetZ(zcenter);
    
     // Here, we need to define a coordinate system for the wire
     // in which the wire runs along one axis. We call the directions
@@ -639,18 +644,37 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<D
     // the wire running in the "u" direction. The "s" direction
     // will be defined by the direction pointing from the beamline
     // to the midpoint of the wire.
-    w->udir.SetXYZ(0.0, 0.0,1.0);	
+    udir.SetXYZ(0.0, 0.0,1.0);	
     if (close_packed){
-      w->udir.RotateX(rotX);
-      w->udir.RotateY(rotY);   
-      w->udir.RotateZ(phi);
-      w->stereo = (rotX<0?-1.:1.)*w->udir.Angle(DVector3(0,0,1));
+      udir.RotateX(rotX);
+      udir.RotateY(rotY);   
+      udir.RotateZ(phi);
+      //stereo = (rotX<0?-1.:1.)*w->udir.Angle(DVector3(0,0,1));
     }
     else{
-      w->stereo=stereo;
-      w->udir.RotateX(stereo);	
-      w->udir.RotateZ(phi);     
+      udir.RotateX(stereo);	
+      udir.RotateZ(phi);     
     }
+    
+    // Apply offsets in x and y
+    double half_dz=0.5*dz;
+    double x0=origin.x(),y0=origin.y();
+    double ux=udir.x()/udir.z();
+    double uy=udir.y()/udir.z();
+    unsigned int ringid=ring-1;
+    DVector3 downstream(x0+half_dz*ux+cdc_offsets[ringid][i].dx_d,
+			y0+half_dz*uy+cdc_offsets[ringid][i].dy_d,
+			zcenter+half_dz);
+    DVector3 upstream(x0-half_dz*ux+cdc_offsets[ringid][i].dx_u,
+		      y0-half_dz*uy+cdc_offsets[ringid][i].dy_u,
+		      zcenter-half_dz);
+    w->origin=0.5*(upstream+downstream);
+    w->phi=w->origin.Phi();
+    
+    // Wire direction
+    w->udir=downstream-upstream;
+    w->udir.SetMag(1.);
+    w->stereo=stereo_sign*w->udir.Angle(DVector3(0.,0.,1.));
 
     stereowires.push_back(w);
   }
@@ -659,20 +683,20 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,string longwireflag,vector<D
 }
 
 /// Extract the axial wire data from the XML
-bool DGeometry::GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires) const{
-  stringstream ncopy_s,phi0_s,r_z_s;
+bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
+				 double zcenter,double dz,
+				 vector<vector<cdc_offset_t> >&cdc_offsets,
+				 vector<DCDCWire*> &axialwires) const{
+  stringstream phi0_s,r_z_s;
 
   // Create search strings for the number of straws and the straw geometrical properties 
-  ncopy_s << "//mposPhi[@volume='CDCstrawShort']/@ncopy/ring[@value='" << ring << "']";
   phi0_s << "//mposPhi[@volume='CDCstrawShort']/@Phi0/ring[@value='" << ring << "']";
   r_z_s << "//mposPhi[@volume='CDCstrawShort']/@R_Z/ring[@value='" << ring << "']";
 
-  unsigned int ncopy;
   double phi0;
   vector<double>r_z;
 
   // Extract the data from the XML
-  if(!Get(ncopy_s.str(), ncopy)) return false; 
   if(!Get(phi0_s.str(), phi0)) return false; 
   if(!Get(r_z_s.str(), r_z)) return false;
 
@@ -686,10 +710,22 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires
     double phi=phi0+double(i)*dphi;
     w->ring=ring;
     w->straw=i+1;
-    w->origin.SetX(r_z[0]*cos(phi));
-    w->origin.SetY(r_z[0]*sin(phi));
-    w->phi=phi;
-    w->stereo=0.;
+
+    // Find the nominal wire position from the XML
+    double x0=r_z[0]*cos(phi);
+    double y0=r_z[0]*sin(phi);
+
+    // Apply offsets in x and y
+    double half_dz=0.5*dz;
+    unsigned int ringid=ring-1;
+    DVector3 downstream(x0+cdc_offsets[ringid][i].dx_d,
+			y0+cdc_offsets[ringid][i].dy_d,
+			zcenter+half_dz);
+    DVector3 upstream(x0+cdc_offsets[ringid][i].dx_u,
+		      y0+cdc_offsets[ringid][i].dy_u,
+		      zcenter-half_dz);
+    w->origin=0.5*(upstream+downstream);
+    w->phi=w->origin.Phi();
 
     // Here, we need to define a coordinate system for the wire
     // in which the wire runs along one axis. We call the directions
@@ -697,8 +733,9 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires
     // the wire running in the "u" direction. The "s" direction
     // will be defined by the direction pointing from the beamline
     // to the midpoint of the wire.
-    w->udir.SetXYZ(0.0, 0.0,1.0);	
-    w->udir.RotateZ(phi);
+    w->udir=downstream-upstream;
+    w->udir.SetMag(1.);
+    w->stereo=w->udir.Angle(DVector3(0.,0.,1.));
 
     axialwires.push_back(w);
   }
@@ -710,6 +747,7 @@ bool DGeometry::GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires
 // GetCDCWires
 //---------------------------------
 bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
+  // Get nominal geometry from XML
   vector<double>cdc_origin;
   vector<double>cdc_length;
   Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
@@ -720,39 +758,130 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
   double zcenter=0.5*(zmin+zmax);
   double L=zmax-zmin;
 
+  string longwireflags[16]={"","B12","","B14","","B16","","B18","","B22","","B24","","B26","","B28"};
+
+  // Get number of straws for each layer from the XML
+  unsigned int numstraws[28];  
+  stringstream ncopy_s;
+  // First axial superlayer
+  for (unsigned int ring=1;ring<=4;ring++){
+    // Create search string for the number of straws 
+    ncopy_s << "//mposPhi[@volume='CDCstrawShort']/@ncopy/ring[@value='" << ring << "']";
+    Get(ncopy_s.str(),numstraws[ring-1]);
+    ncopy_s.str("");
+    ncopy_s.clear();
+  }
+  // First stereo superlayers
+  for (unsigned int ring=5;ring<=12;ring++){
+    // Create search string for the number of straws 
+    ncopy_s << "//mposPhi[@volume='CDCstrawLong" << longwireflags[ring-5] <<"']/@ncopy/ring[@value='" << ring << "']";
+    Get(ncopy_s.str(),numstraws[ring-1]);
+    ncopy_s.str("");
+    ncopy_s.clear();
+  }
+  // Second axial superlayer
+  for (unsigned int ring=13;ring<=16;ring++){
+    // Create search string for the number of straws 
+    ncopy_s << "//mposPhi[@volume='CDCstrawShort']/@ncopy/ring[@value='" << ring << "']";
+    Get(ncopy_s.str(),numstraws[ring-1]);
+    ncopy_s.str("");
+    ncopy_s.clear();
+  }
+  // Second stereo superlayers
+  for (unsigned int ring=17;ring<=24;ring++){
+    // Create search string for the number of straws 
+    ncopy_s << "//mposPhi[@volume='CDCstrawLong" << longwireflags[ring-9] <<"']/@ncopy/ring[@value='" << ring << "']";
+    Get(ncopy_s.str(),numstraws[ring-1]);
+    ncopy_s.str("");
+    ncopy_s.clear();
+  }
+  // Third axial superlayer
+  for (unsigned int ring=25;ring<=28;ring++){
+    // Create search string for the number of straws 
+    ncopy_s << "//mposPhi[@volume='CDCstrawShort']/@ncopy/ring[@value='" << ring << "']";
+    Get(ncopy_s.str(),numstraws[ring-1]);
+    ncopy_s.str("");
+    ncopy_s.clear();
+  }
+
+  // Get offsets tweaking nominal geometry from calibration database
+  JCalibration * jcalib = dapp->GetJCalibration(runnumber);
+  vector<map<string,double> >vals;
+  vector<cdc_offset_t>tempvec;
+  vector<vector<cdc_offset_t> >cdc_offsets;
+
+  if (jcalib->Get("CDC/wire_alignment",vals)==false){
+    unsigned int straw_count=0,ring_count=0;
+    for(unsigned int i=0; i<vals.size(); i++){
+      map<string,double> &row = vals[i];
+
+      // put the vector of offsets for the current ring into the offsets vector
+      if (straw_count==numstraws[ring_count]){
+	straw_count=0;
+	ring_count++;
+	
+	cdc_offsets.push_back(tempvec);
+
+	tempvec.clear();
+      }
+      
+      // Get the offsets from the calibration database 
+      cdc_offset_t temp;
+      temp.dx_u=row["dxu"];
+      //temp.dx_u=0.;
+
+      temp.dy_u=row["dyu"];
+      //temp.dy_u=0.;
+      
+      temp.dx_d=row["dxd"];
+      //temp.dx_d=0.;
+
+      temp.dy_d=row["dyd"];
+      //temp.dy_d=0.;
+
+      tempvec.push_back(temp);
+     
+      straw_count++;
+    }
+    cdc_offsets.push_back(tempvec);
+  }
+  else{
+    jerr<< "CDC wire alignment table not available... bailing... " <<endl;
+    exit(0);
+  }
+
   // First axial layer
   for (unsigned int ring=1;ring<5;ring++){ 
     vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,straws)) return false;    
+    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws)) return false;    
     cdcwires.push_back(straws);
-  }
+  }  
   
-  string longwireflags[16]={"","B12","","B14","","B16","","B18","","B22","","B24","","B26","","B28"};
   // First set of stereo layers
   for (unsigned int i=0;i<8;i++){
     vector<DCDCWire*>straws;
-    if (!GetCDCStereoWires(i+5,longwireflags[i],straws)) return false;
+    if (!GetCDCStereoWires(i+5,numstraws[i+4],longwireflags[i],zcenter,L,cdc_offsets,straws)) return false;
     cdcwires.push_back(straws);
   }
 
   // Second axial layer
   for (unsigned int ring=13;ring<17;ring++){ 
     vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,straws)) return false;    
+    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws)) return false;    
     cdcwires.push_back(straws);
   }
   
   // Second set of stereo layers
   for (unsigned int i=8;i<16;i++){
     vector<DCDCWire*>straws;
-    if (!GetCDCStereoWires(i+9,longwireflags[i],straws)) return false;
+    if (!GetCDCStereoWires(i+9,numstraws[i+8],longwireflags[i],zcenter,L,cdc_offsets,straws)) return false;
     cdcwires.push_back(straws);
   }
 
   // Third axial layer
   for (unsigned int ring=25;ring<29;ring++){ 
     vector<DCDCWire*>straws;
-    if (!GetCDCAxialWires(ring,straws)) return false;    
+    if (!GetCDCAxialWires(ring,numstraws[ring-1],zcenter,L,cdc_offsets,straws)) return false;    
     cdcwires.push_back(straws);
   }
 
@@ -761,7 +890,6 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
     for (unsigned int j=0;j<cdcwires[i].size();j++){
       DCDCWire *w=cdcwires[i][j];
       w->L=L/cos(w->stereo);
-      w->origin.SetZ(zcenter);
   
       // With the addition of close-packed stereo wires, the vector connecting
       // the center of the wire to the beamline ("s" direction) is not necessarily
@@ -828,26 +956,50 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
   if(!GetFDCZ(z_wires)) return false;
   if(!GetFDCStereo(stereo_angles)) return false;
 
-  for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
-    double angle=-stereo_angles[layer-1]*M_PI/180.;
+  // Get offsets tweaking nominal geometry from calibration database
+  JCalibration * jcalib = dapp->GetJCalibration(runnumber);
+  vector<map<string,double> >vals;
+  vector<fdc_wire_offset_t>fdc_wire_offsets;
+  if (jcalib->Get("FDC/wire_alignment",vals)==false){
+    for(unsigned int i=0; i<vals.size(); i++){
+      map<string,double> &row = vals[i];
+
+      // Get the offsets from the calibration database 
+      fdc_wire_offset_t temp;
+      temp.du=row["dU"];
+      //temp.du=0.;
+      
+      temp.dphi=row["dPhi"];
+      //temp.dphi=0.;
+      
+      temp.dz=row["dZ"];
+      temp.dz=0.;
+      fdc_wire_offsets.push_back(temp);
+    }
+  }
+   
+  // Generate the vector of wire plane paramters
+  for(int i=0; i<FDC_NUM_LAYERS; i++){
+    double angle=-stereo_angles[i]*M_PI/180.+fdc_wire_offsets[i].dphi;
     vector<DFDCWire *>temp;
-    for(int wire=1; wire<=WIRES_PER_PLANE; wire++){
+    for(int j=0; j<WIRES_PER_PLANE; j++){
       
       DFDCWire *w = new DFDCWire;
-      w->layer = layer;
-      w->wire = wire;
+      w->layer = i+1;
+      w->wire = j+1;
       w->angle = angle;
 
       // find coordinates of center of wire in rotated system
-      float u = U_OF_WIRE_ZERO + WIRE_SPACING*(float)(wire-1);
-      
+      float u = U_OF_WIRE_ZERO + WIRE_SPACING*(float)(j);
+      w->u=u+fdc_wire_offsets[i].du;
+
       // Rotate coordinates into lab system and set the wire's origin
       // Note that the FDC measures "angle" such that angle=0
       // corresponds to the anode wire in the vertical direction
       // (i.e. at phi=90 degrees).
       float x = u*sin(angle + M_PI/2.0);
       float y = u*cos(angle + M_PI/2.0);
-      w->origin.SetXYZ(x,y,z_wires[layer-1]);
+      w->origin.SetXYZ(x,y,z_wires[i]+fdc_wire_offsets[i].dz);
 
       // Length of wire is set by active radius
       w->L = 2.0*sqrt(pow(FDC_ACTIVE_RADIUS,2.0) - u*u);

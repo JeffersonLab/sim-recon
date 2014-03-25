@@ -9,6 +9,7 @@
 #define _DGeometry_
 
 #include <pthread.h>
+#include <map>
 
 #include <JANA/jerror.h>
 #include <JANA/JGeometry.h>
@@ -63,8 +64,12 @@ class DGeometry{
 				 string delimiter=" ") const
 		{return jgeom->GetMultiple(xpath,vals,delimiter);}
 	
-
-		
+		typedef struct{
+		  double du,dphi,dz;
+		}fdc_wire_offset_t;
+		typedef struct{
+		  double dx_u,dy_u,dx_d,dy_d;
+		}cdc_offset_t;
 
 		typedef pair<string, map<string,string> > node_t;
 		typedef vector<node_t> xpathparsed_t;
@@ -113,8 +118,15 @@ class DGeometry{
 		bool GetCDCRmid(vector<double> &cdc_rmid) const; ///< Distance of the center of CDC wire from beamline for each layer in cm
 		bool GetCDCNwires(vector<int> &cdc_nwires) const; ///< Number of wires for each CDC layer
 		bool GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax) const; 
-		bool GetCDCAxialWires(unsigned int ring,vector<DCDCWire*> &axialwires) const;
-		bool GetCDCStereoWires(unsigned int ring,string longwireflag,vector<DCDCWire*> &stereowires) const;
+		bool GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
+				      double zcenter,double dz,
+				      vector<vector<cdc_offset_t> >&cdc_offsets,
+				      vector<DCDCWire*> &axialwires) const;
+		bool GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
+				       string longwireflag,double zcenter,
+				       double dz,
+				       vector<vector<cdc_offset_t> >&cdc_offsets,
+				       vector<DCDCWire*> &stereowires) const;
 
 		bool GetBCALRmin(double &bcal_rmin) const; ///< minimum distance of BCAL module from beam line
 		bool GetBCALNmodules(unsigned int &bcal_nmodules) const; ///< Number of BCAL modules
@@ -148,6 +160,7 @@ class DGeometry{
 		mutable pthread_mutex_t bfield_mutex;
 		mutable pthread_mutex_t materialmap_mutex;
 		mutable pthread_mutex_t materials_mutex;
+
 		
 };
 
