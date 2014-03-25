@@ -756,11 +756,19 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   vector<intersection_hit_t>hits;
   unsigned int max_i=intersections.size()-1; 
   intersection_hit_t temp;
-  for (unsigned int i=0;i<=max_i;i++){  
+  for (unsigned int i=0;i<max_i;i++){    
     temp.wire=intersections[i]->wire1;
     temp.hit=intersections[i]->hit1;
     hits.push_back(temp);
+    if (intersections[i]->wire2->layer!=intersections[i+1]->wire1->layer){
+      temp.wire=intersections[i]->wire2;
+      temp.hit=intersections[i]->hit2;
+      hits.push_back(temp);
+    }
   }
+  temp.wire=intersections[max_i]->wire1;
+  temp.hit=intersections[max_i]->hit1;
+  hits.push_back(temp);
   temp.wire=intersections[max_i]->wire2;
   temp.hit=intersections[max_i]->hit2;
   hits.push_back(temp);
@@ -989,7 +997,7 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
 		segments[i_plus_1][k].matched=true;
 		myhits.insert(myhits.end(),segments[i_plus_1][k].hits.begin(),
 				segments[i_plus_1][k].hits.end());
-		
+		  
 		unsigned int i_plus_2=i_plus_1+1;
 		if (i_plus_2<4){
 		  tx=segments[i_plus_1][k].S(state_tx);
@@ -1025,7 +1033,7 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
 				segments[i_plus_3][n].matched=true;
 				myhits.insert(myhits.end(),segments[i_plus_3][n].hits.begin(),
 					      segments[i_plus_3][n].hits.end());
-				
+			
 				break;
 			      } // matched a segment
 			    }
