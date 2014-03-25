@@ -306,7 +306,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 							  vpeaks[j].pos);
 	for(xIt=x.begin();xIt!=x.end();xIt++){
 	  if ((*xIt)->element<=WIRES_PER_PLANE && (*xIt)->element>0){
-	    double x_from_wire=DFDCGeometry::getWireR(*xIt);
+	    const DFDCWire *wire=fdcwires[layer-1][(*xIt)->element-1];
+	    double x_from_wire=wire->u;
 	    // Test radial value for checking whether or not the hit is within
 	    // the fiducial region of the detector
 	    double r2test=x_from_wire*x_from_wire+y_from_strips*y_from_strips;
@@ -351,7 +352,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->dw     = 0; // place holder
 	      newPseu->s      = y_from_strips;
 	      newPseu->ds     = 0; // place holder
-	      newPseu->wire   = fdcwires[layer-1][(*xIt)->element-1];
+	      newPseu->wire   = wire;
 	      newPseu->time   = (*xIt)->t;
 	      newPseu->status = status;
 	      newPseu->itrack = (*xIt)->itrack;
@@ -479,6 +480,8 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
       par(K2)=1.;
       for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
         X(i)=double((*j)->element);
+	//X(i)=fdccathodes[layer-1][(*j)->plane/2][(*j)->element)]->u;
+	
         N(i)=double((*j)->q);
         sum+=N(i);
 	i++;
