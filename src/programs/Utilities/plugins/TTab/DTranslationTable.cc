@@ -19,6 +19,10 @@ using namespace std;
 static pthread_mutex_t tt_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool tt_initialized = false;
 static map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo> TT;
+string ROCID_MAP_FILENAME;
+static map<uint32_t, uint32_t> rocid_map;     // (see ReadOptionalROCidTranslation() for details)
+static map<uint32_t, uint32_t> rocid_inv_map; // (see ReadOptionalROCidTranslation() for details)
+
 
 //...................................
 // Less than operator for csc_t data types. This is used by
@@ -63,7 +67,12 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 	gPARMS->SetDefaultParameter("TT:NO_CCDB", NO_CCDB, "Don't try getting translation table from CCDB and just look for file. Only useful if you want to force reading tt.xml. This is automatically set if you specify a different filename via the TT:XML_FILENAME parameter.");
 	JParameter *p = gPARMS->SetDefaultParameter("TT:XML_FILENAME", XML_FILENAME, "Fallback filename of translation table XML file. If set to non-default, CCDB will not be checked.");
 	if(p->GetDefault() != p->GetValue()) NO_CCDB = true;
+	
+	ROCID_MAP_FILENAME = "rocid.map";
+	gPARMS->SetDefaultParameter("TT:ROCID_MAP_FILENAME", ROCID_MAP_FILENAME, "Optional rocid to rocid conversion map for use with files generated with the non-standard rocid's");
 
+	// Look for and read in an optional rocid <-> rocid translation table
+	ReadOptionalROCidTranslation();
 
 	// Read in Translation table. This will create DChannelInfo objects
 	// and store them in the "TT" map, indexed by csc_t objects
@@ -105,6 +114,65 @@ bool DTranslationTable::IsSuppliedType(string dataClassName) const
 }
 
 //---------------------------------
+// ReadOptionalROCidTranslation
+//---------------------------------
+void DTranslationTable::ReadOptionalROCidTranslation(void)
+{
+	// Some data may be taken with the ROC ID value set
+	// incorrectly in CODA. For CODA 3.0 data, there is
+	// actually no way to set it so it can be different
+	// for every CODA configuration. A simple work-around
+	// for this is to use a map file to list the translation
+	// from the crate numbers used in the evio file to those
+	// stored in the TT. Check here if a local file exists
+	// with the name specified by the TT:ROCID_MAP_FILENAME
+	// config parameter (default is "rocid.map"). If so,
+	// read it in. The format is just 2 values per line.
+	// The first is the rocid in the evio file, and the
+	// second, what the rocid is in the TT. Note that the
+	// value of the crate copied into the data objects 
+	// will be what is in the EVIO file.
+	ifstream ifs(ROCID_MAP_FILENAME.c_str());
+	if(!ifs.is_open()) return;
+	
+	cout << "Opened ROC id translation map: " << ROCID_MAP_FILENAME << endl;
+	while(ifs.good()){
+		char line[256];
+		ifs.getline(line, 256);
+		if(ifs.gcount() < 1) break;
+		if(line[0] == '#') continue;
+
+		stringstream ss(line);
+		uint32_t from=10000, to=10000;
+		ss >> from >> to;  // from=evio  to=TT
+		if( to==10000 ){
+			if( from!=10000){
+				cout << "unable to convert line:" << endl;
+				cout << "  " << line;
+			}
+		}else{
+			rocid_map[from] = to;
+			rocid_inv_map[to] = from;
+		}
+	}
+	ifs.close();
+	
+	if(rocid_map.size() == rocid_inv_map.size()){
+		cout << "Read " << rocid_map.size() << " entries" << endl;
+		map<uint32_t,uint32_t>::iterator iter;
+		for(iter=rocid_map.begin(); iter != rocid_map.end(); iter++){
+			cout << "rocid " << iter->first << " -> rocid " << iter->second << endl;
+		}
+	}else{
+		cout << "Entries not unique! This can happen if there are" <<endl;
+		cout << "more than one entry with the same value (either" << endl;
+		cout << "two keys or two vals the same.)" << endl;
+		cout << "Please fix the file \"" << ROCID_MAP_FILENAME << "\"." <<endl;
+		exit(-1);
+	}
+}
+
+//---------------------------------
 // ApplyTranslationTable
 //---------------------------------
 void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
@@ -133,9 +201,14 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	for(uint32_t i=0; i<pulseintegrals250.size(); i++){
 		const Df250PulseIntegral *pi = pulseintegrals250[i];
 		
+		// Apply optional rocid translation
+		uint32_t rocid = pi->rocid;
+		map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
+		if(rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
+		
 		// Create crate,slot,channel index and find entry in Translation table.
 		// If none is found, then just quietly skip this hit.
-		csc_t csc = {pi->rocid, pi->slot, pi->channel};
+		csc_t csc = {rocid, pi->slot, pi->channel};
 		map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
 		if(iter == TT.end()) continue;
 		const DChannelInfo &chaninfo = iter->second;
@@ -540,11 +613,11 @@ void StartElement(void *userData, const char *xmlname, const char **atts) {
 	int mc2codaType= 0;
 	int channel = 0;
 	string Detector;
-	int end;
-	int row,column,module,sector,layer,chan;
-	int ring,straw,plane,bar,gPlane,element;
-	int package,chamber,view,strip,wire;
-	int id, strip_type;
+	int end=0;
+	int row=0,column=0,module=0,sector=0,layer=0,chan=0;
+	int ring=0,straw=0,plane=0,bar=0,gPlane=0,element=0;
+	int package=0,chamber=0,view=0,strip=0,wire=0;
+	int id=0, strip_type=0;
 
 	// This complicated line just recasts the userData pointer into
 	// a reference to the "TT" member of the DTranslationTable object
@@ -634,6 +707,7 @@ void StartElement(void *userData, const char *xmlname, const char **atts) {
 		if(type == "ctp") return;
 		if(type == "sd") return;
 		if(type == "a1535sn") return;
+
 		
 //		// Data integrity check
 //		if(crate<0 || crate>=MAXDCRATE){

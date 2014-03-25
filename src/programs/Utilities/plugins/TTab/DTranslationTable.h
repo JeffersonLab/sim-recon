@@ -194,7 +194,7 @@ class DTranslationTable:public jana::JObject{
 		DTOFTDCDigiHit*  MakeTOFTDCDigiHit( const TOFIndex_t &idx,       const DF1TDCHit *hit) const;
 		
 
-
+		void ReadOptionalROCidTranslation(void);
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		
 		template<class T> void CopyToFactory(JEventLoop *loop, vector<T*> &v) const;
