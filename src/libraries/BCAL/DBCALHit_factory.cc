@@ -28,7 +28,7 @@ jerror_t DBCALHit_factory::init(void)
 jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	/// Read in calibration constants (Needs to be done!)
-	a_scale    = 1.0; // 100 keV/count (?)
+	a_scale    = 0.0001; // 100 keV/count (?)
 	a_pedestal = 0.0;
 	t_scale    = 4.0;    // 4 ns/count
 	t_offset   = 0;
