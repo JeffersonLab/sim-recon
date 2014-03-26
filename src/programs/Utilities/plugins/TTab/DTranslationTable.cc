@@ -158,10 +158,10 @@ void DTranslationTable::ReadOptionalROCidTranslation(void)
 	ifs.close();
 	
 	if(rocid_map.size() == rocid_inv_map.size()){
-		cout << "Read " << rocid_map.size() << " entries" << endl;
+		cout << "   Read " << rocid_map.size() << " entries" << endl;
 		map<uint32_t,uint32_t>::iterator iter;
 		for(iter=rocid_map.begin(); iter != rocid_map.end(); iter++){
-			cout << "rocid " << iter->first << " -> rocid " << iter->second << endl;
+			cout << "   rocid " << iter->first << " -> rocid " << iter->second << endl;
 		}
 	}else{
 		cout << "Entries not unique! This can happen if there are" <<endl;
