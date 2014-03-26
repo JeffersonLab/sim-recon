@@ -369,7 +369,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   // Color codes
   TGGroupFrame *bcalColorCodes = new TGGroupFrame(caloColorCodes, "BCAL colors", kVerticalFrame);
   TGGroupFrame *fcalColorCodes = new TGGroupFrame(caloColorCodes, "FCAL colors", kVerticalFrame);
-  TGTextButton *debuger       = new TGTextButton(caloColorCodes,"Debuger");
+  TGTextButton *debuger       = new TGTextButton(caloColorCodes,"Debugger");
   TGTextButton *bcaldisp       = new TGTextButton(caloColorCodes,"BcalDisp");
 
   caloColorCodes->AddFrame(bcalColorCodes, thints);

@@ -204,12 +204,12 @@ hdv_debugerframe::hdv_debugerframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt
   hdvmf->AddCheckButtons(checkbuttons);
   
   // Finish up and map the window
-  SetWindowName("Hall-D Event Viewer Debuger");
+  SetWindowName("Hall-D Event Viewer Debugger");
   SetIconName("HDView");
   
   done->Connect("Clicked()","hdv_debugerframe", this, "DoDone()");
   
-  SetWindowName("Hall-D Event View Debuger");
+  SetWindowName("Hall-D Event View Debugger");
   SetIconName("HDDebugView");
   
   MapSubwindows();
