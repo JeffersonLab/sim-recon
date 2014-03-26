@@ -102,6 +102,8 @@ class hdv_mainframe:public TGMainFrame {
 		void DrawDetectorsRPhi(void);
 		void DrawAxes(TCanvas *c, vector<TObject*> &graphics, const char *xlab, const char *ylab);
 		void DrawScale(TCanvas *c, vector<TObject*> &graphics);
+		void DrawLabel(TCanvas *c, vector<TObject*> &graphics, const char *txt);
+
 
 		// Other (non-slot) methods
 		void SetEvent(int id);

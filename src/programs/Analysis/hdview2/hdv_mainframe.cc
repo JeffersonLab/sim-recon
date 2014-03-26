@@ -1511,6 +1511,13 @@ void hdv_mainframe::DrawDetectorsXY(void)
 	DrawAxes(sideviewB->GetCanvas(), graphics_sideB, "Z", "Y");
 	DrawAxes(endviewA->GetCanvas(), graphics_endA, "X", "Y");
 	DrawAxes(endviewB->GetCanvas(), graphics_endB, "X", "Y");
+
+
+	//=============== Draw view labels
+	DrawLabel(sideviewA->GetCanvas(), graphics_sideA, "top view (looking down from above detector)");
+	DrawLabel(sideviewA->GetCanvas(), graphics_sideB, "side view from beam right (south)");
+	DrawLabel(endviewA->GetCanvas(), graphics_endA, "BCAL view from downstream looking upstream");
+	DrawLabel(endviewB->GetCanvas(), graphics_endB, "FCAL view from downstream looking upstream");
 }
 
 //-------------------
@@ -1787,6 +1794,31 @@ void hdv_mainframe::DrawScale(TCanvas *c, vector<TObject*> &graphics)
 	label->SetTextAlign(12);
 	graphics.push_back(label);
 }
+
+//-------------------
+// DrawLabel
+//-------------------
+void hdv_mainframe::DrawLabel(TCanvas *c, vector<TObject*> &graphics, const char *txt)
+{
+	/// Create label on top of the specified canvas
+	/// and add it to the specified container of graphics
+	/// objects to be drawn later.
+	double x1 = c->GetX1();
+	double x2 = c->GetX2();
+	double y1 = c->GetY1();
+	double y2 = c->GetY2();
+	double deltax = x2-x1;
+	double deltay = y2-y1;
+	deltax *= c->GetYsizeReal()/c->GetXsizeReal();
+	double x = x1 + 0.005*deltax;
+	double y = y2 - 0.003*deltay;
+
+	TLatex *label = new TLatex(x, y, txt);
+	label->SetTextAlign(13);
+	label->SetTextSize(0.045);
+	graphics.push_back(label);
+}
+
 
 //-------------------
 // SetEvent
