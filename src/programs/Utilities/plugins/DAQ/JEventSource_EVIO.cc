@@ -1136,6 +1136,8 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 	/// chain block transfer, then the data will all be placed in
 	/// a single EVIO bank and this will loop over the modules.
 	while(iptr < iend){
+	
+		if(VERBOSE>9) evioout << "Parsing word: " << hex << *iptr << dec << endl;
 
 		// Get module type from next word (bits 18-21)
 		uint32_t mod_id = ((*iptr) >> 18) & 0x000F;
@@ -1193,6 +1195,9 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 				jerr<<"...skipping to 0x" << hex << iptr << dec << "  (discarding " << (((uint64_t)iptr-(uint64_t)istart)/4) << " words)" << endl;
 				break;
 		}
+		
+		if(VERBOSE>9) evioout << "Finished parsing (last word: " << hex << iptr[-1] << dec << ")" << endl;
+
 		if(module_parsed) MergeObjLists(events, tmp_events);
 	}
 
@@ -1326,7 +1331,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 	
 	// Chop off filler words
 	for(; iptr<iend; iptr++){
-		if(*iptr != 0xf8000000) break;
+		if(((*iptr)&0xf8000000) != 0xf8000000) break;
 	}
 	
 	// Add last event in block to list
