@@ -69,6 +69,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	TIMEOUT = 2.0;
 	EMULATE_PULSE_INTEGRAL_MODE = true;
 	EMULATE_SPARSIFICATION_THRESHOLD = 0; // =0 is equivalent to no threshold
+	MODTYPE_MAP_FILENAME = "modtype.map";
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -82,6 +83,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_PULSE_INTEGRAL_MODE", EMULATE_PULSE_INTEGRAL_MODE, "If non-zero, and Df250WindowRawData objects exist in the event AND no Df250PulseIntegral objects exist, then use the waveform data to generate Df250PulseIntegral objects. Default is for this feature to be on. Set this to zero to disable it.");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_SPARSIFICATION_THRESHOLD", EMULATE_SPARSIFICATION_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then this is used to apply a cut on the non-pedestal-subtracted integral to determine if a Df250PulseIntegral is produced or not.");
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
+		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
 	}
 	
 	// Try to open the file.
@@ -134,6 +136,9 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("Df125PulseTime");
 	event_source_data_types.insert("DF1TDCHit");
 	event_source_data_types.insert("DF1TDCTriggerTime");
+
+	// Read in optional module type translation map if it exists	
+	ReadOptionalModuleTypeTranslation();
 	
 	last_run_number = 0;
 	pthread_mutex_init(&evio_buffer_pool_mutex, NULL);
@@ -160,6 +165,48 @@ JEventSource_EVIO::~JEventSource_EVIO()
 	
 	// Optionally dump the module map
 	if(DUMP_MODULE_MAP)DumpModuleMap();
+}
+
+//---------------------------------
+// ReadOptionalModuleTypeTranslation
+//---------------------------------
+void JEventSource_EVIO::ReadOptionalModuleTypeTranslation(void)
+{
+	// Some data may be taken with bad ROLs or drivers that
+	// write module type values that are non-standard. This
+	// allows the user to specify a simple text file that
+	// can be read in to translate the types found in the
+	// file to another type so that they can be properly parsed.
+	ifstream ifs(MODTYPE_MAP_FILENAME.c_str());
+	if(!ifs.is_open()) return;
+	
+	cout << "Opened JLab module type translation map: " << endl;
+	cout << "   " << MODTYPE_MAP_FILENAME << endl;
+	while(ifs.good()){
+		char line[256];
+		ifs.getline(line, 256);
+		if(ifs.gcount() < 1) break;
+		if(line[0] == '#') continue;
+
+		stringstream ss(line);
+		uint32_t from=10000, to=10000;
+		ss >> from >> to;  // from=evio  to=TT
+		if( to==10000 ){
+			if( from!=10000){
+				cout << "unable to convert line:" << endl;
+				cout << "  " << line;
+			}
+		}else{
+			modtype_translate[(MODULE_TYPE)from] = (MODULE_TYPE)to;
+		}
+	}
+	ifs.close();
+	
+	cout << "   Read " << modtype_translate.size() << " entries" << endl;
+	map<MODULE_TYPE,MODULE_TYPE>::iterator iter;
+	for(iter=modtype_translate.begin(); iter != modtype_translate.end(); iter++){
+		cout << "   type " << iter->first << " -> type " << iter->second << endl;
+	}
 }
 
 //----------------
@@ -775,10 +822,24 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 		for (uint16_t c_samp=0; c_samp<ped_samples; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
+		
+		// calculate pedestal per sample
+		uint32_t pedestal_per_sample = pedestalsum/ped_samples;
+		
 		// loop over the remaining samples to calculate integral
 		for (uint16_t c_samp=ped_samples; c_samp<nsamples; c_samp++) {
 			signalsum += samplesvector[c_samp];
 		}
+		
+		// Subtract pedestal. If the subtraction would make the integral
+		// negative, then set the integral to zero.
+		uint32_t pedestal_tot = (nsamples - ped_samples)*pedestal_per_sample;
+		if( signalsum > pedestal_tot){
+			signalsum -= pedestal_tot;
+		}else{
+			signalsum = 0;
+		}
+		
 		//uint32_t pedestaleffect = ((pedestalsum * isamples)/ped_samples);
 		// myintegral = signalsum - pedestaleffect;
 		// if (myintegral > 10000) jout << myintegral << "  " <<  signalsum << "  " <<  pedestaleffect << "  " <<  pedestalsum << "  " << nsamples  << "  " << ped_samples  << "  " << isamples << " \n";
@@ -1083,6 +1144,11 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 		// with the DAQ group's definitions for modules types!
 		MODULE_TYPE type = (MODULE_TYPE)mod_id;
 		if(VERBOSE>5) evioout << "      Encountered module type: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")" << endl;
+
+		if(modtype_translate.find(type) != modtype_translate.end()){
+			type = modtype_translate[type];
+			if(VERBOSE>5) evioout << "        switched module type to: " << type << " (=" << DModuleType::GetModule(type).GetName() << ")" << endl;	
+		}
 
 		// Parse buffer depending on module type
 		// (Note that each of the ParseXXX routines called below will

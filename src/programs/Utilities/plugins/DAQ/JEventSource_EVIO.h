@@ -125,6 +125,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		virtual const char* className(void){return static_className();}
 		 static const char* static_className(void){return "JEventSource_EVIO";}
 		
+                    void ReadOptionalModuleTypeTranslation(void);
 		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
              inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
      inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
@@ -146,6 +147,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		evioChannel *chan;
 		EVIOSourceType source_type;
 		map<tagNum, MODULE_TYPE> module_type;
+		map<MODULE_TYPE, MODULE_TYPE> modtype_translate;
 
 		JStreamLog evioout;
 
@@ -159,6 +161,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		float TIMEOUT;
 		bool  EMULATE_PULSE_INTEGRAL_MODE;
 		uint32_t  EMULATE_SPARSIFICATION_THRESHOLD;
+		string MODTYPE_MAP_FILENAME;
 
 		// Utility class with multiple roles:
 		//
