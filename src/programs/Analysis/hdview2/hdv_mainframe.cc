@@ -1403,7 +1403,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 
 				TLine *l = new TLine(rmin*cos(phi), rmin*sin(phi), rmax*cos(phi), rmax*sin(phi));
 				l->SetLineColor(isec==0 ? kBlack:12);
-				l->SetLineWidth((Width_t)(isec==0 ? 1.5:1.0));
+				l->SetLineWidth((Width_t)(isec==0 ? 2.5:1.0));
 				graphics_endA.push_back(l);
 			}
 			for(int isec=0; isec<BCAL_SECS2; isec++){
@@ -1413,7 +1413,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 
 				TLine *l = new TLine(rmin*cos(phi), rmin*sin(phi), rmax*cos(phi), rmax*sin(phi));
 				l->SetLineColor(isec==0 ? kBlack:12);
-				l->SetLineWidth((Width_t)(isec==0 ? 1.5:1.0));
+				l->SetLineWidth((Width_t)(isec==0 ? 2.5:1.0));
 				graphics_endA.push_back(l);
 			}
 			
