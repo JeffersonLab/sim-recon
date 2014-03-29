@@ -68,7 +68,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
 	EMULATE_PULSE_INTEGRAL_MODE = true;
-	EMULATE_SPARSIFICATION_THRESHOLD = 0; // =0 is equivalent to no threshold
+	EMULATE_SPARSIFICATION_THRESHOLD = -100000; // =-100000 is equivalent to no threshold
 	MODTYPE_MAP_FILENAME = "modtype.map";
 	
 	if(gPARMS){
@@ -815,38 +815,26 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
 		uint32_t nsamples=samplesvector.size();
-		uint32_t pedestalsum = 0;
-		uint32_t signalsum = 0;
+		int32_t pedestalsum = 0;
+		int32_t signalsum = 0;
 
 		// loop over the first X samples to calculate pedestal
-		for (uint16_t c_samp=0; c_samp<ped_samples; c_samp++) {
+		for (uint32_t c_samp=0; c_samp<ped_samples; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
 		
-		// calculate pedestal per sample
-		uint32_t pedestal_per_sample = pedestalsum/ped_samples;
-		
-		// loop over the remaining samples to calculate integral
-		for (uint16_t c_samp=ped_samples; c_samp<nsamples; c_samp++) {
+		// loop over all samples to calculate integral
+		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
 			signalsum += samplesvector[c_samp];
 		}
 		
-		// Subtract pedestal. If the subtraction would make the integral
-		// negative, then set the integral to zero.
-		uint32_t pedestal_tot = (nsamples - ped_samples)*pedestal_per_sample;
-		if( signalsum > pedestal_tot){
-			signalsum -= pedestal_tot;
-		}else{
-			signalsum = 0;
-		}
-		
-		//uint32_t pedestaleffect = ((pedestalsum * isamples)/ped_samples);
-		// myintegral = signalsum - pedestaleffect;
-		// if (myintegral > 10000) jout << myintegral << "  " <<  signalsum << "  " <<  pedestaleffect << "  " <<  pedestalsum << "  " << nsamples  << "  " << ped_samples  << "  " << isamples << " \n";
+		// Scale pedestal to window width 
+		int32_t pedestal_tot = ((int32_t)nsamples*pedestalsum)/(int32_t)ped_samples;
+
 		myDf250PulseIntegral->pulse_number = pulse_number;
 		myDf250PulseIntegral->quality_factor = quality_factor;
 		myDf250PulseIntegral->integral = signalsum;
-		myDf250PulseIntegral->pedestal = pedestalsum;
+		myDf250PulseIntegral->pedestal = pedestal_tot;
 		
 		// Add the Df250WindowRawData object as an associated object
 		myDf250PulseIntegral->AddAssociatedObject(f250WindowRawData);
