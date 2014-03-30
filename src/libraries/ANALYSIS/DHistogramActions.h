@@ -343,37 +343,49 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		DHistogramAction_GenReconTrackComparison(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_GenReconTrackComparison", false, locActionUniqueString), 
 		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(300), dNum2DThetaBins(140),
-		dNumRFDeltaTBins(202), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
+		dNumRFDeltaTBins(202), dNumPullBins(1000), dNum2DPullBins(500), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
 		dMaxDeltaT(5.0), dMinDeltaVertexZ(-15.0), dMaxDeltaVertexZ(15.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dPullTypes.resize(8);
+			dPullTypes[0] = d_EPull;  dPullTypes[1] = d_PxPull;  dPullTypes[2] = d_PyPull;  dPullTypes[3] = d_PzPull;
+			dPullTypes[4] = d_XxPull;  dPullTypes[5] = d_XyPull;  dPullTypes[6] = d_XzPull;  dPullTypes[7] = d_TPull;
 		}
 
 		DHistogramAction_GenReconTrackComparison(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_GenReconTrackComparison", false, locActionUniqueString), 
 		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(300), dNum2DThetaBins(140),
-		dNumRFDeltaTBins(202), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
+		dNumRFDeltaTBins(202), dNumPullBins(1000), dNum2DPullBins(500), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
 		dMaxDeltaT(5.0), dMinDeltaVertexZ(-15.0), dMaxDeltaVertexZ(15.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dPullTypes.resize(8);
+			dPullTypes[0] = d_EPull;  dPullTypes[1] = d_PxPull;  dPullTypes[2] = d_PyPull;  dPullTypes[3] = d_PzPull;
+			dPullTypes[4] = d_XxPull;  dPullTypes[5] = d_XyPull;  dPullTypes[6] = d_XzPull;  dPullTypes[7] = d_TPull;
 		}
 
 		DHistogramAction_GenReconTrackComparison(void) : 
 		DAnalysisAction(NULL, "Hist_GenReconTrackComparison", false, ""), 
 		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(300), dNum2DThetaBins(140),
-		dNumRFDeltaTBins(202), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
+		dNumRFDeltaTBins(202), dNumPullBins(1000), dNum2DPullBins(500), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
 		dMaxDeltaT(5.0), dMinDeltaVertexZ(-15.0), dMaxDeltaVertexZ(15.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
 			dFinalStatePIDs.push_back(PiMinus);  dFinalStatePIDs.push_back(KMinus);
+
+			dPullTypes.resize(8);
+			dPullTypes[0] = d_EPull;  dPullTypes[1] = d_PxPull;  dPullTypes[2] = d_PyPull;  dPullTypes[3] = d_PzPull;
+			dPullTypes[4] = d_XxPull;  dPullTypes[5] = d_XyPull;  dPullTypes[6] = d_XzPull;  dPullTypes[7] = d_TPull;
 		}
 
-		unsigned int dNumDeltaPOverPBins, dNumDeltaThetaBins, dNumDeltaPhiBins, dNumDeltaTBins, dNumDeltaVertexZBins, dNum2DPBins, dNum2DThetaBins, dNumRFDeltaTBins;
+		unsigned int dNumDeltaPOverPBins, dNumDeltaThetaBins, dNumDeltaPhiBins, dNumDeltaTBins, dNumDeltaVertexZBins, dNum2DPBins, dNum2DThetaBins, dNumRFDeltaTBins, dNumPullBins, dNum2DPullBins;
 		double dMinDeltaPOverP, dMaxDeltaPOverP, dMinDeltaTheta, dMaxDeltaTheta, dMinDeltaPhi, dMaxDeltaPhi, dMinDeltaT, dMaxDeltaT, dMinDeltaVertexZ, dMaxDeltaVertexZ;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta, dMinRFDeltaT, dMaxRFDeltaT;
 
@@ -384,6 +396,7 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
+		deque<DKinFitPullType> dPullTypes;
 		TH1D* dRFBeamBunchDeltaT_Hist;
 
 		map<Particle_t, TH1D*> dHistMap_DeltaPOverP;
@@ -404,6 +417,10 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		map<Particle_t, TH2D*> dHistMap_DeltaTVsP;
 		map<Particle_t, TH2D*> dHistMap_DeltaVertexZVsTheta;
 		map<Particle_t, TH2D*> dHistMap_PVsTheta_LargeDeltaT;
+
+		map<Particle_t, map<DKinFitPullType, TH1D*> > dHistMap_Pulls;
+		map<Particle_t, map<DKinFitPullType, TH2D*> > dHistMap_PullsVsP;
+		map<Particle_t, map<DKinFitPullType, TH2D*> > dHistMap_PullsVsTheta;
 };
 
 class DHistogramAction_TOFHitStudy : public DAnalysisAction
