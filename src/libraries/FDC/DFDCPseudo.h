@@ -31,7 +31,9 @@ class DFDCPseudo : public JObject {
 	
 
 		double u,v; ///< centroid positions in the two cathode views
+		double phi_u,phi_v; /// < rotation angles for cathode planes
 		double w,dw; ///< local coordinate of pseudopoint in the direction perpendicular to the wires and its uncertainty
+		double w_c; /// < wire position computed from cathode data, assuming the avalanche occurs at the wire
 		double s,ds; ///< local coordinate of pseudopoint in the direction along the wire and its uncertainty
 		const DFDCWire* wire; ///< DFDCWire for this wire 
 		double time; ///< time corresponding to this pseudopoint.
@@ -44,6 +46,8 @@ class DFDCPseudo : public JObject {
 		void toStrings(vector<pair<string,string> > &items)const{ 
 		  AddString(items,"u","%3.2f",u);
 		  AddString(items,"v","%3.2f",v);
+		  AddString(items,"phi_u","%3.2f",phi_u);
+		  AddString(items,"phi_v","%3.2f",phi_v);
 		  AddString(items, "w", "%3.2f", w);
 		  AddString(items, "s", "%3.2f", s);
 		  AddString(items, "layer", "%d", wire->layer);
