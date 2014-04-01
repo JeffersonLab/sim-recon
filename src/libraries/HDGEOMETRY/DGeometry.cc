@@ -946,6 +946,56 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
 
 
 //---------------------------------
+// GetFDCCathodes
+//---------------------------------
+bool DGeometry::GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const{
+// Get offsets tweaking nominal geometry from calibration database
+  JCalibration * jcalib = dapp->GetJCalibration(runnumber);
+  vector<map<string,double> >vals;
+  vector<fdc_cathode_offset_t>fdc_cathode_offsets;
+  if (jcalib->Get("FDC/cathode_alignment",vals)==false){
+    for(unsigned int i=0; i<vals.size(); i++){
+      map<string,double> &row = vals[i];
+
+      // Get the offsets from the calibration database 
+      fdc_cathode_offset_t temp;
+      temp.du=row["dU"];
+      //temp.du=0.;
+      
+      temp.dphi=row["dPhiU"];
+      //temp.dphi=0.;
+     
+      fdc_cathode_offsets.push_back(temp);
+
+      temp.du=row["dV"];
+      //temp.du=0.;
+      
+      temp.dphi=row["dPhiV"];
+      //temp.dphi=0.;
+     
+      fdc_cathode_offsets.push_back(temp);
+    }
+  }
+  // Generate the vector of cathode plane parameters
+  for (int i=0;i<2*FDC_NUM_LAYERS; i++){
+    double angle=(i%2)?CATHODE_ROT_ANGLE:-CATHODE_ROT_ANGLE; // +/- 75 degrees
+    angle+=fdc_cathode_offsets[i].dphi;
+    vector<DFDCCathode *>temp;
+    for (int j=0; j<STRIPS_PER_PLANE; j++){
+      DFDCCathode *c = new DFDCCathode;
+      c->layer = i+1;
+      c->strip = j+1;
+      c->angle = angle;
+      c->u=U_OF_STRIP_ZERO+STRIP_SPACING*(float)j+fdc_cathode_offsets[i].du;
+      temp.push_back(c);
+    }
+    fdccathodes.push_back(temp);
+  }
+
+  return true;
+}
+
+//---------------------------------
 // GetFDCWires
 //---------------------------------
 bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
@@ -978,7 +1028,7 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
     }
   }
    
-  // Generate the vector of wire plane paramters
+  // Generate the vector of wire plane parameters
   for(int i=0; i<FDC_NUM_LAYERS; i++){
     double angle=-stereo_angles[i]*M_PI/180.+fdc_wire_offsets[i].dphi;
     vector<DFDCWire *>temp;

@@ -18,6 +18,7 @@ using namespace jana;
 #include <DANA/DApplication.h>
 #include "FDC/DFDCGeometry.h"
 #include "FDC/DFDCWire.h"
+#include "FDC/DFDCCathode.h"
 #include "CDC/DCDCWire.h"
 
 #include <particleType.h>
@@ -68,6 +69,9 @@ class DGeometry{
 		  double du,dphi,dz;
 		}fdc_wire_offset_t;
 		typedef struct{
+		  double du,dphi;
+		}fdc_cathode_offset_t;
+		typedef struct{
 		  double dx_u,dy_u,dx_d,dy_d;
 		}cdc_offset_t;
 
@@ -105,6 +109,7 @@ class DGeometry{
 		const DMaterial* GetDMaterial(string name) const;
 
 		bool GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const;
+		bool GetFDCCathodes(vector<vector<DFDCCathode *> >&fdccathodes) const;
 		bool GetFDCZ(vector<double> &z_wires) const; ///< z-locations for each of the FDC wire planes in cm
 		bool GetFDCStereo(vector<double> &stereo_angles) const; ///< stereo angles of each of the FDC wire layers
 		bool GetFDCRmin(vector<double> &rmin_packages) const; ///< beam hole size for each FDC package in cm
