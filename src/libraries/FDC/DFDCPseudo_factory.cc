@@ -71,6 +71,13 @@ DFDCPseudo_factory::~DFDCPseudo_factory() {
       }
     }    
   }
+  if (fdccathodes.size()){
+    for (unsigned int i=0;i<fdccathodes.size();i++){
+      for (unsigned int j=0;j<fdccathodes[i].size();j++){
+	delete fdccathodes[i][j];
+      }
+    }    
+  }
   //delete _log;
 }
 
@@ -117,7 +124,10 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
     _DBG_<< "FDC geometry not available!" <<endl;
     USE_FDC=false;
   }
-
+  if (!dgeom->GetFDCCathodes(fdccathodes)){
+    _DBG_<< "FDC geometry not available!" <<endl;
+    USE_FDC=false;
+  }
 
 
   if(DEBUG_HISTS){
@@ -168,6 +178,15 @@ jerror_t DFDCPseudo_factory::erun(void){
     }    
   }
   fdcwires.clear();
+  if (fdccathodes.size()){
+    for (unsigned int i=0;i<fdccathodes.size();i++){
+      for (unsigned int j=0;j<fdccathodes[i].size();j++){
+	delete fdccathodes[i][j];
+      }
+    }    
+  }
+  fdccathodes.clear();
+
 
   return NOERROR;
 }
@@ -295,19 +314,25 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
     }
   }
   if (upeaks.size()*vpeaks.size()>0){
+    // Rotation angles for strips
+    unsigned int ind=2*(layer-1);
+    float phi_u=fdccathodes[ind][0]->angle;
+    float phi_v=fdccathodes[ind+1][0]->angle;
+
     //Loop over all u and v centroids looking for matches with wires
-    for (unsigned int i=0;i<upeaks.size();i++){
+    for (unsigned int i=0;i<upeaks.size();i++){  
       for (unsigned int j=0;j<vpeaks.size();j++){
 	// In the layer local coordinate system, wires are quantized 
 	// in the x-direction and y is along the wire.
-	double x_from_strips=DFDCGeometry::getXLocalStrips(upeaks[i].pos,
-						 vpeaks[j].pos);
-	double y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
-							  vpeaks[j].pos);
+	double x_from_strips=DFDCGeometry::getXLocalStrips(upeaks[i].pos,phi_u,
+							   vpeaks[j].pos,phi_v);
+	double y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,phi_u,
+							   vpeaks[j].pos,phi_v);
 	for(xIt=x.begin();xIt!=x.end();xIt++){
 	  if ((*xIt)->element<=WIRES_PER_PLANE && (*xIt)->element>0){
 	    const DFDCWire *wire=fdcwires[layer-1][(*xIt)->element-1];
 	    double x_from_wire=wire->u;
+
 	    // Test radial value for checking whether or not the hit is within
 	    // the fiducial region of the detector
 	    double r2test=x_from_wire*x_from_wire+y_from_strips*y_from_strips;
@@ -345,18 +370,21 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
 	      //double xres=WIRE_SPACING/2./sqrt(12.);
 	   
-	      DFDCPseudo* newPseu = new DFDCPseudo;
+	      DFDCPseudo* newPseu = new DFDCPseudo;     
+	      newPseu->phi_u=phi_u;
+	      newPseu->phi_v=phi_v;
 	      newPseu->u = upeaks[i].pos;
 	      newPseu->v = vpeaks[j].pos;
 	      newPseu->w      = x_from_wire;
-	      newPseu->dw     = 0; // place holder
+	      newPseu->dw     = 0.; // place holder
+	      newPseu->w_c    = x_from_strips;
 	      newPseu->s      = y_from_strips;
-	      newPseu->ds     = 0; // place holder
+	      newPseu->ds     = 0.; // place holder
 	      newPseu->wire   = wire;
 	      newPseu->time   = (*xIt)->t;
 	      newPseu->status = status;
 	      newPseu->itrack = (*xIt)->itrack;
-
+	      
 	      newPseu->AddAssociatedObject(v[vpeaks[j].cluster]);
 	      newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
 	      
@@ -476,16 +504,15 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
       double sum=0.;
  
       // Initialize the matrices to some suitable starting values
-      par(X0)=double((*peak)->element);
+      unsigned int index=2*((*peak)->gLayer-1)+(*peak)->plane/2;
       par(K2)=1.;
       for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-        X(i)=double((*j)->element);
-	//X(i)=fdccathodes[layer-1][(*j)->plane/2][(*j)->element)]->u;
-	
+ 	X(i)=fdccathodes[index][(*j)->element-1]->u;
         N(i)=double((*j)->q);
         sum+=N(i);
 	i++;
       }
+      par(X0)=X(1);
       par(QA)=2.*sum;
       newpar=par;
     

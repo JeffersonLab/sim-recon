@@ -108,6 +108,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
  		
 	private:		
 		vector<vector<DFDCWire*> >fdcwires;
+		vector<vector<DFDCCathode*> >fdccathodes;
 
 		double ROUT_FIDUCIAL,RIN_FIDUCIAL;
 		double r2_out,r2_in;
