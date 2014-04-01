@@ -39,7 +39,7 @@
 #include <JANA/JObject.h>
 #include "DFDCHit.h"
 #include "DFDCWire.h"
-
+#include "DFDCCathode.h"
 
 ///
 /// class DFDCGeometry: definition of a class providing basic geometry
@@ -91,7 +91,15 @@ class DFDCGeometry : public JObject {
   static inline float getXLocalStrips(float u, float v){
     return STRIP_SPACING*(u-1 + v-1 - (STRIPS_PER_PLANE-1))
       /2./cos(CATHODE_ROT_ANGLE);
+  }  
+  static inline float getXLocalStrips(float u, float phi_u,float v, float phi_v){
+    float cosPhiU=cos(phi_u);
+    float cosPhiV=cos(phi_v);
+    float sinPhiU=sin(phi_u);
+    float sinPhiV=sin(phi_v);
+    return (v*sinPhiU-u*sinPhiV)/(cosPhiV*sinPhiU-cosPhiU*sinPhiV);
   }
+ 
 
   ///
   /// DFDCGeometry::getYLocalStrips()
@@ -100,7 +108,17 @@ class DFDCGeometry : public JObject {
   ///
   static inline float getYLocalStrips(float u, float v){
     return  STRIP_SPACING*(u-v)/2./sin(CATHODE_ROT_ANGLE);
-		} 
+  } 
+  static inline float getYLocalStrips(float u, float phi_u,float v, float phi_v){
+    float cosPhiU=cos(phi_u);
+    float cosPhiV=cos(phi_v);
+    float sinPhiU=sin(phi_u);
+    float sinPhiV=sin(phi_v);
+    return (u*cosPhiV-v*cosPhiU)/(cosPhiU*sinPhiV-cosPhiV*sinPhiU);
+  }
+ 
+
+
 };
 
 #endif // DFDCGEOMETRY_H
