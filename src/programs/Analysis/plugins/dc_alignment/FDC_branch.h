@@ -17,7 +17,6 @@ class FDC_branch:public TObject{
 	public:
 
   float dX;
-  float dY;
   float dPhi;
   int layer;
   int N;
