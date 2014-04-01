@@ -37,6 +37,7 @@ using std::map;
 #include <DVector2.h>
 
 #include "FDC_branch.h"
+#include "FDC_c_branch.h"
 #include "CDC_branch.h"
 
 typedef struct{
@@ -53,7 +54,7 @@ typedef struct{
   DMatrix2x1 res;
   DMatrix4x1 S;
   DMatrix4x4 C;
-  DMatrix2x2 R;
+  DMatrix2x2 V;
   DMatrix4x2 H_T;
   DMatrix2x4 H;
   double doca,t;
@@ -96,11 +97,12 @@ typedef struct{
 typedef struct{
   DMatrix2x1 A;
   DMatrix2x2 E;
-  DMatrix2x1 Au;
-  DMatrix2x2 Eu;
-  DMatrix2x1 Av;
-  DMatrix2x2 Ev;
 }wire_align_t;
+
+typedef struct{
+  DMatrix4x1 A;
+  DMatrix4x4 E;
+}cathode_align_t;
 
 typedef struct{
   DMatrix4x1 A;
@@ -155,6 +157,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   FDC_branch fdc;
   FDC_branch *fdc_ptr;
   TBranch *fdcbranch;
+  
+  TTree *fdcCtree;
+  FDC_c_branch fdc_c;
+  FDC_c_branch *fdc_c_ptr;
+  TBranch *fdcCbranch;
 
   TTree *cdctree;
   CDC_branch cdc;
@@ -173,8 +180,10 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   };
 
   enum fdc_align_parms{
-    kPhi,
+    kPhiU,
     kU,
+    kPhiV,
+    kV,
   };
 
   enum align_parms{
@@ -324,10 +333,11 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   pthread_mutex_t mutex;
 
   TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdc_match;
+  TH1F *Hpseudo_prob,*Hpseudo_prelimprob;
   TH1F *Hintersection_match;
   TH1F *Hcdc_prob,*Hcdc_prelimprob;
   TH2F *Hbcalmatch,*Hcdcdrift_time;
-  TH2F *Hures_vs_layer,*HdEdx_vs_beta;	
+  TH2F *Hures_vs_layer,*HdEdx_vs_beta,*Hres_vs_layer;	
   TH2F *Hdrift_time,*Hcdcres_vs_drift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
   TH2F *Hdv_vs_dE,*Hbcalmatchxy;
@@ -346,7 +356,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   double mMinTime,mOuterTime,mOuterZ,mBeta;
   unsigned int mMinTimeID;
   
-  bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE,USE_BCAL;
+  bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE,USE_BCAL,ALIGN_WIRE_PLANES;
 
   // Geometry
   const DGeometry *dgeom;
@@ -354,6 +364,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   vector<align_t>alignments;
   vector<vector<cdc_align_t> >cdc_alignments;
   vector<wire_align_t>fdc_alignments;
+  vector<cathode_align_t>fdc_cathode_alignments;
   vector<vector<DFDCWire*> >fdcwires;
   DMatrix3x1 fdc_drift_parms;
 };
