@@ -18,6 +18,7 @@ class DParticleComboBlueprintStep
 	public:
 
 		bool operator==(const DParticleComboBlueprintStep& locParticleComboBlueprintStep) const;
+		bool operator<(const DParticleComboBlueprintStep& locParticleComboBlueprintStep) const;
 		bool operator!=(const DParticleComboBlueprintStep& locParticleComboBlueprintStep) const{return (!((*this) == locParticleComboBlueprintStep));}
 		void Reset(void);
 

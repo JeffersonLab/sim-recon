@@ -15,6 +15,7 @@
 #include <DANA/DApplication.h>
 
 #include <deque>
+#include <map>
 #include <vector>
 
 using namespace std;
@@ -72,6 +73,8 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 			//Command-line values will override those set in the DReaction
 		pair<bool, double> dMinIndividualTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinProtonMomentum; //when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
+
+		map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*> dBlueprintStepMap;
 
 		DTrackTimeBased_factory_Combo* dTrackTimeBasedFactory_Combo;
 };

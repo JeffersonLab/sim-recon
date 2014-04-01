@@ -65,6 +65,7 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
 	Reset_Pools();
+	dBlueprintStepMap.clear();
 
 	// Get list of factories and find all the ones producing
 	// DReaction objects. (A simpler way to do this would be to
@@ -378,50 +379,19 @@ bool DParticleComboBlueprint_factory::Handle_EndOfReactionStep(const DReaction* 
 	//end of step, advance to next step
 
 	//first check to see if identical to a previous step; if so, just save the old step and recycle the current one
-	bool locRecycleFlag = false;
-	for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
+	map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*>::iterator locStepIterator = dBlueprintStepMap.find(*locParticleComboBlueprintStep);
+	if(locStepIterator != dBlueprintStepMap.end())
 	{
-		for(size_t loc_j = 0; loc_j < locParticleComboBlueprints[loc_i]->Get_NumParticleComboBlueprintSteps(); ++loc_j)
-		{
-			//could have two identical steps in the same reaction (e.g. pi0 decays)
-			const DParticleComboBlueprintStep* locPreviousParticleComboBlueprintStep = locParticleComboBlueprints[loc_i]->Get_ParticleComboBlueprintStep(loc_j);
-			if((*locPreviousParticleComboBlueprintStep) != (*locParticleComboBlueprintStep))
-				continue; //else identical: just use the previously saved one and recycle the newly constructed one
-			if(dDebugLevel > 10)
-				cout << "step identical to previous one: copying & recycling." << endl;
-			Recycle_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
-			locParticleComboBlueprintStep = NULL;
-			locParticleComboBlueprint->Add_ParticleComboBlueprintStep(locPreviousParticleComboBlueprintStep);
-			locRecycleFlag = true;
-			break;
-		}
-		if(locRecycleFlag)
-			break;
+		//identical step found, recycle current one
+		Recycle_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
+		locParticleComboBlueprintStep = NULL;
+		locParticleComboBlueprint->Add_ParticleComboBlueprintStep(locStepIterator->second);
 	}
-	//if match not found, try searching previous dreactions too (may be identical reactions or similar enough)
-	if(!locRecycleFlag)
+	else
 	{
-		for(size_t loc_i = 0; loc_i < _data.size(); ++loc_i)
-		{
-			for(size_t loc_j = 0; loc_j < _data[loc_i]->Get_NumParticleComboBlueprintSteps(); ++loc_j)
-			{
-				const DParticleComboBlueprintStep* locPreviousParticleComboBlueprintStep = _data[loc_i]->Get_ParticleComboBlueprintStep(loc_j);
-				if((*locPreviousParticleComboBlueprintStep) != (*locParticleComboBlueprintStep))
-					continue; //else identical: just use the previously saved one and recycle the newly constructed one
-				if(dDebugLevel > 10)
-					cout << "step identical to one from previous DReaction: copying & recycling." << endl;
-				Recycle_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
-				locParticleComboBlueprintStep = NULL;
-				locParticleComboBlueprint->Add_ParticleComboBlueprintStep(locPreviousParticleComboBlueprintStep);
-				locRecycleFlag = true;
-				break;
-			}
-			if(locRecycleFlag)
-				break;
-		}
-	}
-	if(!locRecycleFlag)
+		dBlueprintStepMap[*locParticleComboBlueprintStep] = locParticleComboBlueprintStep;
 		locParticleComboBlueprint->Add_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
+	}
 
 	++locStepIndex;
 	if(dDebugLevel > 10)
