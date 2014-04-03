@@ -18,6 +18,7 @@ using namespace std;
 jerror_t DFDCIntersection_factory::init(void)
 {
 	MAX_DIST2 = 2.0*2.0;
+	DEBUG_LEVEL=0;
 
 	// Create skeleton of data structure to hold hits
 	vector<const DFDCHit*> mt_trkhits;
@@ -65,9 +66,11 @@ jerror_t DFDCIntersection_factory::evnt(JEventLoop *loop, int eventnumber)
 	// For events with a very large number of hits, assume
 	// we can't reconstruct them so bail early
 	// Feb. 8, 2008  D.L.
-	if(fdchits.size()>(5.0+5.0+1.0)*25.0*6.0){
-		_DBG_<<"Too many hits in FDC! Intersection point reconstruction in FDC bypassed for event "<<loop->GetJEvent().GetEventNumber()<<endl;
-		return NOERROR;
+	if(fdchits.size()>(5+5+1)*24*4){
+	  if (DEBUG_LEVEL>0){
+	    _DBG_<<"Too many hits in FDC! Intersection point reconstruction in FDC bypassed for event "<<loop->GetJEvent().GetEventNumber()<<endl;
+	  }
+	  return NOERROR;
 	}
 	
 	// Sort wire hits by package and layer
