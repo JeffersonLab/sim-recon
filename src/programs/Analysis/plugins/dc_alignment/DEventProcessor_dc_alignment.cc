@@ -73,6 +73,9 @@ jerror_t DEventProcessor_dc_alignment::init(void)
   gPARMS->SetDefaultParameter("DCALIGN:READ_LOCAL_FILE",READ_LOCAL_FILE);
   ALIGN_WIRE_PLANES=true;
   gPARMS->SetDefaultParameter("DCALIGN:ALIGN_WIRE_PLANES",ALIGN_WIRE_PLANES);
+  FILL_TREE=false;
+  gPARMS->SetDefaultParameter("DCALIGN:FILL_TREE",FILL_TREE);
+
 
   fdc_alignments.resize(24);
   for (unsigned int i=0;i<24;i++){
@@ -132,19 +135,20 @@ jerror_t DEventProcessor_dc_alignment::init(void)
     }
     cdc_alignments.push_back(tempvec);
   }
-  
-  // Create Tree
-  fdctree = new TTree("fdc","FDC alignments");
-  fdcbranch = fdctree->Branch("T","FDC_branch",&fdc_ptr);
 
-   // Create Tree
-  fdcCtree = new TTree("fdc_c","FDC alignments");
-  fdcCbranch = fdcCtree->Branch("T","FDC_c_branch",&fdc_c_ptr);
-
-   // Create Tree
-  cdctree = new TTree("cdc","CDC alignments");
-  cdcbranch = cdctree->Branch("T","CDC_branch",&cdc_ptr);
-
+  if (FILL_TREE){
+    // Create Tree
+    fdctree = new TTree("fdc","FDC alignments");
+    fdcbranch = fdctree->Branch("T","FDC_branch",&fdc_ptr);
+    
+    // Create Tree
+    fdcCtree = new TTree("fdc_c","FDC alignments");
+    fdcCbranch = fdcCtree->Branch("T","FDC_c_branch",&fdc_c_ptr);
+    
+    // Create Tree
+    cdctree = new TTree("cdc","CDC alignments");
+    cdcbranch = cdctree->Branch("T","CDC_branch",&cdc_ptr);
+  }
   
   return NOERROR;
 }
@@ -214,7 +218,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   }
   Hztarg = (TH1F*)gROOT->FindObject("Hztarg");
   if (!Hztarg){
-    Hztarg=new TH1F("Hztarg","Estimate for target z",600,-200.0,100.0); 
+    Hztarg=new TH1F("Hztarg","Estimate for target z",1200,-300.0,300.0); 
   }
   Hures_vs_layer=(TH2F*)gROOT->FindObject("Hures_vs_layer");
   if (!Hures_vs_layer){
@@ -264,6 +268,11 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
     Hbcalmatchxy=new TH2F("Hbcalmatchxy","BCAL #deltay vs #deltax",400,-50.,50.,
 			400,-50.,50.);
   }
+  Hfcalmatch=(TH1F*)gROOT->FindObject("Hfcalmatch");
+  if (!Hfcalmatch){
+    Hfcalmatch=new TH1F("Hfcalmatch","FCAL #deltar",400,0.,50.);
+  }
+
 
   
   dapp->Unlock();
@@ -303,19 +312,33 @@ jerror_t DEventProcessor_dc_alignment::fini(void)
   }
   cdcfile.close();
 
-  ofstream fdcfile("fdc_alignment.dat");
-  fdcfile << "Layer dU sig(dU) dPhi sig(dPhi)" <<endl;
-  for (unsigned int layer=0;layer<24;layer++){
-    double du=fdc_alignments[layer].A(kU);
-    double sigu=sqrt(fdc_alignments[layer].E(kU,kU));
-    double dphi=fdc_alignments[layer].A(kPhiU);
-    double sigphi=sqrt(fdc_alignments[layer].E(kPhiU,kPhiU));
-    
-    fdcfile << layer+1 << " " << du <<" " << sigu <<" " << dphi 
-	    << " " << sigphi << endl;
+  if (ALIGN_WIRE_PLANES){
+    ofstream fdcfile("fdc_alignment.dat");
+    fdcfile << "Layer dU sig(dU) dPhi sig(dPhi)" <<endl;
+    for (unsigned int layer=0;layer<24;layer++){
+      double du=fdc_alignments[layer].A(kU);
+      double sigu=sqrt(fdc_alignments[layer].E(kU,kU));
+      double dphi=fdc_alignments[layer].A(kPhiU);
+      double sigphi=sqrt(fdc_alignments[layer].E(kPhiU,kPhiU));
+      
+      fdcfile << layer+1 << " " << du <<" " << sigu <<" " << dphi 
+	      << " " << sigphi << endl;
+    }
+    fdcfile.close(); 
   }
-  fdcfile.close(); 
-
+  else{
+    ofstream fdcfile("fdc_cathode_alignment.dat");
+    fdcfile << "Layer dPhiU dU dPhiV dV" <<endl;
+    for (unsigned int layer=0;layer<24;layer++){
+      fdcfile << layer+1 << " " << fdc_cathode_alignments[layer].A(kPhiU)
+	      << " " << fdc_cathode_alignments[layer].A(kU)
+	      << " " << fdc_cathode_alignments[layer].A(kPhiV)
+	      << " " << fdc_cathode_alignments[layer].A(kV) << endl;
+    }
+    fdcfile.close(); 
+    
+  }
+  
   return NOERROR;
 }
 
@@ -332,13 +355,14 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   if (USE_BCAL)loop->Get(bcalshowers);
 
   vector<const DFDCPseudo*>pseudos;
-  loop->Get(pseudos);
+  //loop->Get(pseudos);
   vector<const DCDCTrackHit*>cdcs;
-  loop->Get(cdcs);
+  if (COSMICS) loop->Get(cdcs);
   vector<const DFDCIntersection*>intersections;
-  loop->Get(intersections);
+  if (ALIGN_WIRE_PLANES)loop->Get(intersections);
+  else loop->Get(pseudos);
 
-  if (cdcs.size()>20){
+  if (cdcs.size()>20 && cdcs.size()<60){
     vector<const DCDCTrackHit*>superlayers[5];
     for (unsigned int i=0;i<cdcs.size();i++){
       int ring=cdcs[i]->wire->ring;
@@ -401,10 +425,9 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   // FDC alignment 
   //-------------------------------------------------------------------------
   if (ALIGN_WIRE_PLANES){ // Use intersection points to align wire planes
-    if (intersections.size()>4&&((fcalshowers.size()>0&&fcalshowers.size()<3 
-				  //&& fcalshowers[0]->getPosition().Perp()>40.0
-				  )
-				 || (bcalshowers.size()>0&&bcalshowers.size()<3))){
+    if (intersections.size()>4 && intersections.size()<25
+	&&((fcalshowers.size()>0&&fcalshowers.size()<3)
+	   || (bcalshowers.size()>0&&bcalshowers.size()<3))){
       // Group FDC hits by package
       vector<const DFDCIntersection*>packages[4];
       for (unsigned int i=0;i<intersections.size();i++){
@@ -426,7 +449,17 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
 	
 	// Perform preliminary line fits for current set of linked segments    
 	DMatrix4x1 S=FitLine(intersections);
-	
+		
+	// Move x and y to the cdc endplate
+	S(state_x)+=endplate_z*S(state_tx);
+	S(state_y)+=endplate_z*S(state_ty);
+		
+	if (fabs(S(state_x))>48. || fabs(S(state_y))>48.) continue;
+
+	// Approximate z-position closest to x=0,y=0
+	double ztarg=-0.5*(S(state_x)/S(state_tx)+S(state_y)/S(state_ty));
+	Hztarg->Fill(ztarg);
+  
 	// Match to outer detectors 
 	if (MatchOuterDetectors(fcalshowers,bcalshowers,S)){
 	  DoFilter(S,intersections);
@@ -435,7 +468,9 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
     }
   }
   else{  // Use pseudopoints to align cathode planes
-    if (pseudos.size()>4 && (fcalshowers.size()==1 || bcalshowers.size()==1)){
+    if (pseudos.size()>4 && pseudos.size()<25
+	&&((fcalshowers.size()>0&&fcalshowers.size()<3)
+	   || (bcalshowers.size()>0&&bcalshowers.size()<3))){
       // Group FDC hits by package
       vector<const DFDCPseudo*>packages[4];
       for (unsigned int i=0;i<pseudos.size();i++){
@@ -470,6 +505,17 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
 	double var_x,var_tx,cov_x_tx,var_y,var_ty,cov_y_ty,chi2x,chi2y;
 	DMatrix4x1 S=FitLine(hits,var_x,cov_x_tx,var_tx,chi2x,var_y,cov_y_ty,
 			     var_ty,chi2y); 
+	
+	// Move x and y to the cdc endplate
+	S(state_x)+=endplate_z*S(state_tx);
+	S(state_y)+=endplate_z*S(state_ty);
+	
+	if (fabs(S(state_x))>48. || fabs(S(state_y))>48.) continue;
+
+	// Approximate z-position closest to x=0,y=0
+	double ztarg=-0.5*(S(state_x)/S(state_tx)+S(state_y)/S(state_ty));
+	Hztarg->Fill(ztarg);
+
 	double prelim_prob=TMath::Prob(chi2x,hits.size()-2);
 	Hpseudo_prelimprob->Fill(prelim_prob);
 	
@@ -487,6 +533,7 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
 
 	// Match to outer detectors 
 	if (MatchOuterDetectors(fcalshowers,bcalshowers,S)){
+
 	  // Run the Kalman Filter algorithm
 	  if (DoFilter(S,hits)==NOERROR){
 	  HdEdx_vs_beta->Fill(mBeta,dEsum);
@@ -635,29 +682,30 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	    
 
 	    FindOffsets(hits,smoothed_updates);
-	    	    
-	    for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
-	      for (unsigned int straw=0;straw<cdc_alignments[ring].size();
-		   straw++){
+	    	
+	    if (FILL_TREE){
+	      for (unsigned int ring=0;ring<cdc_alignments.size();ring++){
+		for (unsigned int straw=0;straw<cdc_alignments[ring].size();
+		     straw++){
 		// Set up to fill tree
-		cdc.dXu=cdc_alignments[ring][straw].A(k_dXu);
-		cdc.dYu=cdc_alignments[ring][straw].A(k_dYu);
-		cdc.dXd=cdc_alignments[ring][straw].A(k_dXd);
-		cdc.dYd=cdc_alignments[ring][straw].A(k_dYd);
-		cdc.straw=straw+1;
-		cdc.ring=ring+1;
-		cdc.N=myevt;
-	    
+		  cdc.dXu=cdc_alignments[ring][straw].A(k_dXu);
+		  cdc.dYu=cdc_alignments[ring][straw].A(k_dYu);
+		  cdc.dXd=cdc_alignments[ring][straw].A(k_dXd);
+		  cdc.dYd=cdc_alignments[ring][straw].A(k_dYd);
+		  cdc.straw=straw+1;
+		  cdc.ring=ring+1;
+		  cdc.N=myevt;
+		  
 		
-		// Lock mutex
-		pthread_mutex_lock(&mutex);
+		  // Lock mutex
+		  pthread_mutex_lock(&mutex);
+		  
+		  cdctree->Fill();
+		  
+		  // Unlock mutex
+		  pthread_mutex_unlock(&mutex);
 		
-		cdctree->Fill();
-
-		// Unlock mutex
-		pthread_mutex_unlock(&mutex);
-		
-		
+		}
 	      }
 	    }
 
@@ -684,8 +732,8 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   vector<update_t>best_updates;
   vector<update_t>smoothed_updates(num_hits);  
 
-  int NEVENTS=150000;
-  double anneal_factor=pow(1e6,(double(NEVENTS-myevt))/(NEVENTS-1.));
+  int NEVENTS=250000;
+  double anneal_factor=pow(1e3,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
   anneal_factor=1.;
   //anneal_factor=1e3;
@@ -697,10 +745,6 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   // for the track. 
   deque<trajectory_t>trajectory;
   deque<trajectory_t>best_traj;
-  // double start_z=hits[0]->wire->origin.z()-1.;
-  S(state_x)+=endplate_z*S(state_tx);
-  S(state_y)+=endplate_z*S(state_ty);
-  //  SetReferenceTrajectory(endplate_z,S,trajectory,hits);
       
   // Intial guess for covariance matrix
   DMatrix4x4 C,C0,Cbest;
@@ -748,6 +792,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
      
 	Hures_vs_layer->Fill(layer,smoothed_updates[i].res(0));
 	Hvres_vs_layer->Fill(layer,smoothed_updates[i].res(1));
+	Hdv_vs_dE->Fill(hits[i]->dE,smoothed_updates[i].res(1));
 
 	Hdrift_time->Fill(smoothed_updates[i].drift_time,
 			  smoothed_updates[i].doca);
@@ -755,22 +800,24 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 
       FindOffsets(hits,smoothed_updates);
       
-      for (unsigned int layer=0;layer<24;layer++){
-	fdc_c.dPhiU=fdc_cathode_alignments[layer].A(kPhiU);
-	fdc_c.dU=fdc_cathode_alignments[layer].A(kU);
-	fdc_c.dPhiV=fdc_cathode_alignments[layer].A(kPhiV);
-	fdc_c.dV=fdc_cathode_alignments[layer].A(kV);
-
-	fdc_c.layer=layer+1;
-	fdc_c.N=myevt;
-	
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
-	
-	fdcCtree->Fill();
-	
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+      if (FILL_TREE){
+	for (unsigned int layer=0;layer<24;layer++){
+	  fdc_c.dPhiU=fdc_cathode_alignments[layer].A(kPhiU);
+	  fdc_c.dU=fdc_cathode_alignments[layer].A(kU);
+	  fdc_c.dPhiV=fdc_cathode_alignments[layer].A(kPhiV);
+	  fdc_c.dV=fdc_cathode_alignments[layer].A(kV);
+	  
+	  fdc_c.layer=layer+1;
+	  fdc_c.N=myevt;
+	  
+	  // Lock mutex
+	  pthread_mutex_lock(&mutex);
+	  
+	  fdcCtree->Fill();
+	  
+	  // Unlock mutex
+	  pthread_mutex_unlock(&mutex);
+	}
       }
       return NOERROR;
     }
@@ -824,11 +871,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   // for the track. 
   deque<trajectory_t>trajectory;
   deque<trajectory_t>best_traj;
-  // double start_z=hits[0]->wire->origin.z()-1.;
-  S(state_x)+=endplate_z*S(state_tx);
-  S(state_y)+=endplate_z*S(state_ty);
-  //  SetReferenceTrajectory(endplate_z,S,trajectory,hits);
-      
+ 
   // Intial guess for covariance matrix
   DMatrix4x4 C,C0,Cbest;
   C0(state_x,state_x)=C0(state_y,state_y)=1.;
@@ -884,20 +927,22 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 
       FindOffsets(hits,smoothed_updates);
      
-      for (unsigned int layer=0;layer<24;layer++){
-	fdc.dPhi=fdc_alignments[layer].A(kPhiU);
-	fdc.dX=fdc_alignments[layer].A(kU);
-
-	fdc.layer=layer+1;
-	fdc.N=myevt;
-	
-	// Lock mutex
-	pthread_mutex_lock(&mutex);
-	
-	fdctree->Fill();
-
-	// Unlock mutex
-	pthread_mutex_unlock(&mutex);
+      if (FILL_TREE){
+	for (unsigned int layer=0;layer<24;layer++){
+	  fdc.dPhi=fdc_alignments[layer].A(kPhiU);
+	  fdc.dX=fdc_alignments[layer].A(kU);
+	  
+	  fdc.layer=layer+1;
+	  fdc.N=myevt;
+	  
+	  // Lock mutex
+	  pthread_mutex_lock(&mutex);
+	  
+	  fdctree->Fill();
+	  
+	  // Unlock mutex
+	  pthread_mutex_unlock(&mutex);
+	}
       }
 
       return NOERROR;
@@ -2027,7 +2072,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
   DMatrix4x2 K;  // Kalman gain matrix
-  DMatrix2x2 V(0.00075,0.,0.,0.00075);  // Measurement variance 
+  DMatrix2x2 V(0.00075*anneal_factor,0.,0.,0.00075*anneal_factor);  // Measurement variance 
   DMatrix2x2 Vtemp,InvV;
   DMatrix2x1 Mdiff;
   DMatrix4x4 I; // identity matrix
@@ -2123,8 +2168,6 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	double sinphi_u=sin(phi_u);
 	double cosphi_v=cos(phi_v);
 	double sinphi_v=sin(phi_v);
-	//double vv=-vpred*sinphi_v+upred*cosphi_v+A(kV);
-	//double vu=-vpred*sinphi_u+upred*cosphi_u+A(kU);
 	double vv=-vpred*sinphi_v+uwire*cosphi_v+A(kV);
 	double vu=-vpred*sinphi_u+uwire*cosphi_u+A(kU);
 
@@ -3016,43 +3059,37 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(const cdc_track_t &track,
 bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower *>&fcalshowers,
 		      vector<const DBCALShower *>&bcalshowers,
 		      const DMatrix4x1 &S){
-  // Approximate z-position closest to x=0,y=0
-  double ztarg=-0.5*(S(state_x)/S(state_tx)+S(state_y)/S(state_ty));
-
-  // printf("z %f\n",ztarg);
-
   //compute tangent of dip angle and related angular quantities
   double tanl=1./sqrt(S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));  
   double sinl=sin(atan(tanl));
 
-    // First match to FCAL 
+  // First match to FCAL 
   double dz=0.;
   double drmin=1000.;
   for (unsigned int i=0;i<fcalshowers.size();i++){
     double fcal_z=fcalshowers[i]->getPosition().z();
-    double x=S(state_x)+fcal_z*S(state_tx);
-    double y=S(state_y)+fcal_z*S(state_ty);
+    double mydz=fcal_z-endplate_z;
+    double x=S(state_x)+mydz*S(state_tx);
+    double y=S(state_y)+mydz*S(state_ty);
     double dx=fcalshowers[i]->getPosition().x()-x;
     double dy=fcalshowers[i]->getPosition().y()-y;
     double dr=sqrt(dx*dx+dy*dy);
-    
+      
     if (dr<drmin){
       drmin=dr;
-      dz=fcal_z-ztarg;
+      dz=mydz;
       mOuterTime=fcalshowers[i]->getTime();
       mOuterZ=fcal_z;
     }
     
   }
+  Hfcalmatch->Fill(drmin);
   
   if (drmin<4.){   
     // Estimate for t0 at the beginning of track assuming particle is 
     // moving at the speed of light
-    mT0=mOuterTime-dz/(29.98*sinl);
-
-    //printf("t %f T0 %f\n",mOuterTime,mT0);
-    Hztarg->Fill(ztarg);
- 
+    //mT0=mOuterTime-dz/(29.98*sinl);
+    mT0=mOuterTime-(mOuterZ-endplate_z)/(29.98*sinl);
 
     return true;
   }
@@ -3061,7 +3098,7 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
     // Match to BCAL
  
     // zero-position and direction of line describing particle trajectory
-    DVector3 pos0(S(state_x),S(state_y),0.);
+    DVector3 pos0(S(state_x),S(state_y),endplate_z);
     DVector3 vhat(S(state_tx),S(state_ty),1.);
     vhat.SetMag(1.);
     
@@ -3109,7 +3146,8 @@ bool DEventProcessor_dc_alignment::MatchOuterDetectors(vector<const DFCALShower 
       }
       else{
 	// assume particle moving at speed of light
-	mT0-=(mOuterZ-ztarg)/(29.98*sinl); 
+	//mT0-=(mOuterZ-ztarg)/(29.98*sinl); 
+	mT0-=(mOuterZ-endplate_z)/(29.98*sinl); 
       }
 
       return true;

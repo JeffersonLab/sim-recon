@@ -341,6 +341,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   TH2F *Hdrift_time,*Hcdcres_vs_drift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
   TH2F *Hdv_vs_dE,*Hbcalmatchxy;
+  TH1F *Hfcalmatch;
   TH1F *Hztarg;
 
   double mT0;
@@ -357,6 +358,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   unsigned int mMinTimeID;
   
   bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE,USE_BCAL,ALIGN_WIRE_PLANES;
+  bool  FILL_TREE;
 
   // Geometry
   const DGeometry *dgeom;
