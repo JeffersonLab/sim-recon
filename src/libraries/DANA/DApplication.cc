@@ -37,19 +37,19 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	pthread_mutex_init(&mutex, NULL);
 	
 	// Add plugin paths to Hall-D specific binary directories
-	const char *bms = getenv("BMS_OSNAME");
-	string sbms(bms==NULL ? "":bms);
+	const char *bms_osname = getenv("BMS_OSNAME");
+	string sbms_osname(bms_osname==NULL ? "":bms_osname);
 	
 	if(const char *ptr = getenv("DANA_PLUGIN_PATH")){
 		AddPluginPath(string(ptr));
 	}
 	if(const char *ptr = getenv("HALLD_MY")){
-		AddPluginPath(string(ptr) + sbms + "/plugins");  // SBMS
-		AddPluginPath(string(ptr) + "/lib/" + sbms);     // BMS
+		AddPluginPath(string(ptr) + "/" + sbms_osname + "/plugins");  // SBMS
+		AddPluginPath(string(ptr) + "/lib/" + sbms_osname);     // BMS
 	}
 	if(const char *ptr = getenv("HALLD_HOME")){
-		AddPluginPath(string(ptr) + sbms + "/plugins");  // SBMS
-		AddPluginPath(string(ptr) + "/lib/" + sbms);     // BMS
+		AddPluginPath(string(ptr) + "/" + sbms_osname + "/plugins");  // SBMS
+		AddPluginPath(string(ptr) + "/lib/" + sbms_osname);     // BMS
 	}
 	
 	//Register CCDB calibration generator
