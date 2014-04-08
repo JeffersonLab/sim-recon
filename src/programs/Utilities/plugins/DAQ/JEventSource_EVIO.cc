@@ -1908,7 +1908,9 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 //----------------
 void JEventSource_EVIO::ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t* iend, list<ObjList*> &events)
 {
-	
+	cout << "<><><><><> !! Parsing of JLab TS module requested !! <><><>" << endl;
+	cout << "<><><><><> !! TS parsing not yet supported        !! <><><>" << endl;
+	iptr = iend;
 }
 
 //----------------
