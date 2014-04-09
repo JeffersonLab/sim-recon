@@ -21,6 +21,7 @@
 #define TOLX 1e-4
 #define TOLF 1e-4
 #define A_OVER_H 0.4
+#define ONE_OVER_H 2.0
 #define ALPHA 1e-4 // rate parameter for Newton step backtracking algorithm
 #define W_EFF 30.2e-9 // GeV
 #define GAS_GAIN 8e4
@@ -524,7 +525,7 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 
         // Compute Jacobian matrix: J_ij = dF_i/dx_j.
         for (i=0;i<3;i++){
-	  double dx=par(X0)-X(i);
+	  double dx=(par(X0)-X(i))*ONE_OVER_H;
           double argp=par(K2)*(dx+A_OVER_H);
           double argm=par(K2)*(dx-A_OVER_H);
 	  double tanh_p=tanh(argp);
@@ -627,7 +628,7 @@ jerror_t DFDCPseudo_factory::FindNewParmVec(const DMatrix3x1 &N,
 
     // Compute the value of the vector F and f=1/2 F.F with the current step
     for (int i=0;i<3;i++){
-      double dx=newpar(X0)-X(i);
+      double dx=(newpar(X0)-X(i))*ONE_OVER_H;
       double argp=newpar(K2)*(dx+A_OVER_H);
       double argm=newpar(K2)*(dx-A_OVER_H);
       newF(i)=N(i)-0.25*newpar(QA)*(tanh(argp)-tanh(argm));
