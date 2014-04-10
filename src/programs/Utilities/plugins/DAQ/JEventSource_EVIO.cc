@@ -1259,10 +1259,10 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				}
 				break;
 			case 3: // Trigger Time
-				t = ((*iptr)&0xFFFFFF)<<24;
+				t = ((*iptr)&0xFFFFFF)<<0;
 				iptr++;
 				if(((*iptr>>31) & 0x1) == 0){
-					t += (*iptr)&0xFFFFFF; // from word on the street: second trigger time word is optional!!??
+					t += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
 				}else{
 					iptr--;
 				}
