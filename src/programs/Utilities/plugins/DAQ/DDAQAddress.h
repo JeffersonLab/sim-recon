@@ -8,6 +8,7 @@
 #ifndef _DDAQAddress_
 #define _DDAQAddress_
 
+#include <JANA/JObject.h>
 #include <JANA/jerror.h>
 
 //--------------------------------------------------------------
