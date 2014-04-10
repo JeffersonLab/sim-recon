@@ -103,6 +103,9 @@ env.Replace( CXX = os.getenv('CXX', 'g++'),
 env.PrependUnique(CPPPATH = ['%s/src' % halld_my, '%s/src/libraries' % halld_my, '%s/src/libraries/include' % halld_my])
 env.PrependUnique(CPPPATH = ['%s/src' % halld_home, '%s/src/libraries' % halld_home, '%s/src/libraries/include' % halld_home])
 
+env.PrependUnique(CPPPATH = ['%s/%s/include' % (halld_my,osname)])
+env.PrependUnique(CPPPATH = ['%s/%s/include' % (halld_home,osname)])
+
 # Turn on debug symbols and warnings
 env.PrependUnique(      CFLAGS = ['-g', '-fPIC', '-Wall'])
 env.PrependUnique(    CXXFLAGS = ['-g', '-fPIC', '-Wall'])
