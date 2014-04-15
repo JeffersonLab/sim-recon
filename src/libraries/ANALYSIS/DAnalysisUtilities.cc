@@ -17,6 +17,126 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 		locGeometry->GetTargetZ(dTargetZCenter);
 }
 
+bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExactMatchFlag) const
+{
+	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated
+	//if locExactMatchFlag = false, then allow the input DReaction to be a subset of the thrown
+	const DParticleCombo* locThrownCombo = NULL;
+	locEventLoop->GetSingle(locThrownCombo, "Thrown");
+
+	if(locThrownCombo == NULL)
+		return false;
+	const DReaction* locThrownReaction = locThrownCombo->Get_Reaction();
+
+	if(locExactMatchFlag)
+	{
+		if(locReaction->Get_NumReactionSteps() != locThrownReaction->Get_NumReactionSteps())
+			return false;
+	}
+
+	//build map of InitialParticleDecayFromStepIndex's for input reaction: assume that if it matters, the user wanted them in the input order
+	map<size_t, int> locReactionInitialParticleDecayFromStepIndexMap; //first is step index (of locReaction) where particle is initial, second is where is final state particle
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_i);
+		if(loc_i == 0)
+		{
+			if(locReactionStep->Get_InitialParticleID() == Gamma)
+				locReactionInitialParticleDecayFromStepIndexMap[0] = -1;
+		}
+		//loop over final state particles, and if decaying, find the step they are a parent in
+		for(size_t loc_j = 0; loc_j < locReactionStep->Get_NumFinalParticleIDs(); ++loc_j)
+		{
+			Particle_t locFinalStatePID = locReactionStep->Get_FinalParticleID(loc_j);
+			//see if this pid is a parent in a future step
+			for(size_t loc_k = loc_i; loc_k < locReaction->Get_NumReactionSteps(); ++loc_k)
+			{
+				if(locReaction->Get_ReactionStep(loc_k)->Get_InitialParticleID() != locFinalStatePID)
+					continue;
+				if(locReactionInitialParticleDecayFromStepIndexMap.find(loc_k) != locReactionInitialParticleDecayFromStepIndexMap.end())
+					continue; //this step already accounted for
+				locReactionInitialParticleDecayFromStepIndexMap[loc_k] = loc_i;
+				break;
+			}
+		}
+	}
+
+	//since throwns are more organized, loop through those and back-check to dreaction
+	set<size_t> locMatchedInputStepIndices; //step indices in input locReaction that are already matched-to
+	map<int, int> locStepMatching; //locReaction map to thrown step map
+	map<int, int> locReverseStepMatching; //thrown map to locReaction step map
+	for(size_t loc_i = 0; loc_i < locThrownCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboStep* locThrownParticleComboStep = locThrownCombo->Get_ParticleComboStep(loc_i);
+		int locInitialParticleDecayFromStepIndex = locThrownParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+
+		//find where to start the search for this step in locReaction
+		size_t locStartSearchIndex = 0; //locReaction could be a subset of the total; start at the beginning unless ...:
+		if(locReverseStepMatching.find(locInitialParticleDecayFromStepIndex) != locReverseStepMatching.end())
+			locStartSearchIndex = locReverseStepMatching[locInitialParticleDecayFromStepIndex] + 1; //parent step was matched, start search for this one after it
+
+		//loop through locReaction and try to find this thrown step
+		bool locMatchFoundFlag = false;
+		int locPossibleMatchIndex = -1;
+		for(size_t loc_j = locStartSearchIndex; loc_j < locReaction->Get_NumReactionSteps(); ++loc_j)
+		{
+			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_j);
+			if(locMatchedInputStepIndices.find(loc_j) != locMatchedInputStepIndices.end())
+				continue; //this step was already accounted for
+			if(!locReactionStep->Are_ParticlesIdentical(locThrownReaction->Get_ReactionStep(loc_i)))
+				continue; //particles aren't the same
+
+			//ok, now check to make sure that the parent particle in this step was produced the same way in both thrown & locReaction
+			if(locReactionInitialParticleDecayFromStepIndexMap.find(loc_j) == locReactionInitialParticleDecayFromStepIndexMap.end())
+			{
+				//this (loc_j) parent particle's production step wasn't listed in the locReaction: locReaction is probably a subset of the total
+				//a match is possible but not certain: (e.g. locReaction is pi0, eta -> pi0, pi0 and this step (loc_i) is a pi0)
+				locPossibleMatchIndex = loc_j;
+				continue; //keep searching in case a different one should be used instead //will use this if another isn't found
+			}
+
+			int locReactionInitialParticleDecayFromStepIndex = locReactionInitialParticleDecayFromStepIndexMap[loc_j];
+			if(locReactionInitialParticleDecayFromStepIndex != -1) //locReaction is not beam particle
+			{
+				if(locStepMatching.find(locReactionInitialParticleDecayFromStepIndex) == locStepMatching.end())
+					continue; //the step in locReaction where this (loc_j) parent particle was produced was not mapped to the thrown steps yet: this is not the step we want
+				int locReactionInitialParticleDecayFromStepIndexMappedBackToThrown = locStepMatching[locReactionInitialParticleDecayFromStepIndex];
+				if(locInitialParticleDecayFromStepIndex != locReactionInitialParticleDecayFromStepIndexMappedBackToThrown)
+					continue; //the decaying parent particle in this step (loc_j) comes from a different step in thrown (locInitialParticleDecayFromStepIndex)/reaction: continue
+			}
+			else if(locInitialParticleDecayFromStepIndex != -1)
+				continue; //reaction is beam but thrown is not beam
+
+			//finally, a match! register it
+			locMatchedInputStepIndices.insert(loc_j);
+			locStepMatching[loc_j] = loc_i;
+			locReverseStepMatching[loc_i] = loc_j;
+			locMatchFoundFlag = true;
+			break;
+		}
+		if((!locMatchFoundFlag) && (locPossibleMatchIndex != -1))
+		{
+			//need to use the possible match
+			locMatchedInputStepIndices.insert(locPossibleMatchIndex);
+			locStepMatching[locPossibleMatchIndex] = loc_i;
+			locReverseStepMatching[loc_i] = locPossibleMatchIndex;
+			locMatchFoundFlag = true;
+		}
+		if(locExactMatchFlag && (!locMatchFoundFlag))
+			return false; //needed an exact match and it wasn't found: bail
+	}
+	if(locExactMatchFlag)
+		return true;
+
+	//locReaction could be a subset of thrown: check if all locReaction steps found
+	for(size_t loc_i = 0; loc_i < locReaction->Get_NumReactionSteps(); ++loc_i)
+	{
+		if(locMatchedInputStepIndices.find(loc_i) == locMatchedInputStepIndices.end())
+			return false; //one of the input steps wasn't matched: abort!
+	}
+	return true;
+}
+
 void DAnalysisUtilities::Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const
 {
 	locUnusedChargedTracks.clear();
@@ -180,42 +300,102 @@ bool DAnalysisUtilities::Are_ThrownPIDsSameAsDesired(JEventLoop* locEventLoop, c
 
 DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, bool locUseKinFitDataFlag) const
 {
+	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	return Calc_MissingP4(locParticleCombo, 0, -1, deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
+}
+
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+{
+	return Calc_MissingP4(locParticleCombo, 0, -1, deque<Particle_t>(), locSourceObjects, locUseKinFitDataFlag);
+}
+
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locUseKinFitDataFlag) const
+{
+	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locSourceObjects, locUseKinFitDataFlag);
+}
+
+DLorentzVector DAnalysisUtilities::Calc_MissingP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+{
+	//NOTE: this routine assumes that the p4 of a charged decaying particle with a detached vertex is the same at both vertices!
+	//assumes missing particle is not the beam particle
 	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
-		return Calc_MissingP4(locParticleCombo, false); //kinematic fit failed
+		return Calc_MissingP4(locParticleCombo, locStepIndex, locUpToStepIndex, locUpThroughPIDs, locSourceObjects, false); //kinematic fit failed
 
 	DLorentzVector locMissingP4;
-	const DKinematicData* locKinematicData;
+	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
 
-	//initial particle
-	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(0);
-	locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
-	if(locKinematicData == NULL)
-		return (DLorentzVector()); //bad!!
-	if(locUseKinFitDataFlag) //kinfit
-		locKinematicData = locParticleComboStep->Get_InitialParticle();
-	locMissingP4 += locKinematicData->lorentzMomentum();
-
-	//target particle
-	locKinematicData = locParticleComboStep->Get_TargetParticle();
-	if(locKinematicData != NULL)
+	const DKinematicData* locKinematicData = NULL;
+	if(locStepIndex == 0)
+	{
+		//initial particle
+		locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
+		locSourceObjects.insert(pair<const JObject*, Particle_t>(locKinematicData, locKinematicData->PID())); //want to use source objects for comparing
+		if(locUseKinFitDataFlag) //kinfit
+			locKinematicData = locParticleComboStep->Get_InitialParticle();
 		locMissingP4 += locKinematicData->lorentzMomentum();
 
-	//final state particles
+		//target particle
+		locKinematicData = locParticleComboStep->Get_TargetParticle();
+		if(locKinematicData != NULL)
+		{
+			locSourceObjects.insert(pair<const JObject*, Particle_t>(locKinematicData, locKinematicData->PID()));
+			locMissingP4 += locKinematicData->lorentzMomentum();
+		}
+	}
+
 	deque<const DKinematicData*> locParticles;
 	if(!locUseKinFitDataFlag) //measured
-		locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+		locParticleComboStep->Get_FinalParticles_Measured(locParticles);
 	else //kinfit
-		locParticleCombo->Get_DetectedFinalParticles(locParticles);
-	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
-		locMissingP4 -= locParticles[loc_i]->lorentzMomentum();
+		locParticleComboStep->Get_FinalParticles(locParticles);
+
+	for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
+	{
+		//DecayStepIndex: one for each final particle: -2 if detected, -1 if missing, >= 0 if decaying, where the # is the step representing the particle decay
+		int locDecayStepIndex = locParticleComboStep->Get_DecayStepIndex(loc_j);
+		if((locDecayStepIndex == -1) || (locDecayStepIndex == -3))
+			continue; //missing particle or no blueprint
+
+		Particle_t locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
+		if(int(locStepIndex) == locUpToStepIndex)
+		{
+			bool locPIDFoundFlag = false;
+			for(deque<Particle_t>::iterator locIterator = locUpThroughPIDs.begin(); locIterator != locUpThroughPIDs.end(); ++locIterator)
+			{
+				if((*locIterator) != locPID)
+					continue;
+				locUpThroughPIDs.erase(locIterator);
+				locPIDFoundFlag = true;
+				break;
+			}
+			if(!locPIDFoundFlag)
+				continue; //skip it: don't want to include it
+		}
+
+		if(locDecayStepIndex == -2) //detected
+		{
+			locMissingP4 -= locParticles[loc_j]->lorentzMomentum();
+			locSourceObjects.insert(pair<const JObject*, Particle_t>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_j), locPID));
+		}
+		else //decaying-particle
+			locMissingP4 += Calc_MissingP4(locParticleCombo, locDecayStepIndex, locUpToStepIndex, locUpThroughPIDs, locSourceObjects, locUseKinFitDataFlag); //p4 returned is already < 0
+	}
 
 	return locMissingP4;
 }
 
+
 DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, bool locUseKinFitDataFlag) const
 {
+	set<pair<const JObject*, Particle_t> > locSourceObjects;
+	return Calc_FinalStateP4(locParticleCombo, locStepIndex, locSourceObjects, locUseKinFitDataFlag);
+}
+
+DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locParticleCombo, size_t locStepIndex, set<pair<const JObject*, Particle_t> >& locSourceObjects, bool locUseKinFitDataFlag) const
+{
 	if(locUseKinFitDataFlag && (locParticleCombo->Get_KinFitResults() == NULL))
-		return Calc_FinalStateP4(locParticleCombo, locStepIndex, false); //kinematic fit failed
+		return Calc_FinalStateP4(locParticleCombo, locStepIndex, locSourceObjects, false); //kinematic fit failed
 
 	DLorentzVector locFinalStateP4;
 	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
@@ -230,18 +410,25 @@ DLorentzVector DAnalysisUtilities::Calc_FinalStateP4(const DParticleCombo* locPa
 
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
+		if(locParticleComboStep->Is_FinalParticleMissing(loc_i))
+			return (DLorentzVector()); //bad!
 		if(locParticleComboStep->Is_FinalParticleDecaying(loc_i))
 		{
 			//measured results, or not constrained by kinfit (either non-fixed mass or excluded from kinfit)
-			if((!locUseKinFitDataFlag) || (!IsFixedMass(locParticleComboStep->Get_FinalParticleID(loc_i))) || locParticleCombo->Check_IfDecayingParticleExcludedFromP4KinFit(locStepIndex))
-				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locUseKinFitDataFlag);
+			if((!locUseKinFitDataFlag) || (!IsFixedMass(locParticleComboStep->Get_FinalParticleID(loc_i))))
+				locFinalStateP4 += Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locSourceObjects, locUseKinFitDataFlag);
 			else //want kinfit results, and decaying particle p4 is constrained by kinfit
+			{
 				locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
+				//still need source objects of decay products! dive down anyway, but ignore p4 result
+				Calc_FinalStateP4(locParticleCombo, locParticleComboStep->Get_DecayStepIndex(loc_i), locSourceObjects, locUseKinFitDataFlag);
+			}
 		}
-		else if((!locUseKinFitDataFlag) && (locParticleComboStep->Is_FinalParticleMissing(loc_i)))
-			return (DLorentzVector());
 		else
+		{
 			locFinalStateP4 += locParticles[loc_i]->lorentzMomentum();
+			locSourceObjects.insert(pair<const JObject*, Particle_t>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_i), locParticles[loc_i]->PID()));
+		}
 	}
 	return locFinalStateP4;
 }
@@ -394,10 +581,24 @@ double DAnalysisUtilities::Calc_CrudeTime(const deque<const DKinFitParticle*>& l
 	double locAverageTime = 0.0;
 	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
 	{
-		Calc_DOCAToVertex(locParticles[loc_i], locCommonVertex, locPOCA);
-		locDeltaVertex = locPOCA - DVector3(locParticles[loc_i]->Get_Position().X(),locParticles[loc_i]->Get_Position().Y(),locParticles[loc_i]->Get_Position().Z());
-		DVector3 locMomentum(locParticles[loc_i]->Get_Momentum().X(),locParticles[loc_i]->Get_Momentum().Y(),locParticles[loc_i]->Get_Momentum().Z());
-		double locTime = locParticles[loc_i]->Get_Time() + locDeltaVertex.Dot(locMomentum)*locParticles[loc_i]->Get_Energy()/(29.9792458*locMomentum.Mag2());
+		double locTime = 0.0;
+		double locE = locParticles[loc_i]->Get_ShowerEnergy();
+		if((locParticles[loc_i]->Get_Charge() == 0) && (locE > 0.0))
+		{
+			double locMass = locParticles[loc_i]->Get_Mass();
+			double locPMag = sqrt(locE*locE - locMass*locMass);
+			TVector3 locPosition = locParticles[loc_i]->Get_Position();
+			DVector3 locDPosition(locPosition.X(), locPosition.Y(), locPosition.Z());
+			DVector3 locDeltaVertex = locDPosition - locCommonVertex;
+			locTime = locParticles[loc_i]->Get_Time() + locDeltaVertex.Mag()*locE/(29.9792458*locPMag);
+		}
+		else
+		{
+			Calc_DOCAToVertex(locParticles[loc_i], locCommonVertex, locPOCA);
+			locDeltaVertex = locPOCA - DVector3(locParticles[loc_i]->Get_Position().X(),locParticles[loc_i]->Get_Position().Y(),locParticles[loc_i]->Get_Position().Z());
+			DVector3 locMomentum(locParticles[loc_i]->Get_Momentum().X(),locParticles[loc_i]->Get_Momentum().Y(),locParticles[loc_i]->Get_Momentum().Z());
+			locTime = locParticles[loc_i]->Get_Time() + locDeltaVertex.Dot(locMomentum)*locParticles[loc_i]->Get_Energy()/(29.9792458*locMomentum.Mag2());
+		}
 		locAverageTime += locTime;
 	}
 	return locAverageTime/(double(locParticles.size()));
@@ -473,7 +674,7 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinFitParticle*
 		return locVertex;
 
 	if(locParticles.size() == 1)
-	  return DVector3(locParticles[0]->Get_Position().X(),locParticles[0]->Get_Position().Y(),locParticles[0]->Get_Position().Z());
+	  return DVector3(locParticles[0]->Get_Position().X(), locParticles[0]->Get_Position().Y(), locParticles[0]->Get_Position().Z());
 
 	double locDOCA, locSmallestDOCA;
 	DVector3 locTempVertex;
@@ -492,715 +693,5 @@ DVector3 DAnalysisUtilities::Calc_CrudeVertex(const deque<const DKinFitParticle*
 		}
 	}
 	return locVertex;
-}
-
-//check whether a given decay chain appears anywhere in any step: if a decaying particle, will then compare the steps with the decay products
-bool DAnalysisUtilities::Find_SimilarCombos(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticleCombo_Source, locStepIndex, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticleCombo_Source, locStepIndex, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticleCombo_Source, locStepIndex, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticleCombo_Source, locStepIndex, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const DParticleCombo* locParticleCombo_ToCheck) const
-{
-	const DParticleComboStep* locParticleComboStep_Source = locParticleCombo_Source->Get_ParticleComboStep(locStepIndex);
-	for(size_t loc_i = 0; loc_i < locParticleCombo_ToCheck->Get_NumParticleComboSteps(); ++loc_i)
-	{
-		const DParticleComboStep* locParticleComboStep_ToCheck = locParticleCombo_ToCheck->Get_ParticleComboStep(loc_i);
-		if(Find_SimilarCombos(locParticleCombo_Source, locParticleComboStep_Source, locParticleCombo_ToCheck, locParticleComboStep_ToCheck))
-			return true;
-	}
-	return false;
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DParticleCombo* locParticleCombo_Source, const DParticleComboStep* locParticleComboStep_Source, const DParticleCombo* locParticleCombo_ToCheck, const DParticleComboStep* locParticleComboStep_ToCheck) const
-{
-	//not as simple as you'd think:
-		//could have more than one particle in step with a given pid (e.g. two gammas, two pi-'s, etc.)
-		//could be comparing different step indices: e.g. two pi0 -> gamma, gamma decays: two different steps
-		//the particles in one step may be in a different order than those in the other step (e.g. pi+ -> mu+, neutrino & pi+ -> neutrino, mu+)
-	if(locParticleComboStep_Source->Get_InitialParticleID() != locParticleComboStep_ToCheck->Get_InitialParticleID())
-		return false; //different initial particle PID
-	if(locParticleComboStep_Source->Get_InitialParticle_Measured() != locParticleComboStep_ToCheck->Get_InitialParticle_Measured())
-		return false; //different initial particle
-	if(locParticleComboStep_Source->Get_TargetParticleID() != locParticleComboStep_ToCheck->Get_TargetParticleID())
-		return false; //different target particle
-	if(locParticleComboStep_Source->Get_NumFinalParticles() != locParticleComboStep_ToCheck->Get_NumFinalParticles())
-		return false; //different final particles
-
-	//grab particles/pids/stepindices for comparison
-	Particle_t locPID;
-	deque<Particle_t> locMissingParticles_Source, locMissingParticles_ToCheck;
-	deque<const DKinematicData*> locMeasuredParticles_Source, locMeasuredParticles_ToCheck;
-	map<Particle_t, deque<int> > locDecayingParticles_Source, locDecayingParticles_ToCheck; //int is step index
-	for(size_t loc_i = 0; loc_i < locParticleComboStep_Source->Get_NumFinalParticles(); ++loc_i)
-	{
-		locPID = locParticleComboStep_Source->Get_FinalParticleID(loc_i);
-		if(locParticleComboStep_Source->Is_FinalParticleDecaying(loc_i))
-		{
-			int locDecayStepIndex = locParticleComboStep_Source->Get_DecayStepIndex(loc_i);
-			if(locDecayingParticles_Source.find(locPID) == locDecayingParticles_Source.end())
-				locDecayingParticles_Source[locPID] = deque<int>(1, locDecayStepIndex);
-			else
-				locDecayingParticles_Source[locPID].push_back(locDecayStepIndex);
-		}
-		else if(locParticleComboStep_Source->Is_FinalParticleMissing(loc_i))
-			locMissingParticles_Source.push_back(locPID);
-		else
-			locMeasuredParticles_Source.push_back(locParticleComboStep_Source->Get_FinalParticle_Measured(loc_i));
-	}
-	for(size_t loc_i = 0; loc_i < locParticleComboStep_ToCheck->Get_NumFinalParticles(); ++loc_i)
-	{
-		locPID = locParticleComboStep_ToCheck->Get_FinalParticleID(loc_i);
-		if(locParticleComboStep_ToCheck->Is_FinalParticleDecaying(loc_i))
-		{
-			int locDecayStepIndex = locParticleComboStep_ToCheck->Get_DecayStepIndex(loc_i);
-			if(locDecayingParticles_ToCheck.find(locPID) == locDecayingParticles_ToCheck.end())
-				locDecayingParticles_ToCheck[locPID] = deque<int>(1, locDecayStepIndex);
-			else
-				locDecayingParticles_ToCheck[locPID].push_back(locDecayStepIndex);
-		}
-		else if(locParticleComboStep_ToCheck->Is_FinalParticleMissing(loc_i))
-			locMissingParticles_ToCheck.push_back(locPID);
-		else
-			locMeasuredParticles_ToCheck.push_back(locParticleComboStep_ToCheck->Get_FinalParticle_Measured(loc_i));
-	}
-
-	//compare final particles
-	if(!Compare_Particles(locMeasuredParticles_Source, locMeasuredParticles_ToCheck))
-		return false;
-	//compare missing particles
-	if(locMissingParticles_Source.size() != locMissingParticles_ToCheck.size())
-		return false;
-	if(!locMissingParticles_Source.empty())
-	{
-		if(locMissingParticles_Source[0] != locMissingParticles_ToCheck[0])
-			return false; //can't be more than one missing!!
-	}
-
-	//compare decaying particles
-	if(locDecayingParticles_Source.size() != locDecayingParticles_ToCheck.size())
-		return false;
-	map<Particle_t, deque<int> >::iterator locIterator_Source;
-	for(locIterator_Source = locDecayingParticles_Source.begin(); locIterator_Source != locDecayingParticles_Source.end(); ++locIterator_Source)
-	{
-		locPID = locIterator_Source->first;
-		if(locDecayingParticles_ToCheck.find(locPID) == locDecayingParticles_ToCheck.end())
-			return false; //decaying particle found in one step but not the other
-		deque<int> locDecayStepIndices_Source = locIterator_Source->second;
-		deque<int> locDecayStepIndices_ToCheck = locIterator_Source->second;
-		if(locDecayStepIndices_Source.size() != locDecayStepIndices_ToCheck.size())
-			return false; //more decaying particles found in one step than the other
-
-		//compare all possible decaystepindices for this PID
-		deque<int>::iterator locDecayIterator_Source, locDecayIterator_ToCheck;
-		for(locDecayIterator_Source = locDecayStepIndices_Source.begin(); locDecayIterator_Source != locDecayStepIndices_Source.end(); ++locDecayIterator_Source)
-		{
-			bool locMatchFoundFlag = false;
-			for(locDecayIterator_ToCheck = locDecayStepIndices_ToCheck.begin(); locDecayIterator_ToCheck != locDecayStepIndices_ToCheck.end(); ++locDecayIterator_ToCheck)
-			{
-				const DParticleComboStep* locParticleComboStep_NextSource = locParticleCombo_Source->Get_ParticleComboStep(*locDecayIterator_Source);
-				const DParticleComboStep* locParticleComboStep_NextToCheck = locParticleCombo_ToCheck->Get_ParticleComboStep(*locDecayIterator_ToCheck);
-				if(Find_SimilarCombos(locParticleCombo_Source, locParticleComboStep_NextSource, locParticleCombo_ToCheck, locParticleComboStep_NextToCheck))
-				{
-					locMatchFoundFlag = true;
-					locDecayStepIndices_ToCheck.erase(locDecayIterator_ToCheck); //matched, so remove it so it's not matched to any other ones
-					break;
-				}
-			}
-			if(!locMatchFoundFlag)
-				return false;
-		}
-	}
-
-	return true;
-}
-bool DAnalysisUtilities::Compare_Particles(const deque<const DKinematicData*>& locMeasuredParticles_Source, const deque<const DKinematicData*> locMeasuredParticles_ToCheck) const
-{
-	deque<const DKinematicData*>::const_iterator locIterator3;
-	deque<const DKinematicData*>::iterator locIterator4;
-	if(locMeasuredParticles_Source.size() != locMeasuredParticles_ToCheck.size())
-		return false; //not same size, clearly can't be the same
-	deque<const DKinematicData*> locMeasuredParticles_ToCheck_Copy = locMeasuredParticles_ToCheck;
-
-	//loop over the lists of particles, see if they're identical
-	for(locIterator3 = locMeasuredParticles_Source.begin(); locIterator3 != locMeasuredParticles_Source.end(); ++locIterator3)
-	{
-		bool locMatchFoundFlag = false;
-		for(locIterator4 = locMeasuredParticles_ToCheck_Copy.begin(); locIterator4 != locMeasuredParticles_ToCheck_Copy.end(); ++locIterator4)
-		{
-			if((*locIterator3) == (*locIterator4))
-			{
-				locMatchFoundFlag = true;
-				locMeasuredParticles_ToCheck_Copy.erase(locIterator4); //particle name is identical, remove it from the list of remaining names
-				break;
-			}
-		}
-		if(!locMatchFoundFlag)
-			return false;
-	}
-	return locMeasuredParticles_ToCheck_Copy.empty(); //all names removed means all names matched: duplicate
-}
-
-
-
-
-
-//check whether a given decay chain appears anywhere in any step, but allow the measured particles to be in any step within that chain: if a decaying particle, will then compare the steps with the decay products
-bool DAnalysisUtilities::Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos_AnyStep(locParticleCombo_Source, locStepIndex, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos_AnyStep(locParticleCombo_Source, locStepIndex, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos_AnyStep(locParticleCombo_Source, locStepIndex, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos_AnyStep(locParticleCombo_Source, locStepIndex, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos_AnyStep(const DParticleCombo* locParticleCombo_Source, size_t locStepIndex, const DParticleCombo* locParticleCombo_ToCheck) const
-{
-	if(locStepIndex >= locParticleCombo_Source->Get_NumParticleComboSteps())
-		return false;
-
-	const DParticleComboStep* locParticleComboStep_Source = locParticleCombo_Source->Get_ParticleComboStep(locStepIndex);
-	deque<const DKinematicData*> locAllMeasuredParticles_Source, locAllMeasuredParticles_ToCheck;
-	locParticleCombo_Source->Get_DecayChainParticles_Measured(locStepIndex, locAllMeasuredParticles_Source);
-	Particle_t locPID = locParticleComboStep_Source->Get_InitialParticleID();
-
-	for(size_t loc_i = 0; loc_i < locParticleCombo_ToCheck->Get_NumParticleComboSteps(); ++loc_i)
-	{
-		const DParticleComboStep* locParticleComboStep_ToCheck = locParticleCombo_ToCheck->Get_ParticleComboStep(loc_i);
-		if(locParticleComboStep_ToCheck->Get_InitialParticleID() != locPID)
-			continue;
-		locAllMeasuredParticles_ToCheck.clear();
-		locParticleCombo_ToCheck->Get_DecayChainParticles_Measured(loc_i, locAllMeasuredParticles_ToCheck);
-		if(Compare_Particles(locAllMeasuredParticles_Source, locAllMeasuredParticles_ToCheck))
-			return true;
-	}
-	return false;
-}
-
-//check whether the kinematic fit results are identical
-bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos_KinFit(locParticleCombo_Source, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos_KinFit(locParticleCombo_Source, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos_KinFit(locParticleCombo_Source, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos_KinFit(locParticleCombo_Source, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos_KinFit(const DParticleCombo* locParticleCombo_Source, const DParticleCombo* locParticleCombo_ToCheck) const
-{
-	return (locParticleCombo_Source->Will_KinFitBeIdentical(locParticleCombo_ToCheck));
-}
-
-//check whether a given measured particle appears anywhere in any step
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticle, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticle, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticle, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticle, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DParticleCombo* locParticleCombo) const
-{
-	const DParticleComboStep* locParticleComboStep;
-	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
-	{
-		locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		if(locParticleComboStep->Get_InitialParticle_Measured() == locParticle)
-			return true;
-		if(locParticleComboStep->Get_TargetParticle() == locParticle)
-			return true;
-		for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
-		{
-			if(locParticleComboStep->Get_FinalParticle_Measured(loc_j) == locParticle)
-				return true;
-		}
-	}
-	return false;
-}
-
-//check whether a given measured particle appears anywhere in any step, while simultaneously having the same RF bunch
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticle, locEventRFBunch, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticle, locEventRFBunch, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticle, locEventRFBunch, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticle, locEventRFBunch, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const DKinematicData* locParticle, const DEventRFBunch* locEventRFBunch, const DParticleCombo* locParticleCombo) const
-{
-	if(locParticleCombo->Get_EventRFBunch() != locEventRFBunch)
-		return false;
-
-	const DParticleComboStep* locParticleComboStep;
-	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
-	{
-		locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-		if(locParticleComboStep->Get_InitialParticle_Measured() == locParticle)
-			return true;
-		if(locParticleComboStep->Get_TargetParticle() == locParticle)
-			return true;
-		for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
-		{
-			if(locParticleComboStep->Get_FinalParticle_Measured(loc_j) == locParticle)
-				return true;
-		}
-	}
-	return false;
-}
-
-//check whether a given measured particle appears anywhere in a specific step (size_t = step index)
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DKinematicData*, size_t> locParticlePair, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticlePair, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DKinematicData*, size_t> locParticlePair, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticlePair, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DKinematicData*, size_t> locParticlePair, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticlePair, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DKinematicData*, size_t> locParticlePair, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticlePair, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DKinematicData*, size_t> locParticlePair, const DParticleCombo* locParticleCombo) const
-{
-	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locParticlePair.second);
-	if(locParticleComboStep == NULL)
-		return false;
-	if(locParticleComboStep->Get_InitialParticle_Measured() == locParticlePair.first)
-		return true;
-	if(locParticleComboStep->Get_TargetParticle() == locParticlePair.first)
-		return true;
-	for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
-	{
-		if(locParticleComboStep->Get_FinalParticle_Measured(loc_j) == locParticlePair.first)
-			return true;
-	}
-	return false;
-}
-
-//check whether all of a collection of given measured particles appears anywhere in any step
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<const DKinematicData*>& locParticles, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticles, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<const DKinematicData*>& locParticles, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticles, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<const DKinematicData*>& locParticles, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticles, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<const DKinematicData*>& locParticles, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticles, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<const DKinematicData*>& locParticles, const DParticleCombo* locParticleCombo) const
-{
-	const DParticleComboStep* locParticleComboStep;
-	for(size_t loc_k = 0; loc_k < locParticles.size(); ++loc_k)
-	{
-		bool locTrackFoundFlag = false;
-		for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
-		{
-			locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
-			if(locParticleComboStep->Get_InitialParticle_Measured() == locParticles[loc_k])
-			{
-				locTrackFoundFlag = true;
-				break;
-			}
-			if(locParticleComboStep->Get_TargetParticle() == locParticles[loc_k])
-			{
-				locTrackFoundFlag = true;
-				break;
-			}
-			for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
-			{
-				if(locParticleComboStep->Get_FinalParticle_Measured(loc_j) == locParticles[loc_k])
-				{
-					locTrackFoundFlag = true;
-					break;
-				}
-			}
-			if(locTrackFoundFlag)
-				break;
-		}
-		if(!locTrackFoundFlag)
-			return false; //this particle not found
-	}
-	return true; //all particles found
-}
-
-//check whether all of a collection of given measured particles appear anywhere in specific steps
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<pair<const DKinematicData*, size_t> >& locParticlePairs, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticlePairs, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<pair<const DKinematicData*, size_t> >& locParticlePairs, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticlePairs, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<pair<const DKinematicData*, size_t> >& locParticlePairs, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos(locParticlePairs, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<pair<const DKinematicData*, size_t> >& locParticlePairs, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locParticlePairs, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(const deque<pair<const DKinematicData*, size_t> >& locParticlePairs, const DParticleCombo* locParticleCombo) const
-{
-	const DParticleComboStep* locParticleComboStep;
-	for(size_t loc_k = 0; loc_k < locParticlePairs.size(); ++loc_k)
-	{
-		locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locParticlePairs[loc_k].second);
-		if(locParticleComboStep->Get_InitialParticle_Measured() == locParticlePairs[loc_k].first)
-			continue;
-		if(locParticleComboStep->Get_TargetParticle() == locParticlePairs[loc_k].first)
-			continue;
-		bool locTrackFoundFlag = false;
-		for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
-		{
-			if(locParticleComboStep->Get_FinalParticle_Measured(loc_j) == locParticlePairs[loc_k].first)
-			{
-				locTrackFoundFlag = true;
-				break;
-			}
-		}
-		if(!locTrackFoundFlag)
-			return false; //this particle not found
-	}
-	return true; //all particles found
-}
-
-//check whether all of the measured particles within a given step appear in the same step at the same particle index (size_t = step index)
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DParticleComboStep*, size_t> locStepPair, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos(locStepPair, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DParticleComboStep*, size_t> locStepPair, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locStepPair, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DParticleComboStep*, size_t> locStepPair, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos(locStepPair, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DParticleComboStep*, size_t> locStepPair, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locStepPair, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(pair<const DParticleComboStep*, size_t> locStepPair, const DParticleCombo* locParticleCombo) const
-{
-	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepPair.second);
-	if(locParticleComboStep == NULL)
-		return false;
-	if(locParticleComboStep->Get_InitialParticle_Measured() != locStepPair.first->Get_InitialParticle_Measured())
-		return false;
-	if(locParticleComboStep->Get_TargetParticle() != locStepPair.first->Get_TargetParticle())
-		return false;
-	for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
-	{
-		if(locParticleComboStep->Get_FinalParticle_Measured(loc_i) != locStepPair.first->Get_FinalParticle_Measured(loc_i))
-			return false;
-	}
-	return true;
-}
-
-//check whether all of the charged, final measured particles within a given step appear in the same step at the same particle index (size_t = step index)
-bool DAnalysisUtilities::Find_SimilarCombos_FinalCharged(pair<const DParticleComboStep*, size_t> locStepPair, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos_FinalCharged(locStepPair, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos_FinalCharged(pair<const DParticleComboStep*, size_t> locStepPair, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos_FinalCharged(locStepPair, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos_FinalCharged(pair<const DParticleComboStep*, size_t> locStepPair, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos_FinalCharged(locStepPair, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos_FinalCharged(pair<const DParticleComboStep*, size_t> locStepPair, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos_FinalCharged(locStepPair, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos_FinalCharged(pair<const DParticleComboStep*, size_t> locStepPair, const DParticleCombo* locParticleCombo) const
-{
-	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepPair.second);
-	if(locParticleComboStep == NULL)
-		return false;
-	double locCharge;
-	for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
-	{
-		if(locParticleComboStep->Get_FinalParticle_Measured(loc_i) == NULL)
-			continue;
-		locCharge = locParticleComboStep->Get_FinalParticle_Measured(loc_i)->charge();
-		if((locCharge > -0.1) && (locCharge < 0.1))
-			continue;
-		if(locParticleComboStep->Get_FinalParticle_Measured(loc_i) != locStepPair.first->Get_FinalParticle_Measured(loc_i))
-			return false;
-	}
-	return true;
-}
-
-//check whether all of the measured particles within all of a collection of given steps appear in the same steps at the same particle index (size_t = step index)
-bool DAnalysisUtilities::Find_SimilarCombos(deque<pair<const DParticleComboStep*, size_t> >& locStepPairs, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck) const
-{
-	deque<pair<const DParticleCombo*, bool> > locParticleCombos_Similar;
-	return Find_SimilarCombos(locStepPairs, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(deque<pair<const DParticleComboStep*, size_t> >& locStepPairs, const deque<pair<const DParticleCombo*, bool> >& locParticleCombos_ToCheck, deque<pair<const DParticleCombo*, bool> >& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locStepPairs, locParticleCombos_ToCheck[loc_i].first))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(deque<pair<const DParticleComboStep*, size_t> >& locStepPairs, const deque<const DParticleCombo*>& locParticleCombos_ToCheck) const
-{
-	deque<const DParticleCombo*> locParticleCombos_Similar;
-	return Find_SimilarCombos(locStepPairs, locParticleCombos_ToCheck, locParticleCombos_Similar);
-}
-bool DAnalysisUtilities::Find_SimilarCombos(deque<pair<const DParticleComboStep*, size_t> >& locStepPairs, const deque<const DParticleCombo*>& locParticleCombos_ToCheck, deque<const DParticleCombo*>& locParticleCombos_Similar) const
-{
-	//locParticleCombos_ToCheck CANNOT include the combo you are comparing against!!
-	locParticleCombos_Similar.clear();
-	for(size_t loc_i = 0; loc_i < locParticleCombos_ToCheck.size(); ++loc_i)
-	{
-		if(Find_SimilarCombos(locStepPairs, locParticleCombos_ToCheck[loc_i]))
-			locParticleCombos_Similar.push_back(locParticleCombos_ToCheck[loc_i]);
-	}
-	return (!locParticleCombos_Similar.empty());
-}
-bool DAnalysisUtilities::Find_SimilarCombos(deque<pair<const DParticleComboStep*, size_t> >& locStepPairs, const DParticleCombo* locParticleCombo) const
-{
-	for(size_t loc_j = 0; loc_j < locStepPairs.size(); ++loc_j)
-	{
-		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepPairs[loc_j].second);
-		if(locParticleComboStep == NULL)
-			return false;
-		if(locParticleComboStep->Get_InitialParticle_Measured() != locStepPairs[loc_j].first->Get_InitialParticle_Measured())
-			return false;
-		if(locParticleComboStep->Get_TargetParticle() != locStepPairs[loc_j].first->Get_TargetParticle())
-			return false;
-		for(size_t loc_i = 0; loc_i < locParticleComboStep->Get_NumFinalParticles(); ++loc_i)
-		{
-			if(locParticleComboStep->Get_FinalParticle_Measured(loc_i) != locStepPairs[loc_j].first->Get_FinalParticle_Measured(loc_i))
-				return false;
-		}
-	}
-	return true;
 }
 

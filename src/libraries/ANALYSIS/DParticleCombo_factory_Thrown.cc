@@ -33,8 +33,6 @@ jerror_t DParticleCombo_factory_Thrown::brun(jana::JEventLoop *locEventLoop, int
 //------------------
 jerror_t DParticleCombo_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
-cout << "DParticleCombo_factory_Thrown evnt" << endl;
-
 	// delete pool sizes if too large, preventing memory-leakage-like behavor.
 	if(dParticleComboStepPool_All.size() > MAX_dParticleComboStepPoolSize)
 	{
@@ -80,6 +78,8 @@ cout << "DParticleCombo_factory_Thrown evnt" << endl;
 	locParticleComboStep->Set_InitialParticle(&locMCReactions[0]->beam);
 	locParticleComboStep->Set_InitialParticle_Measured(&locMCReactions[0]->beam);
 	locParticleComboStep->Set_TargetParticle(&locMCReactions[0]->target);
+	locParticleComboStep->Set_Position(locMCReactions[0]->beam.position());
+	locParticleComboStep->Set_Time(locMCReactions[0]->beam.time());
 
 	for(size_t loc_i = 0; loc_i < locThrownSteps.size(); ++loc_i)
 	{
@@ -108,6 +108,8 @@ cout << "DParticleCombo_factory_Thrown evnt" << endl;
 			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 			locParticleComboStep->Set_InitialParticle(locMCThrown);
 			locParticleComboStep->Set_InitialParticle_Measured(locMCThrown);
+			locParticleComboStep->Set_Position(locMCThrown->position());
+			locParticleComboStep->Set_Time(locMCThrown->time());
 		}
 		for(size_t loc_j = 0; loc_j < locThrownSteps[loc_i].second.size(); ++loc_j)
 		{
@@ -129,8 +131,6 @@ cout << "DParticleCombo_factory_Thrown evnt" << endl;
 	}
 
 	_data.push_back(locParticleCombo);
-
-cout << "end DParticleCombo_factory_Thrown evnt" << endl;
 
 	return NOERROR;
 }

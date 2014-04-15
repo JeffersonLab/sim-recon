@@ -31,40 +31,22 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, int ev
  	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 
-	const DParticleCombo* locParticleCombo;
 	map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
-	const DKinFitParticle* locKinFitParticle;
-	const DBeamPhoton* locBeamPhoton;
-	DBeamPhoton* locNewBeamPhoton;
-
 	map<const DKinFitParticle*, DBeamPhoton*> locKinFitParticleMap;
 	map<DBeamPhoton*, deque<const DParticleCombo*> > locBeamParticleComboMap;
 
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
-		locParticleCombo = locKinFitResultsVector[loc_i]->Get_ParticleCombo();
+		set<const DParticleCombo*> locParticleCombos;
+		locKinFitResultsVector[loc_i]->Get_ParticleCombos(locParticleCombos);
+		const DParticleCombo* locParticleCombo = *(locParticleCombos.begin());
 		if(!locParticleCombo->Get_ParticleComboStep(0)->Is_InitialParticleDetected())
 			continue;
 		locKinFitResultsVector[loc_i]->Get_ReverseParticleMapping(locReverseParticleMapping);
-		locKinFitParticle = locReverseParticleMapping[locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured()];
+		const DKinFitParticle* locKinFitParticle = locReverseParticleMapping[locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured()];
 
-		//loop over previous kinfitresults objects, see if the kinfit results are identical: if so, don't need to correct new tracks for the results
-		bool locMatchFlag = false;
-		for(size_t loc_j = 0; loc_j < loc_i; ++loc_j)
-		{
-			if(!locParticleCombo->Will_KinFitBeIdentical(locKinFitResultsVector[loc_j]->Get_ParticleCombo()))
-				continue;
-			//kinfit results are identical: setup the maps so that the charged tracks are copied instead of created anew
-			locNewBeamPhoton = locKinFitParticleMap[locKinFitParticle];
-			locBeamParticleComboMap[locNewBeamPhoton].push_back(locParticleCombo);
-			locMatchFlag = true;
-			break;
-		}
-		if(locMatchFlag)
-			continue;
-
-		locBeamPhoton = static_cast<const DBeamPhoton*>(locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured());
-		locNewBeamPhoton = Build_BeamPhoton(locBeamPhoton, locKinFitParticle, locParticleCombo);
+		const DBeamPhoton* locBeamPhoton = static_cast<const DBeamPhoton*>(locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured());
+		DBeamPhoton* locNewBeamPhoton = Build_BeamPhoton(locBeamPhoton, locKinFitParticle, locParticleCombo);
 		locKinFitParticleMap[locKinFitParticle] = locNewBeamPhoton;
 		locBeamParticleComboMap[locNewBeamPhoton] = deque<const DParticleCombo*>(1, locParticleCombo);
 	}
@@ -73,7 +55,7 @@ jerror_t DBeamPhoton_factory_KinFit::evnt(jana::JEventLoop* locEventLoop, int ev
 	map<DBeamPhoton*, deque<const DParticleCombo*> >::iterator locIterator;
 	for(locIterator = locBeamParticleComboMap.begin(); locIterator != locBeamParticleComboMap.end(); ++locIterator)
 	{
-		locNewBeamPhoton = locIterator->first;
+		DBeamPhoton* locNewBeamPhoton = locIterator->first;
 		deque<const DParticleCombo*>& locParticleCombos = locIterator->second;
 		for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 			locNewBeamPhoton->AddAssociatedObject(locParticleCombos[loc_i]);

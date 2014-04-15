@@ -2,6 +2,7 @@
 #define _DParticleCombo_
 
 #include <deque>
+#include <set>
 
 #include "JANA/JObject.h"
 #include "particleType.h"
@@ -61,18 +62,13 @@ class DParticleCombo : public JObject
 		void Get_DetectedFinalChargedParticles_SourceObjects(deque<const DChargedTrack*>& locSourceChargedTracks) const;
 		void Get_DetectedFinalNeutralParticles_SourceObjects(deque<const DNeutralShower*>& locSourceNeutralShowers) const;
 
-		// GET DECAY CHAIN PARTICLE NAMES:
-		string Get_DecayChainFinalParticlesROOTName(size_t locStepIndex, bool locKinFitResultsFlag = false) const;
-		string Get_DecayChainFinalParticlesROOTName(size_t locStepIndex, deque<string>& locParticleNames, bool locKinFitResultsFlag = false) const;
-
 		// OTHER:
-		bool Check_IfDecayingParticleExcludedFromP4KinFit(size_t locStepIndex) const;
+		set<pair<const JObject*, Particle_t> > Get_DecayingParticleSourceObjects(size_t locStepIndex) const;
+		bool Get_ApplyKinFitMassConstraintOnInitialParticleFlag(size_t locStepIndex) const;
 		bool Check_AreMeasuredParticlesIdentical(const DParticleCombo* locParticleCombo) const;
-		bool Will_KinFitBeIdentical(const DParticleCombo* locParticleCombo) const; //the pointers for the steps must be identical for this to be true!!
 
 	private:
 		// PRIVATE METHODS:
-		string Get_DecayChainFinalParticlesROOTName_Recursive(size_t locStepIndex, deque<string>& locParticleNames, bool locKinFitResultsFlag = false) const;
 		void Get_DecayChainParticles_Measured_Recursive(int locStepIndex, deque<const DKinematicData*>& locMeasuredParticles) const;
 
 		const DReaction* dReaction;

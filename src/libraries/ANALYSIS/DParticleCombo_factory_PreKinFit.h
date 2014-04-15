@@ -29,6 +29,7 @@
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DParticleComboStep.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"
+#include "ANALYSIS/DAnalysisUtilities.h"
 
 class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 {
@@ -48,12 +49,14 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 
 		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses);
 		DKinematicData* Create_Target(Particle_t locPID);
-		DBeamPhoton* Create_BeamPhoton(void); //for MC only!
 
 		bool Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const;
 		bool Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
+
+		void Calc_CommonSpacetimeVertices(DParticleCombo* locParticleCombo) const;
+		void Setup_VertexConstraint(DParticleCombo* locParticleCombo, size_t locStepIndex, deque<const DKinematicData*>& locDetectedVertexParticles, deque<const DKinematicData*>& locDetectedTimeParticles, deque<size_t>& locIncludedStepIndices) const;
 
 		DParticleComboStep* Clone_ParticleComboStep(const DParticleComboStep* locParticleComboStep);
 		void Reset_KinematicData(DKinematicData* locKinematicData);
@@ -66,9 +69,6 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 
 		deque<DKinematicData*> dKinematicDataPool_All;
 		deque<DKinematicData*> dKinematicDataPool_Available;
-
-		deque<DBeamPhoton*> dBeamPhotonPool_All; //for MC only!
-		deque<DBeamPhoton*> dBeamPhotonPool_Available;
 
 		map<const DParticleComboBlueprintStep*, const DParticleComboStep*> dComboBlueprintStepMap;
 
@@ -85,6 +85,7 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
 
 		double dTargetCenterZ;
+		const DAnalysisUtilities* dAnalysisUtilities;
 };
 
 #endif // _DParticleCombo_factory_PreKinFit_

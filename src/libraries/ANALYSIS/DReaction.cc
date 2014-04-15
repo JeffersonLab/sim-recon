@@ -26,6 +26,7 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 
 	dTTreeOutputFileName = "";
 	dEnableTTreeOutputFlag = false;
+	dMinThrownMatchFOMForROOT = -1.0; //always
 }
 
 const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
@@ -65,100 +66,73 @@ string DReaction::Get_DetectedParticlesROOTName(void) const
 	return locDetectedParticlesROOTName;
 }
 
-void DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, deque<string>& locNames, bool locKinFitResultsFlag) const
+string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, bool locKinFitResultsFlag) const
 {
-	deque<deque<string> > locParticleNames;
-	Get_DecayChainFinalParticlesROOTNames(locInitialPID, locParticleNames, locNames, locKinFitResultsFlag);
+	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
+	return Get_DecayChainFinalParticlesROOTNames(locInitialPID, -1, deque<Particle_t>(), locKinFitResultsFlag);
 }
 
-void DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, deque<deque<string> >& locParticleNames, deque<string>& locNames, bool locKinFitResultsFlag) const
+string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag) const
 {
-	locNames.clear();
+	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
 	deque<Particle_t> locPIDs;
-	locParticleNames.clear();
+	string locName = "";
 	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
 	{
 		if(dReactionSteps[loc_i]->Get_InitialParticleID() != locInitialPID)
 			continue;
-		deque<deque<string> > locTempNames;
-		Get_DecayChainFinalParticlesROOTNames(loc_i, locTempNames, locKinFitResultsFlag);
-		locParticleNames.insert(locParticleNames.end(), locTempNames.begin(), locTempNames.end());
+		return Get_DecayChainFinalParticlesROOTNames(loc_i, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, false);
 	}
-
-	//eliminate duplicate names
-		//particles could be a different order!!!
-	for (size_t loc_i=0;loc_i<locParticleNames.size();loc_i++){
-	  for (size_t loc_j=loc_i+1;loc_j<locParticleNames.size();loc_j++){
-	    if (locParticleNames[loc_i].size()!=locParticleNames[loc_j].size()) continue;
-
-	    for (size_t loc_k=0;loc_k<locParticleNames[loc_i].size();loc_k++){
-	      for (size_t loc_m=0;loc_m<locParticleNames[loc_j].size();loc_m++){
-		if (locParticleNames[loc_j][loc_m]==locParticleNames[loc_i][loc_k]) locParticleNames[loc_j].erase(locParticleNames[loc_j].begin()+loc_m);
-	      }
-	    }
-	  }
-	}
-
-	//finally build the strings
-	for(size_t loc_i = 0; loc_i < locParticleNames.size(); ++loc_i)
-	{
-	  if (locParticleNames[loc_i].size()>0){
-	    string locName;
-	    for(size_t loc_j = 0; loc_j < locParticleNames[loc_i].size(); ++loc_j){
-	      locName += locParticleNames[loc_i][loc_j];
-	      
-	    }
-	    locNames.push_back(locName);
-	  }
-	}
+	return string("");
 }
 
-void DReaction::Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, deque<deque<string> >& locNames, bool locKinFitResultsFlag) const
+string DReaction::Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag, bool locExpandDecayingParticlesFlag) const
 {
-	//if locKinFitResultsFlag = true: don't expand decaying particles (through decay chain) that were included in the kinfit (still expand resonances and excluded particles)
+	//if locKinFitResultsFlag = true: don't expand decaying particles (through decay chain) that were included in the kinfit (still expand resonances)
+	string locName = "";
 	deque<Particle_t> locPIDs;
 	dReactionSteps[locStepIndex]->Get_FinalParticleIDs(locPIDs);
+	int locMissingParticleIndex = dReactionSteps[locStepIndex]->Get_MissingParticleIndex();
 	for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
 	{
+		if(int(loc_j) == locMissingParticleIndex)
+			continue; //exclude missing!
+
+		if(int(locStepIndex) == locUpToStepIndex)
+		{
+			bool locPIDFoundFlag = false;
+			for(deque<Particle_t>::iterator locIterator = locUpThroughPIDs.begin(); locIterator != locUpThroughPIDs.end(); ++locIterator)
+			{
+				if((*locIterator) != locPIDs[loc_j])
+					continue;
+				locUpThroughPIDs.erase(locIterator);
+				locPIDFoundFlag = true;
+				break;
+			}
+			if(!locPIDFoundFlag)
+				continue; //skip it: don't want to include it
+		}
+
 		//find all future steps in which this pid is a parent
-		deque<size_t> locDecayingStepIndices;
-		for(size_t loc_k = locStepIndex + 1; loc_k < dReactionSteps.size(); ++loc_k)
+		int locDecayingStepIndex = -1;
+		//expand if: not-kinfitting, or not a fixed mass
+		if((!locKinFitResultsFlag) || (!IsFixedMass(locPIDs[loc_j])) || locExpandDecayingParticlesFlag)
 		{
-			if(dReactionSteps[loc_k]->Get_InitialParticleID() != locPIDs[loc_j])
-				continue;
-			//expand if: not-kinfitting, not a fixed mass, OR excluded from kinfit
-			if((!locKinFitResultsFlag) || (!IsFixedMass(locPIDs[loc_j])) || Check_IfDecayingParticleExcludedFromP4KinFit(loc_k))
-				locDecayingStepIndices.push_back(loc_k);
+			for(size_t loc_k = locStepIndex + 1; loc_k < dReactionSteps.size(); ++loc_k)
+			{
+				if(dReactionSteps[loc_k]->Get_InitialParticleID() != locPIDs[loc_j])
+					continue;
+				locDecayingStepIndex = loc_k;
+				break;
+			}
 		}
 
-		if(locDecayingStepIndices.empty())
-		{
-			if(locNames.empty())
-				locNames.push_back(deque<string>());
-			for(size_t loc_k = 0; loc_k < locNames.size(); ++loc_k)
-				locNames[loc_k].push_back(ParticleName_ROOT(locPIDs[loc_j]));
-			continue;
-		}
-
-		deque<deque<string> > locBaseNames = locNames;
-		locNames.clear();
-		for(size_t loc_k = 0; loc_k < locDecayingStepIndices.size(); ++loc_k)
-		{
-			deque<deque<string> > locTempNames = locBaseNames;
-			Get_DecayChainFinalParticlesROOTNames(locDecayingStepIndices[loc_k], locTempNames, locKinFitResultsFlag);
-			locNames.insert(locNames.end(), locTempNames.begin(), locTempNames.end());
-		}
+		if(locDecayingStepIndex == -1)
+			locName += ParticleName_ROOT(locPIDs[loc_j]);
+		else
+			locName += Get_DecayChainFinalParticlesROOTNames(locDecayingStepIndex, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, locExpandDecayingParticlesFlag);
 	}
-}
-
-bool DReaction::Check_IfDecayingParticleExcludedFromP4KinFit(size_t locStepIndex) const
-{
-	for(size_t loc_i = 0; loc_i < dDecayingParticlesExcludedFromP4Kinfit.size(); ++loc_i)
-	{
-		if(dDecayingParticlesExcludedFromP4Kinfit[loc_i] == locStepIndex)
-			return true;
-	}
-	return false;
+	return locName;
 }
 
 bool DReaction::Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex) const

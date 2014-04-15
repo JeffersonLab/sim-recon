@@ -85,6 +85,7 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 	if(dDebugLevel > 0)
 	{
 		cout << "Charged Track Matching Summary:" << endl;
+		double locMatchFOM = 0.0;
 		for(size_t loc_i = 0; loc_i < locChargedTrackHypotheses.size(); ++loc_i)
 		{
 			double locP = locChargedTrackHypotheses[loc_i]->momentum().Mag();
@@ -93,7 +94,7 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 			Particle_t locPID = locChargedTrackHypotheses[loc_i]->PID();
 			cout << "charged info: " << locChargedTrackHypotheses[loc_i]->candidateid << ", " << ParticleType(locPID) << ", " << locP << ", " << locTheta << ", " << locPhi << endl;
 			cout << "matched info: ";
-			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypotheses[loc_i]);
+			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypotheses[loc_i], locMatchFOM);
 			if(locMCThrown == NULL)
 			{
 				cout << "NO MATCH." << endl;
@@ -103,14 +104,14 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 			locTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
 			locPhi = locMCThrown->momentum().Phi()*180.0/TMath::Pi();
 			locPID = locMCThrown->PID();
-			cout << ParticleType(locPID) << ", " << locP << ", " << locTheta << ", " << locPhi << endl;
+			cout << ParticleType(locPID) << ", " << locP << ", " << locTheta << ", " << locPhi << ", " << locMatchFOM << endl;
 		}
 		cout << "Unmatched Charged DMCThrowns:" << endl;
 		for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 		{
 			if(ParticleCharge(locMCThrowns[loc_i]->PID()) == 0)
 				continue;
-			if(locMCThrownMatching->Get_MatchingChargedTrack(locMCThrowns[loc_i]) != NULL)
+			if(locMCThrownMatching->Get_MatchingChargedTrack(locMCThrowns[loc_i], locMatchFOM) != NULL)
 				continue;
 			double locP = locMCThrowns[loc_i]->momentum().Mag();
 			double locTheta = locMCThrowns[loc_i]->momentum().Theta()*180.0/TMath::Pi();
@@ -135,11 +136,11 @@ void DMCThrownMatching_factory::Find_GenReconMatches_FCALShowers(JEventLoop* loc
 	const DFCALShower* locFCALShower;
 	locEventLoop->Get(locFCALShowers);
 
-	map<const DFCALShower*, const DFCALTruthShower*> locFCALShowerToTruthMap;
-	map<const DFCALTruthShower*, const DFCALShower*> locFCALTruthToShowerMap;
+	map<const DFCALShower*, pair<const DFCALTruthShower*, double> > locFCALShowerToTruthMap;
+	map<const DFCALTruthShower*, pair<const DFCALShower*, double> > locFCALTruthToShowerMap;
 
 	size_t locBestFCALShowerIndex = 0, locBestFCALTruthShowerIndex = 0;
-	double locMatchDistance;
+	double locBestMatchDistance, locMatchDistance;
 	while((!locFCALShowers.empty()) && (!locFCALTruthShowers.empty()))
 	{
 		bool locMatchFoundFlag = false;
@@ -168,6 +169,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_FCALShowers(JEventLoop* loc
 				//keep the shower with the largest energy
 				if(locFCALShower->getEnergy() > locLargestEnergy)
 				{
+					locBestMatchDistance = locMatchDistance;
 					locMatchFoundFlag = true;
 					locLargestEnergy = locFCALShower->getEnergy();
 					locBestFCALTruthShowerIndex = loc_i;
@@ -182,8 +184,8 @@ void DMCThrownMatching_factory::Find_GenReconMatches_FCALShowers(JEventLoop* loc
 		locFCALTruthShower = locFCALTruthShowers[locBestFCALTruthShowerIndex];
 		locFCALShower = locFCALShowers[locBestFCALShowerIndex];
 
-		locFCALShowerToTruthMap[locFCALShower] = locFCALTruthShower;
-		locFCALTruthToShowerMap[locFCALTruthShower] = locFCALShower;
+		locFCALShowerToTruthMap[locFCALShower] = pair<const DFCALTruthShower*, double>(locFCALTruthShower, locBestMatchDistance);
+		locFCALTruthToShowerMap[locFCALTruthShower] = pair<const DFCALShower*, double>(locFCALShower, locBestMatchDistance);
 
 		locFCALShowers.erase(locFCALShowers.begin() + locBestFCALShowerIndex);
 		locFCALTruthShowers.erase(locFCALTruthShowers.begin() + locBestFCALTruthShowerIndex);
@@ -203,8 +205,8 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BCALShowers(JEventLoop* loc
 	const DBCALShower* locBCALShower;
 	locEventLoop->Get(locBCALShowers);
 
-	map<const DBCALShower*, const DBCALTruthShower*> locBCALShowerToTruthMap;
-	map<const DBCALTruthShower*, const DBCALShower*> locBCALTruthToShowerMap;
+	map<const DBCALShower*, pair<const DBCALTruthShower*, double> > locBCALShowerToTruthMap;
+	map<const DBCALTruthShower*, pair<const DBCALShower*, double> > locBCALTruthToShowerMap;
 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
@@ -227,6 +229,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BCALShowers(JEventLoop* loc
 	{
 		bool locMatchFoundFlag = false;
 		double locLargestEnergy = 0.0;
+		double locBestUnitCircleArcLength = 0.0;
 		for(size_t loc_i = 0; loc_i < locBCALTruthShowers.size(); ++loc_i)
 		{
 			locBCALTruthShower = locBCALTruthShowers[loc_i];
@@ -268,6 +271,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BCALShowers(JEventLoop* loc
 				//keep the shower with the largest energy
 				if(locBCALShower->E > locLargestEnergy)
 				{
+					locBestUnitCircleArcLength = locUnitCircleArcLength;
 					locMatchFoundFlag = true;
 					locLargestEnergy = locBCALShower->E;
 					locBestBCALTruthShowerIndex = loc_i;
@@ -282,8 +286,8 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BCALShowers(JEventLoop* loc
 		locBCALTruthShower = locBCALTruthShowers[locBestBCALTruthShowerIndex];
 		locBCALShower = locBCALShowers[locBestBCALShowerIndex];
 
-		locBCALShowerToTruthMap[locBCALShower] = locBCALTruthShower;
-		locBCALTruthToShowerMap[locBCALTruthShower] = locBCALShower;
+		locBCALShowerToTruthMap[locBCALShower] = pair<const DBCALTruthShower*, double>(locBCALTruthShower, locBestUnitCircleArcLength);
+		locBCALTruthToShowerMap[locBCALTruthShower] = pair<const DBCALShower*, double>(locBCALShower, locBestUnitCircleArcLength);
 
 		locBCALShowers.erase(locBCALShowers.begin() + locBestBCALShowerIndex);
 		locBCALTruthShowers.erase(locBCALTruthShowers.begin() + locBestBCALTruthShowerIndex);
@@ -303,11 +307,11 @@ void DMCThrownMatching_factory::Find_GenReconMatches_TOFPoints(JEventLoop* locEv
 	const DTOFPoint* locTOFPoint;
 	locEventLoop->Get(locTOFPoints);
 
-	map<const DTOFPoint*, const DTOFTruth*> locTOFPointToTruthMap;
-	map<const DTOFTruth*, const DTOFPoint*> locTOFTruthToPointMap;
+	map<const DTOFPoint*, pair<const DTOFTruth*, double> > locTOFPointToTruthMap;
+	map<const DTOFTruth*, pair<const DTOFPoint*, double> > locTOFTruthToPointMap;
 
 	size_t locBestTOFPointIndex = 0, locBestTOFTruthIndex = 0;
-	double locMatchDistance;
+	double locBestMatchDistance, locMatchDistance;
 	while((!locTOFPoints.empty()) && (!locTOFTruths.empty()))
 	{
 		bool locMatchFoundFlag = false;
@@ -332,9 +336,10 @@ void DMCThrownMatching_factory::Find_GenReconMatches_TOFPoints(JEventLoop* locEv
 				if(locMatchDistance > dMaximumTOFMatchDistance)
 					continue;
 
-				//keep the shower with the largest energy
+				//keep the hit with the largest energy
 				if(locTOFTruth->E > locLargestEnergy)
 				{
+					locBestMatchDistance = locMatchDistance;
 					locMatchFoundFlag = true;
 					locLargestEnergy = locTOFTruth->E;
 					locBestTOFTruthIndex = loc_i;
@@ -349,8 +354,8 @@ void DMCThrownMatching_factory::Find_GenReconMatches_TOFPoints(JEventLoop* locEv
 		locTOFTruth = locTOFTruths[locBestTOFTruthIndex];
 		locTOFPoint = locTOFPoints[locBestTOFPointIndex];
 
-		locTOFPointToTruthMap[locTOFPoint] = locTOFTruth;
-		locTOFTruthToPointMap[locTOFTruth] = locTOFPoint;
+		locTOFPointToTruthMap[locTOFPoint] = pair<const DTOFTruth*, double>(locTOFTruth, locBestMatchDistance);
+		locTOFTruthToPointMap[locTOFTruth] = pair<const DTOFPoint*, double>(locTOFPoint, locBestMatchDistance);
 
 		locTOFPoints.erase(locTOFPoints.begin() + locBestTOFPointIndex);
 		locTOFTruths.erase(locTOFTruths.begin() + locBestTOFTruthIndex);
@@ -363,23 +368,23 @@ void DMCThrownMatching_factory::Find_GenReconMatches_TOFPoints(JEventLoop* locEv
 void DMCThrownMatching_factory::Find_GenReconMatches_ChargedTrack(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DChargedTrack*>& locChargedTracks, DMCThrownMatching* locMCThrownMatching) const
 {
 	//assumes Find_GenReconMatches_ChargedHypo has been called first!
-	map<const DChargedTrackHypothesis*, const DMCThrown*> locChargedHypoToThrownMap;
-	map<const DMCThrown*, deque<const DChargedTrackHypothesis*> > locThrownToChargedHypoMap;
+	map<const DChargedTrackHypothesis*, pair<const DMCThrown*, double> > locChargedHypoToThrownMap;
+	map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> > locThrownToChargedHypoMap;
 	locMCThrownMatching->Get_ChargedHypoToThrownMap(locChargedHypoToThrownMap);
 	locMCThrownMatching->Get_ThrownToChargedHypoMap(locThrownToChargedHypoMap);
 
-	map<const DChargedTrack*, const DMCThrown*> locChargedToThrownMap;
-	map<const DMCThrown*, const DChargedTrack*> locThrownToChargedMap;
+	map<const DChargedTrack*, pair<const DMCThrown*, double> > locChargedToThrownMap;
+	map<const DMCThrown*, pair<const DChargedTrack*, double> > locThrownToChargedMap;
 
-	map<const DMCThrown*, deque<const DChargedTrackHypothesis*> >::iterator locIterator;
+	map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> >::iterator locIterator;
 	for(locIterator = locThrownToChargedHypoMap.begin(); locIterator != locThrownToChargedHypoMap.end(); ++locIterator)
 	{
 		for(size_t loc_j = 0; loc_j < locChargedTracks.size(); ++loc_j)
 		{
-			if(locChargedTracks[loc_j]->Get_BestFOM()->candidateid == (locIterator->second)[0]->candidateid) //match
+			if(locChargedTracks[loc_j]->Get_BestFOM()->candidateid == (locIterator->second.first)[0]->candidateid) //match
 			{
-				locChargedToThrownMap[locChargedTracks[loc_j]] = locIterator->first;
-				locThrownToChargedMap[locIterator->first] = locChargedTracks[loc_j];
+				locChargedToThrownMap[locChargedTracks[loc_j]] = pair<const DMCThrown*, double>(locIterator->first, locIterator->second.second);
+				locThrownToChargedMap[locIterator->first] = pair<const DChargedTrack*, double>(locChargedTracks[loc_j], locIterator->second.second);
 			}
 		}
 	}
@@ -390,8 +395,8 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedTrack(const vector<c
 
 void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DChargedTrackHypothesis*>& locInputChargedTrackHypothesisVector, DMCThrownMatching* locMCThrownMatching) const
 {
-	map<const DChargedTrackHypothesis*, const DMCThrown*> locChargedToThrownMap;
-	map<const DMCThrown*, deque<const DChargedTrackHypothesis*> > locThrownToChargedMap;
+	map<const DChargedTrackHypothesis*, pair<const DMCThrown*, double> > locChargedToThrownMap;
+	map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> > locThrownToChargedMap;
 
 	const DChargedTrackHypothesis* locChargedTrackHypothesis;
 	const DMCThrown* locMCThrown;
@@ -415,7 +420,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 				locChargedTrackHypothesis = locChargedTrackHypothesisVector[loc_j];
 				if(ParticleCharge(locChargedTrackHypothesis->PID()) != ParticleCharge((Particle_t)(locMCThrown->type)))
 					continue; //wrong charge
-				locMatchFOM = Calc_MatchFOM(locMCThrown->momentum(), locChargedTrackHypothesis->momentum());
+				locMatchFOM = Calc_MatchFOM(locMCThrown->momentum(), locChargedTrackHypothesis->momentum(), locChargedTrackHypothesis->errorMatrix());
 
 				if(dDebugLevel > 0)
 				{
@@ -442,7 +447,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 		locMCThrown = locMCThrownVector[locBestMCThrownIndex];
 		locChargedTrackHypothesis = locChargedTrackHypothesisVector[locBestChargedTrackHypothesisIndex];
 
-		locChargedToThrownMap[locChargedTrackHypothesis] = locMCThrown;
+		locChargedToThrownMap[locChargedTrackHypothesis] = pair<const DMCThrown*, double>(locMCThrown, locBestMatchFOM);
 		locChargedTrackHypothesisVector.erase(locChargedTrackHypothesisVector.begin() + locBestChargedTrackHypothesisIndex);
 		locMCThrownVector.erase(locMCThrownVector.begin() + locBestMCThrownIndex);
 
@@ -460,12 +465,12 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 			{
 				if(dDebugLevel > 0)
 					cout << "save!" << endl;
-				locChargedToThrownMap[locChargedTrackHypothesisVector[loc_i]] = locMCThrown;
+				locChargedToThrownMap[locChargedTrackHypothesisVector[loc_i]] = pair<const DMCThrown*, double>(locMCThrown, locBestMatchFOM);
 				locMatchedChargedHypos.push_back(locChargedTrackHypothesisVector[loc_i]);
 				locChargedTrackHypothesisVector.erase(locChargedTrackHypothesisVector.begin() + loc_i);
 			}
 		}
-		locThrownToChargedMap[locMCThrown] = locMatchedChargedHypos;
+		locThrownToChargedMap[locMCThrown] = pair<deque<const DChargedTrackHypothesis*>, double>(locMatchedChargedHypos, locBestMatchFOM);
 	}
 
 	locMCThrownMatching->Set_ChargedHypoToThrownMap(locChargedToThrownMap);
@@ -475,28 +480,28 @@ void DMCThrownMatching_factory::Find_GenReconMatches_ChargedHypo(const vector<co
 void DMCThrownMatching_factory::Find_GenReconMatches_NeutralParticle(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DNeutralParticle*>& locNeutralParticles, DMCThrownMatching* locMCThrownMatching) const
 {
 	//assumes Find_GenReconMatches_NeutralHypo has been called first!
-	map<const DNeutralParticleHypothesis*, const DMCThrown*> locNeutralHypoToThrownMap;
-	map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> > locThrownToNeutralHypoMap;
+	map<const DNeutralParticleHypothesis*, pair<const DMCThrown*, double> > locNeutralHypoToThrownMap;
+	map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> > locThrownToNeutralHypoMap;
 	locMCThrownMatching->Get_NeutralHypoToThrownMap(locNeutralHypoToThrownMap);
 	locMCThrownMatching->Get_ThrownToNeutralHypoMap(locThrownToNeutralHypoMap);
 
 	vector<const DNeutralShower*> locNeutralShowerVector_Matched;
 	vector<const DNeutralShower*> locNeutralShowerVector_Check;
 
-	map<const DNeutralParticle*, const DMCThrown*> locNeutralToThrownMap;
-	map<const DMCThrown*, const DNeutralParticle*> locThrownToNeutralMap;
+	map<const DNeutralParticle*, pair<const DMCThrown*, double> > locNeutralToThrownMap;
+	map<const DMCThrown*, pair<const DNeutralParticle*, double> > locThrownToNeutralMap;
 
-	map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> >::iterator locIterator;
+	map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> >::iterator locIterator;
 	for(locIterator = locThrownToNeutralHypoMap.begin(); locIterator != locThrownToNeutralHypoMap.end(); ++locIterator)
 	{
-		(locIterator->second)[0]->GetT(locNeutralShowerVector_Matched);
+		(locIterator->second.first)[0]->GetT(locNeutralShowerVector_Matched);
 		for(size_t loc_j = 0; loc_j < locNeutralParticles.size(); ++loc_j)
 		{
 			locNeutralParticles[loc_j]->GetT(locNeutralShowerVector_Check);
 			if(locNeutralShowerVector_Check[0] == locNeutralShowerVector_Matched[0])
 			{
-				locNeutralToThrownMap[locNeutralParticles[loc_j]] = locIterator->first;
-				locThrownToNeutralMap[locIterator->first] = locNeutralParticles[loc_j];
+				locNeutralToThrownMap[locNeutralParticles[loc_j]] = pair<const DMCThrown*, double>(locIterator->first, locIterator->second.second);
+				locThrownToNeutralMap[locIterator->first] = pair<const DNeutralParticle*, double>(locNeutralParticles[loc_j], locIterator->second.second);
 			}
 		}
 	}
@@ -507,8 +512,8 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralParticle(const vecto
 
 void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<const DMCThrown*>& locInputMCThrownVector, const vector<const DNeutralParticleHypothesis*>& locInputNeutralParticleHypothesisVector, DMCThrownMatching* locMCThrownMatching) const
 {
-	map<const DNeutralParticleHypothesis*, const DMCThrown*> locNeutralToThrownMap;
-	map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> > locThrownToNeutralMap;
+	map<const DNeutralParticleHypothesis*, pair<const DMCThrown*, double> > locNeutralToThrownMap;
+	map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> > locThrownToNeutralMap;
 
 	const DNeutralParticleHypothesis* locNeutralParticleHypothesis;
 	const DMCThrown* locMCThrown;
@@ -527,7 +532,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 			for(size_t loc_j = 0; loc_j < locNeutralParticleHypothesisVector.size(); ++loc_j)
 			{
 				locNeutralParticleHypothesis = locNeutralParticleHypothesisVector[loc_j];
-				locMatchFOM = Calc_MatchFOM(locMCThrown->momentum(), locNeutralParticleHypothesis->momentum());
+				locMatchFOM = Calc_MatchFOM(locMCThrown->momentum(), locNeutralParticleHypothesis->momentum(), locNeutralParticleHypothesis->errorMatrix());
 				if(locMatchFOM >= locBestMatchFOM)
 				{
 					locMatchFoundFlag = true;
@@ -544,7 +549,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 		locMCThrown = locMCThrownVector[locBestMCThrownIndex];
 		locNeutralParticleHypothesis = locNeutralParticleHypothesisVector[locBestNeutralParticleHypothesisIndex];
 
-		locNeutralToThrownMap[locNeutralParticleHypothesis] = locMCThrown;
+		locNeutralToThrownMap[locNeutralParticleHypothesis] = pair<const DMCThrown*, double>(locMCThrown, locBestMatchFOM);
 		locNeutralParticleHypothesisVector.erase(locNeutralParticleHypothesisVector.begin() + locBestNeutralParticleHypothesisIndex);
 		locMCThrownVector.erase(locMCThrownVector.begin() + locBestMCThrownIndex);
 
@@ -558,31 +563,41 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 			locNeutralParticleHypothesisVector[loc_i]->GetT(locNeutralShowerVector_Check);
 			if(locNeutralShowerVector_Check[0] == locNeutralShowerVector_Matched[0])
 			{
-				locNeutralToThrownMap[locNeutralParticleHypothesisVector[loc_i]] = locMCThrown;
+				locNeutralToThrownMap[locNeutralParticleHypothesisVector[loc_i]] = pair<const DMCThrown*, double>(locMCThrown, locBestMatchFOM);
 				locMatchedNeutralHypos.push_back(locNeutralParticleHypothesisVector[loc_i]);
 				locNeutralParticleHypothesisVector.erase(locNeutralParticleHypothesisVector.begin() + loc_i);
 			}
 		}
-		locThrownToNeutralMap[locMCThrown] = locMatchedNeutralHypos;
+		locThrownToNeutralMap[locMCThrown] = pair<deque<const DNeutralParticleHypothesis*>, double>(locMatchedNeutralHypos, locBestMatchFOM);
 	}
 
 	locMCThrownMatching->Set_NeutralHypoToThrownMap(locNeutralToThrownMap);
 	locMCThrownMatching->Set_ThrownToNeutralHypoMap(locThrownToNeutralMap);
 }
 
-double DMCThrownMatching_factory::Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected) const
+double DMCThrownMatching_factory::Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, const DMatrixDSym& locInputCovarianceMatrix) const
 {
-	double locDeltaPOverP = (locMomentum_Thrown.Mag() > 0.0) ? (locMomentum_Thrown.Mag() - locMomentum_Detected.Mag())/locMomentum_Thrown.Mag() : 9.9E9; //mean is zero
-	double locDeltaPOverPSigma = 0.03;
-	double locDeltaPOverPChiSq = locDeltaPOverP*locDeltaPOverP/(locDeltaPOverPSigma*locDeltaPOverPSigma);
+	//Detailed Calculation:
+	DVector3 locDeltaP3 = locMomentum_Detected - locMomentum_Thrown;
+	double locTotalDeltaSq = locDeltaP3.Mag2();
+	double locTotalDelta = sqrt(locTotalDeltaSq);
 
-	double locDeltaTheta = locMomentum_Thrown.Angle(locMomentum_Detected); //mean is zero
-	double locDeltaThetaSigma = 0.5*TMath::Pi()/180.0; //0.5 degrees: phi dominates (theta is ~0.03 degrees)
-	double locDeltaThetaChiSq = locDeltaTheta*locDeltaTheta/(locDeltaThetaSigma*locDeltaThetaSigma);
+	//dx = detected_x - thrown_x
+	//total_delta = sqrt(dx^2 + dy^2 + dz^2)
+	//partial = 1/2*(1/total_delta)*2*dx*1 = dx/total_delta
+	DMatrixDSym locCovarianceMatrix = locInputCovarianceMatrix;
+	DMatrix locJacobian(1, 7);
+	locJacobian.Zero();
+	locJacobian(0, 0) = locDeltaP3.Px()/locTotalDelta;
+	locJacobian(0, 1) = locDeltaP3.Py()/locTotalDelta;
+	locJacobian(0, 2) = locDeltaP3.Pz()/locTotalDelta;
+	double locVariance = (locCovarianceMatrix.Similarity(locJacobian))(0, 0);
 
-	double locFOM = TMath::Prob(locDeltaPOverPChiSq + locDeltaThetaChiSq, 2);
+	double locChiSq = locTotalDeltaSq/locVariance;
+	double locFOM = TMath::Prob(locChiSq, 3);
 	if(dDebugLevel > 10)
-		cout << "delta p over p, delta theta, total FOM = " << locDeltaPOverP << ", " << locDeltaTheta << ", " << locFOM << endl;
+		cout << "delta pxyz, var pxyz, total delsq, total var, total FOM = " << locDeltaP3.Px() << ", " << locDeltaP3.Py() << ", " << locDeltaP3.Pz() << ", " << locInputCovarianceMatrix(0, 0) << ", " << locInputCovarianceMatrix(1, 1) << ", " << locInputCovarianceMatrix(2, 2) << ", " << locTotalDeltaSq << ", " << locVariance << ", " << locFOM << endl;
+
 	return locFOM;
 }
 

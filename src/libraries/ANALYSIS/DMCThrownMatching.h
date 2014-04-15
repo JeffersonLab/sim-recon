@@ -29,100 +29,101 @@ class DMCThrownMatching : public JObject
 
 		JOBJECT_PUBLIC(DMCThrownMatching);
 
-		//SETTERS
-		inline void Set_ChargedHypoToThrownMap(const map<const DChargedTrackHypothesis*, const DMCThrown*>& locChargedHypoToThrownMap){dChargedHypoToThrownMap = locChargedHypoToThrownMap;}
-		inline void Set_ThrownToChargedHypoMap(const map<const DMCThrown*, deque<const DChargedTrackHypothesis*> >& locThrownToChargedHypoMap){dThrownToChargedHypoMap = locThrownToChargedHypoMap;}
-
-		inline void Set_ChargedToThrownMap(const map<const DChargedTrack*, const DMCThrown*>& locChargedToThrownMap){dChargedToThrownMap = locChargedToThrownMap;}
-		inline void Set_ThrownToChargedMap(const map<const DMCThrown*, const DChargedTrack*>& locThrownToChargedMap){dThrownToChargedMap = locThrownToChargedMap;}
-
-		inline void Set_NeutralHypoToThrownMap(const map<const DNeutralParticleHypothesis*, const DMCThrown*>& locNeutralHypoToThrownMap){dNeutralHypoToThrownMap = locNeutralHypoToThrownMap;}
-		inline void Set_ThrownToNeutralHypoMap(const map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> >& locThrownToNeutralHypoMap){dThrownToNeutralHypoMap = locThrownToNeutralHypoMap;}
-
-		inline void Set_NeutralToThrownMap(const map<const DNeutralParticle*, const DMCThrown*>& locNeutralToThrownMap){dNeutralToThrownMap = locNeutralToThrownMap;}
-		inline void Set_ThrownToNeutralMap(const map<const DMCThrown*, const DNeutralParticle*>& locThrownToNeutralMap){dThrownToNeutralMap = locThrownToNeutralMap;}
-
-		inline void Set_TOFPointToTruthMap(const map<const DTOFPoint*, const DTOFTruth*>& locTOFPointToTruthMap){dTOFPointToTruthMap = locTOFPointToTruthMap;}
-		inline void Set_TOFTruthToPointMap(const map<const DTOFTruth*, const DTOFPoint*>& locTOFTruthToPointMap){dTOFTruthToPointMap = locTOFTruthToPointMap;}
-
-		inline void Set_BCALShowerToTruthMap(map<const DBCALShower*, const DBCALTruthShower*>& locBCALShowerToTruthMap){dBCALShowerToTruthMap = locBCALShowerToTruthMap;}
-		inline void Set_BCALTruthToShowerMap(map<const DBCALTruthShower*, const DBCALShower*>& locBCALTruthToShowerMap){dBCALTruthToShowerMap = locBCALTruthToShowerMap;}
-
-		inline void Set_FCALShowerToTruthMap(map<const DFCALShower*, const DFCALTruthShower*>& locFCALShowerToTruthMap){dFCALShowerToTruthMap = locFCALShowerToTruthMap;}
-		inline void Set_FCALTruthToShowerMap(map<const DFCALTruthShower*, const DFCALShower*>& locFCALTruthToShowerMap){dFCALTruthToShowerMap = locFCALTruthToShowerMap;}
-
 		//GETTERS: INDIVIDUAL PARTICLES
 
 		//the below two functions return the hypothesis with PID = MC PID. if not available, returns one with best PID FOM
-		const DChargedTrackHypothesis* Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown) const;
-		const DNeutralParticleHypothesis* Get_MatchingNeutralHypothesis(const DMCThrown* locInputMCThrown) const;
+		const DChargedTrackHypothesis* Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown, double& locMatchFOM) const;
+		const DNeutralParticleHypothesis* Get_MatchingNeutralHypothesis(const DMCThrown* locInputMCThrown, double& locMatchFOM) const;
 
-		void Get_MatchingChargedHypotheses(const DMCThrown* locInputMCThrown, deque<const DChargedTrackHypothesis*>& locMatchingChargedHypotheses) const;
-		const DChargedTrack* Get_MatchingChargedTrack(const DMCThrown* locInputMCThrown) const;
+		bool Get_MatchingChargedHypotheses(const DMCThrown* locInputMCThrown, deque<const DChargedTrackHypothesis*>& locMatchingChargedHypotheses, double& locMatchFOM) const;
+		const DChargedTrack* Get_MatchingChargedTrack(const DMCThrown* locInputMCThrown, double& locMatchFOM) const;
 
-		void Get_MatchingNeutralHypotheses(const DMCThrown* locInputMCThrown, deque<const DNeutralParticleHypothesis*>& locMatchingNeutralHypotheses) const;
-		const DNeutralParticle* Get_MatchingNeutralParticle(const DMCThrown* locInputMCThrown) const;
+		bool Get_MatchingNeutralHypotheses(const DMCThrown* locInputMCThrown, deque<const DNeutralParticleHypothesis*>& locMatchingNeutralHypotheses, double& locMatchFOM) const;
+		const DNeutralParticle* Get_MatchingNeutralParticle(const DMCThrown* locInputMCThrown, double& locMatchFOM) const;
 
-		const DMCThrown* Get_MatchingMCThrown(const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
-		const DMCThrown* Get_MatchingMCThrown(const DChargedTrack* locChargedTrack) const;
+		const DMCThrown* Get_MatchingMCThrown(const DChargedTrackHypothesis* locChargedTrackHypothesis, double& locMatchFOM) const;
+		const DMCThrown* Get_MatchingMCThrown(const DChargedTrack* locChargedTrack, double& locMatchFOM) const;
 
-		const DMCThrown* Get_MatchingMCThrown(const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
-		const DMCThrown* Get_MatchingMCThrown(const DNeutralParticle* locNeutralParticle) const;
+		const DMCThrown* Get_MatchingMCThrown(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, double& locMatchFOM) const;
+		const DMCThrown* Get_MatchingMCThrown(const DNeutralParticle* locNeutralParticle, double& locMatchFOM) const;
 
 		//GETTERS: INDIVIDUAL HITS
-		const DTOFPoint* Get_MatchingTOFPoint(const DTOFTruth* locTOFTruth) const;
-		const DTOFTruth* Get_MatchingTOFTruth(const DTOFPoint* locTOFPoint) const;
+		const DTOFPoint* Get_MatchingTOFPoint(const DTOFTruth* locTOFTruth, double& locMatchFOM) const;
+		const DTOFTruth* Get_MatchingTOFTruth(const DTOFPoint* locTOFPoint, double& locMatchFOM) const;
 
-		const DBCALShower* Get_MatchingBCALShower(const DBCALTruthShower* locBCALTruthShower) const;
-		const DBCALTruthShower* Get_MatchingBCALTruthShower(const DBCALShower* locBCALShower) const;
+		const DBCALShower* Get_MatchingBCALShower(const DBCALTruthShower* locBCALTruthShower, double& locMatchFOM) const;
+		const DBCALTruthShower* Get_MatchingBCALTruthShower(const DBCALShower* locBCALShower, double& locMatchFOM) const;
 
-		const DFCALShower* Get_MatchingFCALShower(const DFCALTruthShower* locFCALTruthShower) const;
-		const DFCALTruthShower* Get_MatchingFCALTruthShower(const DFCALShower* locFCALShower) const;
+		const DFCALShower* Get_MatchingFCALShower(const DFCALTruthShower* locFCALTruthShower, double& locMatchFOM) const;
+		const DFCALTruthShower* Get_MatchingFCALTruthShower(const DFCALShower* locFCALShower, double& locMatchFOM) const;
 
 		//GETTERS: WHOLE MAPS
-		inline void Get_ChargedHypoToThrownMap(map<const DChargedTrackHypothesis*, const DMCThrown*>& locChargedHypoToThrownMap) const{locChargedHypoToThrownMap = dChargedHypoToThrownMap;}
-		inline void Get_ThrownToChargedHypoMap(map<const DMCThrown*, deque<const DChargedTrackHypothesis*> >& locThrownToChargedHypoMap) const{locThrownToChargedHypoMap = dThrownToChargedHypoMap;}
+		inline void Get_ChargedHypoToThrownMap(map<const DChargedTrackHypothesis*, pair<const DMCThrown*, double> >& locChargedHypoToThrownMap) const{locChargedHypoToThrownMap = dChargedHypoToThrownMap;}
+		inline void Get_ThrownToChargedHypoMap(map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> >& locThrownToChargedHypoMap) const{locThrownToChargedHypoMap = dThrownToChargedHypoMap;}
 
-		inline void Get_ChargedToThrownMap(map<const DChargedTrack*, const DMCThrown*>& locChargedToThrownMap) const{locChargedToThrownMap = dChargedToThrownMap;}
-		inline void Get_ThrownToChargedMap(map<const DMCThrown*, const DChargedTrack*>& locThrownToChargedMap) const{locThrownToChargedMap = dThrownToChargedMap;}
+		inline void Get_ChargedToThrownMap(map<const DChargedTrack*, pair<const DMCThrown*, double> >& locChargedToThrownMap) const{locChargedToThrownMap = dChargedToThrownMap;}
+		inline void Get_ThrownToChargedMap(map<const DMCThrown*, pair<const DChargedTrack*, double> >& locThrownToChargedMap) const{locThrownToChargedMap = dThrownToChargedMap;}
 
-		inline void Get_NeutralHypoToThrownMap(map<const DNeutralParticleHypothesis*, const DMCThrown*>& locNeutralHypoToThrownMap) const{locNeutralHypoToThrownMap = dNeutralHypoToThrownMap;}
-		inline void Get_ThrownToNeutralHypoMap(map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> >& locThrownToNeutralHypoMap) const{locThrownToNeutralHypoMap = dThrownToNeutralHypoMap;}
+		inline void Get_NeutralHypoToThrownMap(map<const DNeutralParticleHypothesis*, pair<const DMCThrown*, double> >& locNeutralHypoToThrownMap) const{locNeutralHypoToThrownMap = dNeutralHypoToThrownMap;}
+		inline void Get_ThrownToNeutralHypoMap(map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> >& locThrownToNeutralHypoMap) const{locThrownToNeutralHypoMap = dThrownToNeutralHypoMap;}
 
-		inline void Get_NeutralToThrownMap(map<const DNeutralParticle*, const DMCThrown*>& locNeutralToThrownMap) const{locNeutralToThrownMap = dNeutralToThrownMap;}
-		inline void Get_ThrownToNeutralMap(map<const DMCThrown*, const DNeutralParticle*>& locThrownToNeutralMap) const{locThrownToNeutralMap = dThrownToNeutralMap;}
+		inline void Get_NeutralToThrownMap(map<const DNeutralParticle*, pair<const DMCThrown*, double> >& locNeutralToThrownMap) const{locNeutralToThrownMap = dNeutralToThrownMap;}
+		inline void Get_ThrownToNeutralMap(map<const DMCThrown*, pair<const DNeutralParticle*, double> >& locThrownToNeutralMap) const{locThrownToNeutralMap = dThrownToNeutralMap;}
 
-		inline void Get_TOFPointToTruthMap(map<const DTOFPoint*, const DTOFTruth*>& locTOFPointToTruthMap) const{locTOFPointToTruthMap = dTOFPointToTruthMap;}
-		inline void Get_TOFTruthToPointMap(map<const DTOFTruth*, const DTOFPoint*>& locTOFTruthToPointMap) const{locTOFTruthToPointMap = dTOFTruthToPointMap;}
+		inline void Get_TOFPointToTruthMap(map<const DTOFPoint*, pair<const DTOFTruth*, double> >& locTOFPointToTruthMap) const{locTOFPointToTruthMap = dTOFPointToTruthMap;}
+		inline void Get_TOFTruthToPointMap(map<const DTOFTruth*, pair<const DTOFPoint*, double> >& locTOFTruthToPointMap) const{locTOFTruthToPointMap = dTOFTruthToPointMap;}
 
-		inline void Get_BCALShowerToTruthMap(map<const DBCALShower*, const DBCALTruthShower*>& locBCALShowerToTruthMap) const{locBCALShowerToTruthMap = dBCALShowerToTruthMap;}
-		inline void Get_BCALTruthToShowerMap(map<const DBCALTruthShower*, const DBCALShower*>& locBCALTruthToShowerMap) const{locBCALTruthToShowerMap = dBCALTruthToShowerMap;}
+		inline void Get_BCALShowerToTruthMap(map<const DBCALShower*, pair<const DBCALTruthShower*, double> >& locBCALShowerToTruthMap) const{locBCALShowerToTruthMap = dBCALShowerToTruthMap;}
+		inline void Get_BCALTruthToShowerMap(map<const DBCALTruthShower*, pair<const DBCALShower*, double> >& locBCALTruthToShowerMap) const{locBCALTruthToShowerMap = dBCALTruthToShowerMap;}
 
-		inline void Get_FCALShowerToTruthMap(map<const DFCALShower*, const DFCALTruthShower*>& locFCALShowerToTruthMap) const{locFCALShowerToTruthMap = dFCALShowerToTruthMap;}
-		inline void Get_FCALTruthToShowerMap(map<const DFCALTruthShower*, const DFCALShower*>& locFCALTruthToShowerMap) const{locFCALTruthToShowerMap = dFCALTruthToShowerMap;}
+		inline void Get_FCALShowerToTruthMap(map<const DFCALShower*, pair<const DFCALTruthShower*, double> >& locFCALShowerToTruthMap) const{locFCALShowerToTruthMap = dFCALShowerToTruthMap;}
+		inline void Get_FCALTruthToShowerMap(map<const DFCALTruthShower*, pair<const DFCALShower*, double> >& locFCALTruthToShowerMap) const{locFCALTruthToShowerMap = dFCALTruthToShowerMap;}
+
+		//SETTERS
+		inline void Set_ChargedHypoToThrownMap(const map<const DChargedTrackHypothesis*, pair<const DMCThrown*, double> >& locChargedHypoToThrownMap){dChargedHypoToThrownMap = locChargedHypoToThrownMap;}
+		inline void Set_ThrownToChargedHypoMap(const map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> >& locThrownToChargedHypoMap){dThrownToChargedHypoMap = locThrownToChargedHypoMap;}
+
+		inline void Set_ChargedToThrownMap(const map<const DChargedTrack*, pair<const DMCThrown*, double> >& locChargedToThrownMap){dChargedToThrownMap = locChargedToThrownMap;}
+		inline void Set_ThrownToChargedMap(const map<const DMCThrown*, pair<const DChargedTrack*, double> >& locThrownToChargedMap){dThrownToChargedMap = locThrownToChargedMap;}
+
+		inline void Set_NeutralHypoToThrownMap(const map<const DNeutralParticleHypothesis*, pair<const DMCThrown*, double> >& locNeutralHypoToThrownMap){dNeutralHypoToThrownMap = locNeutralHypoToThrownMap;}
+		inline void Set_ThrownToNeutralHypoMap(const map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> >& locThrownToNeutralHypoMap){dThrownToNeutralHypoMap = locThrownToNeutralHypoMap;}
+
+		inline void Set_NeutralToThrownMap(const map<const DNeutralParticle*, pair<const DMCThrown*, double> >& locNeutralToThrownMap){dNeutralToThrownMap = locNeutralToThrownMap;}
+		inline void Set_ThrownToNeutralMap(const map<const DMCThrown*, pair<const DNeutralParticle*, double> >& locThrownToNeutralMap){dThrownToNeutralMap = locThrownToNeutralMap;}
+
+		inline void Set_TOFPointToTruthMap(const map<const DTOFPoint*, pair<const DTOFTruth*, double> >& locTOFPointToTruthMap){dTOFPointToTruthMap = locTOFPointToTruthMap;}
+		inline void Set_TOFTruthToPointMap(const map<const DTOFTruth*, pair<const DTOFPoint*, double> >& locTOFTruthToPointMap){dTOFTruthToPointMap = locTOFTruthToPointMap;}
+
+		inline void Set_BCALShowerToTruthMap(map<const DBCALShower*, pair<const DBCALTruthShower*, double> >& locBCALShowerToTruthMap){dBCALShowerToTruthMap = locBCALShowerToTruthMap;}
+		inline void Set_BCALTruthToShowerMap(map<const DBCALTruthShower*, pair<const DBCALShower*, double> >& locBCALTruthToShowerMap){dBCALTruthToShowerMap = locBCALTruthToShowerMap;}
+
+		inline void Set_FCALShowerToTruthMap(map<const DFCALShower*, pair<const DFCALTruthShower*, double> >& locFCALShowerToTruthMap){dFCALShowerToTruthMap = locFCALShowerToTruthMap;}
+		inline void Set_FCALTruthToShowerMap(map<const DFCALTruthShower*, pair<const DFCALShower*, double> >& locFCALTruthToShowerMap){dFCALTruthToShowerMap = locFCALTruthToShowerMap;}
 
 	private:
 
-		map<const DChargedTrackHypothesis*, const DMCThrown*> dChargedHypoToThrownMap;
-		map<const DMCThrown*, deque<const DChargedTrackHypothesis*> > dThrownToChargedHypoMap;
+		//doubles are match FOM (for BCAL/FCAL/TOF: is match distance)
+		map<const DChargedTrackHypothesis*, pair<const DMCThrown*, double> > dChargedHypoToThrownMap;
+		map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> > dThrownToChargedHypoMap;
 
-		map<const DChargedTrack*, const DMCThrown*> dChargedToThrownMap;
-		map<const DMCThrown*, const DChargedTrack*> dThrownToChargedMap;
+		map<const DChargedTrack*, pair<const DMCThrown*, double> > dChargedToThrownMap;
+		map<const DMCThrown*, pair<const DChargedTrack*, double> > dThrownToChargedMap;
 
-		map<const DNeutralParticleHypothesis*, const DMCThrown*> dNeutralHypoToThrownMap;
-		map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> > dThrownToNeutralHypoMap;
+		map<const DNeutralParticleHypothesis*, pair<const DMCThrown*, double> > dNeutralHypoToThrownMap;
+		map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> > dThrownToNeutralHypoMap;
 
-		map<const DNeutralParticle*, const DMCThrown*> dNeutralToThrownMap;
-		map<const DMCThrown*, const DNeutralParticle*> dThrownToNeutralMap;
+		map<const DNeutralParticle*, pair<const DMCThrown*, double> > dNeutralToThrownMap;
+		map<const DMCThrown*, pair<const DNeutralParticle*, double> > dThrownToNeutralMap;
 
-		map<const DTOFPoint*, const DTOFTruth*> dTOFPointToTruthMap;
-		map<const DTOFTruth*, const DTOFPoint*> dTOFTruthToPointMap;
+		map<const DTOFPoint*, pair<const DTOFTruth*, double> > dTOFPointToTruthMap;
+		map<const DTOFTruth*, pair<const DTOFPoint*, double> > dTOFTruthToPointMap;
 
-		map<const DBCALShower*, const DBCALTruthShower*> dBCALShowerToTruthMap;
-		map<const DBCALTruthShower*, const DBCALShower*> dBCALTruthToShowerMap;
+		map<const DBCALShower*, pair<const DBCALTruthShower*, double> > dBCALShowerToTruthMap;
+		map<const DBCALTruthShower*, pair<const DBCALShower*, double> > dBCALTruthToShowerMap;
 
-		map<const DFCALShower*, const DFCALTruthShower*> dFCALShowerToTruthMap;
-		map<const DFCALTruthShower*, const DFCALShower*> dFCALTruthToShowerMap;
+		map<const DFCALShower*, pair<const DFCALTruthShower*, double> > dFCALShowerToTruthMap;
+		map<const DFCALTruthShower*, pair<const DFCALShower*, double> > dFCALTruthToShowerMap;
 };
 
 #endif // _DMCThrownMatching_

@@ -30,17 +30,19 @@ class DKinFitter_GlueX : public DKinFitter
 
 		const DKinFitParticle* Make_BeamParticle(const DBeamPhoton* locBeamPhoton);
 		const DKinFitParticle* Make_DetectedParticle(const DChargedTrackHypothesis* locChargedTrackHypothesis);
-		const DKinFitParticle* Make_DetectedParticle(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, bool locWillOnlyBeUsedInP4FitFlag = false); //if true uses particle, false uses associated shower
+		const DKinFitParticle* Make_DetectedShower(const DNeutralParticleHypothesis* locNeutralParticleHypothesis); //DO NOT call this unless the neutral is also in a vertex fit!
+		const DKinFitParticle* Make_DetectedParticle(const DNeutralParticleHypothesis* locNeutralParticleHypothesis);
 		const DKinFitParticle* Make_DecayingParticle(Particle_t locPID);
 		const DKinFitParticle* Make_MissingParticle(Particle_t locPID);
 		const DKinFitParticle* Make_TargetParticle(Particle_t locPID);
+		using DKinFitter::Make_DetectedParticle; //this is necessary because the above declaration hides the base class function, which is needed by DKinFitResults_factory
 
 		bool Fit_Reaction(void);
 
 		bool Propagate_TrackInfoToCommonVertex(DKinematicData* locKinematicData, const DKinFitParticle* locKinFitParticle, const TMatrixDSym* locVXi);
 
-		void Get_ParticleMapping_InputToSource(map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping) const{locParticleMapping = dParticleMapping_InputToSource;}
-		void Get_ParticleMapping_OutputToSource(map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping) const{locParticleMapping = dParticleMapping_OutputToSource;}
+		inline void Get_ParticleMapping_InputToSource(map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping) const{locParticleMapping = dParticleMapping_InputToSource;}
+		inline void Get_ParticleMapping_OutputToSource(map<const DKinFitParticle*, const DKinematicData*>& locParticleMapping) const{locParticleMapping = dParticleMapping_OutputToSource;}
 		const DKinematicData* Get_Source_FromInput(const DKinFitParticle* locKinFitParticle) const;
 		const DKinematicData* Get_Source_FromOutput(const DKinFitParticle* locKinFitParticle) const;
 		inline void Get_Pulls(map<const DKinematicData*, map<DKinFitPullType, double> >& locPulls) const{locPulls = dPulls;} //key is source data (NULL for rf-bunch), 2nd key is param type

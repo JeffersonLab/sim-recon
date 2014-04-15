@@ -20,6 +20,11 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::init(void)
 //------------------
 jerror_t DNeutralParticleHypothesis_factory_KinFit::brun(jana::JEventLoop *locEventLoop, int runnumber)
 {
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
+
+	dTargetZCenter = 0.0;
+	locGeometry->GetTargetZ(dTargetZCenter);
 	return NOERROR;
 }
 
@@ -31,63 +36,29 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
  	vector<const DKinFitResults*> locKinFitResultsVector;
 	locEventLoop->Get(locKinFitResultsVector);
 
-	const DParticleCombo* locParticleCombo;
-	const DParticleComboStep* locParticleComboStep;
-	const DNeutralShower* locNeutralShower;
-	const DNeutralParticleHypothesis* locNeutralParticleHypothesis;
-	DNeutralParticleHypothesis* locNewNeutralParticleHypothesis;
-	const DKinFitParticle* locKinFitParticle;
-
 	map<const DKinFitParticle*, DNeutralParticleHypothesis*> locKinFitParticleMap;
 	map<DNeutralParticleHypothesis*, deque<const DParticleCombo*> > locNeutralParticleComboMap;
 	map<const DKinematicData*, const DKinFitParticle*> locReverseParticleMapping;
 
 	for(size_t loc_i = 0; loc_i < locKinFitResultsVector.size(); ++loc_i)
 	{
-		locParticleCombo = locKinFitResultsVector[loc_i]->Get_ParticleCombo();
+		set<const DParticleCombo*> locParticleCombos;
+		locKinFitResultsVector[loc_i]->Get_ParticleCombos(locParticleCombos);
+		const DParticleCombo* locParticleCombo = *(locParticleCombos.begin());
 		locKinFitResultsVector[loc_i]->Get_ReverseParticleMapping(locReverseParticleMapping);
-
-		//loop over previous kinfitresults objects, see if the kinfit results are identical: if so, don't need to correct new tracks for the results
-		bool locMatchFlag = false;
-		for(size_t loc_j = 0; loc_j < loc_i; ++loc_j)
-		{
-			if(!locParticleCombo->Will_KinFitBeIdentical(locKinFitResultsVector[loc_j]->Get_ParticleCombo()))
-				continue;
-
-			//kinfit results are identical: setup the maps so that the charged tracks are copied instead of created anew
-			for(size_t loc_k = 0; loc_k < locParticleCombo->Get_NumParticleComboSteps(); ++loc_k)
-			{
-				for(size_t loc_l = 0; loc_l < locParticleCombo->Get_ParticleComboStep(loc_k)->Get_NumFinalParticles(); ++loc_l)
-				{
-					const DKinematicData* locSourceData = locParticleCombo->Get_ParticleComboStep(loc_k)->Get_FinalParticle_Measured(loc_l);
-					locKinFitParticle = locReverseParticleMapping[locSourceData];
-					if(locKinFitParticle == NULL)
-						continue; //e.g. a decaying resonance particle not involved in the kinfit
-					if((locKinFitParticle->Get_KinFitParticleType() != d_DetectedParticle) || (locKinFitParticle->Get_Charge() != 0))
-						continue;
-					locNewNeutralParticleHypothesis = locKinFitParticleMap[locKinFitParticle];
-					locNeutralParticleComboMap[locNewNeutralParticleHypothesis].push_back(locParticleCombo);
-				}
-			}
-			locMatchFlag = true;
-			break;
-		}
-		if(locMatchFlag)
-			continue;
-
 		for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
 		{
-			locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
+			const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
 			for(size_t loc_k = 0; loc_k < locParticleComboStep->Get_NumFinalParticles(); ++loc_k)
 			{
 				if(!locParticleComboStep->Is_FinalParticleDetected(loc_k))
 					continue;
 				if(!locParticleComboStep->Is_FinalParticleNeutral(loc_k))
 					continue;
-				locKinFitParticle = locReverseParticleMapping[locParticleComboStep->Get_FinalParticle_Measured(loc_k)];
-				locNeutralShower = static_cast<const DNeutralShower*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_k));
-				locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticleComboStep->Get_FinalParticle(loc_k));
-				locNewNeutralParticleHypothesis = Build_NeutralParticleHypothesis(locNeutralParticleHypothesis, locKinFitParticle, locNeutralShower, locParticleCombo);
+				const DKinFitParticle* locKinFitParticle = locReverseParticleMapping[locParticleComboStep->Get_FinalParticle_Measured(loc_k)];
+				const DNeutralShower* locNeutralShower = static_cast<const DNeutralShower*>(locParticleComboStep->Get_FinalParticle_SourceObject(loc_k));
+				const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticleComboStep->Get_FinalParticle(loc_k));
+				DNeutralParticleHypothesis* locNewNeutralParticleHypothesis = Build_NeutralParticleHypothesis(locNeutralParticleHypothesis, locKinFitParticle, locNeutralShower, locParticleCombo);
 				locKinFitParticleMap[locKinFitParticle] = locNewNeutralParticleHypothesis;
 				locNeutralParticleComboMap[locNewNeutralParticleHypothesis] = deque<const DParticleCombo*>(1, locParticleCombo);
 			}
@@ -98,7 +69,7 @@ jerror_t DNeutralParticleHypothesis_factory_KinFit::evnt(jana::JEventLoop* locEv
 	map<DNeutralParticleHypothesis*, deque<const DParticleCombo*> >::iterator locIterator;
 	for(locIterator = locNeutralParticleComboMap.begin(); locIterator != locNeutralParticleComboMap.end(); ++locIterator)
 	{
-		locNewNeutralParticleHypothesis = locIterator->first;
+		DNeutralParticleHypothesis* locNewNeutralParticleHypothesis = locIterator->first;
 		deque<const DParticleCombo*>& locParticleCombos = locIterator->second;
 		for(size_t loc_i = 0; loc_i < locParticleCombos.size(); ++loc_i)
 			locNewNeutralParticleHypothesis->AddAssociatedObject(locParticleCombos[loc_i]);
@@ -135,7 +106,23 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory_KinFit::Build_Neu
 		locNewNeutralParticleHypothesis->setPathLength(locPathLength, locPathLengthUncertainty);
 	}
 
-	//don't recompute EITHER dedx chisq OR timing chisq: after kinfit timing auto lined up! (even to RF) only orig info and kinfit FOM matters
+	// Calculate DNeutralParticleHypothesis FOM
+	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
+	double locRFTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+	double locPropagatedRFTime = locRFTime + (locNewNeutralParticleHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
+	double locStartTimeVariance = locEventRFBunch->dTimeVariance;
+
+	double locPathLength = locNewNeutralParticleHypothesis->pathLength();
+	double locBeta = locNewNeutralParticleHypothesis->momentum().Mag()/locNewNeutralParticleHypothesis->energy();
+	double locFlightTime = locPathLength/(locBeta*SPEED_OF_LIGHT);
+	double locProjectedTime = locNewNeutralParticleHypothesis->t1() - locFlightTime;
+
+	double locTimeDifference = locPropagatedRFTime - locProjectedTime;
+	double locTimeDifferenceVariance = (locNewNeutralParticleHypothesis->errorMatrix())(6, 6) + locStartTimeVariance;
+	locNewNeutralParticleHypothesis->dChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
+	unsigned int locNDF = 1;
+	locNewNeutralParticleHypothesis->dFOM = TMath::Prob(locNewNeutralParticleHypothesis->dChiSq, locNDF);
+
 	return locNewNeutralParticleHypothesis;
 }
 

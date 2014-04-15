@@ -47,7 +47,7 @@ const DKinFitParticle* DKinFitter_GlueX::Make_BeamParticle(const DBeamPhoton* lo
 	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
 	Particle_t locPID = locKinematicData->PID();
 
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_BeamParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_BeamParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
 	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
 }
@@ -59,53 +59,56 @@ const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DChargedTra
 	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
 	Particle_t locPID = locKinematicData->PID();
 
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
 	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
 }
 
-const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, bool locWillOnlyBeUsedInP4FitFlag)
+const DKinFitParticle* DKinFitter_GlueX::Make_DetectedParticle(const DNeutralParticleHypothesis* locNeutralParticleHypothesis)
 {
 	const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locNeutralParticleHypothesis);
 	Particle_t locPID = locKinematicData->PID();
 
-	const DKinFitParticle* locKinFitParticle;
-	if(locWillOnlyBeUsedInP4FitFlag)
-	{
-		//use DNeutralParticleHypothesis object (assumes vertex is at target center! NOT IDEAL, AVOID IF POSSIBLE!!)
-	  TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
-	  TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
-	  locKinFitParticle = DKinFitter::Make_DetectedParticle(ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
-	}
-	else
-	{
-		//use DNeutralShower object (doesn't make assumption about vertex!)
-		vector<const DNeutralShower*> locNeutralShowers;
-		locNeutralParticleHypothesis->GetT(locNeutralShowers);
-		const DNeutralShower* locNeutralShower = locNeutralShowers[0];
-		locKinFitParticle = DKinFitter::Make_DetectedShower(ParticleMass(locPID), TLorentzVector(locNeutralShower->dSpacetimeVertex.X(),locNeutralShower->dSpacetimeVertex.Y(),locNeutralShower->dSpacetimeVertex.Z(),locNeutralShower->dSpacetimeVertex.T()), locNeutralShower->dEnergy, &(locNeutralShower->dCovarianceMatrix));
-	}
+	//use DNeutralParticleHypothesis object (assumes vertex is at target center! NOT IDEAL, AVOID IF POSSIBLE!!)
+	TLorentzVector locSpacetimeVertex(locKinematicData->position().X(),locKinematicData->position().Y(),locKinematicData->position().Z(), locKinematicData->time());
+	TVector3 locMomentum(locKinematicData->momentum().X(),locKinematicData->momentum().Y(),locKinematicData->momentum().Z());
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID), locSpacetimeVertex, locMomentum, &(locKinematicData->errorMatrix()));
+
+	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
+	return locKinFitParticle;
+}
+
+const DKinFitParticle* DKinFitter_GlueX::Make_DetectedShower(const DNeutralParticleHypothesis* locNeutralParticleHypothesis)
+{
+	const DKinematicData* locKinematicData = static_cast<const DKinematicData*>(locNeutralParticleHypothesis);
+	Particle_t locPID = locKinematicData->PID();
+
+	//use DNeutralShower object (doesn't make assumption about vertex!)
+	const DNeutralShower* locNeutralShower = NULL;
+	locNeutralParticleHypothesis->GetSingle(locNeutralShower);
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DetectedShower(PDGtype(locPID), ParticleMass(locPID), TLorentzVector(locNeutralShower->dSpacetimeVertex.X(),locNeutralShower->dSpacetimeVertex.Y(),locNeutralShower->dSpacetimeVertex.Z(),locNeutralShower->dSpacetimeVertex.T()), locNeutralShower->dEnergy, &(locNeutralShower->dCovarianceMatrix));
+
 	dParticleMapping_InputToSource[locKinFitParticle] = locKinematicData;
 	return locKinFitParticle;
 }
 
 const DKinFitParticle* DKinFitter_GlueX::Make_DecayingParticle(Particle_t locPID)
 {
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DecayingParticle(ParticleCharge(locPID), ParticleMass(locPID));
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_DecayingParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID));
 	dParticleMapping_InputToSource[locKinFitParticle] = NULL;
 	return locKinFitParticle;
 }
 
 const DKinFitParticle* DKinFitter_GlueX::Make_MissingParticle(Particle_t locPID)
 {
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_MissingParticle(ParticleCharge(locPID), ParticleMass(locPID));
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_MissingParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID));
 	dParticleMapping_InputToSource[locKinFitParticle] = NULL;
 	return locKinFitParticle;
 }
 
 const DKinFitParticle* DKinFitter_GlueX::Make_TargetParticle(Particle_t locPID)
 {
-	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_TargetParticle(ParticleCharge(locPID), ParticleMass(locPID));
+	const DKinFitParticle* locKinFitParticle = DKinFitter::Make_TargetParticle(PDGtype(locPID), ParticleCharge(locPID), ParticleMass(locPID));
 	dParticleMapping_InputToSource[locKinFitParticle] = NULL;
 	return locKinFitParticle;
 }

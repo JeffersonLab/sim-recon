@@ -6,6 +6,7 @@
 #include <math.h>
 #include <iostream>
 #include <map>
+#include <set>
 #include <limits>
 
 #include "TVector3.h"
@@ -19,6 +20,14 @@
 #include "DKinFitParticle.h"
 
 using namespace std;
+
+enum DKinFitStatus
+{
+	d_KinFitSuccessful = 0,
+	d_KinFitFailedSetup,
+	d_KinFitFailedInversion,
+	d_KinFitTooManyIterations
+};
 
 class DKinFitter //purely virtual: cannot directly instantiate class, can only inherit from it
 {
@@ -34,24 +43,61 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		//CREATE PARTICLES
 			//If multiple constraints, it is EXTREMELY CRITICAL that only one DKinFitParticle be created per particle, so that the particles are correctly linked across constraints!!
-		const DKinFitParticle* Make_DecayingParticle(int locCharge, double locMass);
-		const DKinFitParticle* Make_MissingParticle(int locCharge, double locMass);
-		const DKinFitParticle* Make_BeamParticle(int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix);
-		const DKinFitParticle* Make_TargetParticle(int locCharge, double locMass);
-		const DKinFitParticle* Make_DetectedParticle(int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix);
-		const DKinFitParticle* Make_DetectedShower(double locMass, TLorentzVector locSpacetimeVertex, double locShowerEnergy, const TMatrixDSym* locCovarianceMatrix);
+			//data is not registered with the fitter (memory is though)
+		const DKinFitParticle* Make_DecayingParticle(int locPID, int locCharge, double locMass);
+		const DKinFitParticle* Make_MissingParticle(int locPID, int locCharge, double locMass);
+		const DKinFitParticle* Make_BeamParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix);
+		const DKinFitParticle* Make_TargetParticle(int locPID, int locCharge, double locMass);
+		const DKinFitParticle* Make_DetectedParticle(int locPID, int locCharge, double locMass, TLorentzVector locSpacetimeVertex, TVector3 locMomentum, const TMatrixDSym* locCovarianceMatrix);
+		const DKinFitParticle* Make_DetectedShower(int locPID, double locMass, TLorentzVector locSpacetimeVertex, double locShowerEnergy, const TMatrixDSym* locCovarianceMatrix);
 
-		//INPUT RF TIME AND FIT CONSTRAINTS
+		//INPUT RF TIME
 		void Set_RFTime(double locRFTime, double locRFUncertainty, const DKinFitParticle* locRFMatchedBeamParticle);
-		const DKinFitConstraint_Vertex* Add_VertexConstraint(const deque<const DKinFitParticle*>& locInitialParticles, const deque<const DKinFitParticle*>& locFinalParticles, TVector3& locVertexGuess);
-		const DKinFitConstraint_Spacetime* Add_SpacetimeConstraint(const deque<const DKinFitParticle*>& locInitialParticles, const deque<const DKinFitParticle*>& locFinalParticles, bool locUseRFTimeFlag, TVector3& locVertexGuess, double locCommonTimeGuess);
-		const DKinFitConstraint_P4* Add_P4Constraint(const deque<const DKinFitParticle*>& locInitialParticles, const deque<const DKinFitParticle*>& locFinalParticles);
+
+		//CREATE CONSTRAINTS
+			//data is not registered with the fitter (memory is though)
+		DKinFitConstraint_Vertex* Make_VertexConstraint(const deque<const DKinFitParticle*>& locInitialParticles, const deque<const DKinFitParticle*>& locFinalParticles, TVector3 locVertexGuess);
+		DKinFitConstraint_Spacetime* Make_SpacetimeConstraint(const deque<const DKinFitParticle*>& locInitialParticles, const deque<const DKinFitParticle*>& locFinalParticles, bool locUseRFTimeFlag, TVector3 locVertexGuess, double locCommonTimeGuess);
+		//note, below locConstrainInitialParticleMassFlag is ignored if the parent particle is beam/detected/open-ended-decaying (enforce p4 constraint instead)
+		DKinFitConstraint_P4* Make_P4Constraint(const deque<const DKinFitParticle*>& locInitialParticles, const deque<const DKinFitParticle*>& locFinalParticles, bool locConstrainInitialParticleMassFlag = true);
+
+		//CLONE CONSTRAINTS
+			//if need to modify a constraint without disrupting the original: note that particles aren't cloned!
+		inline DKinFitConstraint_P4* Clone_KinFitConstraint_P4(const DKinFitConstraint_P4* locConstraint)
+		{
+			return Clone_KinFitConstraint_P4(locConstraint, false);
+		}
+		inline DKinFitConstraint_Vertex* Clone_KinFitConstraint_Vertex(const DKinFitConstraint_Vertex* locConstraint)
+		{
+			return Clone_KinFitConstraint_Vertex(locConstraint, false);
+		}
+		inline DKinFitConstraint_Spacetime* Clone_KinFitConstraint_Spacetime(const DKinFitConstraint_Spacetime* locConstraint)
+		{
+			return Clone_KinFitConstraint_Spacetime(locConstraint, false);
+		}
+
+		//SORT CONSTRAINTS
+			//used to determine which order to perform partial fits to get vertex guesses prior to the full fit
+		bool Sort_Constraints(const deque<DKinFitConstraint*>& locOriginalConstraints, deque<pair<DKinFitConstraint_VertexBase*, set<DKinFitConstraint_P4*> > >& locSortedConstraints);
+
+		//SET CONSTRAINTS FOR FIT
+			//registers particles & constraints with the fitter
+			//clones input particles & constraints so that the originals aren't modified during fitting. clones are returned
+		const DKinFitConstraint_P4* Set_Constraint(const DKinFitConstraint_P4* locConstraint);
+		const DKinFitConstraint_Vertex* Set_Constraint(const DKinFitConstraint_Vertex* locConstraint);
+		const DKinFitConstraint_Spacetime* Set_Constraint(const DKinFitConstraint_Spacetime* locConstraint);
 
 		//FIT!
 		virtual bool Fit_Reaction(void); //IF YOU OVERRIDE THIS METHOD IN THE DERIVED CLASS, MAKE SURE YOU CALL THIS BASE CLASS METHOD!!
 
-		//GET/SET CONTROL VARIABLES
+		//GET STATUS (Fit_Reaction returns true/false for success/fail, but this provides more details on the failures
+		inline DKinFitStatus Get_KinFitStatus(void) const{return dKinFitStatus;}
 
+		//GET/SET CONTROL VARIABLES
+		inline void Set_ConvergenceChiSqDiff(double locConvergenceChiSqDiff){dConvergenceChiSqDiff = locConvergenceChiSqDiff;}
+		inline double Get_ConvergenceChiSqDiff(void) const{return dConvergenceChiSqDiff;}
+		inline void Set_ConvergenceChiSqDiff_LastResort(double locConvergenceChiSqDiff){dConvergenceChiSqDiff_LastResort = locConvergenceChiSqDiff;}
+		inline double Get_ConvergenceChiSqDiff_LastResort(void) const{return dConvergenceChiSqDiff_LastResort;}
 		inline void Set_LinkVerticesFlag(bool locLinkVerticesFlag){dLinkVerticesFlag = locLinkVerticesFlag;}
 		inline bool Get_LinkVerticesFlag(void) const{return dLinkVerticesFlag;}
 		inline void Set_DebugLevel(int locDebugLevel){dDebugLevel = locDebugLevel;}
@@ -94,6 +140,16 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 			map<const DKinFitParticle*, DKinFitParticle*>::const_iterator locIterator = dKinFitParticleIOMap.find(locInputKinFitParticle);
 			return ((locIterator != dKinFitParticleIOMap.end()) ? locIterator->second : NULL);
 		}
+		inline const DKinFitParticle* Get_InputKinFitParticle(const DKinFitParticle* locOutputKinFitParticle) const
+		{
+			map<const DKinFitParticle*, DKinFitParticle*>::const_iterator locIterator = dKinFitParticleIOMap.begin();
+			for(; locIterator != dKinFitParticleIOMap.end(); ++locIterator)
+			{
+				if(locIterator->second == locOutputKinFitParticle)
+					return locIterator->first;
+			}
+			return NULL;
+		}
 		inline void Get_KinFitConstraints(deque<const DKinFitConstraint*>& locKinFitConstraints) const
 		{
 			for(size_t loc_i = 0; loc_i < dKinFitConstraints.size(); ++loc_i)
@@ -104,6 +160,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		//GET UNCERTAINTIES
 		inline const TMatrixDSym* Get_VEta(void) {return dVEta;}
 		inline const TMatrixDSym* Get_VXi(void) {return dVXi;}
+		inline const TMatrixDSym* Get_V(void) {return dV;}
 
 		virtual bool Get_IsBFieldNearBeamline(void) const = 0;
 
@@ -121,6 +178,10 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		DKinFitParticle* Clone_KinFitParticle(const DKinFitParticle* locKinFitParticle);
 		TMatrixDSym* Clone_MatrixDSym(const TMatrixDSym* locMatrix);
 
+		DKinFitConstraint_P4* Clone_KinFitConstraint_P4(const DKinFitConstraint_P4* locConstraint, bool locCloneParticlesFlag);
+		DKinFitConstraint_Vertex* Clone_KinFitConstraint_Vertex(const DKinFitConstraint_Vertex* locConstraint, bool locCloneParticlesFlag);
+		DKinFitConstraint_Spacetime* Clone_KinFitConstraint_Spacetime(const DKinFitConstraint_Spacetime* locConstraint, bool locCloneParticlesFlag);
+
 		DKinFitParticle* Get_KinFitParticleResource(void);
 		DKinFitConstraint_Vertex* Get_KinFitConstraintVertexResource(void);
 		DKinFitConstraint_Spacetime* Get_KinFitConstraintSpacetimeResource(void);
@@ -133,23 +194,34 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		void Resize_Matrices(void);
 		void Zero_Matrices(void);
 
+		// PREPARE CONSTRAINTS
+		bool Prepare_Constraint(DKinFitConstraint_P4* locConstraint) const;
+		bool Prepare_Constraint(DKinFitConstraint_Vertex* locConstraint) const;
+		bool Prepare_Constraint(DKinFitConstraint_Spacetime* locConstraint) const;
+
+		// RESOLVE CONSTRAINTS
 		bool Resolve_Constraints(void);
-		bool Resolve_P4Constraints(void);
-		bool Resolve_DecayingParticleSpacetimeLinks(void);
-		bool Find_ConstrainableParticles(deque<pair<DKinFitParticle*, DKinFitConstraint_P4*> >& locConstrainableParticles, const deque<const DKinFitParticle*>& locConstrainedParticles);
-		void Constrain_Particle(pair<DKinFitParticle*, DKinFitConstraint_P4*>& locConstrainableParticle);
+		bool Resolve_Constraints(const deque<DKinFitConstraint*>& locConstraints, deque<DKinFitConstraint_VertexBase*>& locSortedVertexConstraints, bool locSortOnlyFlag) const;
+		bool Resolve_DecayingParticleSpacetimeLinks(const deque<DKinFitConstraint*>& locKinFitConstraints, deque<DKinFitConstraint_VertexBase*>& locSortedConstraints, bool locSortOnlyFlag) const;
+		bool Resolve_P4Constraints(const deque<DKinFitConstraint*>& locKinFitConstraints, bool locSortOnlyFlag) const;
+		bool Find_ConstrainableParticles(const deque<DKinFitConstraint_P4*>& locP4Constraints, deque<pair<DKinFitParticle*, DKinFitConstraint_P4*> >& locConstrainableParticles, const deque<const DKinFitParticle*>& locConstrainedParticles) const;
+		void Constrain_Particle(DKinFitParticle* locParticleToConstrain, DKinFitConstraint_P4* locConstraint, TLorentzVector& locP4) const;
+		bool Resolve_P4MassConstraints(const deque<DKinFitConstraint*>& locKinFitConstraints, bool locSortOnlyFlag) const;
+		bool Resolve_InclusiveP4(const deque<DKinFitConstraint*>& locKinFitConstraints) const;
+		void Mark_AsMissingMassConstraintIfNecessary(DKinFitConstraint_P4* locP4Constraint) const;
+		bool Group_Constraints(const deque<DKinFitConstraint_VertexBase*>& locSortedVertexConstraints, deque<pair<DKinFitConstraint_VertexBase*, set<DKinFitConstraint_P4*> > >& locSortedConstraints) const;
 
 		void Fill_InputMatrices(void);
 		void Update_ParticleParams(void);
-		TLorentzVector Calc_DecayingP4_FromDecayProducts(DKinFitConstraint_P4* locP4Constraint, bool locDecayMomentumFlag) const;
+		TLorentzVector Calc_DecayingP4(DKinFitConstraint_P4* locP4Constraint, bool locDecayMomentumFlag) const;
 
 		void Print_Matrix(const TMatrixD& locMatrix) const;
 		void Print_ParticleParams(const DKinFitParticle* locKinFitParticle) const;
 
 		void Calc_dF(void);
-		void Calc_dF_P4(DKinFitConstraint_P4* locKinFitConstraint_P4, const DKinFitParticle* locKinFitParticle, bool locInitialStateFlag, bool locDerivsOnlyFlag, bool locOriginalInitialStateFlag, DKinFitConstraint_P4* locKinFitSubConstraint_P4);
-		void Calc_dF_Mass(DKinFitConstraint_P4* locKinFitConstraint_P4);
-		void Calc_dF_Mass_Derivs(DKinFitConstraint_P4* locKinFitConstraint_P4, const TLorentzVector& locDecayingP4_FromDecayProducts, const DKinFitParticle* locKinFitParticle);
+		void Calc_dF_P4(DKinFitConstraint_P4* locKinFitConstraint_P4, const DKinFitParticle* locKinFitParticle, bool locInitialStateFlag, DKinFitConstraint_P4* locKinFitSubConstraint_P4);
+		TLorentzVector Calc_dF_MassP4(DKinFitConstraint_P4* locKinFitConstraint_P4, const DKinFitParticle* locKinFitParticle, bool locInitialStateFlag, bool locIsInvariantMassConstraint, DKinFitConstraint_P4* locKinFitSubConstraint_P4);
+		void Calc_dF_MassDerivs(DKinFitConstraint_P4* locKinFitConstraint_P4, const DKinFitParticle* locKinFitParticle, TLorentzVector locDecayingParticleDerivedP4, bool locInitialStateFlag, bool locIsInvariantMassConstraint, DKinFitConstraint_P4* locKinFitSubConstraint_P4);
 
 		void Calc_dF_Vertex(size_t locFIndex, const DKinFitParticle* locKinFitParticle, const DKinFitParticle* locKinFitParticle_DecayingSource, bool locInitialStateFlag, bool locOriginalInitialStateFlag);
 		void Calc_dF_Vertex_NotDecaying(size_t locFIndex, const DKinFitParticle* locKinFitParticle);
@@ -161,6 +233,7 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		void Calc_Pulls(void);
 		void Set_FinalTrackInfo(void);
+		void Calc_DecayingParticleJacobian(DKinFitConstraint_P4* locP4Constraint, bool locDecayVertexFlag, TMatrixD& locJacobian) const;
 
 		unsigned int dDebugLevel;
 
@@ -194,8 +267,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 		TMatrixD dF_dXi; //partial derivative of constraint equations wrst the unmeasurable unknowns
 		TMatrixD dF_dXi_T;
 
-		TMatrixDSym* dVXi;
+		TMatrixDSym* dVXi; //covariance matrix of dXi
 		TMatrixDSym* dVEta; //covariance matrix of dEta
+		TMatrixDSym* dV; //full covariance matrix: dVEta at top-left and dVXi at bottom-right (+ the eta, xi covariance)
 
 		unsigned int dNumXi; //num unknowns
 		unsigned int dNumEta; //num measurables
@@ -230,6 +304,9 @@ class DKinFitter //purely virtual: cannot directly instantiate class, can only i
 
 		unsigned int dMaxNumIterations;
 		bool dLinkVerticesFlag;
+		DKinFitStatus dKinFitStatus;
+		double dConvergenceChiSqDiff;
+		double dConvergenceChiSqDiff_LastResort; //if max # iterations hit, use this for final check (sometimes chisq walks (very slightly) forever without any meaningful change in the variables)
 };
 
 #endif // _DKinFitter_

@@ -1,27 +1,34 @@
 #include "DMCThrownMatching.h"
 
-void DMCThrownMatching::Get_MatchingChargedHypotheses(const DMCThrown* locInputMCThrown, deque<const DChargedTrackHypothesis*>& locMatchingChargedHypotheses) const
+bool DMCThrownMatching::Get_MatchingChargedHypotheses(const DMCThrown* locInputMCThrown, deque<const DChargedTrackHypothesis*>& locMatchingChargedHypotheses, double& locMatchFOM) const
 {
 	locMatchingChargedHypotheses.clear();
-	map<const DMCThrown*, deque<const DChargedTrackHypothesis*> >::const_iterator locIterator = dThrownToChargedHypoMap.find(locInputMCThrown);
-	if(locIterator != dThrownToChargedHypoMap.end())
-		locMatchingChargedHypotheses = locIterator->second;
+	map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> >::const_iterator locIterator = dThrownToChargedHypoMap.find(locInputMCThrown);
+	if(locIterator == dThrownToChargedHypoMap.end())
+		return false;
+
+	locMatchingChargedHypotheses = locIterator->second.first;
+	locMatchFOM = locIterator->second.second;
+	return true;
 }
 
-const DChargedTrack* DMCThrownMatching::Get_MatchingChargedTrack(const DMCThrown* locInputMCThrown) const
+const DChargedTrack* DMCThrownMatching::Get_MatchingChargedTrack(const DMCThrown* locInputMCThrown, double& locMatchFOM) const
 {
-	map<const DMCThrown*, const DChargedTrack*>::const_iterator locIterator = dThrownToChargedMap.find(locInputMCThrown);
-	if(locIterator != dThrownToChargedMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DMCThrown*, pair<const DChargedTrack*, double> >::const_iterator locIterator = dThrownToChargedMap.find(locInputMCThrown);
+	if(locIterator == dThrownToChargedMap.end())
+		return NULL;
+
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown) const
+const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown, double& locMatchFOM) const
 {
-	map<const DMCThrown*, deque<const DChargedTrackHypothesis*> >::const_iterator locIterator = dThrownToChargedHypoMap.find(locInputMCThrown);
+	map<const DMCThrown*, pair<deque<const DChargedTrackHypothesis*>, double> >::const_iterator locIterator = dThrownToChargedHypoMap.find(locInputMCThrown);
 	if(locIterator == dThrownToChargedHypoMap.end())
 		return NULL;
-	deque<const DChargedTrackHypothesis*> locHypotheses = locIterator->second;
+	deque<const DChargedTrackHypothesis*> locHypotheses = locIterator->second.first;
+	locMatchFOM = locIterator->second.second;
 
 	const DChargedTrackHypothesis* locBestHypothesis = NULL;
 	//double locBestFOM = -10.0;
@@ -37,12 +44,13 @@ const DChargedTrackHypothesis* DMCThrownMatching::Get_MatchingChargedHypothesis(
 	return locBestHypothesis;
 }
 
-const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralHypothesis(const DMCThrown* locInputMCThrown) const
+const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralHypothesis(const DMCThrown* locInputMCThrown, double& locMatchFOM) const
 {
-	map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> >::const_iterator locIterator = dThrownToNeutralHypoMap.find(locInputMCThrown);
+	map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> >::const_iterator locIterator = dThrownToNeutralHypoMap.find(locInputMCThrown);
 	if(locIterator == dThrownToNeutralHypoMap.end())
 		return NULL;
-	deque<const DNeutralParticleHypothesis*> locHypotheses = locIterator->second;
+	deque<const DNeutralParticleHypothesis*> locHypotheses = locIterator->second.first;
+	locMatchFOM = locIterator->second.second;
 
 	const DNeutralParticleHypothesis* locBestHypothesis = NULL;
 	//double locBestFOM = -10.0;
@@ -58,48 +66,60 @@ const DNeutralParticleHypothesis* DMCThrownMatching::Get_MatchingNeutralHypothes
 	return locBestHypothesis;
 }
 
-void DMCThrownMatching::Get_MatchingNeutralHypotheses(const DMCThrown* locInputMCThrown, deque<const DNeutralParticleHypothesis*>& locMatchingNeutralHypotheses) const
+bool DMCThrownMatching::Get_MatchingNeutralHypotheses(const DMCThrown* locInputMCThrown, deque<const DNeutralParticleHypothesis*>& locMatchingNeutralHypotheses, double& locMatchFOM) const
 {
 	locMatchingNeutralHypotheses.clear();
-	map<const DMCThrown*, deque<const DNeutralParticleHypothesis*> >::const_iterator locIterator = dThrownToNeutralHypoMap.find(locInputMCThrown);
-	if(locIterator != dThrownToNeutralHypoMap.end())
-		locMatchingNeutralHypotheses = locIterator->second;
+	map<const DMCThrown*, pair<deque<const DNeutralParticleHypothesis*>, double> >::const_iterator locIterator = dThrownToNeutralHypoMap.find(locInputMCThrown);
+	if(locIterator == dThrownToNeutralHypoMap.end())
+		return false;
+	locMatchFOM = locIterator->second.second;
+	locMatchingNeutralHypotheses = locIterator->second.first;
+	return true;
 }
 
-const DNeutralParticle* DMCThrownMatching::Get_MatchingNeutralParticle(const DMCThrown* locInputMCThrown) const
+const DNeutralParticle* DMCThrownMatching::Get_MatchingNeutralParticle(const DMCThrown* locInputMCThrown, double& locMatchFOM) const
 {
-	map<const DMCThrown*, const DNeutralParticle*>::const_iterator locIterator = dThrownToNeutralMap.find(locInputMCThrown);
-	if(locIterator != dThrownToNeutralMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DMCThrown*, pair<const DNeutralParticle*, double> >::const_iterator locIterator = dThrownToNeutralMap.find(locInputMCThrown);
+	if(locIterator == dThrownToNeutralMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrackHypothesis* locChargedTrackHypothesis, double& locMatchFOM) const
 {
-	map<const DChargedTrackHypothesis*, const DMCThrown*>::const_iterator locIterator = dChargedHypoToThrownMap.find(locChargedTrackHypothesis);
+	map<const DChargedTrackHypothesis*, pair<const DMCThrown*, double> >::const_iterator locIterator = dChargedHypoToThrownMap.find(locChargedTrackHypothesis);
 	if(locIterator != dChargedHypoToThrownMap.end())
-		return locIterator->second;
+	{
+		locMatchFOM = locIterator->second.second;
+		return locIterator->second.first;
+	}
+
 	//perhaps this is an object produced from the factories with the "KinFit" or "Combo" flags: try the source object
 	const DChargedTrack* locAssociatedChargedTrack = NULL;
 	locChargedTrackHypothesis->GetSingleT(locAssociatedChargedTrack);
 	if(locAssociatedChargedTrack == NULL)
 		return NULL;
-	return Get_MatchingMCThrown(locAssociatedChargedTrack);
+	return Get_MatchingMCThrown(locAssociatedChargedTrack, locMatchFOM);
 }
 
-const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrack* locChargedTrack) const
+const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DChargedTrack* locChargedTrack, double& locMatchFOM) const
 {
-	map<const DChargedTrack*, const DMCThrown*>::const_iterator locIterator = dChargedToThrownMap.find(locChargedTrack);
-	if(locIterator != dChargedToThrownMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DChargedTrack*, pair<const DMCThrown*, double> >::const_iterator locIterator = dChargedToThrownMap.find(locChargedTrack);
+	if(locIterator == dChargedToThrownMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const
+const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, double& locMatchFOM) const
 {
-	map<const DNeutralParticleHypothesis*, const DMCThrown*>::const_iterator locIterator = dNeutralHypoToThrownMap.find(locNeutralParticleHypothesis);
+	map<const DNeutralParticleHypothesis*, pair<const DMCThrown*, double> >::const_iterator locIterator = dNeutralHypoToThrownMap.find(locNeutralParticleHypothesis);
 	if(locIterator != dNeutralHypoToThrownMap.end())
-		return locIterator->second;
+	{
+		locMatchFOM = locIterator->second.second;
+		return locIterator->second.first;
+	}
 
 	//perhaps this is an object produced from the factories with the "KinFit" or "Combo" flags: try the source object
 	const DNeutralShower* locAssociatedNeutralShower_Input = NULL;
@@ -108,70 +128,80 @@ const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticleH
 		return NULL;
 
 	//look for a particle with the same source object
-	map<const DNeutralParticle*, const DMCThrown*>::const_iterator locParticleIterator;
+	map<const DNeutralParticle*, pair<const DMCThrown*, double> >::const_iterator locParticleIterator;
 	const DNeutralShower* locAssociatedNeutralShower_Check = NULL;
 	for(locParticleIterator = dNeutralToThrownMap.begin(); locParticleIterator != dNeutralToThrownMap.end(); ++locParticleIterator)
 	{
 		locParticleIterator->first->GetSingleT(locAssociatedNeutralShower_Check);
 		if(locAssociatedNeutralShower_Check == locAssociatedNeutralShower_Input)
-			return locParticleIterator->second;
+		{
+			locMatchFOM = locIterator->second.second;
+			return locParticleIterator->second.first;
+		}
 	}
 	return NULL;
 }
 
-const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticle* locNeutralParticle) const
+const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticle* locNeutralParticle, double& locMatchFOM) const
 {
-	map<const DNeutralParticle*, const DMCThrown*>::const_iterator locIterator = dNeutralToThrownMap.find(locNeutralParticle);
-	if(locIterator != dNeutralToThrownMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DNeutralParticle*, pair<const DMCThrown*, double> >::const_iterator locIterator = dNeutralToThrownMap.find(locNeutralParticle);
+	if(locIterator == dNeutralToThrownMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DTOFPoint* DMCThrownMatching::Get_MatchingTOFPoint(const DTOFTruth* locTOFTruth) const
+const DTOFPoint* DMCThrownMatching::Get_MatchingTOFPoint(const DTOFTruth* locTOFTruth, double& locMatchFOM) const
 {
-	map<const DTOFTruth*, const DTOFPoint*>::const_iterator locIterator = dTOFTruthToPointMap.find(locTOFTruth);
-	if(locIterator != dTOFTruthToPointMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DTOFTruth*, pair<const DTOFPoint*, double> >::const_iterator locIterator = dTOFTruthToPointMap.find(locTOFTruth);
+	if(locIterator == dTOFTruthToPointMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DTOFTruth* DMCThrownMatching::Get_MatchingTOFTruth(const DTOFPoint* locTOFPoint) const
+const DTOFTruth* DMCThrownMatching::Get_MatchingTOFTruth(const DTOFPoint* locTOFPoint, double& locMatchFOM) const
 {
-	map<const DTOFPoint*, const DTOFTruth*>::const_iterator locIterator = dTOFPointToTruthMap.find(locTOFPoint);
-	if(locIterator != dTOFPointToTruthMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DTOFPoint*, pair<const DTOFTruth*, double> >::const_iterator locIterator = dTOFPointToTruthMap.find(locTOFPoint);
+	if(locIterator == dTOFPointToTruthMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DBCALShower* DMCThrownMatching::Get_MatchingBCALShower(const DBCALTruthShower* locBCALTruthShower) const
+const DBCALShower* DMCThrownMatching::Get_MatchingBCALShower(const DBCALTruthShower* locBCALTruthShower, double& locMatchFOM) const
 {
-	map<const DBCALTruthShower*, const DBCALShower*>::const_iterator locIterator = dBCALTruthToShowerMap.find(locBCALTruthShower);
-	if(locIterator != dBCALTruthToShowerMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DBCALTruthShower*, pair<const DBCALShower*, double> >::const_iterator locIterator = dBCALTruthToShowerMap.find(locBCALTruthShower);
+	if(locIterator == dBCALTruthToShowerMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DBCALTruthShower* DMCThrownMatching::Get_MatchingBCALTruthShower(const DBCALShower* locBCALShower) const
+const DBCALTruthShower* DMCThrownMatching::Get_MatchingBCALTruthShower(const DBCALShower* locBCALShower, double& locMatchFOM) const
 {
-	map<const DBCALShower*, const DBCALTruthShower*>::const_iterator locIterator = dBCALShowerToTruthMap.find(locBCALShower);
-	if(locIterator != dBCALShowerToTruthMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DBCALShower*, pair<const DBCALTruthShower*, double> >::const_iterator locIterator = dBCALShowerToTruthMap.find(locBCALShower);
+	if(locIterator == dBCALShowerToTruthMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DFCALShower* DMCThrownMatching::Get_MatchingFCALShower(const DFCALTruthShower* locFCALTruthShower) const
+const DFCALShower* DMCThrownMatching::Get_MatchingFCALShower(const DFCALTruthShower* locFCALTruthShower, double& locMatchFOM) const
 {
-	map<const DFCALTruthShower*, const DFCALShower*>::const_iterator locIterator = dFCALTruthToShowerMap.find(locFCALTruthShower);
-	if(locIterator != dFCALTruthToShowerMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DFCALTruthShower*, pair<const DFCALShower*, double> >::const_iterator locIterator = dFCALTruthToShowerMap.find(locFCALTruthShower);
+	if(locIterator == dFCALTruthToShowerMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 
-const DFCALTruthShower* DMCThrownMatching::Get_MatchingFCALTruthShower(const DFCALShower* locFCALShower) const
+const DFCALTruthShower* DMCThrownMatching::Get_MatchingFCALTruthShower(const DFCALShower* locFCALShower, double& locMatchFOM) const
 {
-	map<const DFCALShower*, const DFCALTruthShower*>::const_iterator locIterator = dFCALShowerToTruthMap.find(locFCALShower);
-	if(locIterator != dFCALShowerToTruthMap.end())
-		return locIterator->second;
-	return NULL;
+	map<const DFCALShower*, pair<const DFCALTruthShower*, double> >::const_iterator locIterator = dFCALShowerToTruthMap.find(locFCALShower);
+	if(locIterator == dFCALShowerToTruthMap.end())
+		return NULL;
+	locMatchFOM = locIterator->second.second;
+	return locIterator->second.first;
 }
 

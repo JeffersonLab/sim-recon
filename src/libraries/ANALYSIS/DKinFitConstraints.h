@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <map>
+#include <set>
 #include <utility>
 
 #include "TVector3.h"
@@ -16,9 +17,14 @@ class DKinFitParticle;
 class DKinFitConstraint //purely virtual: cannot directly instantiate class, can only inherit from it
 {
 	friend class DKinFitter;
+	public:
+		inline string Get_ConstraintString(void) const{return dConstraintString;}
+		inline void Set_ConstraintString(string locConstraintString){dConstraintString = locConstraintString;}
 
 	protected:
 		virtual ~DKinFitConstraint(void) = 0; //forces abstractness
+
+		string dConstraintString; //e.g. "m_{#it{#Lambda}}
 };
 
 class DKinFitConstraint_VertexBase : public DKinFitConstraint //purely virtual: cannot directly instantiate class, can only inherit from it
@@ -30,6 +36,14 @@ class DKinFitConstraint_VertexBase : public DKinFitConstraint //purely virtual: 
 		inline int Get_VxParamIndex(void) const{return dVxParamIndex;}
 		int Get_FIndex(const DKinFitParticle* locKinFitParticle) const;
 
+		void Replace_DecayingParticle(const DKinFitParticle* locOriginalParticle, const DKinFitParticle* locTreatAsDetectedParticle);
+
+		virtual void Set_VertexGuess(TVector3& locVertex) = 0; //inheriting classes MUST define this method
+
+		inline deque<const DKinFitParticle*> Get_FullConstrainParticles(void) const{return deque<const DKinFitParticle*>(dFullConstrainParticles.begin(), dFullConstrainParticles.end());}
+		inline deque<const DKinFitParticle*> Get_NoConstrainParticles(void) const{return deque<const DKinFitParticle*>(dNoConstrainParticles.begin(), dNoConstrainParticles.end());}
+		inline deque<pair<const DKinFitParticle*, bool> > Get_DecayingParticles(void) const{return deque<pair<const DKinFitParticle*, bool> >(dDecayingParticles.begin(), dDecayingParticles.end());}
+
 	protected:
 
 		DKinFitConstraint_VertexBase(void);
@@ -40,7 +54,25 @@ class DKinFitConstraint_VertexBase : public DKinFitConstraint //purely virtual: 
 		inline void Set_FIndex(const DKinFitParticle* locKinFitParticle, unsigned int locFIndex){dConstraintEquationParticleMap[locKinFitParticle] = locFIndex;}
 		inline void Set_VxParamIndex(int locVxParamIndex){dVxParamIndex = locVxParamIndex;}
 
+		inline void Set_FullConstrainParticles(deque<DKinFitParticle*>& locFullConstrainParticles){dFullConstrainParticles = locFullConstrainParticles;}
+		inline void Set_NoConstrainParticles(deque<DKinFitParticle*>& locNoConstrainParticles){dNoConstrainParticles = locNoConstrainParticles;}
+		inline void Set_DecayingParticles(deque<pair<DKinFitParticle*, bool> >& locDecayingParticles)
+		{
+			dDecayingParticles = locDecayingParticles;
+			for(size_t loc_i = 0; loc_i < dDecayingParticles.size(); ++loc_i)
+				dDecayingParticlesToAssign.insert(dDecayingParticles[loc_i].first);
+		}
+
+		inline void Add_FullConstrainParticle(DKinFitParticle* locKinFitParticle){dFullConstrainParticles.push_back(locKinFitParticle);}
+		inline void Add_NoConstrainParticle(DKinFitParticle* locKinFitParticle){dNoConstrainParticles.push_back(locKinFitParticle);}
+
 		int dVxParamIndex; //location of the Vx uncertainty in the dVXi covariance matrix term (Vy & Vz are the subsequent terms)
+
+		deque<pair<DKinFitParticle*, bool> > dDecayingParticles; //bool is true if vertex is production vertex / particle in final state, false if decay vertex / initial state
+		deque<DKinFitParticle*> dFullConstrainParticles; //charged particles, decaying particles, beam particles (not neutral showers!)
+		deque<DKinFitParticle*> dNoConstrainParticles; //missing particles & neutral showers //not used to constrain vertex or time, but fit vertex is set for this particle
+
+		set<DKinFitParticle*> dDecayingParticlesToAssign; //decaying particles not yet assigned to either constrain or be constrained ("no constrain")
 
 		map<const DKinFitParticle*, unsigned int> dConstraintEquationParticleMap; //key is particle (NULL for RF time), value is the constraint equation index (must check whether decaying or not to see what f-matrix it's in!)
 };
@@ -51,10 +83,7 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint_VertexBase
 
 	public:
 		inline TVector3 Get_CommonVertex(void) const{return dCommonVertex;}
-
-		inline deque<const DKinFitParticle*> Get_ConstrainVertexParticles(void) const{return deque<const DKinFitParticle*>(dConstrainVertexParticles.begin(), dConstrainVertexParticles.end());}
-		inline deque<const DKinFitParticle*> Get_NoConstrainParticles(void) const{return deque<const DKinFitParticle*>(dNoConstrainParticles.begin(), dNoConstrainParticles.end());}
-		inline deque<pair<const DKinFitParticle*, bool> > Get_DecayingParticles(void) const{return deque<pair<const DKinFitParticle*, bool> >(dDecayingParticles.begin(), dDecayingParticles.end());}
+		inline void Set_VertexGuess(TVector3& locVertex){dCommonVertex = locVertex;}
 
 		bool Get_DecayingParticleInInitialStateFlag(const DKinFitParticle* locKinFitParticle) const;
 
@@ -66,17 +95,6 @@ class DKinFitConstraint_Vertex : public DKinFitConstraint_VertexBase
 
 		void Set_CommonVertex(TVector3 locCommonVertex){dCommonVertex = locCommonVertex;}
 
-		inline void Set_ConstrainVertexParticles(deque<DKinFitParticle*>& locConstrainVertexParticles){dConstrainVertexParticles = locConstrainVertexParticles;}
-		inline void Set_NoConstrainParticles(deque<DKinFitParticle*>& locNoConstrainParticles){dNoConstrainParticles = locNoConstrainParticles;}
-		inline void Set_DecayingParticles(deque<pair<DKinFitParticle*, bool> >& locDecayingParticles){dDecayingParticles = locDecayingParticles;}
-
-		inline void Add_NoConstrainParticle(DKinFitParticle* locKinFitParticle){dNoConstrainParticles.push_back(locKinFitParticle);}
-		inline void Add_ConstrainVertexParticle(DKinFitParticle* locKinFitParticle){dConstrainVertexParticles.push_back(locKinFitParticle);}
-
-		deque<DKinFitParticle*> dConstrainVertexParticles; //charged particles, decaying particles, beam particles
-		deque<pair<DKinFitParticle*, bool> > dDecayingParticles; //bool is true if vertex is production vertex / particle in final state, false if decay vertex / initial state
-		deque<DKinFitParticle*> dNoConstrainParticles; //missing particles & neutral showers //not used to constrain vertex or time, but fit vertex is set for this particle
-
 		TVector3 dCommonVertex; //for propagating the track to this point
 };
 
@@ -85,18 +103,19 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_VertexBase
 	friend class DKinFitter;
 
 	public:
+		inline void Set_TimeGuess(double locTime){dCommonSpacetimeVertex.SetT(locTime);}
+		inline void Set_VertexGuess(TVector3& locVertex){dCommonSpacetimeVertex.SetVect(locVertex);}
+		inline void Set_SpacetimeGuess(TLorentzVector& locSpacetimeVertex){dCommonSpacetimeVertex = locSpacetimeVertex;}
+
 		inline TLorentzVector Get_CommonSpacetimeVertex(void) const{return dCommonSpacetimeVertex;}
 		inline TVector3 Get_CommonVertex(void) const{return dCommonSpacetimeVertex.Vect();}
 		inline double Get_CommonTime(void) const{return dCommonSpacetimeVertex.T();}
 
 		inline bool Get_UseRFTimeFlag(void) const{return dUseRFTimeFlag;}
-
+		inline const DKinFitParticle* Get_BeamParticle(void) const{return dBeamParticle;}
 		inline int Get_TParamIndex(void) const{return dTParamIndex;}
 
-		inline deque<const DKinFitParticle*> Get_ConstrainSpacetimeParticles(void) const{return deque<const DKinFitParticle*>(dConstrainSpacetimeParticles.begin(), dConstrainSpacetimeParticles.end());}
 		inline deque<const DKinFitParticle*> Get_OnlyConstrainTimeParticles(void) const{return deque<const DKinFitParticle*>(dOnlyConstrainTimeParticles.begin(), dOnlyConstrainTimeParticles.end());} //neutral showers
-		inline deque<const DKinFitParticle*> Get_NoConstrainParticles(void) const{return deque<const DKinFitParticle*>(dNoConstrainParticles.begin(), dNoConstrainParticles.end());}
-		inline deque<pair<const DKinFitParticle*, bool> > Get_DecayingParticles(void) const{return deque<pair<const DKinFitParticle*, bool> >(dDecayingParticles.begin(), dDecayingParticles.end());}
 
 		bool Get_DecayingParticleInInitialStateFlag(const DKinFitParticle* locKinFitParticle) const;
 
@@ -113,22 +132,14 @@ class DKinFitConstraint_Spacetime : public DKinFitConstraint_VertexBase
 		inline void Set_UseRFTimeFlag(bool locUseRFTimeFlag){dUseRFTimeFlag = locUseRFTimeFlag;}
 		inline void Set_TParamIndex(int locTParamIndex){dTParamIndex = locTParamIndex;}
 
-		inline void Add_ConstrainSpacetimeParticle(DKinFitParticle* locKinFitParticle){dConstrainSpacetimeParticles.push_back(locKinFitParticle);}
-		inline void Add_NoConstrainParticle(DKinFitParticle* locKinFitParticle){dNoConstrainParticles.push_back(locKinFitParticle);}
-
-		inline void Set_ConstrainSpacetimeParticles(deque<DKinFitParticle*>& locConstrainSpacetimeParticles){dConstrainSpacetimeParticles = locConstrainSpacetimeParticles;}
 		inline void Set_OnlyConstrainTimeParticles(deque<DKinFitParticle*>& locOnlyConstrainTimeParticles){dOnlyConstrainTimeParticles = locOnlyConstrainTimeParticles;}
-		inline void Set_NoConstrainParticles(deque<DKinFitParticle*>& locNoConstrainParticles){dNoConstrainParticles = locNoConstrainParticles;}
-		inline void Set_DecayingParticles(deque<pair<DKinFitParticle*, bool> >& locDecayingParticles){dDecayingParticles = locDecayingParticles;}
 
-		deque<DKinFitParticle*> dConstrainSpacetimeParticles; //charged particles, decaying particles, beam particles
 		deque<DKinFitParticle*> dOnlyConstrainTimeParticles; //neutral showers //not used to constrain vertex, but fit vertex is used for time constraint
-		deque<DKinFitParticle*> dNoConstrainParticles; //missing particles //not used to constrain vertex or time, but fit vertex & time are set to this particle
-		deque<pair<DKinFitParticle*, bool> > dDecayingParticles; //bool is true if vertex is production vertex / particle in final state, false if decay vertex / initial state
 
 		bool dUseRFTimeFlag; //for time constraint
 		TLorentzVector dCommonSpacetimeVertex; //for propagating the track to this point
 		int dTParamIndex;
+		DKinFitParticle* dBeamParticle; //NULL if not included in this constraint
 };
 
 class DKinFitConstraint_P4 : public DKinFitConstraint //one will be implemented as a p4 constraint, the rest as invariant mass constraints
@@ -136,12 +147,19 @@ class DKinFitConstraint_P4 : public DKinFitConstraint //one will be implemented 
 	friend class DKinFitter;
 
 	public:
-		inline size_t Get_FIndex(void) const{return dFIndex;}
+		inline int Get_FIndex(void) const{return dFIndex;}
+		inline void Set_ConstrainInitialParticleMassFlag(bool locConstrainMassFlag){dConstrainMassFlag = locConstrainMassFlag;}
+		inline bool Get_ConstrainInitialParticleMassFlag(void) const{return dConstrainMassFlag;}
+		inline bool Get_ConstrainedParticleIsInInitialStateFlag(void) const{return dConstrainedParticleIsInInitialStateFlag;}
+		inline bool Get_ConstrainMassByInvariantMassFlag(void) const{return dConstrainMassByInvariantMassFlag;}
+		inline bool Get_IsActualP4ConstraintFlag(void) const{return dIsActualP4ConstraintFlag;}
 
 		inline const DKinFitParticle* Get_ConstrainedP4Particle(void) const{return dConstrainedP4Particle;}
 
 		inline deque<const DKinFitParticle*> Get_InitialParticles(void) const{return deque<const DKinFitParticle*>(dInitialParticles.begin(), dInitialParticles.end());}
 		inline deque<const DKinFitParticle*> Get_FinalParticles(void) const{return deque<const DKinFitParticle*>(dFinalParticles.begin(), dFinalParticles.end());}
+
+		void Replace_Particle(const DKinFitParticle* locOriginalParticle, bool locInitialStateFlag, const DKinFitParticle* locTreatAsDetectedParticle);
 
 	private:
 		DKinFitConstraint_P4(void);
@@ -149,13 +167,18 @@ class DKinFitConstraint_P4 : public DKinFitConstraint //one will be implemented 
 
 		void Reset(void);
 
-		inline void Set_FIndex(size_t locFIndex){dFIndex = locFIndex;}
+		inline void Set_FIndex(int locFIndex){dFIndex = locFIndex;}
 		inline void Set_ConstrainedP4Particle(DKinFitParticle* locConstrainedP4Particle){dConstrainedP4Particle = locConstrainedP4Particle;}
 		inline void Set_InitialParticles(const deque<DKinFitParticle*>& locInitialParticles){dInitialParticles = locInitialParticles;}
 		inline void Set_FinalParticles(const deque<DKinFitParticle*>& locFinalParticles){dFinalParticles = locFinalParticles;}
+		inline void Set_ConstrainedParticleIsInInitialStateFlag(bool locFlag){dConstrainedParticleIsInInitialStateFlag = locFlag;}
 
-		size_t dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term
+		int dFIndex; //starting row index of the equation(s) corresponding to these constraints in the dF matrix term // -1 if a decaying particle mass constraint not applied
 
+		bool dConstrainMassFlag;
+		bool dIsActualP4ConstraintFlag; //e.g. initial particle is beam or open-ended decaying particle AND this is not an inclusive-p4 fit
+		bool dConstrainedParticleIsInInitialStateFlag;
+		bool dConstrainMassByInvariantMassFlag; //true unless missing particle with unknown mass is a decay product (ignored if dConstrainMassFlag is false)
 		DKinFitParticle* dConstrainedP4Particle;
 		deque<DKinFitParticle*> dInitialParticles;
 		deque<DKinFitParticle*> dFinalParticles;

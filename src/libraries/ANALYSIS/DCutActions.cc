@@ -1,5 +1,23 @@
 #include "ANALYSIS/DCutActions.h"
 
+string DCutAction_ThrownTopology::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dExactMatchFlag;
+	return locStream.str();
+}
+
+void DCutAction_ThrownTopology::Initialize(JEventLoop* locEventLoop)
+{
+	dAnalysisUtilities = NULL;
+	locEventLoop->GetSingle(dAnalysisUtilities);
+}
+
+bool DCutAction_ThrownTopology::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	return dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, Get_Reaction(), dExactMatchFlag);
+}
+
 string DCutAction_MaxNumParticleCombos::Get_ActionName(void) const
 {
 	ostringstream locStream;
@@ -232,18 +250,20 @@ bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticl
 	{
 		if(ParticleCharge(dTruePID) == 0)
 		{
+			double locMatchFOM = 0.0;
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
-			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis);
-			if(locMCThrown == NULL)
+			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis, locMatchFOM);
+			if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
 				return false;
 			if(((Particle_t)locMCThrown->type) != dTruePID)
 				return false;
 		}
 		else
 		{
+			double locMatchFOM = 0.0;
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis);
-			if(locMCThrown == NULL)
+			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM);
+			if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
 				return false;
 			if(((Particle_t)locMCThrown->type) != dTruePID)
 				return false;
@@ -266,18 +286,20 @@ bool DCutAction_AllTruePID::Perform_Action(JEventLoop* locEventLoop, const DPart
 	{
 		if(ParticleCharge(locParticles[loc_i]->PID()) == 0)
 		{
+			double locMatchFOM = 0.0;
 			const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_i]);
-			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis);
-			if(locMCThrown == NULL)
+			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis, locMatchFOM);
+			if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
 				return false;
 			if(((Particle_t)locMCThrown->type) != locParticles[loc_i]->PID())
 				return false;
 		}
 		else
 		{
+			double locMatchFOM = 0.0;
 			const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
-			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis);
-			if(locMCThrown == NULL)
+			locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM);
+			if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
 				return false;
 			if(((Particle_t)locMCThrown->type) != locParticles[loc_i]->PID())
 				return false;

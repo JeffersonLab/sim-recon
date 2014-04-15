@@ -59,6 +59,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	loop->AddFactory(new DAnalysisResults_factory);
 	loop->AddFactory(new DEventWriterROOT_factory);
 
+	//For some reason, have difficulty linking these classes without using them somewhere within the library
 	DHistogramAction_ThrownParticleKinematics();
 	DHistogramAction_DetectedParticleKinematics();
 	DHistogramAction_GenReconTrackComparison();
@@ -75,6 +76,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_MissingMassSquared(NULL, false, 0, 0.0, 0.0);
 	DHistogramAction_KinFitResults(NULL, 0.0);
 
+	DCutAction_ThrownTopology(NULL, true);
 	DCutAction_PIDFOM(NULL, Unknown, Unknown, 0.0);
 	DCutAction_CombinedPIDFOM(NULL, 0.0);
 	DCutAction_MissingMass(NULL, false, 0.0, 0.0);
@@ -83,8 +85,8 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_AllVertexZ(NULL, 0.0, 0.0);
 	DCutAction_MaxTrackDOCA(NULL, Unknown, 0.0);
 	DCutAction_KinFitFOM(NULL, 0.0);
-	DCutAction_TruePID(NULL, Unknown, Unknown);
-	DCutAction_AllTruePID(NULL);
+	DCutAction_TruePID(NULL, Unknown, Unknown, 0.0);
+	DCutAction_AllTruePID(NULL, 0.0);
 	DCutAction_GoodEventRFBunch(NULL, false);
 
 	return NOERROR;

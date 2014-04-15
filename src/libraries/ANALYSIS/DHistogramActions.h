@@ -2,6 +2,7 @@
 #define _DHistogramActions_
 
 #include <map>
+#include <set>
 #include <deque>
 #include <string>
 #include <iostream>
@@ -81,7 +82,7 @@ class DHistogramAction_PID : public DAnalysisAction
 		DHistogramAction_PID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_PID", false, locActionUniqueString), 
 		dNumFOMBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), 
-		dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0)
+		dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dThrownPIDs.clear();
 			dThrownPIDs.push_back(Gamma);  dThrownPIDs.push_back(Neutron);
@@ -94,6 +95,7 @@ class DHistogramAction_PID : public DAnalysisAction
 
 		unsigned int dNumFOMBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins, dNum2DThetaBins;
 		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinP, dMaxP, dMinTheta, dMaxTheta;
+		double dMinThrownMatchFOM;
 		deque<Particle_t> dThrownPIDs;
 
 	private:
@@ -124,6 +126,8 @@ class DHistogramAction_PID : public DAnalysisAction
 		map<Particle_t, TH2D*> dHistMap_PVsTheta_NaNDCdEdxFOM;
 
 		map<pair<Particle_t, Particle_t>, TH1D*> dHistMap_PIDFOMForTruePID;
+
+		set<pair<const DEventRFBunch*, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles; //to prevent double-counting (JObject is source object)
 };
 
 class DHistogramAction_TrackVertexComparison : public DAnalysisAction
@@ -208,6 +212,9 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		deque<TH1D*> dHistDeque_MaxTrackDeltaZ;
 		deque<TH1D*> dHistDeque_MaxTrackDeltaT;
 		deque<TH1D*> dHistDeque_MaxTrackDOCA;
+
+		set<const JObject*> dPreviouslyHistogrammedBeamParticles;
+		set<pair<size_t, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles;
 };
 
 class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
@@ -215,7 +222,7 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_ThrownParticleKinematics(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_ThrownParticleKinematics", false, locActionUniqueString), 
-		dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), 
+		dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.clear();
@@ -227,7 +234,7 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_ThrownParticleKinematics(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_ThrownParticleKinematics", false, locActionUniqueString), 
-		dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), 
+		dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.clear();
@@ -239,7 +246,7 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_ThrownParticleKinematics(void) : 
 		DAnalysisAction(NULL, "Hist_ThrownParticleKinematics", false, ""), 
-		dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), 
+		dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), 
 		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0)
 		{
 			dFinalStatePIDs.clear();
@@ -276,8 +283,8 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 	public:
 		DHistogramAction_DetectedParticleKinematics(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_DetectedParticleKinematics", false, locActionUniqueString), 
-		dMinimumPIDFOM(0.00001), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumTrackFOMBins(250), dNum2DVertexZBins(200), 
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0) 
+		dMinimumPIDFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumTrackFOMBins(250), dNum2DVertexZBins(200), 
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -287,8 +294,8 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_DetectedParticleKinematics(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_DetectedParticleKinematics", false, locActionUniqueString), 
-		dMinimumPIDFOM(0.00001), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumTrackFOMBins(250), dNum2DVertexZBins(200), 
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0) 
+		dMinimumPIDFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumTrackFOMBins(250), dNum2DVertexZBins(200), 
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -298,8 +305,8 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 
 		DHistogramAction_DetectedParticleKinematics(void) : 
 		DAnalysisAction(NULL, "Hist_DetectedParticleKinematics", false, ""), 
-		dMinimumPIDFOM(0.00001), dNumPBins(600), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumTrackFOMBins(250), dNum2DVertexZBins(200), 
-		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0) 
+		dMinimumPIDFOM(5.73303E-7), dNumPBins(1200), dNumThetaBins(560), dNumPhiBins(360), dNumVertexZBins(600), dNumTBins(800), dNumVertexXYBins(400), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(1200), dNum2DThetaBins(140), dNum2DPhiBins(180), dNumTrackFOMBins(250), dNum2DVertexZBins(200), 
+		dMinT(-20.0), dMaxT(20.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinVertexZ(0.0), dMaxVertexZ(200.0), dMinVertexXY(-10.0), dMaxVertexXY(10.0), dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -311,6 +318,7 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		unsigned int dNumPBins, dNumThetaBins, dNumPhiBins, dNumVertexZBins, dNumTBins, dNumVertexXYBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins, dNum2DThetaBins, dNum2DPhiBins, dNumTrackFOMBins, dNum2DVertexZBins;
 		double dMinT, dMaxT, dMinP, dMaxP, dMinTheta, dMaxTheta, dMinPhi, dMaxPhi, dMinVertexZ, dMaxVertexZ, dMinVertexXY, dMaxVertexXY, dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta;
 
+		double dMinThrownMatchFOM;
 		deque<Particle_t> dFinalStatePIDs;
 
 		void Initialize(JEventLoop* locEventLoop);
@@ -342,7 +350,7 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 	public:
 		DHistogramAction_GenReconTrackComparison(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_GenReconTrackComparison", false, locActionUniqueString), 
-		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(300), dNum2DThetaBins(140),
+		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(600), dNum2DThetaBins(140),
 		dNumRFDeltaTBins(202), dNumPullBins(1000), dNum2DPullBins(500), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
 		dMaxDeltaT(5.0), dMinDeltaVertexZ(-15.0), dMaxDeltaVertexZ(15.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
@@ -357,7 +365,7 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 
 		DHistogramAction_GenReconTrackComparison(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_GenReconTrackComparison", false, locActionUniqueString), 
-		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(300), dNum2DThetaBins(140),
+		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(600), dNum2DThetaBins(140),
 		dNumRFDeltaTBins(202), dNumPullBins(1000), dNum2DPullBins(500), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
 		dMaxDeltaT(5.0), dMinDeltaVertexZ(-15.0), dMaxDeltaVertexZ(15.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
@@ -372,7 +380,7 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 
 		DHistogramAction_GenReconTrackComparison(void) : 
 		DAnalysisAction(NULL, "Hist_GenReconTrackComparison", false, ""), 
-		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(300), dNum2DThetaBins(140),
+		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(600), dNum2DThetaBins(140),
 		dNumRFDeltaTBins(202), dNumPullBins(1000), dNum2DPullBins(500), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
 		dMaxDeltaT(5.0), dMinDeltaVertexZ(-15.0), dMaxDeltaVertexZ(15.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
 		{
@@ -537,7 +545,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 	public:
 		DHistogramAction_TrackMultiplicity(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TrackMultiplicity", false, locActionUniqueString),
-		dMaxNumTracks(40)
+		dMaxNumTracks(40), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -546,7 +554,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 
 		DHistogramAction_TrackMultiplicity(string locActionUniqueString) : 
 		DAnalysisAction(NULL, "Hist_TrackMultiplicity", false, ""),
-		dMaxNumTracks(40)
+		dMaxNumTracks(40), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -555,7 +563,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 
 		DHistogramAction_TrackMultiplicity(void) : 
 		DAnalysisAction(NULL, "Hist_TrackMultiplicity", false, ""),
-		dMaxNumTracks(40)
+		dMaxNumTracks(40), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dFinalStatePIDs.push_back(Gamma);  dFinalStatePIDs.push_back(Neutron);
 			dFinalStatePIDs.push_back(PiPlus);  dFinalStatePIDs.push_back(KPlus);  dFinalStatePIDs.push_back(Proton);
@@ -563,6 +571,7 @@ class DHistogramAction_TrackMultiplicity : public DAnalysisAction
 		}
 
 		unsigned int dMaxNumTracks;
+		double dMinThrownMatchFOM;
 
 		deque<Particle_t> dFinalStatePIDs;
 
@@ -580,12 +589,12 @@ class DHistogramAction_TruePID : public DAnalysisAction
 		DHistogramAction_TruePID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TruePID", false, locActionUniqueString),
 		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), 
-		dInitialPID(Unknown), dMinMassSq(1.0), dMaxMassSq(0.0){}
+		dInitialPID(Unknown), dMinMassSq(1.0), dMaxMassSq(0.0), dMinThrownMatchFOM(-1.0){}
 
 		DHistogramAction_TruePID(const DReaction* locReaction, Particle_t locInitialPID, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_TruePID", false, locActionUniqueString),
 		dNumPBins(300), dNum2DPBins(150), dNumThetaBins(140), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), 
-		dInitialPID(locInitialPID), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq){}
+		dInitialPID(locInitialPID), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMinThrownMatchFOM(-1.0){}
 
 		unsigned int dNumPBins, dNum2DPBins, dNumThetaBins;
 		double dMinP, dMaxP, dMinTheta, dMaxTheta;
@@ -596,6 +605,9 @@ class DHistogramAction_TruePID : public DAnalysisAction
 
 		Particle_t dInitialPID;
 		double dMinMassSq, dMaxMassSq;
+	public:
+		double dMinThrownMatchFOM;
+	private:
 		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1D* dHist_TruePIDStatus;
@@ -604,6 +616,8 @@ class DHistogramAction_TruePID : public DAnalysisAction
 		deque<map<Particle_t, TH1D*> > dHistDeque_P_IncorrectID;
 		deque<map<Particle_t, TH2D*> > dHistDeque_PVsTheta_CorrectID;
 		deque<map<Particle_t, TH2D*> > dHistDeque_PVsTheta_IncorrectID;
+
+		set<pair<size_t, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles;
 };
 
 class DHistogramAction_InvariantMass : public DAnalysisAction
@@ -620,15 +634,13 @@ class DHistogramAction_InvariantMass : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
-		bool Compare_ParticleNames(const deque<string>& locParticleNames1, const deque<string>& locParticleNames2) const;
-
 		Particle_t dInitialPID;
 		unsigned int dNumMassBins;
 		double dMinMass, dMaxMass;
 		const DAnalysisUtilities* dAnalysisUtilities;
-		deque<TH1D*> dHistDeque_InvaraintMass; //in case more than one particle type combination in DReaction to reach the same mass
+		TH1D* dHist_InvaraintMass;
 
-		deque<deque<string> > dFinalParticleNames; //in case more than one particle type combination in DReaction to reach the same mass
+		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_MissingMass : public DAnalysisAction
@@ -636,7 +648,30 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 	public:
 		DHistogramAction_MissingMass(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass){}
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(-1){}
+
+		//E.g. If:
+		//g, p -> K+, K+, Xi-
+		//                Xi- -> pi-, Lambda
+		//                            Lambda -> (p), pi-
+		//And:
+		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+, K+
+		//Then: Will histogram missing-mass: g, p -> K+, K+, (X)
+		//Also:
+		//locMissingMassOffOfStepIndex = 1, locMissingMassOffOfPID = pi-
+		//Then: Will histogram missing-mass: g, p -> K+, K+, pi-
+		//But:
+		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
+		//Then: Will histogram only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
+		DHistogramAction_MissingMass(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs) {}
+
+		DHistogramAction_MissingMass(const DReaction* locReaction, int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMass, double locMaxMass, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMass(locMinMass), dMaxMass(locMaxMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)) {}
 
 		bool dEnableDoubleCounting;
 
@@ -647,8 +682,12 @@ class DHistogramAction_MissingMass : public DAnalysisAction
 
 		unsigned int dNumMassBins;
 		double dMinMass, dMaxMass;
-		const DAnalysisUtilities* dAnalysisUtilities;
+		int dMissingMassOffOfStepIndex;
+		deque<Particle_t> dMissingMassOffOfPIDs;
 		TH1D* dHist_MissingMass;
+		const DAnalysisUtilities* dAnalysisUtilities;
+
+		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_MissingMassSquared : public DAnalysisAction
@@ -656,7 +695,30 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 	public:
 		DHistogramAction_MissingMassSquared(const DReaction* locReaction, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
 		DAnalysisAction(locReaction, "Hist_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString),
-		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq){}
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(-1){}
+
+		//E.g. If:
+		//g, p -> K+, K+, Xi-
+		//                Xi- -> pi-, Lambda
+		//                            Lambda -> (p), pi-
+		//And:
+		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+, K+
+		//Then: Will histogram missing-mass: g, p -> K+, K+, (X)
+		//Also:
+		//locMissingMassOffOfStepIndex = 1, locMissingMassOffOfPID = pi-
+		//Then: Will histogram missing-mass: g, p -> K+, K+, pi-
+		//But:
+		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
+		//Then: Will histogram only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
+		DHistogramAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs) {}
+
+		DHistogramAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, bool locUseKinFitResultsFlag, unsigned int locNumMassBins, double locMinMassSq, double locMaxMassSq, string locActionUniqueString = "") :
+		DAnalysisAction(locReaction, "Hist_MissingMass", locUseKinFitResultsFlag, locActionUniqueString),
+		dEnableDoubleCounting(false), dNumMassBins(locNumMassBins), dMinMassSq(locMinMassSq), dMaxMassSq(locMaxMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)) {}
 
 		bool dEnableDoubleCounting;
 
@@ -667,8 +729,12 @@ class DHistogramAction_MissingMassSquared : public DAnalysisAction
 
 		unsigned int dNumMassBins;
 		double dMinMassSq, dMaxMassSq;
-		const DAnalysisUtilities* dAnalysisUtilities;
+		int dMissingMassOffOfStepIndex;
+		deque<Particle_t> dMissingMassOffOfPIDs;
 		TH1D* dHist_MissingMassSquared;
+		const DAnalysisUtilities* dAnalysisUtilities;
+
+		set<set<pair<const JObject*, Particle_t> > > dPreviousSourceObjects;
 };
 
 class DHistogramAction_KinFitResults : public DAnalysisAction

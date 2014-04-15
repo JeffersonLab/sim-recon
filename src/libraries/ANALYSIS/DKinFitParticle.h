@@ -44,6 +44,7 @@ class DKinFitParticle
 
 	public:
 
+		inline int Get_PID(void) const{return dPID;}
 		inline double Get_Energy(void) const{return sqrt(dMass*dMass + dMomentum.Mag2());}
 		inline int Get_Charge(void) const{return dCharge;}
 		inline TLorentzVector Get_P4(void) const{return TLorentzVector(dMomentum, Get_Energy());}
@@ -55,20 +56,31 @@ class DKinFitParticle
 		inline double Get_ShowerEnergy(void) const{return dShowerEnergy;}
 		inline double Get_PathLength(void) const{return dPathLength;}
 		inline double Get_PathLengthUncertainty(void) const{return dPathLengthUncertainty;}
-		const TMatrixDSym* Get_CovarianceMatrix(void) const{return dCovarianceMatrix;}
+		inline const TMatrixDSym* Get_CovarianceMatrix(void) const{return dCovarianceMatrix;}
 		inline TLorentzVector Get_SpacetimeVertex(void) const{return dSpacetimeVertex;}
 
 		inline unsigned short int Get_VertexConstraintFlag(void) const{return dVertexConstraintFlag;}
 		inline DKinFitParticleType Get_KinFitParticleType(void) const{return dKinFitParticleType;}
 		inline bool Get_DecayingParticleAtProductionVertexFlag(void) const{return dDecayingParticleAtProductionVertexFlag;}
 
-		inline deque<DKinFitConstraint_VertexBase*> Get_CommonVertexAndOrTimeConstraints(void) const{return dCommonVertexAndOrTimeConstraints;}
-		inline DKinFitConstraint_VertexBase* Get_CommonVertexAndOrTimeConstraint(void) const{return (dCommonVertexAndOrTimeConstraints.empty()) ? NULL : dCommonVertexAndOrTimeConstraints[0];} //WARNING: IF DECAYING CAN BE MORE THAN ONE!
+		inline deque<const DKinFitConstraint_VertexBase*> Get_CommonVertexAndOrTimeConstraints(void) const
+		{
+			return deque<const DKinFitConstraint_VertexBase*>(dCommonVertexAndOrTimeConstraints.begin(), dCommonVertexAndOrTimeConstraints.end());
+		}
 		inline size_t Get_NumVertexFits(void) const{return dCommonVertexAndOrTimeConstraints.size();};
 
-		inline deque<DKinFitConstraint_P4*> Get_P4Constraints(void) const{return dP4Constraints;}
-		inline DKinFitConstraint_P4* Get_P4Constraint(void) const{return (dP4Constraints.empty()) ? NULL : dP4Constraints[0];} //WARNING: IF DECAYING CAN BE MORE THAN ONE!
+		inline deque<const DKinFitConstraint_P4*> Get_P4Constraints(void) const
+		{
+			return deque<const DKinFitConstraint_P4*>(dP4Constraints.begin(), dP4Constraints.end());
+		}
 		inline size_t Get_NumP4Constraints(void) const{return dP4Constraints.size();}
+
+		const DKinFitConstraint_P4* Get_DefinedAtP4Constraint(void) const;
+		const DKinFitConstraint_P4* Get_ConstrainedAtP4Constraint(void) const;
+		const DKinFitConstraint_P4* Get_P4ConstraintWhenInitial(void) const;
+
+		const DKinFitConstraint_VertexBase* Get_DefinedAtVertexAndOrTimeConstraint(void) const;
+		const DKinFitConstraint_VertexBase* Get_ConstrainedAtVertexAndOrTimeConstraint(void) const;
 
 		inline int Get_PxParamIndex(void) const{return dPxParamIndex;}
 		inline int Get_VxParamIndex(void) const{return dVxParamIndex;}
@@ -88,8 +100,6 @@ class DKinFitParticle
 		inline bool Get_IsInVertexOrSpacetimeFitFlag(void) const{return (!dCommonVertexAndOrTimeConstraints.empty());}
 		bool Get_IsInVertexFitFlag(void) const;
 		bool Get_IsInSpacetimeFitFlag(void) const;
-		bool Get_IsDefinedByVertexOrSpacetimeFitFlag(void) const; //as opposed to helping constrain it OR not being in it
-		bool Get_IsConstrainedByVertexOrSpacetimeFitFlag(void) const; //as opposed to being defined by it OR not being in it //INCLUDES neutral showers (constrained by time)
 		inline bool Get_IsInP4FitFlag(void) const{return (!dP4Constraints.empty());}
 		inline bool Get_IsNeutralShowerFlag(void) const{return dIsNeutralShowerFlag;}
 
@@ -98,6 +108,7 @@ class DKinFitParticle
 		DKinFitParticle(void);
 		~DKinFitParticle(void){}
 
+		inline void Set_PID(int locPID){dPID = locPID;}
 		inline void Set_Charge(int locCharge){dCharge = locCharge;}
 		inline void Set_Mass(double locMass){dMass = locMass;}
 		inline void Set_Position(TVector3 locPosition){dSpacetimeVertex.SetVect(locPosition);}
@@ -127,6 +138,7 @@ class DKinFitParticle
 		int Get_CommonVxParamIndex(void) const;
 		int Get_CommonTParamIndex(void) const;
 
+		int dPID; //PDG PID
 		int dCharge;
 		double dMass;
 		//p, x, & t must all coincide: t & p at point x (for charged tracks p is a function of x in a b-field!)
@@ -150,7 +162,9 @@ class DKinFitParticle
 		int dTParamIndex;
 		int dLParamIndex;
 
-		bool dDecayingParticleAtProductionVertexFlag; //true if the object's p3, v3, & t are defined at it's production vertex (& common v & t are at decay vertex). else at it's decay vertex (& common v & t are at production vertex)
+		//true if the object's p3, v3, & t are defined at its production vertex (& common v & t are at decay vertex). else at it's decay vertex (& common v & t are at production vertex)
+			//note: if a decaying particle is not in a vertex fit, then this quantity doesn't matter (default true)
+		bool dDecayingParticleAtProductionVertexFlag;
 
 		bool dIsNeutralShowerFlag;
 

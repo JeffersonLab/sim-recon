@@ -17,7 +17,6 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 {
 	MAX_DParticleComboStepPoolSize = 40;
 	MAX_DKinematicDataPoolSize = 1;
-	MAX_DBeamPhotonPoolSize = 1;
 
 	dMaxPhotonRFDeltaT = pair<bool, double>(false, -1.0);
 	dMinIndividualPIDFOM = pair<bool, double>(false, -1.0);
@@ -35,6 +34,9 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(runnumber);
 	locGeometry->GetTargetZ(dTargetCenterZ);
+
+	dAnalysisUtilities = NULL;
+	locEventLoop->GetSingle(dAnalysisUtilities);
 
 	//Only set the below values if they were set on the command line.
 	if(gPARMS->Exists("COMBO:MAX_PHOTON_RF_DELTAT"))
@@ -156,8 +158,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 					if((fabs(locBeamPhotons[loc_k]->time() - locEventRFBunch->dTime) < locMaxPhotonRFDeltaT.second) || (!locEventRFBunch->dMatchedToTracksFlag) || (!locMaxPhotonRFDeltaT.first))
 						locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
 				}
-				if(locBeamPhotons.empty()) //e.g. genr8
-					locCandidatePhotons.push_back(Create_BeamPhoton());
 
 				if(locCandidatePhotons.empty())
 				{
@@ -219,6 +219,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			continue;
 		}
 
+		Calc_CommonSpacetimeVertices(locParticleCombo);
 		_data.push_back(locParticleCombo);
 
 		//clone combos for additional beam photons (if needed)
@@ -264,21 +265,9 @@ DKinematicData* DParticleCombo_factory_PreKinFit::Create_Target(Particle_t locPI
 	locTarget->setPID(locPID);
 	locTarget->setCharge(ParticleCharge(locPID));
 	locTarget->setMomentum(DVector3(0.0, 0.0, 0.0));
+	locTarget->setPosition(DVector3(0.0, 0.0, dTargetCenterZ));
 	locTarget->setMass(ParticleMass(locPID));
 	return locTarget;
-}
-
-DBeamPhoton* DParticleCombo_factory_PreKinFit::Create_BeamPhoton(void) //for MC only!
-{
-	DBeamPhoton* locBeamPhoton = Get_BeamPhotonResource();
-	double locPhotonEnergy = 9.0;
-	Particle_t locPID = Gamma;
-	locBeamPhoton->setPID(locPID);
-	locBeamPhoton->setCharge(ParticleCharge(locPID));
-	locBeamPhoton->setMomentum(DVector3(0.0, 0.0, locPhotonEnergy));
-	locBeamPhoton->setPosition(DVector3(0.0, 0.0, dTargetCenterZ));
-	locBeamPhoton->setMass(ParticleMass(locPID));
-	return locBeamPhoton;
 }
 
 const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses)
@@ -357,13 +346,6 @@ void DParticleCombo_factory_PreKinFit::Reset_Pools(void)
 		dKinematicDataPool_All.resize(MAX_DKinematicDataPoolSize);
 	}
 	dKinematicDataPool_Available = dKinematicDataPool_All;
-
-	if(dBeamPhotonPool_All.size() > MAX_DBeamPhotonPoolSize){
-		for(size_t loc_i = MAX_DBeamPhotonPoolSize; loc_i < dBeamPhotonPool_All.size(); ++loc_i)
-			delete dBeamPhotonPool_All[loc_i];
-		dBeamPhotonPool_All.resize(MAX_DBeamPhotonPoolSize);
-	}
-	dBeamPhotonPool_Available = dBeamPhotonPool_All;
 }
 
 DParticleComboStep* DParticleCombo_factory_PreKinFit::Get_ParticleComboStepResource(void)
@@ -403,24 +385,6 @@ void DParticleCombo_factory_PreKinFit::Reset_KinematicData(DKinematicData* locKi
 
 	locKinematicData->clearErrorMatrix();
 	locKinematicData->clearTrackingErrorMatrix();
-}
-
-DBeamPhoton* DParticleCombo_factory_PreKinFit::Get_BeamPhotonResource(void)
-{
-	DBeamPhoton* locBeamPhoton;
-	if(dBeamPhotonPool_Available.empty())
-	{
-		locBeamPhoton = new DBeamPhoton;
-		dBeamPhotonPool_All.push_back(locBeamPhoton);
-	}
-	else
-	{
-		locBeamPhoton = dBeamPhotonPool_Available.back();
-		Reset_KinematicData(static_cast<DKinematicData*>(locBeamPhoton));
-		locBeamPhoton->ClearAssociatedObjects();
-		dBeamPhotonPool_Available.pop_back();
-	}
-	return locBeamPhoton;
 }
 
 DKinematicData* DParticleCombo_factory_PreKinFit::Get_KinematicDataResource(void)
@@ -513,6 +477,71 @@ bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCo
 	return (locFOM >= locMinCombinedTrackingFOM.second);
 }
 
+void DParticleCombo_factory_PreKinFit::Calc_CommonSpacetimeVertices(DParticleCombo* locParticleCombo) const
+{
+	set<size_t> locStepIndicesToHandle;
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+		locStepIndicesToHandle.insert(loc_i);
+	while(!locStepIndicesToHandle.empty())
+	{
+		deque<const DKinematicData*> locDetectedVertexParticles, locDetectedTimeParticles;
+		deque<size_t> locIncludedStepIndices;
+
+		Setup_VertexConstraint(locParticleCombo, *(locStepIndicesToHandle.begin()), locDetectedVertexParticles, locDetectedTimeParticles, locIncludedStepIndices);
+
+		//calc common spacetime vertex
+		DVector3 locVertex = dAnalysisUtilities->Calc_CrudeVertex(locDetectedVertexParticles);
+		double locVertexTime = dAnalysisUtilities->Calc_CrudeTime(locDetectedTimeParticles, locVertex);
+
+		//remove steps included in the vertex constraint from the to-handle deque
+		for(size_t loc_i = 0; loc_i < locIncludedStepIndices.size(); ++loc_i)
+		{
+			DParticleComboStep* locParticleComboStep = const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(locIncludedStepIndices[loc_i]));
+			locParticleComboStep->Set_Position(locVertex);
+			locParticleComboStep->Set_Time(locVertexTime);
+			locStepIndicesToHandle.erase(locIncludedStepIndices[loc_i]);
+		}
+	}
+}
+
+void DParticleCombo_factory_PreKinFit::Setup_VertexConstraint(DParticleCombo* locParticleCombo, size_t locStepIndex, deque<const DKinematicData*>& locDetectedVertexParticles, deque<const DKinematicData*>& locDetectedTimeParticles, deque<size_t>& locIncludedStepIndices) const
+{
+	locIncludedStepIndices.push_back(locStepIndex);
+	const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(locStepIndex);
+	Particle_t locPID;
+
+	//initial particle
+	locPID = locParticleComboStep->Get_InitialParticleID();
+	if(locPID == Gamma)
+	{
+		locDetectedVertexParticles.push_back(locParticleComboStep->Get_InitialParticle());
+		locDetectedTimeParticles.push_back(locParticleComboStep->Get_InitialParticle());
+	}
+
+	//final state particles
+	for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
+	{
+		int locDecayStepIndex = locParticleComboStep->Get_DecayStepIndex(loc_j);
+		locPID = locParticleComboStep->Get_FinalParticleID(loc_j);
+		if(locDecayStepIndex == -1) //missing particle
+			continue;
+		else if(locDecayStepIndex >= 0) //decaying particle
+		{
+			if(IsDetachedVertex(locPID))
+				continue;
+			else //go to the next step!!
+				Setup_VertexConstraint(locParticleCombo, locDecayStepIndex, locDetectedVertexParticles, locDetectedTimeParticles, locIncludedStepIndices);
+		}
+		else //detected particle or shower
+		{
+			if(locParticleComboStep->Is_FinalParticleCharged(loc_j))
+				locDetectedVertexParticles.push_back(locParticleComboStep->Get_FinalParticle(loc_j));
+			locDetectedTimeParticles.push_back(locParticleComboStep->Get_FinalParticle(loc_j));
+		}
+	}
+}
+
+
 //------------------
 // erun
 //------------------
@@ -531,9 +560,6 @@ jerror_t DParticleCombo_factory_PreKinFit::fini(void)
 
 	for(size_t loc_i = 0; loc_i < dKinematicDataPool_All.size(); ++loc_i)
 		delete dKinematicDataPool_All[loc_i];
-
-	for(size_t loc_i = 0; loc_i < dBeamPhotonPool_All.size(); ++loc_i)
-		delete dBeamPhotonPool_All[loc_i];
 
 	return NOERROR;
 }

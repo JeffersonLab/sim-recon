@@ -26,7 +26,6 @@ class DReaction : public JObject
 		// SET OBJECT DATA:
 		inline void Set_KinFitType(DKinFitType locKinFitType){dKinFitType = locKinFitType;}
 		inline void Add_ReactionStep(const DReactionStep* locReactionStep){dReactionSteps.push_back(locReactionStep);}
-		inline void Exclude_DecayingParticleFromP4KinFit(size_t locStepIndex){dDecayingParticlesExcludedFromP4Kinfit.push_back(locStepIndex);}
 		inline void Add_AnalysisAction(DAnalysisAction* locAnalysisAction){dAnalysisActions.push_back(locAnalysisAction);}
 
 		// SET TRACK SELECTION FACTORIES //Command-line values will override these values
@@ -41,11 +40,9 @@ class DReaction : public JObject
 		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
 		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
 
-
 		// GET CONTROL MEMBERS:
 		inline string Get_ReactionName(void) const{return dReactionName;}
 		inline DKinFitType Get_KinFitType(void) const{return dKinFitType;}
-		inline void Get_DecayingParticlesExcludedFromP4Kinfit(deque<size_t>& locExcludedParticleStepIndices) const{locExcludedParticleStepIndices = dDecayingParticlesExcludedFromP4Kinfit;}
 
 		// GET REACTION STEPS:
 		inline size_t Get_NumReactionSteps(void) const{return dReactionSteps.size();}
@@ -67,8 +64,9 @@ class DReaction : public JObject
 		// GET PARTICLE NAME STRINGS:
 		string Get_DetectedParticlesROOTName(void) const;
 		string Get_InitialParticlesROOTName(void) const;
-		void Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, deque<string>& locNames, bool locKinFitResultsFlag = false) const;
-		void Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, deque<deque<string> >& locParticleNames, deque<string>& locNames, bool locKinFitResultsFlag = false) const;
+		string Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, bool locKinFitResultsFlag) const;
+		string Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag) const;
+		string Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag, bool locExpandDecayingParticlesFlag) const;
 
 		// GET TRACK SELECTION FACTORIES //Command-line values will override these values
 		inline string Get_ChargedTrackFactoryTag(void) const{return dChargedTrackFactoryTag;}
@@ -90,25 +88,25 @@ class DReaction : public JObject
 		}
 		inline string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
 		inline bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
+		inline void Set_MinThrownMatchFOMForROOT(double locMinThrownMatchFOMForROOT){dMinThrownMatchFOMForROOT = locMinThrownMatchFOMForROOT;}
+		inline double Get_MinThrownMatchFOMForROOT(void) const{return dMinThrownMatchFOMForROOT;}
 
 		// OTHER:
 		bool Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex = 1) const;
-		bool Check_IfDecayingParticleExcludedFromP4KinFit(size_t locStepIndex) const;
 		bool Check_AreStepsIdentical(const DReaction* locReaction) const;
 
 	private:
 		// PRIVATE METHODS:
 		DReaction(void); //make default constructor private. MUST set a name upon construction (and must be unique!)
-		void Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, deque<deque<string> >& locNames, bool locKinFitResultsFlag = false) const;
 
 		// CONTROL MEMBERS:
 		string dReactionName; //must be unique
 		DKinFitType dKinFitType; //defined in ANALYSIS/DKinFitResults.h
-		deque<size_t> dDecayingParticlesExcludedFromP4Kinfit; //to exclude decaying particles from the kinematic fit (resonances are automatically excluded) //size_t is step index where it is a parent
 
 		// ROOT TTREE OUTPUT:
 		bool dEnableTTreeOutputFlag; //default is false
 		string dTTreeOutputFileName;
+		double dMinThrownMatchFOMForROOT; //cut applied when setting matching when filling ROOT tree //default is -1 (always passes)
 
 		// REACTION AND ANALYSIS MEMBERS:
 		deque<const DReactionStep*> dReactionSteps;

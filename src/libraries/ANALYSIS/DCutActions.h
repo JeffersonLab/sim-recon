@@ -28,6 +28,7 @@ using namespace std;
 /*
 //CLASSES DEFINED BELOW:
 DCutAction_MaxNumParticleCombos
+DCutAction_ThrownTopology
 
 DCutAction_PIDFOM
 DCutAction_CombinedPIDFOM
@@ -42,6 +43,24 @@ DCutAction_MissingMass
 DCutAction_MissingMassSquared
 DCutAction_InvariantMass
 */
+
+class DCutAction_ThrownTopology : public DAnalysisAction
+{
+	//cut on whether the thrown topology matches the DReaction
+	public:
+		DCutAction_ThrownTopology(const DReaction* locReaction, bool locExactMatchFlag, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_ThrownTopology", false, locActionUniqueString), 
+		dExactMatchFlag(locExactMatchFlag){}
+
+		string Get_ActionName(void) const;
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+		void Initialize(JEventLoop* locEventLoop);
+
+		bool dExactMatchFlag; //if false, require the DReaction be a subset (or the total) of the thrown topology
+		const DAnalysisUtilities* dAnalysisUtilities;
+};
 
 class DCutAction_MaxNumParticleCombos : public DAnalysisAction
 {
@@ -95,8 +114,9 @@ class DCutAction_CombinedPIDFOM : public DAnalysisAction
 class DCutAction_TruePID : public DAnalysisAction
 {
 	public:
-		DCutAction_TruePID(const DReaction* locReaction, Particle_t locTruePID, Particle_t locInitialPID, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Cut_TruePID", false, locActionUniqueString), dTruePID(locTruePID), dInitialPID(locInitialPID){}
+		DCutAction_TruePID(const DReaction* locReaction, Particle_t locTruePID, Particle_t locInitialPID, double locMinThrownMatchFOM, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_TruePID", false, locActionUniqueString), 
+		dTruePID(locTruePID), dInitialPID(locInitialPID), dMinThrownMatchFOM(locMinThrownMatchFOM){}
 
 		inline void Initialize(JEventLoop* locEventLoop){}
 
@@ -105,18 +125,22 @@ class DCutAction_TruePID : public DAnalysisAction
 
 		Particle_t dTruePID;
 		Particle_t dInitialPID;
+		double dMinThrownMatchFOM;
 };
 
 class DCutAction_AllTruePID : public DAnalysisAction
 {
 	public:
-		DCutAction_AllTruePID(const DReaction* locReaction, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Cut_AllTruePID", false, locActionUniqueString){}
+		DCutAction_AllTruePID(const DReaction* locReaction, double locMinThrownMatchFOM, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_AllTruePID", false, locActionUniqueString), 
+		dMinThrownMatchFOM(locMinThrownMatchFOM){}
 
 		inline void Initialize(JEventLoop* locEventLoop){}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinThrownMatchFOM;
 };
 
 class DCutAction_AllVertexZ : public DAnalysisAction

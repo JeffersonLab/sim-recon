@@ -14,18 +14,22 @@ class DReactionStep
 {
 	public:
 		// CONSTRUCTOR
-		DReactionStep(void) : dInitialParticleID(Unknown), dTargetParticleID(Unknown), dMissingParticleIndex(-1) { };
+		DReactionStep(void) : dInitialParticleID(Unknown), dTargetParticleID(Unknown), dMissingParticleIndex(-1), dApplyKinFitMassConstraintOnInitialParticleFlag(true) { };
+
+		bool Are_ParticlesIdentical(const DReactionStep* locReactionStep) const; //note order can be re-arranged!
 
 		// SET OBJECT DATA:
 		void Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag = false); //TRUE IS NOT SUPPORTED YET!
 		inline void Set_TargetParticleID(Particle_t locPID){dTargetParticleID = locPID;}
 		void Add_FinalParticleID(Particle_t locPID, bool locIsMissingFlag = false);
+		inline void Set_ApplyKinFitMassConstraintOnInitialParticleFlag(bool locFlag){dApplyKinFitMassConstraintOnInitialParticleFlag = locFlag;}
 		void Reset(void);
 
 		// GET INITIAL, TARGET, AND MISSING DATA:
 		inline Particle_t Get_InitialParticleID(void) const{return dInitialParticleID;}
 		inline Particle_t Get_TargetParticleID(void) const{return dTargetParticleID;}
 		inline int Get_MissingParticleIndex(void) const{return dMissingParticleIndex;}
+		inline bool Get_ApplyKinFitMassConstraintOnInitialParticleFlag(void) const{return dApplyKinFitMassConstraintOnInitialParticleFlag;}
 
 		// GET FINAL PARTICLE PIDs:
 		Particle_t Get_FinalParticleID(size_t locFinalParticleIndex) const;
@@ -54,6 +58,7 @@ class DReactionStep
 
 		// CONTROL MEMBERS:
 		int dMissingParticleIndex; //-1 for no missing particles, -2 for missing init (beam) particle (not yet supported!), else final state particle at this index is missing (0 -> x)
+		bool dApplyKinFitMassConstraintOnInitialParticleFlag; //default true, is ignored when not applicable (e.g. init is non-decaying (beam) particle)
 };
 
 #endif // _DReactionStep_

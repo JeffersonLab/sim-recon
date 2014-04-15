@@ -32,7 +32,7 @@ using namespace std;
 class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 {
 	public:
-		double Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected) const;
+		double Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, const DMatrixDSym& locInputCovarianceMatrix) const;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
