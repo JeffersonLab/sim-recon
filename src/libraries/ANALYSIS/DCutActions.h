@@ -197,7 +197,30 @@ class DCutAction_MissingMass : public DAnalysisAction
 	public:
 		DCutAction_MissingMass(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinimumMissingMass, double locMaximumMissingMass, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_MissingMass", locUseKinFitResultsFlag, locActionUniqueString), 
-		dMinimumMissingMass(locMinimumMissingMass), dMaximumMissingMass(locMaximumMissingMass){}
+		dMinimumMissingMass(locMinimumMissingMass), dMaximumMissingMass(locMaximumMissingMass), dMissingMassOffOfStepIndex(-1){}
+
+		//E.g. If:
+		//g, p -> K+, K+, Xi-
+		//                Xi- -> pi-, Lambda
+		//                            Lambda -> (p), pi-
+		//And:
+		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+, K+
+		//Then: Will cut missing-mass: g, p -> K+, K+, (X)
+		//Also:
+		//locMissingMassOffOfStepIndex = 1, locMissingMassOffOfPID = pi-
+		//Then: Will cut missing-mass: g, p -> K+, K+, pi-
+		//But:
+		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
+		//Then: Will cut only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
+		DCutAction_MissingMass(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, double locMinimumMissingMass, double locMaximumMissingMass, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_MissingMass", locUseKinFitResultsFlag, locActionUniqueString), 
+		dMinimumMissingMass(locMinimumMissingMass), dMaximumMissingMass(locMaximumMissingMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs) {}
+
+		DCutAction_MissingMass(const DReaction* locReaction, int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, bool locUseKinFitResultsFlag, double locMinimumMissingMass, double locMaximumMissingMass, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_MissingMass", locUseKinFitResultsFlag, locActionUniqueString), 
+		dMinimumMissingMass(locMinimumMissingMass), dMaximumMissingMass(locMaximumMissingMass), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)) {}
 
 		string Get_ActionName(void) const;
 		void Initialize(JEventLoop* locEventLoop);
@@ -207,16 +230,41 @@ class DCutAction_MissingMass : public DAnalysisAction
 
 		double dMinimumMissingMass;
 		double dMaximumMissingMass;
+		int dMissingMassOffOfStepIndex;
+		deque<Particle_t> dMissingMassOffOfPIDs;
+
 		const DAnalysisUtilities* dAnalysisUtilities;
 };
-
 
 class DCutAction_MissingMassSquared : public DAnalysisAction
 {
 	public:
 		DCutAction_MissingMassSquared(const DReaction* locReaction, bool locUseKinFitResultsFlag, double locMinimumMissingMassSq, double locMaximumMissingMassSq, string locActionUniqueString = "") : 
-		DAnalysisAction(locReaction, "Cut_MissingMassSq", locUseKinFitResultsFlag, locActionUniqueString), 
-		dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq){}
+		DAnalysisAction(locReaction, "Cut_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString), 
+		dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), dMissingMassOffOfStepIndex(-1){}
+
+		//E.g. If:
+		//g, p -> K+, K+, Xi-
+		//                Xi- -> pi-, Lambda
+		//                            Lambda -> (p), pi-
+		//And:
+		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+, K+
+		//Then: Will cut missing-mass: g, p -> K+, K+, (X)
+		//Also:
+		//locMissingMassOffOfStepIndex = 1, locMissingMassOffOfPID = pi-
+		//Then: Will cut missing-mass: g, p -> K+, K+, pi-
+		//But:
+		//locMissingMassOffOfStepIndex = 0, locMissingMassOffOfPIDs = K+
+		//Then: Will cut only missing-mass: g, p -> K+_1, (X)    and NOT K+_2!!!
+		DCutAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, deque<Particle_t> locMissingMassOffOfPIDs, bool locUseKinFitResultsFlag, double locMinimumMissingMassSq, double locMaximumMissingMassSq, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString), 
+		dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dMissingMassOffOfPIDs(locMissingMassOffOfPIDs) {}
+
+		DCutAction_MissingMassSquared(const DReaction* locReaction, int locMissingMassOffOfStepIndex, Particle_t locMissingMassOffOfPID, bool locUseKinFitResultsFlag, double locMinimumMissingMassSq, double locMaximumMissingMassSq, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_MissingMassSquared", locUseKinFitResultsFlag, locActionUniqueString), 
+		dMinimumMissingMassSq(locMinimumMissingMassSq), dMaximumMissingMassSq(locMaximumMissingMassSq), dMissingMassOffOfStepIndex(locMissingMassOffOfStepIndex), 
+		dMissingMassOffOfPIDs(deque<Particle_t>(1, locMissingMassOffOfPID)) {}
 
 		string Get_ActionName(void) const;
 		void Initialize(JEventLoop* locEventLoop);
@@ -226,6 +274,9 @@ class DCutAction_MissingMassSquared : public DAnalysisAction
 
 		double dMinimumMissingMassSq;
 		double dMaximumMissingMassSq;
+		int dMissingMassOffOfStepIndex;
+		deque<Particle_t> dMissingMassOffOfPIDs;
+
 		const DAnalysisUtilities* dAnalysisUtilities;
 };
 

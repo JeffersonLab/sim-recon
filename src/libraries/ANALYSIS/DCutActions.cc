@@ -107,7 +107,13 @@ void DCutAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	double locMissingMass = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M();
+	DLorentzVector locMissingP4;
+	if(dMissingMassOffOfStepIndex == -1)
+		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
+	else
+		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, Get_UseKinFitResultsFlag());
+
+	double locMissingMass = locMissingP4.M();
 	return ((locMissingMass >= dMinimumMissingMass) && (locMissingMass <= dMaximumMissingMass));
 }
 
@@ -127,7 +133,13 @@ void DCutAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 
 bool DCutAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	double locMissingMassSq = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag()).M2();
+	DLorentzVector locMissingP4;
+	if(dMissingMassOffOfStepIndex == -1)
+		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, Get_UseKinFitResultsFlag());
+	else
+		locMissingP4 = dAnalysisUtilities->Calc_MissingP4(locParticleCombo, 0, dMissingMassOffOfStepIndex, dMissingMassOffOfPIDs, Get_UseKinFitResultsFlag());
+
+	double locMissingMassSq = locMissingP4.M2();
 	return ((locMissingMassSq >= dMinimumMissingMassSq) && (locMissingMassSq <= dMaximumMissingMassSq));
 }
 
