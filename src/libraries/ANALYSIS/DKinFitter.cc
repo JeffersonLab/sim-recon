@@ -1507,11 +1507,31 @@ bool DKinFitter::Resolve_InclusiveP4(const deque<DKinFitConstraint*>& locKinFitC
 
 	//see if there is a missing particle in a p4 constraint that has PID = 0
 	DKinFitConstraint_P4* locInclusiveP4Constraint = NULL;
+	bool locUnknownParentFoundFlag = false;
 	for(size_t loc_i = 0; loc_i < locKinFitConstraints.size(); ++loc_i)
 	{
 		DKinFitConstraint_P4* locP4Constraint = dynamic_cast<DKinFitConstraint_P4*>(locKinFitConstraints[loc_i]);
 		if(locP4Constraint == NULL)
 			continue;
+
+		for(size_t loc_i = 0; loc_i < locP4Constraint->dInitialParticles.size(); ++loc_i)
+		{
+			DKinFitParticle* locKinFitParticle = locP4Constraint->dFinalParticles[loc_i];
+			if(locKinFitParticle->Get_KinFitParticleType() != d_DecayingParticle)
+				continue;
+			if(locKinFitParticle->Get_PID() == 0)
+			{
+				locUnknownParentFoundFlag = true;
+				locInclusiveP4Constraint = locP4Constraint;
+				if(dDebugLevel > 20)
+					cout << "Decaying particle with unknown PID found: is inclusive-p4 fit." << endl;
+				locInclusiveP4Constraint->dConstrainMassByInvariantMassFlag = false;
+			}
+			break;
+		}
+		if(locUnknownParentFoundFlag)
+			break;
+
 		bool locMissingParticleFoundFlag = false;
 		for(size_t loc_i = 0; loc_i < locP4Constraint->dFinalParticles.size(); ++loc_i)
 		{
@@ -1572,7 +1592,7 @@ bool DKinFitter::Resolve_InclusiveP4(const deque<DKinFitConstraint*>& locKinFitC
 			if(dDebugLevel > 5)
 				cout << "p4 constraint with pid " << locKinFitParticle->Get_PID() << " as parent marked as no-mass constraint" << endl;
 		}
-		else if(locInclusiveP4Constraint != NULL)
+		else if((locInclusiveP4Constraint != NULL) && (!locUnknownParentFoundFlag)) //if unknown parent, all will be invariant mass constraints
 			Mark_AsMissingMassConstraintIfNecessary(locP4Constraint);
 	}
 
