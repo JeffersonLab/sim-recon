@@ -521,7 +521,7 @@ void DEventProcessor_trackeffv2::Find_GenReconMatches(const vector<const DMCThro
 					if(locKinematicData->PID() != locMCThrown->PID())
 						continue; //wrong pid
 				}
-				locMatchFOM = dMCThrownMatchingFactory->Calc_MatchFOM(locMCThrown->momentum(), locKinematicData->momentum());
+				locMatchFOM = dMCThrownMatchingFactory->Calc_MatchFOM(locMCThrown->momentum(), locKinematicData->momentum(), locKinematicData->errorMatrix());
 
 				if(locMatchFOM >= locBestMatchFOM)
 				{
