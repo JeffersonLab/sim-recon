@@ -47,6 +47,8 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->geom = NULL;
 	this->ploss_direction = kForward;
 	this->check_material_boundaries = true;
+	this->zmin_track_boundary = -100.0;  // boundary at which to stop swimming
+	this->zmax_track_boundary = 670.0;   // boundary at which to stop swimming
 	
 	this->last_phi = 0.0;
 	this->last_swim_step = NULL;
@@ -701,8 +703,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		if (fabs(swim_step->origin.X())>129.  
 		    || fabs(swim_step->origin.Y())>129.)
 		  {Nswim_steps++; break;} // left extent of TOF 
-		if(z>670.0){Nswim_steps++; break;} // ran into FCAL
-		if(z<-100.0){Nswim_steps++; break;} // exit upstream
+		if(z>zmax_track_boundary){Nswim_steps++; break;} // ran into FCAL
+		if(z<zmin_track_boundary){Nswim_steps++; break;} // exit upstream
 		if(wire && Nswim_steps>0){ // optionally check if we passed a wire we're supposed to be swimming to
 			swim_step_t *closest_step = FindClosestSwimStep(wire);
 			if(++closest_step!=swim_step){Nswim_steps++; break;}

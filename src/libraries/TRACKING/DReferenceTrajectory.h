@@ -143,6 +143,10 @@ class DReferenceTrajectory{
 		inline double dPdx_from_A_Z_rho(double ptot, double A, double Z, double density) const;
 		inline double dPdx(double ptot, double KrhoZ_overA, double rhoZ_overA,double LogI) const;
 		bool GetHitCDCEndplate(void) const {return hit_cdc_endplate;}
+		void SetZmaxTrackingBoundary(double zmax) { zmax_track_boundary = zmax; }
+		void SetZminTrackingBoundary(double zmin) { zmin_track_boundary = zmin; }
+		double GetZmaxTrackingBoundary(void) { return zmax_track_boundary; }
+		double GetZminTrackingBoundary(void) { return zmin_track_boundary; }
 		
 		int GetDebugLevel(void){return debug_level;}
 		void SetDebugLevel(int new_level){debug_level=new_level;}
@@ -180,6 +184,8 @@ class DReferenceTrajectory{
 		const DGeometry *geom;
 		direction_t ploss_direction;
 		bool check_material_boundaries;
+		double zmin_track_boundary;  // boundary at which to stop swimming
+		double zmax_track_boundary;  // boundary at which to stop swimming
 		
 		mutable double last_phi;							///< last phi found in DistToRT
 		mutable const swim_step_t* last_swim_step;	///< last swim step used in DistToRT
