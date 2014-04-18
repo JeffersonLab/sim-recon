@@ -140,7 +140,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_FCALShowers(JEventLoop* loc
 	map<const DFCALTruthShower*, pair<const DFCALShower*, double> > locFCALTruthToShowerMap;
 
 	size_t locBestFCALShowerIndex = 0, locBestFCALTruthShowerIndex = 0;
-	double locBestMatchDistance, locMatchDistance;
+	double locBestMatchDistance = 0.0, locMatchDistance;
 	while((!locFCALShowers.empty()) && (!locFCALTruthShowers.empty()))
 	{
 		bool locMatchFoundFlag = false;
@@ -311,7 +311,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_TOFPoints(JEventLoop* locEv
 	map<const DTOFTruth*, pair<const DTOFPoint*, double> > locTOFTruthToPointMap;
 
 	size_t locBestTOFPointIndex = 0, locBestTOFTruthIndex = 0;
-	double locBestMatchDistance, locMatchDistance;
+	double locBestMatchDistance = 0.0, locMatchDistance;
 	while((!locTOFPoints.empty()) && (!locTOFTruths.empty()))
 	{
 		bool locMatchFoundFlag = false;
@@ -577,7 +577,6 @@ void DMCThrownMatching_factory::Find_GenReconMatches_NeutralHypo(const vector<co
 
 double DMCThrownMatching_factory::Calc_MatchFOM(const DVector3& locMomentum_Thrown, const DVector3& locMomentum_Detected, const DMatrixDSym& locInputCovarianceMatrix) const
 {
-	//Detailed Calculation:
 	DVector3 locDeltaP3 = locMomentum_Detected - locMomentum_Thrown;
 	double locTotalDeltaSq = locDeltaP3.Mag2();
 	double locTotalDelta = sqrt(locTotalDeltaSq);
