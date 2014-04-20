@@ -19,9 +19,12 @@
 #include "JANA/JFactory.h"
 #include "DANA/DApplication.h"
 
+#include "TRACKING/DMCThrown.h"
+
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisAction.h"
+#include "ANALYSIS/DAnalysisUtilities.h"
 #include "ANALYSIS/DAnalysisResults.h"
 #include "ANALYSIS/DHistogramActions.h"
 
@@ -47,6 +50,7 @@ class DAnalysisResults_factory_PreKinFit : public jana::JFactory<DAnalysisResult
 		bool dROOTObjectsCreatedFlag;
 		unsigned int dDebugLevel;
 		DApplication* dApplication;
+		const DAnalysisUtilities* dAnalysisUtilities;
 
 		map<const DReaction*, TH1D*> dHistMap_NumParticleCombos;
 		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedAction;

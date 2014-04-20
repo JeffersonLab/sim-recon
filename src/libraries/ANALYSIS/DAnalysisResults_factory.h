@@ -19,6 +19,8 @@
 #include "JANA/JFactory.h"
 #include "DANA/DApplication.h"
 
+#include "TRACKING/DMCThrown.h"
+
 #include "ANALYSIS/DReaction.h"
 #include "ANALYSIS/DParticleCombo.h"
 #include "ANALYSIS/DAnalysisAction.h"

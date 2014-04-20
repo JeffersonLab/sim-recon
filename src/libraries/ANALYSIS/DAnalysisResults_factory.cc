@@ -32,6 +32,9 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
 
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
 	//MAKE CONTROL HISTOGRAMS
 	string locHistName, locHistTitle, locDirName, locDirTitle;
 	const DReaction* locReaction;
@@ -42,74 +45,82 @@ jerror_t DAnalysisResults_factory::brun(jana::JEventLoop *locEventLoop, int runn
 	size_t locNumActions;
 
 	dApplication->RootWriteLock(); //to prevent undefined behavior due to directory changes, etc.
-
-	string locOutputFileName = "hd_root.root";
-	if(gPARMS->Exists("OUTPUT_FILENAME"))
-		gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
-	TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
-	if(locFile == NULL)
-		return NOERROR;
-	locFile->cd("");
-
-	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
-		locReaction = locReactions[loc_i];
-		locReactionName = locReaction->Get_ReactionName();
-		locNumActions = locReaction->Get_NumAnalysisActions();
+		string locOutputFileName = "hd_root.root";
+		if(gPARMS->Exists("OUTPUT_FILENAME"))
+			gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+		if(locFile == NULL)
+			return NOERROR;
+		locFile->cd("");
 
-		deque<string> locActionNames;
-		for(size_t loc_j = 0; loc_j < locNumActions; ++loc_j)
-			locActionNames.push_back(locReaction->Get_AnalysisAction(loc_j)->Get_ActionName());
-
-		locDirName = locReactionName;
-		locDirTitle = locReactionName;
-		locFile->cd();
-		locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
-		if(locDirectoryFile == NULL)
-			locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
-		locDirectoryFile->cd();
-
-		locHistName = "NumEventsSurvivedAction";
-		loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
-		if(loc1DHist == NULL)
+		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		{
-			locHistTitle = locReactionName + string(";;# Events Survived Action");
-			loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 2, -0.5, locNumActions + 2.0 - 0.5); //+2 for input & # tracks
-			loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
-			loc1DHist->GetXaxis()->SetBinLabel(2, "Minimum # Tracks"); // at least one DParticleCombo object before any actions
-			for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-				loc1DHist->GetXaxis()->SetBinLabel(3 + loc_j, locActionNames[loc_j].c_str());
-		}
-		dHistMap_NumEventsSurvivedAction[locReaction] = loc1DHist;
+			locReaction = locReactions[loc_i];
+			locReactionName = locReaction->Get_ReactionName();
+			locNumActions = locReaction->Get_NumAnalysisActions();
 
-		locHistName = "NumCombosSurvivedAction";
-		loc2DHist = static_cast<TH2D*>(locDirectoryFile->Get(locHistName.c_str()));
-		if(loc2DHist == NULL)
-		{
-			locHistTitle = locReactionName + string(";;# Particle Combos Survived Action");
-			loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1 - 0.5, 100, -0.5, 99.5); //+1 for # tracks
-			loc2DHist->GetXaxis()->SetBinLabel(1, "Minimum # Tracks"); // at least one DParticleCombo object before any actions
-			for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-				loc2DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
-		}
-		dHistMap_NumCombosSurvivedAction[locReaction] = loc2DHist;
+			deque<string> locActionNames;
+			for(size_t loc_j = 0; loc_j < locNumActions; ++loc_j)
+				locActionNames.push_back(locReaction->Get_AnalysisAction(loc_j)->Get_ActionName());
 
-		locHistName = "NumCombosSurvivedAction1D";
-		loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
-		if(loc1DHist == NULL)
-		{
-			locHistTitle = locReactionName + string(";;# Particle Combos Survived Action");
-			loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1 - 0.5); //+1 for # tracks
-			loc1DHist->GetXaxis()->SetBinLabel(1, "Minimum # Tracks"); // at least one DParticleCombo object before any actions
-			for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-				loc1DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
+			locDirName = locReactionName;
+			locDirTitle = locReactionName;
+			locFile->cd();
+			locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
+			if(locDirectoryFile == NULL)
+				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
+			locDirectoryFile->cd();
+
+			locHistName = "NumEventsSurvivedAction";
+			loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				unsigned int locThrownOffset = 0;
+				if(!locMCThrowns.empty())
+					locThrownOffset = 1;
+
+				locHistTitle = locReactionName + string(";;# Events Survived Action");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 2 + locThrownOffset, -0.5, locNumActions + 2.0 + float(locThrownOffset) - 0.5); //+2 for input & # tracks
+				loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
+
+				if(!locMCThrowns.empty())
+					loc1DHist->GetXaxis()->SetBinLabel(2, "Is Thrown Topology (Not A Cut)");
+
+				loc1DHist->GetXaxis()->SetBinLabel(2 + locThrownOffset, "Has Particle Combos"); // at least one DParticleCombo object before any actions
+				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+					loc1DHist->GetXaxis()->SetBinLabel(3 + loc_j + locThrownOffset, locActionNames[loc_j].c_str());
+			}
+			dHistMap_NumEventsSurvivedAction[locReaction] = loc1DHist;
+
+			locHistName = "NumCombosSurvivedAction";
+			loc2DHist = static_cast<TH2D*>(locDirectoryFile->Get(locHistName.c_str()));
+			if(loc2DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";;# Particle Combos Survived Action");
+				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1 - 0.5, 100, -0.5, 99.5); //+1 for # tracks
+				loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combos"); // at least one DParticleCombo object before any actions
+				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+					loc2DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
+			}
+			dHistMap_NumCombosSurvivedAction[locReaction] = loc2DHist;
+
+			locHistName = "NumCombosSurvivedAction1D";
+			loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";;# Particle Combos Survived Action");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 1, -0.5, locNumActions + 1 - 0.5); //+1 for # tracks
+				loc1DHist->GetXaxis()->SetBinLabel(1, "Minimum # Tracks"); // at least one DParticleCombo object before any actions
+				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
+					loc1DHist->GetXaxis()->SetBinLabel(2 + loc_j, locActionNames[loc_j].c_str());
+			}
+			dHistMap_NumCombosSurvivedAction1D[locReaction] = loc1DHist;
+			locDirectoryFile->cd("..");
 		}
-		dHistMap_NumCombosSurvivedAction1D[locReaction] = loc1DHist;
-		locDirectoryFile->cd("..");
+
+		dROOTObjectsCreatedFlag = true;
 	}
-
-	dROOTObjectsCreatedFlag = true;
-
 	dApplication->RootUnLock(); //unlock
 
 	return NOERROR;
@@ -155,6 +166,10 @@ jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int even
 
  	vector<const DParticleCombo*> locParticleCombos;
 	locEventLoop->Get(locParticleCombos);
+
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+	unsigned int locNumEventsSurvivedHistBinOffset = locMCThrowns.empty() ? 0 : 1;
 
 	const DReaction* locReaction;
 	DAnalysisResults* locAnalysisResults;
@@ -254,7 +269,7 @@ jerror_t DAnalysisResults_factory::evnt(jana::JEventLoop* locEventLoop, int even
 			for(size_t loc_j = 0; loc_j < locNumParticleCombosSurvivedActions.size(); ++loc_j)
 			{
 				if(locNumParticleCombosSurvivedActions[loc_j] > 0)
-					dHistMap_NumEventsSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 2); //+2 because 0 is initial (no cuts at all), and 1 is min #tracks
+					dHistMap_NumEventsSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 2 + locNumEventsSurvivedHistBinOffset); //+2 because 0 is initial (no cuts at all), and 1 is min #tracks
 				dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1, locNumParticleCombosSurvivedActions[loc_j]); //+1 because 0 is min #tracks
 				for(size_t loc_k = 0; loc_k < locNumParticleCombosSurvivedActions[loc_j]; ++loc_k)
 					dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j + locNumPreKinFitActions + 1); //+1 because 0 is min #tracks

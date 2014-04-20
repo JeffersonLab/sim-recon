@@ -40,7 +40,7 @@ class DEventSourceREST:public JEventSource
    DEventSourceREST(const char* source_name);
    virtual ~DEventSourceREST();		
    virtual const char* className(void) {
-      return static_className();
+      return DEventSourceREST::static_className();
    }
    static const char* static_className(void) {
       return "DEventSourceREST";
