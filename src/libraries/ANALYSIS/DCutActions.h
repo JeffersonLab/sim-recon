@@ -111,6 +111,21 @@ class DCutAction_CombinedPIDFOM : public DAnalysisAction
 		double dMinimumConfidenceLevel;
 };
 
+class DCutAction_CombinedTrackingFOM : public DAnalysisAction
+{
+	public:
+		DCutAction_CombinedTrackingFOM(const DReaction* locReaction, double locMinimumConfidenceLevel, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_CombinedTrackingFOM", false, locActionUniqueString), dMinimumConfidenceLevel(locMinimumConfidenceLevel){}
+
+		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinimumConfidenceLevel;
+};
+
 class DCutAction_TruePID : public DAnalysisAction
 {
 	public:

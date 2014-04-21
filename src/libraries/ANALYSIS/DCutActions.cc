@@ -91,6 +91,30 @@ bool DCutAction_CombinedPIDFOM::Perform_Action(JEventLoop* locEventLoop, const D
 	return ((locTotalNDF == 0) ? true : (TMath::Prob(locTotalChiSq, locTotalNDF) >= dMinimumConfidenceLevel));
 }
 
+string DCutAction_CombinedTrackingFOM::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMinimumConfidenceLevel;
+	return locStream.str();
+}
+
+bool DCutAction_CombinedTrackingFOM::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	unsigned int locTotalNDF = 0;
+	double locTotalChiSq = 0.0;
+
+	deque<const DKinematicData*> locDetectedChargedParticles;
+	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locDetectedChargedParticles);
+	for(size_t loc_i = 0; loc_i < locDetectedChargedParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = dynamic_cast<const DChargedTrackHypothesis*>(locDetectedChargedParticles[loc_i]);
+		locTotalNDF += locChargedTrackHypothesis->dNDF_Track;
+		locTotalChiSq += locChargedTrackHypothesis->dChiSq_Track;
+	}
+
+	return ((locTotalNDF == 0) ? true : (TMath::Prob(locTotalChiSq, locTotalNDF) >= dMinimumConfidenceLevel));
+}
+
 string DCutAction_MissingMass::Get_ActionName(void) const
 {
 	ostringstream locStream;
