@@ -16,6 +16,7 @@
 #include <PID/DNeutralParticleHypothesis.h>
 #include <PID/DNeutralShower.h>
 #include <PID/DEventRFBunch.h>
+#include <PID/DParticleID.h>
 #include <DVector3.h>
 #include <DMatrixDSym.h>
 #include <DMatrix.h>
@@ -33,6 +34,7 @@ class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleH
 		double dTargetLength;
 		double dTargetRadius;
 		DVector3 dTargetCenter;
+		const DParticleID* dParticleID;
 
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *locEventLoop, int runnumber);	///< Called everytime a new run number is detected.

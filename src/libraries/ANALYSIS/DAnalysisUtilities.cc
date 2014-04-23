@@ -19,6 +19,8 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 
 bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExactMatchFlag) const
 {
+	//DOES NOT SUPPORT DREACTIONS WITH MISSING UNKNOWN PARTICLES
+
 	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated
 	//if locExactMatchFlag = false, then allow the input DReaction to be a subset of the thrown
 	const DParticleCombo* locThrownCombo = NULL;
@@ -135,6 +137,17 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 			return false; //one of the input steps wasn't matched: abort!
 	}
 	return true;
+}
+
+double DAnalysisUtilities::Calc_Beta_Timing(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
+{
+	double locStartTime = 0.0, locStartTimeVariance = 0.0;
+	bool locUsedRFTimeFlag;
+	if(!dPIDAlgorithm->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, locRFTimeFixedFlag))
+		return numeric_limits<double>::quiet_NaN();
+	if((!locUsedRFTimeFlag) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector()))
+		return numeric_limits<double>::quiet_NaN(); //didn't use RF time, and t0/t1 detectors are the same: don't compute difference
+	return locChargedTrackHypothesis->pathLength()/(29.9792458*(locChargedTrackHypothesis->t1() - locStartTime));
 }
 
 void DAnalysisUtilities::Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const

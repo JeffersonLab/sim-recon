@@ -34,6 +34,9 @@ jerror_t DNeutralParticleHypothesis_factory::brun(jana::JEventLoop *locEventLoop
 	dTargetLength = 30.0;
 	double locTargetCenterZ = 65.0;
 	dTargetRadius = 1.5; //FIX: grab from database!!!
+
+	locEventLoop->GetSingle(dParticleID);
+
 	if(locGeometry)
 	{
 		locGeometry->GetTargetZ(locTargetCenterZ);
@@ -104,19 +107,11 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	DMatrixDSym locParticleCovariance;
 	Calc_ParticleCovariance(locNeutralShower, locMass, locMomentum, locPath, locParticleCovariance);
 
-	// Calculate DNeutralParticleHypothesis FOM
-	double locTimeDifference = locSpacetimeVertex.T() - locProjectedTime;
-	double locTimeDifferenceVariance = locParticleCovariance(6, 6) + locStartTimeVariance;
-	double locChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
-	unsigned int locNDF = 1;
-	double locFOM = TMath::Prob(locChiSq, locNDF);
-	if(locPID == Neutron)
-		locFOM = -1.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
-
 	// Build DNeutralParticleHypothesis // dEdx not set
 	DNeutralParticleHypothesis* locNeutralParticleHypothesis = new DNeutralParticleHypothesis;
 	locNeutralParticleHypothesis->AddAssociatedObject(locNeutralShower);
 
+	locNeutralParticleHypothesis->setPID(locPID);
 	locNeutralParticleHypothesis->setMass(locMass);
 	locNeutralParticleHypothesis->setCharge(0.0);
 	locNeutralParticleHypothesis->setMomentum(locMomentum);
@@ -127,7 +122,14 @@ DNeutralParticleHypothesis* DNeutralParticleHypothesis_factory::Create_DNeutralP
 	locNeutralParticleHypothesis->setPathLength(locPathLength, 0.0); //zero uncertainty (for now)
 	locNeutralParticleHypothesis->setErrorMatrix(locParticleCovariance);
 
-	locNeutralParticleHypothesis->setPID(locPID);
+	// Calculate DNeutralParticleHypothesis FOM
+	unsigned int locNDF = 0;
+	double locTimePull = 0.0;
+	double locChiSq = dParticleID->Calc_TimingChiSq(locNeutralParticleHypothesis, locEventRFBunch, locNDF, locTimePull);
+	double locFOM = TMath::Prob(locChiSq, locNDF);
+	if(locPID == Neutron)
+		locFOM = -1.0; //disables neutron ID until the neutron energy is calculated correctly from the deposited energy in the shower
+
 	locNeutralParticleHypothesis->dChiSq = locChiSq;
 	locNeutralParticleHypothesis->dNDF = locNDF;
 	locNeutralParticleHypothesis->dFOM = locFOM;

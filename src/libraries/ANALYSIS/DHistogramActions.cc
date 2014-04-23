@@ -20,34 +20,33 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	CreateAndChangeTo_ActionDirectory();
-	dParticleID = locParticleIDs[0];
-	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
-	for(size_t loc_i = 0; loc_i < locDesiredPIDs.size(); ++loc_i)
 	{
-		locPID = locDesiredPIDs[loc_i];
-		locParticleName = ParticleType(locPID);
-		locParticleROOTName = ParticleName_ROOT(locPID);
-		CreateAndChangeTo_Directory(locParticleName, locParticleName);
-
-		// Confidence Level
-		locHistName = "PIDConfidenceLevel";
-		locHistTitle = locParticleROOTName + string(" PID;PID Confidence Level");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_PIDFOM[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_PIDFOM[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
-
-		// Confidence Level in BCAL
-		locHistName = "TOFConfidenceLevel_BCAL";
-		locHistTitle = locParticleROOTName + string(" PID in BCAL;TOF Confidence Level");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_TOFFOM_BCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_TOFFOM_BCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
-
-		if(ParticleCharge(locPID) == 0)
+		CreateAndChangeTo_ActionDirectory();
+		dParticleID = locParticleIDs[0];
+		dAnalysisUtilities = locAnalysisUtilitiesVector[0];
+		for(size_t loc_i = 0; loc_i < locDesiredPIDs.size(); ++loc_i)
 		{
+			locPID = locDesiredPIDs[loc_i];
+			locParticleName = ParticleType(locPID);
+			locParticleROOTName = ParticleName_ROOT(locPID);
+			CreateAndChangeTo_Directory(locParticleName, locParticleName);
+
+			// Confidence Level
+			locHistName = "PIDConfidenceLevel";
+			locHistTitle = locParticleROOTName + string(" PID;PID Confidence Level");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_PIDFOM[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_PIDFOM[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+
+			// Confidence Level in BCAL
+			locHistName = "TOFConfidenceLevel_BCAL";
+			locHistTitle = locParticleROOTName + string(" PID in BCAL;TOF Confidence Level");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_TOFFOM_BCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_TOFFOM_BCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+
 			// Confidence Level in FCAL
 			locHistName = "TOFConfidenceLevel_FCAL";
 			locHistTitle = locParticleROOTName + string(" PID in FCAL;TOF Confidence Level");
@@ -55,142 +54,217 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 				dHistMap_TOFFOM_FCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
 			else
 				dHistMap_TOFFOM_FCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
-		}
-		else //charged particles
-		{
-			// Confidence Level in TOF
-			locHistName = "TOFConfidenceLevel_TOF";
-			locHistTitle = locParticleROOTName + string(" PID in TOF;TOF Confidence Level");
-			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_TOFFOM_TOF[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			else
-				dHistMap_TOFFOM_TOF[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
 
-			// Confidence Level in CDC
-			locHistName = "TOFConfidenceLevel_CDC";
-			locHistTitle = locParticleROOTName + string(" PID in CDC;TOF Confidence Level");
-			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_TOFFOM_CDC[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			else
-				dHistMap_TOFFOM_CDC[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
-
-			// DC dE/dx Confidence Level
-			locHistName = "DCdEdxConfidenceLevel";
-			locHistTitle = locParticleROOTName + string(" PID;DC #it{#frac{dE}{dx}} Confidence Level");
-			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_DCdEdxFOM[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-			else
-				dHistMap_DCdEdxFOM[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
-		}
-
-		//one per thrown pid:
-		if(!locMCThrowns.empty())
-		{
-			for(size_t loc_j = 0; loc_j < dThrownPIDs.size(); ++loc_j)
+			if(ParticleCharge(locPID) != 0)
 			{
-				locPID2 = dThrownPIDs[loc_j];
-				if((ParticleCharge(locPID2) != ParticleCharge(locPID)) && (locPID2 != Unknown))
-					continue;
-				locParticleName2 = ParticleType(locPID2);
-				locParticleROOTName2 = ParticleName_ROOT(locPID2);
-
-				//Confidence Level for Thrown PID
-				pair<Particle_t, Particle_t> locPIDPair(locPID, locPID2);
-				locHistName = string("PIDConfidenceLevel_ForThrownPID_") + locParticleName2;
-				locHistTitle = locParticleROOTName + string(" PID, Thrown PID = ") + locParticleROOTName2 + string(";PID Confidence Level");
+				// Confidence Level in TOF
+				locHistName = "TOFConfidenceLevel_TOF";
+				locHistTitle = locParticleROOTName + string(" PID in TOF;TOF Confidence Level");
 				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-					dHistMap_PIDFOMForTruePID[locPIDPair] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					dHistMap_TOFFOM_TOF[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
 				else
-					dHistMap_PIDFOMForTruePID[locPIDPair] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+					dHistMap_TOFFOM_TOF[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+
+				// Confidence Level in CDC
+				locHistName = "TOFConfidenceLevel_CDC";
+				locHistTitle = locParticleROOTName + string(" PID in CDC;TOF Confidence Level");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_TOFFOM_CDC[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_TOFFOM_CDC[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+
+				// DC dE/dx Confidence Level
+				locHistName = "DCdEdxConfidenceLevel";
+				locHistTitle = locParticleROOTName + string(" PID;DC #it{#frac{dE}{dx}} Confidence Level");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_DCdEdxFOM[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_DCdEdxFOM[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
 			}
-		}
 
-		//beta vs p
-		locHistName = "BetaVsP";
-		locHistTitle = locParticleROOTName + string(";p (GeV/c);#beta");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_BetaVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_BetaVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumBetaBins, dMinBeta, dMaxBeta);
-
-		//delta-beta vs p
-		locHistName = "DeltaBetaVsP";
-		locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta#beta");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_DeltaBetaVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_DeltaBetaVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
-
-		//TOF Confidence Level vs Delta-Beta
-		locHistName = "TOFConfidenceLevelVsDeltaBeta";
-		locHistTitle = locParticleROOTName + string(";#Delta#beta;TOF Confidence Level");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_TOFFOMVsDeltaBeta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_TOFFOMVsDeltaBeta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta, dNumFOMBins, 0.0, 1.0);
-
-		// P Vs Theta, PID FOM < 1%
-		locHistName = "PVsTheta_LowPIDFOM";
-		locHistTitle = locParticleROOTName + string(", PID FOM < 1%;#theta#circ;p (GeV/c)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_PVsTheta_LowPIDFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_PVsTheta_LowPIDFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-		// P Vs Theta, PID FOM = NaN
-		locHistName = "PVsTheta_NaNPIDFOM";
-		locHistTitle = locParticleROOTName + string(", PID FOM = NaN;#theta#circ;p (GeV/c)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_PVsTheta_NaNPIDFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_PVsTheta_NaNPIDFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-		if(ParticleCharge(locPID) != 0) //no other sources of PID for neutrals
-		{
-			// P Vs Theta, TOF FOM < 1%
-			locHistName = "PVsTheta_LowTOFFOM";
-			locHistTitle = locParticleROOTName + string(", TOF FOM < 1%;#theta#circ;p (GeV/c)");
+			//beta vs p
+			locHistName = "BetaVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#beta");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_PVsTheta_LowTOFFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_BetaVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistMap_PVsTheta_LowTOFFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+				dHistMap_BetaVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumBetaBins, dMinBeta, dMaxBeta);
 
-			// P Vs Theta, TOF FOM = NaN
-			locHistName = "PVsTheta_NaNTOFFOM";
-			locHistTitle = locParticleROOTName + string(", TOF FOM = NaN;#theta#circ;p (GeV/c)");
+			//delta-beta vs p
+			locHistName = "DeltaBetaVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta#beta");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_PVsTheta_NaNTOFFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_DeltaBetaVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistMap_PVsTheta_NaNTOFFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+				dHistMap_DeltaBetaVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
 
-			// P Vs Theta, Beta < 0
-			locHistName = "PVsTheta_NegativeBeta";
-			locHistTitle = locParticleROOTName + string(", #beta < 0.0;#theta#circ;p (GeV/c)");
+			//TOF Confidence Level vs Delta-Beta
+			locHistName = "TOFConfidenceLevelVsDeltaBeta";
+			locHistTitle = locParticleROOTName + string(";#Delta#beta;TOF Confidence Level");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_PVsTheta_NegativeBeta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TOFFOMVsDeltaBeta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistMap_PVsTheta_NegativeBeta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+				dHistMap_TOFFOMVsDeltaBeta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta, dNumFOMBins, 0.0, 1.0);
 
-			// P Vs Theta, DC dE/dx FOM < 1%
-			locHistName = "PVsTheta_LowDCdEdxFOM";
-			locHistTitle = locParticleROOTName + string(", DC #it{#frac{dE}{dx}} FOM < 1%;#theta#circ;p (GeV/c)");
+			//one per thrown pid:
+			if(!locMCThrowns.empty())
+			{
+				CreateAndChangeTo_Directory("Throwns", "Throwns");
+				for(size_t loc_j = 0; loc_j < dThrownPIDs.size(); ++loc_j)
+				{
+					locPID2 = dThrownPIDs[loc_j];
+					if((ParticleCharge(locPID2) != ParticleCharge(locPID)) && (locPID2 != Unknown))
+						continue;
+					locParticleName2 = ParticleType(locPID2);
+					locParticleROOTName2 = ParticleName_ROOT(locPID2);
+
+					//Confidence Level for Thrown PID
+					pair<Particle_t, Particle_t> locPIDPair(locPID, locPID2);
+					locHistName = string("PIDConfidenceLevel_ForThrownPID_") + locParticleName2;
+					locHistTitle = locParticleROOTName + string(" PID, Thrown PID = ") + locParticleROOTName2 + string(";PID Confidence Level");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistMap_PIDFOMForTruePID[locPIDPair] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistMap_PIDFOMForTruePID[locPIDPair] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumFOMBins, 0.0, 1.0);
+				}
+				gDirectory->cd("..");
+			}
+
+			CreateAndChangeTo_Directory("Pulls", "Pulls");
+
+			//Delta-t Pulls - CDC
+			if(ParticleCharge(locPID) != 0) //CDC
+			{
+				locHistName = "TimePull_CDC";
+				locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_TimePull_CDC[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_TimePull_CDC[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
+
+				locHistName = "TimePullVsTheta_CDC";
+				locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_TimePullVsTheta_CDC[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_TimePullVsTheta_CDC[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
+			}
+
+			//Delta-t Pulls - BCAL
+			locHistName = "TimePull_BCAL";
+			locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_PVsTheta_LowDCdEdxFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TimePull_BCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistMap_PVsTheta_LowDCdEdxFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+				dHistMap_TimePull_BCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
 
-			// P Vs Theta, DC dE/dx FOM = NaN
-			locHistName = "PVsTheta_NaNDCdEdxFOM";
-			locHistTitle = locParticleROOTName + string(", DC #it{#frac{dE}{dx}} FOM = NaN;#theta#circ;p (GeV/c)");
+			locHistName = "TimePullVsTheta_BCAL";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltat/#sigma_{#Deltat}");
 			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_PVsTheta_NaNDCdEdxFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				dHistMap_TimePullVsTheta_BCAL[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
 			else
-				dHistMap_PVsTheta_NaNDCdEdxFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-		}
+				dHistMap_TimePullVsTheta_BCAL[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
 
-		gDirectory->cd("..");
-	} //end of PID loop
+			//Delta-t Pulls - TOF
+			if(ParticleCharge(locPID) != 0) //TOF
+			{
+				locHistName = "TimePull_TOF";
+				locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_TimePull_TOF[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_TimePull_TOF[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
 
+				locHistName = "TimePullVsP_TOF";
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_TimePullVsP_TOF[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_TimePullVsP_TOF[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+			}
+
+			//Delta-t Pulls - FCAL
+			locHistName = "TimePull_FCAL";
+			locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_TimePull_FCAL[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_TimePull_FCAL[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
+
+			locHistName = (ParticleCharge(locPID) == 0) ? "TimePullVsE_FCAL" : "TimePullVsP_FCAL";
+			string locXAxisTitle = (ParticleCharge(locPID) == 0) ? ";E (GeV)" : ";p (GeV/c)";
+			locHistTitle = locParticleROOTName + locXAxisTitle + string(";#Deltat/#sigma_{#Deltat}");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_TimePullVsPOrE_FCAL[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_TimePullVsPOrE_FCAL[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+
+			gDirectory->cd("..");
+			CreateAndChangeTo_Directory("PVsTheta", "PVsTheta");
+
+			// P Vs Theta, PID FOM < 1%
+			locHistName = "PVsTheta_LowPIDFOM";
+			locHistTitle = locParticleROOTName + string(", PID FOM < 1%;#theta#circ;p (GeV/c)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_PVsTheta_LowPIDFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_PVsTheta_LowPIDFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+			// P Vs Theta, PID FOM = NaN
+			locHistName = "PVsTheta_NaNPIDFOM";
+			locHistTitle = locParticleROOTName + string(", PID FOM = NaN;#theta#circ;p (GeV/c)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_PVsTheta_NaNPIDFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_PVsTheta_NaNPIDFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+			if(ParticleCharge(locPID) != 0) //no other sources of PID for neutrals
+			{
+				// P Vs Theta, TOF FOM < 1%
+				locHistName = "PVsTheta_LowTOFFOM";
+				locHistTitle = locParticleROOTName + string(", TOF FOM < 1%;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_LowTOFFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_LowTOFFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+				// P Vs Theta, TOF FOM = NaN
+				locHistName = "PVsTheta_NaNTOFFOM";
+				locHistTitle = locParticleROOTName + string(", TOF FOM = NaN;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_NaNTOFFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_NaNTOFFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+				// P Vs Theta, DC dE/dx FOM < 1%
+				locHistName = "PVsTheta_LowDCdEdxFOM";
+				locHistTitle = locParticleROOTName + string(", DC #it{#frac{dE}{dx}} FOM < 1%;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_LowDCdEdxFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_LowDCdEdxFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+				// P Vs Theta, DC dE/dx FOM = NaN
+				locHistName = "PVsTheta_NaNDCdEdxFOM";
+				locHistTitle = locParticleROOTName + string(", DC #it{#frac{dE}{dx}} FOM = NaN;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_NaNDCdEdxFOM[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_NaNDCdEdxFOM[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+				// P Vs Theta, Beta < 0
+				locHistName = "PVsTheta_NegativeBeta";
+				locHistTitle = locParticleROOTName + string(", #beta < 0.0;#theta#circ;p (GeV/c)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PVsTheta_NegativeBeta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PVsTheta_NegativeBeta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			}
+			gDirectory->cd("..");
+
+			gDirectory->cd("..");
+		} //end of PID loop
+	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
 
@@ -236,13 +310,9 @@ bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParti
 void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrownMatching* locMCThrownMatching, const DEventRFBunch* locEventRFBunch)
 {
 	Particle_t locPID = locChargedTrackHypothesis->PID();
-	double locDeltaBeta, locBeta_Timing;
+	double locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
+	double locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 
-	double locStartTime, locStartTimeVariance;
-	bool locUsedRFTimeFlag;
-	bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, true);
-	locBeta_Timing = locFoundStartTimeFlag ? locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locStartTime)) : numeric_limits<double>::quiet_NaN();
-	locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 	double locFOM_Timing = (locChargedTrackHypothesis->dNDF_Timing > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_Timing, locChargedTrackHypothesis->dNDF_Timing) : numeric_limits<double>::quiet_NaN();
 	double locFOM_DCdEdx = (locChargedTrackHypothesis->dNDF_DCdEdx > 0) ? TMath::Prob(locChargedTrackHypothesis->dChiSq_DCdEdx, locChargedTrackHypothesis->dNDF_DCdEdx) : numeric_limits<double>::quiet_NaN();
 
@@ -251,16 +321,38 @@ void DHistogramAction_PID::Fill_ChargedHists(const DChargedTrackHypothesis* locC
 	double locMatchFOM = 0.0;
 	const DMCThrown* locMCThrown = (locMCThrownMatching != NULL) ? locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM) : NULL;
 
+	double locTimePull = 0.0;
+	unsigned int locTimeNDF = 0;
+	double locTimeChiSq = dParticleID->Calc_TimingChiSq(locChargedTrackHypothesis, locEventRFBunch, true, locTimeNDF, locTimePull);
+
 	japp->RootWriteLock();
 	{
 		dHistMap_PIDFOM[locPID]->Fill(locChargedTrackHypothesis->dFOM);
 
-		if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
-			dHistMap_TOFFOM_TOF[locPID]->Fill(locFOM_Timing);
-		else if(locChargedTrackHypothesis->t1_detector() == SYS_BCAL)
-			dHistMap_TOFFOM_BCAL[locPID]->Fill(locFOM_Timing);
-		else if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
+		if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
+		{
 			dHistMap_TOFFOM_CDC[locPID]->Fill(locFOM_Timing);
+			dHistMap_TimePull_CDC[locPID]->Fill(locTimePull);
+			dHistMap_TimePullVsTheta_CDC[locPID]->Fill(locTheta, locTimePull);
+		}
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_BCAL)
+		{
+			dHistMap_TOFFOM_BCAL[locPID]->Fill(locFOM_Timing);
+			dHistMap_TimePull_BCAL[locPID]->Fill(locTimePull);
+			dHistMap_TimePullVsTheta_BCAL[locPID]->Fill(locTheta, locTimePull);
+		}
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
+		{
+			dHistMap_TOFFOM_TOF[locPID]->Fill(locFOM_Timing);
+			dHistMap_TimePull_TOF[locPID]->Fill(locTimePull);
+			dHistMap_TimePullVsP_TOF[locPID]->Fill(locP, locTimePull);
+		}
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_FCAL)
+		{
+			dHistMap_TOFFOM_FCAL[locPID]->Fill(locFOM_Timing);
+			dHistMap_TimePull_FCAL[locPID]->Fill(locTimePull);
+			dHistMap_TimePullVsPOrE_FCAL[locPID]->Fill(locP, locTimePull);
+		}
 
 		dHistMap_DCdEdxFOM[locPID]->Fill(locFOM_DCdEdx);
 		dHistMap_BetaVsP[locPID]->Fill(locP, locBeta_Timing);
@@ -298,7 +390,7 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 	Particle_t locPID = locNeutralParticleHypothesis->PID();
 
 	double locStartTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
-	double locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(SPEED_OF_LIGHT*(locNeutralParticleHypothesis->t1() - locStartTime));
+	double locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(29.9792458*(locNeutralParticleHypothesis->t1() - locStartTime));
 	double locDeltaBeta = locNeutralParticleHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 
 	double locP = locNeutralParticleHypothesis->momentum().Mag();
@@ -306,14 +398,30 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 	double locMatchFOM = 0.0;
 	const DMCThrown* locMCThrown = (locMCThrownMatching != NULL) ? locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis, locMatchFOM) : NULL;
 
+	double locTimePull = 0.0;
+	unsigned int locTimeNDF = 0;
+	double locTimeChiSq = dParticleID->Calc_TimingChiSq(locNeutralParticleHypothesis, locEventRFBunch, locTimeNDF, locTimePull);
+
+	const DNeutralShower* locNeutralShower = NULL;
+	locNeutralParticleHypothesis->GetSingle(locNeutralShower);
+	double locShowerEnergy = locNeutralShower->dEnergy;
+
 	japp->RootWriteLock();
 	{
 		dHistMap_PIDFOM[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
 
 		if(locNeutralParticleHypothesis->t1_detector() == SYS_BCAL)
+		{
 			dHistMap_TOFFOM_BCAL[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
+			dHistMap_TimePull_BCAL[locPID]->Fill(locTimePull);
+			dHistMap_TimePullVsTheta_BCAL[locPID]->Fill(locTheta, locTimePull);
+		}
 		else if(locNeutralParticleHypothesis->t1_detector() == SYS_FCAL)
+		{
 			dHistMap_TOFFOM_FCAL[locPID]->Fill(locNeutralParticleHypothesis->dFOM);
+			dHistMap_TimePull_FCAL[locPID]->Fill(locTimePull);
+			dHistMap_TimePullVsPOrE_FCAL[locPID]->Fill(locShowerEnergy, locTimePull);
+		}
 
 		dHistMap_BetaVsP[locPID]->Fill(locP, locBeta_Timing);
 		dHistMap_DeltaBetaVsP[locPID]->Fill(locP, locDeltaBeta);
@@ -927,16 +1035,14 @@ void DHistogramAction_ParticleComboKinematics::Fill_Hists(JEventLoop* locEventLo
 	{
 		const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
 		double locStartTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
-		locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(SPEED_OF_LIGHT*(locNeutralParticleHypothesis->t1() - locStartTime));
+		locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(29.9792458*(locNeutralParticleHypothesis->t1() - locStartTime));
 		locDeltaBeta = locNeutralParticleHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 	}
 	else
 	{
+
 		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locKinematicData);
-		double locStartTime, locStartTimeVariance;
-		bool locUsedRFTimeFlag;
-		bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, true);
-		locBeta_Timing = locFoundStartTimeFlag ? locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locStartTime)) : numeric_limits<double>::quiet_NaN();
+		locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
 		locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 	}
 
@@ -962,7 +1068,7 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 	double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 	double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 	double locP = locMomentum.Mag();
-	double locDeltaTRF = locKinematicData->time() - (locEventRFBunch->dTime + (locKinematicData->z() - dTargetZCenter)/SPEED_OF_LIGHT);
+	double locDeltaTRF = locKinematicData->time() - (locEventRFBunch->dTime + (locKinematicData->z() - dTargetZCenter)/29.9792458);
 
 	japp->RootWriteLock();
 	{
@@ -1139,136 +1245,141 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 	vector<const DParticleID*> locParticleIDs;
 	locEventLoop->Get(locParticleIDs);
 
+	const DAnalysisUtilities* locAnalysisUtilities = NULL;
+	locEventLoop->GetSingle(locAnalysisUtilities);
+
 	//CREATE THE HISTOGRAMS
 	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
-	CreateAndChangeTo_ActionDirectory();
-
-	dParticleID = locParticleIDs[0];
-
-	// Beam Particle
-	locPID = Gamma;
-	locParticleName = string("Beam_") + ParticleType(locPID);
-	locParticleROOTName = ParticleName_ROOT(locPID);
-	CreateAndChangeTo_Directory(locParticleName, locParticleName);
-	locHistName = "Momentum";
-	locHistTitle = string("Beam ") + locParticleROOTName + string(";p (GeV/c)");
-	if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-		dBeamParticle_P = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-	else
-		dBeamParticle_P = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPBins, dMinP, dMaxP);
-	gDirectory->cd("..");
-
-	for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
 	{
-		locPID = dFinalStatePIDs[loc_i];
-		locParticleName = ParticleType(locPID);
+		CreateAndChangeTo_ActionDirectory();
+
+		dParticleID = locParticleIDs[0];
+		dAnalysisUtilities = locAnalysisUtilities;
+
+		// Beam Particle
+		locPID = Gamma;
+		locParticleName = string("Beam_") + ParticleType(locPID);
 		locParticleROOTName = ParticleName_ROOT(locPID);
 		CreateAndChangeTo_Directory(locParticleName, locParticleName);
-
-		// Momentum
 		locHistName = "Momentum";
-		locHistTitle = locParticleROOTName + string(";p (GeV/c)");
+		locHistTitle = string("Beam ") + locParticleROOTName + string(";p (GeV/c)");
 		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_P[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			dBeamParticle_P = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
 		else
-			dHistMap_P[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPBins, dMinP, dMaxP);
-
-		// Theta
-		locHistName = "Theta";
-		locHistTitle = locParticleROOTName + string(";#theta#circ");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_Theta[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_Theta[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumThetaBins, dMinTheta, dMaxTheta);
-
-		// Phi
-		locHistName = "Phi";
-		locHistTitle = locParticleROOTName + string(";#phi#circ");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_Phi[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_Phi[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPhiBins, dMinPhi, dMaxPhi);
-
-		// P Vs Theta
-		locHistName = "PVsTheta";
-		locHistTitle = locParticleROOTName + string(";#theta#circ;p (GeV/c)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_PVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_PVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
-
-		// Phi Vs Theta
-		locHistName = "PhiVsTheta";
-		locHistTitle = locParticleROOTName + string(";#theta#circ;#phi#circ");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_PhiVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_PhiVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPhiBins, dMinPhi, dMaxPhi);
-
-		//beta vs p
-		locHistName = "BetaVsP";
-		locHistTitle = locParticleROOTName + string(";p (GeV/c);#beta");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_BetaVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_BetaVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumBetaBins, dMinBeta, dMaxBeta);
-
-		//delta-beta vs p
-		locHistName = "DeltaBetaVsP";
-		locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta#beta");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_DeltaBetaVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_DeltaBetaVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
-
-		// Vertex-Z
-		locHistName = "VertexZ";
-		locHistTitle = locParticleROOTName + string(";Vertex-Z (cm)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_VertexZ[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_VertexZ[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumVertexZBins, dMinVertexZ, dMaxVertexZ);
-
-		if(ParticleCharge(locPID) != 0)
-		{
-			// Tracking FOM Vs Vertex-Z
-			locHistName = "TrackingFOMVsVertexZ";
-			locHistTitle = locParticleROOTName + string(";Vertex-Z (cm); Time-Based Track Reconstruction FOM");
-			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-				dHistMap_TrackingFOMVsVertexZ[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-			else
-				dHistMap_TrackingFOMVsVertexZ[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DVertexZBins, dMinVertexZ, dMaxVertexZ, dNumTrackFOMBins, 0.0, 1.0);
-		}
-
-		// Vertex-Z Vs Theta
-		locHistName = "VertexZVsTheta";
-		locHistTitle = locParticleROOTName + string(";#theta#circ;Vertex-Z (cm)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_VertexZVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_VertexZVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DVertexZBins, dMinVertexZ, dMaxVertexZ);
-
-		// Vertex-Y Vs Vertex-X
-		locHistName = "VertexYVsX";
-		locHistTitle = locParticleROOTName + string(";Vertex-X (cm);Vertex-Y (cm)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_VertexYVsX[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_VertexYVsX[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
-
-		// Vertex-T
-		locHistName = "VertexT";
-		locHistTitle = locParticleROOTName + string(";Vertex-T (ns)");
-		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
-			dHistMap_VertexT[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
-		else
-			dHistMap_VertexT[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumTBins, dMinT, dMaxT);
-
+			dBeamParticle_P = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPBins, dMinP, dMaxP);
 		gDirectory->cd("..");
+
+		for(size_t loc_i = 0; loc_i < dFinalStatePIDs.size(); ++loc_i)
+		{
+			locPID = dFinalStatePIDs[loc_i];
+			locParticleName = ParticleType(locPID);
+			locParticleROOTName = ParticleName_ROOT(locPID);
+			CreateAndChangeTo_Directory(locParticleName, locParticleName);
+
+			// Momentum
+			locHistName = "Momentum";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_P[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_P[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPBins, dMinP, dMaxP);
+
+			// Theta
+			locHistName = "Theta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_Theta[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_Theta[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumThetaBins, dMinTheta, dMaxTheta);
+
+			// Phi
+			locHistName = "Phi";
+			locHistTitle = locParticleROOTName + string(";#phi#circ");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_Phi[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_Phi[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPhiBins, dMinPhi, dMaxPhi);
+
+			// P Vs Theta
+			locHistName = "PVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;p (GeV/c)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_PVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_PVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+
+			// Phi Vs Theta
+			locHistName = "PhiVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;#phi#circ");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_PhiVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_PhiVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPhiBins, dMinPhi, dMaxPhi);
+
+			//beta vs p
+			locHistName = "BetaVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#beta");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_BetaVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_BetaVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumBetaBins, dMinBeta, dMaxBeta);
+
+			//delta-beta vs p
+			locHistName = "DeltaBetaVsP";
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta#beta");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_DeltaBetaVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_DeltaBetaVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaBetaBins, dMinDeltaBeta, dMaxDeltaBeta);
+
+			// Vertex-Z
+			locHistName = "VertexZ";
+			locHistTitle = locParticleROOTName + string(";Vertex-Z (cm)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_VertexZ[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_VertexZ[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumVertexZBins, dMinVertexZ, dMaxVertexZ);
+
+			if(ParticleCharge(locPID) != 0)
+			{
+				// Tracking FOM Vs Vertex-Z
+				locHistName = "TrackingFOMVsVertexZ";
+				locHistTitle = locParticleROOTName + string(";Vertex-Z (cm); Time-Based Track Reconstruction FOM");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_TrackingFOMVsVertexZ[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_TrackingFOMVsVertexZ[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DVertexZBins, dMinVertexZ, dMaxVertexZ, dNumTrackFOMBins, 0.0, 1.0);
+			}
+
+			// Vertex-Z Vs Theta
+			locHistName = "VertexZVsTheta";
+			locHistTitle = locParticleROOTName + string(";#theta#circ;Vertex-Z (cm)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_VertexZVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_VertexZVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DVertexZBins, dMinVertexZ, dMaxVertexZ);
+
+			// Vertex-Y Vs Vertex-X
+			locHistName = "VertexYVsX";
+			locHistTitle = locParticleROOTName + string(";Vertex-X (cm);Vertex-Y (cm)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_VertexYVsX[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_VertexYVsX[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNumVertexXYBins, dMinVertexXY, dMaxVertexXY, dNumVertexXYBins, dMinVertexXY, dMaxVertexXY);
+
+			// Vertex-T
+			locHistName = "VertexT";
+			locHistTitle = locParticleROOTName + string(";Vertex-T (ns)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dHistMap_VertexT[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dHistMap_VertexT[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumTBins, dMinT, dMaxT);
+
+			gDirectory->cd("..");
+		}
 	}
 	japp->RootUnLock(); //RELEASE ROOT LOCK!!
 }
-
 
 bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
@@ -1281,7 +1392,10 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = (!locEventRFBunches.empty()) ? locEventRFBunches[0] : NULL;
+	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
+	if(locParticleCombo != NULL)
+		locEventRFBunch = locParticleCombo->Get_EventRFBunch();
+
 	double locBeta_Timing, locDeltaBeta;
 
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
@@ -1332,11 +1446,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		double locPhi = locMomentum.Phi()*180.0/TMath::Pi();
 		double locTheta = locMomentum.Theta()*180.0/TMath::Pi();
 		double locP = locMomentum.Mag();
-
-		double locStartTime, locStartTimeVariance;
-		bool locUsedRFTimeFlag;
-		bool locFoundStartTimeFlag = dParticleID->Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, false);
-		locBeta_Timing = locFoundStartTimeFlag ? locChargedTrackHypothesis->pathLength()/(SPEED_OF_LIGHT*(locChargedTrackHypothesis->t1() - locStartTime)) : numeric_limits<double>::quiet_NaN();
+		locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
 		locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 		double locTrackingFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
 
@@ -1399,7 +1509,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		double locP = locMomentum.Mag();
 
 		double locStartTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
-		locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(SPEED_OF_LIGHT*(locNeutralParticleHypothesis->t1() - locStartTime));
+		locBeta_Timing = locNeutralParticleHypothesis->pathLength()/(29.9792458*(locNeutralParticleHypothesis->t1() - locStartTime));
 		locDeltaBeta = locNeutralParticleHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
 
 		japp->RootWriteLock();
@@ -1950,7 +2060,7 @@ bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, cons
 		double locDeltaPathLength = locDeltaZ/cos(locMomentumAtTOF.Theta());
 		double locPropagatedTrueX = locTOFTruth->x + locDeltaPathLength*sin(locMomentumAtTOF.Theta())*cos(locMomentumAtTOF.Phi());
 		double locPropagatedTrueY = locTOFTruth->y + locDeltaPathLength*sin(locMomentumAtTOF.Theta())*sin(locMomentumAtTOF.Phi());
-		double locVelocity = SPEED_OF_LIGHT*locMomentumAtTOF.Mag()/locTOFTruth->E;
+		double locVelocity = 29.9792458*locMomentumAtTOF.Mag()/locTOFTruth->E;
 		double locPropagatedTrueT = locTOFTruth->t + locDeltaPathLength/locVelocity;
 
 		double locDeltaT = locTOFPoint->t - locPropagatedTrueT;

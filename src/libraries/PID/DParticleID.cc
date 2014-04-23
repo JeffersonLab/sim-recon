@@ -897,49 +897,57 @@ bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locCharge
 
 bool DParticleID::Calc_TrackStartTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locStartTime, double& locStartTimeVariance, bool& locUsedRFTimeFlag, bool locRFTimeFixedFlag) const
 {
-	//use RF bunch if available, else use t0 detector if available (e.g. start counter, CDC)
-	double locPropagatedRFTime;
+	//use RF bunch if available
+	double locPropagatedRFTime = 0.0;
 	locUsedRFTimeFlag = Calc_PropagatedRFTime(locChargedTrackHypothesis, locEventRFBunch, locPropagatedRFTime, locRFTimeFixedFlag);
 	if(locUsedRFTimeFlag)
 	{
 		locStartTime = locPropagatedRFTime;
 		locStartTimeVariance = locEventRFBunch->dTimeVariance;
 	}
-	else //no confidence in selecting the RF bunch
+	else //no confidence in selecting the RF bunch: use t0 detector if available (e.g. start counter, CDC)
 	{
-		locStartTime = locChargedTrackHypothesis->t0(); //BEWARE, THIS MAY CHANGE AS SC SYSTEM IS UPDATED!! (may need to propagate time to beamline here)
+		locStartTime = locChargedTrackHypothesis->t0();
 		locStartTimeVariance = locChargedTrackHypothesis->t0_err()*locChargedTrackHypothesis->t0_err();
-		//try to use the start counter or CDC time instead of the RF time
-		if(locChargedTrackHypothesis->t0_detector() == SYS_NULL)
-			return false;
 	}
 	return true;
 }
 
-void DParticleID::Calc_TimingChiSq(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
+double DParticleID::Calc_TimingChiSq(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag, unsigned int &locNDF, double& locPull) const
 {
-	double locStartTime, locStartTimeVariance;
-	bool locUsedRFTimeFlag;
+	double locStartTime = 0.0, locStartTimeVariance = 0.0;
+	bool locUsedRFTimeFlag = false;
 	if(!Calc_TrackStartTime(locChargedTrackHypothesis, locEventRFBunch, locStartTime, locStartTimeVariance, locUsedRFTimeFlag, locRFTimeFixedFlag))
 	{
-		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
-		locChargedTrackHypothesis->dNDF_Timing = 0;
-		return;
+		locNDF = 0;
+		locPull = 0.0;
+		return 0.0;
 	}
 
 	if((!locUsedRFTimeFlag) && (locChargedTrackHypothesis->t0_detector() == locChargedTrackHypothesis->t1_detector())) //e.g. both CDC (not matched to any hits)
 	{
-		locChargedTrackHypothesis->dChiSq_Timing = 0.0;
-		locChargedTrackHypothesis->dNDF_Timing = 0;
-		return;
+		locNDF = 0;
+		locPull = 0.0;
+		return 0.0;
 	}
 
 	double locTimeDifference = locStartTime - locChargedTrackHypothesis->time();
 	double locTimeDifferenceVariance = (locChargedTrackHypothesis->errorMatrix())(6, 6) + locStartTimeVariance;
 
-	double locTimingChiSq = locTimeDifference*locTimeDifference/locTimeDifferenceVariance;
-	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
-	locChargedTrackHypothesis->dNDF_Timing = 1;
+	locNDF = 1;
+	locPull = locTimeDifference/sqrt(locTimeDifferenceVariance);
+	return locPull*locPull;
+}
+
+double DParticleID::Calc_TimingChiSq(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch, unsigned int &locNDF, double& locPull) const
+{
+	double locStartTimeVariance = locEventRFBunch->dTimeVariance;
+	double locStartTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+
+	double locTimeDifferenceVariance = (locNeutralParticleHypothesis->errorMatrix())(6, 6) + locStartTimeVariance;
+	locPull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locTimeDifferenceVariance);
+	locNDF = 1;
+	return locPull*locPull;
 }
 
 Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
@@ -972,7 +980,12 @@ Particle_t DParticleID::IDTrack(float locCharge, float locMass) const
 void DParticleID::Calc_ChargedPIDFOM(DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
 {
 	CalcDCdEdxChiSq(locChargedTrackHypothesis);
-	Calc_TimingChiSq(locChargedTrackHypothesis, locEventRFBunch, locRFTimeFixedFlag);
+
+	unsigned int locTimingNDF = 0;
+	double locTimingPull = 0.0;
+	double locTimingChiSq = Calc_TimingChiSq(locChargedTrackHypothesis, locEventRFBunch, locRFTimeFixedFlag, locTimingNDF, locTimingPull);
+	locChargedTrackHypothesis->dChiSq_Timing = locTimingChiSq;
+	locChargedTrackHypothesis->dNDF_Timing = locTimingNDF;
 
 	unsigned int locNDF_Total = locChargedTrackHypothesis->dNDF_Timing + locChargedTrackHypothesis->dNDF_DCdEdx;
 	double locChiSq_Total = locChargedTrackHypothesis->dChiSq_Timing + locChargedTrackHypothesis->dChiSq_DCdEdx;

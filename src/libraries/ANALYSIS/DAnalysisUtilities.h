@@ -46,6 +46,8 @@ class DAnalysisUtilities : public JObject
 		// Constructor and destructor
 		DAnalysisUtilities(JEventLoop *loop); // require JEventLoop in constructor
 
+		double Calc_Beta_Timing(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const;
+
 		bool Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExactMatchFlag) const;
 
 		void Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const;

@@ -81,7 +81,7 @@ class DHistogramAction_PID : public DAnalysisAction
 
 		DHistogramAction_PID(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_PID", false, locActionUniqueString), 
-		dNumFOMBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), 
+		dNumFOMBins(200), dNumBetaBins(400), dNumDeltaBetaBins(400), dNum2DPBins(300), dNum2DThetaBins(140), dNumPullBins(1000), dNum2DPullBins(500), 
 		dMinBeta(-0.2), dMaxBeta(1.2), dMinDeltaBeta(-1.0), dMaxDeltaBeta(1.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(150.0), dMinThrownMatchFOM(5.73303E-7)
 		{
 			dThrownPIDs.clear();
@@ -93,7 +93,7 @@ class DHistogramAction_PID : public DAnalysisAction
 
 		void Initialize(JEventLoop* locEventLoop);
 
-		unsigned int dNumFOMBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins, dNum2DThetaBins;
+		unsigned int dNumFOMBins, dNumBetaBins, dNumDeltaBetaBins, dNum2DPBins, dNum2DThetaBins, dNumPullBins, dNum2DPullBins;
 		double dMinBeta, dMaxBeta, dMinDeltaBeta, dMaxDeltaBeta, dMinP, dMaxP, dMinTheta, dMaxTheta;
 		double dMinThrownMatchFOM;
 		deque<Particle_t> dThrownPIDs;
@@ -116,6 +116,16 @@ class DHistogramAction_PID : public DAnalysisAction
 		map<Particle_t, TH2D*> dHistMap_BetaVsP;
 		map<Particle_t, TH2D*> dHistMap_DeltaBetaVsP;
 		map<Particle_t, TH2D*> dHistMap_TOFFOMVsDeltaBeta;
+
+		map<Particle_t, TH1D*> dHistMap_TimePull_CDC;
+		map<Particle_t, TH1D*> dHistMap_TimePull_BCAL;
+		map<Particle_t, TH1D*> dHistMap_TimePull_TOF;
+		map<Particle_t, TH1D*> dHistMap_TimePull_FCAL;
+
+		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_CDC;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_BCAL;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_TOF;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsPOrE_FCAL;
 
 		map<Particle_t, TH2D*> dHistMap_PVsTheta_LowPIDFOM;
 		map<Particle_t, TH2D*> dHistMap_PVsTheta_NaNPIDFOM;
@@ -327,6 +337,7 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		const DParticleID* dParticleID;
+		const DAnalysisUtilities* dAnalysisUtilities;
 
 		TH1D* 	dBeamParticle_P;
 
@@ -343,7 +354,6 @@ class DHistogramAction_DetectedParticleKinematics : public DAnalysisAction
 		map<Particle_t, TH2D*> dHistMap_VertexYVsX;
 		map<Particle_t, TH1D*> dHistMap_VertexT;
 };
-
 
 class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 {

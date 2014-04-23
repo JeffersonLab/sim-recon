@@ -541,7 +541,6 @@ void DParticleCombo_factory_PreKinFit::Setup_VertexConstraint(DParticleCombo* lo
 	}
 }
 
-
 //------------------
 // erun
 //------------------
