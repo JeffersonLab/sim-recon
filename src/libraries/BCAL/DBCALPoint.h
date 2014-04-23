@@ -23,7 +23,6 @@ public:
   JOBJECT_PUBLIC(DBCALPoint);
   
   // this constructor uses two hits to obtain a local z position
-  DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 );
   DBCALPoint( const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2 );
   
   // this constructor is helpful for single-ended hits when
