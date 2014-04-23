@@ -4,12 +4,10 @@
 #include "DBCALGeometry_factory.h"
 #include "DBCALShower_factory_IU.h"
 #include "DBCALShower_factory_KLOE.h"
-#include "DBCALShower_factory_KLOE_OLDSMEAR.h"
 #include "DBCALShower_factory.h"
 #include "DBCALCluster_factory.h"
 #include "DBCALCluster_factory_SINGLE.h"
 #include "DBCALPoint_factory.h"
-#include "DBCALPoint_factory_OLDSMEAR.h"
 #include "DBCALUnifiedHit_factory.h"
 #include "DBCALDigiHit.h"
 #include "DBCALHit_factory.h"
@@ -47,17 +45,15 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory_IU());
 	loop->AddFactory(new DBCALShower_factory_KLOE());
-	loop->AddFactory(new DBCALShower_factory_KLOE_OLDSMEAR());
 	loop->AddFactory(new DBCALShower_factory());
 	loop->AddFactory(new DBCALCluster_factory());
 	loop->AddFactory(new DBCALCluster_factory_SINGLE());
 	loop->AddFactory(new DBCALTruthShower_factory());
 	loop->AddFactory(new DBCALTruthCell_factory());
 	loop->AddFactory(new DBCALPoint_factory());
-	loop->AddFactory(new DBCALPoint_factory_OLDSMEAR());
 	loop->AddFactory(new DBCALUnifiedHit_factory());
-        loop->AddFactory(new DBCALClump_factory());
-        loop->AddFactory(new DBCALShower_factory_JLAB());
-   
+	loop->AddFactory(new DBCALClump_factory());
+	loop->AddFactory(new DBCALShower_factory_JLAB());
+
 	return NOERROR;
 }
