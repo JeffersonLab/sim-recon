@@ -53,14 +53,24 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit1, const DBCALHit& hit2 )
   
   m_zLocal = 0.5 * cEff * ( tUp - tDown ); 
 
-  // if it is outside the module then set it to the end of the module
-  m_zLocal = ( m_zLocal > 0.5 * fibLen ? 0.5 * fibLen : m_zLocal );
-  m_zLocal = ( m_zLocal < -0.5 * fibLen ? -0.5 * fibLen : m_zLocal );
-  
   // set the z position relative to the center of the target -- this needs a database
   // lookup to get the target position (set for now at 65 cm)
   
   m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - 65.0;
+
+  //At this point m_z may be unphysical, i.e. it may be outside the BCAL.
+  //For the time being, this is okay. Forcing the z-position inside the
+  //BCAL at this point will bias the clustering procedure:
+  //1) Consider a cluster with a true position of z=400 cm (where the
+  //downstream end of the BCAL is at 407 cm). Say we have three points one each
+  //at z=380 cm, 400 cm, 420 cm. If we force the latter point inside the BCAL
+  //the average of the z-positions will be biased toward the upstream direction.
+  //2) A point reconstructed at "410 cm" should not be treated equivalently to
+  //a point reconstructed at "430 cm", though these would both be truncated to
+  //407 cm. The latter should be more likely to
+  //match a cluster at 390 cm.
+  //The z-position will be forced inside the BCAL *after* clustering
+  //and averaging.
   
   // compute the arrival time of the energy at the cell
   m_t = 0.5 * ( tUp + tDown - fibLen / cEff );
@@ -132,14 +142,23 @@ DBCALPoint::DBCALPoint( const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2
   
   m_zLocal = 0.5 * cEff * ( tUp - tDown ); 
 
-  // if it is outside the module then set it to the end of the module
-  m_zLocal = ( m_zLocal > 0.5 * fibLen ? 0.5 * fibLen : m_zLocal );
-  m_zLocal = ( m_zLocal < -0.5 * fibLen ? -0.5 * fibLen : m_zLocal );
-  
   // set the z position relative to the center of the target -- this needs a database
   // lookup to get the target position (set for now at 65 cm)
   
   m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - 65.0;
+  //At this point m_z may be unphysical, i.e. it may be outside the BCAL.
+  //For the time being, this is okay. Forcing the z-position inside the
+  //BCAL at this point will bias the clustering procedure:
+  //1) Consider a cluster with a true position of z=400 cm (where the
+  //downstream end of the BCAL is at 407 cm). Say we have three points, one each
+  //at z=380 cm, 400 cm, 420 cm. If we force the latter point inside the BCAL
+  //the average of the z-positions will be biased toward the upstream direction.
+  //2) A point reconstructed at "410 cm" should not be treated equivalently to
+  //a point reconstructed at "430 cm", though these would both be truncated to
+  //407 cm. The latter should be more likely to
+  //match a cluster at 390 cm.
+  //The z-position will be forced inside the BCAL *after* clustering
+  //and averaging.
   
   // compute the arrival time of the energy at the cell
   m_t = 0.5 * ( tUp + tDown - fibLen / cEff );

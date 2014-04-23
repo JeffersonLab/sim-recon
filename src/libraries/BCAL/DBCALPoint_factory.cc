@@ -77,8 +77,8 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
     // z in the downstream direction
     double zLocal = 0.5 * cEff * ( uphit->t - dnhit->t );
 
-    // if the timing information indicates that the z position is more than 80 cm outside the BCAL, likely the hit is contamined by noise or entirely noise, skip this cell
-    double tol = 80*k_cm;
+    // if the timing information indicates that the z position is more than 60 cm outside the BCAL, likely the hit is contamined by noise or entirely noise, skip this cell
+    double tol = 60*k_cm;
 
     if (zLocal > (0.5*fibLen + tol) || zLocal < (-0.5*fibLen - tol)) continue;
 

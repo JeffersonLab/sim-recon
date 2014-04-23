@@ -91,8 +91,41 @@ DBCALCluster::makeFromPoints(){
   //least to some low level of rigor. In any case, the weighting scheme below
   //produces far better angular resolutions for clusters than other
   //weightings tested.
-  double wt1;
-  double wt2;
+
+  //Also, don't include hits from the 4th layer in the averages.
+  //Three reasons for doing this:
+  //1) Averaging the quantities theta, rho, and phi (rather than z,r,phi) is
+  //based on the assumption that the shower develops in a linear fashion inside
+  //the BCAL. This assumption breaks down
+  //deep in the BCAL (see GlueX doc 2229 slides 21-22).
+  //(this also applies to layer 3, so at some point, we may want to
+  //consider if we want treat layer 3 differently as well)
+  //2) The errors in the outer layers for measurements of t and z are
+  //relatively large due to the lack
+  //of TDC readout so we don't gain much by including them.
+  //3) Contamination by noise. (Noise is greatest in the 4th layer)
+  //These outer layer hits will of course still contribute to the energy sum.
+
+  //It can happen that a cluster is made up entirely of fourth layer hits.
+  //In this case, we must use all hits in the average.
+  int n = m_points.size();
+  int n4 = 0; //number of 4th layer points in the cluster
+  for( vector< const DBCALPoint* >::const_iterator pt = m_points.begin();
+       pt != m_points.end();
+      ++pt ){
+    if ((**pt).layer() == 4) n4++;
+  }
+
+  bool average_layer4;
+  int n_avg; //number of points involved in the average
+  if (n == n4) { //if all points are in the 4th layer
+    average_layer4 = true; //include 4th layer in average
+    n_avg = n4;
+  } else {
+    average_layer4 = false;
+    n_avg = n - n4; //all points except 4th layer involved in average
+  }
+
   double sum_wt1 = 0;
   double sum_wt1_sq = 0;
   double sum_wt2 = 0;
@@ -109,8 +142,14 @@ DBCALCluster::makeFromPoints(){
 
     m_E += E;
 
-    wt1 = E;
-    wt2 = E*E;
+    double wt1, wt2;
+    if ((**pt).layer() != 4 || average_layer4) {
+      wt1 = E;
+      wt2 = E*E;
+    } else {
+      wt1 = 0;
+      wt2 = 0;
+    }
 
     sum_wt1 += wt1;
     sum_wt1_sq += wt1*wt1;
@@ -135,7 +174,6 @@ DBCALCluster::makeFromPoints(){
   
   //double n_eff1 = sum_wt1*sum_wt1/sum_wt1_sq;
   double n_eff2 = sum_wt2*sum_wt2/sum_wt2_sq;
-  double n = m_points.size();
 
   m_t /= sum_wt2;
   m_sig_t /= sum_wt2;
@@ -164,7 +202,12 @@ DBCALCluster::makeFromPoints(){
 
     double E = (**pt).E();
 
-    wt1 = E;
+    double wt1;
+    if ((**pt).layer() != 4) {
+      wt1 = E;
+    } else {
+      wt1 = 0;
+    }
 
     double deltaPhi = (**pt).phi() - m_phi;
     double deltaPhiAlt = ( (**pt).phi() > m_phi ?
@@ -177,7 +220,7 @@ DBCALCluster::makeFromPoints(){
   m_sig_phi /= sum_wt1;
   m_sig_phi = sqrt( fabs(m_sig_phi) );
   //this should be division, by sqrt(n_eff1), but this works better
-  m_sig_phi /= sqrt(n);
+  m_sig_phi /= sqrt(n_avg);
 
   m_rho /= sum_wt2;
   m_sig_rho /= sum_wt2;
@@ -185,6 +228,31 @@ DBCALCluster::makeFromPoints(){
   m_sig_rho = sqrt( fabs( m_sig_rho ) );
   m_sig_rho /= sqrt(n_eff2);
   
+  //Since the z-positions of the DBCALPoint's are not constrained to be
+  //physical (be inside the BCAL), we can end up with clusters outside of the
+  //BCAL.
+  //Also, in extreme cases, the averaging procedure itself can lead to positions
+  //outside the BCAL.
+  //So at this point, convert our cluster position to cylindrical coordinates,
+  //constrain r and z to be inside the BCAL and then convert back to
+  //spherical coordinates.
+  double target_z = 65.0; //really should not hard-code the target position
+  double z = m_rho*cos(m_theta) + target_z;
+  double r = m_rho*sin(m_theta); 
+
+  double bcal_down = DBCALGeometry::GLOBAL_CENTER + DBCALGeometry::BCALFIBERLENGTH/2.0;
+  double bcal_up = DBCALGeometry::GLOBAL_CENTER - DBCALGeometry::BCALFIBERLENGTH/2.0;
+  if (z > bcal_down) z = bcal_down;
+  if (z < bcal_up) z = bcal_up;
+
+  double r_min = DBCALGeometry::r(DBCALGeometry::cellId(1,1,1)); //This is the center of the first layer of the BCAL. This is the minimum value of r that a DBCALPoint will report.
+  double r_max = DBCALGeometry::r(DBCALGeometry::cellId(1,4,1)); //Maximum r that a DBCALPoint will report
+  if (r > r_max) r = r_max;
+  if (r < r_min) r = r_min;
+
+  m_theta = atan2(r, (z-target_z));
+  m_rho = sqrt(r*r + (z-target_z)*(z-target_z));
+
   // if we only have one point, then set sizes based on the size
   // of the point
   
@@ -200,9 +268,13 @@ DBCALCluster::makeFromPoints(){
   // if two points are at the end of the module (same z) in the
   // same layer in these cases set sigmas to the characteristic 
   // size of the cell
+  // (this condition can also occur if we have one or more 4th layer points
+  // in addition to a single inner layer hit
   
-  if( m_sig_phi   < 1E-6 ) m_sig_phi   = m_points.at(0)->sigPhi()/sqrt(n);
-  if( m_sig_theta < 1E-6 ) m_sig_theta = m_points.at(0)->sigPhi()/sqrt(n);
+  //need to think about what to do with these sqrt(n)'s
+  //also should add sig_phi and sig_theta here
+  if( m_sig_phi   < 1E-6 ) m_sig_phi   = m_points.at(0)->sigPhi()/sqrt(n_avg);
+  if( m_sig_theta < 1E-6 ) m_sig_theta = m_points.at(0)->sigPhi()/sqrt(n_avg);
   
   // correct phi of the cluster if we've drifted outside of 0 - 2PI
   if( m_phi > 2*PI ) m_phi -= 2*PI;
@@ -220,7 +292,7 @@ DBCALCluster::toStrings( vector< pair < string, string > > &items) const {
 //  AddString(items, "dtheta", "%5.2f", m_sig_theta);
   AddString(items, "t", "%5.2f", m_t );
   AddString(items, "E", "%5.2f", m_E );
-  AddString(items, "N_cell", "%d", m_points.size() );
+  AddString(items, "N_cell", "%i", m_points.size() );
 }
 
 
