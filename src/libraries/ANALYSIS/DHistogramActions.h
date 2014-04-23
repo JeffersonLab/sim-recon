@@ -123,9 +123,11 @@ class DHistogramAction_PID : public DAnalysisAction
 		map<Particle_t, TH1D*> dHistMap_TimePull_FCAL;
 
 		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_CDC;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_CDC;
 		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_BCAL;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_BCAL;
 		map<Particle_t, TH2D*> dHistMap_TimePullVsP_TOF;
-		map<Particle_t, TH2D*> dHistMap_TimePullVsPOrE_FCAL;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_FCAL;
 
 		map<Particle_t, TH2D*> dHistMap_PVsTheta_LowPIDFOM;
 		map<Particle_t, TH2D*> dHistMap_PVsTheta_NaNPIDFOM;
@@ -415,6 +417,7 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
 		deque<DKinFitPullType> dPullTypes;
+		double dTargetZCenter;
 		TH1D* dRFBeamBunchDeltaT_Hist;
 
 		map<Particle_t, TH1D*> dHistMap_DeltaPOverP;
@@ -439,6 +442,22 @@ class DHistogramAction_GenReconTrackComparison : public DAnalysisAction
 		map<Particle_t, map<DKinFitPullType, TH1D*> > dHistMap_Pulls;
 		map<Particle_t, map<DKinFitPullType, TH2D*> > dHistMap_PullsVsP;
 		map<Particle_t, map<DKinFitPullType, TH2D*> > dHistMap_PullsVsTheta;
+
+		map<Particle_t, TH1D*> dHistMap_TimePull_CDC;
+		map<Particle_t, TH1D*> dHistMap_TimePull_ST;
+		map<Particle_t, TH1D*> dHistMap_TimePull_BCAL;
+		map<Particle_t, TH1D*> dHistMap_TimePull_TOF;
+		map<Particle_t, TH1D*> dHistMap_TimePull_FCAL;
+
+		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_CDC;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_BCAL;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsTheta_ST;
+
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_CDC;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_BCAL;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_ST;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_TOF;
+		map<Particle_t, TH2D*> dHistMap_TimePullVsP_FCAL;
 };
 
 class DHistogramAction_TOFHitStudy : public DAnalysisAction
