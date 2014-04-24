@@ -67,7 +67,7 @@ jerror_t JEventProcessor_DAQTree::init(void)
 
 	japp->RootWriteLock();
 
-	/// Trees are created
+	/// Window Raw Data
 	Df250WindowRawData_tree = new TTree("Df250WindowRawData",
 										"tree of flash 250 raw window data (waveform samples) for each channel and event");
 	Df250WindowRawData_tree->Branch("channelnum",&channelnum,"channelnum/i");
@@ -76,6 +76,7 @@ jerror_t JEventProcessor_DAQTree::init(void)
 	Df250WindowRawData_tree->Branch("slot",&slot,"slot/i");
 	Df250WindowRawData_tree->Branch("channel",&channel,"channel/i");
 	Df250WindowRawData_tree->Branch("itrigger",&itrigger,"itrigger/i");
+
 	Df250WindowRawData_tree->Branch("waveform",&waveform);
 	Df250WindowRawData_tree->Branch("nsamples",&nsamples,"nsamples/i");
 	Df250WindowRawData_tree->Branch("w_integral",&w_integral,"w_integral/i");
@@ -83,11 +84,20 @@ jerror_t JEventProcessor_DAQTree::init(void)
 	Df250WindowRawData_tree->Branch("w_max",&w_max,"w_max/i");
 	Df250WindowRawData_tree->Branch("w_samp1",&w_samp1,"w_samp1/i");
 
-	/// Trees are created
+	/// Pulse Integral
 	Df250PulseIntegral_tree = new TTree("Df250PulseIntegral",
 										"tree of flash 250 pulse integral for each channel and event");
-	Df250PulseIntegral_tree->Branch("channelnum",&f250PI_channelnum,"channelnum/i");
-	Df250PulseIntegral_tree->Branch("eventnum",&f250PI_eventnum,"eventnum/i");
+	Df250PulseIntegral_tree->Branch("channelnum",&channelnum,"channelnum/i");
+	Df250PulseIntegral_tree->Branch("eventnum",&eventnum,"eventnum/i");
+	Df250PulseIntegral_tree->Branch("rocid",&rocid,"rocid/i");
+	Df250PulseIntegral_tree->Branch("slot",&slot,"slot/i");
+	Df250PulseIntegral_tree->Branch("channel",&channel,"channel/i");
+	Df250PulseIntegral_tree->Branch("itrigger",&itrigger,"itrigger/i");
+
+	Df250PulseIntegral_tree->Branch("pulse_number",&pulse_number,"pulse_number/i");
+	Df250PulseIntegral_tree->Branch("quality_factor",&quality_factor,"quality_factor/i");
+	Df250PulseIntegral_tree->Branch("integral",&integral,"integral/I");
+	Df250PulseIntegral_tree->Branch("pedestal",&pedestal,"pedestal/I");
 
 	japp->RootUnLock();
 	return NOERROR;
@@ -160,11 +170,19 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 	// Get a vector of Df250PulseIntegral objects for this event (1 object for each crate/slot/channel)
 	vector<const Df250PulseIntegral*> f250PulseIntegral_vec;
 	loop->Get(f250PulseIntegral_vec);
-	Nchannels = f250PulseIntegral_vec.size();
-	f250PI_eventnum = eventnumber;
 	// Loop over all channels in this event
-	for(unsigned int c_chan=0; c_chan<Nchannels; c_chan++){
-		f250PI_channelnum = c_chan;
+	for(unsigned int c_chan=0; c_chan<f250PulseIntegral_vec.size(); c_chan++){
+		const Df250PulseIntegral *f250PulseIntegral = f250PulseIntegral_vec[c_chan];
+		rocid = f250PulseIntegral->rocid;
+		slot = f250PulseIntegral->slot;
+		channel = f250PulseIntegral->channel;
+		itrigger = f250PulseIntegral->itrigger;
+
+		pulse_number = f250PulseIntegral->pulse_number;
+		quality_factor= f250PulseIntegral->quality_factor;
+		integral = f250PulseIntegral->integral;
+		pedestal = f250PulseIntegral->pedestal;
+
 		Df250PulseIntegral_tree->Fill();
 	}
 

@@ -60,8 +60,13 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		uint32_t w_samp1;            ///< First sample in the waveform  (for simple analysis in case the STL vector is difficult to access)
 
 		TTree *Df250PulseIntegral_tree;
-		uint32_t f250PI_channelnum;    ///< Arbitrary global channel number (sorted by crate, slot, channel)
-		uint32_t f250PI_eventnum;      ///< Event number	
+		//uint32_t f250PI_channelnum;    ///< Arbitrary global channel number (sorted by crate, slot, channel)
+		//uint32_t f250PI_eventnum;      ///< Event number
+		uint32_t pulse_number;         // from Pulse Integral Data word
+		uint32_t quality_factor;       // from Pulse Integral Data word
+		int32_t integral;              // from Pulse Integral Data word
+		int32_t pedestal;              // from Pulse Integral Data word (future)
+		
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
