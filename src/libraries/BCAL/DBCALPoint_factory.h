@@ -25,7 +25,10 @@ class DBCALPoint_factory : public JFactory<DBCALPoint> {
     vector<const DBCALUnifiedHit*> uphits;
     vector<const DBCALUnifiedHit*> dnhits;
   };
+
+  double m_z_target_center;
  
+  jerror_t brun(JEventLoop *loop, int runnumber);
   jerror_t evnt(JEventLoop *loop, int eventnumber);
 };
 

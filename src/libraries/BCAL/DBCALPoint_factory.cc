@@ -10,7 +10,20 @@ using namespace jana;
 #include "BCAL/DBCALPoint_factory.h"
 #include "BCAL/DBCALHit.h"
 
+#include "DANA/DApplication.h"
+
 #include "units.h"
+
+//----------------
+// brun
+//----------------
+jerror_t DBCALPoint_factory::brun(JEventLoop *loop, int runnumber) {
+  DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
+  DGeometry* geom = app->GetDGeometry(runnumber);
+  geom->GetTargetZ(m_z_target_center);
+
+  return NOERROR;
+}
 
 //----------------
 // evnt
@@ -82,7 +95,7 @@ jerror_t DBCALPoint_factory::evnt(JEventLoop *loop, int eventnumber) {
 
     if (zLocal > (0.5*fibLen + tol) || zLocal < (-0.5*fibLen - tol)) continue;
 
-    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit);
+    DBCALPoint *point = new DBCALPoint(*uphit,*dnhit,m_z_target_center);
 
     point->AddAssociatedObject(uphit);
     point->AddAssociatedObject(dnhit);

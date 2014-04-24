@@ -15,7 +15,7 @@ using namespace std;
 
 #include "units.h"
 
-DBCALPoint::DBCALPoint( const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2 )
+DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center)
 {
   
   // this is a problem -- both hits are on the same end...
@@ -47,13 +47,10 @@ DBCALPoint::DBCALPoint( const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2
   
   // get the position with respect to the center of the module -- positive
   // z in the downstream direction
-  
   m_zLocal = 0.5 * cEff * ( tUp - tDown ); 
 
-  // set the z position relative to the center of the target -- this needs a database
-  // lookup to get the target position (set for now at 65 cm)
-  
-  m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - 65.0;
+  // set the z position relative to the center of the target
+  m_z = m_zLocal + DBCALGeometry::GLOBAL_CENTER - z_target_center;
   //At this point m_z may be unphysical, i.e. it may be outside the BCAL.
   //For the time being, this is okay. Forcing the z-position inside the
   //BCAL at this point will bias the clustering procedure:

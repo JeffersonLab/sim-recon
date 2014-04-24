@@ -23,7 +23,7 @@ public:
   JOBJECT_PUBLIC(DBCALPoint);
   
   // this constructor uses two hits to obtain a local z position
-  DBCALPoint( const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2 );
+  DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2, double z_target_center);
   
   // this constructor is helpful for single-ended hits when
   // z is known -- z measured with respect to target
@@ -36,7 +36,7 @@ public:
   // by extrapolating back on path from center of cell to target
   float tInnerRadius() const;
     
-  // spherical coordinates, origin at the target
+  // spherical coordinates, origin at the center of the target
   float rho()   const { return m_rho; }
   float sigRho() const { return m_sig_rho; }
   
@@ -46,7 +46,7 @@ public:
   float phi() const { return m_phi; }
   float sigPhi() const { return m_sig_phi; }
 
-  // cylindrical coordinates, origin at the target
+  // cylindrical coordinates, origin at the center of the target
   float z()   const { return m_z; }
   float sigZ() const { return m_sig_z; }
   float r()   const { return m_r; }
@@ -81,8 +81,8 @@ private:
   int m_module, m_layer, m_sector;
 
   // cylindrical coordinate locations
-  float m_zLocal;
-  float m_z, m_sig_z;
+  float m_zLocal; //z-coordinate relative to the center of BCAL
+  float m_z, m_sig_z; //z-coordinate relative to the center of the target
   float m_r, m_sig_r;
   float m_phi, m_sig_phi;
   
