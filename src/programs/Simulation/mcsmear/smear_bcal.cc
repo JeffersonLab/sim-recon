@@ -169,10 +169,6 @@ class IncidentParticle_t{
 };
 
 
-// Defined in smear_bcal_deprecated.cc
-void SmearBCAL_DEPRECATED(s_HDDM_t *hddm_s);
-
-
 // Defined in this file
 void bcalInit(void);
 int32_t GetEventNumber(s_HDDM_t *hddm_s);
@@ -219,7 +215,6 @@ extern bool SMEAR_BCAL;
 // The following are all false by default, but can be
 // set to true via command line parameters. Setting
 // one of these to true will turn OFF the feature.
-extern bool USE_DEPRECATED_BCAL_SCHEME;
 extern bool NO_E_SMEAR;
 extern bool NO_T_SMEAR;
 extern bool NO_DARK_PULSES;
@@ -262,12 +257,6 @@ double BCAL_FADC_INTEGRATION_WINDOW_POST = 180.0; // time to integrate signal af
 //-----------
 void SmearBCAL(s_HDDM_t *hddm_s)
 {
-	// Temporary kludge to allow use of old scheme to remain the default but change
-	// with a run-time flag.
-	if(USE_DEPRECATED_BCAL_SCHEME){
-		SmearBCAL_DEPRECATED(hddm_s);
-		return;
-	}
 
 	/// The data from HDGEANT contains attenuated, energy-weighted, timing spectra.
 	/// The job of mcsmear is to use that data to create the bcalfADCUpHit and
