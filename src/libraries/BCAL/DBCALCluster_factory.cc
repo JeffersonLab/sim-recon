@@ -29,7 +29,7 @@ bool ClusterSort( const DBCALCluster& c1, const DBCALCluster& c2 ){
 DBCALCluster_factory::DBCALCluster_factory() : 
 m_mergeSig( 5 ), 
 m_moliereRadius( 3.7*k_cm ),
-m_timeCut( 15.0*k_nsec ){
+m_timeCut( 8.0*k_nsec ){
   
 }
 
@@ -248,20 +248,8 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
       ++clust ){
    
     // put in an energy threshold for clusters
-    if( clust->E() < 30*k_MeV ) continue;
+    if( clust->E() < 5*k_MeV ) continue;
 
-    //We have a big problem with noise in the outer layer of the detector
-    //(the noise is the greatest in the outer layer, since the number of SiPMs
-    //being summed is also the greatest here).
-    //The typical signature of fake "clusters" caused by this noise is that
-    //they only consist of one hit, since it is unlikely that two noise hits
-    //will be right next to each other.
-    //Filter out these clusters here.
-    //Possibly we should come up with a more sophisticated way to deal
-    //with this.
-    double clust_r = clust->rho()*sin(clust->theta());
-    double outer_layer_r = DBCALGeometry::r(DBCALGeometry::cellId(1,4,1));
-    if (clust->nCells() == 1 && fabs(clust_r-outer_layer_r) < 1e-4 && clust->E() < 50*k_MeV) continue;
 
     _data.push_back( new DBCALCluster( *clust ) );
   }
@@ -281,6 +269,19 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
   // come from a database or something
   float seedThresh = 1*k_GeV;
   float minSeed = 10*k_MeV;
+  //We have a big problem with noise in the outer layer of the detector
+  //(the noise is the greatest in the outer layer, since the number of SiPMs
+  //being summed is also the greatest here).
+  //Thus there are a lot of DBCALPoint's in this layer that are pure noise hits.
+  //The simplest way to deal with this is to prevent outer layer points
+  //from seeding clusters. So hits in the outer layer can be associated
+  //with existing clusters, but cannot create their own cluster.
+  //This is okay since since isolated hits in the outer layer
+  //is not really a signature we expect for many physical showers.
+  //However, if a hit is sufficiently energetic, it is unlikely to be a noise
+  //hit. For this reason, we allow 4th layer hits to seed clusters,
+  //but we need a different (higher) minimum seed energy.
+  float layer4_minSeed = 50*k_MeV;
   
   while( seedThresh > minSeed ) {
 
@@ -313,8 +314,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
         
       // if the point doesn't overlap with a cluster
       // see if it can become a new seed
-      
-      if( (**pt).E() > seedThresh ){
+      if( (**pt).E() > seedThresh && ((**pt).layer() != 4 || (**pt).E() > layer4_minSeed) ){
 
         clusters.push_back( DBCALCluster( *pt ) );
         points.erase( pt );
@@ -404,15 +404,15 @@ DBCALCluster_factory::overlap( const DBCALCluster& highEClust,
   //There are no events where the decay photons have separation
   //(delta_phi < 0.2 && delta_z < 25 cm), so in most cases it should be safe
   //to merge clusters together if they are so close.
-  const double deltaPhi_force_merge = 0.2; //radians
-  const double delta_z_force_merge = 25.0*k_cm;
+  const double deltaPhi_force_merge = 0.1; //radians
+  const double delta_z_force_merge = 15.0*k_cm;
 
   //A major cause of extra clusters are lower energy hits, which have poor
   //z-resolution and so are not properly merged. Treat low energy
-  //clusters (< 60 MeV) as a special case. Again, hopefully this is only
+  //clusters (< 40 MeV) as a special case. Again, hopefully this is only
   //a temporary fix until we have a more comprehensive solution.
-  const double delta_z_force_merge_low_E = 50.0*k_cm;
-  const double low_E = .06*k_GeV;
+  const double delta_z_force_merge_low_E = 40.0*k_cm;
+  const double low_E = .04*k_GeV;
   
   double z1 = DBCALGeometry::BCALINNERRAD/tan(highEClust.theta());
   double z2 = DBCALGeometry::BCALINNERRAD/tan(lowEClust.theta());
