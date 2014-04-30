@@ -9,6 +9,7 @@
 
 using namespace std;
 
+#include "DANA/DApplication.h"
 #include "BCAL/DBCALGeometry.h"
 #include "BCAL/DBCALHit.h"
 
@@ -21,9 +22,9 @@ bool PointSort( const DBCALPoint* p1, const DBCALPoint* p2 ){
   return ( p1->E() > p2->E() );
 }
 
-bool ClusterSort( const DBCALCluster& c1, const DBCALCluster& c2 ){
+bool ClusterSort( const DBCALCluster* c1, const DBCALCluster* c2 ){
   
-  return ( c1.E() > c2.E() );
+  return ( c1->E() > c2->E() );
 }
 
 DBCALCluster_factory::DBCALCluster_factory() : 
@@ -96,6 +97,14 @@ DBCALCluster_factory::fini( void ){
 
 #endif
 
+jerror_t DBCALCluster_factory::brun(JEventLoop *loop, int runnumber) {
+  DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
+  DGeometry* geom = app->GetDGeometry(runnumber);
+  geom->GetTargetZ(m_z_target_center);
+
+  return NOERROR;
+}
+
 jerror_t
 DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
 
@@ -130,7 +139,7 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
   
   // now try to clusterize the points
   
-  vector< DBCALCluster > clusters = clusterize( twoEndPoint );
+  vector<DBCALCluster*> clusters = clusterize( twoEndPoint );
   
 #ifdef BCAL_CLUSTER_DIAGNOSTIC
   
@@ -139,15 +148,15 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
   
   for( int i = 0; i < m_nCl; ++i ){
     
-    m_nPts[i] = clusters[i].nCells();
-    m_rhoCl[i] = clusters[i].rho();
-    m_phiCl[i] = clusters[i].phi();
-    m_theCl[i] = clusters[i].theta();
-    m_rhoSCl[i] = clusters[i].sigRho();
-    m_phiSCl[i] = clusters[i].sigPhi();
-    m_theSCl[i] = clusters[i].sigTheta();
-    m_eCl[i] = clusters[i].E();
-    m_tCl[i] = clusters[i].t();
+    m_nPts[i] = clusters[i]->nCells();
+    m_rhoCl[i] = clusters[i]->rho();
+    m_phiCl[i] = clusters[i]->phi();
+    m_theCl[i] = clusters[i]->theta();
+    m_rhoSCl[i] = clusters[i]->sigRho();
+    m_phiSCl[i] = clusters[i]->sigPhi();
+    m_theSCl[i] = clusters[i]->.sigTheta();
+    m_eCl[i] = clusters[i]->E();
+    m_tCl[i] = clusters[i]->t();
   }
   
   m_firstClustTr->Fill();
@@ -243,27 +252,29 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
 */
   
   // load our vector of clusters into the factory member data
-  for( vector< DBCALCluster >::iterator clust = clusters.begin();
+  for( vector<DBCALCluster*>::iterator clust = clusters.begin();
       clust != clusters.end();
       ++clust ){
    
     // put in an energy threshold for clusters
-    if( clust->E() < 5*k_MeV ) continue;
+    if( (**clust).E() < 5*k_MeV ) {
+      delete *clust;
+      continue;
+    }
 
-
-    _data.push_back( new DBCALCluster( *clust ) );
+    _data.push_back(*clust);
   }
 
   return NOERROR;
 }
 
-vector< DBCALCluster >
+vector<DBCALCluster*>
 DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
 
   // first sort the points by energy
   sort( points.begin(), points.end(), PointSort );
 
-  vector< DBCALCluster > clusters( 0 );
+  vector<DBCALCluster*> clusters(0);
   
   // ahh.. more hard coded numbers that should probably
   // come from a database or something
@@ -294,13 +305,13 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
       // first see if point should be added to an existing
       // cluster
       
-      for( vector< DBCALCluster >::iterator clust = clusters.begin();
+      for( vector<DBCALCluster*>::iterator clust = clusters.begin();
            clust != clusters.end();
           ++clust ){
         
-        if( overlap( *clust, *pt ) ){
+        if( overlap( **clust, *pt ) ){
                     
-          clust->addPoint( *pt );
+          (**clust).addPoint( *pt );
           points.erase( pt );
           usedPoint = true;
         }
@@ -316,7 +327,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
       // see if it can become a new seed
       if( (**pt).E() > seedThresh && ((**pt).layer() != 4 || (**pt).E() > layer4_minSeed) ){
 
-        clusters.push_back( DBCALCluster( *pt ) );
+        clusters.push_back(new DBCALCluster( *pt, m_z_target_center ) );
         points.erase( pt );
         usedPoint = true;
       }
@@ -336,7 +347,7 @@ DBCALCluster_factory::clusterize( vector< const DBCALPoint* > points ) const {
 }
 
 void
-DBCALCluster_factory::merge( vector< DBCALCluster >& clusters ) const {
+DBCALCluster_factory::merge( vector<DBCALCluster*>& clusters ) const {
   
   if( clusters.size() <= 1 ) return;
   
@@ -347,17 +358,18 @@ DBCALCluster_factory::merge( vector< DBCALCluster >& clusters ) const {
   while( stillMerging ){
   
     stillMerging = false;
-    for( vector< DBCALCluster >::iterator hClust = clusters.begin();
+    for( vector<DBCALCluster*>::iterator hClust = clusters.begin();
         hClust != clusters.end() - 1;
         ++hClust ){
     
-      for( vector< DBCALCluster >::iterator lClust = hClust + 1;
+      for( vector<DBCALCluster*>::iterator lClust = hClust + 1;
           lClust != clusters.end();
           ++lClust ){
       
-        if( overlap( *hClust, *lClust ) ){
+        if( overlap( **hClust, **lClust ) ){
                   
-          hClust->mergeClust( *lClust );
+          (**hClust).mergeClust(**lClust);
+          delete *lClust;
           clusters.erase( lClust );
           
           // now iterators are invalid and we need to bail out of loops

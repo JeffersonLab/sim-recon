@@ -25,8 +25,8 @@ public:
   
   JOBJECT_PUBLIC( DBCALCluster );
   
-  DBCALCluster();
-  DBCALCluster( const DBCALPoint* point );
+  DBCALCluster(double z_target_center);
+  DBCALCluster(const DBCALPoint* point, double z_target_center);
 
   vector< const DBCALPoint* > points() const { return m_points; }
 
@@ -81,6 +81,8 @@ private:
   float m_sig_theta;
   float m_phi;
   float m_sig_phi;
+
+  float m_z_target_center;
   
 };
 

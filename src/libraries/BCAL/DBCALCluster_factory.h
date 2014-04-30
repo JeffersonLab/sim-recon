@@ -31,13 +31,14 @@ public:
 private:
 
   jerror_t evnt(JEventLoop *loop, int eventnumber);	
+  jerror_t brun(JEventLoop *loop, int runnumber);
   
   void clearPoints();
   
   // these routines combine points and clusters together
 
-  vector< DBCALCluster > clusterize( vector< const DBCALPoint* > points ) const;
-  void merge( vector< DBCALCluster >& clusters ) const;
+  vector<DBCALCluster*> clusterize( vector< const DBCALPoint* > points ) const;
+  void merge( vector<DBCALCluster*>& clusters ) const;
   
   // these are the routines used for testing whether things should be
   // combined -- right now very basic, but can be fine tuned in the future
@@ -54,6 +55,8 @@ private:
   float m_mergeSig;
   float m_moliereRadius;
   float m_timeCut;
+
+  double m_z_target_center;
   
   // we may consider a separate factory to provide the BCAL points at
   // a future stage; for now have this factory own and maintain them

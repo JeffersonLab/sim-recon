@@ -11,14 +11,15 @@
 
 #include <math.h>
 
-DBCALCluster::DBCALCluster( const DBCALPoint* point ) : m_points ( 0 ) {
+DBCALCluster::DBCALCluster( const DBCALPoint* point, double z_target_center )
+  : m_points ( 0 ), m_z_target_center(z_target_center) {
 
   m_points.push_back( point );
   AddAssociatedObject( point );
   makeFromPoints();
 }
 
-DBCALCluster::DBCALCluster() {
+DBCALCluster::DBCALCluster(double z_target_center) : m_z_target_center(z_target_center) {
   clear(); //initialize all values to zero
 }
 
@@ -236,8 +237,7 @@ DBCALCluster::makeFromPoints(){
   //So at this point, convert our cluster position to cylindrical coordinates,
   //constrain r and z to be inside the BCAL and then convert back to
   //spherical coordinates.
-  double target_z = 65.0; //really should not hard-code the target position
-  double z = m_rho*cos(m_theta) + target_z;
+  double z = m_rho*cos(m_theta) + m_z_target_center;
   double r = m_rho*sin(m_theta); 
 
   double bcal_down = DBCALGeometry::GLOBAL_CENTER + DBCALGeometry::BCALFIBERLENGTH/2.0;
@@ -250,8 +250,8 @@ DBCALCluster::makeFromPoints(){
   if (r > r_max) r = r_max;
   if (r < r_min) r = r_min;
 
-  m_theta = atan2(r, (z-target_z));
-  m_rho = sqrt(r*r + (z-target_z)*(z-target_z));
+  m_theta = atan2(r, (z-m_z_target_center));
+  m_rho = sqrt(r*r + (z-m_z_target_center)*(z-m_z_target_center));
 
   // if we only have one point, then set sizes based on the size
   // of the point
@@ -287,7 +287,7 @@ DBCALCluster::toStrings( vector< pair < string, string > > &items) const {
   AddString(items, "r", "%5.2f", m_rho * sin( m_theta ) );
   AddString(items, "phi", "%5.2f", m_phi );
 //  AddString(items, "dphi", "%5.2f", m_sig_phi );
-  AddString(items, "z", "%5.2f", m_rho * cos( m_theta ) + 65 );
+  AddString(items, "z", "%5.2f", m_rho * cos( m_theta ) + m_z_target_center );
   AddString(items, "theta", "%5.2f", m_theta);
 //  AddString(items, "dtheta", "%5.2f", m_sig_theta);
   AddString(items, "t", "%5.2f", m_t );

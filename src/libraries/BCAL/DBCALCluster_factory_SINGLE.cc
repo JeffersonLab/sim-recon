@@ -12,6 +12,7 @@ using namespace std;
 
 #include "DBCALCluster_factory_SINGLE.h"
 #include <BCAL/DBCALPoint.h>
+#include <DANA/DApplication.h>
 using namespace jana;
 
 //------------------
@@ -27,6 +28,9 @@ jerror_t DBCALCluster_factory_SINGLE::init(void)
 //------------------
 jerror_t DBCALCluster_factory_SINGLE::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
+	DApplication* app = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+	DGeometry* geom = app->GetDGeometry(runnumber);
+	geom->GetTargetZ(m_z_target_center);
 	return NOERROR;
 }
 
@@ -43,7 +47,7 @@ jerror_t DBCALCluster_factory_SINGLE::evnt(JEventLoop *loop, int eventnumber)
 	if(bcalpoints.size() == 0) return NOERROR;
 	
 	// Create DBCALCluster object and all all DBCALPoint objects to it
-	DBCALCluster *cluster = new DBCALCluster;
+	DBCALCluster *cluster = new DBCALCluster(m_z_target_center);
 	for(unsigned int i=0; i<bcalpoints.size(); i++){
 		cluster->addPoint(bcalpoints[i]);
 	}
