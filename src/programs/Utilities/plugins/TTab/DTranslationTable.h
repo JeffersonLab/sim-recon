@@ -78,6 +78,25 @@ class DTranslationTable:public jana::JObject{
 			TOF
 		};
 		
+		string DetectorName(Detector_t type) const {
+			switch(type){
+				case BCAL: return "BCAL";
+				case CDC: return "CDC";
+				case FCAL: return "FCAL";
+				case FDC_CATHODES: return "FDC_CATHODES";
+				case FDC_WIRES: return "FDC_WIRES";
+				case PS: return "PS";
+				case PSC: return "PSC";
+				case SC: return "SC";
+				case TAGH: return "TAGH";
+				case TAGM: return "TAGM";
+				case TOF: return "TOF";
+				case UNKNOWN_DETECTOR:
+				default:
+					return "UNKNOWN";
+			}
+		}
+		
 		class BCALIndex_t{
 			public:
 			uint32_t module;
@@ -206,6 +225,9 @@ class DTranslationTable:public jana::JObject{
 		string XML_FILENAME;
 		bool NO_CCDB;
 		set<string> supplied_data_types;
+		int VERBOSE;
+		
+		mutable JStreamLog ttout;
 };
 
 //---------------------------------
@@ -223,6 +245,7 @@ void DTranslationTable::CopyToFactory(JEventLoop *loop, vector<T*> &v) const
 	// all documentation seems to discourage using that as it is
 	// inefficient.
 	JFactory<T> *fac = (JFactory<T> *)loop->GetFactory(T::static_className());
+	if(VERBOSE>8) ttout << " Copying " << T::static_className() << " objects to factory: " << hex << fac << dec << endl;
 	if(fac) fac->CopyTo(v);
 }
 

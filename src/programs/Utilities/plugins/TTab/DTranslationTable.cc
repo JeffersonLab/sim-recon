@@ -64,12 +64,19 @@ DTranslationTable::DTranslationTable(JEventLoop *loop)
 	// force the use of a local file named "tt.xml".
 	NO_CCDB = false;
 	XML_FILENAME = "tt.xml";
+	VERBOSE = 0;
 	gPARMS->SetDefaultParameter("TT:NO_CCDB", NO_CCDB, "Don't try getting translation table from CCDB and just look for file. Only useful if you want to force reading tt.xml. This is automatically set if you specify a different filename via the TT:XML_FILENAME parameter.");
 	JParameter *p = gPARMS->SetDefaultParameter("TT:XML_FILENAME", XML_FILENAME, "Fallback filename of translation table XML file. If set to non-default, CCDB will not be checked.");
 	if(p->GetDefault() != p->GetValue()) NO_CCDB = true;
+	gPARMS->SetDefaultParameter("TT:VERBOSE", VERBOSE, "Verbosity level for Applying Translation Table. 0=no messages, 10=all messages.");
 	
 	ROCID_MAP_FILENAME = "rocid.map";
 	gPARMS->SetDefaultParameter("TT:ROCID_MAP_FILENAME", ROCID_MAP_FILENAME, "Optional rocid to rocid conversion map for use with files generated with the non-standard rocid's");
+
+	// Initialize dedicated JStreamLog used for debugging messages
+	ttout.SetTag("--- TT ---: ");
+	ttout.SetTimestampFlag();
+	ttout.SetThreadstampFlag();
 
 	// Look for and read in an optional rocid <-> rocid translation table
 	ReadOptionalROCidTranslation();
@@ -177,6 +184,7 @@ void DTranslationTable::ReadOptionalROCidTranslation(void)
 //---------------------------------
 void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 {
+	if(VERBOSE>0) ttout << "Entering ApplyTranslationTable:" << endl;
 	/// This will get all of the low level objects and
 	/// generate detector hit objects from them, placing
 	/// them in the appropriate DANA factories.
@@ -198,6 +206,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	// Df250PulseIntegral (will apply Df250PulseTime via associated objects)
 	vector<const Df250PulseIntegral*> pulseintegrals250;
 	loop->Get(pulseintegrals250);
+	if(VERBOSE>2) ttout << "  Number Df250PulseIntegral objects: " << pulseintegrals250.size() << endl;
 	for(uint32_t i=0; i<pulseintegrals250.size(); i++){
 		const Df250PulseIntegral *pi = pulseintegrals250[i];
 		
@@ -206,12 +215,18 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 		map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
 		if(rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
 		
+		if(VERBOSE>4) ttout << "    Looking for rocid:" << rocid <<" slot:" << pi->slot << " chan:" << pi->channel << endl;
+		
 		// Create crate,slot,channel index and find entry in Translation table.
 		// If none is found, then just quietly skip this hit.
 		csc_t csc = {rocid, pi->slot, pi->channel};
 		map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
-		if(iter == TT.end()) continue;
+		if(iter == TT.end()){
+			if(VERBOSE>6) ttout << "     - Didn't find it" << endl;
+			continue;
+		}
 		const DChannelInfo &chaninfo = iter->second;
+		if(VERBOSE>6) ttout << "     - Found entry for: " << DetectorName(chaninfo.det_sys) << endl;
 		
 		// Check for a pulse time (this should have been added in JEventSource_EVIO.cc)
 		const Df250PulseTime *pt = NULL;
@@ -226,7 +241,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 			case SC          : vsc.push_back  ( MakeSCDigiHit(  chaninfo.sc,   pi, pt) ); break;
 			case TOF         : vtof.push_back ( MakeTOFDigiHit( chaninfo.tof,  pi, pt) ); break;
 
-			default:  break;
+			default:
+				if(VERBOSE>4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << endl;
+				break;
 		}
 	}
 
@@ -286,6 +303,19 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	// Sort object order (this makes it easier to browse with hd_dump)
 	sort(vbcal.begin(), vbcal.end(), SortBCALDigiHit);
 	
+	if(VERBOSE>3){
+		ttout << "        vbcal.size() = " << vbcal.size() << endl;
+		ttout << "     vbcaltdc.size() = " << vbcaltdc.size() << endl;
+		ttout << "         vcdc.size() = " << vcdc.size() << endl;
+		ttout << "        vfcal.size() = " << vfcal.size() << endl;
+		ttout << "  vfdccathode.size() = " << vfdccathode.size() << endl;
+		ttout << "     vfdcwire.size() = " << vfdcwire.size() << endl;
+		ttout << "          vsc.size() = " << vsc.size() << endl;
+		ttout << "       vsctdc.size() = " << vsctdc.size() << endl;
+		ttout << "         vtof.size() = " << vtof.size() << endl;
+		ttout << "      vtoftdc.size() = " << vtoftdc.size() << endl;
+	}
+	
 	// Find factory for each container and copy the object pointers into it
 	// (n.b. do this even if container is empty since it sets the evnt_called flag)
 	CopyToFactory(loop, vbcal);
@@ -306,6 +336,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 //---------------------------------
 DBCALDigiHit* DTranslationTable::MakeBCALDigiHit(const BCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const
 {
+	if(VERBOSE>4) ttout << "       - Making DBCALDigiHit for (mod,lay,sec,end)=(" << idx.module << "," << idx.layer << "," << idx.sector << "," << (DBCALGeometry::End)idx.end << endl;
+
 	DBCALDigiHit *h = new DBCALDigiHit();
 	CopyDf250Info(h, pi, pt);
 
