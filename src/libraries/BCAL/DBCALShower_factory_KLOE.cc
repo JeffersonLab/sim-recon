@@ -15,6 +15,8 @@
 #include "BCAL/DBCALGeometry.h"
 #include "BCAL/DBCALShower_factory_KLOE.h"
 
+#include "DANA/DApplication.h"
+
 #include "units.h"
 
 using namespace std;
@@ -90,6 +92,10 @@ jerror_t DBCALShower_factory_KLOE::init()
 //------------------
 jerror_t DBCALShower_factory_KLOE::brun(JEventLoop *loop, int runnumber)
 {
+    //get target position
+    DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
+    DGeometry* geom = app->GetDGeometry(runnumber);
+    geom->GetTargetZ(m_z_target_center);
     
     vector<const DBCALGeometry*> bcalGeomVect;
     loop->Get( bcalGeomVect );
@@ -280,7 +286,7 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
         shower->E_raw               = E;
         shower->x                   = x;
         shower->y                   = y;
-        shower->z                   = z + 65.0; //don't hardcoded this
+        shower->z                   = z + m_z_target_center;
         shower->t                   = t;
         shower->N_cell              = N_cell;
       
@@ -296,11 +302,9 @@ jerror_t DBCALShower_factory_KLOE::evnt(JEventLoop *loop, int eventnumber)
         // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
         // as a function of z and fit.
   
-        // center of target should be a geometry lookup
-        float zTarget = 65*k_cm;
         float r = sqrt( shower->x * shower->x + shower->y * shower->y );
       
-        float zEntry = ( shower->z - zTarget ) * ( DBCALGeometry::BCALINNERRAD / r );
+        float zEntry = ( shower->z - m_z_target_center ) * ( DBCALGeometry::BCALINNERRAD / r );
       
         float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
             m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);
@@ -426,9 +430,8 @@ void DBCALShower_factory_KLOE::CellRecon(JEventLoop *loop)
         xcel[module-1][layer-1][sector-1] = x;
         ycel[module-1][layer-1][sector-1] = y;
         //This factory expects z values relative to the center of the BCAL (z=212 cm)
-        //DBCALPoint_factory gives us z values relative to the center of the target (z=65 cm)
-        //The 65 should not be hard-coded here, but it must match the center of target as listed in DBCALPoint_factory (currently hardcoded as 65)
-        zcel[module-1][layer-1][sector-1] = point.z()+65.0-zOffset;
+        //but DBCALPoint_factory gives us z values relative to the center of the target
+        zcel[module-1][layer-1][sector-1] = point.z()+m_z_target_center-zOffset;
         tcel[module-1][layer-1][sector-1] = point.t();
         ecel[module-1][layer-1][sector-1] = point.E();
 

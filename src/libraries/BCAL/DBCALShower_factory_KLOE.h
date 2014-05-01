@@ -214,6 +214,8 @@ private:
     float m_nonlinZ_p1;
     float m_nonlinZ_p2;
     float m_nonlinZ_p3;
+
+    double m_z_target_center;
 };
 
 #endif // _DBCALShower_factory_KLOE_
