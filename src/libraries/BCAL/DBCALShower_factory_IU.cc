@@ -9,12 +9,12 @@
 #include "DBCALShower_factory_IU.h"
 #include "DBCALCluster.h"
 
+#include "DANA/DApplication.h"
+
 #include "units.h"
 
 DBCALShower_factory_IU::DBCALShower_factory_IU(){
   
-  m_zTarget = 65*k_cm;
-
   if( ! DBCALGeometry::summingOn() ) {
     // in libraries/PID/DNeutralShowerCandidate.h, there are some constants used to calculate the energy uncertainty. If you are updating these constants, you might want to update that also...
 
@@ -46,6 +46,14 @@ DBCALShower_factory_IU::DBCALShower_factory_IU(){
     m_nonlinZ_p3 =  0;
 
   }
+}
+
+jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int runnumber) {
+  DApplication* app = dynamic_cast<DApplication*>(loop->GetJApplication());
+  DGeometry* geom = app->GetDGeometry(runnumber);
+  geom->GetTargetZ(m_zTarget);
+
+  return NOERROR;
 }
 
 jerror_t
@@ -139,11 +147,9 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, int eventnumber ){
     // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
     // as a function of z and fit.
     
-    // center of target should be a geometry lookup
-    float zTarget = 65*k_cm;
     float r = sqrt( shower->x * shower->x + shower->y * shower->y );
     
-    float zEntry = ( shower->z - zTarget ) * ( DBCALGeometry::BCALINNERRAD / r );
+    float zEntry = ( shower->z - m_zTarget ) * ( DBCALGeometry::BCALINNERRAD / r );
     
     float scale = m_scaleZ_p0  + m_scaleZ_p1*zEntry + 
     m_scaleZ_p2*(zEntry*zEntry) + m_scaleZ_p3*(zEntry*zEntry*zEntry);

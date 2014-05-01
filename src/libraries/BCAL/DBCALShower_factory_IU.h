@@ -27,9 +27,10 @@ public:
   
 private:
   
-  jerror_t evnt(JEventLoop *loop, int eventnumber);	
+  jerror_t evnt(JEventLoop *loop, int eventnumber);
+  jerror_t brun(JEventLoop *loop, int runnumber);
 
-  float m_zTarget;
+  double m_zTarget;
 
 // energy calibration parameters
   
