@@ -27,7 +27,7 @@ public:
   
   // this constructor is helpful for single-ended hits when
   // z is known -- z measured with respect to target
-  DBCALPoint( const DBCALHit& hit, float zTarget );
+  DBCALPoint( const DBCALHit& hit, float z, float z_target_center );
 
   float E() const { return m_E; }
   float t() const { return m_t; }

@@ -233,7 +233,7 @@ DBCALCluster_factory::evnt( JEventLoop *loop, int eventnumber ){
           float z = r / tan( clust->theta() );
           
           // make a point there
-          DBCALPoint* pt = new DBCALPoint( *hit, z );
+          DBCALPoint* pt = new DBCALPoint( *hit, z, m_z_target_center );
           
           // add it to the cluster and keep track of it for later cleanup
           //

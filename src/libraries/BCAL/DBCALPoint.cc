@@ -112,7 +112,7 @@ DBCALPoint::DBCALPoint(const DBCALUnifiedHit& hit1, const DBCALUnifiedHit& hit2,
   convertCylindricalToSpherical();
 }
 
-DBCALPoint::DBCALPoint( const DBCALHit& hit, float zTarget )
+DBCALPoint::DBCALPoint( const DBCALHit& hit, float z, float z_target_center )
 {
   
   int cellId = DBCALGeometry::cellId( hit.module, hit.layer, hit.sector );
@@ -124,10 +124,9 @@ DBCALPoint::DBCALPoint( const DBCALHit& hit, float zTarget )
   float fibLen = DBCALGeometry::BCALFIBERLENGTH;
   float cEff = DBCALGeometry::C_EFFECTIVE;
   
-  // set the z position relative to the center of the target -- this needs a database
-  // lookup to get the target position (set for now at 65 cm)
-  m_z = zTarget;
-  m_zLocal = m_z + 65 - DBCALGeometry::GLOBAL_CENTER;
+  // set the z position relative to the center of the target
+  m_z = z;
+  m_zLocal = m_z + z_target_center - DBCALGeometry::GLOBAL_CENTER;
   
   float d = ( isUp ? 0.5 * fibLen + m_zLocal : 0.5 * fibLen - m_zLocal );
   float att = exp( -d / DBCALGeometry::ATTEN_LENGTH );
