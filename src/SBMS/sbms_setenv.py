@@ -95,6 +95,9 @@ def mk_setenv(env):
 	str += 'setenv BMS_OSNAME %s\n' % env['OSNAME']
 	str += 'setenv PATH ${HALLD_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
 	str += 'setenv JANA_PLUGIN_PATH ${HALLD_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
+	# python support
+	str += 'setenv LD_LIBRARY_PATH ${HALLD_HOME}/${BMS_OSNAME}/lib/python:${LD_LIBRARY_PATH}\n'
+	str += 'setenv PYTHONPATH ${HALLD_HOME}/${BMS_OSNAME}/lib/python:${PYTHONPATH}\n'
 	str += '\n'
 
 	# CCDB

@@ -31,7 +31,8 @@ def library(env, libname=''):
 
 	# Add C/C++, and FORTRAN targets
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.c'))
-	env.AppendUnique(ALL_SOURCES = env.Glob('*.cc'))
+	#env.AppendUnique(ALL_SOURCES = env.Glob('*.cc'))
+	env.AppendUnique(ALL_SOURCES = filter(IsNotSWIGWrapper,env.Glob('*.cc')))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.cpp'))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
@@ -179,6 +180,8 @@ def plugin(env, pluginname=''):
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.cpp'))
 	env.AppendUnique(ALL_SOURCES = env.Glob('*.F'))
 
+        #print str([x.rstr() for x in env.Glob('*.cc')])
+
 	sources = env['ALL_SOURCES']
 
 	# Build static library from all source
@@ -203,6 +206,46 @@ def plugin(env, pluginname=''):
 		installed = env.Install(pluginsdir, myplugin)
 		env.Install(includedir, env.Glob('*.[h|hh|hpp]'))
 
+##################################
+# swig_library
+##################################
+def swig_library(env, libname, srcs):
+	# defaults to building python modules for now
+	# library name and list of sources have to be specified
+	if not libname or not srcs:
+		return
+
+	# add standard SWIG options
+	env.AppendUnique(SWIGFLAGS = ["-O"])
+
+	# set up variables needed for building python extensions
+	import distutils.sysconfig
+	so_ext = ".so"
+	env.AppendUnique(CPPPATH = [distutils.sysconfig.get_python_inc()])
+
+	# use LoadableModule() to build the python module, since that properly supports OS X 
+	mylib = env.LoadableModule(libname, srcs,
+				   SHLIBPREFIX="",
+				   SHLIBSUFFIX=so_ext)
+
+	# Cleaning and installation are restricted to the directory
+	# scons was launched from or its descendents
+	CurrentDir = env.Dir('.').srcnode().abspath
+	if not CurrentDir.startswith(env.GetLaunchDir()):
+		# Not in launch directory. Tell scons not to clean these targets
+		env.NoClean([mylib])
+	else:
+		# We're in launch directory (or descendent) schedule installation
+
+		# Installation directories for library and headers
+		installdir = env.subst('$INSTALLDIR')
+		includedir = "%s/%s" %(env.subst('$INCDIR'), libname)
+		libdir = env.subst('$LIBDIR') + "/python"
+
+		# Install targets 
+		the_wrapper = env.Install(libdir, libname+".py")
+		the_lib = env.Install(libdir, mylib)
+		env.Depends(the_wrapper, the_lib)
 
 
 #===========================================================
@@ -356,6 +399,45 @@ def OptionallyBuild(env, dirs):
 
 	if len(subdirs)>0 : env.SConscript(dirs=subdirs, exports='env', duplicate=0)
 
+##################################
+# ProgramExists
+##################################
+def ProgramExists(program):
+	# this checks the PATH environmental variable to see if a program exists
+	# it works like the "which" command in UNIX
+	def is_exe(fpath):
+		return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+	fpath, fname = os.path.split(program)
+	if fpath:
+		if is_exe(program):
+			return program
+	else:
+		for path in os.environ["PATH"].split(os.pathsep):
+			path = path.strip('"')
+			exe_file = os.path.join(path, program)
+			if is_exe(exe_file):
+				return exe_file
+
+	return None
+
+
+##################################
+# IsNotSWIGWrapper
+##################################
+def IsNotSWIGWrapper(fileNode):
+	# this function takes an input of type SCons.Node.FS.File
+	# i.e., what the Environment.Glob() function returns
+	f = open(fileNode.rstr(),'r')
+	f.readline()  ## the first line is blank
+	# check to see if the first line of the auto-generated file has some magic
+	# let's check to see if it contains the string "SWIG"
+	match = re.search( r'SWIG', f.readline() )
+	f.close()
+	if match:
+		return False
+	else:
+		return True
 
 #===========================================================
 # Package support follows
@@ -560,4 +642,13 @@ def AddROOT(env):
 				print "       ROOT dictionary for %s" % f
 	os.chdir(curpath)
 
-
+##################################
+# SWIG
+##################################
+def AddSWIG(env):
+	# SWIG is used to optionally build library wrappers for other languages (e.g. python)
+	# check to see if the swig executable exists
+	# if it does, set a variable to let other scripts know
+	if ProgramExists("swig"):
+		env.AppendUnique(USE_SWIG = "y")
+	
