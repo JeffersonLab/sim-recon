@@ -322,6 +322,13 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
   double X0sum=0.0;
   swim_step_t *last_step=NULL;
   double old_radius=10000.;
+
+  // Variables used to tag the step at which the track passes into one one of
+  // the outer detectors
+  index_at_bcal=-1;
+  index_at_tof=-1;
+  index_at_fcal=-1;
+  bool hit_bcal=false,hit_fcal=false,hit_tof=false;
 	
   for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
        
@@ -426,10 +433,25 @@ void DReferenceTrajectory::FastSwim(const DVector3 &pos, const DVector3 &mom, do
     t+=ds*sqrt(one_over_beta_sq)/SPEED_OF_LIGHT;
     s += ds;
   
-    // Exit the loop if we are already inside the volume of the BCAL
-    // and the radius is decreasing
+    // Mark places along trajectory where we pass into one of the 
+    // main detectors
     double R=swim_step->origin.Perp();
     double z=swim_step->origin.Z();
+    if (hit_bcal==false && R>65. && z<407 &&z>0){
+      index_at_bcal=Nswim_steps-1;
+      hit_bcal=true;
+    }
+    if (hit_tof==false && z>618.){
+      index_at_tof=Nswim_steps-1;
+      hit_tof=true;
+    }
+    if (hit_fcal==false && z>625.){
+      index_at_fcal=Nswim_steps-1;
+      hit_fcal=true;
+    }
+    
+    // Exit the loop if we are already inside the volume of the BCAL
+    // and the radius is decreasing
     if (R<old_radius && R>65.0 && z<407.0 && z>-100.0){
       Nswim_steps++; break;
     }
@@ -522,10 +544,16 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	stepper.GetBField(B);
 	double Bz_old = B.z();
 #endif
+
+	// Variables used to tag the step at which the track passes into one 
+	// one of the outer detectors
+	index_at_bcal=-1;
+	index_at_tof=-1;
+	index_at_fcal=-1;
+	bool hit_bcal=false,hit_fcal=false,hit_tof=false;
 	
 	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
-
-
+	
 		if(Nswim_steps>=this->max_swim_steps){
 		  if (debug_level>0){
 			jerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
@@ -689,10 +717,25 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		t+=ds*sqrt(one_over_beta_sq)/SPEED_OF_LIGHT;
 		s += ds;
 
-		// Exit the loop if we are already inside the volume of the BCAL
-		// and the radius is decreasing
+		// Mark places along trajectory where we pass into one of the 
+		// main detectors
 		double R=swim_step->origin.Perp();
 		double z=swim_step->origin.Z();
+		if (hit_bcal==false && R>65. && z<407 &&z>0){
+		  index_at_bcal=Nswim_steps-1;
+		  hit_bcal=true;
+		}
+		if (hit_tof==false && z>618.){
+		  index_at_tof=Nswim_steps-1;
+		  hit_tof=true;
+		}
+		if (hit_fcal==false && z>625.){
+		  index_at_fcal=Nswim_steps-1;
+		  hit_fcal=true;
+		}
+
+		// Exit the loop if we are already inside the volume of the BCAL
+		// and the radius is decreasing
 		if (R<old_radius && R>65.0 && z<407.0 && z>-100.0){
 		  Nswim_steps++; break;
 		}
@@ -740,6 +783,15 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
     if (t) *t=0.;
     return VALUE_OUT_OF_RANGE;
   }
+  // Return early if the radius at the beginning of the trajectory is outside
+  // the radius to which we are trying to match
+  double inner_radius=swim_steps[0].origin.Perp();
+  if (inner_radius>R){
+    if (s) *s=0.;
+    if (t) *t=0.;
+    return VALUE_OUT_OF_RANGE;
+  }
+
 
   // Loop over swim steps and find the one that crosses the radius
   swim_step_t *swim_step = swim_steps;
@@ -804,11 +856,12 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,
 //---------------------------------
 // GetIntersectionWithPlane
 //---------------------------------
-jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s,double *t) const{
+jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s,double *t,DetectorSystem_t detector) const{
   DVector3 dummy;
-  return GetIntersectionWithPlane(origin,norm,pos,dummy,s,t);
+  return GetIntersectionWithPlane(origin,norm,pos,dummy,s,t,detector);
 }
-jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &p_at_intersection, double *s,double *t) const
+jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &p_at_intersection, double *s,
+							double *t,DetectorSystem_t detector) const
 {
 	/// Get the intersection point of this trajectory with a plane.
 	/// The plane is specified by <i>origin</i> and <i>norm</i>. The
@@ -835,7 +888,21 @@ jerror_t DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, 
 	}
 	// Find the closest swim step to the position where the track crosses
 	// the plane
-	swim_step_t *step = FindPlaneCrossing(origin,norm);
+	swim_step_t *step = NULL;
+	switch(detector){
+	case SYS_FCAL:
+	  if (index_at_fcal<0) return VALUE_OUT_OF_RANGE;
+	  step=&swim_steps[index_at_fcal];
+	  break;
+	case SYS_TOF:
+	  if (index_at_tof<0) return VALUE_OUT_OF_RANGE;
+	  step=&swim_steps[index_at_tof];
+	  break;
+	default:	
+	  step=FindPlaneCrossing(origin,norm);
+	  break;
+	}
+
 	// Kludge for tracking to forward detectors assuming that the planes 
 	// are perpendicular to the beam line 
 	if (step && step->origin.Z()>600.
@@ -1082,8 +1149,9 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 //---------------------------------
 // DistToRTwithTime
 //---------------------------------
-double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t) const{
-  double dist=DistToRT(hit,s);
+double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t,
+					      DetectorSystem_t detector) const{
+  double dist=DistToRT(hit,s,detector);
   if (s!=NULL && t!=NULL) 
   {
     if(last_swim_step==NULL)
@@ -1104,13 +1172,32 @@ double DReferenceTrajectory::DistToRTwithTime(DVector3 hit, double *s,double *t)
 //---------------------------------
 // DistToRT
 //---------------------------------
-double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
+double DReferenceTrajectory::DistToRT(DVector3 hit, double *s,
+				      DetectorSystem_t detector) const
 {
 	last_swim_step=NULL;
 	if(Nswim_steps<1)_DBG__;
 
+	int start_index=0;
+	switch(detector){
+	case SYS_BCAL:
+	  if (index_at_bcal<0) return numeric_limits<double>::quiet_NaN();
+	  start_index=index_at_bcal;
+	  break;	
+	case SYS_FCAL:
+	  if (index_at_fcal<0) return numeric_limits<double>::quiet_NaN();
+	  start_index=index_at_fcal;
+	  break;
+	case SYS_TOF:
+	  if (index_at_tof<0) return numeric_limits<double>::quiet_NaN();
+	  start_index=index_at_tof;
+	  break;
+	default:
+	  break;
+	}
+
 	// First, find closest step to point
-	swim_step_t *swim_step = swim_steps;
+	swim_step_t *swim_step = &swim_steps[start_index];
 	swim_step_t *step=NULL;
 	
 	//double min_delta2 = 1.0E6;
@@ -1121,12 +1208,16 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 	int last_index=Nswim_steps-1;
 	double forward_delta2=(swim_step->origin - hit).Mag2();
 	double backward_delta2=(swim_steps[last_index].origin-hit).Mag2();
+
 	if (forward_delta2<backward_delta2){ // start at the beginning
-	  for(int i=0; i<Nswim_steps; i++, swim_step++){
+	  for(int i=start_index; i<Nswim_steps; i++, swim_step++){
 	    
 	    DVector3 pos_diff = swim_step->origin - hit;
 	    delta2 = pos_diff.Mag2();
-	    if (delta2>old_delta2) break;
+
+	    if (delta2>old_delta2){
+	      break;
+	    }
 	    
 	    //if(delta2 < min_delta2){
 	    //min_delta2 = delta2;
@@ -1137,7 +1228,7 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 	  }
 	}
 	else{// start at the end
-	  for(int i=last_index; i>=0; i--){
+	  for(int i=last_index; i>=start_index; i--){
 	    swim_step=&swim_steps[i];
 	    DVector3 pos_diff = swim_step->origin - hit;
 	    delta2 = pos_diff.Mag2();
@@ -1152,17 +1243,18 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 	  }
 
 	}
+
 	if(step==NULL){
 		// It seems to occasionally occur that we have 1 swim step
 		// and it's values are invalid. Supress warning messages
 		// for these as they are "known" (even if not fully understood!)
-      if(s != NULL)
-        *s = 1.0E6;
-		if(Nswim_steps>1){
-			_DBG_<<"\"hit\" passed to DistToRT(DVector3) out of range!"<<endl;
-			_DBG_<<"hit x,y,z = "<<hit.x()<<", "<<hit.y()<<", "<<hit.z()<<"  Nswim_steps="<<Nswim_steps<<"  min_delta2="<<delta2<<endl;
-		}
-		return 1.0E6;
+	  if(s != NULL)
+	    *s = 1.0E6;
+	  if(Nswim_steps>1){
+	    _DBG_<<"\"hit\" passed to DistToRT(DVector3) out of range!"<<endl;
+	    _DBG_<<"hit x,y,z = "<<hit.x()<<", "<<hit.y()<<", "<<hit.z()<<"  Nswim_steps="<<Nswim_steps<<"  min_delta2="<<delta2<<endl;
+	  }
+	  return 1.0E6;
 	}
 	
 	// store last step
@@ -1255,10 +1347,15 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 	  double p=cbrt(d+c);
 	  double q=cbrt(d-c);
 	  phi = q - p;
-	  double phisq=phi*phi;
+	  if (fabs(phi)<0.2){ // check small angle approximation
+	    double phisq=phi*phi;
 	  
-	  dist2 = 0.25*Ro2*phisq*phisq + alpha*phisq + beta*phi 
-	    + x0*x0 + y0*y0 + z0*z0;
+	    dist2 = 0.25*Ro2*phisq*phisq + alpha*phisq + beta*phi 
+	      + x0*x0 + y0*y0 + z0*z0;
+	  }
+	  else{
+	    return numeric_limits<double>::quiet_NaN();
+	  }
 	}
 	else{
 	  // Use DeMoivre's theorem to find the cube root of a complex
@@ -1292,13 +1389,14 @@ double DReferenceTrajectory::DistToRT(DVector3 hit, double *s) const
 	    phi=phi2;
 	    dist2=d2_2;
 	  }
-	  
+	  if (fabs(phi)<0.2){ // Check small angle approximation
+	    return numeric_limits<double>::quiet_NaN();
+	  }
+
 	  if (isnan(Ro))
 	    {
 	  }
 	}
-
-
 	
 	// Calculate distance along track ("s")
 	if(s!=NULL){
