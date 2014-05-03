@@ -174,7 +174,8 @@ class DTrackFitter:public jana::JObject{
 		bool CORRECT_FOR_ELOSS;
 
 	private:
-		int DEBUG_LEVEL;			
+		int DEBUG_LEVEL;
+		string MATERIAL_MAP_MODEL;			
 
 		// Prohibit default constructor
 		DTrackFitter();
