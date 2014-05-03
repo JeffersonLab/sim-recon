@@ -47,7 +47,13 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	bfield = dapp->GetBfield(); // this should be run number based!
 	lorentz_def=dapp->GetLorentzDeflections(run_number);
 	geom = dapp->GetDGeometry(run_number);
-	RootGeom = dapp->GetRootGeom(run_number);
+
+	RootGeom=NULL;
+	MATERIAL_MAP_MODEL = "DGeometry";
+	gPARMS->SetDefaultParameter("TRKFIT:MATERIAL_MAP_MODEL",MATERIAL_MAP_MODEL);
+	if(MATERIAL_MAP_MODEL=="DRootGeom"){
+	  RootGeom = dapp->GetRootGeom(run_number);
+	}
 
 #ifdef PROFILE_TRK_TIMES
 	// Use a special entry to hold how many tracks we fit
