@@ -110,6 +110,9 @@ class DParticleID:public jana::JObject{
 		double dA_CDC;
 		double dA_FDC;
 
+		double BCAL_Z_CUT,BCAL_PHI_CUT_PAR1,BCAL_PHI_CUT_PAR2;
+		double FCAL_CUT_PAR1,FCAL_CUT_PAR2;
+
 		double DELTA_R_FCAL;
 		double C_EFFECTIVE; // start counter light propagation speed
 		double ATTEN_LENGTH; // Start counter attenuation length
