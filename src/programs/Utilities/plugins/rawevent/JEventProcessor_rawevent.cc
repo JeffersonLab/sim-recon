@@ -145,6 +145,7 @@ static CODA_EXP_INFO *expID     = NULL;
 static CODA_EVENT_INFO *eventID = NULL;
 
 static int nCrate   = 0;
+static int maxCrateNum = 0;
 static int crateID[MAXCRATE];
 static int nModules[MAXCRATE];
 static int modules[MAXCRATE][MAXSLOT];
@@ -265,7 +266,7 @@ jerror_t JEventProcessor_rawevent::init(void) {
 
   // initialize mc2coda package
   if(nomc2coda==0) {
-    expID=mc2codaInitExp(nCrate,expName.c_str());
+    expID=mc2codaInitExp(maxCrateNum+1,expName.c_str());
     if(expID==NULL) {
       jerr << "?NULL return from mc2codaInitExp()" << endl;
       exit(EXIT_FAILURE);
@@ -1288,7 +1289,7 @@ void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname,
     nCrate++;
     crateID[nCrate-1]=crate;
     nModules[nCrate-1]=0;
-
+	if(crate > maxCrateNum) maxCrateNum = crate;
 
   } else if(strcasecmp(xmlname,"slot")==0) {
     for (int i=0; atts[i]; i+=2) {
