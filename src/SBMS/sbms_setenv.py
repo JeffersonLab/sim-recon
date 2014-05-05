@@ -63,6 +63,12 @@ def mk_setenv(env):
 	str += 'endif\n'
 	str += '\n'
 
+	str += '# Make sure PYTHONPATH is set\n'
+	str += 'if ( ! $?PYTHONPATH ) then\n'
+	str += '   setenv PYTHONPATH\n'
+	str += 'endif\n'
+	str += '\n'
+
 	# CLANG-LLVM C++ compiler
 	# If the CLANGROOT environment variable is set, check if there is
 	# a setenv.csh script in there that we can source.
@@ -96,7 +102,7 @@ def mk_setenv(env):
 	str += 'setenv PATH ${HALLD_HOME}/${BMS_OSNAME}/bin:${PATH}\n'
 	str += 'setenv JANA_PLUGIN_PATH ${HALLD_HOME}/${BMS_OSNAME}/plugins:${JANA_PLUGIN_PATH}\n'
 	# python support
-	str += 'setenv LD_LIBRARY_PATH ${HALLD_HOME}/${BMS_OSNAME}/lib/python:${LD_LIBRARY_PATH}\n'
+	str += 'setenv %s ${HALLD_HOME}/${BMS_OSNAME}/lib/python:${%s}\n' %(LDLPV, LDLPV)
 	str += 'setenv PYTHONPATH ${HALLD_HOME}/${BMS_OSNAME}/lib/python:${PYTHONPATH}\n'
 	str += '\n'
 
