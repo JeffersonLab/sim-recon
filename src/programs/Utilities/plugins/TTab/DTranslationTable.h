@@ -258,7 +258,7 @@ void DTranslationTable::CopyDf250Info(T *h, const Df250PulseIntegral *pi, const 
 	/// Copy info from the fADC250 into a hit object.
 	h->pulse_integral = pi->integral;
 	h->pulse_time     = pt==NULL ? 0:pt->time;
-	h->pedestal       = 0; // for future development
+	h->pedestal       = pi->pedestal;
 	h->QF             = pi->quality_factor;
 	
 	h->AddAssociatedObject(pi);
