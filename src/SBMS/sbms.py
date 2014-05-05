@@ -648,7 +648,10 @@ def AddROOT(env):
 def AddSWIG(env):
 	# SWIG is used to optionally build library wrappers for other languages (e.g. python)
 	# check to see if the swig executable exists
-	# if it does, set a variable to let other scripts know
+	# if it does, set a variable to let other scripts know	
 	if ProgramExists("swig"):
 		env.AppendUnique(USE_SWIG = "y")
 	
+	# TEMPORARILY DISABLE
+	env.Replace(USE_SWIG = "n")
+
