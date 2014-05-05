@@ -8,6 +8,8 @@
 #ifndef _JEventProcessor_DAQTreeBCAL_
 #define _JEventProcessor_DAQTreeBCAL_
 
+#include <stdint.h>
+
 #include <JANA/JEventProcessor.h>
 
 #include <TTree.h>
