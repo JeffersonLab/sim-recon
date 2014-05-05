@@ -58,7 +58,7 @@ def library(env, libname=''):
 
 		# Install targets 
 		env.Install(libdir, mylib)
-		env.Install(includedir, env.Glob('*.h*'))
+		env.Install(includedir, env.Glob('*.[h|hh|hpp]'))
 
 
 ##################################
@@ -635,7 +635,7 @@ def AddROOT(env):
 	if(int(env['SHOWBUILD'])>1):
 		print "---- Scanning for headers to generate ROOT dictionaries in: %s" % srcpath
 	os.chdir(srcpath)
-	for f in glob.glob('*.h*'):
+	for f in glob.glob('*.[h|hh|hpp]'):
 		if 'ClassDef' in open(f).read():
 			env.AppendUnique(ALL_SOURCES = env.ROOTDict(f))
 			if(int(env['SHOWBUILD'])>1):
