@@ -37,8 +37,11 @@ jerror_t DMCThrown_factory_Primary::evnt(jana::JEventLoop *locEventLoop, int eve
 	{
 		int locParentID = locMCThrowns[loc_i]->parentid;
 
-		if(locMCThrowns[loc_i]->PID() == Unknown)
+		Particle_t locPID = locMCThrowns[loc_i]->PID();
+		if(locPID == Unknown)
 			continue; //unknown particle
+		if(IsResonance(locPID))
+			continue;
 
 		// check if initial particle
 		if(locParentID == 0)
