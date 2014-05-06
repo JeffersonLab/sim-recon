@@ -58,7 +58,7 @@ def library(env, libname=''):
 
 		# Install targets 
 		env.Install(libdir, mylib)
-		env.Install(includedir, env.Glob('*.[h|hh|hpp]'))
+		env.Install(includedir, env.Glob('*.h')+env.Glob('*.hh')+env.Glob('*.hpp'))
 
 
 ##################################
@@ -204,7 +204,7 @@ def plugin(env, pluginname=''):
 
 		# Install targets 
 		installed = env.Install(pluginsdir, myplugin)
-		env.Install(includedir, env.Glob('*.[h|hh|hpp]'))
+		env.Install(includedir, env.Glob('*.h')+env.Glob('*.hh')+env.Glob('*.hpp'))
 
 ##################################
 # swig_library
