@@ -53,13 +53,25 @@ class DCutAction_ThrownTopology : public DAnalysisAction
 		dExactMatchFlag(locExactMatchFlag){}
 
 		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop);
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		void Initialize(JEventLoop* locEventLoop);
 
 		bool dExactMatchFlag; //if false, require the DReaction be a subset (or the total) of the thrown topology
 		const DAnalysisUtilities* dAnalysisUtilities;
+};
+
+class DCutAction_AllTracksHaveDetectorMatch : public DAnalysisAction
+{
+	public:
+		DCutAction_AllTracksHaveDetectorMatch(const DReaction* locReaction, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_AllTracksHaveDetectorMatch", false, locActionUniqueString) {}
+
+		inline void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 };
 
 class DCutAction_MaxNumParticleCombos : public DAnalysisAction
@@ -70,10 +82,10 @@ class DCutAction_MaxNumParticleCombos : public DAnalysisAction
 		dMaxNumParticleCombos(locMaxNumParticleCombos){}
 
 		string Get_ActionName(void) const;
+		inline void Initialize(JEventLoop* locEventLoop){}
 
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
-		inline void Initialize(JEventLoop* locEventLoop){}
 
 		unsigned int dMaxNumParticleCombos;
 };

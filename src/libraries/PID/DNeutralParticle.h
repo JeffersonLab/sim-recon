@@ -11,6 +11,7 @@
 #include <vector>
 #include <JANA/JObject.h>
 #include <PID/DNeutralParticleHypothesis.h>
+#include <PID/DNeutralShower.h>
 #include <particleType.h>
 
 using namespace std;
@@ -19,7 +20,8 @@ class DNeutralParticle:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DNeutralParticle);
 
-		vector<const DNeutralParticleHypothesis *> dNeutralParticleHypotheses;
+		vector<const DNeutralParticleHypothesis*> dNeutralParticleHypotheses;
+		const DNeutralShower* dNeutralShower;
 
 		const DNeutralParticleHypothesis* Get_BestFOM(void) const;
 		const DNeutralParticleHypothesis* Get_Hypothesis(Particle_t locPID) const;

@@ -30,6 +30,26 @@ bool DCutAction_MaxNumParticleCombos::Perform_Action(JEventLoop* locEventLoop, c
 	return (Get_NumParticleCombos() <= dMaxNumParticleCombos);
 }
 
+bool DCutAction_AllTracksHaveDetectorMatch::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	deque<const DKinematicData*> locParticles;
+	locParticleCombo->Get_DetectedFinalChargedParticles_Measured(locParticles);
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+	{
+		const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_i]);
+		if(locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL)
+			continue;
+		if(locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL)
+			continue;
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+			continue;
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+			continue;
+		return false;
+	}
+	return true;
+}
+
 string DCutAction_PIDFOM::Get_ActionName(void) const
 {
 	ostringstream locStream;

@@ -135,7 +135,7 @@ const DMCThrown* DMCThrownMatching::Get_MatchingMCThrown(const DNeutralParticleH
 		locParticleIterator->first->GetSingleT(locAssociatedNeutralShower_Check);
 		if(locAssociatedNeutralShower_Check == locAssociatedNeutralShower_Input)
 		{
-			locMatchFOM = locIterator->second.second;
+			locMatchFOM = locParticleIterator->second.second;
 			return locParticleIterator->second.first;
 		}
 	}

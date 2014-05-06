@@ -106,6 +106,27 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 			locPID = locMCThrown->PID();
 			cout << ParticleType(locPID) << ", " << locP << ", " << locTheta << ", " << locPhi << ", " << locMatchFOM << endl;
 		}
+		cout << "Neutral Particle Matching Summary:" << endl;
+		for(size_t loc_i = 0; loc_i < locNeutralParticleHypotheses.size(); ++loc_i)
+		{
+			double locP = locNeutralParticleHypotheses[loc_i]->momentum().Mag();
+			double locTheta = locNeutralParticleHypotheses[loc_i]->momentum().Theta()*180.0/TMath::Pi();
+			double locPhi = locNeutralParticleHypotheses[loc_i]->momentum().Phi()*180.0/TMath::Pi();
+			Particle_t locPID = locNeutralParticleHypotheses[loc_i]->PID();
+			cout << "neutral info: " << locNeutralParticleHypotheses[loc_i] << ", " << ParticleType(locPID) << ", " << locP << ", " << locTheta << ", " << locPhi << endl;
+			cout << "matched info: ";
+			const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypotheses[loc_i], locMatchFOM);
+			if(locMCThrown == NULL)
+			{
+				cout << "NO MATCH." << endl;
+				continue;
+			}
+			locP = locMCThrown->momentum().Mag();
+			locTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
+			locPhi = locMCThrown->momentum().Phi()*180.0/TMath::Pi();
+			locPID = locMCThrown->PID();
+			cout << ParticleType(locPID) << ", " << locP << ", " << locTheta << ", " << locPhi << ", " << locMatchFOM << endl;
+		}
 		cout << "Unmatched Charged DMCThrowns:" << endl;
 		for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
 		{
@@ -280,7 +301,7 @@ void DMCThrownMatching_factory::Find_GenReconMatches_BCALShowers(JEventLoop* loc
 			}
 		}
 
-		if(!locMatchFoundFlag) //no more good matches!1
+		if(!locMatchFoundFlag) //no more good matches!
 			break;
 
 		locBCALTruthShower = locBCALTruthShowers[locBestBCALTruthShowerIndex];

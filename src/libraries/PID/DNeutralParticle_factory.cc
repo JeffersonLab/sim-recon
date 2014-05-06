@@ -65,6 +65,7 @@ jerror_t DNeutralParticle_factory::evnt(jana::JEventLoop *locEventLoop, int even
 			continue;
 		locNeutralParticle = new DNeutralParticle();
 		locNeutralParticle->dNeutralParticleHypotheses.push_back(locNeutralParticleHypothesis);
+		locNeutralParticle->dNeutralShower = locNeutralShowers[0];
 		locNeutralParticle->AddAssociatedObject(locNeutralShowers[0]);
 		_data.push_back(locNeutralParticle);
 	}
