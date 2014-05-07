@@ -536,6 +536,20 @@ def AddET(env):
 
 
 ##################################
+# CodaChannels
+##################################
+def AddCODAChannels(env):
+
+	# Only add codaChannels library if CODA is set
+	coda = os.getenv('CODA', 'none')
+	if(coda != 'none') :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_CODACHANNELS'])
+		env.AppendUnique(CPPPATH = ['%s/include' % coda])
+		env.AppendUnique(LIBPATH = ['%s/lib' % coda])
+		env.AppendUnique(LIBS=['codaChannels'])
+
+
+##################################
 # CMSG
 ##################################
 def AddCMSG(env):
