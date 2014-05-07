@@ -145,15 +145,12 @@ sbms.library(env)
 
 #========================================================================
 
-# now we try to build wrapper libraries
+# now we try to build wrapper libraries - these are only built if the swig
+# executable exists and that building these executables is enabled
 # these are needed for other systems that work with HDDM files, e.g. EventStore
-# first, try and load SWIG
 sbms.AddSWIG(env)
-
-# if SWIG is available, then build the HDDM python wrapper
-if env["USE_SWIG"] == "y":
-   swig_env = env.Clone()
-   swig_env.AppendUnique(SWIGFLAGS = ["-c++","-python"])
-   swig_env.AppendUnique(LIBS = ["z","bz2"])
-   sbms.swig_library(swig_env, "pyhddm_r", ["pyhddm_r.i"])
+swig_env = env.Clone()
+swig_env.AppendUnique(SWIGFLAGS = ["-c++","-python"])
+swig_env.AppendUnique(LIBS = ["z","bz2"])
+sbms.swig_library(swig_env, "pyhddm_r", ["pyhddm_r.i"])
 
