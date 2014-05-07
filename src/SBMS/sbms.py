@@ -215,6 +215,15 @@ def swig_library(env, libname, srcs):
 	if not libname or not srcs:
 		return
 
+	# make sure that building swig libraries is enabled
+	try:
+		if not env['SWIG_EXISTS'] or int(env['SWIG_EXISTS']) != 1:
+			return
+		if not env['BUILDSWIG'] or int(env['BUILDSWIG']) != 1:
+			return
+	except:
+		return
+
 	# add standard SWIG options
 	env.AppendUnique(SWIGFLAGS = ["-O"])
 
@@ -222,6 +231,7 @@ def swig_library(env, libname, srcs):
 	import distutils.sysconfig
 	so_ext = ".so"
 	env.AppendUnique(CPPPATH = [distutils.sysconfig.get_python_inc()])
+	env.AppendUnique(SWIGFLAGS = ["-I"+os.getcwd()])
 
 	# use LoadableModule() to build the python module, since that properly supports OS X 
 	mylib = env.LoadableModule(libname, srcs,
@@ -664,8 +674,9 @@ def AddSWIG(env):
 	# check to see if the swig executable exists
 	# if it does, set a variable to let other scripts know	
 	if ProgramExists("swig"):
-		env.AppendUnique(USE_SWIG = "y")
-	
+		env.AppendUnique(SWIG_EXISTS = "1")
+	else:
+		env.AppendUnique(SWIG_EXISTS = "0")
 	# TEMPORARILY DISABLE
-	env.Replace(USE_SWIG = "n")
+	#env.Replace(USE_SWIG = "n")
 
