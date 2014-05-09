@@ -83,6 +83,8 @@ jerror_t JEventProcessor_DAQTree::init(void)
 	Df250WindowRawData_tree->Branch("w_min",&w_min,"w_min/i");
 	Df250WindowRawData_tree->Branch("w_max",&w_max,"w_max/i");
 	Df250WindowRawData_tree->Branch("w_samp1",&w_samp1,"w_samp1/i");
+	Df250WindowRawData_tree->Branch("w_ped",&w_ped,"w_ped/i");
+	Df250WindowRawData_tree->Branch("w_time",&w_time,"w_time/f");
 
 	/// Pulse Integral
 	Df250PulseIntegral_tree = new TTree("Df250PulseIntegral",
@@ -158,12 +160,19 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 				w_min = samplesvector[0];
 				w_max = samplesvector[0];
 				w_samp1 = samplesvector[0];
+				w_ped = samplesvector[0]; 
 			} else {
+				if (c_samp<10) {
+					w_ped += samplesvector[c_samp];
+				}
 				w_integral += samplesvector[c_samp];
 				if (w_min > samplesvector[c_samp]) w_min = samplesvector[c_samp];
 				if (w_max < samplesvector[c_samp]) w_max = samplesvector[c_samp];
-			}
+			}		
 		}
+		// now find the time
+		Int_t threshold = w_max-w_min;
+		w_time=0;
 		Df250WindowRawData_tree->Fill();
 	}
 
