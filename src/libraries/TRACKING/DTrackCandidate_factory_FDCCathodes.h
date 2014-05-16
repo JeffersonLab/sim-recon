@@ -98,11 +98,10 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 };
 
 inline double DTrackCandidate_factory_FDCCathodes::Match(double p){
-  //  return 1000.;
-  
-  if (p<1.) p=1.;
-  if (p>3.) p=3.;
-  return (12.-3.*p+20./p);
+  double cut=1.5+7./p;
+  if (cut>9.0) cut=9.0;
+  else if (cut<4.) cut=4.0;
+  return cut;
 }
 
 
