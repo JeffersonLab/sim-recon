@@ -8,7 +8,7 @@ class DMatrix4x2{
   DMatrix4x2(){
     for (unsigned int i=0;i<2;i++){
       for (unsigned int j=0;j<4;j++){
-	mA[i][j]=0.;
+	mA[j][i]=0.;
       }
     }
   }
