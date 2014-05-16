@@ -54,7 +54,7 @@ inline bool cdc_fdc_match(double p_fdc,double p_cdc,double dist){
   //double frac2=fabs(1.-p_fdc/p_cdc);
   double p=p_fdc;
   if (p_cdc <p ) p=p_cdc;
-  if (dist<10. && dist < 1.75+1.75/p
+  if (dist<10. && dist <3.25+1.75/p
       //&& (frac<0.5 || frac2<0.5)
       ) return true;
   return false;
@@ -133,7 +133,7 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   cdc_endplate.SetZ(endplate_z+endplate_dz);
 
   dgeom->GetTargetZ(TARGET_Z);
- 
+
    // Initialize the stepper
   stepper=new DMagneticFieldStepper(bfield);
   stepper->SetStepSize(1.0);
@@ -146,7 +146,7 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
     match_dist=(TH2F*)gROOT->FindObject("match_dist");
     if (!match_dist){
       match_dist=new TH2F("match_dist","Matching distance",
-			  60,0.,60.,100,0,25.);
+			  120,0.,60.,500,0,25.);
       match_dist->SetXTitle("r (cm)");
       match_dist->SetYTitle("#Deltar (cm)");
     }
@@ -807,7 +807,8 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
   DVector3 mom=fdccan->momentum();
   DVector3 pos=fdccan->position();
   double p_fdc=mom.Mag();
-  
+  ProjectHelixToZ(cdc_endplate.z(),fdccan->charge(),mom,pos); 
+
   // loop over the cdc candidates looking for the smallest distance
   // between the cdc and fdc projections to the end plate
   double diff_min=1000.; // candidate matching difference
