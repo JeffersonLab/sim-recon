@@ -75,6 +75,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_MissingMass(NULL, false, 0, 0.0, 0.0);
 	DHistogramAction_MissingMassSquared(NULL, false, 0, 0.0, 0.0);
 	DHistogramAction_KinFitResults(NULL, 0.0);
+	DHistogramAction_NumParticleCombos(NULL);
 
 	DCutAction_ThrownTopology(NULL, true);
 	DCutAction_PIDFOM(NULL, Unknown, Unknown, 0.0);
@@ -90,6 +91,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_TruePID(NULL, Unknown, Unknown, 0.0);
 	DCutAction_AllTruePID(NULL, 0.0);
 	DCutAction_GoodEventRFBunch(NULL, false);
+	DCutAction_TransverseMomentum(NULL, 0.0);
 
 	return NOERROR;
 }

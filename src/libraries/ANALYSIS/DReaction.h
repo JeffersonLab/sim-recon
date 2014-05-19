@@ -34,11 +34,13 @@ class DReaction : public JObject
 
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		inline void Set_MinIndividualPIDFOM(double locMinIndividualPIDFOM){dMinIndividualPIDFOM = pair<bool, double>(true, locMinIndividualPIDFOM);}
+		inline void Set_MinIndividualNeutralPIDFOM(double locMinIndividualNeutralPIDFOM){dMinIndividualNeutralPIDFOM = pair<bool, double>(true, locMinIndividualNeutralPIDFOM);}
 		inline void Set_MinCombinedPIDFOM(double locMinCombinedPIDFOM){dMinCombinedPIDFOM = pair<bool, double>(true, locMinCombinedPIDFOM);}
 		inline void Set_MinIndividualTrackingFOM(double locMinIndividualTrackingFOM){dMinIndividualTrackingFOM = pair<bool, double>(true, locMinIndividualTrackingFOM);}
 		inline void Set_MinCombinedTrackingFOM(double locMinCombinedTrackingFOM){dMinCombinedTrackingFOM = pair<bool, double>(true, locMinCombinedTrackingFOM);}
 		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
 		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
+		inline void Set_HasDetectorMatchFlag(bool locHasDetectorMatchFlag){dHasDetectorMatchFlag = pair<bool, bool>(true, locHasDetectorMatchFlag);}
 
 		// GET CONTROL MEMBERS:
 		inline string Get_ReactionName(void) const{return dReactionName;}
@@ -74,11 +76,13 @@ class DReaction : public JObject
 
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
 		inline pair<bool, double> Get_MinIndividualPIDFOM(void) const{return dMinIndividualPIDFOM;}
+		inline pair<bool, double> Get_MinIndividualNeutralPIDFOM(void) const{return dMinIndividualNeutralPIDFOM;}
 		inline pair<bool, double> Get_MinCombinedPIDFOM(void) const{return dMinCombinedPIDFOM;}
 		inline pair<bool, double> Get_MinIndividualTrackingFOM(void) const{return dMinIndividualTrackingFOM;}
 		inline pair<bool, double> Get_MinCombinedTrackingFOM(void) const{return dMinCombinedTrackingFOM;}
 		inline pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
 		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
+		inline pair<bool, bool> Get_HasDetectorMatchFlag(void) const{return dHasDetectorMatchFlag;}
 
 		// ROOT OUTPUT:
 		inline void Enable_TTreeOutput(string locTTreeOutputFileName)
@@ -122,12 +126,14 @@ class DReaction : public JObject
 			//Command-line values (variable names are below in all-caps) will override these values
 			//all cuts are disabled by default except dMinProtonMomentum: 300 MeV/c (value used during track reconstruction)
 			//note: tracks with no PID information are not cut-by/included-in the PID cuts
-		pair<bool, double> dMinIndividualPIDFOM; //COMBO:MIN_INDIVIDUAL_PID_FOM - the minimum PID FOM for a charged track used for this DReaction
-		pair<bool, double> dMinCombinedPIDFOM; //COMBO:MIN_COMBINED_PID_FOM - the minimum combined PID FOM for all charged tracks used for this DReaction
+		pair<bool, double> dMinIndividualPIDFOM; //COMBO:MIN_INDIVIDUAL_PID_FOM - the minimum PID FOM for a particle used for this DReaction
+		pair<bool, double> dMinIndividualNeutralPIDFOM; //COMBO:MIN_INDIVIDUAL_NEUTRAL_PID_FOM - the minimum PID FOM for a neutral particle used for this DReaction
+		pair<bool, double> dMinCombinedPIDFOM; //COMBO:MIN_COMBINED_PID_FOM - the minimum combined PID FOM for all particles used for this DReaction
 		pair<bool, double> dMinIndividualTrackingFOM; //COMBO:MIN_INDIVIDUAL_TRACKING_FOM - the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinCombinedTrackingFOM; //COMBO:MIN_COMBINED_TRACKING_FOM - the minimum combined Tracking FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
 		pair<bool, double> dMinProtonMomentum; //COMBO:MIN_PROTON_MOMENTUM - when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
+		pair<bool, bool> dHasDetectorMatchFlag; //COMBO:HAS_DETECTOR_MATCH_FLAG - if both are true, require tracks to have a detector match
 };
 
 #endif // _DReaction_

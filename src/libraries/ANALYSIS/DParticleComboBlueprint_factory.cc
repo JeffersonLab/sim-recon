@@ -12,6 +12,7 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 	dMinIndividualTrackingFOM = pair<bool, double>(false, -1.0);
 	dReactionShowerSelectionTag = pair<bool, string>(false, "");
 	dReactionTrackSelectionTag = pair<bool, string>(false, "");
+	dHasDetectorMatchFlag = pair<bool, bool>(false, false);
 
 	return NOERROR;
 }
@@ -54,6 +55,12 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 	{
 		dReactionShowerSelectionTag.first = true;
 		gPARMS->GetParameter("COMBO:REACTION_SHOWER_SELECT_TAG", dReactionShowerSelectionTag.second);
+	}
+
+	if(gPARMS->Exists("COMBO:HAS_DETECTOR_MATCH_FLAG"))
+	{
+		dHasDetectorMatchFlag.first = true;
+		gPARMS->GetParameter("COMBO:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag.second);
 	}
 
 	return NOERROR;
@@ -774,10 +781,16 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 						cout << "Bad Tracking FOM" << endl;
 					continue;
 				}
+				else if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
+				{
+					if(dDebugLevel > 20)
+						cout << "No Detector Match" << endl;
+					continue;
+				}
 			}
 			else //pid not found for this track: loop over other possible pids
 			{
-				bool locTrackingFOMOKFlag = true;
+				bool locTrackOKFlag = true;
 				deque<pair<Particle_t, bool> > locPIDsToTry = dTrackTimeBasedFactory_Combo->Get_ParticleIDsToTry(locAnalysisPID);
 				bool locFoundFlag = false;
 				for(size_t loc_i = 0; loc_i < locPIDsToTry.size(); ++loc_i)
@@ -789,8 +802,15 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 					if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
 					{
 						if(dDebugLevel > 20)
-						cout << "Bad Tracking FOM" << endl;
-						locTrackingFOMOKFlag = false;
+							cout << "Bad Tracking FOM" << endl;
+						locTrackOKFlag = false;
+						break;
+					}
+					else if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
+					{
+						if(dDebugLevel > 20)
+							cout << "No Detector Match" << endl;
+						locTrackOKFlag = false;
 						break;
 					}
 					break;
@@ -801,11 +821,17 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 					if(!Cut_TrackingFOM(locReaction, locChargedTrackHypothesis))
 					{
 						if(dDebugLevel > 20)
-						cout << "Bad Tracking FOM" << endl;
-						locTrackingFOMOKFlag = false;
+							cout << "Bad Tracking FOM" << endl;
+						locTrackOKFlag = false;
+					}
+					else if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypothesis))
+					{
+						if(dDebugLevel > 20)
+							cout << "No Detector Match" << endl;
+						locTrackOKFlag = false;
 					}
 				}
-				if(!locTrackingFOMOKFlag)
+				if(!locTrackOKFlag)
 					continue; //skip this track
 			}
 		}
@@ -832,6 +858,14 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 						locTrackMomentumTooLowFlag = true;
 					break;
 				}
+				if(!locFoundFlag)
+				{
+					const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTrack->Get_BestFOM();
+					if(dDebugLevel > 20)
+						cout << "Proton candidate, momentum = " << locChargedTrackHypothesis->momentum().Mag() << endl;
+					if(locChargedTrackHypothesis->momentum().Mag() < locMinProtonMomentum.second)
+						locTrackMomentumTooLowFlag = true;
+				}
 			}
 		}
 		if(locTrackMomentumTooLowFlag)
@@ -845,6 +879,22 @@ const JObject* DParticleComboBlueprint_factory::Choose_SourceObject(const DReact
 	}
 	while(locResumeAtIndex < int(locSourceObjects.size()));
 	return NULL;
+}
+
+bool DParticleComboBlueprint_factory::Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+{
+	pair<bool, double> locHasDetectorMatchFlag = dHasDetectorMatchFlag.first ? dHasDetectorMatchFlag : locReaction->Get_HasDetectorMatchFlag();
+	if((!locHasDetectorMatchFlag.first) || (!locHasDetectorMatchFlag.second))
+		return true;
+	if(locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL)
+		return true;
+	if(locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL)
+		return true;
+	if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+		return true;
+	if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+		return true;
+	return false;
 }
 
 bool DParticleComboBlueprint_factory::Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const

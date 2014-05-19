@@ -377,3 +377,22 @@ bool DCutAction_GoodEventRFBunch::Perform_Action(JEventLoop* locEventLoop, const
 	return (dCutIfBadRFBunchFlag == locEventRFBunch->dMatchedToTracksFlag);
 }
 
+string DCutAction_TransverseMomentum::Get_ActionName(void) const
+{
+	ostringstream locStream;
+	locStream << DAnalysisAction::Get_ActionName() << "_" << dMaxTransverseMomentum;
+	return locStream.str();
+}
+
+bool DCutAction_TransverseMomentum::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	deque<const DKinematicData*> locParticles;
+	locParticleCombo->Get_DetectedFinalParticles_Measured(locParticles);
+
+	DVector3 locTotalMomentum;
+	for(size_t loc_i = 0; loc_i < locParticles.size(); ++loc_i)
+		locTotalMomentum += locParticles[loc_i]->momentum();
+
+	return (dMaxTransverseMomentum >= locTotalMomentum.Perp());
+}
+

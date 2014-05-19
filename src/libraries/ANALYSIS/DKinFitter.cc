@@ -2157,7 +2157,7 @@ void DKinFitter::Fill_InputMatrices(void)
 
 	DKinFitParticle* locKinFitParticle;
 	DKinFitParticleType locKinFitParticleType;
-	int locCharge, locParamIndex, locConstraintIndex_Eta, locConstraintIndex_Xi;
+	int locParamIndex, locConstraintIndex_Eta, locConstraintIndex_Xi;
 	TVector3 locMomentum, locPosition;
 
 	//SETUP dY
@@ -2172,7 +2172,6 @@ void DKinFitter::Fill_InputMatrices(void)
 
 		locMomentum = locKinFitParticle->Get_Momentum();
 		locPosition = locKinFitParticle->Get_Position();
-		locCharge = locKinFitParticle->Get_Charge();
 
 		if(!locKinFitParticle->Get_IsNeutralShowerFlag()) //non-neutral shower
 		{

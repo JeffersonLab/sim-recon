@@ -43,7 +43,6 @@ class DAnalysisAction
 
 		//INHERITING CLASSES MUST(!) DEFINE THIS METHOD
 			//FOR REACTION-INDEPENDENT ACTIONS: EXPECT THE INPUT DParticleCombo TO BE NULL.
-			//Be careful to check against dPreviousParticleCombos to make sure you don't double-count when histogramming, etc. (true even for reaction-independent actions)
 		virtual bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL) = 0;
 
 		//FOR ALL OF THE VIRTUAL METHODS:
@@ -56,8 +55,8 @@ class DAnalysisAction
 		TDirectoryFile* CreateAndChangeTo_Directory(string locBaseDirectoryPath, string locDirName, string locDirTitle); //MUST LOCK PRIOR TO ENTRY! (not performed in here!)
 
 		//Valid only during function-call operators (and the functions it calls):
-		void Get_PreviousParticleCombos(deque<pair<const DParticleCombo*, bool> >& locPreviousParticleCombos) const{locPreviousParticleCombos = dPreviousParticleCombos;}
-		unsigned int Get_NumParticleCombos(void) const{return dNumParticleCombos;}
+		size_t Get_NumPreviousParticleCombos(void) const{return dNumPreviousParticleCombos;}
+		size_t Get_NumParticleCombos(void) const{return dNumParticleCombos;}
 
 	private:
 		
@@ -69,8 +68,8 @@ class DAnalysisAction
 		string dOutputFileName;
 
 		//Valid only during function-call operators (and the functions it calls):
-		deque<pair<const DParticleCombo*, bool> > dPreviousParticleCombos; //in the action, check against this to make sure you don't double-count when histogramming, etc.
-		unsigned int dNumParticleCombos;
+		size_t dNumPreviousParticleCombos;
+		size_t dNumParticleCombos;
 
 		DAnalysisAction(void); //to force inheriting classes to call the public constructor
 };

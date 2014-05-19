@@ -20,7 +20,7 @@ dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(lo
 	dOutputFileName = "hd_root.root";
 	if(gPARMS->Exists("OUTPUT_FILENAME"))
 		gPARMS->GetParameter("OUTPUT_FILENAME", dOutputFileName);
-	dPreviousParticleCombos.clear();
+	dNumPreviousParticleCombos = 0;
 	dNumParticleCombos = 0;
 }
 
@@ -39,6 +39,7 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DPar
 {
 	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
 	dNumParticleCombos = locSurvivingParticleCombos.size();
+	dNumPreviousParticleCombos = 0;
 
 	if(Get_Reaction() == NULL)
 	{
@@ -49,9 +50,8 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DPar
 	for(size_t loc_i = 0; loc_i < locSurvivingParticleCombos.size(); ++loc_i)
 	{
 		locSurvivingParticleCombos[loc_i].second = Perform_Action(locEventLoop, locSurvivingParticleCombos[loc_i].first);
-		dPreviousParticleCombos.push_back(locSurvivingParticleCombos[loc_i]);
+		++dNumPreviousParticleCombos;
 	}
-	dPreviousParticleCombos.clear();
 }
 
 TDirectoryFile* DAnalysisAction::CreateAndChangeTo_ActionDirectory(void) //get the directory this action should write ROOT objects to. //MUST LOCK PRIOR TO ENTRY! (not performed in here!)

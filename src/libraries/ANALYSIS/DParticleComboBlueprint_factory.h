@@ -50,6 +50,7 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		const JObject* Choose_SourceObject(const DReaction* locReaction, Particle_t locAnalysisPID, DParticleComboBlueprint* locParticleComboBlueprint, deque<const JObject*>& locSourceObjects, int& locResumeAtIndex) const;
 
 		bool Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
+		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		DParticleComboBlueprintStep* Get_ParticleComboBlueprintStepResource(void);
 		inline void Recycle_ParticleComboBlueprintStep(DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintStepPool_Available.push_back(locParticleComboBlueprintStep);}
@@ -69,11 +70,14 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		pair<bool, string> dReactionShowerSelectionTag;
 
 		// PRE-DPARTICLECOMBO CUT VALUES
-			//bool = true/false for cut enabled/disabled, double = cut value
+			//(first) bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values will override those set in the DReaction
 		pair<bool, double> dMinIndividualTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinProtonMomentum; //when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
+		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 
+		//used to see if can resuse memory with an identical, previously-created step
+			//a map is used instead of a loop over previous combos because map access is significantly faster if #combos is very large
 		map<DParticleComboBlueprintStep, DParticleComboBlueprintStep*> dBlueprintStepMap;
 
 		DTrackTimeBased_factory_Combo* dTrackTimeBasedFactory_Combo;

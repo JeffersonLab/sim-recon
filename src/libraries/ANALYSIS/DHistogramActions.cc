@@ -1,5 +1,41 @@
 #include "ANALYSIS/DHistogramActions.h"
 
+void DHistogramAction_NumParticleCombos::Initialize(JEventLoop* locEventLoop)
+{
+	//CREATE THE HISTOGRAMS
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		CreateAndChangeTo_ActionDirectory();
+		if(gDirectory->Get("NumParticleCombos") != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dHist_NumParticleCombos = static_cast<TH1D*>(gDirectory->Get("NumParticleCombos"));
+		else
+			dHist_NumParticleCombos = new TH1D("NumParticleCombos", ";# Particle Combos;Events", dNumComboBins, 0.5, 0.5 + float(dNumComboBins));
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_NumParticleCombos::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	size_t locNumPreviousParticleCombos = Get_NumPreviousParticleCombos();
+
+	//currently not an ideal/clean way to do this, but this works
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		Double_t locNumEntries = dHist_NumParticleCombos->GetEntries();
+		if(locNumPreviousParticleCombos != 0) //undo previous fill
+		{
+			Int_t locPreviousBin = dHist_NumParticleCombos->FindBin(locNumPreviousParticleCombos);
+			Double_t locPreviousContent = dHist_NumParticleCombos->GetBinContent(locPreviousBin);
+			dHist_NumParticleCombos->SetBinContent(locPreviousBin, locPreviousContent - 1.0);
+		}
+		dHist_NumParticleCombos->Fill(locNumPreviousParticleCombos + 1);
+		dHist_NumParticleCombos->SetEntries(locNumEntries + 1);
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+
+	return true;
+}
+
 void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 {
 	string locHistName, locHistTitle;
@@ -283,9 +319,7 @@ void DHistogramAction_PID::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_PID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviouslyHistogrammedParticles.clear();
 
 	const DMCThrownMatching* locMCThrownMatching = NULL;
@@ -970,9 +1004,7 @@ bool DHistogramAction_ParticleComboKinematics::Perform_Action(JEventLoop* locEve
 		return true; //no fit performed, but kinfit data requested!!
 	}
 
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() == 0)
 	{
 		dPreviouslyHistogrammedParticles.clear();
 		dPreviouslyHistogrammedBeamParticles.clear();
@@ -1205,9 +1237,7 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(!locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
 	Particle_t locPID;
@@ -1395,9 +1425,7 @@ void DHistogramAction_DetectedParticleKinematics::Initialize(JEventLoop* locEven
 
 bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(!locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
 	Particle_t locPID;
@@ -1439,10 +1467,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 				locPID = (Particle_t)locMCThrown->type;
 				locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_Hypothesis(locPID);
 				if(locChargedTrackHypothesis == NULL)
-				{
 					locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
-					locPID = Unknown;
-				}
 			}
 		}
 		else
@@ -1450,6 +1475,10 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 			locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
 			locPID = (locChargedTrackHypothesis->dFOM < dMinimumPIDFOM) ? Unknown : locChargedTrackHypothesis->PID();
 		}
+
+		double locTrackingFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
+		if(locTrackingFOM < dMinimumTrackingFOM)
+			continue;
 
 		if(dHistMap_P.find(locPID) == dHistMap_P.end())
 			continue; //e.g. a decaying particle, or not interested in histogramming
@@ -1460,7 +1489,6 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 		double locP = locMomentum.Mag();
 		locBeta_Timing = dAnalysisUtilities->Calc_Beta_Timing(locChargedTrackHypothesis, locEventRFBunch, true);
 		locDeltaBeta = locChargedTrackHypothesis->lorentzMomentum().Beta() - locBeta_Timing;
-		double locTrackingFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
 
 		japp->RootWriteLock();
 		{
@@ -1500,10 +1528,7 @@ bool DHistogramAction_DetectedParticleKinematics::Perform_Action(JEventLoop* loc
 				locPID = (Particle_t)locMCThrown->type;
 				locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_Hypothesis(locPID);
 				if(locNeutralParticleHypothesis == NULL)
-				{
 					locNeutralParticleHypothesis = locNeutralParticles[loc_i]->Get_BestFOM();
-					locPID = Unknown;
-				}
 			}
 		}
 		else
@@ -1881,9 +1906,7 @@ bool DHistogramAction_GenReconTrackComparison::Perform_Action(JEventLoop* locEve
 	if(locMCThrowns.empty())
 		return true; //e.g. non-simulated event
 
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(!locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
 	Particle_t locPID;
@@ -2190,9 +2213,7 @@ void DHistogramAction_TOFHitStudy::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_TOFHitStudy::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(!locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
@@ -2441,9 +2462,7 @@ void DHistogramAction_NumReconstructedObjects::Initialize(JEventLoop* locEventLo
 
 bool DHistogramAction_NumReconstructedObjects::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(!locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
 	bool locIsRESTEvent = (string(locEventLoop->GetJEvent().GetJEventSource()->className()) == string("DEventSourceREST"));
@@ -2654,9 +2673,7 @@ void DHistogramAction_TrackMultiplicity::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_TrackMultiplicity::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(!locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() != 0)
 		return true; //else double-counting!
 
 	vector<const DChargedTrack*> locChargedTracks;
@@ -2848,9 +2865,7 @@ bool DHistogramAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DP
 	const DMCThrown* locMCThrown;
 	Particle_t locPID;
 
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviouslyHistogrammedParticles.clear();
 
 	deque<const DKinematicData*> locParticles;
@@ -2957,9 +2972,7 @@ void DHistogramAction_InvariantMass::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_InvariantMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviousSourceObjects.clear();
 
 	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
@@ -3018,9 +3031,7 @@ void DHistogramAction_MissingMass::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_MissingMass::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviousSourceObjects.clear();
 
 	set<pair<const JObject*, Particle_t> > locSourceObjects;
@@ -3076,9 +3087,7 @@ void DHistogramAction_MissingMassSquared::Initialize(JEventLoop* locEventLoop)
 
 bool DHistogramAction_MissingMassSquared::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	if(locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() == 0)
 		dPreviousSourceObjects.clear();
 
 	set<pair<const JObject*, Particle_t> > locSourceObjects;
@@ -3300,14 +3309,6 @@ bool DHistogramAction_KinFitResults::Perform_Action(JEventLoop* locEventLoop, co
 	const DKinFitResults* locKinFitResults = locParticleCombo->Get_KinFitResults();
 	if(locKinFitResults == NULL)
 		return true;
-
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-	for(size_t loc_i = 0; loc_i < locPreviousParticleCombos.size(); ++loc_i)
-	{
-		if(locPreviousParticleCombos[loc_i].first->Get_KinFitResults() == locKinFitResults)
-			return true; //dupe: already histed! //probably can't happen
-	}
 
 	// Confidence Level
 	double locConfidenceLevel = locKinFitResults->Get_ConfidenceLevel();

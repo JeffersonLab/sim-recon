@@ -42,6 +42,8 @@ DCutAction_KinFitFOM
 DCutAction_MissingMass
 DCutAction_MissingMassSquared
 DCutAction_InvariantMass
+
+DCutAction_TransverseMomentum
 */
 
 class DCutAction_ThrownTopology : public DAnalysisAction
@@ -341,6 +343,24 @@ class DCutAction_GoodEventRFBunch : public DAnalysisAction
 
 		bool dCutIfBadRFBunchFlag; //if false, will cut if good rf bunch
 };
+
+class DCutAction_TransverseMomentum : public DAnalysisAction
+{
+	//cut on whether the thrown topology matches the DReaction
+	public:
+		DCutAction_TransverseMomentum(const DReaction* locReaction, double locMaxTransverseMomentum, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_TransverseMomentum", false, locActionUniqueString), 
+		dMaxTransverseMomentum(locMaxTransverseMomentum){}
+
+		string Get_ActionName(void) const;
+		void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMaxTransverseMomentum;
+};
+
 
 #endif // _DCutActions_
 

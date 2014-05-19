@@ -7,22 +7,28 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dNeutralShowerFactoryTag = "";
 
 	dMinCombinedPIDFOM.first = false;
-	dMinCombinedPIDFOM.second = 0.001;
+	dMinCombinedPIDFOM.second = 0.0;
 
 	dMinCombinedTrackingFOM.first = false;
-	dMinCombinedTrackingFOM.second = 0.001;
+	dMinCombinedTrackingFOM.second = 0.0;
 
 	dMinIndividualPIDFOM.first = false;
-	dMinIndividualPIDFOM.second = 0.001;
+	dMinIndividualPIDFOM.second = 0.0;
+
+	dMinIndividualNeutralPIDFOM.first = false;
+	dMinIndividualNeutralPIDFOM.second = 5.73303E-7;
 
 	dMinIndividualTrackingFOM.first = false;
-	dMinIndividualTrackingFOM.second = 0.001;
+	dMinIndividualTrackingFOM.second = 0.0027;
 
 	dMaxPhotonRFDeltaT.first = false;
 	dMaxPhotonRFDeltaT.second = 10.0*2.004; //10 RF buckets
 
 	dMinProtonMomentum.first = true;
 	dMinProtonMomentum.second = 0.25;
+
+	dHasDetectorMatchFlag.first = false;
+	dHasDetectorMatchFlag.second = false;
 
 	dTTreeOutputFileName = "";
 	dEnableTTreeOutputFlag = false;

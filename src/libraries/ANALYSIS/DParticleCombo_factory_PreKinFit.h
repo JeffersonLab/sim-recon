@@ -54,6 +54,7 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		bool Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
+		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 
 		void Calc_CommonSpacetimeVertices(DParticleCombo* locParticleCombo) const;
 		void Setup_VertexConstraint(DParticleCombo* locParticleCombo, size_t locStepIndex, deque<const DKinematicData*>& locDetectedVertexParticles, deque<const DKinematicData*>& locDetectedTimeParticles, deque<size_t>& locIncludedStepIndices) const;
@@ -79,10 +80,12 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values will override these values
-		pair<bool, double> dMinIndividualPIDFOM; //the minimum PID FOM for a charged track used for this DReaction
+		pair<bool, double> dMinIndividualPIDFOM; //the minimum PID FOM for a particle used for this DReaction
+		pair<bool, double> dMinIndividualNeutralPIDFOM; //the minimum PID FOM for a neutral particle used for this DReaction
 		pair<bool, double> dMinCombinedPIDFOM; //the minimum combined PID FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMinCombinedTrackingFOM; //the minimum combined Tracking FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection
+		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 
 		double dTargetCenterZ;
 		const DAnalysisUtilities* dAnalysisUtilities;

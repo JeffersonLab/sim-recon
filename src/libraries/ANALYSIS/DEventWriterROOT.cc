@@ -1308,10 +1308,14 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		//associated objects
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+
 		const DBCALShower* locBCALShower = NULL;
-		locChargedTrackHypothesis->GetSingleT(locBCALShower);
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+			locBCALShower = dynamic_cast<const DBCALShower*>(locChargedTrackHypothesis->dBCALShowerMatchParams.dShowerObject);
+
 		const DFCALShower* locFCALShower = NULL;
-		locChargedTrackHypothesis->GetSingleT(locFCALShower);
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+			locFCALShower = dynamic_cast<const DFCALShower*>(locChargedTrackHypothesis->dFCALShowerMatchParams.dShowerObject);
 
 		//IDENTIFIER / MATCHING
 		Fill_FundamentalData<Int_t>(locTree, locParticleBranchName, "ObjectID", locChargedTrackHypothesis->candidateid);
@@ -1400,10 +1404,14 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		//associated objects
 		const DTrackTimeBased* locTrackTimeBased = NULL;
 		locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
+
 		const DBCALShower* locBCALShower = NULL;
-		locChargedTrackHypothesis->GetSingleT(locBCALShower);
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+			locBCALShower = dynamic_cast<const DBCALShower*>(locChargedTrackHypothesis->dBCALShowerMatchParams.dShowerObject);
+
 		const DFCALShower* locFCALShower = NULL;
-		locChargedTrackHypothesis->GetSingleT(locFCALShower);
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+			locFCALShower = dynamic_cast<const DFCALShower*>(locChargedTrackHypothesis->dFCALShowerMatchParams.dShowerObject);
 
 		//IDENTIFIERS / MATCHING
 		Fill_FundamentalData<Int_t>(locTree, "Unused", "ObjectID", locChargedTrackHypothesis->candidateid, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);

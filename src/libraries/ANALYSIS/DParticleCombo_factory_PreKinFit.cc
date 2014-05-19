@@ -20,8 +20,10 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 
 	dMaxPhotonRFDeltaT = pair<bool, double>(false, -1.0);
 	dMinIndividualPIDFOM = pair<bool, double>(false, -1.0);
+	dMinIndividualNeutralPIDFOM = pair<bool, double>(false, -1.0);
 	dMinCombinedPIDFOM = pair<bool, double>(false, -1.0);
 	dMinCombinedTrackingFOM = pair<bool, double>(false, -1.0);
+	dHasDetectorMatchFlag = pair<bool, bool>(false, false);
 
 	return NOERROR;
 }
@@ -57,10 +59,22 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 		gPARMS->GetParameter("COMBO:MIN_INDIVIDUAL_PID_FOM", dMinIndividualPIDFOM.second);
 	}
 
+	if(gPARMS->Exists("COMBO:MIN_INDIVIDUAL_NEUTRAL_PID_FOM"))
+	{
+		dMinIndividualNeutralPIDFOM.first = true;
+		gPARMS->GetParameter("COMBO:MIN_INDIVIDUAL_NEUTRAL_PID_FOM", dMinIndividualNeutralPIDFOM.second);
+	}
+
 	if(gPARMS->Exists("COMBO:MIN_COMBINED_PID_FOM"))
 	{
 		dMinCombinedPIDFOM.first = true;
 		gPARMS->GetParameter("COMBO:MIN_COMBINED_PID_FOM", dMinCombinedPIDFOM.second);
+	}
+
+	if(gPARMS->Exists("COMBO:HAS_DETECTOR_MATCH_FLAG"))
+	{
+		dHasDetectorMatchFlag.first = true;
+		gPARMS->GetParameter("COMBO:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag.second);
 	}
 
 	return NOERROR;
@@ -325,6 +339,9 @@ const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(con
 		if(!Cut_PIDFOM(locReaction, locChargedTrackHypotheses[loc_i]))
 			return NULL;
 
+		if(!Cut_HasDetectorMatch(locReaction, locChargedTrackHypotheses[loc_i]))
+			return NULL; //to cut tracks from DTrackTimeBased_factory_Combo that were re-matched to hits
+
 		return static_cast<const DKinematicData*>(locChargedTrackHypotheses[loc_i]);
 	}
 	return NULL; //uh oh!
@@ -416,9 +433,13 @@ bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, 
 bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const
 {
 	pair<bool, double> locMinIndividualPIDFOM = dMinIndividualPIDFOM.first ? dMinIndividualPIDFOM : locReaction->Get_MinIndividualPIDFOM();
-	if(!locMinIndividualPIDFOM.first)
+	if(locMinIndividualPIDFOM.first)
+		return ((locNeutralParticleHypothesis->dNDF == 0) ? true : (locNeutralParticleHypothesis->dFOM >= locMinIndividualPIDFOM.second));
+
+	pair<bool, double> locMinIndividualNeutralPIDFOM = dMinIndividualNeutralPIDFOM.first ? dMinIndividualNeutralPIDFOM : locReaction->Get_MinIndividualNeutralPIDFOM();
+	if(!locMinIndividualNeutralPIDFOM.first)
 		return true;
-	return ((locNeutralParticleHypothesis->dNDF == 0) ? true : (locNeutralParticleHypothesis->dFOM >= locMinIndividualPIDFOM.second));
+	return ((locNeutralParticleHypothesis->dNDF == 0) ? true : (locNeutralParticleHypothesis->dFOM >= locMinIndividualNeutralPIDFOM.second));
 }
 
 bool DParticleCombo_factory_PreKinFit::Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const
@@ -475,6 +496,22 @@ bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCo
 		return true;
 	double locFOM = TMath::Prob(locTotalTrackingChiSq, locTotalTrackingNDF);
 	return (locFOM >= locMinCombinedTrackingFOM.second);
+}
+
+bool DParticleCombo_factory_PreKinFit::Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
+{
+	pair<bool, double> locHasDetectorMatchFlag = dHasDetectorMatchFlag.first ? dHasDetectorMatchFlag : locReaction->Get_HasDetectorMatchFlag();
+	if((!locHasDetectorMatchFlag.first) || (!locHasDetectorMatchFlag.second))
+		return true;
+	if(locChargedTrackHypothesis->dSCHitMatchParams.dTrackTimeBased != NULL)
+		return true;
+	if(locChargedTrackHypothesis->dTOFHitMatchParams.dTrackTimeBased != NULL)
+		return true;
+	if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+		return true;
+	if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+		return true;
+	return false;
 }
 
 void DParticleCombo_factory_PreKinFit::Calc_CommonSpacetimeVertices(DParticleCombo* locParticleCombo) const
