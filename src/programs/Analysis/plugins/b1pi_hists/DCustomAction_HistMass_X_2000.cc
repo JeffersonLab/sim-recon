@@ -43,11 +43,6 @@ bool DCustomAction_HistMass_X_2000::Perform_Action(JEventLoop* locEventLoop, con
 	//Optional: check whether the user wanted to use the kinematic fit results when performing this action
 	bool locUseKinFitResultsFlag = Get_UseKinFitResultsFlag();
 
-	//Get the DParticleCombo objects for which this action has been previously executed.
-		//This is useful for determining whether filling a histogram will result in double-counting. 
-	deque<pair<const DParticleCombo*, bool> > locPreviousParticleCombos;
-	Get_PreviousParticleCombos(locPreviousParticleCombos);
-
 	const DParticleComboStep* locParticleComboStep0 = locParticleCombo->Get_ParticleComboStep(0);
 	const DParticleComboStep* locParticleComboStep1 = locParticleCombo->Get_ParticleComboStep(1);
 	const DParticleComboStep* locParticleComboStep2 = locParticleCombo->Get_ParticleComboStep(2);
@@ -71,7 +66,7 @@ bool DCustomAction_HistMass_X_2000::Perform_Action(JEventLoop* locEventLoop, con
 	locCurrentParticles.insert(locPhoton2);
 
 	//if new event: clear past particles, else check if duplicate
-	if(locPreviousParticleCombos.empty())
+	if(Get_NumPreviousParticleCombos() == 0)
 		dPastParticles.clear();
 	else //have had previous combos for this event, check to make sure particles used to compute this quantity aren't duplicate
 	{
@@ -116,3 +111,4 @@ bool DCustomAction_HistMass_X_2000::Perform_Action(JEventLoop* locEventLoop, con
 
 	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
 }
+

@@ -47,11 +47,14 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	// Type of kinematic fit to perform:
 	locReaction->Set_KinFitType(d_P4AndVertexFit); //defined in DKinFitResults.h
 
-	// Comboing cuts: used to cut out potential particle combinations that are "obviously" invalid
-		// e.g. contains garbage tracks, PIDs way off
-	// These cut values are overriden if specified on the command line
-	locReaction->Set_MinCombinedPIDFOM(0.001);
-//	locReaction->Set_MinCombinedTrackingFOM(0.001);
+	// Highly Recommended: When generating particle combinations, reject all tracks with a tracking confidence level < 0.27% (+/- 3-sigma)
+	locReaction->Set_MinIndividualTrackingFOM(0.0027);
+
+	// Highly Recommended: When generating particle combinations, reject all tracks without a matching hit in a detector system (ST/TOF/BCAL/FCAL)
+	locReaction->Set_HasDetectorMatchFlag(true);
+
+	// Highly Recommended: When generating particle combinations, reject all neutral particles with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
+	locReaction->Set_MinIndividualNeutralPIDFOM(5.73303E-7);
 
 	// Enable ROOT TTree Output
 	locReaction->Enable_TTreeOutput("tree_b1pi.root"); //string is file name (must end in ".root"!!)
