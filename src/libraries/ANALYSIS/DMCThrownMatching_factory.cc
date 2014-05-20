@@ -19,7 +19,7 @@ jerror_t DMCThrownMatching_factory::init(void)
 	dMaximumFCALMatchDistance = 10.0; //cm
 	dMaximumBCALMatchAngleDegrees = 5.0;
 	dTargetCenter = 0.0; //cm
-	dMaxTotalParticleErrorForMatch = 0.2;
+	dMaxTotalParticleErrorForMatch = 2.0;
 
 	return NOERROR;
 }
@@ -34,7 +34,7 @@ jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int run
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_TOF_DISTANCE", dMaximumTOFMatchDistance);
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_FCAL_DISTANCE", dMaximumFCALMatchDistance);
 	gPARMS->SetDefaultParameter("MCMATCH:MAX_BCAL_ANGLE", dMaximumBCALMatchAngleDegrees);
-	gPARMS->SetDefaultParameter("MCMATCH:MIN_TOTAL_ERROR", dMaxTotalParticleErrorForMatch);
+	gPARMS->SetDefaultParameter("MCMATCH:MAX_TOTAL_ERROR", dMaxTotalParticleErrorForMatch);
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
