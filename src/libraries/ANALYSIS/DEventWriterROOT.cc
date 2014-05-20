@@ -1359,13 +1359,13 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locFCALEnergy);
 
 		//Track DOCA to Shower - BCAL
-		double locDOCAToShower_BCAL = 9.9E20;
+		double locDOCAToShower_BCAL = 999.0;
 		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
 			locDOCAToShower_BCAL = locChargedTrackHypothesis->dBCALShowerMatchParams.dDOCAToShower;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", locDOCAToShower_BCAL);
 
 		//Track DOCA to Shower - FCAL
-		double locDOCAToShower_FCAL = 9.9E20;
+		double locDOCAToShower_FCAL = 999.0;
 		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
 			locDOCAToShower_FCAL = locChargedTrackHypothesis->dFCALShowerMatchParams.dDOCAToShower;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", locDOCAToShower_FCAL);
@@ -1408,20 +1408,24 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locFCALEnergy);
 
 		//Track DOCA to Shower - BCAL
-		double locDistanceToNearestTrack_BCAL = 9.9E20;
+		double locDistanceToNearestTrack_BCAL = 999.0;
 		if(locBCALShower != NULL)
 		{
 			if(!locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDistanceToNearestTrack_BCAL))
-				locDistanceToNearestTrack_BCAL = 9.9E20;
+				locDistanceToNearestTrack_BCAL = 999.0;
+			if(locDistanceToNearestTrack_BCAL > 999.0)
+				locDistanceToNearestTrack_BCAL = 999.0;
 		}
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", locDistanceToNearestTrack_BCAL);
 
 		//Track DOCA to Shower - FCAL
-		double locDistanceToNearestTrack_FCAL = 9.9E20;
+		double locDistanceToNearestTrack_FCAL = 999.0;
 		if(locFCALShower != NULL)
 		{
 			if(!locDetectorMatches->Get_DistanceToNearestTrack(locFCALShower, locDistanceToNearestTrack_FCAL))
-				locDistanceToNearestTrack_FCAL = 9.9E20;
+				locDistanceToNearestTrack_FCAL = 999.0;
+			if(locDistanceToNearestTrack_FCAL > 999.0)
+				locDistanceToNearestTrack_FCAL = 999.0;
 		}
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", locDistanceToNearestTrack_FCAL);
 	}
@@ -1484,13 +1488,13 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_FCAL", locFCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//Track DOCA to Shower - BCAL
-		double locDOCAToShower_BCAL = 9.9E20;
+		double locDOCAToShower_BCAL = 999.0;
 		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
 			locDOCAToShower_BCAL = locChargedTrackHypothesis->dBCALShowerMatchParams.dDOCAToShower;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_BCAL", locDOCAToShower_BCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//Track DOCA to Shower - FCAL
-		double locDOCAToShower_FCAL = 9.9E20;
+		double locDOCAToShower_FCAL = 999.0;
 		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
 			locDOCAToShower_FCAL = locChargedTrackHypothesis->dFCALShowerMatchParams.dDOCAToShower;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_FCAL", locDOCAToShower_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
@@ -1539,20 +1543,24 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_FCAL", locFCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//Track DOCA to Shower - BCAL
-		double locDistanceToNearestTrack_BCAL = 9.9E20;
+		double locDistanceToNearestTrack_BCAL = 999.0;
 		if(locBCALShower != NULL)
 		{
 			if(!locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDistanceToNearestTrack_BCAL))
-				locDistanceToNearestTrack_BCAL = 9.9E20;
+				locDistanceToNearestTrack_BCAL = 999.0;
+			if(locDistanceToNearestTrack_BCAL > 999.0)
+				locDistanceToNearestTrack_BCAL = 999.0;
 		}
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_BCAL", locDistanceToNearestTrack_BCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 
 		//Track DOCA to Shower - FCAL
-		double locDistanceToNearestTrack_FCAL = 9.9E20;
+		double locDistanceToNearestTrack_FCAL = 999.0;
 		if(locFCALShower != NULL)
 		{
 			if(!locDetectorMatches->Get_DistanceToNearestTrack(locFCALShower, locDistanceToNearestTrack_FCAL))
-				locDistanceToNearestTrack_FCAL = 9.9E20;
+				locDistanceToNearestTrack_FCAL = 999.0;
+			if(locDistanceToNearestTrack_FCAL > 999.0)
+				locDistanceToNearestTrack_FCAL = 999.0;
 		}
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_FCAL", locDistanceToNearestTrack_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 	}

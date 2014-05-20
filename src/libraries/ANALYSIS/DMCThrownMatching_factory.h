@@ -57,6 +57,7 @@ class DMCThrownMatching_factory : public jana::JFactory<DMCThrownMatching>
 		double dMaximumBCALMatchAngleDegrees;
 		unsigned int dDebugLevel;
 		double dTargetCenter;
+		double dMaxTotalParticleErrorForMatch;
 };
 
 #endif // _DMCThrownMatching_factory_

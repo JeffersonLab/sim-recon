@@ -18,7 +18,9 @@ jerror_t DMCThrownMatching_factory::init(void)
 	dMaximumTOFMatchDistance = 10.0; //cm
 	dMaximumFCALMatchDistance = 10.0; //cm
 	dMaximumBCALMatchAngleDegrees = 5.0;
-	dTargetCenter = 65.0; //set me from geometry!
+	dTargetCenter = 0.0; //cm
+	dMaxTotalParticleErrorForMatch = 0.2;
+
 	return NOERROR;
 }
 
@@ -27,11 +29,17 @@ jerror_t DMCThrownMatching_factory::init(void)
 //------------------
 jerror_t DMCThrownMatching_factory::brun(jana::JEventLoop* locEventLoop, int runnumber)
 {
-	gPARMS->SetDefaultParameter("MCMATCH:MINMATCHFOM", dMinimumMatchFOM);
-	gPARMS->SetDefaultParameter("MCMATCH:DEBUGLEVEL", dDebugLevel);
-	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHTOFDISTANCE", dMaximumTOFMatchDistance);
-	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHFCALDISTANCE", dMaximumFCALMatchDistance);
-	gPARMS->SetDefaultParameter("MCMATCH:MAXMATCHBCALANGLE", dMaximumBCALMatchAngleDegrees);
+	gPARMS->SetDefaultParameter("MCMATCH:MIN_MATCH_FOM", dMinimumMatchFOM);
+	gPARMS->SetDefaultParameter("MCMATCH:DEBUG_LEVEL", dDebugLevel);
+	gPARMS->SetDefaultParameter("MCMATCH:MAX_TOF_DISTANCE", dMaximumTOFMatchDistance);
+	gPARMS->SetDefaultParameter("MCMATCH:MAX_FCAL_DISTANCE", dMaximumFCALMatchDistance);
+	gPARMS->SetDefaultParameter("MCMATCH:MAX_BCAL_ANGLE", dMaximumBCALMatchAngleDegrees);
+	gPARMS->SetDefaultParameter("MCMATCH:MIN_TOTAL_ERROR", dMaxTotalParticleErrorForMatch);
+
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+	locGeometry->GetTargetZ(dTargetCenter);
+
 	return NOERROR;
 }
 
@@ -601,6 +609,10 @@ double DMCThrownMatching_factory::Calc_MatchFOM(const DVector3& locMomentum_Thro
 	DVector3 locDeltaP3 = locMomentum_Detected - locMomentum_Thrown;
 	double locTotalDeltaSq = locDeltaP3.Mag2();
 	double locTotalDelta = sqrt(locTotalDeltaSq);
+
+	double locTotalError = sqrt(locInputCovarianceMatrix(0, 0) + locInputCovarianceMatrix(1, 1) + locInputCovarianceMatrix(2, 2));
+	if(locTotalError >= dMaxTotalParticleErrorForMatch)
+		return 0.0;
 
 	//dx = detected_x - thrown_x
 	//total_delta = sqrt(dx^2 + dy^2 + dz^2)
