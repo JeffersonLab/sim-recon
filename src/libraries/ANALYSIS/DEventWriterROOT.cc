@@ -613,6 +613,8 @@ void DEventWriterROOT::Create_Branches_FinalStateParticle(TTree* locTree, string
 	}
 	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", "D");
 	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", "D");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", "D");
+	Create_Branch_Fundamental<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", "D");
 }
 
 void DEventWriterROOT::Create_Branches_Beam(TTree* locTree, string locParticleBranchName, bool locKinFitFlag) const
@@ -659,6 +661,8 @@ void DEventWriterROOT::Create_Branches_UnusedParticle(TTree* locTree, string loc
 	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "dEdx_ST", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
 	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
 	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
+	Create_Branch_FundamentalArray<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", locArraySizeString, (*dNumUnusedArraySizeMap)[locTree], "D");
 }
 
 void DEventWriterROOT::Create_Branches_ThrownParticle(TTree* locTree, string locParticleBranchName, string locArraySizeString, bool locIsOnlyThrownFlag) const
@@ -897,6 +901,9 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 
 	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
 	locEventLoop->Get(locNeutralParticleHypotheses);
+
+	const DDetectorMatches* locDetectorMatches = NULL;
+	locEventLoop->GetSingle(locDetectorMatches);
 
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
 	locEventLoop->Get(locMCThrownMatchingVector);
@@ -1168,7 +1175,7 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 					TObjString* locObjString = (TObjString*)locPositionToNameMap->GetValue(locPositionStream.str().c_str());
 					string locParticleBranchName = (const char*)(locObjString->GetString());
 					//fill the data
-					Fill_ParticleData(locKinFitFlag, locTree, locParticleBranchName, locKinematicData, locKinematicData_Measured, locShowerToIDMap, locMCThrownMatching, locMinThrownMatchFOM, locThrownObjectIDMap);
+					Fill_ParticleData(locKinFitFlag, locTree, locParticleBranchName, locKinematicData, locKinematicData_Measured, locShowerToIDMap, locMCThrownMatching, locMinThrownMatchFOM, locThrownObjectIDMap, locDetectorMatches);
 				}
 			}
 
@@ -1176,9 +1183,9 @@ void DEventWriterROOT::Fill_DataTree(JEventLoop* locEventLoop, const DReaction* 
 			unsigned int locNumUnused = locUnusedChargedTrackHypotheses.size() + locUnusedNeutralParticleHypotheses.size();
 			Fill_FundamentalData<UInt_t>(locTree, "NumUnused", locNumUnused);
 			for(size_t loc_j = 0; loc_j < locUnusedChargedTrackHypotheses.size(); ++loc_j)
-				Fill_UnusedParticleData(locTree, loc_j, locNumUnused, locUnusedChargedTrackHypotheses[loc_j], locShowerToIDMap, locMCThrownMatching, locMinThrownMatchFOM, locThrownObjectIDMap);
+				Fill_UnusedParticleData(locTree, loc_j, locNumUnused, locUnusedChargedTrackHypotheses[loc_j], locShowerToIDMap, locMCThrownMatching, locMinThrownMatchFOM, locThrownObjectIDMap, locDetectorMatches);
 			for(size_t loc_j = 0; loc_j < locUnusedNeutralParticleHypotheses.size(); ++loc_j)
-				Fill_UnusedParticleData(locTree, loc_j + locUnusedChargedTrackHypotheses.size(), locNumUnused, locUnusedNeutralParticleHypotheses[loc_j], locShowerToIDMap, locMCThrownMatching, locMinThrownMatchFOM, locThrownObjectIDMap);
+				Fill_UnusedParticleData(locTree, loc_j + locUnusedChargedTrackHypotheses.size(), locNumUnused, locUnusedNeutralParticleHypotheses[loc_j], locShowerToIDMap, locMCThrownMatching, locMinThrownMatchFOM, locThrownObjectIDMap, locDetectorMatches);
 			//update array sizes
 			if(locNumUnused > (*dNumUnusedArraySizeMap)[locTree])
 				(*dNumUnusedArraySizeMap)[locTree] = locNumUnused;
@@ -1283,7 +1290,7 @@ void DEventWriterROOT::Fill_BeamParticleData(TTree* locTree, string locParticleB
 	}
 }
 
-void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, double locMinThrownMatchFOM, map<const DMCThrown*, unsigned int> locThrownObjectIDMap) const
+void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, string locParticleBranchName, const DKinematicData* locKinematicData, const DKinematicData* locKinematicData_Measured, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, double locMinThrownMatchFOM, map<const DMCThrown*, unsigned int> locThrownObjectIDMap, const DDetectorMatches* locDetectorMatches) const
 {
 	//KINEMATICS: MEASURED
 	TLorentzVector locX4_Measured(locKinematicData_Measured->position().X(), locKinematicData_Measured->position().Y(), locKinematicData_Measured->position().Z(), locKinematicData_Measured->time());
@@ -1350,6 +1357,18 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locBCALEnergy);
 		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locFCALEnergy);
+
+		//Track DOCA to Shower - BCAL
+		double locDOCAToShower_BCAL = 9.9E20;
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+			locDOCAToShower_BCAL = locChargedTrackHypothesis->dBCALShowerMatchParams.dDOCAToShower;
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", locDOCAToShower_BCAL);
+
+		//Track DOCA to Shower - FCAL
+		double locDOCAToShower_FCAL = 9.9E20;
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+			locDOCAToShower_FCAL = locChargedTrackHypothesis->dFCALShowerMatchParams.dDOCAToShower;
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", locDOCAToShower_FCAL);
 	}
 	else
 	{
@@ -1387,10 +1406,28 @@ void DEventWriterROOT::Fill_ParticleData(bool locKinFitFlag, TTree* locTree, str
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_BCAL", locBCALEnergy);
 		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "Energy_FCAL", locFCALEnergy);
+
+		//Track DOCA to Shower - BCAL
+		double locDistanceToNearestTrack_BCAL = 9.9E20;
+		if(locBCALShower != NULL)
+		{
+			if(!locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDistanceToNearestTrack_BCAL))
+				locDistanceToNearestTrack_BCAL = 9.9E20;
+		}
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_BCAL", locDistanceToNearestTrack_BCAL);
+
+		//Track DOCA to Shower - FCAL
+		double locDistanceToNearestTrack_FCAL = 9.9E20;
+		if(locFCALShower != NULL)
+		{
+			if(!locDetectorMatches->Get_DistanceToNearestTrack(locFCALShower, locDistanceToNearestTrack_FCAL))
+				locDistanceToNearestTrack_FCAL = 9.9E20;
+		}
+		Fill_FundamentalData<Double_t>(locTree, locParticleBranchName, "TrackDOCA_FCAL", locDistanceToNearestTrack_FCAL);
 	}
 }
 
-void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DKinematicData* locKinematicData, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, double locMinThrownMatchFOM, map<const DMCThrown*, unsigned int> locThrownObjectIDMap) const
+void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locArrayIndex, unsigned int locMinArraySize, const DKinematicData* locKinematicData, const map<const DNeutralShower*, int>& locShowerToIDMap, const DMCThrownMatching* locMCThrownMatching, double locMinThrownMatchFOM, map<const DMCThrown*, unsigned int> locThrownObjectIDMap, const DDetectorMatches* locDetectorMatches) const
 {
 	//KINEMATICS: MEASURED
 	TLorentzVector locX4_Measured(locKinematicData->position().X(), locKinematicData->position().Y(), locKinematicData->position().Z(), locKinematicData->time());
@@ -1445,6 +1482,18 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_BCAL", locBCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_FCAL", locFCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+
+		//Track DOCA to Shower - BCAL
+		double locDOCAToShower_BCAL = 9.9E20;
+		if(locChargedTrackHypothesis->dBCALShowerMatchParams.dTrackTimeBased != NULL)
+			locDOCAToShower_BCAL = locChargedTrackHypothesis->dBCALShowerMatchParams.dDOCAToShower;
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_BCAL", locDOCAToShower_BCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+
+		//Track DOCA to Shower - FCAL
+		double locDOCAToShower_FCAL = 9.9E20;
+		if(locChargedTrackHypothesis->dFCALShowerMatchParams.dTrackTimeBased != NULL)
+			locDOCAToShower_FCAL = locChargedTrackHypothesis->dFCALShowerMatchParams.dDOCAToShower;
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_FCAL", locDOCAToShower_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 	}
 	else
 	{
@@ -1488,6 +1537,24 @@ void DEventWriterROOT::Fill_UnusedParticleData(TTree* locTree, unsigned int locA
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_BCAL", locBCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 		double locFCALEnergy = (locFCALShower != NULL) ? locFCALShower->getEnergy() : 0.0;
 		Fill_FundamentalData<Double_t>(locTree, "Unused", "Energy_FCAL", locFCALEnergy, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+
+		//Track DOCA to Shower - BCAL
+		double locDistanceToNearestTrack_BCAL = 9.9E20;
+		if(locBCALShower != NULL)
+		{
+			if(!locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDistanceToNearestTrack_BCAL))
+				locDistanceToNearestTrack_BCAL = 9.9E20;
+		}
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_BCAL", locDistanceToNearestTrack_BCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
+
+		//Track DOCA to Shower - FCAL
+		double locDistanceToNearestTrack_FCAL = 9.9E20;
+		if(locFCALShower != NULL)
+		{
+			if(!locDetectorMatches->Get_DistanceToNearestTrack(locFCALShower, locDistanceToNearestTrack_FCAL))
+				locDistanceToNearestTrack_FCAL = 9.9E20;
+		}
+		Fill_FundamentalData<Double_t>(locTree, "Unused", "TrackDOCA_FCAL", locDistanceToNearestTrack_FCAL, locArrayIndex, locMinArraySize, (*dNumUnusedArraySizeMap)[locTree]);
 	}
 }
 
