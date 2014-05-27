@@ -55,7 +55,7 @@ def mk_setenv(env):
 	# variable is at least defined (empty if needed) so the rest of the
 	# generated script can just add to it without checking for existence.
 	LDLPV='LD_LIBRARY_PATH'
-	if os.getenv('DYLD_LIBRARY_PATH', 'unset') != 'unset': LDLPV='DYLD_LIBRARY_PATH'
+	if 'Darwin' in env['OSNAME'] : LDLPV='DYLD_LIBRARY_PATH'
 
 	str += '# Make sure %s is set\n' % LDLPV
 	str += 'if ( ! $?%s ) then\n' % LDLPV

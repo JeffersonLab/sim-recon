@@ -627,23 +627,25 @@ def AddROOT(env):
 	AddLinkFlags(env, ROOT_LINKFLAGS)
 	env.AppendUnique(LIBS = "Geom")
 
-	# Define (DY)LD_LIBRARY_PATH env. var. name
-	LDLPV='LD_LIBRARY_PATH'
-	if os.getenv('DYLD_LIBRARY_PATH', 'unset') != 'unset': LDLPV='DYLD_LIBRARY_PATH'
+	# NOTE on (DY)LD_LIBRARY_PATH :
+	# Linux (and most unixes) use LD_LIBRARY_PATH while Mac OS X uses
+	# DYLD_LIBRARY_PATH. Unfortunately, the "thisroot.csh" script distributed
+	# with ROOT sets both of these so we can't use the presence of the
+	# DYLD_LIBRARY_PATH environment variable to decide which of these to 
+	# work with. Thus, we just append to whichever are set, which may be both.
 
 	# Create Builder that can convert .h file into _Dict.cc file
 	rootsys = os.getenv('ROOTSYS', '/usr/local/root/PRO')
-	env.AppendENVPath(LDLPV, '%s/lib' % rootsys )
+	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.AppendENVPath('LD_LIBRARY_PATH'  , '%s/lib' % rootsys )
+	if os.getenv('DYLD_LIBRARY_PATH') != None : env.AppendENVPath('DYLD_LIBRARY_PATH', '%s/lib' % rootsys )
 	if env['SHOWBUILD']==0:
 		rootcintaction = SCons.Script.Action("%s/bin/rootcint -f $TARGET -c $SOURCE" % (rootsys), 'ROOTCINT   [$SOURCE]')
 	else:
 		rootcintaction = SCons.Script.Action("%s/bin/rootcint -f $TARGET -c $SOURCE" % (rootsys))
 	bld = SCons.Script.Builder(action = rootcintaction, suffix='_Dict.cc', src_suffix='.h')
 	env.Append(BUILDERS = {'ROOTDict' : bld})
-	if LDLPV=='LD_LIBRARY_PATH':
-		env.Append(LD_LIBRARY_PATH = os.environ[LDLPV])
-	else:
-		env.Append(DYLD_LIBRARY_PATH = os.environ[LDLPV])
+	if os.getenv('LD_LIBRARY_PATH'  ) != None : env.Append(LD_LIBRARY_PATH   = os.environ['LD_LIBRARY_PATH'  ])
+	if os.getenv('DYLD_LIBRARY_PATH') != None : env.Append(DYLD_LIBRARY_PATH = os.environ['DYLD_LIBRARY_PATH'])
 
 	# Generate ROOT dictionary file targets for each header
 	# containing "ClassDef"
