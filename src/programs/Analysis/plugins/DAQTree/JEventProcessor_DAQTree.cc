@@ -139,6 +139,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 //	printf("channels %i,  ",Nchannels);
 	eventnum = eventnumber;
 
+	const uint32_t numpedestalsamps = 10;
 	// Loop over all channels in this event
 	for(unsigned int c_chan=0; c_chan<Nchannels; c_chan++){
 		waveform.clear();
@@ -162,7 +163,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 				w_samp1 = samplesvector[0];
 				w_ped = samplesvector[0]; 
 			} else {
-				if (c_samp<10) {
+				if (c_samp<numpedestalsamps) {
 					w_ped += samplesvector[c_samp];
 				}
 				w_integral += samplesvector[c_samp];
@@ -170,9 +171,22 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 				if (w_max < samplesvector[c_samp]) w_max = samplesvector[c_samp];
 			}		
 		}
-		// now find the time
-		Int_t threshold = w_max-w_min;
+		// now find the time to cross half peak height
+		Int_t lastbelowsamp, peakheight = w_max-w_min;
+		Float_t threshold = w_min + peakheight/2.0;
+		Float_t  firstaboveheight, lastbelowheight;
 		w_time=0;
+		if (peakheight > 20) {
+			for (uint16_t c_samp=0; c_samp<nsamples; c_samp++) {
+				if (samplesvector[c_samp]>threshold) { 
+					firstaboveheight = samplesvector[c_samp];
+					lastbelowsamp = c_samp-1;
+					lastbelowheight = samplesvector[c_samp-1];
+					break;
+				}
+			}
+			w_time = lastbelowsamp + (threshold-lastbelowheight)/(firstaboveheight-lastbelowheight);
+		}
 		Df250WindowRawData_tree->Fill();
 	}
 
