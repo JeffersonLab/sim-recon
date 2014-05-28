@@ -160,7 +160,10 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
     dapp->Unlock();
   }
 
-  gPARMS->SetDefaultParameter("TRKFIND:MAX_NUM_TRACK_CANDIDATES", MAX_NUM_TRACK_CANDIDATES);
+  gPARMS->SetDefaultParameter("TRKFIND:MAX_NUM_TRACK_CANDIDATES", MAX_NUM_TRACK_CANDIDATES); 
+
+  MIN_NUM_HITS=6;
+  gPARMS->SetDefaultParameter("TRKFIND:MIN_NUM_HITS", MIN_NUM_HITS);
   
   DEBUG_LEVEL=0;
   gPARMS->SetDefaultParameter("TRKFIND:DEBUG_LEVEL", DEBUG_LEVEL);
@@ -197,6 +200,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   // Clear private vectors
   cdctrackcandidates.clear();
   fdctrackcandidates.clear();
+  trackcandidates.clear();
   mycdchits.clear();
 
   // Get the track candidates from the CDC and FDC candidate finders
@@ -338,7 +342,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       }
       can->chisq=cdccan->chisq;
       can->Ndof=cdccan->Ndof;
-      _data.push_back(can);
+      trackcandidates.push_back(can);
     }	
   }
   
@@ -377,7 +381,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       }
     }
 
-    _data.push_back(can);
+    trackcandidates.push_back(can);
   }	
 
   unsigned int num_unmatched_cdcs=0;
@@ -388,12 +392,12 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   // If there are FDC candidates remaining, use the best track candidate 
   // knowledge we have so far to do one final check for matches
   if (num_fdc_cands_remaining>0){
-    for (unsigned int j=0;j<_data.size();j++){
+    for (unsigned int j=0;j<trackcandidates.size();j++){
       if (DEBUG_LEVEL>0) _DBG_ << "Attempting FDC/CDC matching method #4..." <<endl; 
       
       // Match to a track that is already in the combined list.  This track 
       // could have either FDC or CDC hits (or both) associated with it already.
-      MatchMethod4(_data[j],forward_matches,num_fdc_cands_remaining);   
+      MatchMethod4(trackcandidates[j],forward_matches,num_fdc_cands_remaining);   
     } 
   }
 
@@ -434,10 +438,26 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		       forward_matches,num_fdc_cands_remaining);
 	}
 	
-	_data.push_back(can);
+	trackcandidates.push_back(can);
       } // check if fdc candidate already matched...
     }
   }
+  
+  // Only output the candidates that have at least a minimum number of hits
+  for (unsigned int i=0;i<trackcandidates.size();i++){
+    DTrackCandidate *candidate=trackcandidates[i];
+     // Get the hits from the candidate
+    vector<const DFDCPseudo*>myfdchits;
+    candidate->GetT(myfdchits);
+    vector<const DCDCTrackHit *>mycdchits;
+    candidate->GetT(mycdchits);
+    
+    if (int(mycdchits.size()+myfdchits.size())>=MIN_NUM_HITS){
+      _data.push_back(candidate);
+    }
+    
+  }
+
 
   if((int(_data.size()) > MAX_NUM_TRACK_CANDIDATES) && (MAX_NUM_TRACK_CANDIDATES >= 0))
 	{
@@ -910,7 +930,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	can->setMomentum(mom);
 	can->setPosition(pos);
     
-	_data.push_back(can);	    
+	trackcandidates.push_back(can);	    
     
 	// Remove the CDC candidate from the id list because we 
 	// found a match
@@ -1055,7 +1075,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	 can->setPosition(fdccan->position());	    
        }
        
-       _data.push_back(can);
+       trackcandidates.push_back(can);
        
        // Remove the CDC candidate from the list
        cdc_forward_ids.erase(cdc_forward_ids.begin()+j); 
@@ -1200,7 +1220,7 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
 	       can->setPosition(cdccan->position());
 	     }
 	   
-	     _data.push_back(can);
+	     trackcandidates.push_back(can);
 	     
 	     if (DEBUG_LEVEL>0) _DBG_ << ".. matched to CDC candidate #" << k <<endl;
 	   

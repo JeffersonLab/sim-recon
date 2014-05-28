@@ -118,8 +118,9 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   vector<const DTrackCandidate*>cdctrackcandidates;
   vector<const DTrackCandidate*>fdctrackcandidates; 
   vector<const DCDCTrackHit*>mycdchits;
+  vector<DTrackCandidate *>trackcandidates;
 
-  int DEBUG_LEVEL;
+  int DEBUG_LEVEL,MIN_NUM_HITS;
   bool DEBUG_HISTS;
   TH2F *match_dist,*match_dist_vs_p;
 
