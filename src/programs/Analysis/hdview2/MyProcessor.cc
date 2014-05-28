@@ -304,8 +304,10 @@ void MyProcessor::FillGraphics(void)
 	  BCALHitCanvas->Clear();
 	  BCALHitCanvas->Divide(1,3);
 	  BCALHitCanvas->cd(1);
+	  BCALHitMatrixU->Scale(1000);  // Scale histogram to MeV    
 	  BCALHitMatrixU->Draw("colz");
 	  BCALHitCanvas->cd(2);
+	  BCALHitMatrixD->Scale(1000);  // Scale histogram to MeV    
 	  BCALHitMatrixD->Draw("colz");
 	  BCALHitCanvas->cd(3);
 	  BCALParticles->Draw("colz");
@@ -327,31 +329,55 @@ void MyProcessor::FillGraphics(void)
 
 	    if(!poly)continue;
 	   
-	    double a = hit->E/0.02;
-	    double f = sqrt(a>1.0 ? 1.0:a<0.0 ? 0.0:a);
-	    //double grey = 0.8;
-	    //double s = 1.0 - f;
-	    
-	    //float r = s*grey;
-	    //float g = s*grey;
-	    //float b = f*(1.0-grey) + grey;
-	    //float b = 0.;
-	    //float g = 0.;
-	    //float r = f*(1.0-grey) + grey;
-	    
-	    float r = 1.;
-	    float g = 1.-f;
-	    float b = 0.2;
-	    if(f<=0.0){
+	    // The aim is to have a log scale in energy
+	    double E = hit->E*1000;      // Energy in MeV
+	    double logE = log10(E);      
+	    // 3 = 1 GeV, 0 = 1 MeV, use range 0 through 3
+	    // 0-1 White-Yellow
+	    // 1-2 Yellow-Red
+	    // 2-3 Red-Cyan
+	    // 3-4 Cyan-Blue
+
+	    float r,g,b;
+	    if (logE<0){
 	      r = 1.;
 	      g = 1.;
-	      b = 0.9;
+	      b = 1.;
+	    } else {
+	      if (logE<1){
+		r = 1.;
+		g = 1.;
+		b = 1.-(logE-1);
+	      } else {
+		if (logE<2){
+		  r = 1.;
+		  g = 1-(logE-2);
+		  b = 0.;
+		} else {
+		  if (logE<3){
+		    r = 1.;
+		    g = 0.;
+		    b = 1.+(logE-3);
+		  } else {
+		    if (logE<4){
+		      r = 1.-(logE-4);
+		      g = 0.;
+		      b = 1.;
+		    } else {
+		      r = 0;
+		      g = 1.;
+		      b = 0.;
+		    }
+		  }
+		}
+	      }
 	    }
+	    if (r<0||g<0||b<0) printf("color error (r,g,b)=(%f,%f,%f)\n",r,g,b);
 	   
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	    poly->SetLineColor(TColor::GetColor(r,g,b));
 	    poly->SetLineWidth(1);
-	    poly->SetFillStyle(3001);	    
+	    poly->SetFillStyle(1001);  // MMD: nicer to have a solid fill
 	  }
 	}	
 
@@ -1165,16 +1191,31 @@ void MyProcessor::FillGraphics(void)
 void MyProcessor::UpdateBcalDisp(void)
 {
   BCALHitCanvas = hdvmf->GetBcalDispFrame();
-  BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream",  48*4+2, -1.5, 192.5, 10, 0., 10.);
-  BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream",48*4+2, -1.5, 192.5, 10, 0., 10.);
-  BCALParticles = new TH2F("BCALParticles","BCAL Hits Downstream",(48*4+2)*4, -1.87, 361.87, 1, 0., 1.);
+  BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream;Sector number;Radius;Energy  (MeV)",  48*4+2, -1.5, 192.5, 10, 0., 10.);
+  BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream;Sector number;Radius;Energy  (MeV)",48*4+2, -1.5, 192.5, 10, 0., 10.);
+  BCALParticles = new TH2F("BCALParticles","BCAL Hits Downstream;Phi angle [deg]",(48*4+2)*4, -1.87, 361.87, 1, 0., 1.);
   BCALHitMatrixU->SetStats(0);
   BCALHitMatrixD->SetStats(0);
   BCALParticles->SetStats(0);
-  BCALHitMatrixU->GetXaxis()->SetTitle("Sector number");
-  BCALHitMatrixD->GetXaxis()->SetTitle("Sector number");
-  BCALParticles->GetXaxis()->SetTitle("Phi angle [deg]");
-
+  Float_t size = 0.06;
+  BCALHitMatrixU->GetXaxis()->SetTitleSize(size);
+  BCALHitMatrixU->GetXaxis()->SetTitleOffset(0.8);
+  BCALHitMatrixU->GetXaxis()->SetLabelSize(size);
+  BCALHitMatrixU->GetYaxis()->SetTitleSize(size);
+  BCALHitMatrixU->GetYaxis()->SetTitleOffset(0.4);
+  BCALHitMatrixU->GetYaxis()->SetLabelSize(size);
+  BCALHitMatrixU->GetZaxis()->SetTitleSize(size);
+  BCALHitMatrixU->GetZaxis()->SetTitleOffset(0.4);
+  BCALHitMatrixU->GetZaxis()->SetLabelSize(size);
+  BCALHitMatrixD->GetXaxis()->SetTitleSize(size);
+  BCALHitMatrixD->GetXaxis()->SetTitleOffset(0.8);
+  BCALHitMatrixD->GetXaxis()->SetLabelSize(size);
+  BCALHitMatrixD->GetYaxis()->SetTitleSize(size);
+  BCALHitMatrixD->GetYaxis()->SetTitleOffset(0.4);
+  BCALHitMatrixD->GetYaxis()->SetLabelSize(size);
+  BCALHitMatrixD->GetZaxis()->SetTitleSize(size);
+  BCALHitMatrixD->GetZaxis()->SetTitleOffset(0.4);
+  BCALHitMatrixD->GetZaxis()->SetLabelSize(size);
 
   if (BCALHitCanvas) {
     vector<const DBCALHit*> locBcalHits;
@@ -1263,8 +1304,10 @@ void MyProcessor::UpdateBcalDisp(void)
     BCALHitCanvas->Clear();
     BCALHitCanvas->Divide(1,3);
     BCALHitCanvas->cd(1);
+    BCALHitMatrixU->Scale(1000);  // Scale histogram to MeV    
     BCALHitMatrixU->Draw("colz");
     BCALHitCanvas->cd(2);
+    BCALHitMatrixD->Scale(1000);  // Scale histogram to MeV    
     BCALHitMatrixD->Draw("colz");
     BCALHitCanvas->cd(3);
     BCALParticles->Draw("colz");

@@ -381,24 +381,25 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
   // color lables BCAL
   TGLabel* BCCLables[9]; 
-  unsigned int ccodes[9] = {0xFF0033,0xFF2233,0xFF4433,0xFF6633,0xFF8833,0xFFaa33,0xFFcc33,0xFFee33,0xFFFFaa};
+  unsigned int BCccodes[9] = {0x0000FF,0x7700FF,0xFF00FF,0xFF0077,0xFF0000,0xFF7700,0xFFFF00,0xFFFF77,0xFFFFFF};
   for (int i=0;i<9;i++) {
-    double e = (1.-(double)i*0.11)*(1.-(double)i*0.11)*0.02;
+    double e = pow(10,((8-(double)i)/2.0));
     char str1[128];
-    sprintf(str1,"%4.1f MeV",e*1000.);
+    sprintf(str1,"%7.1f MeV",e);
     BCCLables[i] =  new TGLabel(bcalColorCodes, (const char*)str1);
     //BCCLables[i]->SetTextColor(1);
-    BCCLables[i]->SetBackgroundColor(ccodes[i]);
+    BCCLables[i]->SetBackgroundColor(BCccodes[i]);
     bcalColorCodes->AddFrame(BCCLables[i],lhints);
   }
   // color lables FCAL
   TGLabel* FCCLables[9]; 
+  unsigned int FCccodes[9] = {0xFF0033,0xFF2233,0xFF4433,0xFF6633,0xFF8833,0xFFaa33,0xFFcc33,0xFFee33,0xFFFFaa};
   for (int i=0;i<9;i++) {
     double E = pow(10.,((1. - (double)i*0.11)*log10(1./0.005)));
     char str1[128];
     sprintf(str1,"%5.1f MeV",E);
     FCCLables[i] =  new TGLabel(fcalColorCodes, (const char*)str1);
-    FCCLables[i]->SetBackgroundColor(ccodes[i]);
+    FCCLables[i]->SetBackgroundColor(FCccodes[i]);
     fcalColorCodes->AddFrame(FCCLables[i],lhints);
   }
 
@@ -1184,7 +1185,7 @@ void hdv_mainframe::DoMyRedraw(void)
 		if(l && l->GetFillStyle()!=1001){
 			graphics_endA[i]->Draw("f");
 		}else{
-			graphics_endA[i]->Draw("");
+			graphics_endA[i]->Draw("f");
 		}
 	}
 	endviewA->GetCanvas()->Update();
@@ -1357,7 +1358,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 						
 			TPolyLine *poly = new TPolyLine(4, x, y);
 			poly->SetLineColor(12);
-			poly->SetLineWidth(1);
+			poly->SetLineWidth(0);
 			poly->SetFillColor(0);
 			poly->SetFillStyle(0);
 			int chan = (imod+1)*1000 + (ilay+1)*100 + (isec+1)*10;
