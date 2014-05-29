@@ -1448,9 +1448,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		theta<<setprecision(4)<<trk->momentum().Theta()*TMath::RadToDeg();
 		reconlabs["theta"][row]->SetText(theta.str().c_str());
 
-		double myphi = trk->momentum().Phi();
-		if(myphi<0.0)myphi+=2.0*M_PI;
-		phi<<setprecision(4)<<myphi;
+		phi<<setprecision(4)<<trk->momentum().Phi()*TMath::RadToDeg();
 		reconlabs["phi"][row]->SetText(phi.str().c_str());
 
 		z<<setprecision(4)<<trk->position().Z();
