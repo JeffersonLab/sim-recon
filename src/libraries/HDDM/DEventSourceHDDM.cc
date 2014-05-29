@@ -1524,12 +1524,16 @@ jerror_t DEventSourceHDDM::Extract_DBCALTruthShower(s_HDDM_t *hddm_s,  JFactory<
 		for(unsigned int j = 0; j < bcalTruthShowers->mult; j++) {
 			DBCALTruthShower *bcaltruth = new DBCALTruthShower;
 			bcaltruth->track = bcalTruthShowers->in[j].track;
+			bcaltruth->ptype = bcalTruthShowers->in[j].ptype;
 			bcaltruth->primary = bcalTruthShowers->in[j].primary ? 1 : 0;
 			bcaltruth->phi = bcalTruthShowers->in[j].phi;
 			bcaltruth->r = bcalTruthShowers->in[j].r;
 			bcaltruth->z = bcalTruthShowers->in[j].z;
 			bcaltruth->t = bcalTruthShowers->in[j].t;
 			bcaltruth->E = bcalTruthShowers->in[j].E;
+			bcaltruth->px = bcalTruthShowers->in[j].px;
+			bcaltruth->py = bcalTruthShowers->in[j].py;
+			bcaltruth->pz = bcalTruthShowers->in[j].pz;
 			data.push_back(bcaltruth);
 		}
 	}
