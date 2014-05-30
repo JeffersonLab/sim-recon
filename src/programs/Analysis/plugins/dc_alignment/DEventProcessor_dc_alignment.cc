@@ -10,6 +10,8 @@ using namespace jana;
 
 #include <TROOT.h>
 
+#define MAX_STEPS 1000
+
 // Routine used to create our DEventProcessor
 #include <JANA/JApplication.h>
 extern "C"{
@@ -569,12 +571,12 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
     // Covariance matrix
     DMatrix4x4 C0,C,Cbest;
     if (USE_BCAL){
-      C0(state_x,state_x)=C0(state_y,state_y)=4.0;     
-      C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.01;
+      C0(state_x,state_x)=C0(state_y,state_y)=1.0;     
+      C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.001;
     }
     else{
-      C0(state_x,state_x)=C0(state_y,state_y)=10.0;     
-      C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.01;
+      C0(state_x,state_x)=C0(state_y,state_y)=1.0;     
+      C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.001;
     }
 
     vector<cdc_update_t>updates(hits.size());
@@ -2468,6 +2470,7 @@ jerror_t DEventProcessor_dc_alignment
 
   //y-position after which we cut off the loop
   double min_y=last_cdc->wire->origin.y()-5.;
+  unsigned int numsteps=0;
   do{
     double newz=z+dz;
     temp.Skk=Zero4x1;
@@ -2486,11 +2489,13 @@ jerror_t DEventProcessor_dc_alignment
     temp.S(state_ty)=S(state_ty);
     S=temp.S;
     trajectory.push_front(temp);
-    
+  
     z=newz;
-  }while (S(state_y)>min_y);
+    numsteps++;
+  }while (S(state_y)>min_y && numsteps<MAX_STEPS);
 
   if (trajectory.size()<2) return UNRECOVERABLE_ERROR;
+  //if (true)
   if (false)
     {
     printf("Trajectory:\n");
@@ -3232,7 +3237,7 @@ DEventProcessor_dc_alignment::LinkSegments(vector<cdc_segment_t>&axial_segments,
 // using two stereo wires
 DMatrix4x1 
 DEventProcessor_dc_alignment::GuessForStateVector(const cdc_track_t &track,
-						  double x, double y){
+						  double xa, double ya){
   // Parameters for line in x-y plane
   double vx=track.dir.x();
   double vy=track.dir.y();
@@ -3243,8 +3248,8 @@ DEventProcessor_dc_alignment::GuessForStateVector(const cdc_track_t &track,
   DVector3 dir_s=track.stereo_hits[0]->wire->udir;
   double ux_s=dir_s.x();
   double uy_s=dir_s.y();
-  double dx=x-origin_s.x();
-  double dy=y-origin_s.y();
+  double dx=xa-origin_s.x();
+  double dy=ya-origin_s.y();
   double s=(dx*vy-dy*vx)/(ux_s*vy-uy_s*vx);
   DVector3 pos1=origin_s+s*dir_s;
 
@@ -3254,8 +3259,8 @@ DEventProcessor_dc_alignment::GuessForStateVector(const cdc_track_t &track,
   dir_s=track.stereo_hits[last_index]->wire->udir;
   ux_s=dir_s.x();
   uy_s=dir_s.y();
-  dx=x-origin_s.x();
-  dy=y-origin_s.y();
+  dx=xa-origin_s.x();
+  dy=ya-origin_s.y();
   s=(dx*vy-dy*vx)/(ux_s*vy-uy_s*vx);
   DVector3 pos2=origin_s+s*dir_s;
 
@@ -3278,7 +3283,10 @@ DEventProcessor_dc_alignment::GuessForStateVector(const cdc_track_t &track,
   // Increment just beyond point largest in y
   delta_z=(y_slope>0)?0.1:-0.1;
 
-  return DMatrix4x1(x+x_slope*delta_z,y+y_slope*delta_z,x_slope,y_slope);
+  //Starting z position
+  mOuterZ=pos1.z()+(xa-pos1.x())/x_slope+delta_z;
+
+  return DMatrix4x1(xa+x_slope*delta_z,ya+y_slope*delta_z,x_slope,y_slope);
 }
 
 // Compute distance of closest approach between two lines
