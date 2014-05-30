@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <string>
+#include <stdlib.h>
 
 #include "TDirectoryFile.h"
 #include "TFile.h"
@@ -43,6 +44,7 @@ class DAnalysisAction
 
 		//INHERITING CLASSES MUST(!) DEFINE THIS METHOD
 			//FOR REACTION-INDEPENDENT ACTIONS: EXPECT THE INPUT DParticleCombo TO BE NULL.
+			//Make Perform_Action protected or private in derived classes (not public! should call operator() to execute instead)
 		virtual bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL) = 0;
 
 		//FOR ALL OF THE VIRTUAL METHODS:
