@@ -71,6 +71,30 @@ void DTrackFitterKalmanSIMD::locate(const double *xx,int n,double x,int *j){
   else *j=jl; 
 }
 
+
+
+// Locate a position in vector xx given x
+unsigned int DTrackFitterKalmanSIMD::locate(vector<double>&xx,double x){
+  int ju,jm,jl;
+  int ascnd;
+
+  int n=xx.size();
+
+  jl=-1;
+  ju=n;
+  ascnd=(xx[n-1]>=xx[0]);
+  while(ju-jl>1){
+    jm=(ju+jl)>>1;
+    if ( (x>=xx[jm])==ascnd)
+      jl=jm;
+    else
+      ju=jm;
+  }
+  if (x==xx[0]) return 0;
+  else if (x==xx[n-1]) return n-2;
+  return jl;
+}
+
 // Crude approximation for the variance in drift distance due to smearing
 double fdc_drift_variance(double t){
   //return FDC_ANODE_VARIANCE;
@@ -83,36 +107,35 @@ double fdc_drift_variance(double t){
   return sigma*sigma;
 }
 
-
-#define CDC_T0_OFFSET 16.5 //17.0
 // Convert time to distance for the cdc
 double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
-  //if (t<0.) return 0.;
-  /*
-    double time=t*CDC_DRIFT_B_SCALE
-    /(CDC_DRIFT_B_SCALE_PAR1+CDC_DRIFT_B_SCALE_PAR2*B);
-    int id=int((time+CDC_T0_OFFSET)/2.);
-    if (id<0) id=0;
-    if (id>398) id=398;
-    double d=cdc_drift_table[id];
-    //_DBG_ << time<<"  "<< id <<"   "<< d <<endl;
-    
-    if (id!=398){
-    double frac=0.5*(time+CDC_T0_OFFSET-2.*double(id));
-    double dd=cdc_drift_table[id+1]-cdc_drift_table[id];
-    d+=frac*dd;
-    }
-  */
+  double d=0.;
+  if (t>0){
+    double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
+    double tcorr=t-dtc;
+
+    unsigned int index=0;
+    index=locate(cdc_drift_table,tcorr);
+    double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+    double frac=(tcorr-cdc_drift_table[index])/dt;
+    d=0.01*(double(index)+frac); 
+  }
+  return d;
+  
   // The following functional form was derived from the simulated
   // time-to-distance relationship derived from GARFIELD.  It should really
   // be determined empirically...
+  /*
   double two_a=2.*(1129.0+78.66*B);
   double b=49.41-4.74*B;
-  double d=b/two_a;
+  d=b/two_a;
   //  if (t>0.0) d+=0.0279*sqrt(t);
   if (t>0.0) d+=sqrt(b*b+2.*two_a*t)/two_a;
 
+  //_DBG_ << d << endl;
+ 
   return d;
+  */
 }
 
 #define FDC_T0_OFFSET 17.6
@@ -262,7 +285,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     }  
     cdc_time_vs_d=(TH2F*)gROOT->FindObject("cdc_time_vs_d");
     if (!cdc_time_vs_d){
-      cdc_time_vs_d=new TH2F("cdc_time_vs_d","cdc drift time vs distance",100,0,0.8,
+      cdc_time_vs_d=new TH2F("cdc_time_vs_d","cdc drift time vs distance",80,0,0.8,
 			     400,-20,780.);
     } 
 
@@ -287,7 +310,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     cdc_res_vs_B=(TH2F*)gROOT->FindObject("cdc_res_vs_B");
     if (!cdc_res_vs_B){
       cdc_res_vs_B=new TH2F("cdc_res_vs_B","cdc #deltad vs B",
-				  100,1.55,2.15,
+				  100,1.0,2.0,
 				  200,-0.1,0.1);
     }   
     cdc_drift_vs_B=(TH2F*)gROOT->FindObject("cdc_drift_vs_B");
@@ -334,15 +357,13 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
   
   JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
-  typedef map<string,float>::iterator iter_float;
-  vector< map<string, float> > tvals;
-  if (jcalib->Get("CDC/cdc_drift", tvals)==false){    
+  typedef map<string,double>::iterator iter_double;
+  vector< map<string, double> > tvals;
+  if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
     for(unsigned int i=0; i<tvals.size(); i++){
-      map<string, float> &row = tvals[i];
-      iter_float iter = row.begin();
-      cdc_drift_table[i] = iter->second;
-      //_DBG_  << i <<"     "<< iter->second << endl;
-
+      map<string, double> &row = tvals[i];
+      iter_double iter = row.find("t");
+      cdc_drift_table.push_back(1000.*iter->second);
     }
   }
   else{
@@ -350,6 +371,17 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     exit(0);
   }
 
+  map<string, double> cdc_drift_parms;
+  jcalib->Get("CDC/cdc_drift_parms", cdc_drift_parms);
+  CDC_DRIFT_BSCALE_PAR1 = cdc_drift_parms["bscale_par1"];
+  CDC_DRIFT_BSCALE_PAR2 = cdc_drift_parms["bscale_par2"];
+
+  map<string, double> cdc_res_parms;
+  jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
+  CDC_RES_PAR1 = cdc_res_parms["res_par1"];
+  CDC_RES_PAR2 = cdc_res_parms["res_par2"];
+ 
+  /*
   if (jcalib->Get("FDC/fdc_drift2", tvals)==false){
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, float> &row = tvals[i];
@@ -361,6 +393,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
     jerr << " FDC time-to-distance table not available... bailing..." << endl;
     exit(0);
   }
+  */
 
   FDC_CATHODE_SIGMA=0.;
   map<string, double> fdcparms;
@@ -3807,8 +3840,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	
 	// Check how far this hit is from the expected position
 	double chi2check=dm*dm*InvV;
-	if (chi2check<chi2cut){
-	 
+	if (chi2check<chi2cut)
+	  {
+	    /*
 	  if (chi2check>var_cut){
 	    // Give hits that satisfy the wide cut but are still pretty far
 	    // from the projected position less weight
@@ -3818,7 +3852,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 	    V*=1.+my_anneal*diff;
 	    InvV=1./(V+Vproj);
 	  }
-	  
+	    */
 	  // Compute Kalman gain matrix
 	  K=InvV*(Cc*H_T);
 	  
@@ -5056,8 +5090,9 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	// Check how far this hit is from the expected position
 	double chi2check=res*res*InvV;
 	//if (sqrt(chi2check)>NUM_CDC_SIGMA_CUT) InvV*=0.8;
-	if (chi2check<chi2cut){
-	  
+       	if (chi2check<chi2cut)
+{	  
+  /*
 	  if (chi2check>var_cut){
 	    // Give hits that satisfy the wide cut but are still pretty far
 	    // from the projected position less weight
@@ -5068,6 +5103,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	    V*=1.+my_anneal*diff;
 	    InvV=1./(V+Vproj);
 	  }
+  */
 	  
 	  // Compute KalmanSIMD gain matrix
 	  K=InvV*(C*H_T);
@@ -6706,12 +6742,12 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
     my_anneal_const=FORWARD_ANNEAL_POW_CONST;
   }
   double anneal_factor=anneal_scale+1.;
-
+  /*
   if (fit_type==kTimeBased && fabs(1./S(state_q_over_p))<1.0 
       && my_anneal_const>=2.0){ 
     my_anneal_const*=0.5;
   }
-
+  */
   // Chi-squared and degrees of freedom
   double chisq=MAX_CHI2,chisq_forward=MAX_CHI2;
   unsigned int my_ndf=0;
@@ -6958,7 +6994,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
  
   double anneal_factor=ANNEAL_SCALE+1.; // variable for scaling cut for hit pruning
   double my_anneal_const=ANNEAL_POW_CONST;
-  if (fit_type==kTimeBased && fabs(1./Sc(state_q_over_p))<1.0) my_anneal_const*=0.5;
+  //if (fit_type==kTimeBased && fabs(1./Sc(state_q_over_p))<1.0) my_anneal_const*=0.5;
 
   //Initialization of chisq, ndf, and error status
   double chisq_iter=MAX_CHI2,chisq=MAX_CHI2;
@@ -7113,11 +7149,11 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
       double my_t0=last_cdc_updates[m].tdrift-last_cdc_updates[m].tflight;
       if (my_t0<mT0MinimumDriftTime) mT0MinimumDriftTime=my_t0;
 
-      if (m==0 && fit_type==kTimeBased){
+      if (fit_type==kTimeBased){
 	if (ESTIMATE_T0_TB){
 	  EstimateT0Central(my_cdchits[m],last_cdc_updates[m]);
 	}
-	if (DEBUG_HISTS && TMath::Prob(chisq_iter,last_ndf)>0.1){
+	if (m==0 && DEBUG_HISTS && TMath::Prob(chisq_iter,last_ndf)>1e-6){
 	  double tdrift=last_cdc_updates[m].tdrift;
 	  double res=last_cdc_updates[m].residual;
 	  double B=last_cdc_updates[m].B;
@@ -7136,7 +7172,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 	  double doca=d*cosstereo;
 	  
 	  cdc_drift->Fill(tdrift,doca);
-	  cdc_time_vs_d->Fill(doca,tdrift);
+	  if ( B<1.325 && B>1.275)
+	    cdc_time_vs_d->Fill(doca,tdrift);
      
 	  cdc_res->Fill(tdrift,res);
 	  cdc_res_vs_tanl->Fill(last_cdc_updates[m].S(state_tanl),res);

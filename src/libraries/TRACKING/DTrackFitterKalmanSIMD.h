@@ -268,6 +268,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   };
  
   void locate(const double *xx,int n,double x,int *j);
+  unsigned int locate(vector<double>&xx,double x);
   double fdc_y_variance(double dE);
   double cdc_variance(double B,double t);   
   double cdc_drift_distance(double t,double Bz);  
@@ -440,7 +441,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   unsigned int mMinDriftID;
   
   // tables of time-to-drift values
-  double cdc_drift_table[400],fdc_drift_table[140];
+  double fdc_drift_table[140];
+  vector<double>cdc_drift_table;
 
   // Vertex time
   double mT0,mT0MinimumDriftTime,mT0Average;
@@ -481,6 +483,11 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // Maximum seed momentum
   double MAX_SEED_P;
 
+  // parameters for scaling drift table for CDC
+  double CDC_DRIFT_BSCALE_PAR1,CDC_DRIFT_BSCALE_PAR2;
+  // parameters for CDC resolution function
+  double CDC_RES_PAR1,CDC_RES_PAR2;
+
   // Identity matrix
   DMatrix5x5 I5x5;
   // Matrices with zeroes in them
@@ -507,8 +514,8 @@ inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){
   //return CDC_VARIANCE;
   if (t<0.0) t=0.0;
   
-  //double sigma=0.11/(t+3.6)+4.65e-3;
-  double sigma=0.11/(t+3.6)+4.5e-3;
+  //double sigma=0.13/(t+3.6)+10e-3;
+  double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
   return sigma*sigma;
 }
 // Variance for position along wire
