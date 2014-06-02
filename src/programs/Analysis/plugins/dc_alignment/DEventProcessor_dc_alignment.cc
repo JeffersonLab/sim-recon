@@ -32,6 +32,42 @@ bool bcal_cmp(const bcal_match_t &a,const bcal_match_t &b){
   return (a.match->y>b.match->y);
 }
 
+// Locate a position in vector xx given x
+unsigned int DEventProcessor_dc_alignment::locate(vector<double>&xx,double x){
+  int ju,jm,jl;
+  int ascnd;
+
+  int n=xx.size();
+
+  jl=-1;
+  ju=n;
+  ascnd=(xx[n-1]>=xx[0]);
+  while(ju-jl>1){
+    jm=(ju+jl)>>1;
+    if ( (x>=xx[jm])==ascnd)
+      jl=jm;
+    else
+      ju=jm;
+  }
+  if (x==xx[0]) return 0;
+  else if (x==xx[n-1]) return n-2;
+  return jl;
+}
+
+
+// Convert time to distance for the cdc
+double DEventProcessor_dc_alignment::cdc_drift_distance(double t){
+  double d=0.;
+  if (t>0){
+    unsigned int index=0;
+    index=locate(cdc_drift_table,t);
+    double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+    double frac=(t-cdc_drift_table[index])/dt;
+    d=0.01*(double(index)+frac); 
+  }
+  return d;
+}
+
 
 //------------------
 // DEventProcessor_dc_alignment (Constructor)
@@ -77,7 +113,6 @@ jerror_t DEventProcessor_dc_alignment::init(void)
   gPARMS->SetDefaultParameter("DCALIGN:ALIGN_WIRE_PLANES",ALIGN_WIRE_PLANES);
   FILL_TREE=false;
   gPARMS->SetDefaultParameter("DCALIGN:FILL_TREE",FILL_TREE);
-
 
   fdc_alignments.resize(24);
   for (unsigned int i=0;i<24;i++){
@@ -169,6 +204,29 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   endplate_z+=0.5*endplate_dz;
 
+   
+  JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
+  typedef map<string,double>::iterator iter_double;
+  vector< map<string, double> > tvals;
+  if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
+    for(unsigned int i=0; i<tvals.size(); i++){
+      map<string, double> &row = tvals[i];
+      iter_double iter = row.find("t");
+      cdc_drift_table.push_back(1000.*iter->second);
+    }
+  }
+  else{
+    jerr << " CDC time-to-distance table not available... bailing..." << endl;
+    exit(0);
+  }
+
+  map<string, double> cdc_res_parms;
+  jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
+  CDC_RES_PAR1 = cdc_res_parms["res_par1"];
+  CDC_RES_PAR2 = cdc_res_parms["res_par2"];
+
+
+
   dapp->Lock();
     
   Hprob = (TH1F*)gROOT->FindObject("Hprob");
@@ -236,6 +294,11 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   if (!Hvres_vs_layer){
     Hvres_vs_layer=new TH2F("Hvres_vs_layer","Cathode v-view residuals",
 			    24,0.5,24.5,200,-0.5,0.5);
+  }  
+  Hcdc_time_vs_d=(TH2F*)gROOT->FindObject("Hcdc_time_vs_d");
+  if (!Hcdc_time_vs_d){
+    Hcdc_time_vs_d=new TH2F("Hcdc_time_vs_d",
+			    "cdc drift time vs doca",80,0,0.8,400,-20,780);
   } 
   Hcdcdrift_time=(TH2F*)gROOT->FindObject("Hcdcdrift_time");
   if (!Hcdcdrift_time){
@@ -570,15 +633,9 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 
     // Covariance matrix
     DMatrix4x4 C0,C,Cbest;
-    if (USE_BCAL){
-      C0(state_x,state_x)=C0(state_y,state_y)=1.0;     
-      C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.001;
-    }
-    else{
-      C0(state_x,state_x)=C0(state_y,state_y)=1.0;     
-      C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.001;
-    }
-
+    C0(state_x,state_x)=C0(state_y,state_y)=1.0;     
+    C0(state_tx,state_tx)=C0(state_ty,state_ty)=0.01;
+   
     vector<cdc_update_t>updates(hits.size());
     vector<cdc_update_t>best_updates;
     double chi2=1e16,chi2_old=1e16;
@@ -679,6 +736,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 		double res=smoothed_updates[k].res;
 		Hcdcres_vs_drift_time->Fill(tdrift,res);
 		Hcdcdrift_time->Fill(tdrift,d);
+		Hcdc_time_vs_d->Fill(d,tdrift);
 	      }
 	    }
 	    

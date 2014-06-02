@@ -302,7 +302,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			   DMatrix4x1 &S);
   jerror_t EstimateT0(vector<update_t>&updates,
 		      vector<const DFDCPseudo*>&hits);
-  
+
+  unsigned int locate(vector<double>&xx,double x);
   double cdc_variance(double t);
   double cdc_drift_distance(double t);
   double FindDoca(double z,const DMatrix4x1 &S,const DVector3 &vhat,
@@ -340,7 +341,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   TH2F *Hures_vs_layer,*HdEdx_vs_beta,*Hres_vs_layer;	
   TH2F *Hdrift_time,*Hcdcres_vs_drift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
-  TH2F *Hdv_vs_dE,*Hbcalmatchxy;
+  TH2F *Hdv_vs_dE,*Hbcalmatchxy,*Hcdc_time_vs_d;
   TH1F *Hfcalmatch;
   TH1F *Hztarg;
 
@@ -360,6 +361,13 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE,USE_BCAL,ALIGN_WIRE_PLANES;
   bool  FILL_TREE;
 
+  // drift time table
+  vector<double>cdc_drift_table;
+  
+  // Resolution parameters
+  double CDC_RES_PAR1,CDC_RES_PAR2;
+
+
   // Geometry
   const DGeometry *dgeom;
 
@@ -375,19 +383,21 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 // Smearing function derived from fitting residuals
 inline double DEventProcessor_dc_alignment::cdc_variance(double t){ 
   //  return 0.001*0.001;
-  if (t<0.0) t=0.0;
+  if (t<1.) t=1.;
   
-  double sigma=0.069-6e-5*t;
+  double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
   //sigma+=0.02;
   return sigma*sigma;
 }
 
 // Convert time to distance for the cdc
+/*
 inline double DEventProcessor_dc_alignment::cdc_drift_distance(double t){
   double d=0.;
-  if (t>0.0) d=0.03325*sqrt(t)-1.223e-4*t;
+  if (t>0.0) d=0.034*sqrt(t)-1.e-4*t;
   return d;
 }
+*/
 
 #endif // _DEventProcessor_dc_alignment_
 
