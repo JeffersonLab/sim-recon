@@ -339,7 +339,7 @@ void MyProcessor::FillGraphics(void)
 	    // 3-4 Cyan-Blue
 
 	    float r,g,b;
-	    if (logE<0){
+	    if (E<1){
 	      r = 1.;
 	      g = 1.;
 	      b = 1.;
@@ -347,33 +347,34 @@ void MyProcessor::FillGraphics(void)
 	      if (logE<1){
 		r = 1.;
 		g = 1.;
-		b = 1.-(logE-1);
+		b = 1.-logE;
 	      } else {
 		if (logE<2){
 		  r = 1.;
-		  g = 1-(logE-2);
+		  g = 1.-(logE-1);
 		  b = 0.;
 		} else {
 		  if (logE<3){
 		    r = 1.;
 		    g = 0.;
-		    b = 1.+(logE-3);
+		    b = 1.-(logE-2);
 		  } else {
 		    if (logE<4){
-		      r = 1.-(logE-4);
+		      r = 1.-(logE-3);
 		      g = 0.;
 		      b = 1.;
 		    } else {
 		      r = 0;
 		      g = 1.;
 		      b = 0.;
+		      printf("High BCAL cell reconstructed energy: E=%f MeV\n",E);
 		    }
 		  }
 		}
 	      }
 	    }
-	    if (r<0||g<0||b<0) printf("color error (r,g,b)=(%f,%f,%f)\n",r,g,b);
-	   
+	    if (r<0||g<0||b<0||r>1||g>1||b>1) printf("color error (r,g,b)=(%f,%f,%f)\n",r,g,b);
+
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	    poly->SetLineColor(TColor::GetColor(r,g,b));
 	    poly->SetLineWidth(1);
