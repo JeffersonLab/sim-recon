@@ -1185,7 +1185,8 @@ void hdv_mainframe::DoMyRedraw(void)
 		if(l && l->GetFillStyle()!=1001){
 			graphics_endA[i]->Draw("f");
 		}else{
-			graphics_endA[i]->Draw("f");
+			graphics_endA[i]->Draw("");
+			// graphics_endA[i]->Draw(""); // MMD: nicer to have a solid fill
 		}
 	}
 	endviewA->GetCanvas()->Update();

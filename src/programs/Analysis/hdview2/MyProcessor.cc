@@ -304,10 +304,21 @@ void MyProcessor::FillGraphics(void)
 	  BCALHitCanvas->Clear();
 	  BCALHitCanvas->Divide(1,3);
 	  BCALHitCanvas->cd(1);
-	  BCALHitMatrixU->Scale(1000);  // Scale histogram to MeV    
+	  if (BCALHitMatrixU->GetMaximum() > 1000) {
+	    BCALHitMatrixU->Scale(0.001);  // Scale histogram to GeV
+	    BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (GeV)");
+	    printf("scaling to GeV\n");
+	  } else {
+	    BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (MeV)");
+	  }
 	  BCALHitMatrixU->Draw("colz");
 	  BCALHitCanvas->cd(2);
-	  BCALHitMatrixD->Scale(1000);  // Scale histogram to MeV    
+	  if (BCALHitMatrixD->GetMaximum() > 1000) {
+	    BCALHitMatrixD->Scale(0.001);  // Scale histogram to GeV
+	    BCALHitMatrixD->GetZaxis()->SetTitle("Energy  (GeV)");
+	  } else {
+	    BCALHitMatrixU->GetZaxis()->SetTitle("Energy  (MeV)");
+	  }
 	  BCALHitMatrixD->Draw("colz");
 	  BCALHitCanvas->cd(3);
 	  BCALParticles->Draw("colz");
@@ -330,7 +341,7 @@ void MyProcessor::FillGraphics(void)
 	    if(!poly)continue;
 	   
 	    // The aim is to have a log scale in energy
-	    double E = hit->E*1000;      // Energy in MeV
+	    double E = hit->E;      // Energy in MeV
 	    double logE = log10(E);      
 	    // 3 = 1 GeV, 0 = 1 MeV, use range 0 through 3
 	    // 0-1 White-Yellow
@@ -367,7 +378,7 @@ void MyProcessor::FillGraphics(void)
 		      r = 0;
 		      g = 1.;
 		      b = 0.;
-		      printf("High BCAL cell reconstructed energy: E=%f MeV\n",E);
+		      //printf("High BCAL cell reconstructed energy: E=%.1f MeV\n",E);
 		    }
 		  }
 		}
@@ -378,7 +389,8 @@ void MyProcessor::FillGraphics(void)
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	    poly->SetLineColor(TColor::GetColor(r,g,b));
 	    poly->SetLineWidth(1);
-	    poly->SetFillStyle(1001);  // MMD: nicer to have a solid fill
+	    poly->SetFillStyle(3001);	    
+	    //	    poly->SetFillStyle(1001);  // MMD: nicer to have a solid fill
 	  }
 	}	
 
@@ -1192,8 +1204,8 @@ void MyProcessor::FillGraphics(void)
 void MyProcessor::UpdateBcalDisp(void)
 {
   BCALHitCanvas = hdvmf->GetBcalDispFrame();
-  BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream;Sector number;Radius;Energy  (MeV)",  48*4+2, -1.5, 192.5, 10, 0., 10.);
-  BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream;Sector number;Radius;Energy  (MeV)",48*4+2, -1.5, 192.5, 10, 0., 10.);
+  BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream;Sector number;Layer;Energy  (MeV)",  48*4+2, -1.5, 192.5, 10, 0., 10.);
+  BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream;Sector number;Layer;Energy  (MeV)",48*4+2, -1.5, 192.5, 10, 0., 10.);
   BCALParticles = new TH2F("BCALParticles","BCAL Hits Downstream;Phi angle [deg]",(48*4+2)*4, -1.87, 361.87, 1, 0., 1.);
   BCALHitMatrixU->SetStats(0);
   BCALHitMatrixD->SetStats(0);
@@ -1305,10 +1317,8 @@ void MyProcessor::UpdateBcalDisp(void)
     BCALHitCanvas->Clear();
     BCALHitCanvas->Divide(1,3);
     BCALHitCanvas->cd(1);
-    BCALHitMatrixU->Scale(1000);  // Scale histogram to MeV    
     BCALHitMatrixU->Draw("colz");
     BCALHitCanvas->cd(2);
-    BCALHitMatrixD->Scale(1000);  // Scale histogram to MeV    
     BCALHitMatrixD->Draw("colz");
     BCALHitCanvas->cd(3);
     BCALParticles->Draw("colz");
