@@ -1151,6 +1151,9 @@ void hdv_mainframe::DoMyRedraw(void)
 			sA->SetLineWidth((Width_t)iter->size);
 			sB->SetLineWidth((Width_t)iter->size);
 			eA->SetLineWidth((Width_t)iter->size);
+			sA->SetFillStyle(0);
+			sB->SetFillStyle(0);
+			eA->SetFillStyle(0);
 			FillPoly(sA, sB, eA, iter->points); // in hdv_mainframe.h
 			
 			// Axial CDC wires will end up as having zero length in the end view
@@ -1182,11 +1185,10 @@ void hdv_mainframe::DoMyRedraw(void)
 	endviewA->GetCanvas()->cd(0);
 	for(unsigned int i=0; i<graphics_endA.size(); i++){
 		TPolyLine *l = dynamic_cast<TPolyLine*>(graphics_endA[i]);
-		if(l && l->GetFillStyle()!=1001){
+		if(l && l->GetFillStyle()!=0){
 			graphics_endA[i]->Draw("f");
 		}else{
 			graphics_endA[i]->Draw("");
-			// graphics_endA[i]->Draw(""); // MMD: nicer to have a solid fill
 		}
 	}
 	endviewA->GetCanvas()->Update();

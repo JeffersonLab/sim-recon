@@ -389,8 +389,7 @@ void MyProcessor::FillGraphics(void)
 	    poly->SetFillColor(TColor::GetColor(r,g,b));
 	    poly->SetLineColor(TColor::GetColor(r,g,b));
 	    poly->SetLineWidth(1);
-	    poly->SetFillStyle(3001);	    
-	    //	    poly->SetFillStyle(1001);  // MMD: nicer to have a solid fill
+	    poly->SetFillStyle(1001);
 	  }
 	}	
 
