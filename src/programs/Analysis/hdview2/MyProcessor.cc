@@ -343,7 +343,7 @@ void MyProcessor::FillGraphics(void)
 	    // The aim is to have a log scale in energy
 	    double E = hit->E;      // Energy in MeV
 	    double logE = log10(E);      
-	    // 3 = 1 GeV, 0 = 1 MeV, use range 0 through 3
+	    // 3 = 1 GeV, 0 = 1 MeV, use range 0 through 4
 	    // 0-1 White-Yellow
 	    // 1-2 Yellow-Red
 	    // 2-3 Red-Cyan
@@ -1203,9 +1203,9 @@ void MyProcessor::FillGraphics(void)
 void MyProcessor::UpdateBcalDisp(void)
 {
   BCALHitCanvas = hdvmf->GetBcalDispFrame();
-  BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream;Sector number;Layer;Energy  (MeV)",  48*4+2, -1.5, 192.5, 10, 0., 10.);
-  BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream;Sector number;Layer;Energy  (MeV)",48*4+2, -1.5, 192.5, 10, 0., 10.);
-  BCALParticles = new TH2F("BCALParticles","BCAL Hits Downstream;Phi angle [deg]",(48*4+2)*4, -1.87, 361.87, 1, 0., 1.);
+  BCALHitMatrixU = new TH2F("BCALHitMatrixU","BCAL Hits Upstream Energy;Sector number;Layer;Energy  (MeV)",  48*4+2, -1.5, 192.5, 10, 0., 10.);
+  BCALHitMatrixD = new TH2F("BCALHitMatrixD","BCAL Hits Downstream Energy;Sector number;Layer;Energy  (MeV)",48*4+2, -1.5, 192.5, 10, 0., 10.);
+  BCALParticles = new TH2F("BCALParticles","BCAL Particle Hits Type;Phi angle [deg];;Particle Momentum",(48*4+2)*4, -1.87, 361.87, 1, 0., 1.);
   BCALHitMatrixU->SetStats(0);
   BCALHitMatrixD->SetStats(0);
   BCALParticles->SetStats(0);
@@ -1228,6 +1228,15 @@ void MyProcessor::UpdateBcalDisp(void)
   BCALHitMatrixD->GetZaxis()->SetTitleSize(size);
   BCALHitMatrixD->GetZaxis()->SetTitleOffset(0.4);
   BCALHitMatrixD->GetZaxis()->SetLabelSize(size);
+  BCALParticles->GetXaxis()->SetTitleSize(size);
+  BCALParticles->GetXaxis()->SetTitleOffset(0.8);
+  BCALParticles->GetXaxis()->SetLabelSize(size);
+  BCALParticles->GetYaxis()->SetTitleSize(size);
+  BCALParticles->GetYaxis()->SetTitleOffset(0.4);
+  BCALParticles->GetYaxis()->SetLabelSize(size);
+  BCALParticles->GetZaxis()->SetTitleSize(size);
+  BCALParticles->GetZaxis()->SetTitleOffset(0.4);
+  BCALParticles->GetZaxis()->SetLabelSize(size);
 
   if (BCALHitCanvas) {
     vector<const DBCALHit*> locBcalHits;

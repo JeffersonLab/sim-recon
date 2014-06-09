@@ -482,6 +482,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   optionsmf = new hdv_optionsframe(this, NULL, 100, 100);
   debugermf = new hdv_debugerframe(this, NULL, 800, 800);
   fulllistmf = new hdv_fulllistframe(this, NULL, 100, 100);
+  endviewAmf = new hdv_endviewAframe(this, NULL, 600, 600);
   endviewBmf = new hdv_endviewBframe(this, NULL, 600, 600);
   
   //&&&&&&&&&&&&&&&& Defaults
@@ -563,6 +564,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   chargedtracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
   reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
   
+  endviewA->GetCanvas()->Connect("Selected(TVirtualPad*, TObject*, Int_t)", "hdv_mainframe", this, "DoEndViewAEvent(TVirtualPad*, TObject*, Int_t)");
   endviewB->GetCanvas()->Connect("Selected(TVirtualPad*, TObject*, Int_t)", "hdv_mainframe", this, "DoEndViewBEvent(TVirtualPad*, TObject*, Int_t)");
   
   // Set up timer to call the DoTimer() method repeatedly
@@ -735,6 +737,7 @@ void hdv_mainframe::SetRange(void)
 		endviewA->GetCanvas()->Range(xlo, ylo, xhi, yhi);
 		endviewB->GetCanvas()->cd();
 		endviewB->GetCanvas()->Range(xlo*1.3, ylo*1.3, xhi*1.3, yhi*1.3);
+		endviewAmf->SetRange(xlo, ylo, xhi, yhi);
 		endviewBmf->SetRange(xlo*1.3, ylo*1.3, xhi*1.3, yhi*1.3);
 		
 
@@ -763,6 +766,7 @@ void hdv_mainframe::SetRange(void)
 		endviewA->GetCanvas()->Range(philo, rlo/2.5, phihi,  rhi/2.5);
 		endviewB->GetCanvas()->cd();
 		endviewB->GetCanvas()->Range(philo, rlo/10.0, phihi,  rhi/1.9);
+		endviewAmf->SetRange(philo, rlo/2.5, phihi,  rhi/2.5);
 		endviewBmf->SetRange(philo, rlo/10.0, phihi,  rhi/1.9);
 	}
 }
@@ -975,6 +979,24 @@ void hdv_mainframe::DoClearBCALInspectorPointer(void)
 {
 
 }
+
+//-------------------
+// DoEndViewAEvent
+//-------------------
+void hdv_mainframe::DoEndViewAEvent(TVirtualPad* pad, TObject* obj, Int_t event)
+{
+	// event is the mouse button pushed (1=left, 2=center, 3=right)
+	// It seems we can't detect double clicks here.
+	if(endviewAmf==NULL){
+		endviewAmf = new hdv_endviewAframe(this, NULL, 100, 100);
+	}else{
+		endviewAmf->MapWindow();
+		endviewAmf->RaiseWindow();
+		endviewAmf->RequestFocus();
+		DoMyRedraw();
+	}
+}
+
 
 //-------------------
 // DoEndViewBEvent
@@ -1192,6 +1214,8 @@ void hdv_mainframe::DoMyRedraw(void)
 		}
 	}
 	endviewA->GetCanvas()->Update();
+	endviewAmf->DrawObjects(graphics_endA); // duplicate drawing of objects in big window
+
 	endviewB->GetCanvas()->cd(0);
 	for(unsigned int i=0; i<graphics_endB.size(); i++)graphics_endB[i]->Draw("f");
 	for(unsigned int i=0; i<graphics_endB.size(); i++)graphics_endB[i]->Draw();

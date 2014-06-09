@@ -32,6 +32,7 @@ class trk_mainframe;
 class hdv_optionsframe;
 class hdv_debugerframe;
 class hdv_fulllistframe;
+class hdv_endviewAframe;
 class hdv_endviewBframe;
 class DKinematicData;
 #ifndef __CINT__
@@ -39,6 +40,7 @@ class DKinematicData;
 #include "hdv_optionsframe.h"
 #include "hdv_debugerframe.h"
 #include "hdv_fulllistframe.h"
+#include "hdv_endviewAframe.h"
 #include "hdv_endviewBframe.h"
 #endif
 
@@ -81,6 +83,7 @@ class hdv_mainframe:public TGMainFrame {
 		void DoClearFCALInspectorPointer(void);
 		void DoClearBCALInspectorPointer(void);
 		
+		void DoEndViewAEvent(TVirtualPad* pad, TObject* obj, Int_t event);
 		void DoEndViewBEvent(TVirtualPad* pad, TObject* obj, Int_t event);
 
 		void DoPanXpos(void);
@@ -148,6 +151,7 @@ class hdv_mainframe:public TGMainFrame {
 		hdv_debugerframe *debugermf;
 		TCanvas *bcaldispmf;
 		hdv_fulllistframe *fulllistmf;
+		hdv_endviewAframe *endviewAmf;
 		hdv_endviewBframe *endviewBmf;
 	
 		TRootEmbeddedCanvas *sideviewA;
