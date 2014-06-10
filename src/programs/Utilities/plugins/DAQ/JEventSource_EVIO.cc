@@ -1513,6 +1513,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t sum = 0;
 		uint32_t pulse_number = 0;
 		uint32_t pulse_time = 0;
+		uint32_t quality_factor = 0;
 		//bool overflow = false;
 
 		bool found_block_trailer = false;
@@ -1551,13 +1552,15 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				channel = (*iptr>>20) & 0x3F;
 				pulse_number = (*iptr>>18) & 0x03;
 				sum = (*iptr>>0) & 0x3FFFF;
-				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, sum));
+				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
+
 				break;
 			case 8: // Pulse Time
 				channel = (*iptr>>20) & 0x3F;
 				pulse_number = (*iptr>>18) & 0x03;
 				pulse_time = (*iptr>>0) & 0x3FFFF;
-				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, pulse_time));
+				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
+
 				break;
 			case 4: // Window Raw Data
 			case 5: // Window Sum
