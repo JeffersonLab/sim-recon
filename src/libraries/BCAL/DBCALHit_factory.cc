@@ -12,6 +12,7 @@ using namespace std;
 
 #include <BCAL/DBCALDigiHit.h>
 #include "DBCALHit_factory.h"
+#include <DAQ/Df250PulseIntegral.h>
 using namespace jana;
 
 //------------------
@@ -28,8 +29,11 @@ jerror_t DBCALHit_factory::init(void)
 jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	/// Read in calibration constants (Needs to be done!)
-	a_scale    = 0.0001; // 100 keV/count (?)
-	a_pedestal = 0.0;
+	a_scale    = 0.1;   // to get units of MeV
+	//  Crude calibration 
+	//    A minimally ionising particle deposits and integral of 230 ADC counts per cell, 
+	//    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
+	a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
 	t_scale    = 4.0;    // 4 ns/count
 	t_offset   = 0;
 
@@ -54,6 +58,15 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(digihits);
 	for(unsigned int i=0; i<digihits.size(); i++){
 		const DBCALDigiHit *digihit = digihits[i];
+		
+		// Apply associated event pedestal, if it exists
+		double pedestal = a_pedestal;
+		vector<const Df250PulseIntegral*> PIvect;
+		digihit->Get(PIvect);
+		if(!PIvect.empty()){
+		  const Df250PulseIntegral *PIobj = PIvect[0];
+		  pedestal = PIobj->pedestal;
+		}
 
 		DBCALHit *hit = new DBCALHit;
 		hit->module = digihit->module;
@@ -64,7 +77,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
-		hit->E = a_scale * (A - a_pedestal);
+		hit->E = a_scale * (A - pedestal);
 		hit->t = t_scale * (T - t_offset);
 		
 		hit->AddAssociatedObject(digihit);
