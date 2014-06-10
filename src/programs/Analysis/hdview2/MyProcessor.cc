@@ -736,7 +736,8 @@ void MyProcessor::FillGraphics(void)
 	  DGraphicSet gset(kRed, kMarker, 0.5);
 	  for(unsigned int i=0; i<tofpoints.size(); i++){
 	    const DTOFPoint *hit = tofpoints[i];
-	    gset.points.push_back(hit->pos);
+	    TVector3 pos(hit->pos.x(),hit->pos.y(),hit->pos.z());
+	    gset.points.push_back(pos);
 	  }
 	  graphics.push_back(gset);
 	}
@@ -1478,6 +1479,8 @@ void MyProcessor::UpdateTrackLabels(void)
 		const DTrackWireBased *track=dynamic_cast<const DTrackWireBased*>(trk);	
 	
 		const DTrackCandidate *candidate=dynamic_cast<const DTrackCandidate*>(trk);
+		const DChargedTrackHypothesis *chargedtrack=dynamic_cast<const DChargedTrackHypothesis *>(trk);
+
 		if(timetrack){
 			chisq_per_dof<<setprecision(4)<<timetrack->chisq/timetrack->Ndof;
 			Ndof<<timetrack->Ndof;
@@ -1486,11 +1489,22 @@ void MyProcessor::UpdateTrackLabels(void)
 			chisq_per_dof<<setprecision(4)<<track->chisq/track->Ndof;
 			Ndof<<track->Ndof;
 			fom << "N/A";
-		}else{
+		}else if (candidate){
 			chisq_per_dof<<setprecision(4)<<candidate->chisq/candidate->Ndof;
 			Ndof<<candidate->Ndof;
 			fom << "N/A";
 		}
+		else if (chargedtrack){
+		  chisq_per_dof<<setprecision(4)<<chargedtrack->dChiSq_Track/chargedtrack->dNDF_Track;
+			Ndof<<chargedtrack->dNDF_Track;
+			fom << chargedtrack->dFOM;
+		}
+		else{
+		  chisq_per_dof << "--------";
+		  Ndof << "--------";
+		  fom << "--------";
+		}
+		
 		reconlabs["chisq/Ndof"][row]->SetText(chisq_per_dof.str().c_str());
 		reconlabs["Ndof"][row]->SetText(Ndof.str().c_str());
 		reconlabs["FOM"][row]->SetText(fom.str().c_str());
