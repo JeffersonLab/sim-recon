@@ -250,7 +250,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	// Df125PulseIntegral (will apply Df125PulseTime via associated objects)
 	vector<const Df125PulseIntegral*> pulseintegrals125;
 	loop->Get(pulseintegrals125);
-	if(VERBOSE>2) ttout << "  Number Df125PulseIntegral objects: " << pulseintegrals250.size() << endl;
+	if(VERBOSE>2) ttout << "  Number Df125PulseIntegral objects: " << pulseintegrals125.size() << endl;
 	for(uint32_t i=0; i<pulseintegrals125.size(); i++){
 		const Df125PulseIntegral *pi = pulseintegrals125[i];
 
@@ -292,7 +292,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	// DF1TDCHit
 	vector<const DF1TDCHit*> f1tdchits;
 	loop->Get(f1tdchits);
-	if(VERBOSE>2) ttout << "  Number Df250PulseIntegral objects: " << pulseintegrals250.size() << endl;
+	if(VERBOSE>2) ttout << "  Number DF1TDCHit objects: " << f1tdchits.size() << endl;
 	for(uint32_t i=0; i<f1tdchits.size(); i++){
 		const DF1TDCHit *hit = f1tdchits[i];
 
@@ -300,7 +300,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 		uint32_t rocid = hit->rocid;
 		map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
 		if(rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
-		
+
 		if(VERBOSE>4) ttout << "    Looking for rocid:" << rocid <<" slot:" << hit->slot << " chan:" << hit->channel << endl;
 		
 		// Create crate,slot,channel index and find entry in Translation table.
@@ -648,7 +648,10 @@ DTranslationTable::Detector_t DetectorStr2DetID(string &type)
 		return DTranslationTable::PS;
 	} else if( type=="psc" ) {
 		return DTranslationTable::PSC;
-	} else if( type=="sc" ) {
+	} else if( type=="st" ) {
+	        // The start counter is labelled by "ST" in the translation table
+	        // but we stick with the "SC" label in this plugin for consistency
+	        // with the rest of the reconstruction software
 		return DTranslationTable::SC;
 	} else if( type=="tagh" ) {
 		return DTranslationTable::TAGH;
