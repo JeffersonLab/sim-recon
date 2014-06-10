@@ -440,9 +440,6 @@ DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(const FDC_CathodesI
 	DFDCCathodeDigiHit *h = new DFDCCathodeDigiHit();
 	CopyDf125Info(h, pi, pt);
 
-	printf("In MakeFDCCathodeDigiHit(): package = %d, chamber = %d, view = %d, strip = %d, strip type = %d\n",
-	       idx.package, idx.chamber, idx.view, idx.strip, idx.strip_type);
-
 	h->package    = idx.package;
 	h->chamber    = idx.chamber;
 	h->view       = idx.view;
