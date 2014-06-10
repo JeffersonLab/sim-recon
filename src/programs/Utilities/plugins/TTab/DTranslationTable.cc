@@ -250,16 +250,28 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	// Df125PulseIntegral (will apply Df125PulseTime via associated objects)
 	vector<const Df125PulseIntegral*> pulseintegrals125;
 	loop->Get(pulseintegrals125);
+	if(VERBOSE>2) ttout << "  Number Df125PulseIntegral objects: " << pulseintegrals250.size() << endl;
 	for(uint32_t i=0; i<pulseintegrals125.size(); i++){
 		const Df125PulseIntegral *pi = pulseintegrals125[i];
+
+		// Apply optional rocid translation
+		uint32_t rocid = pi->rocid;
+		map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
+		if(rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
 		
+		if(VERBOSE>4) ttout << "    Looking for rocid:" << rocid <<" slot:" << pi->slot << " chan:" << pi->channel << endl;
+	
 		// Create crate,slot,channel index and find entry in Translation table.
 		// If none is found, then just quietly skip this hit.
 		csc_t csc = {pi->rocid, pi->slot, pi->channel};
 		map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
-		if(iter == TT.end()) continue;
+		if(iter == TT.end()) {
+		    if(VERBOSE>6) ttout << "     - Didn't find it" << endl;
+		    continue;
+		}
 		const DChannelInfo &chaninfo = iter->second;
-		
+		if(VERBOSE>6) ttout << "     - Found entry for: " << DetectorName(chaninfo.det_sys) << endl;
+
 		// Check for a pulse time (this should have been added in JEventSource_EVIO.cc
 		const Df125PulseTime *pt = NULL;
 		try{
@@ -271,24 +283,37 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 			case CDC         : vcdc.push_back( MakeCDCDigiHit(chaninfo.cdc, pi, pt) ); break;
 			case FDC_CATHODES: vfdccathode.push_back( MakeFDCCathodeDigiHit(chaninfo.fdc_cathodes, pi, pt) ); break;
 
-			default:  break;
+			default: 
+			    if(VERBOSE>4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << endl; 
+			    break;
 		}
 	}
 
 	// DF1TDCHit
 	vector<const DF1TDCHit*> f1tdchits;
 	loop->Get(f1tdchits);
+	if(VERBOSE>2) ttout << "  Number Df250PulseIntegral objects: " << pulseintegrals250.size() << endl;
 	for(uint32_t i=0; i<f1tdchits.size(); i++){
 		const DF1TDCHit *hit = f1tdchits[i];
 
+		// Apply optional rocid translation
+		uint32_t rocid = hit->rocid;
+		map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
+		if(rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
+		
+		if(VERBOSE>4) ttout << "    Looking for rocid:" << rocid <<" slot:" << hit->slot << " chan:" << hit->channel << endl;
 		
 		// Create crate,slot,channel index and find entry in Translation table.
 		// If none is found, then just quietly skip this hit.
 		csc_t csc = {hit->rocid, hit->slot, hit->channel};
 		map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
-		if(iter == TT.end()) continue;
+		if(iter == TT.end()) {
+		    if(VERBOSE>6) ttout << "     - Didn't find it" << endl;
+		    continue;
+		}
 		const DChannelInfo &chaninfo = iter->second;
-
+		if(VERBOSE>6) ttout << "     - Found entry for: " << DetectorName(chaninfo.det_sys) << endl;
+		
 		// Create the appropriate hit type based on detector type
 		switch(chaninfo.det_sys){
 			case BCAL     : vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal,      hit) ); break;
@@ -296,7 +321,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 			case SC       : vsctdc.push_back( MakeSCTDCDigiHit(chaninfo.sc,      hit) ); break;
 			case TOF      : vtoftdc.push_back( MakeTOFTDCDigiHit(chaninfo.tof,      hit) ); break;
 
-			default:  break;
+			default:  	
+			    if(VERBOSE>4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << endl;
+			    break;
 		}
 	}
 
@@ -412,6 +439,9 @@ DFDCCathodeDigiHit* DTranslationTable::MakeFDCCathodeDigiHit(const FDC_CathodesI
 {
 	DFDCCathodeDigiHit *h = new DFDCCathodeDigiHit();
 	CopyDf125Info(h, pi, pt);
+
+	printf("In MakeFDCCathodeDigiHit(): package = %d, chamber = %d, view = %d, strip = %d, strip type = %d\n",
+	       idx.package, idx.chamber, idx.view, idx.strip, idx.strip_type);
 
 	h->package    = idx.package;
 	h->chamber    = idx.chamber;
@@ -713,7 +743,10 @@ void StartElement(void *userData, const char *xmlname, const char **atts) {
 			else if(tag == "bar"      ) bar       = ival;
 			else if(tag == "package"  ) package   = ival;
 			else if(tag == "chamber"  ) chamber   = ival;
-			else if(tag == "view"     ) view      = ival;
+			else if(tag == "view"     ) {
+			        if(     sval == "U"  ) view=1;
+				else if(sval == "D"  ) view=3;
+			}
 			else if(tag == "strip"    ) strip     = ival;
 			else if(tag == "wire"     ) wire      = ival;
 			else if(tag == "id"       ) id        = ival;
