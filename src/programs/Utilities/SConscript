@@ -13,6 +13,6 @@ SConscript(dirs=subdirs, exports='env osname', duplicate=0)
 
 # Optional targets (can only be built from inside
 # source directory or if specified on command line)
-sbms.OptionallyBuild(env, ['hddm2root', 'dumpwires'])
+sbms.OptionallyBuild(env, ['hddm2root', 'dumpwires', 'evio_merge_events'])
 
 
