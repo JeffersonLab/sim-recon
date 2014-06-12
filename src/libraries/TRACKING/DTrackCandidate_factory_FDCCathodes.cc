@@ -172,11 +172,18 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	// Assume that the particle came from the center of the target.
 	const DFDCPseudo *segment_hit=segment->hits[segment->hits.size()-1];
 	if (rc<10.0 && segment_hit->xy.Mod()<10.0 ){
-	  double r=segment_hit->xy.Mod();
-	  tanl=(segment_hit->wire->origin.z()-TARGET_Z)/r;
-	  rc=0.5*r;
-	  xc=0.5*segment_hit->xy.X();
-	  yc=0.5*segment_hit->xy.Y();
+	  DHelicalFit fit;
+	  for (unsigned int n=0;n<segment->hits.size();n++){
+	    const DFDCPseudo *hit=segment->hits[n];
+	    fit.AddHit(hit);
+	  }
+	  fit.FitTrack_FixedZvertex(TARGET_Z);
+	  tanl=fit.tanl;
+	  rc=fit.r0;
+	  xc=fit.x0;
+	  yc=fit.y0;
+	  fit.FindSenseOfRotation();
+	  q=FactorForSenseOfRotation*fit.h;
 	}	
 
 	// Get the momentum and position at a specific z position
@@ -581,7 +588,11 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
 	}
       }
       // Fake point at origin
-      if (max_r<MAX_R_VERTEX_LIMIT) fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
+      bool use_fake_point=false;
+      if (max_r<MAX_R_VERTEX_LIMIT){
+	fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
+	use_fake_point=true;
+      }
       // Do the fit
       if (fit.FitTrackRiemann(rc)==NOERROR){    
 	// New track parameters
@@ -597,13 +608,15 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
       // Assume that the particle came from the center of the target.
       
       if (rc<0.5*max_r && max_r<10.0){
-	fit.r0=rc=0.5*max_r;
-	fit.x0=xc=0.5*x_at_max_r;
-	fit.y0=yc=0.5*y_at_max_r;
-	fit.FitLine_FixedZvertex(TARGET_Z);
+	if (use_fake_point) fit.PruneHit(0); 
+	fit.FitTrack_FixedZvertex(TARGET_Z);
 	tanl=fit.tanl;
-      }
-      
+	rc=fit.r0;
+	xc=fit.x0;
+	yc=fit.y0;
+	fit.FindSenseOfRotation();
+	q=FactorForSenseOfRotation*fit.h;
+      }      
 
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
