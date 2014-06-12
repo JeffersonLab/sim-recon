@@ -85,11 +85,6 @@
 
 #define ELECTRON_MASS 0.000511 // GeV
 
-#define CDC_DRIFT_B_SCALE_PAR1 602.0
-#define CDC_DRIFT_B_SCALE_PAR2 58.22
-#define FDC_DRIFT_B_SCALE_PAR1 56.03
-#define FDC_DRIFT_B_SCALE_PAR2 9.122
-
 using namespace std;
 
 enum kalman_error_t{
@@ -150,7 +145,7 @@ typedef struct{
   DMatrix5x5 C;
   DMatrix5x1 S;
   DVector2 xy;
-  double z;
+  double doca,z;
   double tdrift,tflight,s,B;
   double residual,variance;
   bool used_in_fit;
@@ -198,7 +193,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(void);
-  virtual kalman_error_t KalmanForward(double anneal,DMatrix5x1 &S,DMatrix5x5 &C,
+  virtual kalman_error_t KalmanForward(double fdc_anneal,double cdc_anneal,DMatrix5x1 &S,DMatrix5x5 &C,
 				 double &chisq,unsigned int &numdof);
   virtual jerror_t SmoothForward(DMatrix5x1 &S,DMatrix5x5 &C);   
 
@@ -369,7 +364,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 				     DVector2 &pos,
 				     double &chisq, 
 				     unsigned int &numdof);
-  kalman_error_t RecoverBrokenForwardTracks(double anneal_factor, 
+  kalman_error_t RecoverBrokenForwardTracks(double fdc_anneal_factor,
+					    double cdc_anneal_factor,
 					    DMatrix5x1 &S, 
 					    DMatrix5x5 &C,
 					    const DMatrix5x5 &C0,
@@ -441,8 +437,8 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   unsigned int mMinDriftID;
   
   // tables of time-to-drift values
-  double fdc_drift_table[140];
   vector<double>cdc_drift_table;
+  vector<double>fdc_drift_table;
 
   // Vertex time
   double mT0,mT0MinimumDriftTime,mT0Average;
@@ -488,6 +484,9 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   // parameters for CDC resolution function
   double CDC_RES_PAR1,CDC_RES_PAR2;
 
+  // Parameters for dealing with FDC drift B dependence
+  double FDC_DRIFT_BSCALE_PAR1,FDC_DRIFT_BSCALE_PAR2;
+
   // Identity matrix
   DMatrix5x5 I5x5;
   // Matrices with zeroes in them
@@ -498,7 +497,6 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 
  private:
   unsigned int last_material_map;
-  double CDC_DRIFT_B_SCALE,FDC_DRIFT_B_SCALE;
 
   TH2F *Hstepsize,*HstepsizeDenom;
   TH2F *fdc_t0,*fdc_t0_vs_theta,*fdc_t0_timebased,*fdc_t0_timebased_vs_theta;

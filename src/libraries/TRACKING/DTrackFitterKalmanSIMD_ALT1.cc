@@ -9,7 +9,7 @@
 
 // Kalman engine for forward tracks.  For FDC hits only the position along 
 // the wire is used in the fit
-kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor, 
+kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_factor, double cdc_anneal_factor,
 					       DMatrix5x1 &S, 
 					       DMatrix5x5 &C,
 					       double &chisq, 
@@ -49,13 +49,14 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
   // Initialize number of degrees of freedom
   numdof=0;
   
-  double my_anneal=anneal_factor*anneal_factor;
-  double my_fdc_anneal=my_anneal;
+  double my_cdc_anneal=cdc_anneal_factor*cdc_anneal_factor;
+  double my_fdc_anneal=fdc_anneal_factor*fdc_anneal_factor;
+ 
   double var_fdc_cut=NUM_FDC_SIGMA_CUT*NUM_FDC_SIGMA_CUT;
   double fdc_chi2cut=my_fdc_anneal*var_fdc_cut;
 
   double var_cdc_cut=NUM_CDC_SIGMA_CUT*NUM_CDC_SIGMA_CUT;
-  double cdc_chi2cut=my_anneal*var_cdc_cut;
+  double cdc_chi2cut=my_cdc_anneal*var_cdc_cut;
 
   // Variables for estimating t0 from tracking
   //mInvVarT0=mT0wires=0.;
@@ -130,6 +131,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
     if (num_fdc_hits>0){
       if (forward_traj[k].h_id>0 && forward_traj[k].h_id<1000){
 	unsigned int id=forward_traj[k].h_id-1;
+	if (fit_type==kWireBased && id==mMinDriftID){
+	  mMinDriftTime=my_fdchits[id]->t-forward_traj[k].t;
+	}
+	
 
 	double cosa=my_fdchits[id]->cosa;
 	double sina=my_fdchits[id]->sina;
@@ -239,6 +244,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	  // loop over the remaining hits
 	  for (unsigned int m=1;m<forward_traj[k].num_hits;m++){
 	    unsigned int my_id=id-m;
+	    
+	    if (fit_type==kWireBased && id==mMinDriftID){
+	      mMinDriftTime=my_fdchits[my_id]->t-forward_traj[k].t;
+	    }
+
 	    u=my_fdchits[my_id]->uwire;
 	    v=my_fdchits[my_id]->vstrip;
 
@@ -319,6 +329,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    fdc_updates[my_id].s=forward_traj[k].s;
 	    fdc_updates[my_id].residual=scale*Mlist[m];
 	    fdc_updates[my_id].variance=scale*Vlist[m];
+	    fdc_updates[my_id].doca=doca;
 	  
 	    // update chi2
 	    chisq+=(probs[m]/prob_tot)*(1.-Hlist[m]*Klist[m])*Mlist[m]*Mlist[m]/Vlist[m];
@@ -344,7 +355,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      
 	      // ad hoc correction 
 	      double diff = chi2_hit-var_fdc_cut;
-	      V*=1.+my_fdc_anneal*diff;
+	      V*=1.+my_fdc_anneal*diff*diff;
 	      InvV=1./(V+Vproj);
 	    }
 
@@ -371,6 +382,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	    fdc_updates[id].residual=scale*Mdiff;
 	    fdc_updates[id].variance=scale*V;
 	    fdc_updates[id].s=forward_traj[k].s;
+	    fdc_updates[id].doca=doca;
 	    fdc_updates[id].used_in_fit=true;
 	    
 	    // Update chi2 for this segment
@@ -696,9 +708,10 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      
 	      // ad hoc correction 
 	      double diff = chi2_hit-var_cdc_cut;
-	      Vc*=1.+my_anneal*diff;
+	      Vc*=1.+my_cdc_anneal*diff*diff;
 	      InvV1=1./(Vc+Vproj);
 	    }
+	    
 
 	    // Compute KalmanSIMD gain matrix
 	    K=InvV1*(C*H_T);
@@ -732,6 +745,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double anneal_factor,
 	      cdc_updates[cdc_index].s=forward_traj[k_minus_1].s;
 	      cdc_updates[cdc_index].residual=res*scale;
 	      cdc_updates[cdc_index].variance=Vc*scale;
+	      cdc_updates[cdc_index].doca=d;
 	      cdc_updates[cdc_index].used_in_fit=true;
 	    
 	      // Update chi2 for this hit

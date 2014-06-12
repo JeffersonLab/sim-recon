@@ -400,12 +400,6 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   jcalib->Get("FDC/fdc_parms", fdcparms);
   FDC_CATHODE_SIGMA     = fdcparms["FDC_CATHODE_SIGMA"];
 
-  double Bref=1.83;
-  CDC_DRIFT_B_SCALE=CDC_DRIFT_B_SCALE_PAR1+CDC_DRIFT_B_SCALE_PAR2*Bref;
-
-  Bref=2.27;
-  FDC_DRIFT_B_SCALE=FDC_DRIFT_B_SCALE_PAR1+FDC_DRIFT_B_SCALE_PAR2*Bref;
-
   for (unsigned int i=0;i<5;i++)I5x5(i,i)=1.;
   
   // Inform user of some configuration settings
@@ -2743,8 +2737,7 @@ DTrackFitterKalmanSIMD::EstimateT0Central(const DKalmanSIMDCDCHit_t *hit,
   //   t(d)=c1 d^2 +c2 d^4
   double c1=1131,c2=140.7;
   double d_sq=doca*doca; 
-  double bfrac=(CDC_DRIFT_B_SCALE_PAR1+CDC_DRIFT_B_SCALE_PAR2*cdc_update.B)
-    /CDC_DRIFT_B_SCALE;
+  double bfrac=1.;
   double t0=hit->tdrift-cdc_update.tflight-bfrac*(c1*d_sq+c2*d_sq*d_sq);
 
   // Calculate the variance in t0
@@ -3994,7 +3987,8 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 }
 
 // Kalman engine for forward tracks
-kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor, 
+kalman_error_t DTrackFitterKalmanSIMD::KalmanForward(double anneal_factor,
+						     double cdc_anneal,
 					       DMatrix5x1 &S, 
 					       DMatrix5x5 &C,
 					       double &chisq, 
@@ -6022,8 +6016,7 @@ jerror_t DTrackFitterKalmanSIMD::EstimateT0Forward(const DKalmanSIMDCDCHit_t *hi
   //   t(d)=c1 d^2 +c2 d^4
   double c1=1131,c2=140.7;
   double d_sq=doca*doca;  
-  double bfrac=(CDC_DRIFT_B_SCALE_PAR1+CDC_DRIFT_B_SCALE_PAR2*cdc_update.B)
-    /CDC_DRIFT_B_SCALE;
+  double bfrac=1.;
   double t0=hit->tdrift-cdc_update.tflight-bfrac*(c1*d_sq+c2*d_sq*d_sq);
 
   // Compute variance in t0 
@@ -6063,8 +6056,7 @@ jerror_t DTrackFitterKalmanSIMD::EstimateT0(const DKalmanUpdate_t &fdc_update,
 	       -hit->uwire)*cosalpha;
 
   // Correction factor to account for dependence of drift time on B
-   double bfrac=(FDC_DRIFT_B_SCALE_PAR1+FDC_DRIFT_B_SCALE_PAR2*fdc_update.B)
-    /FDC_DRIFT_B_SCALE; 
+  double bfrac=1.;
 
   // Estimate for time at "vertex" using approximate form for t(doca)
   //   t(d)=c1 d^2 + c2 d^4
@@ -6361,7 +6353,8 @@ kalman_error_t DTrackFitterKalmanSIMD::RecoverBrokenTracks(double anneal_factor,
 
 // Track recovery for forward-going tracks with hits in the FDC 
 kalman_error_t
-DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor, 
+DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double fdc_anneal,
+						   double cdc_anneal,
 						   DMatrix5x1 &S, 
 						   DMatrix5x5 &C,
 						   const DMatrix5x5 &C0,
@@ -6405,7 +6398,6 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
   kalman_error_t refit_error=FIT_NOT_DONE;
   int refit_iter=0;
   unsigned int break_id=break_point_fdc_index;
-  double my_anneal=anneal_factor;
   while (break_id+num_cdchits>=MIN_HITS_FOR_REFIT && break_id>0 
 	 && break_point_step_index<forward_traj.size()
 	 && break_point_step_index>1
@@ -6424,7 +6416,7 @@ DTrackFitterKalmanSIMD::RecoverBrokenForwardTracks(double anneal_factor,
     refit_ndf=0;
     
     // Now refit with the truncated trajectory and list of hits
-    refit_error=KalmanForward(my_anneal,S1,C1,refit_chisq,refit_ndf);   
+    refit_error=KalmanForward(fdc_anneal,cdc_anneal,S1,C1,refit_chisq,refit_ndf);   
     if (refit_error==FIT_SUCCEEDED
 	|| (refit_error==PRUNED_TOO_MANY_HITS)
 	){
@@ -6487,10 +6479,13 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
   // last z position
   double last_z=z_;
     
-  double anneal_factor=FORWARD_ANNEAL_SCALE+1.;  // variable for scaling cut for hit pruning
-  double my_anneal_const=FORWARD_ANNEAL_POW_CONST;
-  if (fit_type==kTimeBased && fabs(1./S(state_q_over_p))<1.0
-      && my_anneal_const>=2.0) my_anneal_const*=0.5;
+  double fdc_anneal=FORWARD_ANNEAL_SCALE+1.;  // variable for scaling cut for hit pruning
+  double my_fdc_anneal_const=FORWARD_ANNEAL_POW_CONST;
+  //  if (fit_type==kTimeBased && fabs(1./S(state_q_over_p))<1.0
+  // && my_anneal_const>=2.0) my_anneal_const*=0.5;
+  double cdc_anneal=(fit_type==kTimeBased?ANNEAL_SCALE+1.:2.);  // variable for scaling cut for hit pruning
+  double my_cdc_anneal_const=ANNEAL_POW_CONST;
+
 
   // Chi-squared and degrees of freedom
   double chisq=MAX_CHI2,chisq_forward=MAX_CHI2;
@@ -6519,7 +6514,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
     
     // Scale cut for pruning hits according to the iteration number
     if (fit_type==kTimeBased){
-      anneal_factor=FORWARD_ANNEAL_SCALE/pow(my_anneal_const,iter)+1.;
+      fdc_anneal=FORWARD_ANNEAL_SCALE/pow(my_fdc_anneal_const,iter)+1.;
+      cdc_anneal=ANNEAL_SCALE/pow(my_cdc_anneal_const,iter)+1.;
     }
     
     // Swim once through the field out to the most upstream FDC hit
@@ -6532,7 +6528,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
       
       // perform the kalman filter 
       C=C0;
-      kalman_error_t error=KalmanForward(anneal_factor,S,C,chisq,my_ndf);
+      kalman_error_t error=KalmanForward(fdc_anneal,cdc_anneal,S,C,chisq,my_ndf);
       
       if (DEBUG_LEVEL>1) _DBG_ << "Iter: " << iter+1 << " Chi2=" << chisq << " Ndf=" << my_ndf << " Error code: " << error << endl; 
 
@@ -6548,7 +6544,10 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardFit(const DMatrix5x1 &S0,const DMa
 	double temp_chi2=chisq;
 	double x=x_,y=y_,z=z_;
 	
-	kalman_error_t refit_error=RecoverBrokenForwardTracks(anneal_factor,S,C,C0,chisq,my_ndf);
+	kalman_error_t refit_error=RecoverBrokenForwardTracks(fdc_anneal,
+							      cdc_anneal,
+							      S,C,C0,chisq,
+							      my_ndf);
 	if (refit_error!=FIT_SUCCEEDED){
 	  if (error==PRUNED_TOO_MANY_HITS || error==BREAK_POINT_FOUND){
 	    C=Ctemp;
