@@ -16,6 +16,8 @@ using namespace std;
 #include "DSCHit_factory.h"
 using namespace jana;
 
+static int USE_MC_CALIB = 0;
+
 //------------------
 // init
 //------------------
@@ -23,6 +25,9 @@ jerror_t DSCHit_factory::init(void)
 {
 	DELTA_T_ADC_TDC_MAX = 4.0; // ns
 	gPARMS->SetDefaultParameter("SC:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
+
+	// should we use calibrations for simulated data? - this is a temporary workaround
+        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
 
 	return NOERROR;
 }
@@ -32,14 +37,53 @@ jerror_t DSCHit_factory::init(void)
 //------------------
 jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// Read in calibration constants (Needs to be done!)
+	/// set the base conversion scales
 	a_scale    = 2.0E-2/5.2E-5; 
-	a_pedestal = 0.0;
 	t_scale    = 4.0;    // 4 ns/count
-	t_offset   = 0;
+	tdc_scale  = 0.060;    // 60 ps/count
 
-	tdc_scale    = 0.060;    // 60 ps/count
-	tdc_offset   = 0;
+	/// Read in calibration constants
+	cout << "In DSCHit_factory, loading constants..." << endl;
+
+	if(eventLoop->GetCalib("/START_COUNTER/gains", a_gains))
+	    cout << "Error loading /START_COUNTER/gains !" << endl;
+	if(eventLoop->GetCalib("/START_COUNTER/pedestals", a_pedestals))
+	    cout << "Error loading /START_COUNTER/pedestals !" << endl;
+
+	if(USE_MC_CALIB>0) {
+	    if(eventLoop->GetCalib("/START_COUNTER/adc_timing_offsets::mc", adc_time_offsets))
+		cout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
+	    if(eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets::mc", tdc_time_offsets))
+		cout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
+	} else {
+	    if(eventLoop->GetCalib("/START_COUNTER/adc_timing_offsets", adc_time_offsets))
+		cout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
+	    if(eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", tdc_time_offsets))
+		cout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
+	}
+
+	/* 
+	   // load higher order corrections
+	   map<string,double> in_prop_corr;
+	   map<string,double> in_atten_corr;
+
+	   if(!eventLoop->GetCalib("/START_COUNTER/propagation_speed",in_prop_corr ))
+	      cout << "Error loading /START_COUNTER/propagation_speed !" << endl;
+	   if(!eventLoop->GetCalib("/START_COUNTER/attenuation_factor", in_atten_corr))
+	      cout << "Error loading /START_COUNTER/attenuation_factor !" << endl;
+	  
+	   // propogation correction:  A + Bx
+	   propogation_corr_factors.push_back(in_prop_corr["A"]);
+	   propogation_corr_factors.push_back(in_prop_corr["B"]);
+
+	   // attenuation correction:  A + Bx + Cx^2 + Dx^3 + Ex^4 + Fx^5
+	   attenuation_corr_factors.push_back(in_atten_corr["A"]);
+	   attenuation_corr_factors.push_back(in_atten_corr["B"]);
+	   attenuation_corr_factors.push_back(in_atten_corr["C"]);
+	   attenuation_corr_factors.push_back(in_atten_corr["D"]);
+	   attenuation_corr_factors.push_back(in_atten_corr["E"]);
+	   attenuation_corr_factors.push_back(in_atten_corr["F"]);
+	 */
 
 	return NOERROR;
 }
@@ -70,11 +114,14 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
-		hit->dE = a_scale * (A - a_pedestal);
-		hit->t = t_scale * (T - t_offset);
+		// Sectors are numbered from 1-30
+		hit->dE = a_scale * a_gains[hit->sector-1] * (A - a_pedestals[hit->sector-1]);
+		hit->t = t_scale * (T - adc_time_offsets[hit->sector-1]);
 		hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
 		hit->has_fADC = true;
 		hit->has_TDC  = false; // will get set to true below if appropriate
+
+		// add in higher order corrections?
 		
 		hit->AddAssociatedObject(digihit);
 		
@@ -92,8 +139,8 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		// Apply calibration constants here
 		double T = (double)digihit->time;
-		T = tdc_scale * (T - tdc_offset);
-		
+		T = tdc_scale * (T - tdc_time_offsets[digihit->sector-1]);
+
 		// Look for existing hits to see if there is a match
 		// or create new one if there is no match
 		DSCHit *hit = FindMatch(digihit->sector, T);
@@ -104,11 +151,13 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 			hit->has_fADC = false;
 
 			_data.push_back(hit);
-		}
+		}		
 		
 		hit->t = T;
 		hit->sigma_t = 0.160;    // ns (what is the SC TDC time resolution?)
 		hit->has_TDC = true;
+
+		// add in higher order corrections?
 		
 		hit->AddAssociatedObject(digihit);
 	}
@@ -153,4 +202,5 @@ jerror_t DSCHit_factory::fini(void)
 {
 	return NOERROR;
 }
+
 

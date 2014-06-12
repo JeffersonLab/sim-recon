@@ -16,17 +16,19 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		DSCHit_factory(){};
 		~DSCHit_factory(){};
 
-		// Theses are placeholders for calibration constants.
-		// In the "real" implmentation, we will probably need
-		// a map of these indexed by the spcific channel
+		// overall scale factors
 		double a_scale;
-		double a_pedestal;
-
 		double t_scale;
-		double t_offset;
-
 		double tdc_scale;
-		double tdc_offset;
+
+		// calibration constants stored by channel
+		vector<double>  a_gains;
+		vector<double>  a_pedestals;
+		vector<double>  adc_time_offsets;
+		vector<double>  tdc_time_offsets;
+
+		vector<double>  propogation_corr_factors;
+		vector<double>  attenuation_corr_factors;
 		
 		double DELTA_T_ADC_TDC_MAX;
 
@@ -38,6 +40,8 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+
 };
 
 #endif // _DSCHit_factory_
