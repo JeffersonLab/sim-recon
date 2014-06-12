@@ -666,7 +666,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dbcalhits.size(); i++) {
     if((dbcalhits[i]->E>0)&&((dbcalhits[i]->t*1000.)>tMin)&&(dbcalhits[i]->t*1000.<trigTime)) {
 
-      uint32_t E     = dbcalhits[i]->E*(1.0);  // (original already in fADC counts) (max ~2.5E4)
+      uint32_t E     = dbcalhits[i]->E*(10.0);  // (each fADC count ~ 100keV) (max ~2.5E4)
       uint32_t t     = dbcalhits[i]->t*1000.-tMin;  // in picoseconds
 
       if(noroot==0)bcalEnergies->Fill(dbcalhits[i]->E*1000.);
@@ -760,7 +760,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
       uint32_t E     = dfcalhits[i]->E*(2.5E5/4.0E1);  // E in GeV (max ~4)
       uint32_t t     = dfcalhits[i]->t*1000.-tMin;  // in picoseconds
-    
+      
       if(noroot==0)fcalEnergies->Fill(dfcalhits[i]->E*1000000.);
       if(noroot==0)fcalTimes->Fill(dfcalhits[i]->t-tMin/1000);
 
