@@ -9,6 +9,7 @@
 
 #include <string>
 #include <cmath>
+#include <iomanip>
 using namespace std;
 
 //#define HAVE_ET 0 // temporary
@@ -63,7 +64,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	MAKE_DOM_TREE = true;
 	PARSE_EVIO_EVENTS = true;
 	BUFFER_SIZE = 1000000; // in bytes
-	ET_STATION_NEVENTS = 100;
+	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = true;
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
@@ -106,9 +107,11 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 			if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as ET (network) source..." <<endl;
 			ConnectToET(source_name);
 		}
+		
+		if(!chan) throw JException("Failed to open ET system: " + this->source_name);
 
-		// open the file. Throws exception if not successful
-		if(chan)chan->open();
+		// open the channel. Throws exception if not successful
+		chan->open();
 		source_type = kETSource;
 #else
 		// No ET and the file didn't work so re-throw the exception
@@ -259,32 +262,36 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 
 	string session = fields.size()>1 ? fields[1]:"";
 	string station = fields.size()>2 ? fields[2]:"";
-	string host    = fields.size()>3 ? fields[3]:"";
-	int port       = fields.size()>4 ? atoi(fields[4].c_str()):0;
+	string host    = fields.size()>3 ? fields[3]:"localhost";
+	int port       = fields.size()>4 ? atoi(fields[4].c_str()):ET_SERVER_PORT;
 
 	if(session == "") session = "none";
 	if(station == "") station = "DANA";
+	if(host    == "") host    = "localhost";
 	string fname = session.at(0)=='/' ? session:(string("/tmp/et_sys_") + session);
 	
 	// Report to user what we're doing
 	jout << " Opening ET system:" << endl;
-	jout << "     session: " << session << endl;
+	if(session!=fname) jout << "     session: " << session << endl;
 	jout << "     station: " << station << endl;
-	jout << " system file: " << fname << endl;
-	if(host!=""){
-		jout << "        host:\""<<host<<" \"" << endl;
-		if(port !=0) jout << "        port: " << port << endl;
-	}
+	jout << " system file: " << fname   << endl;
+	jout << "        host: " << host    << endl;
+	if(port !=0) jout << "        port: " << port << endl;
 
 	// connect to the ET system
 	et_openconfig openconfig;
 	et_open_config_init(&openconfig);
 	if(host != ""){
+		et_open_config_setcast(openconfig, ET_DIRECT);
+		et_open_config_setmode(openconfig, ET_HOST_AS_LOCAL); // ET_HOST_AS_LOCAL or ET_HOST_AS_REMOTE
 		et_open_config_sethost(openconfig, host.c_str());
-		if(port != 0) et_open_config_setport(openconfig, port);
+		et_open_config_setport(openconfig, ET_BROADCAST_PORT);
+		et_open_config_setserverport(openconfig, port);
 	}
-	if(et_open(&sys_id,fname.c_str(),openconfig)!=ET_OK){
-		cout<<__FILE__<<":"<<__LINE__<<" Problem opening ET system"<<endl;
+	int err = et_open(&sys_id,fname.c_str(),openconfig);
+	if(err != ET_OK){
+		cerr << __FILE__<<":"<<__LINE__<<" Problem opening ET system"<<endl;
+		cerr << et_perror(err);
 		return;
 	}
 
@@ -296,7 +303,7 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	et_station_config_setuser(et_station_config,ET_STATION_USER_MULTI);
 	et_station_config_setrestore(et_station_config,ET_STATION_RESTORE_OUT);
 	et_station_config_setcue(et_station_config,ET_STATION_NEVENTS);
-	et_station_config_setprescale(et_station_config,0);
+	et_station_config_setprescale(et_station_config,1);
 	cout<<"ET station configured\n";
 	
 	// create station if not already created
@@ -304,6 +311,7 @@ void JEventSource_EVIO::ConnectToET(const char* source_name)
 	if((status!=ET_OK)&&(status!=ET_ERROR_EXISTS)) { 
 		et_close(sys_id);
 		cerr << "Unable to create station " << station << endl;
+		cerr << et_perror(status);
 		return;
 	}
 	if(status==ET_ERROR_EXISTS){
@@ -605,19 +613,62 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 				jerr << " Got event from ET, but pointer to data is NULL!" << endl;
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
-
+			
+			// Check byte order of event by looking at magic #
+			bool swap_needed = false;
+			uint32_t magic = et_buff[7];
+			switch(magic){
+				case 0xc0da0100:  swap_needed = false;  break;
+				case 0x0001dac0:  swap_needed = true;  break;
+				default:
+					evioout << "EVIO magic word not present!" << endl;
+					return NO_MORE_EVENTS_IN_SOURCE;
+			}
+			uint32_t len = et_buff[8];
+			if(swap_needed) len = EVIO_SWAP32(len);
+			if(VERBOSE>3){
+				evioout << "Swapping is " << (swap_needed ? "":"not ") << "needed" << endl;
+				evioout << " Num. words in EVIO buffer: "<<len<<endl;
+			}
+			
 			// Size of events in bytes
-			uint32_t bufsize_bytes = (et_buff[0] +1)*sizeof(uint32_t); // +1 is for buffer length word
+			uint32_t bufsize_bytes = (len +1)*sizeof(uint32_t); // +1 is for buffer length word
 			if(bufsize_bytes > BUFFER_SIZE){
 				jerr<<" ET event larger than our BUFFER_SIZE!!!"<<endl;
 				jerr<<" " << bufsize_bytes << " > " << BUFFER_SIZE << endl;
 				jerr<<" Will stop reading from this source now. Try restarting"<<endl;
 				jerr<<" with -PEVIO:BUFFER_SIZE=X where X is greater than "<<bufsize_bytes<<endl;
+				if(VERBOSE>3){
+					evioout << "First few words in case you are trying to debug:" << endl;
+					for(unsigned int j=0; j<3; j++){
+						char str[512];
+						for(unsigned int i=0; i<5; i++){
+							sprintf(str, " %08x", et_buff[i+j*5]);
+							evioout << str;
+						}
+						evioout << endl;
+					}
+				}
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
 
-			// Copy from EVIO internal buffer into our buffer
-			memcpy(buff, et_buff, bufsize_bytes);
+			// Copy from EVIO internal buffer into our buffer skipping
+			// network transfer header. The network transfer header is
+			// 8 words long and described in the "Event Building EVIO Scheme"
+			// document.
+//evioout << "==== Network Transport Header =====" << endl;
+//for(unsigned int j=0; j<4; j++){
+//	char str[512];
+//	for(unsigned int i=0; i<4; i++){
+//		sprintf(str, " %08x", et_buff[i+j*4]);
+//		evioout << str;
+//	}
+//	evioout << endl;
+//}
+			memcpy(buff, &et_buff[8], bufsize_bytes);
+
+			// Byte swap if needed
+			if(swap_needed) evioswap(buff, 1, NULL);
 
 			// Put ET event back since we're done with it
 			et_event_put(sys_id, att_id, pe);
