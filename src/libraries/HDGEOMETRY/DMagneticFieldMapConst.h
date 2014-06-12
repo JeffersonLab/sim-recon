@@ -25,6 +25,7 @@ class DMagneticFieldMapConst:public DMagneticFieldMap{
 	public:
 		DMagneticFieldMapConst(JApplication *japp, string namepath = "Magnets/Solenoid/solenoid_const");
 		DMagneticFieldMapConst(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_const");
+		DMagneticFieldMapConst(double Br, double Bphi, double Bz);		
 		virtual ~DMagneticFieldMapConst();
 		
 		int GetValues(string namepath, int runnumber=1, string context="");

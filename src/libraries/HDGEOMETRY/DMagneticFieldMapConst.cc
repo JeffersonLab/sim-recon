@@ -38,6 +38,18 @@ DMagneticFieldMapConst::DMagneticFieldMapConst(JCalibration *jcalib, string name
 }
 
 //---------------------------------
+// DMagneticFieldMapConst    (Constructor)
+//---------------------------------
+DMagneticFieldMapConst::DMagneticFieldMapConst(double Br, double Bphi, double Bz)
+{
+	this->jcalib = NULL;
+
+	this->Br = Br;
+	this->Bphi = Bphi;
+	this->Bz = Bz;
+}
+
+//---------------------------------
 // ~DMagneticFieldMapConst    (Destructor)
 //---------------------------------
 DMagneticFieldMapConst::~DMagneticFieldMapConst()

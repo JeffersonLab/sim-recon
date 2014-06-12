@@ -77,6 +77,9 @@ void initcalibdb_(char *bfield_type, char *bfield_map, int *runno)
 	else if(bfield_type_str=="NoField"){
 	  nofield=true;
 	}
+	else if(bfield_type_str=="Const"){
+	  Bmap = new DMagneticFieldMapConst(0.0, 0.0, 1.9);
+	}
 	else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type_str<<"\" !!"<<endl;
 		exit(-1);
