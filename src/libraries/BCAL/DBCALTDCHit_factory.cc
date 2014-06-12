@@ -15,11 +15,22 @@ using namespace std;
 #include <BCAL/DBCALTDCHit_factory.h>
 using namespace jana;
 
+#define BCAL_NUM_MODULES   48
+#define BCAL_NUM_TDC_LAYERS     3
+#define BCAL_NUM_SECTORS    4
+
+#define kMaxChannels     1152
+
+static int USE_MC_CALIB = 0;
+
 //------------------
 // init
 //------------------
 jerror_t DBCALTDCHit_factory::init(void)
 {
+        // should we use calibrations for simulated data? - this is a temporary workaround
+        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
+
 	return NOERROR;
 }
 
@@ -28,9 +39,24 @@ jerror_t DBCALTDCHit_factory::init(void)
 //------------------
 jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// Read in calibration constants (Needs to be done!)
+	/// set the base conversion scale
 	t_scale    = 0.060;    // 60 ps/count
-	t_offset   = 0;
+	//t_offset   = 0;
+
+	/// Read in calibration constants
+	vector<double> raw_time_offsets;
+
+	cout << "In DBCALTDCHit_factory, loading constants..." << endl;
+
+	if(USE_MC_CALIB>0) {
+	    if(eventLoop->GetCalib("/BCAL/TDC_offsets::mc", raw_time_offsets))
+		cout << "Error loading /BCAL/TDC_offsets !" << endl;
+	} else {
+	    if(eventLoop->GetCalib("/BCAL/TDC_offsets", raw_time_offsets))
+		cout << "Error loading /BCAL/TDC_offsets !" << endl;
+	}
+	FillCalibTable(time_offsets, raw_time_offsets);
+
 
 	return NOERROR;
 }
@@ -62,8 +88,8 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		
 		// Apply calibration constants here
 		double T = (double)digihit->time;
-		hit->t = t_scale * (T - t_offset);
-		
+		hit->t = t_scale * (T - GetConstant(time_offsets,digihit));
+	
 		hit->AddAssociatedObject(digihit);
 		
 		_data.push_back(hit);
@@ -88,3 +114,52 @@ jerror_t DBCALTDCHit_factory::fini(void)
 	return NOERROR;
 }
 
+
+//------------------
+// GetConstant
+//------------------
+double DBCALTDCHit_factory::GetConstant( map<int,cell_calib_t> &the_table, 
+					 const DBCALTDCDigiHit *the_digihit) 
+{
+    int the_cell = DBCALGeometry::cellId(the_digihit->module,
+					 the_digihit->layer,
+					 the_digihit->sector);
+
+    if(the_digihit->end == DBCALGeometry::kUpstream) {
+	// handle the upstream end
+	return the_table[the_cell].first;
+    } else {
+	// handle the downstream end
+	return the_table[the_cell].second;
+    }
+
+}
+
+
+//------------------
+// FillCalibTable
+//------------------
+void DBCALTDCHit_factory::FillCalibTable( map<int,cell_calib_t> &table, 
+					  const vector<double> &raw_table) 
+{
+    
+    int channel = 0;
+
+    table.clear();
+
+    for(int module=1; module<=BCAL_NUM_MODULES; module++) {
+	for(int layer=1; layer<=BCAL_NUM_TDC_LAYERS; layer++) {
+	    for(int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+		if( (channel < kMaxChannels) || (channel+1 < kMaxChannels) )   // sanity check
+		    return;
+		
+		int cell_id = DBCALGeometry::cellId(module,layer,sector);
+		table[cell_id] = cell_calib_t(raw_table[channel],raw_table[channel+1]);
+
+		channel += 2;
+		
+	    }
+	}
+    }
+
+}

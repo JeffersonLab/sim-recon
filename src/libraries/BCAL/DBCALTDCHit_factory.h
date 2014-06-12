@@ -11,16 +11,17 @@
 #include <JANA/JFactory.h>
 #include "DBCALTDCHit.h"
 
+typedef pair<double,double> cell_calib_t;
+
 class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 	public:
 		DBCALTDCHit_factory(){};
 		~DBCALTDCHit_factory(){};
 
-		// Theses are placeholders for calibration constants.
-		// In the "real" implmentation, we will probably need
-		// a map of these indexed by the spcific channel
+		// overall scale factors
 		double t_scale;
-		double t_offset;
+
+		map<int,cell_calib_t> time_offsets;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -28,6 +29,11 @@ class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		double GetConstant( map<int,cell_calib_t> &the_table, 
+				    const DBCALTDCDigiHit *the_digihit);
+		void FillCalibTable( map<int,cell_calib_t> &table, 
+				     const vector<double> &raw_table);
 };
 
 #endif // _DBCALTDCHit_factory_

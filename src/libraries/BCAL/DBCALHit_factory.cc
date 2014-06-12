@@ -11,15 +11,27 @@
 using namespace std;
 
 #include <BCAL/DBCALDigiHit.h>
+#include "DBCALGeometry.h"
 #include "DBCALHit_factory.h"
 #include <DAQ/Df250PulseIntegral.h>
 using namespace jana;
+
+#define BCAL_NUM_MODULES   48
+#define BCAL_NUM_LAYERS     4
+#define BCAL_NUM_SECTORS    4
+
+#define kMaxChannels     1536
+
+static int USE_MC_CALIB = 0;
 
 //------------------
 // init
 //------------------
 jerror_t DBCALHit_factory::init(void)
 {
+        // should we use calibrations for simulated data? - this is a temporary workaround
+    gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
+
 	return NOERROR;
 }
 
@@ -28,14 +40,37 @@ jerror_t DBCALHit_factory::init(void)
 //------------------
 jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// Read in calibration constants (Needs to be done!)
+	/// set the base conversion scales
 	a_scale    = 0.1;   // to get units of MeV
 	//  Crude calibration 
 	//    A minimally ionising particle deposits and integral of 230 ADC counts per cell, 
 	//    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
-	a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
+	//a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
 	t_scale    = 4.0;    // 4 ns/count
-	t_offset   = 0;
+
+	/// Read in calibration constants
+	vector<double> raw_gains;
+	vector<double> raw_pedestals;
+	vector<double> raw_time_offsets;
+
+	cout << "In DBCALHit_factory, loading constants..." << endl;
+
+	if(eventLoop->GetCalib("/BCAL/ADC_gains", raw_gains))
+	    cout << "Error loading /BCAL/ADC_gains !" << endl;
+	if(eventLoop->GetCalib("/BCAL/ADC_pedestals", raw_pedestals))
+	    cout << "Error loading /BCAL/ADC_pedestals !" << endl;
+	if(USE_MC_CALIB>0) {
+	    if(eventLoop->GetCalib("/BCAL/ADC_timing_offsets::mc", raw_time_offsets))
+		cout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
+	} else {
+	    if(eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_time_offsets))
+		cout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
+	}
+
+	FillCalibTable(gains, raw_gains);
+	FillCalibTable(pedestals, raw_pedestals);
+	FillCalibTable(time_offsets, raw_time_offsets);
+
 
 	return NOERROR;
 }
@@ -60,13 +95,16 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		const DBCALDigiHit *digihit = digihits[i];
 		
 		// Apply associated event pedestal, if it exists
-		double pedestal = a_pedestal;
+		double pedestal = GetConstant(pedestals,digihit);
+		// disabled for now due to strange MC pedestal values
+		/*
 		vector<const Df250PulseIntegral*> PIvect;
 		digihit->Get(PIvect);
 		if(!PIvect.empty()){
 		  const Df250PulseIntegral *PIobj = PIvect[0];
 		  pedestal = PIobj->pedestal;
 		}
+		*/
 
 		DBCALHit *hit = new DBCALHit;
 		hit->module = digihit->module;
@@ -77,8 +115,11 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
-		hit->E = a_scale * (A - pedestal);
-		hit->t = t_scale * (T - t_offset);
+
+		double gain = GetConstant(gains,digihit);
+
+		hit->E = a_scale * gain * (A - pedestal);
+		hit->t = t_scale * (T - GetConstant(time_offsets,digihit));
 		
 		hit->AddAssociatedObject(digihit);
 		
@@ -104,3 +145,54 @@ jerror_t DBCALHit_factory::fini(void)
 	return NOERROR;
 }
 
+//------------------
+// GetConstant
+//------------------
+double DBCALHit_factory::GetConstant( map<int,cell_calib_t> &the_table, 
+				     const DBCALDigiHit *the_digihit) 
+{
+    int the_cell = DBCALGeometry::cellId(the_digihit->module,
+					 the_digihit->layer,
+					 the_digihit->sector);
+
+    if(the_digihit->end == DBCALGeometry::kUpstream) {
+	// handle the upstream end
+	return the_table[the_cell].first;
+    } else {
+	// handle the downstream end
+	return the_table[the_cell].second;
+    }
+
+}
+
+
+//------------------
+// FillCalibTable
+//------------------
+void DBCALHit_factory::FillCalibTable( map<int,cell_calib_t> &table, 
+				       const vector<double> &raw_table) 
+{
+    
+    int channel = 0;
+    
+    cerr << "In DBCALHit_factory::FillCalibTable..." << endl;
+
+    table.clear();
+
+    for(int module=1; module<=BCAL_NUM_MODULES; module++) {
+	for(int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
+	    for(int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
+		if( (channel > kMaxChannels) || (channel+1 > kMaxChannels) )   // sanity check
+		    return;
+		
+		int cell_id = DBCALGeometry::cellId(module,layer,sector);
+		
+		table[cell_id] = cell_calib_t(raw_table[channel],raw_table[channel+1]);
+
+		channel += 2;
+		
+	    }
+	}
+    }
+
+}
