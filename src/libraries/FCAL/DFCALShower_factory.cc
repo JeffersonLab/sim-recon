@@ -22,19 +22,21 @@ using namespace jana;
 //----------------
 DFCALShower_factory::DFCALShower_factory()
 {
+    // should we use CCDB constants?
+    LOAD_CCDB_CONSTANTS = 1.;
 
 // Set of coefficients for non-linear energy corrections 
 
-  SHOWER_ENERGY_THRESHOLD = 50*k_MeV;
+    SHOWER_ENERGY_THRESHOLD = 50*k_MeV;
 
-  NON_LIN_COEF_A = 0.439287;
-  NON_LIN_COEF_B = 0.503378; 
-  NON_LIN_COEF_C = 1.80842;
-  NON_LIN_COEF_alfa = 1+0.0724789;
+    NON_LIN_COEF_A = 0.439287;
+    NON_LIN_COEF_B = 0.503378; 
+    NON_LIN_COEF_C = 1.80842;
+    NON_LIN_COEF_alfa = 1+0.0724789;
 
-  //Loose timing cut
-  SHOWER_TIMING_WINDOW = 5.0;
-
+    //Loose timing cut
+    SHOWER_TIMING_WINDOW = 5.0;
+    
 // Parameters to make shower-depth correction taken from Radphi, 
 // slightly modifed to match photon-polar angle
         FCAL_RADIATION_LENGTH = 3.1;
@@ -60,6 +62,8 @@ DFCALShower_factory::DFCALShower_factory()
 	gPARMS->SetDefaultParameter("FCAL:FCAL_CRITICAL_ENERGY", FCAL_CRITICAL_ENERGY);
 	gPARMS->SetDefaultParameter("FCAL:FCAL_SHOWER_OFFSET", FCAL_SHOWER_OFFSET);
 
+	gPARMS->SetDefaultParameter("FCAL:LOAD_NONLIN_CCDB", LOAD_CCDB_CONSTANTS);
+
 }
 
 //------------------
@@ -79,32 +83,49 @@ jerror_t DFCALShower_factory::brun(JEventLoop *loop, int runnumber)
 		loop->GetJApplication()->Quit();
         }*/
 
-  // Get calibration constants
-  FCAL_C_EFFECTIVE=15.;
-  map<string, double> fcal_parms;
-  loop->GetCalib("FCAL/fcal_parms", fcal_parms);
-  if (fcal_parms.find("FCAL_C_EFFECTIVE")!=fcal_parms.end()){
-    FCAL_C_EFFECTIVE = fcal_parms["FCAL_C_EFFECTIVE"];
-    if(debug_level>0)jout<<"FCAL_C_EFFECTIVE = "<<FCAL_C_EFFECTIVE<<endl;
-  } else {
-    jerr<<"Unable to get FCAL_C_EFFECTIVE from FCAL/fcal_parms in Calib database!"<<endl;
-  }
+    // Get calibration constants
+    FCAL_C_EFFECTIVE=15.;
+    map<string, double> fcal_parms;
+    loop->GetCalib("FCAL/fcal_parms", fcal_parms);
+    if (fcal_parms.find("FCAL_C_EFFECTIVE")!=fcal_parms.end()){
+	FCAL_C_EFFECTIVE = fcal_parms["FCAL_C_EFFECTIVE"];
+	if(debug_level>0)jout<<"FCAL_C_EFFECTIVE = "<<FCAL_C_EFFECTIVE<<endl;
+    } else {
+	jerr<<"Unable to get FCAL_C_EFFECTIVE from FCAL/fcal_parms in Calib database!"<<endl;
+    }
   
-  m_zTarget=65.0*k_cm;
-  m_FCALfront= DFCALGeometry::fcalFaceZ();
-  m_FCALback= m_FCALfront+DFCALGeometry::blockLength();
-  DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-  if (dapp) {
-    const DGeometry *geom = dapp->GetDGeometry(runnumber);
-    geom->GetTargetZ(m_zTarget);
-    geom->GetFCALZ(m_FCALfront);
+    m_zTarget=65.0*k_cm;
+    m_FCALfront= DFCALGeometry::fcalFaceZ();
+    m_FCALback= m_FCALfront+DFCALGeometry::blockLength();
+    DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+    if (dapp) {
+	const DGeometry *geom = dapp->GetDGeometry(runnumber);
+	geom->GetTargetZ(m_zTarget);
+	geom->GetFCALZ(m_FCALfront);
+	
+	vector<double>block;
+	geom->Get("//box[@name='LGBL']/@X_Y_Z",block);
+	m_FCALback=m_FCALfront+block[2];
+    }
 
-    vector<double>block;
-    geom->Get("//box[@name='LGBL']/@X_Y_Z",block);
-    m_FCALback=m_FCALfront+block[2];
-  }
-
-  return NOERROR;
+    // by default, load non-linear shower corrections from the CCDB
+    // but allow these to be overridden by command line parameters
+    if(LOAD_CCDB_CONSTANTS > 0.1) {
+	map<string, double> shower_calib;
+	loop->GetCalib("FCAL/shower_calib", shower_calib);
+	NON_LIN_COEF_A = shower_calib["FCAL_SHOWER_CALIB_A"];
+	NON_LIN_COEF_B = shower_calib["FCAL_SHOWER_CALIB_B"];
+	NON_LIN_COEF_C = shower_calib["FCAL_SHOWER_CALIB_C"];
+	NON_LIN_COEF_alfa = shower_calib["FCAL_SHOWER_CALIB_D"];
+	if(debug_level>0) {
+	    jout << "NON_LIN_COEF_A = " << NON_LIN_COEF_A << endl;
+	    jout << "NON_LIN_COEF_B = " << NON_LIN_COEF_B << endl;
+	    jout << "NON_LIN_COEF_C = " << NON_LIN_COEF_C << endl;
+	    jout << "NON_LIN_COEF_alfa = " << NON_LIN_COEF_alfa << endl;
+	}
+    }
+    
+    return NOERROR;
 }
 
 

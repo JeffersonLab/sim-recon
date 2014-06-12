@@ -28,6 +28,8 @@ class DFCALShower_factory:public JFactory<DFCALShower>{
 		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVector3 *aVertex);
 
                 double m_zTarget,m_FCALback,m_FCALfront;
+
+		double LOAD_CCDB_CONSTANTS;
 		double SHOWER_ENERGY_THRESHOLD;
 
 		double NON_LIN_COEF_A;
