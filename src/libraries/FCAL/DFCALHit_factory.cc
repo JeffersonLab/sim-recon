@@ -15,11 +15,30 @@ using namespace std;
 #include "DFCALHit_factory.h"
 using namespace jana;
 
+
+#define FCAL_MAX_CHANNELS   2800
+
+static int USE_MC_CALIB = 0;
+
 //------------------
 // init
 //------------------
 jerror_t DFCALHit_factory::init(void)
 {
+        // should we use calibrations for simulated data? - this is a temporary workaround
+        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
+
+        // initialize calibration tables
+        vector< vector<double > > new_gains(kBlocksTall, vector<double>(kBlocksWide));
+        vector< vector<double > > new_pedestals(kBlocksTall, vector<double>(kBlocksWide));
+	vector< vector<double > > new_t0s(kBlocksTall, vector<double>(kBlocksWide));
+	vector< vector<double > > new_qualities(kBlocksTall, vector<double>(kBlocksWide));
+
+	gains = new_gains;
+	pedestals = new_pedestals;
+	time_offsets = new_t0s;
+	block_qualities = new_qualities;
+    
 	return NOERROR;
 }
 
@@ -28,12 +47,43 @@ jerror_t DFCALHit_factory::init(void)
 //------------------
 jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// Read in calibration constants (Needs to be done!)
-	a_scale    = 4.0E1/2.5E5; 
-	a_pedestal = 0.0;
-	t_scale    = 4.0;    // 4 ns/count
-	t_offset   = 0;
+	// extract the FCAL Geometry
+	vector<const DFCALGeometry*> fcalGeomVect;
+	eventLoop->Get( fcalGeomVect );
+	if(fcalGeomVect.size()<1)return OBJECT_NOT_AVAILABLE;
+	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
 	
+	/// set the base conversion scales
+	a_scale    = 4.0E1/2.5E5; 
+	t_scale    = 4.0;    // 4 ns/count
+
+	/// Read in calibration constants
+	vector< double > raw_gains;
+	vector< double > raw_pedestals;
+	vector< double > raw_time_offsets;
+	vector< double > raw_block_qualities;    // we should change this to an int?
+
+	cout << "In DFCALHit_factory, loading constants..." << endl;
+
+	if(eventLoop->GetCalib("/FCAL/gains", raw_gains))
+	    cout << "Error loading /FCAL/gains !" << endl;
+	if(eventLoop->GetCalib("/FCAL/pedestals", raw_pedestals))
+	    cout << "Error loading /FCAL/pedestals !" << endl;
+	if(USE_MC_CALIB>0) {
+	    if(eventLoop->GetCalib("/FCAL/timing_offsets::mc", raw_time_offsets))
+		cout << "Error loading /FCAL/timing_offsets !" << endl;
+	} else {
+	    if(eventLoop->GetCalib("/FCAL/timing_offsets", raw_time_offsets))
+		cout << "Error loading /FCAL/timing_offsets !" << endl;
+	}
+	if(eventLoop->GetCalib("/FCAL/block_quality", raw_block_qualities))
+	    cout << "Error loading /FCAL/block_quality !" << endl;
+
+	FillCalibTable(gains, raw_gains, fcalGeom);
+	FillCalibTable(pedestals, raw_pedestals, fcalGeom);
+	FillCalibTable(time_offsets, raw_time_offsets, fcalGeom);
+	FillCalibTable(block_qualities, raw_block_qualities, fcalGeom);
+
 	return NOERROR;
 }
 
@@ -65,12 +115,17 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		DFCALHit *hit = new DFCALHit;
 		hit->row    = digihit->row;
 		hit->column = digihit->column;
-		
-		// Apply calibration constants here
+
+		// throw away hits from bad or noisy channels
+		fcal_quality_state quality = static_cast<fcal_quality_state>(block_qualities[hit->row][hit->column]);
+		if( (quality==BAD) || (quality==NOISY) ) 
+		    return NOERROR;
+
+		// Apply calibration constants
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
-		hit->E = a_scale * (A - a_pedestal);
-		hit->t = t_scale * (T - t_offset);
+		hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestals[hit->row][hit->column]);
+		hit->t = t_scale * (T - time_offsets[hit->row][hit->column]);
 
 		// Get position of blocks on front face. (This should really come from
 		// hdgeant directly so the poisitions can be shifted in mcsmear.)
@@ -103,3 +158,21 @@ jerror_t DFCALHit_factory::fini(void)
 	return NOERROR;
 }
 
+//------------------
+// FillCalibTable
+//------------------
+void DFCALHit_factory::FillCalibTable( fcal_digi_constants_t &table, 
+				       const vector<double> &raw_table, 
+				       const DFCALGeometry &fcalGeom)
+{
+    for(int channel=0; channel<static_cast<int>(raw_table.size()); channel++) {
+	// make sure that we don't try to load info for channels that don't exist
+	if(channel == FCAL_MAX_CHANNELS) break;
+	
+	int row = fcalGeom.row(channel);
+	int col = fcalGeom.column(channel);
+
+	table[row][col] = raw_table[channel];
+    }
+    
+}
