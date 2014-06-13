@@ -27,9 +27,11 @@ using std::set;
 #include <JANA/JStreamLog.h>
 using namespace jana;
 
+#ifdef HAVE_EVIO
 #include <evioChannel.hxx>
 #include <evioUtil.hxx>
 using namespace evio;
+#endif // HAVE_EVIO
 
 #ifdef HAVE_ET
 #include <evioETChannel.hxx>
@@ -124,13 +126,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		           virtual ~JEventSource_EVIO();
 		virtual const char* className(void){return static_className();}
 		 static const char* static_className(void){return "JEventSource_EVIO";}
-		
-                    void ReadOptionalModuleTypeTranslation(void);
-		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
-             inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
-     inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
-          EVIOSourceType GetEVIOSourceType(void){ return source_type; }
-		
+
 		          jerror_t GetEvent(jana::JEvent &event);
 		              void FreeEvent(jana::JEvent &event);
 				    jerror_t GetObjects(jana::JEvent &event, jana::JFactory_base *factory);
@@ -138,6 +134,13 @@ class JEventSource_EVIO: public jana::JEventSource{
                     bool quit_on_next_ET_timeout;
 
 	
+#ifdef HAVE_EVIO		
+                    void ReadOptionalModuleTypeTranslation(void);
+		  virtual jerror_t ReadEVIOEvent(uint32_t* &buf);
+             inline void GetEVIOBuffer(jana::JEvent &jevent, uint32_t* &buff, uint32_t &size) const;
+     inline evioDOMTree* GetEVIODOMTree(jana::JEvent &jevent) const;
+          EVIOSourceType GetEVIOSourceType(void){ return source_type; }
+
 	protected:
 	
 		void ConnectToET(const char* source_name);
@@ -243,12 +246,18 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
+#endif // HAVE_EVIO		
+
 #ifdef HAVE_ET
 		et_sys_id sys_id;
 		et_att_id att_id;
 		et_stat_id sta_id;
 #endif
 };
+
+
+#ifdef HAVE_EVIO		
+
 
 //======================================================================================
 // Some of the following methods are inlined so that
@@ -454,6 +463,9 @@ void LinkAssociationsModuleOnly(vector<T*> &a, vector<U*> &b)
 		}
 	}
 }
+
+#endif // HAVE_EVIO		
+
 
 #endif // _JEventSourceGenerator_DAQ_
 

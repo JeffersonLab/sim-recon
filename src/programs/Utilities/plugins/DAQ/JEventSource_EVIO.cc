@@ -14,8 +14,9 @@ using namespace std;
 
 //#define HAVE_ET 0 // temporary
 
-
+#ifdef HAVE_EVIO		
 #include <evioFileChannel.hxx>
+#endif // HAVE_EVIO
 
 #ifdef HAVE_ET
 #include <evioETChannel.hxx>
@@ -42,6 +43,26 @@ extern "C"{
 	}
 } // "C"
 
+
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+// If EVIO support is not available, define dummy methods
+#ifndef HAVE_EVIO
+JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(source_name){
+	cerr << endl;
+	cerr << "You are trying to use code requiring EVIO when support" << endl;
+	cerr << "for EVIO was not built into this binary. Set your" << endl;
+	cerr << "EVIOROOT *and* your ETROOT environment variables to" << endl;
+	cerr << "point to your EVIO installation and recompile." << endl;
+	cerr << endl;
+	exit(-1);
+}
+         JEventSource_EVIO::~JEventSource_EVIO(){}
+jerror_t JEventSource_EVIO::GetEvent(jana::JEvent &event){return NOERROR;}
+    void JEventSource_EVIO::FreeEvent(jana::JEvent &event){}
+jerror_t JEventSource_EVIO::GetObjects(jana::JEvent &event, jana::JFactory_base *factory){return NOERROR;}
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+#else  // HAVE_EVIO
 
 //----------------
 // Constructor
@@ -113,11 +134,13 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		// open the channel. Throws exception if not successful
 		chan->open();
 		source_type = kETSource;
-#else
+
+#else  // HAVE_ET
+
 		// No ET and the file didn't work so re-throw the exception
 		throw e;
 
-#endif
+#endif  // HAVE_ET
 	}
 	if(VERBOSE>0) evioout << "Success opening event source \"" << this->source_name << "\"!" <<endl;
 	
@@ -155,7 +178,7 @@ JEventSource_EVIO::~JEventSource_EVIO()
 {
 	// close event source here
 	if(chan){
-		if(VERBOSE>0) evioout << "CLosing event source \"" << this->source_name << "\"" <<endl;
+		if(VERBOSE>0) evioout << "Closing event source \"" << this->source_name << "\"" <<endl;
 		chan->close();
 		delete chan;
 	}
@@ -483,7 +506,7 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	/// processor thread (or which there may be many). Since
 	/// the DOM tree creating and data parsing represent the
 	/// larger time cost of getting the event into memory,
-	/// siginificant a performance increase can be gained 
+	/// a siginificant performance increase can be gained 
 	/// using this slightly more complicated method.
 
 	// Double check that we're not re-parsing an event
@@ -624,13 +647,13 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 					evioout << "EVIO magic word not present!" << endl;
 					return NO_MORE_EVENTS_IN_SOURCE;
 			}
-			uint32_t len = et_buff[8];
+			uint32_t len = et_buff[0];
 			if(swap_needed) len = EVIO_SWAP32(len);
 			if(VERBOSE>3){
 				evioout << "Swapping is " << (swap_needed ? "":"not ") << "needed" << endl;
 				evioout << " Num. words in EVIO buffer: "<<len<<endl;
 			}
-			
+
 			// Size of events in bytes
 			uint32_t bufsize_bytes = (len +1)*sizeof(uint32_t); // +1 is for buffer length word
 			if(bufsize_bytes > BUFFER_SIZE){
@@ -651,27 +674,15 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 				}
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
-
-			// Copy from EVIO internal buffer into our buffer skipping
-			// network transfer header. The network transfer header is
-			// 8 words long and described in the "Event Building EVIO Scheme"
-			// document.
-//evioout << "==== Network Transport Header =====" << endl;
-//for(unsigned int j=0; j<4; j++){
-//	char str[512];
-//	for(unsigned int i=0; i<4; i++){
-//		sprintf(str, " %08x", et_buff[i+j*4]);
-//		evioout << str;
-//	}
-//	evioout << endl;
-//}
-			memcpy(buff, &et_buff[8], bufsize_bytes);
-
-			// Byte swap if needed
-			if(swap_needed) evioswap(buff, 1, NULL);
+			
+			// Copy event into "buff", byte swapping if needed
+			evioswap(et_buff, swap_needed ? 1:0, buff);
 
 			// Put ET event back since we're done with it
 			et_event_put(sys_id, att_id, pe);
+			
+			// At this point we have a byte-swapped ET event which may contain
+			// many DAQ events. 
 
 #else    // HAVE_ET
 
@@ -2034,6 +2045,7 @@ void JEventSource_EVIO::DumpBinary(const uint32_t *iptr, const uint32_t *iend, u
 	}
 }
 
+#endif // HAVE_EVIO
 
 #if 0
 //----------------
