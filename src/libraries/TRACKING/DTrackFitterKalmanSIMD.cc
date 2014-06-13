@@ -5328,7 +5328,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
 
   double ztest=endplate_z;
   if (my_fdchits.size()>0){ 
-    ztest =my_fdchits[0]->z;
+    ztest =my_fdchits[0]->z-1.;
   }  
   if (z<ztest)
     {
@@ -5430,7 +5430,7 @@ jerror_t DTrackFitterKalmanSIMD::ExtrapolateToVertex(DMatrix5x1 &S,
   }
 
   double r2=r2_old;
-  while (z>Z_MIN && r2<R2_MAX && z<Z_MAX && r2>EPS){   
+  while (z>Z_MIN && r2<R2_MAX && z<ztest && r2>EPS){   
     // Bail if the momentum has dropped below some minimum
     if (fabs(S(state_q_over_p))>Q_OVER_P_MAX){
       if (DEBUG_LEVEL>2)
@@ -6778,7 +6778,8 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
     }
 
     // Scale cut for pruning hits according to the iteration number
-    if (fit_type==kTimeBased){   
+    //if (fit_type==kTimeBased)
+      {   
       anneal_factor=anneal_scale/pow(my_anneal_const,iter2)+1.;
     }
  
@@ -6826,7 +6827,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 	  //_DBG_ << "Prune" << endl;
 	  unsigned int half_index=max_cdc_index/2;
 	  break_point_cdc_index=(half_index>min_cdc_index_for_refit)?half_index:min_cdc_index_for_refit;
-	  anneal_factor*=10.;
+	  // anneal_factor*=10.;
 	}
 
 	kalman_error_t refit_error=RecoverBrokenTracks(anneal_factor,S,C,C0,chisq,my_ndf);    
@@ -7027,7 +7028,8 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
     ftime=0.;
     
     // Scale cut for pruning hits according to the iteration number
-    if (fit_type==kTimeBased){
+    //if (fit_type==kTimeBased)
+      {
       anneal_factor=ANNEAL_SCALE/pow(my_anneal_const,iter2)+1.;
     }
 
@@ -7067,7 +7069,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
 	if (error==PRUNED_TOO_MANY_HITS){	 
 	  unsigned int half_index=max_cdc_index/2;
 	  break_point_cdc_index=(half_index>min_cdc_index_for_refit)?half_index:min_cdc_index_for_refit;
-	  anneal_factor*=10.;
+	  //anneal_factor*=10.;
 	  //_DBG_ << "Prune" << endl;	  
 	}
 	
