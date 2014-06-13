@@ -224,7 +224,7 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   gPARMS->SetDefaultParameter("KALMAN:NUM_FDC_SIGMA_CUT",NUM_FDC_SIGMA_CUT,
 			      "maximum distance in number of sigmas away from projection to accept fdc hit"); 
 
-  ANNEAL_SCALE=2.5;
+  ANNEAL_SCALE=1.5;
   ANNEAL_POW_CONST=20.0;
   gPARMS->SetDefaultParameter("KALMAN:ANNEAL_SCALE",ANNEAL_SCALE,
 			      "Scale factor for annealing");
@@ -2799,7 +2799,8 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
   }
   else {
     dpt_over_pt=0.0288+0.00579*theta_deg-2.77e-5*theta_deg_sq;
-  } 
+  }
+  /* 
   if (theta_deg<28.){
     theta_deg=28.;
     theta_deg_sq=theta_deg*theta_deg;
@@ -2808,7 +2809,14 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     theta_deg=125.;
     theta_deg_sq=theta_deg*theta_deg;
   }
-  double sig_lambda=-0.0479+0.00253*theta_deg-1.423e-5*theta_deg_sq;
+  */
+  double sig_lambda=0.006;
+  if (theta_deg>30.){
+    sig_lambda=-0.077+0.0038*theta_deg-1.98e-5*theta_deg_sq;
+  }
+  else if (theta_deg>14.){
+    sig_lambda=-0.138+0.0155*theta_deg-0.00034*theta_deg_sq;
+  }
   double dp_over_p_sq
     =dpt_over_pt*dpt_over_pt+tanl_*tanl_*sig_lambda*sig_lambda;
 
@@ -2869,15 +2877,20 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
 
     // Initial guess for forward representation covariance matrix   
     C0(state_x,state_x)=1.0;
-    C0(state_y,state_y)=1.0; 
+    C0(state_y,state_y)=1.0;  
     C0(state_tx,state_tx)=0.001;
     C0(state_ty,state_ty)=0.001;
+    if (theta_deg>12.35){
+      double tsquare=tx_*tx_+ty_*ty_;
+      double temp=sig_lambda*(1.+tsquare);
+      C0(state_tx,state_tx)=C0(state_ty,state_ty)=temp*temp;
+    }
     C0(state_q_over_p,state_q_over_p)=dp_over_p_sq*q_over_p_*q_over_p_;
-    
+
     // The position from the track candidate is reported just outside the 
     // start counter for tracks containing cdc hits. Propagate to the distance
     // of closest approach to the beam line
-    if (/*my_cdchits.size()>0 && */fit_type==kWireBased) ExtrapolateToVertex(S0);
+    if (fit_type==kWireBased) ExtrapolateToVertex(S0);
 
     kalman_error_t error=ForwardFit(S0,C0); 
     if (error!=FIT_FAILED){
@@ -3003,8 +3016,7 @@ jerror_t DTrackFitterKalmanSIMD::KalmanLoop(void){
     C0(state_z,state_z)=dz*dz;
     C0(state_q_over_pt,state_q_over_pt)
       =q_over_pt_*q_over_pt_*dpt_over_pt*dpt_over_pt;
-    double dphi=0.017;
-    if (theta_deg<30) dphi=0.045-0.00091*theta_deg;
+    double dphi=0.024;
     C0(state_phi,state_phi)=dphi*dphi;
     C0(state_D,state_D)=1.0;
     double tanl2=tanl_*tanl_;
@@ -5086,7 +5098,7 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	//if (sqrt(chi2check)>NUM_CDC_SIGMA_CUT) InvV*=0.8;
        	if (chi2check<chi2cut)
 {	  
-  /*
+  
 	  if (chi2check>var_cut){
 	    // Give hits that satisfy the wide cut but are still pretty far
 	    // from the projected position less weight
@@ -5094,10 +5106,10 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	    
 	    // ad hoc correction 
 	    double diff = chi2check-var_cut;    
-	    V*=1.+my_anneal*diff;
+	    V*=1.+my_anneal*diff*diff;
 	    InvV=1./(V+Vproj);
 	  }
-  */
+  
 	  
 	  // Compute KalmanSIMD gain matrix
 	  K=InvV*(C*H_T);
@@ -6733,13 +6745,14 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
 
   double anneal_scale=ANNEAL_SCALE; // variable for scaling cut for hit pruning
   double my_anneal_const=ANNEAL_POW_CONST;
-   
-  double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
-  double tanl=1./sqrt(tsquare);
-  if (tanl>2.5){
-    anneal_scale=FORWARD_ANNEAL_SCALE;
-    my_anneal_const=FORWARD_ANNEAL_POW_CONST;
-  }
+  /* 
+     double tsquare=S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty);
+     double tanl=1./sqrt(tsquare);
+     if (tanl>2.5){
+     anneal_scale=FORWARD_ANNEAL_SCALE;
+     my_anneal_const=FORWARD_ANNEAL_POW_CONST;
+     }
+  */
   double anneal_factor=anneal_scale+1.;
   /*
   if (fit_type==kTimeBased && fabs(1./S(state_q_over_p))<1.0 
@@ -6778,7 +6791,7 @@ kalman_error_t DTrackFitterKalmanSIMD::ForwardCDCFit(const DMatrix5x1 &S0,const 
     }
 
     // Scale cut for pruning hits according to the iteration number
-    //if (fit_type==kTimeBased)
+    if (fit_type==kTimeBased)
       {   
       anneal_factor=anneal_scale/pow(my_anneal_const,iter2)+1.;
     }
@@ -7028,7 +7041,7 @@ kalman_error_t DTrackFitterKalmanSIMD::CentralFit(const DVector2 &startpos,
     ftime=0.;
     
     // Scale cut for pruning hits according to the iteration number
-    //if (fit_type==kTimeBased)
+    if (fit_type==kTimeBased)
       {
       anneal_factor=ANNEAL_SCALE/pow(my_anneal_const,iter2)+1.;
     }
