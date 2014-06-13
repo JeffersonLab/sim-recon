@@ -8,7 +8,6 @@ env = env.Clone()
 
 sbms.AddDANA(env)
 env.AppendUnique(LIBS=['expat'])
-sbms.AddROOT(env)
 sbms.plugin(env)
 
 
