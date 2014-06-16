@@ -304,8 +304,9 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		      vector<const DFDCPseudo*>&hits);
 
   unsigned int locate(vector<double>&xx,double x);
-  double cdc_variance(double t);
+  double cdc_variance(double t); 
   double cdc_drift_distance(double t);
+  double fdc_drift_distance(double t);
   double FindDoca(double z,const DMatrix4x1 &S,const DVector3 &vhat,
 		  const DVector3 &origin);
 
@@ -347,7 +348,6 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 
   double mT0;
   double target_to_fcal_distance;
-  double fdc_drift_table[140];
   DMatrix4x1 Zero4x1;
   DMatrix4x4 Zero4x4;
 
@@ -361,8 +361,9 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE,USE_BCAL,ALIGN_WIRE_PLANES;
   bool  FILL_TREE;
 
-  // drift time table
+  // drift time tables
   vector<double>cdc_drift_table;
+  vector<double>fdc_drift_table;
   
   // Resolution parameters
   double CDC_RES_PAR1,CDC_RES_PAR2;

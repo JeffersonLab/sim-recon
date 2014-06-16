@@ -69,6 +69,21 @@ double DEventProcessor_dc_alignment::cdc_drift_distance(double t){
 }
 
 
+// Interpolate on a table to convert time to distance for the fdc
+double DEventProcessor_dc_alignment::fdc_drift_distance(double t){
+  double d=0.;
+  if (t>0){
+    unsigned int index=0;
+    index=locate(fdc_drift_table,t);
+    double dt=fdc_drift_table[index+1]-fdc_drift_table[index];
+    double frac=(t-fdc_drift_table[index])/dt;
+    d=0.01*(double(index)+frac); 
+  }
+  return d;
+}
+
+
+
 //------------------
 // DEventProcessor_dc_alignment (Constructor)
 //------------------
@@ -225,7 +240,17 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
 
-
+  if (jcalib->Get("FDC/fdc_drift_table", tvals)==false){    
+    for(unsigned int i=0; i<tvals.size(); i++){
+      map<string, double> &row = tvals[i];
+      iter_double iter = row.find("t");
+      fdc_drift_table.push_back(1000.*iter->second);
+    }
+  }
+  else{
+    jerr << " FDC time-to-distance table not available... bailing..." << endl;
+    exit(0);
+  }
 
   dapp->Lock();
     
@@ -493,6 +518,7 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
     if (intersections.size()>4 && intersections.size()<25
 	&&((fcalshowers.size()>0&&fcalshowers.size()<3)
 	   || (bcalshowers.size()>0&&bcalshowers.size()<3))){
+
       // Group FDC hits by package
       vector<const DFDCIntersection*>packages[4];
       for (unsigned int i=0;i<intersections.size();i++){
@@ -921,7 +947,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   int NEVENTS=75000;
   double anneal_factor=pow(1000.,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
-  //anneal_factor=1.;
+  //  anneal_factor=1.;
   //anneal_factor=1e3;
 
   // Best guess for state vector at "vertex"
@@ -978,6 +1004,8 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
      
 	Hres_vs_layer->Fill(layer,smoothed_updates[i].ures);
 	if (prob>0.1&&layer==smoothed_updates.size()/2){
+	  Hdrift_time->Fill(smoothed_updates[i].drift_time,
+			    smoothed_updates[i].doca);
 	  Hres_vs_drift_time->Fill(smoothed_updates[i].drift_time,
 				   smoothed_updates[i].ures);
 	 
@@ -2426,12 +2454,13 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	if (USE_DRIFT_TIMES){
 	  drift=0.;
 	  if (drift_time>0){
-	    drift=fdc_drift_parms(0)+fdc_drift_parms(1)*drift_time
-	      +fdc_drift_parms(2)*sqrt(drift_time);
+	    drift=fdc_drift_distance(drift_time);
+
 	    V=0.0004+0.020433*(anneal_factor/1000.);
 	  }
 	}
 	Mdiff=sign*drift-d;
+	updates[my_id].drift=drift;
 	
 	// Matrix for transforming from state-vector space to measurement space
 	double sinalpha_cosalpha=sinalpha*cosalpha;
