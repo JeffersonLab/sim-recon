@@ -175,8 +175,6 @@ void DBCALHit_factory::FillCalibTable( map<int,cell_calib_t> &table,
     
     int channel = 0;
     
-    cerr << "In DBCALHit_factory::FillCalibTable..." << endl;
-
     table.clear();
 
     for(int module=1; module<=BCAL_NUM_MODULES; module++) {
