@@ -9,12 +9,19 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <vector>
 using namespace std;
 
 #include <TOF/DTOFDigiHit.h>
 #include <TOF/DTOFTDCDigiHit.h>
 #include "DTOFHit_factory.h"
 using namespace jana;
+
+#define TOF_MAX_CHANNELS 176
+#define TOF_NUM_PLANES   2 
+#define TOF_NUM_BARS    44
+
+static int USE_MC_CALIB = 0;
 
 //------------------
 // init
@@ -24,6 +31,9 @@ jerror_t DTOFHit_factory::init(void)
 	DELTA_T_ADC_TDC_MAX = 4.0; // ns
 	gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
 
+        // should we use calibrations for simulated data? - this is a temporary workaround
+        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
+
 	return NOERROR;
 }
 
@@ -32,14 +42,50 @@ jerror_t DTOFHit_factory::init(void)
 //------------------
 jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// Read in calibration constants (Needs to be done!)
+    /*
+        // read in geometry information
+        vector<const DTOFGeometry*> tofGeomVect;
+	eventLoop->Get( tofGeomVect );
+	if(tofGeomVect.size()<1)  return OBJECT_NOT_AVAILABLE;
+	const DTOFGeometry& tofGeom = *(tofGeomVect[0]);
+    */
+	/// Set basic conversion constants
 	a_scale    = 0.2/5.2E5;
-	a_pedestal = 0.0;
 	t_scale    = 4.0;    // 4 ns/count
-	t_offset   = 0;
-
 	tdc_scale    = 0.060;    // 60 ps/count
-	tdc_offset   = 0;
+
+        /// Read in calibration constants
+        vector<double> raw_adc_pedestals;
+        vector<double> raw_adc_gains;
+        vector<double> raw_adc_offsets;
+        vector<double> raw_tdc_offsets;
+        vector<double> raw_tdc_scales;
+
+        jout << "In DTOFHit_factory, loading constants..." << endl;
+
+        if(eventLoop->GetCalib("TOF/pedestals", raw_adc_pedestals))
+	    jout << "Error loading /TOF/pedestals !" << endl;
+        if(eventLoop->GetCalib("TOF/gains", raw_adc_gains))
+	    jout << "Error loading /TOF/gains !" << endl;
+	if(eventLoop->GetCalib("TOF/timing_scales", raw_tdc_scales))
+	    jout << "Error loading /TOF/timing_scales !" << endl;
+	if(USE_MC_CALIB>0) {
+	    if(eventLoop->GetCalib("TOF/adc_timing_offsets::mc", raw_adc_offsets))
+		jout << "Error loading /TOF/adc_timing_offsets !" << endl;
+	    if(eventLoop->GetCalib("TOF/timing_offsets::mc", raw_tdc_offsets))
+		jout << "Error loading /TOF/timing_offsets !" << endl;
+	} else {
+	    if(eventLoop->GetCalib("TOF/adc_timing_offsets", raw_adc_offsets))
+		jout << "Error loading /TOF/adc_timing_offsets !" << endl;
+	    if(eventLoop->GetCalib("TOF/timing_offsets", raw_tdc_offsets))
+		jout << "Error loading /TOF/timing_offsets !" << endl;
+	}
+
+        FillCalibTable(adc_pedestals, raw_adc_pedestals);
+        FillCalibTable(adc_gains, raw_adc_gains);
+        FillCalibTable(adc_time_offsets, raw_adc_offsets);
+        FillCalibTable(tdc_time_offsets, raw_tdc_offsets);
+        FillCalibTable(tdc_scales, raw_tdc_scales);
 
 	return NOERROR;
 }
@@ -49,7 +95,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 //------------------
 jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-	/// Generate DTOFHit object for each DSCDigiHit object.
+	/// Generate DTOFHit object for each DTOFDigiHit object.
 	/// This is where the first set of calibration constants
 	/// is applied to convert from digitzed units into natural
 	/// units.
@@ -72,8 +118,9 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
-		hit->dE = a_scale * (A - a_pedestal);
-		hit->t = t_scale * (T - t_offset);
+		// TOF constants temporarily disabled
+		hit->dE = a_scale * (A - GetConstant(adc_pedestals, digihit));
+		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit));
 		hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
 		hit->has_fADC = true;
 		hit->has_TDC  = false; // will get set to true below if appropriate
@@ -94,11 +141,16 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		// Apply calibration constants here
 		double T = (double)digihit->time;
-		T = tdc_scale * (T - tdc_offset);
+		// TOF constants temporarily disabled
+		T = GetConstant(tdc_scales , digihit)
+		    * (T - GetConstant(tdc_time_offsets, digihit));
+		T = t_scale * T;
+
+		// add in timewalk corrections here
 		
 		// Look for existing hits to see if there is a match
 		// or create new one if there is no match
-		DTOFHit *hit = FindMatch(digihit->plane, hit->bar, hit->end, T);
+		DTOFHit *hit = FindMatch(digihit->plane, hit->bar, hit->end, T);  
 		if(!hit){
 			hit = new DTOFHit;
 			hit->plane = digihit->plane;
@@ -111,7 +163,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		}
 		
 		hit->t = T;
-		hit->sigma_t = 0.160;    // ns (what is the SC TDC time resolution?)
+		hit->sigma_t = 0.160;    // ns (what is the TOF TDC time resolution?)
 		hit->has_TDC = true;
 		
 		hit->AddAssociatedObject(digihit);
@@ -160,3 +212,57 @@ jerror_t DTOFHit_factory::fini(void)
 	return NOERROR;
 }
 
+
+//------------------
+// GetConstant
+//------------------
+double DTOFHit_factory::GetConstant( tof_digi_constants_t &the_table, 
+				     const DTOFDigiHit *the_digihit) 
+{
+    // we have two ends, indexed as 0/1
+    if(the_digihit->end == 0) {
+	return the_table[the_digihit->plane][the_digihit->bar].first;
+    } else {
+	return the_table[the_digihit->plane][the_digihit->bar].second;
+    }
+
+}
+
+//------------------
+// GetConstant
+//------------------
+double DTOFHit_factory::GetConstant( tof_digi_constants_t &the_table, 
+				     const DTOFTDCDigiHit *the_digihit) 
+{
+    // we have two ends, indexed as 0/1
+    if(the_digihit->end == 0) {
+	return the_table[the_digihit->plane][the_digihit->bar].first;
+    } else {
+	return the_table[the_digihit->plane][the_digihit->bar].second;
+    }
+
+}
+
+
+//------------------
+// FillCalibTable
+//------------------
+void DTOFHit_factory::FillCalibTable(tof_digi_constants_t &table, vector<double> &raw_table)
+{
+    int channel = 0;
+
+    table.clear();
+
+    for(int plane=0; plane<TOF_NUM_PLANES; plane++) {
+	table.push_back( vector< pair<double,double> >(TOF_NUM_BARS) );
+	for(int bar=0; bar<TOF_NUM_BARS; bar++) {
+	    if( (channel > TOF_MAX_CHANNELS) || (channel+1 > TOF_MAX_CHANNELS) )   // sanity check
+		return;
+
+	    table[plane][bar] = pair<double,double>(raw_table[channel],raw_table[channel+1]);
+	    
+	    channel += 2;
+	    
+	}
+    }
+}

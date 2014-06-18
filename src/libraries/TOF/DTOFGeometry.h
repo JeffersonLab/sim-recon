@@ -12,8 +12,9 @@
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
+using namespace jana;
 
-class DTOFGeometry:public JObject{
+class DTOFGeometry : public JObject {
 
  public:
   JOBJECT_PUBLIC(DTOFGeometry);
@@ -33,6 +34,8 @@ class DTOFGeometry:public JObject{
   float CenterHPlane;  /// center z position of Horizontal Plane
   float CenterMPlane;  /// center z position between the two Plane
 
+  int NLAYERS;         /// number of scintillator layers
+  int NENDS;           /// maximum number of ends that are read out (should be 2!)
 
   float bar2y(int bar, int end=0)  const ///> convert bar number to the
   ///> position of the center of the
