@@ -10,6 +10,7 @@
 #include "HDGEOMETRY/DGeometry.h"
 
 #define FDC_NUM_LAYERS			24
+#define FDC_NUM_PLANES                  72
 #define FDC_ACTIVE_RADIUS		48.5
 
 //----- These were cut from HDGeant/hitFDC.c -----

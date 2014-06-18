@@ -16,12 +16,18 @@ using namespace std;
 #include "DFDCHit_factory.h"
 using namespace jana;
 
+
+static int USE_MC_CALIB = 0;
+
 //------------------
 // init
 //------------------
 jerror_t DFDCHit_factory::init(void)
 {
-	return NOERROR;
+        // should we use calibrations for simulated data? - this is a temporary workaround
+        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
+
+  	return NOERROR;
 }
 
 //------------------
@@ -29,14 +35,24 @@ jerror_t DFDCHit_factory::init(void)
 //------------------
 jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// Read in calibration constants (Needs to be done!)
+	/// set the base conversion scales
 	a_scale      = 2.4E4/1.3E5;  // cathodes
-	a_pedestal   = 0.0;
-	t_scale      = 8.0;     // 8 ns/count
-	t_offset     = 0;
+	t_scale      = 8.0;          // 8 ns/count
+	tdc_scale    = 0.115;        // 115 ps/count
 
-	tdc_scale    = 0.115; // 115 ps/count
-	tdc_offset   = 0;
+	// reset constants
+	a_gains.clear();
+	a_pedestals.clear();
+	timing_offsets.clear();
+
+	// now load them all
+	cout << "In DFDCHit_factory, loading constants..." << endl;
+
+	// each FDC package has the same set of constants
+	LoadPackageCalibTables(eventLoop,"/FDC/package1");
+	LoadPackageCalibTables(eventLoop,"/FDC/package2");
+	LoadPackageCalibTables(eventLoop,"/FDC/package3");
+	LoadPackageCalibTables(eventLoop,"/FDC/package4");
 
 	return NOERROR;
 }
@@ -96,8 +112,15 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
-		hit->q = a_scale * (A - a_pedestal);
-		hit->t = t_scale * (T - t_offset);
+		hit->q = a_scale * A;
+		hit->t = t_scale * T;
+
+		hit->q = a_scale * a_gains[hit->gPlane-1][hit->element-1] 
+		    * (A - a_pedestals[hit->gPlane-1][hit->element-1] );
+		hit->t = t_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]);
+		//hit->t = t_scale * (T - adc_timing_offsets[hit->gPlane][hit->element]);
+		
+		//cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;
 		
 		hit->AddAssociatedObject(digihit);
 		
@@ -142,7 +165,8 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		// Apply calibration constants here
 		double T = (double)digihit->time;
-		T = tdc_scale * (T - tdc_offset);
+		T = tdc_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]);
+		//T = tdc_scale * T;
 		hit->q = 0.0; // no charge measured for wires in FDC
 		hit->t = T;
 		
@@ -168,5 +192,49 @@ jerror_t DFDCHit_factory::erun(void)
 jerror_t DFDCHit_factory::fini(void)
 {
 	return NOERROR;
+}
+
+
+//------------------
+// LoadPackageCalibTables
+//------------------
+void DFDCHit_factory::LoadPackageCalibTables(jana::JEventLoop *eventLoop, string ccdb_prefix)
+{
+    vector< vector<double> >  new_gains, new_pedestals, new_strip_t0s, new_wire_t0s;
+    
+    if(eventLoop->GetCalib(ccdb_prefix+"/strip_gains", new_gains))
+	cout << "Error loading "+ccdb_prefix+"/strip_gains !" << endl;
+    if(eventLoop->GetCalib(ccdb_prefix+"/strip_pedestals", new_pedestals))
+	cout << "Error loading "+ccdb_prefix+"/strip_pedestals !" << endl;
+    if(USE_MC_CALIB>0) {
+	if(eventLoop->GetCalib(ccdb_prefix+"/strip_timing_offsets::mc", new_strip_t0s))
+	    cout << "Error loading "+ccdb_prefix+"/strip_timing_offsets!" << endl;
+	if(eventLoop->GetCalib(ccdb_prefix+"/wire_timing_offsets::mc", new_wire_t0s))
+	    cout << "Error loading "+ccdb_prefix+"/wire_timing_offsets!" << endl;
+    } else {
+	if(eventLoop->GetCalib(ccdb_prefix+"/strip_timing_offsets", new_strip_t0s))
+	    cout << "Error loading "+ccdb_prefix+"/strip_timing_offsets!" << endl;
+	if(eventLoop->GetCalib(ccdb_prefix+"/wire_timing_offsets", new_wire_t0s))
+	    cout << "Error loading "+ccdb_prefix+"/wire_timing_offsets!" << endl;
+    }
+
+    for(int nchamber=0; nchamber<6; nchamber++) {
+
+	// load ADC gains (only for cathode strips)
+	a_gains.push_back( new_gains[2*nchamber] );
+	a_gains.push_back( vector<double>() );
+	a_gains.push_back( new_gains[2*nchamber+1] );
+
+	// load ADC pedestals (only for cathode strips)
+	a_pedestals.push_back( new_pedestals[2*nchamber] );
+	a_pedestals.push_back( vector<double>() );
+	a_pedestals.push_back( new_pedestals[2*nchamber+1] );
+
+	// load t0's for strips and wires
+	timing_offsets.push_back( new_strip_t0s[2*nchamber] );
+	timing_offsets.push_back( new_wire_t0s[nchamber] );
+	timing_offsets.push_back( new_strip_t0s[2*nchamber+1] );
+	
+    }
 }
 

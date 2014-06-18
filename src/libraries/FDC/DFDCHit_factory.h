@@ -8,6 +8,9 @@
 #ifndef _DFDCHit_factory_
 #define _DFDCHit_factory_
 
+#include <vector>
+using namespace std;
+
 #include <JANA/JFactory.h>
 #include "DFDCHit.h"
 
@@ -16,17 +19,15 @@ class DFDCHit_factory:public jana::JFactory<DFDCHit>{
 		DFDCHit_factory(){};
 		~DFDCHit_factory(){};
 
-		// Theses are placeholders for calibration constants.
-		// In the "real" implmentation, we will probably need
-		// a map of these indexed by the spcific channel
+		// overall scale factors
 		double a_scale;
-		double a_pedestal;
-
 		double t_scale;
-		double t_offset;
-
 		double tdc_scale;
-		double tdc_offset;
+
+		// 
+		vector< vector<double> > a_gains;
+		vector< vector<double> > a_pedestals;
+		vector< vector<double> > timing_offsets;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
@@ -34,6 +35,8 @@ class DFDCHit_factory:public jana::JFactory<DFDCHit>{
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		void LoadPackageCalibTables(jana::JEventLoop *eventLoop, string ccdb_prefix);
 };
 
 #endif // _DFDCHit_factory_

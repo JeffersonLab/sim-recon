@@ -55,7 +55,7 @@ bool DFDCHit_time_cmp(const DFDCHit* a, const DFDCHit* b) {
 /// by their gPlane (plane number over all modules, 1-74) attributes.
 ///
 bool DFDCCathodeCluster_gPlane_cmp(	const DFDCCathodeCluster* a, 
-									const DFDCCathodeCluster* b) {
+					const DFDCCathodeCluster* b) {
 	return a->gPlane < b->gPlane;
 }
 

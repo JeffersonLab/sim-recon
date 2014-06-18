@@ -9,26 +9,30 @@
 #include <cmath>
 using namespace std;
 
-#define HALF_CELL 0.5
-#define MAX_DEFLECTION 0.15
+// some of these aren't being used anymore, so I've commented them out - sdobbs, 6/3/14
+//#define HALF_CELL 0.5
+//#define MAX_DEFLECTION 0.15
 #define EPS 1e-8
-#define KILL_RADIUS 5.0 
+//#define KILL_RADIUS 5.0 
 #define MATCH_RADIUS 2.0
 #define ADJACENT_MATCH_DISTANCE 0.3
-#define SIGN_CHANGE_CHISQ_CUT 10.0
+//#define SIGN_CHANGE_CHISQ_CUT 10.0
 #define BEAM_VARIANCE 1.0 // cm^2
-#define USED_IN_SEGMENT 0x8
-#define CORRECTED 0x10
-#define MAX_ITER 10
-#define MIN_TANL 2.0
+//#define USED_IN_SEGMENT 0x8
+//#define CORRECTED 0x10
+//#define MAX_ITER 10
+//#define MIN_TANL 2.0
 #define ONE_THIRD  0.33333333333333333
 #define SQRT3      1.73205080756887719
 
+
+
 // Variance for position along wire using PHENIX angle dependence, transverse
 // diffusion, and an intrinsic resolution of 127 microns.
-inline double fdc_y_variance(double alpha,double x){
-  return 0.00060+0.0064*tan(alpha)*tan(alpha)+0.0004*fabs(x);
-}
+// Deprecated!
+//inline double fdc_y_variance(double alpha,double x){
+//  return 0.00060+0.0064*tan(alpha)*tan(alpha)+0.0004*fabs(x);
+//}
 
 bool DFDCSegment_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
   return a->wire->layer>b->wire->layer;
