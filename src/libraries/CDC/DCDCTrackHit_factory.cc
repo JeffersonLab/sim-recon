@@ -110,7 +110,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double gas_gain=1e5;
 		double electron_charge=1.6022e-4; /* fC */
 		hit->dE=cdchit->q*w_eff/(gas_gain*electron_charge);
-		hit->dist = hit->tdrift*55.0E-4; // Use number hardwired in simulation for now
+		hit->dist = -1.;  // the actual drift distance is calculated later, use a placeholder value here
 		hit->AddAssociatedObject(cdchit);
 
 		if (MATCH_TRUTH_HITS==true&&mctrackhits.size()>0){
