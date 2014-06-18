@@ -43,23 +43,23 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	tdc_scale  = 0.060;    // 60 ps/count
 
 	/// Read in calibration constants
-	cout << "In DSCHit_factory, loading constants..." << endl;
+	jout << "In DSCHit_factory, loading constants..." << endl;
 
 	if(eventLoop->GetCalib("/START_COUNTER/gains", a_gains))
-	    cout << "Error loading /START_COUNTER/gains !" << endl;
+	    jout << "Error loading /START_COUNTER/gains !" << endl;
 	if(eventLoop->GetCalib("/START_COUNTER/pedestals", a_pedestals))
-	    cout << "Error loading /START_COUNTER/pedestals !" << endl;
+	    jout << "Error loading /START_COUNTER/pedestals !" << endl;
 
 	if(USE_MC_CALIB>0) {
 	    if(eventLoop->GetCalib("/START_COUNTER/adc_timing_offsets::mc", adc_time_offsets))
-		cout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
+		jout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
 	    if(eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets::mc", tdc_time_offsets))
-		cout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
+		jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
 	} else {
 	    if(eventLoop->GetCalib("/START_COUNTER/adc_timing_offsets", adc_time_offsets))
-		cout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
+		jout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
 	    if(eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", tdc_time_offsets))
-		cout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
+		jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
 	}
 
 	/* 
@@ -68,9 +68,9 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	   map<string,double> in_atten_corr;
 
 	   if(!eventLoop->GetCalib("/START_COUNTER/propagation_speed",in_prop_corr ))
-	      cout << "Error loading /START_COUNTER/propagation_speed !" << endl;
+	      jout << "Error loading /START_COUNTER/propagation_speed !" << endl;
 	   if(!eventLoop->GetCalib("/START_COUNTER/attenuation_factor", in_atten_corr))
-	      cout << "Error loading /START_COUNTER/attenuation_factor !" << endl;
+	      jout << "Error loading /START_COUNTER/attenuation_factor !" << endl;
 	  
 	   // propogation correction:  A + Bx
 	   propogation_corr_factors.push_back(in_prop_corr["A"]);

@@ -63,21 +63,21 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	vector< double > raw_time_offsets;
 	vector< double > raw_block_qualities;    // we should change this to an int?
 
-	cout << "In DFCALHit_factory, loading constants..." << endl;
+	jout << "In DFCALHit_factory, loading constants..." << endl;
 
 	if(eventLoop->GetCalib("/FCAL/gains", raw_gains))
-	    cout << "Error loading /FCAL/gains !" << endl;
+	    jout << "Error loading /FCAL/gains !" << endl;
 	if(eventLoop->GetCalib("/FCAL/pedestals", raw_pedestals))
-	    cout << "Error loading /FCAL/pedestals !" << endl;
+	    jout << "Error loading /FCAL/pedestals !" << endl;
 	if(USE_MC_CALIB>0) {
 	    if(eventLoop->GetCalib("/FCAL/timing_offsets::mc", raw_time_offsets))
-		cout << "Error loading /FCAL/timing_offsets !" << endl;
+		jout << "Error loading /FCAL/timing_offsets !" << endl;
 	} else {
 	    if(eventLoop->GetCalib("/FCAL/timing_offsets", raw_time_offsets))
-		cout << "Error loading /FCAL/timing_offsets !" << endl;
+		jout << "Error loading /FCAL/timing_offsets !" << endl;
 	}
 	if(eventLoop->GetCalib("/FCAL/block_quality", raw_block_qualities))
-	    cout << "Error loading /FCAL/block_quality !" << endl;
+	    jout << "Error loading /FCAL/block_quality !" << endl;
 
 	FillCalibTable(gains, raw_gains, fcalGeom);
 	FillCalibTable(pedestals, raw_pedestals, fcalGeom);

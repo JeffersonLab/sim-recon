@@ -53,18 +53,18 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	vector<double> raw_pedestals;
 	vector<double> raw_time_offsets;
 
-	cout << "In DBCALHit_factory, loading constants..." << endl;
+	jout << "In DBCALHit_factory, loading constants..." << endl;
 
 	if(eventLoop->GetCalib("/BCAL/ADC_gains", raw_gains))
-	    cout << "Error loading /BCAL/ADC_gains !" << endl;
+	    jout << "Error loading /BCAL/ADC_gains !" << endl;
 	if(eventLoop->GetCalib("/BCAL/ADC_pedestals", raw_pedestals))
-	    cout << "Error loading /BCAL/ADC_pedestals !" << endl;
+	    jout << "Error loading /BCAL/ADC_pedestals !" << endl;
 	if(USE_MC_CALIB>0) {
 	    if(eventLoop->GetCalib("/BCAL/ADC_timing_offsets::mc", raw_time_offsets))
-		cout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
+		jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
 	} else {
 	    if(eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_time_offsets))
-		cout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
+		jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
 	}
 
 	FillCalibTable(gains, raw_gains);

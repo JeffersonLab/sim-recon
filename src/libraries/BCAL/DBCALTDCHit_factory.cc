@@ -46,14 +46,14 @@ jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	/// Read in calibration constants
 	vector<double> raw_time_offsets;
 
-	cout << "In DBCALTDCHit_factory, loading constants..." << endl;
+	jout << "In DBCALTDCHit_factory, loading constants..." << endl;
 
 	if(USE_MC_CALIB>0) {
 	    if(eventLoop->GetCalib("/BCAL/TDC_offsets::mc", raw_time_offsets))
-		cout << "Error loading /BCAL/TDC_offsets !" << endl;
+		jout << "Error loading /BCAL/TDC_offsets !" << endl;
 	} else {
 	    if(eventLoop->GetCalib("/BCAL/TDC_offsets", raw_time_offsets))
-		cout << "Error loading /BCAL/TDC_offsets !" << endl;
+		jout << "Error loading /BCAL/TDC_offsets !" << endl;
 	}
 	FillCalibTable(time_offsets, raw_time_offsets);
 
