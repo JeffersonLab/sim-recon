@@ -13,6 +13,7 @@ using namespace std;
 #include <FCAL/DFCALDigiHit.h>
 #include <FCAL/DFCALGeometry.h>
 #include "DFCALHit_factory.h"
+#include <DAQ/Df250PulseIntegral.h>
 using namespace jana;
 
 
@@ -111,6 +112,20 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(digihits);
 	for(unsigned int i=0; i<digihits.size(); i++){
 		const DFCALDigiHit *digihit = digihits[i];
+
+		// Apply associated event pedestal, if it exists
+		double pedestal = pedestals[digihit->row][digihit->column];
+
+		// Only use event-by-event pedestals when analyzing data for now
+		// EVIO files from the rawevent plugin give us some crazy pedestal values sometimes
+		if(!USE_MC_CALIB) {
+		    vector<const Df250PulseIntegral*> PIvect;
+		    digihit->Get(PIvect);
+		    if(!PIvect.empty()){
+			const Df250PulseIntegral *PIobj = PIvect[0];
+			pedestal = PIobj->pedestal;
+		    }
+		}
 		
 		DFCALHit *hit = new DFCALHit;
 		hit->row    = digihit->row;
@@ -124,7 +139,7 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
-		hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestals[hit->row][hit->column]);
+		hit->E = a_scale * gains[hit->row][hit->column] * (A - pedestal);
 		hit->t = t_scale * (T - time_offsets[hit->row][hit->column]);
 
 		// Get position of blocks on front face. (This should really come from

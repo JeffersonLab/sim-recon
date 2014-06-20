@@ -96,15 +96,17 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		
 		// Apply associated event pedestal, if it exists
 		double pedestal = GetConstant(pedestals,digihit);
-		// disabled for now due to strange MC pedestal values
-		/*
-		vector<const Df250PulseIntegral*> PIvect;
-		digihit->Get(PIvect);
-		if(!PIvect.empty()){
-		  const Df250PulseIntegral *PIobj = PIvect[0];
-		  pedestal = PIobj->pedestal;
+
+		// Only use event-by-event pedestals when analyzing data for now
+		// EVIO files from the rawevent plugin give us some crazy pedestal values sometimes
+		if(!USE_MC_CALIB) {
+		    vector<const Df250PulseIntegral*> PIvect;
+		    digihit->Get(PIvect);
+		    if(!PIvect.empty()){
+			const Df250PulseIntegral *PIobj = PIvect[0];
+			pedestal = PIobj->pedestal;
+		    }
 		}
-		*/
 
 		DBCALHit *hit = new DBCALHit;
 		hit->module = digihit->module;
