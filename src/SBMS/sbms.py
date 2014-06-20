@@ -531,6 +531,15 @@ def AddEVIO(env):
 	env.AppendUnique(LIBS=['evioxx', 'evio', 'expat'])
 	AddET(env)
 
+	# Only add EVIO if EVIOROOT is set
+	evioroot = os.getenv('EVIOROOT')
+	if(evioroot != None) :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_EVIO'])
+		env.AppendUnique(CPPPATH = ['%s/include' % evioroot])
+		env.AppendUnique(LIBPATH = ['%s/lib' % evioroot])
+		env.AppendUnique(LIBS=['evioxx', 'evio'])
+		AddET(env)
+
 
 ##################################
 # ET
@@ -538,8 +547,8 @@ def AddEVIO(env):
 def AddET(env):
 
 	# Only add ET if ETROOT is set
-	etroot = os.getenv('ETROOT', 'none')
-	if(etroot != 'none') :
+	etroot = os.getenv('ETROOT')
+	if(etroot != None) :
 		env.AppendUnique(CXXFLAGS = ['-DHAVE_ET'])
 		env.AppendUnique(CPPPATH = ['%s/include' % etroot])
 		env.AppendUnique(LIBPATH = ['%s/lib' % etroot])
@@ -552,8 +561,10 @@ def AddET(env):
 def AddCODAChannels(env):
 
 	# Only add codaChannels library if CODA is set
-	coda = os.getenv('CODA', 'none')
-	if(coda != 'none') :
+	coda = os.getenv('CODA')
+	evioroot = os.getenv('EVIOROOT')
+	etroot = os.getenv('ETROOT')
+	if(coda!=None and evioroot!=None and etroot!=None) :
 		env.AppendUnique(CXXFLAGS = ['-DHAVE_CODACHANNELS'])
 		env.AppendUnique(CPPPATH = ['%s/include' % coda])
 		env.AppendUnique(LIBPATH = ['%s/lib' % coda])
