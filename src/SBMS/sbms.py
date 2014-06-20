@@ -525,9 +525,10 @@ def AddCCDB(env):
 ##################################
 def AddEVIO(env):
 	evioroot = os.getenv('EVIOROOT', 'evio')
+	env.AppendUnique(CXXFLAGS = ['-DHAVE_EVIO'])
 	env.AppendUnique(CPPPATH = ['%s/include' % evioroot])
 	env.AppendUnique(LIBPATH = ['%s/lib' % evioroot])
-	env.AppendUnique(LIBS=['evioxx', 'evio'])
+	env.AppendUnique(LIBS=['evioxx', 'evio', 'expat'])
 	AddET(env)
 
 
