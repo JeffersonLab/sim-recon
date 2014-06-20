@@ -49,6 +49,8 @@ using namespace evio;
 #include "Df125TriggerTime.h"
 #include "Df125PulseIntegral.h"
 #include "Df125PulseTime.h"
+#include "Df125PulseRawData.h"
+#include "Df125WindowRawData.h"
 #include "DF1TDCHit.h"
 #include "DF1TDCTriggerTime.h"
 
@@ -220,6 +222,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		set<string> event_source_data_types;
 	
 		void EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
+		void EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t GetRunNumber(evioDOMTree *evt);
 		MODULE_TYPE GuessModuleType(const uint32_t *istart, const uint32_t *iend);
@@ -245,6 +248,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		// f250 methods
 		void MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 		void MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
+		void MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
+		void MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr);
 
 #endif // HAVE_EVIO		
 

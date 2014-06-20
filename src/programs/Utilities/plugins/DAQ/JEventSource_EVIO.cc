@@ -84,7 +84,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	DUMP_MODULE_MAP = false;
 	MAKE_DOM_TREE = true;
 	PARSE_EVIO_EVENTS = true;
-	BUFFER_SIZE = 1000000; // in bytes
+	BUFFER_SIZE = 2000000; // in bytes
 	ET_STATION_NEVENTS = 10;
 	ET_STATION_CREATE_BLOCKING = true;
 	VERBOSE = 0;
@@ -113,7 +113,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		
 		// create evio file channel object using first arg as file name
 		if(VERBOSE>0) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
-		chan = new evioFileChannel(this->source_name);
+		chan = new evioFileChannel(this->source_name, "r", BUFFER_SIZE);
 		
 		// open the file. Throws exception if not successful
 		chan->open();
@@ -160,6 +160,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("Df125PulseIntegral");
 	event_source_data_types.insert("Df125TriggerTime");
 	event_source_data_types.insert("Df125PulseTime");
+	event_source_data_types.insert("Df125WindowRawData");
 	event_source_data_types.insert("DF1TDCHit");
 	event_source_data_types.insert("DF1TDCTriggerTime");
 
@@ -389,15 +390,6 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 	// If we couldn't even open the source, then there's nothing to do
 	if(chan==NULL)throw JException(string("Unable to open EVIO channel for \"") + source_name + "\"");
 	
-	// We want to recursively call ourselves in case we run into an
-	// event that can't be parsed so we can just try the next event.
-	// However, we want to limit how often that can happen since 
-	// tweaking the parsing code could cause a failure for every 
-	// event. Use a counter here to limit how often we recall ourselves
-	// without successfully parsing an event.
-	static uint32_t Nrecursive_calls = 0;
-	if(++Nrecursive_calls >= 4) return NO_MORE_EVENTS_IN_SOURCE;
-
 	// This may not be a long term solution, but here goes:
 	// We need to write single events out in EVIO format, possibly
 	// with new information attached. The easiest way to do this 
@@ -437,14 +429,13 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		objs_ptr->eviobuff_size = buff_size;
 	}
 
-	// If we still don't have any events, then try recalling
-	// ourselves to look at the next event
+	// Store a pointer to the ObjList object for this event in the
+	// JEvent as the Reference value. Parsing will be done later
+	// in GetObjects() -> ParseEvents() using the eviobuff pointer.
 	event.SetJEventSource(this);
 	event.SetEventNumber(++Nevents_read);
 	event.SetRunNumber(objs_ptr->run_number);
 	event.SetRef(objs_ptr);
-
-	Nrecursive_calls = 0; // reset recursive calls counter
 
 	return NOERROR;
 }
@@ -509,6 +500,8 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	/// a siginificant performance increase can be gained 
 	/// using this slightly more complicated method.
 
+	if(VERBOSE>2) evioout << "   Entering ParseEvents() with objs_ptr=" << hex << objs_ptr << dec << endl;
+
 	// Double check that we're not re-parsing an event
 	if(objs_ptr->eviobuff_parsed){
 		jerr << " DAQ event already parsed!! Bug in code. Contact davidl@jlab.org" << endl;
@@ -520,45 +513,98 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	if(buff == NULL){
 		jerr << " Bad buffer pointer passed to JEventSource_EVIO::ParseEvent()!!" << endl;
 		return RESOURCE_UNAVAILABLE;
-	}	
-
-	// Make evioDOMTree for event
+	}
+	
+	// This container will be used to hold all of the individual
+	// Physics (L1 triggered) events for this DAQ event. This includes
+	// both dientangling multi-event blocks and separating multi-event
+	// ET events.
 	list<ObjList*> full_events;
-	bool skipped_parsing = true;
-	if(MAKE_DOM_TREE){
-		evioDOMTree* &evt = objs_ptr->DOMTree;
-		if(!evt) evt = new evioDOMTree(buff); // deleted in FreeEvent
-		if(!evt) return NO_MORE_EVENTS_IN_SOURCE;
+	
+	// Setup up iptr and iend to point to the start of the first event
+	// and the word just after the end of the last event respectively.
+	// Initialize them for the case of reading from a file and not a 
+	// CODA-produced ET event
+	uint32_t *iptr = &buff[0];
+	uint32_t *iend = &buff[buff[0]+1]; // EVIO length word is exclusive so +1
 
-		// Parse event, making other ObjList objects
-		if(PARSE_EVIO_EVENTS){
-			try{
-				skipped_parsing = false;	
-				ParseEVIOEvent(evt, full_events);
-			}catch(JException &jexception){
-				jerr << jexception.what() << endl;
+	// If the "event" was read from ET, then it may (and likely
+	// will) contain several DAQ events. (Each DAQ event may itself
+	// contain many L1 trigger events.) In addition, the ET event
+	// will have a Network Transport Header (NTH) that must be skipped
+	// but only if read from CODA. Events put into the ET system
+	// by other means will not include the NTH. To decide whether 
+	// there is an NTH, we look at the magic word and the header length.
+	// Note that byteswapping should already have occured.
+	if(source_type==kETSource && buff[7]==0xc0da0100 && buff[2]==8){
+		// This buffer read from ET. Redefine iptr and iend
+		iptr = &buff[8];
+		iend = &buff[buff[0]]; // EVIO length word in NTH is inclusive so don't add 1
+	}
+	
+	if(VERBOSE>5) evioout << "    Looping event stack with " << *iptr << " words" << endl;
+	
+	// Loop over events in buffer until entire buffer is parsed.
+	// When reading from a file, this loop should only get executed once.
+	int Nevents_in_stack=0;
+	while(iptr < iend){
+	
+		// Make a evioDOMTree for this DAQ event		
+		evioDOMTree *evt = NULL;
+		if(MAKE_DOM_TREE) evt = new evioDOMTree(iptr);
+
+		if(evt){
+			// Parse event, making other ObjList objects
+			list<ObjList*> my_full_events;
+			//bool skipped_parsing = true;
+			if(PARSE_EVIO_EVENTS){
+				try{
+					//skipped_parsing = false;	
+					ParseEVIOEvent(evt, my_full_events);
+				}catch(JException &jexception){
+					jerr << jexception.what() << endl;
+				}
 			}
+
+			// Append physics events found for this DAQ event to the list of all physics events
+			if(!my_full_events.empty()) {
+				my_full_events.front()->DOMTree = evt; // keep DOMTree pointer with first event from this DAQ event
+				full_events.insert( full_events.end(), my_full_events.begin(), my_full_events.end() );
+			}
+		}else{
+			// No DOM tree made for this buffer. Insert an empty event into
+			// the list so we can keep track of the number of events seen
+			// even when DOMTree creation is turned off.
+			ObjList *objs = new ObjList;
+			full_events.push_back(objs);
 		}
+
+		// Advance pointer to next event in buffer
+		iptr += iptr[0]+1;
+		Nevents_in_stack++; // number of events processed in this buffer (for debugging)
 	}
 
-	// Whether we actually parsed the event or not, we mark it as being
+	if(VERBOSE>5) evioout << "    Loop finished. " << full_events.size() << " events total found (" << Nevents_in_stack << " events in stack)" << endl;
+	
+	// At this point, we have parsed the DAQ event and extracted all physics
+	// events into the full_events list. In the case of a prestart or go event
+	// read from an EVIO file, the full_events list may actually be empty at
+	// this point. For these cases, we need to add an empty event for the 
+	// current thread to "process".
+	if(full_events.empty()) full_events.push_back(new ObjList());
+	
+	// Whether we actually parsed the events or not, we mark them as being
 	// parsed since it is really just used as a flag to tell whether this
 	// method should be called or not.
-	objs_ptr->eviobuff_parsed = true;
-
-	// If parsing was skipped by user request (for benchmarking/debugging)
-	// then just return NOERROR here
-	if(skipped_parsing) return NOERROR;
-
-	// If we did not find any Physics events in this DAQ event,
-	// then notify caller.
-	if(full_events.empty()) return NO_MORE_EVENTS_IN_SOURCE;
+	list<ObjList*>::iterator iter = full_events.begin();
+	for( ; iter != full_events.end(); iter++ )  (*iter)->eviobuff_parsed = true;
 
 	// Copy the first event's objects obtained from parsing into this event's ObjList
 	ObjList *objs = full_events.front();
 	full_events.pop_front();
 	objs_ptr->run_number = objs->run_number;	
-	objs_ptr->hit_objs = objs->hit_objs;
+	objs_ptr->hit_objs   = objs->hit_objs;
+	objs_ptr->DOMTree    = objs->DOMTree;
 	delete objs;
 
 	// Copy remaining events into the stored_events container
@@ -566,10 +612,11 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	while(!full_events.empty()){
 		objs = full_events.front();
 		full_events.pop_front();
-		objs->eviobuff_parsed = true; // flag this event as having been already parsed
 		stored_events.push(objs);
 	}
 	pthread_mutex_unlock(&stored_events_mutex);
+
+	if(VERBOSE>2) evioout << "   Leaving ParseEvents()" << endl;
 
 	return NOERROR;
 }
@@ -579,6 +626,18 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 //----------------
 jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 {
+	/// This method will read an event from the source (file or ET system)
+	/// copying the data into "buff". No parsing of the data is done at
+	/// this level except that if the event comes from ET and needs to be
+	/// byte-swapped, the byte swapping is done during the copy.
+	///
+	/// This is called from the GetEvent method and therefore run in
+	/// the event reader thread. Events read from ET may contain several DAQ
+	/// events in a single buffer (and each of those may contain several
+	/// physics events if read in multi-event blocks). Separating the multiple
+	/// DAQ events is left to the ParseEvents method which gets called later
+	/// from the event processing threads to improve efficiency.
+
 	if(VERBOSE>1) evioout << " ReadEVIOEvent() called with &buff=" << hex << &buff << dec << endl;
 
 	// Get buffer from pool or allocate new one if needed
@@ -598,6 +657,7 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 		if(source_type==kFileSource){
 			if(VERBOSE>3) evioout << "  attempting read from EVIO file source ..." << endl;
 			if(!chan->read(buff, BUFFER_SIZE)){
+_DBG__;
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
 		}else if(source_type==kETSource){
@@ -681,9 +741,6 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 			// Put ET event back since we're done with it
 			et_event_put(sys_id, att_id, pe);
 			
-			// At this point we have a byte-swapped ET event which may contain
-			// many DAQ events. 
-
 #else    // HAVE_ET
 
 			japp->Quit();
@@ -765,6 +822,12 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		EmulateDf250PulseIntergral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
 	}
+	// Optionally generate Df125PulseIntegral objects from Df125WindowRawData objects. 
+	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df125PulseIntegral"].size()==0)){
+		vector<JObject*> pi_objs;
+		EmulateDf125PulseIntergral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
+		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;
+	}
 
 	// Loop over types of data objects, copying to appropriate factory
 	map<string, vector<JObject*> >::iterator iter = hit_objs_by_type.begin();
@@ -815,6 +878,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			else if(dataClassName == "Df125PulseIntegral")    checkSourceFirst = ((JFactory<Df125PulseIntegral   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125TriggerTime")      checkSourceFirst = ((JFactory<Df125TriggerTime     >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125PulseTime")        checkSourceFirst = ((JFactory<Df125PulseTime       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df125WindowRawData")    checkSourceFirst = ((JFactory<Df125WindowRawData   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DF1TDCHit")             checkSourceFirst = ((JFactory<DF1TDCHit            >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DF1TDCTriggerTime")     checkSourceFirst = ((JFactory<DF1TDCTriggerTime    >*)fac)->GetCheckSourceFirst();
 
@@ -908,6 +972,63 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 		}else{
 			// Integral is below threshold so discard the hit.
 			delete myDf250PulseIntegral;
+		}
+	}
+}
+
+//----------------
+// EmulateDf125PulseIntergral
+//----------------
+void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
+{
+	uint16_t ped_samples=5;
+	uint32_t pulse_number = 0;
+	uint32_t quality_factor = 0;
+	// Loop over all window raw data objects
+	for(unsigned int i=0; i<wrd_objs.size(); i++){
+		const Df125WindowRawData *f125WindowRawData = (Df125WindowRawData*)wrd_objs[i];
+		
+		// create new Df125PulseIntegral object
+		Df125PulseIntegral *myDf125PulseIntegral = new Df125PulseIntegral;
+		myDf125PulseIntegral->rocid =f125WindowRawData->rocid;
+		myDf125PulseIntegral->slot = f125WindowRawData->slot;
+		myDf125PulseIntegral->channel = f125WindowRawData->channel;
+		myDf125PulseIntegral->itrigger = f125WindowRawData->itrigger;
+
+		// Get a vector of the samples for this channel
+		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
+		uint32_t nsamples=samplesvector.size();
+		int32_t pedestalsum = 0;
+		int32_t signalsum = 0;
+
+		// loop over the first X samples to calculate pedestal
+		for (uint32_t c_samp=0; c_samp<ped_samples; c_samp++) {
+			pedestalsum += samplesvector[c_samp];
+		}
+		
+		// loop over all samples to calculate integral
+		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
+			signalsum += samplesvector[c_samp];
+		}
+		
+		// Scale pedestal to window width 
+		int32_t pedestal_tot = ((int32_t)nsamples*pedestalsum)/(int32_t)ped_samples;
+
+		myDf125PulseIntegral->pulse_number = pulse_number;
+		myDf125PulseIntegral->quality_factor = quality_factor;
+		myDf125PulseIntegral->integral = signalsum;
+		myDf125PulseIntegral->pedestal = pedestal_tot;
+		
+		// Add the Df125WindowRawData object as an associated object
+		myDf125PulseIntegral->AddAssociatedObject(f125WindowRawData);
+		
+		// Apply sparsification threshold
+		if(myDf125PulseIntegral->integral >= EMULATE_SPARSIFICATION_THRESHOLD){
+			// Integral is above threshold so keep it
+			pi_objs.push_back(myDf125PulseIntegral);
+		}else{
+			// Integral is below threshold so discard the hit.
+			delete myDf125PulseIntegral;
 		}
 	}
 }
@@ -1020,7 +1141,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 //----------------
 void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events)
 {
-	if(VERBOSE>5) evioout << "   Entering ParseEVIOEvent()" << endl;
+	if(VERBOSE>5) evioout << "    Entering ParseEVIOEvent() with evt=" << hex << evt << dec << endl;
 
 	if(!evt)throw RESOURCE_UNAVAILABLE;
 
@@ -1042,7 +1163,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	// these Data Block Banks are banks of ints. More specifically,
 	// uint32_t.
 	//
-	// The "Physics Event's Built Trigget Bank" is a bank of segments.
+	// The "Physics Event's Built Trigger Bank" is a bank of segments.
 	// This contains 3 segments, one each of type uint64, uint16, and
 	// unit32. The first two are "common data" which contains information
 	// common to all rocs. The last (uint32) has information specific to each
@@ -1059,10 +1180,10 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	ObjList objs;
 	evioDOMNodeListP bankList = evt->getNodeList(typeIs<uint32_t>());
 	evioDOMNodeList::iterator iter = bankList->begin();
-	if(VERBOSE>7) evioout << "    Looping over " << bankList->size() << " banks in EVIO event" << endl;
+	if(VERBOSE>7) evioout << "     Looping over " << bankList->size() << " banks in EVIO event" << endl;
 	for(int ibank=1; iter!=bankList->end(); iter++, ibank++){ // ibank only used for debugging messages
 
-		if(VERBOSE>7) evioout << "     -------- bank " << ibank << "/" << bankList->size() << " --------" << endl;
+		if(VERBOSE>7) evioout << "      -------- bank " << ibank << "/" << bankList->size() << " --------" << endl;
 	
 		// The data banks we want should have exactly two parents:
 		// - Data Bank bank       <--  parent
@@ -1083,25 +1204,25 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 			continue; // physics event bank should have no parent!
 		}
 		if(VERBOSE>9){
-			evioout << "     Physics Event Bank: tag=" << hex << physics_event_bank->tag << " num=" << (int)physics_event_bank->num << dec << endl;
-			evioout << "     Data Bank:          tag=" << hex << data_bank->tag << " num=" << (int)data_bank->num << dec << endl;
+			evioout << "      Physics Event Bank: tag=" << hex << physics_event_bank->tag << " num=" << (int)physics_event_bank->num << dec << endl;
+			evioout << "      Data Bank:          tag=" << hex << data_bank->tag << " num=" << (int)data_bank->num << dec << endl;
 		}
 
 		// Check if this is a CODA Reserved Bank Tag. If it is, then
 		// this probably is part of the built trigger bank and not
 		// the ROC data we're looking to parse here.
 		if((data_bank->tag & 0xFF00) == 0xFF00){
-			if(VERBOSE>9) evioout << "     Data Bank tag is in reserved CODA range. This bank is not ROC data. Skipping ..." << endl;
+			if(VERBOSE>9) evioout << "      Data Bank tag is in reserved CODA range. This bank is not ROC data. Skipping ..." << endl;
 			continue;
 		}
 
-		if(VERBOSE>9) evioout << "     bank lineage check OK. Continuing with parsing ... " << endl;
+		if(VERBOSE>9) evioout << "      bank lineage check OK. Continuing with parsing ... " << endl;
 
 		// Get data from bank in the form of a vector of uint32_t
 		const vector<uint32_t> *vec = bankPtr->getVector<uint32_t>();
 		const uint32_t *iptr = &(*vec)[0];
 		const uint32_t *iend = &(*vec)[vec->size()];
-		if(VERBOSE>6) evioout << "     uint32_t bank has " << vec->size() << " words" << endl;
+		if(VERBOSE>6) evioout << "      uint32_t bank has " << vec->size() << " words" << endl;
 
 		// Extract ROC id (crate number) from bank's parent
 		uint32_t rocid = data_bank->tag  & 0x0FFF;
@@ -1111,7 +1232,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		// be at least 1.
 		uint32_t NumEvents = data_bank->num & 0xFF;
 		if( NumEvents<1 ){
-			if(VERBOSE>9) evioout << "     bank has less than 1 event (Data Bank num or \"M\" = 0) skipping ... " << endl;
+			if(VERBOSE>9) evioout << "      bank has less than 1 event (Data Bank num or \"M\" = 0) skipping ... " << endl;
 			continue;
 		}
 
@@ -1138,6 +1259,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		        case 1:
 		        case 3:
 		        case 6:  // flash 250 module, MMD 2014/2/4
+		        case 16: // flash 125 module (CDC), DL 2014/6/19
 				ParseJLabModuleData(rocid, iptr, iend, tmp_events);
 				break;
 
@@ -1154,23 +1276,15 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		if(bank_parsed) MergeObjLists(full_events, tmp_events);
 	}
 	
-	// It is possible that we get to this point and full_events is empty. This
-	// can happen for prestart and go events that are ignored. For these cases,
-	// we need to return at least one empty event so the source will continue
-	// to be read. Otherwise, it assumes all events have been read from the source
-	// and it is closed.
-	if(full_events.empty())full_events.push_back(new ObjList);
-	
-	// Set the run number for all events and copy them into the stored_events queue
+	// Set the run number for all events
 	uint32_t run_number = GetRunNumber(evt);
 	list<ObjList*>::iterator evt_iter = full_events.begin();
 	for(; evt_iter!=full_events.end();  evt_iter++){
 		ObjList *objs = *evt_iter;
 		objs->run_number = run_number;
-		//stored_events.push(objs);
 	}
 
-	if(VERBOSE>5) evioout << "   Leaving ParseEVIOEvent()" << endl;
+	if(VERBOSE>5) evioout << "    Leaving ParseEVIOEvent()" << endl;
 }
 
 //----------------
@@ -1533,7 +1647,6 @@ void JEventSource_EVIO::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uin
 	}
 }
 
-
 //----------------
 // Parsef125Bank
 //----------------
@@ -1610,6 +1723,10 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				}
 				if(objs) objs->hit_objs.push_back(new Df125TriggerTime(rocid, slot, itrigger, t));
 				break;
+			case 4: // Window Raw Data
+				// iptr passed by reference and so will be updated automatically
+				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
+				break;
 			case 7: // Pulse Integral
 				channel = (*iptr>>20) & 0x3F;
 				pulse_number = (*iptr>>18) & 0x03;
@@ -1624,7 +1741,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 
 				break;
-			case 4: // Window Raw Data
+			//case 4: // Window Raw Data
 			case 5: // Window Sum
 			case 6: // Pulse Raw Data
 			case 9: // Streaming Raw Data
@@ -1674,6 +1791,110 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		// Connect Df250TriggerTime to everything
 		LinkAssociationsModuleOnly(vtrigt, vpi);
 		LinkAssociationsModuleOnly(vtrigt, vpt);
+	}
+}
+
+//----------------
+// MakeDf125WindowRawData
+//----------------
+void JEventSource_EVIO::MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
+{
+	uint32_t channel = (*iptr>>23) & 0x0F;
+	uint32_t window_width = (*iptr>>0) & 0x0FFF;
+
+	Df125WindowRawData *wrd = new Df125WindowRawData(rocid, slot, channel, itrigger);
+	
+	for(uint32_t isample=0; isample<window_width; isample +=2){
+
+		// Advance to next word
+		iptr++;
+
+		// Make sure this is a data continuation word, if not, stop here
+		if(((*iptr>>31) & 0x1) != 0x0)break;
+		
+		bool invalid_1 = (*iptr>>29) & 0x1;
+		bool invalid_2 = (*iptr>>13) & 0x1;
+		uint16_t sample_1 = 0;
+		uint16_t sample_2 = 0;
+		if(!invalid_1)sample_1 = (*iptr>>16) & 0x1FFF;
+		if(!invalid_2)sample_2 = (*iptr>>0) & 0x1FFF;
+		
+		// Sample 1
+		wrd->samples.push_back(sample_1);
+		wrd->invalid_samples |= invalid_1;
+		wrd->overflow |= (sample_1>>12) & 0x1;
+		
+		if((isample+2) == window_width && invalid_2)break; // skip last sample if flagged as invalid
+
+		// Sample 2
+		wrd->samples.push_back(sample_2);
+		wrd->invalid_samples |= invalid_2;
+		wrd->overflow |= (sample_2>>12) & 0x1;
+	}
+	
+	// Due to how the calling function works, the value of "objs" passed to us may be NULL.
+	// This will happen if a Window Raw Data block is encountered before an event header.
+	// For these cases, we still want to try parsing the data so that the iptr is updated
+	// but don't have an event to assign it to. If "objs" is non-NULL, add this object to
+	// the list. Otherwise, delete it now.
+	if(objs){
+		objs->hit_objs.push_back(wrd);
+	}else{
+		delete wrd;
+	}
+}
+
+//----------------
+// MakeDf125PulseRawData
+//----------------
+void JEventSource_EVIO::MakeDf125PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
+{
+	uint32_t channel = (*iptr>>23) & 0x0F;
+	uint32_t pulse_number = (*iptr>>21) & 0x000F;
+	uint32_t first_sample_number = (*iptr>>0) & 0x03FF;
+	
+	Df125PulseRawData *prd = new Df125PulseRawData(rocid, slot, channel, itrigger, pulse_number, first_sample_number);
+	
+	// This loop needs to break when it hits a non-continuation word
+	for(uint32_t isample=0; isample<1000; isample +=2){
+		
+		// Advance to next word
+		iptr++;
+		
+		// Make sure this is a data continuation word, if not, stop here
+		if(((*iptr>>31) & 0x1) != 0x0)break;
+		
+		bool invalid_1 = (*iptr>>29) & 0x1;
+		bool invalid_2 = (*iptr>>13) & 0x1;
+		uint16_t sample_1 = 0;
+		uint16_t sample_2 = 0;
+		if(!invalid_1)sample_1 = (*iptr>>16) & 0x1FFF;
+		if(!invalid_2)sample_2 = (*iptr>>0) & 0x1FFF;
+		
+		// Sample 1
+		prd->samples.push_back(sample_1);
+		prd->invalid_samples |= invalid_1;
+		prd->overflow |= (sample_1>>12) & 0x1;
+		
+		bool last_word = (iptr[1]>>31) & 0x1;
+		if(last_word && invalid_2)break; // skip last sample if flagged as invalid
+		
+		// Sample 2
+		prd->samples.push_back(sample_2);
+		prd->invalid_samples |= invalid_2;
+		prd->overflow |= (sample_2>>12) & 0x1;
+	}
+	
+	
+	// Due to how the calling function works, the value of "objs" passed to us may be NULL.
+	// This will happen if a Window Raw Data block is encountered before an event header.
+	// For these cases, we still want to try parsing the data so that the iptr is updated
+	// but don't have an event to assign it to. If "objs" is non-NULL, add this object to
+	// the list. Otherwise, delete it now.
+	if(objs){
+		objs->hit_objs.push_back(prd);
+	}else{
+		delete prd;
 	}
 }
 
@@ -1897,13 +2118,13 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 			uint32_t my_itrigger=0;
 			DF1TDCHit *hit=NULL;
 			switch( (*iptr) & 0xF8000000 ){
-				case 0xA0000000: // F1 Header
+				case 0xC0000000: // F1 Header
 					my_itrigger = ((*iptr)>>16) & 0x3F;
 					if( my_itrigger != (itrigger & 0x3F)){
 						throw JException("Trigger number in data word does not match F1 TDC header!");
 					}
 					break;
-				case 0xB0000000: // F1 Data (we don't check that bit 23 is set!)
+				case 0xB8000000: // F1 Data (we don't check that bit 23 is set!)
 					chip = (*iptr>>19) & 0x07;
 					chan = (*iptr>>16) & 0x07;
 					channel = (chip<<3) + (chan<<0);
@@ -1911,12 +2132,15 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 					hit = new DF1TDCHit(rocid, slot_block_header, channel, itrigger, trig_time, time);
 					if(objs)objs->hit_objs.push_back(hit);
 					break;
-				case 0xA8000000: // F1 Trailer
-					my_itrigger = ((*iptr)>>16) & 0x3F;
-					if( my_itrigger != (itrigger & 0x3F)){
-						throw JException("Trigger number in trailer word does not match F1 TDC header!");
-					}
+//				case 0xA8000000: // F1 Trailer
+//					my_itrigger = ((*iptr)>>16) & 0x3F;
+//					if( my_itrigger != (itrigger & 0x3F)){
+//						throw JException("Trigger number in trailer word does not match F1 TDC header!");
+//					}
+//					break;
+				case 0xF8000000: // Filler word
 					break;
+				case 0xF0000000: // module has no valid data available for read out (how to handle this?)
 				case 0x90000000: // JLab event header (handled in outer loop)
 				case 0x88000000: // JLab block trailer
 					done = true;
