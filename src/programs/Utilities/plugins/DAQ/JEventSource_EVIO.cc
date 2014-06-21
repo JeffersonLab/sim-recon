@@ -1714,10 +1714,10 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				}
 				break;
 			case 3: // Trigger Time
-				t = ((*iptr)&0xFFFFFF)<<24;
+				t = ((*iptr)&0xFFFFFF)<<0;
 				iptr++;
 				if(((*iptr>>31) & 0x1) == 0){
-					t += (*iptr)&0xFFFFFF; // from word on the street: second trigger time word is optional!!??
+					t += ((*iptr)&0xFFFFFF)<<24; // from word on the street: second trigger time word is optional!!??
 				}else{
 					iptr--;
 				}
@@ -1728,16 +1728,17 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
-				channel = (*iptr>>20) & 0x3F;
-				pulse_number = (*iptr>>18) & 0x03;
-				sum = (*iptr>>0) & 0x3FFFF;
+				channel = (*iptr>>20) & 0x0F;
+				pulse_number = (*iptr>>21) & 0x03;
+				sum = (*iptr>>0) & 0x7FFFF;
 				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
 
 				break;
 			case 8: // Pulse Time
-				channel = (*iptr>>20) & 0x3F;
-				pulse_number = (*iptr>>18) & 0x03;
-				pulse_time = (*iptr>>0) & 0x3FFFF;
+				channel = (*iptr>>23) & 0x0F;
+				pulse_number = (*iptr>>21) & 0x03;
+				quality_factor = (*iptr>>19) & 0x03;
+				pulse_time = (*iptr>>0) & 0x7FFFF;
 				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 
 				break;
@@ -1760,7 +1761,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 	
 	// Chop off filler words
 	for(; iptr<iend; iptr++){
-		if(*iptr != 0xf8000000) break;
+		if(((*iptr)&0xf8000000) != 0xf8000000) break;
 	}
 	
 	// Add last event in block to list
@@ -1777,18 +1778,26 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		// Sort list of objects into type-specific lists
 		vector<DDAQAddress*> &hit_objs = (*iter)->hit_objs;
 		vector<Df125TriggerTime*> vtrigt;
+		vector<Df125WindowRawData*> vwrd;
+		vector<Df125PulseRawData*>  vprd;
 		vector<Df125PulseIntegral*> vpi;
 		vector<Df125PulseTime*> vpt;
 		for(unsigned int i=0; i<hit_objs.size(); i++){
 			AddIfAppropriate(hit_objs[i], vtrigt);
+			AddIfAppropriate(hit_objs[i], vwrd);
+			AddIfAppropriate(hit_objs[i], vprd);
 			AddIfAppropriate(hit_objs[i], vpi);
 			AddIfAppropriate(hit_objs[i], vpt);
 		}
 		
 		// Connect Df125PulseIntegral with Df125PulseTime
+		LinkAssociationsWithPulseNumber(vprd, vpi);
+		LinkAssociationsWithPulseNumber(vprd, vpt);
 		LinkAssociationsWithPulseNumber(vpt, vpi);
 				
 		// Connect Df250TriggerTime to everything
+		LinkAssociationsModuleOnly(vtrigt, vwrd);
+		LinkAssociationsModuleOnly(vtrigt, vprd);
 		LinkAssociationsModuleOnly(vtrigt, vpi);
 		LinkAssociationsModuleOnly(vtrigt, vpt);
 	}
