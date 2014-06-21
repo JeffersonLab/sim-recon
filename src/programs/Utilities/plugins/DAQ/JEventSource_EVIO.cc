@@ -1267,9 +1267,31 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 				ParseCAEN1190(rocid, iptr, iend, tmp_events);
 				break;
 
+			case 5:
+				// Beni's original CDC ROL used for the stand-alone CDC DAQ
+				// had the following for the TS readout list (used in the TI):
+				//   *dma_dabufp++ = 0xcebaf111;
+				//   *dma_dabufp++ = tsGetIntCount();
+				//   *dma_dabufp++ = 0xdead;
+				//   *dma_dabufp++ = 0xcebaf222;
+				// We skip this here, but put in the case so that we avoid errors
+				break;
+
+
 			default:
-				jerr<<"Unknown data type ("<<det_id<<") encountered for tag="<<bankPtr->tag<<" num="<< (int)bankPtr->num << endl;
+				jerr<<"Unknown module type ("<<det_id<<") encountered for tag="<<bankPtr->tag<<" num="<< (int)bankPtr->num << endl;
 				bank_parsed = false;
+				if(VERBOSE>5){
+					cerr << endl;
+					cout << "----- First few words to help with debugging -----" << endl;
+					cout.flush(); cerr.flush();
+					int i=0;
+					for(const uint32_t *iiptr = iptr; iiptr<iend; iiptr++, i++){
+						_DBG_ << "0x" << hex << *iiptr << dec << endl;
+						if(i>=8) break;
+					}
+
+				}
 		}
 
 		// Merge this bank's partial events into the full events
