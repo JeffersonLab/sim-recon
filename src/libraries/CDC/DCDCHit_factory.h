@@ -40,10 +40,12 @@ class DCDCHit_factory:public jana::JFactory<DCDCHit>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		void CalcNstraws(jana::JEventLoop *eventLoop, int runnumber, vector<int> &Nstraws);
+		void CalcNstraws(jana::JEventLoop *eventLoop, int runnumber, vector<unsigned int> &Nstraws);
 		void FillCalibTable(vector< vector<double> > &table, vector<double> &raw_table, 
-				    vector<int> &Nstraws);
+				    vector<unsigned int> &Nstraws);
 
+		unsigned int Nrings; // number of rings (layers)
+		vector<unsigned int> Nstraws; // number of straws for each ring
 };
 
 #endif // _DCDCHit_factory_

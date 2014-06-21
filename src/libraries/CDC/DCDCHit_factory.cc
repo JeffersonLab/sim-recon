@@ -13,11 +13,13 @@ using namespace std;
 #include <CDC/DCDCDigiHit.h>
 #include "DCDCHit_factory.h"
 #include "DCDCWire.h"
+#include <DAQ/Df125PulseIntegral.h>
 using namespace jana;
 
 #define CDC_MAX_CHANNELS  3522
 
 static int USE_MC_CALIB = 0;
+static double DIGI_THRESHOLD = -1000.0;
 
 //------------------
 // init
@@ -26,6 +28,7 @@ jerror_t DCDCHit_factory::init(void)
 {
         // should we use calibrations for simulated data? - this is a temporary workaround
         gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
+        gPARMS->SetDefaultParameter("CDC:DIGI_THRESHOLD",DIGI_THRESHOLD, "Do not convert CDC digitized hits into DCDCHit objects that would have q less than this");
 
 	return NOERROR;
 }
@@ -36,11 +39,12 @@ jerror_t DCDCHit_factory::init(void)
 jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
         // calculate the number of straws in each ring
-        vector<int> Nstraws;
-	CalcNstraws(eventLoop, runnumber, Nstraws);
+ 	CalcNstraws(eventLoop, runnumber, Nstraws);
+	Nrings = Nstraws.size();
 
 	/// set the base conversion scales
-	a_scale    = 1.0E6/1.3E5; 
+	//a_scale    = 1.0E6/1.3E5; 
+	a_scale    = 4.0E3/5.0E4; 
 	t_scale    = 8.0;    // 8 ns/count
 
 	/// Read in calibration constants
@@ -66,6 +70,43 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         FillCalibTable(gains, raw_gains, Nstraws);
         FillCalibTable(pedestals, raw_pedestals, Nstraws);
         FillCalibTable(time_offsets, raw_time_offsets, Nstraws);
+	
+	// Verify that the right number of rings was read for each set of constants
+	char str[256];
+	if(gains.size() != Nrings){
+		sprintf(str, "Bad # of rings for CDC gain from CCDB! CCDB=%ld , should be %d", gains.size(), Nrings);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	if(pedestals.size() != Nrings){
+		sprintf(str, "Bad # of rings for CDC pedestal from CCDB! CCDB=%ld , should be %d", pedestals.size(), Nrings);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	if(time_offsets.size() != Nrings){
+		sprintf(str, "Bad # of rings for CDC time_offset from CCDB! CCDB=%ld , should be %d", time_offsets.size(), Nrings);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	// Verify the right number of straws was read for each ring for each set of constants
+	for(unsigned int i=0; i<Nrings; i++){
+		if(gains[i].size() != Nstraws[i]){
+			sprintf(str, "Bad # of straws for CDC gain from CCDB! CCDB=%ld , should be %d for ring %d", gains[i].size(), Nstraws[i], i+1);
+			cerr << str << endl;
+			throw JException(str);
+		}
+		if(pedestals[i].size() != Nstraws[i]){
+			sprintf(str, "Bad # of straws for CDC pedestal from CCDB! CCDB=%ld , should be %d for ring %d", pedestals[i].size(), Nstraws[i], i+1);
+			cerr << str << endl;
+			throw JException(str);
+		}
+		if(time_offsets[i].size() != Nstraws[i]){
+			sprintf(str, "Bad # of straws for CDC time_offset from CCDB! CCDB=%ld , should be %d for ring %d", time_offsets[i].size(), Nstraws[i], i+1);
+			cerr << str << endl;
+			throw JException(str);
+		}
+	}
 
 	return NOERROR;
 }
@@ -86,20 +127,45 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	vector<const DCDCDigiHit*> digihits;
 	loop->Get(digihits);
+	char str[256];
 	for(unsigned int i=0; i<digihits.size(); i++){
 		const DCDCDigiHit *digihit = digihits[i];
-
-		DCDCHit *hit = new DCDCHit;
-		hit->ring  = digihit->ring;
-		hit->straw = digihit->straw;
+		const int &ring  = digihit->ring;
+		const int &straw = digihit->straw;
+		
+		// Make sure ring and straw are in valid range
+		if(ring > (int)Nrings){
+			sprintf(str, "DCDCDigiHit ring out of range! ring=%d (should be 1-%d)", ring, Nrings);
+			throw JException(str);
+		}
+		if(straw > (int)Nstraws[ring-1]){
+			sprintf(str, "DCDCDigiHit straw out of range! straw=%d for ring=%d (should be 1-%d)", straw, ring, Nstraws[ring-1]);
+			throw JException(str);
+		}
+		
+		// Get pedestal. Preference is given to pedestal measured
+		// for event. Otherwise, use statitical one from CCDB
+		double pedestal = pedestals[ring-1][straw-1];
+		vector<const Df125PulseIntegral*> PIvect;
+		digihit->Get(PIvect);
+		if(!PIvect.empty()) pedestal = (double)PIvect[0]->pedestal;
 		
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
+		
+		double q = a_scale * gains[ring-1][straw-1] * (A - pedestal);
+		double t = t_scale * (T - time_offsets[ring-1][straw-1]);
+
+		if( q < DIGI_THRESHOLD) continue;
+
+		DCDCHit *hit = new DCDCHit;
+		hit->ring  = ring;
+		hit->straw = straw;
 
 		// note that ring/straw counting starts at 1
-		hit->q = a_scale * gains[hit->ring-1][hit->straw-1] * (A - pedestals[hit->ring-1][hit->straw-1]);
-		hit->t = t_scale * (T - time_offsets[hit->ring-1][hit->straw-1]);
+		hit->q = q;
+		hit->t = t;
 		hit->d = 0.0;
 		hit->itrack = -1;
 		hit->ptype = 0;
@@ -133,7 +199,7 @@ jerror_t DCDCHit_factory::fini(void)
 //------------------
 // CalcNstraws
 //------------------
-void DCDCHit_factory::CalcNstraws(jana::JEventLoop *eventLoop, int runnumber, vector<int> &Nstraws)
+void DCDCHit_factory::CalcNstraws(jana::JEventLoop *eventLoop, int runnumber, vector<unsigned int> &Nstraws)
 {
     DGeometry *dgeom;
     vector<vector<DCDCWire *> >cdcwires;
@@ -164,7 +230,7 @@ void DCDCHit_factory::CalcNstraws(jana::JEventLoop *eventLoop, int runnumber, ve
 // FillCalibTable
 //------------------
 void DCDCHit_factory::FillCalibTable(vector< vector<double> > &table, vector<double> &raw_table, 
-				     vector<int> &Nstraws)
+				     vector<unsigned int> &Nstraws)
 {
     int ring = 0;
     int straw = 0;
@@ -178,7 +244,7 @@ void DCDCHit_factory::FillCalibTable(vector< vector<double> > &table, vector<dou
         if(channel == CDC_MAX_CHANNELS) break;
 
 	// if we've hit the end of the ring, move on to the next
-	if(straw == Nstraws[ring]) {
+	if(straw == (int)Nstraws[ring]) {
 	    ring++;
 	    straw = 0;
 	}
