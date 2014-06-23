@@ -131,10 +131,6 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
     if (num_fdc_hits>0){
       if (forward_traj[k].h_id>0 && forward_traj[k].h_id<1000){
 	unsigned int id=forward_traj[k].h_id-1;
-	if (fit_type==kWireBased && id==mMinDriftID){
-	  mMinDriftTime=my_fdchits[id]->t-forward_traj[k].t;
-	}
-	
 
 	double cosa=my_fdchits[id]->cosa;
 	double sina=my_fdchits[id]->sina;
@@ -230,7 +226,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  double prob_hit=exp(-0.5*chi2_hit)/sqrt(M_TWO_PI*Vtemp);
 
 	  // Cut out outliers
-	  if (chi2_hit<fdc_chi2cut){
+	  if (chi2_hit<fdc_chi2cut && my_fdchits[id]->status==good_hit){
 	    probs.push_back(prob_hit);
 	    Vlist.push_back(V);
 	    Hlist.push_back(H);
@@ -244,68 +240,65 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  // loop over the remaining hits
 	  for (unsigned int m=1;m<forward_traj[k].num_hits;m++){
 	    unsigned int my_id=id-m;
+	    if (my_fdchits[my_id]->status==good_hit){
+	      u=my_fdchits[my_id]->uwire;
+	      v=my_fdchits[my_id]->vstrip;
+
+	      // Doca to this wire
+	      doca=(upred-u)*cosalpha;
 	    
-	    if (fit_type==kWireBased && id==mMinDriftID){
-	      mMinDriftTime=my_fdchits[my_id]->t-forward_traj[k].t;
-	    }
-
-	    u=my_fdchits[my_id]->uwire;
-	    v=my_fdchits[my_id]->vstrip;
-
-	    // Doca to this wire
-	    doca=(upred-u)*cosalpha;
-	    
-	    // variance for coordinate along the wire
-	    V=fdc_y_variance(my_fdchits[my_id]->dE);
-	    
-	    // Difference between measurement and projection
-	    Mdiff=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
-					     -tv*sinalpha
-					     ));
-
-	    // Update the terms in H/H_T that depend on the particular hit    
-	    doca_cosalpha=doca*cosalpha;
-	    temp=doca_cosalpha*fac;	
-	    H_T(state_tx)=cosa*temp	 
-	      -doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2)
-	      ;
-	    H_T(state_ty)=-sina*temp
-	      -doca_cosalpha*(tu*cosa-tv*sina*cos2_minus_sin2)
-	      ;
-					
-	    // Matrix transpose H_T -> H
-	    H(state_tx)=H_T(state_tx);
-	    H(state_ty)=H_T(state_ty);
-
-	    // Calculate the kalman gain for this hit 
-	    //Vtemp=V+H*C*H_T;
-	    Vtemp=V+C.SandwichMultiply(H_T);
-	    InvV=1./Vtemp;
-
-	    // probability
-	    chi2_hit=Mdiff*Mdiff*InvV;
-	    prob_hit=exp(-0.5*chi2_hit)/sqrt(M_TWO_PI*Vtemp);
-
-	    // Cut out outliers
-	    if(chi2_hit<fdc_chi2cut){	      
-	      probs.push_back(prob_hit);	
-	      Mlist.push_back(Mdiff);
-	      Vlist.push_back(V);
-	      Hlist.push_back(H);   
-	      Klist.push_back(InvV*(C*H_T));	  
-  
-	      used_ids.push_back(my_id);
-	      fdc_updates[my_id].used_in_fit=true;
-
+	      // variance for coordinate along the wire
+	      V=fdc_y_variance(my_fdchits[my_id]->dE);
+	      
+	      // Difference between measurement and projection
+	      Mdiff=v-(vpred_uncorrected+doca*(nz_sinalpha_plus_nr_cosalpha
+					       -tv*sinalpha
+					       ));
+	      
+	      // Update the terms in H/H_T that depend on the particular hit    
+	      doca_cosalpha=doca*cosalpha;
+	      temp=doca_cosalpha*fac;	
+	      H_T(state_tx)=cosa*temp	 
+		-doca_cosalpha*(tu*sina+tv*cosa*cos2_minus_sin2)
+		;
+	      H_T(state_ty)=-sina*temp
+		-doca_cosalpha*(tu*cosa-tv*sina*cos2_minus_sin2)
+		;
+	      
+	      // Matrix transpose H_T -> H
+	      H(state_tx)=H_T(state_tx);
+	      H(state_ty)=H_T(state_ty);
+	      
+	      // Calculate the kalman gain for this hit 
+	      //Vtemp=V+H*C*H_T;
+	      Vtemp=V+C.SandwichMultiply(H_T);
+	      InvV=1./Vtemp;
+	      
+	      // probability
+	      chi2_hit=Mdiff*Mdiff*InvV;
+	      prob_hit=exp(-0.5*chi2_hit)/sqrt(M_TWO_PI*Vtemp);
+	      
+	      // Cut out outliers
+	      if(chi2_hit<fdc_chi2cut){	      
+		probs.push_back(prob_hit);	
+		Mlist.push_back(Mdiff);
+		Vlist.push_back(V);
+		Hlist.push_back(H);   
+		Klist.push_back(InvV*(C*H_T));	  
+		
+		used_ids.push_back(my_id);
+		fdc_updates[my_id].used_in_fit=true;
+		
+	      }
 	    }
 	  }
 	  double prob_tot=1e-100;
 	  for (unsigned int m=0;m<probs.size();m++){
 	    prob_tot+=probs[m];
 	  }
-
+	  
 	  // Adjust the state vector and the covariance using the hit 
-	  //information
+	    //information
 	  DMatrix5x5 sum=I5x5;
 	  DMatrix5x5 sum2;
 	  for (unsigned int m=0;m<Klist.size();m++){
@@ -419,7 +412,7 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
      
       // Check if the doca is no longer decreasing
       if (doca2>old_doca2 /* && z<endplate_z */){
-	if(my_cdchits[cdc_index]->status==0){
+	if(my_cdchits[cdc_index]->status==good_hit){
 	  double newz=z;
 	
 	  // Get energy loss 
