@@ -1750,14 +1750,14 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
-				channel = (*iptr>>20) & 0x0F;
+				channel = (*iptr>>20) & 0x7F;  // is this right??
 				pulse_number = (*iptr>>21) & 0x03;
 				sum = (*iptr>>0) & 0x7FFFF;
 				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
 
 				break;
 			case 8: // Pulse Time
-				channel = (*iptr>>23) & 0x0F;
+				channel = (*iptr>>20) & 0x7F; // is this right??
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0x7FFFF;
@@ -1830,7 +1830,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 //----------------
 void JEventSource_EVIO::MakeDf125WindowRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
 {
-	uint32_t channel = (*iptr>>23) & 0x0F;
+	uint32_t channel = (*iptr>>20) & 0x7F;
 	uint32_t window_width = (*iptr>>0) & 0x0FFF;
 
 	Df125WindowRawData *wrd = new Df125WindowRawData(rocid, slot, channel, itrigger);
