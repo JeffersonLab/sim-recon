@@ -981,7 +981,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
 {
-	uint16_t ped_samples=5;
+	uint16_t ped_samples=20;
 	uint32_t pulse_number = 0;
 	uint32_t quality_factor = 0;
 	// Loop over all window raw data objects
