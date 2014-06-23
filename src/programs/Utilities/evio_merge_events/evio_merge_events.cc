@@ -150,11 +150,13 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 				}
 			}catch(evioException e){
 				cerr << e.what() << endl;
+				QUIT=true;
 				break;
 			}
 			evioDOMTree *dom = new evioDOMTree(ichan[i]);
 			doms.push_back(dom);
 		}
+		if(QUIT) break;
 		if(doms.size() != ichan.size()) break;
 		NEvents_read++;
 		
@@ -179,16 +181,26 @@ void Process(unsigned int &NEvents, unsigned int &NEvents_read)
 					if(mynodes.get() == NULL) continue;
 					evioDOMNodeList::const_iterator myiter;
 					for(myiter=mynodes->begin(); myiter!=mynodes->end(); myiter++) {
-						(*myiter)->move(root);
+						try{
+							(*myiter)->move(root);
+						}catch(...){
+							QUIT = true;
+							break;
+						}
 					}
+					if(QUIT) break;
 				}
+				if(QUIT) break;
 			}
+			if(QUIT) break;
 		}
 		
 		// Write event to output file
-		ochan.write(tree);
-		NEvents++;
-		
+		if(!QUIT){
+			ochan.write(tree);
+			NEvents++;
+		}
+
 		// Update ticker
 		time_t now = time(NULL);
 		if(now != last_time){
