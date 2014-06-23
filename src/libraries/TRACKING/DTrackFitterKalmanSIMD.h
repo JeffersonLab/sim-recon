@@ -372,7 +372,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 					    double &chisq, 
 					    unsigned int &numdof);
     
-
+  void ComputeCDCDrift(double t,double B,double &d, double &V);
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
   //const DLorentzDeflections *lorentz_def;// pointer to lorentz correction map
@@ -466,6 +466,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
   bool ADD_VERTEX_POINT;
   unsigned int MIN_HITS_FOR_REFIT;
   double THETA_CUT;
+  bool USE_PASS1_TIME_MODE;
 
   // Maximum number of sigma's away from the predicted position to include hit
   double NUM_CDC_SIGMA_CUT,NUM_FDC_SIGMA_CUT;
@@ -510,7 +511,7 @@ class DTrackFitterKalmanSIMD: public DTrackFitter{
 // Smearing function derived from fitting residuals
 inline double DTrackFitterKalmanSIMD::cdc_variance(double B,double t){ 
   //return CDC_VARIANCE;
-  if (t<0.0) t=0.0;
+  if (t<0.0) t=0.;
   
   //double sigma=0.13/(t+3.6)+10e-3;
   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;

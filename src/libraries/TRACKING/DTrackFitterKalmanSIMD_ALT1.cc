@@ -673,16 +673,11 @@ kalman_error_t DTrackFitterKalmanSIMD_ALT1::KalmanForward(double fdc_anneal_fact
 	  
 	  // The next measurement
 	  double dm=0.39,tdrift=0.;
-	  if (fit_type==kTimeBased){
+	  if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
 	    tdrift=my_cdchits[cdc_index]->tdrift-mT0
-		-forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
-	    double B=forward_traj[k].B;
-	    dm=cdc_drift_distance(tdrift,B);
-	    
-	    // variance
-	    Vc=cdc_variance(B,tdrift);
-	    double temp=1./(1131.+2.*140.7*dm);
-	    Vc+=mVarT0*temp*temp;
+	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
+	    double B=forward_traj[k_minus_1].B;
+	    ComputeCDCDrift(tdrift,B,dm,Vc);
 	  }
 
 	  // Residual

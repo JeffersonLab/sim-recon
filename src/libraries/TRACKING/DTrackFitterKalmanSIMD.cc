@@ -138,6 +138,29 @@ double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
   */
 }
 
+// Convert time to distance for the cdc and compute variance
+void DTrackFitterKalmanSIMD::ComputeCDCDrift(double t,double B,
+					     double &d, double &V){
+  d=0.;
+  V=0.2028; // initalize with (cell size)/12.
+  if (t>0){
+    double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
+    double tcorr=t-dtc;
+
+    unsigned int index=0;
+    index=locate(cdc_drift_table,tcorr);
+    double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
+    double frac=(tcorr-cdc_drift_table[index])/dt;
+    d=0.01*(double(index)+frac); 
+
+    double sigma=CDC_RES_PAR1/(tcorr+1.)+CDC_RES_PAR2;
+    V=sigma*sigma+mVarT0*0.0001/(dt*dt);
+  }
+}
+
+
+
+
 #define FDC_T0_OFFSET 17.6
 // Interpolate on a table to convert time to distance for the fdc
 double DTrackFitterKalmanSIMD::fdc_drift_distance(double t,double Bz){
@@ -210,6 +233,9 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
   USE_MULS_COVARIANCE=true;
   gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",
 			      USE_MULS_COVARIANCE);  
+
+  USE_PASS1_TIME_MODE=false;
+  gPARMS->SetDefaultParameter("KALMAN:USE_PASS1_TIME_MODE",USE_PASS1_TIME_MODE);
 
   RECOVER_BROKEN_TRACKS=true;
   gPARMS->SetDefaultParameter("KALMAN:RECOVER_BROKEN_TRACKS",RECOVER_BROKEN_TRACKS);
@@ -3799,19 +3825,12 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanCentral(double anneal_factor,
 
 	// Measurement
 	double measurement=0.39,tdrift=0.;
-	if (fit_type==kTimeBased){	
+	if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
 	  tdrift=my_cdchits[cdc_index]->tdrift-mT0
-	    -central_traj[k].t*TIME_UNIT_CONVERSION;
-	  double B=central_traj[k].B;
-	  measurement=cdc_drift_distance(tdrift,B);
-	  // _DBG_ << "CDChit: t2d >> " << measurement << " tdrift="<<tdrift<<"    with B="<<B<<endl;
-	   
-	  // Measurement error
-	  V=cdc_variance(B,tdrift);
-	  double temp=1./(1131.+2.*140.7*measurement);
-	  V+=mVarT0*temp*temp;
-
-	}    
+	    -central_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
+	  double B=central_traj[k_minus_1].B;
+	  ComputeCDCDrift(tdrift,B,measurement,V);
+	}
 
        	// Projection matrix        
 	sinphi=sin(Sc(state_phi));
@@ -5061,22 +5080,11 @@ kalman_error_t DTrackFitterKalmanSIMD::KalmanForwardCDC(double anneal,DMatrix5x1
 	
 	// The next measurement
 	double dm=0.39,tdrift=0.;
-	if (fit_type==kTimeBased){
-	  tdrift=my_cdchits[cdc_index]->hit->tdrift-mT0
-	    -forward_traj[k].t*TIME_UNIT_CONVERSION;
-	  double B=forward_traj[k].B;
-	  dm=cdc_drift_distance(tdrift,B);
- 
-	  V=cdc_variance(B,tdrift);
-	  double temp=1./(1131.+2.*140.7*dm);
-	  V+=mVarT0*temp*temp;
-
-	  if (DEBUG_HISTS){
-	    cdc_drift_forward->Fill(tdrift,d);
-	    //cdc_res_forward->Fill(tdrift,dm-d);	
-	  }
-	  
-	  //printf("V %f vart0 %f\n",V,0.0073*0.0073*0.09);
+	if (fit_type==kTimeBased || USE_PASS1_TIME_MODE){	
+	  tdrift=my_cdchits[cdc_index]->tdrift-mT0
+	      -forward_traj[k_minus_1].t*TIME_UNIT_CONVERSION;
+	  double B=forward_traj[k_minus_1].B;
+	  ComputeCDCDrift(tdrift,B,dm,V);
 	}
 	  
 	// residual
