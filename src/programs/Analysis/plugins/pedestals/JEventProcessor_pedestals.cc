@@ -139,10 +139,23 @@ TH2D* JEventProcessor_pedestals::GetHist(const DDAQAddress *hit)
 		if(dynamic_cast<const Df250PulseIntegral*>(hit) != NULL) mod_type = DModuleType::FADC250;
 		else if(dynamic_cast<const Df125PulseIntegral*>(hit) != NULL) mod_type = DModuleType::FADC125;
 		
-		int Nchan=0;
+		int Nchan = 0;
+		int Nbins = 100;
+		double xmin = -100.0;
+		double xmax = +100.0;
 		switch(mod_type){
-			case DModuleType::FADC250: Nchan = 16; break;
-			case DModuleType::FADC125: Nchan = 72; break;
+			case DModuleType::FADC250:
+				Nchan = 16;
+				Nbins = 1050;
+				xmin = -1000.0;
+				xmax = 20000.0;
+				break;
+			case DModuleType::FADC125:
+				Nchan = 72;
+				Nbins = 1050;
+				xmin = -1000.0;
+				xmax = 100000.0;
+				break;
 			case DModuleType::F1TDC32: Nchan = 32; break;
 			case DModuleType::F1TDC48: Nchan = 48; break;
 			default:
@@ -156,7 +169,7 @@ TH2D* JEventProcessor_pedestals::GetHist(const DDAQAddress *hit)
 		sprintf(hname, "slot%02d", hit->slot);
 		string mod_name = DModuleType::GetName(mod_type);
 		sprintf(title, "Pedestals for %s roc=%d slot=%d", mod_name.c_str(), hit->rocid, hit->slot);
-		h = new TH2D(hname, title, 1050, -1000.0, 20000, Nchan, -0.5, (double)Nchan-0.5);
+		h = new TH2D(hname, title, Nbins, xmin, xmax, Nchan, -0.5, (double)Nchan-0.5);
 		h->SetXTitle("measured pedestal (scaled to total samples)");
 		// h->SetYTitle("channel"); // somehow, this causes crashes when running root on the file later on ??!!
 		h->SetStats(0);
