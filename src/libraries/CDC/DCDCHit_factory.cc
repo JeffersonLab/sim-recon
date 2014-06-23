@@ -19,7 +19,7 @@ using namespace jana;
 #define CDC_MAX_CHANNELS  3522
 
 static int USE_MC_CALIB = 0;
-static double DIGI_THRESHOLD = -1000.0;
+static double DIGI_THRESHOLD = -1000000.0;
 
 //------------------
 // init
@@ -44,7 +44,7 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 
 	/// set the base conversion scales
 	//a_scale    = 1.0E6/1.3E5; 
-	a_scale    = 4.0E3/5.0E4; 
+	a_scale    = 4.0E3/1.0E2; 
 	t_scale    = 8.0;    // 8 ns/count
 
 	/// Read in calibration constants
