@@ -150,6 +150,12 @@ double DAnalysisUtilities::Calc_Beta_Timing(const DChargedTrackHypothesis* locCh
 	return locChargedTrackHypothesis->pathLength()/(29.9792458*(locChargedTrackHypothesis->t1() - locStartTime));
 }
 
+double DAnalysisUtilities::Calc_Beta_Timing(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch) const
+{
+	double locStartTime = locEventRFBunch->dTime + (locNeutralParticleHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
+	return locNeutralParticleHypothesis->pathLength()/(29.9792458*(locNeutralParticleHypothesis->t1() - locStartTime));
+}
+
 void DAnalysisUtilities::Get_UnusedChargedTracks(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo, vector<const DChargedTrack*>& locUnusedChargedTracks) const
 {
 	locUnusedChargedTracks.clear();

@@ -47,6 +47,7 @@ class DAnalysisUtilities : public JObject
 		DAnalysisUtilities(JEventLoop *loop); // require JEventLoop in constructor
 
 		double Calc_Beta_Timing(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const;
+		double Calc_Beta_Timing(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch) const;
 
 		bool Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExactMatchFlag) const;
 
