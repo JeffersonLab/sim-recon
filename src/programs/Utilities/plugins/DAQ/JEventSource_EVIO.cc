@@ -1581,8 +1581,11 @@ void JEventSource_EVIO::MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, ui
 		iptr++;
 
 		// Make sure this is a data continuation word, if not, stop here
-		if(((*iptr>>31) & 0x1) != 0x0)break;
-		
+		if(((*iptr>>31) & 0x1) != 0x0){
+			iptr--; // calling method expects us to point to last word in block
+			break;
+		}
+
 		bool invalid_1 = (*iptr>>29) & 0x1;
 		bool invalid_2 = (*iptr>>13) & 0x1;
 		uint16_t sample_1 = 0;
@@ -1620,9 +1623,12 @@ void JEventSource_EVIO::MakeDf250WindowRawData(ObjList *objs, uint32_t rocid, ui
 //----------------
 void JEventSource_EVIO::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uint32_t slot, uint32_t itrigger, const uint32_t* &iptr)
 {
+	const uint32_t *istart = iptr;
 	uint32_t channel = (*iptr>>23) & 0x0F;
-	uint32_t pulse_number = (*iptr>>21) & 0x000F;
+	uint32_t pulse_number = (*iptr>>21) & 0x0003;
 	uint32_t first_sample_number = (*iptr>>0) & 0x03FF;
+	
+	if(VERBOSE>9) evioout << "        DF250PulseRawData: iptr=0x" << hex << iptr << dec << " channel=" << channel << " pulse_number=" << pulse_number << " first_sample=" << first_sample_number << endl;
 	
 	Df250PulseRawData *prd = new Df250PulseRawData(rocid, slot, channel, itrigger, pulse_number, first_sample_number);
 	
@@ -1656,6 +1662,14 @@ void JEventSource_EVIO::MakeDf250PulseRawData(ObjList *objs, uint32_t rocid, uin
 		prd->overflow |= (sample_2>>12) & 0x1;
 	}
 	
+	if(VERBOSE>9) evioout << "          number of samples: " << prd->samples.size() << "  words processed: " << iptr-istart << endl;
+	
+	// When should get here because the loop above stopped when it found
+	// a data defining word (bit 31=1). The method calling this one will
+	// assume iptr is pointing to the last word of this block and it will
+	// advance to the first word of the next block. We need to back up one
+	// word so that it is pointing to the last word of this block.
+	iptr--;
 	
 	// Due to how the calling function works, the value of "objs" passed to us may be NULL.
 	// This will happen if a Window Raw Data block is encountered before an event header.
