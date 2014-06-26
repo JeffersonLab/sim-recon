@@ -124,10 +124,6 @@ jerror_t DEventProcessor_bcal_calib::brun(JEventLoop *loop, int runnumber)
   
 
   if (DEBUG_HISTS){
-    Hcdc_prelimprob = (TH1F*)gROOT->FindObject("Hcdc_prelimprob");
-    if (!Hcdc_prelimprob){
-      Hcdc_prelimprob=new TH1F("Hcdc_prelimprob","Confidence level for prelimary fit",100,0.0,1.); 
-    } 
     
     Hcdc_prob = (TH1F*)gROOT->FindObject("Hcdc_prob");
     if (!Hcdc_prob){
@@ -142,12 +138,6 @@ jerror_t DEventProcessor_bcal_calib::brun(JEventLoop *loop, int runnumber)
       Hcdcmatch_stereo=new TH1F("Hcdcmatch_stereo","CDC stereo hit matching distance",1000,0.0,50.); 
     }
     
-    
-    Hbcalmatch=(TH2F*)gROOT->FindObject("Hbcalmatch");
-    if (!Hbcalmatch){
-      Hbcalmatch=new TH2F("Hbcalmatch","BCAL #deltar vs #deltaz",100,-50.,50.,
-			  100,0.,10.);
-    }
     Hbcalmatchxy=(TH2F*)gROOT->FindObject("Hbcalmatchxy");
     if (!Hbcalmatchxy){
       Hbcalmatchxy=new TH2F("Hbcalmatchxy","BCAL #deltay vs #deltax",400,-50.,50.,
@@ -300,57 +290,17 @@ DEventProcessor_bcal_calib::DoFilter(DMatrix4x1 &S,
       // Lock mutex
       pthread_mutex_lock(&mutex);
       
-      Hcdc_prelimprob->Fill(prob);
+      Hcdc_prob->Fill(prob);
       
       // Unlock mutex
       pthread_mutex_unlock(&mutex);
     }
 
-    if (prob>0.001){
-      // Perform a time-based pass
+    if (prob>0.01){
+      // Save the best version of the state vector
       S=Sbest;
 
-      chi2=1e16;
-      for (iter=0;iter<20;iter++){
-	chi2_old=chi2; 
-	ndof_old=ndof;
-      
-	trajectory.clear();
-	if (SetReferenceTrajectory(mOuterZ,S,trajectory,hits[maxindex])
-	    ==NOERROR){
-	  C=C0;
-	  KalmanFilter(S,C,hits,trajectory,chi2,ndof,true);
-	  
-	  //printf(">>>>>>chi2 %f ndof %d\n",chi2,ndof);
-	  if (fabs(chi2-chi2_old)<0.1 
-	      || TMath::Prob(chi2,ndof)<TMath::Prob(chi2_old,ndof_old)) break;
-	  
-	  Sbest=S;
-	  Cbest=C;
-	}
-	else break;
-      }
-      if (iter>0){
-	double prob=TMath::Prob(chi2_old,ndof_old);
-	//printf("Time-based prob %f\n",prob);
-
-	if (DEBUG_HISTS){
-	  // Lock mutex
-	  pthread_mutex_lock(&mutex);
-	  
-	  Hcdc_prob->Fill(prob);
-	  
-	  // Unlock mutex
-	  pthread_mutex_unlock(&mutex);
-	}
-	  
-	if (prob>0.001){
-	  S=Sbest;
-	  //S.Print();
-	  return NOERROR;
-	}
-	return VALUE_OUT_OF_RANGE;
-      }
+      return NOERROR;
     }
   }
   
@@ -530,15 +480,8 @@ DEventProcessor_bcal_calib::KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
       diff+=s*tdir-t*wdir;
       double d=diff.Mag();
 
-      // The next measurement and its variance
-      double tdrift=hits[cdc_index]->tdrift-mT0-trajectory[k].t;
+      // The next measurement: use half the radius of the straw
       double dmeas=0.39; 
-      if (timebased){
-	V=cdc_variance(tdrift);
-	dmeas=cdc_drift_distance(tdrift);
-
-	//printf("t0 %f t %f d %f %f V %f\n",mT0,tdrift,dmeas,d,V);
-      }
 
       // residual
       double res=dmeas-d;
@@ -692,6 +635,8 @@ jerror_t DEventProcessor_bcal_calib
   return NOERROR;
 }
 
+// Link axial segments together to form track candidates and match to stereo 
+// hits
 jerror_t 
 DEventProcessor_bcal_calib::LinkSegments(vector<cdc_segment_t>&axial_segments,
 					 vector<const DCDCTrackHit *>&stereo_hits,

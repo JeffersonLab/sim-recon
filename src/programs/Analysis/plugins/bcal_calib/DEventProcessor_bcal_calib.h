@@ -118,8 +118,8 @@ class DEventProcessor_bcal_calib:public jana::JEventProcessor{
     
   pthread_mutex_t mutex;
 
-  TH1F *Hcdc_prob,*Hcdc_prelimprob,*Hcdcmatch,*Hcdcmatch_stereo;
-  TH2F *Hbcalmatch,*Hbcalmatchxy;
+  TH1F *Hcdc_prob,*Hcdcmatch,*Hcdcmatch_stereo;
+  TH2F *Hbcalmatchxy;
 
   double mT0;
 
