@@ -22,13 +22,16 @@
 #include <DMatrix.h>
 #include <TMath.h>
 
-class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleHypothesis>{
+class DNeutralParticleHypothesis_factory:public jana::JFactory<DNeutralParticleHypothesis>
+{
 	public:
 		DNeutralParticleHypothesis_factory(){};
 		~DNeutralParticleHypothesis_factory(){};
 
-		void Calc_ParticleCovariance(const DNeutralShower* locNeutralShower, double locMass, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
 		DNeutralParticleHypothesis* Create_DNeutralParticleHypothesis(const DNeutralShower* locNeutralShower, Particle_t locPID, const DEventRFBunch* locEventRFBunch) const;
+
+		void Calc_ParticleCovariance_Photon(const DNeutralShower* locNeutralShower, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
+		void Calc_ParticleCovariance_Massive(const DNeutralShower* locNeutralShower, double locMass, double locDeltaT, double locStartTimeVariance, const DVector3& locMomentum, const DVector3& locPathVector, DMatrixDSym& locParticleCovariance) const;
 
 	private:
 		double dTargetLength;

@@ -12,14 +12,14 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dMinCombinedTrackingFOM.first = false;
 	dMinCombinedTrackingFOM.second = 0.0;
 
-	dMinIndividualPIDFOM.first = false;
-	dMinIndividualPIDFOM.second = 0.0;
+	dMinChargedPIDFOM.first = false;
+	dMinChargedPIDFOM.second = 0.0;
 
-	dMinIndividualNeutralPIDFOM.first = false;
-	dMinIndividualNeutralPIDFOM.second = 5.73303E-7;
+	dMinPhotonPIDFOM.first = false;
+	dMinPhotonPIDFOM.second = 5.73303E-7;
 
-	dMinIndividualTrackingFOM.first = false;
-	dMinIndividualTrackingFOM.second = 0.0027;
+	dMinTrackingFOM.first = false;
+	dMinTrackingFOM.second = 0.0027;
 
 	dMaxPhotonRFDeltaT.first = false;
 	dMaxPhotonRFDeltaT.second = 10.0*2.004; //10 RF buckets

@@ -152,7 +152,7 @@ double DAnalysisUtilities::Calc_Beta_Timing(const DChargedTrackHypothesis* locCh
 
 double DAnalysisUtilities::Calc_Beta_Timing(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DEventRFBunch* locEventRFBunch) const
 {
-	double locStartTime = locEventRFBunch->dTime + (locNeutralParticleHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
+	double locStartTime = locEventRFBunch->dTime + (locNeutralParticleHypothesis->z() - dTargetZCenter)/29.9792458;
 	return locNeutralParticleHypothesis->pathLength()/(29.9792458*(locNeutralParticleHypothesis->t1() - locStartTime));
 }
 

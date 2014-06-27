@@ -33,10 +33,10 @@ class DReaction : public JObject
 		inline void Set_NeutralShowerFactoryTag(string locNeutralShowerFactoryTag){dNeutralShowerFactoryTag = locNeutralShowerFactoryTag;}
 
 		// SET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
-		inline void Set_MinIndividualPIDFOM(double locMinIndividualPIDFOM){dMinIndividualPIDFOM = pair<bool, double>(true, locMinIndividualPIDFOM);}
-		inline void Set_MinIndividualNeutralPIDFOM(double locMinIndividualNeutralPIDFOM){dMinIndividualNeutralPIDFOM = pair<bool, double>(true, locMinIndividualNeutralPIDFOM);}
+		inline void Set_MinChargedPIDFOM(double locMinChargedPIDFOM){dMinChargedPIDFOM = pair<bool, double>(true, locMinChargedPIDFOM);}
+		inline void Set_MinPhotonPIDFOM(double locMinPhotonPIDFOM){dMinPhotonPIDFOM = pair<bool, double>(true, locMinPhotonPIDFOM);}
 		inline void Set_MinCombinedPIDFOM(double locMinCombinedPIDFOM){dMinCombinedPIDFOM = pair<bool, double>(true, locMinCombinedPIDFOM);}
-		inline void Set_MinIndividualTrackingFOM(double locMinIndividualTrackingFOM){dMinIndividualTrackingFOM = pair<bool, double>(true, locMinIndividualTrackingFOM);}
+		inline void Set_MinTrackingFOM(double locMinTrackingFOM){dMinTrackingFOM = pair<bool, double>(true, locMinTrackingFOM);}
 		inline void Set_MinCombinedTrackingFOM(double locMinCombinedTrackingFOM){dMinCombinedTrackingFOM = pair<bool, double>(true, locMinCombinedTrackingFOM);}
 		inline void Set_MaxPhotonRFDeltaT(double locMaxPhotonRFDeltaT){dMaxPhotonRFDeltaT = pair<bool, double>(true, locMaxPhotonRFDeltaT);}
 		inline void Set_MinProtonMomentum(double locMinProtonMomentum){dMinProtonMomentum = pair<bool, double>(true, locMinProtonMomentum);}
@@ -75,10 +75,10 @@ class DReaction : public JObject
 		inline string Get_NeutralShowerFactoryTag(void) const{return dNeutralShowerFactoryTag;}
 
 		// GET PRE-DPARTICLECOMBO CUT VALUES //Command-line values will override these values
-		inline pair<bool, double> Get_MinIndividualPIDFOM(void) const{return dMinIndividualPIDFOM;}
-		inline pair<bool, double> Get_MinIndividualNeutralPIDFOM(void) const{return dMinIndividualNeutralPIDFOM;}
+		inline pair<bool, double> Get_MinChargedPIDFOM(void) const{return dMinChargedPIDFOM;}
+		inline pair<bool, double> Get_MinPhotonPIDFOM(void) const{return dMinPhotonPIDFOM;}
 		inline pair<bool, double> Get_MinCombinedPIDFOM(void) const{return dMinCombinedPIDFOM;}
-		inline pair<bool, double> Get_MinIndividualTrackingFOM(void) const{return dMinIndividualTrackingFOM;}
+		inline pair<bool, double> Get_MinTrackingFOM(void) const{return dMinTrackingFOM;}
 		inline pair<bool, double> Get_MinCombinedTrackingFOM(void) const{return dMinCombinedTrackingFOM;}
 		inline pair<bool, double> Get_MaxPhotonRFDeltaT(void) const{return dMaxPhotonRFDeltaT;}
 		inline pair<bool, double> Get_MinProtonMomentum(void) const{return dMinProtonMomentum;}
@@ -126,10 +126,10 @@ class DReaction : public JObject
 			//Command-line values (variable names are below in all-caps) will override these values
 			//all cuts are disabled by default except dMinProtonMomentum: 300 MeV/c (value used during track reconstruction)
 			//note: tracks with no PID information are not cut-by/included-in the PID cuts
-		pair<bool, double> dMinIndividualPIDFOM; //COMBO:MIN_INDIVIDUAL_PID_FOM - the minimum PID FOM for a particle used for this DReaction
-		pair<bool, double> dMinIndividualNeutralPIDFOM; //COMBO:MIN_INDIVIDUAL_NEUTRAL_PID_FOM - the minimum PID FOM for a neutral particle used for this DReaction
+		pair<bool, double> dMinChargedPIDFOM; //COMBO:MIN_CHARGED_PID_FOM - the minimum PID FOM for a particle used for this DReaction
+		pair<bool, double> dMinPhotonPIDFOM; //COMBO:MIN_PHOTON_PID_FOM - the minimum PID FOM for a neutral particle used for this DReaction
 		pair<bool, double> dMinCombinedPIDFOM; //COMBO:MIN_COMBINED_PID_FOM - the minimum combined PID FOM for all particles used for this DReaction
-		pair<bool, double> dMinIndividualTrackingFOM; //COMBO:MIN_INDIVIDUAL_TRACKING_FOM - the minimum Tracking FOM for a charged track used for this DReaction
+		pair<bool, double> dMinTrackingFOM; //COMBO:MIN_TRACKING_FOM - the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinCombinedTrackingFOM; //COMBO:MIN_COMBINED_TRACKING_FOM - the minimum combined Tracking FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //COMBO:MAX_PHOTON_RF_DELTAT - the maximum photon-rf time difference: used for photon selection
 		pair<bool, double> dMinProtonMomentum; //COMBO:MIN_PROTON_MOMENTUM - when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have

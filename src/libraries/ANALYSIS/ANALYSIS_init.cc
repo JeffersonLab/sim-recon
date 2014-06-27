@@ -62,6 +62,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	//For some reason, have difficulty linking these classes without using them somewhere within the library
 	DHistogramAction_ThrownParticleKinematics();
 	DHistogramAction_DetectedParticleKinematics();
+	DHistogramAction_ReconnedThrownKinematics();
 	DHistogramAction_GenReconTrackComparison();
 	DHistogramAction_TrackMultiplicity();
 	DHistogramAction_TOFHitStudy();

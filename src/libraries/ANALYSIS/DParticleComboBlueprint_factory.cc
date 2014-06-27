@@ -9,7 +9,7 @@ jerror_t DParticleComboBlueprint_factory::init(void)
 
 	dDebugLevel = 0;
 	dMinProtonMomentum = pair<bool, double>(false, -1.0);
-	dMinIndividualTrackingFOM = pair<bool, double>(false, -1.0);
+	dMinTrackingFOM = pair<bool, double>(false, -1.0);
 	dReactionShowerSelectionTag = pair<bool, string>(false, "");
 	dReactionTrackSelectionTag = pair<bool, string>(false, "");
 	dHasDetectorMatchFlag = pair<bool, bool>(false, false);
@@ -39,10 +39,10 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 		gPARMS->GetParameter("COMBO:MIN_PROTON_MOMENTUM", dMinProtonMomentum.second);
 	}
 
-	if(gPARMS->Exists("COMBO:MIN_INDIVIDUAL_TRACKING_FOM"))
+	if(gPARMS->Exists("COMBO:MIN_TRACKING_FOM"))
 	{
-		dMinIndividualTrackingFOM.first = true;
-		gPARMS->GetParameter("COMBO:MIN_INDIVIDUAL_TRACKING_FOM", dMinIndividualTrackingFOM.second);
+		dMinTrackingFOM.first = true;
+		gPARMS->GetParameter("COMBO:MIN_TRACKING_FOM", dMinTrackingFOM.second);
 	}
 
 	if(gPARMS->Exists("COMBO:REACTION_TRACK_SELECT_TAG"))
@@ -899,11 +899,11 @@ bool DParticleComboBlueprint_factory::Cut_HasDetectorMatch(const DReaction* locR
 
 bool DParticleComboBlueprint_factory::Cut_TrackingFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const
 {
-	pair<bool, double> locMinIndividualTrackingFOM = dMinIndividualTrackingFOM.first ? dMinIndividualTrackingFOM : locReaction->Get_MinIndividualTrackingFOM();
-	if(!locMinIndividualTrackingFOM.first)
+	pair<bool, double> locMinTrackingFOM = dMinTrackingFOM.first ? dMinTrackingFOM : locReaction->Get_MinTrackingFOM();
+	if(!locMinTrackingFOM.first)
 		return true;
 	double locFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
-	return ((locChargedTrackHypothesis->dNDF_Track == 0) ? true : (locFOM >= locMinIndividualTrackingFOM.second));
+	return ((locChargedTrackHypothesis->dNDF_Track == 0) ? true : (locFOM >= locMinTrackingFOM.second));
 }
 
 DParticleComboBlueprintStep* DParticleComboBlueprint_factory::Get_ParticleComboBlueprintStepResource(void)

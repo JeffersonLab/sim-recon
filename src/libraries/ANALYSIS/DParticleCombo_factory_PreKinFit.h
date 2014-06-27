@@ -80,8 +80,8 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values will override these values
-		pair<bool, double> dMinIndividualPIDFOM; //the minimum PID FOM for a particle used for this DReaction
-		pair<bool, double> dMinIndividualNeutralPIDFOM; //the minimum PID FOM for a neutral particle used for this DReaction
+		pair<bool, double> dMinChargedPIDFOM; //the minimum PID FOM for a particle used for this DReaction
+		pair<bool, double> dMinPhotonPIDFOM; //the minimum PID FOM for a neutral particle used for this DReaction
 		pair<bool, double> dMinCombinedPIDFOM; //the minimum combined PID FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMinCombinedTrackingFOM; //the minimum combined Tracking FOM for all charged tracks used for this DReaction
 		pair<bool, double> dMaxPhotonRFDeltaT; //the maximum photon-rf time difference: used for photon selection

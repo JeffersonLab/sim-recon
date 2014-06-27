@@ -72,7 +72,7 @@ class DParticleComboBlueprint_factory : public jana::JFactory<DParticleComboBlue
 		// PRE-DPARTICLECOMBO CUT VALUES
 			//(first) bool = true/false for cut enabled/disabled, double = cut value
 			//Command-line values will override those set in the DReaction
-		pair<bool, double> dMinIndividualTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
+		pair<bool, double> dMinTrackingFOM; //the minimum Tracking FOM for a charged track used for this DReaction
 		pair<bool, double> dMinProtonMomentum; //when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
 		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 
