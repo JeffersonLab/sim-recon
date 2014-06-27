@@ -1,4 +1,5 @@
-      subroutine settofg(vertex,time0)
+      function settofg(vertex,time0)
+      real settofg
       real vertex(3)        ! cm
       real time0            ! ns
 *
@@ -16,6 +17,10 @@
       real beam_bucket_period_ns
       parameter (beam_bucket_period_ns=2.0)
 
-      TOFG=2*int(time0/beam_bucket_period_ns+0.5)*1e-9
-     +    +(vertex(3)-reference_time_plane_z)/CLIGHT
+c discretize the time according to the beam microstructure
+      TOFG=beam_bucket_period_ns*int(time0/beam_bucket_period_ns+0.5)
+c synchronize the time to the accelerator clock, with the phase
+c set to zero when the bunch crosses the reference plane
+      TOFG=TOFG*1e-9 + (vertex(3)-reference_time_plane_z)/CLIGHT
+      settofg=TOFG
       end

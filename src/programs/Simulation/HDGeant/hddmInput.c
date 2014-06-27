@@ -67,7 +67,7 @@
 
 void seteventid_(int *runNo, int *eventNo);
 
-void settofg_(float origin[3], float *time0);
+float settofg_(float origin[3], float *time0);
 
 s_iostream_t* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
@@ -181,8 +181,8 @@ int loadInput ()
             vert->origin->vy = v[1];
             vert->origin->vz = v[2];
          }
-         time0 = 0;
-         settofg_(v,&time0);
+         time0 = vert->origin->t;
+         vert->origin->t = settofg_(v,&time0);
          gsvert_(v, &ntbeam, &nttarg, &ubuf, &nubuf, &nvtx);
          prods = vert->products;
          prodCount = prods->mult;
