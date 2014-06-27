@@ -39,6 +39,7 @@ class DEventProcessor_monitoring_hists : public JEventProcessor
 		DHistogramAction_DetectedParticleKinematics dHistogramAction_DetectedParticleKinematics;
 		DHistogramAction_GenReconTrackComparison dHistogramAction_GenReconTrackComparison;
 		DHistogramAction_NumReconstructedObjects dHistogramAction_NumReconstructedObjects;
+		DHistogramAction_ReconnedThrownKinematics dHistogramAction_ReconnedThrownKinematics;
 };
 
 #endif // _DEventProcessor_monitoring_hists_
