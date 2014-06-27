@@ -1407,6 +1407,23 @@ bool DGeometry::GetBCALDepth(double &bcal_depth) const
 }
 
 //---------------------------------
+// GetBCALPhiShift
+//---------------------------------
+bool DGeometry::GetBCALPhiShift(double &bcal_phi_shift) const
+{
+	vector<double> Phi0;
+	bool good = Get("//BarrelEMcal_s/section/composition/mposPhi/@Phi0", Phi0);
+	if(!good) return false;
+	if(Phi0.size() == 1){
+		bcal_phi_shift = Phi0[0];
+		return true;
+	}else{
+		bcal_phi_shift = 0.0;
+		return false;
+	}
+}
+
+//---------------------------------
 // GetFCALZ
 //---------------------------------
 bool DGeometry::GetFCALZ(double &z_fcal) const
