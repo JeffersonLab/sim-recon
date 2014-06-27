@@ -219,8 +219,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 		     double &var_y,double &cov_y_ty,
 		     double &var_ty,double &chi2y);
   DMatrix4x1 FitLine(vector<const DFDCIntersection*> &fdchits);
-
-  DMatrix4x1 GuessForStateVector(const cdc_track_t &track,double x,double y);
+  
+  jerror_t GuessForStateVector(const cdc_track_t &track,DMatrix4x1 &S);
 
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DCDCTrackHit *>&hits);
@@ -280,7 +280,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   jerror_t FindSegments(vector<const DCDCTrackHit*>&hits,
 			vector<cdc_segment_t>&segments);
   jerror_t LinkSegments(vector<cdc_segment_t>&axial_segments,
-			vector<cdc_segment_t>&stereo_segments,
+			vector<const DCDCTrackHit *>&stereo_hits,
 			vector<cdc_track_t>&LinkedSegments);
   jerror_t LinkSegments(vector<segment_t>segments[4], 
 			vector<vector<const DFDCPseudo *> >&LinkedSegments);
@@ -334,7 +334,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
     
   pthread_mutex_t mutex;
 
-  TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdc_match;
+  TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdcmatch,*Hcdcmatch_stereo;
   TH1F *Hpseudo_prob,*Hpseudo_prelimprob;
   TH1F *Hintersection_match;
   TH1F *Hcdc_prob,*Hcdc_prelimprob;
@@ -384,10 +384,13 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 // Smearing function derived from fitting residuals
 inline double DEventProcessor_dc_alignment::cdc_variance(double t){ 
   //  return 0.001*0.001;
-  if (t<1.) t=1.;
+  if (t<0.) t=0.;
   
   double sigma=CDC_RES_PAR1/(t+1.)+CDC_RES_PAR2;
   //sigma+=0.02;
+  
+  //sigma=0.08/(t+1.)+0.03;
+  
   return sigma*sigma;
 }
 
