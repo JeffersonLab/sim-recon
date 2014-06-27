@@ -62,6 +62,7 @@ public:
   static int NBCALSECSIN;   ///>number of sectors in inner region
   static int NBCALSECSOUT;  ///>number of sectors in outer region
   static float BCALINNERRAD;    ///> innner radius of BCAL in cm
+  static float BCAL_PHI_SHIFT;  ///> overall phi roation of BCAL in radians
 
   // Enter the index of the SiPM that designates the first
   // (counting radially outward) of the outer cells (default 7)

@@ -2,7 +2,10 @@
 // Created: Fri Nov 26 15:10:51 CST 2010
 // Creator: dwbennet
 
+#include <cmath>
 #include "DBCALGeometry.h"
+
+#include <HDGEOMETRY/DGeometry.h>
 
 // On each module there is a 10x4 (r/phi) array of SiPMs
 
@@ -36,6 +39,7 @@ int DBCALGeometry::NSUMLAYSOUT[] = {1,1,1,1};
 
 int DBCALGeometry::NBCALSECSIN = 4/DBCALGeometry::NSUMSECSIN;
 int DBCALGeometry::NBCALSECSOUT = 4/DBCALGeometry::NSUMSECSOUT;
+float DBCALGeometry::BCAL_PHI_SHIFT = 0.0; // will be overwritten in constructor
 
 float DBCALGeometry::BCALINNERRAD = 64.3;   
 float DBCALGeometry::BCALOUTERRAD = 86.17;
@@ -89,6 +93,15 @@ DBCALGeometry::DBCALGeometry()
       std::cout<<"ERROR: Bad BCAL fADC groupings, do not evenly divide cells";
       assert (false);
   }
+  
+  //Get pointer to DGeometry object
+  DApplication* dapp=dynamic_cast<DApplication*>(japp);
+  const DGeometry *dgeom  = dapp->GetDGeometry(9999);
+
+  // Get overall phi shift of BCAL
+  double my_BCAL_PHI_SHIFT;
+  dgeom->GetBCALPhiShift(my_BCAL_PHI_SHIFT);
+  BCAL_PHI_SHIFT = (float)(my_BCAL_PHI_SHIFT*M_PI/180.0);  // convert to radians
 
 }
 
@@ -306,7 +319,10 @@ DBCALGeometry::phi( int fADC_cell ) {
   fADC_sect += nSects * ( module( fADC_cell ) - 1 );
   sectSize = 2 * PI / (NBCALMODS*nSects);
   
-  return sectSize * ( fADC_sect - 0.5 );
+  float my_phi = sectSize * ( (float)fADC_sect - 0.5 );
+  my_phi += BCAL_PHI_SHIFT - 2.0*sectSize; // adjust for center of module and overall BCAL shift
+  
+  return my_phi;
 }
 
 //--------------
