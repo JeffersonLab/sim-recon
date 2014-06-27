@@ -56,6 +56,7 @@ static float BCAL_LAYS1 =  3;
 //static float BCAL_LAYS2 =  4; 
 static float BCAL_SECS1 =  4; 
 static float BCAL_SECS2 =  4;
+static float BCAL_PHI_SHIFT = 0.0; // radians (will be overwritten in constructor!)
 static float FCAL_Zlen = 45.0;
 static float FCAL_Zmin = 622.8;
 static float FCAL_Rmin = 6.0;
@@ -97,7 +98,12 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
   dgeom->GetTargetLength(my_TARGET_Zlen);
   TARGET_Zmid = my_TARGET_Zmid;
   TARGET_Zlen = my_TARGET_Zlen;
-  
+
+  // Get overall phi shift of BCAL
+  double my_BCAL_PHI_SHIFT;
+  dgeom->GetBCALPhiShift(my_BCAL_PHI_SHIFT);
+  BCAL_PHI_SHIFT = (float)(my_BCAL_PHI_SHIFT*TMath::DegToRad());  // convert to radians
+
   UInt_t MainWidth = w;
   
   // First, define all of the of the graphics objects. Below that, make all
@@ -1364,7 +1370,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		// Create polygon for each readout segment for use in coloring hits
 		if(GetCheckButton("bcal")){
 		  for(int imod=0; imod<BCAL_MODS; imod++){
-		    double mod_phi = (double)imod*dmodule;
+		    double mod_phi = (double)imod*dmodule -2.0*dsector1 + BCAL_PHI_SHIFT;
 		    double r_min=BCAL_Rmin;
 		    for(int ilay=0; ilay<BCAL_LAYS1; ilay++){
 		      r_min+=dlayer1*ilay;
@@ -1423,7 +1429,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		// Draw lines to identify boundaries of readout segments
 		for(int imod=0; imod<BCAL_MODS; imod++){
 			// Vertical(sector) boundaries
-			double mod_phi = (double)imod*dmodule;
+			double mod_phi = (double)imod*dmodule -2.0*dsector1 + BCAL_PHI_SHIFT;
 			for(int isec=0; isec<BCAL_SECS1; isec++){
 				double rmin = BCAL_Rmin;
 				double rmax = BCAL_MIDRAD;
