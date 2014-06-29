@@ -10,6 +10,7 @@
 #include "DTrackCandidate_factory_FDCCathodes.h"
 #include "DTrackCandidate_factory_FDCpseudo.h"
 #include "DTrackCandidate_factory_CDC_or_FDCpseudo.h"
+#include "DTrackCandidate_factory_CDCCOSMIC.h"
 #include "DTrackWireBased_factory_THROWN.h"
 #include "DTrackTimeBased_factory_THROWN.h"
 #include "DTrackFitter_factory.h"
@@ -41,6 +42,7 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrackCandidate_factory_FDCpseudo());
 	loop->AddFactory(new DTrackCandidate_factory_CDC_or_FDCpseudo());
 	loop->AddFactory(new DTrackCandidate_factory_THROWN());
+	loop->AddFactory(new DTrackCandidate_factory_CDCCOSMIC());
 	loop->AddFactory(new DMCTrackHit_factory());
 	loop->AddFactory(new DMCThrown_factory());
 	loop->AddFactory(new DMCTrajectoryPoint_factory());
