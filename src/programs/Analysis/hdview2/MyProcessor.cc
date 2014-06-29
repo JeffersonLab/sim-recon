@@ -87,6 +87,11 @@ MyProcessor::MyProcessor()
 	// Tell factory to keep around a few density histos
 	//gPARMS->SetParameter("TRKFIND:MAX_DEBUG_BUFFERS",	16);
 	
+	RMAX_INTERIOR = 65.0;
+	RMAX_EXTERIOR = 88.0;
+	gPARMS->SetDefaultParameter("RT:RMAX_INTERIOR",	RMAX_INTERIOR, "cm track drawing Rmax inside solenoid region");
+	gPARMS->SetDefaultParameter("RT:RMAX_EXTERIOR",	RMAX_EXTERIOR, "cm track drawing Rmax outside solenoid region");
+	
 	gMYPROC = this;
 }
 
@@ -1537,6 +1542,8 @@ void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, dou
 	// Create a reference trajectory with the given kinematic data and swim
 	// it through the detector.
 	DReferenceTrajectory rt(Bfield);
+	rt.Rmax_interior = RMAX_INTERIOR;
+	rt.Rmax_exterior = RMAX_EXTERIOR;
 
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 		rt.SetDRootGeom(RootGeom);
@@ -1571,6 +1578,8 @@ void MyProcessor::GetIntersectionWithCalorimeter(const DKinematicData* kd, DVect
 	// Create a reference trajectory with the given kinematic data and swim
 	// it through the detector.
 	DReferenceTrajectory rt(Bfield);
+	rt.Rmax_interior = RMAX_INTERIOR;
+	rt.Rmax_exterior = RMAX_EXTERIOR;
 
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 		rt.SetDRootGeom(RootGeom);
@@ -1752,6 +1761,8 @@ _DBG_<<"mass="<<mass<<endl;
 	// Create a new DReference trajectory object. The caller takes
 	// ownership of this and so they are responsible for deleting it.
 	rt = new DReferenceTrajectory(Bfield);
+	rt->Rmax_interior = RMAX_INTERIOR;
+	rt->Rmax_exterior = RMAX_EXTERIOR;
 	if(MATERIAL_MAP_MODEL=="DRootGeom"){
 		rt->SetDRootGeom(RootGeom);
 		rt->SetDGeometry(NULL);

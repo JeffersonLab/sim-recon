@@ -111,6 +111,8 @@ class MyProcessor:public JEventProcessor
   DRootGeom *RootGeom;
   DGeometry *geom;
   string MATERIAL_MAP_MODEL;
+  double RMAX_INTERIOR; // Used to allow user to extend drawing range of charged tracks
+  double RMAX_EXTERIOR; // Used to allow user to extend drawing range of charged tracks
 
   TCanvas *BCALHitCanvas;  
   TH2F *BCALHitMatrixU;
