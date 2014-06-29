@@ -6,7 +6,7 @@
 //
 
 #ifndef _DTrackFitter_factory_
-#define _DTrackFitter_factory1_
+#define _DTrackFitter_factory_
 
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackFitter.h>
