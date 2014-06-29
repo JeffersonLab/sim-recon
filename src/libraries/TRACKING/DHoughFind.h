@@ -25,7 +25,7 @@ class DHoughFind:public JObject{
 		DHoughFind();
 		DHoughFind(double xmin, double xmax, double ymin, double ymax, unsigned int Nbinsx, unsigned int Nbinsy);
 		virtual ~DHoughFind();
-		virtual const char* className(void){return static_className();}
+		virtual const char* className(void) const {return static_className();}
 		static const char* static_className(void){return "DHoughFind";}
 		
 		inline double signof(double a){return a<0.0 ? -1.0:1.0;}
