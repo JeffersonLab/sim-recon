@@ -49,6 +49,8 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->check_material_boundaries = true;
 	this->zmin_track_boundary = -100.0;  // boundary at which to stop swimming
 	this->zmax_track_boundary = 670.0;   // boundary at which to stop swimming
+	this->Rmax_interior = 65.0; // Maximum radius (in cm) corresponding to inside of BCAL
+	this->Rmax_exterior = 88.0; // Maximum radius (in cm) corresponding to outside of BCAL
 	
 	this->last_phi = 0.0;
 	this->last_swim_step = NULL;
@@ -736,13 +738,13 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 		// Exit the loop if we are already inside the volume of the BCAL
 		// and the radius is decreasing
-		if (R<old_radius && R>65.0 && z<407.0 && z>-100.0){
+		if (R<old_radius && R>Rmax_interior && z<407.0 && z>-100.0){
 		  Nswim_steps++; break;
 		}
 	
 		
 		// Exit loop if we leave the tracking volume
-		if(R>88.0 && z<407.0){Nswim_steps++; break;} // ran into BCAL
+		if(R>Rmax_exterior && z<407.0){Nswim_steps++; break;} // ran into BCAL
 		if (fabs(swim_step->origin.X())>129.  
 		    || fabs(swim_step->origin.Y())>129.)
 		  {Nswim_steps++; break;} // left extent of TOF 
