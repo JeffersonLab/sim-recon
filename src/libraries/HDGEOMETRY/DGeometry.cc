@@ -565,18 +565,20 @@ _DBG_<<"Components for compsite "<<name<<endl;
 	
 //}
 
+//---------------------------------
+// GetCDCStereoWires
+//---------------------------------
 /// Extract the stereo wire data from the XML
 bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
-				  string longwireflag,
 				  double zcenter,double dz,  
 				  vector<vector<cdc_offset_t> >&cdc_offsets,
 				  vector<DCDCWire*> &stereowires) const{
   stringstream r_z_s,phi0_s,rot_s;
   
   // Create search strings for the straw geometrical properties 
-  r_z_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@R_Z/ring[@value='" << ring << "']";
-  phi0_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@Phi0/ring[@value='" << ring << "']";
-  rot_s << "//mposPhi[@volume='CDCstrawLong" << longwireflag <<"']/@rot/ring[@value='" << ring << "']";
+  r_z_s << "//mposPhi[@volume='CDCstrawLong']/@R_Z/ring[@value='" << ring << "']";
+  phi0_s << "//mposPhi[@volume='CDCstrawLong']/@Phi0/ring[@value='" << ring << "']";
+  rot_s << "//mposPhi[@volume='CDCstrawLong']/@rot/ring[@value='" << ring << "']";
 
   vector<double>r_z;
   double phi0;
@@ -593,30 +595,11 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
   phi0*=deg2rad;
 
   // Extract data from close-packed straws
-  const double EPS=1e-4;
   bool close_packed=false;
   double rotX=0.,rotY=0.,stereo=0.,stereo_sign=1.;
   vector<double>delta_xyz;
-  if (r_z[0]<EPS){
-    close_packed=true;
-    stringstream delta_xyz_s,longstraw_rot_s;
-
-    // Create search strings for the number of straws and the straw geometrical properties 
-    delta_xyz_s << "//composition[@name='CDCstrawLong" << longwireflag <<"']/posXYZ[@volume='CDCstrawLong']/@X_Y_Z";
-    longstraw_rot_s << "//composition[@name='CDCstrawLong" << longwireflag <<"']/posXYZ[@volume='CDCstrawLong']/@rot";
-  
-    // Extract the data from the XML
-    if (!Get(delta_xyz_s.str(),delta_xyz)) return false;
-    if (!Get(longstraw_rot_s.str(),rot)) return false;
-
-    rotX=deg2rad*rot[0];
-    rotY=deg2rad*rot[1];
-    if (rotX<0.) stereo_sign=-1.;
-  }
-  else{
-    stereo=deg2rad*rot[0];
-    if (stereo<0.) stereo_sign=-1.;
-  }
+  stereo=deg2rad*rot[0];
+  if (stereo<0.) stereo_sign=-1.;
 
   // Loop over the number of straws
   for (unsigned int i=0;i<ncopy;i++){
@@ -682,6 +665,9 @@ bool DGeometry::GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
   return true;
 }
 
+//---------------------------------
+// GetCDCAxialWires
+//---------------------------------
 /// Extract the axial wire data from the XML
 bool DGeometry::GetCDCAxialWires(unsigned int ring,unsigned int ncopy,
 				 double zcenter,double dz,
@@ -758,47 +744,14 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
   double zcenter=0.5*(zmin+zmax);
   double L=zmax-zmin;
 
-  string longwireflags[16]={"","B12","","B14","","B16","","B18","","B22","","B24","","B26","","B28"};
-
   // Get number of straws for each layer from the XML
   unsigned int numstraws[28];  
   stringstream ncopy_s;
-  // First axial superlayer
-  for (unsigned int ring=1;ring<=4;ring++){
+
+  // Get number of straws for each ring
+  for (unsigned int ring=1;ring<=28;ring++){
     // Create search string for the number of straws 
-    ncopy_s << "//mposPhi[@volume='CDCstrawShort']/@ncopy/ring[@value='" << ring << "']";
-    Get(ncopy_s.str(),numstraws[ring-1]);
-    ncopy_s.str("");
-    ncopy_s.clear();
-  }
-  // First stereo superlayers
-  for (unsigned int ring=5;ring<=12;ring++){
-    // Create search string for the number of straws 
-    ncopy_s << "//mposPhi[@volume='CDCstrawLong" << longwireflags[ring-5] <<"']/@ncopy/ring[@value='" << ring << "']";
-    Get(ncopy_s.str(),numstraws[ring-1]);
-    ncopy_s.str("");
-    ncopy_s.clear();
-  }
-  // Second axial superlayer
-  for (unsigned int ring=13;ring<=16;ring++){
-    // Create search string for the number of straws 
-    ncopy_s << "//mposPhi[@volume='CDCstrawShort']/@ncopy/ring[@value='" << ring << "']";
-    Get(ncopy_s.str(),numstraws[ring-1]);
-    ncopy_s.str("");
-    ncopy_s.clear();
-  }
-  // Second stereo superlayers
-  for (unsigned int ring=17;ring<=24;ring++){
-    // Create search string for the number of straws 
-    ncopy_s << "//mposPhi[@volume='CDCstrawLong" << longwireflags[ring-9] <<"']/@ncopy/ring[@value='" << ring << "']";
-    Get(ncopy_s.str(),numstraws[ring-1]);
-    ncopy_s.str("");
-    ncopy_s.clear();
-  }
-  // Third axial superlayer
-  for (unsigned int ring=25;ring<=28;ring++){
-    // Create search string for the number of straws 
-    ncopy_s << "//mposPhi[@volume='CDCstrawShort']/@ncopy/ring[@value='" << ring << "']";
+    ncopy_s << "//CentralDC_s/section/composition/mposPhi/@ncopy/ring[@value='" << ring << "']";
     Get(ncopy_s.str(),numstraws[ring-1]);
     ncopy_s.str("");
     ncopy_s.clear();
@@ -860,7 +813,7 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
   // First set of stereo layers
   for (unsigned int i=0;i<8;i++){
     vector<DCDCWire*>straws;
-    if (!GetCDCStereoWires(i+5,numstraws[i+4],longwireflags[i],zcenter,L,cdc_offsets,straws)) return false;
+    if (!GetCDCStereoWires(i+5,numstraws[i+4],zcenter,L,cdc_offsets,straws)) return false;
     cdcwires.push_back(straws);
   }
 
@@ -874,7 +827,7 @@ bool DGeometry::GetCDCWires(vector<vector<DCDCWire *> >&cdcwires) const{
   // Second set of stereo layers
   for (unsigned int i=8;i<16;i++){
     vector<DCDCWire*>straws;
-    if (!GetCDCStereoWires(i+9,numstraws[i+8],longwireflags[i],zcenter,L,cdc_offsets,straws)) return false;
+    if (!GetCDCStereoWires(i+9,numstraws[i+8],zcenter,L,cdc_offsets,straws)) return false;
     cdcwires.push_back(straws);
   }
 

@@ -128,7 +128,7 @@ class DGeometry{
 				      vector<vector<cdc_offset_t> >&cdc_offsets,
 				      vector<DCDCWire*> &axialwires) const;
 		bool GetCDCStereoWires(unsigned int ring,unsigned int ncopy,
-				       string longwireflag,double zcenter,
+				       double zcenter,
 				       double dz,
 				       vector<vector<cdc_offset_t> >&cdc_offsets,
 				       vector<DCDCWire*> &stereowires) const;
