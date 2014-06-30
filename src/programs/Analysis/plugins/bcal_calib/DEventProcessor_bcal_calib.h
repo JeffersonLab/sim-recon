@@ -63,7 +63,7 @@ typedef struct{
 
 #define EPS 1e-3
 #define ITER_MAX 20
-#define CDC_MATCH_RADIUS 2.8
+#define CDC_MATCH_RADIUS 5.0
 
 class DEventProcessor_bcal_calib:public jana::JEventProcessor{
  public:
@@ -100,10 +100,17 @@ class DEventProcessor_bcal_calib:public jana::JEventProcessor{
 				  deque<trajectory_t>&trajectory,
 				  const DCDCTrackHit *last_cdc); 
   jerror_t FindSegments(vector<const DCDCTrackHit*>&hits,
-			vector<cdc_segment_t>&segments);
+			vector<cdc_segment_t>&segments,
+			vector<bool>&used_hits
+			);
   jerror_t LinkSegments(vector<cdc_segment_t>&axial_segments,
+			vector<bool>&used_axial,
+			vector<const DCDCTrackHit *>&axial_hits,
 			vector<const DCDCTrackHit *>&stereo_hits,
 			vector<cdc_track_t>&LinkedSegments);
+  bool MatchCDCHit(const DVector3 &vhat,const DVector3 &pos0,
+		   const DCDCTrackHit *hit);
+
   void PlotLines(deque<trajectory_t>&traj);
 
   bool MatchToBCAL(vector<const DBCALShower *>&bcalshowers,DMatrix4x1 &S);

@@ -204,13 +204,14 @@ jerror_t DEventProcessor_bcal_calib::evnt(JEventLoop *loop, int eventnumber){
 
     // Here we group axial hits into segments
     vector<cdc_segment_t>axial_segments; 
-    FindSegments(axialhits,axial_segments);
+    vector<bool>used_axial(axialhits.size());
+    FindSegments(axialhits,axial_segments,used_axial);
 
     if (axial_segments.size()>0 && stereohits.size()>0){
       // Here we link axial segments into tracks and associate stereo hits 
       // with each track
       vector<cdc_track_t>tracks;
-      LinkSegments(axial_segments,stereohits,tracks);
+      LinkSegments(axial_segments,used_axial,axialhits,stereohits,tracks);
 
       for (unsigned int i=0;i<tracks.size();i++){
 	// Add lists of stereo and axial hits associated with this track 
@@ -318,12 +319,13 @@ DEventProcessor_bcal_calib::DoFilter(DMatrix4x1 &S,
 }
 
 // Find segments in cdc axial layers
-jerror_t DEventProcessor_bcal_calib::FindSegments(vector<const DCDCTrackHit*>&hits,
-						    vector<cdc_segment_t>&segments){
+jerror_t 
+DEventProcessor_bcal_calib::FindSegments(vector<const DCDCTrackHit*>&hits,
+					 vector<cdc_segment_t>&segments,
+					 vector<bool>&used_in_segment){
   if (hits.size()==0) return RESOURCE_UNAVAILABLE;
 
   // Group adjacent hits into pairs
-  vector<bool>used_in_segment(hits.size());
   vector<pair<unsigned int,unsigned int> > pairs;
   for (unsigned int i=0;i<hits.size()-1;i++){
     for (unsigned int j=i+1;j<hits.size();j++){
@@ -339,7 +341,7 @@ jerror_t DEventProcessor_bcal_calib::FindSegments(vector<const DCDCTrackHit*>&hi
 	pthread_mutex_unlock(&mutex);
       }
 
-      if ((abs(r1-r2)==1 && d<CDC_MATCH_RADIUS) 
+      if ((abs(r1-r2)<=2 && d<CDC_MATCH_RADIUS) 
 	  || (abs(r1-r2)==0 && abs(s1-s2)==1)){
 	pair <unsigned int,unsigned int> mypair(i,j);
 	pairs.push_back(mypair);
@@ -649,6 +651,8 @@ jerror_t DEventProcessor_bcal_calib
 // hits
 jerror_t 
 DEventProcessor_bcal_calib::LinkSegments(vector<cdc_segment_t>&axial_segments,
+					 vector<bool>&used_axial,
+					 vector<const DCDCTrackHit *>&axial_hits,
 					 vector<const DCDCTrackHit *>&stereo_hits,
 					 vector<cdc_track_t>&LinkedSegments){
  
@@ -689,23 +693,35 @@ DEventProcessor_bcal_calib::LinkSegments(vector<cdc_segment_t>&axial_segments,
 	  }
 	}
       }
+      //  Position of the first axial wire in the track  
+      pos0=mytrack.axial_hits[0]->wire->origin;
+
+      // Grab axial hits not associated with segments
+      bool got_match=false;
+      for (unsigned int j=0;j<axial_hits.size();j++){
+	if (used_axial[j]==false){
+	  if (MatchCDCHit(vhat,pos0,axial_hits[j])){
+	    used_axial[j]=true;
+	    mytrack.axial_hits.push_back(axial_hits[j]);
+	    got_match=true;
+	  }
+	}
+      }
+      // Resort if we added axial hits and recompute direction vector
+      if (got_match){
+	sort(mytrack.axial_hits.begin(),mytrack.axial_hits.end(),cdc_hit_cmp);
+	
+	vhat=mytrack.axial_hits[mytrack.axial_hits.size()-1]->wire->origin
+	  -mytrack.axial_hits[0]->wire->origin;
+	vhat.SetMag(1.);
+      }
     
       // Now try to associate stereo hits with this track
-      vector<unsigned int>used_in_track(stereo_hits.size());
-      pos0=mytrack.axial_hits[0]->wire->origin;
+      vector<unsigned int>used_stereo(stereo_hits.size());
       for (unsigned int j=0;j<stereo_hits.size();j++){
-	if (used_in_track[j]==false){
-	  DVector3 pos1=stereo_hits[j]->wire->origin;
-	  DVector3 uhat=stereo_hits[j]->wire->udir;
-	  DVector3 diff=pos1-pos0;
-	  double vhat_dot_uhat=vhat.Dot(uhat);
-	  double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
-	  double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(uhat));
-	  double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
-	  double d=(diff+s*uhat-t*vhat).Mag();
-
-	  if (d<CDC_MATCH_RADIUS){
-	    used_in_track[j]=true;
+	if (used_stereo[j]==false){
+	  if (MatchCDCHit(vhat,pos0,stereo_hits[j])){
+	    used_stereo[j]=true;
 	    mytrack.stereo_hits.push_back(stereo_hits[j]);
 	  }
 	}
@@ -720,6 +736,24 @@ DEventProcessor_bcal_calib::LinkSegments(vector<cdc_segment_t>&axial_segments,
   }
 
   return NOERROR;
+}
+
+// Match a CDC hit with a line starting at pos0 going in the vhat direction
+bool DEventProcessor_bcal_calib::MatchCDCHit(const DVector3 &vhat,
+					     const DVector3 &pos0,
+					     const DCDCTrackHit *hit){  
+  DVector3 pos1=hit->wire->origin;
+  DVector3 uhat=hit->wire->udir;
+  DVector3 diff=pos1-pos0;
+  double vhat_dot_uhat=vhat.Dot(uhat);
+  double scale=1./(1.-vhat_dot_uhat*vhat_dot_uhat);
+  double s=scale*(vhat_dot_uhat*diff.Dot(vhat)-diff.Dot(uhat));
+  double t=scale*(diff.Dot(vhat)-vhat_dot_uhat*diff.Dot(uhat));
+  double d=(diff+s*uhat-t*vhat).Mag();
+
+  if (d<CDC_MATCH_RADIUS) return true;
+
+  return false;
 }
 
 
@@ -775,7 +809,7 @@ DEventProcessor_bcal_calib::GuessForStateVector(const cdc_track_t &track,
   double z0y=(sumyy*sumz-sumy*sumyz)/ytemp;
   
   // Increment just beyond point largest in y
-  double delta_z=(yslope>0)?0.1:-0.1;
+  double delta_z=(yslope>0)?0.5:-0.5;
 
   //Starting z position
   mOuterZ=z0y+ya/yslope+delta_z;
