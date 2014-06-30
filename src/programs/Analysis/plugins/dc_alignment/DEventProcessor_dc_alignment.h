@@ -331,6 +331,9 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			double diffx,double diffy,
 			double diffz,
 			DMatrix1x4 &G,DMatrix4x1 &G_T);
+
+  void PlotLines(deque<trajectory_t>&traj);
+  
     
   pthread_mutex_t mutex;
 

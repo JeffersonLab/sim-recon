@@ -9,6 +9,8 @@
 using namespace jana;
 
 #include <TROOT.h>
+#include <TCanvas.h>
+#include <TPolyLine.h>
 
 #define MAX_STEPS 1000
 
@@ -461,7 +463,7 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   if (ALIGN_WIRE_PLANES)loop->Get(intersections);
   else loop->Get(pseudos);
 
-  if (cdcs.size()>20 && cdcs.size()<60){
+  if (cdcs.size()>20 /* && cdcs.size()<60*/){
     vector<const DCDCTrackHit*>axialhits;
     vector<const DCDCTrackHit*>stereohits;
     for (unsigned int i=0;i<cdcs.size();i++){
@@ -548,20 +550,14 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
 	// Perform preliminary line fits for current set of linked segments    
 	DMatrix4x1 S=FitLine(intersections);
 		
-	// Move x and y to the cdc endplate
-	S(state_x)+=endplate_z*S(state_tx);
-	S(state_y)+=endplate_z*S(state_ty);
+	// Move x and y to just before the first hit
+	double my_z=intersections[0]->pos.z()-2.;
+	S(state_x)+=my_z*S(state_tx);
+	S(state_y)+=my_z*S(state_ty);
 		
 	if (fabs(S(state_x))>48. || fabs(S(state_y))>48.) continue;
-
-	// Approximate z-position closest to x=0,y=0
-	double ztarg=-0.5*(S(state_x)/S(state_tx)+S(state_y)/S(state_ty));
-	Hztarg->Fill(ztarg);
-  
-	// Match to outer detectors 
-	if (MatchOuterDetectors(fcalshowers,bcalshowers,S)){
-	  DoFilter(S,intersections);
-	}
+	
+	DoFilter(S,intersections);
       }
     }
   }
@@ -761,6 +757,9 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	    }
 	    Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
 
+	    PlotLines(trajectory);
+
+
 	    for (unsigned int k=0;k<smoothed_updates.size();k++){
 	      if (smoothed_updates[k].used_in_fit==true){
 		double tdrift=smoothed_updates[k].drift_time;
@@ -878,6 +877,8 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
       // run the smoother (opposite direction to filter)
       Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
 
+      PlotLines(trajectory);
+
       //Hbeta->Fill(mBeta);
       for (unsigned int i=0;i<smoothed_updates.size();i++){
 	unsigned int layer=hits[i]->wire->layer;
@@ -984,7 +985,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
     if (KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof)
 	!=NOERROR) break;
 
-    // printf("== event %d == iter %d =====chi2 %f ndof %d \n",myevt,iter,chi2,ndof);
+    printf("== event %d == iter %d =====chi2 %f ndof %d \n",myevt,iter,chi2,ndof);
     if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1 || iter==ITER_MAX) break;  
     
     // Save the current state and covariance matrixes
@@ -1000,9 +1001,12 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
     double prob=TMath::Prob(chi2_old,ndof_old);
     Hprob->Fill(prob);
  
-    if (prob>0.0001){
+    //if (prob>0.0001)
+      {
       // run the smoother (opposite direction to filter)
-      Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
+      Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);   
+
+      PlotLines(trajectory);
 
       //Hbeta->Fill(mBeta);
       for (unsigned int i=0;i<smoothed_updates.size();i++){
@@ -2041,7 +2045,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	dmeas=cdc_drift_distance(tdrift);
 	V=anneal_factor*drift_var;
 
-	//printf("t0 %f t %f d %f %f V %f\n",mT0,tdrift,dmeas,d,V);
+	//printf("t0 %f t %f d %f %f V %f\n",mT0,hits[cdc_index]->tdrift,dmeas,d,V);
       }
 
       // residual
@@ -3498,4 +3502,79 @@ DEventProcessor_dc_alignment::ComputeGMatrices(double s,double t,double scale,
   G_T(k_dXd)=G(k_dXd);
   G_T(k_dYu)=G(k_dYu);
   G_T(k_dYd)=G(k_dYd);
+}
+
+// If the event viewer is available, grab parts of the hdview2 display and 
+// overlay the results of the line fit on the tracking views.
+void DEventProcessor_dc_alignment::PlotLines(deque<trajectory_t>&traj){
+  unsigned int last_index=traj.size()-1;
+
+  TCanvas *c1=dynamic_cast<TCanvas *>(gROOT->FindObject("endviewA Canvas"));
+  if (c1!=NULL){	      
+    c1->cd();
+    TPolyLine *line=new TPolyLine();
+    
+    line->SetLineColor(1);
+    line->SetLineWidth(1);
+    
+    line->SetNextPoint(traj[last_index].S(state_x),traj[last_index].S(state_y));
+    line->SetNextPoint(traj[0].S(state_x),traj[0].S(state_y));
+    line->Draw();
+    
+    c1->Update();
+    
+    delete line;
+  }
+
+  c1=dynamic_cast<TCanvas *>(gROOT->FindObject("endviewA Large Canvas"));
+  if (c1!=NULL){	      
+    c1->cd();
+    TPolyLine *line=new TPolyLine();
+	
+    line->SetLineColor(1);
+    line->SetLineWidth(1);
+    
+    line->SetNextPoint(traj[last_index].S(state_x),traj[last_index].S(state_y));
+    line->SetNextPoint(traj[0].S(state_x),traj[0].S(state_y));
+    line->Draw();
+    
+    c1->Update();
+    
+    delete line;
+  }
+  
+  c1=dynamic_cast<TCanvas *>(gROOT->FindObject("sideviewA Canvas"));
+  if (c1!=NULL){	      
+    c1->cd();
+    TPolyLine *line=new TPolyLine();
+	
+    line->SetLineColor(1);
+    line->SetLineWidth(1);
+    
+    line->SetNextPoint(traj[last_index].z,traj[last_index].S(state_x));
+    line->SetNextPoint(traj[0].z,traj[0].S(state_x));
+    line->Draw();
+    
+    c1->Update();
+    
+    delete line;
+  }
+
+  c1=dynamic_cast<TCanvas *>(gROOT->FindObject("sideviewB Canvas"));
+  if (c1!=NULL){	      
+    c1->cd();
+    TPolyLine *line=new TPolyLine();
+	
+    line->SetLineColor(1);
+    line->SetLineWidth(1);
+    
+    line->SetNextPoint(traj[last_index].z,traj[last_index].S(state_y));
+    line->SetNextPoint(traj[0].z,traj[0].S(state_y));
+    line->Draw();
+    
+    c1->Update();
+    delete line;
+  }
+  // end of drawing code
+  
 }
