@@ -570,6 +570,8 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 			if(!my_full_events.empty()) {
 				my_full_events.front()->DOMTree = evt; // keep DOMTree pointer with first event from this DAQ event
 				full_events.insert( full_events.end(), my_full_events.begin(), my_full_events.end() );
+			}else{
+				delete evt;
 			}
 		}else{
 			// No DOM tree made for this buffer. Insert an empty event into
@@ -602,9 +604,13 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	// Copy the first event's objects obtained from parsing into this event's ObjList
 	ObjList *objs = full_events.front();
 	full_events.pop_front();
-	objs_ptr->run_number = objs->run_number;	
-	objs_ptr->hit_objs   = objs->hit_objs;
-	objs_ptr->DOMTree    = objs->DOMTree;
+	objs_ptr->run_number      = objs->run_number;
+	objs_ptr->own_objects     = objs->own_objects;
+	objs_ptr->hit_objs        = objs->hit_objs;
+	objs_ptr->eviobuff_parsed = objs->eviobuff_parsed;
+	//objs_ptr->eviobuff        = objs->eviobuff;        // Don't copy this! (it causes memory leak)
+	//objs_ptr->eviobuff_size   = objs->eviobuff_size;
+	objs_ptr->DOMTree         = objs->DOMTree;
 	delete objs;
 
 	// Copy remaining events into the stored_events container
