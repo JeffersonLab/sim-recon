@@ -7,6 +7,8 @@
 using namespace jana;
 
 #include <TROOT.h>
+#include <TCanvas.h>
+#include <TPolyLine.h>
 #include <DANA/DApplication.h>
 
 #define MAX_STEPS 1000
@@ -89,6 +91,9 @@ jerror_t DEventProcessor_bcal_calib::init(void)
   DEBUG_HISTS=false;
   gPARMS->SetDefaultParameter("BCAL_CALIB:DEBUG_HISTS",DEBUG_HISTS);
  
+  DEBUG_PLOT_LINES=false;
+  gPARMS->SetDefaultParameter("BCAL_CALIB:DEBUG_PLOT_LINES",DEBUG_PLOT_LINES);
+
   return NOERROR;
 }
 
@@ -299,6 +304,11 @@ DEventProcessor_bcal_calib::DoFilter(DMatrix4x1 &S,
     if (prob>0.01){
       // Save the best version of the state vector
       S=Sbest;
+      
+      // Optionally superimpose results of line fit onto event viewer
+      if (DEBUG_PLOT_LINES){
+	PlotLines(trajectory);
+      }
 
       return NOERROR;
     }
@@ -802,6 +812,81 @@ double DEventProcessor_bcal_calib::FindDoca(double z,const DMatrix4x1 &S,
   
   diff+=s*uhat-t*vhat;
   return diff.Mag();
+}
+
+// If the event viewer is available, grab parts of the hdview2 display and 
+// overlay the results of the line fit on the tracking views.
+void DEventProcessor_bcal_calib::PlotLines(deque<trajectory_t>&traj){
+  unsigned int last_index=traj.size()-1;
+
+  TCanvas *c1=dynamic_cast<TCanvas *>(gROOT->FindObject("endviewA Canvas"));
+  if (c1!=NULL){	      
+    c1->cd();
+    TPolyLine *line=new TPolyLine();
+    
+    line->SetLineColor(1);
+    line->SetLineWidth(1);
+    
+    line->SetNextPoint(traj[last_index].S(state_x),traj[last_index].S(state_y));
+    line->SetNextPoint(traj[0].S(state_x),traj[0].S(state_y));
+    line->Draw();
+    
+    c1->Update();
+    
+    delete line;
+  }
+
+  c1=dynamic_cast<TCanvas *>(gROOT->FindObject("endviewA Large Canvas"));
+  if (c1!=NULL){	      
+    c1->cd();
+    TPolyLine *line=new TPolyLine();
+	
+    line->SetLineColor(1);
+    line->SetLineWidth(1);
+    
+    line->SetNextPoint(traj[last_index].S(state_x),traj[last_index].S(state_y));
+    line->SetNextPoint(traj[0].S(state_x),traj[0].S(state_y));
+    line->Draw();
+    
+    c1->Update();
+    
+    delete line;
+  }
+  
+  c1=dynamic_cast<TCanvas *>(gROOT->FindObject("sideviewA Canvas"));
+  if (c1!=NULL){	      
+    c1->cd();
+    TPolyLine *line=new TPolyLine();
+	
+    line->SetLineColor(1);
+    line->SetLineWidth(1);
+    
+    line->SetNextPoint(traj[last_index].z,traj[last_index].S(state_x));
+    line->SetNextPoint(traj[0].z,traj[0].S(state_x));
+    line->Draw();
+    
+    c1->Update();
+    
+    delete line;
+  }
+
+  c1=dynamic_cast<TCanvas *>(gROOT->FindObject("sideviewB Canvas"));
+  if (c1!=NULL){	      
+    c1->cd();
+    TPolyLine *line=new TPolyLine();
+	
+    line->SetLineColor(1);
+    line->SetLineWidth(1);
+    
+    line->SetNextPoint(traj[last_index].z,traj[last_index].S(state_y));
+    line->SetNextPoint(traj[0].z,traj[0].S(state_y));
+    line->Draw();
+    
+    c1->Update();
+    delete line;
+  }
+  // end of drawing code
+  
 }
 
 

@@ -104,6 +104,7 @@ class DEventProcessor_bcal_calib:public jana::JEventProcessor{
   jerror_t LinkSegments(vector<cdc_segment_t>&axial_segments,
 			vector<const DCDCTrackHit *>&stereo_hits,
 			vector<cdc_track_t>&LinkedSegments);
+  void PlotLines(deque<trajectory_t>&traj);
 
   bool MatchToBCAL(vector<const DBCALShower *>&bcalshowers,DMatrix4x1 &S);
 
@@ -134,7 +135,7 @@ class DEventProcessor_bcal_calib:public jana::JEventProcessor{
   // Resolution parameters
   double CDC_RES_PAR1,CDC_RES_PAR2;
 
-  bool DEBUG_HISTS;
+  bool DEBUG_HISTS,DEBUG_PLOT_LINES;
 };
 
 
