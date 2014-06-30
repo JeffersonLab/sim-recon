@@ -221,10 +221,12 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   DMatrix4x1 FitLine(vector<const DFDCIntersection*> &fdchits);
   
   jerror_t GuessForStateVector(const cdc_track_t &track,DMatrix4x1 &S);
+  bool MatchCDCHit(const DVector3 &vhat,const DVector3 &pos0,
+		   const DCDCTrackHit *hit);
 
-  jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
+  jerror_t DoFilter(double start_z,DMatrix4x1 &S,vector<const DFDCPseudo*> &fdchits);
   jerror_t DoFilter(DMatrix4x1 &S,vector<const DCDCTrackHit *>&hits);
-  jerror_t DoFilter(DMatrix4x1 &S,vector<const DFDCIntersection *>&intersections);
+  jerror_t DoFilter(double start_z,DMatrix4x1 &S,vector<const DFDCIntersection *>&intersections);
 
   jerror_t KalmanFilter(double anneal_factor,
 			DMatrix4x1 &S,DMatrix4x4 &C,
@@ -278,8 +280,12 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   jerror_t FindSegments(vector<const DFDCPseudo*>&pseudos,
 			vector<segment_t>&segments);
   jerror_t FindSegments(vector<const DCDCTrackHit*>&hits,
-			vector<cdc_segment_t>&segments);
+			vector<cdc_segment_t>&segments,
+			vector<bool>&used_hits
+			);
   jerror_t LinkSegments(vector<cdc_segment_t>&axial_segments,
+			vector<bool>&used_axial,
+			vector<const DCDCTrackHit *>&axial_hits,
 			vector<const DCDCTrackHit *>&stereo_hits,
 			vector<cdc_track_t>&LinkedSegments);
   jerror_t LinkSegments(vector<segment_t>segments[4], 
@@ -337,12 +343,12 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
     
   pthread_mutex_t mutex;
 
-  TH1F *Hprob,*Hprelimprob,*Hbeta,*HdEdx,*Hmatch,*Hcdcmatch,*Hcdcmatch_stereo;
+  TH1F *Hprob,*Hprelimprob,*Hbeta,*Hmatch,*Hcdcmatch,*Hcdcmatch_stereo;
   TH1F *Hpseudo_prob,*Hpseudo_prelimprob;
   TH1F *Hintersection_match;
   TH1F *Hcdc_prob,*Hcdc_prelimprob;
   TH2F *Hbcalmatch,*Hcdcdrift_time;
-  TH2F *Hures_vs_layer,*HdEdx_vs_beta,*Hres_vs_layer;	
+  TH2F *Hures_vs_layer,*Hres_vs_layer;	
   TH2F *Hdrift_time,*Hcdcres_vs_drift_time;
   TH2F *Hres_vs_drift_time,*Hvres_vs_layer;
   TH2F *Hdv_vs_dE,*Hbcalmatchxy,*Hcdc_time_vs_d;
