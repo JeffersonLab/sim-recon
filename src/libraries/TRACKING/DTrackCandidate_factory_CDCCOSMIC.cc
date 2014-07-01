@@ -200,7 +200,7 @@ void DTrackCandidate_factory_CDCCOSMIC::CalcChisq(DTrackCandidate *can, vector<c
 	
 	// Hit resolutions
 	double sigma_axial = 0.8 / sqrt(12.0);
-	double sigma_stereo = sigma_axial/sin(6.0/57.3); // 6 degree stereo angle
+	double sigma_stereo = sigma_axial/cos(6.0/57.3); // 6 degree stereo angle
 	
 	can->chisq = 0.0;
 
