@@ -287,7 +287,11 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   } 
   Hintersection_match = (TH1F*)gROOT->FindObject("Hintersection_match");
   if (!Hintersection_match){
-    Hintersection_match=new TH1F("Hintersection_match","Segment matching distance",100,0.0,25.); 
+    Hintersection_match=new TH1F("Hintersection_match","Intersection matching distance",100,0.0,25.); 
+  }
+  Hintersection_link_match = (TH1F*)gROOT->FindObject("Hintersection_link_match");
+  if (!Hintersection_link_match){
+    Hintersection_link_match=new TH1F("Hintersection_link_match","Segment matching distance",100,0.0,25.); 
   }
 
   Hcdcmatch = (TH1F*)gROOT->FindObject("Hcdcmatch");
@@ -303,6 +307,12 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   if (!Hmatch){
     Hmatch=new TH1F("Hmatch","Segment matching distance",100,0.0,25.); 
   }
+  Hlink_match = (TH1F*)gROOT->FindObject("Hlink_match");
+  if (!Hlink_match){
+    Hlink_match=new TH1F("link_match","Segment matching distance",100,0.0,25.); 
+  }
+  
+
   Hbeta = (TH1F*)gROOT->FindObject("Hbeta");
   if (!Hbeta){
     Hbeta=new TH1F("Hbeta","Estimate for #beta",100,0.0,1.5); 
@@ -523,8 +533,9 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   //-------------------------------------------------------------------------
   if (ALIGN_WIRE_PLANES){ // Use intersection points to align wire planes
     if (intersections.size()>4
-	&&((fcalshowers.size()>0&&fcalshowers.size()<3)
-	   || (bcalshowers.size()>0&&bcalshowers.size()<3))){
+	//&&((fcalshowers.size()>0&&fcalshowers.size()<3)
+	//   || (bcalshowers.size()>0&&bcalshowers.size()<3))
+	){
 
       // Group FDC hits by package
       vector<const DFDCIntersection*>packages[4];
@@ -538,15 +549,15 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
 	FindSegments(packages[i],segments[i]);
       }
       // Link the segments together to form track candidadates
-      vector<vector<const DFDCIntersection *> >LinkedSegments;
+      vector<intersection_segment_t>LinkedSegments;
       LinkSegments(segments,LinkedSegments);
       
       // Loop over linked segments
       for (unsigned int k=0;k<LinkedSegments.size();k++){
-	vector<const DFDCIntersection *>intersections=LinkedSegments[k];
+	vector<const DFDCIntersection *>intersections=LinkedSegments[k].hits;
 	
 	// Perform preliminary line fits for current set of linked segments    
-	DMatrix4x1 S=FitLine(intersections);
+	DMatrix4x1 S=LinkedSegments[k].S;
 		
 	// Move x and y to just before the first hit
 	double my_z=intersections[0]->pos.z()-2.;
@@ -561,8 +572,9 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   }
   else{  // Use pseudopoints to align cathode planes
     if (pseudos.size()>4 
-	&&((fcalshowers.size()>0&&fcalshowers.size()<3)
-	   || (bcalshowers.size()>0&&bcalshowers.size()<3))){
+	//&&((fcalshowers.size()>0&&fcalshowers.size()<3)
+	//   || (bcalshowers.size()>0&&bcalshowers.size()<3))
+	){
       // Group FDC hits by package
       vector<const DFDCPseudo*>packages[4];
       for (unsigned int i=0;i<pseudos.size();i++){
@@ -981,7 +993,7 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
     double prob=TMath::Prob(chi2_old,ndof_old);
     Hprob->Fill(prob);
  
-    //if (prob>0.0001)
+    if (prob>0.0001)
       {
       // run the smoother (opposite direction to filter)
       Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);   
@@ -1057,6 +1069,8 @@ DEventProcessor_dc_alignment::LinkSegments(vector<segment_t>segments[4],
 	      double z=segments[i_plus_1][k].hits[0]->wire->origin.z();
 	      DVector2 proj(x0+tx*z,y0+ty*z);
 	      
+	      Hlink_match->Fill((proj-segments[i_plus_1][k].hits[0]->xy).Mod());
+
 	      if ((proj-segments[i_plus_1][k].hits[0]->xy).Mod()<MATCH_RADIUS){
 		segments[i_plus_1][k].matched=true;
 		myhits.insert(myhits.end(),segments[i_plus_1][k].hits.begin(),
@@ -1125,12 +1139,12 @@ DEventProcessor_dc_alignment::LinkSegments(vector<segment_t>segments[4],
 // Link segments from package to package by doing straight-line projections
 jerror_t
 DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segments[4], 
-					vector<vector<const DFDCIntersection*> >&LinkedSegments){
+					   vector<intersection_segment_t>&LinkedSegments){
   vector<const DFDCIntersection *>myhits;
   for (unsigned int i=0;i<4;i++){
     for (unsigned int j=0;j<segments[i].size();j++){
       if (segments[i][j].matched==false){
-	myhits.assign(segments[i][j].hits.begin(),segments[i][j].hits.end());
+	//myhits.assign(segments[i][j].hits.begin(),segments[i][j].hits.end());
 	
 	unsigned i_plus_1=i+1; 
 	if (i_plus_1<4){
@@ -1145,7 +1159,10 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
 	      DVector2 proj(x0+tx*z,y0+ty*z);
 	      DVector2 XY(segments[i_plus_1][k].hits[0]->pos.x(),
 			  segments[i_plus_1][k].hits[0]->pos.y());
-	      if ((proj-XY).Mod()<MATCH_RADIUS){
+	     
+	      Hintersection_link_match->Fill((proj-XY).Mod());
+
+	      if ((proj-XY).Mod()<INTERSECTION_LINK_MATCH_RADIUS){
 		segments[i_plus_1][k].matched=true;
 		myhits.insert(myhits.end(),segments[i_plus_1][k].hits.begin(),
 				segments[i_plus_1][k].hits.end());
@@ -1163,7 +1180,7 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
 		      proj.Set(x0+tx*z,y0+ty*z);
 		      XY.Set(segments[i_plus_2][m].hits[0]->pos.x(),
 			     segments[i_plus_2][m].hits[0]->pos.y());
-		      if ((proj-XY).Mod()<MATCH_RADIUS){
+		      if ((proj-XY).Mod()<INTERSECTION_LINK_MATCH_RADIUS){
 			segments[i_plus_2][m].matched=true;
 			myhits.insert(myhits.end(),segments[i_plus_2][m].hits.begin(),
 				      segments[i_plus_2][m].hits.end());
@@ -1181,7 +1198,7 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
 			      proj.Set(x0+tx*z,y0+ty*z);
 			      XY.Set(segments[i_plus_3][n].hits[0]->pos.x(),
 				     segments[i_plus_3][n].hits[0]->pos.y());
-			      if ((proj-XY).Mod()<MATCH_RADIUS){
+			      if ((proj-XY).Mod()<INTERSECTION_LINK_MATCH_RADIUS){
 				segments[i_plus_3][n].matched=true;
 				myhits.insert(myhits.end(),segments[i_plus_3][n].hits.begin(),
 					      segments[i_plus_3][n].hits.end());
@@ -1201,11 +1218,59 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
 	    }
 	  } // loop over third-to-last set of segments
 	}	
-	LinkedSegments.push_back(myhits);
+	if (myhits.size()>0){
+	  myhits.insert(myhits.begin(),segments[i][j].hits.begin(),segments[i][j].hits.end());	
+	  intersection_segment_t mysegments;
+	  mysegments.hits.assign(myhits.begin(),myhits.end());
+	  mysegments.S=FitLine(myhits);
+	  LinkedSegments.push_back(mysegments);
+	}
 	myhits.clear();
       } // check if we have already used this segment
     } // loop over first set of segments
   } // loop over packages
+
+  
+  // Try to link tracks together
+  if (LinkedSegments.size()>1){
+    for (unsigned int i=0;i<LinkedSegments.size()-1;i++){
+      DMatrix4x1 S=LinkedSegments[i].S;
+      size_t last_index_1=LinkedSegments[i].hits.size()-1;
+      int first_pack_1=LinkedSegments[i].hits[0]->wire1->layer/6;
+      int last_pack_1=LinkedSegments[i].hits[last_index_1]->wire1->layer/6;
+      for (unsigned int j=i+1;j<LinkedSegments.size();j++){
+	size_t last_index_2=LinkedSegments[j].hits.size()-1;
+	double z=LinkedSegments[j].hits[0]->pos.z();
+	int first_pack_2=LinkedSegments[j].hits[0]->wire1->layer/6;
+	int last_pack_2=LinkedSegments[j].hits[last_index_2]->wire1->layer/6;
+	if (last_pack_1<first_pack_2 || first_pack_1 > last_pack_2){
+	  DVector2 proj(S(state_x)+z*S(state_tx),S(state_y)+z*S(state_ty));
+	  DVector2 XY(LinkedSegments[j].hits[0]->pos.x(),LinkedSegments[j].hits[0]->pos.y());
+	  double diff=(XY-proj).Mod();
+	  if (diff<MATCH_RADIUS){
+	    // Combine the hits from the two tracks and recompute the state 
+	    // vector S
+	    if (last_pack_1<first_pack_2){
+	      LinkedSegments[i].hits.insert(LinkedSegments[i].hits.end(),
+					    LinkedSegments[j].hits.begin(),
+					    LinkedSegments[j].hits.end());
+	    }
+	    else{
+	      LinkedSegments[i].hits.insert(LinkedSegments[i].hits.begin(),
+					    LinkedSegments[j].hits.begin(),
+					    LinkedSegments[j].hits.end());
+	    }
+	    LinkedSegments[i].S=FitLine(LinkedSegments[i].hits);
+
+	    // Drop the second track from the list 
+	    LinkedSegments.erase(LinkedSegments.begin()+j);
+	    break;
+	  }
+	}
+      }
+    }
+  }
+
   
   return NOERROR;
 }
@@ -1339,9 +1404,9 @@ jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCPseudo*>&po
 	  match=0;
 	  for (unsigned int m=x_list[k];m<x_list[k+1];m++){
 	    delta=(XY-points[m]->xy).Mod();
-	    if (delta<delta_min && delta<MATCH_RADIUS){
+	    if (delta<delta_min){
 	      delta_min=delta;
-	      match=m;
+	      if (delta<MATCH_RADIUS) match=m;
 	    }
 	  }
 	  Hmatch->Fill(delta_min);
@@ -1398,7 +1463,7 @@ jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCPseudo*>&po
 // Find segments by associating adjacent hits within a package together.
 jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCIntersection*>&points,
 					vector<intersection_segment_t>&segments){
-  if (points.size()==0 || points.size()>6) return RESOURCE_UNAVAILABLE;
+  if (points.size()==0) return RESOURCE_UNAVAILABLE;
   vector<int>used(points.size());
 
   // Put indices for the first point in each plane before the most downstream
@@ -1437,9 +1502,9 @@ jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCIntersectio
 	  for (unsigned int m=x_list[k];m<x_list[k+1];m++){
 	    DVector2 XY2(points[m]->pos.x(),points[m]->pos.y());
 	    delta=(XY-XY2).Mod();
-	    if (delta<delta_min && delta<MATCH_RADIUS){
+	    if (delta<delta_min){
 	      delta_min=delta;
-	      match=m;
+	      if (delta<MATCH_RADIUS) match=m;
 	    }
 	  }
 	  Hintersection_match->Fill(delta_min);
@@ -1473,7 +1538,7 @@ jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCIntersectio
 	  }
 	} // loop looking for hits adjacent to hits on segment
 
-	if (neighbors.size()>4){
+	if (neighbors.size()>3){
 	  intersection_segment_t mysegment;
 	  mysegment.matched=false;
 	  mysegment.S=FitLine(neighbors);

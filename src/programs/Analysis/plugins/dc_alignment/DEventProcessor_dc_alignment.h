@@ -143,7 +143,8 @@ typedef struct{
 #define EPS 1e-3
 #define ITER_MAX 20
 #define ADJACENT_MATCH_RADIUS 1.0
-#define MATCH_RADIUS 20.0
+#define MATCH_RADIUS 2.0
+#define INTERSECTION_LINK_MATCH_RADIUS 10.0
 #define CDC_MATCH_RADIUS 5.0
 
 class DEventProcessor_dc_alignment:public jana::JEventProcessor{
@@ -291,7 +292,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   jerror_t LinkSegments(vector<segment_t>segments[4], 
 			vector<vector<const DFDCPseudo *> >&LinkedSegments);
   jerror_t LinkSegments(vector<intersection_segment_t>segments[4], 
-			vector<vector<const DFDCIntersection*> >&LinkedSegments);
+			vector<intersection_segment_t>&LinkedSegments);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
 		       vector<update_t>&smoothed_updates);
   jerror_t FindOffsets(vector<const DCDCTrackHit*>&hits,
@@ -344,8 +345,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   pthread_mutex_t mutex;
 
   TH1F *Hprob,*Hprelimprob,*Hbeta,*Hmatch,*Hcdcmatch,*Hcdcmatch_stereo;
-  TH1F *Hpseudo_prob,*Hpseudo_prelimprob;
-  TH1F *Hintersection_match;
+  TH1F *Hpseudo_prob,*Hpseudo_prelimprob,*Hlink_match;
+  TH1F *Hintersection_match,*Hintersection_link_match;
   TH1F *Hcdc_prob,*Hcdc_prelimprob;
   TH2F *Hbcalmatch,*Hcdcdrift_time;
   TH2F *Hures_vs_layer,*Hres_vs_layer;	
