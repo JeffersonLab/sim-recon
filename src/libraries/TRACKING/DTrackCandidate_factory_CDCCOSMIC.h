@@ -8,6 +8,8 @@
 #ifndef _DTrackCandidate_factory_CDCCOSMIC_
 #define _DTrackCandidate_factory_CDCCOSMIC_
 
+#include <TH2.h>
+
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DReferenceTrajectory.h>
@@ -15,7 +17,7 @@
 
 class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
 	public:
-		DTrackCandidate_factory_CDCCOSMIC():rt(NULL),bfield(NULL){};
+		DTrackCandidate_factory_CDCCOSMIC():rt(NULL),bfield(NULL),residual_vs_ring(NULL){};
 		~DTrackCandidate_factory_CDCCOSMIC(){};
 		const char* Tag(void){return "CDCCOSMIC";}
 
@@ -28,6 +30,10 @@ class DTrackCandidate_factory_CDCCOSMIC:public jana::JFactory<DTrackCandidate>{
 
 		DReferenceTrajectory *rt;
 		DMagneticFieldMapNoField *bfield;
+		TH2D *residual_vs_ring;
+		TH1D *h_chisq;
+		TH1D *h_Ndof;
+		TH1D *h_chisq_per_Ndof;
 		
 		void CalcChisq(DTrackCandidate *can, vector<const DCDCTrackHit*> &axial_hits, vector<const DCDCTrackHit*> &stereo_hits);
 };

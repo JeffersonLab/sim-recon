@@ -31,6 +31,19 @@ jerror_t DTrackCandidate_factory_CDCCOSMIC::init(void)
 	rt->Rmax_interior = 100.0; // (cm)  set larger swim volume so we can swim through the BCAL 
 	rt->Rmax_exterior = 200.0; // (cm)  set larger swim volume so we can swim through the BCAL 
 
+	// Optionally fill residual vs ring
+	bool FILL_HIST = false;
+	gPARMS->SetDefaultParameter("FILL_HIST", FILL_HIST);
+	if(FILL_HIST){
+		residual_vs_ring = new TH2D("residual_vs_ring", "CDC Cosmics straight line fitter", 250, 0.0, 100.0, 28, 0.5, 28.5);
+		residual_vs_ring->SetXTitle("residual (mm)");
+		residual_vs_ring->SetYTitle("ring (a.k.a. layer)");
+
+		h_chisq = new TH1D("chisq", "#chi^2", 250, 0.0, 200.0);
+		h_Ndof = new TH1D("Ndof", "Degrees of Freedom", 201, -0.5, 200.5);
+		h_chisq_per_Ndof = new TH1D("chisq_per_Ndof", "#chi^2/Ndof", 250, 0.0, 10.0);
+	}
+
 	return NOERROR;
 }
 
@@ -226,6 +239,8 @@ void DTrackCandidate_factory_CDCCOSMIC::CalcChisq(DTrackCandidate *can, vector<c
 		
 		double dchi = dist/sigma_axial;
 		can->chisq += dchi*dchi;
+		
+		if(residual_vs_ring)residual_vs_ring->Fill(fabs(dist)*10.0, wire->ring);
 	}
 
 	// Stereo
@@ -240,8 +255,15 @@ void DTrackCandidate_factory_CDCCOSMIC::CalcChisq(DTrackCandidate *can, vector<c
 		
 		double dchi = dist/sigma_stereo;
 		can->chisq += dchi*dchi;
+
+		if(residual_vs_ring) residual_vs_ring->Fill(fabs(dist)*10.0, wire->ring);
 	}
 
+	if(h_chisq){
+		h_chisq->Fill(can->chisq);
+		h_Ndof->Fill((double)can->Ndof);
+		h_chisq_per_Ndof->Fill(can->chisq/(double)can->Ndof);
+	}
 }
 
 //------------------
