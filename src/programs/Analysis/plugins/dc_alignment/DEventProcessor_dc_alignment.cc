@@ -139,6 +139,7 @@ jerror_t DEventProcessor_dc_alignment::init(void)
   for (unsigned int i=0;i<24;i++){
     fdc_alignments[i].A=DMatrix2x1();
     fdc_alignments[i].E=DMatrix2x2(0.000001,0.,0.,0.0001);
+    //fdc_alignments[i].E=DMatrix2x2();
   }
   fdc_cathode_alignments.resize(24);
   for (unsigned int i=0;i<24;i++){
@@ -159,14 +160,12 @@ jerror_t DEventProcessor_dc_alignment::init(void)
     fdcfile.getline(sdummy,40);
     // loop over remaining entries
     for (unsigned int i=0;i<24;i++){ 
-      int mylayer;
       double du,dphi,sigu,sigphi;
-      
-      fdcfile >> mylayer;
-      fdcfile >> du;
-      fdcfile >> sigu;
+
       fdcfile >> dphi;
       fdcfile >> sigphi;
+      fdcfile >> du;
+      fdcfile >> sigu;
       
       fdc_alignments[i].A(kU)=du;
       fdc_alignments[i].A(kPhiU)=dphi;
@@ -174,6 +173,7 @@ jerror_t DEventProcessor_dc_alignment::init(void)
     fdcfile.close();
   }
 
+  printf("du %f\n",fdc_alignments[0].A(kU));
 
   fdc_drift_parms(0)=0.;
   fdc_drift_parms(1)=0.;
@@ -422,15 +422,14 @@ jerror_t DEventProcessor_dc_alignment::fini(void)
 
   if (ALIGN_WIRE_PLANES){
     ofstream fdcfile("fdc_alignment.dat");
-    fdcfile << "Layer dU sig(dU) dPhi sig(dPhi)" <<endl;
+    fdcfile << "dPhi sig(dPhi) dU sig(dU)" <<endl;
     for (unsigned int layer=0;layer<24;layer++){
       double du=fdc_alignments[layer].A(kU);
       double sigu=sqrt(fdc_alignments[layer].E(kU,kU));
       double dphi=fdc_alignments[layer].A(kPhiU);
       double sigphi=sqrt(fdc_alignments[layer].E(kPhiU,kPhiU));
       
-      fdcfile << layer+1 << " " << du <<" " << sigu <<" " << dphi 
-	      << " " << sigphi << endl;
+      fdcfile <<  dphi <<" " << sigphi <<" " << du << " " << sigu << endl;
     }
     fdcfile.close(); 
   }
@@ -588,12 +587,12 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
       }
       
       // Link the segments together to form track candidadates
-      vector<vector<const DFDCPseudo *> >LinkedSegments;
+      vector<segment_t>LinkedSegments;
       LinkSegments(segments,LinkedSegments);
       
       // Loop over linked segments
       for (unsigned int k=0;k<LinkedSegments.size();k++){
-	vector<const DFDCPseudo *>hits=LinkedSegments[k];
+	vector<const DFDCPseudo *>hits=LinkedSegments[k].hits;
 	sort(hits.begin(),hits.end(),fdc_pseudo_cmp);
 
 	mMinTime=1000.;
@@ -864,12 +863,12 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
   if (iter>1){
     double prob=TMath::Prob(chi2_old,ndof_old);
     Hpseudo_prob->Fill(prob);
+    
+    PlotLines(trajectory);
 
     if (prob>0.0001){
       // run the smoother (opposite direction to filter)
       Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
-
-      PlotLines(trajectory);
 
       //Hbeta->Fill(mBeta);
       for (unsigned int i=0;i<smoothed_updates.size();i++){
@@ -937,7 +936,7 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
   hits.push_back(temp);
 
   unsigned int num_hits=hits.size();
-  if (num_hits<5) return VALUE_OUT_OF_RANGE;
+  if (num_hits<10) return VALUE_OUT_OF_RANGE;
 
   vector<wire_update_t>updates(num_hits);
   vector<wire_update_t>best_updates;
@@ -977,8 +976,8 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
     if (KalmanFilter(anneal_factor,S,C,hits,trajectory,updates,chi2,ndof)
 	!=NOERROR) break;
 
-    //    printf("== event %d == iter %d =====chi2 %f ndof %d \n",myevt,iter,chi2,ndof);
-    if (chi2>chi2_old || fabs(chi2_old-chi2)<0.1 || iter==ITER_MAX) break;  
+    //printf("== event %d == iter %d =====chi2 %f ndof %d \n",myevt,iter,chi2,ndof);
+    if (chi2>chi2_old || iter==ITER_MAX) break;  
     
     // Save the current state and covariance matrixes
     Cbest=C;
@@ -992,20 +991,20 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
   if (iter>1){
     double prob=TMath::Prob(chi2_old,ndof_old);
     Hprob->Fill(prob);
- 
-    if (prob>0.0001)
+    
+    PlotLines(trajectory);
+
+    if (prob>0.001)
       {
       // run the smoother (opposite direction to filter)
       Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);   
-
-      PlotLines(trajectory);
 
       //Hbeta->Fill(mBeta);
       for (unsigned int i=0;i<smoothed_updates.size();i++){
 	unsigned int layer=hits[i].wire->layer;
      
 	Hres_vs_layer->Fill(layer,smoothed_updates[i].ures);
-	if (prob>0.1&&layer==smoothed_updates.size()/2){
+	if (prob>0.1/*&&layer==smoothed_updates.size()/2*/){
 	  Hdrift_time->Fill(smoothed_updates[i].drift_time,
 			    smoothed_updates[i].doca);
 	  Hres_vs_drift_time->Fill(smoothed_updates[i].drift_time,
@@ -1050,13 +1049,11 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
 // Link segments from package to package by doing straight-line projections
 jerror_t
 DEventProcessor_dc_alignment::LinkSegments(vector<segment_t>segments[4], 
-					vector<vector<const DFDCPseudo *> >&LinkedSegments){
+					   vector<segment_t>&LinkedSegments){
   vector<const DFDCPseudo *>myhits;
   for (unsigned int i=0;i<4;i++){
     for (unsigned int j=0;j<segments[i].size();j++){
       if (segments[i][j].matched==false){
-	myhits.assign(segments[i][j].hits.begin(),segments[i][j].hits.end());
-	
 	unsigned i_plus_1=i+1; 
 	if (i_plus_1<4){
 	  double tx=segments[i][j].S(state_tx);
@@ -1125,11 +1122,99 @@ DEventProcessor_dc_alignment::LinkSegments(vector<segment_t>segments[4],
 	    }
 	  } // loop over third-to-last set of segments
 	}	
-	LinkedSegments.push_back(myhits);
+	if (myhits.size()>0){ 
+	  segments[i][j].matched=true;
+	  myhits.insert(myhits.begin(),segments[i][j].hits.begin(),segments[i][j].hits.end());	
+	  segment_t mysegments;
+	  mysegments.hits.assign(myhits.begin(),myhits.end());
+	  mysegments.S=FitLine(myhits);
+	  LinkedSegments.push_back(mysegments);
+	}	  
 	myhits.clear();
       } // check if we have already used this segment
     } // loop over first set of segments
   } // loop over packages
+
+  // Try to link tracks together
+  if (LinkedSegments.size()>1){
+    for (unsigned int i=0;i<LinkedSegments.size()-1;i++){
+      DMatrix4x1 S=LinkedSegments[i].S;
+      size_t last_index_1=LinkedSegments[i].hits.size()-1;
+      int first_pack_1=(LinkedSegments[i].hits[0]->wire->layer-1)/6;
+      int last_pack_1=(LinkedSegments[i].hits[last_index_1]->wire->layer-1)/6;
+      for (unsigned int j=i+1;j<LinkedSegments.size();j++){
+	size_t last_index_2=LinkedSegments[j].hits.size()-1;
+	int first_pack_2=(LinkedSegments[j].hits[0]->wire->layer-1)/6;
+	int last_pack_2=(LinkedSegments[j].hits[last_index_2]->wire->layer-1)/6;
+
+	if (last_pack_1<first_pack_2 || first_pack_1 > last_pack_2){
+	  double z=LinkedSegments[j].hits[0]->wire->origin.z();
+	  DVector2 proj(S(state_x)+z*S(state_tx),S(state_y)+z*S(state_ty));
+	  double diff=(LinkedSegments[j].hits[0]->xy-proj).Mod();
+
+	  if (diff<MATCH_RADIUS){
+	    // Combine the hits from the two tracks and recompute the state 
+	    // vector S
+	    if (last_pack_1<first_pack_2){
+	      LinkedSegments[i].hits.insert(LinkedSegments[i].hits.end(),
+					    LinkedSegments[j].hits.begin(),
+					    LinkedSegments[j].hits.end());
+	    }
+	    else{
+	      LinkedSegments[i].hits.insert(LinkedSegments[i].hits.begin(),
+					    LinkedSegments[j].hits.begin(),
+					    LinkedSegments[j].hits.end());
+	    }
+	    LinkedSegments[i].S=FitLine(LinkedSegments[i].hits);
+
+	    // Drop the second track from the list 
+	    LinkedSegments.erase(LinkedSegments.begin()+j);
+	    break;
+	  }
+	}
+      }
+    }
+  }
+
+  // Try to attach unmatched segments to tracks
+  for (unsigned int i=0;i<LinkedSegments.size();i++){
+    DMatrix4x1 S=LinkedSegments[i].S;
+    size_t last_index_1=LinkedSegments[i].hits.size()-1;
+    int first_pack_1=(LinkedSegments[i].hits[0]->wire->layer-1)/6;
+    int last_pack_1=(LinkedSegments[i].hits[last_index_1]->wire->layer-1)/6; 
+    for (unsigned int j=0;j<4;j++){
+      for (unsigned int k=0;k<segments[j].size();k++){
+	if (segments[j][k].matched==false){
+	  int pack_2=(segments[j][k].hits[0]->wire->layer-1)/6;
+	  if (pack_2<first_pack_1 || pack_2>last_pack_1){
+	    double z=segments[j][k].hits[0]->wire->origin.z();
+	    DVector2 proj(S(state_x)+z*S(state_tx),S(state_y)+z*S(state_ty));
+	    double diff=(segments[j][k].hits[0]->xy-proj).Mod();
+
+	    if (diff<MATCH_RADIUS){
+	      segments[j][k].matched=true;
+	      
+	      // Add hits and recompute S
+	      if (pack_2<first_pack_1){
+		LinkedSegments[i].hits.insert(LinkedSegments[i].hits.begin(),
+					      segments[j][k].hits.begin(),
+					      segments[j][k].hits.end());
+	      }
+	      else {
+		LinkedSegments[i].hits.insert(LinkedSegments[i].hits.end(),
+					      segments[j][k].hits.begin(),
+					      segments[j][k].hits.end());
+	      
+	      }
+	      LinkedSegments[i].S=FitLine(LinkedSegments[i].hits);
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+
   
   return NOERROR;
 }
@@ -1144,8 +1229,6 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
   for (unsigned int i=0;i<4;i++){
     for (unsigned int j=0;j<segments[i].size();j++){
       if (segments[i][j].matched==false){
-	//myhits.assign(segments[i][j].hits.begin(),segments[i][j].hits.end());
-	
 	unsigned i_plus_1=i+1; 
 	if (i_plus_1<4){
 	  double tx=segments[i][j].S(state_tx);
@@ -1219,6 +1302,7 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
 	  } // loop over third-to-last set of segments
 	}	
 	if (myhits.size()>0){
+	  segments[i][j].matched=true;
 	  myhits.insert(myhits.begin(),segments[i][j].hits.begin(),segments[i][j].hits.end());	
 	  intersection_segment_t mysegments;
 	  mysegments.hits.assign(myhits.begin(),myhits.end());
@@ -1240,10 +1324,10 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
       int last_pack_1=LinkedSegments[i].hits[last_index_1]->wire1->layer/6;
       for (unsigned int j=i+1;j<LinkedSegments.size();j++){
 	size_t last_index_2=LinkedSegments[j].hits.size()-1;
-	double z=LinkedSegments[j].hits[0]->pos.z();
 	int first_pack_2=LinkedSegments[j].hits[0]->wire1->layer/6;
 	int last_pack_2=LinkedSegments[j].hits[last_index_2]->wire1->layer/6;
 	if (last_pack_1<first_pack_2 || first_pack_1 > last_pack_2){
+	  double z=LinkedSegments[j].hits[0]->pos.z();
 	  DVector2 proj(S(state_x)+z*S(state_tx),S(state_y)+z*S(state_ty));
 	  DVector2 XY(LinkedSegments[j].hits[0]->pos.x(),LinkedSegments[j].hits[0]->pos.y());
 	  double diff=(XY-proj).Mod();
@@ -1271,6 +1355,45 @@ DEventProcessor_dc_alignment::LinkSegments(vector<intersection_segment_t>segment
     }
   }
 
+  // Try to attach unmatched segments to tracks
+  for (unsigned int i=0;i<LinkedSegments.size();i++){
+    DMatrix4x1 S=LinkedSegments[i].S;
+    size_t last_index_1=LinkedSegments[i].hits.size()-1;
+    int first_pack_1=LinkedSegments[i].hits[0]->wire1->layer/6;
+    int last_pack_1=LinkedSegments[i].hits[last_index_1]->wire1->layer/6; 
+    for (unsigned int j=0;j<4;j++){
+      for (unsigned int k=0;k<segments[j].size();k++){
+	if (segments[j][k].matched==false){
+	  int pack_2=segments[j][k].hits[0]->wire1->layer/6;
+	  if (pack_2<first_pack_1 || pack_2>last_pack_1){
+	    double z=segments[j][k].hits[0]->pos.z();
+	    DVector2 proj(S(state_x)+z*S(state_tx),S(state_y)+z*S(state_ty));
+	    DVector2 XY(segments[j][k].hits[0]->pos.x(),
+		      segments[j][k].hits[0]->pos.y());
+	    double diff=(XY-proj).Mod();
+
+	    if (diff<MATCH_RADIUS){
+	      segments[j][k].matched=true;
+	      
+	      // Add hits and recompute S
+	      if (pack_2<first_pack_1){
+		LinkedSegments[i].hits.insert(LinkedSegments[i].hits.begin(),
+					      segments[j][k].hits.begin(),
+					    segments[j][k].hits.end());
+	      }
+	      else {
+		LinkedSegments[i].hits.insert(LinkedSegments[i].hits.end(),
+					      segments[j][k].hits.begin(),
+					    segments[j][k].hits.end());
+	      
+	      }
+	      LinkedSegments[i].S=FitLine(LinkedSegments[i].hits);
+	    }
+	  }
+	}
+      }
+    }
+  }
   
   return NOERROR;
 }
@@ -1439,7 +1562,7 @@ jerror_t DEventProcessor_dc_alignment::FindSegments(vector<const DFDCPseudo*>&po
 	  }
 	} // loop looking for hits adjacent to hits on segment
 
-	if (neighbors.size()>4){
+	if (neighbors.size()>3){
 	  segment_t mysegment;
 	  mysegment.matched=false;
 	  mysegment.S=FitLine(neighbors);
@@ -2534,7 +2657,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	}
 	Mdiff=sign*drift-d;
 	updates[my_id].drift=drift;
-	
+
 	// Matrix for transforming from state-vector space to measurement space
 	double sinalpha_cosalpha=sinalpha*cosalpha;
 	H_T(state_x)=cospsi*cosalpha;
@@ -2569,18 +2692,18 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 
 	// Variance for this hit
 	InvV=1./(Vtemp+H*C*H_T);
-	
+
 	// Compute Kalman gain matrix
 	K=InvV*(C*H_T);
-	
+	  
 	// Update the state vector 
 	S+=Mdiff*K;
 	updates[my_id].S=S;
-
+	
 	// Update state vector covariance matrix
 	C=C-K*(H*C);    
 	updates[my_id].C=C;
-
+	
 	// Update chi2 for this trajectory 
 	x=S(state_x);
 	y=S(state_y);
@@ -2596,10 +2719,10 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	du=upred-uwire;
 	d=du*cosalpha;
 	sinalpha=sin(alpha);
-
+	
 	sign=(du>0)?1.:-1.;
 	Mdiff=sign*drift-d;
-
+	
 	double RC=Vtemp-H*C*H_T;
 	updates[my_id].ures=Mdiff;
 	updates[my_id].R=RC;
@@ -3055,9 +3178,11 @@ DEventProcessor_dc_alignment::FindOffsets(vector<const DFDCPseudo *>&hits,
       fdc_cathode_alignments[layer].A=A+dA;	  
     }
     else {
+      /*
       printf("-------t= %f\n",smoothed_updates[i].drift_time);
       E.Print();
       Etemp.Print();
+      */
     }
   }
 
@@ -3132,9 +3257,11 @@ DEventProcessor_dc_alignment::FindOffsets(vector<intersection_hit_t>&hits,
       fdc_alignments[layer].A=A+dA;
     }
     else {
+      /*
       printf("-------t= %f\n",smoothed_updates[i].drift_time);
       E.Print();
       Etemp.Print();
+      */
     }
   }
 

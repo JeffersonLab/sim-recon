@@ -290,7 +290,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
 			vector<const DCDCTrackHit *>&stereo_hits,
 			vector<cdc_track_t>&LinkedSegments);
   jerror_t LinkSegments(vector<segment_t>segments[4], 
-			vector<vector<const DFDCPseudo *> >&LinkedSegments);
+			vector<segment_t>&LinkedSegments);
   jerror_t LinkSegments(vector<intersection_segment_t>segments[4], 
 			vector<intersection_segment_t>&LinkedSegments);
   jerror_t FindOffsets(vector<const DFDCPseudo *>&hits,
