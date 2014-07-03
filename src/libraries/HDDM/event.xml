@@ -119,6 +119,9 @@
         <microChannel E="float" column="int" maxOccurs="unbounded" minOccurs="0" row="int">
           <taggerHit maxOccurs="unbounded" minOccurs="0" t="float"/>
         </microChannel>
+        <fixedChannel E="float" channel="int" maxOccurs="unbounded" minOccurs="0">
+          <taggerHit maxOccurs="unbounded" minOccurs="0" t="float"/>
+        </fixedChannel>
       </tagger>
       <mcTrajectory minOccurs="0">
         <mcTrajectoryPoint E="float" dE="float" maxOccurs="unbounded" mech="int" minOccurs="0" part="int" primary_track="int" px="float" py="float" pz="float" radlen="float" step="float" t="float" track="int" x="float" y="float" z="float"/>
