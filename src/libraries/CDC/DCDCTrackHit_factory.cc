@@ -106,6 +106,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 				||(cdchit->ring>16&&cdchit->ring<25))
 				?true:false;
 		hit->tdrift = cdchit->t;
+
 		double w_eff=29.5e-9;
 		double gas_gain=1e5;
 		double electron_charge=1.6022e-4; /* fC */
@@ -114,9 +115,14 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->AddAssociatedObject(cdchit);
 
 		if (MATCH_TRUTH_HITS==true&&mctrackhits.size()>0){
+		  // Estimate for drift distance, ignoring flight time
+		  double d=0.;
+		  if (cdchit->t>0) d=0.0279*sqrt(cdchit->t);
+
 		  // Try matching truth hit with this "real" hit.
-		  const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hit->wire, hit->dist, mctrackhits);
+		  const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hit->wire,d, mctrackhits);
 		
+
 		  if(mctrackhit)hit->AddAssociatedObject(mctrackhit);
 		}
 
