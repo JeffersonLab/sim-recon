@@ -45,7 +45,7 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	/// set the base conversion scales
 	//a_scale    = 1.0E6/1.3E5; 
 	a_scale    = 4.0E3/1.0E2; 
-	t_scale    = 8.0;    // 8 ns/count
+	t_scale    = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
 
 	/// Read in calibration constants
         vector<double> raw_gains;

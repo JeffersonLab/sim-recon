@@ -828,11 +828,25 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		EmulateDf250PulseIntergral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
 	}
-	// Optionally generate Df125PulseIntegral objects from Df125WindowRawData objects. 
+
+	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df125PulseIntegral"].size()==0)){
+		vector<JObject*> pt_objs;
+		EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs);
+		if(pt_objs.size() != 0) hit_objs_by_type["Df125PulseTime"] = pt_objs;
+
 		vector<JObject*> pi_objs;
 		EmulateDf125PulseIntergral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
-		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;
+		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;	
+		
+		// Make PulseTime and PulseIntegral objects associated objects of one another
+		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
+		// tmeplated method to work.
+		vector<DDAQAddress*> da_pt_objs;
+		vector<DDAQAddress*> da_pi_objs;
+		for(unsigned int i=0; i<pt_objs.size(); i++) da_pt_objs.push_back((DDAQAddress*)pt_objs[i]);
+		for(unsigned int i=0; i<pi_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pi_objs[i]);
+		LinkAssociations(da_pt_objs, da_pi_objs);
 	}
 
 	// Loop over types of data objects, copying to appropriate factory
@@ -842,7 +856,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		fac->CopyTo(iter->second);
 	}
 	objs_ptr->own_objects = false;
-
+	
 	// Returning OBJECT_NOT_AVAILABLE tells JANA that this source cannot
 	// provide the type of object requested and it should try and generate
 	// it via a factory algorithm. Returning NOERROR on the other hand
@@ -1036,6 +1050,98 @@ void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, v
 			// Integral is below threshold so discard the hit.
 			delete myDf125PulseIntegral;
 		}
+	}
+}
+
+//----------------
+// EmulateDf125PulseTime
+//----------------
+void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs)
+{
+	uint32_t hit_threshold = 80; // single sample threshold above pedestal
+	uint32_t Nped_samples = 20; // number of samples to use for pedestal calculation
+	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
+	uint32_t Nsamples_before = 8; // Number of samples before threshold crossing to include in upsampling (was XTHR_SAMPLE in Naomi's code)
+//	uint32_t Nupsamples = 8; // Number of upsampled values to calculate (was NUPSAMPLED in Naomi's code)
+//	uint32_t pulse_number = 0;
+//	uint32_t quality_factor = 0;
+
+	// Loop over all window raw data objects
+	for(unsigned int i=0; i<wrd_objs.size(); i++){
+		const Df125WindowRawData *f125WindowRawData = (Df125WindowRawData*)wrd_objs[i];
+
+		// Get a vector of the samples for this channel
+		const vector<uint16_t> &samplesvector = f125WindowRawData->samples;
+		uint32_t Nsamples_all = samplesvector.size(); // (was NADCBUFFER in Naomi's code)
+		if(Nsamples_all < (Nped_samples+Nsamples)){
+			char str[256];
+			sprintf(str, "Too few samples in Df125WindowRawData for pulse time extraction! Nsamples_all=%d, (Nped_samples+Nsamples)=%d", Nsamples_all, (Nped_samples+Nsamples));
+			jerr << str << endl;
+			throw JException(str);
+		}
+
+		// loop over the first ped_samples samples to calculate pedestal
+		int32_t pedestalsum = 0;
+		for (uint32_t c_samp=0; c_samp<Nped_samples; c_samp++) {
+			pedestalsum += samplesvector[c_samp];
+		}
+		pedestalsum /= (double)Nped_samples;
+
+		// Calculate single sample threshold based on pdestal
+		double effective_threshold = hit_threshold + pedestalsum;
+
+		// Look for sample above threshold. Start looking after pedestal
+		// region but only up to Nsamples from end of window so we know
+		// there are at least Nsamples from which to calculate time
+		uint32_t ihitsample; // sample number of first sample above effective_threshold
+		for(ihitsample=Nped_samples; ihitsample<(Nsamples_all - Nsamples); ihitsample++){
+			if(samplesvector[ihitsample] > effective_threshold) break;
+		}
+		
+		// Didn't find sample above threshold. Don't make hit.
+		if(ihitsample >= (Nsamples_all - Nsamples)) continue;
+
+		// Make the start of the subset of samples used for the algorithm include
+		// "Nsamples_before" samples before the first sample above threshold. 
+		ihitsample -= Nsamples_before; 
+
+		// Find time
+		
+		//----- TEMPORARY--------
+		// The following is temporary just to try and get the rest of this
+		// working. The actual algorithm implmented in the FPGA will need to
+		// be filled in later
+		
+		// Linear interpolation of two samples surrounding the first sample over threshold
+		ihitsample += Nsamples_before; // make ihitsample be the first sample over threshold again 
+		double sample1 = (double)samplesvector[ihitsample - 1];
+		double sample2 = (double)samplesvector[ihitsample + 1];
+		double m = (sample2 - sample1)/2.0; // slope where x is in units of samples
+		double b = sample2 - m*(double)(ihitsample + 1);
+		double time_samples = m==0.0 ? (double)ihitsample:(effective_threshold -b)/m;
+
+		//----- TEMPORARY--------
+
+		// Calculate time in ns based on 8ns per sample
+		//double time_samples = ihitsample + 0.1*time;
+		double time_ns = time_samples*10.0; // integer sample needs to be reported in units of 1/10th sample
+		time_ns -= 170.0; // empirical from first BCAL/CDC cosmic data
+		
+		// create new Df125PulseTime object
+		Df125PulseTime *myDf125PulseTime = new Df125PulseTime;
+		myDf125PulseTime->rocid =f125WindowRawData->rocid;
+		myDf125PulseTime->slot = f125WindowRawData->slot;
+		myDf125PulseTime->channel = f125WindowRawData->channel;
+		myDf125PulseTime->itrigger = f125WindowRawData->itrigger;
+		myDf125PulseTime->pulse_number = 0;
+		myDf125PulseTime->quality_factor = 0;
+		myDf125PulseTime->time = (uint32_t)time_ns;
+		
+		// Add the Df125WindowRawData object as an associated object
+		myDf125PulseTime->AddAssociatedObject(f125WindowRawData);
+		
+		// Add to list of Df125PulseTime objects
+		pt_objs.push_back(myDf125PulseTime);
 	}
 }
 

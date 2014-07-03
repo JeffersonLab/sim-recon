@@ -32,11 +32,16 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t erun(void);
 
+		unsigned int locate(vector<double>&xx,double x);
+
 
 		DGeometry *dgeom;
 		vector<vector<DCDCWire *> >cdcwires;
 		int Nstraws[CDC_MAX_RINGS];
 		bool MATCH_TRUTH_HITS;
+		double CDC_DRIFT_BSCALE_PAR1;
+		double CDC_DRIFT_BSCALE_PAR2;
+		vector<double> cdc_drift_table;
 };
 
 #endif // _DCDCTrackHit_factory_
