@@ -4,7 +4,8 @@
  *	This is a part of the hits package for the
  *	HDGeant simulation program for Hall D.
  *
- *	version 1.0 	-Richard Jones November 16, 2006
+ * version 1.0 	-Richard Jones November 16, 2006
+ * version 2.0 	-Richard Jones July 1, 2014
  *
  * Programmer's Notes:
  * -------------------
@@ -19,6 +20,19 @@
  *    of the background photons.  Note that this includes many photons
  *    that never reached the GlueX target because they were stopped
  *    at the collimator.
+ *
+ * update July 1, 2014 (version 2.0)
+ * ---------------------------------
+ * 1) Read the tagger channel energy bounds from the ccdb instead of
+ *    hard-wiring them here.
+ * 2) Add hits in both the fixed_array and microscope detectors.
+ * 3) Fix the bug that forced the E value written into the hits structure
+ *    to always contain the exact simulated beam photon energy, instead
+ *    of the mean value for the hit tagger channel. Now only the mean
+ *    photon energy for the hit channel is recorded.
+ * 4) The recorded photon energy from the tagger is computed from the
+ *    endpoint energy in the ccdb multiplied by the scaled_energy_range
+ *    array values.
  */
 
 #include <stdlib.h>
@@ -28,20 +42,28 @@
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+#include <calibDB.h>
 
-#define TWO_HIT_RESOL   25.
-#define MAX_HITS        5000
-#define C_CM_PER_NS     29.9792458
-#define REF_TIME_Z_CM   65.
+#define BEAM_BUCKET_SPACING_NS  2.
+#define MICRO_TWO_HIT_RESOL     25.
+#define MICRO_MAX_HITS          5000
+#define FIXED_TWO_HIT_RESOL     25.
+#define FIXED_MAX_HITS          5000
+#define C_CM_PER_NS             29.9792458
+#define REF_TIME_Z_CM           65.
+#define TAG_T_MIN_NS            -20
+#define TAG_T_MAX_NS            +20
 
-#define TAGMS_E_RANGE	1.280
-#define TAGMS_E_MIN 	8.000
-#define TAGMS_CHANNELS	128
-#define TAGMS_T_RANGE   500.
-#define TAGMS_T_MIN     -200.
-
-binTree_t* taggerTree = 0;
-static int channelCount = 0;
+float endpoint_energy_GeV = 0;
+static int micro_nchannels = 120;
+float* micro_channel_Erange = 0;
+static int fixed_nchannels = 220;
+float* fixed_channel_Erange = 0;
+binTree_t* microTree = 0;
+binTree_t* fixedTree = 0;
+static int microCount = 0;
+static int fixedCount = 0;
+static int printDone = 0;
 
 /* register hits during event initialization (from gukine) */
 
@@ -49,33 +71,117 @@ void hitTagger (float xin[4], float xout[4],
                 float pin[5], float pout[5], float dEsum,
                 int track, int stack, int history)
 {
-   double chan = TAGMS_CHANNELS*(pin[3]-TAGMS_E_MIN)/TAGMS_E_RANGE+1;
-   double E = TAGMS_E_MIN+(chan+0.5)*TAGMS_E_RANGE/TAGMS_CHANNELS;
+   int micro_chan;
+   int fixed_chan;
+   double E = pin[3];
    double t = xin[3]*1e9-(xin[2]-REF_TIME_Z_CM)/C_CM_PER_NS;
-   t = (fabs(t) < 1e-3)? 0 : t;
+   t = floor(t/BEAM_BUCKET_SPACING_NS+0.5)*BEAM_BUCKET_SPACING_NS;
 
-   if (chan < 1 || chan > TAGMS_CHANNELS) return;   /* tagger energy limits */
+   /* read tagger set endpoint energy from calibdb */
+   if (endpoint_energy_GeV == 0) {
+      char dbname[] = "/PHOTON_BEAM/endpoint_energy::mc";
+      unsigned int ndata = 1;
+      if (GetCalib(dbname, &ndata, &endpoint_energy_GeV)) {
+         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
+                 "failed to read photon beam endpoint energy",
+                 "from calibdb, cannot continue.");
+         exit (2);
+      }
+   }
+ 
+   /* read microscope channel energy bounds from calibdb */
+   if (micro_channel_Erange == 0) {
+      char dbname[] = "/PHOTON_BEAM/microscope/scaled_energy_range::mc";
+      int ndata = 2*micro_nchannels;
+      mystr_t names[ndata];
+      micro_channel_Erange = malloc(ndata*sizeof(float));
+      if (GetArrayConstants(dbname, &ndata, micro_channel_Erange, names)) {
+         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
+                 "failed to read microscope scaled_energy_range table",
+                 "from calibdb, cannot continue.");
+         exit (2);
+      }
+      else {
+         int i;
+         for (i=0; i < ndata; ++i) {
+            micro_channel_Erange[i] *= endpoint_energy_GeV;
+         }
+      }
+   }
+ 
+   /* read fixed array channel energy bounds from calibdb */
+   if (fixed_channel_Erange == 0) {
+      char dbname[] = "/PHOTON_BEAM/fixed_array/scaled_energy_range::mc";
+      int ndata = 2*fixed_nchannels;
+      mystr_t names[ndata];
+      fixed_channel_Erange = malloc(ndata*sizeof(float));
+      if (GetArrayConstants(dbname, &ndata, fixed_channel_Erange, names)) {
+         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
+                 "failed to read fixed_array scaled_energy_range table",
+                 "from calibdb, cannot continue.");
+         exit (2);
+      }
+      else {
+         int i;
+         for (i=0; i < ndata; ++i) {
+            fixed_channel_Erange[i] *= endpoint_energy_GeV;
+         }
+      }
+   }
 
-   /* post the hit to the hits tree, mark slab as hit */
+   if (printDone == 0) {
+      fprintf(stderr,"TAGGER: ALL parameters loaded from Data Base\n");
+      printDone = 1;
+   }
 
-   {
+   /* look up hit tagger channel, if any */
+   micro_chan = -1;
+   if (E < endpoint_energy_GeV) {
+      int i;
+      for (i=0; i < micro_nchannels; ++i) {
+         if ( E < micro_channel_Erange[2*i] &&
+              E > micro_channel_Erange[2*i+1] )
+         {
+            E = (micro_channel_Erange[2*i] + micro_channel_Erange[2*i+1])/2;
+            micro_chan = i;
+            break;
+         }
+      }
+   }
+   fixed_chan = -1;
+   if (micro_chan == -1) {
+      int i;
+      for (i=0; i < fixed_nchannels; ++i) {
+         if ( E < fixed_channel_Erange[2*i] &&
+              E > fixed_channel_Erange[2*i+1] )
+         {
+            E = (fixed_channel_Erange[2*i] + fixed_channel_Erange[2*i+1])/2;
+            fixed_chan = i;
+            break;
+         }
+      }
+   }
+
+   /* post the hit to the microscope hits tree, mark channel as hit */
+
+   if (micro_chan > -1) {
       int nhit;
       s_TaggerHits_t* hits;
-      int mark = chan;
-      void** twig = getTwig(&taggerTree, mark);
+      int mark = micro_chan + 1000;
+      void** twig = getTwig(&microTree, mark);
       if (*twig == 0)
       {
          s_Tagger_t* tag = *twig = make_s_Tagger();
          s_MicroChannels_t* channels = make_s_MicroChannels(1);
-         hits = make_s_TaggerHits(MAX_HITS);
+         hits = make_s_TaggerHits(MICRO_MAX_HITS);
          hits->mult = 0;
          channels->in[0].taggerHits = hits;
-         channels->in[0].column = chan;
+         channels->in[0].column = micro_chan;
          channels->in[0].row = 0;
          channels->in[0].E = E;
          channels->mult = 1;
          tag->microChannels = channels;
-         channelCount++;
+         microCount++;
       }
       else
       {
@@ -87,7 +193,7 @@ void hitTagger (float xin[4], float xout[4],
       {
          for (nhit = 0; nhit < hits->mult; nhit++)
          {
-            if (fabs(hits->in[nhit].t - t) < TWO_HIT_RESOL)
+            if (fabs(hits->in[nhit].t - t) < MICRO_TWO_HIT_RESOL)
             {
                break;
             }
@@ -95,7 +201,7 @@ void hitTagger (float xin[4], float xout[4],
          if (nhit < hits->mult)         /* ignore second hit */
          {
          }
-         else if (nhit < MAX_HITS)         /* create new hit */
+         else if (nhit < MICRO_MAX_HITS)   /* create new hit */
          {
             hits->in[nhit].t = t;
             hits->mult++;
@@ -103,7 +209,60 @@ void hitTagger (float xin[4], float xout[4],
          else
          {
             fprintf(stderr,"HDGeant error in hitTagger: ");
-            fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+            fprintf(stderr,"max hit count %d exceeded, truncating!\n",
+                    MICRO_MAX_HITS);
+         }
+      }
+   }
+
+   /* post the hit to the fixed array hits tree, mark channel as hit */
+
+   if (fixed_chan > -1) {
+      int nhit;
+      s_TaggerHits_t* hits;
+      int mark = fixed_chan + 1000;
+      void** twig = getTwig(&fixedTree, mark);
+      if (*twig == 0)
+      {
+         s_Tagger_t* tag = *twig = make_s_Tagger();
+         s_FixedChannels_t* channels = make_s_FixedChannels(1);
+         hits = make_s_TaggerHits(FIXED_MAX_HITS);
+         hits->mult = 0;
+         channels->in[0].taggerHits = hits;
+         channels->in[0].channel = fixed_chan;
+         channels->in[0].E = E;
+         channels->mult = 1;
+         tag->fixedChannels = channels;
+         fixedCount++;
+      }
+      else
+      {
+         s_Tagger_t* tag = *twig;
+         hits = tag->fixedChannels->in[0].taggerHits;
+      }
+   
+      if (hits != HDDM_NULL)
+      {
+         for (nhit = 0; nhit < hits->mult; nhit++)
+         {
+            if (fabs(hits->in[nhit].t - t) < FIXED_TWO_HIT_RESOL)
+            {
+               break;
+            }
+         }
+         if (nhit < hits->mult)         /* ignore second hit */
+         {
+         }
+         else if (nhit < FIXED_MAX_HITS)   /* create new hit */
+         {
+            hits->in[nhit].t = t;
+            hits->mult++;
+         }
+         else
+         {
+            fprintf(stderr,"HDGeant error in hitTagger: ");
+            fprintf(stderr,"max hit count %d exceeded, truncating!\n",
+                    FIXED_MAX_HITS);
          }
       }
    }
@@ -126,14 +285,15 @@ s_Tagger_t* pickTagger ()
    s_Tagger_t* box;
    s_Tagger_t* item;
 
-   if (channelCount == 0)
+   if (microCount == 0 && fixedCount == 0)
    {
       return HDDM_NULL;
    }
 
    box = make_s_Tagger();
-   box->microChannels = make_s_MicroChannels(channelCount);
-   while ((item = (s_Tagger_t*) pickTwig(&taggerTree)))
+
+   box->microChannels = make_s_MicroChannels(microCount);
+   while ((item = (s_Tagger_t*) pickTwig(&microTree)))
    {
       s_MicroChannels_t* channels = item->microChannels;
       int channel;
@@ -146,8 +306,8 @@ s_Tagger_t* pickTagger ()
          int iok=0;
          for (iok=i=0; i < hits->mult; i++)
          {
-            if ((hits->in[i].t >= TAGMS_T_MIN) &&
-                (hits->in[i].t <= (TAGMS_T_MIN+TAGMS_T_RANGE)))
+            if ((hits->in[i].t >= TAG_T_MIN_NS) &&
+                (hits->in[i].t <= TAG_T_MAX_NS))
             {
                if (iok < i)
                {
@@ -174,7 +334,50 @@ s_Tagger_t* pickTagger ()
       FREE(item);
    }
 
-   channelCount = 0;
+   box->fixedChannels = make_s_FixedChannels(fixedCount);
+   while ((item = (s_Tagger_t*) pickTwig(&fixedTree)))
+   {
+      s_FixedChannels_t* channels = item->fixedChannels;
+      int channel;
+      for (channel=0; channel < channels->mult; ++channel)
+      {
+         s_TaggerHits_t* hits = channels->in[channel].taggerHits;
+
+         /* constraint t values to lie within time range */
+         int i;
+         int iok=0;
+         for (iok=i=0; i < hits->mult; i++)
+         {
+            if ((hits->in[i].t >= TAG_T_MIN_NS) &&
+                (hits->in[i].t <= TAG_T_MAX_NS))
+            {
+               if (iok < i)
+               {
+                  hits->in[iok] = hits->in[i];
+               }
+               ++iok;
+            }
+         }
+         if (iok)
+         {
+            hits->mult = iok;
+            int m = box->fixedChannels->mult++;
+            box->fixedChannels->in[m] = channels->in[0];
+         }
+         else if (hits != HDDM_NULL)
+         {
+            FREE(hits);
+         }
+      }
+      if (channels != HDDM_NULL)
+      {
+         FREE(channels);
+      }
+      FREE(item);
+   }
+
+   microCount = 0;
+   fixedCount = 0;
 
    if ((box->microChannels != HDDM_NULL) &&
        (box->microChannels->mult == 0))
@@ -182,7 +385,14 @@ s_Tagger_t* pickTagger ()
       FREE(box->microChannels);
       box->microChannels = HDDM_NULL;
    }
-   if (box->microChannels->mult == 0)
+   if ((box->fixedChannels != HDDM_NULL) &&
+       (box->fixedChannels->mult == 0))
+   {
+      FREE(box->fixedChannels);
+      box->fixedChannels = HDDM_NULL;
+   }
+   if (box->microChannels->mult == 0 &&
+       box->fixedChannels->mult == 0)
    {
       FREE(box);
       box = HDDM_NULL;
