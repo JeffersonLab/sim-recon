@@ -1,0 +1,1895 @@
+Release Notes for sim-recon-2014-06-30
+--------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2014-06-30
+   Date: July 5, 2014
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 14002 of trunk/sim-recon.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Red Hat Enterprise Linux 6.3 (i686)
+-----------
+  Xerces 3.1.1
+  JANA 0.7.1p3
+  ROOT 5.34.02
+  cernlib 2005
+  gcc/g++/gfortran : 4.4.7 20120313 (Red Hat 4.4.7-4)
+  HDDS 2.1
+  CCDB 1.02
+
+Red Hat Enterprise Linux 6.3 (x86_64)
+-----------
+  Xerces 3.1.1
+  JANA 0.7.1p3
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran : 4.4.7 20120313 (Red Hat 4.4.7-4)
+  HDDS 2.1
+  CCDB 1.02
+
+CentOS release 6.2 (Final)
+-----------
+  Xerces 3.1.1
+  JANA 0.7.1p3
+  ROOT 5.34.01
+  cernlib 2005
+  gcc/g++/gfortran : 4.4.6 20110731 (Red Hat 4.4.6-3)
+  HDDS 2.1
+  CCDB 1.02
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r12354 | romanov | 2014-01-10 17:52:42 -0500 (Fri, 10 Jan 2014) | 1 line
+
+Better debug output if -DCCDB_DEBUG_OUTPUT flag is set in CPPFLAGS
+------------------------------------------------------------------------
+r12360 | staylor | 2014-01-13 17:07:17 -0500 (Mon, 13 Jan 2014) | 1 line
+
+Macro to plot fdc offsets
+------------------------------------------------------------------------
+r12361 | staylor | 2014-01-13 17:08:20 -0500 (Mon, 13 Jan 2014) | 1 line
+
+Add code to do crude alignment of the cdc without using data from external detectors.
+------------------------------------------------------------------------
+r12372 | pmatt | 2014-01-14 13:45:11 -0500 (Tue, 14 Jan 2014) | 3 lines
+
+Fixed a bug where tracks with very few hits had a NaN weighted-chisq/ndf, which caused crashes in the sorting routine. 
+
+
+------------------------------------------------------------------------
+r12375 | davidl | 2014-01-15 09:52:36 -0500 (Wed, 15 Jan 2014) | 1 line
+
+Modified DMagneticFieldMapFineMesh to use JANA resources for B-field map. Also changed the default field map to +1350A (was -1500A).
+------------------------------------------------------------------------
+r12386 | davidl | 2014-01-16 08:20:54 -0500 (Thu, 16 Jan 2014) | 1 line
+
+Check if LIBS exists in environment before accessing it.
+------------------------------------------------------------------------
+r12387 | davidl | 2014-01-16 08:22:13 -0500 (Thu, 16 Jan 2014) | 1 line
+
+import sbms (not sure why this change was sitting here an not checked in.) Also, added optional build of genphoton
+------------------------------------------------------------------------
+r12390 | jonesrt | 2014-01-16 17:09:43 -0500 (Thu, 16 Jan 2014) | 5 lines
+
+* gtnext.F, gthion.F [rtj]
+   - Added comments at the head of the source files explaining why
+     these copies of original Geant3 library sources were customized
+     for the HDGeant project, and what the exact differences are.
+
+------------------------------------------------------------------------
+r12391 | jonesrt | 2014-01-16 17:23:59 -0500 (Thu, 16 Jan 2014) | 11 lines
+
+* rename gsrotm.F to gsrotm.F_obsolete [rtj]
+   - Restore the original geant321 library routine for this function
+     by renaming the local copy away from the .F extension.  This was
+     modified a long time ago by Ed Brash to make the simulation run
+     on the DEC alpha platform, which was somewhat special and no longer
+     in existence.  I never checked out these mods for their impact on
+     other platforms, and in any case, architecture-specific code should
+     be protected by #ifdef's specific to that architecture.  Here I
+     roll back to the original code, until it is proved to cause problems
+     on more modern architectures.
+
+------------------------------------------------------------------------
+r12392 | jonesrt | 2014-01-16 17:27:55 -0500 (Thu, 16 Jan 2014) | 5 lines
+
+* gustep.F [rtj]
+   - Add declaration of character variable "title" that is needed
+     by code enabled by the macro BACKGROUND_PROFILING, otherwise
+     it will not compile with that macro set to 1.
+
+------------------------------------------------------------------------
+r12393 | jonesrt | 2014-01-16 17:47:58 -0500 (Thu, 16 Jan 2014) | 11 lines
+
+* ggclos.F, gvdcar.F [rtj]
+   - These two fixes go together, to correct a bug in the HDGeant simulation
+     that resulted in the disappearance of hits in stereo layers of the CDC
+     for charged tracks at lab polar angles past 80 degrees.  The main bug
+     was in gvdcar.F, as described in the source file header.  In the process
+     of diagnosing that one, I also came across a related bug in ggclos.F, so
+     I am bundling these two bug fixes together in one update.  After these
+     fixes are applied, tracks at backward angles generate hits in both the
+     straight and stereo straw layers with comparable efficiency, as expected.
+
+
+------------------------------------------------------------------------
+r12413 | jonesrt | 2014-01-18 19:10:51 -0500 (Sat, 18 Jan 2014) | 9 lines
+
+* mc.xml [rtj]
+   - Removed the data model definition file mc.xml that is used by the
+     photon beam and tagger simualtion program gxtwist.  This directory
+     is just for the utilities that support the data model classes, and
+     example prototypes, but not actual data model applications.  This
+     file has been moved to the libraries/HDDM directory, where its
+     counterpart for the GlueX spectrometer simulation, and alse the
+     REST format data model are housed.
+
+------------------------------------------------------------------------
+r12414 | jonesrt | 2014-01-18 19:25:26 -0500 (Sat, 18 Jan 2014) | 14 lines
+
+* mc.xml [rtj]
+   - Added mc.xml, which is a hddm template file for standard GlueX simulation
+     events, but with the GlueX spectrometer hitsView and reconView tags stripped
+     out.  It is used by the gxtwist simulation of the photon beamline, tagger,
+     collimator, and pair spectrometer.  That simulation does not currently produce
+     hddm output in the form of hits, but rather generates its output directly in
+     the form of histograms that are accummulated during the course of the simulation.
+     It can, however, accept Monte Carlo input that describes, for example, incident
+     electrons on the photon radiator, or triplet conversions in the pair converter
+     target, to give the user better control over the generated distributions than
+     would be allowed if only the built-in Geant3 generators were available.  This
+     input is provided in the form of hddm files, formatted according to the mc.xml
+     template.
+
+------------------------------------------------------------------------
+r12415 | jonesrt | 2014-01-18 19:42:29 -0500 (Sat, 18 Jan 2014) | 16 lines
+
+* Makefile [rtj]
+   - Modified the Makefile so that it also builds the MC-only stripped
+     version of the hddm s-class simulation event model library files,
+     in addition to the full s-class library files and the REST files.
+     The full s-class library files, named using the prefix hddm_s, 
+     are suitable for holding GlueX simulated events, with MC generator
+     information plus detector hits, plus reconstruction information if
+     available.  The stripped-down s-class library files, named using the
+     prefix hddm_mc_s, are suitable only for holding Monte Carlo generated
+     events.  These can be fed as input into either the full HDGeant
+     simulation of the GlueX experiment, or into the gxtwist simulation
+     of the photon beamline, tagger, collimators, and pair spectrometer.
+     The stripped-down model allows gxtwist to read Monte Carlo input
+     files in a format compatible with what is accepted by HDGeant without
+     knowing anything about the hitsView or reconView data structures.
+
+------------------------------------------------------------------------
+r12416 | jonesrt | 2014-01-19 16:12:12 -0500 (Sun, 19 Jan 2014) | 5 lines
+
+* hddmInput.c, hddmOutput.c [rtj]
+  - modified the class suffix on the c function and struct typenames
+    from "s" to "mc_s" to distinguish them in the global c namespace
+    from the "s" data model that is used for GlueX simulation events.
+
+------------------------------------------------------------------------
+r12417 | jonesrt | 2014-01-19 16:14:21 -0500 (Sun, 19 Jan 2014) | 5 lines
+
+* Makefile, hdds/Makefile [rtj]
+   - refit the Makefiles in this directory so that the hddsGeant3_tagger.F
+     source file, that is generated by hdds-geant, gets copied up into the
+     main project directory, to be build into the gxtwist executable.
+
+------------------------------------------------------------------------
+r12418 | jonesrt | 2014-01-19 16:18:44 -0500 (Sun, 19 Jan 2014) | 8 lines
+
+* mc.xml, Makefile [rtj]
+   - changed the hddm class suffix from "s" to "mc_s" for the case where
+     only the Monte Carlo tags are included, and hits and reconstruction
+     data are not defined.  These two types of files are compatible, in
+     the sense that a library built with one template can read files that
+     were written by a program built with the other, but to coexist in
+     the global c namespace they must have separate suffixes.
+
+------------------------------------------------------------------------
+r12448 | davidl | 2014-01-22 14:17:27 -0500 (Wed, 22 Jan 2014) | 1 line
+
+Remove double comment in SConscript file.
+------------------------------------------------------------------------
+r12450 | staylor | 2014-01-22 15:05:41 -0500 (Wed, 22 Jan 2014) | 1 line
+
+Add code to check for the sign of the z-component of the magnetic field at the center of the target so that the correct charge can be assigned regardless of the magnet polarity.
+------------------------------------------------------------------------
+r12455 | davidl | 2014-01-23 12:33:49 -0500 (Thu, 23 Jan 2014) | 1 line
+
+Add import of sbms
+------------------------------------------------------------------------
+r12457 | davidl | 2014-01-23 15:21:08 -0500 (Thu, 23 Jan 2014) | 1 line
+
+Added /Users/davidl/12GeV/builds/jana_latest/Darwin_macosx10.9-x86_64-llvm5.0/plugins to JANA_PLUGIN_PATH in the generated setenv.csh script
+------------------------------------------------------------------------
+r12458 | davidl | 2014-01-23 16:47:29 -0500 (Thu, 23 Jan 2014) | 1 line
+
+Fix DAQ plugin so that it will compile it ET is not present (and therefore HAVE_ET is not defined).
+------------------------------------------------------------------------
+r12459 | davidl | 2014-01-23 16:50:46 -0500 (Thu, 23 Jan 2014) | 1 line
+
+Add rawevent plugin to the list of ones to optionally build. Updated rawevent SConscript to include EVIO and expat library.
+------------------------------------------------------------------------
+r12461 | davidl | 2014-01-24 01:55:13 -0500 (Fri, 24 Jan 2014) | 1 line
+
+Initialize bcaldispmf to NULL
+------------------------------------------------------------------------
+r12462 | davidl | 2014-01-24 02:36:21 -0500 (Fri, 24 Jan 2014) | 1 line
+
+Remove dependance on BOOST by replacing lexical_cast with a simple templated function. Also, comment out CAENtdctick declaration for now to avoid unused variable warning.
+------------------------------------------------------------------------
+r12463 | davidl | 2014-01-24 02:44:26 -0500 (Fri, 24 Jan 2014) | 1 line
+
+Cleaned things up to get rid of numerous compiler warnings. Mostly unused variables.
+------------------------------------------------------------------------
+r12477 | staylor | 2014-01-28 11:44:21 -0500 (Tue, 28 Jan 2014) | 1 line
+
+Change how the rotation sense is handled such that the charge reported for each track segment is consistent with the direction of the magnetic field.
+------------------------------------------------------------------------
+r12478 | staylor | 2014-01-28 11:50:10 -0500 (Tue, 28 Jan 2014) | 1 line
+
+Remove unnecessary variables p_trans and p (the helical fitter returns circle and line parameters that do not explicitly depend on B but only rely on the assumption that B is constant).  Change the variable q to h meaning the sense of rotation about the circle.  To turn h into q one needs to know the direction of the magnetic field.
+------------------------------------------------------------------------
+r12479 | staylor | 2014-01-28 11:55:55 -0500 (Tue, 28 Jan 2014) | 1 line
+
+Determine the direction of the field (by checking sign of Bz at the nominal target position) at brun and use this in conjunction with the sense of rotation determined during the helical fit to determine q.  The numerous small changes needed after this change will hopefully handle any future changes in magnet polarity.
+------------------------------------------------------------------------
+r12481 | staylor | 2014-01-28 13:18:57 -0500 (Tue, 28 Jan 2014) | 1 line
+
+Small change to simulation of Lorentz force to handle possible opposite directions for B.
+------------------------------------------------------------------------
+r12482 | staylor | 2014-01-28 13:27:05 -0500 (Tue, 28 Jan 2014) | 1 line
+
+Add run number as an explicit argument to intcalibdb_ and use the japp-argument method instead of the jcalib-argument method for obtaining the magnetic field.  The default field map CalibDB is now the Fine Mesh map.  The parametrized, const, and spoiled variants of the field map are now deprecated. However, I have added a NoField option.
+------------------------------------------------------------------------
+r12483 | staylor | 2014-01-28 13:28:01 -0500 (Tue, 28 Jan 2014) | 1 line
+
+Add routine to extract run number from hddm data.
+------------------------------------------------------------------------
+r12484 | davidl | 2014-01-28 16:30:51 -0500 (Tue, 28 Jan 2014) | 1 line
+
+Add danahddm as an optional build.
+------------------------------------------------------------------------
+r12485 | marki | 2014-01-28 17:02:22 -0500 (Tue, 28 Jan 2014) | 3 lines
+
+Define "title" only under special circumstances, done to supress warnings.
+M    gustep.F
+
+------------------------------------------------------------------------
+r12501 | davidl | 2014-01-31 09:05:53 -0500 (Fri, 31 Jan 2014) | 1 line
+
+Add Hall-D specific mkplugin script that uses scons.
+------------------------------------------------------------------------
+r12502 | davidl | 2014-01-31 09:14:38 -0500 (Fri, 31 Jan 2014) | 1 line
+
+Add mkfactory_plugin utility
+------------------------------------------------------------------------
+r12505 | zihlmann | 2014-01-31 13:03:50 -0500 (Fri, 31 Jan 2014) | 4 lines
+
+modify the code to accomodate the changes in the TOF geometry
+with half width long paddles close to the beam hole.
+Note: it is necessary to update and recompile the geometry hdds!!!!!
+
+------------------------------------------------------------------------
+r12509 | jonesrt | 2014-02-03 09:20:14 -0500 (Mon, 03 Feb 2014) | 3 lines
+
+* hitXXX.c [rtj]
+   - clean up code to suppress compiler warnings.
+
+------------------------------------------------------------------------
+r12510 | jonesrt | 2014-02-03 09:24:28 -0500 (Mon, 03 Feb 2014) | 7 lines
+
+* hddmcp_c.c, cdcdump_c.c, bcal2nt_c.c, cdccount_c.c [rtj]
+   - fixed to suppress compiler warnings.
+* memcheck.c, savenewvertex.c, hitCerenkov.c, hddmInput.c [rtj]
+   - fixed to suppress compiler warnings.
+* geant3.h
+   - added prototype for geant321 library function gfpart
+
+------------------------------------------------------------------------
+r12520 | davidl | 2014-02-04 11:17:33 -0500 (Tue, 04 Feb 2014) | 1 line
+
+Optional plugin for dumping track candidates and wire hits to text file. Wire ids not currently working correctly.
+------------------------------------------------------------------------
+r12521 | davidl | 2014-02-04 12:44:45 -0500 (Tue, 04 Feb 2014) | 1 line
+
+Fixed problem with index calculation.
+------------------------------------------------------------------------
+r12522 | dalton | 2014-02-04 13:31:43 -0500 (Tue, 04 Feb 2014) | 1 line
+
+The flash 250 modules have been given module tag number 6.
+------------------------------------------------------------------------
+r12528 | staylor | 2014-02-05 07:54:31 -0500 (Wed, 05 Feb 2014) | 1 line
+
+Comment out unused Const, Spoiled, and Parameterized magnetic field types and add a NoField type for turning on a B=0 field.
+------------------------------------------------------------------------
+r12529 | staylor | 2014-02-05 07:55:58 -0500 (Wed, 05 Feb 2014) | 1 line
+
+B=0 field map
+------------------------------------------------------------------------
+r12530 | staylor | 2014-02-05 08:25:03 -0500 (Wed, 05 Feb 2014) | 1 line
+
+Added code to prevent skipping the first event from an hddm input file, which is being used to determine the run number.
+------------------------------------------------------------------------
+r12531 | staylor | 2014-02-05 08:26:59 -0500 (Wed, 05 Feb 2014) | 1 line
+
+Fix bug that occasionally caused FDC and CDC hits that were below threshold to show up in the output stream as hits with q=0, t=0.
+------------------------------------------------------------------------
+r12537 | davidl | 2014-02-06 11:15:47 -0500 (Thu, 06 Feb 2014) | 6 lines
+
+Add HDDM:ENABLE configuration parameter to allow user to turn off use
+HDDM at run time. This is motivated by an extremely long startup time
+for certain (not all) EVIO files because trying to open them with hddm
+stalls. Presumably because it is trying to parse far too much of the
+file before realizing it is not actually an HDDM file.
+
+------------------------------------------------------------------------
+r12538 | davidl | 2014-02-06 11:16:47 -0500 (Thu, 06 Feb 2014) | 1 line
+
+Add filter and counters to make it easy to write out only events with exactly one candidate.
+------------------------------------------------------------------------
+r12552 | shepherd | 2014-02-06 13:01:11 -0500 (Thu, 06 Feb 2014) | 1 line
+
+change from a static_cast to dynamic_cast in casting the return value of TFile::Get to a TTree*.  For some reason the static_cast generated a segfault for several users.  The dynamic_cast avoids this and is probably better form anyway since it runtime type-checking is done.
+------------------------------------------------------------------------
+r12554 | zihlmann | 2014-02-06 14:24:21 -0500 (Thu, 06 Feb 2014) | 3 lines
+
+change handling of the TOF to reflect the changes in the TOF setup
+using narrow long paddles close to the beam line
+
+------------------------------------------------------------------------
+r12561 | marki | 2014-02-06 17:31:59 -0500 (Thu, 06 Feb 2014) | 1 line
+
+turn DEBUG_PRINT off
+------------------------------------------------------------------------
+r12564 | dalton | 2014-02-07 16:26:58 -0500 (Fri, 07 Feb 2014) | 7 lines
+
+
+Add a utility which will put objects created by the DAQ plugin
+into a root tree.  Currently this only works for 
+Df250WindowRawData data, other data types will be added as needed.
+The intention is to eventuually cover all low level data types.
+
+
+------------------------------------------------------------------------
+r12567 | jonesrt | 2014-02-10 10:06:28 -0500 (Mon, 10 Feb 2014) | 5 lines
+
+* ggclos.F [rtj]
+   - changed "and" to "or" in my last mod to the algorithm for phi
+     virtual divisions in the case where child volumes are placed
+     such that their phi range overlaps phi=0.
+
+------------------------------------------------------------------------
+r12569 | dalton | 2014-02-10 14:30:06 -0500 (Mon, 10 Feb 2014) | 7 lines
+
+Minor mods to DAQTree plugin:
+
+Improved and corrected documentation.
+Add a sort routine to the global channel number.
+Renamed internal variable.
+
+
+------------------------------------------------------------------------
+r12570 | staylor | 2014-02-10 14:39:08 -0500 (Mon, 10 Feb 2014) | 1 line
+
+Add code to prevent linking an FDC track candidate with a stray segment in a package that has already been used by the candidate.  This does not happen very often because there are already checks in other parts of the code but there are special cases where this extra check is needed...
+------------------------------------------------------------------------
+r12571 | staylor | 2014-02-10 14:42:36 -0500 (Mon, 10 Feb 2014) | 1 line
+
+Made minor change to extrapolation in z at the beginning of the wire-based phase and improved the check for valid fits in the CDC fitter.
+------------------------------------------------------------------------
+r12575 | staylor | 2014-02-11 12:41:36 -0500 (Tue, 11 Feb 2014) | 1 line
+
+Initialize locPathLength and locFlightTime before call to rt->GetIntersectionWithRadius in one of the SC matching routines to avoid error flagged by valgrind.
+------------------------------------------------------------------------
+r12576 | staylor | 2014-02-12 09:38:54 -0500 (Wed, 12 Feb 2014) | 1 line
+
+Add reconstructed tof points to display (the button was there, but it didn't do anything...)
+------------------------------------------------------------------------
+r12577 | zihlmann | 2014-02-12 09:50:58 -0500 (Wed, 12 Feb 2014) | 4 lines
+
+adapt the correct TOF geometry to the TOF detector code and move 
+some of the hard coded values used in the Point_factory into the
+DTOFGeometry container.
+
+------------------------------------------------------------------------
+r12578 | staylor | 2014-02-12 10:11:51 -0500 (Wed, 12 Feb 2014) | 1 line
+
+in the ForwardFit routine remove the z_=forward_traj[forward_traj.size()-1].z line and replace it with (normally) equivalent code to fix the rare cases when the trajectory deque after attempting to fix a broken track is also broken.  Also worked on improving code for fixing broken tracks in the forward direction.
+------------------------------------------------------------------------
+r12584 | zihlmann | 2014-02-12 14:47:44 -0500 (Wed, 12 Feb 2014) | 3 lines
+
+there are only 4 narrow long paddles per plane so the
+numbering scheeme of the paddles needed modification 
+
+------------------------------------------------------------------------
+r12585 | zihlmann | 2014-02-12 14:49:48 -0500 (Wed, 12 Feb 2014) | 3 lines
+
+change the code to reflect the fact that there are only 4 long short paddles 
+per plane and the total nubmer of paddles in a plane is 46
+
+------------------------------------------------------------------------
+r12590 | zihlmann | 2014-02-13 10:41:27 -0500 (Thu, 13 Feb 2014) | 3 lines
+
+move some hard coded values from the factories into
+the DTOFGeometry container.
+
+------------------------------------------------------------------------
+r12596 | staylor | 2014-02-13 17:17:17 -0500 (Thu, 13 Feb 2014) | 1 line
+
+Change format of printout slightly.
+------------------------------------------------------------------------
+r12597 | staylor | 2014-02-13 17:18:34 -0500 (Thu, 13 Feb 2014) | 1 line
+
+Adjust initial offset for the first 19 bars.
+------------------------------------------------------------------------
+r12598 | staylor | 2014-02-13 17:19:13 -0500 (Thu, 13 Feb 2014) | 1 line
+
+Comment out sign change for orientation==0.
+------------------------------------------------------------------------
+r12599 | pmatt | 2014-02-13 17:21:35 -0500 (Thu, 13 Feb 2014) | 3 lines
+
+Added Deuteron, Triton, Helium, and Pb208 as final state particles. 
+
+
+------------------------------------------------------------------------
+r12600 | staylor | 2014-02-13 17:23:01 -0500 (Thu, 13 Feb 2014) | 1 line
+
+Suppress paddles with hits that are below threshold on both sides.  Use geometric mean for energy deposition.  Require the times on each end of a paddle be consistent with each other.
+------------------------------------------------------------------------
+r12601 | pmatt | 2014-02-13 17:25:34 -0500 (Thu, 13 Feb 2014) | 3 lines
+
+Screwed up last commit, retrying. 
+
+
+------------------------------------------------------------------------
+r12602 | staylor | 2014-02-13 17:25:36 -0500 (Thu, 13 Feb 2014) | 1 line
+
+Make code consistent with current geometry.  Widen dPositionMatchCut_DoubleEnded.
+------------------------------------------------------------------------
+r12603 | pmatt | 2014-02-13 23:06:38 -0500 (Thu, 13 Feb 2014) | 3 lines
+
+Use a std::set of JObjects to keep track of which tracks/showers are in use for the current combo, delete (newly) unnecessary loops. 
+
+
+------------------------------------------------------------------------
+r12606 | dalton | 2014-02-14 09:18:23 -0500 (Fri, 14 Feb 2014) | 7 lines
+
+
+This plugin is a factory to produce Df250PulseIntegral objects from 
+Df250WindowRawData objects.  
+
+It is not currently working.  It compiles and runs but does not produce the objects.
+
+
+------------------------------------------------------------------------
+r12607 | dalton | 2014-02-14 09:23:18 -0500 (Fri, 14 Feb 2014) | 7 lines
+
+
+Included code to produce a tree from a Df250PulseIntegral object.  
+Currently this tree would not include any functional information.
+
+Minor improvements to Doxygen documentation.
+
+
+------------------------------------------------------------------------
+r12608 | davidl | 2014-02-14 11:00:52 -0500 (Fri, 14 Feb 2014) | 4 lines
+
+Fix for bug where factory from DAQ_WRD2PI plugin was never getting called.
+This is still sketchy since it requires that this plugin needs to be
+added before the DAQ plugin. There may still be potential sequencing problems.
+
+------------------------------------------------------------------------
+r12610 | pmatt | 2014-02-14 13:09:41 -0500 (Fri, 14 Feb 2014) | 3 lines
+
+Moved reset pools to end of evnt method. 
+
+
+------------------------------------------------------------------------
+r12612 | davidl | 2014-02-14 15:22:01 -0500 (Fri, 14 Feb 2014) | 1 line
+
+Allocate MyProcessor on heap rather than stack to ensure it's destructor is called before the DApplication's since that may crash while cleaning up, leaving the ROOT file corrupt.
+------------------------------------------------------------------------
+r12613 | dalton | 2014-02-14 15:22:33 -0500 (Fri, 14 Feb 2014) | 4 lines
+
+
+Minor changes working on Df250PulseIntegral objects. 
+
+
+------------------------------------------------------------------------
+r12617 | pmatt | 2014-02-14 16:29:42 -0500 (Fri, 14 Feb 2014) | 3 lines
+
+Don't include Resonances in the thrown particle steps that will be used to build DReaction tag "Thrown" (caused crash in hd_dump). 
+
+
+------------------------------------------------------------------------
+r12620 | staylor | 2014-02-17 08:57:46 -0500 (Mon, 17 Feb 2014) | 1 line
+
+Reduce default MAX_SWIM_STEPS from 10000 to 2500.
+------------------------------------------------------------------------
+r12621 | staylor | 2014-02-17 09:01:07 -0500 (Mon, 17 Feb 2014) | 1 line
+
+Remove code that was truncating the number of reference trajectories in the pool to a fixed number of 10.   Turn on faster swimmer for reference trajectories.
+------------------------------------------------------------------------
+r12625 | davidl | 2014-02-17 11:13:58 -0500 (Mon, 17 Feb 2014) | 1 line
+
+Make pattern matching of header suffix more restrictive so that .hddm files are not assumed to be header files.
+------------------------------------------------------------------------
+r12630 | pmatt | 2014-02-17 15:29:28 -0500 (Mon, 17 Feb 2014) | 9 lines
+
+Candidates: Cap maximum # track circles at 10000, reduce memory footprint by switching double -> float. To combat memory spikes. 
+Time & Wire-Based: Increase max size of DReferenceTrajectory vector to 50, and allocate this many objects during brun(). 
+
+This is because each DReferenceTrajectory swim step array needs large, free sections of contiguous memory or else it will crash
+(within the recent resize, now array needs 860kB) (can be 100+ objects in an event at once). 
+
+This was causing difficult-to-reproduce crashes on events with many tracks (typically 30+ wire-based) in limited-memory environments. 
+
+
+------------------------------------------------------------------------
+r12633 | staylor | 2014-02-18 11:16:49 -0500 (Tue, 18 Feb 2014) | 1 line
+
+Improvements to FDC hit matching code
+------------------------------------------------------------------------
+r12640 | davidl | 2014-02-19 09:34:58 -0500 (Wed, 19 Feb 2014) | 1 line
+
+Read translation table from CCDB as complete XML file. Option to read from local file as well.
+------------------------------------------------------------------------
+r12642 | davidl | 2014-02-19 11:06:35 -0500 (Wed, 19 Feb 2014) | 1 line
+
+Updated to use XML translation table read from CCDB rather than from local file. Copied some code from TTab/DTranslation.cc to do this.
+------------------------------------------------------------------------
+r12661 | davidl | 2014-02-21 09:07:49 -0500 (Fri, 21 Feb 2014) | 1 line
+
+Require HDDM files to have a '.hddm' suffix before attempting to open them. Previously, every input file, whether HDDM or not, was opened as an HDDM file using the HDDM library in order to determine if it was an HDDM file or not. This caused problems with EVIO files for which the HDDM library would spend lots of time trying to parse the header.
+------------------------------------------------------------------------
+r12662 | davidl | 2014-02-21 09:20:39 -0500 (Fri, 21 Feb 2014) | 1 line
+
+Committed same change for REST files requiring .hddm suffix. (See previous commit log for HDDM library)
+------------------------------------------------------------------------
+r12677 | pmatt | 2014-02-22 21:24:06 -0500 (Sat, 22 Feb 2014) | 3 lines
+
+Forgot to return true. 
+
+
+------------------------------------------------------------------------
+r12681 | marki | 2014-02-24 17:54:31 -0500 (Mon, 24 Feb 2014) | 1 line
+
+don't look for JANA debug libraries
+------------------------------------------------------------------------
+r12682 | staylor | 2014-02-25 10:30:59 -0500 (Tue, 25 Feb 2014) | 1 line
+
+Separate parameters controlling annealing for forward and central tracks.  Add sense-of-rotation variable to treat lingering issue (due to the change in the magnet current sign) of the propagation of D (the signed distance of closest approach to the reference trajectory) over a step in the central parametrization. Remove some unnecessary code in the routine that extrapolates central tracks to the beam line.
+------------------------------------------------------------------------
+r12683 | staylor | 2014-02-25 11:18:50 -0500 (Tue, 25 Feb 2014) | 1 line
+
+update header file
+------------------------------------------------------------------------
+r12684 | pmatt | 2014-02-25 12:18:30 -0500 (Tue, 25 Feb 2014) | 5 lines
+
+Instead of rejecting seeds in regions of high hit density, rejects seeds in regions of high seed density.
+Removed rejection of tracks due to spiral-linking: sometimes the wrong arm of the spiral was chosen for rejection.
+Beam RMS used in circle fits is increases with # axial super layers. Otherwise, sometimes the wrong combination of hits are chosen for tracks that decayed from detached vertices.
+
+
+------------------------------------------------------------------------
+r12685 | staylor | 2014-02-25 12:34:18 -0500 (Tue, 25 Feb 2014) | 1 line
+
+Turn on fall-back mode to use hits from wire-based pass  for time-based fits if the fit is not done because the hit selector did not associate enough hits with the track due to the (lack of) quality of the input parameters
+------------------------------------------------------------------------
+r12688 | staylor | 2014-02-25 13:23:21 -0500 (Tue, 25 Feb 2014) | 1 line
+
+In MatchMethod3 if the refit does not work, fall back on the fdc candidate for momentum and position.  For methods 3 and 4, require that the fdc candidate momentum be at least 50% of the cdc candidate momentum to try to prevent connecting cdc tracks coming from the target with low momentum curlers in the FDC coming from the end plate.
+------------------------------------------------------------------------
+r12696 | marki | 2014-02-26 13:42:02 -0500 (Wed, 26 Feb 2014) | 3 lines
+
+reverse previous change; did not seem to help
+M    Makefile.common
+
+------------------------------------------------------------------------
+r12697 | marki | 2014-02-26 13:42:31 -0500 (Wed, 26 Feb 2014) | 3 lines
+
+Do not use debug suffix for JANA library.
+M    Makefile.bin
+
+------------------------------------------------------------------------
+r12698 | marki | 2014-02-26 13:44:44 -0500 (Wed, 26 Feb 2014) | 1 line
+
+ignore more created source files
+------------------------------------------------------------------------
+r12701 | staylor | 2014-02-26 17:02:18 -0500 (Wed, 26 Feb 2014) | 1 line
+
+Fix bugs that caused failure to create a TOFPoint if one of the bars was a half-length (single ended) bar.
+------------------------------------------------------------------------
+r12703 | davidl | 2014-02-27 09:13:30 -0500 (Thu, 27 Feb 2014) | 1 line
+
+Print warning if DISPLAY environment variable is not set. (By suggestion of Matt S.).
+------------------------------------------------------------------------
+r12706 | pmatt | 2014-02-27 12:28:52 -0500 (Thu, 27 Feb 2014) | 3 lines
+
+Initialize variables to address valgrind warnings. 
+
+
+------------------------------------------------------------------------
+r12708 | pmatt | 2014-02-27 13:57:13 -0500 (Thu, 27 Feb 2014) | 3 lines
+
+Added check on vector size due to warnings from valgrind.
+
+
+------------------------------------------------------------------------
+r12718 | jonesrt | 2014-02-28 11:47:45 -0500 (Fri, 28 Feb 2014) | 5 lines
+
+xml-hddm.cpp, hddm-cpp.cpp, hddm-c.cpp [rtj]
+   * trivial modifications to get rid of compiler warnings about comparison
+     between signed and unsigned integer (why is that ambiguous??) and to
+     remove declarations of variables that do not get used by the algorithm.
+
+------------------------------------------------------------------------
+r12727 | jonesrt | 2014-03-02 01:18:07 -0500 (Sun, 02 Mar 2014) | 5 lines
+
+* hddm-c.cpp, hddm-cpp.cpp [rtj]
+   - added a check when opening an input hddm file to make sure that
+     a valid hddm file header is present, otherwise the process can
+     take a long time to discover that the file is not hddm.
+
+------------------------------------------------------------------------
+r12728 | jonesrt | 2014-03-02 02:05:24 -0500 (Sun, 02 Mar 2014) | 5 lines
+
+* nrutil.h [rtj]
+   - added a dummy initialization routine to suppress compiler warnings
+     about unused variables.  These defines are not thread safe, so use
+     with caution.
+
+------------------------------------------------------------------------
+r12729 | jonesrt | 2014-03-02 02:06:31 -0500 (Sun, 02 Mar 2014) | 3 lines
+
+* genr8.c [rtj]
+   - trivial changes to suppress compiler warnings about unused variables.
+
+------------------------------------------------------------------------
+r12730 | jonesrt | 2014-03-02 02:07:47 -0500 (Sun, 02 Mar 2014) | 3 lines
+
+* MyProcessor.c [rtj]
+   - trivial changes to suppress compiler warnings.
+
+------------------------------------------------------------------------
+r12731 | jonesrt | 2014-03-02 02:09:43 -0500 (Sun, 02 Mar 2014) | 3 lines
+
+* xdr.cpp [rtj]
+   - trivial fix to code in order to suppress compiler warnings.
+
+------------------------------------------------------------------------
+r12737 | pmatt | 2014-03-03 11:59:35 -0500 (Mon, 03 Mar 2014) | 3 lines
+
+Add DBCALShower, DFCALShower, DTOFPoint, and DSCHit as associated objects of DChargedTrackHypothesis. 
+
+
+------------------------------------------------------------------------
+r12747 | staylor | 2014-03-05 08:06:43 -0500 (Wed, 05 Mar 2014) | 1 line
+
+Found and fixed bugs in forward broken track recovery that caused valgrind to complain about an invalid read (caused by occasinally going beyond end of a vector).
+------------------------------------------------------------------------
+r12758 | jonesrt | 2014-03-05 17:31:36 -0500 (Wed, 05 Mar 2014) | 15 lines
+
+* hitFTOF.c, hitStart.c, hitFDC.c, hitFCal.c [rtj]
+   - fixed these hits generation functions to restore the correct
+     behavior of the MAX_HITS constant.  I introduced this constant
+     because of limitations in the old c-API to hddm, which required
+     preallocation of space for hits before the total number of them
+     was known.  Several developers (Start counter, FDC, FCal) thought
+     that this variable could be subverted and used to truncate the
+     total number of hits per channel per event.  It cannot be used
+     for this purpose.  People wishing to do this can apply such a
+     truncation in mcsmear, but using MAX_HITS to do this in Geant
+     is cheating because the first hits generated in the simulation
+     are signal, whereas bg tracks are simulated afterward, which
+     creates an artifical ordering that tends to discard bg hits
+     preferentially over signal.  DO NOT USE MAX_HITS for this purpose.
+
+------------------------------------------------------------------------
+r12761 | jonesrt | 2014-03-05 17:36:02 -0500 (Wed, 05 Mar 2014) | 4 lines
+
+* gustep.F [rtj]
+   - introduced a fix to get rid of ZFATAL crashes when BGRATE/BGGATE
+     are set to generate large amounts of photon beam bg.
+
+------------------------------------------------------------------------
+r12781 | pmatt | 2014-03-06 21:24:01 -0500 (Thu, 06 Mar 2014) | 5 lines
+
+DDetectorMatches: Add Get_Num*Matches() methods. 
+DHistogramActions: Add DHistogramAction_NumReconstructedObjects functor.
+ANALYSIS_init: Add DHistogramAction_NumReconstructedObjects
+
+
+------------------------------------------------------------------------
+r12782 | pmatt | 2014-03-06 21:24:41 -0500 (Thu, 06 Mar 2014) | 3 lines
+
+Execute HistogramAction_NumReconstructedObjects functor.
+
+
+------------------------------------------------------------------------
+r12783 | pmatt | 2014-03-07 00:16:25 -0500 (Fri, 07 Mar 2014) | 5 lines
+
+DDetectorMatches_factory.cc & DParticleID.cc: Call DReferenceTrajectory methods with initialized values. 
+DReferenceTrajectory.cc: In DistToRTwithTime, initialize values of s & t.
+DTrackTimeBased_factory.cc & DTrackWireBased_factory.cc: Reject tracks with one or no swim steps. 
+
+
+------------------------------------------------------------------------
+r12786 | jonesrt | 2014-03-07 08:15:35 -0500 (Fri, 07 Mar 2014) | 7 lines
+
+* xdr.cpp [rtj]
+  - fixing a "fix" I put in earlier that broke hddm i/o.  The meaning of
+    the c expression "4-len&3" is actually "(4-len)&3", and not "4-(len&3)"
+    as I had assumed.  One MIGHT suppose that the precedence of bitwise-and
+    is the same as multiply, right?  Not so, it is further down the list,
+    past +/-.  Live and learn, this fixes it.
+
+------------------------------------------------------------------------
+r12803 | pmatt | 2014-03-08 18:38:38 -0500 (Sat, 08 Mar 2014) | 4 lines
+
+DReferenceTrajectory: Initialized variables input by reference in case early abort from function.
+DParticleID: in SC matching, check if DReferenceTrajectory functions return NOERROR or not. 
+
+
+------------------------------------------------------------------------
+r12808 | pmatt | 2014-03-09 17:21:15 -0400 (Sun, 09 Mar 2014) | 3 lines
+
+Reset a few more variables in the Reset() function. 
+
+
+------------------------------------------------------------------------
+r12811 | davidl | 2014-03-10 09:34:25 -0400 (Mon, 10 Mar 2014) | 1 line
+
+Added dumpthrowns plugin and modified dumpcandidates to swim candidate back to the beam line and put POCA values in output file.
+------------------------------------------------------------------------
+r12825 | staylor | 2014-03-10 14:33:05 -0400 (Mon, 10 Mar 2014) | 1 line
+
+For cdc smoothed updates, set used_in_fit=false before filling.  Change how the new wire direction is computed.  Check for used_in_fit status where appropriate.
+------------------------------------------------------------------------
+r12833 | staylor | 2014-03-11 07:44:12 -0400 (Tue, 11 Mar 2014) | 1 line
+
+Make DEBUG_HISTS a command-line configurable parameter and set the default to false.
+------------------------------------------------------------------------
+r12853 | staylor | 2014-03-12 09:25:29 -0400 (Wed, 12 Mar 2014) | 1 line
+
+Change how the estimate for t0 is computed.  This hopefully fixes the non-deterministic problems Paul was seeing.
+------------------------------------------------------------------------
+r12854 | staylor | 2014-03-12 09:26:13 -0400 (Wed, 12 Mar 2014) | 1 line
+
+Change how the estimate for t0 is computed.  This hopefully fixes the non-deterministic problems Paul was seeing.  Small change to header file
+------------------------------------------------------------------------
+r12855 | staylor | 2014-03-12 09:40:59 -0400 (Wed, 12 Mar 2014) | 1 line
+
+Surround code that computes profile times with #ifdef preprocessor directives.  Most users will never need to look at the numbers computed with this code.  It is also not thread safe, so it needs to be used with care.
+------------------------------------------------------------------------
+r12856 | staylor | 2014-03-12 09:41:57 -0400 (Wed, 12 Mar 2014) | 1 line
+
+SKIP_MASS_HYPOTHESES_WIRE_BASED should be of type bool.
+------------------------------------------------------------------------
+r12857 | staylor | 2014-03-12 09:43:22 -0400 (Wed, 12 Mar 2014) | 1 line
+
+Explicitly include TMath.h, needed for the Prob method.
+------------------------------------------------------------------------
+r12858 | staylor | 2014-03-12 09:46:02 -0400 (Wed, 12 Mar 2014) | 1 line
+
+Use M_TWO_PI instead of computing 2*pi where appropriate
+------------------------------------------------------------------------
+r12874 | staylor | 2014-03-13 07:54:45 -0400 (Thu, 13 Mar 2014) | 1 line
+
+Clean up some code left over after changing how t0 is computed.
+------------------------------------------------------------------------
+r12879 | staylor | 2014-03-13 13:52:09 -0400 (Thu, 13 Mar 2014) | 1 line
+
+Fix bugs that introduced usage of uninitialized variables flagged by valgrind.  These bugs were introduced when I tried to fix the non-deterministic t0 problem found earlier.  Ugh.
+------------------------------------------------------------------------
+r12894 | davidl | 2014-03-14 00:15:34 -0400 (Fri, 14 Mar 2014) | 7 lines
+
+- Added check in DRandom2::SetSeeds to make sure they are
+  in the allowed ranges as indicated in TRandom2::SetSeed(int)
+
+- If mcsmear seeds are not present in hddm file, use the hdgeant 
+  seeds and a constant of 137 for the 3rd seed in order to make
+  the result reproducible.
+
+------------------------------------------------------------------------
+r12895 | davidl | 2014-03-14 10:15:01 -0400 (Fri, 14 Mar 2014) | 14 lines
+
+Turn on compiler optimization by default. Previously, no
+optimization was done. Now the default is level-2. The
+user can change this by setting in the scons command:
+
+> scons OPTIMIZATION=3 install
+
+Also added a DEBUG flag so user can turn off adding 
+debugging symbols:
+
+> scons DEBUG=0 install
+
+By default, debug symbols are included. Note that this
+does increase binary file size by about a factor of 3.
+
+------------------------------------------------------------------------
+r12897 | kmoriya | 2014-03-14 12:20:25 -0400 (Fri, 14 Mar 2014) | 1 line
+
+update trunk for hddm_select_events to select p pi+ pi-, p pi+ pi- pi0
+------------------------------------------------------------------------
+r12898 | marki | 2014-03-14 14:34:03 -0400 (Fri, 14 Mar 2014) | 4 lines
+
+Bring in David's compression switch selection.
+
+svn merge -r12701:12702 $HDSVN/branches/sim-recon-dc-2/src/libraries/HDDM@12702
+
+------------------------------------------------------------------------
+r12904 | davidl | 2014-03-14 16:48:56 -0400 (Fri, 14 Mar 2014) | 6 lines
+
+On Ubuntu 13.10 systems it was observed that the utility
+hddm-cpp would produce different hddm_r.hpp files depending
+if hddm-c.cpp was compiled with optimization turned on or
+not. This change forces optimization off when building the
+hddm tools.
+
+------------------------------------------------------------------------
+r12907 | jonesrt | 2014-03-17 08:42:09 -0400 (Mon, 17 Mar 2014) | 5 lines
+
+* xdr.cpp [rtj]
+   - rewrote code in operator<< methods for float and double using
+     unions instead of type-punned pointers to avoid compiler warnings.
+     
+
+------------------------------------------------------------------------
+r12908 | jonesrt | 2014-03-17 08:44:59 -0400 (Mon, 17 Mar 2014) | 7 lines
+
+* z.cpp, bz.cpp [rt]
+   - removed literal string output from the LOG statements to avoid
+     seeing non-printable characters in the debug log (when enabled).
+   - fixed a bug in bz.cpp that would generate output errors whenever
+     the number of bytes in the compressed output stream happened to
+     be a multiple of the user output buffer size.
+
+------------------------------------------------------------------------
+r12909 | jonesrt | 2014-03-17 08:52:54 -0400 (Mon, 17 Mar 2014) | 6 lines
+
+* hddm-c.cpp, hddm-cpp.cpp [rtj]
+   - superficial changes to hddm-c.cpp to prevent the generated c library
+     from producing compiler errors due to ignored function return values
+   - add explicit checks in the c++ library generated by hddm-cpp.cpp for
+     badbit being set on an ostream following an output operation.
+
+------------------------------------------------------------------------
+r12910 | jonesrt | 2014-03-17 08:54:32 -0400 (Mon, 17 Mar 2014) | 3 lines
+
+* genr8.c [rtj]
+   - superficial change to suppress compiler warning about unused var.
+
+------------------------------------------------------------------------
+r12911 | jonesrt | 2014-03-17 08:55:19 -0400 (Mon, 17 Mar 2014) | 3 lines
+
+* zbrent.c [rtj]
+   - superficial changes to suppress compiler warnings about unused vars.
+
+------------------------------------------------------------------------
+r12912 | jonesrt | 2014-03-17 08:56:19 -0400 (Mon, 17 Mar 2014) | 3 lines
+
+* dl_routines.cc, gelhad/sigmagamma.F [rtj]
+   - superficial changes to suppress compiler warnings.
+
+------------------------------------------------------------------------
+r12913 | jonesrt | 2014-03-17 08:57:21 -0400 (Mon, 17 Mar 2014) | 3 lines
+
+* hitFDC.c [rtj]
+   - superficial changes to suppress compiler warnings.
+
+------------------------------------------------------------------------
+r12914 | jonesrt | 2014-03-17 08:58:00 -0400 (Mon, 17 Mar 2014) | 3 lines
+
+* root2email.cc [rtj]
+   - superficial changes to suppress compiler warnings.
+
+------------------------------------------------------------------------
+r12934 | jonesrt | 2014-03-17 15:41:17 -0400 (Mon, 17 Mar 2014) | 11 lines
+
+* event.xml, mc.xml [rtj]
+   - modified the attribute list of the <random> tag to get rid
+     of one-off seeds for mcsmear, to implement the general policy
+     that all processes acting on this event that need a random
+     seed should initialize to the same seeds, listed in <random>.
+* hddmInput.c, smear.cc [rtj]
+   - modified to implement the general policy that all processes
+     acting on this event that need a random seed should initialize
+     to the same seeds, listed in <random>.  This fix must be
+     synchronized with the changes to event.xml described above.
+
+------------------------------------------------------------------------
+r12949 | dalton | 2014-03-18 15:30:22 -0400 (Tue, 18 Mar 2014) | 4 lines
+
+Collected modifications.  Committing for potential incorporation into DAQ plugin.  
+Current status: suspected working.
+
+
+------------------------------------------------------------------------
+r12963 | davidl | 2014-03-19 21:06:28 -0400 (Wed, 19 Mar 2014) | 11 lines
+
+Copied core part of DAQ_WRD2PI plugin into DAQ plugin so that
+it can generate Df250PulseIntegral objects from Df250WindowRawData
+objects. Added a "pedestal" member to Df250PulseIntegral.
+
+Configuration parameter EVIO:EMULATE_PULSE_INTEGRAL_MODE can
+be used to turn off the emulation which is on by default.
+Note that with emulation on, it activates it only if no
+Df250PulseIntegral objects exist for the event. This could
+give inconsistencies if reading both window raw data and
+pulse data, but some events don't have pulse data objects.
+
+------------------------------------------------------------------------
+r12965 | davidl | 2014-03-19 22:14:46 -0400 (Wed, 19 Mar 2014) | 5 lines
+
+Add EMULATE_SPARSIFICATION_THRESHOLD configuration parameter that can be
+used to apply a sparsification threshold to the Df250PulseIntegral objects 
+created from Df250WindowRawData objects.
+
+
+------------------------------------------------------------------------
+r12966 | pmatt | 2014-03-19 22:31:01 -0400 (Wed, 19 Mar 2014) | 4 lines
+
+Modified hit-sort routines to break ties: use hit energy (DTrackCandidate_factory) and projection-r (DHelicalFit). 
+These ties were causing inconsistent track reconstruction results because the hits grabbed from the associated object maps (which are stored in random order), were not fully sorted if they were on the same wire. 
+
+
+------------------------------------------------------------------------
+r12968 | davidl | 2014-03-20 09:18:17 -0400 (Thu, 20 Mar 2014) | 1 line
+
+Add Df250WindowRawData object as an associated object to Df250PulseIntegral objects generated from them.
+------------------------------------------------------------------------
+r12969 | davidl | 2014-03-20 09:27:05 -0400 (Thu, 20 Mar 2014) | 1 line
+
+Added some parentheses for safety.
+------------------------------------------------------------------------
+r12970 | davidl | 2014-03-20 11:07:44 -0400 (Thu, 20 Mar 2014) | 1 line
+
+Only add -std=c++11 compiler flags to CXXFLAGS and not CCFLAGS. Previously, all flags passed to AddCompilerFlags were just added to CCFLAGS. These are used for both C and C++ compilation. On a recent Mac OS X syetm with ROOT installed via MacPorts, the flags returned by root-config contained -std=c++11. This was being used when running gcc to compile hddm_r.c leading to an error.
+------------------------------------------------------------------------
+r12987 | davidl | 2014-03-21 08:39:34 -0400 (Fri, 21 Mar 2014) | 1 line
+
+Fixed typo I just happened to notice while scanning the code.
+------------------------------------------------------------------------
+r13014 | davidl | 2014-03-24 10:13:22 -0400 (Mon, 24 Mar 2014) | 4 lines
+
+- Fixed typo that accidentally used the same random number for the
+  longitudinal and transverse diffusion in the FDC
+- Fixed typo that was cutting on "t" and not "tdrift" 
+
+------------------------------------------------------------------------
+r13019 | davidl | 2014-03-24 21:50:12 -0400 (Mon, 24 Mar 2014) | 1 line
+
+My previous commit contained changes I didn't intend to commit that broke HDGeant. Backed those out and put in only the bug fix changes I'd intended to on my previous commit.
+------------------------------------------------------------------------
+r13020 | davidl | 2014-03-24 22:43:40 -0400 (Mon, 24 Mar 2014) | 9 lines
+
+Add ability to read a rocid translation map file
+(default name is "rocid.map"). This can be used
+to convert rocid values found in EVIO file into
+different values that match up to ones in the TT
+obtained from the DB. Format of file is one line
+per entry with two values per line. First is the
+rocid found in EVIO file, second is what it should
+be changed to before accessing TT.
+
+------------------------------------------------------------------------
+r13024 | staylor | 2014-03-25 11:17:27 -0400 (Tue, 25 Mar 2014) | 1 line
+
+Fix algorithm from extracting list of hits from intersection points as input to the filter for tracks in the fdc
+------------------------------------------------------------------------
+r13025 | staylor | 2014-03-25 11:19:47 -0400 (Tue, 25 Mar 2014) | 1 line
+
+SConscript file copied from b1pi_hists
+------------------------------------------------------------------------
+r13026 | staylor | 2014-03-25 11:20:44 -0400 (Tue, 25 Mar 2014) | 1 line
+
+Add dc_alignment
+------------------------------------------------------------------------
+r13029 | staylor | 2014-03-25 14:42:38 -0400 (Tue, 25 Mar 2014) | 1 line
+
+Modify code to get alignment parameters for cdc and fdc wires from the calibration database. I've added a table to ccdb for the FDC (the cdc one already existed).
+------------------------------------------------------------------------
+r13033 | staylor | 2014-03-25 14:52:37 -0400 (Tue, 25 Mar 2014) | 1 line
+
+Instead of calling the calcution in DFDCGeometry, get the position of the wire in the local coordinate system through the structure created in DGeometry.
+------------------------------------------------------------------------
+r13044 | davidl | 2014-03-26 08:00:04 -0400 (Wed, 26 Mar 2014) | 1 line
+
+Cosmetic change to print out of rocid map.
+------------------------------------------------------------------------
+r13045 | davidl | 2014-03-26 08:04:51 -0400 (Wed, 26 Mar 2014) | 10 lines
+
+- Implement optional module type map so that the module types
+  found in the EVIO file can be interpreted as a different
+  module type. This was needed for some of the very first BCAL
+  test data that had data from several fADC250 modules marked
+  as being from a TID.
+
+- Do a pedestal subtraction of the pulse integral. This will
+  need to be changed since it is not how the data will come
+  in (pedestals will be separate data words at first).
+
+------------------------------------------------------------------------
+r13046 | davidl | 2014-03-26 08:55:17 -0400 (Wed, 26 Mar 2014) | 1 line
+
+Adjust the temporary scale factor used to convert pulse integrals to attenuated GeV for the BCAL. This is emprical using a few early pulser events.
+------------------------------------------------------------------------
+r13047 | davidl | 2014-03-26 08:57:40 -0400 (Wed, 26 Mar 2014) | 1 line
+
+Draw BCAL module boundary lines thicker. They already were slightly thicker, but it was not very noticable so I thickened them even more.
+------------------------------------------------------------------------
+r13048 | davidl | 2014-03-26 09:45:43 -0400 (Wed, 26 Mar 2014) | 1 line
+
+Add labels to views describing them.
+------------------------------------------------------------------------
+r13049 | davidl | 2014-03-26 09:50:26 -0400 (Wed, 26 Mar 2014) | 1 line
+
+Debuger -> Debugger in button and window name.
+------------------------------------------------------------------------
+r13058 | davidl | 2014-03-26 12:37:56 -0400 (Wed, 26 Mar 2014) | 1 line
+
+Modified check for fADC250 filler words so that it masks off slot number. Added a couple of more verbose print statements.
+------------------------------------------------------------------------
+r13094 | davidl | 2014-03-29 08:09:17 -0400 (Sat, 29 Mar 2014) | 1 line
+
+Change some unsigned ints to signed ints to allow for negative values after pedestal subtraction. Record total pedestal (scaled by ratio of total samples to ped samples). Do not subtract pedestal from integral stored in Df250PulseIntegral.
+------------------------------------------------------------------------
+r13095 | pmatt | 2014-03-30 17:56:58 -0400 (Sun, 30 Mar 2014) | 3 lines
+
+Added thrown-recon pull histogram to DHistogramAction_GenReconTrackComparison.
+
+
+------------------------------------------------------------------------
+r13102 | staylor | 2014-04-01 11:19:50 -0400 (Tue, 01 Apr 2014) | 1 line
+
+Root tree branch info for cathode alignment
+------------------------------------------------------------------------
+r13103 | staylor | 2014-04-01 11:20:24 -0400 (Tue, 01 Apr 2014) | 1 line
+
+Remove dY
+------------------------------------------------------------------------
+r13104 | staylor | 2014-04-01 11:21:18 -0400 (Tue, 01 Apr 2014) | 1 line
+
+Add code to start doing alignment of cathode planes
+------------------------------------------------------------------------
+r13110 | staylor | 2014-04-01 14:17:41 -0400 (Tue, 01 Apr 2014) | 1 line
+
+Class for storing information about cathode strips.
+------------------------------------------------------------------------
+r13111 | staylor | 2014-04-01 14:25:56 -0400 (Tue, 01 Apr 2014) | 1 line
+
+Add rotation angles for cathode planes and the wire position as computed from the strip data.
+------------------------------------------------------------------------
+r13112 | staylor | 2014-04-01 14:27:57 -0400 (Tue, 01 Apr 2014) | 1 line
+
+Add routines for computing x and y from cathode data allowing for the rotation angles for the two views to be different.
+------------------------------------------------------------------------
+r13113 | staylor | 2014-04-01 14:31:55 -0400 (Tue, 01 Apr 2014) | 1 line
+
+Fill the cathode geometry data from DGeometry and use new routines for computing x and y from strip data.  Also use data from the cathode geometry class in the computation of the peak positions in the two cathode views.
+------------------------------------------------------------------------
+r13114 | staylor | 2014-04-01 14:33:25 -0400 (Tue, 01 Apr 2014) | 1 line
+
+Add code to generate a vector of FDC cathode strip parameters.
+------------------------------------------------------------------------
+r13119 | pmatt | 2014-04-01 18:51:16 -0400 (Tue, 01 Apr 2014) | 5 lines
+
+Added < operator to the step to facilitate usage as a map key. Fixed bug in == operator. 
+In the factory, when looking to see if a blueprint step is identical to a previous one, 
+now use a map rather than looping over a vector. This is significantly faster for many-combo events. 
+
+
+------------------------------------------------------------------------
+r13145 | staylor | 2014-04-03 17:52:32 -0400 (Thu, 03 Apr 2014) | 1 line
+
+Add flag to toggle creation and filling of trees.  Add code to output results of cathode plane alignment.  Restrict the range of number of intersection and pseudopoints.  Only do cdc alignment with cosmic ray tracks for now.
+------------------------------------------------------------------------
+r13146 | staylor | 2014-04-03 17:56:12 -0400 (Thu, 03 Apr 2014) | 1 line
+
+Change maximum number of FDC hits and suppress warning about skipping the event if there are too many FDC hits.
+------------------------------------------------------------------------
+r13162 | davidl | 2014-04-07 07:33:55 -0400 (Mon, 07 Apr 2014) | 1 line
+
+Fixed bug where if HALLD_HOME or HALLD_MY did not end in '/' then a bad plugin path name was added.
+------------------------------------------------------------------------
+r13195 | davidl | 2014-04-08 15:33:00 -0400 (Tue, 08 Apr 2014) | 1 line
+
+Print message and skip parsing if JLab TS encountered.
+------------------------------------------------------------------------
+r13202 | staylor | 2014-04-09 10:16:59 -0400 (Wed, 09 Apr 2014) | 1 line
+
+Added scale factor for dx in the Newton-Raphson routines to align the code with the recent change to the implementation of the strip geometry using offsets and rotations from the database.
+------------------------------------------------------------------------
+r13223 | davidl | 2014-04-10 09:03:19 -0400 (Thu, 10 Apr 2014) | 1 line
+
+Include JFactory.h in plugin skeleton created by mkplugin.
+------------------------------------------------------------------------
+r13224 | davidl | 2014-04-10 09:08:19 -0400 (Thu, 10 Apr 2014) | 1 line
+
+In the SConstruct file copied into stand-alone plugin directories, add the installation directories for HALLD_HOME and HALLD_MY to the search path for includes. Maybe should remove the source directories from search path, but am not doing so at the moment.
+------------------------------------------------------------------------
+r13227 | davidl | 2014-04-10 13:48:02 -0400 (Thu, 10 Apr 2014) | 1 line
+
+Include JObject.h. A stand-alone plugin needed this to compile.
+------------------------------------------------------------------------
+r13228 | davidl | 2014-04-10 13:49:24 -0400 (Thu, 10 Apr 2014) | 1 line
+
+Remove the itrigger member of Df250TriggerTime since it inherits this from the DDAQAddress base class.
+------------------------------------------------------------------------
+r13229 | davidl | 2014-04-10 13:50:42 -0400 (Thu, 10 Apr 2014) | 1 line
+
+high-word, low-word order of the Trigger Time data in F250 was switched some time ago. Switch these to make consistent with what is in data.
+------------------------------------------------------------------------
+r13257 | pmatt | 2014-04-15 13:20:36 -0400 (Tue, 15 Apr 2014) | 23 lines
+
+invariant mass: no longer supports the desired particle type decaying differently in different spots of the reaction
+can now histogram missing mass off of a particle or set of particles with DHistogramAction_MissingMass
+
+improved duplicate-combo checking in DHistogramAction classes
+new routines that allow to cut on whether the thrown track topology matches your DReaction: DAnalysisUtilities::Check_ThrownsMatchReaction() and DCutAction_ThrownTopology(). 
+
+thrown/recon matching: now uses tracking covariance matrix for uncertainties in matching FOM
+thrown/recon matching: added method DReaction::Set_MinThrownMatchFOMForROOT() to set a cut that is applied on the matching in the ROOT TTree output (default -1)
+thrown/recon matching: many DHistogramActions (especially DetectedParticleKinematics) now use a +/- 5-sigma cut on thrown/recon matching for PID
+
+kinfitter: improved convergence in detached-vertex fits using succession of vertex + vertex-p4 fits
+kinfitter: added support for disabling mass constraints: DReactionStep::Set_ApplyKinFitMassConstraintOnInitialParticleFlag();
+kinfitter: new interface: must first make constraints and then set them, instead of all at once. 
+kinfitter: added sort_constraints method to facilitate improved-vertex determination. it will also reject invalid vertex constraints
+kinfitter: sort_constraints also rejects mass constraints that over-constrain the system (e.g. m_lambda in g, p -> (K+), Lambda)
+kinfitter: if it has reached the max # of iterations, check to see if the delta-chisq is less than a new ?\226?\128?\156last resort?\226?\128?\157 number (0.005 vs regular 0.001). 
+                this is because sometimes the kinematic fit sometimes oscillates imperceptibly around the minimum (perhaps due to varying b-field with position?)
+kinfitter: now calculates and sets full covariance matrix of decaying particles
+kinfitter: now supports inclusive fits: can set missing particle as ?\226?\128?\156Unknown,?\226?\128?\157 and kinfit won?\226?\128?\153t apply p4 constraint (can still constrain masses & vertices)
+kinfitter: if upcoming kinfit will have identical results to a previous one, skip it (now fixed)
+confidence level histogram now displays constraints, NDF details (blue particles are ones used to constrain vertex/time)
+
+
+------------------------------------------------------------------------
+r13258 | pmatt | 2014-04-15 14:16:49 -0400 (Tue, 15 Apr 2014) | 3 lines
+
+Now kinematic fits with an unknown decaying parent should work. 
+
+
+------------------------------------------------------------------------
+r13259 | pmatt | 2014-04-15 16:39:48 -0400 (Tue, 15 Apr 2014) | 3 lines
+
+Oops, forgot to commit updates to cutting missing mass (squared) off missing particles. 
+
+
+------------------------------------------------------------------------
+r13265 | pmatt | 2014-04-16 11:51:27 -0400 (Wed, 16 Apr 2014) | 3 lines
+
+Updated call to DMCThrownMatching factory. 
+
+
+------------------------------------------------------------------------
+r13275 | pmatt | 2014-04-18 13:51:16 -0400 (Fri, 18 Apr 2014) | 3 lines
+
+Address compiler warnings about uninitialized variables. 
+
+
+------------------------------------------------------------------------
+r13276 | davidl | 2014-04-18 15:26:17 -0400 (Fri, 18 Apr 2014) | 1 line
+
+Add option to turn on profiling with the PROFILE=1 command line option
+------------------------------------------------------------------------
+r13277 | davidl | 2014-04-18 15:30:05 -0400 (Fri, 18 Apr 2014) | 6 lines
+
+Change limits on swimming charged particles from hardcoded values in the
+z direction into variables that can be set programmatically. This was motivated
+by a desired to swim tracks all the way out to the MWPCs in the CPP muon detector.
+The default values are left so that tracking is only done for -100<z<670 so this
+change should not affect any GlueX reconstruction.
+
+------------------------------------------------------------------------
+r13278 | pmatt | 2014-04-20 01:04:28 -0400 (Sun, 20 Apr 2014) | 7 lines
+
+Analysis Results: Add Is-Thrown-Topology to NumEventsSurvivedAction histograms.
+
+DHistogramActions: In DHistogramAction_NumReconstructedObjects, check if REST event, and if so, only histogram a subset of the total objects. 
+
+DEventSourceREST: make sure className() function calls the correct static function. 
+
+
+------------------------------------------------------------------------
+r13280 | pmatt | 2014-04-20 22:40:38 -0400 (Sun, 20 Apr 2014) | 3 lines
+
+Created action DCutAction_CombinedTrackingFOM.
+
+
+------------------------------------------------------------------------
+r13293 | pmatt | 2014-04-22 22:59:30 -0400 (Tue, 22 Apr 2014) | 6 lines
+
+DHistogramActions: Added timing pull histograms to DHistogramAction_PID.
+DAnalysisUtilities: Added Calc_Beta_Timing function. 
+DChargedTrackHypothesis_factory: Propagate SC time to position. 
+Other: Re-arranged routines. 
+
+
+------------------------------------------------------------------------
+r13302 | pmatt | 2014-04-23 13:56:13 -0400 (Wed, 23 Apr 2014) | 3 lines
+
+Add time pull histograms by system to DHistogramAction_GenReconComparison. 
+
+
+------------------------------------------------------------------------
+r13312 | wilevine | 2014-04-23 18:14:33 -0400 (Wed, 23 Apr 2014) | 2 lines
+
+Remove obsolete factories.
+
+------------------------------------------------------------------------
+r13313 | wilevine | 2014-04-23 18:48:33 -0400 (Wed, 23 Apr 2014) | 7 lines
+
+Some changes to BCAL reconstruction algorithms:
+
+Don't include 4th layer hits when averaging hit quantities (t,z,etc.) to
+get cluster quantities.
+Don't force DBCALPoint z to be inside the BCAL. Instead enforce this
+at the DBCALCluster stage.
+
+------------------------------------------------------------------------
+r13314 | wilevine | 2014-04-23 18:53:45 -0400 (Wed, 23 Apr 2014) | 2 lines
+
+Remove unused constructor for DBCALPoint
+
+------------------------------------------------------------------------
+r13316 | wilevine | 2014-04-23 20:02:52 -0400 (Wed, 23 Apr 2014) | 2 lines
+
+Remove a hard-coded z=65 from DBCALPoint
+
+------------------------------------------------------------------------
+r13318 | wilevine | 2014-04-24 10:45:08 -0400 (Thu, 24 Apr 2014) | 2 lines
+
+Remove obsolote BCAL code in mcsmear.
+
+------------------------------------------------------------------------
+r13322 | davidl | 2014-04-24 15:34:26 -0400 (Thu, 24 Apr 2014) | 1 line
+
+Fill out the Df250PulseIntegral tree.
+------------------------------------------------------------------------
+r13328 | wilevine | 2014-04-24 21:15:42 -0400 (Thu, 24 Apr 2014) | 8 lines
+
+Several changes to BCAL clustering:
+
+Lower energy threshold for clusters.
+Change the way 4th layer hits are treated (allow them to seed clusters, but
+only if sufficiently energetic).
+CHange parameters determining when two clusters should be merged (merging
+is now less aggressive).
+
+------------------------------------------------------------------------
+r13437 | davidl | 2014-04-30 07:17:29 -0400 (Wed, 30 Apr 2014) | 1 line
+
+Add VERBOSE flag, ttout stream and DetectorName method to aid in debugging. Put in a few verbocity-driven debug statements, but not a complete set.
+------------------------------------------------------------------------
+r13447 | wilevine | 2014-04-30 12:12:06 -0400 (Wed, 30 Apr 2014) | 2 lines
+
+Remove hard-coded z=65 in DBCALCluster
+
+------------------------------------------------------------------------
+r13460 | wilevine | 2014-05-01 12:39:26 -0400 (Thu, 01 May 2014) | 2 lines
+
+Remove hard-coded z=65 cm in DBCALShower_factory
+
+------------------------------------------------------------------------
+r13461 | wilevine | 2014-05-01 12:55:43 -0400 (Thu, 01 May 2014) | 2 lines
+
+Remove hard-coded z=65's in DBCALShower_factory_KLOE
+
+------------------------------------------------------------------------
+r13462 | wilevine | 2014-05-01 13:09:52 -0400 (Thu, 01 May 2014) | 2 lines
+
+Fix another hard-coded z=65 in DBCALPoint. Last one!
+
+------------------------------------------------------------------------
+r13482 | sdobbs | 2014-05-02 11:42:15 -0400 (Fri, 02 May 2014) | 6 lines
+
+Added support for building python wrappers for sim-recon libraries.
+These wrappers are only built if the SWIG executable is installed
+and in the user's PATH.  The generated files only show up in the
+VariantDir, and if they are in the same directory as other
+library files, they are not added to the library when it is built.
+
+------------------------------------------------------------------------
+r13483 | sdobbs | 2014-05-02 11:44:11 -0400 (Fri, 02 May 2014) | 1 line
+
+Initial version of python REST wrapper
+------------------------------------------------------------------------
+r13485 | staylor | 2014-05-03 18:32:37 -0400 (Sat, 03 May 2014) | 1 line
+
+Add indexes for step at which reference trajectory is about to pass through the face of the bcal,tof, or fcal.  Add arguments to GetIntersectionWithPlane and DistToRT to use these new indexes.  In a part of the code where we use a small angle approximation, check that the angle is actually small...
+------------------------------------------------------------------------
+r13486 | staylor | 2014-05-03 18:36:46 -0400 (Sat, 03 May 2014) | 1 line
+
+Add command-line flag to switch material map model --> TRKFIT:MATERIAL_MAP_MODEL.  The default is to use DGeometry; the root interface can be used by setting this to DRootGeom.
+------------------------------------------------------------------------
+r13487 | staylor | 2014-05-03 18:37:19 -0400 (Sat, 03 May 2014) | 1 line
+
+header file mod for previous commit
+------------------------------------------------------------------------
+r13488 | staylor | 2014-05-03 19:17:43 -0400 (Sat, 03 May 2014) | 1 line
+
+Make track-matching parameters for FCAL and BCAL configurable on the command line and use new versions of matching routines in DReerenceTrajectory that take detector system arguments.
+------------------------------------------------------------------------
+r13489 | staylor | 2014-05-03 19:18:43 -0400 (Sat, 03 May 2014) | 1 line
+
+Add track-matching parameters for bcal and fcal.
+------------------------------------------------------------------------
+r13490 | davidl | 2014-05-05 08:35:41 -0400 (Mon, 05 May 2014) | 1 line
+
+Replace remaining cases where '*.h*' was being used for header files. This can lead to large .hddm files being read causing various programs in the build process to choke.
+------------------------------------------------------------------------
+r13497 | davidl | 2014-05-05 13:42:57 -0400 (Mon, 05 May 2014) | 1 line
+
+Keep track of the maximum crateid (=rocid) and use it to allocate space for crate data, even though some will not be used.
+------------------------------------------------------------------------
+r13498 | davidl | 2014-05-05 15:19:30 -0400 (Mon, 05 May 2014) | 1 line
+
+Add bombproofing against PYTHONPATH not being set. Also set DYLD_LIBRARY_PATH on systems using it to avoid undefined variable problem with LD_LIBRARY_PATH.
+------------------------------------------------------------------------
+r13499 | mstaib | 2014-05-05 15:56:04 -0400 (Mon, 05 May 2014) | 1 line
+
+Pedestal value now set in DBCALDigiHit to match Df250PulseIntegral
+------------------------------------------------------------------------
+r13500 | davidl | 2014-05-05 16:26:41 -0400 (Mon, 05 May 2014) | 1 line
+
+Plugin that gives same info. as DAQTree, but dedicated to BCAL by adding the module, layer, sector, end values.
+------------------------------------------------------------------------
+r13501 | davidl | 2014-05-05 16:54:23 -0400 (Mon, 05 May 2014) | 1 line
+
+Temporarily disable the use of swig to generated the python wrapper for hddm. This was causing the build to fail on CentOS6.4 with complaints like Unable to find 'hddm_r.h'
+------------------------------------------------------------------------
+r13502 | davidl | 2014-05-05 16:59:47 -0400 (Mon, 05 May 2014) | 1 line
+
+Need to include stdint.h on Linux.
+------------------------------------------------------------------------
+r13510 | pmatt | 2014-05-06 13:32:47 -0400 (Tue, 06 May 2014) | 6 lines
+
+DNeutralParticle: Add DNeutralShower as member variable.
+DChargedTrackHypothesis: 
+DCutActions: Added DCutAction_AllTracksHaveDetectorMatch.
+DMCThrownMatching: Fixed bug in retrieving match history for neutrals
+
+
+------------------------------------------------------------------------
+r13511 | pmatt | 2014-05-06 13:54:49 -0400 (Tue, 06 May 2014) | 3 lines
+
+Exclude resonances from primary list.
+
+
+------------------------------------------------------------------------
+r13525 | davidl | 2014-05-06 17:18:36 -0400 (Tue, 06 May 2014) | 10 lines
+
+Replace the h|hh|hpp pattern passed to the scons Glob
+function with addition of lists made from the 3 different
+patterns. Apparently, the scons Glob is not as sophisticated
+as the python glob in its pattern matching. The pattern
+used before would only match files ending in ".h" and not
+".hh" or ".hpp". A recent "fix" that replaced ".h*" with
+this pattern to avoid mistakenly using hddm files actually
+caused the hddm_r.hpp and similar files to NOT be installed
+when they were supposed to be causing the build to fail.
+
+------------------------------------------------------------------------
+r13526 | pmatt | 2014-05-06 17:31:56 -0400 (Tue, 06 May 2014) | 3 lines
+
+Forgot to check whether parent particle is resonance (now fixed). 
+
+
+------------------------------------------------------------------------
+r13534 | davidl | 2014-05-07 11:26:16 -0400 (Wed, 07 May 2014) | 1 line
+
+Add the AddCODAChannels function to sbms.py
+------------------------------------------------------------------------
+r13536 | sdobbs | 2014-05-07 14:42:40 -0400 (Wed, 07 May 2014) | 1 line
+
+moved check to see if swig is enabled to SBMS/sbms.py
+------------------------------------------------------------------------
+r13537 | sdobbs | 2014-05-07 14:45:50 -0400 (Wed, 07 May 2014) | 4 lines
+
+Fixed minor bug in the building of swig libraries, and changed it so that
+they are not built by default.
+To build them, "BUILDSWIG=1" must be included on the command line. 
+
+------------------------------------------------------------------------
+r13557 | dalton | 2014-05-09 11:56:18 -0400 (Fri, 09 May 2014) | 3 lines
+
+Added a pedestal calculation using the first 10 samples of the waveform.
+
+
+------------------------------------------------------------------------
+r13631 | staylor | 2014-05-16 13:36:12 -0400 (Fri, 16 May 2014) | 1 line
+
+Fix indexing problem in initialization, flagged by gcc4.8.2 on ubuntu but not with earlier versions of gcc...
+------------------------------------------------------------------------
+r13632 | staylor | 2014-05-16 13:48:30 -0400 (Fri, 16 May 2014) | 1 line
+
+Improve algorithm for grabbing stray segments after the initial pass linking segments together into track candidates.
+------------------------------------------------------------------------
+r13633 | staylor | 2014-05-16 13:50:45 -0400 (Fri, 16 May 2014) | 1 line
+
+Slight change to FDC/CDC matching distance at the cdc endplate.  Change propagation of FDC candidate to cdc endplate to be consistent with recent changes to the FDC candidate code.
+------------------------------------------------------------------------
+r13658 | pmatt | 2014-05-19 15:45:52 -0400 (Mon, 19 May 2014) | 3 lines
+
+Fixed associated objects. 
+
+
+------------------------------------------------------------------------
+r13659 | pmatt | 2014-05-19 15:48:56 -0400 (Mon, 19 May 2014) | 6 lines
+
+DEventWriterROOT: Fixed how BCAL/FCAL energy is grabbed. 
+DCutActions: Add cut for transverse momentum.
+Add built-in cuts to DReaction (and factories) for has-detector-match & neutral-pid-fom. 
+Fix bugs found by gcc 4.8
+
+
+------------------------------------------------------------------------
+r13661 | pmatt | 2014-05-19 20:25:48 -0400 (Mon, 19 May 2014) | 3 lines
+
+Added variable for DOCA of track to showers.
+
+
+------------------------------------------------------------------------
+r13664 | pmatt | 2014-05-19 21:23:07 -0400 (Mon, 19 May 2014) | 3 lines
+
+Updates due to DAnalysisAction previous combo changes. Also, updated track & shower pre-selection cuts. 
+
+
+------------------------------------------------------------------------
+r13669 | pmatt | 2014-05-20 11:39:29 -0400 (Tue, 20 May 2014) | 3 lines
+
+If no match use match distance of 999.0.
+
+
+------------------------------------------------------------------------
+r13670 | pmatt | 2014-05-20 11:41:35 -0400 (Tue, 20 May 2014) | 4 lines
+
+Match Shower/Track match distance of 999.0
+Reconstructed tracks/showers with a total error > 0.2 will have a match-to-thrown FOM of 0. This cutoff can be changed on the command line. 
+
+
+------------------------------------------------------------------------
+r13672 | pmatt | 2014-05-20 12:45:03 -0400 (Tue, 20 May 2014) | 3 lines
+
+Increase total error to 2.0.
+
+
+------------------------------------------------------------------------
+r13707 | davidl | 2014-05-27 10:35:24 -0400 (Tue, 27 May 2014) | 1 line
+
+Modified use of LDPV to accomodate both LD_LIBRARY_PATH and DYLD_LIBRARY_PATH being set as is done by the thisroot.csh script distributed with ROOT.
+------------------------------------------------------------------------
+r13708 | dalton | 2014-05-27 10:59:09 -0400 (Tue, 27 May 2014) | 6 lines
+
+
+Added the ability to determine the time (in samples) that the pulse reaches
+half of its height.
+
+
+
+------------------------------------------------------------------------
+r13726 | dalton | 2014-05-28 16:41:09 -0400 (Wed, 28 May 2014) | 10 lines
+
+
+Improvements to the BCAL visualization in hdview2.
+    Main BCAL view:
+        Solid fill of cells for brighter display
+        Expanded logarithmic color scale with dynamic range to handle MIPS and LED data
+    BcalDisp breakout view:
+        Converted energy to MeV
+        Increased label and title size
+
+
+------------------------------------------------------------------------
+r13729 | staylor | 2014-05-28 18:59:19 -0400 (Wed, 28 May 2014) | 1 line
+
+Add flag TRKFIND:MIN_NUM_HITS to specify the minimum number of hits (cdc+fdc) for a valid track candidate.  The default is set to 6 for now.
+------------------------------------------------------------------------
+r13731 | davidl | 2014-05-29 11:04:32 -0400 (Thu, 29 May 2014) | 1 line
+
+Change phi value displayed to be in degrees instead of radians and to have a range from -180 to +180.
+------------------------------------------------------------------------
+r13749 | wilevine | 2014-05-29 17:19:17 -0400 (Thu, 29 May 2014) | 2 lines
+
+Add more info to DBCALTruthShower
+
+------------------------------------------------------------------------
+r13750 | wilevine | 2014-05-29 17:20:59 -0400 (Thu, 29 May 2014) | 2 lines
+
+Extract all information from HDDM to fill DBCALTruthShower
+
+------------------------------------------------------------------------
+r13752 | staylor | 2014-05-30 10:20:12 -0400 (Fri, 30 May 2014) | 1 line
+
+For the CDC alignment code, improve initial z position for USE_BCAL=0 case
+------------------------------------------------------------------------
+r13756 | pmatt | 2014-05-30 12:24:08 -0400 (Fri, 30 May 2014) | 3 lines
+
+If kinematic fit results are required, but none is performed, print an error message to screen and abort the program. 
+
+
+------------------------------------------------------------------------
+r13777 | staylor | 2014-06-02 16:12:50 -0400 (Mon, 02 Jun 2014) | 1 line
+
+Get time-to-distance relationship for the CDC from the ccdb instead of using a hard-coded function.  Also get parameters for the cdc resolution function from the ccdb.
+------------------------------------------------------------------------
+r13779 | staylor | 2014-06-02 17:27:46 -0400 (Mon, 02 Jun 2014) | 1 line
+
+Get time-to-distance relationship for CDC from ccdb
+------------------------------------------------------------------------
+r13793 | dalton | 2014-06-04 12:55:41 -0400 (Wed, 04 Jun 2014) | 4 lines
+
+
+Bug fix to BCAL coloring in hdview2.
+
+
+------------------------------------------------------------------------
+r13801 | davidl | 2014-06-04 16:17:45 -0400 (Wed, 04 Jun 2014) | 1 line
+
+A top-level setenv.csh script that will try and automatically source the platform-specific version.
+------------------------------------------------------------------------
+r13809 | dalton | 2014-06-05 19:08:05 -0400 (Thu, 05 Jun 2014) | 7 lines
+
+
+Previous changes to the BCAL visualization interfered with the tracking visualization, 
+this commit mostly backs out of those changes until they can be done properly.
+
+A bug with the energy scaling is fixed.
+
+
+------------------------------------------------------------------------
+r13812 | dalton | 2014-06-06 10:10:03 -0400 (Fri, 06 Jun 2014) | 4 lines
+
+
+Changes to allow solid filling of BCAL module cells.
+
+
+------------------------------------------------------------------------
+r13823 | dalton | 2014-06-09 16:20:56 -0400 (Mon, 09 Jun 2014) | 7 lines
+
+
+Changes to hdview2
+Added a breakout view of endviewA (the BCAL hit deposition and tracks)
+which is accessed by cicking on endviewA.
+
+
+
+------------------------------------------------------------------------
+r13824 | dalton | 2014-06-09 16:23:48 -0400 (Mon, 09 Jun 2014) | 4 lines
+
+
+Forgot to include the two new files in the previous commit.
+
+
+------------------------------------------------------------------------
+r13828 | dalton | 2014-06-10 08:51:06 -0400 (Tue, 10 Jun 2014) | 7 lines
+
+
+Changes:
+	Changed default pedestal to 10000
+	Will use event-by-event pedestal if exists
+	Changed default gain factor, decreased by 1000 to give MeV 
+
+
+------------------------------------------------------------------------
+r13830 | davidl | 2014-06-10 09:22:53 -0400 (Tue, 10 Jun 2014) | 1 line
+
+Initial version of evio_merge_events utility
+------------------------------------------------------------------------
+r13831 | davidl | 2014-06-10 09:29:19 -0400 (Tue, 10 Jun 2014) | 1 line
+
+Added expat, dl, and pthread libraries to evio_merge_events SConscript to get it to compile on Linux.
+------------------------------------------------------------------------
+r13834 | staylor | 2014-06-10 11:48:09 -0400 (Tue, 10 Jun 2014) | 1 line
+
+Fix display of DChargedTrack results in Reconstructed table.
+------------------------------------------------------------------------
+r13846 | sdobbs | 2014-06-10 16:30:12 -0400 (Tue, 10 Jun 2014) | 3 lines
+
+- Fix to correctly set FDC cathode view
+- Additional debugging output
+
+------------------------------------------------------------------------
+r13847 | sdobbs | 2014-06-10 16:33:33 -0400 (Tue, 10 Jun 2014) | 3 lines
+
+Add in quality factor to creation of Df125PulseIntegral/Df125PulseTime
+so that time&integral values are properly initialized.
+
+------------------------------------------------------------------------
+r13848 | sdobbs | 2014-06-10 16:37:11 -0400 (Tue, 10 Jun 2014) | 1 line
+
+Removed stray printf statement
+------------------------------------------------------------------------
+r13849 | sdobbs | 2014-06-10 18:29:23 -0400 (Tue, 10 Jun 2014) | 4 lines
+
+- Fix problem where Start Counter hits were not being loaded
+  (their channels are labeled as "ST" in translation table, not "SC")
+- Minor fixes to verbose output
+
+------------------------------------------------------------------------
+r13856 | staylor | 2014-06-12 10:37:57 -0400 (Thu, 12 Jun 2014) | 1 line
+
+Allow for separate scaling factors for filtering FDC and CDC fits for forward-going tracks with hits in both the FDC and CDC
+------------------------------------------------------------------------
+r13857 | staylor | 2014-06-12 10:39:56 -0400 (Thu, 12 Jun 2014) | 1 line
+
+Improve algorithm for dealing with tracks with hits close to the beam line.
+------------------------------------------------------------------------
+r13858 | davidl | 2014-06-12 15:15:38 -0400 (Thu, 12 Jun 2014) | 1 line
+
+Modified to work with events read from ET system that were put there by CODA. Not actually tested yet.
+------------------------------------------------------------------------
+r13859 | davidl | 2014-06-12 15:37:42 -0400 (Thu, 12 Jun 2014) | 1 line
+
+Make both csh and bash version of setenv scripts. (Not really tested with bash yet)
+------------------------------------------------------------------------
+r13860 | davidl | 2014-06-12 15:43:20 -0400 (Thu, 12 Jun 2014) | 1 line
+
+Reinstate option for simple, constant B-field.
+------------------------------------------------------------------------
+r13862 | sdobbs | 2014-06-12 17:46:04 -0400 (Thu, 12 Jun 2014) | 1 line
+
+correct BCAL energy conversion to 100 keV per count
+------------------------------------------------------------------------
+r13863 | sdobbs | 2014-06-12 18:14:57 -0400 (Thu, 12 Jun 2014) | 1 line
+
+Load shower energy correction from CCDB
+------------------------------------------------------------------------
+r13865 | sdobbs | 2014-06-12 18:23:08 -0400 (Thu, 12 Jun 2014) | 1 line
+
+Initial version of applying constants for digitized -> calibrated hit processing
+------------------------------------------------------------------------
+r13866 | sdobbs | 2014-06-12 18:23:25 -0400 (Thu, 12 Jun 2014) | 1 line
+
+Initial version of applying constants for digitized -> calibrated hit processing
+------------------------------------------------------------------------
+r13867 | sdobbs | 2014-06-12 18:23:47 -0400 (Thu, 12 Jun 2014) | 2 lines
+
+Initial version of applying constants for digitized -> calibrated hit processing
+
+------------------------------------------------------------------------
+r13875 | staylor | 2014-06-13 11:22:54 -0400 (Fri, 13 Jun 2014) | 1 line
+
+Small change to routine extrapolating the track to the beam line in the forward direction to make sure that this vertex is not downstream of the measurements.
+------------------------------------------------------------------------
+r13881 | davidl | 2014-06-13 16:33:37 -0400 (Fri, 13 Jun 2014) | 1 line
+
+Remove ROOT support since it is not needed here.
+------------------------------------------------------------------------
+r13882 | davidl | 2014-06-13 17:10:18 -0400 (Fri, 13 Jun 2014) | 1 line
+
+Make DAQ and TTab plugins part of standard build. If EVIO is not present, then a crippled version of the DAQ plugin will be built, but should at least allow everything to compile on machines without EVIO.
+------------------------------------------------------------------------
+r13887 | staylor | 2014-06-13 18:41:08 -0400 (Fri, 13 Jun 2014) | 1 line
+
+Tweak guesses for initial covariance matrices
+------------------------------------------------------------------------
+r13893 | staylor | 2014-06-16 17:35:48 -0400 (Mon, 16 Jun 2014) | 1 line
+
+Read time-to-distance table for FDC from ccdb.
+------------------------------------------------------------------------
+r13898 | sdobbs | 2014-06-17 18:06:05 -0400 (Tue, 17 Jun 2014) | 2 lines
+
+removed stray debugging printouts
+
+------------------------------------------------------------------------
+r13905 | sdobbs | 2014-06-18 18:39:57 -0400 (Wed, 18 Jun 2014) | 2 lines
+
+Minor changes to output
+
+------------------------------------------------------------------------
+r13906 | sdobbs | 2014-06-18 18:41:47 -0400 (Wed, 18 Jun 2014) | 2 lines
+
+First version of applying digitization-level constants.
+
+------------------------------------------------------------------------
+r13907 | sdobbs | 2014-06-18 18:43:15 -0400 (Wed, 18 Jun 2014) | 3 lines
+
+First version of applying digitization-level constants.
+Also commented out some lines that weren't being used.
+
+------------------------------------------------------------------------
+r13908 | sdobbs | 2014-06-18 19:09:47 -0400 (Wed, 18 Jun 2014) | 1 line
+
+first version of applying digitization constants
+------------------------------------------------------------------------
+r13919 | davidl | 2014-06-19 21:31:07 -0400 (Thu, 19 Jun 2014) | 1 line
+
+Add HAVE_EVIO definition and expat library when building with EVIO support.
+------------------------------------------------------------------------
+r13920 | davidl | 2014-06-19 21:33:45 -0400 (Thu, 19 Jun 2014) | 4 lines
+
+- Modified to handle stacked events from ET
+- Added Df125PulseRawData and Df125WindowRawData classes
+- Fixed (at least partially) F1TDC parsing to make consistent with current firmware.
+
+------------------------------------------------------------------------
+r13921 | davidl | 2014-06-20 07:15:44 -0400 (Fri, 20 Jun 2014) | 1 line
+
+Check for both EVIO and ET if using CODAchannels. Tidy up a couple of other minor things.
+------------------------------------------------------------------------
+r13928 | sdobbs | 2014-06-20 17:59:36 -0400 (Fri, 20 Jun 2014) | 2 lines
+
+Use event-by-event pedestals for digitized hits, except if running over EVIO files converted from MC
+
+------------------------------------------------------------------------
+r13929 | davidl | 2014-06-20 20:55:52 -0400 (Fri, 20 Jun 2014) | 1 line
+
+Added some formatting checks for CDC calibration constants. Also made some tweaks in attempt to get CDC data processing with real data working. This may have temporarily broken the MC data channel for the CDC.
+------------------------------------------------------------------------
+r13930 | davidl | 2014-06-20 20:56:44 -0400 (Fri, 20 Jun 2014) | 1 line
+
+Adjusted parsing of fADC125 data.
+------------------------------------------------------------------------
+r13931 | davidl | 2014-06-20 22:12:03 -0400 (Fri, 20 Jun 2014) | 1 line
+
+Add case to module type to skip over TS word from Beni's CDC ROL. Enhanced some debugging messages.
+------------------------------------------------------------------------
+r13932 | davidl | 2014-06-22 00:52:53 -0400 (Sun, 22 Jun 2014) | 1 line
+
+Plugin to make histograms for each rocid,slot containing the pedestals for f250 and f125 Pulse Integral objects.
+------------------------------------------------------------------------
+r13934 | davidl | 2014-06-23 08:08:51 -0400 (Mon, 23 Jun 2014) | 1 line
+
+Fixed duplication of EVIO configuration block that caused SBMS to always assume EVIO was present. Hopefully, this fixes the issue with the nightly builds.
+------------------------------------------------------------------------
+r13935 | staylor | 2014-06-23 08:53:40 -0400 (Mon, 23 Jun 2014) | 1 line
+
+Add routine to find drift distance and variance at the same time for the CDC.
+------------------------------------------------------------------------
+r13936 | davidl | 2014-06-23 09:11:28 -0400 (Mon, 23 Jun 2014) | 1 line
+
+fADC125 has 72 channels so needs more bits. This may only be correct for WindowRawData in current CDC firmware.
+------------------------------------------------------------------------
+r13937 | davidl | 2014-06-23 09:12:09 -0400 (Mon, 23 Jun 2014) | 1 line
+
+Define histograms differently for f125 than for f250.
+------------------------------------------------------------------------
+r13938 | davidl | 2014-06-23 09:36:15 -0400 (Mon, 23 Jun 2014) | 1 line
+
+Set samples used for pedestal to 20 instead of 5 for f125.
+------------------------------------------------------------------------
+r13939 | davidl | 2014-06-23 10:41:30 -0400 (Mon, 23 Jun 2014) | 1 line
+
+Exit slightly more gracefully than dying on an exception. Still has long pause and no informative messages at end (??)
+------------------------------------------------------------------------
+r13940 | davidl | 2014-06-23 11:44:18 -0400 (Mon, 23 Jun 2014) | 1 line
+
+Forgot to commit the adjusted scaling factor for CDC hits. This is the value of a_scale is extremely rough. Just gets it to about the same order of magnitude as the simulated data.
+------------------------------------------------------------------------
+r13944 | staylor | 2014-06-23 15:44:11 -0400 (Mon, 23 Jun 2014) | 1 line
+
+Move code estimating t0 from the smallest drift time to the methods that generate the reference trajectories.
+------------------------------------------------------------------------
+r13947 | pmatt | 2014-06-24 16:59:41 -0400 (Tue, 24 Jun 2014) | 3 lines
+
+Added AvgBeta_Timing and HitTime variables to TTree output. 
+
+
+------------------------------------------------------------------------
+r13950 | davidl | 2014-06-25 08:55:56 -0400 (Wed, 25 Jun 2014) | 1 line
+
+Fixed bug in parsing of Df250PulseRawData types.
+------------------------------------------------------------------------
+r13953 | dalton | 2014-06-25 16:00:19 -0400 (Wed, 25 Jun 2014) | 18 lines
+
+
+Added new support for the following JANA objects to be written to a tree.
+
+   Df125PulseIntegral
+   DF1TDCHit
+   DF1TDCTriggerTime 
+   Df250PulseRawData  
+   Df250PulseTime 
+   Df250TriggerTime
+
+In addition, minor changes to the Df250WindowRawData implementation.  
+The threshold for timing has been dropped to 11 samples.
+Trees are only created if the objects are found.
+
+https://halldweb1.jlab.org/wiki/index.php/DAQTree_plugin
+
+
+
+------------------------------------------------------------------------
+r13954 | staylor | 2014-06-26 08:16:12 -0400 (Thu, 26 Jun 2014) | 1 line
+
+Plugin for bcal calibrations.  The only thing it does right now is match straight tracks fitted using CDC data to BCAL showers.
+------------------------------------------------------------------------
+r13956 | staylor | 2014-06-26 09:03:36 -0400 (Thu, 26 Jun 2014) | 1 line
+
+Add some comments and remove some unused code
+------------------------------------------------------------------------
+r13957 | staylor | 2014-06-26 09:10:55 -0400 (Thu, 26 Jun 2014) | 1 line
+
+Add bcal_calib plugin to optional list
+------------------------------------------------------------------------
+r13966 | jonesrt | 2014-06-27 08:35:12 -0400 (Fri, 27 Jun 2014) | 8 lines
+
+* settofg.F [rtj]
+  - added comments, and made it return the reference time for the event,
+    in addition to setting the start TOF value in the Geant3 common area.
+* hddmInput.c [rtj]
+  - overwrite the t value of the primary vertex origin in the MC record
+    with the value of the beam-synchronized clock at the instant of the
+    primary interaction in the target.
+
+------------------------------------------------------------------------
+r13967 | davidl | 2014-06-27 10:26:26 -0400 (Fri, 27 Jun 2014) | 1 line
+
+Add method to get the BCAL phi shift from the XML.
+------------------------------------------------------------------------
+r13968 | davidl | 2014-06-27 10:28:31 -0400 (Fri, 27 Jun 2014) | 1 line
+
+Fixed BCAL overall rotation to use value from XML. 
+------------------------------------------------------------------------
+r13970 | davidl | 2014-06-27 11:16:22 -0400 (Fri, 27 Jun 2014) | 1 line
+
+Add overall phi shift of BCAL as obtained from XML.
+------------------------------------------------------------------------
+r13973 | staylor | 2014-06-27 14:50:30 -0400 (Fri, 27 Jun 2014) | 1 line
+
+Improved algorithm for finding segments in axial layers and linking them with stereo wires to form track candidates.  Also improved algorithm to find initial guess for state vector for CDC fitting.
+------------------------------------------------------------------------
+r13974 | pmatt | 2014-06-27 15:13:41 -0400 (Fri, 27 Jun 2014) | 6 lines
+
+Renamed pre-combo cut methods set in DReaction.
+Enabled massive neutral particle reconstruction.
+Created new action: DHistogramAction_ReconnedThrownKinematics.
+Removed MC-matching cut from DHistogramAction_DetectedParticleKinematics
+
+
+------------------------------------------------------------------------
+r13975 | pmatt | 2014-06-27 15:14:27 -0400 (Fri, 27 Jun 2014) | 3 lines
+
+Update pre-combo cuts, added new histogram action. 
+
+
+------------------------------------------------------------------------
+r13979 | davidl | 2014-06-28 21:12:39 -0400 (Sat, 28 Jun 2014) | 1 line
+
+Rename _DTrackFitter_factory1_ #define to _DTrackFitter_factory_ to git rid of compiler warning.
+------------------------------------------------------------------------
+r13980 | davidl | 2014-06-28 21:26:05 -0400 (Sat, 28 Jun 2014) | 1 line
+
+Added const qulaifier to className method to avoid compiler warnings.
+------------------------------------------------------------------------
+r13981 | davidl | 2014-06-29 15:47:51 -0400 (Sun, 29 Jun 2014) | 1 line
+
+Make limits on swimming in R be member variables rather than hardwired so they mak be changed.
+------------------------------------------------------------------------
+r13982 | davidl | 2014-06-29 15:51:10 -0400 (Sun, 29 Jun 2014) | 1 line
+
+Add CDCCOSMIC track candidate factory for fitting cosmic data in CDC. This is primarily so the stereo wire positions derived from the new geometry may be checked. To see the tracks in hdview2, one needs to add the -PRT:RMAX_INTERIOR=100.0 -PRT:RMAX_EXTERIOR=100.0 flags.
+------------------------------------------------------------------------
+r13983 | davidl | 2014-06-29 15:52:52 -0400 (Sun, 29 Jun 2014) | 1 line
+
+Updated DGeometry to correspond to the latest version of CentralDC_HDDS.xml. This means the code in the trunk *must* use the trunk definition of HDDS at the moment since no tagged versions will work with this code.
+------------------------------------------------------------------------
+r13984 | davidl | 2014-06-29 15:54:25 -0400 (Sun, 29 Jun 2014) | 1 line
+
+Add RT:RMAX_INTERIOR and RT:RMAX_EXTERIOR config. params to hdview2 so that the drawing range may be extended into the BCAL region.
+------------------------------------------------------------------------
+r13986 | staylor | 2014-06-30 09:31:46 -0400 (Mon, 30 Jun 2014) | 1 line
+
+Add code to plot results of line fits on event viewer canvases.
+------------------------------------------------------------------------
+r13987 | staylor | 2014-06-30 09:36:31 -0400 (Mon, 30 Jun 2014) | 1 line
+
+Add code to plot results of line fits on event viewer canvases.
+------------------------------------------------------------------------
+r13998 | davidl | 2014-06-30 15:03:40 -0400 (Mon, 30 Jun 2014) | 1 line
+
+Plugged memory leak in DAQ plugin.(Ha! plugged a plugin!)
+------------------------------------------------------------------------
