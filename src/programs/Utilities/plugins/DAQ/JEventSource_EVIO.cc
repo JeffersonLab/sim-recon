@@ -1058,13 +1058,9 @@ void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, v
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs)
 {
-	uint32_t hit_threshold = 80; // single sample threshold above pedestal
-	uint32_t Nped_samples = 20; // number of samples to use for pedestal calculation
+	uint32_t HIT_THRES = 80; // single sample threshold above pedestal for pulse  (HIT_THRES)
+	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
 	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
-	uint32_t Nsamples_before = 8; // Number of samples before threshold crossing to include in upsampling (was XTHR_SAMPLE in Naomi's code)
-//	uint32_t Nupsamples = 8; // Number of upsampled values to calculate (was NUPSAMPLED in Naomi's code)
-//	uint32_t pulse_number = 0;
-//	uint32_t quality_factor = 0;
 
 	// Loop over all window raw data objects
 	for(unsigned int i=0; i<wrd_objs.size(); i++){
@@ -1088,7 +1084,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		pedestalsum /= (double)Nped_samples;
 
 		// Calculate single sample threshold based on pdestal
-		double effective_threshold = hit_threshold + pedestalsum;
+		double effective_threshold = HIT_THRES + pedestalsum;
 
 		// Look for sample above threshold. Start looking after pedestal
 		// region but only up to Nsamples from end of window so we know
@@ -1101,32 +1097,11 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		// Didn't find sample above threshold. Don't make hit.
 		if(ihitsample >= (Nsamples_all - Nsamples)) continue;
 
-		// Make the start of the subset of samples used for the algorithm include
-		// "Nsamples_before" samples before the first sample above threshold. 
-		ihitsample -= Nsamples_before; 
+		// At this point we know we have a hit and will be able to extract a time.
+		// Go ahead and make the PulseTime object, filling in the "rough" time.
+		// and corresponding quality factor. The time and quality factor
+		// will be updated later when and if we can calculate a more accurate one.
 
-		// Find time
-		
-		//----- TEMPORARY--------
-		// The following is temporary just to try and get the rest of this
-		// working. The actual algorithm implmented in the FPGA will need to
-		// be filled in later
-		
-		// Linear interpolation of two samples surrounding the first sample over threshold
-		ihitsample += Nsamples_before; // make ihitsample be the first sample over threshold again 
-		double sample1 = (double)samplesvector[ihitsample - 1];
-		double sample2 = (double)samplesvector[ihitsample + 1];
-		double m = (sample2 - sample1)/2.0; // slope where x is in units of samples
-		double b = sample2 - m*(double)(ihitsample + 1);
-		double time_samples = m==0.0 ? (double)ihitsample:(effective_threshold -b)/m;
-
-		//----- TEMPORARY--------
-
-		// Calculate time in ns based on 8ns per sample
-		//double time_samples = ihitsample + 0.1*time;
-		double time_ns = time_samples*10.0; // integer sample needs to be reported in units of 1/10th sample
-		time_ns -= 170.0; // empirical from first BCAL/CDC cosmic data
-		
 		// create new Df125PulseTime object
 		Df125PulseTime *myDf125PulseTime = new Df125PulseTime;
 		myDf125PulseTime->rocid =f125WindowRawData->rocid;
@@ -1134,14 +1109,120 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf125PulseTime->channel = f125WindowRawData->channel;
 		myDf125PulseTime->itrigger = f125WindowRawData->itrigger;
 		myDf125PulseTime->pulse_number = 0;
-		myDf125PulseTime->quality_factor = 0;
-		myDf125PulseTime->time = (uint32_t)time_ns;
+		myDf125PulseTime->quality_factor = 1;
+		myDf125PulseTime->time = ihitsample*10 - 20; // Rough time 20 is "ROUGH_DT" in Naomi's original code
 		
 		// Add the Df125WindowRawData object as an associated object
 		myDf125PulseTime->AddAssociatedObject(f125WindowRawData);
 		
 		// Add to list of Df125PulseTime objects
 		pt_objs.push_back(myDf125PulseTime);
+
+		//----- UP-SAMPLING--------		
+		uint32_t THRESH_HI = 64;  // single sample threshold above pedestal for timing hit (THRESH_HI)
+		uint32_t THRESH_LO = 16;  // single sample threshold above pedestal for calculating pulse time (THRESH_LO)
+		uint32_t PED_SAMPLE = 4;
+		// Thresholds used for timing
+		int adc_thres_hi = samplesvector[PED_SAMPLE] + THRESH_HI;
+		int adc_thres_lo = samplesvector[PED_SAMPLE] + THRESH_LO;
+		
+		// Find first sample above high threshold
+		uint32_t ihi_thresh;
+		bool over_threshold = false;
+		for(ihi_thresh=Nped_samples+1; ihi_thresh<(Nsamples_all - Nsamples); ihi_thresh++){
+			if(samplesvector[ihi_thresh] > adc_thres_hi){
+				over_threshold = true;
+				break;
+			}
+		}
+		
+		// If unable to find sample above hi thresh, use "rough" time. This actually
+		// should never happen since the pulse hit threshold is even larger.
+		if(!over_threshold) continue;
+
+		// Find first sample below the low threshold
+		uint32_t ilo_thresh;
+		bool below_threshold = false;
+		for(ilo_thresh=ihi_thresh-1; ilo_thresh>=PED_SAMPLE; ilo_thresh--){
+			if(samplesvector[ilo_thresh] <= adc_thres_lo){
+				below_threshold = true;
+				break;
+			}
+		}
+		
+		// Upsample
+		uint32_t iubuf[9]; // Number of mini-samples + 1
+		int z[9]; // signed integer version of iubuf used for running calculation
+		uint32_t nz = 8; // NUPSAMPLED
+		const int K[43]={-4, -9, -13, -10, 5, 37, 82, 124, 139, 102, -1, -161, -336, -455, -436, -212, 241, 886, 1623, 2309, 2795, 2971, 2795, 2309, 1623, 886, 241, -212, -436, -455, -336, -161, -1, 102, 139, 124, 82, 37, 5, -10, -13, -9, -4};    
+		int k,j,dk;
+		const int Kscale = 16384;
+		int firstk = 40 + (ilo_thresh-4)*5;
+		for (k=firstk; k<firstk+nz; k++) {
+
+			dk = k - firstk;    
+			z[dk]=0.0;
+
+			for (j=k%5;j<43;j+=5) z[dk] += samplesvector[(k-j)/5]*K[j]; 
+
+			z[dk] = (int)(5*z[dk])/Kscale;
+		}
+		for(int i=0; i<9; i++) iubuf[i] = z[i];
+		
+		// Find first mini-sample below lo threshold starting from top
+		below_threshold = false;
+		uint32_t ilo_thresh2;
+		for(ilo_thresh2=7; ilo_thresh2>0; ilo_thresh2--){
+			if(iubuf[ilo_thresh2] <= adc_thres_lo){
+				below_threshold = true;
+				break;
+			}
+		}
+		
+		// Linearly interpolate between ilo_thresh2 and the mini-sample right
+		// after it to find the threshold crossing time. Since min-samples are
+		// in time units of 5 samples and we report in units of 10 samples, we
+		// only need to find the crossing point to within 1/2 sample. This is
+		// done in a more complicated way on the FPGA since division is not so
+		// easy.
+		double y1 = (double)iubuf[ilo_thresh2];
+		double y2 = (double)iubuf[ilo_thresh2+1];
+		double m = (y2 - y1); // denominator is x2-x1 = 1 in units of mini-samples
+		double b = y1; // just need time realtive to ilo_thresh2 so define that sample as t=0
+		double tfrac = 0.0;
+		if( m!=0.0 ) tfrac = (adc_thres_lo - b)/m;
+		
+		// Calculate time in units of 1/10 samples
+		uint32_t itime1 = ilo_thresh*10;  // ilo_thresh is in units of samples
+		uint32_t itime2 = ilo_thresh2*2;  // ilo_thresh2 is in units of minisamples
+		uint32_t itime3 = (uint32_t)(tfrac*2.0); // tfrac is in units of fraction of minisamples
+		myDf125PulseTime->time = itime1 + itime2 + itime3;
+		myDf125PulseTime->quality_factor = 0;
+		//----- UP-SAMPLING--------		
+
+//		//----- SIMPLE--------
+//		// The following is a simple algorithm that does a linear interpolation
+//		// between the samples before and after the first sample over threshold.
+//		
+//		// Linear interpolation of two samples surrounding the first sample over threshold
+//		double sample1 = (double)samplesvector[ihitsample - 1];
+//		double sample2 = (double)samplesvector[ihitsample + 1];
+//		double m = (sample2 - sample1)/2.0; // slope where x is in units of samples
+//		double b = sample2 - m*(double)(ihitsample + 1);
+//		double time_samples = m==0.0 ? (double)ihitsample:(effective_threshold -b)/m;
+//		myDf125PulseTime->time = (uint32_t)(time_samples*10.0);
+//		myDf125PulseTime->quality_factor = 0;
+//		//----- SIMPLE--------
+		
+		// The following is empirical from the first BCAL/CDC cosmic data
+		myDf125PulseTime->time -= 170.0;
+		if(myDf125PulseTime->time > 10000){
+			// If calculated time is <170.0, then the unsigned int is problematic. Flag this if it happens
+			myDf125PulseTime->time = 0;
+			myDf125PulseTime->quality_factor = 2;
+		}
+		
+		
 	}
 }
 
