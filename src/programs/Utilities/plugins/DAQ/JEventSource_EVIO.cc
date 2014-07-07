@@ -1123,8 +1123,8 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		uint32_t THRESH_LO = 16;  // single sample threshold above pedestal for calculating pulse time (THRESH_LO)
 		uint32_t PED_SAMPLE = 4;
 		// Thresholds used for timing
-		int adc_thres_hi = samplesvector[PED_SAMPLE] + THRESH_HI;
-		int adc_thres_lo = samplesvector[PED_SAMPLE] + THRESH_LO;
+		uint32_t adc_thres_hi = samplesvector[PED_SAMPLE] + THRESH_HI;
+		uint32_t adc_thres_lo = samplesvector[PED_SAMPLE] + THRESH_LO;
 		
 		// Find first sample above high threshold
 		uint32_t ihi_thresh;
@@ -1153,7 +1153,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		// Upsample
 		uint32_t iubuf[9]; // Number of mini-samples + 1
 		int z[9]; // signed integer version of iubuf used for running calculation
-		uint32_t nz = 8; // NUPSAMPLED
+		int nz = 8; // NUPSAMPLED
 		const int K[43]={-4, -9, -13, -10, 5, 37, 82, 124, 139, 102, -1, -161, -336, -455, -436, -212, 241, 886, 1623, 2309, 2795, 2971, 2795, 2309, 1623, 886, 241, -212, -436, -455, -336, -161, -1, 102, 139, 124, 82, 37, 5, -10, -13, -9, -4};    
 		int k,j,dk;
 		const int Kscale = 16384;
