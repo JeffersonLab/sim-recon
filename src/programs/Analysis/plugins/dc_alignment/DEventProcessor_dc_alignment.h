@@ -369,8 +369,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   double mMinTime,mOuterTime,mOuterZ,mBeta;
   unsigned int mMinTimeID;
   
-  bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE,USE_BCAL,ALIGN_WIRE_PLANES;
-  bool  FILL_TREE,RUN_BENCHMARK,USE_FCAL;
+  bool COSMICS,USE_DRIFT_TIMES,READ_ANODE_FILE,USE_BCAL,ALIGN_WIRE_PLANES;
+  bool  FILL_TREE,RUN_BENCHMARK,USE_FCAL,READ_CATHODE_FILE;
 
   // drift time tables
   vector<double>cdc_drift_table;

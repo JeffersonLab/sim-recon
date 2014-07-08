@@ -132,8 +132,10 @@ jerror_t DEventProcessor_dc_alignment::init(void)
   gPARMS->SetDefaultParameter("DCALIGN:COSMICS", COSMICS);
   USE_DRIFT_TIMES=false;
   gPARMS->SetDefaultParameter("DCALIGN:USE_DRIFT_TIMES",USE_DRIFT_TIMES);
-  READ_LOCAL_FILE=false;
-  gPARMS->SetDefaultParameter("DCALIGN:READ_LOCAL_FILE",READ_LOCAL_FILE);
+  READ_ANODE_FILE=false;
+  gPARMS->SetDefaultParameter("DCALIGN:READ_ANODE_FILE",READ_ANODE_FILE);
+  READ_CATHODE_FILE=false;
+  gPARMS->SetDefaultParameter("DCALIGN:READ_CATHODE_FILE",READ_CATHODE_FILE);
   ALIGN_WIRE_PLANES=true;
   gPARMS->SetDefaultParameter("DCALIGN:ALIGN_WIRE_PLANES",ALIGN_WIRE_PLANES);
   FILL_TREE=false;
@@ -164,7 +166,7 @@ jerror_t DEventProcessor_dc_alignment::init(void)
   }
   
 
-  if (READ_LOCAL_FILE){
+  if (READ_ANODE_FILE){
     ifstream fdcfile("fdc_alignment.dat");
     // Skip first line, used to identify columns in file
     //char sdummy[40];
@@ -179,6 +181,29 @@ jerror_t DEventProcessor_dc_alignment::init(void)
       
       fdc_alignments[i].A(kU)=du;
       fdc_alignments[i].A(kPhiU)=dphi;
+    }
+    fdcfile.close();
+  }
+  
+  if (READ_CATHODE_FILE){
+    ifstream fdcfile("fdc_cathode_alignment.dat");
+    // Skip first line, used to identify columns in file
+    //char sdummy[40];
+    //    fdcfile.getline(sdummy,40);
+    // loop over remaining entries
+    for (unsigned int i=0;i<24;i++){ 
+      double du,dphiu,dv,dphiv;
+
+      fdcfile >> dphiu;
+      fdcfile >> du;
+      fdcfile >> dphiv;
+      fdcfile >> dv;
+      
+      fdc_cathode_alignments[i].A(kU)=du;
+      fdc_cathode_alignments[i].A(kPhiU)=dphiv;  
+      fdc_cathode_alignments[i].A(kV)=dv;
+      fdc_cathode_alignments[i].A(kPhiV)=dphiv;
+
     }
     fdcfile.close();
   }
@@ -638,7 +663,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   int NEVENTS=300000;
   double anneal_factor=pow(1e4,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
-  //anneal_factor=1.;
+  if (RUN_BENCHMARK) anneal_factor=1.;
 
   // deques to store reference trajectories
   deque<trajectory_t>trajectory;
@@ -691,7 +716,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
       double prelimprob=TMath::Prob(chi2_old,ndof_old);
       Hcdc_prelimprob->Fill(prelimprob);
 
-      if (prelimprob>0.01){
+      if (prelimprob>0.001){
  
 	// Perform a time-based pass
 	S=Sbest;
@@ -737,7 +762,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	  double prob=TMath::Prob(chi2_old,ndof_old);
 	  Hcdc_prob->Fill(prob);
 
-	  if (prob>0.01){
+	  if (prob>0.001){
 	    // run the smoother (opposite direction to filter)
 	    vector<cdc_update_t>smoothed_updates(updates.size());
 	    for (unsigned int k=0;k<smoothed_updates.size();k++){
@@ -815,6 +840,7 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
   double anneal_factor=pow(1e3,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
   anneal_factor=1.;
+  if (RUN_BENCHMARK) anneal_factor=1.;
   //anneal_factor=1e3;
 
   // Best guess for state vector at the beginning of the trajectory
@@ -947,6 +973,7 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
   double anneal_factor=pow(1000.,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
   anneal_factor=1.;
+  if (RUN_BENCHMARK) anneal_factor=1.;
   //anneal_factor=1e3;
 
   // Best guess for state vector at "vertex"
