@@ -145,6 +145,7 @@ typedef struct{
 #define ADJACENT_MATCH_RADIUS 1.0
 #define MATCH_RADIUS 2.0
 #define INTERSECTION_LINK_MATCH_RADIUS 10.0
+#define PSEUDO_LINK_MATCH_RADIUS 7.0
 #define CDC_MATCH_RADIUS 5.0
 
 class DEventProcessor_dc_alignment:public jana::JEventProcessor{
@@ -344,8 +345,8 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
     
   pthread_mutex_t mutex;
 
-  TH1F *Hprob,*Hprelimprob,*Hbeta,*Hmatch,*Hcdcmatch,*Hcdcmatch_stereo;
-  TH1F *Hpseudo_prob,*Hpseudo_prelimprob,*Hlink_match;
+  TH1F *Hprob,*Hbeta,*Hmatch,*Hcdcmatch,*Hcdcmatch_stereo;
+  TH1F *Hpseudo_prob,*Hlink_match;
   TH1F *Hintersection_match,*Hintersection_link_match;
   TH1F *Hcdc_prob,*Hcdc_prelimprob;
   TH2F *Hbcalmatch,*Hcdcdrift_time;
@@ -369,7 +370,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   unsigned int mMinTimeID;
   
   bool COSMICS,USE_DRIFT_TIMES,READ_LOCAL_FILE,USE_BCAL,ALIGN_WIRE_PLANES;
-  bool  FILL_TREE;
+  bool  FILL_TREE,RUN_BENCHMARK,USE_FCAL;
 
   // drift time tables
   vector<double>cdc_drift_table;
