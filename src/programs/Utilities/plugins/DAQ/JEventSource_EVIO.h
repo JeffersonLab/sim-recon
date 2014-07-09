@@ -233,6 +233,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 	
 		void EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
 		void EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
+		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs);
 		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs);
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t GetRunNumber(evioDOMTree *evt);

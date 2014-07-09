@@ -823,11 +823,24 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		hit_objs_by_type[hit_obj->className()].push_back(hit_obj);
 	}
 
-	// Optionally generate Df250PulseIntegral objects from Df250WindowRawData objects. 
+	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df250PulseIntegral"].size()==0)){
+		vector<JObject*> pt_objs;
+		EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs);
+		if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
+
 		vector<JObject*> pi_objs;
 		EmulateDf250PulseIntergral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
+
+		// Make PulseTime and PulseIntegral objects associated objects of one another
+		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
+		// tmeplated method to work.
+		vector<DDAQAddress*> da_pt_objs;
+		vector<DDAQAddress*> da_pi_objs;
+		for(unsigned int i=0; i<pt_objs.size(); i++) da_pt_objs.push_back((DDAQAddress*)pt_objs[i]);
+		for(unsigned int i=0; i<pi_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pi_objs[i]);
+		LinkAssociations(da_pt_objs, da_pi_objs);
 	}
 
 	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
@@ -1051,6 +1064,87 @@ void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, v
 			// Integral is below threshold so discard the hit.
 			delete myDf125PulseIntegral;
 		}
+	}
+}
+
+//----------------
+// EmulateDf250PulseTime
+//----------------
+void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs)
+{
+	uint32_t HIT_THRES = 80; // single sample threshold above pedestal for pulse  (HIT_THRES)
+	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
+	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
+
+	// Loop over all window raw data objects
+	for(unsigned int i=0; i<wrd_objs.size(); i++){
+		const Df250WindowRawData *f250WindowRawData = (Df250WindowRawData*)wrd_objs[i];
+
+		// Get a vector of the samples for this channel
+		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
+		uint32_t Nsamples_all = samplesvector.size(); // (was NADCBUFFER in Naomi's code)
+		if(Nsamples_all < (Nped_samples+Nsamples)){
+			char str[256];
+			sprintf(str, "Too few samples in Df250WindowRawData for pulse time extraction! Nsamples_all=%d, (Nped_samples+Nsamples)=%d", Nsamples_all, (Nped_samples+Nsamples));
+			jerr << str << endl;
+			throw JException(str);
+		}
+
+		// loop over the first ped_samples samples to calculate pedestal
+		int32_t pedestalsum = 0;
+		for (uint32_t c_samp=0; c_samp<Nped_samples; c_samp++) {
+			pedestalsum += samplesvector[c_samp];
+		}
+		pedestalsum /= (double)Nped_samples;
+
+		// Calculate single sample threshold based on pdestal
+		double effective_threshold = HIT_THRES + pedestalsum;
+
+		// Look for sample above threshold. Start looking after pedestal
+		// region but only up to Nsamples from end of window so we know
+		// there are at least Nsamples from which to calculate time
+		uint32_t ihitsample; // sample number of first sample above effective_threshold
+		for(ihitsample=Nped_samples; ihitsample<(Nsamples_all - Nsamples); ihitsample++){
+			if(samplesvector[ihitsample] > effective_threshold) break;
+		}
+		
+		// Didn't find sample above threshold. Don't make hit.
+		if(ihitsample >= (Nsamples_all - Nsamples)) continue;
+
+		// At this point we know we have a hit and will be able to extract a time.
+		// Go ahead and make the PulseTime object, filling in the "rough" time.
+		// and corresponding quality factor. The time and quality factor
+		// will be updated later when and if we can calculate a more accurate one.
+
+		// create new Df250PulseTime object
+		Df250PulseTime *myDf250PulseTime = new Df250PulseTime;
+		myDf250PulseTime->rocid =f250WindowRawData->rocid;
+		myDf250PulseTime->slot = f250WindowRawData->slot;
+		myDf250PulseTime->channel = f250WindowRawData->channel;
+		myDf250PulseTime->itrigger = f250WindowRawData->itrigger;
+		myDf250PulseTime->pulse_number = 0;
+		myDf250PulseTime->quality_factor = 1;
+		myDf250PulseTime->time = ihitsample*10 - 20; // Rough time 20 is "ROUGH_DT" in Naomi's original code
+		
+		// Add the Df250WindowRawData object as an associated object
+		myDf250PulseTime->AddAssociatedObject(f250WindowRawData);
+		
+		// Add to list of Df250PulseTime objects
+		pt_objs.push_back(myDf250PulseTime);
+
+		//----- SIMPLE--------
+		// The following is a simple algorithm that does a linear interpolation
+		// between the samples before and after the first sample over threshold.
+		
+		// Linear interpolation of two samples surrounding the first sample over threshold
+		double sample1 = (double)samplesvector[ihitsample - 1];
+		double sample2 = (double)samplesvector[ihitsample + 1];
+		double m = (sample2 - sample1)/2.0; // slope where x is in units of samples
+		double b = sample2 - m*(double)(ihitsample + 1);
+		double time_samples = m==0.0 ? (double)ihitsample:(effective_threshold -b)/m;
+		myDf250PulseTime->time = (uint32_t)(time_samples*10.0);
+		myDf250PulseTime->quality_factor = 0;
+		//----- SIMPLE--------		
 	}
 }
 
