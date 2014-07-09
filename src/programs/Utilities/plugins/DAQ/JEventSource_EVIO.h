@@ -53,6 +53,7 @@ using namespace evio;
 #include "Df125WindowRawData.h"
 #include "DF1TDCHit.h"
 #include "DF1TDCTriggerTime.h"
+#include "DCAEN1290TDCHit.h"
 
 //-----------------------------------------------------------------------
 /// The JEventSource_EVIO class implements a JEventSource capable of reading in
@@ -112,6 +113,15 @@ using namespace evio;
 /// 3.) Add the new ParseXXXBank() method. Preferrably to the
 ///     end of the file or more importantly, in the order the
 ///     method appears in the class definition.
+///
+///
+/// JFactoryGenerator_DAQ.h
+/// --------------------
+/// 1.) Add an include line to the top of the file for each new
+///     data type.
+///
+/// 2.) Add a line for each new data type to the GenerateFactories()
+///     method of JFactoryGenerator_DAQ.
 ///
 ///----------------------------------------------------------------------
 

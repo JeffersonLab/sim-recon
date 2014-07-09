@@ -163,6 +163,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("Df125WindowRawData");
 	event_source_data_types.insert("DF1TDCHit");
 	event_source_data_types.insert("DF1TDCTriggerTime");
+	event_source_data_types.insert("DCAEN1290TDCHit");
 
 	// Read in optional module type translation map if it exists	
 	ReadOptionalModuleTypeTranslation();
@@ -1456,7 +1457,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 				ParseJLabModuleData(rocid, iptr, iend, tmp_events);
 				break;
 
-			case 2:
+			case 20:
 				ParseCAEN1190(rocid, iptr, iend, tmp_events);
 				break;
 
@@ -2456,7 +2457,120 @@ void JEventSource_EVIO::ParseTIBank(int32_t rocid, const uint32_t* &iptr, const 
 //----------------
 void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
 {
+	/// Parse data from a CAEN 1190 or 1290 module
+	/// (See ppg. 72-74 of V1290_REV15.pdf manual)
+	
+	uint32_t slot = 0;
+	uint32_t event_count = 0;
+	uint32_t word_count = 0;
+	uint32_t trigger_time_tag = 0;
+	uint32_t tdc_num = 0;
+	uint32_t event_id = 0;
+	uint32_t bunch_id = 0;
+	uint32_t last_event_id = event_id - 1;
 
+	// We need to accomodate multi-event blocks where
+	// events are entangled (i.e. hits from event 1
+	// are mixed inbetween those of event 2,3,4,
+	// etc... With CAEN modules, we only know which
+	// event a hit came from by looking at the event_id
+	// in the TDC header. This value is only 12 bits
+	// and could roll over within an event block. This
+	// means we need to keep track of the order we
+	// encounter them in so it is maintained in the
+	// "events" container. The event_id order is kept
+	// in the "event_id_order" vector.
+	ObjList *objs = NULL;
+	map<uint32_t, ObjList*> objmap;
+	vector<uint32_t> event_id_order; 
+
+	while(iptr<iend){
+		uint32_t type = (*iptr) >> 27;
+		uint32_t edge = 0; // 1=trailing, 0=leading
+		uint32_t channel = 0;
+		uint32_t tdc = 0;
+		uint32_t error_flags = 0;
+		DCAEN1290TDCHit *caen1290tdchit = NULL;
+		map<uint32_t, ObjList*>::iterator iter;
+		switch(type){
+			case 0b01000:  // Global Header
+				slot = (*iptr) & 0x1f;
+				event_count = ((*iptr)>>5) & 0xffffff;
+				if(VERBOSE>7) evioout << "         CAEN TDC Global Header (slot=" << slot << " , event count=" << event_count << ")" << endl;
+
+				// If event_id has changed. Find or create ObjList (event)
+				// to write this hit into.
+				if(last_event_id != event_id){
+					
+					iter = objmap.find(event_id);
+					if(iter != objmap.end()){
+						objs = iter->second;
+					}else{
+						objs = new ObjList();
+						objmap[event_id] = objs;
+						event_id_order.push_back(event_id);
+					}
+					last_event_id = event_id;
+				}
+				break;
+			case 0b10000:  // Global Trailer
+				slot = (*iptr) & 0x1f;
+				word_count = ((*iptr)>>5) & 0x7ffff;
+				if(VERBOSE>7) evioout << "         CAEN TDC Global Trailer (slot=" << slot << " , word count=" << word_count << ")" << endl;
+				slot = event_count = word_count = trigger_time_tag = tdc_num = event_id = bunch_id = 0;
+				break;
+			case 0b10001:  // Global Trigger Time Tag
+				trigger_time_tag = ((*iptr)>>5) & 0x7ffffff;
+				if(VERBOSE>7) evioout << "         CAEN TDC Global Trigger Time Tag (tag=" << trigger_time_tag << ")" << endl;
+				break;
+			case 0b00001:  // TDC Header
+				tdc_num = ((*iptr)>>24) & 0x03;
+				event_id = ((*iptr)>>12) & 0x0fff;
+				bunch_id = (*iptr) & 0x0fff;
+				if(VERBOSE>7) evioout << "         CAEN TDC TDC Header (tdc=" << tdc_num <<" , event id=" << event_id <<" , bunch id=" << bunch_id << ")" << endl;
+				break;
+			case 0b00000:  // TDC Measurement
+				edge = ((*iptr)>>26) & 0x01;
+				channel = ((*iptr)>>21) & 0x1f;
+				tdc = ((*iptr)>>0) & 0x1fffff;
+				if(VERBOSE>7) evioout << "         CAEN TDC TDC Measurement (" << (edge ? "trailing":"leading") << " , channel=" << channel << " , tdc=" << tdc << ")" << endl;
+
+				// Create DCAEN1290TDCHit object
+				if(objs){
+					caen1290tdchit = new DCAEN1290TDCHit(rocid, slot, channel, 0, edge, tdc_num, event_id, bunch_id, tdc);
+					objs->hit_objs.push_back(caen1290tdchit);
+				}
+				break;
+			case 0b00100:  // TDC Error
+				error_flags = (*iptr) & 0x7fff;
+				if(VERBOSE>7) evioout << "         CAEN TDC TDC Error (err flags=0x" << hex << error_flags << dec << ")" << endl;
+				break;
+			case 0b00011:  // TDC Trailer
+				tdc_num = ((*iptr)>>24) & 0x03;
+				event_id = ((*iptr)>>12) & 0x0fff;
+				word_count = ((*iptr)>>0) & 0x0fff;
+				if(VERBOSE>7) evioout << "         CAEN TDC TDC Trailer (tdc=" << tdc_num <<" , event id=" << event_id <<" , word count=" << word_count << ")" << endl;
+				tdc_num = event_id = bunch_id = 0;
+				break;
+			case 0b11000:  // Filler Word
+				if(VERBOSE>7) evioout << "         CAEN TDC Filler Word" << endl;
+				break;
+			default:
+				evioout << "Unknown datatype: 0x" << hex << type << " full word: "<< *iptr << dec << endl;
+		}
+	
+		iptr++;
+	}
+	
+	// Copy all ObjLists into events, preserving order
+	for(unsigned int i=0; i<event_id_order.size(); i++){
+		map<uint32_t, ObjList*>::iterator iter = objmap.find(event_id_order[i]);
+		if(iter != objmap.end()){
+			events.push_back(iter->second);
+		}else{
+			_DBG_<<"CAEN1290: Unable to find map entry for event id:"<<event_id_order[i]<<"!!!"<<endl;
+		}
+	}
 }
 
 //----------------
