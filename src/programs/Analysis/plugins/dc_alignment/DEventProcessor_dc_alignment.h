@@ -357,7 +357,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   TH2F *Hdv_vs_dE,*Hbcalmatchxy,*Hcdc_time_vs_d;
   TH1F *Hfcalmatch;
   TH1F *Hztarg;
-  TH2F *Hcdc_ring_res[28];
+  TH2F *Hcdc_ring_res[28],*Hcdc_ring_time[28];
 
   double mT0;
   double target_to_fcal_distance;

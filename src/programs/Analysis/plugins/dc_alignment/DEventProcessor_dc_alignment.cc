@@ -310,6 +310,15 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
 				100,-1,1);
     }
   }
+   for (int i=0;i<28;i++){
+    char title[40];
+    sprintf(title,"cdc_drift_time_ring%d",i+1);
+    Hcdc_ring_time[i]=(TH2F*)gROOT->FindObject(title);
+    if (!Hcdc_ring_time[i]){
+      Hcdc_ring_time[i]=new TH2F(title,title,numstraws[i],0.5,numstraws[i]+0.5,
+				 900,-100,800);
+    }
+  }
     
   Hprob = (TH1F*)gROOT->FindObject("Hprob");
   if (!Hprob){
@@ -795,7 +804,8 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 		Hcdcres_vs_drift_time->Fill(tdrift,res);
 		Hcdcdrift_time->Fill(tdrift,d);
 		Hcdc_time_vs_d->Fill(d,tdrift);
-	        Hcdc_ring_res[ring_id]->Fill(straw_id+1,res);
+	        Hcdc_ring_res[ring_id]->Fill(straw_id+1,res); 
+		Hcdc_ring_time[ring_id]->Fill(straw_id+1,tdrift);
 	      }
 	    }
 	    
