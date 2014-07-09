@@ -35,12 +35,6 @@ dReaction(locReaction), dActionName(locActionBaseName), dUseKinFitResultsFlag(lo
 
 bool DAnalysisAction::operator()(JEventLoop* locEventLoop)
 {
-	if(Get_Reaction() != NULL)
-	{
-		jout << "WARNING: Called incorrect function call operator in DAnalysisAction::operator()(JEventLoop*). Aborting action." << endl;
-		return false;
-	}
-
 	return Perform_Action(locEventLoop, NULL);
 }
 
