@@ -69,6 +69,7 @@ typedef struct{
   DMatrix1x4 H;
   double doca,t,z;
   double drift_time,drift;
+  int ring_id,straw_id;
   bool used_in_fit;
 }cdc_update_t;
 
@@ -356,6 +357,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   TH2F *Hdv_vs_dE,*Hbcalmatchxy,*Hcdc_time_vs_d;
   TH1F *Hfcalmatch;
   TH1F *Hztarg;
+  TH2F *Hcdc_ring_res[28];
 
   double mT0;
   double target_to_fcal_distance;
@@ -401,6 +403,8 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   //sigma+=0.02;
   
   //sigma=0.08/(t+1.)+0.03;
+
+  sigma=0.1;
   
   return sigma*sigma;
 }

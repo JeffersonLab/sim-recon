@@ -297,6 +297,19 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   }
 
   dapp->Lock();
+
+  unsigned int numstraws[28]={42,42,54,54,66,66,80,80,93,93,106,106,123,123,
+			      135,135,146,146,158,158,170,170,182,182,197,197,
+			      209,209};
+  for (int i=0;i<28;i++){
+    char title[40];
+    sprintf(title,"cdc_residual_ring%d",i+1);
+    Hcdc_ring_res[i]=(TH2F*)gROOT->FindObject(title);
+    if (!Hcdc_ring_res[i]){
+      Hcdc_ring_res[i]=new TH2F(title,title,numstraws[i],0.5,numstraws[i]+0.5,
+				100,-1,1);
+    }
+  }
     
   Hprob = (TH1F*)gROOT->FindObject("Hprob");
   if (!Hprob){
@@ -380,7 +393,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   }  
   Hcdcres_vs_drift_time=(TH2F*)gROOT->FindObject("Hcdcres_vs_drift_time");
   if (!Hcdcres_vs_drift_time){
-    Hcdcres_vs_drift_time=new TH2F("Hcdcres_vs_drift_time","cdc Residual vs drift time",400,-20,780,100,-0.1,0.1);
+    Hcdcres_vs_drift_time=new TH2F("Hcdcres_vs_drift_time","cdc Residual vs drift time",400,-20,780,100,-1.,1.);
   } 
   Hdrift_time=(TH2F*)gROOT->FindObject("Hdrift_time");
   if (!Hdrift_time){
@@ -508,8 +521,6 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
       else if (ring<=24) stereohits.push_back(cdcs[i]);
       else axialhits.push_back(cdcs[i]);
     }
-    
-    mMinTime=10000.;
 
     // Here we group axial hits into segments
     vector<cdc_segment_t>axial_segments;
@@ -663,6 +674,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
   int NEVENTS=300000;
   double anneal_factor=pow(1e4,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
+  anneal_factor=1.;
   if (RUN_BENCHMARK) anneal_factor=1.;
 
   // deques to store reference trajectories
@@ -778,9 +790,12 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 		double tdrift=smoothed_updates[k].drift_time;
 		double d=smoothed_updates[k].doca;
 		double res=smoothed_updates[k].res;
+		int ring_id=smoothed_updates[k].ring_id;
+		int straw_id=smoothed_updates[k].straw_id;
 		Hcdcres_vs_drift_time->Fill(tdrift,res);
 		Hcdcdrift_time->Fill(tdrift,d);
 		Hcdc_time_vs_d->Fill(d,tdrift);
+	        Hcdc_ring_res[ring_id]->Fill(straw_id+1,res);
 	      }
 	    }
 	    
@@ -2104,6 +2119,8 @@ DEventProcessor_dc_alignment::Smooth(DMatrix4x1 &Ss,DMatrix4x4 &Cs,
 	
 	// doca using smoothed state vector
 	double d=FindDoca(trajectory[m].z,Ss,wdir,origin);
+	smoothed_updates[id].ring_id=ring;
+	smoothed_updates[id].straw_id=straw;
 	smoothed_updates[id].doca=d;
 	smoothed_updates[id].res=updates[id].drift-d;	
 	smoothed_updates[id].drift=updates[id].drift;
