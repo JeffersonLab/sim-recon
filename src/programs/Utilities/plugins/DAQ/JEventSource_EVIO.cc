@@ -2485,6 +2485,11 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 	vector<uint32_t> event_id_order; 
 
 	while(iptr<iend){
+	
+		// This word appears to be appended to the data.
+		// Probably in the ROL. Ignore it if found.
+		if(*iptr == 0xd00dd00d) {iptr++; continue;}
+	
 		uint32_t type = (*iptr) >> 27;
 		uint32_t edge = 0; // 1=trailing, 0=leading
 		uint32_t channel = 0;
