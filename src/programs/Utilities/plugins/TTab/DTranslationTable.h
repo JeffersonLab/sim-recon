@@ -32,6 +32,7 @@ using namespace jana;
 #include <DAQ/Df125TriggerTime.h>
 #include <DAQ/DF1TDCHit.h>
 #include <DAQ/DF1TDCTriggerTime.h>
+#include <DAQ/DCAEN1290TDCHit.h>
 
 #include <BCAL/DBCALDigiHit.h>
 #include <BCAL/DBCALTDCDigiHit.h>
@@ -210,8 +211,9 @@ class DTranslationTable:public jana::JObject{
 		DBCALTDCDigiHit* MakeBCALTDCDigiHit(const BCALIndex_t &idx,      const DF1TDCHit *hit) const;
 		DFDCWireDigiHit* MakeFDCWireDigiHit(const FDC_WiresIndex_t &idx, const DF1TDCHit *hit) const;
 		DSCTDCDigiHit*   MakeSCTDCDigiHit(  const SCIndex_t &idx,        const DF1TDCHit *hit) const;
-		DTOFTDCDigiHit*  MakeTOFTDCDigiHit( const TOFIndex_t &idx,       const DF1TDCHit *hit) const;
 		
+		// CAEN1290TDC
+		DTOFTDCDigiHit*  MakeTOFTDCDigiHit(const TOFIndex_t &idx,        const DCAEN1290TDCHit *hit) const;
 
 		void ReadOptionalROCidTranslation(void);
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
@@ -220,6 +222,7 @@ class DTranslationTable:public jana::JObject{
 		template<class T> void CopyDf250Info(T *h, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
 		template<class T> void CopyDf125Info(T *h, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const;
 		template<class T> void CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const;
+		template<class T> void CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) const;
 
 	protected:
 		string XML_FILENAME;
@@ -293,6 +296,17 @@ void DTranslationTable::CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const
 	h->AddAssociatedObject(hit);
 }
 
+//---------------------------------
+// CopyDCAEN1290TDCInfo
+//---------------------------------
+template<class T>
+void DTranslationTable::CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) const
+{
+	/// Copy info from the CAEN1290 into a hit object.
+	h->time = hit->time;
+	
+	h->AddAssociatedObject(hit);
+}
 
 #endif // _DTranslationTable_
 

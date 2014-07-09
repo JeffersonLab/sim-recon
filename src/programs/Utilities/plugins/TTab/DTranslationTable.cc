@@ -184,10 +184,11 @@ void DTranslationTable::ReadOptionalROCidTranslation(void)
 //---------------------------------
 void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 {
-	if(VERBOSE>0) ttout << "Entering ApplyTranslationTable:" << endl;
 	/// This will get all of the low level objects and
 	/// generate detector hit objects from them, placing
 	/// them in the appropriate DANA factories.
+
+	if(VERBOSE>0) ttout << "Entering ApplyTranslationTable:" << endl;
 	
 	// Containers to hold all of the detector-specific "Digi"
 	// objects. Once filled, these will be copied to the
@@ -319,6 +320,40 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 			case BCAL     : vbcaltdc.push_back( MakeBCALTDCDigiHit(chaninfo.bcal,      hit) ); break;
 			case FDC_WIRES: vfdcwire.push_back( MakeFDCWireDigiHit(chaninfo.fdc_wires, hit) ); break;
 			case SC       : vsctdc.push_back( MakeSCTDCDigiHit(chaninfo.sc,      hit) ); break;
+
+			default:  	
+			    if(VERBOSE>4) ttout << "       - Don't know how to make DigiHit objects for this detector type!" << endl;
+			    break;
+		}
+	}
+
+	// DCAEN1290TDCHit
+	vector<const DCAEN1290TDCHit*> caen1290tdchits;
+	loop->Get(caen1290tdchits);
+	if(VERBOSE>2) ttout << "  Number DCAEN1290TDCHit objects: " << caen1290tdchits.size() << endl;
+	for(uint32_t i=0; i<caen1290tdchits.size(); i++){
+		const DCAEN1290TDCHit *hit = caen1290tdchits[i];
+
+		// Apply optional rocid translation
+		uint32_t rocid = hit->rocid;
+		map<uint32_t, uint32_t>::iterator rocid_iter = rocid_map.find(rocid);
+		if(rocid_iter != rocid_map.end()) rocid = rocid_iter->second;
+
+		if(VERBOSE>4) ttout << "    Looking for rocid:" << rocid <<" slot:" << hit->slot << " chan:" << hit->channel << endl;
+		
+		// Create crate,slot,channel index and find entry in Translation table.
+		// If none is found, then just quietly skip this hit.
+		csc_t csc = {hit->rocid, hit->slot, hit->channel};
+		map<csc_t, DChannelInfo>::const_iterator iter = TT.find(csc);
+		if(iter == TT.end()) {
+		    if(VERBOSE>6) ttout << "     - Didn't find it" << endl;
+		    continue;
+		}
+		const DChannelInfo &chaninfo = iter->second;
+		if(VERBOSE>6) ttout << "     - Found entry for: " << DetectorName(chaninfo.det_sys) << endl;
+		
+		// Create the appropriate hit type based on detector type
+		switch(chaninfo.det_sys){
 			case TOF      : vtoftdc.push_back( MakeTOFTDCDigiHit(chaninfo.tof,      hit) ); break;
 
 			default:  	
@@ -496,10 +531,10 @@ DSCTDCDigiHit*  DTranslationTable::MakeSCTDCDigiHit(const SCIndex_t &idx, const 
 //---------------------------------
 // MakeTOFTDCDigiHit
 //---------------------------------
-DTOFTDCDigiHit*  DTranslationTable::MakeTOFTDCDigiHit(const TOFIndex_t &idx, const DF1TDCHit *hit) const
+DTOFTDCDigiHit*  DTranslationTable::MakeTOFTDCDigiHit(const TOFIndex_t &idx, const DCAEN1290TDCHit *hit) const
 {
 	DTOFTDCDigiHit *h = new DTOFTDCDigiHit();
-	CopyDF1TDCInfo(h, hit);
+	CopyDCAEN1290TDCInfo(h, hit);
 
 	h->plane = idx.plane;
 	h->bar   = idx.bar;
