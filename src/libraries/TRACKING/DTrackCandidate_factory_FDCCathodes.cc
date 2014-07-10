@@ -382,6 +382,7 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double z,
   double dphi1=phi1-dphi_s;// was -
   double x=xc+rc*cos(dphi1);
   double y=yc+rc*sin(dphi1);
+  pos.SetXYZ(x,y,z);
 
   dphi1*=-1.;
   if (FactorForSenseOfRotation*q<0) dphi1+=M_PI;
