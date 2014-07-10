@@ -53,14 +53,11 @@ inline bool static DKalmanSIMDCDCHit_cmp(DKalmanSIMDCDCHit_t *a, DKalmanSIMDCDCH
 
 // Locate a position in array xx given x
 void DTrackFitterKalmanSIMD::locate(const double *xx,int n,double x,int *j){
-  int ju,jm,jl;
-  int ascnd;
-  
-  jl=-1;
-  ju=n;
-  ascnd=(xx[n-1]>=xx[0]);
+  int jl=-1;
+  int ju=n;
+  int ascnd=(xx[n-1]>=xx[0]);
   while(ju-jl>1){
-    jm=(ju+jl)>>1;
+    int jm=(ju+jl)>>1;
     if ( (x>=xx[jm])==ascnd)
       jl=jm;
     else
@@ -75,23 +72,20 @@ void DTrackFitterKalmanSIMD::locate(const double *xx,int n,double x,int *j){
 
 // Locate a position in vector xx given x
 unsigned int DTrackFitterKalmanSIMD::locate(vector<double>&xx,double x){
-  int ju,jm,jl;
-  int ascnd;
-
   int n=xx.size();
+  if (x==xx[0]) return 0;
+  else if (x==xx[n-1]) return n-2;
 
-  jl=-1;
-  ju=n;
-  ascnd=(xx[n-1]>=xx[0]);
+  int jl=-1;
+  int ju=n;
+  int ascnd=(xx[n-1]>=xx[0]);
   while(ju-jl>1){
-    jm=(ju+jl)>>1;
+    int jm=(ju+jl)>>1;
     if ( (x>=xx[jm])==ascnd)
       jl=jm;
     else
       ju=jm;
   }
-  if (x==xx[0]) return 0;
-  else if (x==xx[n-1]) return n-2;
   return jl;
 }
 
@@ -113,6 +107,10 @@ double DTrackFitterKalmanSIMD::cdc_drift_distance(double t,double B){
   if (t>0){
     double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* t;
     double tcorr=t-dtc;
+
+    if (tcorr>cdc_drift_table[cdc_drift_table.size()-1]){
+      return 0.78;
+    }
 
     unsigned int index=0;
     index=locate(cdc_drift_table,tcorr);
@@ -383,13 +381,12 @@ DTrackFitterKalmanSIMD::DTrackFitterKalmanSIMD(JEventLoop *loop):DTrackFitter(lo
 
   
   JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
-  typedef map<string,double>::iterator iter_double;
   vector< map<string, double> > tvals;
+  cdc_drift_table.clear();
   if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, double> &row = tvals[i];
-      iter_double iter = row.find("t");
-      cdc_drift_table.push_back(1000.*iter->second);
+      cdc_drift_table.push_back(1000.*row["t"]);
     }
   }
   else{
@@ -1548,6 +1545,11 @@ jerror_t DTrackFitterKalmanSIMD::PropagateForward(int length,int &i,
     }
   }
   double newz=z+ds*dz_ds; // new z position  
+ // Check if we are stepping through the CDC endplate
+  if (newz>endplate_z && z<endplate_z){
+    //_DBG_ << endl;
+    newz=endplate_z+EPS3;
+  }
 
   // Check if we are about to step to one of the wire planes
   done=false;
@@ -1699,6 +1701,7 @@ jerror_t DTrackFitterKalmanSIMD::SetReferenceTrajectory(DMatrix5x1 &S){
     // Temporory structure keeping state and trajectory information
     DKalmanForwardTrajectory_t temp;
     temp.h_id=0;
+    temp.num_hits=0;
     temp.B=0.;
     temp.K_rho_Z_over_A=temp.rho_Z_over_A=temp.LnI=0.;
     temp.Q=Zero5x5; 
