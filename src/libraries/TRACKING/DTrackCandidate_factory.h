@@ -50,16 +50,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
     //DEBUG_HISTS=true;
   };
   ~DTrackCandidate_factory(){};
-  
-  jerror_t GetPositionAndMomentum(const DFDCSegment *segment,
-				  DVector3 &pos, DVector3 &mom);
-  jerror_t GetPositionAndMomentum(DHelicalFit &fit,double Bz,
-				  const DVector3 &origin,
-				  DVector3 &pos,
-				  DVector3 &mom);
-  jerror_t GetPositionAndMomentum(DHelicalFit &fit,double Bz,DVector3 &pos,
-				  DVector3 &mom);
-  
+   
  protected:
   virtual jerror_t init(void);
   virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
@@ -77,6 +68,17 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   void ProjectHelixToZ(const double z,const double q,const DVector3 &mom,
 		       DVector3 &pos);
 
+  jerror_t GetPositionAndMomentum(const DFDCSegment *segment,
+				  DVector3 &pos, DVector3 &mom);
+  jerror_t GetPositionAndMomentum(DHelicalFit &fit,double Bz,
+				  const DVector3 &origin,
+				  DVector3 &pos,
+				  DVector3 &mom);
+  jerror_t GetPositionAndMomentum(DHelicalFit &fit,double Bz,DVector3 &pos,
+				  DVector3 &mom);
+  jerror_t GetPositionAndMomentum(double z,DHelicalFit &fit,
+				  double Bz,DVector3 &pos,DVector3 &mom);
+
   void UpdatePositionAndMomentum(DTrackCandidate *can,const DFDCPseudo *fdchit,
 				 DHelicalFit &fit,double Bz_avg,int axial_id);
 
@@ -93,7 +95,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
   bool MatchMethod3(const DTrackCandidate *cdccan,vector<int> &forward_matches,
 		    vector<unsigned int>&used_cdc_hits
 		    );  
-  void MatchMethod4(DTrackCandidate *srccan,vector<int> &forward_matches,
+  bool MatchMethod4(DTrackCandidate *srccan,vector<int> &forward_matches,
 		    int &num_fdc_cands_remaining);
   bool MatchMethod5(DTrackCandidate *can,  
 		    vector<const DCDCTrackHit *>&cdchits,

@@ -390,27 +390,15 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   }
 
   // If there are FDC candidates remaining, use the best track candidate 
-  // knowledge we have so far to do one final check for matches
-  if (num_fdc_cands_remaining>0){
-    for (unsigned int j=0;j<trackcandidates.size();j++){
-      if (DEBUG_LEVEL>0) _DBG_ << "Attempting FDC/CDC matching method #4..." <<endl; 
-      
-      // Match to a track that is already in the combined list.  This track 
-      // could have either FDC or CDC hits (or both) associated with it already.
-      MatchMethod4(trackcandidates[j],forward_matches,num_fdc_cands_remaining);   
-    } 
-  }
-
-  // Copy remaining FDC candidates to final candidate list
-  if (num_fdc_cands_remaining>0){
-    for (unsigned int i=0;i<forward_matches.size();i++){
-      if (forward_matches[i]==0){
-	num_fdc_cands_remaining--;
-	forward_matches[i]=1;
-
+  // knowledge we have so far to do one final check for matches.  Add them to 
+  // the final list even if this fails.
+  if (num_fdc_cands_remaining>0){ 
+    for (unsigned int j=0;j<fdctrackcandidates.size();j++){
+      if (num_fdc_cands_remaining<1) break;
+      if (forward_matches[j]==0){
 	DTrackCandidate *can = new DTrackCandidate;
-	const DTrackCandidate *fdccan = fdctrackcandidates[i];
-	
+	const DTrackCandidate *fdccan = fdctrackcandidates[j];
+
 	can->Ndof=fdccan->Ndof;
 	can->chisq=fdccan->chisq;
 	can->setMomentum(fdccan->momentum());
@@ -429,17 +417,16 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  }
 	}
 
-	// Try to match cdc hits that were not linked into track candidates
-	// with the fdc candidate
-	if (num_unmatched_cdcs>2 && segments[0]->package==0){
-	  if (DEBUG_LEVEL>0) _DBG_ "Matching FDC candidates to stray CDC hits" 
-			     <<endl;
-	  MatchMethod6(i,can,segments,used_cdc_hits,num_unmatched_cdcs,
-		       forward_matches,num_fdc_cands_remaining);
+	if (DEBUG_LEVEL>0) _DBG_ << "Attempting matching method #4..." <<endl; 
+	// Try to match to fdc candidates that have not already been matched
+	// to another track
+	if (MatchMethod4(can,forward_matches,num_fdc_cands_remaining)==true){
+	  forward_matches[j]=1;
+	  num_fdc_cands_remaining--;
 	}
-	
+
 	trackcandidates.push_back(can);
-      } // check if fdc candidate already matched...
+      }
     }
   }
   
@@ -1234,9 +1221,8 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
    return false;
  }
 
-// This method tries to match a candidate that is already in the final list 
-// of matched candidates to any additional outstanding fdc candidates
-void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan, 
+// This method tries to match unmatched fdc candidates 
+bool DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan, 
 					   vector<int> &forward_matches,
 					   int &num_fdc_cands_remaining){
   // Momentum of candidate to which we are attempting to match
@@ -1245,15 +1231,13 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
   // Get hits already linked to this candidate from associated objects
   vector<const DFDCPseudo *>fdchits;
   srccan->GetT(fdchits);
-  if (fdchits.size()==0) return;
-  vector<const DCDCTrackHit *>cdchits;
-  srccan->GetT(cdchits);
-	  
-  sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
+  if (fdchits.size()==0) return false;
+
   sort(fdchits.begin(), fdchits.end(), FDCHitSortByLayerincreasing);
   
-  unsigned int pack1=(fdchits[fdchits.size()-1]->wire->layer-1)/6;
-
+  unsigned int pack1_last=(fdchits[fdchits.size()-1]->wire->layer-1)/6;
+  unsigned int pack1_first=(fdchits[0]->wire->layer-1)/6;
+  
   for (unsigned int k=0;k<fdctrackcandidates.size();k++){
     if (num_fdc_cands_remaining==0) break;
     if (forward_matches[k]==0){
@@ -1267,8 +1251,10 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 	
 	const DFDCPseudo *firsthit=segments[0]->hits[0];
-	unsigned int pack2=segments[0]->package;
-	if (pack2>pack1){
+	unsigned int pack2_first=segments[0]->package;
+	unsigned int pack2_last=segments[segments.size()-1]->package;
+	
+	if (pack2_first>pack1_last || pack2_last<pack1_first){
 	  // Momentum and position vectors for the input candidate
 	  DVector3 mom=srccan->momentum();
 	  DVector3 pos=srccan->position();
@@ -1285,7 +1271,7 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	  double d2=dx*dx+dy*dy;
 	  double variance=1.;
 	  double prob=TMath::Prob(d2/variance,1);
-	  
+
 	  unsigned int num_match=(prob>0.01)?1:0;
 	  
 	  // Try to match unmatched fdc candidates
@@ -1301,11 +1287,17 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	    
 	    double variance=1.0;
 	    double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-	  if (prob>0.01) num_match++;
+	    if (prob>0.01) num_match++;
 	  } 
 	  if (num_match>=3){
 	    forward_matches[k]=1;
 	    
+	    // Get any CDC hits matched with the track
+	    vector<const DCDCTrackHit *>cdchits;
+	    srccan->GetT(cdchits);
+	    
+	    sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
+
 	    // Add extra fdc hits as associated objects
 	    for (unsigned int m=0;m<segments.size();m++){
 	      for (unsigned int n=0;n<segments[m]->hits.size();n++){
@@ -1319,13 +1311,6 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	    
 	    // Redo helical fit with all available hits
 	    DHelicalFit fit; 
-	    for (unsigned int m=0;m<cdchits.size();m++){
-	      if (cdchits[m]->is_stereo==false){
-		double cov=0.213; //guess=1.6*1.6/12 (cell size)
-		const DVector3 origin=cdchits[m]->wire->origin;
-		fit.AddHitXYZ(origin.x(),origin.y(),origin.z(),cov,cov,0.,true);
-	      }
-	    }
 	    for (unsigned int m=0;m<fdchits.size();m++){
 	      fit.AddHit(fdchits[m]);
 	      
@@ -1359,26 +1344,33 @@ void DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan,
 	      double theta=fdccan->momentum().Theta();  
 	      fit.tanl=tan(M_PI_2-theta);
 	      fit.z_vertex=srccan->position().Z();
-	      
+
 	      // Redo line fit
 	      fit.FitLineRiemann();
 	      
 	      // Guess charge from fit
 	      fit.h=GetSenseOfRotation(fit,firsthit,srccan->position());
 	      srccan->setCharge(FactorForSenseOfRotation*fit.h);
+
+	      // put z position just upstream of the first hit in z
+	      const DHFHit_t *myhit=fit.GetHits()[0];
+	      pos.SetXYZ(myhit->x,myhit->y,myhit->z);
+	      GetPositionAndMomentum(myhit->z-1.,fit,Bz_avg,pos,mom);
 	      
-	      // Position and momentum just outside of start counter
-	      int cdc_id=(cdchits.size()>0)?0:-1;
-	      UpdatePositionAndMomentum(srccan,fdchits[0],fit,Bz_avg,cdc_id);
-	      
+	      srccan->setPosition(pos);
+	      srccan->setMomentum(mom);
+  
 	      num_fdc_cands_remaining--;
 	      if (DEBUG_LEVEL>0) _DBG_ << "Found a match using method #4" <<endl;
+	      return true;
 	    } // circle fit
 	  } // got a match?
 	} // is the first package in the new fdc candidate downstream of the last?
       } // momentum check
     } // check that we have not already matched this fdc candidate
   } // loop over fdc track candidates
+
+  return false;
 }
 
 // Matching method to try to deal with CDC candidates that do not point 
@@ -1743,4 +1735,35 @@ void DTrackCandidate_factory::UpdatePositionAndMomentum(DTrackCandidate *can,
       can->setPosition(pos);
     }
   }
+}
+
+// Routine to return momentum and position given the helical parameters and the
+// z-component of the magnetic field
+jerror_t 
+DTrackCandidate_factory::GetPositionAndMomentum(double z,DHelicalFit &fit,
+						double Bz,DVector3 &pos,
+						DVector3 &mom){
+  double xc=fit.x0;
+  double yc=fit.y0;
+  double rc=fit.r0;
+  // Position
+  double phi1=atan2(pos.y()-yc,pos.x()-xc);
+  double q_over_rc_tanl=FactorForSenseOfRotation*fit.h/(rc*fit.tanl);
+  double dphi_s=(pos.z()-z)*q_over_rc_tanl;
+  double dphi1=phi1-dphi_s;// was -
+  double x=xc+rc*cos(dphi1);
+  double y=yc+rc*sin(dphi1);
+  pos.SetXYZ(x,y,z);
+
+  dphi1*=-1.;
+  if (fit.h<0) dphi1+=M_PI;
+
+  // Momentum 
+  double pt=0.003*fabs(Bz)*rc; 
+  double px=pt*sin(dphi1);
+  double py=pt*cos(dphi1);
+  double pz=pt*fit.tanl;
+  mom.SetXYZ(px,py,pz);
+
+  return NOERROR;
 }
