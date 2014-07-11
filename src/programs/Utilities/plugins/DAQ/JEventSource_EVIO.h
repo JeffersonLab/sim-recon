@@ -177,6 +177,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool  EMULATE_PULSE_INTEGRAL_MODE;
 		int32_t  EMULATE_SPARSIFICATION_THRESHOLD;
 		string MODTYPE_MAP_FILENAME;
+		bool ENABLE_DISENTANGLING;
 
 		// Utility class with multiple roles:
 		//

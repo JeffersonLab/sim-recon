@@ -92,6 +92,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	EMULATE_PULSE_INTEGRAL_MODE = true;
 	EMULATE_SPARSIFICATION_THRESHOLD = -100000; // =-100000 is equivalent to no threshold
 	MODTYPE_MAP_FILENAME = "modtype.map";
+	ENABLE_DISENTANGLING = true;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -106,6 +107,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_SPARSIFICATION_THRESHOLD", EMULATE_SPARSIFICATION_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then this is used to apply a cut on the non-pedestal-subtracted integral to determine if a Df250PulseIntegral is produced or not.");
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
+		gPARMS->SetDefaultParameter("EVIO:ENABLE_DISENTANGLING", ENABLE_DISENTANGLING, "Enable/disable disentangling of multi-block events. Enabled by default. Set to 0 to disable.");
 	}
 	
 	// Try to open the file.
@@ -563,7 +565,8 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 					//skipped_parsing = false;	
 					ParseEVIOEvent(evt, my_full_events);
 				}catch(JException &jexception){
-					jerr << jexception.what() << endl;
+					jerr << "Exception thrown from ParseEVIOEvent!" << endl;
+					jerr << jexception.toString() << endl;
 				}
 			}
 
@@ -1366,7 +1369,9 @@ int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 //----------------
 void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2)
 {
-	if(VERBOSE>5) evioout << "      Entering MergeObjLists().  &events1=" << hex << &events1 << "  &events2=" << &events2 << dec << endl;
+	if(VERBOSE>5) evioout << "      Entering MergeObjLists().  "
+								<< " &events1=" << hex << &events1 << dec << "(" << events1.size() << " events) "
+								<< " &events2=" << hex << &events2 << dec << "(" << events2.size() << " events) " << endl;
 
 	/// Merge the events referenced in events2 into the events1 list.
 	///
@@ -1392,6 +1397,7 @@ void JEventSource_EVIO::MergeObjLists(list<ObjList*> &events1, list<ObjList*> &e
 	unsigned int Nevents2 = events2.size();
 	if(Nevents1>0 && Nevents2>0){
 		if(Nevents1 != Nevents2){
+			evioout << "Mismatch of number of events passed to MergeObjLists. Throwing exception." << endl;
 			throw JException("Number of events in JEventSource_EVIO::MergeObjLists do not match!");
 		}
 	}
@@ -1583,7 +1589,10 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		}
 
 		// Merge this bank's partial events into the full events
-		if(bank_parsed) MergeObjLists(full_events, tmp_events);
+		if(bank_parsed){
+			if(VERBOSE>5) evioout << "     Merging objects in ParseEVIOEvent" << endl;
+			MergeObjLists(full_events, tmp_events);
+		}
 	}
 	
 	// Set the run number for all events
@@ -1672,7 +1681,10 @@ void JEventSource_EVIO::ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr
 		
 		if(VERBOSE>9) evioout << "Finished parsing (last word: " << hex << iptr[-1] << dec << ")" << endl;
 
-		if(module_parsed) MergeObjLists(events, tmp_events);
+		if(module_parsed){
+			if(VERBOSE>5) evioout << "     Merging objects in ParseJLabModuleData" << endl;
+			MergeObjLists(events, tmp_events);
+		}
 	}
 
 	if(VERBOSE>5) evioout << "     Leaving ParseJLabModuleData()" << endl;
@@ -1739,8 +1751,13 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				//slot_event_header = (*iptr>>22) & 0x1F;
 				itrigger = (*iptr>>0) & 0x3FFFFF;
 				if( (itrigger!=last_itrigger) || (objs==NULL) ){
-					if(objs) events.push_back(objs);
-					objs = new ObjList;
+					if(ENABLE_DISENTANGLING){
+						if(objs){
+							events.push_back(objs);
+							objs = NULL;
+						}
+					}
+					if(!objs) objs = new ObjList;
 					last_itrigger = itrigger;
 				}
 				break;
@@ -2031,8 +2048,15 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 			case 2: // Event Header
 				//slot_event_header = (*iptr>>22) & 0x1F;
 				itrigger = (*iptr>>0) & 0x3FFFFF;
+				if(VERBOSE>7) evioout << "      FADC125 Event Header: itrigger="<<itrigger<<" (objs=0x"<<hex<<objs<<dec<<", last_itrigger="<<last_itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<endl;
 				if( (itrigger!=last_itrigger) || (objs==NULL) ){
-					if(objs) events.push_back(objs);
+					if(ENABLE_DISENTANGLING){
+						if(objs){
+							events.push_back(objs);
+							objs = NULL;
+						}
+					}
+					if(!objs) objs = new ObjList;
 					objs = new ObjList;
 					last_itrigger = itrigger;
 				}
@@ -2045,10 +2069,12 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				}else{
 					iptr--;
 				}
+				if(VERBOSE>7) evioout << "      FADC125 Trigger Time (t="<<t<<")"<<endl;
 				if(objs) objs->hit_objs.push_back(new Df125TriggerTime(rocid, slot, itrigger, t));
 				break;
 			case 4: // Window Raw Data
 				// iptr passed by reference and so will be updated automatically
+				if(VERBOSE>7) evioout << "      FADC125 Window Raw Data"<<endl;
 				MakeDf125WindowRawData(objs, rocid, slot, itrigger, iptr);
 				break;
 			case 7: // Pulse Integral
@@ -2308,8 +2334,13 @@ void JEventSource_EVIO::ParseF1TDCBank_style1(int32_t rocid, const uint32_t* &ip
 			
 			// Check if we are at boundary of a new event
 			if(objs==NULL || ievent!=last_ievent){
-				if(objs != NULL) events.push_back(objs);
-				objs = new ObjList;
+				if(ENABLE_DISENTANGLING){
+					if(objs){
+						events.push_back(objs);
+						objs = NULL;
+					}
+				}
+				if(!objs) objs = new ObjList;
 			}
 			
 		}else{
@@ -2406,8 +2437,11 @@ void JEventSource_EVIO::ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &ip
 		}
 			
 		// Create a new object list (i.e. new event)
-		if(objs)events.push_back(objs);
-		objs = new ObjList();
+		if(objs!=NULL && ENABLE_DISENTANGLING){
+			events.push_back(objs);
+			objs = NULL;
+		}
+		if(!objs) objs = new ObjList;
 		
 		if(objs) objs->hit_objs.push_back(new DF1TDCTriggerTime(rocid, slot_block_header, itrigger, trig_time));
 			
@@ -2605,9 +2639,11 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 					if(iter != objmap.end()){
 						objs = iter->second;
 					}else{
-						objs = new ObjList();
-						objmap[event_id] = objs;
-						event_id_order.push_back(event_id);
+						if(objs==NULL || ENABLE_DISENTANGLING){
+							objs = new ObjList();
+							objmap[event_id] = objs;
+							event_id_order.push_back(event_id);
+						}
 					}
 					last_event_id = event_id;
 				}
