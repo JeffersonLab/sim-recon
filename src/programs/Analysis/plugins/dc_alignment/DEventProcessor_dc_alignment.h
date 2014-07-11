@@ -404,7 +404,7 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   
   //sigma=0.08/(t+1.)+0.03;
 
-  sigma=0.1;
+  sigma=0.05;
   
   return sigma*sigma;
 }

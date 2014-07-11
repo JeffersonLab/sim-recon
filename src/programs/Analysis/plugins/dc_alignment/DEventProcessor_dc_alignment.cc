@@ -40,23 +40,20 @@ bool bcal_cmp(const bcal_match_t &a,const bcal_match_t &b){
 
 // Locate a position in vector xx given x
 unsigned int DEventProcessor_dc_alignment::locate(vector<double>&xx,double x){
-  int ju,jm,jl;
-  int ascnd;
-
   int n=xx.size();
+  if (x==xx[0]) return 0;
+  else if (x==xx[n-1]) return n-2;
 
-  jl=-1;
-  ju=n;
-  ascnd=(xx[n-1]>=xx[0]);
+  int jl=-1;
+  int ju=n;
+  int ascnd=(xx[n-1]>=xx[0]);
   while(ju-jl>1){
-    jm=(ju+jl)>>1;
+    int jm=(ju+jl)>>1;
     if ( (x>=xx[jm])==ascnd)
       jl=jm;
     else
       ju=jm;
-  }
-  if (x==xx[0]) return 0;
-  else if (x==xx[n-1]) return n-2;
+  } 
   return jl;
 }
 
@@ -64,6 +61,7 @@ unsigned int DEventProcessor_dc_alignment::locate(vector<double>&xx,double x){
 // Convert time to distance for the cdc
 double DEventProcessor_dc_alignment::cdc_drift_distance(double t){
   double d=0.;
+  if (t>cdc_drift_table[cdc_drift_table.size()-1]) return 0.78;
   if (t>0){
     unsigned int index=0;
     index=locate(cdc_drift_table,t);
@@ -78,6 +76,7 @@ double DEventProcessor_dc_alignment::cdc_drift_distance(double t){
 // Interpolate on a table to convert time to distance for the fdc
 double DEventProcessor_dc_alignment::fdc_drift_distance(double t){
   double d=0.;
+  if (t>fdc_drift_table[fdc_drift_table.size()-1]) return 0.5;
   if (t>0){
     unsigned int index=0;
     index=locate(fdc_drift_table,t);
@@ -256,7 +255,7 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
 {	
   DApplication* dapp=dynamic_cast<DApplication*>(loop->GetJApplication());
   dgeom  = dapp->GetDGeometry(runnumber);
-  dgeom->GetFDCWires(fdcwires);
+  //dgeom->GetFDCWires(fdcwires);
 
   // Get the position of the CDC downstream endplate from DGeometry
   double endplate_dz,endplate_rmin,endplate_rmax;
@@ -265,13 +264,12 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
 
    
   JCalibration *jcalib = dapp->GetJCalibration((loop->GetJEvent()).GetRunNumber());
-  typedef map<string,double>::iterator iter_double;
   vector< map<string, double> > tvals;
+  cdc_drift_table.clear();
   if (jcalib->Get("CDC/cdc_drift_table", tvals)==false){    
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, double> &row = tvals[i];
-      iter_double iter = row.find("t");
-      cdc_drift_table.push_back(1000.*iter->second);
+      cdc_drift_table.push_back(1000.*row["t"]);
     }
   }
   else{
@@ -284,11 +282,11 @@ jerror_t DEventProcessor_dc_alignment::brun(JEventLoop *loop, int runnumber)
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
 
+  fdc_drift_table.clear();
   if (jcalib->Get("FDC/fdc_drift_table", tvals)==false){    
     for(unsigned int i=0; i<tvals.size(); i++){
       map<string, double> &row = tvals[i];
-      iter_double iter = row.find("t");
-      fdc_drift_table.push_back(1000.*iter->second);
+      fdc_drift_table.push_back(1000.*row["t"]);
     }
   }
   else{
@@ -783,16 +781,16 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	  double prob=TMath::Prob(chi2_old,ndof_old);
 	  Hcdc_prob->Fill(prob);
 
-	  if (prob>0.001){
+	  PlotLines(trajectory);
+
+	  if (prob>1e-6)
+	    {
 	    // run the smoother (opposite direction to filter)
 	    vector<cdc_update_t>smoothed_updates(updates.size());
 	    for (unsigned int k=0;k<smoothed_updates.size();k++){
 	      smoothed_updates[k].used_in_fit=false;
 	    }
 	    Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
-
-	    PlotLines(trajectory);
-
 
 	    for (unsigned int k=0;k<smoothed_updates.size();k++){
 	      if (smoothed_updates[k].used_in_fit==true){
@@ -809,7 +807,7 @@ DEventProcessor_dc_alignment::DoFilter(DMatrix4x1 &S,
 	      }
 	    }
 	    
-	    if (RUN_BENCHMARK==false){
+	    if (prob>0.001 && RUN_BENCHMARK==false){
 	      FindOffsets(hits,smoothed_updates);
 	    	
 	      if (FILL_TREE){
