@@ -2049,17 +2049,14 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				//slot_event_header = (*iptr>>22) & 0x1F;
 				itrigger = (*iptr>>0) & 0x3FFFFF;
 				if(VERBOSE>7) evioout << "      FADC125 Event Header: itrigger="<<itrigger<<" (objs=0x"<<hex<<objs<<dec<<", last_itrigger="<<last_itrigger<<", rocid="<<rocid<<", slot="<<slot<<")" <<endl;
-				if( (itrigger!=last_itrigger) || (objs==NULL) ){
-					if(ENABLE_DISENTANGLING){
-						if(objs){
-							events.push_back(objs);
-							objs = NULL;
-						}
+				if( (itrigger!=last_itrigger) && !ENABLE_DISENTANGLING ){
+					if(objs){
+						events.push_back(objs);
+						objs = NULL;
 					}
-					if(!objs) objs = new ObjList;
-					objs = new ObjList;
 					last_itrigger = itrigger;
 				}
+				if(!objs) objs = new ObjList;
 				break;
 			case 3: // Trigger Time
 				t = ((*iptr)&0xFFFFFF)<<0;
@@ -2145,7 +2142,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		LinkAssociationsWithPulseNumber(vprd, vpt);
 		LinkAssociationsWithPulseNumber(vpt, vpi);
 				
-		// Connect Df250TriggerTime to everything
+		// Connect Df125TriggerTime to everything
 		LinkAssociationsModuleOnly(vtrigt, vwrd);
 		LinkAssociationsModuleOnly(vtrigt, vprd);
 		LinkAssociationsModuleOnly(vtrigt, vpi);
