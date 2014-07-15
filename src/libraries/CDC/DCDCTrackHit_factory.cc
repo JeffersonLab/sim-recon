@@ -71,6 +71,17 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			cdc_drift_table.push_back(1000.*iter->second);
 		}
 	}
+	if(cdc_drift_table.empty()){
+		jerr << endl;
+		jerr << " No values found for \"CDC/cdc_drift_table\"!" <<endl;
+		jerr << endl;
+		jerr << " This probably means you'r using an old calibration DB." << endl;
+		jerr << " Check your JANA_CALIB_URL environment variable." << endl;
+		jerr << " (This message printed from DCDCTrackHit_factory::brun())" << endl;
+		exit(-1);
+	}
+	cdc_drift_table_min = cdc_drift_table[0];
+	cdc_drift_table_max = cdc_drift_table[cdc_drift_table.size()-1];
 
   return NOERROR;
 }
@@ -139,7 +150,13 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double dtc =(CDC_DRIFT_BSCALE_PAR1 + CDC_DRIFT_BSCALE_PAR2 * B)* hit->tdrift;
     	double tcorr = hit->tdrift - dtc;
 		unsigned int index=0;
-		index=locate(cdc_drift_table,tcorr);
+		if(tcorr < cdc_drift_table_min){
+			index = 0;
+		}else if (tcorr >= cdc_drift_table_max){
+			index = cdc_drift_table.size()-1;
+		}else{
+			index=locate(cdc_drift_table,tcorr);
+		}
 		double dt=cdc_drift_table[index+1]-cdc_drift_table[index];
 		double frac=(tcorr-cdc_drift_table[index])/dt;
 		hit->dist = 0.01*(double(index)+frac);  // the actual drift distance is calculated later, use a placeholder value here

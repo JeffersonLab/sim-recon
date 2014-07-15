@@ -42,6 +42,7 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 		double CDC_DRIFT_BSCALE_PAR1;
 		double CDC_DRIFT_BSCALE_PAR2;
 		vector<double> cdc_drift_table;
+		double cdc_drift_table_min, cdc_drift_table_max;
 };
 
 #endif // _DCDCTrackHit_factory_
