@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <cmath>
 using namespace std;
-#ifdef USE_EVIO
+#ifdef HAVE_EVIO
 #include <evioFileChannel.hxx>
 #include <evioUtil.hxx>
 using namespace evio;
@@ -841,10 +841,9 @@ double DMagneticFieldMapFineMesh::GetBz(double x, double y, double z) const{
   return mBfine[indr][indz].Bz;
 }
 
-
 // Read a fine-mesh B-field map from an evio file
 void DMagneticFieldMapFineMesh::GetFineMeshMap(void){ 
-#ifdef USE_EVIO
+#ifdef HAVE_EVIO
   string evioFileName = "finemesh.evio";
   struct stat stFileInfo;
   int intStat = stat(evioFileName.c_str(),&stFileInfo);
@@ -856,7 +855,7 @@ void DMagneticFieldMapFineMesh::GetFineMeshMap(void){
     cout << "Fine-mesh evio file does not exist." <<endl;
     cout << "Constructing the fine-mesh B-field map..." << endl;
     GenerateFineMesh();
-#ifdef USE_EVIO
+#ifdef HAVE_EVIO
     WriteEvioFile(evioFileName);
   }
 #endif
@@ -894,7 +893,7 @@ void DMagneticFieldMapFineMesh::GenerateFineMesh(void){
   }
 }
 
-#ifdef USE_EVIO
+#ifdef HAVE_EVIO
 void DMagneticFieldMapFineMesh::WriteEvioFile(string evioFileName){
   cout << "Writing fine-mesh B-field data to " << evioFileName << "..." <<endl;
 
