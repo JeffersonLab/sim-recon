@@ -56,10 +56,9 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 
   jerror_t GetPositionAndMomentum(const DFDCSegment *segment);
   jerror_t GetPositionAndMomentum(DFDCSegment *segment,
-						DVector3 &pos, DVector3 &mom);
-  jerror_t GetPositionAndMomentum(double z,DVector3 &pos,DVector3 &mom);
-  jerror_t GetPositionAndMomentum(double zmin,
-				  vector<const DFDCSegment *>segments,
+				  DVector3 &pos, DVector3 &mom);
+  jerror_t GetPositionAndMomentum(DVector3 &pos,DVector3 &mom);
+  jerror_t GetPositionAndMomentum(vector<const DFDCSegment *>segments,
 				  DVector3 &pos,DVector3 &mom);
   
   double GetCharge(const DVector3 &pos,const DFDCSegment *segment);
@@ -77,7 +76,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 
   bool DEBUG_HISTS,USE_FDC,APPLY_MOMENTUM_CORRECTION;
   double p_factor1,p_factor2;
-  TH2F *match_dist_fdc;
+  TH2F *match_dist_fdc,*match_center_dist2;
   TH1F *Hcircle_fit_prob;
   vector<double>z_wires;
   double endplate_z;
@@ -98,9 +97,9 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 };
 
 inline double DTrackCandidate_factory_FDCCathodes::Match(double p){
-  double cut=1.5+7./p;
-  if (cut>9.0) cut=9.0;
-  else if (cut<4.) cut=4.0;
+  double cut=-1.0+13.5/p;
+  if (cut>16.0) cut=16.0;
+  if (cut<1.) cut=1.0;
   return cut;
 }
 

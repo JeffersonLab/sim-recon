@@ -21,7 +21,7 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_VAR 1.0 // cm^2
+#define BEAM_VAR 0.0208 // cm^2
 #define HIT_CHI2_CUT 10.0
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
@@ -39,11 +39,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
     _DBG_<< "FDC geometry not available!" <<endl;
     USE_FDC=false;
   }
-
+  /*
   zpack[0]=z_wires[0]-1.;
   zpack[1]=z_wires[6]-1.;
   zpack[2]=z_wires[12]-1.;
   zpack[3]=z_wires[18]-1.;
+  */
 
   // Get the position of the CDC downstream endplate from DGeometry
   double endplate_dz,endplate_rmin,endplate_rmax;
@@ -71,10 +72,18 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   if(DEBUG_HISTS) {
     dapp->Lock();
     match_dist_fdc=(TH2F*)gROOT->FindObject("match_dist_fdc");
-    if (!match_dist_fdc) 
+    if (!match_dist_fdc){ 
       match_dist_fdc=new TH2F("match_dist_fdc",
-		  "Matching distance for connecting FDC segments",
+			      "Matching distance for connecting FDC segments",
 			      50,0.,7,500,0,100.);
+    }
+    match_center_dist2=(TH2F*)gROOT->FindObject("match_center_dist2");
+    if (!match_center_dist2){
+      match_center_dist2=new TH2F("match_center_dist2","matching distance squared between two circle centers vs p",50,0,1.5,100,0,100);
+      match_center_dist2->SetXTitle("p [GeV/c]");
+      match_center_dist2->SetYTitle("(#Deltad)^{2} [cm^{2}]");
+    }
+    
     dapp->Unlock();
   }
     
@@ -189,8 +198,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	// Get the momentum and position at a specific z position
 	DVector3 mom, pos(segment_hit->xy.X(),segment_hit->xy.Y(),
 			  segment_hit->wire->origin.z()); 
-	//put z position just upstream of this package
-	GetPositionAndMomentum(zpack[segment->package],pos,mom);
+	//Get position and momentum just upstream of this hit
+	GetPositionAndMomentum(pos,mom);
 	
 	// Empirical correction to the momentum 
 	if (APPLY_MOMENTUM_CORRECTION){
@@ -244,7 +253,8 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
   // Get the position and momentum at the exit of the package for the 
   // current segment
   GetPositionAndMomentum(segment);
-
+  double my_p=p;
+  
   // Match to the next package
   double doca2_min=1e6,doca2;
   for (unsigned int j=0;j<package.size();j++){
@@ -278,6 +288,30 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(DFDCSegment *seg
 	  match_id=i;
 	}
       }       
+    }
+  }
+
+  
+  if (match==NULL){
+    // Match by centers of circles
+    double circle_center_diff2_min=1e6;
+    for (unsigned int j=0;j<package.size();j++){
+      DFDCSegment *segment2=package[j];
+      
+      double dx=segment->xc-segment2->xc;
+      double dy=segment->yc-segment2->yc;
+      double circle_center_diff2=dx*dx+dy*dy;
+		
+      if (circle_center_diff2<circle_center_diff2_min){
+        circle_center_diff2_min=circle_center_diff2;
+	if (circle_center_diff2_min<4.0){
+	  match=segment2;
+	  match_id=j;
+	}
+      }
+    }
+    if (DEBUG_HISTS){
+      match_center_dist2->Fill(my_p,circle_center_diff2_min);
     }
   }
     
@@ -372,16 +406,17 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
 // Routine to return momentum and position given the helical parameters and the
 // z-component of the magnetic field
 jerror_t 
-DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double z,
-							    DVector3 &pos,
+DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DVector3 &pos,
 							    DVector3 &mom){
   // Position
   double phi1=atan2(pos.y()-yc,pos.x()-xc);
   double q_over_rc_tanl=q/(rc*tanl);
-  double dphi_s=(pos.z()-z)*q_over_rc_tanl;
+  double dz=1.;
+  double dphi_s=dz*q_over_rc_tanl;
   double dphi1=phi1-dphi_s;// was -
   double x=xc+rc*cos(dphi1);
   double y=yc+rc*sin(dphi1);
+  double z=pos.z()-dz;
   pos.SetXYZ(x,y,z);
 
   dphi1*=-1.;
@@ -404,8 +439,8 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double z,
 // Routine to return momentum and position given the helical parameters and the
 // z-component of the magnetic field
 jerror_t 
-DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double zmin,
-							    vector<const DFDCSegment *>segments,
+DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(
+				        vector<const DFDCSegment *>segments,
 							    DVector3 &pos,
 							    DVector3 &mom){
   // Hit in the most upstream package
@@ -413,11 +448,13 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double zmin,
   double zhit=hit->wire->origin.z();
   double xhit=hit->xy.X();
   double yhit=hit->xy.Y();
-
+  
   // Position
+  double dz=1.;
+  double zmin=zhit-dz;
   double phi1=atan2(yhit-yc,xhit-xc);
   double q_over_rc_tanl=q/(rc*tanl);
-  double dphi_s=(zhit-zmin)*q_over_rc_tanl;
+  double dphi_s=dz*q_over_rc_tanl;
   double dphi1=phi1-dphi_s;// was -
   double x=xc+rc*cos(dphi1);
   double y=yc+rc*sin(dphi1);
@@ -433,7 +470,7 @@ DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(double zmin,
   double zmax=segments[num_segments-1]->hits[0]->wire->origin.z();
   unsigned int num_samples=20*num_segments;
   double one_over_denom=1./double(num_samples);
-  double dz=(zmax-zmin)*one_over_denom;
+  dz=(zmax-zmin)*one_over_denom;
   for (unsigned int i=0;i<num_samples;i++){
     double my_dphi=phi1+(z-zmin)*q_over_rc_tanl;
     x=xc+rc*cos(my_dphi);
@@ -523,47 +560,6 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
 	  packages[pack4].erase(packages[pack4].begin()+match_id);
 	}
       }
-      // No match in package 3, try for 4
-      else if(pack4_exists && packages[pack4].size()>0 && 
-	      (match4=GetTrackMatch(match2,packages[pack4],match_id))!=NULL){
-
-	// Insert the segment from package 4 into the track 
-	mysegments.push_back(match4);
-
-	// remove the segment from the list 
-	packages[pack4].erase(packages[pack4].begin()+match_id);
-      }
-    }
-    // No match in package 2, try for 3
-    else if (pack3_exists && packages[pack3].size()>0 && 
-	     (match3=GetTrackMatch(segment,packages[pack3],match_id))!=NULL){
-
-      // Insert the segment from package 3 into the track
-      mysegments.push_back(match3);
-
-      // remove the segment from the list 
-      packages[pack3].erase(packages[pack3].begin()+match_id);
-      
-      // Try matching to package 4
-      if (pack4_exists && packages[pack4].size()>0 && 
-	  (match4=GetTrackMatch(match3,packages[pack4],match_id))!=NULL){
-
-	// Insert the segment from package 4 into the track 
-	mysegments.push_back(match4);
-
-	// remove the segment from the list 
-	packages[pack4].erase(packages[pack4].begin()+match_id);
-      }
-    }    
-    // No match to package 2 or 3, try 4
-    else if (pack4_exists && packages[pack4].size()>0 && 
-	     (match4=GetTrackMatch(segment,packages[pack4], match_id))!=NULL){
-
-      // Insert the segment from package 4 into the track 
-      mysegments.push_back(match4);
-
-      // remove the segment from the list 
-      packages[pack4].erase(packages[pack4].begin()+match_id);
     }
        
     // If we found a match, redo the helical fit with all the hits
@@ -622,10 +618,9 @@ void DTrackCandidate_factory_FDCCathodes::LinkSegments(unsigned int pack1,
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
 
-      // Get the momentum and position at a specific z position
+      // Get the momentum and position just upstream of first hit
       DVector3 mom,pos;
-      // put z position just upstream of this package
-      GetPositionAndMomentum(zpack[segment->package],mysegments,pos,mom);
+      GetPositionAndMomentum(mysegments,pos,mom);
     	
       // Empirical correction to the momentum
       if (APPLY_MOMENTUM_CORRECTION){
@@ -730,11 +725,8 @@ bool DTrackCandidate_factory_FDCCathodes::LinkStraySegment(const DFDCSegment *se
 	  xc=fit.x0;
 	  yc=fit.y0;
 	  q=FactorForSenseOfRotation*fit.h;
-	  
-	  // One of the hits in the first package
-	  int pack=segments[0]->package;
-	  // put z position just upstream of this package
-	  GetPositionAndMomentum(zpack[pack],segments,pos,mom);
+	  // Get position and momentum just upstream of first hit
+	  GetPositionAndMomentum(segments,pos,mom);
 
 	  // Empirical correction to the momentum
 	  if (APPLY_MOMENTUM_CORRECTION){
