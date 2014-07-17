@@ -664,12 +664,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
 ///   Note: this implementation assumes that the error in the z-position is 
 /// negligible; practically speaking, this means it should only be used for FDC
 /// hits...
-  // Get covariance matrix
   size_t num_hits=hits.size();
-  DMatrix CR(num_hits,num_hits);
-  for (unsigned int i=0;i<num_hits;i++){
-    CR(i,i)=hits[i]->covr;
-  }
  
   // Fill vector of intersection points 
   double denom= N[0]*N[0]+N[1]*N[1];
@@ -693,6 +688,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
     // Store projection data in a temporary structure
     DHFProjection_t temp_proj;
     temp_proj.z=hits[m]->z;
+    temp_proj.covR=hits[m]->covr;
     
     // Choose sign of square root based on proximity to actual measurements
     double deltax=N[1]*temp;
@@ -729,16 +725,13 @@ jerror_t DHelicalFit::FitLineRiemann(){
     z_last=z;
     double chord=(projections[k].xy-old_proj).Mod();
     ratio=chord/two_r0;
+
     // Make sure the argument for the arcsin does not go out of range...
     double ds=(ratio>1)? two_r0*M_PI_2 : two_r0*asin(ratio);
     sperp=sperp_old+ds;
     z=projections[k].z;
-      
-    // Estimate error in arc length assuming 10% error in r0
-    double ds_from_r0=0.1*sperp;
-    var_s=ds_from_r0*ds_from_r0;
     
-    double weight=1./(CR(k,k)+var_s);
+    double weight=1./projections[k].covR;
     sumv+=weight;
     sumy+=sperp*weight;
     sumx+=z*weight;

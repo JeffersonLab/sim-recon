@@ -92,7 +92,7 @@ typedef struct{
 
  typedef struct{
    DVector2 xy;
-   float z;
+   float covR,z;
  }DHFProjection_t;
 
 
