@@ -493,6 +493,7 @@ def AddDANA(env):
 	AddHDDS(env)
 	AddXERCES(env)
 	Add_xstream(env)
+	AddEVIO(env)
 	DANA_LIBS  = "DANA ANALYSIS PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE RICH CDC TRIGGER"
 	DANA_LIBS += " FDC TOF BCAL FCAL CCAL HDGEOMETRY JANA"
@@ -531,7 +532,7 @@ def AddEVIO(env):
 		env.AppendUnique(CXXFLAGS = ['-DHAVE_EVIO'])
 		env.AppendUnique(CPPPATH = ['%s/include' % evioroot])
 		env.AppendUnique(LIBPATH = ['%s/lib' % evioroot])
-		env.AppendUnique(LIBS=['evioxx', 'evio'])
+		env.AppendUnique(LIBS=['evioxx', 'evio', 'expat'])
 		AddET(env)
 
 
