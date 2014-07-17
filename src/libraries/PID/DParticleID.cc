@@ -103,7 +103,11 @@ DParticleID::DParticleID(JEventLoop *loop)
 	map<string, double> locPIDParams;
 	if(!loop->GetCalib("PID/photon_track_matching", locPIDParams))
 	{
-		cout<<"DParticleID: loading values from PID data base"<<endl;
+		static bool printed_message = false;
+		if(!printed_message){
+			printed_message = true;
+			cout<<"DParticleID: loading values from PID data base"<<endl;
+		}
 		DELTA_R_FCAL = locPIDParams["DELTA_R_FCAL"];
 	}
 	else
