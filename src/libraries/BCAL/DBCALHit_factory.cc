@@ -46,7 +46,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	//    A minimally ionising particle deposits and integral of 230 ADC counts per cell, 
 	//    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
 	//a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
-	t_scale    = 4.0;    // 4 ns/count
+	t_scale    = 0.0625;   // 62.5 ps/count
 
 	/// Read in calibration constants
 	vector<double> raw_gains;
