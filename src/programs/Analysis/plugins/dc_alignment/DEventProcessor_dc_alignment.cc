@@ -139,7 +139,11 @@ jerror_t DEventProcessor_dc_alignment::init(void)
   gPARMS->SetDefaultParameter("DCALIGN:ALIGN_WIRE_PLANES",ALIGN_WIRE_PLANES);
   FILL_TREE=false;
   gPARMS->SetDefaultParameter("DCALIGN:FILL_TREE",FILL_TREE);
-
+  MIN_PSEUDOS=12;
+  gPARMS->SetDefaultParameter("DCALIGN:MIN_PSEUDOS",MIN_PSEUDOS);
+  MIN_INTERSECTIONS=10;
+  gPARMS->SetDefaultParameter("DCALIGN:MIN_INTERSECTIONS",MIN_INTERSECTIONS);
+ 
   fdc_alignments.resize(24);
   for (unsigned int i=0;i<24;i++){
     fdc_alignments[i].A=DMatrix2x1();
@@ -199,7 +203,7 @@ jerror_t DEventProcessor_dc_alignment::init(void)
       fdcfile >> dv;
       
       fdc_cathode_alignments[i].A(kU)=du;
-      fdc_cathode_alignments[i].A(kPhiU)=dphiv;  
+      fdc_cathode_alignments[i].A(kPhiU)=dphiu;  
       fdc_cathode_alignments[i].A(kV)=dv;
       fdc_cathode_alignments[i].A(kPhiV)=dphiv;
 
@@ -577,7 +581,7 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
   // FDC alignment 
   //-------------------------------------------------------------------------
   if (ALIGN_WIRE_PLANES){ // Use intersection points to align wire planes
-    if (intersections.size()>4
+    if (intersections.size()>MIN_INTERSECTIONS
 	//&&((fcalshowers.size()>0&&fcalshowers.size()<3)
 	//   || (bcalshowers.size()>0&&bcalshowers.size()<3))
 	){
@@ -598,25 +602,30 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
       LinkSegments(segments,LinkedSegments);
       
       // Loop over linked segments
-      for (unsigned int k=0;k<LinkedSegments.size();k++){
-	vector<const DFDCIntersection *>intersections=LinkedSegments[k].hits;
-	
-	// Initial guess for state vector    
-	DMatrix4x1 S=LinkedSegments[k].S;
-		
-	// Move x and y to just before the first hit
-	double my_z=intersections[0]->pos.z()-2.;
-	S(state_x)+=my_z*S(state_tx);
-	S(state_y)+=my_z*S(state_ty);
-		
-	if (fabs(S(state_x))>48. || fabs(S(state_y))>48.) continue;
-	
-	DoFilter(my_z,S,intersections);
+      unsigned int num_linked_segments=LinkedSegments.size();
+      if (num_linked_segments>0 && num_linked_segments<3){
+	for (unsigned int k=0;k<LinkedSegments.size();k++){
+	  vector<const DFDCIntersection *>intersections=LinkedSegments[k].hits;
+	  
+	  if (intersections.size()>MIN_INTERSECTIONS){
+	    // Initial guess for state vector    
+	    DMatrix4x1 S=LinkedSegments[k].S;
+	    
+	    // Move x and y to just before the first hit
+	    double my_z=intersections[0]->pos.z()-2.;
+	    S(state_x)+=my_z*S(state_tx);
+	    S(state_y)+=my_z*S(state_ty);
+	    
+	    if (fabs(S(state_x))>48. || fabs(S(state_y))>48.) continue;
+	    
+	    DoFilter(my_z,S,intersections);
+	  }
+	}
       }
     }
   }
   else{  // Use pseudopoints to align cathode planes
-    if (pseudos.size()>4 
+    if (pseudos.size()>MIN_PSEUDOS
 	//&&((fcalshowers.size()>0&&fcalshowers.size()<3)
 	//   || (bcalshowers.size()>0&&bcalshowers.size()<3))
 	){
@@ -637,33 +646,43 @@ jerror_t DEventProcessor_dc_alignment::evnt(JEventLoop *loop, int eventnumber){
       LinkSegments(segments,LinkedSegments);
       
       // Loop over linked segments
-      for (unsigned int k=0;k<LinkedSegments.size();k++){
-	vector<const DFDCPseudo *>hits=LinkedSegments[k].hits;
-	sort(hits.begin(),hits.end(),fdc_pseudo_cmp);
-
-	mMinTime=1000.;
-	mOuterTime=1000.;
-	mOuterZ=0.;
-	for (unsigned int m=0;m<hits.size();m++){
-	  if (hits[m]->time<mMinTime){
-	    mMinTime=hits[m]->time;
-	    mMinTimeID=m;
+      size_t num_linked_segments=LinkedSegments.size();
+      if (num_linked_segments>0 && num_linked_segments<3){
+	for (unsigned int k=0;k<LinkedSegments.size();k++){
+	  vector<const DFDCPseudo *>hits=LinkedSegments[k].hits;
+	  
+	  if (hits.size()>MIN_PSEUDOS){
+	    sort(hits.begin(),hits.end(),fdc_pseudo_cmp);
+	    
+	    // Initial guess for state vector    
+	    DMatrix4x1 S=LinkedSegments[k].S;
+	  
+	    // Move x and y to just before the first hit
+	    double my_z=hits[0]->wire->origin.z()-1.;
+	    S(state_x)+=my_z*S(state_tx);
+	    S(state_y)+=my_z*S(state_ty);
+	    
+	    if (fabs(S(state_x))>48. || fabs(S(state_y))>48.) continue;
+	    
+	    mMinTime=1e6;
+	    mOuterTime=1e6;
+	    mOuterZ=0.;
+	    double dsdz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+	    for (unsigned int m=0;m<hits.size();m++){
+	      if (hits[m]->time<mMinTime){
+		double L=(hits[m]->wire->origin.z()-my_z)*dsdz;
+		mMinTime=hits[m]->time-L/29.98; // assume moving at speed of light
+		mMinTimeID=m;
+	      }
+	    }
+	    mT0=mMinTime;
+	    
+	    // Run the Kalman Filter algorithm
+	    if (DoFilter(my_z,S,hits)==NOERROR){
+	      
+	    }
 	  }
 	}
-	// Initial guess for state vector    
-	DMatrix4x1 S=LinkedSegments[k].S;
-		
-	// Move x and y to just before the first hit
-	double my_z=hits[0]->wire->origin.z()-1.;
-	S(state_x)+=my_z*S(state_tx);
-	S(state_y)+=my_z*S(state_ty);
-	
-	if (fabs(S(state_x))>48. || fabs(S(state_y))>48.) continue;
-
-	// Run the Kalman Filter algorithm
-	if (DoFilter(my_z,S,hits)==NOERROR){
-
-	}	
       }
     }
   }
@@ -859,10 +878,10 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
   vector<update_t>best_updates;
   vector<update_t>smoothed_updates(num_hits);  
 
-  int NEVENTS=250000;
+  int NEVENTS=100000;
   double anneal_factor=pow(1e3,(double(NEVENTS-myevt))/(NEVENTS-1.));
   if (myevt>NEVENTS) anneal_factor=1.;  
-  anneal_factor=1.;
+  //anneal_factor=10.;
   if (RUN_BENCHMARK) anneal_factor=1.;
   //anneal_factor=1e3;
 
@@ -914,7 +933,8 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
 
     PlotLines(trajectory);
 
-    if (prob>0.0001){
+    if (prob>0.00001)
+      {
       // run the smoother (opposite direction to filter)
       Smooth(Sbest,Cbest,best_traj,hits,best_updates,smoothed_updates);
 
@@ -930,7 +950,7 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
 			  smoothed_updates[i].doca);
       }
 
-      if (RUN_BENCHMARK==false){
+      if (prob>0.001 && RUN_BENCHMARK==false){
 	FindOffsets(hits,smoothed_updates);
 	
 	if (FILL_TREE){
@@ -988,14 +1008,29 @@ DEventProcessor_dc_alignment::DoFilter(double start_z,DMatrix4x1 &S,
   unsigned int num_hits=hits.size();
   if (num_hits<10) return VALUE_OUT_OF_RANGE;
 
+  mMinTime=1e6;
+  mOuterTime=1e6;
+  mOuterZ=0.;
+  double dsdz=sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+  for (unsigned int m=0;m<hits.size();m++){
+    if (hits[m].hit->t<mMinTime){
+      double L=(hits[m].wire->origin.z()-start_z)*dsdz;
+      mMinTime=hits[m].hit->t-L/29.98; // assume moving at speed of light
+      mMinTimeID=m;
+    }
+  }
+  mT0=mMinTime;
+
   vector<wire_update_t>updates(num_hits);
   vector<wire_update_t>best_updates;
   vector<wire_update_t>smoothed_updates(num_hits);  
 
   int NEVENTS=75000;
-  double anneal_factor=pow(1000.,(double(NEVENTS-myevt))/(NEVENTS-1.));
-  if (myevt>NEVENTS) anneal_factor=1.;  
-  anneal_factor=1.;
+  double anneal_factor=1.;
+  if (USE_DRIFT_TIMES){
+    anneal_factor=pow(1000.,(double(NEVENTS-myevt))/(NEVENTS-1.));
+    if (myevt>NEVENTS) anneal_factor=1.;  
+  }
   if (RUN_BENCHMARK) anneal_factor=1.;
   //anneal_factor=1e3;
 
@@ -2408,7 +2443,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
   DMatrix2x4 H;  // Track projection matrix
   DMatrix4x2 H_T; // Transpose of track projection matrix 
   DMatrix4x2 K;  // Kalman gain matrix
-  DMatrix2x2 V(0.00075*anneal_factor,0.,0.,0.00075*anneal_factor);  // Measurement variance 
+  DMatrix2x2 V(0.0075*anneal_factor,0.,0.,0.0075*anneal_factor);  // Measurement variance 
   DMatrix2x2 Vtemp,InvV;
   DMatrix2x1 Mdiff;
   DMatrix4x4 I; // identity matrix
@@ -2705,7 +2740,7 @@ DEventProcessor_dc_alignment::KalmanFilter(double anneal_factor,
 	    drift=fdc_drift_distance(drift_time);
 
 	    //V=0.0004+0.020433*(anneal_factor/1000.);
-	    double sigma=0.015-0.00028*drift_time+3.49e-6*drift_time*drift_time;
+	    double sigma=0.0135-3.98e-4*drift_time+5.62e-6*drift_time*drift_time;
 	    V=anneal_factor*sigma*sigma;
 	  }
 	}

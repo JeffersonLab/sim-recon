@@ -373,6 +373,7 @@ class DEventProcessor_dc_alignment:public jana::JEventProcessor{
   
   bool COSMICS,USE_DRIFT_TIMES,READ_ANODE_FILE,USE_BCAL,ALIGN_WIRE_PLANES;
   bool  FILL_TREE,RUN_BENCHMARK,USE_FCAL,READ_CATHODE_FILE;
+  unsigned int MIN_PSEUDOS,MIN_INTERSECTIONS;
 
   // drift time tables
   vector<double>cdc_drift_table;
@@ -404,7 +405,7 @@ inline double DEventProcessor_dc_alignment::cdc_variance(double t){
   
   //sigma=0.08/(t+1.)+0.03;
 
-  sigma=0.05;
+  //  sigma=0.05;
   
   return sigma*sigma;
 }
