@@ -2,6 +2,12 @@
 // Created: Fri Nov 26 15:10:51 CST 2010
 // Creator: dwbennet
 
+/// MMD: Looking at the cdoe for the DBCALGeometry::phi( int fADC_cell ) method,
+/// I have to conclude that sectors are numbered 1 through 4.  
+/// Judging by what else I've seen, I have to conclude that layers are numbered 1 through 4 or 1 through 10.  
+/// This is now the standard that I will use.
+
+
 #include <cmath>
 #include "DBCALGeometry.h"
 
@@ -61,6 +67,11 @@ float DBCALGeometry::m_radius[] = { 64.3,
 				  83.70,
 				  86.17};
 
+float DBCALGeometry::fADC_radius[] = { 64.3, 
+				  66.3,
+				  70.3,
+				  76.3,
+				  86.17};
 
 float DBCALGeometry::BCALMIDRAD = DBCALGeometry::m_radius[DBCALGeometry::BCALMID-1];
 
@@ -345,3 +356,57 @@ DBCALGeometry::phiSize( int fADC_cell ) {
   return sectSize;
 }
 
+
+//--------------
+/// fADCcellId_rphi
+//--------------
+/// Method to get the fADC cell ID from an (R, phi) combination.  R in cm and phi in radians.
+int
+DBCALGeometry::fADCcellId_rphi( float r, float phi ) {
+  int fADC_cellId = 0;
+  int SiPM_layer = 0;
+
+  if (r < BCALINNERRAD) return 0;
+  else if (r > BCALOUTERRAD) return 0;
+
+  float modulephiSize = (2 * PI) / 48;
+  float sectorphiSize = modulephiSize / 4;
+  float phi_nooffset = (phi + 2.0*sectorphiSize);
+  if (phi_nooffset < 0) return 0;
+  else if (phi_nooffset > 2 * PI) return 0;
+
+  if (r < m_radius[1]) SiPM_layer = 1; 
+  else if (r < m_radius[2]) SiPM_layer = 2; 
+  else if (r < m_radius[3]) SiPM_layer = 3; 
+  else if (r < m_radius[4]) SiPM_layer = 4; 
+  else if (r < m_radius[5]) SiPM_layer = 5; 
+  else if (r < m_radius[6]) SiPM_layer = 6; 
+  else if (r < m_radius[7]) SiPM_layer = 7; 
+  else if (r < m_radius[8]) SiPM_layer = 8; 
+  else if (r < m_radius[9]) SiPM_layer = 9; 
+  else  SiPM_layer = 10; 
+
+  float modulefloat = 1 + phi_nooffset / modulephiSize;
+  int module = (int)modulefloat;
+  float sectorfloat = 1 + ((phi_nooffset - (module-1)*modulephiSize) / sectorphiSize);
+  int sector = (int)sectorfloat;
+ 
+  fADC_cellId = DBCALGeometry::fADCId(module, SiPM_layer, sector);  
+  return fADC_cellId;
+}
+ 
+
+int DBCALGeometry::getglobalsector(int module, int sector) {
+  if (module==0 || sector==0) return 0;
+  else return (module-1)*4 + sector;
+}
+int DBCALGeometry::getsector(int globalsector) {
+  if (globalsector<=0) return 0;
+  int sector = globalsector%4;
+  if (sector==0) sector=4;
+  return sector;
+}
+int DBCALGeometry::getmodule(int globalsector) {
+  if (globalsector<=0) return 0;
+  else return (globalsector-1)/4+1;
+}

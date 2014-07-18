@@ -69,6 +69,7 @@ public:
   static const int BCALMID=7;         ///> first outer layer (default 7)
 
   static float m_radius[11];
+  static float fADC_radius[5];
   static float BCALMIDRAD;     ///> mid radius of BCAL in cm (boundary between inner and outer layers)
   static float BCALOUTERRAD;    ///> outer radius of BCAL in cm
   static float BCALFIBERLENGTH; ///> BCAL Scintilator fiber lenth in cm
@@ -86,24 +87,30 @@ public:
 #endif
   }
 
-  //these functions are about encoding/decoding module/layer/sector info in a cellId
-  static int cellId( int module, int layer, int sector );  
-  static int module( int cellId );  
-  static int layer( int cellId );
-  static int sector( int cellId );
+  ///these functions are about encoding/decoding module/layer/sector info in a cellId
+  static int cellId( int module, int layer, int sector );  ///< This object can be used for the SiPM ID or for the fADC ID since they are defined in the same way (4 bits for sector then 4 bits for layer then 8 bits for module.)
+  static int module( int cellId );  ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
+  static int layer( int cellId );   ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
+  static int sector( int cellId );  ///< This method can be used for the SiPM ID or for the fADC ID since they are defined in the same way
 
-  //these functions are about finding which readout cell contains a specific SiPM cell
+  ///these functions are about finding which readout cell contains a specific SiPM cell
   static int fADC_layer( int SiPM_cellId );
   static int fADC_sector( int SiPM_cellId );
   static int fADCId( int module, int SiPM_layer, int SiPM_sector );
   static int NSiPMs(int fADCId);
 
-  //these functions are about the physical location and dimensions of a readout cell
+  ///these functions are about the physical location and dimensions of a readout cell
   static float phi( int fADC_cellId );
   static float phiSize( int fADC_cellId );  
   static float r( int fADC_cellId );
   static float rSize( int fADC_cellId );
-  
+
+  ///these are missing functions that fill in some previous gaps.
+  static int fADCcellId_rphi( float r, float phi );  ///< Method to get the fADC cell ID from an (R, phi) combination.\n  R in cm and phi in radians.
+  static int getglobalsector(int module, int sector);
+  static int getsector(int globalsector);
+  static int getmodule(int globalsector);
+
 };
 
 #endif // _DBCALGeometry_
