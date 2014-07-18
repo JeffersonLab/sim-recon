@@ -64,8 +64,8 @@ DFCALGeometry::isBlockActive( int row, int column ) const
 	if( row < 0 ||  row >= kBlocksTall )return false;
 	if( column < 0 ||  column >= kBlocksWide )return false;
 
-	assert(    row >= 0 &&    row < kBlocksTall );
-	assert( column >= 0 && column < kBlocksWide );
+	// assert(    row >= 0 &&    row < kBlocksTall );
+	// assert( column >= 0 && column < kBlocksWide );
 	
 	return m_activeBlock[row][column];	
 }
@@ -85,8 +85,8 @@ DFCALGeometry::column( float x ) const
 DVector2
 DFCALGeometry::positionOnFace( int row, int column ) const
 { 
-	assert(    row >= 0 &&    row < kBlocksTall );
-	assert( column >= 0 && column < kBlocksWide );
+  //	assert(    row >= 0 &&    row < kBlocksTall );
+  //	assert( column >= 0 && column < kBlocksWide );
 	
 	return m_positionOnFace[row][column]; 
 }
@@ -108,7 +108,8 @@ DFCALGeometry::channel( int row, int column ) const
 	}
 	else{
 		
-		cerr << "ERROR: request for channel number of inactive block!" << endl;
+	  cerr << "ERROR: request for channel number of inactive block!  row " 
+	       << row << " column " <<  column << endl;
 		return -1;
 	}
 }
