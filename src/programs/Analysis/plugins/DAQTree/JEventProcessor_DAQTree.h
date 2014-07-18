@@ -56,15 +56,15 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		~JEventProcessor_DAQTree();
 		const char* className(void){return "JEventProcessor_DAQTree";}
 
-		TTree *Df125WindowRawData_tree;  /// f125 readout 
+		TTree *Df125WindowRawData_tree;  ///< f125 readout 
 		TTree *DF1TDCHit_tree;
 		TTree *DF1TDCTriggerTime_tree;
-		TTree *Df250WindowRawData_tree;  /// f250 readout modes 1 and 8
-		TTree *Df250PulseRawData_tree;   /// f250 readout mode 2
-		TTree *Df250PulseIntegral_tree;  /// f250 readout modes 3 and 7
-		TTree *Df250PulseTime_tree;      /// f250 readout modes 3,4,7 and 8
-		//TTree *Df250PulseParameters_tree;      /// f250 readout modes 4,7 and 8
-		TTree *Df250TriggerTime_tree;    /// all f250 readout modes 
+		TTree *Df250WindowRawData_tree;  ///< f250 readout modes 1 and 8
+		TTree *Df250PulseRawData_tree;   ///< f250 readout mode 2
+		TTree *Df250PulseIntegral_tree;  ///< f250 readout modes 3 and 7
+		TTree *Df250PulseTime_tree;      ///< f250 readout modes 3,4,7 and 8
+		//TTree *Df250PulseParameters_tree;      ///< f250 readout modes 4,7 and 8
+		TTree *Df250TriggerTime_tree;    ///< all f250 readout modes 
 
 		uint32_t channelnum;         ///< Arbitrary global channel number (sorted by crate, slot, channel).  Note that when data is sparsified then this value will not have a constant relationship with any particular physical channel.
 		uint32_t eventnum;	         ///< Event number	
@@ -72,14 +72,14 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		uint32_t slot;               ///< (from DDAQAddress) Slot number in crate
 		uint32_t channel;            ///< (from DDAQAddress) Channel number in slot
 		uint32_t itrigger;           ///< (from DDAQAddress) Trigger number for cases when this hit was read in a multi-event block (from DDAQAddress)
-		vector<uint32_t> waveform;   ///< STL vector of samples of the waveform for the event\n for f250WRD, f250PRD
-		uint32_t nsamples;           ///< Number of samples extracted from the waveform\n for f250WRD, f250PRD
-		uint32_t w_integral;         ///< Sum of all samples extracted from the waveform\n for f250WRD, f250PRD
-		uint32_t w_min;              ///< Minimum sample extracted from the waveform\n for f250WRD, f250PRD
-		uint32_t w_max;              ///< Maximum sample extracted from the waveform\n for f250WRD, f250PRD
+		vector<uint32_t> waveform;   ///< STL vector of samples of the waveform for the event\n for f125WRD, f250WRD, f250PRD
+		uint32_t nsamples;           ///< Number of samples extracted from the waveform\n for f125WRD, f250WRD, f250PRD
+		uint32_t w_integral;         ///< Sum of all samples extracted from the waveform\n for f125WRD, f250WRD, f250PRD
+		uint32_t w_min;              ///< Minimum sample extracted from the waveform\n for f125WRD, f250WRD, f250PRD
+		uint32_t w_max;              ///< Maximum sample extracted from the waveform\n for f125WRD, f250WRD, f250PRD
 		uint32_t w_samp1;            ///< First sample extracted from the waveform  (for simple analysis in case the STL vector is difficult to access)\n for f250WRD, f250PRD
-		uint32_t w_ped;              ///< the sum of the first 10 samples extracted from the waveform for use as a pedestal\n for f250WRD, Always = 0 for f250PRD
-		Float_t w_time;              ///< the time (in samples) of the pulse calculated similar to the IU method\n for f250WRD, f250PRD
+		uint32_t w_ped;              ///< the sum of the first 10 samples extracted from the waveform for use as a pedestal\n for f125WRD, f250WRD, Always = 0 for f250PRD
+		Float_t w_time;              ///< the time (in samples) of the pulse calculated similar to the IU method\n for f125WRD, f250WRD, f250PRD
 		uint32_t pulse_number;         /// \n for f250PRD, f250PI, f250PT
 		uint32_t quality_factor;       /// \n for f250PI, f250PT
 		int32_t integral;              /// \n for f250PI 

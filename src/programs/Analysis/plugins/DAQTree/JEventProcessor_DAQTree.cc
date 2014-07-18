@@ -21,6 +21,7 @@ using namespace jana;
 #include <DAQ/Df250PulseTime.h>
 #include <DAQ/Df250TriggerTime.h>
 
+/// Define a comparison operator for sorting objets of all the DAQ types.
 bool Df125WindowRawData_cmp(const Df125WindowRawData *a,const Df125WindowRawData *b){
 	// sort by crate, then by slot, then by channel
 	if(a->rocid != b->rocid)return a->rocid < b->rocid;
