@@ -91,6 +91,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	TIMEOUT = 2.0;
 	EMULATE_PULSE_INTEGRAL_MODE = true;
 	EMULATE_SPARSIFICATION_THRESHOLD = -100000; // =-100000 is equivalent to no threshold
+	EMULATE_FADC250_TIME_THRESHOLD = 10;
+	EMULATE_FADC125_TIME_THRESHOLD = 80;
 	MODTYPE_MAP_FILENAME = "modtype.map";
 	ENABLE_DISENTANGLING = true;
 	
@@ -105,6 +107,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:VERBOSE", VERBOSE, "Set verbosity level for processing and debugging statements while parsing. 0=no debugging messages. 10=all messages");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_PULSE_INTEGRAL_MODE", EMULATE_PULSE_INTEGRAL_MODE, "If non-zero, and Df250WindowRawData objects exist in the event AND no Df250PulseIntegral objects exist, then use the waveform data to generate Df250PulseIntegral objects. Default is for this feature to be on. Set this to zero to disable it.");
 		gPARMS->SetDefaultParameter("EVIO:EMULATE_SPARSIFICATION_THRESHOLD", EMULATE_SPARSIFICATION_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then this is used to apply a cut on the non-pedestal-subtracted integral to determine if a Df250PulseIntegral is produced or not.");
+		gPARMS->SetDefaultParameter("EVIO:EMULATE_FADC250_TIME_THRESHOLD", EMULATE_FADC250_TIME_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then DF250PulseTime objects will be emulated as well. This sets the sample threshold above pedestal from which the time will be determined.");
+		gPARMS->SetDefaultParameter("EVIO:EMULATE_FADC125_TIME_THRESHOLD", EMULATE_FADC125_TIME_THRESHOLD, "If EVIO:EMULATE_PULSE_INTEGRAL_MODE is on, then DF125PulseTime objects will be emulated as well. This sets the sample threshold above pedestal from which the time will be determined.");
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
 		gPARMS->SetDefaultParameter("EVIO:ENABLE_DISENTANGLING", ENABLE_DISENTANGLING, "Enable/disable disentangling of multi-block events. Enabled by default. Set to 0 to disable.");
@@ -1075,7 +1079,6 @@ void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, v
 //----------------
 void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs)
 {
-	uint32_t HIT_THRES = 80; // single sample threshold above pedestal for pulse  (HIT_THRES)
 	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
 	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
 
@@ -1101,7 +1104,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		pedestalsum /= (double)Nped_samples;
 
 		// Calculate single sample threshold based on pdestal
-		double effective_threshold = HIT_THRES + pedestalsum;
+		double effective_threshold = EMULATE_FADC250_TIME_THRESHOLD + pedestalsum;
 
 		// Look for sample above threshold. Start looking after pedestal
 		// region but only up to Nsamples from end of window so we know
@@ -1156,7 +1159,6 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs)
 {
-	uint32_t HIT_THRES = 80; // single sample threshold above pedestal for pulse  (HIT_THRES)
 	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
 	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
 
@@ -1182,7 +1184,7 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		pedestalsum /= (double)Nped_samples;
 
 		// Calculate single sample threshold based on pdestal
-		double effective_threshold = HIT_THRES + pedestalsum;
+		double effective_threshold = EMULATE_FADC125_TIME_THRESHOLD + pedestalsum;
 
 		// Look for sample above threshold. Start looking after pedestal
 		// region but only up to Nsamples from end of window so we know
