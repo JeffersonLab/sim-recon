@@ -40,6 +40,7 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 	if(locGeometry != NULL)
 		locGeometry->GetTargetZ(dTargetZCenter);
+	dKinFitter.Set_TargetCenterZ(dTargetZCenter);
 
 	return NOERROR;
 }

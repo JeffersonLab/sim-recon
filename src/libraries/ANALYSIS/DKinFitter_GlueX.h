@@ -24,6 +24,7 @@ class DKinFitter_GlueX : public DKinFitter
 
 		bool Get_IsBFieldNearBeamline(void) const;
 		void Set_BField(const DMagneticFieldMap* locMagneticFieldMap);
+		inline void Set_TargetCenterZ(double locTargetCenterZ){dTargetCenterZ = locTargetCenterZ;}; //for checking field
 
 		void Reset_NewFit(void);
 		void Reset_NewEvent(void);
@@ -51,6 +52,7 @@ class DKinFitter_GlueX : public DKinFitter
 		TVector3 Get_BField(const TVector3& locPosition) const;
 
 		bool dIsBFieldNearBeamline;
+		double dTargetCenterZ;
 		const DMagneticFieldMap* dMagneticFieldMap;
 		map<const DKinFitParticle*, const DKinematicData*> dParticleMapping_InputToSource; //source data is NULL for decaying/target/missing objects!!
 		map<const DKinFitParticle*, const DKinematicData*> dParticleMapping_OutputToSource; //source data is NULL for decaying/target/missing objects!!
