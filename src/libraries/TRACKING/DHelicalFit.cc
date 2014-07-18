@@ -719,7 +719,6 @@ jerror_t DHelicalFit::FitLineRiemann(){
   double z_last=0.,z=0.;
   DVector2 old_proj=projections[0].xy;
   double two_r0=2.*r0;
-  double var_s=0.;
   for (unsigned int k=0;k<n;k++){
     sperp_old=sperp;
     z_last=z;
