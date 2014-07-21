@@ -9,15 +9,14 @@
 /// track finding codes.  The code uses several algorithms in the following 
 /// order of precedence:
 ///      Method 1:  Swims cdc candidates pointing in the forward direction 
-///                 and tries to match them geometrically to fdc candidates
-///                 (whose positions are reported at the cdc endplate in z).
+///                 and tries to match them geometrically to fdc candidates.
 ///      Method 2:  Projects the fdc candidates into the cdc region and tries
 ///                 to match to the cdc hits in each cdc candidate that points 
 ///                 in the forward direction.
 ///      Method 3:  Similar to method 2, except that it projects a cdc 
 ///                 candidate into the FDC region.
-///      Method 4:  Matches left-over fdc candidates to track candidates that 
-///                 have already been added to the output list of candidates.
+///      Method 4:  Matches left-over fdc candidates to other left-over fdc 
+///                 candidates.
 ///      Method 5:  Matches cdc candidates that do not point toward the cdc
 ///                 endplate that were not matched by previous methods to fdc
 ///                 candidates.
@@ -43,7 +42,7 @@ using namespace std;
 
 #define CUT 10.
 #define RADIUS_CUT 50.0
-#define BEAM_VAR 0.01 // cm^2
+#define BEAM_VAR 0.0208 // cm^2
 #define EPS 0.001
 
 //------------------
@@ -95,17 +94,16 @@ inline bool CDCHitSortByLayerincreasing(const DCDCTrackHit* const &hit1, const D
 // FDCHitSortByLayerincreasing
 //------------------
 inline bool FDCHitSortByLayerincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const &hit2) {
-	// Used to sort CDC hits by layer (ring) with innermost layer hits first
-
-	// if same ring, sort by wire number
-	if(hit1->wire->layer == hit2->wire->layer)
-	{
-		if(hit1->wire->wire == hit2->wire->wire)
-			return (hit1->dE > hit2->dE);
-		return (hit1->wire->wire < hit2->wire->wire);
-	}
-
-	return hit1->wire->layer < hit2->wire->layer;
+  // Used to sort FDC hits by layer with most upstream layer hits first  
+  // if same layer, sort by wire number
+  if(hit1->wire->layer == hit2->wire->layer)
+    {
+      if(hit1->wire->wire == hit2->wire->wire)
+	return (hit1->dE > hit2->dE);
+      return (hit1->wire->wire < hit2->wire->wire);
+    }
+  
+  return hit1->wire->layer < hit2->wire->layer;
 }
 
 //------------------
@@ -143,6 +141,14 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
 
   if(DEBUG_HISTS){
     dapp->Lock();
+    /*
+    match_center_dist2=(TH2F*)gROOT->FindObject("match_center_dist2");
+    if (!match_center_dist2){
+      match_center_dist2=new TH2F("match_center_dist2","larger radius vs matching distance squared between two circle centers",100,0,100.,100,0,100);
+      match_center_dist2->SetYTitle("r_{c} [cm]");
+      match_center_dist2->SetXTitle("(#Deltad)^{2} [cm^{2}]");
+    }
+    */
     match_dist=(TH2F*)gROOT->FindObject("match_dist");
     if (!match_dist){
       match_dist=new TH2F("match_dist","Matching distance",
@@ -322,7 +328,28 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       if (DEBUG_LEVEL>0) _DBG_ << "... matched to CDC candidate #" << i <<endl;
     }
   } // loop over forward-pointing cdc candidates
-  
+
+  // The following uses a trick to improve the circle fit and "fix" the 
+  // direction of a cdc candidate for those candidates whose outermost hit 
+  // is a stereo straw by assuming that the z position is at the end of this
+  // straw at the cdc endplate, thereby giving us an additional point in the
+  // xy plane that can be used in the circle fit.  The code then attempts to 
+  // match this "improved" cdc candidate with the remaining fdc candidates.
+  if (num_fdc_cands_remaining>0){
+    for (unsigned int j=0;j<cdc_forward_ids.size();j++){
+      if (num_fdc_cands_remaining==0) break;
+      if (cdc_forward_matches[j]==0){ 
+	const DTrackCandidate *cdccan = cdctrackcandidates[cdc_forward_ids[j]];
+	
+        if (MatchMethod8(cdccan,forward_matches,used_cdc_hits)==true){
+	  cdc_forward_matches[j]=1;
+	  num_fdc_cands_remaining--;
+	}
+
+      } 
+    } 
+  }
+
   // Unmatched CDC track candidates
   for (unsigned int j=0;j<cdc_forward_ids.size();j++){
     if (cdc_forward_matches[j]==0){
@@ -389,47 +416,94 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     if (!used_cdc_hits[i]) num_unmatched_cdcs++;
   }
 
-  // If there are FDC candidates remaining, use the best track candidate 
-  // knowledge we have so far to do one final check for matches.  Add them to 
-  // the final list even if this fails.
-  if (num_fdc_cands_remaining>0){ 
+  // If there are more than one FDC candidates remaining, use the best track 
+  // candidate knowledge we have so far to recheck for matches to other fdc 
+  // candidates.
+  if (num_fdc_cands_remaining>1){ 
     for (unsigned int j=0;j<fdctrackcandidates.size();j++){
       if (num_fdc_cands_remaining<1) break;
       if (forward_matches[j]==0){
-	DTrackCandidate *can = new DTrackCandidate;
+	// Try to match to fdc candidates that have not already been matched
+	// to another track
+	if (MatchMethod4(fdctrackcandidates[j],forward_matches,num_fdc_cands_remaining)==true){
+	  forward_matches[j]=1;
+	  num_fdc_cands_remaining--;
+	}
+      }
+    }
+  }
+  // Of the remaining fdc candidates, output those that have more than one 
+  // segment associated with them.
+  if (num_fdc_cands_remaining>0){ 
+    for (unsigned int j=0;j<fdctrackcandidates.size();j++){
+      if (forward_matches[j]==0){
 	const DTrackCandidate *fdccan = fdctrackcandidates[j];
-
-	can->Ndof=fdccan->Ndof;
-	can->chisq=fdccan->chisq;
-	can->setMomentum(fdccan->momentum());
-	can->setPosition(fdccan->position());
-	can->setCharge(fdccan->charge());
 	
 	// Get the segment data
 	vector<const DFDCSegment *>segments;
 	fdccan->GetT(segments);
-	sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
-      
-	// Add the FDC hits to the final track candidate
-	for (unsigned int m=0;m<segments.size();m++){
-	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
-	    can->AddAssociatedObject(segments[m]->hits[n]);
+	
+	if (segments.size()>1){
+	  // Create new candidate for output
+	  DTrackCandidate *can = new DTrackCandidate;
+	  can->setMomentum(fdccan->momentum());
+	  can->setPosition(fdccan->position());
+	  can->setCharge(fdccan->charge());
+	  can->chisq=fdccan->chisq;
+	  can->Ndof=fdccan->Ndof; 
+	  for (unsigned int m=0;m<segments.size();m++){		  
+	    for (unsigned int n=0;n<segments[m]->hits.size();n++){
+	      const DFDCPseudo *fdchit=segments[m]->hits[n];
+	      can->AddAssociatedObject(fdchit);
+	    }
 	  }
-	}
-
-	if (DEBUG_LEVEL>0) _DBG_ << "Attempting matching method #4..." <<endl; 
-	// Try to match to fdc candidates that have not already been matched
-	// to another track
-	if (MatchMethod4(can,forward_matches,num_fdc_cands_remaining)==true){
-	  forward_matches[j]=1;
+	  trackcandidates.push_back(can);
+	  
 	  num_fdc_cands_remaining--;
+	  forward_matches[j]=1;
 	}
-
-	trackcandidates.push_back(can);
       }
     }
   }
-  
+
+  // Try to match remaining fdc candidates to track candidates that have 
+  // track segments that have already been matched together
+  if (num_fdc_cands_remaining>0){
+    for (unsigned int i=0;i<trackcandidates.size();i++){
+      if (num_fdc_cands_remaining==0) break;
+      
+      DTrackCandidate *can=trackcandidates[i];      
+      MatchMethod7(can,forward_matches,num_fdc_cands_remaining);      
+    }
+  }
+
+
+  // We should be left with only single-segment fdc candidates:
+  if (num_fdc_cands_remaining){
+    for (unsigned int j=0;j<forward_matches.size();j++){
+      if (forward_matches[j]==0){
+	const DTrackCandidate *srccan=fdctrackcandidates[j];
+	// Get the segment data
+	  vector<const DFDCSegment *>segments;
+	  srccan->GetT(segments);
+	  
+	  // Not much we can do here -- add to the final list of candidates
+	  DTrackCandidate *can = new DTrackCandidate;
+	  can->Ndof=srccan->Ndof;
+	  can->chisq=srccan->chisq;
+	  can->setCharge(srccan->charge());
+	  can->setMomentum(srccan->momentum());
+	  can->setPosition(srccan->position());
+	  for (unsigned int n=0;n<segments[0]->hits.size();n++){
+	    const DFDCPseudo *fdchit=segments[0]->hits[n];
+	    can->AddAssociatedObject(fdchit);
+	  }
+
+	  trackcandidates.push_back(can);
+	}
+    }
+  }
+
   // Only output the candidates that have at least a minimum number of hits
   for (unsigned int i=0;i<trackcandidates.size();i++){
     DTrackCandidate *candidate=trackcandidates[i];
@@ -442,9 +516,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     if (int(mycdchits.size()+myfdchits.size())>=MIN_NUM_HITS){
       _data.push_back(candidate);
     }
-    
+    else delete candidate;
   }
-
 
   if((int(_data.size()) > MAX_NUM_TRACK_CANDIDATES) && (MAX_NUM_TRACK_CANDIDATES >= 0))
 	{
@@ -1222,151 +1295,153 @@ bool DTrackCandidate_factory::MatchMethod1(const DTrackCandidate *fdccan,
  }
 
 // This method tries to match unmatched fdc candidates 
-bool DTrackCandidate_factory::MatchMethod4(DTrackCandidate *srccan, 
+bool DTrackCandidate_factory::MatchMethod4(const DTrackCandidate *srccan, 
 					   vector<int> &forward_matches,
 					   int &num_fdc_cands_remaining){
-  // Momentum of candidate to which we are attempting to match
-  double p=srccan->momentum().Mag();
+  // Get segments already linked to this candidate from associated objects
+  vector<const DFDCSegment *>src_segments;
+  srccan->GetT(src_segments);
 
-  // Get hits already linked to this candidate from associated objects
-  vector<const DFDCPseudo *>fdchits;
-  srccan->GetT(fdchits);
-  if (fdchits.size()==0) return false;
-
-  sort(fdchits.begin(), fdchits.end(), FDCHitSortByLayerincreasing);
+  if (src_segments.size()==1) return false;
+  sort(src_segments.begin(), src_segments.end(), SegmentSortByLayerincreasing);
   
-  unsigned int pack1_last=(fdchits[fdchits.size()-1]->wire->layer-1)/6;
-  unsigned int pack1_first=(fdchits[0]->wire->layer-1)/6;
+  if (DEBUG_LEVEL>0) _DBG_ << "Attempting matching method #4..." <<endl; 
+
+  unsigned int pack1_last=src_segments[src_segments.size()-1]->package;
+  unsigned int pack1_first=src_segments[0]->package;
   
   for (unsigned int k=0;k<fdctrackcandidates.size();k++){
     if (num_fdc_cands_remaining==0) break;
     if (forward_matches[k]==0){
       const DTrackCandidate *fdccan = fdctrackcandidates[k];
-      // Momentum of this candidate 
-      double p_fdc=fdccan->momentum().Mag();
-      if (p_fdc/p>0.5){
-	// Get the segment data
-	vector<const DFDCSegment *>segments;
-	fdccan->GetT(segments);
-	sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
-	
-	const DFDCPseudo *firsthit=segments[0]->hits[0];
-	unsigned int pack2_first=segments[0]->package;
-	unsigned int pack2_last=segments[segments.size()-1]->package;
-	
-	if (pack2_first>pack1_last || pack2_last<pack1_first){
-	  // Momentum and position vectors for the input candidate
-	  DVector3 mom=srccan->momentum();
-	  DVector3 pos=srccan->position();
-	  double q=srccan->charge();
-	  DVector3 norm(0.,0.,1.);
-	  
-	  // Swim out to the first hit in the candidate to which we wish to match
-	  // using the stepper
-	  stepper->SetCharge(q);
-	  stepper->SwimToPlane(pos,mom,firsthit->wire->origin,norm,NULL);
-	  
-	  double dx=pos.x()-firsthit->xy.X();
-	  double dy=pos.y()-firsthit->xy.Y();
-	  double d2=dx*dx+dy*dy;
-	  double variance=1.;
-	  double prob=TMath::Prob(d2/variance,1);
 
-	  unsigned int num_match=(prob>0.01)?1:0;
-	  
-	  // Try to match unmatched fdc candidates
-	  for (unsigned int i=1;i<segments[0]->hits.size();i++){
-	    const DFDCPseudo *hit=segments[0]->hits[i];
-	    
-	    ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
-	    
-	    DVector2 XY=hit->xy;
-	    double dx=XY.X()-pos.x();
-	    double dy=XY.Y()-pos.y();
-	    double dr2=dx*dx+dy*dy;
-	    
-	    double variance=1.0;
-	    double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
-	    if (prob>0.01) num_match++;
-	  } 
-	  if (num_match>=3){
-	    forward_matches[k]=1;
-	    
-	    // Get any CDC hits matched with the track
-	    vector<const DCDCTrackHit *>cdchits;
-	    srccan->GetT(cdchits);
-	    
-	    sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
-
-	    // Add extra fdc hits as associated objects
-	    for (unsigned int m=0;m<segments.size();m++){
-	      for (unsigned int n=0;n<segments[m]->hits.size();n++){
-		srccan->AddAssociatedObject(segments[m]->hits[n]);
-	      }
-	    }
+      // Get the segment data
+      vector<const DFDCSegment *>segments;
+      fdccan->GetT(segments);
+      sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
 	
-	    // average Bz
-	    double Bz_avg=0.;
-	    unsigned int num_hits=0;
+      const DFDCPseudo *firsthit=segments[0]->hits[0];
+      unsigned int pack2_first=segments[0]->package;
+      unsigned int pack2_last=segments[segments.size()-1]->package;
+      
+      if (pack2_first>pack1_last || pack2_last<pack1_first){
+	// Momentum and position vectors for the input candidate
+	DVector3 mom=srccan->momentum();
+	DVector3 pos=srccan->position();
+	double q=srccan->charge();
+	DVector3 norm(0.,0.,1.);
+	
+	if (pack2_last<pack1_first){
+	  mom=(-1.0)*mom;
+	}
+
+	// Swim to the first hit in the candidate to which we wish to match
+	// using the stepper
+	stepper->SetCharge(q);
+	stepper->SwimToPlane(pos,mom,firsthit->wire->origin,norm,NULL);
+	  
+	double dx=pos.x()-firsthit->xy.X();
+	double dy=pos.y()-firsthit->xy.Y();
+	double d2=dx*dx+dy*dy;
+	double variance=1.;
+	double prob=TMath::Prob(d2/variance,1);
+	  
+	unsigned int num_match=(prob>0.01)?1:0;
+
+	// Try to match unmatched fdc candidates
+	for (unsigned int i=1;i<segments[0]->hits.size();i++){
+	  const DFDCPseudo *hit=segments[0]->hits[i];
+	  
+	  ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
+	  
+	  DVector2 XY=hit->xy;
+	  double dx=XY.X()-pos.x();
+	  double dy=XY.Y()-pos.y();
+	  double dr2=dx*dx+dy*dy;
+
+	  double variance=1.0;
+	  double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	  if (prob>0.01) num_match++;
+	} 
+	if (num_match>=3){
+	  forward_matches[k]=1;
 	    
-	    // Redo helical fit with all available hits
-	    DHelicalFit fit; 
-	    for (unsigned int m=0;m<fdchits.size();m++){
-	      fit.AddHit(fdchits[m]);
+	  // Create new candidate for output
+	  DTrackCandidate *can = new DTrackCandidate;
+	
+	  // average Bz
+	  double Bz_avg=0.;
+	  unsigned int num_hits=0;
+	    
+	  // Create a new DHelicalFit object for fitting combined data
+	  DHelicalFit fit; 
+	    
+	  // Add hits to the fit object and also to the track candidate
+	  // itself as associated objects
+	  for (unsigned int m=0;m<src_segments.size();m++){
+	    for (unsigned int n=0;n<src_segments[m]->hits.size();n++){
+	      const DFDCPseudo *fdchit=src_segments[m]->hits[n];
+	      fit.AddHit(fdchit);
+	      can->AddAssociatedObject(fdchit);
 	      
 	      //bfield->GetField(x,y,z,Bx,By,Bz);
 	      //Bz_avg-=Bz;
-	      Bz_avg+=bfield->GetBz(fdchits[m]->xy.X(),fdchits[m]->xy.Y(),
-				    fdchits[m]->wire->origin.z());
+	      Bz_avg+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),
+				    fdchit->wire->origin.z());
+	    }
+	    num_hits+=src_segments[m]->hits.size();
+	  }
+	  for (unsigned int m=0;m<segments.size();m++){
+	    for (unsigned int n=0;n<segments[m]->hits.size();n++){
+	      const DFDCPseudo *fdchit=segments[m]->hits[n];
+	      fit.AddHit(fdchit);
+	      can->AddAssociatedObject(fdchit);
 	      
-	      num_hits++;
+	      //bfield->GetField(x,y,z,Bx,By,Bz);
+	      //Bz_avg-=Bz;
+	      Bz_avg+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),
+				    fdchit->wire->origin.z());
 	    }
-	    for (unsigned int m=0;m<segments.size();m++){
-	      for (unsigned int n=0;n<segments[m]->hits.size();n++){
-		const DFDCPseudo *fdchit=segments[m]->hits[n];
-		fit.AddHit(fdchit);
-		//bfield->GetField(x,y,z,Bx,By,Bz);
-		//Bz_avg-=Bz;
-		Bz_avg+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),
-				      fdchit->wire->origin.z());
-	      }
-	      num_hits+=segments[m]->hits.size();
-	    }
+	    num_hits+=segments[m]->hits.size();
+	  }
 	    
-	    // Fake point at origin
-	    //fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
-	    // Fit the points to a circle
-	    if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
+	  // Fake point at origin
+	  //fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
+	  // Fit the points to a circle
+	  if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
 	    // Compute new transverse momentum
-	      Bz_avg=fabs(Bz_avg)/double(num_hits);
+	    Bz_avg=fabs(Bz_avg)/double(num_hits);
 	      
-	      // Guess for theta and z from input candidates
-	      double theta=fdccan->momentum().Theta();  
-	      fit.tanl=tan(M_PI_2-theta);
-	      fit.z_vertex=srccan->position().Z();
+	    // Guess for theta and z from input candidates
+	    double theta=fdccan->momentum().Theta();  
+	    fit.tanl=tan(M_PI_2-theta);
+	    fit.z_vertex=srccan->position().Z();
+	    
+	    // Redo line fit
+	    fit.FitLineRiemann();
+	    
+	    // Guess charge from fit
+	    fit.h=GetSenseOfRotation(fit,firsthit,srccan->position());
+	    can->setCharge(FactorForSenseOfRotation*fit.h);
 
-	      // Redo line fit
-	      fit.FitLineRiemann();
-	      
-	      // Guess charge from fit
-	      fit.h=GetSenseOfRotation(fit,firsthit,srccan->position());
-	      srccan->setCharge(FactorForSenseOfRotation*fit.h);
-
-	      // put z position just upstream of the first hit in z
-	      const DHFHit_t *myhit=fit.GetHits()[0];
-	      pos.SetXYZ(myhit->x,myhit->y,myhit->z);
-	      GetPositionAndMomentum(myhit->z-1.,fit,Bz_avg,pos,mom);
-	      
-	      srccan->setPosition(pos);
-	      srccan->setMomentum(mom);
-  
-	      num_fdc_cands_remaining--;
-	      if (DEBUG_LEVEL>0) _DBG_ << "Found a match using method #4" <<endl;
-	      return true;
-	    } // circle fit
-	  } // got a match?
-	} // is the first package in the new fdc candidate downstream of the last?
-      } // momentum check
+	    // put z position just upstream of the first hit in z
+	    const DHFHit_t *myhit=fit.GetHits()[0];
+	    pos.SetXYZ(myhit->x,myhit->y,myhit->z);
+	    GetPositionAndMomentum(myhit->z-1.,fit,Bz_avg,pos,mom);
+	    
+	    can->setPosition(pos);
+	    can->setMomentum(mom);
+	    can->chisq=fit.chisq;
+	    can->Ndof=fit.ndof;
+	    trackcandidates.push_back(can);
+	    
+	    num_fdc_cands_remaining--;
+	    
+	    if (DEBUG_LEVEL>0) _DBG_ << "Found a match using method #4" <<endl;
+	    return true;
+	  } // circle fit
+	} // got a match?
+      } // is the first package in the new fdc candidate downstream of the last?
     } // check that we have not already matched this fdc candidate
   } // loop over fdc track candidates
 
@@ -1478,13 +1553,10 @@ bool DTrackCandidate_factory::MatchMethod5(DTrackCandidate *can,
 
 // Method to match FDC candidates with stray CDC hits unassociated with track
 // candidates
-void DTrackCandidate_factory::MatchMethod6(unsigned int fdc_id,
-					   DTrackCandidate *can, 
+void DTrackCandidate_factory::MatchMethod6(DTrackCandidate *can, 
 					   vector<const DFDCSegment *>&segments,
 					   vector<unsigned int>&used_cdc_hits,  
-					   unsigned int &num_unmatched_cdcs,
-					   vector<int>&forward_matches,
-					   int &num_fdc_cands_remaining
+					   unsigned int &num_unmatched_cdcs
 					   ){
   // Input candidate parameters
   DVector3 pos=can->position();
@@ -1593,98 +1665,367 @@ void DTrackCandidate_factory::MatchMethod6(unsigned int fdc_id,
     UpdatePositionAndMomentum(can,firsthit,fit,Bz_avg,axial_id);
   
     if (DEBUG_LEVEL>0) _DBG_ << "... matched stray CDC hits ..." << endl;
+    cout<< "... matched stray CDC hits ..." <<endl;
+
   } // match at least one cdc hit
 }
 
-// Method to match fdc track stubs to other track candidates using fdc stubs
-// that have already been matched to cdc hits
-bool DTrackCandidate_factory::MatchMethod7(unsigned int current_id,
-					   unsigned int pack1,
-					   DHelicalFit &fit,
-					   DTrackCandidate *can, 
-					   vector<int>&forward_matches,
-					   int &num_fdc_cands_remaining
-					   ){
-  bool got_match=false;
+// This method tries to match unmatched fdc candidates to candidates that
+// already have fdc/cdc matches 
+bool DTrackCandidate_factory::MatchMethod7(DTrackCandidate *srccan, 
+					   vector<int> &forward_matches,
+					   int &num_fdc_cands_remaining){ 
+  if (DEBUG_LEVEL>0) _DBG_ << "Attempting matching method #7..." <<endl; 
 
-  // loop over all fdc candidates, skipping the current one, and skipping those
-  // that have already been matched to other track stubs
+  // Get the hits associated with this candidate
+  vector<const DFDCPseudo *>fdchits;
+  srccan->GetT(fdchits);
+  if (fdchits.size()==0) return false;
+
+  sort(fdchits.begin(),fdchits.end(),FDCHitSortByLayerincreasing);
+  unsigned int pack1_last=(fdchits[fdchits.size()-1]->wire->layer-1)/6;
+  
   for (unsigned int k=0;k<fdctrackcandidates.size();k++){
     if (num_fdc_cands_remaining==0) break;
-
-    if (k!=current_id && forward_matches[k]==0){
+    if (forward_matches[k]==0){
       const DTrackCandidate *fdccan = fdctrackcandidates[k];
-	      
+
       // Get the segment data
-      vector<const DFDCSegment *>segments2;
-      fdccan->GetT(segments2);
-      sort(segments2.begin(),segments2.end(),SegmentSortByLayerincreasing);
-	     
-      unsigned int pack2=segments2[0]->package;
-      if (pack2>pack1){
-	DVector3 mom=can->momentum();
-	DVector3 pos=can->position();
-	double q=can->charge();
+      vector<const DFDCSegment *>segments;
+      fdccan->GetT(segments);
+      sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
+	
+      const DFDCPseudo *firsthit=segments[0]->hits[0];
+      unsigned int pack2_first=segments[0]->package;
+      
+      if (pack2_first-pack1_last==1){ // match in adjacent packages
+	// Momentum and position vectors for the input candidate
+	DVector3 mom=srccan->momentum();
+	DVector3 pos=srccan->position();
+	double q=srccan->charge();
 	DVector3 norm(0.,0.,1.);
 
-	// Swim out to the first hit in the candidate to which we wish to match
+	// Swim to the first hit in the candidate to which we wish to match
 	// using the stepper
 	stepper->SetCharge(q);
-	stepper->SwimToPlane(pos,mom,segments2[0]->hits[0]->wire->origin,norm,NULL);
-
-	const DFDCPseudo *hit=segments2[0]->hits[0];
-	double dx=pos.x()-hit->xy.X();
-	double dy=pos.y()-hit->xy.Y();
+	stepper->SwimToPlane(pos,mom,firsthit->wire->origin,norm,NULL);
+	  
+	double dx=pos.x()-firsthit->xy.X();
+	double dy=pos.y()-firsthit->xy.Y();
 	double d2=dx*dx+dy*dy;
 	double variance=1.;
 	double prob=TMath::Prob(d2/variance,1);
-
+	  
 	unsigned int num_match=(prob>0.01)?1:0;
-	
-	// Use a helical approximation for the remaining hits in the segment
-	for (unsigned int m=1;m<segments2[0]->hits.size();m++){
-	  hit=segments2[0]->hits[m];
-	  ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);  
-	  dx=pos.x()-hit->xy.X();
-	  dy=pos.y()-hit->xy.Y();
-	  d2=dx*dx+dy*dy;
-	  prob=TMath::Prob(d2/variance,1);
 
+	// Try to match unmatched fdc candidates
+	for (unsigned int i=1;i<segments[0]->hits.size();i++){
+	  const DFDCPseudo *hit=segments[0]->hits[i];
+	  
+	  ProjectHelixToZ(hit->wire->origin.z(),q,mom,pos);
+	  
+	  DVector2 XY=hit->xy;
+	  double dx=XY.X()-pos.x();
+	  double dy=XY.Y()-pos.y();
+	  double dr2=dx*dx+dy*dy;
+
+	  double variance=1.0;
+	  double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
 	  if (prob>0.01) num_match++;
-	  if (num_match>3){
-	    got_match=true;
-	    break;
-	  }
-	}
-	if (got_match){
+	} 
+	if (num_match>=3){
 	  forward_matches[k]=1;
 	  num_fdc_cands_remaining--;
 
-	  // Now the last package in the candidate we just matched to should
-	  // be compared to the first package in any subsequent track..
-	  pack1=segments2[segments2.size()-1]->package;
-	  
-	  // Add the FDC hits to the final track candidate and to the
-	  // fit object
-	  for (unsigned int m=0;m<segments2.size();m++){
-	    for (unsigned int n=0;n<segments2[m]->hits.size();n++){
-	      const DFDCPseudo *hit=segments2[m]->hits[n];
-	      can->AddAssociatedObject(hit);
-	      fit.AddHit(hit);
+	  // average Bz
+	  double Bz=0.;
+	  unsigned int num_hits=0;
+	    
+	  // Create a new DHelicalFit object for fitting combined data
+	  DHelicalFit fit; 
+
+	  // Get the cdc hits associated with this track candidate and add the
+	  // axial straws to the list of hits to use in the circle fit
+	  vector<const DCDCTrackHit *>cdchits;
+	  srccan->GetT(cdchits);
+	  for (unsigned int i=0;i<cdchits.size();i++){
+	    if (cdchits[i]->is_stereo==false){
+	      double cov=0.213;  //guess
+	      const DVector3 origin=cdchits[i]->wire->origin;
+	      double x=origin.x(),y=origin.y(),z=origin.z();
+	      fit.AddHitXYZ(x,y,z,cov,cov,0.,true);
+	      Bz+=bfield->GetBz(x,y,z);
+	      num_hits++;
+	    }   
+	  }	  
+	  // Add the FDC hits from the existing track to this list
+	  for (unsigned int i=0;i<fdchits.size();i++){
+	    fit.AddHit(fdchits[i]);
+	    double zhit=fdchits[i]->wire->origin.z();
+	    Bz+=bfield->GetBz(fdchits[i]->xy.X(),fdchits[i]->xy.Y(),zhit);
+	    num_hits++;
+
+	    if (zhit<firsthit->wire->origin.z()){
+	      firsthit=fdchits[i];
 	    }
 	  }
-	  // Redo the fit
-	  fit.FitCircleRiemann(fit.r0);
-	
-	  if (DEBUG_LEVEL>0) _DBG_ << "... matched to FDC candidate #" 
-				   << k <<endl;      
-	}
-      }
-    }
-  } // loop over candidates
+	  // Add the new set of FDC hits; also add them as associated objects
+	  // to the track
+	  for (unsigned int m=0;m<segments.size();m++){
+	    for (unsigned int n=0;n<segments[m]->hits.size();n++){
+	      const DFDCPseudo *fdchit=segments[m]->hits[n];
+	      fit.AddHit(fdchit);
+	      double zhit=fdchit->wire->origin.z();
+	      Bz+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),zhit);
+	      srccan->AddAssociatedObject(fdchit);
+	    }
+	    num_hits+=segments[m]->hits.size();
+	  }	
+	  Bz=fabs(Bz)/double(num_hits);
 
-  return got_match;
+	  // Redo the circle fit with the extra hits
+	  double rc=srccan->momentum().Perp()/(0.003*Bz);
+	  if (fit.FitCircleRiemann(rc)==NOERROR){
+	    // Determine the polar angle
+	    double theta=srccan->momentum().Theta();
+	    fit.tanl=tan(M_PI_2-theta);
+      
+	    if (cdchits.size()>0){
+	      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
+					 pos,mom)==NOERROR){
+		   // Find the z-position at the new position in x and y
+		DVector2 xy0(pos.X(),pos.Y());
+		double tworc=2.*fit.r0;
+		double ratio=(firsthit->xy-xy0).Mod()/tworc;
+		double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
+		pos.SetZ(firsthit->wire->origin.z()-sperp*fit.tanl);
+	      }
+	    }
+	    else{
+	      // put z position just upstream of the first hit in z
+	      const DHFHit_t *myhit=fit.GetHits()[0];
+	      pos.SetXYZ(myhit->x,myhit->y,myhit->z);
+	      GetPositionAndMomentum(myhit->z-1.,fit,Bz,pos,mom);
+	    }
+
+	    srccan->chisq=fit.chisq;
+	    srccan->Ndof=fit.ndof;
+	    srccan->setMomentum(mom);
+	    srccan->setPosition(pos);
+	  }
+	    
+	  if (DEBUG_LEVEL>0) _DBG_ << "Found a match using method #7" <<endl;
+	  return true;
+	} // got a match?
+      } // is the first package in the new fdc candidate downstream of the last?
+    } // check that we have not already matched this fdc candidate
+  } // loop over fdc track candidates
+
+  return false;
 }
+
+
+// This method tries to improve the quality of the circle fit of a cdc
+// candidate by assuming that if the outermost hit is in a stereo straw, 
+// if this track is going to match to an fdc candidate, the location of the 
+// hit along the straw is likely to be near the end of the straw, thus 
+// providing another useful point on the circle.  After refitting the circle,
+// the code adjusts the dip angle and tries to match to the remaining fdc 
+// candidates.
+bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
+					   vector<int> &forward_matches,
+					   vector<unsigned int>&used_cdc_hits
+					   ){
+  // Get the cdc hits associated with this track candidate	  
+  vector<const DCDCTrackHit *>cdchits;
+  cdccan->GetT(cdchits);
+  sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
+  
+  unsigned int last_index=cdchits.size()-1;
+  if (cdchits[last_index]->is_stereo==true 
+      && cdchits[last_index]->wire->ring<13){
+    DHelicalFit fit;
+    
+    // Assume the outermost stereo hit occurs near the end of the straw
+    DVector3 origin=cdchits[last_index]->wire->origin;
+    DVector3 dir=cdchits[last_index]->wire->udir;
+    DVector3 wirepos=origin+(75./dir.z())*dir;
+    double cov=0.2;
+    double x=wirepos.x(),y=wirepos.y(),z=wirepos.z();
+    fit.AddHitXYZ(x,y,z,cov,cov,0,true);
+    double Bz=bfield->GetBz(x,y,z);
+    int num_hits=1;
+
+    // Add the cdc axial wires to the list of hits to use in the fit 
+    for (unsigned int k=0;k<cdchits.size();k++){	
+      if (cdchits[k]->is_stereo==false){
+	cov=0.2;  //guess
+	origin=cdchits[k]->wire->origin;
+	double x=origin.x(),y=origin.y(),z=origin.z();
+	fit.AddHitXYZ(x,y,z,cov,cov,0.,true);
+	Bz+=bfield->GetBz(x,y,z);
+	num_hits++;
+      }   
+    }
+    Bz=fabs(Bz)/num_hits;
+    
+    // Fit the points to a circle assuming that the circle goes through the 
+    // origin.
+    fit.FitCircle();
+	  
+    // Determine the tangent of the dip angle
+    double tworc=2.*fit.r0;
+    double sperp=tworc*asin(wirepos.Perp()/tworc);
+    fit.tanl=(wirepos.z()-TARGET_Z)/sperp;
+	  
+    // Find sense of rotation (proportional to the charge)
+    fit.GuessChargeFromCircleFit();
+    double q=fit.h*FactorForSenseOfRotation;
+
+    // Find the momentum of the particle and the position just outside the 
+    // start counter
+    DVector3 pos,mom;
+    if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,pos,mom)
+	==NOERROR){
+      // Find the z-position at the new position in x and y
+      DVector2 xy0(pos.X(),pos.Y());
+      double tworc=2.*fit.r0;
+      double ratio=(wirepos-pos).Perp()/tworc;
+      double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;   
+      pos.SetZ(wirepos.z()-sperp*fit.tanl);
+	    
+      // Set the charge for the stepper 
+      stepper->SetCharge(q);
+      // Vector normal to the fdc planes
+      DVector3 norm(0.,0.,1.);
+      
+      // Loop over the fdc candidates looking for a match
+      for (unsigned int k=0;k<fdctrackcandidates.size();k++){
+	if (forward_matches[k]==0){
+	  const DTrackCandidate *fdccan = fdctrackcandidates[k];
+	  
+	  // Get the segment data
+	  vector<const DFDCSegment *>segments;
+	  fdccan->GetT(segments);
+	  sort(segments.begin(), segments.end(), SegmentSortByLayerincreasing);
+	
+	  const DFDCPseudo *firsthit=segments[0]->hits[0];
+	  
+	  // Make copies of the momentum and position vectors for input to 
+	  // the swimmer
+	  DVector3 my_mom(mom);
+	  DVector3 my_pos(pos);
+	 
+	  // Swim to the first hit in the candidate to which we wish to match
+	  // using the stepper
+	  stepper->SwimToPlane(my_pos,my_mom,firsthit->wire->origin,norm,NULL);
+	
+	  // Match based on proximity of projection to hit
+	  double dx=my_pos.x()-firsthit->xy.X();
+	  double dy=my_pos.y()-firsthit->xy.Y();
+	  double d2=dx*dx+dy*dy;
+	  double variance=1.;
+	  double prob=TMath::Prob(d2/variance,1);
+	  
+	  unsigned int num_match=(prob>0.01)?1:0;
+
+	  // Try to match further hits in most upstream segment
+	  for (unsigned int i=1;i<segments[0]->hits.size();i++){
+	    const DFDCPseudo *hit=segments[0]->hits[i];
+		   
+	    ProjectHelixToZ(hit->wire->origin.z(),q,my_mom,my_pos);
+		   
+	    DVector2 XY=hit->xy;
+	    double dx=XY.X()-my_pos.x();
+	    double dy=XY.Y()-my_pos.y();
+	    double dr2=dx*dx+dy*dy;
+	    
+	    double variance=1.0;
+	    double prob = isfinite(dr2) ? TMath::Prob(dr2/variance,1):0.0;
+	    if (prob>0.01) num_match++;
+	  } 
+	  if (num_match>=3){
+	    forward_matches[k]=1;
+	    
+	    // Keep track of magnetic field in FDC
+	    double Bz_fdc=0;
+	    unsigned int num_hits_fdc=0;
+	    
+	    // Drop the first cdc hit in the list, since it isn't an
+	    // axial straw so the actual x,y position of the wire 
+	    // depends on z, which we don't really know yet.
+	    fit.PruneHit(0);
+	    
+	    // Add the fdc hits to the fit class
+	    for (unsigned int m=0;m<segments.size();m++){
+	      for (unsigned int n=0;n<segments[m]->hits.size();n++){
+		const DFDCPseudo *fdchit=segments[m]->hits[n];
+		fit.AddHit(fdchit);
+		
+		Bz_fdc+=bfield->GetBz(fdchit->xy.X(),fdchit->xy.Y(),
+				      fdchit->wire->origin.z());
+	      }
+	      num_hits_fdc+=segments[m]->hits.size();
+	    }
+	    
+	    // Fake point at origin
+	    //fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
+	    // Fit the points to a circle
+	    if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
+	      // Use the fdc track candidate to get tanl
+	      double theta=fdccan->momentum().Theta();
+	      fit.tanl=tan(M_PI_2-theta);
+	      
+	      Bz=0.5*(Bz+fabs(Bz_fdc)/num_hits_fdc);
+	      
+	      if (GetPositionAndMomentum(fit,Bz,cdchits[0]->wire->origin,
+					 my_pos,my_mom)==NOERROR){
+		// FDC hit
+		const DFDCPseudo *fdchit=segments[0]->hits[0];
+		// Find the z-position at the new position in x and y
+		DVector2 xy0(my_pos.X(),my_pos.Y());
+		double tworc=2.*fit.r0;
+		double ratio=(fdchit->xy-xy0).Mod()/tworc;
+		double sperp=(ratio<1.)?tworc*asin(ratio):tworc*M_PI_2;
+		
+		my_pos.SetZ(fdchit->wire->origin.z()-sperp*fit.tanl);
+	       	
+		DTrackCandidate *can = new DTrackCandidate;
+		can->setCharge(q);
+		can->setMomentum(my_mom);
+		can->setPosition(my_pos);
+		can->chisq=fit.chisq;
+		can->Ndof=fit.ndof;
+		
+		// Add hits as associated objects
+		for (unsigned int m=0;m<segments.size();m++){
+		  for (unsigned int n=0;n<segments[m]->hits.size();n++){
+		    const DFDCPseudo *fdchit=segments[m]->hits[n];
+		    can->AddAssociatedObject(fdchit);
+		  }
+		}
+		for (unsigned int n=0;n<cdchits.size();n++){
+		  used_cdc_hits[cdccan->used_cdc_indexes[n]]=1;
+		  can->AddAssociatedObject(cdchits[n]);
+		}
+		
+		trackcandidates.push_back(can);		     
+
+		if (DEBUG_LEVEL>0) _DBG_ << "Matched using Method 8" <<endl;
+
+		return true;
+	      }
+	    } // circle fit
+	  } // match criterion
+	} // check that fdc candidate has not already been matched
+      } // loop over fdc candidates
+    } // find new momentum and position after circle fit
+  } // Check that the outermost hit is a stereo hit
+
+  return false;
+}
+
+
 
 // Update the momentum and position entries for the candidate based on the
 // results of the most recent helical fit
