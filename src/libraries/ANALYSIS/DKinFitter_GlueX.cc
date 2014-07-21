@@ -4,7 +4,6 @@ DKinFitter_GlueX::DKinFitter_GlueX(void)
 {
 	dIsBFieldNearBeamline = false;
 	dMagneticFieldMap = NULL;
-	dTargetCenterZ = 0.0;
 }
 
 bool DKinFitter_GlueX::Get_IsBFieldNearBeamline(void) const
@@ -16,16 +15,6 @@ void DKinFitter_GlueX::Set_BField(const DMagneticFieldMap* locMagneticFieldMap)
 {
 	dMagneticFieldMap = locMagneticFieldMap;
 	dIsBFieldNearBeamline = (dMagneticFieldMap != NULL);
-
-	//test
-	double locBx, locBy, locBz;
-	dMagneticFieldMap->GetField(0.0, 0.0, dTargetCenterZ, locBx, locBy, locBz);
-	TVector3 locBField(locBx, locBy, locBz);
-	if(!(locBField.Mag() > 0.0))
-	{
-		cout << "ERROR: MAGNETIC FIELD IS ZERO AT THE TARGET. Aborting" << endl;
-		abort();
-	}
 }
 
 TVector3 DKinFitter_GlueX::Get_BField(const TVector3& locPosition) const

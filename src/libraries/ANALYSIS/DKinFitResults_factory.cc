@@ -26,7 +26,8 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	dAnalysisUtilities = locAnalysisUtilitiesVector[0];
 
 	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
-	dKinFitter.Set_BField(locApplication->GetBfield());
+	const DMagneticFieldMap* locMagneticFieldMap = locApplication->GetBfield();
+	dKinFitter.Set_BField(locMagneticFieldMap);
 
 	gPARMS->SetDefaultParameter("KINFIT:KINFITDEBUGLEVEL", dKinFitDebugLevel);
 	gPARMS->SetDefaultParameter("KINFIT:DEBUGLEVEL", dDebugLevel);
@@ -40,7 +41,13 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
 	if(locGeometry != NULL)
 		locGeometry->GetTargetZ(dTargetZCenter);
-	dKinFitter.Set_TargetCenterZ(dTargetZCenter);
+
+	//test
+	double locBx, locBy, locBz;
+	locMagneticFieldMap->GetField(0.0, 0.0, dTargetZCenter, locBx, locBy, locBz);
+	TVector3 locBField(locBx, locBy, locBz);
+	if(!(locBField.Mag() > 0.0))
+		cout << "WARNING: MAGNETIC FIELD IS ZERO AT THE TARGET CENTER. YOU SURE THIS IS OK???" << endl;
 
 	return NOERROR;
 }
