@@ -250,7 +250,7 @@ fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define F1TDC32_F1_HEADER(cdata,chip,chan_on_chip,trig,trig_time)  {*dabufp++ = 0xC0000000 | ((cdata&0x1F)<<22) | (0<<23) | (chip<< 3) | (chan_on_chip<< 0) | ((trig&0x3f)<<16) | ((trig_time&0x1ff)<<7);}
 #define F1TDC32_F1_DATA(cdata,chip,chan_on_chip,time)              {*dabufp++ = 0xB8000000 | ((cdata&0x1F)<<22) | (1<<23) | (chip<<19) | (chan_on_chip<<16) | (time&0xffff);}
 
-#define F1TDC32_FILLER {*dabufp++ = 0xF8000000;}
+#define F1TDC32_FILLER {*dabufp++ = 0xF8000000 | (slot<<22);}
 
 #define F1TDC32_CHIP_NUM(chan) (chan>>2)
 #define F1TDC32_CHAN_ON_CHIP(chan) (chan & 0x03)
@@ -377,7 +377,7 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define F1TDC48_F1_HEADER(cdata,chip,chan_on_chip,trig,trig_time)  {*dabufp++ = 0xC0000000 | ((cdata&0x1F)<<22) | (0<<23) | (chip<< 3) | (chan_on_chip<< 0) | ((trig&0x3f)<<16) | ((trig_time&0x1ff)<<7);}
 #define F1TDC48_F1_DATA(cdata,chip,chan_on_chip,time)              {*dabufp++ = 0xB8000000 | ((cdata&0x1F)<<22) | (1<<23) | (chip<<19) | (chan_on_chip<<16) | (time&0xffff);}
 
-#define F1TDC48_FILLER {*dabufp++ = 0xF8000000;}
+#define F1TDC48_FILLER(slot) {*dabufp++ = 0xF8000000 | (slot<<22);}
 
 #define F1TDC48_CHIP_NUM(chan) (chan>>3)
 #define F1TDC48_CHAN_ON_CHIP(chan) (chan & 0x03)
@@ -460,7 +460,7 @@ f1tdc48_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 	
 	nwords = dabufp - start;
 	if((nwords%2) == 0) {
-		F1TDC48_FILLER;
+		F1TDC48_FILLER(slot);
 		nwords += 2;
 		F1TDC48_BL_TRAILER(slot,nwords);
 	}else{
@@ -469,8 +469,8 @@ f1tdc48_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 	}
 	
 	if(nwords%4){
-		F1TDC48_FILLER;
-		F1TDC48_FILLER;
+		F1TDC48_FILLER(slot);
+		F1TDC48_FILLER(slot);
 		nwords += 2;
 	}
 	
