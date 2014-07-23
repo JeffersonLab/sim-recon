@@ -238,23 +238,29 @@ fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define F1TDC32_BL_HEADER(slot,blnum,cnt) {*dabufp++ =  0x80000000 | (slot<<22) | (F1TDC32<<18) | ((blnum&0x3ff)<<8) | cnt; }
 #define F1TDC32_BL_TRAILER(slot,nwords)   {*dabufp++ =  0x88000000 | (slot<<22) | nwords; }
 
-#define F1TDC32_EV_HEADER(slot,trig)  {*dabufp++ = 0x90000000 | (slot<<22) | (trig&0x3fffff); }
+#define F1TDC32_EV_HEADER(slot,trig)  {*dabufp++ = 0x90000000 | (slot<<22)| (trig&0x3fffff); }
 #define F1TDC32_EV_TS_LOW(timestamp)  {*dabufp++ = 0x98000000 | (timestamp&(0x0000000000ffffffLLU)); }
-#define F1TDC32_EV_TS_HIGH(timestamp) {*dabufp++ = (timestamp&(0x0000ffffff000000LLU))>>24; }
+#define F1TDC32_EV_TS_HIGH(timestamp) {*dabufp++ = (timestamp&(0x000000ffff000000LLU))>>24; }
 
 
-#define F1TDC32_F1_HEADER(cdata,evt,trig,chan)  {*dabufp++ = 0xA0000000 | (cdata<<24) | ((evt&0x1ff)<<16) | (chan)       ;}
-#define F1TDC32_F1_DATA(cdata,chan,time)        {*dabufp++ = 0xB0800000 | (cdata<<24) | (chan<<16)        | (time&0xffff);}
-#define F1TDC32_F1_TRAILER(cdata,evt,trig,chan) {*dabufp++ = 0xA8000000 | (cdata<<24) | ((evt&0x1ff)<<16) | (chan)       ;}
+// These changed based on the F1TDC_V2_V3_4_29_14.pdf document
+//#define F1TDC32_F1_HEADER(cdata,evt,trig,chan)  {*dabufp++ = 0xC0000000 | (cdata<<24) | ((evt&0x1ff)<<16) | (chan)       ;}
+//#define F1TDC32_F1_DATA(cdata,chan,time)        {*dabufp++ = 0xB8000000 | (cdata<<24) | (chan<<16)        | (time&0xffff);}
+//#define F1TDC32_F1_TRAILER(cdata,evt,trig,chan) {*dabufp++ = 0xA8000000 | (cdata<<24) | ((evt&0x1ff)<<16) | (chan)       ;}
+#define F1TDC32_F1_HEADER(cdata,chip,chan_on_chip,trig,trig_time)  {*dabufp++ = 0xC0000000 | ((cdata&0x1F)<<22) | (0<<23) | (chip<< 3) | (chan_on_chip<< 0) | ((trig&0x3f)<<16) | ((trig_time&0x1ff)<<7);}
+#define F1TDC32_F1_DATA(cdata,chip,chan_on_chip,time)              {*dabufp++ = 0xB8000000 | ((cdata&0x1F)<<22) | (1<<23) | (chip<<19) | (chan_on_chip<<16) | (time&0xffff);}
 
 #define F1TDC32_FILLER {*dabufp++ = 0xF8000000;}
 
+#define F1TDC32_CHIP_NUM(chan) (chan>>2)
+#define F1TDC32_CHAN_ON_CHIP(chan) (chan & 0x03)
 
 int
 f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 {
 	
 	int ii, jj, chan, hcnt, nwords;
+	int chip, chan_on_chip;
 	uint64_t tsdiv;
 	uint32_t ts, cdata;
 	uint32_t  eventNum;
@@ -283,12 +289,16 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 	
 	/*Loop over all channels */
 	for(chan=0;chan<F1TDC32_MAX_CHAN;chan++) {
+
+		chip = F1TDC32_CHIP_NUM(chan);
+		chan_on_chip = F1TDC32_CHAN_ON_CHIP(chan);
 		
 		/* Check for outputing Chip Header */
 		if(chan == 0) {
-			F1TDC32_F1_HEADER(cdata, (eventNum&0x3f),(ts&0x1ff),chan);
+			//F1TDC32_F1_HEADER(cdata, (eventNum&0x3f),(ts&0x1ff),chan);
+			F1TDC32_F1_HEADER(cdata,chip,chan_on_chip,(eventNum&0x3f), (ts&0x1ff));
 		}
-		
+				
 		/* check for all hits for this channel */
 		jj=0;
 		for(ii=0;ii<hcnt;ii++) {
@@ -309,13 +319,13 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 		}
 		/* printf("write hit data %d\n",jj); */
 		for(ii=0;ii<jj;ii++) {
-			F1TDC32_F1_DATA(cdata,chan,chit[ii]->hdata[0]);
+			F1TDC32_F1_DATA(cdata,chip,chan_on_chip,chit[ii]->hdata[0]);
 		}
 		
 		/* Check for outputing chip trailer */
-		if(chan == 31) {
-			F1TDC32_F1_TRAILER(cdata,(eventNum&0x3f),(ts&0x1ff),chan);
-		}
+//		if(chan == 31) {
+//			F1TDC32_F1_TRAILER(cdata,(eventNum&0x3f),(ts&0x1ff),chan);
+//		}
 		
 	}
 	
@@ -360,11 +370,17 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define F1TDC48_EV_TS_HIGH(timestamp) {*dabufp++ = (timestamp&(0x0000ffffff000000LLU))>>24; }
 
 
-#define F1TDC48_F1_HEADER(cdata,evt,trig,chan)  {*dabufp++ = 0xA0000000 | (cdata<<24) | ((evt&0x1ff)<<16) | (chan);}
-#define F1TDC48_F1_DATA(cdata,chan,time)        {*dabufp++ = 0xB0800000 | (cdata<<24) | (chan<<16)        | (time&0xffff);}
-#define F1TDC48_F1_TRAILER(cdata,evt,trig,chan) {*dabufp++ = 0xA8000000 | (cdata<<24) | ((evt&0x1ff)<<16) | (chan);}
+// These changed based on the F1TDC_V2_V3_4_29_14.pdf document
+//#define F1TDC48_F1_HEADER(cdata,evt,trig,chan)  {*dabufp++ = 0xA0000000 | (cdata<<24) | ((evt&0x1ff)<<16) | (chan);}
+//#define F1TDC48_F1_DATA(cdata,chan,time)        {*dabufp++ = 0xB0800000 | (cdata<<24) | (chan<<16)        | (time&0xffff);}
+//#define F1TDC48_F1_TRAILER(cdata,evt,trig,chan) {*dabufp++ = 0xA8000000 | (cdata<<24) | ((evt&0x1ff)<<16) | (chan);}
+#define F1TDC48_F1_HEADER(cdata,chip,chan_on_chip,trig,trig_time)  {*dabufp++ = 0xC0000000 | ((cdata&0x1F)<<22) | (0<<23) | (chip<< 3) | (chan_on_chip<< 0) | ((trig&0x3f)<<16) | ((trig_time&0x1ff)<<7);}
+#define F1TDC48_F1_DATA(cdata,chip,chan_on_chip,time)              {*dabufp++ = 0xB8000000 | ((cdata&0x1F)<<22) | (1<<23) | (chip<<19) | (chan_on_chip<<16) | (time&0xffff);}
 
 #define F1TDC48_FILLER {*dabufp++ = 0xF8000000;}
+
+#define F1TDC48_CHIP_NUM(chan) (chan>>3)
+#define F1TDC48_CHAN_ON_CHIP(chan) (chan & 0x03)
 
 
 int
@@ -372,6 +388,7 @@ f1tdc48_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 {
 	
 	int ii, jj, chan, hcnt, nwords;
+	int chip, chan_on_chip;
 	uint64_t tsdiv;
 	uint32_t ts, cdata;
 	uint32_t  eventNum;
@@ -402,9 +419,13 @@ f1tdc48_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 	/*Loop over all channels */
 	for(chan=0;chan<F1TDC48_MAX_CHAN;chan++) {
 		
+		chip = F1TDC48_CHIP_NUM(chan);
+		chan_on_chip = F1TDC48_CHAN_ON_CHIP(chan);
+
 		/* Check for outputing Chip Header */
 		if(chan == 0) {
-			F1TDC48_F1_HEADER(cdata, (eventNum&0x3f),(ts&0x1ff),0);
+			//F1TDC48_F1_HEADER(cdata, (eventNum&0x3f),(ts&0x1ff),0);
+			F1TDC48_F1_HEADER(cdata,chip,chan_on_chip,(eventNum&0x3f), (ts&0x1ff));
 		}
 		
 		/* check for all hits for this channel */
@@ -427,13 +448,13 @@ f1tdc48_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 		}
 		/* printf("write hit data %d\n",jj); */
 		for(ii=0;ii<jj;ii++) {
-			F1TDC48_F1_DATA(cdata,chan,chit[ii]->hdata[0]);
+			F1TDC48_F1_DATA(cdata,chip,chan_on_chip,chit[ii]->hdata[0]);
 		}
 		
 		/* Check for outputing chip trailer */
-		if(chan == 47) {
-			F1TDC48_F1_TRAILER(cdata,(eventNum&0x3f),(ts&0x1ff),chan);
-		}
+//		if(chan == 47) {
+//			F1TDC48_F1_TRAILER(cdata,(eventNum&0x3f),(ts&0x1ff),chan);
+//		}
 		
 	}
 	
