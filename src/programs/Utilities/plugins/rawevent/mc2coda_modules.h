@@ -505,7 +505,7 @@ int
 caen1290_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 {
 	
-	int ii, jj, chan, hcnt, nwords=0, wcnt;
+	int ii, jj, chan, hcnt, nwords=0, wcnt=0;
 	//uint64_t tsdiv;
 	uint32_t chip, stat, edge = 0;
 	uint32_t  eventNum;
