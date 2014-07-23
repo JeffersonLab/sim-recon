@@ -254,8 +254,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
-		void ParseF1TDCBank_style1(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
-		void ParseF1TDCBank_style2(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
+		uint32_t F1TDC_channel(uint32_t chip, uint32_t chan_on_chip, int modtype);
 		void ParseTSBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseTIBank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);

@@ -17,10 +17,11 @@ class DF1TDCHit:public DDAQAddress{
 	public:
 		JOBJECT_PUBLIC(DF1TDCHit);
 		
-		DF1TDCHit(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t trig_time=0, uint32_t time=0):DDAQAddress(rocid, slot, channel, itrigger),trig_time(trig_time),time(time){}
+		DF1TDCHit(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t trig_time=0, uint32_t time=0, uint32_t data_word=0):DDAQAddress(rocid, slot, channel, itrigger),trig_time(trig_time),time(time),data_word(data_word){}
 		
 		uint32_t trig_time;            // from data word
 		uint32_t time;                 // from data word
+		uint32_t data_word;            // full data word (bits 24-26 contain some status info)
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
@@ -28,6 +29,7 @@ class DF1TDCHit:public DDAQAddress{
 			DDAQAddress::toStrings(items);
 			AddString(items, "trig_time", "%d", trig_time);
 			AddString(items, "time", "%d", time);
+			AddString(items, "data_word", "0x%08x", data_word);
 		}
 };
 
