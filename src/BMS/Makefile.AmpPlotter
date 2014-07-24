@@ -1,9 +1,0 @@
-CXXFLAGS += -I$(AMPPLOTTER)
-CUFLAGS += -I$(AMPPLOTTER) -I..
-
-ifdef GPU
-include $(HALLD_HOME)/src/BMS/Makefile.CUDA
-MISC_LIBS += -L$(AMPPLOTTER)/lib -lAmpPlotter_GPU
-else
-MISC_LIBS += -L$(AMPPLOTTER)/lib -lAmpPlotter
-endif
