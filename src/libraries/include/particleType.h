@@ -416,11 +416,11 @@ inline static char* ParticleName_ROOT(Particle_t p)
   case b1_1235_Plus:
     return (char*)"#it{b}_{1}(1235)^{+}";
   case Deuteron:
-    return (char*)"#it{D}";
+    return (char*)"#it{d}";
   case Helium:
     return (char*)"#it{He}";
   case Triton:
-    return (char*)"#it{T}";
+    return (char*)"#it{t}";
   case Pb208:
     return (char*)"#it{Pb^{208}}";
   case Sigma_1385_Minus:
