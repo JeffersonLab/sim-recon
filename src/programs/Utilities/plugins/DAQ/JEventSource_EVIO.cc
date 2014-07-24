@@ -16,6 +16,8 @@ using namespace std;
 
 #ifdef HAVE_EVIO		
 #include <evioFileChannel.hxx>
+
+extern "C" uint32_t *swap_int32_t(uint32_t *data, unsigned int length, uint32_t *dest);
 #endif // HAVE_EVIO
 
 #ifdef HAVE_ET
@@ -86,7 +88,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	PARSE_EVIO_EVENTS = true;
 	BUFFER_SIZE = 2000000; // in bytes
 	ET_STATION_NEVENTS = 10;
-	ET_STATION_CREATE_BLOCKING = true;
+	ET_STATION_CREATE_BLOCKING = false;
 	VERBOSE = 0;
 	TIMEOUT = 2.0;
 	EMULATE_PULSE_INTEGRAL_MODE = true;
@@ -749,8 +751,42 @@ _DBG__;
 				return NO_MORE_EVENTS_IN_SOURCE;
 			}
 			
-			// Copy event into "buff", byte swapping if needed
-			evioswap(et_buff, swap_needed ? 1:0, buff);
+			// Copy event into "buff", byte swapping if needed.
+			// The evioswap routine will not handle the NTH correctly
+			// so we need to swap that separately and then swap each
+			// event in the stack using evioswap so that the different
+			// bank types are handled properly. If no swapping is
+			// needed, we just copy it all over in one go.
+			if(!swap_needed){
+
+				// Copy NTH and all events without swapping
+				memcpy(buff, et_buff, bufsize_bytes);
+
+			}else{
+
+				// Swap+copy NTH
+				swap_int32_t(et_buff, 8, buff);
+				
+				// Loop over events in stack
+				int Nevents_in_stack=0;
+				uint32_t idx = 8;
+				while(idx<len){
+					uint32_t mylen = EVIO_SWAP32(et_buff[idx]);
+					if(VERBOSE>7) evioout <<"        swapping event: idx=" << idx <<" mylen="<<mylen<<endl;
+					if( (idx+mylen) > len ){
+						_DBG_ << "Bad word count while swapping events in ET event stack!" << endl;
+						_DBG_ << "idx="<<idx<<" mylen="<<mylen<<" len="<<len<<endl;
+						_DBG_ << "This indicates a problem either with the DAQ system"<<endl;
+						_DBG_ << "or this parser code! Contact davidl@jlab.org x5567 " <<endl;
+						break;
+					}
+					swap_int32_t(&et_buff[idx], mylen+1, &buff[idx]);
+					idx += mylen+1;
+					Nevents_in_stack++;
+				}
+				
+				if(VERBOSE>3) evioout << "        Found " << Nevents_in_stack << " events in the ET event stack." << endl;
+			}
 
 			// Put ET event back since we're done with it
 			et_event_put(sys_id, att_id, pe);
@@ -2265,6 +2301,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 	/// This code is based on the document F1TDC_V2_V3_4_29_14.pdf obtained from:
 	/// https://coda.jlab.org/wiki/index.php/JLab_Module_Manuals
 
+	if(VERBOSE>0) evioout << "  Entering ParseF1TDCBank" << endl;
 
 	const uint32_t *istart = iptr;
 	
@@ -2278,9 +2315,10 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 	}
 
 	uint32_t slot_block_header     = (*iptr)>>22 & 0x001F;
-	//uint32_t block_num             = (*iptr)>> 8 & 0x03FF;
+	uint32_t block_num             = (*iptr)>> 8 & 0x03FF;
 	uint32_t Nevents_block_header  = (*iptr)>> 0 & 0x000F;
 	int modtype = (*iptr)>>18 & 0x000F;  // should match a DModuleType::type_id_t
+	if(VERBOSE>2) evioout << "    F1 Block Header: slot=" << slot_block_header << " block_num=" << block_num << " Nevents=" << Nevents_block_header << endl;
 
 	// Advance to next word
 	iptr++;
@@ -2297,6 +2335,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 
 		uint32_t slot_event_header  = (*iptr)>>22 & 0x00000001F;
 		uint32_t itrigger           = (*iptr)>>0  & 0x0003FFFFF;
+		if(VERBOSE>2) evioout << "      F1 Event Header: slot=" << slot_block_header << " itrigger=" << itrigger << endl;
 		
 		// Make sure slot number from event header matches block header
 		if(slot_event_header != slot_block_header){
@@ -2313,10 +2352,12 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 		// word holds the low 24 bits and the second the high 16 bits. According to Dave A.,
 		// the second word is optional.
 		uint32_t trig_time = ((*iptr)&0xFFFFFF);
+		if(VERBOSE>2) evioout << "      F1 Trigger time: low 24 bits=" << trig_time << endl;
 		iptr++;
 		if(iptr>=iend) throw JException("F1TDC data corrupt! Block truncated before trailer word!");
 		if(((*iptr>>31) & 0x1) == 0){
 			trig_time += ((*iptr)&0xFFFF)<<24; // from word on the street: second trigger time word is optional!!??
+			if(VERBOSE>2) evioout << "      F1 Trigger time: high 16 bits=" << ((*iptr)&0xFFFF) << " total trig_time=" << trig_time << endl;
 		}else{
 			iptr--; // second time word not present, back up pointer
 		}
@@ -2334,39 +2375,42 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 		iptr++;
 
 		// Loop over F1 data words
+		uint32_t chip_f1header=0, chan_on_chip_f1header=0, itrigger_f1header=0, trig_time_f1header=0;
 		while( iptr<iend && ((*iptr)>>31)==0x1 ){
 		
 			bool done = false;
 			
-			uint32_t chip_f1header=0, chan_on_chip_f1header=0, itrigger_f1header=0, trig_time=0;
 			uint32_t chip, chan_on_chip, time;
 			uint32_t channel;
 			DF1TDCHit *hit=NULL;
 			switch( (*iptr) & 0xF8000000 ){
 				case 0xC0000000: // F1 Header
 					chip_f1header         = ((*iptr)>> 3) & 0x07;
-					chan_on_chip_f1header = ((*iptr)>> 0) & 0x07;
+					chan_on_chip_f1header = ((*iptr)>> 0) & 0x07;  // this is always 7 in real data!
 					itrigger_f1header     = ((*iptr)>>16) & 0x3F;
-					trig_time             = ((*iptr)>> 7) & 0x1FF;
+					trig_time_f1header    = ((*iptr)>> 7) & 0x1FF;
+					if(VERBOSE>5) evioout << "      Found F1 header: chip=" << chip_f1header << " chan=" << chan_on_chip_f1header << " itrig=" << itrigger_f1header << " trig_time=" << trig_time_f1header << endl;
 					if( itrigger_f1header != (itrigger & 0x3F)) throw JException("Trigger number in F1 header word does not match Event header word!");
 					break;
 				case 0xB8000000: // F1 Data
 					chip         = (*iptr>>19) & 0x07;
 					chan_on_chip = (*iptr>>16) & 0x07;
 					time         = (*iptr>> 0) & 0xFFFF;
+					if(VERBOSE>5) evioout << "      Found F1 data  : chip=" << chip << " chan=" << chan_on_chip  << " time=" << time << " (header: chip=" << chip_f1header << ")" << endl;
 					if(chip!=chip_f1header) throw JException("F1 chip number in data does not match header!");
-					if(chan_on_chip!=chan_on_chip_f1header) throw JException("F1 chan_on_chip number in data does not match header!");
 					channel = F1TDC_channel(chip, chan_on_chip, modtype);
-					hit = new DF1TDCHit(rocid, slot_block_header, channel, itrigger, trig_time, time, *iptr);
+					hit = new DF1TDCHit(rocid, slot_block_header, channel, itrigger, trig_time_f1header, time, *iptr);
 					if(objs)objs->hit_objs.push_back(hit);
 					break;
 				case 0xF8000000: // Filler word
+					if(VERBOSE>7) evioout << "      Found F1 filler word" << endl;
 					break;
 				case 0x80000000: // JLab block header  (handled in outer loop)
 				case 0x88000000: // JLab block trailer (handled in outer loop)
 				case 0x90000000: // JLab event header  (handled in outer loop)
 				case 0x98000000: // Trigger time       (handled in outer loop)
 				case 0xF0000000: // module has no valid data available for read out (how to handle this?)
+					if(VERBOSE>5) evioout << "      Found F1 break word: 0x" << hex << *iptr << dec << endl;
 					done = true;
 					break;
 				default:
@@ -2376,6 +2420,17 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 					for(const uint32_t *iiptr = istart; iiptr<iend; iiptr++){
 						_DBG_<<"0x"<<hex<<*iiptr<<dec;
 						if(iiptr == iptr)cerr<<"  <----";
+						switch( (*iiptr) & 0xF8000000 ){
+							case 0x80000000: cerr << "   F1 Block Header"; break;
+							case 0x90000000: cerr << "   F1 Event Header"; break;
+							case 0x98000000: cerr << "   F1 Trigger time"; break;
+							case 0xC0000000: cerr << "   F1 Header"; break;
+							case 0xB8000000: cerr << "   F1 Data"; break;
+							case 0x88000000: cerr << "   F1 Block Trailer"; break;
+							case 0xF8000000: cerr << "   Filler word"; break;
+							case 0xF0000000: cerr << "   <module has no valid data>"; break;
+							default: break;
+						}
 						cerr<<endl;
 						if(iiptr > (iptr+4)) break;
 					}
