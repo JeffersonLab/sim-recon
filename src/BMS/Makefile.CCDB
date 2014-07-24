@@ -1,2 +1,0 @@
-
-MISC_LIBS 	+= -L$(CCDB_HOME)/lib -lccdb
