@@ -294,9 +294,9 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 		chan_on_chip = F1TDC32_CHAN_ON_CHIP(chan);
 		
 		/* Check for outputing Chip Header */
-		if(chan == 0) {
+		if(chan_on_chip == 0) {
 			//F1TDC32_F1_HEADER(cdata, (eventNum&0x3f),(ts&0x1ff),chan);
-			F1TDC32_F1_HEADER(cdata,chip,chan_on_chip,(eventNum&0x3f), (ts&0x1ff));
+			F1TDC32_F1_HEADER(cdata,chip, 7,(eventNum&0x3f), (ts&0x1ff));
 		}
 				
 		/* check for all hits for this channel */
