@@ -377,38 +377,32 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     DTrackCandidate *can = new DTrackCandidate;
     const DTrackCandidate *cdccan = cdctrackcandidates[cdc_backward_ids[j]]; 
 
-    can->setMomentum(cdccan->momentum());
-    can->setPosition(cdccan->position());
-    can->setCharge(cdccan->charge());
-
-    // Get the cdc hits and add them to the candidate
-    vector<const DCDCTrackHit *>cdchits;
-    cdccan->GetT(cdchits);
-    sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
-    for (unsigned int n=0;n<cdchits.size();n++){
-      used_cdc_hits[cdccan->used_cdc_indexes[n]]=1;
-      can->AddAssociatedObject(cdchits[n]);
-    }
-    can->chisq=cdccan->chisq;
-    can->Ndof=cdccan->Ndof;
-      
     // Sometimes the cdc track candidate parameters for tracks that are actually
     // going forward are so poor that they don't seem to point towards the cdc
     // end plate, so the previous matching methods fail.  Try one more time 
-    // to match these to FDC segments...
-    if (num_fdc_cands_remaining>0){
-      if (DEBUG_LEVEL>0) _DBG_ << "Attempting FDC/CDC matching method #5..." 
-			       <<endl;
-      if (MatchMethod5(can,cdchits,forward_matches)){
-	num_fdc_cands_remaining--;
-
-	if (DEBUG_LEVEL>0) _DBG_ << "... matched to CDC candidate #" 
-				 <<cdc_backward_ids[j]<<endl;
-
-      }
+    // to match these to FDC segments by using Method 8...
+    if (num_fdc_cands_remaining>0 
+	&& MatchMethod8(cdccan,forward_matches,used_cdc_hits)==true){
+      num_fdc_cands_remaining--;
     }
+    else{
+      can->setMomentum(cdccan->momentum());
+      can->setPosition(cdccan->position());
+      can->setCharge(cdccan->charge());
 
-    trackcandidates.push_back(can);
+      // Get the cdc hits and add them to the candidate
+      vector<const DCDCTrackHit *>cdchits;
+      cdccan->GetT(cdchits);
+      sort(cdchits.begin(), cdchits.end(), CDCHitSortByLayerincreasing);
+      for (unsigned int n=0;n<cdchits.size();n++){
+	used_cdc_hits[cdccan->used_cdc_indexes[n]]=1;
+	can->AddAssociatedObject(cdchits[n]);
+      }
+      can->chisq=cdccan->chisq;
+      can->Ndof=cdccan->Ndof;
+ 
+      trackcandidates.push_back(can);
+    }
   }	
 
   unsigned int num_unmatched_cdcs=0;
@@ -866,9 +860,6 @@ jerror_t DTrackCandidate_factory::DoRefit(DHelicalFit &fit,
     num_hits+=segments[k]->hits.size();
   }	
   Bz=fabs(Bz)/double(num_hits);
-	  
-  // Fake point at origin
-  //fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.);
   
   // Fit the points to a circle
   return (fit.FitCircleRiemann(segments[0]->rc));
@@ -1404,9 +1395,6 @@ bool DTrackCandidate_factory::MatchMethod4(const DTrackCandidate *srccan,
 	    }
 	    num_hits+=segments[m]->hits.size();
 	  }
-	    
-	  // Fake point at origin
-	  //fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
 	  // Fit the points to a circle
 	  if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
 	    // Compute new transverse momentum
@@ -1969,7 +1957,7 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 	    }
 	    
 	    // Fake point at origin
-	    //fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
+	    fit.AddHitXYZ(0.,0.,TARGET_Z,BEAM_VAR,BEAM_VAR,0.,true);
 	    // Fit the points to a circle
 	    if (fit.FitCircleRiemann(segments[0]->rc)==NOERROR){
 	      // Use the fdc track candidate to get tanl
@@ -2011,7 +1999,7 @@ bool DTrackCandidate_factory::MatchMethod8(const DTrackCandidate *cdccan,
 		
 		trackcandidates.push_back(can);		     
 
-		if (DEBUG_LEVEL>0) _DBG_ << "Matched using Method 8" <<endl;
+		if (DEBUG_LEVEL>0) _DBG_ << "Matched using Method #8" <<endl;
 
 		return true;
 	      }
