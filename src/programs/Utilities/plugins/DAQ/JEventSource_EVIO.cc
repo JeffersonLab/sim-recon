@@ -436,6 +436,7 @@ jerror_t JEventSource_EVIO::GetEvent(JEvent &event)
 		objs_ptr = new ObjList();
 		objs_ptr->eviobuff = buff;
 		objs_ptr->eviobuff_size = buff_size;
+		objs_ptr->run_number = FindRunNumber(buff);
 	}
 
 	// Store a pointer to the ObjList object for this event in the
@@ -1401,6 +1402,65 @@ int32_t JEventSource_EVIO::GetRunNumber(evioDOMTree *evt)
 	return last_run_number;
 }
 
+//----------------
+// FindRunNumber
+//----------------
+int32_t JEventSource_EVIO::FindRunNumber(uint32_t *iptr)
+{
+	if(VERBOSE>1) evioout << " .. Searching for run number ..." <<endl;
+
+	// Assume first word is number of words in bank
+	uint32_t *iend = &iptr[*iptr - 1];
+	if(*iptr > 256) iend = &iptr[256];
+	uint32_t Nrocs=0;
+	bool has_timestamps = false;
+	while(iptr<iend){
+		iptr++;
+		switch((*iptr)>>16){
+			case 0xFF10:
+			case 0xFF11:
+			case 0xFF20:
+			case 0xFF21:
+			case 0xFF24:
+			case 0xFF25:
+			case 0xFF30:
+				// These Trigger Bank Tag values have no run number info in them
+				if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does not contain run number" <<endl;
+				return 0;
+			case 0xFF23:
+			case 0xFF27:
+				has_timestamps = true;
+			case 0xFF22:
+			case 0xFF26:
+				if(VERBOSE>2) evioout << " ... Trigger bank tag (0x" << hex << ((*iptr)>>16) << dec << ") does contain run number" <<endl;
+				Nrocs = (*iptr) & 0x0F;
+				break;
+			default:
+				continue;
+		}
+		iptr++;
+		if( ((*iptr)&0x00FF0000) != 0x000A0000) { iptr--; continue; }
+		uint32_t M = iptr[-3] & 0x000000FF; // Number of events from Physics Event header
+		if(VERBOSE>2) evioout << " ... Trigger bank " << (has_timestamps ? "does":"doesn't") << " have timestamps. Nevents in block M=" << M <<endl;
+		iptr++;
+		uint64_t *iptr64 = (uint64_t*)iptr;
+
+		uint64_t event_num = *iptr64;
+		iptr64++;
+		if(has_timestamps) iptr64 = &iptr64[M]; // advance past timestamps
+		if(VERBOSE>3) evioout << " .... Event num: " << event_num <<endl;
+
+		// For some reason, we have to first put this into  
+		// 64bit number and then cast it. 
+		uint64_t run64 = (*iptr64)>>32;
+		int32_t run = (int32_t)run64;
+		if(VERBOSE>1) evioout << " .. Found run number: " << run <<endl;
+
+		return run;
+	}
+	
+	return 0;
+}
 
 //----------------
 // MergeObjLists
