@@ -250,7 +250,7 @@ fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define F1TDC32_F1_HEADER(cdata,chip,chan_on_chip,trig,trig_time)  {*dabufp++ = 0xC0000000 | ((cdata&0x1F)<<22) | (0<<23) | (chip<< 3) | (chan_on_chip<< 0) | ((trig&0x3f)<<16) | ((trig_time&0x1ff)<<7);}
 #define F1TDC32_F1_DATA(cdata,chip,chan_on_chip,time)              {*dabufp++ = 0xB8000000 | ((cdata&0x1F)<<22) | (1<<23) | (chip<<19) | (chan_on_chip<<16) | (time&0xffff);}
 
-#define F1TDC32_FILLER {*dabufp++ = 0xF8000000 | (slot<<22);}
+#define F1TDC32_FILLER(slot) {*dabufp++ = 0xF8000000 | (slot<<22);}
 
 #define F1TDC32_CHIP_NUM(chan) (chan>>2)
 #define F1TDC32_CHAN_ON_CHIP(chan) (chan & 0x03)
@@ -331,7 +331,7 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 	
 	nwords = dabufp - start;
 	if((nwords%2) == 0) {
-		F1TDC32_FILLER;
+		F1TDC32_FILLER(slot);
 		nwords += 2;
 		F1TDC32_BL_TRAILER(slot,nwords);
 	}else{
@@ -340,8 +340,8 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 	}
 	
 	if(nwords%4){
-		F1TDC32_FILLER;
-		F1TDC32_FILLER;
+		F1TDC32_FILLER(slot);
+		F1TDC32_FILLER(slot);
 		nwords += 2;
 	}
 	
@@ -400,8 +400,7 @@ f1tdc48_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 	eventNum  = (event->eventid)&0xffffffff;
 	timestamp = (event->trigtime);
 	hcnt      =  event->hcount[(roc-1)][(slot-1)];
-	
-	
+
 	/* Set default value for cdata bits - 3 bits - 100b = 0x4  res locked, ouput fifo ok, hit fifo ok */
 	cdata = 0x4;
 	
@@ -423,9 +422,9 @@ f1tdc48_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 		chan_on_chip = F1TDC48_CHAN_ON_CHIP(chan);
 
 		/* Check for outputing Chip Header */
-		if(chan == 0) {
+		if(chan_on_chip == 0) {
 			//F1TDC48_F1_HEADER(cdata, (eventNum&0x3f),(ts&0x1ff),0);
-			F1TDC48_F1_HEADER(cdata,chip,chan_on_chip,(eventNum&0x3f), (ts&0x1ff));
+			F1TDC48_F1_HEADER(cdata,chip,7,(eventNum&0x3f), (ts&0x1ff));
 		}
 		
 		/* check for all hits for this channel */
