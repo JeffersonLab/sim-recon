@@ -1323,7 +1323,7 @@ void JEventProcessor_rawevent::StartElement(void *userData, const char *xmlname,
 			break;
 		case CAEN1190:
 		case CAEN1290:
-			detID[nCrate-1][slot-1]   = 2;
+			detID[nCrate-1][slot-1]   = 20;
 			break;
 		default:
 			detID[nCrate-1][slot-1]   = 0;

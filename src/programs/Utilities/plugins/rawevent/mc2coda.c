@@ -366,7 +366,7 @@ mc2codaCloseEvent(CODA_EVENT_INFO *event)
 		// these modules must go in a separate DBB.
 		//
 		// To handle this, the DBB should be opened using the module type
-		// (0 for non-digitizing, 1 for JLab, 2 for CAEN1290, ....) of
+		// (0 for non-digitizing, 1 for JLab, 20 for CAEN1290, ....) of
 		// the first module in the crate. If a module with a different
 		// det_id is encountered, the DBB should be closed and another
 		// opened using that new det_id. This means we need to find the
