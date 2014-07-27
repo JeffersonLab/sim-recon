@@ -1280,7 +1280,7 @@ void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
 	///
 	/// The amplitude of the signal is scaled down to account for the pre_amp
 	/// gain difference between TDC and fADC signal splits. It is also converted
-	/// into units of fADC counts assuming 4096 counts per 2V.
+	/// into GeV-equivalent units.
 	///
 	/// n.b. no quantization of the ADC counts is done at this stage since
 	/// it is unclear if the conversions are correct. This can be done
@@ -1330,15 +1330,27 @@ void FindHitsOneHisto(double thresh_mV, DHistogram *h, vector<fADCHit> &hits)
 			integral += h->GetBinContent(start_bin);
 		}
 		
-		// Scale the integral by the ratio of bin widths to get it in
-		// units of mV * fADC bins
-		integral *= bin_width/4.0; // the fADC250 has 4ns wide samples
-
-		// Expect 4906 counts/2V
-		double fADC = integral*4096.0/2000.0; // 2V = 2000mV
+		//Previously we converted this integral into fADC units. This
+		//conversion factor was simply bin_width/(4 ns)*4096/(2000 mV).
+		//Now, however, for consistency with the rest of the software, we
+		//output hit energy in GeV. Naively we would expect the conversion
+		//factor between integrated mV and integrated MeV to be the same as the
+		//mV_per_MeV factor calculated in bcal_init() above (numerically this
+		//factor is about 0.88), but this is not
+		//the case for some reason, probably because the integral of the
+		//response function (spline) is not equal to one.
+		//When performing the ApplyElectronicPulseShape() step,
+		//one notices that the integral of
+		//the histogram increases by a factor of about 303 (this can be
+		//verified using the debug_hists option). This is effectively
+		//the conversion factor between integrated mV and integrated MeV.
+		//-WL 2014-07-25
+		double adhoc_mV_per_MeV = 303.0;
+		double E_GeV = integral/adhoc_mV_per_MeV;
+		E_GeV /= 1000.0; //convert MeV to GeV
 
 		// Store hit in container
-		hits.push_back(fADCHit(fADC,t));
+		hits.push_back(fADCHit(E_GeV,t));
 	}
 
 }
