@@ -128,17 +128,17 @@ jerror_t DBCALUnifiedHit_factory::brun(jana::JEventLoop *eventLoop, int runnumbe
 
   //first index labels the layer, the second labels the coefficient (c0,c1,...)
   //only three layers of TDCs!
-  const double tdc_timewalk_array[3][4] = {{16.0081, 71.4196, 0.54665, 99.3657},
-                                           {15.2826, 30.9571, 0.374335, 172.578},
-                                           {15.6251, 52.4074, 0.475919, 159.027}};
+  const double tdc_timewalk_array[3][4] = {{16.0081, 0.365565, 0.54665, 0.00640507},
+                                           {15.2826, 0.835660, 0.374335, 0.0111243},
+                                           {15.6251, 0.530827, 0.475919, 0.0102508} };
 
   //In reality, we shouldn't have to do a timewalk correction to the ADC times.
   //But currently the ADC time simulated by mcsmear is a threshold crossing
   //time, so this is necessary.
-  const double adc_timewalk_array[4][4] = { {17.6245, 279.018, 0.877655, 32.6738},
-                                            {17.4629, 398.125, 0.89339, 12.3497},
-                                            {17.5743, 1346.56, 1.08083, -22.4011},
-                                            {17.6123, 2225.99, 1.15505, -40.5162} };
+  const double adc_timewalk_array[4][4] = { {17.6245, 0.0585642, 0.877655, 0.00210614},
+                                            {17.4629, 0.0717924, 0.89339, 0.000796056},
+                                            {17.5743, 0.0397904, 1.08083, -0.00144397},
+                                            {17.6123, 0.0321396, 1.15505, -0.00261166} };
 
   for (int module=1; module<=48; module++) {
     for (int layer=1; layer<=3; layer++) {
@@ -307,9 +307,6 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
         t_tdc_corrected_tree = useTDChit ? t : 0;
         bcal_points_tree->Fill();
       }
-
-      const float fADC_counts_per_GeV = 15800.0;
-      E /= fADC_counts_per_GeV;
 
       DBCALUnifiedHit *uhit = new DBCALUnifiedHit;
       uhit->E = E;
