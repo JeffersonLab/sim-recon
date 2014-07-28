@@ -164,10 +164,12 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	event_source_data_types.insert("Df250PulseRawData");
 	event_source_data_types.insert("Df250TriggerTime");
 	event_source_data_types.insert("Df250PulseTime");
+	event_source_data_types.insert("Df250PulsePedestal");
 	event_source_data_types.insert("Df250WindowRawData");
 	event_source_data_types.insert("Df125PulseIntegral");
 	event_source_data_types.insert("Df125TriggerTime");
 	event_source_data_types.insert("Df125PulseTime");
+	event_source_data_types.insert("Df125PulsePedestal");
 	event_source_data_types.insert("Df125WindowRawData");
 	event_source_data_types.insert("DF1TDCHit");
 	event_source_data_types.insert("DF1TDCTriggerTime");
@@ -870,28 +872,36 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df250PulseIntegral"].size()==0)){
 		vector<JObject*> pt_objs;
-		EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs);
+		vector<JObject*> pp_objs;
+		EmulateDf250PulseTime(hit_objs_by_type["Df250WindowRawData"], pt_objs, pp_objs);
 		if(pt_objs.size() != 0) hit_objs_by_type["Df250PulseTime"] = pt_objs;
+		if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
 
 		vector<JObject*> pi_objs;
 		EmulateDf250PulseIntergral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
 
-		// Make PulseTime and PulseIntegral objects associated objects of one another
+		// Make PulseTime, PulseIntegral, and PulsePedestal objects associated objects of one another
 		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
 		// tmeplated method to work.
 		vector<DDAQAddress*> da_pt_objs;
 		vector<DDAQAddress*> da_pi_objs;
+		vector<DDAQAddress*> da_pp_objs;
 		for(unsigned int i=0; i<pt_objs.size(); i++) da_pt_objs.push_back((DDAQAddress*)pt_objs[i]);
 		for(unsigned int i=0; i<pi_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pi_objs[i]);
+		for(unsigned int i=0; i<pp_objs.size(); i++) da_pp_objs.push_back((DDAQAddress*)pp_objs[i]);
 		LinkAssociations(da_pt_objs, da_pi_objs);
+		LinkAssociations(da_pt_objs, da_pp_objs);
+		LinkAssociations(da_pi_objs, da_pp_objs);
 	}
 
 	// Optionally generate Df125PulseIntegral and Df125PulseTime objects from Df125WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df125PulseIntegral"].size()==0)){
 		vector<JObject*> pt_objs;
-		EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs);
+		vector<JObject*> pp_objs;
+		EmulateDf125PulseTime(hit_objs_by_type["Df125WindowRawData"], pt_objs, pp_objs);
 		if(pt_objs.size() != 0) hit_objs_by_type["Df125PulseTime"] = pt_objs;
+		if(pp_objs.size() != 0) hit_objs_by_type["Df125PulsePedestal"] = pp_objs;
 
 		vector<JObject*> pi_objs;
 		EmulateDf125PulseIntergral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
@@ -902,9 +912,13 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		// tmeplated method to work.
 		vector<DDAQAddress*> da_pt_objs;
 		vector<DDAQAddress*> da_pi_objs;
+		vector<DDAQAddress*> da_pp_objs;
 		for(unsigned int i=0; i<pt_objs.size(); i++) da_pt_objs.push_back((DDAQAddress*)pt_objs[i]);
 		for(unsigned int i=0; i<pi_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pi_objs[i]);
+		for(unsigned int i=0; i<pp_objs.size(); i++) da_pi_objs.push_back((DDAQAddress*)pp_objs[i]);
 		LinkAssociations(da_pt_objs, da_pi_objs);
+		LinkAssociations(da_pt_objs, da_pp_objs);
+		LinkAssociations(da_pi_objs, da_pp_objs);
 	}
 
 	// Loop over types of data objects, copying to appropriate factory
@@ -952,10 +966,12 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 			else if(dataClassName == "Df250PulseRawData")     checkSourceFirst = ((JFactory<Df250PulseRawData    >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250TriggerTime")      checkSourceFirst = ((JFactory<Df250TriggerTime     >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250PulseTime")        checkSourceFirst = ((JFactory<Df250PulseTime       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df250PulsePedestal")    checkSourceFirst = ((JFactory<Df250PulsePedestal   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df250WindowRawData")    checkSourceFirst = ((JFactory<Df250WindowRawData   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125PulseIntegral")    checkSourceFirst = ((JFactory<Df125PulseIntegral   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125TriggerTime")      checkSourceFirst = ((JFactory<Df125TriggerTime     >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125PulseTime")        checkSourceFirst = ((JFactory<Df125PulseTime       >*)fac)->GetCheckSourceFirst();
+			else if(dataClassName == "Df125PulsePedestal")    checkSourceFirst = ((JFactory<Df125PulsePedestal   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "Df125WindowRawData")    checkSourceFirst = ((JFactory<Df125WindowRawData   >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DF1TDCHit")             checkSourceFirst = ((JFactory<DF1TDCHit            >*)fac)->GetCheckSourceFirst();
 			else if(dataClassName == "DF1TDCTriggerTime")     checkSourceFirst = ((JFactory<DF1TDCTriggerTime    >*)fac)->GetCheckSourceFirst();
@@ -1114,7 +1130,7 @@ void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, v
 //----------------
 // EmulateDf250PulseTime
 //----------------
-void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs)
+void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs)
 {
 	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
 	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
@@ -1153,6 +1169,12 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		
 		// Didn't find sample above threshold. Don't make hit.
 		if(ihitsample >= (Nsamples_all - Nsamples)) continue;
+		
+		// Find peak value. This has to be at ihitsample or later
+		uint32_t pulse_peak = 0;
+		for(uint32_t isample=ihitsample; isample<Nsamples_all; isample++){
+			if(samplesvector[isample] > pulse_peak) pulse_peak = samplesvector[isample];
+		}
 
 		// At this point we know we have a hit and will be able to extract a time.
 		// Go ahead and make the PulseTime object, filling in the "rough" time.
@@ -1168,12 +1190,25 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf250PulseTime->pulse_number = 0;
 		myDf250PulseTime->quality_factor = 1;
 		myDf250PulseTime->time = ihitsample*10 - 20; // Rough time 20 is "ROUGH_DT" in Naomi's original code
+
+		// create new Df250PulsePedestal object
+		Df250PulsePedestal *myDf250PulsePedestal = new Df250PulsePedestal;
+		myDf250PulsePedestal->rocid =f250WindowRawData->rocid;
+		myDf250PulsePedestal->slot = f250WindowRawData->slot;
+		myDf250PulsePedestal->channel = f250WindowRawData->channel;
+		myDf250PulsePedestal->itrigger = f250WindowRawData->itrigger;
+		myDf250PulsePedestal->pulse_number = 0;
+		myDf250PulsePedestal->pedestal = pedestalsum;
+		myDf250PulsePedestal->pulse_peak = pulse_peak;
 		
 		// Add the Df250WindowRawData object as an associated object
 		myDf250PulseTime->AddAssociatedObject(f250WindowRawData);
+		myDf250PulsePedestal->AddAssociatedObject(f250WindowRawData);
+		myDf250PulseTime->AddAssociatedObject(myDf250PulsePedestal);
 		
-		// Add to list of Df250PulseTime objects
+		// Add to list of Df250PulseTime and Df250PulsePedestal objects
 		pt_objs.push_back(myDf250PulseTime);
+		pp_objs.push_back(myDf250PulsePedestal);
 
 		//----- SIMPLE--------
 		// The following is a simple algorithm that does a linear interpolation
@@ -1194,7 +1229,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 //----------------
 // EmulateDf125PulseTime
 //----------------
-void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs)
+void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs)
 {
 	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
 	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
@@ -1234,6 +1269,12 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		// Didn't find sample above threshold. Don't make hit.
 		if(ihitsample >= (Nsamples_all - Nsamples)) continue;
 
+		// Find peak value. This has to be at ihitsample or later
+		uint32_t pulse_peak = 0;
+		for(uint32_t isample=ihitsample; isample<Nsamples_all; isample++){
+			if(samplesvector[isample] > pulse_peak) pulse_peak = samplesvector[isample];
+		}
+
 		// At this point we know we have a hit and will be able to extract a time.
 		// Go ahead and make the PulseTime object, filling in the "rough" time.
 		// and corresponding quality factor. The time and quality factor
@@ -1248,12 +1289,25 @@ void JEventSource_EVIO::EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf125PulseTime->pulse_number = 0;
 		myDf125PulseTime->quality_factor = 1;
 		myDf125PulseTime->time = ihitsample*10 - 20; // Rough time 20 is "ROUGH_DT" in Naomi's original code
+
+		// create new Df125PulsePedestal object
+		Df125PulsePedestal *myDf125PulsePedestal = new Df125PulsePedestal;
+		myDf125PulsePedestal->rocid =f125WindowRawData->rocid;
+		myDf125PulsePedestal->slot = f125WindowRawData->slot;
+		myDf125PulsePedestal->channel = f125WindowRawData->channel;
+		myDf125PulsePedestal->itrigger = f125WindowRawData->itrigger;
+		myDf125PulsePedestal->pulse_number = 0;
+		myDf125PulsePedestal->pedestal = pedestalsum;
+		myDf125PulsePedestal->pulse_peak = pulse_peak;
 		
 		// Add the Df125WindowRawData object as an associated object
 		myDf125PulseTime->AddAssociatedObject(f125WindowRawData);
+		myDf125PulsePedestal->AddAssociatedObject(f125WindowRawData);
+		myDf125PulseTime->AddAssociatedObject(myDf125PulsePedestal);
 		
 		// Add to list of Df125PulseTime objects
 		pt_objs.push_back(myDf125PulseTime);
+		pp_objs.push_back(myDf125PulsePedestal);
 
 		//----- UP-SAMPLING--------		
 		uint32_t THRESH_HI = 64;  // single sample threshold above pedestal for timing hit (THRESH_HI)
@@ -1830,6 +1884,8 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t pulse_number = 0;
 		uint32_t quality_factor = 0;
 		uint32_t pulse_time = 0;
+		uint32_t pedestal = 0;
+		uint32_t pulse_peak = 0;
 		bool overflow = false;
 
 		bool found_block_trailer = false;
@@ -1901,6 +1957,13 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				// This is marked "reserved for future implementation" in the current manual (v2).
 				// As such, we don't try handling it here just yet.
 				break;
+			case 10: // Pulse Pedestal
+				channel = (*iptr>>23) & 0x0F;
+				pulse_number = (*iptr>>21) & 0x03;
+				pedestal = (*iptr>>12) & 0x1FF;
+				pulse_peak = (*iptr>>0) & 0xFFF;
+				if(objs) objs->hit_objs.push_back(new Df250PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
+				break;
 			case 13: // Event Trailer
 				// This is marked "suppressed for normal readout – debug mode only" in the
 				// current manual (v2). It does not contain any data so the most we could do here
@@ -1942,6 +2005,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 		vector<Df250PulseRawData*> vprd;
 		vector<Df250PulseIntegral*> vpi;
 		vector<Df250PulseTime*> vpt;
+		vector<Df250PulsePedestal*> vpp;
 		for(unsigned int i=0; i<hit_objs.size(); i++){
 			AddIfAppropriate(hit_objs[i], vtrigt);
 			AddIfAppropriate(hit_objs[i], vwrd);
@@ -1949,12 +2013,16 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 			AddIfAppropriate(hit_objs[i], vprd);
 			AddIfAppropriate(hit_objs[i], vpi);
 			AddIfAppropriate(hit_objs[i], vpt);
+			AddIfAppropriate(hit_objs[i], vpp);
 		}
 		
 		// Connect Df250PulseIntegral with Df250PulseTime, and Df250PulseRawData
 		LinkAssociationsWithPulseNumber(vprd, vpi);
 		LinkAssociationsWithPulseNumber(vprd, vpt);
-		LinkAssociationsWithPulseNumber(vpt, vpi);
+		LinkAssociationsWithPulseNumber(vprd, vpp);
+		LinkAssociationsWithPulseNumber(vpi, vpt);
+		LinkAssociationsWithPulseNumber(vpi, vpp);
+		LinkAssociationsWithPulseNumber(vpt, vpp);
 		
 		// Connect Df250WindowSum and Df250WindowRawData
 		LinkAssociations(vwrd, vws);
@@ -2128,6 +2196,8 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t pulse_number = 0;
 		uint32_t pulse_time = 0;
 		uint32_t quality_factor = 0;
+		uint32_t pedestal = 0;
+		uint32_t pulse_peak = 0;
 		//bool overflow = false;
 
 		bool found_block_trailer = false;
@@ -2185,7 +2255,13 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				quality_factor = (*iptr>>19) & 0x03;
 				pulse_time = (*iptr>>0) & 0x7FFFF;
 				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
-
+				break;
+			case 10: // Pulse Pedestal
+				channel = (*iptr>>23) & 0x0F;
+				pulse_number = (*iptr>>21) & 0x03;
+				pedestal = (*iptr>>12) & 0x1FF;
+				pulse_peak = (*iptr>>0) & 0xFFF;
+				if(objs) objs->hit_objs.push_back(new Df125PulsePedestal(rocid, slot, channel, itrigger, pulse_number, pedestal, pulse_peak));
 				break;
 			//case 4: // Window Raw Data
 			case 5: // Window Sum

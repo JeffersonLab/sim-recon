@@ -45,10 +45,12 @@ using namespace evio;
 #include "Df250PulseRawData.h"
 #include "Df250TriggerTime.h"
 #include "Df250PulseTime.h"
+#include "Df250PulsePedestal.h"
 #include "Df250WindowRawData.h"
 #include "Df125TriggerTime.h"
 #include "Df125PulseIntegral.h"
 #include "Df125PulseTime.h"
+#include "Df125PulsePedestal.h"
 #include "Df125PulseRawData.h"
 #include "Df125WindowRawData.h"
 #include "DF1TDCHit.h"
@@ -236,8 +238,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 	
 		void EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
 		void EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
-		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs);
-		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs);
+		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
+		void EmulateDf125PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);
 		jerror_t ParseEvents(ObjList *objs_ptr);
 		int32_t GetRunNumber(evioDOMTree *evt);
 		int32_t FindRunNumber(uint32_t *iptr);
