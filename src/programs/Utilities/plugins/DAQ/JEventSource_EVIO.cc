@@ -868,6 +868,33 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		JObject *hit_obj = hit_objs[i];
 		hit_objs_by_type[hit_obj->className()].push_back(hit_obj);
 	}
+		
+	// Initially, the F250, F125 firmware does not include the
+	// pedestal measurement in the pulse integral data
+	// (it is an add-on Pulse Pedestal word) We want the
+	// pedestal field of the Df250PulseIntegral objects
+	// to contain the measured pedestals in both cases. 
+	// Check all Df250PulseIntegral objects for an associated
+	// Df250PulsePedestal object. If it has one, copy the
+	// pedestal from it into the Df250PulseIntegral.
+	vector<JObject*> &vpi250 = hit_objs_by_type["Df250PulseIntegral"];
+	for(unsigned int i=0; i<vpi250.size(); i++){
+		Df250PulseIntegral *pi = (Df250PulseIntegral*)vpi250[i];
+		vector<const Df250PulsePedestal*> vpp;
+		pi->Get(vpp);
+		if(!vpp.empty()){
+			pi->pedestal = vpp[0]->pedestal;
+		}
+	}
+	vector<JObject*> &vpi125 = hit_objs_by_type["Df125PulseIntegral"];
+	for(unsigned int i=0; i<vpi125.size(); i++){
+		Df125PulseIntegral *pi = (Df125PulseIntegral*)vpi125[i];
+		vector<const Df125PulsePedestal*> vpp;
+		pi->Get(vpp);
+		if(!vpp.empty()){
+			pi->pedestal = vpp[0]->pedestal;
+		}
+	}
 
 	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df250PulseIntegral"].size()==0)){
@@ -2033,6 +2060,7 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 		LinkAssociationsModuleOnly(vtrigt, vprd);
 		LinkAssociationsModuleOnly(vtrigt, vpi);
 		LinkAssociationsModuleOnly(vtrigt, vpt);
+		LinkAssociationsModuleOnly(vtrigt, vpp);
 	}
 }
 
@@ -2303,24 +2331,30 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		vector<Df125PulseRawData*>  vprd;
 		vector<Df125PulseIntegral*> vpi;
 		vector<Df125PulseTime*> vpt;
+		vector<Df125PulsePedestal*> vpp;
 		for(unsigned int i=0; i<hit_objs.size(); i++){
 			AddIfAppropriate(hit_objs[i], vtrigt);
 			AddIfAppropriate(hit_objs[i], vwrd);
 			AddIfAppropriate(hit_objs[i], vprd);
 			AddIfAppropriate(hit_objs[i], vpi);
 			AddIfAppropriate(hit_objs[i], vpt);
+			AddIfAppropriate(hit_objs[i], vpp);
 		}
 		
 		// Connect Df125PulseIntegral with Df125PulseTime
 		LinkAssociationsWithPulseNumber(vprd, vpi);
 		LinkAssociationsWithPulseNumber(vprd, vpt);
-		LinkAssociationsWithPulseNumber(vpt, vpi);
+		LinkAssociationsWithPulseNumber(vprd, vpp);
+		LinkAssociationsWithPulseNumber(vpi, vpt);
+		LinkAssociationsWithPulseNumber(vpi, vpp);
+		LinkAssociationsWithPulseNumber(vpt, vpp);
 				
 		// Connect Df125TriggerTime to everything
 		LinkAssociationsModuleOnly(vtrigt, vwrd);
 		LinkAssociationsModuleOnly(vtrigt, vprd);
 		LinkAssociationsModuleOnly(vtrigt, vpi);
 		LinkAssociationsModuleOnly(vtrigt, vpt);
+		LinkAssociationsModuleOnly(vtrigt, vpp);
 	}
 }
 
