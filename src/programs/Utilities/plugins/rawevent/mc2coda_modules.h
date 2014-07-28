@@ -253,7 +253,7 @@ fadc125_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 #define F1TDC32_FILLER(slot) {*dabufp++ = 0xF8000000 | (slot<<22);}
 
 #define F1TDC32_CHIP_NUM(chan) (chan>>2)
-#define F1TDC32_CHAN_ON_CHIP(chan) (chan & 0x03)
+#define F1TDC32_CHAN_ON_CHIP(chan) ((chan & 0x03)<<1)
 
 int
 f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
@@ -319,6 +319,7 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
 		}
 		/* printf("write hit data %d\n",jj); */
 		for(ii=0;ii<jj;ii++) {
+		    /*printf("f1tdc32:_write_data: DEBUG: found hit for crate %d slot %d chan %d  (chip %d chan on chip %d).\n", roc,slot,chan,chip,chan_on_chip);*/
 			F1TDC32_F1_DATA(cdata,chip,chan_on_chip,chit[ii]->hdata[0]);
 		}
 		
