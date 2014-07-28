@@ -413,6 +413,20 @@ jerror_t JEventProcessor_rawevent::brun(JEventLoop *eventLoop, int runnumber) {
     }
   }
 
+  static bool compareDBCALTDCHits(const DBCALTDCHit* h1, const DBCALTDCHit* h2) {
+    if(h1->module!=h2->module) {
+      return(h1->module<h2->module);
+    } else if(h1->sector!=h2->sector) {
+      return(h1->sector<h2->sector);
+    } else if(h1->layer!=h2->layer) {
+      return(h1->layer<h2->layer);
+    } else if(h1->end!=h2->end) {
+      return(h1->end<h2->end);
+    } else {
+      return(h1->t<h2->t);
+    }
+  }
+
   static bool compareDFDCHits(const DFDCHit* h1, const DFDCHit* h2) {
     if(h1->gPlane!=h2->gPlane) {
       return(h1->gPlane<h2->gPlane);
@@ -708,7 +722,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
           exit(EXIT_FAILURE);
         }
       }
-
+      /**
       hitCount++;
       nhits=1;
       cscRef cscTDC      = DBCALHitTranslationTDC(dbcalhits[i]);
@@ -740,10 +754,67 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
           exit(EXIT_FAILURE);
         }
       }
+      **/
     }
   }
   if((dumphits>=1)&&(hc>0)) {
     jout << endl << "BCAL hits: " << hc << endl << endl;
+  }
+
+
+  // BCAL TDC hits are handled in separate objections
+  vector<const DBCALTDCHit*> dbcaltdchits;
+  eventLoop->Get(dbcaltdchits);
+  sort(dbcaltdchits.begin(),dbcaltdchits.end(),compareDBCALTDCHits);
+  
+  hc=0;
+  for(i=0; i<dbcaltdchits.size(); i++) {
+    if(((dbcaltdchits[i]->t*1000.)>tMin)&&(dbcaltdchits[i]->t*1000.<trigTime)) {
+
+      int32_t E     = 0;
+      int32_t t     = dbcaltdchits[i]->t*1000.-tMin;  // in picoseconds
+
+      if(noroot==0)bcalTimes->Fill(dbcaltdchits[i]->t-tMin/1000);
+
+
+      cscRef cscTDC      = DBCALHitTranslationTDC(dbcaltdchits[i]);
+          if(cscTDC == CSCREF_NULL) continue;
+
+      hc++;
+      hitCount++;
+      nhits=1;
+      hit[0].hit_id      = hitCount;
+      hit[0].det_id      = detID;
+      hit[0].crate_id    = cscTDC.crate;
+      hit[0].slot_id     = cscTDC.slot;
+      hit[0].chan_id     = cscTDC.channel;
+      hit[0].module_id   = F1TDC32;
+      hit[0].module_mode = 0;
+      hit[0].nwords      = 1;
+      hit[0].hdata       = mcData;
+      hit[0].hdata[0]    = static_cast<double>(t)/F1TDC32tick;
+      
+      if(dumphits>1) {
+        jout << endl;
+        jout << " BCAL TDC module,sector,layer,end are " << dbcaltdchits[i]->module<< ", " << dbcaltdchits[i]->sector
+             << ", " << dbcaltdchits[i]->layer << ", " << dbcaltdchits[i]->end << endl;
+        jout << " c,s,c are " << cscTDC.crate << ", " << cscTDC.slot << ", " << cscTDC.channel << endl;
+        jout << " hdata is: " << hit[0].hdata[0] << endl;
+        jout << " E,t are " << E << ", " << t << endl;
+        jout << endl;
+      }
+      
+      if(nomc2coda==0) {
+	  stat = mc2codaWrite(eventID,nhits,(struct coda_hit_info *)&hit[0]);
+	  if(stat!=nhits) {
+	      jerr << "?error return from mc2codaWrite() for BCAL TDC: " << stat << endl << endl;
+	      exit(EXIT_FAILURE);
+	  }
+      }
+    }
+  }
+  if((dumphits>=1)&&(hc>0)) {
+    jout << endl << "BCAL TDC hits: " << hc << endl << endl;
   }
 
 
@@ -1635,7 +1706,8 @@ cscRef JEventProcessor_rawevent::DBCALHitTranslationADC(const DBCALHit *hit) con
 //----------------------------------------------------------------------------
 
 
-cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) const {
+//cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALHit *hit) const {
+cscRef JEventProcessor_rawevent::DBCALHitTranslationTDC(const DBCALTDCHit *hit) const {
   // BCAL does not have TDC channels for layer 4, but some older simulation files
   // have this. Ignore those hits here.
   if(hit->layer > 3) return CSCREF_NULL;

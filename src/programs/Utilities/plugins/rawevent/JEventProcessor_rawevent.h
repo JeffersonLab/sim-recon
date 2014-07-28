@@ -80,7 +80,8 @@ class JEventProcessor_rawevent : public jana::JEventProcessor {
                 cscRef DTOFHitTranslationTDC(const DTOFHit* hit) const;
 
                 cscRef DBCALHitTranslationADC(const DBCALHit* hit) const;
-                cscRef DBCALHitTranslationTDC(const DBCALHit* hit) const;
+                //cscRef DBCALHitTranslationTDC(const DBCALHit* hit) const;
+                cscRef DBCALHitTranslationTDC(const DBCALTDCHit* hit) const;
 
                 cscRef DFCALHitTranslationADC(const DFCALHit* hit) const;
 
