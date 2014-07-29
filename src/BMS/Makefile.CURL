@@ -1,0 +1,14 @@
+
+WHICH_CURL_CONFIG = $(shell which curl-config)
+
+ifneq ($(strip $(WHICH_CURL_CONFIG)),)
+
+  CURL_CFLAGS = $(shell curl-config --cflags) -DHAS_CURL
+  CURL_LIBS = $(shell curl-config --libs)
+
+  CFLAGS += $(CURL_CFLAGS)
+  CXXFLAGS += $(CURL_CFLAGS)
+
+  MISC_LIBS += $(CURL_LIBS)
+
+endif
