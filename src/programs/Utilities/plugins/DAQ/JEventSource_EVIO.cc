@@ -868,33 +868,6 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		JObject *hit_obj = hit_objs[i];
 		hit_objs_by_type[hit_obj->className()].push_back(hit_obj);
 	}
-		
-	// Initially, the F250, F125 firmware does not include the
-	// pedestal measurement in the pulse integral data
-	// (it is an add-on Pulse Pedestal word) We want the
-	// pedestal field of the Df250PulseIntegral objects
-	// to contain the measured pedestals in both cases. 
-	// Check all Df250PulseIntegral objects for an associated
-	// Df250PulsePedestal object. If it has one, copy the
-	// pedestal from it into the Df250PulseIntegral.
-	vector<JObject*> &vpi250 = hit_objs_by_type["Df250PulseIntegral"];
-	for(unsigned int i=0; i<vpi250.size(); i++){
-		Df250PulseIntegral *pi = (Df250PulseIntegral*)vpi250[i];
-		vector<const Df250PulsePedestal*> vpp;
-		pi->Get(vpp);
-		if(!vpp.empty()){
-			pi->pedestal = vpp[0]->pedestal;
-		}
-	}
-	vector<JObject*> &vpi125 = hit_objs_by_type["Df125PulseIntegral"];
-	for(unsigned int i=0; i<vpi125.size(); i++){
-		Df125PulseIntegral *pi = (Df125PulseIntegral*)vpi125[i];
-		vector<const Df125PulsePedestal*> vpp;
-		pi->Get(vpp);
-		if(!vpp.empty()){
-			pi->pedestal = vpp[0]->pedestal;
-		}
-	}
 
 	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df250PulseIntegral"].size()==0)){
@@ -946,6 +919,33 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		LinkAssociations(da_pt_objs, da_pi_objs);
 		LinkAssociations(da_pt_objs, da_pp_objs);
 		LinkAssociations(da_pi_objs, da_pp_objs);
+	}
+		
+	// Initially, the F250, F125 firmware does not include the
+	// pedestal measurement in the pulse integral data
+	// (it is an add-on Pulse Pedestal word) We want the
+	// pedestal field of the Df250PulseIntegral objects
+	// to contain the measured pedestals in both cases. 
+	// Check all Df250PulseIntegral objects for an associated
+	// Df250PulsePedestal object. If it has one, copy the
+	// pedestal from it into the Df250PulseIntegral.
+	vector<JObject*> &vpi250 = hit_objs_by_type["Df250PulseIntegral"];
+	for(unsigned int i=0; i<vpi250.size(); i++){
+		Df250PulseIntegral *pi = (Df250PulseIntegral*)vpi250[i];
+		vector<const Df250PulsePedestal*> vpp;
+		pi->Get(vpp);
+		if(!vpp.empty()){
+			pi->pedestal = vpp[0]->pedestal;
+		}
+	}
+	vector<JObject*> &vpi125 = hit_objs_by_type["Df125PulseIntegral"];
+	for(unsigned int i=0; i<vpi125.size(); i++){
+		Df125PulseIntegral *pi = (Df125PulseIntegral*)vpi125[i];
+		vector<const Df125PulsePedestal*> vpp;
+		pi->Get(vpp);
+		if(!vpp.empty()){
+			pi->pedestal = vpp[0]->pedestal;
+		}
 	}
 
 	// Loop over types of data objects, copying to appropriate factory
@@ -1075,13 +1075,10 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 			signalsum += samplesvector[c_samp];
 		}
 		
-		// Scale pedestal to window width 
-		int32_t pedestal_tot = ((int32_t)nsamples*pedestalsum)/(int32_t)ped_samples;
-
 		myDf250PulseIntegral->pulse_number = pulse_number;
 		myDf250PulseIntegral->quality_factor = quality_factor;
 		myDf250PulseIntegral->integral = signalsum;
-		myDf250PulseIntegral->pedestal = pedestal_tot;
+		myDf250PulseIntegral->pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
 		
 		// Add the Df250WindowRawData object as an associated object
 		myDf250PulseIntegral->AddAssociatedObject(f250WindowRawData);
@@ -1132,13 +1129,10 @@ void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, v
 			signalsum += samplesvector[c_samp];
 		}
 		
-		// Scale pedestal to window width 
-		int32_t pedestal_tot = ((int32_t)nsamples*pedestalsum)/(int32_t)ped_samples;
-
 		myDf125PulseIntegral->pulse_number = pulse_number;
 		myDf125PulseIntegral->quality_factor = quality_factor;
 		myDf125PulseIntegral->integral = signalsum;
-		myDf125PulseIntegral->pedestal = pedestal_tot;
+		myDf125PulseIntegral->pedestal = 0;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
 		
 		// Add the Df125WindowRawData object as an associated object
 		myDf125PulseIntegral->AddAssociatedObject(f125WindowRawData);
