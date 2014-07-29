@@ -19,16 +19,11 @@ using namespace jana;
 
 #define FCAL_MAX_CHANNELS   2800
 
-static int USE_MC_CALIB = 0;
-
 //------------------
 // init
 //------------------
 jerror_t DFCALHit_factory::init(void)
 {
-        // should we use calibrations for simulated data? - this is a temporary workaround
-        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
-
         // initialize calibration tables
         vector< vector<double > > new_gains(kBlocksTall, vector<double>(kBlocksWide));
         vector< vector<double > > new_pedestals(kBlocksTall, vector<double>(kBlocksWide));
@@ -56,7 +51,7 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	
 	/// set the base conversion scales
 	a_scale    = 4.0E1/2.5E5; 
-	t_scale    = 4.0;    // 4 ns/count
+	t_scale    = 0.0625;   // 62.5 ps/count
 
 	/// Read in calibration constants
 	vector< double > raw_gains;
@@ -70,13 +65,8 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	    jout << "Error loading /FCAL/gains !" << endl;
 	if(eventLoop->GetCalib("/FCAL/pedestals", raw_pedestals))
 	    jout << "Error loading /FCAL/pedestals !" << endl;
-	if(USE_MC_CALIB>0) {
-	    if(eventLoop->GetCalib("/FCAL/timing_offsets::mc", raw_time_offsets))
-		jout << "Error loading /FCAL/timing_offsets !" << endl;
-	} else {
-	    if(eventLoop->GetCalib("/FCAL/timing_offsets", raw_time_offsets))
-		jout << "Error loading /FCAL/timing_offsets !" << endl;
-	}
+	if(eventLoop->GetCalib("/FCAL/timing_offsets", raw_time_offsets))
+	    jout << "Error loading /FCAL/timing_offsets !" << endl;
 	if(eventLoop->GetCalib("/FCAL/block_quality", raw_block_qualities))
 	    jout << "Error loading /FCAL/block_quality !" << endl;
 
@@ -113,18 +103,14 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	for(unsigned int i=0; i<digihits.size(); i++){
 		const DFCALDigiHit *digihit = digihits[i];
 
-		// Apply associated event pedestal, if it exists
+		// Get pedestal.  Prefer associated event pedestal if it exist.
+		// Otherwise, use the average pedestal from CCDB
 		double pedestal = pedestals[digihit->row][digihit->column];
-
-		// Only use event-by-event pedestals when analyzing data for now
-		// EVIO files from the rawevent plugin give us some crazy pedestal values sometimes
-		if(!USE_MC_CALIB) {
-		    vector<const Df250PulseIntegral*> PIvect;
-		    digihit->Get(PIvect);
-		    if(!PIvect.empty()){
-			const Df250PulseIntegral *PIobj = PIvect[0];
-			pedestal = PIobj->pedestal;
-		    }
+		vector<const Df250PulseIntegral*> PIvect;
+		digihit->Get(PIvect);
+		if(!PIvect.empty()){
+		    const Df250PulseIntegral *PIobj = PIvect[0];
+		    pedestal = PIobj->pedestal;
 		}
 		
 		DFCALHit *hit = new DFCALHit;

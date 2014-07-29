@@ -51,7 +51,7 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
     */
 	/// Set basic conversion constants
 	a_scale    = 0.2/5.2E5;
-	t_scale    = 4.0;    // 4 ns/count
+	t_scale    = 0.0625;   // 62.5 ps/count
 	tdc_scale    = 0.060;    // 60 ps/count
 
         /// Read in calibration constants

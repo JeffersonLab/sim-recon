@@ -24,9 +24,6 @@ static int USE_MC_CALIB = 0;
 //------------------
 jerror_t DFDCHit_factory::init(void)
 {
-        // should we use calibrations for simulated data? - this is a temporary workaround
-        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
-
   	return NOERROR;
 }
 
@@ -37,7 +34,7 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	/// set the base conversion scales
 	a_scale      = 2.4E4/1.3E5;  // cathodes
-	t_scale      = 8.0;          // 8 ns/count
+	t_scale    = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
 	tdc_scale    = 0.115;        // 115 ps/count
 
 	// reset constants
@@ -46,7 +43,7 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	timing_offsets.clear();
 
 	// now load them all
-	cout << "In DFDCHit_factory, loading constants..." << endl;
+	jout << "In DFDCHit_factory, loading constants..." << endl;
 
 	// each FDC package has the same set of constants
 	LoadPackageCalibTables(eventLoop,"/FDC/package1");
@@ -206,17 +203,10 @@ void DFDCHit_factory::LoadPackageCalibTables(jana::JEventLoop *eventLoop, string
 	cout << "Error loading "+ccdb_prefix+"/strip_gains !" << endl;
     if(eventLoop->GetCalib(ccdb_prefix+"/strip_pedestals", new_pedestals))
 	cout << "Error loading "+ccdb_prefix+"/strip_pedestals !" << endl;
-    if(USE_MC_CALIB>0) {
-	if(eventLoop->GetCalib(ccdb_prefix+"/strip_timing_offsets::mc", new_strip_t0s))
-	    cout << "Error loading "+ccdb_prefix+"/strip_timing_offsets!" << endl;
-	if(eventLoop->GetCalib(ccdb_prefix+"/wire_timing_offsets::mc", new_wire_t0s))
-	    cout << "Error loading "+ccdb_prefix+"/wire_timing_offsets!" << endl;
-    } else {
-	if(eventLoop->GetCalib(ccdb_prefix+"/strip_timing_offsets", new_strip_t0s))
-	    cout << "Error loading "+ccdb_prefix+"/strip_timing_offsets!" << endl;
-	if(eventLoop->GetCalib(ccdb_prefix+"/wire_timing_offsets", new_wire_t0s))
-	    cout << "Error loading "+ccdb_prefix+"/wire_timing_offsets!" << endl;
-    }
+    if(eventLoop->GetCalib(ccdb_prefix+"/strip_timing_offsets", new_strip_t0s))
+	cout << "Error loading "+ccdb_prefix+"/strip_timing_offsets!" << endl;
+    if(eventLoop->GetCalib(ccdb_prefix+"/wire_timing_offsets", new_wire_t0s))
+	cout << "Error loading "+ccdb_prefix+"/wire_timing_offsets!" << endl;
 
     for(int nchamber=0; nchamber<6; nchamber++) {
 

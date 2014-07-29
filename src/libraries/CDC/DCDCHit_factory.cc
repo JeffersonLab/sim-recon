@@ -18,7 +18,6 @@ using namespace jana;
 
 #define CDC_MAX_CHANNELS  3522
 
-static int USE_MC_CALIB = 0;
 static double DIGI_THRESHOLD = -1000000.0;
 
 //------------------
@@ -26,8 +25,6 @@ static double DIGI_THRESHOLD = -1000000.0;
 //------------------
 jerror_t DCDCHit_factory::init(void)
 {
-        // should we use calibrations for simulated data? - this is a temporary workaround
-        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
         gPARMS->SetDefaultParameter("CDC:DIGI_THRESHOLD",DIGI_THRESHOLD, "Do not convert CDC digitized hits into DCDCHit objects that would have q less than this");
 
 	return NOERROR;
@@ -58,13 +55,8 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	    jout << "Error loading /CDC/wire_gains !" << endl;
         if(eventLoop->GetCalib("/CDC/pedestals", raw_pedestals))
 	    jout << "Error loading /CDC/pedestals !" << endl;
-	if(USE_MC_CALIB>0) {
-	    if(eventLoop->GetCalib("/CDC/timing_offsets::mc", raw_time_offsets))
-		jout << "Error loading /CDC/timing_offsets !" << endl;
-	} else {
-	    if(eventLoop->GetCalib("/CDC/timing_offsets", raw_time_offsets))
-		jout << "Error loading /CDC/timing_offsets !" << endl;
-	}
+	if(eventLoop->GetCalib("/CDC/timing_offsets", raw_time_offsets))
+	    jout << "Error loading /CDC/timing_offsets !" << endl;
 
 	// fill the tables
         FillCalibTable(gains, raw_gains, Nstraws);
@@ -144,12 +136,12 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		}
 		
 		// Get pedestal. Preference is given to pedestal measured
-		// for event. Otherwise, use statitical one from CCDB
+		// for event. Otherwise, use statistical one from CCDB
 		double pedestal = pedestals[ring-1][straw-1];
 		vector<const Df125PulseIntegral*> PIvect;
 		digihit->Get(PIvect);
 		if(!PIvect.empty()) pedestal = (double)PIvect[0]->pedestal;
-		
+ 		
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
@@ -251,10 +243,5 @@ void DCDCHit_factory::FillCalibTable(vector< vector<double> > &table, vector<dou
 
         table[ring].push_back( raw_table[channel] );
     }
-/*
-    cerr << "LOADED TABLE " << endl;
-    cerr << " number of rings = " << table.size() << endl;
-    for(int i=0; i<table.size(); i++)
-	cerr << " ring #" << i+1 << " has " << table[i].size() << " straws" << endl;
-*/
+
 }

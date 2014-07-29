@@ -21,15 +21,11 @@ using namespace jana;
 
 #define kMaxChannels     1152
 
-static int USE_MC_CALIB = 0;
-
 //------------------
 // init
 //------------------
 jerror_t DBCALTDCHit_factory::init(void)
 {
-        // should we use calibrations for simulated data? - this is a temporary workaround
-        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
 
 	return NOERROR;
 }
@@ -48,13 +44,9 @@ jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 
 	jout << "In DBCALTDCHit_factory, loading constants..." << endl;
 
-	if(USE_MC_CALIB>0) {
-	    if(eventLoop->GetCalib("/BCAL/TDC_offsets::mc", raw_time_offsets))
-		jout << "Error loading /BCAL/TDC_offsets !" << endl;
-	} else {
-	    if(eventLoop->GetCalib("/BCAL/TDC_offsets", raw_time_offsets))
-		jout << "Error loading /BCAL/TDC_offsets !" << endl;
-	}
+	if(eventLoop->GetCalib("/BCAL/TDC_offsets", raw_time_offsets))
+	    jout << "Error loading /BCAL/TDC_offsets !" << endl;
+
 	FillCalibTable(time_offsets, raw_time_offsets);
 
 
@@ -150,7 +142,7 @@ void DBCALTDCHit_factory::FillCalibTable( map<int,cell_calib_t> &table,
     for(int module=1; module<=BCAL_NUM_MODULES; module++) {
 	for(int layer=1; layer<=BCAL_NUM_TDC_LAYERS; layer++) {
 	    for(int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
-		if( (channel < kMaxChannels) || (channel+1 < kMaxChannels) )   // sanity check
+		if( (channel > kMaxChannels) || (channel+1 > kMaxChannels) )   // sanity check
 		    return;
 		
 		int cell_id = DBCALGeometry::cellId(module,layer,sector);

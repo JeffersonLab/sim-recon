@@ -16,8 +16,6 @@ using namespace std;
 #include "DSCHit_factory.h"
 using namespace jana;
 
-static int USE_MC_CALIB = 0;
-
 //------------------
 // init
 //------------------
@@ -25,9 +23,6 @@ jerror_t DSCHit_factory::init(void)
 {
 	DELTA_T_ADC_TDC_MAX = 4.0; // ns
 	gPARMS->SetDefaultParameter("SC:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
-
-	// should we use calibrations for simulated data? - this is a temporary workaround
-        gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
 
 	return NOERROR;
 }
@@ -39,28 +34,20 @@ jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	/// set the base conversion scales
 	a_scale    = 2.0E-2/5.2E-5; 
-	t_scale    = 4.0;    // 4 ns/count
+	t_scale    = 0.0625;   // 62.5 ps/count
 	tdc_scale  = 0.060;    // 60 ps/count
 
 	/// Read in calibration constants
 	jout << "In DSCHit_factory, loading constants..." << endl;
-
+	
 	if(eventLoop->GetCalib("/START_COUNTER/gains", a_gains))
 	    jout << "Error loading /START_COUNTER/gains !" << endl;
 	if(eventLoop->GetCalib("/START_COUNTER/pedestals", a_pedestals))
 	    jout << "Error loading /START_COUNTER/pedestals !" << endl;
-
-	if(USE_MC_CALIB>0) {
-	    if(eventLoop->GetCalib("/START_COUNTER/adc_timing_offsets::mc", adc_time_offsets))
-		jout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
-	    if(eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets::mc", tdc_time_offsets))
-		jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
-	} else {
-	    if(eventLoop->GetCalib("/START_COUNTER/adc_timing_offsets", adc_time_offsets))
-		jout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
-	    if(eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", tdc_time_offsets))
-		jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
-	}
+	if(eventLoop->GetCalib("/START_COUNTER/adc_timing_offsets", adc_time_offsets))
+	    jout << "Error loading /START_COUNTER/adc_timing_offsets !" << endl;
+	if(eventLoop->GetCalib("/START_COUNTER/tdc_timing_offsets", tdc_time_offsets))
+	    jout << "Error loading /START_COUNTER/tdc_timing_offsets !" << endl;
 
 	/* 
 	   // load higher order corrections

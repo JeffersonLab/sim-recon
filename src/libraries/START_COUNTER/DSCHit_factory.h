@@ -27,8 +27,8 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		vector<double>  adc_time_offsets;
 		vector<double>  tdc_time_offsets;
 
-		vector<double>  propogation_corr_factors;
-		vector<double>  attenuation_corr_factors;
+		//map<string,double>  propogation_corr_factors;
+		//double<string,double>  attenuation_corr_factors;
 		
 		double DELTA_T_ADC_TDC_MAX;
 

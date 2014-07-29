@@ -22,15 +22,11 @@ using namespace jana;
 
 #define kMaxChannels     1536
 
-static int USE_MC_CALIB = 0;
-
 //------------------
 // init
 //------------------
 jerror_t DBCALHit_factory::init(void)
 {
-        // should we use calibrations for simulated data? - this is a temporary workaround
-    gPARMS->SetDefaultParameter("DIGI:USEMC",USE_MC_CALIB);
 
 	return NOERROR;
 }
@@ -59,13 +55,8 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	    jout << "Error loading /BCAL/ADC_gains !" << endl;
 	if(eventLoop->GetCalib("/BCAL/ADC_pedestals", raw_pedestals))
 	    jout << "Error loading /BCAL/ADC_pedestals !" << endl;
-	if(USE_MC_CALIB>0) {
-	    if(eventLoop->GetCalib("/BCAL/ADC_timing_offsets::mc", raw_time_offsets))
-		jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
-	} else {
-	    if(eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_time_offsets))
-		jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
-	}
+	if(eventLoop->GetCalib("/BCAL/ADC_timing_offsets", raw_time_offsets))
+	    jout << "Error loading /BCAL/ADC_timing_offsets !" << endl;
 
 	FillCalibTable(gains, raw_gains);
 	FillCalibTable(pedestals, raw_pedestals);
@@ -94,18 +85,14 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	for(unsigned int i=0; i<digihits.size(); i++){
 		const DBCALDigiHit *digihit = digihits[i];
 		
-		// Apply associated event pedestal, if it exists
+		// Get pedestal.  Prefer associated event pedestal if it exist.
+		// Otherwise, use the average pedestal from CCDB
 		double pedestal = GetConstant(pedestals,digihit);
-
-		// Only use event-by-event pedestals when analyzing data for now
-		// EVIO files from the rawevent plugin give us some crazy pedestal values sometimes
-		if(!USE_MC_CALIB) {
-		    vector<const Df250PulseIntegral*> PIvect;
-		    digihit->Get(PIvect);
-		    if(!PIvect.empty()){
-			const Df250PulseIntegral *PIobj = PIvect[0];
-			pedestal = PIobj->pedestal;
-		    }
+		vector<const Df250PulseIntegral*> PIvect;
+		digihit->Get(PIvect);
+		if(!PIvect.empty()){
+		    const Df250PulseIntegral *PIobj = PIvect[0];
+		    pedestal = PIobj->pedestal;
 		}
 
 		DBCALHit *hit = new DBCALHit;
