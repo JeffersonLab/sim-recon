@@ -66,17 +66,17 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	// Verify that the right number of rings was read for each set of constants
 	char str[256];
 	if(gains.size() != Nrings){
-		sprintf(str, "Bad # of rings for CDC gain from CCDB! CCDB=%ld , should be %d", gains.size(), Nrings);
+		sprintf(str, "Bad # of rings for CDC gain from CCDB! CCDB=%zu , should be %d", gains.size(), Nrings);
 		cerr << str << endl;
 		throw JException(str);
 	}
 	if(pedestals.size() != Nrings){
-		sprintf(str, "Bad # of rings for CDC pedestal from CCDB! CCDB=%ld , should be %d", pedestals.size(), Nrings);
+		sprintf(str, "Bad # of rings for CDC pedestal from CCDB! CCDB=%zu , should be %d", pedestals.size(), Nrings);
 		cerr << str << endl;
 		throw JException(str);
 	}
 	if(time_offsets.size() != Nrings){
-		sprintf(str, "Bad # of rings for CDC time_offset from CCDB! CCDB=%ld , should be %d", time_offsets.size(), Nrings);
+		sprintf(str, "Bad # of rings for CDC time_offset from CCDB! CCDB=%zu , should be %d", time_offsets.size(), Nrings);
 		cerr << str << endl;
 		throw JException(str);
 	}
@@ -84,17 +84,17 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	// Verify the right number of straws was read for each ring for each set of constants
 	for(unsigned int i=0; i<Nrings; i++){
 		if(gains[i].size() != Nstraws[i]){
-			sprintf(str, "Bad # of straws for CDC gain from CCDB! CCDB=%ld , should be %d for ring %d", gains[i].size(), Nstraws[i], i+1);
+			sprintf(str, "Bad # of straws for CDC gain from CCDB! CCDB=%zu , should be %d for ring %d", gains[i].size(), Nstraws[i], i+1);
 			cerr << str << endl;
 			throw JException(str);
 		}
 		if(pedestals[i].size() != Nstraws[i]){
-			sprintf(str, "Bad # of straws for CDC pedestal from CCDB! CCDB=%ld , should be %d for ring %d", pedestals[i].size(), Nstraws[i], i+1);
+			sprintf(str, "Bad # of straws for CDC pedestal from CCDB! CCDB=%zu , should be %d for ring %d", pedestals[i].size(), Nstraws[i], i+1);
 			cerr << str << endl;
 			throw JException(str);
 		}
 		if(time_offsets[i].size() != Nstraws[i]){
-			sprintf(str, "Bad # of straws for CDC time_offset from CCDB! CCDB=%ld , should be %d for ring %d", time_offsets[i].size(), Nstraws[i], i+1);
+			sprintf(str, "Bad # of straws for CDC time_offset from CCDB! CCDB=%zu , should be %d for ring %d", time_offsets[i].size(), Nstraws[i], i+1);
 			cerr << str << endl;
 			throw JException(str);
 		}
