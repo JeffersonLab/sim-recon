@@ -892,7 +892,6 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       if(noroot==0)fdcTimes->Fill(dfdchits[i]->t-tMin/1000);
 
       int type = dfdchits[i]->type;
-
       // FADC125
       if(type==1) {
         hc++;
@@ -932,6 +931,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
 
       // F1TDC48
       } else if(type==0) {
+        hc++;
         hitCount++;
         nhits=1;
         cscRef cscTDC      = DFDCAnodeHitTranslation(dfdchits[i]);
@@ -963,8 +963,9 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
           }
         }
       }
-    }
+    } 
   }
+
   if((dumphits>=1)&&(hc>0)) {
     jout << endl << "FDC hits: " << hc << endl << endl;
   }
