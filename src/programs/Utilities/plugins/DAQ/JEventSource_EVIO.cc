@@ -1727,6 +1727,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		        case 3:
 		        case 6:  // flash 250 module, MMD 2014/2/4
 		        case 16: // flash 125 module (CDC), DL 2014/6/19
+		        case 26: // F1TDC BCAL 7/31/2014
 				ParseJLabModuleData(rocid, iptr, iend, tmp_events);
 				break;
 
@@ -2561,7 +2562,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 					chan_on_chip = (*iptr>>16) & 0x07;
 					time         = (*iptr>> 0) & 0xFFFF;
 					if(VERBOSE>5) evioout << "      Found F1 data  : chip=" << chip << " chan=" << chan_on_chip  << " time=" << time << " (header: chip=" << chip_f1header << ")" << endl;
-					if(chip!=chip_f1header) throw JException("F1 chip number in data does not match header!");
+					//if(chip!=chip_f1header) throw JException("F1 chip number in data does not match header!");
 					channel = F1TDC_channel(chip, chan_on_chip, modtype);
 					hit = new DF1TDCHit(rocid, slot_block_header, channel, itrigger, trig_time_f1header, time, *iptr);
 					if(objs)objs->hit_objs.push_back(hit);
