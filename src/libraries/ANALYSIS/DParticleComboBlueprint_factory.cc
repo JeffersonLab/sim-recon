@@ -5,7 +5,7 @@
 //------------------
 jerror_t DParticleComboBlueprint_factory::init(void)
 {
-	MAX_DParticleComboBlueprintStepPoolSize = 40;
+	MAX_DParticleComboBlueprintStepPoolSize = 3000;
 
 	dDebugLevel = 0;
 	dMinProtonMomentum = pair<bool, double>(false, -1.0);
@@ -63,22 +63,20 @@ jerror_t DParticleComboBlueprint_factory::brun(jana::JEventLoop* locEventLoop, i
 		gPARMS->GetParameter("COMBO:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag.second);
 	}
 
+	vector<const DReaction*> locReactions;
+	Get_Reactions(locEventLoop, locReactions);
+	MAX_DParticleComboBlueprintStepPoolSize = 3000*locReactions.size();
+
 	return NOERROR;
 }
 
-//------------------
-// evnt
-//------------------
-jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
+void DParticleComboBlueprint_factory::Get_Reactions(JEventLoop *locEventLoop, vector<const DReaction*>& locReactions) const
 {
-	Reset_Pools();
-	dBlueprintStepMap.clear();
-
 	// Get list of factories and find all the ones producing
 	// DReaction objects. (A simpler way to do this would be to
 	// just use locEventLoop->Get(...), but then only one plugin could
 	// be used at a time.)
-	vector<const DReaction*> locReactions;
+	locReactions.clear();
 	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
 	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
 	{
@@ -95,6 +93,18 @@ jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eve
 		locFactory->Get(locReactionsSubset);
 		locReactions.insert(locReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
 	}
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t DParticleComboBlueprint_factory::evnt(JEventLoop *locEventLoop, int eventnumber)
+{
+	Reset_Pools();
+	dBlueprintStepMap.clear();
+
+	vector<const DReaction*> locReactions;
+	Get_Reactions(locEventLoop, locReactions);
 
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 		Build_ParticleComboBlueprints(locEventLoop, locReactions[loc_i]);

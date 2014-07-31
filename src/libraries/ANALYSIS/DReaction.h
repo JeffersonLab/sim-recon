@@ -54,6 +54,7 @@ class DReaction : public JObject
 		// GET ANALYSIS ACTIONS:
 		inline size_t Get_NumAnalysisActions(void) const{return dAnalysisActions.size();}
 		DAnalysisAction* Get_AnalysisAction(size_t locActionIndex) const;
+		DAnalysisAction* Get_LastAnalysisAction(void) const;
 
 		// GET PIDs:
 		void Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, bool locIncludeDuplicatesFlag = false) const;
@@ -85,11 +86,7 @@ class DReaction : public JObject
 		inline pair<bool, bool> Get_HasDetectorMatchFlag(void) const{return dHasDetectorMatchFlag;}
 
 		// ROOT OUTPUT:
-		inline void Enable_TTreeOutput(string locTTreeOutputFileName)
-		{
-			dEnableTTreeOutputFlag = true;
-			dTTreeOutputFileName = locTTreeOutputFileName;
-		}
+		void Enable_TTreeOutput(string locTTreeOutputFileName);
 		inline string Get_TTreeOutputFileName(void) const{return dTTreeOutputFileName;}
 		inline bool Get_EnableTTreeOutputFlag(void) const{return dEnableTTreeOutputFlag;}
 		inline void Set_MinThrownMatchFOMForROOT(double locMinThrownMatchFOMForROOT){dMinThrownMatchFOMForROOT = locMinThrownMatchFOMForROOT;}
@@ -135,6 +132,103 @@ class DReaction : public JObject
 		pair<bool, double> dMinProtonMomentum; //COMBO:MIN_PROTON_MOMENTUM - when testing whether a non-proton DChargedTrackHypothesis could be a proton, this is the minimum momentum it can have
 		pair<bool, bool> dHasDetectorMatchFlag; //COMBO:HAS_DETECTOR_MATCH_FLAG - if both are true, require tracks to have a detector match
 };
+
+inline const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
+{
+	if(locStepIndex >= dReactionSteps.size())
+		return NULL;
+	return dReactionSteps[locStepIndex];
+}
+
+inline string DReaction::Get_InitialParticlesROOTName(void) const
+{
+	if(dReactionSteps.empty())
+		return (string());
+	return dReactionSteps[0]->Get_InitialParticlesROOTName();
+}
+
+inline string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, bool locKinFitResultsFlag) const
+{
+	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
+	return Get_DecayChainFinalParticlesROOTNames(locInitialPID, -1, deque<Particle_t>(), locKinFitResultsFlag);
+}
+
+inline string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag) const
+{
+	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
+	deque<Particle_t> locPIDs;
+	string locName = "";
+	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
+	{
+		if(dReactionSteps[loc_i]->Get_InitialParticleID() != locInitialPID)
+			continue;
+		return Get_DecayChainFinalParticlesROOTNames(loc_i, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, false);
+	}
+	return string("");
+}
+
+inline bool DReaction::Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex) const
+{
+	//see if this pid is a parent in a future step
+	for(size_t loc_k = locSearchStartIndex; loc_k < dReactionSteps.size(); ++loc_k)
+	{
+		if(dReactionSteps[loc_k]->Get_InitialParticleID() == locPID)
+			return true;
+	}
+	return false;
+}
+
+inline void DReaction::Get_ReactionSteps(Particle_t locInitialPID, deque<const DReactionStep*>& locReactionSteps) const
+{
+	locReactionSteps.clear();
+	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
+	{
+		if(dReactionSteps[loc_i]->Get_InitialParticleID() == locInitialPID)
+			locReactionSteps.push_back(dReactionSteps[loc_i]);
+	}
+}
+
+inline DAnalysisAction* DReaction::Get_AnalysisAction(size_t locActionIndex) const
+{
+	if(locActionIndex >= dAnalysisActions.size())
+		return NULL;
+	return dAnalysisActions[locActionIndex];
+}
+
+inline DAnalysisAction* DReaction::Get_LastAnalysisAction(void) const
+{
+	if(dAnalysisActions.empty())
+		return NULL;
+	return dAnalysisActions.back();
+}
+
+inline bool DReaction::Get_MissingPID(Particle_t& locPID) const
+{
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		if(Get_ReactionStep(loc_i)->Get_MissingPID(locPID))
+			return true;
+	}
+	return false;
+}
+
+inline bool DReaction::Check_AreStepsIdentical(const DReaction* locReaction) const
+{
+	if(locReaction->Get_NumReactionSteps() != dReactionSteps.size())
+		return false;
+	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
+	{
+		if(locReaction->Get_ReactionStep(loc_i) != dReactionSteps[loc_i])
+			return false;
+	}
+	return true;
+}
+
+inline void DReaction::Enable_TTreeOutput(string locTTreeOutputFileName)
+{
+	dEnableTTreeOutputFlag = true;
+	dTTreeOutputFileName = locTTreeOutputFileName;
+}
 
 #endif // _DReaction_
 

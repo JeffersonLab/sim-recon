@@ -35,20 +35,6 @@ DReaction::DReaction(string locReactionName) : dReactionName(locReactionName)
 	dMinThrownMatchFOMForROOT = -1.0; //always
 }
 
-const DReactionStep* DReaction::Get_ReactionStep(size_t locStepIndex) const
-{
-	if(locStepIndex >= dReactionSteps.size())
-		return NULL;
-	return dReactionSteps[locStepIndex];
-}
-
-string DReaction::Get_InitialParticlesROOTName(void) const
-{
-	if(dReactionSteps.empty())
-		return (string());
-	return dReactionSteps[0]->Get_InitialParticlesROOTName();
-}
-
 string DReaction::Get_DetectedParticlesROOTName(void) const
 {
 	string locDetectedParticlesROOTName;
@@ -70,26 +56,6 @@ string DReaction::Get_DetectedParticlesROOTName(void) const
 		}
 	}
 	return locDetectedParticlesROOTName;
-}
-
-string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, bool locKinFitResultsFlag) const
-{
-	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
-	return Get_DecayChainFinalParticlesROOTNames(locInitialPID, -1, deque<Particle_t>(), locKinFitResultsFlag);
-}
-
-string DReaction::Get_DecayChainFinalParticlesROOTNames(Particle_t locInitialPID, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag) const
-{
-	//if multiple decay steps have locInitialPID as the parent, only the first listed is used
-	deque<Particle_t> locPIDs;
-	string locName = "";
-	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
-	{
-		if(dReactionSteps[loc_i]->Get_InitialParticleID() != locInitialPID)
-			continue;
-		return Get_DecayChainFinalParticlesROOTNames(loc_i, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, false);
-	}
-	return string("");
 }
 
 string DReaction::Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int locUpToStepIndex, deque<Particle_t> locUpThroughPIDs, bool locKinFitResultsFlag, bool locExpandDecayingParticlesFlag) const
@@ -139,27 +105,6 @@ string DReaction::Get_DecayChainFinalParticlesROOTNames(size_t locStepIndex, int
 			locName += Get_DecayChainFinalParticlesROOTNames(locDecayingStepIndex, locUpToStepIndex, locUpThroughPIDs, locKinFitResultsFlag, locExpandDecayingParticlesFlag);
 	}
 	return locName;
-}
-
-bool DReaction::Check_IsDecayingParticle(Particle_t locPID, size_t locSearchStartIndex) const
-{
-	//see if this pid is a parent in a future step
-	for(size_t loc_k = locSearchStartIndex; loc_k < dReactionSteps.size(); ++loc_k)
-	{
-		if(dReactionSteps[loc_k]->Get_InitialParticleID() == locPID)
-			return true;
-	}
-	return false;
-}
-
-void DReaction::Get_ReactionSteps(Particle_t locInitialPID, deque<const DReactionStep*>& locReactionSteps) const
-{
-	locReactionSteps.clear();
-	for(size_t loc_i = 0; loc_i < dReactionSteps.size(); ++loc_i)
-	{
-		if(dReactionSteps[loc_i]->Get_InitialParticleID() == locInitialPID)
-			locReactionSteps.push_back(dReactionSteps[loc_i]);
-	}
 }
 
 void DReaction::Get_DetectedFinalPIDs(deque<Particle_t>& locDetectedPIDs, bool locIncludeDuplicatesFlag) const //independent of step
@@ -349,34 +294,5 @@ void DReaction::Get_DetectedFinalChargedPIDs(deque<deque<Particle_t> >& locDetec
 			locDetectedChargedPIDs[loc_i].push_back(locPID);
 		}
 	}
-}
-
-DAnalysisAction* DReaction::Get_AnalysisAction(size_t locActionIndex) const
-{
-	if(locActionIndex >= dAnalysisActions.size())
-		return NULL;
-	return dAnalysisActions[locActionIndex];
-}
-
-bool DReaction::Get_MissingPID(Particle_t& locPID) const
-{
-	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
-	{
-		if(Get_ReactionStep(loc_i)->Get_MissingPID(locPID))
-			return true;
-	}
-	return false;
-}
-
-bool DReaction::Check_AreStepsIdentical(const DReaction* locReaction) const
-{
-	if(locReaction->Get_NumReactionSteps() != dReactionSteps.size())
-		return false;
-	for(size_t loc_i = 0; loc_i < Get_NumReactionSteps(); ++loc_i)
-	{
-		if(locReaction->Get_ReactionStep(loc_i) != dReactionSteps[loc_i])
-			return false;
-	}
-	return true;
 }
 

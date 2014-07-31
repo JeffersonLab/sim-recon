@@ -49,6 +49,37 @@ jerror_t DKinFitResults_factory::brun(jana::JEventLoop* locEventLoop, int runnum
 	if(!(locBField.Mag() > 0.0))
 		cout << "WARNING: MAGNETIC FIELD IS ZERO AT THE TARGET CENTER. YOU SURE THIS IS OK???" << endl;
 
+	// Get # of DReactions:
+	// Get list of factories and find all the ones producing
+	// DReaction objects. (A simpler way to do this would be to
+	// just use locEventLoop->Get(...), but then only one plugin could
+	// be used at a time.)
+	size_t locNumReactions = 0;
+	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
+	{
+		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
+		if(locFactory == NULL)
+			continue;
+		if(string(locFactory->Tag()) == "Thrown")
+			continue;
+		// Found a factory producing DReactions. The reaction objects are
+		// produced at the init stage and are persistent through all event
+		// processing so we can grab the list here and append it to our
+		// overall list.
+		vector<const DReaction*> locReactionsSubset;
+		locFactory->Get(locReactionsSubset);
+		locNumReactions += locReactionsSubset.size();
+	}
+
+	//set pool sizes
+	unsigned int locExpectedNumCombos = 1000;
+	dKinFitter.Set_MaxKinFitParticlePoolSize(locNumReactions*locExpectedNumCombos*6);
+	dKinFitter.Set_MaxKinFitConstraintVertexPoolSize(locNumReactions*locExpectedNumCombos*3);
+	dKinFitter.Set_MaxKinFitConstraintSpacetimePoolSize(locNumReactions*locExpectedNumCombos*3);
+	dKinFitter.Set_MaxKinFitConstraintP4PoolSize(locNumReactions*locExpectedNumCombos*3);
+	dKinFitter.Set_MaxMatrixDSymPoolSize(locNumReactions*locExpectedNumCombos*6);
+
 	return NOERROR;
 }
 

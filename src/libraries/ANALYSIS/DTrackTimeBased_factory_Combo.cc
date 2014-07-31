@@ -12,7 +12,7 @@
 //------------------
 jerror_t DTrackTimeBased_factory_Combo::init(void)
 {
-	MAX_dReferenceTrajectoryPoolSize = 5;
+	MAX_dReferenceTrajectoryPoolSize = 10;
 
 	//remember, charge sign could have flipped during track reconstruction
 	deque<pair<Particle_t, bool> > locPIDDeque; //bool is true/false if should/shouldn't reswim
