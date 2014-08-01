@@ -22,6 +22,7 @@ class JEventProcessor_DAQTreeBCAL:public jana::JEventProcessor{
 		const char* className(void){return "JEventProcessor_DAQTreeBCAL";}
 
 		TTree *BCALdigi;
+		TTree *BCALTDCdigi;
 		uint32_t channelnum;         ///< Arbitrary global channel number (sorted by crate, slot, channel)
 		uint32_t eventnum;	         ///< Event number	
 		uint32_t rocid;              ///< (from DDAQAddress) Crate number
@@ -34,6 +35,8 @@ class JEventProcessor_DAQTreeBCAL:public jana::JEventProcessor{
 		uint32_t w_min;              ///< Minimum sample in the waveform
 		uint32_t w_max;              ///< Maximum sample in the waveform
 		uint32_t w_samp1;            ///< First sample in the waveform  (for simple analysis in case the STL vector is difficult to access)
+
+		uint32_t time;
 
 		uint32_t module;
 		uint32_t layer;

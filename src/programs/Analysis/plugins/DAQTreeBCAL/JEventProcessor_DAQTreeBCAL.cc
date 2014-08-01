@@ -12,8 +12,10 @@ using namespace std;
 using namespace jana;
 
 #include <BCAL/DBCALDigiHit.h>
+#include <BCAL/DBCALTDCDigiHit.h>
 #include <DAQ/Df250PulseIntegral.h>
 #include <DAQ/Df250WindowRawData.h>
+#include <DAQ/DF1TDCHit.h>
 
 
 // Routine used to create our JEventProcessor
@@ -66,6 +68,25 @@ jerror_t JEventProcessor_DAQTreeBCAL::init(void)
 	BCALdigi->Branch("layer",&layer,"layer/i");
 	BCALdigi->Branch("sector",&sector,"sector/i");
 	BCALdigi->Branch("end",&end,"end/i");
+
+
+
+	BCALTDCdigi = new TTree("BCALTDCdigi","DBCALTDCDigiHit objects for each channel and event");
+	BCALTDCdigi->Branch("channelnum",&channelnum,"channelnum/i");
+	BCALTDCdigi->Branch("eventnum",&eventnum,"eventnum/i");
+	BCALTDCdigi->Branch("rocid",&rocid,"rocid/i");
+	BCALTDCdigi->Branch("slot",&slot,"slot/i");
+	BCALTDCdigi->Branch("channel",&channel,"channel/i");
+	BCALTDCdigi->Branch("itrigger",&itrigger,"itrigger/i");
+	BCALTDCdigi->Branch("time",&time,"time/i");
+	//BCALTDCdigi->Branch("trigger_time",&trigger_time,"trigger_time/i");
+
+	BCALTDCdigi->Branch("module",&module,"module/i");
+	BCALTDCdigi->Branch("layer",&layer,"layer/i");
+	BCALTDCdigi->Branch("sector",&sector,"sector/i");
+	BCALTDCdigi->Branch("end",&end,"end/i");
+
+
 
 	return NOERROR;
 }
@@ -139,6 +160,35 @@ jerror_t JEventProcessor_DAQTreeBCAL::evnt(JEventLoop *loop, int eventnumber)
 			BCALdigi->Fill();
 
 		} catch (...) {}
+	}
+
+
+	// Get the DBCALTDCDigiHit objects
+	vector<const DBCALTDCDigiHit*> bcaltdcdigihits;
+	loop->Get(bcaltdcdigihits);
+
+	// Loop over DBCALTDCDigiHit objects
+	for(unsigned int i=0; i< bcaltdcdigihits.size(); i++){
+
+		const DBCALTDCDigiHit *bcaltdcdigihit = bcaltdcdigihits[i];
+		const DF1TDCHit *tdchit;
+		bcaltdcdigihit->GetSingle(tdchit);
+
+		channelnum = i;
+		rocid = tdchit->rocid;
+		slot = tdchit->slot;
+		channel = tdchit->channel;
+		itrigger = tdchit->itrigger;
+		
+		time = bcaltdcdigihit->time;
+		
+		module = bcaltdcdigihit->module;
+		layer = bcaltdcdigihit->layer;
+		sector = bcaltdcdigihit->sector;
+		end = bcaltdcdigihit->end;
+		
+		// Fill tree
+		BCALTDCdigi->Fill();
 	}
 
 
