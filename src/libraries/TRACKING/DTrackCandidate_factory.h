@@ -110,7 +110,18 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		    int &num_fdc_cands_remaining);
   bool MatchMethod8(const DTrackCandidate *cdccan,vector<int> &forward_matches,
 		    vector<unsigned int>&used_cdc_hits);
-
+  bool MatchMethod9(unsigned int src_index,const DTrackCandidate *srccan, 
+		    const DFDCSegment *segment,
+		    vector<const DTrackCandidate*>&cands,
+		    vector<int> &forward_matches);
+  bool MatchMethod10(unsigned int src_index,const DTrackCandidate *srccan, 
+		     const DFDCSegment *segment,
+		     vector<const DTrackCandidate*>&cands,
+		     vector<int> &forward_matches);
+  bool MatchMethod11(double q,DVector3 &mypos,DVector3 &mymom,
+		     DHelicalFit &fit2,const DFDCSegment *segment1,
+		     const DFDCSegment *segment2);
+ 
  private:
   const DMagneticFieldMap *bfield;
   DMagneticFieldStepper *stepper;
