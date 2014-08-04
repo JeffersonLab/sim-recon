@@ -97,6 +97,10 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	EMULATE_FADC125_TIME_THRESHOLD = 80;
 	MODTYPE_MAP_FILENAME = "modtype.map";
 	ENABLE_DISENTANGLING = true;
+	F250_THRESHOLD = 120;
+	F250_NSA = 50;
+	F250_NSB = 5;
+	F250_NSPED = 4;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -114,6 +118,11 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("ET:TIMEOUT", TIMEOUT, "Set the timeout in seconds for each attempt at reading from ET system (repeated attempts will still be made indefinitely until program quits or the quit_on_et_timeout flag is set.");
 		gPARMS->SetDefaultParameter("EVIO:MODTYPE_MAP_FILENAME", MODTYPE_MAP_FILENAME, "Optional module type conversion map for use with files generated with the non-standard module types");
 		gPARMS->SetDefaultParameter("EVIO:ENABLE_DISENTANGLING", ENABLE_DISENTANGLING, "Enable/disable disentangling of multi-block events. Enabled by default. Set to 0 to disable.");
+
+		gPARMS->SetDefaultParameter("EVIO:F250_THRESHOLD", F250_THRESHOLD, "For F250 window raw data. Threshold to emulate a PulseIntegral and PulseTime objects.");
+		gPARMS->SetDefaultParameter("EVIO:F250_NSA", F250_NSA, "For f250PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
+		gPARMS->SetDefaultParameter("EVIO:F250_NSB", F250_NSB, "For f250PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
+		gPARMS->SetDefaultParameter("EVIO:F250_NSPED", F250_NSPED, "For f250PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
 	}
 	
 	// Try to open the file.
@@ -1044,7 +1053,6 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 //----------------
 void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
 {
-	uint16_t ped_samples=5;
 	uint32_t pulse_number = 0;
 	uint32_t quality_factor = 0;
 
@@ -1052,6 +1060,30 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 	for(unsigned int i=0; i<wrd_objs.size(); i++){
 		const Df250WindowRawData *f250WindowRawData = (Df250WindowRawData*)wrd_objs[i];
 		
+		// Get a vector of the samples for this channel
+		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
+		uint32_t nsamples=samplesvector.size();
+		int32_t signalsum = 0;
+
+		// find the threshold crossing
+		uint32_t first_sample_over_threshold = 0;
+		uint32_t sample_height = 0; // temporary variable
+		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
+			if(VERBOSE>5) evioout << c_samp << "  " << samplesvector[c_samp] << "  " << F250_THRESHOLD <<endl;
+			if (samplesvector[c_samp] > F250_THRESHOLD) {
+				first_sample_over_threshold = c_samp;
+				sample_height = samplesvector[c_samp];
+				if(VERBOSE>4) evioout << " EmulateDf250PulseIntergral: object " << i << "  found value over " << F250_THRESHOLD << " at samp " 
+						      << c_samp << " with value " << samplesvector[c_samp] <<endl;
+				break;
+			}
+		}
+		// if no threshold crossing, don't process further
+		if (first_sample_over_threshold == 0) {
+		  	if(VERBOSE>4) evioout << " EmulateDf250PulseIntergral: object " << i << " found no values over " << F250_THRESHOLD <<endl;
+			continue;
+		}
+
 		// create new Df250PulseIntegral object
 		Df250PulseIntegral *myDf250PulseIntegral = new Df250PulseIntegral;
 		myDf250PulseIntegral->rocid =f250WindowRawData->rocid;
@@ -1059,38 +1091,30 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 		myDf250PulseIntegral->channel = f250WindowRawData->channel;
 		myDf250PulseIntegral->itrigger = f250WindowRawData->itrigger;
 
-		// Get a vector of the samples for this channel
-		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
-		uint32_t nsamples=samplesvector.size();
-		int32_t pedestalsum = 0;
-		int32_t signalsum = 0;
-
-		// loop over the first X samples to calculate pedestal
-		for (uint32_t c_samp=0; c_samp<ped_samples; c_samp++) {
-			pedestalsum += samplesvector[c_samp];
-		}
-		
-		// loop over all samples to calculate integral
-		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
+		// calculate integral from relevant samples
+		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
+		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
+		if (start_sample < 0) start_sample=0;
+		if (end_sample > nsamples) end_sample=nsamples;
+		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
 			signalsum += samplesvector[c_samp];
 		}
+		// if(VERBOSE>4) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
+		// if (end_sample-start_sample<50) {
+		//   printf("%3i  %3i  %3i  %3i  %3i\n",
+		//  	 first_sample_over_threshold,start_sample,end_sample,end_sample-start_sample,sample_height);
+		// }
 		
 		myDf250PulseIntegral->pulse_number = pulse_number;
 		myDf250PulseIntegral->quality_factor = quality_factor;
 		myDf250PulseIntegral->integral = signalsum;
-		myDf250PulseIntegral->pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
-		
+		myDf250PulseIntegral->pedestal = 0;
+		myDf250PulseIntegral->nsamples_integral = end_sample - start_sample + 1;
+		myDf250PulseIntegral->nsamples_pedestal = F250_NSPED;
+
 		// Add the Df250WindowRawData object as an associated object
 		myDf250PulseIntegral->AddAssociatedObject(f250WindowRawData);
-		
-		// Apply sparsification threshold
-		if(myDf250PulseIntegral->integral >= EMULATE_SPARSIFICATION_THRESHOLD){
-			// Integral is above threshold so keep it
-			pi_objs.push_back(myDf250PulseIntegral);
-		}else{
-			// Integral is below threshold so discard the hit.
-			delete myDf250PulseIntegral;
-		}
+		pi_objs.push_back(myDf250PulseIntegral);
 	}
 }
 
@@ -1153,8 +1177,6 @@ void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, v
 //----------------
 void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs)
 {
-	uint32_t Nped_samples = 4;   // number of samples to use for pedestal calculation (PED_SAMPLE)
-	uint32_t Nsamples = 14; // Number of samples used to define leading edge (was NSAMPLES in Naomi's code)
 
 	// Loop over all window raw data objects
 	for(unsigned int i=0; i<wrd_objs.size(); i++){
@@ -1162,45 +1184,65 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 
 		// Get a vector of the samples for this channel
 		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
-		uint32_t Nsamples_all = samplesvector.size(); // (was NADCBUFFER in Naomi's code)
-		if(Nsamples_all < (Nped_samples+Nsamples)){
-			char str[256];
-			sprintf(str, "Too few samples in Df250WindowRawData for pulse time extraction! Nsamples_all=%d, (Nped_samples+Nsamples)=%d", Nsamples_all, (Nped_samples+Nsamples));
-			jerr << str << endl;
-			throw JException(str);
+		uint32_t nsamples=samplesvector.size();
+
+		// find the threshold crossing
+		uint32_t first_sample_over_threshold = 0;
+		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
+			if (samplesvector[c_samp] > F250_THRESHOLD) {
+				first_sample_over_threshold = c_samp;
+				if(VERBOSE>4) evioout << " EmulateDf250PulseTime: object " << i << " found value over " << F250_THRESHOLD << " at samp " 
+						      << c_samp << " with value " << samplesvector[c_samp] <<endl;
+				break;
+			}
 		}
+		// if no threshold crossing, don't process further
+		if (first_sample_over_threshold == 0) {
+		  	if(VERBOSE>4) evioout << " EmulateDf250PulseTime: object " << i << " found no values over " << F250_THRESHOLD <<endl;
+			continue;
+		}
+
+		// Define the variable for the time extraction (named as in the f250 documentation)
+		uint32_t VPEAK = 0, VMIN = 0, VMID = 0;
+		uint32_t VN1=0, VN2=0;
+		double time_fraction = 0;
 
 		// loop over the first ped_samples samples to calculate pedestal
 		int32_t pedestalsum = 0;
-		for (uint32_t c_samp=0; c_samp<Nped_samples; c_samp++) {
+		for (uint32_t c_samp=0; c_samp<F250_NSPED; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
-		pedestalsum /= (double)Nped_samples;
-
-		// Calculate single sample threshold based on pdestal
-		double effective_threshold = EMULATE_FADC250_TIME_THRESHOLD + pedestalsum;
-
-		// Look for sample above threshold. Start looking after pedestal
-		// region but only up to Nsamples from end of window so we know
-		// there are at least Nsamples from which to calculate time
-		uint32_t ihitsample; // sample number of first sample above effective_threshold
-		for(ihitsample=Nped_samples; ihitsample<(Nsamples_all - Nsamples); ihitsample++){
-			if(samplesvector[ihitsample] > effective_threshold) break;
-		}
+		VMIN = pedestalsum / (double)F250_NSPED;
 		
-		// Didn't find sample above threshold. Don't make hit.
-		if(ihitsample >= (Nsamples_all - Nsamples)) continue;
-		
-		// Find peak value. This has to be at ihitsample or later
-		uint32_t pulse_peak = 0;
-		for(uint32_t isample=ihitsample; isample<Nsamples_all; isample++){
-			if(samplesvector[isample] > pulse_peak) pulse_peak = samplesvector[isample];
-		}
+		// Find maximum by looking for signal downturn
+		uint32_t max_sample = 0;
 
-		// At this point we know we have a hit and will be able to extract a time.
-		// Go ahead and make the PulseTime object, filling in the "rough" time.
-		// and corresponding quality factor. The time and quality factor
-		// will be updated later when and if we can calculate a more accurate one.
+		for (uint32_t c_samp=first_sample_over_threshold; c_samp<nsamples; c_samp++) {
+			if (samplesvector[c_samp] > VPEAK) {
+				VPEAK = samplesvector[c_samp];
+				max_sample = c_samp;
+			} else {
+				// we found the downturn
+				break;
+			}
+		}
+		VMID = (VPEAK + VMIN)/2;
+
+		uint32_t mid_sample = 0;
+		// find the adjacent samples that straddle the VMID crossing
+		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
+			if (samplesvector[c_samp] > VMID) {
+				VN2 = samplesvector[c_samp];
+				VN1 = samplesvector[c_samp-1];
+				mid_sample = c_samp-1;
+				break;
+			}
+		}
+		time_fraction = mid_sample + ((double)(VMID-VN1))/((double)(VN2-VN1));
+		uint32_t time = time_fraction*64;
+		if(VERBOSE>4) evioout << " EmulateDf250PulseTime: object " << i << " VMIN=" << VMIN << " VPEAK=" << VPEAK << " VMID=" << VMID 
+				      << " mid_sample=" << mid_sample << " VN1=" << VN1 << " VN2=" << VN2 << " time_fraction=" << time_fraction 
+				      << " time=" << time<<endl;
 
 		// create new Df250PulseTime object
 		Df250PulseTime *myDf250PulseTime = new Df250PulseTime;
@@ -1209,8 +1251,8 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf250PulseTime->channel = f250WindowRawData->channel;
 		myDf250PulseTime->itrigger = f250WindowRawData->itrigger;
 		myDf250PulseTime->pulse_number = 0;
-		myDf250PulseTime->quality_factor = 1;
-		myDf250PulseTime->time = ihitsample*10 - 20; // Rough time 20 is "ROUGH_DT" in Naomi's original code
+		myDf250PulseTime->quality_factor = 0;
+		myDf250PulseTime->time = time;
 
 		// create new Df250PulsePedestal object
 		Df250PulsePedestal *myDf250PulsePedestal = new Df250PulsePedestal;
@@ -1219,9 +1261,9 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		myDf250PulsePedestal->channel = f250WindowRawData->channel;
 		myDf250PulsePedestal->itrigger = f250WindowRawData->itrigger;
 		myDf250PulsePedestal->pulse_number = 0;
-		myDf250PulsePedestal->pedestal = pedestalsum;
-		myDf250PulsePedestal->pulse_peak = pulse_peak;
-		
+		myDf250PulsePedestal->pedestal = pedestalsum; // Don't return the divided pedestal.  Return the sum and the number of pedestal samples
+		myDf250PulsePedestal->pulse_peak = VPEAK;
+
 		// Add the Df250WindowRawData object as an associated object
 		myDf250PulseTime->AddAssociatedObject(f250WindowRawData);
 		myDf250PulsePedestal->AddAssociatedObject(f250WindowRawData);
@@ -1229,21 +1271,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		
 		// Add to list of Df250PulseTime and Df250PulsePedestal objects
 		pt_objs.push_back(myDf250PulseTime);
-		pp_objs.push_back(myDf250PulsePedestal);
-
-		//----- SIMPLE--------
-		// The following is a simple algorithm that does a linear interpolation
-		// between the samples before and after the first sample over threshold.
-		
-		// Linear interpolation of two samples surrounding the first sample over threshold
-		double sample1 = (double)samplesvector[ihitsample - 1];
-		double sample2 = (double)samplesvector[ihitsample + 1];
-		double m = (sample2 - sample1)/2.0; // slope where x is in units of samples
-		double b = sample2 - m*(double)(ihitsample + 1);
-		double time_samples = m==0.0 ? (double)ihitsample:(effective_threshold -b)/m;
-		myDf250PulseTime->time = (uint32_t)(time_samples*10.0);
-		myDf250PulseTime->quality_factor = 0;
-		//----- SIMPLE--------		
+		pp_objs.push_back(myDf250PulsePedestal);	
 	}
 }
 
@@ -1727,7 +1755,7 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 		        case 3:
 		        case 6:  // flash 250 module, MMD 2014/2/4
 		        case 16: // flash 125 module (CDC), DL 2014/6/19
-		        case 26: // F1TDC BCAL 7/31/2014
+		        case 26: // F1 TDC module (BCAL), MMD 2014-07-31
 				ParseJLabModuleData(rocid, iptr, iend, tmp_events);
 				break;
 
@@ -1908,6 +1936,8 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 		uint32_t pulse_time = 0;
 		uint32_t pedestal = 0;
 		uint32_t pulse_peak = 0;
+		uint32_t nsamples_integral = 0;
+		uint32_t nsamples_pedestal = 0;
 		bool overflow = false;
 
 		bool found_block_trailer = false;
@@ -1966,7 +1996,11 @@ void JEventSource_EVIO::Parsef250Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				quality_factor = (*iptr>>19) & 0x03;
 				sum = (*iptr>>0) & 0x7FFFF;
-				if(objs) objs->hit_objs.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
+				nsamples_integral = (F250_NSA + F250_NSB);
+				nsamples_pedestal = 1;  // The firmware returns an already divided pedestal
+				pedestal = 0;  // This will be replaced by the one from Df250PulsePedestal in GetObjects
+				if(objs) objs->hit_objs.push_back(new Df250PulseIntegral(rocid, slot, channel, itrigger, pulse_number, 
+											 quality_factor, sum, pedestal, nsamples_integral, nsamples_pedestal));
 				break;
 			case 8: // Pulse Time
 				channel = (*iptr>>23) & 0x0F;
@@ -2270,7 +2304,6 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				pulse_number = (*iptr>>21) & 0x03;
 				sum = (*iptr>>0) & 0x7FFFF;
 				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
-
 				break;
 			case 8: // Pulse Time
 				channel = (*iptr>>20) & 0x7F; // is this right??

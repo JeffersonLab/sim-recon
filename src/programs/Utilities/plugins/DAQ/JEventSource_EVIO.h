@@ -182,6 +182,10 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t EMULATE_FADC125_TIME_THRESHOLD;
 		string MODTYPE_MAP_FILENAME;
 		bool ENABLE_DISENTANGLING;
+		uint32_t F250_THRESHOLD;
+		uint32_t F250_NSA;
+		uint32_t F250_NSB;
+		uint32_t F250_NSPED;
 
 		// Utility class with multiple roles:
 		//
