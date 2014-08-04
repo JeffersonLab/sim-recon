@@ -63,7 +63,7 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		TTree *Df250PulseRawData_tree;   ///< f250 readout mode 2
 		TTree *Df250PulseIntegral_tree;  ///< f250 readout modes 3 and 7
 		TTree *Df250PulseTime_tree;      ///< f250 readout modes 3,4,7 and 8
-		//TTree *Df250PulseParameters_tree;      ///< f250 readout modes 4,7 and 8
+		TTree *Df250PulsePedestal_tree;  ///< f250 readout modes 4,7 and 8
 		TTree *Df250TriggerTime_tree;    ///< all f250 readout modes 
 
 		uint32_t channelnum;         ///< Arbitrary global channel number (sorted by crate, slot, channel).  Note that when data is sparsified then this value will not have a constant relationship with any particular physical channel.
@@ -83,7 +83,8 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		uint32_t pulse_number;         /// \n for f250PRD, f250PI, f250PT
 		uint32_t quality_factor;       /// \n for f250PI, f250PT
 		int32_t integral;              /// \n for f250PI 
-		int32_t pedestal;              /// \n for f250PI
+		int32_t pedestal;              /// \n for f250PI and f250PP
+		uint32_t pulse_peak;           /// \n for f250PP
 		uint32_t time;                 /// \n for f250PT, f250TT
 		uint32_t first_sample_number;  /// \n for f250PRD
 		bool invalid_samples;          /// \n for f250WRD, f250PRD
@@ -103,6 +104,7 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		bool f250PRDtree_exists;
 		bool f250PItree_exists;
 		bool f250PTtree_exists;
+		bool f250PPtree_exists;
 		bool f250TTtree_exists;
 
 };
