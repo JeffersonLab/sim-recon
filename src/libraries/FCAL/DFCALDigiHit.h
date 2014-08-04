@@ -21,6 +21,8 @@ class DFCALDigiHit:public jana::JObject{
 		uint32_t pulse_time;     ///< identified pulse time as returned by FPGA algorithm
 		uint32_t pedestal;       ///< pedestal info used by FPGA (if any)
 		uint32_t QF;             ///< Quality Factor from FPGA algorithms
+		uint32_t nsamples_integral;    ///< number of samples used in integral 
+		uint32_t nsamples_pedestal;    ///< number of samples used in pedestal
 		
 		// This method is used primarily for pretty printing
 		// the second argument to AddString is printf style format
