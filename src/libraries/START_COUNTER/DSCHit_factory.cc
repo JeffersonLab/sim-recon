@@ -24,6 +24,10 @@ jerror_t DSCHit_factory::init(void)
 	DELTA_T_ADC_TDC_MAX = 4.0; // ns
 	gPARMS->SetDefaultParameter("SC:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
 
+	a_scale    = 0.;
+	t_scale    = 0.;
+	tdc_scale  = 0.;
+
 	return NOERROR;
 }
 
@@ -92,12 +96,21 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	// First, make hits out of all fADC250 hits
 	vector<const DSCDigiHit*> digihits;
 	loop->Get(digihits);
+	char str[256];
+
 	for(unsigned int i=0; i<digihits.size(); i++){
 		const DSCDigiHit *digihit = digihits[i];
 
 		DSCHit *hit = new DSCHit;
 		hit->sector = digihit->sector;
 		
+		// Make sure sector is in valid range
+		if( (hit->sector <= 0) && (hit->sector > MAX_SECTORS)) {
+			sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
+				hit->sector, MAX_SECTORS);
+			throw JException(str);
+		}
+
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
@@ -123,6 +136,13 @@ jerror_t DSCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(tdcdigihits);
 	for(unsigned int i=0; i<tdcdigihits.size(); i++){
 		const DSCTDCDigiHit *digihit = tdcdigihits[i];
+
+		// Make sure sector is in valid range
+		if( (digihit->sector <= 0) && (digihit->sector > MAX_SECTORS)) {
+			sprintf(str, "DSCDigiHit sector out of range! sector=%d (should be 1-%d)", 
+				digihit->sector, MAX_SECTORS);
+			throw JException(str);
+		}
 
 		// Apply calibration constants here
 		double T = (double)digihit->time;
@@ -191,3 +211,67 @@ jerror_t DSCHit_factory::fini(void)
 }
 
 
+//------------------------------------
+// GetConstant
+//   Allow a few different interfaces
+//------------------------------------
+const double DSCHit_factory::GetConstant(const vector<double> &the_table, const int in_sector) const {
+	
+	char str[256];
+	
+	if( (in_sector < 0) || (in_sector >= MAX_SECTORS)) {
+		sprintf(str, "Bad sector # requested in DSCHit_factory::GetConstant()! requested=%d , should be %ud", in_sector, MAX_SECTORS);
+		cerr << str << endl;
+		throw JException(str);
+	}
+
+	return the_table[in_sector];
+}
+
+const double DSCHit_factory::GetConstant(const vector<double> &the_table,
+				   const DSCDigiHit *in_digihit) const {
+
+	char str[256];
+	
+	if( (in_digihit->sector < 0) || (in_digihit->sector >= MAX_SECTORS)) {
+		sprintf(str, "Bad sector # requested in DSCHit_factory::GetConstant()! requested=%d , should be %ud", in_digihit->sector, MAX_SECTORS);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[in_digihit->sector];
+}
+
+const double DSCHit_factory::GetConstant(const vector<double> &the_table,
+				   const DSCHit *in_hit) const {
+
+	char str[256];
+	
+	if( (in_hit->sector < 0) || (in_hit->sector >= MAX_SECTORS)) {
+		sprintf(str, "Bad sector # requested in DSCHit_factory::GetConstant()! requested=%d , should be %ud", in_hit->sector, MAX_SECTORS);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[in_hit->sector];
+}
+/*
+const double DSCHit_factory::GetConstant(const vector<double> &the_table,
+				   const DTranslationTable *ttab,
+				   const int in_rocid, const int in_slot, const int in_channel) const {
+
+	char str[256];
+	
+	DTranslationTable::csc_t daq_index = { in_rocid, in_slot, in_channel };
+	DTranslationTable::DChannelInfo channel_info = ttab->GetDetectorIndex(daq_index);
+	
+	if( (channel_info.sc.sector <= 0) 
+	    || (channel_info.sc.sector > static_cast<unsigned int>(MAX_SECTORS))) {
+		sprintf(str, "Bad sector # requested in DSCHit_factory::GetConstant()! requested=%d , should be %ud", channel_info.sc.sector, MAX_SECTORS);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[channel_info.sc.sector];
+}
+*/

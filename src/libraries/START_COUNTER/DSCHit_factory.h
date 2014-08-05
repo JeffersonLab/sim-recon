@@ -9,7 +9,9 @@
 #define _DSCHit_factory_
 
 #include <JANA/JFactory.h>
+#include "TTab/DTranslationTable.h"
 #include "DSCHit.h"
+
 
 class DSCHit_factory:public jana::JFactory<DSCHit>{
 	public:
@@ -32,7 +34,20 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		
 		double DELTA_T_ADC_TDC_MAX;
 
+		// geometry information
+		static const int MAX_SECTORS = 30.;
+
 		DSCHit* FindMatch(int sector, double T);
+
+		const double GetConstant(const vector<double>  &the_table,
+					 const int in_sector) const;
+		const double GetConstant(const vector<double>  &the_table,
+					 const DSCDigiHit *the_digihit) const;
+		const double GetConstant(const vector<double>  &the_table,
+					 const DSCHit *the_hit) const;
+		//const double GetConstant(const vector<double>  &the_table,
+		//			 const DTranslationTable *ttab,
+		//			 const int in_rocid, const int in_slot, const int in_channel) const;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
