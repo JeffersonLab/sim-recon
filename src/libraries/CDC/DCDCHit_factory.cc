@@ -211,6 +211,7 @@ void DCDCHit_factory::CalcNstraws(jana::JEventLoop *eventLoop, int runnumber, ve
     // Fill array with the number of straws for each layer
     // Also keep track of the total number of straws, i.e., the total number of detector channels
     maxChannels = 0;
+	 Nstraws.clear();
     for (unsigned int i=0;i<cdcwires.size();i++){
 	Nstraws.push_back( cdcwires[i].size() );
 	maxChannels += cdcwires[i].size();
