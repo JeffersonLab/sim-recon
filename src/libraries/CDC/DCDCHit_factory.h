@@ -13,6 +13,7 @@ using namespace std;
 
 #include <JANA/JFactory.h>
 #include "HDGEOMETRY/DGeometry.h"
+#include "TTab/DTranslationTable.h"
 #include "DCDCHit.h"
 
 // store constants indexed by ring/straw number
@@ -28,11 +29,21 @@ class DCDCHit_factory:public jana::JFactory<DCDCHit>{
 		double a_scale;
 		double t_scale;
 
-
+		// calibration constant tables
 		cdc_digi_constants_t gains;
 		cdc_digi_constants_t pedestals;
 		cdc_digi_constants_t time_offsets;
-		
+
+		const double GetConstant(const cdc_digi_constants_t &the_table,
+					 const int in_ring, const int in_straw) const;
+		const double GetConstant(const cdc_digi_constants_t &the_table,
+					 const DCDCDigiHit *the_digihit) const;
+		const double GetConstant(const cdc_digi_constants_t &the_table,
+					 const DCDCHit *the_hit) const;
+		//const double GetConstant(const cdc_digi_constants_t &the_table,
+		//			 const DTranslationTable *ttab,
+		//			 const int in_rocid, const int in_slot, const int in_channel) const;
+
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
@@ -44,8 +55,11 @@ class DCDCHit_factory:public jana::JFactory<DCDCHit>{
 		void FillCalibTable(vector< vector<double> > &table, vector<double> &raw_table, 
 				    vector<unsigned int> &Nstraws);
 
+		// Geometry information
+		unsigned int maxChannels;
 		unsigned int Nrings; // number of rings (layers)
 		vector<unsigned int> Nstraws; // number of straws for each ring
+
 };
 
 #endif // _DCDCHit_factory_

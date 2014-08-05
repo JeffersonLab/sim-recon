@@ -16,8 +16,6 @@ using namespace std;
 #include <DAQ/Df125PulseIntegral.h>
 using namespace jana;
 
-#define CDC_MAX_CHANNELS  3522
-
 static double DIGI_THRESHOLD = -1000000.0;
 
 //------------------
@@ -26,6 +24,14 @@ static double DIGI_THRESHOLD = -1000000.0;
 jerror_t DCDCHit_factory::init(void)
 {
         gPARMS->SetDefaultParameter("CDC:DIGI_THRESHOLD",DIGI_THRESHOLD, "Do not convert CDC digitized hits into DCDCHit objects that would have q less than this");
+
+	// default values
+	Nrings = 0;
+	a_scale = 0.;
+	t_scale = 0.;
+
+	// Set default number of number of detector channels
+	maxChannels = 3522;
 
 	return NOERROR;
 }
@@ -40,7 +46,6 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	Nrings = Nstraws.size();
 
 	/// set the base conversion scales
-	//a_scale    = 1.0E6/1.3E5; 
 	a_scale    = 4.0E3/1.0E2; 
 	t_scale    = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
 
@@ -126,11 +131,11 @@ jerror_t DCDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		const int &straw = digihit->straw;
 		
 		// Make sure ring and straw are in valid range
-		if(ring > (int)Nrings){
+		if( (ring < 1) || (ring > (int)Nrings)) {
 			sprintf(str, "DCDCDigiHit ring out of range! ring=%d (should be 1-%d)", ring, Nrings);
 			throw JException(str);
 		}
-		if(straw > (int)Nstraws[ring-1]){
+		if( (straw < 1) || (straw > (int)Nstraws[ring-1])) {
 			sprintf(str, "DCDCDigiHit straw out of range! straw=%d for ring=%d (should be 1-%d)", straw, ring, Nstraws[ring-1]);
 			throw JException(str);
 		}
@@ -195,7 +200,7 @@ void DCDCHit_factory::CalcNstraws(jana::JEventLoop *eventLoop, int runnumber, ve
 {
     DGeometry *dgeom;
     vector<vector<DCDCWire *> >cdcwires;
-
+    
     // Get pointer to DGeometry object
     DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
     dgeom  = dapp->GetDGeometry(runnumber);
@@ -204,10 +209,13 @@ void DCDCHit_factory::CalcNstraws(jana::JEventLoop *eventLoop, int runnumber, ve
     dgeom->GetCDCWires(cdcwires);
   
     // Fill array with the number of straws for each layer
+    // Also keep track of the total number of straws, i.e., the total number of detector channels
+    maxChannels = 0;
     for (unsigned int i=0;i<cdcwires.size();i++){
 	Nstraws.push_back( cdcwires[i].size() );
+	maxChannels += cdcwires[i].size();
     }
-
+    
     // clear up all of the wire information
     for (unsigned int i=0;i<cdcwires.size();i++) {
 	for (unsigned int j=0;j<cdcwires[i].size();j++) {
@@ -226,22 +234,108 @@ void DCDCHit_factory::FillCalibTable(vector< vector<double> > &table, vector<dou
 {
     int ring = 0;
     int straw = 0;
-
+    
     // reset table before filling it
     table.clear();
     table.resize( Nstraws.size() );
-
-    for(int channel=0; channel<static_cast<int>(raw_table.size()); channel++,straw++) {
-        // make sure that we don't try to load info for channels that don't exist
-        if(channel == CDC_MAX_CHANNELS) break;
-
-	// if we've hit the end of the ring, move on to the next
-	if(straw == (int)Nstraws[ring]) {
-	    ring++;
-	    straw = 0;
+    
+    for(unsigned int channel=0; channel<raw_table.size(); channel++,straw++) {
+	    // make sure that we don't try to load info for channels that don't exist
+	    if(channel == maxChannels) break;
+	    
+	    // if we've hit the end of the ring, move on to the next
+	    if(straw == (int)Nstraws[ring]) {
+		ring++;
+		straw = 0;
+	    }
+	    
+	    table[ring].push_back( raw_table[channel] );
 	}
-
-        table[ring].push_back( raw_table[channel] );
-    }
-
+	    
 }
+
+
+//------------------------------------
+// GetConstant
+//   Allow a few different interfaces
+//------------------------------------
+const double DCDCHit_factory::GetConstant(const cdc_digi_constants_t &the_table,
+					const int in_ring, const int in_straw) const {
+	
+	char str[256];
+	
+	if( (in_ring <= 0) || (static_cast<unsigned int>(in_ring) > Nrings)) {
+		sprintf(str, "Bad ring # requested in DCDCHit_factory::GetConstant()! requested=%d , should be %ud", in_ring, Nrings);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	if( (in_straw <= 0) || (static_cast<unsigned int>(in_straw) > Nstraws[in_ring])) {
+		sprintf(str, "Bad straw # requested in DCDCHit_factory::GetConstant()! requested=%d , should be %ud", in_straw, Nstraws[in_ring]);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[in_ring-1][in_straw-1];
+}
+
+const double DCDCHit_factory::GetConstant(const cdc_digi_constants_t &the_table,
+				    const DCDCDigiHit *in_digihit) const {
+
+	char str[256];
+	
+	if( (in_digihit->ring <= 0) || (static_cast<unsigned int>(in_digihit->ring) > Nrings)) {
+		sprintf(str, "Bad ring # requested in DCDCHit_factory::GetConstant()! requested=%d , should be %ud", in_digihit->ring, Nrings);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	if( (in_digihit->straw <= 0) || (static_cast<unsigned int>(in_digihit->straw) > Nstraws[in_digihit->ring])) {
+		sprintf(str, "Bad straw # requested in DCDCHit_factory::GetConstant()! requested=%d , should be %ud", in_digihit->straw, Nstraws[in_digihit->ring]);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[in_digihit->ring-1][in_digihit->straw-1];
+}
+
+const double DCDCHit_factory::GetConstant(const cdc_digi_constants_t &the_table,
+				    const DCDCHit *in_hit) const {
+
+	char str[256];
+	
+	if( (in_hit->ring <= 0) || (static_cast<unsigned int>(in_hit->ring) > Nrings)) {
+		sprintf(str, "Bad ring # requested in DCDCHit_factory::GetConstant()! requested=%d , should be %ud", in_hit->ring, Nrings);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	if( (in_hit->straw <= 0) || (static_cast<unsigned int>(in_hit->straw) > Nstraws[in_hit->ring])) {
+		sprintf(str, "Bad straw # requested in DCDCHit_factory::GetConstant()! requested=%d , should be %ud", in_hit->straw, Nstraws[in_hit->ring]);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[in_hit->ring-1][in_hit->straw-1];
+}
+/*
+const double DCDCHit_factory::GetConstant(const cdc_digi_constants_t &the_table,
+				    const DTranslationTable *ttab,
+				    const int in_rocid, const int in_slot, const int in_channel) const {
+
+	char str[256];
+	
+	DTranslationTable::csc_t daq_index = { in_rocid, in_slot, in_channel };
+	DTranslationTable::DChannelInfo channel_info = ttab->GetDetectorIndex(daq_index);
+	
+	if( (channel_info.cdc.ring <= 0) || (channel_info.cdc.ring > Nrings)) {
+		sprintf(str, "Bad ring # requested in DCDCHit_factory::GetConstant()! requested=%d , should be %ud", channel_info.cdc.ring, Nrings);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	if( (channel_info.cdc.straw <= 0) || (channel_info.cdc.straw > Nstraws[channel_info.cdc.ring])) {
+		sprintf(str, "Bad straw # requested in DCDCHit_factory::GetConstant()! requested=%d , should be %ud", channel_info.cdc.ring, Nstraws[channel_info.cdc.straw]);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[channel_info.cdc.ring-1][channel_info.cdc.straw-1];
+}
+*/
