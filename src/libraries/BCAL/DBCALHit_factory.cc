@@ -39,7 +39,7 @@ jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	//    A minimally ionising particle deposits and integral of 230 ADC counts per cell, 
 	//    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
 	//a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
-	t_scale    = 0.0625;   // 62.5 ps/count
+	t_scale    = 0.0625;   // There are 62.5 ps/count from the fADC
 
 	/// Read in calibration constants
 	vector<double> raw_gains;
@@ -83,13 +83,10 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		
 		// Get pedestal.  Prefer associated event pedestal if it exists.
 		// Otherwise, use the average pedestal from CCDB
-		double pedestal = GetConstant(pedestals,digihit);
-		vector<const Df250PulseIntegral*> PIvect;
-		digihit->Get(PIvect);
-		if(!PIvect.empty()){
-		    const Df250PulseIntegral *PIobj = PIvect[0];
-		    pedestal = PIobj->pedestal;
-		}
+		double pedestalpersample = GetConstant(pedestals,digihit);
+		if (digihit->nsamples_pedestal > 0)
+			pedestalpersample = digihit->pedestal / digihit->nsamples_pedestal;
+		else pedestalpersample = digihit->pedestal;
 
 		DBCALHit *hit = new DBCALHit;
 		hit->module = digihit->module;
@@ -102,8 +99,12 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double T = (double)digihit->pulse_time;
 
 		double gain = GetConstant(gains,digihit);
+		double E = 0;
+		if (A > 0) {
+			E = a_scale * gain * (A - (pedestalpersample * digihit->nsamples_integral));
+		}
 
-		hit->E = a_scale * gain * (A - pedestal);
+		hit->E = E;
 		hit->t = t_scale * (T - GetConstant(time_offsets,digihit));
 		
 		hit->AddAssociatedObject(digihit);
