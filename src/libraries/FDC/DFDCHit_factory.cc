@@ -263,27 +263,27 @@ void DFDCHit_factory::LoadPackageCalibTables(jana::JEventLoop *eventLoop, string
 	    throw JException(str);
 	}
 	if(new_pedestals[2*nchamber].size() != STRIPS_PER_PLANE) {
-	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_pedestals[2*nchamber].size(), STRIPS_PER_PLANE);
+	    sprintf(str, "Bad # of strips for FDC pedestals from CCDB! CCDB=%zu , should be %d", new_pedestals[2*nchamber].size(), STRIPS_PER_PLANE);
 	    cerr << str << endl;
 	    throw JException(str);
 	}
 	if(new_pedestals[2*nchamber+1].size() != STRIPS_PER_PLANE) {
-	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_pedestals[2*nchamber+1].size(), STRIPS_PER_PLANE);
+	    sprintf(str, "Bad # of strips for FDC pedestals from CCDB! CCDB=%zu , should be %d", new_pedestals[2*nchamber+1].size(), STRIPS_PER_PLANE);
 	    cerr << str << endl;
 	    throw JException(str);
 	}
 	if(new_strip_t0s[2*nchamber].size() != STRIPS_PER_PLANE) {
-	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_strip_t0s[2*nchamber].size(), STRIPS_PER_PLANE);
+	    sprintf(str, "Bad # of strips for FDC timing offsets from CCDB! CCDB=%zu , should be %d", new_strip_t0s[2*nchamber].size(), STRIPS_PER_PLANE);
 	    cerr << str << endl;
 	    throw JException(str);
 	}
 	if(new_strip_t0s[2*nchamber+1].size() != STRIPS_PER_PLANE) {
-	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_strip_t0s[2*nchamber+1].size(), STRIPS_PER_PLANE);
+	    sprintf(str, "Bad # of strips for FDC timing offsets from CCDB! CCDB=%zu , should be %d", new_strip_t0s[2*nchamber+1].size(), STRIPS_PER_PLANE);
 	    cerr << str << endl;
 	    throw JException(str);
 	}
 	if(new_wire_t0s[nchamber].size() != WIRES_PER_PLANE) {
-	    sprintf(str, "Bad # of wires for FDC gain from CCDB! CCDB=%zu , should be %d", new_wire_t0s[2*nchamber].size(), WIRES_PER_PLANE);
+	    sprintf(str, "Bad # of wires for FDC timing offsets from CCDB! CCDB=%zu , should be %d", new_wire_t0s[2*nchamber].size(), WIRES_PER_PLANE);
 	    cerr << str << endl;
 	    throw JException(str);
 	}
