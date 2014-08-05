@@ -17,13 +17,15 @@ using namespace std;
 using namespace jana;
 
 
-static int USE_MC_CALIB = 0;
-
 //------------------
 // init
 //------------------
 jerror_t DFDCHit_factory::init(void)
 {
+        a_scale = 0.;
+	t_scale = 0.;
+	tdc_scale = 0.;
+
   	return NOERROR;
 }
 
@@ -34,10 +36,10 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
 	/// set the base conversion scales
 	a_scale      = 2.4E4/1.3E5;  // cathodes
-	t_scale    = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
+	t_scale      = 8.0/10.0;     // 8 ns/count and integer time is in 1/10th of sample
 	tdc_scale    = 0.115;        // 115 ps/count
 
-	// reset constants
+	// reset constants tables
 	a_gains.clear();
 	a_pedestals.clear();
 	timing_offsets.clear();
@@ -50,6 +52,27 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	LoadPackageCalibTables(eventLoop,"/FDC/package2");
 	LoadPackageCalibTables(eventLoop,"/FDC/package3");
 	LoadPackageCalibTables(eventLoop,"/FDC/package4");
+
+	// Verify that the right number of layers were loaded
+	char str[256];
+	if(a_gains.size() != FDC_NUM_PLANES) {
+		sprintf(str, "Bad # of planes for FDC gains from CCDB! CCDB=%zu , should be %d", 
+			a_gains.size(), FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	if(a_pedestals.size() != FDC_NUM_PLANES) {
+		sprintf(str, "Bad # of planes for FDC pedestals from CCDB! CCDB=%zu , should be %d", 
+			a_pedestals.size(), FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	if(timing_offsets.size() != FDC_NUM_PLANES) {
+		sprintf(str, "Bad # of planes for FDC timing offsets from CCDB! CCDB=%zu , should be %d", 
+			timing_offsets.size(), FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	}
 
 	return NOERROR;
 }
@@ -68,6 +91,7 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	/// Note that this code does NOT get called for simulated
 	/// data in HDDM format. The HDDM event source will copy
 	/// the precalibrated values directly into the _data vector.
+	char str[256];
 
 	// Make hits out of all DFDCCathodeDigiHit hits
 	vector<const DFDCCathodeDigiHit*> cathodedigihits;
@@ -106,16 +130,23 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->itrack  = -1; // MC data only
 		hit->ptype   = 0;// MC data only
 
+		// Make sure gPlane and stripare in valid range
+		if( (hit->gPlane < 1) || (hit->gPlane > FDC_NUM_PLANES)) {
+			sprintf(str, "DFDCDigiHit plane out of range! gPlane=%d (should be 1-%d)", hit->gPlane, FDC_NUM_PLANES);
+			throw JException(str);
+		}
+		if( (digihit->strip < 1) || (digihit->strip > STRIPS_PER_PLANE)) {
+			sprintf(str, "DFDCDigiHit straw out of range! strip=%d for plane=%d (should be 1-%d)", digihit->strip, hit->gPlane, STRIPS_PER_PLANE);
+			throw JException(str);
+		}
+
 		// Apply calibration constants here
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
-		hit->q = a_scale * A;
-		hit->t = t_scale * T;
 
 		hit->q = a_scale * a_gains[hit->gPlane-1][hit->element-1] 
 		    * (A - a_pedestals[hit->gPlane-1][hit->element-1] );
 		hit->t = t_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]);
-		//hit->t = t_scale * (T - adc_timing_offsets[hit->gPlane][hit->element]);
 		
 		//cerr << "FDC hitL  plane = " << hit->gPlane << "  element = " << hit->element << endl;
 		
@@ -160,10 +191,19 @@ jerror_t DFDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->itrack  = -1;                 // MC data only
 		hit->ptype   = 0;                  // MC data only
 
+		// Make sure gPlane and wire are in valid range
+		if( (hit->gPlane < 1) || (hit->gPlane > FDC_NUM_PLANES)) {
+			sprintf(str, "DFDCDigiHit plane out of range! gPlane=%d (should be 1-%d)", hit->gPlane, FDC_NUM_PLANES);
+			throw JException(str);
+		}
+		if( (digihit->wire < 1) || (digihit->wire > WIRES_PER_PLANE)) {
+			sprintf(str, "DFDCDigiHit straw out of range! wire=%d for plane=%d (should be 1-%d)", digihit->wire, hit->gPlane, WIRES_PER_PLANE);
+			throw JException(str);
+		}
+
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 		T = tdc_scale * (T - timing_offsets[hit->gPlane-1][hit->element-1]);
-		//T = tdc_scale * T;
 		hit->q = 0.0; // no charge measured for wires in FDC
 		hit->t = T;
 		
@@ -198,6 +238,7 @@ jerror_t DFDCHit_factory::fini(void)
 void DFDCHit_factory::LoadPackageCalibTables(jana::JEventLoop *eventLoop, string ccdb_prefix)
 {
     vector< vector<double> >  new_gains, new_pedestals, new_strip_t0s, new_wire_t0s;
+    char str[256];
     
     if(eventLoop->GetCalib(ccdb_prefix+"/strip_gains", new_gains))
 	cout << "Error loading "+ccdb_prefix+"/strip_gains !" << endl;
@@ -209,6 +250,44 @@ void DFDCHit_factory::LoadPackageCalibTables(jana::JEventLoop *eventLoop, string
 	cout << "Error loading "+ccdb_prefix+"/wire_timing_offsets!" << endl;
 
     for(int nchamber=0; nchamber<6; nchamber++) {
+
+	// check the size of table rows
+	if(new_gains[2*nchamber].size() != STRIPS_PER_PLANE) {
+	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_gains[2*nchamber].size(), STRIPS_PER_PLANE);
+	    cerr << str << endl;
+	    throw JException(str);
+	}
+	if(new_gains[2*nchamber+1].size() != STRIPS_PER_PLANE) {
+	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_gains[2*nchamber+1].size(), STRIPS_PER_PLANE);
+	    cerr << str << endl;
+	    throw JException(str);
+	}
+	if(new_pedestals[2*nchamber].size() != STRIPS_PER_PLANE) {
+	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_pedestals[2*nchamber].size(), STRIPS_PER_PLANE);
+	    cerr << str << endl;
+	    throw JException(str);
+	}
+	if(new_pedestals[2*nchamber+1].size() != STRIPS_PER_PLANE) {
+	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_pedestals[2*nchamber+1].size(), STRIPS_PER_PLANE);
+	    cerr << str << endl;
+	    throw JException(str);
+	}
+	if(new_strip_t0s[2*nchamber].size() != STRIPS_PER_PLANE) {
+	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_strip_t0s[2*nchamber].size(), STRIPS_PER_PLANE);
+	    cerr << str << endl;
+	    throw JException(str);
+	}
+	if(new_strip_t0s[2*nchamber+1].size() != STRIPS_PER_PLANE) {
+	    sprintf(str, "Bad # of strips for FDC gain from CCDB! CCDB=%zu , should be %d", new_strip_t0s[2*nchamber+1].size(), STRIPS_PER_PLANE);
+	    cerr << str << endl;
+	    throw JException(str);
+	}
+	if(new_wire_t0s[nchamber].size() != WIRES_PER_PLANE) {
+	    sprintf(str, "Bad # of wires for FDC gain from CCDB! CCDB=%zu , should be %d", new_wire_t0s[2*nchamber].size(), WIRES_PER_PLANE);
+	    cerr << str << endl;
+	    throw JException(str);
+	}
+
 
 	// load ADC gains (only for cathode strips)
 	a_gains.push_back( new_gains[2*nchamber] );
@@ -228,3 +307,149 @@ void DFDCHit_factory::LoadPackageCalibTables(jana::JEventLoop *eventLoop, string
     }
 }
 
+//------------------------------------
+// GetConstant
+//   Allow a few different interfaces
+//------------------------------------
+const double DFDCHit_factory::GetConstant(const fdc_digi_constants_t &the_table,
+					  const int in_gPlane, const int in_element) const {
+	
+	char str[256];
+	
+	if( (in_gPlane <= 0) || (static_cast<unsigned int>(in_gPlane) > FDC_NUM_PLANES)) {
+	        sprintf(str, "Bad gPlane # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", in_gPlane, FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	// strip and wire planes have different numbers of elements
+	if( (in_element <= 0) || (static_cast<unsigned int>(in_element) > the_table[in_gPlane].size())) {
+	        sprintf(str, "Bad element # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %zu", in_element, the_table[in_gPlane].size());
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[in_gPlane-1][in_element-1];
+}
+
+const double DFDCHit_factory::GetConstant(const fdc_digi_constants_t &the_table,
+				    const DFDCCathodeDigiHit *in_digihit) const {
+
+	char str[256];
+
+	int gLayer = in_digihit->chamber + 6*(in_digihit->package - 1);
+	int gPlane = in_digihit->view + 3*(gLayer - 1);
+	
+	if( (gPlane <= 0) || (static_cast<unsigned int>(gPlane) > FDC_NUM_PLANES)) {
+		sprintf(str, "Bad gPlane # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", gPlane, FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	// strip and wire planes have different numbers of elements
+	if( (in_digihit->strip <= 0) || (static_cast<unsigned int>(in_digihit->strip) > STRIPS_PER_PLANE)) {
+	    sprintf(str, "Bad strip # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", in_digihit->strip, STRIPS_PER_PLANE);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[gPlane-1][in_digihit->strip-1];
+}
+
+const double DFDCHit_factory::GetConstant(const fdc_digi_constants_t &the_table,
+					  const DFDCWireDigiHit *in_digihit) const {
+
+	char str[256];
+
+	int gLayer = in_digihit->chamber + 6*(in_digihit->package - 1);
+	int gPlane = 2 + 3*(gLayer - 1);
+	
+	if( (gPlane <= 0) || (static_cast<unsigned int>(gPlane) > FDC_NUM_PLANES)) {
+		sprintf(str, "Bad gPlane # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", gPlane, FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	// strip and wire planes have different numbers of elements
+	if( (in_digihit->wire <= 0) || (static_cast<unsigned int>(in_digihit->wire) > WIRES_PER_PLANE)) {
+	    sprintf(str, "Bad wire # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", in_digihit->wire, WIRES_PER_PLANE);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[gPlane-1][in_digihit->wire-1];
+}
+
+const double DFDCHit_factory::GetConstant(const fdc_digi_constants_t &the_table,
+					  const DFDCHit *in_hit) const {
+
+	char str[256];
+	
+	if( (in_hit->gPlane <= 0) || (static_cast<unsigned int>(in_hit->gPlane) > FDC_NUM_PLANES)) {
+		sprintf(str, "Bad gPlane # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", in_hit->gPlane, FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	}
+	// strip and wire planes have different numbers of elements
+	if( (in_hit->element <= 0) || (static_cast<unsigned int>(in_hit->element) > the_table[in_hit->gPlane].size())) {
+	        sprintf(str, "Bad element # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %zu", in_hit->element, the_table[in_hit->gPlane].size());
+		cerr << str << endl;
+		throw JException(str);
+	}
+	
+	return the_table[in_hit->gPlane-1][in_hit->element-1];
+}
+/*
+const double DFDCHit_factory::GetConstant(const fdc_digi_constants_t &the_table,
+					  const DTranslationTable *ttab,
+					  const int in_rocid, const int in_slot, const int in_channel) const {
+
+	char str[256];
+	
+	DTranslationTable::csc_t daq_index = { in_rocid, in_slot, in_channel };
+	DTranslationTable::DChannelInfo channel_info = ttab->GetDetectorIndex(daq_index);
+	
+	if( channel_info.det_sys == DTranslationTable::FDC_CATHODES ) {  
+	    // FDC Cathodes
+	    int gLayer = channel_info.fdc_cathodes.chamber + 6*(channel_info.fdc_cathodes.package - 1);
+	    int gPlane = channel_info.fdc_cathodes.view + 3*(gLayer - 1);
+
+	    if( (gPlane <= 0) || (gPlane > FDC_NUM_PLANES)) {
+		sprintf(str, "Bad gPlane # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", gPlane, FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	    }
+	    // strip and wire planes have different numbers of elements
+	    if( (channel_info.fdc_cathodes.strip <= 0) 
+		|| (channel_info.fdc_cathodes.strip > STRIPS_PER_PLANE)) {
+		sprintf(str, "Bad strip # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", channel_info.fdc_cathodes.strip, STRIPS_PER_PLANE);
+		cerr << str << endl;
+		throw JException(str);
+	    }
+
+	    return the_table[gPlane-1][channel_info.fdc_cathodes.strip-1];
+	} else if( channel_info.det_sys == DTranslationTable::FDC_WIRES ) {  
+	    // FDC Wirees
+	    int gLayer = channel_info.fdc_wires.chamber + 6*(channel_info.fdc_wires.package - 1);
+	    int gPlane = 2 + 3*(gLayer - 1);  // wire planes are always layer 2
+
+	    if( (gPlane <= 0) || (gPlane > FDC_NUM_PLANES)) {
+		sprintf(str, "Bad gPlane # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", gPlane, FDC_NUM_PLANES);
+		cerr << str << endl;
+		throw JException(str);
+	    }
+	    // strip and wire planes have different numbers of elements
+	    if( (channel_info.fdc_wires.wire <= 0) 
+		|| (channel_info.fdc_wires.wire > WIRES_PER_PLANE)) {
+		sprintf(str, "Bad strip # requested in DFDCHit_factory::GetConstant()! requested=%d , should be %ud", channel_info.fdc_wires.wire, WIRES_PER_PLANE);
+		cerr << str << endl;
+		throw JException(str);
+	    }
+
+	    return the_table[gPlane-1][channel_info.fdc_wires.wire-1];
+	} else {
+	    sprintf(str, "Got bad detector type in DFDCHit_factory::GetConstant()! requested=%d", channel_info.module_type);
+	    cerr << str << endl;
+	    throw JException(str);
+
+	    return -1.;  // should never reach here!
+	}	
+}
+*/

@@ -12,7 +12,11 @@
 using namespace std;
 
 #include <JANA/JFactory.h>
+#include "TTab/DTranslationTable.h"
 #include "DFDCHit.h"
+
+// store constants indexed by gPlane/element number
+typedef  vector< vector<double> >  fdc_digi_constants_t;
 
 class DFDCHit_factory:public jana::JFactory<DFDCHit>{
 	public:
@@ -24,10 +28,22 @@ class DFDCHit_factory:public jana::JFactory<DFDCHit>{
 		double t_scale;
 		double tdc_scale;
 
-		// 
-		vector< vector<double> > a_gains;
-		vector< vector<double> > a_pedestals;
-		vector< vector<double> > timing_offsets;
+		// calibration constant tables
+		fdc_digi_constants_t a_gains;
+		fdc_digi_constants_t a_pedestals;
+		fdc_digi_constants_t timing_offsets;
+
+		const double GetConstant(const fdc_digi_constants_t &the_table,
+					 const int in_gPlane, const int in_element) const;
+		const double GetConstant(const fdc_digi_constants_t &the_table,
+					 const DFDCCathodeDigiHit *the_digihit) const;
+		const double GetConstant(const fdc_digi_constants_t &the_table,
+					 const DFDCWireDigiHit *the_digihit) const;
+		const double GetConstant(const fdc_digi_constants_t &the_table,
+					 const DFDCHit *the_hit) const;
+		//const double GetConstant(const fdc_digi_constants_t &the_table,
+		//			 const DTranslationTable *ttab,
+		//			 const int in_rocid, const int in_slot, const int in_channel) const;
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
