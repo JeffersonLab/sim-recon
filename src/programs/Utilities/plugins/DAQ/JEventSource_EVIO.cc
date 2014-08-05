@@ -1232,6 +1232,7 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		// find the adjacent samples that straddle the VMID crossing
 		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
 			if (samplesvector[c_samp] > VMID) {
+				if(c_samp==0) c_samp++; // prevent indexing array out of bounds
 				VN2 = samplesvector[c_samp];
 				VN1 = samplesvector[c_samp-1];
 				mid_sample = c_samp-1;
@@ -2499,7 +2500,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 	/// This code is based on the document F1TDC_V2_V3_4_29_14.pdf obtained from:
 	/// https://coda.jlab.org/wiki/index.php/JLab_Module_Manuals
 
-	if(VERBOSE>0) evioout << "  Entering ParseF1TDCBank" << endl;
+	if(VERBOSE>0) evioout << "  Entering ParseF1TDCBank (rocid=" << rocid << ")" << endl;
 
 	const uint32_t *istart = iptr;
 	
