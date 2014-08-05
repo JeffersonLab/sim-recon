@@ -17,6 +17,7 @@ using namespace std;
 #include <JANA/JFactory.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JCalibration.h>
+#include <JANA/JException.h>
 using namespace jana;
 
 #include <DAQ/DModuleType.h>
@@ -58,11 +59,15 @@ class DTranslationTable:public jana::JObject{
 		// indexes. These are then used below in the DChannelInfo
 		// class to relate them to the DAQ indexing scheme of
 		// crate, slot, channel.
-		typedef struct{
+		struct csc_t{
 			uint32_t rocid;
 			uint32_t slot;
 			uint32_t channel;
-		}csc_t;
+
+			inline bool operator==(const struct csc_t &rhs) const {
+			    return (rocid==rhs.rocid) && (slot==rhs.slot) && (channel==rhs.channel);
+			}
+		};
 		
 		enum Detector_t{
 			UNKNOWN_DETECTOR,
@@ -104,18 +109,31 @@ class DTranslationTable:public jana::JObject{
 			uint32_t layer;
 			uint32_t sector;
 			uint32_t end;
+
+			inline bool operator==(const struct BCALIndex_t &rhs) const {
+			    return (module==rhs.module) && (layer==rhs.layer) 
+			      && (sector==rhs.sector) && (end==rhs.end);
+			}
 		};
 		
 		class CDCIndex_t{
 			public:
 			uint32_t ring;
 			uint32_t straw;
+
+			inline bool operator==(const struct CDCIndex_t &rhs) const {
+			    return (ring==rhs.ring) && (straw==rhs.straw);
+			}
 		};
 		
 		class FCALIndex_t{
 			public:
 			uint32_t row;
 			uint32_t col;
+
+			inline bool operator==(const struct FCALIndex_t &rhs) const {
+			    return (row==rhs.row) && (col==rhs.col);
+			}
 		};
 
 		class FDC_CathodesIndex_t{
@@ -125,6 +143,11 @@ class DTranslationTable:public jana::JObject{
 			uint32_t view;
 			uint32_t strip;
 			uint32_t strip_type;
+
+			inline bool operator==(const struct FDC_CathodesIndex_t &rhs) const {
+			    return (package==rhs.package) && (chamber==rhs.chamber) && (view==rhs.view)
+			      && (strip==rhs.strip) && (strip_type==rhs.strip_type);
+			}
 		};
 
 		class FDC_WiresIndex_t{
@@ -132,33 +155,57 @@ class DTranslationTable:public jana::JObject{
 			uint32_t package;
 			uint32_t chamber;
 			uint32_t wire;
+
+			inline bool operator==(const struct FDC_WiresIndex_t &rhs) const {
+			    return (package==rhs.package) && (chamber==rhs.chamber) && (wire==rhs.wire);
+			}
 		};
 
 		class PSIndex_t{
 			public:
 			uint32_t side;
 			uint32_t id;
+
+			inline bool operator==(const struct PSIndex_t &rhs) const {
+			    return (side==rhs.side) && (id==rhs.id);
+			}
 		};
 
 		class PSCIndex_t{
 			public:
 			uint32_t id;
+
+			inline bool operator==(const struct PSCIndex_t &rhs) const {
+			    return (id==rhs.id);
+			}
 		};
 
 		class SCIndex_t{
 			public:
 			uint32_t sector;
+
+			inline bool operator==(const struct SCIndex_t &rhs) const {
+			    return (sector==rhs.sector);
+			}
 		};
 
 		class TAGHIndex_t{
 			public:
 			uint32_t id;
+
+			inline bool operator==(const struct TAGHIndex_t &rhs) const {
+			    return (id==rhs.id);
+			}
 		};
 
 		class TAGMIndex_t{
 			public:
 			uint32_t col;
 			uint32_t row;
+
+			inline bool operator==(const struct TAGMIndex_t &rhs) const {
+			    return (col==rhs.col) && (row==rhs.row);
+			}
 		};
 
 		class TOFIndex_t{
@@ -166,6 +213,10 @@ class DTranslationTable:public jana::JObject{
 			uint32_t plane;
 			uint32_t bar;
 			uint32_t end;
+
+			inline bool operator==(const struct TOFIndex_t &rhs) const {
+			    return (plane==rhs.plane) && (bar==rhs.bar) && (end==rhs.end);
+			}
 		};
 		
 		// DChannelInfo holds translation between indexing schemes
@@ -224,6 +275,12 @@ class DTranslationTable:public jana::JObject{
 		template<class T> void CopyDF1TDCInfo(T *h, const DF1TDCHit *hit) const;
 		template<class T> void CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) const;
 
+		
+		// methods for others to search the Translation Table
+		const DChannelInfo &GetDetectorIndex(const csc_t &in_daq_index) const;
+		const csc_t &GetDAQIndex(const DChannelInfo &in_channel) const;
+
+
 	protected:
 		string XML_FILENAME;
 		bool NO_CCDB;
@@ -231,6 +288,8 @@ class DTranslationTable:public jana::JObject{
 		int VERBOSE;
 		
 		mutable JStreamLog ttout;
+
+		string Channel2Str(const DChannelInfo &in_channel) const;
 };
 
 //---------------------------------
@@ -309,6 +368,7 @@ void DTranslationTable::CopyDCAEN1290TDCInfo(T *h, const DCAEN1290TDCHit *hit) c
 	
 	h->AddAssociatedObject(hit);
 }
+
 
 #endif // _DTranslationTable_
 

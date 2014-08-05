@@ -543,6 +543,155 @@ DTOFTDCDigiHit*  DTranslationTable::MakeTOFTDCDigiHit(const TOFIndex_t &idx, con
 	return h;
 }
 
+//---------------------------------
+// GetDetectorIndex
+//---------------------------------
+const DTranslationTable::DChannelInfo &DTranslationTable::GetDetectorIndex(const csc_t &in_daq_index) const
+{
+    map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo>::const_iterator detector_index_itr = TT.find(in_daq_index);
+    if(detector_index_itr == TT.end()) { 
+	stringstream ss_err;
+	ss_err << "Could not find detector channel in Translaton Table: "
+	       << "rocid = " << in_daq_index.rocid
+	       << "slot = " << in_daq_index.slot
+	       << "channel = " << in_daq_index.channel;
+	throw JException(ss_err.str());
+    } 
+
+    return detector_index_itr->second;
+}
+
+//---------------------------------
+// GetDAQIndex
+//---------------------------------
+const DTranslationTable::csc_t &DTranslationTable::GetDAQIndex(const DChannelInfo &in_channel) const
+{
+    map<DTranslationTable::csc_t, DTranslationTable::DChannelInfo>::const_iterator tt_itr = TT.begin();
+
+    // search through the whole Table to find the key that corresponds to our detector channel
+    // this is not terribly efficient - linear in the size of the table
+    bool found = false;
+    for(; tt_itr != TT.end(); tt_itr++) {
+	const DTranslationTable::DChannelInfo &det_channel = tt_itr->second;
+	if( det_channel.det_sys == in_channel.det_sys ) {
+	    switch( in_channel.det_sys ) {
+	    case DTranslationTable::BCAL:
+		if( det_channel.bcal == in_channel.bcal ) 
+		    found = true;
+		break;
+	    case DTranslationTable::CDC:
+		if( det_channel.cdc == in_channel.cdc ) 
+		    found = true;
+		break;
+	    case DTranslationTable::FCAL:
+		if( det_channel.fcal == in_channel.fcal ) 
+		    found = true;
+		break;
+	    case DTranslationTable::FDC_CATHODES:
+		if( det_channel.fdc_cathodes == in_channel.fdc_cathodes ) 
+		    found = true;
+		break;
+	    case DTranslationTable::FDC_WIRES:
+		if( det_channel.fdc_wires == in_channel.fdc_wires ) 
+		    found = true;
+		break;
+	    case DTranslationTable::PS:
+		if( det_channel.ps == in_channel.ps ) 
+		    found = true;
+		break;
+	    case DTranslationTable::PSC:
+		if( det_channel.psc == in_channel.psc )
+		    found = true;
+		break;
+	    case DTranslationTable::SC:
+		if( det_channel.sc == in_channel.sc )
+		    found = true;
+		break;
+	    case DTranslationTable::TAGH:
+		if( det_channel.tagh == in_channel.tagh )
+		    found = true;
+		break;
+	    case DTranslationTable::TAGM:
+		if( det_channel.tagm == in_channel.tagm )
+		    found = true;
+		break;
+	    case DTranslationTable::TOF:
+		if( det_channel.tof == in_channel.tof )
+		    found = true;
+		break;
+	    default:
+		jerr << "DTranslationTable::GetDAQIndex(): Invalid detector type = " << in_channel.det_sys << endl;
+	    }
+	}
+
+	if(found)
+	    break;
+    }
+    
+    if(tt_itr == TT.end()) { 
+	stringstream ss_err;
+	ss_err << "Could not find DAQ channel in Translaton Table:  "
+	       << Channel2Str(in_channel) << endl;
+	throw JException(ss_err.str());
+    }
+
+    return tt_itr->first;
+}
+
+string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
+{
+    stringstream ss;
+    
+    switch( in_channel.det_sys ) {
+    case DTranslationTable::BCAL:
+	    ss << "module = " << in_channel.bcal.module << " layer = " << in_channel.bcal.layer 
+	       << " sector = " << in_channel.bcal.sector << " end = " << in_channel.bcal.end;
+	    break;
+    case DTranslationTable::CDC:
+	    ss << "ring = " << in_channel.cdc.ring << " straw = " << in_channel.cdc.straw;
+	    break;
+    case DTranslationTable::FCAL:
+	    ss << "row = " << in_channel.fcal.row << " column = " << in_channel.fcal.col;
+	    break;
+    case DTranslationTable::FDC_CATHODES:
+	    ss << "package = " << in_channel.fdc_cathodes.package
+	       << " chamber = " << in_channel.fdc_cathodes.chamber
+	       << " view = " << in_channel.fdc_cathodes.view
+	       << " strip = " << in_channel.fdc_cathodes.strip 
+	       << " strip type = " << in_channel.fdc_cathodes.strip_type;
+	    break;
+    case DTranslationTable::FDC_WIRES:
+	    ss << "package = " << in_channel.fdc_wires.package
+	       << " chamber = " << in_channel.fdc_wires.chamber
+	       << " wire = " << in_channel.fdc_wires.wire;
+	    break;
+    case DTranslationTable::PS:
+	    ss << "side = " << in_channel.ps.side << " id = " << in_channel.ps.id;
+	    break;
+    case DTranslationTable::PSC:
+	    ss << "id = " << in_channel.psc.id;
+	    break;
+    case DTranslationTable::SC:
+	    ss << "sector = " << in_channel.sc.sector;
+	    break;
+    case DTranslationTable::TAGH:
+	    ss << "id = " << in_channel.tagh.id;
+	    break;
+    case DTranslationTable::TAGM:
+	    ss << "row = " << in_channel.tagm.row << " column = " << in_channel.tagm.col;
+	    break;
+    case DTranslationTable::TOF:
+	    ss << "plane = " << in_channel.tof.plane << " bar = " << in_channel.tof.bar
+	       << " end = " << in_channel.tof.end;
+	    break;
+    default:
+	    ss << "Unknown detector type" << endl;
+    }   
+
+    return ss.str();
+}
+
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //  The following routines access the translation table
@@ -904,6 +1053,7 @@ void EndElement(void *userData, const char *xmlname) {
 
 
 //--------------------------------------------------------------------------
+
 
 
 
