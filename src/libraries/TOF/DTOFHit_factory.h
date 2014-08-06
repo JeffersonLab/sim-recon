@@ -18,6 +18,7 @@ using namespace std;
 #include "DTOFTDCDigiHit.h"
 #include "DTOFHit.h"
 #include "DTOFGeometry.h"
+#include "TTab/DTranslationTable.h"
 using namespace jana;
 
 
@@ -31,6 +32,11 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 	public:
 		DTOFHit_factory(){};
 		~DTOFHit_factory(){};
+
+		// geometry info - maybe redundant?
+		const static int TOF_MAX_CHANNELS = 176;
+		int TOF_NUM_PLANES;
+		int TOF_NUM_BARS;
 
 		// overall scale factors
 		double a_scale;
@@ -48,15 +54,18 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 
 		DTOFHit* FindMatch(int plane, int bar, int end, double T);
 
-		void FillCalibTable(tof_digi_constants_t &table, vector<double> &raw_table,
-				    const DTOFGeometry &tofGeom);
-
-		double GetConstant( tof_digi_constants_t &the_table, 
-				    const DTOFDigiHit *the_digihit);
-		double GetConstant( tof_digi_constants_t &the_table, 
-				    const DTOFTDCDigiHit *the_digihit);
-		void FillCalibTable(tof_digi_constants_t &table, 
-				    vector<double> &raw_table);
+		const double GetConstant( const tof_digi_constants_t &the_table,
+					  const int in_plane, const int in_bar, 
+					  const int in_end ) const;
+		const double GetConstant( const tof_digi_constants_t &the_table,
+					  const DTOFDigiHit *the_digihit) const;
+		const double GetConstant( const tof_digi_constants_t &the_table,
+					  const DTOFHit *the_hit) const;
+		const double GetConstant( const tof_digi_constants_t &the_table,
+					  const DTOFTDCDigiHit *the_digihit) const;
+		//const double GetConstant( const tof_digi_constants_t &the_table,
+		//			  const DTranslationTable *ttab,
+		//			  const int in_rocid, const int in_slot, const int in_channel) const;
 
 
 	private:
@@ -65,6 +74,9 @@ class DTOFHit_factory:public jana::JFactory<DTOFHit>{
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		void FillCalibTable(tof_digi_constants_t &table, vector<double> &raw_table,
+				    const DTOFGeometry &tofGeom);
 
 };
 
