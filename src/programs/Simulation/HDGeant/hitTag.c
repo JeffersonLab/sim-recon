@@ -85,7 +85,6 @@ void hitTagger (float xin[4], float xout[4],
          fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
                  "failed to read photon beam endpoint energy",
                  "from calibdb, cannot continue.");
-         exit (2);
       }
    }
  
@@ -99,7 +98,6 @@ void hitTagger (float xin[4], float xout[4],
          fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
                  "failed to read microscope scaled_energy_range table",
                  "from calibdb, cannot continue.");
-         exit (2);
       }
       else {
          int i;
@@ -119,7 +117,6 @@ void hitTagger (float xin[4], float xout[4],
          fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
                  "failed to read fixed_array scaled_energy_range table",
                  "from calibdb, cannot continue.");
-         exit (2);
       }
       else {
          int i;
