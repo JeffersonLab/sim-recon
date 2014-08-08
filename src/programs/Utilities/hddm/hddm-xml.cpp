@@ -248,6 +248,34 @@ int main(int argC, char* argV[])
    builder.writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
    builder.writeXML(xmlHeader);
 
+   // The original code below worked by allocating memory and using
+   // it to back a istringstream object and then use the istringstream
+   // as the streambuf for an xstream::xdr::istream. Data is read from
+   // the file into the allocated memory and extracted using the 
+   // xstream::xdr::istream which handles any byte swapping or other
+   // low level formatting.
+   //
+   // The system seemed to work fine for a long time, but then suddenly
+   // stopped working altogether on Mac OS X (I'm using version 10.9.3).
+   // It turns out that the pubsetbuf() method does not seem to set the
+   // the number of valid characters in the buffer. The documentation
+   // actually says that it is implementation-specific how the values
+   // passed into pubsetbuf are handled. The istringstream documentation
+   // doesn't say anything about it so I'm left to assume that they 
+   // changed this at some point. Possibly, because it is actually a
+   // stringbuf, the Mac OS X implementation decided to start calculating
+   // the string length rather than just assume event_buffer_size bytes
+   // are valid(??)
+   // At any rate, the issue was overcome by explicity creating
+   // a string object from the binary data for every read and replacing
+   // the contents of the iss istringstream with it. This is far less
+   // efficient nor is it as elegant as the original solution (an extra
+   // copy of the input data is always suffered now). At least it works
+   // though. Lines added to implement this fix are marked with a 
+   // "8/8/2014 DL" comment.
+   //
+   //   8/8/2014 D. Lawrence
+   
    int event_buffer_size;
    char *event_buffer = new char[event_buffer_size = 1000000];
    std::istringstream iss;
@@ -262,6 +290,7 @@ int main(int argC, char* argV[])
       if (ifs->eof()) {
          break;
       }
+      iss.str(std::string(event_buffer,4)); // 8/8/2014 DL
       iss.seekg(0);
       ifx >> tsize;
 #ifdef VERBOSE_HDDM_LOGGING
@@ -277,8 +306,10 @@ int main(int argC, char* argV[])
       else if (tsize == 1) {
          int size, format, flags;
          ifs->read(event_buffer+4,4);
+         iss.str(std::string(event_buffer+4,4)); // 8/8/2014 DL
          ifx >> size;
          ifs->read(event_buffer+8,size);
+         iss.str(std::string(event_buffer+8,size)); // 8/8/2014 DL
          ifx >> format >> flags;
          if (size == 8 && format == 0 && flags == 0x00) {
             continue;
@@ -309,6 +340,7 @@ int main(int argC, char* argV[])
          event_buffer = new_buffer;
       }
       ifs->read(event_buffer+4,tsize);
+      iss.str(std::string(event_buffer+4,tsize)); // 8/8/2014 DL
       --reqcount;
 
       for (int c = 0; c < contLength; c++)
