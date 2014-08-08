@@ -74,7 +74,11 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
    }
 
    hddm_r::HDDM *record = new hddm_r::HDDM();
-   *fin >> *record;
+   try{
+      *fin >> *record;
+   }catch(std::runtime_error &e){
+      _DBG_<<e.what()<<endl;
+   }
 
 
    // Copy the reference info into the JEvent object
