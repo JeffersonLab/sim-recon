@@ -2589,7 +2589,7 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 					itrigger_f1header     = ((*iptr)>>16) & 0x3F;
 					trig_time_f1header    = ((*iptr)>> 7) & 0x1FF;
 					if(VERBOSE>5) evioout << "      Found F1 header: chip=" << chip_f1header << " chan=" << chan_on_chip_f1header << " itrig=" << itrigger_f1header << " trig_time=" << trig_time_f1header << endl;
-					if( itrigger_f1header != (itrigger & 0x3F)) throw JException("Trigger number in F1 header word does not match Event header word!");
+					//if( itrigger_f1header != (itrigger & 0x3F)) throw JException("Trigger number in F1 header word does not match Event header word!");
 					break;
 				case 0xB8000000: // F1 Data
 					chip         = (*iptr>>19) & 0x07;
