@@ -334,6 +334,7 @@ int main(int argC, char* argV[])
          char *new_buffer = new char[event_buffer_size = tsize+1000];
          iss.rdbuf()->pubsetbuf(new_buffer,event_buffer_size);
          memcpy(new_buffer,event_buffer,4);
+         iss.str(std::string(new_buffer, event_buffer_size)); // 8/8/2014 DL
          iss.seekg(0);
          ifx >> tsize;
          delete event_buffer;
