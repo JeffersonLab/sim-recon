@@ -887,7 +887,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		if(pp_objs.size() != 0) hit_objs_by_type["Df250PulsePedestal"] = pp_objs;
 
 		vector<JObject*> pi_objs;
-		EmulateDf250PulseIntergral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
+		EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
 
 		// Make PulseTime, PulseIntegral, and PulsePedestal objects associated objects of one another
@@ -913,7 +913,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		if(pp_objs.size() != 0) hit_objs_by_type["Df125PulsePedestal"] = pp_objs;
 
 		vector<JObject*> pi_objs;
-		EmulateDf125PulseIntergral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
+		EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;	
 		
 		// Make PulseTime and PulseIntegral objects associated objects of one another
@@ -1049,9 +1049,9 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 }
 
 //----------------
-// EmulateDf250PulseIntergral
+// EmulateDf250PulseIntegral
 //----------------
-void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
+void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
 {
 	uint32_t pulse_number = 0;
 	uint32_t quality_factor = 0;
@@ -1073,14 +1073,14 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 			if (samplesvector[c_samp] > F250_THRESHOLD) {
 				first_sample_over_threshold = c_samp;
 				sample_height = samplesvector[c_samp];
-				if(VERBOSE>4) evioout << " EmulateDf250PulseIntergral: object " << i << "  found value over " << F250_THRESHOLD << " at samp " 
+				if(VERBOSE>4) evioout << " EmulateDf250PulseIntegral: object " << i << "  found value over " << F250_THRESHOLD << " at samp " 
 						      << c_samp << " with value " << samplesvector[c_samp] <<endl;
 				break;
 			}
 		}
 		// if no threshold crossing, don't process further
 		if (first_sample_over_threshold == 0) {
-		  	if(VERBOSE>4) evioout << " EmulateDf250PulseIntergral: object " << i << " found no values over " << F250_THRESHOLD <<endl;
+		  	if(VERBOSE>4) evioout << " EmulateDf250PulseIntegral: object " << i << " found no values over " << F250_THRESHOLD <<endl;
 			continue;
 		}
 
@@ -1119,9 +1119,9 @@ void JEventSource_EVIO::EmulateDf250PulseIntergral(vector<JObject*> &wrd_objs, v
 }
 
 //----------------
-// EmulateDf125PulseIntergral
+// EmulateDf125PulseIntegral
 //----------------
-void JEventSource_EVIO::EmulateDf125PulseIntergral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
+void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
 {
 	uint16_t ped_samples=20;
 	uint32_t pulse_number = 0;
