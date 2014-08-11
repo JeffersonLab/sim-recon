@@ -77,16 +77,22 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 			   vector<const DBCALShower*>&bcal_showers,	  
 			   vector<const DFCALShower*>&fcal_showers,
 			   vector<DTrackTimeBased::DStartTime_t>&start_times);
-  void DoFit(const DTrackWireBased *track,
+  bool DoFit(const DTrackWireBased *track,
 	     vector<DTrackTimeBased::DStartTime_t>&start_times,
 	     JEventLoop *loop,double mass);  
+
+  void AddMissingTrackHypothesis(vector<DTrackTimeBased*>&tracks_to_add,
+				 const DTrackTimeBased *src_track,
+				 double my_mass,double q);
+  bool InsertMissingHypotheses(void);
 
   // Geometry
   const DGeometry *geom;
 
   double mPathLength,mEndTime,mStartTime,mFlightTime;
   DetectorSystem_t mDetector, mStartDetector;
- 
+  int mNumHypPlus,mNumHypMinus;
+
   bool SKIP_MASS_HYPOTHESES_WIRE_BASED;
 
   // start counter geometry
