@@ -84,7 +84,7 @@ class DTrackFitter:public jana::JObject{
 
 		class pull_t{
 		public:
-		  pull_t(double resi, double err, double s=0.0):resi(resi),err(err),s(s){}
+		pull_t(double resi, double err, double s=0.0):resi(resi),err(err),s(s){}
 		    double resi;	// residual of measurement
 		    double err;		// estimated error of measurement
 			 double s;
@@ -111,6 +111,9 @@ class DTrackFitter:public jana::JObject{
 		const DKinematicData& GetFitParameters(void) const {return fit_params;}
 		double GetChisq(void) const {return chisq;}
 		int GetNdof(void) const {return Ndof;}
+		unsigned int GetNumPotentialFDCHits(void) const {return potential_fdc_hits_on_track;}
+		unsigned int GetNumPotentialCDCHits(void) const {return potential_cdc_hits_on_track;}
+		
 		vector<pull_t>& GetPulls(void){return pulls;}
 		fit_type_t GetFitType(void) const {return fit_type;}
 		const DMagneticFieldMap* GetDMagneticFieldMap(void) const {return bfield;}
@@ -169,6 +172,9 @@ class DTrackFitter:public jana::JObject{
 		fit_status_t fit_status;									//< Status of values in fit_params (kFitSuccess, kFitFailed, ...)
 		vector<const DCDCTrackHit*> cdchits_used_in_fit;	//< The CDC hits actually used in the fit
 		vector<const DFDCPseudo*> fdchits_used_in_fit;		//< The FDC hits actually used in the fit
+
+		unsigned int potential_fdc_hits_on_track;
+		unsigned int potential_cdc_hits_on_track;
 
 
 		bool CORRECT_FOR_ELOSS;
