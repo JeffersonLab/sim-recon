@@ -20,6 +20,15 @@ class DTrackTimeBased:public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
+		typedef struct{
+		  unsigned int inner_layer;
+		  unsigned int outer_layer;
+		  unsigned int total_hits;
+		}hit_usage_t;
+
+		hit_usage_t cdc_hit_usage;
+		hit_usage_t fdc_hit_usage;
+
 		oid_t trackid;			///< id of DTrackWireBased corresponding to this track
 		oid_t candidateid;   ///< id of DTrackCandidate corresponding to this track
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
