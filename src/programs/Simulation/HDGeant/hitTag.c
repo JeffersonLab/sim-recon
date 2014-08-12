@@ -55,15 +55,18 @@
 #define TAG_T_MAX_NS            +20
 
 float endpoint_energy_GeV = 0;
-static int micro_nchannels = 120;
-float* micro_channel_Erange = 0;
-static int fixed_nchannels = 220;
-float* fixed_channel_Erange = 0;
+static int micro_nchannels = 102;
+float* micro_channel_Elow = 0;
+float* micro_channel_Ehigh = 0;
+static int fixed_nchannels = 274;
+float* fixed_channel_Elow = 0;
+float* fixed_channel_Ehigh = 0;
+
 binTree_t* microTree = 0;
 binTree_t* fixedTree = 0;
 static int microCount = 0;
 static int fixedCount = 0;
-static int printDone = 0;
+static int loadDone = 0;
 
 /* register hits during event initialization (from gukine) */
 
@@ -77,58 +80,56 @@ void hitTagger (float xin[4], float xout[4],
    double t = xin[3]*1e9-(xin[2]-REF_TIME_Z_CM)/C_CM_PER_NS;
    t = floor(t/BEAM_BUCKET_SPACING_NS+0.5)*BEAM_BUCKET_SPACING_NS;
 
-   /* read tagger set endpoint energy from calibdb */
-   if (endpoint_energy_GeV == 0) {
-      char dbname[] = "/PHOTON_BEAM/endpoint_energy::mc";
-      unsigned int ndata = 1;
-      if (GetCalib(dbname, &ndata, &endpoint_energy_GeV)) {
-         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
-                 "failed to read photon beam endpoint energy",
-                 "from calibdb, cannot continue.");
-      }
-   }
- 
-   /* read microscope channel energy bounds from calibdb */
-   if (micro_channel_Erange == 0) {
-      char dbname[] = "/PHOTON_BEAM/microscope/scaled_energy_range::mc";
-      int ndata = 2*micro_nchannels;
-      mystr_t names[ndata];
-      micro_channel_Erange = malloc(ndata*sizeof(float));
-      if (GetArrayConstants(dbname, &ndata, micro_channel_Erange, names)) {
-         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
-                 "failed to read microscope scaled_energy_range table",
-                 "from calibdb, cannot continue.");
-      }
-      else {
-         int i;
-         for (i=0; i < ndata; ++i) {
-            micro_channel_Erange[i] *= endpoint_energy_GeV;
-         }
-      }
-   }
- 
-   /* read fixed array channel energy bounds from calibdb */
-   if (fixed_channel_Erange == 0) {
-      char dbname[] = "/PHOTON_BEAM/fixed_array/scaled_energy_range::mc";
-      int ndata = 2*fixed_nchannels;
-      mystr_t names[ndata];
-      fixed_channel_Erange = malloc(ndata*sizeof(float));
-      if (GetArrayConstants(dbname, &ndata, fixed_channel_Erange, names)) {
-         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
-                 "failed to read fixed_array scaled_energy_range table",
-                 "from calibdb, cannot continue.");
-      }
-      else {
-         int i;
-         for (i=0; i < ndata; ++i) {
-            fixed_channel_Erange[i] *= endpoint_energy_GeV;
-         }
-      }
-   }
+   if (loadDone==0){
+     /* read tagger set endpoint energy from calibdb */
+     {
+       char dbname[] = "/PHOTON_BEAM/endpoint_energy::mc";
+       unsigned int ndata = 1;
+       if (GetCalib(dbname, &ndata, &endpoint_energy_GeV)) {
+	 fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
+		 "failed to read photon beam endpoint energy",
+		 "from calibdb, cannot continue.");
+	 exit(-2);
+       }
+     }
 
-   if (printDone == 0) {
-      fprintf(stderr,"TAGGER: ALL parameters loaded from Data Base\n");
-      printDone = 1;
+     /* read microscope channel energy bounds from calibdb */
+     {
+       char dbname[] = "/PHOTON_BEAM/microscope/scaled_energy_range::mc";
+       int ndata = micro_nchannels;
+       micro_channel_Elow = malloc(ndata*sizeof(float));
+       micro_channel_Ehigh = malloc(ndata*sizeof(float));
+ 
+       GetColumn(dbname, &ndata, micro_channel_Elow,"xlow");
+       GetColumn(dbname, &ndata, micro_channel_Ehigh,"xhigh");
+       
+       int i;
+       for (i=0; i < ndata; ++i) {
+	 micro_channel_Elow[i] *= endpoint_energy_GeV;
+	 micro_channel_Ehigh[i] *= endpoint_energy_GeV;
+       }
+     }
+     
+      /* read fixed array channel energy bounds from calibdb */
+     {
+       char dbname[] = "/PHOTON_BEAM/hodoscope/scaled_energy_range::mc";
+       int ndata = fixed_nchannels;
+       fixed_channel_Elow = malloc(ndata*sizeof(float));
+       fixed_channel_Ehigh = malloc(ndata*sizeof(float));
+
+       GetColumn(dbname, &ndata, fixed_channel_Elow,"xlow");
+       GetColumn(dbname, &ndata, fixed_channel_Ehigh,"xhigh");
+
+       int i;
+       for (i=0; i < ndata; ++i) {
+	 fixed_channel_Elow[i] *= endpoint_energy_GeV;
+	 fixed_channel_Ehigh[i] *= endpoint_energy_GeV;
+	 
+       }
+     }
+
+     fprintf(stderr,"TAGGER: ALL parameters loaded from Data Base\n");
+     loadDone = 1;
    }
 
    /* look up hit tagger channel, if any */
@@ -136,10 +137,10 @@ void hitTagger (float xin[4], float xout[4],
    if (E < endpoint_energy_GeV) {
       int i;
       for (i=0; i < micro_nchannels; ++i) {
-         if ( E < micro_channel_Erange[2*i] &&
-              E > micro_channel_Erange[2*i+1] )
+         if ( E < micro_channel_Ehigh[i] &&
+              E > micro_channel_Elow[i] )
          {
-            E = (micro_channel_Erange[2*i] + micro_channel_Erange[2*i+1])/2;
+            E = (micro_channel_Ehigh[i] + micro_channel_Elow[i])/2;
             micro_chan = i;
             break;
          }
@@ -149,10 +150,10 @@ void hitTagger (float xin[4], float xout[4],
    if (micro_chan == -1) {
       int i;
       for (i=0; i < fixed_nchannels; ++i) {
-         if ( E < fixed_channel_Erange[2*i] &&
-              E > fixed_channel_Erange[2*i+1] )
+         if ( E < fixed_channel_Ehigh[i] &&
+              E > fixed_channel_Elow[i] )
          {
-            E = (fixed_channel_Erange[2*i] + fixed_channel_Erange[2*i+1])/2;
+            E = (fixed_channel_Elow[i] + fixed_channel_Ehigh[i])/2;
             fixed_chan = i;
             break;
          }
