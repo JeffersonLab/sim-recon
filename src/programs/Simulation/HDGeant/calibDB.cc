@@ -239,6 +239,44 @@ int GetConstants(const char* namepath, int *Nvals, float* vals, mystr_t *strings
 
 
 //----------------
+// GetColumn
+//----------------
+// Get a single column from the database by its key (string)
+int GetColumn(const char* namepath, int *Nvals, float* vals, char *key_cstr){
+ 
+   if(!jcalib){
+      _DBG_<<"ERROR - GetColumn() called when jcalib not set!"<<endl;
+      _DBG_<<"ERROR - request for \""<<namepath<<"\""<<endl;
+      _DBG_<<"ERROR - Exiting ..."<<endl;
+      exit(-1);
+   }
+
+   vector<map <string, float> >detparms;
+   jcalib->Get(namepath, detparms);
+
+   if (*Nvals!=int(detparms.size())){
+     _DBG_ << "ERROR - Array size mismatch:  " << *Nvals << " != " 
+	   << detparms.size() 
+	   << " (ccdb)" << endl;
+     _DBG_ << " for " << namepath <<endl;
+     exit(-1); 
+   }
+
+   string key=key_cstr;
+
+   unsigned int i=0;
+   for (i=0;i<detparms.size();i++){     
+     map<string, float> &row = detparms[i];
+     vals[i]=row[key];
+   }
+
+   return 0;
+}
+
+
+
+
+//----------------
 // GetArrayConstants
 //----------------
 int GetArrayConstants(const char* namepath, int *Nvals, float* vals, mystr_t *strings)

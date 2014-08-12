@@ -21,3 +21,4 @@ void GetLorentzDeflections(float *lorentz_x, float *lorentz_z,
 			   const unsigned int Nzpoints);
 int GetConstants(const char* namepath, int *Nvals, float* vals, mystr_t* strings);
 int GetArrayConstants(const char* namepath, int *Nvals, float* vals, mystr_t* strings);
+int GetColumn(const char* namepath, int *Nvals, float* vals, char *key_cstr);
