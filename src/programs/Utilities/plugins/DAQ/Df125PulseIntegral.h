@@ -19,7 +19,7 @@ class Df125PulseIntegral:public DDAQAddress{
 	public:
 		JOBJECT_PUBLIC(Df125PulseIntegral);
 
-		Df125PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t integral=0):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),integral(integral){}
+                Df125PulseIntegral(uint32_t rocid=0, uint32_t slot=0, uint32_t channel=0, uint32_t itrigger=0, uint32_t pulse_number=0, uint32_t quality_factor=0, uint32_t integral=0, uint32_t pedestal=0):DDAQAddress(rocid, slot, channel, itrigger),pulse_number(pulse_number),quality_factor(quality_factor),integral(integral),pedestal(pedestal){}
 		
 		uint32_t pulse_number;         // from Pulse Integral Data word
 		uint32_t quality_factor;       // from Pulse Integral Data word
