@@ -110,7 +110,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t sector;
 			uint32_t end;
 
-			inline bool operator==(const struct BCALIndex_t &rhs) const {
+			inline bool operator==(const BCALIndex_t &rhs) const {
 			    return (module==rhs.module) && (layer==rhs.layer) 
 			      && (sector==rhs.sector) && (end==rhs.end);
 			}
@@ -121,7 +121,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t ring;
 			uint32_t straw;
 
-			inline bool operator==(const struct CDCIndex_t &rhs) const {
+			inline bool operator==(const CDCIndex_t &rhs) const {
 			    return (ring==rhs.ring) && (straw==rhs.straw);
 			}
 		};
@@ -131,7 +131,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t row;
 			uint32_t col;
 
-			inline bool operator==(const struct FCALIndex_t &rhs) const {
+			inline bool operator==(const FCALIndex_t &rhs) const {
 			    return (row==rhs.row) && (col==rhs.col);
 			}
 		};
@@ -144,7 +144,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t strip;
 			uint32_t strip_type;
 
-			inline bool operator==(const struct FDC_CathodesIndex_t &rhs) const {
+			inline bool operator==(const FDC_CathodesIndex_t &rhs) const {
 			    return (package==rhs.package) && (chamber==rhs.chamber) && (view==rhs.view)
 			      && (strip==rhs.strip) && (strip_type==rhs.strip_type);
 			}
@@ -156,7 +156,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t chamber;
 			uint32_t wire;
 
-			inline bool operator==(const struct FDC_WiresIndex_t &rhs) const {
+			inline bool operator==(const FDC_WiresIndex_t &rhs) const {
 			    return (package==rhs.package) && (chamber==rhs.chamber) && (wire==rhs.wire);
 			}
 		};
@@ -166,7 +166,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t side;
 			uint32_t id;
 
-			inline bool operator==(const struct PSIndex_t &rhs) const {
+			inline bool operator==(const PSIndex_t &rhs) const {
 			    return (side==rhs.side) && (id==rhs.id);
 			}
 		};
@@ -175,7 +175,7 @@ class DTranslationTable:public jana::JObject{
 			public:
 			uint32_t id;
 
-			inline bool operator==(const struct PSCIndex_t &rhs) const {
+			inline bool operator==(const PSCIndex_t &rhs) const {
 			    return (id==rhs.id);
 			}
 		};
@@ -184,7 +184,7 @@ class DTranslationTable:public jana::JObject{
 			public:
 			uint32_t sector;
 
-			inline bool operator==(const struct SCIndex_t &rhs) const {
+			inline bool operator==(const SCIndex_t &rhs) const {
 			    return (sector==rhs.sector);
 			}
 		};
@@ -193,7 +193,7 @@ class DTranslationTable:public jana::JObject{
 			public:
 			uint32_t id;
 
-			inline bool operator==(const struct TAGHIndex_t &rhs) const {
+			inline bool operator==(const TAGHIndex_t &rhs) const {
 			    return (id==rhs.id);
 			}
 		};
@@ -203,7 +203,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t col;
 			uint32_t row;
 
-			inline bool operator==(const struct TAGMIndex_t &rhs) const {
+			inline bool operator==(const TAGMIndex_t &rhs) const {
 			    return (col==rhs.col) && (row==rhs.row);
 			}
 		};
@@ -214,7 +214,7 @@ class DTranslationTable:public jana::JObject{
 			uint32_t bar;
 			uint32_t end;
 
-			inline bool operator==(const struct TOFIndex_t &rhs) const {
+			inline bool operator==(const TOFIndex_t &rhs) const {
 			    return (plane==rhs.plane) && (bar==rhs.bar) && (end==rhs.end);
 			}
 		};
