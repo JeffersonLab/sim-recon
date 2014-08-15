@@ -157,7 +157,7 @@ static uint64_t trigTime     = 32000000;    // in picoseconds
 static float tMin            = -100000.;    // minimum hit time in picoseconds
 
 static double trigtick          = 4000;    // in picoseconds
-//static int CAENTDCtick       = 25;       // in picoseconds
+static double CAENTDCtick       = 25;      // in picoseconds
 static double F1TDC32tick       = 60.;     // in picoseconds
 static double F1TDC48tick       = 120.;    // in picoseconds
 static double FADC250tick       = 62.5;    // in picoseconds
@@ -536,7 +536,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
   for(i=0; i<dcdchits.size(); i++) {
     if((dcdchits[i]->q>0)&&((dcdchits[i]->t*1000.)>tMin)&&(dcdchits[i]->t*1000.<trigTime)) {
 
-	uint32_t q     = dcdchits[i]->q * (1./5.18) * (1.3E5/1.0E6); // q is in femtoCoulombs (max is ~1E6) 
+      uint32_t q     = dcdchits[i]->q * (1./5.18) * (1.3E5/1.0E6); // q is in femtoCoulombs (max is ~1E6) 
       uint32_t t     = dcdchits[i]->t*1000.0 -tMin;    // t is in nanoseconds (max is ~900ns)
       
       if(noroot==0)cdcCharges->Fill(dcdchits[i]->q);
@@ -641,11 +641,11 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
       hit[0].crate_id    = cscTDC.crate;
       hit[0].slot_id     = cscTDC.slot;
       hit[0].chan_id     = cscTDC.channel;
-      hit[0].module_id   = F1TDC32;
+      hit[0].module_id   = CAEN1290;
       hit[0].module_mode = 0;
       hit[0].nwords      = 1;
       hit[0].hdata       = mcData;
-      hit[0].hdata[0]    = static_cast<double>(t)/F1TDC32tick;
+      hit[0].hdata[0]    = static_cast<double>(t)/CAENTDCtick;
       
       if(dumphits>1) {
         jout << endl;
@@ -940,7 +940,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
         hit[0].crate_id    = cscTDC.crate;
         hit[0].slot_id     = cscTDC.slot;
         hit[0].chan_id     = cscTDC.channel;
-        hit[0].module_id   = F1TDC48;
+	hit[0].module_id   = F1TDC48;
         hit[0].module_mode = 0;
         hit[0].nwords      = 1;
         hit[0].hdata       = mcData;
@@ -1156,6 +1156,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if(nwords<0) {
       jerr << "?error return from mc2codaCloseEVent(): " << nwords << endl << endl;
       exit(EXIT_FAILURE);
+
     }
   }
 
