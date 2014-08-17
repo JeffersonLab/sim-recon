@@ -239,7 +239,8 @@ class JEventSource_EVIO: public jana::JEventSource{
 		// List of the data types this event source can provide
 		// (filled in the constructor)
 		set<string> event_source_data_types;
-	
+
+		void AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee);
 		void EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
 		void EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs);
 		void EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector<JObject*> &pt_objs, vector<JObject*> &pp_objs);

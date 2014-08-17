@@ -266,6 +266,8 @@ class DTranslationTable:public jana::JObject{
 		// CAEN1290TDC
 		DTOFTDCDigiHit*  MakeTOFTDCDigiHit(const TOFIndex_t &idx,        const DCAEN1290TDCHit *hit) const;
 
+		void AddToCallStack(JEventLoop *loop, string caller, string callee) const;
+
 		void ReadOptionalROCidTranslation(void);
 		void ReadTranslationTable(JCalibration *jcalib=NULL);
 		

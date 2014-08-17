@@ -190,6 +190,14 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 
 	if(VERBOSE>0) ttout << "Entering ApplyTranslationTable:" << endl;
 	
+	// If the JANA call stack is being recorded, then temporarily disable it
+	// so calls we make to loop->Get() here are ignored. The reason we do this
+	// is because this routine is called while already in a loop->Get() call
+	// so JANA will treat all other loop->Get() calls we make as being dependencies
+	// of the loop->Get() call that we are already in. (Confusing eh?) 
+	bool record_call_stack = loop->GetCallStackRecordingStatus();
+	if(record_call_stack) loop->DisableCallStackRecording();
+	
 	// Containers to hold all of the detector-specific "Digi"
 	// objects. Once filled, these will be copied to the
 	// respective factories at the end of this method.
@@ -391,6 +399,25 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	CopyToFactory(loop, vtof);
 	CopyToFactory(loop, vtoftdc);
 
+	// Add to JANA's call stack some entries to make janadot draw something reasonable
+	// Unfortunately, this is just us telling JANA the relationship as defined here.
+	// It is not derived from the above code which would guarantee the declared relationsips
+	// are correct. That would just be too complicated given how that code works.
+	if(record_call_stack){
+		// re-enable call stack recording
+		loop->EnableCallStackRecording();
+
+		AddToCallStack(loop, "DBCALDigiHit"      , "Df250PulseIntegral");
+		AddToCallStack(loop, "DBCALTDCDigiHit"   , "DF1TDCHit");
+		AddToCallStack(loop, "DCDCDigiHit"       , "Df125PulseIntegral");
+		AddToCallStack(loop, "DFCALDigiHit"      , "Df250PulseIntegral");
+		AddToCallStack(loop, "DFDCCathodeDigiHit", "Df125PulseIntegral");
+		AddToCallStack(loop, "DFDCWireDigiHit"   , "DF1TDCHit");
+		AddToCallStack(loop, "DSCDigiHit"        , "Df250PulseIntegral");
+		AddToCallStack(loop, "DSCTDCDigiHit"     , "DF1TDCHit");
+		AddToCallStack(loop, "DTOFDigiHit"       , "Df250PulseIntegral");
+		AddToCallStack(loop, "DTOFTDCDigiHit"    , "DCAEN1290TDCHit");		
+	}
 }
 
 //---------------------------------
@@ -638,6 +665,9 @@ const DTranslationTable::csc_t &DTranslationTable::GetDAQIndex(const DChannelInf
     return tt_itr->first;
 }
 
+//----------------
+// Channel2Str
+//----------------
 string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
 {
     stringstream ss;
@@ -691,6 +721,28 @@ string DTranslationTable::Channel2Str(const DChannelInfo &in_channel) const
     return ss.str();
 }
 
+//----------------
+// AddToCallStack
+//----------------
+void DTranslationTable::AddToCallStack(JEventLoop *loop, string caller, string callee) const
+{
+	/// This is used to give information to JANA regarding the relationship and
+	/// origin of some of these data objects. This is really just needed so that
+	/// the janadot program can be used to produce the correct callgraph. Because
+	/// of how this plugin works, JANA can't record the correct call stack (at
+	/// least not easily!) Therefore, we have to give it a little help here.
+
+	JEventLoop::call_stack_t cs;
+	cs.start_time = cs.end_time = 0.0;
+	cs.caller_name = caller;
+	cs.callee_name = callee;
+	cs.data_source = JEventLoop::DATA_FROM_CACHE;
+	loop->AddToCallStack(cs);
+	cs.callee_name = cs.caller_name;
+	cs.caller_name = "<ignore>";
+	cs.data_source = JEventLoop::DATA_FROM_FACTORY;
+	loop->AddToCallStack(cs);
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

@@ -877,6 +877,21 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		JObject *hit_obj = hit_objs[i];
 		hit_objs_by_type[hit_obj->className()].push_back(hit_obj);
 	}
+	
+	// In order for the janadot plugin to properly display the callgraph, we need to
+	// make entries for each of the object types that we generated from data in the file
+	JEventLoop::call_stack_t cs;
+	cs.caller_name = "<ignore>"; // tells janadot this object wasn't actually requested by anybody
+	cs.caller_tag = "";
+	cs.callee_tag = "";
+	cs.start_time = 0.0;
+	cs.end_time = 0.0;
+	cs.data_source = JEventLoop::DATA_FROM_SOURCE;
+	map<string, vector<JObject*> >::iterator hoiter;
+	for(hoiter=hit_objs_by_type.begin(); hoiter!=hit_objs_by_type.end(); hoiter++){
+		cs.callee_name = hoiter->first;
+		loop->AddToCallStack(cs);
+	}
 
 	// Optionally generate Df250PulseIntegral and Df250PulseTime objects from Df250WindowRawData objects. 
 	if(EMULATE_PULSE_INTEGRAL_MODE && (hit_objs_by_type["Df250PulseIntegral"].size()==0)){
@@ -889,6 +904,11 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		vector<JObject*> pi_objs;
 		EmulateDf250PulseIntegral(hit_objs_by_type["Df250WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df250PulseIntegral"] = pi_objs;
+		
+		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
+		if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseTime", "Df250WindowRawData");
+		if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulsePedestal", "Df250WindowRawData");
+		if(pi_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df250PulseIntegral", "Df250WindowRawData");
 
 		// Make PulseTime, PulseIntegral, and PulsePedestal objects associated objects of one another
 		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
@@ -916,6 +936,11 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 		EmulateDf125PulseIntegral(hit_objs_by_type["Df125WindowRawData"], pi_objs);
 		if(pi_objs.size() != 0) hit_objs_by_type["Df125PulseIntegral"] = pi_objs;	
 		
+		// Add entries to JANA's callstack to indicate correct relationship of emulated objects
+		if(pt_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulseTime", "Df125WindowRawData");
+		if(pp_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulsePedestal", "Df125WindowRawData");
+		if(pi_objs.size() != 0) AddEmulatedObjectsToCallStack(loop, "Df125PulseIntegral", "Df125WindowRawData");
+
 		// Make PulseTime and PulseIntegral objects associated objects of one another
 		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
 		// tmeplated method to work.
@@ -1049,6 +1074,30 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 }
 
 //----------------
+// AddEmulatedObjectsToCallStack
+//----------------
+void JEventSource_EVIO::AddEmulatedObjectsToCallStack(JEventLoop *loop, string caller, string callee)
+{
+	/// This is used to give information to JANA regarding the relationship and
+	/// origin of some of these data objects. This is really just needed so that
+	/// the janadot program can be used to produce the correct callgraph. Because
+	/// of how this plugin works, JANA can't record the correct call stack (at
+	/// least not easily!) Therefore, we have to give it a little help here.
+
+	JEventLoop::call_stack_t cs;
+	cs.caller_name = caller;
+	cs.callee_name = callee;
+	cs.data_source = JEventLoop::DATA_FROM_SOURCE;
+	loop->AddToCallStack(cs);
+	cs.callee_name = cs.caller_name;
+	cs.caller_name = "<ignore>";
+	cs.data_source = JEventLoop::DATA_FROM_FACTORY;
+	loop->AddToCallStack(cs);
+	//loop->AddToCallStack(cs); // add twice so Nfrom_factory count is higher than Nfrom_source in janadot
+}
+
+
+//----------------
 // EmulateDf250PulseIntegral
 //----------------
 void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
@@ -1094,7 +1143,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// calculate integral from relevant samples
 		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
 		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
-		if (start_sample < 0) start_sample=0;
+		if (F250_NSB > first_sample_over_threshold) start_sample=0;
 		if (end_sample > nsamples) end_sample=nsamples;
 		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
 			signalsum += samplesvector[c_samp];
