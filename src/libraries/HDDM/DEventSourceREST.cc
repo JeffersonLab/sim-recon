@@ -77,7 +77,16 @@ jerror_t DEventSourceREST::GetEvent(JEvent &event)
    try{
       *fin >> *record;
    }catch(std::runtime_error &e){
-      _DBG_<<e.what()<<endl;
+      cerr << "Exception caught while trying to read REST file!" << endl;
+	  cerr << e.what() << endl;
+	  _DBG__;
+	  // returning now is the right thing to do but at the moment,
+	  // a bug in HDDM causes it to throw exceptions even when the data
+	  // for the event is read in OK. I sent an e-mail to Richard on
+	  // 8/8/2014 describing this. Once he's had a chance to fix that,
+	  // the following line can be uncommented.
+	  // 8/17/2014  DL
+	  //return NO_MORE_EVENTS_IN_SOURCE;
    }
 
 
