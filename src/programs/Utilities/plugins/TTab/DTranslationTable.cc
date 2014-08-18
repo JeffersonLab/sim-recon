@@ -195,8 +195,8 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	// is because this routine is called while already in a loop->Get() call
 	// so JANA will treat all other loop->Get() calls we make as being dependencies
 	// of the loop->Get() call that we are already in. (Confusing eh?) 
-	bool record_call_stack = loop->GetCallStackRecordingStatus();
-	if(record_call_stack) loop->DisableCallStackRecording();
+//*	bool record_call_stack = loop->GetCallStackRecordingStatus();
+//*	if(record_call_stack) loop->DisableCallStackRecording();
 	
 	// Containers to hold all of the detector-specific "Digi"
 	// objects. Once filled, these will be copied to the
@@ -403,9 +403,9 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 	// Unfortunately, this is just us telling JANA the relationship as defined here.
 	// It is not derived from the above code which would guarantee the declared relationsips
 	// are correct. That would just be too complicated given how that code works.
-	if(record_call_stack){
+//*	if(record_call_stack){
 		// re-enable call stack recording
-		loop->EnableCallStackRecording();
+//*		loop->EnableCallStackRecording();
 
 		AddToCallStack(loop, "DBCALDigiHit"      , "Df250PulseIntegral");
 		AddToCallStack(loop, "DBCALTDCDigiHit"   , "DF1TDCHit");
@@ -417,7 +417,7 @@ void DTranslationTable::ApplyTranslationTable(JEventLoop *loop) const
 		AddToCallStack(loop, "DSCTDCDigiHit"     , "DF1TDCHit");
 		AddToCallStack(loop, "DTOFDigiHit"       , "Df250PulseIntegral");
 		AddToCallStack(loop, "DTOFTDCDigiHit"    , "DCAEN1290TDCHit");		
-	}
+//*	}
 }
 
 //---------------------------------
@@ -737,11 +737,11 @@ void DTranslationTable::AddToCallStack(JEventLoop *loop, string caller, string c
 	cs.caller_name = caller;
 	cs.callee_name = callee;
 	cs.data_source = JEventLoop::DATA_FROM_CACHE;
-	loop->AddToCallStack(cs);
+//*	loop->AddToCallStack(cs);
 	cs.callee_name = cs.caller_name;
 	cs.caller_name = "<ignore>";
 	cs.data_source = JEventLoop::DATA_FROM_FACTORY;
-	loop->AddToCallStack(cs);
+//*	loop->AddToCallStack(cs);
 }
 
 //----------------------------------------------------------------------------
