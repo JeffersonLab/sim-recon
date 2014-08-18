@@ -63,17 +63,17 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	if(eventLoop->GetCalib("/TOF/digi_scales", scale_factors))
 	    jout << "Error loading /TOF/digi_scales !" << endl;
 	if( scale_factors.find("TOF_ADC_ASCALE") != scale_factors.end() ) {
-	    a_scale = scale_factors["TOF_ADC_ASCALE"];
+		;	//a_scale = scale_factors["TOF_ADC_ASCALE"];
 	} else {
 	    jerr << "Unable to get TOF_ADC_ASCALE from /TOF/digi_scales !" << endl;
 	}
 	if( scale_factors.find("TOF_ADC_TSCALE") != scale_factors.end() ) {
-	    t_scale = scale_factors["TOF_ADC_TSCALE"];
+		; //t_scale = scale_factors["TOF_ADC_TSCALE"];
 	} else {
 	    jerr << "Unable to get TOF_ADC_TSCALE from /TOF/digi_scales !" << endl;
 	}
 	if( scale_factors.find("TOF_TDC_SCALE") != scale_factors.end() ) {
-	    tdc_scale = scale_factors["TOF_TDC_SCALE"];
+		; //tdc_scale = scale_factors["TOF_TDC_SCALE"];
 	} else {
 	    jerr << "Unable to get TOF_TDC_SCALE from /TOF/digi_scales !" << endl;
 	}
@@ -143,11 +143,19 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		double A = (double)digihit->pulse_integral;
 		double T = (double)digihit->pulse_time;
 
+
 		hit->dE = a_scale * (A - pedestal);
 		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit));
 		hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
 		hit->has_fADC = true;
 		hit->has_TDC  = false; // will get set to true below if appropriate
+
+/*
+		cout << "TOF ADC hit =  (" << hit->plane << "," << hit->bar << "," << hit->end << ")  " 
+		     << t_scale << " " << T << "  "
+		     << GetConstant(adc_time_offsets, digihit) << " " 
+		     << t_scale*GetConstant(adc_time_offsets, digihit) << " " << hit->t << endl;
+*/
 		
 		hit->AddAssociatedObject(digihit);
 		
@@ -166,9 +174,17 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 
-		T = GetConstant(tdc_scales, digihit)
-		    * (T - GetConstant(tdc_time_offsets, digihit));
-		T = tdc_scale * T;
+		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit));;
+		// future: allow for seperate TDC scales for each channel
+		//T = GetConstant(tdc_scales, digihit)
+		//  * (T - GetConstant(tdc_time_offsets, digihit));
+
+/*
+		cout << "TOF TDC hit =  (" << digihit->plane << "," << digihit->bar << "," << digihit->end << ")  " 
+		     << tdc_scale << " " << T << "  "
+		     << GetConstant(tdc_time_offsets, digihit) << " " 
+		     << tdc_scale*GetConstant(tdc_time_offsets, digihit) << " " << T << endl;
+*/
 
 		// add in timewalk corrections here
 		
@@ -201,6 +217,8 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 DTOFHit* DTOFHit_factory::FindMatch(int plane, int bar, int end, double T)
 {
+	DTOFHit* best_match = NULL;
+
 	// Loop over existing hits (from fADC) and look for a match
 	// in both the sector and the time.
 	for(unsigned int i=0; i<_data.size(); i++){
@@ -214,10 +232,16 @@ DTOFHit* DTOFHit_factory::FindMatch(int plane, int bar, int end, double T)
 		double delta_T = fabs(hit->t - T);
 		if(delta_T > DELTA_T_ADC_TDC_MAX) continue;
 		
-		return hit;
+		// if there are multiple hits, pick the one that is closest in time
+		if(best_match != NULL) {
+			if(delta_T < fabs(best_match->t - T))
+				best_match = hit;
+		} else {
+			best_match = hit;
+		}
 	}
 	
-	return NULL;
+	return best_match;
 }
 
 //------------------
