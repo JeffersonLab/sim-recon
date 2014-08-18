@@ -26,9 +26,10 @@ jerror_t DTOFHit_factory::init(void)
 	DELTA_T_ADC_TDC_MAX = 4.0; // ns
 	gPARMS->SetDefaultParameter("TOF:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
 
-	a_scale = 0.;
-	t_scale = 0.;
-	tdc_scale = 0.;
+	/// Set basic conversion constants
+	a_scale    = 0.2/5.2E5;
+	t_scale    = 0.0625;   // 62.5 ps/count
+	tdc_scale    = 0.025;    // 25 ps/count
 
 	TOF_NUM_PLANES = 2;
 	TOF_NUM_BARS = 44;
@@ -48,11 +49,6 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	if(tofGeomVect.size()<1)  return OBJECT_NOT_AVAILABLE;
 	const DTOFGeometry& tofGeom = *(tofGeomVect[0]);
 	
-	/// Set basic conversion constants
-	a_scale    = 0.2/5.2E5;
-	t_scale    = 0.0625;   // 62.5 ps/count
-	tdc_scale    = 0.060;    // 60 ps/count
-
         /// Read in calibration constants
         vector<double> raw_adc_pedestals;
         vector<double> raw_adc_gains;
@@ -61,6 +57,26 @@ jerror_t DTOFHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
         vector<double> raw_tdc_scales;
 
         jout << "In DTOFHit_factory, loading constants..." << endl;
+
+	// load scale factors
+	map<string,double> scale_factors;
+	if(eventLoop->GetCalib("/TOF/digi_scales", scale_factors))
+	    jout << "Error loading /TOF/digi_scales !" << endl;
+	if( scale_factors.find("TOF_ADC_ASCALE") != scale_factors.end() ) {
+	    a_scale = scale_factors["TOF_ADC_ASCALE"];
+	} else {
+	    jerr << "Unable to get TOF_ADC_ASCALE from /TOF/digi_scales !" << endl;
+	}
+	if( scale_factors.find("TOF_ADC_TSCALE") != scale_factors.end() ) {
+	    t_scale = scale_factors["TOF_ADC_TSCALE"];
+	} else {
+	    jerr << "Unable to get TOF_ADC_TSCALE from /TOF/digi_scales !" << endl;
+	}
+	if( scale_factors.find("TOF_TDC_SCALE") != scale_factors.end() ) {
+	    tdc_scale = scale_factors["TOF_TDC_SCALE"];
+	} else {
+	    jerr << "Unable to get TOF_TDC_SCALE from /TOF/digi_scales !" << endl;
+	}
 
         if(eventLoop->GetCalib("TOF/pedestals", raw_adc_pedestals))
 	    jout << "Error loading /TOF/pedestals !" << endl;
@@ -152,7 +168,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		T = GetConstant(tdc_scales, digihit)
 		    * (T - GetConstant(tdc_time_offsets, digihit));
-		T = t_scale * T;
+		T = tdc_scale * T;
 
 		// add in timewalk corrections here
 		
