@@ -4,7 +4,7 @@ MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad -lhitutil -rdynamic
 #FFLAGS = -Wno-globals
 CFLAGS += -g -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
 ADDITIONAL_MODULES += HDDM HDGEOMETRY
-FFLAGS += -g
+FFLAGS += -g -DCERNLIB_MOTIF
 
 
 
