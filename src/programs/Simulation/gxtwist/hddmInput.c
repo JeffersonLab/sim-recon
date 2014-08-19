@@ -43,7 +43,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <hddm_mc_s.h>
+#include <HDDM/hddm_mc_s.h>
 #include <geant3.h>
 
 mc_s_iostream_t* thisInputStream = 0;
@@ -164,7 +164,7 @@ int loadInput ()
 
 int storeInput (int runNo, int eventNo, int ntracks)
 {
-   mc_s_PhysicsEvent_t* pe;
+   mc_s_PhysicsEvents_t* pes;
    mc_s_Reactions_t* rs;
    mc_s_Vertices_t* vs;
    mc_s_Origin_t* or;
@@ -178,8 +178,9 @@ int storeInput (int runNo, int eventNo, int ntracks)
       flush_mc_s_HDDM(thisInputEvent, 0);
    }
    thisInputEvent = make_mc_s_HDDM();
-   thisInputEvent->physicsEvents = pe = make_mc_s_PhysicsEvents(1);
-   pe->reactions = rs = make_mc_s_Reactions(1);
+   thisInputEvent->physicsEvents = pes = make_mc_s_PhysicsEvents(1);
+   pes->mult = 1;
+   pes->in[0].reactions = rs = make_mc_s_Reactions(1);
    rs->mult = 1;
    rs->in[0].vertices = vs = make_mc_s_Vertices(99);
    vs->mult = 0;
@@ -220,8 +221,8 @@ int storeInput (int runNo, int eventNo, int ntracks)
       ps->in[ps->mult].momentum->E  = plab[3];
       ps->mult++;
    }
-   pe->runNo = runNo;
-   pe->eventNo = eventNo;
+   pes->in[0].runNo = runNo;
+   pes->in[0].eventNo = eventNo;
    return 0;
 }
 

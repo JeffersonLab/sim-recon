@@ -9,7 +9,6 @@
       common /pawc/ hq(hspace)
       real secmax
       parameter (secmax=300000.)
-      integer istat,icycle
 
 C---- Initialization of HBOOK, ZEBRA, clock
       call GZEBRA(ispace)

@@ -29,12 +29,14 @@
       DIMENSION VERTEX(4),PLAB(5)
       DIMENSION RNDM(20)
 
+#if 0
       real tgen
       real unif01(100)
       integer i,j
       character*20 pname
       integer nubuf
       real ubuf(99)
+#endif
 
       integer idhalo
       parameter (idhalo=9876)

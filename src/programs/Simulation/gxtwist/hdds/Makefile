@@ -1,10 +1,10 @@
 OS_RELEASE = $(shell $(HALLD_HOME)/src/BMS/osrelease.pl)
 
-HDDS_GEANT = $(HDDS_HOME)/bin/$(OS_RELEASE)/hdds-geant
+HDDS_GEANT = $(HDDS_HOME)/$(OS_RELEASE)/bin/hdds-geant
 
-HDDS_SCHEMA = HDDS-1_0.xsd
+HDDS_SCHEMA = HDDS-1_1.xsd
 
-XML_SOURCE = TaggerArea.xml FocalPlane.xml Materials.xml PhotonPipe.xml\
+XML_SOURCE = TaggerArea.xml FocalPlane.xml Materials.xml \
               Regions.xml Spectrometer.xml ElectronDump.xml
 
 hddsGeant3_tagger.F: $(XML_SOURCE) $(HDDS_SCHEMA) $(HDDS_GEANT)

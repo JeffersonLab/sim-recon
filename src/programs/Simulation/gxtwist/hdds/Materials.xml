@@ -814,6 +814,13 @@
  	</addmaterial>
   </composite>
 
+  <composite name="Diamond">
+	<addmaterial material="Carbon">
+		<fractionmass	fraction="1.0"	/>
+ 	</addmaterial>
+        <real name="density"	value="3.52"	unit="g/cm^3" />
+  </composite>
+
   <composite name="TaggerVacuum">
 	<addmaterial material="Air">
 		<fractionmass	fraction="0.99"	/>

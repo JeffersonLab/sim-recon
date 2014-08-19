@@ -3,16 +3,15 @@
 
   <!ENTITY Regions_s SYSTEM "Regions.xml">
   <!ENTITY Material_s SYSTEM "Materials.xml">
-  <!ENTITY PhotonPipe_s SYSTEM "PhotonPipe.xml"> 
   <!ENTITY Spectrometer_s SYSTEM "Spectrometer.xml">
   <!ENTITY FocalPlane_s SYSTEM "FocalPlane.xml">
   <!ENTITY ElectronDump_s SYSTEM "ElectronDump.xml">
 
 ]>
 
-<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds"
+<HDDS specification="v1.1" xmlns="http://www.gluex.org/hdds"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_0.xsd">
+      xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_1.xsd">
 
 <!-- Include materials -->
      &Material_s;
@@ -21,7 +20,6 @@
      &Regions_s;
 
 <!-- Include spec files -->
-     &PhotonPipe_s;
      &Spectrometer_s;
      &FocalPlane_s;
      &ElectronDump_s;
@@ -48,22 +46,18 @@
       The origin is the intersection of the electron beam axis with
       the crystal plane at the goniometer.                           -->
 
-
-
-
-
   <composition name="everything" envelope="HILL">
       <posXYZ volume="FieldVolume" X_Y_Z="0.0 0.0 0.0" />
   </composition>
 
 
   <box name="HILL" X_Y_Z="10000. 10000. 10000." material="Air"
-       				comment="master volume for description" /> 
+                   comment="master volume for description" /> 
 
 
   <box name="AREA" X_Y_Z="9000. 9000. 9000." material="Air"
-       				comment="main tagger enclosure">
-    <apply region="taggerBfield" origin="0.0  0.0  0.0" />
+                   comment="main tagger enclosure">
+    <apply region="tagger_dipole_field" origin="-9.442 0.0 631.723" rot="0 -6.5 0" />
   </box>
 
 
@@ -72,17 +66,25 @@
 
       <posXYZ volume="HallWalls" X_Y_Z="0.0 45.0 0.0" />
 
-      <posXYZ volume="ASEG" X_Y_Z="-499. 45.0  1134.1" />
+      <mposZ volume="ASEG" X_Y="-509.0 45.0" Z0="640.0" dZ="67.0" ncopy="16"/>
 
-      <posXYZ volume="goniometer" X_Y_Z="0.0 0.0 0.0" />
-      <posXYZ volume="quadAssembly" X_Y_Z="0.0 0.0 83.2374" />
+      <posXYZ volume="goniometer" X_Y_Z="-10.0 0.0 0.0" rot="90 0 0" />
+      <posXYZ volume="target_pipe" X_Y_Z="0.0 0.0 47.9"/>
+      <posXYZ volume="amorphous_targets" X_Y_Z="0.0 0.0 61.0" rot="90 0 0" />
 
+      <posXYZ volume="quadAssembly" X_Y_Z="0.0 0.0 107.0" />
 
       <posXYZ volume="dipAssembly" X_Y_Z="-2.482062  0.0  632.51593"
-                                   rot="0 -6.500 0" unit_angle="deg" /> 
+                                   rot="0 -6.5 0" unit_angle="deg" /> 
 
 
-       <posXYZ volume="electronBeamPipe" X_Y_Z="-282.462285  0.0  1818.752590"
+      <posXYZ volume="photonBeamPipe" X_Y_Z="0.0  0.0  1770.0" />
+      <posXYZ volume="photonTransportPipe" X_Y_Z="0.0  0.0  3365.0" />
+
+      <posXYZ volume="electronBeamPipe" X_Y_Z="-264.30  0.0  1739.58"
+                                   rot="0 -13.4 0" unit_angle="deg" /> 
+
+      <posXYZ volume="eBeamPipeFlange" X_Y_Z="-360.50  0.0  2123.90"
                                    rot="0 -13.4 0" unit_angle="deg" /> 
 
 
@@ -93,9 +95,7 @@
 <!--      <posXYZ volume="DET7Comp" X_Y_Z="-122.9944  0.0  836.89"
                                    rot="0 -8.05 0" unit_angle="deg" />  -->
 
-
-
-      <posXYZ volume="electronDump"  X_Y_Z="-458.44206  45.0  2557.438372" rot="0  -13.4  0" unit_angle="deg"/> 
+      <posXYZ volume="electronDump"  X_Y_Z="-0.75  0.0  633.1" rot="0  -13.4  0" unit_angle="deg"/> 
 
   </composition> 
 
@@ -103,78 +103,76 @@
 <!-- ====== Tagger Hall Walls ====== -->
 
   <composition name="HallWalls">
-        <posXYZ volume="HNWL" X_Y_Z=" 450.0     0.0   1145.5" /> 
-        <posXYZ volume="HSWL" X_Y_Z="-665.5674  0.0   561.18301" />
+        <posXYZ volume="HNWL" X_Y_Z=" 345.0  0.0  1170.0" /> 
+        <posXYZ volume="HSWL" X_Y_Z="-575.0  0.0   684.0" />
  
-        <posXYZ volume="HEWL" X_Y_Z=" 60.3002    0.0   2676.0  " />
-        <posXYZ volume="HWWL" X_Y_Z=" -107.7837  0.0   -385.  " />
+        <posXYZ volume="HEWL" X_Y_Z="  99.0  0.0   2615.0" />
+        <posXYZ volume="HWWL" X_Y_Z="-115.0  0.0   -275.0" />
 
-        <posXYZ volume="HFLR" X_Y_Z=" -250. -375.  1500." />  
-        <posXYZ volume="HROF" X_Y_Z=" -250.  375.  1500." />  
+        <posXYZ volume="HFLR" X_Y_Z=" -250. -330.  1500." />  
+        <posXYZ volume="HROF" X_Y_Z=" -250.  420.  1500." />  
+
+        <posXYZ volume="HDSW" X_Y_Z=" -776.  0.0  2533." rot="0 76.6 0"/>  
+        <posXYZ volume="HDEW" X_Y_Z=" -681.  0.0  3494." rot="0 -13.4 0"/>  
+        <posXYZ volume="HDNW" X_Y_Z=" -251.  0.0  3046." rot="0 76.6 0"/>  
   </composition>
 
 
-  <box name="HNWL" X_Y_Z="300.0  450.0  3361.0" material="Concrete"
-       				comment="North Wall" />
+  <box name="HNWL" X_Y_Z="90.0  450.0  2980.0" material="Concrete"
+                   comment="North Wall" />
 
-  <box name="HSWL" X_Y_Z="300.0  450.0  2192.366027" material="Concrete"
-       				comment="South Wall" />
+  <box name="HSWL" X_Y_Z="90.0  450.0  2008.0" material="Concrete"
+                   comment="South Wall" />
 
-  <box name="HEWL" X_Y_Z="479.3996  450.0  300." material="Concrete"
-       				comment="East Wall" />
+  <trd name="HEWL" Xmp_Ymp_Z="391.0 412.0  450. 450. 90.0" 
+       material="Concrete" inclination="-6.7  0" unit_angle="deg"/>
 
-  <box name="HWWL" X_Y_Z="815.5674  450.0  300.0" material="Concrete"
+  <box name="HWWL" X_Y_Z="830.0  450.0  90.0" material="Concrete"
                                 comment="West Wall" />
 
   <box name="HFLR" X_Y_Z="2100.0  300.0  5000.0" material="Concrete"
-       				comment="Floor" />
+                   comment="Floor" />
 
   <box name="HROF" X_Y_Z="2100.0  300.0  5000.0" material="Concrete"
-       				comment="Roof" />
+       comment="Roof" />
+
+  <trd name="HDSW" Xmp_Ymp_Z="1726.0 1747.0  450. 450. 90.0" 
+       material="Concrete" inclination="6.7  0" unit_angle="deg"/>
+
+  <box name="HDEW" X_Y_Z="720.0  450.0  90.0" material="Concrete"
+                                comment="West Wall" />
+
+  <trd name="HDNW" Xmp_Ymp_Z="967.0 989.0  450. 450. 90.0" 
+       material="Concrete" inclination="6.7  0" unit_angle="deg"/>
 
 
-  <box name="ASEG" X_Y_Z="33.02  450.00  1046.48" material="Iron"
+  <box name="ASEG" X_Y_Z="33.0  450.00  66.0" material="Iron"
                                  comment="SEG blocks in the AREA"/>
-
-
 
 <!-- ====== Goniometer ====== -->
 
   <composition name="goniometer" envelope="GONI">
-    <posXYZ volume="GOBX" />
-    <posXYZ volume="GOBE" X_Y_Z="0 0 -29.7"/>
-    <posXYZ volume="GOBE" X_Y_Z="0 0 +29.7"/>
-    <posXYZ volume="XTAL" X_Y_Z="0 0 10e-4"/>
-    <posXYZ volume="XFRA" X_Y_Z="0 0 10e-4"/> 
+    <posXYZ volume="goniometer_chamber" />
+    <posXYZ volume="GOBE" X_Y_Z="10.0 -40.5 0.0" rot="90 0 0"/>
+    <posXYZ volume="GOBE" X_Y_Z="10.0 +40.5 0.0" rot="90 0 0"/>
   </composition>
 
+  <composition name="goniometer_chamber" envelope="GOBX">
+    <posXYZ volume="XTAL" X_Y_Z="10.0 0.0 10e-4" rot="90 0 0"/>
+    <posXYZ volume="XFRA" X_Y_Z="10.0 0.0 10e-4" rot="90 0 0"/> 
+  </composition>
 
+  <tubs name="GONI" Rio_Z="0 42.0 60" material="Iron"
+        comment="goniometer vacuum chamber"/>
 
-  <box name="GONI" X_Y_Z="60 60 60" material="TaggerVacuum"
-                                 comment="goniometer vacuum box"/>
+  <tubs name="GOBX" Rio_Z="0 41.5 59" material="TaggerVacuum"
+        comment="goniometer chamber vacuum"/>
 
-  <pgon name="GOBX" segments="4" profile="-45 360" material="Iron"
-                                 comment="goniometer vacuum box sides">
-    <polyplane Rio_Z="29.4 30.0 -30.0"/>
-    <polyplane Rio_Z="29.4 30.0 +30.0"/>
-  </pgon>
+  <tubs name="GOBE" Rio_Z="0 1.50 2.0" material="TaggerVacuum"
+        comment="goniometer vacuum box ports" />
 
-  <pgon name="GOBE" segments="4" profile="-45 360" material="Iron"
-                                 comment="goniometer vacuum box ends">
-    <polyplane Rio_Z="2.0 30.0 -0.3"/>
-    <polyplane Rio_Z="2.0 30.0 +0.3"/>
-  </pgon>
-
-
-
-<!-- 
   <box name="XTAL" X_Y_Z="0.5 0.5 20e-4" material="Diamond" sensitive="true"
-                                        comment="goniometer crystal"/>  -->
-
-
-  <box name="XTAL" X_Y_Z="0.5 0.5 20e-4" material="Vacuum" sensitive="true"
-                                        comment="goniometer crystal"/> 
-
+       comment="goniometer crystal"/> 
 
   <pgon name="XFRA" segments="4" profile="-45 360" material="Aluminum"
                                  comment="goniometer crystal mount">
@@ -182,25 +180,92 @@
     <polyplane Rio_Z="0.75 1.5 0.3"/>
   </pgon>
 
+  <composition name="target_pipe" envelope="TAPO">
+    <posXYZ volume="TAPI"/>
+  </composition>
 
+  <tubs name="TAPO" Rio_Z="0 1.59 16.80" material="TaggerVacuum" 
+        comment="pipe between goniometer and amorphous targets ladder"/>
+  <tubs name="TAPI" Rio_Z="1.50 1.59 16.80" material="Iron" 
+        comment="wall of pipe between goniometer and amorphous targets ladder"/>
 
-<!-- ====== electronBeamPipe.  5 + 1 = 6 inches pipe. Shift by 2 inches. 1.5 mm thick. d_offset = 150 cm ====== -->
+<!-- ====== amorphous targets ladder ====== -->
+
+  <composition name="amorphous_targets" envelope="TACH">
+    <posXYZ volume="target_ladder" />
+    <posXYZ volume="TABE" X_Y_Z="0.0 -4.6 0.0" rot="90 0 0"/>
+    <posXYZ volume="TABE" X_Y_Z="0.0 +4.6 0.0" rot="90 0 0"/>
+  </composition>
+
+  <composition name="target_ladder" envelope="TLAD">
+    <posXYZ volume="TAMO" rot="90 0 0"/>
+    <posXYZ volume="TAFR" rot="90 0 0"/> 
+  </composition>
+
+  <tubs name="TACH" Rio_Z="0 5.0 30.0" material="Iron"
+        comment="amorphous targets chamber"/>
+
+  <tubs name="TLAD" Rio_Z="0 4.8 29.6" material="TaggerVacuum"
+        comment="amorphous targets chamber vacuum"/>
+
+  <tubs name="TABE" Rio_Z="0 1.50 1.0" material="TaggerVacuum"
+        comment="chamber beam pipe vacuum ports"/>
+
+  <box name="TAMO" X_Y_Z="3.0 3.0 10e-4" material="Carbon" sensitive="true"
+        comment="amorphous carbon radiator" />
+
+  <tubs name="TAFR" Rio_Z="1.21 2.86 0.95" material="Aluminum"
+       comment="amorphous radiator target holder (piece of the fork)"/> 
+
+<!-- ====== photonBeamPipe: 1.25 inch pipe ====== -->
+
+  <composition name="photonBeamPipe" envelope="PBPO">
+    <posXYZ volume="PBPI" />
+  </composition>
+
+  <tubs name="PBPO" Rio_Z="0 1.59 1590" material="TaggerVacuum"
+        comment="photon beam pipe" />
+
+  <tubs name="PBPI" Rio_Z="1.50 1.59 1590" material="Iron"
+        comment="photon beam pipe wall" />
+
+<!-- ====== photonTransportPipe: 10 inch pipe ====== -->
+
+  <composition name="photonTransportPipe" envelope="PTPO">
+    <posXYZ volume="PTPI" />
+  </composition>
+
+  <tubs name="PTPO" Rio_Z="0 12.3 1600" material="TaggerVacuum"
+        comment="photon transport pipe" />
+
+  <tubs name="PTPI" Rio_Z="11.5 12.3 1600" material="Iron"
+        comment="photon transport pipe wall" />
+
+<!-- ====== electronBeamPipe: 6 inch pipe, shift in by 1.75 inches ====== -->
   <composition name="electronBeamPipe">
-   <posXYZ volume="beamPipeAREA" X_Y_Z="-5.08 0.0 0.0" />
+   <posXYZ volume="taggerVacExt" X_Y_Z="-4.45 0.0 0.0" />
   </composition>
 
-
- <composition name="beamPipeAREA" envelope="BPAO">
-    <posXYZ volume="BPAI" X_Y_Z="0 0 0"/>
+ <composition name="taggerVacExt" envelope="BPAO">
+    <posXYZ volume="BPAI"/>
   </composition>
 
-  <box name="BPAO" X_Y_Z="15.54  5.38  952.297318" material="Iron"
-                                 comment="electron pipe AREA"/> 
+  <tubs name="BPAO" Rio_Z="0.0  7.62  790.0" material="TaggerVacuum"
+        comment="tagger vacuum extension pipe"/> 
 
-  <box name="BPAI" X_Y_Z="15.24  5.08  952.297318" material="TaggerVacuum"
-                                 comment="electron pipe AREA inner part"/>
+  <tubs name="BPAI" Rio_Z="7.54  7.62  790.0" material="Iron"
+        comment="tagger vacuum extension pipe wall"/>
 
 
+ <composition name="eBeamPipeFlange" envelope="BPFL">
+    <posXYZ volume="BPFH" X_Y_Z="4.45 0.0 0.0" />
+  </composition>
+
+  <tubs name="BPFL" Rio_Z="0.0  10.0  2.3" material="Iron"
+        comment="tagger vacuum extension pipe flange"/> 
+
+  <tubs name="BPFH" Rio_Z="0.0  1.90  2.3" material="TaggerVacuum"
+        comment="tagger vacuum extension pipe flange hole"/>
 
 
 </section>

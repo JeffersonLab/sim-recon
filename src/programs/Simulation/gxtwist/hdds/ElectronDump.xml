@@ -4,14 +4,14 @@
   GlueX Electron Beam Dump
   *************************
 
-     version 1.0: Initial version	-rtj
+     version 1.0: Initial version   -rtj
 
 <HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
 -->
 
 <section name        = "ElectronBeamDump"
-         version     = "1.0"
-         date        = "2006-03-24"
+         version     = "1.1"
+         date        = "2014-08-14"
          author      = "R.T. Jones"
          top_volume  = "electronDump"
          specification = "v1.0">
@@ -23,147 +23,206 @@
      of the photon beam axis with the unscattered electron beam axis
      after it exits the tagger.                                  -->
 
-
-
   <composition name="electronDump">
-        <posXYZ volume="Labyrinth1" X_Y_Z=" -49.53   0.0  -250.19" />
-        <posXYZ volume="Labyrinth2" X_Y_Z="  49.53   0.0  -29.21"  />
-        <posXYZ volume="Labyrinth3" X_Y_Z=" -49.53   0.0   186.69" /> 
+        <posXYZ volume="FlangeWall" X_Y_Z="-33.0 -47.0  1590.0" />
+        <posXYZ volume="Labyrinth1" X_Y_Z="-82.5  45.0  1742.0" />
+        <posXYZ volume="Labyrinth2" X_Y_Z=" 66.0  45.0  1963.0" />
+        <posXYZ volume="Labyrinth3" X_Y_Z="-99.0  45.0  2180.0" /> 
 
-        <posXYZ volume="DumpDoor" X_Y_Z=" 197.5  0.0  -186.5 " rot="0  -54.904  0" unit_angle="deg"/>
+        <posXYZ volume="DumpDoor" X_Y_Z=" 66.0  45.0  1836.5 " />
 
-<!-- 5 + 1 =  6 inches  pipe; shift by 2 inches -->
-        <posXYZ volume="Pipe12" X_Y_Z=" -5.08  -45.0  -156.21 " />
-        <posXYZ volume="Pipe23" X_Y_Z=" -5.08  -45.0   95.25" />
+        <posXYZ volume="PipeF0" X_Y_Z="0.0  0.0  1545.87" />
+        <posXYZ volume="Pipe01" X_Y_Z="0.0  0.0  1666.0" />
+        <posXYZ volume="Pipe12" X_Y_Z="0.0  0.0  1836.0" />
+        <posXYZ volume="Pipe23" X_Y_Z="0.0  0.0  2088.0" />
+        <posXYZ volume="Pipe3D" X_Y_Z="0.0  0.0  2237.0" />
 
+        <mposZ volume="SEG1" X_Y="-247.5  0.0" Z0="1173.0" dZ="66" ncopy="17" /> 
+        <mposZ volume="SEG2" X_Y=" 231.0  0.0" Z0="1965.0" dZ="66" ncopy="5" /> 
+        <posXYZ volume="SEG1" X_Y_Z="231.0  0.0 1915.0" rot="0 90 0" /> 
 
-        <posXYZ volume="SEG1" X_Y_Z=" -247.65   0.0   -264.16" /> 
-        <posXYZ volume="SEG2" X_Y_Z="  231.14   0.0    119.38" /> 
-
-        <posXYZ volume="BDSW" X_Y_Z="  -410.07635   0.0   17.3810888" rot="0  90.  0" unit_angle="deg"/> 
-        <posXYZ volume="BDNW" X_Y_Z="   364.16      0.0   593.41803"  rot="0  90.  0" unit_angle="deg"/> 
-
-         <posXYZ volume="IronDump" X_Y_Z="0.0 0.0 598.17" /> 
-
+        <posXYZ volume="IronDump" X_Y_Z="0.0 45.0 2562.0" /> 
   </composition>
 
 
 <!-- ====== Labyrinth 1 ====== -->
   <composition name="Labyrinth1" envelope="LBO1">
-        <posXYZ volume="LBI1" X_Y_Z=" 44.45  -45.0  0.0" /> 
+        <posXYZ volume="SEG1" X_Y_Z="132.0 0.0 0.0" /> 
+        <mposZ volume="SEG_with_pipe" X_Y="82.5 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /> 
+        <mposX volume="SEG1" Y_Z="0.0 -16.5" X0="-115.5" dX="66.0" ncopy="3" rot="0 90 0" /> 
+        <mposX volume="SEG1" Y_Z="0.0 +16.5" X0="-115.5" dX="66.0" ncopy="3" rot="0 90 0" /> 
   </composition>
 
-  <box name="LBI1" X_Y_Z=" 15.24  5.08  66.04  " material="TaggerVacuum"  
-       comment="1st Labyrinth hole">
-  </box> 
-
-
-  <box name="LBO1" X_Y_Z=" 363.22  450.0  66.04" material="Iron"  
-       comment="1st Labyrinth wall">
-  </box> 
+  <box name="LBO1" X_Y_Z="297.0  450.0  66.0" material="Air"  
+       comment="1st Labyrinth wall"/>
 
 
 <!-- ====== Labyrinth 2 ====== -->
   <composition name="Labyrinth2" envelope="LBO2">
-        <posXYZ volume="LBI2" X_Y_Z="-54.61  -45.0  0.0" /> 
+        <mposZ volume="SEG1" X_Y="115.5 0.0" Z0="-33.0" dZ="66.0" ncopy="2" /> 
+        <mposZ volume="SEG1" X_Y=" 66.0 0.0" Z0="-49.5" dZ="33.0" ncopy="4" rot="0 90 0" /> 
+        <mposZ volume="SEG1" X_Y="  0.0 0.0" Z0="-49.5" dZ="33.0" ncopy="4" rot="0 90 0" /> 
+        <mposZ volume="SEG_with_pipe" X_Y="-66.0 0.0" Z0="-49.5" dZ="33.0" ncopy="4" /> 
+        <posXYZ volume="SEG1" X_Y_Z="-115.5 0.0 33.0" /> 
   </composition>
 
-
- <box name="LBI2" X_Y_Z="15.24  5.08  132.08  " material="TaggerVacuum"  
-       comment="2nd Labyrinth hole">
-  </box> 
-
-
-  <box name="LBO2" X_Y_Z="297.18  450.0  132.08" material="Iron"  
-       comment="2nd Labyrinth wall">
-  </box> 
+  <box name="LBO2" X_Y_Z="264.0  450.0  132.0" material="Air"  
+       comment="2nd Labyrinth wall" />
 
 
 <!-- ====== Labyrinth 3 ====== -->
   <composition name="Labyrinth3" envelope="LBO3">
-        <posXYZ volume="LBI3" X_Y_Z="44.45  -45.0  0.0" /> 
+        <mposZ volume="SEG_with_pipe" X_Y="99.0 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /> 
+        <mposX volume="SEG1" Y_Z="0.0 -16.5" X0="-99.0" dX="66.0" ncopy="3" rot="0 90 0" /> 
+        <mposX volume="SEG1" Y_Z="0.0 +16.5" X0="-99.0" dX="66.0" ncopy="3" rot="0 90 0" /> 
   </composition>
 
-
-  <box name="LBI3" X_Y_Z="15.24  5.08  66.04  " material="TaggerVacuum"  
-       comment="3rd Labyrinth hole">
-  </box> 
-
-  <box name="LBO3" X_Y_Z="363.22  450.0  66.04" material="Iron"  
-       comment="3rd  Labyrinth wall">
-  </box> 
+  <box name="LBO3" X_Y_Z="264.0  450.0  66.0" material="Iron"  
+       comment="3rd  Labyrinth wall" />
 
 
 <!-- ====== Dump Door ====== -->
   <composition name="DumpDoor" envelope="DOOR">
-     <posXYZ volume="OUTD" X_Y_Z="0.0  0.0  -2.5" />
+        <posXYZ volume="OUTD" X_Y_Z="-2.5  0.0  0.0" />
   </composition>
 
 
-  <box name="DOOR" X_Y_Z="216.971  450.  6.0  " material="Polyethylene"  
-       comment="Labyrinth Door">
-  </box> 
+  <box name="DOOR" X_Y_Z="6.0 450.  122.0" material="Polyethylene"  
+       comment="Labyrinth Door (poly)" />
 
-  <box name="OUTD" X_Y_Z="216.971  450.  1.0  " material="Boron"  
-       comment="Labyrinth Door">
-  </box> 
+  <box name="OUTD" X_Y_Z="1.0 450.  122.0  " material="Boron"  
+       comment="Labyrinth Door (boron as a coating)" />
 
 
-<!-- ====== Pipe between Lab 1 and  2.  5 + 1 = 6 inches, 1.5 mm thick ======  -->
+<!-- ====== Flange shield wall ====== -->
+  <composition name="FlangeWall" envelope="FLSW">
+        <mposZ volume="short_SEG_with_pipe" X_Y="33.0 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /> 
+        <mposZ volume="SEGR" X_Y="-33.0 0.0" Z0="-16.5" dZ="33.0" ncopy="2" /> 
+  </composition>
+
+  <box name="FLSW" X_Y_Z="132.0  266.0  66.0" material="Iron"  
+       comment="flange shield wall" />
+
+  <composition name="short_SEG_with_pipe" envelope="SEGP">
+        <posXYZ volume="SEG_hole_with_pipe" X_Y_Z="0.0 47.0 0.0"/>
+  </composition>
+
+  <box name="SEGP" X_Y_Z="66.0  266. 33.0 " material="Iron"  
+       comment="short SEG block slab with beam pipe punching through" />
+
+  <box name="SEGR" X_Y_Z="66.0  266. 33.0 " material="Iron"  
+       comment="short SEG block slab" />
+
+
+<!-- ====== Pipe 1.5" diameter connecting to 6" flange ======  -->
+  <composition name="PipeF0" envelope="LPOF">
+        <posXYZ volume="LPIF" /> 
+  </composition>
+
+  <tubs name="LPOF" Rio_Z="0.0 1.90 22.3" material="TaggerVacuum"
+        comment="beam pipe just after 6in pipe section" />
+
+  <tubs name="LPIF" Rio_Z="1.75 1.90 22.3" material="Iron"
+        comment="wall of beam pipe just after 6in pipe section" />
+
+
+<!-- ====== Pipe with girder in front of labyrinth wall 1 ======  -->
+  <composition name="Pipe01" envelope="LPO0">
+        <posXYZ volume="LPI0" /> 
+  </composition>
+
+  <tubs name="LPO0" Rio_Z="0.0 1.90 86.0" material="TaggerVacuum"
+        comment="beam pipe in front of labyrinth wall 1" />
+
+  <tubs name="LPI0" Rio_Z="1.75 1.90 86.0" material="Iron"
+        comment="wall of beam pipe in front of labyrinth wall 1" />
+
+
+<!-- ====== Pipe between labyrinth walls 1 and  2 ======  -->
   <composition name="Pipe12" envelope="LPO1">
-        <posXYZ volume="LPI1" X_Y_Z="0.0  0.0  0.0" /> 
+        <posXYZ volume="LPI1" /> 
   </composition>
 
-  <box name="LPO1" X_Y_Z="15.54  5.38  121.92" material="Iron"  
-       comment="Pipe between Lab 1 and 2">
-  </box> 
+  <tubs name="LPO1" Rio_Z="0.0 1.90 122.0" material="TaggerVacuum"
+        comment="beam pipe from labyrinth wall 1 to 2" />
 
-  <box name="LPI1" X_Y_Z="15.24 5.08 121.92" material="TaggerVacuum"  
-       comment="Pipe between Lab 1 and 2">
-  </box> 
+  <tubs name="LPI1" Rio_Z="1.75 1.90 122.0" material="Iron"
+        comment="wall of beam pipe from labyrinth wall 1 to 2" />
 
 
-
-<!-- ======  Pipe between Lab 2 and 3. 5 + 1 = 6 inches, 1.5 mm thick ======   -->
+<!-- ======  Pipe between labyrinth wall 2 and 3 ======   -->
  <composition name="Pipe23" envelope="LPO2">
-        <posXYZ volume="LPI2" X_Y_Z="0.0  0.0  0.0" /> 
+        <posXYZ volume="LPI2" /> 
   </composition>
 
-  <box name="LPO2" X_Y_Z="15.54 5.38 116.84" material="Iron"  
-       comment="Pipe between Lab 2 and 3">
-  </box> 
+  <tubs name="LPO2" Rio_Z="0.0 1.90 118.0" material="TaggerVacuum"
+       comment="beam pipe from labyrinth wall 2 to 3" />
 
-  <box name="LPI2" X_Y_Z="15.24  5.08 116.84" material="TaggerVacuum"  
-       comment="Pipe between Lab 3 and 4">
-  </box> 
+  <tubs name="LPI2" Rio_Z="1.75 1.90 118.0" material="Iron"
+       comment="wall of beam pipe from labyrinth wall 2 to 3" />
 
 
-<!-- ====== Iron slabs along the wall inside the beam dump ====== -->
-  <box name="SEG1" X_Y_Z="33.02  450. 1196.34 " material="Iron"  
-       comment="SEG block slab in the Hall">
-  </box> 
+<!-- ======  Pipe between labyrinth wall 3 to dump ======   -->
+ <composition name="Pipe3D" envelope="LPO3">
+        <posXYZ volume="LPI3" /> 
+  </composition>
 
-  <box name="SEG2" X_Y_Z="66.04  450. 429.26 " material="Iron"  
-       comment="SEG block slab in the Hall">
-  </box> 
+  <tubs name="LPO3" Rio_Z="0.0 1.90 48.0" material="TaggerVacuum"
+       comment="beam pipe from labyrinth wall 3 to dump" />
 
-  <trd name="BDSW" Xmp_Ymp_Z="1655.1356  1724.66  450.  450. 291.8327" 
-     material="Concrete" inclination="6.79288  0" unit_angle="deg"/>
+  <tubs name="LPI3" Rio_Z="1.75 1.90 48.0" material="Iron"
+       comment="wall of beam pipe from labyrinth wall 3 to dump" />
 
-  <trd name="BDNW" Xmp_Ymp_Z="957.58  118.06787  450.  450. 200." 
-     material="Concrete" inclination="-64.5237  0" unit_angle="deg"/>
 
+<!-- ====== Iron slabs forming the walls inside the beam dump ====== -->
+  <box name="SEG1" X_Y_Z="33.0  450. 66.0 " material="Iron"  
+       comment="SEG block slab in the beam dump" />
+
+  <box name="SEG2" X_Y_Z="66.0  450. 66.0 " material="Iron"  
+       comment="double-thick SEG block slab in the beam dump" />
+
+<!-- ====== Iron slabs in the labyrinth with beam pipe sticking through -->
+  <box name="SEG0" X_Y_Z="66.0  450. 33.0 " material="Iron"  
+       comment="SEG block slab with beam pipe punching through" />
+
+  <box name="SEH0" X_Y_Z="20.0  20.0 33.0 " material="Air"  
+       comment="SEG block hole with beam pipe punching through" />
+
+  <tubs name="SEH1" Rio_Z="0.0 1.90 33.0" material="TaggerVacuum" 
+        comment="beam pipe insert in SEG block" />
+
+  <tubs name="SEH2" Rio_Z="1.75 1.90 33.0" material="Iron"
+        comment="wall of beam pipe insert in SEG block" />
+
+  <pgon name="SEH3" segments="4" profile="-45 360" unit_angle="deg" material="Iron"
+        comment="packed iron around beam pipe insert in SEG block">
+        <polyplane Rio_Z="2.00 10.0 -14.0"/>
+        <polyplane Rio_Z="2.00 10.0 +14.0"/>
+  </pgon>
+
+  <composition name="SEG_with_pipe" envelope="SEG0">
+        <posXYZ volume="SEG_hole_with_pipe" X_Y_Z="0.0 -45.0 0.0"/>
+  </composition>
+
+  <composition name="SEG_hole_with_pipe" envelope="SEH0">
+        <posXYZ volume="SEG_hole_pipe" />
+        <posXYZ volume="SEH3" />
+  </composition>
+
+  <composition name="SEG_hole_pipe" envelope="SEH1">
+        <posXYZ volume="SEH2" />
+  </composition>
 
 
 <!-- ====== Iron Dump ====== -->
 
   <composition name="IronDump" envelope="DIRN">
-            <posXYZ volume="BDhole" X_Y_Z=" 0.0  -45.0  -165.1 " />
+            <posXYZ volume="BDhole" X_Y_Z=" 0.0  -45.0  -201.0 " />
   </composition>
 
 
-  <box name="DIRN" X_Y_Z="528.32  450.0  528.32" material="Iron"
-         				comment="Dump Iron House" />
+  <box name="DIRN" X_Y_Z="528.0  450.0  600.0" material="Iron"
+       comment="Dump Iron House" />
 
 
   <composition name="BDhole" envelope="BSYV">
@@ -189,7 +248,7 @@
 
 
   <box name="BSYV" X_Y_Z="66.04   66.04  198.12" material="Air"
-         				comment="Air volume for the iron dump" />
+                     comment="Air volume for the iron dump" />
 
   <tubs name="WINT" Rio_Z="2.48  3.66   12.7" material="Aluminum" comment="Win Section Tube"/> 
 

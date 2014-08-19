@@ -84,8 +84,8 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       thyMS = rhos*sin(phis)
       cos45 = 1/sqrt(2d0)
       rotate(1,1) = 0
-      rotate(1,2) = cos45			!point (1,0,0) along beam
-      rotate(1,3) = -cos45			!point (0,1,1) vertically
+      rotate(1,2) = cos45         !point (1,0,0) along beam
+      rotate(1,3) = -cos45        !point (0,1,1) vertically
       rotate(2,1) = 0
       rotate(2,2) = cos45
       rotate(2,3) = cos45

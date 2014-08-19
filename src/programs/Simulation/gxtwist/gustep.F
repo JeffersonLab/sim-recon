@@ -38,15 +38,14 @@
       character*4 chfrom
       save chfrom
       data chfrom/'NULL'/
-      real rnd(100)
 
-      real vertx(3),tofgx,ubuf(99),xint(3,999)
+      real vertx(3),tofgx,ubuf(99)
       integer ntbeamx,nttargx,nubuf
 
       integer ptype
       real xin(4),xout(4),pin(5),pout(5),dEsum,x0(4),p0(5),p1(5),ppol
       common /nt1/ ptype,xin,xout,pin,pout,dEsum,x0,p0,p1,ppol
-      character*80 ntform
+      character*180 ntform
       parameter (ntform='kind:i,xin(4):r,xout(4):r,'
      +                //'pin(5):r,pout(5):r,dEsum:r,'
      +                //'x0(4):r,p0(5):r,p1(5):r,ppol:r')
@@ -156,11 +155,11 @@ c     endif
 
 * Inside sensitive medium: accumulate info about track segment
 
-      if (ISTOP.ne.0) then		! particle stops
+      if (ISTOP.ne.0) then           ! particle stops
         continue
-      elseif (INWVOL.eq.2) then		! particle exits current volume
+      elseif (INWVOL.eq.2) then      ! particle exits current volume
         continue
-      elseif (INWVOL.eq.1) then		! particle enters new volume
+      elseif (INWVOL.eq.1) then      ! particle enters new volume
         ptype = ipart
         xin(1) = VECT(1)
         xin(2) = VECT(2)
