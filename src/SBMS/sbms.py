@@ -471,8 +471,8 @@ def AddJANA(env):
 ##################################
 def AddHDDS(env):
 	hdds_home = os.getenv('HDDS_HOME', 'hdds')
-	env.AppendUnique(CPPPATH = ["%s/src" % hdds_home])
-	env.AppendUnique(LIBPATH = ["%s/lib/%s" % (hdds_home, env['OSNAME'])])
+	env.AppendUnique(CPPPATH = ["%s/%s/src" % (hdds_home, env['OSNAME'])])
+	env.AppendUnique(LIBPATH = ["%s/%s/lib" % (hdds_home, env['OSNAME'])])
 
 
 ##################################
@@ -480,6 +480,7 @@ def AddHDDS(env):
 ##################################
 def AddHDDM(env):
 	env.AppendUnique(LIBS = 'HDDM')
+	Add_xstream(env)
 
 
 ##################################
@@ -492,7 +493,6 @@ def AddDANA(env):
 	AddCCDB(env)
 	AddHDDS(env)
 	AddXERCES(env)
-	Add_xstream(env)
 	AddEVIO(env)
 	DANA_LIBS  = "DANA ANALYSIS PID TAGGER TRACKING START_COUNTER"
 	DANA_LIBS += " CERE RICH CDC TRIGGER"
