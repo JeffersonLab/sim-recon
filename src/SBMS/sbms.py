@@ -557,13 +557,27 @@ def AddCODAChannels(env):
 
 	# Only add codaChannels library if CODA is set
 	coda = os.getenv('CODA')
-	evioroot = os.getenv('EVIOROOT')
-	etroot = os.getenv('ETROOT')
-	if(coda!=None and evioroot!=None and etroot!=None) :
+	arch = os.getenv('ARCH')
+	if(coda != None) :
 		env.AppendUnique(CXXFLAGS = ['-DHAVE_CODACHANNELS'])
-		env.AppendUnique(CPPPATH = ['%s/include' % coda])
-		env.AppendUnique(LIBPATH = ['%s/lib' % coda])
+		env.AppendUnique(CPPPATH = ['%s/%s/include' % (coda,arch)])
+		env.AppendUnique(LIBPATH = ['%s/%s/lib' % (coda,arch)])
 		env.AppendUnique(LIBS=['codaChannels'])
+
+
+##################################
+# CodaObjects
+##################################
+def AddCODAObjects(env):
+
+	# Only add codaObject library if CODA is set
+	coda = os.getenv('CODA')
+	arch = os.getenv('ARCH')
+	if(coda != None) :
+		env.AppendUnique(CXXFLAGS = ['-DHAVE_CODAOBJECTS'])
+		env.AppendUnique(CPPPATH = ['%s/%s/include' % (coda,arch)])
+		env.AppendUnique(LIBPATH = ['%s/%s/lib' % (coda,arch)])
+		env.AppendUnique(LIBS=['codaObject'])
 
 
 ##################################
