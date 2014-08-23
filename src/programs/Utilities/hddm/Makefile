@@ -48,33 +48,33 @@ mkdirs:
 	mkdir -p $(OBJDIR) $(BINDIR)
 
 install: xml-xml hddm-schema schema-hddm mkdirs $(BINARIES)
-	mkdir -p $(HALLD_MY)/bin
-	cp -v hddm-schema schema-hddm xml-xml $(HALLD_MY)/bin
-	mkdir -p $(HALLD_MY)/bin/$(BMS_OSNAME)
-	cp -v $(BINARIES) $(HALLD_MY)/bin/$(BMS_OSNAME)
+	mkdir -p $(HALLD_MY)/$(BMS_OSNAME)/bin
+	cp -v hddm-schema schema-hddm xml-xml $(HALLD_MY)/$(BMS_OSNAME)/bin
+	mkdir -p $(HALLD_MY)/$(BMS_OSNAME)/bin
+	cp -v $(BINARIES) $(HALLD_MY)/$(BMS_OSNAME)/bin
 
 $(BINDIR)/xml-hddm: xml-hddm.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o $(OBJDIR)/md5.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/include -o $@ $^ \
-	-L$(HALLD_MY)/lib/$(BMS_OSNAME) \
-	-L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lxstream \
+	-I$(HALLD_HOME)/$(BMS_OSNAME)/include -o $@ $^ \
+	-L$(HALLD_MY)/$(BMS_OSNAME)/lib \
+	-L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 $(BINDIR)/hddm-xml: hddm-xml.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o $(OBJDIR)/md5.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/include -o $@ $^ \
-	-L$(HALLD_MY)/lib/$(BMS_OSNAME) \
-	-L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lxstream -lbz2 -lz \
+	-I$(HALLD_HOME)/$(BMS_OSNAME)/include -o $@ $^ \
+	-L$(HALLD_MY)/$(BMS_OSNAME)/lib \
+	-L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lxstream -lbz2 -lz \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 $(BINDIR)/hddm-c: hddm-c.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o $(OBJDIR)/md5.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/include -o $@ $^ \
+	-I$(HALLD_HOME)/$(BMS_OSNAME)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 $(BINDIR)/hddm-cpp: hddm-cpp.cpp $(OBJDIR)/XString.o $(OBJDIR)/XParsers.o $(OBJDIR)/md5.o
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/include -o $@ $^ \
+	-I$(HALLD_HOME)/$(BMS_OSNAME)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 $(BINDIR)/hddmcat: hddmcat.cpp
@@ -84,7 +84,7 @@ test: $(BINDIR)/hddm-c $(BINDIR)/hddm-cpp $(BINDIR)/hddm-xml test.xml
 	hddm-c test.xml
 	hddm-cpp test.xml
 	$(CPP) $(LD_FLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/include -o testhddm -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
+	-I$(HALLD_HOME)/$(BMS_OSNAME)/include -o testhddm -L$(HALLD_HOME)/lib/$(BMS_OSNAME) \
 	testhddm.cpp hddm_v.c hddm_v.cpp -lxstream $(LIBXDR) -lz -lbz2
 	./testhddm
 	hddm-xml test.hddm
@@ -94,11 +94,11 @@ test: $(BINDIR)/hddm-c $(BINDIR)/hddm-cpp $(BINDIR)/hddm-xml test.xml
 
 $(OBJDIR)/%.o: %.cpp
 	$(CPP) $(CXXFLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/include -c -o $@ $^ 
+	-I$(HALLD_HOME)/$(BMS_OSNAME)/include -c -o $@ $^ 
 
 $(OBJDIR)/%.o: %.c
 	$(CPP) $(CXXFLAGS) -I$(HALLD_MY)/include -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/include -c -o $@ $^ 
+	-I$(HALLD_HOME)/$(BMS_OSNAME)/include -c -o $@ $^ 
 
 clean:
 	/bin/rm -f $(OBJDIR)/*.o core *.depend
