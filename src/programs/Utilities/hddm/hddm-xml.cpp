@@ -2,6 +2,11 @@
  *  hddm-xml :	tool that reads in a HDDM document (Hall D Data Model)
  *		and translates it into plain-text xml.
  *
+ *  Version 1.3 - Richard Jones, July 2014.
+ *  - Added support for input hddm streams with additional features
+ *    provided through the c++ API, including on-the-fly compression with
+ *    zlib and bzlib2, and per-record crc32 integrity checks.
+ *
  *  Version 1.2 - Richard Jones, December 2005.
  *  - Updated code to use STL strings and vectors instead of old c-style
  *    pre-allocated arrays and strXXX functions.
@@ -54,6 +59,7 @@
 #include <xstream/z.h>
 #include <xstream/bz.h>
 #include <xstream/xdr.h>
+#include <xstream/digest.h>
 
 #include <iostream>
 #include <fstream>
@@ -78,8 +84,68 @@ class XMLmaker
    ~XMLmaker() {};
 
    void writeXML(const XString& s);
-   void constructXML(xstream::xdr::istream& ifx, DOMElement* el,
+   void constructXML(xstream::xdr::istream *ifx, DOMElement* el,
                      int size, int depth);
+};
+
+class istreambuffer : public std::streambuf {
+ public:
+   istreambuffer(char* buffer, std::streamsize bufferLength) {
+      setg(buffer, buffer, buffer + bufferLength);
+   }
+
+   std::streampos tellg() {
+      return gptr() - eback();
+   }
+
+   void seekg(std::streampos pos) {
+      reset();
+      gbump(pos);
+   }
+
+   int size() {
+      return egptr() - gptr();
+   }
+
+   void reset() {
+      char *gbegin = eback();
+      char *gend = egptr();
+      setg(gbegin, gbegin, gend);
+   }
+
+   char *getbuf() {
+      return eback();
+   }
+};
+
+class ostreambuffer : public std::streambuf {
+ public:
+   ostreambuffer(char* buffer, std::streamsize bufferLength) {
+      setp(buffer, buffer + bufferLength);
+   }
+
+   std::streampos tellp() {
+      return pptr() - pbase();
+   }
+
+   void seekp(std::streampos pos) {
+      reset();
+      pbump(pos);
+   }
+
+   int size() {
+      return pptr() - pbase();
+   }
+
+   void reset() {
+      char *pbegin = pbase();
+      char *pend = epptr();
+      setp(pbegin, pend);
+   }
+
+   char *getbuf() {
+      return pbase();
+   }
 };
 
 void usage()
@@ -248,39 +314,12 @@ int main(int argC, char* argV[])
    builder.writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
    builder.writeXML(xmlHeader);
 
-   // The original code below worked by allocating memory and using
-   // it to back a istringstream object and then use the istringstream
-   // as the streambuf for an xstream::xdr::istream. Data is read from
-   // the file into the allocated memory and extracted using the 
-   // xstream::xdr::istream which handles any byte swapping or other
-   // low level formatting.
-   //
-   // The system seemed to work fine for a long time, but then suddenly
-   // stopped working altogether on Mac OS X (I'm using version 10.9.3).
-   // It turns out that the pubsetbuf() method does not seem to set the
-   // the number of valid characters in the buffer. The documentation
-   // actually says that it is implementation-specific how the values
-   // passed into pubsetbuf are handled. The istringstream documentation
-   // doesn't say anything about it so I'm left to assume that they 
-   // changed this at some point. Possibly, because it is actually a
-   // stringbuf, the Mac OS X implementation decided to start calculating
-   // the string length rather than just assume event_buffer_size bytes
-   // are valid(??)
-   // At any rate, the issue was overcome by explicity creating
-   // a string object from the binary data for every read and replacing
-   // the contents of the iss istringstream with it. This is far less
-   // efficient nor is it as elegant as the original solution (an extra
-   // copy of the input data is always suffered now). At least it works
-   // though. Lines added to implement this fix are marked with a 
-   // "8/8/2014 DL" comment.
-   //
-   //   8/8/2014 D. Lawrence
-   
    int event_buffer_size;
    char *event_buffer = new char[event_buffer_size = 1000000];
-   std::istringstream iss;
-   iss.rdbuf()->pubsetbuf(event_buffer,event_buffer_size);
-   xstream::xdr::istream ifx(iss.rdbuf());
+   istreambuffer *isbuf = new istreambuffer(event_buffer,event_buffer_size);
+   xstream::xdr::istream *ifx = new xstream::xdr::istream(isbuf);
+   int integrity_check_mode = 0;
+   int compression_mode = 0;
    while (reqcount && ifs->good())
    {
       DOMNodeList* contList = rootEl->getChildNodes();
@@ -290,9 +329,8 @@ int main(int argC, char* argV[])
       if (ifs->eof()) {
          break;
       }
-      iss.str(std::string(event_buffer,4)); // 8/8/2014 DL
-      iss.seekg(0);
-      ifx >> tsize;
+      isbuf->reset();
+      *ifx >> tsize;
 #ifdef VERBOSE_HDDM_LOGGING
       XString tnameS(rootEl->getTagName());
       std::cerr << "hddm-xml : tag " << S(tnameS)
@@ -306,43 +344,99 @@ int main(int argC, char* argV[])
       else if (tsize == 1) {
          int size, format, flags;
          ifs->read(event_buffer+4,4);
-         iss.str(std::string(event_buffer+4,4)); // 8/8/2014 DL
-         ifx >> size;
+         *ifx >> size;
          ifs->read(event_buffer+8,size);
-         iss.str(std::string(event_buffer+8,size)); // 8/8/2014 DL
-         ifx >> format >> flags;
-         if (size == 8 && format == 0 && flags == 0x00) {
-            continue;
+         *ifx >> format >> flags;
+         int compression_flags = flags & 0xf0;
+         int integrity_flags = flags & 0x0f;
+         if (size == 8 && format == 0 && compression_flags == 0x00) {
+            if (compression_mode != 0) {
+               std::cerr << "hddm-xml error: compression disabled in"
+                            " mid-stream, this stream is no longer readable."
+                         << std::endl;
+               break;
+            }
          }
-         else if (size == 8 && format == 0 && flags == 0x10) {
-            xstream::z::istreambuf *zin_sb;
-            zin_sb = new xstream::z::istreambuf(ifs->rdbuf());
-            ifs->rdbuf(zin_sb);
-            continue;
+         else if (size == 8 && format == 0 && compression_flags == 0x10) {
+            if (compression_mode == 0) {
+               compression_mode = compression_flags;
+               xstream::z::istreambuf *zin_sb;
+               zin_sb = new xstream::z::istreambuf(ifs->rdbuf());
+               ifs->rdbuf(zin_sb);
+            }
+            else if (compression_mode != compression_flags) {
+               std::cerr << "hddm-xml error: compression mode changed in"
+                            " mid-stream, this stream is no longer readable."
+                         << std::endl;
+               break;
+            }
          }
-         else if (size == 8 && format == 0 && flags == 0x20) {
-            xstream::bz::istreambuf *bzin_sb;
-            bzin_sb = new xstream::bz::istreambuf(ifs->rdbuf());
-            ifs->rdbuf(bzin_sb);
-            continue;
+         else if (size == 8 && format == 0 && compression_flags == 0x20) {
+            if (compression_mode == 0) {
+               compression_mode = compression_flags;
+               xstream::bz::istreambuf *bzin_sb;
+               bzin_sb = new xstream::bz::istreambuf(ifs->rdbuf());
+               ifs->rdbuf(bzin_sb);
+            }
+            else if (compression_mode != compression_flags) {
+               std::cerr << "hddm-xml error: compression mode changed in"
+                            " mid-stream, this stream is no longer readable."
+                         << std::endl;
+               break;
+            }
          }
          else {
+            std::cerr << "hddm-xml error: unrecognized stream compression"
+                         " encountered, this stream is no longer readable."
+                      << std::endl;
             break;
          }
+         if (size == 8 && format == 0 && integrity_flags == 0x0) {
+            integrity_check_mode = 0;
+         }
+         else if (size == 8 && format == 0 && integrity_flags == 0x1) {
+            integrity_check_mode = 1;
+         }
+         else {
+            std::cerr << "hddm-xml error: unrecognized stream modifier"
+                         " encountered, this stream is no longer readable."
+                      << std::endl;
+            break;
+         }
+         continue;
       }
       else if (tsize+4 > event_buffer_size) {
+         delete ifx;
+         delete isbuf;
          char *new_buffer = new char[event_buffer_size = tsize+1000];
-         iss.rdbuf()->pubsetbuf(new_buffer,event_buffer_size);
+         isbuf = new istreambuffer(new_buffer,event_buffer_size);
+         ifx = new xstream::xdr::istream(isbuf);
          memcpy(new_buffer,event_buffer,4);
-         iss.str(std::string(new_buffer, event_buffer_size)); // 8/8/2014 DL
-         iss.seekg(0);
-         ifx >> tsize;
+         *ifx >> tsize;
          delete event_buffer;
          event_buffer = new_buffer;
       }
       ifs->read(event_buffer+4,tsize);
-      iss.str(std::string(event_buffer+4,tsize)); // 8/8/2014 DL
       --reqcount;
+
+      if (integrity_check_mode == 1) {
+         char crcbuf[10];
+         istreambuffer sbuf(crcbuf,10);
+         xstream::xdr::istream xstr(&sbuf);
+         unsigned int recorded_crc;
+         ifs->read(crcbuf,4);
+         xstr >> recorded_crc;
+         xstream::digest::crc32 crc;
+         std::ostream out(&crc);
+         out.write(event_buffer,tsize+4);
+         out.flush();
+         if (crc.digest() != recorded_crc) {
+            std::cerr << "hddm-xml error: crc32 check error on input stream"
+                         " encountered, this stream is no longer readable."
+                      << std::endl;
+            break;
+         }
+      }
 
       for (int c = 0; c < contLength; c++)
       {
@@ -352,7 +446,7 @@ int main(int argC, char* argV[])
          {
             DOMElement* contEl = (DOMElement*) cont;
             int size;
-            ifx >> size;
+            *ifx >> size;
 #ifdef VERBOSE_HDDM_LOGGING
             XString cnameS(contEl->getTagName());
             std::cerr << "hddm-xml : top-level tag " << S(cnameS)
@@ -411,7 +505,7 @@ void XMLmaker::writeXML(const XString& s)
  * at entry the buffer pointer bp points the the word after the word count
  */
 
-void XMLmaker::constructXML(xstream::xdr::istream& ifx,
+void XMLmaker::constructXML(xstream::xdr::istream *ifx,
                             DOMElement* el, int size, int depth)
 {
    XString tagS(el->getTagName());
@@ -421,7 +515,7 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
              atoi(S(repS));
    if (explicit_repeat_count && rep > 1)
    {
-      ifx >> rep;
+      *ifx >> rep;
       size -= 4;
    }
 
@@ -444,49 +538,49 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
          if (typeS == "int")
          {
             int32_t value;
-	    ifx >> value;
+	    *ifx >> value;
             size -= 4;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
 	 else if (typeS == "long")
          {
             int64_t value;
-            ifx >> value;
+            *ifx >> value;
             size -= 8;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "float")
          {
             float value;
-            ifx >> value;
+            *ifx >> value;
             size -= 4;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "double")
          {
             double value;
-            ifx >> value;
+            *ifx >> value;
             size -= 8;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "boolean")
          {
             bool_t value;
-            ifx >> value;
+            *ifx >> value;
             size -= 4;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "Particle_t")
          {
             int32_t value;
-            ifx >> value;
+            *ifx >> value;
             size -= 4;
             attrStr << " " << nameS << "=\"" << ParticleType((Particle_t)value) << "\"";
          }
          else if (typeS == "string" || typeS == "anyURI")
          {
             std::string value;
-            ifx >> value;
+            *ifx >> value;
             int strsize = value.size();
             size -= strsize + 4 + ((strsize % 4)? 4-(strsize % 4) : 0);
             attrStr << " " << nameS << "=\"" << value << "\"";
@@ -521,7 +615,7 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
          {
             DOMElement* contEl = (DOMElement*) cont;
             int csize;
-            ifx >> csize;
+            *ifx >> csize;
             size -= 4;
 #ifdef VERBOSE_HDDM_LOGGING
             XString cnameS(contEl->getTagName());
