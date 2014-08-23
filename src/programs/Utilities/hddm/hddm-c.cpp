@@ -366,7 +366,47 @@ int main(int argC, char* argV[])
 								<< std::endl
                                                                 << std::endl
          << "#include \"" << hname << "\"" 			<< std::endl
-								<< std::endl;
+								<< std::endl
+         << "int hddm_" + classPrefix + "_buffersize = 1000000;"
+								<< std::endl
+         << "int hddm_" + classPrefix + "_stringsize = 1000000;"
+								<< std::endl
+         << "int hddm_" + classPrefix + "_headersize = 1000000;"
+								<< std::endl
+								<< std::endl
+         << "void set_" + classPrefix + "_HDDM_buffersize(int size)"
+								<< std::endl
+         << "{"							<< std::endl
+         << "   hddm_" + classPrefix + "_buffersize = size;"	<< std::endl
+         << "}"							<< std::endl
+								<< std::endl
+         << "int get_" + classPrefix + "_HDDM_buffersize()"	<< std::endl
+         << "{"							<< std::endl
+         << "   return hddm_" + classPrefix + "_buffersize;"	<< std::endl
+         << "}"							<< std::endl
+								<< std::endl
+         << "void set_" + classPrefix + "_HDDM_stringsize(int size)"
+								<< std::endl
+         << "{"							<< std::endl
+         << "   hddm_" + classPrefix + "_stringsize = size;"	<< std::endl
+         << "}"							<< std::endl
+								<< std::endl
+         << "int get_" + classPrefix + "_HDDM_stringsize()"	<< std::endl
+         << "{"							<< std::endl
+         << "   return hddm_" + classPrefix + "_stringsize;"	<< std::endl
+         << "}"							<< std::endl
+								<< std::endl
+         << "void set_" + classPrefix + "_HDDM_headersize(int size)"
+								<< std::endl
+         << "{"							<< std::endl
+         << "   hddm_" + classPrefix + "_headersize = size;"	<< std::endl
+         << "}"							<< std::endl
+								<< std::endl
+         << "int get_" + classPrefix + "_HDDM_headersize()"	<< std::endl
+         << "{"							<< std::endl
+         << "   return hddm_" + classPrefix + "_headersize;"	<< std::endl
+         << "}"							<< std::endl;
+
    builder.constructGroup(rootEl);
 
    builder.hFile						<< std::endl
@@ -419,6 +459,8 @@ int main(int argC, char* argV[])
 	 << "   char* filename;"				<< std::endl
          << "   XDR* xdrs;"					<< std::endl
 	 << "   popNode* popTop;"				<< std::endl
+	 << "   char* iobuffer;"				<< std::endl
+	 << "   int iobuffer_size;"				<< std::endl
 	 << "} " << classPrefix << "_iostream_t;"		<< std::endl
 								<< std::endl
 	 << "#endif /* HDDM_STREAM_INPUT */"			<< std::endl;
@@ -451,7 +493,17 @@ int main(int argC, char* argV[])
    builder.hFile						<< std::endl
 	 << "#ifdef __cplusplus"				<< std::endl
 	 << "extern \"C\" {"					<< std::endl
-	 << "#endif"						<< std::endl;
+	 << "#endif"						<< std::endl
+								<< std::endl
+         << "void set_" + classPrefix + "_hddm_buffersize(int size);"
+								<< std::endl
+         << "int get_" + classPrefix + "_hddm_buffersize();"	<< std::endl
+         << "void set_" + classPrefix + "_hddm_stringsize(int size);"
+								<< std::endl
+         << "int get_" + classPrefix + "_hddm_stringsize();"	<< std::endl
+         << "void set_" + classPrefix + "_hddm_headersize(int size);"
+								<< std::endl
+         << "int get_" + classPrefix + "_hddm_headersize();"	<< std::endl;
    builder.constructReadFunc(rootEl);
    builder.constructSkipFunc();
    builder.constructFlushFunc(rootEl);
@@ -977,16 +1029,6 @@ void CodeBuilder::constructUnpackers()
             << "   {"						<< std::endl
 	    << "       return this1;"				<< std::endl
             << "   }"						<< std::endl
-            << "   else if (size == 1)"				<< std::endl
-            << "   {"						<< std::endl
-            << "      fprintf(stderr,\"hddm error - \""		<< std::endl
-            << "      \"compressed data found in input stream.\\n\"" << std::endl
-            << "      \"Compression/decompression is not supported \"" << std::endl
-            << "      \"by the hddm c i/o interface.\\n\");"	<< std::endl
-            << "      fprintf(stderr,\"You must use the c++ \""	<< std::endl
-            << "      \"interface to read this file.\\n\");"	<< std::endl
-            << "      exit(9);"					<< std::endl
-            << "   }"						<< std::endl
             << "   else if (size > 0)"				<< std::endl
             << "   {"						<< std::endl
             << "      off_t start = xdr_getpos64(xdrs);"	<< std::endl;
@@ -1092,13 +1134,15 @@ void CodeBuilder::constructUnpackers()
          {
             cFile << "         this1->" << nameStr << " = 0;"	 << std::endl
                   << "         xdr_string(xdrs, &this1->"
-	          << nameStr << ", 1000000);"			 << std::endl;
+	          << nameStr << ", hddm_" + classPrefix + "_stringsize);"
+								 << std::endl;
          }
          else if (typeS == "anyURI")
          {
             cFile << "         this1->" << nameStr << " = 0;"	 << std::endl
                   << "         xdr_string(xdrs, &this1->"
-	          << nameStr << ", 1000000);"			 << std::endl;
+	          << nameStr << ", hddm_" + classPrefix + "_stringsize);"
+								 << std::endl;
          }
          else
          {
@@ -1150,8 +1194,51 @@ void CodeBuilder::constructReadFunc(DOMElement* topEl)
 	 << topType << "* read_" << topT
 	 << "(" << classPrefix << "_iostream_t* fp" << ")"		<< std::endl
 	 << "{"								<< std::endl
+         << "   off_t base;"	<< std::endl
+         << "   unsigned int size;"	<< std::endl
+         << "   xdrmem_create(fp->xdrs,fp->iobuffer,fp->iobuffer_size,XDR_DECODE);"
+									<< std::endl
+         << "   base = xdr_getpos64(fp->xdrs);"				<< std::endl
+         << "   if (fread(fp->iobuffer,1,4,fp->fd) != 4 || ! xdr_u_int(fp->xdrs,&size))"
+									<< std::endl
+         << "   {"							<< std::endl
+         << "      xdr_destroy(fp->xdrs);"				<< std::endl
+         << "      return 0;"						<< std::endl
+         << "   }"							<< std::endl
+         << "   else if (size == 1)"					<< std::endl
+         << "   {"							<< std::endl
+         << "      fprintf(stderr,\"hddm error - \""			<< std::endl
+         << "      \"stream compression and/or integrity checks"
+                   " found in input stream.\\n\""			<< std::endl
+         << "      \"These features are not supported by the"
+                   " hddm c i/o interface.\\n\");"			<< std::endl
+         << "      fprintf(stderr,\"You must use the c++ interface"
+                   " to read this file.\\n\");"				<< std::endl
+         << "      exit(9);"						<< std::endl
+         << "   }"							<< std::endl
+         << "   else if (size + 4 > fp->iobuffer_size)"			<< std::endl
+         << "   {"							<< std::endl
+         << "      xdr_destroy(fp->xdrs);"				<< std::endl
+         << "      char *newbuf = (char*)malloc(fp->iobuffer_size *= 2);"
+									<< std::endl
+         << "      memcpy(newbuf,fp->iobuffer,4);"			<< std::endl
+         << "      free(fp->iobuffer);"					<< std::endl
+         << "      fp->iobuffer = newbuf;"				<< std::endl
+         << "      xdrmem_create(fp->xdrs,fp->iobuffer,fp->iobuffer_size,XDR_DECODE);"
+									<< std::endl
+         << "      base = xdr_getpos64(fp->xdrs);"				<< std::endl
+         << "   }"							<< std::endl
+         << "   if (fread(fp->iobuffer+4,1,size,fp->fd) != size)"	<< std::endl
+         << "   {"							<< std::endl
+         << "      fprintf(stderr,\"hddm error - \""			<< std::endl
+         << "      \"read failed on input hddm stream, \""		<< std::endl
+         << "      \"cannot continue.\\n\");"				<< std::endl
+         << "      exit(9);"						<< std::endl
+         << "   }"							<< std::endl
+         << "   xdr_setpos64(fp->xdrs,base);"				<< std::endl
          << "   " << topType << "* nextEvent = " 
 	 << "unpack_" << topT << "(fp->xdrs,fp->popTop);"		<< std::endl
+         << "   xdr_destroy(fp->xdrs);"					<< std::endl
 	 << "   return (nextEvent == HDDM_NULL)? 0 : nextEvent;"	<< std::endl
 	 << "}"								<< std::endl;
 }
@@ -1172,29 +1259,44 @@ void CodeBuilder::constructSkipFunc()
          << "   for (skipped=0; skipped < nskip; ++skipped)"		<< std::endl
          << "   {"							<< std::endl
          << "      unsigned int size;"					<< std::endl
-         << "      if (! xdr_u_int(fp->xdrs,&size))"			<< std::endl
+         << "      xdrmem_create(fp->xdrs,fp->iobuffer,fp->iobuffer_size,XDR_DECODE);"
+									<< std::endl
+         << "      if (fread(fp->iobuffer,1,4,fp->fd) != 4 || ! xdr_u_int(fp->xdrs,&size))"
+									<< std::endl
          << "      {"							<< std::endl
-         << "         return skipped;"					<< std::endl
+         << "         break;"						<< std::endl
          << "      }"							<< std::endl
          << "      else if (size == 1)"					<< std::endl
          << "      {"							<< std::endl
          << "         fprintf(stderr,\"hddm error - \""			<< std::endl
-         << "         \"compressed data found in input stream.\\n\"" 	<< std::endl
-         << "         \"Compression/decompression is not supported \"" 	<< std::endl
-         << "         \"by the hddm c i/o interface.\\n\");"		<< std::endl
-         << "         fprintf(stderr,\"You must use the c++ \""		<< std::endl
-         << "         \"interface to read this file.\\n\");"		<< std::endl
+         << "         \"stream compression and/or integrity "
+                      "checks found in input stream.\\n\""		<< std::endl
+         << "         \"These features are not supported "
+                      "by the hddm c i/o interface.\\n\");"		<< std::endl
+         << "         fprintf(stderr,\"You must use the c++ "
+         <<           "interface to read this file.\\n\");"		<< std::endl
          << "         exit(9);"						<< std::endl
          << "      }"							<< std::endl
-         << "      else if (size > 0)"					<< std::endl
+         << "      else if (size + 4 > fp->iobuffer_size)"		<< std::endl
          << "      {"							<< std::endl
-         << "         off_t start = xdr_getpos64(fp->xdrs);"		<< std::endl
-         << "         if (xdr_setpos64(fp->xdrs,start+size) != 0) {"	<< std::endl
-         << "            fp->lerrno = errno;"				<< std::endl
-         << "            return skipped;"				<< std::endl
-         << "         }"						<< std::endl
+         << "         xdr_destroy(fp->xdrs);"				<< std::endl
+         << "         char *newbuf = (char*)malloc(fp->iobuffer_size *= 2);"	
+									<< std::endl
+         << "         memcpy(newbuf,fp->iobuffer,4);"			<< std::endl
+         << "         free(fp->iobuffer);"				<< std::endl
+         << "         fp->iobuffer = newbuf;"				<< std::endl
+         << "         xdrmem_create(fp->xdrs,fp->iobuffer,fp->iobuffer_size,XDR_DECODE);"
+									<< std::endl
+         << "      }"							<< std::endl
+         << "      if (fread(fp->iobuffer+4,1,size,fp->fd) != size)"	<< std::endl
+         << "      {"							<< std::endl
+         << "         fprintf(stderr,\"hddm error - \""			<< std::endl
+         << "         \"read failed on input hddm stream, \""		<< std::endl
+         << "         \"cannot continue.\\n\");"			<< std::endl
+         << "         exit(9);"						<< std::endl
          << "      }"							<< std::endl
          << "   }"							<< std::endl
+         << "   xdr_destroy(fp->xdrs);"					<< std::endl
          << "   return skipped;"					<< std::endl
          << "}"								<< std::endl;
 }
@@ -1264,8 +1366,20 @@ void CodeBuilder::constructPackers()
       }
       cFile << "   unsigned int size=0;"			<< std::endl
             << "   off_t base,start,end;"			<< std::endl
-            << "   base = xdr_getpos64(xdrs);"			<< std::endl
-            << "   xdr_u_int(xdrs,&size);"			<< std::endl
+            << "   base = xdr_getpos64(xdrs);"			<< std::endl;
+      if (tagT.find("_HDDM") != tagT.npos)
+      {
+         cFile
+            << "   if (base == -1)"				<< std::endl
+            << "   {"						<< std::endl
+            << "      fprintf(stderr,\"hddm error - \""		<< std::endl
+            << "      \"stream offset request failed "
+                      "on output hddm stream, \""		<< std::endl
+            << "      \"cannot continue.\\n\");"		<< std::endl
+            << "      return -1;"					<< std::endl
+            << "   }"						<< std::endl;
+      }
+      cFile << "   xdr_u_int(xdrs,&size);"			<< std::endl
             << "   start = xdr_getpos64(xdrs);"			<< std::endl
     								<< std::endl;
       if (rep > 1)
@@ -1341,13 +1455,15 @@ void CodeBuilder::constructPackers()
          else if (typeS == "string")
          {
             cFile << "      xdr_string(xdrs,&this1->" 
-                  << nameStr << ", 1000000);"			 << std::endl;
+                  << nameStr << ", hddm_" + classPrefix + "_stringsize);"
+								 << std::endl;
             cFile << "      FREE(this1->" << nameStr << ");"	 << std::endl;
          }
          else if (typeS == "anyURI")
          {
             cFile << "      xdr_string(xdrs,&this1->" 
-                  << nameStr << ", 1000000);" 			 << std::endl;
+                  << nameStr << ", hddm_" + classPrefix + "_stringsize);"
+					 			 << std::endl;
             cFile << "      FREE(this1->" << nameStr << ");"	 << std::endl;
          }
          else
@@ -1401,12 +1517,28 @@ void CodeBuilder::constructPackers()
       }
 
       cFile << "   }"						<< std::endl
-            << "   FREE(this1);"				<< std::endl
             << "   end = xdr_getpos64(xdrs);"			<< std::endl
             << "   xdr_setpos64(xdrs,base);"			<< std::endl
-	    << "   size = end-start;"				<< std::endl
-            << "   xdr_u_int(xdrs,&size);"			<< std::endl
+	    << "   size = end-start;"				<< std::endl;
+      if (tagT.find("_HDDM") != tagT.npos)
+      {
+         cFile
+            << "   if (size + 4 > hddm_" + classPrefix + "_buffersize) {"
+								<< std::endl
+            << "      fprintf(stderr,\"hddm error - \""		<< std::endl
+            << "      \"output buffer overflow on hddm stream,"
+                      " cannot continue.\\n\");"		<< std::endl
+            << "      fprintf(stderr,\"Please increase buffer"
+                      " size using \""				<< std::endl
+            << "      \"set_" + classPrefix + "_HDDM_buffersize(s) with"
+                      " s > %d.\", hddm_" + classPrefix + "_buffersize);"
+								<< std::endl
+            << "      exit(9);"					<< std::endl
+            << "   }"						<< std::endl;
+      }
+      cFile << "   xdr_u_int(xdrs,&size);"			<< std::endl
             << "   xdr_setpos64(xdrs,end);"			<< std::endl
+            << "   FREE(this1);"				<< std::endl
             << "   return size;"				<< std::endl
             << "}"						<< std::endl;
    }
@@ -1439,10 +1571,10 @@ void CodeBuilder::constructFlushFunc(DOMElement* el)
          << "   else if (fp == 0)"				<< std::endl
          << "   {"						<< std::endl
 	 << "      XDR* xdrs = (XDR*)malloc(sizeof(XDR));"	<< std::endl
-	 << "      int max_buffer_size = 1000000;"		<< std::endl
-	 << "      char* dump = (char*)malloc(max_buffer_size);"<< std::endl
-	 << "      xdrmem_create(xdrs,dump,max_buffer_size,XDR_ENCODE);"
-	 							<< std::endl
+	 << "      char* dump = (char*)malloc(hddm_" 
+                   + classPrefix + "_buffersize);"		<< std::endl
+	 << "      xdrmem_create(xdrs,dump,hddm_" 
+                   + classPrefix + "_buffersize,XDR_ENCODE);"	<< std::endl
 	 << "      pack_" << topT << "(xdrs,this1);"		<< std::endl
 	 << "      xdr_destroy(xdrs);"				<< std::endl
 	 << "      free(xdrs);"					<< std::endl
@@ -1450,11 +1582,33 @@ void CodeBuilder::constructFlushFunc(DOMElement* el)
          << "   }"						<< std::endl
          << "   else if (fp->iomode == HDDM_STREAM_OUTPUT)"	<< std::endl
 	 << "   {"						<< std::endl
-	 << "      if (pack_" << topT << "(fp->xdrs,this1) < 0) {"
+	 << "      int size;"					<< std::endl
+         << "      xdrmem_create(fp->xdrs,fp->iobuffer,"
+                   "fp->iobuffer_size,XDR_ENCODE);"		<< std::endl
+         << "      size = pack_" + classPrefix + "_HDDM(fp->xdrs,this1);"
 								<< std::endl
-	 << "         fp->lerrno = errno;"			<< std::endl
-	 << "         return -1;"				<< std::endl
-	 << "      }"						<< std::endl
+         << "      if (size < 0)"				<< std::endl
+         << "      {"						<< std::endl
+         << "         fp->lerrno = errno;"			<< std::endl
+         << "         xdr_destroy(fp->xdrs);"			<< std::endl
+         << "         return -1;"				<< std::endl
+         << "      }"						<< std::endl
+         << "      else if (size > 0)"				<< std::endl
+         << "      {"						<< std::endl
+         << "         int wsize = fwrite(fp->iobuffer,1,size+4,fp->fd);"
+								<< std::endl
+         << "         if (wsize != size + 4)"			<< std::endl
+         << "         {"					<< std::endl
+         << "            fprintf(stderr,\"HDDM Error: error writing to \""
+								<< std::endl
+         << "                    \"output hddm file.\\n\");"	<< std::endl
+         << "            fprintf(stderr,\"%d bytes of %d "
+                                 "actually written.\\n\","	<< std::endl
+         << "                    wsize, size+4);"		<< std::endl
+         << "            exit(9);"				<< std::endl
+         << "         }"					<< std::endl
+         << "      }"						<< std::endl
+         << "      xdr_destroy(fp->xdrs);"			<< std::endl
 	 << "   }"						<< std::endl
 	 << "   return 0;"					<< std::endl
 	 << "}"							<< std::endl;
@@ -1655,7 +1809,8 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "      return 0;"					<< std::endl
 	 << "   }"						<< std::endl
 	 << "   fp->iomode = HDDM_STREAM_INPUT;"		<< std::endl
-	 << "   head = (char*)malloc(1000000);"			<< std::endl
+	 << "   head = (char*)malloc(hddm_" + classPrefix + "_headersize);"
+								<< std::endl
 	 << "   if ((fgets(head,7,fp->fd) != 0) &&"		<< std::endl
 	 << "       (strstr(head,\"<HDDM \") != head))"		<< std::endl
 	 << "   {"						<< std::endl
@@ -1669,8 +1824,22 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "        strstr(head,\"</HDDM>\") == 0;"		<< std::endl
 	 << "        p += strlen(p))"				<< std::endl
 	 << "   {"						<< std::endl
-	 << "      if ((p-head >= 999000) ||"			<< std::endl
-	 << "          (fgets(p,1000,fp->fd) == 0))"		<< std::endl
+         << "      if (p-head + 10 > hddm_" + classPrefix + "_headersize)"
+								<< std::endl
+         << "      {"						<< std::endl
+         << "         fprintf(stderr,\"HDDM Error: \");"	<< std::endl
+         << "         fprintf(stderr,\"input template model overflows \""
+								<< std::endl
+         << "         \"the hddm header input buffer, cannot continue.\\n\");"
+								<< std::endl
+         << "         fprintf(stderr,\"Please increase header"
+                      " buffer size using \""			<< std::endl
+         << "         \"set_" + classPrefix + "_HDDM_headersize(s) with "
+                      "s > %d.\\n\", hddm_" + classPrefix + "_headersize);"
+								<< std::endl
+         << "         exit(9);"					<< std::endl
+         << "      }"						<< std::endl
+         << "      if (fgets(p,1000,fp->fd) == 0)"		<< std::endl
 	 << "      {"						<< std::endl
 	 << "         break;"					<< std::endl
 	 << "      }"						<< std::endl
@@ -1691,7 +1860,8 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
          << "(char*)malloc(strlen(filename) + 1);"		<< std::endl
 	 << "   strcpy(fp->filename,filename);"			<< std::endl
 	 << "   fp->xdrs = (XDR*)malloc(sizeof(XDR));"		<< std::endl
-         << "   xdrstdio_create(fp->xdrs,fp->fd,XDR_DECODE);"	<< std::endl
+         << "   fp->iobuffer = (char*)malloc(fp->iobuffer_size"
+            " = hddm_" + classPrefix + "_buffersize);"		<< std::endl
 	 << "   return fp;"					<< std::endl
 	 << "}"							<< std::endl;
 }
@@ -1749,7 +1919,8 @@ void CodeBuilder::constructInitFunc(DOMElement* el)
 	 << "   strcpy(fp->filename,filename);"			<< std::endl
          << "   fp->popTop = 0;"				<< std::endl
 	 << "   fp->xdrs = (XDR*)malloc(sizeof(XDR));"		<< std::endl
-         << "   xdrstdio_create(fp->xdrs,fp->fd,XDR_ENCODE);"	<< std::endl
+         << "   fp->iobuffer = (char*)malloc(fp->iobuffer_size"
+            " = hddm_" + classPrefix + "_buffersize);"		<< std::endl
 	 << "   free(head);"					<< std::endl
 	 << "   return fp;"					<< std::endl
 	 << "}"							<< std::endl;
@@ -1786,6 +1957,7 @@ void CodeBuilder::constructCloseFunc(DOMElement* el)
 	 << "{"							<< std::endl
 	 << "   xdr_destroy(fp->xdrs);"				<< std::endl	
 	 << "   free(fp->xdrs);"				<< std::endl
+	 << "   free(fp->iobuffer);"				<< std::endl
 	 << "   fclose(fp->fd);"				<< std::endl	
 	 << "   free(fp->filename);"				<< std::endl	
          << "   popaway(fp->popTop);"				<< std::endl
