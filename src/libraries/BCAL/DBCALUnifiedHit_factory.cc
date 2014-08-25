@@ -237,7 +237,9 @@ jerror_t DBCALUnifiedHit_factory::evnt(JEventLoop *loop, int eventnumber) {
 
     //if we have no ADC hits, there is nothing to do with the TDC hits either
     if (hits.size()==0) {
-      cout << "DBCALUnifiedHit_factory (event " << eventnumber << "): TDC hits without ADC hits" << endl;
+		static uint64_t Nwarnings = 0;
+		if(++Nwarnings <= 10) cout << "DBCALUnifiedHit_factory (event " << eventnumber << "): TDC hits without ADC hits" << endl;
+		if(  Nwarnings == 10) cout << "DBCALUnifiedHit_factory: LAST WARNING (others will be suppressed)" <<endl;
       continue;
     }
 
