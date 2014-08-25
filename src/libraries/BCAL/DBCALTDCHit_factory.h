@@ -25,9 +25,9 @@ class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 		// these should really be taken from
 		// DBCALGeometry/DGeometry objects
 		static const int BCAL_NUM_MODULES  = 48;
-		static const int BCAL_NUM_LAYERS   =  4;
-		static const int BCAL_NUM_SECTORS  =  4;
-		static const int BCAL_MAX_CHANNELS =  1536;
+		static const int BCAL_NUM_TDC_LAYERS =  3;
+		static const int BCAL_NUM_SECTORS    =  4;
+		static const int BCAL_MAX_TDC_CHANNELS =  1152;
 
 		// overall scale factors
 		double t_scale;

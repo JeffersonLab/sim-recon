@@ -71,11 +71,15 @@ jerror_t DBCALTDCHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->layer  = digihit->layer;
 		hit->sector = digihit->sector;
 		hit->end    = digihit->end;
-		
+
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 		hit->t = t_scale * (T - GetConstant(time_offsets,digihit));
-	
+/*
+		cout << "BCAL TDC Hit: ( " << digihit->module << ", " << digihit->layer << ", "
+		     << digihit->sector << ", " << digihit->end << " )  ->  "
+		     << T << " " << GetConstant(time_offsets,digihit) << " " << hit->t << endl;
+*/			
 		hit->AddAssociatedObject(digihit);
 		
 		_data.push_back(hit);
@@ -114,11 +118,11 @@ void DBCALTDCHit_factory::FillCalibTable( map<int,cell_calib_t> &table,
     table.clear();
 
     for(int module=1; module<=BCAL_NUM_MODULES; module++) {
-	for(int layer=1; layer<=BCAL_NUM_LAYERS; layer++) {
+	    for(int layer=1; layer<=BCAL_NUM_TDC_LAYERS; layer++) {  
 	    for(int sector=1; sector<=BCAL_NUM_SECTORS; sector++) {
-		if( (channel > BCAL_MAX_CHANNELS) || (channel+1 > BCAL_MAX_CHANNELS) ) {  // sanity check
+		if( (channel > BCAL_MAX_TDC_CHANNELS) || (channel+1 > BCAL_MAX_TDC_CHANNELS) ) {  // sanity check
 		    sprintf(str, "Too many channels for BCAL table! channel=%d (should be %d)", 
-			    channel, BCAL_MAX_CHANNELS);
+			    channel, BCAL_MAX_TDC_CHANNELS);
 		    cerr << str << endl;
 		    throw JException(str);
 		}
@@ -133,9 +137,9 @@ void DBCALTDCHit_factory::FillCalibTable( map<int,cell_calib_t> &table,
     }
 
     // check to make sure that we loaded enough channels
-    if(channel != BCAL_MAX_CHANNELS) { 
+    if(channel != BCAL_MAX_TDC_CHANNELS) { 
 	sprintf(str, "Not enough channels for BCAL table! channel=%d (should be %d)", 
-		channel, BCAL_MAX_CHANNELS);
+		channel, BCAL_MAX_TDC_CHANNELS);
 	cerr << str << endl;
 	throw JException(str);
     }
@@ -156,8 +160,8 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
 		cerr << str << endl;
 		throw JException(str);
 	}
-	if( (in_layer <= 0) || (in_layer > BCAL_NUM_LAYERS)) {
-		sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_layer, BCAL_NUM_LAYERS);
+	if( (in_layer <= 0) || (in_layer > BCAL_NUM_TDC_LAYERS)) {
+		sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_layer, BCAL_NUM_TDC_LAYERS);
 		cerr << str << endl;
 		throw JException(str);
 	}
@@ -196,8 +200,8 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
 		cerr << str << endl;
 		throw JException(str);
 	}
-	if( (in_hit->layer <= 0) || (in_hit->layer > BCAL_NUM_LAYERS)) {
-		sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_hit->layer, BCAL_NUM_LAYERS);
+	if( (in_hit->layer <= 0) || (in_hit->layer > BCAL_NUM_TDC_LAYERS)) {
+		sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_hit->layer, BCAL_NUM_TDC_LAYERS);
 		cerr << str << endl;
 		throw JException(str);
 	}
@@ -238,8 +242,8 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
 		cerr << str << endl;
 		throw JException(str);
 	}
-	if( (in_digihit->layer <= 0) || (in_digihit->layer > static_cast<unsigned int>(BCAL_NUM_LAYERS))) {
-		sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_digihit->layer, BCAL_NUM_LAYERS);
+	if( (in_digihit->layer <= 0) || (in_digihit->layer > static_cast<unsigned int>(BCAL_NUM_TDC_LAYERS))) {
+		sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", in_digihit->layer, BCAL_NUM_TDC_LAYERS);
 		cerr << str << endl;
 		throw JException(str);
 	}
@@ -284,8 +288,8 @@ const double DBCALTDCHit_factory::GetConstant( const bcal_digi_constants_t &the_
 		throw JException(str);
 	}
 	if( (channel_info.bcal.layer <= 0) 
-	    || (channel_info.bcal.layer > static_cast<unsigned int>(BCAL_NUM_LAYERS))) {
-		sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", channel_info.bcal.layer, BCAL_NUM_LAYERS);
+	    || (channel_info.bcal.layer > static_cast<unsigned int>(BCAL_NUM_TDC_LAYERS))) {
+		sprintf(str, "Bad layer # requested in DBCALTDCHit_factory::GetConstant()! requested=%d , should be 1-%d", channel_info.bcal.layer, BCAL_NUM_TDC_LAYERS);
 		cerr << str << endl;
 		throw JException(str);
 	}
