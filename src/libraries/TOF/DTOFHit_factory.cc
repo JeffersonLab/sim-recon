@@ -190,7 +190,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		
 		// Look for existing hits to see if there is a match
 		// or create new one if there is no match
-		DTOFHit *hit = FindMatch(digihit->plane, hit->bar, hit->end, T);  
+		DTOFHit *hit = FindMatch(digihit->plane, digihit->bar, digihit->end, T);  
 		if(!hit){
 			hit = new DTOFHit;
 			hit->plane = digihit->plane;
