@@ -101,6 +101,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F250_NSA = 50;
 	F250_NSB = 5;
 	F250_NSPED = 4;
+	F250_EMULATION_THRESHOLD = 20;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -1141,24 +1142,59 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
 		uint32_t nsamples=samplesvector.size();
 		int32_t signalsum = 0;
+		
+		// variables to store the sample numbers
+		uint32_t sn_min = 0, sn_max = 0;
+		uint32_t min = samplesvector[sn_min];
+		uint32_t max = samplesvector[sn_max]; 
 
+		// get max and min information to decide on which algorithm to use
+		for (uint32_t c_samp=1; c_samp<nsamples; c_samp++) {
+			if (samplesvector[c_samp] > max) {
+				max = samplesvector[c_samp];
+				sn_max = c_samp;
+			}
+			if (samplesvector[c_samp] < min) {
+				min = samplesvector[c_samp];
+				sn_min = c_samp;
+			}
+		}
+		// if no signal, don't process further
+		if (max-min < F250_EMULATION_THRESHOLD) {
+			if(VERBOSE>4) evioout << " EmulateDf250PulseIntergral: object " << i << " max - min < " 
+					      << F250_EMULATION_THRESHOLD <<endl;
+			continue;
+		}
+		// if the min and max are reasonable compared to the threshold then use the requested threshold
+		// otherwise adjust it to work better.
+		uint32_t threshold = 0;
+		if (min < F250_THRESHOLD-5 && max > F250_THRESHOLD+5) {
+			threshold = F250_THRESHOLD;
+		} else {
+			threshold = (min + max)/2;
+			quality_factor = 1;
+		}
 		// find the threshold crossing
 		uint32_t first_sample_over_threshold = 0;
 		uint32_t sample_height = 0; // temporary variable
 		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
-			if(VERBOSE>5) evioout << c_samp << "  " << samplesvector[c_samp] << "  " << F250_THRESHOLD <<endl;
-			if (samplesvector[c_samp] > F250_THRESHOLD) {
+			if(VERBOSE>5) evioout << c_samp << "  " << samplesvector[c_samp] << "  " << threshold <<endl;
+			if (samplesvector[c_samp] > threshold) {
 				first_sample_over_threshold = c_samp;
 				sample_height = samplesvector[c_samp];
-				if(VERBOSE>4) evioout << " EmulateDf250PulseIntegral: object " << i << "  found value over " << F250_THRESHOLD << " at samp " 
-						      << c_samp << " with value " << samplesvector[c_samp] <<endl;
+				if(VERBOSE>4) evioout << " EmulateDf250PulseIntegral: object " << i << "  found value over " 
+					  << threshold << " at samp " << c_samp << " with value " << samplesvector[c_samp] <<endl;
 				break;
-			}
+		  	}
 		}
-		// if no threshold crossing, don't process further
-		if (first_sample_over_threshold == 0) {
-		  	if(VERBOSE>4) evioout << " EmulateDf250PulseIntegral: object " << i << " found no values over " << F250_THRESHOLD <<endl;
-			continue;
+
+		// calculate integral from relevant samples
+		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
+		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
+		if (start_sample < 0) start_sample=0;
+		if (end_sample > nsamples) end_sample=nsamples;
+		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
+		  signalsum += samplesvector[c_samp];
 		}
 
 		// create new Df250PulseIntegral object
@@ -1167,21 +1203,6 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf250PulseIntegral->slot = f250WindowRawData->slot;
 		myDf250PulseIntegral->channel = f250WindowRawData->channel;
 		myDf250PulseIntegral->itrigger = f250WindowRawData->itrigger;
-
-		// calculate integral from relevant samples
-		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
-		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
-		if (F250_NSB > first_sample_over_threshold) start_sample=0;
-		if (end_sample > nsamples) end_sample=nsamples;
-		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
-			signalsum += samplesvector[c_samp];
-		}
-		// if(VERBOSE>4) evioout << "Attempting to open \""<<this->source_name<<"\" as EVIO file..." <<endl;
-		// if (end_sample-start_sample<50) {
-		//   printf("%3i  %3i  %3i  %3i  %3i\n",
-		//  	 first_sample_over_threshold,start_sample,end_sample,end_sample-start_sample,sample_height);
-		// }
-		
 		myDf250PulseIntegral->pulse_number = pulse_number;
 		myDf250PulseIntegral->quality_factor = quality_factor;
 		myDf250PulseIntegral->integral = signalsum;
@@ -1263,64 +1284,104 @@ void JEventSource_EVIO::EmulateDf250PulseTime(vector<JObject*> &wrd_objs, vector
 		const vector<uint16_t> &samplesvector = f250WindowRawData->samples;
 		uint32_t nsamples=samplesvector.size();
 
+		// variables to store the sample numbers
+		uint32_t sn_min = 0, sn_max = 0;
+		uint32_t min = samplesvector[sn_min];
+		uint32_t max = samplesvector[sn_max]; 
+
+		// get max and min information to decide on which algorithm to use
+		for (uint32_t c_samp=1; c_samp<nsamples; c_samp++) {
+			if (samplesvector[c_samp] > max) {
+				max = samplesvector[c_samp];
+				sn_max = c_samp;
+			}
+			if (samplesvector[c_samp] < min) {
+				min = samplesvector[c_samp];
+				sn_min = c_samp;
+			}
+		}
+		// if no signal, don't process further
+		if (max-min < F250_EMULATION_THRESHOLD) {
+			if(VERBOSE>4) evioout << " EmulateDf250PulseIntergral: object " << i << " max - min < " 
+					      << F250_EMULATION_THRESHOLD <<endl;
+			continue;
+		}
+		// if the min and max are reasonable compared to the threshold then use the requested threshold
+		// otherwise adjust it to work better
+		uint32_t threshold = 0;
+		if (min < F250_THRESHOLD-5 && max > F250_THRESHOLD+5) {
+			threshold = F250_THRESHOLD;
+		} else {
+			threshold = (min + max)/2;
+		}
 		// find the threshold crossing
-		uint32_t first_sample_over_threshold = 0;
+		int32_t first_sample_over_threshold = -1000;
 		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
-			if (samplesvector[c_samp] > F250_THRESHOLD) {
+			if (samplesvector[c_samp] > threshold) {
 				first_sample_over_threshold = c_samp;
-				if(VERBOSE>4) evioout << " EmulateDf250PulseTime: object " << i << " found value over " << F250_THRESHOLD << " at samp " 
+				if(VERBOSE>4) evioout << " EmulateDf250PulseTime: object " << i << " found value over " << threshold << " at samp " 
 						      << c_samp << " with value " << samplesvector[c_samp] <<endl;
 				break;
 			}
 		}
-		// if no threshold crossing, don't process further
-		if (first_sample_over_threshold == 0) {
-		  	if(VERBOSE>4) evioout << " EmulateDf250PulseTime: object " << i << " found no values over " << F250_THRESHOLD <<endl;
-			continue;
-		}
-
-		// Define the variable for the time extraction (named as in the f250 documentation)
+		// Define the variables for the time extraction (named as in the f250 documentation)
 		uint32_t VPEAK = 0, VMIN = 0, VMID = 0;
 		uint32_t VN1=0, VN2=0;
-		double time_fraction = 0;
+		double time_fraction = -1000;
 
-		// loop over the first ped_samples samples to calculate pedestal
+		// loop over the first F250_NSPED samples to calculate pedestal
 		int32_t pedestalsum = 0;
 		for (uint32_t c_samp=0; c_samp<F250_NSPED; c_samp++) {
 			pedestalsum += samplesvector[c_samp];
 		}
 		VMIN = pedestalsum / (double)F250_NSPED;
-		
-		// Find maximum by looking for signal downturn
-		uint32_t max_sample = 0;
 
-		for (uint32_t c_samp=first_sample_over_threshold; c_samp<nsamples; c_samp++) {
-			if (samplesvector[c_samp] > VPEAK) {
-				VPEAK = samplesvector[c_samp];
-				max_sample = c_samp;
-			} else {
-				// we found the downturn
-				break;
-			}
-		}
-		VMID = (VPEAK + VMIN)/2;
-
+		uint32_t time = 0;
 		uint32_t mid_sample = 0;
-		// find the adjacent samples that straddle the VMID crossing
-		for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
-			if (samplesvector[c_samp] > VMID) {
-				if(c_samp==0) c_samp++; // prevent indexing array out of bounds
-				VN2 = samplesvector[c_samp];
-				VN1 = samplesvector[c_samp-1];
-				mid_sample = c_samp-1;
-				break;
+		uint32_t max_sample = 0;
+		if (VMIN > threshold) { // firmware requires VMIN < F250_THRESHOLD
+			time_fraction = 0;
+		} 
+		if (first_sample_over_threshold == 0) { 
+			time_fraction = 1;
+		} 
+		if (time_fraction < 0) {
+			// Find maximum by looking for signal downturn
+			for (uint32_t c_samp=first_sample_over_threshold; c_samp<nsamples; c_samp++) {
+				if (samplesvector[c_samp] > VPEAK) {
+					VPEAK = samplesvector[c_samp];
+					max_sample = c_samp;
+				} else {
+				  // we found the downturn
+				  break;
+				}
+			}
+			VMID = (VPEAK + VMIN)/2;
+
+			// find the adjacent samples that straddle the VMID crossing
+			for (uint32_t c_samp=0; c_samp<nsamples; c_samp++) {
+				if (samplesvector[c_samp] > VMID) {
+					if (c_samp==0) {
+						// evioout << " EmulateDf250PulseTime: object " << i << " c_samp=" << c_samp 
+						// 	<< " samplesvector[c_samp]=" << samplesvector[c_samp] << " VMID=" << VMID << endl;
+						// evioout << " EmulateDf250PulseTime: object " << i << " VMIN=" << VMIN << " VPEAK=" << VPEAK << " VMID=" << VMID 
+						// 	<< " mid_sample=" << mid_sample << " max_sample=" << max_sample 
+						// 	<< " VN1=" << VN1 << " VN2=" << VN2 << " time_fraction=" << time_fraction 
+						// 	<< " time=" << time << " sample_over=" << first_sample_over_threshold <<endl;
+					} else {
+						VN2 = samplesvector[c_samp];
+						VN1 = samplesvector[c_samp-1];
+						mid_sample = c_samp-1;
+						break;
+					}
+				}
 			}
 		}
 		time_fraction = mid_sample + ((double)(VMID-VN1))/((double)(VN2-VN1));
-		uint32_t time = time_fraction*64;
+		time = time_fraction*64;
 		if(VERBOSE>4) evioout << " EmulateDf250PulseTime: object " << i << " VMIN=" << VMIN << " VPEAK=" << VPEAK << " VMID=" << VMID 
 				      << " mid_sample=" << mid_sample << " VN1=" << VN1 << " VN2=" << VN2 << " time_fraction=" << time_fraction 
-				      << " time=" << time<<endl;
+				      << " time=" << time << " sample_over=" << first_sample_over_threshold << endl;
 
 		// create new Df250PulseTime object
 		Df250PulseTime *myDf250PulseTime = new Df250PulseTime;

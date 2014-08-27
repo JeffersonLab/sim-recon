@@ -182,10 +182,11 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t EMULATE_FADC125_TIME_THRESHOLD;
 		string MODTYPE_MAP_FILENAME;
 		bool ENABLE_DISENTANGLING;
-		uint32_t F250_THRESHOLD;
-		uint32_t F250_NSA;
-		uint32_t F250_NSB;
-		uint32_t F250_NSPED;
+		uint32_t F250_THRESHOLD;             ///< Threshold to use for firmware emulation
+		uint32_t F250_NSA;                   ///< Number of samples to integrate after thershold crossing
+		uint32_t F250_NSB;                   ///< Number of samples to integrate before thershold crossing
+		uint32_t F250_NSPED;                 ///< Number of samples to integrate for pedestal
+		uint32_t F250_EMULATION_THRESHOLD;   ///< Minimum difference between max and min samples to do emulation
 
 		// Utility class with multiple roles:
 		//
