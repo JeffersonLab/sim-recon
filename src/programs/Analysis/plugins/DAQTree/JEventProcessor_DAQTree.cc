@@ -276,7 +276,8 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		DF1TDCHit_tree->Branch("channel",&channel,"channel/i");
 		DF1TDCHit_tree->Branch("itrigger",&itrigger,"itrigger/i");
 		DF1TDCHit_tree->Branch("trig_time",&trig_time,"trig_time/i");
-		DF1TDCHit_tree->Branch("time",&time,"time/I");
+		DF1TDCHit_tree->Branch("time",&time,"time/i");
+		DF1TDCHit_tree->Branch("data_word",&data_word,"data_word/i");
 		F1TDCHtree_exists = 1;
 	}
 	eventnum = eventnumber;
@@ -290,6 +291,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		itrigger = F1TDCHit->itrigger;
 		trig_time= F1TDCHit->trig_time;
 		time = F1TDCHit->time;
+		data_word = F1TDCHit->data_word;
 		DF1TDCHit_tree->Fill();
 	}
 
@@ -309,7 +311,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		DF1TDCTriggerTime_tree->Branch("rocid",&rocid,"rocid/i");
 		DF1TDCTriggerTime_tree->Branch("slot",&slot,"slot/i");
 		DF1TDCTriggerTime_tree->Branch("itrigger",&itrigger,"itrigger/i");
-		DF1TDCTriggerTime_tree->Branch("time",&time,"time/I");
+		DF1TDCTriggerTime_tree->Branch("time",&time,"time/l");
 		F1TDCTTtree_exists = 1;
 	}
 	eventnum = eventnumber;
@@ -323,8 +325,6 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		time = F1TDCTriggerTime->time;
 		DF1TDCTriggerTime_tree->Fill();
 	}
-
-
 
 	/// Df250WindowRawData
 	const uint32_t numDf250WRDpedsamps= 10;
@@ -528,8 +528,8 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		Df250PulseIntegral_tree->Branch("itrigger",&itrigger,"itrigger/i");
 		Df250PulseIntegral_tree->Branch("pulse_number",&pulse_number,"pulse_number/i");
 		Df250PulseIntegral_tree->Branch("quality_factor",&quality_factor,"quality_factor/i");
-		Df250PulseIntegral_tree->Branch("integral",&integral,"integral/I");
-		Df250PulseIntegral_tree->Branch("pedestal",&pedestal,"pedestal/I");
+		Df250PulseIntegral_tree->Branch("integral",&integral,"integral/i");
+		Df250PulseIntegral_tree->Branch("pedestal",&pedestal,"pedestal/i");
 		f250PItree_exists = 1;
 	}
 	eventnum = eventnumber;
@@ -569,7 +569,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		Df250PulseTime_tree->Branch("itrigger",&itrigger,"itrigger/i");
 		Df250PulseTime_tree->Branch("pulse_number",&pulse_number,"pulse_number/i");
 		Df250PulseTime_tree->Branch("quality_factor",&quality_factor,"quality_factor/i");
-		Df250PulseTime_tree->Branch("time",&time,"time/I");
+		Df250PulseTime_tree->Branch("time",&time,"time/i");
 		f250PTtree_exists = 1;
 	}
 	eventnum = eventnumber;
@@ -607,7 +607,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		Df250PulsePedestal_tree->Branch("itrigger",&itrigger,"itrigger/i");
 		Df250PulsePedestal_tree->Branch("pulse_number",&pulse_number,"pulse_number/i");
 		Df250PulsePedestal_tree->Branch("pedestal",&pedestal,"pedestal/i");
-		Df250PulsePedestal_tree->Branch("pulse_peak",&pulse_peak,"pulse_peak/I");
+		Df250PulsePedestal_tree->Branch("pulse_peak",&pulse_peak,"pulse_peak/i");
 		f250PPtree_exists = 1;
 	}
 	eventnum = eventnumber;
@@ -642,7 +642,7 @@ jerror_t JEventProcessor_DAQTree::evnt(JEventLoop *loop, int eventnumber)
 		Df250TriggerTime_tree->Branch("rocid",&rocid,"rocid/i");
 		Df250TriggerTime_tree->Branch("slot",&slot,"slot/i");
 		Df250TriggerTime_tree->Branch("itrigger",&itrigger,"itrigger/i");
-		Df250TriggerTime_tree->Branch("time",&time,"time/I");
+		Df250TriggerTime_tree->Branch("time",&time,"time/l");
 		f250TTtree_exists = 1;
 	}
 	eventnum = eventnumber;

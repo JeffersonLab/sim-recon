@@ -85,11 +85,12 @@ class JEventProcessor_DAQTree:public jana::JEventProcessor{
 		int32_t integral;              /// \n for f250PI 
 		int32_t pedestal;              /// \n for f250PI and f250PP
 		uint32_t pulse_peak;           /// \n for f250PP
-		uint32_t time;                 /// \n for f250PT, f250TT
+		uint32_t time;                 /// \n for f250PT, f250TT, F1TDCH
 		uint32_t first_sample_number;  /// \n for f250PRD
 		bool invalid_samples;          /// \n for f250WRD, f250PRD
 		bool overflow;                 /// \n for f250WRD, f250PRD
 		uint32_t trig_time;            /// \n for F1TDCH
+		uint32_t data_word;            /// \n for F1TDCH
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
