@@ -13,6 +13,11 @@ bool DTrackFinder_cdc_hit_cmp(const DCDCTrackHit *a,const DCDCTrackHit *b){
   return(a->wire->origin.Y()>b->wire->origin.Y());
 }
 
+bool DTrackFinder_fdc_hit_cmp(const DTrackFinder::fdc_hit_t &a,
+			      const DTrackFinder::fdc_hit_t &b){
+  return (a.hit->wire->origin.z()>b.hit->wire->origin.z());
+}
+
 
 //---------------------------------
 // DTrackFinder    (Constructor)
@@ -37,9 +42,15 @@ void DTrackFinder::Reset(void){
   axial_segments.clear();
   cdc_tracks.clear();
 
+  fdc_hits.clear();
+  for (unsigned int i=0;i<4;i++) fdc_segments[i].clear();
+  fdc_tracks.clear();
+
 }
 
-
+void DTrackFinder::AddHit(const DFDCPseudo *hit){
+  fdc_hits.push_back(fdc_hit_t(hit));
+}
 
 
 void DTrackFinder::AddHit(const DCDCTrackHit *hit){  
@@ -50,7 +61,6 @@ void DTrackFinder::AddHit(const DCDCTrackHit *hit){
   else if (ring<=24) stereo_hits.push_back(cdc_hit_t(hit));
   else axial_hits.push_back(cdc_hit_t(hit)); 
 }
-
 
 // Find segments in cdc axial layers
 bool DTrackFinder::FindAxialSegments(void){
@@ -120,8 +130,6 @@ bool DTrackFinder::FindAxialSegments(void){
       DVector3 dir=neighbors[neighbors.size()-1]->wire->origin
 	-neighbors[0]->wire->origin;
       dir.SetMag(1.);
-      
-      dir.Print();
 
       axial_segments.push_back(cdc_segment_t(neighbors,dir));
     }
@@ -205,10 +213,7 @@ void DTrackFinder::LinkCDCSegments(void){
       size_t num_axial=mytrack.axial_hits.size();
       if (num_stereo>0 && num_stereo+num_axial>4){
 	mytrack.dir=vhat;
-	printf("-----------\n");
-	vhat.Print();
 	if (mytrack.FindStateVector()==NOERROR){
-	  mytrack.S.Print();
 	  cdc_tracks.push_back(mytrack);
 	}
       }
@@ -302,7 +307,7 @@ jerror_t DTrackFinder::cdc_track_t::FindStateVector(void){
 
 // Given state vector S, find doca to wire given by origin and wdir
 double DTrackFinder::FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
-			      const DVector3 &origin) const{
+			      const DVector3 &origin,DVector3 *poca) const{
   DVector3 pos(S(state_x),S(state_y),z);
   DVector3 diff=pos-origin;
   
@@ -321,9 +326,325 @@ double DTrackFinder::FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
   double s=scale*N;
   double t=scale*N1;
   
+  if (poca!=NULL) *poca=pos+s*uhat;
+
   diff+=s*uhat-t*vhat;
   return diff.Mag();
 }
 
 
+// Find segments by associating adjacent hits within a package together.
+bool DTrackFinder::FindFDCSegments(void){
+  if (fdc_hits.size()==0) return false;
+  unsigned int num_hits=fdc_hits.size();
+  const double MATCH_RADIUS=2.0;
+  const double ADJACENT_MATCH_RADIUS=1.0;
 
+  // Order points by z
+  sort(fdc_hits.begin(),fdc_hits.end(),DTrackFinder_fdc_hit_cmp);
+
+  // Put indices for the first point in each plane before the most downstream
+  // plane in the vector x_list.
+  double old_z=fdc_hits[0].hit->wire->origin.z();
+  vector<unsigned int>x_list;
+  x_list.push_back(0);
+  for (unsigned int i=0;i<num_hits;i++){
+    if (fdc_hits[i].hit->wire->origin.z()!=old_z){
+      x_list.push_back(i);
+    }
+    old_z=fdc_hits[i].hit->wire->origin.z();
+  }
+  x_list.push_back(num_hits); 
+
+  unsigned int start=0;
+  // loop over the start indices, starting with the first plane
+  while (start<x_list.size()-1){
+    // Now loop over the list of track segment start fdc_hits
+    for (unsigned int i=x_list[start];i<x_list[start+1];i++){
+      if (fdc_hits[i].used==false){
+	fdc_hits[i].used=true;
+	
+	// Point in the current plane in the package 
+	DVector2 XY=fdc_hits[i].hit->xy;
+	double z=fdc_hits[i].hit->wire->origin.z();
+	
+	// Create list of nearest neighbors
+	vector<const DFDCPseudo*>neighbors;
+	neighbors.push_back(fdc_hits[i].hit);
+	unsigned int match=0;
+	double delta,delta_min=1000.;
+	for (unsigned int k=0;k<x_list.size()-1;k++){
+	  delta_min=1000.;
+	  match=0;
+	  for (unsigned int m=x_list[k];m<x_list[k+1];m++){
+	    delta=(XY-fdc_hits[m].hit->xy).Mod();
+	    double delta_z=fabs(z-fdc_hits[m].hit->wire->origin.z());
+	    if (delta<delta_min){
+	      delta_min=delta;
+	      if (delta<MATCH_RADIUS && delta_z<10.0) match=m;
+	    }
+	  }
+	  if (fdc_hits[match].used==false){
+	    XY=fdc_hits[match].hit->xy;
+	    fdc_hits[match].used=true;
+	    neighbors.push_back(fdc_hits[match].hit);	  
+	  }
+	}
+	unsigned int num_neighbors=neighbors.size();
+
+	// Look for hits adjacent to the ones we have in our segment candidate
+	for (unsigned int k=0;k<num_hits;k++){
+	  if (fdc_hits[k].used==false){
+	    for (unsigned int j=0;j<num_neighbors;j++){
+	      delta=(fdc_hits[k].hit->xy-neighbors[j]->xy).Mod();
+
+	      if (delta<ADJACENT_MATCH_RADIUS && 
+		  abs(neighbors[j]->wire->wire-fdc_hits[k].hit->wire->wire)<=1
+		  && neighbors[j]->wire->origin.z()==fdc_hits[k].hit->wire->origin.z()){
+	        fdc_hits[k].used=true;
+		neighbors.push_back(fdc_hits[k].hit);
+	      }      
+	    }
+	  }
+	} // loop looking for hits adjacent to hits on segment
+
+	if (neighbors.size()>3){
+	  unsigned int packNum=(neighbors[0]->wire->layer-1)/6;
+	  fdc_segments[packNum].push_back(fdc_segment_t(neighbors));
+	}
+      }
+    }// loop over start points within a plane
+    
+    // Look for a new plane to start looking for a segment
+    while (start<x_list.size()-1){
+      if (fdc_hits[x_list[start]].used==false) break;
+      start++;
+    }
+
+  }
+
+  return true;
+}
+
+// Link segments from package to package by doing straight-line projections
+bool DTrackFinder::LinkFDCSegments(void){
+  // Cuts for matching
+  const double MATCH_RADIUS=2.0;
+  const double LINK_MATCH_RADIUS=7.0;
+
+  // Vector to store hits for the linked segments
+  vector<const DFDCPseudo *>myhits;
+
+  // loop over packages
+  for (unsigned int i=0;i<4;i++){
+    for (unsigned int j=0;j<fdc_segments[i].size();j++){
+      if (fdc_segments[i][j].matched==false){
+	unsigned i_plus_1=i+1; 
+	if (i_plus_1<4){
+	  double tx=fdc_segments[i][j].S(state_tx);
+	  double ty=fdc_segments[i][j].S(state_ty);
+	  double x0=fdc_segments[i][j].S(state_x);
+	  double y0=fdc_segments[i][j].S(state_y);
+	  
+	  for (unsigned int k=0;k<fdc_segments[i_plus_1].size();k++){
+	    if (fdc_segments[i_plus_1][k].matched==false){
+	      double z=fdc_segments[i_plus_1][k].hits[0]->wire->origin.z();
+	      DVector2 proj(x0+tx*z,y0+ty*z);
+	    
+	      if ((proj-fdc_segments[i_plus_1][k].hits[0]->xy).Mod()<LINK_MATCH_RADIUS){
+		fdc_segments[i_plus_1][k].matched=true;
+		myhits.insert(myhits.end(),fdc_segments[i_plus_1][k].hits.begin(),
+				fdc_segments[i_plus_1][k].hits.end());
+		
+		unsigned int i_plus_2=i_plus_1+1;
+		if (i_plus_2<4){
+		  tx=fdc_segments[i_plus_1][k].S(state_tx);
+		  ty=fdc_segments[i_plus_1][k].S(state_ty);
+		  x0=fdc_segments[i_plus_1][k].S(state_x);
+		  y0=fdc_segments[i_plus_1][k].S(state_y);
+		  
+		  for (unsigned int m=0;m<fdc_segments[i_plus_2].size();m++){
+		    if (fdc_segments[i_plus_2][m].matched==false){
+		      z=fdc_segments[i_plus_2][m].hits[0]->wire->origin.z();
+		      proj.Set(x0+tx*z,y0+ty*z);
+		      
+		      if ((proj-fdc_segments[i_plus_2][m].hits[0]->xy).Mod()<LINK_MATCH_RADIUS){
+			fdc_segments[i_plus_2][m].matched=true;
+			myhits.insert(myhits.end(),fdc_segments[i_plus_2][m].hits.begin(),
+				      fdc_segments[i_plus_2][m].hits.end());
+			
+			unsigned int i_plus_3=i_plus_2+1;
+			if (i_plus_3<4){
+			  tx=fdc_segments[i_plus_2][m].S(state_tx);
+			  ty=fdc_segments[i_plus_2][m].S(state_ty);
+			  x0=fdc_segments[i_plus_2][m].S(state_x);
+			  y0=fdc_segments[i_plus_2][m].S(state_y);
+			  
+			  for (unsigned int n=0;n<fdc_segments[i_plus_3].size();n++){
+			    if (fdc_segments[i_plus_3][n].matched==false){
+			      z=fdc_segments[i_plus_3][n].hits[0]->wire->origin.z();
+			      proj.Set(x0+tx*z,y0+ty*z);
+			      
+			      if ((proj-fdc_segments[i_plus_3][n].hits[0]->xy).Mod()<LINK_MATCH_RADIUS){
+				fdc_segments[i_plus_3][n].matched=true;
+				myhits.insert(myhits.end(),fdc_segments[i_plus_3][n].hits.begin(),
+					      fdc_segments[i_plus_3][n].hits.end());
+				
+				break;
+			      } // matched a segment
+			    }
+			  }  // loop over last set of segments
+			} // if we have another package to loop over
+			break;
+		      } // matched a segment
+		    }
+		  } // loop over second-to-last set of segments
+		}
+		break;
+	      } // matched a segment
+	    }
+	  } // loop over third-to-last set of segments
+	}	
+	if (myhits.size()>0){ 
+	  myhits.insert(myhits.begin(),fdc_segments[i][j].hits.begin(),fdc_segments[i][j].hits.end());	
+	  fdc_tracks.push_back(fdc_segment_t(myhits));
+	}	  
+	myhits.clear();
+      } // check if we have already used this segment
+    } // loop over first set of segments
+  } // loop over packages
+
+  // Try to link tracks together
+  if (fdc_tracks.size()>1){
+    for (unsigned int i=0;i<fdc_tracks.size()-1;i++){
+      DMatrix4x1 S=fdc_tracks[i].S;
+      size_t last_index_1=fdc_tracks[i].hits.size()-1;
+      int first_pack_1=(fdc_tracks[i].hits[0]->wire->layer-1)/6;
+      int last_pack_1=(fdc_tracks[i].hits[last_index_1]->wire->layer-1)/6;
+      for (unsigned int j=i+1;j<fdc_tracks.size();j++){
+	size_t last_index_2=fdc_tracks[j].hits.size()-1;
+	int first_pack_2=(fdc_tracks[j].hits[0]->wire->layer-1)/6;
+	int last_pack_2=(fdc_tracks[j].hits[last_index_2]->wire->layer-1)/6;
+
+	if (last_pack_1<first_pack_2 || first_pack_1 > last_pack_2){
+	  double z=fdc_tracks[j].hits[0]->wire->origin.z();
+	  DVector2 proj(S(state_x)+z*S(state_tx),S(state_y)+z*S(state_ty));
+	  double diff=(fdc_tracks[j].hits[0]->xy-proj).Mod();
+
+	  if (diff<MATCH_RADIUS){
+	    // Combine the hits from the two tracks and recompute the state 
+	    // vector S
+	    if (last_pack_1<first_pack_2){
+	      fdc_tracks[i].hits.insert(fdc_tracks[i].hits.end(),
+					fdc_tracks[j].hits.begin(),
+					fdc_tracks[j].hits.end());
+	    }
+	    else{
+	      fdc_tracks[i].hits.insert(fdc_tracks[i].hits.begin(),
+					fdc_tracks[j].hits.begin(),
+					fdc_tracks[j].hits.end());
+	    }
+	    fdc_tracks[i].FindStateVector();
+	    
+	    // Drop the second track from the list 
+	    fdc_tracks.erase(fdc_tracks.begin()+j);
+	    break;
+	  }
+	}
+      }
+    } // loop over tracks 
+  } // check if we have more than one track
+
+  // Try to attach unmatched segments to tracks
+  for (unsigned int i=0;i<fdc_tracks.size();i++){
+    DMatrix4x1 S=fdc_tracks[i].S;
+    size_t last_index_1=fdc_tracks[i].hits.size()-1;
+    int first_pack_1=(fdc_tracks[i].hits[0]->wire->layer-1)/6;
+    int last_pack_1=(fdc_tracks[i].hits[last_index_1]->wire->layer-1)/6; 
+    for (unsigned int j=0;j<4;j++){
+      for (unsigned int k=0;k<fdc_segments[j].size();k++){
+	if (fdc_segments[j][k].matched==false){
+	  int pack_2=(fdc_segments[j][k].hits[0]->wire->layer-1)/6;
+	  if (pack_2<first_pack_1 || pack_2>last_pack_1){
+	    double z=fdc_segments[j][k].hits[0]->wire->origin.z();
+	    DVector2 proj(S(state_x)+z*S(state_tx),S(state_y)+z*S(state_ty));
+	    double diff=(fdc_segments[j][k].hits[0]->xy-proj).Mod();
+
+	    if (diff<MATCH_RADIUS){
+	      fdc_segments[j][k].matched=true;
+	      
+	      // Add hits and recompute S
+	      if (pack_2<first_pack_1){
+		fdc_tracks[i].hits.insert(fdc_tracks[i].hits.begin(),
+					  fdc_segments[j][k].hits.begin(),
+					  fdc_segments[j][k].hits.end());
+	      }
+	      else {
+		fdc_tracks[i].hits.insert(fdc_tracks[i].hits.end(),
+					  fdc_segments[j][k].hits.begin(),
+					  fdc_segments[j][k].hits.end());
+		
+	      }
+	      fdc_tracks[i].FindStateVector();
+	    }
+	  }
+	} // check if already matched to other segments
+      } // loop over segments in package
+    } // loop over packages
+  } //loop over existing tracks
+  
+
+  return true;
+}
+
+
+
+// Use linear regression on the hits to obtain a first guess for the state
+// vector.  Method taken from Numerical Recipes in C.
+DMatrix4x1 
+DTrackFinder::fdc_segment_t::FindStateVector(void) const {
+  double S1=0.;
+  double S1z=0.;
+  double S1y=0.;
+  double S1zz=0.;
+  double S1zy=0.;  
+  double S2=0.;
+  double S2z=0.;
+  double S2x=0.;
+  double S2zz=0.;
+  double S2zx=0.;
+
+  double sig2v=0.25; // rough guess;
+
+  for (unsigned int i=0;i<hits.size();i++){
+    double cosa=hits[i]->wire->udir.y();
+    double sina=hits[i]->wire->udir.x();
+    double x=hits[i]->xy.X();
+    double y=hits[i]->xy.Y();
+    double z=hits[i]->wire->origin.z();
+    double sig2x=cosa*cosa/12+sina*sina*sig2v;
+    double sig2y=sina*sina/12+cosa*cosa*sig2v;
+    double one_over_var1=1/sig2y;
+    double one_over_var2=1/sig2x;
+
+    S1+=one_over_var1;
+    S1z+=z*one_over_var1;
+    S1y+=y*one_over_var1;
+    S1zz+=z*z*one_over_var1;
+    S1zy+=z*y*one_over_var1;    
+    
+    S2+=one_over_var2;
+    S2z+=z*one_over_var2;
+    S2x+=x*one_over_var2;
+    S2zz+=z*z*one_over_var2;
+    S2zx+=z*x*one_over_var2;
+  }
+  double D1=S1*S1zz-S1z*S1z;
+  double y_intercept=(S1zz*S1y-S1z*S1zy)/D1;
+  double y_slope=(S1*S1zy-S1z*S1y)/D1;
+  double D2=S2*S2zz-S2z*S2z;
+  double x_intercept=(S2zz*S2x-S2z*S2zx)/D2;
+  double x_slope=(S2*S2zx-S2z*S2x)/D2;
+
+  return DMatrix4x1(x_intercept,y_intercept,x_slope,y_slope);
+}

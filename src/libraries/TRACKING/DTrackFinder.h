@@ -10,6 +10,7 @@
 
 #include <JANA/jerror.h>
 #include "DVector3.h"
+#include "FDC/DFDCPseudo.h"
 #include "CDC/DCDCTrackHit.h"
 #include "CDC/DCDCWire.h"
 #include "DMatrixSIMD.h"
@@ -28,6 +29,33 @@ class DTrackFinder:public jana::JObject{
     state_y,
     state_tx,
     state_ty,
+  };
+
+  class fdc_hit_t{
+  public:
+  fdc_hit_t(const DFDCPseudo *hit=NULL,bool used=false):
+    hit(hit),used(used){}
+    const DFDCPseudo *hit;
+    bool used;
+  };
+  
+  class fdc_segment_t{
+  public:
+    fdc_segment_t(vector<const DFDCPseudo *>&input_hits,bool matched=false){
+      for (unsigned int i=0;i<input_hits.size();i++){
+	this->hits.push_back(input_hits[i]);
+      }
+      this->S=FindStateVector();
+      this->matched=matched;
+    };
+    ~fdc_segment_t(){};
+
+    DMatrix4x1 FindStateVector(void) const;
+
+    bool matched;
+    DMatrix4x1 S;
+    vector<const DFDCPseudo *>hits;
+    
   };
 
   class cdc_hit_t{
@@ -78,15 +106,19 @@ class DTrackFinder:public jana::JObject{
 
   
   void Reset(void);
-  void AddHit(const DCDCTrackHit *hit);
+  void AddHit(const DCDCTrackHit *hit); 
+  void AddHit(const DFDCPseudo *hit);
+  bool FindFDCSegments(void);
+  bool LinkFDCSegments(void);
   bool FindAxialSegments(void);
   void LinkCDCSegments(void);
   bool MatchCDCHit(const DVector3 &vhat,const DVector3 &pos0,
 		   const DCDCTrackHit *hit);
-  const vector<cdc_track_t>&GetTracks(void) const {return cdc_tracks;};
+  const vector<cdc_track_t>&GetCDCTracks(void) const {return cdc_tracks;};
+  const vector<fdc_segment_t>&GetFDCTracks(void) const {return fdc_tracks;};
   
   double FindDoca(double z,const DMatrix4x1 &S,const DVector3 &wdir,
-		  const DVector3 &origin) const;
+		  const DVector3 &origin,DVector3 *poca=NULL) const;
 
  private:
   // Prohibit default constructor
@@ -96,6 +128,10 @@ class DTrackFinder:public jana::JObject{
   vector<cdc_hit_t>stereo_hits;
   vector<cdc_segment_t>axial_segments;
   vector<cdc_track_t>cdc_tracks;
+
+  vector<fdc_hit_t>fdc_hits;
+  vector<fdc_segment_t>fdc_segments[4];
+  vector<fdc_segment_t>fdc_tracks;
 };
 
 #endif // _DTrackFinder_
