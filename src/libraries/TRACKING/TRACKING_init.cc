@@ -11,8 +11,10 @@
 #include "DTrackCandidate_factory_FDCpseudo.h"
 #include "DTrackCandidate_factory_CDC_or_FDCpseudo.h"
 #include "DTrackCandidate_factory_CDCCOSMIC.h"
+#include "DTrackCandidate_factory_StraightLine.h"
 #include "DTrackWireBased_factory_THROWN.h"
 #include "DTrackTimeBased_factory_THROWN.h"
+#include "DTrackFinder_factory.h"
 #include "DTrackFitter_factory.h"
 #include "DTrackFitter_factory_ALT1.h"
 #include "DTrackFitter_factory_Riemann.h"
@@ -33,6 +35,7 @@ typedef JFactory<DMCTrajectoryPoint> DMCTrajectoryPoint_factory;
 jerror_t TRACKING_init(JEventLoop *loop)
 {
 	/// Create and register TRACKING data factories
+  	loop->AddFactory(new DTrackFinder_factory());	
 	loop->AddFactory(new DTrackWireBased_factory());
 	loop->AddFactory(new DTrackTimeBased_factory());
 	loop->AddFactory(new DTrackCandidate_factory());
@@ -43,6 +46,7 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrackCandidate_factory_CDC_or_FDCpseudo());
 	loop->AddFactory(new DTrackCandidate_factory_THROWN());
 	loop->AddFactory(new DTrackCandidate_factory_CDCCOSMIC());
+	loop->AddFactory(new DTrackCandidate_factory_StraightLine());
 	loop->AddFactory(new DMCTrackHit_factory());
 	loop->AddFactory(new DMCThrown_factory());
 	loop->AddFactory(new DMCTrajectoryPoint_factory());
