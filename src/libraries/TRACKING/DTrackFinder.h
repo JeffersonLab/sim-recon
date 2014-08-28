@@ -111,7 +111,7 @@ class DTrackFinder:public jana::JObject{
   bool FindFDCSegments(void);
   bool LinkFDCSegments(void);
   bool FindAxialSegments(void);
-  void LinkCDCSegments(void);
+  bool LinkCDCSegments(void);
   bool MatchCDCHit(const DVector3 &vhat,const DVector3 &pos0,
 		   const DCDCTrackHit *hit);
   const vector<cdc_track_t>&GetCDCTracks(void) const {return cdc_tracks;};

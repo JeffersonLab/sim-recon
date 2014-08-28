@@ -143,8 +143,9 @@ bool DTrackFinder::FindAxialSegments(void){
 
 // Link axial segments together to form track candidates and match to stereo 
 // hits
-void DTrackFinder::LinkCDCSegments(void){
+bool DTrackFinder::LinkCDCSegments(void){
   unsigned int num_axial=axial_segments.size();
+  if (num_axial<1) return false;
   for (unsigned int i=0;i<num_axial-1;i++){
     if (axial_segments[i].matched==false){
       DTrackFinder::cdc_track_t mytrack(axial_segments[i].hits);
@@ -219,7 +220,7 @@ void DTrackFinder::LinkCDCSegments(void){
       }
     }
   }
-
+  return true;
 }
 
 
