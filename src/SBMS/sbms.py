@@ -471,8 +471,8 @@ def AddJANA(env):
 ##################################
 def AddHDDS(env):
 	hdds_home = os.getenv('HDDS_HOME', 'hdds')
-	env.AppendUnique(CPPPATH = ["%s/src" % hdds_home])
-	env.AppendUnique(LIBPATH = ["%s/lib/%s" % (hdds_home, env['OSNAME'])])
+	env.AppendUnique(CPPPATH = ["%s/%s/src" % (hdds_home, env['OSNAME'])])
+	env.AppendUnique(LIBPATH = ["%s/%s/lib" % (hdds_home, env['OSNAME'])])
 
 
 ##################################
