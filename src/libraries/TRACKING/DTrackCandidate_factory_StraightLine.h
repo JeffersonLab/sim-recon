@@ -52,14 +52,14 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   jerror_t DoFilter(double t0,double start_z,DMatrix4x1 &S,
 		    vector<const DFDCPseudo *>&hits);
   jerror_t DoFilter(double t0,double OuterZ,DMatrix4x1 &S,
-		    vector<const DCDCTrackHit *>&hits);
+		    vector<const DCDCTrackHit *>&hits,double dzsign);
 
   jerror_t SetReferenceTrajectory(double t0,double z,DMatrix4x1 &S,
 				  deque<trajectory_t>&trajectory,
 				  vector<const DFDCPseudo *>&pseudos);
   jerror_t SetReferenceTrajectory(double t0,double z,DMatrix4x1 &S,
 				  deque<trajectory_t>&trajectory,
-				  const DCDCTrackHit *last_cdc); 
+				  const DCDCTrackHit *last_cdc,double dzsign); 
 
   jerror_t KalmanFilter(DMatrix4x1 &S,DMatrix4x4 &C,
 			vector<const DFDCPseudo *>&hits,
@@ -74,6 +74,7 @@ class DTrackCandidate_factory_StraightLine:public jana::JFactory<DTrackCandidate
   double CDCDriftVariance(double t);
   unsigned int Locate(vector<double>&xx,double x);
 
+  bool COSMICS;
   DTrackFinder *finder;
 
  // drift time tables

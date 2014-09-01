@@ -24,6 +24,19 @@ bool DTrackCandidate_StraightLine_cdc_hit_cmp(const DCDCTrackHit *a,
   return(a->wire->origin.Y()>b->wire->origin.Y());
 }
 
+bool DTrackCandidate_StraightLine_cdc_hit_reverse_cmp(const DCDCTrackHit *a,
+						      const DCDCTrackHit *b){
+  
+  return(a->wire->origin.Y()<b->wire->origin.Y());
+}
+
+bool DTrackCandidate_StraightLine_cdc_hit_radius_cmp(const DCDCTrackHit *a,
+						      const DCDCTrackHit *b){
+  
+  return(a->wire->origin.Perp2()<b->wire->origin.Perp2());
+}
+
+
 bool DTrackCandidate_StraightLine_fdc_hit_cmp(const DFDCPseudo *a,
 					      const DFDCPseudo *b){
   
@@ -66,6 +79,9 @@ jerror_t DTrackCandidate_factory_StraightLine::brun(jana::JEventLoop *loop, int 
   jcalib->Get("CDC/cdc_resolution_parms", cdc_res_parms);
   CDC_RES_PAR1 = cdc_res_parms["res_par1"];
   CDC_RES_PAR2 = cdc_res_parms["res_par2"];
+  
+  COSMICS=true;
+  gPARMS->SetDefaultParameter("TRKFIND:COSMICS",COSMICS);
 
   // Get pointer to TrackFinder object 
   vector<const DTrackFinder *> finders;
@@ -102,11 +118,33 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
     // Get the list of linked segments and fit the hits to lines
     const vector<DTrackFinder::cdc_track_t>tracks=finder->GetCDCTracks();
     for (size_t i=0;i<tracks.size();i++){
+      // start z position and direction of propagation (default = +z direction)
+      double z0=tracks[i].z,dzsign=1.;
+      
+      // Initial guess for state vector
+      DMatrix4x1 S(tracks[i].S);
+      
       // list of axial and stereo hits for this track
       vector<const DCDCTrackHit *>hits=tracks[i].axial_hits;
       hits.insert(hits.end(),tracks[i].stereo_hits.begin(),
 		  tracks[i].stereo_hits.end());
-      sort(hits.begin(),hits.end(),DTrackCandidate_StraightLine_cdc_hit_cmp);
+
+      if (COSMICS){
+	if (S(state_ty)<0) dzsign=-1.;
+
+	sort(hits.begin(),hits.end(),DTrackCandidate_StraightLine_cdc_hit_cmp);
+      }
+      else{	
+	DVector3 pos,origin,dir(0,0,1.);
+	finder->FindDoca(z0,S,dir,origin,&pos);
+	S(state_x)=pos.x();
+	S(state_y)=pos.y();
+	if (z0<pos.z()) dzsign=-1.;
+	z0=pos.z();
+
+	sort(hits.begin(),hits.end(),DTrackCandidate_StraightLine_cdc_hit_radius_cmp);
+	
+      }
 
       // Use earliest cdc time to estimate t0
       double t0=1e6;
@@ -116,11 +154,8 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
 	if (t_test<t0) t0=t_test;
       }
 
-      // Initial guess for state vector
-      DMatrix4x1 S(tracks[i].S);
-
       // Run the Kalman Filter algorithm
-      DoFilter(t0,tracks[i].z,S,hits);	 
+      DoFilter(t0,z0,S,hits,dzsign);	 
     }
   }
 
@@ -185,9 +220,11 @@ jerror_t DTrackCandidate_factory_StraightLine::fini(void)
 
 
 // Steering routine for the kalman filter
-jerror_t DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
-							DMatrix4x1 &S,
-				       vector<const DCDCTrackHit *>&hits){
+jerror_t 
+DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
+					       DMatrix4x1 &S,
+				     vector<const DCDCTrackHit *>&hits,
+					       double dzsign){
   unsigned int numhits=hits.size();
   unsigned int maxindex=numhits-1;
 
@@ -212,7 +249,7 @@ jerror_t DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
     ndof_old=ndof;
 
     trajectory.clear();
-    if (SetReferenceTrajectory(t0,OuterZ,S,trajectory,hits[maxindex])
+    if (SetReferenceTrajectory(t0,OuterZ,S,trajectory,hits[maxindex],dzsign)
 	!=NOERROR) break;
     
     C=C0;
@@ -235,7 +272,7 @@ jerror_t DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
       ndof_old=ndof;
       
       trajectory.clear();
-      if (SetReferenceTrajectory(t0,OuterZ,S,trajectory,hits[maxindex])
+      if (SetReferenceTrajectory(t0,OuterZ,S,trajectory,hits[maxindex],dzsign)
 	  ==NOERROR){
 	C=C0;
 	if (KalmanFilter(S,C,hits,trajectory,chi2,ndof,true)!=NOERROR) break;
@@ -254,29 +291,25 @@ jerror_t DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
       // Create a new track candidate
       DTrackCandidate *cand = new DTrackCandidate;
 
-      // Check if the track is heading backward or not
-      unsigned int last_index=trajectory.size()-1;
       double sign=1.;
-      double x=trajectory[0].S(state_x);
-      double y=trajectory[0].S(state_y);
-      double r2_first=x*x+y*y;
-      double z=trajectory[last_index].z;
-      x=trajectory[last_index].S(state_x);
-      y=trajectory[last_index].S(state_y);
-      double r2_last=x*x+y*y;
-      if ( (z<trajectory[0].z && r2_first<r2_last)
-	   || (z>trajectory[0].z && r2_first>r2_last)) sign=-1.;
-
+      unsigned int last_index=trajectory.size()-1;
+      if (COSMICS==false){
+	DVector3 pos,origin,dir(0,0,1.); 
+	finder->FindDoca(trajectory[last_index].z,Sbest,dir,origin,&pos);
+	cand->setPosition(pos);
+	if (trajectory[0].z<pos.z()) sign=-1.;
+      }
+      else{ 
+	cand->setPosition(DVector3(Sbest(state_x),Sbest(state_y),
+				   trajectory[last_index].z));
+      }
+      
       double tx=Sbest(state_tx),ty=Sbest(state_ty);
       double phi=atan2(ty,tx);
       if (sign<0) phi+=M_PI;
       double tanl=sign/sqrt(tx*tx+ty*ty);
       double pt=10.*cos(atan(tanl));      
       cand->setMomentum(DVector3(pt*cos(phi),pt*sin(phi),pt*tanl));
-
-      DVector3 pos,origin,dir(0,0,1.); 
-      finder->FindDoca(z,Sbest,dir,origin,&pos);
-      cand->setPosition(pos);
 
       cand->Ndof=ndof_old;
       cand->chisq=chi2_old;
@@ -296,19 +329,21 @@ jerror_t DTrackCandidate_factory_StraightLine::DoFilter(double t0,double OuterZ,
 jerror_t DTrackCandidate_factory_StraightLine
 ::SetReferenceTrajectory(double t0,double z,DMatrix4x1 &S,
 			 deque<trajectory_t>&trajectory,
-			 const DCDCTrackHit *last_cdc){ 
+			 const DCDCTrackHit *last_cdc,double dzsign){ 
   DMatrix4x4 J(1.,0.,1.,0., 0.,1.,0.,1., 0.,0.,1.,0., 0.,0.,0.,1.);
 
   double ds=1.0;
-  double dz=(S(state_ty)>0.?-1.:1.)*ds/sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
+  double dz=dzsign*ds/sqrt(1.+S(state_tx)*S(state_tx)+S(state_ty)*S(state_ty));
   double t=t0;
 
-  // Minimum y position
-  double min_y=last_cdc->wire->origin.y()-5.;
+  // last y position of hit (approximate, using center of wire)
+  double last_y=last_cdc->wire->origin.y();
+  double last_r2=last_cdc->wire->origin.Perp2();
   unsigned int numsteps=0;
   const unsigned int MAX_STEPS=1000;
+  bool done=false;
   do{
-    double newz=z+dz;
+    z+=dz;
     J(state_x,state_tx)=-dz;
     J(state_y,state_ty)=-dz;
     // Flight time: assume particle is moving at the speed of light
@@ -317,13 +352,17 @@ jerror_t DTrackCandidate_factory_StraightLine
     S(state_x)+=S(state_tx)*dz;
     S(state_y)+=S(state_ty)*dz;
     trajectory.push_front(trajectory_t(z,t,S,J));
-  
-    z=newz;
+
+    if (COSMICS) done=(S(state_y)<last_y);
+    else{
+      double r2=S(state_x)*S(state_x)+S(state_y)*S(state_y);
+      done=(r2>last_r2);
+    }
     numsteps++;
-  }while (S(state_y)>min_y && numsteps<MAX_STEPS);
+  }while (!done && numsteps<MAX_STEPS);
 
   if (trajectory.size()<2) return UNRECOVERABLE_ERROR;
-  //if (true)
+
   if (false)
     {
     printf("Trajectory:\n");
