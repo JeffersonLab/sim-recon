@@ -22,8 +22,13 @@ using namespace jana;
 //------------------
 jerror_t DBCALHit_factory::init(void)
 {
-        a_scale = 0.;
-        t_scale = 0.;
+	/// set the base conversion scales
+	a_scale    = 0.1;   // to get units of MeV
+	//  Crude calibration 
+	//    A minimally ionising particle deposits and integral of 230 ADC counts per cell, 
+	//    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
+	//a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
+	t_scale    = 0.0625;   // There are 62.5 ps/count from the fADC
        
         return NOERROR;
 }
@@ -33,20 +38,27 @@ jerror_t DBCALHit_factory::init(void)
 //------------------
 jerror_t DBCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// set the base conversion scales
-	a_scale    = 0.1;   // to get units of MeV
-	//  Crude calibration 
-	//    A minimally ionising particle deposits and integral of 230 ADC counts per cell, 
-	//    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
-	//a_pedestal = 10000;  // default pedestal of 100 ADC units over 100 samples 
-	t_scale    = 0.0625;   // There are 62.5 ps/count from the fADC
-
 	/// Read in calibration constants
 	vector<double> raw_gains;
 	vector<double> raw_pedestals;
 	vector<double> raw_time_offsets;
 
 	jout << "In DBCALHit_factory, loading constants..." << endl;
+	
+	// load scale factors
+	map<string,double> scale_factors;
+	if(eventLoop->GetCalib("/BCAL/digi_scales", scale_factors))
+	    jout << "Error loading /BCAL/digi_scales !" << endl;
+	if( scale_factors.find("BCAL_ADC_ASCALE") != scale_factors.end() ) {
+	    a_scale = scale_factors["BCAL_ADC_ASCALE"];
+	} else {
+	    jerr << "Unable to get BCAL_ADC_ASCALE from /BCAL/digi_scales !" << endl;
+	}
+	if( scale_factors.find("BCAL_ADC_TSCALE") != scale_factors.end() ) {
+	    t_scale = scale_factors["BCAL_ADC_TSCALE"];
+	} else {
+	    jerr << "Unable to get BCAL_ADC_TSCALE from /BCAL/digi_scales !" << endl;
+	}
 
 	if(eventLoop->GetCalib("/BCAL/ADC_gains", raw_gains))
 	    jout << "Error loading /BCAL/ADC_gains !" << endl;

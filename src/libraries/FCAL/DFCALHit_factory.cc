@@ -39,9 +39,9 @@ jerror_t DFCALHit_factory::init(void)
 	time_offsets = new_t0s;
 	block_qualities = new_qualities;
 
-	// default values
-	a_scale = 0.;
-	t_scale = 0.;
+	/// set the base conversion scales
+	a_scale    = 4.0E1/2.5E5; 
+	t_scale    = 0.0625;   // 62.5 ps/count
     
 	return NOERROR;
 }
@@ -56,10 +56,6 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	eventLoop->Get( fcalGeomVect );
 	if(fcalGeomVect.size()<1)return OBJECT_NOT_AVAILABLE;
 	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
-	
-	/// set the base conversion scales
-	a_scale    = 4.0E1/2.5E5; 
-	t_scale    = 0.0625;   // 62.5 ps/count
 
 	/// Read in calibration constants
 	vector< double > raw_gains;
@@ -68,7 +64,22 @@ jerror_t DFCALHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 	vector< double > raw_block_qualities;    // we should change this to an int?
 
 	jout << "In DFCALHit_factory, loading constants..." << endl;
-
+	
+	// load scale factors
+	map<string,double> scale_factors;
+	if(eventLoop->GetCalib("/FCAL/digi_scales", scale_factors))
+	    jout << "Error loading /FCAL/digi_scales !" << endl;
+	if( scale_factors.find("FCAL_ADC_ASCALE") != scale_factors.end() ) {
+	    a_scale = scale_factors["FCAL_ADC_ASCALE"];
+	} else {
+	    jerr << "Unable to get FCAL_ADC_ASCALE from /FCAL/digi_scales !" << endl;
+	}
+	if( scale_factors.find("FCAL_ADC_TSCALE") != scale_factors.end() ) {
+	    t_scale = scale_factors["FCAL_ADC_TSCALE"];
+	} else {
+	    jerr << "Unable to get FCAL_ADC_TSCALE from /FCAL/digi_scales !" << endl;
+	}
+	
 	if(eventLoop->GetCalib("/FCAL/gains", raw_gains))
 	    jout << "Error loading /FCAL/gains !" << endl;
 	if(eventLoop->GetCalib("/FCAL/pedestals", raw_pedestals))

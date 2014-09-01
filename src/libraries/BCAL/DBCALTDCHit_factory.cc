@@ -21,6 +21,9 @@ using namespace jana;
 //------------------
 jerror_t DBCALTDCHit_factory::init(void)
 {
+	/// set the base conversion scale
+	t_scale    = 0.060;    // 60 ps/count
+	//t_offset   = 0;
 
 	return NOERROR;
 }
@@ -30,14 +33,21 @@ jerror_t DBCALTDCHit_factory::init(void)
 //------------------
 jerror_t DBCALTDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// set the base conversion scale
-	t_scale    = 0.060;    // 60 ps/count
-	//t_offset   = 0;
 
 	/// Read in calibration constants
 	vector<double> raw_time_offsets;
 
 	jout << "In DBCALTDCHit_factory, loading constants..." << endl;
+
+	// load scale factors
+	map<string,double> scale_factors;
+	if(eventLoop->GetCalib("/BCAL/digi_scales", scale_factors))
+	    jout << "Error loading /BCAL/digi_scales !" << endl; 
+	if( scale_factors.find("BCAL_TDC_SCALE") != scale_factors.end() ) {
+	    t_scale = scale_factors["BCAL_TDC_SCALE"];
+	} else {
+	    jerr << "Unable to get BCAL_TDC_SCALE from /BCAL/digi_scales !" << endl;
+	}
 
 	if(eventLoop->GetCalib("/BCAL/TDC_offsets", raw_time_offsets))
 	    jout << "Error loading /BCAL/TDC_offsets !" << endl;

@@ -24,9 +24,10 @@ jerror_t DSCHit_factory::init(void)
 	DELTA_T_ADC_TDC_MAX = 4.0; // ns
 	gPARMS->SetDefaultParameter("SC:DELTA_T_ADC_TDC_MAX", DELTA_T_ADC_TDC_MAX, "Maximum difference in ns between a (calibrated) fADC time and F1TDC time for them to be matched in a single hit");
 
-	a_scale    = 0.;
-	t_scale    = 0.;
-	tdc_scale  = 0.;
+	/// set the base conversion scales
+	a_scale    = 2.0E-2/5.2E-5; 
+	t_scale    = 0.0625;   // 62.5 ps/count
+	tdc_scale  = 0.060;    // 60 ps/count
 
 	return NOERROR;
 }
@@ -36,13 +37,29 @@ jerror_t DSCHit_factory::init(void)
 //------------------
 jerror_t DSCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// set the base conversion scales
-	a_scale    = 2.0E-2/5.2E-5; 
-	t_scale    = 0.0625;   // 62.5 ps/count
-	tdc_scale  = 0.060;    // 60 ps/count
 
 	/// Read in calibration constants
 	jout << "In DSCHit_factory, loading constants..." << endl;
+
+	// load scale factors
+	map<string,double> scale_factors;
+	if(eventLoop->GetCalib("/START_COUNTER/digi_scales", scale_factors))
+	    jout << "Error loading /START_COUNTER/digi_scales !" << endl;
+	if( scale_factors.find("SC_ADC_ASCALE") != scale_factors.end() ) {
+	    a_scale = scale_factors["SC_ADC_ASCALE"];
+	} else {
+	    jerr << "Unable to get SC_ADC_ASCALE from /START_COUNTER/digi_scales !" << endl;
+	}
+	if( scale_factors.find("SC_ADC_TSCALE") != scale_factors.end() ) {
+	    t_scale = scale_factors["SC_ADC_TSCALE"];
+	} else {
+	    jerr << "Unable to get SC_ADC_TSCALE from /START_COUNTER/digi_scales !" << endl;
+	}
+	if( scale_factors.find("SC_TDC_SCALE") != scale_factors.end() ) {
+	    tdc_scale = scale_factors["SC_TDC_SCALE"];
+	} else {
+	    jerr << "Unable to get SC_TDC_SCALE from /START_COUNTER/digi_scales !" << endl;
+	}
 	
 	if(eventLoop->GetCalib("/START_COUNTER/gains", a_gains))
 	    jout << "Error loading /START_COUNTER/gains !" << endl;

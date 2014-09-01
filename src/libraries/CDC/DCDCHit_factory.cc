@@ -33,6 +33,10 @@ jerror_t DCDCHit_factory::init(void)
 	// Set default number of number of detector channels
 	maxChannels = 3522;
 
+	/// set the base conversion scales
+	a_scale    = 4.0E3/1.0E2; 
+	t_scale    = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
+
 	return NOERROR;
 }
 
@@ -45,16 +49,27 @@ jerror_t DCDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
  	CalcNstraws(eventLoop, runnumber, Nstraws);
 	Nrings = Nstraws.size();
 
-	/// set the base conversion scales
-	a_scale    = 4.0E3/1.0E2; 
-	t_scale    = 8.0/10.0;    // 8 ns/count and integer time is in 1/10th of sample
-
 	/// Read in calibration constants
         vector<double> raw_gains;
         vector<double> raw_pedestals;
         vector<double> raw_time_offsets;
 
 	jout << "In DFCALHit_factory, loading constants..." << endl;
+
+	// load scale factors
+	map<string,double> scale_factors;
+	if(eventLoop->GetCalib("/CDC/digi_scales", scale_factors))
+	    jout << "Error loading /CDC/digi_scales !" << endl;
+	if( scale_factors.find("CDC_ADC_ASCALE") != scale_factors.end() ) {
+	    a_scale = scale_factors["CDC_ADC_ASCALE"];
+	} else {
+	    jerr << "Unable to get CDC_ADC_ASCALE from /CDC/digi_scales !" << endl;
+	}
+	if( scale_factors.find("CDC_ADC_TSCALE") != scale_factors.end() ) {
+	    t_scale = scale_factors["CDC_ADC_TSCALE"];
+	} else {
+	    jerr << "Unable to get CDC_ADC_TSCALE from /CDC/digi_scales !" << endl;
+	}
 
         if(eventLoop->GetCalib("/CDC/wire_gains", raw_gains))
 	    jout << "Error loading /CDC/wire_gains !" << endl;

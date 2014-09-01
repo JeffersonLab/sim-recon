@@ -22,9 +22,10 @@ using namespace jana;
 //------------------
 jerror_t DFDCHit_factory::init(void)
 {
-        a_scale = 0.;
-	t_scale = 0.;
-	tdc_scale = 0.;
+	/// set the base conversion scales
+	a_scale      = 2.4E4/1.3E5;  // cathodes
+	t_scale      = 8.0/10.0;     // 8 ns/count and integer time is in 1/10th of sample
+	tdc_scale    = 0.115;        // 115 ps/count
 
   	return NOERROR;
 }
@@ -34,10 +35,6 @@ jerror_t DFDCHit_factory::init(void)
 //------------------
 jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 {
-	/// set the base conversion scales
-	a_scale      = 2.4E4/1.3E5;  // cathodes
-	t_scale      = 8.0/10.0;     // 8 ns/count and integer time is in 1/10th of sample
-	tdc_scale    = 0.115;        // 115 ps/count
 
 	// reset constants tables
 	a_gains.clear();
@@ -46,6 +43,26 @@ jerror_t DFDCHit_factory::brun(jana::JEventLoop *eventLoop, int runnumber)
 
 	// now load them all
 	jout << "In DFDCHit_factory, loading constants..." << endl;
+
+	// load scale factors
+	map<string,double> scale_factors;
+	if(eventLoop->GetCalib("/FDC/digi_scales", scale_factors))
+	    jout << "Error loading /FDC/digi_scales !" << endl;
+	if( scale_factors.find("FDC_ADC_ASCALE") != scale_factors.end() ) {
+	    a_scale = scale_factors["FDC_ADC_ASCALE"];
+	} else {
+	    jerr << "Unable to get FDC_ADC_ASCALE from /FDC/digi_scales !" << endl;
+	}
+	if( scale_factors.find("FDC_ADC_TSCALE") != scale_factors.end() ) {
+	    t_scale = scale_factors["FDC_ADC_TSCALE"];
+	} else {
+	    jerr << "Unable to get FDC_ADC_TSCALE from /FDC/digi_scales !" << endl;
+	}
+	if( scale_factors.find("FDC_TDC_SCALE") != scale_factors.end() ) {
+	    tdc_scale = scale_factors["FDC_TDC_SCALE"];
+	} else {
+	    jerr << "Unable to get FDC_TDC_SCALE from /FDC/digi_scales !" << endl;
+	}
 
 	// each FDC package has the same set of constants
 	LoadPackageCalibTables(eventLoop,"/FDC/package1");
