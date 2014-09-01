@@ -130,7 +130,7 @@ jerror_t DTrackCandidate_factory_StraightLine::evnt(JEventLoop *loop, int eventn
 		  tracks[i].stereo_hits.end());
 
       if (COSMICS){
-	if (S(state_ty)<0) dzsign=-1.;
+	if (S(state_ty)>0) dzsign=-1.;
 
 	sort(hits.begin(),hits.end(),DTrackCandidate_StraightLine_cdc_hit_cmp);
       }
