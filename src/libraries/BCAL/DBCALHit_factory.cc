@@ -23,7 +23,7 @@ using namespace jana;
 jerror_t DBCALHit_factory::init(void)
 {
    /// set the base conversion scales
-   a_scale    = 0.1;   // to get units of MeV
+   a_scale    = 0.0001;   // to get units of GeV
    //  Crude calibration 
    //    A minimally ionising particle deposits and integral of 230 ADC counts per cell, 
    //    which corresponds to approximately 22 MeV.  Thus, the factor is 0.1 to get MeV
@@ -116,7 +116,7 @@ jerror_t DBCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
          E = a_scale * gain * (A - (pedestalpersample * digihit->nsamples_integral));
       }
 
-      hit->E = E/1000.;  // all calorimeter hits have E in GeV
+      hit->E = E;  
       hit->t = t_scale * (T - GetConstant(time_offsets,digihit)) + t_min;
       
       hit->AddAssociatedObject(digihit);
