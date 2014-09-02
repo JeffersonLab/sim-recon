@@ -132,8 +132,8 @@ int process_event(hddm_s::HDDM &event)
       bcalnt.module = iter->getModule();
       bcalnt.layer = iter->getLayer();
       bcalnt.sector = iter->getSector();
-      hddm_s::BcalHitList hits = iter->getBcalHits();
-      hddm_s::BcalHitList::iterator hiter;
+      hddm_s::BcalTruthHitList hits = iter->getBcalTruthHits();
+      hddm_s::BcalTruthHitList::iterator hiter;
       int hit=0;
       for (hiter = hits.begin(); hiter != hits.end(); ++hiter, ++hit) {
          bcalnt.t[hit] = hiter->getT(); 

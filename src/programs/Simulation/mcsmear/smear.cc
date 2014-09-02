@@ -15,7 +15,7 @@ using namespace std;
 
 #include <math.h>
 #include "units.h"
-#include "HDDM/hddm_s.h"
+#include "HDDM/hddm_s.hpp"
 #include <TF1.h>
 #include <TH2.h>
 
@@ -37,17 +37,19 @@ extern TH1F *cdc_charge;
 extern TH1F *fdc_anode_mult;
 extern TH2F *cdc_drift_smear;
 
-void GetAndSetSeeds(s_HDDM_t *hddm_s);
-void SmearCDC(s_HDDM_t *hddm_s);
-void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
-void SmearFDC(s_HDDM_t *hddm_s);
-void AddNoiseHitsFDC(s_HDDM_t *hddm_s);
-void SmearFCAL(s_HDDM_t *hddm_s);
-void SmearCCAL(s_HDDM_t *hddm_s);
-void SmearBCAL(s_HDDM_t *hddm_s);
-void SmearTOF(s_HDDM_t *hddm_s);
-void SmearSTC(s_HDDM_t *hddm_s);
-void SmearCherenkov(s_HDDM_t *hddm_s);
+void GetAndSetSeeds(hddm_s::HDDM *record);
+void SmearCDC(hddm_s::HDDM *record);
+void AddNoiseHitsCDC(hddm_s::HDDM *record);
+void SmearFDC(hddm_s::HDDM *record);
+void AddNoiseHitsFDC(hddm_s::HDDM *record);
+void SmearFCAL(hddm_s::HDDM *record);
+void SmearCCAL(hddm_s::HDDM *record);
+void SmearBCAL(hddm_s::HDDM *record);
+void SmearTOF(hddm_s::HDDM *record);
+void SmearSTC(hddm_s::HDDM *record);
+void SmearCherenkov(hddm_s::HDDM *record);
+void SmearTAGM(hddm_s::HDDM *record);
+void SmearTAGH(hddm_s::HDDM *record);
 void InitCDCGeometry(void);
 void InitFDCGeometry(void);
 
@@ -135,6 +137,21 @@ extern double FDC_HIT_DROP_FRACTION;
 // FDC discriminator threshold in keV
 extern double FDC_THRESH_KEV;
 
+// Single FTOF bar energy threshold (applied after smearing)
+extern double FTOF_BAR_THRESHOLD;
+
+// Single STC paddle energy threshold (applied after smearing)
+extern double STC_PADDLE_THRESHOLD;
+
+// Tagging counter time resolutions (s)
+extern double TAGM_TSIGMA;
+extern double TAGH_TSIGMA;
+
+// Tagging counter fADC responses
+extern double TAGM_FADC_TSIGMA;
+extern double TAGH_FADC_TSIGMA;
+extern double TAGM_NPIX_PER_GEV;
+extern double TAGH_NPE_PER_GEV;
 
 // Photon-statistics factor for smearing hit energy (from Criss's MC)
 // (copied from DFCALMCResponse_factory.cc 7/2/2009 DL)
@@ -193,9 +210,9 @@ void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
       hp=xa[i+m-1]-x;
       w=c[i+1-1]-d[i-1];
       if ((den=ho-hp)==0.0){
-	free(c);
-	free(d);
-	return;
+   free(c);
+   free(d);
+   return;
       }
   
       den=w/den;
@@ -213,20 +230,27 @@ void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
 //-----------
 // Smear
 //-----------
-void Smear(s_HDDM_t *hddm_s)
+void Smear(hddm_s::HDDM *record)
 {
-	GetAndSetSeeds(hddm_s);
+   GetAndSetSeeds(record);
 
-	if(SMEAR_HITS)SmearCDC(hddm_s);
-	if(ADD_NOISE)AddNoiseHitsCDC(hddm_s);
-	if(SMEAR_HITS)SmearFDC(hddm_s);
-	if(ADD_NOISE)AddNoiseHitsFDC(hddm_s);
-	if(SMEAR_HITS)SmearFCAL(hddm_s);
-	if(SMEAR_HITS)SmearCCAL(hddm_s);
-	if(SMEAR_BCAL)SmearBCAL(hddm_s);
-	if(SMEAR_HITS)SmearTOF(hddm_s);
-	if(SMEAR_HITS)SmearSTC(hddm_s);
-	if(SMEAR_HITS)SmearCherenkov(hddm_s);
+   if (SMEAR_HITS) {
+      SmearCDC(record);
+      SmearFDC(record);
+      SmearFCAL(record);
+      SmearCCAL(record);
+      SmearTOF(record);
+      SmearSTC(record);
+      SmearCherenkov(record);
+      SmearTAGM(record);
+      SmearTAGH(record);
+   }
+   if (ADD_NOISE) {
+      AddNoiseHitsCDC(record);
+      AddNoiseHitsFDC(record);
+   }
+   if (SMEAR_BCAL) 
+      SmearBCAL(record);
 }
 
 //-----------
@@ -234,871 +258,618 @@ void Smear(s_HDDM_t *hddm_s)
 //-----------
 void SetSeeds(const char *vals)
 {
-	/// This is called from the command line parser to
-	/// set the initial seeds based on user input from
-	/// the command line.
-	//
-	//
-	stringstream ss(vals);
-	Int_t seed1, seed2, seed3;
-	ss >> seed1 >> seed2 >> seed3;
-	UInt_t *useed1 = reinterpret_cast<UInt_t*>(&seed1);
-	UInt_t *useed2 = reinterpret_cast<UInt_t*>(&seed2);
-	UInt_t *useed3 = reinterpret_cast<UInt_t*>(&seed3);
-	gDRandom.SetSeeds(*useed1, *useed2, *useed3);
+   /// This is called from the command line parser to
+   /// set the initial seeds based on user input from
+   /// the command line.
+   //
+   //
+   stringstream ss(vals);
+   Int_t seed1, seed2, seed3;
+   ss >> seed1 >> seed2 >> seed3;
+   UInt_t *useed1 = reinterpret_cast<UInt_t*>(&seed1);
+   UInt_t *useed2 = reinterpret_cast<UInt_t*>(&seed2);
+   UInt_t *useed3 = reinterpret_cast<UInt_t*>(&seed3);
+   gDRandom.SetSeeds(*useed1, *useed2, *useed3);
 
-	cout << "Seeds set from command line. Any random number" << endl;
-	cout << "seeds found in the input file will be ignored!" << endl;
-	IGNORE_SEEDS = true;
+   cout << "Seeds set from command line. Any random number" << endl;
+   cout << "seeds found in the input file will be ignored!" << endl;
+   IGNORE_SEEDS = true;
 }
 
 //-----------
 // GetAndSetSeeds
 //-----------
-void GetAndSetSeeds(s_HDDM_t *hddm_s)
+void GetAndSetSeeds(hddm_s::HDDM *record)
 {
-	// Check if non-zero seed values exist in the input HDDM file.
-	// If so, use them to set the seeds for the random number
-	// generator. Otherwise, make sure the seeds that are used
-	// are stored in the output event.
-	
-	if(hddm_s == NULL)return;
-	if(hddm_s->physicsEvents == NULL || hddm_s->physicsEvents==HDDM_NULL)return;
-	if(hddm_s->physicsEvents->mult<1)return;
-	s_PhysicsEvent_t *pe = &hddm_s->physicsEvents->in[0];
-	if(pe->reactions == NULL || pe->reactions==HDDM_NULL)return;
-	if(pe->reactions->mult<1)return;
-	s_Random_t *my_rand = pe->reactions->in[0].random;
-	UInt_t seed1, seed2, seed3;
-	if(my_rand == NULL || my_rand==HDDM_NULL){
-		// No seeds stored in event. Add them
-		my_rand = pe->reactions->in[0].random = make_s_Random();
-		my_rand->seed1 = 0;
-		my_rand->seed2 = 0;
-		my_rand->seed3 = 0;
-		my_rand->seed4 = 0;
-	}
-	if(!IGNORE_SEEDS){
-		// Copy seeds from event record to local variables
-		seed1 = *((UInt_t*)&my_rand->seed1);
-		seed2 = *((UInt_t*)&my_rand->seed2);
-		seed3 = *((UInt_t*)&my_rand->seed3);
-		
-		// If the seeds in the event are all zeros it means they
-		// were not set. In this case, initialize seeds to constants
-		// to guarantee the seeds are used if this input file were
-		// smeared again with the same command a second time. These
-		// are set here to the fractional part of the cube roots of
-		// the first three primes, truncated to 9 digits.
-		if ((seed1 == 0) || (seed2 == 0) || (seed3 == 0)){
-			seed1 = 259921049 + pe->eventNo;
-			seed2 = 442249570 + pe->eventNo;
-			seed3 = 709975946 + pe->eventNo;
-		}
-		
-		// Set the seeds in the random generator.
-		gDRandom.SetSeeds(seed1, seed2, seed3);
-	}
+   // Check if non-zero seed values exist in the input HDDM file.
+   // If so, use them to set the seeds for the random number
+   // generator. Otherwise, make sure the seeds that are used
+   // are stored in the output event.
+   
+   if (record == 0)
+      return;
+   else if (record->getReactions().size() == 0)
+      return;
 
-	// Copy seeds from generator to local variables
-	gDRandom.GetSeeds(seed1, seed2, seed3);
+   hddm_s::ReactionList::iterator reiter = record->getReactions().begin();
+   if (reiter->getRandoms().size() == 0) {
+      // No seeds stored in event. Add them
+      hddm_s::RandomList blank_rand = reiter->addRandoms();
+      blank_rand().setSeed1(0);
+      blank_rand().setSeed2(0);
+      blank_rand().setSeed3(0);
+      blank_rand().setSeed4(0);
+   }
 
-	// Copy seeds from local variables to event record
-	my_rand->seed1 = *((Int_t*)&seed1);
-	my_rand->seed2 = *((Int_t*)&seed2);
-	my_rand->seed3 = *((Int_t*)&seed3);
+   UInt_t seed1, seed2, seed3;
+   hddm_s::Random my_rand = reiter->getRandom();
+
+   if (!IGNORE_SEEDS) {
+      // Copy seeds from event record to local variables
+      seed1 = my_rand.getSeed1();
+      seed2 = my_rand.getSeed2();
+      seed3 = my_rand.getSeed3();
+      
+      // If the seeds in the event are all zeros it means they
+      // were not set. In this case, initialize seeds to constants
+      // to guarantee the seeds are used if this input file were
+      // smeared again with the same command a second time. These
+      // are set here to the fractional part of the cube roots of
+      // the first three primes, truncated to 9 digits.
+      if ((seed1 == 0) || (seed2 == 0) || (seed3 == 0)){
+         int eventNo = record->getPhysicsEvent().getEventNo();
+         seed1 = 259921049 + eventNo;
+         seed2 = 442249570 + eventNo;
+         seed3 = 709975946 + eventNo;
+      }
+      
+      // Set the seeds in the random generator.
+      gDRandom.SetSeeds(seed1, seed2, seed3);
+   }
+
+   // Copy seeds from generator to local variables
+   gDRandom.GetSeeds(seed1, seed2, seed3);
+
+   // Copy seeds from local variables to event record
+   my_rand.setSeed1(seed1);
+   my_rand.setSeed2(seed2);
+   my_rand.setSeed3(seed3);
 }
 
 //-----------
 // SmearCDC
 //-----------
-void SmearCDC(s_HDDM_t *hddm_s)
+void SmearCDC(hddm_s::HDDM *record)
 {
-	/// Smear the drift times of all CDC hits.
-	/// This will add cdcStrawHit objects generated by smearing values in the
-	/// cdcStrawTruthHit objects that hdgeant outputs. Any existing cdcStrawHit
-	/// objects will be replaced.
+   /// Smear the drift times of all CDC hits.
+   /// This will add cdcStrawHit objects generated by smearing values in the
+   /// cdcStrawTruthHit objects that hdgeant outputs. Any existing cdcStrawHit
+   /// objects will be replaced.
 
-	// Acquire the pointer to the physics events
-	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
-	if(!allEvents)return;
+   double t_max = TRIGGER_LOOKBACK_TIME + CDC_TIME_WINDOW;
+   double threshold = CDC_THRESHOLD_FACTOR * CDC_PEDESTAL_SIGMA; // for sparcification
 
-	double t_max=TRIGGER_LOOKBACK_TIME+CDC_TIME_WINDOW;
-	double threshold=CDC_THRESHOLD_FACTOR*CDC_PEDESTAL_SIGMA; // for sparcification
-	for (unsigned int m=0; m < allEvents->mult; m++) {
-		// Acquire the pointer to the overall hits section of the data
-		s_HitView_t *hits = allEvents->in[m].hitView;
-		
-		if (hits == HDDM_NULL)return;
-		if (hits->centralDC == HDDM_NULL)return;
-		if (hits->centralDC->cdcStraws == HDDM_NULL)return;
-		for(unsigned int k=0; k<hits->centralDC->cdcStraws->mult; k++){
-			s_CdcStraw_t *cdcstraw = &hits->centralDC->cdcStraws->in[k];
-			
-			// If the event already contains a s_CdcStrawHits_t object then free it.
-			if(cdcstraw->cdcStrawHits!=HDDM_NULL){
-				static bool warned = false;
-				FREE(cdcstraw->cdcStrawHits);
-				if(!warned){
-					warned = true;
-					cerr<<endl;
-					cerr<<"WARNING: CDC hits already exist in input file! Overwriting!"<<endl;
-					cerr<<endl;
-				}
-			}
-			
-			// Create new s_CdcStrawHits_t
-			cdcstraw->cdcStrawHits = make_s_CdcStrawHits(cdcstraw->cdcStrawTruthHits->mult);
-			
-			unsigned int mult=0;	
-			for(unsigned int j=0; j<cdcstraw->cdcStrawTruthHits->mult; j++){
-				s_CdcStrawTruthHit_t *strawtruthhit = &cdcstraw->cdcStrawTruthHits->in[j];
+   // Loop over all cdcStraw tags
+   hddm_s::CdcStrawList straws = record->getCdcStraws();
+   hddm_s::CdcStrawList::iterator iter;
+   for (iter = straws.begin(); iter != straws.end(); ++iter) {
+ 
+      // If the element already contains a cdcStrawHit list then delete it.
+      hddm_s::CdcStrawHitList hits = iter->getCdcStrawHits();
+      if (hits.size() > 0) {
+         static bool warned = false;
+         iter->deleteCdcStrawHits();
+         if (!warned) {
+            warned = true;
+            cerr << endl;
+            cerr << "WARNING: CDC hits already exist in input file! Overwriting!"
+                 << endl << endl;
+         }
+      }
 
-				// Pedestal-smeared charge
-				double q=strawtruthhit->q+SampleGaussian(CDC_PEDESTAL_SIGMA);
+      // Create new cdcStrawHit from cdcStrawTruthHit information
+      hddm_s::CdcStrawTruthHitList thits = iter->getCdcStrawTruthHits();
+      hddm_s::CdcStrawTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++ titer) {
+         // Pedestal-smeared charge
+         double q = titer->getQ() + SampleGaussian(CDC_PEDESTAL_SIGMA);
+         // Smear out the CDC drift time using the specified sigma.
+         // This is for timing resolution from the electronics;
+         // diffusion is handled in hdgeant.
+         double t = titer->getT() + SampleGaussian(CDC_TDRIFT_SIGMA)*1.0e9;
+         if (t > TRIGGER_LOOKBACK_TIME && t < t_max && q > threshold) {
+            if (iter->getRing() == 1) {
+               double t_corr = t-0.33;
+               cdc_drift_time->Fill(t_corr, titer->getD());
+               cdc_drift_smear->Fill(t_corr, titer->getD()-
+                                             (0.0285*sqrt(t_corr)+0.014));
+               cdc_charge->Fill(q);
+            }
+            hits = iter->addCdcStrawHits();
+            hits().setT(t);
+            hits().setQ(q);
+         }
 
-				double sigma_t = CDC_TDRIFT_SIGMA;
-				// Smear out the CDC drift time using the specified sigma.
-				// This is for timing resolution from the electronics; diffusion is handled in hdgeant.
-				double delta_t = SampleGaussian(sigma_t)*1.0E9; // delta_t is in ns
-				double t = strawtruthhit->t + delta_t;
-				
-				s_CdcStrawHit_t *strawhit = &cdcstraw->cdcStrawHits->in[mult];
-				// Initialization
-				strawhit->t=0.;
-				strawhit->q=0.;
-				strawhit->d = 0.;
-				strawhit->itrack = strawtruthhit->itrack;
-				strawhit->ptype = strawtruthhit->ptype;
-
-				if (t>TRIGGER_LOOKBACK_TIME && t<t_max && q>threshold){	
-				  if (cdcstraw->ring==1){
-				    double t_corr=t-0.33;
-				    cdc_drift_time->Fill(t_corr,strawtruthhit->d);
-				    
-				    cdc_drift_smear->Fill(t_corr,
-							  strawtruthhit->d-(0.0285*sqrt(t_corr)+0.014));
-				    cdc_charge->Fill(q);
-				  }
-				  strawhit->t=t;
-				  strawhit->q=q;
-			
-				  mult++;
-				}
-			}
-			cdcstraw->cdcStrawHits->mult = mult;
-			if (mult==0){
-			  FREE(cdcstraw->cdcStrawHits);
-			  cdcstraw->cdcStrawHits=(s_CdcStrawHits_t *)HDDM_NULL;
-			}
-			
-			if (DROP_TRUTH_HITS){
-			  FREE(cdcstraw->cdcStrawTruthHits);
-			  cdcstraw->cdcStrawTruthHits=(s_CdcStrawTruthHits_t *)HDDM_NULL;
-			 
-			}
-		}
-	}
+         if (DROP_TRUTH_HITS) {
+            iter->deleteCdcStrawTruthHits();
+         }
+      }
+   }
 }
 
 //-----------
 // AddNoiseHitsCDC
 //-----------
-void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
+void AddNoiseHitsCDC(hddm_s::HDDM *record)
 {
+   // Calculate the number of noise hits for each straw and store
+   // them in a sparse map, then copy into the output hddm record.
+   //
+   // The straw rates are obtained using a parameterization done
+   // to calculate the event size for the August 29, 2007 online
+   // meeting. This parameterization is almost already obsolete.
+   // 10/12/2007 D. L.
+
 #if ! JANA_ENABLED
-	if(!CDC_GEOMETRY_INITIALIZED)InitCDCGeometry();
-#endif	
-	// Calculate the number of noise hits for each straw and store
-	// them in a sparse map. We must do it this way since we have to know
-	// the total number of CdcStraw_t structures to allocate in our
-	// call to make_s_CdcStraws.
-	//
-	// The straw rates are obtained using a parameterization done
-	// to calculate the event size for the August 29, 2007 online
-	// meeting. This parameterization is almost already obsolete.
-	// 10/12/2007 D. L.
-	vector<int> Nstraw_hits;
-	vector<int> straw_number;
-	vector<int> ring_number;
-	int Nnoise_straws = 0;
-	int Nnoise_hits = 0;
-	for(unsigned int ring=1; ring<=NCDC_STRAWS.size(); ring++){
-		double p[2] = {10.4705, -0.103046};
-		double r_prime = (double)(ring+3);
-		double N = exp(p[0] + r_prime*p[1]);
-		N *= CDC_TIME_WINDOW;
-		for(unsigned int straw=1; straw<=NCDC_STRAWS[ring-1]; straw++){
-			// Indivdual straw rates should be way less than 1/event so
-			// we just use the rate as a probablity.
-			double Nhits = SampleRange(0.0, 1.0)<N ? 1.0:0.0;
-			if(Nhits<1.0)continue;
-			int iNhits = (int)floor(Nhits);
-			Nstraw_hits.push_back(iNhits);
-			straw_number.push_back(straw);
-			ring_number.push_back(ring);
-			Nnoise_straws++;
-			Nnoise_hits+=iNhits;
-		}
-	}
+   if(!CDC_GEOMETRY_INITIALIZED)InitCDCGeometry();
+#endif   
 
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return;
-	
-	double t_max=TRIGGER_LOOKBACK_TIME+CDC_TIME_WINDOW;
-	double threshold=CDC_THRESHOLD_FACTOR*CDC_PEDESTAL_SIGMA; // for sparcification
-	
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL)continue;
-		
-		// If no CDC hits were produced by HDGeant, then we need to add
-		// the branches needed to the HDDM tree
-		if(hits->centralDC == HDDM_NULL){
-			hits->centralDC = make_s_CentralDC();
-			hits->centralDC->cdcStraws = (s_CdcStraws_t*)HDDM_NULL;
-			hits->centralDC->cdcTruthPoints = (s_CdcTruthPoints_t*)HDDM_NULL;
-		}
+   vector<int> Nstraw_hits;
+   vector<int> straw_number;
+   vector<int> ring_number;
+   int Nnoise_straws = 0;
+   int Nnoise_hits = 0;
+   for(unsigned int ring=1; ring <= NCDC_STRAWS.size(); ring++){
+      double p[2] = {10.4705, -0.103046};
+      double r_prime = (double)(ring+3);
+      double N = exp(p[0] + r_prime*p[1]);
+      N *= CDC_TIME_WINDOW;
+      for (unsigned int straw=1; straw<=NCDC_STRAWS[ring-1]; straw++) {
+         // Indivdual straw rates should be way less than 1/event so
+         // we just use the rate as a probablity.
+         double Nhits = SampleRange(0.0, 1.0)<N ? 1.0:0.0;
+         if(Nhits<1.0)continue;
+         int iNhits = (int)floor(Nhits);
+         Nstraw_hits.push_back(iNhits);
+         straw_number.push_back(straw);
+         ring_number.push_back(ring);
+         Nnoise_straws++;
+         Nnoise_hits+=iNhits;
+      }
+   }
 
-		if(hits->centralDC->cdcStraws == HDDM_NULL){
-			hits->centralDC->cdcStraws = make_s_CdcStraws(0);
-			hits->centralDC->cdcStraws->mult=0;
-		}
-		
-		// Get existing hits
-		s_CdcStraws_t *old_cdcstraws = hits->centralDC->cdcStraws;
-		unsigned int Nold = old_cdcstraws->mult;
-
-		// Create CdcStraws structure that has enough slots for
-		// both the real and noise hits.
-		s_CdcStraws_t* cdcstraws = make_s_CdcStraws((unsigned int)Nnoise_straws + Nold);
-
-		// Add real hits back in first
-		cdcstraws->mult = 0;
-		for(unsigned int j=0; j<Nold; j++){
-			cdcstraws->in[cdcstraws->mult++] = old_cdcstraws->in[j];
-			
-			// We need to transfer ownership of the hits to the new cdcstraws
-			// branch so they don't get deleted when old_cdcstraws is freed.
-			s_CdcStraw_t *cdcstraw = &old_cdcstraws->in[j];
-			cdcstraw->cdcStrawHits = (s_CdcStrawHits_t *)HDDM_NULL;
-		}
-		
-		// Delete memory used for old hits structure and
-		// replace pointer in HDDM tree with ours
-		free(old_cdcstraws);
-		hits->centralDC->cdcStraws = cdcstraws;
-		
-		// Loop over straws with noise hits
-		for(unsigned int j=0; j<Nstraw_hits.size(); j++){
-			s_CdcStraw_t *cdcstraw = &cdcstraws->in[cdcstraws->mult++];
-			s_CdcStrawHits_t *strawhits = make_s_CdcStrawHits(Nstraw_hits[j]);
-			cdcstraw->cdcStrawHits = strawhits;
-			cdcstraw->ring = ring_number[j];
-			cdcstraw->straw = straw_number[j];
-
-			strawhits->mult = 0;
-			for(int k=0; k<Nstraw_hits[j]; k++){
-			  double q=SampleGaussian(CDC_PEDESTAL_SIGMA);
-			  if (q>threshold){
-			    s_CdcStrawHit_t *strawhit = &strawhits->in[strawhits->mult++];
-			    strawhit->q=q;
-			    strawhit->t = SampleRange(TRIGGER_LOOKBACK_TIME,t_max);
-			    strawhit->d = 0.; // be consistent to initialize d=DOCA to zero 
-			    cdc_charge->Fill(strawhit->q);   
-			    cdc_drift_time->Fill(strawhit->t,strawhit->d);
-			  }
-			}
-		}
-	}
+   double t_max = TRIGGER_LOOKBACK_TIME + CDC_TIME_WINDOW;
+   double threshold = CDC_THRESHOLD_FACTOR * CDC_PEDESTAL_SIGMA; // for sparcification
+   
+   // Loop over straws with noise hits
+   hddm_s::CentralDCList cdc = record->getCentralDCs();
+   hddm_s::CdcStrawList straws = record->getCdcStraws();
+   for (unsigned int j=0; j < Nstraw_hits.size(); j++) {
+      hddm_s::CdcStrawList::iterator iter;
+      for (iter = straws.begin(); iter != straws.end(); ++iter) {
+         if (iter->getRing() == ring_number[j] &&
+             iter->getStraw() == straw_number[j])
+            break;
+      }
+      if (iter == straws.end()) {
+         if (cdc.size() == 0)
+            cdc = record->getHitViews().begin()->addCentralDCs();
+         iter = cdc().addCdcStraws().begin();
+         iter->setRing(ring_number[j]);
+         iter->setStraw(straw_number[j]);
+      }
+      for (int k=0; k < Nstraw_hits[j]; k++) {
+         double q = SampleGaussian(CDC_PEDESTAL_SIGMA);
+         if (q > threshold) {
+            hddm_s::CdcStrawHitList hits = iter->addCdcStrawHits();
+            hits().setQ(q);
+            hits().setT(SampleRange(TRIGGER_LOOKBACK_TIME,t_max));
+            cdc_charge->Fill(hits().getQ());   
+            cdc_drift_time->Fill(hits().getT(), 0.);
+         }
+      }
+   }
 }
 
 //-----------
 // SmearFDC
 //-----------
-void SmearFDC(s_HDDM_t *hddm_s)
+void SmearFDC(hddm_s::HDDM *record)
 {
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return;
+   // Calculate ped noise level based on position resolution
+   //   FDC_PED_NOISE = -0.004594 + 0.008711*FDC_CATHODE_SIGMA +
+   //                    0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
+   FDC_PED_NOISE = -0.0938 + 0.0485*FDC_CATHODE_SIGMA;
+   if (FDC_ELOSS_OFF)
+      FDC_PED_NOISE *= 7.0; // empirical  4/29/2009 DL
 
-	// Calculate ped noise level based on position resolution
-	//	FDC_PED_NOISE=-0.004594+0.008711*FDC_CATHODE_SIGMA+0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
-	FDC_PED_NOISE=-0.0938+0.0485*FDC_CATHODE_SIGMA;
-	if(FDC_ELOSS_OFF)FDC_PED_NOISE*=7.0; // empirical  4/29/2009 DL
-	double t_max=TRIGGER_LOOKBACK_TIME+FDC_TIME_WINDOW;
-	double threshold=FDC_THRESHOLD_FACTOR*FDC_PED_NOISE; // for sparcification
+   double t_max = TRIGGER_LOOKBACK_TIME + FDC_TIME_WINDOW;
+   double threshold = FDC_THRESHOLD_FACTOR * FDC_PED_NOISE; // for sparcification
 
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->forwardDC == HDDM_NULL ||
-			hits->forwardDC->fdcChambers == HDDM_NULL)continue;
+   hddm_s::FdcChamberList chambers = record->getFdcChambers();
+   hddm_s::FdcChamberList::iterator iter;
+   for (iter = chambers.begin(); iter != chambers.end(); ++iter) {
 
-		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
-		s_FdcChamber_t *fdcChamber = fdcChambers->in;
-		for(unsigned int j=0; j<fdcChambers->mult; j++, fdcChamber++){
-			
-			// Add pedestal noise to strip charge data
-			s_FdcCathodeStrips_t *strips= fdcChamber->fdcCathodeStrips;
-			if (strips!=HDDM_NULL){
-			  for (unsigned int k=0;k<strips->mult;k++){
-			    s_FdcCathodeStrip_t *strip=&strips->in[k];	
-			    // If a s_FdcCathodeHits_t object already exists delete it
-			    if(strip->fdcCathodeHits!=HDDM_NULL){
-			      FREE(strip->fdcCathodeHits);
-			      strip->fdcCathodeHits = (s_FdcCathodeHits_t*)HDDM_NULL;
-			    }
-			    
-			    s_FdcCathodeTruthHits_t *truthhits=strip->fdcCathodeTruthHits;
-			    if (truthhits==HDDM_NULL)continue;
-				 
-			    // Allocate s_FdcCathodeHits_t objects corresponding to this s_FdcCathodeTruthHits_t
-			    s_FdcCathodeHits_t *hits = strip->fdcCathodeHits = make_s_FdcCathodeHits(truthhits->mult);
-			  			    
-			    s_FdcCathodeHit_t *hit=hits->in;
-			    s_FdcCathodeTruthHit_t *truthhit=truthhits->in;
-			    unsigned int mult=0;			  
-			    for (unsigned int s=0;s<truthhits->mult;s++,truthhit++){
-			      //if(SampleRange(0.0, 1.0)<=FDC_HIT_DROP_FRACTION) continue;
-			      double q= truthhit->q + SampleGaussian(FDC_PED_NOISE);
-			      double t= truthhit->t + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;
-			      //initialization
-			      hit->q=0.;
-			      hit->t=0.;
-			      hit->ptype=truthhit->ptype;
-			      hit->itrack=truthhit->itrack;
-			      if (q>threshold && t>TRIGGER_LOOKBACK_TIME && t<t_max){
-				hit->q = q;
-				hit->t = t;
-			        mult++;
-				hit++;
+      // Add pedestal noise to strip charge data
+      hddm_s::FdcCathodeStripList strips = iter->getFdcCathodeStrips();
+      hddm_s::FdcCathodeStripList::iterator siter;
+      for (siter = strips.begin(); siter != strips.end(); ++siter) {
+          // If a fdcCathodeHit already exists delete it
+          siter->deleteFdcCathodeHits();
+          hddm_s::FdcCathodeTruthHitList thits = 
+                                         siter->getFdcCathodeTruthHits();
+          hddm_s::FdcCathodeTruthHitList::iterator titer;
+          for (titer = thits.begin(); titer != thits.end(); ++titer) {
+            //if (SampleRange(0.0, 1.0) <= FDC_HIT_DROP_FRACTION)
+            //   continue;
+            double q = titer->getQ() + SampleGaussian(FDC_PED_NOISE);
+            double t = titer->getT() +
+                       SampleGaussian(FDC_TDRIFT_SIGMA)*1.0e9;
+            if (q > threshold && t > TRIGGER_LOOKBACK_TIME && t < t_max) {
+               hddm_s::FdcCathodeHitList hits = siter->addFdcCathodeHits();
+               hits().setQ(q);
+               hits().setT(t);
+            }
+            fdc_cathode_charge->Fill(q);
+         }
 
-				fdc_cathode_charge->Fill(q);
-			      }
-			    }
-			    hits->mult=mult;			    
-			    if (hits->mult==0){
-			      FREE(strip->fdcCathodeHits);
-			      strip->fdcCathodeHits=(s_FdcCathodeHits_t*)HDDM_NULL;
-			    }
+         if (DROP_TRUTH_HITS)
+            siter->deleteFdcCathodeTruthHits();
+      }
 
-			    if (DROP_TRUTH_HITS){
-			      FREE(strip->fdcCathodeTruthHits);
-			      strip->fdcCathodeTruthHits=(s_FdcCathodeTruthHits_t*)HDDM_NULL;
+      // Add drift time varation to the anode data 
+      hddm_s::FdcAnodeWireList wires = iter->getFdcAnodeWires();
+      hddm_s::FdcAnodeWireList::iterator witer;
+      for (witer = wires.begin(); witer != wires.end(); ++witer) {
+         // If a fdcAnodeHit exists already delete it
+         witer->deleteFdcAnodeHits();
+         hddm_s::FdcAnodeTruthHitList thits = witer->getFdcAnodeTruthHits();
+         hddm_s::FdcAnodeTruthHitList::iterator titer;
+         for (titer = thits.begin(); titer != thits.end(); ++titer) {
+            double t = titer->getT() + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0e9;
+            if (t > TRIGGER_LOOKBACK_TIME && t < t_max) {
+               hddm_s::FdcAnodeHitList hits = witer->addFdcAnodeHits();
+               hits().setT(t);
+               hits().setDE(titer->getDE());
+            }
+            if (witer->getLayer() == 1 && witer->getModule() == 1) {
+               // 3.7 ns flight time for c=1 to first fdc plane
+               double dt = t - titer->getT() - 3.7;
+               fdc_drift_time_smear_hist->Fill(0., dt);
+               fdc_drift_dist_smear_hist->Fill(0.,
+                         dt*(0.5*0.02421/sqrt(titer->getT())+5.09e-4));
+               fdc_drift_time->Fill(t - 3.7, 0.);
+            }
+         }
+         fdc_anode_mult->Fill(witer->getFdcAnodeHits().size());
 
-			     
-			      
-			    }
-			  }
-			}
-
-			// Add drift time varation to the anode data 
-			s_FdcAnodeWires_t *wires=fdcChamber->fdcAnodeWires;
-			
-			if (wires!=HDDM_NULL){
-			  s_FdcAnodeWire_t *wire=wires->in;
-			  for (unsigned int k=0;k<wires->mult;k++,wire++){
-
-				// If a s_FdcAnodeHits_t object exists already delete it
-				if(wire->fdcAnodeHits!=HDDM_NULL){
-					FREE(wire->fdcAnodeHits);
-					wire->fdcAnodeHits = (s_FdcAnodeHits_t*)HDDM_NULL;
-				}
-
-			    s_FdcAnodeTruthHits_t *truthhits=wire->fdcAnodeTruthHits;
-			    if (truthhits==HDDM_NULL)continue;
-				 
-			    // Allocate s_FdcAnodeHits_t object corresponding to this s_FdcAnodeTruthHits_t
-			    wire->fdcAnodeHits = make_s_FdcAnodeHits(truthhits->mult);
-				 
-			    unsigned int mult=0;			 
-			    for (unsigned int s=0;s<truthhits->mult;s++){
-			      s_FdcAnodeTruthHit_t *truthhit=&truthhits->in[s];
-			      double t = truthhit->t + SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;
-			      s_FdcAnodeHit_t *hit = &wire->fdcAnodeHits->in[mult];
-			      // Initialize the hit data to zeros
-			      hit->t=0.;
-			      hit->dE=0.;
-			      hit->d=0.;
-			      hit->itrack = truthhit->itrack;
-			      hit->ptype = truthhit->ptype;
-			      if (t>TRIGGER_LOOKBACK_TIME && t<t_max){
-				hit->t=t;
-				hit->dE = truthhit->dE;
-				
-				mult++;
-				
-				if (fdcChamber->layer==1 && fdcChamber->module==1){
-				  double dt=hit->t-truthhit->t_unsmeared-3.7; // 3.7 ns flight time for c=1 to first fdc plane
-				  
-				  fdc_drift_time_smear_hist->Fill(truthhit->d,dt);
-				  fdc_drift_dist_smear_hist->Fill(truthhit->d,dt*(0.5*0.02421/sqrt(truthhit->t_unsmeared)+5.09e-4));
-				  fdc_drift_time->Fill(hit->t-3.7,truthhit->d);
-				}
-			      }
-			    }
-			    wire->fdcAnodeHits->mult=mult;
-			    fdc_anode_mult->Fill(mult);
-			    if (mult==0){
-			      FREE(wire->fdcAnodeHits);
-			      wire->fdcAnodeHits=(s_FdcAnodeHits_t*)HDDM_NULL;
-			    }
-
-			    if (DROP_TRUTH_HITS){
-			      FREE(wire->fdcAnodeTruthHits);
-			      wire->fdcAnodeTruthHits=(s_FdcAnodeTruthHits_t *)HDDM_NULL;
-
-			     
-			    }
-			  }
-			}
-		}
-	}
+         if (DROP_TRUTH_HITS)
+            witer->deleteFdcAnodeTruthHits();
+      }
+   }
 }
 
 //-----------
 // AddNoiseHitsFDC
 //-----------
-void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
+void AddNoiseHitsFDC(hddm_s::HDDM *record)
 {
+   // Calculate the number of noise hits for each FDC wire and store
+   // them in a sparse map.
+   //
+   // We do this using the individual wire rates to calculate the probability
+   // of the wire firing for a single event. For the FDC, we calculate the
+   // wire rates as a function of both wire number (distance from beam line)
+   // and layer (position in z). We want a roughly 1/r distribution in the
+   // radial direction and a roughly exponential rise in rate in the
+   // +z direction.
+   //
+   // The wire rates are obtained using a parameterization done
+   // to calculate the event size for the August 29, 2007 online
+   // meeting. This parameterization is almost already obsolete.
+   // In rough terms, the layer rate (integrated over all wires)
+   // is about 1 MHz. For a 24 layer chamber with a 1us time window,
+   // we should have approximately 24 background hits per event.
+   // 11/9/2007 D. L.
+   //
+   // Note by RTJ: Where are the noise hits in the FDC cathode strips??
+   // From the Ncathode_hits vector, it seems that this was originally
+   // intended to be added, once the wire noise model is validated.
+   // The FDC noise algorithm represented below is incomplete.
+  
 #if ! JANA_ENABLED
-	if(!FDC_GEOMETRY_INITIALIZED)InitFDCGeometry();
-#endif	
-	// Calculate the number of noise hits for each FDC wire and store
-	// them in a sparse map. We must do it this way since we have to know
-	// the total number of s_FdcAnodeWire_t structures to allocate in our
-	// call to make_s_FdcAnodeWires.
-	//
-	// We do this using the individual wire rates to calculate the probability
-	// of the wire firing for a single event. For the FDC, we calculate the
-	// wire rates as a function of both wire number (distance from beam line)
-	// and layer (position in z). We want a roughly 1/r distribution in the
-	// radial direction and a roughly exponential rise in rate in the
-	// +z direction.
-	//
-	// The wire rates are obtained using a parameterization done
-	// to calculate the event size for the August 29, 2007 online
-	// meeting. This parameterization is almost already obsolete.
-	// In rough terms, the layer rate (integrated over all wires)
-	// is about 1 MHz. For a 24 layer chamber with a 1us time window,
-	// we should have approximately 24 background hits per event.
-	// 11/9/2007 D. L.
-	vector<int> Nwire_hits;
-	vector<int> Ncathode_hits;
-	vector<int> wire_number;
-	vector<int> layer_number;
-	int Nnoise_wires = 0;
-	int Nnoise_hits = 0;
-	for(unsigned int layer=1; layer<=FDC_LAYER_Z.size(); layer++){
-		double No = FDC_RATE_COEFFICIENT*exp((double)layer*log(4.0)/24.0);
-		for(unsigned int wire=1; wire<=96; wire++){
-			double rwire = fabs(96.0/2.0 - (double)wire);
-			double N = No*log((rwire+0.5)/(rwire-0.5));
+   if(!FDC_GEOMETRY_INITIALIZED)InitFDCGeometry();
+#endif   
 
-			// Indivdual wire rates should be way less than 1/event so
-			// we just use the rate as a probablity.
-			double Nhits = SampleRange(0.0, 1.0)<N ? 1.0:0.0;
-			if(Nhits<1.0)continue;
-			int iNhits = (int)floor(Nhits);
-			Nwire_hits.push_back(iNhits);
-			wire_number.push_back(wire);
-			layer_number.push_back(layer);
-			Nnoise_wires++;
-			Nnoise_hits+=iNhits;
-		}
-	}
+   vector<int> Nwire_hits;
+   vector<int> Ncathode_hits;
+   vector<int> wire_number;
+   vector<int> layer_number;
+   int Nnoise_wires = 0;
+   int Nnoise_hits = 0;
+   for (unsigned int layer=1; layer <= FDC_LAYER_Z.size(); layer++) {
+      double No = FDC_RATE_COEFFICIENT*exp((double)layer*log(4.0)/24.0);
+      for (unsigned int wire=1; wire <= 96; wire++) {
+         double rwire = fabs(96.0/2.0 - (double)wire);
+         double N = No*log((rwire+0.5)/(rwire-0.5));
 
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return;
-	
-	double t_max=TRIGGER_LOOKBACK_TIME+FDC_TIME_WINDOW;
-	//	double threshold=FDC_THRESHOLD_FACTOR*FDC_PED_NOISE; // for sparcification
+         // Indivdual wire rates should be way less than 1/event so
+         // we just use the rate as a probablity.
+         double Nhits = (SampleRange(0.0, 1.0) < N)? 1.0 : 0.0;
+         if (Nhits < 1.0)
+            continue;
+         int iNhits = (int)floor(Nhits);
+         Nwire_hits.push_back(iNhits);
+         wire_number.push_back(wire);
+         layer_number.push_back(layer);
+         Nnoise_wires++;
+         Nnoise_hits+=iNhits;
+      }
+   }
 
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL)continue;
-		
-		// If no FDC hits were produced by HDGeant, then we need to add
-		// the branches needed to the HDDM tree
-		if(hits->forwardDC == HDDM_NULL){
-			hits->forwardDC = make_s_ForwardDC();
-			hits->forwardDC->fdcChambers = (s_FdcChambers_t*)HDDM_NULL;
-		}
+   double t_max = TRIGGER_LOOKBACK_TIME + FDC_TIME_WINDOW;
+   //double threshold = FDC_THRESHOLD_FACTOR * FDC_PED_NOISE; // for sparcification
 
-		if(hits->forwardDC->fdcChambers == HDDM_NULL){
-			hits->forwardDC->fdcChambers = make_s_FdcChambers(0);
-			hits->forwardDC->fdcChambers->mult=0;
-		}
-		
-		// Get existing hits
-		s_FdcChambers_t *old_fdcchambers = hits->forwardDC->fdcChambers;
-		unsigned int Nold = old_fdcchambers->mult;
+   hddm_s::ForwardDCList fdc = record->getForwardDCs();
+   hddm_s::FdcCathodeStripList strips = record->getFdcCathodeStrips();
 
-		// If we were doing this "right" we'd conglomerate all of the noise
-		// hits from the same chamber into the same s_FdcChamber_t structure.
-		// That's a pain in the butt and really may only save a tiny bit of disk
-		// space so we just add each noise hit back in as another chamber
-		// structure.
-		
+   // Loop over wires with noise hits
+   for (unsigned int j=0; j < Nwire_hits.size(); j++) {
+      hddm_s::FdcAnodeWireList wires = record->getFdcAnodeWires();
+      hddm_s::FdcAnodeWireList::iterator witer;
+      for (witer = wires.begin(); witer != wires.end(); ++witer) {
+         int layerId = witer->getLayer() + (witer->getModule() - 1)*8;
+         if (layer_number[j] == layerId && wire_number[j] == witer->getWire())
+            break;
+      }
+      if (witer == wires.end()) {
+         if (fdc.size() == 0)
+            fdc = record->getHitViews().begin()->addForwardDCs();
+         hddm_s::FdcChamberList chambers = record->getFdcChambers();
+         hddm_s::FdcChamberList::iterator citer;
+         for (citer = chambers.begin(); citer != chambers.end(); ++citer) {
+            int layerId = witer->getLayer() + (witer->getModule() - 1)*8;
+            if (layer_number[j] == layerId)
+               break;
+         }
+         if (citer == chambers.end()) {
+            citer = fdc().addFdcChambers().begin();
+            citer->setModule((layer_number[j] - 1)/3 + 1);
+            citer->setLayer((layer_number[j] - 1)%3 + 1);
+         }
+         witer = citer->addFdcAnodeWires().begin();
+         witer->setWire(wire_number[j]);
+      }
 
-		// Create FdcChambers structure that has enough slots for
-		// both the real and noise hits.
-		s_FdcChambers_t* fdcchambers = make_s_FdcChambers(Nwire_hits.size() + Nold);
-
-		// Add real hits back in first
-		fdcchambers->mult = 0;
-		for(unsigned int j=0; j<Nold; j++){
-			fdcchambers->in[fdcchambers->mult++] = old_fdcchambers->in[j];
-			
-			// We need to transfer ownership of the hits to the new fdcchambers
-			// branch so they don't get deleted when old_fdcchambers is freed.
-			s_FdcChamber_t *fdcchamber = &old_fdcchambers->in[j];
-			fdcchamber->fdcAnodeWires = (s_FdcAnodeWires_t *)HDDM_NULL;
-			fdcchamber->fdcCathodeStrips = (s_FdcCathodeStrips_t *)HDDM_NULL;
-		}
-		
-		// Delete memory used for old hits structure and
-		// replace pointer in HDDM tree with ours
-		free(old_fdcchambers);
-		hits->forwardDC->fdcChambers = fdcchambers;
-
-		// Loop over wires with noise hits
-		for(unsigned int j=0; j<Nwire_hits.size(); j++){
-			s_FdcChamber_t *fdcchamber = &fdcchambers->in[fdcchambers->mult++];
-			
-			// Create structure for anode wires
-			s_FdcAnodeWires_t *fdcAnodeWires = make_s_FdcAnodeWires(Nwire_hits[j]);
-			fdcchamber->fdcAnodeWires = fdcAnodeWires;
-
-			fdcAnodeWires->mult = 0;
-			double dEsigma=FDC_THRESH_KEV/FDC_THRESHOLD_FACTOR;
-			for(int k=0; k<Nwire_hits[j]; k++){
-			  // Simulated random hit as pedestal noise 
-			  double dE= SampleGaussian(dEsigma);
-			  if (dE>FDC_THRESH_KEV){
-			    // Get pointer to anode wire structure
-			    s_FdcAnodeWire_t *fdcAnodeWire = &fdcAnodeWires->in[fdcAnodeWires->mult++];
-			    
-			    // Create anode hits structure
-			    s_FdcAnodeHits_t *fdcanodehits = make_s_FdcAnodeHits(1);
-			    fdcAnodeWire->fdcAnodeHits = fdcanodehits;
-				
-			    // Get pointer to anode hit structure
-			    fdcanodehits->mult = 1;
-			    s_FdcAnodeHit_t *fdcanodehit = &fdcanodehits->in[0];
-			    
-			    fdcanodehit->dE = dE; // what should this be?
-			    fdcanodehit->t = SampleRange(TRIGGER_LOOKBACK_TIME,t_max);
-			    fdcanodehit->d = 0.; // d=DOCA initialize to avoid any NAN
-			    
-			    fdcAnodeWire->wire = wire_number[j];
-				
-			    fdcchamber->layer = (layer_number[j]-1)%3 + 1;
-			    fdcchamber->module = (layer_number[j]-1)/3 + 1;
-
-			    fdc_drift_time->Fill(fdcanodehit->t,0.);
-			  }
-			}
-		}
-	}
+      double dEsigma=FDC_THRESH_KEV/FDC_THRESHOLD_FACTOR;
+      for (int k=0; k < Nwire_hits[j]; k++) {
+         // Simulated random hit as pedestal noise 
+         double dE = SampleGaussian(dEsigma);
+         if (dE > FDC_THRESH_KEV) {
+            hddm_s::FdcAnodeHitList hits = witer->addFdcAnodeHits();
+            hits().setDE(dE); // what should this be?
+            hits().setT(SampleRange(TRIGGER_LOOKBACK_TIME, t_max));
+            fdc_drift_time->Fill(hits().getT(), 0.);
+         }
+      }
+   }
 }
 
 //-----------
 // SmearFCAL
 //-----------
-void SmearFCAL(s_HDDM_t *hddm_s)
+void SmearFCAL(hddm_s::HDDM *record)
 {
-	/// Smear the FCAL hits using the nominal resolution of the individual blocks.
-	/// The way this works is a little funny and warrants a little explanation.
-	/// The information coming from hdgeant is truth information indexed by 
-	/// row and column, but containing energy deposited and time. The mcsmear
-	/// program will copy the truth information from the FcalTruthBlock to the
-	/// FcalBlock branch, smearing the values with the appropriate detector
-	/// resolution.
-	///
-	/// To access the "truth" values in DANA, get the DFCALHit objects using the
-	/// "TRUTH" tag.
-	
-	// The code below is perhaps slightly odd in that it simultaneously creates
-	// and fills the mirror (truth) branch while smearing the values in the
-	// nominal hit branch.
-	
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return;
-	
-	if(!fcalGeom)fcalGeom = new DFCALGeometry();
+   /// Smear the FCAL hits using the nominal resolution of the individual blocks.
+   /// The way this works is a little funny and warrants a little explanation.
+   /// The information coming from hdgeant is truth information indexed by 
+   /// row and column, but containing energy deposited and time. The mcsmear
+   /// program will copy the truth information from the fcalTruthHit element
+   /// to a new fcalHit element, smearing the values with the appropriate detector
+   /// resolution.
+   ///
+   /// To access the "truth" values in DANA, get the DFCALHit objects using the
+   /// "TRUTH" tag.
+   
+   if (!fcalGeom)
+      fcalGeom = new DFCALGeometry();
 
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			 hits->forwardEMcal == HDDM_NULL ||
-			 hits->forwardEMcal->fcalBlocks == HDDM_NULL)continue;
-		
-		s_FcalBlocks_t *blocks = hits->forwardEMcal->fcalBlocks;
-		for(unsigned int j=0; j<blocks->mult; j++){
-			s_FcalBlock_t *block = &blocks->in[j];
+   hddm_s::FcalBlockList blocks = record->getFcalBlocks();
+   hddm_s::FcalBlockList::iterator iter;
+   for (iter = blocks.begin(); iter != blocks.end(); ++iter) {
+      iter->deleteFcalHits();
+      hddm_s::FcalTruthHitList thits = iter->getFcalTruthHits();
+      hddm_s::FcalTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // Simulation simulates a grid of blocks for simplicity. 
+         // Do not bother smearing inactive blocks. They will be
+         // discarded in DEventSourceHDDM.cc while being read in
+         // anyway.
+         if (!fcalGeom->isBlockActive(iter->getRow(), iter->getColumn()))
+            continue;
+         // Smear the energy and timing of the hit
+         double sigma = FCAL_PHOT_STAT_COEF/sqrt(titer->getE());
+         double E = titer->getE() * (1.0 + SampleGaussian(sigma));
+         // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
+         double t = titer->getT() + SampleGaussian(200.0e-3);
+         // Apply a single block threshold. 
+         if (E >= FCAL_BLOCK_THRESHOLD) {
+            hddm_s::FcalHitList hits = iter->addFcalHits();
+            hits().setE(E);
+            hits().setT(t);
+         }
+      }
 
-			// Create FCAL hits structures to put smeared data into
-			if(block->fcalHits!=HDDM_NULL)free(block->fcalHits);
-			block->fcalHits = make_s_FcalHits(block->fcalTruthHits->mult);
-		
-			unsigned int mult=0;
-			for(unsigned int k=0; k<block->fcalTruthHits->mult; k++){
-				s_FcalTruthHit_t *fcaltruthhit = &block->fcalTruthHits->in[k];
-				s_FcalHit_t *fcalhit = &block->fcalHits->in[k];
-				
-				//Initialization
-				fcalhit->E=0.;
-				fcalhit->t=0.;
-				fcalhit->E = fcaltruthhit->E;
-				fcalhit->t = fcaltruthhit->t;
-
-				// Simulation simulates a grid of blocks for simplicity. 
-				// Do not bother smearing inactive blocks. They will be
-				// discarded in DEventSourceHDDM.cc while being read in
-				// anyway.
-				if(!fcalGeom->isBlockActive( block->row, block->column ))continue;
-
-				// Smear the energy and timing of the hit
-				double sigma = FCAL_PHOT_STAT_COEF/sqrt(fcaltruthhit->E) ;
-				double E=fcaltruthhit->E*(1.0 + SampleGaussian(sigma));
-				double t=fcaltruthhit->t + SampleGaussian(200.0E-3); // smear by 200 ps fixed for now 7/2/2009 DL
-				
-				// Apply a single block threshold. 
-				if(fcalhit->E >= FCAL_BLOCK_THRESHOLD){
-				  fcalhit->E = E;
-				  fcalhit->t = t;
-				  
-				  mult++;
-				}
-				else if (DROP_TRUTH_HITS==false) mult++;
-
-			} // k  (fcalhits)
-			block->fcalHits->mult = mult;
-
-			if (DROP_TRUTH_HITS){
-			  FREE(block->fcalTruthHits);
-			  block->fcalTruthHits=(s_FcalTruthHits_t *)HDDM_NULL;
-
-			  if (mult==0){
-			    FREE(block->fcalHits);
-			    block->fcalHits=(s_FcalHits_t *)HDDM_NULL;
-			  }
-			}
-
-		} // j  (blocks)
-		if (DROP_TRUTH_HITS){
-		  unsigned int mult=0;
-		  for (unsigned int k=0;k<hits->forwardEMcal->fcalBlocks->mult;k++){
-		    s_FcalBlock_t *block = &hits->forwardEMcal->fcalBlocks->in[k];
-		    if (block->fcalHits!=HDDM_NULL){
-		      hits->forwardEMcal->fcalBlocks->in[mult]=hits->forwardEMcal->fcalBlocks->in[k];
-		      mult++;
-		    }
-		  } 
-		  hits->forwardEMcal->fcalBlocks->mult=mult;
-		}
-	} // i  (physicsEvents)
-
+      if (DROP_TRUTH_HITS)
+         iter->deleteFcalTruthHits();
+   }
 }
 
 //-----------
 // SmearCCAL
 //-----------
-void SmearCCAL(s_HDDM_t *hddm_s)
+void SmearCCAL(hddm_s::HDDM *record)
 {
-	/// Smear the CCAL hits using the same procedure as the FCAL above.
-	/// See those comments for details.
+   /// Smear the CCAL hits using the same procedure as the FCAL above.
+   /// See those comments for details.
 
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return;
-	
-	if(!ccalGeom)ccalGeom = new DCCALGeometry();
+   if (!ccalGeom)
+      ccalGeom = new DCCALGeometry();
 
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			 hits->ComptonEMcal == HDDM_NULL ||
-			 hits->ComptonEMcal->ccalBlocks == HDDM_NULL)continue;
-		
-		s_CcalBlocks_t *blocks = hits->ComptonEMcal->ccalBlocks;
-		for(unsigned int j=0; j<blocks->mult; j++){
-			s_CcalBlock_t *block = &blocks->in[j];
+   hddm_s::CcalBlockList blocks = record->getCcalBlocks();   
+   hddm_s::CcalBlockList::iterator iter;
+   for (iter = blocks.begin(); iter != blocks.end(); ++iter) {
+      iter->deleteCcalHits();
+      hddm_s::CcalTruthHitList thits = iter->getCcalTruthHits();   
+      hddm_s::CcalTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // Simulation simulates a grid of blocks for simplicity. 
+         // Do not bother smearing inactive blocks. They will be
+         // discarded in DEventSourceHDDM.cc while being read in
+         // anyway.
+         if (!ccalGeom->isBlockActive(iter->getRow(), iter->getColumn()))
+            continue;
+         // Smear the energy and timing of the hit
+         double sigma = CCAL_PHOT_STAT_COEF/sqrt(titer->getE()) ;
+         double E = titer->getE() * (1.0 + SampleGaussian(sigma));
+         // Smear the time by 200 ps (fixed for now) 7/2/2009 DL
+         double t = titer->getT() + SampleGaussian(200.0e-3);
+         // Apply a single block threshold. If the (smeared) energy is below this,
+         // then set the energy and time to zero. 
+         if (E > CCAL_BLOCK_THRESHOLD) {
+            hddm_s::CcalHitList hits = iter->addCcalHits();
+            hits().setE(E);
+            hits().setT(t);
+         }
+      }
 
-			// Create FCAL hits structures to put smeared data into
-			if(block->ccalHits!=HDDM_NULL)free(block->ccalHits);
-			block->ccalHits = make_s_CcalHits(block->ccalTruthHits->mult);
-			block->ccalHits->mult = block->ccalTruthHits->mult;
-
-			for(unsigned int k=0; k<block->ccalTruthHits->mult; k++){
-				s_CcalTruthHit_t *ccaltruthhit = &block->ccalTruthHits->in[k];
-				s_CcalHit_t *ccalhit = &block->ccalHits->in[k];
-
-				// Copy info from truth stream before doing anything else
-				ccalhit->E = ccaltruthhit->E;
-				ccalhit->t = ccaltruthhit->t;
-
-				// Simulation simulates a grid of blocks for simplicity. 
-				// Do not bother smearing inactive blocks. They will be
-				// discarded in DEventSourceHDDM.cc while being read in
-				// anyway.
-				if(!ccalGeom->isBlockActive( block->row, block->column ))continue;
-
-				// Smear the energy and timing of the hit
-				double sigma = CCAL_PHOT_STAT_COEF/sqrt(ccalhit->E) ;
-				ccalhit->E *= 1.0 + SampleGaussian(sigma);
-				ccalhit->t += SampleGaussian(200.0E-3); // smear by 200 ps fixed for now 7/2/2009 DL
-				
-				// Apply a single block threshold. If the (smeared) energy is below this,
-				// then set the energy and time to zero. 
-				if(ccalhit->E < CCAL_BLOCK_THRESHOLD){ccalhit->E = ccalhit->t = 0.0;}
-
-			} // k  (fcalhits)
-		} // j  (blocks)
-	} // i  (physicsEvents)
-
+      if (DROP_TRUTH_HITS)
+         iter->deleteCcalTruthHits();
+   }
 }
 
 //-----------
 // SmearTOF
 //-----------
-void SmearTOF(s_HDDM_t *hddm_s)
+void SmearTOF(hddm_s::HDDM *record)
 {
-  // Loop over Physics Events
-  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-  if(!PE) return;
-  
-  for(unsigned int i=0; i<PE->mult; i++){
-    s_HitView_t *hits = PE->in[i].hitView;
-    if (hits == HDDM_NULL ||
-	hits->forwardTOF == HDDM_NULL ||
-	hits->forwardTOF->ftofCounters == HDDM_NULL)continue;
-    
-    
-    s_FtofCounters_t* ftofCounters = hits->forwardTOF->ftofCounters;
-    
-    // Loop over counters
-    
-    for(unsigned int j=0;j<ftofCounters->mult; j++){
-      s_FtofCounter_t *ftofCounter = &(ftofCounters->in[j]);		 
-      
-      // take care of North Hits
-      s_FtofNorthTruthHits_t *ftofNorthTruthHits = ftofCounter->ftofNorthTruthHits;
-
-      if (ftofNorthTruthHits->mult>0){
-	ftofCounter->ftofNorthHits = make_s_FtofNorthHits(ftofNorthTruthHits->mult);
-	ftofCounter->ftofNorthHits->mult = ftofNorthTruthHits->mult;
-	
-	for (unsigned int m=0;m<ftofNorthTruthHits->mult;m++){
-	  s_FtofNorthTruthHit_t *ftofNorthTruthHit = &(ftofNorthTruthHits->in[m]);
-	  s_FtofNorthHit_t *ftofHit = &(ftofCounter->ftofNorthHits->in[m]);
-	  
-	  // Smear the time
-	  ftofHit->t = ftofNorthTruthHit->t + SampleGaussian(TOF_SIGMA);
-	  
-	  // Smear the energy
-	  double npe = (double)ftofNorthTruthHit->dE * 1000. *  TOF_PHOTONS_PERMEV;
-	  npe = npe +  SampleGaussian(sqrt(npe));
-	  float NewE = npe/TOF_PHOTONS_PERMEV/1000.;
-	  ftofHit->dE = NewE;
-	  
-	} 
+   hddm_s::FtofCounterList tofs = record->getFtofCounters();
+   hddm_s::FtofCounterList::iterator iter;
+   for (iter = tofs.begin(); iter != tofs.end(); ++iter) {
+      // take care of hits
+      iter->deleteFtofHits();
+      hddm_s::FtofTruthHitList thits = iter->getFtofTruthHits();
+      hddm_s::FtofTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // Smear the time
+         double t = titer->getT() + SampleGaussian(TOF_SIGMA);
+         // Smear the energy
+         double npe = titer->getDE() * 1000. * TOF_PHOTONS_PERMEV;
+         npe = npe +  SampleGaussian(sqrt(npe));
+         float NewE = npe/TOF_PHOTONS_PERMEV/1000.;
+         if (NewE > FTOF_BAR_THRESHOLD) {
+            hddm_s::FtofHitList hits = iter->addFtofHits();
+            hits().setEnd(titer->getEnd());
+            hits().setT(t);
+            hits().setDE(NewE);
+         }
       }
-
-      // take care of South Hits
-      s_FtofSouthTruthHits_t *ftofSouthTruthHits = ftofCounter->ftofSouthTruthHits;
-      
-      if (ftofSouthTruthHits->mult>0){
-	ftofCounter->ftofSouthHits = make_s_FtofSouthHits(ftofSouthTruthHits->mult);
-	ftofCounter->ftofSouthHits->mult = ftofSouthTruthHits->mult;
-	
-	for (unsigned int m=0;m<ftofSouthTruthHits->mult;m++){
-	  s_FtofSouthTruthHit_t *ftofSouthTruthHit = &(ftofSouthTruthHits->in[m]);
-	  s_FtofSouthHit_t *ftofHit = &(ftofCounter->ftofSouthHits->in[m]);
-	  
-	  // Smear the time
-	  ftofHit->t = ftofSouthTruthHit->t + SampleGaussian(TOF_SIGMA);
-	  
-	  // Smear the energy
-	  double npe = (double)ftofSouthTruthHit->dE * 1000. *  TOF_PHOTONS_PERMEV;
-	  npe = npe +  SampleGaussian(sqrt(npe));
-	  float NewE = npe/TOF_PHOTONS_PERMEV/1000.;
-	  ftofHit->dE = NewE;
-	  
-	}  
-      }
-    } // end loop over all counters
     
-    if (DROP_TRUTH_HITS){
-      for(unsigned int j=0;j<ftofCounters->mult; j++){
-	s_FtofCounter_t *ftofCounter = &(ftofCounters->in[j]);	
-	if (ftofCounter->ftofNorthTruthHits->mult>0) FREE(ftofCounter->ftofNorthTruthHits);
-	ftofCounter->ftofNorthTruthHits=(s_FtofNorthTruthHits_t *)HDDM_NULL;	
-	if (ftofCounter->ftofSouthTruthHits->mult>0) FREE(ftofCounter->ftofSouthTruthHits);
-	ftofCounter->ftofSouthTruthHits=(s_FtofSouthTruthHits_t *)HDDM_NULL;
+      if (DROP_TRUTH_HITS) {
+         iter->deleteFtofTruthHits();
       }
-    }
-  } 
+   }
 }
 
 //-----------
 // SmearSTC - smear hits in the start counter
 //-----------
-void SmearSTC(s_HDDM_t *hddm_s)
+void SmearSTC(hddm_s::HDDM *record)
 {
-  
- // Loop over Physics Events
-  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-  if(!PE) return;
-  
-  for(unsigned int i=0; i<PE->mult; i++){
-    s_HitView_t *hits = PE->in[i].hitView;
-    if (hits == HDDM_NULL ||
-	hits->startCntr == HDDM_NULL ||
-	hits->startCntr->stcPaddles == HDDM_NULL)continue;
-    s_StcPaddles_t *stcPaddles= hits->startCntr->stcPaddles;
-    
-    // Loop over counters
-    for(unsigned int j=0;j<stcPaddles->mult; j++){
-      s_StcPaddle_t *stcPaddle = &(stcPaddles->in[j]);
- 
-      s_StcTruthHits_t *stcTruthHits=stcPaddle->stcTruthHits;
-      stcPaddle->stcHits=make_s_StcHits(stcTruthHits->mult);
-      stcPaddle->stcHits->mult=stcTruthHits->mult;
-      for (unsigned int m=0;m<stcTruthHits->mult;m++){
-	s_StcTruthHit_t *stcTruthHit=&(stcTruthHits->in[m]);	
-	s_StcHit_t *stcHit=&(stcPaddle->stcHits->in[m]);
-	
-	// smear the time
-	stcHit->t=stcTruthHit->t + SampleGaussian(START_SIGMA);
+   hddm_s::StcPaddleList pads = record->getStcPaddles();
+   hddm_s::StcPaddleList::iterator iter;
+   for (iter = pads.begin(); iter != pads.end(); ++iter) {
+      iter->deleteStcHits();
+      hddm_s::StcTruthHitList thits = iter->getStcTruthHits();
+      hddm_s::StcTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // smear the time
+         double t = titer->getT() + SampleGaussian(START_SIGMA);
+         // smear the energy
+         double npe = titer->getDE() * 1000. *  START_PHOTONS_PERMEV;
+         npe = npe +  SampleGaussian(sqrt(npe));
+         double NewE = npe/START_PHOTONS_PERMEV/1000.;
+         if (NewE > STC_PADDLE_THRESHOLD) {
+            hddm_s::StcHitList hits = iter->addStcHits();
+            hits().setT(t);
+            hits().setDE(NewE);
+         }
+      }
 
-	// Smear the energy
-	double npe = (double)stcTruthHit->dE * 1000. *  START_PHOTONS_PERMEV;
-	npe = npe +  SampleGaussian(sqrt(npe));
-	float NewE = npe/START_PHOTONS_PERMEV/1000.;
-	stcHit->dE = NewE;
-      }
-      if (DROP_TRUTH_HITS){
-	FREE(stcPaddle->stcTruthHits);
-	stcPaddle->stcTruthHits=(s_StcTruthHits_t *)HDDM_NULL;
-      }
-    }
-  }
+      if (DROP_TRUTH_HITS)
+         iter->deleteStcTruthHits();
+   }
 }
 
 //-----------
 // SmearCherenkov
 //-----------
-void SmearCherenkov(s_HDDM_t *hddm_s)
+void SmearCherenkov(hddm_s::HDDM *record)
 {
+}
 
+//-----------
+// SmearTAGM
+//-----------
+void SmearTAGM(hddm_s::HDDM *record)
+{
+   hddm_s::MicroChannelList tagms = record->getMicroChannels();
+   hddm_s::MicroChannelList::iterator iter;
+   for (iter = tagms.begin(); iter != tagms.end(); ++iter) {
+      iter->deleteTaggerHits();
+      hddm_s::TaggerTruthHitList thits = iter->getTaggerTruthHits();
+      hddm_s::TaggerTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // smear the time
+         double t = titer->getT() + SampleGaussian(TAGM_TSIGMA);
+         double tADC = titer->getT() + SampleGaussian(TAGM_FADC_TSIGMA);
+         double npe = SamplePoisson(titer->getDE() * TAGM_NPIX_PER_GEV);
+         hddm_s::TaggerHitList hits = iter->addTaggerHits();
+         hits().setT(t);
+         hits().setTADC(tADC);
+         hits().setNpe(npe);
+      }
 
+      if (DROP_TRUTH_HITS)
+         iter->deleteTaggerTruthHits();
+   }
+}
 
+//-----------
+// SmearTAGH
+//-----------
+void SmearTAGH(hddm_s::HDDM *record)
+{
+   hddm_s::HodoChannelList taghs = record->getHodoChannels();
+   hddm_s::HodoChannelList::iterator iter;
+   for (iter = taghs.begin(); iter != taghs.end(); ++iter) {
+      iter->deleteTaggerHits();
+      hddm_s::TaggerTruthHitList thits = iter->getTaggerTruthHits();
+      hddm_s::TaggerTruthHitList::iterator titer;
+      for (titer = thits.begin(); titer != thits.end(); ++titer) {
+         // smear the time
+         double t = titer->getT() + SampleGaussian(TAGH_TSIGMA);
+         double tADC = titer->getT() + SampleGaussian(TAGH_FADC_TSIGMA);
+         double npe = SamplePoisson(titer->getDE() * TAGH_NPE_PER_GEV);
+         hddm_s::TaggerHitList hits = iter->addTaggerHits();
+         hits().setT(t);
+         hits().setTADC(tADC);
+         hits().setNpe(npe);
+      }
+
+      if (DROP_TRUTH_HITS)
+         iter->deleteTaggerTruthHits();
+   }
 }
 
 //-----------
@@ -1124,46 +895,46 @@ void InitCDCGeometry(void)
     float rotX=0.0, rotY=0.0;
     switch(ring){
       // axial
-    case  1:	myNstraws=  42;	radius= 10.7219;	stereo=  degrees0; phi_shift= 0.00000;	break;
-    case  2:	myNstraws=  42;	radius= 12.097;	        stereo=  degrees0; phi_shift= 4.285714;	break;
-    case  3:	myNstraws=  54;	radius= 13.7803;	stereo=  degrees0; phi_shift= 2.00000;	break;
-    case  4:	myNstraws=  54;	radius= 15.1621;	stereo=  degrees0; phi_shift= 5.3333333;	break;
+    case  1:   myNstraws=  42;   radius= 10.7219;   stereo=  degrees0; phi_shift= 0.00000;   break;
+    case  2:   myNstraws=  42;   radius= 12.097;           stereo=  degrees0; phi_shift= 4.285714;   break;
+    case  3:   myNstraws=  54;   radius= 13.7803;   stereo=  degrees0; phi_shift= 2.00000;   break;
+    case  4:   myNstraws=  54;   radius= 15.1621;   stereo=  degrees0; phi_shift= 5.3333333;   break;
       
       // -stereo
-    case  5:	myNstraws=  66;	radius= 16.9321;	stereo= -degrees6; phi_shift= 0.33333;	break;
-    case  6:	myNstraws=  66;	phi_shift= 0.33333;	deltaX= 18.2948 ;	deltaY= 0.871486;	rotX=-6.47674;	rotY=-0.302853;	break;
-    case  7:	myNstraws=  80;	radius= 20.5213;	stereo= -degrees6; phi_shift= -0.5000;	break;
-    case  8:	myNstraws=  80;	phi_shift= -0.5000;	deltaX= 21.8912;	deltaY= 0.860106;	rotX=-6.39548;	rotY=-0.245615;	break;
+    case  5:   myNstraws=  66;   radius= 16.9321;   stereo= -degrees6; phi_shift= 0.33333;   break;
+    case  6:   myNstraws=  66;   phi_shift= 0.33333;   deltaX= 18.2948 ;   deltaY= 0.871486;   rotX=-6.47674;   rotY=-0.302853;   break;
+    case  7:   myNstraws=  80;   radius= 20.5213;   stereo= -degrees6; phi_shift= -0.5000;   break;
+    case  8:   myNstraws=  80;   phi_shift= -0.5000;   deltaX= 21.8912;   deltaY= 0.860106;   rotX=-6.39548;   rotY=-0.245615;   break;
       
       // +stereo
-    case  9:	myNstraws=  93;	radius= 23.8544;	stereo= +degrees6; phi_shift= 1.1000;	break;
-    case 10:	myNstraws=  93;	phi_shift= 1.1000;	deltaX= 25.229;	deltaY= 0.852573;	rotX=+6.34142;	rotY=+0.208647;	break;
-    case 11:	myNstraws= 106;	radius= 27.1877;	stereo= +degrees6; phi_shift= -1.40;	break;
-    case 12:	myNstraws= 106;	phi_shift= -1.400;	deltaX= 28.5658;	deltaY= 0.846871;	rotX=+6.30035;	rotY=+0.181146;	break;
+    case  9:   myNstraws=  93;   radius= 23.8544;   stereo= +degrees6; phi_shift= 1.1000;   break;
+    case 10:   myNstraws=  93;   phi_shift= 1.1000;   deltaX= 25.229;   deltaY= 0.852573;   rotX=+6.34142;   rotY=+0.208647;   break;
+    case 11:   myNstraws= 106;   radius= 27.1877;   stereo= +degrees6; phi_shift= -1.40;   break;
+    case 12:   myNstraws= 106;   phi_shift= -1.400;   deltaX= 28.5658;   deltaY= 0.846871;   rotX=+6.30035;   rotY=+0.181146;   break;
       
       // axial
-    case 13:	myNstraws= 123;	radius= 31.3799;	stereo=  degrees0; phi_shift= 0.5000000;	break;
-    case 14:	myNstraws= 123;	radius= 32.7747;	stereo=  degrees0; phi_shift= 1.9634146;	break;
-    case 15:	myNstraws= 135;	radius= 34.4343;	stereo=  degrees0; phi_shift= 1.0000000;	break;
-    case 16:	myNstraws= 135;	radius= 35.8301;	stereo=  degrees0; phi_shift= 2.3333333;	break;
+    case 13:   myNstraws= 123;   radius= 31.3799;   stereo=  degrees0; phi_shift= 0.5000000;   break;
+    case 14:   myNstraws= 123;   radius= 32.7747;   stereo=  degrees0; phi_shift= 1.9634146;   break;
+    case 15:   myNstraws= 135;   radius= 34.4343;   stereo=  degrees0; phi_shift= 1.0000000;   break;
+    case 16:   myNstraws= 135;   radius= 35.8301;   stereo=  degrees0; phi_shift= 2.3333333;   break;
       
       // -stereo
-    case 17:	myNstraws= 146;	radius= 37.4446;	stereo= -degrees6; phi_shift= 0.2;	break;
-    case 18:	myNstraws= 146;	phi_shift= 0.2;	deltaX= 38.8295;	deltaY= 0.835653;	rotX=-6.21919 ;	rotY=-0.128247;	break;
-    case 19:	myNstraws= 158;	radius= 40.5364;	stereo= -degrees6; phi_shift= 0.7;	break;
-    case 20:	myNstraws= 158;	phi_shift= 0.7;	deltaX=41.9225 ;	deltaY= 0.833676;	rotX=-6.20274;	rotY=-0.118271;	break;
+    case 17:   myNstraws= 146;   radius= 37.4446;   stereo= -degrees6; phi_shift= 0.2;   break;
+    case 18:   myNstraws= 146;   phi_shift= 0.2;   deltaX= 38.8295;   deltaY= 0.835653;   rotX=-6.21919 ;   rotY=-0.128247;   break;
+    case 19:   myNstraws= 158;   radius= 40.5364;   stereo= -degrees6; phi_shift= 0.7;   break;
+    case 20:   myNstraws= 158;   phi_shift= 0.7;   deltaX=41.9225 ;   deltaY= 0.833676;   rotX=-6.20274;   rotY=-0.118271;   break;
       
       // +stereo
-    case 21:	myNstraws= 170;	radius= 43.6152;	stereo= +degrees6; phi_shift= 1.1000;	break;
-    case 22:	myNstraws= 170;	phi_shift= 1.1000;	deltaX=45.0025  ;	deltaY= 0.831738;	rotX=+6.18859;	rotY=+0.109325;	break;
-    case 23:	myNstraws= 182;	radius= 46.6849;	stereo= +degrees6; phi_shift= 1.40;	break;
-    case 24:	myNstraws= 182;	phi_shift= 1.400;	deltaX= 48.0733;	deltaY= 0.829899;	rotX=+6.1763;	rotY=+0.101315;	break;
+    case 21:   myNstraws= 170;   radius= 43.6152;   stereo= +degrees6; phi_shift= 1.1000;   break;
+    case 22:   myNstraws= 170;   phi_shift= 1.1000;   deltaX=45.0025  ;   deltaY= 0.831738;   rotX=+6.18859;   rotY=+0.109325;   break;
+    case 23:   myNstraws= 182;   radius= 46.6849;   stereo= +degrees6; phi_shift= 1.40;   break;
+    case 24:   myNstraws= 182;   phi_shift= 1.400;   deltaX= 48.0733;   deltaY= 0.829899;   rotX=+6.1763;   rotY=+0.101315;   break;
       
       // axial
-    case 25:	myNstraws= 197;	radius= 50.37;	stereo=  degrees0; phi_shift= 0.200000000;	break;
-    case 26:	myNstraws= 197;	radius= 51.77;	stereo=  degrees0; phi_shift= 1.113705000;	break;
-    case 27:	myNstraws= 209;	radius= 53.363;	stereo=  degrees0; phi_shift= 0.800000000;	break;
-    case 28:	myNstraws= 209;	radius= 54.76;	stereo=  degrees0; phi_shift= 1.661244;	break;
+    case 25:   myNstraws= 197;   radius= 50.37;   stereo=  degrees0; phi_shift= 0.200000000;   break;
+    case 26:   myNstraws= 197;   radius= 51.77;   stereo=  degrees0; phi_shift= 1.113705000;   break;
+    case 27:   myNstraws= 209;   radius= 53.363;   stereo=  degrees0; phi_shift= 0.800000000;   break;
+    case 28:   myNstraws= 209;   radius= 54.76;   stereo=  degrees0; phi_shift= 1.661244;   break;
     default:
       cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-28 inclusive!"<<endl;
     }
@@ -1191,52 +962,120 @@ void InitFDCGeometry(void)
   //int WIRES_PER_PLANE = 96;
   //int WIRE_SPACING = 1.116;
   
-  for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
+  for (int layer=1; layer <= FDC_NUM_LAYERS; layer++) {
     
     float degrees00 = 0.0;
     float degrees60 = M_PI*60.0/180.0;
     
-    float angle=0.0;
-    float z_anode=212.0+95.5;
-    switch(layer){
-    case  1: z_anode+= -92.5-2.0;	angle=  degrees00; break;
-    case  2: z_anode+= -92.5+0.0;	angle= +degrees60; break;
-    case  3: z_anode+= -92.5+2.0;	angle= -degrees60; break;
-    case  4: z_anode+= -86.5-2.0;	angle=  degrees00; break;
-    case  5: z_anode+= -86.5+0.0;	angle= +degrees60; break;
-    case  6: z_anode+= -86.5+2.0;	angle= -degrees60; break;
-      
-    case  7: z_anode+= -32.5-2.0;	angle=  degrees00; break;
-    case  8: z_anode+= -32.5+0.0;	angle= +degrees60; break;
-    case  9: z_anode+= -32.5+2.0;	angle= -degrees60; break;
-    case 10: z_anode+= -26.5-2.0;	angle=  degrees00; break;
-    case 11: z_anode+= -26.5+0.0;	angle= +degrees60; break;
-    case 12: z_anode+= -26.5+2.0;	angle= -degrees60; break;
-      
-    case 13: z_anode+= +26.5-2.0;	angle=  degrees00; break;
-    case 14: z_anode+= +26.5+0.0;	angle= +degrees60; break;
-    case 15: z_anode+= +26.5+2.0;	angle= -degrees60; break;
-    case 16: z_anode+= +32.5-2.0;	angle=  degrees00; break;
-    case 17: z_anode+= +32.5+0.0;	angle= +degrees60; break;
-    case 18: z_anode+= +32.5+2.0;	angle= -degrees60; break;
-      
-    case 19: z_anode+= +86.5-2.0;	angle=  degrees00; break;
-    case 20: z_anode+= +86.5+0.0;	angle= +degrees60; break;
-    case 21: z_anode+= +86.5+2.0;	angle= -degrees60; break;
-    case 22: z_anode+= +92.5-2.0;	angle=  degrees00; break;
-    case 23: z_anode+= +92.5+0.0;	angle= +degrees60; break;
-    case 24: z_anode+= +92.5+2.0;	angle= -degrees60; break;
+    float angle = 0.0;
+    float z_anode = 212.0 + 95.5;
+    switch (layer) {
+     case  1:
+       z_anode += -92.5 - 2.0;
+       angle =  degrees00;
+       break;
+     case  2:
+       z_anode += -92.5 + 0.0;
+       angle = +degrees60;
+       break;
+     case  3:
+       z_anode += -92.5 + 2.0;
+       angle = -degrees60;
+       break;
+     case  4:
+       z_anode += -86.5 - 2.0;
+       angle =  degrees00;
+       break;
+     case  5:
+       z_anode += -86.5 + 0.0;
+       angle = +degrees60;
+       break;
+     case  6:
+       z_anode += -86.5 + 2.0;
+       angle = -degrees60;
+       break;
+     case  7:
+       z_anode += -32.5 - 2.0;
+       angle =  degrees00;
+       break;
+     case  8:
+       z_anode += -32.5 + 0.0;
+       angle = +degrees60;
+       break;
+     case  9:
+       z_anode += -32.5 + 2.0;
+       angle = -degrees60;
+       break;
+     case 10:
+       z_anode += -26.5 - 2.0;
+       angle =  degrees00;
+       break;
+     case 11:
+       z_anode += -26.5 + 0.0;
+       angle = +degrees60;
+       break;
+     case 12:
+       z_anode += -26.5 + 2.0;
+       angle = -degrees60;
+       break;
+     case 13:
+       z_anode += +26.5 - 2.0;
+       angle =  degrees00;
+       break;
+     case 14:
+       z_anode += +26.5 + 0.0;
+       angle = +degrees60;
+       break;
+     case 15:
+       z_anode += +26.5 + 2.0;
+       angle = -degrees60;
+       break;
+     case 16:
+       z_anode += +32.5 - 2.0;
+       angle =  degrees00;
+       break;
+     case 17:
+       z_anode += +32.5 + 0.0;
+       angle = +degrees60;
+       break;
+     case 18:
+       z_anode += +32.5 + 2.0;
+       angle = -degrees60;
+       break;
+     case 19:
+       z_anode += +86.5 - 2.0;
+       angle =  degrees00;
+       break;
+     case 20:
+       z_anode += +86.5 + 0.0;
+       angle = +degrees60;
+       break;
+     case 21:
+       z_anode += +86.5 + 2.0;
+       angle = -degrees60;
+       break;
+     case 22:
+       z_anode += +92.5 - 2.0;
+       angle =  degrees00;
+       break;
+     case 23:
+       z_anode += +92.5 + 0.0;
+       angle = +degrees60;
+       break;
+     case 24:
+       z_anode += +92.5 + 2.0;
+       angle = -degrees60;
+       break;
     }
-    
     FDC_LAYER_Z.push_back(z_anode);
   }
   
   // Coefficient used to calculate FDCsingle wire rate. We calculate
   // it once here just to save calculating it for every wire in every event
-  FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
+  FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0) / 2.0 /
+                         log(24.0) * FDC_TIME_WINDOW/1000.0e-9;
   
   // Something is a little off in my calculation above so I scale it down via
   // an emprical factor:
   FDC_RATE_COEFFICIENT *= 0.353;
 }
-

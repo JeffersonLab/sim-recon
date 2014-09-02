@@ -25,7 +25,9 @@
  * based on the hddm_r file.
  *
  * Usage:
- * hddm_select_events [-i Inputfile] [-o Outputfile] [-r input is REST] [-a save remainder events] [-s selection type] [-M maximum number of events] [-d debug]
+ * hddm_select_events [-i Inputfile] [-o Outputfile] [-r input is REST] \
+ *                    [-a save remainder events] [-s selection type] \
+ *                    [-M maximum number of events] [-d debug]
  *
  * selection types:
  * 1. select Lambda -> p pi-
@@ -46,14 +48,17 @@ using namespace std;
 #include <time.h>
 #include <stdlib.h>
 
-#include <HDDM/hddm_s.h>
+#include <HDDM/hddm_s.hpp>
 #include <HDDM/hddm_r.hpp>
 
 #include "TRandom2.h"
 #include "TLorentzVector.h"
 
-bool selectEvent_s(int select_type, s_HDDM_t* hddm_s, int nevents, bool debug);
-bool selectEvent_r(int select_type, hddm_r::HDDM* record, int nevents, bool debug);
+extern bool HDDM_USE_COMPRESSION;
+extern bool HDDM_USE_INTEGRITY_CHECKS;
+
+bool selectEvent_s(int select_type, hddm_s::HDDM &record, int nevents, bool debug);
+bool selectEvent_r(int select_type, hddm_r::HDDM &record, int nevents, bool debug);
 
 // Lambda decay constant
 const double alpha = 0.642;

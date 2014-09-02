@@ -22,11 +22,11 @@
 #include "calibDB.h"
 extern s_HDDM_t* thisInputEvent;
 
-typedef struct{
+typedef struct {
   int writeenohits;
   int showersincol;
   int driftclusters;
-}controlparams_t;
+} controlparams_t;
 
 extern controlparams_t controlparams_;
 
@@ -54,23 +54,26 @@ static int initialized = 0;
 typedef int (*compfn)(const void*, const void*);
 
 // Sort function for sorting clusters
-int cdc_cluster_sort(const void *a,const void *b){
+int cdc_cluster_sort(const void *a,const void *b) {
   const s_CdcStrawTruthHit_t *ca=a;
   const s_CdcStrawTruthHit_t *cb=b;
-  if (ca->t<cb->t) return -1;
-  else if (ca->t>cb->t) return 1;
-  else return 0;
+  if (ca->t < cb->t)
+    return -1;
+  else if (ca->t > cb->t)
+    return 1;
+  else
+    return 0;
 }
 
 // Simulation of the ASIC response to a pulse due to a cluster
-double asic_response(double t){
+double asic_response(double t) {
   double func=0;
   double par[11]={-0.01986,0.01802,-0.001097,10.3,11.72,-0.03701,35.84,
 		  15.93,0.006141,80.95,24.77};
-  if (t<par[3]){
+  if (t < par[3]) {
     func=par[0]*t+par[1]*t*t+par[2]*t*t*t;
   }
-  else{
+  else {
     func+=(par[0]*par[3]+par[1]*par[3]*par[3]+par[2]*par[3]*par[3]*par[3])
       *exp(-(t-par[3])*(t-par[3])/(par[4]*par[4]));
     func+=par[5]*exp(-(t-par[6])*(t-par[6])/(par[7]*par[7]));
@@ -80,12 +83,12 @@ double asic_response(double t){
 }
 
 // Simulation of signal on a wire
-double cdc_wire_signal(double t,s_CdcStrawTruthHits_t* chits){
+double cdc_wire_signal(double t,s_CdcStrawTruthHits_t* chits) {
   int m;
   double asic_gain=0.5; // mV/fC
   double func=0;
-  for (m=0;m<chits->mult;m++){
-    if (t>chits->in[m].t){
+  for (m=0; m < chits->mult; m++) {
+    if (t > chits->in[m].t) {
       double my_time=t-chits->in[m].t;
       func+=asic_gain*chits->in[m].q*asic_response(my_time);
     }
@@ -93,9 +96,9 @@ double cdc_wire_signal(double t,s_CdcStrawTruthHits_t* chits){
   return func;
 }
 
-void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
-		   float t,
-		   float xyzcluster[3]){
+void AddCDCCluster(s_CdcStrawTruthHits_t* hits, int ipart, int track, int n_p,
+		   float t, float xyzcluster[3])
+{
   // measured charge 
   float q=0.;
   
@@ -125,16 +128,17 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
   // passes the doca to the wire) 
   double v_max=0.08; // guess for now based on Garfield, near wire 
   double tmin=dradius/v_max;
-  if (tdrift<tmin){
+  if (tdrift < tmin) {
     tdrift=tmin;
   }
 
   // Skip cluster if the time would go beyond readout window
-  if (tdrift>CDC_TIME_WINDOW) return;
+  if (tdrift > CDC_TIME_WINDOW)
+    return;
   
   // Average number of secondary ion pairs for 50/50 Ar/CO2 mixture
   float n_s_per_p=1.94;    
-  if (controlparams_.driftclusters==0){
+  if (controlparams_.driftclusters == 0) {
     /* Total number of ion pairs.  On average for each primary ion 
        pair produced there are n_s secondary ion pairs produced.  The
        probability distribution is a compound poisson distribution
@@ -144,9 +148,9 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
     float n_s_mean = ((float)n_p)*n_s_per_p;
     gpoiss_(&n_s_mean,&n_s,&one);
     int n_t = n_s+n_p;
-    q=((float)n_t)*GAS_GAIN*ELECTRON_CHARGE;
+    q = ((float)n_t)*GAS_GAIN*ELECTRON_CHARGE;
   }
-  else{
+  else {
     // Distribute the number of secondary ionizations for this primary
     // ionization according to a Poisson distribution with mean n_s_over_p.
     // For simplicity we assume these secondary electrons and the primary
@@ -154,49 +158,44 @@ void AddCDCCluster(s_CdcStrawTruthHits_t* hits,int ipart,int track,int n_p,
     int n_s, one=1;
     gpoiss_(&n_s_per_p,&n_s,&one);
     // Energy deposition, equivalent to anode charge, in units of fC
-    q=GAS_GAIN*ELECTRON_CHARGE*(float)(1+n_s);
+    q = GAS_GAIN*ELECTRON_CHARGE*(float)(1+n_s);
   }
   
   // Add the hit info
   int nhit;
-  for (nhit = 0; nhit < hits->mult; nhit++)
-    {
-      if (fabs(hits->in[nhit].t - tdrift) < TWO_HIT_RESOL)
-	{
-	  break;
-	}
+  for (nhit = 0; nhit < hits->mult; nhit++) {
+    if (fabs(hits->in[nhit].t - tdrift) < TWO_HIT_RESOL) {
+      break;
     }
-  if (nhit < hits->mult)		/* merge with former hit */
-    {
-      /* Use the time from the earlier hit but add the charge*/
-      hits->in[nhit].q += q;
-      if(hits->in[nhit].t>tdrift){
-	hits->in[nhit].t = tdrift;
-	hits->in[nhit].d = dradius;
-	hits->in[nhit].itrack = gidGetId(track);
-	hits->in[nhit].ptype = ipart;
-      }
-      
-      /* hits->in[nhit].t =
-	 (hits->in[nhit].t * hits->in[nhit].q + tdrift * dEsum)
-	 / (hits->in[nhit].q += dEsum);
-      */
-    }
-  else if (nhit < MAX_HITS)		/* create new hit */
-    {
+  }
+  if (nhit < hits->mult) {             /* merge with former hit */
+    /* Use the time from the earlier hit but add the charge*/
+    hits->in[nhit].q += q;
+    if (hits->in[nhit].t > tdrift) {
       hits->in[nhit].t = tdrift;
-      hits->in[nhit].q = q;
       hits->in[nhit].d = dradius;
       hits->in[nhit].itrack = gidGetId(track);
       hits->in[nhit].ptype = ipart;
-      
-      hits->mult++;
     }
-  else
-    {
-      fprintf(stderr,"HDGeant error in hitCentralDC: ");
-      fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
-    }
+
+    /* hits->in[nhit].t =
+          (hits->in[nhit].t * hits->in[nhit].q + tdrift * dEsum) /
+          (hits->in[nhit].q += dEsum);
+    */
+  }
+  else if (nhit < MAX_HITS) {            /* create new hit */
+    hits->in[nhit].t = tdrift;
+    hits->in[nhit].q = q;
+    hits->in[nhit].d = dradius;
+    hits->in[nhit].itrack = gidGetId(track);
+    hits->in[nhit].ptype = ipart;
+
+    hits->mult++;
+  }
+  else {
+    fprintf(stderr,"HDGeant error in hitCentralDC: ");
+    fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+  }
 }
 
 /* register hits during tracking (from gustep) */
@@ -224,7 +223,7 @@ void hitCentralDC (float xin[4], float xout[4],
     if (!status) {
       int ncounter = 0;
       int i;
-      for ( i=0;i<(int)nvalues;i++){
+      for ( i=0;i<(int)nvalues;i++) {
 	//printf("%d %s \n",i,strings[i].str);
 	if (!strcmp(strings[i].str,"CDC_DRIFT_SPEED")) {
 	  DRIFT_SPEED  = values[i];
@@ -243,9 +242,9 @@ void hitCentralDC (float xin[4], float xout[4],
 	  ncounter++;
 	}
       }
-      if (ncounter==4){
+      if (ncounter==4) {
 	printf("CDC: ALL parameters loaded from Data Base\n");
-      } else if (ncounter<5){
+      } else if (ncounter<5) {
 	printf("CDC: NOT ALL necessary parameters found in Data Base %d out of 5\n",ncounter);
       } else {
 	printf("CDC: SOME parameters found more than once in Data Base\n");
@@ -276,7 +275,8 @@ void hitCentralDC (float xin[4], float xout[4],
    * at xout[3] and making sure it is less than 1 second. If it's
    * not, then just use xin[3] for "t".
    */
-  if(xout[3] > 1.0) t = xin[3] * 1e9;
+  if (xout[3] > 1.0)
+    t = xin[3] * 1e9;
 	 
   drin = sqrt(xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1]);
   drout = sqrt(xoutlocal[0]*xoutlocal[0] + xoutlocal[1]*xoutlocal[1]);
@@ -291,16 +291,16 @@ void hitCentralDC (float xin[4], float xout[4],
   xlocal[2]=xinlocal[2]+trackdir[2]*alpha;  
   
   // Deal with tracks exiting the ends of the straws
-  if (fabs(xlocal[2])>=75.45){
-    float sign=(xoutlocal[2]>0)?1.:-1.;
+  if (fabs(xlocal[2]) >= 75.45) {
+    float sign = (xoutlocal[2] > 0)? 1. : -1.;
     int ring = getring_wrapper_();
-    if (ring<=4 || (ring>=13 && ring<=16) || ring>=25){
+    if (ring <= 4 || (ring >= 13 && ring <= 16) || ring >= 25) {
       alpha=(sign*75.45-xinlocal[2])/trackdir[2];
       xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
       xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
       xlocal[2]=sign*75.45;
     }
-    else if (fabs(xlocal[2])>=75.575){
+    else if (fabs(xlocal[2]) >= 75.575) {
       alpha=(sign*75.575-xinlocal[2])/trackdir[2]; 
       xlocal[0]=xinlocal[0]+trackdir[0]*alpha;  
       xlocal[1]=xinlocal[1]+trackdir[1]*alpha;
@@ -319,10 +319,12 @@ void hitCentralDC (float xin[4], float xout[4],
    * it is because it is emerging from the wire volume and
    * automatically ignore those hits by returning immediately.
    */
-  if(drin < 0.0050)return; /* entering straw within 50 microns of wire. ignore */
+  if (drin < 0.0050)
+    return; /* entering straw within 50 microns of wire. ignore */
  
-  if((drin>(STRAW_RADIUS-0.0200) && drout<0.0050)
-     ||(drin<0.274 && drin>0.234 && drout<0.0050)){
+  if ((drin > (STRAW_RADIUS-0.0200) && drout<0.0050) ||
+      (drin < 0.274 && drin > 0.234 && drout<0.0050))
+  {
     /* Either we entered within 200 microns of the straw tube and left
      * within 50 microns of the wire or we entered the stub region near the 
      * donuts at either end of the straw (the inner radius of the feedthrough 
@@ -443,13 +445,13 @@ void hitCentralDC (float xin[4], float xout[4],
 	int n_p; // number of primary ion pairs
 	gpoiss_(&n_p_mean,&n_p,&one);
 	
-	if (controlparams_.driftclusters==0){	  
+	if (controlparams_.driftclusters==0) {	  
 	  AddCDCCluster(hits,ipart,track,n_p,t,xlocal);
 	}
 	else{
 	  // Loop over the number of primary ion pairs
 	  int n;
-	  for (n=0;n<n_p;n++){
+	  for (n=0; n < n_p; n++) {
 	    // Generate a cluster at a random position along the path within the 
 	    // straw
 	    int one=2;
@@ -511,7 +513,7 @@ s_CentralDC_t* pickCentralDC ()
 	  /* compress out the hits below threshold */
 	  int i,iok=0;
 	  
-	  if (controlparams_.driftclusters==0){
+	  if (controlparams_.driftclusters == 0) {
 	    for (iok=i=0; i < hits->mult; i++)
 	      {
 	       if (hits->in[i].q >0.)
@@ -529,7 +531,7 @@ s_CentralDC_t* pickCentralDC ()
 	    // Temporary histogram in 1 ns bins to store waveform data
 	    int num_samples=(int)CDC_TIME_WINDOW;
 	    float *samples=(float *)malloc(num_samples*sizeof(float));
-	    for (i=0;i<num_samples;i++){
+	    for (i=0;i<num_samples;i++) {
 	      samples[i]=cdc_wire_signal((float)i,hits);
 	      //printf("%f %f\n",(float)i,samples[i]);
 	    }
@@ -537,29 +539,28 @@ s_CentralDC_t* pickCentralDC ()
 	    int returned_to_baseline=0;
 	    float q=0.; 
 	    int FADC_BIN_SIZE=1;
-	    for (i=0;i<num_samples;i+=FADC_BIN_SIZE){
-	      if (samples[i]>=THRESH_MV){
-		if (returned_to_baseline==0){
+	    for (i=0; i<num_samples; i+=FADC_BIN_SIZE) {
+	      if (samples[i] >= THRESH_MV) {
+		if (returned_to_baseline == 0) {
 		  hits->in[iok].itrack = hits->in[0].itrack;
 		  hits->in[iok].ptype = hits->in[0].ptype;
 		  hits->in[iok].t=(float) i;
-		  returned_to_baseline=1;
+		  returned_to_baseline = 1;
 		  iok++;
 		}
-		q+=(float)FADC_BIN_SIZE*samples[i];
+		q += (float)FADC_BIN_SIZE*samples[i];
 	      }
-	      if (returned_to_baseline 
-		  && (samples[i]<THRESH_MV)){
-		returned_to_baseline=0;   
-		if (iok>0 && q>0.){
+	      if (returned_to_baseline && (samples[i] < THRESH_MV)) {
+		returned_to_baseline = 0;   
+		if (iok > 0 && q > 0.) {
 		  hits->in[iok-1].q=q;
 		  q=0.;
 		}
 	     //break;
 	      }
 	    }
-	   if (q>0){
-	     hits->in[iok-1].q=q;
+	   if (q > 0) {
+	     hits->in[iok-1].q = q;
 	   }
 	   free(samples);
 	  }
@@ -615,4 +616,3 @@ s_CentralDC_t* pickCentralDC ()
    }
    return box;
 }
-

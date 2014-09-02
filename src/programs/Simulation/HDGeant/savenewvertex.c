@@ -47,7 +47,7 @@ void SaveNewVertex(int kcase, int Npart, float *gkin,
   or->vx = vertex[0];
   or->vy = vertex[1];
   or->vz = vertex[2];
-  or->t = tofg;
+  or->t = tofg * 1e9;
 
   int lastId = getLastId();
 

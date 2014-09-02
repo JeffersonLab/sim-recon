@@ -124,15 +124,17 @@ env.Append(BUILDERS = {'HDDMC'   : bldc})
 env.Append(BUILDERS = {'HDDMCPP' : bldcpp})
 
 
-# Add the C/C++ HDDM (de)serializer source dependcies
+# Add the C/C++ HDDM (de)serializer source dependencies
 # by hand. The output file names depend on the class
 # tag defined inside the XML file. So, specifying the
 # inputs and outputs explicitly here is just easier.
 # The HDDMC_SRC and HDDMCPP_SRC variables are used by
 # the SConscript in src/programs/Utilities/hddm.
 env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_s.h', 'hddm_s.c'], 'event.xml'))
+env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_mc_s.h', 'hddm_mc_s.c'], 'mc.xml'))
 env.AppendUnique(HDDMC_SRC   = env.HDDMC(['hddm_r.h', 'hddm_r.c'], 'rest.xml'))
 env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_s.hpp', 'hddm_s++.cpp'], 'event.xml'))
+env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_mc_s.hpp', 'hddm_mc_s++.cpp'], 'mc.xml'))
 env.AppendUnique(HDDMCPP_SRC = env.HDDMCPP(['hddm_r.hpp', 'hddm_r++.cpp'], 'rest.xml'))
 
 # Finally, clone the build environment and make a library

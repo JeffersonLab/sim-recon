@@ -13,11 +13,9 @@ using namespace jana;
 
 #include "DCereHit.h"
 
-typedef JFactory<DCereHit> DCereHit_factory;
-
 jerror_t CERE_init(JEventLoop *loop) {
 	/// Create and register Cherenkov data factories
-	loop->AddFactory(new DCereHit_factory());
+	loop->AddFactory(new JFactory<DCereHit>());
 
 	return NOERROR;
 }

@@ -41,7 +41,11 @@ int main(int argc, char **argv)
          exit(1);
       }
       while ((thisInputEvent = read_s_HDDM(thisInputFile))) {
-         flush_s_HDDM(thisInputEvent,thisOutputFile);
+         if (flush_s_HDDM(thisInputEvent,thisOutputFile) != 0) {
+            fprintf(stderr,"Error - write failed to output hddm file %s\n",
+                    argv[output]);
+            exit(2);
+         }
       }
       close_s_HDDM(thisInputFile);
    }

@@ -1,10 +1,10 @@
 /*
  * hitFTOF - registers hits for forward Time-Of-Flight
  *
- *	This is a part of the hits package for the
- *	HDGeant simulation program for Hall D.
+ *        This is a part of the hits package for the
+ *        HDGeant simulation program for Hall D.
  *
- *	version 1.0 	-Richard Jones July 16, 2001
+ *        version 1.0         -Richard Jones July 16, 2001
  *
  * changes:     -B. Zihlmann June 19. 2007
  *          add hit position to north and south hit structure
@@ -42,14 +42,14 @@
 #include "calibDB.h"
 
 // plastic scintillator specific constants
-static float ATTEN_LENGTH =	150  ;
-static float C_EFFECTIVE  =	15.0 ;
+static float ATTEN_LENGTH =   150;
+static float C_EFFECTIVE  =   15.0;
 static float BAR_LENGTH   =   252.0; // length of the bar
 
 // kinematic constants
-static float TWO_HIT_RESOL =  25. ;// separation time between two different hits
+static float TWO_HIT_RESOL =  25.;// separation time between two different hits
 
-static float THRESH_MEV    =  0. ;  // do not through away any hits, one can do that later
+static float THRESH_MEV    =  0.;  // do not through away any hits, one can do that later
 
 // maximum particle tracks per counter
 static int TOF_MAX_HITS    = 25;  // was 100 changed to 25
@@ -101,42 +101,42 @@ void hitForwardTOF (float xin[4], float xout[4],
       int ncounter = 0;
       int i;
       for ( i=0;i<(int)nvalues;i++){
-	//printf("%d %s \n",i,strings[i].str);
-	if (!strcmp(strings[i].str,"TOF_ATTEN_LENGTH")) {
-	  ATTEN_LENGTH  = values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"TOF_C_EFFECTIVE")) {
-	  C_EFFECTIVE   = values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"TOF_PADDLE_LENGTH")) {
-	  BAR_LENGTH    = values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"TOF_TWO_HIT_RESOL")) {
-	  TWO_HIT_RESOL = values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"TOF_THRESH_MEV")) {
-	  THRESH_MEV    =  values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"TOF_MAX_HITS")){
-	  TOF_MAX_HITS      = (int)values[i];
-	  ncounter++;
-	}
-	if (!strcmp(strings[i].str,"TOF_MAX_PAD_HITS")) {
-	  TOF_MAX_PAD_HITS  = (int)values[i];
-	  ncounter++;
-	}
+        //printf("%d %s \n",i,strings[i].str);
+        if (!strcmp(strings[i].str,"TOF_ATTEN_LENGTH")) {
+          ATTEN_LENGTH  = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"TOF_C_EFFECTIVE")) {
+          C_EFFECTIVE   = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"TOF_PADDLE_LENGTH")) {
+          BAR_LENGTH    = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"TOF_TWO_HIT_RESOL")) {
+          TWO_HIT_RESOL = values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"TOF_THRESH_MEV")) {
+          THRESH_MEV    =  values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"TOF_MAX_HITS")){
+          TOF_MAX_HITS      = (int)values[i];
+          ncounter++;
+        }
+        if (!strcmp(strings[i].str,"TOF_MAX_PAD_HITS")) {
+          TOF_MAX_PAD_HITS  = (int)values[i];
+          ncounter++;
+        }
       }
       if (ncounter==7){
-	printf("TOF: ALL parameters loaded from Data Base\n");
+        printf("TOF: ALL parameters loaded from Data Base\n");
       } else if (ncounter<7){
-	printf("TOF: NOT ALL necessary parameters found in Data Base %d out of 7\n",ncounter);
+        printf("TOF: NOT ALL necessary parameters found in Data Base %d out of 7\n",ncounter);
       } else {
-	printf("TOF: SOME parameters found more than once in Data Base\n");
+        printf("TOF: SOME parameters found more than once in Data Base\n");
       }
 
     }
@@ -231,11 +231,8 @@ void hitForwardTOF (float xin[4], float xout[4],
   // in other words now store the simulated detector response
   if (dEsum > 0) {
     int nhit;
-    s_FtofNorthTruthHits_t* northHits;
-    s_FtofSouthTruthHits_t* southHits;
-
-    s_FtofMCHits_t* noMCHits;
-    s_FtofMCHits_t* soMCHits;
+    s_FtofTruthHits_t* hits;
+    s_FtofTruthExtras_t* extras;
 
     // getrow and getcolumn are both coded in hddsGeant3.F
     // see above for function getplane()
@@ -250,7 +247,8 @@ void hitForwardTOF (float xin[4], float xout[4],
     //    float dist = xlocal[0];
 
     float dist = x[1]; // do not use local coordinate for x and y
-    if (plane==1) dist = x[0];
+    if (plane==1)
+      dist = x[0];
     float dxnorth = BAR_LENGTH/2.-dist;
     float dxsouth = BAR_LENGTH/2.+dist;
     
@@ -268,9 +266,9 @@ void hitForwardTOF (float xin[4], float xout[4],
     float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
     
     int padl = row;
-    if (row>44){
+    if (row>44)
       padl = row-23;
-    }
+ 
     //int mark = (plane<<20) + (row<<10) + column;
     int mark = (plane<<20) + (padl<<10);// + column;
     void** twig = getTwig(&forwardTOFTree, mark);
@@ -284,24 +282,18 @@ void hitForwardTOF (float xin[4], float xout[4],
       counters->in[0].plane = plane;
       //counters->in[0].bar = row;
       counters->in[0].bar = padl;
-      northHits = HDDM_NULL;
-      southHits = HDDM_NULL;
-      noMCHits = HDDM_NULL;
-      soMCHits = HDDM_NULL;
+      hits = HDDM_NULL;
+      extras = HDDM_NULL;
 
       // get space for the left/top or right/down PMT data for a total
       // of MAX_HITS possible hits in a single paddle
-      // Note: column=0 means paddle read out on both ends coumn=1or2 means single ended readout
+      // Note: column=0 means paddle read out on both ends, 
+      //       column=1 means single-ended readout to north end
+      //       column=2 means single-ended readout to south end
 
-      if (column == 0 || column == 1) {
-	counters->in[0].ftofNorthTruthHits = northHits
-	  = make_s_FtofNorthTruthHits(MAX_HITS);
+      if (column == 0 || column == 1 || column == 2) {
+        counters->in[0].ftofTruthHits = hits = make_s_FtofTruthHits(MAX_HITS);
       }
-      if (column == 0 || column == 2) {
-	counters->in[0].ftofSouthTruthHits = southHits
-	  = make_s_FtofSouthTruthHits(MAX_HITS);
-      }
-
       tof->ftofCounters = counters;
       counterCount++;
 
@@ -310,138 +302,136 @@ void hitForwardTOF (float xin[4], float xout[4],
       // this paddle is already registered (was hit before)
       // get the hit list back
       s_ForwardTOF_t* tof = *twig;
-      northHits = tof->ftofCounters->in[0].ftofNorthTruthHits;
-      southHits = tof->ftofCounters->in[0].ftofSouthTruthHits;
-      
+      hits = tof->ftofCounters->in[0].ftofTruthHits;
     }
     
-    if (northHits != HDDM_NULL) {
+    if (hits != HDDM_NULL) {
       
-      // loop over hits in this PM to find correct time slot
+      // loop over hits in this PM to find correct time slot, north end
       
-      for (nhit = 0; nhit < northHits->mult; nhit++) {
-	
-	if (fabs(northHits->in[nhit].t - t) < TWO_HIT_RESOL) {
-	  break;
-	}
+      for (nhit = 0; nhit < hits->mult; nhit++)
+      { 
+        if (hits->in[nhit].end == 0 &&
+            fabs(hits->in[nhit].t - t) < TWO_HIT_RESOL)
+        {
+          break;
+        }
       }
       
       // this hit is within the time frame of a previous hit
       // combine the times of this weighted by the energy of the hit
       
-      if (nhit < northHits->mult) {         /* merge with former hit */
-	northHits->in[nhit].t = 
-	  (northHits->in[nhit].t * northHits->in[nhit].dE 
-	   + tnorth * dEnorth)
-	  / (northHits->in[nhit].dE += dEnorth);
-		
-	// now add MC tracking information 
-	// first get MC pointer of this paddle
+      if (nhit < hits->mult) {         /* merge with former hit */
+        hits->in[nhit].t = 
+          (hits->in[nhit].t * hits->in[nhit].dE + tnorth * dEnorth) /
+          (hits->in[nhit].dE += dEnorth);
+                
+        // now add MC tracking information 
+        // first get MC pointer of this paddle
 
-	noMCHits = northHits->in[nhit].ftofMCHits;
-	unsigned int nMChit = noMCHits->mult;
-	if (nMChit<MAX_HITS) {
-	  noMCHits->in[nMChit].x = x[0];
-	  noMCHits->in[nMChit].y = x[1];
-	  noMCHits->in[nMChit].z = x[2];
-	  noMCHits->in[nMChit].E = pin[3];
-	  noMCHits->in[nMChit].px = pin[0]*pin[4];
-	  noMCHits->in[nMChit].py = pin[1]*pin[4];
-	  noMCHits->in[nMChit].pz = pin[2]*pin[4];
-	  noMCHits->in[nMChit].ptype = ipart;
-	  noMCHits->in[nMChit].itrack = gidGetId(track);
-	  noMCHits->in[nMChit].dist = dist;
-	  noMCHits->mult++;
-	}
-	
+        extras = hits->in[nhit].ftofTruthExtras;
+        unsigned int nMChit = extras->mult;
+        if (nMChit < MAX_HITS) {
+          extras->in[nMChit].x = x[0];
+          extras->in[nMChit].y = x[1];
+          extras->in[nMChit].z = x[2];
+          extras->in[nMChit].E = pin[3];
+          extras->in[nMChit].px = pin[0]*pin[4];
+          extras->in[nMChit].py = pin[1]*pin[4];
+          extras->in[nMChit].pz = pin[2]*pin[4];
+          extras->in[nMChit].ptype = ipart;
+          extras->in[nMChit].itrack = gidGetId(track);
+          extras->in[nMChit].dist = dist;
+          extras->mult++;
+        }
+        
       }  else if (nhit < MAX_HITS){  // hit in new time window
-	northHits->in[nhit].t = tnorth;
-	northHits->in[nhit].dE = dEnorth;
-	northHits->mult++;
+        hits->in[nhit].t = tnorth;
+        hits->in[nhit].dE = dEnorth;
+        hits->in[nhit].end = 0;
+        hits->mult++;
 
-	// create memory for MC track hit information
-	northHits->in[nhit].ftofMCHits = noMCHits = make_s_FtofMCHits(MAX_HITS);
+        // create memory for MC track hit information
+        hits->in[nhit].ftofTruthExtras = 
+                       extras = make_s_FtofTruthExtras(MAX_HITS);
 
-	noMCHits->in[0].x = x[0];
-	noMCHits->in[0].y = x[1];
-	noMCHits->in[0].z = x[2];
-	noMCHits->in[0].E = pin[3];
-	noMCHits->in[0].px = pin[0]*pin[4];
-	noMCHits->in[0].py = pin[1]*pin[4];
-	noMCHits->in[0].pz = pin[2]*pin[4];
-	noMCHits->in[0].ptype = ipart;
-	noMCHits->in[0].itrack = gidGetId(track);
-	noMCHits->in[0].dist = dist;
-	noMCHits->mult = 1;
-	
+        extras->in[0].x = x[0];
+        extras->in[0].y = x[1];
+        extras->in[0].z = x[2];
+        extras->in[0].E = pin[3];
+        extras->in[0].px = pin[0]*pin[4];
+        extras->in[0].py = pin[1]*pin[4];
+        extras->in[0].pz = pin[2]*pin[4];
+        extras->in[0].ptype = ipart;
+        extras->in[0].itrack = gidGetId(track);
+        extras->in[0].dist = dist;
+        extras->mult = 1;
+        
       } else {
-	fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
-	fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+        fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
+        fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
       }
-    }
-    
-    if (southHits != HDDM_NULL) {
       
-      // loop over hits in this PM to find correct time slot
+      // loop over hits in this PM to find correct time slot, south end
       
-      for (nhit = 0; nhit < southHits->mult; nhit++) {
-	
-	if (fabs(southHits->in[nhit].t - t) < TWO_HIT_RESOL) {
-	  break;
-	}
+      for (nhit = 0; nhit < hits->mult; nhit++)
+      {
+        if (hits->in[nhit].end == 1 &&
+            fabs(hits->in[nhit].t - t) < TWO_HIT_RESOL)
+        {
+          break;
+        }
       }
       
       // this hit is within the time frame of a previous hit
       // combine the times of this weighted by the energy of the hit
       
-      if (nhit < southHits->mult) {         /* merge with former hit */
-	southHits->in[nhit].t = 
-	  (southHits->in[nhit].t * southHits->in[nhit].dE 
-	   + tsouth * dEsouth)
-	  / (southHits->in[nhit].dE += dEsouth);
-	
-	soMCHits = southHits->in[nhit].ftofMCHits;
+      if (nhit < hits->mult) {         /* merge with former hit */
+        hits->in[nhit].t = 
+          (hits->in[nhit].t * hits->in[nhit].dE + tsouth * dEsouth) /
+          (hits->in[nhit].dE += dEsouth);
+        extras = hits->in[nhit].ftofTruthExtras;
 
-	// now add MC tracking information 
-	unsigned int nMChit = soMCHits->mult;	
-	if (nMChit<MAX_HITS) {
-	  
-	  soMCHits->in[nMChit].x = x[0];
-	  soMCHits->in[nMChit].y = x[1];
-	  soMCHits->in[nMChit].z = x[2];
-	  soMCHits->in[nMChit].E = pin[3];
-	  soMCHits->in[nMChit].px = pin[0]*pin[4];
-	  soMCHits->in[nMChit].py = pin[1]*pin[4];
-	  soMCHits->in[nMChit].pz = pin[2]*pin[4];
-	  soMCHits->in[nMChit].ptype = ipart;
-	  soMCHits->in[nMChit].itrack = gidGetId(track);
-	  soMCHits->in[nMChit].dist = dist;
-	  soMCHits->mult++;
-	}
-	
-      }  else if (nhit < MAX_HITS){  // hit in new time window
-	southHits->in[nhit].t = tsouth;
-	southHits->in[nhit].dE = dEsouth;
-	southHits->mult++;
+        // now add MC tracking information 
+        unsigned int nMChit = extras->mult;        
+        if (nMChit < MAX_HITS) {
+          extras->in[nMChit].x = x[0];
+          extras->in[nMChit].y = x[1];
+          extras->in[nMChit].z = x[2];
+          extras->in[nMChit].E = pin[3];
+          extras->in[nMChit].px = pin[0]*pin[4];
+          extras->in[nMChit].py = pin[1]*pin[4];
+          extras->in[nMChit].pz = pin[2]*pin[4];
+          extras->in[nMChit].ptype = ipart;
+          extras->in[nMChit].itrack = gidGetId(track);
+          extras->in[nMChit].dist = dist;
+          extras->mult++;
+        }
+        
+      }  else if (nhit < MAX_HITS) {  // hit in new time window
+        hits->in[nhit].t = tsouth;
+        hits->in[nhit].dE = dEsouth;
+        hits->in[nhit].end = 1;
+        hits->mult++;
 
-	// create memory space for MC track hit information
-	southHits->in[nhit].ftofMCHits = soMCHits = make_s_FtofMCHits(MAX_HITS);
-
-	soMCHits->in[0].x = x[0];
-	soMCHits->in[0].y = x[1];
-	soMCHits->in[0].z = x[2];
-	soMCHits->in[0].E = pin[3];
-	soMCHits->in[0].px = pin[0]*pin[4];
-	soMCHits->in[0].py = pin[1]*pin[4];
-	soMCHits->in[0].pz = pin[2]*pin[4];
-	soMCHits->in[0].ptype = ipart;
-	soMCHits->in[0].itrack = gidGetId(track);
-	soMCHits->in[0].dist = dist;
-	soMCHits->mult = 1;
-	
+        // create memory space for MC track hit information
+        hits->in[nhit].ftofTruthExtras = 
+                        extras = make_s_FtofTruthExtras(MAX_HITS);
+        extras->in[0].x = x[0];
+        extras->in[0].y = x[1];
+        extras->in[0].z = x[2];
+        extras->in[0].E = pin[3];
+        extras->in[0].px = pin[0]*pin[4];
+        extras->in[0].py = pin[1]*pin[4];
+        extras->in[0].pz = pin[2]*pin[4];
+        extras->in[0].ptype = ipart;
+        extras->in[0].itrack = gidGetId(track);
+        extras->in[0].dist = dist;
+        extras->mult = 1;
+        
       } else {
-	fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
-	fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+        fprintf(stderr,"HDGeant error in hitForwardTOF (file hitFTOF.c): ");
+        fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
       }
     }
   }
@@ -482,57 +472,37 @@ s_ForwardTOF_t* pickForwardTOF ()
     int point;
     
     for (counter=0; counter < counters->mult; ++counter) {
-      s_FtofNorthTruthHits_t* northHits = counters->in[counter].ftofNorthTruthHits;
-      s_FtofSouthTruthHits_t* southHits = counters->in[counter].ftofSouthTruthHits;
+      s_FtofTruthHits_t* hits = counters->in[counter].ftofTruthHits;
       
       /* compress out the hits below threshold */
       // cut off parameter is THRESH_MEV
       int iok,i;
       int mok=0;
       // loop over all hits in a counter for the left/up PMT
-      for (iok=i=0; i < northHits->mult; i++) {
-	
-	// check threshold
-	if (northHits->in[i].dE >= THRESH_MEV/1e3) {
-	  
-	  if (iok < i) {
-	    northHits->in[iok] = northHits->in[i];
-	  }
-	  ++mok;
-	  ++iok;
-	}
+      for (iok=i=0; i < hits->mult; i++) {
+        
+        // check threshold
+        if (hits->in[i].dE >= THRESH_MEV/1e3) {
+          
+          if (iok < i) {
+            hits->in[iok] = hits->in[i];
+          }
+          ++mok;
+          ++iok;
+        }
       }
       
       if (iok) {
-	northHits->mult = iok;
-      } else if (northHits != HDDM_NULL){ // no hits left over for this PMT	    
-	counters->in[counter].ftofNorthHits = HDDM_NULL;
-	FREE(northHits);
+        hits->mult = iok;
+      } else if (hits != HDDM_NULL){ // no hits left over for this PMT            
+        counters->in[counter].ftofHits = HDDM_NULL;
+        FREE(hits);
       }
       
-      // now same loop for the right/bottom PMT of a paddle
-      for (iok=i=0; i < southHits->mult; i++){
-	
-	if (southHits->in[i].dE >= THRESH_MEV/1e3){	      
-	  if (iok < i){
-	    southHits->in[iok] = southHits->in[i];
-	  }
-	  ++mok;
-	  ++iok;
-	}
-      }
-      
-      if (iok){
-	southHits->mult = iok;
-      }
-      else if (southHits != HDDM_NULL) {
-	counters->in[counter].ftofSouthHits = HDDM_NULL;
-	FREE(southHits);
-      }
       if (mok){ // total number of time independent FTOF hits in this counter
-	int m = box->ftofCounters->mult++;
-	// add the hit list of this counter to the list
-	box->ftofCounters->in[m] = counters->in[counter];
+        int m = box->ftofCounters->mult++;
+        // add the hit list of this counter to the list
+        box->ftofCounters->in[m] = counters->in[counter];
       }
     } // end of loop over all counters
     
@@ -572,4 +542,3 @@ s_ForwardTOF_t* pickForwardTOF ()
   }
   return box;
 }
-

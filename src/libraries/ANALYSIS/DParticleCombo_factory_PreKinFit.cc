@@ -126,7 +126,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	locEventLoop->Get(locEventRFBunches, "Combo");
 
 	vector<const DBeamPhoton*> locBeamPhotons;
-	locEventLoop->Get(locBeamPhotons);
+	locEventLoop->Get(locBeamPhotons, "MCGEN");
 
 	DParticleCombo* locParticleCombo;
 	DParticleComboStep* locParticleComboStep;

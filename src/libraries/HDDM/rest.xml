@@ -53,7 +53,7 @@
               x="float" y="float" z="float" t="float" dE="float" terr="float"
               lunit="cm" tunit="ns" Eunit="GeV"/>
     <RFtime minOccurs="0" jtag="string"
-            tsync="float" tsyncerr="float" tunit="ns"/>
+            tsync="float" tunit="ns"/>
     <trigger minOccurs="0" jtag="string"
 			L1a="boolean" L1b="boolean" L1c="boolean"/>
 

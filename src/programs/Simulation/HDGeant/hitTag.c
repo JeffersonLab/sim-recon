@@ -55,18 +55,17 @@
 #define TAG_T_MAX_NS            +20
 
 float endpoint_energy_GeV = 0;
+float micro_limits_Erange[2];
+float hodo_limits_Erange[2];
 static int micro_nchannels = 102;
-float* micro_channel_Elow = 0;
-float* micro_channel_Ehigh = 0;
-static int fixed_nchannels = 274;
-float* fixed_channel_Elow = 0;
-float* fixed_channel_Ehigh = 0;
-
+float* micro_channel_Erange = 0;
+static int hodo_nchannels = 274;
+float* hodo_channel_Erange = 0;
 binTree_t* microTree = 0;
-binTree_t* fixedTree = 0;
+binTree_t* hodoTree = 0;
 static int microCount = 0;
-static int fixedCount = 0;
-static int loadDone = 0;
+static int hodoCount = 0;
+static int printDone = 0;
 
 /* register hits during event initialization (from gukine) */
 
@@ -75,86 +74,124 @@ void hitTagger (float xin[4], float xout[4],
                 int track, int stack, int history)
 {
    int micro_chan;
-   int fixed_chan;
+   int hodo_chan;
+   double Etag = 0;
    double E = pin[3];
    double t = xin[3]*1e9-(xin[2]-REF_TIME_Z_CM)/C_CM_PER_NS;
    t = floor(t/BEAM_BUCKET_SPACING_NS+0.5)*BEAM_BUCKET_SPACING_NS;
 
-   if (loadDone==0){
-     /* read tagger set endpoint energy from calibdb */
-     {
-       char dbname[] = "/PHOTON_BEAM/endpoint_energy::mc";
-       unsigned int ndata = 1;
-       if (GetCalib(dbname, &ndata, &endpoint_energy_GeV)) {
-	 fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
-		 "failed to read photon beam endpoint energy",
-		 "from calibdb, cannot continue.");
-	 exit(-2);
-       }
-     }
-
-     /* read microscope channel energy bounds from calibdb */
-     {
-       char dbname[] = "/PHOTON_BEAM/microscope/scaled_energy_range::mc";
-       int ndata = micro_nchannels;
-       micro_channel_Elow = malloc(ndata*sizeof(float));
-       micro_channel_Ehigh = malloc(ndata*sizeof(float));
+   /* read tagger set endpoint energy from calibdb */
+   if (endpoint_energy_GeV == 0) {
+      char dbname[] = "/PHOTON_BEAM/endpoint_energy::mc";
+      unsigned int ndata = 1;
+      if (GetCalib(dbname, &ndata, &endpoint_energy_GeV)) {
+         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
+                 "failed to read photon beam endpoint energy",
+                 "from calibdb, cannot continue.");
+         exit (2);
+      }
+   }
  
-       GetColumn(dbname, &ndata, micro_channel_Elow,"xlow");
-       GetColumn(dbname, &ndata, micro_channel_Ehigh,"xhigh");
-       
-       int i;
-       for (i=0; i < ndata; ++i) {
-	 micro_channel_Elow[i] *= endpoint_energy_GeV;
-	 micro_channel_Ehigh[i] *= endpoint_energy_GeV;
-       }
-     }
-     
-      /* read fixed array channel energy bounds from calibdb */
-     {
-       char dbname[] = "/PHOTON_BEAM/hodoscope/scaled_energy_range::mc";
-       int ndata = fixed_nchannels;
-       fixed_channel_Elow = malloc(ndata*sizeof(float));
-       fixed_channel_Ehigh = malloc(ndata*sizeof(float));
+   /* read microscope channel energy bounds from calibdb */
+   if (micro_channel_Erange == 0) {
+      char dbname[] = "/PHOTON_BEAM/microscope/scaled_energy_range::mc";
+      /* table microscope/scaled_energy_range has 3 columns:
+       *     column  xlow  xhigh
+       * which are returned in an array like float[3][ncolumns]
+       */
+      int ndata = 3*micro_nchannels;
+      mystr_t names[ndata];
+      micro_channel_Erange = malloc(ndata*sizeof(float));
+      if (GetArrayConstants(dbname, &ndata, micro_channel_Erange, names) ||
+          ndata != 3*micro_nchannels)
+      {
+         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
+                 "failed to read microscope scaled_energy_range table",
+                 "from calibdb, cannot continue.");
+         exit (2);
+      }
+      else {
+         int i;
+         micro_limits_Erange[0] = 0;
+         micro_limits_Erange[1] = 1;
+         for (i=0; i < micro_nchannels; ++i) {
+            if (micro_limits_Erange[0] < micro_channel_Erange[3*i+1])
+               micro_limits_Erange[0] = micro_channel_Erange[3*i+1];
+            if (micro_limits_Erange[1] > micro_channel_Erange[3*i+2])
+               micro_limits_Erange[1] = micro_channel_Erange[3*i+2];
+            micro_channel_Erange[3*i+1] *= endpoint_energy_GeV;
+            micro_channel_Erange[3*i+2] *= endpoint_energy_GeV;
+         }
+         micro_limits_Erange[0] *= endpoint_energy_GeV;
+         micro_limits_Erange[1] *= endpoint_energy_GeV;
+      }
+   }
+ 
+   /* read hodoscope channel energy bounds from calibdb */
+   if (hodo_channel_Erange == 0) {
+      char dbname[] = "/PHOTON_BEAM/hodoscope/scaled_energy_range::mc";
+      /* table hodoscope/scaled_energy_range has 3 columns:
+       *     counter  xlow  xhigh
+       * which are returned in an array like float[3][ncolumns]
+       */
+      int ndata = 3*hodo_nchannels;
+      mystr_t names[ndata];
+      hodo_channel_Erange = malloc(ndata*sizeof(float));
+      if (GetArrayConstants(dbname, &ndata, hodo_channel_Erange, names) ||
+          ndata != 3*hodo_nchannels)
+      {
+         fprintf(stderr,"HDGeant error in hitTagger: %s %s\n",
+                 "failed to read hodoscope scaled_energy_range table",
+                 "from calibdb, cannot continue.");
+         exit (2);
+      }
+      else {
+         int i;
+         hodo_limits_Erange[0] = 0;
+         hodo_limits_Erange[1] = 1;
+         for (i=0; i < hodo_nchannels; ++i) {
+            if (hodo_limits_Erange[0] < hodo_channel_Erange[3*i+1])
+               hodo_limits_Erange[0] = hodo_channel_Erange[3*i+1];
+            if (hodo_limits_Erange[1] > hodo_channel_Erange[3*i+2])
+               hodo_limits_Erange[1] = hodo_channel_Erange[3*i+2];
+            hodo_channel_Erange[3*i+1] *= endpoint_energy_GeV;
+            hodo_channel_Erange[3*i+2] *= endpoint_energy_GeV;
+         }
+         hodo_limits_Erange[0] *= endpoint_energy_GeV;
+         hodo_limits_Erange[1] *= endpoint_energy_GeV;
+      }
+   }
 
-       GetColumn(dbname, &ndata, fixed_channel_Elow,"xlow");
-       GetColumn(dbname, &ndata, fixed_channel_Ehigh,"xhigh");
-
-       int i;
-       for (i=0; i < ndata; ++i) {
-	 fixed_channel_Elow[i] *= endpoint_energy_GeV;
-	 fixed_channel_Ehigh[i] *= endpoint_energy_GeV;
-	 
-       }
-     }
-
-     fprintf(stderr,"TAGGER: ALL parameters loaded from Data Base\n");
-     loadDone = 1;
+   if (printDone == 0) {
+      fprintf(stderr,"TAGGER: ALL parameters loaded from Data Base\n");
+      printDone = 1;
    }
 
    /* look up hit tagger channel, if any */
+   hodo_chan = -1;
    micro_chan = -1;
-   if (E < endpoint_energy_GeV) {
+   if (E < micro_limits_Erange[0] && E > micro_limits_Erange[1]) {
       int i;
       for (i=0; i < micro_nchannels; ++i) {
-         if ( E < micro_channel_Ehigh[i] &&
-              E > micro_channel_Elow[i] )
+         if ( E < micro_channel_Erange[3*i+1] &&
+              E > micro_channel_Erange[3*i+2] )
          {
-            E = (micro_channel_Ehigh[i] + micro_channel_Elow[i])/2;
-            micro_chan = i;
+            Etag = (micro_channel_Erange[3*i+1] + 
+                    micro_channel_Erange[3*i+2]) / 2;
+            micro_chan = micro_channel_Erange[3*i];
             break;
          }
       }
    }
-   fixed_chan = -1;
-   if (micro_chan == -1) {
+   else if (E < hodo_limits_Erange[0] && E > hodo_limits_Erange[1]) {
       int i;
-      for (i=0; i < fixed_nchannels; ++i) {
-         if ( E < fixed_channel_Ehigh[i] &&
-              E > fixed_channel_Elow[i] )
+      for (i=0; i < hodo_nchannels; ++i) {
+         if ( E < hodo_channel_Erange[3*i+1] &&
+              E > hodo_channel_Erange[3*i+2] )
          {
-            E = (fixed_channel_Elow[i] + fixed_channel_Ehigh[i])/2;
-            fixed_chan = i;
+            Etag = (hodo_channel_Erange[3*i+1] +
+                    hodo_channel_Erange[3*i+2]) / 2;
+            hodo_chan = hodo_channel_Erange[3*i];
             break;
          }
       }
@@ -164,19 +201,19 @@ void hitTagger (float xin[4], float xout[4],
 
    if (micro_chan > -1) {
       int nhit;
-      s_TaggerHits_t* hits;
+      s_TaggerTruthHits_t* hits;
       int mark = micro_chan + 1000;
       void** twig = getTwig(&microTree, mark);
       if (*twig == 0)
       {
          s_Tagger_t* tag = *twig = make_s_Tagger();
          s_MicroChannels_t* channels = make_s_MicroChannels(1);
-         hits = make_s_TaggerHits(MICRO_MAX_HITS);
+         hits = make_s_TaggerTruthHits(MICRO_MAX_HITS);
          hits->mult = 0;
-         channels->in[0].taggerHits = hits;
+         channels->in[0].taggerTruthHits = hits;
          channels->in[0].column = micro_chan;
          channels->in[0].row = 0;
-         channels->in[0].E = E;
+         channels->in[0].E = Etag;
          channels->mult = 1;
          tag->microChannels = channels;
          microCount++;
@@ -184,7 +221,7 @@ void hitTagger (float xin[4], float xout[4],
       else
       {
          s_Tagger_t* tag = *twig;
-         hits = tag->microChannels->in[0].taggerHits;
+         hits = tag->microChannels->in[0].taggerTruthHits;
       }
    
       if (hits != HDDM_NULL)
@@ -201,7 +238,10 @@ void hitTagger (float xin[4], float xout[4],
          }
          else if (nhit < MICRO_MAX_HITS)   /* create new hit */
          {
+            hits->in[nhit].bg = track;
             hits->in[nhit].t = t;
+            hits->in[nhit].E = E;
+            hits->in[nhit].dE += 3.5e-3; // GeV in SciFi
             hits->mult++;
          }
          else
@@ -213,30 +253,30 @@ void hitTagger (float xin[4], float xout[4],
       }
    }
 
-   /* post the hit to the fixed array hits tree, mark channel as hit */
+   /* post the hit to the hodoscope hits tree, mark channel as hit */
 
-   if (fixed_chan > -1) {
+   if (hodo_chan > -1) {
       int nhit;
-      s_TaggerHits_t* hits;
-      int mark = fixed_chan + 1000;
-      void** twig = getTwig(&fixedTree, mark);
+      s_TaggerTruthHits_t* hits;
+      int mark = hodo_chan + 1000;
+      void** twig = getTwig(&hodoTree, mark);
       if (*twig == 0)
       {
          s_Tagger_t* tag = *twig = make_s_Tagger();
-         s_FixedChannels_t* channels = make_s_FixedChannels(1);
-         hits = make_s_TaggerHits(FIXED_MAX_HITS);
+         s_HodoChannels_t* channels = make_s_HodoChannels(1);
+         hits = make_s_TaggerTruthHits(FIXED_MAX_HITS);
          hits->mult = 0;
-         channels->in[0].taggerHits = hits;
-         channels->in[0].channel = fixed_chan;
-         channels->in[0].E = E;
+         channels->in[0].taggerTruthHits = hits;
+         channels->in[0].counterId = hodo_chan;
+         channels->in[0].E = Etag;
          channels->mult = 1;
-         tag->fixedChannels = channels;
-         fixedCount++;
+         tag->hodoChannels = channels;
+         hodoCount++;
       }
       else
       {
          s_Tagger_t* tag = *twig;
-         hits = tag->fixedChannels->in[0].taggerHits;
+         hits = tag->hodoChannels->in[0].taggerTruthHits;
       }
    
       if (hits != HDDM_NULL)
@@ -253,7 +293,10 @@ void hitTagger (float xin[4], float xout[4],
          }
          else if (nhit < FIXED_MAX_HITS)   /* create new hit */
          {
+            hits->in[nhit].bg = track;
             hits->in[nhit].t = t;
+            hits->in[nhit].E = E;
+            hits->in[nhit].dE += 5.5e-4; // GeV in hodo scint.
             hits->mult++;
          }
          else
@@ -283,7 +326,7 @@ s_Tagger_t* pickTagger ()
    s_Tagger_t* box;
    s_Tagger_t* item;
 
-   if (microCount == 0 && fixedCount == 0)
+   if (microCount == 0 && hodoCount == 0)
    {
       return HDDM_NULL;
    }
@@ -297,7 +340,7 @@ s_Tagger_t* pickTagger ()
       int channel;
       for (channel=0; channel < channels->mult; ++channel)
       {
-         s_TaggerHits_t* hits = channels->in[channel].taggerHits;
+         s_TaggerTruthHits_t* hits = channels->in[channel].taggerTruthHits;
 
          /* constraint t values to lie within time range */
          int i;
@@ -332,14 +375,14 @@ s_Tagger_t* pickTagger ()
       FREE(item);
    }
 
-   box->fixedChannels = make_s_FixedChannels(fixedCount);
-   while ((item = (s_Tagger_t*) pickTwig(&fixedTree)))
+   box->hodoChannels = make_s_HodoChannels(hodoCount);
+   while ((item = (s_Tagger_t*) pickTwig(&hodoTree)))
    {
-      s_FixedChannels_t* channels = item->fixedChannels;
+      s_HodoChannels_t* channels = item->hodoChannels;
       int channel;
       for (channel=0; channel < channels->mult; ++channel)
       {
-         s_TaggerHits_t* hits = channels->in[channel].taggerHits;
+         s_TaggerTruthHits_t* hits = channels->in[channel].taggerTruthHits;
 
          /* constraint t values to lie within time range */
          int i;
@@ -359,8 +402,8 @@ s_Tagger_t* pickTagger ()
          if (iok)
          {
             hits->mult = iok;
-            int m = box->fixedChannels->mult++;
-            box->fixedChannels->in[m] = channels->in[0];
+            int m = box->hodoChannels->mult++;
+            box->hodoChannels->in[m] = channels->in[0];
          }
          else if (hits != HDDM_NULL)
          {
@@ -375,7 +418,7 @@ s_Tagger_t* pickTagger ()
    }
 
    microCount = 0;
-   fixedCount = 0;
+   hodoCount = 0;
 
    if ((box->microChannels != HDDM_NULL) &&
        (box->microChannels->mult == 0))
@@ -383,14 +426,14 @@ s_Tagger_t* pickTagger ()
       FREE(box->microChannels);
       box->microChannels = HDDM_NULL;
    }
-   if ((box->fixedChannels != HDDM_NULL) &&
-       (box->fixedChannels->mult == 0))
+   if ((box->hodoChannels != HDDM_NULL) &&
+       (box->hodoChannels->mult == 0))
    {
-      FREE(box->fixedChannels);
-      box->fixedChannels = HDDM_NULL;
+      FREE(box->hodoChannels);
+      box->hodoChannels = HDDM_NULL;
    }
    if (box->microChannels->mult == 0 &&
-       box->fixedChannels->mult == 0)
+       box->hodoChannels->mult == 0)
    {
       FREE(box);
       box = HDDM_NULL;

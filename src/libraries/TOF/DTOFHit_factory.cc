@@ -29,7 +29,8 @@ jerror_t DTOFHit_factory::init(void)
 	/// Set basic conversion constants
 	a_scale    = 0.2/5.2E5;
 	t_scale    = 0.0625;   // 62.5 ps/count
-	tdc_scale    = 0.025;    // 25 ps/count
+	tdc_scale  = 0.025;    // 25 ps/count
+        t_min      = -100.;    // ns
 
 	TOF_NUM_PLANES = 2;
 	TOF_NUM_BARS = 44;
@@ -145,7 +146,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 
 
 		hit->dE = a_scale * (A - pedestal);
-		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit));
+		hit->t = t_scale * (T - GetConstant(adc_time_offsets, digihit)) + t_min;
 		hit->sigma_t = 4.0;    // ns (what is the fADC time resolution?)
 		hit->has_fADC = true;
 		hit->has_TDC  = false; // will get set to true below if appropriate
@@ -174,7 +175,7 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Apply calibration constants here
 		double T = (double)digihit->time;
 
-		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit));;
+		T = tdc_scale * (T - GetConstant(tdc_time_offsets, digihit)) + t_min;
 		// future: allow for seperate TDC scales for each channel
 		//T = GetConstant(tdc_scales, digihit)
 		//  * (T - GetConstant(tdc_time_offsets, digihit));

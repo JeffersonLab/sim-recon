@@ -7,13 +7,12 @@ using namespace jana;
 #include <CCAL/DCCALGeometry_factory.h>
 
 #include "DCCALHit.h"
-typedef JFactory<DCCALHit> DCCALHit_factory;
 
 jerror_t CCAL_init(JEventLoop *loop)
 {
 	/// Create and register CCAL data factories
-	loop->AddFactory(new DCCALHit_factory());
-	loop->AddFactory(new DCCALHit_factory("TRUTH"));
+	loop->AddFactory(new JFactory<DCCALHit>());
+	loop->AddFactory(new JFactory<DCCALHit>("TRUTH"));
 	loop->AddFactory(new DCCALTruthShower_factory());
 	loop->AddFactory(new DCCALGeometry_factory());
 

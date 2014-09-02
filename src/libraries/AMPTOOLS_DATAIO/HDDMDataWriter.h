@@ -4,12 +4,13 @@
 #include <cstdlib>
 #include <vector>
 #include <cassert>
+#include <fstream>
 
 using namespace std;
 
 #include "CLHEP/Vector/LorentzVector.h"
 #include "IUAmpTools/Kinematics.h"
-#include "HDDM/hddm_s.h"
+#include "HDDM/hddm_s.hpp"
 
 using namespace CLHEP;
 
@@ -29,11 +30,12 @@ public:
 		   float vx, float vy, float vz);
     
   int eventCounter() const { return m_eventCounter; }
-  bool FileOpen(){return m_OutputStream;};
+  bool FileOpen() { return m_OutputStream; }
   
 private:
 
-  s_iostream_t *m_OutputStream;
+  std::ofstream *m_OutputFile;        // output hddm file ofstream
+  hddm_s::ostream *m_OutputStream;    // provides hddm layer on top of ofstream
   int m_eventCounter, m_runNumber;
 
 };

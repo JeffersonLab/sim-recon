@@ -16,7 +16,8 @@
 
 #include "PID/DMCReaction.h"
 #include "TRACKING/DMCThrown.h"
-#include "TAGGER/DTagger.h"
+#include "TAGGER/DTAGMHit.h"
+#include "TAGGER/DTAGHHit.h"
 #include "FCAL/DFCALShower.h"
 #include "PID/DNeutralShower.h"
 #include <PID/DDetectorMatches.h>
@@ -25,6 +26,7 @@
 #include "START_COUNTER/DSCHit.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "TRIGGER/DMCTrigger.h"
+#include "PID/DRFTime.h"
 
 using namespace std;
 using namespace jana;
@@ -45,6 +47,7 @@ class DEventWriterREST : public JObject
 
 		string dOutputFileBaseName;
 		bool HDDM_USE_COMPRESSION;
+		bool HDDM_USE_INTEGRITY_CHECKS;
 };
 
 #endif //_DEventWriterREST_

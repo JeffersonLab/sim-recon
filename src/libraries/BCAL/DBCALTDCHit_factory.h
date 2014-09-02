@@ -31,6 +31,7 @@ class DBCALTDCHit_factory:public jana::JFactory<DBCALTDCHit>{
 
 		// overall scale factors
 		double t_scale;
+                double t_min;
 
 		bcal_digi_constants_t time_offsets;
 

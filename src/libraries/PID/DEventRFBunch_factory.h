@@ -29,6 +29,7 @@
 #include <START_COUNTER/DSCHit.h>
 #include <BCAL/DBCALShower.h>
 #include <TOF/DTOFPoint.h>
+#include <PID/DBeamPhoton.h>
 
 #include <HDGEOMETRY/DGeometry.h>
 #include <DANA/DApplication.h>

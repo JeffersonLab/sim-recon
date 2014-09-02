@@ -52,6 +52,8 @@
 /* Define to 1 if the system has the type `_Bool'. */
 /* #undef HAVE__BOOL */
 
+#ifdef DEFINE_XSTREAM_PACKAGE_MACROS
+
 /* Name of package */
 #define PACKAGE "xstream"
 
@@ -70,14 +72,16 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "0.0.2"
 
+/* Version number of package */
+#define VERSION "0.0.2"
+
+#endif
+
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 /* #undef TM_IN_SYS_TIME */
-
-/* Version number of package */
-#define VERSION "0.0.2"
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */

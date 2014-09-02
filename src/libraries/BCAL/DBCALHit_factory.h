@@ -38,6 +38,7 @@ class DBCALHit_factory:public jana::JFactory<DBCALHit>{
 		// overall scale factors
 		double a_scale;
 		double t_scale;
+		double t_min;
 		
 		// constants tables
 		bcal_digi_constants_t gains;

@@ -1,4 +1,4 @@
-
+#include <string>
 
 typedef struct{
         int geantid;
@@ -17,7 +17,7 @@ typedef struct{
 }peve_t;
 
 
-void open_hddm_output(char *outputfile);
+void open_hddm_output(std::string outputfile);
 void close_hddm_output(void);
 void write_hddm_event(int *iev, int *iproc, keve_t *kin,  peve_t *pin, int *ntra, keve_t *keve, peve_t *peve);
 

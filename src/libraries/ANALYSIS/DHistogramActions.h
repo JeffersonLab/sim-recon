@@ -67,6 +67,7 @@ REACTION-BASED ACTIONS:
 	DHistogramAction_InvariantMass
 	DHistogramAction_MissingMass
 	DHistogramAction_MissingMassSquared
+	DHistogramAction_ParticleComboGenReconComparison
 REACTION-INDEPENDENT ACTIONS:
 	DHistogramAction_TrackMultiplicity
 	DHistogramAction_ThrownParticleKinematics
@@ -244,6 +245,84 @@ class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
 		deque<TH1D*> dHistDeque_MaxTrackDeltaZ;
 		deque<TH1D*> dHistDeque_MaxTrackDeltaT;
 		deque<TH1D*> dHistDeque_MaxTrackDOCA;
+
+		set<const JObject*> dPreviouslyHistogrammedBeamParticles;
+		set<pair<size_t, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles;
+};
+
+class DHistogramAction_ParticleComboGenReconComparison : public DAnalysisAction
+{
+	public:
+		DHistogramAction_ParticleComboGenReconComparison(const DReaction* locReaction, bool locUseKinFitResultsFlag, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Hist_ParticleComboGenReconComparison", locUseKinFitResultsFlag, locActionUniqueString), 
+		dNumDeltaPOverPBins(500), dNumDeltaThetaBins(240), dNumDeltaPhiBins(400), dNumDeltaTBins(500), dNumDeltaVertexZBins(300), dNum2DPBins(600), dNum2DThetaBins(140),
+		dNumRFDeltaTBins(202), dNumPullBins(1000), dNum2DPullBins(500), dMinDeltaPOverP(-0.4), dMaxDeltaPOverP(0.4), dMinDeltaTheta(-1.0), dMaxDeltaTheta(1.0), dMinDeltaPhi(-6.0), dMaxDeltaPhi(6.0), dMinDeltaT(-5.0), 
+		dMaxDeltaT(5.0), dMinDeltaVertexZ(-15.0), dMaxDeltaVertexZ(15.0), dMinP(0.0), dMaxP(12.0), dMinTheta(0.0), dMaxTheta(140.0), dMinRFDeltaT(-10.1), dMaxRFDeltaT(10.1)
+		{
+			dPullTypes.resize(8);
+			dPullTypes[0] = d_EPull;  dPullTypes[1] = d_PxPull;  dPullTypes[2] = d_PyPull;  dPullTypes[3] = d_PzPull;
+			dPullTypes[4] = d_XxPull;  dPullTypes[5] = d_XyPull;  dPullTypes[6] = d_XzPull;  dPullTypes[7] = d_TPull;
+		}
+
+		unsigned int dNumDeltaPOverPBins, dNumDeltaThetaBins, dNumDeltaPhiBins, dNumDeltaTBins, dNumDeltaVertexZBins, dNum2DPBins, dNum2DThetaBins, dNumRFDeltaTBins, dNumPullBins, dNum2DPullBins;
+		double dMinDeltaPOverP, dMaxDeltaPOverP, dMinDeltaTheta, dMaxDeltaTheta, dMinDeltaPhi, dMaxDeltaPhi, dMinDeltaT, dMaxDeltaT, dMinDeltaVertexZ, dMaxDeltaVertexZ;
+		double dMinP, dMaxP, dMinTheta, dMaxTheta, dMinRFDeltaT, dMaxRFDeltaT;
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		void Fill_BeamHists(const DKinematicData* locKinematicData, const DKinematicData* locThrownKinematicData);
+		void Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrown* locMCThrown, const DEventRFBunch* locThrownEventRFBunch, size_t locStepIndex);
+		void Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrown* locMCThrown, const DEventRFBunch* locThrownEventRFBunch, size_t locStepIndex);
+
+		deque<DKinFitPullType> dPullTypes;
+		double dTargetZCenter;
+
+		TH1D* dRFBeamBunchDeltaT_Hist;
+
+		TH1D* dBeamParticleHist_DeltaPOverP;
+		TH2D* dBeamParticleHist_DeltaPOverPVsP;
+		TH1D* dBeamParticleHist_DeltaT;
+
+		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaPOverP;
+		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaTheta;
+		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaPhi;
+		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaT;
+		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaT_TOF;
+		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaT_BCAL;
+		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaT_FCAL;
+		deque<map<Particle_t, TH1D*> > dHistDeque_DeltaVertexZ;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaPOverPVsP;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaPOverPVsTheta;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaThetaVsP;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaThetaVsTheta;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaPhiVsP;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaPhiVsTheta;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaTVsTheta;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaTVsP;
+		deque<map<Particle_t, TH2D*> > dHistDeque_DeltaVertexZVsTheta;
+
+		deque<map<Particle_t, map<DKinFitPullType, TH1D*> > > dHistDeque_Pulls;
+		deque<map<Particle_t, map<DKinFitPullType, TH2D*> > > dHistDeque_PullsVsP;
+		deque<map<Particle_t, map<DKinFitPullType, TH2D*> > > dHistDeque_PullsVsTheta;
+
+		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_CDC;
+		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_ST;
+		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_BCAL;
+		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_TOF;
+		deque<map<Particle_t, TH1D*> > dHistDeque_TimePull_FCAL;
+
+		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsTheta_CDC;
+		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsTheta_BCAL;
+		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsTheta_ST;
+
+		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_CDC;
+		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_BCAL;
+		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_ST;
+		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_TOF;
+		deque<map<Particle_t, TH2D*> > dHistDeque_TimePullVsP_FCAL;
 
 		set<const JObject*> dPreviouslyHistogrammedBeamParticles;
 		set<pair<size_t, pair<Particle_t, const JObject*> > > dPreviouslyHistogrammedParticles;

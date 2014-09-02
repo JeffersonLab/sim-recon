@@ -1,44 +1,42 @@
-
+#include <stdlib.h>
 #include <stdio.h>
+#include <fstream>
 
-#include "HDDM/hddm_s.h"
+#include "HDDM/hddm_s.hpp"
 
-s_iostream_t* hddmOutputStream=NULL;
+std::ofstream *fileOutputStream = NULL;
+hddm_s::ostream *hddmOutputStream = NULL;
 
-typedef struct{
+typedef struct {
         int geantid;
         int mech; /* what do the values of this correspond to */
         int kfid;
         int parent;
         int firstdaughter;
         int lastdaughter;
-}keve_t;
+} keve_t;
 
-typedef struct{
-	float px;
-	float py;
-	float pz;
-	float en;
-}peve_t;
+typedef struct {
+   float px;
+   float py;
+   float pz;
+   float en;
+} peve_t;
 
 /*-----------------
 // open_hddm_output_
 //-----------------*/
-void open_hddm_output(char *outputfile)
+void open_hddm_output(std::string outputfile)
 {
-	/* Copy FORTRAN string into a C-style string */
-	//char outfile[256];
-	//strncpy(outfile, outputfile, len);
-	//outfile[len]=0;
-
-	/* Open output file */
-	hddmOutputStream = init_s_HDDM(outputfile);
-	if(!hddmOutputStream){
-		fprintf(stderr, "Unable to open output file \"%s\" for writing.\n", outputfile);
-		exit(-3);
-	}
-	
-	printf("Opened HDDM file \"%s\" for writing ...\n", outputfile);
+   /* Open output file */
+   fileOutputStream = new std::ofstream(outputfile.c_str());
+   if (! fileOutputStream->is_open()) {
+      fprintf(stderr, "Unable to open output file \"%s\" for writing.\n", 
+              outputfile.c_str());
+      exit(-3);
+   }
+   hddmOutputStream = new hddm_s::ostream(*fileOutputStream);
+   printf("Opened HDDM file \"%s\" for writing ...\n", outputfile.c_str());
 }
 
 /*-----------------
@@ -46,10 +44,11 @@ void open_hddm_output(char *outputfile)
 //-----------------*/
 void close_hddm_output(void)
 {
-	/* Close output file */
-	close_s_HDDM(hddmOutputStream);
-	
-	printf("Closed HDDM output file\n");
+   /* Close output file */
+   delete hddmOutputStream;
+   delete fileOutputStream;
+   
+   printf("Closed HDDM output file\n");
 }
 
 /*-----------------
@@ -59,90 +58,75 @@ void write_hddm_event(int *iev, int *iproc,
                        keve_t *kin,  peve_t *pin,   
             int *ntra, keve_t *keve, peve_t *peve)
 {
-	/* Loop over events */
-	int i;
-	static int Nevents = 0;
-	static int Nevents_written = 0;
-	int runNumber=2;
-	float vertex[3]={0.0, 0.0, 65.0}; 
+   /* Loop over events */
+   int i;
+   static int Nevents = 0;
+   static int Nevents_written = 0;
+   int runNumber=2;
+   float vertex[3]={0.0, 0.0, 65.0}; 
 
-	Nevents++;
+   Nevents++;
 
-	/* Start a new event */
-	s_PhysicsEvents_t* pes;
-	s_Reactions_t* rs;
-	s_Beam_t* bs;
-	s_Momentum_t *mom;
-	s_Properties_t *prop;
-	s_Target_t* ts;
-	s_Vertices_t* vs;
-	s_Origin_t* origin;
-	s_Products_t* ps;
-
-	s_HDDM_t *thisOutputEvent = make_s_HDDM();
-	thisOutputEvent->physicsEvents = pes = make_s_PhysicsEvents(1);
-	pes->mult = 1;
-	pes->in[0].runNo   = runNumber;
-	pes->in[0].eventNo = Nevents;
-	pes->in[0].reactions = rs = make_s_Reactions(1);
-	rs->mult = 1;
-	rs->in[0].type = *iproc;
-
-	rs->in[0].beam = bs = make_s_Beam();
-        bs->type = (Particle_t)kin[0].geantid;
-		  bs->momentum = mom = make_s_Momentum();
-        mom->px = pin[0].px;
-        mom->py = pin[0].py;
-        mom->pz = pin[0].pz;
-        mom->E  = pin[0].en;
-		  bs->properties = prop = make_s_Properties();
-		  prop->charge = 0.0;
-		  prop->mass = 0.0;
+   /* Start a new event */
+   hddm_s::HDDM record;
+   hddm_s::PhysicsEventList pes = record.addPhysicsEvents();
+   pes().setRunNo(runNumber);
+   pes().setEventNo(Nevents);
+   hddm_s::ReactionList rs = pes().addReactions();
+   rs().setType(*iproc);
+   hddm_s::BeamList bs = rs().addBeams();
+   bs().setType((Particle_t)kin[0].geantid);
+   hddm_s::MomentumList bmoms = bs().addMomenta();
+   bmoms().setPx(pin[0].px);
+   bmoms().setPy(pin[0].py);
+   bmoms().setPz(pin[0].pz);
+   bmoms().setE(pin[0].en);
+   hddm_s::PropertiesList bpros = bs().addPropertiesList();
+   bpros().setCharge(0.0);
+   bpros().setMass(0.0);
         
-	rs->in[0].target = ts = make_s_Target();
-        ts->type = (Particle_t)kin[1].geantid;
-		  ts->momentum = mom = make_s_Momentum();
-        mom->px = pin[1].px;
-        mom->py = pin[1].py;
-        mom->pz = pin[1].pz;
-        mom->E  = pin[1].en;
-		  ts->properties = prop = make_s_Properties();
-		  prop->charge = +1;
-		  prop->mass = 0.938272; /* this should be derived from type ... */
+   hddm_s::TargetList ts = rs().addTargets();
+   ts().setType((Particle_t)kin[1].geantid);
+   hddm_s::MomentumList tmoms = ts().addMomenta();
+   tmoms().setPx(pin[1].px);
+   tmoms().setPy(pin[1].py);
+   tmoms().setPz(pin[1].pz);
+   tmoms().setE(pin[1].en);
+   hddm_s::PropertiesList tpros = ts().addPropertiesList();
+   tpros().setCharge(+1);
+   tpros().setMass(0.938272); /* this should be derived from type ... */
         
-	rs->in[0].vertices = vs = make_s_Vertices(1);
-	vs->mult = 1;
-	vs->in[0].origin = origin = make_s_Origin();
-	vs->in[0].products = ps = make_s_Products(*ntra);
-	ps->mult = 0;
-	
-	origin->t = 0.0;
-	origin->vx = vertex[0];
-	origin->vy = vertex[1];
-	origin->vz = vertex[2];
-	
-	for(i=0;i<*ntra; i++){
-		//double E2;
-		//if(keve[i].geantid==0)continue;
-		
-		ps->in[ps->mult].type = (Particle_t)keve[i].geantid;
-                ps->in[ps->mult].mech = keve[i].mech;
-                ps->in[ps->mult].pdgtype = keve[i].kfid;
-		ps->in[ps->mult].id = i+1;
-                ps->in[ps->mult].parentid = keve[i].parent;
-
-		
-		ps->in[ps->mult].momentum = make_s_Momentum();
-		ps->in[ps->mult].momentum->px = peve[i].px;
-		ps->in[ps->mult].momentum->py = peve[i].py;
-		ps->in[ps->mult].momentum->pz = peve[i].pz;
-		ps->in[ps->mult].momentum->E  = peve[i].en;
-		ps->mult++;
-	}
-	
-	if(*ntra>0){
-		Nevents_written++;
-		flush_s_HDDM(thisOutputEvent, hddmOutputStream);
-		if(Nevents_written%10000 == 0)printf("Wrote event %d events (%d generated)\n", Nevents_written, Nevents);
-	}	
+   hddm_s::VertexList vs = rs().addVertices();
+   hddm_s::OriginList os = vs().addOrigins();
+   hddm_s::ProductList ps = vs().addProducts(*ntra);
+   
+   os().setT(0.0);
+   os().setVx(vertex[0]);
+   os().setVy(vertex[1]);
+   os().setVz(vertex[2]);
+   
+   for (i=0; i < *ntra; i++) {
+      //double E2;
+      //if (keve[i].geantid == 0)
+      //   continue;
+      
+      ps(i).setType((Particle_t)keve[i].geantid);
+      ps(i).setMech(keve[i].mech);
+      ps(i).setPdgtype(keve[i].kfid);
+      ps(i).setId(i+1);
+      ps(i).setParentid(keve[i].parent);
+      hddm_s::MomentumList pmoms = ps(i).addMomenta();
+      pmoms().setPx(peve[i].px);
+      pmoms().setPy(peve[i].py);
+      pmoms().setPz(peve[i].pz);
+      pmoms().setE(peve[i].en);
+   }
+   
+   if (*ntra > 0) {
+      Nevents_written++;
+      *hddmOutputStream << record;
+      if (Nevents_written%10000 == 0)
+         printf("Wrote event %d events (%d generated)\n", 
+                Nevents_written, Nevents);
+   }   
 }

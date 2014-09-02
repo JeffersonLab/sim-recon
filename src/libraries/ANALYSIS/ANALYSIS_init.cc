@@ -77,6 +77,7 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DHistogramAction_MissingMassSquared(NULL, false, 0, 0.0, 0.0);
 	DHistogramAction_KinFitResults(NULL, 0.0);
 	DHistogramAction_NumParticleCombos(NULL);
+	DHistogramAction_ParticleComboGenReconComparison(NULL, false);
 
 	DCutAction_ThrownTopology(NULL, true);
 	DCutAction_PIDFOM(NULL, Unknown, Unknown, 0.0);

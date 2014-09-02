@@ -909,7 +909,7 @@ jerror_t JEventSource_EVIO::GetObjects(JEvent &event, JFactory_base *factory)
 
 		// Make PulseTime, PulseIntegral, and PulsePedestal objects associated objects of one another
 		// We need to cast the pointers as DDAQAddress types for the LinkAssociationsWithPulseNumber
-		// tmeplated method to work.
+		// templated method to work.
 		vector<DDAQAddress*> da_pt_objs;
 		vector<DDAQAddress*> da_pi_objs;
 		vector<DDAQAddress*> da_pp_objs;
@@ -2440,15 +2440,16 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 				break;
 			case 7: // Pulse Integral
 				channel = (*iptr>>20) & 0x7F;  // is this right??
-				pulse_number = (*iptr>>21) & 0x03;
-				sum = (*iptr>>0) & 0x7FFFF;
+				pulse_number = (*iptr>>18) & 0x03;
+				sum = (*iptr>>0) & 0x3FFFF;
+                                quality_factor = 0;
 				if(objs) objs->hit_objs.push_back(new Df125PulseIntegral(rocid, slot, channel, itrigger, pulse_number, quality_factor, sum));
 				break;
 			case 8: // Pulse Time
 				channel = (*iptr>>20) & 0x7F; // is this right??
-				pulse_number = (*iptr>>21) & 0x03;
-				quality_factor = (*iptr>>19) & 0x03;
-				pulse_time = (*iptr>>0) & 0x7FFFF;
+				pulse_number = (*iptr>>18) & 0x03;
+				pulse_time = (*iptr>>0) & 0x3FFFF;
+                                quality_factor = 0;
 				if(objs) objs->hit_objs.push_back(new Df125PulseTime(rocid, slot, channel, itrigger, pulse_number, quality_factor, pulse_time));
 				break;
 			case 10: // Pulse Pedestal
@@ -2507,7 +2508,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 			AddIfAppropriate(hit_objs[i], vpt);
 			AddIfAppropriate(hit_objs[i], vpp);
 		}
-		
+
 		// Connect Df125PulseIntegral with Df125PulseTime
 		LinkAssociationsWithPulseNumber(vprd, vpi);
 		LinkAssociationsWithPulseNumber(vprd, vpt);
@@ -2515,7 +2516,7 @@ void JEventSource_EVIO::Parsef125Bank(int32_t rocid, const uint32_t* &iptr, cons
 		LinkAssociationsWithPulseNumber(vpi, vpt);
 		LinkAssociationsWithPulseNumber(vpi, vpp);
 		LinkAssociationsWithPulseNumber(vpt, vpp);
-				
+
 		// Connect Df125TriggerTime to everything
 		LinkAssociationsModuleOnly(vtrigt, vwrd);
 		LinkAssociationsModuleOnly(vtrigt, vprd);

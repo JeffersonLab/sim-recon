@@ -19,7 +19,8 @@ using namespace jana;
 #include <FDC/DFDCHit.h>
 #include <TOF/DTOFRawHit.h>
 #include <START_COUNTER/DSCHit.h>
-#include <TAGGER/DTagger.h>
+#include <TAGGER/DTAGMHit.h>
+#include <TAGGER/DTAGHHit.h>
 
 // Routine used to create our JEventProcessor
 #include <JANA/JApplication.h>
@@ -167,7 +168,8 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DFDCHit*> fdchits;
 	vector<const DTOFRawHit*> tofhits;
 	vector<const DSCHit*> schits;
-	vector<const DTagger*> taggerhits;
+	vector<const DTAGMHit*> tagmhits;
+	vector<const DTAGHHit*> taghhits;
 	
 	loop->Get(beamphotons);
 	loop->Get(bcalhits);
@@ -177,7 +179,8 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(fdchits);
 	loop->Get(tofhits);
 	loop->Get(schits);
-	loop->Get(taggerhits);
+	loop->Get(tagmhits);
+	loop->Get(taghhits);
 	
 	// Count inner and outer BCAL hits
 	unsigned int Nbcalhits_inner = 0;
@@ -298,13 +301,21 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, int eventnumber)
 	}
 	
 	// Count Tagger hits
-	unsigned int Ntaggerhits = 0;
-	for(unsigned int i=0; i<taggerhits.size(); i++){
+	unsigned int Ntagmhits = 0;
+	for(unsigned int i=0; i<tagmhits.size(); i++){
 		// Apply time window
-		if(taggerhits[i]->t < tmin_tagger)continue;
-		if(taggerhits[i]->t > tmax_tagger)continue;
+		if(tagmhits[i]->t < tmin_tagger)continue;
+		if(tagmhits[i]->t > tmax_tagger)continue;
 
-		Ntaggerhits++;
+		Ntagmhits++;
+	}
+	unsigned int Ntaghhits = 0;
+	for(unsigned int i=0; i<taghhits.size(); i++){
+		// Apply time window
+		if(taghhits[i]->t < tmin_tagger)continue;
+		if(taghhits[i]->t > tmax_tagger)continue;
+
+		Ntaghhits++;
 	}
 
 	// Lock mutex while we fill in Event tree
@@ -327,19 +338,21 @@ jerror_t JEventProcessor_event_size::evnt(JEventLoop *loop, int eventnumber)
 	evt->Nfdchits_cathode = Nfdchits_cathode;
 	evt->Ntofhits = Ntofhits;
 	evt->Nschits = Nschits;
-	evt->Ntaggerhits = Ntaggerhits;
+	evt->Ntagmhits = Ntagmhits;
+	evt->Ntaghhits = Ntaghhits;
 
 	evt->Ndigitized_values = 0;
-		evt->Ndigitized_values += 3*evt->Nbcalhits_inner;    // fADC and TDC
-		evt->Ndigitized_values += 2*evt->Nbcalhits_outer;    // fADC only
-		evt->Ndigitized_values += 2*evt->Nfcalhits;          // fADC only
-		evt->Ndigitized_values += 2*evt->Nccalhits;          // fADC only
-		evt->Ndigitized_values += 2*evt->Ncdchits;           // fADC only
-		evt->Ndigitized_values += 1*evt->Nfdchits_anode;     // TDC only
-		evt->Ndigitized_values += 2*evt->Nfdchits_cathode;   // fADC only
-		evt->Ndigitized_values += 3*evt->Ntofhits;           // fADC and TDC
-		evt->Ndigitized_values += 3*evt->Nschits;            // fADC and TDC
-		evt->Ndigitized_values += 3*evt->Ntaggerhits;        // fADC and TDC
+	evt->Ndigitized_values += 3*evt->Nbcalhits_inner;    // fADC and TDC
+	evt->Ndigitized_values += 2*evt->Nbcalhits_outer;    // fADC only
+	evt->Ndigitized_values += 2*evt->Nfcalhits;          // fADC only
+	evt->Ndigitized_values += 2*evt->Nccalhits;          // fADC only
+	evt->Ndigitized_values += 2*evt->Ncdchits;           // fADC only
+	evt->Ndigitized_values += 1*evt->Nfdchits_anode;     // TDC only
+	evt->Ndigitized_values += 2*evt->Nfdchits_cathode;   // fADC only
+	evt->Ndigitized_values += 3*evt->Ntofhits;           // fADC and TDC
+	evt->Ndigitized_values += 3*evt->Nschits;            // fADC and TDC
+	evt->Ndigitized_values += 3*evt->Ntagmhits;          // fADC and TDC
+	evt->Ndigitized_values += 3*evt->Ntaghhits;          // fADC and TDC
 
 	// Fill event tree
 	evt_tree->Fill();

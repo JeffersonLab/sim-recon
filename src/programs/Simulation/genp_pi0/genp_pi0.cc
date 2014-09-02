@@ -5,6 +5,7 @@
 // I'd don't recall the exact source of the cross-section tables
 // so they may be completely wrong.
 
+#include <stdlib.h>
 #include <iomanip>
 #include <vector>
 #include <iostream>
@@ -16,11 +17,11 @@ using namespace std;
 #include "cern.h"
 #include "bg_hddm.h"
 
-char *Name="pi0 photoprod-proton";
-char *Description="pi0 photoproduction off the proton.";
+char Name[] = "pi0 photoprod-proton";
+char Description[] = "pi0 photoproduction off the proton.";
   
-float BEAM_ENERGY=9.0;
-int Nmax=100;
+float BEAM_ENERGY = 9.0;
+int Nmax = 100;
 
 typedef struct {
   float theta;

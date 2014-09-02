@@ -7,18 +7,15 @@ using namespace jana;
 #include "DSCDigiHit.h"
 #include "DSCHit_factory.h"
 #include "DSCTDCDigiHit.h"
-typedef JFactory<DSCDigiHit> DSCDigiHit_factory;
-typedef JFactory<DSCTDCDigiHit> DSCTDCDigiHit_factory;
-typedef JFactory<DSCTruthHit> DSCTruthHit_factory;
 
 jerror_t START_COUNTER_init(JEventLoop *loop)
 {
 	/// Create and register Start Counter data factories
-	loop->AddFactory(new DSCDigiHit_factory());
-	loop->AddFactory(new DSCTDCDigiHit_factory());
+	loop->AddFactory(new JFactory<DSCDigiHit>());
+	loop->AddFactory(new JFactory<DSCTDCDigiHit>());
 	loop->AddFactory(new DSCHit_factory());
-
-	loop->AddFactory(new DSCTruthHit_factory());
+	loop->AddFactory(new JFactory<DSCHit>("TRUTH"));
+	loop->AddFactory(new JFactory<DSCTruthHit>());
 
 	return NOERROR;
 }

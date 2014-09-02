@@ -14,6 +14,8 @@ using namespace std;
 extern vector<char*> INFILENAMES;
 extern char *OUTFILENAME;
 extern int QUIT;
+extern bool HDDM_USE_COMPRESSION;
+extern bool HDDM_USE_INTEGRITY_CHECKS;
 
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl

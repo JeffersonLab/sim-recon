@@ -22,7 +22,8 @@
 #include <PID/DMCReaction.h>
 #include <PID/DBeamPhoton.h>
 #include <PID/DDetectorMatches.h>
-#include <TAGGER/DTagger.h>
+#include <TAGGER/DTAGMHit.h>
+#include <TAGGER/DTAGHHit.h>
 #include "TRACKING/DMCThrown.h"
 #include <TRACKING/DTrackTimeBased.h>
 #include <FCAL/DFCALShower.h>
@@ -30,6 +31,8 @@
 #include <START_COUNTER/DSCHit.h>
 #include <TOF/DTOFPoint.h>
 #include <TRIGGER/DMCTrigger.h>
+#include <DANA/DApplication.h>
+#include <PID/DRFTime.h>
 
 #include <DMatrix.h>
 #include <TMath.h>
@@ -51,13 +54,20 @@ class DEventSourceREST:public JEventSource
    jerror_t GetObjects(JEvent &event, JFactory_base *factory);
 		
    jerror_t Extract_DMCReaction(hddm_r::HDDM *record,
-                    JFactory<DMCReaction> *factory);
+                    JFactory<DMCReaction> *factory, JEventLoop* locEventLoop);
+   jerror_t Extract_DRFTime(hddm_r::HDDM *record,
+                    JFactory<DRFTime> *factory, JEventLoop* locEventLoop);
    jerror_t Extract_DBeamPhoton(hddm_r::HDDM *record,
-                    JFactory<DBeamPhoton> *factory);
+                    JFactory<DBeamPhoton> *factory,
+                    JEventLoop *eventLoop);
    jerror_t Extract_DMCThrown(hddm_r::HDDM *record,
                     JFactory<DMCThrown> *factory);
-   jerror_t Extract_DTagger(hddm_r::HDDM *record,
-                    JFactory<DTagger>* factory);
+   jerror_t Extract_DTAGMHit(hddm_r::HDDM *record,
+                    JFactory<DTAGMHit>* factory,
+                    JEventLoop *eventLoop);
+   jerror_t Extract_DTAGHHit(hddm_r::HDDM *record,
+                    JFactory<DTAGHHit>* factory,
+                    JEventLoop *eventLoop);
    jerror_t Extract_DSCHit(hddm_r::HDDM *record,
                     JFactory<DSCHit>* factory);
    jerror_t Extract_DTOFPoint(hddm_r::HDDM *record,
@@ -81,6 +91,8 @@ class DEventSourceREST:public JEventSource
  private:
    // Warning: Class JEventSource methods must be re-entrant, so do not
    // store any data here that might change from event to event.
+
+	map<unsigned int, double> bTargetCenterZMap; //unsigned int is run number
 
    std::ifstream *ifs;		// input hddm file ifstream
    hddm_r::istream *fin;	// provides hddm layer on top of ifstream

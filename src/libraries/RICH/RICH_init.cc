@@ -12,13 +12,10 @@ using namespace jana;
 #include "DRichHit.h"
 #include "DRichTruthHit.h"
 
-typedef JFactory<DRichHit> DRichHit_factory;
-typedef JFactory<DRichTruthHit> DRichTruthHit_factory;
-
 jerror_t RICH_init(JEventLoop *loop) {
 	/// Create and register RICH data factories
-	loop->AddFactory(new DRichHit_factory());
-	loop->AddFactory(new DRichTruthHit_factory());
+	loop->AddFactory(new JFactory<DRichHit>());
+	loop->AddFactory(new JFactory<DRichTruthHit>());
 
 	return NOERROR;
 }

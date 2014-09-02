@@ -343,7 +343,12 @@ int main(int argc,char **argv)
       }
       mc_evt = make_s_HDDM();
       fill_mc_parts(mc_evt);
-      flush_s_HDDM(mc_evt,outputfp);
+      if (flush_s_HDDM(mc_evt,outputfp) != 0)
+      {
+	fprintf(stderr,"Error - write failed to output hddm file "
+                "after %d events were written\n", written);  
+        exit(2);
+      }
       if (!(++written %100))
       {
 	fprintf(stderr,"stdhep events read: %d\r",written);  

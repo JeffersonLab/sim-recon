@@ -20,7 +20,7 @@ class DTOFHitMC:public JObject{
   
   int plane;		// plane (0: vertical, 1: horizontal)
   int bar;		// bar number
-  int end;               // north/south or left/right
+  int end;              // 0: north (beam-left), 1: south (beam-right)
   int ptype;		// GEANT particle type
   int itrack;           // Track number of primary particle causing the hit
   float dist;           // Hit distance from center of paddle (or x=0)

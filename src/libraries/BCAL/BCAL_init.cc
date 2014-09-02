@@ -23,33 +23,26 @@
 
 #include "DBCALTruthShower.h"
 
-// These come from the event source, not from any algorithm
-typedef JFactory<DBCALDigiHit> DBCALDigiHit_factory;
-typedef JFactory<DBCALTDCDigiHit> DBCALTDCDigiHit_factory;
-typedef JFactory<DBCALIncidentParticle> DBCALIncidentParticle_factory;
-typedef JFactory<DBCALSiPMHit> DBCALSiPMHit_factory;
-typedef JFactory<DBCALSiPMSpectrum> DBCALSiPMSpectrum_factory;
-typedef JFactory<DBCALTruthShower> DBCALTruthShower_factory;
-typedef JFactory<DBCALTruthCell> DBCALTruthCell_factory;
 
 jerror_t BCAL_init(JEventLoop *loop)
 {
 	/// Create and register BCAL data factories
-	loop->AddFactory(new DBCALDigiHit_factory());
-	loop->AddFactory(new DBCALTDCDigiHit_factory());
+	loop->AddFactory(new JFactory<DBCALDigiHit>());
+	loop->AddFactory(new JFactory<DBCALTDCDigiHit>());
 	loop->AddFactory(new DBCALHit_factory());
-	loop->AddFactory(new DBCALIncidentParticle_factory());
+	loop->AddFactory(new JFactory<DBCALIncidentParticle>());
 	loop->AddFactory(new DBCALTDCHit_factory());
-	loop->AddFactory(new DBCALSiPMHit_factory());
-	loop->AddFactory(new DBCALSiPMSpectrum_factory());
+	loop->AddFactory(new JFactory<DBCALSiPMHit>());
+	loop->AddFactory(new JFactory<DBCALSiPMSpectrum>());
+	loop->AddFactory(new JFactory<DBCALSiPMSpectrum>("TRUTH"));
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory_IU());
 	loop->AddFactory(new DBCALShower_factory_KLOE());
 	loop->AddFactory(new DBCALShower_factory());
 	loop->AddFactory(new DBCALCluster_factory());
 	loop->AddFactory(new DBCALCluster_factory_SINGLE());
-	loop->AddFactory(new DBCALTruthShower_factory());
-	loop->AddFactory(new DBCALTruthCell_factory());
+	loop->AddFactory(new JFactory<DBCALTruthShower>());
+	loop->AddFactory(new JFactory<DBCALTruthCell>());
 	loop->AddFactory(new DBCALPoint_factory());
 	loop->AddFactory(new DBCALUnifiedHit_factory());
 	loop->AddFactory(new DBCALClump_factory());

@@ -212,5 +212,5 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       call GSVERT(vertex,0,0,ubuf,nubuf,nvert)
       call GSKINE(plab,1,nvert,0,0,nt) ! push the beam photon on the stack
       vertex(4) = TOFG
-      call hitTagger(vertex,vertex,plab,plab,0.,nt,0,0)
+      call hitTagger(vertex,vertex,plab,plab,0.,1,0,0)
       end

@@ -45,6 +45,10 @@ using namespace jana;
 #include <START_COUNTER/DSCTDCDigiHit.h>
 #include <TOF/DTOFDigiHit.h>
 #include <TOF/DTOFTDCDigiHit.h>
+#include <TAGGER/DTAGMDigiHit.h>
+#include <TAGGER/DTAGMTDCDigiHit.h>
+#include <TAGGER/DTAGHDigiHit.h>
+#include <TAGGER/DTAGHTDCDigiHit.h>
 
 
 class DTranslationTable:public jana::JObject{
@@ -253,6 +257,8 @@ class DTranslationTable:public jana::JObject{
 		DFCALDigiHit* MakeFCALDigiHit(const FCALIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
 		DSCDigiHit*   MakeSCDigiHit(  const SCIndex_t &idx,   const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
 		DTOFDigiHit*  MakeTOFDigiHit( const TOFIndex_t &idx,  const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
+		DTAGMDigiHit* MakeTAGMDigiHit(const TAGMIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
+		DTAGHDigiHit* MakeTAGHDigiHit(const TAGHIndex_t &idx, const Df250PulseIntegral *pi, const Df250PulseTime *pt) const;
 
 		// fADC125
 		DCDCDigiHit* MakeCDCDigiHit(const CDCIndex_t &idx, const Df125PulseIntegral *pi, const Df125PulseTime *pt) const;
@@ -262,6 +268,8 @@ class DTranslationTable:public jana::JObject{
 		DBCALTDCDigiHit* MakeBCALTDCDigiHit(const BCALIndex_t &idx,      const DF1TDCHit *hit) const;
 		DFDCWireDigiHit* MakeFDCWireDigiHit(const FDC_WiresIndex_t &idx, const DF1TDCHit *hit) const;
 		DSCTDCDigiHit*   MakeSCTDCDigiHit(  const SCIndex_t &idx,        const DF1TDCHit *hit) const;
+		DTAGMTDCDigiHit* MakeTAGMTDCDigiHit(const TAGMIndex_t &idx,      const DF1TDCHit *hit) const;
+		DTAGHTDCDigiHit* MakeTAGHTDCDigiHit(const TAGHIndex_t &idx,      const DF1TDCHit *hit) const;
 		
 		// CAEN1290TDC
 		DTOFTDCDigiHit*  MakeTOFTDCDigiHit(const TOFIndex_t &idx,        const DCAEN1290TDCHit *hit) const;

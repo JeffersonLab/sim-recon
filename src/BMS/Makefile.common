@@ -90,6 +90,11 @@ FFLAGS   += -I$(HALLD_HOME)/include
 CFLAGS   += -I$(HALLD_HOME)/include
 CXXFLAGS += -I$(HALLD_HOME)/include
 
+# include HALLD_HOME/$(BMS_OSNAME) include directory
+FFLAGS   += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
+CFLAGS   += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
+CXXFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
+
 # This is to allow files of size>2GB (specifically for HDDM) 6/19/2009 DL
 CXXFLAGS += -D_FILE_OFFSET_BITS=64
 CFLAGS += -D_FILE_OFFSET_BITS=64

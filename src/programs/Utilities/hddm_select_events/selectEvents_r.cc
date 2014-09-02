@@ -12,7 +12,7 @@ using std::distance;
 //-----------------------------------------------------------------
 // selectEvent_s
 //-----------------------------------------------------------------
-bool selectEvent_r(int select_type, hddm_r::HDDM *record, int nevents, bool debug){
+bool selectEvent_r(int select_type, hddm_r::HDDM &record, int nevents, bool debug){
 
   // Select Lambda -> p pi- events
   if(select_type==1){
@@ -23,7 +23,7 @@ bool selectEvent_r(int select_type, hddm_r::HDDM *record, int nevents, bool debu
     bool foundProton = false;
     if(debug) cout << "event: " << nevents << "----------------------------------------------------------------" << endl;
 
-    hddm_r::ReconstructedPhysicsEvent &re = record->getReconstructedPhysicsEvent();
+    hddm_r::ReconstructedPhysicsEvent &re = record.getReconstructedPhysicsEvent();
     hddm_r::ReactionList reactions = re.getReactions();
     // Loop over ReactionList
     hddm_r::ReactionList::iterator iter;
@@ -94,7 +94,7 @@ bool selectEvent_r(int select_type, hddm_r::HDDM *record, int nevents, bool debu
 
     if(debug) cout << "event: " << nevents << "----------------------------------------------------------------" << endl;
 
-    hddm_r::ReconstructedPhysicsEvent &re = record->getReconstructedPhysicsEvent();
+    hddm_r::ReconstructedPhysicsEvent &re = record.getReconstructedPhysicsEvent();
     hddm_r::ReactionList reactions = re.getReactions();
     // Loop over ReactionList
     hddm_r::ReactionList::iterator iter;
@@ -184,7 +184,7 @@ bool selectEvent_r(int select_type, hddm_r::HDDM *record, int nevents, bool debu
     }
     double vertexdiff = 999;
 
-    hddm_r::ReconstructedPhysicsEvent &re = record->getReconstructedPhysicsEvent();
+    hddm_r::ReconstructedPhysicsEvent &re = record.getReconstructedPhysicsEvent();
     hddm_r::ReactionList reactions = re.getReactions();
     // Loop over ReactionList
     hddm_r::ReactionList::iterator iter;
@@ -263,7 +263,7 @@ bool selectEvent_r(int select_type, hddm_r::HDDM *record, int nevents, bool debu
     TLorentzVector p4pim;
     TLorentzVector p4diff;
 
-    hddm_r::ReconstructedPhysicsEvent &re = record->getReconstructedPhysicsEvent();
+    hddm_r::ReconstructedPhysicsEvent &re = record.getReconstructedPhysicsEvent();
     hddm_r::ReactionList reactions = re.getReactions();
     // Loop over ReactionList
     hddm_r::ReactionList::iterator iter;
@@ -356,7 +356,7 @@ bool selectEvent_r(int select_type, hddm_r::HDDM *record, int nevents, bool debu
     TLorentzVector p4diff;
     TLorentzVector p4total;
 
-    hddm_r::ReconstructedPhysicsEvent &re = record->getReconstructedPhysicsEvent();
+    hddm_r::ReconstructedPhysicsEvent &re = record.getReconstructedPhysicsEvent();
     hddm_r::ReactionList reactions = re.getReactions();
     // Loop over ReactionList
     hddm_r::ReactionList::iterator iter;
@@ -494,7 +494,7 @@ bool selectEvent_r(int select_type, hddm_r::HDDM *record, int nevents, bool debu
     TLorentzVector p4pi0;
     TLorentzVector p4diff;
 
-    hddm_r::ReconstructedPhysicsEvent &re = record->getReconstructedPhysicsEvent();
+    hddm_r::ReconstructedPhysicsEvent &re = record.getReconstructedPhysicsEvent();
     hddm_r::ReactionList reactions = re.getReactions();
     // Loop over ReactionList
     hddm_r::ReactionList::iterator iter;

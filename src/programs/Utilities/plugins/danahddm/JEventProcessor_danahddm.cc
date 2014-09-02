@@ -35,13 +35,26 @@ extern "C" {
 JEventProcessor_danahddm::JEventProcessor_danahddm()
 {
 
-  jout << endl << "  Default JEventProcessor_danahddm invoked" << endl << endl;
+  jout << std::endl << "  Default JEventProcessor_danahddm invoked" 
+       << std::endl << std::endl;
 
   // Check for hddm:FILENAME output file name parameter
   gPARMS->SetDefaultParameter("hddm:FILENAME",hddmFileName);
-  jout << endl << "  hddm output file name is " << hddmFileName << endl << endl;
+  jout << std::endl << "  hddm output file name is " << hddmFileName
+       << std::endl << std::endl;
   
+  HDDM_USE_COMPRESSION = true;
+  gPARMS->SetDefaultParameter("HDDM:USE_COMPRESSION", HDDM_USE_COMPRESSION,
+                         "Turn on/off compression of the output HDDM stream."
+                         " Set to \"0\" to turn off (it's on by default)");
+  HDDM_USE_INTEGRITY_CHECKS = true;
+  gPARMS->SetDefaultParameter("HDDM:USE_INTEGRITY_CHECKS",
+                               HDDM_USE_INTEGRITY_CHECKS,
+                         "Turn on/off automatic integrity checking on the"
+                         " output HDDM stream."
+                         " Set to \"0\" to turn off (it's on by default)");
   file = NULL;
+  fout = NULL;
   Nevents_written = 0;
 }  
 
@@ -50,7 +63,6 @@ JEventProcessor_danahddm::JEventProcessor_danahddm()
 //-------------------------------
 JEventProcessor_danahddm::~JEventProcessor_danahddm()
 {
-	
 }
 
 //-------------------------------
@@ -58,7 +70,7 @@ JEventProcessor_danahddm::~JEventProcessor_danahddm()
 //-------------------------------
 jerror_t JEventProcessor_danahddm::init(void)
 {
-	return NOERROR;
+   return NOERROR;
 }
 
 //-------------------------------
@@ -66,24 +78,46 @@ jerror_t JEventProcessor_danahddm::init(void)
 //-------------------------------
 jerror_t JEventProcessor_danahddm::brun(JEventLoop *loop, int runnumber)
 {
-	// If file is already open, don't reopen it. Just keep adding to it.
-	if(file)return NOERROR;
+   // If file is already open, don't reopen it. Just keep adding to it.
+   if (file)
+      return NOERROR;
 
-	// We wait until here to open the output so that we can check if the 
-	// input is hddm. If it's not, tell the user and exit immediately
-	JEvent& event = loop->GetJEvent();
-	JEventSource *source = event.GetJEventSource();
-	DEventSourceHDDM *hddm_source = dynamic_cast<DEventSourceHDDM*>(source);
-	if(!hddm_source){
-		cerr<<" This program MUST be used with an HDDM file as input!"<<endl;
-		exit(-1);
-	}
+   // We wait until here to open the output so that we can check if the 
+   // input is hddm. If it's not, tell the user and exit immediately
+   JEvent& event = loop->GetJEvent();
+   JEventSource *source = event.GetJEventSource();
+   DEventSourceHDDM *hddm_source = dynamic_cast<DEventSourceHDDM*>(source);
+   if (! hddm_source) {
+      std::cerr << " This program MUST be used with an HDDM file as input!" << std::endl;
+      exit(-1);
+   }
 
-	// If we got here, it must be an HDDM source. Open a new file.
-	file = init_s_HDDM((char*)hddmFileName.c_str());
-	Nevents_written = 0;
+   // If we got here, it must be an HDDM source. Open a new file.
+   file = new std::ofstream(hddmFileName.c_str());
+   fout = new hddm_s::ostream(*file);
+   Nevents_written = 0;
+ 
+   // enable on-the-fly bzip2 compression on output stream
+   if (HDDM_USE_COMPRESSION) {
+      jout << " Enabling bz2 compression of output HDDM file stream" 
+           << std::endl;
+      fout->setCompression(hddm_s::k_bz2_compression);
+   }
+   else {
+      jout << " HDDM compression disabled" << std::endl;
+   }
 
-	return NOERROR;
+   // enable a CRC data integrity check at the end of each event record
+   if (HDDM_USE_INTEGRITY_CHECKS) {
+      jout << " Enabling CRC data integrity check in output HDDM file stream"
+           << std::endl;
+      fout->setIntegrityChecks(hddm_s::k_crc32_integrity);
+   }
+   else {
+      jout << " HDDM integrity checks disabled" << std::endl;
+   }
+
+   return NOERROR;
 }
 
 //-------------------------------
@@ -91,81 +125,36 @@ jerror_t JEventProcessor_danahddm::brun(JEventLoop *loop, int runnumber)
 //-------------------------------
 jerror_t JEventProcessor_danahddm::evnt(JEventLoop *loop, int eventnumber)
 {
-	// This is a little complicated. We need to get a hold of the s_HDDM_t
-	// structure pointer for this event so we can pass it to flush_s_HDDM()
-	// along with our ouput stream pointer. The flush routine frees up the
-	// memory in the s_HDDM_t structure. When the framework tries "flush"ing
-	// a second time, we get a seg fault. To prevent the framework from
-	// flushing, we have to clear the free_on_flush flag (by default set
-	// to true). This means we need to get the DEventSource pointer and
-	// downcast to a DEventSourceHDDM structure. It's a little strange setting
-	// this for every event, but we have no way of knowing when the event
-	// source changes and this at least guarantees it for all event sources.
-	JEvent& event = loop->GetJEvent();
-	JEventSource *source = event.GetJEventSource();
-	DEventSourceHDDM *hddm_source = dynamic_cast<DEventSourceHDDM*>(source);
-	if(!hddm_source){
-		cerr<<" This program MUST be used only with HDDM files as inputs!"<<endl;
-		exit(-1);
-	}
-	s_HDDM_t *hddm = (s_HDDM_t*)event.GetRef();
-	if(!hddm)return NOERROR;
-	
-	// Delete any data in the reconView branch of the event. This may be a little
-	// confusing. We want to delete the reconView branch and any memory allocated
-	// to its sub-braches. The easiest way to do this is to create another
-	// event that contains a pointer ONLY to the reconView branch and then
-	// delete that event. The original event will need to have it's reconView
-	// point set to HDDM_NULL to indicate it's empty. Note that one would
-	// expect for most cases the input file not to have any reconView data.
-	s_ReconView_t *recon = (s_ReconView_t*)HDDM_NULL;
-	s_PhysicsEvents_t* PE = hddm->physicsEvents;
-	if(PE){
-		for(unsigned int i=0; i<PE->mult; i++){
-			s_ReconView_t *my_recon = PE->in[i].reconView;
-			if(my_recon != HDDM_NULL){
-				// Create a new, temporary event
-				s_HDDM_t *tmp_hddm = make_s_HDDM();
-				s_PhysicsEvents_t *tmp_PE = make_s_PhysicsEvents(1);
-				
-				// Move recon branch over to temporary tree
-				tmp_PE->mult=1;
-				tmp_PE->in[0].reconView = my_recon;
-				tmp_PE->in[0].reactions = (s_Reactions_t*)HDDM_NULL;
-				tmp_PE->in[0].hitView = (s_HitView_t*)HDDM_NULL;
-				PE->in[i].reconView = (s_ReconView_t*)HDDM_NULL;
-				
-				// Delete temporary tree and any memory in the recon branch along with it
-				flush_s_HDDM(tmp_hddm, NULL);
-			}
-			
-			// Create a new reconView branch to hang our data from (only for
-			// first physics event).
-			if(recon==HDDM_NULL)recon = PE->in[i].reconView = make_s_ReconView();
-		}
-	}
-	
-	// In order to do anything worthwhile here, we need to have a valid recon
-	// pointer.
-	if(recon==NULL || recon==HDDM_NULL)return NOERROR;
+   JEvent& event = loop->GetJEvent();
+   JEventSource *source = event.GetJEventSource();
+   DEventSourceHDDM *hddm_source = dynamic_cast<DEventSourceHDDM*>(source);
+   if (! hddm_source) {
+      std::cerr << " This program MUST be used only with HDDM files as inputs!"
+                << std::endl;
+      exit(-1);
+   }
+   hddm_s::HDDM *hddm = (hddm_s::HDDM*)event.GetRef();
+   if (! hddm)
+      return NOERROR;
+   
+   // Delete any data in the reconView branch of the event.
+   hddm->getPhysicsEvent().deleteReconViews();
 
-	// Fill in reconstructed banks, replacing any that are already there
-	Add_DTrackTimeBased(loop, recon);
+   // Fill in reconstructed banks, replacing any that are already there
+   hddm_s::ReconViewList revs = hddm->getPhysicsEvent().addReconViews();
+   Add_DTrackTimeBased(loop, revs.begin());
 
-	// get write lock
-	pthread_mutex_lock(&hddmMutex);
+   // get write lock
+   pthread_mutex_lock(&hddmMutex);
 
-	// Write event to file and update counter
-	flush_s_HDDM(hddm, file);
-	Nevents_written++;
+   // Write event to file and update counter
+   *fout << *hddm;
+   Nevents_written++;
 
-	// unlock
-	pthread_mutex_unlock(&hddmMutex);
+   // unlock
+   pthread_mutex_unlock(&hddmMutex);
 
-	// Tell the JEventSourceHDDM object not to free this event a second time
-	hddm_source->flush_on_free = false;
-
-	return NOERROR;
+   return NOERROR;
 }
 
 //-------------------------------
@@ -173,7 +162,7 @@ jerror_t JEventProcessor_danahddm::evnt(JEventLoop *loop, int eventnumber)
 //-------------------------------
 jerror_t JEventProcessor_danahddm::erun(void)
 {
-	return NOERROR;
+   return NOERROR;
 }
 
 //-------------------------------
@@ -181,74 +170,76 @@ jerror_t JEventProcessor_danahddm::erun(void)
 //-------------------------------
 jerror_t JEventProcessor_danahddm::fini(void)
 {
-	if(file){
-		close_s_HDDM(file);
-		cout<<endl<<"Closed HDDM file"<<endl;
-	}
-	cout<<" "<<Nevents_written<<" event written to "<<hddmFileName<<endl;
+   if (fout)
+      delete fout;
+   if (file) {
+      delete file;
+      std::cout << std::endl << "Closed HDDM file" << std::endl;
+   }
+   std::cout << " " << Nevents_written << " event written to "
+             << hddmFileName << std::endl;
 
-	return NOERROR;
+   return NOERROR;
 }
 
 //-------------------------------
 // Add_DTrackTimeBased
 //-------------------------------
-void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView_t *recon)
+void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, 
+                               hddm_s::ReconViewList::iterator riter)
 {
-	// Get objects to write out
-	vector<const DTrackTimeBased*> tracktimebaseds;
-	loop->Get(tracktimebaseds);
-	if(tracktimebaseds.size()==0)return;
+   // Get objects to write out
+   vector<const DTrackTimeBased*> tracktimebaseds;
+   loop->Get(tracktimebaseds);
+   if (tracktimebaseds.size() == 0)
+      return;
 
-	// Allocate memory for all time based tracks
-	s_Tracktimebaseds_t *tbt = recon->tracktimebaseds = make_s_Tracktimebaseds(tracktimebaseds.size());
-	tbt->mult = 0;
+   // Allocate memory for all time based tracks
+   unsigned int ntbts = tracktimebaseds.size();
+   hddm_s::TracktimebasedList tbts = riter->addTracktimebaseds(ntbts);
+   for (unsigned int i=0; i < ntbts; i++) {
+      const DTrackTimeBased *tbt_dana = tracktimebaseds[i];
+      DVector3 pos = tbt_dana->position();
+      DVector3 mom = tbt_dana->momentum();
+      
+      tbts(i).setFOM(tbt_dana->FOM);
+      tbts(i).setCandidateid(tbt_dana->candidateid);
+      tbts(i).setTrackid(tbt_dana->trackid);
+      tbts(i).setId(tbt_dana->id);
+      tbts(i).setChisq(tbt_dana->chisq);
+      tbts(i).setNdof(tbt_dana->Ndof);
 
-	for(unsigned int i=0; i<tracktimebaseds.size(); i++, tbt->mult++){
-		const DTrackTimeBased *tbt_dana = tracktimebaseds[i];
-		s_Tracktimebased_t *tbt_hddm = &(tbt->in[tbt->mult]);
-		
-		DVector3 pos = tbt_dana->position();
-		DVector3 mom = tbt_dana->momentum();
-		
-		tbt_hddm->FOM = tbt_dana->FOM;
-		tbt_hddm->candidateid = tbt_dana->candidateid;
-		tbt_hddm->trackid = tbt_dana->trackid;
-		tbt_hddm->id = tbt_dana->id;
-		tbt_hddm->chisq = tbt_dana->chisq;
-		tbt_hddm->Ndof = tbt_dana->Ndof;
+      hddm_s::MomentumList tmoms = tbts(i).addMomenta();
+      hddm_s::PropertiesList tpros = tbts(i).addPropertiesList();
+      hddm_s::OriginList torig = tbts(i).addOrigins();
+      hddm_s::ErrorMatrixList terrs = tbts(i).addErrorMatrixs();
+      hddm_s::TrackingErrorMatrixList tters = 
+                              tbts(i).addTrackingErrorMatrixs();
 
-		tbt_hddm->momentum = make_s_Momentum();
-		tbt_hddm->properties = make_s_Properties();
-		tbt_hddm->origin = make_s_Origin();
-		tbt_hddm->errorMatrix = make_s_ErrorMatrix();
-		tbt_hddm->TrackingErrorMatrix = make_s_TrackingErrorMatrix();
+      tmoms().setE(tbt_dana->energy());
+      tmoms().setPx(mom.x());
+      tmoms().setPy(mom.y());
+      tmoms().setPz(mom.z());
 
-		tbt_hddm->momentum->E = tbt_dana->energy();
-		tbt_hddm->momentum->px = mom.x();
-		tbt_hddm->momentum->py = mom.y();
-		tbt_hddm->momentum->pz = mom.z();
+      tpros().setCharge((int)tbt_dana->charge());
+      tpros().setMass(tbt_dana->mass());
+      
+      torig().setT(0.0);
+      torig().setVx(pos.x());
+      torig().setVy(pos.y());
+      torig().setVz(pos.z());
+      
+      string vals = DMatrixDSymToString(tbt_dana->errorMatrix());
+      terrs().setNcols(7);
+      terrs().setNrows(7);
+      terrs().setType("DMatrixDSym");
+      terrs().setVals(vals.c_str());
 
-		tbt_hddm->properties->charge = (int)tbt_dana->charge();
-		tbt_hddm->properties->mass = tbt_dana->mass();
-		
-		tbt_hddm->origin->t = 0.0;
-		tbt_hddm->origin->vx = pos.x();
-		tbt_hddm->origin->vy = pos.y();
-		tbt_hddm->origin->vz = pos.z();
-		
-		string vals = DMatrixDSymToString(tbt_dana->errorMatrix());
-		tbt_hddm->errorMatrix->Ncols = 7;
-		tbt_hddm->errorMatrix->Nrows = 7;
-		tbt_hddm->errorMatrix->type = strdup("DMatrixDSym"); // HDDM always frees strings automatically
-		tbt_hddm->errorMatrix->vals = strdup(vals.c_str()); // HDDM always frees strings automatically
-
-		tbt_hddm->TrackingErrorMatrix->Ncols = 5;
-		tbt_hddm->TrackingErrorMatrix->Nrows = 5;
-		tbt_hddm->TrackingErrorMatrix->type = strdup("DMatrixDSym"); // HDDM always frees strings automatically
-		tbt_hddm->TrackingErrorMatrix->vals = strdup(DMatrixDSymToString(tbt_dana->TrackingErrorMatrix()).c_str());
-
-	}
+      tters().setNcols(5);
+      tters().setNrows(5);
+      tters().setType("DMatrixDSym");
+      tters().setVals(DMatrixDSymToString(tbt_dana->TrackingErrorMatrix()));
+   }
 }
 
 //-------------------------------
@@ -256,15 +247,15 @@ void JEventProcessor_danahddm::Add_DTrackTimeBased(JEventLoop *loop, s_ReconView
 //-------------------------------
 string JEventProcessor_danahddm::DMatrixDSymToString(const DMatrixDSym &mat)
 {
-	// Convert the given symmetric matrix into a single string that
-	// can be used in an HDDM file.
+   // Convert the given symmetric matrix into a single string that
+   // can be used in an HDDM file.
 
-	stringstream ss;
-	for(int irow=0; irow<mat.GetNrows(); irow++) {
-		for(int icol=irow; icol<mat.GetNcols(); icol++) {
-			ss << mat[irow][icol] << " ";
-		}
-	}
-	
-	return ss.str();
+   stringstream ss;
+   for (int irow=0; irow<mat.GetNrows(); irow++) {
+      for (int icol=irow; icol<mat.GetNcols(); icol++) {
+         ss << mat[irow][icol] << " ";
+      }
+   }
+   
+   return ss.str();
 }

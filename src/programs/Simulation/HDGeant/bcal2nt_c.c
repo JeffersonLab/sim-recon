@@ -124,7 +124,7 @@ int process_event(s_HDDM_t *event)
       s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
       int cell;
       for (cell=0; cell < cells->mult; cell++) {
-         s_BcalHits_t *hits = cells->in[cell].bcalHits;
+         s_BcalTruthHits_t *hits = cells->in[cell].bcalTruthHits;
          int hit;
          bcalnt.event = event->physicsEvents->in[0].eventNo;
          bcalnt.module = cells->in[cell].module;

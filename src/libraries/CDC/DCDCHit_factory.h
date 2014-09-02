@@ -28,6 +28,7 @@ class DCDCHit_factory:public jana::JFactory<DCDCHit>{
 		// overall scale factors.
 		double a_scale;
 		double t_scale;
+                double t_min;
 
 		// calibration constant tables
 		cdc_digi_constants_t gains;

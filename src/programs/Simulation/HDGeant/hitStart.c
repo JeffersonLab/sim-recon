@@ -29,6 +29,7 @@
 #include <HDDM/hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
+#include <gid_map.h>
 #include "calibDB.h"
 extern s_HDDM_t* thisInputEvent;
 
@@ -241,14 +242,21 @@ void hitStartCntr (float xin[4], float xout[4],
       }
       if (nhit < hits->mult)		/* merge with former hit */
       {
+         if (tcorr < hits->in[nhit].t)
+         {
+            hits->in[nhit].ptype = ipart;
+            hits->in[nhit].itrack = gidGetId(track);
+         }
          hits->in[nhit].t = 
-                      (hits->in[nhit].t * hits->in[nhit].dE + tcorr * dEcorr)
-                    / (hits->in[nhit].dE += dEcorr);
+                 (hits->in[nhit].t * hits->in[nhit].dE + tcorr * dEcorr) /
+                 (hits->in[nhit].dE += dEcorr);
       }
       else if (nhit < MAX_HITS)		/* create new hit */
       {
          hits->in[nhit].t = tcorr ;
          hits->in[nhit].dE = dEcorr;
+         hits->in[nhit].ptype = ipart;
+         hits->in[nhit].itrack = gidGetId(track);
          hits->mult++;
       }
       else

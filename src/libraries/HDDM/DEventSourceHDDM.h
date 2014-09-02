@@ -5,9 +5,9 @@
 //
 /// Implements JEventSource for HDDM files
 //
-// Changes:	Oct 3, 2012 Yi Qiang: add classes for Cerenkov detector
-//			OCt 10, 2012 Yi Qiang: modifed Cerenkov classes with general Cere hits
-//			Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
+// Changes:   Oct 3, 2012 Yi Qiang: add classes for Cerenkov detector
+//         OCt 10, 2012 Yi Qiang: modifed Cerenkov classes with general Cere hits
+//         Oct 8, 2013 Yi Qiang: added dedicated object for RICH Truth Hit
 //
 
 #ifndef _JEVENT_SOURCEHDDM_H_
@@ -23,7 +23,6 @@ using namespace std;
 #include <JANA/jerror.h>
 #include <JANA/JCalibration.h>
 
-#include <HDDM/hddm_s.h>
 #include <HDDM/hddm_s.hpp>
 
 #include "TRACKING/DMCTrackHit.h"
@@ -50,92 +49,98 @@ using namespace std;
 #include <PID/DMCReaction.h>
 #include <PID/DBeamPhoton.h>
 #include <TRACKING/DTrackTimeBased.h>
-#include <TAGGER/DTagger.h>
+#include <TAGGER/DTAGMHit.h>
+#include <TAGGER/DTAGHHit.h>
 // load CERE headers, yqiang Oct 3, 2012
 // modified by yqiang, Oct 10 2012
 // added RichTruthHit object, yqiang, Oct 7, 2013
 #include <CERE/DCereHit.h>
 #include <RICH/DRichHit.h>
 #include <RICH/DRichTruthHit.h>
+#include <PID/DRFTime.h>
+#include <DANA/DApplication.h>
 
 class DEventSourceHDDM:public JEventSource
 {
-	public:
-		DEventSourceHDDM(const char* source_name);
-		virtual ~DEventSourceHDDM();		
-		virtual const char* className(void){return static_className();}
-		static const char* static_className(void){return "DEventSourceHDDM";}
+   public:
+      DEventSourceHDDM(const char* source_name);
+      virtual ~DEventSourceHDDM();      
+      virtual const char* className(void){return static_className();}
+      static const char* static_className(void){return "DEventSourceHDDM";}
 
-		jerror_t GetEvent(JEvent &event);
-		void FreeEvent(JEvent &event);
-		jerror_t GetObjects(JEvent &event, JFactory_base *factory);
-		
-		jerror_t Extract_DMCTrackHit(s_HDDM_t *hddm_s, JFactory<DMCTrackHit> *factory);
-		jerror_t GetCDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
-		jerror_t GetFDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
-		jerror_t GetBCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
-		jerror_t GetTOFTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
-		jerror_t GetCherenkovTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
-		jerror_t GetFCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
-		jerror_t GetCCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
-		jerror_t GetSCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
+      jerror_t GetEvent(JEvent &event);
+      void FreeEvent(JEvent &event);
+      jerror_t GetObjects(JEvent &event, JFactory_base *factory);
+      
+      jerror_t Extract_DMCTrackHit(hddm_s::HDDM *record, JFactory<DMCTrackHit> *factory, string tag);
+      jerror_t GetCDCTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetFDCTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetBCALTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetTOFTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetCherenkovTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetFCALTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetCCALTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t GetSCTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
 
-		jerror_t Extract_DBCALTruthShower(s_HDDM_t *hddm_s, JFactory<DBCALTruthShower> *factory);
-		jerror_t Extract_DBCALTruthCell(s_HDDM_t *hddm_s, JFactory<DBCALTruthCell> *factory);
-		jerror_t Extract_DBCALSiPMHit(s_HDDM_t *hddm_s, JFactory<DBCALSiPMHit> *factory);
-		jerror_t Extract_DBCALSiPMSpectrum(s_HDDM_t *hddm_s, JFactory<DBCALSiPMSpectrum>* factory);
-		jerror_t Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory);
-		jerror_t Extract_DBCALIncidentParticle(s_HDDM_t *hddm_s, JFactory<DBCALIncidentParticle> *factory);
-		jerror_t Extract_DBCALTDCHit(s_HDDM_t *hddm_s, JFactory<DBCALTDCHit> *factory);
-		jerror_t Extract_DMCReaction(s_HDDM_t *hddm_s, JFactory<DMCReaction> *factory, JEventLoop *loop);
-		jerror_t Extract_DBeamPhoton(s_HDDM_t *hddm_s, JFactory<DBeamPhoton> *factory, JEventLoop *loop);
-		jerror_t Extract_DMCThrown(s_HDDM_t *hddm_s, JFactory<DMCThrown> *factory);
-		jerror_t Extract_DCDCHit(s_HDDM_t *hddm_s, JFactory<DCDCHit> *factory, string tag);
-		jerror_t Extract_DFDCHit(s_HDDM_t *hddm_s, JFactory<DFDCHit> *factory, string tag);
-		jerror_t Extract_DFCALTruthShower(s_HDDM_t *hddm_s, JFactory<DFCALTruthShower> *factory);
-		jerror_t Extract_DCCALHit(s_HDDM_t *hddm_s, JFactory<DCCALHit> *factory, JEventLoop* eventLoop, string tag);
-		jerror_t Extract_DCCALTruthShower(s_HDDM_t *hddm_s, JFactory<DCCALTruthShower> *factory);
-		jerror_t Extract_DFCALHit(s_HDDM_t *hddm_s, JFactory<DFCALHit> *factory, JEventLoop* eventLoop, string tag);
-		jerror_t Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s, JFactory<DMCTrajectoryPoint> *factory);
-		jerror_t Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTruth> *factory);
+	   jerror_t Extract_DRFTime(hddm_s::HDDM *record, JFactory<DRFTime> *factory, JEventLoop* locEventLoop);
+      jerror_t Extract_DBCALTruthShower(hddm_s::HDDM *record, JFactory<DBCALTruthShower> *factory, string tag);
+      jerror_t Extract_DBCALTruthCell(hddm_s::HDDM *record, JFactory<DBCALTruthCell> *factory, string tag);
+      jerror_t Extract_DBCALSiPMHit(hddm_s::HDDM *record, JFactory<DBCALSiPMHit> *factory, string tag);
+      jerror_t Extract_DBCALSiPMSpectrum(hddm_s::HDDM *record, JFactory<DBCALSiPMSpectrum>* factory, string tag);
+      jerror_t Extract_DBCALHit(hddm_s::HDDM *record, JFactory<DBCALHit> *factory, string tag);
+      jerror_t Extract_DBCALIncidentParticle(hddm_s::HDDM *record, JFactory<DBCALIncidentParticle> *factory, string tag);
+      jerror_t Extract_DBCALTDCHit(hddm_s::HDDM *record, JFactory<DBCALTDCHit> *factory, string tag);
+      jerror_t Extract_DMCReaction(hddm_s::HDDM *record, JFactory<DMCReaction> *factory, string tag, JEventLoop *loop);
+      jerror_t Extract_DBeamPhoton(hddm_s::HDDM *record, JFactory<DBeamPhoton> *factory, string tag, JEventLoop *loop);
+      jerror_t Extract_DMCThrown(hddm_s::HDDM *record, JFactory<DMCThrown> *factory, string tag);
+      jerror_t Extract_DCDCHit(hddm_s::HDDM *record, JFactory<DCDCHit> *factory, string tag);
+      jerror_t Extract_DFDCHit(hddm_s::HDDM *record, JFactory<DFDCHit> *factory, string tag);
+      jerror_t Extract_DFCALTruthShower(hddm_s::HDDM *record, JFactory<DFCALTruthShower> *factory, string tag);
+      jerror_t Extract_DCCALHit(hddm_s::HDDM *record, JFactory<DCCALHit> *factory, string tag, JEventLoop* eventLoop);
+      jerror_t Extract_DCCALTruthShower(hddm_s::HDDM *record, JFactory<DCCALTruthShower> *factory, string tag);
+      jerror_t Extract_DFCALHit(hddm_s::HDDM *record, JFactory<DFCALHit> *factory, string tag, JEventLoop* eventLoop);
+      jerror_t Extract_DMCTrajectoryPoint(hddm_s::HDDM *record, JFactory<DMCTrajectoryPoint> *factory, string tag);
+      jerror_t Extract_DTOFTruth(hddm_s::HDDM *record,  JFactory<DTOFTruth> *factory, string tag);
 
-		jerror_t Extract_DTOFHit( s_HDDM_t *hddm_s,  JFactory<DTOFHit>* factory, JFactory<DTOFHitMC>* factoryMC,string tag);
-		jerror_t Extract_DTOFHitMC( s_HDDM_t *hddm_s,  JFactory<DTOFHitMC>* factoryMC, JFactory<DTOFHit>* factory,string tag);
+      jerror_t Extract_DTOFHit( hddm_s::HDDM *record,  JFactory<DTOFHit>* factory, JFactory<DTOFHitMC>* factoryMC, string tag);
+      jerror_t Extract_DTOFHitMC( hddm_s::HDDM *record,  JFactory<DTOFHitMC>* factoryMC, JFactory<DTOFHit>* factory, string tag);
 
-		jerror_t Extract_DSCHit(s_HDDM_t *hddm_s,  JFactory<DSCHit> *factory);
-		jerror_t Extract_DSCTruthHit(s_HDDM_t *hddm_s,  JFactory<DSCTruthHit> *factory);
+      jerror_t Extract_DSCHit(hddm_s::HDDM *record,  JFactory<DSCHit> *factory, string tag);
+      jerror_t Extract_DSCTruthHit(hddm_s::HDDM *record,  JFactory<DSCTruthHit> *factory, string tag);
 
-		jerror_t Extract_DTrackTimeBased(s_HDDM_t *hddm_s,  JFactory<DTrackTimeBased> *factory, int runnumber);
-		string StringToDMatrixDSym(string &str_vals, DMatrixDSym &mat, int &Nrows, int Ncols);
+      jerror_t Extract_DTrackTimeBased(hddm_s::HDDM *record,  JFactory<DTrackTimeBased> *factory, string tag, int runnumber);
+      string StringToDMatrixDSym(string &str_vals, DMatrixDSym &mat, int Nrows, int Ncols);
 
-		jerror_t Extract_DTagger( s_HDDM_t *hddm_s,  JFactory<DTagger>* factory);
+      jerror_t Extract_DTAGMHit( hddm_s::HDDM *record,  JFactory<DTAGMHit>* factory, string tag);
+      jerror_t Extract_DTAGHHit( hddm_s::HDDM *record,  JFactory<DTAGHHit>* factory, string tag);
 
-		Particle_t IDTrack(float locCharge, float locMass) const;
+      Particle_t IDTrack(float locCharge, float locMass) const;
 
-		// add RICH hit and Truth, yqiang Oct 3, 2012
-		// modifed by yqiang, Oct 10 2012 now include both truth hits in DMCThrown
-		// Oct 8, 2013, added dedicated object for RICH truth hit
-		jerror_t GetRichTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
-		jerror_t Extract_DCereHit(s_HDDM_t *hddm_s, JFactory<DCereHit> *factory);
-		jerror_t Extract_DRichHit(s_HDDM_t *hddm_s, JFactory<DRichHit> *factory);
-		jerror_t Extract_DRichTruthHit(s_HDDM_t *hddm_s, JFactory<DRichTruthHit> *factory);
+      // add RICH hit and Truth, yqiang Oct 3, 2012
+      // modifed by yqiang, Oct 10 2012 now include both truth hits in DMCThrown
+      // Oct 8, 2013, added dedicated object for RICH truth hit
+      jerror_t GetRichTruthHits(hddm_s::HDDM *record, vector<DMCTrackHit*>& data);
+      jerror_t Extract_DCereHit(hddm_s::HDDM *record, JFactory<DCereHit> *factory, string tag);
+      jerror_t Extract_DRichHit(hddm_s::HDDM *record, JFactory<DRichHit> *factory, string tag);
+      jerror_t Extract_DRichTruthHit(hddm_s::HDDM *record, JFactory<DRichTruthHit> *factory, string tag);
 
-		s_iostream_t *fin;
-		s_HDDM_t *hddm_s;
-		bool flush_on_free;
-		DApplication *dapp;
-		const DMagneticFieldMap *bfield;
-		const DGeometry *geom;
-		
-	private:
-		bool initialized;
-	
-		pthread_mutex_t rt_mutex;
-		map<s_HDDM_t*, vector<DReferenceTrajectory*> > rt_by_event;
-		list<DReferenceTrajectory*> rt_pool;
+      std::ifstream *ifs;
+      hddm_s::istream *fin;
+      DApplication *dapp;
+      const DMagneticFieldMap *bfield;
+      const DGeometry *geom;
+      
+   private:
+      bool initialized;
+   
+      pthread_mutex_t rt_mutex;
+      map<hddm_s::HDDM*, vector<DReferenceTrajectory*> > rt_by_event;
+      list<DReferenceTrajectory*> rt_pool;
 
-		JCalibration *jcalib;
-		float uscale[192],vscale[192];
+		map<unsigned int, double> bTargetCenterZMap; //unsigned int is run number
+
+      JCalibration *jcalib;
+      float uscale[192],vscale[192];
 
 };
 

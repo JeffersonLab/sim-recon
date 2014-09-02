@@ -4,57 +4,79 @@
 
 #include "hddm_merge_files.h"
 
-#include <HDDM/hddm_s.h>
-
-
+#include <HDDM/hddm_s.hpp>
 
 //-----------
 // Process_s  --  HDDM simulation format
 //-----------
 void Process_s(unsigned int &NEvents, unsigned int &NEvents_read)
 {
-	// Output file
-	cout<<" output file: "<<OUTFILENAME<<endl;
-	s_iostream_t *fout = init_s_HDDM(OUTFILENAME);
-	if(!fout){
-		cout<<" Error opening output file \""<<OUTFILENAME<<"\"!"<<endl;
-		exit(-1);
-	}
+   // Output file
+   std::cout << " output file: " << OUTFILENAME << std::endl;
+   std::ofstream ofs(OUTFILENAME);
+   if (! ofs.is_open()) {
+      std::cout << " Error opening output file \"" << OUTFILENAME 
+                << "\"!" << std::endl;
+      exit(-1);
+   }
+   hddm_s::ostream *fout = new hddm_s::ostream(ofs);
+   if (HDDM_USE_COMPRESSION) {
+      std::cout << " Enabling bz2 compression of output HDDM file stream" 
+               << std::endl;
+      fout->setCompression(hddm_s::k_bz2_compression);
+   }
+   else {
+      std::cout << " HDDM compression disabled" << std::endl;
+   }
+   if (HDDM_USE_INTEGRITY_CHECKS) {
+      std::cout << " Enabling CRC data integrity check in output HDDM"
+                   " file stream" << std::endl;
+      fout->setIntegrityChecks(hddm_s::k_crc32_integrity);
+   }
+   else {
+      std::cout << " HDDM integrity checks disabled" << std::endl;
+   }
 
-	// Loop over input files
-	time_t last_time = time(NULL);
-	for(unsigned int i=0; i<INFILENAMES.size(); i++){
-		cout<<" input file: "<<INFILENAMES[i]<<endl;
-		s_iostream_t *fin = open_s_HDDM(INFILENAMES[i]);
-		if(!fin){
-			cout<<" Error opening input file \""<<INFILENAMES[i]<<"\"!"<<endl;
-			exit(-1);
-		}
-			
-		// Loop over all events in input
-		while(true){
-			s_HDDM_t *hddm_s = read_s_HDDM(fin);
-			if(!hddm_s)break;
-			NEvents_read++;
-			
-			// Write this output event to file and free its memory
-			flush_s_HDDM(hddm_s, fout);
-			NEvents++;
-		
-			// Update ticker
-			time_t now = time(NULL);
-			if(now != last_time){
-				cout<<"  "<<NEvents_read<<" events read     ("<<NEvents<<" event written) \r";cout.flush();
-				last_time = now;
-			}
+   // Loop over input files
+   time_t last_time = time(NULL);
+   for (unsigned int i=0; i<INFILENAMES.size(); i++) {
+      std::cout << " input file: " << INFILENAMES[i] << std::endl;
+      std::ifstream ifs(INFILENAMES[i]);
+      if (! ifs.is_open()) {
+         std::cout << " Error opening input file \"" << INFILENAMES[i]
+                   << "\"!" << std::endl;
+         exit(-1);
+      }
+      hddm_s::istream *fin = new hddm_s::istream(ifs);
 
-			if(QUIT)break;
-		}
+      // Loop over all events in input
+      while (ifs.good()) {
+         hddm_s::HDDM record;
+         *fin >> record;
+         NEvents_read++;
+         
+         // Write this output event to file
+         *fout << record;
+         NEvents++;
+      
+         // Update ticker
+         time_t now = time(NULL);
+         if (now != last_time) {
+            std::cout << "  " << NEvents_read << " events read     (" 
+                      << NEvents << " event written) \r";
+            std::cout.flush();
+            last_time = now;
+         }
 
-		// Close input file
-		close_s_HDDM(fin);
-	}
-		
-	// Close output file
-	close_s_HDDM(fout);
+         if (QUIT)
+            break;
+      }
+
+      // Close input file
+      ifs.close();
+      delete fin;
+   }
+      
+   // Close output file
+   ofs.close();
 }

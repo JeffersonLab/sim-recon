@@ -59,7 +59,20 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	double locTimeVariance = locRFTimes[0]->dTimeVariance;
 */
 
-	//disable RF bunch selection until timing/etc. issues fixed
+	//cheat & disable RF bunch selection until timing/etc. issues fixed
+	vector<const DBeamPhoton*> locGenBeamPhotons;
+	locEventLoop->Get(locGenBeamPhotons, "MCGEN");
+
+	if(!locGenBeamPhotons.empty())
+	{
+		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+		locEventRFBunch->dTime = locGenBeamPhotons[0]->time();
+		locEventRFBunch->dTimeVariance = 0.0;
+		locEventRFBunch->dMatchedToTracksFlag = true;
+		_data.push_back(locEventRFBunch);
+		return NOERROR;
+	}
+
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = 0.0;
 	locEventRFBunch->dTimeVariance = 0.0;

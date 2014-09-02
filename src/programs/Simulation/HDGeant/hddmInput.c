@@ -182,7 +182,7 @@ int loadInput ()
             vert->origin->vz = v[2];
          }
          time0 = vert->origin->t;
-         vert->origin->t = settofg_(v,&time0);
+         vert->origin->t = settofg_(v,&time0) * 1e9;
          gsvert_(v, &ntbeam, &nttarg, &ubuf, &nubuf, &nvtx);
          prods = vert->products;
          prodCount = prods->mult;
@@ -194,8 +194,9 @@ int loadInput ()
             s_Product_t* prod = &prods->in[ip];
             kind = prod->type;
 				
-				/* Don't tell geant to track particles that are intermediary types */
-				if(kind<=0)continue;
+	    /* Don't tell geant to track particles that are intermediary types */
+	    if (kind <= 0)
+              continue;
 				
             p[0] = prod->momentum->px;
             p[1] = prod->momentum->py;
@@ -270,7 +271,7 @@ int storeInput (int runNo, int eventNo, int ntracks)
          or->vx = vert[0];
          or->vy = vert[1];
          or->vz = vert[2];
-         or->t = tofg;
+         or->t = tofg * 1e9;
       }
       if (ps == HDDM_NULL)
       {

@@ -195,7 +195,7 @@
         VERTEX(2) = VERT(2)
         VERTEX(3) = VERT(3)
         VERTEX(4) = TOFG
-        call hitTagger(VERTEX,VERTEX,PLAB,PLAB,0.,nt,0,0)
+        call hitTagger(VERTEX,VERTEX,PLAB,PLAB,0.,0,0,0)
 
         if (bgrate.gt.0) then
 *

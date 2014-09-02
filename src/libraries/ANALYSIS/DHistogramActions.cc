@@ -1128,6 +1128,745 @@ void DHistogramAction_ParticleComboKinematics::Fill_BeamHists(const DKinematicDa
 	japp->RootUnLock();
 }
 
+void DHistogramAction_ParticleComboGenReconComparison::Initialize(JEventLoop* locEventLoop)
+{
+	if(Get_UseKinFitResultsFlag() && (Get_Reaction()->Get_KinFitType() == d_NoFit))
+	{
+		cout << "WARNING: REQUESTED HISTOGRAM OF KINEMAITIC FIT RESULTS WHEN NO KINEMATIC FIT!!!" << endl;
+		return; //no fit performed, but kinfit data requested!!
+	}
+
+	vector<const DParticleID*> locParticleIDs;
+	locEventLoop->Get(locParticleIDs);
+
+	string locHistName, locHistTitle, locStepName, locStepROOTName, locParticleName, locParticleROOTName;
+	Particle_t locPID;
+
+	size_t locNumSteps = Get_Reaction()->Get_NumReactionSteps();
+
+	dHistDeque_DeltaPOverP.resize(locNumSteps);
+	dHistDeque_DeltaTheta.resize(locNumSteps);
+	dHistDeque_DeltaPhi.resize(locNumSteps);
+	dHistDeque_DeltaT.resize(locNumSteps);
+	dHistDeque_DeltaT_TOF.resize(locNumSteps);
+	dHistDeque_DeltaT_BCAL.resize(locNumSteps);
+	dHistDeque_DeltaT_FCAL.resize(locNumSteps);
+	dHistDeque_DeltaVertexZ.resize(locNumSteps);
+	dHistDeque_DeltaPOverPVsP.resize(locNumSteps);
+	dHistDeque_DeltaPOverPVsTheta.resize(locNumSteps);
+	dHistDeque_DeltaThetaVsP.resize(locNumSteps);
+	dHistDeque_DeltaThetaVsTheta.resize(locNumSteps);
+	dHistDeque_DeltaPhiVsP.resize(locNumSteps);
+	dHistDeque_DeltaPhiVsTheta.resize(locNumSteps);
+	dHistDeque_DeltaTVsTheta.resize(locNumSteps);
+	dHistDeque_DeltaTVsP.resize(locNumSteps);
+	dHistDeque_DeltaVertexZVsTheta.resize(locNumSteps);
+
+	dHistDeque_Pulls.resize(locNumSteps);
+	dHistDeque_PullsVsP.resize(locNumSteps);
+	dHistDeque_PullsVsTheta.resize(locNumSteps);
+
+	dHistDeque_TimePull_CDC.resize(locNumSteps);
+	dHistDeque_TimePull_ST.resize(locNumSteps);
+	dHistDeque_TimePull_BCAL.resize(locNumSteps);
+	dHistDeque_TimePull_TOF.resize(locNumSteps);
+	dHistDeque_TimePull_FCAL.resize(locNumSteps);
+
+	dHistDeque_TimePullVsTheta_CDC.resize(locNumSteps);
+	dHistDeque_TimePullVsTheta_BCAL.resize(locNumSteps);
+	dHistDeque_TimePullVsTheta_ST.resize(locNumSteps);
+
+	dHistDeque_TimePullVsP_CDC.resize(locNumSteps);
+	dHistDeque_TimePullVsP_BCAL.resize(locNumSteps);
+	dHistDeque_TimePullVsP_ST.resize(locNumSteps);
+	dHistDeque_TimePullVsP_TOF.resize(locNumSteps);
+	dHistDeque_TimePullVsP_FCAL.resize(locNumSteps);
+
+	deque<deque<Particle_t> > locDetectedFinalPIDs;
+	Get_Reaction()->Get_DetectedFinalPIDs(locDetectedFinalPIDs);
+
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry *locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+
+	//CREATE THE HISTOGRAMS
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		CreateAndChangeTo_ActionDirectory();
+
+		locGeometry->GetTargetZ(dTargetZCenter);
+
+		//RF
+		locHistName = "DeltaT_RFBeamBunch";
+		if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+			dRFBeamBunchDeltaT_Hist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+		else
+			dRFBeamBunchDeltaT_Hist = new TH1D(locHistName.c_str(), ";RF #Deltat (Reconstructed - Thrown)", dNumRFDeltaTBins, dMinRFDeltaT, dMaxRFDeltaT);
+
+		//beam particle
+		locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
+		bool locBeamParticleUsed = (locPID == Gamma);
+		if(locBeamParticleUsed)
+		{
+			locParticleName = string("Beam_") + ParticleType(locPID);
+			CreateAndChangeTo_Directory(locParticleName, locParticleName);
+			locParticleROOTName = ParticleName_ROOT(locPID);
+
+			// DeltaP/P
+			locHistName = string("DeltaPOverP");
+			locHistTitle = locParticleROOTName + string(";#Deltap/p (Reconstructed - Thrown)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dBeamParticleHist_DeltaPOverP = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dBeamParticleHist_DeltaPOverP = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaPOverPBins, dMinDeltaPOverP, dMaxDeltaPOverP);
+
+			// DeltaP/P Vs P
+			locHistName = string("DeltaPOverPVsP");
+			locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltap/p (Reconstructed - Thrown)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dBeamParticleHist_DeltaPOverPVsP = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dBeamParticleHist_DeltaPOverPVsP = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaPOverPBins, dMinDeltaPOverP, dMaxDeltaPOverP);
+
+			// DeltaT
+			locHistName = string("DeltaT");
+			locHistTitle = locParticleROOTName + string(";#Deltat (ns) (Reconstructed - Thrown)");
+			if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+				dBeamParticleHist_DeltaT = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			else
+				dBeamParticleHist_DeltaT = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+			gDirectory->cd("..");
+		}
+
+		deque<string> locPullNames(8, "");
+		locPullNames[0] = "E";  locPullNames[1] = "Px";  locPullNames[2] = "Py";  locPullNames[3] = "Pz";
+		locPullNames[4] = "Xx";  locPullNames[5] = "Xy";  locPullNames[6] = "Xz";  locPullNames[7] = "T";
+
+		deque<string> locPullTitles(8, "");
+		locPullTitles[0] = "E";  locPullTitles[1] = "p_{x}";  locPullTitles[2] = "p_{y}";  locPullTitles[3] = "p_{z}";
+		locPullTitles[4] = "x_{x}";  locPullTitles[5] = "x_{y}";  locPullTitles[6] = "x_{z}";  locPullTitles[7] = "t";
+
+		//CREATE THE HISTOGRAMS
+		deque<Particle_t> locPIDs;
+		for(size_t loc_i = 0; loc_i < locNumSteps; ++loc_i)
+		{
+			const DReactionStep* locReactionStep = Get_Reaction()->Get_ReactionStep(loc_i);
+			locStepName = locReactionStep->Get_StepName();
+			locStepROOTName = locReactionStep->Get_StepROOTName();
+
+			Particle_t locInitialPID = locReactionStep->Get_InitialParticleID();
+
+			//get PIDs
+			if(!Get_UseKinFitResultsFlag()) //measured, ignore missing & decaying particles (ignore target anyway)
+				locPIDs = locDetectedFinalPIDs[loc_i];
+			else //kinematic fit: decaying & missing particles are reconstructed
+			{
+				locReactionStep->Get_FinalParticleIDs(locPIDs);
+				if((!locBeamParticleUsed) || (loc_i != 0)) //add decaying parent particle //skip if on beam particle!
+					locPIDs.insert(locPIDs.begin(), locInitialPID);
+			}
+
+			if(locPIDs.empty())
+				continue;
+
+			CreateAndChangeTo_Directory(locStepName, locStepName);
+			for(size_t loc_j = 0; loc_j < locPIDs.size(); ++loc_j)
+			{
+				locPID = locPIDs[loc_j];
+				locParticleName = ParticleType(locPID);
+				locParticleROOTName = ParticleName_ROOT(locPID);
+				if(dHistDeque_DeltaPOverP[loc_i].find(locPID) != dHistDeque_DeltaPOverP[loc_i].end())
+					continue; //pid already done
+
+				CreateAndChangeTo_Directory(locParticleName, locParticleName);
+
+				// DeltaP/P
+				locHistName = string("DeltaPOverP");
+				locHistTitle = locParticleROOTName + string(";#Deltap/p (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaPOverP[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaPOverP[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaPOverPBins, dMinDeltaPOverP, dMaxDeltaPOverP);
+
+				// DeltaTheta
+				locHistName = string("DeltaTheta");
+				locHistTitle = locParticleROOTName + string(";#Delta#theta#circ (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaTheta[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaTheta[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaThetaBins, dMinDeltaTheta, dMaxDeltaTheta);
+
+				// DeltaPhi
+				locHistName = string("DeltaPhi");
+				locHistTitle = locParticleROOTName + string(";#Delta#phi#circ (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaPhi[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaPhi[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+
+				// DeltaT
+				locHistName = string("DeltaT");
+				locHistTitle = locParticleROOTName + string(";#Deltat (ns) (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaT[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaT[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+				// DeltaT - BCAL
+				locHistName = string("DeltaT_BCAL");
+				locHistTitle = locParticleROOTName + string(" in BCAL;#Deltat (ns) (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaT_BCAL[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaT_BCAL[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+				// DeltaT - TOF (charged only)
+				if(ParticleCharge(locPID) != 0)
+				{
+					locHistName = string("DeltaT_TOF");
+					locHistTitle = locParticleROOTName + string(" in TOF;#Deltat (ns) (Reconstructed - Thrown)");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_DeltaT_TOF[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_DeltaT_TOF[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				}
+
+				// DeltaT - FCAL (neutral only)
+				if(ParticleCharge(locPID) == 0)
+				{
+					locHistName = string("DeltaT_FCAL");
+					locHistTitle = locParticleROOTName + string(" in FCAL;#Deltat (ns) (Reconstructed - Thrown)");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_DeltaT_FCAL[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_DeltaT_FCAL[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				}
+
+				// DeltaVertexZ
+				locHistName = string("DeltaVertexZ");
+				locHistTitle = locParticleROOTName + string(";#DeltaVertex-Z (cm) (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaVertexZ[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaVertexZ[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaVertexZBins, dMinDeltaVertexZ, dMaxDeltaVertexZ);
+
+				// DeltaP/P Vs P
+				locHistName = string("DeltaPOverPVsP");
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltap/p (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaPOverPVsP[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaPOverPVsP[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaPOverPBins, dMinDeltaPOverP, dMaxDeltaPOverP);
+
+				// DeltaP/P Vs Theta
+				locHistName = string("DeltaPOverPVsTheta");
+				locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltap/p (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaPOverPVsTheta[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaPOverPVsTheta[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNumDeltaPOverPBins, dMinDeltaPOverP, dMaxDeltaPOverP);
+
+				// DeltaTheta Vs P
+				locHistName = string("DeltaThetaVsP");
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta#theta#circ (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaThetaVsP[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaThetaVsP[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaThetaBins, dMinDeltaTheta, dMaxDeltaTheta);
+
+				// DeltaTheta Vs Theta
+				locHistName = string("DeltaThetaVsTheta");
+				locHistTitle = locParticleROOTName + string(";#theta#circ;#Delta#theta#circ (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaThetaVsTheta[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaThetaVsTheta[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNumDeltaThetaBins, dMinDeltaTheta, dMaxDeltaTheta);
+
+				// DeltaPhi Vs P
+				locHistName = string("DeltaPhiVsP");
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta#phi#circ (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaPhiVsP[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaPhiVsP[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+
+				// DeltaPhi Vs Theta
+				locHistName = string("DeltaPhiVsTheta");
+				locHistTitle = locParticleROOTName + string(";#theta#circ;#Delta#phi#circ (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaPhiVsTheta[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaPhiVsTheta[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNumDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+
+				// DeltaT Vs Theta
+				locHistName = string("DeltaTVsTheta");
+				locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltat (ns) (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaTVsTheta[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaTVsTheta[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+				// DeltaT Vs P
+				locHistName = string("DeltaTVsP");
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat (ns) (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaTVsP[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaTVsP[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+
+				// DeltaVertexZ Vs Theta
+				locHistName = string("DeltaVertexZVsTheta");
+				locHistTitle = locParticleROOTName + string(";#theta#circ;#DeltaVertex-Z (cm) (Reconstructed - Thrown)");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_DeltaVertexZVsTheta[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_DeltaVertexZVsTheta[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNumDeltaVertexZBins, dMinDeltaVertexZ, dMaxDeltaVertexZ);
+
+				/************************************************************************ Pulls ************************************************************************/
+
+				CreateAndChangeTo_Directory("Pulls", "Pulls");
+				for(size_t loc_j = 0; loc_j < dPullTypes.size(); ++loc_j)
+				{
+					if((ParticleCharge(locPID) != 0) && (dPullTypes[loc_j] == d_EPull))
+						continue;
+					if((ParticleCharge(locPID) == 0) && ((dPullTypes[loc_j] >= d_PxPull) && (dPullTypes[loc_j] <= d_PzPull)))
+						continue;
+
+					//Pull 1D
+					locHistName = locPullNames[loc_j] + string("Pull");
+					locHistTitle = locParticleROOTName + string(";#Delta") + locPullTitles[loc_j] + string("/#sigma_{") + locPullTitles[loc_j] + string("} (Reconstructed - Thrown)");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						(dHistDeque_Pulls[loc_i][locPID])[dPullTypes[loc_j]] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						(dHistDeque_Pulls[loc_i][locPID])[dPullTypes[loc_j]] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
+
+					//Pull vs P
+					locHistName = locPullNames[loc_j] + string("PullVsP");
+					locHistTitle = locParticleROOTName + string(";p (GeV/c);#Delta") + locPullTitles[loc_j] + string("/#sigma_{") + locPullTitles[loc_j] + string("} (Reconstructed - Thrown)");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						(dHistDeque_PullsVsP[loc_i][locPID])[dPullTypes[loc_j]] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						(dHistDeque_PullsVsP[loc_i][locPID])[dPullTypes[loc_j]] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+
+					//Pull vs Theta
+					locHistName = locPullNames[loc_j] + string("PullVsTheta");
+					locHistTitle = locParticleROOTName + string(";#theta#circ;#Delta") + locPullTitles[loc_j] + string("/#sigma_{") + locPullTitles[loc_j] + string("} (Reconstructed - Thrown)");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						(dHistDeque_PullsVsTheta[loc_i][locPID])[dPullTypes[loc_j]] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						(dHistDeque_PullsVsTheta[loc_i][locPID])[dPullTypes[loc_j]] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
+				}
+
+				//Delta-t Pulls - CDC & ST
+				if(ParticleCharge(locPID) != 0)
+				{
+					//CDC
+					locHistName = "TimePull_CDC";
+					locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TimePull_CDC[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TimePull_CDC[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
+
+					locHistName = "TimePullVsTheta_CDC";
+					locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltat/#sigma_{#Deltat}");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TimePullVsTheta_CDC[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TimePullVsTheta_CDC[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
+
+					locHistName = "TimePullVsP_CDC";
+					locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TimePullVsP_CDC[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TimePullVsP_CDC[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+
+					//ST
+					locHistName = "TimePull_ST";
+					locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TimePull_ST[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TimePull_ST[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
+
+					locHistName = "TimePullVsTheta_ST";
+					locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltat/#sigma_{#Deltat}");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TimePullVsTheta_ST[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TimePullVsTheta_ST[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
+
+					locHistName = "TimePullVsP_ST";
+					locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TimePullVsP_ST[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TimePullVsP_ST[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+				}
+
+				//Delta-t Pulls - BCAL
+				locHistName = "TimePull_BCAL";
+				locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_TimePull_BCAL[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_TimePull_BCAL[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
+
+				locHistName = "TimePullVsTheta_BCAL";
+				locHistTitle = locParticleROOTName + string(";#theta#circ;#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_TimePullVsTheta_BCAL[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_TimePullVsTheta_BCAL[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPullBins, -10.0, 10.0);
+
+				locHistName = "TimePullVsP_BCAL";
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_TimePullVsP_BCAL[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_TimePullVsP_BCAL[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+
+				//Delta-t Pulls - TOF
+				if(ParticleCharge(locPID) != 0) //TOF
+				{
+					locHistName = "TimePull_TOF";
+					locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TimePull_TOF[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TimePull_TOF[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
+
+					locHistName = "TimePullVsP_TOF";
+					locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistDeque_TimePullVsP_TOF[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistDeque_TimePullVsP_TOF[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+				}
+
+				//Delta-t Pulls - FCAL
+				locHistName = "TimePull_FCAL";
+				locHistTitle = locParticleROOTName + string(";#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_TimePull_FCAL[loc_i][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_TimePull_FCAL[loc_i][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumPullBins, -10.0, 10.0);
+
+				locHistName = "TimePullVsP_FCAL";
+				locHistTitle = locParticleROOTName + string(";p (GeV/c);#Deltat/#sigma_{#Deltat}");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistDeque_TimePullVsP_FCAL[loc_i][locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistDeque_TimePullVsP_FCAL[loc_i][locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DPullBins, -10.0, 10.0);
+
+				gDirectory->cd("..");
+
+				gDirectory->cd("..");
+			} //end of particle loop
+			gDirectory->cd("..");
+		} //end of step loop
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_ParticleComboGenReconComparison::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	if(Get_UseKinFitResultsFlag() && (Get_Reaction()->Get_KinFitType() == d_NoFit))
+	{
+		cout << "WARNING: REQUESTED HISTOGRAM OF KINEMAITIC FIT RESULTS WHEN NO KINEMATIC FIT!!! Skipping histogram." << endl;
+		return true; //no fit performed, but kinfit data requested!!
+	}
+
+	if(Get_NumPreviousParticleCombos() == 0)
+	{
+		dPreviouslyHistogrammedParticles.clear();
+		dPreviouslyHistogrammedBeamParticles.clear();
+	}
+
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+	if(locMCThrowns.empty())
+		return true; //e.g. non-simulated event
+
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons, "MCGEN");
+	const DBeamPhoton* locThrownBeamPhoton = locBeamPhotons.empty() ? NULL : locBeamPhotons[0];
+
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+	if(locMCThrownMatchingVector.empty())
+		return true;
+	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
+
+	const DEventRFBunch* locEventRFBunch = locParticleCombo->Get_EventRFBunch();
+	const DEventRFBunch* locThrownEventRFBunch = NULL;
+	locEventLoop->GetSingle(locThrownEventRFBunch, "Thrown");
+
+	//RF time difference
+	double locRFTime = locEventRFBunch->dMatchedToTracksFlag ? locEventRFBunch->dTime : numeric_limits<double>::quiet_NaN();
+	double locRFDeltaT = locRFTime - locThrownEventRFBunch->dTime;
+	japp->RootWriteLock();
+	{
+		dRFBeamBunchDeltaT_Hist->Fill(locRFDeltaT);
+	}
+	japp->RootUnLock();
+
+	const DKinematicData* locKinematicData;
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+
+		//initial particle
+		if(Get_UseKinFitResultsFlag())
+			locKinematicData = locParticleComboStep->Get_InitialParticle();
+		else
+			locKinematicData = locParticleComboStep->Get_InitialParticle_Measured();
+		if(locKinematicData != NULL)
+		{
+			if(locKinematicData->PID() == Gamma)
+			{
+				//check if will be duplicate
+				const JObject* locSourceObject = locParticleComboStep->Get_InitialParticle_Measured();
+				if(dPreviouslyHistogrammedBeamParticles.find(locSourceObject) == dPreviouslyHistogrammedBeamParticles.end())
+				{
+					dPreviouslyHistogrammedBeamParticles.insert(locSourceObject);
+					Fill_BeamHists(locKinematicData, locThrownBeamPhoton);
+				}
+			}
+		}
+
+		//final particles
+		for(size_t loc_j = 0; loc_j < locParticleComboStep->Get_NumFinalParticles(); ++loc_j)
+		{
+			if(Get_UseKinFitResultsFlag())
+				locKinematicData = locParticleComboStep->Get_FinalParticle(loc_j);
+			else
+				locKinematicData = locParticleComboStep->Get_FinalParticle_Measured(loc_j);
+			if(locKinematicData == NULL)
+				continue; //e.g. a decaying or missing particle whose params aren't set yet
+
+			//check if duplicate
+			const JObject* locSourceObject = locParticleComboStep->Get_FinalParticle_SourceObject(loc_j);
+			if(locSourceObject != NULL) //else is reconstructed missing/decaying particle: has many source object, and is unique to this combo: no dupes to check against: let it ride
+			{
+				pair<Particle_t, const JObject*> locParticleInfo(locKinematicData->PID(), locSourceObject);
+				pair<size_t, pair<Particle_t, const JObject*> > locHistInfo(loc_i, locParticleInfo);
+				if(dPreviouslyHistogrammedParticles.find(locHistInfo) != dPreviouslyHistogrammedParticles.end())
+					continue; //previously histogrammed
+				dPreviouslyHistogrammedParticles.insert(locHistInfo);
+			}
+
+			if(ParticleCharge(locKinematicData->PID()) != 0)
+			{
+				const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locKinematicData);
+				double locMatchFOM = 0.0;
+				const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM);
+				if(locMCThrown != NULL)
+					Fill_ChargedHists(locChargedTrackHypothesis, locMCThrown, locThrownEventRFBunch, loc_i);
+			}
+			else
+			{
+				const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locKinematicData);
+				double locMatchFOM = 0.0;
+				const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis, locMatchFOM);
+				if(locMCThrown != NULL)
+					Fill_NeutralHists(locNeutralParticleHypothesis, locMCThrown, locThrownEventRFBunch, loc_i);
+			}
+		} //end of particle loop
+	} //end of step loop
+	return true;
+}
+
+void DHistogramAction_ParticleComboGenReconComparison::Fill_BeamHists(const DKinematicData* locKinematicData, const DKinematicData* locThrownKinematicData)
+{
+	if(locThrownKinematicData == NULL)
+		return;
+
+	DVector3 locMomentum = locKinematicData->momentum();
+	DVector3 locThrownMomentum = locThrownKinematicData->momentum();
+
+	double locThrownP = locThrownMomentum.Mag();
+	double locDeltaPOverP = (locMomentum.Mag() - locThrownP)/locThrownP;
+	double locDeltaT = locKinematicData->time() - locThrownKinematicData->time();
+
+	japp->RootWriteLock();
+	{
+		dBeamParticleHist_DeltaPOverP->Fill(locDeltaPOverP);
+		dBeamParticleHist_DeltaPOverPVsP->Fill(locThrownP, locDeltaPOverP);
+		dBeamParticleHist_DeltaT->Fill(locDeltaT);
+	}
+	japp->RootUnLock();
+}
+
+void DHistogramAction_ParticleComboGenReconComparison::Fill_ChargedHists(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DMCThrown* locMCThrown, const DEventRFBunch* locThrownEventRFBunch, size_t locStepIndex)
+{
+	Particle_t locPID = locChargedTrackHypothesis->PID();
+	double locThrownP = locMCThrown->momentum().Mag();
+	double locThrownTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
+	double locDeltaPOverP = (locChargedTrackHypothesis->momentum().Mag() - locThrownP)/locThrownP;
+	double locDeltaTheta = locChargedTrackHypothesis->momentum().Theta()*180.0/TMath::Pi() - locThrownTheta;
+	double locDeltaPhi = locChargedTrackHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
+	double locDeltaT = locChargedTrackHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
+	double locDeltaVertexZ = locChargedTrackHypothesis->position().Z() - locMCThrown->position().Z();
+	const TMatrixDSym& locCovarianceMatrix = locChargedTrackHypothesis->errorMatrix();
+
+	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
+	double locTimePull = (locStartTime - locChargedTrackHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
+	double locT0Pull = (locStartTime - locChargedTrackHypothesis->t0())/locChargedTrackHypothesis->t0_err();
+	japp->RootWriteLock();
+	{
+		dHistDeque_DeltaPOverP[locStepIndex][locPID]->Fill(locDeltaPOverP);
+		dHistDeque_DeltaTheta[locStepIndex][locPID]->Fill(locDeltaTheta);
+		dHistDeque_DeltaPhi[locStepIndex][locPID]->Fill(locDeltaPhi);
+		dHistDeque_DeltaT[locStepIndex][locPID]->Fill(locDeltaT);
+		if(locChargedTrackHypothesis->t0_detector() == SYS_START)
+		{
+			dHistDeque_TimePull_ST[locStepIndex][locPID]->Fill(locT0Pull);
+			dHistDeque_TimePullVsTheta_ST[locStepIndex][locPID]->Fill(locThrownTheta, locT0Pull);
+			dHistDeque_TimePullVsP_ST[locStepIndex][locPID]->Fill(locThrownP, locT0Pull);
+		}
+		if(locChargedTrackHypothesis->t0_detector() == SYS_CDC)
+		{
+			dHistDeque_TimePull_CDC[locStepIndex][locPID]->Fill(locT0Pull);
+			dHistDeque_TimePullVsTheta_CDC[locStepIndex][locPID]->Fill(locThrownTheta, locT0Pull);
+			dHistDeque_TimePullVsP_CDC[locStepIndex][locPID]->Fill(locThrownP, locT0Pull);
+		}
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_CDC)
+		{
+			dHistDeque_TimePull_CDC[locStepIndex][locPID]->Fill(locTimePull);
+			dHistDeque_TimePullVsTheta_CDC[locStepIndex][locPID]->Fill(locThrownTheta, locTimePull);
+			dHistDeque_TimePullVsP_CDC[locStepIndex][locPID]->Fill(locThrownP, locTimePull);
+		}
+		if(locChargedTrackHypothesis->t1_detector() == SYS_BCAL)
+		{
+			dHistDeque_DeltaT_BCAL[locStepIndex][locPID]->Fill(locDeltaT);
+			dHistDeque_TimePull_BCAL[locStepIndex][locPID]->Fill(locTimePull);
+			dHistDeque_TimePullVsTheta_BCAL[locStepIndex][locPID]->Fill(locThrownTheta, locTimePull);
+			dHistDeque_TimePullVsP_BCAL[locStepIndex][locPID]->Fill(locThrownP, locTimePull);
+		}
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
+		{
+			dHistDeque_DeltaT_TOF[locStepIndex][locPID]->Fill(locDeltaT);
+			dHistDeque_TimePull_TOF[locStepIndex][locPID]->Fill(locTimePull);
+			dHistDeque_TimePullVsP_TOF[locStepIndex][locPID]->Fill(locThrownP, locTimePull);
+		}
+		else if(locChargedTrackHypothesis->t1_detector() == SYS_FCAL)
+		{
+			dHistDeque_TimePull_FCAL[locStepIndex][locPID]->Fill(locTimePull);
+			dHistDeque_TimePullVsP_FCAL[locStepIndex][locPID]->Fill(locThrownP, locTimePull);
+		}
+		dHistDeque_DeltaVertexZ[locStepIndex][locPID]->Fill(locDeltaVertexZ);
+		dHistDeque_DeltaPOverPVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaPOverP);
+		dHistDeque_DeltaPOverPVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaPOverP);
+		dHistDeque_DeltaThetaVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaTheta);
+		dHistDeque_DeltaThetaVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaTheta);
+		dHistDeque_DeltaPhiVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaPhi);
+		dHistDeque_DeltaPhiVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaPhi);
+		dHistDeque_DeltaTVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaT);
+		dHistDeque_DeltaTVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaT);
+		dHistDeque_DeltaVertexZVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaVertexZ);
+
+		for(size_t loc_j = 0; loc_j < dPullTypes.size(); ++loc_j)
+		{
+			if(dPullTypes[loc_j] == d_EPull)
+				continue;
+			double locPull = 0.0;
+			if((dPullTypes[loc_j] >= d_PxPull) && (dPullTypes[loc_j] <= d_PzPull))
+			{
+				int locIndex = int(dPullTypes[loc_j] - d_PxPull);
+				locPull = (locChargedTrackHypothesis->momentum()(locIndex) - locMCThrown->momentum()(locIndex))/sqrt(locCovarianceMatrix(locIndex, locIndex));
+			}
+			else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
+			{
+				int locIndex = int(dPullTypes[loc_j] - d_XxPull);
+				locPull = (locChargedTrackHypothesis->position()(locIndex) - locMCThrown->position()(locIndex))/sqrt(locCovarianceMatrix(locIndex + 3, locIndex + 3));
+			}
+			else if(dPullTypes[loc_j] == d_TPull)
+				locPull = (locChargedTrackHypothesis->time() - locMCThrown->time())/sqrt(locCovarianceMatrix(6, 6));
+			(dHistDeque_Pulls[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locPull);
+			(dHistDeque_PullsVsP[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownP, locPull);
+			(dHistDeque_PullsVsTheta[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownTheta, locPull);
+		}
+	}
+	japp->RootUnLock();
+}
+
+void DHistogramAction_ParticleComboGenReconComparison::Fill_NeutralHists(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, const DMCThrown* locMCThrown, const DEventRFBunch* locThrownEventRFBunch, size_t locStepIndex)
+{
+	Particle_t locPID = locNeutralParticleHypothesis->PID();
+
+	const DNeutralShower* locNeutralShower = NULL;
+	locNeutralParticleHypothesis->GetSingle(locNeutralShower);
+	if(locNeutralShower == NULL)
+		return; //shouldn't be possible ...
+
+	double locThrownP = locMCThrown->momentum().Mag();
+	double locThrownTheta = locMCThrown->momentum().Theta()*180.0/TMath::Pi();
+	double locDeltaPOverP = (locNeutralParticleHypothesis->momentum().Mag() - locThrownP)/locThrownP;
+	double locDeltaTheta = locNeutralParticleHypothesis->momentum().Theta()*180.0/TMath::Pi() - locThrownTheta;
+	double locDeltaPhi = locNeutralParticleHypothesis->momentum().Phi()*180.0/TMath::Pi() - locMCThrown->momentum().Phi()*180.0/TMath::Pi();
+	double locDeltaT = locNeutralParticleHypothesis->time() - locMCThrown->time(); //time comparison isn't fair if track comes from a detached vertex!!!
+	double locDeltaVertexZ = locNeutralParticleHypothesis->position().Z() - locMCThrown->position().Z();
+	const TMatrixDSym& locCovarianceMatrix = locNeutralParticleHypothesis->errorMatrix();
+
+	double locStartTime = locThrownEventRFBunch->dTime + (locMCThrown->z() - dTargetZCenter)/29.9792458;
+	double locTimePull = (locStartTime - locNeutralParticleHypothesis->time())/sqrt(locCovarianceMatrix(6, 6));
+
+	japp->RootWriteLock();
+	{
+		dHistDeque_DeltaPOverP[locStepIndex][locPID]->Fill(locDeltaPOverP);
+		dHistDeque_DeltaTheta[locStepIndex][locPID]->Fill(locDeltaTheta);
+		dHistDeque_DeltaPhi[locStepIndex][locPID]->Fill(locDeltaPhi);
+		dHistDeque_DeltaT[locStepIndex][locPID]->Fill(locDeltaT);
+		if(locNeutralParticleHypothesis->t1_detector() == SYS_BCAL)
+		{
+			dHistDeque_DeltaT_BCAL[locStepIndex][locPID]->Fill(locDeltaT);
+			dHistDeque_TimePull_BCAL[locStepIndex][locPID]->Fill(locTimePull);
+			dHistDeque_TimePullVsTheta_BCAL[locStepIndex][locPID]->Fill(locThrownTheta, locTimePull);
+			dHistDeque_TimePullVsP_BCAL[locStepIndex][locPID]->Fill(locThrownP, locTimePull);
+		}
+		else if(locNeutralParticleHypothesis->t1_detector() == SYS_FCAL)
+		{
+			dHistDeque_DeltaT_FCAL[locStepIndex][locPID]->Fill(locDeltaT);
+			dHistDeque_TimePull_FCAL[locStepIndex][locPID]->Fill(locTimePull);
+			dHistDeque_TimePullVsP_FCAL[locStepIndex][locPID]->Fill(locThrownP, locTimePull);
+		}
+
+		dHistDeque_DeltaVertexZ[locStepIndex][locPID]->Fill(locDeltaVertexZ);
+		dHistDeque_DeltaPOverPVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaPOverP);
+		dHistDeque_DeltaPOverPVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaPOverP);
+		dHistDeque_DeltaThetaVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaTheta);
+		dHistDeque_DeltaThetaVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaTheta);
+		dHistDeque_DeltaPhiVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaPhi);
+		dHistDeque_DeltaPhiVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaPhi);
+		dHistDeque_DeltaTVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaT);
+		dHistDeque_DeltaTVsP[locStepIndex][locPID]->Fill(locThrownP, locDeltaT);
+		dHistDeque_DeltaVertexZVsTheta[locStepIndex][locPID]->Fill(locThrownTheta, locDeltaVertexZ);
+
+		for(size_t loc_j = 0; loc_j < dPullTypes.size(); ++loc_j)
+		{
+			if((dPullTypes[loc_j] >= d_PxPull) && (dPullTypes[loc_j] <= d_PzPull))
+				continue;
+			double locPull = 0.0;
+			if(dPullTypes[loc_j] == d_EPull)
+				locPull = (locNeutralShower->dEnergy - locMCThrown->energy())/sqrt(locNeutralShower->dCovarianceMatrix(0, 0));
+			else if((dPullTypes[loc_j] >= d_XxPull) && (dPullTypes[loc_j] <= d_XzPull))
+			{
+				int locIndex = int(dPullTypes[loc_j] - d_XxPull);
+				locPull = (locNeutralParticleHypothesis->position()(locIndex) - locMCThrown->position()(locIndex))/sqrt(locCovarianceMatrix(locIndex + 3, locIndex + 3));
+			}
+			else if(dPullTypes[loc_j] == d_TPull)
+				locPull = (locNeutralParticleHypothesis->time() - locMCThrown->time())/sqrt(locCovarianceMatrix(6, 6));
+			(dHistDeque_Pulls[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locPull);
+			(dHistDeque_PullsVsP[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownP, locPull);
+			(dHistDeque_PullsVsTheta[locStepIndex][locPID])[dPullTypes[loc_j]]->Fill(locThrownTheta, locPull);
+		}
+
+	}
+	japp->RootUnLock();
+}
+
 void DHistogramAction_ThrownParticleKinematics::Initialize(JEventLoop* locEventLoop)
 {
 	string locHistName, locHistTitle, locParticleName, locParticleROOTName;
@@ -1244,7 +1983,7 @@ bool DHistogramAction_ThrownParticleKinematics::Perform_Action(JEventLoop* locEv
 	const DMCThrown* locMCThrown;
 
 	vector<const DBeamPhoton*> locBeamPhotons;
-	locEventLoop->Get(locBeamPhotons);
+	locEventLoop->Get(locBeamPhotons, "MCGEN");
 	japp->RootWriteLock();
 	{
 		for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)

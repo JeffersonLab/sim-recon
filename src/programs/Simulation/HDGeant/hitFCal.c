@@ -27,15 +27,15 @@ extern s_HDDM_t* thisInputEvent;
 
 
 static float ATTEN_LENGTH    =	100.; 
-static float  C_EFFECTIVE     =  15.;   // cm/ns
-static float  WIDTH_OF_BLOCK  =   4.;   //cm
-static float  LENGTH_OF_BLOCK =  45.;   //cm
-static float  TWO_HIT_RESOL   =  75.;   // ns
-static int    FCAL_MAX_HITS   =  100;   // maximum hits per block
-static float  THRESH_MEV      =   5.;
-static float  ACTIVE_RADIUS   = 120.;
-static int    CENTRAL_ROW     =  29;
-static int    CENTRAL_COLUMN  =  29;
+static float C_EFFECTIVE     =  15.;   // cm/ns
+static float WIDTH_OF_BLOCK  =   4.;   //cm
+static float LENGTH_OF_BLOCK =  45.;   //cm
+static float TWO_HIT_RESOL   =  75.;   // ns
+static int   FCAL_MAX_HITS   =  100;   // maximum hits per block
+static float THRESH_MEV      =   5.;
+static float ACTIVE_RADIUS   = 120.;
+static int   CENTRAL_ROW     =  29;
+static int   CENTRAL_COLUMN  =  29;
 
 // Comment by RTJ:
 // This particular constant "MAX_HITS" is a private constant

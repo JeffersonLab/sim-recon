@@ -56,10 +56,15 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	// Highly Recommended: When generating particle combinations, reject all photon candidates with a PID confidence level < 5.73303E-7 (+/- 5-sigma)
 	locReaction->Set_MinPhotonPIDFOM(5.73303E-7);
 
+	// Highly Recommended: When generating particle combinations, reject all beam photons that match to a different RF bunch (delta_t > 1.002 ns)
+	locReaction->Set_MaxPhotonRFDeltaT(0.5*2.004); //beam bunches are every 2.004 ns, (1.002 should be minimum cut value)
+
 	// Enable ROOT TTree Output
 	locReaction->Enable_TTreeOutput("tree_b1pi.root"); //string is file name (must end in ".root"!!)
 
 /**************************************************** b1pi Actions ****************************************************/
+
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, false));
 
 	//PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
@@ -68,6 +73,7 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	//Kinematic Fit Results and Confidence Level Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01)); //1%
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, true, "PostKinFit"));
 
 	//Constrained Mass Distributions
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 650, 0.3, 1.6, "PostKinFit")); //false: measured data

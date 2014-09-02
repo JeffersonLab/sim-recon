@@ -13,7 +13,9 @@
 #include <fstream>
 using namespace std;
 
-#include "HDDM/hddm_s.h"
+#include <stdlib.h>
+
+#include "HDDM/hddm_s.hpp"
 #include "particleType.h"
 
 char *INPUT_FILE = NULL;
@@ -33,306 +35,300 @@ time_t now;
 // main
 //-------------------------------
 int main(int narg, char *argv[]) {
-	ParseCommandLineArguments(narg, argv);
+   ParseCommandLineArguments(narg, argv);
 
-	if (!INPUT_FILE) {
-		cerr << "No input file!" << endl;
-	}
+   if (! INPUT_FILE) {
+      std::cerr << "No input file!" << std::endl;
+   }
 
-	// Seed the random generator
-	now = time(NULL);
-	srand48(now);
+   // Seed the random generator
+   now = time(NULL);
+   srand48(now);
 
-	// Open input file
-	ifstream *file = new ifstream(INPUT_FILE);
-	if (!file->is_open()) {
-		cerr << "Unable to open file \"" << INPUT_FILE << "\" for reading."
-				<< endl;
-		exit(-2);
-	}
+   // Open input file
+   ifstream *file = new ifstream(INPUT_FILE);
+   if (! file->is_open()) {
+      std::cerr << "Unable to open file \"" << INPUT_FILE << "\" for reading."
+                << std::endl;
+      exit(-2);
+   }
 
-	// Open output file
-	s_iostream_t* thisOutputStream = init_s_HDDM(OUTPUT_FILE);
-	if (!thisOutputStream) {
-		cerr << "Unable to open output file \"" << OUTPUT_FILE
-				<< "\" for writing." << endl;
-		exit(-3);
-	}
+   // Open output file
+   std::ofstream *thisOutputFile = new std::ofstream(OUTPUT_FILE);
+   if (! thisOutputFile->is_open()) {
+      std::cerr << "Unable to open output file \"" << OUTPUT_FILE
+            << "\" for writing." << std::endl;
+      exit(-3);
+   }
+   hddm_s::ostream* thisOutputStream = new hddm_s::ostream(*thisOutputFile);
 
-	// Arbitary run number
-	int runNumber = 9000;
+   // Arbitary run number
+   int runNumber = 9000;
 
-	// Start event number from 1
-	int eventNumber = 0;
+   // Start event number from 1
+   int eventNumber = 0;
 
-	// Loop over events
-	int Nevents = 0;
-	while (!file->eof()) {
-		int nParticles = 0;
-		(*file) >> nParticles;
-		if (nParticles <= 1)
-			break; // particles include beam particle
-		nParticles--;
-		eventNumber++;
+   // Loop over events
+   int Nevents = 0;
+   while (! file->eof()) {
+      int nParticles = 0;
+      (*file) >> nParticles;
+      if (nParticles <= 1)
+         break; // particles include beam particle
+      nParticles--;
+      eventNumber++;
 
-		// Start a new event
-		s_PhysicsEvents_t* pes;
-		s_Reactions_t* rs;
-		s_Vertices_t* vs;
-		s_Origin_t* origin;
-		s_Products_t* ps;
-		s_Beam_t *bs;
-		s_Target_t *ts;
-		s_HDDM_t *thisOutputEvent = make_s_HDDM();
-		thisOutputEvent->physicsEvents = pes = make_s_PhysicsEvents(1);
-		pes->mult = 1;
-		pes->in[0].runNo = runNumber;
-		pes->in[0].eventNo = eventNumber;
-		pes->in[0].reactions = rs = make_s_Reactions(1);
-		rs->mult = 1;
-		rs->in[0].vertices = vs = make_s_Vertices(1);
-		vs->mult = 1;
-		vs->in[0].origin = origin = make_s_Origin();
-		vs->in[0].products = ps = make_s_Products(nParticles);
+      // Start a new event
+      hddm_s::HDDM record;
+      hddm_s::PhysicsEventList pes = record.addPhysicsEvents();
+      pes().setRunNo(runNumber);
+      pes().setEventNo(eventNumber);
+      hddm_s::ReactionList rs = pes().addReactions();
+      hddm_s::VertexList vs = rs().addVertices();
+      hddm_s::OriginList os = vs().addOrigins();
+      hddm_s::ProductList ps = vs().addProducts(nParticles);
+      rs().setWeight(1.0);
 
-		// extract beam info from the first particle
-		int bscharge, bstype;
-		float bspx, bspy, bspz, bsE;
-		(*file) >> bstype >> bscharge >> bspx >> bspy >> bspz >> bsE;
-		rs->in[0].beam = bs = make_s_Beam();
-		bs->type = (Particle_t) bstype;
-		bs->momentum = make_s_Momentum();
-		bs->momentum->px = bspx;
-		bs->momentum->py = bspy;
-		bs->momentum->pz = bspz;
-		bs->momentum->E = bsE;
-		bs->properties = make_s_Properties();
-		bs->properties->charge = bscharge;
-		bs->properties->mass = sqrt(
-				bsE * bsE - bspx * bspx - bspy * bspy - bspz * bspz);
+      // extract beam info from the first particle
+      int bscharge, bstype;
+      float bspx, bspy, bspz, bsE;
+      (*file) >> bstype >> bscharge >> bspx >> bspy >> bspz >> bsE;
+      hddm_s::BeamList bs = rs().addBeams();
+      bs().setType((Particle_t)bstype);
+      hddm_s::MomentumList bmoms = bs().addMomenta();
+      bmoms().setPx(bspx);
+      bmoms().setPy(bspy);
+      bmoms().setPz(bspz);
+      bmoms().setE(bsE);
+      hddm_s::PropertiesList bpros = bs().addPropertiesList();
+      bpros().setCharge(bscharge);
+      bpros().setMass(sqrt(bsE*bsE - bspx*bspx - bspy*bspy - bspz*bspz));
 
-		// add target info, Yi Qiang
-		rs->in[0].target = ts = make_s_Target();
-		rs->in[0].weight = 1.0;
-		ts->type = (Particle_t) Proton;
-		ts->momentum = make_s_Momentum();
-		ts->momentum->px = 0.0;
-		ts->momentum->py = 0.0;
-		ts->momentum->pz = 0.0;
-		ts->momentum->E = 0.93827;
-		ts->properties = make_s_Properties();
-		ts->properties->charge = +1;
-		ts->properties->mass = 0.93827;
+      // add target info, Yi Qiang
+      hddm_s::TargetList ts = rs().addTargets();
+      ts().setType((Particle_t)Proton);
+      hddm_s::MomentumList tmoms = ts().addMomenta();
+      tmoms().setPx(0.0);
+      tmoms().setPy(0.0);
+      tmoms().setPz(0.0);
+      tmoms().setE(0.93827);
+      hddm_s::PropertiesList tpros = ts().addPropertiesList();
+      tpros().setCharge(+1);
+      tpros().setMass(0.93827);
 
-		origin->t = 0;
-		origin->vx = vertex[0];
-		origin->vy = vertex[1];
+      os().setT(0);
+      os().setVx(vertex[0]);
+      os().setVy(vertex[1]);
+      if (vertex[2] < vertex[3]) {
+         os().setVz(randm(vertex[2], vertex[3]));
+      }
+      else {
+         os().setVz(vertex[2]);
+      }
 
-		if (vertex[2] < vertex[3]) {
-			origin->vz = randm(vertex[2], vertex[3]);
-		} else {
-			origin->vz = vertex[2];
-		}
+      for (int i = 0; i < nParticles; i++) {
+         int charge, type;
+         float px, py, pz, E;
+         (*file) >> type >> charge >> px >> py >> pz >> E;
 
-		ps->mult = 0;
-		for (int i = 0; i < nParticles; i++, ps->mult++) {
-			int charge, type;
-			float px, py, pz, E;
-			(*file) >> type >> charge >> px >> py >> pz >> E;
+         ps(i).setType((Particle_t)type);
+         ps(i).setPdgtype(0);  /* don't bother with the PDG type here */
+         ps(i).setId(i + 1);   /* unique value for this particle within the event */
+         ps(i).setParentid(0); /* All internally generated particles have no parent */
+         ps(i).setMech(0);     /* maybe this should be set to something? */
+         hddm_s::MomentumList pmoms = ps(i).addMomenta();
+         pmoms().setPx(px);
+         pmoms().setPy(py);
+         pmoms().setPz(pz);
+         pmoms().setE(E);
+      }
 
-			ps->in[ps->mult].type = (Particle_t) type;
-			ps->in[ps->mult].pdgtype = 0; /* don't bother with the PDG type here */
-			ps->in[ps->mult].id = i + 1; /* unique value for this particle within the event */
-			ps->in[ps->mult].parentid = 0; /* All internally generated particles have no parent */
-			ps->in[ps->mult].mech = 0; /* maybe this should be set to something? */
-			ps->in[ps->mult].momentum = make_s_Momentum();
-			ps->in[ps->mult].momentum->px = px;
-			ps->in[ps->mult].momentum->py = py;
-			ps->in[ps->mult].momentum->pz = pz;
-			ps->in[ps->mult].momentum->E = E;
+      *thisOutputStream << record;
+      if (eventNumber % 1000 == 0)
+         std::cout << "Wrote event " << eventNumber << std::endl;
+      Nevents++;
+      if (maxevent > 0 && Nevents >= maxevent)
+         break;
+   }
 
-		}
+   // Close input file
+   delete file;
 
-		flush_s_HDDM(thisOutputEvent, thisOutputStream);
-		if (eventNumber % 1000 == 0)
-			cout << "Wrote event " << eventNumber << endl;
-		Nevents++;
-		if (maxevent > 0 && Nevents >= maxevent)
-			break;
-	}
+   // Close output file
+   delete thisOutputStream;
+   delete thisOutputFile;
 
-	// Close input file
-	file->close();
+   std::cout << "Processed " << Nevents << " events" << std::endl;
 
-	// Close output file
-	close_s_HDDM(thisOutputStream);
-
-	cout << "Processed " << Nevents << " events" << endl;
-
-	return 0;
+   return 0;
 }
 
 //-------------------------------
 // ParseCommandLineArguments
 //-------------------------------
 void ParseCommandLineArguments(int narg, char *argv[]) {
-	if (narg < 2) {
-		Usage();
-		exit(0);
-	}
+   if (narg < 2) {
+      Usage();
+      exit(0);
+   }
 
-	for (int i = 1; i < narg; i++) {
-		if (argv[i][0] == '-') {
-			char *ptr = &argv[i][1];
-			switch (*ptr) {
-			case 'v':
-			case 'V':
-				sscanf(&ptr[1], "%f %f %f %f", &vertex[0], &vertex[1],
-						&vertex[2], &vertex[3]);
-				if (vertex[2] > vertex[3]) {
-					cerr << "Invalid parameter: z_min > z_max" << endl;
-					exit(-1);
-				}
-				break;
-			case 'm':
-			case 'M':
-				sscanf(&ptr[1], "%d", &maxevent);
-				if (maxevent <= 0) {
-					cerr << "Invalid number of events" << endl;
-					exit(-1);
-				} else {
-					cout << maxevent << " event(s) will be processed." << endl;
-				}
-				break;
-			case 'h':
-			case 'H':
-				Usage();
-				exit(-1);
-			default:
-				cerr << "Unknown option \"" << argv[i] << "\"" << endl;
-				Usage();
-				exit(-1);
-			}
-		} else {
-			INPUT_FILE = argv[i];
-		}
-	}
+   for (int i = 1; i < narg; i++) {
+      if (argv[i][0] == '-') {
+         char *ptr = &argv[i][1];
+         switch (*ptr) {
+         case 'v':
+         case 'V':
+            sscanf(&ptr[1], "%f %f %f %f", &vertex[0], &vertex[1],
+                  &vertex[2], &vertex[3]);
+            if (vertex[2] > vertex[3]) {
+               std::cerr << "Invalid parameter: z_min > z_max" << std::endl;
+               exit(-1);
+            }
+            break;
+         case 'm':
+         case 'M':
+            sscanf(&ptr[1], "%d", &maxevent);
+            if (maxevent <= 0) {
+               std::cerr << "Invalid number of events" << std::endl;
+               exit(-1);
+            } else {
+               std::cout << maxevent << " event(s) will be processed." 
+                         << std::endl;
+            }
+            break;
+         case 'h':
+         case 'H':
+            Usage();
+            exit(-1);
+         default:
+            std::cerr << "Unknown option \"" << argv[i] << "\"" << std::endl;
+            Usage();
+            exit(-1);
+         }
+      }
+      else {
+         INPUT_FILE = argv[i];
+      }
+   }
 }
 
 //-------------------------------
 // Usage
 //-------------------------------
 void Usage(void) {
-	cout << endl;
-	cout << "Usage:" << endl;
-	cout << "       gamp2hddm [options] file.gamp" << endl;
-	cout << endl;
-	cout << "Convert a gamp file of events generated by ppgen into HDDM"
-			<< endl;
-	cout << "for use as input to hdgeant." << endl;
-	cout << endl;
-	cout << " options:" << endl;
-	cout << endl;
-	cout << "  -v\"x  y  z_min  z_max\"    set the vertex for the interaction.";
-	cout << "(default: x=" << vertex[0] << " y=" << vertex[1] << " z_min="
-			<< vertex[2] << " z_max=" << vertex[3] << ")" << endl;
-	cout
-			<< "  -mEvent      set number of events processed. (default: all events)"
-			<< endl;
-	cout << "  -h           print this usage statement." << endl;
-	cout << endl;
+   std::cout << std::endl;
+   std::cout << "Usage:" << std::endl;
+   std::cout << "       gamp2hddm [options] file.gamp" << std::endl;
+   std::cout << std::endl;
+   std::cout << "Convert a gamp file of events generated by ppgen into HDDM"
+         << std::endl;
+   std::cout << "for use as input to hdgeant." << std::endl;
+   std::cout << std::endl;
+   std::cout << " options:" << std::endl;
+   std::cout << std::endl;
+   std::cout << "  -v\"x  y  z_min  z_max\"    set the vertex"
+                " for the interaction.";
+   std::cout << "(default: x=" << vertex[0] << " y=" << vertex[1] << " z_min="
+         << vertex[2] << " z_max=" << vertex[3] << ")" << std::endl;
+   std::cout
+         << "  -mEvent      set number of events processed. "
+            "(default: all events)"
+         << std::endl;
+   std::cout << "  -h           print this usage statement." << std::endl;
+   std::cout << std::endl;
 }
 
 //-------------------------------
 // Str2GeantParticleID
 //-------------------------------
 int Str2GeantParticleID(char *str) {
-	if (!strcmp(str, "unknown"))
-		return Unknown;
-	if (!strcmp(str, "gamma"))
-		return Gamma;
-	if (!strcmp(str, "positron"))
-		return Positron;
-	if (!strcmp(str, "electron"))
-		return Electron;
-	if (!strcmp(str, "neutrino"))
-		return Neutrino;
-	if (!strcmp(str, "mu+"))
-		return MuonPlus;
-	if (!strcmp(str, "mu-"))
-		return MuonMinus;
-	if (!strcmp(str, "pi0"))
-		return Pi0;
-	if (!strcmp(str, "pi+"))
-		return PiPlus;
-	if (!strcmp(str, "pi-"))
-		return PiMinus;
-	if (!strcmp(str, "KL"))
-		return KLong;
-	if (!strcmp(str, "K+"))
-		return KPlus;
-	if (!strcmp(str, "K-"))
-		return KMinus;
-	if (!strcmp(str, "neutron"))
-		return Neutron;
-	if (!strcmp(str, "proton"))
-		return Proton;
-	if (!strcmp(str, "pbar"))
-		return AntiProton;
-	if (!strcmp(str, "Ks"))
-		return KShort;
-	if (!strcmp(str, "eta"))
-		return Eta;
-	if (!strcmp(str, "lambda"))
-		return Lambda;
-	if (!strcmp(str, "sigma+"))
-		return SigmaPlus;
-	if (!strcmp(str, "sigma0"))
-		return Sigma0;
-	if (!strcmp(str, "sigma-"))
-		return SigmaMinus;
-	if (!strcmp(str, "Xi0"))
-		return Xi0;
-	if (!strcmp(str, "Xi-"))
-		return XiMinus;
-	if (!strcmp(str, "omega-"))
-		return OmegaMinus;
-	if (!strcmp(str, "nbar"))
-		return AntiNeutron;
-	if (!strcmp(str, "lambdabar"))
-		return AntiLambda;
-	if (!strcmp(str, "sigmabar-"))
-		return AntiSigmaMinus;
-	if (!strcmp(str, "sigmabar0"))
-		return AntiSigma0;
-	if (!strcmp(str, "sigmabar+"))
-		return AntiSigmaPlus;
-	if (!strcmp(str, "Xibar0"))
-		return AntiXi0;
-	if (!strcmp(str, "Xibar+"))
-		return AntiXiPlus;
-	if (!strcmp(str, "omegabar+"))
-		return AntiOmegaPlus;
-	if (!strcmp(str, "rho0"))
-		return Rho0;
-	if (!strcmp(str, "rho+"))
-		return RhoPlus;
-	if (!strcmp(str, "rho"))
-		return RhoMinus;
-	if (!strcmp(str, "omega"))
-		return omega;
-	if (!strcmp(str, "etaprime"))
-		return EtaPrime;
-	if (!strcmp(str, "phi"))
-		return phiMeson;
-
-	return -1;
+   if (strcmp(str, "unknown") == 0 || strcmp(str, "Unknown") == 0)
+      return Unknown;
+   if (strcmp(str, "gamma") == 0 || strcmp(str, "Gamma") == 0)
+      return Gamma;
+   if (strcmp(str, "positron") == 0 || strcmp(str, "Positron") == 0)
+      return Positron;
+   if (strcmp(str, "electron") == 0 || strcmp(str, "Electron") == 0)
+      return Electron;
+   if (strcmp(str, "neutrino") == 0 || strcmp(str, "Neutrino") == 0)
+      return Neutrino;
+   if (strcmp(str, "mu+") == 0 || strcmp(str, "Mu+") == 0)
+      return MuonPlus;
+   if (strcmp(str, "mu-") == 0 || strcmp(str, "Mu-") == 0)
+      return MuonMinus;
+   if (strcmp(str, "pi0") == 0 || strcmp(str, "Pi0") == 0)
+      return Pi0;
+   if (strcmp(str, "pi+") == 0 || strcmp(str, "Pi+") == 0)
+      return PiPlus;
+   if (strcmp(str, "pi-") == 0 || strcmp(str, "Pi-") == 0)
+      return PiMinus;
+   if (strcmp(str, "KL") == 0)
+      return KLong;
+   if (strcmp(str, "K+") == 0)
+      return KPlus;
+   if (strcmp(str, "K-") == 0)
+      return KMinus;
+   if (strcmp(str, "neutron") == 0 || strcmp(str, "Neutron") == 0)
+      return Neutron;
+   if (strcmp(str, "proton") == 0 || strcmp(str, "Proton") == 0)
+      return Proton;
+   if (strcmp(str, "pbar") == 0 || strcmp(str, "Pbar") == 0)
+      return AntiProton;
+   if (strcmp(str, "Ks") == 0)
+      return KShort;
+   if (strcmp(str, "eta") == 0 || strcmp(str, "Eta") == 0)
+      return Eta;
+   if (strcmp(str, "lambda") == 0 || strcmp(str, "Lambda") == 0)
+      return Lambda;
+   if (strcmp(str, "sigma+") == 0 || strcmp(str, "Sigma+") == 0)
+      return SigmaPlus;
+   if (strcmp(str, "sigma0") == 0 || strcmp(str, "Sigma0") == 0)
+      return Sigma0;
+   if (strcmp(str, "sigma-") == 0 || strcmp(str, "Sigma-") == 0)
+      return SigmaMinus;
+   if (strcmp(str, "Xi0") == 0)
+      return Xi0;
+   if (strcmp(str, "Xi-") == 0)
+      return XiMinus;
+   if (strcmp(str, "omega-") == 0 || strcmp(str, "Omega-") == 0)
+      return OmegaMinus;
+   if (strcmp(str, "nbar") == 0 || strcmp(str, "Nbar") == 0)
+      return AntiNeutron;
+   if (strcmp(str, "lambdabar") == 0 || strcmp(str, "Lambdabar") == 0)
+      return AntiLambda;
+   if (strcmp(str, "sigmabar-") == 0)
+      return AntiSigmaMinus;
+   if (strcmp(str, "sigmabar0") == 0 || strcmp(str, "Sigmabar0") == 0)
+      return AntiSigma0;
+   if (strcmp(str, "sigmabar+") == 0 || strcmp(str, "Sigmabar+") == 0)
+      return AntiSigmaPlus;
+   if (strcmp(str, "Xibar0") == 0)
+      return AntiXi0;
+   if (strcmp(str, "Xibar+") == 0)
+      return AntiXiPlus;
+   if (strcmp(str, "omegabar+") == 0 || strcmp(str, "Omegabar+") == 0)
+      return AntiOmegaPlus;
+   if (strcmp(str, "rho0") == 0 || strcmp(str, "Rho0") == 0)
+      return Rho0;
+   if (strcmp(str, "rho+") == 0 || strcmp(str, "Rho+") == 0)
+      return RhoPlus;
+   if (strcmp(str, "rho") == 0 || strcmp(str, "Rho") == 0)
+      return RhoMinus;
+   if (strcmp(str, "omega") == 0 || strcmp(str, "Omega") == 0)
+      return omega;
+   if (strcmp(str, "etaprime") == 0 || strcmp(str, "Etaprime") == 0)
+      return EtaPrime;
+   if (strcmp(str, "phi") == 0 || strcmp(str, "Phi") == 0)
+      return phiMeson;
+   if (!strcmp(str, "Pb208"))
+      return Pb208;
+   
+   return -1;
 }
 
 /**************************/
 /*  Random generator      */
 /*------------------------*/
 double randm(double low, double high) {
-	return ((high - low) * drand48() + low);
+   return ((high - low) * drand48() + low);
 }
-

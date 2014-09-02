@@ -69,7 +69,8 @@ static string danaObjs[] =  {
   "dfcalhit",
   "dtofrawhit",
   "dschit",
-  "dtagger",
+  "dtagmhit",
+  "dtaghhit",
   "dtrackwirebased",
   "dtracktimebased",
   "dchargedtrack",
@@ -144,7 +145,8 @@ using namespace jana;
 
 #include "PID/DVertex.h"
 
-#include "TAGGER/DTagger.h"
+#include "TAGGER/DTAGMHit.h"
+#include "TAGGER/DTAGHHit.h"
 
 #include "SplitString.h"
 
@@ -460,7 +462,8 @@ jerror_t DDANAEVIO_factory::evnt(JEventLoop *loop, int eventnumber) {
   if(evioMap["dfcalhit"           ].size()>0)  addDFCALHit(             eventLoop, myDDANAEVIODOMTree->tree);
   if(evioMap["dtofrawhitmc"       ].size()>0)  addDTOFRawHitMC(         eventLoop, myDDANAEVIODOMTree->tree); 
   if(evioMap["dschit"             ].size()>0)  addDSCHit(               eventLoop, myDDANAEVIODOMTree->tree);
-  if(evioMap["dtagger"            ].size()>0)  addDTagger(              eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dtagmhit"           ].size()>0)  addDTAGMHit(             eventLoop, myDDANAEVIODOMTree->tree); 
+  if(evioMap["dtaghhit"           ].size()>0)  addDTAGHHit(             eventLoop, myDDANAEVIODOMTree->tree); 
   
   if(evioMap["dcdctrackhit"       ].size()>0)  addDCDCTrackHit(         eventLoop, myDDANAEVIODOMTree->tree);
   if(evioMap["dfdcpseudo"         ].size()>0)  addDFDCPseudo(           eventLoop, myDDANAEVIODOMTree->tree);
@@ -3000,9 +3003,9 @@ void DDANAEVIO_factory::addDFDCSegment(JEventLoop *eventLoop, evioDOMTree &tree)
 //------------------------------------------------------------------------------
 
 
-void DDANAEVIO_factory::addDTagger(JEventLoop *eventLoop, evioDOMTree &tree) {
+void DDANAEVIO_factory::addDTAGMHit(JEventLoop *eventLoop, evioDOMTree &tree) {
 
-  string objName             = "DTagger";
+  string objName             = "DTAGMHit";
   string objNameLC(objName);
   std::transform(objNameLC.begin(), objNameLC.end(), objNameLC.begin(), (int(*)(int)) tolower);
   
@@ -3033,7 +3036,7 @@ void DDANAEVIO_factory::addDTagger(JEventLoop *eventLoop, evioDOMTree &tree) {
 
 
     // is there any data
-    vector<const DTagger*> dataObjects;
+    vector<const DTAGMHit*> dataObjects;
     eventLoop->Get(dataObjects,(*iter).c_str()); 
     if(dataObjects.size()<=0)continue;
 

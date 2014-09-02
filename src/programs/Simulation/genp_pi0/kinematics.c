@@ -10,6 +10,7 @@
 
 
 #include <kinematics.h>
+#include <stdio.h>
 
 
 

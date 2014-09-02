@@ -12,8 +12,8 @@
 
 ROOTDataReader::ROOTDataReader( const vector< string >& args ):
  UserDataReader< ROOTDataReader >( args ),
- m_useWeight( false ),
- m_eventCounter( 0 )
+ m_eventCounter( 0 ),
+ m_useWeight( false )
 {
   assert( args.size() == 2 || args.size() == 1 );
   

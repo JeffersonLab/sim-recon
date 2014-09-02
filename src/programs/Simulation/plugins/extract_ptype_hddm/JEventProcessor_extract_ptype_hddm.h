@@ -9,30 +9,32 @@
 #define _JEventProcessor_extract_ptype_hddm_
 
 #include <stdlib.h>
+#include <fstream>
 
 #include <JANA/JEventProcessor.h>
-#include <HDDM/hddm_s.h>
+#include <HDDM/hddm_s.hpp>
 
 class JEventProcessor_extract_ptype_hddm:public jana::JEventProcessor{
-	public:
-		JEventProcessor_extract_ptype_hddm();
-		~JEventProcessor_extract_ptype_hddm();
-		const char* className(void){return "JEventProcessor_extract_ptype_hddm";}
+   public:
+      JEventProcessor_extract_ptype_hddm();
+      ~JEventProcessor_extract_ptype_hddm();
+      const char* className(void){return "JEventProcessor_extract_ptype_hddm";}
 
-		double randm(double low, double high){return ((high - low) * drand48() + low);}
+      double randm(double low, double high){return ((high - low) * drand48() + low);}
 
-	private:
-		jerror_t init(void);						///< Called once at program start.
-		jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
-		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
-		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
-		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+   private:
+      jerror_t init(void);                  ///< Called once at program start.
+      jerror_t brun(jana::JEventLoop *eventLoop, int runnumber);   ///< Called everytime a new run number is detected.
+      jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);   ///< Called every event.
+      jerror_t erun(void);                  ///< Called everytime run number changes, provided brun has been called.
+      jerror_t fini(void);                  ///< Called after last event of last event source has been processed.
 
-		pthread_mutex_t mutex;
-		s_iostream_t *hddmout;
-		string OUTFILENAME;
-		unsigned long Nevents;
-		unsigned int PTYPE;
+      pthread_mutex_t mutex;
+      std::ofstream *ofsout;
+      hddm_s::ostream *hddmout;
+      string OUTFILENAME;
+      unsigned long Nevents;
+      unsigned int PTYPE;
 };
 
 #endif // _JEventProcessor_extract_ptype_hddm_

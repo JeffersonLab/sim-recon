@@ -21,6 +21,7 @@ class DSCHit_factory:public jana::JFactory<DSCHit>{
 		// overall scale factors
 		double a_scale;
 		double t_scale;
+                double t_min;
 		double tdc_scale;
 
 		// calibration constants stored by channel

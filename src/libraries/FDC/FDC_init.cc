@@ -17,16 +17,15 @@ using namespace jana;
 
 #include <FDC/DFDCCathodeDigiHit.h>
 #include <FDC/DFDCWireDigiHit.h>
-typedef JFactory<DFDCCathodeDigiHit> DFDCCathodeDigiHit_factory;
-typedef JFactory<DFDCWireDigiHit> DFDCWireDigiHit_factory;
 
 jerror_t FDC_init(JEventLoop *loop)
 {
 	/// Create and register FDC data factories
-	loop->AddFactory(new DFDCCathodeDigiHit_factory());
-	loop->AddFactory(new DFDCWireDigiHit_factory());
+	loop->AddFactory(new JFactory<DFDCCathodeDigiHit>());
+	loop->AddFactory(new JFactory<DFDCWireDigiHit>());
 	loop->AddFactory(new DFDCHit_factory());
 	loop->AddFactory(new JFactory<DFDCHit>("TRUTH"));
+	loop->AddFactory(new JFactory<DFDCHit>("CALIB"));
 	loop->AddFactory(new DFDCPseudo_factory());
 	loop->AddFactory(new DFDCCathodeCluster_factory());
 	loop->AddFactory(new DFDCSegment_factory());

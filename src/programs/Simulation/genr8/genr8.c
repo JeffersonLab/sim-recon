@@ -724,7 +724,7 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
   }/* end of while */
   
   fprintf(stderr,
-	  "Max Lorentz Factor:%lf Events generated:%d Events acepted:%d\n\n",
+	  "Max Lorentz Factor:%lf Events generated:%d Events accepted:%d\n\n",
 	  lfmax,ngenerated,naccepted);
   /*
    * Close the output file.

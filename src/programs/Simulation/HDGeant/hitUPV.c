@@ -2,8 +2,8 @@
  * hitUPV - registers hits for UPV - ao
  *
  *
- *	This is a part of the hits package for the
- *	HDGeant simulation program for Hall D.
+ *        This is a part of the hits package for the
+ *        HDGeant simulation program for Hall D.
  *
  *
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
@@ -35,11 +35,11 @@
 #include <bintree.h>
 extern s_HDDM_t* thisInputEvent;
 
-#define ATTEN_LENGTH	150.
-#define C_EFFECTIVE	19.   /* This assumes a single linear fiber path */
+#define ATTEN_LENGTH        150.
+#define C_EFFECTIVE        19.   /* This assumes a single linear fiber path */
 #define THRESH_MEV      5.
-#define TWO_HIT_RESOL	50.
-#define MAX_HITS 	100
+#define TWO_HIT_RESOL        50.
+#define MAX_HITS         100
 
 binTree_t* upstreamEMvetoTree = 0;
 static int paddleCount = 0;
@@ -50,16 +50,15 @@ static int showerCount = 0;
 /* register hits during tracking (from gustep) */
 
 void hitUpstreamEMveto (float xin[4], float xout[4],
-			float pin[5], float pout[5], float dEsum,
-			int track, int stack, int history, int ipart)
+                        float pin[5], float pout[5], float dEsum,
+                        int track, int stack, int history, int ipart)
 {
   float x[3], t;
   float xlocal[3];
   float xupv[3];
   float zeroHat[] = {0,0,0};
   int nhit;
-  s_UpvLeftHits_t* leftHits;
-  s_UpvRightHits_t* rightHits;
+  s_UpvHits_t* hits = 0;
 
   x[0] = (xin[0] + xout[0])/2;
   x[1] = (xin[1] + xout[1])/2;
@@ -130,17 +129,9 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       paddles->mult = 1;
       paddles->in[0].row = row;
       paddles->in[0].layer = layer;
-      leftHits = HDDM_NULL;
-      rightHits = HDDM_NULL;
       if (column == 0 || column == 1)
       {
-         paddles->in[0].upvLeftHits = leftHits
-                                    = make_s_UpvLeftHits(MAX_HITS);
-      }
-      if (column == 0 || column == 1)
-      {
-         paddles->in[0].upvRightHits = rightHits
-                                     = make_s_UpvRightHits(MAX_HITS);
+         paddles->in[0].upvHits = hits = make_s_UpvHits(MAX_HITS);
       }
       upv->upvPaddles = paddles;
       paddleCount++;
@@ -148,32 +139,33 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
     else
     {
       s_UpstreamEMveto_t* upv = *twig;
-      leftHits = upv->upvPaddles->in[0].upvLeftHits;
-      rightHits = upv->upvPaddles->in[0].upvRightHits;
+      hits = upv->upvPaddles->in[0].upvHits;
     }
 
-    if (leftHits != HDDM_NULL)
+    if (hits != HDDM_NULL)
     {
-      for (nhit = 0; nhit < leftHits->mult; nhit++)
+      for (nhit = 0; nhit < hits->mult; nhit++)
       {
-        if (fabs(leftHits->in[nhit].t - tleft) < TWO_HIT_RESOL)
+        if (hits->in[nhit].end == 0 &&
+            fabs(hits->in[nhit].t - tleft) < TWO_HIT_RESOL)
         {
           break;
         }
       }
 
-      if (nhit < leftHits->mult)		/* merge with former hit */
+      if (nhit < hits->mult)                /* merge with former hit */
       {
-        leftHits->in[nhit].t =
-	  (leftHits->in[nhit].t * leftHits->in[nhit].E + tleft * dEleft)
-	  / (leftHits->in[nhit].E += dEleft);
+        hits->in[nhit].t =
+          (hits->in[nhit].t * hits->in[nhit].E + tleft * dEleft) /
+          (hits->in[nhit].E += dEleft);
       }
-      else if (nhit < MAX_HITS)			/* create new hit */
+      else if (nhit < MAX_HITS)         /* create new hit, north end */
       {
-        leftHits->in[nhit].t =
-	  (leftHits->in[nhit].t * leftHits->in[nhit].E + tleft * dEleft)
-	  / (leftHits->in[nhit].E += dEleft);
-        leftHits->mult++;
+        hits->in[nhit].t =
+          (hits->in[nhit].t * hits->in[nhit].E + tleft * dEleft) /
+          (hits->in[nhit].E += dEleft);
+        hits->in[nhit].end = 0;
+        hits->mult++;
       }
       else
       {
@@ -182,34 +174,33 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       }
     }
 
-    if (rightHits != HDDM_NULL)
+    for (nhit = 0; nhit < hits->mult; nhit++)
     {
-      for (nhit = 0; nhit < rightHits->mult; nhit++)
+      if (hits->in[nhit].end == 1 &&
+          fabs(hits->in[nhit].t - tright) < TWO_HIT_RESOL)
       {
-        if (fabs(rightHits->in[nhit].t - tright) < TWO_HIT_RESOL)
-        {
-	  break;
-        }
+        break;
       }
+    }
         
-      if (nhit < rightHits->mult) 		/* merge with former hit */
-      {
-        rightHits->in[nhit].t =
-	  (rightHits->in[nhit].t * rightHits->in[nhit].E + tright * dEright)
-	  / (rightHits->in[nhit].E += dEright);
-      }
-      else if (nhit < MAX_HITS) 		/* create new hit */
-      {
-        rightHits->in[nhit].t = 
-	  (rightHits->in[nhit].t * rightHits->in[nhit].E +  tright * dEright)
-	  / (rightHits->in[nhit].E += dEright);
-        rightHits->mult++;
-      }
-      else
-      {
-        fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
-        fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
-      }
+    if (nhit < hits->mult)                 /* merge with former hit */
+    {
+      hits->in[nhit].t =
+        (hits->in[nhit].t * hits->in[nhit].E + tright * dEright) /
+        (hits->in[nhit].E += dEright);
+    }
+    else if (nhit < MAX_HITS)          /* create new hit, south end */
+    {
+      hits->in[nhit].t = 
+        (hits->in[nhit].t * hits->in[nhit].E +  tright * dEright) /
+        (hits->in[nhit].E += dEright);
+      hits->in[nhit].end = 1;
+      hits->mult++;
+    }
+    else
+    {
+      fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
+      fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
     }
   }
 }
@@ -217,8 +208,8 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
 /* entry point from fortran */
 
 void hitupstreamemveto_(float* xin, float* xout,
-			float* pin, float* pout, float* dEsum,
-			int* track, int* stack, int* history, int* ipart)
+                        float* pin, float* pout, float* dEsum,
+                        int* track, int* stack, int* history, int* ipart)
 {
   hitUpstreamEMveto(xin,xout,pin,pout,*dEsum,*track,*stack,*history,*ipart);
 }
@@ -251,18 +242,17 @@ s_UpstreamEMveto_t* pickUpstreamEMveto ()
          int m = box->upvPaddles->mult;
          int mok = 0;
 
-         s_UpvLeftHits_t* leftHits = paddles->in[paddle].upvLeftHits;
-         s_UpvRightHits_t* rightHits = paddles->in[paddle].upvRightHits;
+         s_UpvHits_t* hits = paddles->in[paddle].upvHits;
 
        /* compress out the hits below threshold */
          int i,iok;
-         for (iok=i=0; i < leftHits->mult; i++)
+         for (iok=i=0; i < hits->mult; i++)
          {
-            if (leftHits->in[i].E >= THRESH_MEV/1e3)
+            if (hits->in[i].E >= THRESH_MEV/1e3)
             {
                if (iok < i)
                {
-                  leftHits->in[iok] = leftHits->in[i];
+                  hits->in[iok] = hits->in[i];
                }
                ++iok;
                ++mok;
@@ -270,34 +260,12 @@ s_UpstreamEMveto_t* pickUpstreamEMveto ()
          }
          if (iok)
          {
-            leftHits->mult = iok;
+            hits->mult = iok;
          }
-         else if (leftHits != HDDM_NULL)
+         else if (hits != HDDM_NULL)
          {
-             paddles->in[paddle].upvLeftHits = HDDM_NULL;
-             FREE(leftHits);
-         }
-
-         for (iok=i=0; i < rightHits->mult; i++)
-         {
-            if (rightHits->in[i].E >= THRESH_MEV/1e3)
-            {
-              if (iok < i)
-              {
-                rightHits->in[iok] = rightHits->in[i];
-              }
-              ++iok;
-              ++mok;
-            }
-         }
-         if (iok)
-         {
-            rightHits->mult = iok;
-         }
-         else if (rightHits != HDDM_NULL)
-         {
-            paddles->in[0].upvRightHits = HDDM_NULL;
-            FREE(rightHits);
+             paddles->in[paddle].upvHits = HDDM_NULL;
+             FREE(hits);
          }
 
          if (mok)

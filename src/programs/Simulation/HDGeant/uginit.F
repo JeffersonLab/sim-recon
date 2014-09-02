@@ -179,6 +179,7 @@ c The following parameters are declared in controlparams.inc above.
       data driftclusters/0/
       data tgtwidth/2*0/
       data get_next_evt/1/
+      data trigger_time_sigma_ns/10./
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
@@ -255,6 +256,7 @@ C..geant..
       CALL FFKEY('showersincol',showersincol,1,'INTEGER')
       call FFKEY('driftclusters',driftclusters,1,'INTEGER')
       call FFKEY('tgtwidth',tgtwidth,2,'REAL')
+      call FFKEY('trefsigma',trigger_time_sigma_ns,1,'REAL')
       call gtgamaff()
       CALL GFFGO
 *
