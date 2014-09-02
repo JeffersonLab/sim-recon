@@ -169,7 +169,7 @@ static double FADC125tick   = 800.;    // in picoseconds
 static double CDC_ADCscale  = 0.25E5/1.0E6;
 static double FDC_ADCscale  = 1.3E5/2.4E4;
 static double FCAL_ADCscale = 2.5E5/4.0E1;
-static double BCAL_ADCscale = 10.;
+static double BCAL_ADCscale = 10000.;
 static double TOF_ADCscale  = 5.2E5/0.2;
 static double SC_ADCscale   = 5.2E-5/2.0E-2 ;
 
@@ -858,9 +858,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
     if ((dbcalhits[i]->E > 0) && ((dbcalhits[i]->t*1000.) > tMin) &&
         (dbcalhits[i]->t*1000. < trigTime))
     {
-      // All calorimeter hits have E in GeV, but BCAL_ADCscale assumes MeV
-      // so fix that here by converting E to MeV first, then apply scale factor.
-      uint32_t E = dbcalhits[i]->E*1000.*BCAL_ADCscale;  // (each fADC count ~ 100keV) (max ~2.5E4)
+      uint32_t E = dbcalhits[i]->E*BCAL_ADCscale;  // (each fADC count ~ 100keV) (max ~2.5E4)
       uint32_t t = dbcalhits[i]->t*1000.-tMin;     // in picoseconds
 
       if (noroot == 0)
@@ -909,7 +907,7 @@ jerror_t JEventProcessor_rawevent::evnt(JEventLoop *eventLoop, int eventnumber) 
           jerr << "?error return from mc2codaWrite() for BCAL ADC: " 
                << stat << std::endl << std::endl;
           exit(EXIT_FAILURE);
-        }
+      }
       }
       /**
       hitCount++;
