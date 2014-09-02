@@ -98,12 +98,33 @@ typedef enum {
   b1_1235_Plus = 171,
   Sigma_1385_Minus = 172,
   Sigma_1385_0 = 173,
-  Sigma_1385_Plus = 174
+  Sigma_1385_Plus = 174,
+
+  /* These are defined in pythia-geant.map in bggen */
+
+  //Rho0          = 80,  // already defined above (44)
+  //omega         = 81,  // already defined above (33)
+  DeltaPlusPlus = 82
+
 
 } Particle_t;
 
+
+static inline Particle_t RemapParticleID(Particle_t p)
+{
+  // bggen defines these in pythia-geant.dat. However,
+  // they are not the same as the definitions used from
+  // E-852 in the enum above. Remap them using this routine
+  // which is called from several of the routines below.
+  if(p==80) return Rho0;
+  if(p==81) return omega;
+  return p;
+}
+
 inline static char* ParticleType(Particle_t p)
 {
+  p = RemapParticleID(p);
+
   switch (p) {
   case Unknown:
     return (char*)"Unknown";
@@ -217,6 +238,8 @@ inline static char* ParticleType(Particle_t p)
     return (char*)"Triton";
   case Pb208:
     return (char*)"Pb208";
+  case DeltaPlusPlus:
+    return (char*)"Delta++";
   default:
     return (char*)"Unknown";
   }
@@ -270,6 +293,8 @@ inline static unsigned short int IsFixedMass(Particle_t p)
 
 inline static unsigned short int IsResonance(Particle_t p)
 {
+   p = RemapParticleID(p);
+
 	if(IsFixedMass(p) == 1)
 		return 0;
 	if(p == Unknown)
@@ -316,6 +341,8 @@ inline static unsigned short int IsDetachedVertex(Particle_t p)
 
 inline static char* ParticleName_ROOT(Particle_t p)
 {
+  p = RemapParticleID(p);
+
   switch (p) {
   case Unknown:
     return (char*)"#it{X}";
@@ -429,6 +456,8 @@ inline static char* ParticleName_ROOT(Particle_t p)
     return (char*)"#it{#Sigma}(1385)^{0}";
   case Sigma_1385_Plus:
     return (char*)"#it{#Sigma}(1385)^{+}";
+  case DeltaPlusPlus:
+    return (char*)"#it{#Delta}(1232)^{++}";
   default:
     return (char*)"X";
   }
@@ -436,6 +465,8 @@ inline static char* ParticleName_ROOT(Particle_t p)
 
 inline static double ParticleMass(Particle_t p)
 {
+  p = RemapParticleID(p);
+
   switch (p) {
   case Unknown:		return HUGE_VAL;
   case Gamma:		return 0;
@@ -493,6 +524,7 @@ inline static double ParticleMass(Particle_t p)
   case Sigma_1385_Minus:	return 1.3872;
   case Sigma_1385_0:		return 1.3837;
   case Sigma_1385_Plus:	return 1.38280;
+  case DeltaPlusPlus:   return 1.232;
   default:
     fprintf(stderr,"ParticleMass: Error: Unknown particle type %d,",p);
     fprintf(stderr," returning HUGE_VAL...\n");
@@ -502,6 +534,8 @@ inline static double ParticleMass(Particle_t p)
 
 inline static int ParticleCharge(Particle_t p)
 {
+  p = RemapParticleID(p);
+
   switch (p) {
   case Unknown:		return  0;
   case Gamma:		return  0;
@@ -559,6 +593,8 @@ inline static int ParticleCharge(Particle_t p)
   case Sigma_1385_Minus:	return -1;
   case Sigma_1385_0:		return 0;
   case Sigma_1385_Plus:	return 1;
+  case DeltaPlusPlus: return 2;
+
   default:
     fprintf(stderr,"ParticleCharge: Error: Unknown particle type %d,",p);
     fprintf(stderr," returning 0...\n");
@@ -568,6 +604,8 @@ inline static int ParticleCharge(Particle_t p)
 
 inline static int PDGtype(Particle_t p)
 {
+  p = RemapParticleID(p);
+
   switch (p) {
   case Unknown:		return  0;
   case Gamma:		return  22;
@@ -625,6 +663,7 @@ inline static int PDGtype(Particle_t p)
   case Sigma_1385_0:		return 3214;
   case Sigma_1385_Plus:	return 3224;
   case Pb208: return 1000822080; // see note 14 in PDG (pg. 416 of 2012 full listing)
+  case DeltaPlusPlus: return 2224;
   default:		return  0;
   }
 }
@@ -687,6 +726,7 @@ inline static Particle_t PDGtoPType(int locPDG_PID)
   case 3214:			return Sigma_1385_0;
   case 3224:			return Sigma_1385_Plus;
   case 1000822080:	return Pb208; // see note 14 in PDG (pg. 416 of 2012 full listing)
+  case 2224:         return DeltaPlusPlus;
   default:			return Unknown;
   }
 }
@@ -720,6 +760,8 @@ inline static int Is_FinalStateParticle(Particle_t locPID)
 
 inline static int ParticleMultiplexPower(Particle_t locPID)
 {
+   locPID = RemapParticleID(locPID);
+
 	switch(locPID)
 	{
 		//FINAL-STATE PARTICLES (+ pi0) (decimal: 10^power):
@@ -776,6 +818,7 @@ inline static int ParticleMultiplexPower(Particle_t locPID)
 		case Sigma_1385_Minus: return 32;
 		case Sigma_1385_0:     return 33;
 		case Sigma_1385_Plus:  return 34;
+      case DeltaPlusPlus:    return 35;
 		default: return -1;
 	}
 }
