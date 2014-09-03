@@ -35,6 +35,7 @@ C
       EELEC=12.  ! electron energy
       EPEAK=9.   ! peak right edge
       ZCOLL=7600.
+      DCOLL=0.0034
       EPYMIN=3.  ! min energy for PYTHIA
       ELOWMIN=0.15
 C
@@ -59,6 +60,7 @@ C
       CALL FFKEY('EELEC'     , EELEC      , 1,'REAL')
       CALL FFKEY('EPEAK'     , EPEAK      , 1,'REAL')
       CALL FFKEY('ZCOLLIM'   , ZCOLL      , 1,'REAL')
+      CALL FFKEY('DCOLLIM'   , DCOLL      , 1,'REAL')      
       CALL FFKEY('EPYTHMIN'  , EPYMIN     , 1,'REAL')
       CALL FFKEY('ELOWMIN'   , ELOWMIN    , 1,'REAL')
       CALL FFKEY('VERTEX'    , VERTEX(1) , 3,'REAL')
@@ -193,7 +195,7 @@ C---    Beam spectrum
 C
       IDBEAM=9000
       NHBEA=0
-      CALL COHBEAM_INI(IDBEAM,EELEC,EPEAK,EPH_LIM,ZCOLL)
+      CALL COHBEAM_INI(IDBEAM,EELEC,EPEAK,EPH_LIM,ZCOLL,DCOLL)
 C
 C---   Pythia
 C

@@ -10,8 +10,8 @@ C Author: Richard Jones    8-July-1997
 C
 C #define vector real
 
-      Subroutine cobrems(Emax,Epeak,Dist)
-      real Emax,Epeak,Dist
+      Subroutine cobrems(Emax,Epeak,Dist,colDiam)
+      real Emax,Epeak,Dist,colDiam
       include 'cobrems.inc'
       REAL inputs(10)
       integer i
@@ -32,7 +32,7 @@ C #define vector real
       spot=0.0005	!electron beam spot size at collimator
       D=Dist		!distance from radiator to collimator
       t=20.0e-6		!thickness of radiator (m)
-      collim=0.0034	!collimator diameter (m)
+      collim=colDiam	!collimator diameter (m)
       thx=-0.0300/E	!rotation of crystal about x (first)
       thy=0.100		!rotation of crystal about y (second)
 C-- require Epeak < Emax
@@ -66,6 +66,7 @@ C-- PDG formula for radiation length, converted to meters
       write(6,1050) thx*1e3,thy*1e3
 1050  format(' crystal orientation: theta-x',f10.3,'mr',
      +      /'                      theta-y',f10.3,'mr')
+      write(6,*)' Collimator diameter: ',colDiam
 C  define the unit cell of the radiator crystal
       ucell(1,1)=0
       ucell(2,1)=0

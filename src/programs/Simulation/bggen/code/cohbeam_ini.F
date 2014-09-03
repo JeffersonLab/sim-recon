@@ -1,5 +1,5 @@
 C
-      SUBROUTINE COHBEAM_INI(ID,E0,EP,ELIM,ZCOLLIM)
+      SUBROUTINE COHBEAM_INI(ID,E0,EP,ELIM,ZCOLLIM,COLDIAM)
 C
 C---   Photoproduction by the coherent Brem. beam
 C---   ID - histogram with the dN/dE*sigma(E), 
@@ -8,10 +8,11 @@ C      E0 - e- energy
 C      EP - coherent peak energy
 C      ELIM - energy limits
 C      ZCOLLIM - distance to the collimator
+C      COLDIAM - collimator diameter
 C
       IMPLICIT NONE
       INTEGER ID
-      REAL E0,EP,ELIM(2),ZCOLLIM
+      REAL E0,EP,ELIM(2),ZCOLLIM,COLDIAM
 C
       INCLUDE 'bg_ctrl.inc'
 C
@@ -30,7 +31,7 @@ C
       xlum=ecurr/1.6E-19*targth*0.071*0.602 ! luminosity factor:  2.25uA on 20um (1.7e-4 RL) crystal, 30 cm LH2 (1/b) 
 C
       IF(ibrem.NE.0) THEN
-         CALL COBREMS(E0,EP,ZCOLLIM/100.) ! collimator distance in m
+         CALL COBREMS(E0,EP,ZCOLLIM/100.,COLDIAM) ! collimator distance in m
       ENDIF
 C
       emn=ELIM(1)

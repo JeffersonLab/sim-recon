@@ -6,6 +6,7 @@ C
       PARAMETER (MXPGEANT=1000,MXPKC=1000)
 C
       COMMON/PHCTRL/ NEVENT,RUNNO,EPH_LIM(2),EELEC,EPEAK,ZCOLL,EPYMIN,ELOWMIN
+     +              ,DCOLL
      +              ,IWROUT(3),LUNWR(3),IRND_SEQ,NPRIEV
      +              ,IDBEAM,NHBEA
      +              ,IFPYTH
@@ -34,6 +35,7 @@ C                           (3) LUN for the ntuple file
       REAL      EPH_LIM ! limits on the photon beam energy GeV (F)
      +         ,EELEC   ! electron beam energy (F)
      +         ,EPEAK   ! energy of the coherent peak (the right edge) (F) 
+     +         ,DCOLL   ! collimator diameter (m) (F)
      +         ,ZCOLL   ! distance to the collimator (cm) (F)
      +         ,EPYMIN  ! minimal energy for PYTHIA, (F)
 C                         below that the low energy generator is used
