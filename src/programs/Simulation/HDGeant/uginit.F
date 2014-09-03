@@ -162,8 +162,9 @@
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
       real beamE0, beamEpeak, beamEmin, radColDist
-      common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist
-      data beamE0,beamEpeak,beamEmin,radColDist/0,0,0,76.0/
+      common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist,colDiam
+      data beamE0,beamEpeak,beamEmin,radColDist,colDiam/0,0,0,76.0,
+     +     0.0034/
       data bfield_type/20*0/
       data bfield_map/20*0/
 
@@ -243,7 +244,7 @@ C..geant..
       call ffkey('postsmear',postsmear,1,'INTEGER')
       call ffkey('mcsmearopts',mcsmearopts,64,'MIXED')
       call ffkey('deleteunsmeared',deleteunsmeared,1,'INTEGER')
-      call ffkey('beam',beamE0,4,'REAL')
+      call ffkey('beam',beamE0,5,'REAL')
       call ffkey('bfieldmap', bfield_map,20,'MIXED')
       call ffkey('bfieldtype', bfield_type,20,'MIXED')
       call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
@@ -352,7 +353,7 @@ C..geant..
         stop
       endif
       if (beamE0 .gt. 0) then
-        call cobrems(beamE0,beamEpeak,radColDist)
+        call cobrems(beamE0,beamEpeak,radColDist,colDiam)
       elseif (infile(1) .eq. 0) then
         continue    ! single-particle gun (mode 1), ignore background gen.
       elseif (bgrate .gt. 0) then

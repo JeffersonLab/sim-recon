@@ -10,8 +10,8 @@ C Author: Richard Jones    8-July-1997
 C
 #define vector real
 
-      Subroutine cobrems(Emax,Epeak,Dist)
-      real Emax,Epeak,Dist
+      Subroutine cobrems(Emax,Epeak,Dist,colDiam)
+      real Emax,Epeak,Dist,colDiam
       include 'cobrems.inc'
 c      vector inputs(10)
       integer i
@@ -32,7 +32,10 @@ c      vector inputs(10)
       spot=0.0005       !electron beam spot size at collimator
       D=Dist            !distance from radiator to collimator
       t=20.0e-6               !thickness of radiator (m)
-      collim=0.0034     !collimator diameter (m)
+      collim=colDiam     !collimator diameter (m)
+      
+      write(6,*)colDiam
+      
       thx=-0.0300/E     !rotation of crystal about x (first)
       thy=0.100         !rotation of crystal about y (second)
 C-- require Epeak < Emax
@@ -54,18 +57,22 @@ C-- PDG formula for radiation length, converted to meters
       radlen=1/radlen
       write(6,*)
       write(6,1000)
-1000  format('Initialization for coherent bremsstralung calculation')
+ 1000 format('Initialization for coherent bremsstralung calculation')
       write(6,1010) E
-1010  format(' electron beam energy:',f12.3,'GeV')
+ 1010 format(' electron beam energy:',f12.3,'GeV')
       write(6,1020) 'diamond',t*1e6
-1020  format(' radiator crystal: ',a10,', thickness',f8.0,'um')
+ 1020 format(' radiator crystal: ',a10,', thickness',f8.0,'um')
       write(6,1030) radlen*1e2,mospread*1e6
-1030  format(' radiation length:',f8.1,'cm, mosaic spread:',f8.1,'ur')
+ 1030 format(' radiation length:',f8.1,'cm, mosaic spread:',f8.1,'ur')
       write(6,1040) collim/(2*D)*(E/me)
-1040  format(' photon beam collimator half-angle:',f12.3,'(m/E)')
+ 1040 format(' photon beam collimator half-angle:',f12.3,'(m/E)')
+      write(6,1045)colDiam*1e2
+ 1045 format(' Collimator diameter:',f8.3,'cm')
       write(6,1050) thx*1e3,thy*1e3
-1050  format(' crystal orientation: theta-x',f10.3,'mr',
+ 1050 format(' crystal orientation: theta-x',f10.3,'mr',
      +      /'                      theta-y',f10.3,'mr')
+  
+
 C  define the unit cell of the radiator crystal
       ucell(1,1)=0
       ucell(2,1)=0
