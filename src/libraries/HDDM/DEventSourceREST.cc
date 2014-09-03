@@ -271,6 +271,11 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
       mcreaction->type = iter->getType();
       mcreaction->weight = iter->getWeight();
       double Ebeam = iter->getEbeam();
+
+      hddm_r::Origin &origin = iter->getVertex().getOrigin();
+      double torig = origin.getT();
+      double zorig = origin.getVz();
+
       mcreaction->beam.setPosition(locPosition);
       mcreaction->beam.setMomentum(DVector3(0.0, 0.0, Ebeam));
       mcreaction->beam.setMass(0.0);
@@ -278,8 +283,9 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
       mcreaction->beam.clearErrorMatrix();
       mcreaction->beam.setT0(0.0, 0.0, SYS_NULL);
       mcreaction->beam.setT1(0.0, 0.0, SYS_NULL);
-      mcreaction->beam.setTime(0.0);
+      mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       mcreaction->beam.setPID(Gamma);
+
       mcreaction->target.setPosition(locPosition);
       mcreaction->target.setMomentum(DVector3(0.0, 0.0, 0.0));
       Particle_t ttype = iter->getTargetType();
@@ -289,7 +295,7 @@ jerror_t DEventSourceREST::Extract_DMCReaction(hddm_r::HDDM *record,
       mcreaction->target.clearErrorMatrix();
       mcreaction->target.setT0(0.0, 0.0, SYS_NULL);
       mcreaction->target.setT1(0.0, 0.0, SYS_NULL);
-      mcreaction->target.setTime(0.0);
+      mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
    }
    
    // Copy into factories
@@ -326,13 +332,12 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
 	if(locRFTimes.empty())
 	{
 		//See if MC data. If so, generate the DRFTime object here (not in input file)
-		// https://halldweb1.jlab.org/wiki/index.php/How_HDGeant_defines_time-zero_for_physics_events
-		vector<const DMCThrown*> locMCThrowns;
-		locEventLoop->Get(locMCThrowns);
-		if(!locMCThrowns.empty())
+		vector<const DBeamPhoton*> locMCGENPhotons;
+		locEventLoop->Get(locMCGENPhotons, "MCGEN");
+		if(!locMCGENPhotons.empty())
 		{
 		   DRFTime *locRFTime = new DRFTime;
-			locRFTime->dTime = 0.0;
+			locRFTime->dTime = locMCGENPhotons[0]->time();
 			locRFTime->dTimeVariance = 0.0;
 			locRFTimes.push_back(locRFTime);
 		}

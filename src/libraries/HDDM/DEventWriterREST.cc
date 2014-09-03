@@ -54,43 +54,40 @@ bool DEventWriterREST::Write_RESTEvent(JEventLoop* locEventLoop,
       rea().setEbeam(reactions[i]->beam.energy());
       rea().setTargetType(reactions[i]->target.PID());
 
-      // Right now the DMCThrown object does not tell which of the listed
-      // reactions gave rise to it, so associate them all to the first one.
-      if (i == 0)
+      if(i != 0)
+			break;
+
+      std::vector<const DMCThrown*> throwns;
+      locEventLoop->Get(throwns);
+      hddm_r::VertexList ver = rea().getVertices();
+		DLorentzVector locPreviousX4(-9.9E9, -9.9E9, -9.9E9, -9.9E9);
+      for (size_t it=0; it < throwns.size(); ++it)
       {
-         std::vector<const DMCThrown*> throwns;
-         locEventLoop->Get(throwns);
-         double vx,vy,vz,vt;
-         vx = vy = vz = vt = -9999;
-         hddm_r::VertexList ver = rea().getVertices();
-         for (size_t it=0; it < throwns.size(); ++it)
+         DLorentzVector locThrownX4(throwns[it]->position(), throwns[it]->time());
+         if((locThrownX4.T() != locPreviousX4.T()) || (locThrownX4.Vect() != locPreviousX4.Vect()))
          {
-            DVector3 orig(throwns[it]->x(),throwns[it]->y(),throwns[it]->z());
-            if (vx != throwns[it]->x() || 
-                vy != throwns[it]->y() ||
-                vz != throwns[it]->z() ||
-                vt != throwns[it]->time() )
-            {
-               ver = rea().addVertices(1);
-               hddm_r::OriginList ori = ver().addOrigins(1);
-               ori().setT(vt=throwns[it]->time());
-               ori().setVx(vx=throwns[it]->x());
-               ori().setVy(vy=throwns[it]->y());
-               ori().setVz(vz=throwns[it]->z());
-            }
-            hddm_r::ProductList pro = ver().addProducts(1);
-            pro().setId(throwns[it]->myid);
-            pro().setParentId(throwns[it]->parentid);
-            int pdgtype = throwns[it]->pdgtype;
-            if (pdgtype == 0)
-               pdgtype = PDGtype((Particle_t)throwns[it]->type);
-            pro().setPdgtype(pdgtype);
-            hddm_r::MomentumList mom = pro().addMomenta(1);
-            mom().setE(throwns[it]->energy());
-            mom().setPx(throwns[it]->px());
-            mom().setPy(throwns[it]->py());
-            mom().setPz(throwns[it]->pz());
+            //new vertex
+            ver = rea().addVertices(1);
+            hddm_r::OriginList ori = ver().addOrigins(1);
+            ori().setT(locThrownX4.T());
+            ori().setVx(locThrownX4.X());
+            ori().setVy(locThrownX4.Y());
+            ori().setVz(locThrownX4.Z());
+            locPreviousX4 = locThrownX4;
          }
+
+         hddm_r::ProductList pro = ver().addProducts(1);
+         pro().setId(throwns[it]->myid);
+         pro().setParentId(throwns[it]->parentid);
+         int pdgtype = throwns[it]->pdgtype;
+         if (pdgtype == 0)
+            pdgtype = PDGtype((Particle_t)throwns[it]->type);
+         pro().setPdgtype(pdgtype);
+         hddm_r::MomentumList mom = pro().addMomenta(1);
+         mom().setE(throwns[it]->energy());
+         mom().setPx(throwns[it]->px());
+         mom().setPy(throwns[it]->py());
+         mom().setPz(throwns[it]->pz());
       }
    }
 

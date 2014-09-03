@@ -398,17 +398,16 @@ jerror_t DEventSourceHDDM::Extract_DRFTime(hddm_s::HDDM *record,
 
    if(locRFTimes.empty())
    {
-      //See if MC data. If so, generate the DRFTime object here (not in input file)
-      // https://halldweb1.jlab.org/wiki/index.php/How_HDGeant_defines_time-zero_for_physics_events
-      vector<const DMCThrown*> locMCThrowns;
-      locEventLoop->Get(locMCThrowns);
-      if(!locMCThrowns.empty())
-      {
-         DRFTime *locRFTime = new DRFTime;
-         locRFTime->dTime = 0.0;
-         locRFTime->dTimeVariance = 0.0;
-         locRFTimes.push_back(locRFTime);
-      }
+		//See if MC data. If so, generate the DRFTime object here (not in input file)
+		vector<const DBeamPhoton*> locMCGENPhotons;
+		locEventLoop->Get(locMCGENPhotons, "MCGEN");
+		if(!locMCGENPhotons.empty())
+		{
+		   DRFTime *locRFTime = new DRFTime;
+			locRFTime->dTime = locMCGENPhotons[0]->time();
+			locRFTime->dTimeVariance = 0.0;
+			locRFTimes.push_back(locRFTime);
+		}
    }
 
    // Copy into factories
@@ -977,7 +976,7 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
          mcreaction->target.setPID(IDTrack(mcreaction->beam.charge(),
                                            mcreaction->beam.mass()));
          mcreaction->beam.clearErrorMatrix();
-         mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/30.0);
+         mcreaction->beam.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       }
       else {
          // fake values for DMCReaction
@@ -1005,7 +1004,7 @@ jerror_t DEventSourceHDDM::Extract_DMCReaction(hddm_s::HDDM *record,
          mcreaction->target.setPID(IDTrack(mcreaction->target.charge(),
                                            mcreaction->target.mass()));
          mcreaction->target.clearErrorMatrix();
-         mcreaction->target.setTime(0.0);
+         mcreaction->target.setTime(torig - (zorig - locTargetCenterZ)/29.9792458);
       }
       else {
          // fake values for DMCReaction
