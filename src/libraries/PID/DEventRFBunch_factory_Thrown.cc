@@ -34,14 +34,19 @@ jerror_t DEventRFBunch_factory_Thrown::evnt(jana::JEventLoop *locEventLoop, int 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 	if(locMCThrowns.empty())
+		return NOERROR; //not a MC event!
+
+	vector<const DRFTime*> locRFTimes;
+	locEventLoop->Get(locRFTimes, "TRUTH");
+	if(locRFTimes.empty())
 		return NOERROR;
 
-	//t = 0 at target center: https://halldweb1.jlab.org/wiki/index.php/How_HDGeant_defines_time-zero_for_physics_events
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
-	locEventRFBunch->dTime = 0.0;
+	locEventRFBunch->dTime = locRFTimes[0]->dTime;
 	locEventRFBunch->dTimeVariance = 0.0;
 	locEventRFBunch->dMatchedToTracksFlag = true;
 	_data.push_back(locEventRFBunch);
+
 	return NOERROR;
 }
 

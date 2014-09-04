@@ -32,6 +32,7 @@ jerror_t PID_init(JEventLoop *loop)
 	/// Create and register PID data factories
 	loop->AddFactory(new JFactory<DMCReaction>());
 	loop->AddFactory(new JFactory<DRFTime>());
+	loop->AddFactory(new JFactory<DRFTime>("TRUTH"));
 	loop->AddFactory(new JFactory<DBeamPhoton>("MCGEN"));
 	loop->AddFactory(new DBeamPhoton_factory);
 	loop->AddFactory(new DBeamPhoton_factory_TRUTH);

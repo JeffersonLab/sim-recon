@@ -320,28 +320,58 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
    const hddm_r::RFtimeList &rftimes = record->getRFtimes();
    hddm_r::RFtimeList::iterator iter;
    for (iter = rftimes.begin(); iter != rftimes.end(); ++iter)
-	{
+   {
       if (iter->getJtag() != tag)
          continue;
       DRFTime *locRFTime = new DRFTime;
-		locRFTime->dTime = iter->getTsync();
-		locRFTime->dTimeVariance = 0.0015; //1.5ps
-		locRFTimes.push_back(locRFTime);
+      locRFTime->dTime = iter->getTsync();
+      locRFTime->dTimeVariance = 0.0015; //1.5ps
+      locRFTimes.push_back(locRFTime);
+   }
+
+	if(!locRFTimes.empty())
+	{
+		//found in the file, copy into factory and return
+		factory->CopyTo(locRFTimes);
+		return NOERROR;
 	}
 
-	if(locRFTimes.empty())
-	{
-		//See if MC data. If so, generate the DRFTime object here (not in input file)
-		vector<const DBeamPhoton*> locMCGENPhotons;
-		locEventLoop->Get(locMCGENPhotons, "MCGEN");
-		if(!locMCGENPhotons.empty())
-		{
-		   DRFTime *locRFTime = new DRFTime;
-			locRFTime->dTime = locMCGENPhotons[0]->time();
-			locRFTime->dTimeVariance = 0.0;
-			locRFTimes.push_back(locRFTime);
-		}
-	}
+	//Not found in the file, so either:
+		//Experimental data & it's missing: bail
+		//MC data: generate it
+
+	vector<const DBeamPhoton*> locMCGENPhotons;
+	locEventLoop->Get(locMCGENPhotons, "MCGEN");
+	if(locMCGENPhotons.empty())
+      return OBJECT_NOT_AVAILABLE; //Experimental data & it's missing: bail
+
+	//Is MC data. Either:
+		//No tag: return t = 0.0, but true t is 0.0 +/- n*2.004: must select the correct beam bunch
+		//TRUTH tag: get exact t from DBeamPhoton tag MCGEN
+
+	if(tag == "TRUTH")
+   {
+	   DRFTime *locRFTime = new DRFTime;
+		locRFTime->dTime = locMCGENPhotons[0]->time();
+		locRFTime->dTimeVariance = 0.0;
+		locRFTimes.push_back(locRFTime);
+   }
+	else
+   {
+		//start with true RF time, increment/decrement by multiples of 2.004 ns until closest to 0
+		double locTime = locMCGENPhotons[0]->time();
+		int locNumRFBuckets = int(locTime/2.004);
+		locTime -= double(locNumRFBuckets)*2.004;
+		while(locTime > 1.002)
+			locTime -= 2.004;
+		while(locTime < -1.002)
+			locTime += 2.004;
+
+	   DRFTime *locRFTime = new DRFTime;
+		locRFTime->dTime = locTime;
+		locRFTime->dTimeVariance = 0.0;
+		locRFTimes.push_back(locRFTime);
+   }
 
    // Copy into factories
    factory->CopyTo(locRFTimes);

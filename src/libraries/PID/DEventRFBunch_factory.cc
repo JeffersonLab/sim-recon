@@ -50,34 +50,26 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	// https://halldweb1.jlab.org/wiki/index.php/How_HDGeant_defines_time-zero_for_physics_events
 
 /*
-	//COMMENTED UNTIL DRFTime CREATED
+	//COMMENTED UNTIL READY
 	vector<const DRFTime*> locRFTimes;
 	locEventLoop->Get(locRFTimes);
 	if(locRFTimes.empty())
 		return RESOURCE_NOT_AVAILABLE;
+
 	double locRFHitTime = locRFTimes[0]->dTime; //get from raw hit when ready
 	double locTimeVariance = locRFTimes[0]->dTimeVariance;
 */
 
-	//cheat & disable RF bunch selection until timing/etc. issues fixed
+	//cheat & disable RF bunch selection until ready
 	vector<const DBeamPhoton*> locGenBeamPhotons;
 	locEventLoop->Get(locGenBeamPhotons, "MCGEN");
 
-	if(!locGenBeamPhotons.empty())
-	{
-		DEventRFBunch *locEventRFBunch = new DEventRFBunch;
-		locEventRFBunch->dTime = locGenBeamPhotons[0]->time();
-		locEventRFBunch->dTimeVariance = 0.0;
-		locEventRFBunch->dMatchedToTracksFlag = true;
-		_data.push_back(locEventRFBunch);
-		return NOERROR;
-	}
-
 	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
-	locEventRFBunch->dTime = 0.0;
+	locEventRFBunch->dTime = locGenBeamPhotons[0]->time();
 	locEventRFBunch->dTimeVariance = 0.0;
 	locEventRFBunch->dMatchedToTracksFlag = true;
 	_data.push_back(locEventRFBunch);
+
 	return NOERROR;
 
 	double locRFHitTime = 0.0;
