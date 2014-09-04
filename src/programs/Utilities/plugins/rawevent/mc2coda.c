@@ -516,24 +516,28 @@ mc2codaResetEvent(CODA_EVENT_INFO *eventID, uint64_t eventNum, uint64_t trigTime
 	
 	/* Populate the Event header and trigger Bank */
 	if(trigTime) {
-		eventID->evbuf[0]  =         10;
+		eventID->evbuf[0]  =         12;
 		eventID->evbuf[1]  = 0xff511001;
-		eventID->evbuf[2]  =          8;
-		eventID->evbuf[3]  = 0xff212000 | ((exp->ncrates)&0xff);
-		eventID->evbuf[4]  = 0x010a0004;
+		eventID->evbuf[2]  =         10;
+		eventID->evbuf[3]  = 0xff232000 | ((exp->ncrates)&0xff);  /* changed from ff21 to include run number 9/04/2013 DL */
+		eventID->evbuf[4]  = 0x010a0006;
 		memcpy((char *)&eventID->evbuf[5],(char *)&eventNum,8);
 		memcpy((char *)&eventID->evbuf[7],(char *)&trigTime,8);
-		eventID->evbuf[9]  = 0x01050001;
-		eventID->evbuf[10] = (eventType);
+		eventID->evbuf[ 9] = 0x01;        /* run type */
+		eventID->evbuf[10] = RUN_NUMBER;  /* This goes into high 32 bits which seems backwards ?? */
+		eventID->evbuf[11]  = 0x01050001; /* segment of shorts header with 1 value */
+		eventID->evbuf[12] = (eventType);
 	}else{
-		eventID->evbuf[0]  =          8;
+		eventID->evbuf[0]  =         10;
 		eventID->evbuf[1]  = 0xff501001;
-		eventID->evbuf[2]  =          6;
-		eventID->evbuf[3]  = 0xff202000 | ((exp->ncrates)&0xff);
+		eventID->evbuf[2]  =          8;
+		eventID->evbuf[3]  = 0xff222000 | ((exp->ncrates)&0xff);  /* changed from ff20 to include run number 9/04/2013 DL */
 		eventID->evbuf[4]  = 0x010a0004;
 		memcpy((char *)&eventID->evbuf[5],(char *)&eventNum,8);
-		eventID->evbuf[7]  = 0x01050001;
-		eventID->evbuf[8] = (eventType);
+		eventID->evbuf[7]  = 0x01;       /* run type */
+		eventID->evbuf[8]  = RUN_NUMBER; /* This goes into high 32 bits which seems backwards ?? */
+		eventID->evbuf[9]  = 0x01050001; /* segment of shorts header with 1 value */
+		eventID->evbuf[10] = (eventType);
 	}
 	
 	
