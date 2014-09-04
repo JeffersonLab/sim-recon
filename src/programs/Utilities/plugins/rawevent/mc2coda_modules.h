@@ -337,7 +337,8 @@ f1tdc32_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
             jj++;
             if (jj >= F1TDC32_MAX_HITS) {
                printf("f1tdc32_write_data: ERROR: Too many hits for channel\n");
-               return 0;
+               jj--;
+					break;
             }
          }
       }
@@ -476,7 +477,8 @@ f1tdc48_write_data (CODA_EVENT_INFO *event, int roc, int slot, int mode)
             jj++;
             if (jj >= F1TDC48_MAX_HITS) {
                printf("f1tdc48_write_data: ERROR: Too many hits for channel\n");
-               return 0;
+               jj--;
+					break;
             }
          }
       }
