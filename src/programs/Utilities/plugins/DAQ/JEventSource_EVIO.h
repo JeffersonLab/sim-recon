@@ -254,7 +254,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		bool IsF250ADC(const uint32_t *istart, const uint32_t *iend);
 		bool IsF1TDC(const uint32_t *istart, const uint32_t *iend);
 		void DumpModuleMap(void){}
-		void DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords);
+		void DumpBinary(const uint32_t *iptr, const uint32_t *iend=NULL, uint32_t MaxWords=0, const uint32_t *imark=NULL);
 
 		
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);

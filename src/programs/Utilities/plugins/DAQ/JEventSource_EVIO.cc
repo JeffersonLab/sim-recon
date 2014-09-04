@@ -616,7 +616,8 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	// read from an EVIO file, the full_events list may actually be empty at
 	// this point. For these cases, we need to add an empty event for the 
 	// current thread to "process".
-	if(full_events.empty()) full_events.push_back(new ObjList());
+	bool empty_event = full_events.empty();
+	if(empty_event) full_events.push_back(new ObjList());
 	
 	// Whether we actually parsed the events or not, we mark them as being
 	// parsed since it is really just used as a flag to tell whether this
@@ -627,7 +628,7 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	// Copy the first event's objects obtained from parsing into this event's ObjList
 	ObjList *objs = full_events.front();
 	full_events.pop_front();
-	objs_ptr->run_number      = objs->run_number;
+	objs_ptr->run_number      = empty_event ? objs_ptr->run_number:objs->run_number;
 	objs_ptr->own_objects     = objs->own_objects;
 	objs_ptr->hit_objs        = objs->hit_objs;
 	objs_ptr->eviobuff_parsed = objs->eviobuff_parsed;
@@ -2668,6 +2669,10 @@ void JEventSource_EVIO::ParseF1TDCBank(int32_t rocid, const uint32_t* &iptr, con
 		// Event header
 		// Double check that event header is set
 		if( ((*iptr) & 0xF8000000) != 0x90000000 ){
+			if(VERBOSE>10){
+				_DBG_<<"Corrupt F1TDC Event header! Data dump follows (\"*\" indicates bad header word):" <<endl;
+				DumpBinary(istart, iend, 0, iptr);
+			}
 			throw JException("F1TDC Event header corrupt! (high 5 bits not set to 0x90000000!)");
 		}
 
@@ -2985,7 +2990,7 @@ void JEventSource_EVIO::ParseCAEN1190(int32_t rocid, const uint32_t* &iptr, cons
 //----------------
 // DumpBinary
 //----------------
-void JEventSource_EVIO::DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords)
+void JEventSource_EVIO::DumpBinary(const uint32_t *iptr, const uint32_t *iend, uint32_t MaxWords, const uint32_t *imark)
 {
 	/// This is used for debugging. It will print to the screen the words
 	/// starting at the address given by iptr and ending just before iend
@@ -3020,8 +3025,10 @@ void JEventSource_EVIO::DumpBinary(const uint32_t *iptr, const uint32_t *iend, u
 			stringstream iptr_hex;
 			iptr_hex << hex << "0x" << *iptr;
 
-			line1 << setw(12) << iptr_hex.str();
-			line2 << setw(12) << *iptr;
+			string mark = (iptr==imark ? "*":" ");
+
+			line1 << setw(12) << iptr_hex.str() << mark;
+			line2 << setw(12) << *iptr << mark;
 		}
 		
 		cout << line1.str() << endl;
