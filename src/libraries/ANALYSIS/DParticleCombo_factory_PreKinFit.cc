@@ -244,7 +244,6 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			locParticleComboStep->Set_SpacetimeVertex(DLorentzVector(0.0, 0.0, dTargetCenterZ, 0.0));
 
 			locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
-			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleComboStep;
 		}
 
 		if(!locBadComboFlag)
@@ -258,6 +257,12 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(loc_j)));
 			delete locParticleCombo;
 			continue;
+		}
+
+		for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
+		{
+			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
+			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleCombo->Get_ParticleComboStep(loc_j);
 		}
 
 		Calc_CommonSpacetimeVertices(locParticleCombo);
