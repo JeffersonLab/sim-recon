@@ -51,7 +51,7 @@
  *	decision was made to store this information in the reaction tag.
  */
 
-#define TARGET_LENGTH 30
+#define TARGET_LENGTH 0.2
 #define BEAM_DIAMETER 0.5
 #define TARGET_CENTER 65
 
