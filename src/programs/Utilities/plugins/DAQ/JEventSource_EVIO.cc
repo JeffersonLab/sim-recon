@@ -573,7 +573,15 @@ jerror_t JEventSource_EVIO::ParseEvents(ObjList *objs_ptr)
 	
 		// Make a evioDOMTree for this DAQ event		
 		evioDOMTree *evt = NULL;
-		if(MAKE_DOM_TREE) evt = new evioDOMTree(iptr);
+		if(MAKE_DOM_TREE){
+			try{
+				evt = new evioDOMTree(iptr);
+			}catch(...){
+				_DBG_ << "Problem creating EVIO DOM Tree!!" << endl;
+				_DBG_ << "Binary dump of first 160 words follows:" << endl;
+				DumpBinary(iptr, iend, 160);
+			}
+		}
 
 		if(evt){
 			// Parse event, making other ObjList objects
