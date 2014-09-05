@@ -254,7 +254,13 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		if(locBadComboFlag) //e.g. bad PID FOM
 		{
 			for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
-				dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(loc_j)));
+			{
+				const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_j);
+				const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
+				map<const DParticleComboBlueprintStep*, const DParticleComboStep*>::iterator locIterator = dComboBlueprintStepMap.find(locParticleComboBlueprintStep);
+				if(locIterator == dComboBlueprintStepMap.end()) //don't recycle if step was grabbed from map!!
+					dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleComboStep));
+			}
 			delete locParticleCombo;
 			continue;
 		}
@@ -264,6 +270,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
 			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleCombo->Get_ParticleComboStep(loc_j);
 		}
+
 
 		Calc_CommonSpacetimeVertices(locParticleCombo);
 		_data.push_back(locParticleCombo);
