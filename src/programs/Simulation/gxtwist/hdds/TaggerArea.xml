@@ -66,7 +66,7 @@
 
       <posXYZ volume="HallWalls" X_Y_Z="0.0 45.0 0.0" />
 
-      <mposZ volume="ASEG" X_Y="-509.0 45.0" Z0="640.0" dZ="67.0" ncopy="16"/>
+      <mposZ volume="ASEG" X_Y="-509.0 -30.0" Z0="640.0" dZ="67.0" ncopy="16"/>
 
       <posXYZ volume="goniometer" X_Y_Z="-10.0 0.0 0.0" rot="90 0 0" />
       <posXYZ volume="target_pipe" X_Y_Z="0.0 0.0 47.9"/>
@@ -106,11 +106,11 @@
         <posXYZ volume="HNWL" X_Y_Z=" 345.0  0.0  1170.0" /> 
         <posXYZ volume="HSWL" X_Y_Z="-575.0  0.0   684.0" />
  
-        <posXYZ volume="HEWL" X_Y_Z="  99.0  0.0   2615.0" />
-        <posXYZ volume="HWWL" X_Y_Z="-115.0  0.0   -275.0" />
+        <posXYZ volume="HEWL" X_Y_Z="  99.0  0.0  2615.0" />
+        <posXYZ volume="HWWL" X_Y_Z="-115.0  0.0  -275.0" />
 
-        <posXYZ volume="HFLR" X_Y_Z=" -250. -330.  1500." />  
-        <posXYZ volume="HROF" X_Y_Z=" -250.  420.  1500." />  
+        <posXYZ volume="HFLR" X_Y_Z=" -250. -375.  1500." />  
+        <posXYZ volume="HROF" X_Y_Z=" -250. +375.  1500." />  
 
         <posXYZ volume="HDSW" X_Y_Z=" -776.  0.0  2533." rot="0 76.6 0"/>  
         <posXYZ volume="HDEW" X_Y_Z=" -681.  0.0  3494." rot="0 -13.4 0"/>  
@@ -146,7 +146,7 @@
        material="Concrete" inclination="6.7  0" unit_angle="deg"/>
 
 
-  <box name="ASEG" X_Y_Z="33.0  450.00  66.0" material="Iron"
+  <box name="ASEG" X_Y_Z="33.0  300.00  66.0" material="Iron"
                                  comment="SEG blocks in the AREA"/>
 
 <!-- ====== Goniometer ====== -->
@@ -158,7 +158,7 @@
   </composition>
 
   <composition name="goniometer_chamber" envelope="GOBX">
-    <posXYZ volume="XTAL" X_Y_Z="10.0 0.0 10e-4" rot="90 0 0"/>
+    <!--posXYZ volume="XTAL" X_Y_Z="10.0 0.0 10e-4" rot="90 0 0"/-->
     <posXYZ volume="XFRA" X_Y_Z="10.0 0.0 10e-4" rot="90 0 0"/> 
   </composition>
 
