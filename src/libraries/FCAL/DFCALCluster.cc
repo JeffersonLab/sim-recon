@@ -22,7 +22,7 @@ DFCALCluster::DFCALCluster( const int nhits )
    fRMS_v = 0;
    fNhits = 0;
    m_nFcalHits = nhits;
-//cout << " Creating Cluster with " << nhits << " hits " << endl;
+//std::cout << " Creating Cluster with " << nhits << " hits " << std::endl;
    if ( nhits > 0) {
       fHit = new int[ nhits ];
       fHitf = new double[ nhits ];
@@ -39,10 +39,14 @@ DFCALCluster::DFCALCluster( const int nhits )
 
 DFCALCluster::~DFCALCluster()
 {
-   if (fHit) delete [] fHit;
-   if (fHitf) delete [] fHitf;
-   if (fEallowed) delete [] fEallowed;
-   if (fEexpected) delete [] fEexpected;
+   if (fHit)
+      delete [] fHit;
+   if (fHitf)
+      delete [] fHitf;
+   if (fEallowed)
+      delete [] fEallowed;
+   if (fEexpected)
+      delete [] fEexpected;
 }
 
 
@@ -51,8 +55,8 @@ void DFCALCluster::saveHits( const userhits_t* const hits )
    
    for ( int i=0; i < fNhits; i++) {
       DFCALClusterHit_t h;
-      int id = getHitID( hits, i ) ;
-      if ( id >= 0 ) {  
+      JObject::oid_t id = getHitID( hits, i ) ;
+      if ( id != 0 ) {  
          h.id = (JObject::oid_t) id;
          h.E = getHitE( hits, i ) ;
          h.x = getHitX( hits, i ) ;
@@ -61,9 +65,13 @@ void DFCALCluster::saveHits( const userhits_t* const hits )
          my_hits.push_back(h);
       }
       else {
-			static uint32_t Nwarns=0;
-         if(++Nwarns<100)cout << "Warning: DFCALCluster : corrupted cluster hit " << i << endl;
-			if(Nwarns==100)cout << "Last warning!!! (further warnings supressed)" << endl;
+         static uint32_t Nwarns=0;
+         if (++Nwarns < 100)
+            std::cout << "Warning: DFCALCluster : corrupted cluster hit "
+                      << i << std::endl;
+         if (Nwarns == 100)
+            std::cout << "Last warning!!! (further warnings supressed)"
+                      << std::endl;
       }
    }
 }
@@ -76,7 +84,7 @@ int DFCALCluster::addHit(const int ihit, const double frac)
       fHit[fNhits] = ihit;
       fHitf[fNhits] = frac;
       ++fNhits;
-//cout << " addHit: " << ihit << " with fraction " << frac << " Total hits: " << fNhits << endl;
+//std::cout << " addHit: " << ihit << " with fraction " << frac << " Total hits: " << fNhits << std::endl;
       return 0;
    }
    else {
@@ -93,7 +101,7 @@ void DFCALCluster::resetClusterHits()
 
 bool DFCALCluster::update( const userhits_t* const hitList)
 {
-//   cout << " Updating cluster with " << fNhits << " hits " << endl;
+//   std::cout << " Updating cluster with " << fNhits << " hits " << std::endl;
    double energy = 0;
    for ( int h = 0; h < fNhits; h++ ) {
       int ih = fHit[h];
@@ -182,7 +190,7 @@ bool DFCALCluster::update( const userhits_t* const hitList)
       double x = hitList->hit[ih].x;
       double y = hitList->hit[ih].y;
 /*      RMS += fHitlist->hit[ih].E*frac
-             *(SQR(x-centroid.x) + SQR(y-centroid.y));*/
+             *(SQR(x-centroid.x) + SQR(y-centroid.y)); */
       MOM1x += hitList->hit[ih].E*frac*x;
       MOM1y += hitList->hit[ih].E*frac*y;
       MOM2x += hitList->hit[ih].E*frac*SQR(x);
@@ -204,7 +212,7 @@ bool DFCALCluster::update( const userhits_t* const hitList)
    fRMS_u = sqrt(energy*MOM2u - SQR(MOM1u))/(energy);
    fRMS_v = sqrt(energy*MOM2v - SQR(MOM1v))/(energy);
 
-   //cout << " Energy " << energy << " fEnergy " << fEnergy << endl;
+   //std::cout << " Energy " << energy << " fEnergy " << fEnergy << std::endl;
    bool something_changed = false;
    if (fabs(energy-fEnergy) > 0.001) {
       fEnergy = energy;
@@ -232,17 +240,19 @@ bool DFCALCluster::update( const userhits_t* const hitList)
 #define MAX_SHOWER_RADIUS 25
 
 void DFCALCluster::shower_profile( const userhits_t* const hitList, 
-                                const int ihit,
-                                double& Eallowed, double& Eexpected) const
+                                   const int ihit,
+                                   double& Eallowed, double& Eexpected) const
 {
 
-   //cout << " Run profile for hit " << ihit; 
+   //std::cout << " Run profile for hit " << ihit; 
    Eallowed = Eexpected = 0;
-   if (fEnergy == 0) return;
+   if (fEnergy == 0)
+      return;
    double x = hitList->hit[ihit].x;
    double y = hitList->hit[ihit].y;
    double dist = sqrt(SQR(x - fCentroid.x()) + SQR(y - fCentroid.y()));
-   if (dist > MAX_SHOWER_RADIUS) return;
+   if (dist > MAX_SHOWER_RADIUS)
+      return;
    double theta = atan2((double)sqrt(SQR(fCentroid.x()) + SQR(fCentroid.y())), ((DFCALGeometry*)NULL)->fcalMidplane() - 65.0);
    double phi = atan2( fCentroid.y(), fCentroid.x() );
    double u0 = sqrt(SQR(fCentroid.x())+SQR(fCentroid.y()));
@@ -258,11 +268,9 @@ void DFCALCluster::shower_profile( const userhits_t* const hitList,
    Eexpected = fEnergy*core;
    Eallowed = 2*fEmax*core + (0.2+0.5*log(fEmax+1.))*tail;
 
-   //cout << " with expected " << Eexpected << " and allowed " << Eallowed << endl;
+   //std::cout << " with expected " << Eexpected << " and allowed " << Eallowed << std::endl;
    if ((dist <= 4.) && (Eallowed < fEmax) ) {
       std::cerr << "Warning: FCAL cluster Eallowed value out of range!\n";
       Eallowed = fEmax;
    }
 }
-
-
