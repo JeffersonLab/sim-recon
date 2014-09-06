@@ -7,6 +7,8 @@
 
 // See comments in JEventSource_EVIO.h for overview description
 
+#include <unistd.h>
+
 #include <string>
 #include <cmath>
 #include <iomanip>
@@ -694,10 +696,8 @@ jerror_t JEventSource_EVIO::ReadEVIOEvent(uint32_t* &buff)
 	try{
 		if(source_type==kFileSource){
 			if(VERBOSE>3) evioout << "  attempting read from EVIO file source ..." << endl;
-			if(!chan->read(buff, BUFFER_SIZE)){
-_DBG__;
-				return NO_MORE_EVENTS_IN_SOURCE;
-			}
+			if(!chan->read(buff, BUFFER_SIZE)) return NO_MORE_EVENTS_IN_SOURCE;
+
 		}else if(source_type==kETSource){
 
 #ifdef HAVE_ET
@@ -723,6 +723,8 @@ _DBG__;
 				if( err==ET_ERROR_TIMEOUT ){
 					if(quit_on_next_ET_timeout)return NO_MORE_EVENTS_IN_SOURCE;
 				}
+				
+				usleep(10);
 			}
 			
 			if(japp->GetQuittingStatus() && pe==NULL) return NO_MORE_EVENTS_IN_SOURCE;
@@ -1200,7 +1202,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 		// calculate integral from relevant samples
 		uint32_t start_sample = first_sample_over_threshold - F250_NSB;
 		uint32_t end_sample = first_sample_over_threshold + F250_NSA - 1;
-		if (start_sample < 0) start_sample=0;
+		if (F250_NSB < first_sample_over_threshold) start_sample=0;
 		if (end_sample > nsamples) end_sample=nsamples;
 		for (uint32_t c_samp=start_sample; c_samp<end_sample; c_samp++) {
 		  signalsum += samplesvector[c_samp];
