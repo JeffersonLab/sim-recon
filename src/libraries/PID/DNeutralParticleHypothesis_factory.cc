@@ -61,11 +61,12 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 
 	vector<const DEventRFBunch*> locEventRFBunches;
 	locEventLoop->Get(locEventRFBunches);
-	const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
+        if (locEventRFBunches.size() > 0) {
+	    const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
 
-	// Loop over DNeutralShowers
-	for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++)
-	{
+	    // Loop over DNeutralShowers
+	    for (unsigned int loc_i = 0; loc_i < locNeutralShowers.size(); loc_i++)
+	    {
 		const DNeutralShower *locNeutralShower = locNeutralShowers[loc_i];
 		// Loop over vertices and PID hypotheses & create DNeutralParticleHypotheses for each combination
 		for (unsigned int loc_k = 0; loc_k < locPIDHypotheses.size(); loc_k++)
@@ -74,6 +75,7 @@ jerror_t DNeutralParticleHypothesis_factory::evnt(jana::JEventLoop *locEventLoop
 			if(locNeutralParticleHypothesis != NULL)
 				_data.push_back(locNeutralParticleHypothesis);	
 		}
+	    }
 	}
 
 	return NOERROR;

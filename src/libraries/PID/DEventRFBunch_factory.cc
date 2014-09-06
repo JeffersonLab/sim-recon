@@ -64,11 +64,13 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	vector<const DBeamPhoton*> locGenBeamPhotons;
 	locEventLoop->Get(locGenBeamPhotons, "MCGEN");
 
-	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
-	locEventRFBunch->dTime = locGenBeamPhotons[0]->time();
-	locEventRFBunch->dTimeVariance = 0.0;
-	locEventRFBunch->dMatchedToTracksFlag = true;
-	_data.push_back(locEventRFBunch);
+	if (locGenBeamPhotons.size() > 0) {
+	   DEventRFBunch *locEventRFBunch = new DEventRFBunch;
+	   locEventRFBunch->dTime = locGenBeamPhotons[0]->time();
+	   locEventRFBunch->dTimeVariance = 0.0;
+	   locEventRFBunch->dMatchedToTracksFlag = true;
+	   _data.push_back(locEventRFBunch);
+	}
 
 	return NOERROR;
 
@@ -131,7 +133,7 @@ jerror_t DEventRFBunch_factory::evnt(jana::JEventLoop *locEventLoop, int eventnu
 	else
 		locMatchedToTracksFlag = false; //no confidence in selecting the RF bunch for the event
 
-	locEventRFBunch = new DEventRFBunch;
+	DEventRFBunch *locEventRFBunch = new DEventRFBunch;
 	locEventRFBunch->dTime = (locMatchedToTracksFlag) ? locRFHitTime + dRFBunchFrequency*double(locBestRFBunchShift) : locRFHitTime;
 	locEventRFBunch->dTimeVariance = locTimeVariance;
 	locEventRFBunch->dMatchedToTracksFlag = locMatchedToTracksFlag;

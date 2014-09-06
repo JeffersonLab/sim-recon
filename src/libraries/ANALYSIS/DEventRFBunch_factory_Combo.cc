@@ -50,10 +50,12 @@ jerror_t DEventRFBunch_factory_Combo::evnt(jana::JEventLoop *locEventLoop, int e
 	locEventLoop->Get(locEventRFBunches);
 
 //the below disables this routine until everything is working
-DEventRFBunch* locEventRFBunch = new DEventRFBunch(*locEventRFBunches[0]);
-for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
+if (locEventRFBunches.size() > 0) {
+   DEventRFBunch* locEventRFBunch = new DEventRFBunch(*locEventRFBunches[0]);
+   for(size_t loc_i = 0; loc_i < locParticleComboBlueprints.size(); ++loc_i)
 	locEventRFBunch->AddAssociatedObject(locParticleComboBlueprints[loc_i]);
-_data.push_back(locEventRFBunch);
+   _data.push_back(locEventRFBunch);
+}
 return NOERROR;
 
 	//note that this routine ignores any detached vertices: without kinematic fitting, probably bogus anyway, and probably won't affect the end result regardless
