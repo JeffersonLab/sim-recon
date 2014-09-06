@@ -78,7 +78,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	for (vector<const DFCALHit*>::const_iterator hit  = fcalhits.begin(); 
                                                      hit != fcalhits.end(); hit++ ) {
            if ( (**hit).E <  1e-6 ) continue;
-           hits->hit[nhits].id = (**hit).id;
+           hits->hit[nhits].id = (**hit).id + 1;
            hits->hit[nhits].x = (**hit).x;
            hits->hit[nhits].y = (**hit).y;
            hits->hit[nhits].E = (**hit).E; // adjust a hit energy either in the hit or photon factory
