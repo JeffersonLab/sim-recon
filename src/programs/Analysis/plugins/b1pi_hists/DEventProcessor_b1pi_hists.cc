@@ -41,12 +41,6 @@ jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumbe
 	locEventWriterROOT->Create_DataTrees(locEventLoop);
 	locEventWriterROOT->Create_ThrownTree("tree_b1pi_thrownmc.root");
 
-	//Initialize Actions
-	dHistogramAction_TrackMultiplicity.Initialize(locEventLoop);
-	dHistogramAction_ThrownParticleKinematics.Initialize(locEventLoop);
-	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
-	dHistogramAction_GenReconTrackComparison.Initialize(locEventLoop);
-
 	return NOERROR;
 }
 
@@ -55,12 +49,6 @@ jerror_t DEventProcessor_b1pi_hists::brun(JEventLoop *locEventLoop, int runnumbe
 //------------------
 jerror_t DEventProcessor_b1pi_hists::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
-	//Fill reaction-independent histograms.
-	dHistogramAction_TrackMultiplicity(locEventLoop);
-	dHistogramAction_ThrownParticleKinematics(locEventLoop);
-	dHistogramAction_DetectedParticleKinematics(locEventLoop);
-	dHistogramAction_GenReconTrackComparison(locEventLoop);
-
 	//Triggers the analysis (is also automatically called by DEventWriterROOT::Fill_Trees())
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);

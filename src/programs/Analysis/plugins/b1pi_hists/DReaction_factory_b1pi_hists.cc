@@ -64,7 +64,9 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 
 /**************************************************** b1pi Actions ****************************************************/
 
+	//Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, false));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, false));
 
 	//PID
 	locReaction->Add_AnalysisAction(new DHistogramAction_PID(locReaction));
@@ -73,7 +75,10 @@ jerror_t DReaction_factory_b1pi_hists::init(void)
 	//Kinematic Fit Results and Confidence Level Cut
 	locReaction->Add_AnalysisAction(new DHistogramAction_KinFitResults(locReaction, 0.05)); //5% confidence level cut on pull histograms only
 	locReaction->Add_AnalysisAction(new DCutAction_KinFitFOM(locReaction, 0.01)); //1%
+
+	//Post-Fit Kinematics
 	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboGenReconComparison(locReaction, true, "PostKinFit"));
+	locReaction->Add_AnalysisAction(new DHistogramAction_ParticleComboKinematics(locReaction, true, "PostKinFit"));
 
 	//Constrained Mass Distributions
 	locReaction->Add_AnalysisAction(new DHistogramAction_MissingMass(locReaction, false, 650, 0.3, 1.6, "PostKinFit")); //false: measured data

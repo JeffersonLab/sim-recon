@@ -369,7 +369,7 @@ jerror_t DEventSourceREST::Extract_DRFTime(hddm_r::HDDM *record,
 
 	   DRFTime *locRFTime = new DRFTime;
 		locRFTime->dTime = locTime;
-		locRFTime->dTimeVariance = 0.0;
+		locRFTime->dTimeVariance = 10000.0;
 		locRFTimes.push_back(locRFTime);
    }
 
