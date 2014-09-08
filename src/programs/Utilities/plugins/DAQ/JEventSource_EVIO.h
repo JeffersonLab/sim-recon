@@ -39,6 +39,7 @@ using namespace evio;
 #endif // HAVE_ET
 
 #include "DModuleType.h"
+#include "Df250Config.h"
 #include "Df250PulseIntegral.h"
 #include "Df250StreamingRawData.h"
 #include "Df250WindowSum.h"
@@ -47,14 +48,17 @@ using namespace evio;
 #include "Df250PulseTime.h"
 #include "Df250PulsePedestal.h"
 #include "Df250WindowRawData.h"
+#include "Df125Config.h"
 #include "Df125TriggerTime.h"
 #include "Df125PulseIntegral.h"
 #include "Df125PulseTime.h"
 #include "Df125PulsePedestal.h"
 #include "Df125PulseRawData.h"
 #include "Df125WindowRawData.h"
+#include "DF1TDCConfig.h"
 #include "DF1TDCHit.h"
 #include "DF1TDCTriggerTime.h"
+#include "DCAEN1290TDCConfig.h"
 #include "DCAEN1290TDCHit.h"
 
 //-----------------------------------------------------------------------
@@ -136,6 +140,30 @@ class JEventSource_EVIO: public jana::JEventSource{
 			kETSource
 		};
 
+		enum daq_param_type{
+
+			kPARAM250_NSA             = 0x0501,
+			kPARAM250_NSB             = 0x0502,
+			kPARAM250_NSA_NSB         = 0x0503,  // NSA+NSB
+			kPARAM250_NPED            = 0x0504,
+
+			kPARAM125_NSA             = 0x0F01,
+			kPARAM125_NSB             = 0x0F02,
+			kPARAM125_NSA_NSB         = 0x0F03,  // NSA+NSB
+			kPARAM125_NPED            = 0x0F04,
+			kPARAM125_WINWIDTH        = 0x0F05,
+
+			kPARAMF1_REFCNT           = 0x0601,
+			kPARAMF1_TRIGWIN          = 0x0602,
+			kPARAMF1_TRIGLAT          = 0x0603,
+			kPARAMF1_HSDIV            = 0x0604,
+			
+			kPARAMCAEN1290_WINWIDTH   = 0x1001,
+			kPARAMCAEN1290_WINOFFSET  = 0x1002,
+
+			kPARAM_NONE               = 0x0000
+		};
+
 		                    JEventSource_EVIO(const char* source_name);
 		           virtual ~JEventSource_EVIO();
 		virtual const char* className(void){return static_className();}
@@ -215,6 +243,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 			bool own_objects; // keeps track of whether these objects were copied to factories or not
 			
 			vector<DDAQAddress*> hit_objs;
+			vector<DDAQConfig*>  config_objs;
 
 			bool eviobuff_parsed;     // flag used to keep track of whether this buffer has been parsed
 			uint32_t *eviobuff;       // Only holds original EVIO event buffer
@@ -260,6 +289,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		void MergeObjLists(list<ObjList*> &events1, list<ObjList*> &events2);
 
 		void ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_events);
+		void ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void ParseJLabModuleData(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef250Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
 		void Parsef125Bank(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events);
@@ -487,6 +517,30 @@ void LinkAssociationsModuleOnly(vector<T*> &a, vector<U*> &b)
 		for(unsigned int k=0; k<b.size(); k++){
 			if(a[j]->rocid != b[k]->rocid) continue;
 			if(a[j]->slot != b[k]->slot) continue;
+
+			b[k]->AddAssociatedObject(a[j]);
+		}
+	}
+}
+
+//----------------------------
+// LinkAssociationsROCIDOnly
+//----------------------------
+template<class T, class U>
+void LinkAssociationsROCIDOnly(vector<T*> &a, vector<U*> &b)
+{
+	/// Template routine to loop over two vectors of pointers to
+	/// objects derived from DDAQAddress. This will find any hits
+	/// coming from the same DAQ module (channel number is not checked)
+	/// When a match is found, the pointer from "a" will be added
+	/// to "b"'s AssociatedObjects list. This will NOT do the inverse
+	/// of adding "b" to "a"'s list. It is intended for adding a module
+	/// level trigger time object to all hits from that module. Adding
+	/// all of the hits to the trigger time object seems like it would
+	/// be a little expensive with no real use case.
+	for(unsigned int j=0; j<a.size(); j++){
+		for(unsigned int k=0; k<b.size(); k++){
+			if(a[j]->rocid != b[k]->rocid) continue;
 
 			b[k]->AddAssociatedObject(a[j]);
 		}

@@ -1913,6 +1913,10 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 				ParseCAEN1190(rocid, iptr, iend, tmp_events);
 				break;
 
+			case 0x55:
+				ParseModuleConfiguration(rocid, iptr, iend, tmp_events);
+				break;
+
 			case 5:
 				// Beni's original CDC ROL used for the stand-alone CDC DAQ
 				// had the following for the TS readout list (used in the TI):
@@ -1956,6 +1960,103 @@ void JEventSource_EVIO::ParseEVIOEvent(evioDOMTree *evt, list<ObjList*> &full_ev
 	}
 
 	if(VERBOSE>5) evioout << "    Leaving ParseEVIOEvent()" << endl;
+}
+
+//----------------
+// ParseModuleConfiguration
+//----------------
+void JEventSource_EVIO::ParseModuleConfiguration(int32_t rocid, const uint32_t* &iptr, const uint32_t *iend, list<ObjList*> &events)
+{
+	if(VERBOSE>5) evioout << "     Entering ParseModuleConfiguration()" << endl;
+	
+	/// Parse a back of module configuration data. These are configuration values
+	/// programmed into the module at the beginning of the run that may be needed
+	/// in the offline. For example, the number of samples to sum in a FADC pulse
+	/// integral.
+	///
+	/// The bank has one or more sections, each describing parameters applicable 
+	/// to a number of modules as indicated by a 24bit slot mask.
+	///
+	/// This bank should appear only once per DAQ event which, if in multi-event
+	/// block mode, may have multiple L1 events. The parameters here will apply
+	/// to all L1 events in the block. This method will put the config objects
+	/// in the first event of "events", creating it if needed. The config objects
+	/// are duplicated for all other events in the block later, after all event
+	/// parsing is finished and the total number of events is known.
+		
+	while(iptr < iend){
+		uint32_t slot_mask = (*iptr) & 0xFFFFFF;
+		uint32_t Nvals = ((*iptr) >> 24) & 0xFF;
+		iptr++;
+		
+		Df250Config *f250config = NULL;
+		Df125Config *f125config = NULL;
+		DF1TDCConfig *f1tdcconfig = NULL;
+		DCAEN1290TDCConfig *caen1290tdcconfig = NULL;
+		
+		// Loop over all parameters in this section
+		for(uint32_t i=0; i< Nvals; i++){
+			if( iptr >= iend){
+				_DBG_ << "DAQ Configuration bank corrupt! slot_mask=0x" << hex << slot_mask << dec << " Nvals="<< Nvals << endl;
+				exit(-1);
+			}
+			
+			daq_param_type ptype = (daq_param_type)((*iptr)>>16);
+			uint16_t val = (*iptr) & 0xFFFF;
+			
+			// Create config object of correct type if needed. (Only one type
+			// should be created per section!)
+			switch(ptype>>16){
+				case 0x05: if(!f250config       ) f250config        = new Df250Config(rocid, slot_mask);        break;
+				case 0x0F: if(!f125config       ) f125config        = new Df125Config(rocid, slot_mask);        break;
+				case 0x06: if(!f1tdcconfig      ) f1tdcconfig       = new DF1TDCConfig(rocid, slot_mask);       break;
+				case 0x10: if(!caen1290tdcconfig) caen1290tdcconfig = new DCAEN1290TDCConfig(rocid, slot_mask); break;
+				default:
+					_DBG_ << "Unknown module type: 0x" << hex << (ptype>>16) << endl;
+					exit(-1);
+			}
+
+			// Copy parameter into config. object
+			switch(ptype){
+				case kPARAM250_NSA            : f250config->NSA              = val; break;
+				case kPARAM250_NSB            : f250config->NSB              = val; break;
+				case kPARAM250_NSA_NSB        : f250config->NSA_NSB          = val; break;
+				case kPARAM250_NPED           : f250config->NPED             = val; break;
+
+				case kPARAM125_NSA            : f125config->NSA              = val; break;
+				case kPARAM125_NSB            : f125config->NSB              = val; break;
+				case kPARAM125_NSA_NSB        : f125config->NSA_NSB          = val; break;
+				case kPARAM125_NPED           : f125config->NPED             = val; break;
+				case kPARAM125_WINWIDTH       : f125config->WINWIDTH         = val; break;
+
+				case kPARAMF1_REFCNT          : f1tdcconfig->REFCNT          = val; break;
+				case kPARAMF1_TRIGWIN         : f1tdcconfig->TRIGWIN         = val; break;
+				case kPARAMF1_TRIGLAT         : f1tdcconfig->TRIGLAT         = val; break;
+				case kPARAMF1_HSDIV           : f1tdcconfig->HSDIV           = val; break;
+
+				case kPARAMCAEN1290_WINWIDTH  : caen1290tdcconfig->WINWIDTH  = val; break;
+				case kPARAMCAEN1290_WINOFFSET : caen1290tdcconfig->WINOFFSET = val; break;
+				
+				default:
+					_DBG_ << "UNKNOWN DAQ Config Parameter type: 0x" << hex << ptype << dec << endl;
+			}
+			
+			iptr++;
+		}
+		
+		// If we get here it means we didn't exit in the switch(ptype>>16) statement above
+		// so there is at least one DDAQConfig object we need to store. Get pointer to
+		// first event's ObjList, creating it if needed.
+		if(events.empty()) events.push_back(new ObjList());
+		ObjList *objs = *(events.begin());
+		
+		if(f250config       ) objs->config_objs.push_back(f250config       );
+		if(f125config       ) objs->config_objs.push_back(f125config       );
+		if(f1tdcconfig      ) objs->config_objs.push_back(f1tdcconfig      );
+		if(caen1290tdcconfig) objs->config_objs.push_back(caen1290tdcconfig);
+	}
+
+	if(VERBOSE>5) evioout << "     Leaving ParseModuleConfiguration()" << endl;	
 }
 
 //----------------
