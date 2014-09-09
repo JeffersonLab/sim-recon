@@ -35,13 +35,24 @@ jerror_t DEventProcessor_monitoring_hists::init(void)
 //------------------
 jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int runnumber)
 {
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
 	//Initialize Actions
 	dHistogramAction_TrackMultiplicity.Initialize(locEventLoop);
-	dHistogramAction_ThrownParticleKinematics.Initialize(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics.Initialize(locEventLoop);
-	dHistogramAction_GenReconTrackComparison.Initialize(locEventLoop);
 	dHistogramAction_NumReconstructedObjects.Initialize(locEventLoop);
-	dHistogramAction_ReconnedThrownKinematics.Initialize(locEventLoop);
+	dHistogramAction_DetectorStudies_MeasuredPID = new DHistogramAction_DetectorStudies(NULL, false, "Measured_PID");
+	dHistogramAction_DetectorStudies_MeasuredPID->Initialize(locEventLoop);
+
+	if(!locMCThrowns.empty())
+	{
+		dHistogramAction_ThrownParticleKinematics.Initialize(locEventLoop);
+		dHistogramAction_GenReconTrackComparison.Initialize(locEventLoop);
+		dHistogramAction_ReconnedThrownKinematics.Initialize(locEventLoop);
+		dHistogramAction_DetectorStudies_ThrownPID = new DHistogramAction_DetectorStudies(NULL, true, "Thrown_PID");
+		dHistogramAction_DetectorStudies_ThrownPID->Initialize(locEventLoop);
+	}
 
 	return NOERROR;
 }
@@ -54,13 +65,22 @@ jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int ev
 	vector<const DAnalysisResults*> locAnalysisResultsVector;
 	locEventLoop->Get(locAnalysisResultsVector);
 
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
 	//Fill reaction-independent histograms.
 	dHistogramAction_TrackMultiplicity(locEventLoop);
-	dHistogramAction_ThrownParticleKinematics(locEventLoop);
 	dHistogramAction_DetectedParticleKinematics(locEventLoop);
-	dHistogramAction_GenReconTrackComparison(locEventLoop);
 	dHistogramAction_NumReconstructedObjects(locEventLoop);
-	dHistogramAction_ReconnedThrownKinematics(locEventLoop);
+	(*dHistogramAction_DetectorStudies_MeasuredPID)(locEventLoop);
+
+	if(!locMCThrowns.empty())
+	{
+		dHistogramAction_ThrownParticleKinematics(locEventLoop);
+		dHistogramAction_GenReconTrackComparison(locEventLoop);
+		dHistogramAction_ReconnedThrownKinematics(locEventLoop);
+		(*dHistogramAction_DetectorStudies_ThrownPID)(locEventLoop);
+	}
 
 	return NOERROR;
 }

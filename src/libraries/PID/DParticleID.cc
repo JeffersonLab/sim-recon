@@ -625,7 +625,11 @@ bool DParticleID::MatchToSC(const DTrackTimeBased* locTrackTimeBased, const DRef
 
 	// Look for a match in phi
 	double phi = dSCphi0 + dSCdphi*(locSCHit->sector - 1);
-	double dphi = phi - proj_phi;
+	double dphi = phi - proj_phi; //phi could be 0 degrees & proj_phi could be 359 degrees
+	while(dphi > TMath::Pi())
+		dphi -= M_TWO_PI;
+	while(dphi < -1.0*TMath::Pi())
+		dphi += M_TWO_PI;
 	if(fabs(dphi) >= 0.21)
 		return false; //no match
 

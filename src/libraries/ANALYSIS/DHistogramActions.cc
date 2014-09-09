@@ -485,6 +485,759 @@ void DHistogramAction_PID::Fill_NeutralHists(const DNeutralParticleHypothesis* l
 	japp->RootUnLock();
 }
 
+void DHistogramAction_DetectorStudies::Initialize(JEventLoop* locEventLoop)
+{
+	//Optional: Create histograms and/or modify member variables.
+	//Create any histograms/trees/etc. within a ROOT lock. 
+		//This is so that when running multithreaded, only one thread is writing to the ROOT file at a time. 
+
+	//When creating a reaction-independent action, only modify member variables within a ROOT lock. 
+		//Objects created within a plugin (such as reaction-independent actions) can be accessed by many threads simultaneously. 
+
+	string locHistName, locHistTitle;
+
+	DApplication* locApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
+	DGeometry* locGeometry = locApplication->GetDGeometry(locEventLoop->GetJEvent().GetRunNumber());
+
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		// Optional: Useful utility functions.
+		// locEventLoop->GetSingle(dAnalysisUtilities);
+
+		double locTargetZCenter = 0.0;
+		locGeometry->GetTargetZ(locTargetZCenter);
+		dTargetCenter.SetXYZ(0.0, 0.0, locTargetZCenter);
+
+		//Required: Create a folder in the ROOT output file that will contain all of the output ROOT objects (if any) for this action.
+			//If another thread has already created the folder, it just changes to it. 
+		CreateAndChangeTo_ActionDirectory();
+
+		CreateAndChangeTo_Directory("Reconstruction", "Reconstruction");
+		{
+			//TAGGER
+			locHistName = "TAGHHitTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TAGHHitTime = new TH1D(locHistName.c_str(), ";TAGH Hit Time (ns)", dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_TAGHHitTime = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "TAGHHitTimeVsCounter";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TAGHHitTimeVsCounter = new TH2D(locHistName.c_str(), ";TAGH Hit Counter;TAGH Hit Time (ns)", 274, 0.5, 274.5, dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_TAGHHitTimeVsCounter = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "TAGMHitTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TAGMHitTime = new TH1D(locHistName.c_str(), ";TAGM Hit Time (ns)", dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_TAGMHitTime = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "TAGMHitTimeVsCounter";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TAGMHitTimeVsCounter = new TH2D(locHistName.c_str(), ";TAGM Hit Counter;TAGM Hit Time (ns)", 102, 0.5, 102.5, dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_TAGMHitTimeVsCounter = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			//FCAL
+			locHistName = "FCALShowerTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALShowerTime = new TH1D(locHistName.c_str(), ";FCAL Shower Time (ns)", dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_FCALShowerTime = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "FCALShowerEnergy";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALShowerEnergy = new TH1D(locHistName.c_str(), ";FCAL Shower Energy (GeV)", dNumShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy);
+			else //already created by another thread
+				dHist_FCALShowerEnergy = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "FCALShowerEnergyVsTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALShowerEnergyVsTime = new TH2D(locHistName.c_str(), ";FCAL Shower Time (ns);FCAL Shower Energy (GeV)", dNum2DTimeBins, dMinTime, dMaxTime, dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy);
+			else //already created by another thread
+				dHist_FCALShowerEnergyVsTime = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "FCALShowerYVsX";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALShowerYVsX = new TH2D(locHistName.c_str(), ";FCAL Shower X (cm);FCAL Shower Y (cm)", dNumFCALTOFXYBins, -120.0, 120.0, dNumFCALTOFXYBins, -120.0, 120.0);
+			else //already created by another thread
+				dHist_FCALShowerYVsX = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			//BCAL
+			locHistName = "BCALShowerPhi";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALShowerPhi = new TH1D(locHistName.c_str(), ";BCAL Shower #phi#circ", dNumPhiBins, dMinPhi, dMaxPhi);
+			else //already created by another thread
+				dHist_BCALShowerPhi = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALShowerPhiVsZ";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALShowerPhiVsZ = new TH2D(locHistName.c_str(), ";BCAL Shower Z (cm);BCAL Shower #phi#circ", dNum2DBCALZBins, 0.0, 450.0, dNum2DPhiBins, dMinPhi, dMaxPhi);
+			else //already created by another thread
+				dHist_BCALShowerPhiVsZ = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALShowerTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALShowerTime = new TH1D(locHistName.c_str(), ";BCAL Shower Time (ns)", dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_BCALShowerTime = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALShowerEnergy";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALShowerEnergy = new TH1D(locHistName.c_str(), ";BCAL Shower Energy (GeV)", dNumShowerEnergyBins, dMinShowerEnergy, dMaxBCALP);
+			else //already created by another thread
+				dHist_BCALShowerEnergy = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALShowerEnergyVsTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALShowerEnergyVsTime = new TH2D(locHistName.c_str(), ";BCAL Shower Time (ns);BCAL Shower Energy (GeV)", dNum2DTimeBins, dMinTime, dMaxTime, dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxBCALP);
+			else //already created by another thread
+				dHist_BCALShowerEnergyVsTime = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			//TOF
+			locHistName = "TOFPointTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TOFPointTime = new TH1D(locHistName.c_str(), ";TOF Point Time (ns)", dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_TOFPointTime = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "TOFPointEnergy";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TOFPointEnergy = new TH1D(locHistName.c_str(), ";TOF Point Energy (MeV)", dNumHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
+			else //already created by another thread
+				dHist_TOFPointEnergy = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "TOFPointYVsX";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TOFPointYVsX = new TH2D(locHistName.c_str(), ";TOF Point X (cm);TOF Point Y (cm)", dNumFCALTOFXYBins, -120.0, 120.0, dNumFCALTOFXYBins, -120.0, 120.0);
+			else //already created by another thread
+				dHist_TOFPointYVsX = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			//SC
+			locHistName = "SCHitTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_SCHitTime = new TH1D(locHistName.c_str(), ";SC Hit Time (ns)", dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_SCHitTime = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "SCHitSector";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_SCHitSector = new TH1D(locHistName.c_str(), ";SC Hit Sector", 24, 0.5, 24.5);
+			else //already created by another thread
+				dHist_SCHitSector = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "SCHitTimeVsSector";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_SCHitTimeVsSector = new TH2D(locHistName.c_str(), ";SC Hit Sector;SC Hit Time (ns)", 24, 0.5, 24.5, dNum2DTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_SCHitTimeVsSector = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "SCHitEnergy";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_SCHitEnergy = new TH1D(locHistName.c_str(), ";SC Hit Energy (MeV)", dNumHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
+			else //already created by another thread
+				dHist_SCHitEnergy = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "SCHitEnergyVsSector";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_SCHitEnergyVsSector = new TH2D(locHistName.c_str(), ";SC Hit Sector;SC Hit Energy (MeV)", 24, 0.5, 24.5, dNum2DHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
+			else //already created by another thread
+				dHist_SCHitEnergyVsSector = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			//TRACKING
+			locHistName = "NumDCHitsPerTrack";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_NumDCHitsPerTrack = new TH1D(locHistName.c_str(), ";# Track Hits", 50, 0.5, 50.5);
+			else //already created by another thread
+				dHist_NumDCHitsPerTrack = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "NumDCHitsPerTrackVsTheta";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_NumDCHitsPerTrackVsTheta = new TH2D(locHistName.c_str(), ";#theta#circ;# Track Hits", dNum2DThetaBins, dMinTheta, dMaxTheta, 50, 0.5, 50.5);
+			else //already created by another thread
+				dHist_NumDCHitsPerTrackVsTheta = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+		}
+		gDirectory->cd("..");
+
+		//Showers not matched to tracks, Tracks not matched to hits
+		CreateAndChangeTo_Directory("Not-Matched", "Not-Matched");
+		{
+			//BCAL
+			locHistName = "BCALTrackDOCA";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALTrackDOCA = new TH1D(locHistName.c_str(), ";BCAL Shower Distance to Nearest Track (cm)", dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackDOCA);
+			else //already created by another thread
+				dHist_BCALTrackDOCA = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALNeutralShowerTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALNeutralShowerTime = new TH1D(locHistName.c_str(), ";BCAL Neutral Shower Time (ns)", dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_BCALNeutralShowerTime = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALNeutralShowerEnergy";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALNeutralShowerEnergy = new TH1D(locHistName.c_str(), ";BCAL Neutral Shower Energy (GeV)", dNumShowerEnergyBins, dMinShowerEnergy, dMaxBCALP);
+			else //already created by another thread
+				dHist_BCALNeutralShowerEnergy = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALNeutralShowerDeltaT";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALNeutralShowerDeltaT = new TH1D(locHistName.c_str(), ";BCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+			else //already created by another thread
+				dHist_BCALNeutralShowerDeltaT = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALNeutralShowerDeltaTVsE";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALNeutralShowerDeltaTVsE = new TH2D(locHistName.c_str(), ";BCAL Neutral Shower Energy (GeV);BCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxBCALP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+			else //already created by another thread
+				dHist_BCALNeutralShowerDeltaTVsE = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "BCALNeutralShowerDeltaTVsZ";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_BCALNeutralShowerDeltaTVsZ = new TH2D(locHistName.c_str(), ";BCAL Neutral Shower Z (cm);BCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNum2DBCALZBins, 0.0, 450.0, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+			else //already created by another thread
+				dHist_BCALNeutralShowerDeltaTVsZ = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			//FCAL
+			locHistName = "FCALTrackDOCA";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALTrackDOCA = new TH1D(locHistName.c_str(), ";FCAL Shower Distance to Nearest Track (cm)", dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackDOCA);
+			else //already created by another thread
+				dHist_FCALTrackDOCA = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "FCALNeutralShowerTime";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALNeutralShowerTime = new TH1D(locHistName.c_str(), ";FCAL Neutral Shower Time (ns)", dNumTimeBins, dMinTime, dMaxTime);
+			else //already created by another thread
+				dHist_FCALNeutralShowerTime = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "FCALNeutralShowerEnergy";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALNeutralShowerEnergy = new TH1D(locHistName.c_str(), ";FCAL Neutral Shower Energy (GeV)", dNumShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy);
+			else //already created by another thread
+				dHist_FCALNeutralShowerEnergy = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "FCALNeutralShowerDeltaT";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALNeutralShowerDeltaT = new TH1D(locHistName.c_str(), ";FCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+			else //already created by another thread
+				dHist_FCALNeutralShowerDeltaT = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+			locHistName = "FCALNeutralShowerDeltaTVsE";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_FCALNeutralShowerDeltaTVsE = new TH2D(locHistName.c_str(), ";FCAL Neutral Shower Energy (GeV);FCAL Neutral Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)", dNum2DShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+			else //already created by another thread
+				dHist_FCALNeutralShowerDeltaTVsE = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+			//TRACKING
+			locHistName = "TrackPVsTheta_NoHitMatch";
+			if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+				dHist_TrackPVsTheta_NoHitMatch = new TH2D(locHistName.c_str(), ";#theta#circ;p (GeV/c)", dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPBins, dMinP, dMaxP);
+			else //already created by another thread
+				dHist_TrackPVsTheta_NoHitMatch = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+		}
+		gDirectory->cd("..");
+
+		//Track Matched to Hit
+		CreateAndChangeTo_Directory("Matched", "Matched");
+		{
+			for(size_t loc_i = 0; loc_i < dTrackingPIDs.size(); ++loc_i)
+			{
+				Particle_t locPID = dTrackingPIDs[loc_i];
+				string locParticleName = ParticleType(locPID);
+				string locParticleROOTName = ParticleName_ROOT(locPID);
+				CreateAndChangeTo_Directory(locParticleName, locParticleName);
+
+				//BCAL
+				locHistName = "BCALTrackDOCA";
+				locHistTitle = locParticleROOTName + ";BCAL Shower Distance to Track (cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_BCALTrackDOCA[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				else //already created by another thread
+					dHistMap_BCALTrackDOCA[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "BCALShowerEnergy";
+				locHistTitle = locParticleROOTName + ";BCAL Shower Energy (GeV)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_BCALShowerEnergy[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumShowerEnergyBins, dMinShowerEnergy, dMaxBCALP);
+				else //already created by another thread
+					dHistMap_BCALShowerEnergy[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "BCALShowerTrackDepth";
+				locHistTitle = locParticleROOTName + ";BCAL Shower Track Depth (cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_BCALShowerTrackDepth[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumShowerDepthBins, dMinShowerDepth, dMaxShowerDepth);
+				else //already created by another thread
+					dHistMap_BCALShowerTrackDepth[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "BCALShowerTrackDepthVsP";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);BCAL Shower Track Depth (cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_BCALShowerTrackDepthVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxBCALP, dNumShowerDepthBins, dMinShowerDepth, dMaxShowerDepth);
+				else //already created by another thread
+					dHistMap_BCALShowerTrackDepthVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "BCALShowerDeltaT";
+				locHistTitle = locParticleROOTName + ";BCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_BCALShowerDeltaT[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_BCALShowerDeltaT[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "BCALShowerDeltaTVsZ";
+				locHistTitle = locParticleROOTName + ";BCAL Shower Z (cm);BCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_BCALShowerDeltaTVsZ[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DBCALZBins, 0.0, 450.0, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_BCALShowerDeltaTVsZ[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "BCALShowerDeltaTVsP";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);BCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_BCALShowerDeltaTVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxBCALP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_BCALShowerDeltaTVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+
+				//FCAL
+				locHistName = "FCALTrackDOCA";
+				locHistTitle = locParticleROOTName + ";FCAL Shower Distance to Track (cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_FCALTrackDOCA[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				else //already created by another thread
+					dHistMap_FCALTrackDOCA[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "FCALShowerEnergy";
+				locHistTitle = locParticleROOTName + ";FCAL Shower Energy (GeV)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_FCALShowerEnergy[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumShowerEnergyBins, dMinShowerEnergy, dMaxShowerEnergy);
+				else //already created by another thread
+					dHistMap_FCALShowerEnergy[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "FCALShowerTrackDepth";
+				locHistTitle = locParticleROOTName + ";FCAL Shower Track Depth (cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_FCALShowerTrackDepth[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumShowerDepthBins, dMinShowerDepth, dMaxShowerDepth);
+				else //already created by another thread
+					dHistMap_FCALShowerTrackDepth[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "FCALShowerTrackDepthVsP";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);FCAL Shower Track Depth (cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_FCALShowerTrackDepthVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNumShowerDepthBins, dMinShowerDepth, dMaxShowerDepth);
+				else //already created by another thread
+					dHistMap_FCALShowerTrackDepthVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "FCALShowerDeltaT";
+				locHistTitle = locParticleROOTName + ";FCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_FCALShowerDeltaT[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_FCALShowerDeltaT[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "FCALShowerDeltaTVsP";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);FCAL Shower #Deltat (t_{Shower} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_FCALShowerDeltaTVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_FCALShowerDeltaTVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+
+				//TOF
+				locHistName = "TOFdEdX";
+				locHistTitle = locParticleROOTName + ";TOF dE/dX (MeV/cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_TOFdEdX[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumdEdxBins, dMindEdX, dMaxdEdX);
+				else //already created by another thread
+					dHistMap_TOFdEdX[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "TOFdEdXVsP";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);TOF dE/dX (MeV/cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_TOFdEdXVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+				else //already created by another thread
+					dHistMap_TOFdEdXVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "TOFTrackDOCA";
+				locHistTitle = locParticleROOTName + ";TOF Point Distance to Track (cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_TOFTrackDOCA[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumTrackDOCABins, dMinTrackDOCA, dMaxTrackMatchDOCA);
+				else //already created by another thread
+					dHistMap_TOFTrackDOCA[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "TOFDeltaT";
+				locHistTitle = locParticleROOTName + ";TOF Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_TOFDeltaT[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_TOFDeltaT[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "TOFDeltaTVsP";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);TOF Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_TOFDeltaTVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_TOFDeltaTVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				//SC
+				locHistName = "SCdEdX";
+				locHistTitle = locParticleROOTName + ";SC dE/dX (MeV/cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCdEdX[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumdEdxBins, dMindEdX, dMaxdEdX);
+				else //already created by another thread
+					dHistMap_SCdEdX[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCdEdXVsP";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);SC dE/dX (MeV/cm)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCdEdXVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DdEdxBins, dMindEdX, dMaxdEdX);
+				else //already created by another thread
+					dHistMap_SCdEdXVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCTrackDeltaPhi";
+				locHistTitle = locParticleROOTName + ";SC Point Track #Delta#phi#circ";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCTrackDeltaPhi[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaPhiBins, dMinDeltaPhi, dMaxDeltaPhi);
+				else //already created by another thread
+					dHistMap_SCTrackDeltaPhi[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCTime";
+				locHistTitle = locParticleROOTName + ";#theta#circ;SC Point Time (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCTime[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumTimeBins, dMinTime, dMaxTime);
+				else //already created by another thread
+					dHistMap_SCTime[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCTimeVsTheta";
+				locHistTitle = locParticleROOTName + ";#theta#circ;SC Point Time (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCTimeVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DTimeBins, dMinTime, dMaxTime);
+				else //already created by another thread
+					dHistMap_SCTimeVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCEnergyVsTheta";
+				locHistTitle = locParticleROOTName + ";#theta#circ;SC Point Energy (MeV)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCEnergyVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DHitEnergyBins, dMinHitEnergy, dMaxHitEnergy);
+				else //already created by another thread
+					dHistMap_SCEnergyVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCPhiVsTheta";
+				locHistTitle = locParticleROOTName + ";#theta#circ;#phi#circ";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCPhiVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DPhiBins, dMinPhi, dMaxPhi);
+				else //already created by another thread
+					dHistMap_SCPhiVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCDeltaT";
+				locHistTitle = locParticleROOTName + ";SC Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCDeltaT[locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), dNumDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_SCDeltaT[locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCDeltaTVsP";
+				locHistTitle = locParticleROOTName + ";p (GeV/c);SC Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCDeltaTVsP[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPBins, dMinP, dMaxP, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_SCDeltaTVsP[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCDeltaTVsPhi";
+				locHistTitle = locParticleROOTName + ";#phi#circ;SC Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCDeltaTVsPhi[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DPhiBins, dMinPhi, dMaxPhi, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_SCDeltaTVsPhi[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				locHistName = "SCDeltaTVsTheta";
+				locHistTitle = locParticleROOTName + ";#theta#circ;SC Point #Deltat (t_{Hit} - t_{Flight} - t_{RF}) (ns)";
+				if(gDirectory->Get(locHistName.c_str()) == NULL) //check to see if already created by another thread
+					dHistMap_SCDeltaTVsTheta[locPID] = new TH2D(locHistName.c_str(), locHistTitle.c_str(), dNum2DThetaBins, dMinTheta, dMaxTheta, dNum2DDeltaTBins, dMinDeltaT, dMaxDeltaT);
+				else //already created by another thread
+					dHistMap_SCDeltaTVsTheta[locPID] = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+
+				gDirectory->cd("..");
+			}
+		}
+		gDirectory->cd("..");
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+bool DHistogramAction_DetectorStudies::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	//Expect locParticleCombo to be NULL since this is a reaction-independent action.
+
+	//Optional: Quit the action if it has already been executed this event (else may result in double-counting when filling histograms)
+	if(Get_NumPreviousParticleCombos() != 0)
+		return true;
+
+	Fill_ReconstructionHists(locEventLoop);
+	Fill_NotMatchedHists(locEventLoop);
+	Fill_MatchedHists(locEventLoop);
+
+	return true; //return false if you want to use this action to apply a cut (and it fails the cut!)
+}
+
+void DHistogramAction_DetectorStudies::Fill_ReconstructionHists(JEventLoop* locEventLoop)
+{
+	vector<const DTAGHHit*> locTAGHHits;
+	locEventLoop->Get(locTAGHHits);
+
+	vector<const DTAGMHit*> locTAGMHits;
+	locEventLoop->Get(locTAGMHits);
+
+	vector<const DBCALShower*> locBCALShowers;
+	locEventLoop->Get(locBCALShowers);
+
+	vector<const DFCALShower*> locFCALShowers;
+	locEventLoop->Get(locFCALShowers);
+
+	vector<const DTOFPoint*> locTOFPoints;
+	locEventLoop->Get(locTOFPoints);
+
+	vector<const DSCHit*> locSCHits;
+	locEventLoop->Get(locSCHits);
+
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+	locEventLoop->Get(locTrackTimeBasedVector);
+
+	//Fill Histograms
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		for(size_t loc_i = 0; loc_i < locTAGHHits.size(); ++loc_i)
+		{
+			dHist_TAGHHitTime->Fill(locTAGHHits[loc_i]->t);
+			dHist_TAGHHitTimeVsCounter->Fill(locTAGHHits[loc_i]->counter_id, locTAGHHits[loc_i]->t);
+		}
+
+		for(size_t loc_i = 0; loc_i < locTAGMHits.size(); ++loc_i)
+		{
+			dHist_TAGMHitTime->Fill(locTAGMHits[loc_i]->t);
+			dHist_TAGMHitTimeVsCounter->Fill(locTAGMHits[loc_i]->column, locTAGMHits[loc_i]->t);
+		}
+
+		for(size_t loc_i = 0; loc_i < locFCALShowers.size(); ++loc_i)
+		{
+			dHist_FCALShowerTime->Fill(locFCALShowers[loc_i]->getTime());
+			dHist_FCALShowerEnergy->Fill(locFCALShowers[loc_i]->getEnergy());
+			dHist_FCALShowerEnergyVsTime->Fill(locFCALShowers[loc_i]->getTime(), locFCALShowers[loc_i]->getEnergy());
+			dHist_FCALShowerYVsX->Fill(locFCALShowers[loc_i]->getPosition().X(), locFCALShowers[loc_i]->getPosition().Y());
+		}
+
+		for(size_t loc_i = 0; loc_i < locBCALShowers.size(); ++loc_i)
+		{
+			dHist_BCALShowerTime->Fill(locBCALShowers[loc_i]->t);
+			dHist_BCALShowerEnergy->Fill(locBCALShowers[loc_i]->E);
+			dHist_BCALShowerEnergyVsTime->Fill(locBCALShowers[loc_i]->t, locBCALShowers[loc_i]->E);
+
+			DVector3 locBCALPosition(locBCALShowers[loc_i]->x, locBCALShowers[loc_i]->y, locBCALShowers[loc_i]->z);
+			double locBCALPhi = locBCALPosition.Phi()*180.0/TMath::Pi();
+			dHist_BCALShowerPhi->Fill(locBCALPhi);
+			dHist_BCALShowerPhiVsZ->Fill(locBCALPosition.Z(), locBCALPhi);
+		}
+
+		for(size_t loc_i = 0; loc_i < locTOFPoints.size(); ++loc_i)
+		{
+			dHist_TOFPointTime->Fill(locTOFPoints[loc_i]->t);
+			dHist_TOFPointEnergy->Fill(locTOFPoints[loc_i]->dE*1.0E3);
+			dHist_TOFPointYVsX->Fill(locTOFPoints[loc_i]->pos.X(), locTOFPoints[loc_i]->pos.Y());
+		}
+
+		for(size_t loc_i = 0; loc_i < locSCHits.size(); ++loc_i)
+		{
+			dHist_SCHitSector->Fill(locSCHits[loc_i]->sector);
+			dHist_SCHitTime->Fill(locSCHits[loc_i]->t);
+			dHist_SCHitTimeVsSector->Fill(locSCHits[loc_i]->sector, locSCHits[loc_i]->t);
+			dHist_SCHitEnergy->Fill(locSCHits[loc_i]->dE*1.0E3);
+			dHist_SCHitEnergyVsSector->Fill(locSCHits[loc_i]->sector, locSCHits[loc_i]->dE*1.0E3);
+		}
+
+		for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+		{
+			dHist_NumDCHitsPerTrack->Fill(locTrackTimeBasedVector[loc_i]->Ndof + 5);
+			dHist_NumDCHitsPerTrackVsTheta->Fill(locTrackTimeBasedVector[loc_i]->momentum().Theta()*180.0/TMath::Pi(), locTrackTimeBasedVector[loc_i]->Ndof + 5);
+		}
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+void DHistogramAction_DetectorStudies::Fill_NotMatchedHists(JEventLoop* locEventLoop)
+{
+	vector<const DNeutralShower*> locNeutralShowers;
+	locEventLoop->Get(locNeutralShowers);
+
+	vector<const DTrackTimeBased*> locTrackTimeBasedVector;
+	locEventLoop->Get(locTrackTimeBasedVector);
+
+	const DDetectorMatches* locDetectorMatches = NULL;
+	locEventLoop->GetSingle(locDetectorMatches);
+
+	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches);
+	double locStartTime = locEventRFBunches.empty() ? 0.0 : locEventRFBunches[0]->dTime;
+
+	//Fill Histograms
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
+		{
+			//assume is photon
+			double locPathLength = (locNeutralShowers[loc_i]->dSpacetimeVertex.Vect() - dTargetCenter).Mag();
+			double locDeltaT = locNeutralShowers[loc_i]->dSpacetimeVertex.T() - locPathLength/29.9792458 - locStartTime;
+
+			double locDistance = 9.9E9;
+			if(locNeutralShowers[loc_i]->dDetectorSystem == SYS_FCAL)
+			{
+				const DFCALShower* locFCALShower = NULL;
+				locNeutralShowers[loc_i]->GetSingle(locFCALShower);
+
+				if(locDetectorMatches->Get_DistanceToNearestTrack(locFCALShower, locDistance))
+					dHist_FCALTrackDOCA->Fill(locDistance);
+
+				dHist_FCALNeutralShowerTime->Fill(locNeutralShowers[loc_i]->dSpacetimeVertex.T());
+				dHist_FCALNeutralShowerEnergy->Fill(locNeutralShowers[loc_i]->dEnergy);
+
+				dHist_FCALNeutralShowerDeltaT->Fill(locDeltaT);
+				dHist_FCALNeutralShowerDeltaTVsE->Fill(locNeutralShowers[loc_i]->dEnergy, locDeltaT);
+			}
+			else
+			{
+				const DBCALShower* locBCALShower = NULL;
+				locNeutralShowers[loc_i]->GetSingle(locBCALShower);
+
+				if(locDetectorMatches->Get_DistanceToNearestTrack(locBCALShower, locDistance))
+					dHist_BCALTrackDOCA->Fill(locDistance);
+
+				dHist_BCALNeutralShowerTime->Fill(locNeutralShowers[loc_i]->dSpacetimeVertex.T());
+				dHist_BCALNeutralShowerEnergy->Fill(locNeutralShowers[loc_i]->dEnergy);
+
+				dHist_BCALNeutralShowerDeltaT->Fill(locDeltaT);
+				dHist_BCALNeutralShowerDeltaTVsE->Fill(locNeutralShowers[loc_i]->dEnergy, locDeltaT);
+				dHist_BCALNeutralShowerDeltaTVsZ->Fill(locNeutralShowers[loc_i]->dSpacetimeVertex.Z(), locDeltaT);
+			}
+		}
+
+		for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); ++loc_i)
+		{
+			if(!locDetectorMatches->Get_IsMatchedToHit(locTrackTimeBasedVector[loc_i]))
+				dHist_TrackPVsTheta_NoHitMatch->Fill(locTrackTimeBasedVector[loc_i]->momentum().Theta()*180.0/TMath::Pi(), locTrackTimeBasedVector[loc_i]->momentum().Mag());
+		}
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
+void DHistogramAction_DetectorStudies::Fill_MatchedHists(JEventLoop* locEventLoop)
+{
+	vector<const DChargedTrack*> locChargedTracks;
+	locEventLoop->Get(locChargedTracks);
+
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+
+	vector<const DEventRFBunch*> locEventRFBunches;
+	locEventLoop->Get(locEventRFBunches);
+	double locStartTime = locEventRFBunches.empty() ? 0.0 : locEventRFBunches[0]->dTime;
+
+	//Fill Histograms
+	japp->RootWriteLock(); //ACQUIRE ROOT LOCK!!
+	{
+		for(size_t loc_i = 0; loc_i < locChargedTracks.size(); ++loc_i)
+		{
+			const DChargedTrackHypothesis* locChargedTrackHypothesis = locChargedTracks[loc_i]->Get_BestFOM();
+
+			if(dUseTruePIDFlag && (!locMCThrownMatchingVector.empty()))
+			{
+				double locMatchFOM = 0.0;
+				const DMCThrown* locMCThrown = locMCThrownMatchingVector[0]->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM);
+				if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
+					continue;
+				//OK, have the thrown. Now, grab the best charged track hypothesis to get the best matching
+				locChargedTrackHypothesis = locMCThrownMatchingVector[0]->Get_MatchingChargedHypothesis(locMCThrown, locMatchFOM);
+			}
+
+			Particle_t locPID = locChargedTrackHypothesis->PID();
+			if(dHistMap_BCALTrackDOCA.find(locPID) == dHistMap_BCALTrackDOCA.end())
+				continue; //disregard PID
+
+			double locTrackingFOM = TMath::Prob(locChargedTrackHypothesis->dChiSq_Track, locChargedTrackHypothesis->dNDF_Track);
+			if(locTrackingFOM < dMinimumTrackingFOM)
+				continue; //likely junk track
+
+			DVector3 locMomentum = locChargedTrackHypothesis->momentum();
+
+			//BCAL
+			const DShowerMatchParams& locBCALShowerMatchParams = locChargedTrackHypothesis->dBCALShowerMatchParams;
+			if(locBCALShowerMatchParams.dTrackTimeBased != NULL)
+			{
+				const DBCALShower* locBCALShower = dynamic_cast<const DBCALShower*>(locBCALShowerMatchParams.dShowerObject);
+				dHistMap_BCALTrackDOCA[locPID]->Fill(locBCALShowerMatchParams.dDOCAToShower);
+				dHistMap_BCALShowerEnergy[locPID]->Fill(locBCALShower->E);
+				dHistMap_BCALShowerTrackDepth[locPID]->Fill(locBCALShowerMatchParams.dx);
+				dHistMap_BCALShowerTrackDepthVsP[locPID]->Fill(locMomentum.Mag(), locBCALShowerMatchParams.dx);
+
+				double locDeltaT = locBCALShower->t - locBCALShowerMatchParams.dFlightTime - locStartTime;
+				dHistMap_BCALShowerDeltaT[locPID]->Fill(locDeltaT);
+				dHistMap_BCALShowerDeltaTVsZ[locPID]->Fill(locBCALShower->z, locDeltaT);
+				dHistMap_BCALShowerDeltaTVsP[locPID]->Fill(locMomentum.Mag(), locDeltaT);
+			}
+
+			//FCAL
+			const DShowerMatchParams& locFCALShowerMatchParams = locChargedTrackHypothesis->dFCALShowerMatchParams;
+			if(locFCALShowerMatchParams.dTrackTimeBased != NULL)
+			{
+				const DFCALShower* locFCALShower = dynamic_cast<const DFCALShower*>(locFCALShowerMatchParams.dShowerObject);
+				dHistMap_FCALTrackDOCA[locPID]->Fill(locFCALShowerMatchParams.dDOCAToShower);
+				dHistMap_FCALShowerEnergy[locPID]->Fill(locFCALShower->getEnergy());
+				dHistMap_FCALShowerTrackDepth[locPID]->Fill(locFCALShowerMatchParams.dx);
+				dHistMap_FCALShowerTrackDepthVsP[locPID]->Fill(locMomentum.Mag(), locFCALShowerMatchParams.dx);
+
+				double locDeltaT = locFCALShower->getTime() - locFCALShowerMatchParams.dFlightTime - locStartTime;
+				dHistMap_FCALShowerDeltaT[locPID]->Fill(locDeltaT);
+				dHistMap_FCALShowerDeltaTVsP[locPID]->Fill(locMomentum.Mag(), locDeltaT);
+			}
+
+			//TOF
+			const DTOFHitMatchParams& locTOFHitMatchParams = locChargedTrackHypothesis->dTOFHitMatchParams;
+			if(locTOFHitMatchParams.dTrackTimeBased != NULL)
+			{
+				dHistMap_TOFdEdX[locPID]->Fill(locTOFHitMatchParams.dEdx*1.0E3);
+				dHistMap_TOFdEdXVsP[locPID]->Fill(locMomentum.Mag(), locTOFHitMatchParams.dEdx*1.0E3);
+				dHistMap_TOFTrackDOCA[locPID]->Fill(locTOFHitMatchParams.dDOCAToHit);
+
+				double locDeltaT = locTOFHitMatchParams.dTOFPoint->t - locTOFHitMatchParams.dFlightTime - locStartTime;
+				dHistMap_TOFDeltaT[locPID]->Fill(locDeltaT);
+				dHistMap_TOFDeltaTVsP[locPID]->Fill(locMomentum.Mag(), locDeltaT);
+			}
+
+			//SC
+			const DSCHitMatchParams& locSCHitMatchParams = locChargedTrackHypothesis->dSCHitMatchParams;
+			if(locSCHitMatchParams.dTrackTimeBased != NULL)
+			{
+				dHistMap_SCdEdX[locPID]->Fill(locSCHitMatchParams.dEdx*1.0E3);
+				dHistMap_SCdEdXVsP[locPID]->Fill(locMomentum.Mag(), locSCHitMatchParams.dEdx*1.0E3);
+				dHistMap_SCTrackDeltaPhi[locPID]->Fill(locSCHitMatchParams.dDeltaPhiToHit*180.0/TMath::Pi());
+
+				dHistMap_SCTime[locPID]->Fill(locSCHitMatchParams.dHitTime);
+				dHistMap_SCTimeVsTheta[locPID]->Fill(locMomentum.Theta()*180.0/TMath::Pi(), locSCHitMatchParams.dHitTime);
+				dHistMap_SCEnergyVsTheta[locPID]->Fill(locMomentum.Theta()*180.0/TMath::Pi(), locSCHitMatchParams.dHitEnergy*1.0E3);
+
+				dHistMap_SCPhiVsTheta[locPID]->Fill(locMomentum.Theta()*180.0/TMath::Pi(), locMomentum.Phi()*180.0/TMath::Pi());
+
+				double locDeltaT = locSCHitMatchParams.dHitTime - locSCHitMatchParams.dFlightTime - locStartTime;
+				dHistMap_SCDeltaT[locPID]->Fill(locDeltaT);
+				dHistMap_SCDeltaTVsP[locPID]->Fill(locMomentum.Mag(), locDeltaT);
+				dHistMap_SCDeltaTVsPhi[locPID]->Fill(locMomentum.Phi()*180.0/TMath::Pi(), locDeltaT);
+				dHistMap_SCDeltaTVsTheta[locPID]->Fill(locMomentum.Theta()*180.0/TMath::Pi(), locDeltaT);
+			}
+		}
+	}
+	japp->RootUnLock(); //RELEASE ROOT LOCK!!
+}
+
 void DHistogramAction_TrackVertexComparison::Initialize(JEventLoop* locEventLoop)
 {
 	deque<deque<Particle_t> > locDetectedChargedPIDs;

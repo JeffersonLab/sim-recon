@@ -62,6 +62,7 @@ using namespace jana;
 REACTION-BASED ACTIONS:
 	DHistogramAction_NumParticleCombos
 	DHistogramAction_ParticleComboKinematics
+	DHistogramAction_ParticleComboGenReconComparison
 	DHistogramAction_PID
 	DHistogramAction_TruePID
 	DHistogramAction_TrackVertexComparison
@@ -77,6 +78,7 @@ REACTION-INDEPENDENT ACTIONS:
 	DHistogramAction_DetectedParticleKinematics
 	DHistogramAction_GenReconTrackComparison
 	DHistogramAction_TOFHitStudy
+	DHistogramAction_DetectorStudies
 	DHistogramAction_NumReconstructedObjects
 */
 
@@ -195,6 +197,138 @@ class DHistogramAction_TrackVertexComparison : public DAnalysisAction
 		deque<map<pair<Particle_t, Particle_t>, TH2D*> > dHistDeque_TrackDeltaTVsP; //one hist per track pair, more massive particle is listed first, p is that of the more massive particle (generally slower: worse projected resolution)
 
 		map<Particle_t, TH2D*> dHistMap_BeamTrackDeltaTVsP;
+};
+
+class DHistogramAction_DetectorStudies : public DAnalysisAction
+{
+	public:
+
+		//user can call any of these three constructors
+		DHistogramAction_DetectorStudies(const DReaction* locReaction, bool locUseTruePIDFlag, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Hist_DetectorStudies", false, locActionUniqueString), 
+		dNumTimeBins(1600), dNumShowerEnergyBins(1600), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(1600), 
+		dNumDeltaTBins(800), dNumShowerDepthBins(800), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
+		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), 
+		dMinTime(-800.0), dMaxTime(800.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
+		dMaxHitEnergy(50.0), dMinTrackDOCA(0.0), dMaxTrackDOCA(400.0), dMaxTrackMatchDOCA(20.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinP(0.0), dMaxP(12.0), dMaxBCALP(1.5), 
+		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(50.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
+		dUseTruePIDFlag(locUseTruePIDFlag), dMinThrownMatchFOM(5.73303E-7), dMinimumTrackingFOM(5.73303E-7)
+		{
+			//FOR REACTION-INDEPENDENT VERSTION, CALL WITH locReaction = NULL!!!
+				//Would have had separate constructors, but (const DReaction*, bool) and (bool, string) are technically ambiguous
+			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
+			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
+		}
+
+		void Initialize(JEventLoop* locEventLoop);
+
+		unsigned int dNumTimeBins, dNumShowerEnergyBins, dNumFCALTOFXYBins, dNumPhiBins, dNumHitEnergyBins, dNum2DBCALZBins, dNumTrackDOCABins;
+		unsigned int dNumDeltaTBins, dNumShowerDepthBins, dNum2DTimeBins, dNum2DShowerEnergyBins, dNum2DPhiBins, dNum2DHitEnergyBins, dNum2DThetaBins;
+		unsigned int dNum2DPBins, dNum2DDeltaTBins, dNumdEdxBins, dNum2DdEdxBins, dNumDeltaPhiBins;
+		double dMinTime, dMaxTime, dMinShowerEnergy, dMaxShowerEnergy, dMinPhi, dMaxPhi, dMinTheta, dMaxTheta, dMinHitEnergy;
+		double dMaxHitEnergy, dMinTrackDOCA, dMaxTrackDOCA, dMaxTrackMatchDOCA, dMinDeltaT, dMaxDeltaT, dMinP, dMaxP, dMaxBCALP;
+		double dMinShowerDepth, dMaxShowerDepth, dMindEdX, dMaxdEdX, dMinDeltaPhi, dMaxDeltaPhi;
+
+	private:
+
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
+		void Fill_ReconstructionHists(JEventLoop* locEventLoop);
+		void Fill_NotMatchedHists(JEventLoop* locEventLoop);
+		void Fill_MatchedHists(JEventLoop* locEventLoop);
+
+		bool dUseTruePIDFlag;
+		double dMinThrownMatchFOM;
+		double dMinimumTrackingFOM;
+		vector<Particle_t> dTrackingPIDs;
+		DVector3 dTargetCenter;
+
+		// Optional: Useful utility functions.
+		// const DAnalysisUtilities* dAnalysisUtilities;
+
+		//Store any histograms as member variables here
+
+		//Reconstruction
+		TH1D* dHist_TAGHHitTime;
+		TH2D* dHist_TAGHHitTimeVsCounter;
+		TH1D* dHist_TAGMHitTime;
+		TH2D* dHist_TAGMHitTimeVsCounter;
+
+		TH2D* dHist_FCALShowerYVsX;
+		TH1D* dHist_FCALShowerTime;
+		TH1D* dHist_FCALShowerEnergy;
+		TH2D* dHist_FCALShowerEnergyVsTime;
+
+		TH1D* dHist_BCALShowerPhi;
+		TH2D* dHist_BCALShowerPhiVsZ;
+		TH1D* dHist_BCALShowerEnergy;
+		TH1D* dHist_BCALShowerTime;
+		TH2D* dHist_BCALShowerEnergyVsTime;
+
+		TH1D* dHist_SCHitSector;
+		TH1D* dHist_SCHitTime;
+		TH2D* dHist_SCHitTimeVsSector;
+		TH1D* dHist_SCHitEnergy;
+		TH2D* dHist_SCHitEnergyVsSector;
+
+		TH1D* dHist_TOFPointTime;
+		TH1D* dHist_TOFPointEnergy;
+		TH2D* dHist_TOFPointYVsX;
+
+		TH1D* dHist_NumDCHitsPerTrack;
+		TH2D* dHist_NumDCHitsPerTrackVsTheta;
+
+		//Not Matched To Track (neutrals or hadronics)
+		TH1D* dHist_BCALTrackDOCA;
+		TH1D* dHist_BCALNeutralShowerTime;
+		TH1D* dHist_BCALNeutralShowerEnergy;
+		TH1D* dHist_BCALNeutralShowerDeltaT;
+		TH2D* dHist_BCALNeutralShowerDeltaTVsE;
+		TH2D* dHist_BCALNeutralShowerDeltaTVsZ;
+
+		TH1D* dHist_FCALTrackDOCA;
+		TH1D* dHist_FCALNeutralShowerTime;
+		TH1D* dHist_FCALNeutralShowerEnergy;
+		TH1D* dHist_FCALNeutralShowerDeltaT;
+		TH2D* dHist_FCALNeutralShowerDeltaTVsE;
+
+		//Not Matched to Hit
+		TH2D* dHist_TrackPVsTheta_NoHitMatch;
+
+		//Matched: By PID
+			//Delta-T: shower/hit_t - tflight - RF_t (if present)
+			//Note, SC time & energy here are different than above: w/ matching can correct for propagation along paddle
+		map<Particle_t, TH1D*> dHistMap_BCALTrackDOCA;
+		map<Particle_t, TH1D*> dHistMap_BCALShowerEnergy;
+		map<Particle_t, TH1D*> dHistMap_BCALShowerTrackDepth;
+		map<Particle_t, TH2D*> dHistMap_BCALShowerTrackDepthVsP;
+		map<Particle_t, TH1D*> dHistMap_BCALShowerDeltaT;
+		map<Particle_t, TH2D*> dHistMap_BCALShowerDeltaTVsZ;
+		map<Particle_t, TH2D*> dHistMap_BCALShowerDeltaTVsP;
+
+		map<Particle_t, TH1D*> dHistMap_FCALTrackDOCA;
+		map<Particle_t, TH1D*> dHistMap_FCALShowerEnergy;
+		map<Particle_t, TH1D*> dHistMap_FCALShowerTrackDepth;
+		map<Particle_t, TH2D*> dHistMap_FCALShowerTrackDepthVsP;
+		map<Particle_t, TH1D*> dHistMap_FCALShowerDeltaT;
+		map<Particle_t, TH2D*> dHistMap_FCALShowerDeltaTVsP;
+
+		map<Particle_t, TH1D*> dHistMap_TOFdEdX;
+		map<Particle_t, TH2D*> dHistMap_TOFdEdXVsP;
+		map<Particle_t, TH1D*> dHistMap_TOFTrackDOCA;
+		map<Particle_t, TH1D*> dHistMap_TOFDeltaT;
+		map<Particle_t, TH2D*> dHistMap_TOFDeltaTVsP;
+
+		map<Particle_t, TH1D*> dHistMap_SCdEdX;
+		map<Particle_t, TH2D*> dHistMap_SCdEdXVsP;
+		map<Particle_t, TH1D*> dHistMap_SCTrackDeltaPhi;
+		map<Particle_t, TH1D*> dHistMap_SCTime;
+		map<Particle_t, TH2D*> dHistMap_SCTimeVsTheta;
+		map<Particle_t, TH2D*> dHistMap_SCEnergyVsTheta;
+		map<Particle_t, TH2D*> dHistMap_SCPhiVsTheta;
+		map<Particle_t, TH1D*> dHistMap_SCDeltaT;
+		map<Particle_t, TH2D*> dHistMap_SCDeltaTVsP;
+		map<Particle_t, TH2D*> dHistMap_SCDeltaTVsPhi;
+		map<Particle_t, TH2D*> dHistMap_SCDeltaTVsTheta;
 };
 
 class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
