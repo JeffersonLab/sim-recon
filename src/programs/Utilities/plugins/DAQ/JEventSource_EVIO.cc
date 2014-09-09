@@ -104,6 +104,7 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 	F250_NSB = 5;
 	F250_NSPED = 4;
 	F250_EMULATION_THRESHOLD = 20;
+	F125_NSPED = 20;
 	
 	if(gPARMS){
 		gPARMS->SetDefaultParameter("EVIO:AUTODETECT_MODULE_TYPES", AUTODETECT_MODULE_TYPES, "Try and guess the module type tag,num values for which there is no module map entry.");
@@ -126,6 +127,8 @@ JEventSource_EVIO::JEventSource_EVIO(const char* source_name):JEventSource(sourc
 		gPARMS->SetDefaultParameter("EVIO:F250_NSA", F250_NSA, "For f250PulseIntegral object.  NSA value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSB", F250_NSB, "For f250PulseIntegral object.  NSB value for emulation from window raw data and for pulse integral pedestal normalization.");
 		gPARMS->SetDefaultParameter("EVIO:F250_NSPED", F250_NSPED, "For f250PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
+
+		gPARMS->SetDefaultParameter("EVIO:F125_NSPED", F125_NSPED, "For f125PulseIntegral object.  Number of pedestal samples value for emulation from window raw data and for pulse integral normalization.");
 	}
 	
 	// Try to open the file.
@@ -1232,7 +1235,7 @@ void JEventSource_EVIO::EmulateDf250PulseIntegral(vector<JObject*> &wrd_objs, ve
 //----------------
 void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, vector<JObject*> &pi_objs)
 {
-	uint16_t ped_samples=20;
+	uint16_t ped_samples = F125_NSPED;
 	uint32_t pulse_number = 0;
 	uint32_t quality_factor = 0;
 	// Loop over all window raw data objects

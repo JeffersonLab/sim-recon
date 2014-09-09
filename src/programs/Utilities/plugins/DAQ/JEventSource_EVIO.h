@@ -215,6 +215,7 @@ class JEventSource_EVIO: public jana::JEventSource{
 		uint32_t F250_NSB;                   ///< Number of samples to integrate before thershold crossing
 		uint32_t F250_NSPED;                 ///< Number of samples to integrate for pedestal
 		uint32_t F250_EMULATION_THRESHOLD;   ///< Minimum difference between max and min samples to do emulation
+		uint32_t F125_NSPED;                 ///< Number of samples to integrate for pedestal
 
 		// Utility class with multiple roles:
 		//
