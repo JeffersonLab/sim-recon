@@ -1265,7 +1265,7 @@ void JEventSource_EVIO::EmulateDf125PulseIntegral(vector<JObject*> &wrd_objs, ve
 		myDf125PulseIntegral->pulse_number = pulse_number;
 		myDf125PulseIntegral->quality_factor = quality_factor;
 		myDf125PulseIntegral->integral = signalsum;
-		myDf125PulseIntegral->pedestal = 0;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
+		myDf125PulseIntegral->pedestal = pedestalsum/ped_samples;  // This will be replaced by the one from Df125PulsePedestal in GetObjects
 		
 		// Add the Df125WindowRawData object as an associated object
 		myDf125PulseIntegral->AddAssociatedObject(f125WindowRawData);
