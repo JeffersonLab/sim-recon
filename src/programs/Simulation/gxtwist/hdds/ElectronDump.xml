@@ -49,7 +49,7 @@
 
 <!-- ====== Labyrinth 1 ====== -->
   <composition name="Labyrinth1" envelope="LBO1">
-        <posXYZ volume="SEG1" X_Y_Z="132.0 -27.0 0.0" /> 
+        <posXYZ volume="COB1" X_Y_Z="132.0 -27.0 0.0" /> 
         <posXYZ volume="SEG_with_pipe" X_Y_Z="82.5 -27.0 -16.5" /> 
         <posXYZ volume="SEG_with_pipe_packed" X_Y_Z="82.5 -27.0  16.5" /> 
         <mposX volume="SEG1" Y_Z="-27.0 -16.5" X0="-115.5" dX="66.0" ncopy="3" rot="0 90 0" /> 
@@ -176,7 +176,7 @@
 
 
 <!-- ======  Pipe between labyrinth wall 3 to dump ======   -->
- <composition name="Pipe3D" envelope="LPO3">
+  <composition name="Pipe3D" envelope="LPO3">
         <posXYZ volume="LPI3" /> 
   </composition>
 
@@ -187,9 +187,12 @@
        comment="wall of beam pipe from labyrinth wall 3 to dump" />
 
 
-<!-- ====== Iron slabs forming the walls inside the beam dump ====== -->
+<!-- ====== Stacked blocks forming the walls inside the beam dump ====== -->
   <box name="SEG1" X_Y_Z="33.0  396. 66.0" material="Iron"  
-       comment="SEG block slab in the beam dump" />
+       comment="SEG block slab in the beam dump shielding wall" />
+
+  <box name="COB1" X_Y_Z="33.0  396. 66.0" material="Concrete"  
+       comment="Concrete block slab in the beam dump shielding wall" />
 
   <box name="SEG2" X_Y_Z="66.0  396. 66.0" material="Iron"  
        comment="double-thick SEG block slab in the beam dump" />
