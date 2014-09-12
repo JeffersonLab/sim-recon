@@ -76,14 +76,12 @@ double BCAL_ADC_THRESHOLD = 4.0;  // mV
 double BCAL_FADC_TIME_RESOLUTION = 4.0/sqrt(12.0); // ns
 
 // BCAL flags
-bool NO_E_SMEAR = false;
 bool NO_T_SMEAR = false;
 bool NO_DARK_PULSES = false;
 bool NO_SAMPLING_FLUCTUATIONS = false;
 bool NO_SAMPLING_FLOOR_TERM = false;
 bool NO_POISSON_STATISTICS = false;
 bool NO_TIME_JITTER = false;
-bool NO_THRESHOLD_CUT = false;
 bool BCAL_DEBUG_HISTS = false;
 
 double FTOF_BAR_THRESHOLD    = 0.0;
@@ -395,14 +393,12 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'R': BCAL_TDC_THRESHOLD = atof(&ptr[2]);        break;
       case 'W': BCAL_ADC_THRESHOLD = atof(&ptr[2]);        break;
       case 'X': BCAL_FADC_TIME_RESOLUTION = atof(&ptr[2]); break;
-      case 'F': NO_E_SMEAR = true;                         break;
       case 'G': NO_T_SMEAR = true;                         break;
       case 'H': NO_DARK_PULSES = true;                     break;
       case 'K': NO_SAMPLING_FLUCTUATIONS = true;           break;
       case 'L': NO_SAMPLING_FLOOR_TERM = true;             break;
       case 'M': NO_POISSON_STATISTICS = true;              break;
       case 'Q': NO_TIME_JITTER = true;                     break;
-      case 'I': NO_THRESHOLD_CUT = true;                   break;
       case 'J': BCAL_DEBUG_HISTS = true;                   break;
       case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec;           break;
       case 'S': START_SIGMA= atof(&ptr[2])*k_psec;         break;
@@ -487,14 +483,12 @@ void Usage(void)
    cout << "    -Rthresh BCAL TDC threshold (def. " << BCAL_TDC_THRESHOLD << " mV)" << endl;
    cout << "    -Wthresh BCAL ADC threshold (def. " << BCAL_ADC_THRESHOLD << " mV)" << endl;
    cout << "    -Wsigma  BCAL fADC time resolution (def. " << BCAL_FADC_TIME_RESOLUTION << " ns)" << endl;
-   cout << "    -F       Don't smear BCAL energy (def. smear)" << endl;
    cout << "    -G       Don't smear BCAL times (def. smear)" << endl;
    cout << "    -H       Don't add BCAL dark hits (def. add)" << endl;
    cout << "    -K       Don't apply BCAL sampling fluctuations (def. apply)" << endl;
    cout << "    -L       Don't apply BCAL sampling floor term (def. apply)" << endl;
    cout << "    -M       Don't apply BCAL Poisson statistics (def. apply)" << endl;
    cout << "    -Q       Don't apply BCAL time jitter (def. apply)" << endl;
-   cout << "    -I       Don't apply discrim. thresh. to BCAL hits (def. cut)" << endl;
    cout << "    -J       Create BCAL debug hists (only use with a few events!)" << endl;
    cout << "    -f#      TOF sigma in psec (def: " <<  TOF_SIGMA/k_psec << ")" << endl;
    cout << "    -h       Print this usage statement." << endl;

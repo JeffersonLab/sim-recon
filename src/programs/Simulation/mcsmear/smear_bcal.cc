@@ -252,14 +252,12 @@ extern bool SMEAR_BCAL;
 // The following are all false by default, but can be
 // set to true via command line parameters. Setting
 // one of these to true will turn OFF the feature.
-extern bool NO_E_SMEAR;
 extern bool NO_T_SMEAR;
 extern bool NO_DARK_PULSES;
 extern bool NO_SAMPLING_FLUCTUATIONS;
 extern bool NO_SAMPLING_FLOOR_TERM;
 extern bool NO_POISSON_STATISTICS;
 extern bool NO_TIME_JITTER;
-extern bool NO_THRESHOLD_CUT;
 extern bool BCAL_DEBUG_HISTS;
 
 extern double BCAL_TDC_THRESHOLD; // mV
