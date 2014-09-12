@@ -88,7 +88,8 @@ DBCALShower_factory_IU::evnt( JEventLoop *loop, int eventnumber ){
     //the shower location (x,y,z)
     double t = (**clItr).t();
     double inner_rad = DBCALGeometry::BCALINNERRAD;
-    t = t * sqrt( shower->x*shower->x + shower->y*shower->y )/inner_rad;
+    double dist_in_BCAL = rho - inner_rad/sinTh;
+    t = t + dist_in_BCAL/(30*k_cm/k_nsec);
     shower->t = t;
 
     shower->N_cell = (**clItr).nCells();
