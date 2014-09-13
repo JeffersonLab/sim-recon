@@ -11,6 +11,7 @@
 #include "PID/DNeutralParticleHypothesis.h"
 #include "PID/DNeutralParticle.h"
 #include "PID/DNeutralShower.h"
+#include "PID/DBeamPhoton.h"
 
 #include "TOF/DTOFPoint.h"
 #include "TOF/DTOFTruth.h"
@@ -24,12 +25,13 @@ using namespace jana;
 
 class DMCThrownMatching : public JObject
 {
-	//uses measured tracks for matching, not kinfit ones
+	//uses measured tracks/photons/etc. for matching, not kinfit ones
 	public:
 
 		JOBJECT_PUBLIC(DMCThrownMatching);
 
 		//GETTERS: INDIVIDUAL PARTICLES
+		const DBeamPhoton* Get_ReconMCGENBeamPhoton(void) const{return dReconMCGENBeamPhoton;}
 
 		//the below two functions return the hypothesis with PID = MC PID. if not available, returns one with best PID FOM
 		const DChargedTrackHypothesis* Get_MatchingChargedHypothesis(const DMCThrown* locInputMCThrown, double& locMatchFOM) const;
@@ -46,6 +48,9 @@ class DMCThrownMatching : public JObject
 
 		const DMCThrown* Get_MatchingMCThrown(const DNeutralParticleHypothesis* locNeutralParticleHypothesis, double& locMatchFOM) const;
 		const DMCThrown* Get_MatchingMCThrown(const DNeutralParticle* locNeutralParticle, double& locMatchFOM) const;
+
+		const DBeamPhoton* Get_MatchingReconPhoton(const DBeamPhoton* locTruthBeamPhoton) const;
+		const DBeamPhoton* Get_MatchingTruthPhoton(const DBeamPhoton* locReconBeamPhoton) const;
 
 		//GETTERS: INDIVIDUAL HITS
 		const DTOFPoint* Get_MatchingTOFPoint(const DTOFTruth* locTOFTruth, double& locMatchFOM) const;
@@ -101,6 +106,11 @@ class DMCThrownMatching : public JObject
 		inline void Set_FCALShowerToTruthMap(map<const DFCALShower*, pair<const DFCALTruthShower*, double> >& locFCALShowerToTruthMap){dFCALShowerToTruthMap = locFCALShowerToTruthMap;}
 		inline void Set_FCALTruthToShowerMap(map<const DFCALTruthShower*, pair<const DFCALShower*, double> >& locFCALTruthToShowerMap){dFCALTruthToShowerMap = locFCALTruthToShowerMap;}
 
+		inline void Set_BeamPhotonToTruthMap(map<const DBeamPhoton*, const DBeamPhoton*>& locBeamPhotonToTruthMap){dBeamPhotonToTruthMap = locBeamPhotonToTruthMap;}
+		inline void Set_BeamTruthToPhotonMap(map<const DBeamPhoton*, const DBeamPhoton*>& locBeamTruthToPhotonMap){dBeamTruthToPhotonMap = locBeamTruthToPhotonMap;}
+
+		inline void Set_ReconMCGENBeamPhoton(const DBeamPhoton* locBeamPhoton){dReconMCGENBeamPhoton = locBeamPhoton;}
+
 	private:
 
 		//doubles are match FOM (for BCAL/FCAL/TOF: is match distance)
@@ -124,6 +134,11 @@ class DMCThrownMatching : public JObject
 
 		map<const DFCALShower*, pair<const DFCALTruthShower*, double> > dFCALShowerToTruthMap;
 		map<const DFCALTruthShower*, pair<const DFCALShower*, double> > dFCALTruthToShowerMap;
+
+		map<const DBeamPhoton*, const DBeamPhoton*> dBeamPhotonToTruthMap;
+		map<const DBeamPhoton*, const DBeamPhoton*> dBeamTruthToPhotonMap;
+
+		const DBeamPhoton* dReconMCGENBeamPhoton; //the reconstructed photon that matches the MCGEN photon
 };
 
 #endif // _DMCThrownMatching_

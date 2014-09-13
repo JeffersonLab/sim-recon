@@ -80,6 +80,8 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 
 	DMCThrownMatching* locMCThrownMatching = new DMCThrownMatching();
 
+	Find_GenReconMatches_BeamPhotons(locEventLoop, locMCThrownMatching);
+
 	Find_GenReconMatches_ChargedHypo(locOriginalMCThrowns_Charged, locChargedTrackHypotheses, locMCThrownMatching);
 	Find_GenReconMatches_ChargedTrack(locOriginalMCThrowns_Charged, locChargedTracks, locMCThrownMatching);
 
@@ -153,6 +155,98 @@ jerror_t DMCThrownMatching_factory::evnt(jana::JEventLoop* locEventLoop, int eve
 	_data.push_back(locMCThrownMatching);
 
 	return NOERROR;
+}
+
+void DMCThrownMatching_factory::Find_GenReconMatches_BeamPhotons(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const
+{
+	vector<const DBeamPhoton*> locBeamPhotons;
+	locEventLoop->Get(locBeamPhotons);
+
+	vector<const DBeamPhoton*> locBeamPhotons_MCGEN;
+	locEventLoop->Get(locBeamPhotons_MCGEN, "MCGEN");
+
+	vector<const DBeamPhoton*> locBeamPhotons_TRUTH;
+	locEventLoop->Get(locBeamPhotons_TRUTH, "TRUTH");
+
+	//first match MCGEN
+	double locBestDeltaE = 9.9E9;
+	const DBeamPhoton* locBestBeamPhoton = NULL;
+	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
+	{
+		double locDeltaT = fabs(locBeamPhotons[loc_i]->time() - locBeamPhotons_MCGEN[0]->time());
+		if(locDeltaT > 2.004)
+			continue;
+		double locDeltaE = fabs(locBeamPhotons[loc_i]->energy() - locBeamPhotons_MCGEN[0]->energy());
+		if(locDeltaE > locBestDeltaE)
+			continue;
+		locBestDeltaE = locDeltaE;
+		locBestBeamPhoton = locBeamPhotons[loc_i];
+	}
+	locMCThrownMatching->Set_ReconMCGENBeamPhoton(locBestBeamPhoton);
+
+	//recon photon, truth photon, delta-t
+	map<const DBeamPhoton*, vector<pair<const DBeamPhoton*, double> > > locPossibleMatches;
+	for(size_t loc_i = 0; loc_i < locBeamPhotons.size(); ++loc_i)
+	{
+		for(size_t loc_j = 0; loc_j < locBeamPhotons_TRUTH.size(); ++loc_j)
+		{
+			const DTAGMHit* locTAGMHit = NULL;
+			locBeamPhotons[loc_i]->GetSingle(locTAGMHit);
+			const DTAGHHit* locTAGHHit = NULL;
+			locBeamPhotons[loc_i]->GetSingle(locTAGHHit);
+
+			const DTAGMHit* locTAGMHit_TRUTH = NULL;
+			locBeamPhotons_TRUTH[loc_j]->GetSingle(locTAGMHit_TRUTH);
+			const DTAGHHit* locTAGHHit_TRUTH = NULL;
+			locBeamPhotons_TRUTH[loc_j]->GetSingle(locTAGHHit_TRUTH);
+
+			if(locTAGMHit != NULL)
+			{
+				if(locTAGMHit_TRUTH == NULL)
+					continue;
+				if((locTAGMHit->row != locTAGMHit_TRUTH->row) || (locTAGMHit->column != locTAGMHit_TRUTH->column))
+					continue;
+			}
+			else
+			{
+				if(locTAGHHit_TRUTH == NULL)
+					continue;
+				if(locTAGHHit->counter_id != locTAGHHit_TRUTH->counter_id)
+					continue;
+			}
+
+			double locDeltaT = fabs(locBeamPhotons[loc_i]->time() - locBeamPhotons_TRUTH[loc_j]->time());
+			pair<const DBeamPhoton*, double> locMatchPair(locBeamPhotons_TRUTH[loc_j], locDeltaT);
+			locPossibleMatches[locBeamPhotons[loc_i]].push_back(locMatchPair);
+		}
+	}
+
+	map<const DBeamPhoton*, const DBeamPhoton*> locBeamPhotonToTruthMap;
+	map<const DBeamPhoton*, const DBeamPhoton*> locBeamTruthToPhotonMap;
+
+	map<const DBeamPhoton*, vector<pair<const DBeamPhoton*, double> > >::iterator locIterator = locPossibleMatches.begin();
+	for(; locIterator != locPossibleMatches.end(); ++locIterator)
+	{
+		vector<pair<const DBeamPhoton*, double> > locPairs = locIterator->second;
+		double locBestDeltaT = 9.9E9;
+		const DBeamPhoton* locBestBeamPhoton = NULL;
+		for(size_t loc_i = 0; loc_i < locPairs.size(); ++loc_i)
+		{
+			double locDeltaT = locPairs[loc_i].second;
+			if(locDeltaT >= locBestDeltaT)
+				continue;
+			locBestDeltaT = locDeltaT;
+			locBestBeamPhoton = locPairs[loc_i].first;
+		}
+
+		if((dDebugLevel > 20) && (locBestBeamPhoton != NULL))
+			cout << "Photon match: delta-E, delta-t = " << fabs(locIterator->first->energy() - locBestBeamPhoton->energy()) << ", " << locBestDeltaT << endl;
+		locBeamPhotonToTruthMap[locIterator->first] = locBestBeamPhoton;
+		locBeamTruthToPhotonMap[locBestBeamPhoton] = locIterator->first;
+	}
+
+	locMCThrownMatching->Set_BeamPhotonToTruthMap(locBeamPhotonToTruthMap);
+	locMCThrownMatching->Set_BeamTruthToPhotonMap(locBeamTruthToPhotonMap);
 }
 
 void DMCThrownMatching_factory::Find_GenReconMatches_FCALShowers(JEventLoop* locEventLoop, DMCThrownMatching* locMCThrownMatching) const
