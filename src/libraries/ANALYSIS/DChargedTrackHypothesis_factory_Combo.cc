@@ -53,26 +53,20 @@ jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventL
 		const DParticleComboBlueprint* locParticleComboBlueprint = locParticleComboBlueprints[loc_i];
 
 		//select the corresponding rf bunch
-		const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
-/*
 		const DEventRFBunch* locEventRFBunch = NULL;
 		for(size_t loc_j = 0; loc_j < locEventRFBunches.size(); ++loc_j)
 		{
-			vector<const DParticleComboBlueprint*> locParticleComboBlueprints_Bunch;
-			locEventRFBunches[loc_j]->Get(locParticleComboBlueprints_Bunch);
-			bool locMatchFoundFlag = false;
-			for(size_t loc_k = 0; loc_k < locParticleComboBlueprints_Bunch.size(); ++loc_k)
-			{
-				if(locParticleComboBlueprints_Bunch[loc_k] != locParticleComboBlueprint)
-					continue;
-				locEventRFBunch = locEventRFBunches[loc_j];
-				locMatchFoundFlag = true;
-				break;
-			}
-			if(locMatchFoundFlag)
-				break;
+			if(!locEventRFBunches[loc_j]->IsAssociated(locParticleComboBlueprint))
+				continue;
+			locEventRFBunch = locEventRFBunches[loc_j];
+			break;
 		}
-*/
+		if(locEventRFBunch == NULL)
+		{
+			cout << "SOMETHING IS VERY WRONG IN DParticleCombo_factory_PreKinFit.cc" << endl;
+			abort();
+		}
+
 		if(locCreatedParticleMap.find(locEventRFBunch) == locCreatedParticleMap.end())
 			locCreatedParticleMap[locEventRFBunch] = deque<pair<const DChargedTrack*, Particle_t> >();
 

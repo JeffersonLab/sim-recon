@@ -46,6 +46,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumb
 	{
 		DVector3 mom(0.0, 0.0, tagm_hits[ih]->E);
 		DBeamPhoton *gamma = new DBeamPhoton;
+		gamma->setPID(Gamma);
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
 		gamma->setCharge(0);
@@ -62,6 +63,7 @@ jerror_t DBeamPhoton_factory::evnt(jana::JEventLoop *locEventLoop, int eventnumb
 	{
 		DVector3 mom(0.0, 0.0, tagh_hits[ih]->E);
 		DBeamPhoton *gamma = new DBeamPhoton;
+		gamma->setPID(Gamma);
 		gamma->setMomentum(mom);
 		gamma->setPosition(pos);
 		gamma->setCharge(0);

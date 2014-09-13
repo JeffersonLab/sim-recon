@@ -206,10 +206,7 @@ int DEventRFBunch_factory::Find_BestRFBunchShift(double locRFHitTime, const vect
 		if(locNumRFBucketsShiftedMap.find(locNumRFBucketsShifted) == locNumRFBucketsShiftedMap.end())
 			locNumRFBucketsShiftedMap[locNumRFBucketsShifted] = 1;
 		else
-		{
-			unsigned int locOldNumTracks = locNumRFBucketsShiftedMap[locNumRFBucketsShifted];
 			++(locNumRFBucketsShiftedMap[locNumRFBucketsShifted]);
-		}
 
 		if(locNumRFBucketsShifted == locBestRFBunchShift)
 			continue;

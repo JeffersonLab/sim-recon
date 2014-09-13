@@ -204,7 +204,7 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 	public:
 
 		//user can call any of these three constructors
-		DHistogramAction_DetectorStudies(const DReaction* locReaction, bool locUseTruePIDFlag, string locActionUniqueString = "") : 
+		DHistogramAction_DetectorStudies(const DReaction* locReaction, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Hist_DetectorStudies", false, locActionUniqueString), 
 		dNumTimeBins(1600), dNumShowerEnergyBins(1600), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(1600), 
 		dNumDeltaTBins(800), dNumShowerDepthBins(800), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
@@ -212,10 +212,36 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		dMinTime(-800.0), dMaxTime(800.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
 		dMaxHitEnergy(50.0), dMinTrackDOCA(0.0), dMaxTrackDOCA(400.0), dMaxTrackMatchDOCA(20.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinP(0.0), dMaxP(12.0), dMaxBCALP(1.5), 
 		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(50.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
-		dUseTruePIDFlag(locUseTruePIDFlag), dMinThrownMatchFOM(5.73303E-7), dMinimumTrackingFOM(5.73303E-7)
+		dMinThrownMatchFOM(5.73303E-7), dMinimumTrackingFOM(5.73303E-7)
 		{
-			//FOR REACTION-INDEPENDENT VERSTION, CALL WITH locReaction = NULL!!!
-				//Would have had separate constructors, but (const DReaction*, bool) and (bool, string) are technically ambiguous
+			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
+			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
+		}
+
+		DHistogramAction_DetectorStudies(string locActionUniqueString) : 
+		DAnalysisAction(NULL, "Hist_DetectorStudies", false, locActionUniqueString), 
+		dNumTimeBins(1600), dNumShowerEnergyBins(1600), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(1600), 
+		dNumDeltaTBins(800), dNumShowerDepthBins(800), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
+		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), 
+		dMinTime(-800.0), dMaxTime(800.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
+		dMaxHitEnergy(50.0), dMinTrackDOCA(0.0), dMaxTrackDOCA(400.0), dMaxTrackMatchDOCA(20.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinP(0.0), dMaxP(12.0), dMaxBCALP(1.5), 
+		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(50.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
+		dMinThrownMatchFOM(5.73303E-7), dMinimumTrackingFOM(5.73303E-7)
+		{
+			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
+			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
+		}
+
+		DHistogramAction_DetectorStudies(void) : 
+		DAnalysisAction(NULL, "Hist_DetectorStudies", false, ""), 
+		dNumTimeBins(1600), dNumShowerEnergyBins(1600), dNumFCALTOFXYBins(240), dNumPhiBins(720), dNumHitEnergyBins(500), dNum2DBCALZBins(450), dNumTrackDOCABins(1600), 
+		dNumDeltaTBins(800), dNumShowerDepthBins(800), dNum2DTimeBins(400), dNum2DShowerEnergyBins(400), dNum2DPhiBins(360), dNum2DHitEnergyBins(250), dNum2DThetaBins(280), 
+		dNum2DPBins(600), dNum2DDeltaTBins(400), dNumdEdxBins(800), dNum2DdEdxBins(400), dNumDeltaPhiBins(800), 
+		dMinTime(-800.0), dMaxTime(800.0), dMinShowerEnergy(0.0), dMaxShowerEnergy(8.0), dMinPhi(-180.0), dMaxPhi(180.0), dMinTheta(0.0), dMaxTheta(140.0), dMinHitEnergy(0.0), 
+		dMaxHitEnergy(50.0), dMinTrackDOCA(0.0), dMaxTrackDOCA(400.0), dMaxTrackMatchDOCA(20.0), dMinDeltaT(-10.0), dMaxDeltaT(10.0), dMinP(0.0), dMaxP(12.0), dMaxBCALP(1.5), 
+		dMinShowerDepth(0.0), dMaxShowerDepth(20.0), dMindEdX(0.0), dMaxdEdX(50.0), dMinDeltaPhi(-30.0), dMaxDeltaPhi(30.0), 
+		dMinThrownMatchFOM(5.73303E-7), dMinimumTrackingFOM(5.73303E-7)
+		{
 			dTrackingPIDs.push_back(PiPlus);  dTrackingPIDs.push_back(KPlus);  dTrackingPIDs.push_back(Proton);
 			dTrackingPIDs.push_back(PiMinus);  dTrackingPIDs.push_back(KMinus);
 		}
@@ -234,9 +260,8 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 		void Fill_ReconstructionHists(JEventLoop* locEventLoop);
 		void Fill_NotMatchedHists(JEventLoop* locEventLoop);
-		void Fill_MatchedHists(JEventLoop* locEventLoop);
+		void Fill_MatchedHists(JEventLoop* locEventLoop, bool locUseTruePIDFlag);
 
-		bool dUseTruePIDFlag;
 		double dMinThrownMatchFOM;
 		double dMinimumTrackingFOM;
 		vector<Particle_t> dTrackingPIDs;
@@ -297,38 +322,39 @@ class DHistogramAction_DetectorStudies : public DAnalysisAction
 		//Matched: By PID
 			//Delta-T: shower/hit_t - tflight - RF_t (if present)
 			//Note, SC time & energy here are different than above: w/ matching can correct for propagation along paddle
-		map<Particle_t, TH1D*> dHistMap_BCALTrackDOCA;
-		map<Particle_t, TH1D*> dHistMap_BCALShowerEnergy;
-		map<Particle_t, TH1D*> dHistMap_BCALShowerTrackDepth;
-		map<Particle_t, TH2D*> dHistMap_BCALShowerTrackDepthVsP;
-		map<Particle_t, TH1D*> dHistMap_BCALShowerDeltaT;
-		map<Particle_t, TH2D*> dHistMap_BCALShowerDeltaTVsZ;
-		map<Particle_t, TH2D*> dHistMap_BCALShowerDeltaTVsP;
+			//bool in pair: true/false for true/best-reconstructed PID
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_BCALTrackDOCA;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_BCALShowerEnergy;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_BCALShowerTrackDepth;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_BCALShowerTrackDepthVsP;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_BCALShowerDeltaT;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_BCALShowerDeltaTVsZ;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_BCALShowerDeltaTVsP;
 
-		map<Particle_t, TH1D*> dHistMap_FCALTrackDOCA;
-		map<Particle_t, TH1D*> dHistMap_FCALShowerEnergy;
-		map<Particle_t, TH1D*> dHistMap_FCALShowerTrackDepth;
-		map<Particle_t, TH2D*> dHistMap_FCALShowerTrackDepthVsP;
-		map<Particle_t, TH1D*> dHistMap_FCALShowerDeltaT;
-		map<Particle_t, TH2D*> dHistMap_FCALShowerDeltaTVsP;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_FCALTrackDOCA;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_FCALShowerEnergy;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_FCALShowerTrackDepth;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_FCALShowerTrackDepthVsP;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_FCALShowerDeltaT;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_FCALShowerDeltaTVsP;
 
-		map<Particle_t, TH1D*> dHistMap_TOFdEdX;
-		map<Particle_t, TH2D*> dHistMap_TOFdEdXVsP;
-		map<Particle_t, TH1D*> dHistMap_TOFTrackDOCA;
-		map<Particle_t, TH1D*> dHistMap_TOFDeltaT;
-		map<Particle_t, TH2D*> dHistMap_TOFDeltaTVsP;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_TOFdEdX;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_TOFdEdXVsP;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_TOFTrackDOCA;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_TOFDeltaT;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_TOFDeltaTVsP;
 
-		map<Particle_t, TH1D*> dHistMap_SCdEdX;
-		map<Particle_t, TH2D*> dHistMap_SCdEdXVsP;
-		map<Particle_t, TH1D*> dHistMap_SCTrackDeltaPhi;
-		map<Particle_t, TH1D*> dHistMap_SCTime;
-		map<Particle_t, TH2D*> dHistMap_SCTimeVsTheta;
-		map<Particle_t, TH2D*> dHistMap_SCEnergyVsTheta;
-		map<Particle_t, TH2D*> dHistMap_SCPhiVsTheta;
-		map<Particle_t, TH1D*> dHistMap_SCDeltaT;
-		map<Particle_t, TH2D*> dHistMap_SCDeltaTVsP;
-		map<Particle_t, TH2D*> dHistMap_SCDeltaTVsPhi;
-		map<Particle_t, TH2D*> dHistMap_SCDeltaTVsTheta;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_SCdEdX;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCdEdXVsP;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_SCTrackDeltaPhi;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_SCTime;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCTimeVsTheta;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCEnergyVsTheta;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCPhiVsTheta;
+		map<pair<Particle_t, bool>, TH1D*> dHistMap_SCDeltaT;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCDeltaTVsP;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCDeltaTVsPhi;
+		map<pair<Particle_t, bool>, TH2D*> dHistMap_SCDeltaTVsTheta;
 };
 
 class DHistogramAction_ParticleComboKinematics : public DAnalysisAction
@@ -525,7 +551,10 @@ class DHistogramAction_ThrownParticleKinematics : public DAnalysisAction
 	private:
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo = NULL);
 
-		TH1D* 	dBeamParticle_P;
+		TH1D* 	dMCGENBeamParticle_P;
+		TH1D* 	dMCGENBeamParticle_Time;
+		TH1D* 	dAllBeamParticle_P;
+		TH1D* 	dAllBeamParticle_Time;
 
 		map<Particle_t, TH2D*> dHistMap_PVsTheta;
 		map<Particle_t, TH2D*> dHistMap_PhiVsTheta;

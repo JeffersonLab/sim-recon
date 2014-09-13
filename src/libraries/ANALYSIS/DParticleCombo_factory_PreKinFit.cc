@@ -126,7 +126,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	locEventLoop->Get(locEventRFBunches, "Combo");
 
 	vector<const DBeamPhoton*> locBeamPhotons;
-	locEventLoop->Get(locBeamPhotons, "MCGEN");
+	locEventLoop->Get(locBeamPhotons);
 
 	DParticleCombo* locParticleCombo;
 	DParticleComboStep* locParticleComboStep;
@@ -148,26 +148,20 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		bool locBadComboFlag = false;
 
 		//select the corresponding rf bunch
-		const DEventRFBunch* locEventRFBunch = locEventRFBunches[0];
-/*
 		const DEventRFBunch* locEventRFBunch = NULL;
 		for(size_t loc_j = 0; loc_j < locEventRFBunches.size(); ++loc_j)
 		{
-			vector<const DParticleComboBlueprint*> locParticleComboBlueprints_Bunch;
-			locEventRFBunches[loc_j]->Get(locParticleComboBlueprints_Bunch);
-			bool locMatchFoundFlag = false;
-			for(size_t loc_k = 0; loc_k < locParticleComboBlueprints_Bunch.size(); ++loc_k)
-			{
-				if(locParticleComboBlueprints_Bunch[loc_k] != locParticleComboBlueprint)
-					continue;
-				locEventRFBunch = locEventRFBunches[loc_j];
-				locMatchFoundFlag = true;
-				break;
-			}
-			if(locMatchFoundFlag)
-				break;
+			if(!locEventRFBunches[loc_j]->IsAssociated(locParticleComboBlueprint))
+				continue;
+			locEventRFBunch = locEventRFBunches[loc_j];
+			break;
 		}
-*/
+		if(locEventRFBunch == NULL)
+		{
+			cout << "SOMETHING IS VERY WRONG IN DParticleCombo_factory_PreKinFit.cc" << endl;
+			abort();
+		}
+
 		locParticleCombo->Set_EventRFBunch(locEventRFBunch);
 
 		vector<const DBeamPhoton*> locCandidatePhotons;
@@ -203,6 +197,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 					locBadComboFlag = true; //no photons match the RF time
 					break;
 				}
+
 				locParticleComboStep->Set_InitialParticle(locCandidatePhotons[0]);
 				locParticleComboStep->Set_InitialParticle_Measured(locCandidatePhotons[0]);
 			}
