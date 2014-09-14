@@ -19,7 +19,7 @@ DAnalysisUtilities::DAnalysisUtilities(JEventLoop* locEventLoop)
 
 bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, const DReaction* locReaction, bool locExactMatchFlag) const
 {
-	//DOES NOT SUPPORT DREACTIONS WITH MISSING UNKNOWN PARTICLES
+	//IF DREACTION HAS A MISSING UNKNOWN PARTICLE, MUST USE locExactMatchFlag = false
 
 	//note, if you decay a final state particle (e.g. k+, pi+) in your input DReaction*, a match will NOT be found: the thrown reaction/combo is truncated
 	//if locExactMatchFlag = false, then allow the input DReaction to be a subset of the thrown
@@ -85,7 +85,8 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 			const DReactionStep* locReactionStep = locReaction->Get_ReactionStep(loc_j);
 			if(locMatchedInputStepIndices.find(loc_j) != locMatchedInputStepIndices.end())
 				continue; //this step was already accounted for
-			if(!locReactionStep->Are_ParticlesIdentical(locThrownReaction->Get_ReactionStep(loc_i)))
+			//when not exact match: allow user step to have a missing unknown particle
+			if(!locThrownReaction->Get_ReactionStep(loc_i)->Are_ParticlesIdentical(locReactionStep, !locExactMatchFlag))
 				continue; //particles aren't the same
 
 			//ok, now check to make sure that the parent particle in this step was produced the same way in both thrown & locReaction
@@ -136,6 +137,7 @@ bool DAnalysisUtilities::Check_ThrownsMatchReaction(JEventLoop* locEventLoop, co
 		if(locMatchedInputStepIndices.find(loc_i) == locMatchedInputStepIndices.end())
 			return false; //one of the input steps wasn't matched: abort!
 	}
+
 	return true;
 }
 
@@ -271,11 +273,12 @@ void DAnalysisUtilities::Get_ThrownParticleSteps(JEventLoop* locEventLoop, deque
 		//else add a new decay step and add this particle to it
 		locThrownSteps.push_back(pair<const DMCThrown*, deque<const DMCThrown*> >(locIDMap[locMCThrowns[loc_i]->parentid], deque<const DMCThrown*>(1, locMCThrowns[loc_i]) ));
 	}
+
 /*
 cout << "THROWN STEPS: " << endl;
 for(size_t loc_i = 0; loc_i < locThrownSteps.size(); ++loc_i)
 {
-	cout << ((loc_i == 0) ? -1 : locThrownSteps[loc_i].first->myid) << ": ";
+	cout << ((loc_i == 0) ? 0 : locThrownSteps[loc_i].first->myid) << ": ";
 	for(size_t loc_j = 0; loc_j < locThrownSteps[loc_i].second.size(); ++loc_j)
 		cout << locThrownSteps[loc_i].second[loc_j]->myid << ", ";
 	cout << endl;
@@ -496,7 +499,7 @@ double DAnalysisUtilities::Calc_DOCAVertex(const DKinFitParticle* locKinFitParti
 	DVector3 locUnitDir2(locKinFitParticle2->Get_Momentum().Unit().X(),locKinFitParticle2->Get_Momentum().Unit().Y(),locKinFitParticle2->Get_Momentum().Unit().Z());
 	DVector3 locVertex1(locKinFitParticle1->Get_Position().X(),locKinFitParticle1->Get_Position().Y(),locKinFitParticle1->Get_Position().Z());
 	DVector3 locVertex2(locKinFitParticle2->Get_Position().X(),locKinFitParticle2->Get_Position().Y(),locKinFitParticle2->Get_Position().Z());
-       	return Calc_DOCAVertex(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locDOCAVertex);
+	return Calc_DOCAVertex(locUnitDir1, locUnitDir2, locVertex1, locVertex2, locDOCAVertex);
 }
 
 double DAnalysisUtilities::Calc_DOCAVertex(const DKinematicData* locKinematicData1, const DKinematicData* locKinematicData2, DVector3& locDOCAVertex) const

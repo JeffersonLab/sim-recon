@@ -14,9 +14,7 @@
 #include "JANA/JEventProcessor.h"
 
 #include "DANA/DApplication.h"
-#include "ANALYSIS/DAnalysisResults.h"
-
-#include "DFactoryGenerator_monitoring_hists.h"
+#include "ANALYSIS/DHistogramActions.h"
 
 using namespace jana;
 

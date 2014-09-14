@@ -16,7 +16,7 @@ class DReactionStep
 		// CONSTRUCTOR
 		DReactionStep(void) : dInitialParticleID(Unknown), dTargetParticleID(Unknown), dMissingParticleIndex(-1), dApplyKinFitMassConstraintOnInitialParticleFlag(true) { };
 
-		bool Are_ParticlesIdentical(const DReactionStep* locReactionStep) const; //note order can be re-arranged!
+		bool Are_ParticlesIdentical(const DReactionStep* locReactionStep, bool locExceptMissingUnknownInInputFlag = false) const; //note order can be re-arranged!
 
 		// SET OBJECT DATA:
 		void Set_InitialParticleID(Particle_t locPID, bool locIsMissingFlag = false); //TRUE IS NOT SUPPORTED YET!

@@ -113,13 +113,20 @@ bool DEventRFBunch_factory::Find_NeutralTimes(JEventLoop* locEventLoop, vector<d
 {
 	locTimes.clear();
 
-	vector<const DNeutralParticleHypothesis*> locNeutralParticleHypotheses;
-	locEventLoop->Get(locNeutralParticleHypotheses);
+	vector<const DNeutralShower*> locNeutralShowers;
+	locEventLoop->Get(locNeutralShowers);
 
-	for(size_t loc_i = 0; loc_i < locNeutralParticleHypotheses.size(); ++loc_i)
+	for(size_t loc_i = 0; loc_i < locNeutralShowers.size(); ++loc_i)
 	{
-		if(locNeutralParticleHypotheses[loc_i]->PID() == Gamma)
-			locTimes.push_back(locNeutralParticleHypotheses[loc_i]->time());
+		DVector3 locHitPoint = locNeutralShowers[loc_i]->dSpacetimeVertex.Vect();
+		DVector3 locPath = locHitPoint - dTargetCenter;
+		double locPathLength = locPath.Mag();
+		if(!(locPathLength > 0.0))
+			continue;
+
+		double locFlightTime = locPathLength/29.9792458;
+		double locHitTime = locNeutralShowers[loc_i]->dSpacetimeVertex.T();
+		locTimes.push_back(locHitTime - locFlightTime);
 	}
 
 	return (!locTimes.empty());

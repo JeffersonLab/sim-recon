@@ -32,6 +32,8 @@ DCutAction_ThrownTopology
 
 DCutAction_PIDFOM
 DCutAction_CombinedPIDFOM
+DCutAction_TrueBeamParticle
+DCutAction_TrueCombo
 DCutAction_TruePID
 DCutAction_AllTruePID
 
@@ -49,6 +51,7 @@ DCutAction_TransverseMomentum
 class DCutAction_ThrownTopology : public DAnalysisAction
 {
 	//cut on whether the thrown topology matches the DReaction
+		//if locExactMatchFlag = false, require the DReaction be a subset (or the total) of the thrown topology
 	public:
 		DCutAction_ThrownTopology(const DReaction* locReaction, bool locExactMatchFlag, string locActionUniqueString = "") : 
 		DAnalysisAction(locReaction, "Cut_ThrownTopology", false, locActionUniqueString), 
@@ -138,6 +141,39 @@ class DCutAction_CombinedTrackingFOM : public DAnalysisAction
 		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
 
 		double dMinimumConfidenceLevel;
+};
+
+class DCutAction_TrueBeamParticle : public DAnalysisAction
+{
+	public:
+		DCutAction_TrueBeamParticle(const DReaction* locReaction, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_TrueBeamParticle", false, locActionUniqueString){}
+
+		inline void Initialize(JEventLoop* locEventLoop){}
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+};
+
+class DCutAction_TrueCombo : public DAnalysisAction
+{
+	public:
+		//if locExactMatchFlag = false, require the DReaction be a subset (or the total) of the thrown topology
+		DCutAction_TrueCombo(const DReaction* locReaction, double locMinThrownMatchFOM, bool locExactMatchFlag, string locActionUniqueString = "") : 
+		DAnalysisAction(locReaction, "Cut_TrueCombo", false, locActionUniqueString), 
+		dMinThrownMatchFOM(locMinThrownMatchFOM), dExactMatchFlag(locExactMatchFlag){}
+
+		void Initialize(JEventLoop* locEventLoop);
+
+	private:
+		bool Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo);
+
+		double dMinThrownMatchFOM;
+		bool dExactMatchFlag;
+
+		DCutAction_ThrownTopology* dCutAction_ThrownTopology;
+
+		DCutAction_TrueBeamParticle* dCutAction_TrueBeamParticle;
 };
 
 class DCutAction_TruePID : public DAnalysisAction

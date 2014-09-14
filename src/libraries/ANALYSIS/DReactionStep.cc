@@ -1,12 +1,22 @@
 #include "DReactionStep.h"
 
-bool DReactionStep::Are_ParticlesIdentical(const DReactionStep* locReactionStep) const
+bool DReactionStep::Are_ParticlesIdentical(const DReactionStep* locReactionStep, bool locExceptMissingUnknownInInputFlag) const
 {
 	if(dInitialParticleID != locReactionStep->dInitialParticleID)
 		return false;
 	if(dTargetParticleID != locReactionStep->dTargetParticleID)
 		return false;
-	if(dFinalParticleIDs.size() != locReactionStep->dFinalParticleIDs.size())
+
+	int locSizeChange = 0;
+	if(locExceptMissingUnknownInInputFlag)
+	{
+		Particle_t locMissingPID = Unknown;
+		bool locIsMissingPID = locReactionStep->Get_MissingPID(locMissingPID);
+		if(locIsMissingPID && (locMissingPID == Unknown))
+			locSizeChange = 1;
+	}
+
+	if(dFinalParticleIDs.size() != (locReactionStep->dFinalParticleIDs.size() - locSizeChange))
 		return false;
 
 	//note order can be re-arranged!

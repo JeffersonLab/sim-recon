@@ -18,7 +18,6 @@ extern "C"
 	{
 		InitJANAPlugin(app);
 		app->AddProcessor(new DEventProcessor_monitoring_hists());
-		app->AddFactoryGenerator(new DFactoryGenerator_monitoring_hists());
 	}
 } // "C"
 
@@ -59,9 +58,6 @@ jerror_t DEventProcessor_monitoring_hists::brun(JEventLoop *locEventLoop, int ru
 //------------------
 jerror_t DEventProcessor_monitoring_hists::evnt(JEventLoop *locEventLoop, int eventnumber)
 {
-	vector<const DAnalysisResults*> locAnalysisResultsVector;
-	locEventLoop->Get(locAnalysisResultsVector);
-
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
 

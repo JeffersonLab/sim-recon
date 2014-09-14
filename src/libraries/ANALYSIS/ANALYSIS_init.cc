@@ -95,6 +95,8 @@ jerror_t ANALYSIS_init(JEventLoop *loop)
 	DCutAction_AllTruePID(NULL, 0.0);
 	DCutAction_GoodEventRFBunch(NULL, false);
 	DCutAction_TransverseMomentum(NULL, 0.0);
+	DCutAction_TrueBeamParticle(NULL);
+	DCutAction_TrueCombo(NULL, 0.0, false);
 
 	return NOERROR;
 }

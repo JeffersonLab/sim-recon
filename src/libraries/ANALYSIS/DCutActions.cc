@@ -292,6 +292,132 @@ bool DCutAction_KinFitFOM::Perform_Action(JEventLoop* locEventLoop, const DParti
 	return (locKinFitResults->Get_ConfidenceLevel() > dMinimumConfidenceLevel);
 }
 
+void DCutAction_TrueCombo::Initialize(JEventLoop* locEventLoop)
+{
+	dCutAction_TrueBeamParticle = new DCutAction_TrueBeamParticle(Get_Reaction());
+	dCutAction_TrueBeamParticle->Initialize(locEventLoop);
+	dCutAction_ThrownTopology = new DCutAction_ThrownTopology(Get_Reaction(), dExactMatchFlag);
+	dCutAction_ThrownTopology->Initialize(locEventLoop);
+}
+
+bool DCutAction_TrueCombo::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+	if(locMCThrownMatchingVector.empty())
+		return false; //not a simulated event
+	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector[0];
+
+	if(!(*dCutAction_ThrownTopology)(locEventLoop, locParticleCombo))
+		return false; //not the thrown topology: bail
+
+	//Do we need to pick the beam photon? If so, look for it
+	Particle_t locPID = Get_Reaction()->Get_ReactionStep(0)->Get_InitialParticleID();
+	if(locPID == Gamma)
+	{
+		if(!(*dCutAction_TrueBeamParticle)(locEventLoop, locParticleCombo))
+			return false; //needed the true beam photon, didn't have it
+	}
+
+	//get & organize throwns
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
+	map<int, const DMCThrown*> locMCThrownMyIDMap; //map of myid -> thrown
+	for(size_t loc_i = 0; loc_i < locMCThrowns.size(); ++loc_i)
+		locMCThrownMyIDMap[locMCThrowns[loc_i]->myid] = locMCThrowns[loc_i];
+
+	//OK, now need to check and see if the particles have the right PID & the right parent chain
+	for(size_t loc_i = 0; loc_i < locParticleCombo->Get_NumParticleComboSteps(); ++loc_i)
+	{
+		const DParticleComboStep* locParticleComboStep = locParticleCombo->Get_ParticleComboStep(loc_i);
+
+		deque<const DKinematicData*> locParticles;
+		locParticleComboStep->Get_DetectedFinalParticles_Measured(locParticles);
+		for(size_t loc_j = 0; loc_j < locParticles.size(); ++loc_j)
+		{
+			const DMCThrown* locMCThrown = NULL;
+			double locMatchFOM = 0.0;
+			if(ParticleCharge(locParticles[loc_j]->PID()) == 0)
+			{
+				//check if good neutral & PID
+				const DNeutralParticleHypothesis* locNeutralParticleHypothesis = static_cast<const DNeutralParticleHypothesis*>(locParticles[loc_j]);
+				locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypothesis, locMatchFOM);
+				if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
+					return false; //not matched
+				if(((Particle_t)locMCThrown->type) != locParticles[loc_j]->PID())
+					return false; //bad PID
+			}
+			else
+			{
+				//check if good track & PID
+				double locMatchFOM = 0.0;
+				const DChargedTrackHypothesis* locChargedTrackHypothesis = static_cast<const DChargedTrackHypothesis*>(locParticles[loc_j]);
+				locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypothesis, locMatchFOM);
+				if((locMCThrown == NULL) || (locMatchFOM < dMinThrownMatchFOM))
+					return false; //not matched
+				if(((Particle_t)locMCThrown->type) != locParticles[loc_j]->PID())
+					return false; //bad PID
+			}
+
+			//check if parent is correct
+			const DParticleComboStep* locParentSearchParticleComboStep = locParticleComboStep;
+			int locParentID = locMCThrown->parentid;
+
+			do
+			{
+				if(locParentID == -1)
+					return false; //parent particle is not listed: matched to knock-out particle, is wrong. bail
+				if(locParentID == 0)
+				{
+					//parent id of 0 is directly produced (e.g.)
+					if(locParentSearchParticleComboStep->Get_InitialParticleID() != Gamma)
+						return false; //was directly (photo-) produced, but not so in combo: bail
+					break; //good: this is the only "good" exit point of the do-loop
+				}
+
+				const DMCThrown* locMCThrownParent = locMCThrownMyIDMap[locParentID];
+				Particle_t locPID = locMCThrownParent->PID();
+				if((locPID == Unknown) || IsResonance(locPID))
+				{
+					//intermediate (unknown or resonance) particle: go to its parent
+					locParentID = locMCThrownParent->parentid;
+					continue;
+				}
+				if(locPID != locParentSearchParticleComboStep->Get_InitialParticleID())
+					return false; //the true particle was produced from a different parent: bail
+
+				//OK, we've determined that the particle in question decayed from the correct particle.
+				//HOWEVER, we need to determine whether the PARENT decayed from the correct particle (and on(back)wards until the production step)
+				locParentID = locMCThrownParent->parentid;
+				int locNewSearchStepIndex = locParentSearchParticleComboStep->Get_InitialParticleDecayFromStepIndex();
+				locParentSearchParticleComboStep = locParticleCombo->Get_ParticleComboStep(locNewSearchStepIndex);
+			}
+			while(true);
+		}
+	}
+
+	return true; //we made it!
+}
+
+bool DCutAction_TrueBeamParticle::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
+{
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+	if(locMCThrownMatchingVector.empty())
+		return false; //not a simulated event
+
+	const DKinematicData* locKinematicData = locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticle_Measured();
+	if(locKinematicData == NULL)
+		return false; //initial step is not production step
+
+	const DBeamPhoton* locBeamPhoton = dynamic_cast<const DBeamPhoton*>(locKinematicData);
+	if(locBeamPhoton == NULL)
+		return false; //dunno how could be possible ...
+
+	return (locBeamPhoton == locMCThrownMatchingVector[0]->Get_ReconMCGENBeamPhoton());
+}
+
 bool DCutAction_TruePID::Perform_Action(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo)
 {
 	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
