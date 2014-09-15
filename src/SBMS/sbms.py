@@ -237,7 +237,7 @@ def swig_library(env, libname, srcs):
 
 	# use LoadableModule() to build the python module, since that properly supports OS X 
 	mylib = env.LoadableModule(libname, srcs,
-				   SHLIBPREFIX="",
+				   SHLIBPREFIX="_",
 				   SHLIBSUFFIX=so_ext)
 
 	# Cleaning and installation are restricted to the directory
