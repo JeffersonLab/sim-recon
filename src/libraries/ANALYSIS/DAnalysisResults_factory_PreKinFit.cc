@@ -236,7 +236,12 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 		locAnalysisResults->Set_Reaction(locReaction);
 
 		if(dCombosByReaction.find(locReaction) == dCombosByReaction.end())
+		{
+			dApplication->RootWriteLock();
+			dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
+			dApplication->RootUnLock();
 			continue;
+		}
 		set<const DParticleCombo*>& locSurvivingParticleCombos = dCombosByReaction[locReaction];
 
 		//find the true particle combo

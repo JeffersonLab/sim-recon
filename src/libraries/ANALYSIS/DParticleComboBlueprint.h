@@ -10,8 +10,12 @@
 using namespace std;
 using namespace jana;
 
+class DParticleComboBlueprint_factory;
+
 class DParticleComboBlueprint : public JObject
 {
+	friend class DParticleComboBlueprint_factory;
+
 	public:
 
 		JOBJECT_PUBLIC(DParticleComboBlueprint);
@@ -20,7 +24,7 @@ class DParticleComboBlueprint : public JObject
 
 		const DParticleComboBlueprintStep* Get_ParticleComboBlueprintStep(size_t locStepIndex) const;
 		const DParticleComboBlueprintStep* Pop_ParticleComboBlueprintStep(void);
-		inline void Add_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintSteps.push_back(locParticleComboBlueprintStep);}
+		inline void Prepend_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep){dParticleComboBlueprintSteps.push_front(locParticleComboBlueprintStep);}
 		inline size_t Get_NumParticleComboBlueprintSteps(void) const{return dParticleComboBlueprintSteps.size();}
 		void Set_ParticleComboBlueprintStep(const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locStepIndex);
 
@@ -49,8 +53,8 @@ inline const DParticleComboBlueprintStep* DParticleComboBlueprint::Pop_ParticleC
 {
 	if(dParticleComboBlueprintSteps.empty())
 		return NULL;
-	const DParticleComboBlueprintStep* locParticleComboBlueprintStep = dParticleComboBlueprintSteps.back();
-	dParticleComboBlueprintSteps.pop_back();
+	const DParticleComboBlueprintStep* locParticleComboBlueprintStep = dParticleComboBlueprintSteps.front();
+	dParticleComboBlueprintSteps.pop_front();
 	return locParticleComboBlueprintStep;
 }
 
