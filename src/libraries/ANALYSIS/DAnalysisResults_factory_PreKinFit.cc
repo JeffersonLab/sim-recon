@@ -75,8 +75,15 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 			loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
 			if(loc1DHist == NULL)
 			{
-				locHistTitle = locReactionName + string(";# Track Combinations;# Events");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 100, -0.5, 99.5);
+				double* locBinArray = new double[55];
+				for(unsigned int loc_j = 0; loc_j < 6; ++loc_j)
+				{
+					for(unsigned int loc_k = 1; loc_k <= 9; ++loc_k)
+						locBinArray[loc_j*9 + loc_k] = -0.5 + double(loc_k)*pow(10.0, double(loc_j));
+				}
+				locBinArray[54] = 1.0E6 + 0.5;
+				locHistTitle = locReactionName + string(";# Particle Combinations;# Events");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 54, locBinArray);
 			}
 			dHistMap_NumParticleCombos[locReaction] = loc1DHist;
 
