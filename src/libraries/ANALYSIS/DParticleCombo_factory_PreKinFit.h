@@ -27,6 +27,8 @@
 #include <DANA/DApplication.h>
 
 #include "ANALYSIS/DParticleCombo.h"
+#include "ANALYSIS/DCutActions.h"
+#include "ANALYSIS/DMCThrownMatching.h"
 #include "ANALYSIS/DParticleComboStep.h"
 #include "ANALYSIS/DParticleComboBlueprint.h"
 #include "ANALYSIS/DAnalysisUtilities.h"
@@ -47,11 +49,11 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses);
+		const DKinematicData* Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const DMCThrownMatching* locMCThrownMatching);
 		DKinematicData* Create_Target(Particle_t locPID);
 
-		bool Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const;
-		bool Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const;
+		bool Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo, bool locIsTrueComboFlag);
+		bool Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo, bool locIsTrueComboFlag);
 		bool Cut_PIDFOM(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
 		bool Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const;
 		bool Cut_HasDetectorMatch(const DReaction* locReaction, const DChargedTrackHypothesis* locChargedTrackHypothesis) const;
@@ -88,7 +90,34 @@ class DParticleCombo_factory_PreKinFit : public jana::JFactory<DParticleCombo>
 		pair<bool, bool> dHasDetectorMatchFlag; //if both are true, require tracks to have a detector match
 
 		double dTargetCenterZ;
+		double dMinThrownMatchFOM;
 		const DAnalysisUtilities* dAnalysisUtilities;
+		vector<const DReaction*> dReactions;
+		map<const DReaction*, bool> dMCReactionExactMatchFlags;
+		map<const DReaction*, DCutAction_TrueCombo*> dTrueComboCuts;
+
+		set<const DChargedTrackHypothesis*> dPreviousPIDTracks;
+		set<const DNeutralParticleHypothesis*> dPreviousPIDNeutrals;
+		map<const DReaction*, map<Particle_t, TH1D*> > dHistMap_PIDFOM_All;
+		map<const DReaction*, map<Particle_t, TH1D*> > dHistMap_PIDFOM_True;
+
+		map<const DReaction*, TH1D*> dHistMap_CombinedPIDFOM_All;
+		map<const DReaction*, TH1D*> dHistMap_CombinedPIDFOM_True;
+
+		map<const DReaction*, TH1D*> dHistMap_CombinedTrackingFOM_All;
+		map<const DReaction*, TH1D*> dHistMap_CombinedTrackingFOM_True;
+
+		set<pair<const DEventRFBunch*, const DBeamPhoton*> > dPreviousPhotonRFDeltaTPairs;
+		map<const DReaction*, TH1D*> dHistMap_PhotonRFDeltaT_All;
+		map<const DReaction*, TH1D*> dHistMap_PhotonRFDeltaT_True;
+
+		map<const DReaction*, TH1D*> dHistMap_NumSurvivingBeamParticles;
+
+		map<const DReaction*, TH2D*> dHistMap_NumBlueprintsSurvivedCut;
+		map<const DReaction*, TH1D*> dHistMap_NumBlueprintsSurvivedCut1D;
+
+		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedCut_All;
+		map<const DReaction*, TH1D*> dHistMap_NumEventsSurvivedCut_True;
 };
 
 #endif // _DParticleCombo_factory_PreKinFit_

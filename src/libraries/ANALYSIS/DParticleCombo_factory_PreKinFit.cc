@@ -25,6 +25,8 @@ jerror_t DParticleCombo_factory_PreKinFit::init(void)
 	dMinCombinedTrackingFOM = pair<bool, double>(false, -1.0);
 	dHasDetectorMatchFlag = pair<bool, bool>(false, false);
 
+	dMinThrownMatchFOM = 5.73303E-7;
+
 	return NOERROR;
 }
 
@@ -77,13 +79,13 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 		gPARMS->GetParameter("COMBO:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag.second);
 	}
 
-	// Get # of DReactions:
+	// Get DReactions:
 	// Get list of factories and find all the ones producing
 	// DReaction objects. (A simpler way to do this would be to
 	// just use locEventLoop->Get(...), but then only one plugin could
 	// be used at a time.)
-	size_t locNumReactions = 0;
 	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
+	dReactions.clear();
 	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
 	{
 		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
@@ -97,10 +99,231 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 		// overall list.
 		vector<const DReaction*> locReactionsSubset;
 		locFactory->Get(locReactionsSubset);
-		locNumReactions += locReactionsSubset.size();
+		dReactions.insert(dReactions.end(), locReactionsSubset.begin(), locReactionsSubset.end());
 	}
 
-	MAX_DParticleComboStepPoolSize = 3000*locNumReactions;
+	MAX_DParticleComboStepPoolSize = 3000*dReactions.size();
+
+	vector<const DMCThrown*> locMCThrowns;
+	locEventLoop->Get(locMCThrowns);
+
+	if(!locMCThrowns.empty())
+	{
+		for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+		{
+			//auto-detect whether the DReaction is expected to be the entire reaction or a subset
+			bool locExactMatchFlag = true;
+			if(dReactions[loc_i]->Get_ReactionStep(0)->Get_InitialParticleID() != Gamma)
+				locExactMatchFlag = false;
+			else
+			{
+				Particle_t locMissingPID = Unknown;
+				if(dReactions[loc_i]->Get_MissingPID(locMissingPID))
+				{
+					if(!Is_FinalStateParticle(locMissingPID))
+						locExactMatchFlag = false;
+				}
+			}
+
+			dMCReactionExactMatchFlags[dReactions[loc_i]] = locExactMatchFlag;
+			dTrueComboCuts[dReactions[loc_i]] = new DCutAction_TrueCombo(dReactions[loc_i], dMinThrownMatchFOM, locExactMatchFlag);
+			dTrueComboCuts[dReactions[loc_i]]->Initialize(locEventLoop);
+		}
+	}
+
+	string locHistName, locHistTitle;
+	TH1D* loc1DHist;
+	TH2D* loc2DHist;
+
+	//Create Diagnostic Histograms
+	japp->RootWriteLock();
+	{
+		string locOutputFileName = "hd_root.root";
+		if(gPARMS->Exists("OUTPUT_FILENAME"))
+			gPARMS->GetParameter("OUTPUT_FILENAME", locOutputFileName);
+		TFile* locFile = (TFile*)gROOT->FindObject(locOutputFileName.c_str());
+		if(locFile == NULL)
+			return NOERROR;
+		locFile->cd("");
+
+		for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+		{
+			const DReaction* locReaction = dReactions[loc_i];
+
+			//get to the correct directory
+			string locReactionName = locReaction->Get_ReactionName();
+			string locDirName = locReactionName;
+			string locDirTitle = locReactionName;
+
+			//action directory
+			locFile->cd();
+			TDirectoryFile* locDirectoryFile = static_cast<TDirectoryFile*>(locFile->GetDirectory(locDirName.c_str()));
+			if(locDirectoryFile == NULL)
+				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
+			locDirectoryFile->cd();
+
+			//pre-combo directory
+			locDirName = "Hist_ComboConstruction";
+			locDirectoryFile = static_cast<TDirectoryFile*>(gDirectory->GetDirectory(locDirName.c_str()));
+			if(locDirectoryFile == NULL)
+				locDirectoryFile = new TDirectoryFile(locDirName.c_str(), locDirTitle.c_str());
+			locDirectoryFile->cd();
+
+			//# Events Survived
+			locHistName = "NumEventsSurvivedCut";
+			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";;# Events Survived Cut");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 5, 0.5, 5.5);
+				loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
+				loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
+				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
+				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particles (PID, Detector Match)");
+				loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Combined PID, Tracking FOMs");
+			}
+			dHistMap_NumEventsSurvivedCut_All[locReaction] = loc1DHist;
+
+			if(!locMCThrowns.empty())
+			{
+				locHistName = "NumTrueEventsSurvivedCut";
+				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+				{
+					locHistTitle = locReactionName + string(";;# Events Survived Cut");
+					loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 6, 0.5, 6.5);
+					loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
+					loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combo Blueprints");
+					loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Beam, RF #Deltat");
+					loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Particles (PID, Detector Match)");
+					loc1DHist->GetXaxis()->SetBinLabel(5, "Cut Combined PID, Tracking FOMs");
+					loc1DHist->GetXaxis()->SetBinLabel(6, "Has True Combo (Not a Cut)");
+				}
+				dHistMap_NumEventsSurvivedCut_True[locReaction] = loc1DHist;
+			}
+
+			//# Blueprints Survived
+			locHistName = "NumBlueprintsSurvivedCut";
+			loc2DHist = static_cast<TH2D*>(gDirectory->Get(locHistName.c_str()));
+			if(loc2DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";;# Combo Blueprints Survived Cut");
+				loc2DHist = new TH2D(locHistName.c_str(), locHistTitle.c_str(), 4, 0.5, 4.5, 100, -0.5, 99.5);
+				loc2DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
+				loc2DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
+				loc2DHist->GetXaxis()->SetBinLabel(3, "Cut Particles (PID, Detector Match)");
+				loc2DHist->GetXaxis()->SetBinLabel(4, "Cut Combined PID, Tracking FOMs");
+			}
+			dHistMap_NumBlueprintsSurvivedCut[locReaction] = loc2DHist;
+
+			locHistName = "NumBlueprintsSurvivedCut1D";
+			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";;# Combo Blueprints Survived Cut");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 4, 0.5, 4.5);
+				loc1DHist->GetXaxis()->SetBinLabel(1, "Has Particle Combo Blueprints");
+				loc1DHist->GetXaxis()->SetBinLabel(2, "Cut Beam, RF #Deltat");
+				loc1DHist->GetXaxis()->SetBinLabel(3, "Cut Particles (PID, Detector Match)");
+				loc1DHist->GetXaxis()->SetBinLabel(4, "Cut Combined PID, Tracking FOMs");
+			}
+			dHistMap_NumBlueprintsSurvivedCut1D[locReaction] = loc1DHist;
+
+			//Beam, RF Delta-t
+			locHistName = "BeamPhotonRFDeltaT";
+			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";#Deltat_{Beam #gamma - RF} (ns)");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 220, -11.0, 11.0);
+			}
+			dHistMap_PhotonRFDeltaT_All[locReaction] = loc1DHist;
+
+			if(!locMCThrowns.empty())
+			{
+				locHistName = "TrueBeamPhotonRFDeltaT";
+				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+					loc1DHist = (TH1D*)dHistMap_PhotonRFDeltaT_All[locReaction]->Clone(locHistName.c_str());
+				dHistMap_PhotonRFDeltaT_True[locReaction] = loc1DHist;
+			}
+
+			//Num Beam Photons Per Blueprint
+			locHistName = "NumSurvivingBeamParticles";
+			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";# Surviving Beam Particles");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 11, -0.5, 10.5);
+			}
+			dHistMap_NumSurvivingBeamParticles[locReaction] = loc1DHist;
+
+			//PID FOM
+			deque<Particle_t> locDetectedPIDs;
+			dReactions[loc_i]->Get_DetectedFinalPIDs(locDetectedPIDs, false);
+			for(size_t loc_j = 0; loc_j < locDetectedPIDs.size(); ++loc_j)
+			{
+				Particle_t locPID = locDetectedPIDs[loc_j];
+				string locParticleName = ParticleType(locPID);
+				string locParticleROOTName = ParticleName_ROOT(locPID);
+
+				locHistName = string("PIDConfidenceLevel_") + locParticleName;
+				locHistTitle = locParticleROOTName + string(";PID Confidence Level");
+				if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+					dHistMap_PIDFOM_All[locReaction][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				else
+					dHistMap_PIDFOM_All[locReaction][locPID] = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
+
+				if(!locMCThrowns.empty())
+				{
+					locHistName = string("PIDConfidenceLevel_True") + locParticleName;
+					if(gDirectory->Get(locHistName.c_str()) != NULL) //already created by another thread, or directory name is duplicate (e.g. two identical steps)
+						dHistMap_PIDFOM_True[locReaction][locPID] = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+					else
+						dHistMap_PIDFOM_True[locReaction][locPID] = (TH1D*)dHistMap_PIDFOM_All[locReaction][locPID]->Clone(locHistName.c_str());
+				}
+			}
+
+			//Combined PID FOM
+			locHistName = "CombinedPIDFOM";
+			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";#Combined PID Confidence Level");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
+			}
+			dHistMap_CombinedPIDFOM_All[locReaction] = loc1DHist;
+
+			if(!locMCThrowns.empty())
+			{
+				locHistName = "TrueCombinedPIDFOM";
+				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+					loc1DHist = (TH1D*)dHistMap_CombinedPIDFOM_All[locReaction]->Clone(locHistName.c_str());
+				dHistMap_CombinedPIDFOM_True[locReaction] = loc1DHist;
+			}
+
+			//Combined Tracking FOM
+			locHistName = "CombinedTrackingFOM";
+			loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+			if(loc1DHist == NULL)
+			{
+				locHistTitle = locReactionName + string(";#Combined Tracking Confidence Level");
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), 200, 0.0, 1.0);
+			}
+			dHistMap_CombinedTrackingFOM_All[locReaction] = loc1DHist;
+
+			if(!locMCThrowns.empty())
+			{
+				locHistName = "TrueCombinedTrackingFOM";
+				loc1DHist = static_cast<TH1D*>(gDirectory->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+					loc1DHist = (TH1D*)dHistMap_CombinedTrackingFOM_All[locReaction]->Clone(locHistName.c_str());
+				dHistMap_CombinedTrackingFOM_True[locReaction] = loc1DHist;
+			}
+		}
+	}
+	japp->RootUnLock(); //unlock
 
 	return NOERROR;
 }
@@ -111,6 +334,10 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, int eventnumber)
 {
 	dComboBlueprintStepMap.clear();
+	dPreviousPhotonRFDeltaTPairs.clear();
+	dPreviousPIDTracks.clear();
+	dPreviousPIDNeutrals.clear();
+
 	Reset_Pools();
 
 	vector<const DParticleComboBlueprint*> locParticleComboBlueprints;
@@ -128,12 +355,20 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	vector<const DBeamPhoton*> locBeamPhotons;
 	locEventLoop->Get(locBeamPhotons);
 
+	vector<const DMCThrownMatching*> locMCThrownMatchingVector;
+	locEventLoop->Get(locMCThrownMatchingVector);
+	const DMCThrownMatching* locMCThrownMatching = locMCThrownMatchingVector.empty() ? NULL : locMCThrownMatchingVector[0];
+
+	set<const DReaction*> locTrueComboSurvivedReactions;
+
 	DParticleCombo* locParticleCombo;
 	DParticleComboStep* locParticleComboStep;
 	DKinematicData* locTarget;
 
 	map<Particle_t, DKinematicData*> locTargetParticleMap;
 	Particle_t locPID;
+
+	map<const DReaction*, deque<size_t> > locNumBlueprintsSurvivedCuts;
 
 	map<const DParticleComboStep*, deque<const DParticleComboStep*> > locStepCloneForBeamMap;
 	map<const DParticleComboStep*, deque<const DParticleComboStep*> >::iterator locIterator;
@@ -146,6 +381,10 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		locParticleCombo->AddAssociatedObject(locParticleComboBlueprint);
 		locParticleCombo->Set_KinFitResults(NULL);
 		bool locBadComboFlag = false;
+
+		if(locNumBlueprintsSurvivedCuts[locReaction].empty())
+			locNumBlueprintsSurvivedCuts[locReaction].resize(4);
+		++locNumBlueprintsSurvivedCuts[locReaction][0];
 
 		//select the corresponding rf bunch
 		const DEventRFBunch* locEventRFBunch = NULL;
@@ -164,15 +403,22 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 
 		locParticleCombo->Set_EventRFBunch(locEventRFBunch);
 
+		if(locParticleComboBlueprint->Get_ParticleComboBlueprintStep(0)->Get_InitialParticleID() != Gamma)
+			++locNumBlueprintsSurvivedCuts[locReaction][1]; //don't need to cut
+
 		vector<const DBeamPhoton*> locCandidatePhotons;
 		for(size_t loc_j = 0; loc_j < locParticleComboBlueprint->Get_NumParticleComboBlueprintSteps(); ++loc_j)
 		{
 			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
+			locPID = locParticleComboBlueprintStep->Get_InitialParticleID();
+
 			//search to see if blueprint step is a duplicate of a previous one. if so, combo step will be too!
 			map<const DParticleComboBlueprintStep*, const DParticleComboStep*>::iterator locIterator = dComboBlueprintStepMap.find(locParticleComboBlueprintStep);
 			if(locIterator != dComboBlueprintStepMap.end()) //identical! save it and continue
 			{
 				locParticleCombo->Add_ParticleComboStep(locIterator->second);
+				if(locPID == Gamma)
+					++locNumBlueprintsSurvivedCuts[locReaction][1]; //wouldn't have been saved to map unless it was good
 				continue;
 			}
 
@@ -180,23 +426,42 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			locParticleComboStep->Set_ParticleComboBlueprintStep(locParticleComboBlueprintStep);
 
 			//initial particle
-			locPID = locParticleComboBlueprintStep->Get_InitialParticleID();
-			if(locParticleComboBlueprintStep->Get_InitialParticleID() == Gamma) //else decaying particle: nothing to set
+			if(locPID == Gamma) //else decaying particle: nothing to set
 			{
 				//beam photon: will later create additional combo for each one that's within the time window, just set the first one for now
 				//compare photon time to RF time (at center of target) //if RF time not matched to tracks: don't cut on photon time
-				pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : locReaction->Get_MaxPhotonRFDeltaT();
-				for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
+				japp->RootWriteLock();
 				{
-					if((fabs(locBeamPhotons[loc_k]->time() - locEventRFBunch->dTime) < locMaxPhotonRFDeltaT.second) || (!locEventRFBunch->dMatchedToTracksFlag) || (!locMaxPhotonRFDeltaT.first))
-						locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
+					pair<bool, double> locMaxPhotonRFDeltaT = dMaxPhotonRFDeltaT.first ? dMaxPhotonRFDeltaT : locReaction->Get_MaxPhotonRFDeltaT();
+					for(size_t loc_k = 0; loc_k < locBeamPhotons.size(); ++loc_k)
+					{
+						double locDeltaT = locBeamPhotons[loc_k]->time() - locEventRFBunch->dTime;
+
+						pair<const DEventRFBunch*, const DBeamPhoton*> locPhotonRFDeltaTPair(locEventRFBunch, locBeamPhotons[loc_k]);
+						if(dPreviousPhotonRFDeltaTPairs.find(locPhotonRFDeltaTPair) == dPreviousPhotonRFDeltaTPairs.end())
+						{
+							dHistMap_PhotonRFDeltaT_All[locReaction]->Fill(locDeltaT);
+							if(locMCThrownMatching != NULL)
+							{
+								if(locBeamPhotons[loc_k] == locMCThrownMatching->Get_ReconMCGENBeamPhoton())
+									dHistMap_PhotonRFDeltaT_True[locReaction]->Fill(locDeltaT);
+							}
+							dPreviousPhotonRFDeltaTPairs.insert(locPhotonRFDeltaTPair);
+						}
+
+						if((fabs(locDeltaT) < locMaxPhotonRFDeltaT.second) || (!locEventRFBunch->dMatchedToTracksFlag) || (!locMaxPhotonRFDeltaT.first))
+							locCandidatePhotons.push_back(locBeamPhotons[loc_k]);
+					}
 				}
+				japp->RootUnLock();
 
 				if(locCandidatePhotons.empty())
 				{
 					locBadComboFlag = true; //no photons match the RF time
 					break;
 				}
+
+				++locNumBlueprintsSurvivedCuts[locReaction][1];
 
 				locParticleComboStep->Set_InitialParticle(locCandidatePhotons[0]);
 				locParticleComboStep->Set_InitialParticle_Measured(locCandidatePhotons[0]);
@@ -222,7 +487,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 				const DKinematicData* locParticleData = NULL;
 				if(locParticleComboBlueprintStep->Is_FinalParticleDetected(loc_k))
 				{
-					locParticleData = Get_DetectedParticle(locReaction, locEventRFBunch, locParticleComboBlueprintStep, loc_k, locChargedTrackHypotheses, locNeutralParticleHypotheses);
+					locParticleData = Get_DetectedParticle(locReaction, locEventRFBunch, locParticleComboBlueprintStep, loc_k, locChargedTrackHypotheses, locNeutralParticleHypotheses, locMCThrownMatching);
 					if(locParticleData == NULL) //e.g. bad vertex-z
 					{
 						locBadComboFlag = true;
@@ -241,12 +506,17 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
 		}
 
+		bool locIsTrueComboFlag = false;
 		if(!locBadComboFlag)
 		{
-			if((!Cut_CombinedTrackingFOM(locParticleCombo)) || (!Cut_CombinedPIDFOM(locParticleCombo)))
+			++locNumBlueprintsSurvivedCuts[locReaction][2];
+			if(dTrueComboCuts.find(locReaction) != dTrueComboCuts.end())
+				locIsTrueComboFlag = (*dTrueComboCuts[locReaction])(locEventLoop, locParticleCombo);
+			if((!Cut_CombinedTrackingFOM(locParticleCombo, locIsTrueComboFlag)) || (!Cut_CombinedPIDFOM(locParticleCombo, locIsTrueComboFlag)))
 				locBadComboFlag = true;
 		}
-		if(locBadComboFlag) //e.g. bad PID FOM
+
+		if(locBadComboFlag) //e.g. bad PID FOM: recycle steps
 		{
 			for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
 			{
@@ -259,6 +529,10 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			delete locParticleCombo;
 			continue;
 		}
+		++locNumBlueprintsSurvivedCuts[locReaction][3];
+
+		if(locIsTrueComboFlag)
+			locTrueComboSurvivedReactions.insert(locReaction);
 
 		for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
 		{
@@ -266,9 +540,15 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleCombo->Get_ParticleComboStep(loc_j);
 		}
 
-
 		Calc_CommonSpacetimeVertices(locParticleCombo);
 		_data.push_back(locParticleCombo);
+
+		if(locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticleID() == Gamma)
+		{
+			japp->RootWriteLock();
+			dHistMap_NumSurvivingBeamParticles[locReaction]->Fill(locCandidatePhotons.size());
+			japp->RootUnLock();
+		}
 
 		//clone combos for additional beam photons (if needed)
 		if((locParticleCombo->Get_ParticleComboStep(0)->Get_InitialParticleID() == Gamma) && (locCandidatePhotons.size() > 1))
@@ -297,6 +577,42 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		}
 	}
 
+	//fill passed-cut histograms
+	japp->RootWriteLock();
+	{
+		for(size_t loc_i = 0; loc_i < dReactions.size(); ++loc_i)
+		{
+			const DReaction* locReaction = dReactions[loc_i];
+
+			bool locIsThrownMatchFlag = false;
+			if(locMCThrownMatching != NULL)
+			{
+				if(dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, locReaction, dMCReactionExactMatchFlags[locReaction]))
+					locIsThrownMatchFlag = true;
+			}
+
+			dHistMap_NumEventsSurvivedCut_All[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
+			if(locIsThrownMatchFlag)
+				dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
+			if(locTrueComboSurvivedReactions.find(locReaction) != locTrueComboSurvivedReactions.end())
+				dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(6); //true combo
+
+			for(size_t loc_j = 0; loc_j < locNumBlueprintsSurvivedCuts[locReaction].size(); ++loc_j)
+			{
+				if(locNumBlueprintsSurvivedCuts[locReaction][loc_j] > 0)
+				{
+					dHistMap_NumEventsSurvivedCut_All[locReaction]->Fill(loc_j + 2); //+2 because binning begins at 1, and 0 is input event
+					if(locIsThrownMatchFlag)
+						dHistMap_NumEventsSurvivedCut_True[locReaction]->Fill(loc_j + 2); //+2 because binning begins at 1, and 0 is input event
+				}
+				dHistMap_NumBlueprintsSurvivedCut[locReaction]->Fill(loc_j + 1, locNumBlueprintsSurvivedCuts[locReaction][loc_j]); //+1 because 0 is has blueprint
+				for(size_t loc_k = 0; loc_k < locNumBlueprintsSurvivedCuts[locReaction][loc_j]; ++loc_k)
+					dHistMap_NumBlueprintsSurvivedCut1D[locReaction]->Fill(loc_j + 1); //+1 because 0 is has blueprint
+			}
+		}
+	}
+	japp->RootUnLock();
+
 	return NOERROR;
 }
 
@@ -318,7 +634,7 @@ DKinematicData* DParticleCombo_factory_PreKinFit::Create_Target(Particle_t locPI
 	return locTarget;
 }
 
-const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses)
+const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(const DReaction* locReaction, const DEventRFBunch* locEventRFBunch, const DParticleComboBlueprintStep* locParticleComboBlueprintStep, size_t locParticleIndex, vector<const DChargedTrackHypothesis*>& locChargedTrackHypotheses, vector<const DNeutralParticleHypothesis*>& locNeutralParticleHypotheses, const DMCThrownMatching* locMCThrownMatching)
 {
 	Particle_t locPID = locParticleComboBlueprintStep->Get_FinalParticleID(locParticleIndex);
 	int locCharge = ParticleCharge(locPID);
@@ -343,6 +659,26 @@ const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(con
 			if(locEventRFBunch_Hypothesis != locEventRFBunch)
 				continue;
 
+			if(dPreviousPIDNeutrals.find(locNeutralParticleHypotheses[loc_i]) == dPreviousPIDNeutrals.end())
+			{
+				japp->RootWriteLock();
+				{
+					dHistMap_PIDFOM_All[locReaction][locPID]->Fill(locNeutralParticleHypotheses[loc_i]->dFOM);
+					if(locMCThrownMatching != NULL)
+					{
+						double locMatchFOM = 0.0;
+						const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locNeutralParticleHypotheses[loc_i], locMatchFOM);
+						if((locMCThrown != NULL) && (locMatchFOM >= dMinThrownMatchFOM))
+						{
+							if(locMCThrown->PID() == locPID)
+								dHistMap_PIDFOM_True[locReaction][locPID]->Fill(locNeutralParticleHypotheses[loc_i]->dFOM);
+						}
+					}
+				}
+				japp->RootUnLock();
+				dPreviousPIDNeutrals.insert(locNeutralParticleHypotheses[loc_i]);
+			}
+
 			//check to make sure the PID isn't way off (save time/mem)
 			if(!Cut_PIDFOM(locReaction, locNeutralParticleHypotheses[loc_i]))
 				return NULL;
@@ -351,6 +687,7 @@ const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(con
 		}
 		return NULL; //uh oh!
 	}
+
 
 	//charged
 	const DChargedTrack* locChargedTrack = static_cast<const DChargedTrack*>(locSourceObject);
@@ -368,6 +705,26 @@ const DKinematicData* DParticleCombo_factory_PreKinFit::Get_DetectedParticle(con
 		locChargedTrackHypotheses[loc_i]->GetSingleT(locChargedTrack_Hypothesis);
 		if(locChargedTrack_Hypothesis != locChargedTrack)
 			continue;
+
+		if(dPreviousPIDTracks.find(locChargedTrackHypotheses[loc_i]) == dPreviousPIDTracks.end())
+		{
+			japp->RootWriteLock();
+			{
+				dHistMap_PIDFOM_All[locReaction][locPID]->Fill(locChargedTrackHypotheses[loc_i]->dFOM);
+				if(locMCThrownMatching != NULL)
+				{
+					double locMatchFOM = 0.0;
+					const DMCThrown* locMCThrown = locMCThrownMatching->Get_MatchingMCThrown(locChargedTrackHypotheses[loc_i], locMatchFOM);
+					if((locMCThrown != NULL) && (locMatchFOM >= dMinThrownMatchFOM))
+					{
+						if(locMCThrown->PID() == locPID)
+							dHistMap_PIDFOM_True[locReaction][locPID]->Fill(locChargedTrackHypotheses[loc_i]->dFOM);
+					}
+				}
+			}
+			japp->RootUnLock();
+			dPreviousPIDTracks.insert(locChargedTrackHypotheses[loc_i]);
+		}
 
 		//check to make sure the PID isn't way off (save time/mem)
 		if(!Cut_PIDFOM(locReaction, locChargedTrackHypotheses[loc_i]))
@@ -475,12 +832,10 @@ bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, 
 	return ((locNeutralParticleHypothesis->dNDF == 0) ? true : (locNeutralParticleHypothesis->dFOM >= locMinPhotonPIDFOM.second));
 }
 
-bool DParticleCombo_factory_PreKinFit::Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo) const
+bool DParticleCombo_factory_PreKinFit::Cut_CombinedPIDFOM(const DParticleCombo* locParticleCombo, bool locIsTrueComboFlag)
 {
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
 	pair<bool, double> locMinCombinedPIDFOM = dMinCombinedPIDFOM.first ? dMinCombinedPIDFOM : locReaction->Get_MinCombinedPIDFOM();
-	if(!locMinCombinedPIDFOM.first)
-		return true;
 
 	unsigned int locTotalPIDNDF = 0;
 	double locTotalPIDChiSq = 0.0;
@@ -503,15 +858,20 @@ bool DParticleCombo_factory_PreKinFit::Cut_CombinedPIDFOM(const DParticleCombo* 
 		}
 	}
 	double locFOM = TMath::Prob(locTotalPIDChiSq, locTotalPIDNDF);
+
+	dHistMap_CombinedTrackingFOM_All[locReaction]->Fill(locFOM);
+	if(locIsTrueComboFlag)
+		dHistMap_CombinedTrackingFOM_True[locReaction]->Fill(locFOM);
+
+	if(!locMinCombinedPIDFOM.first)
+		return true;
 	return (locFOM >= locMinCombinedPIDFOM.second);
 }
 
-bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo) const
+bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCombo* locParticleCombo, bool locIsTrueComboFlag)
 {
 	const DReaction* locReaction = locParticleCombo->Get_Reaction();
 	pair<bool, double> locMinCombinedTrackingFOM = dMinCombinedTrackingFOM.first ? dMinCombinedTrackingFOM : locReaction->Get_MinCombinedTrackingFOM();
-	if(!locMinCombinedTrackingFOM.first)
-		return true;
 
 	unsigned int locTotalTrackingNDF = 0;
 	double locTotalTrackingChiSq = 0.0;
@@ -528,6 +888,13 @@ bool DParticleCombo_factory_PreKinFit::Cut_CombinedTrackingFOM(const DParticleCo
 	if(locTotalTrackingNDF == 0)
 		return true;
 	double locFOM = TMath::Prob(locTotalTrackingChiSq, locTotalTrackingNDF);
+
+	dHistMap_CombinedPIDFOM_All[locReaction]->Fill(locFOM);
+	if(locIsTrueComboFlag)
+		dHistMap_CombinedPIDFOM_True[locReaction]->Fill(locFOM);
+
+	if(!locMinCombinedTrackingFOM.first)
+		return true;
 	return (locFOM >= locMinCombinedTrackingFOM.second);
 }
 

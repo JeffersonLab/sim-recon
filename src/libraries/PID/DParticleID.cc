@@ -884,39 +884,14 @@ double DParticleID::Calc_SCFlightTimePCorrelation(const DTrackTimeBased* locTrac
 bool DParticleID::Calc_PropagatedRFTime(const DChargedTrackHypothesis* locChargedTrackHypothesis, const DEventRFBunch* locEventRFBunch, double& locPropagatedRFTime, bool locRFTimeFixedFlag) const
 {
 	locPropagatedRFTime = locEventRFBunch->dTime + (locChargedTrackHypothesis->z() - dTargetZCenter)/SPEED_OF_LIGHT;
-	return true; //disabled until timing/etc. issues sorted out. (locEventRFBunch->dTime always = 0)
 
 	if(locRFTimeFixedFlag)
 		return locEventRFBunch->dMatchedToTracksFlag;
+	if((locChargedTrackHypothesis->t1_detector() == SYS_NULL) || (locChargedTrackHypothesis->t1_detector() == SYS_CDC) || (locChargedTrackHypothesis->t1_detector() == SYS_FDC))
+		return locEventRFBunch->dMatchedToTracksFlag; // this track can't distinguish which RF bunch: use the propagated RF time from locEventRFBunch
 
 	//Propagates RF time to the track vertex-z, and then selects the closest RF bunch
-	//Method: match track to RF bunch.  If cannot reliably match (e.g. no TOF or start counter hit) then use the best guess for this event (from locEventRFBunch) if available
-		//First use TOF hit if any, then use a BCAL hit if track is fast enough (resolution low enough), else use start counter hit
-	double locProjectedHitTime;
-
-	//Use TOF hit if any
-	bool locMatchFlag = false;
-	double locP = locChargedTrackHypothesis->momentum().Mag();
-	if(locChargedTrackHypothesis->t1_detector() == SYS_TOF)
-	{
-		locProjectedHitTime = locChargedTrackHypothesis->time();
-		locMatchFlag = true;
-	}
-	else if((locChargedTrackHypothesis->t1_detector() == SYS_BCAL) && (locP > 0.25))
-	{
-		//if p < 250 MeV/c: too slow for the BCAL to distinguish RF bunch
-			//at 225 MeV/c, BCAL t-resolution is ~333ps (3sigma = 999ps), BCAL delta-t error is ~40ps: ~1040ps: bad
-			//at 250 MeV/c, BCAL t-resolution is ~310ps (3sigma = 920ps), BCAL delta-t error is ~40ps: ~960 ps < 1 ns: OK!!
-		locProjectedHitTime = locChargedTrackHypothesis->time();
-		locMatchFlag = true;
-	}
-
-	if(!locMatchFlag) // this track can't distinguish which RF bunch: use the propagated RF time from locEventRFBunch if it was succesfully matched to other tracks, else abort
-		return locEventRFBunch->dMatchedToTracksFlag;
-			
-	//have a matching hit in either TOF/BCAL/ST: match this track to the closest RF bunch
-	//If using an ST hit, this assumes that the start counter resolution will be good enough to unambiguously determine the RF bunch for each track individually.
-		//Otherwise just delete the ST matching section above
+	double locProjectedHitTime = locChargedTrackHypothesis->time();
 	while((locPropagatedRFTime - locProjectedHitTime) > (0.5*dRFBunchFrequency))
 		locPropagatedRFTime -= dRFBunchFrequency;
 	while((locPropagatedRFTime - locProjectedHitTime) < (-0.5*dRFBunchFrequency))

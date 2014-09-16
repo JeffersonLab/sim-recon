@@ -13,7 +13,7 @@
 jerror_t DAnalysisResults_factory_PreKinFit::init(void)
 {
 	dDebugLevel = 0;
-	dROOTObjectsCreatedFlag = false;
+	dMinThrownMatchFOM = 5.73303E-7;
 	return NOERROR;
 }
 
@@ -25,9 +25,6 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 	dApplication = dynamic_cast<DApplication*>(locEventLoop->GetJApplication());
 
 	gPARMS->SetDefaultParameter("ANALYSIS:DEBUGLEVEL", dDebugLevel);
-
-	if(dROOTObjectsCreatedFlag)
-		return NOERROR;
 
 	vector<const DReaction*> locReactions;
 	Get_Reactions(locEventLoop, locReactions);
@@ -87,22 +84,26 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 			loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
 			if(loc1DHist == NULL)
 			{
-				unsigned int locThrownOffset = 0;
-				if(!locMCThrowns.empty())
-					locThrownOffset = 1;
-
 				locHistTitle = locReactionName + string(";;# Events Survived Action");
-				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 2 + locThrownOffset, -0.5, locNumActions + 2.0 + float(locThrownOffset) - 0.5); //+2 for input & # tracks
+				loc1DHist = new TH1D(locHistName.c_str(), locHistTitle.c_str(), locNumActions + 2, -0.5, locNumActions + 2.0 - 0.5); //+2 for input & # tracks
 				loc1DHist->GetXaxis()->SetBinLabel(1, "Input"); // a new event
-
-				if(!locMCThrowns.empty())
-					loc1DHist->GetXaxis()->SetBinLabel(2, "Is Thrown Topology (Not A Cut)");
-
-				loc1DHist->GetXaxis()->SetBinLabel(2 + locThrownOffset, "Has Particle Combos"); // at least one DParticleCombo object before any actions
+				loc1DHist->GetXaxis()->SetBinLabel(2, "Has Particle Combos"); // at least one DParticleCombo object before any actions
 				for(size_t loc_j = 0; loc_j < locActionNames.size(); ++loc_j)
-					loc1DHist->GetXaxis()->SetBinLabel(3 + loc_j + locThrownOffset, locActionNames[loc_j].c_str());
+					loc1DHist->GetXaxis()->SetBinLabel(3 + loc_j, locActionNames[loc_j].c_str());
 			}
-			dHistMap_NumEventsSurvivedAction[locReaction] = loc1DHist;
+			dHistMap_NumEventsSurvivedAction_All[locReaction] = loc1DHist;
+
+			if(!locMCThrowns.empty())
+			{
+				locHistName = "NumTrueEventsSurvivedAction";
+				loc1DHist = static_cast<TH1D*>(locDirectoryFile->Get(locHistName.c_str()));
+				if(loc1DHist == NULL)
+				{
+					loc1DHist = (TH1D*)dHistMap_NumEventsSurvivedAction_All[locReaction]->Clone(locHistName.c_str());
+					loc1DHist->SetTitle(";;# Events Where True Combo Survived Action");
+				}
+				dHistMap_NumEventsSurvivedAction_True[locReaction] = loc1DHist;
+			}
 
 			locHistName = "NumCombosSurvivedAction";
 			loc2DHist = static_cast<TH2D*>(locDirectoryFile->Get(locHistName.c_str()));
@@ -148,7 +149,28 @@ jerror_t DAnalysisResults_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop
 		}
 	}
 
-	dROOTObjectsCreatedFlag = true;
+	//auto-detect whether the DReaction is expected to be the entire reaction or a subset
+	if(!locMCThrowns.empty())
+	{
+		for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
+		{
+			bool locExactMatchFlag = true;
+			if(locReactions[loc_i]->Get_ReactionStep(0)->Get_InitialParticleID() != Gamma)
+				locExactMatchFlag = false;
+			else
+			{
+				Particle_t locMissingPID = Unknown;
+				if(locReactions[loc_i]->Get_MissingPID(locMissingPID))
+				{
+					if(!Is_FinalStateParticle(locMissingPID))
+						locExactMatchFlag = false;
+				}
+			}
+			dMCReactionExactMatchFlags[locReactions[loc_i]] = locExactMatchFlag;
+			dTrueComboCuts[locReactions[loc_i]] = new DCutAction_TrueCombo(locReactions[loc_i], dMinThrownMatchFOM, locExactMatchFlag);
+			dTrueComboCuts[locReactions[loc_i]]->Initialize(locEventLoop);
+		}
+	}
 
 	return NOERROR;
 }
@@ -192,7 +214,6 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 
 	vector<const DMCThrown*> locMCThrowns;
 	locEventLoop->Get(locMCThrowns);
-	unsigned int locNumEventsSurvivedHistBinOffset = locMCThrowns.empty() ? 0 : 1;
 
 	const DReaction* locReaction;
 	DAnalysisResults* locAnalysisResults;
@@ -203,19 +224,36 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 	if(dDebugLevel > 0)
 		cout << "Total # PreKinFit DParticleCombos: " << locParticleCombos.size() << endl;
 
+	//organize the combos by dreaction
+	map<const DReaction*, set<const DParticleCombo*> > dCombosByReaction;
+	for(size_t loc_j = 0; loc_j < locParticleCombos.size(); ++loc_j)
+		dCombosByReaction[locParticleCombos[loc_j]->Get_Reaction()].insert(locParticleCombos[loc_j]);
+
 	for(size_t loc_i = 0; loc_i < locReactions.size(); ++loc_i)
 	{
 		locAnalysisResults = new DAnalysisResults();
 		locReaction = locReactions[loc_i];
 		locAnalysisResults->Set_Reaction(locReaction);
 
-		//select the particle combos belonging to this reaction
-		deque<pair<const DParticleCombo*, bool> > locSurvivingParticleCombos;
-		for(size_t loc_j = 0; loc_j < locParticleCombos.size(); ++loc_j)
+		if(dCombosByReaction.find(locReaction) == dCombosByReaction.end())
+			continue;
+		set<const DParticleCombo*>& locSurvivingParticleCombos = dCombosByReaction[locReaction];
+
+		//find the true particle combo
+		const DParticleCombo* locTrueParticleCombo = NULL;
+		if(dTrueComboCuts.find(locReaction) != dTrueComboCuts.end())
 		{
-			if(locParticleCombos[loc_j]->Get_Reaction() == locReaction)
-				locSurvivingParticleCombos.push_back(pair<const DParticleCombo*, bool>(locParticleCombos[loc_j], true));
+			set<const DParticleCombo*>::iterator locIterator = locSurvivingParticleCombos.begin();
+			for(; locIterator != locSurvivingParticleCombos.end(); ++locIterator)
+			{
+				if(!(*dTrueComboCuts[locReaction])(locEventLoop, *locIterator))
+					continue;
+				locTrueParticleCombo = *locIterator;
+				break;
+			}
 		}
+		int locLastActionTrueComboSurvives = (locTrueParticleCombo != NULL) ? -1 : -2; //-1/-2: combo does/does-not exist
+
 		if(dDebugLevel > 0)
 			cout << "Evaluating DReaction: " << locReaction->Get_ReactionName() << endl;
 		if(dDebugLevel > 0)
@@ -223,7 +261,8 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 
 		//execute the actions
 		size_t locNumAnalysisActions = locReaction->Get_NumAnalysisActions();
-		deque<size_t> locNumParticleCombosSurvivedActions(1, locSurvivingParticleCombos.size()); //first cut is "are there enough tracks"
+		deque<size_t> locNumParticleCombosSurvivedActions(1, locSurvivingParticleCombos.size()); //first cut is "is there a combo"
+
 		for(size_t loc_j = 0; loc_j < locNumAnalysisActions; ++loc_j)
 		{
 			if(locSurvivingParticleCombos.empty())
@@ -233,66 +272,49 @@ jerror_t DAnalysisResults_factory_PreKinFit::evnt(jana::JEventLoop* locEventLoop
 			if(locAnalysisAction->Get_UseKinFitResultsFlag())
 				break; //need to kinfit first!!!
 
+			size_t locNumPreActionParticleCombos = locSurvivingParticleCombos.size();
 			if(dDebugLevel > 0)
 				cout << "Execute Action # " << loc_j + 1 << ": " << locAnalysisAction->Get_ActionName() << " on " << locSurvivingParticleCombos.size() << " surviving DParticleCombos." << endl;
 			(*locAnalysisAction)(locEventLoop, locSurvivingParticleCombos); //EXECUTE!
-
-			//remove failed particle combos
-			size_t locNumPreActionParticleCombos = locSurvivingParticleCombos.size();
-			deque<pair<const DParticleCombo*, bool> >::iterator locIterator;
-			for(locIterator = locSurvivingParticleCombos.begin(); locIterator != locSurvivingParticleCombos.end();)
-			{
-				if(!locIterator->second)
-				{
-					//failed the cut
-					locAnalysisResults->Add_FailedParticleCombo(locIterator->first, loc_j);
-					locIterator = locSurvivingParticleCombos.erase(locIterator);
-				}
-				else
-					++locIterator;
-			}
 			locNumParticleCombosSurvivedActions.push_back(locSurvivingParticleCombos.size());
+			if(locSurvivingParticleCombos.find(locTrueParticleCombo) != locSurvivingParticleCombos.end())
+				locLastActionTrueComboSurvives = loc_j;
+
 			if(dDebugLevel > 0)
 				cout << locNumPreActionParticleCombos - locNumParticleCombosSurvivedActions.back() << " combos failed the action." << endl;
 		}
 
-		for(size_t loc_j = 0; loc_j < locSurvivingParticleCombos.size(); ++loc_j)
-			locAnalysisResults->Add_PassedParticleCombo(locSurvivingParticleCombos[loc_j].first);
+		set<const DParticleCombo*>::iterator locIterator = locSurvivingParticleCombos.begin();
+		for(; locIterator != locSurvivingParticleCombos.end(); ++locIterator)
+			locAnalysisResults->Add_PassedParticleCombo(*locIterator);
+
+		bool locIsThrownMatchFlag = false;
+		if(!locMCThrowns.empty())
+		{
+			if(dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, locReaction, dMCReactionExactMatchFlags[locReaction]))
+				locIsThrownMatchFlag = true;
+		}
 
 		//fill histograms
 		dApplication->RootWriteLock();
 		{
-			dHistMap_NumEventsSurvivedAction[locReaction]->Fill(0); //initial: a new event
-			if(locNumEventsSurvivedHistBinOffset == 1)
-			{
-				//auto-detect whether the DReaction is expected to be the entire reaction or a subset
-				bool locExactMatchFlag = true;
-				if(locReaction->Get_ReactionStep(0)->Get_InitialParticleID() != Gamma)
-					locExactMatchFlag = false;
-				else
-				{
-					Particle_t locMissingPID = Unknown;
-					if(locReaction->Get_MissingPID(locMissingPID))
-					{
-						if(!Is_FinalStateParticle(locMissingPID))
-							locExactMatchFlag = false;
-					}
-				}
-				if(dAnalysisUtilities->Check_ThrownsMatchReaction(locEventLoop, locReaction, locExactMatchFlag))
-					dHistMap_NumEventsSurvivedAction[locReaction]->Fill(1); //is thrown topology
-			}
+			dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(0); //initial: a new event
+			if(locIsThrownMatchFlag)
+				dHistMap_NumEventsSurvivedAction_True[locReaction]->Fill(1); //input event (+1 because binning begins at 1)
 
 			dHistMap_NumParticleCombos[locReaction]->Fill(locNumParticleCombosSurvivedActions[0]);
 			for(size_t loc_j = 0; loc_j < locNumParticleCombosSurvivedActions.size(); ++loc_j)
 			{
 				if(locNumParticleCombosSurvivedActions[loc_j] > 0)
-					dHistMap_NumEventsSurvivedAction[locReaction]->Fill(loc_j + 1 + locNumEventsSurvivedHistBinOffset); //+1 because 0 is initial (no cuts at all)
+					dHistMap_NumEventsSurvivedAction_All[locReaction]->Fill(loc_j + 1); //+1 because 0 is initial (no cuts at all)
 				dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, locNumParticleCombosSurvivedActions[loc_j]);
 				for(size_t loc_k = 0; loc_k < locNumParticleCombosSurvivedActions[loc_j]; ++loc_k)
 					dHistMap_NumCombosSurvivedAction1D[locReaction]->Fill(loc_j);
 			}
 			for(size_t loc_j = locNumParticleCombosSurvivedActions.size(); loc_j < (locNumAnalysisActions + 1); ++loc_j)
 				dHistMap_NumCombosSurvivedAction[locReaction]->Fill(loc_j, 0);
+			for(int loc_j = -1; loc_j <= locLastActionTrueComboSurvives; ++loc_j)
+				dHistMap_NumEventsSurvivedAction_True[locReaction]->Fill(loc_j + 1);
 		}
 		dApplication->RootUnLock();
 

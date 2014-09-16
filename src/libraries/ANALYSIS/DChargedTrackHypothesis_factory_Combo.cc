@@ -103,7 +103,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventL
 					//yes it was: create new object with same PID (so that is registered with the combo factory, and because rf bunch could be different)
 					const DTrackTimeBased* locTrackTimeBased = NULL;
 					locChargedTrackHypothesis->GetSingleT(locTrackTimeBased);
-					locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, locDetectorMatches, locEventRFBunch, true);
+					locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, locDetectorMatches, locEventRFBunch);
 					locNewChargedTrackHypothesis->AddAssociatedObject(locEventRFBunch);
 					locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 					_data.push_back(locNewChargedTrackHypothesis);
@@ -122,7 +122,7 @@ jerror_t DChargedTrackHypothesis_factory_Combo::evnt(jana::JEventLoop* locEventL
 					if(locTimeBasedSourceChargedTrack != locChargedTrack)
 						continue;
 					//correct DTrackTimeBased grabbed for this source object: create new DChargedTrackHypothesis object
-					locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, locDetectorMatches, locEventRFBunch, true);
+					locNewChargedTrackHypothesis = dChargedTrackHypothesisFactory->Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBased, locDetectorMatches, locEventRFBunch);
 					locNewChargedTrackHypothesis->AddAssociatedObject(locEventRFBunch);
 					locNewChargedTrackHypothesis->AddAssociatedObject(locChargedTrack);
 					_data.push_back(locNewChargedTrackHypothesis);

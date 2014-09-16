@@ -49,7 +49,7 @@ bool DAnalysisAction::operator()(JEventLoop* locEventLoop, const DParticleCombo*
 	return (dPerformAntiCut ? !locResult : locResult);
 }
 
-void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos)
+void DAnalysisAction::operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos)
 {
 	//THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
 	dNumParticleCombos = locSurvivingParticleCombos.size();
@@ -61,10 +61,15 @@ void DAnalysisAction::operator()(JEventLoop* locEventLoop, deque<pair<const DPar
 		return;
 	}
 
-	for(size_t loc_i = 0; loc_i < locSurvivingParticleCombos.size(); ++loc_i)
+	set<const DParticleCombo*>::iterator locIterator = locSurvivingParticleCombos.begin();
+	while(locIterator != locSurvivingParticleCombos.end())
 	{
-		bool locResult = Perform_Action(locEventLoop, locSurvivingParticleCombos[loc_i].first);
-		locSurvivingParticleCombos[loc_i].second = dPerformAntiCut ? !locResult : locResult;
+		bool locResult = Perform_Action(locEventLoop, *locIterator);
+		bool locSaveComboFlag = dPerformAntiCut ? !locResult : locResult;
+		if(locSaveComboFlag)
+			++locIterator;
+		else
+			locSurvivingParticleCombos.erase(locIterator++);
 		++dNumPreviousParticleCombos;
 	}
 }

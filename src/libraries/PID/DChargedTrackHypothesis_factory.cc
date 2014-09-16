@@ -48,7 +48,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, i
 
 	for(size_t loc_i = 0; loc_i < locTrackTimeBasedVector.size(); loc_i++)
 	{
-		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBasedVector[loc_i], locDetectorMatches, locEventRFBunches[0], false);
+		DChargedTrackHypothesis* locChargedTrackHypothesis = Create_ChargedTrackHypothesis(locEventLoop, locTrackTimeBasedVector[loc_i], locDetectorMatches, locEventRFBunches[0]);
 		if(locChargedTrackHypothesis != NULL)
 			_data.push_back(locChargedTrackHypothesis);
 	}
@@ -57,7 +57,7 @@ jerror_t DChargedTrackHypothesis_factory::evnt(jana::JEventLoop* locEventLoop, i
 	return NOERROR;
 }
 
-DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const
+DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const
 {
 	DChargedTrackHypothesis* locChargedTrackHypothesis = new DChargedTrackHypothesis();
 	locChargedTrackHypothesis->AddAssociatedObject(locTrackTimeBased);
@@ -172,7 +172,7 @@ DChargedTrackHypothesis* DChargedTrackHypothesis_factory::Create_ChargedTrackHyp
 	locChargedTrackHypothesis->setErrorMatrix(locCovarianceMatrix);
 
 	//Calculate PID ChiSq, NDF, FOM
-	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch, locRFTimeFixedFlag);
+	dPIDAlgorithm->Calc_ChargedPIDFOM(locChargedTrackHypothesis, locEventRFBunch, true);
 
 	return locChargedTrackHypothesis;
 }

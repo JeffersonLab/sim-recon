@@ -39,7 +39,7 @@ class DAnalysisAction
 		//Function-call operators: Execute the action.
 		bool operator()(JEventLoop* locEventLoop); //DON'T CALL THIS FOR COMBO-DEPENDENT ACTIONS
 		bool operator()(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
-		void operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
+		void operator()(JEventLoop* locEventLoop, set<const DParticleCombo*>& locSurvivingParticleCombos); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
 
 	protected:
 

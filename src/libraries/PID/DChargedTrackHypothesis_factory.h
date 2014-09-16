@@ -29,7 +29,7 @@ class DChargedTrackHypothesis_factory:public jana::JFactory<DChargedTrackHypothe
 		DChargedTrackHypothesis_factory(){};
 		~DChargedTrackHypothesis_factory(){};
 
-		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch, bool locRFTimeFixedFlag) const;
+		DChargedTrackHypothesis* Create_ChargedTrackHypothesis(JEventLoop* locEventLoop, const DTrackTimeBased* locTrackTimeBased, const DDetectorMatches* locDetectorMatches, const DEventRFBunch* locEventRFBunch) const;
 		void Add_TimeToTrackingMatrix(DChargedTrackHypothesis* locChargedTrackHypothesis, double locFlightTimeVariance, double locHitTimeVariance, double locFlightTimePCorrelation) const;
 
 	private:
