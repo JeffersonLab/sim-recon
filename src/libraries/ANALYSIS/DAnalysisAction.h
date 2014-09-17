@@ -37,8 +37,7 @@ class DAnalysisAction
 		virtual void Initialize(JEventLoop* locEventLoop) = 0;
 
 		//Function-call operators: Execute the action.
-		bool operator()(JEventLoop* locEventLoop); //DON'T CALL THIS FOR COMBO-DEPENDENT ACTIONS
-		bool operator()(JEventLoop* locEventLoop, const DParticleCombo* locParticleCombo); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
+		bool operator()(JEventLoop* locEventLoop); //DON'T CALL THIS FOR REACTION-DEPENDENT ACTIONS
 		void operator()(JEventLoop* locEventLoop, deque<pair<const DParticleCombo*, bool> >& locSurvivingParticleCombos); //THIS METHOD ASSUMES THAT ONLY ONE THREAD HAS ACCESS TO THIS OBJECT
 
 	protected:
@@ -60,10 +59,6 @@ class DAnalysisAction
 		//Valid only during function-call operators (and the functions it calls):
 		size_t Get_NumPreviousParticleCombos(void) const{return dNumPreviousParticleCombos;}
 		size_t Get_NumParticleCombos(void) const{return dNumParticleCombos;}
-
-	public:
-		//Set by constructor:
-		bool dPerformAntiCut; //if Perform_Action returned true/false, instead return false/true
 
 	private:
 		

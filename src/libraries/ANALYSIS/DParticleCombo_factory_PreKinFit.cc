@@ -15,7 +15,7 @@ using namespace jana;
 //------------------
 jerror_t DParticleCombo_factory_PreKinFit::init(void)
 {
-	MAX_DParticleComboStepPoolSize = 3000;
+	MAX_DParticleComboStepPoolSize = 40;
 	MAX_DKinematicDataPoolSize = 1;
 
 	dMaxPhotonRFDeltaT = pair<bool, double>(false, -1.0);
@@ -77,31 +77,6 @@ jerror_t DParticleCombo_factory_PreKinFit::brun(jana::JEventLoop *locEventLoop, 
 		gPARMS->GetParameter("COMBO:HAS_DETECTOR_MATCH_FLAG", dHasDetectorMatchFlag.second);
 	}
 
-	// Get # of DReactions:
-	// Get list of factories and find all the ones producing
-	// DReaction objects. (A simpler way to do this would be to
-	// just use locEventLoop->Get(...), but then only one plugin could
-	// be used at a time.)
-	size_t locNumReactions = 0;
-	vector<JFactory_base*> locFactories = locEventLoop->GetFactories();
-	for(size_t loc_i = 0; loc_i < locFactories.size(); ++loc_i)
-	{
-		JFactory<DReaction>* locFactory = dynamic_cast<JFactory<DReaction>* >(locFactories[loc_i]);
-		if(locFactory == NULL)
-			continue;
-		if(string(locFactory->Tag()) == "Thrown")
-			continue;
-		// Found a factory producing DReactions. The reaction objects are
-		// produced at the init stage and are persistent through all event
-		// processing so we can grab the list here and append it to our
-		// overall list.
-		vector<const DReaction*> locReactionsSubset;
-		locFactory->Get(locReactionsSubset);
-		locNumReactions += locReactionsSubset.size();
-	}
-
-	MAX_DParticleComboStepPoolSize = 3000*locNumReactions;
-
 	return NOERROR;
 }
 
@@ -126,7 +101,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 	locEventLoop->Get(locEventRFBunches, "Combo");
 
 	vector<const DBeamPhoton*> locBeamPhotons;
-	locEventLoop->Get(locBeamPhotons, "MCGEN");
+	locEventLoop->Get(locBeamPhotons);
 
 	DParticleCombo* locParticleCombo;
 	DParticleComboStep* locParticleComboStep;
@@ -244,6 +219,7 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 			locParticleComboStep->Set_SpacetimeVertex(DLorentzVector(0.0, 0.0, dTargetCenterZ, 0.0));
 
 			locParticleCombo->Add_ParticleComboStep(locParticleComboStep);
+			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleComboStep;
 		}
 
 		if(!locBadComboFlag)
@@ -253,16 +229,8 @@ jerror_t DParticleCombo_factory_PreKinFit::evnt(jana::JEventLoop *locEventLoop, 
 		}
 		if(locBadComboFlag) //e.g. bad PID FOM
 		{
-			for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
-				dParticleComboStepPool_Available.push_back(const_cast<DParticleComboStep*>(locParticleCombo->Get_ParticleComboStep(loc_j)));
 			delete locParticleCombo;
 			continue;
-		}
-
-		for(size_t loc_j = 0; loc_j < locParticleCombo->Get_NumParticleComboSteps(); ++loc_j)
-		{
-			const DParticleComboBlueprintStep* locParticleComboBlueprintStep = locParticleComboBlueprint->Get_ParticleComboBlueprintStep(loc_j);
-			dComboBlueprintStepMap[locParticleComboBlueprintStep] = locParticleCombo->Get_ParticleComboStep(loc_j);
 		}
 
 		Calc_CommonSpacetimeVertices(locParticleCombo);
@@ -464,8 +432,9 @@ bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, 
 
 bool DParticleCombo_factory_PreKinFit::Cut_PIDFOM(const DReaction* locReaction, const DNeutralParticleHypothesis* locNeutralParticleHypothesis) const
 {
-	if(locNeutralParticleHypothesis->PID() != Gamma)
-		return true;
+	pair<bool, double> locMinChargedPIDFOM = dMinChargedPIDFOM.first ? dMinChargedPIDFOM : locReaction->Get_MinChargedPIDFOM();
+	if(locMinChargedPIDFOM.first)
+		return ((locNeutralParticleHypothesis->dNDF == 0) ? true : (locNeutralParticleHypothesis->dFOM >= locMinChargedPIDFOM.second));
 
 	pair<bool, double> locMinPhotonPIDFOM = dMinPhotonPIDFOM.first ? dMinPhotonPIDFOM : locReaction->Get_MinPhotonPIDFOM();
 	if(!locMinPhotonPIDFOM.first)
